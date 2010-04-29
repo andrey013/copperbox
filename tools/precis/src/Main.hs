@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Main
 -- Copyright   :  (c) Stephen Tetley 2010
--- License     :  BSD3
+-- License     :  LGPL (depends on CppHs)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -17,7 +17,7 @@
 
 module Main where
 
-import Precis.CPP
+import CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.HsSrcUtils
@@ -118,8 +118,8 @@ compareSourceFiles new_sf old_sf = do
   old_ans <- fullParseModule old_sf
   case (new_ans, old_ans) of 
     (Right new_modu, Right old_modu) -> compareModules new_modu old_modu
-    (Left err,_)                     -> putStrLn $ show err
-    (_, Left err)                    -> putStrLn $ show err
+    (Left err,_)                     -> putStrLn $ moduleParseErrorMsg err
+    (_, Left err)                    -> putStrLn $ moduleParseErrorMsg err
 
 
 compareModules :: Module -> Module -> IO ()
@@ -147,16 +147,14 @@ fullParseModule (SourceFile _ file_name) = do
 
 
 
-
+-- Note this one throws a (fatal) error...
+--
 runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
     ans <- extractPrecis path known_extensions
     case ans of
-      Left  err -> error $ (fmt err)
+      Left  err -> error $ cabalFileErrorMsg err
       Right cfg -> return cfg
-  where
-    fmt ERR_CABAL_FILE_MISSING     = "*** Missing cabal file " ++ path
-    fmt (ERR_CABAL_FILE_PARSE msg) = "*** Parse error: " ++ msg 
 
 
 

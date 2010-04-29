@@ -1,18 +1,24 @@
 name:             precis
-version:          0.1.0
-license:          BSD3
+version:          0.2.0
+license:          OtherLicense
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Distribution
-synopsis:         Summarize Cabal packages.
+synopsis:         Diff Cabal packages.
 description:
-  Summarize Cabal pacakages.
+  Summarize API differences between revisions of Cabal packages.
   .
-  BSD3 + GPL executable apropos CppHs
+  Note Precis library is BSD3, Precis executable is LGPL apropos 
+  the dependency on CppHs.
   .
-  
+  Status 0.2.0 - probably not readily useful. Currently Precis 
+  only diffs the exports list of exposed mdoules. It doesn\'t 
+  diff e.g. class instances, type signatures of exported 
+  functions, exported data declarations, ...
+  .
+
 build-type:         Simple
 stability:          unstable
 cabal-version:      >= 1.2
@@ -33,7 +39,6 @@ library
 
   exposed-modules: 
     Precis.CabalPackage,
-    Precis.CPP,
     Precis.Datatypes,
     Precis.HsSrcUtils,
     Precis.ModuleProperties,
@@ -48,8 +53,8 @@ executable precis
   hs-source-dirs: src
     
   other-modules:   
+    CPP,
     Precis.CabalPackage,
-    Precis.CPP,
     Precis.Datatypes,
     Precis.HsSrcUtils,
     Precis.ModuleProperties,

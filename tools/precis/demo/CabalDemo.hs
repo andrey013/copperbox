@@ -2,7 +2,7 @@
 
 module CabalDemo where
 
-import Precis.CPP
+import CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.HsSrcUtils

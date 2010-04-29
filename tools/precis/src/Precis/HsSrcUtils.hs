@@ -32,6 +32,7 @@ module Precis.HsSrcUtils
   ) where
 
 import Precis.Datatypes
+import Precis.PPShowS
 
 import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 
@@ -39,9 +40,12 @@ import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 readModule :: MacroExpandedSrcFile -> Either ModuleParseError Module
 readModule (MacroExpandedSrcFile filename mx_src) = 
     case parseModuleWithExts knownExtensions filename mx_src of
-      ParseFailed _ msg -> Left (ERR_MODULE_FILE_PARSE msg)
-      ParseOk a         -> Right $ a
-
+      ParseFailed loc msg -> Left $ ERR_MODULE_FILE_PARSE $ mkMsg msg loc
+      ParseOk a           -> Right $ a
+  where
+    mkMsg msg loc        = toString $ text msg <+> ppLoc loc
+    ppLoc (SrcLoc _ l c) = parens $ 
+        (text "line:" <+> int l <+> text ", column:" <+> int c)
 
 parseModuleWithExts :: [Extension] -> FilePath -> String -> ParseResult Module
 parseModuleWithExts exts file_name txt = parseModuleWithMode pmode txt

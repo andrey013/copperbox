@@ -45,7 +45,7 @@ extractPrecis :: FilePath -> [Extension] -> IO (Either CabalFileError CabalPreci
 extractPrecis cabal_file exts = do
     exists <- doesFileExist cabal_file
     if exists then extractP cabal_file exts `onSuccessM` post
-              else return $ Left ERR_CABAL_FILE_MISSING
+              else return $ Left $ ERR_CABAL_FILE_MISSING cabal_file
   where
     post = return . nubSourceFiles
 

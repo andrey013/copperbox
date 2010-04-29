@@ -22,18 +22,10 @@ module Precis.Utils
   , snocH
   , toListH
  
-  , para
-  , mbCons
-  , mbEither
 
 
-  , predMaybe
   , onSuccess
   , onSuccessM
-
-  , predMaybeM
-  , condM
-
 
   ) where
 
@@ -54,26 +46,6 @@ toListH = ($ [])
 
 
 
--- paramorphism (generalizes catamorphism (fold))
-para :: (a -> ([a], b) -> b) -> b -> [a] -> b
-para _   b []     = b
-para phi b (x:xs) = phi x (xs, para phi b xs)
-
-
-
-mbCons :: Maybe a -> [a] -> [a]
-mbCons oa xs = maybe xs (:xs) $ oa
-
-mbEither :: b -> Maybe a -> Either b a
-mbEither b = maybe (Left b) Right
-
-
-predMaybe :: (a -> Bool) -> a -> Maybe a
-predMaybe p a | p a       = Just a
-              | otherwise = Nothing
-
-
-
   
 onSuccess :: Monad m => Either a b -> (b -> m c) -> m (Either a c)
 onSuccess (Left a)  _  = return (Left a)
@@ -85,13 +57,4 @@ onSuccessM ma msk = ma >>= step
   where
     step (Left a)  = return (Left a)
     step (Right b) = liftM Right $ msk b 
-
-
-predMaybeM :: Monad m => (a -> m Bool) -> a -> m (Maybe a)
-predMaybeM mp a = mp a >>= \v -> if v then return (Just a) else return Nothing
-
-
-condM :: Monad m => m Bool -> m b -> m a -> m (Either a b)
-condM mtest sk fk = mtest >>= \ans -> 
-                    if ans then liftM Right sk  else liftM Left fk
 

@@ -2,9 +2,9 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.CPP
+-- Module      :  CPP
 -- Copyright   :  (c) Stephen Tetley 2010
--- License     :  BSD3
+-- License     :  LGPL (depends on CppHs)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.CPP 
+module CPP 
   (
     preprocessFile
   , precisCpphsOptions

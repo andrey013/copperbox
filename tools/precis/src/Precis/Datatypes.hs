@@ -19,6 +19,8 @@ module Precis.Datatypes
     StrName
   , TextRep
   , CabalFileError(..)
+  , cabalFileErrorMsg
+
   , CabalPrecis(..)
   , SourceFile(..)
   , sourceFile 
@@ -26,6 +28,7 @@ module Precis.Datatypes
 
   , MacroExpandedSrcFile(..)
   , ModuleParseError(..)
+  , moduleParseErrorMsg
 
   , ExportItem(..)
   , exportItemName
@@ -44,9 +47,17 @@ import System.FilePath
 type StrName = String
 type TextRep = String
 
-data CabalFileError = ERR_CABAL_FILE_MISSING
+data CabalFileError = ERR_CABAL_FILE_MISSING FilePath
                     | ERR_CABAL_FILE_PARSE   String
   deriving (Eq,Show)
+
+
+cabalFileErrorMsg :: CabalFileError -> String
+cabalFileErrorMsg (ERR_CABAL_FILE_MISSING s) = 
+    "*** Error: missing file - " ++ s
+cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = 
+    "*** Error: parse error - " ++ s
+
 
 data CabalPrecis = CabalPrecis
       { package_name            :: StrName
@@ -95,6 +106,12 @@ data MacroExpandedSrcFile = MacroExpandedSrcFile
 data ModuleParseError = ERR_MODULE_FILE_MISSING String
                       | ERR_MODULE_FILE_PARSE   String
   deriving (Eq,Show)
+
+moduleParseErrorMsg :: ModuleParseError -> String
+moduleParseErrorMsg (ERR_MODULE_FILE_MISSING s) = 
+    "*** Error: missing file - " ++ s
+moduleParseErrorMsg (ERR_MODULE_FILE_PARSE   s) = 
+    "*** Error: parse error - " ++ s
 
 
 data ExportItem = ModuleExport StrName
