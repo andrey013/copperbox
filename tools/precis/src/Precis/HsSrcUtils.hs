@@ -25,6 +25,8 @@ module Precis.HsSrcUtils
   , extractName
   , extractSpecialCon
 
+  , getModuleName
+
   , namedDecls
 
   ) where
@@ -68,6 +70,10 @@ extractName (Symbol name) = name
 extractSpecialCon :: SpecialCon -> String
 extractSpecialCon = prettyPrint
 
+--------------------------------------------------------------------------------
+
+getModuleName :: Module -> ModuleName 
+getModuleName (Module _ mn _ _ _ _ _) = mn 
 
 
 --------------------------------------------------------------------------------

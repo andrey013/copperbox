@@ -31,15 +31,12 @@ module Precis.ModuleProperties
   --
   , ExportsProp
   , exportsProp
-  , ExportsPrecis(..)
-  , ModuleExport
-  , ClassExport(..)
-  , DataExport(..)
-  , VarExport
+  , diffExportsProps
 
   ) where
 
 import Precis.Datatypes
+import Precis.HsSrcUtils
 import Precis.Properties
 
 import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
@@ -67,10 +64,6 @@ packageModulesList cp = PackageModulesList expos privs
     expos = map sourceFileName $ exposed_modules  cp
     privs = map sourceFileName $ internal_modules cp
 
-
-sourceFileName :: SourceFile -> StrName
-sourceFileName (SourceFile n _)   = n
-sourceFileName (UnresolvedFile n) = n 
 
 
 diffPackageModulesProps :: PackageModulesProp 
@@ -116,41 +109,44 @@ diffExposedModulesProps = diffProperty cmp
 
 --------------------------------------------------------------------------------
 
-type ExportsProp = Property ExportsPrecis
+type ExportsProp = Property ExportsList
 
-makeExportsProp :: ExportsPrecis -> ExportsProp
+makeExportsProp :: ExportsList -> ExportsProp
 makeExportsProp  = Property name descr 
   where
     name  = "Module exports"
     descr = "Explicit exports from a module (class instances not counted)."
 
 
--- NoExports ?
-data ExportsPrecis = ExportsPrecis 
-       { exported_modules     :: [ModuleExport]
-       , exported_classes     :: [ClassExport]
-       , exported_data_defs   :: [DataExport]
-       , exported_variables   :: [VarExport]
-       }
-  deriving (Eq,Show)
+type ExportsList = [ExportItem]
 
-  
-type ModuleExport = StrName
-type VarExport    = StrName
-
-
--- Text rep of a Data export is for example @ One(..) @
--- (it is not a data definition).
---
-data DataExport   = DataExport StrName TextRep
-  deriving (Eq,Show)
-
-data ClassExport  = ClassExport StrName TextRep
-  deriving (Eq,Show)
 
 exportsProp :: Module -> ExportsProp
-exportsProp modu = makeExportsProp (exportsPrecis modu)
+exportsProp modu = makeExportsProp (exportsList modu)
 
 
-exportsPrecis :: Module -> ExportsPrecis
-exportsPrecis _modu = error "exportsPrecis TODO" 
+exportsList :: Module -> ExportsList
+exportsList (Module _ _ _ _ mb_expos _ _) = 
+    maybe [] (map makeExportItem)  mb_expos 
+
+
+makeExportItem :: ExportSpec -> ExportItem
+makeExportItem (EModuleContents name) = ModuleExport $ extractModuleName name 
+makeExportItem (EVar name)            = Variable $ extractQName name
+makeExportItem s@(EAbs name)          = 
+    DataOrClass (extractQName name) (prettyPrint s)
+makeExportItem s@(EThingAll name)     = 
+    DataOrClass (extractQName name) (prettyPrint s)
+makeExportItem s@(EThingWith name _)  = 
+    DataOrClass (extractQName name) (prettyPrint s)
+
+
+diffExportsProps :: ExportsProp -> ExportsProp -> [Edit ExportItem]
+diffExportsProps = diffProperty cmp
+  where
+    cmp :: ExportsList -> ExportsList -> [Edit ExportItem]
+    cmp es1 es2 = difference (lift2a (==)) (/=) es1 es2         
+        
+
+    lift2a :: (StrName -> StrName -> b) -> ExportItem -> ExportItem -> b
+    lift2a op s1 s2 = exportItemName s1 `op` exportItemName s2

@@ -97,9 +97,9 @@ printModuleCountSummary new_cp old_cp = putShowSLine $ vsep
     , newline
     ]
   where
-    pm_new        = packageModulesProp new_cp
-    pm_old        = packageModulesProp old_cp
-    (expos,privs) = diffPackageModulesProps pm_new pm_old
+    new_pm        = packageModulesProp new_cp
+    old_pm        = packageModulesProp old_cp
+    (expos,privs) = diffPackageModulesProps new_pm old_pm
                                   
 
 compareExposedModules :: ExposedModulesProp -> ExposedModulesProp -> IO ()
@@ -122,16 +122,21 @@ compareSourceFiles new_sf old_sf = do
 
 
 compareModules :: Module -> Module -> IO ()
-compareModules new_modu old_modu = do 
-    -- temp
-    putStrLn $ show new_expos
-    putStrLn $ show old_expos
+compareModules new_modu old_modu = putShowSLine $ vsep
+    [ text $ modu_name ++ " exports:"
+    , summarizeConflictRemoved "export" "exports" txt expos
+    ]
   where
     new_expos = exportsProp new_modu
     old_expos = exportsProp old_modu
+    expos     = diffExportsProps new_expos old_expos
 
+    txt (ModuleExport s)   = s
+    txt (DataOrClass  _ r) = r
+    txt (Variable     s)   = s 
 
-  
+    modu_name = extractModuleName (getModuleName new_modu)
+
 
 -- | macro-expand and parse
 --

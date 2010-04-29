@@ -28,6 +28,7 @@ module Precis.Properties
   , diffProperty
   , addedRemoved
   , summarizeAddedRemoved
+  , summarizeConflictRemoved
 
   ) where
 
@@ -79,6 +80,14 @@ addedRemoved = foldr fn ([],[])
     fn (Removed a) (as,rs) = (as,a:rs)
     fn _           acc     = acc
 
+conflictRemoved :: [Edit a] -> ([(a,a)],[a])
+conflictRemoved = foldr fn ([],[])
+  where
+    fn (Conflict a b)   (cs,rs) = ((a,b):cs,rs)
+    fn (Removed  a)     (cs,rs) = (cs,a:rs)
+    fn _                acc     = acc
+
+
 summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
 summarizeAddedRemoved single plural str xs = 
            added_msg <> comma <+> removed_msg 
@@ -87,10 +96,10 @@ summarizeAddedRemoved single plural str xs =
   where
     (as,rs)     = addedRemoved xs
     (alen,rlen) = (length as, length rs)
-    msgFiles    = msgCount single plural
+    countfun    = msgCount single plural
 
-    added_msg   = msgFiles alen <+> text "added (+)"
-    removed_msg = msgFiles rlen <+> text "removed (-)"
+    added_msg   = countfun alen <+> text "added (+)"
+    removed_msg = countfun rlen <+> text "removed (-)"
  
     added1 a     = char '+' <+> (text $ str a)
     removed1 a   = char '-' <+> (text $ str a)
@@ -98,3 +107,20 @@ summarizeAddedRemoved single plural str xs =
 msgCount :: String -> String -> Int -> ShowS
 msgCount single _      1 = int 1 <+> text single
 msgCount _      plural n = int n <+> text plural
+
+summarizeConflictRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
+summarizeConflictRemoved single plural str xs = 
+           conflict_msg <> comma <+> removed_msg 
+    `line` vsep (map conflict1 cs)
+    `line` vsep (map removed1  rs)
+  where
+    (cs,rs)       = conflictRemoved xs
+    (clen,rlen)   = (length cs, length rs)
+    countfun      = msgCount single plural
+
+    conflict_msg  = countfun clen <+> text "conflict (*)"
+    removed_msg   = countfun rlen <+> text "removed (-)"
+ 
+    conflict1 (a,b) = prefixLines (text "< ") (str a) `line`
+                      prefixLines (text "> ") (str b) <> newline
+    removed1 a      = char '-' <+> (text $ str a)

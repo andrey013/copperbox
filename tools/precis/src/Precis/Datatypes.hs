@@ -18,23 +18,20 @@ module Precis.Datatypes
   (
     StrName
   , TextRep
+  , CabalFileError(..)
   , CabalPrecis(..)
   , SourceFile(..)
   , sourceFile 
-  , CabalFileError(..)
+  , sourceFileName
 
   , MacroExpandedSrcFile(..)
   , ModuleParseError(..)
-  , ModuleParseErr
-  , DeclMap
-  , ModulePrecis(..)
-  , ModuleExportPrecis(..) 
+
   , ExportItem(..)
+  , exportItemName
 
   ) where
 
-
-import qualified Data.Map as Map
 
 import System.FilePath
 
@@ -46,6 +43,10 @@ import System.FilePath
 
 type StrName = String
 type TextRep = String
+
+data CabalFileError = ERR_CABAL_FILE_MISSING
+                    | ERR_CABAL_FILE_PARSE   String
+  deriving (Eq,Show)
 
 data CabalPrecis = CabalPrecis
       { package_name            :: StrName
@@ -71,9 +72,12 @@ sourceFile :: String -> FilePath -> SourceFile
 sourceFile name path = SourceFile name (normalise path)
 
 
-data CabalFileError = ERR_CABAL_FILE_MISSING
-                    | ERR_CABAL_FILE_PARSE   String
-  deriving (Eq,Show)
+
+sourceFileName :: SourceFile -> StrName
+sourceFileName (SourceFile n _)   = n
+sourceFileName (UnresolvedFile n) = n 
+
+
 
 
 --------------------------------------------------------------------------------
@@ -92,27 +96,13 @@ data ModuleParseError = ERR_MODULE_FILE_MISSING String
                       | ERR_MODULE_FILE_PARSE   String
   deriving (Eq,Show)
 
-type ModuleParseErr = String
-
-type DeclMap = Map.Map StrName TextRep
-
-
-data ModulePrecis = ModulePrecis
-      { mp_export_precis        :: ModuleExportPrecis
-      , mp_decls_map            :: DeclMap
-      }
-  deriving (Eq,Show)
-
-
-data ModuleExportPrecis = ModuleExportPrecis 
-      { mep_base_module         :: StrName
-      , mep_exports             :: [ExportItem]
-      }
-  deriving (Eq,Show)
 
 data ExportItem = ModuleExport StrName
                 | DataOrClass  StrName TextRep
                 | Variable     StrName 
   deriving (Eq,Show)
 
-
+exportItemName :: ExportItem -> StrName
+exportItemName (ModuleExport s)   = s
+exportItemName (DataOrClass  s _) = s
+exportItemName (Variable     s)   = s 
