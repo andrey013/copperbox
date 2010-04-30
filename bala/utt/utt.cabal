@@ -1,0 +1,44 @@
+name:             utt
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley 2010
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Uniform triadic transformations. 
+description:
+  Uniform triadic transformations
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Triadic.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5,
+                      vector-space >= 0.6 && < 0.7
+
+  exposed-modules:
+    UTT.Base,
+    UTT.Z12
+    
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
