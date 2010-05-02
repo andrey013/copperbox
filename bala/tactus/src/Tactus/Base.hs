@@ -35,7 +35,7 @@ module Tactus.Base
 import Tactus.Fraction
 import Tactus.Utils
 
-
+import Data.Ratio
 
 type MeterPattern = [Fraction]
 
@@ -105,22 +105,22 @@ sumFraction = mkFraction . sum . map mkRational
 -- Really, it suggest a proper fraction type...
 --
 divide2 :: (Integer,Integer) -> Alg a
-divide2 (l,r) = Alg $ \ f u -> step f u
+divide2 (i,j) = Alg $ \ f u -> step f u
   where
     step _ []         = (id,[])
-    step f ((a:%:b):ns) = let unit  = a `div` (l+r)  -- HACK
-                              left  = (l * unit) :%: b
-                              right = (r * unit) :%: b
-                          in (consH (f left) . consH (f right), ns) 
+    step f ((a:%:b):ns) = let unit  = (a%b) / ((i+j)%1)
+                              di    = fromR $ (fromIntegral i) * unit
+                              dj    = fromR $ (fromIntegral j) * unit
+                          in (consH (f di) . consH (f dj), ns) 
 
 divide3 :: (Integer,Integer,Integer) -> Alg a
 divide3 (i,j,k) = Alg $ \ f u -> step f u
   where
     step _ []         = (id,[])
-    step f ((a:%:b):ns) = let unit  = a `div` (i+j+k)  -- HACK
-                              di    = (i * unit) :%: b
-                              dj    = (j * unit) :%: b
-                              dk    = (k * unit) :%: b
+    step f ((a:%:b):ns) = let unit  = (a%b) / ((i+j+k)%1)
+                              di    = fromR $ (fromIntegral i) * unit
+                              dj    = fromR $ (fromIntegral j) * unit
+                              dk    = fromR $ (fromIntegral k) * unit
                           in (consH (f di) . consH (f dj) . consH (f dk), ns)
 
 

@@ -53,7 +53,8 @@ drumtune = variableDef "drumtune" $ drummode (time 7 8 <$> stemDown <$> tune1 )
 
 
 drum_score :: Score (TRepeat :. TRepAlt :. TRepAlt :. TLinear 
-                             :. TRepeat :. TRepeat :. Z) 
+                             :. TRepeat :. TRepAlt :. TRepAlt 
+                             :. TRepAlt :. Z) 
                     (NoteList (DrumGlyph ()))
 drum_score = fmap simpleNoteList $
       Repeat ("a",bars_1_4 ) 
@@ -61,7 +62,9 @@ drum_score = fmap simpleNoteList $
     $ RepAlt ("c",bars_10_12)  [("cFirst", bar_13), ("cSecond", bar_14)] 
     $ Linear ("d",bars_15_16)
     $ Repeat ("e",bars_17_20)
-    $ Repeat ("dummy", bars_21_ )
+    $ RepAlt ("f",bars_21_23)  [("fFirst", bar_24), ("fSecond", bar_25)] 
+    $ RepAlt ("g",bars_26_28)  [("gFirst", bar_29), ("gSecond", bar_30)] 
+    $ RepAlt ("h",bars_31_33)  [("hFirst", bar_34), ("hSecond", bar_35)] 
     $ Nil
   
 
@@ -99,8 +102,33 @@ bars_15_16  = drumNotes $ o_o_d +++ o_o_d
 bars_17_20  :: [DrumGlyph ()]
 bars_17_20  = drumNotes $ o_d_d +++ o_d_d2'1 +++ o_d_d +++ d_d_o
 
-bars_21_    :: [DrumGlyph ()]
-bars_21_    = drumNotes $ d_special
+bars_21_23  :: [DrumGlyph ()]
+bars_21_23  = drumNotes $ d_special +++ d_special +++ d_d_d2'1
+
+bar_24      :: [DrumGlyph ()]
+bar_24      = drumNotes d_d_d
+ 
+bar_25      :: [DrumGlyph ()]
+bar_25      = drumNotes o_o_o
+
+bars_26_28  :: [DrumGlyph ()]
+bars_26_28  = drumNotes $ d_d_d2'1 +++ d_d_d +++ o_d_d
+
+bar_29      :: [DrumGlyph ()]
+bar_29      = drumNotes o_d_o
+
+bar_30      :: [DrumGlyph ()]
+bar_30      = drumNotes o_o_o
+
+bars_31_33  :: [DrumGlyph ()]
+bars_31_33  = drumNotes $ o_o_d +++ o_o_d +++ o_d_d
+
+bar_34      :: [DrumGlyph ()]
+bar_34      = drumNotes o_d_o
+
+bar_35      :: [DrumGlyph ()]
+bar_35      = drumNotes o_o_o
+
 
 drumNotes :: Alg (DrumGlyph ()) -> [DrumGlyph ()]
 drumNotes = runAlg fn hijaz_mp 
@@ -110,6 +138,8 @@ drumNotes = runAlg fn hijaz_mp
 hc :: Duration -> DrumGlyph ()
 hc drn = GlyNote (Note () handclap) drn False
 
+d_d_d       :: Alg a
+d_d_d       = dim +++ dim +++ dim
 
 d_d_o       :: Alg a
 d_d_o       = dim +++ dim +++ one
@@ -125,6 +155,9 @@ o_o_o       = one +++ one +++ one
 
 o_d_o       :: Alg a
 o_d_o       = one +++ dim +++ one
+
+d_d_d2'1    :: Alg a
+d_d_d2'1    = dim +++ dim +++ divide2 (2,1)
 
 o_d_d2'1    :: Alg a
 o_d_d2'1    = one +++ dim +++ divide2 (2,1)

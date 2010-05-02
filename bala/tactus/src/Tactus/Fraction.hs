@@ -19,6 +19,8 @@
 module Tactus.Fraction
   (
     Fraction(..)
+  , toR
+  , fromR
 
   ) where
 
