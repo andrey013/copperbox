@@ -17,17 +17,22 @@
 
 module Tactus.Neume
   (
-
-    rationalToDuration
+    fractionToDuration
+  , rationalToDuration
 
   ) where
 
-import Tactus.Utils ( viewRational )
+import Tactus.Base
 
 import Neume.Core.Duration
 
 import Data.Ratio
 
+
+fractionToDuration :: Fraction -> Maybe Duration
+fractionToDuration (n,d) = rationalToDuration r 
+  where 
+    r = (fromIntegral n) % (fromIntegral d)
 
 -- | Convert a rational to a duration - dotting and double dotting
 -- is supported.
@@ -36,7 +41,7 @@ rationalToDuration r | r == 4%1   = Just $ dLonga
                      | r == 2%1   = Just $ dBreve
                      | r == 0     = Just $ dZero
                      | r >  1     = Nothing
-                     | otherwise  = let (n,d) = viewRational r
+                     | otherwise  = let (n,d) = (numerator r, denominator r)
                                     in dotfun n d 
   where
     dotfun n d | n == 1    = fn d

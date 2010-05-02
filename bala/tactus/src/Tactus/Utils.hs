@@ -18,11 +18,9 @@
 module Tactus.Utils
   (
 
-  -- * Numerator * denonimator
-    viewRational
 
   -- * Hughes list
-  , H
+    H
   , fromH
   , consH
   , replicateH
@@ -30,11 +28,6 @@ module Tactus.Utils
   ) where
 
 
-
-import Data.Ratio
-
-viewRational :: Rational -> (Integer,Integer)
-viewRational r = (numerator r, denominator r)
 
 
 --------------------------------------------------------------------------------

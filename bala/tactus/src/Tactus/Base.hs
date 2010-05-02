@@ -17,7 +17,8 @@
 
 module Tactus.Base
   (
-    MeterPattern
+    Fraction
+  , MeterPattern
   , Alg                        -- opaque
 
   , dim
@@ -34,9 +35,12 @@ import Tactus.Utils
 
 import Data.Ratio
 
-type MeterPattern = [Rational]
+type Fraction = (Int,Int)
 
-type InterpDuration a = Rational -> a
+-- Whoa - rationals are normalizing, which is bad for Tactus...
+type MeterPattern = [Fraction]
+
+type InterpDuration a = Fraction -> a
 
 -- an algebra is parameterized with an interpretation function...
 
@@ -48,9 +52,8 @@ newtype Alg a = Alg {
 dim :: Alg a
 dim = Alg $ \ f u -> step f u 
   where
-    step _ []     = (id,[])
-    step f (r:rs) = let (n,d) = viewRational r 
-                    in (replicateH (fromIntegral n) (f $ 1%d), rs)
+    step _ []         = (id,[])
+    step f ((n,d):rs) = (replicateH (fromIntegral n) (f $ (1,d)), rs)
 
 
 -- 
@@ -71,7 +74,7 @@ one = Alg $ \ f u -> step f u
 -- Clever, is the (necessary) type restriction on the first 
 -- parameter too restrictive though?
 --
-crushWith :: Alg Rational -> ([Rational] -> Rational) -> Alg a
+crushWith :: Alg Fraction -> ([Fraction] -> Fraction) -> Alg a
 crushWith alg sf = Alg $ \ f u -> let (h,ns') = (getAlg alg) id u
                                   in (consH $ f $ summarize sf h, ns') 
 
@@ -84,15 +87,22 @@ summarize f hf = f $ hf []
  
 aug :: Int -> Alg a
 aug i | i < 1 = error "aug - must always consume some input"
-aug i         = (step i one) `crushWith` sum
+aug i         = (step i one) `crushWith` sumFraction
   where
     step 1 alg = alg
     step n alg = step (n-1) (alg +++ one)
 
+sumFraction :: [Fraction] -> Fraction
+sumFraction = mkFraction . sum . map mkRational
+  where
+    mkFraction r     = (numerator r, denominator r)
+    mkRational (n,d) = n % d
 
--- This has scope for improvement as rationals are now used...
+
+-- This has scope for improvement as fractions/rationals are 
+-- now used...
 --
-div2 :: (Rational -> (Rational,Rational)) -> Alg a
+div2 :: (Fraction -> (Fraction,Fraction)) -> Alg a
 div2 df = Alg $ \ f u -> step f u
   where
     step _ []     = (id,[])
@@ -101,6 +111,6 @@ div2 df = Alg $ \ f u -> step f u
 
 
 
-runAlg :: (Rational -> a) -> MeterPattern -> Alg a -> [a]
+runAlg :: (Fraction -> a) -> MeterPattern -> Alg a -> [a]
 runAlg tc ns alg = fromH $ fst $ (getAlg alg) tc (cycle ns)
 

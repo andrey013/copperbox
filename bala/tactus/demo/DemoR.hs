@@ -20,42 +20,8 @@ import Neume.Extra.Percussion
 import Data.Ratio
 import System.Cmd
 
-import Text.PrettyPrint.Leijen
-
-main :: IO ()
-main =
-  writeDoc "hijaz-perc.ly"      ly_score        >>
-  system   "lilypond hijaz-perc.ly"             >>
-  return ()
-
-
-
-ly_score :: Doc
-ly_score =  version "2.12.2" 
-        <$> drumtune
-        <$> scoreExpr (new "DrumStaff" 
-                        (with dstyle (simultaneous [variableUse "drumtune"])))
-  where
-    dstyle =  definition "drumStyleTable" (text "#percussion-style")
-          <$> override "StaffSymbol" "line-count" (int 1)
-          <$> override "BarLine"     "bar-size"   (int 3)
-
-drumtune :: Doc
-drumtune = variableDef "drumtune" $ drummode (time 7 8 <$> stemDown <$> tune1 )
-  where
-    tune1    = renderLyDrums ofmt orw drum_score
-        
-    ofmt     = Ly_std_format_config       strip
-    orw      = Ly_drums_rewrite_config [1%2, 1%2] strip
-
-
-drum_score :: Score (TLinear :. Z) (NoteList (DrumGlyph ()))
-drum_score = fmap simpleNoteList $
-    Linear ("a",drum_notes) $ Nil
-
-
 hijaz_mp :: MeterPattern 
-hijaz_mp = [2%8,2%8,3%8]
+hijaz_mp = [(2,8),(2,8),(3,8)]
 
 
 drum_notes :: [DrumGlyph ()]
