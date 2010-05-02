@@ -23,6 +23,7 @@ module Tactus.Neume
   ) where
 
 import Tactus.Base
+import Tactus.Fraction
 
 import Neume.Core.Duration
 
@@ -30,7 +31,7 @@ import Data.Ratio
 
 
 fractionToDuration :: Fraction -> Maybe Duration
-fractionToDuration (n,d) = rationalToDuration r 
+fractionToDuration (n :%: d) = rationalToDuration r 
   where 
     r = (fromIntegral n) % (fromIntegral d)
 

@@ -5,6 +5,7 @@
 module DemoHijaz where
 
 import Tactus.Base
+import Tactus.Fraction
 import Tactus.Neume
 
 import Neume.Core.Duration
@@ -21,6 +22,8 @@ import Data.Ratio
 import System.Cmd
 
 import Text.PrettyPrint.Leijen
+
+
 
 main :: IO ()
 main =
@@ -50,7 +53,7 @@ drumtune = variableDef "drumtune" $ drummode (time 7 8 <$> stemDown <$> tune1 )
 
 
 drum_score :: Score (TRepeat :. TRepAlt :. TRepAlt :. TLinear 
-                             :. TRepeat :. Z) 
+                             :. TRepeat :. TRepeat :. Z) 
                     (NoteList (DrumGlyph ()))
 drum_score = fmap simpleNoteList $
       Repeat ("a",bars_1_4 ) 
@@ -58,13 +61,13 @@ drum_score = fmap simpleNoteList $
     $ RepAlt ("c",bars_10_12)  [("cFirst", bar_13), ("cSecond", bar_14)] 
     $ Linear ("d",bars_15_16)
     $ Repeat ("e",bars_17_20)
---    $ Repeat ("dummy", bars_21_ )
+    $ Repeat ("dummy", bars_21_ )
     $ Nil
   
 
 
 hijaz_mp :: MeterPattern 
-hijaz_mp = [(2,8),(2,8),(3,8)]
+hijaz_mp = [(2:%:8),(2:%:8),(3:%:8)]
 
 
 bars_1_4    :: [DrumGlyph ()]

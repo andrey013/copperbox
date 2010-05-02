@@ -32,13 +32,11 @@ module Tactus.Base
 
   ) where
 
+import Tactus.Fraction
 import Tactus.Utils
 
-import Data.Ratio
 
-type Fraction = (Int,Int)
 
--- Whoa - rationals are normalizing, which is bad for Tactus...
 type MeterPattern = [Fraction]
 
 type InterpDuration a = Fraction -> a
@@ -53,8 +51,8 @@ newtype Alg a = Alg {
 dim :: Alg a
 dim = Alg $ \ f u -> step f u 
   where
-    step _ []         = (id,[])
-    step f ((n,d):rs) = (replicateH (fromIntegral n) (f $ (1,d)), rs)
+    step _ []           = (id,[])
+    step f ((n:%:d):rs) = (replicateH (fromIntegral n) (f $ 1:%:d), rs)
 
 
 -- 
@@ -88,41 +86,42 @@ summarize f hf = f $ hf []
  
 aug :: Int -> Alg a
 aug i | i < 1 = error "aug - must always consume some input"
-aug i         = (step i one) `crushWith` sumFraction
+aug i         = (step i one) `crushWith` sum
   where
     step 1 alg = alg
     step n alg = step (n-1) (alg +++ one)
 
+{-
 sumFraction :: [Fraction] -> Fraction
 sumFraction = mkFraction . sum . map mkRational
   where
     mkFraction r     = (numerator r, denominator r)
     mkRational (n,d) = n % d
-
+-}
 
 
 
 -- Note this can be improved, currently assumes perfict `div`.
 -- Really, it suggest a proper fraction type...
 --
-divide2 :: (Int,Int) -> Alg a
+divide2 :: (Integer,Integer) -> Alg a
 divide2 (l,r) = Alg $ \ f u -> step f u
   where
     step _ []         = (id,[])
-    step f ((a,b):ns) = let unit  = a `div` (l+r)  -- HACK
-                            left  = (l * unit, b)
-                            right = (r * unit, b)
-                        in (consH (f left) . consH (f right), ns) 
+    step f ((a:%:b):ns) = let unit  = a `div` (l+r)  -- HACK
+                              left  = (l * unit) :%: b
+                              right = (r * unit) :%: b
+                          in (consH (f left) . consH (f right), ns) 
 
-divide3 :: (Int,Int,Int) -> Alg a
+divide3 :: (Integer,Integer,Integer) -> Alg a
 divide3 (i,j,k) = Alg $ \ f u -> step f u
   where
     step _ []         = (id,[])
-    step f ((a,b):ns) = let unit  = a `div` (i+j+k)  -- HACK
-                            di    = (i * unit, b)
-                            dj    = (j * unit, b)
-                            dk    = (k * unit, b)
-                        in (consH (f di) . consH (f dj) . consH (f dk), ns) 
+    step f ((a:%:b):ns) = let unit  = a `div` (i+j+k)  -- HACK
+                              di    = (i * unit) :%: b
+                              dj    = (j * unit) :%: b
+                              dk    = (k * unit) :%: b
+                          in (consH (f di) . consH (f dj) . consH (f dk), ns)
 
 
 
