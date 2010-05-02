@@ -49,10 +49,16 @@ drumtune = variableDef "drumtune" $ drummode (time 7 8 <$> stemDown <$> tune1 )
     orw      = Ly_drums_rewrite_config [2%8, 2%8, 3%8] strip
 
 
-drum_score :: Score (TRepeat :. TRepAlt :. Z) (NoteList (DrumGlyph ()))
+drum_score :: Score (TRepeat :. TRepAlt :. TRepAlt :. TLinear 
+                             :. TRepeat :. Z) 
+                    (NoteList (DrumGlyph ()))
 drum_score = fmap simpleNoteList $
       Repeat ("a",bars_1_4 ) 
-    $ RepAlt ("b",bars_5_7) [("bFirst", bar_8),("bSecond", bar_9)] 
+    $ RepAlt ("b",bars_5_7)    [("bFirst", bar_8), ("bSecond", bar_9)] 
+    $ RepAlt ("c",bars_10_12)  [("cFirst", bar_13), ("cSecond", bar_14)] 
+    $ Linear ("d",bars_15_16)
+    $ Repeat ("e",bars_17_20)
+--    $ Repeat ("dummy", bars_21_ )
     $ Nil
   
 
@@ -61,21 +67,40 @@ hijaz_mp :: MeterPattern
 hijaz_mp = [(2,8),(2,8),(3,8)]
 
 
-bars_1_4 :: [DrumGlyph ()]
-bars_1_4 = drum_notes (o_d_d +++ o_o_d +++ o_d_d +++ o_o_o)
+bars_1_4    :: [DrumGlyph ()]
+bars_1_4    = drumNotes $ o_d_d +++ o_o_d +++ o_d_d +++ o_o_o
 
-bars_5_7 :: [DrumGlyph ()]
-bars_5_7 = drum_notes (o_d_d +++ o_o_d +++ o_d_d)
+bars_5_7    :: [DrumGlyph ()]
+bars_5_7    = drumNotes $ o_d_d +++ o_o_d +++ o_d_d
 
-bar_8    :: [DrumGlyph ()]
-bar_8 = drum_notes o_d_o
+bar_8       :: [DrumGlyph ()]
+bar_8       = drumNotes o_d_o
  
-bar_9    :: [DrumGlyph ()]
-bar_9 = drum_notes o_o_o
+bar_9       :: [DrumGlyph ()]
+bar_9       = drumNotes o_o_o
 
 
-drum_notes :: Alg (DrumGlyph ()) -> [DrumGlyph ()]
-drum_notes = runAlg fn hijaz_mp 
+bars_10_12  :: [DrumGlyph ()]
+bars_10_12  = drumNotes $ o_d_d2'1 +++ o_d_d2'1 +++ o_d_d
+
+
+bar_13      :: [DrumGlyph ()]
+bar_13      = drumNotes o_d_d
+ 
+bar_14      :: [DrumGlyph ()]
+bar_14      = drumNotes o_o_o
+
+bars_15_16  :: [DrumGlyph ()]
+bars_15_16  = drumNotes $ o_o_d +++ o_o_d
+ 
+bars_17_20  :: [DrumGlyph ()]
+bars_17_20  = drumNotes $ o_d_d +++ o_d_d2'1 +++ o_d_d +++ d_d_o
+
+bars_21_    :: [DrumGlyph ()]
+bars_21_    = drumNotes $ d_special
+
+drumNotes :: Alg (DrumGlyph ()) -> [DrumGlyph ()]
+drumNotes = runAlg fn hijaz_mp 
   where
     fn = hc . maybe (error "bad conv") id . fractionToDuration
 
@@ -83,15 +108,23 @@ hc :: Duration -> DrumGlyph ()
 hc drn = GlyNote (Note () handclap) drn False
 
 
+d_d_o       :: Alg a
+d_d_o       = dim +++ dim +++ one
 
-o_d_d :: Alg a
-o_d_d = one +++ dim +++ dim
+o_d_d       :: Alg a
+o_d_d       = one +++ dim +++ dim
 
-o_o_d :: Alg a
-o_o_d = one +++ dim +++ dim
+o_o_d       :: Alg a
+o_o_d       = one +++ dim +++ dim
 
-o_o_o :: Alg a
-o_o_o = one +++ one +++ one
+o_o_o       :: Alg a
+o_o_o       = one +++ one +++ one
 
-o_d_o :: Alg a
-o_d_o = one +++ dim +++ one
+o_d_o       :: Alg a
+o_d_o       = one +++ dim +++ one
+
+o_d_d2'1    :: Alg a
+o_d_d2'1    = one +++ dim +++ divide2 (2,1)
+
+d_special :: Alg a
+d_special = dim +++ divide3 (2,1,1) +++ divide3 (4,1,1)

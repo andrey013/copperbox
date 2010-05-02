@@ -25,7 +25,8 @@ module Tactus.Base
   , one
   , (+++)
   , aug
-  , div2
+  , divide2
+  , divide3
   
   , runAlg
 
@@ -99,14 +100,29 @@ sumFraction = mkFraction . sum . map mkRational
     mkRational (n,d) = n % d
 
 
--- This has scope for improvement as fractions/rationals are 
--- now used...
+
+
+-- Note this can be improved, currently assumes perfict `div`.
+-- Really, it suggest a proper fraction type...
 --
-div2 :: (Fraction -> (Fraction,Fraction)) -> Alg a
-div2 df = Alg $ \ f u -> step f u
+divide2 :: (Int,Int) -> Alg a
+divide2 (l,r) = Alg $ \ f u -> step f u
   where
-    step _ []     = (id,[])
-    step f (n:ns) = let (a,b) = df n in  (consH (f a) . consH (f b), ns) 
+    step _ []         = (id,[])
+    step f ((a,b):ns) = let unit  = a `div` (l+r)  -- HACK
+                            left  = (l * unit, b)
+                            right = (r * unit, b)
+                        in (consH (f left) . consH (f right), ns) 
+
+divide3 :: (Int,Int,Int) -> Alg a
+divide3 (i,j,k) = Alg $ \ f u -> step f u
+  where
+    step _ []         = (id,[])
+    step f ((a,b):ns) = let unit  = a `div` (i+j+k)  -- HACK
+                            di    = (i * unit, b)
+                            dj    = (j * unit, b)
+                            dk    = (k * unit, b)
+                        in (consH (f di) . consH (f dj) . consH (f dk), ns) 
 
 
 

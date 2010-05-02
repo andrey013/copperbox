@@ -104,7 +104,7 @@ instance Ord Duration where
 
 
 instance Show Duration where
-  showsPrec _ drn = showChar '-' . shows n . showChar '%' . shows d
+  showsPrec _ drn = shows n . showChar '%' . shows d
                     where (n,d) = extentComponents drn
 
 
