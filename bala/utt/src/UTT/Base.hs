@@ -35,6 +35,15 @@ module UTT.Base
   , dominant
   , mediant
 
+  -- Riemannian
+  , total
+  , riemannian
+  , schritt
+  , weschel
+
+  , unitSchritt
+  , skew
+
   ) where
 
 
@@ -146,4 +155,26 @@ dominant        = UTT Pos 5 5
 mediant         :: UTT
 mediant         = UTT Neg 9 8
 
+
+--------------------------------------------------------------------------------
+
+total           :: UTT -> Z12
+total (UTT _ tpos tneg) = tpos + tneg 
+
+riemannian :: UTT -> Bool
+riemannian u    = total u == 0
+
+schritt         :: Z12 -> UTT
+schritt n       = UTT Pos n (negate n)
+
+weschel         :: Z12 -> UTT
+weschel n       = UTT Neg n (negate n)
+
+
+unitSchritt     :: UTT
+unitSchritt     = schritt 1
+
+skew            :: UTT -> Z12
+skew (UTT rho tpos tneg) | rho == Pos   = tpos + tneg
+                         | otherwise    = tpos + tneg + 6
 

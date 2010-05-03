@@ -31,6 +31,7 @@ module Neume.Core.Pitch
   , middle_c
 
   -- * Operations
+  , semitoneCount
   , label
   , toUpperLChar
   , toLowerLChar
@@ -38,6 +39,7 @@ module Neume.Core.Pitch
   , displaceOctave
   , lyOctaveDist
   , arithmeticDist
+
 
   ) where
 
@@ -74,26 +76,6 @@ data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
 -- Ord instance
 
 
-    
-semitoneCount :: Pitch -> Int
-semitoneCount (Pitch l mba o) = 
-    letterSemis l + maybe 0 accidentalSemis mba + (12 * o)
-  where
-    letterSemis C               = 0
-    letterSemis D               = 2
-    letterSemis E               = 4
-    letterSemis F               = 5
-    letterSemis G               = 7
-    letterSemis A               = 9
-    letterSemis B               = 11
-
-    accidentalSemis Nat         = 0
-    accidentalSemis Sharp       = 1
-    accidentalSemis Flat        = (-1)
-    accidentalSemis DoubleSharp = 2
-    accidentalSemis DoubleFlat  = (-2)
-  
-
 -- Standard instances
   
 instance Ord Pitch where
@@ -118,6 +100,24 @@ middle_c :: Pitch
 middle_c = Pitch C Nothing 4
 
 
+    
+semitoneCount :: Pitch -> Int
+semitoneCount (Pitch l mba o) = 
+    letterSemis l + maybe 0 accidentalSemis mba + (12 * o)
+  where
+    letterSemis C               = 0
+    letterSemis D               = 2
+    letterSemis E               = 4
+    letterSemis F               = 5
+    letterSemis G               = 7
+    letterSemis A               = 9
+    letterSemis B               = 11
+
+    accidentalSemis Nat         = 0
+    accidentalSemis Sharp       = 1
+    accidentalSemis Flat        = (-1)
+    accidentalSemis DoubleSharp = 2
+    accidentalSemis DoubleFlat  = (-2)
 
 -- | Extract the @PitchLabel@ from a @Pitch@.
 label :: Pitch -> PitchLabel
@@ -193,9 +193,9 @@ instance Show PitchLabel where
 
 instance Show Accidental where
   showsPrec _ DoubleFlat   = showString "bb"
-  showsPrec _ Flat         = showChar 'b'
-  showsPrec _ Nat          = id
-  showsPrec _ Sharp        = showChar '#'
+  showsPrec _ Flat         = showChar   'b'
+  showsPrec _ Nat          = showString "nat"
+  showsPrec _ Sharp        = showChar   '#'
   showsPrec _ DoubleSharp  = showString "##"
 
 

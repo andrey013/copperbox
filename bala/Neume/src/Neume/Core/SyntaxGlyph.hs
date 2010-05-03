@@ -25,6 +25,8 @@ module Neume.Core.SyntaxGlyph
   , Tie
   , GraceNote(..)
   
+  , chord 
+    
   -- * Markup glyphs for fret diags etc.
   , MarkupGlyph(..)
 
@@ -73,6 +75,10 @@ data GraceNote anno pch dur = GraceNote !anno !pch !dur
   deriving (Eq,Show)
 
 
+-- Wrapper constructor - avoids exposing OneList
+chord :: [Note anno pch] -> dur -> Tie -> Glyph anno pch dur
+chord [] _ _ = error "chord - cannot create a chord from the empty list."
+chord xs d t = Chord (fromList xs) d t
 
 
 --------------------------------------------------------------------------------

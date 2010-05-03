@@ -27,6 +27,8 @@ library
 
   exposed-modules:
     UTT.Base,
+    UTT.Neume,
+    UTT.TCBase,
     UTT.Z12
     
   other-modules:
