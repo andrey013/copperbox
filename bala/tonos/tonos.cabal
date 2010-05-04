@@ -1,0 +1,47 @@
+name:             tactus
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley 2010
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Meter pattern manipulation. 
+description:
+  Meter Pattern manipulation - somehow primitive hence the name
+  Tactus.
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/DemoR.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5,
+                      neume >= 0.3.0 && < 0.5
+
+  exposed-modules:
+    Tactus.Base,
+    Tactus.Fraction,
+    Tactus.Neume,
+    Tactus.Utils
+    
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
