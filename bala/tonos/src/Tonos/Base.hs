@@ -22,6 +22,9 @@ module Tonos.Base
   -- * Multiplication
   , Mult(..)
 
+  -- * Distance
+  , Distance(..)
+
   ) where
 
 
@@ -35,3 +38,13 @@ infixl 7 ^*^
 
 class Mult a where
   (^*^) :: a -> a -> a
+
+
+
+-- Implementations should follow the conditions for metric spaces
+--
+-- distance a b >= 0
+-- distance a b == distance b a
+--
+class Distance a where
+  distance :: a -> a -> Int

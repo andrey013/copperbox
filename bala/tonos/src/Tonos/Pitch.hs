@@ -16,12 +16,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Tonos.Pitch where
+module Tonos.Pitch 
+  (
+    PitchLetter(..)
+  , plSemitones
 
+  , Pitch(..)
+  , middle_c
+
+  , StandardForm
+  , Accidental
+  , Octave
+  , standardForm
+
+  , Interval(..)
+
+  ) where
+
+import Tonos.Base
 import Tonos.Utils
 
 import Data.AdditiveGroup
-import Data.AffineSpace
+import Data.AffineSpace   hiding ( distance )
 
 
 --------------------------------------------------------------------------------
@@ -31,11 +47,29 @@ data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Enum,Eq,Ord,Show)
 
 
+
+liftU_pl :: (Int -> Int) -> PitchLetter -> PitchLetter
+liftU_pl op = toFro (\x -> (op x) `mod` 7)
+
+liftB_pl :: (Int -> Int -> Int) -> PitchLetter -> PitchLetter -> PitchLetter
+liftB_pl op a b = toEnum $ ((fromEnum a) `op` (fromEnum b)) `mod` 7
+   
+
+instance Num PitchLetter where
+  (+) = liftB_pl (+)
+  (-) = liftB_pl (-)
+  (*) = liftB_pl (*)
+  negate        = liftU_pl negate
+  fromInteger i = toEnum $ (fromInteger i) `mod` 7
+  signum _      = error "PitchLetters are not signed"
+  abs _         = error "PitchLetters are not signed"
+  
+
 -- Note - countup does not address the /double counting/ of
 -- arithmetic distance
 --
 countup :: PitchLetter -> Int -> PitchLetter
-countup p i = toFro (\x -> (x+i) `mod` 7) p 
+countup p i = p + fromIntegral i 
 
 
 instance AffineSpace PitchLetter where
@@ -63,6 +97,14 @@ plSemitones G = 7
 plSemitones A = 9
 plSemitones B = 11
 
+-- distance a b >= 0
+-- distance a b == distance b a
+--
+instance Distance PitchLetter where
+  distance a b = min ((sa-sb) `mod` 12) ((sb-sa) `mod` 12)
+    where
+      sa = plSemitones a; sb = plSemitones b
+
 --------------------------------------------------------------------------------
 -- Pitch
 
@@ -77,6 +119,7 @@ data Pitch = Pitch
 middle_c    :: Pitch 
 middle_c    = Pitch C 60
 
+type StandardForm = (PitchLetter, Accidental, Octave)
 
 type Accidental = Int   -- 0 Nat, negative Flat, positive Sharp
 
@@ -85,7 +128,7 @@ type Octave = Int
 -- Note 'standardForm' does not change the pitch letter, so the
 -- result may have double flats, triple sharps, or more.
 -- 
-standardForm :: Pitch -> (PitchLetter, Accidental, Octave)
+standardForm :: Pitch -> StandardForm
 standardForm (Pitch l sc) = rebalance (l,acc,ove)
   where
     -- If you "subtract" the pitch letter then (`divMod` 12) 
