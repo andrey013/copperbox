@@ -62,7 +62,11 @@ description:
   0.13.1 to 0.14.0:
   .
   * Argument order changed for @ellipse@ and @zellispe@ in
-    Wumpus.Core.Picture. Removed dependency on Data.Aviary.
+    Wumpus.Core.Picture. 
+  .
+  * Removed dependency on Data.Aviary.
+  .
+  * Removed DList dependency.
   .
 build-type:         Simple
 stability:          unstable
@@ -79,7 +83,7 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
-                      monadLib, xml, dlist, algebra
+                      monadLib, xml, algebra
                         
   exposed-modules:
     Wumpus.Core,

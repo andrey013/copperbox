@@ -93,7 +93,6 @@ import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils
 
 
-import qualified Data.DList as DL
 import MonadLib
 
 import Data.List ( foldl' )
@@ -160,7 +159,7 @@ gs_dash_pattern = Solid
 
 type PostScript = String
 
-type PsOutput = DL.DList Char
+type PsOutput = H Char
 
 type WumpusM a = PsT Id a
 
@@ -205,7 +204,7 @@ pstId = runId `oo` runPsT
 
 -- | Drop state and result, take the Writer trace.
 runWumpus :: TextEncoder -> WumpusM a -> String
-runWumpus = (DL.toList . snd) `oo` pstId
+runWumpus = (toListH . snd) `oo` pstId
 
 --------------------------------------------------------------------------------
 -- "Deltas" of the graphics state
@@ -266,11 +265,11 @@ tell :: WriterM m i => i -> m ()
 tell s = puts ((),s)
 
 writeChar :: WriterM m PsOutput => Char -> m ()
-writeChar = tell . DL.singleton 
+writeChar = tell . showChar 
 
 
 write :: WriterM m PsOutput => String -> m ()
-write = tell . DL.fromList 
+write = tell . showString 
 
 
 writeln :: WriterM m PsOutput => String -> m ()

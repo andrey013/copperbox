@@ -51,10 +51,12 @@ module Wumpus.Core.Utils
   , sequenceA
   , (<:>) 
 
-
+  -- * Hughes list
+  , H
+  , toListH
   
 
-  -- * One type - non-empty list type
+  -- * OneList type - non-empty list type
   , OneList(..)
   , mkList2
   , onesmapM_
@@ -241,7 +243,13 @@ infixr 6 <:>
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) a b = (:) <$> a <*> b
 
+--------------------------------------------------------------------------------
+-- Hughes list
 
+type H a = [a] -> [a]
+
+toListH :: H a -> [a]
+toListH = ($ [])
 
 --------------------------------------------------------------------------------
 
