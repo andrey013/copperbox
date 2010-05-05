@@ -1,5 +1,6 @@
 \documentclass{article}
 
+%include polycode.fmt
 \usepackage{comment}
 \usepackage{amssymb}
 \usepackage{alltt}
@@ -136,8 +137,8 @@ Primitives are attributed with drawing styles - font name and
 size for labels; line width, colour, etc. for paths - and 
 place within a picture. The function \texttt{frame} lifts a 
 primitive to a picture within the standard affine frame (the 
-standard frame has origin at (0,0) and unit bases for the x and
-y axes). The function \texttt{frameMulti} places one or more 
+standard frame has origin at (0,0) and unit bases for the X and
+Y axes). The function \texttt{frameMulti} places one or more 
 primitives in a frame - this will produce more efficient 
 PostScript and should be preferred for creating scatter-plots 
 and the like.
@@ -174,28 +175,121 @@ simple. If one wanted to make blue arrows or red arrows with
 creating function.
 
 %-----------------------------------------------------------------
+\section{Affine transformations}
+%-----------------------------------------------------------------
+
+For affine transformations Wumpus uses the \texttt{Matrix3} data 
+type to represent 3x3 matrices in row-major form. The constructor
+ \texttt{(M3'3 a b c  d e f  g h i)} builds this matrix:
+
+\begin{displaymath}
+\begin{array}{ccc}
+a & b & c\\
+d & e & f\\
+g & h & i
+\end{array}
+\end{displaymath}
+
+Note, in practice the elements \emph{g} and \emph{h} are 
+superflous. They are included in the data type to make it match 
+the typical representation from geometry texts. Also, typically 
+matrices will implicitly created with functions from the 
+\texttt{Core.Geometry} and \texttt{Core.AffineTrans} modules.
+
+For example a translation matrix moving 10 units in the X-axis and
+20 in the Y-axis will be encoded as 
+ \texttt{(M3'3 1.0 0.0 10.0   0.0 1.0 20.0  0.0  0.0 1.0)}
+
+\begin{displaymath}
+\begin{array}{ccc}
+1.0 & 0.0 & 10.0\\
+0.0 & 1.0 & 20.0\\
+0.0 & 0.0 & 1.0
+\end{array}
+\end{displaymath}
+
+Affine transformations are communicated to PostScript as 
+\texttt{concat} commands. Effectively \wumpuscore performs no
+transformations itself, delegating all the work to PostScript or
+SVG. This means transformations can generally be located in the 
+output if a picture needs to be debugged, though as this might 
+not be very helpful in practice. Internally \wumpuscore only 
+performs the transformation on the pictures bounding box - it 
+needs to do this so transformed pictures can still be composed 
+with the picture language operations.
+
+PostScript uses column-major form and uses a six element matrix
+rather than a nine element one. The translation matrix above 
+would produce this concat command:
+
+\begin{verbatim}
+[1.0 0.0 0.0 1.0 10.0 20.0] concat
+\end{verbatim}
+
+Similarly, it would be communicated to SVG via a 
+\texttt{<g ...> </g>} element:
+
+\begin{verbatim}
+<g transform="matrix(1.0, 0.0, 0.0, 1.0, 10.0, 20.0)"> ... </g>
+\end{verbatim}
+
+
+
+
+%-----------------------------------------------------------------
 \section{Font handling}
 %-----------------------------------------------------------------
 
-Font handling is quite primitive in \wumpuscore. Particularly 
-the bounding box of text label is only estimated rather than 
-calculated from the font's metrics. For the its intended use 
-(producing diagrams, pictures rather than high quality text) this
-is not such a draw back - implementing a font loader to read 
-TrueType fonts would be a significant effort, probably larger than
-the effort put into \wumpuscore itself.
+Font handling is quite primitive in \wumpuscore. The bounding box 
+of text label is only estimated - based on the length of the 
+label's string rather than the metrics of the individual letters 
+encoded in the font. Accessing the glyph metrics in a font would 
+require a font loader to read TrueType font files. This would be 
+a significant effort, probably larger than the effort put into 
+\wumpuscore itself; for \wumpuscore's intended use - producing 
+diagrams and pictures rather than high quality text - its 
+primitive font handling is not such a draw back.
 
-In both PostScript and SVG mis-named fonts can ...
 
- 
-attributes -
+In both PostScript and SVG mis-named fonts can cause somewhat
+inscrutable printing anomalies - usually falling back to a default 
+font but not always. Paricularly note, that PostScript fonts may
+only support glyphs in a limited set of sizes 
+(10, 12, 18, 24, 26), for labels at other sizes the text should
+be drawn at a regular size then scaled once it has been lifted 
+with the \texttt{frame} function to the Picture type.
 
-matrix alignment -
+The following table lists PostScript fonts and their SVG 
+equivalents. The unreleased package \texttt{wumpus-extra} has
+a module \texttt{SafeFonts} encoding this list to avoid 
+typographical slips...
+
+
+
+\begin{tabular}{ l l }
+PostScript name   & SVG name      \\
+\hline
+Times-Roman       & Times New Roman \\
+Times-Italic      & Times New Roman - style="italic" \\
+Times-Bold        & Times New Roman - font-weight="bold" \\
+Times-BoldItalic  & Times New Roman - style="italic", font-weight="bold" \\
+Helvetica         & Helvetica \\
+Helvetica-Oblique & Helvetica - style="italic" \\
+Helvetica-Bold    & Helvetica - font-weight="bold" \\
+Helvetica-Bold-Oblique & Helvetica - style="italic", font-weight="bold" \\
+Courier           & Courier New \\
+Courier-Oblique   & Courier New - style="italic" \\
+Courier-Bold      & Courier New - font-weight="bold" \\
+Courier-Bold-Oblique & Courier New - style="italic", font-weight="bold" \\
+Symbol & Symbol \\
+\hline
+\end{tabular}
+
 
 
 
 %-----------------------------------------------------------------
-\section{References}
+\section{Acknowledgments}
 %-----------------------------------------------------------------
 
 PostScript is a registered trademark of Adobe Systems Inc.

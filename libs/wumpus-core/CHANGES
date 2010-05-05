@@ -1,8 +1,15 @@
 
 
-0.13.1 to 0.14.0
+0.13.1 to 0.14.0:
+
+  * Added draft user guide. 
+  
   * Argument order changed for @ellipse@ and @zellispe@ in
-    Wumpus.Core.Picture. Removed dependency on Data.Aviary.
+    Wumpus.Core.Picture. 
+  
+  * Removed dependency on Data.Aviary.
+  
+  * Removed DList dependency.
 
 
 0.13.0 to 0.13.1:

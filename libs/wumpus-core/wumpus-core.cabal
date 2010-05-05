@@ -28,7 +28,7 @@ description:
   THE DRAWBACKS...
   .
   For actually drawing pictures, diagrams, etc. Wumpus is very 
-  low level. I am working on a complementary package 
+  low level. I\'ve worked on a complementary package 
   @wumpus-extra@ with higher-level stuff (polygons, arrows etc.)
   but it is too unstable for Hackage. Preview releases can be
   found at <http://code.google.com/p/copperbox/> though.
@@ -45,13 +45,13 @@ description:
   appears okay for Latin 1 but I\'m not sure about other 
   character sets, and I may have to revise it significantly.
   .
-  With revision 0.14.0 I added the first draft of a user guide. 
-  Source for the guide is included as there is an extra example 
-  picture. @wumpus-extra@ hasn't received any more attention 
-  unfortunately, so Wumpus is still really a bit too primitive 
-  for general use. However, if you want FFI-free vector
-  graphics and Wumpus seems to otherwise fit the task, please 
-  email me and I will try to help.
+  With revision 0.14.0, I've added the first draft of a user 
+  guide. Source for the guide is included as well as the PDF as 
+  there is an extra example picture. @wumpus-extra@ hasn\'t 
+  received any more attention unfortunately, so Wumpus is still 
+  really a bit too primitive for general use. However, if you 
+  want FFI-free vector graphics and Wumpus seems to otherwise 
+  fit the task, please email me and I will try to help.
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool to 
