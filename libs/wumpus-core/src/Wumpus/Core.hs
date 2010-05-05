@@ -34,7 +34,7 @@
 --
 -- * "Wumpus.Core.PictureLanguage"
 --
--- * "Wumpus.Core.TextEncoding"
+-- * "Wumpus.Core.TextEncoder"
 --
 --
 -- Named colours ( black, white etc.) are hidden from 

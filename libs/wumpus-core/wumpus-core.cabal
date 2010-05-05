@@ -45,11 +45,11 @@ description:
   appears okay for Latin 1 but I\'m not sure about other 
   character sets, and I may have to revise it significantly.
   .
-  /There is no documentation/ - the graphics model used by 
-  Wumpus is different to PostScript or SVG, and Wumpus really 
-  needs a manual. Unfortunately there isn\'t one yet, and I will 
-  be focusing on @wumpus-extra@ for the foreseeable future; so a
-  manual won\'t be written soon. If you want FFI-free vector
+  With revision 0.14.0 I added the first draft of a user guide. 
+  Source for the guide is included as there is an extra example 
+  picture. @wumpus-extra@ hasn't received any more attention 
+  unfortunately, so Wumpus is still really a bit too primitive 
+  for general use. However, if you want FFI-free vector
   graphics and Wumpus seems to otherwise fit the task, please 
   email me and I will try to help.
   .
@@ -60,6 +60,8 @@ description:
   Changelog:
   .
   0.13.1 to 0.14.0:
+  .
+  * Added draft user guide. 
   .
   * Argument order changed for @ellipse@ and @zellispe@ in
     Wumpus.Core.Picture. 
@@ -76,7 +78,12 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/LabelPic.hs,
-  demo/Picture.hs
+  demo/Picture.hs,
+  doc/Guide.pdf,
+  doc-src/Guide.lhs,
+  doc-src/Makefile,
+  doc-src/WorldFrame.eps
+
 
 
 library
