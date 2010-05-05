@@ -20,11 +20,10 @@
 module Wumpus.Extra.Grid where
 
 import Wumpus.Core
-
+import Wumpus.Geometry.Utils
 
 import MonadLib
 
-import qualified Data.DList as DL
 
 -- import MonadLib.Monads
 
@@ -41,7 +40,7 @@ data GridElement = Node NodeId Coord
 data GridSt = GridSt { posn :: Coord }
   deriving (Show)
 
-type GridTrace = DL.DList GridElement
+type GridTrace = H GridElement
 
 
 grid_state_zero :: GridSt
@@ -61,7 +60,7 @@ runGridT m = runWriterT $ runStateT grid_state_zero (unGridT m)
 
 
 grid :: GridM a -> (a,[GridElement])
-grid = fn . runId . runGridT  where fn ((a,_),t) = (a,DL.toList t)
+grid = fn . runId . runGridT  where fn ((a,_),t) = (a,toListH t)
 
 
 instance Monad m => Functor (GridT m) where
@@ -88,8 +87,8 @@ instance MonadT GridT where
 mapPosn :: (Coord -> Coord) -> GridSt -> GridSt
 mapPosn f = GridSt . f . posn
 
-tell :: WriterM m (DL.DList i) => i -> m () 
-tell = put . DL.singleton
+tell :: WriterM m (H i) => i -> m () 
+tell = put . consH
 
 -- | Move to next row...
 row :: GridM ()

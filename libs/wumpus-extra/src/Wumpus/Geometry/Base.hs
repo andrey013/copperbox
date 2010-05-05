@@ -38,7 +38,6 @@ import Wumpus.Core
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Data.List
 
 --------------------------------------------------------------------------------
 -- Type classes

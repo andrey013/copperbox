@@ -24,8 +24,8 @@ module Wumpus.Extra.Text
   ) where
 
 import Wumpus.Core
+import Wumpus.Geometry.Utils
 
-import Data.Aviary
 
 -- | Draw a line of text at the given point. The bounding box is
 -- calculated with Courier metrics - as Courier is a monospaced

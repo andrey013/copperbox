@@ -27,13 +27,14 @@ module Wumpus.Extra.Arrowheads
 
   ) where
 
+import Wumpus.Core
+
 import Wumpus.Extra.Marks
 import Wumpus.Extra.Lines
 
 import Wumpus.Geometry
-import Wumpus.Core
+import Wumpus.Geometry.Utils
 
-import Data.Aviary
 
 import Data.AffineSpace
 import Data.VectorSpace

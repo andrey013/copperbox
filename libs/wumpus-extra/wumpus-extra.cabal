@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.6.1
+version:          0.7.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -9,6 +9,10 @@ category:         Graphics
 synopsis:         Extra geometry and objects (arrows, grids) for Wumpus. 
 description:
   Extra geometry and objects (arrows, grids) for Wumpus.
+  .
+  This version (0.7.0) is for wumpus-core 0.14.0.
+  .
+  .
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2
@@ -25,9 +29,8 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
-                      monadLib, xml, dlist,
-                      data-aviary > 0.2.0,
-                      wumpus-core >= 0.13.90
+                      monadLib, xml,
+                      wumpus-core >= 0.14.0
 
   
   exposed-modules:
@@ -53,7 +56,8 @@ library
     Wumpus.Geometry.CoordinateGen,
     Wumpus.Geometry.LineEquation,
     Wumpus.Geometry.LineSegment,
-    Wumpus.Geometry.Polygon
+    Wumpus.Geometry.Polygon,
+    Wumpus.Geometry.Utils
   other-modules:
     
   extensions:

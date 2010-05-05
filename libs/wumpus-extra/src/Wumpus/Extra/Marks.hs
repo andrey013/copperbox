@@ -37,15 +37,16 @@ module Wumpus.Extra.Marks
   , mstrokePolygon
   , mellipse
 
-  , dup -- For Data.Aviary
+  , dup
 
   ) where
 
-import Wumpus.Geometry
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 
-import Data.Aviary
+import Wumpus.Geometry
+import Wumpus.Geometry.Utils
+
 
 import Control.Applicative
 

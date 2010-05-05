@@ -39,8 +39,7 @@ module Wumpus.Geometry.Curve
 
 import Wumpus.Core
 import Wumpus.Geometry.Base
-
-import Data.Aviary
+import Wumpus.Geometry.Utils
 
 import Data.AffineSpace
 

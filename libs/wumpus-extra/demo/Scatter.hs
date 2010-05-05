@@ -8,8 +8,7 @@ import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
 
-import Data.Aviary
-
+import Control.Applicative ( liftA2 )
 import Control.Monad
 
 import Text.ParserCombinators.Parsec
@@ -41,7 +40,7 @@ test01 = do
     writeSVG_latin1 "./out/scatter01.svg" pic
 
   where
-    mkIris name = map (bigphi P2 sepal_width sepal_length) . filterByClass name
+    mkIris name = map (liftA2 P2 sepal_width sepal_length) . filterByClass name
 
 --------------------------------------------------------------------------------
 -- For the Iris data set...

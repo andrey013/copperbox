@@ -38,10 +38,10 @@ module Wumpus.Extra.Drawing
   ) where
 
 
-import Wumpus.Geometry
 import Wumpus.Core
+import Wumpus.Geometry
+import Wumpus.Geometry.Utils
 
-import Data.Aviary
 
 import Data.AffineSpace
 
