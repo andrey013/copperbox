@@ -52,7 +52,7 @@ type AbcGlyph = Glyph () Pitch AbcMultiplier
 type AbcNote  = Note  () Pitch
 
 
-abcRewrite :: SpellingMap
+abcRewrite :: AbcSpellingMap
            -> DurationMeasure 
            -> CPhrase (Glyph anno Pitch Duration)
            -> CPhrase AbcGlyph
@@ -125,7 +125,7 @@ rewriteDuration r = mapCPhrase (fmap3c (abcMultiplier r))
 
 -- Pitch spelling
 
-rewritePitch :: SpellingMap 
+rewritePitch :: AbcSpellingMap 
              -> CPhrase (Glyph anno Pitch dur)
              -> CPhrase (Glyph anno Pitch dur)
 rewritePitch sm = mapCPhrase (fmap3b (spell sm))

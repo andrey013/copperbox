@@ -94,7 +94,7 @@ data ABC_std_format_config = ABC_std_format_config
 
 
 data ABC_std_rewrite_config = ABC_std_rewrite_config 
-    { spelling_map    :: SpellingMap
+    { spelling_map    :: AbcSpellingMap
     , unit_duration   :: DurationMeasure 
     , meter_pattern   :: MeterPattern
     }

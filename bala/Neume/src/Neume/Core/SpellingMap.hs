@@ -11,9 +11,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Pitch representation.
---
 -- Pitch renaming for ABC.
+--
+-- The notion of spelling in this module is ABC specific and not 
+-- about enharmonic pitches as such
+--
 --
 --------------------------------------------------------------------------------
 
@@ -21,9 +23,9 @@ module Neume.Core.SpellingMap
   ( 
 
   -- * Pitch spelling
-    SpellingMap
+    AbcSpellingMap
   , spell
-  , makeSpellingMap
+  , makeAbcSpellingMap
 
   ) where
 
@@ -71,10 +73,10 @@ natural (PitchLabel l _) = PitchLabel l (Just Nat)
 
 
 
-type SpellingMap = Map.Map PitchLabel PitchLabel
+type AbcSpellingMap = Map.Map PitchLabel PitchLabel
 
 
-spell :: SpellingMap -> Pitch -> Pitch
+spell :: AbcSpellingMap -> Pitch -> Pitch
 spell sm p@(Pitch _ _ o) = makePitch (fn $ label p) o
   where
     fn lbl = maybe lbl id $ Map.lookup lbl sm
@@ -82,9 +84,9 @@ spell sm p@(Pitch _ _ o) = makePitch (fn $ label p) o
 -- | Make a spelling map with @n@ accidentals. If @n@ is positive
 -- the accidentals will be sharps, if @n@ s negative the 
 -- accidentals will be flats.
-makeSpellingMap :: Int -> SpellingMap
-makeSpellingMap n 
-    | abs n > 7 = error "Pitch.spellingMap - more sharps/flats than notes."
+makeAbcSpellingMap :: Int -> AbcSpellingMap
+makeAbcSpellingMap n 
+    | abs n > 7 = error "SpellingMap.makeAbcSpellingMap - more sharps/flats than notes."
     | n == 0    = Map.empty
     | n >  0    = build $ nsharps n
     | otherwise = build $ nflats (abs n)          

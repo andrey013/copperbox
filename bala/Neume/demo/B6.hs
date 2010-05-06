@@ -62,8 +62,8 @@ b6_score = fmap simpleNoteList $
 
 
 
-a_major     :: SpellingMap
-a_major     = makeSpellingMap 3
+a_major     :: AbcSpellingMap
+a_major     = makeAbcSpellingMap 3
 
 
 
