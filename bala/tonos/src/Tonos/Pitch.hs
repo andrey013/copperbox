@@ -19,7 +19,6 @@
 module Tonos.Pitch 
   (
     PitchLetter(..)
-  , plSemitones
 
   , Pitch(..)
   , middle_c
@@ -88,14 +87,14 @@ bumpCount n | n < 0     = n-1
 
 
 
-plSemitones :: PitchLetter -> Int
-plSemitones C = 0
-plSemitones D = 2
-plSemitones E = 4
-plSemitones F = 5
-plSemitones G = 7
-plSemitones A = 9
-plSemitones B = 11
+instance Semitones PitchLetter where
+  semitones C = 0
+  semitones D = 2
+  semitones E = 4
+  semitones F = 5
+  semitones G = 7
+  semitones A = 9
+  semitones B = 11
 
 -- distance a b >= 0
 -- distance a b == distance b a
@@ -103,7 +102,7 @@ plSemitones B = 11
 instance Distance PitchLetter where
   distance a b = min ((sa-sb) `mod` 12) ((sb-sa) `mod` 12)
     where
-      sa = plSemitones a; sb = plSemitones b
+      sa = semitones a; sb = semitones b
 
 --------------------------------------------------------------------------------
 -- Pitch
@@ -134,7 +133,7 @@ standardForm (Pitch l sc) = rebalance (l,acc,ove)
     -- If you "subtract" the pitch letter then (`divMod` 12) 
     -- gives the octave and the accidental...
     --
-    (ove,a0)   = (sc - plSemitones l) `divMod` 12
+    (ove,a0)   = (sc - semitones l) `divMod` 12
     
     -- But the accidental counts upwards with sharps [0..11], it 
     -- needs shifting [-5..6] for flats...

@@ -25,6 +25,10 @@ module Tonos.Base
   -- * Distance
   , Distance(..)
 
+  -- * semitone count
+  , Semitones(..)
+
+
   ) where
 
 
@@ -48,3 +52,8 @@ class Mult a where
 --
 class Distance a where
   distance :: a -> a -> Int
+
+
+
+class Semitones a where
+  semitones :: a -> Int

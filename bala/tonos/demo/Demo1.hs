@@ -5,14 +5,15 @@
 module Demo1 where
 
 import Tonos.Base
-import Tonos.Neume
+import Tonos.Enharmonic
 import Tonos.Pitch
 -- import Tonos.Utils
 
 import qualified Neume.Core.Pitch as Neume
+-- import qualified Neume.Core.SpellingMap as ABC
 
 demo1 :: Neume.Pitch
-demo1 = neumePitch $ middle_c
+demo1 = neumePitch g_major middle_c
 
 
 demo2, demo3, demo4 :: Int
@@ -22,3 +23,7 @@ demo4 = distance B C   -- 1
 
 demo5 :: Bool
 demo5 = distance F G == distance G F
+
+
+demo6 = (distance F B, fromEnum $ B - F)
+

@@ -37,15 +37,33 @@ neumePitch p = Neume.Pitch (neumePitchLetter l) (neumeAccidental a) o
   where
     (l,a,o)    = enharmonic $ standardForm p
 
-
--- could make this neater and avoid the Motion data type 
--- by having separate sharpen / flatten functions...
---
 enharmonic :: (PitchLetter, Accidental, Octave) 
            -> (PitchLetter, Accidental, Octave)
-enharmonic (l,a,o) = (lbl,acc,ove) 
+enharmonic (l,a,o) = (l', a', odif+o)
   where
-    (acc,lbl)  = if a >= 0 then l `sharpenBy` a else l `flattenBy` a
+    (odif,n) = (a + semitones l) `divMod` 12
+    (l',a')  = spell n 
+
+-- Need a 'proper' spelling map...
+spell 0 = (C,0)
+spell 1 = (C,1)
+spell 2 = (D,0)
+spell 3 = (D,1)
+spell 4 = (E,0)
+spell 5 = (F,0)
+spell 6 = (F,1)
+spell 7 = (G,0)
+spell 8 = (G,1)
+spell 9 = (A,0)
+spell 10 = (A,1)
+spell _  = (B,0)
+
+-- superceeded (almost ...)
+enharmonic' :: (PitchLetter, Accidental, Octave) 
+            -> (PitchLetter, Accidental, Octave)
+enharmonic' (l,a,o) = (lbl,acc,ove) 
+  where
+    (lbl,acc)  = if a >= 0 then l `sharpenBy` a else l `flattenBy` a
 
     direction  = motion a
     
@@ -58,7 +76,7 @@ enharmonic (l,a,o) = (lbl,acc,ove)
 
 data Motion = SHARPEN | FLATTEN
 
-motion :: Int -> Motion
+motion :: Accidental -> Motion
 motion i | i >= 0    = SHARPEN
          | otherwise = FLATTEN  
 
@@ -84,16 +102,16 @@ neumeAccidental (-1) = Just Neume.Flat
 neumeAccidental   _  = error $ "neumeAccidental - accidental not normalized"
 
 
-sharpenBy :: PitchLetter -> Int -> (Int,PitchLetter)
+sharpenBy :: PitchLetter -> Accidental -> (PitchLetter,Accidental)
 sharpenBy ltr i | i > 1     = next `sharpenBy` (i - distance ltr next)
-                | otherwise = (i,ltr)
+                | otherwise = (ltr,i)
   where
     next = ltr+1
 
 -- flattenBy takes a negative number and takes it towards (-1) ...
 --
-flattenBy :: PitchLetter -> Int -> (Int,PitchLetter)
+flattenBy :: PitchLetter -> Accidental -> (PitchLetter,Accidental)
 flattenBy ltr i | i < (-1)  = next `flattenBy` (i + distance ltr next)
-                | otherwise = (i,ltr)
+                | otherwise = (ltr,i)
   where
     next = ltr-1

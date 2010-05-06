@@ -1,4 +1,4 @@
-name:             tactus
+name:             tonos
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -6,10 +6,9 @@ copyright:        Stephen Tetley 2010
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Meter pattern manipulation. 
+synopsis:         Pitch and interval manipulation. 
 description:
-  Meter Pattern manipulation - somehow primitive hence the name
-  Tactus.
+  Pitch and interval manipulation.
   .
   (c) 2010 Stephen Tetley
 
@@ -27,10 +26,12 @@ library
                       neume >= 0.3.0 && < 0.5
 
   exposed-modules:
-    Tactus.Base,
-    Tactus.Fraction,
-    Tactus.Neume,
-    Tactus.Utils
+    Tonos.Base,
+    Tonos.Enharmonic,
+    Tonos.Neume,
+    Tonos.Pitch,
+    Tonos.Utils,
+    Tonos.Z12
     
   other-modules:
     
