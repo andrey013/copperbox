@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Colour
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -61,6 +61,7 @@ import Wumpus.Core.Utils
 import Data.VectorSpace
 
 -- | Red-Green-Blue - no alpha.
+--
 data RGB3 a = RGB3 !a !a !a
   deriving (Eq,Show)
 
@@ -69,18 +70,22 @@ data RGB3 a = RGB3 !a !a !a
 -- 
 -- 1.0 represents full saturation, for instance red is 
 -- 1.0, 0.0, 0.0.
+--
 type DRGB = RGB3 Double
 
 
 -- | Hue-Saturation-Brightness.
+--
 data HSB3 a = HSB3 !a !a !a 
   deriving (Eq,Show)
 
 -- | HSB represented by Double - values should be in the range
 -- 0.0 to 1.0.
+--
 type DHSB = HSB3 Double 
 
-
+-- | Gray scale.
+-- 
 newtype Gray a = Gray a
   deriving (Eq,Num,Fractional,Ord,Show)
 
@@ -235,22 +240,27 @@ gray2hsb (Gray a) = HSB3 0 0 a
 -- There will be name clashes with the X11Colours / SVGColours.
 
 -- | Black - 0.0, 0.0, 0.0.
+--
 black :: DRGB
 black = RGB3 0 0 0
 
 -- | White - 1.0, 1.0, 1.0.
+--
 white :: DRGB
 white = RGB3 1 1 1
 
 -- | Red - 1.0, 0.0, 0.0.
+--
 red :: DRGB
 red = RGB3 1 0 0
 
 -- | Green - 0.0, 1.0, 0.0.
+--
 green :: DRGB 
 green = RGB3 0 1 0
 
 -- | Blue - 0.0, 0.0, 1.0.
+--
 blue :: DRGB
 blue = RGB3 0 0 1
 

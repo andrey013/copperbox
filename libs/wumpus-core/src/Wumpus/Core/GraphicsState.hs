@@ -5,12 +5,13 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.GraphicsState
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
+--
 --
 -- Data types for stroke and label attributes and type classes 
 -- for conversion to PostScript\'s colour and matrix 

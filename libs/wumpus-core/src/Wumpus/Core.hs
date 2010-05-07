@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -61,6 +61,8 @@ module Wumpus.Core
   , module Wumpus.Core.PictureLanguage
   , module Wumpus.Core.TextEncoder
 
+  , wumpus_core_version
+
   -- Export from Picture Internal
   , Picture
   , DPicture
@@ -93,6 +95,6 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PictureLanguage
 import Wumpus.Core.TextEncoder
-
+import Wumpus.Core.VersionNumber ( wumpus_core_version )
 
 

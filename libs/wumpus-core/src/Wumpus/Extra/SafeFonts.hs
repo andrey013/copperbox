@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.SafeFonts
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,7 +12,9 @@
 --
 -- Safe to use font / size combinations.
 --
--- Consider drawing then uniform-scaling for other sizes in 
+-- Using fonts at other sizes than the ones enumerated in this 
+-- module may case unusual rendering errors, consider drawing 
+-- at a standard size then uniform-scaling for other sizes in 
 -- PostScript.
 --
 --------------------------------------------------------------------------------

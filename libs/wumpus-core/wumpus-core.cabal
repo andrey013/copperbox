@@ -105,6 +105,7 @@ library
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.TextEncoder,
     Wumpus.Core.TextLatin1,
+    Wumpus.Core.VersionNumber,
     Wumpus.Extra.SafeFonts,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours

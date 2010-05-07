@@ -6,7 +6,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.AffineTrans
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -22,7 +22,7 @@
 -- performs the affine transformations as matrix operations. This 
 -- simplifies the implementation of pictures 
 -- ("Wumpus.Core.PictureInternal"). When a picture is composed and 
--- transformed, transformations will be performed directly on the 
+-- transformed, transformations will be performed only on the 
 -- bounding box in Wumpus but the transformation of the 
 -- picture content (paths or text labels) will be communicated to 
 -- PostScript or SVG to render. This is because Wumpus has no 
