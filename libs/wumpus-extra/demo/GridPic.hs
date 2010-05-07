@@ -2,6 +2,7 @@
 module GridPic where
 
 import Wumpus.Core
+import Wumpus.Doodle.Grid
 import Wumpus.Extra
 
 

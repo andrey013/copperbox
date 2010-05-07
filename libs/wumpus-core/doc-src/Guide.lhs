@@ -25,8 +25,8 @@
 
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
-no dependencies on foreign (i.e. C) libraries. It supports output 
-to PostScript and SVG (Scalable Vector Graphics). 
+no dependencies on foreign C libraries. Output to PostScript and 
+SVG (Scalable Vector Graphics) is supported. 
 
 \wumpuscore is rather primitive, the basic drawing objects are 
 paths and text labels. A secondary library \texttt{wumpus-extra}
@@ -112,11 +112,35 @@ vertical concatenation.
 
 \item[\texttt{Wumpus.Core.TextEncoder.}]
 Types for handling non-ASCII character codes. This module is
-perhaps under-cooked thou it appears adequate for Latin 1...
+perhaps under-cooked thou it appears adequate for Latin-1...
 
 \item[\texttt{Wumpus.Core.TextLatin1.}]
 A instance of the TextEncoder type for mapping Latin 1 characters
 to the PostScript and SVG escape characters.
+
+\item[\texttt{Wumpus.Core.VersionNumber.}]
+Current version number of \wumpuscore.
+\end{description}
+
+The package also contains some extra modules defining
+safe fonts and colour schemes. These modules would ideally be
+packaged in a separate package \texttt{wumpus-extra}, 
+unfortunately the other code in this package is not yet suitable 
+for wide spread distribution, so they are currently distributed 
+with \wumpuscore.
+
+\begin{description}
+\item[\texttt{Wumpus.Extra.SafeFonts.}]
+Safe to use font and size combinations. The fonts named here are 
+included with GhostScript and are aliased as \emph{safe} fonts
+for SVG. 
+
+\item[\texttt{Wumpus.Extra.SVGColours.}]
+All the SVG named colours.
+
+\item[\texttt{Wumpus.Extra.SafeFonts.}]
+All the X11 named colours.
+
 \end{description}
 
 %-----------------------------------------------------------------

@@ -5,8 +5,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Extra.Grid
--- Copyright   :  (c) Stephen Tetley 2009
+-- Module      :  Wumpus.Doodle.Grid
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -17,7 +17,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.Grid where
+module Wumpus.Doodle.Grid where
 
 import Wumpus.Core
 

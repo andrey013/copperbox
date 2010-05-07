@@ -6,9 +6,9 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
-synopsis:         Extra geometry and objects (arrows, grids) for Wumpus. 
+synopsis:         Extra geometry and objects (arrows, dots) for Wumpus. 
 description:
-  Extra geometry and objects (arrows, grids) for Wumpus.
+  Extra geometry and objects (arrows, dots) for Wumpus.
   .
   This version (0.8.0) is for wumpus-core 0.15.0.
   .
@@ -33,6 +33,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Doodle.Grid,
     Wumpus.Doodle.ScatterPlot,
     Wumpus.Doodle.SVGColourChart,
     Wumpus.Doodle.X11ColourChart,
@@ -43,7 +44,6 @@ library
     Wumpus.Extra.BasicObjects,
     Wumpus.Extra.Dots,
     Wumpus.Extra.Drawing,
-    Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
     Wumpus.Extra.Marks,    
     Wumpus.Extra.Text,
