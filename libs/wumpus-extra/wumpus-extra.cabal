@@ -33,6 +33,9 @@ library
 
   
   exposed-modules:
+    Wumpus.Doodle.ScatterPlot,
+    Wumpus.Doodle.SVGColourChart,
+    Wumpus.Doodle.X11ColourChart,
     Wumpus.Extra,
     Wumpus.Extra.Arrows,
     Wumpus.Extra.Arrowheads,
@@ -40,11 +43,8 @@ library
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
-    Wumpus.Extra.Marks,
-    Wumpus.Extra.ScatterPlot,
-    Wumpus.Extra.SVGColourChart,
+    Wumpus.Extra.Marks,    
     Wumpus.Extra.Text,
-    Wumpus.Extra.X11ColourChart,
     Wumpus.Geometry,
     Wumpus.Geometry.Base,
     Wumpus.Geometry.CoreAdditions,

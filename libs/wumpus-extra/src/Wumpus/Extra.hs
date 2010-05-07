@@ -26,8 +26,6 @@ module Wumpus.Extra
   , module Wumpus.Extra.Drawing
   , module Wumpus.Extra.Grid
   , module Wumpus.Extra.Lines
-  , module Wumpus.Extra.SafeFonts
-  , module Wumpus.Extra.ScatterPlot
   , module Wumpus.Extra.Text
   ) where
 
@@ -36,8 +34,6 @@ import Wumpus.Extra.Dots
 import Wumpus.Extra.Drawing
 import Wumpus.Extra.Grid
 import Wumpus.Extra.Lines
-import Wumpus.Extra.SafeFonts
-import Wumpus.Extra.ScatterPlot
 import Wumpus.Extra.Text
 
 

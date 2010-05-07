@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Extra.SVGColourChart
+-- Module      :  Wumpus.Doodle.SVGColourChart
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.SVGColourChart
+module Wumpus.Doodle.SVGColourChart
   (
   -- * All SVG colours in a table
     all_svg_colours

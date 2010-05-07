@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Extra.X11ColourChart
+-- Module      :  Wumpus.Doodle.X11ColourChart
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.X11ColourChart
+module Wumpus.Doodle.X11ColourChart
   ( 
   -- * All SVG colours in a table
      all_x11_colours

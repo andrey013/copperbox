@@ -67,6 +67,8 @@ description:
   .
   * Added Named colours and \"safe fonts\" from wumpus-extra.
   .
+  * Added wumpus_core_version to track version number.
+  .
   .
 build-type:         Simple
 stability:          unstable

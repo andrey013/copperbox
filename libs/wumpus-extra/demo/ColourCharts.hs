@@ -4,10 +4,11 @@ module ColourCharts where
 
 import Wumpus.Core
 import Wumpus.Extra
+import Wumpus.Extra.SafeFonts
 import Wumpus.Geometry
 
-import Wumpus.Extra.SVGColourChart
-import Wumpus.Extra.X11ColourChart
+import Wumpus.Doodle.SVGColourChart
+import Wumpus.Doodle.X11ColourChart
 
 import Data.AffineSpace
 

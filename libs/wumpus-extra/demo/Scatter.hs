@@ -5,7 +5,7 @@
 module Scatter where
 
 import Wumpus.Core
-import Wumpus.Extra
+import Wumpus.Doodle.ScatterPlot
 import Wumpus.Extra.SVGColours
 
 import Control.Applicative ( liftA2 )

@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Extra.ScatterPlot
+-- Module      :  Wumpus.Doodle.ScatterPlot
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -12,11 +12,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- SCatter plots...
+-- Scatter plots...
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.ScatterPlot
+module Wumpus.Doodle.ScatterPlot
   ( 
     PlotPoint(..)
 

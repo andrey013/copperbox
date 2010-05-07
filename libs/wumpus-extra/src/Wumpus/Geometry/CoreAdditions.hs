@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Geometry.CoreAdditions
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -17,11 +17,9 @@
 
 module Wumpus.Geometry.CoreAdditions
   (
-  -- * Version
-    wumpus_core_version
 
   -- * Pending additions to Wumpus.Core
-  , dashOffset
+    dashOffset
   , evenDashes
   , solid
 
@@ -30,9 +28,6 @@ module Wumpus.Geometry.CoreAdditions
 
 import Wumpus.Core
 
-
-wumpus_core_version :: (Int,Int,Int)
-wumpus_core_version = (0,13,1)
 
 
 
