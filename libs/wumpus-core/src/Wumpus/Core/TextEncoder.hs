@@ -47,7 +47,6 @@ module Wumpus.Core.TextEncoder
   ) where
 
 
-import Data.Char
 
 type GlyphName = String
 type CharCode  = Int 

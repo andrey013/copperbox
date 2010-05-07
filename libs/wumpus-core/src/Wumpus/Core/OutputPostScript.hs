@@ -41,8 +41,6 @@ import Wumpus.Core.Utils
 
 import MonadLib hiding ( Label )
 
-import Control.Monad ( mapM_, zipWithM_ )
-
 
 
 

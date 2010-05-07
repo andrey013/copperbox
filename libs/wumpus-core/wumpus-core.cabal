@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.14.0
+version:          0.15.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -25,6 +25,10 @@ description:
   composing pictures (more-or-less similar to the usual pretty
   printing combinators).
   .
+  With revision 0.15.0 I\'ve added three extra helper modules
+  that are not really part of the \"core\", but they provide 
+  lists of named colours and fonts.
+  .
   THE DRAWBACKS...
   .
   For actually drawing pictures, diagrams, etc. Wumpus is very 
@@ -47,7 +51,7 @@ description:
   .
   With revision 0.14.0, I've added the first draft of a user 
   guide. Source for the guide is included as well as the PDF as 
-  there is an extra example picture. @wumpus-extra@ hasn\'t 
+  there is an extra example picture.  @wumpus-extra@ hasn\'t 
   received any more attention unfortunately, so Wumpus is still 
   really a bit too primitive for general use. However, if you 
   want FFI-free vector graphics and Wumpus seems to otherwise 
@@ -59,16 +63,10 @@ description:
   .
   Changelog:
   .
-  0.13.1 to 0.14.0:
+  0.14.0 to 0.15.0:
   .
-  * Added draft user guide. 
+  * Added Named colours and \"safe fonts\" from wumpus-extra.
   .
-  * Argument order changed for @ellipse@ and @zellispe@ in
-    Wumpus.Core.Picture. 
-  .
-  * Removed dependency on Data.Aviary.
-  .
-  * Removed DList dependency.
   .
 build-type:         Simple
 stability:          unstable
@@ -77,6 +75,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/FontPic.hs,
   demo/LabelPic.hs,
   demo/Picture.hs,
   doc/Guide.pdf,
@@ -105,7 +104,10 @@ library
     Wumpus.Core.Picture,
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.TextEncoder,
-    Wumpus.Core.TextLatin1
+    Wumpus.Core.TextLatin1,
+    Wumpus.Extra.SafeFonts,
+    Wumpus.Extra.SVGColours,
+    Wumpus.Extra.X11Colours
 
   other-modules:
     Wumpus.Core.PictureInternal,

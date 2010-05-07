@@ -260,8 +260,8 @@ be drawn at a regular size then scaled once it has been lifted
 with the \texttt{frame} function to the Picture type.
 
 The following table lists PostScript fonts and their SVG 
-equivalents. The unreleased package \texttt{wumpus-extra} has
-a module \texttt{SafeFonts} encoding this list to avoid 
+equivalents. As of revision 0.15.0 \wumpuscore includes a module 
+\texttt{Wumpus.Extra.SafeFonts} encoding this list to avoid 
 typographical slips...
 
 
