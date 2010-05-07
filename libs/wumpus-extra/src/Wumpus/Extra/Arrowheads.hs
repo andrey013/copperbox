@@ -29,12 +29,10 @@ module Wumpus.Extra.Arrowheads
 
 import Wumpus.Core
 
+import Wumpus.Extra.BasicObjects
 import Wumpus.Extra.Marks
 import Wumpus.Extra.Lines
-
-import Wumpus.Geometry
-import Wumpus.Geometry.Utils
-
+import Wumpus.Extra.Utils
 
 import Data.AffineSpace
 import Data.VectorSpace

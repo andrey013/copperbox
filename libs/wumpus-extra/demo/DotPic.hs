@@ -5,8 +5,6 @@ module DotPic where
 import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
-import Wumpus.Geometry
-import Wumpus.Geometry.CoreAdditions
 
 import Wumpus.Extra.Marks
 

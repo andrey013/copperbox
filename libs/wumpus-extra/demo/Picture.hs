@@ -5,7 +5,6 @@ module Picture where
 import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
-import Wumpus.Geometry
 
 
 main :: IO ()

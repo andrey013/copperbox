@@ -44,8 +44,8 @@ module Wumpus.Extra.Marks
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 
-import Wumpus.Geometry
-import Wumpus.Geometry.Utils
+import Wumpus.Extra.BasicObjects
+import Wumpus.Extra.Utils
 
 
 import Control.Applicative

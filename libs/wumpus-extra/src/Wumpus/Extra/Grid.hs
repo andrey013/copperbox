@@ -20,7 +20,8 @@
 module Wumpus.Extra.Grid where
 
 import Wumpus.Core
-import Wumpus.Geometry.Utils
+
+import Wumpus.Extra.Utils
 
 import MonadLib
 

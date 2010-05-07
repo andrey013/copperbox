@@ -5,7 +5,6 @@ module ColourCharts where
 import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SafeFonts
-import Wumpus.Geometry
 
 import Wumpus.Doodle.SVGColourChart
 import Wumpus.Doodle.X11ColourChart

@@ -1,9 +1,10 @@
-
+-- NOW DEFUNCT
+-- no Line data type
 
 module GeometryPic where
 
 import Wumpus.Core
-import Wumpus.Geometry
+import Wumpus.Extra
 
 
 import Text.PrettyPrint.Leijen

@@ -37,10 +37,11 @@ module Wumpus.Extra.Dots
   ) where
 
 
-import Wumpus.Extra.Marks
-
-import Wumpus.Geometry
 import Wumpus.Core
+
+import Wumpus.Extra.Base
+import Wumpus.Extra.BasicObjects
+import Wumpus.Extra.Marks
 
 import Data.AffineSpace
 

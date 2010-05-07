@@ -22,6 +22,8 @@
 module Wumpus.Extra
   ( 
     module Wumpus.Extra.Arrows
+  , module Wumpus.Extra.Base
+  , module Wumpus.Extra.BasicObjects
   , module Wumpus.Extra.Dots
   , module Wumpus.Extra.Drawing
   , module Wumpus.Extra.Grid
@@ -30,6 +32,8 @@ module Wumpus.Extra
   ) where
 
 import Wumpus.Extra.Arrows
+import Wumpus.Extra.Base
+import Wumpus.Extra.BasicObjects
 import Wumpus.Extra.Dots
 import Wumpus.Extra.Drawing
 import Wumpus.Extra.Grid

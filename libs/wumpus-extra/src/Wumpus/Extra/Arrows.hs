@@ -17,12 +17,11 @@
 
 module Wumpus.Extra.Arrows where
 
-import Wumpus.Extra.Arrowheads
-import Wumpus.Extra.Marks
-
-import Wumpus.Geometry.CoreAdditions
-
 import Wumpus.Core
+
+import Wumpus.Extra.Arrowheads
+import Wumpus.Extra.Base
+import Wumpus.Extra.Marks
 
 
 import Data.AffineSpace

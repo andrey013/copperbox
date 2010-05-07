@@ -39,21 +39,15 @@ library
     Wumpus.Extra,
     Wumpus.Extra.Arrows,
     Wumpus.Extra.Arrowheads,
+    Wumpus.Extra.Base,
+    Wumpus.Extra.BasicObjects,
     Wumpus.Extra.Dots,
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
     Wumpus.Extra.Marks,    
     Wumpus.Extra.Text,
-    Wumpus.Geometry,
-    Wumpus.Geometry.Base,
-    Wumpus.Geometry.CoreAdditions,
-    Wumpus.Geometry.Curve,
-    Wumpus.Geometry.CoordinateGen,
-    Wumpus.Geometry.LineEquation,
-    Wumpus.Geometry.LineSegment,
-    Wumpus.Geometry.Polygon,
-    Wumpus.Geometry.Utils
+    Wumpus.Extra.Utils
   other-modules:
     
   extensions:

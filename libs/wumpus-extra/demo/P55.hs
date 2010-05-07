@@ -4,7 +4,7 @@
 module P55 where
 
 import Wumpus.Core
-import Wumpus.Geometry
+import Wumpus.Extra
 
 -- Note 
 -- Processing has (0,0) at top left, 

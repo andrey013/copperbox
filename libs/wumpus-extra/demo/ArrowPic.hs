@@ -5,7 +5,6 @@ module ArrowPic where
 import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
-import Wumpus.Geometry
 
 main :: IO ()
 main = sequence_ 

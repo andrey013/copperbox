@@ -39,8 +39,9 @@ module Wumpus.Extra.Drawing
 
 
 import Wumpus.Core
-import Wumpus.Geometry
-import Wumpus.Geometry.Utils
+
+import Wumpus.Extra.BasicObjects
+import Wumpus.Extra.Utils
 
 
 import Data.AffineSpace

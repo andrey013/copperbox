@@ -4,6 +4,7 @@ module TextPicture where
 
 import Wumpus.Core
 import Wumpus.Extra
+import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.SVGColours
 
 
