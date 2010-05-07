@@ -29,7 +29,6 @@ module Wumpus.Geometry.Base
   -- * Operations
   , subdivisions
   , midpointBetween
-  , para
 
   ) where
 
@@ -91,11 +90,4 @@ midpointBetween p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 --------------------------------------------------------------------------------
-
-
--- | paramorphism (generalizes cata (foldr), folds right...)
-para :: (a -> ([a], b) -> b) -> b -> [a] -> b
-para phi b = step
-  where step []     = b
-        step (x:xs) = phi x (xs, step xs)
 

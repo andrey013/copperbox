@@ -29,7 +29,7 @@ import Wumpus.Geometry.Utils
 
 -- | Draw a line of text at the given point. The bounding box is
 -- calculated with Courier metrics - as Courier is a monospaced
--- font the bounding bow will be strictly wider than necessary 
+-- font the bounding box will be strictly wider than necessary 
 -- for variable width fonts.
 --
 -- The supplied point represents the bottom-left corner of the 

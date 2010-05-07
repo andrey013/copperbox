@@ -63,15 +63,15 @@ class Mark t where
 
 
 constrLineWidth :: Double -> MarkAttr
-constrLineWidth i = MarkAttr { line_width = i, 
-                            mark_colour = black, 
-                            mark_second_colour = Nothing }
+constrLineWidth i = MarkAttr { line_width         = i
+                             , mark_colour        = black
+                             , mark_second_colour = Nothing }
 
 
 constrColour :: PSColour c => c -> MarkAttr
-constrColour c = MarkAttr { line_width = 1,
-                           mark_colour = psColour c,
-                           mark_second_colour = Nothing }
+constrColour c = MarkAttr { line_width          = 1
+                          , mark_colour         = psColour c
+                          , mark_second_colour  = Nothing }
 
 
 instance Mark () where

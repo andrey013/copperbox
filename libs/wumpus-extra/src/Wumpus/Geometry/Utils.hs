@@ -17,8 +17,11 @@
 
 module Wumpus.Geometry.Utils
   (
+
+    para
+
   -- * Specs
-    oo
+  , oo
   , ooo
   , oooo
 
@@ -33,6 +36,17 @@ module Wumpus.Geometry.Utils
   , consH
 
   ) where
+
+
+
+
+-- | paramorphism (generalizes cata (foldr), folds right...)
+para :: (a -> ([a], b) -> b) -> b -> [a] -> b
+para phi b = step
+  where step []     = b
+        step (x:xs) = phi x (xs, step xs)
+
+
 
 -- | Compose an arity 1 function with an arity 2 function.
 -- B1 - blackbird
@@ -52,12 +66,12 @@ oooo f g = (((f .) .) .) . g
 -- > on = (appro comb f f)
 --
 appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
-appro comb f g x y = comb (f x) (g y) 
+appro bop f g x y = (f x) `bop` (g y) 
 
 
 -- 
 combfi :: (c -> b -> d) -> (a -> c) -> a -> b -> d
-combfi comb f x y = comb (f x) y 
+combfi bop f x y = (f x) `bop` y 
 
 -- | dup - duplicator aka the W combinator aka Warbler. 
 -- 

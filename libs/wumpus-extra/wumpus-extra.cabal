@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.7.0
+version:          0.8.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -10,7 +10,7 @@ synopsis:         Extra geometry and objects (arrows, grids) for Wumpus.
 description:
   Extra geometry and objects (arrows, grids) for Wumpus.
   .
-  This version (0.7.0) is for wumpus-core 0.14.0.
+  This version (0.8.0) is for wumpus-core 0.15.0.
   .
   .
 build-type:         Simple
@@ -20,7 +20,6 @@ cabal-version:      >= 1.2
 extra-source-files:
   demo/ArrowPic.hs,
   demo/ColourCharts.hs,
-  demo/FontTest.hs,
   demo/GridPic.hs,
   demo/P55.hs,
   demo/Picture.hs
@@ -42,13 +41,10 @@ library
     Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
     Wumpus.Extra.Marks,
-    Wumpus.Extra.SafeFonts,
     Wumpus.Extra.ScatterPlot,
     Wumpus.Extra.SVGColourChart,
-    Wumpus.Extra.SVGColours,
     Wumpus.Extra.Text,
     Wumpus.Extra.X11ColourChart,
-    Wumpus.Extra.X11Colours,
     Wumpus.Geometry,
     Wumpus.Geometry.Base,
     Wumpus.Geometry.CoreAdditions,
