@@ -46,9 +46,10 @@ library
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Lines,
     Wumpus.Extra.Marks,    
-    Wumpus.Extra.Text,
-    Wumpus.Extra.Utils
+    Wumpus.Extra.Text
+
   other-modules:
+    Wumpus.Extra.Utils
     
   extensions:
     

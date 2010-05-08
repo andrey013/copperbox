@@ -21,7 +21,10 @@ main = sequence_ [ test01 ]
 
 -- This is wrong -- can't do one scatter plot over another as
 -- each one is at liberty to change the /scaling/. This needs a 
--- rethink...
+-- rethink.
+-- 
+-- Probably should use rescale...
+--
 test01 :: IO ()
 test01 = do 
     idata <- readIrisData

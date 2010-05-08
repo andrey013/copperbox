@@ -51,6 +51,8 @@ module Wumpus.Extra.Base
   , countup
   , countdown
 
+  , rescale
+  , clamp
 
   ) where
 
@@ -218,3 +220,17 @@ countup n = unfoldr phi 0 where
    phi i | i > n = Nothing
    phi i         = Just (fromIntegral i,i+1)
 
+
+
+--------------------------------------------------------------------------------
+
+rescale :: Fractional a => (a,a) -> (a,a) -> a -> a
+rescale (amin,amax) (bmin,bmax) a = 
+    bmin + apos * (brange / arange)  
+  where
+    arange = amax - amin
+    brange = bmax - bmin
+    apos   = a - amin 
+
+clamp :: Ord a => a -> a -> a -> a
+clamp amin amax a = max amin (min amax a)

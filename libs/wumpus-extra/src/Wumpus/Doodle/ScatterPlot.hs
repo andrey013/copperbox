@@ -30,7 +30,6 @@ import Wumpus.Extra.Dots
 import Wumpus.Extra.Marks
 import Wumpus.Core
 
--- import Data.Aviary
 
 class PlotPoint a where
   plotPoint :: a -> Point2 Double 

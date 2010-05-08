@@ -40,9 +40,10 @@ demo02 = do
     writeSVG_latin1 "./out/picture02.svg" pic1 
   where
     pic1 :: Picture Double
-    pic1 = uniformScale 5 $ backgroundFill cornflowerBlue 
+    pic1 = stackOntoCenter [poly] bkgd
+    bkgd = uniformScale 5 $ backgroundFill cornflowerBlue 
                           $ blankPicture (BBox zeroPt (P2 100 100))
-
+    poly = frame $ fillPolygon () $ rotate45 $ rectangle 40 50 (P2 20 20) 
 
 demo03 :: IO ()
 demo03 = do 
