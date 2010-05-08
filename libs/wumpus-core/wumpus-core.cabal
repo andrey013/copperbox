@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.15.0
+version:          0.16.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -62,6 +62,13 @@ description:
   convert Wumpus'\s EPS files to many other formats (bitmaps). 
   .
   Changelog:
+  0.15.0 to 0.16.0:
+  .
+  * Additions to Core.Geometry (direction, pvec, vangle, 
+    circularModulo).
+  .
+  * Fixed error with langle due to not accounting for circle 
+    quadrants in Core.Geometry.
   .
   0.14.0 to 0.15.0:
   .

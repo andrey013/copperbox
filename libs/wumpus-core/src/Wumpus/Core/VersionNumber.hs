@@ -22,4 +22,4 @@ module Wumpus.Core.VersionNumber
 
 
 wumpus_core_version :: (Int,Int,Int)
-wumpus_core_version = (0,15,0)
+wumpus_core_version = (0,16,0)

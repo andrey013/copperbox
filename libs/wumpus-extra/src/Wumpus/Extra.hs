@@ -26,7 +26,6 @@ module Wumpus.Extra
   , module Wumpus.Extra.BasicObjects
   , module Wumpus.Extra.Dots
   , module Wumpus.Extra.Drawing
-  , module Wumpus.Extra.Lines
   , module Wumpus.Extra.Text
   ) where
 
@@ -35,7 +34,6 @@ import Wumpus.Extra.Base
 import Wumpus.Extra.BasicObjects
 import Wumpus.Extra.Dots
 import Wumpus.Extra.Drawing
-import Wumpus.Extra.Lines
 import Wumpus.Extra.Text
 
 

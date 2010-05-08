@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -54,6 +55,11 @@ module Wumpus.Extra.BasicObjects
   , curvesToPath
 
   , circlePath 
+
+  , bend
+  , tighten
+  , tildeCurve
+  
 
   -- * Polygon construction
   , square
@@ -277,8 +283,13 @@ expandLineSegment n line =  LS2 (p .-^ v) (p .+^ v) where
 lineSegmentToPath :: LineSegment u -> Path u
 lineSegmentToPath (LS2 p1 p2) = vertexPath [p1,p2]
 
-
-
+-- A segments-to-path function will have undefined behaviour 
+-- when end and start points of lines don't agree. 
+--
+-- > segmentsToPath :: [LineSegment u] -> Path u
+--
+-- So there isn't one...
+--
 
 
 --------------------------------------------------------------------------------
@@ -336,6 +347,38 @@ circlePath :: (Fractional u, Floating u)
 circlePath = curvesToPath `ooo` bezierCircle
 
 
+
+-- @bend@ seems most intuitive for \'humps\' - maybe it should 
+-- only take one angle...
+
+bend :: (Floating u, Real u, InnerSpace (Vec2 u))
+     => Radian -> Radian -> Point2 u -> Point2 u -> CubicBezier u
+bend oang iang u v = cubicBezier u a b v
+  where
+    half_dist = 0.5 * distance u v 
+    theta     = langle u v
+    a         = u .+^ avec (theta + oang) half_dist 
+    b         = v .+^ avec (theta + iang) half_dist
+
+
+tighten :: Num u => Vec2 u -> Vec2 u -> CubicBezier u -> CubicBezier u
+tighten u v (CubicBezier p0 p1 p2 p3) = CubicBezier p0 (p1 .+^ u) (p2 .+^ v) p3
+  -- ang = langle p0 p4
+
+
+-- | Create a tilde (sinusodial) curve about the horizontal plane.
+-- 
+-- This one is rather simplistic - single one phase curve with no
+-- subdivision...
+-- 
+-- There are better ways to plot things
+--
+tildeCurve :: (Floating u, AffineSpace (pt u), Converse (Vec2 u)) 
+           => u -> Point2 u -> CubicBezier u
+tildeCurve w = \pt -> let endpt = pt .+^ hvec w
+                      in cubicBezier pt (pt .+^ v) (endpt .+^ converse v) endpt
+  where 
+    v = avec (pi/4) (w/2)
 
 --------------------------------------------------------------------------------
 

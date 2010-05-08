@@ -30,6 +30,8 @@ module Wumpus.Extra.Base
   -- * Operations
   , subdivisions
   , midpointBetween
+  , strline
+  , strlineMidpt
 
   -- * Dash patterns
   , dashOffset
@@ -112,6 +114,14 @@ subdivisions i a = take (i+1) $ iterate (+n) 0 where
 -- | Midpoint between two points.
 midpointBetween :: Fractional u => Point2 u -> Point2 u -> Point2 u
 midpointBetween p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
+
+
+
+strline :: Num u => Point2 u -> Vec2 u -> u -> Point2 u
+strline pt u t = pt .+^ (t *^ u)
+
+strlineMidpt :: Floating u => Point2 u -> Vec2 u -> Point2 u
+strlineMidpt pt u = strline pt u 0.5
 
 
 --------------------------------------------------------------------------------

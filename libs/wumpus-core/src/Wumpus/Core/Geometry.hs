@@ -49,9 +49,12 @@ module Wumpus.Core.Geometry
   , MatrixMult(..)
 
   -- * Vector operations
+  , direction
   , hvec
   , vvec
   , avec
+  , pvec
+  , vangle
 
   -- * Point operations
   , zeroPt
@@ -84,6 +87,7 @@ module Wumpus.Core.Geometry
   , fromRadian
   , d2r
   , r2d
+  , circularModulo
 
   ) where
 
@@ -397,6 +401,13 @@ instance Num a => MatrixMult (Point2 a) where
 --------------------------------------------------------------------------------
 -- Vectors
 
+
+-- | Direction of a vector - i.e. the counter-clockwise angle 
+-- from the x-axis.
+--
+direction :: (Floating a, Real a) => Vec2 a -> Radian
+direction (V2 x y) = langle (P2 0 0) (P2 x y)
+
 -- | Construct a vector with horizontal displacement.
 hvec :: Num a => a -> Vec2 a
 hvec d = V2 d 0
@@ -413,6 +424,19 @@ avec theta d = V2 x y where
   y   = d * sin ang
 
 
+-- | The vector between two points
+--
+-- > pvec = flip (.-.)
+--
+pvec :: Num a => Point2 a -> Point2 a -> Vec2 a
+pvec = flip (.-.)
+
+-- | Extract the angle between two vectors.
+--
+vangle :: (Floating a, Real a, InnerSpace (Vec2 a)) 
+       => Vec2 a -> Vec2 a -> Radian
+vangle u v = realToFrac $ acos $ (u <.> v) / (on (*) magnitude u v)
+
 --------------------------------------------------------------------------------
 -- Points
 
@@ -422,8 +446,23 @@ zeroPt = P2 0 0
 
 -- | Calculate the counter-clockwise angle between two points 
 -- and the x-axis.
-langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
-langle (P2 x y) (P2 x' y') = toRadian $ atan $ (y'-y) / (x'-x) 
+langle :: (Floating a, Real a) => Point2 a -> Point2 a -> Radian
+langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
+  where
+    -- north-east quadrant 
+    step x y | pve x && pve y = toRadian $ atan (y/x)          
+    
+    -- north-west quadrant
+    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
+
+    -- south-east quadrant
+    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
+
+    -- otherwise... south-west quadrant
+    step x y                  = pi     + (toRadian $ atan (y/x))
+
+    pve a = signum a >= 0
+
 
 
 --------------------------------------------------------------------------------
@@ -649,4 +688,16 @@ d2r = Radian . realToFrac . (*) (pi/180)
 -- | Radians to degrees.
 r2d :: (Floating a, Real a) => Radian -> a
 r2d = (*) (180/pi) . fromRadian
+
+
+-- | Modulate a (positive) angle to be in the range 0..2*pi
+--
+circularModulo :: Radian -> Radian
+circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
+  where
+    i       :: Integer
+    dec     :: Double
+    (i,dec) = properFraction $ r2d r
+
+
 

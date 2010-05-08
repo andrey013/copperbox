@@ -31,7 +31,6 @@ import Wumpus.Core
 
 import Wumpus.Extra.BasicObjects
 import Wumpus.Extra.Marks
-import Wumpus.Extra.Lines
 import Wumpus.Extra.Utils
 
 import Data.AffineSpace
