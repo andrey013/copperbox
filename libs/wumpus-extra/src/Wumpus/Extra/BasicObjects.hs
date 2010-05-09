@@ -71,6 +71,9 @@ module Wumpus.Extra.BasicObjects
   , fillPolygon
   , strokePolygon
 
+  , strokeRoundedPolygon
+  , fillRoundedPolygon
+
   ) where
 
 
@@ -432,5 +435,56 @@ fillPolygon = appro fill id (vertexPath . vertexList)
 
 strokePolygon :: (Stroke t, Num u, Ord u) => t -> Polygon u -> Primitive u
 strokePolygon = appro cstroke id (vertexPath . vertexList) 
+
+fillRoundedPolygon :: (Fill t, Num u, Ord u, Floating u, Real u,
+                       InnerSpace (Vec2 u)) 
+                   => u -> t -> Polygon u -> Primitive u
+fillRoundedPolygon d props = fill props . roundedPolyPath d
+
+strokeRoundedPolygon :: (Stroke t, Num u, Ord u, Floating u, Real u,
+                         InnerSpace (Vec2 u)) 
+                     => u -> t -> Polygon u -> Primitive u
+strokeRoundedPolygon d props = cstroke props . roundedPolyPath d
+
+
+roundedPolyPath :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+               => u -> Polygon u -> Path u
+roundedPolyPath _ (Polygon ps) | length ps < 3 = error $ 
+    "roundedPolyPath - vertex list too short - " ++ show (length ps)
+
+roundedPolyPath d (Polygon ps) = mkPath1 corner_quads
+  where
+    corner_quads    = map (roundCorner d) $ partCycle3 ps
+
+    mkPath1 []                 = error "roundedPolygon - unreachable"
+    mkPath1 ((p0,p1,p2,p3):xs) = path p0 $ curveTo p1 p2 p3 : mkSegs xs
+
+    mkSegs []                  = []
+    mkSegs ((p0,p1,p2,p3):xs)  = lineTo p0 : curveTo p1 p2 p3 : mkSegs xs
+
+
+roundCorner :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+            => u -> (Point2 u, Point2 u, Point2 u)
+            -> (Point2 u, Point2 u, Point2 u, Point2 u)
+roundCorner d (p0,p1,p2) = (p0_1, cp1,cp2,p2_1) 
+  where
+    p0_1   = p1 .+^ (avec (langle p1 p0) d)   -- pt between p0 and p1
+    p2_1   = p1 .+^ (avec (langle p1 p2) d)   -- pt between p2 and p1
+
+    theta = vangle (p0 .-. p0_1) (p2 .-. p2_1)
+
+    d'    = rescale (0,pi) (0,d) (realToFrac theta)
+    
+    cp1   = p0_1 .+^ (avec (langle p0 p1) d')
+    cp2   = p2_1 .+^ (avec (langle p2 p1) d')
+
+
+
+partCycle3 :: [a] -> [(a,a,a)]
+partCycle3 (a:b:c:cs) = step a b c cs
+  where
+    step t u v []     = [(t,u,v), (u,v,a), (v,a,b)]
+    step t u v (x:xs) = (t,u,v) : step u v x xs
+partCycle3 _xs        = error $ "partCycle3 - list too short"
 
 --------------------------------------------------------------------------------
