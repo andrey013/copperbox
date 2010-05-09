@@ -2,7 +2,7 @@
 module GridPic where
 
 import Wumpus.Core hiding ( blank )
-import Wumpus.Doodle.Grid
+import Wumpus.Extra.Matrix
 import Wumpus.Extra
 
 
@@ -14,11 +14,11 @@ main = sequence_ [ demo01 ]
 
 mgrid01 = do 
   
-  gal_m           <- elem1 $ nil & blank         & node "Gal(M)" 
+  gal_m           <- cell1 $ nil & blank         & node "Gal(M)" 
   
-  (delta,gal_nm)  <- elem2 $ nil & node "/\\"    & node "Gal(N/M)"
+  (delta,gal_nm)  <- cell2 $ nil & node "/\\"    & node "Gal(N/M)"
 
-  ee              <- elem1 $ nil & node "(E/E')" & blank
+  ee              <- cell1 $ nil & node "(E/E')" & blank
 
   return ()
 
@@ -27,7 +27,7 @@ demo01 = do
     writeSVG_latin1 "./out/grid01.svg" pic1 
   where
     pic1 :: Picture Double
-    pic1   = nodePicture 100 50 3 elts no_pic
-    elts   = snd $ grid mgrid01 
-    no_pic = blankPicture (BBox zeroPt zeroPt)
+    ((),st,w)   = grid mgrid01 
+    pic1        = matrixPicture (V2 100 50) (st,w) no_pic
+    no_pic      = blankPicture (BBox zeroPt zeroPt)
 

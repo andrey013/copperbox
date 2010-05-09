@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Doodle.Grid
+-- Module      :  Wumpus.Extra.Matrix
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -11,11 +11,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Grids, just a doodle...
+-- Drawing in a matrix grid, inspired by TikZ... 
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Doodle.Grid 
+module Wumpus.Extra.Matrix
   (
   
     NodeId
@@ -46,25 +46,37 @@ import Wumpus.Core hiding ( blank )
 
 import Wumpus.Extra.Utils
 
-import Data.Monoid
+import qualified Data.Map as Map
 
+
+-- The level naturals
 data Z
 data S a
 
+instance Ord a => Ord (Point2 a) where
+  compare (P2 x y) (P2 x' y') = (x,y) `compare` (x',y')
 
 type Coord = Point2 Int
 
-type NodeId = String
+type CellValues u = Map.Map Coord (CellValue u)
 
+type CellValue u = Either SimpleLabel (Picture u)
+
+type SimpleLabel = String
+
+type NodeId = Coord
+
+{-
 data GridElement = Node NodeId Coord
                  | Edge NodeId NodeId          
   deriving (Eq,Show)
+-}
 
 
-data GridSt = GridSt { posn :: Coord }
+data GridSt = GridSt { posn :: Coord, line_count :: Int }
   deriving (Show)
 
-type GridTrace = H GridElement
+type GridTrace u = CellValues u
 
 -- Note - rows always start with nil which increments the y-pos
 -- oblivious to its current value. If the initial state was
@@ -72,30 +84,32 @@ type GridTrace = H GridElement
 -- have to start the initial coor at (0,-1).
 --
 grid_state_zero :: GridSt
-grid_state_zero = GridSt { posn = P2 0 (-1) }
+grid_state_zero = GridSt { posn = P2 0 (-1), line_count = 0 }
   
 
+-- sh - shape
+-- u  - unit (usually Double)
 
-data GridM sh a = GridM { 
-          unGridM :: GridSt -> GridTrace -> (a,GridSt,GridTrace) }
-
-
-runGridM :: GridM sh a -> (a,GridSt,GridTrace)
-runGridM (GridM f) =  f grid_state_zero mempty 
+data GridM sh u a = GridM { 
+          unGridM :: GridSt -> GridTrace u -> (a,GridSt,GridTrace u) }
 
 
+runGridM :: GridM sh u a -> (a, GridSt, GridTrace u)
+runGridM (GridM f) =  f grid_state_zero Map.empty
 
-grid :: GridM sh a -> (a,[GridElement])
+
+
+grid :: GridM sh u a -> ((), GridSt, CellValues u)
 grid = post . runGridM  
   where 
-    post (a,_,t) = (a,toListH t)
+    post (_,s,w) = ((),s,w)
 
 
-instance Functor (GridM sh) where
+instance Functor (GridM sh u) where
   fmap f (GridM g) = GridM $ \s w -> let (a,s',w') =  g s w in (f a,s',w')
 
 
-instance Monad (GridM sh) where
+instance Monad (GridM sh u) where
   return a  = GridM $ \s w -> (a,s,w)
   (GridM f) >>= mf  = GridM $ \s w -> 
     let (a,s',w') = f s w in (unGridM . mf) a s' w'
@@ -110,32 +124,32 @@ nextRow :: GridSt -> GridSt
 nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
 
-tellNode :: String -> Coord -> GridTrace -> GridTrace
-tellNode name loc hf = consH (Node name loc) hf
+tellNode :: String -> Coord -> GridTrace u -> GridTrace u
+tellNode name loc cells = Map.insert loc (Left name) cells
 
 
 --------------------------------------------------------------------------------
 -- constructing \'matrices\'
 
 
-nil :: GridM Z ()
+nil :: GridM Z u ()
 nil = GridM $ \s w -> ((), nextRow s, w)
 
-blank :: GridM sh a -> GridM (S sh) a
+blank :: GridM sh u a -> GridM (S sh) u a
 blank (GridM mf) = GridM $ \s w -> 
     let (acc,s',w') = mf s w in (acc, nextCol s', w')
 
 
-node :: NodeId -> GridM sh a -> GridM (S sh) (a,NodeId)
+node :: SimpleLabel -> GridM sh u a -> GridM (S sh) u (a,NodeId)
 node name (GridM mf) = GridM $ \s w -> 
     let (acc,s',w') = mf s w 
         loc         = posn s'
-    in ((acc,name), nextCol s', tellNode name loc w')
+    in ((acc,loc), nextCol s', tellNode name loc w')
 
 
 
 infixl 5 &
-(&) :: GridM sh a -> (GridM sh a -> GridM (S sh) b) -> GridM (S sh) b
+(&) :: GridM sh u a -> (GridM sh u a -> GridM (S sh) u b) -> GridM (S sh) u b
 tl & hf = hf tl
 
 
@@ -143,52 +157,53 @@ tl & hf = hf tl
 -- An arity family of cell \'selectors\'
 
 
-cell0 :: GridM sh () -> GridM sh ()
+cell0 :: GridM sh u () -> GridM sh u ()
 cell0 (GridM mf) = GridM $ \s w -> mf s w
 
-cell1 :: GridM sh ((),a) -> GridM sh a
+cell1 :: GridM sh u ((),a) -> GridM sh u a
 cell1 (GridM mf) = GridM $ \s w -> 
     let (((),a),s',w') = mf s w in (a,s',w')
 
-cell2 :: GridM sh (((),a),a) -> GridM sh (a,a)
+cell2 :: GridM sh u (((),a),a) -> GridM sh u (a,a)
 cell2 (GridM mf) = GridM $ \s w -> 
     let ((((),a),b),s',w') = mf s w in ((a,b),s',w')
 
-cell3 :: GridM sh ((((),a),a),a) -> GridM sh (a,a,a)
+cell3 :: GridM sh u ((((),a),a),a) -> GridM sh u (a,a,a)
 cell3 (GridM mf) = GridM $ \s w -> 
     let (((((),a),b),c),s',w') = mf s w in ((a,b,c),s',w')
 
-cell4 :: GridM sh (((((),a),a),a),a) -> GridM sh (a,a,a,a)
+cell4 :: GridM sh u (((((),a),a),a),a) -> GridM sh u (a,a,a,a)
 cell4 (GridM mf) = GridM $ \s w -> 
     let ((((((),a),b),c),d),s',w') = mf s w in ((a,b,c,d),s',w')
 
-cell5 :: GridM sh ((((((),a),a),a),a),a) -> GridM sh (a,a,a,a,a)
+cell5 :: GridM sh u ((((((),a),a),a),a),a) -> GridM sh u (a,a,a,a,a)
 cell5 (GridM mf) = GridM $ \s w -> 
     let (((((((),a),b),c),d),e),s',w') = mf s w in ((a,b,c,d,e),s',w')
 
-cell6 :: GridM sh (((((((),a),a),a),a),a),a) -> GridM sh (a,a,a,a,a,a)
+cell6 :: GridM sh u (((((((),a),a),a),a),a),a) -> GridM sh u (a,a,a,a,a,a)
 cell6 (GridM mf) = GridM $ \s w -> 
     let ((((((((),a),b),c),d),e),f),s',w') = mf s w in ((a,b,c,d,e,f),s',w')
 
-cell7 :: GridM sh ((((((((),a),a),a),a),a),a),a) -> GridM sh (a,a,a,a,a,a,a)
+cell7 :: GridM sh u ((((((((),a),a),a),a),a),a),a) 
+      -> GridM sh u (a,a,a,a,a,a,a)
 cell7 (GridM mf) = GridM $ \s w -> 
     let (((((((((),a),b),c),d),e),f),g),s',w') = mf s w 
     in ((a,b,c,d,e,f,g),s',w')
 
-cell8 :: GridM sh (((((((((),a),a),a),a),a),a),a),a) 
-      -> GridM sh (a,a,a,a,a,a,a,a)
+cell8 :: GridM sh u (((((((((),a),a),a),a),a),a),a),a) 
+      -> GridM sh u (a,a,a,a,a,a,a,a)
 cell8 (GridM mf) = GridM $ \s w -> 
     let ((((((((((),a),b),c),d),e),f),g),h),s',w') = mf s w 
     in ((a,b,c,d,e,f,g,h),s',w')
 
-cell9 :: GridM sh ((((((((((),a),a),a),a),a),a),a),a),a)
-      -> GridM sh (a,a,a,a,a,a,a,a,a)
+cell9 :: GridM sh u ((((((((((),a),a),a),a),a),a),a),a),a)
+      -> GridM sh u (a,a,a,a,a,a,a,a,a)
 cell9 (GridM mf) = GridM $ \s w -> 
     let (((((((((((),a),b),c),d),e),f),g),h),i),s',w') = mf s w 
     in ((a,b,c,d,e,f,g,h,i),s',w')
 
-cell10 :: GridM sh (((((((((((),a),a),a),a),a),a),a),a),a),a)
-      -> GridM sh (a,a,a,a,a,a,a,a,a,a)
+cell10 :: GridM sh u (((((((((((),a),a),a),a),a),a),a),a),a),a)
+      -> GridM sh u (a,a,a,a,a,a,a,a,a,a)
 cell10 (GridM mf) = GridM $ \s w -> 
     let ((((((((((((),a),b),c),d),e),f),g),h),i),j),s',w') = mf s w 
     in ((a,b,c,d,e,f,g,h,i,j),s',w')
@@ -197,10 +212,14 @@ cell10 (GridM mf) = GridM $ \s w ->
 -- creating a picture
 
 matrixPicture :: (Fractional u, Ord u)
-            => u -> u -> Int -> [GridElement] -> Picture u -> Picture u
-matrixPicture sx sy h xs p = foldr fn p xs where
-  fn (Node s pt) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
-  fn _           pic = pic
+            => Vec2 u -> (GridSt,CellValues u) -> Picture u -> Picture u
+matrixPicture (V2 sx sy) (st,cells) p = foldr fn p $ Map.toList cells
+  where
+    fn (pt, (Left s)) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
+    fn _              pic = pic
+ 
+    (P2 _ h)  = posn st
+
 
 
 mkLabel :: (Fractional u, Ord u) => String -> Picture u

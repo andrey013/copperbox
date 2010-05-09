@@ -41,8 +41,9 @@ module Wumpus.Extra.Utils
   -- * Hughes list
   , H 
   , toListH
+  , emptyH
   , consH
-
+  , snocH
   ) where
 
 
@@ -127,5 +128,11 @@ type H a = [a] -> [a]
 toListH :: H a -> [a]
 toListH = ($ [])
 
+emptyH :: H a 
+emptyH = id
+
 consH :: a -> H a -> H a
 consH a hl = (a:) . hl
+
+snocH :: H a -> a -> H a
+snocH hl a = hl . (a:)

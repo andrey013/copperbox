@@ -33,7 +33,6 @@ library
 
   
   exposed-modules:
-    Wumpus.Doodle.Grid,
     Wumpus.Doodle.Lines,
     Wumpus.Doodle.ScatterPlot,
     Wumpus.Doodle.SVGColourChart,
@@ -46,6 +45,7 @@ library
     Wumpus.Extra.Dots,
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Marks,    
+    Wumpus.Extra.Matrix,
     Wumpus.Extra.Text
 
   other-modules:
