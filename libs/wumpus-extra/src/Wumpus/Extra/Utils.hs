@@ -26,6 +26,13 @@ module Wumpus.Extra.Utils
   , ooo
   , oooo
 
+  -- * pstars
+  , pstar
+  , pstar2
+  , pstar3
+  , pstar4
+  , pstar5
+
   -- * Combinators
   , appro
   , combfi
@@ -64,6 +71,36 @@ ooo f g = ((f .) .) . g
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g  
 
+
+--------------------------------------------------------------------------------
+-- pstars
+
+pstar     :: (a -> r -> ans) 
+          -> (r -> a) 
+          -> r -> ans
+pstar f fa x = f (fa x) x
+
+pstar2    :: (a -> b -> r -> ans) 
+          -> (r -> a) -> (r -> b) 
+          -> r -> ans
+pstar2 f fa fb x = f (fa x) (fb x) x
+
+pstar3    :: (a -> b -> c -> r -> ans) 
+          -> (r -> a) -> (r -> b) -> (r -> c) 
+          -> r -> ans
+pstar3 f fa fb fc x = f (fa x) (fb x) (fc x) x
+
+pstar4    :: (a -> b -> c -> d -> r -> ans) 
+          -> (r -> a) -> (r -> b) -> (r -> c) -> (r -> d) 
+          -> r -> ans
+pstar4 f fa fb fc fd x = f (fa x) (fb x) (fc x) (fd x) x
+
+pstar5    :: (a -> b -> c -> d -> e -> r -> ans) 
+          -> (r -> a) -> (r -> b) -> (r -> c) -> (r -> d) -> (r -> e) 
+          -> r -> ans
+pstar5 f fa fb fc fd fe x = f (fa x) (fb x) (fc x) (fd x) (fe x) x
+
+
 -- NEEDS NEW NAME!
 -- > on = (appro comb f f)
 --
@@ -90,5 +127,5 @@ type H a = [a] -> [a]
 toListH :: H a -> [a]
 toListH = ($ [])
 
-consH :: a -> H a
-consH a = (a:)
+consH :: a -> H a -> H a
+consH a hl = (a:) . hl

@@ -431,10 +431,10 @@ isoscelesTriangle bw h pt = Polygon [br,top,bl]
 -- Drawing polygons
 
 fillPolygon :: (Fill t, Num u, Ord u) => t -> Polygon u -> Primitive u
-fillPolygon = appro fill id (vertexPath . vertexList) 
+fillPolygon props = fill props . (vertexPath . vertexList) 
 
 strokePolygon :: (Stroke t, Num u, Ord u) => t -> Polygon u -> Primitive u
-strokePolygon = appro cstroke id (vertexPath . vertexList) 
+strokePolygon props = cstroke props . (vertexPath . vertexList) 
 
 fillRoundedPolygon :: (Fill t, Num u, Ord u, Floating u, Real u,
                        InnerSpace (Vec2 u)) 

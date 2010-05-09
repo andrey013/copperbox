@@ -1,6 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,10 +25,10 @@ import Wumpus.Core
 
 import Wumpus.Extra.Utils
 
-import MonadLib
+import Data.Monoid
 
-
--- import MonadLib.Monads
+data Z
+data S a
 
 
 type Coord = Point2 Int
@@ -43,47 +45,115 @@ data GridSt = GridSt { posn :: Coord }
 
 type GridTrace = H GridElement
 
-
+-- Note - rows always start with nil which increments the y-pos
+-- oblivious to its current value. If the initial state was
+-- (0,0) the initial nil would move the coord to (0,1), so we
+-- have to start the initial coor at (0,-1).
+--
 grid_state_zero :: GridSt
-grid_state_zero = GridSt { posn = zeroPt }
+grid_state_zero = GridSt { posn = P2 0 (-1) }
+  
 
 
-newtype GridT m a = GridT { 
-          unGridT :: StateT GridSt (WriterT GridTrace m) a
-        }  
-
-type GridM a = GridT Id a
+data GridM sh a = GridM { 
+          unGridM :: GridSt -> GridTrace -> (a,GridSt,GridTrace) }
 
 
-runGridT :: Monad m => GridT m a -> m ((a,GridSt),GridTrace)
-runGridT m = runWriterT $ runStateT grid_state_zero (unGridT m) 
-
-
-
-grid :: GridM a -> (a,[GridElement])
-grid = fn . runId . runGridT  where fn ((a,_),t) = (a,toListH t)
-
-
-instance Monad m => Functor (GridT m) where
-  fmap f (GridT mf) = GridT $ fmap f mf 
-
-instance Monad m => Monad (GridT m) where
-  return a  = GridT $ return a
-  ma >>= f  = GridT $ unGridT ma >>= unGridT . f
-
-instance Monad m => WriterM (GridT m) GridTrace where
-  put = GridT . put
-
-instance Monad m => StateM (GridT m) GridSt where
-  get = GridT $ get
-  set = GridT . set
-
-instance MonadT GridT where
-  lift = GridT . lift . lift
+runGridM :: GridM sh a -> (a,GridSt,GridTrace)
+runGridM (GridM f) =  f grid_state_zero mempty 
 
 
 
+grid :: GridM sh a -> (a,[GridElement])
+grid = post . runGridM  
+  where 
+    post (a,_,t) = (a,toListH t)
 
+
+instance Functor (GridM sh) where
+  fmap f (GridM g) = GridM $ \s w -> let (a,s',w') =  g s w in (f a,s',w')
+
+
+instance Monad (GridM sh) where
+  return a  = GridM $ \s w -> (a,s,w)
+  (GridM f) >>= mf  = GridM $ \s w -> 
+    let (a,s',w') = f s w in (unGridM . mf) a s' w'
+
+
+nextCol :: GridSt -> GridSt
+nextCol = pstar upf posn where 
+    upf (P2 x y) s = s { posn=(P2 (x+1) y) }
+
+
+nextRow :: GridSt -> GridSt
+nextRow = pstar upf posn where
+  upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
+
+tellNode :: String -> Coord -> GridTrace -> GridTrace
+tellNode name loc hf = consH (Node name loc) hf
+
+nil :: GridM Z ()
+nil = GridM $ \s w -> ((), nextRow s, w)
+
+
+blank :: GridM sh a -> GridM (S sh) a
+blank (GridM mf) = GridM $ \s w -> 
+    let (acc,s',w') = mf s w in (acc, nextCol s', w')
+
+
+node :: NodeId -> GridM sh a -> GridM (S sh) (a,NodeId)
+node name (GridM mf) = GridM $ \s w -> 
+    let (acc,s',w') = mf s w 
+        loc         = posn s'
+    in ((acc,name), nextCol s', tellNode name loc w')
+
+
+
+infixl 5 &
+(&) :: GridM sh a -> (GridM sh a -> GridM (S sh) b) -> GridM (S sh) b
+tl & hf = hf tl
+
+
+elem0 :: GridM sh () -> GridM sh ()
+elem0 (GridM mf) = GridM $ \s w -> mf s w
+
+
+
+elem1 :: GridM sh ((),a) -> GridM sh a
+elem1 (GridM mf) = GridM $ \s w -> 
+    let (((),a),s',w') = mf s w in (a,s',w')
+
+
+elem2 :: GridM sh (((),a),b) -> GridM sh (a,b)
+elem2 (GridM mf) = GridM $ \s w -> 
+    let ((((),a),b),s',w') = mf s w in ((a,b),s',w')
+
+
+
+elem3 :: GridM sh ((((),a),b),c) -> GridM sh (a,b,c)
+elem3 (GridM mf) = GridM $ \s w -> 
+    let (((((),a),b),c),s',w') = mf s w in ((a,b,c),s',w')
+
+
+nodePicture :: (Fractional u, Ord u)
+            => u -> u -> Int -> [GridElement] -> Picture u -> Picture u
+nodePicture sx sy h xs p = foldr fn p xs where
+  fn (Node s pt) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
+  fn _           pic = pic
+
+
+mkLabel :: (Fractional u, Ord u) => String -> Picture u
+mkLabel s = frame $ ztextlabel zeroPt s 
+
+
+-- /Grid/ coordinates have origin top-left, they are remapped to
+-- have the origin at the bottom right.
+remapCoord :: Num u => u -> u -> Int -> Coord -> Point2 u
+remapCoord sx sy h (P2 x y) = 
+    P2 (sx * fromIntegral x) (sy * fromIntegral (h - y))
+
+
+{-
 
 mapPosn :: (Coord -> Coord) -> GridSt -> GridSt
 mapPosn f = GridSt . f . posn
@@ -125,3 +195,5 @@ mkLabel s = frame $ ztextlabel zeroPt s
 remapCoord :: Num u => u -> u -> Int -> Coord -> Point2 u
 remapCoord sx sy h (P2 x y) = 
     P2 (sx * fromIntegral x) (sy * fromIntegral (h - y))
+
+-}
