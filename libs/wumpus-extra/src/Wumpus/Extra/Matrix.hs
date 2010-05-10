@@ -25,6 +25,8 @@ module Wumpus.Extra.Matrix
   , node
   , blank
   , ( & )
+
+  , connect
   
   , cell0
   , cell1
@@ -44,6 +46,7 @@ module Wumpus.Extra.Matrix
 
 import Wumpus.Core hiding ( blank )
 
+import Wumpus.Extra.Arrows
 import Wumpus.Extra.Utils
 
 import qualified Data.Map as Map
@@ -53,8 +56,6 @@ import qualified Data.Map as Map
 data Z
 data S a
 
-instance Ord a => Ord (Point2 a) where
-  compare (P2 x y) (P2 x' y') = (x,y) `compare` (x',y')
 
 type Coord = Point2 Int
 
@@ -66,17 +67,14 @@ type SimpleLabel = String
 
 type NodeId = Coord
 
-{-
-data GridElement = Node NodeId Coord
-                 | Edge NodeId NodeId          
+-- likely to need annotating eg. for arrowheads, curviture...
+data Connector = Connector Coord Coord          
   deriving (Eq,Show)
--}
-
 
 data GridSt = GridSt { posn :: Coord, line_count :: Int }
   deriving (Show)
 
-type GridTrace u = CellValues u
+type GridTrace u = (CellValues u, [Connector])
 
 -- Note - rows always start with nil which increments the y-pos
 -- oblivious to its current value. If the initial state was
@@ -95,11 +93,11 @@ data GridM sh u a = GridM {
 
 
 runGridM :: GridM sh u a -> (a, GridSt, GridTrace u)
-runGridM (GridM f) =  f grid_state_zero Map.empty
+runGridM (GridM f) =  f grid_state_zero (Map.empty,[])
 
 
 
-grid :: GridM sh u a -> ((), GridSt, CellValues u)
+grid :: GridM sh u a -> ((), GridSt, GridTrace u)
 grid = post . runGridM  
   where 
     post (_,s,w) = ((),s,w)
@@ -125,7 +123,10 @@ nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
 
 tellNode :: String -> Coord -> GridTrace u -> GridTrace u
-tellNode name loc cells = Map.insert loc (Left name) cells
+tellNode name loc (cells,ls) = (Map.insert loc (Left name) cells,ls)
+
+tellLink :: Coord -> Coord ->  GridTrace u -> GridTrace u
+tellLink from to (cells,ls) = (cells, Connector from to : ls)
 
 
 --------------------------------------------------------------------------------
@@ -152,6 +153,9 @@ infixl 5 &
 (&) :: GridM sh u a -> (GridM sh u a -> GridM (S sh) u b) -> GridM (S sh) u b
 tl & hf = hf tl
 
+
+connect :: NodeId -> NodeId -> GridM sh u ()
+connect from to = GridM $ \s w -> ((),s, tellLink from to w)
 
 --------------------------------------------------------------------------------
 -- An arity family of cell \'selectors\'
@@ -211,12 +215,23 @@ cell10 (GridM mf) = GridM $ \s w ->
 --------------------------------------------------------------------------------
 -- creating a picture
 
-matrixPicture :: (Fractional u, Ord u)
-            => Vec2 u -> (GridSt,CellValues u) -> Picture u -> Picture u
-matrixPicture (V2 sx sy) (st,cells) p = foldr fn p $ Map.toList cells
+-- This is just a dummy and isn't very good at all...
+--
+-- Need to be cleverer about centering cells, bounding boxes, 
+-- etc.
+--
+matrixPicture :: (Floating u, Fractional u, Real u, Ord u)
+            => Vec2 u -> (GridSt,GridTrace u) -> Picture u -> Picture u
+matrixPicture (V2 sx sy) (st,(cells,ls)) p = all_conns `over` all_nodes
   where
-    fn (pt, (Left s)) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
-    fn _              pic = pic
+    all_nodes = foldr f p $ Map.toList cells
+    all_conns = foldr g (blankPicture (boundary all_nodes)) ls
+
+    f (pt, (Left s)) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
+    f _              pic = pic
+
+    g (Connector from to) pic = pic `over`
+       arrowTri' () (remapCoord sx sy h from) (remapCoord sx sy h to)
  
     (P2 _ h)  = posn st
 

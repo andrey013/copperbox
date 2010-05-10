@@ -120,8 +120,11 @@ data Vec2 a = V2 !a !a
 type DVec2 = Vec2 Double
 
 -- | 2D Point - both components are strict.
+-- 
+-- Point2 derives Ord so it can be used as a key in Data.Map etc.
+--
 data Point2 a = P2 !a !a
-  deriving (Eq,Show)
+  deriving (Eq,Ord,Show)
 
 type DPoint2 = Point2 Double
 

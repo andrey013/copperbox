@@ -10,15 +10,22 @@ import Wumpus.Extra
 main :: IO ()
 main = sequence_ [ demo01 ]
 
-
+-- Note - sending "/\" instead of "delta" to PostScript causes 
+-- the drawing to fail due to unescaped special chars.
 
 mgrid01 = do 
   
   gal_m           <- cell1 $ nil & blank         & node "Gal(M)" 
   
-  (delta,gal_nm)  <- cell2 $ nil & node "/\\"    & node "Gal(N/M)"
+  (delta,gal_nm)  <- cell2 $ nil & node "delta"  & node "Gal(N/M)"
 
   ee              <- cell1 $ nil & node "(E/E')" & blank
+
+  connect gal_m  delta
+  connect gal_m  gal_nm
+  connect delta  gal_nm
+  connect delta  ee
+  connect ee     gal_nm
 
   return ()
 
