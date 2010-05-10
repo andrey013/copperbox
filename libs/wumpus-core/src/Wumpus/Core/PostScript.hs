@@ -31,6 +31,9 @@ module Wumpus.Core.PostScript
 
   , runWumpus
 
+  -- * Escape sepcial characters
+  , escapeStringPS
+
   -- * Deltas 
   , deltaFontAttr
   , deltaRgbColour
@@ -205,6 +208,22 @@ pstId = runId `oo` runPsT
 -- | Drop state and result, take the Writer trace.
 runWumpus :: TextEncoder -> WumpusM a -> String
 runWumpus = (toListH . snd) `oo` pstId
+
+--------------------------------------------------------------------------------
+-- Escape special chars
+
+-- | Escape these characters:
+--
+-- > \\ - (, ), <, >, [, ], {, }, /, and %
+--
+escapeStringPS :: String -> String
+escapeStringPS = foldr f "" where
+  f c ss | c `elem` ps_special = '\\' : c : ss
+         | otherwise           = c : ss
+
+ps_special :: [Char]
+ps_special = "\\()<>[]{}/%"
+
 
 --------------------------------------------------------------------------------
 -- "Deltas" of the graphics state

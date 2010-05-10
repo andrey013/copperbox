@@ -330,7 +330,7 @@ outputEncodedText :: EncodedText -> WumpusM ()
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
 
 outputTextChunk :: TextChunk -> WumpusM () 
-outputTextChunk (SText s)  = ps_show s
+outputTextChunk (SText s)  = ps_show $ escapeStringPS s
 
 outputTextChunk (EscInt i) = 
     ask >>= \env -> maybe (failk env) ps_glyphshow $ lookupByCharCode i env
