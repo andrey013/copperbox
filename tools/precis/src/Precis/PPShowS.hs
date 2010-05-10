@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.HString
+-- Module      :  Precis.PPShowS
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --

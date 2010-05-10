@@ -17,8 +17,9 @@
 
 module Precis.Utils
   (
+    unlist
 
-    H 
+  , H 
   , snocH
   , toListH
  
@@ -30,7 +31,10 @@ module Precis.Utils
 
 import Control.Monad
 
-
+unlist :: [String] -> String
+unlist []              = ""
+unlist [w]             = w
+unlist (w:ws)          = w ++ ',' : ' ' : unwords ws
 
 -- Hughes lists
 

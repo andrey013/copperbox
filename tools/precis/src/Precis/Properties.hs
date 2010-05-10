@@ -27,6 +27,8 @@ module Precis.Properties
   , difference
   , diffProperty
   , addedRemoved
+  , conflictRemoved
+  , addedConflictRemoved
   , summarizeAddedRemoved
   , summarizeConflictRemoved
   , summarizeAddedConflictRemoved
@@ -49,7 +51,7 @@ data Property n = Property
 
 --------------------------------------------------------------------------------
 
-data Edit a = Added a | Conflict a a | Same a | Removed a
+data Edit a = ADD a | DIF a a | EQU a | DEL a
   deriving (Eq,Show)
 
 
@@ -59,14 +61,14 @@ difference matches conflict as bs = toListH $ checkShort bs (checkLong as id)
   where
     checkLong []     f = f
     checkLong (x:xs) f = case find (matches x) bs of
-        Just b | conflict x b -> checkLong xs (f `snocH` Conflict x b) 
-               | otherwise    -> checkLong xs (f `snocH` Same x)
-        Nothing               -> checkLong xs (f `snocH` Added x)
+        Just b | conflict x b -> checkLong xs (f `snocH` DIF x b) 
+               | otherwise    -> checkLong xs (f `snocH` EQU x)
+        Nothing               -> checkLong xs (f `snocH` ADD x)
 
     checkShort []     f = f
     checkShort (y:ys) f = case find (matches y) as of
         Just _                -> checkShort ys f   -- already found
-        Nothing               -> checkShort ys (f `snocH` Removed y)
+        Nothing               -> checkShort ys (f `snocH` DEL y)
 
 
 
@@ -77,25 +79,25 @@ diffProperty cmp (Property _ _ a) (Property _ _ b) = cmp a b
 addedRemoved :: [Edit a] -> ([a],[a])
 addedRemoved = foldr fn ([],[])
   where
-    fn (Added a)   (as,rs) = (a:as,rs)
-    fn (Removed r) (as,rs) = (as,r:rs)
-    fn _           acc     = acc
+    fn (ADD a) (as,rs) = (a:as,rs)
+    fn (DEL r) (as,rs) = (as,r:rs)
+    fn _       acc     = acc
 
 addedConflictRemoved :: [Edit a] -> ([a],[(a,a)],[a])
 addedConflictRemoved = foldr fn ([],[],[])
   where
-    fn (Added a)      (as,cs,rs) = (a:as,cs,rs)
-    fn (Conflict a b) (as,cs,rs) = (as,(a,b):cs,rs)
-    fn (Removed r)    (as,cs,rs) = (as,cs,r:rs)
-    fn _              acc        = acc
+    fn (ADD a)   (as,cs,rs) = (a:as,cs,rs)
+    fn (DIF a b) (as,cs,rs) = (as,(a,b):cs,rs)
+    fn (DEL r)   (as,cs,rs) = (as,cs,r:rs)
+    fn _         acc        = acc
 
 
 conflictRemoved :: [Edit a] -> ([(a,a)],[a])
 conflictRemoved = foldr fn ([],[])
   where
-    fn (Conflict a b)   (cs,rs) = ((a,b):cs,rs)
-    fn (Removed  r)     (cs,rs) = (cs,r:rs)
-    fn _                acc     = acc
+    fn (DIF a b)   (cs,rs) = ((a,b):cs,rs)
+    fn (DEL r)     (cs,rs) = (cs,r:rs)
+    fn _           acc     = acc
 
 
 summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS

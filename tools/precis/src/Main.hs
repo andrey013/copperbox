@@ -19,20 +19,20 @@ import CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.HsSrcUtils
+import Precis.HtmlReport
 import Precis.ModuleProperties
 import Precis.PPShowS
 import Precis.Properties
+import Precis.VersionNumber
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
+
+import Text.XHtml ( renderHtml )                -- package: xhtml
 
 import System.Environment
 import System.Exit
 import System.Console.GetOpt
 
--- | REMEMBER TO CHANGE THIS!
--- *****************************************************************************
-version_number :: String
-version_number = "0.3.0"
 
 header :: String
 header = "Usage: precis <new_cabal_file> <old_cabal_file>"
@@ -45,12 +45,14 @@ help_message = unlines $
 
 data Flag = Usage
           | Version
+          | HtmlReport
   deriving (Eq, Show)
 
 options :: [OptDescr Flag]
 options =
     [ Option ['h'] ["help"]     (NoArg Usage)        help_message
     , Option ['v'] ["version"]  (NoArg Version)      "show version"
+    , Option []    ["html"]     (NoArg HtmlReport)   "html report"
     ]
 
 main :: IO ()
@@ -63,7 +65,7 @@ main2 :: [Flag] -> [FilePath] -> [String] -> IO ()
 main2 opts _           _ 
   | Usage       `elem` opts = precisExit $ usageInfo header options
   | Version     `elem` opts = precisExit $ 
-                                "precis version " ++ version_number
+                                "precis version " ++ precis_version_number
 
 main2 _    [newc,oldc] []   = runCompare newc oldc
 main2 _    _           errs = 
@@ -91,8 +93,14 @@ runCompare new_cabal_file old_cabal_file = do
       ; printModuleCountSummary new_cp old_cp
       ; compareExposedModules (exposedModulesProp new_cp) 
                               (exposedModulesProp old_cp)
+      ; tempHTML new_cp old_cp
       }
 
+
+tempHTML :: CabalPrecis -> CabalPrecis -> IO ()
+tempHTML new_cp old_cp = do
+    my_doc <- makeHtmlReport new_cp old_cp
+    writeFile "../_temp/precis.html" (renderHtml my_doc)
 
 printPackageNameAndVersions :: CabalPrecis -> CabalPrecis -> IO ()
 printPackageNameAndVersions new_cp old_cp = putShowSLine $ vsep
@@ -129,8 +137,8 @@ compareExposedModules new_expos old_expos =
    mapM_ compareSrcFileEdit $ diffExposedModulesProps new_expos old_expos  
 
 compareSrcFileEdit :: Edit SourceFile -> IO ()
-compareSrcFileEdit (Conflict a b) = compareSourceFiles a b
-compareSrcFileEdit _              = return ()
+compareSrcFileEdit (DIF a b) = compareSourceFiles a b
+compareSrcFileEdit _         = return ()
 
 
 compareSourceFiles :: SourceFile -> SourceFile -> IO ()
