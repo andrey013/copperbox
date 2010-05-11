@@ -20,6 +20,7 @@ module Precis.ReportMonad
     -- * Report-monad
     ReportM
   , Log
+  , ModuleParseFunction
   , ReportLevel(..)
 
   , runReportM
@@ -28,9 +29,13 @@ module Precis.ReportMonad
   , tellHtml
   , tellMsg
   , liftIO
+  , askParseFun
 
   ) where
 
+import Precis.Datatypes
+
+import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
 import Text.XHtml               -- package: xhtml
 
 import Control.Monad
@@ -43,12 +48,16 @@ import Control.Monad
 
 type Log = ([String],[Html])
 
+type ModuleParseFunction = SourceFile -> IO (Either ModuleParseError Module)
+
 data ReportLevel = JUST_MSG | MSG_AND_HTML
   deriving (Eq,Show)
 
+type Env = (ModuleParseFunction, ReportLevel)
+
 -- Reader (for report level)  x State
 --
-newtype ReportM a = ReportM { getReportM :: ReportLevel -> Log -> IO (a,Log) }
+newtype ReportM a = ReportM { getReportM :: Env -> Log -> IO (a,Log) }
 
 instance Functor ReportM where
   fmap f (ReportM rf) = ReportM $ \e w ->  
@@ -68,16 +77,19 @@ instance Monad ReportM where
 
 
 
-runReportM :: ReportLevel -> ReportM a -> IO (a,Log)
-runReportM lvl mf =  (getReportM mf) lvl ([],[]) `bindIO` post
+runReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO (a,Log)
+runReportM pf lvl mf =  (getReportM mf) (pf,lvl) ([],[]) `bindIO` post
   where
     post (a,(xs,ys)) = returnIO (a,(reverse xs, reverse ys))
 
-execReportM :: ReportLevel -> ReportM a -> IO Log
-execReportM lvl mf = liftM snd (runReportM lvl mf)
+execReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO Log
+execReportM pf lvl mf = liftM snd (runReportM pf lvl mf)
+
+askParseFun :: ReportM ModuleParseFunction
+askParseFun = ReportM $ \(pf,_) w -> returnIO (pf,w)
 
 tellHtml :: Html -> ReportM ()
-tellHtml h = ReportM $ \e (ss,hs) -> case e of 
+tellHtml h = ReportM $ \(_,lvl) (ss,hs) -> case lvl of 
                JUST_MSG     -> returnIO ((),(ss,hs))                     
                MSG_AND_HTML -> returnIO ((),(ss,h:hs))
 
