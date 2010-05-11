@@ -99,7 +99,7 @@ runCompare new_cabal_file old_cabal_file = do
 
 tempHTML :: CabalPrecis -> CabalPrecis -> IO ()
 tempHTML new_cp old_cp = do
-    my_doc <- makeHtmlReport new_cp old_cp
+    (my_doc,_) <- makeHtmlReport new_cp old_cp
     writeFile "../_temp/precis.html" (renderHtml my_doc)
 
 printPackageNameAndVersions :: CabalPrecis -> CabalPrecis -> IO ()

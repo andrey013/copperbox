@@ -46,10 +46,12 @@ library
     Precis.CabalPackage,
     Precis.Datatypes,
     Precis.HsSrcUtils,
+    Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
     Precis.PPShowS,
     Precis.Properties,
+    Precis.ReportMonad,
     Precis.VersionNumber
   
   other-modules:
@@ -65,10 +67,12 @@ executable precis
     Precis.CabalPackage,
     Precis.Datatypes,
     Precis.HsSrcUtils,
+    Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
     Precis.PPShowS,
     Precis.Properties,
+    Precis.ReportMonad,
     Precis.Utils
     Precis.VersionNumber
 

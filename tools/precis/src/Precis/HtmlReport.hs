@@ -24,26 +24,37 @@ module Precis.HtmlReport
 import Precis.Datatypes
 import Precis.ModuleProperties
 import Precis.Properties
+import Precis.ReportMonad
 import Precis.Utils
 
 import Text.XHtml               -- package: xhtml
 
-makeHtmlReport :: CabalPrecis -> CabalPrecis -> IO Html
-makeHtmlReport new_cp old_cp = return $ concatHtml $ 
-    [ packageNamesAndVersions new_cp old_cp
-    , moduleCountSummary      new_cp old_cp
-    ]
+import Control.Monad
+
+-- TextSummary to be printed to the console...
+type TextSummary = String
+
+makeHtmlReport :: CabalPrecis -> CabalPrecis -> IO (Html,TextSummary)
+makeHtmlReport new_cp old_cp = liftM post $ execReportM MSG_AND_HTML $ 
+   do { packageNamesAndVersions new_cp old_cp
+      ; moduleCountSummary      new_cp old_cp
+      }
+  where
+    post :: Log -> (Html,TextSummary)
+    post (ss,hs) = (concatHtml hs, unlines ss)
 
 
-packageNameAndVersion :: CabalPrecis -> Html
-packageNameAndVersion cp = p << msg
+packageNameAndVersion :: CabalPrecis -> ReportM ()
+packageNameAndVersion cp = 
+    do { tellHtml $ p << msg ; tellMsg  msg }
   where 
     msg = package_name cp ++ " " ++ package_version cp
 
 
 
-packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> Html
-packageNamesAndVersions new_cp old_cp = p << (unwords xs)
+packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
+packageNamesAndVersions new_cp old_cp = 
+    do { tellHtml $ p << (unwords xs) }
   where
     xs = [ "Comparing", package_name new_cp, package_version new_cp
          , "to",        package_name old_cp, package_version old_cp
@@ -88,8 +99,8 @@ summarizeAR single plural sf xs =
     removed_msg   = removedMsg  single plural (length rs)
 
 
-moduleCountSummary :: CabalPrecis -> CabalPrecis -> Html
-moduleCountSummary new_cp old_cp = concatHtml
+moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
+moduleCountSummary new_cp old_cp = tellHtml $ concatHtml
     [ p << "Exposed modules:"
     , p << summarizeAR "file" "files" id expos
     , p << "Internal modules:"
@@ -101,48 +112,3 @@ moduleCountSummary new_cp old_cp = concatHtml
     (expos,privs) = diffPackageModulesProps new_pm old_pm
 
 
-
-{-
-printPackageNamesAndVersions (Conflict new_name old_name) 
-
-
-pvMsg :: Edit String -> Edit String -> String
-pvMsg (EQU name)              (DIF new_v old_v) = 
-  unwords [ "Comparing", name, new_v, "to" name, old_v ]    -- Good case
-
-pvMsg (DIF new_name old_name) (Conflict
-
-
-
-printPackageNameAndVersions :: CabalPrecis -> CabalPrecis -> Html
-printPackageNameAndVersions new_cp old_cp = putShowSLine $ vsep
-    [ repeatChar 50 '-'
-    , packageNames    (package_name new_cp)    (package_name old_cp) 
-    , repeatChar 50 '-'
-    , packageVersions (package_version new_cp) (package_version old_cp)
-    , newline
-    ]
-  where
-    packageNames a b | a == b    = text a
-                     | otherwise = text a <+> text "*** Warning: comparing to " 
-                                          <+> text b
-    packageVersions a b = text "Version:" <+> text a 
-                       <+> text "compared to Version:" 
-                       <+> text b
-
--}
-{-
-compareExports :: Module -> Module -> Html
-compareExports new_modu old_modu = vsep
-    [ text "Explicit exports:"
-    , summarizeAddedConflictRemoved "export" "exports" txt expos
-    ]
-  where
-    new_expos = exportsProp new_modu
-    old_expos = exportsProp old_modu
-    expos     = diffExportsProps new_expos old_expos
-
-    txt (ModuleExport s)   = s
-    txt (DataOrClass  _ r) = r
-    txt (Variable     s)   = s 
--}
