@@ -29,13 +29,9 @@ module Precis.Properties
   , addedRemoved
   , conflictRemoved
   , addedConflictRemoved
-  , summarizeAddedRemoved
-  , summarizeConflictRemoved
-  , summarizeAddedConflictRemoved
 
   ) where
 
-import Precis.PPShowS
 import Precis.Utils
 
 import Data.List ( find )
@@ -54,6 +50,7 @@ data Property n = Property
 data Edit a = ADD a | DIF a a | EQU a | DEL a
   deriving (Eq,Show)
 
+-- some edits are better as ADD | EQU | DEL though...
 
 
 difference :: (a -> a -> Bool) -> (a -> a -> Bool) -> [a] -> [a] -> [Edit a]
@@ -99,67 +96,3 @@ conflictRemoved = foldr fn ([],[])
     fn (DEL r)     (cs,rs) = (cs,r:rs)
     fn _           acc     = acc
 
-
-summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
-summarizeAddedRemoved single plural sf xs = 
-           added_msg <> comma <+> removed_msg 
-    `nextLine` vsep (map (addedLine sf)   as)
-    `nextLine` vsep (map (removedLine sf) rs)
-  where
-    (as,rs)       = addedRemoved xs
-    added_msg     = addedMsg    single plural (length as)
-    removed_msg   = removedMsg  single plural (length rs)
-
-
-summarizeConflictRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
-summarizeConflictRemoved single plural sf xs = 
-           conflict_msg <> comma <+> removed_msg 
-    `nextLine` vsep (map (conflictLine sf) cs)
-    `nextLine` vsep (map (removedLine sf)  rs)
-  where
-    (cs,rs)       = conflictRemoved xs
-    conflict_msg  = conflictMsg single plural (length cs)
-    removed_msg   = removedMsg  single plural (length rs)
-
-
-summarizeAddedConflictRemoved :: String 
-                              -> String 
-                              -> (a -> String) -> [Edit a] -> ShowS
-summarizeAddedConflictRemoved single plural sf xs = 
-           added_msg <> comma <+> conflict_msg <> comma <+> removed_msg 
-    `nextLine` vsep (map (addedLine sf)    as)
-    `nextLine` vsep (map (conflictLine sf) cs)
-    `nextLine` vsep (map (removedLine sf)  rs)
-  where
-    (as,cs,rs)    = addedConflictRemoved xs
-    added_msg     = addedMsg    single plural (length as)
-    conflict_msg  = conflictMsg single plural (length cs)
-    removed_msg   = removedMsg  single plural (length rs)
-
-
--- 
-
-msgCount :: String -> String -> Int -> ShowS
-msgCount single _      1 = int 1 <+> text single
-msgCount _      plural n = int n <+> text plural
-
-
-addedMsg :: String -> String -> Int -> ShowS
-addedMsg single plural i = msgCount single plural i <+> text "added (+)"
-
-conflictMsg :: String -> String -> Int -> ShowS
-conflictMsg single plural i = msgCount single plural i <+> text "conflict (*)"
-
-removedMsg :: String -> String -> Int -> ShowS
-removedMsg single plural i = msgCount single plural i <+> text "removed (-)"
-
-
-addedLine :: (a -> String) -> a -> ShowS
-addedLine f a = char '+' <+> (text $ f a)
-
-conflictLine :: (a -> String) -> (a,a) -> ShowS
-conflictLine f (a,b) = prefixLines (text "< ") (f a) `line`
-                       prefixLines (text "> ") (f b) <> newline
-
-removedLine :: (a -> String) -> a -> ShowS
-removedLine f a      = char '-' <+> (text $ f a)

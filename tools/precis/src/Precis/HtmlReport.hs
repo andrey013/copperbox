@@ -29,7 +29,7 @@ import Precis.ReportMonad
 import Precis.Utils
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
-import Text.XHtml               -- package: xhtml
+import Text.XHtml hiding ( navy, maroon )       -- package: xhtml
 
 import Control.Monad
 
@@ -64,14 +64,20 @@ makeReport lvl pf new_cp old_cp = liftM post $ execReportM pf lvl $
       }
   where
     post :: Log -> (Html,TextSummary)
-    post (ss,hs) = (concatHtml hs, unlines ss)
+    post (ss,hs) = (assembleDoc (package_name new_cp) hs, unlines ss)
 
 
 --------------------------------------------------------------------------------
 -- 
+
+assembleDoc :: String -> [Html] -> Html
+assembleDoc pkg_name hs = docHead pkg_name +++ body << concatHtml hs
+
 packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
 packageNamesAndVersions new_cp old_cp = 
-    do { tellHtml $ p << (unwords xs)
+    do { tellHtml $ h1 << (package_name new_cp ++ " change summary") 
+       ; tellHtml $ h2 << (unwords xs)
+       ; tellMsg  $ unwords xs
        ; warnOnNameDiff (package_name new_cp) (package_name old_cp)
        }
   where
@@ -95,8 +101,10 @@ moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
 moduleCountSummary new_cp old_cp = tellHtml $ concatHtml
     [ p << "Exposed modules:"
     , p << summarizeAR "file" "files" expos
+    , filesDiff expos
     , p << "Internal modules:"
     , p << summarizeAR "file" "files" privs
+    , filesDiff privs
     ]
   where
     new_pm        = packageModulesProp new_cp
@@ -224,3 +232,62 @@ summarizeAR single plural xs =
     removed_msg   = removedMsg  single plural (length rs)
 
 
+--------------------------------------------------------------------------------
+-- Html ...
+
+docHead :: String -> Html
+docHead pkg_name = header << doc_title +++ doc_style
+
+  where
+    doc_title = thetitle << (pkg_name ++ " change summary")
+    doc_style = style ! [thetype "text/css"] << inline_stylesheet
+
+
+filesDiff :: [Edit String] -> Html
+filesDiff xs = table << zipWith fn xs [1::Int ..]
+  where
+    fn (ADD a)   i = makeRow i "+" a
+    fn (DIF a b) i = makeRow i "*" (unwords [a,b])
+    fn (EQU a)   i = makeRow i ""  a
+    fn (DEL a)   i = makeRow i "-" a
+    
+    makeRow i op name = tr << [ td << (show i), td << op, td << name ]
+
+
+
+inline_stylesheet :: Html
+inline_stylesheet = primHtml $ unlines $ 
+  [ "<!--"
+  , "body { background-color: white; color: black; "
+  , "        font-family: sans-serif; padding: 0 0; }"
+  , ""
+  , "h1    { background-color: " ++ whitesmoke ++ "; color: " ++ brown ++ " }"
+  , "-->"
+  ]
+  
+-- some named colours...
+
+aliceblue :: String
+aliceblue = "rgb(240,249,255)"
+
+
+brown :: String 
+brown = "rgb(165,43,43)"
+
+chocolate :: String
+chocolate = "rgb(211,106,31)"
+
+crimson :: String
+crimson = "rgb(221,20,60)"
+
+maroon :: String
+maroon = "rgb(128,0,0)"
+
+mintcream :: String
+mintcream = "rgb(246,255,250)"
+
+navy :: String 
+navy = "rgb(0,0,128)"
+
+whitesmoke :: String
+whitesmoke = "rgb(246,246,246)"
