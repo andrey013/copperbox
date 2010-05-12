@@ -26,6 +26,7 @@ import Precis.Datatypes
 import Precis.Diff
 import Precis.StyleSheet
 import Precis.ModuleProperties
+import Precis.PPShowS ( toString, line )
 import Precis.ReportMonad
 import Precis.TextOutput
 import Precis.Utils
@@ -64,9 +65,11 @@ makeReport lvl pf new old = liftM post $ execReportM pf lvl $
       ; compareExposedModules (exposed_modules new) (exposed_modules old)
       }
   where
-    post :: Log -> (Html,TextSummary)
-    post (hs,stats) = (assembleDoc (package_name new) hs, 
-                          comparingMsg new old ++ '\n':show stats )
+    post (hs,stats) = (assembleDoc (package_name new) hs, mkText stats)
+
+    mkText stats = toString $ 
+                     (comparingMsg new old) `line` showChangeStats stats
+    
 
 
 --------------------------------------------------------------------------------
@@ -77,8 +80,8 @@ assembleDoc pkg_name hs = docHead pkg_name +++ body << concatHtml hs
 
 packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
 packageNamesAndVersions new old = 
-    do { tellHtml $ h1 << (package_name new ++ " change summary") 
-       ; tellHtml $ h2 << comparingMsg new old
+    do { tellHtml $ h1 << ("Change summary: " ++ package_name new) 
+       ; tellHtml $ h2 << (toString $ comparingMsg new old)
        ; warnOnNameDiff (package_name new) (package_name old)
        }
 
@@ -95,18 +98,25 @@ warnOnNameDiff new_name old_name
 
 
 moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
-moduleCountSummary new old = tellHtml $ concatHtml
-    [ p << "Exposed modules:"
---    , p << summarizeAR "file" "files" expos
-    , filesDiff expos
-    , p << "Internal modules:"
---    , p << summarizeAR "file" "files" privs
-    , filesDiff privs
-    ]
+moduleCountSummary new old = 
+    do { mapM_ countWhenDeleted expos 
+       ; tellHtml $ concatHtml
+             [ p << "Exposed modules:"
+             --    , p << summarizeAR "file" "files" expos
+             , filesDiff expos
+    
+             , p << "Internal modules:"
+             --    , p << summarizeAR "file" "files" privs
+             , filesDiff privs
+             ]
+       }
   where
     expos = diffExposedModules  new old
     privs = diffInternalModules new old
 
+    countWhenDeleted (Del _) = incrRemovedModules
+    countWhenDeleted _       = return ()
+    
 
 compareExposedModules :: [SourceFile] -> [SourceFile] -> ReportM ()
 compareExposedModules new old = 
@@ -131,7 +141,7 @@ compareSourceFiles new old = do
        }                            
   where 
     failk cmpmod err = do { tellParseFail cmpmod
-                          ; liftIO $ putStrLn $ moduleParseErrorMsg err
+                          ; return ()           -- should ouput some HTML here
                           }
 
 

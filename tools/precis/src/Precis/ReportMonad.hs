@@ -21,7 +21,7 @@ module Precis.ReportMonad
     ReportM
   , Log
   , CMP(..)
-  , ChangeStats
+  , ChangeStats(..)
 
   , ModuleParseFunction
   , ReportLevel(..)
