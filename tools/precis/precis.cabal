@@ -50,8 +50,10 @@ library
     Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.PPShowS,
     Precis.ReportMonad,
-    Precis.StyleSheet
+    Precis.StyleSheet,
+    Precis.TextOutput,
     Precis.VersionNumber
   
   other-modules:
@@ -71,8 +73,10 @@ executable precis
     Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.PPShowS,
     Precis.ReportMonad,
     Precis.StyleSheet,
+    Precis.TextOutput,
     Precis.Utils,
     Precis.VersionNumber
 

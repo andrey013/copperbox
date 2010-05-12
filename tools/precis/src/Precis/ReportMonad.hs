@@ -33,7 +33,6 @@ module Precis.ReportMonad
   , liftIO
 
   , tellHtml
-  , tellMsg
   , tellParseFail
 
   , incrRemovedModules
@@ -63,7 +62,7 @@ import Control.Monad
 
 -- 
 
-type Log = ([String],[Html],ChangeStats)
+type Log = ([Html],ChangeStats)
 
 -- Stats collects changes that should bump a /major version 
 -- number/ as well as files that can't be parsed. 
@@ -123,14 +122,14 @@ instance Monad ReportM where
 
 
 log_zero :: Log
-log_zero = ([],[],stats_zero)
+log_zero = ([],stats_zero)
   where
     stats_zero = ChangeStats [] 0  0 0   0 0   0 0   0 0
 
 runReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO (a,Log)
 runReportM pf lvl mf =  (getReportM mf) (pf,lvl) log_zero `bindIO` post
   where
-    post (a,(xs,ys,stats)) = returnIO (a,(reverse xs, reverse ys,stats))
+    post (a,(hs,stats)) = returnIO (a,(reverse hs,stats))
 
 execReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO Log
 execReportM pf lvl mf = liftM snd (runReportM pf lvl mf)
@@ -143,15 +142,13 @@ liftIO mf = ReportM $ \_ w -> mf `bindIO` \a -> returnIO (a,w)
 
 
 tellHtml :: Html -> ReportM ()
-tellHtml h = ReportM $ \(_,lvl) (ss,hs,stats) -> case lvl of 
-               JUST_MSG     -> returnIO ((),(ss,hs,stats))                     
-               MSG_AND_HTML -> returnIO ((),(ss,h:hs,stats))
-
-tellMsg :: String -> ReportM ()
-tellMsg s = ReportM $ \_ (ss,hs,stats) -> returnIO ((),(s:ss,hs,stats))
+tellHtml h = ReportM $ \(_,lvl) (hs,stats) -> case lvl of 
+               JUST_MSG     -> returnIO ((),(hs,stats))                     
+               MSG_AND_HTML -> returnIO ((),(h:hs,stats))
 
 updateStats :: (ChangeStats -> ChangeStats) -> ReportM ()
-updateStats fn = ReportM $ \_ (ss,hs,stats) -> returnIO ((),(ss, hs, fn stats))
+updateStats fn = ReportM $ \_ (hs,stats) -> returnIO ((),(hs, fn stats))
+
 
 tellParseFail :: CMP StrName -> ReportM ()
 tellParseFail name = updateStats $ 

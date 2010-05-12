@@ -27,6 +27,7 @@ import Precis.Diff
 import Precis.StyleSheet
 import Precis.ModuleProperties
 import Precis.ReportMonad
+import Precis.TextOutput
 import Precis.Utils
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
@@ -64,8 +65,8 @@ makeReport lvl pf new old = liftM post $ execReportM pf lvl $
       }
   where
     post :: Log -> (Html,TextSummary)
-    post (ss,hs,stats) = (assembleDoc (package_name new) hs, 
-                          unlines ss ++ '\n':show stats )
+    post (hs,stats) = (assembleDoc (package_name new) hs, 
+                          comparingMsg new old ++ '\n':show stats )
 
 
 --------------------------------------------------------------------------------
@@ -75,22 +76,17 @@ assembleDoc :: String -> [Html] -> Html
 assembleDoc pkg_name hs = docHead pkg_name +++ body << concatHtml hs
 
 packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
-packageNamesAndVersions new_cp old_cp = 
-    do { tellHtml $ h1 << (package_name new_cp ++ " change summary") 
-       ; tellHtml $ h2 << (unwords xs)
-       ; tellMsg  $ unwords xs
-       ; warnOnNameDiff (package_name new_cp) (package_name old_cp)
+packageNamesAndVersions new old = 
+    do { tellHtml $ h1 << (package_name new ++ " change summary") 
+       ; tellHtml $ h2 << comparingMsg new old
+       ; warnOnNameDiff (package_name new) (package_name old)
        }
-  where
-    xs = [ "Comparing", package_name new_cp, package_version new_cp
-         , "to",        package_name old_cp, package_version old_cp
-         ]
 
 
 warnOnNameDiff :: String -> String -> ReportM ()
 warnOnNameDiff new_name old_name 
     | new_name == old_name = return ()
-    | otherwise            = do { tellHtml $ p << warn_msg; tellMsg warn_msg }
+    | otherwise            = do { tellHtml $ p << warn_msg }
   where
     warn_msg = unwords $ [ "Warning: package names different -"
                          , new_name, "vs.", old_name ]
@@ -156,10 +152,6 @@ compareExports new old =
   where
     expos     = diffExports new old
 
---    txt (ModuleExport s)   = s
---    txt (DataOrClass  _ r) = r
---    txt (Variable     s)   = s 
-
 compareInstances :: Module -> Module -> ReportM ()
 compareInstances new old = 
     do { tellHtml $ p << "Instances:"
@@ -167,8 +159,6 @@ compareInstances new old =
        }
   where
     expos     = diffInstances new old
-
---    txt (InstanceDecl _ _ r)   = r
 
 
 compareDataDecls :: Module -> Module -> ReportM ()
@@ -188,8 +178,6 @@ compareTypeSigs new old =
        }
   where
     tysigs     = diffTypeSigs new old
-
---    ppty (TypeSigDecl n r) = n ++ " :: " ++ r
 
 
 
