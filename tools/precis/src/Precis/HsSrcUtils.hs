@@ -34,7 +34,6 @@ module Precis.HsSrcUtils
   ) where
 
 import Precis.Datatypes
-import Precis.PPShowS
 
 import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 
@@ -45,9 +44,8 @@ readModule (MacroExpandedSrcFile filename mx_src) =
       ParseFailed loc msg -> Left $ ERR_MODULE_FILE_PARSE $ mkMsg msg loc
       ParseOk a           -> Right $ a
   where
-    mkMsg msg loc        = toString $ text msg <+> ppLoc loc
-    ppLoc (SrcLoc _ l c) = parens $ 
-        (text "line:" <+> int l <+> text ", column:" <+> int c)
+    mkMsg msg loc        = msg ++ " - " ++ ppLoc loc
+    ppLoc (SrcLoc _ l c) = unwords ["line:", show l ++ ",", "column:", show c]
 
 parseModuleWithExts :: [Extension] -> FilePath -> String -> ParseResult Module
 parseModuleWithExts exts file_name txt = parseModuleWithMode pmode txt
@@ -96,7 +94,6 @@ namedDecls t@(InstDecl    _ _ q _ _)          = [(extractQName q, prettyPrint t)
 namedDecls t@(DerivDecl   _ _ q _)            = [(extractQName q, prettyPrint t)]
 namedDecls t@(TypeSig     _ ns _)             = map fn ns
    where fn n = (extractName n, prettyPrint t)
-
 namedDecls _                                  = []
 
 

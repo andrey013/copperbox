@@ -51,6 +51,7 @@ library
     Precis.ModuleProperties,
     Precis.PathUtils,
     Precis.ReportMonad,
+    Precis.StyleSheet
     Precis.VersionNumber
   
   other-modules:
@@ -71,7 +72,8 @@ executable precis
     Precis.ModuleProperties,
     Precis.PathUtils,
     Precis.ReportMonad,
-    Precis.Utils
+    Precis.StyleSheet,
+    Precis.Utils,
     Precis.VersionNumber
 
 

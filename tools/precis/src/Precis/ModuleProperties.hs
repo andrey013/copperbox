@@ -78,11 +78,9 @@ diffExposedSrcFiles new old = diff4 equal (/=) new old
 
 
 diffExports :: Module -> Module -> [Edit4 ExportItem]
-diffExports new old = 
-    diff4 (lift2a (==)) (/=) (exportsList new) (exportsList old)         
+diffExports new old = diff4 equal (/=) (exportsList new) (exportsList old)         
   where      
-    lift2a :: (StrName -> StrName -> b) -> ExportItem -> ExportItem -> b
-    lift2a op s1 s2 = exportItemName s1 `op` exportItemName s2
+    equal s1 s2 = exportItemName s1 == exportItemName s2
 
 
 
@@ -114,12 +112,9 @@ instanceKey :: InstanceDecl -> InstanceKey
 instanceKey (InstanceDecl s k _) = (s,k)
 
 diffInstances :: Module -> Module -> [Edit4 InstanceDecl]
-diffInstances new old =
-    diff4 (lift2a (==)) (/=) (instancesList new) (instancesList old)
+diffInstances new old = diff4 equal (/=) (instancesList new) (instancesList old)
   where      
-    lift2a :: (InstanceKey -> InstanceKey -> b) 
-           -> InstanceDecl -> InstanceDecl -> b
-    lift2a op s1 s2 = instanceKey s1 `op` instanceKey s2
+    equal s1 s2 = instanceKey s1 == instanceKey s2
 
 instancesList :: Module -> [InstanceDecl]
 instancesList (Module _ _ _ _ _ _ ds) = catMaybes $ map makeInstanceDecl ds
@@ -136,11 +131,9 @@ makeInstanceDecl _                          = Nothing
 
 
 diffDataDecls :: Module -> Module -> [Edit4 DatatypeDecl]
-diffDataDecls new old = 
-    diff4 (lift2a (==)) (/=) (dataDeclsList new) (dataDeclsList old)
+diffDataDecls new old = diff4 equal (/=) (dataDeclsList new) (dataDeclsList old)
   where      
-    lift2a :: (StrName -> StrName -> b) -> DatatypeDecl -> DatatypeDecl -> b
-    lift2a op s1 s2 = datatypeDeclName s1 `op` datatypeDeclName s2
+    equal s1 s2 = datatypeDeclName s1 == datatypeDeclName s2
 
 
 dataDeclsList :: Module -> [DatatypeDecl]
@@ -174,11 +167,9 @@ filterDatatypes (Just expos) xs = filter fn xs
 
 
 diffTypeSigs :: Module -> Module -> [Edit4 TypeSigDecl]
-diffTypeSigs new old = 
-    diff4 (lift2a (==)) (/=) (typeSigsList new) (typeSigsList old)
+diffTypeSigs new old = diff4 equal (/=) (typeSigsList new) (typeSigsList old)
   where        
-    lift2a :: (StrName -> StrName -> b) -> TypeSigDecl -> TypeSigDecl -> b
-    lift2a op s1 s2 = typeSigDeclName s1 `op` typeSigDeclName s2
+    equal s1 s2 = typeSigDeclName s1 == typeSigDeclName s2
 
 
 typeSigsList :: Module -> [TypeSigDecl]
