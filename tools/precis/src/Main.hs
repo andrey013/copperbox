@@ -49,7 +49,7 @@ options :: [OptDescr Flag]
 options =
     [ Option ['h'] ["help"]     (NoArg Usage)        help_message
     , Option ['v'] ["version"]  (NoArg Version)      "show version"
-    , Option []    ["html"]     (ReqArg HtmlReport "FILE")   "html report"
+    , Option ['o'] ["out"]      (ReqArg HtmlReport "FILE")   "html report"
     
     ]
 

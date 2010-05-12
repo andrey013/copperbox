@@ -24,7 +24,7 @@ module Precis.Datatypes
   , CabalPrecis(..)
   , SourceFile(..)
   , sourceFile 
-  , sourceFileName
+  , sourceFileModule
 
   , MacroExpandedSrcFile(..)
   , ModuleParseError(..)
@@ -91,9 +91,9 @@ sourceFile name path = SourceFile name (normalise path)
 
 
 
-sourceFileName :: SourceFile -> StrName
-sourceFileName (SourceFile n _)   = n
-sourceFileName (UnresolvedFile n) = n 
+sourceFileModule :: SourceFile -> StrName
+sourceFileModule (SourceFile n _)   = n
+sourceFileModule (UnresolvedFile n) = n     -- defer to unresolved
 
 
 

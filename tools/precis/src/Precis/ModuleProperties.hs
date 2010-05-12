@@ -83,7 +83,6 @@ diffExports new old = diff4 equal (/=) (exportsList new) (exportsList old)
     equal s1 s2 = exportItemName s1 == exportItemName s2
 
 
-
 exportsList :: Module -> [ExportItem]
 exportsList (Module _ _ _ _ mb_expos _ _) = 
     maybe [] (map makeExportItem)  mb_expos 

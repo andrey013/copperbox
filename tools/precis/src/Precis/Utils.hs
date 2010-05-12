@@ -26,6 +26,10 @@ module Precis.Utils
   , onSuccess
   , onSuccessM
 
+  , pstar
+  , pstar2
+
+
   ) where
 
 
@@ -57,4 +61,18 @@ onSuccessM ma msk = ma >>= step
   where
     step (Left a)  = return (Left a)
     step (Right b) = liftM Right $ msk b 
+
+--------------------------------------------------------------------------------
+-- pstars - starling combinator with args permuted
+-- useful for record updates
+
+pstar     :: (a -> r -> ans) 
+          -> (r -> a) 
+          -> r -> ans
+pstar f fa x = f (fa x) x
+
+pstar2    :: (a -> b -> r -> ans) 
+          -> (r -> a) -> (r -> b) 
+          -> r -> ans
+pstar2 f fa fb x = f (fa x) (fb x) x
 

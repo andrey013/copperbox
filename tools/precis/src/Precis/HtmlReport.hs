@@ -64,7 +64,8 @@ makeReport lvl pf new old = liftM post $ execReportM pf lvl $
       }
   where
     post :: Log -> (Html,TextSummary)
-    post (ss,hs) = (assembleDoc (package_name new) hs, unlines ss)
+    post (ss,hs,stats) = (assembleDoc (package_name new) hs, 
+                          unlines ss ++ '\n':show stats )
 
 
 --------------------------------------------------------------------------------
@@ -122,16 +123,21 @@ compareSrcFileEdit _         = return ()
 
 
 compareSourceFiles :: SourceFile -> SourceFile -> ReportM ()
-compareSourceFiles new_sf old_sf = do 
-    do { tellHtml $ p << module_name new_sf
+compareSourceFiles new old = do 
+    do { tellHtml $ p << sourceFileModule new
        ; pf      <- askParseFun
-       ; new_ans <- liftIO $ pf new_sf
-       ; old_ans <- liftIO $ pf old_sf
+       ; new_ans <- liftIO $ pf new
+       ; old_ans <- liftIO $ pf old
        ; case (new_ans, old_ans) of 
-           (Right new_m, Right old_m) -> compareModules new_m old_m
-           (Left err,_)               -> liftIO $ putStrLn $ moduleParseErrorMsg err
-           (_, Left err)              -> liftIO $ putStrLn $ moduleParseErrorMsg err
-       }
+           (Right a, Right b) -> compareModules a b
+           (Left err,_)       -> failk (NEW $ sourceFileModule new) err
+           (_, Left err)      -> failk (OLD $ sourceFileModule old) err
+       }                            
+  where 
+    failk cmpmod err = do { tellParseFail cmpmod
+                          ; liftIO $ putStrLn $ moduleParseErrorMsg err
+                          }
+
 
 compareModules :: Module -> Module -> ReportM ()
 compareModules new_modu old_modu = 

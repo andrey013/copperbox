@@ -20,23 +20,40 @@ module Precis.ReportMonad
     -- * Report-monad
     ReportM
   , Log
+  , CMP(..)
+  , ChangeStats
+
   , ModuleParseFunction
   , ReportLevel(..)
 
   , runReportM
   , execReportM
 
+  , askParseFun
+  , liftIO
+
   , tellHtml
   , tellMsg
-  , liftIO
-  , askParseFun
+  , tellParseFail
+
+  , incrRemovedModules
+  , incrRemovedExports 
+  , incrChangedExports 
+  , incrRemovedDatatypes
+  , incrChangedDatatypes
+  , incrRemovedTypesigs
+  , incrChangedTypesigs
+  , incrRemovedInstances
+  , incrChangedInstances
+
 
   ) where
 
 import Precis.Datatypes
+import Precis.Utils
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
-import Text.XHtml               -- package: xhtml
+import Text.XHtml hiding ( name )               -- package: xhtml
 
 import Control.Monad
 
@@ -46,7 +63,35 @@ import Control.Monad
 
 -- 
 
-type Log = ([String],[Html])
+type Log = ([String],[Html],ChangeStats)
+
+-- Stats collects changes that should bump a /major version 
+-- number/ as well as files that can't be parsed. 
+
+data CMP a = NEW a | OLD a
+  deriving (Eq,Show)
+
+data ChangeStats = ChangeStats 
+      { unparseable_modules     :: [CMP StrName]
+      , removed_modules         :: Int
+
+      -- exports from a module
+      , removed_exports         :: Int
+      , changed_exports         :: Int
+
+      -- datatypes
+      , removed_datatypes       :: Int
+      , changed_datatypes       :: Int
+
+      -- type signatures of functions / constants
+      , removed_typesigs        :: Int
+      , changed_typesigs        :: Int
+
+      -- class instances
+      , removed_instances       :: Int
+      , changed_instances       :: Int
+      }
+  deriving (Show)
 
 type ModuleParseFunction = SourceFile -> IO (Either ModuleParseError Module)
 
@@ -77,10 +122,15 @@ instance Monad ReportM where
 
 
 
-runReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO (a,Log)
-runReportM pf lvl mf =  (getReportM mf) (pf,lvl) ([],[]) `bindIO` post
+log_zero :: Log
+log_zero = ([],[],stats_zero)
   where
-    post (a,(xs,ys)) = returnIO (a,(reverse xs, reverse ys))
+    stats_zero = ChangeStats [] 0  0 0   0 0   0 0   0 0
+
+runReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO (a,Log)
+runReportM pf lvl mf =  (getReportM mf) (pf,lvl) log_zero `bindIO` post
+  where
+    post (a,(xs,ys,stats)) = returnIO (a,(reverse xs, reverse ys,stats))
 
 execReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO Log
 execReportM pf lvl mf = liftM snd (runReportM pf lvl mf)
@@ -88,13 +138,60 @@ execReportM pf lvl mf = liftM snd (runReportM pf lvl mf)
 askParseFun :: ReportM ModuleParseFunction
 askParseFun = ReportM $ \(pf,_) w -> returnIO (pf,w)
 
-tellHtml :: Html -> ReportM ()
-tellHtml h = ReportM $ \(_,lvl) (ss,hs) -> case lvl of 
-               JUST_MSG     -> returnIO ((),(ss,hs))                     
-               MSG_AND_HTML -> returnIO ((),(ss,h:hs))
-
-tellMsg :: String -> ReportM ()
-tellMsg s = ReportM $ \_ (ss,hs) -> returnIO ((),(s:ss,hs))
-
 liftIO :: IO a -> ReportM a
 liftIO mf = ReportM $ \_ w -> mf `bindIO` \a -> returnIO (a,w)
+
+
+tellHtml :: Html -> ReportM ()
+tellHtml h = ReportM $ \(_,lvl) (ss,hs,stats) -> case lvl of 
+               JUST_MSG     -> returnIO ((),(ss,hs,stats))                     
+               MSG_AND_HTML -> returnIO ((),(ss,h:hs,stats))
+
+tellMsg :: String -> ReportM ()
+tellMsg s = ReportM $ \_ (ss,hs,stats) -> returnIO ((),(s:ss,hs,stats))
+
+updateStats :: (ChangeStats -> ChangeStats) -> ReportM ()
+updateStats fn = ReportM $ \_ (ss,hs,stats) -> returnIO ((),(ss, hs, fn stats))
+
+tellParseFail :: CMP StrName -> ReportM ()
+tellParseFail name = updateStats $ 
+    pstar (\xs s -> s { unparseable_modules = name:xs})  unparseable_modules
+
+incrRemovedModules :: ReportM ()
+incrRemovedModules = updateStats $
+    pstar (\i s -> s { removed_modules = i+1}) removed_modules
+
+
+incrRemovedExports :: ReportM ()
+incrRemovedExports = updateStats $
+    pstar (\i s -> s { removed_exports = i+1}) removed_exports
+
+incrChangedExports :: ReportM ()
+incrChangedExports = updateStats $
+    pstar (\i s -> s { changed_exports = i+1}) changed_exports
+
+
+incrRemovedDatatypes :: ReportM ()
+incrRemovedDatatypes = updateStats $
+    pstar (\i s -> s { removed_datatypes = i+1}) removed_datatypes
+
+incrChangedDatatypes :: ReportM ()
+incrChangedDatatypes = updateStats $
+    pstar (\i s -> s { changed_datatypes = i+1}) changed_datatypes
+
+
+incrRemovedTypesigs :: ReportM ()
+incrRemovedTypesigs = updateStats $
+    pstar (\i s -> s { removed_typesigs = i+1}) removed_typesigs 
+
+incrChangedTypesigs :: ReportM ()
+incrChangedTypesigs = updateStats $
+    pstar (\i s -> s { changed_typesigs = i+1}) changed_typesigs
+
+incrRemovedInstances :: ReportM ()
+incrRemovedInstances = updateStats $
+    pstar (\i s -> s { removed_instances = i+1}) removed_instances 
+
+incrChangedInstances :: ReportM ()
+incrChangedInstances = updateStats $
+    pstar (\i s -> s { changed_instances = i+1}) changed_instances
