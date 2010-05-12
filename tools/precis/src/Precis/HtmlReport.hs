@@ -23,8 +23,8 @@ module Precis.HtmlReport
   ) where
 
 import Precis.Datatypes
+import Precis.Diff
 import Precis.ModuleProperties
-import Precis.Properties
 import Precis.ReportMonad
 import Precis.Utils
 
@@ -56,15 +56,14 @@ makeReport :: ReportLevel
            -> CabalPrecis 
            -> CabalPrecis 
            -> IO (Html,TextSummary)
-makeReport lvl pf new_cp old_cp = liftM post $ execReportM pf lvl $ 
-   do { packageNamesAndVersions new_cp old_cp
-      ; moduleCountSummary      new_cp old_cp
-      ; compareExposedModules (exposedModulesProp new_cp) 
-                              (exposedModulesProp old_cp)
+makeReport lvl pf new old = liftM post $ execReportM pf lvl $ 
+   do { packageNamesAndVersions new old
+      ; moduleCountSummary      new old
+      ; compareExposedModules (exposed_modules new) (exposed_modules old)
       }
   where
     post :: Log -> (Html,TextSummary)
-    post (ss,hs) = (assembleDoc (package_name new_cp) hs, unlines ss)
+    post (ss,hs) = (assembleDoc (package_name new) hs, unlines ss)
 
 
 --------------------------------------------------------------------------------
@@ -98,26 +97,24 @@ warnOnNameDiff new_name old_name
 
 
 moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
-moduleCountSummary new_cp old_cp = tellHtml $ concatHtml
+moduleCountSummary new old = tellHtml $ concatHtml
     [ p << "Exposed modules:"
-    , p << summarizeAR "file" "files" expos
+--    , p << summarizeAR "file" "files" expos
     , filesDiff expos
     , p << "Internal modules:"
-    , p << summarizeAR "file" "files" privs
+--    , p << summarizeAR "file" "files" privs
     , filesDiff privs
     ]
   where
-    new_pm        = packageModulesProp new_cp
-    old_pm        = packageModulesProp old_cp
-    (expos,privs) = diffPackageModulesProps new_pm old_pm
+    expos = diffExposedModules  new old
+    privs = diffInternalModules new old
 
 
+compareExposedModules :: [SourceFile] -> [SourceFile] -> ReportM ()
+compareExposedModules new old = 
+   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
 
-compareExposedModules :: ExposedModulesProp -> ExposedModulesProp -> ReportM ()
-compareExposedModules new_expos old_expos = 
-   mapM_ compareSrcFileEdit $ diffExposedModulesProps new_expos old_expos  
-
-compareSrcFileEdit :: Edit SourceFile -> ReportM ()
+compareSrcFileEdit :: Edit4 SourceFile -> ReportM ()
 compareSrcFileEdit (DIF a b) = compareSourceFiles a b
 compareSrcFileEdit _         = return ()
 
@@ -145,55 +142,47 @@ compareModules new_modu old_modu =
 
 
 compareExports :: Module -> Module -> ReportM ()
-compareExports new_modu old_modu = 
+compareExports new old = 
     do { tellHtml $ p << "Explicit exports:"
        ; tellHtml $ p << summarizeADR "export" "exports" expos
        }
   where
-    new_expos = exportsProp new_modu
-    old_expos = exportsProp old_modu
-    expos     = diffExportsProps new_expos old_expos
+    expos     = diffExports new old
 
-    txt (ModuleExport s)   = s
-    txt (DataOrClass  _ r) = r
-    txt (Variable     s)   = s 
+--    txt (ModuleExport s)   = s
+--    txt (DataOrClass  _ r) = r
+--    txt (Variable     s)   = s 
 
 compareInstances :: Module -> Module -> ReportM ()
-compareInstances new_modu old_modu = 
+compareInstances new old = 
     do { tellHtml $ p << "Instances:"
        ; tellHtml $ p << summarizeADR "instance" "instances" expos
        }
   where
-    new_insts = instancesProp new_modu
-    old_insts = instancesProp old_modu
-    expos     = diffInstancesProps new_insts old_insts
+    expos     = diffInstances new old
 
-    txt (InstanceDecl _ _ r)   = r
+--    txt (InstanceDecl _ _ r)   = r
 
 
 compareDataDecls :: Module -> Module -> ReportM ()
-compareDataDecls new_modu old_modu = 
+compareDataDecls new old = 
     do { tellHtml $ p << "Exported data type decls:"
        ; tellHtml $ p << summarizeADR "data type" "data types" ddecls
        }
   where
-    new_ddecls = dataDeclsProp new_modu
-    old_ddecls = dataDeclsProp old_modu
-    ddecls     = diffDataDeclsProps new_ddecls old_ddecls
+    ddecls     = diffDataDecls new old
 
 
 compareTypeSigs :: Module -> Module -> ReportM ()
-compareTypeSigs new_modu old_modu = 
+compareTypeSigs new old = 
     do { tellHtml $ p << "Exported type sigs:"
        ; tellHtml $ p << summarizeADR "type signature" 
                                       "type signatures" tysigs
        }
   where
-    new_tysigs = typeSigsProp new_modu
-    old_tysigs = typeSigsProp old_modu
-    tysigs     = diffTypeSigsProps new_tysigs old_tysigs
+    tysigs     = diffTypeSigs new old
 
-    ppty (TypeSigDecl n r) = n ++ " :: " ++ r
+--    ppty (TypeSigDecl n r) = n ++ " :: " ++ r
 
 
 
@@ -214,7 +203,7 @@ conflictMsg = msgCount "conflict (*)"
 removedMsg :: String -> String -> Int -> String
 removedMsg = msgCount "removed (-)"
 
-summarizeADR :: String -> String -> [Edit a] -> String
+summarizeADR :: String -> String -> [Edit4 a] -> String
 summarizeADR single plural xs = 
     unlist [ added_msg, dif_msg, removed_msg ]
   where
@@ -223,7 +212,7 @@ summarizeADR single plural xs =
     dif_msg       = conflictMsg single plural (length cs)
     removed_msg   = removedMsg  single plural (length rs)
 
-summarizeAR :: String -> String  -> [Edit a] -> String
+summarizeAR :: String -> String  -> [Edit4 a] -> String
 summarizeAR single plural xs = 
     unlist [ added_msg, removed_msg ]
   where
@@ -243,13 +232,12 @@ docHead pkg_name = header << doc_title +++ doc_style
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
 
-filesDiff :: [Edit String] -> Html
+filesDiff :: [Edit3 String] -> Html
 filesDiff xs = table << zipWith fn xs [1::Int ..]
   where
-    fn (ADD a)   i = makeRow i "+" a
-    fn (DIF a b) i = makeRow i "*" (unwords [a,b])
-    fn (EQU a)   i = makeRow i ""  a
-    fn (DEL a)   i = makeRow i "-" a
+    fn (Add a)   i = makeRow i "+" a
+    fn (Equ a)   i = makeRow i ""  a
+    fn (Del a)   i = makeRow i "-" a
     
     makeRow i op name = tr << [ td << (show i), td << op, td << name ]
 

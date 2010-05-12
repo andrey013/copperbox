@@ -45,12 +45,11 @@ library
   exposed-modules: 
     Precis.CabalPackage,
     Precis.Datatypes,
+    Precis.Diff,
     Precis.HsSrcUtils,
     Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
-    Precis.PPShowS,
-    Precis.Properties,
     Precis.ReportMonad,
     Precis.VersionNumber
   
@@ -66,12 +65,11 @@ executable precis
     CPP,
     Precis.CabalPackage,
     Precis.Datatypes,
+    Precis.Diff,
     Precis.HsSrcUtils,
     Precis.HtmlReport,
     Precis.ModuleProperties,
     Precis.PathUtils,
-    Precis.PPShowS,
-    Precis.Properties,
     Precis.ReportMonad,
     Precis.Utils
     Precis.VersionNumber
