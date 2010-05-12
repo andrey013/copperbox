@@ -29,10 +29,9 @@ import Precis.ModuleProperties
 import Precis.PPShowS ( toString, line )
 import Precis.ReportMonad
 import Precis.TextOutput
-import Precis.Utils
 
-import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
-import Text.XHtml hiding ( navy, maroon )       -- package: xhtml
+import Language.Haskell.Exts ( Module )  -- package: haskell-src-exts
+import Text.XHtml hiding ( name )                     -- package: xhtml
 
 import Control.Monad
 
@@ -99,7 +98,7 @@ warnOnNameDiff new_name old_name
 
 moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
 moduleCountSummary new old = 
-    do { mapM_ countWhenDeleted expos 
+    do { countDeletions incrRemovedModules expos 
        ; tellHtml $ concatHtml
              [ p << "Exposed modules:"
              --    , p << summarizeAR "file" "files" expos
@@ -114,9 +113,7 @@ moduleCountSummary new old =
     expos = diffExposedModules  new old
     privs = diffInternalModules new old
 
-    countWhenDeleted (Del _) = incrRemovedModules
-    countWhenDeleted _       = return ()
-    
+
 
 compareExposedModules :: [SourceFile] -> [SourceFile] -> ReportM ()
 compareExposedModules new old = 
@@ -141,91 +138,109 @@ compareSourceFiles new old = do
        }                            
   where 
     failk cmpmod err = do { tellParseFail cmpmod
-                          ; return ()           -- should ouput some HTML here
+                          ; return ()           -- should output some HTML here
                           }
 
 
+data CompareAlg e = CompareAlg 
+       { changedLogger  :: ReportM ()
+       , removedLogger  :: ReportM ()
+       , diffCollect    :: Module -> Module -> [Edit4 e]
+       , textPrinter    :: e -> String
+       }
+
+
 compareModules :: Module -> Module -> ReportM ()
-compareModules new_modu old_modu = 
-    do { compareExports   new_modu old_modu
-       ; compareDataDecls new_modu old_modu
-       ; compareTypeSigs  new_modu old_modu
-       ; compareInstances new_modu old_modu
+compareModules new old =
+    do { runCompareAlg exports_alg    new old 
+       ; runCompareAlg datadecls_alg  new old 
+       ; runCompareAlg typesigs_alg   new old 
+       ; runCompareAlg instances_alg  new old 
        }
+ 
 
 
-compareExports :: Module -> Module -> ReportM ()
-compareExports new old = 
-    do { tellHtml $ p << "Explicit exports:"
-       ; tellHtml $ p << summarizeADR "export" "exports" expos
+
+runCompareAlg :: CompareAlg e -> Module -> Module -> ReportM ()
+runCompareAlg alg new old = let diff_list = (diffCollect alg) new old in 
+    do { countWarnings (changedLogger alg) (removedLogger alg) diff_list
+       ; mapM_ tellHtml $ renderModifications (textPrinter alg) diff_list
        }
+
+exports_alg :: CompareAlg ExportItem
+exports_alg = CompareAlg { changedLogger  = incrChangedExports
+                         , removedLogger  = incrRemovedExports
+                         , diffCollect    = diffExports
+                         , textPrinter    = ppExport
+                         }
   where
-    expos     = diffExports new old
+    ppExport (ModuleExport s)  = s
+    ppExport (DataOrClass _ s) = s
+    ppExport (Variable s)      = s
 
-compareInstances :: Module -> Module -> ReportM ()
-compareInstances new old = 
-    do { tellHtml $ p << "Instances:"
-       ; tellHtml $ p << summarizeADR "instance" "instances" expos
-       }
+
+datadecls_alg :: CompareAlg DatatypeDecl
+datadecls_alg = CompareAlg { changedLogger  = incrChangedDatatypes
+                           , removedLogger  = incrRemovedDatatypes
+                           , diffCollect    = diffDataDecls
+                           , textPrinter    = datatype_rep
+                           }
+
+
+typesigs_alg :: CompareAlg TypeSigDecl
+typesigs_alg = CompareAlg { changedLogger  = incrChangedTypeSigs
+                          , removedLogger  = incrRemovedTypeSigs
+                          , diffCollect    = diffTypeSigs
+                          , textPrinter    = ppTypeSig 
+                          }
   where
-    expos     = diffInstances new old
+    ppTypeSig a = type_decl_name a ++ " :: " ++ type_signature a
+
+instances_alg :: CompareAlg InstanceDecl
+instances_alg = CompareAlg { changedLogger  = incrChangedInstances
+                           , removedLogger  = incrRemovedInstances
+                           , diffCollect    = diffInstances
+                           , textPrinter    = full_rep
+                           }
 
 
-compareDataDecls :: Module -> Module -> ReportM ()
-compareDataDecls new old = 
-    do { tellHtml $ p << "Exported data type decls:"
-       ; tellHtml $ p << summarizeADR "data type" "data types" ddecls
-       }
-  where
-    ddecls     = diffDataDecls new old
-
-
-compareTypeSigs :: Module -> Module -> ReportM ()
-compareTypeSigs new old = 
-    do { tellHtml $ p << "Exported type sigs:"
-       ; tellHtml $ p << summarizeADR "type signature" 
-                                      "type signatures" tysigs
-       }
-  where
-    tysigs     = diffTypeSigs new old
 
 
 
 --------------------------------------------------------------------------------
 -- Helpers
 
-msgCount :: String ->  String -> String -> Int -> String
-msgCount suffix single _      1  = unwords [ "1"   , single, suffix ]
-msgCount suffix _      plural n  = unwords [ show n, plural, suffix ]
+
+countWarnings :: ReportM () -> ReportM () -> [Edit4 a] -> ReportM ()
+countWarnings mchange mdelete = mapM_ step where
+    step (DIF _ _) = mchange
+    step (DEL _)   = mdelete
+    step _         = return ()
+
+countDeletions :: ReportM () -> [Edit3 a] -> ReportM ()
+countDeletions mf = mapM_ step where
+    step (Del _) = mf
+    step _       = return ()
+
+renderModifications :: (a -> String) -> [Edit4 a] -> [Html]
+renderModifications pp = step where
+   step (DIF a b:xs) = diffMarkup pp a b : step xs
+   step (DEL a:xs)   = delMarkup pp a : step xs 
+   step (_:xs)       = step xs
+   step []           = []
 
 
-addedMsg :: String -> String -> Int -> String
-addedMsg = msgCount "added (+)"
+diffMarkup :: (a -> String) -> a -> a -> Html
+diffMarkup pp a b = concatHtml [ p << "New"
+                               , pre << pp a
+                               , p << "Old"                
+                               , pre << pp b
+                               ]
 
-conflictMsg :: String -> String -> Int -> String
-conflictMsg = msgCount "conflict (*)"
-
-removedMsg :: String -> String -> Int -> String
-removedMsg = msgCount "removed (-)"
-
-summarizeADR :: String -> String -> [Edit4 a] -> String
-summarizeADR single plural xs = 
-    unlist [ added_msg, dif_msg, removed_msg ]
-  where
-    (as,cs,rs)    = addedConflictRemoved xs
-    added_msg     = addedMsg    single plural (length as)
-    dif_msg       = conflictMsg single plural (length cs)
-    removed_msg   = removedMsg  single plural (length rs)
-
-summarizeAR :: String -> String  -> [Edit4 a] -> String
-summarizeAR single plural xs = 
-    unlist [ added_msg, removed_msg ]
-  where
-    (as,rs)       = addedRemoved xs
-    added_msg     = addedMsg    single plural (length as)
-    removed_msg   = removedMsg  single plural (length rs)
-
-
+delMarkup :: (a -> String) -> a -> Html
+delMarkup pp a = concatHtml [ p << "Deleted"
+                            , pre << pp a
+                            ]
 --------------------------------------------------------------------------------
 -- Html ...
 

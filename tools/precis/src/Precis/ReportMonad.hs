@@ -40,8 +40,8 @@ module Precis.ReportMonad
   , incrChangedExports 
   , incrRemovedDatatypes
   , incrChangedDatatypes
-  , incrRemovedTypesigs
-  , incrChangedTypesigs
+  , incrRemovedTypeSigs
+  , incrChangedTypeSigs
   , incrRemovedInstances
   , incrChangedInstances
 
@@ -177,12 +177,12 @@ incrChangedDatatypes = updateStats $
     pstar (\i s -> s { changed_datatypes = i+1}) changed_datatypes
 
 
-incrRemovedTypesigs :: ReportM ()
-incrRemovedTypesigs = updateStats $
+incrRemovedTypeSigs :: ReportM ()
+incrRemovedTypeSigs = updateStats $
     pstar (\i s -> s { removed_typesigs = i+1}) removed_typesigs 
 
-incrChangedTypesigs :: ReportM ()
-incrChangedTypesigs = updateStats $
+incrChangedTypeSigs :: ReportM ()
+incrChangedTypeSigs = updateStats $
     pstar (\i s -> s { changed_typesigs = i+1}) changed_typesigs
 
 incrRemovedInstances :: ReportM ()

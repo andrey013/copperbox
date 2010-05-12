@@ -33,7 +33,7 @@ showChangeStats = vsep . catMaybes . sequence funs
     funs = [ unparseableModules, removedModules
            , removedExports,     changedExports
            , removedDatatypes,   changedDatatypes 
-           , removedTypesigs,    changedTypesigs
+           , removedTypeSigs,    changedTypeSigs
            , removedInstances,   changedInstances
            ]
 
@@ -56,7 +56,7 @@ removedModules =
 
 removedExports :: ChangeStats -> Maybe ShowS
 removedExports = 
-    countMsg "removed" "export" "exports" . removed_exports
+    countMsg "removed" "export list item" "export list items" . removed_exports
 
 changedExports :: ChangeStats -> Maybe ShowS
 changedExports = 
@@ -72,12 +72,12 @@ changedDatatypes =
 
 
 
-removedTypesigs :: ChangeStats -> Maybe ShowS
-removedTypesigs = 
+removedTypeSigs :: ChangeStats -> Maybe ShowS
+removedTypeSigs = 
     countMsg "removed" "type signature" "type signatures" . removed_typesigs
 
-changedTypesigs :: ChangeStats -> Maybe ShowS
-changedTypesigs = 
+changedTypeSigs :: ChangeStats -> Maybe ShowS
+changedTypeSigs = 
     countMsg "changed" "type signature" "type signatures" . changed_typesigs
 
 
