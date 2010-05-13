@@ -71,11 +71,12 @@ makeReport lvl pf new old = liftM post $ execReportM pf lvl $
     
 
 
---------------------------------------------------------------------------------
--- 
-
 assembleDoc :: String -> [Html] -> Html
 assembleDoc pkg_name hs = docHead pkg_name +++ body << concatHtml hs
+
+
+--------------------------------------------------------------------------------
+-- 
 
 packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
 packageNamesAndVersions new old = 
@@ -99,15 +100,7 @@ warnOnNameDiff new_name old_name
 moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
 moduleCountSummary new old = 
     do { countDeletions incrRemovedModules expos 
-       ; tellHtml $ concatHtml
-             [ p << "Exposed modules:"
-             --    , p << summarizeAR "file" "files" expos
-             , filesDiff expos
-    
-             , p << "Internal modules:"
-             --    , p << summarizeAR "file" "files" privs
-             , filesDiff privs
-             ]
+       ; tellHtml $ docModulesDiffs expos privs
        }
   where
     expos = diffExposedModules  new old
@@ -127,23 +120,24 @@ compareSrcFileEdit _         = return ()
 
 compareSourceFiles :: SourceFile -> SourceFile -> ReportM ()
 compareSourceFiles new old = do 
-    do { tellHtml $ p << sourceFileModule new
+    do { tellHtml $ docStartSummary new
        ; pf      <- askParseFun
        ; new_ans <- liftIO $ pf new
        ; old_ans <- liftIO $ pf old
        ; case (new_ans, old_ans) of 
            (Right a, Right b) -> compareModules a b
-           (Left err,_)       -> failk (NEW $ sourceFileModule new) err
-           (_, Left err)      -> failk (OLD $ sourceFileModule old) err
+           (Left err,_)       -> failk (NEW new) err
+           (_, Left err)      -> failk (OLD old) err
        }                            
   where 
-    failk cmpmod err = do { tellParseFail cmpmod
-                          ; return ()           -- should output some HTML here
+    failk cmpmod err = do { tellParseFail (fmap sourceFileModule cmpmod)
+                          ; tellHtml $ docModuleParseError cmpmod err
                           }
 
 
 data CompareAlg e = CompareAlg 
-       { changedLogger  :: ReportM ()
+       { algName        :: String
+       , changedLogger  :: ReportM ()
        , removedLogger  :: ReportM ()
        , diffCollect    :: Module -> Module -> [Edit4 e]
        , textPrinter    :: e -> String
@@ -164,11 +158,13 @@ compareModules new old =
 runCompareAlg :: CompareAlg e -> Module -> Module -> ReportM ()
 runCompareAlg alg new old = let diff_list = (diffCollect alg) new old in 
     do { countWarnings (changedLogger alg) (removedLogger alg) diff_list
-       ; mapM_ tellHtml $ renderModifications (textPrinter alg) diff_list
+       ; tellHtml $ 
+            renderModifications (algName alg) (textPrinter alg) diff_list
        }
 
 exports_alg :: CompareAlg ExportItem
-exports_alg = CompareAlg { changedLogger  = incrChangedExports
+exports_alg = CompareAlg { algName        = "Exports list"
+                         , changedLogger  = incrChangedExports
                          , removedLogger  = incrRemovedExports
                          , diffCollect    = diffExports
                          , textPrinter    = ppExport
@@ -180,7 +176,8 @@ exports_alg = CompareAlg { changedLogger  = incrChangedExports
 
 
 datadecls_alg :: CompareAlg DatatypeDecl
-datadecls_alg = CompareAlg { changedLogger  = incrChangedDatatypes
+datadecls_alg = CompareAlg { algName        = "Data declarations"
+                           , changedLogger  = incrChangedDatatypes
                            , removedLogger  = incrRemovedDatatypes
                            , diffCollect    = diffDataDecls
                            , textPrinter    = datatype_rep
@@ -188,7 +185,8 @@ datadecls_alg = CompareAlg { changedLogger  = incrChangedDatatypes
 
 
 typesigs_alg :: CompareAlg TypeSigDecl
-typesigs_alg = CompareAlg { changedLogger  = incrChangedTypeSigs
+typesigs_alg = CompareAlg { algName        = "Type signatures"
+                          , changedLogger  = incrChangedTypeSigs
                           , removedLogger  = incrRemovedTypeSigs
                           , diffCollect    = diffTypeSigs
                           , textPrinter    = ppTypeSig 
@@ -197,7 +195,8 @@ typesigs_alg = CompareAlg { changedLogger  = incrChangedTypeSigs
     ppTypeSig a = type_decl_name a ++ " :: " ++ type_signature a
 
 instances_alg :: CompareAlg InstanceDecl
-instances_alg = CompareAlg { changedLogger  = incrChangedInstances
+instances_alg = CompareAlg { algName        = "Class instances"
+                           , changedLogger  = incrChangedInstances
                            , removedLogger  = incrRemovedInstances
                            , diffCollect    = diffInstances
                            , textPrinter    = full_rep
@@ -222,12 +221,17 @@ countDeletions mf = mapM_ step where
     step (Del _) = mf
     step _       = return ()
 
-renderModifications :: (a -> String) -> [Edit4 a] -> [Html]
-renderModifications pp = step where
-   step (DIF a b:xs) = diffMarkup pp a b : step xs
-   step (DEL a:xs)   = delMarkup pp a : step xs 
-   step (_:xs)       = step xs
-   step []           = []
+
+
+renderModifications :: String -> (a -> String) -> [Edit4 a] -> Html
+renderModifications txt pp es = case renderBody es of
+    [] -> noHtml
+    xs -> (h3 << txt) +++ concatHtml xs
+  where 
+    renderBody (DIF a b:xs) = diffMarkup pp a b : renderBody xs
+    renderBody (DEL a:xs)   = delMarkup pp a : renderBody xs 
+    renderBody (_:xs)       = renderBody xs
+    renderBody []           = []
 
 
 diffMarkup :: (a -> String) -> a -> a -> Html
@@ -248,12 +252,47 @@ docHead :: String -> Html
 docHead pkg_name = header << doc_title +++ doc_style
 
   where
-    doc_title = thetitle << (pkg_name ++ " change summary")
+    doc_title = thetitle << ("Change summary: " +++ pkg_name)
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
+docStartSummary :: SourceFile -> Html
+docStartSummary src_file = h2 << (sourceFileModule src_file ++ ":")
 
-filesDiff :: [Edit3 String] -> Html
-filesDiff xs = table << zipWith fn xs [1::Int ..]
+docModuleParseError :: CMP SourceFile -> ModuleParseError -> Html
+docModuleParseError (OLD _src) err = pre << (moduleParseErrorMsg err)
+docModuleParseError (NEW _src) err = pre << (moduleParseErrorMsg err)
+
+
+
+docModulesDiffs :: [Edit3 StrName] -> [Edit3 StrName] -> Html
+docModulesDiffs expos privs  = expos_doc +++ privs_doc
+  where
+    expos_doc = maybe docNoExpos (withHeader2 "Exposed modules:")
+                      $ modulesTable expos
+    privs_doc = maybe docNoPrivs (withHeader2 "Internal modules:")
+                      $ modulesTable privs
+
+
+withHeader2 :: String -> Html -> Html
+withHeader2 txt htm = (h2 << txt) +++ htm
+
+docNoExpos :: Html
+docNoExpos = p << txt where
+    txt = unwords $ 
+            [ "No exposed modules counted."
+            , "Precis only summarizes libraries or combined"
+            , "library/exe packages."
+            ]
+
+docNoPrivs :: Html
+docNoPrivs = p << txt where
+    txt = unwords $ 
+            [ "No internal modules counted." ]
+
+
+modulesTable :: [Edit3 StrName] -> Maybe Html
+modulesTable [] = Nothing
+modulesTable xs = Just $ table << zipWith fn xs [1::Int ..]
   where
     fn (Add a)   i = makeRow i "+" a
     fn (Equ a)   i = makeRow i ""  a

@@ -70,6 +70,10 @@ type Log = ([Html],ChangeStats)
 data CMP a = NEW a | OLD a
   deriving (Eq,Show)
 
+instance Functor CMP where
+  fmap f (NEW a) = NEW (f a)
+  fmap f (OLD a) = OLD (f a)
+
 data ChangeStats = ChangeStats 
       { unparseable_modules     :: [CMP StrName]
       , removed_modules         :: Int
