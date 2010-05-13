@@ -17,7 +17,9 @@ description:
   .
   0.3.1 to 0.4.0
   .
-  * Added version number module.
+  * Substantial changes to reporting - now a summary is printed
+    to the console, and an HTML report can be generated via a
+    command line flag.
   .
   * Changed constructor names for Edit data type
   . 

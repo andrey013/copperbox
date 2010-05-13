@@ -83,6 +83,7 @@ packageNamesAndVersions new old =
     do { tellHtml $ h1 << ("Change summary: " ++ package_name new) 
        ; tellHtml $ h2 << (toString $ comparingMsg new old)
        ; warnOnNameDiff (package_name new) (package_name old)
+       ; tellHtml $ docCaveat
        }
 
 
@@ -236,14 +237,14 @@ renderModifications txt pp es = case renderBody es of
 
 diffMarkup :: (a -> String) -> a -> a -> Html
 diffMarkup pp a b = concatHtml [ p << "New"
-                               , pre << pp a
+                               , docChangedCode (NEW $ pp a)
                                , p << "Old"                
-                               , pre << pp b
+                               , docChangedCode (OLD $ pp b)
                                ]
 
 delMarkup :: (a -> String) -> a -> Html
 delMarkup pp a = concatHtml [ p << "Deleted"
-                            , pre << pp a
+                            , docDeletedCode (pp a)
                             ]
 --------------------------------------------------------------------------------
 -- Html ...
@@ -301,3 +302,31 @@ modulesTable xs = Just $ table << zipWith fn xs [1::Int ..]
     makeRow i op name = tr << [ td << (show i), td << op, td << name ]
 
 
+docCaveat :: Html
+docCaveat = p << txt
+  where 
+    txt = unwords $ 
+      [ "Note, Precis uses a shallow mechanism to detect changes."
+      , "Syntax elements are parsed by Haskell-src-exts and comparison" 
+      , "is made on the strings extracted from pretty-printing them." 
+      , "This means that Precis should be oblivious to"
+      , "white-space differences, but harmless changes will be"
+      , "flagged as differences. e.g. adding a new deriving clause"
+      , "to a datatype."
+      ]
+      
+
+docChangedCode :: CMP String -> Html
+docChangedCode = step 
+  where
+    step (NEW s) = pre ! [new_style] << s
+    step (OLD s) = pre ! [old_style] << s
+
+    new_style    = theclass "oldcode"
+    old_style    = theclass "newcode"
+
+docDeletedCode :: String -> Html
+docDeletedCode s = pre ! [del_style] << s
+  where
+    del_style    = theclass "deletedcode"
+    
