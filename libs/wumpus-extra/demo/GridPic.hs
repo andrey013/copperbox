@@ -10,6 +10,7 @@ import Wumpus.Extra
 main :: IO ()
 main = sequence_ [ demo01 ]
 
+mgrid01 :: GridM Width2 u ()
 mgrid01 = do 
   
   gal_m           <- cell1 $ nil & blank         & node "Gal(M)" 
@@ -31,6 +32,5 @@ demo01 = do
     writeSVG_latin1 "./out/grid01.svg" pic1 
   where
     pic1 :: Picture Double
-    ((),st,w)   = grid mgrid01 
-    pic1        = matrixPicture (V2 100 50) (st,w)
+    pic1 = runMatrix (matrixProps (V2 100 50)) mgrid01
 

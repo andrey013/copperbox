@@ -42,6 +42,7 @@ library
     Wumpus.Extra.Arrowheads,
     Wumpus.Extra.Base,
     Wumpus.Extra.BasicObjects,
+    Wumpus.Extra.CoreAdditions,
     Wumpus.Extra.Dots,
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Marks,    

@@ -19,10 +19,22 @@ module Wumpus.Extra.Matrix
   (
   
     NodeId
-  , grid
+  , GridM       -- opaque
+
+  , Width1
+  , Width2
+  , Width3
+  , Width4
+  , Width5
+  , Width6
+  , Width7
+  , Width8
+  , Width9
+  , Width10
 
   , nil 
   , node
+  , cellpic
   , blank
   , ( & )
 
@@ -40,7 +52,9 @@ module Wumpus.Extra.Matrix
   , cell9
   , cell10
 
-  , matrixPicture
+  , runMatrix
+  , MatrixProps         -- opaque
+  , matrixProps
 
   ) where
 
@@ -57,10 +71,22 @@ import qualified Data.Map as Map
 data Z
 data S a
 
+type Width1     = S Z
+type Width2     = S Width1
+type Width3     = S Width2
+type Width4     = S Width3
+type Width5     = S Width4
+type Width6     = S Width5
+type Width7     = S Width6
+type Width8     = S Width7
+type Width9     = S Width8
+type Width10    = S Width9
+
+--------------------------------------------------------------------------------
 
 type GridCoord = Point2 Int
 
-type CellValues u = Map.Map GridCoord (CellValue u)
+type CellValues u = [(GridCoord,CellValue u)]
 
 
 data CellValue u = CellPic (Picture u)
@@ -78,7 +104,13 @@ data Connector = Conn GridCoord GridCoord
 data GridSt = GridSt { posn :: GridCoord, line_count :: Int }
   deriving (Show)
 
-type GridTrace u = (CellValues u, [Connector])
+data GridTrace u = GridTrace 
+        { cell_values :: CellValues u
+        , node_conns  :: [Connector]
+        }
+
+trace_zero :: GridTrace u
+trace_zero = GridTrace [] []
 
 -- Note - rows always start with nil which increments the y-pos
 -- oblivious to its current value. If the initial state was
@@ -97,14 +129,9 @@ data GridM sh u a = GridM {
 
 
 runGridM :: GridM sh u a -> (a, GridSt, GridTrace u)
-runGridM (GridM f) =  f grid_state_zero (Map.empty,[])
+runGridM (GridM f) =  f grid_state_zero trace_zero
 
 
-
-grid :: GridM sh u a -> ((), GridSt, GridTrace u)
-grid = post . runGridM  
-  where 
-    post (_,s,w) = ((),s,w)
 
 
 instance Functor (GridM sh u) where
@@ -127,10 +154,16 @@ nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
 
 tellNode :: String -> GridCoord -> GridTrace u -> GridTrace u
-tellNode name loc (cells,ls) = (Map.insert loc (CellNode name) cells,ls)
+tellNode name loc = 
+    pstar (\xs s -> s { cell_values = (loc,CellNode name):xs }) cell_values
+
+tellPicture :: Picture u -> GridCoord -> GridTrace u -> GridTrace u
+tellPicture pic loc = 
+    pstar (\xs s -> s { cell_values = (loc,CellPic pic):xs }) cell_values
 
 tellLink :: GridCoord -> GridCoord ->  GridTrace u -> GridTrace u
-tellLink a b (cells,ls) = (cells, Conn a b : ls)
+tellLink a b  = 
+    pstar (\xs s -> s { node_conns = Conn a b : xs }) node_conns
 
 
 --------------------------------------------------------------------------------
@@ -151,6 +184,11 @@ node name (GridM mf) = GridM $ \s w ->
         loc         = posn s'
     in ((acc,loc), nextCol s', tellNode name loc w')
 
+cellpic :: Picture u -> GridM sh u a -> GridM (S sh) u (a,NodeId)
+cellpic pic (GridM mf) = GridM $ \s w -> 
+    let (acc,s',w') = mf s w 
+        loc         = posn s'
+    in ((acc,loc), nextCol s', tellPicture pic loc w')
 
 
 infixl 5 &
@@ -219,28 +257,6 @@ cell10 (GridM mf) = GridM $ \s w ->
 --------------------------------------------------------------------------------
 -- creating a picture
 
--- This is just a dummy and isn't very good at all...
---
--- Need to be cleverer about centering cells, bounding boxes, 
--- etc.
---
-
-{-
-matrixPicture :: (Floating u, Fractional u, Real u, Ord u)
-            => Vec2 u -> (GridSt,GridTrace u) -> Picture u -> Picture u
-matrixPicture vscale (st,(cells,ls)) p = all_conns `over` all_nodes
-  where
-    all_nodes = foldr f p $ Map.toList cells
-    all_conns = foldr g (blankPicture (boundary all_nodes)) ls
-
-    f (pt, (CellNode s)) pic = pic `over` (mkLabel s `at` (remapCoord h vscale pt))
-    f _                  pic = pic
-
-    g (Conn a b)         pic = pic `over`
-       arrowTri' () (remapCoord h vscale a) (remapCoord h vscale b)
- 
-    (P2 _ h)  = posn st
--}
 
 -- Note TikZ shapes (ch. 46 Shape Library) support anchors on 
 -- the boundary of shapes, rather than the boundary of the BBox
@@ -250,55 +266,88 @@ matrixPicture vscale (st,(cells,ls)) p = all_conns `over` all_nodes
 type Border u = BoundingBox u
 
 -- maybe add the scaling function so missing cells can be 'found'...
-type BorderMap u = Map.Map GridCoord (Border u)
+data BorderMap u = BorderMap 
+        { border_table :: Map.Map GridCoord (Border u)
+        , fallback_fun :: GridCoord -> Border u
+        }
+
+
+-- Likely more props to follow... 
+
+data MatrixProps u = MatrixProps
+      { scaling_vector           :: Vec2 u }
+
+
+runMatrix :: (Floating u, Fractional u, Real u, Ord u)
+          => MatrixProps u -> GridM sh u a -> Picture u
+runMatrix props mf = matrixPicture (scaling_vector props) (s,w) 
+  where
+    (_,s,w) = runGridM mf
+
+matrixProps :: Vec2 u -> MatrixProps u
+matrixProps v = MatrixProps { scaling_vector = v }
+    
+
 
 matrixPicture :: (Floating u, Fractional u, Real u, Ord u)
                => Vec2 u -> (GridSt,GridTrace u) -> Picture u
-matrixPicture vscale (st,(cells,ls)) = p2
+matrixPicture vscale (st,w) = p2
   where
-    scalef  = remapCoord (columnCount st) vscale
-    (p1,bm) = processCells scalef cells
-    p2      = processConnectors bm ls p1
+    scalef  = remapCoord st vscale
+    (p1,bm) = processCells scalef (cell_values w)
+    p2      = processConnectors bm (node_conns w) p1
 
 processCells :: (Fractional u, Ord u) 
              => (GridCoord -> Point2 u) 
              -> CellValues u 
              -> (Picture u, BorderMap u)
-processCells f cvs = foldr step (zeroPicture,Map.empty) xs
+processCells f = foldr step (zeroPicture,initBorderMap f) 
   where 
-    xs = Map.toAscList cvs 
     step (coord,CellPic p)  acc     = work coord p acc
     step (coord,CellNode s) acc     = work coord (mkLabel s) acc
 
-    work coord p (ps,bm) = (p' `over` ps, Map.insert coord bb bm)
+    work coord p (ps,bm) = (p' `over` ps, insertBorder coord bb bm)
       where
-        p' = p `centeredAt` (f coord)  -- displace center??
+        p' = p `centeredAt` (f coord) 
         bb = boundary p'
 
 processConnectors :: (Floating u, Real u, Ord u) 
                   => BorderMap u -> [Connector] -> Picture u -> Picture u
 processConnectors bm xs p0 = foldr fn p0 xs 
   where
-    fn (Conn a b) p = case (findBorder a bm, findBorder b bm) of
-        (Just b1, Just b2) -> let arr = arrowTri' () (boundaryPoint C b1) 
-                                                     (boundaryPoint C b2) 
-                              in arr `over` p
-        _                  -> p
+    fn (Conn a b) p = arr `over` p where
+      b1  = findBorder a bm
+      b2  = findBorder b bm
+      arr = arrowTri' () (boundaryPoint C b1) (boundaryPoint C b2)
 
 
 mkLabel :: (Fractional u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel zeroPt s 
 
 
-findBorder :: GridCoord -> BorderMap u -> Maybe (Border u)
-findBorder = Map.lookup
+findBorder :: GridCoord -> BorderMap u -> Border u
+findBorder coord bm = maybe fk id $ Map.lookup coord (border_table bm)
+  where
+    fk = (fallback_fun bm) coord
+         
 
-
-columnCount :: GridSt -> Int 
-columnCount (GridSt { posn=(P2 _ h)}) = h
+rowCount :: GridSt -> Int 
+rowCount (GridSt { posn=(P2 _ h)}) = h
 
 -- /Grid/ coordinates have origin top-left, they are remapped to
 -- have the origin at the bottom right.
-remapCoord :: Num u => Int -> (Vec2 u) -> GridCoord -> Point2 u
-remapCoord h (V2 sx sy)  (P2 x y) = 
-    P2 (sx * fromIntegral x) (sy * fromIntegral (h - y))
+--
+remapCoord :: Num u => GridSt -> (Vec2 u) -> GridCoord -> Point2 u
+remapCoord st (V2 sx sy)  (P2 x y) = 
+    P2 (sx * fromIntegral x) (sy * fromIntegral (height - y))
+  where
+    height = rowCount st
+
+initBorderMap :: (GridCoord -> Point2 u) -> BorderMap u
+initBorderMap cf = BorderMap { border_table = Map.empty, fallback_fun = fb }
+  where
+    fb coord = let pt = cf coord in BBox pt pt
+
+insertBorder :: GridCoord -> Border u -> BorderMap u -> BorderMap u
+insertBorder coord b =
+   pstar (\mp s -> s { border_table = Map.insert coord b mp }) border_table
