@@ -47,6 +47,7 @@ module Wumpus.Extra.Matrix
 import Wumpus.Core hiding ( blank )
 
 import Wumpus.Extra.Arrows
+import Wumpus.Extra.CoreAdditions ( zeroPicture, centeredAt )
 import Wumpus.Extra.Utils
 
 import qualified Data.Map as Map
@@ -57,21 +58,24 @@ data Z
 data S a
 
 
-type Coord = Point2 Int
+type GridCoord = Point2 Int
 
-type CellValues u = Map.Map Coord (CellValue u)
+type CellValues u = Map.Map GridCoord (CellValue u)
 
-type CellValue u = Either SimpleLabel (Picture u)
+
+data CellValue u = CellPic (Picture u)
+                 | CellNode SimpleLabel
+  deriving (Eq,Show)
 
 type SimpleLabel = String
 
-type NodeId = Coord
+type NodeId = GridCoord
 
 -- likely to need annotating eg. for arrowheads, curviture...
-data Connector = Connector Coord Coord          
+data Connector = Conn GridCoord GridCoord
   deriving (Eq,Show)
 
-data GridSt = GridSt { posn :: Coord, line_count :: Int }
+data GridSt = GridSt { posn :: GridCoord, line_count :: Int }
   deriving (Show)
 
 type GridTrace u = (CellValues u, [Connector])
@@ -122,11 +126,11 @@ nextRow :: GridSt -> GridSt
 nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
 
-tellNode :: String -> Coord -> GridTrace u -> GridTrace u
-tellNode name loc (cells,ls) = (Map.insert loc (Left name) cells,ls)
+tellNode :: String -> GridCoord -> GridTrace u -> GridTrace u
+tellNode name loc (cells,ls) = (Map.insert loc (CellNode name) cells,ls)
 
-tellLink :: Coord -> Coord ->  GridTrace u -> GridTrace u
-tellLink from to (cells,ls) = (cells, Connector from to : ls)
+tellLink :: GridCoord -> GridCoord ->  GridTrace u -> GridTrace u
+tellLink a b (cells,ls) = (cells, Conn a b : ls)
 
 
 --------------------------------------------------------------------------------
@@ -220,31 +224,81 @@ cell10 (GridM mf) = GridM $ \s w ->
 -- Need to be cleverer about centering cells, bounding boxes, 
 -- etc.
 --
+
+{-
 matrixPicture :: (Floating u, Fractional u, Real u, Ord u)
             => Vec2 u -> (GridSt,GridTrace u) -> Picture u -> Picture u
-matrixPicture (V2 sx sy) (st,(cells,ls)) p = all_conns `over` all_nodes
+matrixPicture vscale (st,(cells,ls)) p = all_conns `over` all_nodes
   where
     all_nodes = foldr f p $ Map.toList cells
     all_conns = foldr g (blankPicture (boundary all_nodes)) ls
 
-    f (pt, (Left s)) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
-    f _              pic = pic
+    f (pt, (CellNode s)) pic = pic `over` (mkLabel s `at` (remapCoord h vscale pt))
+    f _                  pic = pic
 
-    g (Connector from to) pic = pic `over`
-       arrowTri' () (remapCoord sx sy h from) (remapCoord sx sy h to)
+    g (Conn a b)         pic = pic `over`
+       arrowTri' () (remapCoord h vscale a) (remapCoord h vscale b)
  
     (P2 _ h)  = posn st
+-}
 
+-- Note TikZ shapes (ch. 46 Shape Library) support anchors on 
+-- the boundary of shapes, rather than the boundary of the BBox
+-- 
+-- It would be nice to have shape boundaries...
+--
+type Border u = BoundingBox u
+
+-- maybe add the scaling function so missing cells can be 'found'...
+type BorderMap u = Map.Map GridCoord (Border u)
+
+matrixPicture :: (Floating u, Fractional u, Real u, Ord u)
+               => Vec2 u -> (GridSt,GridTrace u) -> Picture u
+matrixPicture vscale (st,(cells,ls)) = p2
+  where
+    scalef  = remapCoord (columnCount st) vscale
+    (p1,bm) = processCells scalef cells
+    p2      = processConnectors bm ls p1
+
+processCells :: (Fractional u, Ord u) 
+             => (GridCoord -> Point2 u) 
+             -> CellValues u 
+             -> (Picture u, BorderMap u)
+processCells f cvs = foldr step (zeroPicture,Map.empty) xs
+  where 
+    xs = Map.toAscList cvs 
+    step (coord,CellPic p)  acc     = work coord p acc
+    step (coord,CellNode s) acc     = work coord (mkLabel s) acc
+
+    work coord p (ps,bm) = (p' `over` ps, Map.insert coord bb bm)
+      where
+        p' = p `centeredAt` (f coord)  -- displace center??
+        bb = boundary p'
+
+processConnectors :: (Floating u, Real u, Ord u) 
+                  => BorderMap u -> [Connector] -> Picture u -> Picture u
+processConnectors bm xs p0 = foldr fn p0 xs 
+  where
+    fn (Conn a b) p = case (findBorder a bm, findBorder b bm) of
+        (Just b1, Just b2) -> let arr = arrowTri' () (boundaryPoint C b1) 
+                                                     (boundaryPoint C b2) 
+                              in arr `over` p
+        _                  -> p
 
 
 mkLabel :: (Fractional u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel zeroPt s 
 
 
+findBorder :: GridCoord -> BorderMap u -> Maybe (Border u)
+findBorder = Map.lookup
+
+
+columnCount :: GridSt -> Int 
+columnCount (GridSt { posn=(P2 _ h)}) = h
+
 -- /Grid/ coordinates have origin top-left, they are remapped to
 -- have the origin at the bottom right.
-remapCoord :: Num u => u -> u -> Int -> Coord -> Point2 u
-remapCoord sx sy h (P2 x y) = 
+remapCoord :: Num u => Int -> (Vec2 u) -> GridCoord -> Point2 u
+remapCoord h (V2 sx sy)  (P2 x y) = 
     P2 (sx * fromIntegral x) (sy * fromIntegral (h - y))
-
-

@@ -10,14 +10,11 @@ import Wumpus.Extra
 main :: IO ()
 main = sequence_ [ demo01 ]
 
--- Note - sending "/\" instead of "delta" to PostScript causes 
--- the drawing to fail due to unescaped special chars.
-
 mgrid01 = do 
   
   gal_m           <- cell1 $ nil & blank         & node "Gal(M)" 
   
-  (delta,gal_nm)  <- cell2 $ nil & node "delta"  & node "Gal(N/M)"
+  (delta,gal_nm)  <- cell2 $ nil & node "/\\"    & node "Gal(N/M)"
 
   ee              <- cell1 $ nil & node "(E/E')" & blank
 
@@ -35,6 +32,5 @@ demo01 = do
   where
     pic1 :: Picture Double
     ((),st,w)   = grid mgrid01 
-    pic1        = matrixPicture (V2 100 50) (st,w) no_pic
-    no_pic      = blankPicture (BBox zeroPt zeroPt)
+    pic1        = matrixPicture (V2 100 50) (st,w)
 
