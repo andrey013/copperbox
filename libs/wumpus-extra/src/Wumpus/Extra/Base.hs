@@ -55,6 +55,8 @@ module Wumpus.Extra.Base
 
   , rescale
   , clamp
+  , inrange
+  , order
 
   ) where
 
@@ -242,5 +244,14 @@ rescale (amin,amax) (bmin,bmax) a =
     brange = bmax - bmin
     apos   = a - amin 
 
-clamp :: Ord a => a -> a -> a -> a
-clamp amin amax a = max amin (min amax a)
+-- | @clamp min max a@ - clamp a to be with in the bounds 
+-- min..max
+--
+clamp :: Ord a => (a,a) -> a -> a
+clamp (amin,amax) a = max amin (min amax a)
+
+inrange :: Ord a => a -> (a,a) -> Bool
+a `inrange` (amin,amax) = a >= amin && a <= amax
+
+order :: Ord a => a -> a -> (a,a)
+order a b = (min a b, max a b)

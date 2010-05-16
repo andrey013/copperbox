@@ -335,7 +335,9 @@ transformFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
 -- For instance after a reflection in the y-axis br becomes bl.
 transformBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-transformBBox fp = trace . map fp . corners
+transformBBox fp bb = trace $ map fp $ [bl,br,tl,tr]
+  where
+    (bl,br,tr,tl) = corners bb
 
 
 --------------------------------------------------------------------------------

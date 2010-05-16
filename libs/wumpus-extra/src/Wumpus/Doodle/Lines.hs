@@ -37,12 +37,6 @@ module Wumpus.Doodle.Lines
 
 import Wumpus.Core
 
-import Wumpus.Extra.Base
-import Wumpus.Extra.BasicObjects
-
-import Data.AffineSpace
-import Data.VectorSpace
-
 
 
 

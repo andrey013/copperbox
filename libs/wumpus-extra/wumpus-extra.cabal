@@ -47,7 +47,8 @@ library
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Marks,    
     Wumpus.Extra.Matrix,
-    Wumpus.Extra.Text
+    Wumpus.Extra.Text,
+    Wumpus.Extra.VersionNumber
 
   other-modules:
     Wumpus.Extra.Utils

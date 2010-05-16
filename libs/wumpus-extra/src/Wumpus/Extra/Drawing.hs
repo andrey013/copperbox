@@ -73,6 +73,12 @@ strokedCrossedRect attr_border attr_cross w h = border `over` cross
 --------------------------------------------------------------------------------
 -- Picture transformers
 
+fourCorners :: BoundingBox u -> [Point2 u]
+fourCorners bb = [bl,br,tr,tl]
+  where
+    (bl,br,tr,tl) = corners bb
+
+
 backgroundTrafo :: (Num u, Ord u) 
                 => (BoundingBox u -> Picture u) -> Picture u -> Picture u
 backgroundTrafo fn p = p `over` bkgrnd where
@@ -83,13 +89,13 @@ backgroundTrafo fn p = p `over` bkgrnd where
 backgroundFill :: (Fractional u, Ord u, PSColour c) 
                => c -> Picture u -> Picture u
 backgroundFill c = backgroundTrafo fn where
-  fn = frame . fill (psColour c) . vertexPath . corners
+  fn = frame . fill (psColour c) . vertexPath . fourCorners
 
 
 backgroundStroke :: (Fractional u, Ord u, Stroke t)
                  => t -> Picture u -> Picture u
 backgroundStroke attr = backgroundTrafo fn where
-  fn = frame . cstroke attr . vertexPath . corners
+  fn = frame . cstroke attr . vertexPath . fourCorners
 
 
 
@@ -97,12 +103,12 @@ backgroundStroke attr = backgroundTrafo fn where
 
 clipPicture :: (Fractional u, Ord u) 
             => BoundingBox u -> Picture u -> Picture u
-clipPicture bb p = clip (vertexPath $ corners bb) p
+clipPicture bb p = clip (vertexPath $ fourCorners bb) p
 
 
 clipToBoundary :: (Fractional u, Ord u) 
                => Picture u -> Picture u
-clipToBoundary p = clip (vertexPath $ corners $ boundary p) p
+clipToBoundary p = clip (vertexPath $ fourCorners $ boundary p) p
 
 
 -- Grid

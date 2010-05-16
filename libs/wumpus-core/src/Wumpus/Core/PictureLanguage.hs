@@ -53,6 +53,7 @@ module Wumpus.Core.PictureLanguage
   , above
   , below
   , at
+  , centeredAt
   , stackOnto
   , hcat 
   , vcat
@@ -266,8 +267,16 @@ a `above` b = (moveV disp a) `over` b where disp = topBound b - bottomBound a
 
 
 -- | Place the picture at the supplied point.
+-- 
 at :: (Move a, u ~ PUnit a) => a -> Point2 u  -> a
 p `at` (P2 x y) = move x y p
+
+-- | Center the picture at the supplied point.
+--
+centeredAt :: (Horizontal a, Vertical a, Move a, Composite a, Blank a, 
+               Fractional u, u ~ PUnit a) 
+           => a -> Point2 u -> a
+centeredAt p pt = p -@- (blank 0 0 `at` pt) 
 
 
 

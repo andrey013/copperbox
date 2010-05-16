@@ -100,7 +100,8 @@ instance Pretty a => Pretty (BoundingBox a) where
 type instance DUnit (BoundingBox u) = u
 
 instance (Num u, Ord u) => Scale (BoundingBox u) where
-  scale x y bb     = trace $ map (scale x y) $ corners bb
+  scale x y bb     = trace $ map (scale x y) $ [bl,br,tr,tl]
+    where (bl,br,tr,tl) = corners bb
 
 
 
@@ -153,9 +154,9 @@ trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (cmin z a, cmax z b) ) (p,p) ps
 trace []     = error $ "BoundingBox.trace called in empty list"
 
 -- | Generate all the corners of a bounding box, counter-clock 
--- wise from the bottom left, i.e. @[bl, br, tr, tl]@.
-corners :: BoundingBox a -> [Point2 a]
-corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl] where
+-- wise from the bottom left, i.e. @(bl, br, tr, tl)@.
+corners :: BoundingBox a -> (Point2 a, Point2 a, Point2 a, Point2 a)
+corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
     br = P2 x1 y0
     tl = P2 x0 y1
 

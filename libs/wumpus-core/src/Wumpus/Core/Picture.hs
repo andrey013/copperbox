@@ -96,6 +96,7 @@ blankPicture bb = PicBlank (stdFrame, bb)
 
 
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
+--
 frame :: (Fractional u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
@@ -152,16 +153,19 @@ path :: Point2 u -> [PathSegment u] -> Path u
 path = Path 
 
 -- | Create a straight-line PathSegment.
+--
 lineTo :: Point2 u -> PathSegment u
 lineTo = PLine
 
 -- | Create a curved PathSegment.
+--
 curveTo :: Point2 u -> Point2 u -> Point2 u -> PathSegment u
 curveTo = PCurve
 
 
 -- | Convert the list of vertices to a path of straight line 
 -- segments.
+--
 vertexPath :: [Point2 u] -> Path u
 vertexPath []     = error "Picture.vertexPath - empty point list"
 vertexPath (x:xs) = Path x (map PLine xs)
@@ -172,6 +176,7 @@ vertexPath (x:xs) = Path x (map PLine xs)
 -- The first point in the list makes the start point, each curve 
 -- segment thereafter takes 3 points. /Spare/ points at the end 
 -- are discarded. 
+--
 curvedPath :: [Point2 u] -> Path u
 curvedPath []     = error "Picture.curvedPath - empty point list"
 curvedPath (x:xs) = Path x (fn xs) where
@@ -258,10 +263,12 @@ instance Stroke (Gray Double,[StrokeAttr]) where
 
 
 -- | Create an open stoke coloured black.
+--
 zostroke :: (Num u, Ord u) => Path u -> Primitive u
 zostroke = ostrokePath psBlack []
  
 -- | Create a closed stroke coloured black.
+--
 zcstroke :: (Num u, Ord u) => Path u -> Primitive u
 zcstroke = cstrokePath psBlack []
 
@@ -297,6 +304,7 @@ zfill = fillPath psBlack
 -- Clipping 
 
 -- | Clip a picture with respect to the supplied path.
+--
 clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
 clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 

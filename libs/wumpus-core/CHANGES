@@ -1,4 +1,26 @@
 
+0.15.0 to 0.16.0:
+
+  * Additions to Core.Geometry (direction, pvec, vangle, 
+    circularModulo).
+
+  * Fixed error with langle due to not accounting for circle 
+    quadrants in Core.Geometry.
+
+  * Point2 now derives Ord - so it can be used as a key for
+    Data.Map.
+
+  * Added escape-character handling to text output in PostScript.
+    This was causing a nasty bug where a drawing would completely
+    fail when special chars shown (GhostView gives little hint of 
+    what is wrong when such errors are present).
+ 
+  * Changed BoundingBox operation 'corners' to return a 4-tuple
+    rather than a list.
+  
+  * Added centeredAt to PictureLanguage
+
+
 0.14.0 to 0.15.0:
 
   * Added Named colours and "safe fonts" from wumpus-extra.

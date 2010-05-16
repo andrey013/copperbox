@@ -21,18 +21,15 @@ module Wumpus.Extra.CoreAdditions
   (
 
     zeroPicture
-  , centeredAt
 
   ) where
 
 
 import Wumpus.Core
 
+-- Not sure about this - it is useful, but it might 
+-- have bad 'semantics' 
+--
 zeroPicture :: Num u => Picture u
 zeroPicture = blankPicture (BBox zeroPt zeroPt)
-
-centeredAt :: (Horizontal a, Vertical a, Move a, Composite a, Blank a, 
-               Fractional u, u ~ PUnit a) 
-           => a -> Point2 u -> a
-centeredAt p pt = p -@- (blank 0 0 `at` pt) 
 

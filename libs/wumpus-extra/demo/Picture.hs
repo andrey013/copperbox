@@ -3,6 +3,7 @@
 module Picture where
 
 import Wumpus.Core
+import Wumpus.Doodle.Lines
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
 

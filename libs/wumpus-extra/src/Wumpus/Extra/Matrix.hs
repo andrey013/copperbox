@@ -61,7 +61,7 @@ module Wumpus.Extra.Matrix
 import Wumpus.Core hiding ( blank )
 
 import Wumpus.Extra.Arrows
-import Wumpus.Extra.CoreAdditions ( zeroPicture, centeredAt )
+import Wumpus.Extra.CoreAdditions ( zeroPicture )
 import Wumpus.Extra.Utils
 
 import qualified Data.Map as Map

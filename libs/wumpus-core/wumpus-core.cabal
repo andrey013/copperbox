@@ -79,7 +79,11 @@ description:
     fail when special chars shown (GhostView gives little hint of 
     what is wrong when such errors are present).
   . 
+  * Changed BoundingBox operation 'corners' to return a 4-tuple
+    rather than a list.
   .  
+  * Added centeredAt to PictureLanguage
+  .
   0.14.0 to 0.15.0:
   .
   * Added Named colours and \"safe fonts\" from wumpus-extra.
