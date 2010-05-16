@@ -69,6 +69,8 @@ description:
   * Argument order of 'textlabel' and 'ztextlabel' change so
     that Point2 is the last argument.
   .
+  * PathSegment constructor names changed (this is an internal
+    change as the constructors are not exported).
   .
   0.15.0 to 0.16.0:
   .

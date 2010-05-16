@@ -30,6 +30,8 @@ module Wumpus.Core.PictureInternal
   , DPathSegment
   , Label(..)
   , DLabel
+  , PrimEllipse(..)
+  , DPrimEllipse
 
   , PathProps                   -- hide in Wumpus.Core export?
   , LabelProps                  -- hide in Wumpus.Core export?
@@ -140,40 +142,49 @@ type DPicture = Picture Double
 -- constraint is also obliged.
 --
 
-data Primitive u = PPath    PathProps (Path u)
-                 | PLabel   LabelProps (Label u) 
-                 | PEllipse { 
-                      ellipse_props       :: EllipseProps,
-                      ellipse_center      :: Point2 u,
-                      ellipse_half_width  :: u,
-                      ellipse_half_height :: u 
-                    } 
+data Primitive u = PPath    PathProps    (Path u)
+                 | PLabel   LabelProps   (Label u) 
+                 | PEllipse EllipseProps (PrimEllipse u)
   deriving (Eq,Show)
 
 type DPrimitive = Primitive Double
 
 
-
+-- | Path - start point and a list of path segments.
+--
 data Path u = Path (Point2 u) [PathSegment u]
   deriving (Eq,Show)
 
 type DPath = Path Double
 
-
-data PathSegment u = PCurve  (Point2 u) (Point2 u) (Point2 u)
-                   | PLine   (Point2 u)
+-- | PathSegment - either a cubic Bezier curve or a line.
+--  
+data PathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
+                   | PLineTo   (Point2 u)
   deriving (Eq,Show)
 
 type DPathSegment = PathSegment Double
 
-data Label u = Label { 
-                   label_bottom_left :: Point2 u,
-                   label_text        :: EncodedText
-                 }
+-- | Label - represented by bottom left corner and text.
+--
+data Label u = Label 
+      { label_bottom_left :: Point2 u
+      , label_text        :: EncodedText
+      }
   deriving (Eq,Show)
 
 type DLabel = Label Double
 
+-- Ellipse represented by center and half_width * half_height
+--
+data PrimEllipse u = PrimEllipse 
+      { ellipse_center      :: Point2 u
+      , ellipse_half_width  :: u
+      , ellipse_half_height :: u 
+      } 
+  deriving (Eq,Show)
+
+type DPrimEllipse = PrimEllipse Double
 
 -- | Note when drawn /filled/ and drawn /stroked/ the same 
 -- polygon will have (slightly) different size: 
@@ -236,21 +247,24 @@ ppLocale (fr,bb) = align (ppfr <$> pretty bb) where
 instance Pretty u => Pretty (Primitive u) where
   pretty (PPath _ p)        = pretty "path:" <+> pretty p
   pretty (PLabel _ lbl)     = pretty lbl
-  pretty (PEllipse _ c w h) = pretty "ellipse" <+> pretty c
-                                               <+> text "w:" <> pretty w
-                                               <+> text "h:" <> pretty h
+  pretty (PEllipse _ e)     = pretty e 
 
 
 instance Pretty u => Pretty (Path u) where
    pretty (Path pt ps) = pretty pt <> hcat (map pretty ps)
 
 instance Pretty u => Pretty (PathSegment u) where
-  pretty (PCurve p1 p2 p3)    = text ".*" <> pretty p1 <> text ",," <> pretty p2 
+  pretty (PCurveTo p1 p2 p3)    = text ".*" <> pretty p1 <> text ",," <> pretty p2 
                                           <> text "*." <> pretty p3
-  pretty (PLine pt)           = text "--" <> pretty pt
+  pretty (PLineTo pt)           = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
   pretty (Label pt s) = dquotes (pretty s) <> char '@' <> pretty pt
+
+instance Pretty u => Pretty (PrimEllipse u) where
+  pretty (PrimEllipse c w h) = pretty "ellipse" <+> pretty c
+                                                <+> text "w:" <> pretty w
+                                                <+> text "h:" <> pretty h
 
 
 --------------------------------------------------------------------------------
@@ -259,7 +273,7 @@ instance Pretty u => Pretty (Label u) where
 -- /empty path/.
 
 instance Semigroup (Path u) where
-  Path st xs `append` Path st' xs' = Path st (xs ++ (PLine st' : xs'))
+  Path st xs `append` Path st' xs' = Path st (xs ++ (PLineTo st' : xs'))
 
 
 instance Pointwise (Path u) where
@@ -268,17 +282,19 @@ instance Pointwise (Path u) where
 
 instance Pointwise (PathSegment u) where
   type Pt (PathSegment u) = Point2 u
-  pointwise f (PLine p)         = PLine (f p)
-  pointwise f (PCurve p1 p2 p3) = PCurve (f p1) (f p2) (f p3)
+  pointwise f (PLineTo p)         = PLineTo (f p)
+  pointwise f (PCurveTo p1 p2 p3) = PCurveTo (f p1) (f p2) (f p3)
   
 
 
 --------------------------------------------------------------------------------
 -- Affine trans instances
 
-type instance DUnit (Picture u) = u
-type instance DUnit (Primitive u) = u
-type instance DUnit (Path u) = u
+type instance DUnit (Picture u)     = u
+type instance DUnit (Primitive u)   = u
+type instance DUnit (Path u)        = u
+type instance DUnit (PrimEllipse u) = u
+
 
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
@@ -391,8 +407,8 @@ instance (Num u, Ord u) => Blank (Picture u) where
 
 instance (Num u, Ord u) => Boundary (Path u) where
   boundary (Path st xs) = trace $ st : foldr f [] xs where
-      f (PLine p1)        acc  = p1 : acc
-      f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
+      f (PLineTo p1)        acc  = p1 : acc
+      f (PCurveTo p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
 
 -- Note - this will calculate a very bad bounding box for text.
@@ -403,8 +419,14 @@ instance (Fractional u, Ord u) => Boundary (Primitive u) where
   boundary (PPath _ p)                  = boundary p
   boundary (PLabel (_,a) (Label pt xs)) = textBounds (font_size a) pt char_count
     where char_count = textLength xs
-  boundary (PEllipse _ c hw hh)         = BBox (c .-^ v) (c .+^ v) 
+  boundary (PEllipse _ e)               = boundary e
+
+
+instance (Fractional u, Ord u) => Boundary (PrimEllipse u) where
+  boundary (PrimEllipse c hw hh)        = BBox (c .-^ v) (c .+^ v) 
     where v = V2 hw hh
+ 
+
 
 
 instance Boundary (Picture u) where

@@ -263,6 +263,19 @@ textline attr s ctr = Textline s attr $ rectangle w h ctr
     (V2 w h)           = tr .-. bl
     (bl, _br, tr, _tl) = corners $ boundary $ textlabel attr s ctr
 
+
+-- Can\'t apply affine transformations to Primitives.
+-- This means drawing a TextLine has to make a Picture,
+-- and this is a bit disappointing as other Shapes can be 
+-- accommodated as Primitives.
+--
+-- (Other shapes have their constituent points transformed
+-- before they are draw with wumpus-core).
+--
+-- Having e.g. many coordinates rendering as individual 
+-- Pictures is inefficient.
+-- 
+
 {-
 drawTextline :: TextLine u -> Picture u
 drawTextline 

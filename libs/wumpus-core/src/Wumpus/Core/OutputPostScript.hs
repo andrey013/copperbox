@@ -162,7 +162,7 @@ epsFooter = do
 -- Frame changes, representing scalings translation, rotations...
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
-
+--
 outputPicture :: (Fractional u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
@@ -201,9 +201,9 @@ updateFrame frm ma
                            }
 
 outputPrimitive :: (Fractional u, PSUnit u) => Primitive u -> WumpusM ()
-outputPrimitive (PPath (c,dp) p)           = outputPath dp c p 
-outputPrimitive (PLabel props l)           = updateFont props $ outputLabel l
-outputPrimitive (PEllipse (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
+outputPrimitive (PPath (c,dp) p)    = outputPath dp c p 
+outputPrimitive (PLabel props l)    = updateFont props $ outputLabel l
+outputPrimitive (PEllipse (c,dp) e) = outputEllipse dp c e
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
 updateFont (c,fnt) ma = updateColour c $ do 
@@ -287,8 +287,8 @@ strokeSetReset = foldr (appro link cmd id) (return (), return ())
 
 
 outputPathSeg :: PSUnit u => PathSegment u -> WumpusM ()
-outputPathSeg (PLine (P2 x y))  = ps_lineto x y
-outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
+outputPathSeg (PLineTo (P2 x y))  = ps_lineto x y
+outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
   where
     P2 x1 y1 = p1
     P2 x2 y2 = p2
@@ -297,9 +297,10 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
+--
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
-              => DrawEllipse -> c -> Point2 u -> u -> u -> WumpusM ()
-outputEllipse dp c (P2 x y) hw hh 
+              => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
+outputEllipse dp c (PrimEllipse (P2 x y) hw hh)
     | hw==hh    = outputArc dp c x y hw
     | otherwise = do { ps_gsave
                      -- Not so good -- the next line changes stroke width...

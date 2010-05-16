@@ -115,10 +115,9 @@ picture _ (Clip (fr,_) p a) = do
 
 
 primitive :: (Ord u, PSUnit u) => Clipped -> Primitive u -> SvgM Element
-primitive c (PPath props p)            = clipAttrib c $ path props p
-primitive c (PLabel props l)           = clipAttrib c $ label props l
-primitive c (PEllipse props mid hw hh) = clipAttrib c $ 
-                                                ellipse props mid hw hh
+primitive c (PPath props p)     = clipAttrib c $ path props p
+primitive c (PLabel props l)    = clipAttrib c $ label props l
+primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
 
 
 
@@ -210,8 +209,8 @@ fontStyle SVG_BOLD_OBLIQUE =
 
 -- If w==h the draw the ellipse as a circle
 
-ellipse :: PSUnit u => EllipseProps -> Point2 u -> u -> u -> SvgM Element
-ellipse (c,dp) (P2 x y) w h 
+ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
+ellipse (c,dp) (PrimEllipse (P2 x y) w h) 
     | w == h    = return $ element_circle  
                          `rap` add_attrs (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
@@ -267,8 +266,8 @@ pathInstructions :: PSUnit u => Path u -> [String]
 pathInstructions (Path (P2 x y) xs) = path_m x y : map pathSegment xs
 
 pathSegment :: PSUnit u => PathSegment u -> String
-pathSegment (PLine (P2 x1 y1))                        = path_l x1 y1
-pathSegment (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
+pathSegment (PLineTo (P2 x1 y1))                        = path_l x1 y1
+pathSegment (PCurveTo (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
     path_c x1 y1 x2 y2 x3 y3
 
 

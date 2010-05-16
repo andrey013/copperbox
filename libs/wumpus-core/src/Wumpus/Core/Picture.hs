@@ -155,12 +155,12 @@ path = Path
 -- | Create a straight-line PathSegment.
 --
 lineTo :: Point2 u -> PathSegment u
-lineTo = PLine
+lineTo = PLineTo
 
 -- | Create a curved PathSegment.
 --
 curveTo :: Point2 u -> Point2 u -> Point2 u -> PathSegment u
-curveTo = PCurve
+curveTo = PCurveTo
 
 
 -- | Convert the list of vertices to a path of straight line 
@@ -168,7 +168,7 @@ curveTo = PCurve
 --
 vertexPath :: [Point2 u] -> Path u
 vertexPath []     = error "Picture.vertexPath - empty point list"
-vertexPath (x:xs) = Path x (map PLine xs)
+vertexPath (x:xs) = Path x (map PLineTo xs)
 
 
 
@@ -180,7 +180,7 @@ vertexPath (x:xs) = Path x (map PLine xs)
 curvedPath :: [Point2 u] -> Path u
 curvedPath []     = error "Picture.curvedPath - empty point list"
 curvedPath (x:xs) = Path x (fn xs) where
-  fn (a:b:c:ys) = PCurve a b c : fn ys 
+  fn (a:b:c:ys) = PCurveTo a b c : fn ys 
   fn _          = []
 
 
@@ -390,7 +390,7 @@ multilabel attr n va (x:xs) pt =
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) pt hw hh
+mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh)
 
 
 ellipseDefault :: EllipseProps
