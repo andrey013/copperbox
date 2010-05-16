@@ -25,7 +25,7 @@ main = do
 
 
 makeFontLabel :: DRGB -> FontAttr -> (DPoint2 -> DPrimitive)
-makeFontLabel c fa = \pt -> textlabel (c,fa) pt msg
+makeFontLabel c fa = textlabel (c,fa) msg
   where
     msg = unwords [ font_name fa, (show $ font_size fa) ++ "pt"]
 

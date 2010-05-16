@@ -39,6 +39,6 @@ colourSample :: (Fractional u, Ord u)
              => (String,DRGB) -> Point2 u -> Picture u
 colourSample (name,c) pt = multi [block, lbl] where
   block = frame $ fillPolygon c $ rectangle 15 10 pt
-  lbl   = textline courier10 (pt .+^ hvec 18) name
+  lbl   = textline courier10 name (pt .+^ hvec 18)
 
 

@@ -27,6 +27,8 @@ module Wumpus.Extra.CoreAdditions
 
 import Wumpus.Core
 
+-- TextLabel has questionable arg order... {FIXED}
+
 -- Not sure about this - it is useful, but it might 
 -- have bad 'semantics' 
 --

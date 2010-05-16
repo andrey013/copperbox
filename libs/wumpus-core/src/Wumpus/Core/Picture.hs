@@ -312,8 +312,8 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
-mkTextLabel :: PSRgb -> FontAttr -> Point2 u -> String -> Primitive u
-mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt $ lexLabel txt)
+mkTextLabel :: PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
+mkTextLabel c attr txt pt = PLabel (c,attr) (Label pt $ lexLabel txt)
 
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 
@@ -330,8 +330,10 @@ default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
 -- Unless a 'FontAttr' is specified, the label will use 12pt 
 -- Courier.
 --
+-- The supplied point is is the bottom left corner.
+--
 class TextLabel t where 
-  textlabel :: t -> Point2 u -> String -> Primitive u
+  textlabel :: t -> String -> Point2 u -> Primitive u
 
 
 instance TextLabel () where textlabel () = mkTextLabel psBlack default_font
@@ -359,7 +361,7 @@ instance TextLabel (Gray Double,FontAttr) where
 
 -- | Create a label where the font is @Courier@, text size is 10 
 -- and colour is black.
-ztextlabel :: Point2 u -> String -> Primitive u
+ztextlabel :: String -> Point2 u -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
 
 
@@ -372,14 +374,15 @@ ztextlabel = mkTextLabel psBlack default_font
 -- An error is throw if the list of strings is empty
 -- 
 multilabel :: (Fractional u, Ord u, TextLabel t) 
-           => t -> u -> VAlign -> Point2 u -> [String]-> Picture u
-multilabel _    _ _  _  []     = error $ 
+           => t -> u -> VAlign -> [String] -> Point2 u -> Picture u
+multilabel _    _ _  []     _  = error $ 
     "Wumpus.Core.Picture.multilabel - empty list."
-multilabel attr n va pt (x:xs) = 
+
+multilabel attr n va (x:xs) pt = 
     moveAll $ vsepA va n line1 (map mkPic xs)
   where
     line1     = mkPic x
-    mkPic     = frame . textlabel attr zeroPt
+    mkPic s   = frame $ textlabel attr s zeroPt
     vdelta p  = boundaryHeight (boundary p) - boundaryHeight (boundary line1)
     moveAll p = moveV (vdelta p) $ p `at` pt
 

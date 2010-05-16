@@ -322,7 +322,7 @@ processConnectors bm xs p0 = foldr fn p0 xs
 
 
 mkLabel :: (Fractional u, Ord u) => String -> Picture u
-mkLabel s = frame $ ztextlabel zeroPt s 
+mkLabel s = frame $ ztextlabel s zeroPt
 
 
 findBorder :: GridCoord -> BorderMap u -> Border u

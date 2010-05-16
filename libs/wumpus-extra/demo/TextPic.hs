@@ -32,11 +32,11 @@ text_pic01 = pic1 -//- pic2
 pic1 :: Picture Double
 pic1 = vsepA VLeft 4 line1 [line2,line3]
   where
-    line1   = frame $ textlabel courier24 zeroPt all_nums
-    line2   = frame $ textlabel courier24 zeroPt all_uppers
-    line3   = frame $ textlabel courier24 zeroPt all_lowers
+    line1   = frame $ textlabel courier24 all_nums   zeroPt
+    line2   = frame $ textlabel courier24 all_uppers zeroPt
+    line3   = frame $ textlabel courier24 all_lowers zeroPt
 
 
 pic2 :: Picture Double
-pic2 = backgroundFill lightCoral $ textline courier24 zeroPt "Wumpus"
+pic2 = backgroundFill lightCoral $ textline courier24 "Wumpus" zeroPt
 

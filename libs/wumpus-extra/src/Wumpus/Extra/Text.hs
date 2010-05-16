@@ -39,13 +39,14 @@ import Wumpus.Extra.Utils
 -- descenders.
 --
 textline :: (Fractional u, Ord u) 
-         => FontAttr -> Point2 u -> String -> Picture u
+         => FontAttr -> String -> Point2 u -> Picture u
 textline = frame `ooo` textlabel 
 
 
 
 -- | Coloured version of 'textline'. Same conditions vis bounding
 -- box metrics and start point apply. 
+--
 colouredTextline :: (Fractional u, Ord u, PSColour c)
-                 => c -> FontAttr -> Point2 u -> String -> Picture u
+                 => c -> FontAttr -> String -> Point2 u -> Picture u
 colouredTextline  c attr = frame `oo` textlabel (psColour c,attr)

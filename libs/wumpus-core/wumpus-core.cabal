@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.16.0
+version:          0.17.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -63,6 +63,13 @@ description:
   convert Wumpus'\s EPS files to many other formats (bitmaps). 
   .
   Changelog:
+  .
+  0.16.0 to 0.17.0:
+  .
+  * Argument order of 'textlabel' and 'ztextlabel' change so
+    that Point2 is the last argument.
+  .
+  .
   0.15.0 to 0.16.0:
   .
   * Additions to Core.Geometry (direction, pvec, vangle, 
@@ -83,12 +90,6 @@ description:
     rather than a list.
   .  
   * Added centeredAt to PictureLanguage
-  .
-  0.14.0 to 0.15.0:
-  .
-  * Added Named colours and \"safe fonts\" from wumpus-extra.
-  .
-  * Added wumpus_core_version to track version number.
   .
   .
 build-type:         Simple

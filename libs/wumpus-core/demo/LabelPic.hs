@@ -10,8 +10,10 @@ import Wumpus.Core
 
 
 drawBounds :: (Fractional u, Ord u) => Picture u -> Picture u
-drawBounds p        = p `over` (frame $ cstroke () ph) where
-    ph   = vertexPath $ corners $ boundary p
+drawBounds p        = p `over` (frame $ cstroke () ph) 
+  where
+    ph            = vertexPath $ [bl,br,tr,tl]
+    (bl,br,tr,tl) = corners $ boundary p
 
 --------------------------------------------------------------------------------
 
@@ -29,8 +31,8 @@ black = RGB3 0 0 0
 
 lbl1 :: Picture Double
 lbl1 = line1 -//- line2 where
-  line1 = frame (textlabel attrs zeroPt "Hello")
-  line2 = frame (textlabel attrs zeroPt "World")
+  line1 = frame (textlabel attrs "Hello" zeroPt)
+  line2 = frame (textlabel attrs "World" zeroPt)
   attrs = (peru, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 
 
 
@@ -76,7 +78,7 @@ bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
 bigLetter :: PSRgb -> Char -> Picture Double
-bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs zeroPt [ch]
+bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs [ch] zeroPt
   where
     attrs = (col, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 
 
@@ -135,7 +137,7 @@ demo10 = do
     writeSVG_latin1 "./out/label10.svg" p1
   where
     p1 :: Picture Double
-    p1 = frame $ textlabel () zeroPt "myst&#egrave;re"
+    p1 = frame $ textlabel () "myst&#egrave;re" zeroPt
 
 demo11 :: IO ()
 demo11 = do
@@ -144,7 +146,7 @@ demo11 = do
   where
     pic :: Picture Double
     pic = p1 `over` p2
-    p1  = multilabel plum 3 VLeft (P2 50 50) ["Hello", "from", "Wumpus"]
+    p1  = multilabel plum 3 VLeft ["Hello", "from", "Wumpus"] (P2 50 50)
     p2  = bigA `at` P2 50 50
 
 

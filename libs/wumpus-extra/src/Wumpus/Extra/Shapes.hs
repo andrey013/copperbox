@@ -35,6 +35,10 @@ module Wumpus.Extra.Shapes
   , rectangle
   , strokeRectangle
 
+  -- * TextLine
+  , Textline
+  , textline
+
   ) where
 
 import Wumpus.Core hiding ( center, CTM )
@@ -220,3 +224,46 @@ strokeRectangle t rtangle = cstroke t $ vertexPath [bl,br,tr,tl]
     tr        = northeast rtangle
     br        = southeast rtangle
     tl        = northwest rtangle
+
+--------------------------------------------------------------------------------
+-- Text label
+
+data Textline u = Textline
+      { text_string           :: String
+      , text_attr             :: FontAttr
+      , text_rect             :: Rectangle u
+      }
+
+type instance DUnit (Textline u) = u
+      
+
+instance (Fractional u) => AnchorCenter (Textline u) where
+  center = center . text_rect 
+
+
+instance (Floating u, Real u) => Rotate (Textline u) where
+  rotate r = pstar (\m s -> s { text_rect = rotate r m }) text_rect
+
+
+instance (Floating u, Real u) => RotateAbout (Textline u) where
+  rotateAbout r pt = 
+      pstar (\m s -> s { text_rect = rotateAbout r pt m }) text_rect
+
+instance Num u => Scale (Textline u) where
+  scale x y = pstar (\m s -> s { text_rect = scale x y m }) text_rect
+
+instance Num u => Translate (Textline u) where
+  translate x y = 
+     pstar (\m s -> s { text_rect = translate x y m }) text_rect
+
+textline :: (Fractional u, Ord u) 
+         => FontAttr -> String -> Point2 u -> Textline u
+textline attr s ctr = Textline s attr $ rectangle w h ctr
+  where 
+    (V2 w h)           = tr .-. bl
+    (bl, _br, tr, _tl) = corners $ boundary $ textlabel attr s ctr
+
+{-
+drawTextline :: TextLine u -> Picture u
+drawTextline 
+-}

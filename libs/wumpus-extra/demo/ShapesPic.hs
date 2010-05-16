@@ -45,5 +45,7 @@ coorda rect = frameMulti
     , drawCoordinate indigo $ coordinate (southeast rect)
     , drawCoordinate indigo $ coordinate (southwest rect)
     , drawCoordinate indigo $ coordinate (northwest rect)
-
     ] 
+
+-- labelPic :: String -> Picture u
+-- labelPic = 
