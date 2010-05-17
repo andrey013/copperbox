@@ -1,7 +1,7 @@
 
 module GridPic where
 
-import Wumpus.Core hiding ( blank )
+import Wumpus.Core 
 import Wumpus.Extra.Matrix
 import Wumpus.Extra
 

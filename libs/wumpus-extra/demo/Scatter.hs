@@ -6,6 +6,7 @@ module Scatter where
 
 import Wumpus.Core
 import Wumpus.Doodle.ScatterPlot
+import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SVGColours
 
 import Control.Applicative ( liftA2 )

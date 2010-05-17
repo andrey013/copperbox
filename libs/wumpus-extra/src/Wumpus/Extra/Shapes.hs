@@ -41,7 +41,7 @@ module Wumpus.Extra.Shapes
 
   ) where
 
-import Wumpus.Core hiding ( center, CTM )
+import Wumpus.Core hiding ( CTM )
 import Wumpus.Extra.Utils
 
 import Data.AffineSpace         -- package: vector-space

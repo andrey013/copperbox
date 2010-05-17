@@ -3,8 +3,9 @@
 
 module ShapesPic where
 
-import Wumpus.Core  hiding ( center )
-import Wumpus.Extra hiding ( rectangle )
+import Wumpus.Core
+-- import Wumpus.Extra hiding ( rectangle )
+import Wumpus.Extra.PictureLanguage hiding ( center )
 import Wumpus.Extra.Shapes
 import Wumpus.Extra.SVGColours
 

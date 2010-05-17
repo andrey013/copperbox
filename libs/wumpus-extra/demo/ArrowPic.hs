@@ -4,6 +4,7 @@ module ArrowPic where
 
 import Wumpus.Core
 import Wumpus.Extra
+import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SVGColours
 
 main :: IO ()

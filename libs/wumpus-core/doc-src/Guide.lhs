@@ -114,6 +114,11 @@ to the PostScript and SVG escape characters.
 
 \item[\texttt{Wumpus.Core.VersionNumber.}]
 Current version number of \wumpuscore.
+
+\item[\texttt{Wumpus.Core.WumpusTypes.}]
+This module collects internal types for Pictures, Paths etc. and
+presents them as opaque types - i.e. their constructors are 
+hidden. 
 \end{description}
 
 The package also contains some extra modules defining

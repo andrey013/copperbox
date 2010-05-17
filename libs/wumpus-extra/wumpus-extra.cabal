@@ -29,7 +29,7 @@ library
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
                       monadLib, xml,
-                      wumpus-core >= 0.14.0
+                      wumpus-core >= 0.17.0
 
   
   exposed-modules:

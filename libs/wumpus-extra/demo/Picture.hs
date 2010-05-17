@@ -5,6 +5,7 @@ module Picture where
 import Wumpus.Core
 import Wumpus.Doodle.Lines
 import Wumpus.Extra
+import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SVGColours
 
 

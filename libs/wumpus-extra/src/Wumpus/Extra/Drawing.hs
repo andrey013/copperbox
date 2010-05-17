@@ -41,6 +41,7 @@ module Wumpus.Extra.Drawing
 import Wumpus.Core
 
 import Wumpus.Extra.BasicObjects
+import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.Utils
 
 

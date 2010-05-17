@@ -5,6 +5,7 @@ module P55 where
 
 import Wumpus.Core
 import Wumpus.Extra
+import Wumpus.Extra.PictureLanguage
 
 -- Note 
 -- Processing has (0,0) at top left, 

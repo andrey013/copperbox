@@ -21,6 +21,7 @@ module Wumpus.Extra.CoreAdditions
   (
 
     zeroPicture
+  , bbcenter
 
   ) where
 
@@ -35,3 +36,10 @@ import Wumpus.Core
 zeroPicture :: Num u => Picture u
 zeroPicture = blankPicture (BBox zeroPt zeroPt)
 
+-- | Extract a point from the bounding box at the supplied 
+-- cardinal position.
+bbcenter :: Fractional a => BoundingBox a -> Point2 a
+bbcenter (BBox (P2 x0 y0) (P2 x1 y1)) = P2 xMid  yMid
+  where
+    xMid      = x0 + 0.5 * (x1 - x0)
+    yMid      = y0 + 0.5 * (y1 - y0)

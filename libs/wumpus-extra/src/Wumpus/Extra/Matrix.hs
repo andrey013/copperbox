@@ -58,10 +58,11 @@ module Wumpus.Extra.Matrix
 
   ) where
 
-import Wumpus.Core hiding ( blank )
+import Wumpus.Core
 
 import Wumpus.Extra.Arrows
-import Wumpus.Extra.CoreAdditions ( zeroPicture )
+import Wumpus.Extra.CoreAdditions ( zeroPicture, bbcenter )
+import Wumpus.Extra.PictureLanguage hiding ( blank )
 import Wumpus.Extra.Utils
 
 import qualified Data.Map as Map
@@ -318,7 +319,7 @@ processConnectors bm xs p0 = foldr fn p0 xs
     fn (Conn a b) p = arr `over` p where
       b1  = findBorder a bm
       b2  = findBorder b bm
-      arr = arrowTri' () (boundaryPoint C b1) (boundaryPoint C b2)
+      arr = arrowTri' () (bbcenter b1) (bbcenter b2)
 
 
 mkLabel :: (Fractional u, Ord u) => String -> Picture u
