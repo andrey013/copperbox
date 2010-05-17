@@ -294,20 +294,16 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
     P2 x2 y2 = p2
     P2 x3 y3 = p3
 
+
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh)
-    | hw==hh    = outputArc dp c x y hw
-    | otherwise = do { ps_gsave
-                     -- Not so good -- the next line changes stroke width...
-                     ; ps_scale 1 (hh/hw)
-                     ; outputArc dp c x y hw
-                     ; ps_grestore
-                     }
+outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm) = 
+    concatInOut (ctm * scalingMatrix 1 (hh/hw)) (outputArc dp c x y hw)
+
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
@@ -322,10 +318,10 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
     ps_stroke
 
 
-outputLabel :: PSUnit u => Label u -> WumpusM ()
-outputLabel (Label (P2 x y) entxt) = do
+outputLabel :: (PSUnit u, Fractional u) => Label u -> WumpusM ()
+outputLabel (Label (P2 x y) entxt ctm) = do
     ps_moveto x y
-    outputEncodedText entxt
+    concatInOut ctm $ outputEncodedText entxt
 
 outputEncodedText :: EncodedText -> WumpusM () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
@@ -347,3 +343,11 @@ missingCode i fallback =  do
             
 
 
+concatInOut :: (PSUnit u, Fractional u) 
+            => Matrix3'3 u -> WumpusM a -> WumpusM ()
+concatInOut m1 ma | m1 == identityMatrix  = ma >> return ()
+                  | otherwise             = do { ps_concat $ toCTM m1
+                                               ; _ <- ma 
+                                               ; ps_concat $ toCTM $ invert m1
+                                               }
+    

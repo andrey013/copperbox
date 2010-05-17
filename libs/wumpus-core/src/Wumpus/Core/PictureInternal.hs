@@ -65,13 +65,11 @@ import Wumpus.Core.Utils
 import Data.AffineSpace
 import Data.Semigroup
 
-import Control.Applicative ( liftA2 )
-
 import Text.PrettyPrint.Leijen
 
 
 
--- | Picture is a leaf attributed tree - where atttibutes are 
+-- | Picture is a leaf attributed tree - where attributes are 
 -- colour, line-width etc. It is parametric on the unit type 
 -- of points (typically Double).
 -- 
@@ -171,6 +169,7 @@ type DPathSegment = PathSegment Double
 data Label u = Label 
       { label_bottom_left :: Point2 u
       , label_text        :: EncodedText
+      , label_CTM         :: Matrix3'3 u
       }
   deriving (Eq,Show)
 
@@ -179,9 +178,10 @@ type DLabel = Label Double
 -- Ellipse represented by center and half_width * half_height
 --
 data PrimEllipse u = PrimEllipse 
-      { ellipse_center      :: Point2 u
-      , ellipse_half_width  :: u
-      , ellipse_half_height :: u 
+      { ellipse_center        :: Point2 u
+      , ellipse_half_width    :: u
+      , ellipse_half_height   :: u 
+      , ellispe_CTM           :: Matrix3'3 u
       } 
   deriving (Eq,Show)
 
@@ -260,13 +260,19 @@ instance Pretty u => Pretty (PathSegment u) where
   pretty (PLineTo pt)           = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
-  pretty (Label pt s) = dquotes (pretty s) <> char '@' <> pretty pt
+  pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
+                                               <+> ppMatrixCTM ctm
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse c w h) = pretty "ellipse" <+> pretty c
-                                                <+> text "w:" <> pretty w
-                                                <+> text "h:" <> pretty h
+  pretty (PrimEllipse c w h ctm) = pretty "ellipse" <+> pretty c
+                                                    <+> text "w:" <> pretty w
+                                                    <+> text "h:" <> pretty h
+                                                    <+> ppMatrixCTM ctm
 
+ppMatrixCTM :: Pretty u => Matrix3'3 u -> Doc
+ppMatrixCTM = pp . toCTM where
+  pp (CTM a b  c d  x y) = list $ map pretty [a,b,c,d,x,y]
+  
 
 --------------------------------------------------------------------------------
 
@@ -309,12 +315,38 @@ instance (Num u, Ord u) => Scale (Picture u) where
 instance (Num u, Ord u) => Translate (Picture u) where
   translate = translatePicture
 
+instance (Real u, Floating u) => Rotate (Primitive u) where
+  rotate ang (PPath    attr path) = PPath    attr $ rotatePath ang path
+  rotate ang (PLabel   attr lbl)  = PLabel   attr $ rotateLabel ang lbl
+  rotate ang (PEllipse attr ell)  = PEllipse attr $ rotateEllipse ang ell
+
+instance (Real u, Floating u) => RotateAbout (Primitive u) where
+  rotateAbout ang pt (PPath    attr path) = 
+      PPath    attr $ rotatePathAbout ang pt path
+
+  rotateAbout ang pt (PLabel   attr lbl)  = 
+      PLabel   attr $ rotateLabelAbout ang pt lbl
+
+  rotateAbout ang pt (PEllipse attr ell)  = 
+      PEllipse attr $ rotateEllipseAbout ang pt ell
+
+
+instance Num u => Scale (Primitive u) where
+  scale x y (PPath    attr path) = PPath    attr $ scalePath x y path
+  scale x y (PLabel   attr lbl)  = PLabel   attr $ scaleLabel x y lbl
+  scale x y (PEllipse attr ell)  = PEllipse attr $ scaleEllipse x y ell
+
+instance Num u => Translate (Primitive u) where
+  translate x y (PPath    attr path) = PPath    attr $ translatePath x y path
+  translate x y (PLabel   attr lbl)  = PLabel   attr $ translateLabel x y lbl
+  translate x y (PEllipse attr ell)  = PEllipse attr $ translateEllipse x y ell
+
 --------------------------------------------------------------------------------
 
 -- Helpers for the affine transformations
 
 rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
-rotatePicture = liftA2 transformPicture rotate rotate
+rotatePicture ang = transformPicture (rotate ang) (rotate ang)
 
 
 rotatePictureAbout :: (Real u, Floating u) 
@@ -338,7 +370,6 @@ transformPicture fp fv =
     mapLocale $ \(frm,bb) -> (transformFrame fp fv frm, transformBBox fp bb)
 
 
--- Shouldn't transforming the frame be the inverse transformation?
 
 transformFrame :: Num u
                => (Point2 u -> Point2 u) 
@@ -358,32 +389,75 @@ transformBBox fp bb = trace $ map fp $ [bl,br,tl,tr]
 
 
 
+-- Paths
+
+rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
+rotatePath ang = transformPath (rotate ang)
+
+rotatePathAbout :: (Real u, Floating u) 
+                => Radian -> Point2 u -> Path u -> Path u
+rotatePathAbout ang pt = transformPath (rotateAbout ang pt) 
+
+scalePath :: Num u => u -> u -> Path u -> Path u
+scalePath x y = transformPath (scale x y)
+
+translatePath :: Num u => u -> u -> Path u -> Path u
+translatePath x y = transformPath (translate x y)
+
+transformPath :: (Point2 u -> Point2 u) -> Path u -> Path u
+transformPath fp (Path start ss) = 
+    Path (fp start) (map (transformPathSegment fp) ss)
+
+-- Path Segments
+
+
+transformPathSegment :: (Point2 u -> Point2 u) -> PathSegment u -> PathSegment u
+transformPathSegment fp = pointwise fp
+
+-- Labels
+
+-- rotate CTM and pt or just CTM ??
+rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
+rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix ang)
+
+-- rotate CTM and pt or just CTM ??
+rotateLabelAbout :: (Real u, Floating u) 
+                => Radian -> Point2 u -> Label u -> Label u
+rotateLabelAbout ang rpt (Label pt txt ctm) = 
+    Label pt txt (ctm * originatedRotationMatrix ang rpt) 
+
+scaleLabel :: Num u => u -> u -> Label u -> Label u
+scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix x y)
+
+-- no need to change CTM for translation (??)
+translateLabel :: Num u => u -> u -> Label u -> Label u
+translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
+
+
+-- 
+
+rotateEllipse :: (Real u, Floating u) 
+              => Radian -> PrimEllipse u -> PrimEllipse u
+rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * rotationMatrix ang)
+
+rotateEllipseAbout :: (Real u, Floating u) 
+                   => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
+rotateEllipseAbout ang rpt (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * originatedRotationMatrix ang rpt)
+
+
+scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * scalingMatrix x y)
+
+
+translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+translateEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh ctm
+
 --------------------------------------------------------------------------------
 -- Boundary
-
-instance (Num u, Ord u) => Boundary (Path u) where
-  boundary (Path st xs) = trace $ st : foldr f [] xs where
-      f (PLineTo p1)        acc  = p1 : acc
-      f (PCurveTo p1 p2 p3) acc  = p1 : p2 : p3 : acc 
-
-
--- Note - this will calculate a very bad bounding box for text.
--- Descenders will be transgress the boundary and width will be 
--- very long.
-
-instance (Fractional u, Ord u) => Boundary (Primitive u) where
-  boundary (PPath _ p)                  = boundary p
-  boundary (PLabel (_,a) (Label pt xs)) = textBounds (font_size a) pt char_count
-    where char_count = textLength xs
-  boundary (PEllipse _ e)               = boundary e
-
-
-instance (Fractional u, Ord u) => Boundary (PrimEllipse u) where
-  boundary (PrimEllipse c hw hh)        = BBox (c .-^ v) (c .+^ v) 
-    where v = V2 hw hh
- 
-
-
 
 instance Boundary (Picture u) where
   boundary (PicBlank (_,bb))     = bb
@@ -391,7 +465,75 @@ instance Boundary (Picture u) where
   boundary (Picture  (_,bb) _)   = bb
   boundary (Clip     (_,bb) _ _) = bb
 
+instance (Num u, Ord u) => Boundary (Path u) where
+  boundary (Path st xs) = trace $ st : foldr f [] xs where
+      f (PLineTo p1)        acc  = p1 : acc
+      f (PCurveTo p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
+
+-- Note - this will calculate an approximate bounding box for 
+-- text.
+
+instance (Fractional u, Floating u, Ord u) => Boundary (Primitive u) where
+  boundary (PPath _ p)        = boundary p
+  boundary (PLabel (_,a) l)   = primLabelBoundary a l 
+  boundary (PEllipse _ e)     = boundary e
+
+primLabelBoundary :: (Fractional u, Ord u) 
+                  => FontAttr -> Label u -> BoundingBox u
+primLabelBoundary attr (Label pt xs ctm) = retrace (ctm *#) untraf_bbox
+  where
+    untraf_bbox = textBounds (font_size attr) pt char_count
+    char_count  = textLength xs
+
+instance (Fractional u, Floating u, Ord u) => Boundary (PrimEllipse u) where
+  boundary (PrimEllipse ctr hw hh ctm) 
+      | hw == hh  = circleBoundary ctr hw ctm
+      | otherwise = ellipseBoundary ctr hw hh ctm
+
+
+-- circle boundary is quite efficient - a circle always fits in 
+-- a square, so we can get the bounding box easily.
+--
+circleBoundary :: (Num u, Ord u)
+               => Point2 u -> u -> Matrix3'3 u -> BoundingBox u
+circleBoundary ctr radius ctm = retrace (ctm *#) untraf_bb
+  where
+    untraf_bb = BBox (ctr .-^ vec) (ctr .+^ vec)
+    vec       = V2 radius radius
+
+
+-- Find the bbox of an ellipse by drawing it as four bezier 
+-- curves then trace all the points and control points to find
+-- the bbox.
+--
+-- (Maybe this is more work than necessary...)
+-- 
+-- Note all_points takes three of four to avoid duplicating
+-- /matched/ start-end points
+--
+
+ellipseBoundary :: (Floating u, Ord u)
+                => Point2 u -> u -> u -> Matrix3'3 u -> BoundingBox u
+ellipseBoundary ctr hw hh ctm = trace $ map (new_mtrx *#) all_points
+  where
+    radius     = max hw hh
+    (dx,dy)    = if radius == hw then (1, rescale (0,1) (0,hh) hh)
+                                 else (rescale (0,1) (0,hw) hw, 1)
+
+    new_mtrx   = ctm * scalingMatrix dx dy
+    circ       = bezierCircle radius ctr
+    all_points = foldr (\(a,b,c,_) acc -> c:b:a:acc) [] circ
+
+
+-- | Make a circle from Bezier curves - @n@ is the number of 
+-- subdivsions per quadrant.
+bezierCircle :: Floating u 
+             => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
+bezierCircle radius pt = map mkQuad angs
+  where
+    angs         = [(0, pi/2), (pi/2,pi), (pi, 3*pi/2), (3*pi/2, 0)]
+    mkQuad (a,b) = bezierArc radius a b pt
 
 
 

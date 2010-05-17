@@ -27,7 +27,7 @@ world_frame = uniformScale 0.75 $
 
 
 makeLabelPrim :: String -> DPoint2 -> DPrimitive
-makeLabelPrim text pt = textlabel attrs pt text
+makeLabelPrim = textlabel attrs 
   where
     attrs     = (black, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 10)
 

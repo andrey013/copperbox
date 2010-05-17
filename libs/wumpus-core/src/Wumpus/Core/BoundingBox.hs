@@ -37,6 +37,8 @@ module Wumpus.Core.BoundingBox
   , obbox
   , union 
   , trace
+  , retrace
+
   , corners
   , withinBB
   , boundaryWidth
@@ -158,6 +160,20 @@ BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
 trace :: (Num a, Ord a) => [Point2 a] -> BoundingBox a
 trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (cmin z a, cmax z b) ) (p,p) ps
 trace []     = error $ "BoundingBox.trace called in empty list"
+
+-- | Perform the supplied transformation on the four corners of 
+-- the bounding box. Trace the new corners to calculate the 
+-- resulting bounding box.
+-- 
+-- This helper function can be used to re-calculate a bounding 
+-- box after a rotation for example.
+--
+retrace :: (Num u, Ord u) 
+        => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
+retrace f = trace . map f . fromCorners . corners
+  where
+    fromCorners (bl,br,tr,tl) = [bl,br,tr,tl]
+
 
 -- | Generate all the corners of a bounding box, counter-clock 
 -- wise from the bottom left, i.e. @(bl, br, tr, tl)@.

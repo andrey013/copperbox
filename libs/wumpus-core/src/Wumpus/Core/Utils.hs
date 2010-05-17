@@ -34,6 +34,8 @@ module Wumpus.Core.Utils
   , truncateDouble
   , roundup
 
+
+  , rescale
   , clamp
   , ramp
   , ramp255
@@ -183,6 +185,17 @@ roundup = show . ceilingi
 ceilingi :: RealFrac a => a -> Integer
 ceilingi = ceiling
 
+
+-- rescale a (originally in the range amin to amax) within the 
+-- the range bmin to bmax.
+--
+rescale :: Fractional a => (a,a) -> (a,a) -> a -> a
+rescale (amin,amax) (bmin,bmax) a = 
+    bmin + apos * (brange / arange)  
+  where
+    arange = amax - amin
+    brange = bmax - bmin
+    apos   = a - amin 
 
 clamp :: Ord a => a -> a -> a -> a 
 clamp a b x = max a (min b x)

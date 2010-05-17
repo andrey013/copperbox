@@ -97,7 +97,7 @@ blankPicture bb = PicBlank (stdFrame, bb)
 
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
-frame :: (Fractional u, Ord u) => Primitive u -> Picture u
+frame :: (Fractional u, Floating u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
 -- | Frame a picture within the supplied bounding box
@@ -114,7 +114,8 @@ frame p = Single (stdFrame, boundary p) p
 -- ellipse. Thus the bounding box will never reframed to a 
 -- smaller size than the /natural/ bounding box.
 --
-frameWithin :: (Fractional u, Ord u) => Primitive u -> BoundingBox u -> Picture u
+frameWithin :: (Fractional u, Floating u, Ord u) 
+            => Primitive u -> BoundingBox u -> Picture u
 frameWithin p@(PLabel _ _) bb = Single (stdFrame,bb) p
 frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 
@@ -126,7 +127,8 @@ frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 --
 -- This function throws an error when supplied the empty list.
 --
-frameMulti :: (Fractional u, Ord u) => [Primitive u] -> Picture u
+frameMulti :: (Fractional u, Floating u, Ord u) 
+           => [Primitive u] -> Picture u
 frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti xs = multi $ map frame xs
 
@@ -312,8 +314,10 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
-mkTextLabel :: PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
-mkTextLabel c attr txt pt = PLabel (c,attr) (Label pt $ lexLabel txt)
+mkTextLabel :: Num u => PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
+mkTextLabel c attr txt pt = PLabel (c,attr) lbl 
+  where
+    lbl = Label pt (lexLabel txt) identityMatrix
 
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 
@@ -333,7 +337,7 @@ default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
 -- The supplied point is is the bottom left corner.
 --
 class TextLabel t where 
-  textlabel :: t -> String -> Point2 u -> Primitive u
+  textlabel :: Num u => t -> String -> Point2 u -> Primitive u
 
 
 instance TextLabel () where textlabel () = mkTextLabel psBlack default_font
@@ -361,7 +365,7 @@ instance TextLabel (Gray Double,FontAttr) where
 
 -- | Create a label where the font is @Courier@, text size is 10 
 -- and colour is black.
-ztextlabel :: String -> Point2 u -> Primitive u
+ztextlabel :: Num u => String -> Point2 u -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
 
 
@@ -370,7 +374,7 @@ ztextlabel = mkTextLabel psBlack default_font
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh)
+mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityMatrix)
 
 
 ellipseDefault :: EllipseProps

@@ -62,6 +62,8 @@ type Clipped    = Bool
 coordChange ::  (Num u, Ord u, Scale t, u ~ DUnit t) => t -> t
 coordChange = scale 1 (-1)
 
+svg_reflection_matrix :: Num u => Matrix3'3 u
+svg_reflection_matrix = M3'3  1 0 0    0 (-1) 0    0 0 1  
 
 --------------------------------------------------------------------------------
 
@@ -144,7 +146,7 @@ clipAttrib True  melt = do
 
 path :: PSUnit u => PathProps -> Path u -> SvgM Element
 path (c,dp) p = 
-    return $ element_path ps `rap` add_attrs (fill_a : stroke_a : opts)
+    return $ element_path ps `snoc_attrs` (fill_a : stroke_a : opts)
   where
     (fill_a,stroke_a,opts) = drawProperties c dp
     ps                     = svgPath dp p 
@@ -158,19 +160,19 @@ path (c,dp) p =
 -- tspan element).
 -- 
 label :: (Ord u, PSUnit u) => LabelProps -> Label u -> SvgM Element
-label (c,FontAttr _ fam style sz) (Label pt entxt) = do 
+label (c,FontAttr _ fam style sz) (Label pt entxt ctm) = do 
      str <- encodedText entxt
-     let tspan_elt = element_tspan str `rap` add_attrs [ attr_fill c ]
-     return $ element_text tspan_elt `rap` add_attrs text_xs 
-                                     `rap` add_attrs (fontStyle style)
+     let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
+     return $ element_text tspan_elt `snoc_attrs` text_xs 
+                                     `snoc_attrs` (fontStyle style)
   where
     P2 x y    = coordChange pt
-    text_xs   = [ attr_x x
-                , attr_y y 
-                , attr_transform $ val_matrix 1 0 0 (-1) 0 (0::Double)
-                , attr_font_family fam
-                , attr_font_size sz 
-                ]
+    text_xs   = withCTM (ctm * svg_reflection_matrix) $ 
+                  [ attr_x x
+                  , attr_y y 
+                  , attr_font_family fam
+                  , attr_font_size sz 
+                  ]
     
     
 
@@ -210,14 +212,14 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse (P2 x y) w h) 
+ellipse (c,dp) (PrimEllipse (P2 x y) w h ctm) 
     | w == h    = return $ element_circle  
-                         `rap` add_attrs (circle_attrs  ++ style_attrs)
+                            `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
-                         `rap` add_attrs (ellipse_attrs ++ style_attrs)
+                            `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
-    ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
+    circle_attrs  = withCTM ctm $ [attr_cx x, attr_cy y, attr_r w]
+    ellipse_attrs = withCTM ctm $ [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
 
@@ -283,3 +285,13 @@ frameChange fr
 
 closePath :: SvgPath -> SvgPath 
 closePath xs = xs ++ ["Z"]
+
+snoc_attrs :: Element -> [Attr] -> Element
+snoc_attrs = flip add_attrs
+
+withCTM :: PSUnit u => Matrix3'3 u -> [Attr] -> [Attr]
+withCTM mtrx attrs | mtrx == identityMatrix = attrs
+                   | otherwise              = mtrx_attr : attrs
+  where
+    mtrx_attr       = attr_transform $ val_matrix a b c d e f
+    CTM a b c d e f = toCTM mtrx

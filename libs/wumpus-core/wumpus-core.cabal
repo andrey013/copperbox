@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.17.0
+version:          0.18.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -32,6 +32,8 @@ description:
   .
   WARNING...
   .
+  THIS_NEEDS_REVISING_BEFORE_THE_NEXT_COMMIT_TO_HACKAGE
+  ?????????????????????????????????????????????????????
   wumpus-core is likely to change quite a bit with the next 
   revision as I want to see if I can make Primitives 
   support affine translations. Hopefully this will not change 
@@ -73,6 +75,10 @@ description:
   convert Wumpus'\s EPS files to many other formats (bitmaps). 
   .
   Changelog:
+  .
+  0.17.0 to 0.18.0:
+  .
+  * ????????
   .
   0.16.0 to 0.17.0:
   .
