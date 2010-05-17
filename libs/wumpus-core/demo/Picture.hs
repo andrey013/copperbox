@@ -3,7 +3,7 @@
 module Picture where
 
 import Wumpus.Core
-
+import Wumpus.Extra.PictureLanguage
 
 
 peru :: PSRgb

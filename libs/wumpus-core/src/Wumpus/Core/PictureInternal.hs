@@ -46,6 +46,8 @@ module Wumpus.Core.PictureInternal
   
   -- * Extras
   , mapLocale
+  , movePic
+  , moveLocale
   , extractFrame
   , repositionProperties
 
@@ -56,7 +58,6 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
@@ -356,51 +357,6 @@ transformBBox fp bb = trace $ map fp $ [bl,br,tl,tr]
     (bl,br,tr,tl) = corners bb
 
 
---------------------------------------------------------------------------------
-
--- TO DETERMINE
--- What should leftBound and rightBound be for an empty picture?
-
-type instance PUnit (Picture u) = u
-
-instance (Num u, Ord u) => Horizontal (Picture u) where
-  moveH a    = movePic (hvec a) 
-  leftBound  = leftPlane . boundary
-  rightBound = rightPlane . boundary
-
-instance (Num u, Ord u) => Vertical (Picture u) where
-  moveV a     = movePic (vvec a) 
-  topBound    = upperPlane . boundary
-  bottomBound = lowerPlane . boundary
-
--- Note - picture is a binary tree and drawing is depth-first,
--- left-to-right so pictures in the right of the tree potentially
--- are drawn on top of pictures on the left.
---
--- So to print picture a _over_ picture b we form this node:
---
--- >  locale 
--- >    /\
--- >   /  \
--- >  b    a
---
--- Hence `over` flips b and a
-
-
-instance (Num u, Ord u) => Composite (Picture u) where
-  a `over` b = Picture (ortho zeroPt, bb) (mkList2 b a) where
-               bb = union (boundary a) (boundary b)
-                       
-
-
-
-instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u)) => 
-      Move (Picture u) where
-  move x y = movePic (V2 x y)
-
-
-instance (Num u, Ord u) => Blank (Picture u) where
-  blank w h = PicBlank (ortho zeroPt, bbox zeroPt (P2 w h))
 
 --------------------------------------------------------------------------------
 -- Boundary

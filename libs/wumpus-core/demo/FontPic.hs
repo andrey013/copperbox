@@ -3,6 +3,7 @@
 module FontPic where
 
 import Wumpus.Core
+import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.SVGColours ( steelBlue )
 import Wumpus.Extra.X11Colours ( indianRed1 )

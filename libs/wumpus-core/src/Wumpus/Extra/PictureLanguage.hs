@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.PictureLanguage
+-- Module      :  Wumpus.Extra.PictureLanguage
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -21,9 +21,17 @@
 -- half D\' as they have horizontal operations but only carriage 
 -- return in the vertical.
 --
+-- WARNING - this module may change in detail if not in spirit
+-- quite significantly in future.
+--
+-- These drawing operations are pretty fundamental and a 
+-- compentent functional drawing program should provide them in 
+-- some formulation. However the implementation herein needs 
+-- some more thought.
+--
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.PictureLanguage 
+module Wumpus.Extra.PictureLanguage 
   (
   -- * Data types for alignment 
     HAlign(..)
@@ -72,9 +80,13 @@ module Wumpus.Core.PictureLanguage
   , hsepA
   , vsepA
 
+  -- * Special function for text
+  , multilabel
+
+
   ) where
 
-import Wumpus.Core.Geometry
+import Wumpus.Core
 
 import Data.AffineSpace
 
@@ -473,3 +485,70 @@ vsepA :: ( Fractional u, Horizontal a, Vertical a
 vsepA va n = foldl' op where 
    a `op` b = moveAlignV va (moveAlignV va a (blankV n)) b 
 
+--------------------------------------------------------------------------------
+
+-- TO DETERMINE
+-- What should leftBound and rightBound be for an empty picture?
+
+type instance PUnit (Picture u) = u
+
+instance (Num u, Ord u) => Horizontal (Picture u) where
+  moveH a    = movePic (hvec a) 
+  leftBound  = leftPlane . boundary
+  rightBound = rightPlane . boundary
+
+instance (Num u, Ord u) => Vertical (Picture u) where
+  moveV a     = movePic (vvec a) 
+  topBound    = upperPlane . boundary
+  bottomBound = lowerPlane . boundary
+
+-- Note - picture is a binary tree and drawing is depth-first,
+-- left-to-right so pictures in the right of the tree potentially
+-- are drawn on top of pictures on the left.
+--
+-- So to print picture a _over_ picture b we form this node:
+--
+-- >  locale 
+-- >    /\
+-- >   /  \
+-- >  b    a
+--
+-- Hence `over` flips b and a
+
+
+instance (Num u, Ord u) => Composite (Picture u) where
+  over = picOver       
+
+instance (Num u, Ord u) => Move (Picture u) where
+  move x y = movePic (V2 x y)
+
+
+instance (Num u, Ord u) => Blank (Picture u) where
+  blank w h = blankPicture (bbox zeroPt (P2 w h))
+
+
+
+--------------------------------------------------------------------------------
+-- 
+
+
+-- | Create multiple lines of text.
+--
+-- The dimension argument is the linespacing, measured as the
+-- distance between the upper lines descender and the lower 
+-- lines ascender.
+--
+-- An error is throw if the list of strings is empty
+-- 
+multilabel :: (Fractional u, Ord u, TextLabel t) 
+           => t -> u -> VAlign -> [String] -> Point2 u -> Picture u
+multilabel _    _ _  []     _  = error $ 
+    "Wumpus.Core.Picture.multilabel - empty list."
+
+multilabel attr n va (x:xs) pt = 
+    moveAll $ vsepA va n line1 (map mkPic xs)
+  where
+    line1     = mkPic x
+    mkPic s   = frame $ textlabel attr s zeroPt
+    vdelta p  = boundaryHeight (boundary p) - boundaryHeight (boundary line1)
+    moveAll p = moveV (vdelta p) $ p `at` pt

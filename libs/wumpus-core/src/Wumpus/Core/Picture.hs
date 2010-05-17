@@ -44,16 +44,17 @@ module Wumpus.Core.Picture
 
   , TextLabel(..)
   , ztextlabel
-  , multilabel
 
   , Ellipse(..)
   , zellipse
 
-
-
-
   -- * Operations
   , extendBoundary
+
+
+  -- * Warning - don\'t use these are a temporary exports
+  , movePic  -- re-export from PictureInternal
+  , picOver
 
   ) where
 
@@ -62,7 +63,6 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.PictureLanguage
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
@@ -365,26 +365,6 @@ ztextlabel :: String -> Point2 u -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
 
 
--- | Create multiple lines of text.
---
--- The dimension argument is the linespacing, measured as the
--- distance between the upper lines descender and the lower 
--- lines ascender.
---
--- An error is throw if the list of strings is empty
--- 
-multilabel :: (Fractional u, Ord u, TextLabel t) 
-           => t -> u -> VAlign -> [String] -> Point2 u -> Picture u
-multilabel _    _ _  []     _  = error $ 
-    "Wumpus.Core.Picture.multilabel - empty list."
-
-multilabel attr n va (x:xs) pt = 
-    moveAll $ vsepA va n line1 (map mkPic xs)
-  where
-    line1     = mkPic x
-    mkPic s   = frame $ textlabel attr s zeroPt
-    vdelta p  = boundaryHeight (boundary p) - boundaryHeight (boundary line1)
-    moveAll p = moveV (vdelta p) $ p `at` pt
 
 --------------------------------------------------------------------------------
 
@@ -492,3 +472,8 @@ extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb))
     
     posve n | n < 0     = 0
             | otherwise = n 
+
+picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+a `picOver` b = Picture (ortho zeroPt, bb) (mkList2 b a) 
+  where
+    bb = union (boundary a) (boundary b)

@@ -36,13 +36,14 @@
 --
 -- * "Wumpus.Core.TextEncoder"
 --
+-- * "Wumpus.Core.VersionNumber"
+--
+-- * "Wumpus.Core.WumpusTypes"
 --
 -- Named colours ( black, white etc.) are hidden from 
 -- "Wumpus.Core.Colour" to avoid collisions with modules that
 -- define colour sets (e.g. all the SVG colours). 
 --
--- Some data types are exported from 
--- "Wumpus.Core.PictureInternal" but are made opaque. 
 -- 
 --------------------------------------------------------------------------------
 
@@ -58,28 +59,10 @@ module Wumpus.Core
   , module Wumpus.Core.OutputPostScript
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
-  , module Wumpus.Core.PictureLanguage
   , module Wumpus.Core.TextEncoder
+  , module Wumpus.Core.VersionNumber
+  , module Wumpus.Core.WumpusTypes
 
-  , wumpus_core_version
-
-  -- Export from Picture Internal
-  , Picture
-  , DPicture
-  , Primitive
-  , DPrimitive
-  , Path
-  , DPath
-  , PathSegment
-  , DPathSegment
-  , Label
-  , DLabel
-
-  , PathProps                   -- Better hidden?
-  , LabelProps                  --      "
-  , EllipseProps                --      "
-  , DrawPath                    --      "
-  , DrawEllipse                 --      "
 
   ) where
 
@@ -92,9 +75,6 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
-import Wumpus.Core.PictureInternal
-import Wumpus.Core.PictureLanguage
 import Wumpus.Core.TextEncoder
-import Wumpus.Core.VersionNumber ( wumpus_core_version )
-
-
+import Wumpus.Core.VersionNumber
+import Wumpus.Core.WumpusTypes
