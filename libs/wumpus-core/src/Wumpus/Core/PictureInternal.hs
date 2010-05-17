@@ -103,7 +103,7 @@ import Text.PrettyPrint.Leijen
 -- 
 -- The additional constructors are convenience:
 --
--- @PickBlank@ has a bounding box but no content and is useful for
+-- @PicBlank@ has a bounding box but no content and is useful for
 -- some picture language operations (e.g. @hsep@).
 --
 -- @Clip@ nests a picture (tree) inside a clipping path.

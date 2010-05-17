@@ -104,12 +104,6 @@ constructors are convenient in that attributes - colour, line
 width, etc. - may be specified or not. The technique is due to 
 Iavor S. Diatchki's XML-Light.
 
-\item[\texttt{Wumpus.Core.PictureLanguage.}]
-Composition operators for pictures. The operators are somewhat 
-analogue to the usual operators or pretty-printing libraries, 
-but work in 2D rather than largely horizontally with some 
-vertical concatenation.
-
 \item[\texttt{Wumpus.Core.TextEncoder.}]
 Types for handling non-ASCII character codes. This module is
 perhaps under-cooked thou it appears adequate for Latin-1...
@@ -123,13 +117,19 @@ Current version number of \wumpuscore.
 \end{description}
 
 The package also contains some extra modules defining
-safe fonts and colour schemes. These modules would ideally be
-packaged in a separate package \texttt{wumpus-extra}, 
-unfortunately the other code in this package is not yet suitable 
-for wide spread distribution, so they are currently distributed 
-with \wumpuscore.
+picture composition operators, safe fonts and colour schemes. 
+These modules would ideally be packaged in a separate package 
+\texttt{wumpus-extra}, unfortunately the other code in this 
+package is not yet suitable for wide spread distribution, so 
+they are currently distributed with \wumpuscore.
 
 \begin{description}
+\item[\texttt{Wumpus.Extra.PictureLanguage.}]
+Composition operators for pictures. The operators are somewhat 
+analogue to the usual operators or pretty-printing libraries, 
+but work in 2D rather than largely horizontally with some 
+vertical concatenation.
+
 \item[\texttt{Wumpus.Extra.SafeFonts.}]
 Safe to use font and size combinations. The fonts named here are 
 included with GhostScript and are aliased as \emph{safe} fonts
@@ -285,8 +285,8 @@ with the \texttt{frame} function to the Picture type.
 
 The following table lists PostScript fonts and their SVG 
 equivalents. As of revision 0.15.0 \wumpuscore includes a module 
-\texttt{Wumpus.Extra.SafeFonts} encoding this list to avoid 
-typographical slips...
+\texttt{Wumpus.Extra.SafeFonts} encoding the fonts in this list 
+to avoid typographical slips...
 
 
 

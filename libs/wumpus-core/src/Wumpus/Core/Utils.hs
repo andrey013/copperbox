@@ -81,8 +81,7 @@ import Control.Applicative
 import Control.Monad ( ap )
 import Data.List ( intersperse )
 import Data.Ratio
-import System.Time 
-
+import Data.Time
 
 
 
@@ -197,22 +196,27 @@ ramp255 :: Double -> Int
 ramp255 = clamp 0 255  . ceiling . (*255)
 
 
+--------------------------------------------------------------------------------
 
 -- | Generate a time stamp for the output files. Note PostScript
 -- does no interpretation of the time stamp, it is solely for 
 -- information and so the representation is arbitrary.
+
 mkTimeStamp :: IO String
-mkTimeStamp = getClockTime >>= toCalendarTime >>= return . format
+mkTimeStamp = getZonedTime >>= return . format . zonedTimeToLocalTime
   where
-    format t = mkTime t ++ " " ++ mkDate t
-    mkTime = concat . intersperse ":" . sequenceA tfuns
-    mkDate = concat . intersperse " " . sequenceA dfuns
-    tfuns  = [ pad2 . ctHour, pad2 . ctMin, pad2 . ctSec ]
-    dfuns  = [ show . ctDay, show . ctMonth, show . ctYear ]
+    format t  = mkTime t ++ " " ++ mkDate t
+    mkTime = concat . intersperse ":" . sequenceA tfuns . localTimeOfDay
+    mkDate = showGregorian . localDay
+    tfuns  = [ pad2 . todHour, pad2 . todMin, pad2 . floori . todSec ]
     pad2 i | i < 10    = '0' : show i
            | otherwise = show i  
 
+floori :: RealFrac a => a -> Int
+floori = floor
 
+
+--------------------------------------------------------------------------------
 
 -- | Enclose string in parens.
 parens :: String -> String 
