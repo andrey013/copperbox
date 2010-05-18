@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -52,9 +53,12 @@ module Wumpus.Core.Picture
   , extendBoundary
 
 
-  -- * Warning - don\'t use these are a temporary exports
-  , movePic  -- re-export from PictureInternal
+  -- * Minimal - picture composition
+  , picMoveBy
   , picOver
+  , picBeside
+  , illustrateBounds
+  , illustrateBoundsPrim 
 
   ) where
 
@@ -322,7 +326,7 @@ mkTextLabel c attr txt pt = PLabel (c,attr) lbl
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 
 default_font :: FontAttr
-default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
+default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
 
 -- | Create a text label. The string should not contain newline
 -- or tab characters. Use 'multilabel' to create text with 
@@ -363,7 +367,7 @@ instance TextLabel (HSB3 Double,FontAttr) where
 instance TextLabel (Gray Double,FontAttr) where
   textlabel (c,a) = mkTextLabel (psColour c) a
 
--- | Create a label where the font is @Courier@, text size is 10 
+-- | Create a label where the font is @Courier@, text size is 24pt
 -- and colour is black.
 ztextlabel :: Num u => String -> Point2 u -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
@@ -477,7 +481,70 @@ extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb))
     posve n | n < 0     = 0
             | otherwise = n 
 
+--------------------------------------------------------------------------------
+-- Minimal support for Picture composition
+
+-- | 'picOver' : @ picture -> picture -> picture @
+--
+-- Draw the first picture on to off the second picture - 
+-- neither picture will be moved.
+--
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picOver` b = Picture (ortho zeroPt, bb) (mkList2 b a) 
   where
     bb = union (boundary a) (boundary b)
+
+-- | 'picMoveBy' : @ picture -> vector -> picture @
+-- 
+--  Move a picture by the supplied vector. 
+--
+picMoveBy :: Num u => Picture u -> Vec2 u -> Picture u
+p `picMoveBy` v = v `movePic` p 
+
+-- | 'picBeside' : @ picture -> picture -> picture @
+--
+-- Move the second picture to sit at the right side of the
+-- first picture
+--
+picBeside :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+a `picBeside` b = a `picOver` (b `picMoveBy` v) 
+  where 
+    v = hvec $ rightPlane (boundary a) - leftPlane (boundary b) 
+
+-- | 'illustrateBounds' : @ colour -> picture -> picture @
+-- 
+-- Draw the picture on top of an image of its bounding box.
+-- The bounding box image will be drawn in the supplied colour.
+--
+illustrateBounds :: (Floating u, Ord u) => DRGB -> Picture u -> Picture u
+illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p) 
+
+
+-- | 'illustrateBoundsPrim' : @ colour -> primitive -> picture @
+-- 
+-- Draw the primitive on top of an image of its bounding box.
+-- The bounding box image will be drawn in the supplied colour.
+--
+-- The result will be lifted from Primitive to Picture.
+-- 
+illustrateBoundsPrim :: (Floating u, Ord u) 
+                     => DRGB -> Primitive u -> Picture u
+illustrateBoundsPrim rgb p = frameMulti (boundsPrims rgb p ++ [p])
+
+-- Note - above has to use snoc (++ [p]) to get the picture to
+-- draw above the bounding box image.
+
+
+-- | Draw a the rectangle of a bounding box, plus cross lines
+-- joining the corners.
+--
+boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
+            => DRGB -> t -> [Primitive u]
+boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
+  where
+    (bl,br,tr,tl) = corners $ boundary a
+    bbox_rect     = cstroke rgb $ vertexPath [bl,br,tr,tl]
+    bl_to_tr      = ostroke rgb $ vertexPath [bl,tr]
+    br_to_tl      = ostroke rgb $ vertexPath [br,tl]
+
+

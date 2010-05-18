@@ -36,6 +36,9 @@ module Wumpus.Core.Colour
   , Gray(..)
   , DGray
 
+  -- * Utility constructor
+  , iRGB3
+
   -- * Operations
   , rgb2hsb
   , hsb2rgb
@@ -164,6 +167,23 @@ instance Num a => VectorSpace (Gray a) where
   type Scalar (Gray a) = a
   s *^ (Gray a) = Gray (s*a)
 
+
+--------------------------------------------------------------------------------
+-- Utility constructor
+
+-- | 'iRGB3' : @ red -> green -> blue -> rgb @
+-- 
+-- Create an RGB colour with intergers in the range [0..255].
+-- 
+-- 255 represents full sturation so red will be @ 255 0 0 @.
+--
+-- Integer values above 255 will be clamped to 255, similarly
+-- values below 0 will be clamped to 0.
+-- 
+iRGB3 :: Int -> Int -> Int -> DRGB
+iRGB3 r g b = RGB3 (fn r) (fn g) (fn b)
+  where
+    fn a = rescale (0,255.0) (0,1.0) (clamp 0 255 $ fromIntegral a)
 
 --------------------------------------------------------------------------------
 -- Operations

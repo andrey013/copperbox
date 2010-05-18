@@ -10,9 +10,9 @@
     the Haddock documentation more cohesive.
    
   * Moved the Core.PictureLanguage module into the Extra
-    namespace (Extra.PictureLanguage). This module change
+    namespace (Extra.PictureLanguage). This module may change
     in detail, if not in spirit in the future as I'm not 
-    to happy with it. Also this model is somewhat 
+    very happy with it. Also this module is somewhat 
     \"higher-level\" than the modules in wumpus-core, so 
     a different home seems fitting. 
    

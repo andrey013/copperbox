@@ -9,7 +9,7 @@ import Wumpus.Extra.PictureLanguage
 
 
 
-drawBounds :: (Fractional u, Ord u) => Picture u -> Picture u
+drawBounds :: (Fractional u, Floating u, Ord u) => Picture u -> Picture u
 drawBounds p        = p `over` (frame $ cstroke () ph) 
   where
     ph            = vertexPath $ [bl,br,tr,tl]

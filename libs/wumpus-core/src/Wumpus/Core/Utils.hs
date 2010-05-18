@@ -198,7 +198,7 @@ rescale (amin,amax) (bmin,bmax) a =
     apos   = a - amin 
 
 clamp :: Ord a => a -> a -> a -> a 
-clamp a b x = max a (min b x)
+clamp amin amax x = max amin (min amax x)
 
 ramp :: Double -> Double
 ramp = clamp 0 1
