@@ -487,28 +487,12 @@ primLabelBoundary attr (Label pt xs ctm) = retrace (ctm *#) untraf_bbox
     untraf_bbox = textBounds (font_size attr) pt char_count
     char_count  = textLength xs
 
-instance (Fractional u, Floating u, Ord u) => Boundary (PrimEllipse u) where
-  boundary prim@(PrimEllipse ctr hw hh ctm) 
-      | hw == hh  = circleBoundary ctr hw ctm
-      | otherwise = ellipseBoundary prim
-
-
--- circle boundary is quite efficient - a circle always fits in 
--- a square, so we can get the bounding box easily.
---
-circleBoundary :: (Num u, Ord u)
-               => Point2 u -> u -> Matrix3'3 u -> BoundingBox u
-circleBoundary ctr radius ctm = retrace (ctm *#) untraf_bb
-  where
-    untraf_bb = BBox (ctr .-^ vec) (ctr .+^ vec)
-    vec       = V2 radius radius
-
+instance (Floating u, Ord u) => Boundary (PrimEllipse u) where
+  boundary = ellipseBoundary
 
 -- Find the bbox of an ellipse by drawing it as four bezier 
 -- curves then trace all the points and control points to find
 -- the bbox.
---
--- (Maybe this is more work than necessary...)
 -- 
 -- Note all_points takes three of the four points to avoid 
 -- duplicating
@@ -518,8 +502,13 @@ circleBoundary ctr radius ctm = retrace (ctm *#) untraf_bb
 ellipseBoundary :: (Floating u, Ord u) => PrimEllipse u -> BoundingBox u
 ellipseBoundary = trace . ellipseControlPoints
 
-
-
+-- PROBLEM:
+-- Currently a rotated circle has a different BBox to a 
+-- non-rotated circle, because of how tangents are selected...
+-- 
+-- This is the same as a diamond having a larger BBox
+-- than a square with same side-length
+--
 
 --------------------------------------------------------------------------------
 --
@@ -613,6 +602,7 @@ circleScalingProps hw hh  = (radius, (dx,dy))
 
 -- | Make a circle from Bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
+--
 bezierCircle :: Floating u 
              => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
 bezierCircle radius pt = map mkQuad angs

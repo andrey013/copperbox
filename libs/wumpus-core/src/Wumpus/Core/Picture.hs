@@ -483,6 +483,8 @@ extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb))
 --------------------------------------------------------------------------------
 -- Minimal support for Picture composition
 
+infixr 6 `picBeside`, `picOver`
+
 -- | 'picOver' : @ picture -> picture -> picture @
 --
 -- Draw the first picture on to off the second picture - 
@@ -547,6 +549,16 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
     br_to_tl      = ostroke rgb $ vertexPath [br,tl]
 
 
+-- | Generate the control points illustrating the Bezier 
+-- curves within a picture.
+-- 
+-- This has no effect on TextLabels.
+-- 
+-- Pseudo control points are generated for ellipses, 
+-- although strictly speaking ellipses do not use Bezier
+-- curves - they are implemented with PostScript\'s 
+-- @arc@ command.  
+--
 illustrateControlPoints :: (Floating u, Ord u)
                         => DRGB -> Primitive u -> Picture u
 illustrateControlPoints rgb prim = step prim
@@ -559,7 +571,12 @@ pathCtrlLines :: DRGB -> Path u -> [Primitive u]
 pathCtrlLines  _ _ = []
 
 
-
+-- Generate lines illustrating the control points of an 
+-- ellipse:
+-- 
+-- Two lines for each quadrant: 
+-- start-point to control-point1; control-point2 to end-point
+--
 ellipseCtrlLines :: (Floating u, Ord u) 
                      => DRGB -> PrimEllipse u -> [Primitive u]
 ellipseCtrlLines rgb pe = start all_points
