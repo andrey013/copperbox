@@ -50,6 +50,7 @@ module Wumpus.Core.PictureInternal
   , moveLocale
   , extractFrame
   , repositionProperties
+  , ellipseControlPoints
 
   ) where
 
@@ -487,9 +488,9 @@ primLabelBoundary attr (Label pt xs ctm) = retrace (ctm *#) untraf_bbox
     char_count  = textLength xs
 
 instance (Fractional u, Floating u, Ord u) => Boundary (PrimEllipse u) where
-  boundary (PrimEllipse ctr hw hh ctm) 
+  boundary prim@(PrimEllipse ctr hw hh ctm) 
       | hw == hh  = circleBoundary ctr hw ctm
-      | otherwise = ellipseBoundary ctr hw hh ctm
+      | otherwise = ellipseBoundary prim
 
 
 -- circle boundary is quite efficient - a circle always fits in 
@@ -514,39 +515,9 @@ circleBoundary ctr radius ctm = retrace (ctm *#) untraf_bb
 -- /matched/ start-end points
 --
 
-ellipseBoundary :: (Floating u, Ord u)
-                => Point2 u -> u -> u -> Matrix3'3 u -> BoundingBox u
-ellipseBoundary ctr hw hh ctm = trace $ map (new_mtrx *#) all_points
-  where
-    (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = ctm * scalingMatrix dx dy
-    circ             = bezierCircle radius ctr
-    all_points       = foldr (\(_,b,c,d) acc -> d:c:b:acc ) [] circ
+ellipseBoundary :: (Floating u, Ord u) => PrimEllipse u -> BoundingBox u
+ellipseBoundary = trace . ellipseControlPoints
 
---
--- I don't know how to calculate bezier arcs (and thus control
--- points) for an ellipse but I know how to do it for a circle...
---
--- So a make a circle with the largest of half-width and 
--- half-height then apply a scale to the points
--- 
-circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
-circleScalingProps hw hh  = (radius, (dx,dy))
-  where
-    radius     = max hw hh
-    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
-                                 else (rescale (0,hh) (0,1) hw, 1)
-
-
-
--- | Make a circle from Bezier curves - @n@ is the number of 
--- subdivsions per quadrant.
-bezierCircle :: Floating u 
-             => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
-bezierCircle radius pt = map mkQuad angs
-  where
-    angs         = [(0, pi*0.5), (pi*0.5,pi), (pi, pi*1.5), (pi*1.5, pi*2)]
-    mkQuad (a,b) = bezierArc radius a b pt
 
 
 
@@ -599,5 +570,54 @@ repositionProperties = fn . boundary where
       y  = 4 - lly
       ll = P2 (llx+x) (lly+y)
       ur = P2 (urx+x) (ury+y)  
+
+
+-- | Get the control points as a list
+-- 
+-- There are no duplicates in the list except for the final 
+-- /wrap-around/. We take 4 points initially (start,cp1,cp2,end)
+-- then (cp1,cp2,end) for the other three quadrants.
+--
+ellipseControlPoints :: (Floating u, Ord u)
+                     => PrimEllipse u -> [Point2 u]
+ellipseControlPoints (PrimEllipse ctr hw hh ctm) = 
+    map (new_mtrx *#) $ start circ
+  where
+    (radius,(dx,dy)) = circleScalingProps hw hh
+    new_mtrx         = ctm * scalingMatrix dx dy
+    circ             = bezierCircle radius ctr
+    
+    start ((a,b,c,d):xs)  = a:b:c:d : rest xs
+    start _               = []      -- should be unreachable
+    
+    rest  ((_,b,c,d):xs)  = b:c:d : rest xs
+    rest  _               = []
+
+
+
+--
+-- I don't know how to calculate bezier arcs (and thus control
+-- points) for an ellipse but I know how to do it for a circle...
+--
+-- So a make a circle with the largest of half-width and 
+-- half-height then apply a scale to the points
+-- 
+circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
+circleScalingProps hw hh  = (radius, (dx,dy))
+  where
+    radius     = max hw hh
+    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
+                                 else (rescale (0,hh) (0,1) hw, 1)
+
+
+
+-- | Make a circle from Bezier curves - @n@ is the number of 
+-- subdivsions per quadrant.
+bezierCircle :: Floating u 
+             => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
+bezierCircle radius pt = map mkQuad angs
+  where
+    angs         = [(0, pi*0.5), (pi*0.5,pi), (pi, pi*1.5), (pi*1.5, pi*2)]
+    mkQuad (a,b) = bezierArc radius a b pt
 
 

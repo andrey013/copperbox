@@ -270,38 +270,42 @@ toListH = ($ [])
 
 --------------------------------------------------------------------------------
 
-infixr 5 :+
+infixr 5 `Many`
 
-data OneList a = One a | a :+ OneList a
+data OneList a = One a | Many a  (OneList a)
   deriving (Eq)
 
 instance Show a => Show (OneList a) where
   show = ('{':) . ($ []) . step where
-     step (One a)   = shows a . showChar '}'
-     step (a :+ xs) = shows a . showChar ',' . step xs
+     step (One a)     = shows a . showChar '}'
+     step (Many a xs) = shows a . showChar ',' . step xs
 
 
 mkList2 :: a -> a -> OneList a
-mkList2 a b = a :+ One b
+mkList2 a b = a `Many` One b
 
 
 onesmapM_ :: Monad m => (a -> m b) -> OneList a -> m ()
-onesmapM_ f (One a)   = f a >> return ()
-onesmapM_ f (a :+ xs) = f a >> onesmapM_ f xs
+onesmapM_ f (One x)     = f x >> return ()
+onesmapM_ f (Many x xs) = f x >> onesmapM_ f xs
 
 toListWith :: (a -> b) -> OneList a -> [b]
-toListWith f (One a)   = [f a]
-toListWith f (a :+ xs) = f a : toListWith f xs
+toListWith f (One x)     = [f x]
+toListWith f (Many x xs) = f x : toListWith f xs
 
 toListWithM :: Monad m => (a -> m b) -> OneList a -> m [b]
-toListWithM f (One a)   = return return `ap` f a
-toListWithM f (a :+ xs) = return (:) `ap` f a `ap` toListWithM f xs
+toListWithM mf (One x)     = mf x >>= \a -> return [a]
+toListWithM mf (Many x xs) = return (:) `ap` mf x `ap` toListWithM mf xs
 
 
-fromListErr :: String -> [a] -> OneList a
-fromListErr msg []     = error msg
-fromListErr _   [a]    = One a
-fromListErr msg (a:xs) = a :+ fromListErr msg xs
+-- Error msg is a parameter, so client code can supply a 
+-- meaningful warning.
+-- 
+fromListErr :: [a] -> String -> OneList a
+fromListErr xs0 msg = step xs0 where
+   step []     = error msg
+   step [a]    = One a
+   step (a:xs) = Many a $ step xs
 
 
 

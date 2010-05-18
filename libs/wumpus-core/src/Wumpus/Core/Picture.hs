@@ -59,6 +59,7 @@ module Wumpus.Core.Picture
   , picBeside
   , illustrateBounds
   , illustrateBoundsPrim 
+  , illustrateControlPoints
 
   ) where
 
@@ -71,8 +72,6 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
 import Data.Semigroup
-
-
 
 
 --------------------------------------------------------------------------------
@@ -147,7 +146,7 @@ multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
     sconcat []      = error err_msg
     sconcat (x:xs)  = foldr append x xs
 
-    ones            = fromListErr err_msg ps
+    ones            = fromListErr ps err_msg
 
     err_msg         = "Wumpus.Core.Picture.multi - empty list"
 
@@ -548,3 +547,32 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
     br_to_tl      = ostroke rgb $ vertexPath [br,tl]
 
 
+illustrateControlPoints :: (Floating u, Ord u)
+                        => DRGB -> Primitive u -> Picture u
+illustrateControlPoints rgb prim = step prim
+  where
+    step (PEllipse _ e) = frameMulti (prim : ellipseCtrlLines rgb e)
+    step (PPath    _ p) = frameMulti (prim : pathCtrlLines rgb p)
+    step _              = frame prim
+
+pathCtrlLines :: DRGB -> Path u -> [Primitive u]
+pathCtrlLines  _ _ = []
+
+
+
+ellipseCtrlLines :: (Floating u, Ord u) 
+                     => DRGB -> PrimEllipse u -> [Primitive u]
+ellipseCtrlLines rgb pe = start all_points
+  where 
+    -- list in order: 
+    -- [s,cp1,cp2,e, cp1,cp2,e, cp1,cp2,e, cp1,cp2,e]
+
+    all_points         = ellipseControlPoints pe
+
+    start (s:c1:c2:e:xs) = mkLine s c1 : mkLine c2 e : rest e xs
+    start _              = []
+
+    rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
+    rest _ _             = []
+
+    mkLine s e = ostroke rgb (Path s [lineTo e]) 

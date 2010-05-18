@@ -6,10 +6,13 @@ module PrimAffine where
 import Wumpus.Core
 import Wumpus.Core.Colour ( black, red )
 
+
+import Wumpus.Core.PictureInternal
 import Wumpus.Core.Utils
 
 main :: IO ()
-main = sequence_ [ test_text, test_circle, test_ellipse ]
+main = sequence_ [ test_text, test_circle, test_ellipse
+                 , test_control_points_ellipse ]
 
 
 light_blue :: DRGB
@@ -72,6 +75,48 @@ rgbEllipse rgb = ellipse rgb 30 15 zeroPt
 rot_ellipse :: DPicture
 rot_ellipse =   (makePic1 $ rgbEllipse black) 
     `picBeside` (makePic1 $ rgbEllipse red)
+
+--------------------------------------------------------------------------------
+
+test_control_points_ellipse = do 
+    { putStrLn "Rotated ellipse (control points) ..."
+    ; writeEPS_latin1 "./out/affine_test01_ell_cp.eps" ctrl_pt_ellipse
+    ; writeSVG_latin1 "./out/affine_test01_ell_cp.svg" ctrl_pt_ellipse
+    }
+
+{-
+ctrl_pt_ellipse :: DPicture
+ctrl_pt_ellipse = 
+    frame $ ostroke () $ vertexPath 
+                       $ ellipseControlPoints 
+                       $ PrimEllipse zeroPt 30 15 identityMatrix
+-}
+
+ctrl_pt_ellipse :: DPicture
+ctrl_pt_ellipse = 
+    illustrateBounds light_blue $ illustrateControlPoints black $ rot_prim
+  where
+   rot_prim :: DPrimitive
+   rot_prim = rotate45 $ rgbEllipse red
+
+
+output1 = mapM_ (putStrLn . show . fn) points_list
+  where
+    fn (p1,p2) = (intPoint p1, intPoint p2)
+
+intPoint (P2 a b) = P2 (truncateDouble a) (truncateDouble b)
+
+output2 = mapM_ (putStrLn . show . intPoint) $ reverse $ ellipseControlPoints 
+                                             $ PrimEllipse zeroPt 30 15 identityMatrix
+
+points_list = start $ reverse $ ellipseControlPoints $ PrimEllipse zeroPt 30 15 identityMatrix
+  where
+    start (s:c1:c2:e:xs) = (s,c1) : (c2,e) : rest e xs
+    start _              = []
+
+    rest s (c1:c2:e:xs)  = (s,c1) : (c2,e) : rest e xs
+    rest _ _             = []
+
 
 test01 = corners $ boundary (rgbEllipse red)
 
