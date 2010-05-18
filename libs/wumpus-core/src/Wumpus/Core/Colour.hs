@@ -38,7 +38,9 @@ module Wumpus.Core.Colour
 
   -- * Utility constructor
   , iRGB3
-
+  , iHSB3
+  , iGray
+  
   -- * Operations
   , rgb2hsb
   , hsb2rgb
@@ -169,7 +171,7 @@ instance Num a => VectorSpace (Gray a) where
 
 
 --------------------------------------------------------------------------------
--- Utility constructor
+-- Utility constructors
 
 -- | 'iRGB3' : @ red -> green -> blue -> rgb @
 -- 
@@ -180,10 +182,17 @@ instance Num a => VectorSpace (Gray a) where
 -- Integer values above 255 will be clamped to 255, similarly
 -- values below 0 will be clamped to 0.
 -- 
-iRGB3 :: Int -> Int -> Int -> DRGB
-iRGB3 r g b = RGB3 (fn r) (fn g) (fn b)
-  where
-    fn a = rescale (0,255.0) (0,1.0) (clamp 0 255 $ fromIntegral a)
+iRGB3 :: (Fractional a, Ord a) => Int -> Int -> Int -> RGB3 a
+iRGB3 r g b = RGB3 (rescaleZeroOne r) (rescaleZeroOne g) (rescaleZeroOne b)
+
+iHSB3 :: (Fractional a, Ord a) => Int -> Int -> Int -> HSB3 a
+iHSB3 h s b = HSB3 (rescaleZeroOne h) (rescaleZeroOne s) (rescaleZeroOne b)
+
+iGray :: (Fractional a, Ord a) => Int -> Gray a
+iGray i = Gray $ rescaleZeroOne i
+
+rescaleZeroOne :: (Fractional a, Ord a) => Int -> a
+rescaleZeroOne a = rescale (0,255.0) (0,1.0) (clamp 0 255 $ fromIntegral a)
 
 --------------------------------------------------------------------------------
 -- Operations

@@ -493,12 +493,12 @@ vsepA va n = foldl' op where
 type instance PUnit (Picture u) = u
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
-  moveH a    = movePic (hvec a) 
+  moveH a p  = p `picMoveBy` (hvec a) 
   leftBound  = leftPlane . boundary
   rightBound = rightPlane . boundary
 
 instance (Num u, Ord u) => Vertical (Picture u) where
-  moveV a     = movePic (vvec a) 
+  moveV a p   = p `picMoveBy` (vvec a) 
   topBound    = upperPlane . boundary
   bottomBound = lowerPlane . boundary
 
@@ -520,7 +520,7 @@ instance (Num u, Ord u) => Composite (Picture u) where
   over = picOver       
 
 instance (Num u, Ord u) => Move (Picture u) where
-  move x y = movePic (V2 x y)
+  move x y p = p `picMoveBy` (V2 x y)
 
 
 instance (Num u, Ord u) => Blank (Picture u) where

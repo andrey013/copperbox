@@ -78,7 +78,16 @@ description:
   .
   0.17.0 to 0.18.0:
   .
-  * ????????
+  * Affine operations on Primitives (path, text,ellipse).
+    As well as making things more uniform, this can sometimes 
+    reduce the use of @concat@ in the generated PostScript code.
+  .
+  * Added a some picture composition functions to Core.Picture.
+    These are useful for testing where the type class 
+    complications of Extra.PictureLanguage are an overhead.  
+  .
+  * Added iRGB to Core.Colour - create RGB colours with 
+    integer components [0..255].
   .
   * Minor change - ztextlabal changed to use 24pt as rather than
     12pt. 
@@ -138,6 +147,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/AffineTest01.hs,
   demo/FontPic.hs,
   demo/LabelPic.hs,
   demo/Picture.hs,
