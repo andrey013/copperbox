@@ -6,6 +6,8 @@ module PrimAffine where
 import Wumpus.Core
 import Wumpus.Core.Colour ( black, red )
 
+import Wumpus.Core.Utils
+
 main :: IO ()
 main = sequence_ [ test_text, test_circle, test_ellipse ]
 
@@ -70,3 +72,44 @@ rgbEllipse rgb = ellipse rgb 30 15 zeroPt
 rot_ellipse :: DPicture
 rot_ellipse =   (makePic1 $ rgbEllipse black) 
     `picBeside` (makePic1 $ rgbEllipse red)
+
+test01 = corners $ boundary (rgbEllipse red)
+
+test02 :: (DPoint2,DPoint2,DPoint2,DPoint2)
+test02 = bezierArc 30 0 (pi/2) zeroPt
+
+test03 = ellipseBoundary zeroPt 30 15 identityMatrix
+
+test04 = boundary (rgbEllipse red)
+
+ellipseBoundary :: (Floating u, Ord u)
+                => Point2 u -> u -> u -> Matrix3'3 u -> BoundingBox u
+ellipseBoundary ctr hw hh ctm = trace $ map (new_mtrx *#) all_points
+  where
+    (radius,(dx,dy)) = circleScalingProps hw hh
+    new_mtrx         = ctm * scalingMatrix dx dy
+    circ             = bezierCircle radius ctr
+    all_points       = foldr (\(a,b,c,d) acc -> d:c:b:acc ) [] circ
+
+
+circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
+circleScalingProps hw hh  = (radius, (dx,dy))
+  where
+    radius     = max hw hh
+    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
+                                 else (rescale (0,hh) (0,1) hw, 1)
+
+
+
+
+-- | Make a circle from Bezier curves - @n@ is the number of 
+-- subdivsions per quadrant.
+bezierCircle :: Floating u 
+             => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
+bezierCircle radius pt = map mkQuad angs
+  where
+    angs         = [(0, pi*0.5), (pi*0.5,pi), (pi, pi*1.5), (pi*1.5, pi*2)]
+    mkQuad (a,b) = bezierArc radius a b pt
+
+test100 = bezierArc 30 (pi*1.5) 0      zeroPt
+test101 = bezierArc 30 (pi*1.5) (pi*2) zeroPt

@@ -713,6 +713,8 @@ circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
 -- PostScript\'s @arc@ command, but the arc is created as a 
 -- Bezier curve so it should span less than 90deg.
 --
+-- CAVEAT - ang2 must be greater than ang1 
+--
 bezierArc :: Floating u 
           => u -> Radian -> Radian -> Point2 u 
           -> (Point2 u, Point2 u, Point2 u, Point2 u)
@@ -724,4 +726,5 @@ bezierArc r ang1 ang2 pt = (p0,p1,p2,p3)
     p1    = p0 .+^ avec (ang1 + pi/2) e
     p2    = p3 .+^ avec (ang2 - pi/2) e
     p3    = pt .+^ avec ang2 r
+
 

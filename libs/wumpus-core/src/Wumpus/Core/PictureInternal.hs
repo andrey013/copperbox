@@ -509,7 +509,8 @@ circleBoundary ctr radius ctm = retrace (ctm *#) untraf_bb
 --
 -- (Maybe this is more work than necessary...)
 -- 
--- Note all_points takes three of four to avoid duplicating
+-- Note all_points takes three of the four points to avoid 
+-- duplicating
 -- /matched/ start-end points
 --
 
@@ -517,13 +518,25 @@ ellipseBoundary :: (Floating u, Ord u)
                 => Point2 u -> u -> u -> Matrix3'3 u -> BoundingBox u
 ellipseBoundary ctr hw hh ctm = trace $ map (new_mtrx *#) all_points
   where
-    radius     = max hw hh
-    (dx,dy)    = if radius == hw then (1, rescale (0,1) (0,hh) hh)
-                                 else (rescale (0,1) (0,hw) hw, 1)
+    (radius,(dx,dy)) = circleScalingProps hw hh
+    new_mtrx         = ctm * scalingMatrix dx dy
+    circ             = bezierCircle radius ctr
+    all_points       = foldr (\(_,b,c,d) acc -> d:c:b:acc ) [] circ
 
-    new_mtrx   = ctm * scalingMatrix dx dy
-    circ       = bezierCircle radius ctr
-    all_points = foldr (\(a,b,c,_) acc -> c:b:a:acc) [] circ
+--
+-- I don't know how to calculate bezier arcs (and thus control
+-- points) for an ellipse but I know how to do it for a circle...
+--
+-- So a make a circle with the largest of half-width and 
+-- half-height then apply a scale to the points
+-- 
+circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
+circleScalingProps hw hh  = (radius, (dx,dy))
+  where
+    radius     = max hw hh
+    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
+                                 else (rescale (0,hh) (0,1) hw, 1)
+
 
 
 -- | Make a circle from Bezier curves - @n@ is the number of 
@@ -532,7 +545,7 @@ bezierCircle :: Floating u
              => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
 bezierCircle radius pt = map mkQuad angs
   where
-    angs         = [(0, pi/2), (pi/2,pi), (pi, 3*pi/2), (3*pi/2, 0)]
+    angs         = [(0, pi*0.5), (pi*0.5,pi), (pi, pi*1.5), (pi*1.5, pi*2)]
     mkQuad (a,b) = bezierArc radius a b pt
 
 
