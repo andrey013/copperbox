@@ -149,6 +149,7 @@ extra-source-files:
   LICENSE,
   demo/AffineTest01.hs,
   demo/FontPic.hs,
+  demo/HPath.hs,
   demo/LabelPic.hs,
   demo/Picture.hs,
   doc/Guide.pdf,

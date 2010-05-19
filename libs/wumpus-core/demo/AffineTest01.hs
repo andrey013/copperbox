@@ -3,6 +3,8 @@
 
 module PrimAffine where
 
+import HPath
+
 import Wumpus.Core
 import Wumpus.Core.Colour ( black, red, blue )
 
@@ -11,9 +13,10 @@ import Wumpus.Core.PictureInternal
 import Wumpus.Core.Utils
 
 main :: IO ()
-main = sequence_ [ test_text, test_circle, test_ellipse
+main = sequence_ [ test_text, test_circle, test_ellipse, test_path
                  , test_control_points_circle
                  , test_control_points_ellipse
+                 , test_control_points_path
                  ]
 
 
@@ -84,7 +87,24 @@ rgbEllipse rgb = ellipse rgb 60 30 zeroPt
 rot_ellipse :: DPicture
 rot_ellipse = combine3 (rgbEllipse black) (rgbEllipse blue) (rgbEllipse red)
 
+--------------------------------------------------------------------------------
+-- Primitive - Path
 
+test_path = do 
+    { putStrLn "Rotated path..."
+    ; writeEPS_latin1 "./out/affine_test01_path.eps" rot_path
+    ; writeSVG_latin1 "./out/affine_test01_path.svg" rot_path
+    }
+
+-- Make this a bit more interesting, so you can see whats going on...
+-- (add some curves...)
+
+rgbPath :: DRGB -> DPrimitive
+rgbPath rgb = ostroke rgb $ dog_kennel
+
+
+rot_path :: DPicture
+rot_path = combine3 (rgbPath black) (rgbPath blue) (rgbPath red)
 
 --------------------------------------------------------------------------------
 
@@ -116,4 +136,18 @@ ctrl_pt_ellipse =
   where
    rot_prim :: DPrimitive
    rot_prim = rotate45 $ rgbEllipse red
+
+
+test_control_points_path = do 
+    { putStrLn "Path (control points) ..."
+    ; writeEPS_latin1 "./out/affine_test01_path_cp.eps" ctrl_pt_path
+    ; writeSVG_latin1 "./out/affine_test01_path_cp.svg" ctrl_pt_path
+    }
+
+ctrl_pt_path :: DPicture
+ctrl_pt_path = 
+    illustrateBounds light_blue $ illustrateControlPoints black $ rot_prim
+  where
+   rot_prim :: DPrimitive
+   rot_prim = rotate45 $ rgbPath red
 

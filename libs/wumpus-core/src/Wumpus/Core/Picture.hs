@@ -567,8 +567,23 @@ illustrateControlPoints rgb prim = step prim
     step (PPath    _ p) = frameMulti (prim : pathCtrlLines rgb p)
     step _              = frame prim
 
-pathCtrlLines :: DRGB -> Path u -> [Primitive u]
-pathCtrlLines  _ _ = []
+-- Genrate lines illustrating the control points of curves on 
+-- a Path.
+--
+-- Two lines are generated for a Bezier curve:
+-- start-point to control-point1; control-point2 to end-point
+--
+-- Nothing is generated for a straight line.
+--
+pathCtrlLines :: (Num u, Ord u) => DRGB -> Path u -> [Primitive u]
+pathCtrlLines rgb (Path start ss) = step start ss
+  where 
+    -- trail the current end point through the recursion...
+    step _ []                    = []
+    step _ (PLineTo e:xs)        = step e xs
+    step s (PCurveTo c1 c2 e:xs) = mkLine s c1 : mkLine c2 e : step e xs 
+
+    mkLine s e                   = ostroke rgb (Path s [lineTo e]) 
 
 
 -- Generate lines illustrating the control points of an 
@@ -584,7 +599,7 @@ ellipseCtrlLines rgb pe = start all_points
     -- list in order: 
     -- [s,cp1,cp2,e, cp1,cp2,e, cp1,cp2,e, cp1,cp2,e]
 
-    all_points         = ellipseControlPoints pe
+    all_points           = ellipseControlPoints pe
 
     start (s:c1:c2:e:xs) = mkLine s c1 : mkLine c2 e : rest e xs
     start _              = []
@@ -592,4 +607,6 @@ ellipseCtrlLines rgb pe = start all_points
     rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
     rest _ _             = []
 
-    mkLine s e = ostroke rgb (Path s [lineTo e]) 
+    mkLine s e           = ostroke rgb (Path s [lineTo e]) 
+
+
