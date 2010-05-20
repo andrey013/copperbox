@@ -5,6 +5,8 @@ module LabelPic where
 import Wumpus.Core
 import Wumpus.Extra.PictureLanguage
 
+import System.Directory
+
 --------------------------------------------------------------------------------
 
 
@@ -151,8 +153,8 @@ demo11 = do
 
 
 main :: IO ()
-main = sequence_
-  [ demo01, demo02, demo03, demo04, demo05
-  , demo06, demo07, demo08, demo09, demo10
-  , demo11
-  ]  
+main = do 
+  createDirectoryIfMissing True "./out/"
+  sequence_ [ demo01, demo02, demo03, demo04, demo05
+            , demo06, demo07, demo08, demo09, demo10
+            , demo11 ]  

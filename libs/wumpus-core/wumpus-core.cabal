@@ -148,14 +148,17 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/AffineTest01.hs,
+  demo/AffineTest02.hs,
+  demo/AffineTest03.hs,
+  demo/AffineTest04.hs,
+  demo/AffineTestBase.hs,
   demo/FontPic.hs,
-  demo/HPath.hs,
   demo/LabelPic.hs,
   demo/Picture.hs,
   doc/Guide.pdf,
   doc-src/Guide.lhs,
   doc-src/Makefile,
-  doc-src/WorldFrame.eps
+  doc-src/WorldFrame.hs
 
 
 

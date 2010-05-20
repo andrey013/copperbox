@@ -13,8 +13,11 @@ import Data.VectorSpace
 
 import Data.List ( unfoldr )
 
+import System.Directory
+
 main :: IO ()
 main = do 
+    createDirectoryIfMissing True "./out/"
     writeEPS_latin1 "./out/font_courier.eps"   courier_pic
     writeSVG_latin1 "./out/font_courier.svg"   courier_pic
     writeEPS_latin1 "./out/font_times.eps"     times_pic

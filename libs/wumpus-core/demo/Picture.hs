@@ -5,6 +5,7 @@ module Picture where
 import Wumpus.Core
 import Wumpus.Extra.PictureLanguage
 
+import System.Directory
 
 peru :: PSRgb
 peru = RGB3 0.804  0.522  0.247
@@ -197,8 +198,8 @@ demo14 = do
 
 
 main :: IO ()
-main = sequence_
-  [ demo01, demo02, demo03, demo04, demo05
-  , demo06, demo07, demo08, demo09, demo10
-  , demo11, demo12, demo13, demo14
-  ]
+main = do 
+    createDirectoryIfMissing True "./out/"
+    sequence_  [ demo01, demo02, demo03, demo04, demo05
+               , demo06, demo07, demo08, demo09, demo10
+               , demo11, demo12, demo13, demo14 ]
