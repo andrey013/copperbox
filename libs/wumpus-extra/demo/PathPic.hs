@@ -26,29 +26,14 @@ pic1 :: Picture Double
 pic1 = frame $ ostroke () $ dog_kennel
 
 
-
-dog_kennel :: DPath
-dog_kennel = makePath $ 
-    start_path (0,0) `line_to`  (0,60)   `line_to` (40,100)
-                     `line_to`  (80,60)  `line_to` (80,0)
-                     `line_to`  (60,0)   `line_to` (60,30)
-                     `curve_to` ((60,50), (50,60), (40,60))
-                     `curve_to` ((30,60), (20,50), (20,30))
-                     `line_to`  (20,0)
-                        
-
-
-{-
-
 -- Or, maybe a monadic formulation...
 
 dog_kennel :: DPath
-dog_kennel = makePath $ 
-    start_path (0,0) >> line_to  (0,60)  >> line_to (40,100)
+dog_kennel = pathFrom (0,0) $ 
+                        line_to  (0,60)  >> line_to (40,100)
                      >> line_to  (80,60) >> line_to (80,0)
                      >> line_to  (60,0)  >> line_to (60,30)
-                     >> curve_to ((60,50), (50,60), (40,60))
-                     >> curve_to ((30,60), (20,50), (20,30))
+                     >> curve_to (60,50) (50,60) (40,60)
+                     >> curve_to (30,60) (20,50) (20,30)
                      >> line_to  (20,0)
-                        
--}
+

@@ -134,7 +134,7 @@ runGridM (GridM f) =  f grid_state_zero trace_zero
 
 
 
-
+-- not really useful though...
 instance Functor (GridM sh u) where
   fmap f (GridM g) = GridM $ \s w -> let (a,s',w') =  g s w in (f a,s',w')
 
@@ -153,6 +153,8 @@ nextCol = pstar upf posn where
 nextRow :: GridSt -> GridSt
 nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
+
+-- NOTE - calling these tell____ is probably not the clearest way.
 
 tellNode :: String -> GridCoord -> GridTrace u -> GridTrace u
 tellNode name loc = 
