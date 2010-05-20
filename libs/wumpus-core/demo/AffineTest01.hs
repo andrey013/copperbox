@@ -1,20 +1,16 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- ROTATE tests
 --------------------------------------------------------------------------------
 
-module AffineTest04 where
+module AffineTest01 where
 
 
 import AffineTestBase
-
 import Wumpus.Core
-import Wumpus.Core.Colour ( black, red, blue )
 
-
-import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils
 
 main :: IO ()
 main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]

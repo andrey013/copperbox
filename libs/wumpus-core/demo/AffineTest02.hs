@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- SCALE tests
@@ -7,15 +8,8 @@
 
 module AffineTest02 where
 
-
 import AffineTestBase
-
 import Wumpus.Core
-import Wumpus.Core.Colour ( black, red, blue )
-
-
-import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils
 
 main :: IO ()
 main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]

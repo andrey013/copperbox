@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 -- Common machinery for the affine tests.
 
@@ -20,8 +21,6 @@ import Wumpus.Core
 import Wumpus.Core.Colour ( black, red, blue )
 
 
-import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils
 
 import System.Directory
 
