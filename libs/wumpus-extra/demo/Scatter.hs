@@ -16,9 +16,12 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as P
 
+import System.Directory
 
 main :: IO ()
-main = sequence_ [ test01 ]
+main = do 
+    createDirectoryIfMissing True "./out/"
+    sequence_ [ test01 ]
 
 -- This is wrong -- can't do one scatter plot over another as
 -- each one is at liberty to change the /scaling/. This needs a 

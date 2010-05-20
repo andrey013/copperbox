@@ -7,9 +7,12 @@ import Wumpus.Extra
 import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SVGColours
 
+import System.Directory
+
 main :: IO ()
-main = sequence_ 
-  [ demo01 ]
+main = do 
+    createDirectoryIfMissing True "./out/"
+    sequence_ [ demo01 ]
 
 pt2 :: Point2 Double
 pt2 = P2 100 10

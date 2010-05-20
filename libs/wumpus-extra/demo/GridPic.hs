@@ -5,10 +5,12 @@ import Wumpus.Core
 import Wumpus.Extra.Matrix
 import Wumpus.Extra
 
-
+import System.Directory
 
 main :: IO ()
-main = sequence_ [ demo01 ]
+main = do 
+    createDirectoryIfMissing True "./out/"
+    sequence_ [ demo01 ]
 
 mgrid01 :: GridM Width2 u ()
 mgrid01 = do 

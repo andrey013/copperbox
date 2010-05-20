@@ -8,10 +8,12 @@ import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
 
-
+import System.Directory
 
 main :: IO ()
-main = sequence_ [ demo01 ]
+main = do
+    createDirectoryIfMissing True "./out/"
+    sequence_ [ demo01 ]
 
 
 

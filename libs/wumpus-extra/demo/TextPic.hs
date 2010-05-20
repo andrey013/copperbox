@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module TextPicture where
+module TextPic where
 
 import Wumpus.Core
 import Wumpus.Extra
@@ -8,11 +8,12 @@ import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.SVGColours
 
-
+import Ssytem.Directory
 
 main :: IO ()
-main = sequence_ [ demo01 ]
-
+main = do 
+    createDirectoryIfMissing True "./out/"
+    demo1
 
 
 demo01 :: IO ()

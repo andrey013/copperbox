@@ -9,14 +9,17 @@ import Wumpus.Extra.PictureLanguage hiding ( center )
 import Wumpus.Extra.Shapes
 import Wumpus.Extra.SVGColours
 
+import System.Directory
+
 -- Note 
 -- Processing has (0,0) at top left, 
 -- PostScript has (0,0) at bottom left
 -- hence the @scale 1 (-1)@
 
 main :: IO ()
-main = sequence_ [ test01 ]
-
+main = do
+    createDirectoryIfMissing True "./out/"
+    sequence_ [ test01 ]
 
 test01 :: IO ()
 test01 = do 

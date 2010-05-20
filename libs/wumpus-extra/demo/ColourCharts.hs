@@ -13,9 +13,13 @@ import Data.AffineSpace
 
 import Data.List
 
-main :: IO ()
-main = sequence_ [ test01 ]
+import System.Directory
 
+main :: IO ()
+main = do
+   createDirectoryIfMissing True "./out/"
+   test01
+ 
 -- This is wrong -- can't do one scatter plot over another as
 -- each one is at liberty to change the /scaling/. This needs a 
 -- rethink...

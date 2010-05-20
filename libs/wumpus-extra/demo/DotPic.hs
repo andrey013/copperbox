@@ -9,10 +9,12 @@ import Wumpus.Extra.SVGColours
 
 import Wumpus.Extra.Marks
 
+import System.Directory
 
 main :: IO ()
-main = sequence_ 
-  [ demo01 ]
+main = do 
+    createDirectoryIfMissing True "./out/"
+    demo01
 
 pt2 :: Point2 Double
 pt2 = P2 100 10
