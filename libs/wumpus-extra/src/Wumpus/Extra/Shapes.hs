@@ -276,6 +276,9 @@ textline attr s ctr = Textline s attr $ rectangle w h ctr
 -- Pictures is inefficient.
 -- 
 
+-- UPDATE - with wumpus-core-0.18.0 we can affine transform 
+-- prims.
+
 {-
 drawTextline :: TextLine u -> Picture u
 drawTextline 

@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.18.0
+version:          0.19.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -33,13 +33,9 @@ description:
   .
   WARNING...
   .
-  With revision 0.18.0, I\'ve changed the internals a bit so that 
-  Primitives (paths, text labels) support affine transformations. 
-  In the end, this didn\'t changed the API significantly, though 
-  with the next revision, I want to look at changing the 
-  PostScript output - swapping some uses of @concat@ to @moveto@; 
-  so again there is the possibility of significant changes 
-  between this revision and the next one.
+  ( !! NO NEED TO OPTIMIZE @frameMulti@ !! )
+  .
+  LOOK TO CHANGE CMinMax...
   .
   Also the module, Core.BoundingBox, is still a candidate for 
   reworking, as it has too many functions that do not offer 
@@ -53,7 +49,7 @@ description:
   may be tighter than than the bounding box of transformed 
   picture containing the same primitive, i.e.:
   . 
-  @liftToPicture (transform PRIM) /= transform (liftToPicture PRIM)@
+  @boundary (liftToPicture (transform PRIM)) /= boundary (transform (liftToPicture PRIM))@
   .
   Where liftToPicture is usually @frame@ from 
   @Wumpus.Core.Picture@.
@@ -88,6 +84,11 @@ description:
   .
   Changelog:
   .
+  0.18,0 to 0.19.0:
+  .
+  * Added new demo - MultiPic. The PostScript it generates
+    is efficient - no extraneous use of @concat@. 
+  .
   0.17.0 to 0.18.0:
   .
   * Added instances of the affine operation classes (Scale, 
@@ -113,53 +114,6 @@ description:
     missing with the generated file @WorldFrame.eps@ incorrectly 
     included instead.
   .
-  0.16.0 to 0.17.0:
-  .
-  * Added Core.WumpusTypes to export opaque versions of
-    datatypes from Core.PictureInternal. This should make
-    the Haddock documentation more cohesive.
-  . 
-  * Moved the Core.PictureLanguage module into the Extra
-    namespace (Extra.PictureLanguage). This module may change
-    in detail, if not in spirit in the future as I'm not 
-    very happy with it. Also this module is somewhat 
-    \"higher-level\" than the modules in wumpus-core, so 
-    a different home seems fitting. 
-  . 
-  * Removed CardinalPoint and boundaryPoint from BoundingBox.
-  .
-  * Argument order of 'textlabel' and 'ztextlabel' changed so
-    that Point2 is the last argument.
-  .
-  * PathSegment constructor names changed - this is an internal
-    change as the constructors are not exported.
-  .
-  * Primitive type changed - moved Ellipse properties into 
-    PrimEllipse type - internal change.
-  .
-  * Removed dependency on \'old-time\'.
-  .
-  0.15.0 to 0.16.0:
-  .
-  * Additions to Core.Geometry (direction, pvec, vangle, 
-    circularModulo).
-  .
-  * Fixed error with langle due to not accounting for circle 
-    quadrants in Core.Geometry.
-  .
-  * Point2 now derives Ord - so it can be used as a key for
-    Data.Map.
-  .
-  * Added escape-character handling to text output in PostScript.
-    This was causing a nasty bug where a drawing would completely
-    fail when special chars shown (GhostView gives little hint of 
-    what is wrong when such errors are present).
-  . 
-  * Changed BoundingBox operation 'corners' to return a 4-tuple
-    rather than a list.
-  .  
-  * Added centeredAt to PictureLanguage
-  .
   .
 build-type:         Simple
 stability:          unstable
@@ -175,6 +129,7 @@ extra-source-files:
   demo/AffineTestBase.hs,
   demo/FontPic.hs,
   demo/LabelPic.hs,
+  demo/MultiPic.hs
   demo/Picture.hs,
   doc/Guide.pdf,
   doc-src/Guide.lhs,

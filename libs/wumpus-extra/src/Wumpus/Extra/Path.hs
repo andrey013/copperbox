@@ -26,8 +26,6 @@ module Wumpus.Extra.Path
   , line_to
   , curve_to
 
-  -- * Example
-  , dog_kennel
 
   ) where
 
@@ -53,7 +51,7 @@ toListH = ($ [])
 data HPath u = HPath 
       { start_point     :: Point2 u
       , current_point   :: Point2 u
-      , path_segments   :: H (PathSegment u))
+      , path_segments   :: H (PathSegment u)
       }
 
 
@@ -61,6 +59,7 @@ makePath :: HPath u -> Path u
 makePath p = path (start_point p) (toListH $ path_segments p)
 
 mkPoint :: (u,u) -> Point2 u 
+mkPoint (x,y) = P2 x y
 
 start_path :: (u,u) -> HPath u
 start_path xy = let pt = mkPoint xy in HPath pt pt emptyH
@@ -73,7 +72,7 @@ line_to (HPath s _ f) xy =
 
 
 curve_to :: HPath u -> ((u,u),(u,u),(u,u)) -> HPath u
-curve_to (HPath s _f) cp1 cp2 xy = let end = mkPoint xy in
+curve_to (HPath s _ f) (cp1,cp2,xy) = let end = mkPoint xy in
     HPath s end (f `snocH` curveTo (mkPoint cp1) (mkPoint cp2) end)
 
 
@@ -85,16 +84,3 @@ curve_to (HPath s _f) cp1 cp2 xy = let end = mkPoint xy in
 -- state monad, so this is taking things towards a big module.
 --
 --
-
---------------------------------------------------------------------------------
--- Demo - draw a dog kennel...
-
-dog_kennel :: DPath
-dog_kennel = makePath $ 
-    start_path (0,0) `line_to`  (0,60)   `line_to` (40,100)
-                     `line_to`  (80,60)  `line_to` (80,0)
-                     `line_to`  (60,0)   `line_to` (60,30)
-                     `curve_to` ((60,50), (50,60), (40,60))
-                     `curve_to` ((30,60), (20,50), (20,30))
-                     `line_to`  (20,0)
-                        
