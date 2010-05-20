@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.10.0
+version:          0.11.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -10,7 +10,7 @@ synopsis:         Extra geometry and objects (arrows, dots) for Wumpus.
 description:
   Extra geometry and objects (arrows, dots) for Wumpus.
   .
-  This version (0.10.0) is for wumpus-core 0.17.0.
+  This version (0.11.0) is for wumpus-core 0.18.0.
   .
   .
 build-type:         Simple
@@ -29,7 +29,7 @@ library
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
                       monadLib, xml,
-                      wumpus-core >= 0.17.0
+                      wumpus-core > 0.17.0
 
   
   exposed-modules:

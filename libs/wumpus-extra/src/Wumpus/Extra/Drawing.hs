@@ -57,13 +57,13 @@ import Data.List ( unfoldr )
 
 -- | Coloured but otherwise blank picture, bottom left at the 
 -- origin.
-backgroundRect :: (Fractional u, Ord u, PSColour c) 
+backgroundRect :: (Fractional u, Floating u, Ord u, PSColour c) 
                => c -> u -> u -> Picture u
 backgroundRect c w h = 
   frame $ fillPolygon (psColour c) $ rectangle w h zeroPt
 
 
-strokedCrossedRect :: (Fractional u, Ord u, Stroke t) 
+strokedCrossedRect :: (Fractional u, Floating u, Ord u, Stroke t) 
                    => t -> t -> u -> u -> Picture u
 strokedCrossedRect attr_border attr_cross w h = border `over` cross 
   where 
@@ -87,13 +87,13 @@ backgroundTrafo fn p = p `over` bkgrnd where
 
 -- | Fill the background of a picture (where the backgound area is 
 -- given by the bounding box).
-backgroundFill :: (Fractional u, Ord u, PSColour c) 
+backgroundFill :: (Fractional u, Floating u, Ord u, PSColour c) 
                => c -> Picture u -> Picture u
 backgroundFill c = backgroundTrafo fn where
   fn = frame . fill (psColour c) . vertexPath . fourCorners
 
 
-backgroundStroke :: (Fractional u, Ord u, Stroke t)
+backgroundStroke :: (Fractional u, Floating u, Ord u, Stroke t)
                  => t -> Picture u -> Picture u
 backgroundStroke attr = backgroundTrafo fn where
   fn = frame . cstroke attr . vertexPath . fourCorners
@@ -121,7 +121,7 @@ gencoords fn a bconst step amax = unfoldr phi a where
     phi n | n <= amax = Just (fn n bconst,n+step)
           | otherwise = Nothing
 
-mkGrid :: (Fractional u, Ord u, Stroke t) 
+mkGrid :: (Fractional u, Floating u, Ord u, Stroke t) 
        => t -> u -> u -> u -> u -> u -> u -> Picture u
 mkGrid attr x y w h xstep ystep = frameMulti vlines `over` frameMulti hlines
   where
@@ -140,7 +140,7 @@ mkGrid attr x y w h xstep ystep = frameMulti vlines `over` frameMulti hlines
 -- edges of the grid may be trucated and not show complete
 -- squares.
 --
-rectBackgroundGrid :: (Fractional u, Ord u, Stroke t) 
+rectBackgroundGrid :: (Fractional u, Floating u, Ord u, Stroke t) 
                    => t -> u -> u -> Picture u -> Picture u
 rectBackgroundGrid attr xstep ystep = backgroundTrafo fn where
   fn bb@(BBox (P2 x0 y0) _) = mkGrid attr x0 y0 width height xstep ystep 
@@ -155,13 +155,13 @@ rectBackgroundGrid attr xstep ystep = backgroundTrafo fn where
 -- edges of the grid may be trucated and not show complete
 -- squares.
 --
-backgroundGrid :: (Fractional u, Ord u, Stroke t) 
+backgroundGrid :: (Fractional u, Floating u, Ord u, Stroke t) 
                => t -> u -> Picture u -> Picture u
 backgroundGrid attr step = rectBackgroundGrid attr step step
 
 
 -- | Grid (no truncation). ...
-rectGridPicture :: (Fractional u, Ord u, Stroke t) 
+rectGridPicture :: (Fractional u, Floating u, Ord u, Stroke t) 
                  => t -> Int -> Int -> u -> u -> Picture u
 rectGridPicture attr row_count col_count xstep ystep = 
     mkGrid attr 0 0 width height xstep ystep 
@@ -170,7 +170,7 @@ rectGridPicture attr row_count col_count xstep ystep =
     height = ystep * fromIntegral row_count
 
 -- | Grid (no truncation). ...
-gridPicture :: (Fractional u, Ord u, Stroke t) 
+gridPicture :: (Fractional u, Floating u, Ord u, Stroke t) 
                  => t -> Int -> Int -> u -> Picture u
 gridPicture attr row_count col_count step = 
     rectGridPicture attr row_count col_count step step 

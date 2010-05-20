@@ -13,7 +13,8 @@ main :: IO ()
 main = sequence_ [ demo01, demo02, demo03, demo04 ]
 
 
-colouredSquare :: (Fractional u, Ord u) => DRGB -> u -> Picture u
+colouredSquare :: (Floating u, Fractional u, Ord u) 
+               => DRGB -> u -> Picture u
 colouredSquare c sz = 
   frame $ fill c $ extractPath $ square sz zeroPt 
 

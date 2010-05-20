@@ -47,7 +47,7 @@ std_attr = (black,1.0)
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 
-makeDotPic :: (Fractional u, Ord u) 
+makeDotPic :: (Fractional u, Floating u, Ord u) 
            => (Point2 u -> Picture u) -> [Point2 u] -> Picture u
 makeDotPic fn xs = multi $ dashline : map fn xs
   where

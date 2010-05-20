@@ -35,7 +35,7 @@ test01 = do
 
     scalePt w (P2 x y) = P2 (x*w) (y*12) 
 
-colourSample :: (Fractional u, Ord u) 
+colourSample :: (Fractional u, Floating u, Ord u) 
              => (String,DRGB) -> Point2 u -> Picture u
 colourSample (name,c) pt = multi [block, lbl] where
   block = frame $ fillPolygon c $ rectangle 15 10 pt

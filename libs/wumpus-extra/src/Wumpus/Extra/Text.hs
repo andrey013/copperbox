@@ -38,7 +38,7 @@ import Wumpus.Extra.Utils
 -- bottom-left of a stem (e.g. H,I) and does not account for
 -- descenders.
 --
-textline :: (Fractional u, Ord u) 
+textline :: (Fractional u, Floating u, Ord u) 
          => FontAttr -> String -> Point2 u -> Picture u
 textline = frame `ooo` textlabel 
 
@@ -47,6 +47,6 @@ textline = frame `ooo` textlabel
 -- | Coloured version of 'textline'. Same conditions vis bounding
 -- box metrics and start point apply. 
 --
-colouredTextline :: (Fractional u, Ord u, PSColour c)
+colouredTextline :: (Fractional u, Floating u, Ord u, PSColour c)
                  => c -> FontAttr -> String -> Point2 u -> Picture u
 colouredTextline  c attr = frame `oo` textlabel (psColour c,attr)

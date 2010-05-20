@@ -256,7 +256,7 @@ instance Num u => Translate (Textline u) where
   translate x y = 
      pstar (\m s -> s { text_rect = translate x y m }) text_rect
 
-textline :: (Fractional u, Ord u) 
+textline :: (Floating u, Fractional u, Ord u) 
          => FontAttr -> String -> Point2 u -> Textline u
 textline attr s ctr = Textline s attr $ rectangle w h ctr
   where 

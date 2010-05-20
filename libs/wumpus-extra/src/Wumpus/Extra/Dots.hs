@@ -56,13 +56,13 @@ import Data.AffineSpace
 
 
 
-dotHLine :: (Fractional u, Ord u, Mark t)
+dotHLine :: (Fractional u, Floating u, Ord u, Mark t)
          => t -> Point2 u -> Picture u 
 dotHLine attr pt = 
   frame $ mostroke attr $ lineSegmentToPath $ hlineSegmentMid (lwX10 attr) pt
 
 
-dotVLine :: (Fractional u, Ord u, Mark t)
+dotVLine :: (Fractional u, Floating u, Ord u, Mark t)
          => t -> Point2 u -> Picture u 
 dotVLine attr pt = 
   frame $ mostroke attr $ lineSegmentToPath $ vlineSegmentMid (lwX10 attr) pt
@@ -104,13 +104,13 @@ dotDiamond attr pt = frame $ mcstroke attr $ vertexPath [p1,p2,p3,p4]
 
 
 
-dotDisk :: (Fractional u, Ord u, Mark t) 
+dotDisk :: (Fractional u, Floating u, Ord u, Mark t) 
         => t -> Point2 u -> Picture u
 dotDisk attr pt = frame $ mellipse attr radius radius pt where 
      radius = lwX5 attr
 
 
-dotSquare :: (Fractional u, Ord u, Mark t) 
+dotSquare :: (Fractional u, Floating u, Ord u, Mark t) 
           => t -> Point2 u -> Picture u
 dotSquare attr pt = 
     frame $ mstrokePolygon attr $ square (lwX10 attr) (pt .-^ vec) 

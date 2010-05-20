@@ -298,7 +298,7 @@ matrixPicture vscale (st,w) = p2
     (p1,bm) = processCells scalef (cell_values w)
     p2      = processConnectors bm (node_conns w) p1
 
-processCells :: (Fractional u, Ord u) 
+processCells :: (Floating u, Fractional u, Ord u) 
              => (GridCoord -> Point2 u) 
              -> CellValues u 
              -> (Picture u, BorderMap u)
@@ -322,7 +322,7 @@ processConnectors bm xs p0 = foldr fn p0 xs
       arr = arrowTri' () (bbcenter b1) (bbcenter b2)
 
 
-mkLabel :: (Fractional u, Ord u) => String -> Picture u
+mkLabel :: (Fractional u, Floating u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel s zeroPt
 
 

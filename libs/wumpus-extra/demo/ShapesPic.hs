@@ -34,7 +34,7 @@ picture1 = rect1 ->- rect2 ->- rect3
     r1    = rectangle 100 50 (P2 50 25)
     r2    = rotate45About (center r1) r1
 
-coorda :: (Fractional u , Ord u) => Rectangle u -> Picture u
+coorda :: (Floating u, Fractional u , Ord u) => Rectangle u -> Picture u
 coorda rect = frameMulti 
     [ strokeRectangle () $ rect
     , drawCoordinate red    $ coordinate (center rect)
