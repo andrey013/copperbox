@@ -58,6 +58,8 @@ module Wumpus.Core.Geometry
 
   -- * Point operations
   , zeroPt
+  , minPt
+  , maxPt
   , langle
 
   -- * Frame operations
@@ -94,7 +96,7 @@ module Wumpus.Core.Geometry
 
   ) where
 
-import Wumpus.Core.Utils ( CMinMax(..), PSUnit(..), oo )
+import Wumpus.Core.Utils ( PSUnit(..), oo )
 
 
 import Data.AffineSpace
@@ -117,16 +119,18 @@ type family DUnit a :: *
 -- Datatypes 
 
 -- | 2D Vector - both components are strict.
-data Vec2 a = V2 !a !a
+--
+data Vec2 u = V2 !u !u
   deriving (Eq,Show)
 
 type DVec2 = Vec2 Double
 
 -- | 2D Point - both components are strict.
 -- 
--- Point2 derives Ord so it can be used as a key in Data.Map etc.
+-- Note - Point2 derives Ord so it can be used as a key in 
+-- Data.Map etc.
 --
-data Point2 a = P2 !a !a
+data Point2 u = P2 !u !u
   deriving (Eq,Ord,Show)
 
 type DPoint2 = Point2 Double
@@ -143,7 +147,7 @@ type DPoint2 = Point2 Double
 -- > Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 -- 
 
-data Frame2 a = Frame2 (Vec2 a) (Vec2 a) (Point2 a)
+data Frame2 u = Frame2 (Vec2 u) (Vec2 u) (Point2 u)
   deriving (Eq,Show)
 
 type DFrame2 = Frame2 Double
@@ -184,7 +188,7 @@ type DFrame2 = Frame2 Double
 -- 
 
 
-data Matrix3'3 a = M3'3 !a !a !a  !a !a !a  !a !a !a
+data Matrix3'3 u = M3'3 !u !u !u  !u !u !u  !u !u !u
   deriving (Eq)
 
 type DMatrix3'3 = Matrix3'3 Double
@@ -201,19 +205,19 @@ newtype Radian = Radian { getRadian :: Double }
 --------------------------------------------------------------------------------
 -- Family instances
 
-type instance DUnit (Point2 a)    = a
-type instance DUnit (Vec2 a)      = a
-type instance DUnit (Frame2 a)    = a
-type instance DUnit (Matrix3'3 a) = a
+type instance DUnit (Point2 u)    = u
+type instance DUnit (Vec2 u)      = u
+type instance DUnit (Frame2 u)    = u
+type instance DUnit (Matrix3'3 u) = u
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
 
-lift2Vec2 :: (a -> a -> a) -> Vec2 a -> Vec2 a -> Vec2 a
+lift2Vec2 :: (u -> u -> u) -> Vec2 u -> Vec2 u -> Vec2 u
 lift2Vec2 op (V2 x y) (V2 x' y') = V2 (x `op` x') (y `op` y')
 
 
-lift2Matrix3'3 :: (a -> a -> a) -> Matrix3'3 a -> Matrix3'3 a -> Matrix3'3 a
+lift2Matrix3'3 :: (u -> u -> u) -> Matrix3'3 u -> Matrix3'3 u -> Matrix3'3 u
 lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) = 
       M3'3 (a `op` m) (b `op` n) (c `op` o)  
            (d `op` p) (e `op` q) (f `op` r)  
@@ -242,27 +246,27 @@ instance Functor Matrix3'3 where
 
 -- Vectors have a sensible Monoid instance as addition, points don't
 
-instance Num a => Monoid (Vec2 a) where
+instance Num u => Monoid (Vec2 u) where
   mempty  = V2 0 0
   mappend = lift2Vec2 (+) 
 
 
 -- Affine frames also have a sensible Monoid instance
 
-instance (Num a, InnerSpace (Vec2 a)) => Monoid (Frame2 a) where
+instance (Num u, InnerSpace (Vec2 u)) => Monoid (Frame2 u) where
   mempty = ortho zeroPt
   mappend = frameProduct
 
 
 -- Show
 
-instance Show a => Show (Matrix3'3 a) where
+instance Show u => Show (Matrix3'3 u) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
     body = show [[a,b,c],[d,e,f],[g,h,i]]
 
 -- Num
 
-instance Num a => Num (Matrix3'3 a) where
+instance Num u => Num (Matrix3'3 u) where
   (+) = lift2Matrix3'3 (+) 
   (-) = lift2Matrix3'3 (-)
 
@@ -290,19 +294,19 @@ instance Ord Radian where
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-instance Pretty a => Pretty (Vec2 a) where
+instance Pretty u => Pretty (Vec2 u) where
   pretty (V2 a b) = angles (char '|' <+> pretty a <+> pretty b <+> char '|')
 
-instance Pretty a => Pretty (Point2 a) where
+instance Pretty u => Pretty (Point2 u) where
   pretty (P2 a b) = brackets (char '|' <+> pretty a <+> pretty b <+> char '|')
 
-instance Pretty a => Pretty (Frame2 a) where
+instance Pretty u => Pretty (Frame2 u) where
   pretty (Frame2 e0 e1 o) = braces $
         text "e0:" <> pretty e0
     <+> text "e1:" <> pretty e1
     <+> text "o:" <> pretty o
 
-instance PSUnit a => Pretty (Matrix3'3 a) where
+instance PSUnit u => Pretty (Matrix3'3 u) where
   pretty (M3'3 a b c  d e f  g h i) = 
       matline a b c <$> matline d e f <$> matline g h i
     where
@@ -317,38 +321,38 @@ instance Pretty Radian where
 --------------------------------------------------------------------------------
 -- Vector space instances
 
-instance Num a => AdditiveGroup (Vec2 a) where
+instance Num u => AdditiveGroup (Vec2 u) where
   zeroV = V2 0 0 
   (^+^) = lift2Vec2 (+)  
   negateV = fmap negate 
 
 
-instance Num a => VectorSpace (Vec2 a) where
-  type Scalar (Vec2 a) = a
+instance Num u => VectorSpace (Vec2 u) where
+  type Scalar (Vec2 u) = u
   s *^ v = fmap (s*) v
 
 
 -- scalar (dot / inner) product via the class InnerSpace
 
-instance (Num a, InnerSpace a, Scalar a ~ a) 
-    => InnerSpace (Vec2 a) where
+instance (Num u, InnerSpace u, Scalar u ~ u) 
+    => InnerSpace (Vec2 u) where
   (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')
 
 
-instance Num a => AffineSpace (Point2 a) where
-  type Diff (Point2 a) = Vec2 a
+instance Num u => AffineSpace (Point2 u) where
+  type Diff (Point2 u) = Vec2 u
   (P2 a b) .-. (P2 x y)   = V2 (a-x)  (b-y)
   (P2 a b) .+^ (V2 vx vy) = P2 (a+vx) (b+vy)
 
 
-instance Num a => AdditiveGroup (Matrix3'3 a) where
+instance Num u => AdditiveGroup (Matrix3'3 u) where
   zeroV = fromInteger 0
   (^+^) = (+)
   negateV = negate
 
 
-instance Num a => VectorSpace (Matrix3'3 a) where
-  type Scalar (Matrix3'3 a) = a
+instance Num u => VectorSpace (Matrix3'3 u) where
+  type Scalar (Matrix3'3 u) = u
   s *^ m = fmap (s*) m 
 
 --------------------------------------------------------------------------------
@@ -371,19 +375,14 @@ instance Pointwise a => Pointwise [a] where
   type Pt [a] = Pt a
   pointwise f pts = map (pointwise f) pts 
 
-instance Pointwise (Vec2 a) where
-  type Pt (Vec2 a) = Vec2 a
+instance Pointwise (Vec2 u) where
+  type Pt (Vec2 u) = Vec2 u
   pointwise f v = f v
 
-instance Pointwise (Point2 a) where
-  type Pt (Point2 a) = Point2 a
+instance Pointwise (Point2 u) where
+  type Pt (Point2 u) = Point2 u
   pointwise f pt = f pt
 
---------------------------------------------------------------------------------
-
-instance Ord a => CMinMax (Point2 a) where
-  cmin (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
-  cmax (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 
 --------------------------------------------------------------------------------
 -- Matrix multiply
@@ -394,14 +393,14 @@ infixr 7 *#
 -- represented as homogeneous coordinates. 
 --
 class MatrixMult t where 
-  (*#) :: DUnit t ~ a => Matrix3'3 a -> t -> t
+  (*#) :: DUnit t ~ u => Matrix3'3 u -> t -> t
 
 
-instance Num a => MatrixMult (Vec2 a) where       
+instance Num u => MatrixMult (Vec2 u) where       
   (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
 
 
-instance Num a => MatrixMult (Point2 a) where
+instance Num u => MatrixMult (Point2 u) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
 --------------------------------------------------------------------------------
@@ -411,19 +410,22 @@ instance Num a => MatrixMult (Point2 a) where
 -- | Direction of a vector - i.e. the counter-clockwise angle 
 -- from the x-axis.
 --
-direction :: (Floating a, Real a) => Vec2 a -> Radian
+direction :: (Floating u, Real u) => Vec2 u -> Radian
 direction (V2 x y) = langle (P2 0 0) (P2 x y)
 
 -- | Construct a vector with horizontal displacement.
-hvec :: Num a => a -> Vec2 a
+--
+hvec :: Num u => u -> Vec2 u
 hvec d = V2 d 0
 
 -- | Construct a vector with vertical displacement.
-vvec :: Num a => a -> Vec2 a
+--
+vvec :: Num u => u -> Vec2 u
 vvec d = V2 0 d
 
 -- | Construct a vector from an angle and magnitude.
-avec :: Floating a => Radian -> a -> Vec2 a
+--
+avec :: Floating u => Radian -> u -> Vec2 u
 avec theta d = V2 x y where
   ang = fromRadian theta
   x   = d * cos ang
@@ -434,25 +436,50 @@ avec theta d = V2 x y where
 --
 -- > pvec = flip (.-.)
 --
-pvec :: Num a => Point2 a -> Point2 a -> Vec2 a
+pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
 pvec = flip (.-.)
 
 -- | Extract the angle between two vectors.
 --
-vangle :: (Floating a, Real a, InnerSpace (Vec2 a)) 
-       => Vec2 a -> Vec2 a -> Radian
+vangle :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+       => Vec2 u -> Vec2 u -> Radian
 vangle u v = realToFrac $ acos $ (u <.> v) / (on (*) magnitude u v)
 
 --------------------------------------------------------------------------------
 -- Points
 
 -- | Construct a point at 0 0.
-zeroPt :: Num a => Point2 a
+--
+zeroPt :: Num u => Point2 u
 zeroPt = P2 0 0
+
+
+-- | /Component-wise/ min on points.  
+-- Standard 'min' and 'max' via Ord are defined lexographically
+-- on pairs, e.g.:
+-- 
+-- > min (1,2) (2,1) = (1,2)
+-- 
+-- For Points we want the component-wise min and max, e.g:
+--
+-- > minPt (P2 1 2) (Pt 2 1) = Pt 1 1 
+-- > maxPt (P2 1 2) (Pt 2 1) = Pt 2 2
+-- 
+minPt :: Ord u => Point2 u -> Point2 u -> Point2 u
+minPt (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
+
+-- | /Component-wise/ max on points.  
+--
+-- > maxPt (P2 1 2) (Pt 2 1) = Pt 2 2
+-- 
+maxPt :: Ord u => Point2 u -> Point2 u -> Point2 u
+maxPt (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
+
 
 -- | Calculate the counter-clockwise angle between two points 
 -- and the x-axis.
-langle :: (Floating a, Real a) => Point2 a -> Point2 a -> Radian
+--
+langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
 langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
   where
     -- north-east quadrant 
@@ -476,16 +503,19 @@ langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
 
 -- | Create a frame with standard (orthonormal bases) at the 
 -- supplied point.
-ortho :: Num a => Point2 a -> Frame2 a
+--
+ortho :: Num u => Point2 u -> Frame2 u
 ortho o = Frame2 (V2 1 0) (V2 0 1) o
 
 -- | Displace the origin of the frame by the supplied vector.
-displaceOrigin :: Num a => Vec2 a -> Frame2 a -> Frame2 a
+--
+displaceOrigin :: Num u => Vec2 u -> Frame2 u -> Frame2 u
 displaceOrigin v (Frame2 e0 e1 o) = Frame2 e0 e1 (o.+^v)
 
 -- | \'World coordinate\' calculation of a point in the supplied
 -- frame.
-pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
+--
+pointInFrame :: Num u => Point2 u -> Frame2 u -> Point2 u
 pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
 
 -- | Concatenate the elements of the frame as columns forming a
@@ -502,7 +532,7 @@ pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)
 -- >        0   0   1  )
 --
 
-frame2Matrix :: Num a =>  Frame2 a -> Matrix3'3 a
+frame2Matrix :: Num u =>  Frame2 u -> Matrix3'3 u
 frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) = 
     M3'3 e0x e1x ox  
          e0y e1y oy 
@@ -519,21 +549,24 @@ frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) =
 --
 -- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 -- 
-matrix2Frame :: Matrix3'3 a -> Frame2 a
+matrix2Frame :: Matrix3'3 u -> Frame2 u
 matrix2Frame (M3'3 e0x e1x ox 
                    e0y e1y oy
                    _   _   _ ) = Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 
 
 -- | /Multiplication/ of frames to form their product.
-frameProduct :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
+--
+frameProduct :: (Num u, InnerSpace (Vec2 u)) 
+             => Frame2 u -> Frame2 u -> Frame2 u
 frameProduct = matrix2Frame `oo` on (*) frame2Matrix
 
 
 
 -- | Is the origin at (0,0) and are the basis vectors orthogonal 
 -- with unit length?
-standardFrame :: Num a => Frame2 a -> Bool
+--
+standardFrame :: Num u => Frame2 u -> Bool
 standardFrame (Frame2 (V2 1 0) (V2 0 1) (P2 0 0)) = True
 standardFrame _                                   = False
 
@@ -547,7 +580,7 @@ standardFrame _                                   = False
 -- >       0 1 0
 -- >       0 0 1 )
 --
-identityMatrix :: Num a => Matrix3'3 a
+identityMatrix :: Num u => Matrix3'3 u
 identityMatrix = M3'3 1 0 0  
                       0 1 0  
                       0 0 1
@@ -560,7 +593,7 @@ identityMatrix = M3'3 1 0 0
 -- >       0  sy 0
 -- >       0  0  1 )
 --
-scalingMatrix :: Num a => a -> a -> Matrix3'3 a
+scalingMatrix :: Num u => u -> u -> Matrix3'3 u
 scalingMatrix sx sy = M3'3  sx 0  0   
                             0  sy 0   
                             0  0  1
@@ -571,7 +604,7 @@ scalingMatrix sx sy = M3'3  sx 0  0
 -- >       0  1  y
 -- >       0  0  1 )
 --
-translationMatrix :: Num a => a -> a -> Matrix3'3 a
+translationMatrix :: Num u => u -> u -> Matrix3'3 u
 translationMatrix x y = M3'3 1 0 x  
                              0 1 y  
                              0 0 1
@@ -582,7 +615,7 @@ translationMatrix x y = M3'3 1 0 x
 -- >       sin(a)   cos(a)  y
 -- >       0        0       1 )
 --
-rotationMatrix :: (Floating a, Real a) => Radian -> Matrix3'3 a
+rotationMatrix :: (Floating u, Real u) => Radian -> Matrix3'3 u
 rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0 
                         (sin ang) (cos ang)          0  
                         0         0                  1
@@ -600,8 +633,8 @@ rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0
 -- (T being the translation matrix, R the rotation matrix and
 -- T^-1 the inverse of the translation matrix).
 --
-originatedRotationMatrix :: (Floating a, Real a) 
-                         => Radian -> (Point2 a) -> Matrix3'3 a
+originatedRotationMatrix :: (Floating u, Real u) 
+                         => Radian -> (Point2 u) -> Matrix3'3 u
 originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
   where
     mT    = M3'3 1 0 x     
@@ -615,15 +648,18 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
 
 
 -- | Invert a matrix.
-invert :: Fractional a => Matrix3'3 a -> Matrix3'3 a 
+--
+invert :: Fractional u => Matrix3'3 u -> Matrix3'3 u
 invert m = (1 / determinant m) *^ adjoint m
 
 -- | Determinant of a matrix.
-determinant :: Num a => Matrix3'3 a -> a
+--
+determinant :: Num u => Matrix3'3 u -> u
 determinant (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 
 -- | Transpose a matrix.
-transpose :: Matrix3'3 a -> Matrix3'3 a
+--
+transpose :: Matrix3'3 u -> Matrix3'3 u
 transpose (M3'3 a b c 
                 d e f 
                 g h i) = M3'3 a d g  
@@ -632,23 +668,23 @@ transpose (M3'3 a b c
 
 -- Helpers
 
-adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
+adjoint :: Num u => Matrix3'3 u -> Matrix3'3 u
 adjoint = transpose . cofactor . mofm
 
 
-cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
+cofactor :: Num u => Matrix3'3 u -> Matrix3'3 u
 cofactor (M3'3 a b c  
                d e f  
                g h i) = M3'3   a  (-b)   c
                              (-d)   e  (-f)
                                g  (-h)   i
 
-mofm :: Num a => Matrix3'3 a -> Matrix3'3 a
+mofm :: Num u => Matrix3'3 u -> Matrix3'3 u
 mofm (M3'3 a b c  
                d e f  
                g h i)  = M3'3 m11 m12 m13  
                               m21 m22 m23 
-                          m31 m32 m33
+                              m31 m32 m33
   where  
     m11 = (e*i) - (f*h)
     m12 = (d*i) - (f*g)

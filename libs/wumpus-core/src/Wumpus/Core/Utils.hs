@@ -19,12 +19,9 @@
 module Wumpus.Core.Utils
   ( 
 
-  -- * Component-wise min and max
-    CMinMax(..)
-  , within
 
   -- * Three values  
-  , max3
+    max3
   , min3
   , med3
 
@@ -88,34 +85,6 @@ import Data.Time
 
 
 --------------------------------------------------------------------------------
-
--- | /Component-wise/ min and max. 
--- Standard 'min' and 'max' via Ord are defined lexographically
--- on pairs, e.g.:
--- 
--- > min (1,2) (2,1) = (1,2)
--- 
--- For certain geometrical objects (Points!) we want the 
--- (constructed-) componentwise min and max, e.g:
---
--- > cmin (1,2) (2,1) = (1,1) 
--- > cmax (1,2) (2,1) = (2,2)
--- 
-
-class CMinMax a where
-  cmin :: a -> a -> a
-  cmax :: a -> a -> a
-
-
-
-instance (Ord a, Ord b) => CMinMax (a,b) where
-  cmin (x,y) (x',y') = (min x x', min y y')
-  cmax (x,y) (x',y') = (max x x', max y y')
-
-
--- | Test whether a is within opper and lower.
-within :: Eq a => CMinMax a => a -> a -> a -> Bool
-within a lower upper = (cmin a lower) == lower && (cmax a upper) == upper
 
 
 -- | max of 3

@@ -40,7 +40,7 @@ module Wumpus.Core.BoundingBox
   , retrace
 
   , corners
-  , withinBB
+  , within
   , boundaryWidth
   , boundaryHeight
   , boundaryBottomLeft
@@ -57,7 +57,6 @@ module Wumpus.Core.BoundingBox
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Utils ( CMinMax(..), within )
 
 import Data.Semigroup
 
@@ -72,9 +71,9 @@ import Text.PrettyPrint.Leijen hiding ( width )
 -- spared the obligation to be /empty/. BoundingBox is an instance
 -- of the Semigroup class where @append@ is the union operation.
 -- 
-data BoundingBox a = BBox 
-      { ll_corner :: Point2 a
-      , ur_corner :: Point2 a 
+data BoundingBox u = BBox 
+      { ll_corner :: Point2 u
+      , ur_corner :: Point2 u 
       }
   deriving (Eq,Show)
 
@@ -87,11 +86,11 @@ type DBoundingBox = BoundingBox Double
 
 -- BBox is NOT monoidal - it\'s much simpler that way.
 
-instance Ord a => Semigroup (BoundingBox a) where
+instance Ord u => Semigroup (BoundingBox u) where
   append = union
 
 
-instance Pretty a => Pretty (BoundingBox a) where
+instance Pretty u => Pretty (BoundingBox u) where
   pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
 
 
@@ -113,14 +112,14 @@ instance (Num u, Ord u) => Scale (BoundingBox u) where
 -- Picture, Path etc.
 --
 class Boundary a where
-  boundary :: a -> BoundingBox (DUnit a)
+  boundary :: DUnit a ~ u => a -> BoundingBox u 
 
 
 --------------------------------------------------------------------------------
 
 
-instance Pointwise (BoundingBox a) where
-  type Pt (BoundingBox a) = Point2 a
+instance Pointwise (BoundingBox u) where
+  type Pt (BoundingBox u) = Point2 u
   pointwise f (BBox bl tr) = BBox (f bl) (f tr)
 
 
@@ -132,7 +131,7 @@ instance Pointwise (BoundingBox a) where
 -- @bbox@ throws an error if the width or height of the 
 -- constructed bounding box is negative.
 --
-bbox :: Ord a => Point2 a -> Point2 a -> BoundingBox a
+bbox :: Ord u => Point2 u -> Point2 u -> BoundingBox u
 bbox ll@(P2 x0 y0) ur@(P2 x1 y1) 
    | x0 <= x1 && y0 <= y1 = BBox ll ur 
    | otherwise            = error "Wumpus.Core.BoundingBox.bbox - malformed."
@@ -141,15 +140,15 @@ bbox ll@(P2 x0 y0) ur@(P2 x1 y1)
 -- | Create a BoundingBox with bottom left corner at the origin,
 -- and dimensions @w@ and @h@.
 --
-obbox :: Num a => a -> a -> BoundingBox a
+obbox :: Num u => u -> u -> BoundingBox u
 obbox w h = BBox zeroPt (P2 w h)
 
 
 -- | The union of two bounding boxes. This is also the @append@ 
 -- of BoundingBox\'s @Semigroup@ instance.
 --
-union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
-BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
+union :: Ord u => BoundingBox u -> BoundingBox u -> BoundingBox u
+BBox ll ur `union` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')
 
 -- | Trace a list of points, retuning the BoundingBox that 
 -- includes them.
@@ -157,8 +156,8 @@ BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
 -- 'trace' throws a run-time error when supplied with the empty 
 -- list.
 --
-trace :: (Num a, Ord a) => [Point2 a] -> BoundingBox a
-trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (cmin z a, cmax z b) ) (p,p) ps
+trace :: (Num u, Ord u) => [Point2 u] -> BoundingBox u
+trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (minPt z a, maxPt z b) ) (p,p) ps
 trace []     = error $ "BoundingBox.trace called in empty list"
 
 -- | Perform the supplied transformation on the four corners of 
@@ -177,24 +176,24 @@ retrace f = trace . map f . fromCorners . corners
 
 -- | Generate all the corners of a bounding box, counter-clock 
 -- wise from the bottom left, i.e. @(bl, br, tr, tl)@.
-corners :: BoundingBox a -> (Point2 a, Point2 a, Point2 a, Point2 a)
+corners :: BoundingBox u -> (Point2 u, Point2 u, Point2 u, Point2 u)
 corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
     br = P2 x1 y0
     tl = P2 x0 y1
 
 -- | Within test - is the supplied point within the bounding box?
 --
-withinBB :: Ord a => Point2 a -> BoundingBox a -> Bool
-withinBB p (BBox ll ur) = within p ll ur
+within :: Ord u => Point2 u -> BoundingBox u -> Bool
+within p (BBox ll ur) = (minPt p ll) == ll && (maxPt p ur) == ur
 
 -- | Extract the width of a bounding box.
 --
-boundaryWidth :: Num a => BoundingBox a -> a
+boundaryWidth :: Num u => BoundingBox u -> u
 boundaryWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
 -- | Extract the height of a bounding box.
 --
-boundaryHeight :: Num a => BoundingBox a -> a
+boundaryHeight :: Num u => BoundingBox u -> u
 boundaryHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 
 
@@ -203,19 +202,19 @@ boundaryHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 -- Points on the boundary
 
 -- | Extract the bottom-left corner of the bounding box.
-boundaryBottomLeft  :: BoundingBox a -> Point2 a
+boundaryBottomLeft  :: BoundingBox u -> Point2 u
 boundaryBottomLeft (BBox p0 _ ) = p0
 
 -- | Extract the top-right corner of the bounding box.
-boundaryTopRight :: BoundingBox a -> Point2 a
+boundaryTopRight :: BoundingBox u -> Point2 u
 boundaryTopRight (BBox _ p1) = p1
 
 -- | Extract the top-left corner of the bounding box.
-boundaryTopLeft :: BoundingBox a -> Point2 a
+boundaryTopLeft :: BoundingBox u -> Point2 u
 boundaryTopLeft (BBox (P2 x _) (P2 _ y)) = P2 x y
 
 -- | Extract the bottom-right corner of the bounding box.
-boundaryBottomRight :: BoundingBox a -> Point2 a
+boundaryBottomRight :: BoundingBox u -> Point2 u
 boundaryBottomRight (BBox (P2 _ y) (P2 x _)) = P2 x y
 
 
@@ -228,19 +227,19 @@ boundaryBottomRight (BBox (P2 _ y) (P2 x _)) = P2 x y
 -- Are these really worthwhile ? ...
 
 -- | Extract the unit of the left vertical plane.
-leftPlane :: BoundingBox a -> a
+leftPlane :: BoundingBox u -> u
 leftPlane (BBox (P2 l _) _) = l
 
 -- | Extract the unit of the right vertical plane.
-rightPlane :: BoundingBox a -> a
+rightPlane :: BoundingBox u -> u
 rightPlane (BBox _ (P2 r _)) = r
 
 -- | Extract the unit of the lower horizontal plane.
-lowerPlane :: BoundingBox a -> a
+lowerPlane :: BoundingBox u -> u
 lowerPlane (BBox (P2 _ l) _) = l
 
 -- | Extract the unit of the upper horizontal plane.
-upperPlane :: BoundingBox a -> a
+upperPlane :: BoundingBox u -> u
 upperPlane (BBox _ (P2 _ u)) = u
 
 

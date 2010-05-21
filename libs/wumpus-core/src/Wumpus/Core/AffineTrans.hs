@@ -82,10 +82,10 @@ class Rotate t where
   rotate :: Radian -> t -> t
 
 
-instance (Floating a, Real a) => Rotate (Point2 a) where
+instance (Floating u, Real u) => Rotate (Point2 u) where
   rotate a = ((rotationMatrix a) *#)
 
-instance (Floating a, Real a) => Rotate (Vec2 a) where
+instance (Floating u, Real u) => Rotate (Vec2 u) where
   rotate a = ((rotationMatrix a) *#)
 
 
@@ -94,11 +94,11 @@ class RotateAbout t where
   rotateAbout :: Radian -> Point2 (DUnit t) -> t -> t 
 
 
-instance (Floating a, Real a) => RotateAbout (Point2 a) where
+instance (Floating u, Real u) => RotateAbout (Point2 u) where
   rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
 
 
-instance (Floating a, Real a) => RotateAbout (Vec2 a) where
+instance (Floating u, Real u) => RotateAbout (Vec2 u) where
   rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
   
 --------------------------------------------------------------------------------
