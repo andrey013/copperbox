@@ -38,6 +38,7 @@ module Wumpus.Extra.Shapes
   -- * TextLine
   , Textline
   , textline
+  , drawTextline
 
   ) where
 
@@ -151,43 +152,43 @@ type instance DUnit (Rectangle u) = u
 
 inCtxRect :: Num u
           => Rectangle u -> (CTM u -> Point2 u -> Vec2 u -> a) -> a
-inCtxRect rtangle f = f ctm bl (tr .-. bl)
+inCtxRect rect f = f ctm bl (tr .-. bl)
     where
-      ctm       = rect_ctm rtangle
-      bl        = rect_bottom_left rtangle
-      tr        = rect_upper_right rtangle
+      ctm       = rect_ctm rect
+      bl        = rect_bottom_left rect
+      tr        = rect_upper_right rect
 
 -- Instances 
   
 
 instance (Fractional u) => AnchorCenter (Rectangle u) where
-  center rtangle = inCtxRect rtangle $ \ ctm bl v -> 
+  center rect = inCtxRect rect $ \ ctm bl v -> 
       let v' = v ^* 0.5 in (ctm *#) $ (bl .+^ v')
 
 
 
 instance (Fractional u) =>  AnchorCardinal (Rectangle u) where
-  north rtangle = inCtxRect rtangle $ \ ctm bl (V2 w h) -> 
+  north rect = inCtxRect rect $ \ ctm bl (V2 w h) -> 
       (ctm *#) $ bl .+^ (V2 (w*0.5) h)
 
-  south rtangle = inCtxRect rtangle $ \ ctm bl (V2 w _) -> 
+  south rect = inCtxRect rect $ \ ctm bl (V2 w _) -> 
       (ctm *#) $ bl .+^ (V2 (w*0.5) 0)
 
-  east rtangle = inCtxRect rtangle $ \ ctm bl (V2 w h) -> 
+  east rect = inCtxRect rect $ \ ctm bl (V2 w h) -> 
       (ctm *#) $ bl .+^ (V2 w (h*0.5))
 
-  west rtangle = inCtxRect rtangle $ \ ctm bl (V2 _ h) -> 
+  west rect = inCtxRect rect $ \ ctm bl (V2 _ h) -> 
       (ctm *#) $ bl .+^ (V2 0 (h*0.5))
 
-  northeast rtangle = inCtxRect rtangle $ \ ctm bl v -> 
+  northeast rect = inCtxRect rect $ \ ctm bl v -> 
       (ctm *#) $ bl .+^ v
 
-  southeast rtangle = inCtxRect rtangle $ \ ctm bl (V2 w _) -> 
+  southeast rect = inCtxRect rect $ \ ctm bl (V2 w _) -> 
       (ctm *#) $ bl .+^ (V2 w 0)
 
-  southwest rtangle = inCtxRect rtangle $ \ ctm bl _ -> ctm *# bl
+  southwest rect = inCtxRect rect $ \ ctm bl _ -> ctm *# bl
 
-  northwest rtangle = inCtxRect rtangle $ \ ctm bl (V2 _ h) -> 
+  northwest rect = inCtxRect rect $ \ ctm bl (V2 _ h) -> 
       (ctm *#) $ bl .+^ (V2 0 h)
 
 
@@ -218,27 +219,32 @@ rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix
 --
 strokeRectangle :: (Fractional u, Ord u, Stroke t) 
                 => t -> Rectangle u -> Primitive u
-strokeRectangle t rtangle = cstroke t $ vertexPath [bl,br,tr,tl]
+strokeRectangle t rect = cstroke t $ vertexPath [bl,br,tr,tl]
   where
-    bl        = southwest rtangle
-    tr        = northeast rtangle
-    br        = southeast rtangle
-    tl        = northwest rtangle
+    bl        = southwest rect
+    tr        = northeast rect
+    br        = southeast rect
+    tl        = northwest rect
 
 --------------------------------------------------------------------------------
 -- Text label
 
+-- Note - a Textline needs some \"drawing attributes\" - Font 
+-- style and size.
+-- 
+-- Unfortunately this /divides/ the TextLabel type class from 
+-- wumpus-core into two halves - needs size and font, but wants
+-- colour later (only when drawn).
+--
+
 data Textline u = Textline
       { text_string           :: String
-      , text_attr             :: FontAttr
+      , text_font_props       :: FontAttr
       , text_rect             :: Rectangle u
       }
 
 type instance DUnit (Textline u) = u
       
-
-instance (Fractional u) => AnchorCenter (Textline u) where
-  center = center . text_rect 
 
 
 instance (Floating u, Real u) => Rotate (Textline u) where
@@ -256,6 +262,23 @@ instance Num u => Translate (Textline u) where
   translate x y = 
      pstar (\m s -> s { text_rect = translate x y m }) text_rect
 
+
+
+instance (Fractional u) => AnchorCenter (Textline u) where
+  center = center . text_rect
+
+instance (Fractional u) =>  AnchorCardinal (Textline u) where
+  north = north . text_rect
+  south = south . text_rect
+  east  = east  . text_rect
+  west  = west  . text_rect
+
+  northeast = northeast . text_rect
+  southeast = southeast . text_rect 
+  southwest = southwest . text_rect
+  northwest = northwest . text_rect
+
+
 textline :: (Floating u, Fractional u, Ord u) 
          => FontAttr -> String -> Point2 u -> Textline u
 textline attr s ctr = Textline s attr $ rectangle w h ctr
@@ -264,22 +287,9 @@ textline attr s ctr = Textline s attr $ rectangle w h ctr
     (bl, _br, tr, _tl) = corners $ boundary $ textlabel attr s ctr
 
 
--- Can\'t apply affine transformations to Primitives.
--- This means drawing a TextLine has to make a Picture,
--- and this is a bit disappointing as other Shapes can be 
--- accommodated as Primitives.
---
--- (Other shapes have their constituent points transformed
--- before they are draw with wumpus-core).
---
--- Having e.g. many coordinates rendering as individual 
--- Pictures is inefficient.
--- 
 
--- UPDATE - with wumpus-core-0.18.0 we can affine transform 
--- prims.
-
-{-
-drawTextline :: TextLine u -> Picture u
-drawTextline 
--}
+drawTextline :: (Num u, PSColour c) => c -> Textline u -> Primitive u
+drawTextline c txt = 
+    textlabel (psColour c, text_font_props txt) (text_string txt) bottom_left
+  where
+    bottom_left = rect_bottom_left $ text_rect txt

@@ -154,18 +154,17 @@ nextRow :: GridSt -> GridSt
 nextRow = pstar upf posn where
   upf (P2 _ y) s = s { posn=(P2 0 (y+1)) }
 
--- NOTE - calling these tell____ is probably not the clearest way.
 
-tellNode :: String -> GridCoord -> GridTrace u -> GridTrace u
-tellNode name loc = 
+addNode :: String -> GridCoord -> GridTrace u -> GridTrace u
+addNode name loc = 
     pstar (\xs s -> s { cell_values = (loc,CellNode name):xs }) cell_values
 
-tellPicture :: Picture u -> GridCoord -> GridTrace u -> GridTrace u
-tellPicture pic loc = 
+addPicture :: Picture u -> GridCoord -> GridTrace u -> GridTrace u
+addPicture pic loc = 
     pstar (\xs s -> s { cell_values = (loc,CellPic pic):xs }) cell_values
 
-tellLink :: GridCoord -> GridCoord ->  GridTrace u -> GridTrace u
-tellLink a b  = 
+addLink :: GridCoord -> GridCoord ->  GridTrace u -> GridTrace u
+addLink a b  = 
     pstar (\xs s -> s { node_conns = Conn a b : xs }) node_conns
 
 
@@ -185,13 +184,13 @@ node :: SimpleLabel -> GridM sh u a -> GridM (S sh) u (a,NodeId)
 node name (GridM mf) = GridM $ \s w -> 
     let (acc,s',w') = mf s w 
         loc         = posn s'
-    in ((acc,loc), nextCol s', tellNode name loc w')
+    in ((acc,loc), nextCol s', addNode name loc w')
 
 cellpic :: Picture u -> GridM sh u a -> GridM (S sh) u (a,NodeId)
 cellpic pic (GridM mf) = GridM $ \s w -> 
     let (acc,s',w') = mf s w 
         loc         = posn s'
-    in ((acc,loc), nextCol s', tellPicture pic loc w')
+    in ((acc,loc), nextCol s', addPicture pic loc w')
 
 
 infixl 5 &
@@ -200,7 +199,7 @@ tl & hf = hf tl
 
 
 connect :: NodeId -> NodeId -> GridM sh u ()
-connect from to = GridM $ \s w -> ((),s, tellLink from to w)
+connect from to = GridM $ \s w -> ((),s, addLink from to w)
 
 --------------------------------------------------------------------------------
 -- An arity family of cell \'selectors\'

@@ -116,7 +116,7 @@ description:
     transformation, Pictures may generate a larger bounding box 
     than composite primitives.
   .
-  * Minor change - ztextlabal changed to use 24pt type rather 
+  * Minor change - ztextlabel changed to use 24pt type rather 
     than 12pt. 
   .
   * Corrected the cabal file to include the correct files for 

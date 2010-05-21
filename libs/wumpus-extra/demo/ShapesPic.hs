@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -6,6 +7,7 @@ module ShapesPic where
 import Wumpus.Core
 -- import Wumpus.Extra hiding ( rectangle )
 import Wumpus.Extra.PictureLanguage hiding ( center )
+import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.Shapes
 import Wumpus.Extra.SVGColours
 
@@ -19,7 +21,12 @@ import System.Directory
 main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/"
-    sequence_ [ test01 ]
+    sequence_ [ test01, test02 ]
+
+
+
+--------------------------------------------------------------------------------
+-- 
 
 test01 :: IO ()
 test01 = do 
@@ -51,5 +58,33 @@ coorda rect = frameMulti
     , drawCoordinate indigo $ coordinate (northwest rect)
     ] 
 
--- labelPic :: String -> Picture u
--- labelPic = 
+--------------------------------------------------------------------------------
+
+test02 :: IO ()
+test02 = do 
+   writeEPS_latin1 "./out/Shapes2.eps" picture2
+   writeSVG_latin1 "./out/Shapes2.svg" picture2
+
+
+picture2 :: DPicture
+picture2 = rect1 ->- text1
+  where
+    rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt)
+    text1 = drawWithAnchors (drawTextline blue)   
+                            (textline courier36 "Wumpus!" zeroPt)
+    
+
+drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t
+                   , u ~ DUnit t) 
+                => (t -> Primitive u) -> t -> Picture u
+drawWithAnchors primf t = frameMulti $ primf t : xs
+  where
+    xs = map (drawCoordinate indigo) $ cardinals t
+
+cardinals :: (Num u, AnchorCenter t, AnchorCardinal t
+             , u ~ DUnit t) 
+          => t -> [Coordinate u]
+cardinals = map coordinate . sequence funs
+  where
+    funs = [center, north, northeast, east, southeast, south
+                         , southwest, west, northwest ]
