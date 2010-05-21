@@ -8,7 +8,7 @@ import Wumpus.Core
 -- import Wumpus.Extra hiding ( rectangle )
 import Wumpus.Extra.PictureLanguage hiding ( center )
 import Wumpus.Extra.SafeFonts
-import Wumpus.Extra.Shapes
+import Wumpus.Extra.Shape
 import Wumpus.Extra.SVGColours
 
 import System.Directory
@@ -70,8 +70,8 @@ picture2 :: DPicture
 picture2 = rect1 ->- text1
   where
     rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt)
-    text1 = drawWithAnchors (drawTextline blue)   
-                            (textline courier36 "Wumpus!" zeroPt)
+    text1 = drawWithAnchors (drawTextLine blue)   
+                            (textLine courier36 "Wumpus!" zeroPt)
     
 
 drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t

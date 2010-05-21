@@ -48,7 +48,11 @@ library
     Wumpus.Extra.Marks,    
     Wumpus.Extra.Matrix,
     Wumpus.Extra.Path,
-    Wumpus.Extra.Shapes,
+    Wumpus.Extra.Shape,
+    Wumpus.Extra.Shape.Base,
+    Wumpus.Extra.Shape.Coordinate,
+    Wumpus.Extra.Shape.Rectangle,
+    Wumpus.Extra.Shape.TextLine,
     Wumpus.Extra.Text,
     Wumpus.Extra.VersionNumber
 
