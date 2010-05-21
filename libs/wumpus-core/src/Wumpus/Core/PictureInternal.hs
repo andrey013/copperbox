@@ -569,19 +569,14 @@ repositionProperties = fn . boundary where
 --
 ellipseControlPoints :: (Floating u, Ord u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse ctr hw hh ctm) = 
-    map (new_mtrx *#) $ start circ
+ellipseControlPoints (PrimEllipse ctr hw hh ctm) = map (new_mtrx *#) circ
   where
     (radius,(dx,dy)) = circleScalingProps hw hh
     new_mtrx         = ctm * scalingMatrix dx dy
-    circ             = bezierCircle radius ctr
-    
-    start ((a,b,c,d):xs)  = a:b:c:d : rest xs
-    start _               = []      -- should be unreachable
-    
-    rest  ((_,b,c,d):xs)  = b:c:d : rest xs
-    rest  _               = []
+    circ             = bezierCircle 1 radius ctr
 
+    -- subdivide the bezierCircle with 1 to get two
+    -- control points per quadrant.    
 
 
 --
@@ -598,16 +593,5 @@ circleScalingProps hw hh  = (radius, (dx,dy))
     (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
                                  else (rescale (0,hh) (0,1) hw, 1)
 
-
-
--- | Make a circle from Bezier curves - @n@ is the number of 
--- subdivsions per quadrant.
---
-bezierCircle :: Floating u 
-             => u -> Point2 u -> [(Point2 u, Point2 u, Point2 u, Point2 u)]
-bezierCircle radius pt = map mkQuad angs
-  where
-    angs         = [(0, pi*0.5), (pi*0.5,pi), (pi, pi*1.5), (pi*1.5, pi*2)]
-    mkQuad (a,b) = bezierArc radius a b pt
 
 

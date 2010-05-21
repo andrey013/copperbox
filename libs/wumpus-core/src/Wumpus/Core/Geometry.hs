@@ -93,6 +93,7 @@ module Wumpus.Core.Geometry
 
   -- * Bezier curves
   , bezierArc
+  , bezierCircle
 
   ) where
 
@@ -762,5 +763,27 @@ bezierArc r ang1 ang2 pt = (p0,p1,p2,p3)
     p1    = p0 .+^ avec (ang1 + pi/2) e
     p2    = p3 .+^ avec (ang2 - pi/2) e
     p3    = pt .+^ avec ang2 r
+
+
+-- | Make a circle from Bezier curves - @n@ is the number of 
+-- subdivsions per quadrant.
+--
+bezierCircle :: (Fractional u, Floating u) 
+             => Int -> u -> Point2 u -> [Point2 u]
+bezierCircle n radius pt = start $ subdivisions (n*4) (2*pi)
+  where
+    start (a:b:xs) = s : cp1 : cp2 : e : rest (b:xs)
+      where (s,cp1,cp2,e) = bezierArc radius a b pt
+                     
+    start _        = [] 
+
+    rest (a:b:xs)  = cp1 : cp2 : e : rest (b:xs)
+      where (_,cp1,cp2,e) = bezierArc radius a b pt 
+
+    rest _         = [] 
+
+    subdivisions i a = 0 : take i (iterate (+one) one) 
+      where  one  = a / fromIntegral i
+
 
 

@@ -9,6 +9,9 @@ category:         Graphics
 synopsis:         Pure Haskell PostScript and SVG generation. 
 description:
   .
+  TODO - look at adding accessible defaults for GraphicsState
+  elements !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  .
   Wumpus - (W)riter (M)onad (P)ost (S)cript. 
   .
   Wumpus is a library for generating 2D vector pictures, its 
@@ -95,6 +98,9 @@ description:
     obligations change lexically as well @Floating a =>@ to 
     @Floating u =>@. Superficially this means a lot of type 
     signatures have diffs but haven\'t changed. 
+  .
+  * Added function @bezierCircle@ to generate the Bezier curve 
+    points for arcs describing a circle.
   .
   * Added new demo - MultiPic. The PostScript it generates
     is efficient - no extraneous use of @concat@. 

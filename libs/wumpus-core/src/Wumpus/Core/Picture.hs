@@ -385,7 +385,7 @@ ellipseDefault = (psBlack, EFill)
 
 
 -- | Create an ellipse, the ellipse will be filled unless the 
--- supplied attributes /imply/ a stoked ellipse, e.g.:
+-- supplied attributes /imply/ a stroked ellipse, e.g.:
 --
 -- > ellipse (LineWidth 4) zeroPt 40 40 
 --
