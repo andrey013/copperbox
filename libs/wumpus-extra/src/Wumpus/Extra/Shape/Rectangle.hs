@@ -23,6 +23,8 @@ module Wumpus.Extra.Shape.Rectangle
     Rectangle(..)
   , rectangle
   , strokeRectangle
+  , fillRectangle
+  
 
   ) where
 
@@ -110,14 +112,22 @@ rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix
     v = V2 (w * 0.5) (h * 0.5) 
 
 
--- | make Picture or Primitive? ANS - primitive
+
+--  
 --
 strokeRectangle :: (Fractional u, Ord u, Stroke t) 
                 => t -> Rectangle u -> Primitive u
-strokeRectangle t rect = cstroke t $ vertexPath [bl,br,tr,tl]
+strokeRectangle t = cstroke t . vertexPath . extractVertexList
+
+fillRectangle :: (Fractional u, Ord u, Fill t) 
+                => t -> Rectangle u -> Primitive u
+fillRectangle t = fill t . vertexPath . extractVertexList
+
+
+extractVertexList :: Fractional u => Rectangle u -> [Point2 u]
+extractVertexList rect = [bl,br,tr,tl]
   where
     bl        = southwest rect
     tr        = northeast rect
     br        = southeast rect
     tl        = northwest rect
-

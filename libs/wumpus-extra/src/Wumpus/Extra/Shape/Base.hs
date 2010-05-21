@@ -35,10 +35,6 @@ module Wumpus.Extra.Shape.Base
   ) where
 
 import Wumpus.Core hiding ( CTM )
-import Wumpus.Extra.Utils
-
-import Data.AffineSpace         -- package: vector-space
-import Data.VectorSpace
 
 
 --------------------------------------------------------------------------------

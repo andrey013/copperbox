@@ -8,12 +8,12 @@ import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.SVGColours
 
-import Ssytem.Directory
+import System.Directory
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo1
+    demo01
 
 
 demo01 :: IO ()

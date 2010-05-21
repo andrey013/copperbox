@@ -48,7 +48,6 @@ module Wumpus.Extra.BasicObjects
   , cubicBezier
 
   -- * Operations
-  , bezierCircle
 
   , curveToPath
   , curvesToPath
@@ -79,6 +78,8 @@ module Wumpus.Extra.BasicObjects
 import Wumpus.Core
 import Wumpus.Extra.Base
 import Wumpus.Extra.Utils
+
+import Wumpus.Extra.CoreAdditions ( bezierCircle )
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -304,17 +305,6 @@ cubicBezier = CubicBezier
 
 
 
--- | Make a circle from Bezier curves - @n@ is the number of 
--- subdivsions per quadrant.
-bezierCircle :: (Fractional u, Floating u) 
-             => Int -> u -> Point2 u -> [CubicBezier u]
-bezierCircle n r pt = para phi [] $ subdivisions (n*4) (2*pi) where
-   phi a (b:_,acc)    = adapt (bezierArc r a b pt) : acc
-   phi _ (_,acc)      = acc 
-
-   adapt (s,c1,c2,e)  = CubicBezier s c1 c2 e
-  
-
 --------------------------------------------------------------------------------
 -- operations
 
@@ -329,11 +319,22 @@ curvesToPath (CubicBezier p0 p1 p2 p3:cs) =
    path p0 (curveTo p1 p2 p3 : map fn cs) where 
       fn (CubicBezier _ u v w) = curveTo u v w
 
+
+adaptPoints :: [Point2 u] -> [CubicBezier u]
+adaptPoints = start where
+   start (p0:p1:p2:p3:xs) = CubicBezier p0 p1 p2 p3 : rest p3 xs
+   start _                = error $ "adapt -- too short"
+   
+   rest p0 (p1:p2:p3:xs)  = CubicBezier p0 p1 p2 p3 : rest p3 xs
+   rest _  _              = []
+
+
+
 --------------------------------------------------------------------------------
 
 circlePath :: (Fractional u, Floating u) 
            => Int -> u -> Point2 u -> Path u
-circlePath = curvesToPath `ooo` bezierCircle
+circlePath n radius = curvesToPath . adaptPoints . bezierCircle n radius
 
 
 

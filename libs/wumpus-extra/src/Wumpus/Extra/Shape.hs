@@ -21,6 +21,7 @@ module Wumpus.Extra.Shape
   ( 
 
     module Wumpus.Extra.Shape.Base
+  , module Wumpus.Extra.Shape.Circle
   , module Wumpus.Extra.Shape.Coordinate
   , module Wumpus.Extra.Shape.Rectangle
   , module Wumpus.Extra.Shape.TextLine
@@ -30,6 +31,7 @@ module Wumpus.Extra.Shape
 
 
 import Wumpus.Extra.Shape.Base
+import Wumpus.Extra.Shape.Circle
 import Wumpus.Extra.Shape.Coordinate
 import Wumpus.Extra.Shape.Rectangle
 import Wumpus.Extra.Shape.TextLine

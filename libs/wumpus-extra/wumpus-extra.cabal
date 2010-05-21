@@ -50,6 +50,7 @@ library
     Wumpus.Extra.Path,
     Wumpus.Extra.Shape,
     Wumpus.Extra.Shape.Base,
+    Wumpus.Extra.Shape.Circle,
     Wumpus.Extra.Shape.Coordinate,
     Wumpus.Extra.Shape.Rectangle,
     Wumpus.Extra.Shape.TextLine,

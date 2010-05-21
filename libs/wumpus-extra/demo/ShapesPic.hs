@@ -13,6 +13,7 @@ import Wumpus.Extra.SVGColours
 
 import System.Directory
 
+
 -- Note 
 -- Processing has (0,0) at top left, 
 -- PostScript has (0,0) at bottom left
@@ -67,12 +68,13 @@ test02 = do
 
 
 picture2 :: DPicture
-picture2 = rect1 ->- text1
+picture2 = rect1 ->- text1 ->- circ1 ->- circ2
   where
     rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt)
     text1 = drawWithAnchors (drawTextLine blue)   
                             (textLine courier36 "Wumpus!" zeroPt)
-    
+    circ1 = frame $ strokeCircle () $ circle 50 zeroPt
+    circ2 = frame $ strokeCircle () $ scale 2 1 $ circle 50 zeroPt
 
 drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t
                    , u ~ DUnit t) 
