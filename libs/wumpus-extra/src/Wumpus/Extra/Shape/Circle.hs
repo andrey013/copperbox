@@ -31,6 +31,7 @@ import Wumpus.Extra.CoreAdditions
 import Wumpus.Extra.Shape.Base
 import Wumpus.Extra.Utils
 
+import Data.AffineSpace                 -- package: vector-space
 
 --------------------------------------------------------------------------------
 
@@ -45,21 +46,32 @@ data Circle u = Circle
 type instance DUnit (Circle u) = u
 
 
+
 -- helper - extract coord_center w.r.t. the CTM 
 --
-inCtxCircle :: Num u => Circle u -> (Point2 u -> a) -> a
-inCtxCircle coord f = f $ ctm *# pt
-    where
-      ctm       = circle_ctm    coord
-      pt        = circle_center coord
 
- 
+withGeom :: Num u => (CTM u -> Point2 u -> u -> a) -> Circle u -> a
+withGeom f c = f (circle_ctm c) (circle_center c) (circle_radius c)
+
+
+-------------------------------------------------------------------------------- 
 
 -- Instances 
 
 instance Num u => AnchorCenter (Circle u) where
-  center c = inCtxCircle c id
+  center = withGeom $ \ctm ctr _ -> ctm *# ctr
 
+
+instance Floating u => AnchorCardinal (Circle u) where
+  north = withGeom $ \ctm ctr r -> ctm *# (ctr .+^ vvec r)
+  south = withGeom $ \ctm ctr r -> ctm *# (ctr .-^ vvec r)
+  east  = withGeom $ \ctm ctr r -> ctm *# (ctr .+^ hvec r)
+  west  = withGeom $ \ctm ctr r -> ctm *# (ctr .-^ hvec r)
+
+  northeast = withGeom $ \ctm ctr r -> ctm *# (ctr .+^ avec (pi*0.25) r)
+  southeast = withGeom $ \ctm ctr r -> ctm *# (ctr .-^ avec (pi*0.75) r)
+  southwest = withGeom $ \ctm ctr r -> ctm *# (ctr .-^ avec (pi*0.25) r)
+  northwest = withGeom $ \ctm ctr r -> ctm *# (ctr .+^ avec (pi*0.75) r)
 
 instance (Floating u, Real u) => Rotate (Circle u) where
   rotate r = pstar (\m s -> s { circle_ctm = rotateCTM r m }) circle_ctm 
@@ -70,7 +82,7 @@ instance (Floating u, Real u) => RotateAbout (Circle u) where
 
 
 -- For scaling /just/ change the ctm - but remember to 
--- apply the ctm to all points an control points before
+-- apply the ctm to all points and control points before
 -- drawing the circle.
 instance Num u => Scale (Circle u) where
   scale x y = pstar2 (\m r s -> s { circle_ctm = scaleCTM x y m
@@ -83,7 +95,8 @@ instance Num u => Translate (Circle u) where
      pstar (\m s -> s { circle_ctm = translateCTM x y m }) circle_ctm
 
 
---
+--------------------------------------------------------------------------------
+-- 
 
 circle :: Num u => u -> Point2 u -> Circle u
 circle radius pt = Circle radius pt identityMatrix

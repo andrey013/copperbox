@@ -73,8 +73,8 @@ picture2 = rect1 ->- text1 ->- circ1 ->- circ2
     rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt)
     text1 = drawWithAnchors (drawTextLine blue)   
                             (textLine courier36 "Wumpus!" zeroPt)
-    circ1 = frame $ strokeCircle () $ circle 50 zeroPt
-    circ2 = frame $ strokeCircle () $ scale 2 1 $ circle 50 zeroPt
+    circ1 = drawWithAnchors (strokeCircle red) (rotate30 $ circle 20 zeroPt)
+    circ2 = drawWithAnchors (strokeCircle red) (scale 2 4 $ circle 20 zeroPt)
 
 drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t
                    , u ~ DUnit t) 

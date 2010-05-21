@@ -17,9 +17,11 @@
 
 module Wumpus.Extra.Utils
   (
-
+  
+  -- * strip - dual of const
+    strip 
   -- * Para
-    para
+  , para
 
   -- * Specs
   , oo
@@ -49,6 +51,9 @@ module Wumpus.Extra.Utils
 
 
 --------------------------------------------------------------------------------
+
+strip :: a -> b -> b
+strip _ b = b
 
 -- | paramorphism (generalizes cata (foldr), folds right...)
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b

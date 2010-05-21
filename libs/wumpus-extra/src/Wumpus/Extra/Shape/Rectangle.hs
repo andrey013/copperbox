@@ -47,46 +47,35 @@ data Rectangle u = Rectangle
 type instance DUnit (Rectangle u) = u
 
 
-inCtxRect :: Num u
-          => Rectangle u -> (CTM u -> Point2 u -> Vec2 u -> a) -> a
-inCtxRect rect f = f ctm bl (tr .-. bl)
-    where
-      ctm       = rect_ctm rect
-      bl        = rect_bottom_left rect
-      tr        = rect_upper_right rect
+-- Having a vector to upper right seems a bit easier 
+-- than representing it as a point...
+--
+withGeom :: Num u
+         => (CTM u -> Point2 u -> Vec2 u -> a) -> Rectangle u -> a
+withGeom f rect = f (rect_ctm rect) bl (tr .-. bl)
+  where
+    bl        = rect_bottom_left rect
+    tr        = rect_upper_right rect
 
 -- Instances 
   
 
 instance (Fractional u) => AnchorCenter (Rectangle u) where
-  center rect = inCtxRect rect $ \ ctm bl v -> 
+  center = withGeom $ \ ctm bl v -> 
       let v' = v ^* 0.5 in (ctm *#) $ (bl .+^ v')
 
 
 
 instance (Fractional u) =>  AnchorCardinal (Rectangle u) where
-  north rect = inCtxRect rect $ \ ctm bl (V2 w h) -> 
-      (ctm *#) $ bl .+^ (V2 (w*0.5) h)
+  north = withGeom $ \ ctm bl (V2 w h) -> ctm *# (bl .+^ V2 (w*0.5) h)
+  south = withGeom $ \ ctm bl (V2 w _) -> ctm *# (bl .+^ V2 (w*0.5) 0)
+  east  = withGeom $ \ ctm bl (V2 w h) -> ctm *# (bl .+^ V2 w (h*0.5))
+  west  = withGeom $ \ ctm bl (V2 _ h) -> ctm *# (bl .+^ V2 0 (h*0.5))
 
-  south rect = inCtxRect rect $ \ ctm bl (V2 w _) -> 
-      (ctm *#) $ bl .+^ (V2 (w*0.5) 0)
-
-  east rect = inCtxRect rect $ \ ctm bl (V2 w h) -> 
-      (ctm *#) $ bl .+^ (V2 w (h*0.5))
-
-  west rect = inCtxRect rect $ \ ctm bl (V2 _ h) -> 
-      (ctm *#) $ bl .+^ (V2 0 (h*0.5))
-
-  northeast rect = inCtxRect rect $ \ ctm bl v -> 
-      (ctm *#) $ bl .+^ v
-
-  southeast rect = inCtxRect rect $ \ ctm bl (V2 w _) -> 
-      (ctm *#) $ bl .+^ (V2 w 0)
-
-  southwest rect = inCtxRect rect $ \ ctm bl _ -> ctm *# bl
-
-  northwest rect = inCtxRect rect $ \ ctm bl (V2 _ h) -> 
-      (ctm *#) $ bl .+^ (V2 0 h)
+  northeast = withGeom $ \ ctm bl v -> ctm *#  (bl .+^ v)
+  southeast = withGeom $ \ ctm bl (V2 w _) -> ctm *# (bl .+^ V2 w 0)
+  southwest = withGeom $ \ ctm bl _ -> ctm *# bl
+  northwest = withGeom $ \ ctm bl (V2 _ h) -> ctm *# (bl .+^ V2 0 h)
 
 
 instance (Floating u, Real u) => Rotate (Rectangle u) where

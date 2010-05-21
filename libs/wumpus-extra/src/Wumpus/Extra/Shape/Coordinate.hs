@@ -44,18 +44,15 @@ type instance DUnit (Coordinate u) = u
 
 -- helper - extract coord_center w.r.t. the CTM 
 --
-inCtxCoord :: Num u => Coordinate u -> (Point2 u -> a) -> a
-inCtxCoord coord f = f $ ctm *# pt
-    where
-      ctm       = coord_ctm    coord
-      pt        = coord_center coord
+withGeom :: Num u => (CTM u -> Point2 u -> a) -> Coordinate u -> a
+withGeom f c = f (coord_ctm c) (coord_center c)
 
  
 
 -- Instances 
 
 instance Num u => AnchorCenter (Coordinate u) where
-  center c = inCtxCoord c id
+  center = withGeom $ \ctm ctr -> ctm *# ctr
 
 
 instance (Floating u, Real u) => Rotate (Coordinate u) where
@@ -78,6 +75,9 @@ instance Num u => Translate (Coordinate u) where
 coordinate :: Num u => Point2 u -> Coordinate u
 coordinate pt = Coordinate pt identityMatrix
 
+-- Note - currently this takes no notice of any scaling 
+-- transformations in the CTM...
+--
 drawCoordinate :: (Fractional u, Ellipse t) => t -> Coordinate u -> Primitive u
-drawCoordinate t coord = ellipse t 2 2 (inCtxCoord coord id)
+drawCoordinate t coord = ellipse t 2 2 (center coord)
 
