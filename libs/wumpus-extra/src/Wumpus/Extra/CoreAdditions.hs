@@ -23,6 +23,7 @@ module Wumpus.Extra.CoreAdditions
     zeroPicture
   , bbcenter
   , bezierCircle
+  , wumpus_default_font
 
   ) where
 
@@ -30,8 +31,8 @@ module Wumpus.Extra.CoreAdditions
 import Wumpus.Core
 
 
--- Not sure about this - it is useful, but it might 
--- have bad 'semantics' 
+-- | Not sure about this - it is useful, but it might 
+-- have bad 'semantics'...
 --
 -- Final decision - NO - this doesn't want to go into 
 -- wumpus-core and should be removed from wumpus-extra!
@@ -74,3 +75,8 @@ bezierCircle n radius pt = start $ subdivisions (n*4) (2*pi)
     subdivisions i a = 0 : take i (iterate (+one) one) 
       where  one  = a / fromIntegral i
 
+
+-- In CORE for 0.19.0
+--
+wumpus_default_font :: FontAttr
+wumpus_default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24

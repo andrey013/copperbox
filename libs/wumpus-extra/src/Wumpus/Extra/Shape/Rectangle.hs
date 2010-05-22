@@ -42,6 +42,7 @@ data Rectangle u = Rectangle
       { rect_bottom_left      :: Point2 u
       , rect_upper_right      :: Point2 u
       , rect_ctm              :: CTM u
+      , rect_label            :: Maybe (ShapeLabel)
       }
 
 type instance DUnit (Rectangle u) = u
@@ -96,7 +97,7 @@ instance Num u => Translate (Rectangle u) where
 -- | @rectangle : width * height * center_pt -> rectangle@
 --
 rectangle :: Fractional u => u -> u -> Point2 u -> Rectangle u
-rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix
+rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix Nothing
   where
     v = V2 (w * 0.5) (h * 0.5) 
 
@@ -105,8 +106,13 @@ rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix
 --  
 --
 strokeRectangle :: (Fractional u, Ord u, Stroke t) 
-                => t -> Rectangle u -> Primitive u
-strokeRectangle t = cstroke t . vertexPath . extractVertexList
+                => t -> Rectangle u -> Composite u
+strokeRectangle t rect = fn rect $ \ctm bl (V2 w h) -> 
+    labelledComposite ctm (bl .+^ V2 (w*0.5) (h*0.5)) (rect_label rect) shape
+  where
+    shape = cstroke t $ vertexPath $ extractVertexList rect
+
+    fn a f = withGeom f a
 
 fillRectangle :: (Fractional u, Ord u, Fill t) 
                 => t -> Rectangle u -> Primitive u

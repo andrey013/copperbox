@@ -27,6 +27,14 @@ module Wumpus.Extra.Shape.Base
   , rotateCTM
   , rotateAboutCTM
 
+  -- * Composite
+  , Composite(..)
+  , labelledComposite
+
+  -- * Shape label
+  , ShapeLabel(..)
+  , drawShapeLabel
+
   -- * Anchors
   , AnchorCenter(..)
   , AnchorCardinal(..)
@@ -35,6 +43,8 @@ module Wumpus.Extra.Shape.Base
   ) where
 
 import Wumpus.Core hiding ( CTM )
+
+import Data.AffineSpace         -- package: vector-space
 
 
 --------------------------------------------------------------------------------
@@ -56,6 +66,40 @@ rotateAboutCTM r pt m = originatedRotationMatrix r pt * m
 
 
 
+
+--------------------------------------------------------------------------------
+
+newtype Composite u = Composite { getPrimitives :: [Primitive u] }
+
+
+labelledComposite :: (Fractional u, Ord u) 
+                  => CTM u -> Point2 u -> Maybe ShapeLabel -> Primitive u -> Composite u
+labelledComposite ctm ctr mb_lbl prim = maybe (Composite [prim]) sk mb_lbl 
+  where
+    sk lbl = let lbl_prim = drawShapeLabel lbl (ctm *# ctr)
+             -- note lbl_prim needs the CTM applying ...
+             -- Looks like wumpus-core needs extending with
+             -- a 'matrix-apply' affine transformation
+             in Composite [ lbl_prim, prim ]
+ 
+
+
+data ShapeLabel = ShapeLabel
+      { shapelabel_text         :: String
+      , shapelabel_font_props   :: FontAttr
+      , shapelabel_font_colour  :: PSRgb
+      }
+
+
+drawShapeLabel :: (Fractional u, Ord u) => ShapeLabel -> Point2 u -> Primitive u
+drawShapeLabel sl ctr = textlabel attr (shapelabel_text sl) pt
+  where
+    attr     = (shapelabel_font_colour sl, shapelabel_font_props sl)
+    font_sz  = font_size $ shapelabel_font_props sl
+    text     = shapelabel_text sl
+    bb       = textBounds font_sz zeroPt (length text)
+    V2 w2 h2 = ur_corner bb .-. ll_corner bb
+    pt       = ctr .-^ V2 (w2 / 2) (h2 / 2)
 
 
 --------------------------------------------------------------------------------

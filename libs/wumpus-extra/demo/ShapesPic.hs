@@ -39,7 +39,7 @@ test01 = do
 picture1 :: Picture Double
 picture1 = rect1 ->- rect2 ->- rect3
   where
-    rect1 = frame $ strokeRectangle () $ r1
+    rect1 = undefined -- frame $ strokeRectangle () $ r1
     rect2 = coorda r2
     rect3 = coorda r1
     r1    = rectangle 100 50 (P2 50 25)
@@ -47,7 +47,7 @@ picture1 = rect1 ->- rect2 ->- rect3
 
 coorda :: (Floating u, Fractional u , Ord u) => Rectangle u -> Picture u
 coorda rect = frameMulti 
-    [ strokeRectangle () $ rect
+    [ undefined -- strokeRectangle () $ rect
     , drawCoordinate red    $ coordinate (center rect)
     , drawCoordinate green  $ coordinate (north rect)
     , drawCoordinate blue   $ coordinate (south rect)
@@ -68,9 +68,9 @@ test02 = do
 
 
 picture2 :: DPicture
-picture2 = rect1 ->- text1 ->- circ1 ->- circ2
+picture2 = {- rect1 ->- -} text1 ->- circ1 ->- circ2
   where
-    rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt)
+{-    rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt) -}
     text1 = drawWithAnchors (drawTextLine blue)   
                             (textLine courier36 "Wumpus!" zeroPt)
     circ1 = drawWithAnchors (strokeCircle red) (rotate30 $ circle 20 zeroPt)
