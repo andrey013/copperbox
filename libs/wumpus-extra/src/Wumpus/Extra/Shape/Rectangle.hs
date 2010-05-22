@@ -94,6 +94,15 @@ instance Num u => Translate (Rectangle u) where
      pstar (\m s -> s { rect_ctm = translateCTM x y m }) rect_ctm
 
 
+instance AddLabel (Rectangle u) where
+  r `addLabel` text = pstar updateLabel rect_label r
+    where
+      updateLabel Nothing    s = s { rect_label = Just $ basicLabel text }
+      updateLabel (Just lbl) s = s { rect_label = Just $ lbl' } 
+         where 
+            lbl' = lbl { shapelabel_text = text }
+     
+
 -- | @rectangle : width * height * center_pt -> rectangle@
 --
 rectangle :: Fractional u => u -> u -> Point2 u -> Rectangle u

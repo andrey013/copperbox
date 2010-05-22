@@ -6,11 +6,12 @@ module ShapesPic where
 
 import Wumpus.Core
 -- import Wumpus.Extra hiding ( rectangle )
-import Wumpus.Extra.PictureLanguage hiding ( center )
+import Wumpus.Extra.PictureLanguage hiding ( center, Composite )
 import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.Shape
 import Wumpus.Extra.SVGColours
 
+import Data.Monoid
 import System.Directory
 
 
@@ -37,17 +38,19 @@ test01 = do
 
 
 picture1 :: Picture Double
-picture1 = rect1 ->- rect2 ->- rect3
+picture1 = rect1 ->- rect2 ->- rect3 ->- blabel
   where
-    rect1 = undefined -- frame $ strokeRectangle () $ r1
+    rect1 = frameComposite $ strokeRectangle () $ r1
     rect2 = coorda r2
     rect3 = coorda r1
-    r1    = rectangle 100 50 (P2 50 25)
+    r1    = rectangle 140 50 (P2 50 25) `addLabel` "rectangle"
     r2    = rotate45About (center r1) r1
 
+    blabel = illustrateBoundsPrim red $ textlabel () "rectangle" zeroPt
+
 coorda :: (Floating u, Fractional u , Ord u) => Rectangle u -> Picture u
-coorda rect = frameMulti 
-    [ undefined -- strokeRectangle () $ rect
+coorda rect = frameComposite $ mconcat
+    [ strokeRectangle () rect
     , drawCoordinate red    $ coordinate (center rect)
     , drawCoordinate green  $ coordinate (north rect)
     , drawCoordinate blue   $ coordinate (south rect)
@@ -68,9 +71,9 @@ test02 = do
 
 
 picture2 :: DPicture
-picture2 = {- rect1 ->- -} text1 ->- circ1 ->- circ2
+picture2 = rect1 ->- text1 ->- circ1 ->- circ2
   where
-{-    rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt) -}
+    rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt) 
     text1 = drawWithAnchors (drawTextLine blue)   
                             (textLine courier36 "Wumpus!" zeroPt)
     circ1 = drawWithAnchors (strokeCircle red) (rotate30 $ circle 20 zeroPt)
@@ -78,8 +81,8 @@ picture2 = {- rect1 ->- -} text1 ->- circ1 ->- circ2
 
 drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t
                    , u ~ DUnit t) 
-                => (t -> Primitive u) -> t -> Picture u
-drawWithAnchors primf t = frameMulti $ primf t : xs
+                => (t -> Composite u) -> t -> Picture u
+drawWithAnchors primf t = frameComposite $ mconcat $ primf t : xs
   where
     xs = map (drawCoordinate indigo) $ cardinals t
 
@@ -90,3 +93,16 @@ cardinals = map coordinate . sequence funs
   where
     funs = [center, north, northeast, east, southeast, south
                          , southwest, west, northwest ]
+
+
+
+--------------------------------------------------------------------------------
+
+test03 :: IO ()
+test03 = do 
+   writeEPS_latin1 "./out/Shapes3.eps" picture3
+   writeSVG_latin1 "./out/Shapes3.svg" picture3
+
+picture3 :: DPicture
+picture3 = frameComposite $ drawTextLine red $ uniformScale 5 $ rotate45 $ 
+             textLine wumpus_default_font "Wumpus!" zeroPt

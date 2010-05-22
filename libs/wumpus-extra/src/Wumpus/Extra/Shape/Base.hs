@@ -35,7 +35,8 @@ module Wumpus.Extra.Shape.Base
 
   -- * Shape label
   , ShapeLabel(..)
-  , drawShapeLabel
+  , AddLabel(..)
+  , basicLabel
 
   -- * Anchors
   , AnchorCenter(..)
@@ -45,6 +46,7 @@ module Wumpus.Extra.Shape.Base
   ) where
 
 import Wumpus.Core hiding ( CTM )
+import qualified Wumpus.Core.Colour as Colour
 
 import Data.AffineSpace         -- package: vector-space
 
@@ -104,6 +106,9 @@ data ShapeLabel = ShapeLabel
       , shapelabel_font_colour  :: PSRgb
       }
 
+basicLabel :: String -> ShapeLabel
+basicLabel text = ShapeLabel text wumpus_default_font Colour.black
+
 
 drawShapeLabel :: (Fractional u, Ord u) => ShapeLabel -> Point2 u -> Primitive u
 drawShapeLabel sl ctr = textlabel attr (shapelabel_text sl) pt
@@ -111,10 +116,15 @@ drawShapeLabel sl ctr = textlabel attr (shapelabel_text sl) pt
     attr     = (shapelabel_font_colour sl, shapelabel_font_props sl)
     font_sz  = font_size $ shapelabel_font_props sl
     text     = shapelabel_text sl
-    bb       = textBounds font_sz zeroPt (length text)
-    V2 w2 h2 = ur_corner bb .-. ll_corner bb
-    pt       = ctr .-^ V2 (w2 / 2) (h2 / 2)
+--    bb       = textBounds font_sz zeroPt (length text)
+--    V2 w2 h2 = ur_corner bb .-. ll_corner bb
+    twidth   = textWidth font_sz (length text)
+    theight  = textHeight font_sz
+    pt       = ctr .-^ V2 (twidth / 2) (theight / 2)
 
+
+class AddLabel t where
+  addLabel :: t -> String -> t
 
 --------------------------------------------------------------------------------
 -- Anchors

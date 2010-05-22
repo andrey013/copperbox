@@ -27,7 +27,6 @@ module Wumpus.Extra.Shape.Circle
   ) where
 
 import Wumpus.Core hiding ( CTM )
-import Wumpus.Extra.CoreAdditions
 import Wumpus.Extra.Shape.Base
 import Wumpus.Extra.Utils
 
