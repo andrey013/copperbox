@@ -303,6 +303,9 @@ type instance DUnit (Primitive u)   = u
 type instance DUnit (Path u)        = u
 type instance DUnit (PrimEllipse u) = u
 
+instance (Num u, Ord u) => Transform (Picture u) where
+  transform ctm pic = transformPicture (transform ctm) (transform ctm) pic
+
 
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
@@ -315,6 +318,18 @@ instance (Num u, Ord u) => Scale (Picture u) where
 
 instance (Num u, Ord u) => Translate (Picture u) where
   translate = translatePicture
+
+
+-- Primitives
+
+instance Num u => Transform (Primitive u) where
+  transform ctm (PPath   attr path) = 
+      PPath attr $ transformPath (transform ctm) path
+
+  transform ctm (PLabel   attr lbl) = PLabel attr $ transformLabel ctm lbl
+
+  transform ctm (PEllipse attr ell) = PEllipse attr $ transformEllipse ctm ell
+
 
 instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate ang (PPath    attr path) = PPath    attr $ rotatePath ang path
@@ -361,7 +376,11 @@ scalePicture x y = transformPicture (scale x y) (scale x y)
 translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
 translatePicture x y = transformPicture (translate x y) (translate x y)
 
-
+-- TODO - the nameing for these functions is confusing now that
+-- I've added a Transform typeclass.
+--
+-- Look to unifying the naming scheme in someway.
+--
 transformPicture :: (Num u, Ord u) 
                  => (Point2 u -> Point2 u) 
                  -> (Vec2 u -> Vec2 u) 
@@ -417,6 +436,9 @@ transformPathSegment fp = pointwise fp
 
 -- Labels
 
+transformLabel :: Num u => Matrix3'3 u -> Label u -> Label u
+transformLabel m33 (Label pt txt ctm) = Label pt txt (ctm * m33)
+
 -- rotate CTM and pt or just CTM ??
 rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
 rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix ang)
@@ -436,6 +458,10 @@ translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 
 
 -- 
+
+transformEllipse :: Num u => Matrix3'3 u -> PrimEllipse u -> PrimEllipse u
+transformEllipse m33 (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * m33)
 
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u

@@ -33,6 +33,8 @@ module Wumpus.Core.Picture
   , vertexPath  
   , curvedPath
 
+  , wumpus_default_font
+
   -- * Constructing primitives
   , Stroke(..)
   , zostroke
@@ -192,6 +194,18 @@ curvedPath (x:xs) = Path x (fn xs) where
   
 
 
+-- | Constant for the default font, which is @Courier@ (aliased 
+-- to @Courier New@ for SVG).
+-- 
+-- The font size is 24 point. Note that only a handful of font 
+-- sizes are available directly to PostScript / GhostScript.
+--
+-- To get non-standard sizes, consider drawing the text and 
+-- applying a 'uniformScale'.
+--
+wumpus_default_font :: FontAttr
+wumpus_default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
+
 
 --------------------------------------------------------------------------------
 -- Take Paths to Primitives
@@ -322,10 +336,6 @@ mkTextLabel c attr txt pt = PLabel (c,attr) lbl
   where
     lbl = Label pt (lexLabel txt) identityMatrix
 
--- SVG seems to have an issue with /Courier/ and needs /Courier New/.
-
-default_font :: FontAttr
-default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
 
 -- | Create a text label. The string should not contain newline
 -- or tab characters. Use 'multilabel' to create text with 
@@ -343,16 +353,17 @@ class TextLabel t where
   textlabel :: Num u => t -> String -> Point2 u -> Primitive u
 
 
-instance TextLabel () where textlabel () = mkTextLabel psBlack default_font
+instance TextLabel () where 
+    textlabel () = mkTextLabel psBlack wumpus_default_font
 
 instance TextLabel (RGB3 Double) where
-  textlabel c = mkTextLabel (psColour c) default_font
+  textlabel c = mkTextLabel (psColour c) wumpus_default_font
 
 instance TextLabel (HSB3 Double) where
-  textlabel c = mkTextLabel (psColour c) default_font
+  textlabel c = mkTextLabel (psColour c) wumpus_default_font
 
 instance TextLabel (Gray Double) where
-  textlabel c = mkTextLabel (psColour c) default_font
+  textlabel c = mkTextLabel (psColour c) wumpus_default_font
 
 instance TextLabel FontAttr where
   textlabel a = mkTextLabel psBlack a
@@ -369,7 +380,7 @@ instance TextLabel (Gray Double,FontAttr) where
 -- | Create a label where the font is @Courier@, text size is 24pt
 -- and colour is black.
 ztextlabel :: Num u => String -> Point2 u -> Primitive u
-ztextlabel = mkTextLabel psBlack default_font
+ztextlabel = mkTextLabel psBlack wumpus_default_font
 
 
 

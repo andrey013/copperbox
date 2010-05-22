@@ -38,7 +38,8 @@
 module Wumpus.Core.AffineTrans
   ( 
   -- * Type classes
-    Rotate(..)
+    Transform(..)
+  , Rotate(..)
   , RotateAbout(..)
   , Scale(..)
   , Translate(..)
@@ -76,10 +77,22 @@ import Wumpus.Core.Geometry
 --------------------------------------------------------------------------------
 -- Affine transformations 
 
+-- | Apply a matrix trasnformation directly.
+class Transform t where
+  transform :: u ~ DUnit t => Matrix3'3 u -> t -> t
+
+
 
 -- | Type class for rotation.
+-- 
 class Rotate t where
   rotate :: Radian -> t -> t
+
+instance Num u => Transform (Point2 u) where
+  transform ctm = (ctm *#)
+
+instance Num u => Transform (Vec2 u) where
+  transform ctm = (ctm *#)
 
 
 instance (Floating u, Real u) => Rotate (Point2 u) where
@@ -91,7 +104,7 @@ instance (Floating u, Real u) => Rotate (Vec2 u) where
 
 -- | Type class for rotation about a point.
 class RotateAbout t where
-  rotateAbout :: Radian -> Point2 (DUnit t) -> t -> t 
+  rotateAbout :: u ~ DUnit t =>  Radian -> Point2 u -> t -> t 
 
 
 instance (Floating u, Real u) => RotateAbout (Point2 u) where
@@ -106,7 +119,7 @@ instance (Floating u, Real u) => RotateAbout (Vec2 u) where
 
 -- | Type class for scaling.
 class Scale t where
-  scale :: DUnit t -> DUnit t -> t -> t
+  scale :: u ~ DUnit t => u -> u -> t -> t
 
 instance Num u => Scale (Point2 u) where
   scale x y = ((scalingMatrix x y) *#) 

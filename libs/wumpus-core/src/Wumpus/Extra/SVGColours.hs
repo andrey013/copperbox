@@ -172,7 +172,7 @@ module Wumpus.Extra.SVGColours
 import Wumpus.Core.Colour ( RGB3(..), DRGB )
 
 
-import Prelude hiding ( tan )
+import Prelude ( )
   
 
 
