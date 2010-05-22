@@ -52,10 +52,11 @@ data TextLine u = TextLine
 type instance DUnit (TextLine u) = u
       
 
+-- NOTE - affine transformations don\'t work properly.
+-- The scale the rectangle but not the text
 
 instance (Floating u, Real u) => Rotate (TextLine u) where
   rotate r = pstar (\m s -> s { text_rect = rotate r m }) text_rect
-
 
 instance (Floating u, Real u) => RotateAbout (TextLine u) where
   rotateAbout r pt = 
@@ -94,8 +95,9 @@ textLine attr s ctr = TextLine s attr $ rectangle w h ctr
 
 
 
-drawTextLine :: (Num u, PSColour c) => c -> TextLine u -> Primitive u
-drawTextLine c txt = 
+drawTextLine :: (Num u, PSColour c) => c -> TextLine u -> Composite u
+drawTextLine c txt = simpleComposite $ transform (rect_ctm  $ text_rect txt) $ 
     textlabel (psColour c, text_font_props txt) (text_string txt) bottom_left
   where
     bottom_left = rect_bottom_left $ text_rect txt
+

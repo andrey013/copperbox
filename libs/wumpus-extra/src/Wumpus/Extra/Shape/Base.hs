@@ -29,7 +29,9 @@ module Wumpus.Extra.Shape.Base
 
   -- * Composite
   , Composite(..)
+  , frameComposite
   , labelledComposite
+  , simpleComposite
 
   -- * Shape label
   , ShapeLabel(..)
@@ -45,6 +47,11 @@ module Wumpus.Extra.Shape.Base
 import Wumpus.Core hiding ( CTM )
 
 import Data.AffineSpace         -- package: vector-space
+
+import qualified Data.Foldable          as F
+import Data.Monoid
+import Data.Sequence (Seq, (|>) )
+import qualified Data.Sequence          as S
 
 
 --------------------------------------------------------------------------------
@@ -69,19 +76,26 @@ rotateAboutCTM r pt m = originatedRotationMatrix r pt * m
 
 --------------------------------------------------------------------------------
 
-newtype Composite u = Composite { getPrimitives :: [Primitive u] }
+newtype Composite u = Composite { getPrimitives :: Seq (Primitive u) }
 
+instance Monoid (Composite u) where
+  mempty = Composite S.empty
+  Composite sa `mappend` Composite sb = Composite $ sa `mappend` sb
 
 labelledComposite :: (Fractional u, Ord u) 
                   => CTM u -> Point2 u -> Maybe ShapeLabel -> Primitive u -> Composite u
-labelledComposite ctm ctr mb_lbl prim = maybe (Composite [prim]) sk mb_lbl 
+labelledComposite ctm ctr mb_lbl prim = maybe noLabel withLabel mb_lbl 
   where
-    sk lbl = let lbl_prim = drawShapeLabel lbl (ctm *# ctr)
-             -- note lbl_prim needs the CTM applying ...
-             -- Looks like wumpus-core needs extending with
-             -- a 'matrix-apply' affine transformation
-             in Composite [ lbl_prim, prim ]
- 
+    noLabel       = Composite $ S.singleton prim
+    withLabel lbl = Composite (S.empty |> lbl_prim |> prim ) where 
+                      lbl_prim = transform ctm $ drawShapeLabel lbl (ctm *# ctr)
+            
+
+simpleComposite :: Primitive u -> Composite u
+simpleComposite = Composite . S.singleton 
+
+frameComposite :: (Floating u, Ord u) => Composite u -> Picture u
+frameComposite = frameMulti . F.toList . getPrimitives
 
 
 data ShapeLabel = ShapeLabel

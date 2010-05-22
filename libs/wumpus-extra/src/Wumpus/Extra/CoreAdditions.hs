@@ -22,8 +22,6 @@ module Wumpus.Extra.CoreAdditions
 
     zeroPicture
   , bbcenter
-  , bezierCircle
-  , wumpus_default_font
 
   ) where
 
@@ -52,7 +50,7 @@ bbcenter (BBox (P2 x0 y0) (P2 x1 y1)) = P2 xMid  yMid
     yMid      = y0 + 0.5 * (y1 - y0)
 
 
-
+{-
 -- | Make a circle from Bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
 --
@@ -80,3 +78,8 @@ bezierCircle n radius pt = start $ subdivisions (n*4) (2*pi)
 --
 wumpus_default_font :: FontAttr
 wumpus_default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
+
+
+-}
+
+

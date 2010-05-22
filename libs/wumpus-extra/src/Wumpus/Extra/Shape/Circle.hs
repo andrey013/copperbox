@@ -109,8 +109,8 @@ circle radius pt = Circle radius pt identityMatrix
 -- get affected by the CTM.
 --
 strokeCircle :: (Floating u, Fractional u, Ord u, Stroke t) 
-             => t -> Circle u -> Primitive u
-strokeCircle t circ = cstroke t $ curvedPath circle_pts
+             => t -> Circle u -> Composite u
+strokeCircle t circ = simpleComposite $ cstroke t $ curvedPath circle_pts
   where
     ctm           = circle_ctm circ
     circle_pts = map (ctm *#) $ 

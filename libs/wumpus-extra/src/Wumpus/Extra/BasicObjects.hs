@@ -79,7 +79,6 @@ import Wumpus.Core
 import Wumpus.Extra.Base
 import Wumpus.Extra.Utils
 
-import Wumpus.Extra.CoreAdditions ( bezierCircle )
 
 import Data.AffineSpace
 import Data.VectorSpace

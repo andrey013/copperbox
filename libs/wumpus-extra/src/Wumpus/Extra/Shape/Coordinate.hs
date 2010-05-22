@@ -76,6 +76,6 @@ coordinate pt = Coordinate pt identityMatrix
 -- Note - currently this takes no notice of any scaling 
 -- transformations in the CTM...
 --
-drawCoordinate :: (Fractional u, Ellipse t) => t -> Coordinate u -> Primitive u
-drawCoordinate t coord = ellipse t 2 2 (center coord)
+drawCoordinate :: (Fractional u, Ellipse t) => t -> Coordinate u -> Composite u
+drawCoordinate t coord = simpleComposite $ ellipse t 2 2 (center coord)
 
