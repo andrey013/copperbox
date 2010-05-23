@@ -1,6 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,6 +21,7 @@ module Wumpus.Extra.Shape.Circle
     Circle(..)
   , circle
   , strokeCircle
+  , fillCircle
 
   ) where
 
@@ -98,10 +97,10 @@ instance Num u => Translate (Circle u) where
 
 
 instance AddLabel (Circle u) where
-  r `addLabel` text = pstar updateLabel circle_label r
+  r `addLabel` text = pstar fn circle_label r
     where
-      updateLabel Nothing    s = s { circle_label = Just $ basicLabel text }
-      updateLabel (Just lbl) s = s { circle_label = Just $ updateText text lbl } 
+      fn Nothing    s = s { circle_label = Just $ basicLabel text }
+      fn (Just lbl) s = s { circle_label = Just $ updateText text lbl } 
      
 
 
@@ -118,18 +117,24 @@ circle radius pt = Circle radius pt identityMatrix Nothing
 -- command (via ellipse in wumpus-core) as line width does not
 -- get affected by the CTM.
 --
-strokeCircle :: (Floating u, Fractional u, Ord u, Stroke t) 
-             => t -> Circle u -> Composite u
-strokeCircle t circ = 
+drawCircle :: (Floating u, Fractional u, Ord u) 
+           => (Path u -> Primitive u) -> Circle u -> Composite u
+drawCircle drawF circ = 
     labelledComposite ctm ctr (circle_label circ) shape
 
   where
     ctm        = circle_ctm    circ
     ctr        = circle_center circ 
     circle_pts = map (ctm *#) $ bezierCircle 2 (circle_radius circ) ctr
-    shape      = cstroke t $ curvedPath circle_pts
+    shape      = drawF $ curvedPath circle_pts
 
 
 
+strokeCircle :: (Floating u, Fractional u, Ord u, Stroke t) 
+             => t -> Circle u -> Composite u
+strokeCircle t  = drawCircle (cstroke t)
 
+fillCircle :: (Floating u, Fractional u, Ord u, Fill t) 
+             => t -> Circle u -> Composite u
+fillCircle t  = drawCircle (fill t)
 

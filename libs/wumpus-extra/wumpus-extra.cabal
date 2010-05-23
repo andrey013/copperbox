@@ -52,8 +52,9 @@ library
     Wumpus.Extra.Shape.Base,
     Wumpus.Extra.Shape.Circle,
     Wumpus.Extra.Shape.Coordinate,
+    Wumpus.Extra.Shape.Diamond,
+    Wumpus.Extra.Shape.FreeLabel,
     Wumpus.Extra.Shape.Rectangle,
-    Wumpus.Extra.Shape.TextLine,
     Wumpus.Extra.Text,
     Wumpus.Extra.VersionNumber
 

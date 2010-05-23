@@ -74,8 +74,8 @@ picture2 :: DPicture
 picture2 = rect1 ->- text1 ->- circ1 ->- circ2
   where
     rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt) 
-    text1 = drawWithAnchors (drawTextLine blue)   
-                            (textLine courier36 "Wumpus!" zeroPt)
+    text1 = drawWithAnchors (drawFreeLabel blue)   
+                            (freeLabel courier36 "Wumpus!" zeroPt)
     circ1 = drawWithAnchors (strokeCircle red) (rotate30 c1)
     circ2 = drawWithAnchors (strokeCircle red) (scale 2 4 c1)
 
@@ -106,5 +106,5 @@ test03 = do
    writeSVG_latin1 "./out/Shapes3.svg" picture3
 
 picture3 :: DPicture
-picture3 = frameComposite $ drawTextLine red $ uniformScale 5 $ rotate45 $ 
-             textLine wumpus_default_font "Wumpus!" zeroPt
+picture3 = frameComposite $ drawFreeLabel red $ uniformScale 5 $ rotate45 $ 
+             freeLabel wumpus_default_font "Wumpus!" zeroPt
