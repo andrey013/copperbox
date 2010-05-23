@@ -107,7 +107,7 @@ instance AddLabel (Diamond u) where
 -- | @rectangle : width * height * center_pt -> rectangle@
 --
 diamond :: Fractional u => u -> u -> Point2 u -> Diamond u
-diamond hw hh ctr = Diamond ctr hw hh identityMatrix Nothing
+diamond w h ctr = Diamond ctr (w*0.5) (h*0.5) identityMatrix Nothing
 
 
 --------------------------------------------------------------------------------
@@ -117,7 +117,10 @@ diamond hw hh ctr = Diamond ctr hw hh identityMatrix Nothing
 
 drawDiamond :: (Fractional u, Ord u)   
               => (Path u -> Primitive u) -> Diamond u -> Composite u
-drawDiamond _drawF _dia = undefined
+drawDiamond drawF dia = (flip withGeom) dia $ \ctm ctr _ _ -> 
+    labelledComposite ctm ctr (diamond_label dia) shape
+  where
+    shape = drawF $ vertexPath $ extractVertexList dia
 
 strokeDiamond :: (Fractional u, Ord u, Stroke t) 
               => t -> Diamond u -> Composite u
@@ -128,15 +131,8 @@ fillDiamond :: (Fractional u, Ord u, Fill t)
             => t -> Diamond u -> Composite u
 fillDiamond t = drawDiamond (fill t)
 
-{- 
+ 
 
 extractVertexList :: Fractional u => Diamond u -> [Point2 u]
-extractVertexList rect = [bl,br,tr,tl]
-  where
-    bl        = southwest rect
-    tr        = northeast rect
-    br        = southeast rect
-    tl        = northwest rect
-
--}
+extractVertexList = sequence [south,east,north,west]
 

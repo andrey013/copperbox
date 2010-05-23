@@ -91,9 +91,10 @@ description:
   * Added @Transform@ type class to apply a matrix transformation
     directly.
   .
-  * Changed @frameMulti@ so that list gets drawn from front to 
-    back. This seems more logical - the front of the queue is the 
-    first in the zorder.
+  * Changed the ordering of picture drawing in PostScript and SVG
+    output so the list gets drawn from tail to head with right 
+    folds. This makes the list order of pictures match their 
+    zorder.
   .
   * Renamed the function @withinBB@ (Core.BoundingBox) to 
     @within@.

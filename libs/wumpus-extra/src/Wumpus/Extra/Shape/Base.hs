@@ -51,7 +51,7 @@ import Data.AffineSpace         -- package: vector-space
 
 import qualified Data.Foldable          as F
 import Data.Monoid
-import Data.Sequence (Seq, (|>) )
+import Data.Sequence (Seq, (<|) )
 import qualified Data.Sequence          as S
 
 
@@ -88,7 +88,7 @@ labelledComposite :: (Fractional u, Ord u)
 labelledComposite ctm ctr mb_lbl prim = maybe noLabel withLabel mb_lbl 
   where
     noLabel       = Composite $ S.singleton prim
-    withLabel lbl = Composite (S.empty |> lbl_prim |> prim ) where 
+    withLabel lbl = Composite (lbl_prim <| S.singleton prim) where 
                       lbl_prim = transform ctm $ drawShapeLabel lbl (ctm *# ctr)
             
 

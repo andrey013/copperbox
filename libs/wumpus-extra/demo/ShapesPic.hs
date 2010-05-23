@@ -5,11 +5,12 @@
 module ShapesPic where
 
 import Wumpus.Core
--- import Wumpus.Extra hiding ( rectangle )
+import Wumpus.Extra ( ixLeftRightDown )
 import Wumpus.Extra.PictureLanguage hiding ( center, Composite )
 import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.Shape
 import Wumpus.Extra.SVGColours
+
 
 import Data.Monoid
 import System.Directory
@@ -23,7 +24,7 @@ import System.Directory
 main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/"
-    sequence_ [ test01, test02 ]
+    sequence_ [ test01, test02, test03 ]
 
 
 
@@ -105,6 +106,26 @@ test03 = do
    writeEPS_latin1 "./out/Shapes3.eps" picture3
    writeSVG_latin1 "./out/Shapes3.svg" picture3
 
+mkCoordinate :: Fractional u => Point2 u -> Composite u
+mkCoordinate pt = drawCoordinate lightSteelBlue $ coordinate pt
+
+mkCircle :: (Floating u, Ord u) => Point2 u -> Composite u
+mkCircle pt = fillCircle lightSteelBlue $ circle 60 pt `addLabel` "Circle"
+
+mkDiamond :: (Fractional u, Ord u) => Point2 u -> Composite u
+mkDiamond pt = fillDiamond lightSteelBlue $ diamond 120 120  pt `addLabel` "Diamond"
+
+mkLabel :: Fractional u => Point2 u -> Composite u
+mkLabel =  drawFreeLabel black . freeLabel wumpus_default_font "FreeLabel" 
+
+mkRectangle :: (Fractional u, Ord u) => Point2 u -> Composite u
+mkRectangle pt = 
+    fillRectangle lightSteelBlue $ rectangle 140 40 pt `addLabel` "Rectangle" 
+
 picture3 :: DPicture
-picture3 = frameComposite $ drawFreeLabel red $ uniformScale 5 $ rotate45 $ 
-             freeLabel wumpus_default_font "Wumpus!" zeroPt
+picture3 = frameComposite $ mconcat $ zipWith ($) picfs ixs
+  where
+    picfs = [ mkCoordinate, mkCircle, mkDiamond, mkLabel, mkRectangle ]
+
+ixs :: Num u => [Point2 u]
+ixs = ixLeftRightDown 3 5 (fmap (*200)) 
