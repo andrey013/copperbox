@@ -130,6 +130,9 @@ frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 -- | Lift a list of primitives to a composite picture, all 
 -- primitives will be located within the standard frame.
 --
+-- The order of the list maps to the zorder - the front of the
+-- list is drawn at the top.
+--
 -- This function throws an error when supplied the empty list.
 --
 frameMulti :: (Fractional u, Floating u, Ord u) 
@@ -143,12 +146,14 @@ frameMulti xs = multi $ map frame xs
 -- This function throws an error when supplied the empty list.
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
-multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
+multi ps = Picture (stdFrame, sconcat $ map boundary ps) $ step ps
   where 
     sconcat []      = error err_msg
     sconcat (x:xs)  = foldr append x xs
 
-    ones            = fromListErr ps err_msg
+    step [x]        = One x
+    step (x:xs)     = x `Many` step xs
+    step _          = error err_msg
 
     err_msg         = "Wumpus.Core.Picture.multi - empty list"
 

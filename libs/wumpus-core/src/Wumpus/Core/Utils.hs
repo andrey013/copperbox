@@ -250,6 +250,7 @@ instance Show a => Show (OneList a) where
      step (Many a xs) = shows a . showChar ',' . step xs
 
 
+
 mkList2 :: a -> a -> OneList a
 mkList2 a b = a `Many` One b
 
