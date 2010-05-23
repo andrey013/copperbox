@@ -43,10 +43,10 @@ picture1 = rect1 ->- rect2 ->- rect3 ->- blabel
     rect1 = frameComposite $ strokeRectangle () $ r1
     rect2 = coorda r2
     rect3 = coorda r1
-    r1    = rectangle 140 50 (P2 50 25) `addLabel` "rectangle"
+    r1    = rectangle 160 50 (P2 50 25) `addLabel` "Rectangle!"
     r2    = rotate45About (center r1) r1
 
-    blabel = illustrateBoundsPrim red $ textlabel () "rectangle" zeroPt
+    blabel = illustrateBoundsPrim red $ textlabel () "Rectangle!" zeroPt
 
 coorda :: (Floating u, Fractional u , Ord u) => Rectangle u -> Picture u
 coorda rect = frameComposite $ mconcat
@@ -76,8 +76,10 @@ picture2 = rect1 ->- text1 ->- circ1 ->- circ2
     rect1 = drawWithAnchors (strokeRectangle red) (rectangle 80 40 zeroPt) 
     text1 = drawWithAnchors (drawTextLine blue)   
                             (textLine courier36 "Wumpus!" zeroPt)
-    circ1 = drawWithAnchors (strokeCircle red) (rotate30 $ circle 20 zeroPt)
-    circ2 = drawWithAnchors (strokeCircle red) (scale 2 4 $ circle 20 zeroPt)
+    circ1 = drawWithAnchors (strokeCircle red) (rotate30 c1)
+    circ2 = drawWithAnchors (strokeCircle red) (scale 2 4 c1)
+
+    c1 = circle 20 zeroPt `addLabel` "20"
 
 drawWithAnchors :: (Floating u, Ord u, AnchorCenter t, AnchorCardinal t
                    , u ~ DUnit t) 

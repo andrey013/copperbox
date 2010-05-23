@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.Shape.Coordinate
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,6 +12,8 @@
 -- Portability :  GHC with TypeFamilies and more
 --
 -- Coordinate points
+--
+-- Note coordinate points cannot have labels.
 -- 
 --------------------------------------------------------------------------------
 

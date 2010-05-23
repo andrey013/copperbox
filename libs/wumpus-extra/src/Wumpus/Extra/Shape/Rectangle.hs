@@ -6,14 +6,14 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.Shape.Rectangle
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Coordinate points
+-- Rectangle
 -- 
 --------------------------------------------------------------------------------
 
@@ -41,8 +41,8 @@ import Data.VectorSpace
 data Rectangle u = Rectangle 
       { rect_bottom_left      :: Point2 u
       , rect_upper_right      :: Point2 u
-      , rect_ctm              :: CTM u
-      , rect_label            :: Maybe (ShapeLabel)
+      , rectangle_ctm         :: CTM u
+      , rect_label            :: Maybe ShapeLabel
       }
 
 type instance DUnit (Rectangle u) = u
@@ -53,11 +53,13 @@ type instance DUnit (Rectangle u) = u
 --
 withGeom :: Num u
          => (CTM u -> Point2 u -> Vec2 u -> a) -> Rectangle u -> a
-withGeom f rect = f (rect_ctm rect) bl (tr .-. bl)
+withGeom f rect = f (rectangle_ctm rect) bl (tr .-. bl)
   where
     bl        = rect_bottom_left rect
     tr        = rect_upper_right rect
 
+
+--------------------------------------------------------------------------------
 -- Instances 
   
 
@@ -79,29 +81,33 @@ instance (Fractional u) =>  AnchorCardinal (Rectangle u) where
   northwest = withGeom $ \ ctm bl (V2 _ h) -> ctm *# (bl .+^ V2 0 h)
 
 
+-- helper
+updateCTM :: (CTM u -> CTM u) -> Rectangle u -> Rectangle u
+updateCTM f = pstar (\m s -> s { rectangle_ctm = f m } ) rectangle_ctm
+
+
 instance (Floating u, Real u) => Rotate (Rectangle u) where
-  rotate r = pstar (\m s -> s { rect_ctm = rotateCTM r m }) rect_ctm 
+  rotate r = updateCTM (rotateCTM r)
 
 instance (Floating u, Real u) => RotateAbout (Rectangle u) where
-  rotateAbout r pt = 
-      pstar (\m s -> s { rect_ctm = rotateAboutCTM r pt m }) rect_ctm
+  rotateAbout r pt = updateCTM (rotateAboutCTM r pt)
 
 instance Num u => Scale (Rectangle u) where
-  scale x y = pstar (\m s -> s { rect_ctm = scaleCTM x y m }) rect_ctm
+  scale x y = updateCTM (scaleCTM x y)
 
 instance Num u => Translate (Rectangle u) where
-  translate x y = 
-     pstar (\m s -> s { rect_ctm = translateCTM x y m }) rect_ctm
+  translate x y = updateCTM (translateCTM x y)
 
 
 instance AddLabel (Rectangle u) where
   r `addLabel` text = pstar updateLabel rect_label r
     where
       updateLabel Nothing    s = s { rect_label = Just $ basicLabel text }
-      updateLabel (Just lbl) s = s { rect_label = Just $ lbl' } 
-         where 
-            lbl' = lbl { shapelabel_text = text }
+      updateLabel (Just lbl) s = s { rect_label = Just $ updateText text lbl } 
      
+
+--------------------------------------------------------------------------------
+-- Construction
 
 -- | @rectangle : width * height * center_pt -> rectangle@
 --
@@ -111,8 +117,9 @@ rectangle w h ctr = Rectangle (ctr .-^ v) (ctr .+^ v) identityMatrix Nothing
     v = V2 (w * 0.5) (h * 0.5) 
 
 
+--------------------------------------------------------------------------------
+-- Drawing 
 
---  
 --
 strokeRectangle :: (Fractional u, Ord u, Stroke t) 
                 => t -> Rectangle u -> Composite u
@@ -120,7 +127,6 @@ strokeRectangle t rect = fn rect $ \ctm bl (V2 w h) ->
     labelledComposite ctm (bl .+^ V2 (w*0.5) (h*0.5)) (rect_label rect) shape
   where
     shape = cstroke t $ vertexPath $ extractVertexList rect
-
     fn a f = withGeom f a
 
 fillRectangle :: (Fractional u, Ord u, Fill t) 

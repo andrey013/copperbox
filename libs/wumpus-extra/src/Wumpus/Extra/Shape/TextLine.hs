@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.Shape.TextLine
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -16,6 +16,8 @@
 -- Coordinate points
 -- 
 --------------------------------------------------------------------------------
+
+-- TODO - change name to FreeLabel
 
 module Wumpus.Extra.Shape.TextLine
   ( 
@@ -96,7 +98,7 @@ textLine attr s ctr = TextLine s attr $ rectangle w h ctr
 
 
 drawTextLine :: (Num u, PSColour c) => c -> TextLine u -> Composite u
-drawTextLine c txt = simpleComposite $ transform (rect_ctm  $ text_rect txt) $ 
+drawTextLine c txt = simpleComposite $ transform (rectangle_ctm  $ text_rect txt) $ 
     textlabel (psColour c, text_font_props txt) (text_string txt) bottom_left
   where
     bottom_left = rect_bottom_left $ text_rect txt

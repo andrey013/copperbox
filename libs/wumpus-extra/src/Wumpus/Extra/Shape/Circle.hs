@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.Shape.Circle
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -40,6 +40,7 @@ data Circle u = Circle
       { circle_radius          :: u
       , circle_center          :: Point2 u
       , circle_ctm             :: CTM u 
+      , circle_label           :: Maybe ShapeLabel
       }
 
 type instance DUnit (Circle u) = u
@@ -72,33 +73,43 @@ instance Floating u => AnchorCardinal (Circle u) where
   southwest = withGeom $ \ctm ctr r -> ctm *# (ctr .-^ avec (pi*0.25) r)
   northwest = withGeom $ \ctm ctr r -> ctm *# (ctr .+^ avec (pi*0.75) r)
 
+
+-- helper
+updateCTM :: (CTM u -> CTM u) -> Circle u -> Circle u
+updateCTM f = pstar (\m s -> s { circle_ctm = f m } ) circle_ctm
+
+
 instance (Floating u, Real u) => Rotate (Circle u) where
-  rotate r = pstar (\m s -> s { circle_ctm = rotateCTM r m }) circle_ctm 
+  rotate r = updateCTM (rotateCTM r) 
 
 instance (Floating u, Real u) => RotateAbout (Circle u) where
-  rotateAbout r pt = 
-      pstar (\m s -> s { circle_ctm = rotateAboutCTM r pt m }) circle_ctm
+  rotateAbout r pt = updateCTM (rotateAboutCTM r pt)
 
 
 -- For scaling /just/ change the ctm - but remember to 
 -- apply the ctm to all points and control points before
 -- drawing the circle.
+--
 instance Num u => Scale (Circle u) where
-  scale x y = pstar2 (\m r s -> s { circle_ctm = scaleCTM x y m
-                                  , circle_radius = r }) 
-                     circle_ctm 
-                     circle_radius
+  scale x y = updateCTM (scaleCTM x y) 
 
 instance Num u => Translate (Circle u) where
-  translate x y = 
-     pstar (\m s -> s { circle_ctm = translateCTM x y m }) circle_ctm
+  translate x y = updateCTM (translateCTM x y)
+
+
+instance AddLabel (Circle u) where
+  r `addLabel` text = pstar updateLabel circle_label r
+    where
+      updateLabel Nothing    s = s { circle_label = Just $ basicLabel text }
+      updateLabel (Just lbl) s = s { circle_label = Just $ updateText text lbl } 
+     
 
 
 --------------------------------------------------------------------------------
 -- 
 
 circle :: Num u => u -> Point2 u -> Circle u
-circle radius pt = Circle radius pt identityMatrix
+circle radius pt = Circle radius pt identityMatrix Nothing
 
 
 -- Hand-build the circle with bezier arcs.
@@ -109,10 +120,16 @@ circle radius pt = Circle radius pt identityMatrix
 --
 strokeCircle :: (Floating u, Fractional u, Ord u, Stroke t) 
              => t -> Circle u -> Composite u
-strokeCircle t circ = simpleComposite $ cstroke t $ curvedPath circle_pts
+strokeCircle t circ = 
+    labelledComposite ctm ctr (circle_label circ) shape
+
   where
-    ctm           = circle_ctm circ
-    circle_pts = map (ctm *#) $ 
-                      bezierCircle 2 (circle_radius circ) (circle_center circ) 
+    ctm        = circle_ctm    circ
+    ctr        = circle_center circ 
+    circle_pts = map (ctm *#) $ bezierCircle 2 (circle_radius circ) ctr
+    shape      = cstroke t $ curvedPath circle_pts
+
+
+
 
 

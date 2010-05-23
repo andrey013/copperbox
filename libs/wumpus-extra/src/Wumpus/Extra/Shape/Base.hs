@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Extra.Shape.Base
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -37,6 +37,7 @@ module Wumpus.Extra.Shape.Base
   , ShapeLabel(..)
   , AddLabel(..)
   , basicLabel
+  , updateText
 
   -- * Anchors
   , AnchorCenter(..)
@@ -109,6 +110,9 @@ data ShapeLabel = ShapeLabel
 basicLabel :: String -> ShapeLabel
 basicLabel text = ShapeLabel text wumpus_default_font Colour.black
 
+updateText :: String -> ShapeLabel -> ShapeLabel
+updateText text s = s { shapelabel_text = text } 
+
 
 drawShapeLabel :: (Fractional u, Ord u) => ShapeLabel -> Point2 u -> Primitive u
 drawShapeLabel sl ctr = textlabel attr (shapelabel_text sl) pt
@@ -116,8 +120,6 @@ drawShapeLabel sl ctr = textlabel attr (shapelabel_text sl) pt
     attr     = (shapelabel_font_colour sl, shapelabel_font_props sl)
     font_sz  = font_size $ shapelabel_font_props sl
     text     = shapelabel_text sl
---    bb       = textBounds font_sz zeroPt (length text)
---    V2 w2 h2 = ur_corner bb .-. ll_corner bb
     twidth   = textWidth font_sz (length text)
     theight  = textHeight font_sz
     pt       = ctr .-^ V2 (twidth / 2) (theight / 2)
