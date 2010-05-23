@@ -194,6 +194,7 @@ library
     Wumpus.Core.PictureInternal,
     Wumpus.Core.PostScript,
     Wumpus.Core.SVG,
+    Wumpus.Core.OneList,
     Wumpus.Core.TextEncodingInternal,
     Wumpus.Core.Utils
     

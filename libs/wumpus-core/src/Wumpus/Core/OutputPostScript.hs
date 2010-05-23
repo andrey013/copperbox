@@ -41,6 +41,7 @@ import Wumpus.Core.Utils
 
 import MonadLib hiding ( Label )
 
+import qualified Data.Foldable as F
 
 
 
@@ -167,8 +168,8 @@ outputPicture :: (Fractional u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
-outputPicture (Picture (fr,_) ones)      = do
-    updateFrame fr $ onesmapM_ outputPicture  ones
+outputPicture (Picture (fr,_) ones)     =
+    updateFrame fr $ F.foldrM (\p _ -> outputPicture p) () ones
 outputPicture (Clip (fr,_) cp p)        = 
     updateFrame fr $ do { clipPath cp ; outputPicture p }
 

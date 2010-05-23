@@ -55,6 +55,7 @@ import MonadLib hiding ( Label )
 
 import Text.XML.Light
 
+import qualified Data.Foldable as F
 
 type Clipped    = Bool
 
@@ -107,9 +108,12 @@ picture c (Single (fr,_) prim)    = do
     return $ gElement (maybe [] return $ frameChange fr) [elt]
 
 picture c (Picture (fr,_) ones)    = do
-    es <- toListWithM (picture c) ones
+    -- Note - list in zorder, so we want to draw the tail first 
+    es <- liftM toListH $ F.foldrM fn emptyH ones
     return $ gElement (maybe [] return $ frameChange fr) es
-
+  where
+    fn e hl = picture c e >>= \a -> return $ hl `snocH` a
+  
 picture _ (Clip (fr,_) p a) = do 
    cp <- clipPath p
    e1 <- picture True a

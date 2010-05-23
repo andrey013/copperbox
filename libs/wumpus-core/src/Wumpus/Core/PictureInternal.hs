@@ -59,6 +59,7 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.OneList
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
@@ -234,12 +235,12 @@ type Locale u = (Frame2 u, BoundingBox u)
 instance (Num u, Pretty u) => Pretty (Picture u) where
   pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
-  pretty (Picture m ones)  = 
-      ppLocale m <$> indent 2 (list $ toListWith pretty ones)
+  pretty (Picture m ones)   = 
+      ppLocale m <$> indent 2 (list $ toListF pretty ones)
 
   pretty (Clip m cpath p)   = 
       text "Clip:" <+> ppLocale m <$> indent 2 (pretty cpath)
-                                   <$> indent 2 (pretty p)
+                                  <$> indent 2 (pretty p)
 
 ppLocale :: (Num u, Pretty u) => Locale u -> Doc
 ppLocale (fr,bb) = align (ppfr <$> pretty bb) where

@@ -52,16 +52,9 @@ module Wumpus.Core.Utils
 
   -- * Hughes list
   , H
+  , emptyH
   , toListH
-  
-
-  -- * OneList type - non-empty list type
-  , OneList(..)
-  , mkList2
-  , onesmapM_
-  , toListWith
-  , toListWithM
-  , fromListErr
+  , snocH  
 
 
   -- * specs etc. from Data.Aviary
@@ -77,7 +70,6 @@ module Wumpus.Core.Utils
 
 
 import Control.Applicative
-import Control.Monad ( ap )
 import Data.List ( intersperse )
 import Data.Ratio
 import Data.Time
@@ -234,53 +226,16 @@ infixr 6 <:>
 
 type H a = [a] -> [a]
 
+emptyH :: H a
+emptyH = id
+
 toListH :: H a -> [a]
 toListH = ($ [])
 
---------------------------------------------------------------------------------
-
-infixr 5 `Many`
-
-data OneList a = One a | Many a  (OneList a)
-  deriving (Eq)
-
-instance Show a => Show (OneList a) where
-  show = ('{':) . ($ []) . step where
-     step (One a)     = shows a . showChar '}'
-     step (Many a xs) = shows a . showChar ',' . step xs
-
-
-
-mkList2 :: a -> a -> OneList a
-mkList2 a b = a `Many` One b
-
-
-onesmapM_ :: Monad m => (a -> m b) -> OneList a -> m ()
-onesmapM_ f (One x)     = f x >> return ()
-onesmapM_ f (Many x xs) = f x >> onesmapM_ f xs
-
-toListWith :: (a -> b) -> OneList a -> [b]
-toListWith f (One x)     = [f x]
-toListWith f (Many x xs) = f x : toListWith f xs
-
-toListWithM :: Monad m => (a -> m b) -> OneList a -> m [b]
-toListWithM mf (One x)     = mf x >>= \a -> return [a]
-toListWithM mf (Many x xs) = return (:) `ap` mf x `ap` toListWithM mf xs
-
-
--- Error msg is a parameter, so client code can supply a 
--- meaningful warning.
--- 
-fromListErr :: [a] -> String -> OneList a
-fromListErr xs0 msg = step xs0 where
-   step []     = error msg
-   step [a]    = One a
-   step (a:xs) = Many a $ step xs
-
-
+snocH :: H a -> a -> H a
+snocH hl a = hl . (a:)
 
 --------------------------------------------------------------------------------
-
 
 -- | A variant of the @D2@ or dovekie combinator - the argument
 -- order has been changed to be more satisfying for Haskellers:

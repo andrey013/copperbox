@@ -69,9 +69,9 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.TextEncodingInternal
-import Wumpus.Core.Utils
 
 import Data.Semigroup
 
@@ -151,8 +151,8 @@ multi ps = Picture (stdFrame, sconcat $ map boundary ps) $ step ps
     sconcat []      = error err_msg
     sconcat (x:xs)  = foldr append x xs
 
-    step [x]        = One x
-    step (x:xs)     = x `Many` step xs
+    step [x]        = one x
+    step (x:xs)     = x `cons` step xs
     step _          = error err_msg
 
     err_msg         = "Wumpus.Core.Picture.multi - empty list"
@@ -507,7 +507,7 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb) (mkList2 b a) 
+a `picOver` b = Picture (ortho zeroPt, bb) (cons b $ one a) 
   where
     bb = union (boundary a) (boundary b)
 
