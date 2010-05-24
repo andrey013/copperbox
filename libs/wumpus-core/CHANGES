@@ -1,3 +1,35 @@
+
+0.18,0 to 0.19.0:
+  
+  * Added @Transform@ type class to apply a matrix transformation
+    directly.
+  
+  * Changed the ordering of picture drawing in PostScript and SVG
+    output so the list gets drawn from tail to head with right 
+    folds. This makes the list order of pictures match their 
+    zorder.
+  
+  * Renamed the function @withinBB@ (Core.BoundingBox) to 
+    @within@.
+  
+  * On many type signatures with e.g. Points, I\'ve changed the 
+    parameter name on the type constructor from @a@ to @u@.
+    This is to indicate that @u@ is some unit - almost always a
+    Double. e.g @Point2 a@ becomes @Point2 u@ and all the class
+    obligations change lexically as well @Floating a =>@ to 
+    @Floating u =>@. Superficially this means a lot of type 
+    signatures have diffs but haven\'t really changed. 
+  
+  * Added function @bezierCircle@ to generate the Bezier curve 
+    points for arcs describing a circle.
+  
+  * Added new demo - MultiPic. The PostScript it generates
+    is efficient - no extraneous use of @concat@. 
+  
+  * Added wumpus_default_font constant.
+  
+
+
 0.17.0 to 0.18.0:
   
   * Added instances of the affine operation classes (Scale, 

@@ -9,9 +9,6 @@ category:         Graphics
 synopsis:         Pure Haskell PostScript and SVG generation. 
 description:
   .
-  TODO - look at adding accessible defaults for GraphicsState
-  elements !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  .
   Wumpus - (W)riter (M)onad (P)ost (S)cript. 
   .
   Wumpus is a library for generating 2D vector pictures, its 
@@ -19,7 +16,7 @@ description:
   It can generate PostScript (EPS) files and SVG files. The 
   generated PostScript code is plain [1] and reasonably 
   efficient as the use of stack operations, i.e @gsave@ and 
-  @grestore@ is minimized.
+  @grestore@, is minimized.
   .
   Pictures in Wumpus are made from /paths/ and text /labels/. 
   Paths themselves are made from points. The usual affine 
@@ -28,28 +25,32 @@ description:
   is no notion of a current point, Wumpus builds pictures in a
   coordinate-free style. 
   .
-  With recent revisions, I\'ve added some extra helper modules
-  that are not really part of the \"core\", but they provide 
-  lists of named colours and /safe/ fonts, plus some code  
-  (Extra.PictureLanguage) that has been moved out of the
-  wumpus-core namespace because it is somewhat \"higher-level\". 
+  Wumpus-core includes some extra helper modules that are not 
+  really part of the \"core\", but are otherwise currently 
+  homeless. They provide lists of named colours and /safe/ 
+  fonts, plus some prototype code (Extra.PictureLanguage) for 
+  arranging pictures.
   .
   WARNING...
   .
-  ( !! NO NEED TO OPTIMIZE @frameMulti@ !! )
+  The modules @Core.BoundingBox@ and @Extra.PictureLanguage@ are
+  likely to be reworked significantly in the future. 
   .
-  .
-  Also the module, Core.BoundingBox, is still a candidate for 
-  reworking, as it has too many functions that do not offer 
+  @Core.BoundingBox@ has too many functions that do not offer 
   distinct functionality. Some functions were removed in 
   revision 0.17.0 and some more are likely to follow. 
   .
+  @Extra.PictureLanguage@ needs some more thought. The current 
+  set of classes is rather cumbersome, and some of the operations 
+  would benefit new names.
+  .
   NOTE...
   .
-  One consequence of adding affine transformations for primitives
-  is that the bounding box of a primitive under transformation 
-  may be tighter than than the bounding box of transformed 
-  picture containing the same primitive, i.e.:
+  Revision 0.17.0 added affine transformations for primitives 
+  (paths, text labels, ellipses), one consequence of this is 
+  the bounding box may be tighter for a primitive under affine 
+  transformation then lifted to a picture, than a primitive 
+  lifted to picture then transformed, i.e.:
   . 
   @boundary (liftToPicture (transform PRIM)) /= boundary (transform (liftToPicture PRIM))@
   .
@@ -70,19 +71,20 @@ description:
   found at <http://code.google.com/p/copperbox/> though.
   .
   Some of the design decisions made for wumpus-core are not 
-  sophisticated (e.g. how attributes like colour are 
-  handled, and how the bounding boxes of text labels are 
-  calculated), so Wumpus might be limited compared to other 
-  systems. However, the design permits a simple implementation - 
-  which is a priority. Text encoding an exception - I\'m not 
-  sure how reasonable the design is. The current implementation 
+  sophisticated (e.g. how attributes like colour are handled, 
+  and how the bounding boxes of text labels are calculated), so 
+  Wumpus might be limited compared to other systems. However, 
+  the design permits a fairly simple implementation - which is 
+  a priority. Text encoding an exception - I\'m not sure how 
+  reasonable the design is. The current implementation 
   appears okay for Latin 1 but may be inadequate for other 
   character sets, so I may have to revise it significantly.
   .
   .
   \[1\] Because the output is simple, straight-line PostScript 
-  code, it is possible to use GraphicsMagick or a similar tool to 
-  convert Wumpus'\s EPS files to many other formats (bitmaps). 
+  code, it is possible to use GraphicsMagick or a similar tool 
+  to convert Wumpus'\s EPS files to many other formats 
+  (bitmaps). 
   .
   Changelog:
   .
@@ -105,7 +107,7 @@ description:
     Double. e.g @Point2 a@ becomes @Point2 u@ and all the class
     obligations change lexically as well @Floating a =>@ to 
     @Floating u =>@. Superficially this means a lot of type 
-    signatures have diffs but haven\'t changed. 
+    signatures have diffs but haven\'t really changed. 
   .
   * Added function @bezierCircle@ to generate the Bezier curve 
     points for arcs describing a circle.

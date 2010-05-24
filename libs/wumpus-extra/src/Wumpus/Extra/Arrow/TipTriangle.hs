@@ -43,7 +43,9 @@ tripoints left_extend half_height tip = (tip .+^ v1, tip .+^ v2)
 
 
 -- /latex/ style arrow 
-
+--
+-- NOTE - should have a gentle curve...
+--
 latexTip :: (Floating u, Real u, Ord u) => ArrowTip u
 latexTip = ArrowTip (*2) fn 
   where
@@ -52,6 +54,4 @@ latexTip = ArrowTip (*2) fn
                                       $ vertexPath [end,a,b]
       where
         (a,b) = tripoints (lw*4) (lw*1.5) end
-
-        -- WARNING - should have a gentle curve...
 

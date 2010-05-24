@@ -29,6 +29,6 @@ picture1 = frameComposite $ temp_line
 temp_line :: (Floating u, Real u) => Composite u
 temp_line = ln `mappend` tip
   where
-    ln  = simpleComposite $ ostroke () $ vertexPath [zeroPt , P2 100 0]
-    tip = (arrowtip_drawing latexTip) 1.0 0 (P2 100 0)
+    ln  = simpleComposite $ ostroke () $ vertexPath [zeroPt , P2 100 100]
+    tip = (arrowtip_drawing latexTip) 1.0 (pi/4) (P2 100 100)
      
