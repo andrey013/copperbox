@@ -20,10 +20,11 @@ demo1 = writeSparkLineSVG "./out/spark1.svg" pic1 >>
 attrs1 :: SparkLineProps Double Double  
 attrs1 = SparkLineProps
              { point_size          = 14
+             , word_length         = 10
              , line_colour         = black
              , y_band              = Just (0.3, 0.8, aquamarine)
-             , x_rescale           = rescale 0 1 0 100
-             , y_rescale           = rescale 0 1 0 100
+             , x_rescale           = rescale 0.1 1 0 100
+             , y_rescale           = rescale 0   1 0 100
              }
 
 
