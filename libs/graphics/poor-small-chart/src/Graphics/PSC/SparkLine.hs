@@ -8,16 +8,27 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
--- Version number
+-- Spark line
 --
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.SparkLine
+  (
   
+  -- * Datatypes
+    SparkLine
+  , SparkLineProps(..)
 
-  where
+  -- * Write to file
+  , writeSparkLineEPS
+  , writeSparkLineSVG
+  
+  -- * Draw
+  , drawSparkLine  
+
+  ) where
 
 import Graphics.PSC.Utils
 import Wumpus.Core
@@ -25,6 +36,16 @@ import Wumpus.Core
 type SparkLine = DPicture
 type SparkPath = DPath
 type PointSize = Int
+
+
+data SparkLineProps xu yu = SparkLineProps
+      { point_size          :: PointSize
+      , line_colour         :: DRGB
+      , y_band              :: Maybe (yu,yu,DRGB)
+      , x_rescale           :: xu -> Double
+      , y_rescale           :: yu -> Double
+      }
+
 
 
 writeSparkLineEPS :: FilePath -> SparkLine -> IO ()
@@ -35,22 +56,36 @@ writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
 writeSparkLineSVG = writeSVG_latin1 
 
 
-data SparkAttr = SparkAttr 
-      { point_size          :: PointSize
-      , line_colour         :: DRGB
-      , horizontal_factor   :: Double
-      , hrange              :: Maybe (Double,Double,DRGB)
-      }
 
-drawSparkLine :: SparkAttr -> [(Double,Double)] -> SparkLine
+
+rescaleYCoord :: PointSize -> (u -> Double) -> (u -> Double)
+rescaleYCoord pt f = rescale 0 100 0 (fromIntegral pt) . f
+
+-- | rescale the width according to how many elements in the 
+-- list of points.
+--
+-- Remember that a spark line is a /dataword/ in Edward Tufte\'s
+-- terminology. So we take the ananlogy that each point is a 
+-- letter
+--
+rescaleXCoord :: PointSize -> Int -> (u -> Double) -> (u -> Double)
+rescaleXCoord pt_size points_count f = rescale 0 100 0 xsize . f
+  where
+    xsize = textWidth pt_size points_count
+
+drawSparkLine :: SparkLineProps u v -> [(u,v)] -> SparkLine
 drawSparkLine attr points = pic
   where
-    sp_path     = plotPath (point_size attr) (horizontal_factor attr) points
+    pt_size     = point_size attr
+    rescaleX    = rescaleXCoord pt_size (length points) (x_rescale attr)
+    rescaleY    = rescaleYCoord pt_size (y_rescale attr)
+    sp_path     = plotPath rescaleX rescaleY points
     sp_prim     = strokeSparkPath (line_colour attr) sp_path
 
-    background  = case hrange attr of
+    background  = case y_band attr of
                     Nothing -> Nothing
-                    Just (lo,hi,rgb) -> Just $ sparkrect rgb lo hi sp_path
+                    Just (lo,hi,rgb) -> Just $ 
+                        sparkrect rgb rescaleY lo hi sp_path
 
     pic         = case background of
                     Nothing  -> frame  sp_prim
@@ -64,17 +99,13 @@ strokeSparkPath rgb = ostroke (rgb,line_attrs)
     line_attrs = [LineCap CapRound, LineJoin JoinRound]
 
 
--- WRONG...
-sparkrect :: DRGB -> Double -> Double -> SparkPath -> DPrimitive
-sparkrect rgb ylo yhi sparkpath = fill rgb $ vertexPath [bl,br,ur,ul]
+sparkrect :: DRGB -> (u -> Double) -> u -> u -> SparkPath -> DPrimitive
+sparkrect rgb scaleY ylo yhi sparkpath = fill rgb $ vertexPath [bl,br,ur,ul]
   where
-    yloc                           = clamp 0 1 ylo
-    yhic                           = clamp 0 1 yhi
-    BBox (P2 llx lly) (P2 urx ury) = boundary sparkpath 
+    BBox (P2 llx _) (P2 urx _)     = boundary sparkpath 
 
-    -- this is wrong - should rescale on the (ymin,ymax)...    
-    y0                             = rescale 0 1 lly ury yloc
-    y1                             = rescale 0 1 lly ury yhic
+    y0                             = scaleY ylo
+    y1                             = scaleY yhi
 
     bl                             = P2 llx y0
     br                             = P2 urx y0
@@ -85,17 +116,7 @@ sparkrect rgb ylo yhi sparkpath = fill rgb $ vertexPath [bl,br,ur,ul]
     
 
 
-plotPath :: PointSize -> Double -> [(Double,Double)] -> SparkPath
-plotPath pt factor pairs = vertexPath scaled_points
+plotPath :: (u -> Double) -> (v -> Double) -> [(u,v)] -> SparkPath
+plotPath xscale yscale pairs = vertexPath $ map fn pairs
   where
-    points              = map (uncurry P2) pairs
-    (xrange,yrange)     = minMax2 points 
-    scaled_points       = map (rescaleXY xrange yrange pt factor) points
-
-
-rescaleXY :: XRange -> YRange -> PointSize -> Double -> DPoint2 -> DPoint2
-rescaleXY (xmin,xmax) (ymin,ymax) pt stretch (P2 x y) = 
-    P2 (rescale xmin xmax 0 (stretch*pt_frac) x) (rescale ymin ymax 0 pt_frac y) 
-  where
-    pt_frac = fromIntegral pt
-   
+    fn (x,y)            = P2 (xscale x) (yscale y)

@@ -3,6 +3,8 @@
 module Sparky1 where
 
 import Graphics.PSC.SparkLine
+import Graphics.PSC.Utils 
+
 import Wumpus.Extra.SVGColours 
 
 import System.Directory
@@ -15,17 +17,20 @@ demo1 :: IO ()
 demo1 = writeSparkLineSVG "./out/spark1.svg" pic1 >>
         writeSparkLineEPS "./out/spark1.eps" pic1
 
-attrs1 :: SparkAttr   
-attrs1 = SparkAttr 
+attrs1 :: SparkLineProps Double Double  
+attrs1 = SparkLineProps
              { point_size          = 14
              , line_colour         = black
-             , horizontal_factor   = 4.0
-             , hrange              = Just (0.3, 0.8, aquamarine)
+             , y_band              = Just (0.3, 0.8, aquamarine)
+             , x_rescale           = rescale 0 1 0 100
+             , y_rescale           = rescale 0 1 0 100
              }
+
 
 
 pic1 :: SparkLine
 pic1 = drawSparkLine attrs1 spark1
+
 
 
 spark1 :: [(Double,Double)]
