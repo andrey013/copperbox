@@ -33,6 +33,7 @@ library
     Graphics.PSC.Utils
 
   other-modules:
+    Graphics.PSC.RenderMonad
     
   extensions:
     

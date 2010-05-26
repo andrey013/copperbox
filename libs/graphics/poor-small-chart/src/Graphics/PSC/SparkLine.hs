@@ -33,6 +33,7 @@ module Graphics.PSC.SparkLine
 
   ) where
 
+import Graphics.PSC.RenderMonad
 import Graphics.PSC.Utils
 import Wumpus.Core
 
@@ -77,47 +78,13 @@ writeSparkLineEPS = writeEPS_latin1
 writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
 writeSparkLineSVG = writeSVG_latin1 
 
-type Trace = [DPrimitive]
 
-newtype RenderM u v a = RenderM { getRenderM :: Geom u v -> Trace -> (a,Trace) } 
-
-instance Functor (RenderM u v) where
-  fmap f (RenderM mf) = RenderM $ \e w -> let (a,w') = mf e w in (f a,w')
-
-instance Applicative (RenderM u v) where
-  pure v    = RenderM $ \_ w -> (v,w)
-  mf <*> mx = RenderM $ \e w -> let (f,w')  = (getRenderM mf) e w
-                                    (x,w'') = (getRenderM mx) e w'
-                                in (f x,w'')
-           
-                                 
-
-instance Monad (RenderM u v) where
-  return a  = RenderM $ \_ w -> (a,w)
-  ma >>= mf = RenderM $ \e w -> let (a,w') = getRenderM ma e w
-                                in getRenderM (mf a) e w'
+type SparkM u v a = RenderM (Geom u v) a
 
 
-ask :: RenderM u v (Geom u v)
-ask = RenderM $ \e w -> (e,w)
+run :: SparkLineConfig u v -> SparkM u v a -> (a,DPicture)
+run cfg mf = runRender (makeGeom cfg) mf
 
-asks :: (Geom u v -> a) -> RenderM u v a
-asks f = RenderM $ \e w -> (f e,w) 
-
-tell :: DPrimitive -> RenderM u v ()
-tell p = RenderM $ \_ w -> ((),p:w)
-
-mbTell :: Maybe DPrimitive -> RenderM u v ()
-mbTell mbp = RenderM $ \_ w -> ((), mbCons mbp w)
-  where
-    mbCons Nothing  = id
-    mbCons (Just a) = (a:)
-
-
-
-runRender :: SparkLineConfig u v -> RenderM u v a -> (a,DPicture)
-runRender cfg (RenderM f) = 
-    let (a,prims) = f (makeGeom cfg) [] in (a, frameMulti prims)
 
 makeGeom :: SparkLineConfig xu yu -> Geom xu yu
 makeGeom attr@(SparkLineConfig {point_size,word_length})  = 
@@ -152,7 +119,7 @@ makeRescaleY (SparkLineConfig {point_size, y_rescale}) =
 
 drawSparkLine :: SparkLineConfig u v -> LineData u v -> SparkLine
 drawSparkLine attr (props,points) = 
-     snd $ runRender attr mkPicture
+     snd $ run attr mkPicture
    where
      mkPicture = do { mbTell =<< mbRangeBand (y_band attr) 
                     ; sline  <- plotPath2 points
@@ -160,13 +127,8 @@ drawSparkLine attr (props,points) =
                     }
 
 
-mbRangeBand :: Maybe (RangeBand v) -> RenderM u v (Maybe DPrimitive)
+mbRangeBand :: Maybe (RangeBand v) -> SparkM u v (Maybe DPrimitive)
 mbRangeBand = mbM (\(rgb,y0,y1) -> rangeBand rgb (y0,y1))
-
-
-mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)
-mbM _  Nothing  = return Nothing
-mbM mf (Just a) = mf a >>= return . Just 
 
 
 
@@ -177,7 +139,7 @@ strokeSparkPath (SparkLineProps {line_width, line_colour}) =
     attrs = [LineWidth line_width, LineCap CapRound, LineJoin JoinRound]
 
 
-rangeBand :: DRGB -> (v,v) -> RenderM u v DPrimitive
+rangeBand :: DRGB -> (v,v) -> SparkM u v DPrimitive
 rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
   where
     mkBand w scaleY = fill rgb $ vertexPath [bl,br,ur,ul]
@@ -188,7 +150,7 @@ rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
         ul  = P2 0 (scaleY y1)
 
 
-plotPath2 :: [(u,v)] -> RenderM u v SparkPath
+plotPath2 :: [(u,v)] -> SparkM u v SparkPath
 plotPath2 pairs = liftA2 plot (asks rescale_x)  (asks rescale_y)
   where
     plot scaleX scaleY = vertexPath $ map (makePoint scaleX scaleY) pairs
