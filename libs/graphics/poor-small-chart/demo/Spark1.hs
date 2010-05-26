@@ -17,12 +17,11 @@ demo1 :: IO ()
 demo1 = writeSparkLineSVG "./out/spark1.svg" pic1 >>
         writeSparkLineEPS "./out/spark1.eps" pic1
 
-attrs1 :: SparkLineProps Double Double  
-attrs1 = SparkLineProps
-             { point_size          = 14
+attrs1 :: SparkLineConfig Double Double  
+attrs1 = SparkLineConfig
+             { point_size          = 24
              , word_length         = 10
-             , line_colour         = black
-             , y_band              = Just (0.3, 0.8, aquamarine)
+             , y_band              = Just (aquamarine, 0.3, 0.8)
              , x_rescale           = rescale 0.1 1 0 100
              , y_rescale           = rescale 0   1 0 100
              }
@@ -30,7 +29,7 @@ attrs1 = SparkLineProps
 
 
 pic1 :: SparkLine
-pic1 = drawSparkLine attrs1 spark1
+pic1 = drawSparkLine attrs1 ((SparkLineProps 0.5 black),spark1)
 
 
 

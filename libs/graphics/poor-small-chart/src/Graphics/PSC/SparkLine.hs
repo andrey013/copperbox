@@ -20,7 +20,9 @@ module Graphics.PSC.SparkLine
   
   -- * Datatypes
     SparkLine
+  , SparkLineConfig(..)
   , SparkLineProps(..)
+  , RangeBand
 
   -- * Write to file
   , writeSparkLineEPS
@@ -34,21 +36,39 @@ module Graphics.PSC.SparkLine
 import Graphics.PSC.Utils
 import Wumpus.Core
 
+import Control.Applicative
+
+
 type SparkLine = DPicture
 type SparkPath = DPath
 type PointSize = Int
 
 
-data SparkLineProps xu yu = SparkLineProps
+data SparkLineConfig xu yu = SparkLineConfig
       { point_size          :: PointSize
       , word_length         :: Int
-      , line_colour         :: DRGB
-      , y_band              :: Maybe (yu,yu,DRGB)
+      , y_band              :: Maybe (RangeBand yu)
       , x_rescale           :: xu -> Double
       , y_rescale           :: yu -> Double
       }
 
 
+data SparkLineProps = SparkLineProps
+      { line_width          :: Double
+      , line_colour         :: DRGB
+      }
+
+data Geom xu yu = Geom 
+      { rect_height         :: Double
+      , rect_width          :: Double
+      , rescale_x           :: xu -> Double
+      , rescale_y           :: yu -> Double
+      }
+
+
+type RangeBand yu = (DRGB, yu, yu) 
+
+type LineData xu yu = (SparkLineProps,[(xu,yu)]) 
 
 writeSparkLineEPS :: FilePath -> SparkLine -> IO ()
 writeSparkLineEPS = writeEPS_latin1 
@@ -57,12 +77,57 @@ writeSparkLineEPS = writeEPS_latin1
 writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
 writeSparkLineSVG = writeSVG_latin1 
 
+type Trace = [DPrimitive]
+
+newtype RenderM u v a = RenderM { getRenderM :: Geom u v -> Trace -> (a,Trace) } 
+
+instance Functor (RenderM u v) where
+  fmap f (RenderM mf) = RenderM $ \e w -> let (a,w') = mf e w in (f a,w')
+
+instance Applicative (RenderM u v) where
+  pure v    = RenderM $ \_ w -> (v,w)
+  mf <*> mx = RenderM $ \e w -> let (f,w')  = (getRenderM mf) e w
+                                    (x,w'') = (getRenderM mx) e w'
+                                in (f x,w'')
+           
+                                 
+
+instance Monad (RenderM u v) where
+  return a  = RenderM $ \_ w -> (a,w)
+  ma >>= mf = RenderM $ \e w -> let (a,w') = getRenderM ma e w
+                                in getRenderM (mf a) e w'
+
+
+ask :: RenderM u v (Geom u v)
+ask = RenderM $ \e w -> (e,w)
+
+asks :: (Geom u v -> a) -> RenderM u v a
+asks f = RenderM $ \e w -> (f e,w) 
+
+tell :: DPrimitive -> RenderM u v ()
+tell p = RenderM $ \_ w -> ((),p:w)
+
+mbTell :: Maybe DPrimitive -> RenderM u v ()
+mbTell mbp = RenderM $ \_ w -> ((), mbCons mbp w)
+  where
+    mbCons Nothing  = id
+    mbCons (Just a) = (a:)
 
 
 
-boxLength :: SparkLineProps u v -> Double
-boxLength (SparkLineProps {point_size,word_length}) = 
-    textWidth point_size word_length
+runRender :: SparkLineConfig u v -> RenderM u v a -> (a,DPicture)
+runRender cfg (RenderM f) = 
+    let (a,prims) = f (makeGeom cfg) [] in (a, frameMulti prims)
+
+makeGeom :: SparkLineConfig xu yu -> Geom xu yu
+makeGeom attr@(SparkLineConfig {point_size,word_length})  = 
+    Geom { rect_height  = fromIntegral point_size
+         , rect_width   = textWidth    point_size word_length 
+         , rescale_x    = makeRescaleX attr
+         , rescale_y    = makeRescaleY attr
+         }
+
+
 
 -- | Rescale in X according the box length - calculated from
 -- the /word length/.
@@ -71,55 +136,65 @@ boxLength (SparkLineProps {point_size,word_length}) =
 -- terminology. So we want it to have a size similar to a word in 
 -- the current font.
 --
-makeRescaleX :: SparkLineProps u v -> (u -> Double)
-makeRescaleX props@(SparkLineProps {x_rescale}) = 
-    rescale 0 100 0 (boxLength props) . x_rescale 
- 
+makeRescaleX :: SparkLineConfig u v -> (u -> Double)
+makeRescaleX attr@(SparkLineConfig {x_rescale}) = 
+    rescale 0 100 0 width . x_rescale 
+  where
+    width = textWidth (point_size attr) (word_length attr)
 
-makeRescaleY :: SparkLineProps u v -> (v -> Double)
-makeRescaleY (SparkLineProps {point_size, y_rescale}) = 
+makeRescaleY :: SparkLineConfig u v -> (v -> Double)
+makeRescaleY (SparkLineConfig {point_size, y_rescale}) = 
     rescale 0 100 0 (fromIntegral point_size) . y_rescale
 
 
 
-drawSparkLine :: SparkLineProps u v -> [(u,v)] -> SparkLine
-drawSparkLine attr@(SparkLineProps {line_colour,y_band}) points = pic
+
+
+drawSparkLine :: SparkLineConfig u v -> LineData u v -> SparkLine
+drawSparkLine attr (props,points) = 
+     snd $ runRender attr mkPicture
+   where
+     mkPicture = do { mbTell =<< mbRangeBand (y_band attr) 
+                    ; sline  <- plotPath2 points
+                    ; tell $ strokeSparkPath props sline
+                    }
+
+
+mbRangeBand :: Maybe (RangeBand v) -> RenderM u v (Maybe DPrimitive)
+mbRangeBand = mbM (\(rgb,y0,y1) -> rangeBand rgb (y0,y1))
+
+
+mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)
+mbM _  Nothing  = return Nothing
+mbM mf (Just a) = mf a >>= return . Just 
+
+
+
+strokeSparkPath :: SparkLineProps -> SparkPath -> DPrimitive
+strokeSparkPath (SparkLineProps {line_width, line_colour}) = 
+    ostroke (line_colour, attrs) 
   where
-    rescaleX    = makeRescaleX attr
-    rescaleY    = makeRescaleY attr 
-    sp_path     = plotPath rescaleX rescaleY points
-    sp_prim     = strokeSparkPath line_colour sp_path
-
-    background  = case y_band of
-                    Nothing -> Nothing
-                    Just (lo,hi,rgb) -> Just $ 
-                        sparkrect rgb (boxLength attr) rescaleY lo hi
-
-    pic         = case background of
-                    Nothing  -> frame  sp_prim
-                    Just bkg -> frameMulti [sp_prim,bkg]
-    
+    attrs = [LineWidth line_width, LineCap CapRound, LineJoin JoinRound]
 
 
-strokeSparkPath :: DRGB -> DPath -> DPrimitive
-strokeSparkPath rgb = ostroke (rgb,line_attrs) 
+rangeBand :: DRGB -> (v,v) -> RenderM u v DPrimitive
+rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
   where
-    line_attrs = [LineCap CapRound, LineJoin JoinRound]
+    mkBand w scaleY = fill rgb $ vertexPath [bl,br,ur,ul]
+      where
+        bl  = P2 0 (scaleY y0)
+        br  = P2 w (scaleY y0)
+        ur  = P2 w (scaleY y1)
+        ul  = P2 0 (scaleY y1)
 
 
-sparkrect :: DRGB -> Double -> (u -> Double) -> u -> u -> DPrimitive
-sparkrect rgb box_width scaleY ylo yhi = fill rgb $ vertexPath [bl,br,ur,ul]
+plotPath2 :: [(u,v)] -> RenderM u v SparkPath
+plotPath2 pairs = liftA2 plot (asks rescale_x)  (asks rescale_y)
   where
-    y0                             = scaleY ylo
-    y1                             = scaleY yhi
+    plot scaleX scaleY = vertexPath $ map (makePoint scaleX scaleY) pairs
 
-    bl                             = P2 0         y0
-    br                             = P2 box_width y0
-    ur                             = P2 box_width y1
-    ul                             = P2 0         y1
- 
+     
+makePoint :: (u -> Double) -> (v -> Double) -> (u,v) -> Point2 Double
+makePoint f g (u,v) = P2 (f u) (g v)
 
-plotPath :: (u -> Double) -> (v -> Double) -> [(u,v)] -> SparkPath
-plotPath xscale yscale pairs = vertexPath $ map fn pairs
-  where
-    fn (x,y)            = P2 (xscale x) (yscale y)
+
