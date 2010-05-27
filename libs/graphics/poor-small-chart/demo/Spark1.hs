@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Sparky1 where
+module Spark1 where
 
 import Graphics.PSC.SparkLine
 

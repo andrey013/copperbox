@@ -21,28 +21,62 @@ module Graphics.PSC.RenderMonad
   -- * RenderMonad
     RenderM  
   , runRender
+  , Geom(..)
+  , makeGeom
+
   , ask
   , asks
   , tell
+  , tellList
   , mbTell
+
+  , scalePoint
   
   -- * General monad function
   , mbM
 
   ) where
 
+import Graphics.PSC.Core
+import Graphics.PSC.Utils
+
 import Wumpus.Core
 
 import Control.Applicative
 
-type Trace = [DPrimitive]
+type Trace = H DPrimitive
 
-newtype RenderM e a = RenderM { getRenderM :: e -> Trace -> (a,Trace) } 
+newtype RenderM xu yu a = RenderM { 
+            getRenderM :: Geom xu yu -> Trace -> (a,Trace) }
 
-instance Functor (RenderM e) where
+data Geom xu yu = Geom 
+      { rect_height         :: Double
+      , rect_width          :: Double
+      , rescale_x           :: xu -> Double
+      , rescale_y           :: yu -> Double
+      }
+
+
+makeGeom :: Double -> Double -> Range xu -> Range yu -> Geom xu yu
+makeGeom width height range_x range_y = Geom 
+    { rect_width   = width
+    , rect_height  = height
+    , rescale_x    = makeRescaleX width  range_x
+    , rescale_y    = makeRescaleY height range_y
+    }
+
+
+makeRescaleX :: Double -> Range u -> (u -> Double)
+makeRescaleX width (x0,x1,fn) = rescale (fn x0) (fn x1) 0 width . fn
+
+makeRescaleY :: Double -> Range u -> (u -> Double)
+makeRescaleY height (y0,y1,fn) = rescale (fn y0) (fn y1) 0 height . fn
+
+
+instance Functor (RenderM xu yu) where
   fmap f (RenderM mf) = RenderM $ \e w -> let (a,w') = mf e w in (f a,w')
 
-instance Applicative (RenderM e) where
+instance Applicative (RenderM xu yu) where
   pure v    = RenderM $ \_ w -> (v,w)
   mf <*> mx = RenderM $ \e w -> let (f,w')  = (getRenderM mf) e w
                                     (x,w'') = (getRenderM mx) e w'
@@ -50,31 +84,41 @@ instance Applicative (RenderM e) where
            
                                  
 
-instance Monad (RenderM e) where
+instance Monad (RenderM xu yu) where
   return a  = RenderM $ \_ w -> (a,w)
   ma >>= mf = RenderM $ \e w -> let (a,w') = getRenderM ma e w
                                 in getRenderM (mf a) e w'
 
 
-runRender :: e -> RenderM e a -> (a,DPicture)
-runRender env (RenderM f) = let (a,prims) = f env [] in (a, frameMulti prims)
+runRender :: Geom xu yu -> RenderM xu yu a -> (a,DPicture)
+runRender env (RenderM f) = 
+    let (a,prims) = f env emptyH in (a, frameMulti $ toListH prims)
 
 
-ask :: RenderM e e
+ask :: RenderM xu yu (Geom xu yu)
 ask = RenderM $ \e w -> (e,w)
 
-asks :: (e -> a) -> RenderM e a
+asks :: (Geom xu yu -> a) -> RenderM xu yu a
 asks f = RenderM $ \e w -> (f e,w) 
 
-tell :: DPrimitive -> RenderM e ()
-tell p = RenderM $ \_ w -> ((),p:w)
+tell :: DPrimitive -> RenderM xu yu ()
+tell p = RenderM $ \_ w -> ((),p `consH` w)
 
-mbTell :: Maybe DPrimitive -> RenderM e ()
+tellList :: [DPrimitive] -> RenderM xu yu ()
+tellList ps = RenderM $ \_ w -> ((), (fromListH ps) `appendH` w)
+
+
+mbTell :: Maybe DPrimitive -> RenderM xu yu ()
 mbTell mbp = RenderM $ \_ w -> ((), mbCons mbp w)
   where
     mbCons Nothing  = id
-    mbCons (Just a) = (a:)
+    mbCons (Just a) = consH a
 
+
+scalePoint :: (u,v) -> RenderM u v DPoint2
+scalePoint (u,v) = fn <$> asks rescale_x <*> asks rescale_y
+  where
+    fn f g = P2 (f u) (g v)
 
 
 

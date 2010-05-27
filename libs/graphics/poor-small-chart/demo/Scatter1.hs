@@ -8,7 +8,6 @@
 module Scatter where
 
 import IrisParser
-import Graphics.PSC.Core
 import Graphics.PSC.ScatterPlot
 
 import Wumpus.Extra.SVGColours
@@ -28,17 +27,21 @@ demo01 = do
     case ans of
       Nothing -> putStrLn "no go"
       Just (setosa, _versicolor, _virginica) -> do 
-          let pic = drawScatterPlot red (map sepalData setosa)
+          let pic = drawScatterPlot attrs1 (sepalProps, map slsw setosa)
           writeScatterPlotEPS "./out/scatter01.eps" pic
           writeScatterPlotSVG "./out/scatter01.svg" pic
-           
 
-sepalData :: IrisData -> (Double,Double)
-sepalData iris = (slRescale $ sepal_length iris, swRescale $ sepal_width iris)
+sepalProps :: ScatterPlotProps 
+sepalProps = ScatterPlotProps 3 red
 
-slRescale :: Double -> Double
-slRescale = rescale 4 6 0 100
+attrs1 :: ScatterPlotConfig Double Double  
+attrs1 = ScatterPlotConfig
+             { plot_width          = 200
+             , plot_height         = 200
+             , x_range             = (4.0, 6.0, id)
+             , y_range             = (2.0, 5.0, id)
+             }
 
-swRescale :: Double -> Double
-swRescale = rescale 2 5 0 100
+slsw :: IrisData -> (Double,Double)
+slsw iris = (sepal_length iris, sepal_width iris)
 

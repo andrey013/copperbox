@@ -59,14 +59,6 @@ data SparkLineProps = SparkLineProps
       , line_colour         :: DRGB
       }
 
-data Geom xu yu = Geom 
-      { rect_height         :: Double
-      , rect_width          :: Double
-      , rescale_x           :: xu -> Double
-      , rescale_y           :: yu -> Double
-      }
-
-
 type RangeBand yu = (DRGB, yu, yu) 
 
 type LineData xu yu = (SparkLineProps,[(xu,yu)]) 
@@ -79,21 +71,7 @@ writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
 writeSparkLineSVG = writeSVG_latin1 
 
 
-type SparkLineM u v a = RenderM (Geom u v) a
-
-
-run :: SparkLineConfig u v -> SparkLineM u v a -> (a,DPicture)
-run cfg mf = runRender (makeGeom cfg) mf
-
-
-makeGeom :: SparkLineConfig xu yu -> Geom xu yu
-makeGeom attr@(SparkLineConfig {point_size,word_length})  = 
-    Geom { rect_width   = textWidth    point_size word_length 
-         , rect_height  = fromIntegral point_size
-         , rescale_x    = makeRescaleX attr
-         , rescale_y    = makeRescaleY attr
-         }
-
+type SparkLineM u v a = RenderM u v a
 
 
 -- | Rescale in X according the box length - calculated from
@@ -103,16 +81,14 @@ makeGeom attr@(SparkLineConfig {point_size,word_length})  =
 -- terminology. So we want it to have a size similar to a word in 
 -- the current font.
 --
-makeRescaleX :: SparkLineConfig u v -> (u -> Double)
-makeRescaleX attr@(SparkLineConfig {x_range = (x0,x1,fn)}) = 
-    rescale (fn x0) (fn x1) 0 width . fn
+
+
+run :: SparkLineConfig u v -> SparkLineM u v a -> (a,DPicture)
+run cfg@(SparkLineConfig {point_size,word_length}) mf = 
+    runRender (makeGeom width height (x_range cfg) (y_range cfg)) mf
   where
-    width = textWidth (point_size attr) (word_length attr)
-
-makeRescaleY :: SparkLineConfig u v -> (v -> Double)
-makeRescaleY (SparkLineConfig {point_size, y_range = (y0,y1,fn)}) = 
-    rescale (fn y0) (fn y1) 0 (fromIntegral point_size) . fn
-
+    width   = textWidth    point_size word_length 
+    height  = fromIntegral point_size
 
 
 drawSparkLine :: SparkLineConfig u v -> LineData u v -> SparkLine
@@ -120,7 +96,7 @@ drawSparkLine attr (props,points) =
      snd $ run attr mkPicture
    where
      mkPicture = do { mbTell =<< mbRangeBand (y_band attr) 
-                    ; sline  <- plotPath2 points
+                    ; sline  <- plotPath points
                     ; tell $ strokeSparkPath props sline
                     }
 
@@ -148,13 +124,6 @@ rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
         ul  = P2 0 (scaleY y1)
 
 
-plotPath2 :: [(u,v)] -> SparkLineM u v SparkPath
-plotPath2 pairs = liftA2 plot (asks rescale_x)  (asks rescale_y)
-  where
-    plot scaleX scaleY = vertexPath $ map (makePoint scaleX scaleY) pairs
-
-     
-makePoint :: (u -> Double) -> (v -> Double) -> (u,v) -> Point2 Double
-makePoint f g (u,v) = P2 (f u) (g v)
-
+plotPath :: [(u,v)] -> SparkLineM u v SparkPath
+plotPath pairs = vertexPath <$> mapM scalePoint pairs
 

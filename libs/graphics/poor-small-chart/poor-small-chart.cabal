@@ -30,11 +30,12 @@ library
   exposed-modules:
     Graphics.PSC.Core,
     Graphics.PSC.ScatterPlot,
-    Graphics.PSC.SparkLine,
+    Graphics.PSC.SparkLine
 
   other-modules:
-    Graphics.PSC.RenderMonad
-    
+    Graphics.PSC.RenderMonad,
+    Graphics.PSC.Utils
+
   extensions:
     
 

@@ -16,44 +16,48 @@
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.ScatterPlot
- where
+  ( 
+  -- * Types
+    ScatterPlot
+  , DotRadius
+  , Pt72
+  , ScatterPlotConfig(..)
+  , ScatterPlotProps(..)
+
+  -- * Write to file
+  , writeScatterPlotEPS
+  , writeScatterPlotSVG
+
+  -- * Draw
+  , drawScatterPlot
+ 
+  ) where
 
 import Graphics.PSC.Core
+import Graphics.PSC.RenderMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Control.Applicative
+-- import Control.Monad
+
 type ScatterPlot = DPicture
-type Pt72 = Int
+type DotRadius   = Double
+type Pt72        = Int
 
 data ScatterPlotConfig xu yu = ScatterPlotConfig
       { plot_width          :: Pt72
       , plot_height         :: Pt72
-      , x_range             :: xu -> Double
-      , y_range             :: yu -> Double
+      , x_range             :: Range xu
+      , y_range             :: Range yu
       }
 
-
-
-data Geom xu yu = Geom 
-      { rect_height         :: Double
-      , rect_width          :: Double
-      , rescale_x           :: xu -> Double
-      , rescale_y           :: yu -> Double
+data ScatterPlotProps = ScatterPlotProps
+      { dot_radius         :: DotRadius
+      , dot_colour         :: DRGB
       }
 
-
-{-
-
-makeGeom :: ScatterPlotConfig xu yu -> Geom xu yu
-makeGeom attr@(ScatterPlotConfig {point_size,word_length})  = 
-    Geom { rect_width   = fromIntegral plot_width
-         , rect_height  = fromIntegral plot_height 
-         , rescale_x    = makeRescaleX attr
-         , rescale_y    = makeRescaleY attr
-         }
--}
-
-
+type DotData xu yu = (ScatterPlotProps,[(xu,yu)]) 
 
 writeScatterPlotEPS :: FilePath -> ScatterPlot -> IO ()
 writeScatterPlotEPS = writeEPS_latin1 
@@ -62,15 +66,25 @@ writeScatterPlotEPS = writeEPS_latin1
 writeScatterPlotSVG :: FilePath -> ScatterPlot -> IO ()
 writeScatterPlotSVG = writeSVG_latin1 
 
+type ScatterPlotM u v a = RenderM u v a
 
-drawScatterPlot :: DRGB -> [(Double,Double)] -> ScatterPlot
-drawScatterPlot rgb = frameMulti . plot rgb
+run :: ScatterPlotConfig u v -> ScatterPlotM u v a -> (a,DPicture)
+run (ScatterPlotConfig {plot_width, plot_height, x_range, y_range}) mf = 
+    runRender (makeGeom width height x_range y_range) mf
+  where
+    width   = fromIntegral plot_width
+    height  = fromIntegral plot_height
 
-plot :: DRGB -> [(Double,Double)] -> [DPrimitive]
-plot rgb = map fn where
-    fn (x,y) = ellipse rgb 2 2 (P2 x y)
+drawScatterPlot :: ScatterPlotConfig u v -> DotData u v -> ScatterPlot
+drawScatterPlot attr (props,points) = 
+     snd $ run attr mkPicture
+   where
+     mkPicture = do { tellList =<< plotDots (dot_radius props) (dot_colour props) points
+                    }
 
 
+plotDots :: DotRadius -> DRGB -> [(u,v)] -> ScatterPlotM u v [DPrimitive] 
+plotDots lw rgb pairs = mapM (\pair -> dot lw rgb <$> scalePoint pair) pairs  
 
-dot :: LineWidth -> DRGB -> DPoint2 -> DPrimitive
-dot lw rgb pt = ellipse rgb (2*lw) (3*lw) pt 
+dot :: DotRadius -> DRGB -> DPoint2 -> DPrimitive
+dot dr rgb pt = ellipse rgb dr dr pt 
