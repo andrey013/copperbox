@@ -28,9 +28,9 @@ library
 
   
   exposed-modules:
+    Graphics.PSC.Core,
     Graphics.PSC.ScatterPlot,
     Graphics.PSC.SparkLine,
-    Graphics.PSC.Utils
 
   other-modules:
     Graphics.PSC.RenderMonad

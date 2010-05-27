@@ -2,11 +2,14 @@
 {-# OPTIONS -Wall #-}
 
 
+-- See:
+-- http://en.wikipedia.org/wiki/Iris_flower_data_set
+
 module Scatter where
 
 import IrisParser
+import Graphics.PSC.Core
 import Graphics.PSC.ScatterPlot
-import Graphics.PSC.Utils
 
 import Wumpus.Extra.SVGColours
 
@@ -25,7 +28,7 @@ demo01 = do
     case ans of
       Nothing -> putStrLn "no go"
       Just (setosa, _versicolor, _virginica) -> do 
-          let pic = drawScatterPlot black (map sepalData setosa)
+          let pic = drawScatterPlot red (map sepalData setosa)
           writeScatterPlotEPS "./out/scatter01.eps" pic
           writeScatterPlotSVG "./out/scatter01.svg" pic
            

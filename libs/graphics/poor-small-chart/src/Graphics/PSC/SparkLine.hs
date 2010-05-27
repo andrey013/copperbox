@@ -33,29 +33,29 @@ module Graphics.PSC.SparkLine
 
   ) where
 
+import Graphics.PSC.Core
 import Graphics.PSC.RenderMonad
-import Graphics.PSC.Utils
-import Wumpus.Core
+
+import Wumpus.Core                      -- package: wumpus-core
 
 import Control.Applicative
 
 
 type SparkLine = DPicture
 type SparkPath = DPath
-type PointSize = Int
 
 
 data SparkLineConfig xu yu = SparkLineConfig
       { point_size          :: PointSize
       , word_length         :: Int
       , y_band              :: Maybe (RangeBand yu)
-      , x_rescale           :: xu -> Double
-      , y_rescale           :: yu -> Double
+      , x_range             :: Range xu
+      , y_range             :: (yu,yu, yu -> Double)
       }
 
 
 data SparkLineProps = SparkLineProps
-      { line_width          :: Double
+      { line_width          :: LineWidth
       , line_colour         :: DRGB
       }
 
@@ -79,17 +79,17 @@ writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
 writeSparkLineSVG = writeSVG_latin1 
 
 
-type SparkM u v a = RenderM (Geom u v) a
+type SparkLineM u v a = RenderM (Geom u v) a
 
 
-run :: SparkLineConfig u v -> SparkM u v a -> (a,DPicture)
+run :: SparkLineConfig u v -> SparkLineM u v a -> (a,DPicture)
 run cfg mf = runRender (makeGeom cfg) mf
 
 
 makeGeom :: SparkLineConfig xu yu -> Geom xu yu
 makeGeom attr@(SparkLineConfig {point_size,word_length})  = 
-    Geom { rect_height  = fromIntegral point_size
-         , rect_width   = textWidth    point_size word_length 
+    Geom { rect_width   = textWidth    point_size word_length 
+         , rect_height  = fromIntegral point_size
          , rescale_x    = makeRescaleX attr
          , rescale_y    = makeRescaleY attr
          }
@@ -104,16 +104,14 @@ makeGeom attr@(SparkLineConfig {point_size,word_length})  =
 -- the current font.
 --
 makeRescaleX :: SparkLineConfig u v -> (u -> Double)
-makeRescaleX attr@(SparkLineConfig {x_rescale}) = 
-    rescale 0 100 0 width . x_rescale 
+makeRescaleX attr@(SparkLineConfig {x_range = (x0,x1,fn)}) = 
+    rescale (fn x0) (fn x1) 0 width . fn
   where
     width = textWidth (point_size attr) (word_length attr)
 
 makeRescaleY :: SparkLineConfig u v -> (v -> Double)
-makeRescaleY (SparkLineConfig {point_size, y_rescale}) = 
-    rescale 0 100 0 (fromIntegral point_size) . y_rescale
-
-
+makeRescaleY (SparkLineConfig {point_size, y_range = (y0,y1,fn)}) = 
+    rescale (fn y0) (fn y1) 0 (fromIntegral point_size) . fn
 
 
 
@@ -127,7 +125,7 @@ drawSparkLine attr (props,points) =
                     }
 
 
-mbRangeBand :: Maybe (RangeBand v) -> SparkM u v (Maybe DPrimitive)
+mbRangeBand :: Maybe (RangeBand v) -> SparkLineM u v (Maybe DPrimitive)
 mbRangeBand = mbM (\(rgb,y0,y1) -> rangeBand rgb (y0,y1))
 
 
@@ -139,7 +137,7 @@ strokeSparkPath (SparkLineProps {line_width, line_colour}) =
     attrs = [LineWidth line_width, LineCap CapRound, LineJoin JoinRound]
 
 
-rangeBand :: DRGB -> (v,v) -> SparkM u v DPrimitive
+rangeBand :: DRGB -> (v,v) -> SparkLineM u v DPrimitive
 rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
   where
     mkBand w scaleY = fill rgb $ vertexPath [bl,br,ur,ul]
@@ -150,7 +148,7 @@ rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
         ul  = P2 0 (scaleY y1)
 
 
-plotPath2 :: [(u,v)] -> SparkM u v SparkPath
+plotPath2 :: [(u,v)] -> SparkLineM u v SparkPath
 plotPath2 pairs = liftA2 plot (asks rescale_x)  (asks rescale_y)
   where
     plot scaleX scaleY = vertexPath $ map (makePoint scaleX scaleY) pairs

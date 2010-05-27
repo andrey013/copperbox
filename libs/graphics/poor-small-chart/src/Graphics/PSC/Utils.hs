@@ -12,6 +12,8 @@
 --
 -- Utilities
 --
+-- WARNING - all out of date?
+--
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.Utils
@@ -19,8 +21,6 @@ module Graphics.PSC.Utils
     XRange
   , YRange
   , minMax2
-  , rescale
-  , clamp
   
   ) where
 
@@ -41,18 +41,3 @@ minMax2 (P2 x0 y0:ps) = foldr fn ((x0,x0),(y0,y0)) ps
         xrange = (min x xlo, max x xhi)
         yrange = (min y ylo, max y yhi)
 
-
-rescale :: Fractional a => a -> a -> a -> a -> a -> a
-rescale amin amax bmin bmax a = 
-    bmin + offset * (output_range / input_range)  
-  where
-    input_range   = amax - amin
-    output_range  = bmax - bmin
-    offset        = a - amin 
-
-
--- | @clamp min max a@ - clamp a to be with in the bounds 
--- min..max
---
-clamp :: Ord a => a -> a -> a -> a
-clamp amin amax a = max amin (min amax a)

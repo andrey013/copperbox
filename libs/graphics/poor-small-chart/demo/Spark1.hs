@@ -3,7 +3,6 @@
 module Sparky1 where
 
 import Graphics.PSC.SparkLine
-import Graphics.PSC.Utils 
 
 import Wumpus.Extra.SVGColours 
 
@@ -22,8 +21,8 @@ attrs1 = SparkLineConfig
              { point_size          = 24
              , word_length         = 10
              , y_band              = Just (aquamarine, 0.3, 0.8)
-             , x_rescale           = rescale 0.1 1 0 100
-             , y_rescale           = rescale 0   1 0 100
+             , x_range             = (0.1, 1, id)
+             , y_range             = (0,   1, id)
              }
 
 
