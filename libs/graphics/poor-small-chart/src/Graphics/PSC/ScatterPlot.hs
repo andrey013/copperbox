@@ -30,13 +30,16 @@ module Graphics.PSC.ScatterPlot
 
   -- * Draw
   , drawScatterPlot
+  , drawMulti
  
   ) where
 
+import Graphics.PSC.Axis
 import Graphics.PSC.Core
 import Graphics.PSC.RenderMonad
 
 import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Extra.SVGColours
 
 import Control.Applicative
 -- import Control.Monad
@@ -76,11 +79,21 @@ run (ScatterPlotConfig {plot_width, plot_height, x_range, y_range}) mf =
     height  = fromIntegral plot_height
 
 drawScatterPlot :: ScatterPlotConfig u v -> DotData u v -> ScatterPlot
-drawScatterPlot attr (props,points) = 
-     snd $ run attr mkPicture
-   where
-     mkPicture = do { tellList =<< plotDots (dot_radius props) (dot_colour props) points
-                    }
+drawScatterPlot attr dot_data = snd $ run attr $ plotLayer dot_data
+                   
+
+-- NOTE constraints on this type sig are too tight...
+drawMulti :: (Fractional u, RealFloat u, Num u, Num v) 
+          => ScatterPlotConfig u v -> AxisLabel u -> [DotData u v] -> ScatterPlot
+drawMulti attr axis_lbl layers = snd $ run attr $ do 
+    mapM_ plotLayer layers
+    tellList =<< xlabels axis_lbl
+
+
+plotLayer :: DotData u v -> ScatterPlotM u v ()
+plotLayer (props,points) = 
+    tellList =<< plotDots (dot_radius props) (dot_colour props) points
+    
 
 
 plotDots :: DotRadius -> DRGB -> [(u,v)] -> ScatterPlotM u v [DPrimitive] 
