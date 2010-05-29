@@ -29,6 +29,7 @@ import Numeric
 
 data AxisLabel u = AxisLabel
       { label_font      :: FontAttr
+      , font_colour     :: DRGB
       , start_value     :: u
       , step_count      :: Int
       , step_fun        :: u -> u
@@ -42,20 +43,33 @@ xaxis rgb n width start_pt = return [baseline]
     tot_width = width * fromIntegral n
     baseline  = ostroke rgb $ vertexPath [start_pt , start_pt .+^ hvec tot_width]
 
-xlabels :: Num v => AxisLabel u -> RenderM u v [DPrimitive]
-xlabels attr@(AxisLabel {label_font,render_fun}) = 
-    mapM (xlabel1 label_font render_fun) $ 
+xlabels :: AxisLabel u -> RenderM u v [DPrimitive]
+xlabels attr@(AxisLabel {label_font,font_colour,render_fun}) = 
+    mapM (xlabel1 font_colour label_font render_fun) $ 
         take (step_count attr) $ iterate (step_fun attr) (start_value attr)
 
+xlabel1 :: DRGB -> FontAttr -> (u -> String) -> u -> RenderM u v DPrimitive
+xlabel1 rgb font_attr toString val = 
+    origin        >>= \(P2 _ y) -> 
+    scaleX val    >>= \x        ->
+    return $ textlabel (rgb,font_attr) (toString val) (P2 x (y-2 * f_height))
+  where
+    f_height = textHeight $ font_size $ font_attr
 
--- NOTE - (val,0) - should not be 0, but the minimum value from
--- the y_range of the plot...
---
--- Maybe Geom needs extending to supply access to this value.
---
-xlabel1 :: Num v => FontAttr -> (u -> String) -> u -> RenderM u v DPrimitive
-xlabel1 font_attr toString val = scalePoint (val,0) >>= \ pt ->
-              return $ textlabel font_attr (toString val) pt
+
+ylabels :: AxisLabel v -> RenderM u v [DPrimitive]
+ylabels attr@(AxisLabel {label_font,font_colour,render_fun}) = 
+    mapM (ylabel1 font_colour label_font render_fun) $ 
+        take (step_count attr) $ iterate (step_fun attr) (start_value attr)
+
+ylabel1 :: DRGB -> FontAttr -> (v -> String) -> v -> RenderM u v DPrimitive
+ylabel1 rgb font_attr toString val = 
+    origin        >>= \(P2 x _) -> 
+    scaleY val    >>= \y        ->
+    return $ textlabel (rgb,font_attr) label_text (P2 (x - f_width) y)
+  where
+    label_text = toString val
+    f_width = textWidth (font_size $ font_attr) (length label_text)
 
 
 ffloat :: RealFloat u => Int -> u -> String

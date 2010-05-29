@@ -18,6 +18,7 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
+  demo/data/iris.data
   demo/IrisParser.hs,
   demo/Scatter1.hs,
   demo/Spark1.hs

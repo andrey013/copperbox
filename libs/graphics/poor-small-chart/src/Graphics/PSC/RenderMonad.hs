@@ -31,6 +31,9 @@ module Graphics.PSC.RenderMonad
   , mbTell
 
   , scalePoint
+  , scaleX
+  , scaleY
+  , origin
   
   -- * General monad function
   , mbM
@@ -54,17 +57,21 @@ data Geom xu yu = Geom
       , rect_width          :: Double
       , rescale_x           :: xu -> Double
       , rescale_y           :: yu -> Double
+      , geom_origin         :: DPoint2
       }
 
 
 makeGeom :: Double -> Double -> Range xu -> Range yu -> Geom xu yu
-makeGeom width height range_x range_y = Geom 
-    { rect_width   = width
-    , rect_height  = height
-    , rescale_x    = makeRescaleX width  range_x
-    , rescale_y    = makeRescaleY height range_y
+makeGeom width height range_x@(x0,_,_) range_y@(y0,_,_) = Geom 
+    { rect_width    = width
+    , rect_height   = height
+    , rescale_x     = rescaleX
+    , rescale_y     = rescaleY
+    , geom_origin   = P2 (rescaleX x0) (rescaleY y0)
     }
-
+  where
+    rescaleX        = makeRescaleX width  range_x
+    rescaleY        = makeRescaleY height range_y
 
 makeRescaleX :: Double -> Range u -> (u -> Double)
 makeRescaleX width (x0,x1,fn) = rescale (fn x0) (fn x1) 0 width . fn
@@ -121,7 +128,16 @@ scalePoint (u,v) = fn <$> asks rescale_x <*> asks rescale_y
     fn f g = P2 (f u) (g v)
 
 
+scaleX :: u -> RenderM u v Double
+scaleX u = ($ u) <$> asks rescale_x
 
+scaleY :: v -> RenderM u v Double
+scaleY v = ($ v) <$> asks rescale_y
+
+origin :: RenderM u v DPoint2
+origin = asks geom_origin
+
+ 
 mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)
 mbM _  Nothing  = return Nothing
 mbM mf (Just a) = mf a >>= return . Just 

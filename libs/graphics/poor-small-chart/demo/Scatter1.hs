@@ -29,7 +29,7 @@ demo01 = do
     case ans of
       Nothing -> putStrLn "no go"
       Just (setosa, versicolor, virginica) -> do 
-          let pic = drawMulti attrs1 x_axis_label $ 
+          let pic = drawMulti attrs1 (x_axis_label, y_axis_label) $ 
                      [ (sepalProps, map slsw setosa)
                      , (versicolorProps, map slsw versicolor)
                      , (virginicaProps, map slsw virginica)
@@ -65,8 +65,19 @@ slsw iris = (sepal_length iris, sepal_width iris)
 x_axis_label :: AxisLabel Double
 x_axis_label = AxisLabel
       { label_font      = helvetica10
+      , font_colour     = black
       , start_value     = 4.5
       , step_count      = 4
       , step_fun        = (+1.0)
+      , render_fun      = ffloat 1
+      }
+
+y_axis_label :: AxisLabel Double
+y_axis_label = AxisLabel
+      { label_font      = helvetica10
+      , font_colour     = black
+      , start_value     = 2.0
+      , step_count      = 5
+      , step_fun        = (+0.5)
       , render_fun      = ffloat 1
       }

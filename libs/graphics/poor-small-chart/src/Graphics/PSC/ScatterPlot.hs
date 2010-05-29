@@ -39,7 +39,6 @@ import Graphics.PSC.Core
 import Graphics.PSC.RenderMonad
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Extra.SVGColours
 
 import Control.Applicative
 -- import Control.Monad
@@ -83,11 +82,14 @@ drawScatterPlot attr dot_data = snd $ run attr $ plotLayer dot_data
                    
 
 -- NOTE constraints on this type sig are too tight...
-drawMulti :: (Fractional u, RealFloat u, Num u, Num v) 
-          => ScatterPlotConfig u v -> AxisLabel u -> [DotData u v] -> ScatterPlot
-drawMulti attr axis_lbl layers = snd $ run attr $ do 
+drawMulti :: ScatterPlotConfig u v 
+          -> (AxisLabel u,AxisLabel v) 
+          -> [DotData u v] 
+          -> ScatterPlot
+drawMulti attr (x_axis_lbl, y_axis_lbl) layers = snd $ run attr $ do 
     mapM_ plotLayer layers
-    tellList =<< xlabels axis_lbl
+    tellList =<< xlabels x_axis_lbl
+    tellList =<< ylabels y_axis_lbl
 
 
 plotLayer :: DotData u v -> ScatterPlotM u v ()
