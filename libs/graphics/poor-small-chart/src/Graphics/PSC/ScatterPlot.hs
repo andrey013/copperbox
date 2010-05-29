@@ -81,15 +81,13 @@ drawScatterPlot :: ScatterPlotConfig u v -> DotData u v -> ScatterPlot
 drawScatterPlot attr dot_data = snd $ run attr $ plotLayer dot_data
                    
 
--- NOTE constraints on this type sig are too tight...
 drawMulti :: ScatterPlotConfig u v 
-          -> (AxisLabel u,AxisLabel v) 
+          -> AxisLabelConfig u v 
           -> [DotData u v] 
           -> ScatterPlot
-drawMulti attr (x_axis_lbl, y_axis_lbl) layers = snd $ run attr $ do 
+drawMulti attr axis_lbl_cfg layers = snd $ run attr $ do 
     mapM_ plotLayer layers
-    tellList =<< xlabels x_axis_lbl
-    tellList =<< ylabels y_axis_lbl
+    tellList =<< axisLabels axis_lbl_cfg
 
 
 plotLayer :: DotData u v -> ScatterPlotM u v ()

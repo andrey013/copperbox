@@ -25,7 +25,11 @@ module Graphics.PSC.Core
   , rescale
   , clamp
   
+  , ffloat
+  
   ) where
+
+import Numeric
 
 
 -- | PointSize - synonymously font size.
@@ -57,3 +61,10 @@ rescale amin amax bmin bmax a =
 --
 clamp :: Ord a => a -> a -> a -> a
 clamp amin amax a = max amin (min amax a)
+
+
+
+-- | As per showFFloat but makes a String...
+--
+ffloat :: RealFloat u => Int -> u -> String
+ffloat prec = ($ "") . showFFloat (Just prec)

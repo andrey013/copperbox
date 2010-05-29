@@ -8,6 +8,8 @@
 module Scatter where
 
 import IrisParser
+import Graphics.PSC.Axis
+import Graphics.PSC.Core
 import Graphics.PSC.ScatterPlot
 
 import Wumpus.Extra.SafeFonts           -- package: wumpus-core
@@ -15,7 +17,6 @@ import Wumpus.Extra.SVGColours
 
 import System.Directory
 
-import Graphics.PSC.Axis -- TEMP
 
 
 main :: IO ()
@@ -29,7 +30,7 @@ demo01 = do
     case ans of
       Nothing -> putStrLn "no go"
       Just (setosa, versicolor, virginica) -> do 
-          let pic = drawMulti attrs1 (x_axis_label, y_axis_label) $ 
+          let pic = drawMulti attrs1 axis_label_cfg $ 
                      [ (sepalProps, map slsw setosa)
                      , (versicolorProps, map slsw versicolor)
                      , (virginicaProps, map slsw virginica)
@@ -62,22 +63,22 @@ slsw iris = (sepal_length iris, sepal_width iris)
 -- x-axis 4.5, 5.5, 6.5, 7.5
 -- y-axis 2.0, 2.5, 3.0, 3.5, 4.0
 
-x_axis_label :: AxisLabel Double
-x_axis_label = AxisLabel
+axis_label_cfg :: AxisLabelConfig Double Double
+axis_label_cfg = AxisLabelConfig
       { label_font      = helvetica10
       , font_colour     = black
-      , start_value     = 4.5
-      , step_count      = 4
-      , step_fun        = (+1.0)
-      , render_fun      = ffloat 1
+      , x_axis_alg      = Just $ AxisLabelAlg 
+          { start_value     = 4.5
+          , step_count      = 4
+          , step_fun        = (+1.0)
+          , render_fun      = ffloat 1
+          }
+      , y_axis_alg      = Just $ AxisLabelAlg
+          { start_value     = 2.0
+          , step_count      = 5
+          , step_fun        = (+0.5)
+          , render_fun      = ffloat 1
+          }
       }
 
-y_axis_label :: AxisLabel Double
-y_axis_label = AxisLabel
-      { label_font      = helvetica10
-      , font_colour     = black
-      , start_value     = 2.0
-      , step_count      = 5
-      , step_fun        = (+0.5)
-      , render_fun      = ffloat 1
-      }
+-- Hmmm, its simpler to specify the numbers here though...
