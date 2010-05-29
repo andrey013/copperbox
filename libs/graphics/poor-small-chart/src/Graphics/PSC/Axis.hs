@@ -27,7 +27,7 @@ import Graphics.PSC.RenderMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 
--- import Data.AffineSpace                 -- package: vector-space 
+import Data.AffineSpace                 -- package: vector-space 
 
 import Control.Applicative
 
@@ -100,3 +100,22 @@ xaxis rgb n width start_pt = return [baseline]
 --------------------------------------------------------------------------------
 -- Grids
 
+data GridConfig = GridConfig
+      { line_width      :: Double
+      , line_colour     :: Double 
+      }
+
+
+{-
+hlines :: GridConfig -> AxisLabelAlg u -> v -> RenderM u v [DPrimitive]
+hlines grid_cfg (AxisLabelAlg {start_value,step_fun}) v = 
+    generatePoints (start_value,v) (step_fun, id) >>= \ps      ->
+    verticalBounds                                >>= \(y0,y1) ->
+    return $ map (\pt -> path pt [lineTo $ pt .+^ vvec (y1-y0)]) ps
+
+-}
+
+{-
+grid :: GridConfig -> RenderM u v [DPrimitive]
+grid (GridConfig {line_width,line_colour}) xstep ystep pt = 
+-}

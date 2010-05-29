@@ -114,16 +114,17 @@ strokeSparkPath (SparkLineProps {line_width, line_colour}) =
 
 
 rangeBand :: DRGB -> (v,v) -> SparkLineM u v DPrimitive
-rangeBand rgb (y0,y1) = liftA2 mkBand (asks rect_width) (asks rescale_y)
+rangeBand rgb (y0,y1) = 
+    mkBand <$> (asks rect_width) <*> scaleY y0 <*> scaleY y1
   where
-    mkBand w scaleY = fill rgb $ vertexPath [bl,br,ur,ul]
+    mkBand w ya yb = fill rgb $ vertexPath [bl,br,ur,ul]
       where
-        bl  = P2 0 (scaleY y0)
-        br  = P2 w (scaleY y0)
-        ur  = P2 w (scaleY y1)
-        ul  = P2 0 (scaleY y1)
+        bl  = P2 0 ya
+        br  = P2 w ya
+        ur  = P2 w yb
+        ul  = P2 0 yb
 
 
 plotPath :: [(u,v)] -> SparkLineM u v SparkPath
-plotPath pairs = vertexPath <$> mapM scalePoint pairs
+plotPath coords = vertexPath <$> mapM scaleCoord coords
 

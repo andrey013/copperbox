@@ -81,4 +81,6 @@ axis_label_cfg = AxisLabelConfig
           }
       }
 
+-- x major major (start_value,step_fun)
+
 -- Hmmm, its simpler to specify the numbers here though...

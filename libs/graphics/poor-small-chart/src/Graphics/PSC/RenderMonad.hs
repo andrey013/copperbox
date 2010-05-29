@@ -30,10 +30,19 @@ module Graphics.PSC.RenderMonad
   , tellList
   , mbTell
 
-  , scalePoint
+  , scaleCoord
   , scaleX
   , scaleY
   , origin
+  , horizontalBounds
+  , verticalBounds
+  , containsPoint
+  , containsCoord
+
+  , hstroke
+  , vstroke
+
+  , generatePoints
   
   -- * General monad function
   , mbM
@@ -57,7 +66,7 @@ data Geom xu yu = Geom
       , rect_width          :: Double
       , rescale_x           :: xu -> Double
       , rescale_y           :: yu -> Double
-      , geom_origin         :: DPoint2
+      , origin_point        :: DPoint2
       }
 
 
@@ -67,7 +76,7 @@ makeGeom width height range_x@(x0,_,_) range_y@(y0,_,_) = Geom
     , rect_height   = height
     , rescale_x     = rescaleX
     , rescale_y     = rescaleY
-    , geom_origin   = P2 (rescaleX x0) (rescaleY y0)
+    , origin_point  = P2 (rescaleX x0) (rescaleY y0)
     }
   where
     rescaleX        = makeRescaleX width  range_x
@@ -122,10 +131,9 @@ mbTell mbp = RenderM $ \_ w -> ((), mbCons mbp w)
     mbCons (Just a) = consH a
 
 
-scalePoint :: (u,v) -> RenderM u v DPoint2
-scalePoint (u,v) = fn <$> asks rescale_x <*> asks rescale_y
-  where
-    fn f g = P2 (f u) (g v)
+scaleCoord :: (u,v) -> RenderM u v DPoint2
+scaleCoord (u,v) = P2 <$> scaleX u <*> scaleY v
+
 
 
 scaleX :: u -> RenderM u v Double
@@ -135,7 +143,44 @@ scaleY :: v -> RenderM u v Double
 scaleY v = ($ v) <$> asks rescale_y
 
 origin :: RenderM u v DPoint2
-origin = asks geom_origin
+origin = asks origin_point
+
+horizontalBounds :: RenderM u v (Double,Double)
+horizontalBounds = fn <$> origin <*> asks rect_width
+  where
+    fn (P2 x0 _) w = (x0, x0+w)
+
+verticalBounds :: RenderM u v (Double,Double)
+verticalBounds = fn <$> origin <*> asks rect_height
+  where
+    fn (P2 _ y0) h = (y0, y0+h)
+
+containsPoint :: DPoint2 -> RenderM u v Bool
+containsPoint (P2 x y) = fn <$> horizontalBounds <*> verticalBounds
+  where
+    fn (x0,x1) (y0,y1) = contains x0 x1 x && contains y0 y1 y
+
+containsCoord :: (u,v) -> RenderM u v Bool
+containsCoord coord = scaleCoord coord >>= containsPoint
+
+
+hstroke :: Stroke t => t -> v -> RenderM u v DPrimitive
+hstroke props v = fn <$> scaleY v <*> horizontalBounds
+  where
+    fn y (x0,x1) = ostroke props $ path (P2 x0 y) [lineTo $ P2 x1 y]
+
+vstroke :: Stroke t => t -> u -> RenderM u v DPrimitive
+vstroke props h = fn <$> scaleX h <*> verticalBounds
+  where
+    fn x (y0,y1) = ostroke props $ path (P2 x y0) [lineTo $ P2 x y1]
+
+
+generatePoints :: (u,v) -> (u -> u, v -> v) -> RenderM u v [DPoint2]
+generatePoints (u,v) (f,g) = unfoldrM phi (u,v) where
+  phi (x,y) = scaleCoord (x,y) >>= \pt  -> 
+              containsPoint pt >>= \ans ->
+              if ans then return $ Just (pt,(f x,g y)) else return Nothing
+
 
  
 mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)

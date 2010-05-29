@@ -16,7 +16,12 @@
 
 module Graphics.PSC.Utils
   (
-    H
+
+  -- * unfoldrM
+   unfoldrM
+
+  -- * Hughes list
+  , H
   , emptyH
   , consH
   , snocH
@@ -26,6 +31,14 @@ module Graphics.PSC.Utils
 
   ) where
 
+
+unfoldrM :: Monad m => (st -> m (Maybe (a,st))) -> st -> m [a]
+unfoldrM phi st = phi st >>= \ans -> case ans of 
+    Nothing      -> return []
+    Just (x,st') -> do {xs <- unfoldrM phi st'; return (x:xs) }
+
+--------------------------------------------------------------------------------
+-- Hughes list
 
 type H a = [a] -> [a]
 

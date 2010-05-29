@@ -97,7 +97,8 @@ plotLayer (props,points) =
 
 
 plotDots :: DotRadius -> DRGB -> [(u,v)] -> ScatterPlotM u v [DPrimitive] 
-plotDots lw rgb pairs = mapM (\pair -> dot lw rgb <$> scalePoint pair) pairs  
+plotDots lw rgb coords = 
+    mapM (\coord -> dot lw rgb <$> scaleCoord coord) coords  
 
 dot :: DotRadius -> DRGB -> DPoint2 -> DPrimitive
 dot dr rgb pt = ellipse rgb dr dr pt 

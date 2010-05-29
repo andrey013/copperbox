@@ -24,6 +24,7 @@ module Graphics.PSC.Core
   -- * functions
   , rescale
   , clamp
+  , contains
   
   , ffloat
   
@@ -62,6 +63,13 @@ rescale amin amax bmin bmax a =
 clamp :: Ord a => a -> a -> a -> a
 clamp amin amax a = max amin (min amax a)
 
+
+-- | @contains : min * max * a -> Bool @ 
+-- 
+-- Is a within in the bounds min..max?
+--
+contains :: Ord a => a -> a -> a -> Bool
+contains amin amax a = a >= amin && a <= amax
 
 
 -- | As per showFFloat but makes a String...
