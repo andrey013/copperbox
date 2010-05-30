@@ -34,6 +34,9 @@ module Graphics.PSC.RenderMonad
   , scaleX
   , scaleY
   , origin
+  , xAxisRange
+  , yAxisRange
+
   , horizontalBounds
   , verticalBounds
   , containsPoint
@@ -61,22 +64,29 @@ type Trace = H DPrimitive
 newtype RenderM xu yu a = RenderM { 
             getRenderM :: Geom xu yu -> Trace -> (a,Trace) }
 
+-- maybe x-to-y aspect ratio rather than 
+-- (rect-height, rect-width)...
+
 data Geom xu yu = Geom 
       { rect_height         :: Double
       , rect_width          :: Double
       , rescale_x           :: xu -> Double
       , rescale_y           :: yu -> Double
       , origin_point        :: DPoint2
+      , x_axis_range        :: (xu,xu)
+      , y_axis_range        :: (yu,yu)
       }
 
 
 makeGeom :: Double -> Double -> Range xu -> Range yu -> Geom xu yu
-makeGeom width height range_x@(x0,_,_) range_y@(y0,_,_) = Geom 
+makeGeom width height range_x@(x0,x1,_) range_y@(y0,y1,_) = Geom 
     { rect_width    = width
     , rect_height   = height
     , rescale_x     = rescaleX
     , rescale_y     = rescaleY
     , origin_point  = P2 (rescaleX x0) (rescaleY y0)
+    , x_axis_range  = (x0,x1)
+    , y_axis_range  = (y0,y1)
     }
   where
     rescaleX        = makeRescaleX width  range_x
@@ -145,6 +155,14 @@ scaleY v = ($ v) <$> asks rescale_y
 origin :: RenderM u v DPoint2
 origin = asks origin_point
 
+xAxisRange :: RenderM u v (u,u)
+xAxisRange = asks x_axis_range
+
+yAxisRange :: RenderM u v (v,v)
+yAxisRange = asks y_axis_range
+
+
+
 horizontalBounds :: RenderM u v (Double,Double)
 horizontalBounds = fn <$> origin <*> asks rect_width
   where
@@ -182,10 +200,6 @@ generatePoints (u,v) (f,g) = unfoldrM phi (u,v) where
               if ans then return $ Just (pt,(f x,g y)) else return Nothing
 
 
- 
-mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)
-mbM _  Nothing  = return Nothing
-mbM mf (Just a) = mf a >>= return . Just 
 
 
 

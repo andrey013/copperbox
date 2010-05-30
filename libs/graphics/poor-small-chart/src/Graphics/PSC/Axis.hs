@@ -11,7 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC - NamedFieldPuns
 --
--- Spark line
+-- Axes / grids
 --
 --------------------------------------------------------------------------------
 
@@ -20,6 +20,10 @@ module Graphics.PSC.Axis
     AxisLabelConfig(..)
   , AxisLabelAlg(..)
   , axisLabels
+
+  , GridConfig(..)
+  , hlines
+  , vlines
 
   ) where
 
@@ -89,33 +93,35 @@ ylabel1 (rgb,font_attrs) toString val =
     f_width = textWidth (font_size $ font_attrs) (length label_text)
 
 
-{-
-xaxis :: DRGB -> Int -> Double -> DPoint2 -> RenderM u v [DPrimitive]
-xaxis rgb n width start_pt = return [baseline]
-  where
-    tot_width = width * fromIntegral n
-    baseline  = ostroke rgb $ vertexPath [start_pt , start_pt .+^ hvec tot_width]
--}
 
 --------------------------------------------------------------------------------
 -- Grids
 
 data GridConfig = GridConfig
-      { line_width      :: Double
-      , line_colour     :: Double 
+      { line_colour     :: DRGB 
+      , line_width      :: Double
       }
 
 
-{-
-hlines :: GridConfig -> AxisLabelAlg u -> v -> RenderM u v [DPrimitive]
-hlines grid_cfg (AxisLabelAlg {start_value,step_fun}) v = 
+
+
+vlines :: GridConfig -> AxisLabelAlg u -> RenderM u v [DPrimitive]
+vlines grid_cfg (AxisLabelAlg {start_value,step_fun}) = 
+    yAxisRange                                    >>= \(v,_) ->
     generatePoints (start_value,v) (step_fun, id) >>= \ps      ->
     verticalBounds                                >>= \(y0,y1) ->
-    return $ map (\pt -> path pt [lineTo $ pt .+^ vvec (y1-y0)]) ps
+    return $ map (\pt -> sf $ path pt [lineTo $ pt .+^ vvec (y1-y0)]) ps
+  where
+    sf = ostroke (line_colour grid_cfg, [LineWidth $ line_width grid_cfg])
 
--}
 
-{-
-grid :: GridConfig -> RenderM u v [DPrimitive]
-grid (GridConfig {line_width,line_colour}) xstep ystep pt = 
--}
+
+hlines :: GridConfig -> AxisLabelAlg v -> RenderM u v [DPrimitive]
+hlines grid_cfg (AxisLabelAlg {start_value,step_fun}) = 
+    xAxisRange                                    >>= \(u,_) ->
+    generatePoints (u,start_value) (id, step_fun) >>= \ps      ->
+    horizontalBounds                              >>= \(x0,x1) ->
+    return $ map (\pt -> sf $ path pt [lineTo $ pt .+^ hvec (x1-x0)]) ps
+  where
+    sf = ostroke (line_colour grid_cfg, [LineWidth $ line_width grid_cfg])
+

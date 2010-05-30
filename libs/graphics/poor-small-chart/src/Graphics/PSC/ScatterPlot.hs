@@ -86,8 +86,18 @@ drawMulti :: ScatterPlotConfig u v
           -> [DotData u v] 
           -> ScatterPlot
 drawMulti attr axis_lbl_cfg layers = snd $ run attr $ do 
-    mapM_ plotLayer layers
     tellList =<< axisLabels axis_lbl_cfg
+    -- TEMP
+    case y_axis_alg axis_lbl_cfg of
+      Nothing -> return ()
+      Just alg -> tellList =<< hlines (GridConfig (RGB3 0 0 0.25) 0.5) alg
+
+    case x_axis_alg axis_lbl_cfg of
+      Nothing -> return ()
+      Just alg -> tellList =<< vlines (GridConfig (RGB3 0 0 0.25) 0.5) alg
+
+    -- plot layers last
+    mapM_ plotLayer layers
 
 
 plotLayer :: DotData u v -> ScatterPlotM u v ()

@@ -17,8 +17,9 @@
 module Graphics.PSC.Utils
   (
 
-  -- * unfoldrM
-   unfoldrM
+  -- * functions
+    unfoldrM
+  , mbM
 
   -- * Hughes list
   , H
@@ -36,6 +37,12 @@ unfoldrM :: Monad m => (st -> m (Maybe (a,st))) -> st -> m [a]
 unfoldrM phi st = phi st >>= \ans -> case ans of 
     Nothing      -> return []
     Just (x,st') -> do {xs <- unfoldrM phi st'; return (x:xs) }
+
+ 
+mbM :: Monad m => (a -> m b) -> Maybe a ->  m (Maybe b)
+mbM _  Nothing  = return Nothing
+mbM mf (Just a) = mf a >>= return . Just 
+
 
 --------------------------------------------------------------------------------
 -- Hughes list

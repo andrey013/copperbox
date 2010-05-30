@@ -52,9 +52,9 @@ virginicaProps = ScatterPlotProps 3 blue
 attrs1 :: ScatterPlotConfig Double Double  
 attrs1 = ScatterPlotConfig
              { plot_width          = 200
-             , plot_height         = 200
+             , plot_height         = 200 -- 320
              , x_range             = (4.0, 8.0, id)
-             , y_range             = (2.0, 6.0, id)
+             , y_range             = (2.0, 4.5, id)
              }
 
 slsw :: IrisData -> (Double,Double)
@@ -75,7 +75,7 @@ axis_label_cfg = AxisLabelConfig
           }
       , y_axis_alg      = Just $ AxisLabelAlg
           { start_value     = 2.0
-          , step_count      = 5
+          , step_count      = 6
           , step_fun        = (+0.5)
           , render_fun      = ffloat 1
           }
@@ -84,3 +84,4 @@ axis_label_cfg = AxisLabelConfig
 -- x major major (start_value,step_fun)
 
 -- Hmmm, its simpler to specify the numbers here though...
+
