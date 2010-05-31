@@ -5,7 +5,7 @@
 -- See:
 -- http://en.wikipedia.org/wiki/Iris_flower_data_set
 
-module Scatter where
+module Scatter1 where
 
 import IrisParser
 import Graphics.PSC.Axis
@@ -20,9 +20,8 @@ import System.Directory
 
 
 main :: IO ()
-main = do 
-    createDirectoryIfMissing True "./out/"
-    sequence_ [ demo01 ]
+main = createDirectoryIfMissing True "./out/"
+    >> demo01
 
 demo01 :: IO ()
 demo01 = do 

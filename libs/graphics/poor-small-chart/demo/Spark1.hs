@@ -8,6 +8,10 @@ import Wumpus.Extra.SVGColours
 
 import System.Directory
 
+import Wumpus.Core -- TEMP
+
+z01 = textWidth 24 10
+
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"   >> 
        sequence_ [ demo1 ]
@@ -44,3 +48,7 @@ spark1 = [ (0.1, 0.95)
          , (0.9, 0.25) 
          , (1,   0.2)
          ]
+
+
+trx :: (Double,Double) -> (Double,Double)
+trx (x,y) = ((x-0.1)*143.5, y*24.0)

@@ -2,6 +2,7 @@
 
 module SparkTWO where
 
+import Graphics.PSC.Core
 import Graphics.PSC.SparkLineTWO
 
 import Wumpus.Core ( textWidth, textHeight )
@@ -11,17 +12,24 @@ import Wumpus.Extra.SVGColours
 
 import System.Directory
 
-
+main :: IO ()
 main =  createDirectoryIfMissing True "./out/"
      >> writeChartEPS "./out/spark2.eps" chart1
      >> writeChartSVG "./out/spark2.svg" chart1
 
-chart1 = compileSparkLine (SparkLine spark_size spark_scale spark_stroke data_points)
+chart1 :: Chart
+chart1 = renderSparkLine (SparkLine spark_size 
+                                    spark_scale 
+                                    spark_stroke 
+                                    data_points)
 
+spark_stroke :: LineConfiguration
 spark_stroke = LineConfiguration black 0.5 Nothing
 
+spark_size :: SparkLineConfiguration Double
 spark_size = SparkLineConfiguration 24 10 (Just (aquamarine, 0.3, 0.8))
 
+spark_scale :: XYProjection Double Double
 spark_scale = ( Projection id (0.1) (w / 0.9)
               , Projection id 0      h  )
 
@@ -42,43 +50,3 @@ data_points =
     , (1,   0.2)
     ]
 
-
-{-
-
-
-import Wumpus.Extra.SVGColours 
-
-import System.Directory
-
-import Wumpus.Core -- TEMP
-
-
-main :: IO ()
-main = createDirectoryIfMissing True "./out/"   >> 
-       sequence_ [ demo1 ]
-
-demo1 :: IO ()
-demo1 = writeSparkLineSVG "./out/spark1.svg" pic1 >>
-        writeSparkLineEPS "./out/spark1.eps" pic1
-
-attrs1 :: SparkLineConfig Double Double  
-attrs1 = SparkLineConfig
-             { point_size          = 24
-             , word_length         = 10
-             , y_band              = Just (aquamarine, 0.3, 0.8)
-             , x_range             = (0.1, 1, id)
-             , y_range             = (0,   1, id)
-             }
-
-
-
-pic1 :: SparkLine
-pic1 = drawSparkLine attrs1 ((SparkLineProps 0.5 black),spark1)
-
-
-
-
-trx :: (Double,Double) -> (Double,Double)
-trx (x,y) = ((x-0.1)*143.5, y*24.0)
-
--}

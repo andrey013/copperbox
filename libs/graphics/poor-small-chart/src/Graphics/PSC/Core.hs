@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,20 +18,70 @@
 module Graphics.PSC.Core
   (
   -- * Types
-    PointSize
+    Chart
+  , Dataset
+  , LineConfiguration(..)
+  , DashConfiguration(..)
+  , Projection(..)
+  , XYProjection
+  
+  , PointSize
   , LineWidth
   , Range
 
+  -- * Output
+  , writeChartEPS
+  , writeChartSVG
+
   -- * functions
+  , makeStrokeProps
+  , makeProjector
+  
   , rescale
   , clamp
   , contains
   
   , ffloat
+  , minMax
   
   ) where
 
+
+import Wumpus.Core
+
+import Data.Maybe
 import Numeric
+
+
+
+type Chart = DPicture
+
+
+type Dataset u v = [(u,v)]
+
+
+data LineConfiguration = LineConfiguration
+      { line_colour       :: DRGB
+      , line_width        :: Double
+      , opt_dash_pattern  :: Maybe DashConfiguration
+      }
+
+
+data DashConfiguration = DashConfiguration 
+       { dash_offset    :: Int 
+       , on_off_pairs   :: [(Int,Int)] 
+       }
+
+
+data Projection u = Projection 
+      { proj_conv   :: u -> Double
+      , proj_trans  :: Double
+      , proj_scale  :: Double
+      }
+
+type XYProjection u v = (Projection u, Projection v)
+
+--------------------------------------------------------------------------------
 
 
 -- | PointSize - synonymously font size.
@@ -45,6 +96,39 @@ type LineWidth = Double
 -- | 'Range' @ (min,max, toDouble) @
 --
 type Range u = (u, u, u -> Double)
+
+
+
+
+--------------------------------------------------------------------------------
+-- Output
+
+writeChartEPS :: FilePath -> Chart -> IO ()
+writeChartEPS = writeEPS_latin1 
+
+
+writeChartSVG :: FilePath -> Chart -> IO ()
+writeChartSVG = writeSVG_latin1 
+
+
+--------------------------------------------------------------------------------
+
+
+makeStrokeProps :: LineConfiguration -> (DRGB,[StrokeAttr])
+makeStrokeProps (LineConfiguration rgb lw mb_dash) = 
+    (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
+  where
+    mkDash (DashConfiguration offset xs) = DashPattern $ Dash offset xs
+
+
+makeProjector :: Projection u -> (u -> Double)
+makeProjector (Projection {proj_conv,proj_trans,proj_scale}) = 
+    \u -> ((proj_conv u) - proj_trans) * proj_scale
+
+
+
+--------------------------------------------------------------------------------
+
 
 -- @rescale old_min old_max  new_min new_max  a@
 --
@@ -76,3 +160,11 @@ contains amin amax a = a >= amin && a <= amax
 --
 ffloat :: RealFloat u => Int -> u -> String
 ffloat prec = ($ "") . showFFloat (Just prec)
+
+
+minMax :: (Ord u, Ord v) => Dataset u v -> ((u,v), (u,v))
+minMax (x:xs) = foldr fn (x,x) xs where
+    fn (u,v) ((u0,v0),(u1,v1)) = ((min u u0, min v v0), (max u u1, max v v1))
+minMax _                    = error $ "minMax - empty dataset."
+
+
