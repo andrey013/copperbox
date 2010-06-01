@@ -46,7 +46,7 @@ drect :: DrawingRectangle
 drect = DrawingRectangle 300 300
 
 scatter_scale :: XYProjection Double Double
-scatter_scale = (Projection id 4.0 70, Projection id 2.0 50)
+scatter_scale = (Projection id 4.0 (300/4), Projection id 2.0 (300/2.5))
 
 
 sepal_cfg       :: LayerConfiguration 
@@ -71,15 +71,13 @@ grid_cfg = GridConfig
 
 axis_x :: AxisLabelAlg Double
 axis_x = AxisLabelAlg
-           { start_value     = 2.0
-           , step_fun        = (+0.5)
-           , render_fun      = undefined
+           { start_value     = 4.5
+           , step_fun        = (+1.0)
            }
 
 axis_y :: AxisLabelAlg Double
 axis_y = AxisLabelAlg
-           { start_value     = 4.5
-           , step_fun        = (+1.0)
-           , render_fun      = undefined
+           { start_value     = 2.0
+           , step_fun        = (+0.5)
            }
      

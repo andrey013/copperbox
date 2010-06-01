@@ -29,14 +29,13 @@ import Data.AffineSpace                 -- package: vector-space
 data AxisLabelConfig u v = AxisLabelConfig
       { label_font      :: FontAttr
       , font_colour     :: DRGB
-      , x_axis_alg      :: Maybe (AxisLabelAlg u)
-      , y_axis_alg      :: Maybe (AxisLabelAlg v)
+      , x_axis_alg      :: Maybe (AxisLabelAlg u, u -> String)
+      , y_axis_alg      :: Maybe (AxisLabelAlg v, v -> String)
       } 
 
 data AxisLabelAlg unit = AxisLabelAlg
       { start_value     :: unit
       , step_fun        :: unit -> unit
-      , render_fun      :: unit -> String
       }
 
 {-
@@ -105,35 +104,35 @@ drawGrid (fX,fY) (GridConfig {grid_line, grid_x_axis, grid_y_axis}) rect =
   where
     xs = case grid_x_axis of 
            Nothing  -> []
-           Just alg -> hlines fX grid_line alg rect
+           Just alg -> verticalLines fX grid_line alg rect
 
     ys = case grid_y_axis of 
            Nothing  -> []
-           Just alg -> vlines fY grid_line alg rect
+           Just alg -> horizontalLines fY grid_line alg rect
 
 
 
-hlines :: (v -> Double)
-       -> LineConfiguration 
-       -> AxisLabelAlg v 
-       -> DrawingRectangle
-       -> [DPrimitive]
-hlines fY line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
-    map (\pt -> sf $ path pt [lineTo $ pt .+^ hvec rect_width]) points
-  where
-    points  = map (\y -> P2 0 y) $ yvalues fY axis_alg rect_height
-    sf      = ostroke (makeStrokeProps line_cfg)
-
-
-vlines :: (u -> Double) 
-       -> LineConfiguration 
-       -> AxisLabelAlg u 
-       -> DrawingRectangle
-       -> [DPrimitive]
-vlines fX line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
+verticalLines :: (u -> Double)
+              -> LineConfiguration 
+              -> AxisLabelAlg u
+              -> DrawingRectangle
+              -> [DPrimitive]
+verticalLines fX line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
     map (\pt -> sf $ path pt [lineTo $ pt .+^ vvec rect_height]) points
   where
     points  = map (\x -> P2 x 0) $ xvalues fX axis_alg rect_width
+    sf      = ostroke (makeStrokeProps line_cfg)
+
+
+horizontalLines :: (v -> Double) 
+                -> LineConfiguration 
+                -> AxisLabelAlg v
+                -> DrawingRectangle
+                -> [DPrimitive]
+horizontalLines fY line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
+    map (\pt -> sf $ path pt [lineTo $ pt .+^ hvec rect_width]) points
+  where
+    points  = map (\y -> P2 0 y) $ yvalues fY axis_alg rect_height
     sf      = ostroke (makeStrokeProps line_cfg)
 
 
