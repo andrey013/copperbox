@@ -18,7 +18,7 @@
 module Graphics.PSC.ScatterPlotTWO
   where
 
-import Graphics.PSC.Axis
+import Graphics.PSC.AxisTWO
 import Graphics.PSC.Core
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -26,6 +26,9 @@ import Wumpus.Core                      -- package: wumpus-core
 
 data ScatterPlot u v = ScatterPlot
       { scatterplot_projs     :: XYProjection u v
+      , scatterplot_rect      :: DrawingRectangle
+      , scatterplot_grid      :: Maybe (GridConfig u v)
+      , scatterplot_legend    :: Maybe ()
       , scatterplot_layers    :: [(LayerConfiguration, Dataset u v)]
       }
 
@@ -36,16 +39,22 @@ data LayerConfiguration = LayerConfiguration
       }  
 
 
-
+-- Fraction constraint is temporary////
 renderScatterPlot :: ScatterPlot u v -> Chart
-renderScatterPlot (ScatterPlot (px,py) ls) = 
-    frameMulti $ concat layers
+renderScatterPlot (ScatterPlot (px,py) rect grid legend ls) = 
+    apply_grid pic_layers
   where
-    layers = map (makeLayer (fX,fY)) ls
+    pic_layers  = frameMulti $ concat layers
 
-   
-    fX     = makeProjector px
-    fY     = makeProjector py
+    apply_grid  = case grid of 
+                   Nothing -> id
+                   Just gd -> (\p -> p `picOver` (frameMulti $ drawGrid (fX,fY) gd rect))
+
+    layers      = map (makeLayer (fX,fY)) ls
+
+
+    fX          = makeProjector px
+    fY          = makeProjector py
 
 
 makeLayer :: (u -> Double,v -> Double) 

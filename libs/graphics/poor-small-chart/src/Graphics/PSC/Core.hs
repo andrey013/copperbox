@@ -20,6 +20,7 @@ module Graphics.PSC.Core
   -- * Types
     Chart
   , Dataset
+  , DrawingRectangle(..)
   , LineConfiguration(..)
   , DashConfiguration(..)
   , Projection(..)
@@ -59,6 +60,11 @@ type Chart = DPicture
 
 type Dataset u v = [(u,v)]
 
+
+data DrawingRectangle = DrawingRectangle
+      { rect_width        :: Double
+      , rect_height       :: Double
+      }
 
 data LineConfiguration = LineConfiguration
       { line_colour       :: DRGB
