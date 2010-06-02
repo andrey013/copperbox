@@ -35,7 +35,6 @@ library
     Graphics.PSC.SparkLine
 
   other-modules:
-    Graphics.PSC.RenderMonad,
     Graphics.PSC.Utils
 
   extensions:

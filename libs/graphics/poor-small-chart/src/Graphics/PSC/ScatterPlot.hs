@@ -16,99 +16,57 @@
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.ScatterPlot
-  ( 
-  -- * Types
-    ScatterPlot
-  , DotRadius
-  , Pt72
-  , ScatterPlotConfig(..)
-  , ScatterPlotProps(..)
-
-  -- * Write to file
-  , writeScatterPlotEPS
-  , writeScatterPlotSVG
-
-  -- * Draw
-  , drawScatterPlot
-  , drawMulti
- 
-  ) where
+  where
 
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
-import Graphics.PSC.RenderMonad
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Control.Applicative
--- import Control.Monad
 
-type ScatterPlot = DPicture
-type DotRadius   = Double
-type Pt72        = Int
-
-data ScatterPlotConfig xu yu = ScatterPlotConfig
-      { plot_width          :: Pt72
-      , plot_height         :: Pt72
-      , x_range             :: Range xu
-      , y_range             :: Range yu
+data ScatterPlot u v = ScatterPlot
+      { scatterplot_projs     :: XYProjection u v
+      , scatterplot_rect      :: DrawingRectangle
+      , scatterplot_grid      :: Maybe (GridConfig u v)
+      , scatterplot_legend    :: Maybe ()
+      , scatterplot_layers    :: [(LayerConfig, Dataset u v)]
       }
 
-data ScatterPlotProps = ScatterPlotProps
-      { dot_radius         :: DotRadius
-      , dot_colour         :: DRGB
-      }
 
-type DotData xu yu = (ScatterPlotProps,[(xu,yu)]) 
-
-writeScatterPlotEPS :: FilePath -> ScatterPlot -> IO ()
-writeScatterPlotEPS = writeEPS_latin1 
+data LayerConfig = LayerConfig
+      { dot_colour      :: DRGB
+      , dot_radius      :: Double
+      }  
 
 
-writeScatterPlotSVG :: FilePath -> ScatterPlot -> IO ()
-writeScatterPlotSVG = writeSVG_latin1 
-
-type ScatterPlotM u v a = RenderM u v a
-
-run :: ScatterPlotConfig u v -> ScatterPlotM u v a -> (a,DPicture)
-run (ScatterPlotConfig {plot_width, plot_height, x_range, y_range}) mf = 
-    runRender (makeGeom width height x_range y_range) mf
+-- Fraction constraint is temporary////
+renderScatterPlot :: ScatterPlot u v -> Chart
+renderScatterPlot (ScatterPlot (px,py) rect mb_grid _legend ls) = 
+    concatBackgrounds pic_layers [ grid ]
   where
-    width   = fromIntegral plot_width
-    height  = fromIntegral plot_height
+    pic_layers  = frameMulti $ concat layers
 
-drawScatterPlot :: ScatterPlotConfig u v -> DotData u v -> ScatterPlot
-drawScatterPlot attr dot_data = snd $ run attr $ plotLayer dot_data
-                   
+    grid        = fmap (\x -> frameMulti $ drawGrid (fX,fY) x rect) mb_grid
 
-drawMulti :: ScatterPlotConfig u v 
-          -> AxisLabelConfig u v 
-          -> [DotData u v] 
-          -> ScatterPlot
-drawMulti attr axis_lbl_cfg layers = snd $ run attr $ do 
-    tellList =<< axisLabels axis_lbl_cfg
-    -- TEMP
-    case y_axis_alg axis_lbl_cfg of
-      Nothing -> return ()
-      Just alg -> tellList =<< hlines (GridConfig (RGB3 0 0 0.25) 0.5) alg
-
-    case x_axis_alg axis_lbl_cfg of
-      Nothing -> return ()
-      Just alg -> tellList =<< vlines (GridConfig (RGB3 0 0 0.25) 0.5) alg
-
-    -- plot layers last
-    mapM_ plotLayer layers
+    layers      = map (makeLayer (fX,fY)) ls
 
 
-plotLayer :: DotData u v -> ScatterPlotM u v ()
-plotLayer (props,points) = 
-    tellList =<< plotDots (dot_radius props) (dot_colour props) points
-    
+    fX          = makeProjector px
+    fY          = makeProjector py
 
 
-plotDots :: DotRadius -> DRGB -> [(u,v)] -> ScatterPlotM u v [DPrimitive] 
-plotDots lw rgb coords = 
-    mapM (\coord -> dot lw rgb <$> scaleCoord coord) coords  
+makeLayer :: (u -> Double,v -> Double) 
+          -> (LayerConfig,Dataset u v) 
+          -> [DPrimitive]
+makeLayer (fX,fY) (layer,ds) = map (makeDot (fX,fY) layer) ds 
 
-dot :: DotRadius -> DRGB -> DPoint2 -> DPrimitive
-dot dr rgb pt = ellipse rgb dr dr pt 
+
+makeDot :: (u -> Double,v -> Double) -> LayerConfig -> (u,v) -> DPrimitive
+makeDot (fX,fY) (LayerConfig rgb radius) (u,v) = 
+    dot rgb radius (P2 (fX u) (fY v))
+
+
+dot :: DRGB -> Double -> DPoint2 -> DPrimitive
+dot rgb radius pt = ellipse rgb radius radius pt 
+

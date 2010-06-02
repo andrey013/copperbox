@@ -21,8 +21,8 @@ module Graphics.PSC.Core
     Chart
   , Dataset
   , DrawingRectangle(..)
-  , LineConfiguration(..)
-  , DashConfiguration(..)
+  , LineConfig(..)
+  , DashConfig(..)
   , Projection(..)
   , XYProjection
   
@@ -63,14 +63,14 @@ data DrawingRectangle = DrawingRectangle
       , rect_height       :: Double
       }
 
-data LineConfiguration = LineConfiguration
+data LineConfig = LineConfig
       { line_colour       :: DRGB
       , line_width        :: Double
-      , opt_dash_pattern  :: Maybe DashConfiguration
+      , opt_dash_pattern  :: Maybe DashConfig
       }
 
 
-data DashConfiguration = DashConfiguration 
+data DashConfig = DashConfig
        { dash_offset    :: Int 
        , on_off_pairs   :: [(Int,Int)] 
        }

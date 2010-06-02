@@ -49,11 +49,11 @@ import Data.Maybe
 --------------------------------------------------------------------------------
 -- drawing
 
-makeStrokeProps :: LineConfiguration -> (DRGB,[StrokeAttr])
-makeStrokeProps (LineConfiguration rgb lw mb_dash) = 
+makeStrokeProps :: LineConfig -> (DRGB,[StrokeAttr])
+makeStrokeProps (LineConfig rgb lw mb_dash) = 
     (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
   where
-    mkDash (DashConfiguration offset xs) = DashPattern $ Dash offset xs
+    mkDash (DashConfig offset xs) = DashPattern $ Dash offset xs
 
 
 makeProjector :: Projection u -> (u -> Double)

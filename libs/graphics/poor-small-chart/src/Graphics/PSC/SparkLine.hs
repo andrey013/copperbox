@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.SparkLine
+-- Module      :  Graphics.PSC.SparkLineTWO
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,114 +17,83 @@
 
 module Graphics.PSC.SparkLine
   (
-  
-  -- * Datatypes
-    SparkLine
+  -- * Data types
+    SparkLine(..)
   , SparkLineConfig(..)
-  , SparkLineProps(..)
   , RangeBand
 
-  -- * Write to file
-  , writeSparkLineEPS
-  , writeSparkLineSVG
-  
   -- * Draw
-  , drawSparkLine  
+  , renderSparkLine  
 
   ) where
 
-import Graphics.PSC.Core hiding ( line_width, line_colour, rect_width )
-import Graphics.PSC.RenderMonad
+import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Control.Applicative
+import Data.Maybe
 
-
-type SparkLine = DPicture
-type SparkPath = DPath
-
-
-data SparkLineConfig xu yu = SparkLineConfig
-      { point_size          :: PointSize
-      , word_length         :: Int
-      , y_band              :: Maybe (RangeBand yu)
-      , x_range             :: Range xu
-      , y_range             :: (yu,yu, yu -> Double)
+     
+data SparkLine u v = SparkLine
+      { sparkline_config  :: SparkLineConfig v
+      , sparkline_projs   :: XYProjection u v
+      , sparkline_style   :: LineConfig
+      , sparkline_data    :: Dataset u v
       }
 
-
-data SparkLineProps = SparkLineProps
-      { line_width          :: LineWidth
-      , line_colour         :: DRGB
+data SparkLineConfig v = SparkLineConfig
+      { font_height     :: PointSize
+      , letter_count    :: Int
+      , opt_range_band  :: Maybe (RangeBand v)
       }
+
 
 type RangeBand yu = (DRGB, yu, yu) 
 
-type LineData xu yu = (SparkLineProps,[(xu,yu)]) 
 
-writeSparkLineEPS :: FilePath -> SparkLine -> IO ()
-writeSparkLineEPS = writeEPS_latin1 
-
-
-writeSparkLineSVG :: FilePath -> SparkLine -> IO ()
-writeSparkLineSVG = writeSVG_latin1 
-
-
-type SparkLineM u v a = RenderM u v a
-
-
--- | Rescale in X according the box length - calculated from
--- the /word length/.
---
--- Remember that a spark line is a /dataword/ in Edward Tufte\'s
--- terminology. So we want it to have a size similar to a word in 
--- the current font.
---
-
-
-run :: SparkLineConfig u v -> SparkLineM u v a -> (a,DPicture)
-run cfg@(SparkLineConfig {point_size,word_length}) mf = 
-    runRender (makeGeom width height (x_range cfg) (y_range cfg)) mf
+renderSparkLine :: SparkLine u v -> Chart
+renderSparkLine (SparkLine c (px,py) props ds) = 
+    frameMulti $ catMaybes [ Just sline, bkgrnd ]
   where
-    width   = textWidth    point_size word_length 
-    height  = fromIntegral point_size
+    sline  = ostroke (makeStrokeProps props) $ vertexPath points
+    points = map (\(u,v) -> P2 (fX u) (fY v)) ds
+    
+
+    bkgrnd = fmap (makeRangeBand fY (w,h)) $ opt_range_band c
+    (w,h)  = pictureSize c
+
+    fX     = makeProjector px
+    fY     = makeProjector py
 
 
-drawSparkLine :: SparkLineConfig u v -> LineData u v -> SparkLine
-drawSparkLine attr (props,points) = 
-     snd $ run attr mkPicture
-   where
-     mkPicture = do { mbTell =<< mbRangeBand (y_band attr) 
-                    ; sline  <- plotPath points
-                    ; tell $ strokeSparkPath props sline
-                    }
-
-
-mbRangeBand :: Maybe (RangeBand v) -> SparkLineM u v (Maybe DPrimitive)
-mbRangeBand = mbM (\(rgb,y0,y1) -> rangeBand rgb (y0,y1))
-
-
-
-strokeSparkPath :: SparkLineProps -> SparkPath -> DPrimitive
-strokeSparkPath (SparkLineProps {line_width, line_colour}) = 
-    ostroke (line_colour, attrs) 
+makeRangeBand :: (v -> Double) -> (Double,Double) -> RangeBand v -> DPrimitive
+makeRangeBand fY (width,_) (rgb,y0,y1) = fill rgb $ vertexPath [bl,br,ur,ul]
   where
-    attrs = [LineWidth line_width, LineCap CapRound, LineJoin JoinRound]
+    (ya,yb) = (fY y0,fY y1) 
+    bl      = P2 0     ya
+    br      = P2 width ya
+    ur      = P2 width yb
+    ul      = P2 0     yb
 
 
-rangeBand :: DRGB -> (v,v) -> SparkLineM u v DPrimitive
-rangeBand rgb (y0,y1) = 
-    mkBand <$> (asks rect_width) <*> scaleY y0 <*> scaleY y1
-  where
-    mkBand w ya yb = fill rgb $ vertexPath [bl,br,ur,ul]
-      where
-        bl  = P2 0 ya
-        br  = P2 w ya
-        ur  = P2 w yb
-        ul  = P2 0 yb
+
+pictureSize :: SparkLineConfig v -> (Double,Double)
+pictureSize (SparkLineConfig {font_height,letter_count}) =
+  (textWidth font_height letter_count, fromIntegral font_height)  
 
 
-plotPath :: [(u,v)] -> SparkLineM u v SparkPath
-plotPath coords = vertexPath <$> mapM scaleCoord coords
+
+
+
+-- Start and end dots - need to see the dataset
+-- Min and max dots   - need to see the dataset
+-- Range band         - needs to know how wide the spark line is
+--                      or the min x and max x (then rescales)
+
+
+-- It\'s unsafe to take the scaling directly from the data. 
+-- 
+-- Do this meanas that you can\'t satck one spark line on 
+-- another -- this is the problem the initial scatter plot had.
 
