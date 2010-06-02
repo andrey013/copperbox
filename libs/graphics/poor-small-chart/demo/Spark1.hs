@@ -14,8 +14,8 @@ import System.Directory
 
 main :: IO ()
 main =  createDirectoryIfMissing True "./out/"
-     >> writeChartEPS "./out/spark2.eps" chart1
-     >> writeChartSVG "./out/spark2.svg" chart1
+     >> writeChartEPS "./out/spark1.eps" chart1
+     >> writeChartSVG "./out/spark1.svg" chart1
 
 chart1 :: Chart
 chart1 = renderSparkLine (SparkLine spark_size 

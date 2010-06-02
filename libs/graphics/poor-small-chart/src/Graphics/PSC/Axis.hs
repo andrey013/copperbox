@@ -16,7 +16,17 @@
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.Axis
-  where
+  ( 
+  -- * Axes
+    AxisLabelConfig(..)
+  , AxisLabelAlg(..)
+  , drawAxes
+
+  -- * Grids
+  , GridConfig(..)
+  , drawGrid
+
+  ) where
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
@@ -29,8 +39,7 @@ import Wumpus.Core                      -- package: wumpus-core
 
 
 data AxisLabelConfig u v = AxisLabelConfig
-      { label_font      :: FontAttr
-      , font_colour     :: DRGB
+      { axis_label_cfg  :: LabelConfig
       , x_axis_cfg      :: Maybe (AxisLabelAlg u, u -> String)
       , y_axis_cfg      :: Maybe (AxisLabelAlg v, v -> String)
       } 
@@ -41,9 +50,6 @@ data AxisLabelAlg unit = AxisLabelAlg
       }
 
 
-
-fontProps :: AxisLabelConfig u v -> (DRGB,FontAttr)
-fontProps (AxisLabelConfig {font_colour,label_font}) = (font_colour,label_font)
 
 
 -- NOTE - need a bit more sophistication to offest labels...
@@ -59,6 +65,11 @@ drawAxes (fX,fY) axis_cfg@(AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
     vf = maybeHf (\z -> verticalLabels   fY font_attr z rect) y_axis_cfg
     
     font_attr = fontProps axis_cfg
+
+fontProps :: AxisLabelConfig u v -> (DRGB,FontAttr)
+fontProps (AxisLabelConfig {axis_label_cfg}) = 
+    (label_text_colour axis_label_cfg, label_font axis_label_cfg)
+
     
 
 horizontalLabels :: (u -> Double) 

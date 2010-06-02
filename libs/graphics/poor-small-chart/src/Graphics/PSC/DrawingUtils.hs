@@ -28,7 +28,9 @@ module Graphics.PSC.DrawingUtils
 
   -- * text labels
   , textlabelN
+  , textlabelS
   , textlabelE
+  , textlabelW
   
   ) where
 
@@ -88,6 +90,17 @@ textlabelN :: Fractional u
            => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
 textlabelN = makeTextlabel (\w ch -> V2 (w*0.5) ch)
 
+
+
+textlabelS :: Fractional u 
+           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelS = makeTextlabel (\w _ -> V2 (w*0.5) 0)
+
+
 textlabelE :: Fractional u 
            => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
 textlabelE = makeTextlabel (\w ch -> V2 w (ch*0.5))
+
+textlabelW :: Fractional u 
+           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelW = makeTextlabel (\_ ch -> V2 0 (ch*0.5))

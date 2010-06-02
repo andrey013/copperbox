@@ -23,6 +23,7 @@ module Graphics.PSC.Core
   , DrawingRectangle(..)
   , LineConfig(..)
   , DashConfig(..)
+  , LabelConfig(..)
   , Projection(..)
   , XYProjection
   
@@ -59,27 +60,30 @@ type Dataset u v = [(u,v)]
 
 
 data DrawingRectangle = DrawingRectangle
-      { rect_width        :: Double
-      , rect_height       :: Double
+      { rect_width              :: Double
+      , rect_height             :: Double
       }
 
 data LineConfig = LineConfig
-      { line_colour       :: DRGB
-      , line_width        :: Double
-      , opt_dash_pattern  :: Maybe DashConfig
+      { line_colour             :: DRGB
+      , line_width              :: Double
+      , opt_dash_pattern        :: Maybe DashConfig
       }
 
-
 data DashConfig = DashConfig
-       { dash_offset    :: Int 
-       , on_off_pairs   :: [(Int,Int)] 
-       }
+      { dash_offset             :: Int 
+      , on_off_pairs            :: [(Int,Int)] 
+      }
 
+data LabelConfig = LabelConfig
+      { label_font              :: FontAttr
+      , label_text_colour       :: DRGB
+      }
 
 data Projection u = Projection 
-      { proj_conv   :: u -> Double
-      , proj_trans  :: Double
-      , proj_scale  :: Double
+      { proj_conv               :: u -> Double
+      , proj_trans              :: Double
+      , proj_scale              :: Double
       }
 
 type XYProjection u v = (Projection u, Projection v)

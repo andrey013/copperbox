@@ -41,8 +41,8 @@ demo01 = do
                          , (virginica_cfg,  map slsw virginica)
                          ]
 
-          writeChartEPS "./out/scatter01.eps" pic
-          writeChartSVG "./out/scatter01.svg" pic
+          writeChartEPS "./out/scatter1.eps" pic
+          writeChartSVG "./out/scatter1.svg" pic
 
 
 
@@ -68,8 +68,7 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { label_font      = courier24
-      , font_colour     = black
+      { axis_label_cfg  = LabelConfig courier24 black
       , x_axis_cfg      = Just (axis_x, ffloat 1)
       , y_axis_cfg      = Just (axis_y, ffloat 1)
       } 
@@ -84,13 +83,13 @@ grid_cfg = GridConfig
 
 axis_x :: AxisLabelAlg Double
 axis_x = AxisLabelAlg
-           { start_value     = 4.5
-           , step_fun        = (+1.0)
-           }
+      { start_value     = 4.5
+      , step_fun        = (+1.0)
+      }
 
 axis_y :: AxisLabelAlg Double
 axis_y = AxisLabelAlg
-           { start_value     = 2.0
-           , step_fun        = (+0.5)
-           }
+      { start_value     = 2.0
+      , step_fun        = (+0.5)
+      }
      

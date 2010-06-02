@@ -33,6 +33,7 @@ library
   exposed-modules:
     Graphics.PSC.Axis,
     Graphics.PSC.Core,
+    Graphics.PSC.Legend,
     Graphics.PSC.ScatterPlot,
     Graphics.PSC.SparkLine
 
