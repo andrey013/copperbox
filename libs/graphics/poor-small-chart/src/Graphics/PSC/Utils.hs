@@ -23,6 +23,7 @@ module Graphics.PSC.Utils
   , makeProjector
 
   , concatBackgrounds
+  , straightLine
 
   -- * functions
   , unfoldrM
@@ -43,6 +44,8 @@ module Graphics.PSC.Utils
 import Graphics.PSC.Core
 
 import Wumpus.Core                      -- package: wumpus-core
+
+import Data.AffineSpace                 -- package: vector-space
 
 import Data.Maybe
 
@@ -68,6 +71,9 @@ concatBackgrounds top bkgrds = foldr fn top bkgrds
   where
     fn Nothing      p1 = p1
     fn (Just bkgrd) p1 = p1 `picOver` bkgrd
+
+straightLine :: Num u => Point2 u -> Vec2 u -> Path u
+straightLine pt v = path pt [lineTo $ pt .+^ v]
 
 
 --------------------------------------------------------------------------------

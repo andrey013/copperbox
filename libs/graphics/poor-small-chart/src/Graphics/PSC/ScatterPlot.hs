@@ -16,6 +16,15 @@
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.ScatterPlot
+  (
+  -- * Data types
+    ScatterPlot(..)
+  , DotConfig(..)
+
+  -- * Draw
+  , renderScatterPlot
+
+  )
   where
 
 import Graphics.PSC.Axis
@@ -30,11 +39,11 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_rect      :: DrawingRectangle
       , scatterplot_grid      :: Maybe (GridConfig u v)
       , scatterplot_legend    :: Maybe ()
-      , scatterplot_layers    :: [(LayerConfig, Dataset u v)]
+      , scatterplot_layers    :: [(DotConfig, Dataset u v)]
       }
 
 
-data LayerConfig = LayerConfig
+data DotConfig = DotConfig
       { dot_colour      :: DRGB
       , dot_radius      :: Double
       }  
@@ -57,13 +66,13 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid _legend ls) =
 
 
 makeLayer :: (u -> Double,v -> Double) 
-          -> (LayerConfig,Dataset u v) 
+          -> (DotConfig,Dataset u v) 
           -> [DPrimitive]
-makeLayer (fX,fY) (layer,ds) = map (makeDot (fX,fY) layer) ds 
+makeLayer (fX,fY) (dotcfg,ds) = map (makeDot (fX,fY) dotcfg) ds 
 
 
-makeDot :: (u -> Double,v -> Double) -> LayerConfig -> (u,v) -> DPrimitive
-makeDot (fX,fY) (LayerConfig rgb radius) (u,v) = 
+makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> DPrimitive
+makeDot (fX,fY) (DotConfig rgb radius) (u,v) = 
     dot rgb radius (P2 (fX u) (fY v))
 
 

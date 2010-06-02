@@ -25,7 +25,9 @@ extra-source-files:
   
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, wumpus-core >= 0.19.0
+  build-depends:      base         < 5, 
+                      vector-space >= 0.6,
+                      wumpus-core  >= 0.19.0
 
   
   exposed-modules:

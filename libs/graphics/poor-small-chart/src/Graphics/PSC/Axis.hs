@@ -23,7 +23,7 @@ import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space 
+-- import Data.AffineSpace                 -- package: vector-space 
 
 
 
@@ -39,10 +39,14 @@ data AxisLabelAlg unit = AxisLabelAlg
       , step_fun        :: unit -> unit
       }
 
-{-
+
 
 fontProps :: AxisLabelConfig u v -> (DRGB,FontAttr)
 fontProps (AxisLabelConfig {font_colour,label_font}) = (font_colour,label_font)
+
+
+
+{-
 
 axisLabels :: AxisLabelConfig u v -> RenderM u v [DPrimitive]
 axisLabels cfg = (++) <$> optLabels xlabels (x_axis_alg cfg)
@@ -118,10 +122,11 @@ verticalLines :: (u -> Double)
               -> AxisLabelAlg u
               -> DrawingRectangle
               -> [DPrimitive]
-verticalLines fX line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
-    map (\pt -> sf $ path pt [lineTo $ pt .+^ vvec rect_height]) points
+verticalLines fX line_cfg axis_alg draw_rect = 
+    map (\pt -> sf $ straightLine pt upvec) points
   where
-    points  = map (\x -> P2 x 0) $ xvalues fX axis_alg rect_width
+    points  = horizontalPoints 0 fX axis_alg draw_rect
+    upvec   = vvec $ rect_height draw_rect
     sf      = ostroke (makeStrokeProps line_cfg)
 
 
@@ -130,19 +135,51 @@ horizontalLines :: (v -> Double)
                 -> AxisLabelAlg v
                 -> DrawingRectangle
                 -> [DPrimitive]
-horizontalLines fY line_cfg axis_alg (DrawingRectangle {rect_width,rect_height}) = 
-    map (\pt -> sf $ path pt [lineTo $ pt .+^ hvec rect_width]) points
+horizontalLines fY line_cfg axis_alg draw_rect = 
+    map (\pt -> sf $ straightLine pt rightvec) points
   where
-    points  = map (\y -> P2 0 y) $ yvalues fY axis_alg rect_height
-    sf      = ostroke (makeStrokeProps line_cfg)
+    points      = verticalPoints 0 fY axis_alg draw_rect
+    rightvec    = hvec $ rect_width draw_rect
+    sf          = ostroke (makeStrokeProps line_cfg)
 
 
-xvalues :: (u -> Double) ->  AxisLabelAlg u -> Double -> [Double]
-xvalues fX (AxisLabelAlg {start_value,step_fun}) width = 
-  takeWhile (< width) $ map fX $ iterate step_fun start_value
+
+--------------------------------------------------------------------------------
+-- Enumerate x-y values, generate points
+
+horizontalPoints :: Double 
+                 -> (u -> Double) 
+                 -> AxisLabelAlg u 
+                 -> DrawingRectangle 
+                 -> [DPoint2]
+horizontalPoints y0 fX axis_alg rect = 
+    map (\x -> P2 x y0) $ xvalues fX axis_alg rect
 
 
-yvalues :: (v -> Double) ->  AxisLabelAlg v -> Double -> [Double]
-yvalues fY (AxisLabelAlg {start_value,step_fun}) height = 
-  takeWhile (< height) $ map fY $ iterate step_fun start_value
+verticalPoints :: Double 
+               -> (v -> Double) 
+               -> AxisLabelAlg v
+               -> DrawingRectangle 
+               -> [DPoint2]
+verticalPoints x0 fY axis_alg rect = 
+    map (\y -> P2 x0 y) $ yvalues fY axis_alg rect
 
+
+xvalues :: (u -> Double) ->  AxisLabelAlg u -> DrawingRectangle -> [Double]
+xvalues fX (AxisLabelAlg {start_value,step_fun}) draw_rect = 
+    takeWhile cmp $ map fX $ iterate step_fun start_value
+  where
+    cmp x = x `leqEps` rect_width draw_rect 
+
+yvalues :: (v -> Double) ->  AxisLabelAlg v -> DrawingRectangle -> [Double]
+yvalues fY (AxisLabelAlg {start_value,step_fun}) draw_rect = 
+    takeWhile cmp $ map fY $ iterate step_fun start_value
+  where
+    cmp y = y `leqEps` rect_height draw_rect
+
+leqEps :: Double -> Double -> Bool
+leqEps a b | a < b     = True
+           | otherwise = let diff = a - b in diff < rect_epsilon 
+
+rect_epsilon :: Double 
+rect_epsilon = 0.01

@@ -49,14 +49,14 @@ scatter_scale :: XYProjection Double Double
 scatter_scale = (Projection id 4.0 (300/4), Projection id 2.0 (300/2.5))
 
 
-sepal_cfg       :: LayerConfig 
-sepal_cfg       = LayerConfig red 3
+sepal_cfg       :: DotConfig 
+sepal_cfg       = DotConfig red 3
 
-versicolor_cfg  :: LayerConfig
-versicolor_cfg  = LayerConfig green 3
+versicolor_cfg  :: DotConfig
+versicolor_cfg  = DotConfig green 3
 
-virginica_cfg   :: LayerConfig
-virginica_cfg   = LayerConfig blue 3
+virginica_cfg   :: DotConfig
+virginica_cfg   = DotConfig blue 3
 
 slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)
