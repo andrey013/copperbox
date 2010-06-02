@@ -11,6 +11,7 @@ import IrisParser
 
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
+import Graphics.PSC.Legend
 import Graphics.PSC.ScatterPlot
 
 
@@ -20,6 +21,8 @@ import Wumpus.Extra.SVGColours
 
 import System.Directory
 
+-- TEMP...
+import Wumpus.Core
 
 
 main :: IO ()
@@ -41,10 +44,13 @@ demo01 = do
                          , (virginica_cfg,  map slsw virginica)
                          ]
 
-          writeChartEPS "./out/scatter1.eps" pic
-          writeChartSVG "./out/scatter1.svg" pic
+          writeChartEPS "./out/scatter1.eps" (pic `picBeside` legend)
+          writeChartSVG "./out/scatter1.svg" (pic `picBeside` legend)
 
-
+legend :: DPicture
+legend = drawLegend (LegendConfig (LabelConfig courier24 black) Nothing)
+                    [ (red, "sepal"), (green, "versicolor"), 
+                                      (blue,  "viginica") ]
 
 drect :: DrawingRectangle
 drect = DrawingRectangle 300 300

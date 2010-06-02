@@ -24,6 +24,7 @@ module Graphics.PSC.DrawingUtils
 
   , concatBackgrounds
   , straightLine
+  , rectPoints
 
 
   -- * text labels
@@ -69,6 +70,13 @@ concatBackgrounds top bkgrds = foldr fn top bkgrds
 straightLine :: Num u => Point2 u -> Vec2 u -> Path u
 straightLine pt v = path pt [lineTo $ pt .+^ v]
 
+
+rectPoints :: Num u => u -> u -> Point2 u -> [Point2 u]
+rectPoints w h bl = [ bl, br, tr, tl ]
+  where
+    br = bl .+^ hvec w
+    tr = br .+^ vvec h
+    tl = bl .+^ vvec h 
 
 --------------------------------------------------------------------------------
 
