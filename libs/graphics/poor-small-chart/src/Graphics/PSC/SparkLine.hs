@@ -28,7 +28,7 @@ module Graphics.PSC.SparkLine
   ) where
 
 import Graphics.PSC.Core
-import Graphics.PSC.Utils
+import Graphics.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 

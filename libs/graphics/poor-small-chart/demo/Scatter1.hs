@@ -41,8 +41,10 @@ demo01 = do
                          , (virginica_cfg,  map slsw virginica)
                          ]
 
-          writeChartEPS "./out/scatter02.eps" pic
-          writeChartSVG "./out/scatter02.svg" pic
+          writeChartEPS "./out/scatter01.eps" pic
+          writeChartSVG "./out/scatter01.svg" pic
+
+
 
 drect :: DrawingRectangle
 drect = DrawingRectangle 300 300
@@ -66,7 +68,7 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { label_font      = timesRoman10
+      { label_font      = courier24
       , font_colour     = black
       , x_axis_cfg      = Just (axis_x, ffloat 1)
       , y_axis_cfg      = Just (axis_y, ffloat 1)

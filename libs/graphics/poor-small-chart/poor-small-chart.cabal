@@ -37,6 +37,7 @@ library
     Graphics.PSC.SparkLine
 
   other-modules:
+    Graphics.PSC.DrawingUtils,
     Graphics.PSC.Utils
 
   extensions:

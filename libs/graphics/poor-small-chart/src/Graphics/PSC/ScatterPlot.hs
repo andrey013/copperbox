@@ -29,7 +29,7 @@ module Graphics.PSC.ScatterPlot
 
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
-import Graphics.PSC.Utils
+import Graphics.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 

@@ -19,6 +19,7 @@ module Graphics.PSC.Axis
   where
 
 import Graphics.PSC.Core
+import Graphics.PSC.DrawingUtils
 import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -70,7 +71,7 @@ horizontalLabels fX font_props (axis_alg,textF) draw_rect =
   where
     points      = horizontalPoints 0 fX axis_alg draw_rect
     strs_inf    = map textF $ infValues axis_alg         
-    tf pt lbl   = textlabel font_props lbl pt
+    tf pt lbl   = textlabelN font_props lbl pt
 
 
 verticalLabels :: (v -> Double) 
@@ -83,9 +84,10 @@ verticalLabels fY font_props (axis_alg,textF) draw_rect =
   where
     points      = verticalPoints 0 fY axis_alg draw_rect
     strs_inf    = map textF $ infValues axis_alg         
-    tf pt lbl   = textlabel font_props lbl pt
+    tf pt lbl   = textlabelE font_props lbl pt
 
-
+-- How about a variant of textlabel with position as an arg?
+-- (bl, center, east...)
 
 --------------------------------------------------------------------------------
 -- Grids

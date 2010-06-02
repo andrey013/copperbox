@@ -18,15 +18,8 @@
 module Graphics.PSC.Utils
   (
 
-  -- * drawing
-    makeStrokeProps
-  , makeProjector
-
-  , concatBackgrounds
-  , straightLine
-
   -- * functions
-  , unfoldrM
+    unfoldrM
   , mbM
 
   -- * Hughes list
@@ -41,42 +34,6 @@ module Graphics.PSC.Utils
   ) where
 
 
-import Graphics.PSC.Core
-
-import Wumpus.Core                      -- package: wumpus-core
-
-import Data.AffineSpace                 -- package: vector-space
-
-import Data.Maybe
-
---------------------------------------------------------------------------------
--- drawing
-
-makeStrokeProps :: LineConfig -> (DRGB,[StrokeAttr])
-makeStrokeProps (LineConfig rgb lw mb_dash) = 
-    (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
-  where
-    mkDash (DashConfig offset xs) = DashPattern $ Dash offset xs
-
-
-makeProjector :: Projection u -> (u -> Double)
-makeProjector (Projection {proj_conv,proj_trans,proj_scale}) = 
-    \u -> ((proj_conv u) - proj_trans) * proj_scale
-
-
-
-concatBackgrounds :: (Num u, Ord u) 
-                  => Picture u -> [Maybe (Picture u)] -> Picture u
-concatBackgrounds top bkgrds = foldr fn top bkgrds
-  where
-    fn Nothing      p1 = p1
-    fn (Just bkgrd) p1 = p1 `picOver` bkgrd
-
-straightLine :: Num u => Point2 u -> Vec2 u -> Path u
-straightLine pt v = path pt [lineTo $ pt .+^ v]
-
-
---------------------------------------------------------------------------------
 
 
 unfoldrM :: Monad m => (st -> m (Maybe (a,st))) -> st -> m [a]
