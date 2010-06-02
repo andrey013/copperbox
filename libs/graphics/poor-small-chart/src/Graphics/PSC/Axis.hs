@@ -30,8 +30,8 @@ import Wumpus.Core                      -- package: wumpus-core
 data AxisLabelConfig u v = AxisLabelConfig
       { label_font      :: FontAttr
       , font_colour     :: DRGB
-      , x_axis_alg      :: Maybe (AxisLabelAlg u, u -> String)
-      , y_axis_alg      :: Maybe (AxisLabelAlg v, v -> String)
+      , x_axis_cfg      :: Maybe (AxisLabelAlg u, u -> String)
+      , y_axis_cfg      :: Maybe (AxisLabelAlg v, v -> String)
       } 
 
 data AxisLabelAlg unit = AxisLabelAlg
@@ -45,53 +45,50 @@ fontProps :: AxisLabelConfig u v -> (DRGB,FontAttr)
 fontProps (AxisLabelConfig {font_colour,label_font}) = (font_colour,label_font)
 
 
+-- NOTE - need a bit more sophistication to offest labels...
 
-{-
-
-axisLabels :: AxisLabelConfig u v -> RenderM u v [DPrimitive]
-axisLabels cfg = (++) <$> optLabels xlabels (x_axis_alg cfg)
-                      <*> optLabels ylabels (y_axis_alg cfg)
+drawAxes :: (u -> Double, v -> Double) 
+         -> AxisLabelConfig u v
+         -> DrawingRectangle
+         -> [DPrimitive]
+drawAxes (fX,fY) axis_cfg@(AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
+    toListH $ hf $ vf emptyH
   where
-    optLabels _ Nothing         = return []
-    optLabels f (Just alg)      = f (fontProps cfg) alg
+    hf = maybeHf (\z -> horizontalLabels fX font_attr z rect) x_axis_cfg
+    vf = maybeHf (\z -> verticalLabels   fY font_attr z rect) y_axis_cfg
+    
+    font_attr = fontProps axis_cfg
+    
 
-xlabels :: (DRGB,FontAttr) -> AxisLabelAlg u -> RenderM u v [DPrimitive]
-xlabels dprops attr@(AxisLabelAlg {render_fun}) = 
-    mapM (xlabel1 dprops render_fun) $ 
-        take (step_count attr) $ iterate (step_fun attr) (start_value attr)
-
-
-
-
-xlabel1 :: (DRGB,FontAttr) -> (u -> String) -> u -> RenderM u v DPrimitive
-xlabel1 (rgb,font_attrs) toString val = 
-    origin        >>= \(P2 _ y) -> 
-    scaleX val    >>= \x        ->
-    return $ textlabel (rgb,font_attrs) (toString val) (P2 x (y-2 * f_height))
+horizontalLabels :: (u -> Double) 
+                 -> (DRGB,FontAttr) 
+                 -> (AxisLabelAlg u, u -> String)
+                 -> DrawingRectangle 
+                 -> [DPrimitive]
+horizontalLabels fX font_props (axis_alg,textF) draw_rect = 
+    zipWith tf points strs_inf
   where
-    f_height = textHeight $ font_size $ font_attrs
+    points      = horizontalPoints 0 fX axis_alg draw_rect
+    strs_inf    = map textF $ infValues axis_alg         
+    tf pt lbl   = textlabel font_props lbl pt
 
 
-
-ylabels :: (DRGB,FontAttr) -> AxisLabelAlg v -> RenderM u v [DPrimitive]
-ylabels dprops attr@(AxisLabelAlg {render_fun}) = 
-    mapM (ylabel1 dprops render_fun) $ 
-        take (step_count attr) $ iterate (step_fun attr) (start_value attr)
-
-ylabel1 :: (DRGB,FontAttr) -> (v -> String) -> v -> RenderM u v DPrimitive
-ylabel1 (rgb,font_attrs) toString val = 
-    origin        >>= \(P2 x _) -> 
-    scaleY val    >>= \y        ->
-    return $ textlabel (rgb,font_attrs) label_text (P2 (x - f_width) y)
+verticalLabels :: (v -> Double) 
+               -> (DRGB,FontAttr) 
+               -> (AxisLabelAlg v, v -> String)
+               -> DrawingRectangle 
+               -> [DPrimitive]
+verticalLabels fY font_props (axis_alg,textF) draw_rect = 
+    zipWith tf points strs_inf
   where
-    label_text = toString val
-    f_width = textWidth (font_size $ font_attrs) (length label_text)
+    points      = verticalPoints 0 fY axis_alg draw_rect
+    strs_inf    = map textF $ infValues axis_alg         
+    tf pt lbl   = textlabel font_props lbl pt
 
 
 
 --------------------------------------------------------------------------------
 -- Grids
--}
 
 
 data GridConfig u v = GridConfig
@@ -100,20 +97,22 @@ data GridConfig u v = GridConfig
       , grid_y_axis     :: Maybe (AxisLabelAlg v)
       } 
 
+
+
 drawGrid :: (u -> Double, v -> Double) 
          -> GridConfig u v
          -> DrawingRectangle
          -> [DPrimitive]
 drawGrid (fX,fY) (GridConfig {grid_line, grid_x_axis, grid_y_axis}) rect =
-    xs ++ ys
+    toListH $ vf $ hf emptyH
   where
-    xs = case grid_x_axis of 
-           Nothing  -> []
-           Just alg -> verticalLines fX grid_line alg rect
+    hf = maybeHf (\alg -> horizontalLines fY grid_line alg rect) grid_y_axis
+    vf = maybeHf (\alg -> verticalLines   fX grid_line alg rect) grid_x_axis
 
-    ys = case grid_y_axis of 
-           Nothing  -> []
-           Just alg -> horizontalLines fY grid_line alg rect
+
+maybeHf :: (a -> [b]) -> Maybe a -> (H b -> H b)
+maybeHf _ Nothing  = id
+maybeHf f (Just a) = appendH (fromListH $ f a) 
 
 
 
@@ -166,16 +165,18 @@ verticalPoints x0 fY axis_alg rect =
 
 
 xvalues :: (u -> Double) ->  AxisLabelAlg u -> DrawingRectangle -> [Double]
-xvalues fX (AxisLabelAlg {start_value,step_fun}) draw_rect = 
-    takeWhile cmp $ map fX $ iterate step_fun start_value
+xvalues fX alg draw_rect = takeWhile cmp $ map fX $ infValues alg
   where
     cmp x = x `leqEps` rect_width draw_rect 
 
 yvalues :: (v -> Double) ->  AxisLabelAlg v -> DrawingRectangle -> [Double]
-yvalues fY (AxisLabelAlg {start_value,step_fun}) draw_rect = 
-    takeWhile cmp $ map fY $ iterate step_fun start_value
+yvalues fY alg draw_rect = takeWhile cmp $ map fY $ infValues alg
   where
     cmp y = y `leqEps` rect_height draw_rect
+
+infValues :: AxisLabelAlg unit -> [unit]
+infValues (AxisLabelAlg {start_value,step_fun}) = iterate step_fun start_value 
+
 
 leqEps :: Double -> Double -> Bool
 leqEps a b | a < b     = True

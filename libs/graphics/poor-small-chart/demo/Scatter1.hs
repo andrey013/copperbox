@@ -15,7 +15,7 @@ import Graphics.PSC.ScatterPlot
 
 
 
--- import Wumpus.Extra.SafeFonts           -- package: wumpus-core
+import Wumpus.Extra.SafeFonts           -- package: wumpus-core
 import Wumpus.Extra.SVGColours
 
 import System.Directory
@@ -33,7 +33,9 @@ demo01 = do
       Nothing -> putStrLn "no go"
       Just (setosa, versicolor, virginica) -> do 
           let pic =  renderScatterPlot $ 
-                       ScatterPlot scatter_scale drect (Just grid_cfg) Nothing $ 
+                       ScatterPlot scatter_scale drect 
+                                                 (Just grid_cfg)
+                                                 (Just axes_cfg)  Nothing $ 
                          [ (sepal_cfg,      map slsw setosa)
                          , (versicolor_cfg, map slsw versicolor)
                          , (virginica_cfg,  map slsw virginica)
@@ -60,6 +62,15 @@ virginica_cfg   = DotConfig blue 3
 
 slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)
+
+
+axes_cfg :: AxisLabelConfig Double Double
+axes_cfg = AxisLabelConfig
+      { label_font      = timesRoman10
+      , font_colour     = black
+      , x_axis_cfg      = Just (axis_x, ffloat 1)
+      , y_axis_cfg      = Just (axis_y, ffloat 1)
+      } 
 
 
 grid_cfg :: GridConfig Double Double
