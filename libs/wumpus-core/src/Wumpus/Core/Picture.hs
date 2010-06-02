@@ -503,11 +503,11 @@ infixr 6 `picBeside`, `picOver`
 
 -- | 'picOver' : @ picture -> picture -> picture @
 --
--- Draw the first picture on to off the second picture - 
+-- Draw the first picture on top of the second picture - 
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb) (cons b $ one a) 
+a `picOver` b = Picture (ortho zeroPt, bb) (cons a $ one b) 
   where
     bb = union (boundary a) (boundary b)
 

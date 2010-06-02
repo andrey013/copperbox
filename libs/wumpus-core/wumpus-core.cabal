@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.19.0
+version:          0.20.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -88,7 +88,12 @@ description:
   .
   Changelog:
   .
-  0.18,0 to 0.19.0:
+  0.19.0 to 0.20.0:
+  .
+  * Fixed bug with @picOver@, previously the zorder was wrong 
+    and the function was actually working as /picUnder/. 
+  .
+  0.18.0 to 0.19.0:
   .
   * Added @Transform@ type class to apply a matrix transformation
     directly.
@@ -116,31 +121,6 @@ description:
     is efficient - no extraneous use of @concat@. 
   .
   * Added wumpus_default_font constant.
-  .
-  0.17.0 to 0.18.0:
-  .
-  * Added instances of the affine operation classes (Scale, 
-    Rotate ...) for Primitives (path, text label, ellipse).
-  .
-  * Added some picture composition functions to Core.Picture.
-    These are useful for testing where the type class 
-    complications of Extra.PictureLanguage are an overhead.  
-  .
-  * Added iRGB to Core.Colour - create RGB colours with 
-    integer components [0..255] - and iHSB, iGrey.
-  .
-  * Added some test modules for the affine transformations.
-    These illustrate a quirk in Wumpus where, under affine 
-    transformation, Pictures may generate a larger bounding box 
-    than composite primitives.
-  .
-  * Minor change - ztextlabel changed to use 24pt type rather 
-    than 12pt. 
-  .
-  * Corrected the cabal file to include the correct files for 
-    the manual. The Haskell source file @WorldFrame.hs@ was 
-    missing with the generated file @WorldFrame.eps@ incorrectly 
-    included instead.
   .
   .
 build-type:         Simple

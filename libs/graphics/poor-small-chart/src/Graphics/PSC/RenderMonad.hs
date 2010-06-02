@@ -52,7 +52,7 @@ module Graphics.PSC.RenderMonad
 
   ) where
 
-import Graphics.PSC.Core
+import Graphics.PSC.Core hiding ( rect_width, rect_height )
 import Graphics.PSC.Utils
 
 import Wumpus.Core

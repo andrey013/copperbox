@@ -20,6 +20,7 @@ module Graphics.PSC.ScatterPlotTWO
 
 import Graphics.PSC.AxisTWO
 import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -41,14 +42,12 @@ data LayerConfiguration = LayerConfiguration
 
 -- Fraction constraint is temporary////
 renderScatterPlot :: ScatterPlot u v -> Chart
-renderScatterPlot (ScatterPlot (px,py) rect grid legend ls) = 
-    apply_grid pic_layers
+renderScatterPlot (ScatterPlot (px,py) rect mb_grid legend ls) = 
+    concatBackgrounds pic_layers [ grid ]
   where
     pic_layers  = frameMulti $ concat layers
 
-    apply_grid  = case grid of 
-                   Nothing -> id
-                   Just gd -> (\p -> p `picOver` (frameMulti $ drawGrid (fX,fY) gd rect))
+    grid        = fmap (\x -> frameMulti $ drawGrid (fX,fY) x rect) mb_grid
 
     layers      = map (makeLayer (fX,fY)) ls
 

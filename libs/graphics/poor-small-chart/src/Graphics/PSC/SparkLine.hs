@@ -33,7 +33,7 @@ module Graphics.PSC.SparkLine
 
   ) where
 
-import Graphics.PSC.Core
+import Graphics.PSC.Core hiding ( line_width, line_colour, rect_width )
 import Graphics.PSC.RenderMonad
 
 import Wumpus.Core                      -- package: wumpus-core

@@ -7,6 +7,14 @@ import Wumpus.Extra.PictureLanguage
 
 import System.Directory
 
+
+main :: IO ()
+main = do 
+    createDirectoryIfMissing True "./out/"
+    sequence_  [ demo01, demo02, demo03, demo04, demo05
+               , demo06, demo07, demo08, demo09, demo10
+               , demo11, demo12, demo13, demo14 ]
+
 peru :: PSRgb
 peru = RGB3 0.804  0.522  0.247
 
@@ -197,9 +205,3 @@ demo14 = do
     small_peru  = mkFilledSquare peru  10 `at` P2 10 50
 
 
-main :: IO ()
-main = do 
-    createDirectoryIfMissing True "./out/"
-    sequence_  [ demo01, demo02, demo03, demo04, demo05
-               , demo06, demo07, demo08, demo09, demo10
-               , demo11, demo12, demo13, demo14 ]

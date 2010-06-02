@@ -28,6 +28,7 @@ module Graphics.PSC.SparkLineTWO
   ) where
 
 import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -59,7 +60,7 @@ renderSparkLine (SparkLine c (px,py) props ds) =
     points = map (\(u,v) -> P2 (fX u) (fY v)) ds
     
 
-    bkgrnd = fmap (makeRangeBand tY (w,h)) $ opt_range_band c
+    bkgrnd = fmap (makeRangeBand fY (w,h)) $ opt_range_band c
     (w,h)  = pictureSize c
 
     fX     = makeProjector px

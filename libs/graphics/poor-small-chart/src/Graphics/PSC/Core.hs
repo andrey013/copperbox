@@ -35,8 +35,6 @@ module Graphics.PSC.Core
   , writeChartSVG
 
   -- * functions
-  , makeStrokeProps
-  , makeProjector
   
   , rescale
   , clamp
@@ -50,7 +48,6 @@ module Graphics.PSC.Core
 
 import Wumpus.Core
 
-import Data.Maybe
 import Numeric
 
 
@@ -116,20 +113,6 @@ writeChartEPS = writeEPS_latin1
 writeChartSVG :: FilePath -> Chart -> IO ()
 writeChartSVG = writeSVG_latin1 
 
-
---------------------------------------------------------------------------------
-
-
-makeStrokeProps :: LineConfiguration -> (DRGB,[StrokeAttr])
-makeStrokeProps (LineConfiguration rgb lw mb_dash) = 
-    (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
-  where
-    mkDash (DashConfiguration offset xs) = DashPattern $ Dash offset xs
-
-
-makeProjector :: Projection u -> (u -> Double)
-makeProjector (Projection {proj_conv,proj_trans,proj_scale}) = 
-    \u -> ((proj_conv u) - proj_trans) * proj_scale
 
 
 

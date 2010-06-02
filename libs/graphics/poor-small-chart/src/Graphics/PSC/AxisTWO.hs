@@ -19,6 +19,7 @@ module Graphics.PSC.AxisTWO
   where
 
 import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
