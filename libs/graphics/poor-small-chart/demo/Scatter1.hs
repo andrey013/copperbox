@@ -35,10 +35,7 @@ demo01 = do
     case ans of
       Nothing -> putStrLn "no go"
       Just (setosa, versicolor, virginica) -> do 
-          let pic =  renderScatterPlot $ 
-                       ScatterPlot scatter_scale drect 
-                                                 (Just grid_cfg)
-                                                 (Just axes_cfg)  Nothing $ 
+          let pic =  renderScatterPlot length_width_plot $ 
                          [ (sepal_cfg,      map slsw setosa)
                          , (versicolor_cfg, map slsw versicolor)
                          , (virginica_cfg,  map slsw virginica)
@@ -47,17 +44,24 @@ demo01 = do
           writeChartEPS "./out/scatter1.eps" (pic `picBeside` legend)
           writeChartSVG "./out/scatter1.svg" (pic `picBeside` legend)
 
-legend :: DPicture
-legend = drawLegend (LegendConfig (LabelConfig courier24 black) Nothing)
-                    [ (red, "sepal"), (green, "versicolor"), 
-                                      (blue,  "viginica") ]
+length_width_plot :: ScatterPlot Double Double
+length_width_plot =  ScatterPlot scatter_scale output_rect 
+                                               (Just grid_cfg)
+                                               (Just axes_cfg)  Nothing
+                       
+x_range :: Range Double
+x_range = 4.0 ::: 8.0
 
-drect :: DrawingRectangle
-drect = DrawingRectangle 300 300
+y_range :: Range Double
+y_range = 2.0 ::: 4.5
+
+output_rect :: DrawingRectangle
+output_rect = drawing 300 300 
+
+
 
 scatter_scale :: XYProjection Double Double
-scatter_scale = (Projection id 4.0 (300/4), Projection id 2.0 (300/2.5))
-
+scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
 sepal_cfg       :: DotConfig 
 sepal_cfg       = DotConfig red 3
@@ -72,12 +76,25 @@ slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)
 
 
+
+
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { axis_label_cfg  = LabelConfig courier24 black
+      { axis_label_cfg  = LabelConfig helvetica12 black
       , x_axis_cfg      = Just (axis_x, ffloat 1)
       , y_axis_cfg      = Just (axis_y, ffloat 1)
       } 
+
+
+gridConfig :: LineConfig 
+           -> Maybe (u -> u) 
+           -> Maybe (v -> v)
+           -> (Range u,Range v)
+           -> GridConfig u v
+gridConfig line_cfg mbHf mbVf (u0:::_, v0:::_) = GridConfig line_cfg mbHalg mbValg
+  where
+    mbHalg = fmap (\fu -> AxisLabelAlg u0 fu) mbHf
+    mbValg = fmap (\fv -> AxisLabelAlg v0 fv) mbVf
 
 
 grid_cfg :: GridConfig Double Double
@@ -98,4 +115,31 @@ axis_y = AxisLabelAlg
       { start_value     = 2.0
       , step_fun        = (+0.5)
       }
-     
+
+
+legend :: DPicture
+legend = drawLegend (LegendConfig (LabelConfig helvetica12 black) Nothing)
+                    [ (red, "Sepal"), (green, "Versicolor"), 
+                                      (blue,  "Viginica") ]
+
+
+------------
+
+axisAlg :: Range x  -> (x -> x) -> AxisLabelAlg x
+axisAlg (u ::: _) f = AxisLabelAlg { start_value = u, step_fun = f }
+
+drawing :: Double -> Double -> DrawingRectangle
+drawing = DrawingRectangle
+
+
+drawingProjection :: (Num u, Num v) 
+                  => (Range u,u -> Double) 
+                  -> (Range v,v -> Double) 
+                  -> DrawingRectangle
+                  -> XYProjection u v
+drawingProjection (u@(u0:::_),fromU) (v@(v0:::_),fromV) (DrawingRectangle w h) =
+    (xprojection, yprojection)
+  where
+    xprojection = Projection fromU (fromU u0) (w / fromU (rangeDist u))
+    yprojection = Projection fromV (fromV v0) (h / fromV (rangeDist v))
+

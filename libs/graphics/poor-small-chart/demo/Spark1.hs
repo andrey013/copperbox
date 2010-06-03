@@ -27,7 +27,7 @@ spark_stroke :: LineConfig
 spark_stroke = LineConfig black 0.5 Nothing
 
 spark_size :: SparkLineConfig Double
-spark_size = SparkLineConfig 24 10 (Just (aquamarine, 0.3, 0.8))
+spark_size = SparkLineConfig 24 10 (Just (aquamarine, 0.3 ::: 0.8))
 
 spark_scale :: XYProjection Double Double
 spark_scale = ( Projection id (0.1) (w / 0.9)

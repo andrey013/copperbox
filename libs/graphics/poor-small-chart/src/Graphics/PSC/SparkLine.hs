@@ -49,7 +49,7 @@ data SparkLineConfig v = SparkLineConfig
       }
 
 
-type RangeBand yu = (DRGB, yu, yu) 
+type RangeBand yu = (DRGB, Range yu) 
 
 
 renderSparkLine :: SparkLine u v -> Chart
@@ -68,7 +68,7 @@ renderSparkLine (SparkLine c (px,py) props ds) =
 
 
 makeRangeBand :: (v -> Double) -> (Double,Double) -> RangeBand v -> DPrimitive
-makeRangeBand fY (width,_) (rgb,y0,y1) = fill rgb $ vertexPath [bl,br,ur,ul]
+makeRangeBand fY (width,_) (rgb,y0 ::: y1) = fill rgb $ vertexPath [bl,br,ur,ul]
   where
     (ya,yb) = (fY y0,fY y1) 
     bl      = P2 0     ya

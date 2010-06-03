@@ -28,11 +28,16 @@ module Graphics.PSC.DrawingUtils
 
 
   -- * text labels
+  , textlabelU
   , textlabelN
   , textlabelS
   , textlabelE
   , textlabelW
   
+  -- wumpus-core additions
+  , capHeight
+
+
   ) where
 
 
@@ -93,10 +98,18 @@ makeTextlabel mv (rgb,font_props) text bottom_left =
     text_width  = textWidth  pt_size (length text)
     cap_height  = textHeight pt_size - (2 * descenderDepth pt_size)
 
+textlabelU :: Fractional u 
+           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelU (rgb,font_props) text bottom_left = 
+    textlabel (rgb,font_props) text (bottom_left .+^ vvec dd)
+  where
+    pt_size     = font_size font_props
+    dd          = descenderDepth pt_size
+
 
 textlabelN :: Fractional u 
            => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
-textlabelN = makeTextlabel (\w ch -> V2 (w*0.5) ch)
+textlabelN = makeTextlabel (\w cap_height -> V2 (w*0.5) cap_height)
 
 
 
@@ -107,8 +120,21 @@ textlabelS = makeTextlabel (\w _ -> V2 (w*0.5) 0)
 
 textlabelE :: Fractional u 
            => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
-textlabelE = makeTextlabel (\w ch -> V2 w (ch*0.5))
+textlabelE = makeTextlabel (\w cap_height -> V2 w (cap_height*0.5))
 
 textlabelW :: Fractional u 
            => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
-textlabelW = makeTextlabel (\_ ch -> V2 0 (ch*0.5))
+textlabelW = makeTextlabel (\_ cap_height -> V2 0 (cap_height*0.5))
+
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- WUMPUS_CORE additions
+
+
+-- The height of an upper case letter (without ascender or 
+-- descender).
+--
+capHeight :: Fractional u => FontSize -> u
+capHeight sz = textHeight sz - (2 * descenderDepth sz)

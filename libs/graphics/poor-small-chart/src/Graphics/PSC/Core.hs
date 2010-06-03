@@ -29,13 +29,14 @@ module Graphics.PSC.Core
   
   , PointSize
   , LineWidth
-  , Range
+  , Range(..)
 
   -- * Output
   , writeChartEPS
   , writeChartSVG
 
   -- * functions
+  , rangeDist
   
   , rescale
   , clamp
@@ -100,9 +101,9 @@ type PointSize = Int
 -- 
 type LineWidth = Double
 
--- | 'Range' @ (min,max, toDouble) @
+-- | 'Range' @ min ::: max @
 --
-type Range u = (u, u, u -> Double)
+data Range u = u ::: u
 
 
 
@@ -121,6 +122,10 @@ writeChartSVG = writeSVG_latin1
 
 
 --------------------------------------------------------------------------------
+
+rangeDist :: Num u => Range u -> u
+rangeDist (u ::: v) = v-u
+
 
 
 -- @rescale old_min old_max  new_min new_max  a@

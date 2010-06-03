@@ -47,7 +47,7 @@ legend1 :: LabelConfig -> (DRGB,String) -> DPoint2 -> (DPrimitive,DPrimitive)
 legend1 (LabelConfig {label_text_colour,label_font}) (rgb,text) pt = 
     (square,label)
   where
-    height      = textHeight $ font_size label_font
+    height      = capHeight $ font_size label_font
     square      = fill rgb $ vertexPath $ rectPoints height height pt
     pt2         = pt .+^ hvec (height + 4)
     label       = textlabel (label_text_colour,label_font) text pt2

@@ -40,7 +40,6 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_grid      :: Maybe (GridConfig u v)
       , scatterplot_axes      :: Maybe (AxisLabelConfig u v)
       , scatterplot_legend    :: Maybe ()
-      , scatterplot_layers    :: [(DotConfig, Dataset u v)]
       }
 
 
@@ -49,10 +48,12 @@ data DotConfig = DotConfig
       , dot_radius      :: Double
       }  
 
+type ScatterPlotLayer u v = (DotConfig, Dataset u v)
+
 
 -- Fraction constraint is temporary////
-renderScatterPlot :: ScatterPlot u v -> Chart
-renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend ls) = 
+renderScatterPlot :: ScatterPlot u v -> [ScatterPlotLayer u v] -> Chart
+renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls = 
     concatBackgrounds pic_layers [ grid, axes ]
   where
     pic_layers  = frameMulti $ concat layers
