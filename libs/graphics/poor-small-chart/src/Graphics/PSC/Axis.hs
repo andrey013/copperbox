@@ -44,9 +44,16 @@ data AxisLabelConfig u v = AxisLabelConfig
       , y_axis_cfg      :: Maybe (AxisLabelAlg v, v -> String)
       } 
 
-data AxisLabelAlg unit = AxisLabelAlg
-      { start_value     :: unit
-      , step_fun        :: unit -> unit
+-- How you draw axis labels is quite "shrewd" - i.e 
+-- ticks / labels or both...
+-- It\'s probably better to make the construct a function
+-- from Point -> Drawing than try to stor its components.
+--
+
+
+data AxisLabelAlg u = AxisLabelAlg
+      { start_value     :: u
+      , step_fun        :: u -> u
       }
 
 

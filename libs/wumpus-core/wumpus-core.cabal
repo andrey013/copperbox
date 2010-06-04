@@ -93,6 +93,9 @@ description:
   * Fixed bug with @picOver@, previously the zorder was wrong 
     and the function was actually working as /picUnder/. 
   .
+  * Added @capHeight@ to FontSize - get the size of an upper 
+    case letter without ascenders of descenders.
+  .
   0.18.0 to 0.19.0:
   .
   * Added @Transform@ type class to apply a matrix transformation

@@ -30,9 +30,10 @@ module Graphics.PSC.ScatterPlot
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
-
+import Wumpus.Core.Colour ( black )
 
 data ScatterPlot u v = ScatterPlot
       { scatterplot_projs     :: XYProjection u v
@@ -46,6 +47,7 @@ data ScatterPlot u v = ScatterPlot
 data DotConfig = DotConfig
       { dot_colour      :: DRGB
       , dot_radius      :: Double
+      , dot_circled     :: Bool
       }  
 
 type ScatterPlotLayer u v = (DotConfig, Dataset u v)
@@ -72,14 +74,22 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
 makeLayer :: (u -> Double,v -> Double) 
           -> (DotConfig,Dataset u v) 
           -> [DPrimitive]
-makeLayer (fX,fY) (dotcfg,ds) = map (makeDot (fX,fY) dotcfg) ds 
+makeLayer (fX,fY) (dotcfg,ds) = veloH (makeDot (fX,fY) dotcfg) ds 
 
 
-makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> DPrimitive
-makeDot (fX,fY) (DotConfig rgb radius) (u,v) = 
-    dot rgb radius (P2 (fX u) (fY v))
+makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> H DPrimitive
+makeDot (fX,fY) (DotConfig {dot_colour,dot_radius,dot_circled}) (u,v) =
+    if dot_circled then circledDot dot_colour dot_radius pt
+                   else        dot dot_colour dot_radius pt
+  where
+    pt = P2 (fX u) (fY v)
 
 
-dot :: DRGB -> Double -> DPoint2 -> DPrimitive
-dot rgb radius pt = ellipse rgb radius radius pt 
+dot :: DRGB -> Double -> DPoint2 -> H DPrimitive
+dot rgb radius pt = wrapH $ ellipse rgb radius radius pt 
+
+circledDot :: DRGB -> Double -> DPoint2 -> H DPrimitive
+circledDot rgb radius pt = outline `consH` dot rgb radius pt
+  where 
+    outline = ellipse (black,LineWidth 0.5) radius radius pt
 

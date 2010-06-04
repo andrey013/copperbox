@@ -25,9 +25,11 @@ module Graphics.PSC.Utils
   -- * Hughes list
   , H
   , emptyH
+  , wrapH
   , consH
   , snocH
   , appendH
+  , veloH
   , toListH
   , fromListH
 
@@ -55,6 +57,9 @@ type H a = [a] -> [a]
 emptyH :: H a
 emptyH = id
 
+wrapH :: a -> H a
+wrapH a = consH a id 
+
 consH :: a -> H a -> H a
 consH a f = (a:) . f
 
@@ -63,6 +68,14 @@ snocH  f a = f . (a:)
 
 appendH :: H a -> H a -> H a
 appendH f g = f . g
+
+-- | velo consumes the list as per map, but builds it back
+-- with an intermediate Hughes list - so items can be dropped
+-- replaced, repeated, etc...
+-- 
+veloH :: (a -> H b) -> [a] -> [b]
+veloH f = toListH . foldr step id 
+  where step a hf = f a . hf
 
 
 toListH :: H a -> [a]

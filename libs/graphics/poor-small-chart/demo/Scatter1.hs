@@ -24,6 +24,10 @@ import System.Directory
 -- TEMP...
 import Wumpus.Core
 
+infixr 5 `rap`
+rap :: a -> (a -> b) -> b
+rap a f = f a
+
 
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"
@@ -53,10 +57,10 @@ x_range :: Range Double
 x_range = 4.0 ::: 8.0
 
 y_range :: Range Double
-y_range = 2.0 ::: 4.5
+y_range = 1.8 ::: 4.8
 
 output_rect :: DrawingRectangle
-output_rect = drawing 300 300 
+output_rect = drawing 200 200
 
 
 
@@ -64,13 +68,16 @@ scatter_scale :: XYProjection Double Double
 scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
 sepal_cfg       :: DotConfig 
-sepal_cfg       = DotConfig red 3
+sepal_cfg       = circledDot red 2.5
 
 versicolor_cfg  :: DotConfig
-versicolor_cfg  = DotConfig green 3
+versicolor_cfg  = circledDot green 2.5
 
 virginica_cfg   :: DotConfig
-virginica_cfg   = DotConfig blue 3
+virginica_cfg   = circledDot blue 2.5
+
+circledDot :: DRGB -> Double -> DotConfig
+circledDot rgb rad = DotConfig rgb rad True 
 
 slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)
@@ -86,23 +93,28 @@ axes_cfg = AxisLabelConfig
       } 
 
 
+type AxisF u = u -> Maybe (AxisLabelAlg u)
+
+axisStep :: (u -> u) -> AxisF u
+axisStep f = \u0 -> Just (AxisLabelAlg u0 f)
+
+
+startingFrom :: u -> AxisF u -> AxisF u 
+startingFrom u f = \_u0 -> f u 
+
 gridConfig :: LineConfig 
-           -> Maybe (u -> u) 
-           -> Maybe (v -> v)
+           -> AxisF u
+           -> AxisF v
            -> (Range u,Range v)
            -> GridConfig u v
-gridConfig line_cfg mbHf mbVf (u0:::_, v0:::_) = GridConfig line_cfg mbHalg mbValg
-  where
-    mbHalg = fmap (\fu -> AxisLabelAlg u0 fu) mbHf
-    mbValg = fmap (\fv -> AxisLabelAlg v0 fv) mbVf
-
+gridConfig line_cfg fu fv (u0:::_, v0:::_) = GridConfig line_cfg (fu u0) (fv v0)
 
 grid_cfg :: GridConfig Double Double
-grid_cfg = GridConfig
-      { grid_line       = LineConfig blue 0.5 Nothing
-      , grid_x_axis     = Just axis_x
-      , grid_y_axis     = Just axis_y
-      } 
+grid_cfg = gridConfig (LineConfig blue 0.5 Nothing) x_alg y_alg (x_range,y_range)
+  where
+    x_alg = axisStep (+1.0) `rap` startingFrom 4.5
+    y_alg = axisStep (+0.5) `rap` startingFrom 2.0
+
 
 axis_x :: AxisLabelAlg Double
 axis_x = AxisLabelAlg
