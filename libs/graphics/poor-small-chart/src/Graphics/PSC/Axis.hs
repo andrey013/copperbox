@@ -79,7 +79,7 @@ drawAxes :: (u -> Double, v -> Double)
          -> AxisLabelConfig u v
          -> DrawingRectangle
          -> Maybe DPicture
-drawAxes (fX,fY) axis_cfg@(AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
+drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
     drawHPrim $ hf . vf
   where
     hf = maybe id (\z -> horizontalLabels fX z rect) x_axis_cfg

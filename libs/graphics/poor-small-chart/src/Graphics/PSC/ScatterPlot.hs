@@ -19,9 +19,11 @@ module Graphics.PSC.ScatterPlot
   (
   -- * Data types
     ScatterPlot(..)
-  , DotConfig(..)
+  , DotF
 
   -- * Draw
+  , dot
+  , circledDot
   , renderScatterPlot
 
   )
@@ -43,14 +45,21 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_legend    :: Maybe ()
       }
 
--- TODO - dots could be replcaed with a simple function : Point -> HPrim
-data DotConfig = DotConfig
-      { dot_colour      :: DRGB
-      , dot_radius      :: Double
-      , dot_circled     :: Bool
-      }  
+-- TODO - dots could be replaced with a simple function : Point -> HPrim
 
-type ScatterPlotLayer u v = (DotConfig, Dataset u v)
+type DotF = DPoint2 -> HPrim Double
+
+
+dot :: DRGB -> Double -> DotF 
+dot rgb radius = \pt -> wrapH $ ellipse rgb radius radius pt 
+
+circledDot :: DRGB -> Double -> DotF 
+circledDot rgb radius = \pt -> outline pt `consH` dot rgb radius pt
+  where 
+    outline pt = ellipse (black,LineWidth 0.5) radius radius pt
+
+
+type ScatterPlotLayer u v = (DotF, Dataset u v)
 
 
 -- Fraction constraint is temporary////
@@ -75,24 +84,12 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
 
 
 makeLayer :: (u -> Double,v -> Double) 
-          -> (DotConfig,Dataset u v) 
+          -> (DotF,Dataset u v) 
           -> HPrim Double
-makeLayer (fX,fY) (dotcfg,ds) = veloH (makeDot (fX,fY) dotcfg) ds 
+makeLayer (fX,fY) (dotF,ds) = veloH (makeDot (fX,fY) dotF) ds 
 
 
-makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> HPrim Double
-makeDot (fX,fY) (DotConfig {dot_colour,dot_radius,dot_circled}) (u,v) =
-    if dot_circled then circledDot dot_colour dot_radius pt
-                   else        dot dot_colour dot_radius pt
-  where
-    pt = P2 (fX u) (fY v)
+makeDot :: (u -> Double,v -> Double) -> DotF -> (u,v) -> HPrim Double
+makeDot (fX,fY) dotF (u,v) = dotF $ P2 (fX u) (fY v)
 
-
-dot :: DRGB -> Double -> DPoint2 -> HPrim Double
-dot rgb radius pt = wrapH $ ellipse rgb radius radius pt 
-
-circledDot :: DRGB -> Double -> DPoint2 -> HPrim Double
-circledDot rgb radius pt = outline `consH` dot rgb radius pt
-  where 
-    outline = ellipse (black,LineWidth 0.5) radius radius pt
 
