@@ -87,9 +87,8 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { axis_label_cfg  = LabelConfig helvetica12 black
-      , x_axis_cfg      = Just (axis_x, ffloat 1)
-      , y_axis_cfg      = Just (axis_y, ffloat 1)
+      { x_axis_cfg      = Just (axis_x, xAxisText (black,helvetica12) 4 (ffloat 1))
+      , y_axis_cfg      = Just (axis_y, yAxisText (black,helvetica12) 2 (ffloat 1))
       } 
 
 
