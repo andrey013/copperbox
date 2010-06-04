@@ -45,11 +45,12 @@ data AxisLabelConfig u v = AxisLabelConfig
       } 
 
 -- How you draw axis labels is quite "shrewd" - i.e 
--- ticks / labels or both...
+-- ticks / labels or both, or neither...
 -- It\'s probably better to make the construct a function
 -- from Point -> Drawing than try to stor its components.
 --
 
+type AxisLabelDrawF u = u -> DPoint2 -> HPrim Double
 
 data AxisLabelAlg u = AxisLabelAlg
       { start_value     :: u
@@ -64,9 +65,9 @@ data AxisLabelAlg u = AxisLabelAlg
 drawAxes :: (u -> Double, v -> Double) 
          -> AxisLabelConfig u v
          -> DrawingRectangle
-         -> [DPrimitive]
+         -> Maybe DPicture
 drawAxes (fX,fY) axis_cfg@(AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
-    toListH $ hf $ vf emptyH
+    drawHPrim $ hf $ vf emptyH
   where
     hf = maybeHf (\z -> horizontalLabels fX font_attr z rect) x_axis_cfg
     vf = maybeHf (\z -> verticalLabels   fY font_attr z rect) y_axis_cfg
@@ -122,9 +123,9 @@ data GridConfig u v = GridConfig
 drawGrid :: (u -> Double, v -> Double) 
          -> GridConfig u v
          -> DrawingRectangle
-         -> [DPrimitive]
+         -> Maybe DPicture
 drawGrid (fX,fY) (GridConfig {grid_line, grid_x_axis, grid_y_axis}) rect =
-    toListH $ vf $ hf emptyH
+    drawHPrim $ vf $ hf emptyH
   where
     hf = maybeHf (\alg -> horizontalLines fY grid_line alg rect) grid_y_axis
     vf = maybeHf (\alg -> verticalLines   fX grid_line alg rect) grid_x_axis

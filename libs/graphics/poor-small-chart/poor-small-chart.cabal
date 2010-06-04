@@ -35,11 +35,13 @@ library
     Graphics.PSC.Core,
     Graphics.PSC.Legend,
     Graphics.PSC.ScatterPlot,
-    Graphics.PSC.SparkLine
+    Graphics.PSC.SparkLine,
 
-  other-modules:
+-- These are really internal, but currently I want haddock to see them...
     Graphics.PSC.DrawingUtils,
     Graphics.PSC.Utils
+
+  other-modules:
 
   extensions:
     

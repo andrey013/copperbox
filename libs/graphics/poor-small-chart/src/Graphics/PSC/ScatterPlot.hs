@@ -43,7 +43,7 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_legend    :: Maybe ()
       }
 
-
+-- TODO - dots could be replcaed with a simple function : Point -> HPrim
 data DotConfig = DotConfig
       { dot_colour      :: DRGB
       , dot_radius      :: Double
@@ -58,12 +58,15 @@ renderScatterPlot :: ScatterPlot u v -> [ScatterPlotLayer u v] -> Chart
 renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls = 
     concatBackgrounds pic_layers [ grid, axes ]
   where
-    pic_layers  = frameMulti $ concat layers
+    pic_layers  = frameMulti $ toListH $ concatH layers
 
-    grid        = fmap (\x -> frameMulti $ drawGrid (fX,fY) x rect) mb_grid
+    grid        :: Maybe DPicture
+    grid        = maybe Nothing (\x -> drawGrid (fX,fY) x rect) mb_grid
+    
+    axes        :: Maybe DPicture
+    axes        = maybe Nothing (\x -> drawAxes (fX,fY) x rect) mb_axes
 
-    axes        = fmap (\x -> frameMulti $ drawAxes (fX,fY) x rect) mb_axes
-
+    layers      :: [HPrim Double]
     layers      = map (makeLayer (fX,fY)) ls
 
 
@@ -73,11 +76,11 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
 
 makeLayer :: (u -> Double,v -> Double) 
           -> (DotConfig,Dataset u v) 
-          -> [DPrimitive]
+          -> HPrim Double
 makeLayer (fX,fY) (dotcfg,ds) = veloH (makeDot (fX,fY) dotcfg) ds 
 
 
-makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> H DPrimitive
+makeDot :: (u -> Double,v -> Double) -> DotConfig -> (u,v) -> HPrim Double
 makeDot (fX,fY) (DotConfig {dot_colour,dot_radius,dot_circled}) (u,v) =
     if dot_circled then circledDot dot_colour dot_radius pt
                    else        dot dot_colour dot_radius pt
@@ -85,10 +88,10 @@ makeDot (fX,fY) (DotConfig {dot_colour,dot_radius,dot_circled}) (u,v) =
     pt = P2 (fX u) (fY v)
 
 
-dot :: DRGB -> Double -> DPoint2 -> H DPrimitive
+dot :: DRGB -> Double -> DPoint2 -> HPrim Double
 dot rgb radius pt = wrapH $ ellipse rgb radius radius pt 
 
-circledDot :: DRGB -> Double -> DPoint2 -> H DPrimitive
+circledDot :: DRGB -> Double -> DPoint2 -> HPrim Double
 circledDot rgb radius pt = outline `consH` dot rgb radius pt
   where 
     outline = ellipse (black,LineWidth 0.5) radius radius pt

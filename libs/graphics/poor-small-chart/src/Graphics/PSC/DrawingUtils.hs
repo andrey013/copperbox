@@ -17,9 +17,12 @@
 
 module Graphics.PSC.DrawingUtils
   (
+  -- Composing primitives
+    HPrim
+  , drawHPrim
 
   -- * drawing
-    makeStrokeProps
+  , makeStrokeProps
   , makeProjector
 
   , concatBackgrounds
@@ -42,6 +45,7 @@ module Graphics.PSC.DrawingUtils
 
 
 import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -49,8 +53,20 @@ import Data.AffineSpace                 -- package: vector-space
 
 import Data.Maybe
 
+
 --------------------------------------------------------------------------------
--- drawing
+-- Composing primitives with Hughes lists
+
+type HPrim u = H (Primitive u)
+
+drawHPrim :: (Floating u, Ord u) => HPrim u -> Maybe (Picture u)
+drawHPrim f = step $ f []
+  where
+    step [] = Nothing
+    step xs = Just $ frameMulti xs 
+
+--------------------------------------------------------------------------------
+-- Drawing
 
 makeStrokeProps :: LineConfig -> (DRGB,[StrokeAttr])
 makeStrokeProps (LineConfig rgb lw mb_dash) = 

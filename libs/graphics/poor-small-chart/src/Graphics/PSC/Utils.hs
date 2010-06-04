@@ -30,6 +30,8 @@ module Graphics.PSC.Utils
   , snocH
   , appendH
   , veloH
+  , concatH
+
   , toListH
   , fromListH
 
@@ -70,12 +72,15 @@ appendH :: H a -> H a -> H a
 appendH f g = f . g
 
 -- | velo consumes the list as per map, but builds it back
--- with an intermediate Hughes list - so items can be dropped
+-- as a Hughes list - so items can be dropped
 -- replaced, repeated, etc...
 -- 
-veloH :: (a -> H b) -> [a] -> [b]
-veloH f = toListH . foldr step id 
+veloH :: (a -> H b) -> [a] -> H b
+veloH f = foldr step id 
   where step a hf = f a . hf
+
+concatH :: [H a] -> H a
+concatH = foldr (.) id
 
 
 toListH :: H a -> [a]
