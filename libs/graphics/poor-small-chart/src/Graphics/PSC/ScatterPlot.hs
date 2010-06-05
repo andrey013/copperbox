@@ -37,6 +37,9 @@ import Graphics.PSC.Utils
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
+import Data.Maybe
+
+
 data ScatterPlot u v = ScatterPlot
       { scatterplot_projs     :: XYProjection u v
       , scatterplot_rect      :: DrawingRectangle
@@ -63,15 +66,16 @@ type ScatterPlotLayer u v = (DotF, Dataset u v)
 -- Fraction constraint is temporary////
 renderScatterPlot :: ScatterPlot u v -> [ScatterPlotLayer u v] -> Chart
 renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls = 
-    concatBackgrounds pic_layers [ grid, axes ]
+    fromMaybe errK $ concatBackgrounds pic_layers [ grid, axes ]
   where
-    pic_layers  = frameMulti $ toListH $ concatH layers
+    errK        = error "renderScatterPlot - empty Drawing"
+    pic_layers  = concatH layers
 
-    grid        :: Maybe DPicture
-    grid        = maybe Nothing (\x -> drawGrid (fX,fY) x rect) mb_grid
+    grid        :: Graphic
+    grid        = maybe id (\x -> drawGrid (fX,fY) x rect) mb_grid
     
-    axes        :: Maybe DPicture
-    axes        = maybe Nothing (\x -> drawAxes (fX,fY) x rect) mb_axes
+    axes        :: Graphic
+    axes        = maybe id (\x -> drawAxes (fX,fY) x rect) mb_axes
 
     layers      :: [Graphic]
     layers      = map (makeLayer (fX,fY)) ls

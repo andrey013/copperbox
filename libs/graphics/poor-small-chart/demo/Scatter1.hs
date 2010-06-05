@@ -98,15 +98,17 @@ axisStep f = \u0 -> Just (AxisLabelAlg u0 f)
 startingFrom :: u -> AxisF u -> AxisF u 
 startingFrom u f = \_u0 -> f u 
 
-gridConfig :: LineConfig 
+gridConfig :: Stroke t 
+           => t
            -> AxisF u
            -> AxisF v
            -> (Range u,Range v)
            -> GridConfig u v
-gridConfig line_cfg fu fv (u0:::_, v0:::_) = GridConfig line_cfg (fu u0) (fv v0)
+gridConfig t fu fv (u0:::_, v0:::_) = GridConfig (simpleGridLine t) (fu u0) (fv v0)
+
 
 grid_cfg :: GridConfig Double Double
-grid_cfg = gridConfig (LineConfig blue 0.5 Nothing) x_alg y_alg (x_range,y_range)
+grid_cfg = gridConfig (blue, LineWidth 0.5) x_alg y_alg (x_range,y_range)
   where
     x_alg = axisStep (+1.0) `rap` startingFrom 4.5
     y_alg = axisStep (+0.5) `rap` startingFrom 2.0

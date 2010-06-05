@@ -28,6 +28,8 @@ module Graphics.PSC.Axis
 
   -- * Grids
   , GridConfig(..)
+  , simpleGridLine
+
   , drawGrid
 
 
@@ -54,8 +56,6 @@ data AxisLabelConfig u v = AxisLabelConfig
 
 -- How you draw axis labels is quite "shrewd" - i.e 
 -- ticks / labels or both, or neither...
--- It\'s probably better to make the construct a function
--- from Point -> Drawing than try to store its components.
 --
 
 type AxisLabelDrawF u = u -> DPoint2 -> Graphic
@@ -66,9 +66,6 @@ data AxisLabelAlg u = AxisLabelAlg
       }
 
 
-
-
--- NOTE - need a bit more sophistication to offest labels...
 
 
 xAxisText :: (DRGB,FontAttr) -> Double -> (u -> String) -> AxisLabelDrawF u
@@ -84,9 +81,8 @@ yAxisText font_props gap textF = \v east_pt ->
 drawAxes :: (u -> Double, v -> Double) 
          -> AxisLabelConfig u v
          -> DrawingRectangle
-         -> Maybe DPicture
-drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
-    drawGraphic $ hf . vf
+         -> Graphic
+drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect = hf . vf
   where
     hf = maybe id (\z -> horizontalLabels fX z rect) x_axis_cfg
     vf = maybe id (\z -> verticalLabels   fY z rect) y_axis_cfg
@@ -115,8 +111,14 @@ verticalLabels fY (axis_alg,buildF) draw_rect =
 -- Grids
 
 
+type GridLineDrawF = DPoint2 -> DPoint2 -> Graphic
+
+
+simpleGridLine :: Stroke t => t -> GridLineDrawF
+simpleGridLine t = \p0 p1 -> wrapH $ ostroke t $ path p0 [ lineTo p1 ]
+
 data GridConfig u v = GridConfig
-      { grid_line       :: LineConfig
+      { grid_line_draw  :: GridLineDrawF
       , grid_x_axis     :: Maybe (AxisLabelAlg u)
       , grid_y_axis     :: Maybe (AxisLabelAlg v)
       } 
@@ -126,60 +128,58 @@ data GridConfig u v = GridConfig
 drawGrid :: (u -> Double, v -> Double) 
          -> GridConfig u v
          -> DrawingRectangle
-         -> Maybe DPicture
-drawGrid (fX,fY) (GridConfig {grid_line, grid_x_axis, grid_y_axis}) rect =
-    drawGraphic $ vf . hf
+         -> Graphic
+drawGrid (fX,fY) (GridConfig {grid_line_draw, grid_x_axis, grid_y_axis}) rect =
+    vf . hf
   where
-    hf = maybe id (\alg -> horizontalLines fY grid_line alg rect) grid_y_axis
-    vf = maybe id (\alg -> verticalLines   fX grid_line alg rect) grid_x_axis
+    hf = maybe id (\alg -> horizontalLines fY grid_line_draw alg rect) grid_y_axis
+    vf = maybe id (\alg -> verticalLines   fX grid_line_draw alg rect) grid_x_axis
 
 
 verticalLines :: (u -> Double)
-              -> LineConfig
+              -> GridLineDrawF
               -> AxisLabelAlg u
               -> DrawingRectangle
               -> Graphic
-verticalLines fX line_cfg axis_alg draw_rect = 
+verticalLines fX drawF axis_alg draw_rect = 
     horizontalPoints buildF 0 fX axis_alg draw_rect
   where
-    buildF _ pt  = wrapH $ sf $ straightLine pt upvec
+    buildF _ pt  = drawF pt (pt .+^ upvec)
     upvec        = vvec $ rect_height draw_rect
-    sf           = ostroke (makeStrokeProps line_cfg)
 
 
 horizontalLines :: (v -> Double) 
-                -> LineConfig
+                -> GridLineDrawF
                 -> AxisLabelAlg v
                 -> DrawingRectangle
                 -> Graphic
-horizontalLines fY line_cfg axis_alg draw_rect = 
+horizontalLines fY drawF axis_alg draw_rect = 
     verticalPoints buildF 0 fY axis_alg draw_rect
   where
-    buildF _ pt = wrapH $ sf $ straightLine pt rightvec
+    buildF _ pt = drawF pt (pt .+^ rightvec)
     rightvec    = hvec $ rect_width draw_rect
-    sf          = ostroke (makeStrokeProps line_cfg)
 
 
 
 --------------------------------------------------------------------------------
 -- Enumerate x-y values, generate points
 
-horizontalPoints :: (u -> DPoint2 -> H a) 
+horizontalPoints :: (u -> DPoint2 -> Graphic) 
                  -> Double 
                  -> (u -> Double) 
                  -> AxisLabelAlg u 
                  -> DrawingRectangle 
-                 -> H a
+                 -> Graphic
 horizontalPoints buildF y0 fX axis_alg rect = 
     veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues fX axis_alg rect
 
 
-verticalPoints :: (v -> DPoint2 -> H a) 
+verticalPoints :: (v -> DPoint2 -> Graphic) 
                -> Double 
                -> (v -> Double) 
                -> AxisLabelAlg v
                -> DrawingRectangle 
-               -> H a 
+               -> Graphic 
 verticalPoints buildF x0 fY axis_alg rect = 
     veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues fY axis_alg rect
 

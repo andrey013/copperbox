@@ -44,6 +44,7 @@ module Graphics.PSC.DrawingUtils
 
 
 import Graphics.PSC.Core
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -65,6 +66,7 @@ drawGraphic f = step $ f []
 --------------------------------------------------------------------------------
 -- Drawing
 
+
 makeStrokeProps :: LineConfig -> (DRGB,[StrokeAttr])
 makeStrokeProps (LineConfig rgb lw mb_dash) = 
     (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
@@ -78,12 +80,8 @@ makeProjector (Projection {proj_conv,proj_trans,proj_scale}) =
 
 
 
-concatBackgrounds :: (Num u, Ord u) 
-                  => Picture u -> [Maybe (Picture u)] -> Picture u
-concatBackgrounds top bkgrds = foldr fn top bkgrds
-  where
-    fn Nothing      p1 = p1
-    fn (Just bkgrd) p1 = p1 `picOver` bkgrd
+concatBackgrounds :: Graphic -> [Graphic] -> Maybe DPicture
+concatBackgrounds top bkgrds = drawGraphic $ concatH bkgrds . top
 
 straightLine :: Num u => Point2 u -> Vec2 u -> Path u
 straightLine pt v = path pt [lineTo $ pt .+^ v]
