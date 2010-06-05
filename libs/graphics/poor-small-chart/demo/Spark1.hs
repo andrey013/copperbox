@@ -18,13 +18,11 @@ main =  createDirectoryIfMissing True "./out/"
      >> writeChartSVG "./out/spark1.svg" chart1
 
 chart1 :: Chart
-chart1 = renderSparkLine (SparkLine spark_size 
-                                    spark_scale 
-                                    spark_stroke 
-                                    data_points)
+chart1 = renderSparkLine (SparkLine spark_size spark_scale spark_stroke) 
+                         data_points
 
-spark_stroke :: LineConfig
-spark_stroke = LineConfig black 0.5 Nothing
+spark_stroke :: SparkLineF
+spark_stroke = simpleLine black 0.5
 
 spark_size :: SparkLineConfig Double
 spark_size = SparkLineConfig 24 10 (Just (aquamarine, 0.3 ::: 0.8))

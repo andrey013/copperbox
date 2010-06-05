@@ -29,6 +29,11 @@ module Graphics.PSC.Axis
   , GridConfig(..)
   , drawGrid
 
+
+  -- * Border
+  , BorderF
+  , plainBorder
+
   ) where
 
 import Graphics.PSC.Core
@@ -49,7 +54,7 @@ data AxisLabelConfig u v = AxisLabelConfig
 -- How you draw axis labels is quite "shrewd" - i.e 
 -- ticks / labels or both, or neither...
 -- It\'s probably better to make the construct a function
--- from Point -> Drawing than try to stor its components.
+-- from Point -> Drawing than try to store its components.
 --
 
 type AxisLabelDrawF u = u -> DPoint2 -> HPrim Double
@@ -199,3 +204,13 @@ leqEps a b | a < b     = True
 
 rect_epsilon :: Double 
 rect_epsilon = 0.01
+
+
+--------------------------------------------------------------------------------
+
+type BorderF = DPoint2 -> DPoint2 -> HPrim Double
+
+
+plainBorder :: DRGB -> Double -> BorderF
+plainBorder rgb line_width = \bl@(P2 x0 y0) (P2 x1 y1)  -> 
+   cstroke (rgb, LineWidth lw) $ vertexPath $ rectPoints (x1-x0) (y1-y0) bl
