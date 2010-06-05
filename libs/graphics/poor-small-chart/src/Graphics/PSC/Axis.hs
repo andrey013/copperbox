@@ -20,6 +20,7 @@ module Graphics.PSC.Axis
   -- * Axes
     AxisLabelConfig(..)
   , AxisLabelAlg(..)
+  , AxisLabelDrawF
 
   , xAxisText 
   , yAxisText
@@ -212,5 +213,5 @@ type BorderF = DPoint2 -> DPoint2 -> HPrim Double
 
 
 plainBorder :: DRGB -> Double -> BorderF
-plainBorder rgb line_width = \bl@(P2 x0 y0) (P2 x1 y1)  -> 
-   cstroke (rgb, LineWidth lw) $ vertexPath $ rectPoints (x1-x0) (y1-y0) bl
+plainBorder rgb lw = \bl@(P2 x0 y0) (P2 x1 y1)  -> wrapH $ 
+    cstroke (rgb, LineWidth lw) $ vertexPath $ rectPoints (x1-x0) (y1-y0) bl

@@ -21,10 +21,12 @@ module Graphics.PSC.SparkLine
     SparkLine(..)
   , SparkLineConfig(..)
   , SparkLineF
-  , RangeBand
-
+  , RangeBandF
+  
   -- * Draw
   , simpleLine
+  , rangeBand
+  , noRangeBand
   , renderSparkLine  
 
   ) where
@@ -39,19 +41,18 @@ import Data.Maybe
 
      
 data SparkLine u v = SparkLine
-      { sparkline_config  :: SparkLineConfig v
+      { sparkline_config  :: SparkLineConfig
       , sparkline_projs   :: XYProjection u v
       , sparkline_draw    :: SparkLineF
+      , range_band        :: RangeBandF v
       }
 
-data SparkLineConfig v = SparkLineConfig
+data SparkLineConfig = SparkLineConfig
       { font_height     :: PointSize
       , letter_count    :: Int
-      , opt_range_band  :: Maybe (RangeBand v)
       }
 
 
-type RangeBand yu = (DRGB, Range yu) 
 
 
 type SparkLineF = [DPoint2] -> HPrim Double
@@ -62,49 +63,41 @@ simpleLine rgb lw = wrapH . ostroke (rgb, LineWidth lw) . vertexPath
 
 
 renderSparkLine :: SparkLine u v -> Dataset u v -> Chart
-renderSparkLine (SparkLine c (px,py) drawF) ds = 
+renderSparkLine (SparkLine c (px,py) drawF rangeF) ds = 
     fromMaybe errK $ drawHPrim $ drawF points . bkgrnd
   where
     errK   = error "renderSparkLine - empty drawing"
     points = map (\(u,v) -> P2 (fX u) (fY v)) ds
 
     bkgrnd :: HPrim Double    
-    bkgrnd = maybe id (makeRangeBand fY (w,h)) $ opt_range_band c
-    (w,h)  = pictureSize c
+    bkgrnd = rangeF fY w 0
+
+    (w,_)  = pictureSize c
 
     fX     = makeProjector px
     fY     = makeProjector py
 
+-- The type of RangeBandF is very specially tailored to 
+-- work with the implementation @rangeBand@.
 
--- Is there any benefit to changing the representation of
--- RangeBand?
--- 
--- There is only one style of range band - filled rect of some
--- supplied colour, which enumerates to two drawings: range band
--- or no range band 
---
--- type RangeBandF = HPrim
---
+type RangeBandF v = (v -> Double) -> SparkLineWidth -> Double -> HPrim Double
 
+type SparkLineWidth = Double
 
-makeRangeBand :: (v -> Double) -> (Double,Double) -> RangeBand v -> HPrim Double
-makeRangeBand fY (width,_) (rgb,y0 ::: y1) = wrapH $ fill rgb $ vertexPath [bl,br,ur,ul]
-  where
-    (ya,yb) = (fY y0,fY y1) 
-    bl      = P2 0     ya
-    br      = P2 width ya
-    ur      = P2 width yb
-    ul      = P2 0     yb
+rangeBand :: Range v -> DRGB -> RangeBandF v
+rangeBand (y0 ::: y1) rgb = 
+    \fY w x0 -> let (dy0,dy1) = (fY y0, fY y1)
+                    pt        = P2 x0 dy0 in 
+                wrapH $ fill rgb $ vertexPath $ rectPoints w (dy1-dy0) pt
 
 
+noRangeBand :: RangeBandF v
+noRangeBand = \_ _ _ -> id  
 
-pictureSize :: SparkLineConfig v -> (Double,Double)
+
+pictureSize :: SparkLineConfig -> (Double,Double)
 pictureSize (SparkLineConfig {font_height,letter_count}) =
   (textWidth font_height letter_count, fromIntegral font_height)  
-
-
-
-
 
 
 
