@@ -58,7 +58,7 @@ data AxisLabelConfig u v = AxisLabelConfig
 -- from Point -> Drawing than try to store its components.
 --
 
-type AxisLabelDrawF u = u -> DPoint2 -> HPrim Double
+type AxisLabelDrawF u = u -> DPoint2 -> Graphic
 
 data AxisLabelAlg u = AxisLabelAlg
       { start_value     :: u
@@ -86,7 +86,7 @@ drawAxes :: (u -> Double, v -> Double)
          -> DrawingRectangle
          -> Maybe DPicture
 drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
-    drawHPrim $ hf . vf
+    drawGraphic $ hf . vf
   where
     hf = maybe id (\z -> horizontalLabels fX z rect) x_axis_cfg
     vf = maybe id (\z -> verticalLabels   fY z rect) y_axis_cfg
@@ -95,7 +95,7 @@ drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect =
 horizontalLabels :: (u -> Double) 
                  -> (AxisLabelAlg u, AxisLabelDrawF u)
                  -> DrawingRectangle 
-                 -> HPrim Double
+                 -> Graphic
 horizontalLabels fX (axis_alg,buildF) draw_rect = 
     horizontalPoints buildF 0 fX axis_alg draw_rect
 
@@ -103,7 +103,7 @@ horizontalLabels fX (axis_alg,buildF) draw_rect =
 verticalLabels :: (v -> Double) 
                -> (AxisLabelAlg v, AxisLabelDrawF v)
                -> DrawingRectangle 
-               -> HPrim Double
+               -> Graphic
 verticalLabels fY (axis_alg,buildF) draw_rect = 
     verticalPoints buildF 0 fY axis_alg draw_rect
 
@@ -128,7 +128,7 @@ drawGrid :: (u -> Double, v -> Double)
          -> DrawingRectangle
          -> Maybe DPicture
 drawGrid (fX,fY) (GridConfig {grid_line, grid_x_axis, grid_y_axis}) rect =
-    drawHPrim $ vf . hf
+    drawGraphic $ vf . hf
   where
     hf = maybe id (\alg -> horizontalLines fY grid_line alg rect) grid_y_axis
     vf = maybe id (\alg -> verticalLines   fX grid_line alg rect) grid_x_axis
@@ -138,7 +138,7 @@ verticalLines :: (u -> Double)
               -> LineConfig
               -> AxisLabelAlg u
               -> DrawingRectangle
-              -> HPrim Double
+              -> Graphic
 verticalLines fX line_cfg axis_alg draw_rect = 
     horizontalPoints buildF 0 fX axis_alg draw_rect
   where
@@ -151,7 +151,7 @@ horizontalLines :: (v -> Double)
                 -> LineConfig
                 -> AxisLabelAlg v
                 -> DrawingRectangle
-                -> HPrim Double
+                -> Graphic
 horizontalLines fY line_cfg axis_alg draw_rect = 
     verticalPoints buildF 0 fY axis_alg draw_rect
   where
@@ -209,7 +209,7 @@ rect_epsilon = 0.01
 
 --------------------------------------------------------------------------------
 
-type BorderF = DPoint2 -> DPoint2 -> HPrim Double
+type BorderF = DPoint2 -> DPoint2 -> Graphic
 
 
 plainBorder :: DRGB -> Double -> BorderF

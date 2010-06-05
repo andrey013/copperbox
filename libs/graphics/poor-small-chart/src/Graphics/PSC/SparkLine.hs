@@ -55,7 +55,7 @@ data SparkLineConfig = SparkLineConfig
 
 
 
-type SparkLineF = [DPoint2] -> HPrim Double
+type SparkLineF = [DPoint2] -> Graphic
 
 simpleLine :: DRGB -> Double -> SparkLineF
 simpleLine rgb lw = wrapH . ostroke (rgb, LineWidth lw) . vertexPath
@@ -64,12 +64,11 @@ simpleLine rgb lw = wrapH . ostroke (rgb, LineWidth lw) . vertexPath
 
 renderSparkLine :: SparkLine u v -> Dataset u v -> Chart
 renderSparkLine (SparkLine c (px,py) drawF rangeF) ds = 
-    fromMaybe errK $ drawHPrim $ drawF points . bkgrnd
+    fromMaybe errK $ drawGraphic $ drawF points . bkgrnd
   where
     errK   = error "renderSparkLine - empty drawing"
     points = map (\(u,v) -> P2 (fX u) (fY v)) ds
 
-    bkgrnd :: HPrim Double    
     bkgrnd = rangeF fY w 0
 
     (w,_)  = pictureSize c
@@ -77,10 +76,19 @@ renderSparkLine (SparkLine c (px,py) drawF rangeF) ds =
     fX     = makeProjector px
     fY     = makeProjector py
 
--- The type of RangeBandF is very specially tailored to 
+
+pictureSize :: SparkLineConfig -> (Double,Double)
+pictureSize (SparkLineConfig {font_height,letter_count}) =
+  (textWidth font_height letter_count, fromIntegral font_height)  
+
+
+--------------------------------------------------------------------------------
+-- Range band
+
+-- The type of RangeBandF is very specifically tailored to 
 -- work with the implementation @rangeBand@.
 
-type RangeBandF v = (v -> Double) -> SparkLineWidth -> Double -> HPrim Double
+type RangeBandF v = (v -> Double) -> SparkLineWidth -> Double -> Graphic
 
 type SparkLineWidth = Double
 
@@ -95,14 +103,15 @@ noRangeBand :: RangeBandF v
 noRangeBand = \_ _ _ -> id  
 
 
-pictureSize :: SparkLineConfig -> (Double,Double)
-pictureSize (SparkLineConfig {font_height,letter_count}) =
-  (textWidth font_height letter_count, fromIntegral font_height)  
 
+--------------------------------------------------------------------------------
+-- Specific dots
+
+-- type DotF = DPoint2 -> Graphic
 
 
 -- Start and end dots - need to see the dataset
 -- Min and max dots   - need to see the dataset
--- Range band         - needs to know how wide the spark line is
---                      or the min x and max x (then rescales)
+
+
 

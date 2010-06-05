@@ -19,6 +19,7 @@ module Graphics.PSC.Core
   (
   -- * Types
     Chart
+  , Graphic
   , Dataset
   , DrawingRectangle(..)
   , LineConfig(..)
@@ -48,6 +49,8 @@ module Graphics.PSC.Core
   ) where
 
 
+import Graphics.PSC.Utils
+
 import Wumpus.Core
 
 import Numeric
@@ -55,6 +58,11 @@ import Numeric
 
 
 type Chart = DPicture
+
+-- | Note - this representation allows for zero, one or more
+-- Primitives to be collected together.
+--
+type Graphic = H DPrimitive
 
 
 type Dataset u v = [(u,v)]

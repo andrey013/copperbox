@@ -45,9 +45,7 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_legend    :: Maybe ()
       }
 
--- TODO - dots could be replaced with a simple function : Point -> HPrim
-
-type DotF = DPoint2 -> HPrim Double
+type DotF = DPoint2 -> Graphic
 
 
 dot :: DRGB -> Double -> DotF 
@@ -75,7 +73,7 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
     axes        :: Maybe DPicture
     axes        = maybe Nothing (\x -> drawAxes (fX,fY) x rect) mb_axes
 
-    layers      :: [HPrim Double]
+    layers      :: [Graphic]
     layers      = map (makeLayer (fX,fY)) ls
 
 
@@ -85,11 +83,11 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
 
 makeLayer :: (u -> Double,v -> Double) 
           -> (DotF,Dataset u v) 
-          -> HPrim Double
+          -> Graphic
 makeLayer (fX,fY) (dotF,ds) = veloH (makeDot (fX,fY) dotF) ds 
 
 
-makeDot :: (u -> Double,v -> Double) -> DotF -> (u,v) -> HPrim Double
+makeDot :: (u -> Double,v -> Double) -> DotF -> (u,v) -> Graphic
 makeDot (fX,fY) dotF (u,v) = dotF $ P2 (fX u) (fY v)
 
 

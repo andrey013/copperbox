@@ -18,8 +18,7 @@
 module Graphics.PSC.DrawingUtils
   (
   -- Composing primitives
-    HPrim
-  , drawHPrim
+    drawGraphic
 
   -- * drawing
   , makeStrokeProps
@@ -45,7 +44,6 @@ module Graphics.PSC.DrawingUtils
 
 
 import Graphics.PSC.Core
-import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -57,10 +55,9 @@ import Data.Maybe
 --------------------------------------------------------------------------------
 -- Composing primitives with Hughes lists
 
-type HPrim u = H (Primitive u)
 
-drawHPrim :: (Floating u, Ord u) => HPrim u -> Maybe (Picture u)
-drawHPrim f = step $ f []
+drawGraphic :: Graphic -> Maybe DPicture
+drawGraphic f = step $ f []
   where
     step [] = Nothing
     step xs = Just $ frameMulti xs 
