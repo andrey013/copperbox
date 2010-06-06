@@ -19,7 +19,7 @@ module Graphics.PSC.Axis
   ( 
   -- * Axes
     AxisLabelConfig(..)
-  , AxisLabelAlg(..)
+  , AxisSteps
   , AxisLabelDrawF
 
   , xAxisText 
@@ -50,8 +50,8 @@ import Data.AffineSpace                 -- package: vector-space
 
 
 data AxisLabelConfig u v = AxisLabelConfig
-      { x_axis_cfg      :: Maybe (AxisLabelAlg u, AxisLabelDrawF u)
-      , y_axis_cfg      :: Maybe (AxisLabelAlg v, AxisLabelDrawF v)
+      { x_axis_cfg      :: (AxisSteps u, AxisLabelDrawF u)
+      , y_axis_cfg      :: (AxisSteps v, AxisLabelDrawF v)
       } 
 
 -- How you draw axis labels is quite "shrewd" - i.e 
@@ -60,67 +60,62 @@ data AxisLabelConfig u v = AxisLabelConfig
 
 type AxisLabelDrawF u = u -> DPoint2 -> Graphic
 
-data AxisLabelAlg u = AxisLabelAlg
-      { start_value     :: u
-      , step_fun        :: u -> u
-      }
-
-
+type AxisSteps u = [u]
 
 
 xAxisText :: (DRGB,FontAttr) -> Double -> (u -> String) -> AxisLabelDrawF u
 xAxisText font_props gap textF = \u north_pt -> 
-    wrapH $ textlabelN font_props (textF u) (north_pt .-^ vvec gap)
+    textlabelN font_props (textF u) (north_pt .-^ vvec gap)
 
 
 yAxisText :: (DRGB,FontAttr) -> Double -> (v -> String) -> AxisLabelDrawF v
 yAxisText font_props gap textF = \v east_pt -> 
-    wrapH $ textlabelE font_props (textF v) (east_pt .-^ hvec gap)
+    textlabelE font_props (textF v) (east_pt .-^ hvec gap)
 
 
-drawAxes :: (u -> Double, v -> Double) 
-         -> AxisLabelConfig u v
+drawAxes :: (AxisSteps u, AxisLabelDrawF u)
+         -> (AxisSteps v, AxisLabelDrawF v)
+         -> (u -> Double, v -> Double) 
          -> DrawingRectangle
          -> Graphic
-drawAxes (fX,fY) (AxisLabelConfig {x_axis_cfg, y_axis_cfg}) rect = hf . vf
+drawAxes (usteps,udrawF) (vsteps,vdrawF) (fX,fY) rect = hf . vf
   where
-    hf = maybe id (\z -> horizontalLabels fX z rect) x_axis_cfg
-    vf = maybe id (\z -> verticalLabels   fY z rect) y_axis_cfg
+    hf = horizontalLabels usteps udrawF fX rect 
+    vf = verticalLabels   vsteps vdrawF fY rect
     
 
-horizontalLabels :: (u -> Double) 
-                 -> (AxisLabelAlg u, AxisLabelDrawF u)
+horizontalLabels :: AxisSteps u
+                 -> AxisLabelDrawF u
+                 -> (u -> Double)
                  -> DrawingRectangle 
                  -> Graphic
-horizontalLabels fX (axis_alg,buildF) draw_rect = 
-    horizontals buildF 0 fX axis_alg draw_rect
+horizontalLabels steps buildF fX draw_rect = 
+    horizontals buildF 0 fX steps draw_rect
 
 
-verticalLabels :: (v -> Double) 
-               -> (AxisLabelAlg v, AxisLabelDrawF v)
+verticalLabels :: AxisSteps v
+               -> AxisLabelDrawF v
+               -> (v -> Double)
                -> DrawingRectangle 
                -> Graphic
-verticalLabels fY (axis_alg,buildF) draw_rect = 
-    verticals buildF 0 fY axis_alg draw_rect
+verticalLabels steps buildF fY draw_rect = 
+    verticals buildF 0 fY steps draw_rect
 
-
--- How about a variant of textlabel with position as an arg?
--- (bl, center, east...)
 
 --------------------------------------------------------------------------------
 -- Grids
 
 
-type GridLineDrawF = DPoint2 -> DPoint2 -> Graphic
+type StraightLineF = DPoint2 -> DPoint2 -> Graphic
 
 
-simpleGridLine :: Stroke t => t -> GridLineDrawF
-simpleGridLine t = \p0 p1 -> wrapH $ ostroke t $ path p0 [ lineTo p1 ]
+simpleGridLine :: Stroke t => t -> StraightLineF
+simpleGridLine t = \p0 p1 -> straightLine t (p1 .-. p0) p0
 
 data GridConfig u v = GridConfig
-      { grid_line_draw  :: GridLineDrawF
-      , grid_x_axis     :: Maybe (AxisLabelAlg u)
-      , grid_y_axis     :: Maybe (AxisLabelAlg v)
+      { grid_line_draw  :: StraightLineF
+      , grid_x_axis     :: Maybe (AxisSteps u)
+      , grid_y_axis     :: Maybe (AxisSteps v)
       } 
 
 
@@ -132,29 +127,29 @@ drawGrid :: (u -> Double, v -> Double)
 drawGrid (fX,fY) (GridConfig {grid_line_draw, grid_x_axis, grid_y_axis}) rect =
     vf . hf
   where
-    hf = maybe id (\alg -> horizontalLines fY grid_line_draw alg rect) grid_y_axis
-    vf = maybe id (\alg -> verticalLines   fX grid_line_draw alg rect) grid_x_axis
+    hf = maybe id (\steps -> horizontalLines fY grid_line_draw steps rect) grid_y_axis
+    vf = maybe id (\steps -> verticalLines   fX grid_line_draw steps rect) grid_x_axis
 
 
 verticalLines :: (u -> Double)
-              -> GridLineDrawF
-              -> AxisLabelAlg u
+              -> StraightLineF
+              -> AxisSteps u
               -> DrawingRectangle
               -> Graphic
-verticalLines fX drawF axis_alg draw_rect = 
-    horizontals buildF 0 fX axis_alg draw_rect
+verticalLines fX drawF steps draw_rect = 
+    horizontals buildF 0 fX steps draw_rect
   where
     buildF _ pt  = drawF pt (pt .+^ upvec)
     upvec        = vvec $ rect_height draw_rect
 
 
 horizontalLines :: (v -> Double) 
-                -> GridLineDrawF
-                -> AxisLabelAlg v
+                -> StraightLineF
+                -> AxisSteps v
                 -> DrawingRectangle
                 -> Graphic
-horizontalLines fY drawF axis_alg draw_rect = 
-    verticals buildF 0 fY axis_alg draw_rect
+horizontalLines fY drawF steps draw_rect = 
+    verticals buildF 0 fY steps draw_rect
   where
     buildF _ pt = drawF pt (pt .+^ rightvec)
     rightvec    = hvec $ rect_width draw_rect
@@ -167,36 +162,34 @@ horizontalLines fY drawF axis_alg draw_rect =
 horizontals :: (u -> DPoint2 -> Graphic) 
             -> Double 
             -> (u -> Double) 
-            -> AxisLabelAlg u 
+            -> AxisSteps u 
             -> DrawingRectangle 
             -> Graphic
-horizontals buildF y0 fX axis_alg rect = 
-    veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues fX axis_alg rect
+horizontals buildF y0 fX steps rect = 
+    veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues fX steps rect
 
 
 verticals :: (v -> DPoint2 -> Graphic) 
           -> Double 
           -> (v -> Double) 
-          -> AxisLabelAlg v
+          -> AxisSteps v
           -> DrawingRectangle 
           -> Graphic 
-verticals buildF x0 fY axis_alg rect = 
-    veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues fY axis_alg rect
+verticals buildF x0 fY steps rect = 
+    veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues fY steps rect
 
 
 
-xvalues :: (u -> Double) ->  AxisLabelAlg u -> DrawingRectangle -> [(u,Double)]
-xvalues fX alg draw_rect = takeWhile cmp $ map (\a -> (a,fX a)) $ infValues alg
+xvalues :: (u -> Double) ->  AxisSteps u -> DrawingRectangle -> [(u,Double)]
+xvalues fX steps draw_rect = takeWhile cmp $ map (\a -> (a,fX a)) steps
   where
     cmp (_,x) = x `leqEps` rect_width draw_rect 
 
-yvalues :: (v -> Double) ->  AxisLabelAlg v -> DrawingRectangle -> [(v,Double)]
-yvalues fY alg draw_rect = takeWhile cmp $ map (\a -> (a, fY a)) $ infValues alg
+yvalues :: (v -> Double) ->  AxisSteps v -> DrawingRectangle -> [(v,Double)]
+yvalues fY steps draw_rect = takeWhile cmp $ map (\a -> (a, fY a)) steps
   where
     cmp (_,y) = y `leqEps` rect_height draw_rect
 
-infValues :: AxisLabelAlg u -> [u]
-infValues (AxisLabelAlg {start_value,step_fun}) = iterate step_fun start_value 
 
 
 leqEps :: Double -> Double -> Bool
@@ -213,5 +206,5 @@ type BorderF = DPoint2 -> DPoint2 -> Graphic
 
 
 plainBorder :: DRGB -> Double -> BorderF
-plainBorder rgb lw = \bl@(P2 x0 y0) (P2 x1 y1)  -> wrapH $ 
-    cstroke (rgb, LineWidth lw) $ vertexPath $ rectPoints (x1-x0) (y1-y0) bl
+plainBorder rgb lw = \bl@(P2 x0 y0) (P2 x1 y1) -> 
+    strokedRectangle (rgb, LineWidth lw) (x1-x0) (y1-y0) bl

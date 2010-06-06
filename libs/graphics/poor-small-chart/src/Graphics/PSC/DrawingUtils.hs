@@ -23,19 +23,18 @@ module Graphics.PSC.DrawingUtils
     wrapG
   , drawGraphic
 
-  -- * drawing
+  -- * Drawing
   , makeProjector
 
   , concatBackgrounds
   , straightLine
-  , rectangle
-  , rectPoints
   , strokedRectangle
   , filledRectangle
   , strokedCircle
   , filledCircle
 
-  -- * text labels
+  -- * Text labels
+  , TextLabelF
   , textlabelU
   , textlabelN
   , textlabelS
@@ -85,19 +84,12 @@ makeProjector (Projection {proj_conv,proj_trans,proj_scale}) =
 concatBackgrounds :: Graphic -> [Graphic] -> Maybe DPicture
 concatBackgrounds top bkgrds = drawGraphic $ concatH bkgrds . top
 
-straightLine :: Num u => Point2 u -> Vec2 u -> Path u
-straightLine pt v = path pt [lineTo $ pt .+^ v]
+
+straightLine :: Stroke t => t -> DVec2 -> DPoint2 -> Graphic
+straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
 
 rectangle :: Num u => u -> u -> Point2 u -> Path u
 rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
-  where
-    br = bl .+^ hvec w
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 
-
-
-rectPoints :: Num u => u -> u -> Point2 u -> [Point2 u]
-rectPoints w h bl = [ bl, br, tr, tl ]
   where
     br = bl .+^ hvec w
     tr = br .+^ vvec h
@@ -121,45 +113,41 @@ filledCircle rgb radius = \pt -> wrapG $ ellipse rgb radius radius pt
 
 --------------------------------------------------------------------------------
 
-makeTextlabel :: Fractional u 
-              => (u -> u -> Vec2 u) 
+type TextLabelF = DPoint2 -> Graphic
+
+makeTextlabel :: (Double -> Double -> Vec2 Double) 
               -> (DRGB,FontAttr) 
               -> String 
-              -> Point2 u 
-              -> Primitive u
+              -> TextLabelF
 makeTextlabel mv (rgb,font_props) text bottom_left = 
-    textlabel (rgb,font_props) text (bottom_left .-^ mv text_width cap_height)
+    wrapG $ textlabel (rgb,font_props) text (bottom_left .-^ displacement)
   where
-    pt_size     = font_size font_props
-    text_width  = textWidth  pt_size (length text)
-    cap_height  = textHeight pt_size - (2 * descenderDepth pt_size)
+    pt_size       = font_size font_props
+    text_width    = textWidth  pt_size (length text)
+    cap_height    = textHeight pt_size - (2 * descenderDepth pt_size)
+    displacement  = mv text_width cap_height
 
-textlabelU :: Fractional u 
-           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
-textlabelU (rgb,font_props) text bottom_left = 
-    textlabel (rgb,font_props) text (bottom_left .+^ vvec dd)
+textlabelU :: (DRGB,FontAttr) -> String -> TextLabelF
+textlabelU (rgb,font_props) = 
+    makeTextlabel (\ _ _ -> V2 0 (negate dd)) (rgb,font_props)
   where
     pt_size     = font_size font_props
     dd          = descenderDepth pt_size
 
 
-textlabelN :: Fractional u 
-           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelN :: (DRGB,FontAttr) -> String -> TextLabelF
 textlabelN = makeTextlabel (\w cap_height -> V2 (w*0.5) cap_height)
 
 
 
-textlabelS :: Fractional u 
-           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelS :: (DRGB,FontAttr) -> String -> TextLabelF
 textlabelS = makeTextlabel (\w _ -> V2 (w*0.5) 0)
 
 
-textlabelE :: Fractional u 
-           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelE :: (DRGB,FontAttr) -> String -> TextLabelF
 textlabelE = makeTextlabel (\w cap_height -> V2 w (cap_height*0.5))
 
-textlabelW :: Fractional u 
-           => (DRGB,FontAttr) -> String -> Point2 u -> Primitive u
+textlabelW :: (DRGB,FontAttr) -> String -> TextLabelF
 textlabelW = makeTextlabel (\_ cap_height -> V2 0 (cap_height*0.5))
 
 

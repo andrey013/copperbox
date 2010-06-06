@@ -68,7 +68,6 @@ output_rect :: DrawingRectangle
 output_rect = drawing 200 200
 
 
-
 scatter_scale :: XYProjection Double Double
 scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
@@ -89,47 +88,28 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { x_axis_cfg      = Just (axis_x, xAxisText (black,helvetica12) 4 (ffloat 1))
-      , y_axis_cfg      = Just (axis_y, yAxisText (black,helvetica12) 2 (ffloat 1))
+      { x_axis_cfg      = (x_steps, xAxisText (black,helvetica12) 4 (ffloat 1))
+      , y_axis_cfg      = (y_steps, yAxisText (black,helvetica12) 2 (ffloat 1))
       } 
 
 
-type AxisF u = u -> Maybe (AxisLabelAlg u)
-
-axisStep :: (u -> u) -> AxisF u
-axisStep f = \u0 -> Just (AxisLabelAlg u0 f)
-
-
-startingFrom :: u -> AxisF u -> AxisF u 
-startingFrom u f = \_u0 -> f u 
 
 gridConfig :: Stroke t 
            => t
-           -> AxisF u
-           -> AxisF v
-           -> (Range u,Range v)
+           -> AxisSteps u
+           -> AxisSteps v
            -> GridConfig u v
-gridConfig t fu fv (u0:::_, v0:::_) = GridConfig (simpleGridLine t) (fu u0) (fv v0)
+gridConfig t sx sy = GridConfig (simpleGridLine t) (Just sx) (Just sy)
 
 
 grid_cfg :: GridConfig Double Double
-grid_cfg = gridConfig (blue, LineWidth 0.5) x_alg y_alg (x_range,y_range)
-  where
-    x_alg = axisStep (+1.0) `rap` startingFrom 4.5
-    y_alg = axisStep (+0.5) `rap` startingFrom 2.0
+grid_cfg = gridConfig (blue, LineWidth 0.5) x_steps y_steps
 
+x_steps :: AxisSteps Double
+x_steps = iterate (+1.0) 4.5
 
-axis_x :: AxisLabelAlg Double
-axis_x = AxisLabelAlg
-      { start_value     = 4.5
-      , step_fun        = (+1.0)
-      }
-
-axis_y :: AxisLabelAlg Double
-axis_y = AxisLabelAlg
-      { start_value     = 2.0
-      , step_fun        = (+0.5)
-      }
+y_steps :: AxisSteps Double
+y_steps = iterate (+0.5) 2.0
 
 
 legend :: Graphic
@@ -139,9 +119,6 @@ legend = drawLegend (simpleLegendElementDraw black helvetica12) 14
 
 
 ------------
-
-axisAlg :: Range x  -> (x -> x) -> AxisLabelAlg x
-axisAlg (u ::: _) f = AxisLabelAlg { start_value = u, step_fun = f }
 
 drawing :: Double -> Double -> DrawingRectangle
 drawing = DrawingRectangle

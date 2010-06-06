@@ -33,7 +33,6 @@ module Graphics.PSC.SparkLine
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
-import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 

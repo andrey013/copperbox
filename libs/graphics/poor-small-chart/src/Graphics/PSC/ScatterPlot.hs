@@ -74,7 +74,8 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
     grid        = maybe id (\x -> drawGrid (fX,fY) x rect) mb_grid
     
     axes        :: Graphic
-    axes        = maybe id (\x -> drawAxes (fX,fY) x rect) mb_axes
+    axes        = maybe id (\(AxisLabelConfig x y) -> 
+                             drawAxes x y (fX,fY) rect) mb_axes
 
     layers      :: [Graphic]
     layers      = map (makeLayer (fX,fY)) ls
