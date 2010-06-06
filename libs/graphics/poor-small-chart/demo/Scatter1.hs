@@ -88,8 +88,8 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 axes_cfg :: AxisLabelConfig Double Double
 axes_cfg = AxisLabelConfig
-      { x_axis_cfg      = (x_steps, xAxisText (black,helvetica12) 4 (ffloat 1))
-      , y_axis_cfg      = (y_steps, yAxisText (black,helvetica12) 2 (ffloat 1))
+      { x_axis_cfg      = (xAxisText (black,helvetica12) 4 (ffloat 1), x_steps)
+      , y_axis_cfg      = (yAxisText (black,helvetica12) 2 (ffloat 1), y_steps)
       } 
 
 

@@ -50,8 +50,8 @@ import Data.AffineSpace                 -- package: vector-space
 
 
 data AxisLabelConfig u v = AxisLabelConfig
-      { x_axis_cfg      :: (AxisSteps u, AxisLabelDrawF u)
-      , y_axis_cfg      :: (AxisSteps v, AxisLabelDrawF v)
+      { x_axis_cfg      :: (AxisLabelDrawF u, AxisSteps u)
+      , y_axis_cfg      :: (AxisLabelDrawF v, AxisSteps v)
       } 
 
 -- How you draw axis labels is quite "shrewd" - i.e 
@@ -73,33 +73,21 @@ yAxisText font_props gap textF = \v east_pt ->
     textlabelE font_props (textF v) (east_pt .-^ hvec gap)
 
 
-drawAxes :: (AxisSteps u, AxisLabelDrawF u)
-         -> (AxisSteps v, AxisLabelDrawF v)
-         -> (u -> Double, v -> Double) 
-         -> DrawingRectangle
-         -> Graphic
-drawAxes (usteps,udrawF) (vsteps,vdrawF) (fX,fY) rect = hf . vf
+drawAxes :: (AxisLabelDrawF u, AxisSteps u)
+         -> (AxisLabelDrawF v, AxisSteps v)
+         -> ScaleCtx u v Graphic
+drawAxes (udrawF,usteps) (vdrawF,vsteps) ctx = hf . vf
   where
-    hf = horizontalLabels usteps udrawF fX rect 
-    vf = verticalLabels   vsteps vdrawF fY rect
+    hf = horizontalLabels udrawF usteps ctx 
+    vf = verticalLabels   vdrawF vsteps ctx
     
 
-horizontalLabels :: AxisSteps u
-                 -> AxisLabelDrawF u
-                 -> (u -> Double)
-                 -> DrawingRectangle 
-                 -> Graphic
-horizontalLabels steps buildF fX draw_rect = 
-    horizontals buildF 0 fX steps draw_rect
+horizontalLabels :: AxisLabelDrawF u -> AxisSteps u -> ScaleCtx u v Graphic
+horizontalLabels buildF steps = horizontals 0 buildF steps
 
 
-verticalLabels :: AxisSteps v
-               -> AxisLabelDrawF v
-               -> (v -> Double)
-               -> DrawingRectangle 
-               -> Graphic
-verticalLabels steps buildF fY draw_rect = 
-    verticals buildF 0 fY steps draw_rect
+verticalLabels :: AxisLabelDrawF v -> AxisSteps v -> ScaleCtx u v Graphic
+verticalLabels buildF steps = verticals 0 buildF steps 
 
 
 --------------------------------------------------------------------------------
@@ -120,75 +108,62 @@ data GridConfig u v = GridConfig
 
 
 
-drawGrid :: (u -> Double, v -> Double) 
-         -> GridConfig u v
-         -> DrawingRectangle
-         -> Graphic
-drawGrid (fX,fY) (GridConfig {grid_line_draw, grid_x_axis, grid_y_axis}) rect =
+drawGrid :: GridConfig u v -> ScaleCtx u v Graphic
+drawGrid (GridConfig {grid_line_draw, grid_x_axis, grid_y_axis}) ctx =
     vf . hf
   where
-    hf = maybe id (\steps -> horizontalLines fY grid_line_draw steps rect) grid_y_axis
-    vf = maybe id (\steps -> verticalLines   fX grid_line_draw steps rect) grid_x_axis
+    hf = maybe id (\steps -> horizontalLines grid_line_draw steps ctx) grid_y_axis
+    vf = maybe id (\steps -> verticalLines   grid_line_draw steps ctx) grid_x_axis
 
 
-verticalLines :: (u -> Double)
-              -> StraightLineF
+verticalLines :: StraightLineF
               -> AxisSteps u
-              -> DrawingRectangle
-              -> Graphic
-verticalLines fX drawF steps draw_rect = 
-    horizontals buildF 0 fX steps draw_rect
+              -> ScaleCtx u v Graphic
+verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
   where
     buildF _ pt  = drawF pt (pt .+^ upvec)
-    upvec        = vvec $ rect_height draw_rect
+    upvec        = vvec $ rect_height rect
 
 
-horizontalLines :: (v -> Double) 
-                -> StraightLineF
+horizontalLines :: StraightLineF
                 -> AxisSteps v
-                -> DrawingRectangle
-                -> Graphic
-horizontalLines fY drawF steps draw_rect = 
-    verticals buildF 0 fY steps draw_rect
+                -> ScaleCtx u v Graphic
+horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx
   where
     buildF _ pt = drawF pt (pt .+^ rightvec)
-    rightvec    = hvec $ rect_width draw_rect
+    rightvec    = hvec $ rect_width rect
 
 
 
 --------------------------------------------------------------------------------
 -- Enumerate x-y values...
 
-horizontals :: (u -> DPoint2 -> Graphic) 
-            -> Double 
-            -> (u -> Double) 
+horizontals :: Double 
+            -> (u -> DPoint2 -> Graphic) 
             -> AxisSteps u 
-            -> DrawingRectangle 
-            -> Graphic
-horizontals buildF y0 fX steps rect = 
-    veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues fX steps rect
+            -> ScaleCtx u v Graphic
+horizontals y0 buildF steps ctx = 
+    veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues steps ctx
 
 
-verticals :: (v -> DPoint2 -> Graphic) 
-          -> Double 
-          -> (v -> Double) 
-          -> AxisSteps v
-          -> DrawingRectangle 
-          -> Graphic 
-verticals buildF x0 fY steps rect = 
-    veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues fY steps rect
+verticals :: Double 
+          -> (v -> DPoint2 -> Graphic) 
+          -> AxisSteps v 
+          -> ScaleCtx u v Graphic 
+verticals x0 buildF steps ctx = 
+    veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues steps ctx
 
 
 
-xvalues :: (u -> Double) ->  AxisSteps u -> DrawingRectangle -> [(u,Double)]
-xvalues fX steps draw_rect = takeWhile cmp $ map (\a -> (a,fX a)) steps
+xvalues :: AxisSteps u -> ScaleCtx u v [(u,Double)]
+xvalues steps (rect,fX,_) = takeWhile cmp $ map (\a -> (a,fX a)) steps
   where
-    cmp (_,x) = x `leqEps` rect_width draw_rect 
+    cmp (_,x) = x `leqEps` rect_width rect 
 
-yvalues :: (v -> Double) ->  AxisSteps v -> DrawingRectangle -> [(v,Double)]
-yvalues fY steps draw_rect = takeWhile cmp $ map (\a -> (a, fY a)) steps
+yvalues :: AxisSteps v -> ScaleCtx u v [(v,Double)]
+yvalues steps (rect,_,fY) = takeWhile cmp $ map (\a -> (a, fY a)) steps
   where
-    cmp (_,y) = y `leqEps` rect_height draw_rect
+    cmp (_,y) = y `leqEps` rect_height rect
 
 
 

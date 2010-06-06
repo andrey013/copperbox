@@ -71,27 +71,22 @@ renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls =
     pic_layers  = concatH layers
 
     grid        :: Graphic
-    grid        = maybe id (\x -> drawGrid (fX,fY) x rect) mb_grid
+    grid        = maybe id (\x -> drawGrid x ctx) mb_grid
     
     axes        :: Graphic
-    axes        = maybe id (\(AxisLabelConfig x y) -> 
-                             drawAxes x y (fX,fY) rect) mb_axes
+    axes        = maybe id (\(AxisLabelConfig x y) -> drawAxes x y ctx) mb_axes
 
     layers      :: [Graphic]
-    layers      = map (makeLayer (fX,fY)) ls
+    layers      = map (\x -> makeLayer x ctx) ls
+
+    ctx         = (rect, makeProjector px, makeProjector py)
 
 
-    fX          = makeProjector px
-    fY          = makeProjector py
+makeLayer :: (DotF,Dataset u v) -> ScaleCtx u v Graphic
+makeLayer (dotF,ds) = \ctx -> veloH (\pt -> makeDot dotF pt ctx) ds 
 
 
-makeLayer :: (u -> Double,v -> Double) 
-          -> (DotF,Dataset u v) 
-          -> Graphic
-makeLayer (fX,fY) (dotF,ds) = veloH (makeDot (fX,fY) dotF) ds 
-
-
-makeDot :: (u -> Double,v -> Double) -> DotF -> (u,v) -> Graphic
-makeDot (fX,fY) dotF (u,v) = dotF $ P2 (fX u) (fY v)
+makeDot :: DotF -> (u,v) -> ScaleCtx u v Graphic
+makeDot dotF (u,v) = \(_,fX,fY) -> dotF $ P2 (fX u) (fY v)
 
 
