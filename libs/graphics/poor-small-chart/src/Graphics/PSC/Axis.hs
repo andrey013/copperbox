@@ -115,7 +115,7 @@ verticalLines :: StraightLineF
 verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
   where
     buildF _ pt  = drawF pt (pt .+^ upvec)
-    upvec        = vvec $ rect_height rect
+    upvec        = vvec $ rectHeight rect
 
 
 horizontalLines :: StraightLineF
@@ -124,7 +124,7 @@ horizontalLines :: StraightLineF
 horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx
   where
     buildF _ pt = drawF pt (pt .+^ rightvec)
-    rightvec    = hvec $ rect_width rect
+    rightvec    = hvec $ rectWidth rect
 
 
 
@@ -151,12 +151,12 @@ verticals x0 buildF steps ctx =
 xvalues :: AxisSteps u -> ScaleCtx u v [(u,Double)]
 xvalues steps (rect,fX,_) = takeWhile cmp $ map (\a -> (a,fX a)) steps
   where
-    cmp (_,x) = x `leqEps` rect_width rect 
+    cmp (_,x) = x `leqEps` rectWidth rect 
 
 yvalues :: AxisSteps v -> ScaleCtx u v [(v,Double)]
 yvalues steps (rect,_,fY) = takeWhile cmp $ map (\a -> (a, fY a)) steps
   where
-    cmp (_,y) = y `leqEps` rect_height rect
+    cmp (_,y) = y `leqEps` rectHeight rect
 
 
 

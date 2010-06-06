@@ -115,7 +115,7 @@ legend = drawLegend (simpleLegendElementDraw black helvetica12) 14
 ------------
 
 drawing :: Double -> Double -> DrawingRectangle
-drawing = DrawingRectangle
+drawing = (,)
 
 
 drawingProjection :: (Num u, Num v) 
@@ -123,7 +123,7 @@ drawingProjection :: (Num u, Num v)
                   -> (Range v,v -> Double) 
                   -> DrawingRectangle
                   -> XYProjection u v
-drawingProjection (u@(u0:::_),fromU) (v@(v0:::_),fromV) (DrawingRectangle w h) =
+drawingProjection (u@(u0:::_),fromU) (v@(v0:::_),fromV) (w,h) =
     (xprojection, yprojection)
   where
     xprojection = Projection fromU (fromU u0) (w / fromU (rangeDist u))

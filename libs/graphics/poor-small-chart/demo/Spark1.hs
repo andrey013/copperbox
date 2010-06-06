@@ -25,7 +25,7 @@ chart1 = renderSparkLine (SparkLine spark_size spark_scale spark_stroke
 spark_stroke :: SparkLineF 
 spark_stroke = simpleLine black 0.5
 
-spark_range :: RangeBandF Double
+spark_range :: RangeBandF Double Double
 spark_range = rangeBand (0.3 ::: 0.8) aquamarine
 
 spark_size :: SparkLineConfig

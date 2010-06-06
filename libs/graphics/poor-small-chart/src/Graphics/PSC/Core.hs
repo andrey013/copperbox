@@ -22,7 +22,7 @@ module Graphics.PSC.Core
   , Graphic
   , ScaleCtx
   , Dataset
-  , DrawingRectangle(..)
+  , DrawingRectangle
   , Projection(..)
   , XYProjection
   
@@ -35,6 +35,9 @@ module Graphics.PSC.Core
   , writeChartSVG
 
   -- * functions
+  , rectWidth
+  , rectHeight
+
   , rangeDist
   
   , rescale
@@ -67,11 +70,9 @@ type ScaleCtx u v a = (DrawingRectangle, u -> Double, v -> Double) -> a
 
 type Dataset u v = [(u,v)]
 
-
-data DrawingRectangle = DrawingRectangle
-      { rect_width              :: Double
-      , rect_height             :: Double
-      }
+-- | DrawingRectangle = (width,height)
+--
+type DrawingRectangle = (Double,Double) 
 
 
 data Projection u = Projection 
@@ -115,6 +116,14 @@ writeChartSVG = writeSVG_latin1
 
 
 --------------------------------------------------------------------------------
+
+rectWidth :: DrawingRectangle -> Double
+rectWidth = fst
+
+rectHeight :: DrawingRectangle -> Double
+rectHeight = fst
+
+
 
 -- | 'rangeDist' - max - min.
 --

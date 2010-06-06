@@ -43,7 +43,7 @@ data SparkLine u v = SparkLine
       { sparkline_config  :: SparkLineConfig
       , sparkline_projs   :: XYProjection u v
       , sparkline_draw    :: SparkLineF
-      , range_band        :: RangeBandF v
+      , range_band        :: RangeBandF u v
       }
 
 data SparkLineConfig = SparkLineConfig
@@ -68,9 +68,9 @@ renderSparkLine (SparkLine c (px,py) drawF rangeF) ds =
     errK   = error "renderSparkLine - empty drawing"
     points = map (\(u,v) -> P2 (fX u) (fY v)) ds
 
-    bkgrnd = rangeF fY w 0
+    bkgrnd = rangeF ctx
 
-    (w,_)  = pictureSize c
+    ctx    = (pictureSize c, fX, fY)
 
     fX     = makeProjector px
     fY     = makeProjector py
@@ -87,19 +87,18 @@ pictureSize (SparkLineConfig {font_height,letter_count}) =
 -- The type of RangeBandF is very specifically tailored to 
 -- work with the implementation @rangeBand@.
 
-type RangeBandF v = (v -> Double) -> SparkLineWidth -> Double -> Graphic
 
-type SparkLineWidth = Double
-
-rangeBand :: Range v -> DRGB -> RangeBandF v
-rangeBand (y0 ::: y1) rgb = 
-    \fY w x0 -> let (dy0,dy1) = (fY y0, fY y1)
-                    pt        = P2 x0 dy0 in 
-                filledRectangle rgb w (dy1-dy0) pt
+type RangeBandF u v = ScaleCtx u v Graphic
 
 
-noRangeBand :: RangeBandF v
-noRangeBand = \_ _ _ -> id  
+rangeBand :: Num v => Range v -> DRGB -> RangeBandF u v
+rangeBand (y0 ::: y1) rgb = \(rect,_,fY) -> 
+    filledRectangle rgb (rectWidth rect) (fY $ y1 - y0) (P2 0 (fY y0)) 
+
+
+
+noRangeBand :: RangeBandF u v
+noRangeBand = \_ -> id  
 
 
 
