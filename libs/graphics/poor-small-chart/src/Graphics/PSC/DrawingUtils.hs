@@ -21,11 +21,11 @@ module Graphics.PSC.DrawingUtils
     drawGraphic
 
   -- * drawing
-  , makeStrokeProps
   , makeProjector
 
   , concatBackgrounds
   , straightLine
+  , rectangle
   , rectPoints
 
 
@@ -50,7 +50,6 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
 
-import Data.Maybe
 
 
 --------------------------------------------------------------------------------
@@ -67,12 +66,6 @@ drawGraphic f = step $ f []
 -- Drawing
 
 
-makeStrokeProps :: LineConfig -> (DRGB,[StrokeAttr])
-makeStrokeProps (LineConfig rgb lw mb_dash) = 
-    (rgb, catMaybes [ Just $ LineWidth lw, fmap mkDash mb_dash] )
-  where
-    mkDash (DashConfig offset xs) = DashPattern $ Dash offset xs
-
 
 makeProjector :: Projection u -> (u -> Double)
 makeProjector (Projection {proj_conv,proj_trans,proj_scale}) = 
@@ -85,6 +78,13 @@ concatBackgrounds top bkgrds = drawGraphic $ concatH bkgrds . top
 
 straightLine :: Num u => Point2 u -> Vec2 u -> Path u
 straightLine pt v = path pt [lineTo $ pt .+^ v]
+
+rectangle :: Num u => u -> u -> Point2 u -> Path u
+rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
+  where
+    br = bl .+^ hvec w
+    tr = br .+^ vvec h
+    tl = bl .+^ vvec h 
 
 
 rectPoints :: Num u => u -> u -> Point2 u -> [Point2 u]

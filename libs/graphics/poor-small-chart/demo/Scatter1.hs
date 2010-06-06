@@ -23,6 +23,8 @@ import System.Directory
 
 -- TEMP...
 import Wumpus.Core
+import Graphics.PSC.DrawingUtils
+import Data.Maybe
 
 infixr 5 `rap`
 rap :: a -> (a -> b) -> b
@@ -45,8 +47,11 @@ demo01 = do
                          , (virginica_cfg,  map slsw virginica)
                          ]
 
-          writeChartEPS "./out/scatter1.eps" (pic `picBeside` legend)
-          writeChartSVG "./out/scatter1.svg" (pic `picBeside` legend)
+          writeChartEPS "./out/scatter1.eps" (addLegend pic)
+          writeChartSVG "./out/scatter1.svg" (addLegend pic)
+  where
+   addLegend pic1 = pic1 `picBeside` (fromMaybe errK $ drawGraphic legend)
+   errK           = error "Empty legend"
 
 length_width_plot :: ScatterPlot Double Double
 length_width_plot =  ScatterPlot scatter_scale output_rect 
@@ -127,8 +132,8 @@ axis_y = AxisLabelAlg
       }
 
 
-legend :: DPicture
-legend = drawLegend (LegendConfig (LabelConfig helvetica12 black) Nothing)
+legend :: Graphic
+legend = drawLegend (simpleLegendElementDraw black helvetica12) 14
                     [ (red, "Sepal"), (green, "Versicolor"), 
                                       (blue,  "Viginica") ]
 

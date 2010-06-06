@@ -93,7 +93,7 @@ horizontalLabels :: (u -> Double)
                  -> DrawingRectangle 
                  -> Graphic
 horizontalLabels fX (axis_alg,buildF) draw_rect = 
-    horizontalPoints buildF 0 fX axis_alg draw_rect
+    horizontals buildF 0 fX axis_alg draw_rect
 
 
 verticalLabels :: (v -> Double) 
@@ -101,7 +101,7 @@ verticalLabels :: (v -> Double)
                -> DrawingRectangle 
                -> Graphic
 verticalLabels fY (axis_alg,buildF) draw_rect = 
-    verticalPoints buildF 0 fY axis_alg draw_rect
+    verticals buildF 0 fY axis_alg draw_rect
 
 
 -- How about a variant of textlabel with position as an arg?
@@ -142,7 +142,7 @@ verticalLines :: (u -> Double)
               -> DrawingRectangle
               -> Graphic
 verticalLines fX drawF axis_alg draw_rect = 
-    horizontalPoints buildF 0 fX axis_alg draw_rect
+    horizontals buildF 0 fX axis_alg draw_rect
   where
     buildF _ pt  = drawF pt (pt .+^ upvec)
     upvec        = vvec $ rect_height draw_rect
@@ -154,7 +154,7 @@ horizontalLines :: (v -> Double)
                 -> DrawingRectangle
                 -> Graphic
 horizontalLines fY drawF axis_alg draw_rect = 
-    verticalPoints buildF 0 fY axis_alg draw_rect
+    verticals buildF 0 fY axis_alg draw_rect
   where
     buildF _ pt = drawF pt (pt .+^ rightvec)
     rightvec    = hvec $ rect_width draw_rect
@@ -162,25 +162,25 @@ horizontalLines fY drawF axis_alg draw_rect =
 
 
 --------------------------------------------------------------------------------
--- Enumerate x-y values, generate points
+-- Enumerate x-y values...
 
-horizontalPoints :: (u -> DPoint2 -> Graphic) 
-                 -> Double 
-                 -> (u -> Double) 
-                 -> AxisLabelAlg u 
-                 -> DrawingRectangle 
-                 -> Graphic
-horizontalPoints buildF y0 fX axis_alg rect = 
+horizontals :: (u -> DPoint2 -> Graphic) 
+            -> Double 
+            -> (u -> Double) 
+            -> AxisLabelAlg u 
+            -> DrawingRectangle 
+            -> Graphic
+horizontals buildF y0 fX axis_alg rect = 
     veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues fX axis_alg rect
 
 
-verticalPoints :: (v -> DPoint2 -> Graphic) 
-               -> Double 
-               -> (v -> Double) 
-               -> AxisLabelAlg v
-               -> DrawingRectangle 
-               -> Graphic 
-verticalPoints buildF x0 fY axis_alg rect = 
+verticals :: (v -> DPoint2 -> Graphic) 
+          -> Double 
+          -> (v -> Double) 
+          -> AxisLabelAlg v
+          -> DrawingRectangle 
+          -> Graphic 
+verticals buildF x0 fY axis_alg rect = 
     veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues fY axis_alg rect
 
 

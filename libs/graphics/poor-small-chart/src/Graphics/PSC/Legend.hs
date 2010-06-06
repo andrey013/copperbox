@@ -11,7 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC - NamedFieldPuns
 --
--- Axes / grids
+-- Legends
 --
 --------------------------------------------------------------------------------
 
@@ -20,38 +20,30 @@ module Graphics.PSC.Legend
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
+import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space 
 
-
-
-data LegendConfig = LegendConfig
-      { legend_label_cfg      :: LabelConfig
-      , legend_borderline     :: Maybe LineConfig
-      } 
-
+type LegendElementDrawF = DRGB -> String -> DPoint2 -> Graphic
 
 type ColourLegend = [(DRGB,String)]
 
-drawLegend :: LegendConfig -> ColourLegend -> DPicture
-drawLegend (LegendConfig {legend_label_cfg}) xs = 
-    frameMulti $ foldr fn [] $ zipWith (legend1 legend_label_cfg) xs points
+drawLegend :: LegendElementDrawF -> Double -> ColourLegend -> Graphic
+drawLegend drawF height xs = 
+    foldr (.) id $ zipWith (\(rgb,text) pt -> drawF rgb text pt) xs points
   where
-    height          = textHeight $ font_size $ label_font legend_label_cfg
     points          = iterate (.-^ vvec (height + 4)) (P2 4 4)
-    fn (p1,p2) acc  = p1:p2:acc
 
-legend1 :: LabelConfig -> (DRGB,String) -> DPoint2 -> (DPrimitive,DPrimitive)
-legend1 (LabelConfig {label_text_colour,label_font}) (rgb,text) pt = 
-    (square,label)
-  where
-    height      = capHeight $ font_size label_font
-    square      = fill rgb $ vertexPath $ rectPoints height height pt
-    pt2         = pt .+^ hvec (height + 4)
-    label       = textlabel (label_text_colour,label_font) text pt2
-
+simpleLegendElementDraw :: DRGB -> FontAttr -> LegendElementDrawF
+simpleLegendElementDraw text_rgb font_props = 
+    \rgb text pt -> let height  = capHeight $ font_size font_props
+                        square  = wrapH $ fill rgb $ rectangle height height pt
+                        pt2     = pt .+^ hvec (height + 4)
+                        label   = wrapH $ textlabel (text_rgb,font_props) text pt2
+                    in square . label 
+    
 
 longestName :: ColourLegend -> String
 longestName = snd . foldr fn (0,"") where

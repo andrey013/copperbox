@@ -22,9 +22,6 @@ module Graphics.PSC.Core
   , Graphic
   , Dataset
   , DrawingRectangle(..)
-  , LineConfig(..)
-  , DashConfig(..)
-  , LabelConfig(..)
   , Projection(..)
   , XYProjection
   
@@ -73,21 +70,6 @@ data DrawingRectangle = DrawingRectangle
       , rect_height             :: Double
       }
 
-data LineConfig = LineConfig
-      { line_colour             :: DRGB
-      , line_width              :: Double
-      , opt_dash_pattern        :: Maybe DashConfig
-      }
-
-data DashConfig = DashConfig
-      { dash_offset             :: Int 
-      , on_off_pairs            :: [(Int,Int)] 
-      }
-
-data LabelConfig = LabelConfig
-      { label_font              :: FontAttr
-      , label_text_colour       :: DRGB
-      }
 
 data Projection u = Projection 
       { proj_conv               :: u -> Double
