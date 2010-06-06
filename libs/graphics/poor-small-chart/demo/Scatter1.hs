@@ -55,8 +55,8 @@ demo01 = do
 
 length_width_plot :: ScatterPlot Double Double
 length_width_plot =  ScatterPlot scatter_scale output_rect 
-                                               (Just grid_cfg)
-                                               (Just axes_cfg)  Nothing
+                                               grid_cfg
+                                               axes_cfg  Nothing
                        
 x_range :: Range Double
 x_range = 4.0 ::: 8.0
@@ -86,24 +86,18 @@ slsw iris = (sepal_length iris, sepal_width iris)
 
 
 
-axes_cfg :: AxisLabelConfig Double Double
-axes_cfg = AxisLabelConfig
-      { x_axis_cfg      = (xAxisText (black,helvetica12) 4 (ffloat 1), x_steps)
-      , y_axis_cfg      = (yAxisText (black,helvetica12) 2 (ffloat 1), y_steps)
-      } 
+axes_cfg :: AxisF Double Double
+axes_cfg = drawAxes (xAxisText (black,helvetica12) 4 (ffloat 1)) x_steps
+                    (yAxisText (black,helvetica12) 2 (ffloat 1)) y_steps
+      
 
 
 
-gridConfig :: Stroke t 
-           => t
-           -> AxisSteps u
-           -> AxisSteps v
-           -> GridConfig u v
-gridConfig t sx sy = GridConfig (simpleGridLine t) (Just sx) (Just sy)
 
-
-grid_cfg :: GridConfig Double Double
-grid_cfg = gridConfig (blue, LineWidth 0.5) x_steps y_steps
+grid_cfg :: GridF Double Double
+grid_cfg = drawGrid drawF x_steps y_steps
+  where
+    drawF = simpleGridLine (blue, LineWidth 0.5)
 
 x_steps :: AxisSteps Double
 x_steps = iterate (+1.0) 4.5

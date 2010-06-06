@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -9,7 +8,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC - NamedFieldPuns
+-- Portability :  GHC
 --
 -- Axes / grids
 --
@@ -18,16 +17,17 @@
 module Graphics.PSC.Axis
   ( 
   -- * Axes
-    AxisLabelConfig(..)
+    AxisF
   , AxisSteps
   , AxisLabelDrawF
-
+ 
   , xAxisText 
   , yAxisText
   , drawAxes
 
   -- * Grids
-  , GridConfig(..)
+  , GridF 
+  , StraightLineF
   , simpleGridLine
 
   , drawGrid
@@ -36,6 +36,7 @@ module Graphics.PSC.Axis
   -- * Border
   , BorderF
   , plainBorder
+  , noBorder
 
   ) where
 
@@ -49,14 +50,11 @@ import Data.AffineSpace                 -- package: vector-space
 
 
 
-data AxisLabelConfig u v = AxisLabelConfig
-      { x_axis_cfg      :: (AxisLabelDrawF u, AxisSteps u)
-      , y_axis_cfg      :: (AxisLabelDrawF v, AxisSteps v)
-      } 
-
 -- How you draw axis labels is quite "shrewd" - i.e 
 -- ticks / labels or both, or neither...
 --
+
+type AxisF u v = ScaleCtx u v Graphic
 
 type AxisLabelDrawF u = u -> DPoint2 -> Graphic
 
@@ -73,10 +71,11 @@ yAxisText font_props gap textF = \v east_pt ->
     textlabelE font_props (textF v) (east_pt .-^ hvec gap)
 
 
-drawAxes :: (AxisLabelDrawF u, AxisSteps u)
-         -> (AxisLabelDrawF v, AxisSteps v)
+
+drawAxes :: AxisLabelDrawF u -> AxisSteps u
+         -> AxisLabelDrawF v -> AxisSteps v
          -> ScaleCtx u v Graphic
-drawAxes (udrawF,usteps) (vdrawF,vsteps) ctx = hf . vf
+drawAxes udrawF usteps vdrawF vsteps ctx = hf . vf
   where
     hf = horizontalLabels udrawF usteps ctx 
     vf = verticalLabels   vdrawF vsteps ctx
@@ -93,6 +92,7 @@ verticalLabels buildF steps = verticals 0 buildF steps
 --------------------------------------------------------------------------------
 -- Grids
 
+type GridF u v = ScaleCtx u v Graphic
 
 type StraightLineF = DPoint2 -> DPoint2 -> Graphic
 
@@ -100,20 +100,13 @@ type StraightLineF = DPoint2 -> DPoint2 -> Graphic
 simpleGridLine :: Stroke t => t -> StraightLineF
 simpleGridLine t = \p0 p1 -> straightLine t (p1 .-. p0) p0
 
-data GridConfig u v = GridConfig
-      { grid_line_draw  :: StraightLineF
-      , grid_x_axis     :: Maybe (AxisSteps u)
-      , grid_y_axis     :: Maybe (AxisSteps v)
-      } 
 
 
-
-drawGrid :: GridConfig u v -> ScaleCtx u v Graphic
-drawGrid (GridConfig {grid_line_draw, grid_x_axis, grid_y_axis}) ctx =
-    vf . hf
+drawGrid :: StraightLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v Graphic
+drawGrid drawF usteps vsteps ctx = vf . hf
   where
-    hf = maybe id (\steps -> horizontalLines grid_line_draw steps ctx) grid_y_axis
-    vf = maybe id (\steps -> verticalLines   grid_line_draw steps ctx) grid_x_axis
+    hf = horizontalLines drawF vsteps ctx
+    vf = verticalLines   drawF usteps ctx
 
 
 verticalLines :: StraightLineF
@@ -183,3 +176,6 @@ type BorderF = DPoint2 -> DPoint2 -> Graphic
 plainBorder :: DRGB -> Double -> BorderF
 plainBorder rgb lw = \bl@(P2 x0 y0) (P2 x1 y1) -> 
     strokedRectangle (rgb, LineWidth lw) (x1-x0) (y1-y0) bl
+
+noBorder :: BorderF
+noBorder = \ _ _ -> id

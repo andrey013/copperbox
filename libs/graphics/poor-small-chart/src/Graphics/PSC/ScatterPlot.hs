@@ -43,8 +43,8 @@ import Data.Maybe
 data ScatterPlot u v = ScatterPlot
       { scatterplot_projs     :: XYProjection u v
       , scatterplot_rect      :: DrawingRectangle
-      , scatterplot_grid      :: Maybe (GridConfig u v)
-      , scatterplot_axes      :: Maybe (AxisLabelConfig u v)
+      , scatterplot_grid      :: GridF u v
+      , scatterplot_axes      :: AxisF u v
       , scatterplot_legend    :: Maybe ()
       }
 
@@ -64,17 +64,17 @@ type ScatterPlotLayer u v = (DotF, Dataset u v)
 
 -- Fraction constraint is temporary////
 renderScatterPlot :: ScatterPlot u v -> [ScatterPlotLayer u v] -> Chart
-renderScatterPlot (ScatterPlot (px,py) rect mb_grid mb_axes _legend) ls = 
+renderScatterPlot (ScatterPlot (px,py) rect gridF axisF _legend) ls = 
     fromMaybe errK $ concatBackgrounds pic_layers [ grid, axes ]
   where
     errK        = error "renderScatterPlot - empty Drawing"
     pic_layers  = concatH layers
 
     grid        :: Graphic
-    grid        = maybe id (\x -> drawGrid x ctx) mb_grid
+    grid        = gridF ctx
     
     axes        :: Graphic
-    axes        = maybe id (\(AxisLabelConfig x y) -> drawAxes x y ctx) mb_axes
+    axes        = axisF ctx
 
     layers      :: [Graphic]
     layers      = map (\x -> makeLayer x ctx) ls
