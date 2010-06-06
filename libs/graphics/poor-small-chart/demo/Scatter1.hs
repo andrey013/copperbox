@@ -73,13 +73,13 @@ scatter_scale :: XYProjection Double Double
 scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
 sepal_cfg       :: DotF
-sepal_cfg       = circledDot red    2.5
+sepal_cfg       = outlinedDot red    2.5
 
 versicolor_cfg  :: DotF
-versicolor_cfg  = circledDot green  2.5
+versicolor_cfg  = outlinedDot green  2.5
 
 virginica_cfg   :: DotF
-virginica_cfg   = circledDot blue   2.5
+virginica_cfg   = outlinedDot blue   2.5
 
 slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)

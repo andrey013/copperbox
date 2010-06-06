@@ -62,6 +62,7 @@ type Chart = DPicture
 type Graphic = H DPrimitive
 
 
+
 type Dataset u v = [(u,v)]
 
 
@@ -113,6 +114,8 @@ writeChartSVG = writeSVG_latin1
 
 --------------------------------------------------------------------------------
 
+-- | 'rangeDist' - max - min.
+--
 rangeDist :: Num u => Range u -> u
 rangeDist (u ::: v) = v-u
 

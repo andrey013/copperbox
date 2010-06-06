@@ -20,7 +20,6 @@ module Graphics.PSC.Legend
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
-import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -39,9 +38,9 @@ drawLegend drawF height xs =
 simpleLegendElementDraw :: DRGB -> FontAttr -> LegendElementDrawF
 simpleLegendElementDraw text_rgb font_props = 
     \rgb text pt -> let height  = capHeight $ font_size font_props
-                        square  = wrapH $ fill rgb $ rectangle height height pt
+                        square  = filledRectangle rgb height height pt
                         pt2     = pt .+^ hvec (height + 4)
-                        label   = wrapH $ textlabel (text_rgb,font_props) text pt2
+                        label   = wrapG $ textlabel (text_rgb,font_props) text pt2
                     in square . label 
     
 

@@ -23,7 +23,7 @@ module Graphics.PSC.ScatterPlot
 
   -- * Draw
   , dot
-  , circledDot
+  , outlinedDot
   , renderScatterPlot
 
   )
@@ -52,13 +52,12 @@ type DotF = DPoint2 -> Graphic
 
 
 dot :: DRGB -> Double -> DotF 
-dot rgb radius = \pt -> wrapH $ ellipse rgb radius radius pt 
+dot rgb radius = filledCircle rgb radius 
 
-circledDot :: DRGB -> Double -> DotF 
-circledDot rgb radius = \pt -> outline pt `consH` dot rgb radius pt
-  where 
-    outline pt = ellipse (black,LineWidth 0.5) radius radius pt
 
+outlinedDot :: DRGB -> Double -> DotF 
+outlinedDot rgb radius = \pt -> 
+    strokedCircle black 0.5 radius pt . filledCircle rgb radius pt
 
 type ScatterPlotLayer u v = (DotF, Dataset u v)
 

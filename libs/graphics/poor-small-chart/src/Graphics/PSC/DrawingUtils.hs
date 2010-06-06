@@ -17,8 +17,11 @@
 
 module Graphics.PSC.DrawingUtils
   (
-  -- Composing primitives
-    drawGraphic
+
+
+  -- * Graphic type
+    wrapG
+  , drawGraphic
 
   -- * drawing
   , makeProjector
@@ -27,7 +30,10 @@ module Graphics.PSC.DrawingUtils
   , straightLine
   , rectangle
   , rectPoints
-
+  , strokedRectangle
+  , filledRectangle
+  , strokedCircle
+  , filledCircle
 
   -- * text labels
   , textlabelU
@@ -51,6 +57,9 @@ import Wumpus.Core                      -- package: wumpus-core
 import Data.AffineSpace                 -- package: vector-space
 
 
+
+wrapG :: DPrimitive -> Graphic
+wrapG = wrapH 
 
 --------------------------------------------------------------------------------
 -- Composing primitives with Hughes lists
@@ -93,6 +102,22 @@ rectPoints w h bl = [ bl, br, tr, tl ]
     br = bl .+^ hvec w
     tr = br .+^ vvec h
     tl = bl .+^ vvec h 
+
+
+strokedRectangle :: Stroke t => t -> Double -> Double -> DPoint2 -> Graphic
+strokedRectangle t w h bl = wrapG $ cstroke t $ rectangle w h bl
+
+filledRectangle :: Fill t => t -> Double -> Double -> DPoint2 -> Graphic
+filledRectangle t w h bl = wrapG $ fill t $ rectangle w h bl
+
+
+
+strokedCircle :: DRGB -> LineWidth -> Double -> DPoint2 -> Graphic 
+strokedCircle rgb lw radius = \pt -> 
+    wrapG $ ellipse (rgb, LineWidth lw) radius radius pt
+
+filledCircle :: DRGB -> Double -> DPoint2 -> Graphic
+filledCircle rgb radius = \pt -> wrapG $ ellipse rgb radius radius pt 
 
 --------------------------------------------------------------------------------
 

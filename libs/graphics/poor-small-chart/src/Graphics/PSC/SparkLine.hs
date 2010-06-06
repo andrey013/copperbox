@@ -58,7 +58,7 @@ data SparkLineConfig = SparkLineConfig
 type SparkLineF = [DPoint2] -> Graphic
 
 simpleLine :: DRGB -> Double -> SparkLineF
-simpleLine rgb lw = wrapH . ostroke (rgb, LineWidth lw) . vertexPath
+simpleLine rgb lw = wrapG . ostroke (rgb, LineWidth lw) . vertexPath
 
 
 
@@ -96,7 +96,7 @@ rangeBand :: Range v -> DRGB -> RangeBandF v
 rangeBand (y0 ::: y1) rgb = 
     \fY w x0 -> let (dy0,dy1) = (fY y0, fY y1)
                     pt        = P2 x0 dy0 in 
-                wrapH $ fill rgb $ vertexPath $ rectPoints w (dy1-dy0) pt
+                filledRectangle rgb w (dy1-dy0) pt
 
 
 noRangeBand :: RangeBandF v
