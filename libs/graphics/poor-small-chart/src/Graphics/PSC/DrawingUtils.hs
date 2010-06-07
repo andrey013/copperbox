@@ -24,6 +24,7 @@ module Graphics.PSC.DrawingUtils
   , drawGraphic
 
   -- * Drawing
+  , drawingContext
   , makeProjector
 
   , concatBackgrounds
@@ -73,6 +74,16 @@ drawGraphic f = step $ f []
 --------------------------------------------------------------------------------
 -- Drawing
 
+
+drawingContext :: (Num u, Num v) 
+               => Range u -> (u -> Double) 
+               -> Range v -> (v -> Double) 
+               -> DrawingRectangle
+               -> DrawingContext u v
+drawingContext (u0:::u1) fromU (v0:::v1) fromV (w,h) = ((w,h), scaleX, scaleY) 
+  where
+    scaleX = rescale (fromU u0) (fromU u1) 0 w . fromU
+    scaleY = rescale (fromV v0) (fromV v1) 0 h . fromV
 
 
 makeProjector :: Projection u -> (u -> Double)

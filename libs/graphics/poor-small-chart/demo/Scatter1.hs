@@ -54,9 +54,7 @@ demo01 = do
    errK           = error "Empty legend"
 
 length_width_plot :: ScatterPlot Double Double
-length_width_plot =  ScatterPlot scatter_scale output_rect 
-                                               grid_cfg
-                                               axes_cfg  Nothing
+length_width_plot =  ScatterPlot drawing_ctx grid_cfg axes_cfg
                        
 x_range :: Range Double
 x_range = 4.0 ::: 8.0
@@ -67,9 +65,11 @@ y_range = 1.8 ::: 4.8
 output_rect :: DrawingRectangle
 output_rect = drawing 200 200
 
+drawing_ctx :: DrawingContext Double Double
+drawing_ctx = drawingContext x_range id y_range id output_rect
 
-scatter_scale :: XYProjection Double Double
-scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
+-- scatter_scale :: XYProjection Double Double
+-- scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
 sepal_cfg       :: DotF
 sepal_cfg       = outlinedDot red    2.5
@@ -114,9 +114,12 @@ legend = drawLegend (simpleLegendElementDraw black helvetica12) 14
 
 ------------
 
+
 drawing :: Double -> Double -> DrawingRectangle
 drawing = (,)
 
+
+{-
 
 drawingProjection :: (Num u, Num v) 
                   => (Range u,u -> Double) 
@@ -129,3 +132,4 @@ drawingProjection (u@(u0:::_),fromU) (v@(v0:::_),fromV) (w,h) =
     xprojection = Projection fromU (fromU u0) (w / fromU (rangeDist u))
     yprojection = Projection fromV (fromV v0) (h / fromV (rangeDist v))
 
+-}

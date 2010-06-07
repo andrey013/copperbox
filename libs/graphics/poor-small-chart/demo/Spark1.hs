@@ -3,10 +3,13 @@
 module Spark1 where
 
 import Graphics.PSC.Core
+import Graphics.PSC.DrawingUtils
 import Graphics.PSC.SparkLine
 
-import Wumpus.Core ( textWidth, textHeight )
+import Wumpus.Core
+import Wumpus.Extra.SafeFonts
 import Wumpus.Extra.SVGColours 
+
 
 
 
@@ -18,7 +21,7 @@ main =  createDirectoryIfMissing True "./out/"
      >> writeChartSVG "./out/spark1.svg" chart1
 
 chart1 :: Chart
-chart1 = renderSparkLine (SparkLine spark_size spark_scale spark_stroke
+chart1 = renderSparkLine (SparkLine spark_ctx spark_stroke
                                     spark_range) 
                          data_points
 
@@ -28,15 +31,14 @@ spark_stroke = simpleLine black 0.5
 spark_range :: RangeBandF Double Double
 spark_range = rangeBand (0.3 ::: 0.8) aquamarine
 
-spark_size :: SparkLineConfig
-spark_size = SparkLineConfig 24 10
-
-spark_scale :: XYProjection Double Double
-spark_scale = ( Projection id (0.1) (w / 0.9)
-              , Projection id 0      h  )
-
+spark_ctx :: DrawingContext Double Double
+spark_ctx = drawingContext (0.1 ::: 1.0) id (0.0 ::: 1.0) id rect
   where
-    (w,h) = (textWidth 24 10, textHeight 24)
+    rect = sparklineRectangle spark_font 10
+
+spark_font :: FontAttr
+spark_font = courier24
+
 
 data_points :: Dataset Double Double
 data_points = 

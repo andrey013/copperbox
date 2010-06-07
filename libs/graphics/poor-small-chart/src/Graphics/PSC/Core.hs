@@ -20,6 +20,7 @@ module Graphics.PSC.Core
   -- * Types
     Chart
   , Graphic
+  , DrawingContext
   , ScaleCtx
   , Dataset
   , DrawingRectangle
@@ -65,7 +66,9 @@ type Chart = DPicture
 --
 type Graphic = H DPrimitive
 
-type ScaleCtx u v a = (DrawingRectangle, u -> Double, v -> Double) -> a  
+type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
+
+type ScaleCtx u v a = DrawingContext u v -> a  
 
 
 type Dataset u v = [(u,v)]

@@ -19,7 +19,6 @@ module Graphics.PSC.SparkLine
   (
   -- * Data types
     SparkLine(..)
-  , SparkLineConfig(..)
   , SparkLineF
   , RangeBandF
   
@@ -28,6 +27,7 @@ module Graphics.PSC.SparkLine
   , rangeBand
   , noRangeBand
   , renderSparkLine  
+  , sparklineRectangle
 
   ) where
 
@@ -40,18 +40,10 @@ import Data.Maybe
 
      
 data SparkLine u v = SparkLine
-      { sparkline_config  :: SparkLineConfig
-      , sparkline_projs   :: XYProjection u v
+      { sparkline_ctx     :: DrawingContext u v
       , sparkline_draw    :: SparkLineF
       , range_band        :: RangeBandF u v
       }
-
-data SparkLineConfig = SparkLineConfig
-      { font_height     :: PointSize
-      , letter_count    :: Int
-      }
-
-
 
 
 type SparkLineF = [DPoint2] -> Graphic
@@ -62,7 +54,7 @@ simpleLine rgb lw = wrapG . ostroke (rgb, LineWidth lw) . vertexPath
 
 
 renderSparkLine :: SparkLine u v -> Dataset u v -> Chart
-renderSparkLine (SparkLine c (px,py) drawF rangeF) ds = 
+renderSparkLine (SparkLine ctx@(_,fX,fY) drawF rangeF) ds = 
     fromMaybe errK $ drawGraphic $ drawF points . bkgrnd
   where
     errK   = error "renderSparkLine - empty drawing"
@@ -70,15 +62,12 @@ renderSparkLine (SparkLine c (px,py) drawF rangeF) ds =
 
     bkgrnd = rangeF ctx
 
-    ctx    = (pictureSize c, fX, fY)
 
-    fX     = makeProjector px
-    fY     = makeProjector py
-
-
-pictureSize :: SparkLineConfig -> (Double,Double)
-pictureSize (SparkLineConfig {font_height,letter_count}) =
-  (textWidth font_height letter_count, fromIntegral font_height)  
+sparklineRectangle :: FontAttr -> Int -> DrawingRectangle
+sparklineRectangle attr letter_count = 
+    (textWidth sz letter_count, fromIntegral sz)
+  where
+    sz = font_size attr
 
 
 --------------------------------------------------------------------------------
