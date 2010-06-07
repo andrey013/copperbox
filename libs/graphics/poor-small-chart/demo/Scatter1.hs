@@ -42,9 +42,9 @@ demo01 = do
       Nothing -> putStrLn "no go"
       Just (setosa, versicolor, virginica) -> do 
           let pic =  renderScatterPlot length_width_plot $ 
-                         [ (sepal_cfg,      map slsw setosa)
-                         , (versicolor_cfg, map slsw versicolor)
-                         , (virginica_cfg,  map slsw virginica)
+                         [ (dot_sepal,      map slsw setosa)
+                         , (dot_versicolor, map slsw versicolor)
+                         , (dot_virginica,  map slsw virginica)
                          ]
 
           writeChartEPS "./out/scatter1.eps" (addLegend pic)
@@ -53,32 +53,33 @@ demo01 = do
    addLegend pic1 = pic1 `picBeside` (fromMaybe errK $ drawGraphic legend)
    errK           = error "Empty legend"
 
-length_width_plot :: ScatterPlot Double Double
-length_width_plot =  ScatterPlot drawing_ctx grid_cfg axes_cfg
-                       
-x_range :: Range Double
-x_range = 4.0 ::: 8.0
 
-y_range :: Range Double
-y_range = 1.8 ::: 4.8
+length_width_plot :: ScatterPlot Double Double
+length_width_plot =  ScatterPlot ctx (grid_cfg `cc` axes_cfg)
+  where
+    ctx = drawingCtx range_sepal_length range_sepal_width
+                       
+range_sepal_length     :: Range Double
+range_sepal_length     = 4.0 ::: 8.0
+
+range_sepal_width      :: Range Double
+range_sepal_width      = 1.8 ::: 4.8
 
 output_rect :: DrawingRectangle
 output_rect = drawing 200 200
 
-drawing_ctx :: DrawingContext Double Double
-drawing_ctx = drawingContext x_range id y_range id output_rect
+drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
+drawingCtx x_range y_range = drawingContext x_range id y_range id output_rect
 
--- scatter_scale :: XYProjection Double Double
--- scatter_scale = drawingProjection (x_range,id) (y_range,id) output_rect
 
-sepal_cfg       :: DotF
-sepal_cfg       = outlinedDot red    2.5
+dot_sepal       :: DotF
+dot_sepal       = outlinedDot red    2.5
 
-versicolor_cfg  :: DotF
-versicolor_cfg  = outlinedDot green  2.5
+dot_versicolor  :: DotF
+dot_versicolor  = outlinedDot green  2.5
 
-virginica_cfg   :: DotF
-virginica_cfg   = outlinedDot blue   2.5
+dot_virginica   :: DotF
+dot_virginica   = outlinedDot blue   2.5
 
 slsw :: IrisData -> (Double,Double)
 slsw iris = (sepal_length iris, sepal_width iris)

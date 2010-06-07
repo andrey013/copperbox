@@ -22,6 +22,7 @@ module Graphics.PSC.DrawingUtils
   -- * Graphic type
     wrapG
   , drawGraphic
+  , cc
 
   -- * Drawing
   , drawingContext
@@ -61,6 +62,8 @@ import Data.AffineSpace                 -- package: vector-space
 wrapG :: DPrimitive -> Graphic
 wrapG = wrapH 
 
+
+
 --------------------------------------------------------------------------------
 -- Composing primitives with Hughes lists
 
@@ -70,6 +73,13 @@ drawGraphic f = step $ f []
   where
     step [] = Nothing
     step xs = Just $ frameMulti xs 
+
+
+infixr 9 `cc`
+
+cc :: ScaleCtx u v Graphic -> ScaleCtx u v Graphic -> ScaleCtx u v Graphic 
+cc f g = \ctx -> f ctx . g ctx
+
 
 --------------------------------------------------------------------------------
 -- Drawing

@@ -173,9 +173,9 @@ rect_epsilon = 0.01
 type BorderF = DPoint2 -> DPoint2 -> Graphic
 
 
-plainBorder :: DRGB -> Double -> BorderF
-plainBorder rgb lw = \bl@(P2 x0 y0) (P2 x1 y1) -> 
-    strokedRectangle (rgb, LineWidth lw) (x1-x0) (y1-y0) bl
+plainBorder :: DRGB -> Double -> ScaleCtx u v Graphic
+plainBorder rgb lw = \((w,h),_,_) -> 
+    strokedRectangle (rgb, LineWidth lw) w h (P2 0 0)
 
 noBorder :: BorderF
 noBorder = \ _ _ -> id

@@ -29,7 +29,6 @@ module Graphics.PSC.ScatterPlot
   )
   where
 
-import Graphics.PSC.Axis
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
 import Graphics.PSC.Utils
@@ -41,12 +40,13 @@ import Data.Maybe
 
 
 data ScatterPlot u v = ScatterPlot
-      { scatterplot_ctx       :: DrawingContext u v
-      , scatterplot_grid      :: GridF u v
-      , scatterplot_axes      :: AxisF u v
+      { scatterplot_ctx         :: DrawingContext u v
+      , scatterplot_labelling   :: LabellingF u v
       }
 
 type DotF = DPoint2 -> Graphic
+
+type LabellingF u v = ScaleCtx u v Graphic
 
 
 dot :: DRGB -> Double -> DotF 
@@ -62,17 +62,14 @@ type ScatterPlotLayer u v = (DotF, Dataset u v)
 
 -- Fraction constraint is temporary////
 renderScatterPlot :: ScatterPlot u v -> [ScatterPlotLayer u v] -> Chart
-renderScatterPlot (ScatterPlot ctx gridF axisF) ls = 
-    fromMaybe errK $ concatBackgrounds pic_layers [ grid, axes ]
+renderScatterPlot (ScatterPlot ctx labellingF) ls = 
+    fromMaybe errK $ concatBackgrounds pic_layers [ labels ]
   where
     errK        = error "renderScatterPlot - empty Drawing"
     pic_layers  = concatH layers
 
-    grid        :: Graphic
-    grid        = gridF ctx
-    
-    axes        :: Graphic
-    axes        = axisF ctx
+    labels      :: Graphic
+    labels      = labellingF ctx
 
     layers      :: [Graphic]
     layers      = map (\x -> makeLayer x ctx) ls
