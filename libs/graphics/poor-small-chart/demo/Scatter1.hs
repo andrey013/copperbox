@@ -47,54 +47,66 @@ allPictures infos = vsepA VCenter 20 row1 [row2, row3, row4]
   where
     box1  = labelBox "Sepal.Length"
   
-    swsl  = makePic range_sepal_width  sepal_width
-                    range_sepal_length sepal_length 
+    swsl  = makePic range_sepal_width  sepal_width 
+                    range_sepal_length sepal_length
+                    Nothing Nothing
    
     plsl  = makePic range_petal_length petal_length
                     range_sepal_length sepal_length
+                    Nothing Nothing
   
-    pwsl  = makePic range_petal_width  petal_width
+    pwsl  = makePic range_petal_width  petal_width 
                     range_sepal_length sepal_length
+                    Nothing Nothing
 
     row1  = hsepA HCenter 20 box1 [swsl infos, plsl infos, pwsl infos]
     --------
 
     slsw  = makePic range_sepal_length sepal_length
-                    range_sepal_width  sepal_width 
+                    range_sepal_width  sepal_width
+                    Nothing Nothing
 
     box2  = labelBox "Sepal.Width"
    
     plsw  = makePic range_petal_length petal_length
-                    range_sepal_width  sepal_width
+                    range_sepal_width  sepal_width 
+                    Nothing Nothing
   
-    pwsw  = makePic range_petal_width  petal_width
-                    range_sepal_width  sepal_width
+    pwsw  = makePic range_petal_width  petal_width 
+                    range_sepal_width  sepal_width 
+                    Nothing Nothing
 
     row2  = hsepA HCenter 20 (slsw infos) [box2, plsw infos, pwsw infos]
     --------
 
     slpl  = makePic range_sepal_length sepal_length
-                    range_petal_length petal_length 
-   
-    swpl  = makePic range_sepal_width  sepal_width
                     range_petal_length petal_length
+                    Nothing Nothing
+   
+    swpl  = makePic range_sepal_width  sepal_width 
+                    range_petal_length petal_length
+                    Nothing Nothing
                     
     box3  = labelBox "Petal.Length"
 
     pwpl  = makePic range_petal_width  petal_width
                     range_petal_length petal_length
+                    Nothing Nothing
 
     row3  = hsepA HCenter 20 (slpl infos) [swpl infos, box3, pwpl infos]
     --------
 
     slpw  = makePic range_sepal_length sepal_length
                     range_petal_width  petal_width 
+                    Nothing Nothing
    
     swpw  = makePic range_sepal_width  sepal_width
                     range_petal_width  petal_width
+                    Nothing Nothing
                     
     plpw  = makePic range_petal_length petal_length
                     range_petal_width  petal_width
+                    Nothing Nothing
                     
     box4  = labelBox "Petal.Width"
 
@@ -104,13 +116,20 @@ allPictures infos = vsepA VCenter 20 row1 [row2, row3, row4]
 
 makePic :: Range Double -> (IrisData -> Double) 
         -> Range Double -> (IrisData -> Double) 
+        -> Maybe (ScaleCtx Double Double Graphic)
+        -> Maybe (ScaleCtx Double Double Graphic)
         -> InfoSet
         -> DPicture
-makePic xr xflt yr yflt infos = 
-    renderScatterPlot (makePlot xr yr) (makeLayers extr infos)
+makePic xr xflt yr yflt mb_xaxis mb_yaxis infos = 
+    renderScatterPlot (makePlot xr yr axisF) (makeLayers extr infos)
   where
-    extr = extractData (xflt,yflt) 
-
+    extr  = extractData (xflt,yflt) 
+    
+    axisF = case (mb_xaxis , mb_yaxis) of
+              (Nothing, Nothing) -> const id
+              (Just xF, Nothing) -> xF
+              (Nothing, Just yF) -> yF
+              (Just xF, Just yF) -> xF `cc` yF
 
 makeLayers :: (IrisData -> (Double,Double)) 
            -> InfoSet 
@@ -122,9 +141,12 @@ makeLayers filt (setosa, versicolor, virginica) =
     ]
            
                  
-makePlot :: Range Double -> Range Double -> ScatterPlot Double Double
-makePlot x_range y_range = 
-    ScatterPlot (drawingCtx x_range y_range) border
+makePlot :: Range Double 
+         -> Range Double 
+         -> ScaleCtx Double Double Graphic
+         -> ScatterPlot Double Double
+makePlot x_range y_range axisF = 
+    ScatterPlot (drawingCtx x_range y_range) (axisF `cc` border)
   where
     border = plainBorder black 0.5
 

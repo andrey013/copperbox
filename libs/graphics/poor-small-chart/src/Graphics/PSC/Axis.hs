@@ -17,17 +17,26 @@
 module Graphics.PSC.Axis
   ( 
   -- * Axes
-    AxisF
-  , AxisSteps
-  , AxisLabelDrawF
+    AxisSteps
+  , AxisLabelF
  
-  , xAxisText 
-  , yAxisText
+  , xAxisLabel
+  , yAxisLabel
+
+  , xAxisTickLabel
+  , xAxisTickLabelAlt
+
+  , yAxisTickLabel
+  , yAxisTickLabelAlt
+
   , drawAxes
+  , horizontalLabels
+  , verticalLabels
+  , horizontalLabelsTop
+  , verticalLabelsRight
 
   -- * Grids
-  , GridF 
-  , StraightLineF
+  , GridLineF
   , simpleGridLine
 
   , drawGrid
@@ -54,62 +63,155 @@ import Data.AffineSpace                 -- package: vector-space
 -- ticks / labels or both, or neither...
 --
 
-type AxisF u v = ScaleCtx u v Graphic
-
-type AxisLabelDrawF u = u -> DPoint2 -> Graphic
+type AxisLabelF u = u -> DPoint2 -> Graphic
 
 type AxisSteps u = [u]
 
-
-xAxisText :: (DRGB,FontAttr) -> Double -> (u -> String) -> AxisLabelDrawF u
-xAxisText font_props gap textF = \u north_pt -> 
+-- | 'xAxisLabel' 
+-- : @ (rgb,font_attr) * vertical_gap * to_string -> label_functional @
+-- 
+xAxisLabel :: (DRGB,FontAttr) -> Double -> (u -> String) -> AxisLabelF u
+xAxisLabel font_props gap textF = \u north_pt -> 
     textlabelN font_props (textF u) (north_pt .-^ vvec gap)
 
 
-yAxisText :: (DRGB,FontAttr) -> Double -> (v -> String) -> AxisLabelDrawF v
-yAxisText font_props gap textF = \v east_pt -> 
+-- | 'yAxisLabel' 
+-- : @ (rgb,font_attr) * horizontal_gap * to_string -> label_functional @
+-- 
+yAxisLabel :: (DRGB,FontAttr) -> Double -> (v -> String) -> AxisLabelF v
+yAxisLabel font_props gap textF = \v east_pt -> 
     textlabelE font_props (textF v) (east_pt .-^ hvec gap)
 
 
-
-drawAxes :: AxisLabelDrawF u -> AxisSteps u
-         -> AxisLabelDrawF v -> AxisSteps v
-         -> ScaleCtx u v Graphic
-drawAxes udrawF usteps vdrawF vsteps ctx = hf . vf
+-- | 'xAxisLabelTick' 
+-- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
+--   * tick_length * vertical_gap  * to_string -> label_functional @
+-- 
+-- Label at the bottom, tick above it...
+--
+-- >  |
+-- > 1.0
+--
+xAxisTickLabel :: (DRGB,Double) 
+               -> (DRGB,FontAttr) 
+               -> Double -> Double 
+               -> (v -> String) 
+               -> AxisLabelF v
+xAxisTickLabel (rgb,lw) font_props tick_len gap textF = 
+     \v point -> line point . label v point
   where
-    hf = horizontalLabels udrawF usteps ctx 
-    vf = verticalLabels   vdrawF vsteps ctx
+    label v pt = textlabelN font_props (textF v) (pt .-^ vvec (tick_len + gap))
+    line pt    = straightLine (rgb, LineWidth lw) (vvec (negate tick_len)) pt
+
+
+-- | 'xAxisLabelTick' 
+-- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
+--   * tick_length * vertical_gap  * to_string -> label_functional @
+-- 
+-- Tick at the bottom, label above it...
+--
+-- > 1.0
+-- >  |
+--
+xAxisTickLabelAlt :: (DRGB,Double) 
+                  -> (DRGB,FontAttr) 
+                  -> Double -> Double 
+                  -> (v -> String) 
+                  -> AxisLabelF v
+xAxisTickLabelAlt (rgb,lw) font_props tick_len gap textF = 
+     \v point -> line point . label v point
+  where
+    label v pt = textlabelS font_props (textF v) (pt .+^ vvec (tick_len + gap))
+    line pt    = straightLine (rgb, LineWidth lw) (vvec tick_len) pt
+
+
+-- | 'yAxisLabelTick' 
+-- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
+--   * tick_length * horizontal_gap  * to_string -> label_functional @
+-- 
+-- Label on the left, tick to its right...
+--
+-- > 1.0 --
+--
+yAxisTickLabel :: (DRGB,Double) 
+               -> (DRGB,FontAttr) 
+               -> Double -> Double 
+               -> (v -> String) 
+               -> AxisLabelF v
+yAxisTickLabel (rgb,lw) font_props tick_len gap textF = 
+     \v point -> line point . label v point
+  where
+    label v pt = textlabelE font_props (textF v) (pt .-^ hvec (tick_len + gap))
+    line pt    = straightLine (rgb, LineWidth lw) (hvec (negate tick_len)) pt
+
+-- | 'yAxisTickLabelAlt' 
+-- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
+--   * tick_length * horizontal_gap  * to_string -> label_functional @ 
+-- 
+-- Tick on the left, label to its right...
+--
+-- > -- 1.0
+--
+yAxisTickLabelAlt :: (DRGB,Double) 
+                  -> (DRGB,FontAttr) 
+                  -> Double -> Double 
+                  -> (v -> String) 
+                  -> AxisLabelF v
+yAxisTickLabelAlt (rgb,lw) font_props tick_len gap textF = 
+     \v point -> line point . label v point
+  where
+    label v pt = textlabelW font_props (textF v) (pt .+^ hvec (tick_len + gap))
+    line pt    = straightLine (rgb, LineWidth lw) (hvec tick_len) pt
+
     
 
-horizontalLabels :: AxisLabelDrawF u -> AxisSteps u -> ScaleCtx u v Graphic
+drawAxes :: AxisLabelF u -> AxisSteps u
+         -> AxisLabelF v -> AxisSteps v
+         -> ScaleCtx u v Graphic
+drawAxes udrawF usteps vdrawF vsteps = hf `cc` vf
+  where
+    hf = horizontalLabels udrawF usteps
+    vf = verticalLabels   vdrawF vsteps
+    
+
+horizontalLabels :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v Graphic
 horizontalLabels buildF steps = horizontals 0 buildF steps
 
 
-verticalLabels :: AxisLabelDrawF v -> AxisSteps v -> ScaleCtx u v Graphic
+verticalLabels :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v Graphic
 verticalLabels buildF steps = verticals 0 buildF steps 
+
+horizontalLabelsTop :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v Graphic
+horizontalLabelsTop buildF steps = \ctx -> 
+    horizontals (ctxRectangleHeight ctx) buildF steps ctx
+
+
+verticalLabelsRight :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v Graphic
+verticalLabelsRight buildF steps = \ctx -> 
+    verticals (ctxRectangleWidth ctx) buildF steps ctx
+
 
 
 --------------------------------------------------------------------------------
 -- Grids
 
-type GridF u v = ScaleCtx u v Graphic
 
-type StraightLineF = DPoint2 -> DPoint2 -> Graphic
+type GridLineF = DPoint2 -> DPoint2 -> Graphic
 
 
-simpleGridLine :: Stroke t => t -> StraightLineF
+simpleGridLine :: Stroke t => t -> GridLineF
 simpleGridLine t = \p0 p1 -> straightLine t (p1 .-. p0) p0
 
 
 
-drawGrid :: StraightLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v Graphic
+drawGrid :: GridLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v Graphic
 drawGrid drawF usteps vsteps ctx = vf . hf
   where
     hf = horizontalLines drawF vsteps ctx
     vf = verticalLines   drawF usteps ctx
 
 
-verticalLines :: StraightLineF
+verticalLines :: GridLineF
               -> AxisSteps u
               -> ScaleCtx u v Graphic
 verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
@@ -118,7 +220,7 @@ verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
     upvec        = vvec $ rectHeight rect
 
 
-horizontalLines :: StraightLineF
+horizontalLines :: GridLineF
                 -> AxisSteps v
                 -> ScaleCtx u v Graphic
 horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx

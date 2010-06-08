@@ -25,6 +25,10 @@ module Graphics.PSC.DrawingUtils
 
   -- * Drawing
   , drawingContext
+  , ctxRectangleWidth
+  , ctxRectangleHeight
+  , ctxRectangleScaleX
+  , ctxRectangleScaleY  
 
   , concatBackgrounds
   , straightLine
@@ -95,6 +99,18 @@ drawingContext (u0:::u1) fromU (v0:::v1) fromV (w,h) = ((w,h), scaleX, scaleY)
     scaleY = rescale (fromV v0) (fromV v1) 0 h . fromV
 
 
+ctxRectangleWidth :: ScaleCtx u v Double
+ctxRectangleWidth = \((w,_),_,_) -> w
+
+ctxRectangleHeight:: ScaleCtx u v Double
+ctxRectangleHeight = \((_,h),_,_) -> h
+
+ctxRectangleScaleX :: ScaleCtx u v (u -> Double)
+ctxRectangleScaleX = \(_,fX,_) -> fX
+
+ctxRectangleScaleY :: ScaleCtx u v (v -> Double)
+ctxRectangleScaleY = \(_,_,fY) -> fY
+ 
 
 
 concatBackgrounds :: Graphic -> [Graphic] -> Maybe DPicture
