@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,7 +25,6 @@ module Graphics.PSC.DrawingUtils
 
   -- * Drawing
   , drawingContext
-  , makeProjector
 
   , concatBackgrounds
   , straightLine
@@ -42,6 +40,7 @@ module Graphics.PSC.DrawingUtils
   , textlabelS
   , textlabelE
   , textlabelW
+  , textlabelC
   
   -- wumpus-core additions
   , capHeight
@@ -95,10 +94,6 @@ drawingContext (u0:::u1) fromU (v0:::v1) fromV (w,h) = ((w,h), scaleX, scaleY)
     scaleX = rescale (fromU u0) (fromU u1) 0 w . fromU
     scaleY = rescale (fromV v0) (fromV v1) 0 h . fromV
 
-
-makeProjector :: Projection u -> (u -> Double)
-makeProjector (Projection {proj_conv,proj_trans,proj_scale}) = 
-    \u -> ((proj_conv u) - proj_trans) * proj_scale
 
 
 
@@ -170,6 +165,10 @@ textlabelE = makeTextlabel (\w cap_height -> V2 w (cap_height*0.5))
 
 textlabelW :: (DRGB,FontAttr) -> String -> TextLabelF
 textlabelW = makeTextlabel (\_ cap_height -> V2 0 (cap_height*0.5))
+
+textlabelC :: (DRGB,FontAttr) -> String -> TextLabelF
+textlabelC = makeTextlabel (\w cap_height -> V2 (w*0.5) (cap_height*0.5))
+
 
 
 --------------------------------------------------------------------------------

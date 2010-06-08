@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -9,14 +8,20 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC - NamedFieldPuns
+-- Portability :  GHC
 --
 -- Legends
 --
 --------------------------------------------------------------------------------
 
 module Graphics.PSC.Legend
-  where
+  ( 
+    LegendElementDrawF
+  , ColourLegend
+  , drawLegend
+  , simpleLegendElementDraw
+
+  ) where
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils

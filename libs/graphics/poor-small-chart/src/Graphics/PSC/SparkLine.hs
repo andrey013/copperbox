@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -9,7 +8,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC - NamedFieldPuns
+-- Portability :  GHC
 --
 -- Spark line
 --
