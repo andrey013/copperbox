@@ -23,6 +23,7 @@ module Graphics.PSC.Axis
   , xAxisLabel
   , yAxisLabel
 
+  , TickLabelConfig(..)
   , xAxisTickLabel
   , xAxisTickLabelAlt
 
@@ -83,6 +84,15 @@ yAxisLabel font_props gap textF = \v east_pt ->
     textlabelE font_props (textF v) (east_pt .-^ hvec gap)
 
 
+data TickLabelConfig = TickLabelConfig
+      { tick_label_font_colour      :: DRGB
+      , tick_label_font_attr        :: FontAttr
+      , tick_label_tick_colour      :: DRGB
+      , tick_label_line_width       :: Double
+      , tick_label_tick_length      :: Double
+      , tick_label_gap_length       :: Double
+      }
+
 -- | 'xAxisLabelTick' 
 -- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
 --   * tick_length * vertical_gap  * to_string -> label_functional @
@@ -92,16 +102,14 @@ yAxisLabel font_props gap textF = \v east_pt ->
 -- >  |
 -- > 1.0
 --
-xAxisTickLabel :: (DRGB,Double) 
-               -> (DRGB,FontAttr) 
-               -> Double -> Double 
+xAxisTickLabel :: TickLabelConfig
                -> (v -> String) 
                -> AxisLabelF v
-xAxisTickLabel (rgb,lw) font_props tick_len gap textF = 
+xAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
      \v point -> line point . label v point
   where
-    label v pt = textlabelN font_props (textF v) (pt .-^ vvec (tick_len + gap))
-    line pt    = straightLine (rgb, LineWidth lw) (vvec (negate tick_len)) pt
+    label v pt = textlabelN (frgb,fattr) (textF v) (pt .-^ vvec (tick_len + gap))
+    line pt    = straightLine (lrgb, LineWidth lw) (vvec (negate tick_len)) pt
 
 
 -- | 'xAxisLabelTick' 
@@ -113,16 +121,12 @@ xAxisTickLabel (rgb,lw) font_props tick_len gap textF =
 -- > 1.0
 -- >  |
 --
-xAxisTickLabelAlt :: (DRGB,Double) 
-                  -> (DRGB,FontAttr) 
-                  -> Double -> Double 
-                  -> (v -> String) 
-                  -> AxisLabelF v
-xAxisTickLabelAlt (rgb,lw) font_props tick_len gap textF = 
+xAxisTickLabelAlt :: TickLabelConfig -> (v -> String) -> AxisLabelF v
+xAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
      \v point -> line point . label v point
   where
-    label v pt = textlabelS font_props (textF v) (pt .+^ vvec (tick_len + gap))
-    line pt    = straightLine (rgb, LineWidth lw) (vvec tick_len) pt
+    label v pt = textlabelS (frgb,fattr) (textF v) (pt .+^ vvec (tick_len + gap))
+    line pt    = straightLine (lrgb, LineWidth lw) (vvec tick_len) pt
 
 
 -- | 'yAxisLabelTick' 
@@ -133,16 +137,12 @@ xAxisTickLabelAlt (rgb,lw) font_props tick_len gap textF =
 --
 -- > 1.0 --
 --
-yAxisTickLabel :: (DRGB,Double) 
-               -> (DRGB,FontAttr) 
-               -> Double -> Double 
-               -> (v -> String) 
-               -> AxisLabelF v
-yAxisTickLabel (rgb,lw) font_props tick_len gap textF = 
+yAxisTickLabel :: TickLabelConfig -> (v -> String) -> AxisLabelF v
+yAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
      \v point -> line point . label v point
   where
-    label v pt = textlabelE font_props (textF v) (pt .-^ hvec (tick_len + gap))
-    line pt    = straightLine (rgb, LineWidth lw) (hvec (negate tick_len)) pt
+    label v pt = textlabelE (frgb,fattr) (textF v) (pt .-^ hvec (tick_len + gap))
+    line pt    = straightLine (lrgb, LineWidth lw) (hvec (negate tick_len)) pt
 
 -- | 'yAxisTickLabelAlt' 
 -- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
@@ -152,16 +152,12 @@ yAxisTickLabel (rgb,lw) font_props tick_len gap textF =
 --
 -- > -- 1.0
 --
-yAxisTickLabelAlt :: (DRGB,Double) 
-                  -> (DRGB,FontAttr) 
-                  -> Double -> Double 
-                  -> (v -> String) 
-                  -> AxisLabelF v
-yAxisTickLabelAlt (rgb,lw) font_props tick_len gap textF = 
+yAxisTickLabelAlt :: TickLabelConfig -> (v -> String) -> AxisLabelF v
+yAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
      \v point -> line point . label v point
   where
-    label v pt = textlabelW font_props (textF v) (pt .+^ hvec (tick_len + gap))
-    line pt    = straightLine (rgb, LineWidth lw) (hvec tick_len) pt
+    label v pt = textlabelW (frgb,fattr) (textF v) (pt .+^ hvec (tick_len + gap))
+    line pt    = straightLine (lrgb, LineWidth lw) (hvec tick_len) pt
 
     
 
