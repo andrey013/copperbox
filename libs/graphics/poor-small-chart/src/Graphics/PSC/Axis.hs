@@ -19,7 +19,8 @@ module Graphics.PSC.Axis
   -- * Axes
     AxisSteps
   , AxisLabelF
- 
+
+  , LabelConfig(..)
   , xAxisLabel
   , yAxisLabel
 
@@ -68,20 +69,28 @@ type AxisLabelF u = u -> DPoint2 -> Graphic
 
 type AxisSteps u = [u]
 
+
+
+
+data LabelConfig = LabelConfig
+      { label_font_colour       :: DRGB
+      , label_font_attr         :: FontAttr
+      , label_gap_length        :: Double
+      }
+
+
 -- | 'xAxisLabel' 
--- : @ (rgb,font_attr) * vertical_gap * to_string -> label_functional @
 -- 
-xAxisLabel :: (DRGB,FontAttr) -> Double -> (u -> String) -> AxisLabelF u
-xAxisLabel font_props gap textF = \u north_pt -> 
-    textlabelN font_props (textF u) (north_pt .-^ vvec gap)
+xAxisLabel :: LabelConfig -> (u -> String) -> AxisLabelF u
+xAxisLabel (LabelConfig frgb fattr gap) textF = \u north_pt -> 
+    textlabelN (frgb,fattr) (textF u) (north_pt .-^ vvec gap)
 
 
 -- | 'yAxisLabel' 
--- : @ (rgb,font_attr) * horizontal_gap * to_string -> label_functional @
 -- 
-yAxisLabel :: (DRGB,FontAttr) -> Double -> (v -> String) -> AxisLabelF v
-yAxisLabel font_props gap textF = \v east_pt -> 
-    textlabelE font_props (textF v) (east_pt .-^ hvec gap)
+yAxisLabel :: LabelConfig -> (v -> String) -> AxisLabelF v
+yAxisLabel (LabelConfig frgb fattr gap) textF = \v east_pt -> 
+    textlabelE (frgb,fattr) (textF v) (east_pt .-^ hvec gap)
 
 
 data TickLabelConfig = TickLabelConfig
@@ -93,9 +102,16 @@ data TickLabelConfig = TickLabelConfig
       , tick_label_gap_length       :: Double
       }
 
+
+-- TODO/Note - the placement/geometry could (probably) be 
+-- supplied in the Config data type rather than having four 
+-- separate functions.
+-- 
+-- But maybe again a functional representation will have
+-- advantages...
+--
+
 -- | 'xAxisLabelTick' 
--- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
---   * tick_length * vertical_gap  * to_string -> label_functional @
 -- 
 -- Label at the bottom, tick above it...
 --
@@ -112,9 +128,7 @@ xAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF =
     line pt    = straightLine (lrgb, LineWidth lw) (vvec (negate tick_len)) pt
 
 
--- | 'xAxisLabelTick' 
--- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
---   * tick_length * vertical_gap  * to_string -> label_functional @
+-- | 'xAxisLabelTickAlt' 
 -- 
 -- Tick at the bottom, label above it...
 --
@@ -130,8 +144,6 @@ xAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF =
 
 
 -- | 'yAxisLabelTick' 
--- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
---   * tick_length * horizontal_gap  * to_string -> label_functional @
 -- 
 -- Label on the left, tick to its right...
 --
@@ -145,8 +157,6 @@ yAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF =
     line pt    = straightLine (lrgb, LineWidth lw) (hvec (negate tick_len)) pt
 
 -- | 'yAxisTickLabelAlt' 
--- : @ (tick_rgb, tick_line_width) * (font_rgb,font_attr) 
---   * tick_length * horizontal_gap  * to_string -> label_functional @ 
 -- 
 -- Tick on the left, label to its right...
 --

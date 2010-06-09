@@ -2,11 +2,9 @@
 
 
 -- See:
--- http://en.wikipedia.org/wiki/Iris_flower_data_set
+-- http://en.wikipedia.org/wiki/Scatter_plot
 
-module Scatter1 where
-
-import IrisParser
+module ScatterPlot where
 
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
@@ -16,12 +14,11 @@ import Graphics.PSC.ScatterPlot
 
 
 import Wumpus.Core
-import Wumpus.Extra.PictureLanguage
 import Wumpus.Extra.SafeFonts           -- package: wumpus-core
 import Wumpus.Extra.SVGColours
 
-import Data.List
-import Data.Maybe
+import Data.AffineSpace                 -- package: vector-space
+
 import System.Directory
 
 
@@ -30,130 +27,23 @@ import System.Directory
 
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"
-    >> demo01
-
-demo01 :: IO ()
-demo01 = do 
-    ans <- readIrisData
-    case ans of
-      Nothing -> putStrLn "no go"
-      Just infos -> do 
-          let pic = allPictures infos
-          writeChartEPS "./out/scatter1.eps" (uniformScale 0.75 pic)
-          writeChartSVG "./out/scatter1.svg" pic
+    >> writeChartEPS "./out/scatter_plot1.eps" pic1
+    >> writeChartSVG "./out/scatter_plot1.svg" pic1
 
 
-allPictures :: InfoSet -> DPicture
-allPictures infos = 
-    vspace 25 caption (verticalize [row1, row2, row3, row4])
+pic1 :: DPicture
+pic1 = renderScatterPlot scatter_cfg [(squareDot,input_data)]
   where
-    box1  = labelBox "Sepal.Length"
-  
-    swsl  = makePic range_sepal_width  sepal_width 
-                    range_sepal_length sepal_length
-                    (Just sepal_width_x_axis) Nothing
-
-    plsl  = makePic range_petal_length petal_length
-                    range_sepal_length sepal_length
-                    Nothing Nothing
-  
-    pwsl  = makePic range_petal_width  petal_width 
-                    range_sepal_length sepal_length
-                    (Just petal_width_x_axis) (Just sepal_length_y_axis)
-
-    row1  = horizontalize [box1, swsl infos, plsl infos, pwsl infos]
-    --------
-
-    slsw  = makePic range_sepal_length sepal_length
-                    range_sepal_width  sepal_width
-                    Nothing (Just sepal_width_y_axis)
-
-    box2  = labelBox "Sepal.Width"
-   
-    plsw  = makePic range_petal_length petal_length
-                    range_sepal_width  sepal_width 
-                    Nothing Nothing
-  
-    pwsw  = makePic range_petal_width  petal_width 
-                    range_sepal_width  sepal_width 
-                    Nothing Nothing
-
-    row2  = horizontalize [slsw infos, box2, plsw infos, pwsw infos]
-    --------
-
-    slpl  = makePic range_sepal_length sepal_length
-                    range_petal_length petal_length
-                    Nothing Nothing
-   
-    swpl  = makePic range_sepal_width  sepal_width 
-                    range_petal_length petal_length
-                    Nothing Nothing
-                    
-    box3  = labelBox "Petal.Length"
-
-    pwpl  = makePic range_petal_width  petal_width
-                    range_petal_length petal_length
-                    Nothing (Just petal_length_y_axis)
-
-    row3  = horizontalize [slpl infos, swpl infos, box3, pwpl infos]
-    --------
-
-    slpw  = makePic range_sepal_length sepal_length
-                    range_petal_width  petal_width 
-                    (Just sepal_length_x_axis) (Just petal_width_y_axis)
-   
-    swpw  = makePic range_sepal_width  sepal_width
-                    range_petal_width  petal_width
-                    Nothing Nothing
-                    
-    plpw  = makePic range_petal_length petal_length
-                    range_petal_width  petal_width
-                    (Just petal_length_x_axis) Nothing
-                    
-    box4  = labelBox "Petal.Width"
-
-    row4  = horizontalize [slpw infos, swpw infos, plpw infos, box4]
+   scatter_cfg = ScatterPlot (drawingCtx x_range y_range) (axis_fun `cc` border)
+   border      = plainBorder black 0.5
 
 
-
-makePic :: Range Double -> (IrisData -> Double) 
-        -> Range Double -> (IrisData -> Double) 
-        -> Maybe (ScaleCtx Double Double Graphic)
-        -> Maybe (ScaleCtx Double Double Graphic)
-        -> InfoSet
-        -> DPicture
-makePic xr xflt yr yflt mb_xaxis mb_yaxis infos = 
-    renderScatterPlot (makePlot xr yr axisF) (makeLayers extr infos)
+axis_fun :: ScaleCtx Double Double Graphic
+axis_fun = xa `cc` ya
   where
-    extr  = extractData (xflt,yflt) 
+    xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
+    ya = verticalLabels   (yAxisTickLabel tick_label_config (ffloat 1)) y_axis_steps
     
-    axisF = case (mb_xaxis , mb_yaxis) of
-              (Nothing, Nothing) -> const id
-              (Just xF, Nothing) -> xF
-              (Nothing, Just yF) -> yF
-              (Just xF, Just yF) -> xF `cc` yF
-
-makeLayers :: (IrisData -> (Double,Double)) 
-           -> InfoSet 
-           -> [(DotF, Dataset Double Double)]
-makeLayers filt (setosa, versicolor, virginica) = 
-    [ (dot_setosa,      map filt setosa)
-    , (dot_versicolor,  map filt versicolor)
-    , (dot_virginica,   map filt virginica)
-    ]
-           
-                 
-makePlot :: Range Double 
-         -> Range Double 
-         -> ScaleCtx Double Double Graphic
-         -> ScatterPlot Double Double
-makePlot x_range y_range axisF = 
-    ScatterPlot (drawingCtx x_range y_range) (axisF `cc` border)
-  where
-    border = plainBorder black 0.5
-
-tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black helvetica10 black 0.5 4 2
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -161,126 +51,52 @@ ifloor = step . floor
     step :: Int -> String
     step = show
 
-sepal_width_x_axis :: ScaleCtx Double Double Graphic
-sepal_width_x_axis = horizontalLabelsTop labelF steps_sepal_width
-  where
-    labelF = xAxisTickLabelAlt tick_label_config (ffloat 1) 
 
-sepal_width_y_axis :: ScaleCtx Double Double Graphic
-sepal_width_y_axis = verticalLabels labelF steps_sepal_width
-  where
-    labelF = yAxisTickLabel tick_label_config (ffloat 1) 
-
-sepal_length_x_axis :: ScaleCtx Double Double Graphic
-sepal_length_x_axis = horizontalLabels labelF steps_sepal_length
-  where
-    labelF = xAxisTickLabel tick_label_config (ffloat 1) 
-    
-sepal_length_y_axis :: ScaleCtx Double Double Graphic
-sepal_length_y_axis = verticalLabelsRight labelF steps_sepal_length
-  where
-    labelF = yAxisTickLabelAlt tick_label_config (ffloat 1) 
-
-petal_width_x_axis :: ScaleCtx Double Double Graphic
-petal_width_x_axis = horizontalLabelsTop labelF steps_petal_width
-  where
-    labelF = xAxisTickLabelAlt tick_label_config (ffloat 1) 
-
-petal_width_y_axis :: ScaleCtx Double Double Graphic
-petal_width_y_axis = verticalLabels labelF steps_petal_width
-  where
-    labelF = yAxisTickLabel tick_label_config (ffloat 1) 
-
-petal_length_x_axis  :: ScaleCtx Double Double Graphic
-petal_length_x_axis = horizontalLabels labelF steps_petal_length
-  where
-    labelF = xAxisTickLabel tick_label_config ifloor 
-    
-petal_length_y_axis  :: ScaleCtx Double Double Graphic
-petal_length_y_axis = verticalLabelsRight labelF steps_petal_length
-  where
-    labelF = yAxisTickLabelAlt tick_label_config ifloor 
+tick_label_config :: TickLabelConfig
+tick_label_config = TickLabelConfig black helvetica10 black 0.5 4 2
 
 
-range_sepal_length     :: Range Double
-range_sepal_length     = 4.0 ::: 8.0
+x_range         :: Range Double
+x_range         = (-1.0) ::: 21.0
 
-steps_sepal_length     :: AxisSteps Double
-steps_sepal_length     = steps 4.5 (+1.0)
+x_axis_steps    :: AxisSteps Double
+x_axis_steps    = steps 0 (+5.0)
 
 --
-range_sepal_width      :: Range Double
-range_sepal_width      = 1.8 ::: 4.8
+y_range         :: Range Double
+y_range         = 92.5 ::: 103.5
 
-steps_sepal_width      :: AxisSteps Double
-steps_sepal_width      = steps 2.0 (+0.5)
-
---
-range_petal_length     :: Range Double
-range_petal_length     = 0.8 ::: 7.6
-
-steps_petal_length     :: AxisSteps Double
-steps_petal_length     = steps 1.0 (+1.0)
-
---
-range_petal_width      :: Range Double
-range_petal_width      = 0.0 ::: 2.6
-
-steps_petal_width      :: AxisSteps Double
-steps_petal_width      = steps 0.5 (+0.5)
+y_axis_steps    :: AxisSteps Double
+y_axis_steps    = steps 94.0 (+2.0)
 
 
 output_rect :: DrawingRectangle
-output_rect = (150,150)
+output_rect = (450,400)
 
 drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
-drawingCtx x_range y_range = drawingContext x_range id y_range id output_rect
+drawingCtx xr yr = drawingContext xr id yr id output_rect
 
-
-dot_setosa      :: DotF
-dot_setosa      = outlinedDot red    2
-
-dot_versicolor  :: DotF
-dot_versicolor  = outlinedDot green  2
-
-dot_virginica   :: DotF
-dot_virginica   = outlinedDot blue   2
-
-
-extractData :: (IrisData -> Double, IrisData -> Double) -> IrisData -> (Double,Double)
-extractData (fX,fY) = \iris -> (fX iris, fY iris)
-
-labelBox :: String -> DPicture
-labelBox title = fromMaybe errK $ drawGraphic $ rect . text
-  where
-    errK  = error "error - labelBox"
-    rect  = strokedRectangle (black, LineWidth 0.5) w h (P2 0 0)
-    text  = textlabelC (black,courier18) title (P2 (w*0.5) (h*0.5))
-    (w,h) = output_rect
+squareDot :: DotF
+squareDot = \pt -> filledRectangle green 10 10 (pt .-^ V2 5 5)
 
 steps :: u -> (u -> u) -> [u]
 steps = flip iterate
 
-
-
-horizontalize :: [DPicture] -> DPicture
-horizontalize []     = error "horizontalize"
-horizontalize (x:xs) = stackOnto (snd $ mapAccumL phi pic_displacement xs) x
+input_data :: Dataset Double Double
+input_data = zipWith (\x y -> (sz x, y)) [0..] response
   where
-    phi h pic = (h + pic_displacement, moveH h pic) 
+    sz    :: Int -> Double
+    sz    = rescale 0 upper 0.0 20.0 . fromIntegral
+    upper :: Double
+    upper = fromIntegral $ (length response - 1)
+
+response :: [Double]
+response = [ 103.18, 101.68, 102.91, 101.28, 100.89, 100.36, 98.60, 99.07
+           , 99.91, 98.62, 100.39, 96.88, 100.38, 97.53, 101.78, 98.63, 99.11
+           , 98.62, 98.59, 99.06, 99.97, 99.09, 98.97, 98.69, 99.77, 98.79
+           , 95.95, 97.52, 97.08, 96.59, 98.21, 98.69, 98.54, 97.74, 97.25
+           , 97.65, 98.70, 99.77, 97.02, 94.92, 97.65, 96.46, 95.25, 95.39
+           , 94.65, 93.15, 95.36, 95.05, 95.83, 94.44, 94.97, 96.85, 93.95
+           , 93.36, 97.43, 94.09, 94.23, 97.51, 95.69, 94.35, 94.17]
 
 
-verticalize :: [DPicture] -> DPicture
-verticalize []     = error "verticalize"
-verticalize (x:xs) = 
-    stackOnto (snd $ mapAccumL phi (negate pic_displacement) xs) x
-  where
-    phi v pic = (v - pic_displacement, moveV v pic) 
-
-pic_displacement :: Double
-pic_displacement = 1.20 * fst output_rect
-
-caption :: DPicture
-caption = frame $ textlabel (black,helvetica18) msg (P2 120 0)
-  where
-    msg = "Iris Data (red=setosa, green=versicolor, blue=virginica)"
