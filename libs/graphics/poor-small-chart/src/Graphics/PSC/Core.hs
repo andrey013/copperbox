@@ -120,10 +120,10 @@ writeChartSVG = writeSVG_latin1
 --------------------------------------------------------------------------------
 
 rectWidth :: DrawingRectangle -> Double
-rectWidth = fst
+rectWidth (w,_) = w
 
 rectHeight :: DrawingRectangle -> Double
-rectHeight = fst
+rectHeight (_,h) = h 
 
 
 

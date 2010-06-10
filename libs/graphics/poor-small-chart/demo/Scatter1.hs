@@ -4,7 +4,7 @@
 -- See:
 -- http://en.wikipedia.org/wiki/Scatter_plot
 
-module ScatterPlot where
+module Scatter1 where
 
 import Graphics.PSC.Axis
 import Graphics.PSC.Core
@@ -87,7 +87,6 @@ input_data = zipWith (\x y -> (sz x, y)) [0..] response
   where
     sz    :: Int -> Double
     sz    = rescale 0 upper 0.0 20.0 . fromIntegral
-    upper :: Double
     upper = fromIntegral $ (length response - 1)
 
 response :: [Double]

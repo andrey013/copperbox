@@ -99,10 +99,10 @@ drawingContext (u0:::u1) fromU (v0:::v1) fromV (w,h) = ((w,h), scaleX, scaleY)
     scaleY = rescale (fromV v0) (fromV v1) 0 h . fromV
 
 
-ctxRectangleWidth :: ScaleCtx u v Double
-ctxRectangleWidth = \((w,_),_,_) -> w
+ctxRectangleWidth  :: ScaleCtx u v Double
+ctxRectangleWidth  = \((w,_),_,_) -> w
 
-ctxRectangleHeight:: ScaleCtx u v Double
+ctxRectangleHeight :: ScaleCtx u v Double
 ctxRectangleHeight = \((_,h),_,_) -> h
 
 ctxRectangleScaleX :: ScaleCtx u v (u -> Double)

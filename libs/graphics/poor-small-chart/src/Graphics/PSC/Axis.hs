@@ -259,12 +259,12 @@ verticals x0 buildF steps ctx =
 xvalues :: AxisSteps u -> ScaleCtx u v [(u,Double)]
 xvalues steps (rect,fX,_) = takeWhile cmp $ map (\a -> (a,fX a)) steps
   where
-    cmp (_,x) = x `leqEps` rectWidth rect 
+    cmp (_,a) = a `leqEps` rectWidth rect 
 
 yvalues :: AxisSteps v -> ScaleCtx u v [(v,Double)]
 yvalues steps (rect,_,fY) = takeWhile cmp $ map (\a -> (a, fY a)) steps
   where
-    cmp (_,y) = y `leqEps` rectHeight rect
+    cmp (_,a) = a `leqEps` rectHeight rect
 
 
 

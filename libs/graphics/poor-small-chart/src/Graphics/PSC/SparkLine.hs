@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.SparkLineTWO
+-- Module      :  Graphics.PSC.SparkLine
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Spark line
+-- Spark lines
 --
 --------------------------------------------------------------------------------
 

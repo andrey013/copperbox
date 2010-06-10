@@ -1,0 +1,45 @@
+name:             wumpus-clave
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Percussion box / clave notation
+description:
+  .
+  wumpus-clave
+  .
+  .
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Clave1.hs
+  
+library
+  hs-source-dirs:     src
+  build-depends:      base         < 5, 
+                      vector-space >= 0.6,
+                      wumpus-core  >= 0.19.0
+
+  
+  exposed-modules:
+    Wumpus.Clave.Core,
+    Wumpus.Clave.Drawing,
+    Wumpus.Clave.Utils
+
+  other-modules:
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
