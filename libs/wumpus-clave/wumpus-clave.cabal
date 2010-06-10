@@ -27,6 +27,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Clave.ClaveMonad,
     Wumpus.Clave.Core,
     Wumpus.Clave.Drawing,
     Wumpus.Clave.Utils
