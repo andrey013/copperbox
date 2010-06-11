@@ -22,7 +22,6 @@ module Wumpus.Clave.Core
   , Graphic  
   , DGraphic
 
-  , Coordinate
 
   , LineWidth
   , BoxHeight
@@ -44,7 +43,6 @@ type Graphic u = H (Primitive u)
 
 type DGraphic  = Graphic Double
 
-type Coordinate = Point2 Int
 
 
 type LineWidth = Double

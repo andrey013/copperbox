@@ -45,12 +45,11 @@ import Wumpus.Core.Colour ( black )
 
 import Data.AffineSpace                 -- package: vector-space
 
-
 drawGraphic :: (Floating u, Ord u ) => Graphic u -> Maybe (Picture u)
 drawGraphic f = step $ f []
   where
     step [] = Nothing
-    step xs = Just $ frameMulti xs 
+    step xs = Just $ frameMulti $ xs 
 
 
 wrapG :: Primitive u -> Graphic u 

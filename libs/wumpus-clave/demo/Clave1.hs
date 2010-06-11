@@ -7,7 +7,7 @@ import Wumpus.Clave.Core
 import Wumpus.Clave.Drawing
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Core.Colour ( black )
+import Wumpus.Extra.SVGColours
 
 import Data.Maybe
 import System.Directory
@@ -16,9 +16,10 @@ main :: IO ()
 main = createDirectoryIfMissing True "./out/"
     >> writeEPS_latin1 "./out/clave01.eps" pic2
     >> writeSVG_latin1 "./out/clave01.svg" pic2 
-  where
-    pic1 :: Picture Double
-    pic1 = fromMaybe errK $ drawGraphic line1
+
+
+pic1 :: Picture Double
+pic1 = fromMaybe errK $ drawGraphic line1
 
 errK :: a
 errK = error "no picture"
@@ -31,7 +32,8 @@ line1 = circleF 24 black (P2 0 0)
 
 pic2 :: DPicture
 pic2 = fromMaybe errK $ drawGraphic $ 
-        evalClaveM cfg (beat >> rest >> rest >> beat >> endLine)
+        evalClaveM cfg (beat >> rest >> highlight 2 sandyBrown 
+                             >> rest >> beat >> rest >> endLine)
   where
     cfg = ClaveConfig { box_height      = 24
                       , scalefun        = (24.0 *) . fromIntegral }

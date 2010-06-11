@@ -23,6 +23,7 @@ library
   hs-source-dirs:     src
   build-depends:      base         < 5, 
                       vector-space >= 0.6,
+                      monadLib     >= 3.6,
                       wumpus-core  >= 0.19.0
 
   
@@ -30,6 +31,8 @@ library
     Wumpus.Clave.ClaveMonad,
     Wumpus.Clave.Core,
     Wumpus.Clave.Drawing,
+    Wumpus.Clave.TraceT,
+    Wumpus.Clave.TurtleT,
     Wumpus.Clave.Utils
 
   other-modules:

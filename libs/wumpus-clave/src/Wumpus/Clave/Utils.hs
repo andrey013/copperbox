@@ -30,12 +30,9 @@ module Wumpus.Clave.Utils
   , toListH
   , fromListH
 
-  -- * WUMPUS CORE ADDITIONS - CAUTION ....
-  , capHeight
 
   ) where
 
-import Wumpus.Core                      -- package: wumpus-core
 
 --------------------------------------------------------------------------------
 -- Hughes list
@@ -79,11 +76,4 @@ fromListH xs = (xs++)
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-
--- The height of an upper case letter (without ascender or 
--- descender).
---
-capHeight :: Fractional u => FontSize -> u
-capHeight sz = textHeight sz - (2 * descenderDepth sz)
-
 
