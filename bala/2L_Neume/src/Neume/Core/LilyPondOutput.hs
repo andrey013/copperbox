@@ -29,8 +29,11 @@ import Neume.Core.ModularSyntax
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.Pretty
 
-import Text.PrettyPrint.Leijen          -- package: wl-pprint
+import Text.PrettyPrint.Leijen hiding ( (<$>) )      -- package: wl-pprint
 
+import MonadLib.Monads                  -- package: monadLib
+
+import Control.Applicative hiding ( empty )
 import qualified Data.Foldable          as F
 
 
@@ -46,7 +49,7 @@ import qualified Data.Foldable          as F
 
 
 
-type OutputLy gly a = (gly -> Doc) -> a
+type OutputLy gly a = Reader (gly -> Doc) a
 
 
 class LilyPondOutput repr where
@@ -54,40 +57,40 @@ class LilyPondOutput repr where
 
 
 runRender :: LilyPondOutput repr => (gly -> Doc) -> repr gly -> PhraseImage
-runRender f = renderLyPhraseImage `flip` f
+runRender f = runReader f . renderLyPhraseImage
 
 
 -- Just instances for the Phrase formats...
 
 instance LilyPondOutput Full where
-  renderLyPhraseImage (Full (Phrase name bars)) = \f -> 
-      Phrase name $ map (oBarMD `flip` f) bars 
+  renderLyPhraseImage (Full (Phrase name bars)) = 
+      Phrase name <$> mapM oBarMD bars 
 
 instance LilyPondOutput Undiv where
-  renderLyPhraseImage (Undiv (Phrase name bars)) = \f -> 
-      Phrase name $ map (oBar `flip` f) bars 
+  renderLyPhraseImage (Undiv (Phrase name bars)) =
+      Phrase name <$> mapM oBar bars 
 
 
 instance LilyPondOutput Unmetered where
-  renderLyPhraseImage (Unmetered (Phrase name mds)) = \f -> 
-      Phrase name [hsep $ oMetricalDivs mds f]
+  renderLyPhraseImage (Unmetered (Phrase name mds)) =
+      (\mds' -> Phrase name [hsep mds']) <$> oMetricalDivs mds
 
 
 
 oBarMD :: Bar (MetricalDiv gly) -> OutputLy gly BarImage
-oBarMD bar = \f -> hsep $ oMetricalDivs bar f 
+oBarMD bar = hsep <$> oMetricalDivs bar
 
 oBar :: Bar gly -> OutputLy gly BarImage
-oBar bar = \f -> hsep $ map f bar
+oBar bar = (\f -> hsep $ map f bar) <$> ask
 
 
 oMetricalDivs ::  [MetricalDiv gly] -> OutputLy gly [Doc]
-oMetricalDivs xs = \f -> map (oMetricalDiv `flip` f) xs
+oMetricalDivs = mapM oMetricalDiv 
 
 oMetricalDiv :: MetricalDiv gly -> OutputLy gly Doc
-oMetricalDiv (WrapMD (Atom e))       = \f -> f e 
-oMetricalDiv (WrapMD (N_Plet mp xs)) = pletForm mp . oMetricalDivs xs
-oMetricalDiv (WrapMD (Beamed notes)) = beamForm . oMetricalDivs notes 
+oMetricalDiv (Atom e)       = (\f -> f e) <$> ask
+oMetricalDiv (N_Plet mp xs) = pletForm mp <$> oMetricalDivs xs
+oMetricalDiv (Beamed notes) = beamForm    <$> oMetricalDivs notes 
 
 -- annos generally printed _after_ duration...
 

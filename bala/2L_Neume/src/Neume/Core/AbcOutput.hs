@@ -26,13 +26,17 @@ module Neume.Core.AbcOutput
 
 import Neume.Core.AbcPretty
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.ModularSyntax
 import Neume.Core.Pitch hiding ( octave )
 import Neume.Core.Utils.OneList ( OneList, toListF )
 import Neume.Core.Utils.Pretty
 
-import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
+import Text.PrettyPrint.Leijen hiding ( sep, (<$>) )     -- package: wl-print
 
+import MonadLib.Monads                  -- package: monadLib
+
+import Control.Applicative hiding ( empty ) 
 import qualified Data.Foldable as F
 
 
@@ -40,14 +44,14 @@ import qualified Data.Foldable as F
 
 
 
-type OutputAbc gly a = (gly -> Doc) -> a
+type OutputAbc gly a = Reader (gly -> Doc) a
 
 class AbcOutput repr where
    renderAbcPhraseImage :: repr gly -> OutputAbc gly PhraseImage
 
 
 runRender :: AbcOutput repr => (gly -> Doc) -> repr gly -> PhraseImage
-runRender f = renderAbcPhraseImage `flip` f
+runRender f = runReader f . renderAbcPhraseImage
 
 
 type NoteSep = Doc -> Doc -> Doc
@@ -56,25 +60,25 @@ type NoteSep = Doc -> Doc -> Doc
 -- Just instances for the Phrase formats...
 
 instance AbcOutput Full where
-  renderAbcPhraseImage (Full (Phrase name bars)) = \f -> 
-      Phrase name $ map (oBarMD `flip` f) bars 
+  renderAbcPhraseImage (Full (Phrase name bars)) = 
+      Phrase name <$> mapM oBarMD bars 
 
 instance AbcOutput Undiv where
-  renderAbcPhraseImage (Undiv (Phrase name bars)) = \f -> 
-      Phrase name $ map (oBar `flip` f) bars 
+  renderAbcPhraseImage (Undiv (Phrase name bars)) =
+      Phrase name <$> mapM oBar bars 
 
 
 instance AbcOutput Unmetered where
-  renderAbcPhraseImage (Unmetered (Phrase name mds)) = \f -> 
-      Phrase name [oMetricalDivs (<+>) mds f]
+  renderAbcPhraseImage (Unmetered (Phrase name mds)) =
+      (\mds' -> Phrase name [mds']) <$> oMetricalDivs (<+>) mds
 
 
 
 oBarMD :: Bar (MetricalDiv gly) -> OutputAbc gly BarImage
-oBarMD bar = \f -> oMetricalDivs (<+>) bar f 
+oBarMD bar = oMetricalDivs (<+>) bar 
 
 oBar :: Bar gly -> OutputAbc gly BarImage
-oBar bar = \f -> hsep $ map f bar
+oBar bar = (\f -> hsep $ map f bar) <$> ask
 
 
 -- MetricalDiv\'s need some extra 'context' - beamed notes have 
@@ -82,14 +86,15 @@ oBar bar = \f -> hsep $ map f bar
 --
 
 oMetricalDivs :: NoteSep -> [MetricalDiv gly] -> OutputAbc gly Doc
-oMetricalDivs sep xs = \f -> 
-    sepList sep $ map (oMetricalDiv sep `flip` f) xs
+oMetricalDivs sep xs = sepList sep <$> mapM (oMetricalDiv sep) xs
 
 oMetricalDiv :: NoteSep -> MetricalDiv gly -> OutputAbc gly Doc
-oMetricalDiv _  (WrapMD (Atom e))       = \f -> f e
-oMetricalDiv op (WrapMD (N_Plet pm xs)) = \f -> 
-    pletContext (pletStats pm (length xs)) <+> oMetricalDivs op xs f
-oMetricalDiv _  (WrapMD (Beamed notes)) = oMetricalDivs (<>) notes
+oMetricalDiv _  (Atom e)       = (\f -> f e) <$> ask
+oMetricalDiv _  (Beamed notes) = oMetricalDivs (<>) notes
+oMetricalDiv op (N_Plet pm xs) = (doc1 <+>) <$> oMetricalDivs op xs
+  where
+    doc1 = pletContext $ pletStats pm (length xs)
+
 
 
 pletStats :: PletMult -> Int -> (Int,Int,Int)

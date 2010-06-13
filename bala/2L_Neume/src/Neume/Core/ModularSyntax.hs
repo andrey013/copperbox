@@ -30,19 +30,11 @@ module Neume.Core.ModularSyntax
   , Bar
 
   -- * Metrical divisions of a bar - beam groups, tuplets, ... 
-  , SMetricalDiv(..)
   , MetricalDiv(..)
-  , PletMult                    -- .................................
-  , atom 
-  , n_plet
-  , beamed
 
   -- * Note lists
   , NoteList(..)
-  , SDivision(..)
   , Division(..)
-  , oneElem
-  , plet
   , DivisionNoteList
   , SimpleNoteList
 
@@ -62,6 +54,7 @@ module Neume.Core.ModularSyntax
 
   ) where
 
+import Neume.Core.Metrical ( PletMult )
 import Neume.Core.Utils.OneList
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )   -- package: wl-pprint
@@ -102,26 +95,11 @@ type Bar e = [e]
 -- Beaming is likely to be synthesized by Neume, rather than
 -- constructed directly. 
 --
-data SMetricalDiv x e = Atom e
-                      | N_Plet PletMult [x]
-                      | Beamed          [x]
+data MetricalDiv e = Atom e
+                   | Beamed          [MetricalDiv e]
+                   | N_Plet PletMult [MetricalDiv e]
   deriving (Show)
 
-type PletMult = (Integer, Integer)
-
--- | 'NoteGroup' - recursive wrapper for SNoteGroup.
---
-newtype MetricalDiv e = WrapMD (SMetricalDiv (MetricalDiv e) e)
-  deriving (Show)
-
-atom            :: e -> MetricalDiv e
-atom e          = WrapMD $ Atom e
-
-n_plet          :: PletMult -> [MetricalDiv e] -> MetricalDiv e
-n_plet mul xs   = WrapMD $ N_Plet mul xs
-
-beamed          :: [MetricalDiv e] -> MetricalDiv e
-beamed xs       = WrapMD $ Beamed xs
 
 --------------------------------------------------------------------------------
 -- Note lists - created by the user...
@@ -131,20 +109,9 @@ data NoteList e = NoteList
       , note_list_notes :: [e]
       }
 
-data SDivision x e = OneElem e
-                   | Plet PletMult [x]
+data Division e = S e
+                | Plet PletMult [Division e]
   deriving (Show)
-
-newtype Division e = WrapDiv (SDivision (Division e) e)
-  deriving (Show)
-
-
-oneElem         :: e -> Division e
-oneElem e       = WrapDiv $ OneElem e
-
-
-plet            :: PletMult -> [Division e] -> Division e
-plet mul xs     = WrapDiv $ Plet mul xs
 
 
 type DivisionNoteList e = NoteList (Division e)
@@ -222,18 +189,18 @@ instance Functor Phrase where
   fmap f (Phrase name bars) = Phrase name $ map f bars
 
 instance Functor MetricalDiv where
-  fmap f (WrapMD (Atom e))        = atom (f e)
-  fmap f (WrapMD (N_Plet mul xs)) = n_plet mul (map (fmap f) xs)
-  fmap f (WrapMD (Beamed xs))     = beamed (map (fmap f) xs)
+  fmap f (Atom e)        = Atom (f e)
+  fmap f (Beamed xs)     = Beamed (map (fmap f) xs)
+  fmap f (N_Plet mul xs) = N_Plet mul (map (fmap f) xs)
 
 instance Foldable MetricalDiv where
-  foldMap f (WrapMD (Atom e))        = f e
-  foldMap f (WrapMD (N_Plet _ xs))   = foldMap (foldMap f) xs
-  foldMap f (WrapMD (Beamed xs))     = foldMap (foldMap f) xs
+  foldMap f (Atom e)        = f e
+  foldMap f (Beamed xs)     = foldMap (foldMap f) xs
+  foldMap f (N_Plet _ xs)   = foldMap (foldMap f) xs
 
 instance Traversable MetricalDiv where
-  traverse f (WrapMD (Atom e))      = atom <$> f e
-  traverse f (WrapMD (N_Plet m xs)) = (n_plet m) <$> traverse (traverse f) xs
-  traverse f (WrapMD (Beamed xs))   = beamed <$> traverse (traverse f) xs
+  traverse f (Atom e)      = Atom     <$> f e
+  traverse f (Beamed xs)   = Beamed   <$> traverse (traverse f) xs
+  traverse f (N_Plet m xs) = N_Plet m <$> traverse (traverse f) xs
 
 

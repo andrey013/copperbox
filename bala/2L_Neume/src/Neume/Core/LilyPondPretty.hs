@@ -44,9 +44,8 @@ module Neume.Core.LilyPondPretty
 
 
 import Neume.Core.Duration
--- import Neume.Core.Metrical
+import Neume.Core.Metrical
 import Neume.Core.Pitch
-import Neume.Core.ModularSyntax ( PletMult )
 import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint

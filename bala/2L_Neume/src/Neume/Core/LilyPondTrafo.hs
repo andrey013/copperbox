@@ -90,9 +90,9 @@ rpBar = mapM rpStep
 
 rpMetricalDiv :: LyRelPitchStep gly
               => MetricalDiv gly -> RelPitchTrafo (MetricalDiv gly)
-rpMetricalDiv (WrapMD (Atom e))       = atom      <$> rpStep e
-rpMetricalDiv (WrapMD (N_Plet mp xs)) = n_plet mp <$> mapM rpMetricalDiv xs 
-rpMetricalDiv (WrapMD (Beamed    xs)) = beamed    <$> mapM rpMetricalDiv xs
+rpMetricalDiv (Atom e)       = Atom      <$> rpStep e
+rpMetricalDiv (Beamed    xs) = Beamed    <$> mapM rpMetricalDiv xs
+rpMetricalDiv (N_Plet mp xs) = N_Plet mp <$> mapM rpMetricalDiv xs 
 
 
 
@@ -255,9 +255,9 @@ rdBar bar = fst $ runState Nothing (mapM rdStep bar)
 
 rdMetricalDiv :: (LyRelDurStep gly, gly' ~ OptDur gly)
               => MetricalDiv gly -> RelDurTrafo (MetricalDiv gly')
-rdMetricalDiv (WrapMD (Atom e))       = atom      <$> rdStep e
-rdMetricalDiv (WrapMD (N_Plet mp xs)) = n_plet mp <$> mapM rdMetricalDiv xs 
-rdMetricalDiv (WrapMD (Beamed    xs)) = beamed    <$> mapM rdMetricalDiv xs
+rdMetricalDiv (Atom e)       = Atom      <$> rdStep e
+rdMetricalDiv (N_Plet mp xs) = N_Plet mp <$> mapM rdMetricalDiv xs 
+rdMetricalDiv (Beamed    xs) = Beamed    <$> mapM rdMetricalDiv xs
 
 
 -- Never set a dotted duration as the state...
