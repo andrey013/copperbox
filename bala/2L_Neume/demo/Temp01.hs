@@ -8,6 +8,7 @@ import Neume.Core.ModularSyntax
 import Neume.Core.LilyPondOutput
 import Neume.Core.LilyPondTrafo
 import qualified Neume.Core.AbcOutput as ABC
+import qualified Neume.Core.AbcTrafo  as ABC
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 

@@ -64,7 +64,11 @@ module Neume.Core.ModularSyntax
 
 import Neume.Core.Utils.OneList
 
-import Text.PrettyPrint.Leijen          -- package: wl-pprint
+import Text.PrettyPrint.Leijen hiding ( (<$>) )   -- package: wl-pprint
+
+import Control.Applicative
+import Data.Foldable
+import Data.Traversable
 
 -- | Phrase formats
 
@@ -221,4 +225,15 @@ instance Functor MetricalDiv where
   fmap f (WrapMD (Atom e))        = atom (f e)
   fmap f (WrapMD (N_Plet mul xs)) = n_plet mul (map (fmap f) xs)
   fmap f (WrapMD (Beamed xs))     = beamed (map (fmap f) xs)
+
+instance Foldable MetricalDiv where
+  foldMap f (WrapMD (Atom e))        = f e
+  foldMap f (WrapMD (N_Plet _ xs))   = foldMap (foldMap f) xs
+  foldMap f (WrapMD (Beamed xs))     = foldMap (foldMap f) xs
+
+instance Traversable MetricalDiv where
+  traverse f (WrapMD (Atom e))      = atom <$> f e
+  traverse f (WrapMD (N_Plet m xs)) = (n_plet m) <$> traverse (traverse f) xs
+  traverse f (WrapMD (Beamed xs))   = beamed <$> traverse (traverse f) xs
+
 

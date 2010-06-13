@@ -25,6 +25,11 @@ module Neume.Core.LilyPondTrafo
   , LyRelPitchStep(..)
   , runRelPitchTrafo
 
+  -- * Absolute pitch transformation
+  , LyAbsPitchTrafo(..)
+  , LyAbsPitchStep(..)
+  , runAbsPitchTrafo
+
   -- * Relative duration transformation
   , OptDur
   , LyRelDurTrafo(..)
@@ -85,7 +90,7 @@ rpBar = mapM rpStep
 
 rpMetricalDiv :: LyRelPitchStep gly
               => MetricalDiv gly -> RelPitchTrafo (MetricalDiv gly)
-rpMetricalDiv (WrapMD (Atom e))       = atom <$> rpStep e
+rpMetricalDiv (WrapMD (Atom e))       = atom      <$> rpStep e
 rpMetricalDiv (WrapMD (N_Plet mp xs)) = n_plet mp <$> mapM rpMetricalDiv xs 
 rpMetricalDiv (WrapMD (Beamed    xs)) = beamed    <$> mapM rpMetricalDiv xs
 
@@ -93,18 +98,18 @@ rpMetricalDiv (WrapMD (Beamed    xs)) = beamed    <$> mapM rpMetricalDiv xs
 
 
 instance LyRelPitchStep (Glyph anno Pitch dur) where
-  rpStep (GlyNote n d t)  = (\rn -> GlyNote rn d t) <$> rpStep n
+  rpStep (GlyNote n d t)  = (\n' -> GlyNote n' d t) <$> rpStep n
   rpStep (Rest    d)      = return $ Rest d
   rpStep (Spacer  d)      = return $ Spacer d
-  rpStep (Chord   xs d t) = (\rxs -> Chord rxs d t) <$> rpChordNotes xs
+  rpStep (Chord   xs d t) = (\xs' -> Chord xs' d t) <$> rpChordNotes xs
   rpStep (Graces  xs)     = Graces <$> T.mapM rpStep xs
 
 
 instance LyRelPitchStep (Note anno Pitch) where
-  rpStep (Note a p) = (\rp -> Note a rp) <$> relativePitch p
+  rpStep (Note a p) = (\p' -> Note a p') <$> relativePitch p
 
 instance LyRelPitchStep (GraceNote anno Pitch dur) where
-  rpStep (GraceNote a p d) = (\rp -> GraceNote a rp d) <$> relativePitch p
+  rpStep (GraceNote a p d) = (\p' -> GraceNote a p' d) <$> relativePitch p
 
 
 -- | The second and later notes of a chord are renamed relative 
@@ -134,7 +139,54 @@ relativePitch p = get     >>= \ prev ->
                   set p   >>
                   return (setOctave (lyOctaveDist prev p) p)
 
+--------------------------------------------------------------------------------
 
+type AbsPitchTrafo a = Reader (Octave -> Octave) a
+ 
+
+
+runAbsPitchTrafo :: (LyAbsPitchTrafo repr, LyAbsPitchStep gly)
+                 => (Octave -> Octave) -> repr gly -> repr gly
+runAbsPitchTrafo fn = runReader fn . lyAbsPitchTrafo
+
+
+class LyAbsPitchTrafo repr where
+  lyAbsPitchTrafo :: LyAbsPitchStep gly => repr gly -> AbsPitchTrafo (repr gly)
+
+class LyAbsPitchStep gly where
+  apStep :: gly -> AbsPitchTrafo gly
+
+
+instance LyAbsPitchTrafo Full where
+  lyAbsPitchTrafo (Full (Phrase name bars)) = 
+      (Full . Phrase name) <$> mapM (mapM (T.mapM apStep)) bars
+      
+instance LyAbsPitchTrafo Undiv where
+  lyAbsPitchTrafo (Undiv (Phrase name bars)) = 
+      (Undiv . Phrase name) <$> mapM (T.mapM apStep) bars
+
+      
+instance LyAbsPitchTrafo Unmetered where
+  lyAbsPitchTrafo (Unmetered (Phrase name mdivs)) = 
+      (Unmetered . Phrase name) <$> mapM (T.mapM apStep) mdivs
+      
+
+instance LyAbsPitchStep (Glyph anno Pitch dur) where
+  apStep (GlyNote n d t)  = (\n' -> GlyNote n' d t) <$> apStep n
+  apStep (Rest    d)      = return $ Rest d
+  apStep (Spacer  d)      = return $ Spacer d
+  apStep (Chord   xs d t) = (\xs' -> Chord xs' d t) <$> T.mapM apStep xs
+  apStep (Graces  xs)     = Graces <$> T.mapM apStep xs
+
+
+instance LyAbsPitchStep (Note anno Pitch) where
+  apStep (Note a p) = (\p' -> Note a p') <$> absolutePitch p
+
+instance LyAbsPitchStep (GraceNote anno Pitch dur) where
+  apStep (GraceNote a p d) = (\p' -> GraceNote a p' d) <$> absolutePitch p
+
+absolutePitch :: Pitch -> AbsPitchTrafo Pitch
+absolutePitch (Pitch l oa o) = (\f -> Pitch l oa (f o)) <$> ask
 
 --------------------------------------------------------------------------------
 
@@ -179,10 +231,10 @@ instance LyRelDurTrafo Unmetered where
 
 
 instance LyRelDurStep (Glyph anno pch Duration) where
-  rdStep (GlyNote n d t)  = (\od -> GlyNote n od t) <$> relativeDuration d
-  rdStep (Rest    d)      = (\od -> Rest od)        <$> relativeDuration d
-  rdStep (Spacer  d)      = (\od -> Spacer od)      <$> relativeDuration d
-  rdStep (Chord   xs d t) = (\od -> Chord xs od t)  <$> relativeDuration d
+  rdStep (GlyNote n d t)  = (\d' -> GlyNote n d' t) <$> relativeDuration d
+  rdStep (Rest    d)      = (\d' -> Rest d')        <$> relativeDuration d
+  rdStep (Spacer  d)      = (\d' -> Spacer d')      <$> relativeDuration d
+  rdStep (Chord   xs d t) = (\d' -> Chord xs d' t)  <$> relativeDuration d
   rdStep (Graces  xs)     = (Graces $ fmap fn xs)   <$  set Nothing
     where
       fn (GraceNote a p d) = GraceNote a p (Just d)
@@ -190,8 +242,8 @@ instance LyRelDurStep (Glyph anno pch Duration) where
 
 
 instance LyRelDurStep (Graphic gly Duration) where
-  rdStep (Graphic g d)  = (\od -> Graphic g od) <$> relativeDuration d
-  rdStep (Skip    d)    = (\od -> Skip od)      <$> relativeDuration d
+  rdStep (Graphic g d)  = (\d' -> Graphic g d') <$> relativeDuration d
+  rdStep (Skip    d)    = (\d' -> Skip d')      <$> relativeDuration d
  
 rdBarMD :: (LyRelDurStep gly, gly' ~ OptDur gly) 
         => Bar (MetricalDiv gly) -> Bar (MetricalDiv gly')
@@ -203,7 +255,7 @@ rdBar bar = fst $ runState Nothing (mapM rdStep bar)
 
 rdMetricalDiv :: (LyRelDurStep gly, gly' ~ OptDur gly)
               => MetricalDiv gly -> RelDurTrafo (MetricalDiv gly')
-rdMetricalDiv (WrapMD (Atom e))       = atom <$> rdStep e
+rdMetricalDiv (WrapMD (Atom e))       = atom      <$> rdStep e
 rdMetricalDiv (WrapMD (N_Plet mp xs)) = n_plet mp <$> mapM rdMetricalDiv xs 
 rdMetricalDiv (WrapMD (Beamed    xs)) = beamed    <$> mapM rdMetricalDiv xs
 
