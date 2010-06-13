@@ -27,9 +27,6 @@ module Neume.Core.Pitch
   , PitchLabel(..)
 
 
-  -- * Modifying pitch
-  , HasPitch(..)
-
   -- * Constants
   , middle_c
 
@@ -91,18 +88,6 @@ instance Ord Pitch where
 -- It is defined only to allow PitchLabels to be stored in a finite map.
 instance Ord PitchLabel where
   compare (PitchLabel l a) (PitchLabel l' a') = (l,a) `compare` (l',a')
-
---------------------------------------------------------------------------------
--- Modifying pitch
-
-class HasPitch a where
-  getPitch :: a -> Pitch
-  setPitch :: Pitch -> a -> a
-
-
-instance HasPitch Pitch where
-  getPitch   = id
-  setPitch p = const p 
 
 --------------------------------------------------------------------------------
 

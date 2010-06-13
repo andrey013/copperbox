@@ -184,8 +184,8 @@ data GraceNote anno pch dur = GraceNote !anno !pch !dur
 -- | For LilyPond fret diagrams etc. where there is either a
 -- graphic or nothing (no grace notes, chords).
 --
-data Graphic glyph dur = Graphic  glyph   !dur
-                       | Skip     !dur
+data Graphic gly dur = Graphic  gly   !dur
+                     | Skip     !dur
   deriving (Eq,Show)
 
 
