@@ -3,7 +3,7 @@
 
 module Temp01 where
 
-
+import Neume.Core.Bracket
 import Neume.Core.ModularSyntax
 import Neume.Core.LilyPondOutput
 import Neume.Core.LilyPondTrafo
@@ -15,7 +15,7 @@ import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
 
 d01 :: MetricalDiv Char
-d01 = beamed [atom 'C' , atom 'D', atom 'E' ]
+d01 = Beamed [ Atom 'C', Atom 'D', Atom 'E' ]
 
 d02 :: MetricalDiv Int
 d02 = fmap (const 10) d01

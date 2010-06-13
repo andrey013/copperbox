@@ -54,7 +54,8 @@ module Neume.Core.ModularSyntax
 
   ) where
 
-import Neume.Core.Metrical ( PletMult )
+import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Utils.OneList
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )   -- package: wl-pprint
@@ -204,3 +205,28 @@ instance Traversable MetricalDiv where
   traverse f (N_Plet m xs) = N_Plet m <$> traverse (traverse f) xs
 
 
+
+--------------------------------------------------------------------------------
+
+divisionFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> b -> Division gly -> b
+divisionFold f _ b (S a)        = f a b
+divisionFold f g b (Plet pm xs) = foldl' (divisionFold f g) (g pm b) xs
+
+
+-- | The measure of a \single\ or a \plet tree\ - plet trees are
+-- considered indivisable so it is not a problem to sum them.
+--
+
+divisionMeasure :: DMeasure gly => Division gly -> DurationMeasure 
+divisionMeasure = snd . divisionFold  phi chi (mult_stack_zero,0) where
+  phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
+  chi pm (stk,acc) = (pushPM pm stk,acc) 
+
+
+instance DMeasure gly => DMeasure (Division gly) where
+  dmeasure = divisionMeasure
+
+instance BeamExtremity gly => BeamExtremity (Division gly) where
+  rendersToNote (S a)          = rendersToNote a
+  rendersToNote (Plet _ (x:_)) = rendersToNote x
+  rendersToNote _              = False 
