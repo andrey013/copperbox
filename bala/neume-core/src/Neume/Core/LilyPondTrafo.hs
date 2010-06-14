@@ -68,16 +68,14 @@ class LyRelPitchStep gly where
    rpStep :: gly -> RelPitchTrafo gly
 
 instance LyRelPitchTrafo Full where
-  lyRelPitchTrafo (Full (Phrase name bars)) =  
-      (Full . Phrase name) <$> mapM rpBarMD bars
+  lyRelPitchTrafo (Full (Phrase bars)) =  (Full . Phrase) <$> mapM rpBarMD bars
 
 instance LyRelPitchTrafo Undiv where
-  lyRelPitchTrafo (Undiv (Phrase name bars)) = 
-      (Undiv . Phrase name) <$> mapM rpBar bars 
+  lyRelPitchTrafo (Undiv (Phrase bars)) = (Undiv . Phrase) <$> mapM rpBar bars 
 
 instance LyRelPitchTrafo Unmetered where
-  lyRelPitchTrafo (Unmetered (Phrase name mdivs)) = 
-      (Unmetered . Phrase name) <$>  mapM rpMetricalDiv mdivs
+  lyRelPitchTrafo (Unmetered (Phrase mdivs)) = 
+      (Unmetered . Phrase) <$>  mapM rpMetricalDiv mdivs
 
 
 rpBarMD :: LyRelPitchStep gly
@@ -158,17 +156,17 @@ class LyAbsPitchStep gly where
 
 
 instance LyAbsPitchTrafo Full where
-  lyAbsPitchTrafo (Full (Phrase name bars)) = 
-      (Full . Phrase name) <$> mapM (mapM (T.mapM apStep)) bars
+  lyAbsPitchTrafo (Full (Phrase bars)) = 
+      (Full . Phrase) <$> mapM (mapM (T.mapM apStep)) bars
       
 instance LyAbsPitchTrafo Undiv where
-  lyAbsPitchTrafo (Undiv (Phrase name bars)) = 
-      (Undiv . Phrase name) <$> mapM (T.mapM apStep) bars
+  lyAbsPitchTrafo (Undiv (Phrase bars)) = 
+      (Undiv . Phrase) <$> mapM (T.mapM apStep) bars
 
       
 instance LyAbsPitchTrafo Unmetered where
-  lyAbsPitchTrafo (Unmetered (Phrase name mdivs)) = 
-      (Unmetered . Phrase name) <$> mapM (T.mapM apStep) mdivs
+  lyAbsPitchTrafo (Unmetered (Phrase mdivs)) = 
+      (Unmetered . Phrase) <$> mapM (T.mapM apStep) mdivs
       
 
 instance LyAbsPitchStep (Glyph anno Pitch dur) where
@@ -216,15 +214,13 @@ class LyRelDurStep gly where
    rdStep :: gly' ~ OptDur gly => gly -> RelDurTrafo gly'
 
 instance LyRelDurTrafo Full where
-  lyRelDurTrafo (Full (Phrase name bars)) = 
-      Full $ Phrase name (map rdBarMD bars)
+  lyRelDurTrafo (Full (Phrase bars)) = Full $ Phrase (map rdBarMD bars)
       
 instance LyRelDurTrafo Undiv where
-  lyRelDurTrafo (Undiv (Phrase name bars)) = 
-      Undiv $ Phrase name (map rdBar bars)
+  lyRelDurTrafo (Undiv (Phrase bars)) = Undiv $ Phrase (map rdBar bars)
       
 instance LyRelDurTrafo Unmetered where
-  lyRelDurTrafo (Unmetered (Phrase name mdivs)) = Unmetered $ Phrase name mdivs'
+  lyRelDurTrafo (Unmetered (Phrase mdivs)) = Unmetered $ Phrase mdivs'
     where
       mdivs' = fst $ runState Nothing (mapM rdMetricalDiv mdivs)
       

@@ -60,9 +60,9 @@ eighth_note = (1%8)
 
 phrase :: (DMeasure (Division a), BeamExtremity (Division a))
        => MeterPattern -> NoteList (Division a) -> Phrase [MetricalDiv a]
-phrase mp (NoteList name notes) = 
-    Phrase name $ map (reconstituteBar . map changeInteriorMU)
-                $ partitionToInterimBars mp (0,notes)
+phrase mp (NoteList notes) = 
+    Phrase $ map (reconstituteBar . map changeInteriorMU)
+           $ partitionToInterimBars mp (0,notes)
 
 
 phraseAna :: (DMeasure (Division a), BeamExtremity (Division a))
@@ -70,9 +70,9 @@ phraseAna :: (DMeasure (Division a), BeamExtremity (Division a))
           -> MeterPattern 
           -> NoteList (Division a) 
           -> Phrase [MetricalDiv a]
-phraseAna ana mp (NoteList name notes) = undefined
-    Phrase name $ map (reconstituteBar . map changeInteriorMU)
-                $ partitionWithAna ana mp notes
+phraseAna ana mp (NoteList notes) = 
+    Phrase $ map (reconstituteBar . map changeInteriorMU)
+           $ partitionWithAna ana mp notes
 
 
 reconstituteBar :: InterimBar (MetricalDiv pt) -> [MetricalDiv pt]
@@ -98,7 +98,7 @@ changeInteriorMU =
 
 
 divToMDiv :: Division gly -> MetricalDiv gly
-divToMDiv (S gly)      = Atom gly
+divToMDiv (Unit gly)   = Atom gly
 divToMDiv (Plet pm xs) = N_Plet pm (map divToMDiv xs)
 
 

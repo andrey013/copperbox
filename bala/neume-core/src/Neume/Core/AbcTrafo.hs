@@ -66,17 +66,17 @@ class AbcPitchSpellStep gly where
 
 
 instance AbcPitchSpellTrafo Full where
-  abcPitchSpellTrafo (Full (Phrase name bars)) = 
-      (Full . Phrase name) <$> mapM (mapM (T.mapM spStep)) bars
+  abcPitchSpellTrafo (Full (Phrase bars)) = 
+      (Full . Phrase) <$> mapM (mapM (T.mapM spStep)) bars
       
 instance AbcPitchSpellTrafo Undiv where
-  abcPitchSpellTrafo (Undiv (Phrase name bars)) = 
-      (Undiv . Phrase name) <$> mapM (T.mapM spStep) bars
+  abcPitchSpellTrafo (Undiv (Phrase bars)) = 
+      (Undiv . Phrase) <$> mapM (T.mapM spStep) bars
 
       
 instance AbcPitchSpellTrafo Unmetered where
-  abcPitchSpellTrafo (Unmetered (Phrase name mdivs)) = 
-      (Unmetered . Phrase name) <$> mapM (T.mapM spStep) mdivs
+  abcPitchSpellTrafo (Unmetered (Phrase mdivs)) = 
+      (Unmetered . Phrase) <$> mapM (T.mapM spStep) mdivs
       
 
 instance AbcPitchSpellStep (Glyph anno Pitch dur) where
@@ -129,18 +129,18 @@ class AbcDurMultStep gly where
 
 
 instance AbcDurMultTrafo Full where
-  abcDurMultTrafo (Full (Phrase name bars)) = 
-      (Full . Phrase name) <$> mapM (T.mapM (T.mapM dmStep)) bars
+  abcDurMultTrafo (Full (Phrase bars)) = 
+      (Full . Phrase) <$> mapM (T.mapM (T.mapM dmStep)) bars
 
 
 instance AbcDurMultTrafo Undiv where
-  abcDurMultTrafo (Undiv (Phrase name bars)) = 
-      (Undiv . Phrase name) <$> mapM (T.mapM dmStep) bars
+  abcDurMultTrafo (Undiv (Phrase bars)) = 
+      (Undiv . Phrase) <$> mapM (T.mapM dmStep) bars
       
 
 instance AbcDurMultTrafo Unmetered where
-  abcDurMultTrafo (Unmetered (Phrase name mdivs)) =
-     (Unmetered . Phrase name) <$> mapM (T.mapM dmStep) mdivs
+  abcDurMultTrafo (Unmetered (Phrase mdivs)) =
+     (Unmetered . Phrase) <$> mapM (T.mapM dmStep) mdivs
 
 
 instance AbcDurMultStep (Glyph anno pch Duration) where

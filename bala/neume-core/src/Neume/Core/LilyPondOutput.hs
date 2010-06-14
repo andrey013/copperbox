@@ -63,17 +63,15 @@ runRender f = runReader f . renderLyPhraseImage
 -- Just instances for the Phrase formats...
 
 instance LilyPondOutput Full where
-  renderLyPhraseImage (Full (Phrase name bars)) = 
-      Phrase name <$> mapM oBarMD bars 
+  renderLyPhraseImage (Full (Phrase bars)) = Phrase <$> mapM oBarMD bars 
 
 instance LilyPondOutput Undiv where
-  renderLyPhraseImage (Undiv (Phrase name bars)) =
-      Phrase name <$> mapM oBar bars 
+  renderLyPhraseImage (Undiv (Phrase bars)) = Phrase <$> mapM oBar bars 
 
 
 instance LilyPondOutput Unmetered where
-  renderLyPhraseImage (Unmetered (Phrase name mds)) =
-      (\mds' -> Phrase name [hsep mds']) <$> oMetricalDivs mds
+  renderLyPhraseImage (Unmetered (Phrase mds)) =
+      (\mds' -> Phrase [hsep mds']) <$> oMetricalDivs mds
 
 
 

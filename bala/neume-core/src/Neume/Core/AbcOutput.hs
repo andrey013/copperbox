@@ -60,17 +60,15 @@ type NoteSep = Doc -> Doc -> Doc
 -- Just instances for the Phrase formats...
 
 instance AbcOutput Full where
-  renderAbcPhraseImage (Full (Phrase name bars)) = 
-      Phrase name <$> mapM oBarMD bars 
+  renderAbcPhraseImage (Full (Phrase bars)) = Phrase <$> mapM oBarMD bars 
 
 instance AbcOutput Undiv where
-  renderAbcPhraseImage (Undiv (Phrase name bars)) =
-      Phrase name <$> mapM oBar bars 
+  renderAbcPhraseImage (Undiv (Phrase bars)) = Phrase <$> mapM oBar bars 
 
 
 instance AbcOutput Unmetered where
-  renderAbcPhraseImage (Unmetered (Phrase name mds)) =
-      (\mds' -> Phrase name [mds']) <$> oMetricalDivs (<+>) mds
+  renderAbcPhraseImage (Unmetered (Phrase mds)) =
+      (\mds' -> Phrase [mds']) <$> oMetricalDivs (<+>) mds
 
 
 

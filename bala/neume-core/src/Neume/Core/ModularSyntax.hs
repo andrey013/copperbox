@@ -27,7 +27,6 @@ module Neume.Core.ModularSyntax
   
   -- * Phrase
   , Phrase(..)
-  , PhraseName
   , Bar
 
   -- * Metrical divisions of a bar - beam groups, tuplets, ... 
@@ -74,15 +73,10 @@ newtype Unmetered gly = Unmetered (Phrase            (MetricalDiv gly))
 
 
 
--- Note - Phrase isn\'t recursive... 
 
-data Phrase e = Phrase 
-      { phrase_name   :: PhraseName
-      , phrase_bars   :: [e]
-      }
+newtype Phrase e = Phrase { getPhraseBars :: [e] } 
   deriving (Show)
 
-type PhraseName     = String
 
 type Bar e = [e]
 
@@ -106,12 +100,10 @@ data MetricalDiv e = Atom e
 --------------------------------------------------------------------------------
 -- Note lists - created by the user...
 
-data NoteList e = NoteList
-      { note_list_name  :: String
-      , note_list_notes :: [e]
-      }
+newtype NoteList e = NoteList { getNotes :: [e] }
+  deriving (Show)
 
-data Division e = S e
+data Division e = Unit e
                 | Plet PletMult [Division e]
   deriving (Show)
 
@@ -188,7 +180,7 @@ type PhraseOverlayImage = Phrase [BarImage]
 --------------------------------------------------------------------------------
 
 instance Functor Phrase where
-  fmap f (Phrase name bars) = Phrase name $ map f bars
+  fmap f (Phrase bars) = Phrase $ map f bars
 
 instance Functor MetricalDiv where
   fmap f (Atom e)        = Atom (f e)
@@ -210,7 +202,7 @@ instance Traversable MetricalDiv where
 --------------------------------------------------------------------------------
 
 divisionFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> b -> Division gly -> b
-divisionFold f _ b (S a)        = f a b
+divisionFold f _ b (Unit a)     = f a b
 divisionFold f g b (Plet pm xs) = foldl' (divisionFold f g) (g pm b) xs
 
 
@@ -240,7 +232,7 @@ instance DMeasure (Graphic gly Duration) where
 
 
 instance BeamExtremity gly => BeamExtremity (Division gly) where
-  rendersToNote (S a)          = rendersToNote a
+  rendersToNote (Unit a)       = rendersToNote a
   rendersToNote (Plet _ (x:_)) = rendersToNote x
   rendersToNote _              = False 
 

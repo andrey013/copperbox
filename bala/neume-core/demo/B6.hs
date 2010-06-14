@@ -42,9 +42,9 @@ putDocEighty = putStr . renderEighty
 ly_all :: Doc 
 ly_all = lyDoc $ fn ly_img
   where
-    fn    = encloseSep empty term sepa . phrase_bars
+    fn    = encloseSep empty term sepa . getPhraseBars
     term  = string " |"
-    sepa  = empty -- string " |"
+    sepa  = string " |"
 
 lyDoc :: Doc -> Doc
 lyDoc body = prolog <$> body <$> epilog
@@ -63,7 +63,7 @@ lyDoc body = prolog <$> body <$> epilog
 abc_all :: Doc
 abc_all = abc_prolog <$> fn abc_img
   where
-    fn    = encloseSep empty term sepa . phrase_bars
+    fn    = encloseSep empty term sepa . getPhraseBars
     term  = string " :|"
     sepa  = string " |"
    
@@ -85,7 +85,7 @@ abc_score :: Full (Glyph () Pitch AbcMultiplier)
 abc_score = ABC.runDurMultTrafo (1%16) $ ABC.runPitchSpellTrafo a_major b6_score
 
 b6_score :: Full StdGlyph
-b6_score = Full $ phrase two_four_time $ NoteList "B6" $ map S bars1_4
+b6_score = Full $ phrase two_four_time $ NoteList $ map Unit bars1_4
 
 
 two_four_time :: MeterPattern
