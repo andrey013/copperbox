@@ -18,49 +18,59 @@ import Neume.Core.ModularSyntax
 import Text.PrettyPrint.Leijen
 
 import Data.Ratio
--- import System.Cmd
+import System.Cmd
 
 type StdGlyph = Glyph () Pitch Duration
 
-{-
+
 
 main :: IO ()
 main = 
-  writeDoc "bulgarian6.ly"      ly_score                        >>
-  writeDoc "bulgarian6_abc.abc" abc_score                       >>
-  system   "lilypond bulgarian6.ly"                             >>
-  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
-  return ()
+     writeFile "bulgarian6_abc.abc" (renderEighty abc_all)
+  >> system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"
+  >> writeFile "bulgarian6.ly"      (renderEighty ly_all)
+  >> system   "lilypond bulgarian6.ly"
+  >> return ()
 
 
-ly_score :: Doc
-ly_score =  version "2.12.2" 
-        <$> scoreExpr (relative middle_c $ key a_nat "major" 
-                       <$> time 2 4
-                       <$> tune1)
+renderEighty :: Doc -> String
+renderEighty = ($ "") . displayS . renderPretty 0.8 80
+
+putDocEighty :: Doc -> IO ()
+putDocEighty = putStr . renderEighty
+
+ly_all :: Doc 
+ly_all = lyDoc $ fn ly_img
   where
-    tune1    = renderLyRelative ofmt rwspec b6_score
-    
-    ofmt     = Ly_std_format_config       strip
-    rwspec   = Ly_relative_rewrite_config middle_c two_four_time strip
+    fn    = encloseSep empty term sepa . phrase_bars
+    term  = string " |"
+    sepa  = empty -- string " |"
 
-abc_score :: Doc
-abc_score =  ABC.tunenum   1 
-         <$> ABC.title     "Bulgarian 6 (ABC)" 
-         <$> ABC.meter     "2/4"
-         <$> ABC.key       "Amaj"
-         <$> tune1
+lyDoc :: Doc -> Doc
+lyDoc body = prolog <$> body <$> epilog
   where
-    tune1   = ABC.renderABC ofmt rwspec b6_score
+    prolog = vsep $ map text
+               [ "\\version \"2.12.2\""
+               , "\\score {"
+               , "  \\relative c' {"
+               , "    \\key a \\major"
+               , "    \\time 2/4"
+               , "    \\repeat volta 2 {"
+               ]
+    epilog = vsep $ map text [ "    }", "  }", "}"]
 
-    ofmt    = ABC.ABC_std_format_config  [4,4,4,4] ABC.barNumber
-    rwspec  = ABC.ABC_std_rewrite_config a_major (1%16) two_four_time 
 
+abc_all :: Doc
+abc_all = abc_prolog <$> fn abc_img
+  where
+    fn    = encloseSep empty term sepa . phrase_bars
+    term  = string " :|"
+    sepa  = string " |"
+   
 
-b6_score :: Score (TRepeat :. TRepeat :. Z) (NoteList StdGlyph)
-b6_score = fmap simpleNoteList $ 
-    Repeat ("a", bars1'4) $ Repeat ("b", bars5'8) $ Nil
--}
+abc_prolog :: Doc
+abc_prolog = vsep $ map text $
+    [ "X:1", "T:Bulgarian 6 (ABC)", "M:2/4", "K:Amaj" ] 
 
 ly_img :: PhraseImage
 ly_img  = runRender (renderGlyph pitch (\_ a -> a)) ly_score
@@ -75,7 +85,7 @@ abc_score :: Full (Glyph () Pitch AbcMultiplier)
 abc_score = ABC.runDurMultTrafo (1%16) $ ABC.runPitchSpellTrafo a_major b6_score
 
 b6_score :: Full StdGlyph
-b6_score = Full $ phrase two_four_time $ NoteList "b6" $ map S $ bars1_4 ++ bars5_8
+b6_score = Full $ phrase two_four_time $ NoteList "B6" $ map S bars1_4
 
 
 two_four_time :: MeterPattern
@@ -86,43 +96,6 @@ a_major     :: AbcSpellingMap
 a_major     = makeAbcSpellingMap 3
 
 
-bars1_4 :: [StdGlyph]
-bars1_4 =  
-  [ sn (A,4,nat),   sn (B,4,nat), sn (C,5,sharp), sn (C,5,sharp)
-  , sn (C,5,sharp), sn (A,4,nat), sn (C,5,sharp), sn (C,5,sharp)
-  
-  -- bar 2
-  , sn (C,5,sharp), sn (A,4,nat), sn (B,4,nat),   sn (C,5,sharp) 
-  , sn (B,4,nat),   sn (A,4,nat), sn (A,4,nat),   sn_rest
-  
-  -- bar 3
-  , sn (E,5,nat),   sn (D,5,nat), sn (C,5,sharp), sn (B,4,nat)
-  , sn (C,5,sharp), sn (A,4,nat), sn (B,4,nat),   sn (C,5,sharp)
-
-  -- bar 4
-  , sn (A,4,nat),   sn (B,4,nat), sn (B,4,nat),   sn (A,4,nat)
-  , en (A,4,nat),   en_rest
-  ]
-
-
-bars5_8 :: [StdGlyph]
-bars5_8 = 
-  [ en (C,5,sharp), sn (B,4,nat), sn (A,4,nat)
-  , en (B,4,nat),   sn (A,4,nat), sn (G,4,sharp)
-
-  -- bar 6
-  , sn (F,4,sharp), sn (E,4,nat), sn (F,4,sharp), sn (G,4,sharp)
-  , en (A,4,nat),   en (B,4,nat)
-
-  -- bar 7
-  , en (C,5,sharp), sn (B,4,nat), sn (A,4,nat)
-  , en (B,4,nat),   sn (A,4,nat), sn (G,4,sharp)
-
-  -- bar 8
-  , sn (F,4,sharp), sn (E,4,nat), en (F,4,sharp)
-  , en (F,4,sharp), en_rest
- 
-  ]
 
 nat, sharp :: Bool
 nat = False
@@ -144,4 +117,23 @@ en_rest = Rest dEighth
 
 sn_rest :: StdGlyph
 sn_rest = Rest dSixteenth
+
+bars1_4 :: [StdGlyph]
+bars1_4 =  
+  [ sn (A,4,nat),   sn (B,4,nat), sn (C,5,sharp), sn (C,5,sharp)
+  , sn (C,5,sharp), sn (A,4,nat), sn (C,5,sharp), sn (C,5,sharp)
+  
+  -- bar 2
+  , sn (C,5,sharp), sn (A,4,nat), sn (B,4,nat),   sn (C,5,sharp) 
+  , sn (B,4,nat),   sn (A,4,nat), sn (A,4,nat),   sn_rest
+  
+  -- bar 3
+  , sn (E,5,nat),   sn (D,5,nat), sn (C,5,sharp), sn (B,4,nat)
+  , sn (C,5,sharp), sn (A,4,nat), sn (B,4,nat),   sn (C,5,sharp)
+
+  -- bar 4
+  , sn (A,4,nat),   sn (B,4,nat), sn (B,4,nat),   sn (A,4,nat)
+  , en (A,4,nat),   en_rest
+  ]
+
 
