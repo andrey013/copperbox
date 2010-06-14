@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -226,7 +227,34 @@ divisionMeasure = snd . divisionFold  phi chi (mult_stack_zero,0) where
 instance DMeasure gly => DMeasure (Division gly) where
   dmeasure = divisionMeasure
 
+instance DMeasure (Glyph anno pch Duration) where
+  dmeasure (GlyNote _ d _)    = dmeasure d
+  dmeasure (Rest     d)       = dmeasure d
+  dmeasure (Spacer   d)       = dmeasure d
+  dmeasure (Chord _ d _)      = dmeasure d
+  dmeasure (Graces _)         = 0
+
+instance DMeasure (Graphic gly Duration) where
+  dmeasure (Graphic _ d) = dmeasure d
+  dmeasure (Skip     d)  = dmeasure d
+
+
 instance BeamExtremity gly => BeamExtremity (Division gly) where
   rendersToNote (S a)          = rendersToNote a
   rendersToNote (Plet _ (x:_)) = rendersToNote x
   rendersToNote _              = False 
+
+
+instance BeamExtremity (Glyph anno pch dur) where
+  rendersToNote (GlyNote _ _ _) = True
+  rendersToNote (Rest _)        = False
+  rendersToNote (Spacer _)      = False
+  rendersToNote (Chord _ _ _)   = True
+  rendersToNote (Graces _)      = False
+
+instance BeamExtremity (Graphic gly dur) where
+  rendersToNote (Graphic _ _) = True
+  rendersToNote (Skip _)      = False
+
+
+

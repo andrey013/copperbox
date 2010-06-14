@@ -34,7 +34,7 @@ module Neume.Core.LilyPondTrafo
   , OptDur
   , LyRelDurTrafo(..)
   , LyRelDurStep(..)
-  , runLyRelDurTrafo
+  , runRelDurTrafo
 
   ) where
 
@@ -198,9 +198,9 @@ type family OptDur gly :: *
 type instance OptDur (Glyph anno pch Duration) = Glyph anno pch (Maybe Duration)
 type instance OptDur (Graphic gly Duration)    = Graphic gly (Maybe Duration)
 
-runLyRelDurTrafo :: (LyRelDurTrafo repr, LyRelDurStep gly, gly' ~ OptDur gly)
-                 => repr gly -> repr gly'
-runLyRelDurTrafo = lyRelDurTrafo
+runRelDurTrafo :: (LyRelDurTrafo repr, LyRelDurStep gly, gly' ~ OptDur gly)
+               => repr gly -> repr gly'
+runRelDurTrafo = lyRelDurTrafo
 
 
 -- Note -- the monadic effect is not at the top level of this 

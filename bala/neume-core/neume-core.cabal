@@ -1,0 +1,63 @@
+name:             neume-core
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley 2010
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         A library for generating LilyPond and ABC scores. 
+description:
+  Neume-core is a library for generating ABC and LilyPond scores. 
+  It aims to generate /good/ quality scores - that's to say the 
+  output should resemble hand-written scores. 
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/B6.hs
+  
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, 
+                      containers, 
+                      monadLib,
+                      wl-pprint,
+                      algebra
+
+  exposed-modules:
+    Neume.Core.AbcOutput,
+    Neume.Core.AbcPretty,
+    Neume.Core.AbcTrafo,
+    Neume.Core.Bracket,
+    Neume.Core.Duration,
+    Neume.Core.LilyPondOutput,
+    Neume.Core.LilyPondPretty,
+    Neume.Core.LilyPondTrafo,
+    Neume.Core.Metrical,
+    Neume.Core.ModularSyntax,
+    Neume.Core.Pitch,
+    Neume.Core.SpellingMap,
+    Neume.Core.Utils.Common,
+    Neume.Core.Utils.HList,
+    Neume.Core.Utils.OneList,
+    Neume.Core.Utils.Pretty
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  

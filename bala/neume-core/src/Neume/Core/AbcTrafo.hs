@@ -21,9 +21,9 @@ module Neume.Core.AbcTrafo
   (
 
   -- * Pitch spelling transformation
-    AbcSpellPitchTrafo(..)
-  , AbcSpellPitchStep(..)
-  , runSpellPitchTrafo
+    AbcPitchSpellTrafo(..)
+  , AbcPitchSpellStep(..)
+  , runPitchSpellTrafo
 
 
   -- * Duration multiplier transformation
@@ -48,38 +48,38 @@ import qualified Data.Traversable as T
 
 --------------------------------------------------------------------------------
 
-type SpellPitchTrafo a = Reader AbcSpellingMap a
+type PitchSpellTrafo a = Reader AbcSpellingMap a
  
 
 
-runSpellPitchTrafo :: (AbcSpellPitchTrafo repr, AbcSpellPitchStep gly)
+runPitchSpellTrafo :: (AbcPitchSpellTrafo repr, AbcPitchSpellStep gly)
                    => AbcSpellingMap -> repr gly -> repr gly
-runSpellPitchTrafo sm = runReader sm . abcSpellPitchTrafo
+runPitchSpellTrafo sm = runReader sm . abcPitchSpellTrafo
 
 
-class AbcSpellPitchTrafo repr where
-  abcSpellPitchTrafo :: AbcSpellPitchStep gly => 
-                        repr gly -> SpellPitchTrafo (repr gly)
+class AbcPitchSpellTrafo repr where
+  abcPitchSpellTrafo :: AbcPitchSpellStep gly => 
+                        repr gly -> PitchSpellTrafo (repr gly)
 
-class AbcSpellPitchStep gly where
-  spStep :: gly -> SpellPitchTrafo gly
+class AbcPitchSpellStep gly where
+  spStep :: gly -> PitchSpellTrafo gly
 
 
-instance AbcSpellPitchTrafo Full where
-  abcSpellPitchTrafo (Full (Phrase name bars)) = 
+instance AbcPitchSpellTrafo Full where
+  abcPitchSpellTrafo (Full (Phrase name bars)) = 
       (Full . Phrase name) <$> mapM (mapM (T.mapM spStep)) bars
       
-instance AbcSpellPitchTrafo Undiv where
-  abcSpellPitchTrafo (Undiv (Phrase name bars)) = 
+instance AbcPitchSpellTrafo Undiv where
+  abcPitchSpellTrafo (Undiv (Phrase name bars)) = 
       (Undiv . Phrase name) <$> mapM (T.mapM spStep) bars
 
       
-instance AbcSpellPitchTrafo Unmetered where
-  abcSpellPitchTrafo (Unmetered (Phrase name mdivs)) = 
+instance AbcPitchSpellTrafo Unmetered where
+  abcPitchSpellTrafo (Unmetered (Phrase name mdivs)) = 
       (Unmetered . Phrase name) <$> mapM (T.mapM spStep) mdivs
       
 
-instance AbcSpellPitchStep (Glyph anno Pitch dur) where
+instance AbcPitchSpellStep (Glyph anno Pitch dur) where
   spStep (GlyNote n d t)  = (\n' -> GlyNote n' d t) <$> spStep n
   spStep (Rest    d)      = return $ Rest d
   spStep (Spacer  d)      = return $ Spacer d
@@ -87,13 +87,13 @@ instance AbcSpellPitchStep (Glyph anno Pitch dur) where
   spStep (Graces  xs)     = Graces <$> T.mapM spStep xs
 
 
-instance AbcSpellPitchStep (Note anno Pitch) where
+instance AbcPitchSpellStep (Note anno Pitch) where
   spStep (Note a p) = (\p' -> Note a p') <$> spellPitch p
 
-instance AbcSpellPitchStep (GraceNote anno Pitch dur) where
+instance AbcPitchSpellStep (GraceNote anno Pitch dur) where
   spStep (GraceNote a p d) = (\p' -> GraceNote a p' d) <$> spellPitch p
 
-spellPitch :: Pitch -> SpellPitchTrafo Pitch
+spellPitch :: Pitch -> PitchSpellTrafo Pitch
 spellPitch p = (\sm -> spell sm p) <$> ask
 
 --------------------------------------------------------------------------------
@@ -103,11 +103,10 @@ type DurMultTrafo a = Reader Rational a
 
 type family DurMult gly :: *
 
-type instance DurMult (Glyph anno pch Duration) = 
-                       Glyph anno pch (Maybe AbcMultiplier)
+type instance DurMult (Glyph anno pch Duration) = Glyph anno pch AbcMultiplier
 
 type instance DurMult (GraceNote anno pch Duration) = 
-                       GraceNote anno pch (Maybe AbcMultiplier)
+                       GraceNote anno pch AbcMultiplier
 
 
 runDurMultTrafo :: ( AbcDurMultTrafo repr, AbcDurMultStep gly
@@ -157,5 +156,7 @@ instance AbcDurMultStep (GraceNote anno pch Duration) where
 
 
 -- Never set a dotted duration as the state...
-durationMult :: Duration -> DurMultTrafo (Maybe AbcMultiplier)
-durationMult dur = (\r -> abcRepresentation r dur) <$> ask
+durationMult :: Duration -> DurMultTrafo AbcMultiplier
+durationMult dur = (\r -> fn $ abcRepresentation r dur) <$> ask
+  where
+    fn = maybe IdenM id
