@@ -74,7 +74,7 @@ newtype Unmetered gly = Unmetered (Phrase            (MetricalDiv gly))
 
 
 
-newtype Phrase e = Phrase { getPhraseBars :: [e] } 
+newtype Phrase e = Phrase { getPhraseData :: [e] } 
   deriving (Show)
 
 

@@ -45,8 +45,10 @@ library
     Neume.Core.SpellingMap,
     Neume.Core.Utils.Common,
     Neume.Core.Utils.HList,
+    Neume.Core.Utils.Lahl,
     Neume.Core.Utils.OneList,
-    Neume.Core.Utils.Pretty
+    Neume.Core.Utils.Pretty,
+    Neume.Core.Utils.Stream
 
   other-modules:
     

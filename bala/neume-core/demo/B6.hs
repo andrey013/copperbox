@@ -42,7 +42,7 @@ putDocEighty = putStr . renderEighty
 ly_all :: Doc 
 ly_all = lyDoc $ fn ly_img
   where
-    fn    = encloseSep empty term sepa . getPhraseBars
+    fn    = encloseSep empty term sepa . getPhraseData
     term  = string " |"
     sepa  = string " |"
 
@@ -63,7 +63,7 @@ lyDoc body = prolog <$> body <$> epilog
 abc_all :: Doc
 abc_all = abc_prolog <$> fn abc_img
   where
-    fn    = encloseSep empty term sepa . getPhraseBars
+    fn    = encloseSep empty term sepa . getPhraseData
     term  = string " :|"
     sepa  = string " |"
    
