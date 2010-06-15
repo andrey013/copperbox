@@ -1,4 +1,5 @@
-
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module Temp01 where
 
@@ -12,11 +13,16 @@ import Neume.Core.Utils.HList
 import qualified Neume.Core.Utils.Lahl as L
 import Neume.Core.Utils.Stream ( Stream(..) )
 import qualified Neume.Core.Utils.Stream as S
+import Neume.Core.Utils.TraceT
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
+import MonadLib.Monads
+
 import Data.Ratio
 
+eighth_note :: DurationMeasure 
+eighth_note = (1%8)
 
 
 demo1 :: [Int] 
@@ -41,6 +47,125 @@ instance DMeasure Int where
 
 
 demo2 = fitMeasure (1::Int) (2%1)
+
+type PulseLenStack = Stream DurationMeasure
+type BarSizeStack  = Stream Int
+
+makeBars :: [Pulse e] -> BarSizeStack -> Phrase [MetricalDiv e]
+makeBars es = Phrase . step es
+  where
+    step [] _           = []
+    step es (z ::: sz)  = let (tip,rest) = splitAt z es 
+                          in makeDivs tip : step rest sz
+
+makeDivs :: [Pulse e] -> [MetricalDiv e]
+makeDivs []     = []
+makeDivs (x:xs) = step x xs emptyH
+  where
+    step Space     []     acc = toListH acc
+    step Space     (y:ys) acc = step y ys acc
+--    step (Group h) (y:ys) acc = step y ys (acc `appendH` (
+
+
+-- with beamStart2 if you go into beamGroup mode  
+-- you'll always produce a beam group...
+-- 
+-- err - no you won't ... (1%8) rest rest (1%4)
+
+-- beam has a concrete start of at least 1 and a speculative list...
+
+-- might want an optimization on the 1 element-Pulse case 
+
+
+data BeamState e = BS { prolog :: H e, speculation :: H e }
+
+{-
+speculate :: BeamState e -> e -> BeamState e
+speculate (BS p s) e = BS p (s `snocH` e)
+
+addConcrete :: BeamState e -> e -> BeamState e
+addConcrete (BS p s) e = 
+-}
+
+-- It\'s assumed: DMeasuure <= eighth
+--
+addInside :: BeamExtremity e => e -> BeamState e -> BeamState e
+addInside e (BS p s) 
+    | rendersToNote e = BS (p `appendH` s `snocH` e) emptyH
+    | otherwise       = BS p                         (s `snocH` e)
+
+inside2 :: BeamExtremity e => e -> e -> BeamState e
+inside2 a b | rendersToNote b = BS ((a:) . (b:)) emptyH
+inside2 a b                   = BS (a:)   (b:)
+
+
+traceBuffer :: Monad m => TraceM m (MetricalDiv e) => BeamState e -> m ()
+traceBuffer (BS p s) = 
+    (trace $ beamOrOne p) >> mapM_ (trace1 . Atom) (toListH s)
+  where
+    beamOrOne f = zom emptyH (wrapH . Atom) (wrapH . Beamed . map Atom) $ f []
+
+zom :: b -> (a -> b) -> ([a] -> b) -> [a] -> b
+zom zero _    _     []  = zero
+zom _    oneF _     [x] = oneF x
+zom _    _    manyF xs  = manyF xs
+
+
+beamStart2 :: (BeamExtremity e, DMeasure e) => e -> e -> Bool
+beamStart2 e1 e2 = rendersToNote e1
+                && dmeasure e1 <= eighth_note
+                && dmeasure e1 <= eighth_note
+
+evalTrace :: TraceT e Id a -> H e
+evalTrace = snd . runId . runTraceT 
+
+
+
+dividePulse :: (BeamExtremity e, DMeasure e) => Pulse e -> H (MetricalDiv e)
+dividePulse Space     = emptyH
+dividePulse (Group h) = zom emptyH (wrapH . Atom) (evalTrace . outside) (h [])
+  where
+    outside (x:y:zs) | beamStart2 x y = inside (inside2 x y) zs
+                     | otherwise      = trace1 (Atom x) >> outside (y:zs)
+    outside zs                        = trace (veloH Atom zs)
+
+    inside buf []                     = traceBuffer buf
+    inside buf (x:xs) 
+        | dmeasure x > eighth_note    = traceBuffer buf >> trace1 (Atom x) >> outside xs
+        | otherwise                   = inside (addInside x buf) xs
+
+
+
+dividePulse1 :: forall e. (BeamExtremity e, DMeasure e) 
+            => Pulse e -> H (MetricalDiv e)
+dividePulse1 Space     = emptyH
+dividePulse1 (Group h) = outside emptyH (toListH h)
+  where
+    outside :: H (MetricalDiv e) -> [e] -> H (MetricalDiv e)
+    outside acc []     = acc
+    outside acc (e:es) 
+        | dmeasure e > eighth_note = outside (acc `snoc1` e) es
+        | not (rendersToNote e)    = outside (acc `snoc1` e) es
+        | otherwise                = inside acc [e] es
+
+    inside acc reva []     = acc `appendH` unwind reva
+    inside acc reva (e:es) 
+        | dmeasure e > eighth_note = acc `appendH` unwind (e:reva)
+        | otherwise                = inside acc (e:reva) es
+
+    -- unwind works on a reversed list
+    unwind :: [e] -> H (MetricalDiv e) 
+    unwind []     = emptyH
+    unwind (e:es) | not (rendersToNote e) = unwind es `snoc1` e
+                  | otherwise             = mkbeam $ reverse (e:es)
+
+    snoc1 :: H (MetricalDiv e) -> e -> H (MetricalDiv e)    
+    snoc1 f e = f `snocH` Atom e
+
+    mkbeam :: [e] -> H (MetricalDiv e)
+    mkbeam []  = emptyH
+    mkbeam [e] = wrapH $ Atom e
+    mkbeam es  = wrapH $ Beamed (map Atom es)
 
 
 
@@ -69,9 +194,6 @@ segment notes (top ::: pls) = group notes top pls L.empty
     pulse acc e = Group $ L.getH (acc `L.snoc` e)
 
 
-
-
-type PulseLenStack = Stream DurationMeasure
 
 
 -- If r == 0 produce (Just 0, stk_tail)

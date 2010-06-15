@@ -70,4 +70,5 @@ toList = ($ []) . apply
 -- the input list.
 --
 fromList :: [a] -> Lahl a
+fromList [] = Lahl 0               id
 fromList xs = Lahl (Pre.length xs) (xs++)
