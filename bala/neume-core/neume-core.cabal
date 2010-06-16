@@ -48,6 +48,7 @@ library
     Neume.Core.Utils.Lahl,
     Neume.Core.Utils.OneList,
     Neume.Core.Utils.Pretty,
+    Neume.Core.Utils.TraceT,
     Neume.Core.Utils.Stream
 
   other-modules:

@@ -1,7 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# OPTIONS -Wall #-}
-
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -18,193 +16,188 @@
 --------------------------------------------------------------------------------
 
 module Neume.Core.Bracket 
-  ( 
-  
-    shortenAna
+  (
+    MDiv(..)
   , phrase
-  , phraseAna
 
   ) where
 
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.ModularSyntax
-import Neume.Core.Utils.Common ( modR )
+
 import Neume.Core.Utils.HList
--- import qualified Neume.Core.Utils.Stream as S
+import qualified Neume.Core.Utils.Lahl          as L
+import Neume.Core.Utils.Stream ( Stream(..) )
+import qualified Neume.Core.Utils.Stream        as S
+import Neume.Core.Utils.TraceT
 
-import Data.List ( unfoldr )
+import MonadLib.Monads
+
 import Data.Ratio
-
-
-   
-type Borrow = DurationMeasure
-
-
--- | A /Metrical Unit/ represents a division of a NoteList 
--- according to the sizes of a 'MeterPattern'.
---
---
-
-type InterimBar pt = [InterimMetricalUnit pt]
-type InterimMetricalUnit pt = [pt]
-
 
 eighth_note :: DurationMeasure 
 eighth_note = (1%8)
 
 
+data Pulse a = Space | Group (H a)
 
--- | Shorten a meter pattern to represent an anacrusis of a note 
--- or notes before the first bar. Figuratively the anacrusis 
--- /counts from the right/. 
---
--- Negative durations result in a runtime error.
---
-shortenAna :: DurationMeasure -> MeterPattern -> MeterPattern
-shortenAna d0 mp  | d0 == 0   = mp
-                  | d0 <  0   = error "shortenAna - negative duration"
-                  | otherwise = let len = sum mp in step (d0 `modR` len) len
-  where
-    step d len = sminus (len - d) mp 
+data FitMeasure r = Fits
+                  | Underflow r
+                  | Overflow  r
+  deriving (Eq,Show)
 
--- If you make the stack (Stream) of meter patterns more 
--- concrete, then you can support e.g. alternating metrical
--- bars. Also supporting anacrusis becomes more direct.
+fitMeasure :: DMeasure e 
+           => e -> DurationMeasure -> FitMeasure DurationMeasure
+fitMeasure e = step (dmeasure e) where
+    step dm r | dm == r        = Fits
+              | dm >  r        = Overflow  $ dm - r
+              | otherwise      = Underflow $ r - dm
+ 
+
+type PulseLenStack = Stream DurationMeasure
+type BarSizeStack  = Stream Int
+
+phrase :: (BeamExtremity (repr e), DMeasure (repr e), MDiv repr)
+       => (PulseLenStack,BarSizeStack) 
+       -> NoteList (repr e) 
+       -> Phrase [MetricalDiv e]
+phrase (pstk,bstk) = bars bstk . segment pstk . getNotes
 
 
-
---------------------------------------------------------------------------------
+-- with beamStart2 if you go into beamGroup mode  
+-- you'll always produce a beam group...
 -- 
+-- err - no you won't ... (1%8) rest rest (1%4)
+
+-- beam has a concrete start of at least 1 and a speculative list...
+
+-- might want an optimization on the 1 element-Pulse case 
 
 
-phrase :: (DMeasure (Division a), BeamExtremity (Division a))
-       => MeterPattern -> NoteList (Division a) -> Phrase [MetricalDiv a]
-phrase mp (NoteList notes) = 
-    Phrase $ map (reconstituteBar . map changeInteriorMU)
-           $ partitionToInterimBars mp (0,notes)
+data BeamState e = BS 
+      { prolog      :: H (MetricalDiv e)
+      , speculation :: H (MetricalDiv e) 
+      }
 
 
-phraseAna :: (DMeasure (Division a), BeamExtremity (Division a))
-          => DurationMeasure 
-          -> MeterPattern 
-          -> NoteList (Division a) 
-          -> Phrase [MetricalDiv a]
-phraseAna ana mp (NoteList notes) = 
-    Phrase $ map (reconstituteBar . map changeInteriorMU)
-           $ partitionWithAna ana mp notes
-
-
-reconstituteBar :: InterimBar (MetricalDiv pt) -> [MetricalDiv pt]
-reconstituteBar = foldr fn [] where
-  fn mu acc = step mu acc 
-    where
-      step (x:xs) ys = x : step xs ys
-      step []     ys = ys
-
-
-changeInteriorMU :: (DMeasure (Division gly), BeamExtremity (Division gly))
-                 => InterimMetricalUnit (Division gly) -> [MetricalDiv gly]
-changeInteriorMU = 
-    interior leftTest (insideAlways, insideSpeculative) mkBeam divToMDiv
-  where
-    leftTest e          = dmeasure e >  eighth_note || not (rendersToNote e)
-    insideAlways e      = dmeasure e <= eighth_note && rendersToNote e   
-    insideSpeculative e = dmeasure e <= eighth_note && not (rendersToNote e)
-    
-    mkBeam [a]          = a 
-    mkBeam xs           = Beamed xs
-
-
-
-divToMDiv :: Division gly -> MetricalDiv gly
-divToMDiv (Unit gly)   = Atom gly
-divToMDiv (Plet pm xs) = N_Plet pm (map divToMDiv xs)
-
-
---------------------------------------------------------------------------------
--- partition
-
-
-
-partitionWithAna :: DMeasure pt 
-                 => DurationMeasure -> MeterPattern -> [pt] -> [InterimBar pt]
-partitionWithAna ana mp xs = bar1:bars where
-  (bar1,st) = firstAna ana mp xs
-  bars      = partitionToInterimBars mp st
-
-
-partitionToInterimBars :: DMeasure pt 
-                       => MeterPattern -> (Borrow,[pt]) -> [InterimBar pt]
-partitionToInterimBars mp st0 = unfoldr phi st0 where
-  phi (_,[]) = Nothing
-  phi st     = Just $ nextBar mp st
-
-
-firstAna :: DMeasure pt
-         => DurationMeasure -> MeterPattern -> [pt] 
-         -> (InterimBar pt, (Borrow,[pt]))
-firstAna ana mp0 notes = nextBar (shortenAna ana mp0) (0,notes)
-
-
-nextBar :: forall pt. DMeasure pt
-        => MeterPattern -> (Borrow,[pt]) -> (InterimBar pt, (Borrow,[pt]))
-nextBar mp (borrow,xs) = post $ foldl_st' fn (borrow,xs) id mp 
-  where
-    fn :: (Borrow,[pt]) -> H [pt] -> DurationMeasure -> (H [pt], (Borrow,[pt]))
-    fn st accf d = let (a,st') = nextMetricalUnit d st in (accf `snocH` a,st')
-
-    post :: (H [pt], (Borrow,[pt])) -> ([[pt]], (Borrow,[pt]))
-    post (accf,st) = (accf [], st)
-
-nextMetricalUnit :: DMeasure pt
-                 => DurationMeasure
-                 -> (Borrow,[pt])
-                 -> ([pt], (Borrow,[pt]))
-nextMetricalUnit d (borrow,xs) | borrow >= d = ([],(borrow - d,xs))
-                               | otherwise   = measureSpan (d - borrow) xs
-
-measureSpan :: DMeasure pt
-            => DurationMeasure -> [pt] -> ([pt], (Borrow,[pt]))
-measureSpan = step id where
-  step accf d xs      | d <= 0 = (accf [], (abs d,xs))
-  step accf d []               = (accf [], (abs d,[]))
-  step accf d (x:xs)           = step (accf `snocH` x) (d - dmeasure x) xs
-
---------------------------------------------------------------------------------
-
--- | @interior@ models grouping notes within a metrical unit 
--- into a beam group.
+-- It\'s assumed: DMeasuure <= eighth
 --
--- First we buffer all notes longer than (1%8) etc that are on
--- the left. 
+addInside :: (BeamExtremity (repr e), MDiv repr) 
+          => repr e -> BeamState e -> BeamState e
+addInside e (BS p s) 
+    | rendersToNote e = BS (p `appendH` s `snocH` (mdiv e)) emptyH
+    | otherwise       = BS p                                (s `snocH` (mdiv e))
+
+inside2 :: (BeamExtremity (repr e), MDiv repr) 
+        => repr e -> repr e -> BeamState e
+inside2 a b | rendersToNote b = BS ((mdiv a:) . (mdiv b:)) emptyH
+inside2 a b                   = BS (mdiv a:)   (mdiv b:)
+
+
+traceBuffer :: (Monad m, TraceM m (MetricalDiv e)) 
+            => BeamState e -> m ()
+traceBuffer (BS p s) = trace (fn $ toListH p) >> trace s
+  where
+    fn []  = id
+    fn [x] = wrapH x
+    fn xs  = wrapH $ Beamed xs
+
+
+
+class MDiv repr where
+  mdiv :: repr e -> MetricalDiv e
+
+
+instance MDiv Item where
+  mdiv (Item e) = Atom e
+
+instance MDiv Division where
+  mdiv (Elem e)    = Atom e
+  mdiv (Plet m es) = N_Plet m (map mdiv es)
+
+beamStart2 :: (BeamExtremity e, DMeasure e) => e -> e -> Bool
+beamStart2 e1 e2 = rendersToNote e1
+                && dmeasure e1 <= eighth_note
+                && dmeasure e1 <= eighth_note
+
+evalTrace :: TraceT e Id a -> H e
+evalTrace = snd . runId . runTraceT 
+
+traceAtom :: (TraceM m (MetricalDiv e), MDiv repr) =>  repr e -> m ()
+traceAtom = trace1 . mdiv
+
+
+-- Note - consuming the the pulse with /outside/ uses so much
+-- machinery that we avoid it for the the empty and one-element
+-- cases... 
+
+dividePulse :: (BeamExtremity (repr e), DMeasure (repr e), MDiv repr) 
+            => Pulse (repr e) -> H (MetricalDiv e)
+dividePulse Space     = emptyH
+dividePulse (Group h) = case toListH h of
+                          []  -> emptyH 
+                          [e] -> wrapH $ mdiv e 
+                          es  -> evalTrace $ outside es
+  where
+    outside (x:y:zs) | beamStart2 x y = inside (inside2 x y) zs
+                     | otherwise      = traceAtom x >> outside (y:zs)
+    outside zs                        = trace (veloH mdiv zs)
+
+    inside buf []                     = traceBuffer buf
+    inside buf (x:xs) 
+        | dmeasure x > eighth_note    = traceBuffer buf >> traceAtom x >> outside xs
+        | otherwise                   = inside (addInside x buf) xs
+
+bars :: (BeamExtremity (repr e), DMeasure (repr e), MDiv repr) 
+     => BarSizeStack -> [Pulse (repr e)] -> Phrase [MetricalDiv e]
+bars (top ::: stk) xs = Phrase $ step (splitAt top xs) stk
+  where
+    step ([],[])   _         = []
+    step (ps,[])   _         = [mkBar ps]
+    step (ps,rest) (t ::: s) = mkBar ps : step (splitAt t rest) s
+
+    mkBar = toListH . concatH . map dividePulse 
+
+segment :: DMeasure (repr e) => PulseLenStack -> [repr e] -> [Pulse (repr e)]
+segment (top ::: pls) notes = group notes top pls L.empty
+  where  
+    -- Input exhausted...
+    group []     _ _              acc = 
+        if L.length acc <= 0 then [] else [Group $ L.getH acc]
+        
+    -- Building up a pulse...
+    group (e:es) a stk@(z ::: sz) acc = case fitMeasure e a of
+        Fits        -> pulse acc e : group es z sz L.empty
+        Underflow r -> group es r stk (acc `L.snoc` e)  
+        Overflow  r -> pulse acc e : overflow r es sz
+
+    -- Subtracting the overflow carry from the stack... 
+    -- Potentially the overflow carry is larger the the next 
+    -- pulse length so we might have to produce a @Space@ in
+    -- the output...
+    --
+    overflow r inp stk = case decrement r stk of
+        (Just r',stk')     -> Space : overflow r' inp stk'
+        (Nothing,z ::: sz) -> group inp z sz L.empty
+                           
+    pulse acc e = Group $ L.getH (acc `L.snoc` e)
+
+
+
+
+-- If r == 0 produce (Just 0, stk_tail)
+decrement :: DurationMeasure 
+          -> PulseLenStack 
+          -> (Maybe DurationMeasure, PulseLenStack)
+decrement r (a ::: sa) | r <  a    = (Nothing, (a - r) ::: sa)
+                       | otherwise = (Just (r - a), sa)
+
+-- This is 'dangerous' for the segmenting algorithm:
+-- we have no idea how many pulses are "popped" if r is too big
 -- 
--- Once we meet an eighth note we move inside with two buffers,
--- the second buffer can be speculatively filled with rests/ spacers
--- that cannot end a beam group but can be within it. We continue
--- until we reach the end of the bar of a note longer than an
--- eighth.
---
-interior :: forall a b. 
-  (a -> Bool) -> (a -> Bool, a -> Bool) -> ([b] -> b) -> (a -> b) -> [a] -> [b]
-interior outLeft (insideAlways, insideSpeculative) incrush fn lzt = 
-    leftside id lzt
-  where
-    leftside :: H b -> [a] -> [b]
-    leftside accf []                 = accf []  -- all left, no interior
-    leftside accf (x:xs) | outLeft x = leftside (accf `snocH` fn x) xs
-                         | otherwise = accf $ inside (fn x:) id xs
+stkMinus :: DurationMeasure -> PulseLenStack -> PulseLenStack
+stkMinus r (a ::: sa) | r == a    = sa
+                      | r > a     = stkMinus (r - a) sa
+                      | otherwise = a - r ::: sa  
 
-    -- specf is a /speculative/ buffer...
-    inside :: H b -> H b -> [a] -> [b]
-    inside alwaysf specf []     = (incrush $ alwaysf []) : specf []
-    inside alwaysf specf (x:xs) 
-      | insideSpeculative x     = inside alwaysf (specf `snocH` fn x) xs
-      | insideAlways x          = inside (alwaysf . specf `snocH` fn x) id xs
-      | otherwise               = (incrush $ alwaysf []) : specf (map fn (x:xs))
-
-
-foldl_st' :: (st -> b -> a -> (b,st)) -> st -> b -> [a] -> (b,st) 
-foldl_st' f st0 b0 lzt = step st0 b0 lzt where
-    step st b []     = (b,st)
-    step st b (x:xs) = let (b',st') = f st b x in b' `seq` st' `seq` step st' b' xs 

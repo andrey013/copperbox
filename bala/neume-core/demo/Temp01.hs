@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 
@@ -99,9 +100,9 @@ inside2 a b | rendersToNote b = BS ((a:) . (b:)) emptyH
 inside2 a b                   = BS (a:)   (b:)
 
 
-traceBuffer :: Monad m => TraceM m (MetricalDiv e) => BeamState e -> m ()
+traceBuffer :: (Monad m, TraceM m (MetricalDiv e)) => BeamState e -> m ()
 traceBuffer (BS p s) = 
-    (trace $ beamOrOne p) >> mapM_ (trace1 . Atom) (toListH s)
+    (trace $ beamOrOne p) >> mapM_ traceAtom (toListH s)
   where
     beamOrOne f = zom emptyH (wrapH . Atom) (wrapH . Beamed . map Atom) $ f []
 
@@ -110,6 +111,40 @@ zom zero _    _     []  = zero
 zom _    oneF _     [x] = oneF x
 zom _    _    manyF xs  = manyF xs
 
+newtype I a = I a deriving (Eq,Show)
+
+type family NoteListElem e :: *
+
+class ToMetricalDiv repr where
+  toMetricalDiv :: e ~ NoteListElem repr => repr -> MetricalDiv e
+
+type instance NoteListElem (Division e) = e
+-- type instance NoteListElem e = e
+
+type instance NoteListElem (I e) = e
+
+class ToMetricalDiv2 repr where
+  toMetricalDiv2 :: repr e -> MetricalDiv e
+
+
+-- Having Notelists as lists of some type /e/, rather 
+-- than some type-constructor over /e/ is a problem.
+--
+-- It means the /atom/ function is at two different types...
+--
+atom :: e -> MetricalDiv e
+atom e = Atom e
+
+atomZ :: Division e -> MetricalDiv e
+atomZ (Elem e)    = Atom e 
+atomZ (Plet m es) = N_Plet m (map atomZ es)
+
+instance ToMetricalDiv2 I where
+ toMetricalDiv2 (I e) = Atom e
+
+instance ToMetricalDiv2 Division where
+  toMetricalDiv2 (Elem e)    = Atom e
+  toMetricalDiv2 (Plet m es) = N_Plet m (map atomZ es)
 
 beamStart2 :: (BeamExtremity e, DMeasure e) => e -> e -> Bool
 beamStart2 e1 e2 = rendersToNote e1
@@ -119,19 +154,20 @@ beamStart2 e1 e2 = rendersToNote e1
 evalTrace :: TraceT e Id a -> H e
 evalTrace = snd . runId . runTraceT 
 
-
+traceAtom :: TraceM m (MetricalDiv e) =>  e -> m ()
+traceAtom = trace1 . Atom
 
 dividePulse :: (BeamExtremity e, DMeasure e) => Pulse e -> H (MetricalDiv e)
 dividePulse Space     = emptyH
 dividePulse (Group h) = zom emptyH (wrapH . Atom) (evalTrace . outside) (h [])
   where
     outside (x:y:zs) | beamStart2 x y = inside (inside2 x y) zs
-                     | otherwise      = trace1 (Atom x) >> outside (y:zs)
+                     | otherwise      = traceAtom x >> outside (y:zs)
     outside zs                        = trace (veloH Atom zs)
 
     inside buf []                     = traceBuffer buf
     inside buf (x:xs) 
-        | dmeasure x > eighth_note    = traceBuffer buf >> trace1 (Atom x) >> outside xs
+        | dmeasure x > eighth_note    = traceBuffer buf >> traceAtom x >> outside xs
         | otherwise                   = inside (addInside x buf) xs
 
 

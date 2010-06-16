@@ -25,6 +25,7 @@ module Neume.Core.Utils.HList
   , snocH
   , appendH
   , veloH
+  , concatH
 
   , toListH
   , fromListH
@@ -57,6 +58,9 @@ appendH f g = f . g
 veloH :: (a -> b) -> [a] -> H b
 veloH _ [] = id
 veloH f (x:xs) = consH (f x) $ veloH f xs 
+
+concatH :: [H a] -> H a
+concatH = foldr (.) id
 
 
 toListH :: H a -> [a]

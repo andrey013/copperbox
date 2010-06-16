@@ -35,6 +35,7 @@ module Neume.Core.ModularSyntax
   -- * Note lists
   , NoteList(..)
   , Division(..)
+  , Item(..)
   , DivisionNoteList
   , SimpleNoteList
 
@@ -103,13 +104,18 @@ data MetricalDiv e = Atom e
 newtype NoteList e = NoteList { getNotes :: [e] }
   deriving (Show)
 
-data Division e = Unit e
+data Division e = Elem e
                 | Plet PletMult [Division e]
   deriving (Show)
 
 
+-- This is just the Identity datatype - unfortunately not
+-- available without installing _mtl_.
+--
+newtype Item a = Item a         deriving (Eq,Show)
+
 type DivisionNoteList e = NoteList (Division e)
-type SimpleNoteList   e = NoteList e
+type SimpleNoteList   e = NoteList (Item e)
 
 
 --------------------------------------------------------------------------------
@@ -202,7 +208,7 @@ instance Traversable MetricalDiv where
 --------------------------------------------------------------------------------
 
 divisionFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> b -> Division gly -> b
-divisionFold f _ b (Unit a)     = f a b
+divisionFold f _ b (Elem a)     = f a b
 divisionFold f g b (Plet pm xs) = foldl' (divisionFold f g) (g pm b) xs
 
 
@@ -232,10 +238,12 @@ instance DMeasure (Graphic gly Duration) where
 
 
 instance BeamExtremity gly => BeamExtremity (Division gly) where
-  rendersToNote (Unit a)       = rendersToNote a
+  rendersToNote (Elem a)       = rendersToNote a
   rendersToNote (Plet _ (x:_)) = rendersToNote x
   rendersToNote _              = False 
 
+instance BeamExtremity gly => BeamExtremity (Item gly) where
+  rendersToNote (Item a)       = rendersToNote a
 
 instance BeamExtremity (Glyph anno pch dur) where
   rendersToNote (GlyNote _ _ _) = True
