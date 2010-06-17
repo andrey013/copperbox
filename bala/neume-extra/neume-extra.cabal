@@ -1,0 +1,47 @@
+name:             neume-extra
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley 2010
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Generating LilyPond and ABC scores...
+description:
+  Neume-extra - higher level stuff over @neume-core@. 
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/B6.hs
+  
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, 
+                      containers, 
+                      wl-pprint,
+                      neume-core
+                     
+
+  exposed-modules:
+    Neume.Extra.AbcDoc,
+    Neume.Extra.LilyPondDoc
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
