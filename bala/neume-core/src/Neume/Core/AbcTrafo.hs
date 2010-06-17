@@ -35,9 +35,9 @@ module Neume.Core.AbcTrafo
   ) where
 
 import Neume.Core.Duration
-import Neume.Core.ModularSyntax
 import Neume.Core.Pitch
 import Neume.Core.SpellingMap
+import Neume.Core.Syntax
 
 import MonadLib.Monads                  -- package: monadLib
 

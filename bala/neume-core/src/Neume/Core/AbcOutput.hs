@@ -27,8 +27,8 @@ module Neume.Core.AbcOutput
 import Neume.Core.AbcPretty
 import Neume.Core.Duration
 import Neume.Core.Metrical
-import Neume.Core.ModularSyntax
 import Neume.Core.Pitch hiding ( octave )
+import Neume.Core.Syntax
 import Neume.Core.Utils.OneList ( OneList, toListF )
 import Neume.Core.Utils.Pretty
 

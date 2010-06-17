@@ -24,13 +24,13 @@ module Neume.Core.Bracket
 
 import Neume.Core.Duration
 import Neume.Core.Metrical
-import Neume.Core.ModularSyntax
+import Neume.Core.Syntax
 
 import Neume.Core.Utils.HList
 import qualified Neume.Core.Utils.Lahl          as L
+import Neume.Core.Utils.SnocTraceT
 import Neume.Core.Utils.Stream ( Stream(..) )
 import qualified Neume.Core.Utils.Stream        as S
-import Neume.Core.Utils.TraceT
 
 import MonadLib.Monads
 

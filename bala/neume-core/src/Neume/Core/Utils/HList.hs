@@ -55,8 +55,14 @@ snocH  f a = f . (a:)
 appendH :: H a -> H a -> H a
 appendH f g = f . g
 
+
+-- | Traverse a list as per 'map' applying the supplied function 
+-- to each element, *but* pruduce a Hughes list as output.
+--
+-- 
+-- 
 veloH :: (a -> b) -> [a] -> H b
-veloH _ [] = id
+veloH _ []     = id
 veloH f (x:xs) = consH (f x) $ veloH f xs 
 
 concatH :: [H a] -> H a

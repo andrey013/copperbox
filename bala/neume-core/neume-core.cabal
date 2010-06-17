@@ -9,7 +9,7 @@ category:         Music
 synopsis:         A library for generating LilyPond and ABC scores. 
 description:
   Neume-core is a library for generating ABC and LilyPond scores. 
-  It aims to generate /good/ quality scores - that's to say the 
+  It aims to generate /good quality/ scores - that's to say the 
   output should resemble hand-written scores. 
   .
   (c) 2010 Stephen Tetley
@@ -40,15 +40,15 @@ library
     Neume.Core.LilyPondPretty,
     Neume.Core.LilyPondTrafo,
     Neume.Core.Metrical,
-    Neume.Core.ModularSyntax,
     Neume.Core.Pitch,
     Neume.Core.SpellingMap,
+    Neume.Core.Syntax,
     Neume.Core.Utils.Common,
     Neume.Core.Utils.HList,
     Neume.Core.Utils.Lahl,
     Neume.Core.Utils.OneList,
     Neume.Core.Utils.Pretty,
-    Neume.Core.Utils.TraceT,
+    Neume.Core.Utils.SnocTraceT,
     Neume.Core.Utils.Stream
 
   other-modules:

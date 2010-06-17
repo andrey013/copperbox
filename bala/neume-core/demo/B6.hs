@@ -12,7 +12,7 @@ import Neume.Core.LilyPondTrafo
 import Neume.Core.Metrical
 import Neume.Core.Pitch
 import Neume.Core.SpellingMap
-import Neume.Core.ModularSyntax
+import Neume.Core.Syntax
 
 import qualified Neume.Core.Utils.Stream as S
 

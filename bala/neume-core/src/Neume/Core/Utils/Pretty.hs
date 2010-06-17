@@ -35,6 +35,7 @@ module Neume.Core.Utils.Pretty
   , writeDoc
   , printDoc
   , renderDocEighty
+  , docSixty
 
   ) where
 
@@ -121,4 +122,8 @@ printDoc = putStrLn . renderDocEighty
 
 renderDocEighty :: Doc -> String
 renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
+
+docSixty :: Doc -> String
+docSixty = (displayS `flip` []) . renderPretty 0.8 60
+
 

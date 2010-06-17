@@ -25,7 +25,7 @@ module Neume.Core.LilyPondOutput
 
 import Neume.Core.Duration
 import Neume.Core.LilyPondPretty
-import Neume.Core.ModularSyntax
+import Neume.Core.Syntax
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.Pretty
 

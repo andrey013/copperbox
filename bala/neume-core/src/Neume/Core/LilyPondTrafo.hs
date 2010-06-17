@@ -39,8 +39,8 @@ module Neume.Core.LilyPondTrafo
   ) where
 
 import Neume.Core.Duration
-import Neume.Core.ModularSyntax
 import Neume.Core.Pitch
+import Neume.Core.Syntax
 import Neume.Core.Utils.OneList
 
 import MonadLib.Monads                  -- package: monadLib

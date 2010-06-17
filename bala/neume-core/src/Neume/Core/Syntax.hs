@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.ModularSyntax
+-- Module      :  Neume.Core.Syntax
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -11,13 +11,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Images - scores that have been partially rendered and are 
--- composed as Docs.
---
+-- Data types for syntax tree
 --
 --------------------------------------------------------------------------------
 
-module Neume.Core.ModularSyntax
+module Neume.Core.Syntax
   (
 
   -- * Phrase formats
@@ -58,19 +56,24 @@ module Neume.Core.ModularSyntax
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.Utils.OneList
+import Neume.Core.Utils.Pretty
 
-import Text.PrettyPrint.Leijen hiding ( (<$>) )   -- package: wl-pprint
+import Text.PrettyPrint.Leijen hiding ( (<$>) )  -- package: wl-pprint
 
-import Control.Applicative
+import Control.Applicative hiding ( empty )
 import Data.Foldable
 import Data.Traversable
 
 -- | Phrase formats
 
 newtype Full      gly = Full      (Phrase   (Bar     (MetricalDiv gly)))
-newtype Undiv     gly = Undiv     (Phrase   (Bar                  gly))
-newtype Unmetered gly = Unmetered (Phrase            (MetricalDiv gly))
+  deriving (Show)
 
+newtype Undiv     gly = Undiv     (Phrase   (Bar                  gly))
+  deriving (Show)
+
+newtype Unmetered gly = Unmetered (Phrase            (MetricalDiv gly))
+  deriving (Show)
 
 
 
@@ -95,7 +98,6 @@ type Bar e = [e]
 data MetricalDiv e = Atom e
                    | Beamed          [MetricalDiv e]
                    | N_Plet PletMult [MetricalDiv e]
-  deriving (Show)
 
 
 --------------------------------------------------------------------------------
@@ -106,7 +108,6 @@ newtype NoteList e = NoteList { getNotes :: [e] }
 
 data Division e = Elem e
                 | Plet PletMult [Division e]
-  deriving (Show)
 
 
 -- This is just the Identity datatype - unfortunately not
@@ -128,11 +129,11 @@ data Glyph anno pch dur = GlyNote  (Note anno pch) !dur !Tie
                         | Spacer   !dur
                         | Chord    (OneList (Note anno pch)) !dur !Tie
                         | Graces   (OneList (GraceNote anno pch dur)) 
-  deriving (Eq,Show)
+  deriving (Eq)
 
 
 data Note anno pch = Note !anno !pch
-  deriving (Eq,Show)
+  deriving (Eq)
 
 data Tie = Tie | NoTie
   deriving (Eq,Show)
@@ -145,7 +146,7 @@ data Tie = Tie | NoTie
 -- grouping).
 --
 data GraceNote anno pch dur = GraceNote !anno !pch !dur
-  deriving (Eq,Show)
+  deriving (Eq)
 
 
 
@@ -257,4 +258,45 @@ instance BeamExtremity (Graphic gly dur) where
   rendersToNote (Skip _)      = False
 
 
+
+--------------------------------------------------------------------------------
+-- Special show functions
+
+dshow :: Show a => a -> Doc
+dshow = string . show
+
+optTie :: Tie -> Doc
+optTie Tie = char '~'
+optTie _   = empty
+
+dpletmult :: PletMult -> Doc
+dpletmult (n,d) = integer n <> colon <> integer d
+
+instance Show gly => Show (Division gly) where 
+  show (Elem a)          = show a
+  show (Plet pm xs)      = docSixty $ 
+      braces (dpletmult pm <+> fillSep (map dshow xs))
+    
+
+instance Show gly => Show (MetricalDiv gly) where
+  show (Atom e)          = show e
+  show (Beamed xs)       = docSixty $ brackets (fillSep $ map dshow xs)
+  show (N_Plet pm xs)    = docSixty $
+      braces (dpletmult pm <+> fillSep (map dshow xs))
+
+instance (Show pch, Show dur) => Show (Glyph anno pch dur) where
+  show (GlyNote n d t) = docSixty $ dshow n  <> dshow d <> optTie t
+  show (Rest    d)     = docSixty $ char 'r' <> dshow d
+  show (Spacer  d)     = docSixty $ char 's' <> dshow d
+  show (Chord os d t)  = docSixty $ (angles $ fillSep $ toListF dshow os) 
+                                      <> dshow d <> dshow t
+  show (Graces os)     = docSixty $ braces $ fillSep $ toListF dshow os
+
+
+instance (Show pch) => Show (Note anno pch) where
+  show (Note _ p) = show p
+
+
+instance (Show pch, Show dur) => Show (GraceNote anno pch dur) where
+  show (GraceNote _ p d) = docSixty $ dshow p <> dshow d
 
