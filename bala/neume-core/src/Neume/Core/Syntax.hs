@@ -222,6 +222,11 @@ divisionMeasure = snd . divisionFold  phi chi (mult_stack_zero,0) where
   phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
   chi pm (stk,acc) = (pushPM pm stk,acc) 
 
+--------------------------------------------------------------------------------
+-- DMeasure instances
+
+instance DMeasure gly => DMeasure (Item gly) where
+  dmeasure (Item e) = dmeasure e
 
 instance DMeasure gly => DMeasure (Division gly) where
   dmeasure = divisionMeasure
@@ -237,6 +242,9 @@ instance DMeasure (Graphic gly Duration) where
   dmeasure (Graphic _ d) = dmeasure d
   dmeasure (Skip     d)  = dmeasure d
 
+
+--------------------------------------------------------------------------------
+-- BeamExtremity instances...
 
 instance BeamExtremity gly => BeamExtremity (Division gly) where
   rendersToNote (Elem a)       = rendersToNote a
@@ -262,8 +270,6 @@ instance BeamExtremity (Graphic gly dur) where
 --------------------------------------------------------------------------------
 -- Special show functions
 
-dshow :: Show a => a -> Doc
-dshow = string . show
 
 optTie :: Tie -> Doc
 optTie Tie = char '~'
@@ -271,6 +277,10 @@ optTie _   = empty
 
 dpletmult :: PletMult -> Doc
 dpletmult (n,d) = integer n <> colon <> integer d
+
+ddur :: Show a => a -> Doc
+ddur d = char '\'' <> dshow d
+
 
 instance Show gly => Show (Division gly) where 
   show (Elem a)          = show a
@@ -285,11 +295,11 @@ instance Show gly => Show (MetricalDiv gly) where
       braces (dpletmult pm <+> fillSep (map dshow xs))
 
 instance (Show pch, Show dur) => Show (Glyph anno pch dur) where
-  show (GlyNote n d t) = docSixty $ dshow n  <> dshow d <> optTie t
+  show (GlyNote n d t) = docSixty $ dshow n  <> ddur d <> optTie t
   show (Rest    d)     = docSixty $ char 'r' <> dshow d
   show (Spacer  d)     = docSixty $ char 's' <> dshow d
   show (Chord os d t)  = docSixty $ (angles $ fillSep $ toListF dshow os) 
-                                      <> dshow d <> dshow t
+                                      <> ddur d <> dshow t
   show (Graces os)     = docSixty $ braces $ fillSep $ toListF dshow os
 
 

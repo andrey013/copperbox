@@ -14,7 +14,6 @@ import Neume.Core.Pitch
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
 
-import qualified Neume.Core.Utils.Stream as S
 
 import Text.PrettyPrint.Leijen
 
@@ -83,13 +82,12 @@ abc_img :: PhraseImage
 abc_img = ABC.runRender ABC.renderGlyph abc_score 
 
 abc_score :: Full (Glyph () Pitch AbcMultiplier)
-abc_score = ABC.runDurMultTrafo (1%16) $ ABC.runPitchSpellTrafo a_major b6_score
+abc_score = 
+    ABC.runDurMultTrafo (1%16) $ ABC.runPitchSpellTrafo a_major b6_score
 
 b6_score :: Full StdGlyph
-b6_score = Full $ phrase (plen_stk,bsz_stk) $ NoteList $ map Elem bars1_4
-  where
-    plen_stk = S.cycle [1%4,1%4]
-    bsz_stk  = S.cycle [2]
+b6_score = 
+    makeFull (bracketConfig two_four_time) $ NoteList $ map Elem bars1_4
 
 two_four_time :: MeterPattern
 two_four_time = makeMeterPattern 2 4

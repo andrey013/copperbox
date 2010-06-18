@@ -24,7 +24,6 @@ module Neume.Core.Duration
   , DurationMeasure
   
   -- * Classes
-  , ShowsDuration(..)
   , MakeRest(..)
   , MakeSpacer(..)
   
@@ -63,6 +62,7 @@ module Neume.Core.Duration
   
   ) where
 
+import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen hiding ( dot )     -- package: wl-pprint 
 
@@ -85,8 +85,8 @@ type DurationMeasure = Rational
 --------------------------------------------------------------------------------
 -- Classes
 
-class ShowsDuration a where
-  showsDur :: a -> ShowS
+-- class ShowsDuration a where
+--  showsDur :: a -> ShowS
 
 
 class MakeSpacer e where
@@ -102,17 +102,19 @@ class MakeSpacer e => MakeRest e where
 instance Ord Duration where
   compare d1 d2 = extent d1 `compare` extent d2
 
-
+{-
 instance Show Duration where
   showsPrec _ drn = shows n . showChar '%' . shows d
                     where (n,d) = extentComponents drn
+-}
 
-
+{-
 instance ShowsDuration Duration where
   showsDur = shows
 
 instance Show a => ShowsDuration (Maybe a) where
   showsDur = maybe id shows
+-}
 
 --------------------------------------------------------------------------------
 
@@ -217,24 +219,24 @@ abcMultiplier unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
 
 
 --------------------------------------------------------------------------------
--- Pretty instances
+-- Show instances
 
-instance Pretty Duration where
-  pretty DZero                 = empty
-  pretty (D1 n dc) | dc <= 0   = pretty n
-                   | otherwise = pretty n <> (text $ replicate dc '.')
+instance Show Duration where
+  show DZero                 = ""
+  show (D1 n dc) | dc <= 0   = show n
+                 | otherwise = docSixty $ dshow n <> (text $ replicate dc '.')
 
-instance Pretty Numeral where
-  pretty N128  = int 128
-  pretty N64   = int 64
-  pretty N32   = int 32
-  pretty N16   = int 16
-  pretty N8    = int 8 
-  pretty N4    = int 4
-  pretty N2    = int 2
-  pretty N1    = empty
-  pretty Breve = text "breve"
-  pretty Longa = text "longa"
+instance Show Numeral where
+  show N128  = "128"
+  show N64   = "64"
+  show N32   = "32"
+  show N16   = "16"
+  show N8    = "8" 
+  show N4    = "4"
+  show N2    = "2"
+  show N1    = ""
+  show Breve = "breve"
+  show Longa = "longa"
 
 --------------------------------------------------------------------------------
 -- Named durations

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,7 +18,13 @@
 
 module Neume.Core.Bracket 
   (
-    MDiv(..)
+    PulseLenStack
+  , BarSizeStack
+  , BracketConfig
+  , bracketConfig
+
+  , makeFull   
+  , MDiv(..)
   , phrase
 
   ) where
@@ -36,8 +43,23 @@ import MonadLib.Monads
 
 import Data.Ratio
 
+
+type PulseLenStack = Stream DurationMeasure
+type BarSizeStack  = Stream Int
+
+type BracketConfig = (PulseLenStack,BarSizeStack)
+
+bracketConfig :: MeterPattern -> BracketConfig
+bracketConfig xs = (S.cycle xs, S.cycle [length xs])
+
 eighth_note :: DurationMeasure 
 eighth_note = (1%8)
+
+
+
+makeFull :: (BeamExtremity (repr gly), DMeasure  (repr gly), MDiv  repr) 
+         => BracketConfig -> NoteList (repr gly) -> Full gly
+makeFull bc = Full . phrase bc
 
 
 data Pulse a = Space | Group (H a)
@@ -55,8 +77,6 @@ fitMeasure e = step (dmeasure e) where
               | otherwise      = Underflow $ r - dm
  
 
-type PulseLenStack = Stream DurationMeasure
-type BarSizeStack  = Stream Int
 
 phrase :: (BeamExtremity (repr e), DMeasure (repr e), MDiv repr)
        => (PulseLenStack,BarSizeStack) 
