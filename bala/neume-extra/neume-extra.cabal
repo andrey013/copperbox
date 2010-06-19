@@ -33,6 +33,8 @@ library
     Neume.Extra.Common,
     Neume.Extra.DrumPitches,
     Neume.Extra.LilyPondDoc,
+    Neume.Extra.LilyPondScoreOutput,
+    Neume.Extra.NamedElements,
     Neume.Extra.Percussion,
     Neume.Extra.ScoreSyntax
 

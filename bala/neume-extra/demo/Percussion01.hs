@@ -53,7 +53,7 @@ score_doc = outputScore name_score
 -- The original Neume had better code for this...
 --
 outputParts :: Score shape (String,PhraseImage) -> Doc
-outputParts = scoreFoldr empty lin rep repalt
+outputParts = undefined -- scoreFoldr empty lin rep repalt
   where
     lin    (s,img)      ac = def id s img  <$> ac 
     rep    (s,img)      ac = def (repeatvolta 2) s img <$> ac

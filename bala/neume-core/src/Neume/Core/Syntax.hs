@@ -26,6 +26,7 @@ module Neume.Core.Syntax
   -- * Phrase
   , Phrase(..)
   , Bar
+  , BarNum
 
   -- * Metrical divisions of a bar - beam groups, tuplets, ... 
   , MetricalDiv(..)
@@ -82,8 +83,9 @@ newtype Phrase e = Phrase { getPhraseData :: [e] }
   deriving (Show)
 
 
-type Bar e = [e]
+type Bar e  = [e]
 
+type BarNum = Int
 
 
 --------------------------------------------------------------------------------
@@ -221,6 +223,20 @@ divisionMeasure :: DMeasure gly => Division gly -> DurationMeasure
 divisionMeasure = snd . divisionFold  phi chi (mult_stack_zero,0) where
   phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
   chi pm (stk,acc) = (pushPM pm stk,acc) 
+
+
+--------------------------------------------------------------------------------
+-- MakeRest / MakeSpacer instances
+
+instance MakeSpacer (Glyph anno pch Duration) where
+  makeSpacer = Spacer
+
+instance MakeRest (Glyph anno pch Duration) where
+  makeRest = Rest
+
+instance MakeSpacer (Graphic gly Duration) where
+  makeSpacer = Skip
+
 
 --------------------------------------------------------------------------------
 -- DMeasure instances

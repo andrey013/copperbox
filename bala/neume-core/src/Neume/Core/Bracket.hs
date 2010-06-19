@@ -96,8 +96,8 @@ phrase (pstk,bstk) = bars bstk . segment pstk . getNotes
 
 
 data BeamState e = BS 
-      { prolog      :: H (MetricalDiv e)
-      , speculation :: H (MetricalDiv e) 
+      { _prolog      :: H (MetricalDiv e)
+      , _speculation :: H (MetricalDiv e) 
       }
 
 
@@ -139,7 +139,7 @@ instance MDiv Division where
 beamStart2 :: (BeamExtremity e, DMeasure e) => e -> e -> Bool
 beamStart2 e1 e2 = rendersToNote e1
                 && dmeasure e1 <= eighth_note
-                && dmeasure e1 <= eighth_note
+                && dmeasure e2 <= eighth_note
 
 evalTrace :: TraceT e Id a -> H e
 evalTrace = snd . runId . runTraceT 
@@ -213,11 +213,4 @@ decrement :: DurationMeasure
 decrement r (a ::: sa) | r <  a    = (Nothing, (a - r) ::: sa)
                        | otherwise = (Just (r - a), sa)
 
--- This is 'dangerous' for the segmenting algorithm:
--- we have no idea how many pulses are "popped" if r is too big
--- 
-stkMinus :: DurationMeasure -> PulseLenStack -> PulseLenStack
-stkMinus r (a ::: sa) | r == a    = sa
-                      | r > a     = stkMinus (r - a) sa
-                      | otherwise = a - r ::: sa  
 

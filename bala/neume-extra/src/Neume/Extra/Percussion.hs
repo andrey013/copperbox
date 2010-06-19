@@ -37,7 +37,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondTrafo
 import Neume.Core.Syntax
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 

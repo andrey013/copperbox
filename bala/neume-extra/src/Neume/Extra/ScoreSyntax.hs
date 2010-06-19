@@ -2,7 +2,6 @@
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -15,18 +14,14 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Minimal syntax types for bars and phrases after rendering to 
--- ABC or Lilypond. 
---
--- Operations - e.g. interspersing with bar lines, adding repeat
--- marks - are simpler and more general when there is almost no 
--- syntax to get in the way. 
+-- Represent scores with /linear/ sections, repeats, and repeats
+-- with alternative endings.
 --
 --------------------------------------------------------------------------------
 
 module Neume.Extra.ScoreSyntax
   (
-  -- * Score ( assembled from repeats and /straights/ )
+  -- * Score ( assembled from /linear/ sections and repeats )
     
     Score(..)
 
@@ -36,11 +31,11 @@ module Neume.Extra.ScoreSyntax
   , TRepeat
   , TRepAlt
 
+  -- * Operations
   , scoreZipWith
   , content
-
-  , scoreFoldl'
-  , scoreFoldr
+  
+  , stmap
 
   ) where
 
@@ -90,38 +85,26 @@ content (Linear e xs)    = e : content xs
 content (Repeat e xs)    = e : content xs
 content (RepAlt e es xs) = (e:es) ++ content xs
 
-scoreFoldl' :: e -> (e -> a -> e) -> (e -> a -> e) -> (e -> a -> [a] -> e) 
-            -> Score shape a -> e
-scoreFoldl' nil lin rep repa s0 = foldl_go nil lin rep repa s0
 
-foldl_go :: e -> (e -> a -> e) -> (e -> a -> e) -> (e -> a -> [a] -> e) 
-         -> Score shape a -> e
-foldl_go ac _   _   _    Nil              = ac
+stmap :: (st -> a -> (b,st)) -> st -> Score shape a -> (Score shape b,st)
+stmap _ st Nil              = (Nil,st)
 
-foldl_go ac lin rep repa (Linear e xs)    = 
-    let z' = lin ac e in z' `seq` (foldl_go z' lin rep repa xs)  
+stmap f st (Linear e xs)    = (Linear a ys,st'') 
+  where (a,st') = f st e; (ys,st'') = stmap f st' xs
 
-foldl_go ac lin rep repa (Repeat e xs)    = 
-    let z' = rep ac e in z' `seq` (foldl_go z' lin rep repa xs)
+stmap f st (Repeat e xs)    = (Repeat a ys,st'')
+  where (a,st') = f st e; (ys,st'') = stmap f st' xs
 
-foldl_go ac lin rep repa (RepAlt e es xs) = 
-    let z' = repa ac e es in z' `seq` (foldl_go z' lin rep repa xs)  
+stmap f st (RepAlt e es xs) = (RepAlt a as ys,st''')
+  where (a, st')   = f st e
+        (as,st'')  = smapList  f st'  es
+        (ys,st''') = stmap     f st'' xs
 
-
-scoreFoldr :: e -> (a -> e -> e) 
-           -> (a -> e -> e) -> (a -> [a] -> e -> e) 
-           -> Score shape a -> e
-scoreFoldr nil _   _   _    Nil              = nil
-
-scoreFoldr nil lin rep repa (Linear e xs)    = 
-    lin e (scoreFoldr nil lin rep repa xs)
-
-scoreFoldr nil lin rep repa (Repeat e xs)    = 
-    rep e (scoreFoldr nil lin rep repa xs)
-
-scoreFoldr nil lin rep repa (RepAlt e es xs) = 
-    repa e es (scoreFoldr nil lin rep repa xs)
-
+smapList :: (st -> a -> (b,st)) -> st -> [a] -> ([b],st)
+smapList _ st []     = ([],st)
+smapList f st (x:xs) = (y:ys,st'')
+  where (y,st')   = f st x
+        (ys,st'') = smapList f st' xs
 
 --------------------------------------------------------------------------------
 -- instances

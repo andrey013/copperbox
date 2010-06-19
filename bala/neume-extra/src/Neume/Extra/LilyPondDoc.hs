@@ -91,14 +91,10 @@ module Neume.Extra.LilyPondDoc
   , copyright
   , tagline
 
-  -- ** Bar lines, repeats
-  , doubleBar 
-  , singleBar
-
+  -- * Repeats
   , repeatvolta
   , alternative
 
-  , parallelMusic
 
 
   -- ** Files, variables, overrides
