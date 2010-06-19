@@ -1,6 +1,8 @@
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -35,6 +37,10 @@ module Neume.Extra.ScoreSyntax
   , TRepAlt
 
   , scoreZipWith
+  , content
+
+  , scoreFoldl'
+  , scoreFoldr
 
   ) where
 
@@ -78,6 +84,46 @@ scoreZipWith f (RepAlt a as xs) (RepAlt b bs ys) =
 scoreZipWith _ _                _                = 
     error $ "scoreZipWith - unreachable in theory..."
 
+content :: Score shape e -> [e]
+content Nil              = []
+content (Linear e xs)    = e : content xs
+content (Repeat e xs)    = e : content xs
+content (RepAlt e es xs) = (e:es) ++ content xs
+
+scoreFoldl' :: e -> (e -> a -> e) -> (e -> a -> e) -> (e -> a -> [a] -> e) 
+            -> Score shape a -> e
+scoreFoldl' nil lin rep repa s0 = foldl_go nil lin rep repa s0
+
+foldl_go :: e -> (e -> a -> e) -> (e -> a -> e) -> (e -> a -> [a] -> e) 
+         -> Score shape a -> e
+foldl_go ac _   _   _    Nil              = ac
+
+foldl_go ac lin rep repa (Linear e xs)    = 
+    let z' = lin ac e in z' `seq` (foldl_go z' lin rep repa xs)  
+
+foldl_go ac lin rep repa (Repeat e xs)    = 
+    let z' = rep ac e in z' `seq` (foldl_go z' lin rep repa xs)
+
+foldl_go ac lin rep repa (RepAlt e es xs) = 
+    let z' = repa ac e es in z' `seq` (foldl_go z' lin rep repa xs)  
+
+
+scoreFoldr :: e -> (a -> e -> e) 
+           -> (a -> e -> e) -> (a -> [a] -> e -> e) 
+           -> Score shape a -> e
+scoreFoldr nil _   _   _    Nil              = nil
+
+scoreFoldr nil lin rep repa (Linear e xs)    = 
+    lin e (scoreFoldr nil lin rep repa xs)
+
+scoreFoldr nil lin rep repa (Repeat e xs)    = 
+    rep e (scoreFoldr nil lin rep repa xs)
+
+scoreFoldr nil lin rep repa (RepAlt e es xs) = 
+    repa e es (scoreFoldr nil lin rep repa xs)
+
+
+--------------------------------------------------------------------------------
 -- instances
 
 instance Functor (Score shape) where

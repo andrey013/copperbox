@@ -31,14 +31,6 @@ module Neume.Core.LilyPondPretty
   , beamForm
   , pletForm
 
-  -- * Pretty printers
-  , doubleBar 
-  , singleBar
-
-  , repeatvolta
-  , alternative
-
-  , parallelMusic
 
   ) where
 
@@ -155,42 +147,3 @@ pletForm :: PletMult -> [Doc] -> Doc
 pletForm (n,d) xs = lyCommand "times" <+> integer n <> char '/' <> integer d
                                       <+> braces (hsep xs)
 
-
-
-
---------------------------------------------------------------------------------
-
-
-
--- Bar lines
-
--- | Print a double bar line @||@.
-doubleBar :: Doc 
-doubleBar = lyCommand "bar" <+> dquotes (text "||")
-
--- | Print a single bar line @|@.
-singleBar :: Doc
-singleBar = text "|"
-
-
--- Repeats
-
--- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
---
-repeatvolta :: Int -> Doc -> Doc 
-repeatvolta i expr = 
-    lyCommand "repeat" <+> text "volta" <+> int i <+> nestBraces expr
-
--- | @\\alternative { \\n { ... } \\n { ... } ... }@
---
-alternative :: [Doc] -> Doc
-alternative = (lyCommand "alternative" <+>) . nestBraces . vsep . map braces 
-
-
-
--- | @\\parallelMusic #'( ... ) {\\n ...\\n }@.
-parallelMusic       :: [String] -> Doc -> Doc
-parallelMusic xs e  = 
-    lyCommand "parallelMusic" <+> text "#'" <> parens names <+> nestBraces e
-  where
-    names = hsep $ map text xs

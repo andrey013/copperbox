@@ -7,10 +7,9 @@ module Percussion01 where
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.LilyPondOutput
-import Neume.Core.Metrical
 import Neume.Core.Syntax
 import Neume.Core.Utils.OneList ( fromList )
-
+import Neume.Core.Utils.Pretty ( writeDoc )
 import Neume.Extra.Common
 import Neume.Extra.DrumPitches
 import Neume.Extra.LilyPondDoc
@@ -23,7 +22,7 @@ import Data.Ratio
 import System.Cmd
 
 
-{-
+
 main :: IO ()
 main =
   writeDoc "percussion.ly"      ly_score        >>
@@ -34,34 +33,57 @@ main =
 
 ly_score :: Doc
 ly_score =  version "2.12.2" 
-        <$> drumtune
-        <$> scoreExpr (new "DrumStaff" 
-                        (with dstyle (simultaneous [variableUse "drumtune"])))
+        <$> drum_globals_doc
+        <$> drum_parts_doc
+        <$> score_doc
+
+drum_globals_doc :: Doc
+drum_globals_doc = 
+    variableDef "drumglobals" $ nestBraces (time 4 4 <$> stemUp)
+
+drum_parts_doc :: Doc
+drum_parts_doc = outputParts $ scoreZipWith fn drum_score_final name_score
   where
-    dstyle = definition "drumStyleTable" (text "#drums-style")
+    fn img name = (name,img)
+
+score_doc :: Doc 
+score_doc = outputScore name_score
 
 
-drumtune :: Doc
-drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
+-- The original Neume had better code for this...
+--
+outputParts :: Score shape (String,PhraseImage) -> Doc
+outputParts = scoreFoldr empty lin rep repalt
   where
-    tune1    = renderLyDrums ofmt orw drum_score
-        
-    ofmt     = Ly_std_format_config       strip
-    orw      = Ly_drums_rewrite_config [1%2, 1%2] strip
--}
+    lin    (s,img)      ac = def id s img  <$> ac 
+    rep    (s,img)      ac = def (repeatvolta 2) s img <$> ac
+    repalt _       _    _  = error "outputParts - repalt"
+    def f s img            = variableDef s (drummode $ f $ vsep $ getPhraseData img)
+
+
+outputScore :: Score shape String -> Doc
+outputScore scr = scoreExpr $ new "DrumStaff" $ nestBraces body
+  where
+    body = fillSep $ map variableUse $ "drumglobals" : content scr
 
 -- the score here doesn't need naming...
 
 -- This one doesn't merit using Score datatype...
 
-drum_score_one = fmap trafo drum_score_zero
+makeScore :: a -> Score (TRepeat :. Z) a
+makeScore a = Repeat a $ Nil
+
+drum_score_final :: Score (TRepeat :. Z) PhraseImage
+drum_score_final = fmap trafo drum_score
   where 
     trafo = runRender (renderGlyph drumShortName strip)
               . drumScoreTrafo . makeFull (bracketConfig [1%2,1%2])
 
-drum_score_zero :: Score (TRepeat :. Z) 
-                         (SimpleNoteList (DrumGlyph () Duration))
-drum_score_zero = Repeat (simpleNoteList $ chacha_notes) $ Nil
+name_score :: Score (TRepeat :. Z) String
+name_score = makeScore "chacha"
+
+drum_score :: Score (TRepeat :. Z) (SimpleNoteList (DrumGlyph () Duration))
+drum_score = makeScore (simpleNoteList $ chacha_notes)
 
 -- fmap (Full . phrase (bracketConfig [1%2,1%2])) $ 
 

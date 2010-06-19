@@ -30,7 +30,11 @@ library
 
   exposed-modules:
     Neume.Extra.AbcDoc,
-    Neume.Extra.LilyPondDoc
+    Neume.Extra.Common,
+    Neume.Extra.DrumPitches,
+    Neume.Extra.LilyPondDoc,
+    Neume.Extra.Percussion,
+    Neume.Extra.ScoreSyntax
 
   other-modules:
     

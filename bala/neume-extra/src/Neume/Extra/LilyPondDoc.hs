@@ -91,6 +91,16 @@ module Neume.Extra.LilyPondDoc
   , copyright
   , tagline
 
+  -- ** Bar lines, repeats
+  , doubleBar 
+  , singleBar
+
+  , repeatvolta
+  , alternative
+
+  , parallelMusic
+
+
   -- ** Files, variables, overrides
   , include
   , variableDef
@@ -387,6 +397,39 @@ tagline               :: String -> Doc
 tagline               = headerElement "tagline" . dquotes . text
 
 
+--------------------------------------------------------------------------------
+-- Bar lines, repeats
+
+-- | Print a double bar line @||@.
+doubleBar :: Doc 
+doubleBar = command "bar" <+> dquotes (text "||")
+
+-- | Print a single bar line @|@.
+singleBar :: Doc
+singleBar = text "|"
+
+
+-- Repeats
+
+-- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
+--
+repeatvolta :: Int -> Doc -> Doc 
+repeatvolta i expr = 
+    command "repeat" <+> text "volta" <+> int i <+> nestBraces expr
+
+-- | @\\alternative { \\n { ... } \\n { ... } ... }@
+--
+alternative :: [Doc] -> Doc
+alternative = (command "alternative" <+>) . nestBraces . vsep . map braces 
+
+
+
+-- | @\\parallelMusic #'( ... ) {\\n ...\\n }@.
+parallelMusic       :: [String] -> Doc -> Doc
+parallelMusic xs e  = 
+    command "parallelMusic" <+> text "#'" <> parens names <+> nestBraces e
+  where
+    names = hsep $ map text xs
 
 
 --------------------------------------------------------------------------------
