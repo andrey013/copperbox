@@ -10,9 +10,11 @@ import Neume.Core.LilyPondOutput
 import Neume.Core.Syntax
 import Neume.Core.Utils.OneList ( fromList )
 import Neume.Core.Utils.Pretty ( writeDoc )
+
 import Neume.Extra.Common
 import Neume.Extra.DrumPitches
 import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondScoreOutput
 import Neume.Extra.Percussion
 import Neume.Extra.ScoreSyntax
 
@@ -42,25 +44,19 @@ drum_globals_doc =
     variableDef "drumglobals" $ nestBraces (time 4 4 <$> stemUp)
 
 drum_parts_doc :: Doc
-drum_parts_doc = outputParts $ scoreZipWith fn drum_score_final name_score
+drum_parts_doc = defnsDefns barNumber 1 drum_plan drum_score_final
+
+drum_plan :: ScorePlan (TRepeat :. Z) DefinitionsElement
+drum_plan = PRepeat chacha PNil
   where
-    fn img name = (name,img)
+    chacha    = ("chacha", chachaF)
+    chachaF d = drummode $ time 4 4 <$> stemUp <$> d
+
 
 score_doc :: Doc 
-score_doc = outputScore name_score
+score_doc = scoreExpr $ new "DrumStaff" $ nestBraces $ 
+              variableUse "drumglobals" <$> defnsScore drum_plan
 
-
-{-
--- The original Neume had better code for this...
---
-outputParts :: Score shape (String,PhraseImage) -> Doc
-outputParts = undefined -- scoreFoldr empty lin rep repalt
-  where
-    lin    (s,img)      ac = def id s img  <$> ac 
-    rep    (s,img)      ac = def (repeatvolta 2) s img <$> ac
-    repalt _       _    _  = error "outputParts - repalt"
-    def f s img            = variableDef s (drummode $ f $ vsep $ getPhraseData img)
--}
 
 outputScore :: Score shape String -> Doc
 outputScore scr = scoreExpr $ new "DrumStaff" $ nestBraces body
@@ -80,8 +76,6 @@ drum_score_final = fmap trafo drum_score
     trafo = runRender (renderGlyph drumShortName strip)
               . drumScoreTrafo . makeFull (bracketConfig [1%2,1%2])
 
-name_score :: Score (TRepeat :. Z) String
-name_score = makeScore "chacha"
 
 drum_score :: Score (TRepeat :. Z) (SimpleNoteList (DrumGlyph () Duration))
 drum_score = makeScore (simpleNoteList $ chacha_notes)

@@ -24,6 +24,7 @@ module Neume.Extra.ScoreSyntax
   -- * Score ( assembled from /linear/ sections and repeats )
     
     Score(..)
+  , ScorePlan(..)
 
   , Z
   , (:.)
@@ -57,11 +58,37 @@ data TRepAlt
 
 infixr 5 :.
 
+-- | A Score with unrepeated (linear) sections, repeats, and 
+-- repeats with alternative endings.
+--
+-- Score using some type level tricks to encode the shape at the
+-- type level. This is so that to make polyphonic overlays, for 
+-- example, the two scores that are zipped together must have
+-- the same shape.
+--
 data Score shape e where
   Nil     ::                              Score Z e
   Linear  :: e        -> Score shape e -> Score (TLinear :. shape) e
   Repeat  :: e        -> Score shape e -> Score (TRepeat :. shape) e
   RepAlt  :: e -> [e] -> Score shape e -> Score (TRepAlt :. shape) e
+
+
+-- | A plan of a /Score/ - one datum is carried by each 
+-- constructor, rather than many in the case of (Score RepAlt).
+-- 
+-- This means a ScorePlan can be used for naming the sections in
+-- a score, e.g.:
+--
+-- > type NamedPlan = ScorePlan shape String
+--
+-- Otherwise all the alternatives in RepAlt would need new names.
+-- 
+data ScorePlan shape a where
+  PNil    ::                           ScorePlan Z a
+  PLinear :: a -> ScorePlan shape a -> ScorePlan (TLinear :. shape) a
+  PRepeat :: a -> ScorePlan shape a -> ScorePlan (TRepeat :. shape) a
+  PRepAlt :: a -> ScorePlan shape a -> ScorePlan (TRepAlt :. shape) a
+
 
 
 scoreZipWith :: (a -> b -> c) -> Score sh a -> Score sh b -> Score sh c
@@ -109,17 +136,36 @@ smapList f st (x:xs) = (y:ys,st'')
 --------------------------------------------------------------------------------
 -- instances
 
+-- Functor
+
 instance Functor (Score shape) where
   fmap _ Nil              = Nil
   fmap f (Linear e xs)    = Linear (f e)            (fmap f xs)
   fmap f (Repeat e xs)    = Repeat (f e)            (fmap f xs)
   fmap f (RepAlt e es xs) = RepAlt (f e) (map f es) (fmap f xs)
 
+instance Functor (ScorePlan shape) where
+  fmap _ PNil             = PNil
+  fmap f (PLinear e xs)   = PLinear (f e) (fmap f xs)
+  fmap f (PRepeat e xs)   = PRepeat (f e) (fmap f xs)
+  fmap f (PRepAlt e xs)   = PRepAlt (f e) (fmap f xs)
+
+-- Foldable
+
 instance Foldable (Score shape) where
   foldMap _ Nil              = mempty
   foldMap f (Linear e xs)    = f e `mappend` foldMap f xs
   foldMap f (Repeat e xs)    = f e `mappend` foldMap f xs
   foldMap f (RepAlt e es xs) = f e `mappend` foldMap f es `mappend` foldMap f xs
+
+instance Foldable (ScorePlan shape) where
+  foldMap _ PNil             = mempty
+  foldMap f (PLinear e xs)   = f e `mappend` foldMap f xs
+  foldMap f (PRepeat e xs)   = f e `mappend` foldMap f xs
+  foldMap f (PRepAlt e xs)   = f e `mappend` foldMap f xs
+
+
+-- Traversable
 
 instance Traversable (Score shape) where
   traverse _ Nil              = pure Nil
@@ -128,6 +174,13 @@ instance Traversable (Score shape) where
   traverse f (RepAlt e es xs) = RepAlt <$> f e <*> traverse f es <*> traverse f xs
 
 
+instance Traversable (ScorePlan shape) where
+  traverse _ PNil             = pure PNil
+  traverse f (PLinear e xs)   = PLinear <$> f e <*> traverse f xs
+  traverse f (PRepeat e xs)   = PRepeat <$> f e <*> traverse f xs
+  traverse f (PRepAlt e xs)   = PRepAlt <$> f e <*> traverse f xs
+
+-- Show
 
 instance Show e => Show (Score shape e) where
   showsPrec _ Nil               = showString "Nil"
@@ -141,6 +194,19 @@ instance Show e => Show (Score shape e) where
   showsPrec _ (RepAlt e es xs)  = 
     showString "RepAlt" . spS . shows e . spS . showList es . spS
                         . appS . spS . shows xs
+
+
+instance Show e => Show (ScorePlan shape e) where
+  showsPrec _ PNil               = showString "PNil"
+
+  showsPrec _ (PLinear e xs)     = 
+    showString "PLinear" . spS . shows e . spS . appS . spS . shows xs
+
+  showsPrec _ (PRepeat e xs)     = 
+    showString "PRepeat" . spS . shows e . spS . appS . spS . shows xs
+
+  showsPrec _ (PRepAlt e xs)  = 
+    showString "PRepAlt" . spS . shows e . spS . appS . spS . shows xs
 
 
 spS :: ShowS

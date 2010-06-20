@@ -17,8 +17,11 @@
 
 module Neume.Extra.LilyPondDoc
   (
-  
-    annoAbove
+  -- * Types
+    VarName
+
+  -- * Printers  
+  , annoAbove
   , annoCenter
   , annoBelow
 
@@ -104,7 +107,6 @@ module Neume.Extra.LilyPondDoc
   , schemeDef
   , schemeStringLiteral
   , override
-  , definition
 
   -- ** Midi directives
   , midi
@@ -124,6 +126,8 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.Char ( isAlpha )
 
+
+type VarName = String
 
 
 infixr 6 `annoAbove`, `annoCenter`, `annoBelow`
@@ -438,7 +442,7 @@ include ss            = command "include" <+> dquotes (text ss)
 
 -- | @varName = ...@ - define a variable. The variable name should only
 -- contain alphabetic characters, otherwise an error is thrown.
-variableDef           :: String -> Doc -> Doc
+variableDef           :: VarName -> Doc -> Doc
 variableDef ss e         
   | all isAlpha ss    = text ss <+> equals <+> e
   | otherwise         = error $ "LilyPondDoc.variableDef - " ++ ss ++ 
@@ -446,7 +450,7 @@ variableDef ss e
 
 -- | @\\varName@ - the variable name should only contain 
 -- alphabetic characters.
-variableUse           :: String -> Doc
+variableUse           :: VarName -> Doc
 variableUse ss  
   | all isAlpha ss    = command ss
   | otherwise         = error $ "LilyPondDoc.variableUse - " ++ ss ++ 
@@ -454,7 +458,7 @@ variableUse ss
 
 -- | @varName = #( ... )@ - the variable name should only contain 
 -- alphabetic characters.
-schemeDef :: String -> Doc -> Doc
+schemeDef :: VarName -> Doc -> Doc
 schemeDef ss d
   | all isAlpha ss    = text ss <+> equals <+> char '#' <> d
   | otherwise         = error $ "LilyPondDoc.schemeDef - " ++ ss ++ 
@@ -470,9 +474,6 @@ override obj prop d = command "override" <+> text obj  <+> text "#'"
                                          <+> char '#'  <> d
 
 
--- | @name = val@ - primitive combinator for building definitions. 
-definition :: String -> Doc -> Doc
-definition name val = text name <+> equals <+> val
 
 
 --------------------------------------------------------------------------------
