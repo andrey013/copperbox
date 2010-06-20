@@ -50,6 +50,7 @@ score_doc :: Doc
 score_doc = outputScore name_score
 
 
+{-
 -- The original Neume had better code for this...
 --
 outputParts :: Score shape (String,PhraseImage) -> Doc
@@ -59,7 +60,7 @@ outputParts = undefined -- scoreFoldr empty lin rep repalt
     rep    (s,img)      ac = def (repeatvolta 2) s img <$> ac
     repalt _       _    _  = error "outputParts - repalt"
     def f s img            = variableDef s (drummode $ f $ vsep $ getPhraseData img)
-
+-}
 
 outputScore :: Score shape String -> Doc
 outputScore scr = scoreExpr $ new "DrumStaff" $ nestBraces body

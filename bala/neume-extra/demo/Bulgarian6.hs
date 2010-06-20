@@ -10,6 +10,7 @@ import Neume.Core.LilyPondPretty
 import Neume.Core.LilyPondOutput
 import Neume.Core.LilyPondTrafo
 import Neume.Core.Pitch
+import Neume.Core.Utils.Pretty ( writeDoc )
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
 
@@ -25,28 +26,17 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 import System.Cmd
 
-{-
+
 
 main :: IO ()
 main = 
-  writeDoc "bulgarian6.ly"      ly_score                        >>
-  writeDoc "bulgarian6_abc.abc" abc_score                       >>
+  writeDoc "bulgarian6.ly"      lilypond_full                   >>
+--  writeDoc "bulgarian6_abc.abc" abc_score                       >>
   system   "lilypond bulgarian6.ly"                             >>
-  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
+--  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
   return ()
 
-
-ly_score :: Doc
-ly_score =  version "2.12.2" 
-        <$> scoreExpr (relative middle_c $ key a_nat "major" 
-                       <$> time 2 4
-                       <$> tune1)
-  where
-    tune1    = renderLyRelative ofmt rwspec b6_score
-    
-    ofmt     = Ly_std_format_config       strip
-    rwspec   = Ly_relative_rewrite_config middle_c two_four_time strip
-
+{-
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 
          <$> ABC.title     "Bulgarian 6 (ABC)" 
@@ -60,11 +50,22 @@ abc_score =  ABC.tunenum   1
     rwspec  = ABC.ABC_std_rewrite_config a_major (1%16) two_four_time 
 -}
 
+lilypond_full :: Doc
+lilypond_full =  version "2.12.2"
+             <$> variableDef "melody" melody_body
+             <$> scoreExpr (variableUse "melody")
+  where 
+    melody_body = relative middle_c $ vsep [ key a_nat "major" 
+                                           , time 2 4
+                                           , score_doc_ly ]
+
 -- NOTE - relative-duration-trafo is shape sensitive, although
 -- it would be nice, there isn't really an opportunity to fuse 
 -- it with the relative-pitch-trafo.
 --
 
+score_doc_ly :: Doc
+score_doc_ly = inlineScore barNumber 1 b6_score_ly
 
 b6_score_ly :: Score (TRepeat :. TRepeat :. Z) PhraseImage
 b6_score_ly = 
@@ -76,7 +77,7 @@ b6_score_ly =
 
 b6_score :: Score (TRepeat :. TRepeat :. Z) 
                   (Full (Glyph () Pitch Duration))
-b6_score = fmap (makeFull (bracketConfig [1%2,1%2]) . simpleNoteList) $ 
+b6_score = fmap (makeFull (bracketConfig [1%4,1%4]) . simpleNoteList) $ 
     Repeat bars1'4 $ Repeat bars5'8 $ Nil
 
 

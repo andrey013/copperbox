@@ -26,7 +26,6 @@ module Neume.Core.Syntax
   -- * Phrase
   , Phrase(..)
   , Bar
-  , BarNum
 
   -- * Metrical divisions of a bar - beam groups, tuplets, ... 
   , MetricalDiv(..)
@@ -84,8 +83,6 @@ newtype Phrase e = Phrase { getPhraseData :: [e] }
 
 
 type Bar e  = [e]
-
-type BarNum = Int
 
 
 --------------------------------------------------------------------------------
