@@ -18,10 +18,12 @@ module Neume.Extra.FretDiagrams
   (
     FretNum(..)
   , FretDiagram(..)
-  , FretDiagramGlyph
+  , FretDiagramGraphic
 
   , fretDiagram
   , x_none
+
+  , fretDiagAlg
 
   , fretNum
 
@@ -30,21 +32,21 @@ module Neume.Extra.FretDiagrams
   
   ) where
 
-import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.LilyPondPretty ( spacer )
 import Neume.Core.LilyPondOutput
-import Neume.Core.Metrical
+import Neume.Core.LilyPondTrafo
 import Neume.Core.Syntax
 
 import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondScoreOutput
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 data FretNum = X | FN Int
   deriving (Eq,Show)
 
-type FretDiagramGlyph = Graphic FretDiagram Duration
+type FretDiagramGraphic dur = Graphic FretDiagram dur
 
 data FretDiagram = FretDiagram { 
         chord_name  :: String,
@@ -68,34 +70,17 @@ fretDiagram :: String -> String -> [Int] -> FretDiagram
 fretDiagram name alias ns = FretDiagram name alias (map fretNum ns)
 
 
-{-
-data Ly_fret_diag_config = Ly_fret_diag_config
-    { meter_pattern_fret_diag         :: MeterPattern }
 
-renderFretDiag :: Ly_std_format_config
-               -> Ly_fret_diag_config
-               -> Score sh (NoteList FretDiagramGlyph)
-               -> Doc
-renderFretDiag (Ly_std_format_config func) rw1 = 
-    concatDocSections func . scoreImageFretDiag rw1
-
-
-scoreImageFretDiag :: Ly_fret_diag_config
-                   -> Score sh (NoteList FretDiagramGlyph) 
-                   -> Score sh PhraseImage
-scoreImageFretDiag cfg = fmap (phraseImageFretDiag mp)
-  where
-    mp = meter_pattern_fret_diag cfg
+fretDiagAlg :: (LyRelDurTrafo repr)
+            => LilyPondImageAlg repr (FretDiagramGraphic Duration)
+                                     (FretDiagramGraphic (Maybe Duration))
+fretDiagAlg = LilyPondImageAlg
+    { glyph_printer     = renderGraphic diagOut
+    , duration_trafo    = fmap runRelDurTrafo
+    , pitch_trafo       = id
+    }
 
 
-
-
-phraseImageFretDiag :: MeterPattern
-                    -> NoteList FretDiagramGlyph
-                    -> PhraseImage
-phraseImageFretDiag mp = 
-  renderPhrase (renderMarkupGlyph diagOut) . rewriteDurationOpt . phrase mp
--}
 
 
 diagOut :: FretDiagram -> Maybe Duration -> Doc

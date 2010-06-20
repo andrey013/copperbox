@@ -6,16 +6,12 @@ module Bulgarian6 where
 import qualified Neume.Core.AbcOutput       as ABC
 import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondPretty
-import Neume.Core.LilyPondOutput
-import Neume.Core.LilyPondTrafo
 import Neume.Core.Pitch
 import Neume.Core.Utils.Pretty ( writeDoc )
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import Neume.Extra.Common
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.LilyPondScoreOutput
 import Neume.Extra.NamedElements
@@ -68,11 +64,7 @@ score_doc_ly :: Doc
 score_doc_ly = inlineScore barNumber 1 b6_score_ly
 
 b6_score_ly :: Score (TRepeat :. TRepeat :. Z) PhraseImage
-b6_score_ly = 
-    fmap render_step $ fmap runRelDurTrafo 
-                     $ fst $ stmap runRelPitchTrafo middle_c b6_score
-  where 
-    render_step = runRender (renderGlyph pitch strip)
+b6_score_ly = lilyPondImageScore (stdLilyPondAlg middle_c) b6_score
 
 
 b6_score :: Score (TRepeat :. TRepeat :. Z) 

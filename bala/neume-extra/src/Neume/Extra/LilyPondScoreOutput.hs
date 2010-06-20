@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE GADTs                      #-}
 {-# OPTIONS -Wall #-}
 
@@ -18,7 +20,12 @@
 module Neume.Extra.LilyPondScoreOutput
   (
 
-    BarNum
+    LilyPondImageAlg(..)
+  , lilyPondImageScore
+  , stdLilyPondAlg
+
+  
+  , BarNum
   
   , barNumber
   , inlineScore
@@ -29,14 +36,60 @@ module Neume.Extra.LilyPondScoreOutput
 
   ) where
 
+import Neume.Core.Duration
+import Neume.Core.LilyPondOutput
+import Neume.Core.LilyPondPretty ( pitch )
+import Neume.Core.LilyPondTrafo
+import Neume.Core.Pitch
 import Neume.Core.Syntax
 import Neume.Core.Utils.Pretty
 
+import Neume.Extra.Common
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.ScoreSyntax
 
 import MonadLib                         -- package: monadLib
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
+
+
+
+-- Note - this needs to be at the type of @Score@ so that 
+-- relative-pitch transformations can be statefully chained.
+-- 
+
+data LilyPondImageAlg repr gly gly' = LilyPondImageAlg
+      { glyph_printer   :: gly' -> Doc
+      , duration_trafo  :: forall shape. 
+                           Score shape (repr gly) -> Score shape (repr gly')
+      , pitch_trafo     :: forall shape.
+                           Score shape (repr gly) -> Score shape (repr gly)
+      }
+
+lilyPondImageScore :: LilyPondOutput repr 
+                   => LilyPondImageAlg repr gly gly' 
+                   -> Score shape (repr gly) 
+                   -> Score shape PhraseImage
+lilyPondImageScore (LilyPondImageAlg 
+    { glyph_printer  = pp
+    , duration_trafo = df
+    , pitch_trafo    = pf }) = fmap (runRender pp) . df . pf
+
+
+
+stdLilyPondAlg :: (LyRelPitchTrafo repr, LyRelDurTrafo repr)
+               => Pitch 
+               -> LilyPondImageAlg repr (Glyph anno Pitch Duration)
+                                        (Glyph anno Pitch (Maybe Duration))
+stdLilyPondAlg rel_start = LilyPondImageAlg
+    { glyph_printer     = renderGlyph pitch strip
+    , duration_trafo    = fmap runRelDurTrafo
+    , pitch_trafo       = fst . stmap runRelPitchTrafo rel_start
+    }
+
+
+
+--------------------------------------------------------------------------------
+
 
 type BarNum = Int
 
@@ -46,6 +99,7 @@ type BarNumF = BarNum -> DocS
 --
 barNumber :: BarNum -> DocS
 barNumber i = ((text $ "%% Bar " ++ show i) <$>)
+
 
 
 type ScoreM a = StateT BarNum (ReaderT BarNumF Id) a

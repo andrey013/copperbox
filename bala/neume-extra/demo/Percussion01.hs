@@ -6,12 +6,10 @@ module Percussion01 where
 
 import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondOutput
 import Neume.Core.Syntax
 import Neume.Core.Utils.OneList ( fromList )
 import Neume.Core.Utils.Pretty ( writeDoc )
 
-import Neume.Extra.Common
 import Neume.Extra.DrumPitches
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.LilyPondScoreOutput
@@ -71,16 +69,15 @@ makeScore :: a -> Score (TRepeat :. Z) a
 makeScore a = Repeat a $ Nil
 
 drum_score_final :: Score (TRepeat :. Z) PhraseImage
-drum_score_final = fmap trafo drum_score
+drum_score_final = 
+    lilyPondImageScore (drumAlg drumShortName) $ fmap trafo drum_score
   where 
-    trafo = runRender (renderGlyph drumShortName strip)
-              . drumScoreTrafo . makeFull (bracketConfig [1%2,1%2])
+    trafo = makeFull (bracketConfig [1%2,1%2])
 
 
 drum_score :: Score (TRepeat :. Z) (SimpleNoteList (DrumGlyph () Duration))
 drum_score = makeScore (simpleNoteList $ chacha_notes)
 
--- fmap (Full . phrase (bracketConfig [1%2,1%2])) $ 
 
 simpleNoteList :: [e] -> SimpleNoteList e
 simpleNoteList = NoteList . map Item

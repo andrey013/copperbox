@@ -4,12 +4,12 @@
 
 module GuitarChords where
 
+import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.Pitch
 import Neume.Core.Syntax
 import Neume.Core.Utils.Pretty ( writeDoc )
 
-import Neume.Extra.Common
 import Neume.Extra.FretDiagrams
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.LilyPondScoreOutput
@@ -50,39 +50,41 @@ ly_score =  version "2.12.2"
 chord_defs :: Doc
 chord_defs = diagDefsList [ chord_G6, chord_C, chord_D7, chord_G ]
 
+
+-- Ideally this would use makeUndiv rather than makeFull...
+--
 chord_tune :: Doc
 chord_tune = variableDef "chordTune" $ nestBraces (time 4 4 <$> tune1)
   where
-    tune1    = renderFretDiag ofmt rwcfg chord_score
-    ofmt     = Ly_std_format_config barNumber
-    rwcfg    = Ly_fret_diag_config  [1%2, 1%2]
-
+    tune1    = inlineScore barNumber 1 $ 
+                 lilyPondImageScore fretDiagAlg $ 
+                   fmap (makeFull (bracketConfig [1%2,1%2])) chord_score
 
 note_tune :: Doc
 note_tune = variableDef "noteTune"  
               $ relative middle_c $ (key g_nat "major"
                                       <$> time 4 4 <$> tune1)
   where
-    tune1    = renderLyRelative ofmt rwspec note_score
-    
-    ofmt     = Ly_std_format_config       barNumber
-    rwspec   = Ly_relative_rewrite_config middle_c [1%2, 1%2] strip
+    tune1    = inlineScore barNumber 1 $ 
+                 lilyPondImageScore (stdLilyPondAlg middle_c) $
+                   fmap (makeFull (bracketConfig [1%2,1%2])) note_score
 
 
-chord_score :: Score (TLinear :. Z) (NoteList FretDiagramGlyph)
+
+chord_score :: Score (TLinear :. Z) (SimpleNoteList (FretDiagramGraphic Duration))
 chord_score = fmap simpleNoteList $
-    Linear ("chords", chord_list) $ Nil
+    Linear chord_list $ Nil
 
-note_score :: Score (TLinear :. Z) (NoteList (Glyph () Pitch Duration))
+note_score :: Score (TLinear :. Z) (SimpleNoteList (Glyph () Pitch Duration))
 note_score = fmap simpleNoteList $
-    Linear ("notes", arp_notes) $ Nil
+    Linear arp_notes $ Nil
 
-diag :: FretDiagram -> Duration -> FretDiagramGlyph
+diag :: FretDiagram -> Duration -> FretDiagramGraphic Duration
 diag = Graphic
 
 
 
-chord_list :: [FretDiagramGlyph]
+chord_list :: [FretDiagramGraphic Duration]
 chord_list = [ diag chord_G6 dHalf, diag chord_C dHalf
               , diag chord_D7 dHalf, diag chord_G dHalf ]
 

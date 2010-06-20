@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,20 +21,26 @@ module Neume.Extra.Percussion
 
   
   -- * LilyPond drum pitches
-    DrumPitch(..)
+    DrumName
+  , DrumPitch(..)
   , DrumGlyph
+
+  , drumAlg 
 
   , drumLongName
   , drumShortName
 
-  , drumScoreTrafo
 
   ) where
 
 
 import Neume.Core.Duration
+import Neume.Core.LilyPondOutput
 import Neume.Core.LilyPondTrafo
 import Neume.Core.Syntax
+
+import Neume.Extra.Common
+import Neume.Extra.LilyPondScoreOutput
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
@@ -43,6 +48,9 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 --------------------------------------------------------------------------------
 -- LilyPond drum pitches 
+
+type DrumName = String
+
 
 data DrumPitch = DrumPitch 
       { drum_long_name   :: String
@@ -54,6 +62,20 @@ data DrumPitch = DrumPitch
 type DrumGlyph  anno dur = Glyph anno DrumPitch dur
 
 
+
+drumAlg :: (LyRelDurTrafo repr)
+        => (DrumPitch -> Doc) 
+        -> LilyPondImageAlg repr (DrumGlyph anno Duration)
+                                 (DrumGlyph anno (Maybe Duration))
+drumAlg pp = LilyPondImageAlg
+    { glyph_printer     = renderGlyph pp strip
+    , duration_trafo    = fmap runRelDurTrafo
+    , pitch_trafo       = id
+    }
+
+
+
+
 drumLongName    :: DrumPitch -> Doc
 drumLongName    = text . drum_long_name
 
@@ -61,15 +83,6 @@ drumShortName   :: DrumPitch -> Doc
 drumShortName   = text . drum_short_name
 
 
--- lyDrumGlyph :: DrumGlyph anno (Maybe Duration) -> Doc
--- lyDrumGlyph = renderGlyph (text . drumShortName) strip
 
-
-
-drumScoreTrafo :: LyRelDurTrafo  repr 
-               => repr (DrumGlyph anno Duration) 
-               -> repr (DrumGlyph anno (Maybe Duration))
-drumScoreTrafo = runRelDurTrafo
-               
 
   
