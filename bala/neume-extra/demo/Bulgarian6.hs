@@ -3,7 +3,7 @@
 
 module Bulgarian6 where
 
-import qualified Neume.Core.AbcOutput       as ABC
+import qualified Neume.Core.AbcOutput         as ABC
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.Pitch
@@ -11,7 +11,8 @@ import Neume.Core.Utils.Pretty ( writeDoc )
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
 
-import qualified Neume.Extra.AbcDoc          as ABC
+import qualified Neume.Extra.AbcDoc           as ABC
+import qualified Neume.Extra.AbcScoreOutput   as ABC 
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.LilyPondScoreOutput
 import Neume.Extra.NamedElements
@@ -59,6 +60,11 @@ lilypond_full =  version "2.12.2"
 -- it would be nice, there isn't really an opportunity to fuse 
 -- it with the relative-pitch-trafo.
 --
+
+b6_score_abc :: Score (TRepeat :. TRepeat :. Z) PhraseImage
+b6_score_abc = ABC.abcImageScore (ABC.stdAbcAlg a_major (1%16)) b6_score
+
+
 
 score_doc_ly :: Doc
 score_doc_ly = inlineScore barNumber 1 b6_score_ly

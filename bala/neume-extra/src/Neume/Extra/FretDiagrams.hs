@@ -48,10 +48,10 @@ data FretNum = X | FN Int
 
 type FretDiagramGraphic dur = Graphic FretDiagram dur
 
-data FretDiagram = FretDiagram { 
-        chord_name  :: String,
-        chord_alias :: String,
-        fret_descr  :: [FretNum]
+data FretDiagram = FretDiagram 
+      { chord_name  :: String
+      , chord_alias :: String
+      , fret_descr  :: [FretNum]
       }
   deriving (Show)
 

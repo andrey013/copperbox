@@ -16,9 +16,19 @@
 
 module Neume.Extra.Common 
   ( 
-    strip
+    BarNum
+  , BarNumF
+
+  , strip
 
   ) where
+
+
+import Neume.Core.Utils.Pretty 
+
+type BarNum = Int
+
+type BarNumF = BarNum -> DocS
 
 
 -- | strip - dual of const

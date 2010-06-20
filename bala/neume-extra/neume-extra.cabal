@@ -31,6 +31,7 @@ library
 
   exposed-modules:
     Neume.Extra.AbcDoc,
+    Neume.Extra.AbcScoreOutput,
     Neume.Extra.Common,
     Neume.Extra.DrumPitches,
     Neume.Extra.FretDiagrams,

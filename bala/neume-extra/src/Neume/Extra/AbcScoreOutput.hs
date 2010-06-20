@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Extra.LilyPondScoreOutput
+-- Module      :  Neume.Extra.AbcScoreOutput
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,32 +17,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Extra.LilyPondScoreOutput
+module Neume.Extra.AbcScoreOutput
   (
 
-    LilyPondImageAlg(..)
-  , lilyPondImageScore
-  , stdLilyPondAlg
+    AbcImageAlg(..)
+  , abcImageScore
+  , stdAbcAlg
 
   , barNumber
-  , inlineScore
 
-  , DefinitionsElement
-  , defnsScore
-  , defnsDefns
 
   ) where
 
 import Neume.Core.Duration
-import Neume.Core.LilyPondOutput
-import Neume.Core.LilyPondPretty ( pitch )
-import Neume.Core.LilyPondTrafo
+import Neume.Core.AbcOutput
+import Neume.Core.AbcTrafo
 import Neume.Core.Pitch
+import Neume.Core.SpellingMap
 import Neume.Core.Syntax
 import Neume.Core.Utils.Pretty
 
+import Neume.Extra.AbcDoc
 import Neume.Extra.Common
-import Neume.Extra.LilyPondDoc
 import Neume.Extra.ScoreSyntax
 
 import MonadLib                         -- package: monadLib
@@ -54,7 +50,7 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 -- relative-pitch transformations can be statefully chained.
 -- 
 
-data LilyPondImageAlg repr gly gly' = LilyPondImageAlg
+data AbcImageAlg repr gly gly' = AbcImageAlg
       { glyph_printer   :: gly' -> Doc
       , duration_trafo  :: forall shape. 
                            Score shape (repr gly) -> Score shape (repr gly')
@@ -62,25 +58,26 @@ data LilyPondImageAlg repr gly gly' = LilyPondImageAlg
                            Score shape (repr gly) -> Score shape (repr gly)
       }
 
-lilyPondImageScore :: LilyPondOutput repr 
-                   => LilyPondImageAlg repr gly gly' 
-                   -> Score shape (repr gly) 
-                   -> Score shape PhraseImage
-lilyPondImageScore (LilyPondImageAlg 
+abcImageScore :: AbcOutput repr 
+              => AbcImageAlg repr gly gly' 
+              -> Score shape (repr gly) 
+              -> Score shape PhraseImage
+abcImageScore (AbcImageAlg 
     { glyph_printer  = pp
     , duration_trafo = df
     , pitch_trafo    = pf }) = fmap (runRender pp) . df . pf
 
 
 
-stdLilyPondAlg :: (LyRelPitchTrafo repr, LyRelDurTrafo repr)
-               => Pitch 
-               -> LilyPondImageAlg repr (Glyph anno Pitch Duration)
-                                        (Glyph anno Pitch (Maybe Duration))
-stdLilyPondAlg rel_start = LilyPondImageAlg
-    { glyph_printer     = renderGlyph pitch strip
-    , duration_trafo    = fmap runRelDurTrafo
-    , pitch_trafo       = fst . stmap runRelPitchTrafo rel_start
+stdAbcAlg :: (AbcPitchSpellTrafo repr, AbcDurMultTrafo repr)
+          => AbcSpellingMap 
+          -> Rational
+          -> AbcImageAlg repr (Glyph anno Pitch Duration)
+                              (Glyph anno Pitch AbcMultiplier)
+stdAbcAlg spell_map unit_dur = AbcImageAlg
+    { glyph_printer     = renderGlyph
+    , duration_trafo    = fmap (runDurMultTrafo    unit_dur)
+    , pitch_trafo       = fmap (runPitchSpellTrafo spell_map)
     }
 
 
@@ -88,6 +85,41 @@ stdLilyPondAlg rel_start = LilyPondImageAlg
 --------------------------------------------------------------------------------
 
 
+barNumber :: BarNum -> DocS
+barNumber i = (abcComment ("Bar " ++ show i) <$>)
+
+
+-- Interspersing bars:
+--
+-- 1. The first bar should not be prefixed - even if it is a 
+--    repeat.
+--
+-- 2. A 'straight' can be printed with at bar-line after the last
+--    bar, regardless of what follows it. 
+--     
+-- 3. A repeat-start can start a line.
+--
+-- 4. Back-to-back repeats can print :| on one line and |: on the
+--    next line.
+--
+-- 5. Alternative repeats - each repeat is started with its number 
+--    e.g. [1 . The initial repeats are terminated with :| , the 
+--    final repeat is terminated with ||
+--
+-- 6. A tune should end with || or :|
+--
+
+-- The start and end are index-sensitive:
+-- 
+-- 1. Don't print repeat-start on the first bar.
+-- 
+-- 2. Change | to || on last bar (leave repeat as is)
+--
+-- 3. Don't print LINE_CONT on last bar
+--
+
+
+{-
 
 -- | Default bar numbering function.
 --
@@ -201,3 +233,5 @@ barImage :: BarImage -> ScoreM Doc
 barImage d = sets (\s -> (s,s+1)) >>= \n  ->
              ask                  >>= \f  ->
              return (f n $ d <+> singleBar)
+
+-}
