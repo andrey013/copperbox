@@ -24,6 +24,7 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, 
                       containers, 
+                      monadLib,
                       wl-pprint,
                       neume-core
                      
@@ -32,6 +33,7 @@ library
     Neume.Extra.AbcDoc,
     Neume.Extra.Common,
     Neume.Extra.DrumPitches,
+    Neume.Extra.FretDiagrams,
     Neume.Extra.LilyPondDoc,
     Neume.Extra.LilyPondScoreOutput,
     Neume.Extra.NamedElements,
