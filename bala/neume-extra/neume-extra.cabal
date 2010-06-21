@@ -39,7 +39,8 @@ library
     Neume.Extra.LilyPondScoreOutput,
     Neume.Extra.NamedElements,
     Neume.Extra.Percussion,
-    Neume.Extra.ScoreSyntax
+    Neume.Extra.ScoreSyntax,
+    Neume.Extra.Tab
 
   other-modules:
     
