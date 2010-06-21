@@ -3,7 +3,6 @@
 
 module Bulgarian6 where
 
-import qualified Neume.Core.AbcOutput         as ABC
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.Pitch
@@ -28,24 +27,18 @@ import System.Cmd
 main :: IO ()
 main = 
   writeDoc "bulgarian6.ly"      lilypond_full                   >>
---  writeDoc "bulgarian6_abc.abc" abc_score                       >>
+  writeDoc "bulgarian6_abc.abc" abc_score                       >>
   system   "lilypond bulgarian6.ly"                             >>
---  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
+  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
   return ()
 
-{-
+
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 
          <$> ABC.title     "Bulgarian 6 (ABC)" 
          <$> ABC.meter     "2/4"
          <$> ABC.key       "Amaj"
-         <$> tune1
-  where
-    tune1   = ABC.renderABC ofmt rwspec b6_score
-
-    ofmt    = ABC.ABC_std_format_config  [4,4,4,4] ABC.barNumber
-    rwspec  = ABC.ABC_std_rewrite_config a_major (1%16) two_four_time 
--}
+         <$> score_doc_abc
 
 lilypond_full :: Doc
 lilypond_full =  version "2.12.2"
@@ -60,6 +53,9 @@ lilypond_full =  version "2.12.2"
 -- it would be nice, there isn't really an opportunity to fuse 
 -- it with the relative-pitch-trafo.
 --
+
+score_doc_abc :: Doc
+score_doc_abc = ABC.inlineScore ABC.barNumber 1 b6_score_abc
 
 b6_score_abc :: Score (TRepeat :. TRepeat :. Z) PhraseImage
 b6_score_abc = ABC.abcImageScore (ABC.stdAbcAlg a_major (1%16)) b6_score

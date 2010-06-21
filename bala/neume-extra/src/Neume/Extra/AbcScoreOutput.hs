@@ -24,8 +24,10 @@ module Neume.Extra.AbcScoreOutput
   , abcImageScore
   , stdAbcAlg
 
+  , AbcBarNumF
   , barNumber
 
+  , inlineScore         -- needs new name
 
   ) where
 
@@ -35,7 +37,7 @@ import Neume.Core.AbcTrafo
 import Neume.Core.Pitch
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
-import Neume.Core.Utils.Pretty
+import Neume.Core.Utils.Stream ( Stream(..) )
 
 import Neume.Extra.AbcDoc
 import Neume.Extra.Common
@@ -44,7 +46,7 @@ import Neume.Extra.ScoreSyntax
 import MonadLib                         -- package: monadLib
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
-
+import Prelude hiding ( repeat )
 
 -- Note - this needs to be at the type of @Score@ so that 
 -- relative-pitch transformations can be statefully chained.
@@ -84,9 +86,12 @@ stdAbcAlg spell_map unit_dur = AbcImageAlg
 
 --------------------------------------------------------------------------------
 
+type AbcBarNumF = BarNum -> Maybe Doc
 
-barNumber :: BarNum -> DocS
-barNumber i = (abcComment ("Bar " ++ show i) <$>)
+barNumber :: AbcBarNumF
+barNumber i = Just $ abcComment $ "Bar " ++ show i
+
+type AbcLineWidths = Stream Int
 
 
 -- Interspersing bars:
@@ -119,42 +124,47 @@ barNumber i = (abcComment ("Bar " ++ show i) <$>)
 --
 
 
-{-
-
--- | Default bar numbering function.
---
-barNumber :: BarNum -> DocS
-barNumber i = ((text $ "%% Bar " ++ show i) <$>)
 
 
 
-type ScoreM a = StateT BarNum (ReaderT BarNumF Id) a
+type ScoreM a = StateT BarNum (ReaderT AbcBarNumF Id) a
 
-runScoreM :: BarNumF -> BarNum -> ScoreM a -> a
+runScoreM :: AbcBarNumF -> BarNum -> ScoreM a -> a
 runScoreM f n mf = fst $ runId $ runReaderT f $ runStateT n mf
+
 
 
 -- anacrusis can start with barnum=0...
 
 -- | A single linear score representation...
 --
-inlineScore :: BarNumF -> BarNum -> Score shape PhraseImage -> Doc
-inlineScore f n sc = runScoreM f n $ renderInline sc
+inlineScore :: AbcBarNumF -> BarNum -> Score shape PhraseImage -> Doc
+inlineScore f n sc = vsep $ contTraf $ runScoreM f n $ renderInline sc
+  where
+    contTraf = id -- TODO
 
 
-renderInline :: Score shape PhraseImage -> ScoreM Doc
-renderInline Nil              = return empty
+renderInline :: Score shape PhraseImage -> ScoreM [Doc]
+renderInline Nil              = return []
 
-renderInline (Linear e xs)    = do { d1  <- concatPhraseImage e
-                                   ; d2  <- renderInline xs
-                                   ; return $ d1 <$> d2 
-                                   }
+renderInline (Linear e xs)    = do 
+    { zs  <- phraseImages e
+    ; ds  <- renderInline xs
+    ; case ds of 
+        [] -> return $ linearFinal zs
+        _  -> return $ linear zs ++ ds
+    }
  
-renderInline (Repeat e xs)    = do { d1  <- concatPhraseImage e
-                                   ; d2  <- renderInline xs
-                                   ; return $ (repeatvolta 2 d1) <$> d2
-                                   }
-                                 
+renderInline (Repeat e xs)    = do 
+    { start <- initialBar
+    ; zs    <- phraseImages e
+    ; ds    <- renderInline xs
+    ; case start of
+        True -> return $ repeatInitial zs ++ ds
+        _    -> return $ repeat zs ++ ds
+    }
+
+{-                                 
 renderInline (RepAlt e es xs) = do { d1  <- concatPhraseImage e
                                    ; d2  <- mapM concatPhraseImage es
                                    ; d3  <- renderInline xs
@@ -164,74 +174,53 @@ renderInline (RepAlt e es xs) = do { d1  <- concatPhraseImage e
                                            <$> d3
                                    }
                     
+-}
 
--- This was at the wrong type - its giving a new name and 
--- transformer to each element in the alternatives list
---
--- In reality we want to be zipping across both a score and
--- a "(name x transformer) list" with the same shape.
---
--- Solution... ScorePlan.
---
-           
-type PhraseTransformer = DocS
-
-type DefinitionsElement = (VarName,PhraseTransformer)
-
-defnsScore :: ScorePlan shape DefinitionsElement -> Doc
-defnsScore PNil = empty
-defnsScore (PLinear (n,_) ps) = variableUse n <$> defnsScore ps
-defnsScore (PRepeat (n,_) ps) = variableUse n <$> defnsScore ps
-defnsScore (PRepAlt (n,_) ps) = variableUse n <$> defnsScore ps
+initialBar :: ScoreM Bool
+initialBar = liftM (<=1) get
 
 
-defnsDefns :: BarNumF -> BarNum 
-           -> ScorePlan shape DefinitionsElement 
-           -> Score     shape PhraseImage
-           -> Doc
-defnsDefns f n sp sc = runScoreM f n $ renderDefns sp sc
+phraseImages :: PhraseImage -> ScoreM [(Maybe Doc,Doc)]
+phraseImages (Phrase xs) = mapM barImage xs
 
 
-renderDefns :: ScorePlan shape DefinitionsElement 
-            -> Score     shape PhraseImage
-            -> ScoreM Doc
-renderDefns PNil               Nil              = return empty
-
-renderDefns (PLinear (n,f) ps) (Linear e xs)    = do 
-    { d1 <- concatPhraseImage e
-    ; d2 <- renderDefns ps xs
-    ; let def1 = variableDef n $ f d1
-    ; return (def1 <$> d2)
-    }
-
-renderDefns (PRepeat (n,f) ps) (Repeat e xs)    = do
-    { d1 <- concatPhraseImage e
-    ; d2 <- renderDefns ps xs
-    ; let def1 = variableDef n (f $ repeatvolta 2 d1)
-    ; return (def1 <$> d2)
-    }
-
-renderDefns (PRepAlt (n,f) ps) (RepAlt e es xs) = do
-    { d1 <- concatPhraseImage e
-    ; d2  <- mapM concatPhraseImage es
-    ; d3  <- renderDefns ps xs 
-    ; let def1 = variableDef n 
-                   (f $ (repeatvolta (length es) d1 <$> alternative d2))
-    ; return (def1 <$> d3)
-    }
-
-renderDefns _                  _                = 
-    error "renderDefns - impossible, type level shape should stop this."
-
-
-
-
-concatPhraseImage :: PhraseImage -> ScoreM Doc
-concatPhraseImage (Phrase xs) = liftM vsep (mapM barImage xs)
-
-barImage :: BarImage -> ScoreM Doc
+barImage :: BarImage -> ScoreM (Maybe Doc, Doc)
 barImage d = sets (\s -> (s,s+1)) >>= \n  ->
              ask                  >>= \f  ->
-             return (f n $ d <+> singleBar)
+             return (f n, d)
 
--}
+
+linear :: [(Maybe Doc,Doc)] -> [Doc]
+linear = map fn where
+  fn (c, d) = mbLines c d <+> singleBar  
+
+linearFinal :: [(Maybe Doc,Doc)] -> [Doc]
+linearFinal []      = []
+linearFinal (x:xs)  = step x xs
+  where
+    step (c,d) []       = [mbLines c d <+> doubleBar]
+    step (c,d) (y:ys)   = (mbLines c d <+> singleBar) : step y ys
+    
+
+
+repeat :: [(Maybe Doc,Doc)] -> [Doc]
+repeat []         = []
+repeat ((s,t):xs) = intraRepeat (s, lrepeat <+> t) xs
+
+repeatInitial :: [(Maybe Doc,Doc)] -> [Doc]
+repeatInitial []         = []
+repeatInitial ((s,t):xs) = intraRepeat (s, t) xs   -- no initial repeat symbol
+
+
+intraRepeat :: (Maybe Doc,Doc) -> [(Maybe Doc,Doc)] -> [Doc]
+intraRepeat (c,d) []     = [mbLines c d <+> rrepeat]
+intraRepeat (c,d) (y:ys) = (mbLines c d <+> singleBar) : intraRepeat y ys 
+
+
+mbLines :: Maybe Doc -> Doc -> Doc
+mbLines Nothing  d     = d
+mbLines (Just c) d     = c <$> d
+
+
+
+

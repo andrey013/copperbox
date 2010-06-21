@@ -24,6 +24,7 @@ module Neume.Extra.LilyPondScoreOutput
   , lilyPondImageScore
   , stdLilyPondAlg
 
+  , LyBarNumF
   , barNumber
   , inlineScore
 
@@ -87,18 +88,19 @@ stdLilyPondAlg rel_start = LilyPondImageAlg
 
 --------------------------------------------------------------------------------
 
+type LyBarNumF = BarNum -> DocS
 
 
 -- | Default bar numbering function.
 --
-barNumber :: BarNum -> DocS
+barNumber :: LyBarNumF
 barNumber i = ((text $ "%% Bar " ++ show i) <$>)
 
 
 
-type ScoreM a = StateT BarNum (ReaderT BarNumF Id) a
+type ScoreM a = StateT BarNum (ReaderT LyBarNumF Id) a
 
-runScoreM :: BarNumF -> BarNum -> ScoreM a -> a
+runScoreM :: LyBarNumF -> BarNum -> ScoreM a -> a
 runScoreM f n mf = fst $ runId $ runReaderT f $ runStateT n mf
 
 
@@ -106,7 +108,7 @@ runScoreM f n mf = fst $ runId $ runReaderT f $ runStateT n mf
 
 -- | A single linear score representation...
 --
-inlineScore :: BarNumF -> BarNum -> Score shape PhraseImage -> Doc
+inlineScore :: LyBarNumF -> BarNum -> Score shape PhraseImage -> Doc
 inlineScore f n sc = runScoreM f n $ renderInline sc
 
 
@@ -153,7 +155,7 @@ defnsScore (PRepeat (n,_) ps) = variableUse n <$> defnsScore ps
 defnsScore (PRepAlt (n,_) ps) = variableUse n <$> defnsScore ps
 
 
-defnsDefns :: BarNumF -> BarNum 
+defnsDefns :: LyBarNumF -> BarNum 
            -> ScorePlan shape DefinitionsElement 
            -> Score     shape PhraseImage
            -> Doc
