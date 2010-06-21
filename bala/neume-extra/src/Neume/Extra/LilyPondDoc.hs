@@ -236,7 +236,7 @@ simultaneous ds = text "<<" <$> indent 2 (vsep ds) <$> text ">>"
 -- | @\<\< ... \\\\ ... \>\>@ - print simultaneous expressions 
 -- with a double forward slash separator.
 overlay :: [Doc] -> Doc
-overlay = dblangles . vsep . punctuate (text " \\\\") . map spaceBraces
+overlay = dblangles . vsep . punctuate (text " \\\\")
 
 
 -- | @\\score@.
