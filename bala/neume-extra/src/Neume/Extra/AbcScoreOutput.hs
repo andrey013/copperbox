@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,6 +26,9 @@ module Neume.Extra.AbcScoreOutput
   , abcImageScore
   , stdAbcAlg
 
+  , AbcLineWidths
+  , four_bars_per_line
+
   , AbcBarNumF
   , barNumber
 
@@ -37,8 +42,10 @@ import Neume.Core.AbcTrafo
 import Neume.Core.Pitch
 import Neume.Core.SpellingMap
 import Neume.Core.Syntax
+import Neume.Core.Utils.Pretty ( DocS )
+import qualified Neume.Core.Utils.Stream        as S
 import Neume.Core.Utils.Stream ( Stream(..) )
-
+import Neume.Core.Utils.HList
 import Neume.Extra.AbcDoc
 import Neume.Extra.Common
 import Neume.Extra.ScoreSyntax
@@ -46,7 +53,8 @@ import Neume.Extra.ScoreSyntax
 import MonadLib                         -- package: monadLib
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
-import Prelude hiding ( repeat )
+import qualified Prelude as Pre
+import Prelude hiding ( repeat, length )
 
 -- Note - this needs to be at the type of @Score@ so that 
 -- relative-pitch transformations can be statefully chained.
@@ -86,13 +94,15 @@ stdAbcAlg spell_map unit_dur = AbcImageAlg
 
 --------------------------------------------------------------------------------
 
-type AbcBarNumF = BarNum -> Maybe Doc
+type AbcBarNumF = BarNum -> DocS
 
 barNumber :: AbcBarNumF
-barNumber i = Just $ abcComment $ "Bar " ++ show i
+barNumber i = \d -> (abcComment $ "Bar " ++ show i) <$> d
 
 type AbcLineWidths = Stream Int
 
+four_bars_per_line :: AbcLineWidths
+four_bars_per_line = S.repeat 4
 
 -- Interspersing bars:
 --
@@ -124,13 +134,65 @@ type AbcLineWidths = Stream Int
 --
 
 
+data LeftPunct = LP_NONE | LP_REPEAT | LP_ALT Int
+  deriving (Eq)
+
+data RightPunct = RP_SGL | RP_DBL | RP_REPEAT
+  deriving (Eq)
+
+-- No - this structure doesn't allow easy adding of the 
+-- punctuation tip to the last bar
+--
+data CollectBuffer = CollectBuffer 
+      { cb_accumulator  :: H Doc
+      , right_tip       :: Maybe (Doc, RightPunct)
+      , next_left_punct :: LeftPunct                    -- usually LP_NONE
+      }
 
 
+bufferZero :: CollectBuffer
+bufferZero = CollectBuffer emptyH Nothing LP_NONE
 
-type ScoreM a = StateT BarNum (ReaderT AbcBarNumF Id) a
+finalize :: CollectBuffer -> [Doc]
+finalize (CollectBuffer acc Nothing      _) = toListH acc
+finalize (CollectBuffer acc (Just (d,r)) _) = 
+    toListH $ acc `snocH` (suffixRP d $ promote r)
+  where
+    promote RP_SGL = RP_DBL
+    promote z      = z
 
-runScoreM :: AbcBarNumF -> BarNum -> ScoreM a -> a
-runScoreM f n mf = fst $ runId $ runReaderT f $ runStateT n mf
+newtype ScoreM a = ScoreM { getScoreM :: StateT CollectBuffer 
+                                        (StateT BarNum 
+                                        (ReaderT AbcBarNumF Id)) a }
+
+instance Functor ScoreM where
+  fmap f = ScoreM . fmap f . getScoreM
+
+instance Monad ScoreM where
+  return a = ScoreM $ return a
+  f >>= k  = ScoreM $ getScoreM f >>= getScoreM . k
+
+
+-- BarNum for the state instance...
+
+instance StateM ScoreM BarNum where
+  get   = ScoreM $ lift get
+  set a = ScoreM $ lift $ set a
+
+instance ReaderM ScoreM AbcBarNumF where
+  ask   = ScoreM $ lift $ lift $ ask
+
+
+runScoreM :: AbcBarNumF -> BarNum -> ScoreM a -> CollectBuffer
+runScoreM f n mf = post $ runId 
+                        $ runReaderT f 
+                        $ runStateT  n 
+                        $ runStateT  bufferZero 
+                        $ getScoreM mf
+  where
+    post ((_,b),_) = b
+  
+
 
 
 
@@ -138,89 +200,115 @@ runScoreM f n mf = fst $ runId $ runReaderT f $ runStateT n mf
 
 -- | A single linear score representation...
 --
-inlineScore :: AbcBarNumF -> BarNum -> Score shape PhraseImage -> Doc
-inlineScore f n sc = vsep $ contTraf $ runScoreM f n $ renderInline sc
-  where
-    contTraf = id -- TODO
+inlineScore :: AbcBarNumF -> AbcLineWidths -> BarNum 
+            -> Score shape PhraseImage 
+            -> Doc
+inlineScore f lw n sc = 
+    addLineConts lw $ finalize $ runScoreM f n $ renderInline sc
 
 
-renderInline :: Score shape PhraseImage -> ScoreM [Doc]
-renderInline Nil              = return []
-
-renderInline (Linear e xs)    = do 
-    { zs  <- phraseImages e
-    ; ds  <- renderInline xs
-    ; case ds of 
-        [] -> return $ linearFinal zs
-        _  -> return $ linear zs ++ ds
-    }
+addLineConts :: AbcLineWidths -> [Doc] -> Doc
+addLineConts abclw ds = vsep $ step ds abclw where
+    step [] _          = []
+    step xs (n ::: sn) = let (ys,zs) = splitAt n xs 
+                         in contLines ys : step zs sn
  
-renderInline (Repeat e xs)    = do 
-    { start <- initialBar
-    ; zs    <- phraseImages e
-    ; ds    <- renderInline xs
-    ; case start of
-        True -> return $ repeatInitial zs ++ ds
-        _    -> return $ repeat zs ++ ds
-    }
-
-{-                                 
-renderInline (RepAlt e es xs) = do { d1  <- concatPhraseImage e
-                                   ; d2  <- mapM concatPhraseImage es
-                                   ; d3  <- renderInline xs
-                                   ; let n = length es
-                                   ; return $  (repeatvolta n d1) 
-                                           <$> (alternative d2)
-                                           <$> d3
-                                   }
-                    
--}
-
-initialBar :: ScoreM Bool
-initialBar = liftM (<=1) get
+contLines :: [Doc] -> Doc
+contLines []     = empty
+contLines [e]    = e
+contLines (e:es) = e <> lineCont <$> contLines es 
 
 
-phraseImages :: PhraseImage -> ScoreM [(Maybe Doc,Doc)]
-phraseImages (Phrase xs) = mapM barImage xs
+renderInline :: Score shape PhraseImage -> ScoreM ()
+renderInline Nil              = return ()
+renderInline (Linear e xs)    = phraseImages e >> renderInline xs
+renderInline (Repeat e xs)    = repeated e >> renderInline xs
+renderInline (RepAlt e es xs) = repeatAlt e es >> renderInline xs
 
 
-barImage :: BarImage -> ScoreM (Maybe Doc, Doc)
+
+repeated :: PhraseImage -> ScoreM ()
+repeated e = start_REP >> phraseImages e >> end_REP
+
+-- Note - the end of of the initial section (before the first 
+-- alternative)  is just a single bar.
+--
+repeatAlt :: PhraseImage -> [PhraseImage] -> ScoreM ()
+repeatAlt e es = 
+    start_REP >> phraseImages e >> zipWithM_ fn es [0..] >> end_DBL
+  where
+    fn a n = start_ALT n >> phraseImages a >> end_REP
+ 
+
+
+phraseImages :: PhraseImage -> ScoreM ()
+phraseImages (Phrase xs) = mapM_ (barImage >=> fn) xs
+  where
+    fn (df,d) = snocBar df d
+
+barImage :: BarImage -> ScoreM (DocS, Doc)
 barImage d = sets (\s -> (s,s+1)) >>= \n  ->
              ask                  >>= \f  ->
              return (f n, d)
 
 
-linear :: [(Maybe Doc,Doc)] -> [Doc]
-linear = map fn where
-  fn (c, d) = mbLines c d <+> singleBar  
 
-linearFinal :: [(Maybe Doc,Doc)] -> [Doc]
-linearFinal []      = []
-linearFinal (x:xs)  = step x xs
+-- NOTE - can only set left punctation when right tip holds data.
+-- This models dropping eliding printing a start-repeat for the 
+-- first bar of a score.
+--
+-- Note too, that left-punctuation is snoc-ed /after/ the current
+-- right tip.
+-- 
+setLP :: LeftPunct -> ScoreM () 
+setLP punct = setsCB_ fn
   where
-    step (c,d) []       = [mbLines c d <+> doubleBar]
-    step (c,d) (y:ys)   = (mbLines c d <+> singleBar) : step y ys
-    
+    fn buf = maybe buf sk $ right_tip buf
+      where
+        sk _ = buf { next_left_punct = punct }  
+
+start_REP :: ScoreM () 
+start_REP = setLP LP_REPEAT
+
+start_ALT :: Int -> ScoreM ()
+start_ALT n = setLP (LP_ALT n)
+
+setRP :: RightPunct -> ScoreM ()
+setRP punct = setsCB_ fn 
+  where
+    fn buf = maybe buf sk $ right_tip buf
+      where
+        sk (body,_) = buf { right_tip = Just (body,punct) }  
+
+end_REP   :: ScoreM () 
+end_REP    = setRP RP_REPEAT
+
+end_DBL   :: ScoreM () 
+end_DBL    = setRP RP_DBL
+
+snocBar :: DocS -> Doc -> ScoreM ()
+snocBar bartraf img = setsCB_ fn
+   where
+     fn buf = CollectBuffer new_acc (Just new_tip) LP_NONE 
+       where 
+         leftF   = prefixLP (next_left_punct buf) 
+         new_tip = (bartraf $ leftF img, RP_SGL) 
+         new_acc = case right_tip buf of 
+                     Nothing    -> cb_accumulator buf
+                     Just (b,p) -> cb_accumulator buf `snocH` suffixRP b p
 
 
-repeat :: [(Maybe Doc,Doc)] -> [Doc]
-repeat []         = []
-repeat ((s,t):xs) = intraRepeat (s, lrepeat <+> t) xs
 
-repeatInitial :: [(Maybe Doc,Doc)] -> [Doc]
-repeatInitial []         = []
-repeatInitial ((s,t):xs) = intraRepeat (s, t) xs   -- no initial repeat symbol
+setsCB_ :: (CollectBuffer -> CollectBuffer) -> ScoreM ()
+setsCB_ f = ScoreM $ get >>= \cb -> set (f cb)
 
+prefixLP :: LeftPunct -> Doc -> Doc
+prefixLP LP_NONE    d = d
+prefixLP LP_REPEAT  d = lrepeat <+> d
+prefixLP (LP_ALT n) d = alternative n <+> d
 
-intraRepeat :: (Maybe Doc,Doc) -> [(Maybe Doc,Doc)] -> [Doc]
-intraRepeat (c,d) []     = [mbLines c d <+> rrepeat]
-intraRepeat (c,d) (y:ys) = (mbLines c d <+> singleBar) : intraRepeat y ys 
-
-
-mbLines :: Maybe Doc -> Doc -> Doc
-mbLines Nothing  d     = d
-mbLines (Just c) d     = c <$> d
-
-
-
+suffixRP :: Doc -> RightPunct -> Doc
+suffixRP d RP_SGL     = d <+> singleBar
+suffixRP d RP_DBL     = d <+> doubleBar
+suffixRP d RP_REPEAT  = d <+> rrepeat
 

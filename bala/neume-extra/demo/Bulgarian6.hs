@@ -55,7 +55,8 @@ lilypond_full =  version "2.12.2"
 --
 
 score_doc_abc :: Doc
-score_doc_abc = ABC.inlineScore ABC.barNumber 1 b6_score_abc
+score_doc_abc = 
+    ABC.inlineScore ABC.barNumber ABC.four_bars_per_line 1 b6_score_abc
 
 b6_score_abc :: Score (TRepeat :. TRepeat :. Z) PhraseImage
 b6_score_abc = ABC.abcImageScore (ABC.stdAbcAlg a_major (1%16)) b6_score
