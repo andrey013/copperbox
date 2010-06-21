@@ -26,8 +26,11 @@ module Neume.Extra.AbcScoreOutput
   , abcImageScore
   , stdAbcAlg
 
+  , overlay2
+
   , AbcLineWidths
   , four_bars_per_line
+  , lineWidths 
 
   , AbcBarNumF
   , barNumber
@@ -91,6 +94,17 @@ stdAbcAlg spell_map unit_dur = AbcImageAlg
     }
 
 
+--------------------------------------------------------------------------------
+
+type AbcPhraseOverlay = Phrase Doc
+
+overlay2 :: Score sh PhraseImage 
+         -> Score sh PhraseImage 
+         -> Score sh AbcPhraseOverlay
+overlay2 = scoreZipWith f
+  where 
+    f (Phrase xs) (Phrase ys) = Phrase $ longZipWith g xs ys
+    g d1 d2                   = d1 <+> overlay <$> d2
 
 --------------------------------------------------------------------------------
 
@@ -103,6 +117,14 @@ type AbcLineWidths = Stream Int
 
 four_bars_per_line :: AbcLineWidths
 four_bars_per_line = S.repeat 4
+
+-- repeat last in list forever...
+
+lineWidths :: [Int] -> AbcLineWidths
+lineWidths [] = error "lineWidths - empty list."
+lineWidths xs = let a  = tail xs
+                    ys = init xs 
+                in foldr (\e s -> e ::: s) (S.cycle a) ys 
 
 -- Interspersing bars:
 --

@@ -19,6 +19,7 @@ module Neume.Extra.Common
     BarNum
 
   , strip
+  , longZipWith
 
   ) where
 
@@ -33,3 +34,7 @@ type BarNum = Int
 strip :: a -> b -> b
 strip _ b = b
 
+longZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
+longZipWith _ xs     []     = xs
+longZipWith _ []     ys     = ys
+longZipWith f (x:xs) (y:ys) = f x y : longZipWith f xs ys
