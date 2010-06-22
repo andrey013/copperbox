@@ -5,8 +5,8 @@ module CabalDemo where
 import CPP
 import Precis.CabalPackage
 import Precis.Datatypes
+import Precis.Diff
 import Precis.HsSrcUtils
-import Precis.Properties
 import Precis.PathUtils
 
 import Language.Haskell.Exts ( Module, prettyPrint )
@@ -47,7 +47,7 @@ demo3 = do
                     
   case ans of
     Right modu -> putStrLn $ prettyPrint modu
-    Left err       -> error $ show err
+    Left err   -> error $ show err
 
 
 demo4 :: IO ()
@@ -59,8 +59,8 @@ demo4 = do
   print $ removePrefix "../samples/one.hs" "..\\samples\\two.hs"
 
 
-demo5 :: [Edit Char]
-demo5 = difference match conflict "ABCDEF" "feCba"
+demo5 :: [Edit4 Char]
+demo5 = diff4 match conflict "ABCDEF" "feCba"
   where
     match a b = toLower a == toLower b
     conflict  = (/=)

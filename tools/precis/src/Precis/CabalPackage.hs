@@ -16,7 +16,7 @@
 
 module Precis.CabalPackage 
   ( 
-    Extension
+    FileExtension
   , extractPrecis
   , known_extensions
 
@@ -26,36 +26,42 @@ import Precis.Datatypes
 import Precis.PathUtils
 import Precis.Utils
 
-import Distribution.ModuleName
-import Distribution.Package
-import Distribution.PackageDescription
-import Distribution.PackageDescription.Parse
-import Distribution.Verbosity
-import Distribution.Version
+import qualified Distribution.ModuleName                as D
+import qualified Distribution.Package                   as D
+import qualified Distribution.PackageDescription        as D
+import qualified Distribution.PackageDescription.Parse  as D
+import qualified Distribution.Verbosity                 as D
+import qualified Distribution.Version                   as D
 
 import Control.Monad
 import Data.List ( intersperse, nub )
 import System.Directory
 import System.FilePath
 
-type Extension = String
+type FileExtension = String
 
 
-extractPrecis :: FilePath -> [Extension] -> IO (Either CabalFileError CabalPrecis)
-extractPrecis cabal_file exts = do
-    exists <- doesFileExist cabal_file
-    if exists then extractP cabal_file exts `onSuccessM` post
+extractPrecis :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
+extractPrecis cabal_file known_exts = do
+    exists   <- doesFileExist cabal_file
+    if exists then sk 
               else return $ Left $ ERR_CABAL_FILE_MISSING cabal_file
   where
-    post = return . nubSourceFiles
+    sk = liftM (mapRight nubSourceFiles) $ extractP cabal_file known_exts
 
-
-known_extensions :: [Extension]
+-- | File extensions that Precis can handle:
+--
+-- > ["hs", "lhs"]
+--
+known_extensions :: [FileExtension]
 known_extensions = ["hs", "lhs"]
 
-extractP :: FilePath -> [String] -> IO (Either CabalFileError CabalPrecis)
+
+
+
+extractP :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
 extractP cabal_file_path exts =
-    safeReadPackageDescription normal cabal_file_path `onSuccessM` sk
+    safeReadPackageDescription D.normal cabal_file_path `onSuccessM` sk
   where
     root_to_cabal = dropFileName cabal_file_path  
     sk gen_pkg = do { (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
@@ -68,39 +74,39 @@ extractP cabal_file_path exts =
                                  }
                     }
 
-type SafeGPD = Either CabalFileError GenericPackageDescription
+type SafeGPD = Either CabalFileError D.GenericPackageDescription
 
-safeReadPackageDescription :: Verbosity -> FilePath -> IO SafeGPD
+safeReadPackageDescription :: D.Verbosity -> FilePath -> IO SafeGPD
 safeReadPackageDescription verbo path = 
-  catch (liftM Right $ readPackageDescription verbo path)
+  catch (liftM Right $ D.readPackageDescription verbo path)
         (\e -> return $ Left $ ERR_CABAL_FILE_PARSE $ show e)
 
 --------------------------------------------------------------------------------
 -- Extract from Package description
 
-getName    :: GenericPackageDescription -> String
-getName    = extrNameText    . package . packageDescription 
+getName    :: D.GenericPackageDescription -> String
+getName    = extrNameText    . D.package . D.packageDescription 
 
-getVersion :: GenericPackageDescription -> String
-getVersion = extrVersionText . package . packageDescription 
+getVersion :: D.GenericPackageDescription -> String
+getVersion = extrVersionText . D.package . D.packageDescription 
                                   
 
-extrNameText :: PackageIdentifier  -> String
-extrNameText = fn . pkgName
-  where fn (PackageName str) = str 
+extrNameText :: D.PackageIdentifier  -> String
+extrNameText = fn . D.pkgName
+  where fn (D.PackageName str) = str 
 
-extrVersionText :: PackageIdentifier -> String
-extrVersionText = fn . versionBranch . pkgVersion
+extrVersionText :: D.PackageIdentifier -> String
+extrVersionText = fn . D.versionBranch . D.pkgVersion
   where fn = concat . intersperse "." . map show
 
 
 
 -- extract source files
 
-getSourceFiles :: GenericPackageDescription 
-           -> FilePath
-           -> [String] 
-           -> IO ([SourceFile], [SourceFile])
+getSourceFiles :: D.GenericPackageDescription 
+               -> FilePath
+               -> [FileExtension] 
+               -> IO ([SourceFile], [SourceFile])
 getSourceFiles pkg_desc root exts = do 
     lib_mods <- mapM (resolveLibrary root exts)    $ allLibraries   pkg_desc
     exe_mods <- mapM (resolveExecutable root exts) $ allExecutables pkg_desc
@@ -110,47 +116,50 @@ getSourceFiles pkg_desc root exts = do
     fn (a,b) (xs,ys) = (a++xs,b++ys)                                 
 
 
-allLibraries :: GenericPackageDescription -> [Library]
-allLibraries = maybe [] fn . condLibrary 
+allLibraries :: D.GenericPackageDescription -> [D.Library]
+allLibraries = maybe [] fn . D.condLibrary 
   where
-   fn :: CondTree ConfVar [Dependency] Library -> [Library]
+   fn :: D.CondTree D.ConfVar [D.Dependency] D.Library -> [D.Library]
    fn = ctfold (:) []
 
  
-allExecutables :: GenericPackageDescription -> [Executable]
-allExecutables = concat . map (ctfold (:) [] . snd) . condExecutables
+allExecutables :: D.GenericPackageDescription -> [D.Executable]
+allExecutables = concat . map (ctfold (:) [] . snd) . D.condExecutables
 
 
-resolveLibrary :: FilePath -> [String] -> Library -> IO ([SourceFile], [SourceFile])
+resolveLibrary :: FilePath 
+               -> [String] 
+               -> D.Library 
+               -> IO ([SourceFile], [SourceFile])
 resolveLibrary root exts lib = liftM2 (,) (fn expos) (fn others)
   where
     fn mods                    = resolveFiles root src_paths mods exts
     (src_paths, expos, others) = libraryContents lib  
 
-libraryContents :: Library -> ([FilePath], [ModuleName], [ModuleName])
+libraryContents :: D.Library -> ([FilePath], [D.ModuleName], [D.ModuleName])
 libraryContents lib = (src_paths, expo_modules, other_modules)
   where
-    src_paths       = hsSourceDirs   $ libBuildInfo lib
-    expo_modules    = exposedModules lib
-    other_modules   = otherModules   $ libBuildInfo lib
+    src_paths       = D.hsSourceDirs   $ D.libBuildInfo lib
+    expo_modules    = D.exposedModules lib
+    other_modules   = D.otherModules   $ D.libBuildInfo lib
 
-resolveExecutable :: FilePath -> [String] -> Executable -> IO [SourceFile]
+resolveExecutable :: FilePath -> [String] -> D.Executable -> IO [SourceFile]
 resolveExecutable root exts exe = resolveFiles root src_paths mods exts
   where
     (src_paths, mods) = executableModules exe
 
 
-executableContents :: Executable -> ([FilePath], FilePath, [ModuleName])
+executableContents :: D.Executable -> ([FilePath], FilePath, [D.ModuleName])
 executableContents exe = (src_paths, exe_main_module, other_modules)
   where
-    src_paths       = hsSourceDirs   $ buildInfo exe
-    exe_main_module = modulePath exe
-    other_modules   = otherModules   $ buildInfo exe
+    src_paths       = D.hsSourceDirs   $ D.buildInfo exe
+    exe_main_module = D.modulePath exe
+    other_modules   = D.otherModules   $ D.buildInfo exe
 
 
 -- All executable modules considered internal...
 
-executableModules :: Executable -> ([FilePath], [ModuleName])
+executableModules :: D.Executable -> ([FilePath], [D.ModuleName])
 executableModules = fn . executableContents 
   where
     fn (as,exe,cs) = (as, exeModuleName exe : cs)
@@ -171,10 +180,10 @@ nubSourceFiles cp@(CabalPrecis _ _ _ exs ins) =
 --------------------------------------------------------------------------------
 -- General helper
 
-ctfold :: (a -> b -> b) -> b -> (CondTree v c a) -> b
-ctfold op initial node = foldr compfold x (condTreeComponents node)
+ctfold :: (a -> b -> b) -> b -> (D.CondTree v c a) -> b
+ctfold op initial node = foldr compfold x (D.condTreeComponents node)
   where
-    x                           = condTreeData node `op` initial
+    x                           = D.condTreeData node `op` initial
     compfold (_,t1, Nothing) b  = ctfold op b t1
     compfold (_,t1, Just t2) b  = ctfold op (ctfold op b t1) t2
                          

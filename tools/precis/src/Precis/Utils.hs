@@ -22,8 +22,10 @@ module Precis.Utils
   , H 
   , snocH
   , toListH
+
+  , mapLeft
+  , mapRight
  
-  , onSuccess
   , onSuccessM
 
   , pstar
@@ -50,11 +52,19 @@ snocH f a = f . (a:)
 toListH :: H a -> [a]
 toListH = ($ [])
 
-  
-onSuccess :: Monad m => Either a b -> (b -> m c) -> m (Either a c)
-onSuccess (Left a)  _  = return (Left a)
-onSuccess (Right b) mf = liftM Right $ mf b 
 
+-- Where\'s the bifunctor class when you need it...
+
+mapLeft :: (a -> s) -> Either a b -> Either s b
+mapLeft f (Left a)  = Left $ f a
+mapLeft _ (Right b) = Right b
+
+mapRight :: (b -> t) -> Either a b -> Either a t
+mapRight _ (Left a)  = Left a
+mapRight f (Right b) = Right $ f b
+
+
+  
   
 onSuccessM :: Monad m => m (Either a b) -> (b -> m c) -> m (Either a c)
 onSuccessM ma msk = ma >>= step 

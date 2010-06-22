@@ -24,21 +24,21 @@ module Precis.PathUtils
 
 import Precis.Datatypes
 
-import Distribution.ModuleName
+import qualified Distribution.ModuleName        as D
 
 import Data.List ( intersperse )
 import Data.Monoid
 import System.Directory
-import System.FilePath
+import qualified System.FilePath                as FP
 
 
 -- should have \".hs\" or \".lhs\" extension
-exeModuleName :: FilePath -> ModuleName
-exeModuleName = fromString . dropExtension
+exeModuleName :: FilePath -> D.ModuleName
+exeModuleName = D.fromString . FP.dropExtension
 
 resolveFiles :: FilePath 
              -> [FilePath] 
-             -> [ModuleName] 
+             -> [D.ModuleName] 
              -> [String]
              -> IO [SourceFile]
 resolveFiles path_root src_dirs mod_names exts = 
@@ -58,14 +58,14 @@ resolveFiles path_root src_dirs mod_names exts =
 
 findByExtension :: FilePath -> [String] -> IO (Maybe FilePath)
 findByExtension _    []     = return Nothing
-findByExtension path (e:es) = let full = addExtension path e in 
+findByExtension path (e:es) = let full = FP.addExtension path e in 
     doesFileExist full >>= \ans -> if ans then return (Just full) 
                                           else findByExtension path es
 
 
-moduleLongPath :: FilePath -> FilePath -> ModuleName -> FilePath
+moduleLongPath :: FilePath -> FilePath -> D.ModuleName -> FilePath
 moduleLongPath root src_dir mod_name = 
-    joinPath $ splitPath root ++ splitPath src_dir ++ components mod_name 
+    FP.joinPath $ FP.splitPath root ++ FP.splitPath src_dir ++ D.components mod_name 
 
 
 longCrossProduct :: Monoid a => [a] -> [b] -> [(a,b)]
@@ -73,15 +73,15 @@ longCrossProduct [] ys = map (\b -> (mempty,b)) ys
 longCrossProduct xs ys = [(a,b) | a <- xs , b <- ys ]
 
 
-mname :: ModuleName -> String 
-mname = concat . intersperse "." . components
+mname :: D.ModuleName -> String 
+mname = concat . intersperse "." . D.components
 
 --------------------------------------------------------------------------------
 
 removePrefix :: FilePath -> FilePath -> FilePath
-removePrefix pre path = joinPath $ step (fn pre) (fn path) 
+removePrefix pre path = FP.joinPath $ step (fn pre) (fn path) 
   where
-    fn                          = splitPath . normalise
+    fn                          = FP.splitPath . FP.normalise
     step (x:xs) (y:ys) | x == y = step xs ys 
     step _      ys              = ys
 
@@ -89,4 +89,4 @@ removePrefix pre path = joinPath $ step (fn pre) (fn path)
 
 resolveToCabalFileLoc :: FilePath -> FilePath -> FilePath
 resolveToCabalFileLoc cabal_file src_file = 
-    (dropFileName cabal_file) `combine` src_file 
+    (FP.dropFileName cabal_file) `FP.combine` src_file 
