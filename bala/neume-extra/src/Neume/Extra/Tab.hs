@@ -53,17 +53,8 @@ tabAlg :: (LyAbsPitchTrafo repr, LyRelDurTrafo repr)
 tabAlg = LilyPondImageAlg
     { glyph_printer     = renderGlyph pitch ppStringNumber
     , duration_trafo    = fmap runRelDurTrafo
-    , pitch_trafo       = fmap (runAbsPitchTrafo octaveTabF)
+    , pitch_trafo       = fmap (runAbsPitchTrafo octaveTab)
     }
-
--- for neume-core
-octaveTrebleF :: Octave -> Octave
-octaveTrebleF o = o-3
-
-octaveTabF :: Octave -> Octave
-octaveTabF o = o-4
-
-
 
 
 

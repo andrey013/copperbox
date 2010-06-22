@@ -420,7 +420,7 @@ repeatvolta i expr =
 -- | @\\alternative { \\n { ... } \\n { ... } ... }@
 --
 alternative :: [Doc] -> Doc
-alternative = (command "alternative" <+>) . nestBraces . vsep . map braces 
+alternative = (command "alternative" <+>) . nestBraces . vsep . map nestBraces
 
 
 

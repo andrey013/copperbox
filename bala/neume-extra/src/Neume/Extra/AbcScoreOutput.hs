@@ -122,9 +122,7 @@ four_bars_per_line = S.repeat 4
 
 lineWidths :: [Int] -> AbcLineWidths
 lineWidths [] = error "lineWidths - empty list."
-lineWidths xs = let a  = tail xs
-                    ys = init xs 
-                in foldr (\e s -> e ::: s) (S.cycle a) ys 
+lineWidths xs = S.trail xs
 
 -- Interspersing bars:
 --
