@@ -51,9 +51,12 @@ import Data.Char ( toLower )
 
 
 
--- | To print ABC,  Natural must be distinct from 
--- no-accidental. Hence the Maybe onAccidental.
-
+-- | To print ABC, /natural/ must be distinct from 
+-- /no-accidental/. 
+--
+-- Hence accidental is represented by @(Maybe Accidental)@ where
+-- Nothing is no-accidental.
+--
 data Pitch = Pitch 
       { pitch_letter    :: PitchLetter 
       , opt_accidental  :: Maybe Accidental
@@ -61,14 +64,19 @@ data Pitch = Pitch
       }
   deriving (Eq)
 
+
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Enum,Eq,Ord,Show)
 
+-- | Printable accidentals - double flat to double sharp.
+--
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Bounded,Enum,Eq,Ord)
 
 type Octave  = Int
 
+-- | Pitch representation without octave designation.
+--  
 data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
   deriving (Eq)
 
@@ -98,7 +106,10 @@ middle_c :: Pitch
 middle_c = Pitch C Nothing 4
 
 
-    
+-- | Count the semitones in a Pitch
+--
+-- For instance middle_c is 48.
+-- 
 semitoneCount :: Pitch -> Int
 semitoneCount (Pitch l mba o) = 
     letterSemis l + maybe 0 accidentalSemis mba + (12 * o)
@@ -118,11 +129,13 @@ semitoneCount (Pitch l mba o) =
     accidentalSemis DoubleFlat  = (-2)
 
 -- | Extract the @PitchLabel@ from a @Pitch@.
+--
 label :: Pitch -> PitchLabel
 label (Pitch l a _) = PitchLabel l a
 
 
 -- | Print the PitchLetter as an upper case letter.
+--
 toUpperLChar :: PitchLetter -> Char  
 toUpperLChar C         = 'C'  
 toUpperLChar D         = 'D'
@@ -133,6 +146,7 @@ toUpperLChar A         = 'A'
 toUpperLChar B         = 'B'   
 
 -- | Print the PitchLetter as a lower case letter.
+--
 toLowerLChar :: PitchLetter -> Char 
 toLowerLChar = toLower . toUpperLChar
 
@@ -146,19 +160,22 @@ setOctave :: Int -> Pitch -> Pitch
 setOctave i (Pitch l a _)   = Pitch l a i
 
   
--- | Modify the octave designator, e.g displace by (-4) for  
--- LilyPond.
+-- | Modify the octave designator, e.g displace by (@-4@) for  
+-- LilyPond tab staff notation.
+--
 displaceOctave :: Int -> Pitch -> Pitch
 displaceOctave i (Pitch l a o) = Pitch l a (o+i)
 
 
--- | Calculate the octave distance for LilyPond. 
--- The distance is modulo an interval of a fifth.
--- See Lilypond (6.1.6 - relative octaves)
+-- | Calculate the octave distance for LilyPond. The distance is 
+-- modulo an interval of a fifth. See Lilypond (6.1.6 - relative 
+-- octaves)
+--
 -- @
 --   ceses ->- fisis
 --   cbb   ->- f##   -- fourth 
 -- @
+--
 lyOctaveDist :: Pitch -> Pitch -> Int
 lyOctaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
   where
@@ -171,6 +188,7 @@ lyOctaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
 -- | The arithmetic distance between pitches is a /retrograde/ count of 
 -- the pitch letters. Retrograde meaning that the starting letter is 
 -- counted e.g. the distance from C4 to C4 is 1 not 0. 
+--
 arithmeticDist :: Pitch -> Pitch -> Int
 arithmeticDist p p' = retro $ lexval p' - lexval p
   where

@@ -160,3 +160,5 @@ durationMult :: Duration -> DurMultTrafo AbcMultiplier
 durationMult dur = (\r -> fn $ abcRepresentation r dur) <$> ask
   where
     fn = maybe IdenM id
+
+

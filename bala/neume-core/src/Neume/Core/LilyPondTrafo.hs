@@ -26,9 +26,13 @@ module Neume.Core.LilyPondTrafo
   , runRelPitchTrafo
 
   -- * Absolute pitch transformation
+  , OctaveS
   , LyAbsPitchTrafo(..)
   , LyAbsPitchStep(..)
   , runAbsPitchTrafo
+  , octaveTreble
+  , octaveTab
+
 
   -- * Relative duration transformation
   , OptDur
@@ -139,13 +143,33 @@ relativePitch p = get     >>= \ prev ->
 
 --------------------------------------------------------------------------------
 
-type AbsPitchTrafo a = Reader (Octave -> Octave) a
+type OctaveS = Octave -> Octave
+
+type AbsPitchTrafo a = Reader OctaveS a
  
 
 
 runAbsPitchTrafo :: (LyAbsPitchTrafo repr, LyAbsPitchStep gly)
-                 => (Octave -> Octave) -> repr gly -> repr gly
+                 => OctaveS -> repr gly -> repr gly
 runAbsPitchTrafo fn = runReader fn . lyAbsPitchTrafo
+
+
+
+-- | Octave modifier for normal note staff - treble clef.
+--
+-- > o' = o - 3
+--
+octaveTreble :: OctaveS
+octaveTreble = \o -> o-3
+
+-- | Octave modifier for tab staff.
+--
+-- > o' = o - 4 
+--
+octaveTab :: OctaveS
+octaveTab = \o -> o-4
+
+
 
 
 class LyAbsPitchTrafo repr where
