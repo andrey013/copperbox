@@ -53,6 +53,7 @@ toListH :: H a -> [a]
 toListH = ($ [])
 
 
+
 -- Where\'s the bifunctor class when you need it...
 
 mapLeft :: (a -> s) -> Either a b -> Either s b

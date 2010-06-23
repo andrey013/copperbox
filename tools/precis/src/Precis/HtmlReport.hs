@@ -131,7 +131,7 @@ compareSourceFiles new old = do
            (_, Left err)      -> failk (OLD old) err
        }                            
   where 
-    failk cmpmod err = do { tellParseFail (fmap sourceFileModule cmpmod)
+    failk cmpmod err = do { error "failk" -- tellParseFail (fmap sourceFileModule cmpmod)
                           ; tellHtml $ docModuleParseError cmpmod err
                           }
 
@@ -257,7 +257,7 @@ docHead pkg_name = header << doc_title +++ doc_style
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
 docStartSummary :: SourceFile -> Html
-docStartSummary src_file = h2 << (sourceFileModule src_file ++ ":")
+docStartSummary src_file = h2 << (componentName (module_name src_file) ++ ":")
 
 docModuleParseError :: CMP SourceFile -> ModuleParseError -> Html
 docModuleParseError (OLD _src) err = pre << (moduleParseErrorMsg err)
@@ -265,7 +265,7 @@ docModuleParseError (NEW _src) err = pre << (moduleParseErrorMsg err)
 
 
 
-docModulesDiffs :: [Edit3 StrName] -> [Edit3 StrName] -> Html
+docModulesDiffs :: [Edit3 ModName] -> [Edit3 ModName] -> Html
 docModulesDiffs expos privs  = expos_doc +++ privs_doc
   where
     expos_doc = maybe docNoExpos (withHeader2 "Exposed modules:")
@@ -291,13 +291,13 @@ docNoPrivs = p << txt where
             [ "No internal modules counted." ]
 
 
-modulesTable :: [Edit3 StrName] -> Maybe Html
+modulesTable :: [Edit3 ModName] -> Maybe Html
 modulesTable [] = Nothing
 modulesTable xs = Just $ table << zipWith fn xs [1::Int ..]
   where
-    fn (Add a)   i = makeRow i "+" a
-    fn (Equ a)   i = makeRow i ""  a
-    fn (Del a)   i = makeRow i "-" a
+    fn (Add a)   i = makeRow i "+" $ componentName a
+    fn (Equ a)   i = makeRow i ""  $ componentName a
+    fn (Del a)   i = makeRow i "-" $ componentName a
     
     makeRow i op name = tr << [ td << (show i), td << op, td << name ]
 

@@ -49,21 +49,20 @@ import Data.Maybe ( catMaybes )
 -- all modules (exposed and internal) in a cabal file
 
 
-diffExposedModules :: CabalPrecis -> CabalPrecis -> [Edit3 StrName]
+diffExposedModules :: CabalPrecis -> CabalPrecis -> [Edit3 ModName]
 diffExposedModules new old = diff3 (==) new' old'
   where
     new' = map getName $ exposed_modules new
     old' = map getName $ exposed_modules old
 
-diffInternalModules :: CabalPrecis -> CabalPrecis -> [Edit3 StrName]
+diffInternalModules :: CabalPrecis -> CabalPrecis -> [Edit3 ModName]
 diffInternalModules new old = diff3 (==) new' old'
   where
     new' = map getName $ internal_modules new
     old' = map getName $ internal_modules old
 
-getName :: SourceFile -> StrName
+getName :: SourceFile -> ModName
 getName (SourceFile m _)   = m
-getName (UnresolvedFile s) = s  
 
 
 

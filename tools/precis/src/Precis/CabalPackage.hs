@@ -16,12 +16,13 @@
 
 module Precis.CabalPackage 
   ( 
-    FileExtension
-  , extractPrecis
+   
+    extractPrecis
   , known_extensions
 
   ) where
 
+import Precis.ControlOperators
 import Precis.Datatypes
 import Precis.PathUtils
 import Precis.Utils
@@ -33,12 +34,18 @@ import qualified Distribution.PackageDescription.Parse  as D
 import qualified Distribution.Verbosity                 as D
 import qualified Distribution.Version                   as D
 
+import Control.Applicative
 import Control.Monad
 import Data.List ( intersperse, nub )
 import System.Directory
 import System.FilePath
 
-type FileExtension = String
+
+data ExePrecis = ExePrecis 
+      { exe_module_path     :: FilePath
+      , exe_other_modules   :: [D.ModuleName]
+      , exe_source_dirs     :: [FilePath]
+      }
 
 
 extractPrecis :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
@@ -71,6 +78,7 @@ extractP cabal_file_path exts =
                                  , path_to_cabal_file    = cabal_file_path
                                  , exposed_modules       = expos
                                  , internal_modules      = privs
+                                 , unresolved_modules    = []
                                  }
                     }
 
@@ -146,23 +154,29 @@ libraryContents lib = (src_paths, expo_modules, other_modules)
 resolveExecutable :: FilePath -> [String] -> D.Executable -> IO [SourceFile]
 resolveExecutable root exts exe = resolveFiles root src_paths mods exts
   where
-    (src_paths, mods) = executableModules exe
-
-
-executableContents :: D.Executable -> ([FilePath], FilePath, [D.ModuleName])
-executableContents exe = (src_paths, exe_main_module, other_modules)
-  where
-    src_paths       = D.hsSourceDirs   $ D.buildInfo exe
-    exe_main_module = D.modulePath exe
-    other_modules   = D.otherModules   $ D.buildInfo exe
+    (src_paths, mods) = ([],[]) -- executableModules exe
 
 
 -- All executable modules considered internal...
-
+{-
 executableModules :: D.Executable -> ([FilePath], [D.ModuleName])
 executableModules = fn . executableContents 
   where
-    fn (as,exe,cs) = (as, exeModuleName exe : cs)
+    fn (as,exe,cs) = (as, maybe cs (:cs) $ exeModuleName exe)
+    --
+    -- WARNING - this is bad ignoring an error...
+-}
+
+-- exe_module_path likely to have an extension but the 
+-- path will be relative to source_dirs
+
+executableContents :: D.Executable -> ExePrecis
+executableContents exe = ExePrecis
+      { exe_module_path     = D.modulePath exe
+      , exe_other_modules   = D.otherModules   $ D.buildInfo exe
+      , exe_source_dirs     = D.hsSourceDirs   $ D.buildInfo exe
+      }
+
 
 --------------------------------------------------------------------------------
 -- reconcile modules
@@ -171,11 +185,15 @@ executableModules = fn . executableContents
 -- conditional mechanism).
 --
 nubSourceFiles :: CabalPrecis -> CabalPrecis
-nubSourceFiles cp@(CabalPrecis _ _ _ exs ins) = 
-    cp { exposed_modules = exs', internal_modules = ins' }
+nubSourceFiles  = 
+    pstar2 (\xs ys s  -> let (xs',ys') = differentiate xs ys  
+              in s { exposed_modules = xs', internal_modules = ys' })
+           exposed_modules internal_modules
   where
-    exs'  = nub exs
-    ins'  = filter (not . (`elem` exs')) $ nub ins 
+    differentiate xs ys = (xs', ys') where 
+       xs' = nub xs
+       ys' = filter (\x -> not (x `elem` xs')) $ nub ys
+ 
 
 --------------------------------------------------------------------------------
 -- General helper
@@ -188,3 +206,50 @@ ctfold op initial node = foldr compfold x (D.condTreeComponents node)
     compfold (_,t1, Just t2) b  = ctfold op (ctfold op b t1) t2
                          
 
+--------------------------------------------------------------------------------
+--
+
+data REnv = REnv { root_path :: FilePath, known_exts :: [FileExtension] }
+
+newtype ResolverM a = ResolverM { getResolverM :: REnv -> IO a }
+
+instance Functor ResolverM where
+  fmap f mf = ResolverM $ \env -> getResolverM mf env >>= \a -> return (f a)
+
+instance Applicative ResolverM where
+  pure a   = ResolverM $ \_   -> return a
+  af <*> a = ResolverM $ \env -> getResolverM af env >>= \f ->
+                                 liftM f (getResolverM a  env)
+
+
+instance Monad ResolverM where
+  return a = ResolverM $ \_   -> return a
+  m >>= k  = ResolverM $ \env -> getResolverM m env >>= \a -> 
+                                 getResolverM (k a) env
+
+
+ask :: ResolverM REnv
+ask = ResolverM $ \env -> return env
+
+asks :: (REnv -> a) -> ResolverM a
+asks f = liftM f ask
+
+liftIO :: IO a -> ResolverM a
+liftIO ma = ResolverM $ \_ -> ma
+
+validFile :: FilePath -> ResolverM (Maybe FilePath)
+validFile path = valid (liftIO . doesFileExist) path
+
+resolve :: FilePath -> D.ModuleName 
+                    -> ResolverM (Either UnresolvedModule SourceFile)
+resolve rel_src_dir modu_name = 
+    asks root_path  >>= \root -> 
+    asks known_exts >>= \exts ->
+    firstSuccess (validFile . resPath root) exts >>= \ans ->
+    case ans of 
+      Nothing -> return $ Left (UnresolvedModule modu_name)
+      Just path -> return $ Right (srcFile path)
+
+  where
+    resPath root = \ext -> buildFullPath root rel_src_dir modu_name ext
+    srcFile full_path = SourceFile modu_name full_path

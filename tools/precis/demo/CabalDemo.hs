@@ -24,8 +24,6 @@ runExtract path = do
       Right cfg -> return cfg
 
 fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
-fullParseModule (UnresolvedFile name) = 
-    return $ Left $ ERR_MODULE_FILE_MISSING name
 fullParseModule (SourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
     return $ readModule mx_src

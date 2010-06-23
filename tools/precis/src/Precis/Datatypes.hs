@@ -16,15 +16,18 @@
 
 module Precis.Datatypes
   (
-    StrName
-  , TextRep
+    TextRep
+  , StrName
+  , ModName
+
   , CabalFileError(..)
   , cabalFileErrorMsg
 
   , CabalPrecis(..)
   , SourceFile(..)
   , sourceFile 
-  , sourceFileModule
+  , UnresolvedModule(..)
+  , componentName
 
   , MacroExpandedSrcFile(..)
   , ModuleParseError(..)
@@ -44,7 +47,9 @@ module Precis.Datatypes
 
   ) where
 
+import qualified Distribution.ModuleName        as D
 
+import Data.List ( intersperse )
 import System.FilePath
 
 
@@ -53,8 +58,9 @@ import System.FilePath
 -- and symbols.
 --
 
-type StrName = String
 type TextRep = String
+type StrName = String
+type ModName = D.ModuleName
 
 data CabalFileError = ERR_CABAL_FILE_MISSING FilePath
                     | ERR_CABAL_FILE_PARSE   String
@@ -72,30 +78,29 @@ data CabalPrecis = CabalPrecis
       , path_to_cabal_file      :: FilePath
       , exposed_modules         :: [SourceFile]
       , internal_modules        :: [SourceFile]
+      , unresolved_modules      :: [UnresolvedModule]
       }
   deriving (Eq,Show)
 
 -- 
-data SourceFile
-      = SourceFile     { module_name            :: StrName
-                       , full_path_to           :: FilePath 
-                       }
-      | UnresolvedFile { unresolved_file_name   :: StrName }  
+data SourceFile = SourceFile     
+      { module_name            :: ModName
+      , full_path_to           :: FilePath 
+      }
+  deriving (Eq,Ord,Show)
+
+newtype UnresolvedModule = UnresolvedModule { unresolved_name :: ModName }
   deriving (Eq,Ord,Show)
 
 
 -- smart constructor
 
-sourceFile :: String -> FilePath -> SourceFile
+sourceFile :: ModName -> FilePath -> SourceFile
 sourceFile name path = SourceFile name (normalise path)
 
-
-
-sourceFileModule :: SourceFile -> StrName
-sourceFileModule (SourceFile n _)   = n
-sourceFileModule (UnresolvedFile n) = n     -- defer to unresolved
-
-
+-- "A.B.C"
+componentName :: ModName -> StrName
+componentName = concat . intersperse "." . D.components
 
 
 --------------------------------------------------------------------------------
