@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.HsSrcUtils
+-- Module      :  Precis.HsSrc.Utils
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.HsSrcUtils
+module Precis.HsSrc.Utils
   (
 
     readModule 
@@ -33,7 +33,7 @@ module Precis.HsSrcUtils
 
   ) where
 
-import Precis.Datatypes
+import Precis.HsSrc.Datatypes
 
 import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 

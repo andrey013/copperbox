@@ -1,5 +1,5 @@
 name:             precis
-version:          0.4.0
+version:          0.5.0
 license:          OtherLicense
 license-file:     LICENCE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,6 +14,9 @@ description:
   the dependency on CppHs.
   .
   CHANGES
+  0.4.0 to 0.5.0
+  .
+  * Major re-organization.
   .
   0.3.1 to 0.4.0
   .
@@ -45,21 +48,23 @@ library
   hs-source-dirs: src
 
   exposed-modules: 
-    Precis.CabalPackage,
-    Precis.Datatypes,
+    Precis.Cabal.CabalPackage,
+    Precis.Cabal.Datatypes,
+    Precis.Cabal.PathUtils,
     Precis.Diff,
-    Precis.HsSrcUtils,
+    Precis.HsSrc.Datatypes,
+    Precis.HsSrc.Utils,
     Precis.HtmlReport,
     Precis.ModuleProperties,
-    Precis.PathUtils,
-    Precis.PPShowS,
     Precis.ReportMonad,
     Precis.StyleSheet,
     Precis.TextOutput,
+    Precis.Utils.Common,  
+    Precis.Utils.ControlOperators,
+    Precis.Utils.PPShowS,
     Precis.VersionNumber
   
   other-modules:
-    Precis.Utils  
 
 executable precis
   main-is: Main.hs
@@ -68,18 +73,21 @@ executable precis
     
   other-modules:   
     CPP,
-    Precis.CabalPackage,
-    Precis.Datatypes,
+    Precis.Cabal.CabalPackage,
+    Precis.Cabal.Datatypes,
+    Precis.Cabal.PathUtils,
     Precis.Diff,
-    Precis.HsSrcUtils,
+    Precis.HsSrc.Datatypes,
+    Precis.HsSrc.Utils,
     Precis.HtmlReport,
     Precis.ModuleProperties,
-    Precis.PathUtils,
-    Precis.PPShowS,
     Precis.ReportMonad,
     Precis.StyleSheet,
     Precis.TextOutput,
-    Precis.Utils,
+    Precis.Utils.Common,  
+    Precis.Utils.ControlOperators,
+    Precis.Utils.PPShowS,
     Precis.VersionNumber
+
 
 

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.PPShowS
+-- Module      :  Precis.Utils.PPShowS
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.PPShowS
+module Precis.Utils.PPShowS
   (
 
     toString

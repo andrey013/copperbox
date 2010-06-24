@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.CabalPackage
+-- Module      :  Precis.Cabal.CabalPackage
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.CabalPackage 
+module Precis.Cabal.CabalPackage 
   ( 
    
     extractPrecis
@@ -22,10 +22,10 @@ module Precis.CabalPackage
 
   ) where
 
-import Precis.ControlOperators
-import Precis.Datatypes
-import Precis.PathUtils
-import Precis.Utils
+import Precis.Cabal.Datatypes
+import Precis.Cabal.PathUtils
+import Precis.Utils.Common
+import Precis.Utils.ControlOperators
 
 import qualified Distribution.ModuleName                as D
 import qualified Distribution.Package                   as D
@@ -34,7 +34,6 @@ import qualified Distribution.PackageDescription.Parse  as D
 import qualified Distribution.Verbosity                 as D
 import qualified Distribution.Version                   as D
 
-import Control.Applicative
 import Control.Monad
 import Data.List ( intersperse, nub )
 import System.Directory
@@ -67,15 +66,15 @@ known_extensions = ["hs", "lhs"]
 
 
 extractP :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
-extractP cabal_file_path exts =
-    safeReadPackageDescription D.normal cabal_file_path `onSuccessM` sk
+extractP cabal_file exts =
+    safeReadPackageDescription D.normal cabal_file `onSuccessM` sk
   where
-    root_to_cabal = dropFileName cabal_file_path  
+    root_to_cabal = dropFileName cabal_file
     sk gen_pkg = do { (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
                     ; return $ CabalPrecis 
                                  { package_name          = getName gen_pkg
                                  , package_version       = getVersion gen_pkg
-                                 , path_to_cabal_file    = cabal_file_path
+                                 , path_to_cabal_file    = cabalFilePath cabal_file
                                  , exposed_modules       = expos
                                  , internal_modules      = privs
                                  , unresolved_modules    = []
@@ -206,50 +205,3 @@ ctfold op initial node = foldr compfold x (D.condTreeComponents node)
     compfold (_,t1, Just t2) b  = ctfold op (ctfold op b t1) t2
                          
 
---------------------------------------------------------------------------------
---
-
-data REnv = REnv { root_path :: FilePath, known_exts :: [FileExtension] }
-
-newtype ResolverM a = ResolverM { getResolverM :: REnv -> IO a }
-
-instance Functor ResolverM where
-  fmap f mf = ResolverM $ \env -> getResolverM mf env >>= \a -> return (f a)
-
-instance Applicative ResolverM where
-  pure a   = ResolverM $ \_   -> return a
-  af <*> a = ResolverM $ \env -> getResolverM af env >>= \f ->
-                                 liftM f (getResolverM a  env)
-
-
-instance Monad ResolverM where
-  return a = ResolverM $ \_   -> return a
-  m >>= k  = ResolverM $ \env -> getResolverM m env >>= \a -> 
-                                 getResolverM (k a) env
-
-
-ask :: ResolverM REnv
-ask = ResolverM $ \env -> return env
-
-asks :: (REnv -> a) -> ResolverM a
-asks f = liftM f ask
-
-liftIO :: IO a -> ResolverM a
-liftIO ma = ResolverM $ \_ -> ma
-
-validFile :: FilePath -> ResolverM (Maybe FilePath)
-validFile path = valid (liftIO . doesFileExist) path
-
-resolve :: FilePath -> D.ModuleName 
-                    -> ResolverM (Either UnresolvedModule SourceFile)
-resolve rel_src_dir modu_name = 
-    asks root_path  >>= \root -> 
-    asks known_exts >>= \exts ->
-    firstSuccess (validFile . resPath root) exts >>= \ans ->
-    case ans of 
-      Nothing -> return $ Left (UnresolvedModule modu_name)
-      Just path -> return $ Right (srcFile path)
-
-  where
-    resPath root = \ext -> buildFullPath root rel_src_dir modu_name ext
-    srcFile full_path = SourceFile modu_name full_path

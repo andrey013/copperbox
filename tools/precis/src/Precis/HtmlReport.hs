@@ -22,13 +22,14 @@ module Precis.HtmlReport
 
   ) where
 
-import Precis.Datatypes
+import Precis.Cabal.Datatypes
 import Precis.Diff
-import Precis.StyleSheet
+import Precis.HsSrc.Datatypes
 import Precis.ModuleProperties
-import Precis.PPShowS ( toString, line )
 import Precis.ReportMonad
+import Precis.StyleSheet
 import Precis.TextOutput
+import Precis.Utils.PPShowS ( toString, line )
 
 import Language.Haskell.Exts ( Module )  -- package: haskell-src-exts
 import Text.XHtml hiding ( name )                     -- package: xhtml
@@ -257,7 +258,7 @@ docHead pkg_name = header << doc_title +++ doc_style
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
 docStartSummary :: SourceFile -> Html
-docStartSummary src_file = h2 << (componentName (module_name src_file) ++ ":")
+docStartSummary src_file = h2 << (module_name src_file ++ ":")
 
 docModuleParseError :: CMP SourceFile -> ModuleParseError -> Html
 docModuleParseError (OLD _src) err = pre << (moduleParseErrorMsg err)

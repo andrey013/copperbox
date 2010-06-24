@@ -32,7 +32,7 @@ module Precis.Diff
 
   ) where
 
-import Precis.Utils
+import Precis.Utils.Common
 
 import Data.List ( find )
 

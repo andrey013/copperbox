@@ -24,4 +24,4 @@ module Precis.VersionNumber
 -- | Version number
 --
 precis_version_number :: String
-precis_version_number = "0.4.0"
+precis_version_number = "0.5.0"

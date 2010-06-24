@@ -48,8 +48,10 @@ module Precis.ReportMonad
 
   ) where
 
-import Precis.Datatypes
-import Precis.Utils
+
+import Precis.Cabal.Datatypes
+import Precis.HsSrc.Datatypes
+import Precis.Utils.Common
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
 import Text.XHtml hiding ( name )               -- package: xhtml

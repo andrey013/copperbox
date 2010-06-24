@@ -21,9 +21,9 @@ module Precis.TextOutput
   , comparingMsg
   ) where
 
-import Precis.Datatypes
-import Precis.PPShowS
+import Precis.Cabal.Datatypes
 import Precis.ReportMonad
+import Precis.Utils.PPShowS
 
 import Data.Maybe
 

@@ -35,9 +35,10 @@ module Precis.ModuleProperties
 
   ) where
 
-import Precis.Datatypes
+import Precis.Cabal.Datatypes
 import Precis.Diff
-import Precis.HsSrcUtils
+import Precis.HsSrc.Datatypes
+import Precis.HsSrc.Utils
 
 import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
 
@@ -50,18 +51,19 @@ import Data.Maybe ( catMaybes )
 
 
 diffExposedModules :: CabalPrecis -> CabalPrecis -> [Edit3 ModName]
-diffExposedModules new old = diff3 (==) new' old'
+diffExposedModules new old = undefined -- diff3 (==) new' old'
   where
     new' = map getName $ exposed_modules new
     old' = map getName $ exposed_modules old
 
 diffInternalModules :: CabalPrecis -> CabalPrecis -> [Edit3 ModName]
-diffInternalModules new old = diff3 (==) new' old'
+diffInternalModules new old = undefined -- diff3 (==) new' old'
   where
     new' = map getName $ internal_modules new
     old' = map getName $ internal_modules old
 
-getName :: SourceFile -> ModName
+-- getName :: SourceFile -> ModName
+getName :: SourceFile -> String
 getName (SourceFile m _)   = m
 
 

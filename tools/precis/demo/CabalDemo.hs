@@ -3,13 +3,16 @@
 module CabalDemo where
 
 import CPP
-import Precis.CabalPackage
-import Precis.Datatypes
+import Precis.Cabal.CabalPackage
+import Precis.Cabal.Datatypes
+import Precis.Cabal.PathUtils
 import Precis.Diff
-import Precis.HsSrcUtils
-import Precis.PathUtils
+import Precis.HsSrc.Datatypes
+import Precis.HsSrc.Utils
 
 import Language.Haskell.Exts ( Module, prettyPrint )
+
+import qualified Distribution.ModuleName as D
 
 import Data.Char
 import System.FilePath

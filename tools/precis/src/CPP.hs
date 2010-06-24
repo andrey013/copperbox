@@ -21,7 +21,7 @@ module CPP
   , precisCpphsOptions
   ) where
 
-import Precis.Datatypes
+import Precis.HsSrc.Datatypes
 
 import Language.Preprocessor.Cpphs
 

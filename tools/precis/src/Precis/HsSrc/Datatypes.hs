@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.Datatypes
+-- Module      :  Precis.HsSrc.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,20 +14,10 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.Datatypes
+module Precis.HsSrc.Datatypes
   (
     TextRep
   , StrName
-  , ModName
-
-  , CabalFileError(..)
-  , cabalFileErrorMsg
-
-  , CabalPrecis(..)
-  , SourceFile(..)
-  , sourceFile 
-  , UnresolvedModule(..)
-  , componentName
 
   , MacroExpandedSrcFile(..)
   , ModuleParseError(..)
@@ -47,61 +37,14 @@ module Precis.Datatypes
 
   ) where
 
-import qualified Distribution.ModuleName        as D
+
 
 import Data.List ( intersperse )
 import System.FilePath
 
 
--- Don\'t use the Name type from haskell-src-exts.
--- Precis doesn\'t need its distinction between identifiers
--- and symbols.
---
-
 type TextRep = String
 type StrName = String
-type ModName = D.ModuleName
-
-data CabalFileError = ERR_CABAL_FILE_MISSING FilePath
-                    | ERR_CABAL_FILE_PARSE   String
-  deriving (Eq,Show)
-
-
-cabalFileErrorMsg :: CabalFileError -> String
-cabalFileErrorMsg (ERR_CABAL_FILE_MISSING s) = "*** Error: missing file - " ++ s
-cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = "*** Error: parse error - " ++ s
-
-
-data CabalPrecis = CabalPrecis
-      { package_name            :: StrName
-      , package_version         :: String
-      , path_to_cabal_file      :: FilePath
-      , exposed_modules         :: [SourceFile]
-      , internal_modules        :: [SourceFile]
-      , unresolved_modules      :: [UnresolvedModule]
-      }
-  deriving (Eq,Show)
-
--- 
-data SourceFile = SourceFile     
-      { module_name            :: ModName
-      , full_path_to           :: FilePath 
-      }
-  deriving (Eq,Ord,Show)
-
-newtype UnresolvedModule = UnresolvedModule { unresolved_name :: ModName }
-  deriving (Eq,Ord,Show)
-
-
--- smart constructor
-
-sourceFile :: ModName -> FilePath -> SourceFile
-sourceFile name path = SourceFile name (normalise path)
-
--- "A.B.C"
-componentName :: ModName -> StrName
-componentName = concat . intersperse "." . D.components
-
 
 --------------------------------------------------------------------------------
 -- Precis for individual source files

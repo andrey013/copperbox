@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.Utils
+-- Module      :  Precis.Utils.Common
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.Utils
+module Precis.Utils.Common
   (
     unlist
 

@@ -16,9 +16,10 @@
 module Main where
 
 import CPP
-import Precis.CabalPackage
-import Precis.Datatypes
-import Precis.HsSrcUtils
+import Precis.Cabal.CabalPackage
+import Precis.Cabal.Datatypes
+import Precis.HsSrc.Datatypes
+import Precis.HsSrc.Utils
 import Precis.HtmlReport
 import Precis.VersionNumber
 
