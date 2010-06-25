@@ -64,7 +64,6 @@ demo4 = do
   print $ splitPath "..\\samples\\two.hs"
   print $ normalise "../samples/one.hs" 
   print $ normalise "..\\samples\\two.hs"
-  print $ removePrefix "../samples/one.hs" "..\\samples\\two.hs"
 
 
 demo5 :: [Edit4 Char]

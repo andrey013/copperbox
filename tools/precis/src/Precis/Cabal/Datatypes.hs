@@ -27,13 +27,16 @@ module Precis.Cabal.Datatypes
   , CabalSourceDir
   , cabalSourceDir
   , directoriesToSource
+
+  , ModName
+  , modName
+  , getModName
   
   , ModuleDesc
   , moduleDesc  
   , moduleDescName
   , moduleDirectories
 
-  , ModName
 
   , CabalFileError(..)
   , cabalFileErrorMsg
@@ -47,7 +50,6 @@ module Precis.Cabal.Datatypes
   , SourceFile(..)
   , sourceFile 
   , UnresolvedModule(..)
-  , componentName
 
 
   ) where
@@ -106,8 +108,18 @@ directoriesToSource :: CabalSourceDir -> [FilePath]
 directoriesToSource = srcdir_path_to_split
 
 
+newtype ModName = ModName { mod_name :: String }
+  deriving (Eq,Ord,Show)
+
+modName :: D.ModuleName -> ModName
+modName = ModName . concat . intersperse "."  . D.components
+
+getModName :: ModName -> String
+getModName = mod_name
+
+
 data ModuleDesc = ModuleDesc 
-      { module_desc_name    :: String
+      { module_desc_name    :: ModName
       , module_components   :: [FilePath]
       }
   deriving (Eq,Ord,Show)
@@ -118,10 +130,10 @@ moduleDesc mname =
     ModuleDesc { module_desc_name = name, module_components = parts }
   where
     xs    = D.components mname
-    name  = concat $ intersperse "." xs
+    name  = ModName $ concat $ intersperse "." xs
     parts = map (++[pathSeparator]) xs
 
-moduleDescName :: ModuleDesc -> String
+moduleDescName :: ModuleDesc -> ModName
 moduleDescName = module_desc_name
 
 moduleDirectories :: ModuleDesc -> [FilePath]
@@ -185,12 +197,12 @@ cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = "*** Error: parse error - " ++ s
 
  
 data SourceFile = SourceFile     
-      { module_name            :: String
+      { module_name            :: ModName
       , full_path_to           :: FilePath 
       }
   deriving (Eq,Ord,Show)
 
-type ModName = D.ModuleName
+
 newtype UnresolvedModule = UnresolvedModule { unresolved_name :: ModName }
   deriving (Eq,Ord,Show)
 
@@ -198,9 +210,11 @@ newtype UnresolvedModule = UnresolvedModule { unresolved_name :: ModName }
 -- smart constructor
 
 sourceFile :: ModName -> FilePath -> SourceFile
-sourceFile name path = SourceFile (componentName name) (normalise path)
+sourceFile name path = SourceFile name (normalise path)
+
+{-
 
 -- "A.B.C"
 componentName :: ModName -> String
 componentName = concat . intersperse "." . D.components
-
+-}

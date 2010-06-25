@@ -260,7 +260,7 @@ docHead pkg_name = header << doc_title +++ doc_style
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
 docStartSummary :: SourceFile -> Html
-docStartSummary src_file = h2 << (module_name src_file ++ ":")
+docStartSummary src_file = h2 << ((getModName $ module_name src_file) ++ ":")
 
 docModuleParseError :: CMP SourceFile -> ModuleParseError -> Html
 docModuleParseError (OLD _src) err = pre << (moduleParseErrorMsg err)
@@ -298,9 +298,9 @@ modulesTable :: [Edit3 ModName] -> Maybe Html
 modulesTable [] = Nothing
 modulesTable xs = Just $ table << zipWith fn xs [1::Int ..]
   where
-    fn (Add a)   i = makeRow i "+" $ componentName a
-    fn (Equ a)   i = makeRow i ""  $ componentName a
-    fn (Del a)   i = makeRow i "-" $ componentName a
+    fn (Add a)   i = makeRow i "+" $ getModName a
+    fn (Equ a)   i = makeRow i ""  $ getModName a
+    fn (Del a)   i = makeRow i "-" $ getModName a
     
     makeRow i op name = tr << [ td << (show i), td << op, td << name ]
 
