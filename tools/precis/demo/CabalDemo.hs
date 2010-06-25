@@ -12,7 +12,9 @@ import Precis.HsSrc.Utils
 
 import Language.Haskell.Exts ( Module, prettyPrint )
 
-import qualified Distribution.ModuleName as D
+import qualified Distribution.ModuleName                as D
+import qualified Distribution.PackageDescription.Parse  as D
+import qualified Distribution.Verbosity                 as D
 
 import Data.Char
 import System.FilePath
@@ -21,7 +23,7 @@ import System.FilePath
 
 runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
-    ans <- extractPrecis path ["hs", "lhs"]
+    ans <- extractPrecis path
     case ans of
       Left err -> error $ show err
       Right cfg -> return cfg
@@ -37,8 +39,13 @@ demo1 = runExtract "../../_sample_data/mtl.cabal" >>= print
 
 demo2 :: IO ()
 demo2 = do 
-  cp <- runExtract "../../_sample_data/mtl.cabal"
+  cp <- runExtract "../../_sample_data/regex-posix.cabal"
   print cp
+
+demo2a :: IO ()
+demo2a = do
+  pd <- D.readPackageDescription  D.verbose "../../_sample_data/regex-posix.cabal"
+  print pd
 
 
 demo3 :: IO ()

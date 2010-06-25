@@ -62,7 +62,7 @@ makeReport :: ReportLevel
 makeReport lvl pf new old = liftM post $ execReportM pf lvl $ 
    do { packageNamesAndVersions new old
       ; moduleCountSummary      new old
-      ; compareExposedModules (exposed_modules new) (exposed_modules old)
+      ; compareLibraries (cond_libraries new) (cond_libraries old)
       }
   where
     post (hs,stats) = (assembleDoc (package_name new) hs, mkText stats)
@@ -100,19 +100,21 @@ warnOnNameDiff new_name old_name
 
 
 moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
-moduleCountSummary new old = 
+moduleCountSummary new old = undefined
+{-
     do { countDeletions incrRemovedModules expos 
        ; tellHtml $ docModulesDiffs expos privs
        }
   where
     expos = diffExposedModules  new old
     privs = diffInternalModules new old
+-}
 
 
+compareLibraries :: [CabalLibrary] -> [CabalLibrary] -> ReportM ()
+compareLibraries new old = undefined
 
-compareExposedModules :: [SourceFile] -> [SourceFile] -> ReportM ()
-compareExposedModules new old = 
-   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
+--   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
 
 compareSrcFileEdit :: Edit4 SourceFile -> ReportM ()
 compareSrcFileEdit (DIF a b) = compareSourceFiles a b

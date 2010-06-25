@@ -44,6 +44,10 @@ import System.Directory
 import qualified System.FilePath                as FP
 
 
+-- Are there any more useful manipulations than simply 
+-- resolving module_naames to file_paths?
+
+
 type FileExtension = String
 
 -- should have \".hs\" or \".lhs\" extension

@@ -39,9 +39,6 @@ module Precis.HsSrc.Datatypes
 
 
 
-import Data.List ( intersperse )
-import System.FilePath
-
 
 type TextRep = String
 type StrName = String

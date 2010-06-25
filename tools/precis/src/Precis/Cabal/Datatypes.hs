@@ -23,12 +23,15 @@ module Precis.Cabal.Datatypes
   , pathToCabalFile
   , directoriesToCabalFile
 
+  , ExeMainPath(..)
   , CabalSourceDir
   , cabalSourceDir
   , directoriesToSource
   
   , ModuleDesc
   , moduleDesc  
+  , moduleDescName
+  , moduleDirectories
 
   , ModName
 
@@ -36,6 +39,11 @@ module Precis.Cabal.Datatypes
   , cabalFileErrorMsg
 
   , CabalPrecis(..)
+  , CabalLibrary(..)
+  , CabalExe(..)
+
+
+
   , SourceFile(..)
   , sourceFile 
   , UnresolvedModule(..)
@@ -77,6 +85,9 @@ directoriesToCabalFile :: CabalFilePath -> [FilePath]
 directoriesToCabalFile = cabal_path_to_split
 
 
+newtype ExeMainPath = ExeMainPath { relPathToExeMain :: FilePath }
+  deriving (Eq,Ord,Show)
+
 data CabalSourceDir = CabalSourceDir
       { srcdir_rel_loc          :: FilePath
       , srcdir_path_to_split    :: [FilePath]
@@ -99,6 +110,8 @@ data ModuleDesc = ModuleDesc
       { module_desc_name    :: String
       , module_components   :: [FilePath]
       }
+  deriving (Eq,Ord,Show)
+
 
 moduleDesc :: D.ModuleName -> ModuleDesc
 moduleDesc mname = 
@@ -108,6 +121,55 @@ moduleDesc mname =
     name  = concat $ intersperse "." xs
     parts = map (++[pathSeparator]) xs
 
+moduleDescName :: ModuleDesc -> String
+moduleDescName = module_desc_name
+
+moduleDirectories :: ModuleDesc -> [FilePath]
+moduleDirectories = module_components
+
+-- Do we want /resolution/ during the building 
+-- the CabalPrecis or afterwards?
+-- 
+-- i.e. when do we query the file system to locate the modules? 
+
+
+-- Because of CondTree/Conditional a Cabal file can appear as
+-- though it contains more than one Library, some normalization
+-- has to be performed on this structure...
+--
+data CabalPrecis = CabalPrecis
+      { package_name            :: String
+      , package_version         :: String
+      , path_to_cabal_file      :: CabalFilePath
+      , cond_libraries          :: [CabalLibrary]
+      , cond_exes               :: [CabalExe]
+      }
+  deriving (Eq,Show)
+
+-- One library per cabal file / package.
+
+data CabalLibrary = CabalLibrary 
+      { library_src_dirs    :: [CabalSourceDir]
+      , public_modules      :: [ModuleDesc]
+      , private_modules     :: [ModuleDesc]
+      }
+  deriving (Eq,Ord,Show)    
+
+-- Zero / one or more exe per cabal file / package.
+-- The executable file will include the extension...
+
+data CabalExe = CabalExe
+      { exe_main_module     :: ExeMainPath
+      , exe_src_dirs        :: [CabalSourceDir]
+      , exe_other_modules   :: [ModuleDesc] 
+      }
+  deriving (Eq,Ord,Show)
+
+
+
+
+
+--------------------------------------------------------------------------------
 
 
 data CabalFileError = ERR_CABAL_FILE_MISSING FilePath
@@ -119,18 +181,9 @@ cabalFileErrorMsg :: CabalFileError -> String
 cabalFileErrorMsg (ERR_CABAL_FILE_MISSING s) = "*** Error: missing file - " ++ s
 cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = "*** Error: parse error - " ++ s
 
+-----
 
-data CabalPrecis = CabalPrecis
-      { package_name            :: String
-      , package_version         :: String
-      , path_to_cabal_file      :: CabalFilePath
-      , exposed_modules         :: [SourceFile]
-      , internal_modules        :: [SourceFile]
-      , unresolved_modules      :: [UnresolvedModule]
-      }
-  deriving (Eq,Show)
-
--- 
+ 
 data SourceFile = SourceFile     
       { module_name            :: String
       , full_path_to           :: FilePath 

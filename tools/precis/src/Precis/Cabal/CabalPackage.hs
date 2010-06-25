@@ -25,9 +25,7 @@ module Precis.Cabal.CabalPackage
 import Precis.Cabal.Datatypes
 import Precis.Cabal.PathUtils
 import Precis.Utils.Common
-import Precis.Utils.ControlOperators
 
-import qualified Distribution.ModuleName                as D
 import qualified Distribution.Package                   as D
 import qualified Distribution.PackageDescription        as D
 import qualified Distribution.PackageDescription.Parse  as D
@@ -35,92 +33,124 @@ import qualified Distribution.Verbosity                 as D
 import qualified Distribution.Version                   as D
 
 import Control.Monad
-import Data.List ( intersperse, nub )
+import Data.List ( intersperse )
 import System.Directory
-import System.FilePath
 
-
-data ExePrecis = ExePrecis 
-      { exe_module_path     :: FilePath
-      , exe_other_modules   :: [D.ModuleName]
-      , exe_source_dirs     :: [FilePath]
-      }
-
-
-extractPrecis :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
-extractPrecis cabal_file known_exts = do
-    exists   <- doesFileExist cabal_file
-    if exists then sk 
-              else return $ Left $ ERR_CABAL_FILE_MISSING cabal_file
-  where
-    sk = liftM (mapRight nubSourceFiles) $ extractP cabal_file known_exts
 
 -- | File extensions that Precis can handle:
 --
 -- > ["hs", "lhs"]
 --
+
 known_extensions :: [FileExtension]
 known_extensions = ["hs", "lhs"]
 
 
+extractPrecis :: FilePath -> IO (Either CabalFileError CabalPrecis)
+extractPrecis cabal_file =
+    doesFileExist cabal_file >>= \exists -> 
+    if exists then extractP cabal_file else cabalFileMissing cabal_file
+  
 
 
-extractP :: FilePath -> [FileExtension] -> IO (Either CabalFileError CabalPrecis)
-extractP cabal_file exts =
-    safeReadPackageDescription D.normal cabal_file `onSuccessM` sk
+cabalFileMissing :: FilePath -> IO (Either CabalFileError a)
+cabalFileMissing file = return $ Left $ ERR_CABAL_FILE_MISSING file
+
+
+
+extractP :: FilePath -> IO (Either CabalFileError CabalPrecis)
+extractP cabal_file =
+    liftM sk (safeReadGPD D.normal cabal_file)
   where
-    root_to_cabal = dropFileName cabal_file
-    sk gen_pkg = do { (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
-                    ; return $ CabalPrecis 
-                                 { package_name          = getName gen_pkg
-                                 , package_version       = getVersion gen_pkg
-                                 , path_to_cabal_file    = cabalFilePath cabal_file
-                                 , exposed_modules       = expos
-                                 , internal_modules      = privs
-                                 , unresolved_modules    = []
-                                 }
-                    }
+    sk = mapRight (extractCabalPrecis cabal_file)
 
-type SafeGPD = Either CabalFileError D.GenericPackageDescription
-
-safeReadPackageDescription :: D.Verbosity -> FilePath -> IO SafeGPD
-safeReadPackageDescription verbo path = 
+safeReadGPD :: D.Verbosity -> FilePath 
+            -> IO (Either CabalFileError D.GenericPackageDescription)
+safeReadGPD verbo path = 
   catch (liftM Right $ D.readPackageDescription verbo path)
         (\e -> return $ Left $ ERR_CABAL_FILE_PARSE $ show e)
+
+
+extractCabalPrecis :: FilePath -> D.GenericPackageDescription -> CabalPrecis
+extractCabalPrecis path gpd =  
+    CabalPrecis { package_name            = getName       gpd
+                , package_version         = getVersion    gpd
+                , path_to_cabal_file      = cabalFilePath path
+                , cond_libraries          = getLibraries  gpd
+                , cond_exes               = getExes       gpd
+                }
 
 --------------------------------------------------------------------------------
 -- Extract from Package description
 
 getName    :: D.GenericPackageDescription -> String
-getName    = extrNameText    . D.package . D.packageDescription 
+getName    = extractNameText    . D.package . D.packageDescription 
 
 getVersion :: D.GenericPackageDescription -> String
-getVersion = extrVersionText . D.package . D.packageDescription 
+getVersion = extractVersionText . D.package . D.packageDescription 
+
+
+-- Getting \"Libraries\" is complicated due to Conditions...
+--
+-- Here all libraries are extracted, it seems typical that the 
+-- Library within the PackageDescription is empty.
+--
+getLibraries :: D.GenericPackageDescription -> [CabalLibrary]
+getLibraries gpd = filter (not . emptyLibrary) $ mbCons x xs
+  where 
+    x  = fmap extractLibrary $ D.library $ D.packageDescription $ gpd
+    xs = fmap extractLibrary $ allLibraries $ gpd
+
+
+emptyLibrary :: CabalLibrary -> Bool
+emptyLibrary (CabalLibrary [] [] []) = True
+emptyLibrary _                       = False
+
+mbCons :: Maybe a -> [a] -> [a]
+mbCons opt xs = maybe xs (:xs) $ opt 
+
+
+-- Again, getting \"Executables\" is complicated by Conditions...
+--
+getExes :: D.GenericPackageDescription -> [CabalExe]
+getExes gpd = xs ++ ys
+   where 
+     xs = map extractExe $ allExecutables gpd
+     ys = map extractExe $ D.executables $ D.packageDescription gpd
                                   
 
-extrNameText :: D.PackageIdentifier  -> String
-extrNameText = fn . D.pkgName
+extractNameText :: D.PackageIdentifier  -> String
+extractNameText = fn . D.pkgName
   where fn (D.PackageName str) = str 
 
-extrVersionText :: D.PackageIdentifier -> String
-extrVersionText = fn . D.versionBranch . D.pkgVersion
+extractVersionText :: D.PackageIdentifier -> String
+extractVersionText = fn . D.versionBranch . D.pkgVersion
   where fn = concat . intersperse "." . map show
 
 
+extractLibrary :: D.Library -> CabalLibrary
+extractLibrary lib  = 
+    CabalLibrary { library_src_dirs = getSourceDirs  $ D.libBuildInfo lib
+                 , public_modules   = mkExpos lib
+                 , private_modules  = getPrivateModules $ D.libBuildInfo lib
+                 }
+  where
+    mkExpos = map moduleDesc . D.exposedModules
 
--- extract source files
 
-getSourceFiles :: D.GenericPackageDescription 
-               -> FilePath
-               -> [FileExtension] 
-               -> IO ([SourceFile], [SourceFile])
-getSourceFiles pkg_desc root exts = do 
-    lib_mods <- mapM (resolveLibrary root exts)    $ allLibraries   pkg_desc
-    exe_mods <- mapM (resolveExecutable root exts) $ allExecutables pkg_desc
-    let (lib_expos, lib_privs) = foldr fn ([],[]) lib_mods 
-    return (lib_expos, lib_privs ++ concat exe_mods)
-  where 
-    fn (a,b) (xs,ys) = (a++xs,b++ys)                                 
+
+extractExe :: D.Executable -> CabalExe
+extractExe exe = 
+    CabalExe { exe_main_module   = ExeMainPath       $ D.modulePath exe
+             , exe_src_dirs      = getSourceDirs     $ D.buildInfo exe
+             , exe_other_modules = getPrivateModules $ D.buildInfo exe
+             }
+
+getSourceDirs  :: D.BuildInfo -> [CabalSourceDir]
+getSourceDirs  = map cabalSourceDir . D.hsSourceDirs    
+
+getPrivateModules :: D.BuildInfo -> [ModuleDesc]
+getPrivateModules = map moduleDesc . D.otherModules   
 
 
 allLibraries :: D.GenericPackageDescription -> [D.Library]
@@ -134,65 +164,6 @@ allExecutables :: D.GenericPackageDescription -> [D.Executable]
 allExecutables = concat . map (ctfold (:) [] . snd) . D.condExecutables
 
 
-resolveLibrary :: FilePath 
-               -> [String] 
-               -> D.Library 
-               -> IO ([SourceFile], [SourceFile])
-resolveLibrary root exts lib = liftM2 (,) (fn expos) (fn others)
-  where
-    fn mods                    = resolveFiles root src_paths mods exts
-    (src_paths, expos, others) = libraryContents lib  
-
-libraryContents :: D.Library -> ([FilePath], [D.ModuleName], [D.ModuleName])
-libraryContents lib = (src_paths, expo_modules, other_modules)
-  where
-    src_paths       = D.hsSourceDirs   $ D.libBuildInfo lib
-    expo_modules    = D.exposedModules lib
-    other_modules   = D.otherModules   $ D.libBuildInfo lib
-
-resolveExecutable :: FilePath -> [String] -> D.Executable -> IO [SourceFile]
-resolveExecutable root exts exe = resolveFiles root src_paths mods exts
-  where
-    (src_paths, mods) = ([],[]) -- executableModules exe
-
-
--- All executable modules considered internal...
-{-
-executableModules :: D.Executable -> ([FilePath], [D.ModuleName])
-executableModules = fn . executableContents 
-  where
-    fn (as,exe,cs) = (as, maybe cs (:cs) $ exeModuleName exe)
-    --
-    -- WARNING - this is bad ignoring an error...
--}
-
--- exe_module_path likely to have an extension but the 
--- path will be relative to source_dirs
-
-executableContents :: D.Executable -> ExePrecis
-executableContents exe = ExePrecis
-      { exe_module_path     = D.modulePath exe
-      , exe_other_modules   = D.otherModules   $ D.buildInfo exe
-      , exe_source_dirs     = D.hsSourceDirs   $ D.buildInfo exe
-      }
-
-
---------------------------------------------------------------------------------
--- reconcile modules
-
--- Initially a precis may have dublicates (via Cabal\'s 
--- conditional mechanism).
---
-nubSourceFiles :: CabalPrecis -> CabalPrecis
-nubSourceFiles  = 
-    pstar2 (\xs ys s  -> let (xs',ys') = differentiate xs ys  
-              in s { exposed_modules = xs', internal_modules = ys' })
-           exposed_modules internal_modules
-  where
-    differentiate xs ys = (xs', ys') where 
-       xs' = nub xs
-       ys' = filter (\x -> not (x `elem` xs')) $ nub ys
- 
 
 --------------------------------------------------------------------------------
 -- General helper

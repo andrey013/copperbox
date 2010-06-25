@@ -84,8 +84,8 @@ precisExitFail i s = putStrLn s >> exitWith (ExitFailure i)
 
 runCompare :: (Maybe FilePath) -> FilePath -> FilePath -> IO ()
 runCompare mb_out new_cabal_file old_cabal_file = do 
-    ans1 <- extractPrecis new_cabal_file known_extensions
-    ans2 <- extractPrecis old_cabal_file known_extensions
+    ans1 <- extractPrecis new_cabal_file
+    ans2 <- extractPrecis old_cabal_file
 
     case (ans1,ans2) of
       (Right new_cp, Right old_cp) -> sk new_cp old_cp

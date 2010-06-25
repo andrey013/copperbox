@@ -60,7 +60,6 @@ instance Functor Edit3 where
 
 
 
-
 diff4 :: (a -> a -> Bool) -> (a -> a -> Bool) -> [a] -> [a] -> [Edit4 a]
 diff4 matches conflict as bs = toListH $ checkShort bs (checkLong as id)
   where
