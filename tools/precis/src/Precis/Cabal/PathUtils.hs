@@ -29,11 +29,13 @@ module Precis.Cabal.PathUtils
   ) where
 
 import Precis.Cabal.Datatypes
+import Precis.Utils.Common
 import Precis.Utils.ControlOperators
 
 import Control.Applicative
 import Control.Monad
 import Data.Foldable ( foldrM )
+import Data.List ( nub )
 import System.Directory
 import qualified System.FilePath                as FP
 
@@ -71,29 +73,41 @@ fullPath root src_dir modu_desc ext =
             , moduleDirectories       modu_desc
             ]
 
-publicModuleFiles :: CabalLibrary -> ResolveM ([UnresolvedModule],[SourceFile])
-publicModuleFiles lib = 
-    sourceFiles (library_src_dirs lib) (public_modules lib)
+
+publicModuleFiles   :: [CabalLibrary] 
+                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
+publicModuleFiles   = extractAll library_src_dirs public_modules
+
+privateModuleFiles  :: [CabalLibrary] 
+                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
+privateModuleFiles  = extractAll library_src_dirs private_modules
   
-privateModuleFiles :: CabalLibrary -> ResolveM ([UnresolvedModule],[SourceFile])
-privateModuleFiles lib = 
-    sourceFiles (library_src_dirs lib) (private_modules lib)
+exeModuleFiles      :: [CabalExe] 
+                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
+exeModuleFiles      = extractAll exe_src_dirs exe_other_modules
+
+extractAll :: (a -> [CabalSourceDir]) -> (a -> [ModuleDesc]) -> [a]
+           -> ResolveM ([UnresolvedModule],[HsSourceFile])
+extractAll srcF modF = liftM post . foldrM step (id,id) 
+  where
+    step a acc        = liftM (pconc acc) $ sourceFiles (srcF a) (modF a)
+
+    pconc (f,g) (a,b) = (a `appendH` f, b `appendH` g)
+
+    post (fs,gs)      = (nub $ toListH fs, nub $ toListH gs) 
   
-exeModuleFiles :: CabalExe -> ResolveM ([UnresolvedModule],[SourceFile])
-exeModuleFiles exe = 
-    sourceFiles (exe_src_dirs exe) (exe_other_modules exe) 
 
 
 sourceFiles :: [CabalSourceDir] -> [ModuleDesc] 
-            -> ResolveM ([UnresolvedModule],[SourceFile])
-sourceFiles src_dirs mods = foldrM fn ([],[]) mods
+            -> ResolveM (H UnresolvedModule,H HsSourceFile)
+sourceFiles src_dirs mods = foldrM fn (emptyH,emptyH) mods
   where
     fn md (us,ss) = resolveModuleLoc src_dirs md >>= \ans -> 
                     case ans of
                       Nothing   -> let m1 = UnresolvedModule $ moduleDescName md
-                                   in return (m1:us,ss)
-                      Just path -> let s1 = sourceFile (moduleDescName md) path
-                                   in return (us, s1:ss)
+                                   in return (m1 `consH` us,ss)
+                      Just path -> let s1 = hsSourceFile (moduleDescName md) path
+                                   in return (us, s1 `consH` ss)
 
 
 --------------------------------------------------------------------------------

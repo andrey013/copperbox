@@ -47,8 +47,8 @@ module Precis.Cabal.Datatypes
 
 
 
-  , SourceFile(..)
-  , sourceFile 
+  , HsSourceFile(..)
+  , hsSourceFile 
   , UnresolvedModule(..)
 
 
@@ -196,7 +196,7 @@ cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = "*** Error: parse error - " ++ s
 -----
 
  
-data SourceFile = SourceFile     
+data HsSourceFile = HsSourceFile     
       { module_name            :: ModName
       , full_path_to           :: FilePath 
       }
@@ -209,8 +209,8 @@ newtype UnresolvedModule = UnresolvedModule { unresolved_name :: ModName }
 
 -- smart constructor
 
-sourceFile :: ModName -> FilePath -> SourceFile
-sourceFile name path = SourceFile name (normalise path)
+hsSourceFile :: ModName -> FilePath -> HsSourceFile
+hsSourceFile name path = HsSourceFile name (normalise path)
 
 {-
 

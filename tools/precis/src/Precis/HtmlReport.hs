@@ -116,14 +116,14 @@ compareLibraries new old = undefined
 
 --   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
 
-compareSrcFileEdit :: Edit4 SourceFile -> ReportM ()
-compareSrcFileEdit (DIF a b) = compareSourceFiles a b
+compareSrcFileEdit :: Edit4 HsSourceFile -> ReportM ()
+compareSrcFileEdit (DIF a b) = compareHsSourceFiles a b
 compareSrcFileEdit _         = return ()
 
 
 
-compareSourceFiles :: SourceFile -> SourceFile -> ReportM ()
-compareSourceFiles new old = do 
+compareHsSourceFiles :: HsSourceFile -> HsSourceFile -> ReportM ()
+compareHsSourceFiles new old = do 
     do { tellHtml $ docStartSummary new
        ; pf      <- askParseFun
        ; new_ans <- liftIO $ pf new
@@ -259,10 +259,10 @@ docHead pkg_name = header << doc_title +++ doc_style
     doc_title = thetitle << ("Change summary: " +++ pkg_name)
     doc_style = style ! [thetype "text/css"] << inline_stylesheet
 
-docStartSummary :: SourceFile -> Html
+docStartSummary :: HsSourceFile -> Html
 docStartSummary src_file = h2 << ((getModName $ module_name src_file) ++ ":")
 
-docModuleParseError :: CMP SourceFile -> ModuleParseError -> Html
+docModuleParseError :: CMP HsSourceFile -> ModuleParseError -> Html
 docModuleParseError (OLD _src) err = pre << (moduleParseErrorMsg err)
 docModuleParseError (NEW _src) err = pre << (moduleParseErrorMsg err)
 

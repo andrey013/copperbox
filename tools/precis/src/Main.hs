@@ -113,8 +113,8 @@ shortReport new_cp old_cp =
 
 -- | macro-expand and parse
 --
-fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
-fullParseModule (SourceFile _ file_name) = do
+fullParseModule :: HsSourceFile -> IO (Either ModuleParseError Module)
+fullParseModule (HsSourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
     return $ readModule mx_src
 

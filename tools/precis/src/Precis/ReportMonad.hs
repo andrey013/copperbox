@@ -98,7 +98,7 @@ data ChangeStats = ChangeStats
       }
   deriving (Show)
 
-type ModuleParseFunction = SourceFile -> IO (Either ModuleParseError Module)
+type ModuleParseFunction = HsSourceFile -> IO (Either ModuleParseError Module)
 
 data ReportLevel = JUST_MSG | MSG_AND_HTML
   deriving (Eq,Show)

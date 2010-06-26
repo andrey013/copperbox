@@ -17,8 +17,8 @@
 module Precis.Cabal.CabalPackage 
   ( 
    
-    extractPrecis
-  , known_extensions
+    known_extensions
+  , extractPrecis
 
   ) where
 
@@ -62,7 +62,7 @@ extractP :: FilePath -> IO (Either CabalFileError CabalPrecis)
 extractP cabal_file =
     liftM sk (safeReadGPD D.normal cabal_file)
   where
-    sk = mapRight (extractCabalPrecis cabal_file)
+    sk = mapRight (buildPrecis cabal_file)
 
 safeReadGPD :: D.Verbosity -> FilePath 
             -> IO (Either CabalFileError D.GenericPackageDescription)
@@ -71,14 +71,16 @@ safeReadGPD verbo path =
         (\e -> return $ Left $ ERR_CABAL_FILE_PARSE $ show e)
 
 
-extractCabalPrecis :: FilePath -> D.GenericPackageDescription -> CabalPrecis
-extractCabalPrecis path gpd =  
+buildPrecis :: FilePath -> D.GenericPackageDescription -> CabalPrecis
+buildPrecis path gpd =  
     CabalPrecis { package_name            = getName       gpd
                 , package_version         = getVersion    gpd
                 , path_to_cabal_file      = cabalFilePath path
                 , cond_libraries          = getLibraries  gpd
                 , cond_exes               = getExes       gpd
                 }
+
+
 
 --------------------------------------------------------------------------------
 -- Extract from Package description

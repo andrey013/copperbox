@@ -67,7 +67,7 @@ diffInternalModules new old = undefined -- diff3 (==) new' old'
 
 
 
-diffExposedSrcFiles :: [SourceFile] -> [SourceFile] -> [Edit4 SourceFile]
+diffExposedSrcFiles :: [HsSourceFile] -> [HsSourceFile] -> [Edit4 HsSourceFile]
 diffExposedSrcFiles new old = diff4 equal (/=) new old 
   where
     s `equal` t = module_name s == module_name t
