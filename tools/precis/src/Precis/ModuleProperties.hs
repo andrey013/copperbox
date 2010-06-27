@@ -35,7 +35,7 @@ module Precis.ModuleProperties
 
   ) where
 
-import Precis.Cabal.Datatypes
+import Precis.Cabal
 import Precis.Diff
 import Precis.HsSrc.Datatypes
 import Precis.HsSrc.Utils
@@ -43,7 +43,6 @@ import Precis.HsSrc.Utils
 import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
 
 import Data.Maybe ( catMaybes )
-
 
 
 

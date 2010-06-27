@@ -47,7 +47,8 @@ library
                   
   hs-source-dirs: src
 
-  exposed-modules: 
+  exposed-modules:
+    Precis.Cabal, 
     Precis.Cabal.CabalPackage,
     Precis.Cabal.Datatypes,
     Precis.Cabal.PathUtils,
