@@ -23,7 +23,7 @@ module Precis.Cabal.CabalPackage
   ) where
 
 import Precis.Cabal.Datatypes
-import Precis.Cabal.PathUtils
+import Precis.Cabal.InterimDatatypes
 import Precis.Utils.Common
 
 import qualified Distribution.Package                   as D
@@ -73,11 +73,11 @@ safeReadGPD verbo path =
 
 buildPrecis :: FilePath -> D.GenericPackageDescription -> CabalPrecis
 buildPrecis path gpd =  
-    CabalPrecis { package_name            = getName       gpd
-                , package_version         = getVersion    gpd
-                , path_to_cabal_file      = cabalFilePath path
-                , cond_libraries          = getLibraries  gpd
-                , cond_exes               = getExes       gpd
+    CabalPrecis { pkg_name              = getName       gpd
+                , pkg_version           = getVersion    gpd
+                , path_to_cabal_file    = cabalFilePath path
+                , cond_libraries        = getLibraries  gpd
+                , cond_exes             = getExes       gpd
                 }
 
 

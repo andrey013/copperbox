@@ -40,7 +40,8 @@ module Precis.Utils.Common
 
   , pstar
   , pstar2
-
+  , star 
+  , star2
 
   ) where
 
@@ -131,4 +132,14 @@ pstar2    :: (a -> b -> r -> ans)
           -> (r -> a) -> (r -> b) 
           -> r -> ans
 pstar2 f fa fb x = f (fa x) (fb x) x
+
+star     :: (r -> a) 
+         -> (a -> r -> ans) 
+         -> r -> ans
+star fa f x = f (fa x) x
+
+star2    :: (r -> a) -> (r -> b) 
+         -> (a -> b -> r -> ans) 
+         -> r -> ans
+star2 fa fb f x = f (fa x) (fb x) x
 

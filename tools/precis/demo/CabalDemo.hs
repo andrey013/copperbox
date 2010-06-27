@@ -5,7 +5,8 @@ module CabalDemo where
 import CPP
 import Precis.Cabal.CabalPackage
 import Precis.Cabal.Datatypes
-import Precis.Cabal.PathUtils
+import Precis.Cabal.InterimDatatypes
+import Precis.Cabal.ResolveM
 import Precis.Diff
 import Precis.HsSrc.Datatypes
 import Precis.HsSrc.Utils
@@ -28,8 +29,8 @@ runExtract path = do
       Left err -> error $ show err
       Right cfg -> return cfg
 
-fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
-fullParseModule (SourceFile _ file_name) = do
+fullParseModule :: HsSourceFile -> IO (Either ModuleParseError Module)
+fullParseModule (HsSourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
     return $ readModule mx_src
 
@@ -50,7 +51,7 @@ demo2a = do
 
 demo3 :: IO ()
 demo3 = do 
-  ans <- fullParseModule (SourceFile "State.Strict"
+  ans <- fullParseModule (HsSourceFile undefined {- (modName State.Strict") -}
                                      "../../_sample_data/Control/Monad/Cont/Class.hs")
                     
   case ans of

@@ -1,8 +1,9 @@
 {-# OPTIONS -Wall #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.Cabal.PathUtils
+-- Module      :  Precis.Cabal.ResolveM
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,11 +11,13 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
+-- A Monad transofrmer (over IO) for revolving module names 
+-- to FilePaths.
 --
 --------------------------------------------------------------------------------
 
 
-module Precis.Cabal.PathUtils
+module Precis.Cabal.ResolveM
   (
     FileExtension
 
@@ -22,28 +25,28 @@ module Precis.Cabal.PathUtils
   , runResolve
   , resolveModuleLoc
 
-  , publicModuleFiles
-  , privateModuleFiles
-  , exeModuleFiles
 
   ) where
 
 import Precis.Cabal.Datatypes
+import Precis.Cabal.InterimDatatypes
 import Precis.Utils.Common
 import Precis.Utils.ControlOperators
 
 import Control.Applicative
 import Control.Monad
+
 import Data.Foldable ( foldrM )
 import Data.List ( nub )
+import Data.Set ( Set )
+import qualified Data.Set                       as Set
 import System.Directory
 import qualified System.FilePath                as FP
 
 
+
 -- Are there any more useful manipulations than simply 
 -- resolving module_names to file_paths?
-
-type FileExtension = String
 
 
 resolveModuleLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
@@ -73,6 +76,11 @@ fullPath root src_dir modu_desc ext =
             , moduleDirectories       modu_desc
             ]
 
+
+
+
+
+{-
 
 publicModuleFiles   :: [CabalLibrary] 
                     -> ResolveM ([UnresolvedModule],[HsSourceFile])
@@ -109,45 +117,91 @@ sourceFiles src_dirs mods = foldrM fn (emptyH,emptyH) mods
                       Just path -> let s1 = hsSourceFile (moduleDescName md) path
                                    in return (us, s1 `consH` ss)
 
-
+-}
+        
 --------------------------------------------------------------------------------
 --
 
+
+data RSt = RSt { internal_mods  :: Set HsSourceFile
+               , exposed_mods   :: Set HsSourceFile
+               , unresolveds    :: [UnresolvedModule]
+               }
+
+stateZero :: RSt 
+stateZero = RSt Set.empty Set.empty []
+
+
 data REnv = REnv { root_path :: CabalFilePath, known_exts :: [FileExtension] }
 
-newtype ResolveM a = ResolveM { getResolveM :: REnv -> IO a }
+newtype ResolveM a = ResolveM { getResolveM :: REnv -> RSt -> IO (a,RSt) }
 
 instance Functor ResolveM where
-  fmap f mf = ResolveM $ \env -> getResolveM mf env >>= \a -> return (f a)
+  fmap f mf = ResolveM $ \env st -> getResolveM mf env st >>= \(a,st') -> 
+                                    return (f a,st')
+
 
 instance Applicative ResolveM where
-  pure a   = ResolveM $ \_   -> return a
-  af <*> a = ResolveM $ \env -> getResolveM af env >>= \f ->
-                                liftM f (getResolveM a  env)
+  pure a   = ResolveM $ \_   st -> return (a,st)
+  af <*> a = ResolveM $ \env st -> getResolveM af env st  >>= \(f,st')  ->
+                                   getResolveM a  env st' >>= \(a,st'') -> 
+                                   return (f a, st'')
 
 
 instance Monad ResolveM where
-  return a = ResolveM $ \_   -> return a
-  m >>= k  = ResolveM $ \env -> getResolveM m env >>= \a -> 
-                                getResolveM (k a) env
+  return a = ResolveM $ \_   st -> return (a,st)
+  m >>= k  = ResolveM $ \env st -> getResolveM m env st >>= \(a,st') -> 
+                                   getResolveM (k a) env st' 
+                                   
 
 
-runResolve :: CabalFilePath -> [FileExtension] -> ResolveM a -> IO a
-runResolve root exts mf = getResolveM mf $ env
+runResolve :: CabalFilePath -> [FileExtension] -> ResolveM a -> IO (a,RSt)
+runResolve root exts mf = getResolveM mf env stateZero
   where
     env = REnv { root_path = root, known_exts = exts }
 
 ask :: ResolveM REnv
-ask = ResolveM $ \env -> return env
+ask = ResolveM $ \env st -> return (env,st)
 
 asks :: (REnv -> a) -> ResolveM a
 asks f = liftM f ask
 
+get :: ResolveM RSt
+get = ResolveM $ \_ st -> return (st,st)
+
+set :: RSt -> ResolveM ()
+set st = ResolveM $ \_ _ -> return ((),st)
+
+sets :: (RSt -> (a,RSt)) -> ResolveM a
+sets f = ResolveM $ \_ st -> return (f st)
+
+sets_ :: (RSt -> RSt) -> ResolveM ()
+sets_ f = ResolveM $ \_ st -> return ((), f st)
+
+
 liftIO :: IO a -> ResolveM a
-liftIO ma = ResolveM $ \_ -> ma
+liftIO ma = ResolveM $ \_ st -> ma >>= \a -> return (a,st)
 
 validFile :: FilePath -> ResolveM (Maybe FilePath)
 validFile path = valid (liftIO . doesFileExist) path
 
 
+logUnresolved :: ModName -> ResolveM ()
+logUnresolved name = 
+    sets_ $ star unresolveds 
+                 (\us s -> s {unresolveds = UnresolvedModule name : us})
+                   
+
+
+
+-- The module might already be hidden or even exposed...
+--
+logHidden :: ModName -> FilePath -> ResolveM ()
+logHidden name path = sets_ $ star2 exposed_mods internal_mods upd
+  where
+    hs_src        = HsSourceFile name path
+    upd exs ins s = if Set.member hs_src exs 
+                      then s
+                      else s { internal_mods = Set.insert hs_src ins }
+                     
 
