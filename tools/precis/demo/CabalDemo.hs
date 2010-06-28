@@ -3,6 +3,7 @@
 module CabalDemo where
 
 import CPP
+import Precis.Cabal
 import Precis.Cabal.CabalPackage
 import Precis.Cabal.Datatypes
 import Precis.Cabal.InterimDatatypes
@@ -22,9 +23,9 @@ import System.FilePath
 
 
 
-runExtract :: FilePath -> IO CabalPrecis
+runExtract :: FilePath -> IO Package
 runExtract path = do
-    ans <- extractPrecis path
+    ans <- extractPackageInfo path
     case ans of
       Left err -> error $ show err
       Right cfg -> return cfg

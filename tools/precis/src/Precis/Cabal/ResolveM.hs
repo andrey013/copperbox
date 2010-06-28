@@ -20,9 +20,11 @@
 module Precis.Cabal.ResolveM
   (
 
-    ResolveM
+    resolvePrecis
+  , ResolveM
   , runResolve
   , getFilePathLoc
+  , getEIU
 
   ) where
 
@@ -46,6 +48,33 @@ import qualified System.FilePath                as FP
 -- Are there any more useful manipulations than simply 
 -- resolving module_names to file_paths?
 
+resolvePrecis :: CabalPrecis 
+              -> [FileExtension]
+              -> IO ([HsSourceFile],[HsSourceFile],[UnresolvedModule])
+resolvePrecis precis exts = 
+    liftM (getEIU . snd) $ runResolve (path_to_cabal_file precis) exts process
+  where
+    process     = do { mapM_ resolveLibrary (cond_libraries precis)
+                     ; mapM_ resolveExe     (cond_exes      precis)
+                     }
+                
+                
+
+resolveLibrary :: CabalLibrary -> ResolveM ()
+resolveLibrary lib@(CabalLibrary {library_src_dirs = src_dirs}) =
+    do { mapM_ (resolveExposedModule src_dirs) (public_modules lib)
+       ; mapM_ (resolveHiddenModule  src_dirs) (private_modules lib)
+       }
+
+    
+
+resolveExe :: CabalExe -> ResolveM ()
+resolveExe exe@(CabalExe {exe_src_dirs=src_dirs}) = 
+    do { mapM_ (resolveHiddenModule  src_dirs) (exe_other_modules exe)
+       ; return ()  -- THE EXE MODULE TODO...
+       }
+
+
 resolveExposedModule :: [CabalSourceDir] -> ModuleDesc -> ResolveM ()
 resolveExposedModule = resolveModule logExposed
 
@@ -65,28 +94,39 @@ getFilePathLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
 getFilePathLoc src_dirs mod_desc = 
     asks root_path  >>= \root -> 
     asks known_exts >>= \exts ->
+    liftIO (putStrLn $ show $ makeAll root exts) >>
+    liftIO (putStrLn $ show (root,exts))         >>
+    liftIO (putStrLn $ show src_dirs)            >>
     firstSuccess validFile (makeAll root exts)
   where
     makeAll root exts = 
-        crossProductWith (\src_dir ext -> fullPath root src_dir mod_desc ext) 
+        directoryProduct (\opt_dir ext -> fullPath root opt_dir mod_desc ext) 
                          src_dirs
                          exts
                             
 
+directoryProduct :: (Maybe a -> b -> c) -> [a] -> [b] -> [c] 
+directoryProduct f [] ys = [f Nothing  b | b <- ys]
+directoryProduct f xs ys = [f (Just a) b | a <- xs , b <- ys ]
+
+-- BAD ... this doesn't handle empty src_dirs...
 
 
 crossProductWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 crossProductWith f xs ys = [f a b | a <- xs , b <- ys ]
 
-fullPath :: CabalFilePath -> CabalSourceDir -> ModuleDesc -> FileExtension 
+
+fullPath :: CabalFilePath -> Maybe CabalSourceDir -> ModuleDesc -> FileExtension 
          -> FilePath
-fullPath root src_dir modu_desc ext = 
+fullPath root opt_src_dir modu_desc ext = 
     FP.addExtension ext $ FP.joinPath $ concat parts
   where
-    parts = [ directoriesToCabalFile root 
-            , directoriesToSource    src_dir
-            , moduleDirectories       modu_desc
-            ]
+    parts = case opt_src_dir of 
+              Nothing      -> [ directoriesToCabalFile root
+                              , moduleDirectories modu_desc ]
+              Just src_dir -> [ directoriesToCabalFile root
+                              , directoriesToSource    src_dir
+                              , moduleDirectories      modu_desc ]
 
 
 
@@ -145,6 +185,11 @@ data RSt = RSt { internal_mods  :: Set HsSourceFile
 stateZero :: RSt 
 stateZero = RSt Set.empty Set.empty []
 
+getEIU :: RSt -> ([HsSourceFile],[HsSourceFile],[UnresolvedModule])
+getEIU rst = ( Set.toList $ exposed_mods rst
+             , Set.toList $ internal_mods rst 
+             , unresolveds rst )
+
 
 data REnv = REnv { root_path :: CabalFilePath, known_exts :: [FileExtension] }
 
@@ -197,7 +242,7 @@ liftIO :: IO a -> ResolveM a
 liftIO ma = ResolveM $ \_ st -> ma >>= \a -> return (a,st)
 
 validFile :: FilePath -> ResolveM (Maybe FilePath)
-validFile path = valid (liftIO . doesFileExist) path
+validFile path = (liftIO $ putStrLn path) >> valid (liftIO . doesFileExist) path
 
 
 logUnresolved :: ModName -> ResolveM ()
