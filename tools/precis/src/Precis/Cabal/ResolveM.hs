@@ -19,12 +19,10 @@
 
 module Precis.Cabal.ResolveM
   (
-    FileExtension
 
-  , ResolveM
+    ResolveM
   , runResolve
-  , resolveModuleLoc
-
+  , getFilePathLoc
 
   ) where
 
@@ -48,9 +46,23 @@ import qualified System.FilePath                as FP
 -- Are there any more useful manipulations than simply 
 -- resolving module_names to file_paths?
 
+resolveExposedModule :: [CabalSourceDir] -> ModuleDesc -> ResolveM ()
+resolveExposedModule = resolveModule logExposed
 
-resolveModuleLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
-resolveModuleLoc src_dirs mod_desc = 
+resolveHiddenModule :: [CabalSourceDir] -> ModuleDesc -> ResolveM ()
+resolveHiddenModule = resolveModule logHidden
+
+resolveModule :: (ModName -> FilePath -> ResolveM ()) 
+              -> [CabalSourceDir] -> ModuleDesc -> ResolveM ()
+resolveModule sk src_dirs mod_desc =
+    getFilePathLoc src_dirs mod_desc >>= \ans ->
+    case ans of 
+      Nothing -> logUnresolved (moduleDescName mod_desc) 
+      Just path -> sk (moduleDescName mod_desc) path
+
+
+getFilePathLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
+getFilePathLoc src_dirs mod_desc = 
     asks root_path  >>= \root -> 
     asks known_exts >>= \exts ->
     firstSuccess validFile (makeAll root exts)
@@ -118,6 +130,8 @@ sourceFiles src_dirs mods = foldrM fn (emptyH,emptyH) mods
                                    in return (us, s1 `consH` ss)
 
 -}
+
+
         
 --------------------------------------------------------------------------------
 --
@@ -196,6 +210,9 @@ logUnresolved name =
 
 -- The module might already be hidden or even exposed...
 --
+-- If already hidded  - don't add
+-- If already exposed - don't add
+-- 
 logHidden :: ModName -> FilePath -> ResolveM ()
 logHidden name path = sets_ $ star2 exposed_mods internal_mods upd
   where
@@ -205,3 +222,19 @@ logHidden name path = sets_ $ star2 exposed_mods internal_mods upd
                       else s { internal_mods = Set.insert hs_src ins }
                      
 
+-- The module might already be exposed or hidden...
+--
+-- If already hidded  - remove from hidden list add to exposed list
+-- If already exposed - don't add
+-- 
+logExposed :: ModName -> FilePath -> ResolveM ()
+logExposed name path = sets_ $ star2 exposed_mods internal_mods upd
+  where
+    hs_src        = HsSourceFile name path
+    upd exs ins s = if Set.member hs_src ins
+                      then s { internal_mods = Set.delete hs_src ins
+                             , exposed_mods  = optAdd hs_src exs }
+                      else s { internal_mods = optAdd hs_src exs }
+
+    optAdd a s = if Set.member a s then s else Set.insert a s
+                     

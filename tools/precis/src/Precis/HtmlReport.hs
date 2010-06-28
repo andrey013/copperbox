@@ -22,7 +22,7 @@ module Precis.HtmlReport
 
   ) where
 
-import Precis.Cabal.Datatypes
+import Precis.Cabal
 import Precis.Diff
 import Precis.HsSrc.Datatypes
 import Precis.ModuleProperties
@@ -41,28 +41,28 @@ type TextSummary = String
 
 
 makeShortReport :: ModuleParseFunction 
-                -> CabalPrecis 
-                -> CabalPrecis 
+                -> Package 
+                -> Package 
                 -> IO TextSummary
 makeShortReport pf ncp ocp = liftM snd $ makeReport MSG_AND_HTML pf ncp ocp
 
 
 makeFullReport :: ModuleParseFunction 
-                -> CabalPrecis 
-                -> CabalPrecis 
+                -> Package 
+                -> Package 
                 -> IO (Html,TextSummary)
 makeFullReport = makeReport MSG_AND_HTML
 
 
 makeReport :: ReportLevel
            -> ModuleParseFunction 
-           -> CabalPrecis 
-           -> CabalPrecis 
+           -> Package 
+           -> Package 
            -> IO (Html,TextSummary)
 makeReport lvl pf new old = liftM post $ execReportM pf lvl $ 
    do { packageNamesAndVersions new old
       ; moduleCountSummary      new old
-      ; compareLibraries (cond_libraries new) (cond_libraries old)
+      ; undefined -- compareLibraries (cond_libraries new) (cond_libraries old)
       }
   where
     post (hs,stats) = (assembleDoc (package_name new) hs, mkText stats)
@@ -79,7 +79,7 @@ assembleDoc pkg_name hs = docHead pkg_name +++ body << concatHtml hs
 --------------------------------------------------------------------------------
 -- 
 
-packageNamesAndVersions :: CabalPrecis -> CabalPrecis -> ReportM ()
+packageNamesAndVersions :: Package -> Package -> ReportM ()
 packageNamesAndVersions new old = 
     do { tellHtml $ h1 << ("Change summary: " ++ package_name new) 
        ; tellHtml $ h2 << (toString $ comparingMsg new old)
@@ -99,7 +99,7 @@ warnOnNameDiff new_name old_name
 
 
 
-moduleCountSummary :: CabalPrecis -> CabalPrecis -> ReportM ()
+moduleCountSummary :: Package -> Package -> ReportM ()
 moduleCountSummary new old = undefined
 {-
     do { countDeletions incrRemovedModules expos 
@@ -111,8 +111,8 @@ moduleCountSummary new old = undefined
 -}
 
 
-compareLibraries :: [CabalLibrary] -> [CabalLibrary] -> ReportM ()
-compareLibraries new old = undefined
+-- compareLibraries :: [HsSourceModule] -> [HsSourceModule] -> ReportM ()
+-- compareLibraries new old = undefined
 
 --   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
 

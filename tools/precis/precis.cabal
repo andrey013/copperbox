@@ -51,7 +51,8 @@ library
     Precis.Cabal, 
     Precis.Cabal.CabalPackage,
     Precis.Cabal.Datatypes,
-    Precis.Cabal.PathUtils,
+    Precis.Cabal.InterimDatatypes,
+    Precis.Cabal.ResolveM,
     Precis.Diff,
     Precis.HsSrc.Datatypes,
     Precis.HsSrc.Utils,
@@ -74,9 +75,11 @@ executable precis
     
   other-modules:   
     CPP,
+    Precis.Cabal,
     Precis.Cabal.CabalPackage,
     Precis.Cabal.Datatypes,
-    Precis.Cabal.PathUtils,
+    Precis.Cabal.InterimDatatypes,
+    Precis.Cabal.ResolveM,
     Precis.Diff,
     Precis.HsSrc.Datatypes,
     Precis.HsSrc.Utils,

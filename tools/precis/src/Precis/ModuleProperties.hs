@@ -36,6 +36,7 @@ module Precis.ModuleProperties
   ) where
 
 import Precis.Cabal
+import Precis.Cabal.InterimDatatypes ( ModName )   -- TODO...
 import Precis.Diff
 import Precis.HsSrc.Datatypes
 import Precis.HsSrc.Utils
@@ -51,20 +52,21 @@ import Data.Maybe ( catMaybes )
 -- all modules (exposed and internal) in a cabal file
 
 
-diffExposedModules :: CabalLibrary -> CabalLibrary -> [Edit3 ModName]
+diffExposedModules :: Package -> Package -> [Edit3 ModName]
 diffExposedModules new old = undefined -- diff3 (==) new' old'
+{-
   where
     new' = map moduleDescName $ public_modules new
     old' = map moduleDescName $ public_modules old
+-}
 
-diffInternalModules :: CabalLibrary -> CabalLibrary -> [Edit3 ModName]
+diffInternalModules :: Package -> Package -> [Edit3 ModName]
 diffInternalModules new old = undefined -- diff3 (==) new' old'
+{-
   where
     new' = map moduleDescName $ private_modules new
     old' = map moduleDescName $ private_modules old
-
-
-
+-}
 
 diffExposedSrcFiles :: [HsSourceFile] -> [HsSourceFile] -> [Edit4 HsSourceFile]
 diffExposedSrcFiles new old = diff4 equal (/=) new old 

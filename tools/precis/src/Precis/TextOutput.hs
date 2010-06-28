@@ -99,7 +99,7 @@ countMsg act single plural n
 
 --------------------------------------------------------------------------------
 
-comparingMsg :: CabalPrecis -> CabalPrecis -> ShowS
+comparingMsg :: Package -> Package -> ShowS
 comparingMsg new old = suffixEllipses $ hsep $ map text 
     [ "Comparing", package_name new, package_version new
     , "to",        package_name old, package_version old

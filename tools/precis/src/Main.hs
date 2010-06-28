@@ -16,8 +16,7 @@
 module Main where
 
 import CPP
-import Precis.Cabal.CabalPackage
-import Precis.Cabal.Datatypes
+import Precis.Cabal
 import Precis.HsSrc.Datatypes
 import Precis.HsSrc.Utils
 import Precis.HtmlReport
@@ -84,8 +83,8 @@ precisExitFail i s = putStrLn s >> exitWith (ExitFailure i)
 
 runCompare :: (Maybe FilePath) -> FilePath -> FilePath -> IO ()
 runCompare mb_out new_cabal_file old_cabal_file = do 
-    ans1 <- extractPrecis new_cabal_file
-    ans2 <- extractPrecis old_cabal_file
+    ans1 <- undefined -- extractPrecis new_cabal_file
+    ans2 <- undefined -- extractPrecis old_cabal_file
 
     case (ans1,ans2) of
       (Right new_cp, Right old_cp) -> sk new_cp old_cp
@@ -97,7 +96,7 @@ runCompare mb_out new_cabal_file old_cabal_file = do
                         Just path -> fullReportHtml path new_cp old_cp
 
 
-fullReportHtml :: FilePath -> CabalPrecis -> CabalPrecis -> IO ()
+fullReportHtml :: FilePath -> Package -> Package -> IO ()
 fullReportHtml out_path new_cp old_cp = 
     do { (my_doc,msg) <- makeFullReport fullParseModule new_cp old_cp
        ; putStrLn $ msg
@@ -105,7 +104,7 @@ fullReportHtml out_path new_cp old_cp =
        }
 
 
-shortReport :: CabalPrecis -> CabalPrecis -> IO ()
+shortReport :: Package -> Package -> IO ()
 shortReport new_cp old_cp = 
     do { msg <- makeShortReport fullParseModule new_cp old_cp
        ; putStrLn $ msg

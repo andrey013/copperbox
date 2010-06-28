@@ -19,18 +19,17 @@ module Precis.Cabal
   (
     module Precis.Cabal.CabalPackage 
   , module Precis.Cabal.Datatypes
-  , module Precis.Cabal.PathUtils
 
-  , exposedModules
+  , ModName
+  , getModName
 
-  , AllModules(..)
-  , allModules
   ) where
 
 import Precis.Cabal.CabalPackage 
 import Precis.Cabal.Datatypes
-import Precis.Cabal.PathUtils
- 
+import Precis.Cabal.InterimDatatypes ( ModName, getModName ) 
+
+{-
 
 -- | Extract all the exposed modules in a cabal file.
 --
@@ -70,3 +69,5 @@ allModules precis = undefined
     exes   = cond_exes          precis
     lprivs = runResolve path known_extensions (privateModuleFiles libs)
     eprivs = runResolve path known_extensions (exeModuleFiles exes)
+
+-}
