@@ -127,7 +127,11 @@ moduleDesc mname =
   where
     xs    = D.components mname
     name  = ModName $ concat $ intersperse "." xs
-    parts = map (++[pathSeparator]) xs
+
+    -- Add separator to inits but not last...
+    parts = foldr fn [] xs where fn e [] = [e]
+                                 fn e ac = (e++[pathSeparator]):ac
+   
 
 moduleDescName :: ModuleDesc -> ModName
 moduleDescName = module_desc_name

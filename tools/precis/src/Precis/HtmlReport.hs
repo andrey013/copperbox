@@ -62,7 +62,7 @@ makeReport :: ReportLevel
 makeReport lvl pf new old = liftM post $ execReportM pf lvl $ 
    do { packageNamesAndVersions new old
       ; moduleCountSummary      new old
-      ; undefined -- compareLibraries (cond_libraries new) (cond_libraries old)
+      ; compareExposedModules   new old
       }
   where
     post (hs,stats) = (assembleDoc (package_name new) hs, mkText stats)
@@ -100,21 +100,20 @@ warnOnNameDiff new_name old_name
 
 
 moduleCountSummary :: Package -> Package -> ReportM ()
-moduleCountSummary new old = undefined
-{-
+moduleCountSummary new old =
     do { countDeletions incrRemovedModules expos 
        ; tellHtml $ docModulesDiffs expos privs
        }
   where
     expos = diffExposedModules  new old
     privs = diffInternalModules new old
--}
 
 
--- compareLibraries :: [HsSourceModule] -> [HsSourceModule] -> ReportM ()
--- compareLibraries new old = undefined
 
---   mapM_ compareSrcFileEdit $ diffExposedSrcFiles new old
+compareExposedModules :: Package -> Package -> ReportM ()
+compareExposedModules new old = 
+    mapM_ compareSrcFileEdit $ 
+        diffExposedSrcFiles (exposed_modules new) (exposed_modules old)
 
 compareSrcFileEdit :: Edit4 HsSourceFile -> ReportM ()
 compareSrcFileEdit (DIF a b) = compareHsSourceFiles a b

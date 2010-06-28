@@ -36,8 +36,6 @@ import Precis.Utils.ControlOperators
 import Control.Applicative
 import Control.Monad
 
-import Data.Foldable ( foldrM )
-import Data.List ( nub )
 import Data.Set ( Set )
 import qualified Data.Set                       as Set
 import System.Directory
@@ -51,8 +49,10 @@ import qualified System.FilePath                as FP
 resolvePrecis :: CabalPrecis 
               -> [FileExtension]
               -> IO ([HsSourceFile],[HsSourceFile],[UnresolvedModule])
-resolvePrecis precis exts = 
-    liftM (getEIU . snd) $ runResolve (path_to_cabal_file precis) exts process
+resolvePrecis precis exts =
+    do { (_,st) <- runResolve (path_to_cabal_file precis) exts process
+       ; return $ getEIU st
+       }
   where
     process     = do { mapM_ resolveLibrary (cond_libraries precis)
                      ; mapM_ resolveExe     (cond_exes      precis)
@@ -62,7 +62,7 @@ resolvePrecis precis exts =
 
 resolveLibrary :: CabalLibrary -> ResolveM ()
 resolveLibrary lib@(CabalLibrary {library_src_dirs = src_dirs}) =
-    do { mapM_ (resolveExposedModule src_dirs) (public_modules lib)
+    do { mapM_ (resolveExposedModule src_dirs) (public_modules  lib)
        ; mapM_ (resolveHiddenModule  src_dirs) (private_modules lib)
        }
 
@@ -94,9 +94,6 @@ getFilePathLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
 getFilePathLoc src_dirs mod_desc = 
     asks root_path  >>= \root -> 
     asks known_exts >>= \exts ->
-    liftIO (putStrLn $ show $ makeAll root exts) >>
-    liftIO (putStrLn $ show (root,exts))         >>
-    liftIO (putStrLn $ show src_dirs)            >>
     firstSuccess validFile (makeAll root exts)
   where
     makeAll root exts = 
@@ -109,67 +106,26 @@ directoryProduct :: (Maybe a -> b -> c) -> [a] -> [b] -> [c]
 directoryProduct f [] ys = [f Nothing  b | b <- ys]
 directoryProduct f xs ys = [f (Just a) b | a <- xs , b <- ys ]
 
--- BAD ... this doesn't handle empty src_dirs...
-
-
-crossProductWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-crossProductWith f xs ys = [f a b | a <- xs , b <- ys ]
-
 
 fullPath :: CabalFilePath -> Maybe CabalSourceDir -> ModuleDesc -> FileExtension 
          -> FilePath
-fullPath root opt_src_dir modu_desc ext = 
-    FP.addExtension ext $ FP.joinPath $ concat parts
+fullPath root opt_src_dir mdesc ext = FP.normalise $ 
+    prepend (directoriesToCabalFile root) $ 
+    prepend (maybe [] directoriesToSource opt_src_dir) $ 
+    modulePath mdesc ext         
+
+prepend :: [FilePath] -> FilePath -> FilePath
+prepend xs = FP.combine (FP.joinPath xs)
+
+modulePath :: ModuleDesc -> FileExtension -> FilePath
+modulePath mdesc ext = step (moduleDirectories mdesc) 
   where
-    parts = case opt_src_dir of 
-              Nothing      -> [ directoriesToCabalFile root
-                              , moduleDirectories modu_desc ]
-              Just src_dir -> [ directoriesToCabalFile root
-                              , directoriesToSource    src_dir
-                              , moduleDirectories      modu_desc ]
+    step []     = ext      -- Really an error?
+    step [a]    = FP.addExtension a ext
+    step (a:as) = FP.combine a $ step as
 
 
 
-
-
-{-
-
-publicModuleFiles   :: [CabalLibrary] 
-                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
-publicModuleFiles   = extractAll library_src_dirs public_modules
-
-privateModuleFiles  :: [CabalLibrary] 
-                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
-privateModuleFiles  = extractAll library_src_dirs private_modules
-  
-exeModuleFiles      :: [CabalExe] 
-                    -> ResolveM ([UnresolvedModule],[HsSourceFile])
-exeModuleFiles      = extractAll exe_src_dirs exe_other_modules
-
-extractAll :: (a -> [CabalSourceDir]) -> (a -> [ModuleDesc]) -> [a]
-           -> ResolveM ([UnresolvedModule],[HsSourceFile])
-extractAll srcF modF = liftM post . foldrM step (id,id) 
-  where
-    step a acc        = liftM (pconc acc) $ sourceFiles (srcF a) (modF a)
-
-    pconc (f,g) (a,b) = (a `appendH` f, b `appendH` g)
-
-    post (fs,gs)      = (nub $ toListH fs, nub $ toListH gs) 
-  
-
-
-sourceFiles :: [CabalSourceDir] -> [ModuleDesc] 
-            -> ResolveM (H UnresolvedModule,H HsSourceFile)
-sourceFiles src_dirs mods = foldrM fn (emptyH,emptyH) mods
-  where
-    fn md (us,ss) = resolveModuleLoc src_dirs md >>= \ans -> 
-                    case ans of
-                      Nothing   -> let m1 = UnresolvedModule $ moduleDescName md
-                                   in return (m1 `consH` us,ss)
-                      Just path -> let s1 = hsSourceFile (moduleDescName md) path
-                                   in return (us, s1 `consH` ss)
-
--}
 
 
         
@@ -203,8 +159,8 @@ instance Functor ResolveM where
 instance Applicative ResolveM where
   pure a   = ResolveM $ \_   st -> return (a,st)
   af <*> a = ResolveM $ \env st -> getResolveM af env st  >>= \(f,st')  ->
-                                   getResolveM a  env st' >>= \(a,st'') -> 
-                                   return (f a, st'')
+                                   getResolveM a  env st' >>= \(b,st'') -> 
+                                   return (f b, st'')
 
 
 instance Monad ResolveM where
@@ -242,13 +198,13 @@ liftIO :: IO a -> ResolveM a
 liftIO ma = ResolveM $ \_ st -> ma >>= \a -> return (a,st)
 
 validFile :: FilePath -> ResolveM (Maybe FilePath)
-validFile path = (liftIO $ putStrLn path) >> valid (liftIO . doesFileExist) path
+validFile path = valid (liftIO . doesFileExist) path
 
 
 logUnresolved :: ModName -> ResolveM ()
-logUnresolved name = 
-    sets_ $ star unresolveds 
-                 (\us s -> s {unresolveds = UnresolvedModule name : us})
+logUnresolved name = sets_ (star unresolveds upd)
+   where
+     upd us s = s {unresolveds = UnresolvedModule name : us}
                    
 
 
@@ -259,7 +215,7 @@ logUnresolved name =
 -- If already exposed - don't add
 -- 
 logHidden :: ModName -> FilePath -> ResolveM ()
-logHidden name path = sets_ $ star2 exposed_mods internal_mods upd
+logHidden name path = sets_ (star2 exposed_mods internal_mods upd)
   where
     hs_src        = HsSourceFile name path
     upd exs ins s = if Set.member hs_src exs 
@@ -273,13 +229,13 @@ logHidden name path = sets_ $ star2 exposed_mods internal_mods upd
 -- If already exposed - don't add
 -- 
 logExposed :: ModName -> FilePath -> ResolveM ()
-logExposed name path = sets_ $ star2 exposed_mods internal_mods upd
+logExposed name path = sets_ (star2 exposed_mods internal_mods upd)
   where
     hs_src        = HsSourceFile name path
     upd exs ins s = if Set.member hs_src ins
                       then s { internal_mods = Set.delete hs_src ins
                              , exposed_mods  = optAdd hs_src exs }
-                      else s { internal_mods = optAdd hs_src exs }
+                      else s { exposed_mods  = optAdd hs_src exs }
 
     optAdd a s = if Set.member a s then s else Set.insert a s
                      

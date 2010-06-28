@@ -83,11 +83,10 @@ precisExitFail i s = putStrLn s >> exitWith (ExitFailure i)
 
 runCompare :: (Maybe FilePath) -> FilePath -> FilePath -> IO ()
 runCompare mb_out new_cabal_file old_cabal_file = do 
-    ans1 <- undefined -- extractPrecis new_cabal_file
-    ans2 <- undefined -- extractPrecis old_cabal_file
-
+    ans1 <- extractPackageInfo new_cabal_file
+    ans2 <- extractPackageInfo old_cabal_file
     case (ans1,ans2) of
-      (Right new_cp, Right old_cp) -> sk new_cp old_cp
+      (Right new_pkg, Right old_pkg) -> sk new_pkg old_pkg
       (Left err, _)                -> precisExitFail 2 $ cabalFileErrorMsg err
       (_, Left err)                -> precisExitFail 2 $ cabalFileErrorMsg err
   where
