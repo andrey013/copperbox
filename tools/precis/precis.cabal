@@ -10,13 +10,21 @@ synopsis:         Diff Cabal packages.
 description:
   Summarize API differences between revisions of Cabal packages.
   .
-  Note Precis library is BSD3, Precis executable is LGPL apropos 
+  Precis library is BSD3, Precis executable is LGPL apropos 
   the dependency on CppHs.
+  .
+  NOTE for version 0.5.0 - the next version is likely to have 
+  substantial changes. Version 0.5.0 does have a better strategy 
+  to resolve conditional modules, but otherwise it is not a 
+  compelling upgrade. If you have 0.4.0 installed, I recommend 
+  you skip this revision and wait for the next version.
   .
   CHANGES
   0.4.0 to 0.5.0
   .
-  * Major re-organization.
+  * Major re-organization. Module-to-file resolution substantially
+    changed. Should be better for Cabal fines that use condition
+    variables.
   .
   0.3.1 to 0.4.0
   .

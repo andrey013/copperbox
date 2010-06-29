@@ -91,9 +91,9 @@ resolveModule sk src_dirs mod_desc =
 
 
 getFilePathLoc :: [CabalSourceDir] -> ModuleDesc -> ResolveM (Maybe (FilePath))
-getFilePathLoc src_dirs mod_desc = 
-    asks root_path  >>= \root -> 
-    asks known_exts >>= \exts ->
+getFilePathLoc src_dirs mod_desc = do 
+    root <- asks root_path
+    exts <- asks known_exts
     firstSuccess validFile (makeAll root exts)
   where
     makeAll root exts = 
@@ -181,6 +181,7 @@ ask = ResolveM $ \env st -> return (env,st)
 asks :: (REnv -> a) -> ResolveM a
 asks f = liftM f ask
 
+{-
 get :: ResolveM RSt
 get = ResolveM $ \_ st -> return (st,st)
 
@@ -189,6 +190,7 @@ set st = ResolveM $ \_ _ -> return ((),st)
 
 sets :: (RSt -> (a,RSt)) -> ResolveM a
 sets f = ResolveM $ \_ st -> return (f st)
+-}
 
 sets_ :: (RSt -> RSt) -> ResolveM ()
 sets_ f = ResolveM $ \_ st -> return ((), f st)
