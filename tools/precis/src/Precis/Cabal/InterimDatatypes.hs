@@ -97,7 +97,7 @@ cabalSourceDir path =
     CabalSourceDir { srcdir_rel_loc = rel, srcdir_path_to_split = parts }
   where
     rel   = normalise path
-    parts = splitPath $ dropFileName rel
+    parts = splitPath rel
 
 
 directoriesToSource :: CabalSourceDir -> [FilePath]

@@ -33,6 +33,7 @@ module Precis.ReportMonad
   , liftIO
 
   , tellHtml
+  , tellUnresolved
   , tellParseFail
 
   , incrRemovedModules
@@ -77,8 +78,9 @@ instance Functor CMP where
   fmap f (OLD a) = OLD (f a)
 
 data ChangeStats = ChangeStats 
-      { unparseable_modules     :: [CMP StrName]
-      , removed_modules         :: Int
+      { unresolved_mods         :: [CMP StrName]
+      , unparseable_mods        :: [CMP StrName]
+      , removed_mods            :: Int
 
       -- exports from a module
       , removed_exports         :: Int
@@ -130,7 +132,7 @@ instance Monad ReportM where
 log_zero :: Log
 log_zero = ([],stats_zero)
   where
-    stats_zero = ChangeStats [] 0  0 0   0 0   0 0   0 0
+    stats_zero = ChangeStats [] [] 0  0 0   0 0   0 0   0 0
 
 runReportM :: ModuleParseFunction -> ReportLevel -> ReportM a -> IO (a,Log)
 runReportM pf lvl mf =  (getReportM mf) (pf,lvl) log_zero `bindIO` post
@@ -156,13 +158,17 @@ updateStats :: (ChangeStats -> ChangeStats) -> ReportM ()
 updateStats fn = ReportM $ \_ (hs,stats) -> returnIO ((),(hs, fn stats))
 
 
+tellUnresolved :: CMP StrName -> ReportM ()
+tellUnresolved name = updateStats $ 
+    pstar (\xs s -> s { unresolved_mods = name:xs})  unresolved_mods
+
 tellParseFail :: CMP StrName -> ReportM ()
 tellParseFail name = updateStats $ 
-    pstar (\xs s -> s { unparseable_modules = name:xs})  unparseable_modules
+    pstar (\xs s -> s { unparseable_mods = name:xs})  unparseable_mods
 
 incrRemovedModules :: ReportM ()
 incrRemovedModules = updateStats $
-    pstar (\i s -> s { removed_modules = i+1}) removed_modules
+    pstar (\i s -> s { removed_mods = i+1}) removed_mods
 
 
 incrRemovedExports :: ReportM ()

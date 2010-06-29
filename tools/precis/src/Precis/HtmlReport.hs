@@ -61,6 +61,7 @@ makeReport :: ReportLevel
            -> IO (Html,TextSummary)
 makeReport lvl pf new old = liftM post $ execReportM pf lvl $ 
    do { packageNamesAndVersions new old
+      ; countUnresolveds        (unresolved_modules new)
       ; moduleCountSummary      new old
       ; compareExposedModules   new old
       }
@@ -133,7 +134,7 @@ compareHsSourceFiles new old = do
            (_, Left err)      -> failk (OLD old) err
        }                            
   where 
-    failk cmpmod err = do { error "failk" -- tellParseFail (fmap sourceFileModule cmpmod)
+    failk cmpmod err = do { tellParseFail (fmap (getModName . module_name) cmpmod)
                           ; tellHtml $ docModuleParseError cmpmod err
                           }
 
@@ -207,7 +208,8 @@ instances_alg = CompareAlg { algName        = "Class instances"
 
 
 
-
+countUnresolveds :: [UnresolvedModule] -> ReportM ()
+countUnresolveds = mapM_ (tellUnresolved . NEW . getModName . unresolved_name)
 
 --------------------------------------------------------------------------------
 -- Helpers

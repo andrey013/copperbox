@@ -30,7 +30,9 @@ import Data.Maybe
 showChangeStats :: ChangeStats -> ShowS
 showChangeStats = vsep . catMaybes . sequence funs 
   where
-    funs = [ unparseableModules, removedModules
+    funs = [ unresolvedModules
+           , unparseableModules
+           , removedModules
            , removedExports,     changedExports
            , removedDatatypes,   changedDatatypes 
            , removedTypeSigs,    changedTypeSigs
@@ -38,8 +40,20 @@ showChangeStats = vsep . catMaybes . sequence funs
            ]
 
 
+
+unresolvedModules :: ChangeStats -> Maybe ShowS
+unresolvedModules = step . unresolved_mods 
+  where
+   step []     = Nothing
+   step xs     = Just $ prolog $ vsep $ map fn xs
+
+   fn (NEW s)  = space <> text s <+> parens (text "new")
+   fn (OLD s)  = space <> text s <+> parens (text "old")
+
+   prolog k    = text "The following modules could not be found: " `line` k
+
 unparseableModules :: ChangeStats -> Maybe ShowS
-unparseableModules = step . unparseable_modules 
+unparseableModules = step . unparseable_mods 
   where
    step []     = Nothing 
    step xs     = Just $ prolog $ vsep $ map fn xs
@@ -52,7 +66,7 @@ unparseableModules = step . unparseable_modules
 
 removedModules :: ChangeStats -> Maybe ShowS
 removedModules = 
-    countMsg "removed" "exposed module" "exposed modules" . removed_modules
+    countMsg "removed" "exposed module" "exposed modules" . removed_mods
 
 removedExports :: ChangeStats -> Maybe ShowS
 removedExports = 
