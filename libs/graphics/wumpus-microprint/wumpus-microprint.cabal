@@ -17,7 +17,7 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Clave1.hs
+  demo/Demo01.hs
   
 library
   hs-source-dirs:     src
@@ -28,7 +28,14 @@ library
 
   
   exposed-modules:
-    Wumpus.MicroPrint
+    Wumpus.MicroPrint,
+    Wumpus.MicroPrint.DrawMonad,
+    Wumpus.MicroPrint.HughesList,
+    Wumpus.MicroPrint.Render,
+    Wumpus.MicroPrint.TraceMonad,
+    Wumpus.MicroPrint.TurtleMonad
+
+
 
   other-modules:
 

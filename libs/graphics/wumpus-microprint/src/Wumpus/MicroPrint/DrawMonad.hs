@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.MicroPrint.TraceM
+-- Module      :  Wumpus.MicroPrint.DrawMonad
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,17 +10,19 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- MicroPrints
+-- MicroPrints drawing monad 
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.MicroPrint.TraceM
+module Wumpus.MicroPrint.DrawMonad
   (
 
     TraceM
   , runTrace
   , execTrace
 
+  , Tile(..)
+  , Height
   , linebreak
   , setRGB
   , char
@@ -43,9 +45,9 @@ data TileState = Start | S0 Int | W0 Int
 
 
 type Text       = H Tile
-
 type Trace      = Text
-type State      = (TileState, DRGB)
+type Height     = Int
+type State      = (TileState, DRGB, Height)
 
 newtype TraceM a = TraceM { getTraceM :: Trace -> State -> (a,Trace,State) }
 
@@ -58,18 +60,19 @@ instance Monad TraceM where
                               (getTraceM . k) a w' s'
 
 
-runTrace :: TraceM a -> (a,[Tile])
-runTrace m = post $ getTraceM m emptyH (Start,black)
+runTrace :: TraceM a -> (a,[Tile],Height)
+runTrace m = post $ getTraceM m emptyH (Start,black,1)
   where
-    post (a,f,(W0 n,rgb)) = (a, toListH $ f `snocH` (Word rgb n))
-    post (a,f,_)          = (a, f [])
+    post (a,f,(W0 n, rgb, h)) = (a, toListH $ f `snocH` (Word rgb n), h)
+    post (a,f,(_, _, h))      = (a, f [], h)
 
-execTrace :: TraceM a -> [Tile]
-execTrace = snd . runTrace
+execTrace :: TraceM a -> ([Tile],Height)
+execTrace = post . runTrace
+  where post (_,xs,h) = (xs,h)
 
 enqueueTile :: TraceM ()
-enqueueTile = TraceM $ \w (opt,rgb) -> 
-    let tileF = step rgb opt in ((), tileF w, (Start, rgb))
+enqueueTile = TraceM $ \w (opt,rgb,h) -> 
+    let tileF = step rgb opt in ((), tileF w, (Start, rgb,h))
   where
     step _   Start  = id
     step _   (S0 n) = (\f -> f `snocH` (Space n))
@@ -79,7 +82,8 @@ enqueueTile = TraceM $ \w (opt,rgb) ->
 linebreak :: TraceM ()
 linebreak = enqueueTile >> next
   where
-    next = TraceM $ \w s -> ((),w `snocH` LineBreak, s)
+    
+    next = TraceM $ \w (opt,rgb,h) -> ((),w `snocH` LineBreak, (opt,rgb,h+1))
 
 -- Note - it is permissible to change colour mid-word.
 -- But this is the same as having a no-space break.
@@ -88,11 +92,11 @@ setRGB :: DRGB -> TraceM ()
 setRGB rgb = enqueueTile >> next
   where
     -- tip will always be Start here...
-    next = TraceM $ \w (tip,_) -> ((),w,(tip,rgb))
+    next = TraceM $ \w (tip,_,h) -> ((),w,(tip,rgb,h))
 
 char :: TraceM ()
-char = TraceM $ \w (tip,rgb) ->
-    let (f,tip') = addChar tip in ((),f w,(tip',rgb))
+char = TraceM $ \w (tip,rgb,h) ->
+    let (f,tip') = addChar tip in ((),f w,(tip',rgb,h))
   where
     addChar Start  = (id, W0 1)
     addChar (W0 n) = (id, W0 $ n+1)
@@ -100,12 +104,12 @@ char = TraceM $ \w (tip,rgb) ->
 
 
 space :: TraceM ()
-space = TraceM $ \w (tip,rgb) ->
-    let (f,tip') = addSpace tip in ((),f w,(tip',rgb))
+space = TraceM $ \w (tip,rgb,h) ->
+    let (f,tip') = addSpace tip rgb in ((),f w,(tip',rgb,h))
   where
-    addSpace Start  = (id, S0 1)
-    addSpace (W0 n) = (\f -> f `snocH` (Space n), S0 1)
-    addSpace (S0 n) = (id, S0 $ n+1)
+    addSpace Start  _   = (id, S0 1)
+    addSpace (W0 n) rgb = (\f -> f `snocH` (Word rgb n), S0 1)
+    addSpace (S0 n) _   = (id, S0 $ n+1)
 
  
 
