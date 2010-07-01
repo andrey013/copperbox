@@ -1,33 +1,41 @@
 {-# OPTIONS -Wall #-}
 
+-- Read this file a make a microprint of it...
+
 module Demo01 where
 
 import Wumpus.MicroPrint
-import Wumpus.MicroPrint.DrawMonad
-import Wumpus.MicroPrint.Render
 
 import Wumpus.Core
-import Wumpus.Extra.SVGColours
+import Wumpus.Basic.SVGColours
 
 import Data.Maybe
 import System.Directory
 
 main :: IO ()
-main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/mp01.eps" pic1
-    >> writeSVG_latin1 "./out/mp01.svg" pic1
-
-
-pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawMicroPrint cfg1 mp1
-
-mp1 :: ([Tile],Height)
-mp1 = execTrace (setRGB lightSlateGrey >> char >> space >> space >> char >> char
-                >> linebreak >> setRGB firebrick >> char >> char >> char >> char)
+main = do 
+    { createDirectoryIfMissing True "./out/"
+    ; micro1 <- filePic
+    ; let pic1 = fromMaybe errK $ renderMicroPrint cfg1 (prefix micro1)
+    ; writeEPS_latin1 "./out/mp01.eps" pic1
+    ; writeSVG_latin1 "./out/mp01.svg" pic1
+    }
+  where
+    prefix mp = setRGB lightSlateGrey >> mp
 
 errK :: a
 errK = error "no picture"
 
+filePic :: IO (MicroPrint ())
+filePic = do
+  xs <- readFile "Demo01.hs"
+  return $ foldr (\a acc -> drawChar a >> acc) (return ()) xs
+
+drawChar :: Char -> MicroPrint ()
+drawChar '\n' = linebreak
+drawChar '\t' = space >> space >> space >> space
+drawChar ' '  = space
+drawChar _    = char
 
 
 cfg1 :: MP_config

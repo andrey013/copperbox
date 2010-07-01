@@ -28,12 +28,12 @@ module Wumpus.MicroPrint.Render
 
   ) where
 
-import Wumpus.Core hiding ( trace ) 
+import Wumpus.Core
+import Wumpus.Basic.Monads.TraceMonad
+import Wumpus.Basic.Monads.TurtleMonad
+import Wumpus.Basic.Utils.HList
 
 import Wumpus.MicroPrint.DrawMonad ( Tile(..), Height ) 
-import Wumpus.MicroPrint.HughesList
-import Wumpus.MicroPrint.TraceMonad
-import Wumpus.MicroPrint.TurtleMonad
 
 import Data.AffineSpace                 -- package: vector-space
 import MonadLib                         -- package: monadLib

@@ -17,9 +17,9 @@
 module Wumpus.MicroPrint.DrawMonad
   (
 
-    TraceM
-  , runTrace
-  , execTrace
+    MicroPrint
+  , runMicroPrint
+  , execMicroPrint
 
   , Tile(..)
   , Height
@@ -33,7 +33,7 @@ module Wumpus.MicroPrint.DrawMonad
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 
-import Wumpus.MicroPrint.HughesList
+import Wumpus.Basic.Utils.HList
 
 import Control.Monad
 
@@ -49,29 +49,33 @@ type Trace      = Text
 type Height     = Int
 type State      = (TileState, DRGB, Height)
 
-newtype TraceM a = TraceM { getTraceM :: Trace -> State -> (a,Trace,State) }
+-- | A /microprint/ is really a monad in disguise...
+--
+newtype MicroPrint a = MicroPrint { 
+          getMicroPrint :: Trace -> State -> (a,Trace,State) }
 
-instance Functor TraceM where
-  fmap f m = TraceM $ \w s -> let (a,w',s') = getTraceM m w s in (f a,w',s')
+instance Functor MicroPrint where
+  fmap f m = MicroPrint $ \w s -> 
+                let (a,w',s') = getMicroPrint m w s in (f a,w',s')
 
-instance Monad TraceM where
-  return a = TraceM $ \w s -> (a,w,s)
-  m >>= k  = TraceM $ \w s -> let (a,w',s') = getTraceM m w s in
-                              (getTraceM . k) a w' s'
+instance Monad MicroPrint where
+  return a = MicroPrint $ \w s -> (a,w,s)
+  m >>= k  = MicroPrint $ \w s -> let (a,w',s') = getMicroPrint m w s 
+                                  in (getMicroPrint . k) a w' s'
 
 
-runTrace :: TraceM a -> (a,[Tile],Height)
-runTrace m = post $ getTraceM m emptyH (Start,black,1)
+runMicroPrint :: MicroPrint a -> (a,[Tile],Height)
+runMicroPrint m = post $ getMicroPrint m emptyH (Start,black,1)
   where
     post (a,f,(W0 n, rgb, h)) = (a, toListH $ f `snocH` (Word rgb n), h)
     post (a,f,(_, _, h))      = (a, f [], h)
 
-execTrace :: TraceM a -> ([Tile],Height)
-execTrace = post . runTrace
+execMicroPrint :: MicroPrint a -> ([Tile],Height)
+execMicroPrint = post . runMicroPrint
   where post (_,xs,h) = (xs,h)
 
-enqueueTile :: TraceM ()
-enqueueTile = TraceM $ \w (opt,rgb,h) -> 
+enqueueTile :: MicroPrint ()
+enqueueTile = MicroPrint $ \w (opt,rgb,h) -> 
     let tileF = step rgb opt in ((), tileF w, (Start, rgb,h))
   where
     step _   Start  = id
@@ -79,23 +83,23 @@ enqueueTile = TraceM $ \w (opt,rgb,h) ->
     step rgb (W0 n) = (\f -> f `snocH` (Word rgb n))
 
 
-linebreak :: TraceM ()
+linebreak :: MicroPrint ()
 linebreak = enqueueTile >> next
   where
-    
-    next = TraceM $ \w (opt,rgb,h) -> ((),w `snocH` LineBreak, (opt,rgb,h+1))
+    next = MicroPrint $ 
+             \w (opt,rgb,h) -> ((),w `snocH` LineBreak, (opt,rgb,h+1))
 
 -- Note - it is permissible to change colour mid-word.
 -- But this is the same as having a no-space break.
 --
-setRGB :: DRGB -> TraceM ()
+setRGB :: DRGB -> MicroPrint ()
 setRGB rgb = enqueueTile >> next
   where
     -- tip will always be Start here...
-    next = TraceM $ \w (tip,_,h) -> ((),w,(tip,rgb,h))
+    next = MicroPrint $ \w (tip,_,h) -> ((),w,(tip,rgb,h))
 
-char :: TraceM ()
-char = TraceM $ \w (tip,rgb,h) ->
+char :: MicroPrint ()
+char = MicroPrint $ \w (tip,rgb,h) ->
     let (f,tip') = addChar tip in ((),f w,(tip',rgb,h))
   where
     addChar Start  = (id, W0 1)
@@ -103,8 +107,8 @@ char = TraceM $ \w (tip,rgb,h) ->
     addChar (S0 n) = (\f -> f `snocH` (Space n), W0 1)
 
 
-space :: TraceM ()
-space = TraceM $ \w (tip,rgb,h) ->
+space :: MicroPrint ()
+space = MicroPrint $ \w (tip,rgb,h) ->
     let (f,tip') = addSpace tip rgb in ((),f w,(tip',rgb,h))
   where
     addSpace Start  _   = (id, S0 1)

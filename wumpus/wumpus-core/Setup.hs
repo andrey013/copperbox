@@ -28,3 +28,5 @@ sdistVersionWarning _ _ =
 printVersionNumberFile :: IO ()
 printVersionNumberFile = 
   readFile "src/Wumpus/Core/VersionNumber.hs" >>= putStrLn
+
+
