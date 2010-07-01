@@ -404,7 +404,7 @@ transformFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
 -- For instance after a reflection in the y-axis br becomes bl.
 transformBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-transformBBox fp bb = trace $ map fp $ [bl,br,tl,tr]
+transformBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
   where
     (bl,br,tr,tl) = corners bb
 
@@ -494,7 +494,7 @@ instance Boundary (Picture u) where
   boundary (Clip     (_,bb) _ _) = bb
 
 instance (Num u, Ord u) => Boundary (Path u) where
-  boundary (Path st xs) = trace $ st : foldr f [] xs where
+  boundary (Path st xs) = traceBoundary $ st : foldr f [] xs where
       f (PLineTo p1)        acc  = p1 : acc
       f (PCurveTo p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
@@ -509,7 +509,8 @@ instance (Fractional u, Floating u, Ord u) => Boundary (Primitive u) where
 
 primLabelBoundary :: (Fractional u, Ord u) 
                   => FontAttr -> Label u -> BoundingBox u
-primLabelBoundary attr (Label pt xs ctm) = retrace (ctm *#) untraf_bbox
+primLabelBoundary attr (Label pt xs ctm) = 
+    retraceBoundary (ctm *#) untraf_bbox
   where
     untraf_bbox = textBounds (font_size attr) pt char_count
     char_count  = textLength xs
@@ -527,7 +528,7 @@ instance (Floating u, Ord u) => Boundary (PrimEllipse u) where
 --
 
 ellipseBoundary :: (Floating u, Ord u) => PrimEllipse u -> BoundingBox u
-ellipseBoundary = trace . ellipseControlPoints
+ellipseBoundary = traceBoundary . ellipseControlPoints
 
 -- PROBLEM:
 -- Currently a rotated circle has a different BBox to a 

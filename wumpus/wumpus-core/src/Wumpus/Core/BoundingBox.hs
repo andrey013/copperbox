@@ -36,8 +36,8 @@ module Wumpus.Core.BoundingBox
   , bbox
   , obbox
   , union 
-  , trace
-  , retrace
+  , traceBoundary
+  , retraceBoundary
 
   , corners
   , within
@@ -100,7 +100,7 @@ instance Pretty u => Pretty (BoundingBox u) where
 type instance DUnit (BoundingBox u) = u
 
 instance (Num u, Ord u) => Scale (BoundingBox u) where
-  scale x y bb     = trace $ map (scale x y) $ [bl,br,tr,tl]
+  scale x y bb     = traceBoundary $ map (scale x y) $ [bl,br,tr,tl]
     where (bl,br,tr,tl) = corners bb
 
 
@@ -156,9 +156,10 @@ BBox ll ur `union` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')
 -- 'trace' throws a run-time error when supplied with the empty 
 -- list.
 --
-trace :: (Num u, Ord u) => [Point2 u] -> BoundingBox u
-trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (minPt z a, maxPt z b) ) (p,p) ps
-trace []     = error $ "BoundingBox.trace called in empty list"
+traceBoundary :: (Num u, Ord u) => [Point2 u] -> BoundingBox u
+traceBoundary (p:ps) = 
+    uncurry BBox $ foldr (\z (a,b) -> (minPt z a, maxPt z b) ) (p,p) ps
+traceBoundary []     = error $ "BoundingBox.trace called in empty list"
 
 -- | Perform the supplied transformation on the four corners of 
 -- the bounding box. Trace the new corners to calculate the 
@@ -167,9 +168,9 @@ trace []     = error $ "BoundingBox.trace called in empty list"
 -- This helper function can be used to re-calculate a bounding 
 -- box after a rotation for example.
 --
-retrace :: (Num u, Ord u) 
+retraceBoundary :: (Num u, Ord u) 
         => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-retrace f = trace . map f . fromCorners . corners
+retraceBoundary f = traceBoundary . map f . fromCorners . corners
   where
     fromCorners (bl,br,tr,tl) = [bl,br,tr,tl]
 

@@ -29,12 +29,9 @@ no dependencies on foreign C libraries. Output to PostScript and
 SVG (Scalable Vector Graphics) is supported. 
 
 \wumpuscore is rather primitive, the basic drawing objects are 
-paths and text labels. A secondary library \texttt{wumpus-extra}
-has been prototyped containing some higher level objects 
-(arrowheads, etc.), but hasn't been officially released - the code 
-needs more thought before being put into the wild. Previews are 
-available from the \texttt{copperbox} project repository 
-hosted by Googlecode.
+paths and text labels. A second library \texttt{wumpus-basic}
+contains code for higher level drawing but it is still missing 
+main functionalities e.g. shapes, arrowheads.
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
 PostScript's notion of an (implicit) current point and the 
@@ -121,32 +118,13 @@ presents them as opaque types - i.e. their constructors are
 hidden. 
 \end{description}
 
-The package also contains some extra modules defining
-picture composition operators, safe fonts and colour schemes. 
-These modules would ideally be packaged in a separate package 
-\texttt{wumpus-extra}, unfortunately the other code in this 
-package is not yet suitable for wide spread distribution, so 
-they are currently distributed with \wumpuscore.
-
-\begin{description}
-\item[\texttt{Wumpus.Extra.PictureLanguage.}]
-Composition operators for pictures. The operators are somewhat 
+The package also contains a deprecated module defining
+picture composition operators, 
+\texttt{Wumpus.Extra.PictureLanguage}. The operators are somewhat 
 analogue to the usual operators or pretty-printing libraries, 
 but work in 2D rather than largely horizontally with some 
-vertical concatenation.
-
-\item[\texttt{Wumpus.Extra.SafeFonts.}]
-Safe to use font and size combinations. The fonts named here are 
-included with GhostScript and are aliased as \emph{safe} fonts
-for SVG. 
-
-\item[\texttt{Wumpus.Extra.SVGColours.}]
-All the SVG named colours.
-
-\item[\texttt{Wumpus.Extra.SafeFonts.}]
-All the X11 named colours.
-
-\end{description}
+vertical concatenation. At some point in the future 
+\texttt{wumpus-basic} should supercede this module.
 
 %-----------------------------------------------------------------
 \section{Drawing model}
@@ -289,8 +267,9 @@ be drawn at a regular size then scaled once it has been lifted
 with the \texttt{frame} function to the Picture type.
 
 The following table lists PostScript fonts and their SVG 
-equivalents. As of revision 0.15.0 \wumpuscore includes a module 
-\texttt{Wumpus.Extra.SafeFonts} encoding the fonts in this list 
+equivalents. As of revision 0.20.0, the package 
+\texttt{wumpus-basic} includes a module 
+\texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
 to avoid typographical slips...
 
 

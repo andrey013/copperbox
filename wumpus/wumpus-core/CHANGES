@@ -1,5 +1,27 @@
+0.19.0 to 0.20.0:
+  
+  * Removed the modules:
+    (1) Wumpus.Extra.SafeFonts
+    (2) Wumpus.Extra.SVGColours@
+    (3) Wumpus.Extra.X11Colours - they are now in the package 
+    @wumpus-basic@.
+  
+  * Removed the example FontPic.hs to @wumpus-basic@.
+  
+  * Renamed some functions in Core.BoundingBox: 
+    (1) @trace@ changed to @traceBoundary@, (2) @retrace@ 
+    changed to @retraceBoundary@.
+   
+  * Fixed bug with @picOver@, previously the zorder was wrong 
+    and the function was actually working as /picUnder/. 
+  
+  * Added @capHeight@ to FontSize - get the size of an upper 
+    case letter without ascenders of descenders.
+  
+  * Guide updated regarding the new package @wumpus-basic@.
+  
 
-0.18,0 to 0.19.0:
+0.18.0 to 0.19.0:
   
   * Added @Transform@ type class to apply a matrix transformation
     directly.
@@ -27,7 +49,6 @@
     is efficient - no extraneous use of @concat@. 
   
   * Added wumpus_default_font constant.
-  
 
 
 0.17.0 to 0.18.0:

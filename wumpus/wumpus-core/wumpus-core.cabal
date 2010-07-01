@@ -11,8 +11,8 @@ description:
   .
   Wumpus - (W)riter (M)onad (P)ost (S)cript. 
   .
-  Wumpus is a library for generating 2D vector pictures, its 
-  salient feature is portability due to no FFI dependencies. 
+  Wumpus is a kernel library for generating 2D vector pictures, 
+  its salient feature is portability due to no FFI dependencies. 
   It can generate PostScript (EPS) files and SVG files. The 
   generated PostScript code is plain [1] and reasonably 
   efficient as the use of stack operations, i.e @gsave@ and 
@@ -25,50 +25,13 @@ description:
   is no notion of a current point, Wumpus builds pictures in a
   coordinate-free style. 
   .
-  Wumpus-core includes some extra helper modules that are not 
-  really part of the \"core\", but are otherwise currently 
-  homeless. They provide lists of named colours and /safe/ 
-  fonts, plus some prototype code (Extra.PictureLanguage) for 
-  arranging pictures.
-  .
-  WARNING...
-  .
-  The modules @Core.BoundingBox@ and @Extra.PictureLanguage@ are
-  likely to be reworked significantly in the future. 
-  .
-  @Core.BoundingBox@ has too many functions that do not offer 
-  distinct functionality. Some functions were removed in 
-  revision 0.17.0 and some more are likely to follow. 
-  .
-  @Extra.PictureLanguage@ needs some more thought. The current 
-  set of classes is rather cumbersome, and some of the operations 
-  would benefit new names.
-  .
-  NOTE...
-  .
-  Revision 0.17.0 added affine transformations for primitives 
-  (paths, text labels, ellipses), one consequence of this is 
-  the bounding box may be tighter for a primitive under affine 
-  transformation then lifted to a picture, than a primitive 
-  lifted to picture then transformed, i.e.:
-  . 
-  @boundary (liftToPicture (transform PRIM)) /= boundary (transform (liftToPicture PRIM))@
-  .
-  Where liftToPicture is usually @frame@ from 
-  @Wumpus.Core.Picture@.
-  .
-  This is because the bounding box of a transformed picture is 
-  calculated by applying the transformation to the corner points 
-  of its (previous) bounding box rather than finding the bounding 
-  box union of all the composite primitives.
-  .
   GENERAL DRAWBACKS...
   .
   For actually drawing pictures, diagrams, etc. Wumpus is very 
-  low level. I\'m working on a complementary package 
-  @wumpus-extra@ with higher-level stuff (polygons, arrows etc.)
-  but it is too unstable for Hackage. Preview releases can be
-  found at <http://code.google.com/p/copperbox/> though.
+  low level. There is a supplemantary package @wumpus-basic@ 
+  available that helps create certain types of diagram, but even 
+  this lacks the higher-level stuff (polygons, arrows etc.) that 
+  would make creating general drawings easy.
   .
   Some of the design decisions made for wumpus-core are not 
   sophisticated (e.g. how attributes like colour are handled, 
@@ -80,6 +43,16 @@ description:
   appears okay for Latin 1 but may be inadequate for other 
   character sets, so I may have to revise it significantly.
   .
+  WARNING...
+  .
+  The module @Core.BoundingBox@ is likely to be reworked 
+  significantly in the future. It has too many functions that do 
+  not offer distinct functionality. Some functions were removed in 
+  revision 0.17.0 and some more are likely to follow. 
+  .
+  The module @Extra.PictureLanguage@ is deprecated. At some point 
+  it will be superceded by @wumpus-basic@ but this will not be soon.
+  .
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -90,40 +63,22 @@ description:
   .
   0.19.0 to 0.20.0:
   .
+  * Removed the modules - Wumpus.Extra.SafeFonts,
+    Wumpus.Extra.SVGColours, Wumpus.Extra.X11Colours - they are 
+    now in the package @wumpus-basic@.
+  .
+  * Removed the example FontPic.hs to @wumpus-basic@.
+  .
+  * Renamed two functions in Core.BoundingBox - @trace@ changed 
+    to @traceBoundary@; @retrace@ changed to @retraceBoundary@.
+  . 
   * Fixed bug with @picOver@, previously the zorder was wrong 
     and the function was actually working as /picUnder/. 
   .
   * Added @capHeight@ to FontSize - get the size of an upper 
     case letter without ascenders of descenders.
   .
-  0.18.0 to 0.19.0:
-  .
-  * Added @Transform@ type class to apply a matrix transformation
-    directly.
-  .
-  * Changed the ordering of picture drawing in PostScript and SVG
-    output so the list gets drawn from tail to head with right 
-    folds. This makes the list order of pictures match their 
-    zorder.
-  .
-  * Renamed the function @withinBB@ (Core.BoundingBox) to 
-    @within@.
-  .
-  * On many type signatures with e.g. Points, I\'ve changed the 
-    parameter name on the type constructor from @a@ to @u@.
-    This is to indicate that @u@ is some unit - almost always a
-    Double. e.g @Point2 a@ becomes @Point2 u@ and all the class
-    obligations change lexically as well @Floating a =>@ to 
-    @Floating u =>@. Superficially this means a lot of type 
-    signatures have diffs but haven\'t really changed. 
-  .
-  * Added function @bezierCircle@ to generate the Bezier curve 
-    points for arcs describing a circle.
-  .
-  * Added new demo - MultiPic. The PostScript it generates
-    is efficient - no extraneous use of @concat@. 
-  .
-  * Added wumpus_default_font constant.
+  * Guide updated regarding the new package @wumpus-basic@.
   .
   .
 build-type:         Simple
@@ -138,7 +93,6 @@ extra-source-files:
   demo/AffineTest03.hs,
   demo/AffineTest04.hs,
   demo/AffineTestBase.hs,
-  demo/FontPic.hs,
   demo/LabelPic.hs,
   demo/MultiPic.hs
   demo/Picture.hs,
@@ -171,10 +125,7 @@ library
     Wumpus.Core.TextLatin1,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes,
-    Wumpus.Extra.PictureLanguage,
-    Wumpus.Extra.SafeFonts,
-    Wumpus.Extra.SVGColours,
-    Wumpus.Extra.X11Colours
+    Wumpus.Extra.PictureLanguage
 
   other-modules:
     Wumpus.Core.PictureInternal,
