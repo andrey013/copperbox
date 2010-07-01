@@ -15,10 +15,15 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Tracing monad transformer - operationally similar to a writer
--- monad, but with snoc-ing rather than monoidal append.
+-- \"Trace\" monad and monad transformer.
 --
--- Candidate for Wumpus-Extra.
+-- Trace is operationally similar to the Writer monad but it
+-- supports elementary consing as well as the Writer\'s monoidal 
+-- concatenation. 
+--
+-- Note, some care is needed to order the output to a trace with
+-- respect to the Z-order of a drawing. The API here may well
+-- be too limited... 
 -- 
 --------------------------------------------------------------------------------
 
@@ -111,17 +116,6 @@ runTrace mf = getTrace mf id
 
 runTraceT :: Monad m => TraceT i m a -> m (a,H i)
 runTraceT mf = getTraceT mf id >>= \(a,w) -> return (a,w)
-
-
-{-
-trace ::  Monad m => H i -> TraceT i m ()
-trace h = TraceT $ \w -> return ((), w . h)  
-
-
-trace1 :: Monad m => i -> TraceT i m ()
-trace1 i = TraceT $ \w -> return ((), w `snocH` i)  
--}
-
 
 
 

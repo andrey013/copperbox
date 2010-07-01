@@ -6,7 +6,7 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
-synopsis:         Common drawing utilities above wumpus-core
+synopsis:         Common drawing utilities built on wumpus-core.
 description:
   .
   Very preliminary release...
@@ -21,10 +21,10 @@ extra-source-files:
   
 library
   hs-source-dirs:     src
-  build-depends:      base         < 5, 
-                      vector-space >= 0.6,
-                      monadLib     >= 3.6,
-                      wumpus-core  >= 0.20.0
+  build-depends:      base            <  5, 
+                      vector-space    >= 0.6,
+                      monadLib        >= 3.6,
+                      wumpus-core     >= 0.20.0
 
   
   exposed-modules:

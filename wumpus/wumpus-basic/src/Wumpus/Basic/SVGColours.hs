@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- The SVG \'named colours\', but as rgb [0,1] values 
+-- The SVG \'named colours\', as rgb [0,1] values 
 --
 --------------------------------------------------------------------------------
 

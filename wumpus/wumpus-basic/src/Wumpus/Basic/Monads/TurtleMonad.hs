@@ -12,9 +12,14 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Turtle monad and monad transformer
+-- Turtle monad and monad transformer.
 --
--- Candidate for Wumpus-Extra.
+-- The Turtle monad embodies the LOGO style of imperative 
+-- drawing - sending commands to update the a cursor.
+--
+-- While Wumpus generally aims for a more compositional,
+-- \"coordinate-free\" style of drawing, some types of 
+-- diagram are very easily expressed in the LOGO style.
 --
 --------------------------------------------------------------------------------
 
@@ -149,6 +154,9 @@ moveDown    = setsLoc_ $ \(Coord x y) -> Coord x (y+1)
 nextLine    :: TurtleM m => m ()
 nextLine    = setsLoc_ $ \(Coord _ y) -> Coord 0 (y-1)
 
+
+-- | No longer sure about this combinator...
+--
 wander :: TurtleM m => m a -> m (a,Coord,Coord)
 wander ma = getLoc >>= \start ->
             ma     >>= \ans   ->

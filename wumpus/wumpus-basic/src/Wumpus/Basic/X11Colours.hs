@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- The X11 \'named colours\', but as rgb [0,1] values 
+-- The X11 \'named colours\', as rgb [0,1] values 
 --
 --------------------------------------------------------------------------------
 

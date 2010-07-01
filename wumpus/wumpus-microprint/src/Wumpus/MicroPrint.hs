@@ -16,12 +16,14 @@
 
 module Wumpus.MicroPrint
   (
-    
+
+  -- * Re-export all MicroPrint.Render        
     module Wumpus.MicroPrint.Render
 
+  -- * Top level rendering function
   , renderMicroPrint
 
-  -- * Re-exports from DrawMonad
+  -- * Re-export some from MicroPrint.DrawMonad
   , MicroPrint
   , Tile(..)
   , Height
@@ -36,8 +38,10 @@ import Wumpus.Core
 
 import Wumpus.MicroPrint.DrawMonad
 import Wumpus.MicroPrint.Render
--- Note is is permissible to change colour mid-word...
 
--- | Build a picture from a 
+
+
+-- | Build a picture from a MicroPrint.
+--
 renderMicroPrint :: MP_config -> MicroPrint a -> Maybe DPicture
 renderMicroPrint cfg mf = drawMicroPrint cfg $ execMicroPrint mf
