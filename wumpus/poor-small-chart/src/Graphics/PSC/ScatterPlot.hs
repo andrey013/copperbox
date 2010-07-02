@@ -33,7 +33,8 @@ import Graphics.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
 
 import Data.Maybe
 
@@ -43,9 +44,9 @@ data ScatterPlot u v = ScatterPlot
       , scatterplot_labelling   :: LabellingF u v
       }
 
-type DotF = DPoint2 -> Graphic
+type DotF = DPoint2 -> DGraphic
 
-type LabellingF u v = ScaleCtx u v Graphic
+type LabellingF u v = ScaleCtx u v DGraphic
 
 
 dot :: DRGB -> Double -> DotF 
@@ -67,18 +68,18 @@ renderScatterPlot (ScatterPlot ctx labellingF) ls =
     errK        = error "renderScatterPlot - empty Drawing"
     pic_layers  = concatH layers
 
-    labels      :: Graphic
+    labels      :: DGraphic
     labels      = labellingF ctx
 
-    layers      :: [Graphic]
+    layers      :: [DGraphic]
     layers      = map (\x -> makeLayer x ctx) ls
 
 
-makeLayer :: (DotF,Dataset u v) -> ScaleCtx u v Graphic
+makeLayer :: (DotF,Dataset u v) -> ScaleCtx u v DGraphic
 makeLayer (dotF,ds) = \ctx -> veloH (\pt -> makeDot dotF pt ctx) ds 
 
 
-makeDot :: DotF -> (u,v) -> ScaleCtx u v Graphic
+makeDot :: DotF -> (u,v) -> ScaleCtx u v DGraphic
 makeDot dotF (u,v) = \(_,fX,fY) -> dotF $ P2 (fX u) (fY v)
 
 

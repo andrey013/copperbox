@@ -3,11 +3,11 @@
 module Clave1 where
 
 import Wumpus.Clave.ClaveMonad
-import Wumpus.Clave.Core        
 import Wumpus.Clave.Drawing
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.SVGColours          -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.SVGColours
 
 import Data.Maybe
 import System.Directory
@@ -33,7 +33,7 @@ line1 = circleF 24 black (P2 0 0)
 pic2 :: DPicture
 pic2 = fromMaybe errK $ drawGraphic $ 
         evalClaveM cfg (beat >> rest >> highlight 2 sandyBrown 
-                             >> rest >> beat >> rest >> endLine)
+                             >> beat >> rest >> rest >> endLine)
   where
     cfg = ClaveConfig { box_height      = 24
                       , scalefun        = (24.0 *) . fromIntegral }

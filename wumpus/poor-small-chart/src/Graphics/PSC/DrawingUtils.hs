@@ -19,9 +19,7 @@ module Graphics.PSC.DrawingUtils
 
 
   -- * Graphic type
-    wrapG
-  , drawGraphic
-  , cc
+    cc
 
   -- * Drawing
   , drawingContext
@@ -31,9 +29,6 @@ module Graphics.PSC.DrawingUtils
   , ctxRectangleScaleY  
 
   , concatBackgrounds
-  , straightLine
-  , strokedRectangle
-  , filledRectangle
   , strokedCircle
   , filledCircle
 
@@ -53,14 +48,12 @@ module Graphics.PSC.DrawingUtils
 import Graphics.PSC.Core
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
+
 
 import Data.AffineSpace                 -- package: vector-space
 
-
-
-wrapG :: DPrimitive -> Graphic
-wrapG = wrapH 
 
 
 
@@ -68,16 +61,10 @@ wrapG = wrapH
 -- Composing primitives with Hughes lists
 
 
-drawGraphic :: Graphic -> Maybe DPicture
-drawGraphic f = step $ f []
-  where
-    step [] = Nothing
-    step xs = Just $ frameMulti xs 
-
 
 infixr 9 `cc`
 
-cc :: ScaleCtx u v Graphic -> ScaleCtx u v Graphic -> ScaleCtx u v Graphic 
+cc :: ScaleCtx u v DGraphic -> ScaleCtx u v DGraphic -> ScaleCtx u v DGraphic
 cc f g = \ctx -> f ctx . g ctx
 
 
@@ -110,39 +97,22 @@ ctxRectangleScaleY = \(_,_,fY) -> fY
  
 
 
-concatBackgrounds :: Graphic -> [Graphic] -> Maybe DPicture
+concatBackgrounds :: DGraphic -> [DGraphic] -> Maybe DPicture
 concatBackgrounds top bkgrds = drawGraphic $ concatH bkgrds . top
 
 
-straightLine :: Stroke t => t -> DVec2 -> DPoint2 -> Graphic
-straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
-
-rectangle :: Num u => u -> u -> Point2 u -> Path u
-rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
-  where
-    br = bl .+^ hvec w
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 
 
 
-strokedRectangle :: Stroke t => t -> Double -> Double -> DPoint2 -> Graphic
-strokedRectangle t w h bl = wrapG $ cstroke t $ rectangle w h bl
-
-filledRectangle :: Fill t => t -> Double -> Double -> DPoint2 -> Graphic
-filledRectangle t w h bl = wrapG $ fill t $ rectangle w h bl
-
-
-
-strokedCircle :: DRGB -> LineWidth -> Double -> DPoint2 -> Graphic 
+strokedCircle :: DRGB -> LineWidth -> Double -> DPoint2 -> DGraphic 
 strokedCircle rgb lw radius = \pt -> 
     wrapG $ ellipse (rgb, LineWidth lw) radius radius pt
 
-filledCircle :: DRGB -> Double -> DPoint2 -> Graphic
+filledCircle :: DRGB -> Double -> DPoint2 -> DGraphic
 filledCircle rgb radius = \pt -> wrapG $ ellipse rgb radius radius pt 
 
 --------------------------------------------------------------------------------
 
-type TextLabelF = DPoint2 -> Graphic
+type TextLabelF = DPoint2 -> DGraphic
 
 makeTextlabel :: (Double -> Double -> Vec2 Double) 
               -> (DRGB,FontAttr) 

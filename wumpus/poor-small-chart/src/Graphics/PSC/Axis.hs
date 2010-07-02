@@ -55,7 +55,8 @@ import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
 
 import Data.AffineSpace                 -- package: vector-space 
 
@@ -65,7 +66,7 @@ import Data.AffineSpace                 -- package: vector-space
 -- ticks / labels or both, or neither...
 --
 
-type AxisLabelF u = u -> DPoint2 -> Graphic
+type AxisLabelF u = u -> DPoint2 -> DGraphic
 
 type AxisSteps u = [u]
 
@@ -173,26 +174,26 @@ yAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF =
 
 drawAxes :: AxisLabelF u -> AxisSteps u
          -> AxisLabelF v -> AxisSteps v
-         -> ScaleCtx u v Graphic
+         -> ScaleCtx u v DGraphic
 drawAxes udrawF usteps vdrawF vsteps = hf `cc` vf
   where
     hf = horizontalLabels udrawF usteps
     vf = verticalLabels   vdrawF vsteps
     
 
-horizontalLabels :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v Graphic
+horizontalLabels :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v DGraphic
 horizontalLabels buildF steps = horizontals 0 buildF steps
 
 
-verticalLabels :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v Graphic
+verticalLabels :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v DGraphic
 verticalLabels buildF steps = verticals 0 buildF steps 
 
-horizontalLabelsTop :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v Graphic
+horizontalLabelsTop :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v DGraphic
 horizontalLabelsTop buildF steps = \ctx -> 
     horizontals (ctxRectangleHeight ctx) buildF steps ctx
 
 
-verticalLabelsRight :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v Graphic
+verticalLabelsRight :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v DGraphic
 verticalLabelsRight buildF steps = \ctx -> 
     verticals (ctxRectangleWidth ctx) buildF steps ctx
 
@@ -202,7 +203,7 @@ verticalLabelsRight buildF steps = \ctx ->
 -- Grids
 
 
-type GridLineF = DPoint2 -> DPoint2 -> Graphic
+type GridLineF = DPoint2 -> DPoint2 -> DGraphic
 
 
 simpleGridLine :: Stroke t => t -> GridLineF
@@ -210,7 +211,7 @@ simpleGridLine t = \p0 p1 -> straightLine t (p1 .-. p0) p0
 
 
 
-drawGrid :: GridLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v Graphic
+drawGrid :: GridLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v DGraphic
 drawGrid drawF usteps vsteps ctx = vf . hf
   where
     hf = horizontalLines drawF vsteps ctx
@@ -219,7 +220,7 @@ drawGrid drawF usteps vsteps ctx = vf . hf
 
 verticalLines :: GridLineF
               -> AxisSteps u
-              -> ScaleCtx u v Graphic
+              -> ScaleCtx u v DGraphic
 verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
   where
     buildF _ pt  = drawF pt (pt .+^ upvec)
@@ -228,7 +229,7 @@ verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
 
 horizontalLines :: GridLineF
                 -> AxisSteps v
-                -> ScaleCtx u v Graphic
+                -> ScaleCtx u v DGraphic
 horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx
   where
     buildF _ pt = drawF pt (pt .+^ rightvec)
@@ -240,17 +241,17 @@ horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx
 -- Enumerate x-y values...
 
 horizontals :: Double 
-            -> (u -> DPoint2 -> Graphic) 
+            -> (u -> DPoint2 -> DGraphic) 
             -> AxisSteps u 
-            -> ScaleCtx u v Graphic
+            -> ScaleCtx u v DGraphic
 horizontals y0 buildF steps ctx = 
     veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues steps ctx
 
 
 verticals :: Double 
-          -> (v -> DPoint2 -> Graphic) 
+          -> (v -> DPoint2 -> DGraphic) 
           -> AxisSteps v 
-          -> ScaleCtx u v Graphic 
+          -> ScaleCtx u v DGraphic 
 verticals x0 buildF steps ctx = 
     veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues steps ctx
 
@@ -278,10 +279,10 @@ rect_epsilon = 0.01
 
 --------------------------------------------------------------------------------
 
-type BorderF = DPoint2 -> DPoint2 -> Graphic
+type BorderF = DPoint2 -> DPoint2 -> DGraphic
 
 
-plainBorder :: DRGB -> Double -> ScaleCtx u v Graphic
+plainBorder :: DRGB -> Double -> ScaleCtx u v DGraphic
 plainBorder rgb lw = \((w,h),_,_) -> 
     strokedRectangle (rgb, LineWidth lw) w h (P2 0 0)
 

@@ -19,9 +19,6 @@ module Wumpus.Clave.Core
   -- * Types
     BoxDiagram
 
-  , Graphic  
-  , DGraphic
-
 
   , LineWidth
   , BoxHeight
@@ -31,17 +28,8 @@ module Wumpus.Clave.Core
 
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 type BoxDiagram = DPicture
-
--- | Note - this representation allows for zero, one or more
--- Primitives to be collected together.
---
-type Graphic u = H (Primitive u)
-
-type DGraphic  = Graphic Double
-
 
 
 type LineWidth = Double

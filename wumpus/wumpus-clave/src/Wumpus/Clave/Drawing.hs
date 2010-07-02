@@ -18,8 +18,7 @@ module Wumpus.Clave.Drawing
   (
   
   -- * Graphic
-    drawGraphic
-  , wrapG  
+    wrapG  
 
   -- * Glyphs
   , circleF
@@ -41,24 +40,16 @@ import Wumpus.Clave.Core
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
 
 import Data.AffineSpace                 -- package: vector-space
 
-drawGraphic :: (Floating u, Ord u ) => Graphic u -> Maybe (Picture u)
-drawGraphic f = step $ f []
-  where
-    step [] = Nothing
-    step xs = Just $ frameMulti $ xs 
-
-
-wrapG :: Primitive u -> Graphic u 
-wrapG = wrapH 
 
 displacePt :: Num u => u -> u -> (Point2 u -> Point2 u)
 displacePt x y = (.+^ V2 x y)
 
-circleF :: BoxHeight -> DRGB -> DPoint2 -> DGraphic
+circleF :: BoxHeight -> DRGB -> DGraphicF
 circleF h rgb = filledCircle rgb radius . displacePt (radius+dd) (radius+dd)
   where
     radius = 0.5 * capHeight h
@@ -93,32 +84,13 @@ backgroundF n h rgb = filledRectangle rgb width height
 --------------------------------------------------------------------------------
 
 
-straightLine :: (Num u, Ord u, Stroke t) 
-             => t -> Vec2 u -> Point2 u -> Graphic u
-straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
-
-strokedRectangle :: (Num u, Ord u, Stroke t) 
-                 => t -> u -> u -> Point2 u -> Graphic u
-strokedRectangle t w h bl = wrapG $ cstroke t $ rectangle w h bl
-
-filledRectangle :: (Num u, Ord u, Fill t) 
-                => t -> u -> u -> Point2 u -> Graphic u
-filledRectangle t w h bl = wrapG $ fill t $ rectangle w h bl
 
 
 strokedCircle :: Fractional u 
               =>  DRGB -> LineWidth -> u -> Point2 u -> Graphic u
-strokedCircle rgb lw radius = \pt -> 
-    wrapG $ ellipse (rgb, LineWidth lw) radius radius pt
+strokedCircle rgb lw radius = circle (rgb, LineWidth lw) radius
 
 filledCircle :: Fractional u 
              => DRGB -> u -> Point2 u -> Graphic u
-filledCircle rgb radius = \pt -> wrapG $ ellipse rgb radius radius pt 
+filledCircle rgb radius = circle rgb radius
 
-
-rectangle :: Num u => u -> u -> Point2 u -> Path u
-rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
-  where
-    br = bl .+^ hvec w
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 

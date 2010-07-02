@@ -14,7 +14,8 @@ import Graphics.PSC.ScatterPlot
 
 
 import Wumpus.Core                      -- package: wupus-core
-import Wumpus.Basic.SafeFonts           -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
 import Data.AffineSpace                 -- package: vector-space
@@ -38,7 +39,7 @@ pic1 = renderScatterPlot scatter_cfg [(squareDot,input_data)]
    border      = plainBorder black 0.5
 
 
-axis_fun :: ScaleCtx Double Double Graphic
+axis_fun :: ScaleCtx Double Double DGraphic
 axis_fun = xa `cc` ya
   where
     xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps

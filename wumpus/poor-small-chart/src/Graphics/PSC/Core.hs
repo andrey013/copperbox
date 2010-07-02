@@ -18,7 +18,6 @@ module Graphics.PSC.Core
   (
   -- * Types
     Chart
-  , Graphic
   , DrawingContext
   , ScaleCtx
   , Dataset
@@ -52,7 +51,6 @@ module Graphics.PSC.Core
 
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 import Numeric
 
@@ -63,7 +61,6 @@ type Chart = DPicture
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
 --
-type Graphic = H DPrimitive
 
 type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
 

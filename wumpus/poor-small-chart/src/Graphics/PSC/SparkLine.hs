@@ -31,9 +31,9 @@ module Graphics.PSC.SparkLine
   ) where
 
 import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 import Data.Maybe
 
@@ -45,7 +45,7 @@ data SparkLine u v = SparkLine
       }
 
 
-type SparkLineF = [DPoint2] -> Graphic
+type SparkLineF = [DPoint2] -> DGraphic
 
 simpleLine :: DRGB -> Double -> SparkLineF
 simpleLine rgb lw = wrapG . ostroke (rgb, LineWidth lw) . vertexPath
@@ -76,7 +76,7 @@ sparklineRectangle attr letter_count =
 -- work with the implementation @rangeBand@.
 
 
-type RangeBandF u v = ScaleCtx u v Graphic
+type RangeBandF u v = ScaleCtx u v DGraphic
 
 
 rangeBand :: Num v => Range v -> DRGB -> RangeBandF u v

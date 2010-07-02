@@ -37,7 +37,8 @@ import Wumpus.Clave.Drawing
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
-import Wumpus.Basic.Monads.TraceMonad   -- package: wumpus-basic
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Monads.TraceMonad
 import Wumpus.Basic.Monads.TurtleMonad
 
 import MonadLib                         -- package: monadLib
