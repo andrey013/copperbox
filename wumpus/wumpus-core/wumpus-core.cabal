@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.20.0
+version:          0.21.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -60,6 +60,12 @@ description:
   (bitmaps). 
   .
   Changelog:
+  .
+  0.20.0 to 0.21.0:
+  .
+  * Removed UndecidableInstances pragma from 
+    Core.PictureInternal. It looks like Core.Geometry will always 
+    needs UndecidableInstances though.
   .
   0.19.0 to 0.20.0:
   .

@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.1.1
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -10,6 +10,16 @@ synopsis:         Common drawing utilities built on wumpus-core.
 description:
   .
   Very preliminary release...
+  .
+  Changelog:
+  .
+  0.1.1 to 0.2.0:
+  .
+  * Added the module @Wumpus.Basic.Graphic@.
+  .
+  * ???
+  .
+  * ??? 
   .
   .
 build-type:         Simple
@@ -30,6 +40,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Basic.Graphic,
     Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.SafeFonts,

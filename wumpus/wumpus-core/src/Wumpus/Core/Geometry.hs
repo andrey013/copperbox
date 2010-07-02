@@ -335,6 +335,10 @@ instance Num u => VectorSpace (Vec2 u) where
 
 -- scalar (dot / inner) product via the class InnerSpace
 
+-- This definition mandates UndecidableInstances, but this seems
+-- in line with Data.VectorSpace...
+--
+
 instance (Num u, InnerSpace u, Scalar u ~ u) 
     => InnerSpace (Vec2 u) where
   (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')

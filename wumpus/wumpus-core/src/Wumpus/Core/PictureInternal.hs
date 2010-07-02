@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
