@@ -29,10 +29,9 @@ module Wumpus.Clave.Core
   ) where
 
 
-import Wumpus.Clave.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
-
+import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 type BoxDiagram = DPicture
 

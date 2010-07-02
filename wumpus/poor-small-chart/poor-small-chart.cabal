@@ -26,21 +26,19 @@ extra-source-files:
   
 library
   hs-source-dirs:     src
-  build-depends:      base         < 5, 
-                      vector-space >= 0.6,
-                      wumpus-core  >= 0.19.0
-
+  build-depends:      base              <  5, 
+                      vector-space      >= 0.6,
+                      wumpus-core       >= 0.20.0,
+                      wumpus-basic      >= 0.1.0
   
   exposed-modules:
     Graphics.PSC.Axis,
     Graphics.PSC.Core,
+    Graphics.PSC.DrawingUtils,
     Graphics.PSC.Legend,
     Graphics.PSC.ScatterPlot,
-    Graphics.PSC.SparkLine,
+    Graphics.PSC.SparkLine
 
--- These are really internal, but currently I want haddock to see them...
-    Graphics.PSC.DrawingUtils,
-    Graphics.PSC.Utils
 
   other-modules:
 

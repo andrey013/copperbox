@@ -13,9 +13,9 @@ import Graphics.PSC.DrawingUtils
 import Graphics.PSC.ScatterPlot
 
 
-import Wumpus.Core
-import Wumpus.Extra.SafeFonts           -- package: wumpus-core
-import Wumpus.Extra.SVGColours
+import Wumpus.Core                      -- package: wupus-core
+import Wumpus.Basic.SafeFonts           -- package: wumpus-basic
+import Wumpus.Basic.SVGColours
 
 import Data.AffineSpace                 -- package: vector-space
 

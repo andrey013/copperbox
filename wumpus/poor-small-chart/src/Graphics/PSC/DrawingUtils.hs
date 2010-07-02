@@ -46,17 +46,14 @@ module Graphics.PSC.DrawingUtils
   , textlabelW
   , textlabelC
   
-  -- wumpus-core additions
-  , capHeight
-
 
   ) where
 
 
 import Graphics.PSC.Core
-import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 import Data.AffineSpace                 -- package: vector-space
 
@@ -192,9 +189,3 @@ textlabelC = makeTextlabel (\w cap_height -> V2 (w*0.5) (cap_height*0.5))
 --------------------------------------------------------------------------------
 -- WUMPUS_CORE additions
 
-
--- The height of an upper case letter (without ascender or 
--- descender).
---
-capHeight :: Fractional u => FontSize -> u
-capHeight sz = textHeight sz - (2 * descenderDepth sz)

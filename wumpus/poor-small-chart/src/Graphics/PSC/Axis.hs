@@ -53,9 +53,9 @@ module Graphics.PSC.Axis
 
 import Graphics.PSC.Core
 import Graphics.PSC.DrawingUtils
-import Graphics.PSC.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 import Data.AffineSpace                 -- package: vector-space 
 

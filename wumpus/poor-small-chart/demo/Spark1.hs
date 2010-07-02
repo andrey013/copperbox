@@ -7,8 +7,8 @@ import Graphics.PSC.DrawingUtils
 import Graphics.PSC.SparkLine
 
 import Wumpus.Core
-import Wumpus.Extra.SafeFonts
-import Wumpus.Extra.SVGColours 
+import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.SVGColours 
 
 
 

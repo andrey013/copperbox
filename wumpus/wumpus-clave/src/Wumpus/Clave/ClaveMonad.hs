@@ -34,11 +34,11 @@ module Wumpus.Clave.ClaveMonad
 
 import Wumpus.Clave.Core
 import Wumpus.Clave.Drawing
-import Wumpus.Clave.TraceT
-import Wumpus.Clave.TurtleT
 
-import Wumpus.Core hiding ( trace )     -- package: wumpus-core
+import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
+import Wumpus.Basic.Monads.TraceMonad   -- package: wumpus-basic
+import Wumpus.Basic.Monads.TurtleMonad
 
 import MonadLib                         -- package: monadLib
 

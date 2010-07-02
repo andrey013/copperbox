@@ -38,10 +38,10 @@ module Wumpus.Clave.Drawing
 
 
 import Wumpus.Clave.Core
-import Wumpus.Clave.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
+import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 import Data.AffineSpace                 -- package: vector-space
 

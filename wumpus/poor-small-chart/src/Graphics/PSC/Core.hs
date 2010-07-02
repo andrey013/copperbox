@@ -50,9 +50,9 @@ module Graphics.PSC.Core
   ) where
 
 
-import Graphics.PSC.Utils
 
-import Wumpus.Core
+import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
 import Numeric
 

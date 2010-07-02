@@ -7,7 +7,7 @@ import Wumpus.Clave.Core
 import Wumpus.Clave.Drawing
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Extra.SVGColours
+import Wumpus.Basic.SVGColours          -- package: wumpus-basic
 
 import Data.Maybe
 import System.Directory
