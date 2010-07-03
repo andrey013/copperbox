@@ -27,9 +27,6 @@ module Wumpus.Clave.Drawing
   , backgroundF
 
   -- * Graphic primitives
-  , straightLine
-  , strokedRectangle
-  , filledRectangle
   , strokedCircle
   , filledCircle
 

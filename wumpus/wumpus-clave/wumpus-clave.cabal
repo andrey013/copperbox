@@ -31,6 +31,7 @@ library
   exposed-modules:
     Wumpus.Clave.ClaveMonad,
     Wumpus.Clave.Core,
+    Wumpus.Clave.DjembeStrokes,
     Wumpus.Clave.Drawing
 
   other-modules:
