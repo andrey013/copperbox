@@ -302,18 +302,20 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse hw hh ctm) = 
-    concatInOut (ctm * scalingMatrix 1 (hh/hw)) (outputArc dp c 0 0 hw)
+outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm) = 
+    concatInOut (ctm * scalingMatrix2'2 1 (hh/hw)) (outputArc dp c x y hw)
 
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
 outputArc EFill        c x y r = updateColour c $ do 
+    ps_newpath
     ps_arc x y r 0 360 
     ps_closepath
     ps_fill
 
 outputArc (EStroke xs) c x y r = updatePen c xs $ do 
+    ps_newpath
     ps_arc x y r 0 360 
     ps_closepath
     ps_stroke
@@ -345,10 +347,12 @@ missingCode i fallback =  do
 
 
 concatInOut :: (PSUnit u, Fractional u) 
-            => Matrix3'3 u -> WumpusM a -> WumpusM ()
-concatInOut m1 ma | m1 == identityMatrix  = ma >> return ()
-                  | otherwise             = do { ps_concat $ toCTM m1
-                                               ; _ <- ma 
-                                               ; ps_concat $ toCTM $ invert m1
-                                               }
-    
+            => Matrix2'2 u -> WumpusM a -> WumpusM ()
+concatInOut m1 ma 
+    | m1 == identityMatrix2'2 = ma >> return ()
+    | otherwise               = do { ps_concat $ toCTM m33
+                                   ; _ <- ma 
+                                   ; ps_concat $ toCTM $ invert m33
+                                   }
+  where
+    m33 = rep3'3 m1 (P2 0 0)

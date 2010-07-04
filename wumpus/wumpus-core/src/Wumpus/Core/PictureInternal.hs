@@ -170,19 +170,19 @@ type DPathSegment = PathSegment Double
 data Label u = Label 
       { label_bottom_left :: Point2 u
       , label_text        :: EncodedText
-      , label_CTM         :: Matrix3'3 u
+      , label_CTM         :: Matrix2'2 u
       }
   deriving (Eq,Show)
 
 type DLabel = Label Double
 
--- Ellipse represented by half_width * half_height * CTM
--- The x y values of the CTM give the circles center.
+-- Ellipse represented by center and half_width * half_height
 --
 data PrimEllipse u = PrimEllipse 
-      { ellipse_half_width    :: u
+      { ellipse_center        :: Point2 u
+      , ellipse_half_width    :: u
       , ellipse_half_height   :: u 
-      , ellispe_CTM           :: Matrix3'3 u
+      , ellispe_CTM           :: Matrix2'2 u
       } 
   deriving (Eq,Show)
 
@@ -265,13 +265,13 @@ instance Pretty u => Pretty (Label u) where
                                                <+> ppMatrixCTM ctm
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse w h ctm) = pretty "ellipse" <+> text "w:" <> pretty w
-                                                  <+> text "h:" <> pretty h
-                                                  <+> ppMatrixCTM ctm
+  pretty (PrimEllipse c w h ctm) = pretty "ellipse" <+> pretty c
+                                                    <+> text "w:" <> pretty w
+                                                    <+> text "h:" <> pretty h
+                                                    <+> ppMatrixCTM ctm
 
-ppMatrixCTM :: Pretty u => Matrix3'3 u -> Doc
-ppMatrixCTM = pp . toCTM where
-  pp (CTM a b  c d  x y) = list $ map pretty [a,b,c,d,x,y]
+ppMatrixCTM :: Pretty u => Matrix2'2 u -> Doc
+ppMatrixCTM (M2'2 a b  c d) = list $ map pretty [a,b,c,d]
   
 
 --------------------------------------------------------------------------------
@@ -321,6 +321,10 @@ instance (Num u, Ord u) => Translate (Picture u) where
 
 -- Primitives
 
+{-
+-- (PROBABLY) CANNOT SUPPORT THIS OPERATION...
+--
+
 instance Num u => Transform (Primitive u) where
   transform ctm (PPath   attr path) = 
       PPath attr $ transformPath (transform ctm) path
@@ -328,13 +332,16 @@ instance Num u => Transform (Primitive u) where
   transform ctm (PLabel   attr lbl) = PLabel attr $ transformLabel ctm lbl
 
   transform ctm (PEllipse attr ell) = PEllipse attr $ transformEllipse ctm ell
-
+-}
 
 instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate ang (PPath    attr path) = PPath    attr $ rotatePath ang path
   rotate ang (PLabel   attr lbl)  = PLabel   attr $ rotateLabel ang lbl
   rotate ang (PEllipse attr ell)  = PEllipse attr $ rotateEllipse ang ell
 
+{-
+-- (PROBABLY) CANNOT SUPPORT THIS OPERATION...
+--
 instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout ang pt (PPath    attr path) = 
       PPath    attr $ rotatePathAbout ang pt path
@@ -344,7 +351,7 @@ instance (Real u, Floating u) => RotateAbout (Primitive u) where
 
   rotateAbout ang pt (PEllipse attr ell)  = 
       PEllipse attr $ rotateEllipseAbout ang pt ell
-
+-}
 
 instance Num u => Scale (Primitive u) where
   scale x y (PPath    attr path) = PPath    attr $ scalePath x y path
@@ -413,9 +420,13 @@ transformBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
 rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
 rotatePath ang = transformPath (rotate ang)
 
+{-
+-- CAN\'T SUPPORT CORRESPONDING OPERATION ON LABELS, ELLIPSES
+--
 rotatePathAbout :: (Real u, Floating u) 
                 => Radian -> Point2 u -> Path u -> Path u
 rotatePathAbout ang pt = transformPath (rotateAbout ang pt) 
+-}
 
 scalePath :: Num u => u -> u -> Path u -> Path u
 scalePath x y = transformPath (scale x y)
@@ -437,21 +448,31 @@ transformPathSegment fp = pointwise fp
 --------------------------------------------------------------------------------
 -- Labels
 
+{-
+-- NOTE SURE THIS CAN BE SUPPORTED...
+--
 transformLabel :: Num u => Matrix3'3 u -> Label u -> Label u
 transformLabel m33 (Label pt txt ctm) = Label pt txt (ctm * m33)
+-}
 
--- rotate CTM and pt or just CTM ??
+
+-- 
 rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
-rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix ang)
+rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix2'2 ang)
 
+{-
+-- NOTE SURE THIS CAN BE SUPPORTED...
+--
 -- rotate CTM and pt or just CTM ??
 rotateLabelAbout :: (Real u, Floating u) 
                 => Radian -> Point2 u -> Label u -> Label u
 rotateLabelAbout ang rpt (Label pt txt ctm) = 
     Label pt txt (ctm * originatedRotationMatrix ang rpt) 
+-}
+
 
 scaleLabel :: Num u => u -> u -> Label u -> Label u
-scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix x y)
+scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix2'2 x y)
 
 
 -- no need to change CTM for translation (??)
@@ -462,39 +483,47 @@ scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix x y)
 --
 -- > transflate x y . trafo . translate (-x) (-y)
 --
--- 
+-- ... SOLUTION - DON\'T SUPPORT THIS TYPE OF TRANFORMATION
+--
+
+
 translateLabel :: Num u => u -> u -> Label u -> Label u
--- translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
-translateLabel x y (Label pt txt ctm) = 
-    let ctm' = ctm * translationMatrix x y
-    in Label (ctm' *# pt) txt ctm'
+translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 
 --------------------------------------------------------------------------------
 -- Ellipse
 
+{-
+-- NOTE SURE THIS CAN BE SUPPORTED...
+--
 transformEllipse :: Num u => Matrix3'3 u -> PrimEllipse u -> PrimEllipse u
-transformEllipse m33 (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (ctm * m33)
+transformEllipse m33 (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * m33)
+-}
 
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u
-rotateEllipse ang (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (ctm * rotationMatrix ang)
+rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * rotationMatrix2'2 ang)
 
+{-
+-- NOT SURE THIS CAN BE SUPPORTED
+--
 rotateEllipseAbout :: (Real u, Floating u) 
                    => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
-rotateEllipseAbout ang rpt (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (ctm * originatedRotationMatrix ang rpt)
+rotateEllipseAbout ang rpt (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * originatedRotationMatrix ang rpt)
 
+-}
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-scaleEllipse x y (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (ctm * scalingMatrix x y)
+scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (ctm * scalingMatrix2'2 x y)
 
 
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse x y (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (ctm * translationMatrix x y)
+translateEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh ctm
     
 
 --------------------------------------------------------------------------------
@@ -520,11 +549,14 @@ instance (Fractional u, Floating u, Ord u) => Boundary (Primitive u) where
   boundary (PLabel (_,a) l)   = primLabelBoundary a l 
   boundary (PEllipse _ e)     = boundary e
 
+
+
 primLabelBoundary :: (Fractional u, Ord u) 
                   => FontAttr -> Label u -> BoundingBox u
 primLabelBoundary attr (Label pt xs ctm) = 
-    retraceBoundary (ctm *#) untraf_bbox
+    retraceBoundary (ctm' *#) untraf_bbox
   where
+    ctm'        = rep3'3 ctm zeroPt
     untraf_bbox = textBounds (font_size attr) pt char_count
     char_count  = textLength xs
 
@@ -610,11 +642,10 @@ repositionProperties = fn . boundary where
 --
 ellipseControlPoints :: (Floating u, Ord u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse hw hh ctm) = map (new_mtrx *#) circ
+ellipseControlPoints (PrimEllipse ctr hw hh ctm) = map (new_mtrx *#) circ
   where
-    ctr              = P2 0 0 
     (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = ctm * scalingMatrix dx dy
+    new_mtrx         = rep3'3 ctm (P2 dx dy)
     circ             = bezierCircle 1 radius ctr
 
     -- subdivide the bezierCircle with 1 to get two

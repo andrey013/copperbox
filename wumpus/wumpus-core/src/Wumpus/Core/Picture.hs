@@ -339,7 +339,7 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 mkTextLabel :: Num u => PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
 mkTextLabel c attr txt pt = PLabel (c,attr) lbl 
   where
-    lbl = Label pt (lexLabel txt) identityMatrix
+    lbl = Label pt (lexLabel txt) identityMatrix2'2
 
 
 -- | Create a text label. The string should not contain newline
@@ -393,8 +393,7 @@ ztextlabel = mkTextLabel psBlack wumpus_default_font
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh (P2 x y) = 
-    PEllipse (c,dp) (PrimEllipse hw hh (translationMatrix x y))
+mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityMatrix2'2)
 
 
 ellipseDefault :: EllipseProps

@@ -37,6 +37,8 @@ module Wumpus.Core.Geometry
   , DPoint2
   , Frame2(..)
   , DFrame2
+  , Matrix2'2(..)
+  , DMatrix2'2
   , Matrix3'3(..)
   , DMatrix3'3
   , Radian
@@ -73,12 +75,16 @@ module Wumpus.Core.Geometry
 
   -- * Matrix contruction
   , identityMatrix
+  , identityMatrix2'2
   , scalingMatrix
+  , scalingMatrix2'2
   , translationMatrix
   , rotationMatrix
+  , rotationMatrix2'2
   , originatedRotationMatrix
 
   -- * matrix operations
+  , rep3'3
   , invert
   , determinant
   , transpose
@@ -154,6 +160,23 @@ data Frame2 u = Frame2 (Vec2 u) (Vec2 u) (Point2 u)
 type DFrame2 = Frame2 Double
 
 
+-- | 2x2 matrix, considered to be in row-major form.
+--
+-- > (M2'2 a b
+-- >       c d )
+--
+-- For instance the rotation 10x scaling matrix is represented as
+--
+-- >  ( 10   0
+-- >     0  10 )
+--
+
+data Matrix2'2 u = M2'2 !u !u  !u !u 
+  deriving (Eq)
+
+type DMatrix2'2 = Matrix2'2 Double
+
+
 
 -- | 3x3 matrix, considered to be in row-major form.
 -- 
@@ -218,6 +241,12 @@ lift2Vec2 :: (u -> u -> u) -> Vec2 u -> Vec2 u -> Vec2 u
 lift2Vec2 op (V2 x y) (V2 x' y') = V2 (x `op` x') (y `op` y')
 
 
+lift2Matrix2'2 :: (u -> u -> u) -> Matrix2'2 u -> Matrix2'2 u -> Matrix2'2 u
+lift2Matrix2'2 op (M2'2 a b c d) (M2'2 m n o p) = 
+      M2'2 (a `op` m) (b `op` n) 
+           (c `op` o) (d `op` p)
+
+
 lift2Matrix3'3 :: (u -> u -> u) -> Matrix3'3 u -> Matrix3'3 u -> Matrix3'3 u
 lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) = 
       M3'3 (a `op` m) (b `op` n) (c `op` o)  
@@ -237,6 +266,10 @@ instance Functor Vec2 where
 
 instance Functor Point2 where
   fmap f (P2 a b) = P2 (f a) (f b)
+
+instance Functor Matrix2'2 where
+  fmap f (M2'2 a b c d) = M2'2 (f a) (f b) (f c) (f d)
+
 
 instance Functor Matrix3'3 where
   fmap f (M3'3 m n o p q r s t u) = 
@@ -261,11 +294,31 @@ instance (Num u, InnerSpace (Vec2 u)) => Monoid (Frame2 u) where
 
 -- Show
 
+instance Show u => Show (Matrix2'2 u) where
+  show (M2'2 a b c d) = "(M2'2 " ++ body ++ ")" where
+    body = show [[a,b],[c,d]]
+
+
 instance Show u => Show (Matrix3'3 u) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
     body = show [[a,b,c],[d,e,f],[g,h,i]]
 
 -- Num
+
+
+instance Num u => Num (Matrix2'2 u) where
+  (+) = lift2Matrix2'2 (+) 
+  (-) = lift2Matrix2'2 (-)
+
+  (*) (M2'2 a b c d) (M2'2 m n o p) = 
+      M2'2 (a*m + b*o) (a*n + b*p) 
+           (c*m + d*o) (c*n + d*p) 
+  
+  abs    = fmap abs 
+  negate = fmap negate
+  signum = fmap signum
+  fromInteger a = M2'2 a' a'  a' a' where a' = fromInteger a 
+
 
 instance Num u => Num (Matrix3'3 u) where
   (+) = lift2Matrix3'3 (+) 
@@ -590,6 +643,16 @@ identityMatrix = M3'3 1 0 0
                       0 1 0  
                       0 0 1
 
+
+-- | Construct the identity matrix:
+--
+-- > (M2'2 1 0
+-- >       0 1 )
+--
+identityMatrix2'2 :: Num u => Matrix2'2 u
+identityMatrix2'2 = M2'2 1 0 
+                         0 1
+
 -- Common transformation matrices (for 2d homogeneous coordinates)
 
 -- | Construct a scaling matrix:
@@ -603,6 +666,17 @@ scalingMatrix sx sy = M3'3  sx 0  0
                             0  sy 0   
                             0  0  1
 
+
+-- | Construct a scaling matrix:
+--
+-- > (M2'2 sx 0  
+-- >       0  sy )
+--
+scalingMatrix2'2 :: Num u => u -> u -> Matrix2'2 u
+scalingMatrix2'2 sx sy = M2'2  sx 0   
+                               0  sy
+
+
 -- | Construct a translation matrix:
 --
 -- > (M3'3 1  0  x
@@ -614,10 +688,13 @@ translationMatrix x y = M3'3 1 0 x
                              0 1 y  
                              0 0 1
 
+-- NOTE - no 2'2 translation matrix
+
+
 -- | Construct a rotation matrix:
 --
--- > (M3'3 cos(a)  -sin(a)  x
--- >       sin(a)   cos(a)  y
+-- > (M3'3 cos(a)  -sin(a)  0
+-- >       sin(a)   cos(a)  0
 -- >       0        0       1 )
 --
 rotationMatrix :: (Floating u, Real u) => Radian -> Matrix3'3 u
@@ -625,6 +702,17 @@ rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0
                         (sin ang) (cos ang)          0  
                         0         0                  1
   where ang = fromRadian a
+
+-- | Construct a rotation matrix:
+--
+-- > (M2'2 cos(a)  -sin(a)
+-- >       sin(a)   cos(a) )
+-- 
+rotationMatrix2'2 :: (Floating u, Real u) => Radian -> Matrix2'2 u
+rotationMatrix2'2 a = M2'2 (cos ang) (negate $ sin ang)
+                           (sin ang) (cos ang)
+  where ang = fromRadian a
+
 
 -- No reflectionMatrix function
 -- A reflection about the x-axis is a scale of 1 (-1)
@@ -650,7 +738,16 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
                  0 1 (-y)  
                  0 0   1
 
+-- NOTE - no Matrix2'2 version
 
+
+--------------------------------------------------------------------------------
+-- Matrix ops
+
+-- | Convert a 2x2 matrix and a point to a 3x3 matrix.
+--
+rep3'3 :: Num u => Matrix2'2 u -> Point2 u -> Matrix3'3 u
+rep3'3 (M2'2 a b c d) (P2 x y) = M3'3 a b x  c d y  0 0 1
 
 -- | Invert a matrix.
 --

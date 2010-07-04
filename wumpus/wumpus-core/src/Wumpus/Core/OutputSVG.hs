@@ -63,8 +63,8 @@ type Clipped    = Bool
 coordChange ::  (Num u, Ord u, Scale t, u ~ DUnit t) => t -> t
 coordChange = scale 1 (-1)
 
-svg_reflection_matrix :: Num u => Matrix3'3 u
-svg_reflection_matrix = M3'3  1 0 0    0 (-1) 0    0 0 1  
+svg_reflection_matrix :: Num u => Matrix2'2 u
+svg_reflection_matrix = M2'2  1 0    0 (-1)  
 
 --------------------------------------------------------------------------------
 
@@ -216,20 +216,16 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse w h ctm) 
+ellipse (c,dp) (PrimEllipse (P2 x y) w h ctm) 
     | w == h    = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    (x,y,ctm')    = splitCTM ctm
-    circle_attrs  = withCTM ctm $ [ {- attr_cx x, attr_cy y, -} attr_r w]
-    ellipse_attrs = withCTM ctm' $ [ attr_cx x, attr_cy y, attr_rx w, attr_ry h]
+    circle_attrs  = withCTM ctm $ [attr_cx x, attr_cy y, attr_r w]
+    ellipse_attrs = withCTM ctm $ [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
-
-splitCTM :: Num u => Matrix3'3 u -> (u, u, Matrix3'3 u)
-splitCTM (M3'3 a b x_ d e y_ f g h) = (x_, y_, M3'3 a b 0 d e 0 f g h) 
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
@@ -297,9 +293,10 @@ closePath xs = xs ++ ["Z"]
 snoc_attrs :: Element -> [Attr] -> Element
 snoc_attrs = flip add_attrs
 
-withCTM :: PSUnit u => Matrix3'3 u -> [Attr] -> [Attr]
-withCTM mtrx attrs | mtrx == identityMatrix = attrs
-                   | otherwise              = mtrx_attr : attrs
+withCTM :: PSUnit u => Matrix2'2 u -> [Attr] -> [Attr]
+withCTM mtrx@(M2'2 a b c d) attrs 
+    | mtrx == identityMatrix2'2 = attrs
+    | otherwise                 = mtrx_attr : attrs
   where
-    mtrx_attr       = attr_transform $ val_matrix a b c d e f
-    CTM a b c d e f = toCTM mtrx
+    mtrx_attr       = attr_transform $ val_matrix a b c d 0 0
+ 
