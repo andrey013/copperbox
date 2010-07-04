@@ -176,11 +176,11 @@ data Label u = Label
 
 type DLabel = Label Double
 
--- Ellipse represented by center and half_width * half_height
+-- Ellipse represented by half_width * half_height * CTM
+-- The x y values of the CTM give the circles center.
 --
 data PrimEllipse u = PrimEllipse 
-      { ellipse_center        :: Point2 u
-      , ellipse_half_width    :: u
+      { ellipse_half_width    :: u
       , ellipse_half_height   :: u 
       , ellispe_CTM           :: Matrix3'3 u
       } 
@@ -256,19 +256,18 @@ instance Pretty u => Pretty (Path u) where
    pretty (Path pt ps) = pretty pt <> hcat (map pretty ps)
 
 instance Pretty u => Pretty (PathSegment u) where
-  pretty (PCurveTo p1 p2 p3)    = text ".*" <> pretty p1 <> text ",," <> pretty p2 
+  pretty (PCurveTo p1 p2 p3)  = text ".*" <> pretty p1 <> text ",," <> pretty p2 
                                           <> text "*." <> pretty p3
-  pretty (PLineTo pt)           = text "--" <> pretty pt
+  pretty (PLineTo pt)         = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
   pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
                                                <+> ppMatrixCTM ctm
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse c w h ctm) = pretty "ellipse" <+> pretty c
-                                                    <+> text "w:" <> pretty w
-                                                    <+> text "h:" <> pretty h
-                                                    <+> ppMatrixCTM ctm
+  pretty (PrimEllipse w h ctm) = pretty "ellipse" <+> text "w:" <> pretty w
+                                                  <+> text "h:" <> pretty h
+                                                  <+> ppMatrixCTM ctm
 
 ppMatrixCTM :: Pretty u => Matrix3'3 u -> Doc
 ppMatrixCTM = pp . toCTM where
@@ -408,7 +407,7 @@ transformBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
     (bl,br,tr,tl) = corners bb
 
 
-
+--------------------------------------------------------------------------------
 -- Paths
 
 rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
@@ -434,6 +433,8 @@ transformPath fp (Path start ss) =
 transformPathSegment :: (Point2 u -> Point2 u) -> PathSegment u -> PathSegment u
 transformPathSegment fp = pointwise fp
 
+
+--------------------------------------------------------------------------------
 -- Labels
 
 transformLabel :: Num u => Matrix3'3 u -> Label u -> Label u
@@ -452,36 +453,49 @@ rotateLabelAbout ang rpt (Label pt txt ctm) =
 scaleLabel :: Num u => u -> u -> Label u -> Label u
 scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix x y)
 
+
 -- no need to change CTM for translation (??)
-translateLabel :: Num u => u -> u -> Label u -> Label u
-translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
-
-
+-- THIS IS NOT RIGHT:
+--
+-- It doesn\'t work for transformations that translate the "origin"
+-- apply a trafo, then reverse the origin translation...
+--
+-- > transflate x y . trafo . translate (-x) (-y)
+--
 -- 
+translateLabel :: Num u => u -> u -> Label u -> Label u
+-- translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
+translateLabel x y (Label pt txt ctm) = 
+    let ctm' = ctm * translationMatrix x y
+    in Label (ctm' *# pt) txt ctm'
+
+--------------------------------------------------------------------------------
+-- Ellipse
 
 transformEllipse :: Num u => Matrix3'3 u -> PrimEllipse u -> PrimEllipse u
-transformEllipse m33 (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * m33)
+transformEllipse m33 (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (ctm * m33)
 
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u
-rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * rotationMatrix ang)
+rotateEllipse ang (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (ctm * rotationMatrix ang)
 
 rotateEllipseAbout :: (Real u, Floating u) 
                    => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
-rotateEllipseAbout ang rpt (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * originatedRotationMatrix ang rpt)
+rotateEllipseAbout ang rpt (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (ctm * originatedRotationMatrix ang rpt)
 
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * scalingMatrix x y)
+scaleEllipse x y (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (ctm * scalingMatrix x y)
 
 
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (translate x y pt) hw hh ctm
+translateEllipse x y (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (ctm * translationMatrix x y)
+    
 
 --------------------------------------------------------------------------------
 -- Boundary
@@ -596,8 +610,9 @@ repositionProperties = fn . boundary where
 --
 ellipseControlPoints :: (Floating u, Ord u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse ctr hw hh ctm) = map (new_mtrx *#) circ
+ellipseControlPoints (PrimEllipse hw hh ctm) = map (new_mtrx *#) circ
   where
+    ctr              = P2 0 0 
     (radius,(dx,dy)) = circleScalingProps hw hh
     new_mtrx         = ctm * scalingMatrix dx dy
     circ             = bezierCircle 1 radius ctr

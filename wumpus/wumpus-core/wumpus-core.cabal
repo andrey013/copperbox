@@ -63,6 +63,9 @@ description:
   .
   0.20.0 to 0.21.0:
   .
+  * Changed Affine translations on Label and Ellipse primitives....
+    ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+  .
   * Removed UndecidableInstances pragma from 
     Core.PictureInternal. It looks like Core.Geometry will always 
     needs UndecidableInstances though.

@@ -302,8 +302,8 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm) = 
-    concatInOut (ctm * scalingMatrix 1 (hh/hw)) (outputArc dp c x y hw)
+outputEllipse dp c (PrimEllipse hw hh ctm) = 
+    concatInOut (ctm * scalingMatrix 1 (hh/hw)) (outputArc dp c 0 0 hw)
 
 
 outputArc :: (PSColour c, PSUnit u) 

@@ -216,16 +216,20 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse (P2 x y) w h ctm) 
+ellipse (c,dp) (PrimEllipse w h ctm) 
     | w == h    = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = withCTM ctm $ [attr_cx x, attr_cy y, attr_r w]
-    ellipse_attrs = withCTM ctm $ [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
+    (x,y,ctm')    = splitCTM ctm
+    circle_attrs  = withCTM ctm $ [ {- attr_cx x, attr_cy y, -} attr_r w]
+    ellipse_attrs = withCTM ctm' $ [ attr_cx x, attr_cy y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
+
+splitCTM :: Num u => Matrix3'3 u -> (u, u, Matrix3'3 u)
+splitCTM (M3'3 a b x_ d e y_ f g h) = (x_, y_, M3'3 a b 0 d e 0 f g h) 
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)

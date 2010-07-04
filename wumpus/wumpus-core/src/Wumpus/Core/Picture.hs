@@ -393,7 +393,8 @@ ztextlabel = mkTextLabel psBlack wumpus_default_font
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityMatrix)
+mkEllipse c dp hw hh (P2 x y) = 
+    PEllipse (c,dp) (PrimEllipse hw hh (translationMatrix x y))
 
 
 ellipseDefault :: EllipseProps
