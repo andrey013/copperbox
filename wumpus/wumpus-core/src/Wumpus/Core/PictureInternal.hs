@@ -303,7 +303,7 @@ type instance DUnit (Path u)        = u
 type instance DUnit (PrimEllipse u) = u
 
 instance (Num u, Ord u) => Transform (Picture u) where
-  transform ctm pic = transformPicture (transform ctm) (transform ctm) pic
+  transform ctm pic = trafoPicture (transform ctm) (transform ctm) pic
 
 
 instance (Floating u, Real u) => Rotate (Picture u) where
@@ -342,48 +342,47 @@ instance Num u => Translate (Primitive u) where
 -- Helpers for the affine transformations
 
 rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
-rotatePicture ang = transformPicture (rotate ang) (rotate ang)
-
+rotatePicture ang = trafoPicture (rotate ang) (rotate ang)
 
 rotatePictureAbout :: (Real u, Floating u) 
                    => Radian -> Point2 u -> Picture u -> Picture u
 rotatePictureAbout ang pt = 
-    transformPicture (rotateAbout ang pt) (rotateAbout ang pt)
+    trafoPicture (rotateAbout ang pt) (rotateAbout ang pt)
   
 scalePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-scalePicture x y = transformPicture (scale x y) (scale x y)
+scalePicture x y = trafoPicture (scale x y) (scale x y)
 
 translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-translatePicture x y = transformPicture (translate x y) (translate x y)
+translatePicture x y = trafoPicture (translate x y) (translate x y)
 
 -- TODO - the nameing for these functions is confusing now that
 -- I've added a Transform typeclass.
 --
 -- Look to unifying the naming scheme in someway.
 --
-transformPicture :: (Num u, Ord u) 
-                 => (Point2 u -> Point2 u) 
-                 -> (Vec2 u -> Vec2 u) 
-                 -> Picture u 
-                 -> Picture u
-transformPicture fp fv = 
-    mapLocale $ \(frm,bb) -> (transformFrame fp fv frm, transformBBox fp bb)
+trafoPicture :: (Num u, Ord u) 
+             => (Point2 u -> Point2 u) 
+             -> (Vec2 u -> Vec2 u) 
+             -> Picture u 
+             -> Picture u
+trafoPicture fp fv = 
+    mapLocale $ \(frm,bb) -> (trafoFrame fp fv frm, trafoBBox fp bb)
 
 
 
-transformFrame :: Num u
-               => (Point2 u -> Point2 u) 
-               -> (Vec2 u -> Vec2 u) 
-               -> Frame2 u 
-               -> Frame2 u
-transformFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
+trafoFrame :: Num u
+           => (Point2 u -> Point2 u) 
+           -> (Vec2 u -> Vec2 u) 
+           -> Frame2 u 
+           -> Frame2 u
+trafoFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
 
 
 -- Bounding boxes need recalculating after a transformation.
 -- For instance after a reflection in the y-axis br becomes bl.
-transformBBox :: (Num u, Ord u)
+trafoBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-transformBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
+trafoBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
   where
     (bl,br,tr,tl) = corners bb
 
@@ -430,20 +429,33 @@ translatePath x y = pointwise (translate x y)
 --------------------------------------------------------------------------------
 -- Labels
 
+-- Both Label and Ellipse reply on special cases in the 
+-- outputting to SVG and PostScript that recognize the CTM is 
+-- not the identity matrix and wrap the CTM and the Point 
+-- in a concat @ a b c d x y concat @
+--
+-- Note - transformations on Labels / Ellipses are not 
+-- commutative.
+-- 
 
 -- Cannot support general matrix transform or rotateAbout on 
 -- Ellipse.
 --
 
-
+-- Change the CTM
+--
 rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
 rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix2'2 ang)
 
 
+-- Change the CTM
+--
 scaleLabel :: Num u => u -> u -> Label u -> Label u
 scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix2'2 x y)
 
 
+-- Change the point
+--
 translateLabel :: Num u => u -> u -> Label u -> Label u
 translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 
@@ -454,18 +466,22 @@ translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 -- Ellipse.
 --
 
-        
+-- Change the CTM
+--        
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u
 rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
     PrimEllipse pt hw hh (ctm * rotationMatrix2'2 ang)
 
-
+-- Change the CTM
+--
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
 scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
     PrimEllipse pt hw hh (ctm * scalingMatrix2'2 x y)
 
 
+-- Change the point
+--
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
 translateEllipse x y (PrimEllipse pt hw hh ctm) = 
     PrimEllipse (translate x y pt) hw hh ctm
@@ -501,8 +517,8 @@ primLabelBoundary :: (Fractional u, Ord u)
 primLabelBoundary attr (Label pt xs ctm) = 
     retraceBoundary (ctm' *#) untraf_bbox
   where
-    ctm'        = rep3'3 ctm zeroPt
-    untraf_bbox = textBounds (font_size attr) pt char_count
+    ctm'        = rep3'3 ctm pt
+    untraf_bbox = textBounds (font_size attr) zeroPt char_count
     char_count  = textLength xs
 
 instance (Floating u, Ord u) => Boundary (PrimEllipse u) where
@@ -567,7 +583,8 @@ extractFrame (Clip     (fr,_) _ _) = fr
 -- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
 -- user defined.
 --
-repositionProperties :: (Num u, Ord u) => Picture u -> (BoundingBox u, Maybe (Vec2 u))
+repositionProperties :: (Num u, Ord u) 
+                     => Picture u -> (BoundingBox u, Maybe (Vec2 u))
 repositionProperties = fn . boundary where
   fn bb@(BBox (P2 llx lly) (P2 urx ury))
       | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)

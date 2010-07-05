@@ -80,8 +80,9 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 
 svgDraw :: (Ord u, PSUnit u) => TextEncoder -> Picture u -> [Content]
-svgDraw enc pic = runSVG enc $ 
-    picture False pic' >>= return . topLevelPic mbvec >>= prefixXmlDecls
+svgDraw enc pic = runSVG enc $ do
+    elem1     <- picture False (coordChange pic)
+    prefixXmlDecls (topLevelPic mbvec elem1)
   where
     pic'      = coordChange pic
     (_,mbvec) = repositionProperties pic'
@@ -171,10 +172,8 @@ label (c,FontAttr _ fam style sz) (Label pt entxt ctm) = do
                                      `snoc_attrs` (fontStyle style)
   where
     P2 x y    = coordChange pt
-    text_xs   = withCTM (ctm * svg_reflection_matrix) $ 
-                  [ attr_x x
-                  , attr_y y 
-                  , attr_font_family fam
+    text_xs   = withCTM (ctm * svg_reflection_matrix) x y attr_x attr_y $ 
+                  [ attr_font_family fam
                   , attr_font_size sz 
                   ]
     
@@ -222,8 +221,8 @@ ellipse (c,dp) (PrimEllipse (P2 x y) w h ctm)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = withCTM ctm $ [attr_cx x, attr_cy y, attr_r w]
-    ellipse_attrs = withCTM ctm $ [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
+    circle_attrs  = withCTM ctm x y attr_cx attr_cy $ [attr_r w]
+    ellipse_attrs = withCTM ctm x y attr_cx attr_cy $ [attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
 
@@ -293,10 +292,15 @@ closePath xs = xs ++ ["Z"]
 snoc_attrs :: Element -> [Attr] -> Element
 snoc_attrs = flip add_attrs
 
-withCTM :: PSUnit u => Matrix2'2 u -> [Attr] -> [Attr]
-withCTM mtrx@(M2'2 a b c d) attrs 
-    | mtrx == identityMatrix2'2 = attrs
-    | otherwise                 = mtrx_attr : attrs
+-- Note - if the matrix is not the idenity matrix it means 
+-- the primitive has been transformed: print the x and y as 
+-- part of the CTM and not as separate coordinates.
+-- 
+withCTM :: PSUnit u 
+        => Matrix2'2 u -> u -> u 
+        -> (u -> Attr) -> (u -> Attr) -> [Attr] -> [Attr]
+withCTM mtrx@(M2'2 a b c d) x y fx fy attrs 
+    | mtrx == identityMatrix2'2 = fx x : fy y: attrs
+    | otherwise                 = mtrx_attr : attrs   -- No x or y
   where
-    mtrx_attr       = attr_transform $ val_matrix a b c d 0 0
- 
+    mtrx_attr       = attr_transform $ val_matrix a b c d x y

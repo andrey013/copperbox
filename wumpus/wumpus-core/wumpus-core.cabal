@@ -66,6 +66,9 @@ description:
   * Changed Affine translations on Label and Ellipse primitives....
     ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
   .
+  * Remove demo/AffineTest04.hs as it tested @rotateAbout@ on 
+    Primitives which is no longer supported.
+   
   * Removed UndecidableInstances pragma from 
     Core.PictureInternal. It looks like Core.Geometry will always 
     needs UndecidableInstances though.
@@ -104,9 +107,9 @@ extra-source-files:
   demo/LabelPic.hs,
   demo/MultiPic.hs
   demo/Picture.hs,
-  demo/RotatedSquare.hs
-  demo/ScaledSquare.hs
-  demo/TranslatedSquare.hs
+  demo/Rotated.hs
+  demo/Scaled.hs
+  demo/Translated.hs
   doc/Guide.pdf,
   doc-src/Guide.lhs,
   doc-src/Makefile,

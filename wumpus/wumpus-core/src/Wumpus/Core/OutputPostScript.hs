@@ -302,9 +302,13 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm) = 
-    concatInOut (ctm * scalingMatrix2'2 1 (hh/hw)) (outputArc dp c x y hw)
+outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm)
+    | ctm == identityMatrix2'2  = outputArc dp c x y hw
+    | otherwise                 = concatInOut (ctm * scalingMatrix2'2 1 (hh/hw)) 
+                                              x y 
+                                              (outputArc dp c 0 0 hw)
 
+-- ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
@@ -322,9 +326,8 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
 
 
 outputLabel :: (PSUnit u, Fractional u) => Label u -> WumpusM ()
-outputLabel (Label (P2 x y) entxt ctm) = do
-    ps_moveto x y
-    concatInOut ctm $ outputEncodedText entxt
+outputLabel (Label (P2 x y) entxt ctm) =
+    concatInOut ctm x y $ outputEncodedText entxt
 
 outputEncodedText :: EncodedText -> WumpusM () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
@@ -347,12 +350,13 @@ missingCode i fallback =  do
 
 
 concatInOut :: (PSUnit u, Fractional u) 
-            => Matrix2'2 u -> WumpusM a -> WumpusM ()
-concatInOut m1 ma 
-    | m1 == identityMatrix2'2 = ma >> return ()
+            => Matrix2'2 u -> u -> u -> WumpusM a -> WumpusM ()
+concatInOut m1 x y ma 
+    | m1 == identityMatrix2'2 = ps_moveto x y >> ma >> return ()
     | otherwise               = do { ps_concat $ toCTM m33
+                                   ; ps_moveto 0 (0::Double)
                                    ; _ <- ma 
                                    ; ps_concat $ toCTM $ invert m33
                                    }
   where
-    m33 = rep3'3 m1 (P2 0 0)
+    m33 = rep3'3 m1 (P2 x y)

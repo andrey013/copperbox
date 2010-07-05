@@ -7,10 +7,13 @@ import Wumpus.Core.Colour
 
 import Data.AffineSpace
 
+import System.Directory
+
 main :: IO ()
 main = do 
-  writeEPS_latin1 "./out/multi_pic.eps"  pic1
-  writeSVG_latin1 "./out/multi_pic.svg"  pic1
+    createDirectoryIfMissing True "./out/"
+    writeEPS_latin1 "./out/multi_pic.eps"  pic1
+    writeSVG_latin1 "./out/multi_pic.svg"  pic1
 
 
 
