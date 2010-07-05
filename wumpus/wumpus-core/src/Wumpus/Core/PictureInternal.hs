@@ -321,37 +321,11 @@ instance (Num u, Ord u) => Translate (Picture u) where
 
 -- Primitives
 
-{-
--- (PROBABLY) CANNOT SUPPORT THIS OPERATION...
---
-
-instance Num u => Transform (Primitive u) where
-  transform ctm (PPath   attr path) = 
-      PPath attr $ transformPath (transform ctm) path
-
-  transform ctm (PLabel   attr lbl) = PLabel attr $ transformLabel ctm lbl
-
-  transform ctm (PEllipse attr ell) = PEllipse attr $ transformEllipse ctm ell
--}
-
 instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate ang (PPath    attr path) = PPath    attr $ rotatePath ang path
   rotate ang (PLabel   attr lbl)  = PLabel   attr $ rotateLabel ang lbl
   rotate ang (PEllipse attr ell)  = PEllipse attr $ rotateEllipse ang ell
 
-{-
--- (PROBABLY) CANNOT SUPPORT THIS OPERATION...
---
-instance (Real u, Floating u) => RotateAbout (Primitive u) where
-  rotateAbout ang pt (PPath    attr path) = 
-      PPath    attr $ rotatePathAbout ang pt path
-
-  rotateAbout ang pt (PLabel   attr lbl)  = 
-      PLabel   attr $ rotateLabelAbout ang pt lbl
-
-  rotateAbout ang pt (PEllipse attr ell)  = 
-      PEllipse attr $ rotateEllipseAbout ang pt ell
--}
 
 instance Num u => Scale (Primitive u) where
   scale x y (PPath    attr path) = PPath    attr $ scalePath x y path
@@ -417,74 +391,57 @@ transformBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
 --------------------------------------------------------------------------------
 -- Paths
 
-rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
-rotatePath ang = transformPath (rotate ang)
-
-{-
--- CAN\'T SUPPORT CORRESPONDING OPERATION ON LABELS, ELLIPSES
+-- Cannot support general matrix transform or rotateAbout on 
+-- Ellipses or Labels so there are not supported on Paths.
 --
-rotatePathAbout :: (Real u, Floating u) 
-                => Radian -> Point2 u -> Path u -> Path u
-rotatePathAbout ang pt = transformPath (rotateAbout ang pt) 
--}
 
+-- rotatePath - rotate the path about its start point.
+-- 
+-- This is a visually intuitive interpretation - Primitives are
+-- not in an affine space (they have an origin, i.e. the location 
+-- (0,0), but don\'t not basis vectors) so manipulating them 
+-- cannot follow the standard affine interpretation.
+-- 
+rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
+rotatePath ang (Path start xs) = 
+    Path start $ map (pointwise (rotateAbout ang start)) xs
+
+-- scalePath - scale the vector between each point and the start 
+-- point.
+--
+-- This produces visually inituitive results. As primitives 
+-- don\'t exist in an affine space / affine frame until they
+-- are lifted to Pictures their manipulation cannot correspond
+-- to the standard affine manipulations.
+--
 scalePath :: Num u => u -> u -> Path u -> Path u
-scalePath x y = transformPath (scale x y)
+scalePath x y (Path pt xs) = Path pt (map (pointwise fn) xs) 
+  where
+    fn p1 = let dif = p1 .-. pt in pt .+^ (scale x y $ dif)
 
+-- translatePath - move all points in the path by the supplied 
+-- x and y values.
+--
 translatePath :: Num u => u -> u -> Path u -> Path u
-translatePath x y = transformPath (translate x y)
+translatePath x y = pointwise (translate x y)
 
-transformPath :: (Point2 u -> Point2 u) -> Path u -> Path u
-transformPath fp (Path start ss) = 
-    Path (fp start) (map (transformPathSegment fp) ss)
-
--- Path Segments
-
-
-transformPathSegment :: (Point2 u -> Point2 u) -> PathSegment u -> PathSegment u
-transformPathSegment fp = pointwise fp
 
 
 --------------------------------------------------------------------------------
 -- Labels
 
-{-
--- NOTE SURE THIS CAN BE SUPPORTED...
+
+-- Cannot support general matrix transform or rotateAbout on 
+-- Ellipse.
 --
-transformLabel :: Num u => Matrix3'3 u -> Label u -> Label u
-transformLabel m33 (Label pt txt ctm) = Label pt txt (ctm * m33)
--}
 
 
--- 
 rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
 rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix2'2 ang)
-
-{-
--- NOTE SURE THIS CAN BE SUPPORTED...
---
--- rotate CTM and pt or just CTM ??
-rotateLabelAbout :: (Real u, Floating u) 
-                => Radian -> Point2 u -> Label u -> Label u
-rotateLabelAbout ang rpt (Label pt txt ctm) = 
-    Label pt txt (ctm * originatedRotationMatrix ang rpt) 
--}
 
 
 scaleLabel :: Num u => u -> u -> Label u -> Label u
 scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix2'2 x y)
-
-
--- no need to change CTM for translation (??)
--- THIS IS NOT RIGHT:
---
--- It doesn\'t work for transformations that translate the "origin"
--- apply a trafo, then reverse the origin translation...
---
--- > transflate x y . trafo . translate (-x) (-y)
---
--- ... SOLUTION - DON\'T SUPPORT THIS TYPE OF TRANFORMATION
---
 
 
 translateLabel :: Num u => u -> u -> Label u -> Label u
@@ -493,28 +450,16 @@ translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 --------------------------------------------------------------------------------
 -- Ellipse
 
-{-
--- NOTE SURE THIS CAN BE SUPPORTED...
+-- Cannot support general matrix transform or rotateAbout on 
+-- Ellipse.
 --
-transformEllipse :: Num u => Matrix3'3 u -> PrimEllipse u -> PrimEllipse u
-transformEllipse m33 (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * m33)
--}
 
+        
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u
 rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
     PrimEllipse pt hw hh (ctm * rotationMatrix2'2 ang)
 
-{-
--- NOT SURE THIS CAN BE SUPPORTED
---
-rotateEllipseAbout :: (Real u, Floating u) 
-                   => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
-rotateEllipseAbout ang rpt (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * originatedRotationMatrix ang rpt)
-
--}
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
 scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
