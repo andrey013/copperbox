@@ -296,19 +296,21 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
     P2 x3 y3 = p3
 
 
--- | This is not very good as it uses a PostScript's
--- @scale@ operator - this will vary the line width during the
--- drawing of a stroked ellipse.
+-- | This is not very good - the use of PostScript's @concat@ 
+-- operator will vary the line width during the drawing of a 
+-- stroked ellipse.
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh)
+outputEllipse dp c (PrimEllipse pt@(P2 x y) hw hh)
     | hw==hh    = outputArc dp c x y hw
-    | otherwise = let matrix = scalingMatrix 1 (hh/hw) in
-                  do { ps_concat $ toCTM matrix
-                     ; outputArc dp c x y hw
-                     ; ps_concat $ toCTM $ invert matrix
-                     }
+    | otherwise = let matrix     = scalingMatrix 1 (hh/hw) 
+                      matrix'    = invert matrix
+                      (P2 dx dy) = matrix' *# pt 
+                  in do { ps_concat $ toCTM matrix
+                        ; outputArc dp c dx dy hw
+                        ; ps_concat $ toCTM $ matrix'
+                        }
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()

@@ -38,11 +38,21 @@ module Wumpus.Core.WumpusTypes
   , DLabel
 
   -- * Drawing styles
-  , PathProps                   -- Better hidden?
-  , LabelProps                  --      "
-  , EllipseProps                --      "
-  , DrawPath                    --      "
-  , DrawEllipse                 --      "
+  , PathProps       
+  , LabelProps
+  , EllipseProps
+  , DrawPath
+  , DrawEllipse
+
+
+  -- * Transformations on Primitives
+  , translatePrimitive
+  , rotatePath
+  , scalePath
+  , translatePath
+  , rotateLabel
+  , translateLabel
+  , translateEllipse
 
   ) where
 

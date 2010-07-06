@@ -44,7 +44,8 @@ module Wumpus.Core.PictureInternal
   , PSUnit(..)
 
 
-  -- * Tranformations on Primitives
+  -- * Transformations on Primitives
+  , translatePrimitive
   , rotatePath
   , scalePath
   , translatePath
@@ -337,12 +338,14 @@ instance Num u => Scale (Primitive u) where
   scale x y (PPath    attr path) = PPath    attr $ scalePath x y path
   scale x y (PLabel   attr lbl)  = PLabel   attr $ scaleLabel x y lbl
   scale x y (PEllipse attr ell)  = PEllipse attr $ scaleEllipse x y ell
-
-instance Num u => Translate (Primitive u) where
-  translate x y (PPath    attr path) = PPath    attr $ translatePath x y path
-  translate x y (PLabel   attr lbl)  = PLabel   attr $ translateLabel x y lbl
-  translate x y (PEllipse attr ell)  = PEllipse attr $ translateEllipse x y ell
 -}
+
+
+translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
+translatePrimitive x y (PPath    a path) = PPath a $ translatePath x y path
+translatePrimitive x y (PLabel   a lbl)  = PLabel a $ translateLabel x y lbl
+translatePrimitive x y (PEllipse a ell)  = PEllipse a $ translateEllipse x y ell
+
 
 --------------------------------------------------------------------------------
 
@@ -580,11 +583,13 @@ repositionProperties = fn . boundary where
 --
 ellipseControlPoints :: (Floating u, Ord u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse ctr hw hh) = map (new_mtrx *#) circ
+ellipseControlPoints (PrimEllipse (P2 x y) hw hh) = 
+    map (disp . (new_mtrx *#)) circ
   where
+    disp             = (.+^ V2 x y)
     (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = translationMatrix dx dy
-    circ             = bezierCircle 1 radius ctr
+    new_mtrx         = scalingMatrix dx dy
+    circ             = bezierCircle 1 radius (P2 0 0)
 
     -- subdivide the bezierCircle with 1 to get two
     -- control points per quadrant.    

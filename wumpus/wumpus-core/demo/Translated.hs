@@ -23,19 +23,19 @@ main = do
 -- both squares should share the bottom left coord...
 pic1 :: DPicture
 pic1 = illustrateBounds grey $ frameMulti $ 
-    [ translate 100 10 $ square blue 50 (P2 100 100)
+    [ translatePrimitive 100 10 $ square blue 50 (P2 100 100)
     , square red 50 (P2 100 100)
     ]
 
 pic2 :: DPicture
 pic2 = illustrateBounds grey $ frameMulti $ 
-    [ translate 100 10 $ ellipseHH blue 25 (P2 100 100)
+    [ translatePrimitive 100 10 $ ellipseHH blue 25 (P2 100 100)
     , ellipseHH red 25 (P2 100 100)
     ]
 
 pic3 :: DPicture
 pic3 = illustrateBounds grey $ frameMulti $ 
-    [ translate 100 10 $ label blue (P2 100 100)
+    [ translatePrimitive 100 10 $ label blue (P2 100 100)
     , label red (P2 100 100)
     ]
 
