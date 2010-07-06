@@ -24,7 +24,7 @@ main = do
 
 pic1 :: DPicture
 pic1 = illustrateBounds grey $ frameMulti $ 
-    [ uniformScale 0.5 $ square blue 50 (P2 100 100)
+    [ uniformScalePrimitive 0.5 $ square blue 50 (P2 100 100)
     , square red 50 (P2 100 100)
     ]
 
@@ -32,7 +32,7 @@ pic1 = illustrateBounds grey $ frameMulti $
 -- both ellipses should share the same center
 pic2 :: DPicture
 pic2 = illustrateBounds grey $ frameMulti $ 
-    [ uniformScale 0.5 $ ellipseHH blue 25 (P2 100 100)
+    [ uniformScalePrimitive 0.5 $ ellipseHH blue 25 (P2 100 100)
     , ellipseHH red 25 (P2 100 100)
     ]
 
@@ -40,7 +40,7 @@ pic2 = illustrateBounds grey $ frameMulti $
 -- both labels should share the same bottom left corner
 pic3 :: DPicture
 pic3 = illustrateBounds grey $ frameMulti $
-    [ uniformScale 0.5 $ label blue (P2 100 100)
+    [ uniformScalePrimitive 0.5 $ label blue (P2 100 100)
     , label red (P2 100 100)
     ]
 

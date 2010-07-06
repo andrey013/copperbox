@@ -47,12 +47,9 @@ module Wumpus.Core.WumpusTypes
 
   -- * Transformations on Primitives
   , translatePrimitive
-  , rotatePath
-  , scalePath
-  , translatePath
-  , rotateLabel
-  , translateLabel
-  , translateEllipse
+  , rotatePrimitive
+  , scalePrimitive
+  , uniformScalePrimitive
 
   ) where
 

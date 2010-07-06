@@ -217,7 +217,7 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse (P2 x y) w h) 
+ellipse (c,dp) (PrimEllipse (P2 x y) w h _ctm) 
     | w == h    = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 

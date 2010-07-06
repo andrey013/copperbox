@@ -31,6 +31,7 @@ module Wumpus.Core.PictureInternal
   , DLabel
   , PrimEllipse(..)
   , DPrimEllipse
+  , PrimCTM
 
   , PathProps                   -- hide in Wumpus.Core export?
   , LabelProps                  -- hide in Wumpus.Core export?
@@ -46,12 +47,15 @@ module Wumpus.Core.PictureInternal
 
   -- * Transformations on Primitives
   , translatePrimitive
-  , rotatePath
-  , scalePath
-  , translatePath
-  , rotateLabel
-  , translateLabel
-  , translateEllipse
+  , rotatePrimitive
+  , scalePrimitive
+  , uniformScalePrimitive
+
+  -- * PrimCTM
+  , identityCTM
+  , scaleCTM
+  , matrixRepCTM
+  , translMatrixRepCTM
   
   -- * Extras
   , mapLocale
@@ -76,7 +80,7 @@ import Wumpus.Core.Utils
 import Data.AffineSpace
 import Data.Semigroup
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 
@@ -180,7 +184,7 @@ type DPathSegment = PathSegment Double
 data Label u = Label 
       { label_bottom_left :: Point2 u
       , label_text        :: EncodedText
-      , label_rotation    :: Radian
+      , label_ctm         :: PrimCTM u
       }
   deriving (Eq,Show)
 
@@ -192,10 +196,16 @@ data PrimEllipse u = PrimEllipse
       { ellipse_center        :: Point2 u
       , ellipse_half_width    :: u
       , ellipse_half_height   :: u 
+      , ellipse_ctm           :: PrimCTM u
       } 
   deriving (Eq,Show)
 
 type DPrimEllipse = PrimEllipse Double
+
+
+data PrimCTM u = PrimCTM { _xscale :: u, _yscale :: u, _rot :: Radian }
+  deriving (Eq,Show)
+
 
 -- | Note when drawn /filled/ and drawn /stroked/ the same 
 -- polygon will have (slightly) different size: 
@@ -237,6 +247,9 @@ type EllipseProps = (PSRgb, DrawEllipse)
 type Locale u = (Frame2 u, BoundingBox u) 
 
 
+
+
+
 --------------------------------------------------------------------------------
 -- Pretty printing
 
@@ -270,14 +283,19 @@ instance Pretty u => Pretty (PathSegment u) where
   pretty (PLineTo pt)         = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
-  pretty (Label pt s rot) = dquotes (pretty s) <> char '@' <> pretty pt
-                                              <+> pretty rot
+  pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
+                                              <+> pretty ctm
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse ctr w h) = pretty "ellipse" <+> pretty ctr
-                                                  <+> text "w:" <> pretty w
-                                                  <+> text "h:" <> pretty h
+  pretty (PrimEllipse ctr w h ctm) = pretty "ellipse" <+> pretty ctr
+                                        <+> text "w:" <> pretty w
+                                        <+> text "h:" <> pretty h
+                                        <+> pretty ctm
   
+
+instance Pretty u => Pretty (PrimCTM u) where
+  pretty (PrimCTM x y ang) = 
+      braces (pretty x <> comma <+> pretty y <> comma <+> pretty ang)
 
 --------------------------------------------------------------------------------
 
@@ -324,21 +342,24 @@ instance (Num u, Ord u) => Translate (Picture u) where
   translate = translatePicture
 
 
-{-
+
 
 -- Primitives
 
-instance (Real u, Floating u) => Rotate (Primitive u) where
-  rotate ang (PPath    attr path) = PPath    attr $ rotatePath ang path
-  rotate ang (PLabel   attr lbl)  = PLabel   attr $ rotateLabel ang lbl
-  rotate ang (PEllipse attr ell)  = PEllipse attr $ rotateEllipse ang ell
+rotatePrimitive :: (Real u, Floating u) 
+                => Radian -> Primitive u -> Primitive u
+rotatePrimitive ang (PPath    a path) = PPath    a $ rotatePath ang path
+rotatePrimitive ang (PLabel   a lbl)  = PLabel   a $ rotateLabel ang lbl
+rotatePrimitive ang (PEllipse a ell)  = PEllipse a $ rotateEllipse ang ell
 
 
-instance Num u => Scale (Primitive u) where
-  scale x y (PPath    attr path) = PPath    attr $ scalePath x y path
-  scale x y (PLabel   attr lbl)  = PLabel   attr $ scaleLabel x y lbl
-  scale x y (PEllipse attr ell)  = PEllipse attr $ scaleEllipse x y ell
--}
+scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
+scalePrimitive x y (PPath    a path) = PPath    a $ scalePath x y path
+scalePrimitive x y (PLabel   a lbl)  = PLabel   a $ scaleLabel x y lbl
+scalePrimitive x y (PEllipse a ell)  = PEllipse a $ scaleEllipse x y ell
+
+uniformScalePrimitive :: Num u => u -> Primitive u -> Primitive u
+uniformScalePrimitive d = scalePrimitive d d 
 
 
 translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
@@ -437,6 +458,33 @@ translatePath x y = pointwise (translate x y)
 
 
 --------------------------------------------------------------------------------
+-- Manipulating the Primitive CTM
+
+identityCTM :: Num u => PrimCTM u
+identityCTM = PrimCTM 1 1 0
+
+scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
+scaleCTM x1 y1 (PrimCTM x y ang) = PrimCTM (x1*x) (y1*y) ang
+
+rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
+rotateCTM ang1 (PrimCTM x y ang) = PrimCTM x y (ang1+ang)
+
+matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
+matrixRepCTM (PrimCTM x y ang) = 
+    rotationMatrix (circularModulo ang) * scalingMatrix x y
+
+
+-- Note - the order of combining a translation (i.e. the 
+-- location of a point) and the CTM is crucial as matrix
+-- multiplication is not commutative.
+--
+-- The function encapsulated the correct order.
+--
+translMatrixRepCTM :: (Floating u, Real u) 
+                   => u -> u -> PrimCTM u -> Matrix3'3 u
+translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
+
+--------------------------------------------------------------------------------
 -- Labels
 
 
@@ -444,25 +492,39 @@ translatePath x y = pointwise (translate x y)
 -- Rotations on a (primitive) Label are interpreted as rotating
 -- about the bottom-left corner.
 --
-rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
-rotateLabel ang (Label pt txt rot) = Label pt txt (rot+ang)
+rotateLabel :: Radian -> Label u -> Label u
+rotateLabel ang (Label pt txt ctm) = Label pt txt (rotateCTM ang ctm)
+
+scaleLabel :: Num u => u -> u -> Label u -> Label u
+scaleLabel x y (Label pt txt ctm) = Label pt txt (scaleCTM x y ctm)
 
 
 -- Change the bottom-left corner.
 --
 translateLabel :: Num u => u -> u -> Label u -> Label u
-translateLabel x y (Label pt txt rot) = Label (translate x y pt) txt rot
+translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
 
 --------------------------------------------------------------------------------
 -- Ellipse
 
--- Only translations are supported on PrimEllipse
+
+rotateEllipse :: Radian -> PrimEllipse u -> PrimEllipse u
+rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (rotateCTM ang ctm)
+    
+
+
+scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh (scaleCTM x y ctm)
+    
+
 
 -- Change the point
 --
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse x y (PrimEllipse pt hw hh) = 
-    PrimEllipse (translate x y pt) hw hh
+translateEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh ctm
     
 
 --------------------------------------------------------------------------------
@@ -492,15 +554,15 @@ instance (Real u, Floating u) => Boundary (Primitive u) where
 
 primLabelBoundary :: (Floating u, Real u) 
                   => FontAttr -> Label u -> BoundingBox u
-primLabelBoundary attr (Label (P2 x y) xs rot) = 
-    retraceBoundary  (disp . (ctm *#)) untraf_bbox
+primLabelBoundary attr (Label (P2 x y) xs ctm) = 
+    retraceBoundary  (disp . (m33 *#)) untraf_bbox
   where
     disp        = (.+^ V2 x y)
-    ctm         = rotationMatrix rot
+    m33         = matrixRepCTM ctm
     untraf_bbox = textBounds (font_size attr) zeroPt char_count
     char_count  = textLength xs
 
-instance (Floating u, Ord u) => Boundary (PrimEllipse u) where
+instance (Real u, Floating u) => Boundary (PrimEllipse u) where
   boundary = ellipseBoundary
 
 -- Find the bbox of an ellipse by drawing it as four bezier 
@@ -512,7 +574,7 @@ instance (Floating u, Ord u) => Boundary (PrimEllipse u) where
 -- /matched/ start-end points
 --
 
-ellipseBoundary :: (Floating u, Ord u) => PrimEllipse u -> BoundingBox u
+ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
 ellipseBoundary = traceBoundary . ellipseControlPoints
 
 -- PROBLEM:
@@ -525,6 +587,8 @@ ellipseBoundary = traceBoundary . ellipseControlPoints
 
 --------------------------------------------------------------------------------
 --
+
+
 
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
@@ -581,14 +645,14 @@ repositionProperties = fn . boundary where
 -- /wrap-around/. We take 4 points initially (start,cp1,cp2,end)
 -- then (cp1,cp2,end) for the other three quadrants.
 --
-ellipseControlPoints :: (Floating u, Ord u)
+ellipseControlPoints :: (Floating u, Real u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse (P2 x y) hw hh) = 
+ellipseControlPoints (PrimEllipse (P2 x y) hw hh ctm) = 
     map (disp . (new_mtrx *#)) circ
   where
     disp             = (.+^ V2 x y)
     (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = scalingMatrix dx dy
+    new_mtrx         = matrixRepCTM $ scaleCTM dx dy ctm
     circ             = bezierCircle 1 radius (P2 0 0)
 
     -- subdivide the bezierCircle with 1 to get two

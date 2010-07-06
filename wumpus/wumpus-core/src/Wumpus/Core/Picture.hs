@@ -339,7 +339,7 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 mkTextLabel :: Num u => PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
 mkTextLabel c attr txt pt = PLabel (c,attr) lbl 
   where
-    lbl = Label pt (lexLabel txt) 0
+    lbl = Label pt (lexLabel txt) identityCTM
 
 
 -- | Create a text label. The string should not contain newline
@@ -393,7 +393,7 @@ ztextlabel = mkTextLabel psBlack wumpus_default_font
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh)
+mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityCTM)
 
 
 ellipseDefault :: EllipseProps
@@ -608,8 +608,8 @@ pathCtrlLines rgb (Path start ss) = step start ss
 -- Two lines for each quadrant: 
 -- start-point to control-point1; control-point2 to end-point
 --
-ellipseCtrlLines :: (Floating u, Ord u) 
-                     => DRGB -> PrimEllipse u -> [Primitive u]
+ellipseCtrlLines :: (Real u, Floating u) 
+                 => DRGB -> PrimEllipse u -> [Primitive u]
 ellipseCtrlLines rgb pe = start all_points
   where 
     -- list in order: 

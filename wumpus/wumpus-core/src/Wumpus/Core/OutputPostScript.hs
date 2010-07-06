@@ -300,17 +300,18 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- operator will vary the line width during the drawing of a 
 -- stroked ellipse.
 --
-outputEllipse :: (PSColour c, Fractional u, PSUnit u)
+outputEllipse :: (PSColour c, Real u, Floating u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse pt@(P2 x y) hw hh)
-    | hw==hh    = outputArc dp c x y hw
-    | otherwise = let matrix     = scalingMatrix 1 (hh/hw) 
-                      matrix'    = invert matrix
-                      (P2 dx dy) = matrix' *# pt 
-                  in do { ps_concat $ toCTM matrix
-                        ; outputArc dp c dx dy hw
-                        ; ps_concat $ toCTM $ matrix'
-                        }
+outputEllipse dp c (PrimEllipse pt@(P2 x y) hw hh ctm)
+    | hw==hh  && ctm == identityCTM = outputArc dp c x y hw
+    | otherwise                     = 
+          let matrix     =  matrixRepCTM $ scaleCTM 1 (hh/hw) ctm
+              matrix'    = invert matrix
+              (P2 dx dy) = matrix' *# pt 
+          in do { ps_concat $ toCTM matrix
+                ; outputArc dp c dx dy hw
+                ; ps_concat $ toCTM $ matrix'
+                }
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
@@ -327,16 +328,19 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
     ps_stroke
 
 
--- Note - the matrix calculated here might be wrong...
+-- Note - for the otherwise case the x-and-y coordinates are 
+-- encoded in the matrix, hence the @ 0 0 moveto @.
 --
 outputLabel :: (Real u, Floating u, PSUnit u) => Label u -> WumpusM ()
-outputLabel (Label (P2 x y) entxt rot) 
-   | rot == 0  = do { ps_moveto x y; outputEncodedText entxt }
-   | otherwise = let matrix = scalingMatrix x y * rotationMatrix rot in
-                 do { ps_concat $ toCTM matrix
-                    ; outputEncodedText entxt
-                    ; ps_concat $ toCTM $ invert matrix
-                    }
+outputLabel (Label (P2 x y) entxt ctm) 
+    | ctm == identityCTM  = do { ps_moveto x y; outputEncodedText entxt }
+    | otherwise           = do { ps_concat $ toCTM matrix
+                               ; ps_moveto 0 (0 :: Double)
+                               ; outputEncodedText entxt
+                               ; ps_concat $ toCTM $ invert matrix
+                               }
+  where
+    matrix = translMatrixRepCTM x y ctm
 
 outputEncodedText :: EncodedText -> WumpusM () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
