@@ -63,8 +63,6 @@ type Clipped    = Bool
 coordChange ::  (Num u, Ord u, Scale t, u ~ DUnit t) => t -> t
 coordChange = scale 1 (-1)
 
-svg_reflection_matrix :: Num u => Matrix2'2 u
-svg_reflection_matrix = M2'2  1 0    0 (-1)  
 
 --------------------------------------------------------------------------------
 
@@ -81,7 +79,7 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 svgDraw :: (Ord u, PSUnit u) => TextEncoder -> Picture u -> [Content]
 svgDraw enc pic = runSVG enc $ do
-    elem1     <- picture False (coordChange pic)
+    elem1     <- picture False pic'
     prefixXmlDecls (topLevelPic mbvec elem1)
   where
     pic'      = coordChange pic
@@ -164,18 +162,22 @@ path (c,dp) p =
 -- Also rendering coloured text is convoluted (needing the
 -- tspan element).
 -- 
+-- TEMP 2010-07-06 rotation currently ignored...
+--
 label :: (Ord u, PSUnit u) => LabelProps -> Label u -> SvgM Element
-label (c,FontAttr _ fam style sz) (Label pt entxt ctm) = do 
+label (c,FontAttr _ fam style sz) (Label pt entxt _rot) = do 
      str <- encodedText entxt
      let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
      return $ element_text tspan_elt `snoc_attrs` text_xs 
                                      `snoc_attrs` (fontStyle style)
   where
     P2 x y    = coordChange pt
-    text_xs   = withCTM (ctm * svg_reflection_matrix) x y attr_x attr_y $ 
-                  [ attr_font_family fam
-                  , attr_font_size sz 
-                  ]
+    text_xs   = [ attr_x x
+                , attr_y y 
+                , attr_transform $ val_matrix 1 0 0 (-1) 0 (0::Double)
+                , attr_font_family fam
+                , attr_font_size sz 
+                ]
     
     
 
@@ -215,14 +217,14 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse (P2 x y) w h ctm) 
+ellipse (c,dp) (PrimEllipse (P2 x y) w h) 
     | w == h    = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = withCTM ctm x y attr_cx attr_cy $ [attr_r w]
-    ellipse_attrs = withCTM ctm x y attr_cx attr_cy $ [attr_rx w, attr_ry h]
+    circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
+    ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
 
@@ -292,6 +294,8 @@ closePath xs = xs ++ ["Z"]
 snoc_attrs :: Element -> [Attr] -> Element
 snoc_attrs = flip add_attrs
 
+{-
+
 -- Note - if the matrix is not the idenity matrix it means 
 -- the primitive has been transformed: print the x and y as 
 -- part of the CTM and not as separate coordinates.
@@ -304,3 +308,4 @@ withCTM mtrx@(M2'2 a b c d) x y fx fy attrs
     | otherwise                 = mtrx_attr : attrs   -- No x or y
   where
     mtrx_attr       = attr_transform $ val_matrix a b c d x y
+-}

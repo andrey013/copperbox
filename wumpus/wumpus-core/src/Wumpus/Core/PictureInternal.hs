@@ -42,6 +42,15 @@ module Wumpus.Core.PictureInternal
   -- * Type class
 
   , PSUnit(..)
+
+
+  -- * Tranformations on Primitives
+  , rotatePath
+  , scalePath
+  , translatePath
+  , rotateLabel
+  , translateLabel
+  , translateEllipse
   
   -- * Extras
   , mapLocale
@@ -170,7 +179,7 @@ type DPathSegment = PathSegment Double
 data Label u = Label 
       { label_bottom_left :: Point2 u
       , label_text        :: EncodedText
-      , label_CTM         :: Matrix2'2 u
+      , label_rotation    :: Radian
       }
   deriving (Eq,Show)
 
@@ -182,7 +191,6 @@ data PrimEllipse u = PrimEllipse
       { ellipse_center        :: Point2 u
       , ellipse_half_width    :: u
       , ellipse_half_height   :: u 
-      , ellispe_CTM           :: Matrix2'2 u
       } 
   deriving (Eq,Show)
 
@@ -261,17 +269,13 @@ instance Pretty u => Pretty (PathSegment u) where
   pretty (PLineTo pt)         = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
-  pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
-                                               <+> ppMatrixCTM ctm
+  pretty (Label pt s rot) = dquotes (pretty s) <> char '@' <> pretty pt
+                                              <+> pretty rot
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse c w h ctm) = pretty "ellipse" <+> pretty c
-                                                    <+> text "w:" <> pretty w
-                                                    <+> text "h:" <> pretty h
-                                                    <+> ppMatrixCTM ctm
-
-ppMatrixCTM :: Pretty u => Matrix2'2 u -> Doc
-ppMatrixCTM (M2'2 a b  c d) = list $ map pretty [a,b,c,d]
+  pretty (PrimEllipse ctr w h) = pretty "ellipse" <+> pretty ctr
+                                                  <+> text "w:" <> pretty w
+                                                  <+> text "h:" <> pretty h
   
 
 --------------------------------------------------------------------------------
@@ -319,6 +323,8 @@ instance (Num u, Ord u) => Translate (Picture u) where
   translate = translatePicture
 
 
+{-
+
 -- Primitives
 
 instance (Real u, Floating u) => Rotate (Primitive u) where
@@ -336,6 +342,7 @@ instance Num u => Translate (Primitive u) where
   translate x y (PPath    attr path) = PPath    attr $ translatePath x y path
   translate x y (PLabel   attr lbl)  = PLabel   attr $ translateLabel x y lbl
   translate x y (PEllipse attr ell)  = PEllipse attr $ translateEllipse x y ell
+-}
 
 --------------------------------------------------------------------------------
 
@@ -429,62 +436,30 @@ translatePath x y = pointwise (translate x y)
 --------------------------------------------------------------------------------
 -- Labels
 
--- Both Label and Ellipse reply on special cases in the 
--- outputting to SVG and PostScript that recognize the CTM is 
--- not the identity matrix and wrap the CTM and the Point 
--- in a concat @ a b c d x y concat @
---
--- Note - transformations on Labels / Ellipses are not 
--- commutative.
--- 
 
--- Cannot support general matrix transform or rotateAbout on 
--- Ellipse.
---
 
--- Change the CTM
+-- Rotations on a (primitive) Label are interpreted as rotating
+-- about the bottom-left corner.
 --
 rotateLabel :: (Real u, Floating u) => Radian -> Label u -> Label u
-rotateLabel ang (Label pt txt ctm) = Label pt txt (ctm * rotationMatrix2'2 ang)
+rotateLabel ang (Label pt txt rot) = Label pt txt (rot+ang)
 
 
--- Change the CTM
---
-scaleLabel :: Num u => u -> u -> Label u -> Label u
-scaleLabel x y (Label pt txt ctm) = Label pt txt (ctm * scalingMatrix2'2 x y)
-
-
--- Change the point
+-- Change the bottom-left corner.
 --
 translateLabel :: Num u => u -> u -> Label u -> Label u
-translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
+translateLabel x y (Label pt txt rot) = Label (translate x y pt) txt rot
 
 --------------------------------------------------------------------------------
 -- Ellipse
 
--- Cannot support general matrix transform or rotateAbout on 
--- Ellipse.
---
-
--- Change the CTM
---        
-rotateEllipse :: (Real u, Floating u) 
-              => Radian -> PrimEllipse u -> PrimEllipse u
-rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * rotationMatrix2'2 ang)
-
--- Change the CTM
---
-scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (ctm * scalingMatrix2'2 x y)
-
+-- Only translations are supported on PrimEllipse
 
 -- Change the point
 --
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (translate x y pt) hw hh ctm
+translateEllipse x y (PrimEllipse pt hw hh) = 
+    PrimEllipse (translate x y pt) hw hh
     
 
 --------------------------------------------------------------------------------
@@ -505,19 +480,20 @@ instance (Num u, Ord u) => Boundary (Path u) where
 -- Note - this will calculate an approximate bounding box for 
 -- text.
 
-instance (Fractional u, Floating u, Ord u) => Boundary (Primitive u) where
+instance (Real u, Floating u) => Boundary (Primitive u) where
   boundary (PPath _ p)        = boundary p
   boundary (PLabel (_,a) l)   = primLabelBoundary a l 
   boundary (PEllipse _ e)     = boundary e
 
 
 
-primLabelBoundary :: (Fractional u, Ord u) 
+primLabelBoundary :: (Floating u, Real u) 
                   => FontAttr -> Label u -> BoundingBox u
-primLabelBoundary attr (Label pt xs ctm) = 
-    retraceBoundary (ctm' *#) untraf_bbox
+primLabelBoundary attr (Label (P2 x y) xs rot) = 
+    retraceBoundary  (disp . (ctm *#)) untraf_bbox
   where
-    ctm'        = rep3'3 ctm pt
+    disp        = (.+^ V2 x y)
+    ctm         = rotationMatrix rot
     untraf_bbox = textBounds (font_size attr) zeroPt char_count
     char_count  = textLength xs
 
@@ -604,10 +580,10 @@ repositionProperties = fn . boundary where
 --
 ellipseControlPoints :: (Floating u, Ord u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse ctr hw hh ctm) = map (new_mtrx *#) circ
+ellipseControlPoints (PrimEllipse ctr hw hh) = map (new_mtrx *#) circ
   where
     (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = rep3'3 ctm (P2 dx dy)
+    new_mtrx         = translationMatrix dx dy
     circ             = bezierCircle 1 radius ctr
 
     -- subdivide the bezierCircle with 1 to get two

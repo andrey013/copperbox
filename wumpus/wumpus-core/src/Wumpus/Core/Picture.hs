@@ -102,7 +102,7 @@ blankPicture bb = PicBlank (stdFrame, bb)
 
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
-frame :: (Fractional u, Floating u, Ord u) => Primitive u -> Picture u
+frame :: (Real u, Floating u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
 -- | Frame a picture within the supplied bounding box
@@ -119,7 +119,7 @@ frame p = Single (stdFrame, boundary p) p
 -- ellipse. Thus the bounding box will never reframed to a 
 -- smaller size than the /natural/ bounding box.
 --
-frameWithin :: (Fractional u, Floating u, Ord u) 
+frameWithin :: (Real u, Floating u) 
             => Primitive u -> BoundingBox u -> Picture u
 frameWithin p@(PLabel _ _) bb = Single (stdFrame,bb) p
 frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
@@ -135,7 +135,7 @@ frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 --
 -- This function throws an error when supplied the empty list.
 --
-frameMulti :: (Fractional u, Floating u, Ord u) 
+frameMulti :: (Real u, Floating u) 
            => [Primitive u] -> Picture u
 frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti xs = multi $ map frame xs
@@ -339,7 +339,7 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 mkTextLabel :: Num u => PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
 mkTextLabel c attr txt pt = PLabel (c,attr) lbl 
   where
-    lbl = Label pt (lexLabel txt) identityMatrix2'2
+    lbl = Label pt (lexLabel txt) 0
 
 
 -- | Create a text label. The string should not contain newline
@@ -393,7 +393,7 @@ ztextlabel = mkTextLabel psBlack wumpus_default_font
 
 mkEllipse :: Num u 
           => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityMatrix2'2)
+mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh)
 
 
 ellipseDefault :: EllipseProps
@@ -533,7 +533,7 @@ a `picBeside` b = a `picOver` (b `picMoveBy` v)
 -- Draw the picture on top of an image of its bounding box.
 -- The bounding box image will be drawn in the supplied colour.
 --
-illustrateBounds :: (Floating u, Ord u) => DRGB -> Picture u -> Picture u
+illustrateBounds :: (Real u, Floating u) => DRGB -> Picture u -> Picture u
 illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p) 
 
 
@@ -544,7 +544,7 @@ illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p)
 --
 -- The result will be lifted from Primitive to Picture.
 -- 
-illustrateBoundsPrim :: (Floating u, Ord u) 
+illustrateBoundsPrim :: (Real u, Floating u) 
                      => DRGB -> Primitive u -> Picture u
 illustrateBoundsPrim rgb p = frameMulti (boundsPrims rgb p ++ [p])
 
@@ -575,7 +575,7 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 -- curves - they are implemented with PostScript\'s 
 -- @arc@ command.  
 --
-illustrateControlPoints :: (Floating u, Ord u)
+illustrateControlPoints :: (Real u, Floating u)
                         => DRGB -> Primitive u -> Picture u
 illustrateControlPoints rgb prim = step prim
   where

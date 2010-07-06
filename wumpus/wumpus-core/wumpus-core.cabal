@@ -65,8 +65,13 @@ description:
   .
   * Changed Affine translations on Label and Ellipse primitives....
     ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+    Note - scalefont should be able to accept any integer...
   .
-  * Remove demo/AffineTest04.hs as it tested @rotateAbout@ on 
+  * Class obligations changed on PostScript output from 
+    Fractional and Ord on the unit to Real and Floating.
+  .
+  * ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+    Remove demo/AffineTest04.hs as it tested @rotateAbout@ on 
     Primitives which is no longer supported.
    
   * Removed UndecidableInstances pragma from 

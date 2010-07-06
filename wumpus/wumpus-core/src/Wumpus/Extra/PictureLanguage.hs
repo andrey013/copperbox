@@ -540,10 +540,10 @@ instance (Num u, Ord u) => Blank (Picture u) where
 --
 -- An error is throw if the list of strings is empty
 -- 
-multilabel :: (Fractional u, Floating u, Ord u, TextLabel t) 
+multilabel :: (Real u, Floating u, TextLabel t) 
            => t -> u -> VAlign -> [String] -> Point2 u -> Picture u
 multilabel _    _ _  []     _  = error $ 
-    "Wumpus.Core.Picture.multilabel - empty list."
+    "Wumpus.Core.PictureLanguage.multilabel - empty list."
 
 multilabel attr n va (x:xs) pt = 
     moveAll $ vsepA va n line1 (map mkPic xs)

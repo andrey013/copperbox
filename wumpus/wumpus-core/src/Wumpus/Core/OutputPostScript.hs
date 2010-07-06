@@ -51,7 +51,7 @@ import qualified Data.Foldable as F
 -- | Output a series of pictures to a Postscript file. Each 
 -- picture will be printed on a separate page. 
 --
-writePS :: (Fractional u, Ord u, PSUnit u) 
+writePS :: (Real u, Floating u, PSUnit u) 
         => FilePath -> TextEncoder -> [Picture u] -> IO ()
 writePS filepath enc pic = do 
     timestamp <- mkTimeStamp
@@ -61,7 +61,7 @@ writePS filepath enc pic = do
 -- The .eps file can then be imported or embedded in another 
 -- document.
 --
-writeEPS :: (Fractional u, Ord u, PSUnit u)  
+writeEPS :: (Real u, Floating u, PSUnit u)  
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeEPS filepath enc pic = do
     timestamp <- mkTimeStamp
@@ -69,12 +69,12 @@ writeEPS filepath enc pic = do
 
 
 -- | Version of 'writePS' - using Latin1 encoding. 
-writePS_latin1 :: (Fractional u, Ord u, PSUnit u) 
+writePS_latin1 :: (Real u, Floating u, PSUnit u) 
         => FilePath -> [Picture u] -> IO ()
 writePS_latin1 filepath = writePS filepath latin1Encoder 
 
 -- | Version of 'writeEPS' - using Latin1 encoding. 
-writeEPS_latin1 :: (Fractional u, Ord u, PSUnit u)  
+writeEPS_latin1 :: (Real u, Floating u, PSUnit u)  
          => FilePath -> Picture u -> IO ()
 writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
 
@@ -85,7 +85,7 @@ writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
 
 
 -- | Draw a picture, generating PostScript output.
-psDraw :: (Fractional u, Ord u, PSUnit u) 
+psDraw :: (Real u, Floating u, PSUnit u) 
        => String -> TextEncoder -> [Picture u] -> PostScript
 psDraw timestamp enc pics = runWumpus enc $ do
     psHeader 1 timestamp
@@ -95,7 +95,7 @@ psDraw timestamp enc pics = runWumpus enc $ do
     pages = map (\i -> (show i,i)) [1..]
 
 
-psDrawPage :: (Fractional u, Ord u, PSUnit u) 
+psDrawPage :: (Real u, Floating u, PSUnit u) 
            => (String,Int) -> Picture u -> WumpusM ()
 psDrawPage (lbl,ordinal) pic = do
     dsc_Page lbl ordinal
@@ -113,7 +113,7 @@ psDrawPage (lbl,ordinal) pic = do
 -- | Note the bounding box may /below the origin/ - if it is, it 
 -- will need translating.
 --
-epsDraw :: (Fractional u, Ord u, PSUnit u) 
+epsDraw :: (Real u, Floating u, PSUnit u) 
         => String -> TextEncoder -> Picture u -> PostScript
 epsDraw timestamp enc pic = runWumpus enc $ do 
     epsHeader bb timestamp      
@@ -164,7 +164,7 @@ epsFooter = do
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
 --
-outputPicture :: (Fractional u, PSUnit u) => Picture u -> WumpusM ()
+outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
@@ -201,7 +201,7 @@ updateFrame frm ma
                            ; ps_concat $ toCTM $ invert m1
                            }
 
-outputPrimitive :: (Fractional u, PSUnit u) => Primitive u -> WumpusM ()
+outputPrimitive :: (Real u, Floating u, PSUnit u) => Primitive u -> WumpusM ()
 outputPrimitive (PPath (c,dp) p)    = outputPath dp c p 
 outputPrimitive (PLabel props l)    = updateFont props $ outputLabel l
 outputPrimitive (PEllipse (c,dp) e) = outputEllipse dp c e
@@ -302,13 +302,13 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 --
 outputEllipse :: (PSColour c, Fractional u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm)
-    | ctm == identityMatrix2'2  = outputArc dp c x y hw
-    | otherwise                 = concatInOut (ctm * scalingMatrix2'2 1 (hh/hw)) 
-                                              x y 
-                                              (outputArc dp c 0 0 hw)
-
--- ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+outputEllipse dp c (PrimEllipse (P2 x y) hw hh)
+    | hw==hh    = outputArc dp c x y hw
+    | otherwise = let matrix = scalingMatrix 1 (hh/hw) in
+                  do { ps_concat $ toCTM matrix
+                     ; outputArc dp c x y hw
+                     ; ps_concat $ toCTM $ invert matrix
+                     }
 
 outputArc :: (PSColour c, PSUnit u) 
           => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
@@ -325,9 +325,16 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
     ps_stroke
 
 
-outputLabel :: (PSUnit u, Fractional u) => Label u -> WumpusM ()
-outputLabel (Label (P2 x y) entxt ctm) =
-    concatInOut ctm x y $ outputEncodedText entxt
+-- Note - the matrix calculated here might be wrong...
+--
+outputLabel :: (Real u, Floating u, PSUnit u) => Label u -> WumpusM ()
+outputLabel (Label (P2 x y) entxt rot) 
+   | rot == 0  = do { ps_moveto x y; outputEncodedText entxt }
+   | otherwise = let matrix = scalingMatrix x y * rotationMatrix rot in
+                 do { ps_concat $ toCTM matrix
+                    ; outputEncodedText entxt
+                    ; ps_concat $ toCTM $ invert matrix
+                    }
 
 outputEncodedText :: EncodedText -> WumpusM () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
@@ -348,15 +355,3 @@ missingCode i fallback =  do
     ps_glyphshow fallback
             
 
-
-concatInOut :: (PSUnit u, Fractional u) 
-            => Matrix2'2 u -> u -> u -> WumpusM a -> WumpusM ()
-concatInOut m1 x y ma 
-    | m1 == identityMatrix2'2 = ps_moveto x y >> ma >> return ()
-    | otherwise               = do { ps_concat $ toCTM m33
-                                   ; ps_moveto 0 (0::Double)
-                                   ; _ <- ma 
-                                   ; ps_concat $ toCTM $ invert m33
-                                   }
-  where
-    m33 = rep3'3 m1 (P2 x y)
