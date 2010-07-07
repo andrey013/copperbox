@@ -60,24 +60,31 @@ import qualified Data.Foldable as F
 type Clipped    = Bool
 
 
-coordChange ::  (Num u, Ord u, Scale t, u ~ DUnit t) => t -> t
+coordChange ::  (Num u, Scale t, u ~ DUnit t) => t -> t
 coordChange = scale 1 (-1)
 
+svg_reflection_matrix :: Num u => Matrix3'3 u
+svg_reflection_matrix = scalingMatrix 1 (-1)
 
 --------------------------------------------------------------------------------
 
 -- | Output a picture to a SVG file. 
-writeSVG :: (Ord u, PSUnit u) => FilePath -> TextEncoder -> Picture u -> IO ()
+--
+writeSVG :: (Real u, Floating u, PSUnit u) 
+         => FilePath -> TextEncoder -> Picture u -> IO ()
 writeSVG filepath enc pic = 
     writeFile filepath $ unlines $ map ppContent $ svgDraw enc pic 
 
 -- | Version of 'writeSVG' - using Latin1 encoding. 
-writeSVG_latin1 :: (Ord u, PSUnit u) => FilePath -> Picture u -> IO ()
+--
+writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
+                => FilePath -> Picture u -> IO ()
 writeSVG_latin1 filepath = writeSVG filepath latin1Encoder 
 
 
 
-svgDraw :: (Ord u, PSUnit u) => TextEncoder -> Picture u -> [Content]
+svgDraw :: (Real u, Floating u, PSUnit u) 
+        => TextEncoder -> Picture u -> [Content]
 svgDraw enc pic = runSVG enc $ do
     elem1     <- picture False pic'
     prefixXmlDecls (topLevelPic mbvec elem1)
@@ -100,7 +107,8 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 
 
 
-picture :: (Ord u, PSUnit u) => Clipped -> Picture u -> SvgM Element
+picture :: (Real u, Floating u, PSUnit u) 
+        => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim
@@ -119,7 +127,8 @@ picture _ (Clip (fr,_) p a) = do
    return $ gElement (maybe [] return $ frameChange fr) [cp,e1]
 
 
-primitive :: (Ord u, PSUnit u) => Clipped -> Primitive u -> SvgM Element
+primitive :: (Real u, Floating u, PSUnit u) 
+          => Clipped -> Primitive u -> SvgM Element
 primitive c (PPath props p)     = clipAttrib c $ path props p
 primitive c (PLabel props l)    = clipAttrib c $ label props l
 primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
@@ -162,24 +171,35 @@ path (c,dp) p =
 -- Also rendering coloured text is convoluted (needing the
 -- tspan element).
 -- 
--- TEMP 2010-07-06 rotation currently ignored...
 --
-label :: (Ord u, PSUnit u) => LabelProps -> Label u -> SvgM Element
-label (c,FontAttr _ fam style sz) (Label pt entxt _rot) = do 
+label :: (Real u, Floating u, PSUnit u) 
+      => LabelProps -> Label u -> SvgM Element
+label (c,FontAttr _ fam style sz) (Label pt entxt ctm) = do 
      str <- encodedText entxt
      let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
-     return $ element_text tspan_elt `snoc_attrs` text_xs 
+     return $ element_text tspan_elt `snoc_attrs` coord_attrs
+                                     `snoc_attrs` font_attrs 
                                      `snoc_attrs` (fontStyle style)
   where
+    coord_attrs = if ctm == identityCTM then simpleLabelAttrs pt
+                                        else transfLabelAttrs pt ctm
+    font_attrs  = [ attr_font_family fam
+                  , attr_font_size sz 
+                  ]
+
+simpleLabelAttrs :: PSUnit u => Point2 u -> [Attr]     
+simpleLabelAttrs pt = [ attr_x x, attr_y y, attr_transform mtrx]
+  where
     P2 x y    = coordChange pt
-    text_xs   = [ attr_x x
-                , attr_y y 
-                , attr_transform $ val_matrix 1 0 0 (-1) 0 (0::Double)
-                , attr_font_family fam
-                , attr_font_size sz 
-                ]
+    mtrx      = val_matrix 1 0 0 (-1) 0 (0::Double)
     
-    
+transfLabelAttrs :: (Real u, Floating u, PSUnit u) 
+                 => Point2 u -> PrimCTM u -> [Attr]     
+transfLabelAttrs (P2 x y) ctm = 
+    [ attr_x (0::Double), attr_y (0 :: Double), attr_transform vmtrx]
+  where
+    mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
+    vmtrx     = valMatrix mtrx
 
 
 encodedText :: EncodedText -> SvgM String 
@@ -216,17 +236,51 @@ fontStyle SVG_BOLD_OBLIQUE =
 
 -- If w==h the draw the ellipse as a circle
 
-ellipse :: PSUnit u => EllipseProps -> PrimEllipse u -> SvgM Element
-ellipse (c,dp) (PrimEllipse (P2 x y) w h _ctm) 
-    | w == h    = return $ element_circle  
+ellipse :: (Real u, Floating u, PSUnit u)
+        => EllipseProps -> PrimEllipse u -> SvgM Element
+ellipse (c,dp) (PrimEllipse pt hw hh ctm) 
+    | hw == hh  = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
-    ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
+    circle_attrs  = if ctm == identityCTM 
+                      then simpleCircleAttrs pt hw
+                      else transfCircleAttrs pt hw ctm
+
+    ellipse_attrs = if ctm == identityCTM 
+                      then simpleEllipseAttrs pt hw hh 
+                      else transfEllipseAttrs pt hw hh ctm
+
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
+
+simpleCircleAttrs :: PSUnit u => Point2 u -> u -> [Attr]
+simpleCircleAttrs (P2 x y) radius = [attr_cx x, attr_cy y, attr_r radius]
+
+simpleEllipseAttrs :: PSUnit u => Point2 u -> u -> u -> [Attr]
+simpleEllipseAttrs (P2 x y) hw hh = 
+    [attr_cx x, attr_cy y, attr_rx hw, attr_ry hh]
+
+
+transfCircleAttrs :: (Real u, Floating u, PSUnit u)
+                  => Point2 u -> u -> PrimCTM u -> [Attr]
+transfCircleAttrs (P2 x y) radius ctm = 
+    [ attr_cx (0::Double), attr_cy (0::Double), attr_r radius
+    , attr_transform vmtrx ]
+  where
+    mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
+    vmtrx     = valMatrix mtrx
+
+
+transfEllipseAttrs :: (Real u, Floating u, PSUnit u)
+                   => Point2 u -> u -> u -> PrimCTM u -> [Attr]
+transfEllipseAttrs (P2 x y) hw hh ctm = 
+    [ attr_cx (0::Double), attr_cy (0::Double), attr_rx hw, attr_ry hh
+    , attr_transform vmtrx ]
+  where
+    mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
+    vmtrx     = valMatrix mtrx
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
@@ -294,18 +348,9 @@ closePath xs = xs ++ ["Z"]
 snoc_attrs :: Element -> [Attr] -> Element
 snoc_attrs = flip add_attrs
 
-{-
 
--- Note - if the matrix is not the idenity matrix it means 
--- the primitive has been transformed: print the x and y as 
--- part of the CTM and not as separate coordinates.
--- 
-withCTM :: PSUnit u 
-        => Matrix2'2 u -> u -> u 
-        -> (u -> Attr) -> (u -> Attr) -> [Attr] -> [Attr]
-withCTM mtrx@(M2'2 a b c d) x y fx fy attrs 
-    | mtrx == identityMatrix2'2 = fx x : fy y: attrs
-    | otherwise                 = mtrx_attr : attrs   -- No x or y
+
+valMatrix :: PSUnit u => Matrix3'3 u -> String
+valMatrix m33 = val_matrix a b c d x y
   where
-    mtrx_attr       = attr_transform $ val_matrix a b c d x y
--}
+    CTM a b c d x y = toCTM m33
