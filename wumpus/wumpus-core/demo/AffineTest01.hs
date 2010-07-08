@@ -20,6 +20,9 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
 rot30 :: (Rotate t, Fractional u, u ~ DUnit t) => t -> t
 rot30 = rotate30
 
+rot30P :: (Real u, Floating u) => Primitive u -> Primitive u
+rot30P = rotatePrimitive (d2r (30.0::Double))
+
 -- Primitive - Text
 
 
@@ -30,7 +33,7 @@ text_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/rotate_text.svg"
     , ata_prim_constructor  = rgbLabel
     , ata_pic_transformer   = rot30
-    , ata_prim_transformer  = rot30
+    , ata_prim_transformer  = rot30P
     }
 
 circle_ata :: AffineTrafoAlg
@@ -40,7 +43,7 @@ circle_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/rotate_circle.svg"
     , ata_prim_constructor  = rgbCircle
     , ata_pic_transformer   = rot30
-    , ata_prim_transformer  = rot30
+    , ata_prim_transformer  = rot30P
     }
 
 
@@ -51,7 +54,7 @@ ellipse_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/rotate_ellipse.svg"
     , ata_prim_constructor  = rgbEllipse
     , ata_pic_transformer   = rot30
-    , ata_prim_transformer  = rot30
+    , ata_prim_transformer  = rot30P
     }
 
 path_ata :: AffineTrafoAlg
@@ -61,7 +64,7 @@ path_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/rotate_path.svg"
     , ata_prim_constructor  = rgbPath
     , ata_pic_transformer   = rot30
-    , ata_prim_transformer  = rot30
+    , ata_prim_transformer  = rot30P
     }
 
 
@@ -74,7 +77,7 @@ circle_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/rotate_crc_cp.eps"
     , cpa_svg_file          = "./out/affine_test/rotate_crc_cp.svg"
     , cpa_prim_constructor  = rgbCircle
-    , cpa_prim_transformer  = rot30
+    , cpa_prim_transformer  = rot30P
     }
 
 
@@ -85,7 +88,7 @@ ellipse_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/rotate_ell_cp.eps"
     , cpa_svg_file          = "./out/affine_test/rotate_ell_cp.svg"
     , cpa_prim_constructor  = rgbEllipse
-    , cpa_prim_transformer  = rot30
+    , cpa_prim_transformer  = rot30P
     }
 
 
@@ -95,6 +98,6 @@ path_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/rotate_path_cp.eps"
     , cpa_svg_file          = "./out/affine_test/rotate_path_cp.svg"
     , cpa_prim_constructor  = rgbPath
-    , cpa_prim_transformer  = rot30 
+    , cpa_prim_transformer  = rot30P
     }
 

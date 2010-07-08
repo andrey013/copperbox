@@ -11,7 +11,7 @@ import System.Directory
 
 
 
-drawBounds :: (Fractional u, Floating u, Ord u) => Picture u -> Picture u
+drawBounds :: (Floating u, Real u) => Picture u -> Picture u
 drawBounds p        = p `over` (frame $ cstroke () ph) 
   where
     ph            = vertexPath $ [bl,br,tr,tl]

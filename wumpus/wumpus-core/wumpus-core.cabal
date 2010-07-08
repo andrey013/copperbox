@@ -63,17 +63,24 @@ description:
   .
   0.20.0 to 0.21.0:
   .
-  * Changed Affine translations on Label and Ellipse primitives....
-    ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
-    Note - scalefont should be able to accept any integer...
+  * Removed the instances of the Affine transformation. They have
+    been replaced with special transformation functions: 
+    @rotatePrimitive@, @scalePrimitive@, @translatePrimitive@.
+    As Primitives are not in an affine frame until they are lifted 
+    to Pictures the affine instances had ill-conceived semantics.
   .
-  * Class obligations changed on PostScript output from 
-    Fractional and Ord on the unit to Real and Floating.
+  * Due to changes to accommodate the new non-affine  
+    transformations, many of the class obligations have changed 
+    on the @unit@ of Pictures, Primitives, Bounding Boxes etc. 
+    Generally many class contexts that previously required 
+    Fractional and Ord on the unit have changed to Real and 
+    Floating.
   .
-  * ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
-    Remove demo/AffineTest04.hs as it tested @rotateAbout@ on 
-    Primitives which is no longer supported.
-   
+  * Removed demo/AffineTest04.hs - there is no longer a 
+    @rotateAbout@ operation on Primitives as they do not exist 
+    in an affine frame until they they are lifted to Pictures.
+    Added - Scaled.hs, Rotated.hs, Translated,hs.
+  . 
   * Removed UndecidableInstances pragma from 
     Core.PictureInternal. It looks like Core.Geometry will always 
     needs UndecidableInstances though.

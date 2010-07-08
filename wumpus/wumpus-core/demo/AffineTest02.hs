@@ -19,6 +19,10 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
 scale_onehalf_x_two :: (Scale t, Fractional u, u ~ DUnit t) => t -> t
 scale_onehalf_x_two = scale 1.5 2.0
 
+
+scale_onehalf_x_twoP :: Fractional u => Primitive u -> Primitive u
+scale_onehalf_x_twoP = scalePrimitive 1.5 2.0
+
 -- Primitive - Text
 
 
@@ -29,7 +33,7 @@ text_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/scale_text.svg"
     , ata_prim_constructor  = rgbLabel
     , ata_pic_transformer   = scale_onehalf_x_two
-    , ata_prim_transformer  = scale_onehalf_x_two
+    , ata_prim_transformer  = scale_onehalf_x_twoP
     }
 
 circle_ata :: AffineTrafoAlg
@@ -39,7 +43,7 @@ circle_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/scale_circle.svg"
     , ata_prim_constructor  = rgbCircle
     , ata_pic_transformer   = scale_onehalf_x_two
-    , ata_prim_transformer  = scale_onehalf_x_two
+    , ata_prim_transformer  = scale_onehalf_x_twoP
     }
 
 
@@ -50,7 +54,7 @@ ellipse_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/scale_ellipse.svg"
     , ata_prim_constructor  = rgbEllipse
     , ata_pic_transformer   = scale_onehalf_x_two
-    , ata_prim_transformer  = scale_onehalf_x_two
+    , ata_prim_transformer  = scale_onehalf_x_twoP
     }
 
 path_ata :: AffineTrafoAlg
@@ -60,7 +64,7 @@ path_ata = AffineTrafoAlg
     , ata_svg_file          = "./out/affine_test/scale_path.svg"
     , ata_prim_constructor  = rgbPath
     , ata_pic_transformer   = scale_onehalf_x_two
-    , ata_prim_transformer  = scale_onehalf_x_two
+    , ata_prim_transformer  = scale_onehalf_x_twoP
     }
 
 
@@ -73,7 +77,7 @@ circle_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/scale_crc_cp.eps"
     , cpa_svg_file          = "./out/affine_test/scale_crc_cp.svg"
     , cpa_prim_constructor  = rgbCircle
-    , cpa_prim_transformer  = scale_onehalf_x_two
+    , cpa_prim_transformer  = scale_onehalf_x_twoP
     }
 
 
@@ -84,7 +88,7 @@ ellipse_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/scale_ell_cp.eps"
     , cpa_svg_file          = "./out/affine_test/scale_ell_cp.svg"
     , cpa_prim_constructor  = rgbEllipse
-    , cpa_prim_transformer  = scale_onehalf_x_two
+    , cpa_prim_transformer  = scale_onehalf_x_twoP
     }
 
 
@@ -94,6 +98,6 @@ path_cpa = ControlPointAlg
     , cpa_eps_file          = "./out/affine_test/scale_path_cp.eps"
     , cpa_svg_file          = "./out/affine_test/scale_path_cp.svg"
     , cpa_prim_constructor  = rgbPath
-    , cpa_prim_transformer  = scale_onehalf_x_two
+    , cpa_prim_transformer  = scale_onehalf_x_twoP
     }
 

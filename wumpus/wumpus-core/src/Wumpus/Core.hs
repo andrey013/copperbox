@@ -63,7 +63,6 @@ module Wumpus.Core
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
 
-
   ) where
 
 import Wumpus.Core.AffineTrans
@@ -78,3 +77,4 @@ import Wumpus.Core.Picture
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
+

@@ -132,8 +132,15 @@ type H a = [a] -> [a]
 emptyH :: H a
 emptyH = id
 
-snocH :: H a -> a -> H a
-snocH hf a = hf . (a:)
+
+-- NOTE - this is redundant if we want consH 
+-- rather than snocH.
+-- 
+-- Some of the drawings do appear to have problems with 
+-- Z-order so we'll keep it for now.
+--
+consH :: a -> H a -> H a
+consH a hf = hf . (a:)
 
 toListH :: H a -> [a]
 toListH = ($ [])
@@ -156,11 +163,11 @@ start_path (x,y) = (P2 x y, emptyH)
 infixl 6 `line_to`, `curve_to`
 
 line_to :: HPath u -> (u,u) -> HPath u
-line_to (s,f) (x,y) = (s, f `snocH` lineTo (P2 x y))
+line_to (s,f) (x,y) = (s, lineTo (P2 x y) `consH` f)
 
 curve_to :: HPath u -> ((u,u),(u,u),(u,u)) -> HPath u
 curve_to (s,f) ((c1x,c1y),(c2x,c2y),(ex,ey)) = 
-    (s, f `snocH` curveTo (P2 c1x c1y) (P2 c2x c2y) (P2 ex ey))
+    (s, curveTo (P2 c1x c1y) (P2 c2x c2y) (P2 ex ey) `consH` f)
 
 
 --

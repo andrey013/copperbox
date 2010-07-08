@@ -44,12 +44,12 @@ module Wumpus.Core.WumpusTypes
   , DrawPath
   , DrawEllipse
 
-
   -- * Transformations on Primitives
   , translatePrimitive
   , rotatePrimitive
   , scalePrimitive
   , uniformScalePrimitive
+
 
   ) where
 

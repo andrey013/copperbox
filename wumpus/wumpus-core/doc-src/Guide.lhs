@@ -240,7 +240,13 @@ Similarly, it would be communicated to SVG via a
 <g transform="matrix(1.0, 0.0, 0.0, 1.0, 10.0, 20.0)"> ... </g>
 \end{verbatim}
 
-
+For efficiency reasons \wumpuscore supports some transformations
+on Primitives. These are not affine transformations as Primitives
+are not in an affine frame until they are lifted to Pictures.
+For Paths, all the transformations are precomputed before the 
+output is generated. Unfortunately scaling and rotation cannot be 
+precomputed for labels and ellipses, so matrix operations are 
+generated in the PostScript and SVG output.
 
 
 %-----------------------------------------------------------------
@@ -260,18 +266,19 @@ primitive font handling is not such a draw back.
 
 In both PostScript and SVG mis-named fonts can cause somewhat
 inscrutable printing anomalies - usually falling back to a default 
-font but not always. Paricularly note, that PostScript fonts may
-only support glyphs in a limited set of sizes 
-(10, 12, 18, 24, 26), for labels at other sizes the text should
-be drawn at a regular size then scaled once it has been lifted 
-with the \texttt{frame} function to the Picture type.
+font but not always. PostScript may do no subsequent drawing after
+a font load error. \wumpuscore uses @scalefont@ in the generated
+PostScript, this semingly works for any integer size and not just
+the regular font sizes (10, 12, 18, 24, 36). Older versions of
+\wumpuscore mention that using non-standard sizes may cause font
+loading problems, however this does not appear to be the case.
+
 
 The following table lists PostScript fonts and their SVG 
 equivalents. As of revision 0.20.0, the package 
 \texttt{wumpus-basic} includes a module 
 \texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
-to avoid typographical slips...
-
+to avoid typographical slips.
 
 
 \begin{tabular}{ l l }

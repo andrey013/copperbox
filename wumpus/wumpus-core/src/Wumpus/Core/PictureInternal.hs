@@ -346,6 +346,23 @@ instance (Num u, Ord u) => Translate (Picture u) where
 
 -- Primitives
 
+
+-- | Rotate a Primitive.
+-- 
+-- Note - this is not an affine transformation as Primitives are
+-- not regarded as being in an affine frame.
+--
+-- * Paths are rotated about their start point.
+--
+-- * Labels are rotated about the bottom-left corner.
+--
+-- * Ellipses are rotated about the center.
+--
+-- For Primitives and Ellipses applying a rotation and or a scale 
+-- will generate an additional matrix transformation in the 
+-- generated PostScript. For Paths all transformations are
+-- \"cost-free\".
+--
 rotatePrimitive :: (Real u, Floating u) 
                 => Radian -> Primitive u -> Primitive u
 rotatePrimitive ang (PPath    a path) = PPath    a $ rotatePath ang path
@@ -353,15 +370,48 @@ rotatePrimitive ang (PLabel   a lbl)  = PLabel   a $ rotateLabel ang lbl
 rotatePrimitive ang (PEllipse a ell)  = PEllipse a $ rotateEllipse ang ell
 
 
+-- | Scale a Primitive.
+-- 
+-- Note - this is not an affine transformation as Primitives are
+-- not regarded as being in an affine frame.
+--
+-- An affine scaling uniformly scales all the elements in a 
+-- Picture. It is just a change of the Picture\'s basis vectors.
+-- The elements within the Picture are unchanged - though 
+-- obviously rendering changes according to the transformation.
+--
+-- By contrast, the scaling operation on Primitives changes the 
+-- properties of the object as it is applied - e.g. for a path
+-- the vector between the start point and all subsequent points
+-- is changed with respect to the x,y scaling factors; for an
+-- ellipse the half-width and half-height of the ellipse is
+-- scaled.
+--
+-- For Primitives and Ellipses applying a rotation and or a scale 
+-- will generate an additional matrix transformation in the 
+-- generated PostScript. For Paths all transformations are 
+-- \"cost-free\".
+--
 scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
 scalePrimitive x y (PPath    a path) = PPath    a $ scalePath x y path
 scalePrimitive x y (PLabel   a lbl)  = PLabel   a $ scaleLabel x y lbl
 scalePrimitive x y (PEllipse a ell)  = PEllipse a $ scaleEllipse x y ell
 
+-- | Apply a uniform scale to a Primitive.
+--
 uniformScalePrimitive :: Num u => u -> Primitive u -> Primitive u
 uniformScalePrimitive d = scalePrimitive d d 
 
-
+-- | Translate a primitive.
+--
+-- Translation is essentially \"cost-free\" for the generated 
+-- PostScript or SVG. Paths are translated before the PostScript 
+-- is generated. For Ellipses and Labels, translation will 
+-- either move the bottom-left origin (Label) or center 
+-- (Ellipse); or if they are also scaled or rotated the 
+-- translation will be concatenated into the matrix operation in 
+-- the generated output. 
+-- 
 translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
 translatePrimitive x y (PPath    a path) = PPath a $ translatePath x y path
 translatePrimitive x y (PLabel   a lbl)  = PLabel a $ translateLabel x y lbl
