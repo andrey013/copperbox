@@ -17,9 +17,9 @@ description:
   .
   * Added the module @Wumpus.Basic.Graphic@.
   .
-  * ???
-  .
-  * ??? 
+  * SafeFonts changed to be size neutral. PostScript\'s 
+    @scalefont@ command (which wumpus-core uses in the generated
+    output) should be able to scale to any integer size.
   .
   .
 build-type:         Simple

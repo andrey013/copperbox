@@ -28,17 +28,20 @@ main = do
     writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
 
 
-makeFontLabel :: DRGB -> FontAttr -> (DPoint2 -> DPrimitive)
+makeFontLabel :: DRGB -> FontAttr -> DPoint2 -> DPrimitive
 makeFontLabel c fa = textlabel (c,fa) msg
   where
     msg = unwords [ font_name fa, (show $ font_size fa) ++ "pt"]
 
-blueLabel :: FontAttr -> (DPoint2 -> DPrimitive)
-blueLabel = makeFontLabel steelBlue
+blueLabel :: (Int -> FontAttr) -> Int -> DPoint2 -> DPrimitive
+blueLabel f i = makeFontLabel steelBlue (f i)
 
-redLabel :: FontAttr -> (DPoint2 -> DPrimitive)
-redLabel = makeFontLabel indianRed1
+redLabel :: (Int -> FontAttr) -> Int -> DPoint2 -> DPrimitive
+redLabel f i = makeFontLabel indianRed1 (f i)
 
+
+point_sizes :: [Int]
+point_sizes = [10, 12, 18, 24, 36, 48]
 
 --------------------------------------------------------------------------------
 -- Times
@@ -51,32 +54,19 @@ times_pic = timesroman_pic -//- timesitalic_pic -//- timesbold_pic
 
 timesroman_pic :: Picture Double
 timesroman_pic = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ timesRoman10, timesRoman12, timesRoman18
-         , timesRoman24, timesRoman36, timesRoman48 ]
+    frameMulti $ zipWith (blueLabel timesRoman) point_sizes (mkPoints 1.5)
 
 timesitalic_pic :: Picture Double
 timesitalic_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ timesItalic10, timesItalic12, timesItalic18
-         , timesItalic24, timesItalic36, timesItalic48 ]
-
+    frameMulti $ zipWith (redLabel timesItalic) point_sizes (mkPoints 1.5)
 
 timesbold_pic :: Picture Double
 timesbold_pic = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ timesBold10, timesBold12, timesBold18
-         , timesBold24, timesBold36, timesBold48 ]
+    frameMulti $ zipWith (blueLabel timesBold) point_sizes (mkPoints 1.5)
 
 timesbolditalic_pic :: Picture Double
 timesbolditalic_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ timesBoldItalic10, timesBoldItalic12, timesBoldItalic18
-         , timesBoldItalic24, timesBoldItalic36, timesBoldItalic48 ]
+    frameMulti $ zipWith (redLabel timesBoldItalic) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 helvetica_pic :: Picture Double
@@ -85,36 +75,19 @@ helvetica_pic = helvetica_pic1 -//- helveticaoblique_pic -//- helveticabold_pic
 
 helvetica_pic1 :: Picture Double
 helvetica_pic1 = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ helvetica10, helvetica12, helvetica18
-         , helvetica24, helvetica36, helvetica48 ]
+    frameMulti $ zipWith (blueLabel helvetica) point_sizes (mkPoints 1.5)
 
-
-    
 helveticaoblique_pic :: Picture Double
 helveticaoblique_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ helveticaOblique10, helveticaOblique12, helveticaOblique18
-         , helveticaOblique24, helveticaOblique36, helveticaOblique48 ]
-
+    frameMulti $ zipWith (redLabel helveticaOblique) point_sizes (mkPoints 1.5)
     
 helveticabold_pic :: Picture Double
 helveticabold_pic = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ helveticaBold10, helveticaBold12, helveticaBold18
-         , helveticaBold24, helveticaBold36, helveticaBold48 ]
-
+    frameMulti $ zipWith (blueLabel helveticaBold) point_sizes (mkPoints 1.5)
     
 helveticaboldoblique_pic :: Picture Double
 helveticaboldoblique_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ helveticaBoldOblique10, helveticaBoldOblique12
-         , helveticaBoldOblique18, helveticaBoldOblique24
-         , helveticaBoldOblique36, helveticaBoldOblique48 ]
+    frameMulti $ zipWith (redLabel helveticaBoldOblique) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 
@@ -124,43 +97,26 @@ courier_pic = courier_pic1 -//- courieroblique_pic -//- courierbold_pic
     
 courier_pic1 :: Picture Double
 courier_pic1 = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ courier10, courier12, courier18
-         , courier24, courier36, courier48 ]
-
+    frameMulti $ zipWith (blueLabel courier) point_sizes (mkPoints 1.5)
     
 courieroblique_pic :: Picture Double
 courieroblique_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ courierOblique10, courierOblique12, courierOblique18
-         , courierOblique24, courierOblique36, courierOblique48 ]
-
+    frameMulti $ zipWith (redLabel courierOblique) point_sizes (mkPoints 1.5)
     
 courierbold_pic :: Picture Double
 courierbold_pic = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ courierBold10, courierBold12, courierBold18
-         , courierBold24, courierBold36, courierBold48 ]
-
+    frameMulti $ zipWith (blueLabel courierBold) point_sizes (mkPoints 1.5)
     
 courierboldoblique_pic :: Picture Double
 courierboldoblique_pic = 
-    frameMulti $ zipWith redLabel xs (mkPoints 1.5)
-  where
-    xs = [ courierBoldOblique10, courierBoldOblique12, courierBoldOblique18
-         , courierBoldOblique24, courierBoldOblique36, courierBoldOblique48 ]
+    frameMulti $ zipWith (redLabel courierBoldOblique) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 
     
 symbol_pic :: Picture Double
 symbol_pic = 
-    frameMulti $ zipWith blueLabel xs (mkPoints 1.5)
-  where
-    xs = [ symbol10, symbol12, symbol18, symbol24, symbol36, symbol48 ]
+    frameMulti $ zipWith (blueLabel symbol) point_sizes (mkPoints 1.5)
 
 
 --------------------------------------------------------------------------------

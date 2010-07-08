@@ -18,53 +18,66 @@
 
 module Wumpus.MicroPrint.Render
   (
-  
-    Graphic
-  , DGraphic
+
+    DrawF  
   , MP_config(..)
   , greekF
+  , borderedF
 
   , drawMicroPrint
 
   ) where
 
 import Wumpus.Core
+import Wumpus.Core.Colour ( black )
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Monads.TraceMonad
 import Wumpus.Basic.Monads.TurtleMonad
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.MicroPrint.DrawMonad ( Tile(..), Height ) 
 
-import Data.AffineSpace                 -- package: vector-space
 import MonadLib                         -- package: monadLib
+import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
 import Control.Monad
 
--- | Note - this representation allows for zero, one or more
--- Primitives to be collected together.
+-- | 'DrawF' :
+-- @ (num_chars, char_unit_width) * (full_width, full_height) -> rgb -> DGraphicF @
 --
-type Graphic u = H (Primitive u)
-
-type DGraphic  = Graphic Double
-
-type GraphicF u = Point2 u -> Graphic u
-
-type DGraphicF = GraphicF Double 
-
+type DrawF = (Int,Double) -> (Double,Double) -> DRGB -> DGraphicF
 
 
 data MP_config = MP_config 
        { char_height    :: Double
        , char_width     :: Double
        , line_spacing   :: Double 
-       , drawF          :: Double -> Double -> DRGB -> DGraphicF
+       , drawF          :: DrawF
        }
 
-greekF :: Double -> Double -> DRGB -> DGraphicF
-greekF w h rgb = filledRectangle rgb w h 
+greekF :: DrawF
+greekF _ (w,h) rgb = filledRectangle rgb w h 
 
+borderedF :: Double -> DrawF
+borderedF line_width (i,uw) (w,h) rgb = 
+    srect `cc` seps `cc` greekF (i,uw) (w,h) rgb
+  where
+    props = (black, LineWidth line_width)
 
+    srect :: DGraphicF
+    srect = strokedRectangle props w h
+ 
+    seps  :: DGraphicF
+    seps  = \pt -> unfoldrH (phi pt) (1,uw) 
+    
+    phi pt (n,disp) | n >= i    = Nothing
+                    | otherwise = let ln = vline props h (pt .+^ hvec disp)
+                                  in  Just (ln,(n+1,disp+uw))
+ 
+vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
+vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]
+    
 
 newtype RenderMonad a = RM { getRM :: ReaderT MP_config
                                     ( TraceT  DPrimitive Turtle)  a }
@@ -114,9 +127,10 @@ interp1 (Space    i)  = moveRightN i
 interp1 (Word rgb i)  = do
     w  <- scaleWidth i 
     h  <- asks char_height
+    uw <- asks char_width
     pt <- scaleCurrentCoord
     dF <- asks drawF
-    trace (dF w h rgb pt)
+    trace (dF (i,uw) (w,h) rgb pt)
     moveRightN i
    
 moveRightN :: Int -> RenderMonad ()
@@ -137,13 +151,16 @@ scaleWidth i = (\cw -> cw * fromIntegral i) <$> asks char_width
 
 --------------------------------------------------------------------------------
 
-filledRectangle :: (Num u, Ord u, Fill t) 
-                => t -> u -> u -> GraphicF u
-filledRectangle t w h bl = wrapH $ fill t $ rectangle w h bl
 
-rectangle :: Num u => u -> u -> Point2 u -> Path u
-rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
-  where
-    br = bl .+^ hvec w
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 
+-- Wow a new bird combinator...
+
+infixr 9 `cc`
+
+cc :: (r1 -> a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
+cc f g = \x y -> f x (g x y)
+
+unfoldrH :: (b -> Maybe (a,b)) -> b -> H a
+unfoldrH phi = step
+  where step b = case phi b of
+                  Nothing -> emptyH
+                  Just (a,s) -> a `consH` step s

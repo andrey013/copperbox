@@ -19,6 +19,15 @@ description:
   .
   \[1\] <http://scg.unibe.ch/archive/papers/Robb05b-microprintsESUG.pdf>
   .
+  Changelog:
+  .
+  0.1.1 to 0.2.0:
+  .
+  * Updated to use Basic.Graphic types from wumpus-basic-0.2.0
+  .
+  * Added bordered printing that marks the unit character width.
+
+  .
   .
 build-type:         Simple
 stability:          highly unstable
@@ -34,8 +43,8 @@ library
   build-depends:      base              < 5, 
                       vector-space      >= 0.6,
                       monadLib          >= 3.6,
-                      wumpus-core       >= 0.20.0,
-                      wumpus-basic      >= 0.1.0
+                      wumpus-core       >= 0.21.0,
+                      wumpus-basic      >= 0.2.0
 
   
   exposed-modules:

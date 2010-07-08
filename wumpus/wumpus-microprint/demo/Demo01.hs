@@ -21,7 +21,7 @@ main = do
     ; writeSVG_latin1 "./out/mp01.svg" pic1
     }
   where
-    prefix mp = setRGB lightSlateGrey >> mp
+    prefix mp = setRGB moccasin >> mp
 
 errK :: a
 errK = error "no picture"
@@ -43,7 +43,7 @@ cfg1 = MP_config
        { char_height    = 12.0
        , char_width     = 8.0
        , line_spacing   = 3.0
-       , drawF          = greekF
+       , drawF          = borderedF 1.0
        }
  
 

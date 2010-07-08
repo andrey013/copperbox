@@ -81,28 +81,9 @@ description:
     in an affine frame until they they are lifted to Pictures.
     Added - Scaled.hs, Rotated.hs, Translated,hs.
   . 
-  * Removed UndecidableInstances pragma from 
+  * Removed the UndecidableInstances pragma from 
     Core.PictureInternal. It looks like Core.Geometry will always 
-    needs UndecidableInstances though.
-  .
-  0.19.0 to 0.20.0:
-  .
-  * Removed the modules - Wumpus.Extra.SafeFonts,
-    Wumpus.Extra.SVGColours, Wumpus.Extra.X11Colours - they are 
-    now in the package @wumpus-basic@.
-  .
-  * Removed the example FontPic.hs to @wumpus-basic@.
-  .
-  * Renamed two functions in Core.BoundingBox - @trace@ changed 
-    to @traceBoundary@; @retrace@ changed to @retraceBoundary@.
-  . 
-  * Fixed bug with @picOver@, previously the zorder was wrong 
-    and the function was actually working as /picUnder/. 
-  .
-  * Added @capHeight@ to FontSize - get the size of an upper 
-    case letter without ascenders of descenders.
-  .
-  * Guide updated regarding the new package @wumpus-basic@.
+    need UndecidableInstances though.
   .
   .
 build-type:         Simple

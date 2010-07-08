@@ -59,7 +59,7 @@ type DGraphicF = GraphicF Double
 -- | Note - a Picture cannot be empty whereas a Graphic can.
 -- Hence this function returns via Maybe.
 --
-drawGraphic :: (Floating u, Ord u ) => Graphic u -> Maybe (Picture u)
+drawGraphic :: (Real u, Floating u) => Graphic u -> Maybe (Picture u)
 drawGraphic f = post $ f []
   where
     post [] = Nothing
