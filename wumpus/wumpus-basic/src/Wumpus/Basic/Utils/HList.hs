@@ -24,6 +24,7 @@ module Wumpus.Basic.Utils.HList
   , consH
   , snocH
   , appendH
+  , unfoldrH
   , veloH
   , concatH
 
@@ -53,6 +54,15 @@ snocH  f a = f . (a:)
 
 appendH :: H a -> H a -> H a
 appendH f g = f . g
+
+
+
+unfoldrH :: (b -> Maybe (a,b)) -> b -> H a
+unfoldrH phi = step
+  where step b = case phi b of
+                  Nothing -> emptyH
+                  Just (a,s) -> a `consH` step s
+
 
 -- | velo consumes the list as per map, but builds it back
 -- as a Hughes list - so items can be dropped

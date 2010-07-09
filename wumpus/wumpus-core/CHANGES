@@ -23,6 +23,8 @@
     Core.PictureInternal. It looks like Core.Geometry will always 
     needs UndecidableInstances though.
 
+  * Removed the Ord superclass constriant from the @Stroke@ and
+    @Fill@ classes and derived operations (e.g. @zostroke@).
 
 
 0.19.0 to 0.20.0:

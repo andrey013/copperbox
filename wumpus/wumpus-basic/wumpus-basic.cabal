@@ -21,6 +21,7 @@ description:
     @scalefont@ command (which wumpus-core uses in the generated
     output) should be able to scale to any integer size.
   .
+  * New demo @ColourCharts.hs@.
   .
 build-type:         Simple
 stability:          highly unstable
@@ -29,8 +30,11 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
-  demo/FontPic.hs
-  
+  demo/FontPic.hs,
+  demo/ColourCharts.hs,
+  demo/ColourDefns.hs
+
+
 library
   hs-source-dirs:     src
   build-depends:      base            <  5, 

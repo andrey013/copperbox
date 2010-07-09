@@ -10,7 +10,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Graphic type - HList of primitive
+-- Graphic type and opertations
+--
+-- ** WARNING ** this module is highly experimental, and may 
+-- change significantly or even be dropped from future revisions.
+--
 --
 --------------------------------------------------------------------------------
 
@@ -23,10 +27,14 @@ module Wumpus.Basic.Graphic
   , GraphicF
   , DGraphicF
 
+  -- * New Bird..
+  , cc
+
   -- * Operations
   , drawGraphic
   , wrapG
 
+  , text
   , straightLine
   , strokedRectangle
   , filledRectangle
@@ -53,6 +61,14 @@ type GraphicF u = Point2 u -> Graphic u
 type DGraphicF = GraphicF Double
 
 
+--------------------------------------------------------------------------------
+-- Wow a new bird combinator...
+
+infixr 9 `cc`
+
+cc :: (r1 -> a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
+cc f g = \x y -> f x (g x y)
+
 
 --------------------------------------------------------------------------------
 
@@ -74,8 +90,10 @@ wrapG = wrapH
 
 --------------------------------------------------------------------------------
 
+text :: (TextLabel t, Num u) => t -> String -> GraphicF u
+text t ss = wrapG . textlabel t ss 
 
-straightLine :: (Stroke t, Num u, Ord u) => t -> Vec2 u -> GraphicF u
+straightLine :: (Stroke t, Num u) => t -> Vec2 u -> GraphicF u
 straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
 
 
@@ -88,7 +106,6 @@ strokedRectangle t w h = wrapG . cstroke t . rectangle w h
 --
 filledRectangle :: (Fill t, Num u, Ord u) => t -> u -> u -> GraphicF u
 filledRectangle t w h = wrapG . fill t . rectangle w h
-
 
 
 rectangle :: Num u => u -> u -> Point2 u -> Path u

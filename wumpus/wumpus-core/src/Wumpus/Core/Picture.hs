@@ -216,12 +216,10 @@ wumpus_default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
 -- Take Paths to Primitives
 
 
-ostrokePath :: (Num u, Ord u) 
-            => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
+ostrokePath :: Num u => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
 ostrokePath c attrs p = PPath (c, OStroke attrs) p
 
-cstrokePath :: (Num u, Ord u) 
-            => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
+cstrokePath :: Num u => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
 cstrokePath c attrs p = PPath (c, CStroke attrs) p
 
 -- | Create a open, stroked path (@ostroke@) or a closed, stroked
@@ -231,8 +229,8 @@ cstrokePath c attrs p = PPath (c, CStroke attrs) p
 -- the path more convenient.
 -- 
 class Stroke t where
-  ostroke :: (Num u, Ord u) => t -> Path u -> Primitive u
-  cstroke :: (Num u, Ord u) => t -> Path u -> Primitive u
+  ostroke :: Num u => t -> Path u -> Primitive u
+  cstroke :: Num u => t -> Path u -> Primitive u
 
 instance Stroke () where
   ostroke () = ostrokePath psBlack []
@@ -288,12 +286,12 @@ instance Stroke (Gray Double,[StrokeAttr]) where
 
 -- | Create an open stoke coloured black.
 --
-zostroke :: (Num u, Ord u) => Path u -> Primitive u
+zostroke :: Num u => Path u -> Primitive u
 zostroke = ostrokePath psBlack []
  
 -- | Create a closed stroke coloured black.
 --
-zcstroke :: (Num u, Ord u) => Path u -> Primitive u
+zcstroke :: Num u => Path u -> Primitive u
 zcstroke = cstrokePath psBlack []
 
 
@@ -302,7 +300,7 @@ zcstroke = cstrokePath psBlack []
 
 
 
-fillPath :: (Num u, Ord u) => PSRgb -> Path u -> Primitive u
+fillPath :: Num u => PSRgb -> Path u -> Primitive u
 fillPath c p = PPath (c,CFill) p
 
 -- | Create a filled path (@fill@). Fills only have one 
@@ -312,7 +310,7 @@ fillPath c p = PPath (c,CFill) p
 -- @ fill () @ will fill with the default colour - black.
 -- 
 class Fill t where
-  fill :: (Num u, Ord u) => t -> Path u -> Primitive u
+  fill :: Num u => t -> Path u -> Primitive u
  
 
 instance Fill ()                where fill () = fillPath psBlack 
@@ -321,7 +319,7 @@ instance Fill (HSB3 Double)     where fill = fillPath . psColour
 instance Fill (Gray Double)     where fill = fillPath . psColour
 
 -- | Create a filled path coloured black. 
-zfill :: (Num u, Ord u) => Path u -> Primitive u
+zfill :: Num u => Path u -> Primitive u
 zfill = fillPath psBlack
 
 --------------------------------------------------------------------------------
