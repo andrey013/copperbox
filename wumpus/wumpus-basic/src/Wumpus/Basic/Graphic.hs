@@ -99,12 +99,12 @@ straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
 
 -- | Point is bottom-left.
 --
-strokedRectangle :: (Stroke t, Num u, Ord u) => t -> u -> u -> GraphicF u
+strokedRectangle :: (Stroke t, Num u) => t -> u -> u -> GraphicF u
 strokedRectangle t w h = wrapG . cstroke t . rectangle w h
 
 -- | Point is bottom-left.
 --
-filledRectangle :: (Fill t, Num u, Ord u) => t -> u -> u -> GraphicF u
+filledRectangle :: (Fill t, Num u) => t -> u -> u -> GraphicF u
 filledRectangle t w h = wrapG . fill t . rectangle w h
 
 

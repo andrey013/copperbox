@@ -21,62 +21,127 @@ import Wumpus.Core.Colour ( black )
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.SafeFonts 
 
-
-
 import Data.AffineSpace                 -- package: vector-space
 
+import Data.List
+
+
+-- need a combinator to draw a stem and "feed" a 
+-- center coord to the argument...
+
+stemC :: DGraphicF -> DGraphicF
+stemC gF = stem `cc` (gF . vdisplace (-25))
+
+flamC :: DGraphicF -> DGraphicF -> DGraphicF
+flamC sF lF = flamStem `cc` (sF . displace (-5) (-18)) 
+                       `cc` (lF . vdisplace (-25))
+
+
+-- Top of the stem is the origin...
 
 muffledBass     :: DGraphicF
-muffledBass     = slash bassP
+muffledBass     = stemC (slash bassP)
 
 muffledTone     :: DGraphicF
-muffledTone     = slash toneP
+muffledTone     = stemC (slash toneP)
+
+muffledSlap     :: DGraphicF
+muffledSlap     = stemC (underscore slapP)
+
+bassFlam        :: DGraphicF
+bassFlam        = flamC (smallLetter 'B') (letter 'B')
+
+
+slapFlam        :: DGraphicF
+slapFlam        = flamC (smallLetter 'X') (letter 'X')
+
+toneFlam        :: DGraphicF
+toneFlam        = flamC smallTone toneP
+  where
+    smallTone = circle black 2 . vdisplace (-1)
+
+
 
 dot             :: DGraphicF
-dot             = circle black 0.5 . moveOrigin 0 3
+dot             = stemC dotP
 
 bass            :: DGraphicF
-bass            = wrapG . bassP
+bass            = stemC bassP
 
 tone            :: DGraphicF
-tone            = wrapPrimF toneP
+tone            = stemC toneP
 
 slap            :: DGraphicF
-slap            = wrapPrimF slapP
+slap            = stemC slapP
 
-bassP           :: DPrimF
+bassP           :: DGraphicF
 bassP           = letter 'B'
 
-toneP           :: DPrimF
-toneP           = ellipse black 4 4
+toneP           :: DGraphicF
+toneP           = circle black 4 . vdisplace (-1)
 
-slapP           :: DPrimF
+slapP           :: DGraphicF
 slapP           = letter 'X'
 
+dotP            :: DGraphicF
+dotP            = circle black 1 . vdisplace (-3)
 
-slash :: DPrimF -> DGraphicF
-slash primF = slash1 `cc` (wrapG . primF)
+
+
+paren :: DGraphicF -> DGraphicF
+paren gF = lparen `cc` gF `cc` rparen
   where
-    slash1 = straightLine black (V2 8 14) . moveOrigin 4 7
+    lparen = letter '(' . displace (-4) (-24)
+    rparen = letter ')' . displace 8    (-24)
 
 
-
-paren :: DPrimF -> DGraphicF
-paren primF = lparen `cc` (wrapG . primF) `cc` rparen
+slash :: DGraphicF -> DGraphicF
+slash gF = gF `cc` slash1
   where
-    lparen = wrapG . letter '(' . moveOrigin 3    (-1)
-    rparen = wrapG . letter ')' . moveOrigin (-7) (-1)
+    slash1 = straightLine black (V2 10 10) . displace (-5) (-6) 
+
+
+underscore :: DGraphicF -> DGraphicF
+underscore gF = gF `cc` uscore
+  where
+    uscore = straightLine black (V2 10 0) . displace (-5) (-5) 
+
 
 dominant :: DGraphicF -> DGraphicF
-dominant grF = closed_square `cc` grF
+dominant gF = gF `cc` closed_square
   where
-    closed_square = filledRectangle black  4.5 4.5 . moveOrigin 2.25 9.25
+    closed_square = filledRectangleCtr black  4.5 4.5 . displaceHand
 
 otherhand :: DGraphicF -> DGraphicF
 otherhand grF = open_square `cc` grF
   where
-    open_square = strokedRectangle props 4 4 . moveOrigin 2 9
+    open_square = strokedRectangleCtr props 4 4 . displaceHand
     props       = (black, LineWidth 0.5)
+
+displaceHand :: Point2T Double
+displaceHand = vdisplace (-3) . displaceStem . displaceCharHeight 
+
+
+-- 
+
+stem :: DGraphicF
+stem = straightLine line_props (vvec 20) . displaceStem
+
+flamStem :: DGraphicF 
+flamStem = openPath line_props vec_path . displaceStem
+  where
+    vec_path = [vvec 20, vec (-5) (-5), vvec (-10)]
+
+line_props :: (DRGB, StrokeAttr)
+line_props = (black, LineWidth 1.0)
+
+
+displaceStem :: Point2T Double
+displaceStem = vdisplace (-20)
+
+displaceCharHeight :: Point2T Double
+displaceCharHeight = vdisplace (-10)
+
 
 -- Note - we cannot make a "rectangle transformer" that centers a 
 -- rectangle because the Bounding box cannot be accessed.
@@ -87,72 +152,67 @@ otherhand grF = open_square `cc` grF
 
 -- flams are need not necessarily duplicate the same letter
 -- GDgdPT notation can have [GD,dg,PT,TP,...]
+--
+-- tone flam (circle) and the letter flams have different
+-- scaling factors.
 
-
--- sub is an 80% scale - sub bottom-right is sup top-left
-flam :: DPrimF -> DPrimF -> DGraphicF
-flam sub sup = (wrapG . sup) `cc` (wrapG . trafo sub) 
-  where
-    trafo f = \pt -> translate (-4) 6 $ uniformScale 0.6 $ f pt
-
-    -- this is wrong - scalings (like the more obvious rotate) need to 
-    -- be done about the origin...
-
-
---
--- Notes - in a nutshell you can't affine transform GraphicF.
---
--- With a Hughes list you can do some silly things, e.g
---
--- > list1 = map (+1) . fromListH [1,2,3] 
--- 
--- But the extent of map (+1) will travel to anything that
--- list1 is concatenated to.
---
--- > list2 = list1 . fromList [0,0,0]
---
--- > list2 == [2,3,4,1,1,1]
---
--- In theory you a trasfomation could go in-and-out of
--- an normal list
---
--- > fromListH . map (scale x y) . toListH
---
--- But this is beyond the pale...
---
 
 
 --------------------------------------------------------------------------------
 
-type PrimF  u = Point2 u -> Primitive u
-type DPrimF   = PrimF Double
 
-
-
-wrapPrimF :: (Point2 u -> Primitive u) -> GraphicF u
-wrapPrimF fn = wrapG . fn
 
 
 -- Where to have the  origin....
-letter :: Char -> DPrimF
-letter ch = grp . moveOrigin 4 5
-  where 
-    grp = textlabel (black,helvetica12) [ch]
+letter :: Char -> DGraphicF
+letter ch = wrapG . textlabel (black,helvetica 12) [ch] . displace (-4) (-5)
+
+-- For flam...
+smallLetter :: Char -> DGraphicF
+smallLetter ch = wrapG . textlabel (black,helvetica 9) [ch] . displace (-3) (-5)
 
 
--- Probably for Basic.Graphic
+-- Candidates for Basic.Graphic
 
-type Point2T    u = Point2 u    -> Point2 u
-type PrimitiveT u = Primitive u -> Primitive u 
-
-
-moveOrigin :: Num u => u -> u -> Point2T u
-moveOrigin x y = (.-^ V2 x y)
+type Point2T    u = Point2 u -> Point2 u
 
 
--- Wow a new bird combinator...
+displace :: Num u => u -> u -> Point2T u
+displace x y = (.+^ V2 x y)
 
-infixr 9 `cc`
+hdisplace :: Num u => u -> Point2T u
+hdisplace x = displace x 0
 
-cc :: (r1 -> a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
-cc f g = \x y -> f x (g x y)
+vdisplace :: Num u => u -> Point2T u
+vdisplace y = displace 0 y
+
+vec :: u -> u -> Vec2 u
+vec = V2
+
+
+
+openPath :: (Stroke t, Num u) => t -> [Vec2 u] -> GraphicF u
+openPath t vs = \pt -> wrapG $ ostroke t $ path pt (snd $ mapAccumL fn pt vs)
+  where
+    fn p v = let p' = p .+^ v in (p', lineTo p')
+
+
+
+
+-- | Point is center.
+--
+strokedRectangleCtr :: (Stroke t, Fractional u) => t -> u -> u -> GraphicF u
+strokedRectangleCtr t w h = wrapG . cstroke t . rectangleCtr w h
+
+-- | Point is center.
+--
+filledRectangleCtr :: (Fill t, Fractional u) => t -> u -> u -> GraphicF u
+filledRectangleCtr t w h = wrapG . fill t . rectangleCtr w h
+
+rectangleCtr :: Fractional u => u -> u -> Point2 u -> Path u
+rectangleCtr w h ctr = path bl [ lineTo br, lineTo tr, lineTo tl ]
+  where
+    bl = ctr .-^ V2 (w*0.5) (h*0.5)
+    br = bl .+^ hvec h
+    tr = br .+^ vvec h
+    tl = bl .+^ vvec h 
