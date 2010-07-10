@@ -152,15 +152,3 @@ scaleWidth i = (\cw -> cw * fromIntegral i) <$> asks char_width
 --------------------------------------------------------------------------------
 
 
--- Wow a new bird combinator...
-
-infixr 9 `cc`
-
-cc :: (r1 -> a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
-cc f g = \x y -> f x (g x y)
-
-unfoldrH :: (b -> Maybe (a,b)) -> b -> H a
-unfoldrH phi = step
-  where step b = case phi b of
-                  Nothing -> emptyH
-                  Just (a,s) -> a `consH` step s

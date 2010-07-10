@@ -1,5 +1,5 @@
 name:             wumpus-microprint
-version:          0.1.1
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -26,7 +26,6 @@ description:
   * Updated to use Basic.Graphic types from wumpus-basic-0.2.0
   .
   * Added bordered printing that marks the unit character width.
-
   .
   .
 build-type:         Simple
