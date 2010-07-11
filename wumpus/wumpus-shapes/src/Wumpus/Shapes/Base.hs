@@ -18,12 +18,21 @@
 module Wumpus.Shapes.Base
   ( 
 
+  -- * CTM 
+    CTM(..)
+  , identityCTM
+  , scaleCTM
+  , rotateCTM
+  , ctmDisplace
+
   -- * Shape label
-    ShapeLabel(..)
+  , ShapeLabel(..)
   , AddLabel(..)
   , basicLabel
   , updateText
   , drawShapeLabel
+  , labelGraphic
+
   , DrawShape(..)
 
   -- * Anchors
@@ -33,12 +42,45 @@ module Wumpus.Shapes.Base
 
   ) where
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Shapes.Utils
+
+import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 import Data.AffineSpace                 -- package: vector-space
+
+import Control.Applicative
+
+data CTM u = CTM 
+      { ctm_scale_x             :: u
+      , ctm_scale_y             :: u
+      , ctm_rotation            :: Radian
+      }
+  deriving (Eq,Show)
+
+identityCTM :: Num u => CTM u
+identityCTM = CTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
+
+scaleCTM :: Num u => u -> u -> CTM u -> CTM u
+scaleCTM x1 y1 = star2 (\s x y -> s { ctm_scale_x = x1*x
+                                    , ctm_scale_y = y1*y })
+                       ctm_scale_x
+                       ctm_scale_y
+
+rotateCTM :: Radian -> CTM u -> CTM u
+rotateCTM ang1 = star (\s ang -> s { ctm_rotation = circularModulo $ ang1+ang })
+                      ctm_rotation
+
+
+ctmDisplace :: (Real u, Floating u) => u -> u -> CTM u -> Point2 u
+ctmDisplace x y ctm = rotate (ctm_rotation ctm) (P2 x' y')
+  where
+    x' = liftA (*x) ctm_scale_x ctm
+    y' = liftA (*y) ctm_scale_y ctm
+
+
 
 data ShapeLabel = ShapeLabel
       { shapelabel_text         :: String
@@ -66,6 +108,12 @@ drawShapeLabel sl ctr ang = rotatePrimitive ang $ textlabel (rgb,attr) text pt
     theight           = textHeight font_sz
     pt                = let p1 = ctr .-^ V2 (0.5 * twidth) (0.5 * theight)
                         in rotateAbout ang ctr p1
+
+-- Note - labels are not scaled ....
+--
+labelGraphic :: (Real u, Floating u) 
+             => Point2 u -> CTM u -> ShapeLabel -> Graphic u
+labelGraphic ctr ctm lbl = wrapG $ drawShapeLabel lbl ctr (ctm_rotation ctm)  
 
 
 -- can all shapes (except coordinates) be stroked and filled?

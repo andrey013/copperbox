@@ -34,16 +34,13 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
-import Data.AffineSpace                 -- package: vector-space
-
-
 -- | Rectangles.
 --
 data Rectangle u = Rectangle 
       { rect_center        :: Point2 u
       , rect_half_width    :: u
       , rect_half_height   :: u
-      , rect_rotation      :: Radian
+      , rect_ctm           :: CTM u
       , rect_label         :: Maybe ShapeLabel
       }
 
@@ -54,14 +51,17 @@ type instance DUnit (Rectangle u) = u
 
 
 
--- CTM * ctr * half_width * half_height      
+-- ctr * CTM * half_width * half_height      
 --
-withGeom :: Num u => (Point2 u -> Radian -> u -> u -> a) -> Rectangle u -> a
-withGeom f (Rectangle ctr hw hh ang _) = f ctr ang hw hh
+withGeom :: Num u => (Point2 u -> CTM u -> u -> u -> a) -> Rectangle u -> a
+withGeom f (Rectangle { rect_center=ctr, rect_ctm=ctm
+                      , rect_half_width=hw, rect_half_height=hh}) =
+    f ctr ctm hw hh
      
 -- What to call this.... ?
-obelisk :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
-obelisk f = withGeom $ \ctr ang hw hh -> ctr .+^ rotateAbout ang ctr (f hw hh) 
+calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
+calcPoint f = withGeom $ \(P2 cx cy) ctm hw hh -> 
+    let (V2 x y) = f hw hh in translate cx cy $ ctmDisplace x y ctm
 
 --------------------------------------------------------------------------------
 -- Instances 
@@ -74,39 +74,37 @@ instance AnchorCenter (Rectangle u) where
 
 
 instance (Real u, Floating u) =>  AnchorCardinal (Rectangle u) where
-  north = obelisk $ \ _  hh -> vvec hh
-  south = obelisk $ \ _  hh -> vvec (-hh)
-  east  = obelisk $ \ hw _  -> hvec hw
-  west  = obelisk $ \ hw _  -> hvec (-hw)
+  north = calcPoint $ \ _  hh -> vvec hh
+  south = calcPoint $ \ _  hh -> vvec (-hh)
+  east  = calcPoint $ \ hw _  -> hvec hw
+  west  = calcPoint $ \ hw _  -> hvec (-hw)
 
-  northeast = obelisk $ \ hw hh -> V2 hw hh
-  southeast = obelisk $ \ hw hh -> V2 hw (-hh)
-  southwest = obelisk $ \ hw hh -> V2 (-hw) (-hh)
-  northwest = obelisk $ \ hw hh -> V2 (-hw) hh
+  northeast = calcPoint $ \ hw hh -> V2 hw hh
+  southeast = calcPoint $ \ hw hh -> V2 hw (-hh)
+  southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)
+  northwest = calcPoint $ \ hw hh -> V2 (-hw) hh
 
 
 
 instance (Floating u, Real u) => Rotate (Rectangle u) where
-  rotate r = star (\ang s -> s { rect_rotation = circularModulo $ r+ang })
-                  rect_rotation
+  rotate r = star (\s ctm -> s {rect_ctm = rotateCTM r ctm })
+                  rect_ctm
 
 
 instance Num u => Scale (Rectangle u) where
-  scale x y = star2 (\hw hh s -> s { rect_half_width = x*hw,
-                                     rect_half_height = y*hh})
-                    rect_half_width
-                    rect_half_height
+  scale x y = star (\s ctm -> s { rect_ctm = scaleCTM x y ctm })
+                   rect_ctm
 
 instance Num u => Translate (Rectangle u) where
-  translate x y = star (\ctr s -> s { rect_center = translate x y ctr} )
+  translate x y = star (\s ctr -> s { rect_center = translate x y ctr} )
                        rect_center 
 
 
 instance AddLabel (Rectangle u) where
   r `addLabel` text = star fn rect_label r
     where
-      fn Nothing    s = s { rect_label = Just $ basicLabel text }
-      fn (Just lbl) s = s { rect_label = Just $ updateText text lbl } 
+      fn s Nothing    = s { rect_label = Just $ basicLabel text }
+      fn s (Just lbl) = s { rect_label = Just $ updateText text lbl } 
      
 
 
@@ -117,7 +115,11 @@ instance AddLabel (Rectangle u) where
 -- | @rectangle : width * height * center_pt -> rectangle@
 --
 rectangle :: Fractional u => u -> u -> Point2 u -> Rectangle u
-rectangle w h ctr = Rectangle ctr (w * 0.5) (h * 0.5) 0 Nothing
+rectangle w h ctr = Rectangle { rect_center       = ctr 
+                              , rect_half_width   = 0.5*w 
+                              , rect_half_height  = 0.5*h
+                              , rect_ctm          = identityCTM 
+                              , rect_label        = Nothing }
 
 
 --------------------------------------------------------------------------------
@@ -130,8 +132,7 @@ drawRectangle :: (Real u, Floating u)
               => (Path u -> Primitive u) -> Rectangle u -> Graphic u
 drawRectangle drawF rect = labelpic . rectpic
   where
-    labelpic = maybe id (\lbl -> wrapG $ 
-                           drawShapeLabel lbl (rect_center rect) (rect_rotation rect))
+    labelpic = maybe id (labelGraphic (rect_center rect) (rect_ctm rect))
                         (rect_label rect)
 
     rectpic   = wrapG $ drawF $ vertexPath $ extractVertexList rect

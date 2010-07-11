@@ -71,6 +71,10 @@ description:
     Particularly, the function @capHeight@ has been replaced with
     the function @numeralHeight@ which has better semantics.
   .
+  * The CTM data type and ToCTM class are now hidden in the
+    top-level import module @Wumpus.Core@. They can be accessed
+    by importing @Wumpus.Core.GraphicsState@ directly.
+  .
   0.20.0 to 0.21.0:
   .
   * Removed the Primitive instances of the Affine transformation 

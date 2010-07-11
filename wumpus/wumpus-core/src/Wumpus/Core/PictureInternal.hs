@@ -203,7 +203,11 @@ data PrimEllipse u = PrimEllipse
 type DPrimEllipse = PrimEllipse Double
 
 
-data PrimCTM u = PrimCTM { _xscale :: u, _yscale :: u, _rot :: Radian }
+data PrimCTM u = PrimCTM 
+      { ctm_scale_x     :: u
+      , ctm_scale_y     :: u
+      , ctm_rotation    :: Radian 
+      }
   deriving (Eq,Show)
 
 
@@ -511,13 +515,13 @@ translatePath x y = pointwise (translate x y)
 -- Manipulating the Primitive CTM
 
 identityCTM :: Num u => PrimCTM u
-identityCTM = PrimCTM 1 1 0
+identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
 
 scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
 scaleCTM x1 y1 (PrimCTM x y ang) = PrimCTM (x1*x) (y1*y) ang
 
 rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
-rotateCTM ang1 (PrimCTM x y ang) = PrimCTM x y (ang1+ang)
+rotateCTM ang1 (PrimCTM x y ang) = PrimCTM x y (circularModulo $ ang1+ang)
 
 matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
 matrixRepCTM (PrimCTM x y ang) = 

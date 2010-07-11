@@ -25,14 +25,32 @@ module Wumpus.Shapes.Utils
 
 -- starlings...
 
-star     :: (a -> r -> ans) 
+-- Note - this is the correct argument order for a starling.
+-- I\'ve used these combinators elsewhere with arguments of the
+-- \"combiner\" in the wrong order.
+
+star     :: (r -> a -> ans) 
          -> (r -> a) 
          -> r -> ans
-star f fa x = f (fa x) x
+star f fa x = f x (fa x)
 
-star2    :: (a -> b -> r -> ans) 
+star2    :: (r -> a -> b -> ans) 
          -> (r -> a) 
          -> (r -> b) 
          -> r -> ans
-star2 f fa fb x = f (fa x) (fb x) x
+star2 f fa fb x = f x (fa x) (fb x)
+
+
+{-
+
+-- |  - aka liftM on functions 
+-- 
+esop :: (r -> a) -> (a -> ans) -> r -> ans
+esop g f r = f (g r)
+
+-- | bigphi2 - a
+-- 
+esop2 :: (r -> a) -> (r -> b) -> (a -> b -> ans) -> r -> ans
+esop2 fa fb f r = f (fa r) (fb r)
+-}
 
