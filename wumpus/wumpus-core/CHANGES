@@ -1,11 +1,12 @@
 
 0.20.0 to 0.21.0:
 
-  * Removed the instances of the Affine transformation. They have
-    been replaced with special transformation functions: 
-    @rotatePrimitive@, @scalePrimitive@, @translatePrimitive@.
-    As Primitives are not in an affine frame until they are lifted 
-    to Pictures the affine instances had ill-conceived semantics.
+  * Removed the Primitive instances of the Affine transformation 
+    classes. They have been replaced with special transformation 
+    functions: @rotatePrimitive@, @scalePrimitive@, 
+    @translatePrimitive@. As Primitives are not in an affine 
+    frame until they are lifted to Pictures the affine instances 
+    had ill-conceived semantics.
 
   * Due to changes to accommodate the new non-affine  
     transformations, many of the class obligations have changed 

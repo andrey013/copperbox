@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.21.0
+version:          0.22.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -61,13 +61,22 @@ description:
   .
   Changelog:
   .
+  0.21.0 to 0.22.0:
+  .
+  * Added vec as a synonym for the constructor V2.
+  .
+  * Changed some of the Core.FontSize to use better terminology. 
+    Thus some of the constants have changed. Added a new example
+    @FontMetrics.hs@ to illustrate how FontSize works.
+  .
   0.20.0 to 0.21.0:
   .
-  * Removed the instances of the Affine transformation. They have
-    been replaced with special transformation functions: 
-    @rotatePrimitive@, @scalePrimitive@, @translatePrimitive@.
-    As Primitives are not in an affine frame until they are lifted 
-    to Pictures the affine instances had ill-conceived semantics.
+  * Removed the Primitive instances of the Affine transformation 
+    classes. They have been replaced with special transformation 
+    functions: @rotatePrimitive@, @scalePrimitive@, 
+    @translatePrimitive@. As Primitives are not in an affine 
+    frame until they are lifted to Pictures the affine instances 
+    had ill-conceived semantics.
   .
   * Due to changes to accommodate the new non-affine  
     transformations, many of the class obligations have changed 
@@ -100,6 +109,7 @@ extra-source-files:
   demo/AffineTest02.hs,
   demo/AffineTest03.hs,
   demo/AffineTestBase.hs,
+  demo/FontMetrics.hs
   demo/LabelPic.hs,
   demo/MultiPic.hs
   demo/Picture.hs,

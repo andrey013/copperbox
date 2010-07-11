@@ -17,7 +17,10 @@
 -- calculated for other font families will usually have longer 
 -- width than is necessary for the printed text. 
 -- 
--- This is a deficiency of Wumpus, but alternatives would have
+-- This is a deficiency of Wumpus, and limits its text handling
+-- capabilities (for example, text cannot be automatically 
+-- centered). However, alternatives would need access to font 
+-- metrics - this would require a font loader and add 
 -- significant implementation complexity.
 -- 
 --------------------------------------------------------------------------------
@@ -31,8 +34,8 @@ module Wumpus.Core.FontSize
 
   -- * Courier metrics at 48 point
   , courier48_width
-  , courier48_body_height
   , courier48_height
+  , courier48_numeral_height
   , courier48_descender_depth
   , courier48_spacer_width
 
@@ -55,6 +58,10 @@ import Data.AffineSpace                 -- package: vector-space
 type CharCount = Int
 type FontSize = Int
 
+-- NOTE - Edward Tufte\'s Visual Explantions explains 
+-- terminolgy on page 99.
+
+
 -- | The width of a letter in Courier at 48 pt.
 --
 -- The value is not entirely accurate but it is satisfactory.
@@ -62,32 +69,33 @@ type FontSize = Int
 courier48_width :: Num u => u
 courier48_width = 26
 
-
--- | The height of a letter without accents, ascenders or 
--- descenders in Courier at 48 pt .
+-- | The pointsize of a character in Courier at 48pt.
 --
--- The value is not entirely accurate but it is satisfactory - 
--- some letters are taller than others (e.g. numbers are taller 
--- then capitals).
+-- Pointsize is the body height plus the ascender height and 
+-- descender depth.
 --
-courier48_body_height :: Num u => u 
-courier48_body_height = 30
-
-
--- | The /common maximum/ height of a letter in Courier at 48pt.
---
--- By common maximum the letter is allowed to have both an accent 
--- or ascender and a descender.
---
--- Naturally the height is 48.0.
+-- \*\* Naturally the height is 48.0 \*\*.
 --
 courier48_height :: Num u => u
 courier48_height = 48
 
 
+
+-- | The height of a numeral without accents, ascenders or 
+-- descenders in Courier at 48 pt.
+--
+-- Note - the height of a numeral in Courier is slightly 
+-- larger than a upper-case letter.
+--
+courier48_numeral_height :: Num u => u 
+courier48_numeral_height = 30
+
+
+
 -- | The depth of a descender in Courier at 48 pt.
 -- 
--- Also the height of an ascender.
+-- > descender_depth = 9.0
+-- 
 courier48_descender_depth :: Num u => u 
 courier48_descender_depth = 9
 
@@ -96,7 +104,11 @@ courier48_descender_depth = 9
 -- | The spacing between letters printed directly with 
 -- PostScript\'s show command for Courier at 48 pt.
 --
--- The value is not entirely accurate but it is satisfactory.
+-- The value is not entirely accurate but it is satisfactory
+-- for bounding box calculations.
+--
+-- > spacer_width = 3.0
+--
 courier48_spacer_width :: Num u => u
 courier48_spacer_width = 3
 
@@ -125,8 +137,8 @@ textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
 textHeight :: Num u =>  FontSize -> u
 textHeight = fromIntegral
 
--- The height of an upper case letter (without ascender or 
--- descender).
+-- The height of an upper case letter (without ascenders or 
+-- descenders).
 --
 capHeight :: Fractional u => FontSize -> u
 capHeight sz = textHeight sz - (2 * descenderDepth sz)

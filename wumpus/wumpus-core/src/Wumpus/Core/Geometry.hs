@@ -49,6 +49,7 @@ module Wumpus.Core.Geometry
   , MatrixMult(..)
 
   -- * Vector operations
+  , vec
   , direction
   , hvec
   , vvec
@@ -417,6 +418,20 @@ instance Num u => MatrixMult (Point2 u) where
 --------------------------------------------------------------------------------
 -- Vectors
 
+-- | A synonym for the constructor 'V2' with a Num constraint on 
+-- the arguments.
+--
+-- Essentially superfluous, but it can be slightly more 
+-- typographically pleasant when used in lists of vectors:
+--
+-- > [ vec 2 2, vvec 4, hvec 4, vec 2 2 ]
+--
+-- Versus:
+--
+-- > [ V2 2 2, vvec 4, hvec 4, V2 2 2 ]
+--  
+vec :: Num u => u -> u -> Vec2 u
+vec = V2
 
 -- | Direction of a vector - i.e. the counter-clockwise angle 
 -- from the x-axis.
