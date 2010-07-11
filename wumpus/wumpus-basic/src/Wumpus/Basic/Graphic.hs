@@ -34,7 +34,7 @@ module Wumpus.Basic.Graphic
   , drawGraphic
   , wrapG
 
-  , text
+  , textline
   , straightLine
   , strokedRectangle
   , filledRectangle
@@ -90,8 +90,10 @@ wrapG = wrapH
 
 --------------------------------------------------------------------------------
 
-text :: (TextLabel t, Num u) => t -> String -> GraphicF u
-text t ss = wrapG . textlabel t ss 
+-- | text should not contatin newlines...
+--
+textline :: (TextLabel t, Num u) => t -> String -> GraphicF u
+textline t ss = wrapG . textlabel t ss 
 
 straightLine :: (Stroke t, Num u) => t -> Vec2 u -> GraphicF u
 straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]

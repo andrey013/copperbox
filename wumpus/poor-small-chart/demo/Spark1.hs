@@ -37,7 +37,7 @@ spark_ctx = drawingContext (0.1 ::: 1.0) id (0.0 ::: 1.0) id rect
     rect = sparklineRectangle spark_font 10
 
 spark_font :: FontAttr
-spark_font = courier24
+spark_font = courier 24
 
 
 data_points :: Dataset Double Double

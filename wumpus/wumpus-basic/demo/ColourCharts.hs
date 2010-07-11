@@ -54,7 +54,7 @@ colourSample :: (Fractional u, Floating u, Ord u)
 colourSample (name,rgb) = block `cc` lbl 
   where
     block = filledRectangle rgb  15 10
-    lbl   = text (courier 10) name . (.+^ hvec 18)
+    lbl   = textline (courier 10) name . (.+^ hvec 18)
 
 
 

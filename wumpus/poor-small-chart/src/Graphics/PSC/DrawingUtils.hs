@@ -18,11 +18,9 @@ module Graphics.PSC.DrawingUtils
   (
 
 
-  -- * Graphic type
-    cc
 
   -- * Drawing
-  , drawingContext
+    drawingContext
   , ctxRectangleWidth
   , ctxRectangleHeight
   , ctxRectangleScaleX
@@ -57,15 +55,6 @@ import Data.AffineSpace                 -- package: vector-space
 
 
 
---------------------------------------------------------------------------------
--- Composing primitives with Hughes lists
-
-
-
-infixr 9 `cc`
-
-cc :: ScaleCtx u v DGraphic -> ScaleCtx u v DGraphic -> ScaleCtx u v DGraphic
-cc f g = \ctx -> f ctx . g ctx
 
 
 --------------------------------------------------------------------------------
@@ -118,11 +107,11 @@ makeTextlabel :: (Double -> Double -> Vec2 Double)
               -> (DRGB,FontAttr) 
               -> String 
               -> TextLabelF
-makeTextlabel mv (rgb,font_props) text bottom_left = 
-    wrapG $ textlabel (rgb,font_props) text (bottom_left .-^ displacement)
+makeTextlabel mv (rgb,font_props) msg bottom_left = 
+    wrapG $ textlabel (rgb,font_props) msg (bottom_left .-^ displacement)
   where
     pt_size       = font_size font_props
-    text_width    = textWidth  pt_size (length text)
+    text_width    = textWidth  pt_size (length msg)
     cap_height    = textHeight pt_size - (2 * descenderDepth pt_size)
     displacement  = mv text_width cap_height
 

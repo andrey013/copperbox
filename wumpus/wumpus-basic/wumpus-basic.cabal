@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,6 +12,10 @@ description:
   Very preliminary release...
   .
   Changelog:
+  .
+  0.2.0 to 0.3.0 :
+  . 
+  * Basic.Graphic - changed @text@ to @textline@.
   .
   0.1.1 to 0.2.0:
   .
@@ -40,7 +44,7 @@ library
   build-depends:      base            <  5, 
                       vector-space    >= 0.6,
                       monadLib        >= 3.6,
-                      wumpus-core     >= 0.20.0
+                      wumpus-core     >= 0.21.0
 
   
   exposed-modules:

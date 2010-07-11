@@ -28,8 +28,8 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
-                      wumpus-core       >= 0.20.0,
-                      wumpus-basic      >= 0.1.0
+                      wumpus-core       >= 0.21.0,
+                      wumpus-basic      >= 0.2.0
   
   exposed-modules:
     Graphics.PSC.Axis,

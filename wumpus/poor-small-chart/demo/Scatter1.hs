@@ -54,7 +54,7 @@ ifloor = step . floor
 
 
 tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black helvetica10 black 0.5 4 2
+tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
 
 
 x_range         :: Range Double
