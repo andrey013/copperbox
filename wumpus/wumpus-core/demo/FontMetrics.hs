@@ -35,12 +35,13 @@ metrics_pic = char_pic `picOver` lines_pic
 
 lines_pic   :: DPicture
 lines_pic   = frameMulti $ 
-    [ ascender_line, numeral_line, baseline, descender_line ]
+    [ ascender_line, numeral_line, xheight_line, baseline, descender_line ]
   where
     descender_pos   = 0 - courier48_descender_depth
   
     ascender_line   = haxis peru (descender_pos + courier48_height)
     numeral_line    = haxis peru courier48_numeral_height
+    xheight_line    = haxis peru courier48_xheight
     baseline        = haxis peru 0
     descender_line  = haxis peru descender_pos
 
@@ -49,7 +50,7 @@ lines_pic   = frameMulti $
 char_pic :: Picture Double
 char_pic = frameMulti $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
   where
-    chars = (map letter "ABabg12") ++ [agraveU]
+    chars = (map letter "ABXabdgjxy12") ++ [agraveU]
 
 type PrimF = DPoint2 -> DPrimitive
 
@@ -68,7 +69,7 @@ vertLine rgb height pt = ostroke rgb $ vertexPath [pt, pt .+^ vvec height]
 
 haxis :: DRGB -> Double -> DPrimitive
 haxis rgb ypos = 
-    ostroke (rgb, dash_attr) $ vertexPath [pt, pt .+^ hvec 400 ]
+    ostroke (rgb, dash_attr) $ vertexPath [ pt, pt .+^ hvec 440 ]
   where
     dash_attr = DashPattern (Dash 0 [(2,2)])
     pt        = P2 0 ypos

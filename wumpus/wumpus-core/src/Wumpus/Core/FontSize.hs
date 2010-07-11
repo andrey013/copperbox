@@ -36,7 +36,9 @@ module Wumpus.Core.FontSize
   , courier48_width
   , courier48_height
   , courier48_numeral_height
+  , courier48_xheight
   , courier48_descender_depth
+  , courier48_ascender_height
   , courier48_spacer_width
 
 
@@ -44,7 +46,7 @@ module Wumpus.Core.FontSize
   , widthAt48pt
   , textWidth
   , textHeight
-  , capHeight
+  , numeralHeight
   , descenderDepth
   , textBounds
 
@@ -66,13 +68,12 @@ type FontSize = Int
 --
 -- The value is not entirely accurate but it is satisfactory.
 --
+-- > width = 26.0 
+--
 courier48_width :: Num u => u
 courier48_width = 26
 
--- | The pointsize of a character in Courier at 48pt.
---
--- Pointsize is the body height plus the ascender height and 
--- descender depth.
+-- | The point size of a character in Courier at 48 pt.
 --
 -- \*\* Naturally the height is 48.0 \*\*.
 --
@@ -87,9 +88,20 @@ courier48_height = 48
 -- Note - the height of a numeral in Courier is slightly 
 -- larger than a upper-case letter.
 --
+-- > numeral_height = 30.0 
+--
 courier48_numeral_height :: Num u => u 
 courier48_numeral_height = 30
 
+-- | The height of the body of a lower-case letter 
+--  (typically the letter  \'x\') in Courier at 48 pt. 
+--
+-- This is also known as the \"body height\".
+--
+-- > xheight = 20.0 
+-- 
+courier48_xheight :: Num u => u 
+courier48_xheight = 20
 
 
 -- | The depth of a descender in Courier at 48 pt.
@@ -99,6 +111,22 @@ courier48_numeral_height = 30
 courier48_descender_depth :: Num u => u 
 courier48_descender_depth = 9
 
+-- | The depth of an ascender in Courier at 48 pt.
+-- 
+-- > ascender_height = 10.0
+-- 
+-- Note - for Courier point size is not the sum of
+-- descender, ascender and xheight and lower-case letters with
+-- ascenders are slightly taller than upper-case letters:
+--
+-- > descender_depth + xheight + ascender_height /= point_size
+--
+-- > xheight + ascender_height /= cap_height
+--
+-- > xheight + ascender_height == numeral_height
+--
+courier48_ascender_height :: Num u => u 
+courier48_ascender_height = 10
 
 
 -- | The spacing between letters printed directly with 
@@ -129,21 +157,20 @@ textWidth :: Fractional u => FontSize -> CharCount -> u
 textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
 
 
--- | Text height is just identity/double-coercion, i.e. 
--- @18 == 18.0@. The /size/ of a font is the maximum height:
---
--- > body + descender max + ascender max
+-- | Text height is just identity/double-coercion of the Point size.
+-- i.e. @18 == 18.0@. The /size/ of a font is the maximum height:
 --
 textHeight :: Num u =>  FontSize -> u
 textHeight = fromIntegral
 
--- The height of an upper case letter (without ascenders or 
--- descenders).
+-- | Approximate the height of a numeral using metrics derived 
+-- from the Courier monospaced font.
 --
-capHeight :: Fractional u => FontSize -> u
-capHeight sz = textHeight sz - (2 * descenderDepth sz)
+numeralHeight :: Fractional u => FontSize -> u
+numeralHeight sz = textHeight sz * (courier48_numeral_height / courier48_height)
 
--- | Descender depth for font size @sz@.
+-- | Approximate the descender depth for font size @sz@ using
+-- metrics derived from the Courier monospaced font.
 -- 
 descenderDepth :: Fractional u => FontSize -> u
 descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
