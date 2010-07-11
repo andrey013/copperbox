@@ -24,6 +24,12 @@ errK :: a
 errK = error "no picture"
 
 pic1 :: DPicture
-pic1 = fromMaybe errK $ drawGraphic $ strokeRectangle lightSteelBlue $ 
-         (rectangle 40 20 (P2 0 0) `addLabel` "Rectangle")
+pic1 = fromMaybe errK $ drawGraphic $ 
+         foldr (\e a -> strokeShape lightSteelBlue e . a) id
+         [ translate 100 0 $ rotate45 rect1
+         , rect1
+         ]
 
+
+rect1    :: DRectangle 
+rect1    = rectangle 80 20 zeroPt `addLabel` "Rectangle"

@@ -19,6 +19,8 @@ module Wumpus.Shapes.Rectangle
   ( 
 
     Rectangle(..)
+  , DRectangle
+
   , rectangle
   , strokeRectangle
   , fillRectangle
@@ -27,7 +29,7 @@ module Wumpus.Shapes.Rectangle
   ) where
 
 import Wumpus.Shapes.Base
-
+import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
@@ -38,12 +40,14 @@ import Data.AffineSpace                 -- package: vector-space
 -- | Rectangles.
 --
 data Rectangle u = Rectangle 
-      { _center        :: Point2 u
-      , _half_width    :: u
-      , _half_height   :: u
-      , _rotation      :: Radian
-      , _label         :: Maybe ShapeLabel
+      { rect_center        :: Point2 u
+      , rect_half_width    :: u
+      , rect_half_height   :: u
+      , rect_rotation      :: Radian
+      , rect_label         :: Maybe ShapeLabel
       }
+
+type DRectangle = Rectangle Double
 
 type instance DUnit (Rectangle u) = u
 
@@ -53,12 +57,7 @@ type instance DUnit (Rectangle u) = u
 -- CTM * ctr * half_width * half_height      
 --
 withGeom :: Num u => (Point2 u -> Radian -> u -> u -> a) -> Rectangle u -> a
-withGeom f rect = f ctr ang hw hh
-  where
-    ang = _rotation    rect
-    ctr = _center      rect
-    hw  = _half_width  rect
-    hh  = _half_height rect 
+withGeom f (Rectangle ctr hw hh ang _) = f ctr ang hw hh
      
 -- What to call this.... ?
 obelisk :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
@@ -69,7 +68,7 @@ obelisk f = withGeom $ \ctr ang hw hh -> ctr .+^ rotateAbout ang ctr (f hw hh)
   
 
 instance AnchorCenter (Rectangle u) where
-  center (Rectangle { _center = ctr }) = ctr
+  center (Rectangle { rect_center = ctr }) = ctr
 
 
 
@@ -85,34 +84,32 @@ instance (Real u, Floating u) =>  AnchorCardinal (Rectangle u) where
   southwest = obelisk $ \ hw hh -> V2 (-hw) (-hh)
   northwest = obelisk $ \ hw hh -> V2 (-hw) hh
 
-{-
+
 
 instance (Floating u, Real u) => Rotate (Rectangle u) where
-  rotate r = updateCTM (rotateCTM r)
+  rotate r = star (\ang s -> s { rect_rotation = circularModulo $ r+ang })
+                  rect_rotation
 
-instance (Floating u, Real u) => RotateAbout (Rectangle u) where
-  rotateAbout r pt = updateCTM (rotateAboutCTM r pt)
 
 instance Num u => Scale (Rectangle u) where
-  scale x y = updateCTM (scaleCTM x y)
+  scale x y = star2 (\hw hh s -> s { rect_half_width = x*hw,
+                                     rect_half_height = y*hh})
+                    rect_half_width
+                    rect_half_height
 
 instance Num u => Translate (Rectangle u) where
-  translate x y = updateCTM (translateCTM x y)
--}
+  translate x y = star (\ctr s -> s { rect_center = translate x y ctr} )
+                       rect_center 
+
 
 instance AddLabel (Rectangle u) where
-  r `addLabel` text = star fn _label r
+  r `addLabel` text = star fn rect_label r
     where
-      fn Nothing    s = s { _label = Just $ basicLabel text }
-      fn (Just lbl) s = s { _label = Just $ updateText text lbl } 
+      fn Nothing    s = s { rect_label = Just $ basicLabel text }
+      fn (Just lbl) s = s { rect_label = Just $ updateText text lbl } 
      
 
--- starling...
 
-star     :: (a -> r -> ans) 
-          -> (r -> a) 
-          -> r -> ans
-star f fa x = f (fa x) x
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -133,7 +130,9 @@ drawRectangle :: (Real u, Floating u)
               => (Path u -> Primitive u) -> Rectangle u -> Graphic u
 drawRectangle drawF rect = labelpic . rectpic
   where
-    labelpic = maybe id (\lbl -> wrapG $ drawShapeLabel lbl (_center rect)) $ _label rect
+    labelpic = maybe id (\lbl -> wrapG $ 
+                           drawShapeLabel lbl (rect_center rect) (rect_rotation rect))
+                        (rect_label rect)
 
     rectpic   = wrapG $ drawF $ vertexPath $ extractVertexList rect
 
@@ -145,6 +144,10 @@ fillRectangle :: (Real u, Floating u, Fill t)
               => t -> Rectangle u -> Graphic u
 fillRectangle t = drawRectangle (fill t)
 
+
+instance DrawShape Rectangle where
+  strokeShape t = drawRectangle (cstroke t) 
+  fillShape   t = drawRectangle (fill t)
 
 extractVertexList :: (Real u, Floating u) => Rectangle u -> [Point2 u]
 extractVertexList rect = [bl,br,tr,tl]

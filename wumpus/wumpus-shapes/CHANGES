@@ -1,0 +1,14 @@
+
+0.1.1 to 0.2.0:
+
+  * Updated to use Basic.Graphic types from wumpus-basic-0.2.0.
+
+  * Added bordered printing that marks the unit character width.
+
+  
+
+0.1.0 to 0.1.1:
+
+  * Added missing LICENSE file to the Cabal file.
+
+  * Added this CHANGES file.
