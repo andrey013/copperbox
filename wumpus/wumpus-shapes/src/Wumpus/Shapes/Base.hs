@@ -25,6 +25,7 @@ module Wumpus.Shapes.Base
   , rotateCTM
   , translateCTM
   , ctmDisplace
+  , ctmCenter
 
   -- * Shape label
   , ShapeLabel(..)
@@ -53,6 +54,10 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
+
+
+--------------------------------------------------------------------------------
+-- CTM
 
 data CTM u = CTM 
       { ctm_pos                 :: Point2 u
@@ -91,6 +96,13 @@ ctmDisplace x y ctm = translate cx cy $ rotate (ctm_rotation ctm) (P2 x' y')
     y'        = liftA (*y) ctm_scale_y ctm
     P2 cx cy  = ctm_pos ctm
 
+
+ctmCenter :: (Real u, Floating u) => CTM u -> Point2 u
+ctmCenter = ctmDisplace 0 0
+
+
+--------------------------------------------------------------------------------
+-- Shape label
 
 data ShapeLabel = ShapeLabel
       { shapelabel_text         :: String

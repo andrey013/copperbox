@@ -20,8 +20,8 @@ module Wumpus.Shapes
     module Wumpus.Shapes.Base
   , module Wumpus.Shapes.Circle
   , module Wumpus.Shapes.Coordinate
---  , module Wumpus.Shapes.Diamond
---  , module Wumpus.Shapes.FreeLabel
+  , module Wumpus.Shapes.Diamond
+  , module Wumpus.Shapes.FreeLabel
   , module Wumpus.Shapes.Rectangle
 
 
@@ -31,8 +31,8 @@ module Wumpus.Shapes
 import Wumpus.Shapes.Base
 import Wumpus.Shapes.Circle
 import Wumpus.Shapes.Coordinate
--- import Wumpus.Shapes.Diamond
--- import Wumpus.Shapes.FreeLabel
+import Wumpus.Shapes.Diamond
+import Wumpus.Shapes.FreeLabel
 import Wumpus.Shapes.Rectangle
 
 

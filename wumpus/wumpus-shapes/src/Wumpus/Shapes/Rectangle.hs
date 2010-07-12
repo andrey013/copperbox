@@ -50,13 +50,12 @@ type instance DUnit (Rectangle u) = u
 
 
 
--- ctr * CTM * half_width * half_height      
+-- CTM * half_width * half_height      
 --
 withGeom :: Num u => (CTM u -> u -> u -> a) -> Rectangle u -> a
 withGeom f (Rectangle { rect_ctm=ctm,rect_half_width=hw,rect_half_height=hh}) =
     f ctm hw hh
      
--- What to call this.... ?
 calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
 calcPoint f = withGeom $ \ctm hw hh -> 
     let (V2 x y) = f hw hh in ctmDisplace x y ctm
@@ -66,8 +65,7 @@ calcPoint f = withGeom $ \ctm hw hh ->
   
 
 instance (Real u, Floating u) => AnchorCenter (Rectangle u) where
-  center = ctmDisplace 0 0 . rect_ctm
-
+  center = ctmCenter . rect_ctm
 
 
 
@@ -82,20 +80,19 @@ instance (Real u, Floating u) =>  AnchorCardinal (Rectangle u) where
   southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)
   northwest = calcPoint $ \ hw hh -> V2 (-hw) hh
 
+-- helper
+updateCTM :: (CTM u -> CTM u) -> Rectangle u -> Rectangle u
+updateCTM f = star (\s m -> s { rect_ctm = f m } ) rect_ctm
 
 
 instance (Floating u, Real u) => Rotate (Rectangle u) where
-  rotate r = star (\s ctm -> s {rect_ctm = rotateCTM r ctm })
-                  rect_ctm
-
-
+  rotate r = updateCTM (rotateCTM r)
+ 
 instance Num u => Scale (Rectangle u) where
-  scale x y = star (\s ctm -> s { rect_ctm = scaleCTM x y ctm })
-                   rect_ctm
+  scale x y = updateCTM (scaleCTM x y)
 
 instance Num u => Translate (Rectangle u) where
-  translate x y = star (\s ctm -> s { rect_ctm = translateCTM x y ctm })
-                       rect_ctm
+  translate x y = updateCTM (translateCTM x y)
 
 
 instance AddLabel (Rectangle u) where

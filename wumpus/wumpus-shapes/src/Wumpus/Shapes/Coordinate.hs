@@ -46,7 +46,7 @@ type instance DUnit (Coordinate u) = u
 -- Instances 
 
 instance (Real u, Floating u) => AnchorCenter (Coordinate u) where
-  center = ctmDisplace 0 0 . coord_ctm
+  center = ctmCenter . coord_ctm
 
 
 instance (Floating u, Real u) => Rotate (Coordinate u) where

@@ -56,7 +56,6 @@ type instance DUnit (Circle u) = u
 withGeom :: Num u => (CTM u -> u -> a) -> Circle u -> a
 withGeom f (Circle { circ_ctm=ctm, circ_radius=r }) = f ctm r
      
--- What to call this.... ?
 calcPoint :: (Real u, Floating u) => (u -> Vec2 u) -> Circle u -> Point2 u
 calcPoint f = withGeom $ \ctm r -> 
     let (V2 x y) = f r in ctmDisplace x y ctm
@@ -67,10 +66,7 @@ calcPoint f = withGeom $ \ctm r ->
 -- Instances 
 
 instance (Real u, Floating u) => AnchorCenter (Circle u) where
-  center = ctmDisplace 0 0 . circ_ctm
-
-
-
+  center = ctmCenter . circ_ctm
 
 
 instance (Real u, Floating u) => AnchorCardinal (Circle u) where
@@ -85,18 +81,18 @@ instance (Real u, Floating u) => AnchorCardinal (Circle u) where
   northwest = calcPoint $ \ r -> avec (1.25*pi) r
 
 
+-- helper
+updateCTM :: (CTM u -> CTM u) -> Circle u -> Circle u
+updateCTM f = star (\s m -> s { circ_ctm = f m } ) circ_ctm
 
 instance (Real u, Floating u) => Rotate (Circle u) where
-  rotate r = star (\s ctm -> s { circ_ctm = rotateCTM r ctm })
-                  circ_ctm
+  rotate r = updateCTM (rotateCTM r)
 
 instance Num u => Scale (Circle u) where
-  scale x y = star (\s ctm -> s { circ_ctm = scaleCTM x y ctm })
-                   circ_ctm
+  scale x y = updateCTM (scaleCTM x y)
 
 instance Num u => Translate (Circle u) where
-  translate x y = star (\s ctm -> s { circ_ctm = translateCTM x y ctm } )
-                       circ_ctm 
+  translate x y = updateCTM (translateCTM x y)
 
 
 instance AddLabel (Circle u) where
