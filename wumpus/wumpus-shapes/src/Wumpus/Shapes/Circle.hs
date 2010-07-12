@@ -40,7 +40,6 @@ import Wumpus.Basic.Graphic hiding (circle)     -- package: wumpus-basic
 
 data Circle u = Circle
       { circ_radius     :: u
-      , circ_center     :: Point2 u
       , circ_ctm        :: CTM u 
       , circ_label      :: Maybe ShapeLabel
       }
@@ -54,22 +53,22 @@ type instance DUnit (Circle u) = u
 
 -- ctr * CTM * radius      
 --
-withGeom :: Num u => (Point2 u -> CTM u -> u -> a) -> Circle u -> a
-withGeom f (Circle { circ_center=ctr, circ_ctm=ctm
-                   , circ_radius=r }) = f ctr ctm r
+withGeom :: Num u => (CTM u -> u -> a) -> Circle u -> a
+withGeom f (Circle { circ_ctm=ctm, circ_radius=r }) = f ctm r
      
 -- What to call this.... ?
 calcPoint :: (Real u, Floating u) => (u -> Vec2 u) -> Circle u -> Point2 u
-calcPoint f = withGeom $ \(P2 cx cy) ctm r -> 
-    let (V2 x y) = f r in translate cx cy $ ctmDisplace x y ctm
+calcPoint f = withGeom $ \ctm r -> 
+    let (V2 x y) = f r in ctmDisplace x y ctm
 
 
 -------------------------------------------------------------------------------- 
 
 -- Instances 
 
-instance Num u => AnchorCenter (Circle u) where
-  center = circ_center
+instance (Real u, Floating u) => AnchorCenter (Circle u) where
+  center = ctmDisplace 0 0 . circ_ctm
+
 
 
 
@@ -96,8 +95,8 @@ instance Num u => Scale (Circle u) where
                    circ_ctm
 
 instance Num u => Translate (Circle u) where
-  translate x y = star (\s ctr -> s { circ_center = translate x y ctr} )
-                       circ_center 
+  translate x y = star (\s ctm -> s { circ_ctm = translateCTM x y ctm } )
+                       circ_ctm 
 
 
 instance AddLabel (Circle u) where
@@ -111,11 +110,10 @@ instance AddLabel (Circle u) where
 --------------------------------------------------------------------------------
 -- 
 
-circle :: Num u => u -> Point2 u -> Circle u
-circle radius ctr = Circle { circ_radius = radius
-                           , circ_center = ctr
-                           , circ_ctm    = identityCTM
-                           , circ_label  = Nothing }
+circle :: Num u => u -> Circle u
+circle radius = Circle { circ_radius = radius
+                       , circ_ctm    = identityCTM
+                       , circ_label  = Nothing }
 
 
 -- Hand-build the circle with bezier arcs.
@@ -128,28 +126,16 @@ drawCircle :: (Real u, Floating u)
            => (Path u -> Primitive u) -> Circle u -> Graphic u
 drawCircle drawF circ = labelpic . circpic
   where
-    labelpic = maybe id (labelGraphic (circ_center circ) (circ_ctm circ))
-                        (circ_label circ)
+    labelpic = maybe id (labelGraphic (circ_ctm circ)) $ circ_label circ
     circpic  = wrapG $ drawF $ curvedPath $ circlePoints circ
 
 
 circlePoints :: (Real u, Floating u) => Circle u -> [Point2 u]
-circlePoints (Circle { circ_center=(P2 cx cy), circ_ctm=ctm
-                      , circ_radius=radius }) = map fn all_points
+circlePoints (Circle { circ_ctm=ctm, circ_radius=radius }) = map fn all_points
   where
-    fn (P2 x y) = translate cx cy $ ctmDisplace x y ctm
+    fn (P2 x y) = ctmDisplace x y ctm
     all_points  = bezierCircle 2 radius zeroPt 
 
-{-
-drawCircle drawF circ = 
-    labelledComposite ctm ctr (circle_label circ) shape
-
-  where
-    ctm        = circle_ctm    circ
-    ctr        = circle_center circ 
-    circle_pts = map (ctm *#) $ bezierCircle 2 (circle_radius circ) ctr
-    shape      = drawF $ curvedPath circle_pts
--}
 
 
 strokeCircle :: (Real u, Floating u, Stroke t) 
@@ -160,6 +146,6 @@ fillCircle :: (Real u, Floating u, Fill t)
              => t -> Circle u -> Graphic u
 fillCircle t  = drawCircle (fill t)
 
-instance DrawShape Circle where
+instance (Real u, Floating u) => DrawShape (Circle u) where
   strokeShape t = drawCircle (cstroke t) 
   fillShape   t = drawCircle (fill t)

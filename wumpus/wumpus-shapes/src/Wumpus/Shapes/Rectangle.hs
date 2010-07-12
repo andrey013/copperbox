@@ -37,8 +37,7 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 -- | Rectangles.
 --
 data Rectangle u = Rectangle 
-      { rect_center        :: Point2 u
-      , rect_half_width    :: u
+      { rect_half_width    :: u
       , rect_half_height   :: u
       , rect_ctm           :: CTM u
       , rect_label         :: Maybe ShapeLabel
@@ -53,22 +52,21 @@ type instance DUnit (Rectangle u) = u
 
 -- ctr * CTM * half_width * half_height      
 --
-withGeom :: Num u => (Point2 u -> CTM u -> u -> u -> a) -> Rectangle u -> a
-withGeom f (Rectangle { rect_center=ctr, rect_ctm=ctm
-                      , rect_half_width=hw, rect_half_height=hh}) =
-    f ctr ctm hw hh
+withGeom :: Num u => (CTM u -> u -> u -> a) -> Rectangle u -> a
+withGeom f (Rectangle { rect_ctm=ctm,rect_half_width=hw,rect_half_height=hh}) =
+    f ctm hw hh
      
 -- What to call this.... ?
 calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
-calcPoint f = withGeom $ \(P2 cx cy) ctm hw hh -> 
-    let (V2 x y) = f hw hh in translate cx cy $ ctmDisplace x y ctm
+calcPoint f = withGeom $ \ctm hw hh -> 
+    let (V2 x y) = f hw hh in ctmDisplace x y ctm
 
 --------------------------------------------------------------------------------
 -- Instances 
   
 
-instance AnchorCenter (Rectangle u) where
-  center (Rectangle { rect_center = ctr }) = ctr
+instance (Real u, Floating u) => AnchorCenter (Rectangle u) where
+  center = ctmDisplace 0 0 . rect_ctm
 
 
 
@@ -96,8 +94,8 @@ instance Num u => Scale (Rectangle u) where
                    rect_ctm
 
 instance Num u => Translate (Rectangle u) where
-  translate x y = star (\s ctr -> s { rect_center = translate x y ctr} )
-                       rect_center 
+  translate x y = star (\s ctm -> s { rect_ctm = translateCTM x y ctm })
+                       rect_ctm
 
 
 instance AddLabel (Rectangle u) where
@@ -112,14 +110,13 @@ instance AddLabel (Rectangle u) where
 --------------------------------------------------------------------------------
 -- Construction
 
--- | @rectangle : width * height * center_pt -> rectangle@
+-- | @rectangle : width * height -> rectangle@
 --
-rectangle :: Fractional u => u -> u -> Point2 u -> Rectangle u
-rectangle w h ctr = Rectangle { rect_center       = ctr 
-                              , rect_half_width   = 0.5*w 
-                              , rect_half_height  = 0.5*h
-                              , rect_ctm          = identityCTM 
-                              , rect_label        = Nothing }
+rectangle :: Fractional u => u -> u -> Rectangle u
+rectangle w h = Rectangle { rect_half_width   = 0.5*w 
+                          , rect_half_height  = 0.5*h
+                          , rect_ctm          = identityCTM 
+                          , rect_label        = Nothing }
 
 
 --------------------------------------------------------------------------------
@@ -132,9 +129,7 @@ drawRectangle :: (Real u, Floating u)
               => (Path u -> Primitive u) -> Rectangle u -> Graphic u
 drawRectangle drawF rect = labelpic . rectpic
   where
-    labelpic = maybe id (labelGraphic (rect_center rect) (rect_ctm rect))
-                        (rect_label rect)
-
+    labelpic = maybe id (labelGraphic (rect_ctm rect)) $ rect_label rect
     rectpic   = wrapG $ drawF $ vertexPath $ extractVertexList rect
 
 strokeRectangle :: (Real u, Floating u, Stroke t) 
@@ -146,7 +141,7 @@ fillRectangle :: (Real u, Floating u, Fill t)
 fillRectangle t = drawRectangle (fill t)
 
 
-instance DrawShape Rectangle where
+instance (Real u, Floating u) => DrawShape (Rectangle u) where
   strokeShape t = drawRectangle (cstroke t) 
   fillShape   t = drawRectangle (fill t)
 

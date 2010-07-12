@@ -3,9 +3,7 @@
 
 module Demo01 where
 
-import Wumpus.Shapes.Base
-import Wumpus.Shapes.Circle
-import Wumpus.Shapes.Rectangle
+import Wumpus.Shapes
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic hiding ( circle )   -- package: wumpus-basic
@@ -36,8 +34,8 @@ pic1 = fromMaybe errK $ drawGraphic $ rects . circs
     circs = strokeShape lightSteelBlue $ rotate45 $ translate 200 0 circ1
 
 rect1    :: DRectangle 
-rect1    = rectangle 80 20 zeroPt `addLabel` "Rectangle"
+rect1    = rectangle 80 20 `addLabel` "Rectangle"
 
 
 circ1   :: DCircle 
-circ1   = circle 20 zeroPt `addLabel` "Circle"
+circ1   = circle 20 `addLabel` "Circle"

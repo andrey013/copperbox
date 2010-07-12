@@ -30,7 +30,9 @@ library
 
   
   exposed-modules:
+    Wumpus.Shapes,
     Wumpus.Shapes.Base,
+    Wumpus.Shapes.Coordinate,
     Wumpus.Shapes.Circle,
     Wumpus.Shapes.Rectangle,
     Wumpus.Shapes.Utils,
