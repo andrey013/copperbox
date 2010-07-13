@@ -18,6 +18,7 @@
 module Wumpus.Shapes.FreeLabel
   ( 
     FreeLabel(..)
+  , DFreeLabel
   , freeLabel
   , drawFreeLabel
 
@@ -30,35 +31,41 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
-import Data.AffineSpace                 -- package: vector-space
 
 --------------------------------------------------------------------------------
 -- Free floating label
 
--- Note - a FreeLabel needs some \"drawing attributes\" - Font 
--- style and size.
--- 
--- Unfortunately this /divides/ the TextLabel type class from 
--- wumpus-core into two halves - needs size and font, but wants
--- colour later (only when drawn).
---
 
 data FreeLabel u = FreeLabel
       { flbl_label         :: ShapeLabel
       , flbl_ctm           :: CTM u
       }
 
+type DFreeLabel = FreeLabel Double
+
+
 type instance DUnit (FreeLabel u) = u
 
 
-{-
--- CTM * ctr * half_width * half_height      
-withGeom :: Fractional u => (CTM u -> Point2 u -> u -> u -> a) -> FreeLabel u -> a
-withGeom f lbl = 
-    f (freelabel_ctm lbl) (freelabel_center lbl) (width*0.5) (height*0.5)
+
+-- CTM * half_width * half_height      
+--
+withGeom :: Fractional u => (CTM u -> u -> u -> a) -> FreeLabel u -> a
+withGeom f (FreeLabel { flbl_ctm=ctm, flbl_label=lbl }) = 
+    f ctm (0.5*twidth) (0.5*theight)
   where
-    (width,height) = textDimensions lbl
--}
+    ((_,attr),text)   = deconsLabel lbl
+    font_sz           = font_size attr
+    twidth            = textWidth  font_sz (length text)
+    theight           = textHeight font_sz
+    
+     
+calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> FreeLabel u -> Point2 u
+calcPoint f = withGeom $ \ctm hw hh -> 
+    let (V2 x y) = f hw hh in ctmDisplace x y ctm
+
+
+
 
 --------------------------------------------------------------------------------
 -- instances
@@ -71,8 +78,7 @@ updateCTM f = star (\s m -> s { flbl_ctm = f m } ) flbl_ctm
 instance (Floating u, Real u) => Rotate (FreeLabel u) where
   rotate r = updateCTM (rotateCTM r)
 
-instance Num u => Scale (FreeLabel u) where
-  scale x y = updateCTM (scaleCTM x y)
+-- cannnot scale a FreeLabel
 
 instance Num u => Translate (FreeLabel u) where
   translate x y = updateCTM (translateCTM x y)
@@ -82,18 +88,18 @@ instance Num u => Translate (FreeLabel u) where
 instance (Real u, Floating u) => AnchorCenter (FreeLabel u) where
     center = ctmCenter . flbl_ctm
 
-{-
-instance (Fractional u) =>  AnchorCardinal (FreeLabel u) where
-  north = withGeom $ \ctm ctr _  hh -> ctm *# (ctr .+^ vvec hh)
-  south = withGeom $ \ctm ctr _  hh -> ctm *# (ctr .-^ vvec hh)
-  east  = withGeom $ \ctm ctr hw _  -> ctm *# (ctr .+^ hvec hw)
-  west  = withGeom $ \ctm ctr hw _  -> ctm *# (ctr .-^ hvec hw)
 
-  northeast = withGeom $ \ctm ctr hw hh  -> ctm *# (ctr .+^ V2 hw hh)
-  southeast = withGeom $ \ctm ctr hw hh  -> ctm *# (ctr .+^ V2 hw (-hh))
-  southwest = withGeom $ \ctm ctr hw hh  -> ctm *# (ctr .+^ V2 (-hw) (-hh))
-  northwest = withGeom $ \ctm ctr hw hh  -> ctm *# (ctr .+^ V2 (-hw) hh)
--}
+instance (Real u, Floating u) =>  AnchorCardinal (FreeLabel u) where
+  north = calcPoint $ \ _  hh -> vvec hh
+  south = calcPoint $ \ _  hh -> vvec (-hh)
+  east  = calcPoint $ \ hw _  -> hvec hw
+  west  = calcPoint $ \ hw _  -> hvec (-hw)
+
+  northeast = calcPoint $ \ hw hh -> V2 hw hh
+  southeast = calcPoint $ \ hw hh -> V2 hw (-hh)
+  southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)
+  northwest = calcPoint $ \ hw hh -> V2 (-hw) hh
+
 
 freeLabel :: Num u => FontAttr -> DRGB -> String -> FreeLabel u
 freeLabel attr rgb s = FreeLabel (ShapeLabel s attr rgb) identityCTM

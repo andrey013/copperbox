@@ -96,10 +96,7 @@ instance Num u => Translate (Circle u) where
 
 
 instance AddLabel (Circle u) where
-  r `addLabel` text = star fn circ_label r
-    where
-      fn s Nothing    = s { circ_label = Just $ basicLabel text }
-      fn s (Just lbl) = s { circ_label = Just $ updateText text lbl } 
+  circ `addLabel` lbl = circ { circ_label = Just lbl }
      
 
 

@@ -35,6 +35,7 @@ library
     Wumpus.Shapes.Coordinate,
     Wumpus.Shapes.Circle,
     Wumpus.Shapes.Diamond,
+    Wumpus.Shapes.Ellipse,
     Wumpus.Shapes.FreeLabel,
     Wumpus.Shapes.Rectangle,
     Wumpus.Shapes.Utils,

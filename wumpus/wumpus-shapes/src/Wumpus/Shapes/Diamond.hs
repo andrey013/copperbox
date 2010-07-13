@@ -19,6 +19,7 @@ module Wumpus.Shapes.Diamond
   ( 
 
     Diamond(..)
+  , DDiamond
   , diamond
   , strokeDiamond
   , fillDiamond
@@ -43,6 +44,8 @@ data Diamond u = Diamond
       , dia_ctm           :: CTM u
       , dia_label         :: Maybe ShapeLabel
       }
+
+type DDiamond = Diamond Double
 
 type instance DUnit (Diamond u) = u
 
@@ -107,11 +110,7 @@ instance Num u => Translate (Diamond u) where
 
 
 instance AddLabel (Diamond u) where
-  r `addLabel` text = star updateLabel dia_label r
-    where
-      updateLabel s Nothing    = s { dia_label = Just $ basicLabel text }
-      updateLabel s (Just lbl) = s { dia_label = Just $ updateText text lbl }
-     
+  dia `addLabel` lbl = dia { dia_label = Just lbl }
 
 --------------------------------------------------------------------------------
 -- Construction

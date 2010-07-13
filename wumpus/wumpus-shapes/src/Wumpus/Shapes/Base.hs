@@ -30,6 +30,7 @@ module Wumpus.Shapes.Base
   -- * Shape label
   , ShapeLabel(..)
   , AddLabel(..)
+  , deconsLabel
   , basicLabel
   , updateText
   , drawShapeLabel
@@ -145,10 +146,9 @@ class DrawShape sh where
   strokeShape :: (Stroke t, u ~ DUnit sh) => t -> sh -> Graphic u
   fillShape   :: (Fill t, u ~ DUnit sh)   => t -> sh -> Graphic u 
 
--- yuck...
---
+
 class AddLabel t where
-  addLabel :: t -> String -> t
+  addLabel :: t -> ShapeLabel -> t
 
 --------------------------------------------------------------------------------
 -- Anchors

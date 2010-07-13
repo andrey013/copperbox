@@ -96,10 +96,7 @@ instance Num u => Translate (Rectangle u) where
 
 
 instance AddLabel (Rectangle u) where
-  r `addLabel` text = star fn rect_label r
-    where
-      fn s Nothing    = s { rect_label = Just $ basicLabel text }
-      fn s (Just lbl) = s { rect_label = Just $ updateText text lbl } 
+  rect `addLabel` lbl = rect { rect_label = Just lbl }
      
 
 

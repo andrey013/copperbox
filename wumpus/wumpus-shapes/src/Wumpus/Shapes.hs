@@ -21,6 +21,7 @@ module Wumpus.Shapes
   , module Wumpus.Shapes.Circle
   , module Wumpus.Shapes.Coordinate
   , module Wumpus.Shapes.Diamond
+  , module Wumpus.Shapes.Ellipse
   , module Wumpus.Shapes.FreeLabel
   , module Wumpus.Shapes.Rectangle
 
@@ -32,6 +33,7 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Circle
 import Wumpus.Shapes.Coordinate
 import Wumpus.Shapes.Diamond
+import Wumpus.Shapes.Ellipse
 import Wumpus.Shapes.FreeLabel
 import Wumpus.Shapes.Rectangle
 

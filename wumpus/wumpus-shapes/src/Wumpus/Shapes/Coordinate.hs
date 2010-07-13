@@ -21,6 +21,7 @@ module Wumpus.Shapes.Coordinate
   ( 
 
     Coordinate(..)
+  , DCoordinate
   , coordinate
   , drawCoordinate
 
@@ -39,6 +40,8 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 data Coordinate u = Coordinate
       { coord_ctm             :: CTM u 
       }
+
+type DCoordinate = Coordinate Double
 
 type instance DUnit (Coordinate u) = u
 
