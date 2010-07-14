@@ -73,29 +73,13 @@ moveExtent :: Extent -> Double -> Extent
 moveExtent e x = extmap (\(SP p q) -> SP (p+x) (q+x)) e
 
 
-
-fit :: Extent -> Extent -> Double
-fit ep eq = fit' (getExtent ep) (getExtent eq)  
-  where
-    fit' ((SP _ p):ps) ((SP q _):qs) = max (fit' ps qs) (p-q+1.0)
-    fit' _             _             = 0.0
-
-{-
 fit :: Extent -> Extent -> Double
 fit a b = step (getExtent a) (getExtent b) 0.0 
   where
     step (SP _ p:ps) (SP q _:qs) acc = step ps qs (max acc (p - q + 1.0))
     step _           _           acc = acc  
--}
 
-fitlistl ::  [Extent] -> [Double]
-fitlistl = fitlistl' mempty
-  where
-  fitlistl' _   [] = []
-  fitlistl' acc (e:es) = let x = fit acc e
-                         in x : fitlistl' (acc `mappend` moveExtent e x) es
 
-{-
 
 fitlistl :: [Extent] -> [Double]
 fitlistl xs = step xs mempty
@@ -103,7 +87,7 @@ fitlistl xs = step xs mempty
     step []     _   = []
     step (e:es) acc = x : step es (acc `mappend` moveExtent e x)
                       where x = fit acc e
--}
+
 
 -- Using a Hughes list with snoc can save one reverse...
 --
@@ -151,15 +135,17 @@ type LocNode u a = (Point2 u, a)
 -- Because Wumpus used bottom-left as the origin, the root needs
 -- the largest Y-value...
 -- 
--- The first traversal, labels nodes with their depth. The second 
--- traversal inverts the depth. 
+-- The first traversal, labels nodes with their depth and makes 
+-- the x-coord absolute. The second traversal inverts the depth 
+-- and applies the scaling functions. 
 --
 scaleTree :: (Double -> u, Int -> u) -> Tree (PNode a) -> Tree (LocNode u a)
 scaleTree (fx,fy) tree = fmap step2 tree1
   where
-    (height,tree1)            = step1 0 tree
-    step1 lvl (Node (x,a) xs) = let (ns,kids) = unzipMap (step1 (lvl+1)) xs
-                                in (maxima ns, Node ((x,lvl),a) kids) 
+    (height,tree1)               = step1 0 0 tree
+    step1 ix lvl (Node (x,a) xs) = 
+        let (ns,kids) = unzipMap (step1 (ix+x) (lvl+1)) xs
+        in (maxima ns, Node ((ix+x,lvl),a) kids) 
 
     step2 ((x,lvl),a)         = (P2 (fx x) (fy $ height - lvl), a)
 
