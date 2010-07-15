@@ -11,144 +11,206 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Diamond
+-- A variant of the tree drawing algorithm from 
+-- Andrew Kennedy - Functional Pearls Drawing Trees 1996.
+--
+-- Acknowledgment - although based on Andrew Kennedy\'s algorithm,
+-- this version uses absolute extents rather than relative ones 
+-- and is a somewhat different in detail if not in spirit to the 
+-- original.
+--
+-- Any mistakes are mine of course.
 -- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Tree.Algorithm
-  ( 
-    PNode
+  (
+    CoordTree
   , design
-  , LocNode
-  , scaleTree
-  
-  ) where
+  )
+  where
 
 import Wumpus.Core ( Point2(..) )       -- package: wumpus-core
-import Wumpus.Basic.Utils.HList         -- package: wumpus-basic
 
-import Data.Monoid
+import Data.List 
+import Data.Maybe
 import Data.Tree
 
-data SP u = SP !u !u
+
+
+-- | XPos is an absolute position
+--
+type XPos = Double      
+
+type XTree a = Tree (XPos,a)
+
+
+-- | Delta - difference in X-positions.
+--
+type Delta = Double
+
+data Span = S !XPos !XPos
   deriving (Eq,Ord,Show)
 
+type CoordTree u a = Tree (Point2 u, a)
 
-longZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
-longZipWith f = step where
-  step xs     []     = xs
-  step []     ys     = ys
-  step (x:xs) (y:ys) = f x y : step xs ys
 
-unzipMap :: (a -> (b,c)) -> [a] -> ([b],[c])
-unzipMap f = step 
-  where
-    step []     = ([],[])
-    step (a:as) = (b:bs,c:cs) where (b,c)   = f a 
-                                    (bs,cs) = step as
-                  
+outsideMerge :: Span -> Span -> Span
+outsideMerge (S p _) (S _ q) = S p q
 
-newtype Extent = Extent { getExtent :: [SP Double] }
+moveSpan :: Delta -> Span -> Span
+moveSpan d (S p q) = S (p+d) (q+d)
+
+
+newtype Extent = Extent { span_list :: [Span] }
   deriving (Eq,Show)
 
-extmap :: (SP Double -> SP Double) -> Extent -> Extent
-extmap f = Extent . map f . getExtent
 
-extcons :: SP Double -> Extent -> Extent
-extcons a (Extent as) = Extent $ a:as
+extlink :: XPos -> Extent -> Extent
+extlink a (Extent as) = Extent (S a a:as)
 
-instance Monoid Extent where
-  mempty   = Extent []
-  Extent xs `mappend` Extent ys  = Extent $ longZipWith op xs ys
-                                   where op (SP p _) (SP _ q) = SP p q
+-- note is this just for left ... ?
+midtop :: XPos -> Extent -> XPos 
+midtop r (Extent [])        = r
+midtop _ (Extent (S p q:_)) = p + (0.5*(q-p))
 
 
-type PNode a = (Double,a)
+-- merge \"moving right\"...
+mergeMR :: Delta -> Extent -> Extent -> Extent
+mergeMR dx (Extent xs) (Extent ys) = Extent $ step xs ys
+  where
+    step ps     []     = ps
+    step []     qs     = map (moveSpan dx) qs
+    step (p:ps) (q:qs) = outsideMerge p (moveSpan dx q) : step ps qs
 
-moveTree :: Tree (PNode a) -> Double -> Tree (PNode a)
-moveTree (Node (x,a) subtrees) dx = Node ((x+dx),a) subtrees
+-- dx is negative...
+--
+mergeML :: Delta -> Extent -> Extent -> Extent
+mergeML dx (Extent xs) (Extent ys) = Extent $ step xs ys
+  where
+    step ps     []     = map (moveSpan dx) ps
+    step []     qs     = qs
+    step (p:ps) (q:qs) = outsideMerge (moveSpan dx p) q : step ps qs
 
 
-moveExtent :: Extent -> Double -> Extent
-moveExtent e x = extmap (\(SP p q) -> SP (p+x) (q+x)) e
+
+extentZero :: Extent
+extentZero = Extent []
+
+extentOne :: XPos -> Extent
+extentOne x = Extent [S x x]
+
+
+-- 'moveTree' is now recursive...
+--
+moveTree :: Delta -> XTree a -> XTree a
+moveTree dx (Node (x,a) subtrees) = Node ((x+dx),a) subtrees'
+  where
+    subtrees' = map (moveTree dx) subtrees
+
 
 
 fit :: Extent -> Extent -> Double
-fit a b = step (getExtent a) (getExtent b) 0.0 
+fit a b = step (span_list a) (span_list b) 0.0 
   where
-    step (SP _ p:ps) (SP q _:qs) acc = step ps qs (max acc (p - q + 1.0))
-    step _           _           acc = acc  
+    step (S _ p:ps) (S q _:qs) acc = step ps qs (max acc (p - q + 1.0))
+    step _          _          acc = acc  
 
 
+-- fitting the children of some node...
 
-fitlistl :: [Extent] -> [Double]
-fitlistl xs = step xs mempty
+fitleft :: [(XTree a,Extent)] -> ([XTree a], Extent)
+fitleft []     = ([],extentZero)
+fitleft ((l,ext):xs) = (l:ts,ext') -- left-most child unchanged
+   where 
+     (ext',ts)        = mapAccumL step ext xs
+
+     step aex (t,ex)  = let dx = fit aex ex 
+                        in (mergeMR dx aex ex, moveTree dx t)
+
+fitright :: [(XTree a,Extent)] -> ([XTree a], Extent)
+fitright []  = ([],extentZero)
+fitright xs  = post $ foldr fn Nothing xs
   where
-    step []     _   = []
-    step (e:es) acc = x : step es (acc `mappend` moveExtent e x)
-                      where x = fit acc e
+    post                        = fromMaybe ([],extentZero)
+    fn (t,ex) Nothing           = Just ([t],ex)
+    fn (t,ex) (Just (ts,aex))   = Just (t':ts,aex')
+       where
+         dx     = negate $ fit ex aex
+         t'     = moveTree dx t
+         aex'   = mergeML dx ex aex
 
 
--- Using a Hughes list with snoc can save one reverse...
+
+-- Note - this will tell how wide the tree is...
+-- though the last exten is not necessarily the widest.
+
+designl :: forall a. Tree a -> (XTree a, Extent)
+designl (Node a [])   = (Node (0.0,a)  [],    extentOne 0.0)
+designl (Node a kids) = (Node (xpos,a) kids', ext1)
+  where
+    xs              :: [(XTree a,Extent)]
+    xs              = map designl kids
+
+    kids'           :: [XTree a]
+    ext0, ext1      :: Extent
+    (kids',ext0)    = fitleft xs
+
+    xpos            = midtop 0.0 ext0
+    ext1            = xpos `extlink` ext0
+
+
+designr :: forall a. XPos -> Tree a -> (XTree a, Extent)
+designr r (Node a [])   = (Node (r,a)  [],    extentOne r)
+designr r (Node a kids) = (Node (xpos,a) kids', ext1)
+  where
+    xs              :: [(XTree a,Extent)]
+    xs              = map (designr r) kids
+
+    kids'           :: [XTree a]
+    ext0, ext1      :: Extent
+    (kids',ext0)    = fitright xs
+
+    xpos            = midtop r ext0
+    ext1            = xpos `extlink` ext0
+
+
+design :: (Double -> u, Int -> u) -> Tree a -> CoordTree u a
+design (fx,fy) t = label 0 t3
+  where
+    (t1,ext)                    = designl t
+    (h,S xmin xmax)             = stats ext
+    width                       = xmax - xmin
+    (t2,_)                      = designr width t
+    
+    -- reconcile the left and right drawings...
+    t3                          = treeZipWith zfn t1 t2
+    
+    mkPt x lvl                  = P2 (fx x) (fy $ h - lvl)
+    label lvl (Node (x,a) kids) = Node (mkPt x lvl, a) kids'
+       where
+         kids' = map (label (lvl+1)) kids 
+
+    zfn (x0,a) (x1,_)           = (mean x0 x1,a)
+
+-- find height and width
 --
-fitlistr :: [Extent] -> [Double]
-fitlistr xs = toListH $ step (reverse xs) mempty
+stats :: Extent -> (Int,Span)
+stats (Extent [])     = (0,S 0 0)
+stats (Extent (e:es)) = foldr fn (1,e) es
   where
-    step []     _   = emptyH
-    step (e:es) acc = (step es (moveExtent e x `mappend` acc)) `snocH` x
-                      where x = negate $ fit e acc 
+    fn (S x0 x1) (h, S xmin xmax) = (h+1, S (min x0 xmin) (max x1 xmax))
 
 mean :: Double -> Double -> Double
 mean x y = (x+y) / 2.0
 
-fitlist :: [Extent] -> [Double]
-fitlist es = zipWith mean (fitlistl es) (fitlistr es)
 
-
-design :: Tree a -> Tree (PNode a)
-design = fst . design'
-
-design' :: forall a. Tree a -> (Tree (PNode a), Extent)
-design' (Node val subtrees) = (resultTree, resultExtent)
+treeZipWith :: (a -> b -> c) -> Tree a -> Tree b -> Tree c
+treeZipWith f (Node a xs) (Node b ys) = Node (f a b) (step xs ys)
   where
-    (trees, extents) = unzipMap design' subtrees
-    
-    positions        :: [Double]
-    positions        = fitlist extents
-
-    ptrees           :: [Tree (PNode a)]
-    ptrees           = zipWith moveTree trees positions
-
-    pextents         :: [Extent]
-    pextents         = zipWith moveExtent extents positions
-
-    resultExtent     :: Extent
-    resultExtent     = (SP 0.0 0.0) `extcons` mconcat pextents
-
-    resultTree       :: Tree (PNode a)
-    resultTree       = Node (0.0,val) ptrees
+    step (p:ps) (q:qs) = treeZipWith f p q : step ps qs
+    step _      _      = [] 
 
 
-type LocNode u a = (Point2 u, a)
 
 
--- Because Wumpus used bottom-left as the origin, the root needs
--- the largest Y-value...
--- 
--- The first traversal, labels nodes with their depth and makes 
--- the x-coord absolute. The second traversal inverts the depth 
--- and applies the scaling functions. 
---
-scaleTree :: (Double -> u, Int -> u) -> Tree (PNode a) -> Tree (LocNode u a)
-scaleTree (fx,fy) tree = fmap step2 tree1
-  where
-    (height,tree1)               = step1 0 0 tree
-    step1 ix lvl (Node (x,a) xs) = 
-        let (ns,kids) = unzipMap (step1 (ix+x) (lvl+1)) xs
-        in (maxima ns, Node ((ix+x,lvl),a) kids) 
-
-    step2 ((x,lvl),a)         = (P2 (fx x) (fy $ height - lvl), a)
-
-maxima :: (Num a, Ord a) => [a] -> a
-maxima [] = 0
-maxima xs = maximum xs 

@@ -20,24 +20,44 @@ tree1 = Node 'A' [Node 'B' bs, Node 'F' fs]
    bs = [Node 'C' [], Node 'D' [], Node 'E' []]
    fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
+tree2 :: Tree Char
+tree2 = Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
+  where
+   bs = [Node 'C' [], Node 'D' [], Node 'E' []]
+   gs = [Node 'H' [], Node 'I' [], Node 'J' []]
 
 
-tree2 :: Tree (PNode Char)
-tree2 = design tree1
 
-tree3 :: Tree (LocNode Double Char)
-tree3 = scaleTree ((*30.0), \x-> 30.0 * fromIntegral x) tree2
+{- 
+treeABC = Node 'o' [Node 'A' [], Node 'B' [], Node 'C' []]
+treeAB  = Node 'o' [Node 'A' [], Node 'B' []]
+-}
 
--- Note - not corret at the moment...
---
+fx :: Double -> Double
+fx = (*30.0)
+
+fy :: Int -> Double
+fy x = 30.0 * fromIntegral x
+
+
+
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/tree01.eps" pic1
-    >> writeSVG_latin1 "./out/tree01.svg" pic1
+    >> writeEPS_latin1 "./out/tree01.eps"  pic1
+    >> writeSVG_latin1 "./out/tree01.svg"  pic1
+    >> writeEPS_latin1 "./out/tree02.eps"  pic2
+    >> writeSVG_latin1 "./out/tree02.svg"  pic2
+
+
+
 
 
 pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic $ draw tree3
+pic1 = fromMaybe errK $ drawGraphic $ draw $ design (fx,fy) tree1
+
+pic2 :: Picture Double
+pic2 = fromMaybe errK $ drawGraphic $ draw $ design (fx,fy) tree2
+
 
 
 errK :: a

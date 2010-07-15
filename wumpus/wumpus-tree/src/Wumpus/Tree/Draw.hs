@@ -27,14 +27,14 @@ import Wumpus.Basic.Utils.HList
 
 import Data.Tree
 
-draw :: Tree (LocNode Double a) -> DGraphic
+draw :: CoordTree Double a -> DGraphic
 draw (Node (pt,_) ns) = dot pt . veloH draw ns . link pt ns
 
 
 dot :: Fractional u => Point2 u -> Graphic u
 dot pt = circle black 4 $ pt
 
-link :: Point2 Double -> [Tree (LocNode Double a)] -> DGraphic
+link :: Point2 Double -> [CoordTree Double a] -> DGraphic
 link pt ns = veloH step ns
   where
     step (Node (to,_) _) = wrapG $ ostroke black $ vertexPath [pt,to]
