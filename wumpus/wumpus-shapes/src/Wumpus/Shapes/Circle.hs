@@ -31,7 +31,8 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )               -- package: wumpus-core
-import Wumpus.Basic.Graphic hiding (circle)     -- package: wumpus-basic
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
+import Wumpus.Basic.Graphic hiding (circle)
 
 
 --------------------------------------------------------------------------------
@@ -75,6 +76,7 @@ instance (Real u, Floating u) => AnchorCardinal (Circle u) where
   east  = calcPoint $ \ r -> hvec r
   west  = calcPoint $ \ r -> hvec (-r)
 
+instance (Real u, Floating u) => AnchorCardinal2 (Circle u) where
   northeast = calcPoint $ \ r -> avec (0.25*pi) r
   southeast = calcPoint $ \ r -> avec (1.75*pi) r
   southwest = calcPoint $ \ r -> avec (0.75*pi) r

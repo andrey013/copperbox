@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Stability   :  highly unstable
 -- Portability :  GHC 
 --
 -- Graphic type and opertations
@@ -38,7 +38,9 @@ module Wumpus.Basic.Graphic
   , straightLine
   , strokedRectangle
   , filledRectangle
-  , circle
+  , strokedCircle
+  , filledCircle
+  , disk
 
   ) where
 
@@ -90,7 +92,7 @@ wrapG = wrapH
 
 --------------------------------------------------------------------------------
 
--- | text should not contatin newlines...
+-- | Text should not contain newlines.
 --
 textline :: (TextLabel t, Num u) => t -> String -> GraphicF u
 textline t ss = wrapG . textlabel t ss 
@@ -118,6 +120,34 @@ rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
     tl = bl .+^ vvec h 
 
 
+-- | Point is center, n is number of subdivisions per quadrant.
+--
+-- Circle is made from bezier curves.
+-- 
+strokedCircle :: (Stroke t, Floating u) => t -> Int -> u -> GraphicF u
+strokedCircle t n r = wrapG . cstroke t . curvedPath . bezierCircle n r
 
-circle :: (Ellipse t, Fractional u) => t -> u -> GraphicF u
-circle t radius = wrapG . ellipse t radius radius 
+-- | Point is center, n is number of subdivisions per quadrant.
+--
+-- Circle is made from bezier curves.
+-- 
+filledCircle :: (Fill t, Floating u) => t -> Int -> u -> GraphicF u
+filledCircle t n r = wrapG . fill t . curvedPath . bezierCircle n r
+
+
+
+-- | 'disk' is drawn with Wumpus-Core\'s @ellipse@ primitive.
+--
+-- This is a efficient representation of circles using 
+-- PostScript\'s @arc@ or SVG\'s @circle@ in the generated 
+-- output. However, stroked-circles do not draw well after 
+-- non-uniform scaling - the line width is scaled as well as 
+-- the shape.
+--
+-- For stroked circles that can be scaled, consider making the 
+-- circle from Bezier curves.
+--
+disk :: (Ellipse t, Fractional u) => t -> u -> GraphicF u
+disk t radius = wrapG . ellipse t radius radius 
+
+

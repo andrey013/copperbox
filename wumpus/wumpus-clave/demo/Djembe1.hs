@@ -33,6 +33,7 @@ line1 :: DGraphic
 line1 = mk [bass, muffledBass, tone, muffledTone, slap, paren bass, paren slap
            , paren tone, dot, dominant bass, dominant slap, otherhand slap
            , bassFlam, toneFlam, slapFlam, muffledSlap
+           , accent tone
            ] 
 
 

@@ -31,7 +31,8 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 import Data.AffineSpace                 -- package: vector-space
 import Data.VectorSpace
@@ -89,6 +90,7 @@ instance (Real u, Floating u) =>  AnchorCardinal (Diamond u) where
   east  = calcPoint $ \ hw _  -> hvec hw
   west  = calcPoint $ \ hw _  -> hvec (-hw)
 
+instance (Real u, Floating u) =>  AnchorCardinal2 (Diamond u) where
   northeast = midpoint north east
   southeast = midpoint south east
   southwest = midpoint south west

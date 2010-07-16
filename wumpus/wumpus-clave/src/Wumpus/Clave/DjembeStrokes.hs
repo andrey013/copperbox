@@ -113,13 +113,18 @@ dominant gF = gF `cc` closed_square
     closed_square = filledRectangleCtr black  4.5 4.5 . displaceHand
 
 otherhand :: DGraphicF -> DGraphicF
-otherhand grF = open_square `cc` grF
+otherhand = (`cc` open_square)
   where
     open_square = strokedRectangleCtr props 4 4 . displaceHand
     props       = (black, LineWidth 0.5)
 
 displaceHand :: Point2T Double
 displaceHand = vdisplace (-3) . displaceStem . displaceCharHeight 
+
+accent :: DGraphicF -> DGraphicF
+accent = (`cc` gt)
+  where  
+    gt = openPath line_props [ vec 10 3, vec (-10) 3] . displace (-5) 2
 
 
 -- 
@@ -186,8 +191,6 @@ hdisplace x = displace x 0
 vdisplace :: Num u => u -> Point2T u
 vdisplace y = displace 0 y
 
-vec :: u -> u -> Vec2 u
-vec = V2
 
 
 

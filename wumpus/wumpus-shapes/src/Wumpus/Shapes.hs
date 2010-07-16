@@ -24,7 +24,7 @@ module Wumpus.Shapes
   , module Wumpus.Shapes.Ellipse
   , module Wumpus.Shapes.FreeLabel
   , module Wumpus.Shapes.Rectangle
-
+  , module Wumpus.Shapes.VersionNumber
 
   ) where
 
@@ -36,5 +36,6 @@ import Wumpus.Shapes.Diamond
 import Wumpus.Shapes.Ellipse
 import Wumpus.Shapes.FreeLabel
 import Wumpus.Shapes.Rectangle
+import Wumpus.Shapes.VersionNumber
 
 

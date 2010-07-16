@@ -29,7 +29,8 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 
 --------------------------------------------------------------------------------
@@ -95,6 +96,7 @@ instance (Real u, Floating u) =>  AnchorCardinal (FreeLabel u) where
   east  = calcPoint $ \ hw _  -> hvec hw
   west  = calcPoint $ \ hw _  -> hvec (-hw)
 
+instance (Real u, Floating u) => AnchorCardinal2 (FreeLabel u) where
   northeast = calcPoint $ \ hw hh -> V2 hw hh
   southeast = calcPoint $ \ hw hh -> V2 hw (-hh)
   southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)

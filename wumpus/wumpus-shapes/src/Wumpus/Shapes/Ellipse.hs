@@ -31,7 +31,8 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM, Ellipse, ellipse )   -- package: wumpus-core
-import Wumpus.Basic.Graphic                           -- package: wumpus-basic
+import Wumpus.Basic.Anchors                           -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 
 --------------------------------------------------------------------------------
@@ -79,6 +80,7 @@ instance (Real u, Floating u) => AnchorCardinal (Ellipse u) where
   east  = calcPoint $ \ rx _  -> hvec rx
   west  = calcPoint $ \ rx _  -> hvec (-rx)
 
+instance (Real u, Floating u) => AnchorCardinal2 (Ellipse u) where
   northeast = calcPoint $ \rx ry -> rescale rx ry $ avec (0.25*pi) rx
   southeast = calcPoint $ \rx ry -> rescale rx ry $ avec (1.75*pi) rx
   southwest = calcPoint $ \rx ry -> rescale rx ry $ avec (0.75*pi) rx

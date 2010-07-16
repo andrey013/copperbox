@@ -38,11 +38,6 @@ module Wumpus.Shapes.Base
 
   , DrawShape(..)
 
-  -- * Anchors
-  , AnchorCenter(..)
-  , AnchorCardinal(..)
-  , AnchorText(..)
-
   ) where
 
 import Wumpus.Shapes.Utils
@@ -149,24 +144,3 @@ class DrawShape sh where
 
 class AddLabel t where
   addLabel :: t -> ShapeLabel -> t
-
---------------------------------------------------------------------------------
--- Anchors
-
-class AnchorCenter t where
-  center :: DUnit t ~ u => t -> Point2 u
-
-class AnchorCardinal t where
-  north :: DUnit t ~ u => t -> Point2 u
-  south :: DUnit t ~ u => t -> Point2 u
-  east  :: DUnit t ~ u => t -> Point2 u
-  west  :: DUnit t ~ u => t -> Point2 u
-
-  northeast :: DUnit t ~ u => t -> Point2 u
-  southeast :: DUnit t ~ u => t -> Point2 u
-  southwest :: DUnit t ~ u => t -> Point2 u
-  northwest :: DUnit t ~ u => t -> Point2 u
-
-
-class AnchorText t where
-  textAnchor :: DUnit t ~ u => t -> Point2 u

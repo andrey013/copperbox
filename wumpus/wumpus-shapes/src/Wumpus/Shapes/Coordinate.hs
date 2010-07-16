@@ -31,7 +31,8 @@ import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 --------------------------------------------------------------------------------
 
