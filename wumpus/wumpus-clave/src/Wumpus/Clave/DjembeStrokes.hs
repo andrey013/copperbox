@@ -58,7 +58,7 @@ slapFlam        = flamC (smallLetter 'X') (letter 'X')
 toneFlam        :: DGraphicF
 toneFlam        = flamC smallTone toneP
   where
-    smallTone = circle black 2 . vdisplace (-1)
+    smallTone = disk black 2 . vdisplace (-1)
 
 
 
@@ -78,13 +78,13 @@ bassP           :: DGraphicF
 bassP           = letter 'B'
 
 toneP           :: DGraphicF
-toneP           = circle black 4 . vdisplace (-1)
+toneP           = disk black 4 . vdisplace (-1)
 
 slapP           :: DGraphicF
 slapP           = letter 'X'
 
 dotP            :: DGraphicF
-dotP            = circle black 1 . vdisplace (-3)
+dotP            = disk black 1 . vdisplace (-3)
 
 
 

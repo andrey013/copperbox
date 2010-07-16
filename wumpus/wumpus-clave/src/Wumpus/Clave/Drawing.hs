@@ -47,16 +47,16 @@ displacePt :: Num u => u -> u -> (Point2 u -> Point2 u)
 displacePt x y = (.+^ V2 x y)
 
 circleF :: BoxHeight -> DRGB -> DGraphicF
-circleF h rgb = filledCircle rgb radius . displacePt (radius+dd) (radius+dd)
+circleF h rgb = disk rgb radius . displacePt (radius+dd) (radius+dd)
   where
-    radius = 0.5 * capHeight h
+    radius = 0.5 * numeralHeight h
     dd     = descenderDepth h
 
 
 barF :: BoxHeight -> DRGB -> DPoint2 -> DGraphic
 barF h rgb = filledRectangle rgb width height  . displacePt xdisp dd
   where
-    height = capHeight h
+    height = numeralHeight h
     width  = 0.25 * height
     dd     = descenderDepth h
     xdisp  = (0.5 * fromIntegral h) - 0.5*width
@@ -81,13 +81,4 @@ backgroundF n h rgb = filledRectangle rgb width height
 --------------------------------------------------------------------------------
 
 
-
-
-strokedCircle :: Fractional u 
-              =>  DRGB -> LineWidth -> u -> Point2 u -> Graphic u
-strokedCircle rgb lw radius = circle (rgb, LineWidth lw) radius
-
-filledCircle :: Fractional u 
-             => DRGB -> u -> Point2 u -> Graphic u
-filledCircle rgb radius = circle rgb radius
 

@@ -6,7 +6,7 @@ module Demo01 where
 import Wumpus.Shapes
 
 import Wumpus.Core hiding ( ellipse )           -- package: wumpus-core
-import Wumpus.Basic.Graphic hiding ( circle )   -- package: wumpus-basic
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.SVGColours
 
 import Data.Maybe

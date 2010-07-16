@@ -14,10 +14,11 @@ import Graphics.PSC.DrawingUtils
 import Graphics.PSC.ScatterPlot
 
 
-import Wumpus.Core
+import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Extra.PictureLanguage
-import Wumpus.Extra.SafeFonts           -- package: wumpus-core
-import Wumpus.Extra.SVGColours
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.SVGColours
 
 import Data.List
 import Data.Maybe
@@ -115,8 +116,8 @@ allPictures infos =
 
 makePic :: Range Double -> (IrisData -> Double) 
         -> Range Double -> (IrisData -> Double) 
-        -> Maybe (ScaleCtx Double Double Graphic)
-        -> Maybe (ScaleCtx Double Double Graphic)
+        -> Maybe (ScaleCtx Double Double DGraphic)
+        -> Maybe (ScaleCtx Double Double DGraphic)
         -> InfoSet
         -> DPicture
 makePic xr xflt yr yflt mb_xaxis mb_yaxis infos = 
@@ -142,7 +143,7 @@ makeLayers filt (setosa, versicolor, virginica) =
                  
 makePlot :: Range Double 
          -> Range Double 
-         -> ScaleCtx Double Double Graphic
+         -> ScaleCtx Double Double DGraphic
          -> ScatterPlot Double Double
 makePlot x_range y_range axisF = 
     ScatterPlot (drawingCtx x_range y_range) (axisF `cc` border)
@@ -150,7 +151,7 @@ makePlot x_range y_range axisF =
     border = plainBorder black 0.5
 
 tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black helvetica10 black 0.5 4 2
+tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -158,42 +159,42 @@ ifloor = step . floor
     step :: Int -> String
     step = show
 
-sepal_width_x_axis :: ScaleCtx Double Double Graphic
+sepal_width_x_axis :: ScaleCtx Double Double DGraphic
 sepal_width_x_axis = horizontalLabelsTop labelF steps_sepal_width
   where
     labelF = xAxisTickLabelAlt tick_label_config (ffloat 1) 
 
-sepal_width_y_axis :: ScaleCtx Double Double Graphic
+sepal_width_y_axis :: ScaleCtx Double Double DGraphic
 sepal_width_y_axis = verticalLabels labelF steps_sepal_width
   where
     labelF = yAxisTickLabel tick_label_config (ffloat 1) 
 
-sepal_length_x_axis :: ScaleCtx Double Double Graphic
+sepal_length_x_axis :: ScaleCtx Double Double DGraphic
 sepal_length_x_axis = horizontalLabels labelF steps_sepal_length
   where
     labelF = xAxisTickLabel tick_label_config (ffloat 1) 
     
-sepal_length_y_axis :: ScaleCtx Double Double Graphic
+sepal_length_y_axis :: ScaleCtx Double Double DGraphic
 sepal_length_y_axis = verticalLabelsRight labelF steps_sepal_length
   where
     labelF = yAxisTickLabelAlt tick_label_config (ffloat 1) 
 
-petal_width_x_axis :: ScaleCtx Double Double Graphic
+petal_width_x_axis :: ScaleCtx Double Double DGraphic
 petal_width_x_axis = horizontalLabelsTop labelF steps_petal_width
   where
     labelF = xAxisTickLabelAlt tick_label_config (ffloat 1) 
 
-petal_width_y_axis :: ScaleCtx Double Double Graphic
+petal_width_y_axis :: ScaleCtx Double Double DGraphic
 petal_width_y_axis = verticalLabels labelF steps_petal_width
   where
     labelF = yAxisTickLabel tick_label_config (ffloat 1) 
 
-petal_length_x_axis  :: ScaleCtx Double Double Graphic
+petal_length_x_axis  :: ScaleCtx Double Double DGraphic
 petal_length_x_axis = horizontalLabels labelF steps_petal_length
   where
     labelF = xAxisTickLabel tick_label_config ifloor 
     
-petal_length_y_axis  :: ScaleCtx Double Double Graphic
+petal_length_y_axis  :: ScaleCtx Double Double DGraphic
 petal_length_y_axis = verticalLabelsRight labelF steps_petal_length
   where
     labelF = yAxisTickLabelAlt tick_label_config ifloor 
@@ -252,7 +253,7 @@ labelBox title = fromMaybe errK $ drawGraphic $ rect . text
   where
     errK  = error "error - labelBox"
     rect  = strokedRectangle (black, LineWidth 0.5) w h (P2 0 0)
-    text  = textlabelC (black,courier18) title (P2 (w*0.5) (h*0.5))
+    text  = textlabelC (black,courier 18) title (P2 (w*0.5) (h*0.5))
     (w,h) = output_rect
 
 steps :: u -> (u -> u) -> [u]
@@ -278,6 +279,6 @@ pic_displacement :: Double
 pic_displacement = 1.20 * fst output_rect
 
 caption :: DPicture
-caption = frame $ textlabel (black,helvetica18) msg (P2 120 0)
+caption = frame $ textlabel (black, helvetica 18) msg (P2 120 0)
   where
     msg = "Iris Data (red=setosa, green=versicolor, blue=virginica)"

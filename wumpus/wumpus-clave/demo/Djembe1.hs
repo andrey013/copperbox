@@ -53,6 +53,6 @@ mk xs = foldr1 (.) $ zipWith fn xs (iterate (.+^ V2 20 0) (P2 0 0))
     
 
 reddot :: DGraphicF
-reddot = circle red 1
+reddot = disk red 1
 
 

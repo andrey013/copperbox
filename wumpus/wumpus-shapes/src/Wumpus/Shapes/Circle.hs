@@ -32,7 +32,7 @@ import Wumpus.Shapes.Utils
 
 import Wumpus.Core hiding ( CTM )               -- package: wumpus-core
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
-import Wumpus.Basic.Graphic hiding (circle)
+import Wumpus.Basic.Graphic
 
 
 --------------------------------------------------------------------------------

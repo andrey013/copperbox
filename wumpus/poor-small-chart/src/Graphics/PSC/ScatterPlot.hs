@@ -50,12 +50,12 @@ type LabellingF u v = ScaleCtx u v DGraphic
 
 
 dot :: DRGB -> Double -> DotF 
-dot rgb radius = filledCircle rgb radius 
+dot rgb radius = disk rgb radius 
 
 
 outlinedDot :: DRGB -> Double -> DotF 
 outlinedDot rgb radius = \pt -> 
-    strokedCircle black 0.5 radius pt . filledCircle rgb radius pt
+    disk (black, LineWidth 0.5) radius pt . disk rgb radius pt
 
 type ScatterPlotLayer u v = (DotF, Dataset u v)
 

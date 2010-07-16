@@ -11,9 +11,10 @@ import Graphics.PSC.DrawingUtils
 import Graphics.PSC.ScatterPlot
 
 
-import Wumpus.Core
-import Wumpus.Extra.SafeFonts           -- package: wumpus-core
-import Wumpus.Extra.SVGColours
+import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.SVGColours
 
 
 import System.Directory
@@ -35,7 +36,7 @@ pic1 = renderScatterPlot scatter_cfg [(blueDot,input_data)]
    border      = plainBorder black 0.5
 
 
-axis_fun :: ScaleCtx Double Double Graphic
+axis_fun :: ScaleCtx Double Double DGraphic
 axis_fun = xa `cc` ya
   where
     xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
@@ -50,7 +51,7 @@ ifloor = step . floor
 
 
 tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black helvetica10 black 0.5 4 2
+tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
 
 
 x_range         :: Range Double
