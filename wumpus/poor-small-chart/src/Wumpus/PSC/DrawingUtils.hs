@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.Utils
+-- Module      :  Wumpus.PSC.Utils
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.PSC.DrawingUtils
+module Wumpus.PSC.DrawingUtils
   (
 
 
@@ -43,7 +43,7 @@ module Graphics.PSC.DrawingUtils
   ) where
 
 
-import Graphics.PSC.Core
+import Wumpus.PSC.Core
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic

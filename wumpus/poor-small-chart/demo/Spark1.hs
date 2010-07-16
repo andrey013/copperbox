@@ -2,9 +2,9 @@
 
 module Spark1 where
 
-import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
-import Graphics.PSC.SparkLine
+import Wumpus.PSC.Core
+import Wumpus.PSC.DrawingUtils
+import Wumpus.PSC.SparkLine
 
 import Wumpus.Core
 import Wumpus.Basic.SafeFonts

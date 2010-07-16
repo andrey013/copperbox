@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.Legend
+-- Module      :  Wumpus.PSC.Legend
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.PSC.Legend
+module Wumpus.PSC.Legend
   ( 
     LegendElementDrawF
   , ColourLegend
@@ -23,8 +23,8 @@ module Graphics.PSC.Legend
 
   ) where
 
-import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
+import Wumpus.PSC.Core
+import Wumpus.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 

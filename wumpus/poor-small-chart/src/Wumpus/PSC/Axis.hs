@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.Axis
+-- Module      :  Wumpus.PSC.Axis
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.PSC.Axis
+module Wumpus.PSC.Axis
   ( 
   -- * Axes
     AxisSteps
@@ -51,8 +51,8 @@ module Graphics.PSC.Axis
 
   ) where
 
-import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
+import Wumpus.PSC.Core
+import Wumpus.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic

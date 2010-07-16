@@ -32,12 +32,12 @@ library
                       wumpus-basic      >= 0.2.0
   
   exposed-modules:
-    Graphics.PSC.Axis,
-    Graphics.PSC.Core,
-    Graphics.PSC.DrawingUtils,
-    Graphics.PSC.Legend,
-    Graphics.PSC.ScatterPlot,
-    Graphics.PSC.SparkLine
+    Wumpus.PSC.Axis,
+    Wumpus.PSC.Core,
+    Wumpus.PSC.DrawingUtils,
+    Wumpus.PSC.Legend,
+    Wumpus.PSC.ScatterPlot,
+    Wumpus.PSC.SparkLine
 
 
   other-modules:

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.SparkLine
+-- Module      :  Wumpus.PSC.SparkLine
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.PSC.SparkLine
+module Wumpus.PSC.SparkLine
   (
   -- * Data types
     SparkLine(..)
@@ -30,7 +30,7 @@ module Graphics.PSC.SparkLine
 
   ) where
 
-import Graphics.PSC.Core
+import Wumpus.PSC.Core
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic

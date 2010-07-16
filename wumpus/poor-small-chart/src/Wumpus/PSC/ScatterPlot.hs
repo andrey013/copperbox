@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.PSC.ScatterPlot
+-- Module      :  Wumpus.PSC.ScatterPlot
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Graphics.PSC.ScatterPlot
+module Wumpus.PSC.ScatterPlot
   (
   -- * Data types
     ScatterPlot(..)
@@ -28,8 +28,8 @@ module Graphics.PSC.ScatterPlot
   )
   where
 
-import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
+import Wumpus.PSC.Core
+import Wumpus.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )

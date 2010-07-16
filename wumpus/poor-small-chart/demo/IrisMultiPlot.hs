@@ -8,10 +8,10 @@ module IrisMultiPlot where
 
 import IrisParser
 
-import Graphics.PSC.Axis
-import Graphics.PSC.Core
-import Graphics.PSC.DrawingUtils
-import Graphics.PSC.ScatterPlot
+import Wumpus.PSC.Axis
+import Wumpus.PSC.Core
+import Wumpus.PSC.DrawingUtils
+import Wumpus.PSC.ScatterPlot
 
 
 import Wumpus.Core                      -- package: wumpus-core
