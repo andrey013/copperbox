@@ -47,6 +47,7 @@ module Wumpus.Core.FontSize
   , textWidth
   , textHeight
   , numeralHeight
+  , xcharHeight
   , descenderDepth
   , textBounds
 
@@ -60,8 +61,9 @@ import Data.AffineSpace                 -- package: vector-space
 type CharCount = Int
 type FontSize = Int
 
--- NOTE - Edward Tufte\'s Visual Explantions explains 
--- terminolgy on page 99.
+-- NOTE - I\'ve largely tried to follow the terminoly from 
+-- Edward Tufte\'s /Visual Explantions/, page 99.
+--
 
 
 -- | The width of a letter in Courier at 48 pt.
@@ -168,6 +170,13 @@ textHeight = fromIntegral
 --
 numeralHeight :: Fractional u => FontSize -> u
 numeralHeight sz = textHeight sz * (courier48_numeral_height / courier48_height)
+
+-- | Approximate the height of the lower-case char \'x\' using 
+-- metrics derived from the Courier monospaced font.
+--
+xcharHeight :: Fractional u => FontSize -> u
+xcharHeight sz = textHeight sz * (courier48_xheight / courier48_height)
+
 
 -- | Approximate the descender depth for font size @sz@ using
 -- metrics derived from the Courier monospaced font.

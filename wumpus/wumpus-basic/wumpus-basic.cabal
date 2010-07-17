@@ -17,7 +17,10 @@ description:
   . 
   * Added the module @Wumpus.Basic.Anchor@.
   .
-  * Basic.Graphic - changed @text@ to @textline@.
+  * Basic.Graphic - rectangles and lines now take the supplied
+    point to be the center rather than the bottom-left corner.
+    Name changes - @circle@ changed to @disk@, @text@ changed to 
+    @textline@.
   .
   0.1.1 to 0.2.0:
   .
@@ -36,6 +39,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/DotPic.hs,
   demo/FontPic.hs,
   demo/ColourCharts.hs,
   demo/ColourDefns.hs
@@ -51,6 +55,7 @@ library
   
   exposed-modules:
     Wumpus.Basic.Anchors,
+    Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleMonad,

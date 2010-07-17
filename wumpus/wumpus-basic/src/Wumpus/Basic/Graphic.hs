@@ -42,25 +42,31 @@ module Wumpus.Basic.Graphic
   , filledCircle
   , disk
 
+
+  , Point2T
+  , disp
+  , vdisp
+  , hdisp
+
   ) where
 
-
-
-import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Utils.HList
 
+import Wumpus.Core                      -- package: wumpus-core
+
 import Data.AffineSpace                 -- package: vector-space
+import Data.VectorSpace
 
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
 --
-type Graphic u = H (Primitive u)
+type Graphic u          = H (Primitive u)
 
-type DGraphic  = Graphic Double
+type DGraphic           = Graphic Double
 
-type GraphicF u = Point2 u -> Graphic u
+type GraphicF u         = Point2 u -> Graphic u
 
-type DGraphicF = GraphicF Double
+type DGraphicF          = GraphicF Double
 
 
 --------------------------------------------------------------------------------
@@ -94,23 +100,34 @@ wrapG = wrapH
 
 -- | Text should not contain newlines.
 --
+-- Note the supplied point is the \'left-baseline\'.
+--
 textline :: (TextLabel t, Num u) => t -> String -> GraphicF u
 textline t ss = wrapG . textlabel t ss 
 
-straightLine :: (Stroke t, Num u) => t -> Vec2 u -> GraphicF u
-straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
+
+-- | Supplied point is the center.
+--
+straightLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
+straightLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
+    wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
+ 
+    
 
 
 -- | Point is bottom-left.
 --
-strokedRectangle :: (Stroke t, Num u) => t -> u -> u -> GraphicF u
-strokedRectangle t w h = wrapG . cstroke t . rectangle w h
+strokedRectangle :: (Stroke t, Fractional u) => t -> u -> u -> GraphicF u
+strokedRectangle t w h = wrapG . cstroke t . rectangle w h . ctrToSW w h
 
 -- | Point is bottom-left.
 --
-filledRectangle :: (Fill t, Num u) => t -> u -> u -> GraphicF u
-filledRectangle t w h = wrapG . fill t . rectangle w h
+filledRectangle :: (Fill t, Fractional u) => t -> u -> u -> GraphicF u
+filledRectangle t w h = wrapG . fill t . rectangle w h . ctrToSW w h
 
+
+ctrToSW :: Fractional u => u -> u -> Point2T u
+ctrToSW w h = disp (negate $ 0.5*w) (negate $ 0.5*h)
 
 rectangle :: Num u => u -> u -> Point2 u -> Path u
 rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
@@ -123,6 +140,8 @@ rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
 -- | Point is center, n is number of subdivisions per quadrant.
 --
 -- Circle is made from bezier curves.
+--
+-- The supplied point is the center.
 -- 
 strokedCircle :: (Stroke t, Floating u) => t -> Int -> u -> GraphicF u
 strokedCircle t n r = wrapG . cstroke t . curvedPath . bezierCircle n r
@@ -151,3 +170,18 @@ disk :: (Ellipse t, Fractional u) => t -> u -> GraphicF u
 disk t radius = wrapG . ellipse t radius radius 
 
 
+--------------------------------------------------------------------------------
+-- Transforming points...
+
+
+type Point2T    u = Point2 u -> Point2 u
+
+
+disp :: Num u => u -> u -> Point2T u
+disp x y = (.+^ V2 x y)
+
+hdisp :: Num u => u -> Point2T u
+hdisp x = disp x 0
+
+vdisp :: Num u => u -> Point2T u
+vdisp y = disp 0 y
