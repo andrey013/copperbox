@@ -7,10 +7,11 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Stability   :  highly unstable
 -- Portability :  GHC 
 --
 -- 
+-- \*\* WARNING \*\* - function names likely to change.
 --
 --------------------------------------------------------------------------------
 
@@ -28,7 +29,17 @@ import Data.List
 
 
    
-
+-- | 'hpoints' : @ ypos * step * (x0,x1) -> [point] @
+-- 
+-- Generate points in a horizontal line between x0 and x1.
+--
+-- Note - the step increment is w.r.t. 0 rather than x0. x0 and 
+-- x1 are just the range. An example:
+-- 
+-- > hpoints 0 10 (5,35)
+--
+-- > [P2 10 0, P2 20 0, P2 30 0]
+--
 hpoints :: RealFrac u => u -> u -> (u,u) -> [Point2 u]
 hpoints y step (x0,x1) = unfoldr phi start
   where
@@ -36,6 +47,18 @@ hpoints y step (x0,x1) = unfoldr phi start
     phi st | st < x1   = Just (P2 st y, st+step)  
            | otherwise = Nothing
 
+
+-- | 'vpoints' : @ xpos * step * (y0,y1) -> [point] @
+-- 
+-- Generate points in a vertical line between y0 and y1.
+--
+-- Note - the step increment is w.r.t. 0 rather than y0. y0 and 
+-- y1 are just the range. An example:
+-- 
+-- > vpoints 5 100 (50,500)
+--
+-- > [P2 5 100, P2 5 200, P2 5 300, P2 5 400]
+--
 vpoints :: RealFrac u => u -> u -> (u,u) -> [Point2 u]
 vpoints x step (y0,y1) = unfoldr phi start
   where
@@ -49,7 +72,7 @@ initial :: RealFrac a => a -> a -> a
 initial step minval = step * (fn $ minval / step)
   where
     fn x | x < 0     = fromIntegral $ ceilingi x
-         | otherwise = fromIntegral $ 1 + floori   x
+         | otherwise = fromIntegral $ 1 + floori x
 
 
 

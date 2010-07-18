@@ -20,10 +20,20 @@ main = createDirectoryIfMissing True "./out/"
 
 
 pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic grid1
+pic1 = fromMaybe errK $ drawGraphic $ supply (P2 2.0 2.0) $ border1 `cc` grid1
 
 errK :: a
 errK = error "no picture"
 
-grid1 :: DGraphic
-grid1 = grid black 20 20 (RectFrame 96 56) (P2 2.0 2.0) 
+supply :: Point2 u -> GraphicF u -> Graphic u
+supply pt g = g pt
+
+border1 :: DGraphicF 
+border1 = border red frame1
+
+grid1 :: DGraphicF
+grid1 = grid black 20 20 frame1
+
+
+frame1 :: DRectFrame
+frame1 = RectFrame 96 56

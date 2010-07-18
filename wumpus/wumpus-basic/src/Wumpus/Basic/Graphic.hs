@@ -12,8 +12,9 @@
 --
 -- Graphic type and opertations
 --
--- ** WARNING ** this module is highly experimental, and may 
--- change significantly or even be dropped from future revisions.
+-- \*\* WARNING \*\* - this module is highly experimental, and 
+-- may change significantly or even be dropped from future 
+-- revisions.
 --
 --
 --------------------------------------------------------------------------------
@@ -51,7 +52,9 @@ module Wumpus.Basic.Graphic
 
   -- * Grid
   , RectFrame(..)
+  , DRectFrame
   , grid
+  , border
 
   ) where
 
@@ -140,19 +143,26 @@ rectanglePath w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
     tl = bl .+^ vvec h 
 
 
--- | Point is center, n is number of subdivisions per quadrant.
+-- | 'strokedCircle' : @ stroked_props * num_subs * radius -> GraphicF @
 --
--- Circle is made from bezier curves.
+-- Draw a stroked circle made from Bezier curves. @num_subs@ is 
+-- the number of subdivisions per quadrant.
 --
--- The supplied point is the center.
+-- The result is a HOF (GraphicF :: Point -> Graphic) where the 
+-- point is the center. 
 -- 
 strokedCircle :: (Stroke t, Floating u) => t -> Int -> u -> GraphicF u
 strokedCircle t n r = wrapG . cstroke t . curvedPath . bezierCircle n r
 
--- | Point is center, n is number of subdivisions per quadrant.
+
+-- | 'filledCircle' : @ fill_props * num_subs * radius -> GraphicF @
 --
--- Circle is made from bezier curves.
--- 
+-- Draw a filled circle made from Bezier curves. @num_subs@ is 
+-- the number of subdivisions per quadrant.
+--
+-- The result is a HOF (GraphicF :: Point -> Graphic) where the 
+-- point is the center. 
+--
 filledCircle :: (Fill t, Floating u) => t -> Int -> u -> GraphicF u
 filledCircle t n r = wrapG . fill t . curvedPath . bezierCircle n r
 
@@ -198,8 +208,12 @@ data RectFrame u = RectFrame
       }  
   deriving (Eq,Ord,Show)
 
+type DRectFrame = RectFrame Double
 
--- | Supplied point is bottom-left.
+-- | 'grid' : @ stroke_props * xstep * ystep * rect_frame -> GraphicF @
+--
+-- The result is a HOF (GraphicF :: Point -> Graphic) where the 
+-- point is bottom-left. 
 --
 grid :: (Stroke t, RealFrac u) => t -> u -> u -> RectFrame u -> GraphicF u 
 grid t xstep ystep (RectFrame w h) = \pt ->
@@ -208,3 +222,11 @@ grid t xstep ystep (RectFrame w h) = \pt ->
     vlines (P2 x y) = veloH (straightLine t (vvec h)) $ hpoints y xstep (x,x+w)
     hlines (P2 x y) = veloH (straightLine t (hvec w)) $ vpoints x ystep (y,y+h)
     
+
+-- | 'border' : @ stroke_props * rect_frame -> GraphicF @
+--
+-- The result is a HOF (GraphicF :: Point -> Graphic) where the 
+-- point is bottom-left. 
+--
+border :: (Stroke t, Num u) => t -> RectFrame u -> GraphicF u
+border t (RectFrame w h) = wrapG . cstroke t . rectanglePath w h

@@ -188,23 +188,3 @@ openPath t vs = \pt -> wrapG $ ostroke t $ path pt (snd $ mapAccumL fn pt vs)
     fn p v = let p' = p .+^ v in (p', lineTo p')
 
 
-
-{-
--- | Point is center.
---
-strokedRectangleCtr :: (Stroke t, Fractional u) => t -> u -> u -> GraphicF u
-strokedRectangleCtr t w h = wrapG . cstroke t . rectangleCtr w h
-
--- | Point is center.
---
-filledRectangleCtr :: (Fill t, Fractional u) => t -> u -> u -> GraphicF u
-filledRectangleCtr t w h = wrapG . fill t . rectangleCtr w h
-
-rectangleCtr :: Fractional u => u -> u -> Point2 u -> Path u
-rectangleCtr w h ctr = path bl [ lineTo br, lineTo tr, lineTo tl ]
-  where
-    bl = ctr .-^ V2 (w*0.5) (h*0.5)
-    br = bl .+^ hvec h
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 
--}
