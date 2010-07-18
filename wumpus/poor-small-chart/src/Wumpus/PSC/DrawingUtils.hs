@@ -17,8 +17,6 @@
 module Wumpus.PSC.DrawingUtils
   (
 
-
-
   -- * Drawing
     drawingContext
   , ctxRectangleWidth
@@ -27,8 +25,6 @@ module Wumpus.PSC.DrawingUtils
   , ctxRectangleScaleY  
 
   , concatBackgrounds
-  , strokedCircle
-  , filledCircle
 
   -- * Text labels
   , TextLabelF
@@ -91,14 +87,6 @@ concatBackgrounds top bkgrds = drawGraphic $ concatH bkgrds . top
 
 
 
-{-
-strokedCircle :: DRGB -> LineWidth -> Double -> DPoint2 -> DGraphic 
-strokedCircle rgb lw radius = \pt -> 
-    wrapG $ ellipse (rgb, LineWidth lw) radius radius pt
-
-filledCircle :: DRGB -> Double -> DPoint2 -> DGraphic
-filledCircle rgb radius = \pt -> wrapG $ ellipse rgb radius radius pt 
--}
 
 --------------------------------------------------------------------------------
 

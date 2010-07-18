@@ -281,10 +281,10 @@ rect_epsilon = 0.01
 
 type BorderF = DPoint2 -> DPoint2 -> DGraphic
 
-
+-- TODO - check this
 plainBorder :: DRGB -> Double -> ScaleCtx u v DGraphic
 plainBorder rgb lw = \((w,h),_,_) -> 
-    strokedRectangle (rgb, LineWidth lw) w h (P2 0 0)
+    strokedRectangle (rgb, LineWidth lw) w h (P2 (w*0.5) (h*0.5))
 
 noBorder :: BorderF
 noBorder = \ _ _ -> id

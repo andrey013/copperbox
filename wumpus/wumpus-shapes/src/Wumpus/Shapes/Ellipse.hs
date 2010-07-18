@@ -30,7 +30,7 @@ module Wumpus.Shapes.Ellipse
 import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
-import Wumpus.Core hiding ( CTM, Ellipse, ellipse )   -- package: wumpus-core
+import Wumpus.Core hiding ( Ellipse, ellipse )        -- package: wumpus-core
 import Wumpus.Basic.Anchors                           -- package: wumpus-basic
 import Wumpus.Basic.Graphic
 

@@ -117,10 +117,11 @@ fit a b = step (span_list a) (span_list b) 0.0
     step _          _          acc = acc  
 
 
--- fitting the children of some node...
+-- Fitting the children of a node...
+
 
 fitleft :: [(XTree a,Extent)] -> ([XTree a], Extent)
-fitleft []     = ([],extentZero)
+fitleft []           = ([],extentZero)
 fitleft ((l,ext):xs) = (l:ts,ext') -- left-most child unchanged
    where 
      (ext',ts)        = mapAccumL step ext xs
@@ -129,8 +130,7 @@ fitleft ((l,ext):xs) = (l:ts,ext') -- left-most child unchanged
                         in (mergeMR dx aex ex, moveTree dx t)
 
 fitright :: [(XTree a,Extent)] -> ([XTree a], Extent)
-fitright []  = ([],extentZero)
-fitright xs  = post $ foldr fn Nothing xs
+fitright = post . foldr fn Nothing
   where
     post                        = fromMaybe ([],extentZero)
     fn (t,ex) Nothing           = Just ([t],ex)

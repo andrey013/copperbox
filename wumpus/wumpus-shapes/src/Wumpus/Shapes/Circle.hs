@@ -30,8 +30,8 @@ module Wumpus.Shapes.Circle
 import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
-import Wumpus.Core hiding ( CTM )               -- package: wumpus-core
-import Wumpus.Basic.Anchors                     -- package: wumpus-basic
+import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Anchors             -- package: wumpus-basic
 import Wumpus.Basic.Graphic
 
 

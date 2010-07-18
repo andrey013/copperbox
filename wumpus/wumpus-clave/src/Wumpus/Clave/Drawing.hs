@@ -66,13 +66,13 @@ gridF n h lw = \ pt -> rect pt . verts pt
   where
     height    = textHeight h
     width     = height * fromIntegral n
-    rect pt   = strokedRectangle (black,LineWidth lw) width height pt
+    rect pt   = wrapG $ cstroke (black,LineWidth lw) $ rectanglePath width height pt
     verts pt  = veloH (\i ->  mkLine (pt .+^ hvec (height * fromIntegral i)))
                       [1..n-1]
     mkLine    = straightLine (black, LineWidth lw) (vvec height)
 
 backgroundF :: Int -> BoxHeight -> DRGB -> DPoint2 -> DGraphic
-backgroundF n h rgb = filledRectangle rgb width height
+backgroundF n h rgb = wrapG . fill rgb . rectanglePath width height
   where
     height    = textHeight h
     width     = height * fromIntegral n

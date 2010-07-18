@@ -42,7 +42,7 @@ module Wumpus.Shapes.Base
 
 import Wumpus.Shapes.Utils
 
-import Wumpus.Core hiding ( CTM )       -- package: wumpus-core
+import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
 import Wumpus.Basic.Graphic             -- package: wumpus-basic

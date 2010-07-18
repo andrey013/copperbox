@@ -57,7 +57,7 @@ data MP_config = MP_config
        }
 
 greekF :: DrawF
-greekF _ (w,h) rgb = filledRectangle rgb w h 
+greekF _ (w,h) rgb = wrapG . fill rgb . rectanglePath w h 
 
 borderedF :: Double -> DrawF
 borderedF line_width (i,uw) (w,h) rgb = 
@@ -66,14 +66,14 @@ borderedF line_width (i,uw) (w,h) rgb =
     props = (black, LineWidth line_width)
 
     srect :: DGraphicF
-    srect = strokedRectangle props w h
+    srect = wrapG . cstroke props . rectanglePath w h
  
     seps  :: DGraphicF
     seps  = \pt -> unfoldrH (phi pt) (1,uw) 
     
-    phi pt (n,disp) | n >= i    = Nothing
-                    | otherwise = let ln = vline props h (pt .+^ hvec disp)
-                                  in  Just (ln,(n+1,disp+uw))
+    phi pt (n,hshift) | n >= i    = Nothing
+                      | otherwise = let ln = vline props h (pt .+^ hvec hshift)
+                                    in  Just (ln,(n+1,hshift+uw))
  
 vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
 vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]

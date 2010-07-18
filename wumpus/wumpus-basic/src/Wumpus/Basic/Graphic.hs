@@ -38,6 +38,7 @@ module Wumpus.Basic.Graphic
   , straightLine
   , strokedRectangle
   , filledRectangle
+  , rectanglePath
   , strokedCircle
   , filledCircle
   , disk
@@ -55,7 +56,6 @@ import Wumpus.Basic.Utils.HList
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
-import Data.VectorSpace
 
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
@@ -106,31 +106,29 @@ textline :: (TextLabel t, Num u) => t -> String -> GraphicF u
 textline t ss = wrapG . textlabel t ss 
 
 
--- | Supplied point is the center.
+-- | Vector is applied to the point.
 --
 straightLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
-straightLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
-    wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
+straightLine t v = \pt -> wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
  
-    
 
-
--- | Point is bottom-left.
+-- | Supplied point is center.
 --
 strokedRectangle :: (Stroke t, Fractional u) => t -> u -> u -> GraphicF u
-strokedRectangle t w h = wrapG . cstroke t . rectangle w h . ctrToSW w h
+strokedRectangle t w h = wrapG . cstroke t . rectangle w h
 
--- | Point is bottom-left.
+-- | Supplied point is center.
 --
 filledRectangle :: (Fill t, Fractional u) => t -> u -> u -> GraphicF u
-filledRectangle t w h = wrapG . fill t . rectangle w h . ctrToSW w h
+filledRectangle t w h = wrapG . fill t . rectangle w h
 
+rectangle :: Fractional u => u -> u -> Point2 u -> Path u
+rectangle w h ctr = rectanglePath w h (ctr .-^ vec (0.5*w) (0.5*h))
 
-ctrToSW :: Fractional u => u -> u -> Point2T u
-ctrToSW w h = disp (negate $ 0.5*w) (negate $ 0.5*h)
-
-rectangle :: Num u => u -> u -> Point2 u -> Path u
-rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
+-- | Supplied point is /bottom-left/.
+--
+rectanglePath :: Num u => u -> u -> Point2 u -> Path u
+rectanglePath w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
   where
     br = bl .+^ hvec w
     tr = br .+^ vvec h
@@ -185,3 +183,5 @@ hdisp x = disp x 0
 
 vdisp :: Num u => u -> Point2T u
 vdisp y = disp 0 y
+
+

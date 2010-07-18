@@ -32,7 +32,7 @@ draw (Node (pt,_) ns) = dot pt . veloH draw ns . link pt ns
 
 
 dot :: Fractional u => Point2 u -> Graphic u
-dot pt = circle black 4 $ pt
+dot pt = disk black 4 $ pt
 
 link :: Point2 Double -> [CoordTree Double a] -> DGraphic
 link pt ns = veloH step ns

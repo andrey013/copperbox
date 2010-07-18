@@ -47,6 +47,7 @@ import Wumpus.Basic.Utils.HList
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
+import Data.VectorSpace
 
 import Control.Applicative
 import Data.List
@@ -82,18 +83,28 @@ markHeight = xcharHeight . point_size
 -- PostScript.
 --
 
+    
+
+-- | Supplied point is the center.
+--
+axialLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
+axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
+    wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
+ 
+
+
 
 -- Better would be a version of straightLine where the point is 
 -- the center not the start...
 -- 
 dotHLine :: Fractional u => MarkAttr -> GraphicF u 
 dotHLine attr = let w = markHeight attr in 
-    straightLine (primaryAttr attr) (hvec w)
+    axialLine (primaryAttr attr) (hvec w)
     
 
 dotVLine :: Fractional u => MarkAttr -> GraphicF u 
 dotVLine attr = let h = markHeight attr in 
-    straightLine (primaryAttr attr) (vvec h)
+    axialLine (primaryAttr attr) (vvec h)
 
 
 dotX :: Fractional u => MarkAttr -> GraphicF u
@@ -101,8 +112,8 @@ dotX attr = ls1 `cc` ls2
   where
     h        = markHeight attr
     w        = 0.75 * h
-    ls1      = straightLine (primaryAttr attr) (vec w    h)
-    ls2      = straightLine (primaryAttr attr) (vec (-w) h)
+    ls1      = axialLine (primaryAttr attr) (vec w    h)
+    ls2      = axialLine (primaryAttr attr) (vec (-w) h)
 
 
 dotPlus :: Fractional u => MarkAttr -> GraphicF u
@@ -113,8 +124,8 @@ dotCross :: Floating u => MarkAttr -> GraphicF u
 dotCross attr = ls1 `cc` ls2
   where
     z        = markHeight attr
-    ls1      = straightLine (primaryAttr attr) (avec (pi*0.25)    z)
-    ls2      = straightLine (primaryAttr attr) (avec (negate $ pi*0.25) z)
+    ls1      = axialLine (primaryAttr attr) (avec (pi*0.25)    z)
+    ls2      = axialLine (primaryAttr attr) (avec (negate $ pi*0.25) z)
 
 
 -- needs horizontal pinch...
@@ -149,7 +160,6 @@ dotCircle :: Fractional u => MarkAttr -> GraphicF u
 dotCircle attr = disk (primaryAttr attr) (0.5*markHeight attr) 
 
 
--- | Five points
 dotPentagon :: Floating u => MarkAttr -> GraphicF u
 dotPentagon attr = 
     wrapG . cstroke (primaryAttr attr) . vertexPath . polygonPointsV 5 hh
@@ -190,27 +200,16 @@ dotAsterisk attr = ls1 `cc` ls2 `cc` ls3
     z        = markHeight attr
     props    = primaryAttr attr
     ang      = two_pi / 6
-    ls1      = straightLine props (vvec z)
-    ls2      = straightLine props (avec (half_pi + ang)    z)
-    ls3      = straightLine props (avec (half_pi + ang + ang) z)
+    ls1      = axialLine props (vvec z)
+    ls2      = axialLine props (avec (half_pi + ang)    z)
+    ls3      = axialLine props (avec (half_pi + ang + ang) z)
 
-{-
--- | Six points
-dotAsterisk :: Fractional u, Mark t)
-            => t -> Point2 u -> Picture u
-dotAsterisk attr pt = 
-    frameMulti $ map (mostroke attr . lineSegmentToPath) [ls1,ls2,ls3]
-  where
-    ls1 = vlineSegmentMid (lwX10 attr) pt
-    ls2 = rotateAbout (pi/3) pt ls1
-    ls3 = rotateAbout (pi/3) pt ls2
--}
 
 dotOPlus :: Fractional u
          => MarkAttr -> GraphicF u
 dotOPlus attr = dotCircle attr `cc` dotPlus attr
 
--- Cross draws two wide...
+
 dotOCross :: Floating u => MarkAttr -> GraphicF u
 dotOCross attr = dotCircle attr `cc` dotCross attr
 

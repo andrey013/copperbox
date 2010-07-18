@@ -30,11 +30,11 @@ import Data.List
 -- center coord to the argument...
 
 stemC :: DGraphicF -> DGraphicF
-stemC gF = stem `cc` (gF . vdisplace (-25))
+stemC gF = stem `cc` (gF . vdisp (-25))
 
 flamC :: DGraphicF -> DGraphicF -> DGraphicF
-flamC sF lF = flamStem `cc` (sF . displace (-5) (-18)) 
-                       `cc` (lF . vdisplace (-25))
+flamC sF lF = flamStem `cc` (sF . disp (-5) (-18)) 
+                       `cc` (lF . vdisp (-25))
 
 
 -- Top of the stem is the origin...
@@ -58,7 +58,7 @@ slapFlam        = flamC (smallLetter 'X') (letter 'X')
 toneFlam        :: DGraphicF
 toneFlam        = flamC smallTone toneP
   where
-    smallTone = disk black 2 . vdisplace (-1)
+    smallTone = disk black 2 . vdisp (-1)
 
 
 
@@ -78,53 +78,53 @@ bassP           :: DGraphicF
 bassP           = letter 'B'
 
 toneP           :: DGraphicF
-toneP           = disk black 4 . vdisplace (-1)
+toneP           = disk black 4 . vdisp (-1)
 
 slapP           :: DGraphicF
 slapP           = letter 'X'
 
 dotP            :: DGraphicF
-dotP            = disk black 1 . vdisplace (-3)
+dotP            = disk black 1 . vdisp (-3)
 
 
 
 paren :: DGraphicF -> DGraphicF
 paren gF = lparen `cc` gF `cc` rparen
   where
-    lparen = letter '(' . displace (-4) (-24)
-    rparen = letter ')' . displace 8    (-24)
+    lparen = letter '(' . disp (-4) (-24)
+    rparen = letter ')' . disp 8    (-24)
 
 
 slash :: DGraphicF -> DGraphicF
 slash gF = gF `cc` slash1
   where
-    slash1 = straightLine black (V2 10 10) . displace (-5) (-6) 
+    slash1 = straightLine black (V2 10 10) . disp (-5) (-6) 
 
 
 underscore :: DGraphicF -> DGraphicF
 underscore gF = gF `cc` uscore
   where
-    uscore = straightLine black (V2 10 0) . displace (-5) (-5) 
+    uscore = straightLine black (V2 10 0) . disp (-5) (-5) 
 
 
 dominant :: DGraphicF -> DGraphicF
 dominant gF = gF `cc` closed_square
   where
-    closed_square = filledRectangleCtr black  4.5 4.5 . displaceHand
+    closed_square = filledRectangle black  4.5 4.5 . displaceHand
 
 otherhand :: DGraphicF -> DGraphicF
 otherhand = (`cc` open_square)
   where
-    open_square = strokedRectangleCtr props 4 4 . displaceHand
+    open_square = strokedRectangle props 4 4 . displaceHand
     props       = (black, LineWidth 0.5)
 
 displaceHand :: Point2T Double
-displaceHand = vdisplace (-3) . displaceStem . displaceCharHeight 
+displaceHand = vdisp (-3) . displaceStem . displaceCharHeight 
 
 accent :: DGraphicF -> DGraphicF
 accent = (`cc` gt)
   where  
-    gt = openPath line_props [ vec 10 3, vec (-10) 3] . displace (-5) 2
+    gt = openPath line_props [ vec 10 3, vec (-10) 3] . disp (-5) 2
 
 
 -- 
@@ -142,10 +142,10 @@ line_props = (black, LineWidth 1.0)
 
 
 displaceStem :: Point2T Double
-displaceStem = vdisplace (-20)
+displaceStem = vdisp (-20)
 
 displaceCharHeight :: Point2T Double
-displaceCharHeight = vdisplace (-10)
+displaceCharHeight = vdisp (-10)
 
 
 -- Note - we cannot make a "rectangle transformer" that centers a 
@@ -170,26 +170,14 @@ displaceCharHeight = vdisplace (-10)
 
 -- Where to have the  origin....
 letter :: Char -> DGraphicF
-letter ch = wrapG . textlabel (black,helvetica 12) [ch] . displace (-4) (-5)
+letter ch = wrapG . textlabel (black,helvetica 12) [ch] . disp (-4) (-5)
 
 -- For flam...
 smallLetter :: Char -> DGraphicF
-smallLetter ch = wrapG . textlabel (black,helvetica 9) [ch] . displace (-3) (-5)
+smallLetter ch = wrapG . textlabel (black,helvetica 9) [ch] . disp (-3) (-5)
 
 
 -- Candidates for Basic.Graphic
-
-type Point2T    u = Point2 u -> Point2 u
-
-
-displace :: Num u => u -> u -> Point2T u
-displace x y = (.+^ V2 x y)
-
-hdisplace :: Num u => u -> Point2T u
-hdisplace x = displace x 0
-
-vdisplace :: Num u => u -> Point2T u
-vdisplace y = displace 0 y
 
 
 
@@ -201,7 +189,7 @@ openPath t vs = \pt -> wrapG $ ostroke t $ path pt (snd $ mapAccumL fn pt vs)
 
 
 
-
+{-
 -- | Point is center.
 --
 strokedRectangleCtr :: (Stroke t, Fractional u) => t -> u -> u -> GraphicF u
@@ -219,3 +207,4 @@ rectangleCtr w h ctr = path bl [ lineTo br, lineTo tr, lineTo tl ]
     br = bl .+^ hvec h
     tr = br .+^ vvec h
     tl = bl .+^ vvec h 
+-}

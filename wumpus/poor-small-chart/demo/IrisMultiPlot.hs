@@ -252,7 +252,7 @@ labelBox :: String -> DPicture
 labelBox title = fromMaybe errK $ drawGraphic $ rect . text
   where
     errK  = error "error - labelBox"
-    rect  = strokedRectangle (black, LineWidth 0.5) w h (P2 0 0)
+    rect  = strokedRectangle (black, LineWidth 0.5) w h (P2 (0.5*w) (0.5*h))
     text  = textlabelC (black,courier 18) title (P2 (w*0.5) (h*0.5))
     (w,h) = output_rect
 

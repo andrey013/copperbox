@@ -81,7 +81,7 @@ type RangeBandF u v = ScaleCtx u v DGraphic
 
 rangeBand :: Num v => Range v -> DRGB -> RangeBandF u v
 rangeBand (y0 ::: y1) rgb = \(rect,_,fY) -> 
-    filledRectangle rgb (rectWidth rect) (fY $ y1 - y0) (P2 0 (fY y0)) 
+    wrapG $ fill rgb $ rectanglePath (rectWidth rect) (fY $ y1 - y0) (P2 0 (fY y0))
 
 
 

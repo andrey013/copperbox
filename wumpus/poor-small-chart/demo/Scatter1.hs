@@ -18,7 +18,6 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
-import Data.AffineSpace                 -- package: vector-space
 
 import System.Directory
 
@@ -78,7 +77,7 @@ drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
 drawingCtx xr yr = drawingContext xr id yr id output_rect
 
 squareDot :: DotF
-squareDot = \pt -> filledRectangle green 10 10 (pt .-^ V2 5 5)
+squareDot = filledRectangle green 10 10
 
 steps :: u -> (u -> u) -> [u]
 steps = flip iterate
