@@ -57,6 +57,7 @@ library
     Wumpus.Basic.Anchors,
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
+    Wumpus.Basic.Graphic.PointSupply,
     Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.SafeFonts,

@@ -49,8 +49,13 @@ module Wumpus.Basic.Graphic
   , vdisp
   , hdisp
 
+  -- * Grid
+  , RectFrame(..)
+  , grid
+
   ) where
 
+import Wumpus.Basic.Graphic.PointSupply
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -184,4 +189,22 @@ hdisp x = disp x 0
 vdisp :: Num u => u -> Point2T u
 vdisp y = disp 0 y
 
+--------------------------------------------------------------------------------
+-- need a border / frame abstraction...
 
+data RectFrame u = RectFrame 
+      { frame_width     :: !u
+      , frame_height    :: !u 
+      }  
+  deriving (Eq,Ord,Show)
+
+
+-- | Supplied point is bottom-left.
+--
+grid :: (Stroke t, RealFrac u) => t -> u -> u -> RectFrame u -> GraphicF u 
+grid t xstep ystep (RectFrame w h) = \pt ->
+    vlines pt . hlines pt
+  where
+    vlines (P2 x y) = veloH (straightLine t (vvec h)) $ hpoints y xstep (x,x+w)
+    hlines (P2 x y) = veloH (straightLine t (hvec w)) $ vpoints x ystep (y,y+h)
+    
