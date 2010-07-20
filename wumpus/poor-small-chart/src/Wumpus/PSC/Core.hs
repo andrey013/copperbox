@@ -67,7 +67,7 @@ type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
 type ScaleCtx u v a = DrawingContext u v -> a  
 
 
-type Dataset u v = [(u,v)]
+type Dataset ux uy = [(ux,uy)]
 
 -- | DrawingRectangle = (width,height)
 --

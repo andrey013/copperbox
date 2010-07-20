@@ -7,9 +7,10 @@
 module Scatter1 where
 
 import Wumpus.PSC.Axis
-import Wumpus.PSC.Core
+import Wumpus.PSC.Core  hiding ( ScaleCtx, Projection )
 import Wumpus.PSC.DrawingUtils
 -- import Wumpus.PSC.Legend
+import Wumpus.PSC.ScaleMonad
 import Wumpus.PSC.ScatterPlot
 
 
@@ -18,7 +19,7 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
-
+import Data.Maybe
 import System.Directory
 
 
@@ -31,12 +32,25 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartSVG "./out/scatter_plot1.svg" pic1
 
 
+{-
 pic1 :: DPicture
 pic1 = renderScatterPlot scatter_cfg [(squareDot,input_data)]
   where
    scatter_cfg = ScatterPlot (drawingCtx x_range y_range) (axis_fun `cc` border)
    border      = plainBorder black 0.5
+-}
 
+pic1 :: Picture Double
+pic1 = fromMaybe errK $ drawGraphic plot_layers
+
+errK :: a
+errK = error "Empty Graphic"
+
+plot_layers :: Graphic Double
+plot_layers = runCoordScale scale_ctx $ plotLayers [layer1]
+
+
+{-
 
 axis_fun :: ScaleCtx Double Double DGraphic
 axis_fun = xa `cc` ya
@@ -69,14 +83,36 @@ y_range         = 92.5 ::: 103.5
 y_axis_steps    :: AxisSteps Double
 y_axis_steps    = steps 94.0 (+2.0)
 
+-}
 
 output_rect :: DrawingRectangle
 output_rect = (450,400)
 
+
+
+scale_ctx   :: ScaleCtx Double Double Double
+scale_ctx = ScaleCtx xrange yrange
+  where
+    xrange = projectRange ((-1.0) ::: 21.0) (0.0 ::: 450.0) id
+    yrange = projectRange  (92.5 ::: 103.5) (0.0 ::: 400.0) id
+
+
+projectRange :: Fractional u 
+             => Range ua -> Range u -> (ua -> u) -> Projection ua u
+projectRange (ua0 ::: ua1) (u0 ::: u1) fromUA = 
+   rescale (fromUA ua0) (fromUA ua1) u0 u1 . fromUA
+
+
+layer1 :: ScatterPlotLayer Double Double Double
+layer1 = (squareDot, input_data)
+
+{-
 drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
 drawingCtx xr yr = drawingContext xr id yr id output_rect
+-}
 
-squareDot :: DotF
+
+squareDot :: DotF Double
 squareDot = filledRectangle green 10 10
 
 steps :: u -> (u -> u) -> [u]

@@ -15,6 +15,7 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.PSC.ScatterPlot
+{-
   (
   -- * Data types
     ScatterPlot(..)
@@ -26,7 +27,9 @@ module Wumpus.PSC.ScatterPlot
   , renderScatterPlot
 
   )
+-}
   where
+
 
 import Wumpus.PSC.Core
 import Wumpus.PSC.DrawingUtils
@@ -40,6 +43,40 @@ import Wumpus.Basic.Utils.HList
 import Control.Monad
 import Data.Maybe
 
+type DotF u = GraphicF u
+
+type ScatterPlotLayer ux uy u = (DotF u, Dataset ux uy)
+
+
+
+-- Return in the ScaleMonad or run it?
+--
+plotLayers :: (Monad m , CoordScaleM m ux uy u, Real u, Floating u) 
+           => [ScatterPlotLayer ux uy u] -> m (Graphic u)
+plotLayers xs = mveloH makeLayer xs
+
+
+
+
+makeLayer :: (Monad m , CoordScaleM m ux uy u) 
+          => (DotF u, Dataset ux uy) -> m (Graphic u)
+makeLayer (dotF,ds) = mveloH (drawAt dotF) ds 
+
+mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)
+mveloH mf = step id 
+  where
+    step acc []     = return acc
+    step acc (x:xs) = mf x >>= \a -> step (acc . a) xs
+ 
+
+-- name ?
+--
+drawAt :: (Monad m , CoordScaleM m ux uy u) 
+       => GraphicF u -> (ux,uy) -> m (Graphic u)
+drawAt gf (x,y) = liftM gf $ coordScale (x,y)
+
+
+{-
 
 data ScatterPlot u v = ScatterPlot
       { scatterplot_ctx         :: DrawingContext u v
@@ -59,7 +96,6 @@ outlinedDot :: DRGB -> Double -> DotF
 outlinedDot rgb radius = \pt -> 
     disk (black, LineWidth 0.5) radius pt . disk rgb radius pt
 
-type ScatterPlotLayer u v = (DotF, Dataset u v)
 
 
 -- Fraction constraint is temporary////
@@ -84,28 +120,15 @@ makeLayer (dotF,ds) = \ctx -> veloH (\pt -> makeDot dotF pt ctx) ds
 makeDot :: DotF -> (u,v) -> ScaleCtx u v DGraphic
 makeDot dotF (u,v) = \(_,fX,fY) -> dotF $ P2 (fX u) (fY v)
 
+-}
 
 
--- working out...
 
-type DotF' u = GraphicF u
-
-
-makeLayer' :: (Monad m , CoordScaleM m ux uy u) 
-          => (DotF' u,Dataset ux uy) -> m (Graphic u)
-makeLayer' (dotF,ds) = mveloH (makeDot' dotF) ds 
-
-
+{-
 makeDot' :: (Monad m , CoordScaleM m ux uy u) 
          => DotF' u -> (ux,uy) -> m (Graphic u)
-makeDot' dotF (u,v) = liftM dotF $ coordScale (u,v)
+makeDot' dotF (u,v) = drawZ 
+-}
 
 
 
-
-mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)
-mveloH mf = step id 
-  where
-    step acc []     = return acc
-    step acc (x:xs) = mf x >>= \a -> step (acc . a) xs
- 
