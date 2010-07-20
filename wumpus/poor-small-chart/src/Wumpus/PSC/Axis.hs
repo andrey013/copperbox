@@ -15,276 +15,154 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.PSC.Axis
-  ( 
-  -- * Axes
-    AxisSteps
-  , AxisLabelF
-
-  , LabelConfig(..)
-  , xAxisLabel
-  , yAxisLabel
-
-  , TickLabelConfig(..)
-  , xAxisTickLabel
-  , xAxisTickLabelAlt
-
-  , yAxisTickLabel
-  , yAxisTickLabelAlt
-
-  , drawAxes
-  , horizontalLabels
-  , verticalLabels
-  , horizontalLabelsTop
-  , verticalLabelsRight
-
-  -- * Grids
-  , GridLineF
-  , simpleGridLine
-
-  , drawGrid
+  where
 
 
-  -- * Border
-  , BorderF
-  , plainBorder
-  , noBorder
-
-  ) where
-
-import Wumpus.PSC.Core
-import Wumpus.PSC.DrawingUtils
+import Wumpus.PSC.ScaleMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.Utils.HList
 
-import Data.AffineSpace                 -- package: vector-space 
+import Data.AffineSpace                 -- package: vector-space
 
-
-
--- How you draw axis labels is quite "shrewd" - i.e 
--- ticks / labels or both, or neither...
---
-
-type AxisLabelF u = u -> DPoint2 -> DGraphic
-
-type AxisSteps u = [u]
+import Control.Monad
 
 
 
 
-data LabelConfig = LabelConfig
-      { label_font_colour       :: DRGB
-      , label_font_attr         :: FontAttr
-      , label_gap_length        :: Double
+
+type AxisMarkF ux u = ux -> GraphicF u
+
+
+
+
+xAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
+      => u -> ux -> (ux -> ux) -> RectFrameLoc u -> m [(ux,Point2 u)]
+xAxis ypos ux0 next rfl = unfoldrM phi ux0
+  where
+    mkPt x = P2 x ypos
+
+    phi ux = (liftM mkPt $ xScale ux) >>= \pt -> 
+             if withinRectFrameLoc pt rfl 
+               then return (Just ((ux,pt), next ux))
+               else return Nothing
+
+yAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
+      => u -> uy -> (uy -> uy) -> RectFrameLoc u -> m [(uy,Point2 u)]
+yAxis xpos uy0 next rfl = unfoldrM phi uy0
+  where
+    mkPt y = P2 xpos y
+
+    phi uy = (liftM mkPt $ yScale uy) >>= \pt -> 
+             if withinRectFrameLoc pt rfl 
+               then return (Just ((uy,pt), next uy))
+               else return Nothing
+
+
+
+unfoldrM :: Monad m => (b -> m (Maybe (a, b))) -> b -> m [a]
+unfoldrM mf st  = mf st >>= step
+  where
+    step (Just (a,st')) = liftM (a:) $ (mf st' >>= step)
+    step Nothing        = return []
+
+
+
+
+
+
+-- for Wumpus.Basic.Graphic...
+type RectFrameLoc u = (Point2 u, RectFrame u)
+
+
+withinRectFrameLoc :: (Num u, Ord u) => Point2 u -> RectFrameLoc u -> Bool
+withinRectFrameLoc (P2 x y) (P2 ox oy, RectFrame w h) = 
+   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
+
+
+centeredTextline :: Fractional u => (DRGB,FontAttr) -> String -> GraphicF u
+centeredTextline (rgb,attr) text ctr = 
+    wrapG $ textlabel (rgb,attr) text bottom_left
+  where
+    pt_size       = font_size attr
+    y_displace    = 0.5 * numeralHeight pt_size
+
+    text_width    = textWidth  pt_size (length text)
+    x_displace    = 0.5 * text_width
+
+    bottom_left   = ctr .-^ vec x_displace y_displace 
+
+
+--------------------------------------------------------------------------------
+
+type TickDraw  t u = (t, Point2T u, Vec2 u)
+type LabelDraw   u = (DRGB, FontAttr, Point2T u)
+
+data TickLabelConfig ua = TickLabelConfig 
+      { tick_label_font_colour    :: DRGB
+      , tick_label_font_attr      :: FontAttr
+      , tick_label_text_fun       :: ua -> String
+      , tick_label_line_colour    :: DRGB
+      , tick_label_line_width     :: Double
       }
 
+tickLabelConfig :: DRGB -> FontAttr -> (ua -> String) -> TickLabelConfig ua
+tickLabelConfig rgb font_attr textF = 
+    TickLabelConfig { tick_label_font_colour    = rgb
+                    , tick_label_font_attr      = font_attr
+                    , tick_label_text_fun       = textF
+                    , tick_label_line_colour    = rgb
+                    , tick_label_line_width     = 1.0
+                    }
 
--- | 'xAxisLabel' 
--- 
-xAxisLabel :: LabelConfig -> (u -> String) -> AxisLabelF u
-xAxisLabel (LabelConfig frgb fattr gap) textF = \u north_pt -> 
-    textlabelN (frgb,fattr) (textF u) (north_pt .-^ vvec gap)
+lineAttrs :: TickLabelConfig ua -> (DRGB, StrokeAttr)
+lineAttrs (TickLabelConfig 
+            { tick_label_line_colour = rgb
+            , tick_label_line_width  = lw} ) = (rgb, LineWidth lw)
 
-
--- | 'yAxisLabel' 
--- 
-yAxisLabel :: LabelConfig -> (v -> String) -> AxisLabelF v
-yAxisLabel (LabelConfig frgb fattr gap) textF = \v east_pt -> 
-    textlabelE (frgb,fattr) (textF v) (east_pt .-^ hvec gap)
-
-
-data TickLabelConfig = TickLabelConfig
-      { tick_label_font_colour      :: DRGB
-      , tick_label_font_attr        :: FontAttr
-      , tick_label_tick_colour      :: DRGB
-      , tick_label_line_width       :: Double
-      , tick_label_tick_length      :: Double
-      , tick_label_gap_length       :: Double
-      }
+textAttrs :: TickLabelConfig ua -> (DRGB, FontAttr)
+textAttrs (TickLabelConfig 
+            { tick_label_font_colour = rgb
+            , tick_label_font_attr   = attr} ) = (rgb,attr)
 
 
--- TODO/Note - the placement/geometry could (probably) be 
--- supplied in the Config data type rather than having four 
--- separate functions.
--- 
--- But maybe again a functional representation will have
--- advantages...
---
-
--- | 'xAxisLabelTick' 
--- 
--- Label at the bottom, tick above it...
---
--- >  |
--- > 1.0
---
-xAxisTickLabel :: TickLabelConfig
-               -> (v -> String) 
-               -> AxisLabelF v
-xAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
-     \v point -> line point . label v point
+makeTickLabel :: Fractional u
+              => Vec2 u -> Point2T u -> Point2T u 
+              -> TickLabelConfig ua -> AxisMarkF ua u
+makeTickLabel vec_to_end_pt disp_tick disp_lbl cfg = 
+    \v -> line `cc` label v
   where
-    label v pt = textlabelN (frgb,fattr) (textF v) (pt .-^ vvec (tick_len + gap))
-    line pt    = straightLine (lrgb, LineWidth lw) (vvec (negate tick_len)) pt
+    label v    = centeredTextline (textAttrs cfg) (textF v) . disp_lbl
+    line       = straightLine (lineAttrs cfg) vec_to_end_pt . disp_tick
+
+    textF      = tick_label_text_fun cfg
 
 
--- | 'xAxisLabelTickAlt' 
--- 
--- Tick at the bottom, label above it...
---
--- > 1.0
--- >  |
---
-xAxisTickLabelAlt :: TickLabelConfig -> (v -> String) -> AxisLabelF v
-xAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
-     \v point -> line point . label v point
+tickup_textdownH :: Fractional u
+                 => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickup_textdownH tick_len text_gap =  
+   makeTickLabel (vvec tick_len) id (vdisp $ negate text_gap)
+
+
+
+tickdown_textdownH :: Fractional u 
+                   => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickdown_textdownH tick_len text_gap =  
+    makeTickLabel (vvec $ negate tick_len) id lbl_disp 
   where
-    label v pt = textlabelS (frgb,fattr) (textF v) (pt .+^ vvec (tick_len + gap))
-    line pt    = straightLine (lrgb, LineWidth lw) (vvec tick_len) pt
+    lbl_disp = vdisp $ negate $ tick_len + text_gap
 
 
--- | 'yAxisLabelTick' 
--- 
--- Label on the left, tick to its right...
---
--- > 1.0 --
---
-yAxisTickLabel :: TickLabelConfig -> (v -> String) -> AxisLabelF v
-yAxisTickLabel (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
-     \v point -> line point . label v point
+tickleftV :: Fractional u 
+                   => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickleftV tick_len text_gap =  
+    makeTickLabel (hvec $ negate tick_len) id lbl_disp 
   where
-    label v pt = textlabelE (frgb,fattr) (textF v) (pt .-^ hvec (tick_len + gap))
-    line pt    = straightLine (lrgb, LineWidth lw) (hvec (negate tick_len)) pt
-
--- | 'yAxisTickLabelAlt' 
--- 
--- Tick on the left, label to its right...
---
--- > -- 1.0
---
-yAxisTickLabelAlt :: TickLabelConfig -> (v -> String) -> AxisLabelF v
-yAxisTickLabelAlt (TickLabelConfig frgb fattr lrgb lw tick_len gap) textF = 
-     \v point -> line point . label v point
-  where
-    label v pt = textlabelW (frgb,fattr) (textF v) (pt .+^ hvec (tick_len + gap))
-    line pt    = straightLine (lrgb, LineWidth lw) (hvec tick_len) pt
-
-    
-
-drawAxes :: AxisLabelF u -> AxisSteps u
-         -> AxisLabelF v -> AxisSteps v
-         -> ScaleCtx u v DGraphic
-drawAxes udrawF usteps vdrawF vsteps = hf `cc` vf
-  where
-    hf = horizontalLabels udrawF usteps
-    vf = verticalLabels   vdrawF vsteps
-    
-
-horizontalLabels :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v DGraphic
-horizontalLabels buildF steps = horizontals 0 buildF steps
-
-
-verticalLabels :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v DGraphic
-verticalLabels buildF steps = verticals 0 buildF steps 
-
-horizontalLabelsTop :: AxisLabelF u -> AxisSteps u -> ScaleCtx u v DGraphic
-horizontalLabelsTop buildF steps = \ctx -> 
-    horizontals (ctxRectangleHeight ctx) buildF steps ctx
-
-
-verticalLabelsRight :: AxisLabelF v -> AxisSteps v -> ScaleCtx u v DGraphic
-verticalLabelsRight buildF steps = \ctx -> 
-    verticals (ctxRectangleWidth ctx) buildF steps ctx
+    lbl_disp = hdisp $ negate $ tick_len + text_gap
 
 
 
---------------------------------------------------------------------------------
--- Grids
+axisMarks :: AxisMarkF ua u -> [(ua,Point2 u)] -> Graphic u
+axisMarks fn = veloH (uncurry fn) 
 
-
-type GridLineF = DPoint2 -> DPoint2 -> DGraphic
-
-
-simpleGridLine :: Stroke t => t -> GridLineF
-simpleGridLine t = \p0 p1 -> straightLine t (p1 .-. p0) p0
-
-
-
-drawGrid :: GridLineF -> AxisSteps u -> AxisSteps v -> ScaleCtx u v DGraphic
-drawGrid drawF usteps vsteps ctx = vf . hf
-  where
-    hf = horizontalLines drawF vsteps ctx
-    vf = verticalLines   drawF usteps ctx
-
-
-verticalLines :: GridLineF
-              -> AxisSteps u
-              -> ScaleCtx u v DGraphic
-verticalLines drawF steps ctx@(rect,_,_) = horizontals 0 buildF steps ctx
-  where
-    buildF _ pt  = drawF pt (pt .+^ upvec)
-    upvec        = vvec $ rectHeight rect
-
-
-horizontalLines :: GridLineF
-                -> AxisSteps v
-                -> ScaleCtx u v DGraphic
-horizontalLines drawF steps ctx@(rect,_,_) = verticals 0 buildF steps ctx
-  where
-    buildF _ pt = drawF pt (pt .+^ rightvec)
-    rightvec    = hvec $ rectWidth rect
-
-
-
---------------------------------------------------------------------------------
--- Enumerate x-y values...
-
-horizontals :: Double 
-            -> (u -> DPoint2 -> DGraphic) 
-            -> AxisSteps u 
-            -> ScaleCtx u v DGraphic
-horizontals y0 buildF steps ctx = 
-    veloH (\(xu,x) -> buildF xu (P2 x y0)) $ xvalues steps ctx
-
-
-verticals :: Double 
-          -> (v -> DPoint2 -> DGraphic) 
-          -> AxisSteps v 
-          -> ScaleCtx u v DGraphic 
-verticals x0 buildF steps ctx = 
-    veloH (\(yu,y) -> buildF yu (P2 x0 y)) $ yvalues steps ctx
-
-
-
-xvalues :: AxisSteps u -> ScaleCtx u v [(u,Double)]
-xvalues steps (rect,fX,_) = takeWhile cmp $ map (\a -> (a,fX a)) steps
-  where
-    cmp (_,a) = a `leqEps` rectWidth rect 
-
-yvalues :: AxisSteps v -> ScaleCtx u v [(v,Double)]
-yvalues steps (rect,_,fY) = takeWhile cmp $ map (\a -> (a, fY a)) steps
-  where
-    cmp (_,a) = a `leqEps` rectHeight rect
-
-
-
-leqEps :: Double -> Double -> Bool
-leqEps a b | a < b     = True
-           | otherwise = let diff = a - b in diff < rect_epsilon 
-
-rect_epsilon :: Double 
-rect_epsilon = 0.01
-
-
---------------------------------------------------------------------------------
-
-type BorderF = DPoint2 -> DPoint2 -> DGraphic
-
--- TODO - check this
-plainBorder :: DRGB -> Double -> ScaleCtx u v DGraphic
-plainBorder rgb lw = \((w,h),_,_) -> 
-    strokedRectangle (rgb, LineWidth lw) w h (P2 (w*0.5) (h*0.5))
-
-noBorder :: BorderF
-noBorder = \ _ _ -> id

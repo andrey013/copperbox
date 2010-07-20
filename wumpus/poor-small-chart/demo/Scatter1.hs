@@ -8,7 +8,7 @@ module Scatter1 where
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Core  hiding ( ScaleCtx, Projection )
-import Wumpus.PSC.DrawingUtils
+-- import Wumpus.PSC.DrawingUtils
 -- import Wumpus.PSC.Legend
 import Wumpus.PSC.ScaleMonad
 import Wumpus.PSC.ScatterPlot
@@ -32,32 +32,35 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartSVG "./out/scatter_plot1.svg" pic1
 
 
-{-
-pic1 :: DPicture
-pic1 = renderScatterPlot scatter_cfg [(squareDot,input_data)]
-  where
-   scatter_cfg = ScatterPlot (drawingCtx x_range y_range) (axis_fun `cc` border)
-   border      = plainBorder black 0.5
--}
-
 pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic plot_layers
+pic1 = fromMaybe errK $ drawGraphic $ 
+          plot_layers . xaxis_graphic . yaxis_graphic
 
 errK :: a
 errK = error "Empty Graphic"
 
-plot_layers :: Graphic Double
+plot_layers :: DGraphic
 plot_layers = runCoordScale scale_ctx $ plotLayers [layer1]
 
 
-{-
-
-axis_fun :: ScaleCtx Double Double DGraphic
-axis_fun = xa `cc` ya
+xaxis_graphic :: DGraphic
+xaxis_graphic = axisMarks tickfun
+                    $ runCoordScale scale_ctx 
+                    $ xAxis 0 0 (+5) output_rect
   where
-    xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
-    ya = verticalLabels   (yAxisTickLabel tick_label_config (ffloat 1)) y_axis_steps
-    
+    tickfun = tickdown_textdownH 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) ifloor
+
+
+
+yaxis_graphic :: DGraphic
+yaxis_graphic = axisMarks tickfun
+                    $ runCoordScale scale_ctx 
+                    $ yAxis 0 94 (+2) output_rect
+  where
+    tickfun = tickleftV 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) ifloor
+
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -65,6 +68,13 @@ ifloor = step . floor
     step :: Int -> String
     step = show
 
+{-
+axis_fun :: ScaleCtx Double Double DGraphic
+axis_fun = xa `cc` ya
+  where
+    xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
+    ya = verticalLabels   (yAxisTickLabel tick_label_config (ffloat 1)) y_axis_steps
+    
 
 tick_label_config :: TickLabelConfig
 tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
@@ -85,8 +95,10 @@ y_axis_steps    = steps 94.0 (+2.0)
 
 -}
 
-output_rect :: DrawingRectangle
-output_rect = (450,400)
+
+
+output_rect :: RectFrameLoc Double
+output_rect = (zeroPt, RectFrame 450 400)
 
 
 
