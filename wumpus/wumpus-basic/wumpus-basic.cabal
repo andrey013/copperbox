@@ -9,7 +9,8 @@ category:         Graphics
 synopsis:         Common drawing utilities built on wumpus-core.
 description:
   .
-  Very preliminary release...
+  Very preliminary release.
+  .
   .
   Changelog:
   .
@@ -58,6 +59,7 @@ library
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.PointSupply,
+    Wumpus.Basic.Monads.ScaleMonad,
     Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.SafeFonts,

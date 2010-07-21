@@ -10,21 +10,18 @@ import Wumpus.PSC.Axis
 import Wumpus.PSC.Core  hiding ( ScaleCtx, Projection )
 -- import Wumpus.PSC.DrawingUtils
 -- import Wumpus.PSC.Legend
-import Wumpus.PSC.ScaleMonad
 import Wumpus.PSC.ScatterPlot
 
 
 import Wumpus.Core                      -- package: wupus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Monads.ScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
 import Data.Maybe
 import System.Directory
 
-
-supply :: u -> (u -> a) -> a 
-supply u f = f u
 
 
 main :: IO ()
@@ -101,8 +98,8 @@ y_axis_steps    = steps 94.0 (+2.0)
 
 
 
-output_rect :: RectFrameLoc Double
-output_rect = (zeroPt, RectFrame 450 400)
+output_rect :: RectangleLoc Double
+output_rect = (zeroPt, Rectangle 450 400)
 
 
 

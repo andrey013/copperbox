@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.PSC.ScaleMonad
+-- Module      :  Wumpus.Basic.Monads.ScaleMonad
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -13,11 +13,13 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Coordinate scaling (evironment) monad ...
+-- Coordinate scaling (evironment) monad.
+--
+-- Useful for plotting bivariate data.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.PSC.ScaleMonad
+module Wumpus.Basic.Monads.ScaleMonad
   ( 
     Projection
   , ScaleCtx(..)

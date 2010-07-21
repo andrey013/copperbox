@@ -18,10 +18,10 @@ module Wumpus.PSC.Axis
   where
 
 
-import Wumpus.PSC.ScaleMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Monads.ScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad
@@ -36,24 +36,24 @@ type AxisMarkF ux u = ux -> GraphicF u
 
 
 xAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
-      => u -> ux -> (ux -> ux) -> RectFrameLoc u -> m [(ux,Point2 u)]
+      => u -> ux -> (ux -> ux) -> RectangleLoc u -> m [(ux,Point2 u)]
 xAxis ypos ux0 next rfl = unfoldrM phi ux0
   where
     mkPt x = P2 x ypos
 
     phi ux = (liftM mkPt $ xScale ux) >>= \pt -> 
-             if withinRectFrameLoc pt rfl 
+             if withinRectangleLoc pt rfl 
                then return (Just ((ux,pt), next ux))
                else return Nothing
 
 yAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
-      => u -> uy -> (uy -> uy) -> RectFrameLoc u -> m [(uy,Point2 u)]
+      => u -> uy -> (uy -> uy) -> RectangleLoc u -> m [(uy,Point2 u)]
 yAxis xpos uy0 next rfl = unfoldrM phi uy0
   where
     mkPt y = P2 xpos y
 
     phi uy = (liftM mkPt $ yScale uy) >>= \pt -> 
-             if withinRectFrameLoc pt rfl 
+             if withinRectangleLoc pt rfl 
                then return (Just ((uy,pt), next uy))
                else return Nothing
 
@@ -72,39 +72,37 @@ unfoldrM mf st  = mf st >>= step
 
 -- for Wumpus.Basic.Graphic...
 -- 
--- probaly nice if Wumpus.Basic changed the name of RectFrame to Rectangle
-type RectFrameLoc u = (Point2 u, RectFrame u)
+-- probaly nice if Wumpus.Basic changed the name of Rectangle to Rectangle
+type RectangleLoc u = (Point2 u, Rectangle u)
 
 
-withinRectFrameLoc :: (Num u, Ord u) => Point2 u -> RectFrameLoc u -> Bool
-withinRectFrameLoc (P2 x y) (P2 ox oy, RectFrame w h) = 
+withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
+withinRectangleLoc (P2 x y) (P2 ox oy, Rectangle w h) = 
    ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
 
 
 
-reorient :: Point2T u -> (Point2 u -> a) -> (Point2 u -> a)
-reorient displacer gf  = gf . displacer 
 
 
 
 
 textlineRect :: Fractional u 
-             => (DRGB,FontAttr) -> String -> (RectFrame u, GraphicF u)
+             => (DRGB,FontAttr) -> String -> (Rectangle u, GraphicF u)
 textlineRect (rgb,attr) text  = 
-    (RectFrame text_width text_height, wrapG . textlabel (rgb,attr) text)
+    (Rectangle text_width text_height, wrapG . textlabel (rgb,attr) text)
   where
     pt_size       = font_size attr
     text_height   = numeralHeight pt_size
     text_width    = textWidth  pt_size (length text)
 
 
-type TextRectDisplace u = (RectFrame u, GraphicF u) -> GraphicF u
+type TextRectDisplace u = (Rectangle u, GraphicF u) -> GraphicF u
     
 frameWest :: Fractional u => TextRectDisplace u
-frameWest (RectFrame w h, gf) = gf . disp (-w) (negate $ 0.5*h)
+frameWest (Rectangle w h, gf) = gf . disp (-w) (negate $ 0.5*h)
 
 frameNorth :: Fractional u => TextRectDisplace u
-frameNorth (RectFrame w h, gf) = gf . disp (negate $ 0.5*w) (-h)
+frameNorth (Rectangle w h, gf) = gf . disp (negate $ 0.5*w) (-h)
 
 
 
@@ -149,7 +147,7 @@ makeTickLabel :: Fractional u
               -> TickLabelConfig ua 
               -> AxisMarkF ua u
 makeTickLabel vec_to_end_pt disp_tick disp_lbl move_text cfg = 
-    \v -> (reorient disp_tick line) `cc` (reorient disp_lbl $ label v)
+    \v -> (positionWith disp_tick line) `cc` (positionWith disp_lbl $ label v)
   where
     label v    = move_text $ textlineRect (textAttrs cfg) (textF v)
     line       = straightLine (lineAttrs cfg) vec_to_end_pt

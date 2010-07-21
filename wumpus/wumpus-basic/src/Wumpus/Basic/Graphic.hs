@@ -28,8 +28,9 @@ module Wumpus.Basic.Graphic
   , GraphicF
   , DGraphicF
 
-  -- * New Bird..
+  -- * General combinators
   , cc
+  , supply
 
   -- * Operations
   , drawGraphic
@@ -44,15 +45,16 @@ module Wumpus.Basic.Graphic
   , filledCircle
   , disk
 
-
+  -- * Displacement
   , Point2T
+  , positionWith
   , disp
   , vdisp
   , hdisp
 
   -- * Grid
-  , RectFrame(..)
-  , DRectFrame
+  , Rectangle(..)
+  , DRectangle
   , grid
   , border
 
@@ -78,12 +80,22 @@ type DGraphicF          = GraphicF Double
 
 
 --------------------------------------------------------------------------------
--- Wow a new bird combinator...
+-- Combinators...
 
 infixr 9 `cc`
 
+-- | Composition operator...
+--
+-- > cc f g = \x y -> f x (g x y)
+--
 cc :: (r1 -> a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
 cc f g = \x y -> f x (g x y)
+
+
+-- | Reverse application.
+--
+supply :: u -> (u -> a) -> a 
+supply u f = f u
 
 
 --------------------------------------------------------------------------------
@@ -189,6 +201,9 @@ disk t radius = wrapG . ellipse t radius radius
 
 type Point2T    u = Point2 u -> Point2 u
 
+positionWith :: Point2T u -> (Point2 u -> a) -> (Point2 u -> a)
+positionWith displacer gf  = gf . displacer 
+
 
 disp :: Num u => u -> u -> Point2T u
 disp x y = (.+^ V2 x y)
@@ -202,31 +217,31 @@ vdisp y = disp 0 y
 --------------------------------------------------------------------------------
 -- need a border / frame abstraction...
 
-data RectFrame u = RectFrame 
-      { frame_width     :: !u
-      , frame_height    :: !u 
+data Rectangle u = Rectangle 
+      { rect_width     :: !u
+      , rect_height    :: !u 
       }  
   deriving (Eq,Ord,Show)
 
-type DRectFrame = RectFrame Double
+type DRectangle = Rectangle Double
 
--- | 'grid' : @ stroke_props * xstep * ystep * rect_frame -> GraphicF @
+-- | 'grid' : @ stroke_props * xstep * ystep * boundary_rect -> GraphicF @
 --
 -- The result is a HOF (GraphicF :: Point -> Graphic) where the 
 -- point is bottom-left. 
 --
-grid :: (Stroke t, RealFrac u) => t -> u -> u -> RectFrame u -> GraphicF u 
-grid t xstep ystep (RectFrame w h) = \pt ->
+grid :: (Stroke t, RealFrac u) => t -> u -> u -> Rectangle u -> GraphicF u 
+grid t xstep ystep (Rectangle w h) = \pt ->
     vlines pt . hlines pt
   where
     vlines (P2 x y) = veloH (straightLine t (vvec h)) $ hpoints y xstep (x,x+w)
     hlines (P2 x y) = veloH (straightLine t (hvec w)) $ vpoints x ystep (y,y+h)
     
 
--- | 'border' : @ stroke_props * rect_frame -> GraphicF @
+-- | 'border' : @ stroke_props * boundary_rect -> GraphicF @
 --
 -- The result is a HOF (GraphicF :: Point -> Graphic) where the 
 -- point is bottom-left. 
 --
-border :: (Stroke t, Num u) => t -> RectFrame u -> GraphicF u
-border t (RectFrame w h) = wrapG . cstroke t . rectanglePath w h
+border :: (Stroke t, Num u) => t -> Rectangle u -> GraphicF u
+border t (Rectangle w h) = wrapG . cstroke t . rectanglePath w h

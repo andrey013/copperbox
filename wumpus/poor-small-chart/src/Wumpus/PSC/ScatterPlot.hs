@@ -32,9 +32,9 @@ module Wumpus.PSC.ScatterPlot
 
 
 import Wumpus.PSC.Core ( Dataset )
-import Wumpus.PSC.ScaleMonad
 
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Monads.ScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad
