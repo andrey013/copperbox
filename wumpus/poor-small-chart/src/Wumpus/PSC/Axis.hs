@@ -24,8 +24,6 @@ import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.Utils.HList
 
-import Data.AffineSpace                 -- package: vector-space
-
 import Control.Monad
 
 
@@ -73,6 +71,8 @@ unfoldrM mf st  = mf st >>= step
 
 
 -- for Wumpus.Basic.Graphic...
+-- 
+-- probaly nice if Wumpus.Basic changed the name of RectFrame to Rectangle
 type RectFrameLoc u = (Point2 u, RectFrame u)
 
 
@@ -81,17 +81,33 @@ withinRectFrameLoc (P2 x y) (P2 ox oy, RectFrame w h) =
    ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
 
 
-centeredTextline :: Fractional u => (DRGB,FontAttr) -> String -> GraphicF u
-centeredTextline (rgb,attr) text ctr = 
-    wrapG $ textlabel (rgb,attr) text bottom_left
+
+reorient :: Point2T u -> (Point2 u -> a) -> (Point2 u -> a)
+reorient displacer gf  = gf . displacer 
+
+
+
+
+textlineRect :: Fractional u 
+             => (DRGB,FontAttr) -> String -> (RectFrame u, GraphicF u)
+textlineRect (rgb,attr) text  = 
+    (RectFrame text_width text_height, wrapG . textlabel (rgb,attr) text)
   where
     pt_size       = font_size attr
-    y_displace    = 0.5 * numeralHeight pt_size
-
+    text_height   = numeralHeight pt_size
     text_width    = textWidth  pt_size (length text)
-    x_displace    = 0.5 * text_width
 
-    bottom_left   = ctr .-^ vec x_displace y_displace 
+
+type TextRectDisplace u = (RectFrame u, GraphicF u) -> GraphicF u
+    
+frameWest :: Fractional u => TextRectDisplace u
+frameWest (RectFrame w h, gf) = gf . disp (-w) (negate $ 0.5*h)
+
+frameNorth :: Fractional u => TextRectDisplace u
+frameNorth (RectFrame w h, gf) = gf . disp (negate $ 0.5*w) (-h)
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -129,27 +145,30 @@ textAttrs (TickLabelConfig
 
 makeTickLabel :: Fractional u
               => Vec2 u -> Point2T u -> Point2T u 
-              -> TickLabelConfig ua -> AxisMarkF ua u
-makeTickLabel vec_to_end_pt disp_tick disp_lbl cfg = 
-    \v -> line `cc` label v
+              -> TextRectDisplace u
+              -> TickLabelConfig ua 
+              -> AxisMarkF ua u
+makeTickLabel vec_to_end_pt disp_tick disp_lbl move_text cfg = 
+    \v -> (reorient disp_tick line) `cc` (reorient disp_lbl $ label v)
   where
-    label v    = centeredTextline (textAttrs cfg) (textF v) . disp_lbl
-    line       = straightLine (lineAttrs cfg) vec_to_end_pt . disp_tick
+    label v    = move_text $ textlineRect (textAttrs cfg) (textF v)
+    line       = straightLine (lineAttrs cfg) vec_to_end_pt
 
     textF      = tick_label_text_fun cfg
+
 
 
 tickup_textdownH :: Fractional u
                  => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
 tickup_textdownH tick_len text_gap =  
-   makeTickLabel (vvec tick_len) id (vdisp $ negate text_gap)
+   makeTickLabel (vvec tick_len) id (vdisp $ negate text_gap) frameNorth
 
 
 
 tickdown_textdownH :: Fractional u 
                    => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
 tickdown_textdownH tick_len text_gap =  
-    makeTickLabel (vvec $ negate tick_len) id lbl_disp 
+    makeTickLabel (vvec $ negate tick_len) id lbl_disp frameNorth
   where
     lbl_disp = vdisp $ negate $ tick_len + text_gap
 
@@ -157,7 +176,7 @@ tickdown_textdownH tick_len text_gap =
 tickleftV :: Fractional u 
                    => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
 tickleftV tick_len text_gap =  
-    makeTickLabel (hvec $ negate tick_len) id lbl_disp 
+    makeTickLabel (hvec $ negate tick_len) id lbl_disp frameWest
   where
     lbl_disp = hdisp $ negate $ tick_len + text_gap
 

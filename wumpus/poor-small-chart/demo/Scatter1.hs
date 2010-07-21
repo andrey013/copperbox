@@ -23,7 +23,8 @@ import Data.Maybe
 import System.Directory
 
 
- 
+supply :: u -> (u -> a) -> a 
+supply u f = f u
 
 
 main :: IO ()
@@ -34,7 +35,7 @@ main = createDirectoryIfMissing True "./out/"
 
 pic1 :: Picture Double
 pic1 = fromMaybe errK $ drawGraphic $ 
-          plot_layers . xaxis_graphic . yaxis_graphic
+          plot_layers . xaxis_graphic . yaxis_graphic . border_graphic
 
 errK :: a
 errK = error "Empty Graphic"
@@ -61,6 +62,9 @@ yaxis_graphic = axisMarks tickfun
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
 
+
+border_graphic :: DGraphic
+border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ snd output_rect
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -118,10 +122,6 @@ projectRange (ua0 ::: ua1) (u0 ::: u1) fromUA =
 layer1 :: ScatterPlotLayer Double Double Double
 layer1 = (squareDot, input_data)
 
-{-
-drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
-drawingCtx xr yr = drawingContext xr id yr id output_rect
--}
 
 
 squareDot :: DotF Double
@@ -138,12 +138,12 @@ input_data = zipWith (\x y -> (sz x, y)) [0..] response
     upper = fromIntegral $ (length response - 1)
 
 response :: [Double]
-response = [ 103.18, 101.68, 102.91, 101.28, 100.89, 100.36, 98.60, 99.07
-           , 99.91, 98.62, 100.39, 96.88, 100.38, 97.53, 101.78, 98.63, 99.11
-           , 98.62, 98.59, 99.06, 99.97, 99.09, 98.97, 98.69, 99.77, 98.79
-           , 95.95, 97.52, 97.08, 96.59, 98.21, 98.69, 98.54, 97.74, 97.25
-           , 97.65, 98.70, 99.77, 97.02, 94.92, 97.65, 96.46, 95.25, 95.39
-           , 94.65, 93.15, 95.36, 95.05, 95.83, 94.44, 94.97, 96.85, 93.95
-           , 93.36, 97.43, 94.09, 94.23, 97.51, 95.69, 94.35, 94.17]
+response = [ 103.18, 101.68, 102.91, 101.28, 100.89, 100.36, 98.60,  99.07
+           , 99.91,  98.62,  100.39, 96.88,  100.38, 97.53,  101.78, 98.63,  99.11
+           , 98.62,  98.59,  99.06,  99.97,  99.09,  98.97,  98.69,  99.77,  98.79
+           , 95.95,  97.52,  97.08,  96.59,  98.21,  98.69,  98.54,  97.74,  97.25
+           , 97.65,  98.70,  99.77,  97.02,  94.92,  97.65,  96.46,  95.25,  95.39
+           , 94.65,  93.15,  95.36,  95.05,  95.83,  94.44,  94.97,  96.85,  93.95
+           , 93.36,  97.43,  94.09,  94.23,  97.51,  95.69,  94.35,  94.17 ]
 
 
