@@ -75,6 +75,8 @@ description:
     top-level import module @Wumpus.Core@. They can be accessed
     by importing @Wumpus.Core.GraphicsState@ directly.
   .
+  * Exposed the PSUnit type class. 
+  .
   0.20.0 to 0.21.0:
   .
   * Removed the Primitive instances of the Affine transformation 

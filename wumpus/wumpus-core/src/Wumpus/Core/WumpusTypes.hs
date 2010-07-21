@@ -51,8 +51,12 @@ module Wumpus.Core.WumpusTypes
   , uniformScalePrimitive
 
 
+  -- * Printable unit for PostScript
+  , PSUnit(..)
+
   ) where
 
 
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.Utils ()
 
