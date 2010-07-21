@@ -18,12 +18,7 @@ module Wumpus.PSC.Core
   (
   -- * Types
     Chart
-  , DrawingContext
-  , ScaleCtx
   , Dataset
-  , DrawingRectangle
-  , Projection(..)
-  , XYProjection
   
   , PointSize
   , LineWidth
@@ -34,10 +29,10 @@ module Wumpus.PSC.Core
   , writeChartSVG
 
   -- * functions
-  , rectWidth
-  , rectHeight
-
   , rangeDist
+  , RangeProjection
+  , projection
+  , rectangleScaleCtx
   
   , rescale
   , clamp
@@ -50,37 +45,27 @@ module Wumpus.PSC.Core
 
 
 
-import Wumpus.Core                      -- package: wumpus-core
-
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Monads.CoordScaleMonad
 import Numeric
 
 
 
-type Chart = DPicture
+type Chart u = Picture u
 
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
 --
 
-type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
+-- type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
 
-type ScaleCtx u v a = DrawingContext u v -> a  
+-- type ScaleCtx u v a = DrawingContext u v -> a  
 
 
 type Dataset ux uy = [(ux,uy)]
 
--- | DrawingRectangle = (width,height)
---
-type DrawingRectangle = (Double,Double) 
 
-
-data Projection u = Projection 
-      { proj_conv               :: u -> Double
-      , proj_trans              :: Double
-      , proj_scale              :: Double
-      }
-
-type XYProjection u v = (Projection u, Projection v)
 
 --------------------------------------------------------------------------------
 
@@ -94,9 +79,10 @@ type PointSize = Int
 -- 
 type LineWidth = Double
 
--- | 'Range' @ min ::: max @
+-- | 'Range' @ (min, max) @
 --
 data Range u = u ::: u
+  deriving (Eq,Ord,Show)
 
 
 
@@ -104,11 +90,13 @@ data Range u = u ::: u
 --------------------------------------------------------------------------------
 -- Output
 
-writeChartEPS :: FilePath -> Chart -> IO ()
+writeChartEPS :: (Real u, Floating u, PSUnit u) 
+              => FilePath -> Chart u -> IO ()
 writeChartEPS = writeEPS_latin1 
 
 
-writeChartSVG :: FilePath -> Chart -> IO ()
+writeChartSVG :: (Real u, Floating u, PSUnit u) 
+              => FilePath -> Chart u -> IO ()
 writeChartSVG = writeSVG_latin1 
 
 
@@ -116,18 +104,34 @@ writeChartSVG = writeSVG_latin1
 
 --------------------------------------------------------------------------------
 
-rectWidth :: DrawingRectangle -> Double
-rectWidth (w,_) = w
-
-rectHeight :: DrawingRectangle -> Double
-rectHeight (_,h) = h 
-
 
 
 -- | 'rangeDist' - max - min.
 --
 rangeDist :: Num u => Range u -> u
 rangeDist (u ::: v) = v-u
+
+
+
+projection :: Fractional u
+           => Range ua -> Range u -> (ua -> u) -> Projection ua u
+projection (ua0 ::: ua1) (u0 ::: u1) fromUA = 
+   rescale (fromUA ua0) (fromUA ua1) u0 u1 . fromUA
+
+type RangeProjection ua u = (Range ua, ua -> u)
+
+
+rectangleScaleCtx :: Fractional u 
+                  => RangeProjection ux u 
+                  -> RangeProjection uy u 
+                  -> Rectangle u
+                  -> ScaleCtx ux uy u
+rectangleScaleCtx (x_range,fx) (y_range,fy) (Rectangle w h) = 
+    ScaleCtx x_proj y_proj
+  where
+    x_proj  = projection x_range (0 ::: w) fx
+    y_proj  = projection y_range (0 ::: h) fy
+
 
 
 

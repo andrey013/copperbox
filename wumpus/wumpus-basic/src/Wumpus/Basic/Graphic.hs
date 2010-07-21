@@ -34,8 +34,12 @@ module Wumpus.Basic.Graphic
 
   -- * Operations
   , drawGraphic
-  , wrapG
+  , drawGraphicU
 
+  , wrapG
+  , emptyG 
+
+  -- * Graphic primitives
   , textline
   , straightLine
   , strokedRectangle
@@ -66,6 +70,10 @@ import Wumpus.Basic.Utils.HList
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
+
+import Data.Maybe
+
+
 
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
@@ -110,11 +118,22 @@ drawGraphic f = post $ f []
     post xs = Just $ frameMulti $ xs 
 
 
+-- | /Unsafe/ version of 'drawGraphic' - this function throws 
+-- an error when the graphic is empty.
+--
+drawGraphicU :: (Real u, Floating u) => Graphic u -> Picture u
+drawGraphicU = fromMaybe errK . drawGraphic
+  where
+    errK = error "drawGraphic - empty Graphic."
+
+
 -- | Lift a Primitive to a Graphic
 --
 wrapG :: Primitive u -> Graphic u
 wrapG = wrapH 
 
+emptyG :: Graphic u
+emptyG = emptyH
 
 --------------------------------------------------------------------------------
 

@@ -17,6 +17,7 @@
 module Wumpus.PSC.Axis
   where
 
+import Wumpus.PSC.BasicAdditions
 
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -70,40 +71,6 @@ unfoldrM mf st  = mf st >>= step
 
 
 
--- for Wumpus.Basic.Graphic...
--- 
--- probaly nice if Wumpus.Basic changed the name of Rectangle to Rectangle
-type RectangleLoc u = (Point2 u, Rectangle u)
-
-
-withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
-withinRectangleLoc (P2 x y) (P2 ox oy, Rectangle w h) = 
-   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
-
-
-
-
-
-
-
-textlineRect :: Fractional u 
-             => (DRGB,FontAttr) -> String -> (Rectangle u, GraphicF u)
-textlineRect (rgb,attr) text  = 
-    (Rectangle text_width text_height, wrapG . textlabel (rgb,attr) text)
-  where
-    pt_size       = font_size attr
-    text_height   = numeralHeight pt_size
-    text_width    = textWidth  pt_size (length text)
-
-
-type TextRectDisplace u = (Rectangle u, GraphicF u) -> GraphicF u
-    
-frameWest :: Fractional u => TextRectDisplace u
-frameWest (Rectangle w h, gf) = gf . disp (-w) (negate $ 0.5*h)
-
-frameNorth :: Fractional u => TextRectDisplace u
-frameNorth (Rectangle w h, gf) = gf . disp (negate $ 0.5*w) (-h)
-
 
 
 
@@ -143,7 +110,7 @@ textAttrs (TickLabelConfig
 
 makeTickLabel :: Fractional u
               => Vec2 u -> Point2T u -> Point2T u 
-              -> TextRectDisplace u
+              -> TextlineRectDisplace u
               -> TickLabelConfig ua 
               -> AxisMarkF ua u
 makeTickLabel vec_to_end_pt disp_tick disp_lbl move_text cfg = 

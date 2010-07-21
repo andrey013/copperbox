@@ -28,6 +28,7 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
+                      monadLib          >= 3.6,
                       wumpus-core       >= 0.21.0,
                       wumpus-basic      >= 0.2.0
   
@@ -35,9 +36,8 @@ library
     Wumpus.PSC.Axis,
     Wumpus.PSC.BasicAdditions,
     Wumpus.PSC.Core,
-    Wumpus.PSC.DrawingUtils,
     Wumpus.PSC.Legend,
-    Wumpus.PSC.ScaleMonad,
+    Wumpus.PSC.ScaleRectMonad,
     Wumpus.PSC.ScatterPlot,
     Wumpus.PSC.SparkLine
 

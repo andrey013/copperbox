@@ -16,17 +16,29 @@
 
 module Wumpus.PSC.BasicAdditions
   (
-
-    mveloH
+    blankG
+  , mveloH
   , drawAt
+  , RectangleLoc
+  , withinRectangleLoc
+  , textlineRect
+  , TextlineRectDisplace
+  , frameWest
+  , frameNorth
 
   ) where
 
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad
+
+blankG :: Graphic u
+blankG = emptyH
+
 
 mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)
 mveloH mf = step id 
@@ -35,9 +47,47 @@ mveloH mf = step id
     step acc (x:xs) = mf x >>= \a -> step (acc . a) xs
  
 
--- name ?
+-- This one is a problem - its useful but adding it to Basic
+-- will introduce a dependency between the Graphic and 
+-- CoordScaleMonad modules.
 --
 drawAt :: (Monad m , CoordScaleM m ux uy u) 
        => GraphicF u -> (ux,uy) -> m (Graphic u)
 drawAt gf (x,y) = liftM gf $ coordScale (x,y)
 
+
+
+
+-- for Wumpus.Basic.Graphic ?
+-- 
+-- probaly nice if Wumpus.Basic changed the name of Rectangle to Rectangle
+type RectangleLoc u = (Point2 u, Rectangle u)
+
+
+withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
+withinRectangleLoc (P2 x y) (P2 ox oy, Rectangle w h) = 
+   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
+
+
+
+
+
+
+
+textlineRect :: Fractional u 
+             => (DRGB,FontAttr) -> String -> (Rectangle u, GraphicF u)
+textlineRect (rgb,attr) text  = 
+    (Rectangle text_width text_height, wrapG . textlabel (rgb,attr) text)
+  where
+    pt_size       = font_size attr
+    text_height   = numeralHeight pt_size
+    text_width    = textWidth  pt_size (length text)
+
+
+type TextlineRectDisplace u = (Rectangle u, GraphicF u) -> GraphicF u
+    
+frameWest :: Fractional u => TextlineRectDisplace u
+frameWest (Rectangle w h, gf) = gf . disp (-w) (negate $ 0.5*h)
+
+frameNorth :: Fractional u => TextlineRectDisplace u
+frameNorth (Rectangle w h, gf) = gf . disp (negate $ 0.5*w) (-h)

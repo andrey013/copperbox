@@ -24,25 +24,26 @@ module Wumpus.PSC.Legend
   ) where
 
 import Wumpus.PSC.Core
-import Wumpus.PSC.DrawingUtils
 
 import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+
 
 import Data.AffineSpace                 -- package: vector-space 
 
-type LegendElementDrawF = DRGB -> String -> DPoint2 -> Graphic
+type LegendElementDrawF u = DRGB -> String -> DPoint2 -> Graphic u
 
 type ColourLegend = [(DRGB,String)]
 
-drawLegend :: LegendElementDrawF -> Double -> ColourLegend -> Graphic
+drawLegend :: LegendElementDrawF u -> Double -> ColourLegend -> Graphic u
 drawLegend drawF height xs = 
     foldr (.) id $ zipWith (\(rgb,text) pt -> drawF rgb text pt) xs points
   where
     points          = iterate (.-^ vvec (height + 4)) (P2 4 4)
 
-simpleLegendElementDraw :: DRGB -> FontAttr -> LegendElementDrawF
+simpleLegendElementDraw :: DRGB -> FontAttr -> LegendElementDrawF Double
 simpleLegendElementDraw text_rgb font_props = 
-    \rgb text pt -> let height  = capHeight $ font_size font_props
+    \rgb text pt -> let height  = numeralHeight $ font_size font_props
                         square  = filledRectangle rgb height height pt
                         pt2     = pt .+^ hvec (height + 4)
                         label   = wrapG $ textlabel (text_rgb,font_props) text pt2

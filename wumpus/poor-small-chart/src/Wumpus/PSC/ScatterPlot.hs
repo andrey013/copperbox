@@ -15,20 +15,15 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.PSC.ScatterPlot
-{-
   (
   -- * Data types
-    ScatterPlot(..)
-  , DotF
+    DotF
+  , ScatterPlotLayer
 
   -- * Draw
-  , dot
-  , outlinedDot
-  , renderScatterPlot
+  , plotLayers
 
-  )
--}
-  where
+  ) where
 
 
 import Wumpus.PSC.BasicAdditions
