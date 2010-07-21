@@ -33,6 +33,7 @@ library
   
   exposed-modules:
     Wumpus.PSC.Axis,
+    Wumpus.PSC.BasicAdditions,
     Wumpus.PSC.Core,
     Wumpus.PSC.DrawingUtils,
     Wumpus.PSC.Legend,

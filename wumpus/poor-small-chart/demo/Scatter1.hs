@@ -13,9 +13,9 @@ import Wumpus.PSC.Core  hiding ( ScaleCtx, Projection )
 import Wumpus.PSC.ScatterPlot
 
 
-import Wumpus.Core                      -- package: wupus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
-import Wumpus.Basic.Monads.ScaleMonad
+import Wumpus.Core                              -- package: wupus-core
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 

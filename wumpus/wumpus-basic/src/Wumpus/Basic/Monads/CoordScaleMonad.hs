@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Monads.ScaleMonad
+-- Module      :  Wumpus.Basic.Monads.CoordScaleMonad
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Monads.ScaleMonad
+module Wumpus.Basic.Monads.CoordScaleMonad
   ( 
     Projection
   , ScaleCtx(..)

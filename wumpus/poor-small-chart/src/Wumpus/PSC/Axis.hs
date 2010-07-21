@@ -19,9 +19,9 @@ module Wumpus.PSC.Axis
 
 
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
-import Wumpus.Basic.Monads.ScaleMonad
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad

@@ -59,7 +59,7 @@ library
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.PointSupply,
-    Wumpus.Basic.Monads.ScaleMonad,
+    Wumpus.Basic.Monads.CoordScaleMonad,
     Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.SafeFonts,

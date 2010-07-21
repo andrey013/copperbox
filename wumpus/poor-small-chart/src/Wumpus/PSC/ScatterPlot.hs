@@ -31,13 +31,12 @@ module Wumpus.PSC.ScatterPlot
   where
 
 
+import Wumpus.PSC.BasicAdditions
 import Wumpus.PSC.Core ( Dataset )
 
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
-import Wumpus.Basic.Monads.ScaleMonad
-import Wumpus.Basic.Utils.HList
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Monads.CoordScaleMonad
 
-import Control.Monad
 
 type DotF u = GraphicF u
 
@@ -57,17 +56,4 @@ plotLayers xs = mveloH makeLayer xs
 makeLayer :: (Monad m , CoordScaleM m ux uy u) 
           => (DotF u, Dataset ux uy) -> m (Graphic u)
 makeLayer (dotF,ds) = mveloH (drawAt dotF) ds 
-
-mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)
-mveloH mf = step id 
-  where
-    step acc []     = return acc
-    step acc (x:xs) = mf x >>= \a -> step (acc . a) xs
- 
-
--- name ?
---
-drawAt :: (Monad m , CoordScaleM m ux uy u) 
-       => GraphicF u -> (ux,uy) -> m (Graphic u)
-drawAt gf (x,y) = liftM gf $ coordScale (x,y)
 
