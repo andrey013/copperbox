@@ -28,12 +28,16 @@ module Wumpus.PSC.Core
   , writeChartEPS
   , writeChartSVG
 
-  -- * functions
+  -- * Drawing rectangles
   , rangeDist
   , RangeProjection
+  , RectangleLoc
+  , withinRectangleLoc
   , projection
   , rectangleScaleCtx
   
+
+  -- * functions
   , rescale
   , clamp
   , contains
@@ -110,6 +114,17 @@ writeChartSVG = writeSVG_latin1
 --
 rangeDist :: Num u => Range u -> u
 rangeDist (u ::: v) = v-u
+
+
+
+-- for Wumpus.Basic.Graphic ?
+-- 
+type RectangleLoc u = (Rectangle u, Point2 u)
+
+
+withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
+withinRectangleLoc (P2 x y) (Rectangle w h, P2 ox oy) = 
+   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
 
 
 

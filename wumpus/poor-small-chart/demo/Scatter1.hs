@@ -7,10 +7,10 @@
 module Scatter1 where
 
 import Wumpus.PSC.Axis
-import Wumpus.PSC.BasicAdditions
+-- import Wumpus.PSC.BasicAdditions
 import Wumpus.PSC.Core
 -- import Wumpus.PSC.DrawingUtils
--- import Wumpus.PSC.Legend
+import Wumpus.PSC.ScaleRectMonad
 import Wumpus.PSC.ScatterPlot
 
 
@@ -32,37 +32,35 @@ main = createDirectoryIfMissing True "./out/"
 
 
 pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic $ 
-          plot_layers . xaxis_graphic . yaxis_graphic . border_graphic
+pic1 = fromMaybe errK $ drawGraphic $ scatter_plot
 
 errK :: a
 errK = error "Empty Graphic"
 
-plot_layers :: DGraphic
-plot_layers = runCoordScale scale_ctx $ plotLayers [layer1]
+scatter_plot :: DGraphic
+scatter_plot = runScaleRectM scale_ctx output_rect $ do 
+    a <- plotLayers [layer1]
+    b <- xaxis_graphic
+    c <- yaxis_graphic
+    return (a . b . c)
 
-
-xaxis_graphic :: DGraphic
-xaxis_graphic = axisMarks tickfun
-                    $ runCoordScale scale_ctx 
-                    $ xAxis 0 0 (+5) output_rect
+xaxis_graphic :: (Fractional u, Ord u) => ScaleRectM Double uy u (Graphic u)
+xaxis_graphic = drawXAxis tickfun (xAxisPoints 0 0 (+5))
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
 
 
 
-yaxis_graphic :: DGraphic
-yaxis_graphic = axisMarks tickfun
-                    $ runCoordScale scale_ctx 
-                    $ yAxis 0 94 (+2) output_rect
+yaxis_graphic :: (Fractional u, Ord u) => ScaleRectM ux Double u (Graphic u)
+yaxis_graphic = drawYAxis tickfun (yAxisPoints 0 94 (+2))
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
 
 
 border_graphic :: DGraphic
-border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ snd output_rect
+border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ fst output_rect
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -70,51 +68,17 @@ ifloor = step . floor
     step :: Int -> String
     step = show
 
-{-
-axis_fun :: ScaleCtx Double Double DGraphic
-axis_fun = xa `cc` ya
-  where
-    xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
-    ya = verticalLabels   (yAxisTickLabel tick_label_config (ffloat 1)) y_axis_steps
-    
-
-tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
-
-
-x_range         :: Range Double
-x_range         = (-1.0) ::: 21.0
-
-x_axis_steps    :: AxisSteps Double
-x_axis_steps    = steps 0 (+5.0)
-
---
-y_range         :: Range Double
-y_range         = 92.5 ::: 103.5
-
-y_axis_steps    :: AxisSteps Double
-y_axis_steps    = steps 94.0 (+2.0)
-
--}
-
 
 
 output_rect :: RectangleLoc Double
-output_rect = (zeroPt, Rectangle 450 400)
+output_rect = (Rectangle 450 400, zeroPt)
 
 
 
 scale_ctx   :: ScaleCtx Double Double Double
-scale_ctx = ScaleCtx xrange yrange
-  where
-    xrange = projectRange ((-1.0) ::: 21.0) (0.0 ::: 450.0) id
-    yrange = projectRange  (92.5 ::: 103.5) (0.0 ::: 400.0) id
-
-
-projectRange :: Fractional u 
-             => Range ua -> Range u -> (ua -> u) -> Projection ua u
-projectRange (ua0 ::: ua1) (u0 ::: u1) fromUA = 
-   rescale (fromUA ua0) (fromUA ua1) u0 u1 . fromUA
+scale_ctx = rectangleScaleCtx ((-1.0) ::: 21.0, id)
+                              ( 92.5  ::: 103.5, id)
+                              (fst output_rect)
 
 
 layer1 :: ScatterPlotLayer Double Double Double

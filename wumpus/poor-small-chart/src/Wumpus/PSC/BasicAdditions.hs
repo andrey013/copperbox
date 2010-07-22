@@ -19,8 +19,6 @@ module Wumpus.PSC.BasicAdditions
     blankG
   , mveloH
   , drawAt
-  , RectangleLoc
-  , withinRectangleLoc
   , textlineRect
   , TextlineRectDisplace
   , frameWest
@@ -54,23 +52,6 @@ mveloH mf = step id
 drawAt :: (Monad m , CoordScaleM m ux uy u) 
        => GraphicF u -> (ux,uy) -> m (Graphic u)
 drawAt gf (x,y) = liftM gf $ coordScale (x,y)
-
-
-
-
--- for Wumpus.Basic.Graphic ?
--- 
--- probaly nice if Wumpus.Basic changed the name of Rectangle to Rectangle
-type RectangleLoc u = (Point2 u, Rectangle u)
-
-
-withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
-withinRectangleLoc (P2 x y) (P2 ox oy, Rectangle w h) = 
-   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
-
-
-
-
 
 
 

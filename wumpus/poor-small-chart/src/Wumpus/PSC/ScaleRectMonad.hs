@@ -25,11 +25,14 @@ module Wumpus.PSC.ScaleRectMonad
   , borderRectangle
   , borderWidth
   , borderHeight
+  , withinBorderRect
 
   ) where
 
+import Wumpus.PSC.Core
 
-import Wumpus.Basic.Graphic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Monads.CoordScaleMonad
 
 import MonadLib                                 -- package: monadlib
@@ -39,7 +42,7 @@ import Control.Monad
 
 newtype ScaleRectM ux uy u a = 
             ScaleRectM { getScaleRectM ::  CoordScaleT ux uy u
-                                         ( ReaderT (Rectangle u) Id) a }
+                                         ( ReaderT (RectangleLoc u) Id) a }
 
 
 instance Functor (ScaleRectM ux uy u) where
@@ -60,19 +63,21 @@ instance CoordScaleM (ScaleRectM ux uy u) ux uy u where
   yScale v         = ScaleRectM $ yScale v
 
 
-runScaleRectM :: ScaleCtx ux uy u -> Rectangle u -> ScaleRectM ux uy u a -> a
+runScaleRectM :: ScaleCtx ux uy u -> RectangleLoc u -> ScaleRectM ux uy u a -> a
 runScaleRectM scale_ctx rect mf = runId 
                                 ( runReaderT rect 
                                 ( runCoordScaleT scale_ctx $ getScaleRectM mf ))
 
 
-borderRectangle :: ScaleRectM ux uy u (Rectangle u)
+borderRectangle :: ScaleRectM ux uy u (RectangleLoc u)
 borderRectangle = ScaleRectM $ lift $ ask
 
-
 borderWidth :: ScaleRectM ux uy u u
-borderWidth = liftM rect_width borderRectangle
+borderWidth = liftM (rect_width . fst) borderRectangle
 
 
 borderHeight :: ScaleRectM ux uy u u
-borderHeight = liftM rect_height borderRectangle
+borderHeight = liftM (rect_height . fst) borderRectangle
+
+withinBorderRect :: (Num u, Ord u) => Point2 u -> ScaleRectM ux uy u Bool
+withinBorderRect pt = (withinRectangleLoc pt) <$> borderRectangle

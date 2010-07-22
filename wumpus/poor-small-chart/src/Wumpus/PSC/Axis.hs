@@ -18,43 +18,56 @@ module Wumpus.PSC.Axis
   where
 
 import Wumpus.PSC.BasicAdditions
-
+import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.Utils.HList
 
+import Control.Applicative
 import Control.Monad
 
 
 
 
 
-type AxisMarkF ux u = ux -> GraphicF u
+type AxisMarkF ua u = ua -> GraphicF u
+
+
+drawXAxis :: AxisMarkF ux u 
+          -> ScaleRectM ux uy u [(ux, Point2 u)] 
+          -> ScaleRectM ux uy u (Graphic u)
+drawXAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
+
+drawYAxis :: AxisMarkF uy u 
+          -> ScaleRectM ux uy u [(uy, Point2 u)] 
+          -> ScaleRectM ux uy u (Graphic u)
+drawYAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
 
 
-
-xAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
-      => u -> ux -> (ux -> ux) -> RectangleLoc u -> m [(ux,Point2 u)]
-xAxis ypos ux0 next rfl = unfoldrM phi ux0
+xAxisPoints :: (Num u, Ord u) 
+            => u -> ux -> (ux -> ux) -> ScaleRectM ux uy u [(ux,Point2 u)]
+xAxisPoints ypos ux0 next = unfoldrM phi ux0
   where
     mkPt x = P2 x ypos
 
-    phi ux = (liftM mkPt $ xScale ux) >>= \pt -> 
-             if withinRectangleLoc pt rfl 
+    phi ux = (liftM mkPt $ xScale ux) >>= \pt  -> 
+             withinBorderRect pt      >>= \ans ->
+             if ans 
                then return (Just ((ux,pt), next ux))
                else return Nothing
 
-yAxis :: (Num u, Ord u, Monad m, CoordScaleM m ux uy u)
-      => u -> uy -> (uy -> uy) -> RectangleLoc u -> m [(uy,Point2 u)]
-yAxis xpos uy0 next rfl = unfoldrM phi uy0
+yAxisPoints :: (Num u, Ord u) 
+            => u -> uy -> (uy -> uy) -> ScaleRectM ux uy u [(uy,Point2 u)]
+yAxisPoints xpos uy0 next = unfoldrM phi uy0
   where
     mkPt y = P2 xpos y
 
     phi uy = (liftM mkPt $ yScale uy) >>= \pt -> 
-             if withinRectangleLoc pt rfl 
+             withinBorderRect pt      >>= \ans ->
+             if ans
                then return (Just ((uy,pt), next uy))
                else return Nothing
 
@@ -146,7 +159,7 @@ tickleftV tick_len text_gap =
     lbl_disp = hdisp $ negate $ tick_len + text_gap
 
 
-
+{-
 axisMarks :: AxisMarkF ua u -> [(ua,Point2 u)] -> Graphic u
 axisMarks fn = veloH (uncurry fn) 
-
+-}

@@ -32,7 +32,7 @@ import Control.Applicative
      
 data SparkLine ux uy u = SparkLine
       { sparkline_ctx     :: ScaleCtx ux uy u
-      , sparkline_rect    :: Rectangle u
+      , sparkline_rect    :: RectangleLoc u
       , sparkline_draw    :: SparkLineF u
       , range_band        :: RangeBand ux uy u
       }

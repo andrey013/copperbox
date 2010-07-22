@@ -46,12 +46,14 @@ spark_rangeband = rangeBand (0.3 ::: 0.8) aquamarine
 
 
 spark_ctx :: ScaleCtx Double Double Double
-spark_ctx = rectangleScaleCtx ((0.1 ::: 1.0), id) ((0.0 ::: 1.0), id) output_rect
+spark_ctx = rectangleScaleCtx (0.1 ::: 1.0, id) 
+                              (0.0 ::: 1.0, id) 
+                              (fst output_rect)
 
 
 
-output_rect :: Rectangle Double
-output_rect = sparklineRectangle spark_font 10
+output_rect :: RectangleLoc Double
+output_rect = (sparklineRectangle spark_font 10, zeroPt)
 
 spark_font :: FontAttr
 spark_font = courier 24
