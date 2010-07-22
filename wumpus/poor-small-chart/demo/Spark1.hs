@@ -28,7 +28,7 @@ chart1 = fromMaybe errK $ drawGraphic $ drawSparkLine spark_cfg data_points
 errK :: a
 errK = error "empty Graphic"
 
-spark_cfg :: SparkLine Double Double Double
+spark_cfg :: SparkLine Double Double
 spark_cfg = SparkLine spark_ctx 
                       output_rect
                       spark_stroke
@@ -36,11 +36,11 @@ spark_cfg = SparkLine spark_ctx
 
 
 
-spark_stroke :: SparkLineF Double
+spark_stroke :: SparkLineF
 spark_stroke = simpleLine black 0.5
 
 
-spark_rangeband :: RangeBand Double Double Double
+spark_rangeband :: RangeBand Double Double
 spark_rangeband = rangeBand (0.3 ::: 0.8) aquamarine
 
 

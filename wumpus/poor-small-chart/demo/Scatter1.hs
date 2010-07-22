@@ -44,7 +44,7 @@ scatter_plot = runScaleRectM scale_ctx output_rect $ do
     c <- yaxis_graphic
     return (a . b . c)
 
-xaxis_graphic :: (Fractional u, Ord u) => ScaleRectM Double uy u (Graphic u)
+xaxis_graphic :: ScaleRectM Double uy DGraphic
 xaxis_graphic = drawXAxis tickfun (xAxisPoints 0 0 (+5))
   where
     tickfun = tickdown_textdownH 4 10 cfg
@@ -52,7 +52,7 @@ xaxis_graphic = drawXAxis tickfun (xAxisPoints 0 0 (+5))
 
 
 
-yaxis_graphic :: (Fractional u, Ord u) => ScaleRectM ux Double u (Graphic u)
+yaxis_graphic :: ScaleRectM ux Double DGraphic
 yaxis_graphic = drawYAxis tickfun (yAxisPoints 0 94 (+2))
   where
     tickfun = tickleftV 4 10 cfg

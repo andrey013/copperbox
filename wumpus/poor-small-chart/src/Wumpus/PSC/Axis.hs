@@ -32,23 +32,22 @@ import Control.Monad
 
 
 
-type AxisMarkF ua u = ua -> GraphicF u
+type AxisMarkF ua = ua -> DGraphicF
 
 
-drawXAxis :: AxisMarkF ux u 
-          -> ScaleRectM ux uy u [(ux, Point2 u)] 
-          -> ScaleRectM ux uy u (Graphic u)
+drawXAxis :: AxisMarkF ux 
+          -> ScaleRectM ux uy [(ux, DPoint2)] 
+          -> ScaleRectM ux uy DGraphic
 drawXAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
-drawYAxis :: AxisMarkF uy u 
-          -> ScaleRectM ux uy u [(uy, Point2 u)] 
-          -> ScaleRectM ux uy u (Graphic u)
+drawYAxis :: AxisMarkF uy
+          -> ScaleRectM ux uy [(uy, DPoint2)] 
+          -> ScaleRectM ux uy DGraphic
 drawYAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
 
 
-xAxisPoints :: (Num u, Ord u) 
-            => u -> ux -> (ux -> ux) -> ScaleRectM ux uy u [(ux,Point2 u)]
+xAxisPoints :: Double -> ux -> (ux -> ux) -> ScaleRectM ux uy [(ux,DPoint2)]
 xAxisPoints ypos ux0 next = unfoldrM phi ux0
   where
     mkPt x = P2 x ypos
@@ -59,8 +58,7 @@ xAxisPoints ypos ux0 next = unfoldrM phi ux0
                then return (Just ((ux,pt), next ux))
                else return Nothing
 
-yAxisPoints :: (Num u, Ord u) 
-            => u -> uy -> (uy -> uy) -> ScaleRectM ux uy u [(uy,Point2 u)]
+yAxisPoints :: Double -> uy -> (uy -> uy) -> ScaleRectM ux uy [(uy,DPoint2)]
 yAxisPoints xpos uy0 next = unfoldrM phi uy0
   where
     mkPt y = P2 xpos y
@@ -121,11 +119,10 @@ textAttrs (TickLabelConfig
             , tick_label_font_attr   = attr} ) = (rgb,attr)
 
 
-makeTickLabel :: Fractional u
-              => Vec2 u -> Point2T u -> Point2T u 
-              -> TextlineRectDisplace u
+makeTickLabel :: DVec2 -> Point2T Double -> Point2T Double
+              -> TextlineRectDisplace Double
               -> TickLabelConfig ua 
-              -> AxisMarkF ua u
+              -> AxisMarkF ua
 makeTickLabel vec_to_end_pt disp_tick disp_lbl move_text cfg = 
     \v -> (positionWith disp_tick line) `cc` (positionWith disp_lbl $ label v)
   where
@@ -136,30 +133,23 @@ makeTickLabel vec_to_end_pt disp_tick disp_lbl move_text cfg =
 
 
 
-tickup_textdownH :: Fractional u
-                 => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickup_textdownH :: Double -> Double -> TickLabelConfig ua -> AxisMarkF ua
 tickup_textdownH tick_len text_gap =  
    makeTickLabel (vvec tick_len) id (vdisp $ negate text_gap) frameNorth
 
 
 
-tickdown_textdownH :: Fractional u 
-                   => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickdown_textdownH :: Double -> Double -> TickLabelConfig ua -> AxisMarkF ua
 tickdown_textdownH tick_len text_gap =  
     makeTickLabel (vvec $ negate tick_len) id lbl_disp frameNorth
   where
     lbl_disp = vdisp $ negate $ tick_len + text_gap
 
 
-tickleftV :: Fractional u 
-                   => u -> u -> TickLabelConfig ua -> AxisMarkF ua u
+tickleftV :: Double -> Double -> TickLabelConfig ua -> AxisMarkF ua
 tickleftV tick_len text_gap =  
     makeTickLabel (hvec $ negate tick_len) id lbl_disp frameWest
   where
     lbl_disp = hdisp $ negate $ tick_len + text_gap
 
 
-{-
-axisMarks :: AxisMarkF ua u -> [(ua,Point2 u)] -> Graphic u
-axisMarks fn = veloH (uncurry fn) 
--}

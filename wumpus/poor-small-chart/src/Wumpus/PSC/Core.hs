@@ -32,6 +32,7 @@ module Wumpus.PSC.Core
   , rangeDist
   , RangeProjection
   , RectangleLoc
+  , DRectangleLoc
   , withinRectangleLoc
   , projection
   , rectangleScaleCtx
@@ -120,6 +121,8 @@ rangeDist (u ::: v) = v-u
 -- for Wumpus.Basic.Graphic ?
 -- 
 type RectangleLoc u = (Rectangle u, Point2 u)
+
+type DRectangleLoc = RectangleLoc Double
 
 
 withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
