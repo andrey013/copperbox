@@ -57,16 +57,7 @@ import Numeric
 
 
 
-type Chart u = Picture u
-
--- | Note - this representation allows for zero, one or more
--- Primitives to be collected together.
---
-
--- type DrawingContext u v = (DrawingRectangle, u -> Double, v -> Double)
-
--- type ScaleCtx u v a = DrawingContext u v -> a  
-
+type Chart = DPicture
 
 type Dataset ux uy = [(ux,uy)]
 
@@ -95,13 +86,11 @@ data Range u = u ::: u
 --------------------------------------------------------------------------------
 -- Output
 
-writeChartEPS :: (Real u, Floating u, PSUnit u) 
-              => FilePath -> Chart u -> IO ()
+writeChartEPS :: FilePath -> Chart -> IO ()
 writeChartEPS = writeEPS_latin1 
 
 
-writeChartSVG :: (Real u, Floating u, PSUnit u) 
-              => FilePath -> Chart u -> IO ()
+writeChartSVG :: FilePath -> Chart -> IO ()
 writeChartSVG = writeSVG_latin1 
 
 

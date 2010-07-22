@@ -22,7 +22,7 @@ main =  createDirectoryIfMissing True "./out/"
      >> writeChartEPS "./out/spark1.eps" chart1
      >> writeChartSVG "./out/spark1.svg" chart1
 
-chart1 :: Chart Double
+chart1 :: Chart
 chart1 = fromMaybe errK $ drawGraphic $ drawSparkLine spark_cfg data_points
 
 errK :: a

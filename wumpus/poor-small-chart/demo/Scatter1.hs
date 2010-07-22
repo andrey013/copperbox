@@ -81,12 +81,12 @@ scale_ctx = rectangleScaleCtx ((-1.0) ::: 21.0, id)
                               (fst output_rect)
 
 
-layer1 :: ScatterPlotLayer Double Double Double
+layer1 :: ScatterPlotLayer Double Double
 layer1 = (squareDot, input_data)
 
 
 
-squareDot :: DotF Double
+squareDot :: DotF
 squareDot = filledRectangle green 10 10
 
 steps :: u -> (u -> u) -> [u]

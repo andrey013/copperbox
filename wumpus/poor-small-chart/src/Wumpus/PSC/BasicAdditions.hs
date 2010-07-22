@@ -16,7 +16,9 @@
 
 module Wumpus.PSC.BasicAdditions
   (
-    blankG
+
+    DScaleCtx
+  , blankG
   , mveloH
   , drawAt
   , textlineRect
@@ -33,6 +35,9 @@ import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad
+
+
+type DScaleCtx ux uy = ScaleCtx ux uy Double
 
 blankG :: Graphic u
 blankG = emptyH

@@ -28,27 +28,25 @@ module Wumpus.PSC.ScatterPlot
 
 import Wumpus.PSC.BasicAdditions
 import Wumpus.PSC.Core ( Dataset )
+import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
 
 
-type DotF u = GraphicF u
+type DotF = DGraphicF 
 
-type ScatterPlotLayer ux uy u = (DotF u, Dataset ux uy)
+type ScatterPlotLayer ux uy = (DotF, Dataset ux uy)
 
 
 
 -- Return in the ScaleMonad or run it?
 --
-plotLayers :: (Monad m , CoordScaleM m ux uy u, Real u, Floating u) 
-           => [ScatterPlotLayer ux uy u] -> m (Graphic u)
+plotLayers :: [ScatterPlotLayer ux uy] -> ScaleRectM ux uy DGraphic
 plotLayers xs = mveloH makeLayer xs
 
 
 
 
-makeLayer :: (Monad m , CoordScaleM m ux uy u) 
-          => (DotF u, Dataset ux uy) -> m (Graphic u)
+makeLayer :: (DotF, Dataset ux uy) -> ScaleRectM ux uy DGraphic
 makeLayer (dotF,ds) = mveloH (drawAt dotF) ds 
 
