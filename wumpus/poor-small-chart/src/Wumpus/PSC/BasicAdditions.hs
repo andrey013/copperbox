@@ -17,9 +17,8 @@
 module Wumpus.PSC.BasicAdditions
   (
 
-    DScaleCtx
-  , blankG
-  , mveloH
+
+    mveloH
   , drawAt
   , textlineRect
   , TextlineRectDisplace
@@ -36,11 +35,6 @@ import Wumpus.Basic.Utils.HList
 
 import Control.Monad
 
-
-type DScaleCtx ux uy = ScaleCtx ux uy Double
-
-blankG :: Graphic u
-blankG = emptyH
 
 
 mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)

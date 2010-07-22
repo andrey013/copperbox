@@ -7,7 +7,6 @@ module Plot1 where
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Core
-import Wumpus.PSC.DrawingUtils
 import Wumpus.PSC.ScatterPlot
 
 

@@ -75,7 +75,7 @@ output_rect = (Rectangle 450 400, zeroPt)
 
 
 
-scale_ctx   :: ScaleCtx Double Double Double
+scale_ctx   :: DScaleCtx Double Double
 scale_ctx = rectangleScaleCtx ((-1.0) ::: 21.0, id)
                               ( 92.5  ::: 103.5, id)
                               (fst output_rect)

@@ -18,7 +18,6 @@ module Wumpus.PSC.SparkLine
   where
 
 
-import Wumpus.PSC.BasicAdditions
 import Wumpus.PSC.Core
 import Wumpus.PSC.ScaleRectMonad
 

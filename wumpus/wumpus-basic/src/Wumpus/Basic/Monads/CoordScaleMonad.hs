@@ -23,6 +23,7 @@ module Wumpus.Basic.Monads.CoordScaleMonad
   ( 
     Projection
   , ScaleCtx(..)
+  , DScaleCtx
 
   , CoordScale
   , CoordScaleT
@@ -48,6 +49,7 @@ data ScaleCtx ux uy u = ScaleCtx
       , yproj   :: Projection uy u
       }
 
+type DScaleCtx ux uy = ScaleCtx ux uy Double
 
 newtype CoordScale  ux uy u   a = 
           CoordScale  { getCoordScale    :: ScaleCtx ux uy u -> a }

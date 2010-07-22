@@ -37,7 +37,7 @@ module Wumpus.Basic.Graphic
   , drawGraphicU
 
   , wrapG
-  , emptyG 
+  , blankG 
 
   -- * Graphic primitives
   , textline
@@ -51,6 +51,7 @@ module Wumpus.Basic.Graphic
 
   -- * Displacement
   , Point2T
+  , DPoint2T 
   , positionWith
   , disp
   , vdisp
@@ -61,6 +62,10 @@ module Wumpus.Basic.Graphic
   , DRectangle
   , grid
   , border
+
+  , RectangleLoc
+  , DRectangleLoc
+  , withinRectangleLoc
 
   ) where
 
@@ -132,8 +137,8 @@ drawGraphicU = fromMaybe errK . drawGraphic
 wrapG :: Primitive u -> Graphic u
 wrapG = wrapH 
 
-emptyG :: Graphic u
-emptyG = emptyH
+blankG :: Graphic u
+blankG = emptyH
 
 --------------------------------------------------------------------------------
 
@@ -220,6 +225,8 @@ disk t radius = wrapG . ellipse t radius radius
 
 type Point2T    u = Point2 u -> Point2 u
 
+type DPoint2T     = Point2T Double
+
 positionWith :: Point2T u -> (Point2 u -> a) -> (Point2 u -> a)
 positionWith displacer gf  = gf . displacer 
 
@@ -264,3 +271,17 @@ grid t xstep ystep (Rectangle w h) = \pt ->
 --
 border :: (Stroke t, Num u) => t -> Rectangle u -> GraphicF u
 border t (Rectangle w h) = wrapG . cstroke t . rectanglePath w h
+
+
+
+type RectangleLoc u = (Rectangle u, Point2 u)
+
+type DRectangleLoc = RectangleLoc Double
+
+
+withinRectangleLoc :: (Num u, Ord u) => Point2 u -> RectangleLoc u -> Bool
+withinRectangleLoc (P2 x y) (Rectangle w h, P2 ox oy) = 
+   ox <= x && x <= (ox+w) && oy <= y && y <= (oy+h)
+
+
+

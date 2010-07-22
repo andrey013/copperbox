@@ -29,7 +29,6 @@ module Wumpus.PSC.ScaleRectMonad
 
   ) where
 
-import Wumpus.PSC.Core
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
