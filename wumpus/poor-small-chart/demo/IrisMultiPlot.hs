@@ -10,13 +10,13 @@ import IrisParser
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Core
-import Wumpus.PSC.DrawingUtils
 import Wumpus.PSC.ScatterPlot
 
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Extra.PictureLanguage
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Dots                        -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
@@ -228,8 +228,8 @@ steps_petal_width      :: AxisSteps Double
 steps_petal_width      = steps 0.5 (+0.5)
 
 
-output_rect :: DrawingRectangle
-output_rect = (150,150)
+output_rect :: DRectangleLoc
+output_rect = (Rectangle 150 150, zeroPt)
 
 drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
 drawingCtx x_range y_range = drawingContext x_range id y_range id output_rect
@@ -245,6 +245,9 @@ dot_virginica   :: DotF
 dot_virginica   = outlinedDot blue   2
 
 
+outlinedDot :: DRGB -> Int -> DGraphicF
+outlinedDot rgb n = dotDisk ((standardAttr n) { mark_colour = rgb })
+
 extractData :: (IrisData -> Double, IrisData -> Double) -> IrisData -> (Double,Double)
 extractData (fX,fY) = \iris -> (fX iris, fY iris)
 
@@ -253,7 +256,7 @@ labelBox title = fromMaybe errK $ drawGraphic $ rect . text
   where
     errK  = error "error - labelBox"
     rect  = strokedRectangle (black, LineWidth 0.5) w h (P2 (0.5*w) (0.5*h))
-    text  = textlabelC (black,courier 18) title (P2 (w*0.5) (h*0.5))
+    text  = textlabel (black,courier 18) title (P2 (w*0.5) (h*0.5))
     (w,h) = output_rect
 
 steps :: u -> (u -> u) -> [u]

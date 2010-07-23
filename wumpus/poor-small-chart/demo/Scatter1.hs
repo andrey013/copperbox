@@ -45,7 +45,7 @@ scatter_plot = runScaleRectM scale_ctx output_rect $ do
     return (a . b . c)
 
 xaxis_graphic :: ScaleRectM Double uy DGraphic
-xaxis_graphic = drawXAxis tickfun (xAxisPoints 0 0 (+5))
+xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 0 (+5))
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
@@ -53,7 +53,7 @@ xaxis_graphic = drawXAxis tickfun (xAxisPoints 0 0 (+5))
 
 
 yaxis_graphic :: ScaleRectM ux Double DGraphic
-yaxis_graphic = drawYAxis tickfun (yAxisPoints 0 94 (+2))
+yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 94 (+2))
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor

@@ -5,11 +5,10 @@ module Demo01 where
 
 import Wumpus.Shapes
 
-import Wumpus.Core hiding ( ellipse )           -- package: wumpus-core
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Core hiding ( ellipse )               -- package: wumpus-core
+import Wumpus.Basic.Graphic hiding ( DRectangle )   -- package: wumpus-basic
 import Wumpus.Basic.SVGColours
 
-import Data.Maybe
 import System.Directory
 
 main :: IO ()
@@ -19,11 +18,8 @@ main = do
     ; writeSVG_latin1 "./out/demo01.svg" pic1
     }
 
-errK :: a
-errK = error "no picture"
-
 pic1 :: DPicture
-pic1 = fromMaybe errK $ drawGraphic $ rects . circ . diam . ellp
+pic1 = drawGraphicU $ rects . circ . diam . ellp
   where
     rects = foldr (\e a -> strokeShape lightSteelBlue e . a)
                   id

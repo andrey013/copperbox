@@ -17,13 +17,13 @@
 module Wumpus.PSC.BasicAdditions
   (
 
-
     mveloH
   , drawAt
   , textlineRect
   , TextlineRectDisplace
   , frameWest
   , frameNorth
+  , pointHylo
 
   ) where
 
@@ -34,6 +34,8 @@ import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.Utils.HList
 
 import Control.Monad
+
+
 
 
 
@@ -71,3 +73,40 @@ frameWest (Rectangle w h, gf) = gf . disp (-w) (negate $ 0.5*h)
 
 frameNorth :: Fractional u => TextlineRectDisplace u
 frameNorth (Rectangle w h, gf) = gf . disp (negate $ 0.5*w) (-h)
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+hylor :: (st -> Maybe (a,st)) -> (a -> b -> b) -> b -> st -> b
+hylor f g b0 st0 = step b0 (f st0)
+  where
+    step acc Nothing        = acc
+    step acc (Just (a,st))  = step (g a acc) (f st) 
+
+
+-- Simple type restricted hylomorphism - generates points, 
+-- amalgamates to a Graphic.
+--
+pointHylo :: (st -> Maybe (Point2 u, st)) 
+          -> (Point2 u -> Graphic u) 
+          -> st 
+          -> Graphic u
+pointHylo f g = hylor f (\pt acc -> acc . g pt) blankG
+
+
+-- This would be unnecessary on a real hylomorphism as the 
+-- result type of the unfold step could pair the state with
+-- the answer.
+--
+  
+pointHyloSt :: (st -> Maybe (Point2 u, st)) 
+            -> (st -> Point2 u -> Graphic u) 
+            -> st 
+            -> Graphic u
+pointHyloSt g f st0 = step blankG (g st0) 
+  where
+    step acc Nothing        = acc
+    step acc (Just (pt,st)) = step (acc . f st pt) (g st)

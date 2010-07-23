@@ -7,11 +7,15 @@ module Plot1 where
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Core
+import Wumpus.PSC.ScaleRectMonad
 import Wumpus.PSC.ScatterPlot
 
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Wumpus.Basic.Dots                        -- package: wumpus-basic
+import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
@@ -19,7 +23,6 @@ import Wumpus.Basic.SVGColours
 import System.Directory
 
 
- 
 
 
 main :: IO ()
@@ -27,60 +30,54 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartEPS "./out/laplace1.eps" pic1
     >> writeChartSVG "./out/laplace1.svg" pic1
 
+pic1 :: Picture Double
+pic1 = drawGraphicU $ scatter_plot
 
-pic1 :: DPicture
-pic1 = renderScatterPlot scatter_cfg [(blueDot,input_data)]
+
+scatter_plot :: DGraphic
+scatter_plot = runScaleRectM scale_ctx output_rect $ do 
+    a <- plotLayers [(blueDot,input_data)]
+    b <- xaxis_graphic
+    c <- yaxis_graphic
+    return (a . b . c)
+
+xrange :: Range Int
+xrange = 1 ::: 16
+
+yrange :: Range Double
+yrange = 0.0 ::: 7.0
+
+xaxis_graphic :: ScaleRectM Int uy DGraphic
+xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 1 (+1))
   where
-   scatter_cfg = ScatterPlot (drawingCtx x_range y_range) (axis_fun `cc` border)
-   border      = plainBorder black 0.5
+    tickfun = tickdown_textdownH 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) show
 
 
-axis_fun :: ScaleCtx Double Double DGraphic
-axis_fun = xa `cc` ya
+
+yaxis_graphic :: ScaleRectM ux Double DGraphic
+yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 0 (+1.75))
   where
-    xa = horizontalLabels (xAxisTickLabel tick_label_config ifloor)     x_axis_steps
-    ya = verticalLabels   (yAxisTickLabel tick_label_config (ffloat 2)) y_axis_steps
-    
-
-ifloor :: Double -> String
-ifloor = step . floor 
-  where
-    step :: Int -> String
-    step = show
+    tickfun = tickleftV 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
 
 
-tick_label_config :: TickLabelConfig
-tick_label_config = TickLabelConfig black (helvetica 10) black 0.5 4 2
+scale_ctx   :: DScaleCtx Int Double
+scale_ctx = rectangleScaleCtx ( xrange, fromIntegral)
+                              ( yrange, id)
+                              (fst output_rect)
 
 
-x_range         :: Range Double
-x_range         = 1.0 ::: 16.0
+output_rect :: DRectangleLoc
+output_rect = (Rectangle 450 300, zeroPt)
 
-x_axis_steps    :: AxisSteps Double
-x_axis_steps    = steps 1.0 (+1.0)
-
---
-y_range         :: Range Double
-y_range         = 0.0 ::: 7.0
-
-y_axis_steps    :: AxisSteps Double
-y_axis_steps    = steps 0.0 (+1.75)
-
-
-output_rect :: DrawingRectangle
-output_rect = (450,300)
-
-drawingCtx :: Range Double -> Range Double -> DrawingContext Double Double
-drawingCtx xr yr = drawingContext xr id yr id output_rect
 
 blueDot :: DotF
-blueDot = outlinedDot white 4
+blueDot = dotCircle ( (standardAttr 18) { mark_colour = blue })
 
-steps :: u -> (u -> u) -> [u]
-steps = flip iterate
 
-input_data :: Dataset Double Double
-input_data = zipWith (\x y -> (fromIntegral x, y)) [(1::Int)..] laplace
+input_data :: Dataset Int Double
+input_data = zip [1..] laplace
 
 laplace :: [Double]
 laplace = [ 1.00, 1.75, 2.50, 3.25, 3.75

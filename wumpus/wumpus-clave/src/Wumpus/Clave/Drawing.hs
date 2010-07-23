@@ -61,7 +61,7 @@ gridF :: Int -> BoxHeight -> LineWidth -> DPoint2 -> DGraphic
 gridF n h lw = border props rect `cc` verts
   where 
     props = (black, LineWidth lw)
-    rect  = RectFrame (fromIntegral $ n*h) (fromIntegral h)
+    rect  = Rectangle (fromIntegral $ n*h) (fromIntegral h)
     verts = grid props (fromIntegral h) (fromIntegral h) rect
 
 

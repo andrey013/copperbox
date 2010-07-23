@@ -28,7 +28,15 @@ import Wumpus.Basic.Utils.HList
 import Control.Applicative
 import Control.Monad
 
+-- | Orientation of the x-axis
+--
+data OrientX = OXTop | OXBottom
+  deriving (Eq,Ord,Show)
 
+-- | Orientation of the y-axis
+--
+data OrientY = OYLeft | OYRight
+  deriving (Eq,Ord,Show)
 
 
 
@@ -45,26 +53,37 @@ drawYAxis :: AxisMarkF uy
           -> ScaleRectM ux uy DGraphic
 drawYAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
-
-
-xAxisPoints :: Double -> ux -> (ux -> ux) -> ScaleRectM ux uy [(ux,DPoint2)]
-xAxisPoints ypos ux0 next = unfoldrM phi ux0
+genXPointFun  :: OrientX -> ScaleRectM ux uy (Double -> Point2 Double)
+genXPointFun o = step o <$> borderRectangle
   where
-    mkPt x = P2 x ypos
+    step OXTop    (Rectangle _ h, P2 _ y) = (\u -> P2 u (y+h))
+    step OXBottom (Rectangle _ _, P2 _ y) = (\u -> P2 u y)
 
-    phi ux = (liftM mkPt $ xScale ux) >>= \pt  -> 
-             withinBorderRect pt      >>= \ans ->
+
+genYPointFun  :: OrientY -> ScaleRectM ux uy (Double -> Point2 Double)
+genYPointFun o = step o <$> borderRectangle
+  where
+    step OYLeft  (Rectangle _ _, P2 x _) = (\u -> P2 x u)
+    step OYRight (Rectangle w _, P2 x _) = (\u -> P2 (x+w) u)
+
+
+-- Note genXPointFun is constant - might want it ouside of the 
+-- loop...
+--
+xAxisPoints :: OrientX -> ux -> (ux -> ux) -> ScaleRectM ux uy [(ux,DPoint2)]
+xAxisPoints ox ux0 next = unfoldrM phi ux0
+  where
+    phi ux = (genXPointFun ox <*> xScale ux) >>= \pt ->
+             withinBorderRect pt             >>= \ans ->
              if ans 
                then return (Just ((ux,pt), next ux))
                else return Nothing
 
-yAxisPoints :: Double -> uy -> (uy -> uy) -> ScaleRectM ux uy [(uy,DPoint2)]
-yAxisPoints xpos uy0 next = unfoldrM phi uy0
+yAxisPoints :: OrientY -> uy -> (uy -> uy) -> ScaleRectM ux uy [(uy,DPoint2)]
+yAxisPoints oy uy0 next = unfoldrM phi uy0
   where
-    mkPt y = P2 xpos y
-
-    phi uy = (liftM mkPt $ yScale uy) >>= \pt -> 
-             withinBorderRect pt      >>= \ans ->
+    phi uy = (genYPointFun oy <*> yScale uy)  >>= \pt -> 
+             withinBorderRect pt              >>= \ans ->
              if ans
                then return (Just ((uy,pt), next uy))
                else return Nothing
