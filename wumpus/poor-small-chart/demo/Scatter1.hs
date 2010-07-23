@@ -16,7 +16,6 @@ import Wumpus.PSC.ScatterPlot
 
 import Wumpus.Core                              -- package: wupus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
@@ -37,15 +36,23 @@ pic1 = fromMaybe errK $ drawGraphic $ scatter_plot
 errK :: a
 errK = error "Empty Graphic"
 
+
+x_range :: Range Double
+x_range = (-1.0) ::: 21.0
+          
+y_range :: Range Double
+y_range = 92.5  ::: 103.5
+
+
 scatter_plot :: DGraphic
-scatter_plot = runScaleRectM scale_ctx output_rect $ do 
+scatter_plot = runScaleRectM (x_range,id) (y_range,id) output_rect $ do 
     a <- plotLayers [layer1]
     b <- xaxis_graphic
     c <- yaxis_graphic
     return (a . b . c)
 
 xaxis_graphic :: ScaleRectM Double uy DGraphic
-xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 0 (+5))
+xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 5)
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
@@ -53,7 +60,7 @@ xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 0 (+5))
 
 
 yaxis_graphic :: ScaleRectM ux Double DGraphic
-yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 94 (+2))
+yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 2)
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
@@ -75,22 +82,13 @@ output_rect = (Rectangle 450 400, zeroPt)
 
 
 
-scale_ctx   :: DScaleCtx Double Double
-scale_ctx = rectangleScaleCtx ((-1.0) ::: 21.0, id)
-                              ( 92.5  ::: 103.5, id)
-                              (fst output_rect)
-
-
 layer1 :: ScatterPlotLayer Double Double
 layer1 = (squareDot, input_data)
-
 
 
 squareDot :: DotF
 squareDot = filledRectangle green 10 10
 
-steps :: u -> (u -> u) -> [u]
-steps = flip iterate
 
 input_data :: Dataset Double Double
 input_data = zipWith (\x y -> (sz x, y)) [0..] response

@@ -17,7 +17,9 @@
 module Wumpus.PSC.Axis
   where
 
+
 import Wumpus.PSC.BasicAdditions
+import Wumpus.PSC.Core
 import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -53,39 +55,78 @@ drawYAxis :: AxisMarkF uy
           -> ScaleRectM ux uy DGraphic
 drawYAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
-genXPointFun  :: OrientX -> ScaleRectM ux uy (Double -> Point2 Double)
-genXPointFun o = step o <$> borderRectangle
+
+xaxisPoint :: OrientX -> ux -> ScaleRectM ux uy DPoint2
+xaxisPoint ox ux = step ox <$> xScale ux <*> borderRectangle
   where
-    step OXTop    (Rectangle _ h, P2 _ y) = (\u -> P2 u (y+h))
-    step OXBottom (Rectangle _ _, P2 _ y) = (\u -> P2 u y)
+    step OXTop    x (Rectangle _ h, P2 _ y) = P2 x (y+h)
+    step OXBottom x (Rectangle _ _, P2 _ y) = P2 x y
+
+yaxisPoint :: OrientY -> uy -> ScaleRectM ux uy DPoint2
+yaxisPoint oy uy = step oy <$> yScale uy <*> borderRectangle
+  where
+    step OYLeft  y (Rectangle _ _, P2 x _) = P2 x     y
+    step OYRight y (Rectangle w _, P2 x _) = P2 (x+w) y
+
+xaxisIxStart :: RealFrac ux => ux -> ScaleRectM ux uy ux
+xaxisIxStart step = (\(x ::: _) -> ixStart (x,step)) <$> xRange
+
+yaxisIxStart :: RealFrac uy => uy -> ScaleRectM ux uy uy
+yaxisIxStart step = (\(y ::: _) -> ixStart (y,step)) <$> yRange
+
+xaxisIxStarti :: Integral ux => ux -> ScaleRectM ux uy ux
+xaxisIxStarti step = (\(x ::: _) -> ixStarti (x,step)) <$> xRange
+
+yaxisIxStarti :: Integral uy => uy -> ScaleRectM ux uy uy
+yaxisIxStarti step = (\(y ::: _) -> ixStarti (y,step)) <$> yRange
 
 
-genYPointFun  :: OrientY -> ScaleRectM ux uy (Double -> Point2 Double)
-genYPointFun o = step o <$> borderRectangle
-  where
-    step OYLeft  (Rectangle _ _, P2 x _) = (\u -> P2 x u)
-    step OYRight (Rectangle w _, P2 x _) = (\u -> P2 (x+w) u)
+type HyloPhi    st a = st -> Maybe ((a, DPoint2),st)
+type HyloPhiM m st a = st -> m (Maybe ((a, DPoint2),st))
+
 
 
 -- Note genXPointFun is constant - might want it ouside of the 
 -- loop...
 --
-xAxisPoints :: OrientX -> ux -> (ux -> ux) -> ScaleRectM ux uy [(ux,DPoint2)]
-xAxisPoints ox ux0 next = unfoldrM phi ux0
+xAxisPoints :: RealFrac ux => OrientX -> ux -> ScaleRectM ux uy [(ux,DPoint2)]
+xAxisPoints ox step = xaxisIxStart step >>= unfoldrM phi
   where
-    phi ux = (genXPointFun ox <*> xScale ux) >>= \pt ->
-             withinBorderRect pt             >>= \ans ->
+    phi ux = xaxisPoint ox ux      >>= \pt ->
+             withinBorderRect pt   >>= \ans ->
              if ans 
-               then return (Just ((ux,pt), next ux))
+               then return (Just ((ux,pt), ux+step))
                else return Nothing
 
-yAxisPoints :: OrientY -> uy -> (uy -> uy) -> ScaleRectM ux uy [(uy,DPoint2)]
-yAxisPoints oy uy0 next = unfoldrM phi uy0
+yAxisPoints :: RealFrac uy => OrientY -> uy -> ScaleRectM ux uy [(uy,DPoint2)]
+yAxisPoints oy step = yaxisIxStart step >>= unfoldrM phi
   where
-    phi uy = (genYPointFun oy <*> yScale uy)  >>= \pt -> 
-             withinBorderRect pt              >>= \ans ->
+    phi uy = yaxisPoint oy uy       >>= \pt -> 
+             withinBorderRect pt    >>= \ans ->
              if ans
-               then return (Just ((uy,pt), next uy))
+               then return (Just ((uy,pt),uy+step))
+               else return Nothing
+
+
+
+-- Uck - temporary bit of copying...
+--
+xAxisPointsi :: Integral ux => OrientX -> ux -> ScaleRectM ux uy [(ux,DPoint2)]
+xAxisPointsi ox step = xaxisIxStarti step >>= unfoldrM phi
+  where
+    phi ux = xaxisPoint ox ux      >>= \pt ->
+             withinBorderRect pt   >>= \ans ->
+             if ans 
+               then return (Just ((ux,pt), ux+step))
+               else return Nothing
+
+yAxisPointsi :: Integral uy => OrientY -> uy -> ScaleRectM ux uy [(uy,DPoint2)]
+yAxisPointsi oy step = yaxisIxStarti step >>= unfoldrM phi
+  where
+    phi uy = yaxisPoint oy uy       >>= \pt -> 
+             withinBorderRect pt    >>= \ans ->
+             if ans
+               then return (Just ((uy,pt),uy+step))
                else return Nothing
 
 

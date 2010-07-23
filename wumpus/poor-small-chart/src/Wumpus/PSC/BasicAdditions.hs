@@ -16,14 +16,18 @@
 
 module Wumpus.PSC.BasicAdditions
   (
-
-    mveloH
+  
+    IndexAlg
+  , ixStart
+  , ixStarti
+  , mveloH
   , drawAt
   , textlineRect
   , TextlineRectDisplace
   , frameWest
   , frameNorth
   , pointHylo
+  , pointHylo2
 
   ) where
 
@@ -35,6 +39,21 @@ import Wumpus.Basic.Utils.HList
 
 import Control.Monad
 
+
+
+-- (min,step)
+type IndexAlg ua = (ua,ua)
+
+ixStart :: (Fractional ua, RealFrac ua) => IndexAlg ua -> ua
+ixStart (minval, step) = step * ceilingFro (minval / step)
+  where
+    ceilingFro = fromInteger . ceiling
+
+ixStarti :: (Integral ua) => IndexAlg ua -> ua
+ixStarti (minval, step) = step * ceiling (minval `divi` step)
+
+divi :: Integral a => a -> a -> Double 
+divi a b = fromIntegral a / fromIntegral b
 
 
 
@@ -97,16 +116,8 @@ pointHylo :: (st -> Maybe (Point2 u, st))
 pointHylo f g = hylor f (\pt acc -> acc . g pt) blankG
 
 
--- This would be unnecessary on a real hylomorphism as the 
--- result type of the unfold step could pair the state with
--- the answer.
---
-  
-pointHyloSt :: (st -> Maybe (Point2 u, st)) 
-            -> (st -> Point2 u -> Graphic u) 
-            -> st 
-            -> Graphic u
-pointHyloSt g f st0 = step blankG (g st0) 
-  where
-    step acc Nothing        = acc
-    step acc (Just (pt,st)) = step (acc . f st pt) (g st)
+pointHylo2 :: (st -> Maybe ((a,Point2 u), st)) 
+           -> (a -> Point2 u -> Graphic u) 
+           -> st 
+           -> Graphic u
+pointHylo2 g f  = hylor g (\(a,pt) acc -> acc . f a pt) blankG

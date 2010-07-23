@@ -15,7 +15,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Dots                        -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
@@ -35,20 +34,23 @@ pic1 = drawGraphicU $ scatter_plot
 
 
 scatter_plot :: DGraphic
-scatter_plot = runScaleRectM scale_ctx output_rect $ do 
+scatter_plot = runScaleRectM (x_range,fromIntegral) (y_range,id) output_rect $ do 
     a <- plotLayers [(blueDot,input_data)]
     b <- xaxis_graphic
     c <- yaxis_graphic
     return (a . b . c)
 
-xrange :: Range Int
-xrange = 1 ::: 16
+x_range :: Range Int
+x_range = 1 ::: 16
 
-yrange :: Range Double
-yrange = 0.0 ::: 7.0
+y_range :: Range Double
+y_range = 0.0 ::: 7.0
+
+output_rect :: DRectangleLoc
+output_rect = (Rectangle 450 300, zeroPt)
 
 xaxis_graphic :: ScaleRectM Int uy DGraphic
-xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 1 (+1))
+xaxis_graphic = drawXAxis tickfun (xAxisPointsi OXBottom 1)
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) show
@@ -56,20 +58,12 @@ xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 1 (+1))
 
 
 yaxis_graphic :: ScaleRectM ux Double DGraphic
-yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 0 (+1.75))
+yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 1.75)
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
 
 
-scale_ctx   :: DScaleCtx Int Double
-scale_ctx = rectangleScaleCtx ( xrange, fromIntegral)
-                              ( yrange, id)
-                              (fst output_rect)
-
-
-output_rect :: DRectangleLoc
-output_rect = (Rectangle 450 300, zeroPt)
 
 
 blueDot :: DotF
