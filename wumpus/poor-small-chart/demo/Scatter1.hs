@@ -7,10 +7,8 @@
 module Scatter1 where
 
 import Wumpus.PSC.Axis
--- import Wumpus.PSC.BasicAdditions
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core
--- import Wumpus.PSC.DrawingUtils
-import Wumpus.PSC.ScaleRectMonad
 import Wumpus.PSC.ScatterPlot
 
 
@@ -19,7 +17,6 @@ import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
-import Data.Maybe
 import System.Directory
 
 
@@ -30,11 +27,32 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartSVG "./out/scatter_plot1.svg" pic1
 
 
-pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic $ scatter_plot
 
-errK :: a
-errK = error "Empty Graphic"
+pic1 :: Picture Double
+pic1 = drawGraphicU $ scatter_plot . xaxis_graphic 
+                                   . yaxis_graphic 
+                                   . border_graphic
+
+
+
+scatter_plot :: DGraphic
+scatter_plot = plotLayers [layer1] bv_config
+
+
+xaxis_graphic :: DGraphic
+xaxis_graphic = xAxis OXBottom 5 tickfun bv_config 
+  where
+    tickfun = tickdown_textdownH 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) ifloor
+
+yaxis_graphic :: DGraphic
+yaxis_graphic = yAxis OYLeft 2 tickfun bv_config
+  where
+    tickfun = tickleftV 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) ifloor
+
+border_graphic :: DGraphic
+border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ fst output_rect
 
 
 x_range :: Range Double
@@ -43,31 +61,12 @@ x_range = (-1.0) ::: 21.0
 y_range :: Range Double
 y_range = 92.5  ::: 103.5
 
+output_rect :: RectangleLoc Double
+output_rect = (Rectangle 450 400, zeroPt)
 
-scatter_plot :: DGraphic
-scatter_plot = runScaleRectM (x_range,id) (y_range,id) output_rect $ do 
-    a <- plotLayers [layer1]
-    b <- xaxis_graphic
-    c <- yaxis_graphic
-    return (a . b . c)
+bv_config :: Bivariate Double Double
+bv_config = bivariate (x_range,id) (y_range,id) output_rect
 
-xaxis_graphic :: ScaleRectM Double uy DGraphic
-xaxis_graphic = drawXAxis tickfun (xAxisPoints OXBottom 5)
-  where
-    tickfun = tickdown_textdownH 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) ifloor
-
-
-
-yaxis_graphic :: ScaleRectM ux Double DGraphic
-yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 2)
-  where
-    tickfun = tickleftV 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) ifloor
-
-
-border_graphic :: DGraphic
-border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ fst output_rect
 
 ifloor :: Double -> String
 ifloor = step . floor 
@@ -77,8 +76,6 @@ ifloor = step . floor
 
 
 
-output_rect :: RectangleLoc Double
-output_rect = (Rectangle 450 400, zeroPt)
 
 
 

@@ -20,8 +20,6 @@ module Wumpus.PSC.BasicAdditions
     IndexAlg
   , ixStart
   , ixStarti
-  , mveloH
-  , drawAt
   , textlineRect
   , TextlineRectDisplace
   , frameWest
@@ -34,10 +32,7 @@ module Wumpus.PSC.BasicAdditions
 import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
-import Wumpus.Basic.Utils.HList
 
-import Control.Monad
 
 
 
@@ -55,23 +50,6 @@ ixStarti (minval, step) = step * ceiling (minval `divi` step)
 divi :: Integral a => a -> a -> Double 
 divi a b = fromIntegral a / fromIntegral b
 
-
-
-
-mveloH :: Monad m => (a -> m (H b)) -> [a] -> m (H b)
-mveloH mf = step id 
-  where
-    step acc []     = return acc
-    step acc (x:xs) = mf x >>= \a -> step (acc . a) xs
- 
-
--- This one is a problem - its useful but adding it to Basic
--- will introduce a dependency between the Graphic and 
--- CoordScaleMonad modules.
---
-drawAt :: (Monad m , CoordScaleM m ux uy u) 
-       => GraphicF u -> (ux,uy) -> m (Graphic u)
-drawAt gf (x,y) = liftM gf $ coordScale (x,y)
 
 
 

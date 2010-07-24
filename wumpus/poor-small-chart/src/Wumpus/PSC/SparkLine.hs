@@ -18,20 +18,16 @@ module Wumpus.PSC.SparkLine
   where
 
 
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core
-import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
-
-import Control.Applicative
 
 
      
 data SparkLine ux uy = SparkLine
-      { sparkline_ctx     :: ScaleCtx ux uy Double
-      , sparkline_rect    :: DRectangleLoc
+      { sparkline_ctx     :: Bivariate ux uy
       , sparkline_draw    :: SparkLineF
       , range_band        :: RangeBand ux uy
       }
@@ -39,19 +35,18 @@ data SparkLine ux uy = SparkLine
 
 type SparkLineF = [DPoint2] -> DGraphic
 
-drawSparkLine :: (SparkLine ux uy) -> Dataset ux uy -> DGraphic
-drawSparkLine (SparkLine ctx rect drawF rangeF) ds = 
-    runScaleRectM ctx rect $ do { a <- drawLine drawF ds
-                                ; b <- rangeF
-                                ; return $ a . b
-                                }
+drawSparkLine :: (SparkLine ux uy) 
+              -> Dataset ux uy 
+              -> DGraphic
+drawSparkLine (SparkLine bv drawF rangeF) ds = 
+    drawLine drawF ds bv . rangeF bv
 
 simpleLine :: DRGB -> Double -> SparkLineF
 simpleLine rgb lw = wrapG . ostroke (rgb, LineWidth lw) . vertexPath
 
 
-drawLine :: SparkLineF -> Dataset ux uy -> ScaleRectM ux uy DGraphic
-drawLine drawF ds = drawF <$> mapM coordScale ds
+drawLine :: SparkLineF -> Dataset ux uy -> Bivariate ux uy ->  DGraphic
+drawLine drawF ds bv = drawF $ map (scaleXY `flip` bv) ds
 
 
 sparklineRectangle :: FontAttr -> Int -> DRectangle
@@ -69,19 +64,21 @@ sparklineRectangle attr letter_count =
 -- work with the implementation @rangeBand@.
 
 
-type RangeBand ux uy = ScaleRectM ux uy DGraphic
+type RangeBand ux uy = Bivariate ux uy -> DGraphic
 
 
 
 rangeBand :: (Num ux, Num uy) => Range uy -> DRGB -> RangeBand ux uy
-rangeBand (y0 ::: y1) rgb = 
-       (\w h y -> wrapG $ fill rgb $ rectanglePath w h (P2 0 y))
-   <$> borderWidth <*> yScale (y1 - y0) <*> yScale y0   
+rangeBand (y0 ::: y1) rgb = \bv -> 
+    draw (borderWidth bv) (scaleY (y1 - y0) bv) (bx bv) (scaleY y0 bv) 
+  where
+    draw w h x y = wrapG $ fill rgb $ rectanglePath w h (P2 x y)
+    bx bv = let (P2 x _) = borderOrigin bv in x
 
 
 
 noRangeBand :: RangeBand ux uy
-noRangeBand = return blankG
+noRangeBand = const blankG
 
 
 

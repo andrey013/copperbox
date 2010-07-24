@@ -30,9 +30,9 @@ module Wumpus.PSC.Core
 
   -- * Drawing rectangles
   , rangeDist
+  , withinRange
   , RangeProjection
   , projection
-  , rectangleScaleCtx
   
 
   -- * functions
@@ -48,8 +48,7 @@ module Wumpus.PSC.Core
 
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
+
 import Numeric
 
 
@@ -102,30 +101,20 @@ writeChartSVG = writeSVG_latin1
 rangeDist :: Num u => Range u -> u
 rangeDist (u ::: v) = v-u
 
+withinRange :: Ord u => u -> Range u -> Bool
+withinRange a (u ::: v) = u <= a && a <= v
 
 
 -- for Wumpus.Basic.Graphic ?
 -- 
 
+type Projection      ua u = ua -> u
+type RangeProjection ua u = (Range ua, ua -> u)
 
 projection :: Fractional u
            => Range ua -> Range u -> (ua -> u) -> Projection ua u
 projection (ua0 ::: ua1) (u0 ::: u1) fromUA = 
    rescale (fromUA ua0) (fromUA ua1) u0 u1 . fromUA
-
-type RangeProjection ua u = (Range ua, ua -> u)
-
-
-rectangleScaleCtx :: Fractional u 
-                  => RangeProjection ux u 
-                  -> RangeProjection uy u 
-                  -> Rectangle u
-                  -> ScaleCtx ux uy u
-rectangleScaleCtx (x_range,fx) (y_range,fy) (Rectangle w h) = 
-    ScaleCtx x_proj y_proj
-  where
-    x_proj  = projection x_range (0 ::: w) fx
-    y_proj  = projection y_range (0 ::: h) fy
 
 
 

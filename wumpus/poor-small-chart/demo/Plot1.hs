@@ -6,8 +6,8 @@
 module Plot1 where
 
 import Wumpus.PSC.Axis
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core
-import Wumpus.PSC.ScaleRectMonad
 import Wumpus.PSC.ScatterPlot
 
 
@@ -30,15 +30,26 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartSVG "./out/laplace1.svg" pic1
 
 pic1 :: Picture Double
-pic1 = drawGraphicU $ scatter_plot
+pic1 = drawGraphicU $ scatter_plot . xaxis_graphic . yaxis_graphic
 
 
 scatter_plot :: DGraphic
-scatter_plot = runScaleRectM (x_range,fromIntegral) (y_range,id) output_rect $ do 
-    a <- plotLayers [(blueDot,input_data)]
-    b <- xaxis_graphic
-    c <- yaxis_graphic
-    return (a . b . c)
+scatter_plot = plotLayers [(blueDot,input_data)] bv_config
+
+
+xaxis_graphic :: DGraphic
+xaxis_graphic = xAxisi OXBottom 1 tickfun bv_config 
+  where
+    tickfun = tickdown_textdownH 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) show
+
+yaxis_graphic :: DGraphic
+yaxis_graphic = yAxis OYLeft 1.75 tickfun bv_config
+  where
+    tickfun = tickleftV 4 10 cfg
+    cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
+
+
 
 x_range :: Range Int
 x_range = 1 ::: 16
@@ -49,19 +60,9 @@ y_range = 0.0 ::: 7.0
 output_rect :: DRectangleLoc
 output_rect = (Rectangle 450 300, zeroPt)
 
-xaxis_graphic :: ScaleRectM Int uy DGraphic
-xaxis_graphic = drawXAxis tickfun (xAxisPointsi OXBottom 1)
-  where
-    tickfun = tickdown_textdownH 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) show
+bv_config :: Bivariate Int Double
+bv_config = bivariate (x_range,fromIntegral) (y_range,id) output_rect
 
-
-
-yaxis_graphic :: ScaleRectM ux Double DGraphic
-yaxis_graphic = drawYAxis tickfun (yAxisPoints OYLeft 1.75)
-  where
-    tickfun = tickleftV 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
 
 
 

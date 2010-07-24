@@ -35,9 +35,9 @@ library
   exposed-modules:
     Wumpus.PSC.Axis,
     Wumpus.PSC.BasicAdditions,
+    Wumpus.PSC.Bivariate,
     Wumpus.PSC.Core,
     Wumpus.PSC.Legend,
-    Wumpus.PSC.ScaleRectMonad,
     Wumpus.PSC.ScatterPlot,
     Wumpus.PSC.SparkLine
 

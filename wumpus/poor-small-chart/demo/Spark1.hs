@@ -2,18 +2,16 @@
 
 module Spark1 where
 
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core
--- import Wumpus.PSC.DrawingUtils
 import Wumpus.PSC.SparkLine
 
 import Wumpus.Core
 
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours 
 
-import Data.Maybe
 import System.Directory
 
 
@@ -23,14 +21,10 @@ main =  createDirectoryIfMissing True "./out/"
      >> writeChartSVG "./out/spark1.svg" chart1
 
 chart1 :: Chart
-chart1 = fromMaybe errK $ drawGraphic $ drawSparkLine spark_cfg data_points
-
-errK :: a
-errK = error "empty Graphic"
+chart1 = drawGraphicU $ drawSparkLine spark_cfg data_points
 
 spark_cfg :: SparkLine Double Double
 spark_cfg = SparkLine spark_ctx 
-                      output_rect
                       spark_stroke
                       spark_rangeband
 
@@ -45,10 +39,10 @@ spark_rangeband = rangeBand (0.3 ::: 0.8) aquamarine
 
 
 
-spark_ctx :: ScaleCtx Double Double Double
-spark_ctx = rectangleScaleCtx (0.1 ::: 1.0, id) 
-                              (0.0 ::: 1.0, id) 
-                              (fst output_rect)
+spark_ctx :: Bivariate Double Double
+spark_ctx = bivariate (0.1 ::: 1.0, id) 
+                      (0.0 ::: 1.0, id) 
+                      output_rect
 
 
 

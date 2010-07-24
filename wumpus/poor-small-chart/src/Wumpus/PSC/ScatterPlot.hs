@@ -26,27 +26,21 @@ module Wumpus.PSC.ScatterPlot
   ) where
 
 
-import Wumpus.PSC.BasicAdditions
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core ( Dataset )
-import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-
+import Wumpus.Basic.Utils.HList
 
 type DotF = DGraphicF 
 
 type ScatterPlotLayer ux uy = (DotF, Dataset ux uy)
 
 
+plotLayers :: [ScatterPlotLayer ux uy] -> Bivariate ux uy -> DGraphic
+plotLayers xs bv = veloH (makeLayer `flip` bv) xs
 
--- Return in the ScaleMonad or run it?
---
-plotLayers :: [ScatterPlotLayer ux uy] -> ScaleRectM ux uy DGraphic
-plotLayers xs = mveloH makeLayer xs
-
-
-
-
-makeLayer :: (DotF, Dataset ux uy) -> ScaleRectM ux uy DGraphic
-makeLayer (dotF,ds) = mveloH (drawAt dotF) ds 
+makeLayer :: (DotF, Dataset ux uy) -> Bivariate ux uy -> DGraphic
+makeLayer (dotF,ds) bv = veloH (\pt -> dotF (scaleXY pt bv)) ds 
+ 
 

@@ -19,16 +19,11 @@ module Wumpus.PSC.Axis
 
 
 import Wumpus.PSC.BasicAdditions
+import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core
-import Wumpus.PSC.ScaleRectMonad
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Monads.CoordScaleMonad
-import Wumpus.Basic.Utils.HList
-
-import Control.Applicative
-import Control.Monad
 
 -- | Orientation of the x-axis
 --
@@ -40,105 +35,81 @@ data OrientX = OXTop | OXBottom
 data OrientY = OYLeft | OYRight
   deriving (Eq,Ord,Show)
 
-
-
 type AxisMarkF ua = ua -> DGraphicF
 
 
-drawXAxis :: AxisMarkF ux 
-          -> ScaleRectM ux uy [(ux, DPoint2)] 
-          -> ScaleRectM ux uy DGraphic
-drawXAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
 
-drawYAxis :: AxisMarkF uy
-          -> ScaleRectM ux uy [(uy, DPoint2)] 
-          -> ScaleRectM ux uy DGraphic
-drawYAxis drawF ptGen = (veloH (uncurry drawF)) <$> ptGen 
-
-
-xaxisPoint :: OrientX -> ux -> ScaleRectM ux uy DPoint2
-xaxisPoint ox ux = step ox <$> xScale ux <*> borderRectangle
+xaxisPoint :: OrientX -> ux -> Bivariate ux uy -> DPoint2
+xaxisPoint ox ux bv = step ox (scaleX ux bv) (borderRectangle bv)
   where
     step OXTop    x (Rectangle _ h, P2 _ y) = P2 x (y+h)
     step OXBottom x (Rectangle _ _, P2 _ y) = P2 x y
 
-yaxisPoint :: OrientY -> uy -> ScaleRectM ux uy DPoint2
-yaxisPoint oy uy = step oy <$> yScale uy <*> borderRectangle
+
+yaxisPoint :: OrientY -> uy -> Bivariate ux uy -> DPoint2
+yaxisPoint oy uy bv = step oy (scaleY uy bv) (borderRectangle bv)
   where
     step OYLeft  y (Rectangle _ _, P2 x _) = P2 x     y
     step OYRight y (Rectangle w _, P2 x _) = P2 (x+w) y
 
-xaxisIxStart :: RealFrac ux => ux -> ScaleRectM ux uy ux
-xaxisIxStart step = (\(x ::: _) -> ixStart (x,step)) <$> xRange
-
-yaxisIxStart :: RealFrac uy => uy -> ScaleRectM ux uy uy
-yaxisIxStart step = (\(y ::: _) -> ixStart (y,step)) <$> yRange
-
-xaxisIxStarti :: Integral ux => ux -> ScaleRectM ux uy ux
-xaxisIxStarti step = (\(x ::: _) -> ixStarti (x,step)) <$> xRange
-
-yaxisIxStarti :: Integral uy => uy -> ScaleRectM ux uy uy
-yaxisIxStarti step = (\(y ::: _) -> ixStarti (y,step)) <$> yRange
 
 
-type HyloPhi    st a = st -> Maybe ((a, DPoint2),st)
-type HyloPhiM m st a = st -> m (Maybe ((a, DPoint2),st))
+type Hylo2Phi   st a = st -> Maybe ((a, DPoint2),st)
+
+type HyloChi       a  = a -> DPoint2 -> DGraphic    
+
+xAxisPhi :: Num ux 
+         => OrientX -> ux -> Bivariate ux uy -> Hylo2Phi ux ux 
+xAxisPhi ox step bv = \ux -> let pt = xaxisPoint ox ux bv in 
+    if withinBorderRect pt bv then (Just ((ux,pt), ux+step))
+                              else Nothing
+
+
+yAxisPhi :: Num uy
+         => OrientY -> uy -> Bivariate ux uy -> Hylo2Phi uy uy 
+yAxisPhi oy step bv = \uy -> let pt = yaxisPoint oy uy bv in 
+    if withinBorderRect pt bv then (Just ((uy,pt), uy+step))
+                              else Nothing
 
 
 
--- Note genXPointFun is constant - might want it ouside of the 
--- loop...
---
-xAxisPoints :: RealFrac ux => OrientX -> ux -> ScaleRectM ux uy [(ux,DPoint2)]
-xAxisPoints ox step = xaxisIxStart step >>= unfoldrM phi
+xaxisIxStart :: RealFrac ux => ux -> Bivariate ux uy -> ux
+xaxisIxStart step bv = let (x ::: _) = xRange bv in ixStart (x,step)
+
+yaxisIxStart :: RealFrac uy => uy -> Bivariate ux uy -> uy
+yaxisIxStart step bv = let (y ::: _) = yRange bv in ixStart (y,step)
+
+xaxisIxStarti :: Integral ux => ux -> Bivariate ux uy -> ux
+xaxisIxStarti step bv = let (x ::: _) = xRange bv in ixStarti (x,step)
+
+yaxisIxStarti :: Integral uy => uy -> Bivariate ux uy -> uy
+yaxisIxStarti step bv = let (y ::: _) = yRange bv in ixStarti (y,step)
+
+
+xAxis :: RealFrac ux 
+      => OrientX -> ux -> (ux -> DGraphicF) -> Bivariate ux uy -> DGraphic
+xAxis orX step drawF bv = pointHylo2 phi drawF (xaxisIxStart step bv) 
   where
-    phi ux = xaxisPoint ox ux      >>= \pt ->
-             withinBorderRect pt   >>= \ans ->
-             if ans 
-               then return (Just ((ux,pt), ux+step))
-               else return Nothing
+    phi = xAxisPhi orX step bv
 
-yAxisPoints :: RealFrac uy => OrientY -> uy -> ScaleRectM ux uy [(uy,DPoint2)]
-yAxisPoints oy step = yaxisIxStart step >>= unfoldrM phi
+yAxis :: RealFrac uy
+      => OrientY -> uy -> (uy -> DGraphicF) -> Bivariate ux uy -> DGraphic
+yAxis orY step drawF bv = pointHylo2 phi drawF (yaxisIxStart step bv) 
   where
-    phi uy = yaxisPoint oy uy       >>= \pt -> 
-             withinBorderRect pt    >>= \ans ->
-             if ans
-               then return (Just ((uy,pt),uy+step))
-               else return Nothing
+    phi = yAxisPhi orY step bv
 
 
-
--- Uck - temporary bit of copying...
---
-xAxisPointsi :: Integral ux => OrientX -> ux -> ScaleRectM ux uy [(ux,DPoint2)]
-xAxisPointsi ox step = xaxisIxStarti step >>= unfoldrM phi
+xAxisi :: Integral ux 
+       => OrientX -> ux -> (ux -> DGraphicF) -> Bivariate ux uy -> DGraphic
+xAxisi orX step drawF bv = pointHylo2 phi drawF (xaxisIxStarti step bv) 
   where
-    phi ux = xaxisPoint ox ux      >>= \pt ->
-             withinBorderRect pt   >>= \ans ->
-             if ans 
-               then return (Just ((ux,pt), ux+step))
-               else return Nothing
+    phi = xAxisPhi orX step bv
 
-yAxisPointsi :: Integral uy => OrientY -> uy -> ScaleRectM ux uy [(uy,DPoint2)]
-yAxisPointsi oy step = yaxisIxStarti step >>= unfoldrM phi
+yAxisi :: Integral uy
+       => OrientY -> uy -> (uy -> DGraphicF) -> Bivariate ux uy -> DGraphic
+yAxisi orY step drawF bv = pointHylo2 phi drawF (yaxisIxStarti step bv) 
   where
-    phi uy = yaxisPoint oy uy       >>= \pt -> 
-             withinBorderRect pt    >>= \ans ->
-             if ans
-               then return (Just ((uy,pt),uy+step))
-               else return Nothing
-
-
-
-unfoldrM :: Monad m => (b -> m (Maybe (a, b))) -> b -> m [a]
-unfoldrM mf st  = mf st >>= step
-  where
-    step (Just (a,st')) = liftM (a:) $ (mf st' >>= step)
-    step Nothing        = return []
-
-
-
+    phi = yAxisPhi orY step bv
 
 
 
