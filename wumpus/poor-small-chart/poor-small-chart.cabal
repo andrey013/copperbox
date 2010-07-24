@@ -36,6 +36,7 @@ library
     Wumpus.PSC.Axis,
     Wumpus.PSC.BasicAdditions,
     Wumpus.PSC.Bivariate,
+    Wumpus.PSC.BivariateGraphic,
     Wumpus.PSC.Core,
     Wumpus.PSC.Legend,
     Wumpus.PSC.ScatterPlot,

@@ -16,7 +16,22 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.PSC.Bivariate
-  where
+  (
+    Bivariate(..)
+  , bivariate
+  , xRange
+  , yRange
+  , borderRectangle
+  , borderOrigin
+  , borderWidth
+  , borderHeight
+  , withinBorderRect
+  , withinRangeBi
+  , scaleX
+  , scaleY
+  , scaleXY
+
+  ) where
 
 import Wumpus.PSC.Core
 
@@ -30,6 +45,8 @@ data Bivariate ux uy = Bivariate
       , bvp_yproj      :: uy -> Double
       , bvp_rect       :: DRectangleLoc
       }
+
+
 
 bivariate :: (Range ux, ux -> Double) 
           -> (Range uy, uy -> Double)
@@ -45,10 +62,10 @@ bivariate (xr,fx) (yr,fy) rect@(Rectangle w h, P2 x y)  =  Bivariate
   where
    xproj = projection xr (x ::: (x+w)) fx
    yproj = projection yr (y ::: (y+h)) fy
+
   
 xRange :: Bivariate ux uy -> Range ux
 xRange = bvp_xrange
-
 
 yRange :: Bivariate ux uy -> Range uy
 yRange = bvp_yrange

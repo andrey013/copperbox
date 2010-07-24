@@ -3,6 +3,7 @@
 module Spark1 where
 
 import Wumpus.PSC.Bivariate
+import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 import Wumpus.PSC.SparkLine
 
@@ -21,28 +22,26 @@ main =  createDirectoryIfMissing True "./out/"
      >> writeChartSVG "./out/spark1.svg" chart1
 
 chart1 :: Chart
-chart1 = drawGraphicU $ drawSparkLine spark_cfg data_points
-
-spark_cfg :: SparkLine Double Double
-spark_cfg = SparkLine spark_ctx 
-                      spark_stroke
-                      spark_rangeband
+chart1 = drawGraphicU $ supply spark_bv $ 
+            spark_line `cc` spark_rangeband
 
 
+spark_line :: BivariateGraphic Double Double
+spark_line = sparkLine spark_stroke data_points
 
 spark_stroke :: SparkLineF
-spark_stroke = simpleLine black 0.5
+spark_stroke = simpleLine black 1.0
 
 
-spark_rangeband :: RangeBand Double Double
+spark_rangeband :: BivariateGraphic Double Double
 spark_rangeband = rangeBand (0.3 ::: 0.8) aquamarine
 
 
 
-spark_ctx :: Bivariate Double Double
-spark_ctx = bivariate (0.1 ::: 1.0, id) 
-                      (0.0 ::: 1.0, id) 
-                      output_rect
+spark_bv :: Bivariate Double Double
+spark_bv = bivariate (0.1 ::: 1.0, id) 
+                     (0.0 ::: 1.0, id) 
+                     output_rect
 
 
 

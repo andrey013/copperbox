@@ -8,6 +8,7 @@ module Scatter1 where
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Bivariate
+import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 import Wumpus.PSC.ScatterPlot
 
@@ -29,30 +30,29 @@ main = createDirectoryIfMissing True "./out/"
 
 
 pic1 :: Picture Double
-pic1 = drawGraphicU $ scatter_plot . xaxis_graphic 
-                                   . yaxis_graphic 
-                                   . border_graphic
+pic1 = drawGraphicU $ supply bv_config $ 
+          scatter_plot `cc` xaxis_graphic `cc` yaxis_graphic `cc` border_graphic
 
 
 
-scatter_plot :: DGraphic
-scatter_plot = plotLayers [layer1] bv_config
+scatter_plot :: BivariateGraphic Double Double
+scatter_plot = plotLayers [layer1]
 
 
-xaxis_graphic :: DGraphic
-xaxis_graphic = xAxis OXBottom 5 tickfun bv_config 
+xaxis_graphic :: BivariateGraphic Double Double
+xaxis_graphic = xAxis OXBottom 5 tickfun 
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
 
-yaxis_graphic :: DGraphic
-yaxis_graphic = yAxis OYLeft 2 tickfun bv_config
+yaxis_graphic :: BivariateGraphic Double Double
+yaxis_graphic = yAxis OYLeft 2 tickfun
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) ifloor
 
-border_graphic :: DGraphic
-border_graphic = supply zeroPt $ border (black, LineWidth 1.0) $ fst output_rect
+border_graphic :: BivariateGraphic Double Double 
+border_graphic = rectangleBorder (black, LineWidth 1.0)
 
 
 x_range :: Range Double

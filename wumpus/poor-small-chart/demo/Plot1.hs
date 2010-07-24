@@ -7,6 +7,7 @@ module Plot1 where
 
 import Wumpus.PSC.Axis
 import Wumpus.PSC.Bivariate
+import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 import Wumpus.PSC.ScatterPlot
 
@@ -30,21 +31,22 @@ main = createDirectoryIfMissing True "./out/"
     >> writeChartSVG "./out/laplace1.svg" pic1
 
 pic1 :: Picture Double
-pic1 = drawGraphicU $ scatter_plot . xaxis_graphic . yaxis_graphic
+pic1 = drawGraphicU $ supply bv_config $ 
+          scatter_plot `cc` xaxis_graphic `cc` yaxis_graphic
 
 
-scatter_plot :: DGraphic
-scatter_plot = plotLayers [(blueDot,input_data)] bv_config
+scatter_plot :: BivariateGraphic Int Double
+scatter_plot = plotLayers [(blueDot,input_data)]
 
 
-xaxis_graphic :: DGraphic
-xaxis_graphic = xAxisi OXBottom 1 tickfun bv_config 
+xaxis_graphic :: BivariateGraphic Int uy
+xaxis_graphic = xAxisi OXBottom 1 tickfun
   where
     tickfun = tickdown_textdownH 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) show
 
-yaxis_graphic :: DGraphic
-yaxis_graphic = yAxis OYLeft 1.75 tickfun bv_config
+yaxis_graphic :: BivariateGraphic ux Double
+yaxis_graphic = yAxis OYLeft 1.75 tickfun
   where
     tickfun = tickleftV 4 10 cfg
     cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
