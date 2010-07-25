@@ -16,23 +16,24 @@
 
 module Wumpus.Timing.Alphabet
   (
-    Alphabet(..)
+    Letter(..)
+  , Payload
 
   ) where
 
 
 import Wumpus.Timing.Width
 
-data Alphabet = H Width                 -- High
-              | L Width                 -- Low
-              | Z Width                 -- High impendence
-              | U Width                 -- Undefined
-              | D Width  Payload        -- Data
-              | C Width1                -- Clock
-              | T Width1                -- Toggle
-              | M Width                 -- Metastasis
-              | G                       -- Glitch
-              | S Width                 -- Space
+data Letter = H Width                 -- High
+            | L Width                 -- Low
+            | Z Width                 -- High impendence
+            | X Width                 -- Undefined
+            | D Width  Payload        -- Data
+            | C Width1                -- Clock
+            | T Width1                -- Toggle
+            | M Width                 -- Metastasis
+            | G                       -- Glitch
+            | S Width                 -- Space
   deriving Show
 
 type Payload = String

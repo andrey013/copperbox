@@ -17,10 +17,15 @@
 module Wumpus.Timing.Drawing
   (
 
-    Prefix(..)
-  , high
-  , low
-  , highImpedence
+    Props(..)
+  , defaultProps
+  , Prefix(..)
+
+  , lineHigh
+  , lineLow
+  , lineMid
+
+  , glitch
     
   , fillCamferedRect
   , fillRightCamferedRect
@@ -35,10 +40,32 @@ module Wumpus.Timing.Drawing
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.SVGColours ( black, grey )
 
 import Data.AffineSpace                         -- package: vector-space
 
 import Data.List
+
+
+type DPathF = DPoint2 -> DPath
+
+data Props = Props 
+      { line_width      :: Double 
+      , fill_colour     :: DRGB
+      , stroke_colour   :: DRGB
+      }
+
+defaultProps :: Props
+defaultProps = Props { line_width     = 1.0
+                     , fill_colour    = grey
+                     , stroke_colour  = black }
+
+strokeProps :: Props -> (DRGB,[StrokeAttr])
+strokeProps props = (stroke_colour props, [ LineWidth $ line_width props
+                                          , LineCap CapRound ] ) 
+
+fillProps :: Props -> DRGB
+fillProps = fill_colour
 
 
 data Prefix = Init
@@ -47,12 +74,12 @@ data Prefix = Init
             | FromBtm
   deriving (Eq,Ord,Show)
 
--- TikZ-Timing actaull has more options than these 4...
+-- TikZ-Timing has more options than these 4...
 
-
-dispLine :: (Stroke t, Num u) => t -> [Vec2 u] -> GraphicF u
-dispLine t vs = \pt -> 
-    wrapG $ ostroke t $ vertexPath $ map (pt .+^) vs
+data VAlign = ATop
+            | ACtr
+            | ABtm
+  deriving (Eq,Ord,Show)
  
 div16 :: Fractional u => u -> u
 div16 = (0.0625 *)
@@ -64,41 +91,79 @@ div8 = (0.125 *)
 width :: Num u  => Int -> u -> u
 width w hh = hh * fromIntegral w
 
-high :: Stroke t => t -> Prefix -> Int -> Double -> DGraphicF
-high t pre wi hh = dispLine t $ fn pre
+makePath :: [DVec2] -> DPathF
+makePath vs = \pt -> vertexPath $ map (pt .+^) vs
+
+
+drawDPathF :: Stroke t => t -> DPathF -> DGraphicF
+drawDPathF t pf = wrapG . ostroke t . pf
+
+
+-- straight line - no transition
+--
+biLine :: VAlign -> Double -> Int -> Double -> DPathF
+biLine ATop ins wi hh = makePath [ vec ins hh,    vec (width wi hh) hh    ]
+biLine ACtr ins wi hh = makePath [ vec ins 0,     vec (width wi hh) 0     ]
+biLine ABtm ins wi hh = makePath [ vec ins (-hh), vec (width wi hh) (-hh) ]
+
+-- threepoint line 
+--
+triLine :: (VAlign,VAlign) -> (Double,Double) -> Int -> Double -> DPathF
+triLine (s,e) (ins1,ins2) wi hh | s==e       = biLine s ins1 wi hh
+                                | otherwise  = makePath [v1, v2, v3]
   where
-    final       = vec (width wi hh) (hh) 
+    vpos ATop = hh
+    vpos ACtr = 0
+    vpos ABtm = (-hh)
 
-    fn FromCtr  = [ vec 0 0,     vec (div16 hh) hh, final ]
-    fn FromBtm  = [ vec 0 (-hh), vec (div8  hh) hh, final ]
-    fn _        = [ vec 0 hh,    final ] 
+    v1        = vec ins1 (vpos s)
+    v2        = vec ins2 (vpos e)
+    v3        = vec (width wi hh) (vpos e)
+    
 
 
-low :: Stroke t => t -> Prefix -> Int -> Double -> DGraphicF
-low t pre wi hh = dispLine t $ fn pre
+lineHigh :: Prefix -> Int -> Double -> Props -> DGraphicF
+lineHigh pre wi hh props = drawDPathF (strokeProps props) $ fn pre
+   where 
+     fn FromCtr = triLine (ACtr,ATop) (0,div16 hh) wi hh
+     fn FromBtm = triLine (ABtm,ATop) (0,div8  hh) wi hh
+     fn _       = biLine  ATop        0            wi hh
+
+
+
+
+lineLow :: Prefix -> Int -> Double -> Props -> DGraphicF
+lineLow pre wi hh props = drawDPathF (strokeProps props) $ fn pre
   where
-    final       = vec (width wi hh) (-hh) 
-
-    fn FromCtr  = [ vec 0 0,     vec (div16 hh) (-hh), final ]
-    fn FromTop  = [ vec 0 hh,    vec (div8  hh) (-hh), final ]
-    fn _        = [ vec 0 (-hh), final ] 
+    fn FromCtr  = triLine (ACtr,ABtm) (0,div16 hh) wi hh
+    fn FromTop  = triLine (ATop,ABtm) (0,div8  hh) wi hh
+    fn _        = biLine  ABtm        0            wi hh
 
 
+
+-- High-impedence Z and Undefined X using the same drawing
+-- mechanism.
+--
 -- Note - Init and FromCtr are different...
 --
-highImpedence :: Stroke t => t -> Prefix -> Int -> Double -> DGraphicF
-highImpedence t pre wi hh = dispLine t $ fn pre
+lineMid :: Prefix -> Int -> Double -> Props -> DGraphicF
+lineMid pre wi hh props = drawDPathF (strokeProps props) $ fn pre
   where
-    final       = vec (width wi hh) 0
-
-    fn FromTop  = [ vec 0 hh,        vec (div16 hh)    0, final ]
-    fn FromBtm  = [ vec 0 (-hh),     vec (div16 (-hh)) 0, final ]
-    fn FromCtr  = [ vec (div8 hh) 0, final ] 
-    fn _        = [ vec 0 0,         final ]     -- aka Start 
+    fn FromTop  = triLine (ATop,ACtr) (0,div8 hh)  wi hh
+    fn FromBtm  = triLine (ABtm,ACtr) (0,div8 hh)  wi hh
+    fn FromCtr  = biLine  ACtr        (div8 hh)    wi hh
+    fn _        = biLine  ACtr        0            wi hh
 
 
 
 
+metastasis :: Prefix -> Int -> Metastasis -> Double -> Props -> DGraphicF
+metastasis _pre wi start hh props =  
+    wrapG . ostroke (strokeProps props) . metastasisPath wi start hh
+
+glitch :: Double -> Props -> DGraphicF
+glitch hh props = 
+    drawDPathF (strokeProps props) $ makePath [ vvec (-hh), vvec hh ]
 
 
 
@@ -141,10 +206,6 @@ data Metastasis = Even | Odd
   deriving (Eq,Ord,Show)
 
 
-metastasis :: (Stroke t,  Fractional u) 
-           => t -> Int -> Metastasis -> u -> GraphicF u 
-metastasis t wi start hh = 
-    wrapG . ostroke t . metastasisPath wi start hh
 
  
 metastasisPath :: Fractional u => Int -> Metastasis -> u -> Point2 u -> Path u 
