@@ -91,11 +91,11 @@ pointHylo :: (st -> Maybe (Point2 u, st))
           -> (Point2 u -> Graphic u) 
           -> st 
           -> Graphic u
-pointHylo f g = hylor f (\pt acc -> acc . g pt) blankG
+pointHylo f g = hylor f (\pt acc -> acc . g pt) emptyG
 
 
 pointHylo2 :: (st -> Maybe ((a,Point2 u), st)) 
            -> (a -> Point2 u -> Graphic u) 
            -> st 
            -> Graphic u
-pointHylo2 g f  = hylor g (\(a,pt) acc -> acc . f a pt) blankG
+pointHylo2 g f  = hylor g (\(a,pt) acc -> acc . f a pt) emptyG

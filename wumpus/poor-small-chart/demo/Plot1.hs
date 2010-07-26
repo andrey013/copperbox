@@ -67,8 +67,6 @@ bv_config = bivariate (x_range,fromIntegral) (y_range,id) output_rect
 
 
 
-
-
 blueDot :: DotF
 blueDot = dotCircle ( (standardAttr 18) { mark_colour = blue })
 

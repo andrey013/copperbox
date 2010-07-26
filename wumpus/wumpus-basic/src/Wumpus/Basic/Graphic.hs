@@ -37,7 +37,7 @@ module Wumpus.Basic.Graphic
   , drawGraphicU
 
   , wrapG
-  , blankG 
+  , emptyG 
 
   -- * Graphic primitives
   , textline
@@ -137,8 +137,10 @@ drawGraphicU = fromMaybe errK . drawGraphic
 wrapG :: Primitive u -> Graphic u
 wrapG = wrapH 
 
-blankG :: Graphic u
-blankG = emptyH
+-- | The empty graphic.
+--
+emptyG :: Graphic u
+emptyG = emptyH
 
 --------------------------------------------------------------------------------
 

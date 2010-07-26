@@ -20,6 +20,7 @@ module Wumpus.PSC.Axis
 
 import Wumpus.PSC.BasicAdditions
 import Wumpus.PSC.Bivariate
+import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -56,7 +57,6 @@ yaxisPoint oy uy bv = step oy (scaleY uy bv) (borderRectangle bv)
 
 type Hylo2Phi   st a = st -> Maybe ((a, DPoint2),st)
 
-type HyloChi       a  = a -> DPoint2 -> DGraphic    
 
 xAxisPhi :: Num ux 
          => OrientX -> ux -> Bivariate ux uy -> Hylo2Phi ux ux 
@@ -87,26 +87,26 @@ yaxisIxStarti step bv = let (y ::: _) = yRange bv in ixStarti (y,step)
 
 
 xAxis :: RealFrac ux 
-      => OrientX -> ux -> (ux -> DGraphicF) -> Bivariate ux uy -> DGraphic
+      => OrientX -> ux -> (ux -> DGraphicF) -> BivariateGraphic ux uy
 xAxis orX step drawF bv = pointHylo2 phi drawF (xaxisIxStart step bv) 
   where
     phi = xAxisPhi orX step bv
 
 yAxis :: RealFrac uy
-      => OrientY -> uy -> (uy -> DGraphicF) -> Bivariate ux uy -> DGraphic
+      => OrientY -> uy -> (uy -> DGraphicF) -> BivariateGraphic ux uy
 yAxis orY step drawF bv = pointHylo2 phi drawF (yaxisIxStart step bv) 
   where
     phi = yAxisPhi orY step bv
 
 
 xAxisi :: Integral ux 
-       => OrientX -> ux -> (ux -> DGraphicF) -> Bivariate ux uy -> DGraphic
+       => OrientX -> ux -> (ux -> DGraphicF) -> BivariateGraphic ux uy
 xAxisi orX step drawF bv = pointHylo2 phi drawF (xaxisIxStarti step bv) 
   where
     phi = xAxisPhi orX step bv
 
 yAxisi :: Integral uy
-       => OrientY -> uy -> (uy -> DGraphicF) -> Bivariate ux uy -> DGraphic
+       => OrientY -> uy -> (uy -> DGraphicF) -> BivariateGraphic ux uy
 yAxisi orY step drawF bv = pointHylo2 phi drawF (yaxisIxStarti step bv) 
   where
     phi = yAxisPhi orY step bv
