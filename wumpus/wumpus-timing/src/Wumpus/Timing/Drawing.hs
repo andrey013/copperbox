@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,233 +17,82 @@
 
 module Wumpus.Timing.Drawing
   (
+    Posn(..)
+  )
+  where
 
-    Props(..)
-  , defaultProps
-  , Prefix(..)
+import Wumpus.Timing.Alphabet
+import Wumpus.Timing.STraceMonad
 
-  , lineHigh
-  , lineLow
-  , lineMid
+import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.SVGColours
 
-  , glitch
-    
-  , fillCamferedRect
-  , fillRightCamferedRect
+import MonadLib                         -- package: monadLib
 
-  , Metastasis(..)
-  , metastasis
-
-  , metastasisEven
-  , metastasisOdd
-
-  ) where
-
-import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.SVGColours ( black, grey )
-
-import Data.AffineSpace                         -- package: vector-space
-
-import Data.List
+data Posn = High
+          | Mid
+          | Low
+  deriving (Eq,Ord,Show)
 
 
-type DPathF = DPoint2 -> DPath
-
-data Props = Props 
-      { line_width      :: Double 
-      , fill_colour     :: DRGB
-      , stroke_colour   :: DRGB
+data DrawingState = DrawingState 
+      { line_colour :: DRGB
+      , fill_colour :: DRGB
+      , x_pos       :: Double
+      , y_pos       :: Posn
       }
 
-defaultProps :: Props
-defaultProps = Props { line_width     = 1.0
-                     , fill_colour    = grey
-                     , stroke_colour  = black }
+data DrawingConfig = DrawingConfig { half_height :: !Double }
 
-strokeProps :: Props -> (DRGB,[StrokeAttr])
-strokeProps props = (stroke_colour props, [ LineWidth $ line_width props
-                                          , LineCap CapRound ] ) 
-
-fillProps :: Props -> DRGB
-fillProps = fill_colour
+newtype DrawingM a = DrawingM 
+          { getDrawingM ::  StateT  DrawingState
+                          ( ReaderT DrawingConfig  
+                          ( STraceT DPrimitive  Id)) a }
 
 
-data Prefix = Init
-            | FromTop
-            | FromCtr
-            | FromBtm
-  deriving (Eq,Ord,Show)
+instance Functor DrawingM where
+  fmap f = DrawingM . fmap f . getDrawingM
 
--- TikZ-Timing has more options than these 4...
-
-data VAlign = ATop
-            | ACtr
-            | ABtm
-  deriving (Eq,Ord,Show)
- 
-div16 :: Fractional u => u -> u
-div16 = (0.0625 *)
-
-div8 :: Fractional u => u -> u
-div8 = (0.125 *)
+instance Monad DrawingM where
+  return a = DrawingM $ return a
+  m >>= k  = DrawingM $ getDrawingM m >>= getDrawingM . k
 
 
-width :: Num u  => Int -> u -> u
-width w hh = hh * fromIntegral w
-
-makePath :: [DVec2] -> DPathF
-makePath vs = \pt -> vertexPath $ map (pt .+^) vs
+instance StateM DrawingM DrawingState where
+  get   = DrawingM $ get
+  set c = DrawingM $ set c
 
 
-drawDPathF :: Stroke t => t -> DPathF -> DGraphicF
-drawDPathF t pf = wrapG . ostroke t . pf
+updateYPos :: Transition -> DrawingM ()
+updateYPos T_Zero = return ()
+updateYPos HM     = sets_ (\s -> s { y_pos = Mid  })
+updateYPos HL     = sets_ (\s -> s { y_pos = Low  })
+updateYPos MH     = sets_ (\s -> s { y_pos = High })
+updateYPos MHC    = sets_ (\s -> s { y_pos = Mid  })
+updateYPos ML     = sets_ (\s -> s { y_pos = Low  })
+updateYPos LH     = sets_ (\s -> s { y_pos = High })
+updateYPos LHC    = sets_ (\s -> s { y_pos = High })
+updateYPos LM     = sets_ (\s -> s { y_pos = Mid  })
+
+updateColour :: Instruction -> DrawingM ()
+updateColour (Line _ rgb)     = sets_  (\s -> s { line_colour = rgb   }) 
+updateColour (CData _ fill _) = sets_  (\s -> s { line_colour = black
+                                                , fill_colour = fill  })
+updateColour (OData _ fill _) = sets_  (\s -> s { line_colour = black
+                                                , fill_colour = fill  })
+updateColour (Clock _ _)      = sets_  (\s -> s { line_colour = black })
+updateColour (Metastasis _)   = sets_  (\s -> s { line_colour = brown }) 
+updateColour (Space _)        = return () 
+updateColour Glitch           = return ()
 
 
--- straight line - no transition
+-- Update colour before drawing, update transition after 
+-- drawing...
 --
-biLine :: VAlign -> Double -> Int -> Double -> DPathF
-biLine ATop ins wi hh = makePath [ vec ins hh,    vec (width wi hh) hh    ]
-biLine ACtr ins wi hh = makePath [ vec ins 0,     vec (width wi hh) 0     ]
-biLine ABtm ins wi hh = makePath [ vec ins (-hh), vec (width wi hh) (-hh) ]
-
--- threepoint line 
---
-triLine :: (VAlign,VAlign) -> (Double,Double) -> Int -> Double -> DPathF
-triLine (s,e) (ins1,ins2) wi hh | s==e       = biLine s ins1 wi hh
-                                | otherwise  = makePath [v1, v2, v3]
-  where
-    vpos ATop = hh
-    vpos ACtr = 0
-    vpos ABtm = (-hh)
-
-    v1        = vec ins1 (vpos s)
-    v2        = vec ins2 (vpos e)
-    v3        = vec (width wi hh) (vpos e)
-    
+step1 :: (Instruction,Transition) -> DrawingM ()
+step1 (ins,trans) = updateColour ins >> draw ins >> updateYPos trans
 
 
-lineHigh :: Prefix -> Int -> Double -> Props -> DGraphicF
-lineHigh pre wi hh props = drawDPathF (strokeProps props) $ fn pre
-   where 
-     fn FromCtr = triLine (ACtr,ATop) (0,div16 hh) wi hh
-     fn FromBtm = triLine (ABtm,ATop) (0,div8  hh) wi hh
-     fn _       = biLine  ATop        0            wi hh
-
-
-
-
-lineLow :: Prefix -> Int -> Double -> Props -> DGraphicF
-lineLow pre wi hh props = drawDPathF (strokeProps props) $ fn pre
-  where
-    fn FromCtr  = triLine (ACtr,ABtm) (0,div16 hh) wi hh
-    fn FromTop  = triLine (ATop,ABtm) (0,div8  hh) wi hh
-    fn _        = biLine  ABtm        0            wi hh
-
-
-
--- High-impedence Z and Undefined X using the same drawing
--- mechanism.
---
--- Note - Init and FromCtr are different...
---
-lineMid :: Prefix -> Int -> Double -> Props -> DGraphicF
-lineMid pre wi hh props = drawDPathF (strokeProps props) $ fn pre
-  where
-    fn FromTop  = triLine (ATop,ACtr) (0,div8 hh)  wi hh
-    fn FromBtm  = triLine (ABtm,ACtr) (0,div8 hh)  wi hh
-    fn FromCtr  = biLine  ACtr        (div8 hh)    wi hh
-    fn _        = biLine  ACtr        0            wi hh
-
-
-
-
-metastasis :: Prefix -> Int -> Metastasis -> Double -> Props -> DGraphicF
-metastasis _pre wi start hh props =  
-    wrapG . ostroke (strokeProps props) . metastasisPath wi start hh
-
-glitch :: Double -> Props -> DGraphicF
-glitch hh props = 
-    drawDPathF (strokeProps props) $ makePath [ vvec (-hh), vvec hh ]
-
-
-
-fillCamferedRect :: (Fill t, Fractional u) => t -> Int -> u -> GraphicF u
-fillCamferedRect t wi halfsize = wrapG . fill t . camferedPath wi halfsize
-
-fillRightCamferedRect :: (Fill t, Fractional u) => t -> Int -> u -> GraphicF u
-fillRightCamferedRect t wi halfsize = 
-    wrapG . fill t . rightCamferedPath wi halfsize
-
-camferedPath :: Fractional u => Int -> u -> Point2 u -> Path u
-camferedPath wi hh leftvmid = 
-    vertexPath $ leftvmid : sequence [tl, tr , rightvmid, br, bl] leftvmid
-  where
-    w           = width wi hh 
-    cam         = 0.25 * hh 
-    tl          = (.+^ vec cam     hh)
-    tr          = (.+^ vec w       hh)
-    rightvmid   = (.+^ vec (w+cam) 0)
-    br          = (.+^ vec w       (-hh))
-    bl          = (.+^ vec cam     (-hh))
-
--- right camfer extended past the width
---
-rightCamferedPath :: Fractional u => Int -> u -> Point2 u -> Path u
-rightCamferedPath wi hh leftvmid = 
-    vertexPath $ sequence [tl, tr , rightvmid, br, bl] leftvmid
-  where
-    w           = width wi hh
-    cam         = 0.25 * hh
-    tl          = (.+^ vec 0       hh)
-    tr          = (.+^ vec w       hh)
-    rightvmid   = (.+^ vec (w+cam) 0)
-    br          = (.+^ vec w       (-hh))
-    bl          = (.+^ vec 0       (-hh))
-
-
-
-data Metastasis = Even | Odd
-  deriving (Eq,Ord,Show)
-
-
-
- 
-metastasisPath :: Fractional u => Int -> Metastasis -> u -> Point2 u -> Path u 
-metastasisPath wi start hh leftvmid
-    | start == Even = vertexPath $ expand0 $ metastasisEven wi
-    | otherwise     = vertexPath $ expand0 $ metastasisOdd wi
-  where
-    point n h      = leftvmid .+^ vec (uw * fromIntegral n) h
-    uh             = 0.5  * hh
-    uw             = 0.25 * uh
-  
-    expand0 (x:xs) = point x 0 : expandU xs
-    expand0 _      = []
-    
-    expandU [x,y]  = [point x uh, point y 0]
-    expandU (x:xs) = point x uh : expandD xs
-    expandU _      = []
-
-    expandD [x,y]  = [point x (-uh), point y 0]
-    expandD (x:xs) = point x (-uh) : expandU xs
-    expandD _      = []
-
-  
-
-metastasisEven :: Int -> [Int]
-metastasisEven n = 0 : unfoldr phi 1
-  where
-    nmax = 8*n
-    phi i | i < nmax    = Just (i, i+2)
-          | i == nmax+1 = Just (nmax, i+2)
-          | otherwise   = Nothing
-
-metastasisOdd :: Int -> [Int]
-metastasisOdd n = 2 : unfoldr phi 3
-  where
-    nmax = 8*n
-    phi i | i < nmax    = Just (i, i+2)
-          | i == nmax+1 = Just (nmax, i+2)
-          | otherwise   = Nothing
+draw :: Instruction -> DrawingM ()
+draw _ = return ()
 

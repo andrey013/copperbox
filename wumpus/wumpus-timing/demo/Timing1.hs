@@ -2,7 +2,7 @@
 
 module Timing1 where
 
-import Wumpus.Timing.Drawing hiding ( glitch )
+import Wumpus.Timing.DrawingPrims hiding ( glitch )
 import Wumpus.Timing.Interpret
 import Wumpus.Timing.TimingMonad
 
@@ -12,7 +12,6 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.SVGColours
 
 import System.Directory
-
 
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"

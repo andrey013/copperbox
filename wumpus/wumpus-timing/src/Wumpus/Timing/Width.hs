@@ -20,6 +20,7 @@ module Wumpus.Timing.Width
   , Width
   , half
 
+  , width1
   , halfcount
 
   ) where
@@ -63,6 +64,11 @@ instance Num Width where
 
 half :: Width 
 half = IH 0
+
+
+width1 :: Width1 -> Width
+width1 H = half
+width1 O = 1
 
 
 halfcount :: Width -> Int
