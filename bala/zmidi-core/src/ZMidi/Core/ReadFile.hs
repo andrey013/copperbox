@@ -203,8 +203,6 @@ getVarlenBytes :: ParserM (Word32,[Word8])
 getVarlenBytes = gencount getVarlen word8
 
 
--- Not working...
-
 getVarlen :: ParserM Word32
 getVarlen = liftM fromVarlen step1
   where

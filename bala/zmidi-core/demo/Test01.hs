@@ -36,6 +36,6 @@ process filename = do
     case ans of
       Left err -> print err
       Right a  -> writeMidi (filename ++ ".001") a
-    putStrLn $ show ans  -- not very good, need a pretty printer...
+    putStrLn $ take 1000 $ show ans  -- not very good, need a pretty printer...
 
  

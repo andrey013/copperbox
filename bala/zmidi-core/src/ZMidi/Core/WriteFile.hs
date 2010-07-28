@@ -111,10 +111,13 @@ putMetaEvent (TimeSignature nmr dnm met nps)  =
 putMetaEvent (KeySignature ky sc)             =
     out3 0xFF 0x59 2 *> out2 (wrapint ky) (wscale sc)
 
-putMetaEvent (SSME i ws)                      =  varlen i *> outBytes ws
+putMetaEvent (SSME i ws)                      =  
+    out2 0xFF 0x7F *> varlen i *> outBytes ws
 
+
+-- WARNING - what is DataEvent???????
 putSystemEvent :: SystemEvent -> PutM ()
-putSystemEvent (SysEx i ws)   = varlen i *> outBytes ws
+putSystemEvent (SysEx i ws)   = out1 0xF0 *> varlen i *> outBytes ws
 putSystemEvent (DataEvent w8) = putWord8 w8 
   
     
