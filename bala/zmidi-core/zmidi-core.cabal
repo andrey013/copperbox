@@ -12,7 +12,7 @@ description:
   .
 
 build-type:         Simple
-stability:          half baked
+stability:          unstable
 cabal-version:      >= 1.2
 
 extra-source-files:

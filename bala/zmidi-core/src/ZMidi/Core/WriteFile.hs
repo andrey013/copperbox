@@ -30,7 +30,6 @@ import Control.Applicative
 import Data.Bits
 import qualified Data.ByteString.Lazy as L
 import Data.Char (ord)
-import qualified Data.Foldable as F
 import Data.Int
 import Data.Word
 
@@ -131,21 +130,21 @@ infixr 5 `u4l4`
 u4l4 :: Word8 -> Word8 -> Word8
 a `u4l4` b = (a `shiftL` 4) + b 
 
-out1 :: Word8 -> PutM () 
-out1 = putWord8
+out1            :: Word8 -> PutM () 
+out1            = putWord8
 
-out2 :: Word8 -> Word8 -> PutM () 
-out2 a b = putWord8 a *> putWord8 b
+out2            :: Word8 -> Word8 -> PutM () 
+out2 a b        = putWord8 a *> putWord8 b
 
-out3 :: Word8 -> Word8 -> Word8 -> PutM ()
-out3 a b c = putWord8 a *> putWord8 b *> putWord8 c
+out3            :: Word8 -> Word8 -> Word8 -> PutM ()
+out3 a b c      = putWord8 a *> putWord8 b *> putWord8 c
 
-out4 :: Word8 -> Word8 -> Word8 -> Word8 -> PutM () 
-out4 a b c d = putWord8 a *> putWord8 b *> putWord8 c *> putWord8 d
+out4            :: Word8 -> Word8 -> Word8 -> Word8 -> PutM () 
+out4 a b c d    = putWord8 a *> putWord8 b *> putWord8 c *> putWord8 d
 
-out5 :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> PutM ()
-out5 a b c d e = putWord8 a *> putWord8 b *> putWord8 c
-                            *> putWord8 d *> putWord8 e
+out5            :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> PutM ()
+out5 a b c d e  = putWord8 a *> putWord8 b *> putWord8 c
+                             *> putWord8 d *> putWord8 e
 
    
 
@@ -177,12 +176,11 @@ lowerEight n = (fromIntegral lower8, remain)
     lower8 = n .&. 0xff 
       
 varlen :: Word32 -> PutM ()
-varlen = step . varlenSplit where
-    step [a]          = out1 a
-    step [a,b]        = out2 a b
-    step [a,b,c]      = out3 a b c
-    step [a,b,c,d]    = out4 a b c d
-    step _            = error $ "put varlen bad..."
+varlen = step . toVarlen where
+    step (V1 a)          = out1 a
+    step (V2 a b)        = out2 a b
+    step (V3 a b c)      = out3 a b c
+    step (V4 a b c d)    = out4 a b c d
     
 
 outString :: String -> PutM ()    

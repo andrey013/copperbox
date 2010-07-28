@@ -203,29 +203,20 @@ getVarlenBytes :: ParserM (Word32,[Word8])
 getVarlenBytes = gencount getVarlen word8
 
 
+-- Not working...
+
 getVarlen :: ParserM Word32
-getVarlen = buildWhile (`testBit` 7) merge merge 0 word8
+getVarlen = liftM fromVarlen step1
   where
-    merge i acc = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
-   
+    high a = a `testBit` 7
+
+    step1     = word8 >>= \a -> if high a then step2 a else return (V1 a)
+    step2 a   = word8 >>= \b -> if high b then step3 a b else return (V2 a b)
+    step3 a b = word8 >>= \c -> if high c then do { d <- word8
+                                                  ; return (V4 a b c d)}
+                                          else return (V3 a b c)  
 
 
-
--- | Build a value by while the test holds. When the test fails 
--- the position is not backtracked, instead we use the \"failing\"
--- element with @lastOp@ potentially still building the value 
--- with it.
--- 
-buildWhile :: (a -> Bool) 
-           -> (a -> b -> b) 
-           -> (a -> b -> b) 
-           -> b 
-           -> ParserM a 
-           -> ParserM b
-buildWhile test op lastOp initial p = step where
-    step = p >>= \ans -> 
-      if test ans then (step >>= \acc -> return $ ans `op` acc)
-                  else (return $ ans `lastOp` initial)
 
 
 -- | Apply parse then apply the check, if the check fails report

@@ -82,7 +82,7 @@ instance Monad ParserM where
                                 Right a -> (getParserM . k) a s'
 
 runParser :: L.ByteString -> ParserM a -> Either ParseErr a
-runParser bs mf = fst $ getParserM mf (ParserState 0 bs)
+runParser bs mf = fst $ getParserM mf (ParserState { pos = 0, input = bs})
 
 
 getPos :: ParserM Int
