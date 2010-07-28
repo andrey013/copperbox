@@ -18,6 +18,7 @@ module ZMidi.Core.Internal.ParserMonad
   (
 
     ErrMsg
+  , ParseErr
   , ParserM
   , runParser
   
@@ -33,6 +34,7 @@ module ZMidi.Core.Internal.ParserMonad
   , count
   , gencount
   , text
+  , boundRepeat
 
   ) where
 
@@ -44,15 +46,20 @@ import Data.Int
 import Data.Word
 
 
+type Pos = Int
+
 data ParserState = ParserState 
-       { pos    :: !Int
-       , input  :: L.ByteString 
+       { pos       :: !Pos
+       , input     :: L.ByteString 
        }
+
 
 type ErrMsg = String
 
+type ParseErr = (Pos,ErrMsg)
+
 newtype ParserM a = ParserM 
-          { getParserM :: ParserState -> (Either ErrMsg a, ParserState) }
+          { getParserM :: ParserState -> (Either ParseErr a, ParserState) }
 
 
 instance Functor ParserM where
@@ -74,15 +81,16 @@ instance Monad ParserM where
                                 Left e -> (Left e, s')
                                 Right a -> (getParserM . k) a s'
 
-runParser :: L.ByteString -> ParserM a -> Either ErrMsg a
+runParser :: L.ByteString -> ParserM a -> Either ParseErr a
 runParser bs mf = fst $ getParserM mf (ParserState 0 bs)
 
 
-
+getPos :: ParserM Int
+getPos = ParserM $ \s -> (Right $ pos s, s)
 
 word8 :: ParserM Word8
 word8 = ParserM $ \s@(ParserState n bs) -> case L.uncons bs of 
-    Nothing      -> (Left $ "word8 - not more data, position " ++ show n, s)
+    Nothing      -> (Left (n,"word8 - not more data."), s)
     Just (a,bs') -> (Right a, ParserState (n+1) bs')
 
 
@@ -94,17 +102,17 @@ int8 = fromIntegral <$> word8
 
 word16be :: ParserM Word16
 word16be = ParserM $ \s@(ParserState n bs) -> case uncons2 bs of
-    Nothing -> (Left $ "word16be - not more data, position " ++ show n, s)
+    Nothing -> (Left (n,"word16be - not more data."), s)
     Just (a,b,bs') -> (Right $ w16be a b, ParserState (n+2) bs')
 
 word24be :: ParserM Word32
 word24be = ParserM $ \s@(ParserState n bs) -> case uncons3 bs of
-    Nothing -> (Left $ "word24be - not more data, position " ++ show n, s)
+    Nothing -> (Left (n,"word24be - not more data."), s)
     Just (a,b,c,bs') -> (Right $ w24be a b c, ParserState (n+3) bs')
 
 word32be :: ParserM Word32
 word32be = ParserM $ \s@(ParserState n bs) -> case uncons4 bs of
-    Nothing -> (Left $ "word32be - not more data, position " ++ show n, s)
+    Nothing -> (Left (n, "word32be - not more data."), s)
     Just (a,b,c,d,bs') -> (Right $ w32be a b c d, ParserState (n+4) bs')
 
 
@@ -114,7 +122,7 @@ char8 = (chr . fromIntegral) <$> word8
 
 
 reportError :: String -> ParserM a
-reportError msg = ParserM $ \s -> (Left msg, s)
+reportError msg = ParserM $ \s -> (Left (pos s, msg), s)
 
 
 
@@ -132,6 +140,20 @@ gencount plen p = plen >>= \i ->
 
 text :: Int -> ParserM String
 text i = count i char8
+
+
+boundRepeat :: Int -> ParserM a -> ParserM [a]
+boundRepeat n p = getPos >>= \start -> step (start + n)
+  where
+    step lim = do { a <- p
+                  ; i <- getPos 
+                  ; case compare i lim of
+                      LT -> do { as <- step lim; return (a:as) }
+                      EQ -> return [a]
+                      GT -> reportError "boundRepeat - parser exceeds limit"
+                  }
+
+
 
 --------------------------------------------------------------------------------
 -- helpers

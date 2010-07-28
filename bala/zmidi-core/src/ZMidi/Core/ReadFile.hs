@@ -34,7 +34,7 @@ import Data.Word
 import Numeric
 
 
-readMidi :: FilePath -> IO (Either ErrMsg MidiFile)
+readMidi :: FilePath -> IO (Either ParseErr MidiFile)
 readMidi filename =
     liftM (runParser `flip` midiFile) (L.readFile filename)
 
@@ -65,8 +65,10 @@ track = liftM Track (trackHeader >>= getMessages)
 trackHeader :: ParserM Word32
 trackHeader = assertString "MTrk" >> word32be
 
+
+-- wrong... 
 getMessages :: Word32 -> ParserM [Message]
-getMessages i = count (fromIntegral i) message
+getMessages i = boundRepeat (fromIntegral i) message
 
 
 message :: ParserM Message

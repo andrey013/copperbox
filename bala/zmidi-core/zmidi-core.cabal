@@ -1,4 +1,4 @@
-name:             zmidi
+name:             zmidi-core
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -6,9 +6,9 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         MIDI files...
+synopsis:         Read and write MIDI files.
 description:
-  Read MIDI files...
+  Minimalist library to read and write MIDI files.
   .
 
 build-type:         Simple
@@ -22,24 +22,16 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base < 5,
-                      containers,
-                      mtl,
                       bytestring,
-                      kangaroo >= 0.3.0 && < 0.4
-
+                      binary >= 0.5
   
   exposed-modules:
-    ZMidi,
-    ZMidi.Construction,
-    ZMidi.Datatypes,
-    ZMidi.GeneralMidiInstruments,
-    ZMidi.MergeSort,
-    ZMidi.ReadFile,
-    ZMidi.TextualMidi,
-    ZMidi.Utils,
-    ZMidi.WriteFile
+    ZMidi.Core.Datatypes,
+    ZMidi.Core.ReadFile,
+    ZMidi.Core.WriteFile
 
   other-modules:
+    ZMidi.Core.Internal.ParserMonad
       
   extensions:
     

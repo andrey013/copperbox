@@ -4,7 +4,7 @@
 -- |
 -- Module      :  ZMidi.Core.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2010
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -15,37 +15,44 @@
 --------------------------------------------------------------------------------
 
 
-module ZMidi.Core.Datatypes (
-    -- * MidiFile representation
-    MidiFile(..),
-    -- * File header with basic information
-    Header(..),
-    -- * Track - a series of events
-    Track(..),
-    -- * Header format
-    HFormat(..),
+module ZMidi.Core.Datatypes 
+  (
+  -- * MidiFile representation
+    MidiFile(..)
+  
+  -- * File header with basic information
+  ,  Header(..)
+  
+  -- * Track - a series of events
+  , Track(..)
+  
+  -- * Header format
+  , HFormat(..)
     
-    DeltaTime,
 
-    -- * A midi event paired with the delta time of its onset
-    Message, 
-    -- * A control or meta event
-    Event(..),
+  -- * A midi event paired with the delta time of its onset
+  , DeltaTime
+  , Message
     
-    VoiceEvent(..),
-    SystemEvent(..),
-    MetaEvent(..),
+
+  -- * A control or meta event
+  , Event(..)
     
-    -- * Representation of delta times as a division of quarter notes
-    TimeDivision(..),
-    -- * Type of a text meta-event
-    TextType(..),
+  , VoiceEvent(..)
+  , SystemEvent(..)
+  , MetaEvent(..)
     
-    -- * Scale type - used for setting key signature
-    ScaleType(..),
+  -- * Representation of delta times as a division of quarter notes
+  , TimeDivision(..)
+  -- * Type of a text meta-event
+  , TextType(..)
     
-    -- * Two helpers
-    varlenSplit, hexStr
+  -- * Scale type - used for setting key signature
+  , ScaleType(..)
+    
+  -- * Two helpers
+  , varlenSplit
+  , hexStr
     
   ) where
 
