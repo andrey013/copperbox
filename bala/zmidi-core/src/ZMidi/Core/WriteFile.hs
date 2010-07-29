@@ -84,7 +84,7 @@ putEvent (MetaEvent        evt) = putMetaEvent  evt
   
 
 putDataEvent :: DataEvent -> PutM ()
-putDataEvent (Data4 tag b c d) = out4 tag b c d
+putDataEvent (Data1 tag) = out1 tag
     
 putVoiceEvent :: VoiceEvent -> PutM ()
 putVoiceEvent (NoteOff c n v)         = out3 (0x8 `u4l4` c) n v 
@@ -212,11 +212,6 @@ varlen = step . toVarlen where
 outString :: String -> PutM ()    
 outString s = putLazyByteString (L.pack $ fmap (fromIntegral . ord) s) 
 
-{-
-outChars :: String -> MidiOut
-outChars []     = id
-outChars (s:ss) = out1 (fromIntegral $ ord s) . outChars ss
--}
 
 outBytes :: [Word8] -> PutM () 
 outBytes []     = return ()

@@ -78,7 +78,7 @@ message :: ParserM Message
 message = (,) <$>  deltaTime <*> event
 
 deltaTime :: ParserM Word32
-deltaTime = getVarlen
+deltaTime = "delta time" <??> getVarlen
 
 event :: ParserM Event
 event = word8 >>= step
@@ -92,32 +92,54 @@ event = word8 >>= step
            | otherwise      = DataEvent        <$> dataEvent n
 
 dataEvent :: Word8 -> ParserM DataEvent
-dataEvent tag = (\b c d -> Data4 tag b c d) <$> word8 <*> word8 <*> word8
+dataEvent tag = pure $ Data1 tag
 
 
--- hex2 :: Integral a => a -> String
--- hex2 = ($ "") . showHex 
    
 voiceEvent :: SplitByte -> ParserM VoiceEvent
-voiceEvent (SB 0x8 ch)  = (NoteOff ch)        <$> word8 <*> word8
-voiceEvent (SB 0x9 ch)  = (NoteOn ch)         <$> word8 <*> word8
-voiceEvent (SB 0xA ch)  = (NoteAftertouch ch) <$> word8 <*> word8
-voiceEvent (SB 0xB ch)  = (Controller ch)     <$> word8 <*> word8
-voiceEvent (SB 0xC ch)  = (ProgramChange ch)  <$> word8 
-voiceEvent (SB 0xD ch)  = (ChanAftertouch ch) <$> word8 
-voiceEvent (SB 0xE ch)  = (PitchBend ch)      <$> word16be
+voiceEvent (SB 0x8 ch)  = 
+    "note-off"          <??> (NoteOff ch)        <$> word8 <*> word8
+
+voiceEvent (SB 0x9 ch)  = 
+    "note-on"           <??> (NoteOn ch)         <$> word8 <*> word8
+
+voiceEvent (SB 0xA ch)  = 
+    "note aftertouch"   <??> (NoteAftertouch ch) <$> word8 <*> word8
+    
+voiceEvent (SB 0xB ch)  = 
+    "controller"        <??> (Controller ch)     <$> word8 <*> word8
+
+voiceEvent (SB 0xC ch)  = 
+    "program change"    <??> (ProgramChange ch)  <$> word8 
+
+voiceEvent (SB 0xD ch)  = 
+    "chan aftertouch"   <??> (ChanAftertouch ch) <$> word8 
+
+voiceEvent (SB 0xE ch)  = 
+    "pitch bend"        <??> (PitchBend ch)      <$> word16be
+
 voiceEvent (SB z   _ )  = reportError $ "voiceEvent " ++ hexStr z 
 
 
 sysCommonEvent :: Word8 -> ParserM SysCommonEvent
-sysCommonEvent 0xF1 = QuarterFrame . splitByte      <$> word8
-sysCommonEvent 0xF2 = SongPosPointer                <$> word8 <*> word8
-sysCommonEvent 0xF3 = SongSelect                    <$> word8
-sysCommonEvent 0xF4 = pure $ Common_undefined 0xF4
-sysCommonEvent 0xF5 = pure $ Common_undefined 0xF5
-sysCommonEvent 0xF6 = pure TuneRequest
-sysCommonEvent 0xF7 = pure EOX
-sysCommonEvent tag  = pure $ Common_undefined tag
+sysCommonEvent 0xF1     = 
+    "quarter frame"     <??> QuarterFrame . splitByte      <$> word8
+
+sysCommonEvent 0xF2     = 
+    "song pos. pointer" <??> SongPosPointer                <$> word8 <*> word8
+
+sysCommonEvent 0xF3     = 
+    "song select"       <??> SongSelect                    <$> word8
+
+sysCommonEvent 0xF4     = pure $ Common_undefined 0xF4
+
+sysCommonEvent 0xF5     = pure $ Common_undefined 0xF5
+
+sysCommonEvent 0xF6     = pure TuneRequest
+
+sysCommonEvent 0xF7     = pure EOX
+
+sysCommonEvent tag      = pure $ Common_undefined tag
 
 
 sysRealTimeEvent :: Word8 -> ParserM SysRealTimeEvent
@@ -133,31 +155,48 @@ sysRealTimeEvent tag  = pure $ RT_undefined tag
 
 
 sysExEvent :: ParserM SysExEvent
-sysExEvent = (uncurry SysEx) <$> getVarlenBytes
+sysExEvent = "sys-ex" <??> (uncurry SysEx) <$> getVarlenBytes
                       
 
 
 metaEvent :: Word8 -> ParserM MetaEvent
-metaEvent 0x00 = SequenceNumber   <$> (assertWord8 2     *> word16be)
-metaEvent 0x01 = textEvent GENERIC_TEXT 
-metaEvent 0x02 = textEvent COPYRIGHT_NOTICE
-metaEvent 0x03 = textEvent SEQUENCE_NAME
-metaEvent 0x04 = textEvent INSTRUMENT_NAME
-metaEvent 0x05 = textEvent LYRICS
-metaEvent 0x06 = textEvent MARKER
-metaEvent 0x07 = textEvent CUE_POINT
-metaEvent 0x20 = ChannelPrefix    <$> word8             <*> word8
-metaEvent 0x2F = EndOfTrack       <$   assertWord8 0  
-metaEvent 0x51 = SetTempo         <$> (assertWord8 3     *> word24be)
-metaEvent 0x54 = SMPTEOffset      <$> (assertWord8 5     *> word8) 
-                                  <*> word8             <*> word8
-                                  <*> word8             <*> word8
-metaEvent 0x58 = TimeSignature    <$> (assertWord8 4     *> word8)
-                                  <*> word8             <*> word8 
-                                  <*> word8 
-metaEvent 0x59 = KeySignature     <$> (assertWord8 2     *> int8) 
-                                  <*> scale
-metaEvent 0x7F = (uncurry SSME)   <$> getVarlenBytes     
+metaEvent 0x00          = 
+    "sequence number"   <??> SequenceNumber <$> (assertWord8 2 *> word16be)
+
+metaEvent 0x01          = "generic text"      <??> textEvent GENERIC_TEXT 
+metaEvent 0x02          = "copyrightn notice" <??> textEvent COPYRIGHT_NOTICE
+metaEvent 0x03          = "sequence name"     <??> textEvent SEQUENCE_NAME
+metaEvent 0x04          = "instrument name"   <??> textEvent INSTRUMENT_NAME
+metaEvent 0x05          = "lyrics"            <??> textEvent LYRICS
+metaEvent 0x06          = "marker"            <??> textEvent MARKER
+metaEvent 0x07          = "cue point"         <??> textEvent CUE_POINT
+
+metaEvent 0x20          = 
+    "channel prefix"    <??> ChannelPrefix <$> word8 <*> word8
+
+metaEvent 0x2F          = 
+    "end of track"      <??> EndOfTrack <$ assertWord8 0  
+
+metaEvent 0x51          = 
+    "set tempo"         <??> SetTempo <$> (assertWord8 3     *> word24be)
+
+metaEvent 0x54          = 
+    "smpte offset"      <??> SMPTEOffset  <$> (assertWord8 5   *> word8) 
+                                          <*> word8           <*> word8
+                                          <*> word8           <*> word8
+
+metaEvent 0x58          = 
+    "time signature"    <??> TimeSignature  <$> (assertWord8 4   *> word8)
+                                            <*> word8           <*> word8 
+                                            <*> word8 
+
+metaEvent 0x59          = 
+    "key signature"     <??> KeySignature   <$> (assertWord8 2   *> int8) 
+                                            <*> scale
+
+metaEvent 0x7F          = 
+    "system specific meta event" <??> (uncurry SSME) <$> getVarlenBytes     
+
 metaEvent z    = reportError $ "unreconized meta-event " ++ hexStr z
 
 

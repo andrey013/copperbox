@@ -30,12 +30,16 @@ module ZMidi.Core.Internal.ParserMonad
   , word24be
   , word32be
   , char8
+
+  , (<??>)
   , reportError
 
   , count
   , gencount
   , text
   , boundRepeat
+
+  
 
   ) where
 
@@ -120,9 +124,14 @@ word32be = ParserM $ \s@(ParserState n bs) -> case uncons4 bs of
 char8 :: ParserM Char
 char8 = (chr . fromIntegral) <$> word8
 
+infixr 0 <??>
 
+(<??>) :: ErrMsg -> ParserM a -> ParserM a
+(<??>) msg p = ParserM $ \s -> case getParserM p s of
+                                (Left (n,_),s') -> (Left (n,msg),s')
+                                (Right a,   s') -> (Right a,s')
 
-reportError :: String -> ParserM a
+reportError :: ErrMsg -> ParserM a
 reportError msg = ParserM $ \s -> (Left (pos s, msg), s)
 
 

@@ -172,7 +172,7 @@ type Message = (DeltaTime, Event)
 -- MIDI has four types of event.
 --
 data Event 
-    -- | Data event - 4 bytes long including initial tag byte, 
+    -- | Data event - just initial tag byte, 
     -- uninterpreted
     = DataEvent         DataEvent
 
@@ -208,7 +208,7 @@ data Event
   deriving (Eq,Show,Ord)
 
 
-data DataEvent = Data4 TagByte Word8 Word8 Word8
+data DataEvent = Data1 TagByte
   deriving (Eq,Ord,Show)
 
 -- | @'VoiceEvent'@ 
