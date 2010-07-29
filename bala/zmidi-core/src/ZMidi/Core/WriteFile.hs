@@ -48,13 +48,13 @@ putMidiFile (MidiFile hdr trks) =
   
 putHeader :: Header -> PutM ()
 putHeader (Header fmt n td) =
-    outString "MThd"  *>  putWord32be 6 *> 
+    putString "MThd"  *>  putWord32be 6 *> 
     putHFormat fmt    *>  putWord16be n *>  putTimeDivision td
 
 
 putTrack :: Track -> PutM ()
 putTrack (Track ms) = 
-    outString "MTrk" *> (putWord32be $ fromIntegral $ L.length bs)
+    putString "MTrk" *> (putWord32be $ fromIntegral $ L.length bs)
                      *> putLazyByteString bs
   where 
     bs = runPut (mapM_ putMessage ms) 
@@ -66,78 +66,116 @@ putHFormat MF1 = putWord16be 1
 putHFormat MF2 = putWord16be 2
 
 putTimeDivision :: TimeDivision -> PutM ()
-putTimeDivision (FPS n) = putWord16be (n `setBit` 15)
+putTimeDivision (FPS n) = putWord16be (n `setBit`   15)
 putTimeDivision (TPB n) = putWord16be (n `clearBit` 15)
 
 
 
 putMessage :: Message -> PutM () 
-putMessage (dt,evt) = varlen dt *> putEvent evt
+putMessage (dt,evt) = putVarlen dt *> putEvent evt
 
 putEvent :: Event -> PutM ()
-putEvent (DataEvent        evt) = putDataEvent  evt
-putEvent (VoiceEvent       evt) = putVoiceEvent evt
-putEvent (SysExEvent       evt) = putSysExEvent evt
-putEvent (SysCommonEvent   evt) = putSysCommonEvent evt
-putEvent (SysRealTimeEvent evt) = putSysRealTimeEvent evt
-putEvent (MetaEvent        evt) = putMetaEvent  evt
+putEvent (DataEvent e)        = putDataEvent  e
+putEvent (VoiceEvent e)       = putVoiceEvent e
+putEvent (SysExEvent e)       = putSysExEvent e
+putEvent (SysCommonEvent e)   = putSysCommonEvent e
+putEvent (SysRealTimeEvent e) = putSysRealTimeEvent e
+putEvent (MetaEvent e)        = putMetaEvent  e
   
 
 putDataEvent :: DataEvent -> PutM ()
-putDataEvent (Data1 tag) = out1 tag
+putDataEvent (Data1 tag) = putWord8 tag
     
 putVoiceEvent :: VoiceEvent -> PutM ()
-putVoiceEvent (NoteOff c n v)         = out3 (0x8 `u4l4` c) n v 
-putVoiceEvent (NoteOn c n v)          = out3 (0x9 `u4l4` c) n v 
-putVoiceEvent (NoteAftertouch c n v)  = out3 (0xA `u4l4` c) n v
-putVoiceEvent (Controller c n v)      = out3 (0xB `u4l4` c) n v
-putVoiceEvent (ProgramChange c n)     = out2 (0xC `u4l4` c) n
-putVoiceEvent (ChanAftertouch c v)    = out2 (0xD `u4l4` c) v  
-putVoiceEvent (PitchBend c v)         = out1 (0xE `u4l4` c) *> putWord16be v
+putVoiceEvent (NoteOff c n v)         = 
+    putWord8 (0x8 `u4l4` c) *> putWord8 n *> putWord8 v 
+
+putVoiceEvent (NoteOn c n v)          = 
+    putWord8 (0x9 `u4l4` c) *> putWord8 n *> putWord8 v 
+
+putVoiceEvent (NoteAftertouch c n v)  = 
+    putWord8 (0xA `u4l4` c) *> putWord8 n *> putWord8 v
+
+putVoiceEvent (Controller c n v)      = 
+    putWord8 (0xB `u4l4` c) *> putWord8 n *> putWord8 v
+
+putVoiceEvent (ProgramChange c n)     = 
+    putWord8 (0xC `u4l4` c) *> putWord8 n
+
+putVoiceEvent (ChanAftertouch c v)    = 
+    putWord8 (0xD `u4l4` c) *> putWord8 v  
+
+putVoiceEvent (PitchBend c v)         = 
+    putWord8 (0xE `u4l4` c) *> putWord16be v
 
 putSysExEvent :: SysExEvent -> PutM ()
-putSysExEvent (SysEx n ws) = out1 0xF0 *> varlen n *> outBytes ws
+putSysExEvent (SysEx n ws) = 
+    putWord8 0xF0 *> putVarlen n *> mapM_ putWord8 ws
 
 putSysCommonEvent :: SysCommonEvent -> PutM ()
-putSysCommonEvent (QuarterFrame sb)        = out1 0xF1 *> outSB sb
-putSysCommonEvent (SongPosPointer lsb msb) = out3 0xF2 lsb msb
-putSysCommonEvent (SongSelect w)           = out2 0xF3 w
-putSysCommonEvent (Common_undefined tag)   = out1 tag
-putSysCommonEvent TuneRequest              = out1 0xF6
-putSysCommonEvent EOX                      = out1 0xF7
+putSysCommonEvent (QuarterFrame sb)        = 
+    putWord8 0xF1 *> putSplitByte sb
+
+putSysCommonEvent (SongPosPointer lsb msb) = 
+    putWord8 0xF2 *> putWord8 lsb *> putWord8 msb
+
+putSysCommonEvent (SongSelect w)           = 
+    putWord8 0xF3 *> putWord8 w
+
+putSysCommonEvent (Common_undefined tag)   = 
+    putWord8 tag
+
+putSysCommonEvent TuneRequest              = 
+    putWord8 0xF6
+
+putSysCommonEvent EOX                      = 
+    putWord8 0xF7
 
 putSysRealTimeEvent :: SysRealTimeEvent -> PutM ()
-putSysRealTimeEvent TimingClock            = out1 0xF8
-putSysRealTimeEvent (RT_undefined tag)     = out1 tag
-putSysRealTimeEvent StartSequence          = out1 0xFA
-putSysRealTimeEvent ContinueSequence       = out1 0xFB
-putSysRealTimeEvent StopSequence           = out1 0xFC
-putSysRealTimeEvent ActiveSensing          = out1 0xFE
-putSysRealTimeEvent SystemReset            = out1 0xFF
+putSysRealTimeEvent TimingClock            = putWord8 0xF8
+putSysRealTimeEvent (RT_undefined tag)     = putWord8 tag
+putSysRealTimeEvent StartSequence          = putWord8 0xFA
+putSysRealTimeEvent ContinueSequence       = putWord8 0xFB
+putSysRealTimeEvent StopSequence           = putWord8 0xFC
+putSysRealTimeEvent ActiveSensing          = putWord8 0xFE
+putSysRealTimeEvent SystemReset            = putWord8 0xFF
 
 putMetaEvent :: MetaEvent -> PutM ()
 putMetaEvent (TextEvent ty ss)                = 
-    out2 0xFF (texttype ty) *> (varlen $ fromIntegral $ length ss) *> outString ss
+    putWord8 0xFF *> putWord8 (texttype ty) 
+                  *> putVarlen   (fromIntegral $ length ss) 
+                  *> putString ss
   
-putMetaEvent (SequenceNumber n)               = out3 0xFF 0x00 2 *> putWord16be n
+putMetaEvent (SequenceNumber n)               = 
+    putWord8 0xFF *> putWord8 0x00 *> prefixLen 2 (putWord16be n)
   
-putMetaEvent (ChannelPrefix i ch)             = out3 0xFF 0x20 i *> out1 ch
+putMetaEvent (ChannelPrefix i ch)             = 
+    putWord8 0xFF *> putWord8 0x20 *> prefixLen i (putWord8 ch)
   
-putMetaEvent (EndOfTrack)                     = out3 0xFF 0x2F 0
+putMetaEvent (EndOfTrack)                     = 
+    putWord8 0xFF *> putWord8 0x2F *> prefixLen 0 (pure ())
   
-putMetaEvent (SetTempo t)                     = out3 0xFF 0x51 3 *> putWord24be t
+putMetaEvent (SetTempo t)                     = 
+    putWord8 0xFF *> putWord8 0x51 *> prefixLen 3 (putWord24be t)
   
 putMetaEvent (SMPTEOffset hr mn sc fr sfr)    =
-    out3 0xFF 0x54 5 *> out5 hr mn sc fr sfr
+    putWord8 0xFF *> putWord8 0x54 *> prefixLen 5 body
+ where
+    body = putWord8 hr *> putWord8 mn *> putWord8 sc 
+                       *> putWord8 fr *> putWord8 sfr
   
 putMetaEvent (TimeSignature nmr dnm met nps)  =
-    out3 0xFF 0x58 4 *> out4 nmr dnm met nps    
+    putWord8 0xFF *> putWord8 0x58 *> prefixLen 4 body
+  where
+    body = putWord8 nmr *> putWord8 dnm *> putWord8 met *> putWord8 nps    
   
 putMetaEvent (KeySignature ky sc)             =
-    out3 0xFF 0x59 2 *> out2 (wrapint ky) (wscale sc)
+    putWord8 0xFF *> putWord8 0x59 *> prefixLen 2 body
+  where
+    body = putWord8 (wrapint ky) *> putWord8 (wscale sc)
 
 putMetaEvent (SSME i ws)                      =  
-    out2 0xFF 0x7F *> varlen i *> outBytes ws
+    putWord8 0xFF *> putWord8 0x7F *> putVarlen i *> mapM_ putWord8 ws
 
 
     
@@ -148,31 +186,17 @@ putMetaEvent (SSME i ws)                      =
 --------------------------------------------------------------------------------
 -- Output helpers
 
-outSB :: SplitByte -> PutM ()
-outSB a = putWord8 (joinByte a)
+prefixLen :: Word8 -> PutM () -> PutM ()
+prefixLen n out = putWord8 n *> out 
+
+putSplitByte :: SplitByte -> PutM ()
+putSplitByte a = putWord8 (joinByte a)
 
 infixr 5 `u4l4`
 
 u4l4 :: Word8 -> Word8 -> Word8
 a `u4l4` b = (a `shiftL` 4) + b 
-
-out1            :: Word8 -> PutM () 
-out1            = putWord8
-
-out2            :: Word8 -> Word8 -> PutM () 
-out2 a b        = putWord8 a *> putWord8 b
-
-out3            :: Word8 -> Word8 -> Word8 -> PutM ()
-out3 a b c      = putWord8 a *> putWord8 b *> putWord8 c
-
-out4            :: Word8 -> Word8 -> Word8 -> Word8 -> PutM () 
-out4 a b c d    = putWord8 a *> putWord8 b *> putWord8 c *> putWord8 d
-
-out5            :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 -> PutM ()
-out5 a b c d e  = putWord8 a *> putWord8 b *> putWord8 c
-                             *> putWord8 d *> putWord8 e
-
-   
+  
 
 wrapint :: Int8 -> Word8
 wrapint i | i < 0     = fromIntegral $ i' + 256
@@ -187,7 +211,7 @@ wscale MINOR = 0x01
 
 
 putWord24be :: Word32 -> PutM ()
-putWord24be i = out3 c b a 
+putWord24be i = putWord8 c *> putWord8 b *> putWord8 a 
   where 
   (a, r1)   = lowerEight i     
   (b, r2)   = lowerEight r1
@@ -201,21 +225,18 @@ lowerEight n = (fromIntegral lower8, remain)
     remain = n `shiftR` 8
     lower8 = n .&. 0xff 
       
-varlen :: Word32 -> PutM ()
-varlen = step . toVarlen where
-    step (V1 a)          = out1 a
-    step (V2 a b)        = out2 a b
-    step (V3 a b c)      = out3 a b c
-    step (V4 a b c d)    = out4 a b c d
+putVarlen :: Word32 -> PutM ()
+putVarlen = step . toVarlen where
+    step (V1 a)          = putWord8 a
+    step (V2 a b)        = putWord8 a *> putWord8 b
+    step (V3 a b c)      = putWord8 a *> putWord8 b *> putWord8 c
+    step (V4 a b c d)    = putWord8 a *> putWord8 b *> putWord8 c *> putWord8 d
     
 
-outString :: String -> PutM ()    
-outString s = putLazyByteString (L.pack $ fmap (fromIntegral . ord) s) 
+putString :: String -> PutM ()    
+putString s = putLazyByteString (L.pack $ fmap (fromIntegral . ord) s) 
 
 
-outBytes :: [Word8] -> PutM () 
-outBytes []     = return ()
-outBytes (s:ss) = putWord8 s *> outBytes ss
 
 
 texttype :: TextType -> Word8
