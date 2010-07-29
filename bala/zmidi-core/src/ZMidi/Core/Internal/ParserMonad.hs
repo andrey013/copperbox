@@ -7,8 +7,8 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Stability   :  unstable
+-- Portability :  As per dependencies.
 --
 -- A parse monad - better error handling than Binary-Get.
 --

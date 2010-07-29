@@ -7,59 +7,50 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Stability   :  unstable
+-- Portability :  As per dependencies.
 --
 -- Concrete syntax tree for MIDI files.
+--
+-- Values are sometimes not interpreted. This means that the
+-- the data types do not fully represent the sematics of the 
+-- data, but all data is stored in the tree (or is 
+-- synthesizeable).
+-- 
+-- @ readFile >>= writeFile @ will produce an identical binary \[1\]. 
+--
+-- \[1\] Or it should, failure indicates a bug...
 --
 --------------------------------------------------------------------------------
 
 
 module ZMidi.Core.Datatypes 
   (
-  -- * MidiFile representation
+  -- * MidiFile representation.
     MidiFile(..)
-  
-  -- * File header with basic information
-  ,  Header(..)
-  
-  -- * Track - a series of events
+  , Header(..)  
   , Track(..)
-  
-  -- * Header format
-  , HFormat(..)
-    
-
-  -- * A midi event paired with the delta time of its onset
+  , Format(..)
   , DeltaTime
   , Message
-    
-
-  -- * A control or meta event
   , Event(..)
-    
   , DataEvent(..)
   , VoiceEvent(..)
   , SysExEvent(..)
   , SysCommonEvent(..)
   , SysRealTimeEvent(..)
   , MetaEvent(..)
-    
-  -- * Representation of delta times as a division of quarter notes
   , TimeDivision(..)
-  -- * Type of a text meta-event
   , TextType(..)
-    
-  -- * Scale type - used for setting key signature
   , ScaleType(..)
 
-
-  -- * SplitByte
+  -- * Interim types.
+  -- ** SplitByte
   , SplitByte(..)
   , splitByte
   , joinByte
     
-  -- * Varlen - not explicitly used in the AST
+  -- ** Varlen
   , Varlen(..)
   , fromVarlen
   , toVarlen
@@ -75,40 +66,41 @@ import Numeric (showHex)
 
 type TagByte = Word8
 
+
+-- | 'MidiFile' : @ header * tracks @
+--
 data MidiFile = MidiFile 
       { mf_header         :: Header
       , mf_tracks         :: [Track]
       }
   deriving (Eq,Show)
 
--- | @'Header' fmt nt td@ 
+-- | 'Header' : @ format * num_tracks * time_division @ 
 --
--- @fmt@ - file format - see @'HFormat'@, 
--- @nt@  - number of tracks,
--- @td@  - @'TimeDivision'@, often 384 or 480 ticks per beat.
+-- 'TimeDivision' is often 384 or 480 ticks per beat.
+--
 -- The header is the start of a MIDI file, it is indicated by the 
--- marker \'@MThd@\'.   
+-- 4 character marker @MThd@.   
 --
 data Header = Header { 
-      hdr_format        :: HFormat,
+      hdr_format        :: Format,
       num_tracks        :: Word16,
       time_division     :: TimeDivision
     }
   deriving (Eq,Show)
 
--- | @'Track' xs@ 
+-- | 'Track' : @ [message] @
 --
--- @xs@ - list of @'Message'@. In MIDI files, the start of a track is
--- indicated by the marker \'@MTrk@\'.  
+-- In MIDI files, the start of a track is indicated by the 4 
+-- character marker @MTrk@.  
 --
 newtype Track = Track { getTrack :: [Message] }
   deriving (Eq,Show)
 
--- | @'HFormat'@ 
+-- | The file format - in a MIDI file this is a big-endian 
+-- word16 with 0,1 or 2 being the only valid values. 
 --
--- The file format - in a MIDI file this is a big-endian word16 with 0,1 or 2
--- being the only valid values. 
-data HFormat 
+data Format 
     -- | Format 0 file - single multi-channel track.
     = MF0 
     -- | Format 1 file - 1 or more tracks, played simultaneously.
@@ -117,20 +109,20 @@ data HFormat
     | MF2
   deriving (Eq, Enum, Show) 
 
--- | @'TimeDivision'@ 
---
--- Defines the default unit of time in the MIDI file.
+-- | Default unit of time in the MIDI file.
 --
 data TimeDivision 
-    -- | frames per second.
+    -- | Frames-per-second.
+    --
     = FPS Word16
-    -- | ticks per beat, i.e. the number of units for a quater note.
+    
+    -- | Ticks-per-beat, i.e. the number of units for a quater 
+    -- note.
+    --
     | TPB Word16    
   deriving (Eq,Show)
                                              
--- | @'TextType'@ 
---
--- Signal the type of a text meta event.
+-- | Enumeration of the text meta event types.
 --
 data TextType 
     = GENERIC_TEXT 
@@ -142,19 +134,19 @@ data TextType
     | CUE_POINT 
   deriving (Eq,Enum,Ord,Show) 
 
--- | @'DeltaTime'@ 
+-- | All time values in a MIDI track are represented as a \delta\ 
+-- from the previous event rather than an absolute time. 
 --
--- All time values in a MIDI track are represented as a \delta\ from the 
--- previous event rather than an absolute time. 
--- Although DeltaTime is a type synonym for Word32, in MIDI files it is 
--- represented as a @varlen@ to save space. 
+-- Although DeltaTime is a type synonym for Word32, in MIDI 
+-- files it is represented as a @varlen@ to save space. 
 --
 type DeltaTime = Word32
 
--- | @'Message'@ 
+-- | MIDI messages are pairs of 'DeltaTime' and 'Event' wrapped in 
+-- a newtype. 
 --
--- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@ wrapped in a newtype. 
--- Sequential messages with delta time 0 will be played simultaneously.  
+-- Sequential messages with delta time 0 are played 
+-- simultaneously.  
 --
 type Message = (DeltaTime, Event)
 
@@ -167,39 +159,38 @@ type Message = (DeltaTime, Event)
      
 
 
--- | @'Event'@ 
---
--- MIDI has four types of event.
+-- | Recognised event types - some types ('DataEvent' and 
+-- 'SysEx') are not interpreted.
 --
 data Event 
     -- | Data event - just initial tag byte, 
     -- uninterpreted
+    --
     = DataEvent         DataEvent
 
     -- | Voice event (e.g @note-on@, @note-off@) are relayed to specific
     -- channels.
+    --
     | VoiceEvent        VoiceEvent
 
 
-    -- | SysEx - system exclusive - events. Usually synthesizer 
-    -- specific.
-    --
-    -- @length * data@ - an uninterpreted sysex event.          
+    -- | SysEx - system exclusive event. Usually synthesizer 
+    -- specific, not interpreted.
     --
     | SysExEvent        SysExEvent
 
 
-    -- | SysCommon - system common events.           
+    -- | SysCommon - system common event.
     --
     | SysCommonEvent    SysCommonEvent
 
 
-    -- | SysRealTime - system realtime events.           
+    -- | SysRealTime - system realtime event.
     --
     | SysRealTimeEvent  SysRealTimeEvent
 
 
-    -- | Meta event - usually interpretable (e.g. @end-of-track@, 
+    -- | Meta event - interpreted (e.g. @end-of-track@, 
     -- @set-tempo@).
     --
     | MetaEvent         MetaEvent
@@ -207,91 +198,158 @@ data Event
 
   deriving (Eq,Show,Ord)
 
-
+-- | Data events are events with tags from 0x00 to 0x7F. 
+-- 
+-- Data events have no payload - they are represented only by the
+-- tag byte.  
+--
 data DataEvent = Data1 TagByte
   deriving (Eq,Ord,Show)
 
--- | @'VoiceEvent'@ 
+-- | Voice events control the output of the synthesizer.
 --
--- Voice events control the output of the synthesizer.
--- Note - these are not in the the same order as there byte values
--- Controller and ProgramChange are higher than they /naturally/
--- occur so the will come first after a comparison / sort.
+-- Note - the constructors are not in the the same order as their 
+-- byte values. Controller and ProgramChange are higher than they 
+-- /naturally/ occur so the will come first after a comparison or 
+-- sort.
+--
+-- When generating MIDI, Controller and ProgramChange events 
+-- should be signalled before NoteOn or NoteOff events at the same 
+-- delta-time. Changing the order of the constructors helps to 
+-- sort for this.
 --
 data VoiceEvent 
-    -- | @Controller chan type value@ - controller change to the channel,
-    -- e.g. by a footswitch.
+    -- | @ channel * controller_number * value @ 
+    -- 
+    -- Controller change, e.g. by a footswitch.
+    --
     = Controller          Word8 Word8 Word8
 
-    -- | @ProgramChange chan num@ - change the instrument playing on the 
-    -- specified channel. See 'GMInst' for the instruments available with
-    -- General MIDI.
+    -- | @ channel * program_number @ - change the instrument 
+    -- playing on the specified channel. For playback on 
+    -- computers (rather than synthesizers) the program numbers
+    -- will correspond to the /General MIDI/ instrument numbers.
+    --
     | ProgramChange       Word8 Word8
 
-    -- | @NoteOff chan note velocity@ - turn off a sounding note.
+    -- | @ channel * note * velocity @ 
+    -- 
+    -- Turn off a sounding note.
+    --
     | NoteOff             Word8 Word8 Word8   
 
-    -- | @NoteOn chan note velocity@ - start playing a note.
+    -- | @ channel * note * velocity @ 
+    -- 
+    -- Start playing a note.
+    --
     | NoteOn              Word8 Word8 Word8
 
-    -- | @NoteAftertouch chan note value@ - change in pressure applied to 
-    -- the synthesizer key. 
+    -- | @ channel * note * pressure_value @ 
+    -- 
+    -- Change of pressure applied to the synthesizer key. 
+    --
     | NoteAftertouch      Word8 Word8 Word8     
 
-    -- | @ChanAftertouch chan value@ - 
+    -- | @ channel * pressure_value @ 
+    -- 
     | ChanAftertouch      Word8 Word8
 
-    -- | @PitchBend chan value@ - change the pitch of a sounding note. 
-    -- Often used to approxiamate microtonal tunings.
+    -- | @ channel * value @ 
+    -- 
+    -- Change the pitch of a sounding note. Often used to 
+    -- approximate microtonal tunings.
+    -- 
+    -- NOTE - currently value is uninterpreted.
+    --
     | PitchBend           Word8 Word16
   deriving (Eq,Show,Ord)
 
--- | @'SysExEvent'@ 
---
--- \SysEx\ events - these are generally uninterpreted by ZMidi. 
+-- | \SysEx\ - system exclusive event. 
 --
 data SysExEvent
-    -- | @SysEx length data@ - an uninterpreted sysex event.          
+    -- | @ length * data @ 
+    -- 
+    -- An uninterpreted sys-ex event.
+    --
     = SysEx               Word32 [Word8]
   deriving (Eq,Show,Ord)
 
 
--- | @'SysCommonEvent'@ 
+-- | System common event.
 --
--- \SysEx\ events - these are generally uninterpreted by ZMidi. 
+-- Common information for all channels in a system. 
+--
+-- These events may not be pertinent to MIDI files generated on a 
+-- computer (as opposed to MIDI generated by a synthesizer or 
+-- sequencer).
 --
 data SysCommonEvent
-    -- | @QuarterFrame@           
+    -- | Time code quarter frame.
+    --
     = QuarterFrame      SplitByte
     
+    -- | Song position pointer.
+    --
     | SongPosPointer    Word8       Word8
 
+    -- | @ song_number @
+    --
+    -- Song number should be in the range 0..127.
+    --
     | SongSelect        Word8
 
     -- | Tag should be limited to 0xF4 or 0xF5.
     --
+    -- Other values would indicate either a badly formed MIDI
+    -- file or a failure with the parser.
+    --
     | Common_undefined  TagByte
 
+    -- | Tune request message for analogue synthesizers.
+    --
     | TuneRequest
+    
+    -- | End-of-system-exclusive message.
     | EOX
   deriving (Eq,Show,Ord)
 
 
--- | @'SysRealTime'@ 
+-- | System real-time event.
 --
--- \SysEx\ events - these are generally uninterpreted by ZMidi. 
+-- These events may not be pertinent to MIDI files generated on a 
+-- computer (as opposed to MIDI generated by a synthesizer or 
+-- sequencer).
 --
 data SysRealTimeEvent
-    -- | @QuarterFrame@           
+    -- | Timing signal.
+    --      
     = TimingClock
     
     -- | Tag should be limited to either 0xF9 or 0xFD.
     --
+    -- Other values would indicate either a badly formed MIDI
+    -- file or a failure with the parser.
+    --
     | RT_undefined      TagByte
+    
+    -- | Start playing a sequence.
+    -- 
     | StartSequence
+    
+    -- | Continue playing a stopped sequence.
+    --
     | ContinueSequence
+
+    -- | Stop playing a sequence.
+    --
     | StopSequence
+
+    -- | Synchronization pulse...
+    -- 
     | ActiveSensing
+
+    -- | Reset to power-up status.
+    --
     | SystemReset
   deriving (Eq,Show,Ord)
 
@@ -300,67 +358,80 @@ data SysRealTimeEvent
 
 
 
--- | @'MetaEvent'@ 
---
--- Meta events - in Format 1 files \general\ events (e.g. text events) should
--- only appear in track 1. \Specific\ events (e.g. end-of-track) should appear
--- in any track where necessary. 
+-- | Meta event 
+-- 
+-- In Format 1 files general events (e.g. text events) should
+-- only appear in track 1. Certain events (e.g. end-of-track) 
+-- can appear in any track where necessary. 
 --
 data MetaEvent
 
-    -- | @TextEvent text_type contents@ - a free text field (e.g. copyright).
-    -- The contents can notionally be any length.
+    -- | @ text_type * contents @ 
+    -- 
+    -- Free text field (e.g. copyright statement). The contents 
+    -- can notionally be any length.
     --
     = TextEvent           TextType String
 
-    -- | @SequenceNumber value@ - Format 1 files - only track 1 should have a 
-    -- sequence number. Format 2 files - a sequence number should identify 
-    -- each track. 
-    -- This should occur at the start of a track, before any non-zero time 
-    -- events.
+    -- | @ value @ 
+    -- 
+    -- Format 1 files - only track 1 should have a sequence 
+    -- number. 
+    --
+    -- Format 2 files - a sequence number should identify each 
+    -- track.
+    --  
+    -- The sequence number event should occur at the start of a 
+    -- track, before any non-zero time events.
     --
     | SequenceNumber      Word16
 
-    -- | @ChannelPrefix chan@ - relay all meta and sysex events to the 
-    -- given channel.
+    -- | @ 1 * channel @ 
+    -- 
+    -- Relay all meta and sys-ex events to the given channel.
     --
-    | ChannelPrefix       Word8 Word8   -- first w8==1
+    -- The first byte should always be 1.
+    -- 
+    | ChannelPrefix       Word8 Word8
 
-    -- | @EndOfTrack@ - indicated end of track. 
+    -- | End-of-track event. 
     --
     | EndOfTrack
 
-    -- | @SetTempo mspqn@ - microseconds per quarter-note.
+    -- | @ microseconds_per_quarter_note @
     --
     | SetTempo            Word32
 
-    -- | @SMPTEOffset hour  minute second frac subfrac@ - the SMPTE time when 
-    -- a track should start. This should occur at the start of a track,
-    -- before any non-zero time events.
+    -- | @ hour * minute * second * frac * subfrac @ 
+    -- 
+    -- The SMPTE time when a track should start. This event 
+    -- should occur at the start of a track, before any non-zero 
+    -- time events.
     --
     | SMPTEOffset         Word8 Word8 Word8 Word8 Word8
     
-    -- | @TimeSignature numerator denominator metro num-32nd-notes@ - time 
-    -- signature.
+    -- | @ numerator * denominator * metro * num_32nd_notes @ 
     --
     | TimeSignature       Word8 Word8 Word8 Word8
     
-    -- | @KeySignature key_type scale_type@ - key_type is the number of 
-    -- sharps (postive numbers) or flats (negative numbers), 
-    -- e.g. (-1) is 1 flat.
-    -- 'ScaleType' indicates major or minor.  
+    -- | @ key_type * scale_type @ 
+    --
+    -- @key_type@ is the number of sharps (postive numbers) or 
+    -- flats (negative numbers), e.g. (-1) is 1 flat.
+    --
+    -- @scale_type@ indicates major or minor.  
     --
     | KeySignature        Int8 ScaleType
     
-    -- | @SSME length data@ - sequencer specific meta-event.
+    -- | @ length * data@ 
+    -- 
+    -- Sequencer specific meta-event - uninterpreted.
     --
     | SSME                Word32 [Word8]
 
   deriving (Eq,Show,Ord)
 
--- | @'ScaleType'@ 
---
--- Scale type - @major@ or @minor@.  
+-- | Scale type - @major@ or @minor@.  
 --
 data ScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Ord,Show)
@@ -369,6 +440,9 @@ data ScaleType = MAJOR | MINOR
 
 --------------------------------------------------------------------------------
 
+-- | SplitByte - divide a byte into the upper four and lower 
+-- 4 bits.
+-- 
 data SplitByte = SB { upper4 :: Word8, lower4 :: Word8 }
   deriving (Eq,Ord,Show)
 
@@ -383,6 +457,12 @@ joinByte (SB a b) = (a `shiftL` 4) + (b .&. 0x0F)
 -- helper for varlen
 --------------------------------------------------------------------------------
 
+-- | Space efficient representation of length fields.
+-- 
+-- This data type is not used directly in the syntax tree where
+-- it would be cumbersome. But it is used as an intermediate type
+-- in the parser and emitter.
+--
 data Varlen = V1 !Word8
             | V2 !Word8 !Word8
             | V3 !Word8 !Word8 !Word8

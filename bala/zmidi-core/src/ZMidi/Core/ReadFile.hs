@@ -7,8 +7,8 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Stability   :  unstable
+-- Portability :  As per dependencies.
 --
 -- A MIDI file parser. 
 --
@@ -69,7 +69,7 @@ trackHeader :: ParserM Word32
 trackHeader = assertString "MTrk" >> word32be
 
 
--- wrong... 
+
 getMessages :: Word32 -> ParserM [Message]
 getMessages i = boundRepeat (fromIntegral i) message
 
@@ -202,7 +202,7 @@ metaEvent z    = reportError $ "unreconized meta-event " ++ hexStr z
 
 
                           
-format :: ParserM HFormat
+format :: ParserM Format
 format = word16be >>= fn 
   where 
     fn 0 = return MF0

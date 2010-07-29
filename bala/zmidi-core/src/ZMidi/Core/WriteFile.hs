@@ -7,8 +7,8 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Stability   :  unstable
+-- Portability :  As per dependencies.
 --
 -- Write a MIDI file.
 --
@@ -49,7 +49,7 @@ putMidiFile (MidiFile hdr trks) =
 putHeader :: Header -> PutM ()
 putHeader (Header fmt n td) =
     putString "MThd"  *>  putWord32be 6 *> 
-    putHFormat fmt    *>  putWord16be n *>  putTimeDivision td
+    putFormat fmt     *>  putWord16be n *>  putTimeDivision td
 
 
 putTrack :: Track -> PutM ()
@@ -60,10 +60,10 @@ putTrack (Track ms) =
     bs = runPut (mapM_ putMessage ms) 
 
 
-putHFormat :: HFormat -> PutM ()
-putHFormat MF0 = putWord16be 0
-putHFormat MF1 = putWord16be 1
-putHFormat MF2 = putWord16be 2
+putFormat :: Format -> PutM ()
+putFormat MF0 = putWord16be 0
+putFormat MF1 = putWord16be 1
+putFormat MF2 = putWord16be 2
 
 putTimeDivision :: TimeDivision -> PutM ()
 putTimeDivision (FPS n) = putWord16be (n `setBit`   15)
