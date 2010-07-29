@@ -18,6 +18,7 @@ module ZMidi.Core.Internal.ParserMonad
   (
 
     ErrMsg
+  , Pos
   , ParseErr
   , ParserM
   , runParser
@@ -90,7 +91,7 @@ getPos = ParserM $ \s -> (Right $ pos s, s)
 
 word8 :: ParserM Word8
 word8 = ParserM $ \s@(ParserState n bs) -> case L.uncons bs of 
-    Nothing      -> (Left (n,"word8 - not more data."), s)
+    Nothing      -> (Left (n,"word8 - no more data."), s)
     Just (a,bs') -> (Right a, ParserState (n+1) bs')
 
 
@@ -102,17 +103,17 @@ int8 = fromIntegral <$> word8
 
 word16be :: ParserM Word16
 word16be = ParserM $ \s@(ParserState n bs) -> case uncons2 bs of
-    Nothing -> (Left (n,"word16be - not more data."), s)
+    Nothing -> (Left (n,"word16be - no more data."), s)
     Just (a,b,bs') -> (Right $ w16be a b, ParserState (n+2) bs')
 
 word24be :: ParserM Word32
 word24be = ParserM $ \s@(ParserState n bs) -> case uncons3 bs of
-    Nothing -> (Left (n,"word24be - not more data."), s)
+    Nothing -> (Left (n,"word24be - no more data."), s)
     Just (a,b,c,bs') -> (Right $ w24be a b c, ParserState (n+3) bs')
 
 word32be :: ParserM Word32
 word32be = ParserM $ \s@(ParserState n bs) -> case uncons4 bs of
-    Nothing -> (Left (n, "word32be - not more data."), s)
+    Nothing -> (Left (n, "word32be - no more data."), s)
     Just (a,b,c,d,bs') -> (Right $ w32be a b c d, ParserState (n+4) bs')
 
 

@@ -17,8 +17,12 @@
 module ZMidi.Core.ReadFile 
   (
   -- * Read a MIDI file
-  -- $readmididoc
     readMidi
+
+  -- * Auxiallary types
+  , ParseErr
+  , Pos
+  , ErrMsg
   
   ) where
 
@@ -31,7 +35,6 @@ import Control.Monad
 import Data.Bits
 import qualified Data.ByteString.Lazy   as L
 import Data.Word
-import Numeric
 
 
 readMidi :: FilePath -> IO (Either ParseErr MidiFile)
@@ -72,39 +75,66 @@ getMessages i = boundRepeat (fromIntegral i) message
 
 
 message :: ParserM Message
-message = (,) <$>  deltaTime <*> (uncurry next =<< word8split)
-  where  
-    next code chan  
-        | code == 0xF && chan == 0xF  = MetaEvent   <$> (word8 >>= metaEvent)         
-        | code == 0xF                 = SystemEvent <$> systemEvent
-        | code >= 0x8 && code <  0xF  = VoiceEvent  <$> voiceEvent code chan
-        | otherwise                   = reportError $ unwords 
-                                          [ "unrecognized message "
-                                          , hexStr ((code `shiftL` 4) + chan)
-                                          , "code:"
-                                          , hex2 code
-                                          , "chan:"
-                                          , hex2 chan
-                                          ]
-
-
-hex2 :: Integral a => a -> String
-hex2 = ($ "") . showHex 
+message = (,) <$>  deltaTime <*> event
 
 deltaTime :: ParserM Word32
 deltaTime = getVarlen
+
+event :: ParserM Event
+event = word8 >>= step
+  where
+    -- 00..7f  -- /data/
+    step n | n    == 0xFF   = MetaEvent        <$> (word8 >>= metaEvent)
+           | 0xF8 <= n      = SysRealTimeEvent <$> sysRealTimeEvent n
+           | 0xF1 <= n      = SysCommonEvent   <$> sysCommonEvent n
+           | n    == 0xF0   = SysExEvent       <$> sysExEvent
+           | 0x80 <= n      = VoiceEvent       <$> voiceEvent (splitByte n)
+           | otherwise      = DataEvent        <$> dataEvent n
+
+dataEvent :: Word8 -> ParserM DataEvent
+dataEvent tag = (\b c d -> Data4 tag b c d) <$> word8 <*> word8 <*> word8
+
+
+-- hex2 :: Integral a => a -> String
+-- hex2 = ($ "") . showHex 
    
-voiceEvent :: Word8 -> Word8 -> ParserM VoiceEvent
-voiceEvent 0x8 ch = (NoteOff ch)        <$> word8 <*> word8
-voiceEvent 0x9 ch = (NoteOn ch)         <$> word8 <*> word8
-voiceEvent 0xA ch = (NoteAftertouch ch) <$> word8 <*> word8
-voiceEvent 0xB ch = (Controller ch)     <$> word8 <*> word8
-voiceEvent 0xC ch = (ProgramChange ch)  <$> word8 
-voiceEvent 0xD ch = (ChanAftertouch ch) <$> word8 
-voiceEvent 0xE ch = (PitchBend ch)      <$> word16be
-voiceEvent z   _  = reportError $ "voiceEvent " ++ hexStr z 
+voiceEvent :: SplitByte -> ParserM VoiceEvent
+voiceEvent (SB 0x8 ch)  = (NoteOff ch)        <$> word8 <*> word8
+voiceEvent (SB 0x9 ch)  = (NoteOn ch)         <$> word8 <*> word8
+voiceEvent (SB 0xA ch)  = (NoteAftertouch ch) <$> word8 <*> word8
+voiceEvent (SB 0xB ch)  = (Controller ch)     <$> word8 <*> word8
+voiceEvent (SB 0xC ch)  = (ProgramChange ch)  <$> word8 
+voiceEvent (SB 0xD ch)  = (ChanAftertouch ch) <$> word8 
+voiceEvent (SB 0xE ch)  = (PitchBend ch)      <$> word16be
+voiceEvent (SB z   _ )  = reportError $ "voiceEvent " ++ hexStr z 
 
 
+sysCommonEvent :: Word8 -> ParserM SysCommonEvent
+sysCommonEvent 0xF1 = QuarterFrame . splitByte      <$> word8
+sysCommonEvent 0xF2 = SongPosPointer                <$> word8 <*> word8
+sysCommonEvent 0xF3 = SongSelect                    <$> word8
+sysCommonEvent 0xF4 = pure $ Common_undefined 0xF4
+sysCommonEvent 0xF5 = pure $ Common_undefined 0xF5
+sysCommonEvent 0xF6 = pure TuneRequest
+sysCommonEvent 0xF7 = pure EOX
+sysCommonEvent tag  = pure $ Common_undefined tag
+
+
+sysRealTimeEvent :: Word8 -> ParserM SysRealTimeEvent
+sysRealTimeEvent 0xF8 = pure TimingClock
+sysRealTimeEvent 0xF9 = pure $ RT_undefined 0xF9
+sysRealTimeEvent 0xFA = pure StartSequence
+sysRealTimeEvent 0xFB = pure ContinueSequence
+sysRealTimeEvent 0xFC = pure StopSequence
+sysRealTimeEvent 0xFD = pure $ RT_undefined 0xFD
+sysRealTimeEvent 0xFE = pure ActiveSensing
+sysRealTimeEvent 0xFF = pure SystemReset
+sysRealTimeEvent tag  = pure $ RT_undefined tag
+
+
+sysExEvent :: ParserM SysExEvent
+sysExEvent = (uncurry SysEx) <$> getVarlenBytes
+                      
 
 
 metaEvent :: Word8 -> ParserM MetaEvent
@@ -131,9 +161,7 @@ metaEvent 0x7F = (uncurry SSME)   <$> getVarlenBytes
 metaEvent z    = reportError $ "unreconized meta-event " ++ hexStr z
 
 
-systemEvent :: ParserM SystemEvent
-systemEvent = (uncurry SysEx) <$> getVarlenBytes
-                      
+
                           
 format :: ParserM HFormat
 format = word16be >>= fn 
@@ -163,21 +191,6 @@ textEvent ty = (TextEvent ty . snd) <$> getVarlenText
 
 --------------------------------------------------------------------------------
 -- helpers
-
-{-
--- enumerate doesn't really seem worth it for scale etc... 
-enumerate :: Integral a => [ans] -> a -> String -> ParserM ans
-enumerate []     _ msg = reportError msg
-enumerate (x:xs) i msg | i == 0    = return x
-                       | otherwise = enumerate xs (i-1) msg
-
--}
-
-
-word8split :: ParserM (Word8,Word8) 
-word8split = split <$> word8 
-  where
-    split i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
 
  
 assertWord8 :: Word8 -> ParserM Word8

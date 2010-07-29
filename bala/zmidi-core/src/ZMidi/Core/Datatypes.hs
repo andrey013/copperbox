@@ -38,8 +38,11 @@ module ZMidi.Core.Datatypes
   -- * A control or meta event
   , Event(..)
     
+  , DataEvent(..)
   , VoiceEvent(..)
-  , SystemEvent(..)
+  , SysExEvent(..)
+  , SysCommonEvent(..)
+  , SysRealTimeEvent(..)
   , MetaEvent(..)
     
   -- * Representation of delta times as a division of quarter notes
@@ -49,6 +52,12 @@ module ZMidi.Core.Datatypes
     
   -- * Scale type - used for setting key signature
   , ScaleType(..)
+
+
+  -- * SplitByte
+  , SplitByte(..)
+  , splitByte
+  , joinByte
     
   -- * Varlen - not explicitly used in the AST
   , Varlen(..)
@@ -64,7 +73,7 @@ import Data.Int
 import Data.Word
 import Numeric (showHex)
 
-
+type TagByte = Word8
 
 data MidiFile = MidiFile 
       { mf_header         :: Header
@@ -160,17 +169,47 @@ type Message = (DeltaTime, Event)
 
 -- | @'Event'@ 
 --
--- MIDI has three types of event.
+-- MIDI has four types of event.
 --
 data Event 
-    -- | Meta events - usually interpretable (e.g. @end-of-track@, @set-tempo@).
-    = MetaEvent         MetaEvent
-    -- | SysEx - system exclusive - events. Usually synthesizer specific.
-    | SystemEvent       SystemEvent
-    -- | Voice events (e.g @note-on@, @note-off@) are relayed to specific
+    -- | Data event - 4 bytes long including initial tag byte, 
+    -- uninterpreted
+    = DataEvent         DataEvent
+
+    -- | Voice event (e.g @note-on@, @note-off@) are relayed to specific
     -- channels.
-    | VoiceEvent        VoiceEvent    
+    | VoiceEvent        VoiceEvent
+
+
+    -- | SysEx - system exclusive - events. Usually synthesizer 
+    -- specific.
+    --
+    -- @length * data@ - an uninterpreted sysex event.          
+    --
+    | SysExEvent        SysExEvent
+
+
+    -- | SysCommon - system common events.           
+    --
+    | SysCommonEvent    SysCommonEvent
+
+
+    -- | SysRealTime - system realtime events.           
+    --
+    | SysRealTimeEvent  SysRealTimeEvent
+
+
+    -- | Meta event - usually interpretable (e.g. @end-of-track@, 
+    -- @set-tempo@).
+    --
+    | MetaEvent         MetaEvent
+
+
   deriving (Eq,Show,Ord)
+
+
+data DataEvent = Data4 TagByte Word8 Word8 Word8
+  deriving (Eq,Ord,Show)
 
 -- | @'VoiceEvent'@ 
 --
@@ -183,34 +222,83 @@ data VoiceEvent
     -- | @Controller chan type value@ - controller change to the channel,
     -- e.g. by a footswitch.
     = Controller          Word8 Word8 Word8
+
     -- | @ProgramChange chan num@ - change the instrument playing on the 
     -- specified channel. See 'GMInst' for the instruments available with
     -- General MIDI.
     | ProgramChange       Word8 Word8
+
     -- | @NoteOff chan note velocity@ - turn off a sounding note.
     | NoteOff             Word8 Word8 Word8   
+
     -- | @NoteOn chan note velocity@ - start playing a note.
     | NoteOn              Word8 Word8 Word8
+
     -- | @NoteAftertouch chan note value@ - change in pressure applied to 
     -- the synthesizer key. 
     | NoteAftertouch      Word8 Word8 Word8     
+
     -- | @ChanAftertouch chan value@ - 
     | ChanAftertouch      Word8 Word8
+
     -- | @PitchBend chan value@ - change the pitch of a sounding note. 
     -- Often used to approxiamate microtonal tunings.
     | PitchBend           Word8 Word16
   deriving (Eq,Show,Ord)
 
--- | @'SystemEvent'@ 
+-- | @'SysExEvent'@ 
 --
 -- \SysEx\ events - these are generally uninterpreted by ZMidi. 
 --
-data SystemEvent 
+data SysExEvent
     -- | @SysEx length data@ - an uninterpreted sysex event.          
     = SysEx               Word32 [Word8]
-    -- | @DataEvent value@ - value should be in the range 0..127.
-    | DataEvent           Word8 
   deriving (Eq,Show,Ord)
+
+
+-- | @'SysCommonEvent'@ 
+--
+-- \SysEx\ events - these are generally uninterpreted by ZMidi. 
+--
+data SysCommonEvent
+    -- | @QuarterFrame@           
+    = QuarterFrame      SplitByte
+    
+    | SongPosPointer    Word8       Word8
+
+    | SongSelect        Word8
+
+    -- | Tag should be limited to 0xF4 or 0xF5.
+    --
+    | Common_undefined  TagByte
+
+    | TuneRequest
+    | EOX
+  deriving (Eq,Show,Ord)
+
+
+-- | @'SysRealTime'@ 
+--
+-- \SysEx\ events - these are generally uninterpreted by ZMidi. 
+--
+data SysRealTimeEvent
+    -- | @QuarterFrame@           
+    = TimingClock
+    
+    -- | Tag should be limited to either 0xF9 or 0xFD.
+    --
+    | RT_undefined      TagByte
+    | StartSequence
+    | ContinueSequence
+    | StopSequence
+    | ActiveSensing
+    | SystemReset
+  deriving (Eq,Show,Ord)
+
+
+
+
+
 
 -- | @'MetaEvent'@ 
 --
@@ -276,6 +364,19 @@ data MetaEvent
 --
 data ScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Ord,Show)
+
+
+
+--------------------------------------------------------------------------------
+
+data SplitByte = SB { upper4 :: Word8, lower4 :: Word8 }
+  deriving (Eq,Ord,Show)
+
+splitByte :: Word8 -> SplitByte
+splitByte i = SB ((i .&. 0xF0) `shiftR` 4) (i .&. 0x0F)
+
+joinByte :: SplitByte -> Word8
+joinByte (SB a b) = (a `shiftL` 4) + (b .&. 0x0F)
 
 
 --------------------------------------------------------------------------------

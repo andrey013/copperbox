@@ -75,10 +75,16 @@ putMessage :: Message -> PutM ()
 putMessage (dt,evt) = varlen dt *> putEvent evt
 
 putEvent :: Event -> PutM ()
-putEvent (VoiceEvent  evt) = putVoiceEvent evt
-putEvent (SystemEvent evt) = putSystemEvent evt
-putEvent (MetaEvent   evt) = putMetaEvent evt
+putEvent (DataEvent        evt) = putDataEvent  evt
+putEvent (VoiceEvent       evt) = putVoiceEvent evt
+putEvent (SysExEvent       evt) = putSysExEvent evt
+putEvent (SysCommonEvent   evt) = putSysCommonEvent evt
+putEvent (SysRealTimeEvent evt) = putSysRealTimeEvent evt
+putEvent (MetaEvent        evt) = putMetaEvent  evt
   
+
+putDataEvent :: DataEvent -> PutM ()
+putDataEvent (Data4 tag b c d) = out4 tag b c d
     
 putVoiceEvent :: VoiceEvent -> PutM ()
 putVoiceEvent (NoteOff c n v)         = out3 (0x8 `u4l4` c) n v 
@@ -89,6 +95,25 @@ putVoiceEvent (ProgramChange c n)     = out2 (0xC `u4l4` c) n
 putVoiceEvent (ChanAftertouch c v)    = out2 (0xD `u4l4` c) v  
 putVoiceEvent (PitchBend c v)         = out1 (0xE `u4l4` c) *> putWord16be v
 
+putSysExEvent :: SysExEvent -> PutM ()
+putSysExEvent (SysEx n ws) = out1 0xF0 *> varlen n *> outBytes ws
+
+putSysCommonEvent :: SysCommonEvent -> PutM ()
+putSysCommonEvent (QuarterFrame sb)        = out1 0xF1 *> outSB sb
+putSysCommonEvent (SongPosPointer lsb msb) = out3 0xF2 lsb msb
+putSysCommonEvent (SongSelect w)           = out2 0xF3 w
+putSysCommonEvent (Common_undefined tag)   = out1 tag
+putSysCommonEvent TuneRequest              = out1 0xF6
+putSysCommonEvent EOX                      = out1 0xF7
+
+putSysRealTimeEvent :: SysRealTimeEvent -> PutM ()
+putSysRealTimeEvent TimingClock            = out1 0xF8
+putSysRealTimeEvent (RT_undefined tag)     = out1 tag
+putSysRealTimeEvent StartSequence          = out1 0xFA
+putSysRealTimeEvent ContinueSequence       = out1 0xFB
+putSysRealTimeEvent StopSequence           = out1 0xFC
+putSysRealTimeEvent ActiveSensing          = out1 0xFE
+putSysRealTimeEvent SystemReset            = out1 0xFF
 
 putMetaEvent :: MetaEvent -> PutM ()
 putMetaEvent (TextEvent ty ss)                = 
@@ -115,11 +140,6 @@ putMetaEvent (SSME i ws)                      =
     out2 0xFF 0x7F *> varlen i *> outBytes ws
 
 
--- WARNING - what is DataEvent???????
-putSystemEvent :: SystemEvent -> PutM ()
-putSystemEvent (SysEx i ws)   = out1 0xF0 *> varlen i *> outBytes ws
-putSystemEvent (DataEvent w8) = putWord8 w8 
-  
     
   
 
@@ -127,6 +147,9 @@ putSystemEvent (DataEvent w8) = putWord8 w8
 
 --------------------------------------------------------------------------------
 -- Output helpers
+
+outSB :: SplitByte -> PutM ()
+outSB a = putWord8 (joinByte a)
 
 infixr 5 `u4l4`
 
