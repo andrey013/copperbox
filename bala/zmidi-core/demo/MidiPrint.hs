@@ -1,24 +1,13 @@
 {-# OPTIONS -Wall #-}
 
--- ghci> :set -i../../ZMidi
--- ghci> :set args bulgarian6.mid
-
-
--- shell> ghc --make MidiPrint.hs -i../../ZMidi
---
--- shell> runhaskell.exe -i../../ZMidi MidiPrint.hs bulgarian6.mid
-
-
+-- Dump the contents of a MIDI file
 
 module Main where
 
-import ZMidi
-
-import Control.Exception
-import Prelude hiding (catch)
+import ZMidi.Core.Pretty
+import ZMidi.Core.ReadFile
 
 import System.Environment
-import System.Exit
 
 
 main :: IO ()
@@ -30,10 +19,9 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-    ans <- catch (readMidi filename) exitHandle
-    printMidi ans
-  where
-    exitHandle :: IOException -> IO a 
-    exitHandle e = putStrLn (show e) >> exitFailure
+    ans <- readMidi filename
+    case ans of
+      Left (n,msg) -> putStrLn $ "Parse failure at " ++ show n ++ ": " ++ msg
+      Right m      -> printMidi m
 
  

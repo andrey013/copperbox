@@ -27,11 +27,13 @@ library
   
   exposed-modules:
     ZMidi.Core.Datatypes,
+    ZMidi.Core.Pretty,
     ZMidi.Core.ReadFile,
     ZMidi.Core.WriteFile
 
   other-modules:
-    ZMidi.Core.Internal.ParserMonad
+    ZMidi.Core.Internal.ParserMonad,
+    ZMidi.Core.Internal.SimpleFormat
       
   extensions:
     

@@ -63,15 +63,15 @@ header = Header <$> (assertString "MThd" *> assertWord32 (6::Int) *> format)
 
 
 track :: ParserM Track
-track = liftM Track (trackHeader >>= getMessages)
+track = liftM Track (trackHeader >>= messages)
 
 trackHeader :: ParserM Word32
 trackHeader = assertString "MTrk" >> word32be
 
 
 
-getMessages :: Word32 -> ParserM [Message]
-getMessages i = boundRepeat (fromIntegral i) message
+messages :: Word32 -> ParserM [Message]
+messages i = boundRepeat (fromIntegral i) message
 
 
 message :: ParserM Message

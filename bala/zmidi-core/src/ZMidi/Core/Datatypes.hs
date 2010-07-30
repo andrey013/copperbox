@@ -14,8 +14,8 @@
 --
 -- Values are sometimes not interpreted. This means that the
 -- the data types do not fully represent the sematics of the 
--- data, but all data is stored in the tree (or is 
--- synthesizeable).
+-- data, but all the data is either stored in the tree or 
+-- synthesizeable.
 -- 
 -- @ readFile >>= writeFile @ will produce an identical binary \[1\]. 
 --
@@ -94,7 +94,7 @@ data Header = Header {
 -- In MIDI files, the start of a track is indicated by the 4 
 -- character marker @MTrk@.  
 --
-newtype Track = Track { getTrack :: [Message] }
+newtype Track = Track { getMessages :: [Message] }
   deriving (Eq,Show)
 
 -- | The file format - in a MIDI file this is a big-endian 
