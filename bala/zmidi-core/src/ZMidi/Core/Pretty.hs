@@ -33,7 +33,10 @@ import Data.Monoid
 import Data.Word
 
 
-
+-- | Print the MIDI file to std-out.
+--
+-- One event is printed per line, so the output may be huge.
+--
 printMidi :: MidiFile -> IO ()
 printMidi (MidiFile hdr tracks) = do
     column_break
@@ -43,11 +46,21 @@ printMidi (MidiFile hdr tracks) = do
     putTrack       = (mapM_ putStrLn) . track
     column_break   = putStrLn $ replicate 60 '-'
 
+
+-- | Print the MIDI header.
+--
+-- Results are returned as a list of String to avoid extraneous
+-- concatenation.
+-- 
 header :: Header -> [String]
 header (Header fmt tcount td) = 
    map output [ppFormat fmt, ppNumTracks tcount, ppTimeDivision td]  
 
-
+-- | Print a track.
+--
+-- Results are returned as a list of String to avoid extraneous
+-- concatenation.
+--
 track  :: Track -> [String]
 track = snd . mapAccumL (\acc b -> msnd output $ message acc b) 0 . getMessages 
   where

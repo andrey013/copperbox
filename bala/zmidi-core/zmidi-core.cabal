@@ -8,7 +8,8 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Music
 synopsis:         Read and write MIDI files.
 description:
-  Minimalist library to read and write MIDI files.
+  Minimalist library to read and write MIDI files, with 
+  dependencies only on ByteString and Data.Binary.
   .
 
 build-type:         Simple
@@ -16,7 +17,8 @@ stability:          unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/MidiPrint.hs
+  demo/MidiPrint.hs,
+  demo/MidiCopy.hs
 
 
 library
