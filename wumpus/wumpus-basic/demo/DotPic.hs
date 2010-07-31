@@ -11,7 +11,6 @@ import Wumpus.Basic.Utils.HList
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Extra.PictureLanguage
 
-import Data.Maybe
 import System.Directory
 
 main :: IO ()
@@ -56,7 +55,7 @@ points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 
 makeDotPic :: (Real u, Floating u) 
            => (MarkAttr -> GraphicF u) -> [Point2 u] -> Picture u
-makeDotPic fn xs = fromMaybe errK $ drawGraphic $ veloH (fn std_attr) xs . dashline
+makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
   where
     dashline = wrapG $ ostroke attr $ vertexPath xs
     attr     = (cadetBlue, DashPattern $ evenDashes 1)
