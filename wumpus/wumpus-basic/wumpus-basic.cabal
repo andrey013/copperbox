@@ -65,6 +65,7 @@ library
     Wumpus.Basic.SVGColours,
     Wumpus.Basic.X11Colours,
     Wumpus.Basic.Utils.HList,
+    Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber
 
   other-modules:

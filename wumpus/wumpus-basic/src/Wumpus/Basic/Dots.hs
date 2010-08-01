@@ -22,12 +22,14 @@ module Wumpus.Basic.Dots
   , standardAttr   
 
   -- * Dots
+  , dotChar
   , dotHLine
   , dotVLine
   , dotX
   , dotPlus
   , dotCross
   , dotDiamond
+  , dotFDiamond
   , dotDisk
   , dotSquare
   , dotCircle
@@ -36,11 +38,14 @@ module Wumpus.Basic.Dots
   , dotAsterisk
   , dotOPlus
   , dotOCross
+  , dotFOCross
 
   ) where
 
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.PointSupply
+import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Utils.HList
 
@@ -50,11 +55,10 @@ import Data.AffineSpace                 -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
-import Data.List
 
 data MarkAttr = MarkAttr 
       { line_width         :: Double
-      , point_size         :: FontSize
+      , font_props         :: FontAttr
       , mark_colour        :: DRGB
       , mark_second_colour :: DRGB
       }
@@ -62,7 +66,7 @@ data MarkAttr = MarkAttr
 
 standardAttr :: FontSize -> MarkAttr
 standardAttr sz = MarkAttr { line_width         = 1.0
-                           , point_size         = sz
+                           , font_props         = courier sz
                            , mark_colour        = black
                            , mark_second_colour = gold  }
 
@@ -70,8 +74,14 @@ standardAttr sz = MarkAttr { line_width         = 1.0
 primaryAttr :: MarkAttr -> (DRGB, StrokeAttr)
 primaryAttr = liftA2 (,) mark_colour (LineWidth . line_width)
 
+secondaryAttr :: MarkAttr -> DRGB
+secondaryAttr = mark_second_colour
+
+textAttr :: MarkAttr -> (DRGB,FontAttr)
+textAttr = liftA2 (,) mark_colour font_props
+
 markHeight :: Fractional u => MarkAttr -> u
-markHeight = xcharHeight . point_size
+markHeight = xcharHeight . font_size . font_props
 
 -- Marks should be the height of a lower-case letter...
 
@@ -83,7 +93,14 @@ markHeight = xcharHeight . point_size
 -- PostScript.
 --
 
-    
+
+dotChar :: Fractional u => Char -> MarkAttr -> GraphicF u
+dotChar ch attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
+    wrapG $ textlabel (textAttr attr) [ch] pt
+  where
+    sz = font_size $ font_props attr
+    hh = 0.5 * numeralHeight sz
+    hw = 0.5 * textWidth sz 1 
 
 -- | Supplied point is the center.
 --
@@ -91,6 +108,7 @@ axialLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
 axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
     wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
  
+
 
 
 
@@ -129,9 +147,9 @@ dotCross attr = ls1 `cc` ls2
 
 
 -- needs horizontal pinch...
-dotDiamond :: Fractional u => MarkAttr -> GraphicF u
-dotDiamond attr = 
-    wrapG . cstroke (primaryAttr attr) . vertexPath . sequence [dvs,dve,dvn,dvw]
+
+pathDiamond :: Fractional u => MarkAttr -> PathF u
+pathDiamond attr = vertexPath . sequence [dvs,dve,dvn,dvw]
   where
     hh    = 0.66  * markHeight attr
     hw    = 0.5   * markHeight attr
@@ -140,7 +158,16 @@ dotDiamond attr =
     dvn   = (.+^ vvec hh)
     dvw   = (.+^ hvec (-hw))
 
+type PathF u = Point2 u -> Path u
 
+dotDiamond :: Fractional u => MarkAttr -> GraphicF u
+dotDiamond attr = 
+    wrapG . cstroke (primaryAttr attr) . pathDiamond attr
+
+dotFDiamond :: Fractional u => MarkAttr -> GraphicF u
+dotFDiamond attr = dotDiamond attr `cc` filled 
+  where
+    filled = wrapG . fill (secondaryAttr attr) . pathDiamond attr
 
 
 
@@ -167,23 +194,6 @@ dotPentagon attr =
     hh      = 0.5 * markHeight attr
 
  
-
-two_pi :: Radian
-two_pi = 2.0 * pi
-
-half_pi :: Radian
-half_pi = 0.5 * pi
-
-
-polygonPointsV :: Floating u => Int -> u -> Point2 u -> [Point2 u]
-polygonPointsV n radius = sequence vecs
-  where
-    theta = two_pi / fromIntegral n
-    vecs  = unfoldr phi (0,half_pi)
-    
-    phi (i,ang) | i < n     = Just ((.+^ avec ang radius), (i+1,ang+theta))
-                | otherwise = Nothing
-
 
 dotStar :: Floating u => MarkAttr -> GraphicF u 
 dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
@@ -213,3 +223,9 @@ dotOPlus attr = dotCircle attr `cc` dotPlus attr
 dotOCross :: Floating u => MarkAttr -> GraphicF u
 dotOCross attr = dotCircle attr `cc` dotCross attr
 
+
+dotFOCross :: Floating u => MarkAttr -> GraphicF u
+dotFOCross attr = dotCircle attr `cc` dotCross attr `cc` bkCircle attr 
+
+bkCircle :: Fractional u => MarkAttr -> GraphicF u
+bkCircle attr = disk (secondaryAttr attr) (0.5*markHeight attr) 

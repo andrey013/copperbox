@@ -17,7 +17,13 @@
 
 module Wumpus.Basic.Graphic.PointSupply
   (
-    hpoints
+    -- * Constants (might move from this module)
+    two_pi
+  , half_pi
+  
+  -- * Generate points.
+  , polygonPointsV
+  , hpoints
   , vpoints
   
   ) where
@@ -25,7 +31,27 @@ module Wumpus.Basic.Graphic.PointSupply
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Data.AffineSpace                 -- package: vector-space
+
 import Data.List
+
+two_pi :: Radian
+two_pi = 2.0 * pi
+
+half_pi :: Radian
+half_pi = 0.5 * pi
+
+
+-- | 'polygonPointsV' : @ num_points * radius * center -> [point] @ 
+--
+polygonPointsV :: Floating u => Int -> u -> Point2 u -> [Point2 u]
+polygonPointsV n radius = sequence vecs
+  where
+    theta = two_pi / fromIntegral n
+    vecs  = unfoldr phi (0,half_pi)
+    
+    phi (i,ang) | i < n     = Just ((.+^ avec ang radius), (i+1,ang+theta))
+                | otherwise = Nothing
 
 
    

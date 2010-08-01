@@ -30,7 +30,8 @@ demo01 = do
     pic :: Picture Double
     pic = extendBoundary 10 10 $ 
           uniformScale 2       $ 
-            vsepA VLeft 10 p1 [p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14]
+            vsepA VLeft 10 p1 [p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14
+                              ,p15,p16,p17]
     
     p1  = makeDotPic dotHLine       points
     p2  = makeDotPic dotVLine       points
@@ -46,7 +47,10 @@ demo01 = do
     p12 = makeDotPic dotAsterisk    points
     p13 = makeDotPic dotOPlus       points
     p14 = makeDotPic dotOCross      points
-
+    p15 = makeDotPic dotFOCross     points
+    p16 = makeDotPic dotFDiamond    points
+    p17 = makeDotPic (dotChar 'A')  points
+ 
 std_attr :: MarkAttr
 std_attr = standardAttr 12
 
