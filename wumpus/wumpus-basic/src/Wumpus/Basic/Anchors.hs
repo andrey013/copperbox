@@ -22,27 +22,27 @@ module Wumpus.Basic.Anchors
   ( 
 
   -- * Anchors
-    AnchorCenter(..)
-  , AnchorCardinal(..)
-  , AnchorCardinal2(..)
-  , AnchorText(..)
-  , AnchorAngle(..)
+    CenterAnchor(..)
+  , CardinalAnchor(..)
+  , CardinalAnchor2(..)
+  , TextAnchor(..)
+  , RadialAnchor(..)
 
   ) where
 
 import Wumpus.Core                      -- package: wumpus-core
 
 
-class AnchorCenter t where
+class CenterAnchor t where
   center :: DUnit t ~ u => t -> Point2 u
 
-class AnchorCardinal t where
+class CardinalAnchor t where
   north :: DUnit t ~ u => t -> Point2 u
   south :: DUnit t ~ u => t -> Point2 u
   east  :: DUnit t ~ u => t -> Point2 u
   west  :: DUnit t ~ u => t -> Point2 u
 
-class AnchorCardinal2 t where
+class CardinalAnchor2 t where
   northeast :: DUnit t ~ u => t -> Point2 u
   southeast :: DUnit t ~ u => t -> Point2 u
   southwest :: DUnit t ~ u => t -> Point2 u
@@ -51,14 +51,14 @@ class AnchorCardinal2 t where
 -- | 'textAnchor' is the Bottom left corner 
 -- on the baseline.
 --
-class AnchorText t where
+class TextAnchor t where
   textAnchor :: DUnit t ~ u => t -> Point2 u
 
 
 -- | Anchor on a border that can be identified with and angle.
 --
-class AnchorAngle t where
-  anchorAngle :: DUnit t ~ u => Radian -> t -> Point2 u
+class RadialAnchor t where
+  radialAnchor :: DUnit t ~ u => Radian -> t -> Point2 u
 
 
 -- Note - AnchorAngle.
