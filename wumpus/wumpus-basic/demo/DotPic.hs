@@ -49,7 +49,7 @@ demo01 = do
     p14 = makeDotPic dotOCross      points
     p15 = makeDotPic dotFOCross     points
     p16 = makeDotPic dotFDiamond    points
-    p17 = makeDotPic (dotChar 'A')  points
+    p17 = makeDotPic (dotText "AA") points
  
 std_attr :: MarkAttr
 std_attr = standardAttr 12

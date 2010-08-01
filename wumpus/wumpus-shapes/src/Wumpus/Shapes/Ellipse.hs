@@ -68,19 +68,16 @@ calcPoint f = withGeom $ \ctm rx ry ->
 
 -- Instances 
 
-instance (Real u, Floating u) => AnchorCenter (Ellipse u) where
+instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
   center = ctmCenter . ell_ctm
 
-
-
-
-instance (Real u, Floating u) => AnchorCardinal (Ellipse u) where
+instance (Real u, Floating u) => CardinalAnchor (Ellipse u) where
   north = calcPoint $ \ _  ry -> vvec ry
   south = calcPoint $ \ _  ry -> vvec (-ry)
   east  = calcPoint $ \ rx _  -> hvec rx
   west  = calcPoint $ \ rx _  -> hvec (-rx)
 
-instance (Real u, Floating u) => AnchorCardinal2 (Ellipse u) where
+instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
   northeast = calcPoint $ \rx ry -> rescale rx ry $ avec (0.25*pi) rx
   southeast = calcPoint $ \rx ry -> rescale rx ry $ avec (1.75*pi) rx
   southwest = calcPoint $ \rx ry -> rescale rx ry $ avec (0.75*pi) rx

@@ -66,17 +66,17 @@ calcPoint f = withGeom $ \ctm r ->
 
 -- Instances 
 
-instance (Real u, Floating u) => AnchorCenter (Circle u) where
+instance (Real u, Floating u) => CenterAnchor (Circle u) where
   center = ctmCenter . circ_ctm
 
 
-instance (Real u, Floating u) => AnchorCardinal (Circle u) where
+instance (Real u, Floating u) => CardinalAnchor (Circle u) where
   north = calcPoint $ \ r -> vvec r
   south = calcPoint $ \ r -> vvec (-r)
   east  = calcPoint $ \ r -> hvec r
   west  = calcPoint $ \ r -> hvec (-r)
 
-instance (Real u, Floating u) => AnchorCardinal2 (Circle u) where
+instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   northeast = calcPoint $ \ r -> avec (0.25*pi) r
   southeast = calcPoint $ \ r -> avec (1.75*pi) r
   southwest = calcPoint $ \ r -> avec (0.75*pi) r

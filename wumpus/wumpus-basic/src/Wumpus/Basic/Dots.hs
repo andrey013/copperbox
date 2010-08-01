@@ -23,6 +23,7 @@ module Wumpus.Basic.Dots
 
   -- * Dots
   , dotChar
+  , dotText
   , dotHLine
   , dotVLine
   , dotX
@@ -93,14 +94,16 @@ markHeight = xcharHeight . font_size . font_props
 -- PostScript.
 --
 
-
 dotChar :: Fractional u => Char -> MarkAttr -> GraphicF u
-dotChar ch attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
-    wrapG $ textlabel (textAttr attr) [ch] pt
+dotChar ch = dotText [ch]
+
+dotText :: Fractional u => String -> MarkAttr -> GraphicF u
+dotText str attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
+    wrapG $ textlabel (textAttr attr) str pt
   where
     sz = font_size $ font_props attr
     hh = 0.5 * numeralHeight sz
-    hw = 0.5 * textWidth sz 1 
+    hw = 0.5 * textWidth sz (length str) 
 
 -- | Supplied point is the center.
 --

@@ -65,18 +65,16 @@ calcPoint f = withGeom $ \ctm hw hh ->
 -- Instances 
   
 
-instance (Real u, Floating u) => AnchorCenter (Rectangle u) where
+instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
   center = ctmCenter . rect_ctm
 
-
-
-instance (Real u, Floating u) =>  AnchorCardinal (Rectangle u) where
+instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
   north = calcPoint $ \ _  hh -> vvec hh
   south = calcPoint $ \ _  hh -> vvec (-hh)
   east  = calcPoint $ \ hw _  -> hvec hw
   west  = calcPoint $ \ hw _  -> hvec (-hw)
 
-instance (Real u, Floating u) =>  AnchorCardinal2 (Rectangle u) where
+instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
   northeast = calcPoint $ \ hw hh -> V2 hw hh
   southeast = calcPoint $ \ hw hh -> V2 hw (-hh)
   southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)

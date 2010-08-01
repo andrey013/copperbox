@@ -86,17 +86,17 @@ instance Num u => Translate (FreeLabel u) where
 
 
 
-instance (Real u, Floating u) => AnchorCenter (FreeLabel u) where
+instance (Real u, Floating u) => CenterAnchor (FreeLabel u) where
     center = ctmCenter . flbl_ctm
 
 
-instance (Real u, Floating u) =>  AnchorCardinal (FreeLabel u) where
+instance (Real u, Floating u) => CardinalAnchor (FreeLabel u) where
   north = calcPoint $ \ _  hh -> vvec hh
   south = calcPoint $ \ _  hh -> vvec (-hh)
   east  = calcPoint $ \ hw _  -> hvec hw
   west  = calcPoint $ \ hw _  -> hvec (-hw)
 
-instance (Real u, Floating u) => AnchorCardinal2 (FreeLabel u) where
+instance (Real u, Floating u) => CardinalAnchor2 (FreeLabel u) where
   northeast = calcPoint $ \ hw hh -> V2 hw hh
   southeast = calcPoint $ \ hw hh -> V2 hw (-hh)
   southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)

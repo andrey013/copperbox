@@ -68,7 +68,7 @@ calcPoint f = withGeom $ \ctm hw hh ->
 -- Instances 
   
 
-instance (Real u, Floating u) => AnchorCenter (Diamond u) where
+instance (Real u, Floating u) => CenterAnchor (Diamond u) where
   center = ctmCenter . dia_ctm
 
 
@@ -84,13 +84,13 @@ midpoint f g d = a .+^ v
     v = (b .-. a) ^* 0.5
 
 
-instance (Real u, Floating u) =>  AnchorCardinal (Diamond u) where
+instance (Real u, Floating u) =>  CardinalAnchor (Diamond u) where
   north = calcPoint $ \ _  hh -> vvec hh
   south = calcPoint $ \ _  hh -> vvec (-hh)
   east  = calcPoint $ \ hw _  -> hvec hw
   west  = calcPoint $ \ hw _  -> hvec (-hw)
 
-instance (Real u, Floating u) =>  AnchorCardinal2 (Diamond u) where
+instance (Real u, Floating u) =>  CardinalAnchor2 (Diamond u) where
   northeast = midpoint north east
   southeast = midpoint south east
   southwest = midpoint south west

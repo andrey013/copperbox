@@ -49,7 +49,7 @@ type instance DUnit (Coordinate u) = u
 
 -- Instances 
 
-instance (Real u, Floating u) => AnchorCenter (Coordinate u) where
+instance (Real u, Floating u) => CenterAnchor (Coordinate u) where
   center = ctmCenter . coord_ctm
 
 
