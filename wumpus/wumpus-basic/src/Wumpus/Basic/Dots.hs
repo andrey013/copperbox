@@ -20,6 +20,9 @@ module Wumpus.Basic.Dots
   -- * Mark drawing attributes
     MarkAttr(..)
   , standardAttr   
+  , secondaryAttr
+  , textAttr
+  , markHeight
 
   -- * Dots
   , dotChar
