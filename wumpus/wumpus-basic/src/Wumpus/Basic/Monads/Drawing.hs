@@ -19,7 +19,9 @@
 module Wumpus.Basic.Monads.Drawing
   (
     
-    node
+    MGraphicF 
+  , traceG
+  , node
   , at
   ) where
 
@@ -29,11 +31,21 @@ import Wumpus.Basic.Monads.TurtleClass
 
 import Wumpus.Core                              -- package: wumpus-core
 
-node :: (TraceM m (Primitive u), TurtleM m u) => GraphicF u -> m ()
-node gF = getLoc >>= \pt -> trace (gF pt)
+
+type MGraphicF m u a = Point2 u -> m a
+
+traceG :: (Monad m, TraceM m (Primitive u)) => GraphicF u -> MGraphicF m u ()
+traceG fn = \pt -> trace (fn pt)
+
+-- MGraphic functions will have to trace themselves...
+
+node :: (TraceM m (Primitive u), TurtleM m u) => MGraphicF m u a -> m a 
+node mgF = getLoc >>= \pt -> mgF pt
+
 
 infixr 6 `at` 
+
 at :: (Num u, TraceM m (Primitive u), TurtleM m u) 
-   => GraphicF u -> (Int,Int) -> m ()
-at gF coord = scaleCoord coord >>= \pt -> trace (gF pt)
+   => MGraphicF m u a -> (Int,Int) -> m a
+at mgF coord = scaleCoord coord >>= \pt -> mgF pt
 

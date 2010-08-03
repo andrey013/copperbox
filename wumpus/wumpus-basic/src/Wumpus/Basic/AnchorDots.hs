@@ -27,8 +27,9 @@ module Wumpus.Basic.AnchorDots
 
 import Wumpus.Basic.Anchors
 import qualified Wumpus.Basic.Dots as BD
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.STraceMonad
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.DrawingCtxClass
+import Wumpus.Basic.Monads.TraceClass
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -37,16 +38,20 @@ import Data.AffineSpace                 -- package: vector-space
 
 
 
+-- This draws to the trace then returns an opaque thing
+-- (a Circle) that supports anchors
 
-dotCircle :: ( Monad m, STraceM m (Primitive u)
+dotCircle :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
              , Fractional u) 
-          => DrawingAttr -> Point2 u -> m (Circle u)
-dotCircle attr pt = strace (BD.dotCircle attr pt) >> 
-               return (Circle (0.5*markHeight attr) pt)
+          => MGraphicF m u (Circle u)
+dotCircle = \pt -> askDrawingCtx                >>= \attr -> 
+                   markHeight                   >>= \h    ->
+                   trace (BD.dotCircle attr pt) >> 
+                   return (Circle (0.5*h) pt)
 
 data Circle u = Circle 
-      { circ_radius :: u
-      , circ_ctr    :: Point2 u 
+      { _circ_radius :: u
+      , _circ_ctr    :: Point2 u 
       }
 
 type instance DUnit (Circle u) = u
@@ -58,64 +63,9 @@ instance Floating u => RadialAnchor (Circle u) where
   radialAnchor theta (Circle r ctr) = ctr .+^ (avec theta r)
 
 
-
-{-
-
-data RadialGraphic u = RadialGraphic 
-      { rg_draw     :: GraphicF u
-      , rg_anchor   :: Radian -> (Point2 u -> Point2 u)
-      }
-
-type RadialGraphicF u = Point2 u -> RadialGraphic u 
-
-
-adotCircle :: Floating u => WD.MarkAttr -> RadialGraphic u
-adotCircle attr = RadialGraphic { rg_draw   = dotCircle attr
-                                , rg_anchor = anchorF }
-  where
-    anchorF theta ctr = radialAnchor theta (Circle (0.5*markHeight attr) ctr)
-
--}
-
-
-
-
-{-
-
--- ADots support radial and center anchor
-
--- Note - is this any better than shapes which have different 
--- types but a /unified/ type class interface?
--- 
-data ADot u = forall t. (CenterAnchor t, DUnit t ~ u) => ADot
-      { dot_drawf    :: MarkAttr -> GraphicF u
-      , dot_repr     :: t
-      }
-
-data Square u = Sq1 deriving (Eq,Show)
-
-type instance DUnit (Square u) = u
-type instance DUnit (ADot u)   = u
- 
-instance Num u => CenterAnchor (Square u) where
-  center (Sq1) = P2 0 0 
-
-instance CenterAnchor (ADot u) where
-  center (ADot {dot_repr=body}) = center body
-
-
-adotSquare :: Fractional u => ADot u
-adotSquare = ADot { dot_drawf = dotSquare, dot_repr = Sq1 }
-
-
-data Circle u = Cir1 deriving (Eq,Show)
-
-type instance DUnit (Circle u) = u
-
-instance Num u => CenterAnchor (Circle u) where
-  center (Cir1) = P2 0 0 
-
-adotCircle :: Fractional u => ADot u
-adotCircle = ADot { dot_drawf = dotCircle, dot_repr = Cir1 }
-
--}
+instance Floating u => CardinalAnchor (Circle u) where
+  north (Circle r ctr) = ctr .+^ (avec (pi/2)   r)
+  south (Circle r ctr) = ctr .+^ (avec (3*pi/2) r)
+  east  (Circle r ctr) = ctr .+^ (avec  0       r)
+  west  (Circle r ctr) = ctr .+^ (avec  pi      r)
+  
