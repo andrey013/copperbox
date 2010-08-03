@@ -19,7 +19,7 @@
 --
 -- While Wumpus generally aims for a more compositional,
 -- \"coordinate-free\" style of drawing, some types of 
--- diagram are very easily expressed in the LOGO style.
+-- diagram are more easily expressed in the LOGO style.
 --
 --------------------------------------------------------------------------------
 
@@ -45,8 +45,6 @@ module Wumpus.Basic.Monads.TurtleMonad
   , moveUp
   , moveDown
   , nextLine
-
-  , wander
  
   ) where
 
@@ -154,12 +152,4 @@ moveDown    = setsLoc_ $ \(Coord x y) -> Coord x (y+1)
 nextLine    :: TurtleM m => m ()
 nextLine    = setsLoc_ $ \(Coord _ y) -> Coord 0 (y-1)
 
-
--- | No longer sure about this combinator...
---
-wander :: TurtleM m => m a -> m (a,Coord,Coord)
-wander ma = getLoc >>= \start ->
-            ma     >>= \ans   ->
-            getLoc >>= \end   ->
-            return (ans,start,end)
 

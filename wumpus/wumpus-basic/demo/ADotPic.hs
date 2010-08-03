@@ -5,10 +5,9 @@ module ADotPic where
 
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.AnchorDots
-import qualified Wumpus.Basic.Dots as BD
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.STraceMonad
-import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -32,8 +31,8 @@ demo01 = do
     writeSVG_latin1 "./out/andots01.svg" pic1
 
 
-std_attr :: BD.MarkAttr
-std_attr = BD.standardAttr 24
+std_attr :: DrawingAttr
+std_attr = standardAttr 24
 
 runFun :: STraceT (Primitive u) Id a -> (a, Graphic u)
 runFun = runId . runSTraceT
@@ -45,9 +44,9 @@ pic1 = drawGraphicU $ snd $ runFun  $ mf
 mf :: STraceT DPrimitive Id ()
 mf = do 
     a <- dotCircle std_attr zeroPt 
-    b <- dotCircle std_attr (P2 60 0)
-    let c = radialAnchor 0  a
-    let d = radialAnchor pi b
+    b <- dotCircle std_attr (P2 60 60)
+    let c = radialAnchor (pi/4)  a
+    let d = radialAnchor (5* pi/4) b
     strace $ straightLine () (d .-. c) c
 
 

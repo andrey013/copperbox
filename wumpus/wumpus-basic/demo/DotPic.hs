@@ -5,6 +5,7 @@ module DotPic where
 
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Utils.HList
 
@@ -51,14 +52,14 @@ demo01 = do
     p16 = makeDotPic dotFDiamond    points
     p17 = makeDotPic (dotText "AA") points
  
-std_attr :: MarkAttr
+std_attr :: DrawingAttr
 std_attr = standardAttr 12
 
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 
 makeDotPic :: (Real u, Floating u) 
-           => (MarkAttr -> GraphicF u) -> [Point2 u] -> Picture u
+           => (DrawingAttr -> GraphicF u) -> [Point2 u] -> Picture u
 makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
   where
     dashline = wrapG $ ostroke attr $ vertexPath xs

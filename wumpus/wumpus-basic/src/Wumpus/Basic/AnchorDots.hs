@@ -27,24 +27,22 @@ module Wumpus.Basic.AnchorDots
 
 import Wumpus.Basic.Anchors
 import qualified Wumpus.Basic.Dots as BD
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.STraceMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
-import MonadLib                         -- package: monadLib
 
-import Control.Applicative
 
 
 
 
 dotCircle :: ( Monad m, STraceM m (Primitive u)
              , Fractional u) 
-          => BD.MarkAttr -> Point2 u -> m (Circle u)
+          => DrawingAttr -> Point2 u -> m (Circle u)
 dotCircle attr pt = strace (BD.dotCircle attr pt) >> 
-               return (Circle (0.5*BD.markHeight attr) pt)
+               return (Circle (0.5*markHeight attr) pt)
 
 data Circle u = Circle 
       { circ_radius :: u
