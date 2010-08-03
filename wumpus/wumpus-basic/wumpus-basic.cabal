@@ -58,6 +58,7 @@ library
     Wumpus.Basic.Anchors,
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
+    Wumpus.Basic.Graphic.DrawingAttr,
     Wumpus.Basic.Graphic.PointSupply,
     Wumpus.Basic.Monads.STraceMonad,
     Wumpus.Basic.Monads.TraceMonad,
