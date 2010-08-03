@@ -26,6 +26,7 @@ module Wumpus.Basic.Monads.SnocDrawing
   , execSnocDrawingT
 
   -- * Re-exports
+  , module Wumpus.Basic.Monads.Drawing
   , module Wumpus.Basic.Monads.DrawingCtxClass
   , module Wumpus.Basic.Monads.TraceClass
   , module Wumpus.Basic.Monads.TurtleClass 
@@ -33,6 +34,7 @@ module Wumpus.Basic.Monads.SnocDrawing
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.DrawingCtxMonad
 import Wumpus.Basic.Monads.STraceMonad

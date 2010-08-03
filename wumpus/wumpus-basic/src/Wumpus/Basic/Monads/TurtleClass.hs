@@ -27,6 +27,7 @@ module Wumpus.Basic.Monads.TurtleClass
   (
 
     TurtleConfig(..)
+  , regularConfig 
 
   , TurtleM(..)
 
@@ -42,6 +43,8 @@ module Wumpus.Basic.Monads.TurtleClass
   , moveDown
   , nextLine
  
+  , scaleCoord
+
   ) where
 
 
@@ -60,6 +63,8 @@ data TurtleConfig u = TurtleConfig
   deriving (Eq,Show)
 
 
+regularConfig :: u -> TurtleConfig u
+regularConfig u = TurtleConfig u u 
 
 
 class Monad m => TurtleM m u | m -> u where
@@ -106,6 +111,9 @@ moveDown    = setsLoc_ $ \(_,yi) (P2 x y) -> P2 x (y-yi)
 -- Note this will draw things with negative y-coorinates unless
 -- you intially seed the state with a high x-pos ...
 
-nextLine    :: (TurtleM m u , Num u) => m ()
+nextLine    :: (TurtleM m u, Num u) => m ()
 nextLine    = setsLoc_ $ \(_,yi)(P2 _ y) -> P2 0 (y-yi)
 
+scaleCoord  :: (TurtleM m u, Num u) => (Int,Int) -> m (Point2 u)
+scaleCoord (x,y) = askSteps >>= \(sx,sy) ->
+                   return $ P2 (sx * fromIntegral x) (sy * fromIntegral y)

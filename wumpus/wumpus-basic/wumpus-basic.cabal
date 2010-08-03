@@ -60,6 +60,7 @@ library
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,
     Wumpus.Basic.Graphic.PointSupply,
+    Wumpus.Basic.Monads.Drawing,
     Wumpus.Basic.Monads.DrawingCtxClass,
     Wumpus.Basic.Monads.DrawingCtxMonad,
     Wumpus.Basic.Monads.STraceMonad,
