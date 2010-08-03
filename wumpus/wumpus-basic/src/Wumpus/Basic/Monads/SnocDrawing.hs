@@ -26,37 +26,18 @@ module Wumpus.Basic.Monads.SnocDrawing
   , execSnocDrawingT
 
   -- * Re-exports
-  
-  -- ** DrawingCtxMonad
-  , DrawingAttr(..)
-  , standardAttr
-  , strokeAttr
-  , fillAttr
-  , textAttr
-  , markHeight
-
-  -- ** STraceMonad
-  , strace
-  , strace1
-
-  -- ** TurtleMonad
-  , TurtleConfig(..)
-  , getLoc
-  , setLoc
-  , xStep
-  , yStep
-  , resetLoc
-  , moveLeft
-  , moveRight
-  , moveUp
-  , moveDown
-  , nextLine
+  , module Wumpus.Basic.Monads.DrawingCtxClass
+  , module Wumpus.Basic.Monads.TraceClass
+  , module Wumpus.Basic.Monads.TurtleClass 
 
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.DrawingCtxMonad
 import Wumpus.Basic.Monads.STraceMonad
+import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Monads.TurtleClass
 import Wumpus.Basic.Monads.TurtleMonad
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -134,13 +115,13 @@ instance DrawingCtxM (SnocDrawing u) where
 instance Monad m => DrawingCtxM (SnocDrawingT u m) where
   askDrawingCtx = SnocDrawingT $ lift askDrawingCtx
 
-instance STraceM (SnocDrawing u) (Primitive u) where
-  strace  a = SnocDrawing $ lift $ lift $ strace a
-  strace1 a = SnocDrawing $ lift $ lift $ strace1 a
+instance TraceM (SnocDrawing u) (Primitive u) where
+  trace  a = SnocDrawing $ lift $ lift $ trace a
+  trace1 a = SnocDrawing $ lift $ lift $ trace1 a
 
-instance Monad m => STraceM (SnocDrawingT u m) (Primitive u) where
-  strace  a = SnocDrawingT $ lift $ lift $ strace a
-  strace1 a = SnocDrawingT $ lift $ lift $ strace1 a
+instance Monad m => TraceM (SnocDrawingT u m) (Primitive u) where
+  trace  a = SnocDrawingT $ lift $ lift $ trace a
+  trace1 a = SnocDrawingT $ lift $ lift $ trace1 a
 
 runSnocDrawing :: Num u 
                => TurtleConfig u 

@@ -17,30 +17,19 @@
 module Wumpus.Basic.Monads.DrawingCtxMonad
   (
 
-  -- * Re-exports from Wumpus.Basic.Graphic.DrawingAttr
-    DrawingAttr(..)
-  , standardAttr
 
   -- * DrawingCtx monads
-  , DrawingCtx
+    DrawingCtx
   , DrawingCtxT     
-
-  , DrawingCtxM(..)
 
   , runDrawingCtx
   , runDrawingCtxT
 
-  , strokeAttr
-  , fillAttr
-  , textAttr
-  , markHeight
   
   ) where
 
-import Wumpus.Basic.Graphic.DrawingAttr ( DrawingAttr(..), standardAttr )
-import qualified Wumpus.Basic.Graphic.DrawingAttr as DA
+import Wumpus.Basic.Monads.DrawingCtxClass
 
-import Wumpus.Core                      -- package: wumpus-core
 
 import MonadLib ( MonadT(..) )          -- package: monadLib
 
@@ -48,9 +37,9 @@ import Control.Applicative
 import Control.Monad
 
 
-newtype DrawingCtx a = DrawingCtx  { getDrawingCtx  :: DA.DrawingAttr -> a } 
+newtype DrawingCtx a = DrawingCtx  { getDrawingCtx  :: DrawingAttr -> a } 
 
-newtype DrawingCtxT m a = DrawingCtxT { getDrawingCtxT :: DA.DrawingAttr -> m a }
+newtype DrawingCtxT m a = DrawingCtxT { getDrawingCtxT :: DrawingAttr -> m a }
 
 
 -- Functor
@@ -94,11 +83,6 @@ instance MonadT DrawingCtxT where
   lift m = DrawingCtxT $ \_ -> m >>= \a -> return a
 
 
--- local to add? or new class...
-
-class Monad m => DrawingCtxM m where
-  askDrawingCtx :: m DrawingAttr
-
 
 instance DrawingCtxM DrawingCtx where
   askDrawingCtx = DrawingCtx id
@@ -113,18 +97,4 @@ runDrawingCtx cfg mf = getDrawingCtx mf cfg
 
 runDrawingCtxT :: Monad m => DrawingAttr -> DrawingCtxT m a -> m a
 runDrawingCtxT cfg mf = getDrawingCtxT mf cfg
-
-
-strokeAttr  :: DrawingCtxM m => m (DRGB, StrokeAttr)
-strokeAttr  = liftM DA.strokeAttr askDrawingCtx
-
-
-fillAttr    :: DrawingCtxM m => m DRGB
-fillAttr    = liftM DA.fillAttr askDrawingCtx
-
-textAttr    :: DrawingCtxM m => m  (DRGB, FontAttr)
-textAttr    = liftM DA.textAttr askDrawingCtx
-
-markHeight  :: (Fractional u, DrawingCtxM m) => m u
-markHeight  = liftM DA.markHeight askDrawingCtx
 

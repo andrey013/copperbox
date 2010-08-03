@@ -1,7 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,12 +27,9 @@
 module Wumpus.Basic.Monads.TurtleMonad
   (
 
-    TurtleConfig(..)
 
-  , Turtle
+    Turtle
   , TurtleT
-
-  , TurtleM(..)
 
   , runTurtle
   , runTurtleT
@@ -41,21 +37,10 @@ module Wumpus.Basic.Monads.TurtleMonad
   , evalTurtle
   , evalTurtleT 
 
-  , setsLoc
-  , setsLoc_
-
-
-
-  -- * movement
-  , resetLoc
-  , moveLeft
-  , moveRight
-  , moveUp
-  , moveDown
-  , nextLine
  
   ) where
 
+import Wumpus.Basic.Monads.TurtleClass
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -63,16 +48,6 @@ import MonadLib ( MonadT(..) )          -- package: monadLib
 
 import Control.Applicative
 import Control.Monad
-
--- Might want to expand this with an initial y-value,
--- otherwise using nextLine will get you negative y-values
--- without care...
-
-data TurtleConfig u = TurtleConfig 
-      { xstep :: !u
-      , ystep :: !u 
-      }  
-  deriving (Eq,Show)
 
 
 -- Turtle is a Reader / State monad
@@ -130,11 +105,6 @@ instance MonadT (TurtleT u) where
   lift m = TurtleT $ \_ s -> m >>= \a -> return (a,s)
 
 
-class Monad m => TurtleM m u | m -> u where
-  getLoc :: m (Point2 u)
-  setLoc :: (Point2 u) -> m ()
-  xStep  :: m u
-  yStep  :: m u
 
 instance TurtleM (Turtle u) u where
   getLoc   = Turtle $ \_ s -> (s,s)
@@ -164,44 +134,4 @@ evalTurtleT :: (Monad m, Num u)
             => TurtleConfig u -> TurtleT u m a -> m a
 evalTurtleT cfg mf = liftM fst $ runTurtleT cfg mf
 
-
-askSteps :: TurtleM m u => m (u,u)
-askSteps = liftM2 (,) xStep yStep
-
-setsLoc :: TurtleM m u 
-        => ((u,u) -> Point2 u -> (a,Point2 u)) -> m a
-setsLoc f = getLoc      >>= \pt -> 
-            askSteps    >>= \sc ->
-            let (a,pt') = f sc pt in setLoc pt' >> return a
-
-setsLoc_ :: TurtleM m u => ((u,u) -> Point2 u -> Point2 u) -> m ()
-setsLoc_ f = getLoc     >>= \pt -> 
-             askSteps   >>= \sc ->
-             let pt' = f sc pt in setLoc pt'
-
-
-
-resetLoc    :: (TurtleM m u, Num u) => m ()
-resetLoc    = setLoc (P2 0 0)
-
-
-moveRight   :: (TurtleM m u, Num u) => m ()
-moveRight   = setsLoc_ $ \(xi,_) (P2 x y) -> P2 (x+xi) y
-
-
-moveLeft    :: (TurtleM m u, Num u) => m ()
-moveLeft    = setsLoc_ $ \(xi,_) (P2 x y) -> P2 (x-xi) y
-
-moveUp      :: (TurtleM m u, Num u) => m ()
-moveUp      = setsLoc_ $ \(_,yi) (P2 x y) -> P2 x (y+yi)
-
-moveDown    :: (TurtleM m u, Num u) => m ()
-moveDown    = setsLoc_ $ \(_,yi) (P2 x y) -> P2 x (y-yi)
-
-
--- Note this will draw things with negative y-coorinates unless
--- you intially seed the state with a high x-pos ...
-
-nextLine    :: (TurtleM m u , Num u) => m ()
-nextLine    = setsLoc_ $ \(_,yi)(P2 _ y) -> P2 0 (y-yi)
 

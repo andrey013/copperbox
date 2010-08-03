@@ -32,16 +32,17 @@ module Wumpus.Basic.Monads.TraceMonad
 
     Trace
   , TraceT
-  , TraceM(..)
 
   , runTrace
   , runTraceT
  
   ) where
 
-import MonadLib ( MonadT(..) )          -- package: monadLib
-
+import Wumpus.Basic.Monads.TraceClass
 import Wumpus.Basic.Utils.HList
+
+
+import MonadLib ( MonadT(..) )          -- package: monadLib
 
 import Control.Applicative
 
@@ -95,10 +96,6 @@ instance Monad m => Monad (TraceT i m) where
 
 instance MonadT (TraceT i) where 
   lift m = TraceT $ \w -> m >>= \ a -> return (a,w)
-
-class TraceM  m i | m -> i where
-  trace  :: H i -> m ()
-  trace1 :: i -> m ()
 
 
 instance TraceM (Trace i) i where

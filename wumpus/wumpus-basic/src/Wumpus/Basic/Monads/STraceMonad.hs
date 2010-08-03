@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -23,16 +22,17 @@ module Wumpus.Basic.Monads.STraceMonad
 
     STrace
   , STraceT
-  , STraceM(..)
 
   , runSTrace
   , runSTraceT
  
   ) where
 
-import MonadLib ( MonadT(..) )          -- package: monadLib
 
+import Wumpus.Basic.Monads.TraceClass
 import Wumpus.Basic.Utils.HList
+
+import MonadLib ( MonadT(..) )          -- package: monadLib
 
 import Control.Applicative
 
@@ -87,18 +87,14 @@ instance Monad m => Monad (STraceT i m) where
 instance MonadT (STraceT i) where 
   lift m = STraceT $ \w -> m >>= \ a -> return (a,w)
 
-class STraceM  m i | m -> i where
-  strace  :: H i -> m ()
-  strace1 :: i -> m ()
 
+instance TraceM (STrace i) i where
+  trace  h = STrace $ \w -> ((), w . h)  
+  trace1 i = STrace $ \w -> ((), w `snocH` i)  
 
-instance STraceM (STrace i) i where
-  strace  h = STrace $ \w -> ((), w . h)  
-  strace1 i = STrace $ \w -> ((), w `snocH` i)  
-
-instance Monad m => STraceM (STraceT i m) i where
-  strace  h = STraceT $ \w -> return ((), w . h)  
-  strace1 i = STraceT $ \w -> return ((), w `snocH` i)  
+instance Monad m => TraceM (STraceT i m) i where
+  trace  h = STraceT $ \w -> return ((), w . h)  
+  trace1 i = STraceT $ \w -> return ((), w `snocH` i)  
 
 
 
