@@ -98,15 +98,24 @@ instance MonadT (SnocDrawingT u) where
   lift m = SnocDrawingT $ lift $ lift $ lift m
 
 
-instance TurtleM (SnocDrawing u) u where
-  getLoc   = SnocDrawing $ getLoc
-  setLoc c = SnocDrawing $ setLoc c
+instance TurtleM (SnocDrawing u) where
+  getLoc      = SnocDrawing $ getLoc
+  setLoc c    = SnocDrawing $ setLoc c
+  getOrigin   = SnocDrawing $ getOrigin
+  setOrigin o = SnocDrawing $ setOrigin o
+
+instance TurtleScaleM (SnocDrawing u) u where
   xStep    = SnocDrawing $ xStep
   yStep    = SnocDrawing $ yStep
 
-instance Monad m => TurtleM (SnocDrawingT u m) u where
-  getLoc   = SnocDrawingT $ getLoc
-  setLoc c = SnocDrawingT $ setLoc c
+instance Monad m => TurtleM (SnocDrawingT u m) where
+  getLoc      = SnocDrawingT $ getLoc
+  setLoc c    = SnocDrawingT $ setLoc c
+  getOrigin   = SnocDrawingT $ getOrigin
+  setOrigin o = SnocDrawingT $ setOrigin o
+
+
+instance Monad m => TurtleScaleM (SnocDrawingT u m) u where
   xStep    = SnocDrawingT $ xStep
   yStep    = SnocDrawingT $ yStep
 
@@ -127,34 +136,38 @@ instance Monad m => TraceM (SnocDrawingT u m) (Primitive u) where
 
 runSnocDrawing :: Num u 
                => TurtleConfig u 
+               -> (Int,Int)
                -> DrawingAttr 
                -> SnocDrawing u a 
                -> (a, Graphic u)
-runSnocDrawing cfg attr mf = runSTrace 
-                           ( runDrawingCtxT attr
-                           ( evalTurtleT    cfg  $ getSnocDrawing mf ))
+runSnocDrawing cfg ogin attr mf = runSTrace 
+                                ( runDrawingCtxT attr
+                                ( runTurtleT cfg ogin $ getSnocDrawing mf ))
 
 
 runSnocDrawingT :: (Monad m, Num u) 
-                => TurtleConfig u 
+                => TurtleConfig u
+                -> (Int,Int) 
                 -> DrawingAttr 
                 -> SnocDrawingT u m a 
                 -> m (a, Graphic u)
-runSnocDrawingT cfg attr mf = runSTraceT 
-                            ( runDrawingCtxT attr
-                            ( evalTurtleT    cfg  $ getSnocDrawingT mf ))
+runSnocDrawingT cfg ogin attr mf = runSTraceT 
+                                 ( runDrawingCtxT attr
+                                 ( runTurtleT cfg ogin $ getSnocDrawingT mf ))
 
 execSnocDrawing :: Num u 
                 => TurtleConfig u 
+                -> (Int,Int)
                 -> DrawingAttr 
                 -> SnocDrawing u a 
                 -> Graphic u
-execSnocDrawing cfg attr mf = snd $ runSnocDrawing cfg attr mf
+execSnocDrawing cfg ogin attr mf = snd $ runSnocDrawing cfg ogin attr mf
 
 
 execSnocDrawingT :: (Monad m, Num u)
                  => TurtleConfig u 
+                 -> (Int,Int)
                  -> DrawingAttr 
                  -> SnocDrawingT u m a 
                  -> m (Graphic u)
-execSnocDrawingT cfg attr mf = liftM snd $ runSnocDrawingT cfg attr mf
+execSnocDrawingT cfg ogin attr mf = liftM snd $ runSnocDrawingT cfg ogin attr mf

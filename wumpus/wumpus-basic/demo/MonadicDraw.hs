@@ -29,7 +29,8 @@ demo01 = do
 
 
 pic1 :: DPicture
-pic1 = drawGraphicU $ execSnocDrawing (regularConfig 40) (standardAttr 24) $ do
+pic1 = drawGraphicU $ 
+           execSnocDrawing (regularConfig 40) (0,0) (standardAttr 24) $ do
         a <- node dotCircle 
         b <- dotText "text" `at` (1,2)
         connect (northeast a) (radialAnchor (5*pi/4) b)

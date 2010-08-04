@@ -39,13 +39,14 @@ traceG fn = \pt -> trace (fn pt)
 
 -- MGraphic functions will have to trace themselves...
 
-node :: (TraceM m (Primitive u), TurtleM m u) => MGraphicF m u a -> m a 
-node mgF = getLoc >>= \pt -> mgF pt
+node :: (TraceM m (Primitive u), TurtleScaleM m u, Num u) 
+     => MGraphicF m u a -> m a 
+node mgF = getPos >>= \pt -> mgF pt
 
 
 infixr 6 `at` 
 
-at :: (Num u, TraceM m (Primitive u), TurtleM m u) 
+at :: (Num u, TraceM m (Primitive u), TurtleScaleM m u) 
    => MGraphicF m u a -> (Int,Int) -> m a
 at mgF coord = scaleCoord coord >>= \pt -> mgF pt
 

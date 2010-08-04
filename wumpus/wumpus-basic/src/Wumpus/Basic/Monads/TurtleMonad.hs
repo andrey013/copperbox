@@ -34,15 +34,11 @@ module Wumpus.Basic.Monads.TurtleMonad
   , runTurtle
   , runTurtleT
 
-  , evalTurtle
-  , evalTurtleT 
-
  
   ) where
 
 import Wumpus.Basic.Monads.TurtleClass
 
-import Wumpus.Core                      -- package: wumpus-core
 
 import MonadLib ( MonadT(..) )          -- package: monadLib
 
@@ -54,14 +50,19 @@ import Control.Monad
 -- 
 -- The env is the horizontal and vertical move distances.
 -- 
--- The state is the current point.
+-- The state is the current coordinate and the origin.
 --
 
+data TurtleState = TurtleState 
+      { _turtle_origin   :: (Int,Int)
+      , _current_coord   :: (Int,Int)
+      }
+
 newtype Turtle u a = Turtle  { 
-          getTurtle  :: TurtleConfig u -> Point2 u -> (a, Point2 u) } 
+          getTurtle  :: TurtleConfig u -> TurtleState -> (a, TurtleState) } 
 
 newtype TurtleT u m a = TurtleT { 
-          getTurtleT :: TurtleConfig u -> Point2 u -> m (a, Point2 u) }
+          getTurtleT :: TurtleConfig u -> TurtleState -> m (a, TurtleState) }
 
 
 -- Functor
@@ -106,32 +107,34 @@ instance MonadT (TurtleT u) where
 
 
 
-instance TurtleM (Turtle u) u where
-  getLoc   = Turtle $ \_ s -> (s,s)
-  setLoc c = Turtle $ \_ _ -> ((),c)
+instance TurtleM (Turtle u) where
+  getLoc      = Turtle $ \_ s@(TurtleState _ c) -> (c,s)
+  setLoc c    = Turtle $ \_   (TurtleState o _) -> ((),TurtleState o c)
+  getOrigin   = Turtle $ \_ s@(TurtleState o _) -> (o,s)
+  setOrigin o = Turtle $ \_   (TurtleState _ c) -> ((),TurtleState o c)
+
+instance TurtleScaleM (Turtle u) u where
   xStep    = Turtle $ \r s -> (xstep r,s)
   yStep    = Turtle $ \r s -> (ystep r,s)
 
 
-instance Monad m => TurtleM (TurtleT u m) u where
-  getLoc   = TurtleT $ \_ s -> return (s,s)
-  setLoc c = TurtleT $ \_ _ -> return ((),c)
+instance Monad m => TurtleM (TurtleT u m) where
+  getLoc      = TurtleT $ \_ s@(TurtleState _ c) -> return (c,s)
+  setLoc c    = TurtleT $ \_   (TurtleState o _) -> return ((),TurtleState o c)
+  getOrigin   = TurtleT $ \_ s@(TurtleState o _) -> return (o,s)
+  setOrigin o = TurtleT $ \_   (TurtleState _ c) -> return ((),TurtleState o c)
+
+instance Monad m => TurtleScaleM (TurtleT u m) u where
   xStep    = TurtleT $ \r s -> return (xstep r,s)
   yStep    = TurtleT $ \r s -> return (ystep r,s)
 
 
-runTurtle :: Num u => TurtleConfig u -> Turtle u a -> (a, Point2 u)
-runTurtle cfg mf = getTurtle mf cfg zeroPt 
+-- Run functions discard the state...
+
+runTurtle :: Num u => TurtleConfig u -> (Int,Int) -> Turtle u a -> a
+runTurtle cfg ogin mf = fst $ getTurtle mf cfg (TurtleState ogin ogin)
  
 runTurtleT :: (Monad m, Num u) 
-           => TurtleConfig u -> TurtleT u m a -> m (a, Point2 u)
-runTurtleT cfg mf = getTurtleT mf cfg zeroPt
-
-evalTurtle :: Num u => TurtleConfig u -> Turtle u a -> a
-evalTurtle cfg mf = fst $ runTurtle cfg mf 
-
-evalTurtleT :: (Monad m, Num u) 
-            => TurtleConfig u -> TurtleT u m a -> m a
-evalTurtleT cfg mf = liftM fst $ runTurtleT cfg mf
-
+           => TurtleConfig u -> (Int,Int) -> TurtleT u m a -> m a
+runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
 

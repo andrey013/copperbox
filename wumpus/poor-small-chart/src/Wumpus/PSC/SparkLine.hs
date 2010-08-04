@@ -65,7 +65,7 @@ rangeBand (y0 ::: y1) rgb = \bv ->
 
 
 noRangeBand :: BivariateGraphic ux uy
-noRangeBand = const blankG
+noRangeBand = const emptyG
 
 
 

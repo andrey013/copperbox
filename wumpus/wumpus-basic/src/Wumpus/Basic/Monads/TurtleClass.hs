@@ -26,10 +26,12 @@
 module Wumpus.Basic.Monads.TurtleClass
   (
 
-    TurtleConfig(..)
+    Coord
+  , TurtleConfig(..)
   , regularConfig 
 
   , TurtleM(..)
+  , TurtleScaleM(..)
 
   , askSteps
   , setsLoc
@@ -43,6 +45,7 @@ module Wumpus.Basic.Monads.TurtleClass
   , moveDown
   , nextLine
  
+  , getPos
   , scaleCoord
 
   ) where
@@ -51,6 +54,9 @@ module Wumpus.Basic.Monads.TurtleClass
 import Wumpus.Core                      -- package: wumpus-core
 
 import Control.Monad
+
+type Coord = (Int,Int)
+
 
 -- Might want to expand this with an initial y-value,
 -- otherwise using nextLine will get you negative y-values
@@ -67,53 +73,58 @@ regularConfig :: u -> TurtleConfig u
 regularConfig u = TurtleConfig u u 
 
 
-class Monad m => TurtleM m u | m -> u where
-  getLoc :: m (Point2 u)
-  setLoc :: (Point2 u) -> m ()
-  xStep  :: m u
-  yStep  :: m u
+class Monad m => TurtleM m where
+  getLoc     :: m (Int,Int)
+  setLoc     :: (Int,Int) -> m ()
+  getOrigin  :: m (Int,Int)
+  setOrigin  :: (Int,Int) -> m ()
+
+class TurtleM m => TurtleScaleM m u | m -> u where 
+  xStep     :: m u
+  yStep     :: m u
 
 
-askSteps :: TurtleM m u => m (u,u)
+askSteps :: TurtleScaleM m u => m (u,u)
 askSteps = liftM2 (,) xStep yStep
 
-setsLoc :: TurtleM m u 
-        => ((u,u) -> Point2 u -> (a,Point2 u)) -> m a
-setsLoc f = getLoc      >>= \pt -> 
-            askSteps    >>= \sc ->
-            let (a,pt') = f sc pt in setLoc pt' >> return a
+setsLoc :: TurtleM m => (Coord -> (a,Coord)) -> m a
+setsLoc f = getLoc      >>= \coord -> 
+            let (a,coord') = f coord in setLoc coord' >> return a
 
-setsLoc_ :: TurtleM m u => ((u,u) -> Point2 u -> Point2 u) -> m ()
-setsLoc_ f = getLoc     >>= \pt -> 
-             askSteps   >>= \sc ->
-             let pt' = f sc pt in setLoc pt'
+setsLoc_ :: TurtleM m => (Coord -> Coord) -> m ()
+setsLoc_ f = getLoc     >>= \coord ->  setLoc (f coord)
 
 
 
-resetLoc    :: (TurtleM m u, Num u) => m ()
-resetLoc    = setLoc (P2 0 0)
+resetLoc    :: TurtleM m => m ()
+resetLoc    = getOrigin >>= setLoc
 
 
-moveRight   :: (TurtleM m u, Num u) => m ()
-moveRight   = setsLoc_ $ \(xi,_) (P2 x y) -> P2 (x+xi) y
+moveRight   :: TurtleM m => m ()
+moveRight   = setsLoc_ $ \(x,y)-> (x+1, y)
 
 
-moveLeft    :: (TurtleM m u, Num u) => m ()
-moveLeft    = setsLoc_ $ \(xi,_) (P2 x y) -> P2 (x-xi) y
+moveLeft    :: TurtleM m => m ()
+moveLeft    = setsLoc_ $ \(x,y) -> (x-1,y)
 
-moveUp      :: (TurtleM m u, Num u) => m ()
-moveUp      = setsLoc_ $ \(_,yi) (P2 x y) -> P2 x (y+yi)
+moveUp      :: TurtleM m => m ()
+moveUp      = setsLoc_ $ \(x,y) -> (x,y+1)
 
-moveDown    :: (TurtleM m u, Num u) => m ()
-moveDown    = setsLoc_ $ \(_,yi) (P2 x y) -> P2 x (y-yi)
+moveDown    :: TurtleM m => m ()
+moveDown    = setsLoc_ $ \(x,y) -> (x ,y-1)
 
 
--- Note this will draw things with negative y-coorinates unless
--- you intially seed the state with a high x-pos ...
+nextLine    :: TurtleM m => m ()
+nextLine    = getOrigin >>= \(ox,_) ->
+              setsLoc_ $ \(_,y) -> (ox,y-1)
 
-nextLine    :: (TurtleM m u, Num u) => m ()
-nextLine    = setsLoc_ $ \(_,yi)(P2 _ y) -> P2 0 (y-yi)
 
-scaleCoord  :: (TurtleM m u, Num u) => (Int,Int) -> m (Point2 u)
+getPos :: (TurtleScaleM m u, Num u) => m (Point2 u)
+getPos = getLoc   >>= \(x,y)   ->
+         askSteps >>= \(sx,sy) ->
+         return $ P2 (sx * fromIntegral x) (sy * fromIntegral y)
+
+scaleCoord  :: (TurtleScaleM m u, Num u) => (Int,Int) -> m (Point2 u)
 scaleCoord (x,y) = askSteps >>= \(sx,sy) ->
                    return $ P2 (sx * fromIntegral x) (sy * fromIntegral y)
+
