@@ -31,8 +31,8 @@ demo01 = do
 pic1 :: DPicture
 pic1 = drawGraphicU $ execSnocDrawing (regularConfig 40) (standardAttr 24) $ do
         a <- node dotCircle 
-        b <- dotCircle `at` (1,2)
-        connect (north a) (south b)
+        b <- dotText "text" `at` (1,2)
+        connect (northeast a) (radialAnchor (5*pi/4) b)
         
 connect :: (Num u, TraceM m (Primitive u)) => Point2 u -> Point2 u -> m ()
 connect a b = trace1 $ ostroke black $ vertexPath [a,b]  

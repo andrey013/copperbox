@@ -26,6 +26,8 @@ module Wumpus.Basic.Graphic.DrawingAttr
   , textAttr
   , markHeight
 
+  , textDimensions
+
   ) where
 
 
@@ -66,3 +68,12 @@ textAttr = liftA2 (,) stroke_colour font_props
 markHeight :: Fractional u => DrawingAttr -> u
 markHeight = xcharHeight . font_size . font_props
 
+
+-- | textDimensions : text -> DrawingAttr -> (width,height)
+--
+textDimensions :: Fractional u => String -> DrawingAttr -> (u,u)
+textDimensions str attr = (w,h)
+  where
+    sz = font_size $ font_props attr
+    w  = 0.5 * textWidth sz (length str) 
+    h  = 0.5 * textHeight sz

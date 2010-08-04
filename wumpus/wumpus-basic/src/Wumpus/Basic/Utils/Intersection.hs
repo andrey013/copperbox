@@ -25,6 +25,9 @@ module Wumpus.Basic.Utils.Intersection
   , toLineEqn
   , findIntersect
   , intersection
+
+  , rectangleLines
+
   ) 
   where
 
@@ -117,3 +120,14 @@ lineF (P2 x y) (LineEqn a b c) = a*x + b*y + c
 affineComb :: Num u => Point2 u -> Point2 u -> u -> Point2 u
 affineComb p q t = p .+^ t *^ (q .-. p)
 
+
+
+
+
+rectangleLines :: Num u => Point2 u -> u -> u -> [LineSegment u]
+rectangleLines ctr hw hh = [LS br tr, LS tr tl, LS tl bl, LS bl br]
+  where
+    br = ctr .+^ (vec hw    (-hh))
+    tr = ctr .+^ (vec hw    hh)
+    tl = ctr .+^ (vec (-hw) hh)
+    bl = ctr .+^ (vec (-hw) (-hh))

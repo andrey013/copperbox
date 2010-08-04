@@ -30,6 +30,8 @@ module Wumpus.Basic.Monads.DrawingCtxClass
   , fillAttr
   , textAttr
   , markHeight
+
+  , textDimensions
   
   ) where
 
@@ -60,3 +62,5 @@ textAttr    = liftM DA.textAttr askDrawingCtx
 markHeight  :: (Fractional u, DrawingCtxM m) => m u
 markHeight  = liftM DA.markHeight askDrawingCtx
 
+textDimensions :: (Fractional u, DrawingCtxM m) => String -> m (u,u)
+textDimensions str = liftM (DA.textDimensions str) askDrawingCtx
