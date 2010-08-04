@@ -9,8 +9,7 @@ import Wumpus.Tree.Draw
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
-import Data.Maybe
-import Data.Tree
+import Data.Tree hiding ( drawTree )
 import System.Directory
 
 
@@ -53,13 +52,8 @@ main = createDirectoryIfMissing True "./out/"
 
 
 pic1 :: Picture Double
-pic1 = fromMaybe errK $ drawGraphic $ draw $ design (fx,fy) tree1
+pic1 = drawGraphicU $ drawTree $ design (fx,fy) tree1
 
 pic2 :: Picture Double
-pic2 = fromMaybe errK $ drawGraphic $ draw $ design (fx,fy) tree2
-
-
-
-errK :: a
-errK = error "no picture"
+pic2 = drawGraphicU $ drawTree $ design (fx,fy) tree2
 

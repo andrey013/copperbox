@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ExistentialQuantification  #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,9 +20,11 @@
 module Wumpus.Basic.AnchorDots
   ( 
 
+    DotAnchor
+  , dotCircleEx
 
   -- * Dots with anchor points
-    dotCircle
+  , dotCircle
   , dotSquare
   , dotChar
   , dotText
@@ -39,6 +42,56 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
+{-
+data DotAnchor u = forall s.  
+                    DotAnchor { ctr_anchor :: s -> Point2 u
+                              , rad_anchor :: s -> Radian -> Point2 u
+                              , rep        :: s }
+
+type instance DUnit (DotAnchor u) = u
+
+instance CenterAnchor (DotAnchor u) where
+  center (DotAnchor ca _ r) = ca r
+
+
+instance RadialAnchor (DotAnchor u) where
+  radialAnchor theta (DotAnchor _ ra r) = ra r theta
+-}
+
+-- An existential thing that supports anchors.
+-- This means any dot can retun the same (opaque) structure
+--
+-- But it does mean that which anchor class are supported is 
+-- fixed - the datatype needs a field for each one.
+-- Supporting north, southeast etc. will also be tedious...
+--
+data DotAnchor u = forall s.  
+                    DotAnchor { _ctr_anchor :: Point2 u
+                              , _rad_anchor :: Radian -> Point2 u }
+
+type instance DUnit (DotAnchor u) = u
+
+instance CenterAnchor (DotAnchor u) where
+  center (DotAnchor ca _) = ca
+
+
+instance RadialAnchor (DotAnchor u) where
+   radialAnchor theta (DotAnchor _ ra) = ra theta
+
+circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
+circleAnchor rad ctr = DotAnchor ctr (\theta -> ctr .+^ (avec theta rad))
+
+
+-- This draws to the trace then returns an opaque thing
+-- (a Circle) that supports anchors
+
+dotCircleEx :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
+               , Floating u) 
+            => MGraphicF m u (DotAnchor u)
+dotCircleEx = \pt -> askDrawingCtx                    >>= \attr -> 
+                     markHeight                       >>= \h    ->
+                     trace (BD.dotCircle attr pt)     >> 
+                     return (circleAnchor (0.5*h) pt)
 
 
 

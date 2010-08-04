@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,23 +19,54 @@ module Wumpus.Tree.Draw where
 
 import Wumpus.Tree.Algorithm
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
+import Wumpus.Basic.AnchorDots
+import Wumpus.Basic.Graphic   
+import Wumpus.Basic.Monads.SnocDrawing
 import Wumpus.Basic.SVGColours
-import Wumpus.Basic.Utils.HList
 
+import Data.VectorSpace                         -- package: vector-space
 
 import Data.Tree
 
-draw :: CoordTree Double a -> DGraphic
-draw (Node (pt,_) ns) = dot pt . veloH draw ns . link pt ns
+-- Don\'t actually need the Turtle of SnocDrawing...
+
+drawTree :: CoordTree Double a -> DGraphic
+drawTree tree = 
+    execSnocDrawing (regularConfig 1) (0,0) (standardAttr 18) $ drawTop tree 
 
 
-dot :: Fractional u => Point2 u -> Graphic u
-dot pt = disk black 4 $ pt
+drawTop :: CoordTree Double a -> SnocDrawing Double ()
+drawTop (Node (pt,_) ns) = do 
+    ancr <- dotCircleEx pt
+    mapM_ (draw1 ancr) ns
 
-link :: Point2 Double -> [CoordTree Double a] -> DGraphic
-link pt ns = veloH step ns
+draw1 :: DotAnchor Double -> CoordTree Double a -> SnocDrawing Double ()
+draw1 ancr_from (Node (pt,_) ns) = do
+    ancr <- dotCircleEx pt
+    connector ancr_from ancr
+    mapM_ (draw1 ancr) ns   
+
+
+connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 
+          => DotAnchor u -> DotAnchor u -> SnocDrawing u ()
+connector afrom ato = trace1 $ ostroke black $ vertexPath [p0,p1]
+   where  
+     (ang0,ang1)    = anchorAngles (center afrom) (center ato)
+     p0             = radialAnchor ang0 afrom
+     p1             = radialAnchor ang1 ato 
+
+
+
+
+anchorAngles :: (Floating u, Real u, InnerSpace (Vec2  u)) 
+             => Point2 u -> Point2 u -> (Radian,Radian)
+anchorAngles f t = (theta0, theta1)
   where
-    step (Node (to,_) _) = wrapG $ ostroke black $ vertexPath [pt,to]
+    conn_v  = pvec f t
+    theta0  = direction conn_v
+    theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
+    
+
