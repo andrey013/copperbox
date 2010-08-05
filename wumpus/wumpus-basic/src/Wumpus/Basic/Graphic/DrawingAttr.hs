@@ -74,6 +74,6 @@ markHeight = xcharHeight . font_size . font_props
 textDimensions :: Fractional u => String -> DrawingAttr -> (u,u)
 textDimensions str attr = (w,h)
   where
-    sz = font_size $ font_props attr
-    w  = 0.5 * textWidth sz (length str) 
-    h  = 0.5 * textHeight sz
+    sz = font_size  $ font_props attr
+    w  = textWidth  sz (1 + length str) 
+    h  = textHeight sz

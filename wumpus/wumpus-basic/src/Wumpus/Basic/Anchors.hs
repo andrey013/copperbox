@@ -36,6 +36,12 @@ import Wumpus.Core                      -- package: wumpus-core
 class CenterAnchor t where
   center :: DUnit t ~ u => t -> Point2 u
 
+-- Note - in TikZ cardinal anchors are not necessarily at the
+-- equivalent radial position, for instance reactangle north-east
+-- is the top-right corner whether or not this is incident at 
+-- 45deg.
+--
+
 class CardinalAnchor t where
   north :: DUnit t ~ u => t -> Point2 u
   south :: DUnit t ~ u => t -> Point2 u
@@ -59,8 +65,4 @@ class TextAnchor t where
 --
 class RadialAnchor t where
   radialAnchor :: DUnit t ~ u => Radian -> t -> Point2 u
-
-
--- Note - AnchorAngle.
--- Obviously, circles would support this. In TikZ rectangles do...
 
