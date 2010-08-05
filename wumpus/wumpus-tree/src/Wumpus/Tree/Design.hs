@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Tree.Algorithm
+-- Module      :  Wumpus.Tree.Design
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -23,12 +23,14 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Tree.Algorithm
+module Wumpus.Tree.Design
   (
-    CoordTree
-  , design
+    design
   )
   where
+
+import Wumpus.Tree.Base
+
 
 import Wumpus.Core ( Point2(..) )       -- package: wumpus-core
 
@@ -52,7 +54,6 @@ type Delta = Double
 data Span = S !XPos !XPos
   deriving (Eq,Ord,Show)
 
-type CoordTree u a = Tree (Point2 u, a)
 
 
 outsideMerge :: Span -> Span -> Span
@@ -192,6 +193,8 @@ design (fx,fy) t = label 0 t3
          kids' = map (label (lvl+1)) kids 
 
     zfn (x0,a) (x1,_)           = (mean x0 x1,a)
+
+
 
 -- find height and width
 --

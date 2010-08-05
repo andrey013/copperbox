@@ -24,12 +24,15 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       containers        >= 0.3.0     && < 0.4.0,
+                      vector-space      >= 0.6,
                       wumpus-core       >= 0.22.0,
                       wumpus-basic      >= 0.3.0
 
   
   exposed-modules:
-    Wumpus.Tree.Algorithm,
+    Wumpus.Tree,
+    Wumpus.Tree.Base,
+    Wumpus.Tree.Design,
     Wumpus.Tree.Draw,
     Wumpus.Tree.VersionNumber
 

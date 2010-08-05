@@ -17,7 +17,7 @@
 
 module Wumpus.Tree.Draw where
 
-import Wumpus.Tree.Algorithm
+import Wumpus.Tree.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -33,19 +33,19 @@ import Data.Tree
 
 -- Don\'t actually need the Turtle of SnocDrawing...
 
-drawTree :: CoordTree Double a -> DGraphic
+drawTree :: CoordTree Double Char -> DGraphic
 drawTree tree = 
     execSnocDrawing (regularConfig 1) (0,0) (standardAttr 18) $ drawTop tree 
 
 
-drawTop :: CoordTree Double a -> SnocDrawing Double ()
-drawTop (Node (pt,_) ns) = do 
-    ancr <- dotCircleEx pt
+drawTop :: CoordTree Double Char -> SnocDrawing Double ()
+drawTop (Node (pt,a) ns) = do 
+    ancr <- dotChar a pt
     mapM_ (draw1 ancr) ns
 
-draw1 :: DotAnchor Double -> CoordTree Double a -> SnocDrawing Double ()
-draw1 ancr_from (Node (pt,_) ns) = do
-    ancr <- dotCircleEx pt
+draw1 :: DotAnchor Double -> CoordTree Double Char -> SnocDrawing Double ()
+draw1 ancr_from (Node (pt,a) ns) = do
+    ancr <- dotChar a pt
     connector ancr_from ancr
     mapM_ (draw1 ancr) ns   
 

@@ -1,0 +1,80 @@
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Tree
+-- Copyright   :  (c) Stephen Tetley 2010
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+--------------------------------------------------------------------------------
+
+module Wumpus.Tree
+  (
+  -- * The type of rendered trees
+    TreePicture
+
+  -- * Render a Data.Tree to a TreePicture
+  , ScaleFactors(..)
+  , uniformScaling
+
+  , drawTreePicture
+
+
+
+  -- * Output to file
+  , writeEPS_TreePicture
+  , writeSVG_TreePicture
+
+  )
+  where
+
+import Wumpus.Tree.Base
+import Wumpus.Tree.Design
+import Wumpus.Tree.Draw
+
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.Maybe
+import Data.Tree hiding ( drawTree )
+
+
+writeEPS_TreePicture :: FilePath -> TreePicture -> IO ()
+writeEPS_TreePicture = writeEPS_latin1
+
+writeSVG_TreePicture :: FilePath -> TreePicture -> IO ()
+writeSVG_TreePicture = writeSVG_latin1
+
+data ScaleFactors = ScaleFactors
+      { dx_scale :: Double
+      , dy_scale :: Double 
+      }
+  deriving (Eq,Show)
+
+uniformScaling :: Double -> ScaleFactors
+uniformScaling u = ScaleFactors u u 
+
+
+drawTreePicture :: ScaleFactors -> Tree Char -> TreePicture
+drawTreePicture sfactors tree = 
+    fromMaybe errK $ drawGraphic $ drawTree $ design funs tree
+  where
+    funs = scalingFunctions sfactors
+
+errK :: a
+errK = error "treePicture - empty tree drawing." 
+
+
+scalingFunctions :: ScaleFactors -> (Double -> Double, Int -> Double)
+scalingFunctions (ScaleFactors sx sy) = (fx,fy)
+  where
+    fx d = sx * d
+    fy d = sy * fromIntegral d
+
+
+
+

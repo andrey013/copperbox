@@ -3,11 +3,8 @@
 
 module Demo01 where
 
-import Wumpus.Tree.Algorithm
-import Wumpus.Tree.Draw
+import Wumpus.Tree
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 import Data.Tree hiding ( drawTree )
 import System.Directory
@@ -27,33 +24,22 @@ tree2 = Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
 
 
 
-{- 
-treeABC = Node 'o' [Node 'A' [], Node 'B' [], Node 'C' []]
-treeAB  = Node 'o' [Node 'A' [], Node 'B' []]
--}
-
-fx :: Double -> Double
-fx = (*30.0)
-
-fy :: Int -> Double
-fy x = 30.0 * fromIntegral x
-
 
 
 main :: IO ()
 main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/tree01.eps"  pic1
-    >> writeSVG_latin1 "./out/tree01.svg"  pic1
-    >> writeEPS_latin1 "./out/tree02.eps"  pic2
-    >> writeSVG_latin1 "./out/tree02.svg"  pic2
+    >> writeEPS_TreePicture "./out/tree01.eps"  pic1
+    >> writeSVG_TreePicture "./out/tree01.svg"  pic1
+    >> writeEPS_TreePicture "./out/tree02.eps"  pic2
+    >> writeSVG_TreePicture "./out/tree02.svg"  pic2
 
 
 
 
 
-pic1 :: Picture Double
-pic1 = drawGraphicU $ drawTree $ design (fx,fy) tree1
+pic1 :: TreePicture
+pic1 = drawTreePicture (uniformScaling 30) tree1
 
-pic2 :: Picture Double
-pic2 = drawGraphicU $ drawTree $ design (fx,fy) tree2
+pic2 :: TreePicture
+pic2 = drawTreePicture (uniformScaling 30) tree2
 
