@@ -1,3 +1,6 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,7 +32,8 @@ module Wumpus.Basic.Monads.DrawingCtxMonad
   ) where
 
 import Wumpus.Basic.Monads.DrawingCtxClass
-
+import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Monads.TurtleClass
 
 import MonadLib ( MonadT(..) )          -- package: monadLib
 
@@ -99,3 +103,19 @@ runDrawingCtx cfg mf = getDrawingCtx mf cfg
 runDrawingCtxT :: Monad m => DrawingAttr -> DrawingCtxT m a -> m a
 runDrawingCtxT cfg mf = getDrawingCtxT mf cfg
 
+--------------------------------------------------------------------------------
+--- Cross instances
+
+instance (Monad m, TraceM m i) => TraceM (DrawingCtxT m) i where
+  trace a  = DrawingCtxT $ \_ -> trace a
+  trace1 a = DrawingCtxT $ \_ -> trace1 a
+
+instance TurtleM m => TurtleM (DrawingCtxT m) where
+  getLoc          = DrawingCtxT $ \_ -> getLoc
+  setLoc c        = DrawingCtxT $ \_ -> setLoc c
+  getOrigin       = DrawingCtxT $ \_ -> getOrigin
+  setOrigin o     = DrawingCtxT $ \_ -> setOrigin o
+
+instance TurtleScaleM m u => TurtleScaleM (DrawingCtxT m) u where
+  xStep           = DrawingCtxT $ \_ -> xStep
+  yStep           = DrawingCtxT $ \_ -> yStep

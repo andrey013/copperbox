@@ -14,7 +14,7 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
--- Dots might be the same thing as shapes - but without labels...
+
 
 main :: IO ()
 main = do 

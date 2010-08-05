@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -38,6 +39,7 @@ module Wumpus.Basic.Monads.TurtleMonad
   ) where
 
 import Wumpus.Basic.Monads.DrawingCtxClass
+import Wumpus.Basic.Monads.TraceClass
 import Wumpus.Basic.Monads.TurtleClass
 
 
@@ -142,7 +144,18 @@ runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
 
 
 ----------------------------------------------------------------------------------
+-- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
   askDrawingCtx   = TurtleT $ \_ s -> askDrawingCtx >>= \ ctx -> return (ctx,s)
   localCtx ctx mf = TurtleT $ \r s -> localCtx ctx (getTurtleT mf r s)
+
+
+-- This needs undecidable instances...
+
+instance (Monad m, TraceM m i) => TraceM (TurtleT u m) i where
+  trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
+  trace1 a = TurtleT $ \_ s -> trace1 a >> return ((),s)
+
+
+

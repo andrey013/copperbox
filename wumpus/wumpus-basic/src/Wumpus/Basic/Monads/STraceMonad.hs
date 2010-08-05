@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -28,8 +29,10 @@ module Wumpus.Basic.Monads.STraceMonad
  
   ) where
 
-
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Monads.TurtleClass
+
 import Wumpus.Basic.Utils.HList
 
 import MonadLib ( MonadT(..) )          -- package: monadLib
@@ -105,3 +108,21 @@ runSTraceT :: Monad m => STraceT i m a -> m (a,H i)
 runSTraceT mf = getSTraceT mf id >>= \(a,w) -> return (a,w)
 
 
+
+--------------------------------------------------------------------------------
+-- Cross instances
+
+instance DrawingCtxM m => DrawingCtxM (STraceT i m) where
+  askDrawingCtx   = STraceT $ \w -> askDrawingCtx >>= \ctx -> return (ctx,w)
+  localCtx ctx mf = STraceT $ \w -> localCtx ctx (getSTraceT mf w)
+
+
+instance TurtleM m => TurtleM (STraceT i m) where
+  getLoc          = STraceT $ \w -> getLoc >>= \a -> return (a,w)
+  setLoc c        = STraceT $ \w -> setLoc c >> return ((),w)
+  getOrigin       = STraceT $ \w -> getOrigin >>= \a -> return (a,w)
+  setOrigin o     = STraceT $ \w -> setOrigin o >> return ((),w)
+
+instance TurtleScaleM m u => TurtleScaleM (STraceT i m) u where
+  xStep           = STraceT $ \w -> xStep >>= \a -> return (a,w)
+  yStep           = STraceT $ \w -> yStep >>= \a -> return (a,w)

@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -38,7 +38,9 @@ module Wumpus.Basic.Monads.TraceMonad
  
   ) where
 
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Monads.TurtleClass
 import Wumpus.Basic.Utils.HList
 
 
@@ -115,6 +117,22 @@ runTraceT :: Monad m => TraceT i m a -> m (a,H i)
 runTraceT mf = getTraceT mf id >>= \(a,w) -> return (a,w)
 
 
+--------------------------------------------------------------------------------
+-- Cross instances
 
+instance DrawingCtxM m => DrawingCtxM (TraceT i m) where
+  askDrawingCtx   = TraceT $ \w -> askDrawingCtx >>= \ ctx -> return (ctx,w)
+  localCtx ctx mf = TraceT $ \w -> localCtx ctx (getTraceT mf w)
+
+
+instance TurtleM m => TurtleM (TraceT i m) where
+  getLoc          = TraceT $ \w -> getLoc >>= \a -> return (a,w)
+  setLoc c        = TraceT $ \w -> setLoc c >> return ((),w)
+  getOrigin       = TraceT $ \w -> getOrigin >>= \a -> return (a,w)
+  setOrigin o     = TraceT $ \w -> setOrigin o >> return ((),w)
+
+instance TurtleScaleM m u => TurtleScaleM (TraceT i m) u where
+  xStep           = TraceT $ \w -> xStep >>= \a -> return (a,w)
+  yStep           = TraceT $ \w -> yStep >>= \a -> return (a,w)
  
 
