@@ -52,12 +52,12 @@ import Control.Monad
 
 newtype SnocDrawing u a = SnocDrawing { 
           getSnocDrawing  :: TurtleT           u
-                           ( DrawingCtxT
+                           ( DrawingCtxT 
                            ( STrace (Primitive u))) a }
 
 newtype SnocDrawingT u m a = SnocDrawingT { 
           getSnocDrawingT :: TurtleT            u
-                           ( DrawingCtxT
+                           ( DrawingCtxT 
                            ( STraceT (Primitive u) m)) a }
 
 
@@ -120,11 +120,12 @@ instance Monad m => TurtleScaleM (SnocDrawingT u m) u where
   yStep    = SnocDrawingT $ yStep
 
 instance DrawingCtxM (SnocDrawing u) where
-  askDrawingCtx = SnocDrawing $ lift askDrawingCtx
-  
+  askDrawingCtx   = SnocDrawing $ askDrawingCtx
+  localCtx ctx ma = SnocDrawing $ localCtx ctx (getSnocDrawing ma)
 
 instance Monad m => DrawingCtxM (SnocDrawingT u m) where
-  askDrawingCtx = SnocDrawingT $ lift askDrawingCtx
+  askDrawingCtx   = SnocDrawingT $ askDrawingCtx
+  localCtx ctx ma = SnocDrawingT $ localCtx ctx (getSnocDrawingT ma)
 
 instance TraceM (SnocDrawing u) (Primitive u) where
   trace  a = SnocDrawing $ lift $ lift $ trace a

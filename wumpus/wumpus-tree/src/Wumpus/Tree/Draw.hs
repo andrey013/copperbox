@@ -33,21 +33,25 @@ import Data.Tree
 
 -- Don\'t actually need the Turtle of SnocDrawing...
 
-drawTree :: CoordTree Double Char -> DGraphic
-drawTree tree = 
-    execSnocDrawing (regularConfig 1) (0,0) (standardAttr 18) $ drawTop tree 
+drawTree :: (a -> TreeNode) -> CoordTree Double a -> DGraphic
+drawTree drawF tree = 
+    execSnocDrawing (regularConfig 1) (0,0) (standardAttr 18) 
+                    $ drawTop drawF tree 
 
 
-drawTop :: CoordTree Double Char -> SnocDrawing Double ()
-drawTop (Node (pt,a) ns) = do 
-    ancr <- dotChar a pt
-    mapM_ (draw1 ancr) ns
+drawTop :: (a -> TreeNode) -> CoordTree Double a -> SnocDrawing Double ()
+drawTop drawF (Node (pt,a) ns) = do 
+    ancr <- drawF a pt
+    mapM_ (draw1 drawF ancr) ns
 
-draw1 :: DotAnchor Double -> CoordTree Double Char -> SnocDrawing Double ()
-draw1 ancr_from (Node (pt,a) ns) = do
-    ancr <- dotChar a pt
+draw1 :: (a -> TreeNode) 
+      -> DotAnchor Double 
+      -> CoordTree Double a 
+      -> SnocDrawing Double ()
+draw1 drawF ancr_from (Node (pt,a) ns) = do
+    ancr <- drawF a pt
     connector ancr_from ancr
-    mapM_ (draw1 ancr) ns   
+    mapM_ (draw1 drawF ancr) ns   
 
 
 connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 

@@ -24,7 +24,7 @@ module Wumpus.Basic.Monads.DrawingCtxClass
   -- * DrawingCtx class
 
   , DrawingCtxM(..)
-
+  , withinModifiedCtx
 
   , strokeAttr
   , fillAttr
@@ -47,6 +47,13 @@ import Control.Monad
 
 class Monad m => DrawingCtxM m where
   askDrawingCtx :: m DrawingAttr
+  localCtx      :: DrawingAttr -> m a -> m a
+
+
+
+withinModifiedCtx :: DrawingCtxM m 
+                  => (DrawingAttr -> DrawingAttr) -> m a -> m a
+withinModifiedCtx upd ma = askDrawingCtx >>= \ctx -> localCtx (upd ctx) ma
 
 
 strokeAttr  :: DrawingCtxM m => m (DRGB, StrokeAttr)
@@ -64,3 +71,4 @@ markHeight  = liftM DA.markHeight askDrawingCtx
 
 textDimensions :: (Fractional u, DrawingCtxM m) => String -> m (u,u)
 textDimensions str = liftM (DA.textDimensions str) askDrawingCtx
+

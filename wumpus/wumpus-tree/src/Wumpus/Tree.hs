@@ -23,11 +23,14 @@ module Wumpus.Tree
 
   , drawTreePicture
 
-
-
   -- * Output to file
   , writeEPS_TreePicture
   , writeSVG_TreePicture
+
+  -- * Drawing nodes
+  , charNode
+  , textNode
+  , circleNode
 
   )
   where
@@ -36,7 +39,9 @@ import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.AnchorDots                  -- package: wumpus-basic
+import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Maybe
@@ -59,9 +64,9 @@ uniformScaling :: Double -> ScaleFactors
 uniformScaling u = ScaleFactors u u 
 
 
-drawTreePicture :: ScaleFactors -> Tree Char -> TreePicture
-drawTreePicture sfactors tree = 
-    fromMaybe errK $ drawGraphic $ drawTree $ design funs tree
+drawTreePicture :: (a -> TreeNode) -> ScaleFactors -> Tree a -> TreePicture
+drawTreePicture drawF sfactors tree = 
+    fromMaybe errK $ drawGraphic $ drawTree drawF $ design funs tree
   where
     funs = scalingFunctions sfactors
 
@@ -74,6 +79,23 @@ scalingFunctions (ScaleFactors sx sy) = (fx,fy)
   where
     fx d = sx * d
     fy d = sy * fromIntegral d
+
+--------------------------------------------------------------------------------
+-- Drawing functions
+
+charNode :: Char -> TreeNode
+charNode = dotChar
+
+textNode :: String -> TreeNode
+textNode = dotText . uptoNewline
+  where
+    uptoNewline = takeWhile (/='\n')
+
+
+circleNode :: DRGB -> (a -> TreeNode)
+circleNode rgb = fn
+  where
+    fn _ pt = withinModifiedCtx (\s -> s { stroke_colour = rgb}) (dotCircle $ pt)
 
 
 

@@ -5,6 +5,7 @@ module Demo01 where
 
 import Wumpus.Tree
 
+import Wumpus.Basic.SVGColours                  -- package: wumpus-basic
 
 import Data.Tree hiding ( drawTree )
 import System.Directory
@@ -38,8 +39,8 @@ main = createDirectoryIfMissing True "./out/"
 
 
 pic1 :: TreePicture
-pic1 = drawTreePicture (uniformScaling 30) tree1
+pic1 = drawTreePicture charNode (uniformScaling 30) tree1
 
 pic2 :: TreePicture
-pic2 = drawTreePicture (uniformScaling 30) tree2
+pic2 = drawTreePicture (circleNode red) (uniformScaling 30) tree2
 

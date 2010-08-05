@@ -85,11 +85,12 @@ instance MonadT DrawingCtxT where
 
 
 instance DrawingCtxM DrawingCtx where
-  askDrawingCtx = DrawingCtx id
-  
+  askDrawingCtx    = DrawingCtx id
+  localCtx ctx ma  = DrawingCtx $ \_ -> getDrawingCtx ma ctx  
 
 instance Monad m => DrawingCtxM (DrawingCtxT m) where
-  askDrawingCtx = DrawingCtxT return
+  askDrawingCtx    = DrawingCtxT return
+  localCtx ctx ma  = DrawingCtxT $ \_ -> getDrawingCtxT ma ctx  
 
 
 runDrawingCtx :: DrawingAttr -> DrawingCtx a -> a
