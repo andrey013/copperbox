@@ -17,7 +17,10 @@ module Wumpus.Tree
   -- * The type of rendered trees
     TreePicture
 
+
   -- * Render a Data.Tree to a TreePicture
+  , DrawingAttr(..)             -- re-export
+  , standardAttr                -- re-export
   , ScaleFactors(..)
   , uniformScaling
 
@@ -31,6 +34,7 @@ module Wumpus.Tree
   , charNode
   , textNode
   , circleNode
+  , diskNode
 
   )
   where
@@ -64,9 +68,9 @@ uniformScaling :: Double -> ScaleFactors
 uniformScaling u = ScaleFactors u u 
 
 
-drawTreePicture :: (a -> TreeNode) -> ScaleFactors -> Tree a -> TreePicture
-drawTreePicture drawF sfactors tree = 
-    fromMaybe errK $ drawGraphic $ drawTree drawF $ design funs tree
+drawTreePicture :: (a -> TreeNode) -> DrawingAttr -> ScaleFactors -> Tree a -> TreePicture
+drawTreePicture drawF attr sfactors tree = 
+    fromMaybe errK $ drawGraphic $ drawTree drawF attr $ design funs tree
   where
     funs = scalingFunctions sfactors
 
@@ -93,10 +97,14 @@ textNode = dotText . uptoNewline
 
 
 circleNode :: DRGB -> (a -> TreeNode)
-circleNode rgb = fn
+circleNode rgb = const fn
   where
-    fn _ pt = withinModifiedCtx (\s -> s { stroke_colour = rgb}) (dotCircle $ pt)
+    fn pt = withinModifiedCtx (\s -> s { stroke_colour = rgb}) (dotCircle $ pt)
 
+diskNode :: DRGB -> (a -> TreeNode)
+diskNode rgb = const fn
+  where
+    fn pt = withinModifiedCtx (\s -> s { fill_colour = rgb}) (dotDisk $ pt)
 
 
 

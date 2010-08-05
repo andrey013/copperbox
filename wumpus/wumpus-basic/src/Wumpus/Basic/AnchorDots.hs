@@ -25,6 +25,7 @@ module Wumpus.Basic.AnchorDots
 
   -- * Dots with anchor points
   , dotCircle
+  , dotDisk
   , dotSquare
   , dotChar
   , dotText
@@ -137,6 +138,15 @@ dotCircle = \pt -> askDrawingCtx                    >>= \attr ->
                    markHeight                       >>= \h    ->
                    trace (BD.dotCircle attr pt)     >> 
                    return (circleAnchor (0.5*h) pt)
+
+
+dotDisk :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
+           , Floating u) 
+        => MGraphicF m u (DotAnchor u)
+dotDisk = \pt -> askDrawingCtx                    >>= \attr -> 
+                 markHeight                       >>= \h    ->
+                 trace (BD.dotDisk attr pt)       >> 
+                 return (circleAnchor (0.5*h) pt)
 
 
 

@@ -37,6 +37,7 @@ module Wumpus.Basic.Monads.TurtleMonad
  
   ) where
 
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.TurtleClass
 
 
@@ -138,3 +139,10 @@ runTurtleT :: (Monad m, Num u)
            => TurtleConfig u -> (Int,Int) -> TurtleT u m a -> m a
 runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
 
+
+
+----------------------------------------------------------------------------------
+
+instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
+  askDrawingCtx   = TurtleT $ \_ s -> askDrawingCtx >>= \ ctx -> return (ctx,s)
+  localCtx ctx mf = TurtleT $ \r s -> localCtx ctx (getTurtleT mf r s)

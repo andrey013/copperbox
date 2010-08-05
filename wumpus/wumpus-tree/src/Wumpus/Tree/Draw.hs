@@ -33,9 +33,9 @@ import Data.Tree
 
 -- Don\'t actually need the Turtle of SnocDrawing...
 
-drawTree :: (a -> TreeNode) -> CoordTree Double a -> DGraphic
-drawTree drawF tree = 
-    execSnocDrawing (regularConfig 1) (0,0) (standardAttr 18) 
+drawTree :: (a -> TreeNode) -> DrawingAttr -> CoordTree Double a -> DGraphic
+drawTree drawF attr tree = 
+    execSnocDrawing (regularConfig 1) (0,0) attr
                     $ drawTop drawF tree 
 
 
