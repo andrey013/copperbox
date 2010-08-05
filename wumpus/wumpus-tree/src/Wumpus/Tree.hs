@@ -21,6 +21,8 @@ module Wumpus.Tree
   -- * Render a Data.Tree to a TreePicture
   , DrawingAttr(..)             -- re-export
   , standardAttr                -- re-export
+
+
   , ScaleFactors(..)
   , uniformScaling
 
@@ -51,19 +53,36 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.Maybe
 import Data.Tree hiding ( drawTree )
 
-
+-- | Output a 'TreePicture', generating an EPS file.
+--
 writeEPS_TreePicture :: FilePath -> TreePicture -> IO ()
 writeEPS_TreePicture = writeEPS_latin1
 
+-- | Output a 'TreePicture', generating a SVG file.
+--
 writeSVG_TreePicture :: FilePath -> TreePicture -> IO ()
 writeSVG_TreePicture = writeSVG_latin1
 
+
+-- | Customize the size of the printed tree.
+--
+-- A tree is /designed/ with a height of 1 unit between 
+-- parent and child nodes.
+--
+-- The y-scaling factor multiplies the unit height, a scaling 
+-- factor of 30 represents 30 /points/.
+--
+-- In the horizontal, 1 unit is the smallest possible distance 
+-- between child nodes.
+--
 data ScaleFactors = ScaleFactors
       { dx_scale :: Double
       , dy_scale :: Double 
       }
   deriving (Eq,Show)
 
+-- | Build uniform x- and y-scaling factors, i.e. x==y.
+--
 uniformScaling :: Double -> ScaleFactors
 uniformScaling u = ScaleFactors u u 
 
@@ -87,20 +106,42 @@ scalingFunctions (ScaleFactors sx sy) = (fx,fy)
 --------------------------------------------------------------------------------
 -- Drawing functions
 
+-- | Render tree nodes with a single character.
+--
+--  Useful for rendering @ Data.Tree Char @.
+--
 charNode :: Char -> TreeNode
 charNode = dotChar
 
+
+-- | Tree nodes with a text label.
+--
+-- Useful for rendering @ Data.Tree String @.
+--
+-- Note the width of the label is not accounted for in the 
+-- /design/ of the tree. Labels with long texts may overlap.
+-- Also, only a single line of text is printed - any text after 
+-- the first newline character will be dropped.
+--
 textNode :: String -> TreeNode
 textNode = dotText . uptoNewline
   where
     uptoNewline = takeWhile (/='\n')
 
-
+-- | Tree nodes with a stroked circle.
+--
+-- Suitable for printing the shape of a tree, ignoring the data.
+--
 circleNode :: DRGB -> (a -> TreeNode)
 circleNode rgb = const fn
   where
     fn pt = withinModifiedCtx (\s -> s { stroke_colour = rgb}) (dotCircle $ pt)
 
+
+-- | Tree nodes with a filled circle.
+--
+-- Suitable for printing the shape of a tree, ignoring the data.
+--
 diskNode :: DRGB -> (a -> TreeNode)
 diskNode rgb = const fn
   where

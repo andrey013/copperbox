@@ -9,14 +9,20 @@ category:         Graphics
 synopsis:         Common drawing utilities built on wumpus-core.
 description:
   .
-  Very preliminary release.
+  \*\* WARNING \*\* - this package is sub-alpha. It is only on 
+  Hackage to support other packages (Wumpus-Tree, 
+  Wumpus-Microprint) that are slighly more stable.
+  .
+  A few of the modules (SafeFonts, SVGColours, X11Colours) are
+  fairly stable others simply aren\'t and may even disappear in
+  subsequent updates.
   .
   .
   Changelog:
   .
   0.2.0 to 0.3.0 :
   . 
-  * Added the module @Wumpus.Basic.Anchor@.
+  * Added the anchors, monads, drawingAttrs...
   .
   * Basic.Graphic - rectangles and lines now take the supplied
     point to be the center rather than the bottom-left corner.

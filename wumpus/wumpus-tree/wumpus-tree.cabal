@@ -9,7 +9,12 @@ category:         Graphics
 synopsis:         Drawing trees
 description:
   .
-  Primtive
+  Tree drawing with /nice/ layout. 
+  .
+  Draw trees represented by Data.Tree, output SVG or EPS. The 
+  output should be quite good - no overlapping edges, identical 
+  subtrees should have the same shape.
+  .
   .
 build-type:         Simple
 stability:          highly unstable
@@ -31,12 +36,12 @@ library
   
   exposed-modules:
     Wumpus.Tree,
-    Wumpus.Tree.Base,
-    Wumpus.Tree.Design,
-    Wumpus.Tree.Draw,
     Wumpus.Tree.VersionNumber
 
   other-modules:
+    Wumpus.Tree.Base,
+    Wumpus.Tree.Design,
+    Wumpus.Tree.Draw
 
   extensions:
     

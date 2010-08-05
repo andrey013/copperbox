@@ -122,11 +122,13 @@ instance Monad m => TurtleScaleM (ConsDrawingT u m) u where
 
 
 instance DrawingCtxM (ConsDrawing u) where
-  askDrawingCtx = ConsDrawing $ lift askDrawingCtx
+  askDrawingCtx   = ConsDrawing $ lift askDrawingCtx
+  localCtx ctx ma = ConsDrawing $ localCtx ctx (getConsDrawing ma)
   
 
 instance Monad m => DrawingCtxM (ConsDrawingT u m) where
-  askDrawingCtx = ConsDrawingT $ lift askDrawingCtx
+  askDrawingCtx   = ConsDrawingT $ lift askDrawingCtx
+  localCtx ctx ma = ConsDrawingT $ localCtx ctx (getConsDrawingT ma)
 
 instance TraceM (ConsDrawing u) (Primitive u) where
   trace  a = ConsDrawing $ lift $ lift $ trace a
