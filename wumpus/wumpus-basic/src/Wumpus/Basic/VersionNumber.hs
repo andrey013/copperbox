@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Version number
 --
@@ -21,5 +21,9 @@ module Wumpus.Basic.VersionNumber
   ) where
 
 
+-- | Version number
+--
+-- > (0,3,0)
+--
 wumpus_basic_version :: (Int,Int,Int)
 wumpus_basic_version = (0,3,0)

@@ -19,6 +19,7 @@
 module Wumpus.Basic.Monads.SnocDrawing
   (
     SnocDrawing
+  , SnocDrawingT
 
   , runSnocDrawing
   , runSnocDrawingT

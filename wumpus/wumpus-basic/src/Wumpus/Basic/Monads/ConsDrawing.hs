@@ -19,6 +19,7 @@
 module Wumpus.Basic.Monads.ConsDrawing
   (
     ConsDrawing
+  , ConsDrawingT
 
   , runConsDrawing
   , runConsDrawingT

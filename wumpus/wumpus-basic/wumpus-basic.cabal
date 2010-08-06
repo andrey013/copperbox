@@ -24,6 +24,10 @@ description:
   . 
   * Added the anchors, monads, drawingAttrs...
   .
+  * Added the module @PictureLanguage@ from Wumpus-Core.
+    It is located with the path prefix @Wumpus.Deprecated@.
+    At some point it will be replaced...
+  .
   * Basic.Graphic - rectangles and lines now take the supplied
     point to be the center rather than the bottom-left corner.
     Name changes - @circle@ changed to @disk@, @text@ changed to 
@@ -49,8 +53,8 @@ extra-source-files:
   demo/DotPic.hs,
   demo/FontPic.hs,
   demo/ColourCharts.hs,
-  demo/ColourDefns.hs
-
+  demo/ColourDefns.hs,
+  demo/Picture.hs
 
 library
   hs-source-dirs:     src
@@ -82,7 +86,8 @@ library
     Wumpus.Basic.X11Colours,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
-    Wumpus.Basic.VersionNumber
+    Wumpus.Basic.VersionNumber,
+    Wumpus.Deprecated.Picture
 
   other-modules:
 
