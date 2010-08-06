@@ -1,4 +1,25 @@
 
+0.21.0 to 0.22.0:
+
+  * Moved the deprecated module @Wumpus.Extra.PictureLanguage@
+    into the package Wumpus-Basic along with the example 
+    @Picture.hs@.
+
+  * Added vec as a synonym for the constructor V2.
+
+  * Changed some of the Core.FontSize to use better terminology. 
+    Thus some of the constants have changed. Added a new example
+    @FontMetrics.hs@ to illustrate how FontSize works. 
+    Particularly, the function @capHeight@ has been replaced with
+    the function @numeralHeight@ which has better semantics.
+
+  * The CTM data type and ToCTM class are now hidden in the
+    top-level import module @Wumpus.Core@. They can be accessed
+    by importing @Wumpus.Core.GraphicsState@ directly.
+
+  * Exposed the PSUnit type class. 
+
+
 0.20.0 to 0.21.0:
 
   * Removed the Primitive instances of the Affine transformation 

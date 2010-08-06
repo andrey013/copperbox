@@ -103,7 +103,7 @@ Iavor S. Diatchki's XML-Light.
 
 \item[\texttt{Wumpus.Core.TextEncoder.}]
 Types for handling non-ASCII character codes. This module is
-perhaps under-cooked thou it appears adequate for Latin-1...
+perhaps under-cooked although it appears adequate for Latin-1.
 
 \item[\texttt{Wumpus.Core.TextLatin1.}]
 A instance of the TextEncoder type for mapping Latin 1 characters
@@ -117,14 +117,6 @@ This module collects internal types for Pictures, Paths etc. and
 presents them as opaque types - i.e. their constructors are 
 hidden. 
 \end{description}
-
-The package also contains a deprecated module defining
-picture composition operators, 
-\texttt{Wumpus.Extra.PictureLanguage}. The operators are somewhat 
-analogue to the usual operators or pretty-printing libraries, 
-but work in 2D rather than largely horizontally with some 
-vertical concatenation. At some point in the future 
-\texttt{wumpus-basic} should supercede this module.
 
 %-----------------------------------------------------------------
 \section{Drawing model}

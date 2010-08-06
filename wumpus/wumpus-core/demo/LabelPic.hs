@@ -1,9 +1,9 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 module LabelPic where
 
 import Wumpus.Core
-import Wumpus.Extra.PictureLanguage
 
 import System.Directory
 
@@ -12,10 +12,19 @@ import System.Directory
 
 
 drawBounds :: (Floating u, Real u) => Picture u -> Picture u
-drawBounds p        = p `over` (frame $ cstroke () ph) 
+drawBounds p        = p `picOver` (frame $ cstroke () ph) 
   where
     ph            = vertexPath $ [bl,br,tr,tl]
     (bl,br,tr,tl) = corners $ boundary p
+
+
+-- | The center of a picture.
+center :: (Boundary a, Fractional u, DUnit a ~ u) => a -> Point2 u
+center a = P2 hcenter vcenter 
+  where  
+    BBox (P2 x0 y0) (P2 x1 y1) = boundary a
+    hcenter                    = x0 + 0.5 * (x1 - x0)
+    vcenter                    = y0 + 0.5 * (y1 - y0)
 
 --------------------------------------------------------------------------------
 
@@ -32,7 +41,7 @@ black = RGB3 0 0 0
 
 
 lbl1 :: Picture Double
-lbl1 = line1 -//- line2 where
+lbl1 = line1 `picBeside` line2 where
   line1 = frame (textlabel attrs "Hello" zeroPt)
   line2 = frame (textlabel attrs "World" zeroPt)
   attrs = (peru, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 
@@ -48,16 +57,18 @@ demo02 = do
     writeEPS_latin1 "./out/label02.eps" p1
     writeSVG_latin1 "./out/label02.svg" p1
   where
-    p1 = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
+    p1 = lbl1 `picBeside` lbl1 
+              `picBeside` (rotateAbout (pi/4) (center lbl1) lbl1) 
+              `picBeside` lbl1
 
 demo03 :: IO ()
 demo03 = do 
     writeEPS_latin1 "./out/label03.eps" p1
     writeSVG_latin1 "./out/label03.svg" p1
   where
-    p1 = (drawBounds lbl1) ->- 
-         (drawBounds lbl1) ->- 
-         (drawBounds $ rotateAbout (pi/4) (center lbl1) lbl1) ->- 
+    p1 = (drawBounds lbl1) `picBeside` 
+         (drawBounds lbl1) `picBeside` 
+         (drawBounds $ rotateAbout (pi/4) (center lbl1) lbl1) `picBeside` 
          (drawBounds lbl1)
 
 
@@ -67,9 +78,9 @@ demo04 = do
     writeEPS_latin1 "./out/label04.eps" p1
     writeSVG_latin1 "./out/label04.svg" p1
   where
-    p1 =        (drawBounds lbl1) 
-         `over` (drawBounds $ scale 2 2 lbl1)
-         `over` (drawBounds $ scale 3 3 lbl1)
+    p1 =           (drawBounds lbl1) 
+         `picOver` (drawBounds $ scale 2 2 lbl1)
+         `picOver` (drawBounds $ scale 3 3 lbl1)
 
 
 
@@ -91,7 +102,8 @@ demo05 = do
     writeEPS_latin1 "./out/label05.eps" p1
     writeSVG_latin1 "./out/label05.svg" p1
   where
-    p1 = uniformScale 10 $ stackOntoCenter [bigA, bigB] bigT
+    p1 = uniformScale 10 $ bigA `picOver` bigB `picOver` bigT
+
 
 
 demo06 :: IO ()
@@ -99,8 +111,11 @@ demo06 = do
     writeEPS_latin1 "./out/label06.eps" p1
     writeSVG_latin1 "./out/label06.svg" p1
   where
-    p1 = hsep 20 (fn 'a') (map fn "abcdefg")
-    fn = drawBounds . bigLetter peru
+    p1 = pA `picBeside` pB `picBeside` pC `picBeside` pA
+    
+    pA = drawBounds bigA
+    pB = drawBounds $ uniformScale 2 bigB
+    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
 demo07 :: IO ()
@@ -108,53 +123,15 @@ demo07 = do
     writeEPS_latin1 "./out/label07.eps" p1
     writeSVG_latin1 "./out/label07.svg" p1
   where
-    p1 = pA ->- pB ->- pC ->- pA
+    p1 = pA `picBeside` pB `picBeside` pC
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ move 0 10 $ bigLetter peru 'C'
-
-
-demo08 :: IO ()
-demo08 = do 
-    writeEPS_latin1 "./out/label08.eps" p1
-    writeSVG_latin1 "./out/label08.svg" p1
-  where
-    p1 = hcat pA [pA, pB, pC]
-    
-    pA = drawBounds bigA
-    pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ move 0 10 $ bigLetter peru 'C'
-
-demo09 :: IO ()
-demo09 = do 
-    writeEPS_latin1 "./out/label09.eps" p1
-    writeSVG_latin1 "./out/label09.svg" p1
-  where
-    p1 = (bigA `above` bigB) ->- (bigA `below` bigB) 
-    
-demo10 :: IO ()
-demo10 = do 
-    writeEPS_latin1 "./out/label10.eps" p1
-    writeSVG_latin1 "./out/label10.svg" p1
-  where
-    p1 :: Picture Double
-    p1 = frame $ textlabel () "myst&#egrave;re" zeroPt
-
-demo11 :: IO ()
-demo11 = do
-    writeEPS_latin1 "./out/label11.eps" pic
-    writeSVG_latin1 "./out/label11.svg" pic
-  where
-    pic :: Picture Double
-    pic = p1 `over` p2
-    p1  = multilabel plum 3 VLeft ["Hello", "from", "Wumpus"] (P2 50 50)
-    p2  = bigA `at` P2 50 50
+    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
 main :: IO ()
 main = do 
   createDirectoryIfMissing True "./out/"
   sequence_ [ demo01, demo02, demo03, demo04, demo05
-            , demo06, demo07, demo08, demo09, demo10
-            , demo11 ]  
+            , demo06, demo07 ]

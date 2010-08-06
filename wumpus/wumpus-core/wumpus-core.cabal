@@ -63,6 +63,10 @@ description:
   .
   0.21.0 to 0.22.0:
   .
+  * Moved the deprecated module @Wumpus.Extra.PictureLanguage@
+    into the package Wumpus-Basic along with the example 
+    @Picture.hs@.
+  .
   * Added vec as a synonym for the constructor V2.
   .
   * Changed some of the Core.FontSize to use better terminology. 
@@ -120,7 +124,6 @@ extra-source-files:
   demo/FontMetrics.hs
   demo/LabelPic.hs,
   demo/MultiPic.hs
-  demo/Picture.hs,
   demo/Rotated.hs
   demo/Scaled.hs
   demo/Translated.hs
@@ -152,8 +155,7 @@ library
     Wumpus.Core.TextEncoder,
     Wumpus.Core.TextLatin1,
     Wumpus.Core.VersionNumber,
-    Wumpus.Core.WumpusTypes,
-    Wumpus.Extra.PictureLanguage
+    Wumpus.Core.WumpusTypes
 
   other-modules:
     Wumpus.Core.PictureInternal,

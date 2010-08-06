@@ -86,8 +86,27 @@ data ScaleFactors = ScaleFactors
 uniformScaling :: Double -> ScaleFactors
 uniformScaling u = ScaleFactors u u 
 
-
-drawTreePicture :: (a -> TreeNode) -> DrawingAttr -> ScaleFactors -> Tree a -> TreePicture
+-- | 'drawTreePicture' : @ draw_fun * attr * scale_factors * tree -> TreePicture @
+--
+-- The rendering function.
+-- 
+-- @draw_fun@ renders the individual nodes. Usually 'charNode', 
+-- 'circleNode'
+--
+-- @attr@ is the font size (translates to node size), stroke 
+-- colour, fill colour.
+--
+-- @scale_factors@ scales the distances between parent and child 
+-- (y-scale) and sibling nodes (x-scale).
+--
+-- @tree@ is the input tree to be rendered.
+--
+--
+drawTreePicture :: (a -> TreeNode) 
+                -> DrawingAttr 
+                -> ScaleFactors 
+                -> Tree a 
+                -> TreePicture
 drawTreePicture drawF attr sfactors tree = 
     fromMaybe errK $ drawGraphic $ drawTree drawF attr $ design funs tree
   where
