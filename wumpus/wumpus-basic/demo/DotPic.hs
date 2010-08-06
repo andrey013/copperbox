@@ -8,9 +8,9 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Utils.HList
+import Wumpus.Deprecated.PictureLanguage
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Extra.PictureLanguage
 
 import System.Directory
 

@@ -20,6 +20,9 @@ module Wumpus.Tree.VersionNumber
 
   ) where
 
-
+-- | Version number
+--
+-- > (0,1,0)
+--
 wumpus_tree_version :: (Int,Int,Int)
 wumpus_tree_version = (0,1,0)

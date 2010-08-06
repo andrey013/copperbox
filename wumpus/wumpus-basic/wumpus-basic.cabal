@@ -87,7 +87,7 @@ library
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber,
-    Wumpus.Deprecated.Picture
+    Wumpus.Deprecated.PictureLanguage
 
   other-modules:
 

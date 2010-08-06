@@ -20,6 +20,9 @@ module Wumpus.MicroPrint.VersionNumber
 
   ) where
 
-
+-- | Version number
+--
+-- > (0,3,0)
+--
 wumpus_microprint_version :: (Int,Int,Int)
-wumpus_microprint_version = (0,2,0)
+wumpus_microprint_version = (0,3,0)

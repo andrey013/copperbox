@@ -23,7 +23,7 @@ description:
   . 
   0.2.0 to 0.3.0:
   .
-  * ???
+  * Updated to use ConsDrawing monad from Wumpus-Basic.
   .
   0.1.1 to 0.2.0:
   .
@@ -46,7 +46,7 @@ library
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
                       monadLib          >= 3.6,
-                      wumpus-core       >= 0.21.0,
+                      wumpus-core       >= 0.22.0,
                       wumpus-basic      >= 0.3.0
 
   

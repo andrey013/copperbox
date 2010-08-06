@@ -81,7 +81,7 @@ data ScaleFactors = ScaleFactors
       }
   deriving (Eq,Show)
 
--- | Build uniform x- and y-scaling factors, i.e. x==y.
+-- | Build uniform x- and y-scaling factors, i.e. @ x == y @.
 --
 uniformScaling :: Double -> ScaleFactors
 uniformScaling u = ScaleFactors u u 

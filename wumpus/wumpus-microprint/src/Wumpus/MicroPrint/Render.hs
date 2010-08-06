@@ -31,8 +31,7 @@ module Wumpus.MicroPrint.Render
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Monads.TraceMonad
-import Wumpus.Basic.Monads.TurtleMonad
+import Wumpus.Basic.Monads.ConsDrawing
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.MicroPrint.DrawMonad ( Tile(..), Height ) 
@@ -60,10 +59,10 @@ greekF :: DrawF
 greekF _ (w,h) rgb = wrapG . fill rgb . rectanglePath w h 
 
 borderedF :: Double -> DrawF
-borderedF line_width (i,uw) (w,h) rgb = 
+borderedF ln_width (i,uw) (w,h) rgb = 
     srect `cc` seps `cc` greekF (i,uw) (w,h) rgb
   where
-    props = (black, LineWidth line_width)
+    props = (black, LineWidth ln_width)
 
     srect :: DGraphicF
     srect = wrapG . cstroke props . rectanglePath w h
@@ -79,8 +78,7 @@ vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
 vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]
     
 
-newtype RenderMonad a = RM { getRM :: ReaderT MP_config
-                                    ( TraceT  DPrimitive Turtle)  a }
+newtype RenderMonad a = RM { getRM :: ReaderT MP_config (ConsDrawing Double) a }
 
 instance Functor RenderMonad where
   fmap f = RM . fmap f . getRM
@@ -101,8 +99,10 @@ instance ReaderM RenderMonad MP_config where
   ask      = RM $ ask
 
 instance TurtleM RenderMonad where
-  getLoc   = RM $ lift $ lift $ getLoc
-  setLoc c = RM $ lift $ lift $ setLoc c
+  getLoc        = RM $ lift $ getLoc
+  setLoc c      = RM $ lift $ setLoc c
+  getOrigin     = RM $ lift $ getOrigin
+  setOrigin o   = RM $ lift $ setOrigin o
 
 
 drawMicroPrint :: MP_config -> ([Tile],Height) -> Maybe DPicture
@@ -114,9 +114,8 @@ drawMicroPrint cfg (xs,h) =
 
 runRender :: MP_config -> RenderMonad a -> (a, DGraphic)
 runRender cfg m = 
-    post $ runTurtle $ runTraceT $ runReaderT cfg $ getRM $ m
-  where
-    post ((a,w), _) = (a,w)
+    runConsDrawing (regularConfig 1) (0,0) (standardAttr 14) 
+         $ runReaderT cfg $ getRM $ m
 
 interpret :: [Tile] -> RenderMonad ()
 interpret = mapM_ interp1
@@ -133,17 +132,17 @@ interp1 (Word rgb i)  = do
     trace (dF (i,uw) (w,h) rgb pt)
     moveRightN i
    
-moveRightN :: Int -> RenderMonad ()
-moveRightN i = setsLoc_ (\(Coord x y) -> Coord (x+i) y )
+moveRightN   :: Int -> RenderMonad ()
+moveRightN i = setsLoc_ $ \(x,y) -> (x+i,y)
 
-moveUpN :: Int -> RenderMonad ()
-moveUpN i = setsLoc_ (\(Coord x y) -> Coord x (y+i) )
+moveUpN      :: Int -> RenderMonad ()
+moveUpN i    = setsLoc_ $ \(x,y) -> (x,y+i)
 
 scaleCurrentCoord :: RenderMonad DPoint2
 scaleCurrentCoord = 
     fn <$> getLoc <*> asks char_width <*> asks char_height <*> asks line_spacing
   where
-    fn (Coord x y) cw ch sp = P2 (cw * fromIntegral x) ((ch+sp) * fromIntegral y)
+    fn (x,y) cw ch sp = P2 (cw * fromIntegral x) ((ch+sp) * fromIntegral y)
 
 scaleWidth :: Int -> RenderMonad Double
 scaleWidth i = (\cw -> cw * fromIntegral i) <$> asks char_width

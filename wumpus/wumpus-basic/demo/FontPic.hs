@@ -2,13 +2,14 @@
 
 module FontPic where
 
-import Wumpus.Core
-import Wumpus.Extra.PictureLanguage
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours ( steelBlue )
 import Wumpus.Basic.X11Colours ( indianRed1 )
+import Wumpus.Deprecated.PictureLanguage
 
-import Data.AffineSpace
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.List ( unfoldr )
