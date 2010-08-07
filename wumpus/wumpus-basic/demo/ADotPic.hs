@@ -7,12 +7,11 @@ import Wumpus.Basic.Anchors
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.STraceMonad
+import Wumpus.Basic.Monads.ConsDrawing
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
-import MonadLib                         -- package: monadLib
 
 import System.Directory
 
@@ -34,19 +33,19 @@ demo01 = do
 std_attr :: DrawingAttr
 std_attr = standardAttr 24
 
-runFun :: STraceT (Primitive u) Id a -> (a, Graphic u)
-runFun = runId . runSTraceT
+runFun :: Num u => ConsDrawing u a -> (a, Graphic u)
+runFun = runConsDrawing (regularConfig 20) (0,0) std_attr 
 
 pic1 :: DPicture
 pic1 = drawGraphicU $ snd $ runFun  $ mf 
 
 
-mf :: STraceT DPrimitive Id ()
+mf :: Floating u => ConsDrawing u ()
 mf = do 
-    a <- dotCircle std_attr zeroPt 
-    b <- dotCircle std_attr (P2 60 60)
+    a <- dotCircle zeroPt 
+    b <- dotCircle (P2 60 60)
     let c = radialAnchor (pi/4)  a
     let d = radialAnchor (5* pi/4) b
-    strace $ straightLine () (d .-. c) c
+    trace $ straightLine () (d .-. c) c
 
 

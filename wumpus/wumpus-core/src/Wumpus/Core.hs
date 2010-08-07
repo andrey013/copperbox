@@ -42,7 +42,9 @@
 --
 -- Named colours ( black, white etc.) are hidden from 
 -- "Wumpus.Core.Colour" to avoid collisions with modules that
--- define colour sets (e.g. all the SVG colours). 
+-- define colour sets (e.g. all the SVG colours). If needed, 
+-- the module can be imported directly.
+-- 
 --
 -- 
 --------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import Wumpus.Basic.Anchors
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.SnocDrawing
+import Wumpus.Basic.Monads.ConsDrawing
 import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -30,7 +30,7 @@ demo01 = do
 
 pic1 :: DPicture
 pic1 = drawGraphicU $ 
-           execSnocDrawing (regularConfig 40) (0,0) (standardAttr 24) $ do
+           execConsDrawing (regularConfig 40) (0,0) (standardAttr 24) $ do
         a <- node dotCircle 
         b <- dotText "text" `at` (1,2)
         connect (northeast a) (radialAnchor (5*pi/4) b)

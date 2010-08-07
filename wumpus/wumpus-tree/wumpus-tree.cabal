@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.1.0
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,6 +14,14 @@ description:
   Draw trees represented by Data.Tree, output SVG or EPS. The 
   output should be quite good - no overlapping edges, identical 
   subtrees should have the same shape.
+  .
+  .
+  Changelog:
+  .
+  0.1.0 to 0.2.0:
+  .
+  * Changed internals to use ConsDrawing monad as Wumpus-Basic
+    has changed.
   .
   .
 build-type:         Simple

@@ -24,22 +24,22 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic   
-import Wumpus.Basic.Monads.SnocDrawing
+import Wumpus.Basic.Monads.ConsDrawing
 import Wumpus.Basic.SVGColours
 
 import Data.VectorSpace                         -- package: vector-space
 
 import Data.Tree
 
--- Don\'t actually need the Turtle of SnocDrawing...
+-- Don\'t actually need the Turtle of ConsDrawing...
 
 drawTree :: (a -> TreeNode) -> DrawingAttr -> CoordTree Double a -> DGraphic
 drawTree drawF attr tree = 
-    execSnocDrawing (regularConfig 1) (0,0) attr
+    execConsDrawing (regularConfig 1) (0,0) attr
                     $ drawTop drawF tree 
 
 
-drawTop :: (a -> TreeNode) -> CoordTree Double a -> SnocDrawing Double ()
+drawTop :: (a -> TreeNode) -> CoordTree Double a -> ConsDrawing Double ()
 drawTop drawF (Node (pt,a) ns) = do 
     ancr <- drawF a pt
     mapM_ (draw1 drawF ancr) ns
@@ -47,7 +47,7 @@ drawTop drawF (Node (pt,a) ns) = do
 draw1 :: (a -> TreeNode) 
       -> DotAnchor Double 
       -> CoordTree Double a 
-      -> SnocDrawing Double ()
+      -> ConsDrawing Double ()
 draw1 drawF ancr_from (Node (pt,a) ns) = do
     ancr <- drawF a pt
     connector ancr_from ancr
@@ -55,7 +55,7 @@ draw1 drawF ancr_from (Node (pt,a) ns) = do
 
 
 connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 
-          => DotAnchor u -> DotAnchor u -> SnocDrawing u ()
+          => DotAnchor u -> DotAnchor u -> ConsDrawing u ()
 connector afrom ato = trace1 $ ostroke black $ vertexPath [p0,p1]
    where  
      (ang0,ang1)    = anchorAngles (center afrom) (center ato)
