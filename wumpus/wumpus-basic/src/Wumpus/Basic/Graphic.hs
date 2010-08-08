@@ -116,7 +116,8 @@ supply u f = f u
 -- | Note - a Picture cannot be empty whereas a Graphic can.
 -- Hence this function returns via Maybe.
 --
-drawGraphic :: (Real u, Floating u) => Graphic u -> Maybe (Picture u)
+drawGraphic :: (Real u, Floating u, FromPtSize u) 
+            => Graphic u -> Maybe (Picture u)
 drawGraphic f = post $ f []
   where
     post [] = Nothing
@@ -126,7 +127,7 @@ drawGraphic f = post $ f []
 -- | /Unsafe/ version of 'drawGraphic' - this function throws 
 -- an error when the graphic is empty.
 --
-drawGraphicU :: (Real u, Floating u) => Graphic u -> Picture u
+drawGraphicU :: (Real u, Floating u, FromPtSize u) => Graphic u -> Picture u
 drawGraphicU = fromMaybe errK . drawGraphic
   where
     errK = error "drawGraphic - empty Graphic."

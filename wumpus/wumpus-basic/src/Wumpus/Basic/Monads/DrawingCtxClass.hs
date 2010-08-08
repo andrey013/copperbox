@@ -63,12 +63,12 @@ strokeAttr  = liftM DA.strokeAttr askDrawingCtx
 fillAttr    :: DrawingCtxM m => m DRGB
 fillAttr    = liftM DA.fillAttr askDrawingCtx
 
-textAttr    :: DrawingCtxM m => m  (DRGB, FontAttr)
+textAttr    :: DrawingCtxM m => m (DRGB, FontAttr)
 textAttr    = liftM DA.textAttr askDrawingCtx
 
-markHeight  :: (Fractional u, DrawingCtxM m) => m u
-markHeight  = liftM DA.markHeight askDrawingCtx
+markHeight  :: (FromPtSize u, DrawingCtxM m) => m u
+markHeight  = liftM (DA.markHeight) askDrawingCtx
 
-textDimensions :: (Fractional u, DrawingCtxM m) => String -> m (u,u)
+textDimensions :: (FromPtSize u, DrawingCtxM m) => String -> m (u,u)
 textDimensions str = liftM (DA.textDimensions str) askDrawingCtx
 

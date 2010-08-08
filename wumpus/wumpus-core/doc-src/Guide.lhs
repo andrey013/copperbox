@@ -101,6 +101,11 @@ constructors are convenient in that attributes - colour, line
 width, etc. - may be specified or not. The technique is due to 
 Iavor S. Diatchki's XML-Light.
 
+\item[\texttt{Wumpus.Core.PtSize.}]
+Text size calculations in \texttt{Core.FontSize} use points 
+(i.e. 1/72 of an inch). The \texttt{PtSize} module is a numeric 
+type to represent them.
+
 \item[\texttt{Wumpus.Core.TextEncoder.}]
 Types for handling non-ASCII character codes. This module is
 perhaps under-cooked although it appears adequate for Latin-1.

@@ -19,17 +19,68 @@
 module Wumpus.Basic.Monads.Drawing
   (
     
-    MGraphicF 
+    AGraphic(..)
+  , liftAG 
+  , atAG
+
+  -- OLD 
+  , MGraphicF 
   , traceG
   , node
   , at
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.TraceClass
 import Wumpus.Basic.Monads.TurtleClass
 
 import Wumpus.Core                              -- package: wumpus-core
+
+import Control.Applicative
+
+
+data AGraphic u a = AGraphic 
+       { agAttrF    :: DrawingAttr -> DrawingAttr
+       , agDrawF    :: DrawingAttr -> Point2 u -> Graphic u
+       , agMakeF    :: DrawingAttr -> Point2 u -> a
+       }
+
+instance Functor (AGraphic u) where
+  fmap f (AGraphic af df mf) = AGraphic af df (\attr pt -> f $ mf attr pt)
+
+
+-- This doesn't work like at on MGraphicF, as the point is not 
+-- scaled w.r.t. TurtleScaleM ...
+--
+atAG :: AGraphic u a -> Point2 u -> AGraphic u a
+atAG (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
+                                          (\attr _ -> mf attr pt)
+
+instance Applicative (AGraphic u) where
+  pure a = AGraphic id (\_ _ -> id) (\_ _ -> a)
+  (AGraphic af1 df1 mf1) <*> (AGraphic af2 df2 mf2) = AGraphic af df mf
+     where
+       af           = af2 . af1
+       df attr pt   = df2 (af2 attr) pt . df1 (af1 attr) pt
+       mf attr pt   = mf1 attr pt $ mf2 attr pt
+
+
+-- getPos should be a class method outside of Turtle
+-- those Bivariate context from PSC could implement it...
+
+liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+       => AGraphic u a -> m a
+liftAG (AGraphic af df mf) = 
+    askDrawingCtx >>= \a0 ->
+    getPos        >>= \pt ->
+    let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
+
+
+
+-- OLD...
+
 
 
 type MGraphicF m u a = Point2 u -> m a

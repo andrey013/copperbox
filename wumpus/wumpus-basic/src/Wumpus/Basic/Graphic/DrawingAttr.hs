@@ -65,15 +65,15 @@ textAttr = liftA2 (,) stroke_colour font_props
 -- | A Mark is consider to be the height of a lowercase letter
 -- in the current font.
 --
-markHeight :: Fractional u => DrawingAttr -> u
-markHeight = xcharHeight . font_size . font_props
+markHeight :: FromPtSize u => DrawingAttr -> u
+markHeight = fromPtSize . xcharHeight . font_size . font_props
 
 
 -- | textDimensions : text -> DrawingAttr -> (width,height)
 --
-textDimensions :: Fractional u => String -> DrawingAttr -> (u,u)
+textDimensions :: FromPtSize u => String -> DrawingAttr -> (u,u)
 textDimensions str attr = (w,h)
   where
     sz = font_size  $ font_props attr
-    w  = textWidth  sz (1 + length str) 
-    h  = textHeight sz
+    w  = fromPtSize $ textWidth  sz (1 + length str) 
+    h  = fromPtSize $ textHeight sz

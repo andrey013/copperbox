@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.22.0
+version:          0.23.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -67,10 +67,11 @@ description:
     specifically for text size calculations, vis the 
     @Core.FontSize@ module.
   .
-  * Changed all functions in @Core.FontSize@ to return PtSize
-    instead of some @u@ (where @u@ is an instance of Fractional).
-    To get other unit type rather than FontSize use an explicit 
-    conversion that scales the value accordingly.
+  * Changed all functions in @Core.FontSize@ to return @PtSize@
+    instead of a polymorphic type @u@ (where @u@ is an instance 
+    of Fractional). To get to another unit type rather than 
+    FontSize use an explicit conversion that scales the value 
+    accordingly.
   .
   * Added FromPtSize class constraints to various functions in
     @Core.Picture@.

@@ -61,16 +61,16 @@ import Data.VectorSpace
 -- PostScript.
 --
 
-dotChar :: Fractional u => Char -> DrawingAttr -> GraphicF u
+dotChar :: (Fractional u, FromPtSize u) => Char -> DrawingAttr -> GraphicF u
 dotChar ch = dotText [ch]
 
-dotText :: Fractional u => String -> DrawingAttr -> GraphicF u
+dotText :: (Fractional u, FromPtSize u) => String -> DrawingAttr -> GraphicF u
 dotText str attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
     wrapG $ textlabel (textAttr attr) str pt
   where
     sz = font_size $ font_props attr
-    hh = 0.5 * numeralHeight sz
-    hw = 0.5 * textWidth sz (length str) 
+    hh = fromPtSize $ 0.5 * numeralHeight sz
+    hw = fromPtSize $ 0.5 * textWidth sz (length str) 
 
 -- | Supplied point is the center.
 --
@@ -85,17 +85,17 @@ axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
 -- Better would be a version of straightLine where the point is 
 -- the center not the start...
 -- 
-dotHLine :: Fractional u => DrawingAttr -> GraphicF u 
+dotHLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
 dotHLine attr = let w = markHeight attr in 
     axialLine (strokeAttr attr) (hvec w)
     
 
-dotVLine :: Fractional u => DrawingAttr -> GraphicF u 
+dotVLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
 dotVLine attr = let h = markHeight attr in 
     axialLine (strokeAttr attr) (vvec h)
 
 
-dotX :: Fractional u => DrawingAttr -> GraphicF u
+dotX :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotX attr = ls1 `cc` ls2
   where
     h        = markHeight attr
@@ -104,11 +104,11 @@ dotX attr = ls1 `cc` ls2
     ls2      = axialLine (strokeAttr attr) (vec (-w) h)
 
 
-dotPlus :: Fractional u => DrawingAttr -> GraphicF u
+dotPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotPlus attr = dotVLine attr `cc` dotHLine attr
 
 
-dotCross :: Floating u => DrawingAttr -> GraphicF u
+dotCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotCross attr = ls1 `cc` ls2
   where
     z        = markHeight attr
@@ -118,7 +118,7 @@ dotCross attr = ls1 `cc` ls2
 
 -- needs horizontal pinch...
 
-pathDiamond :: Fractional u => DrawingAttr -> PathF u
+pathDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> PathF u
 pathDiamond attr = vertexPath . sequence [dvs,dve,dvn,dvw]
   where
     hh    = 0.66  * markHeight attr
@@ -130,11 +130,11 @@ pathDiamond attr = vertexPath . sequence [dvs,dve,dvn,dvw]
 
 type PathF u = Point2 u -> Path u
 
-dotDiamond :: Fractional u => DrawingAttr -> GraphicF u
+dotDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotDiamond attr = 
     wrapG . cstroke (strokeAttr attr) . pathDiamond attr
 
-dotFDiamond :: Fractional u => DrawingAttr -> GraphicF u
+dotFDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotFDiamond attr = dotDiamond attr `cc` filled 
   where
     filled = wrapG . fill (fillAttr attr) . pathDiamond attr
@@ -143,21 +143,21 @@ dotFDiamond attr = dotDiamond attr `cc` filled
 
 -- | Note disk is filled.
 --
-dotDisk :: Fractional u => DrawingAttr -> GraphicF u
+dotDisk :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotDisk attr = disk (fill_colour attr) (0.5*markHeight attr) 
 
 
-dotSquare :: Fractional u => DrawingAttr -> GraphicF u
+dotSquare :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotSquare attr = let u = markHeight attr in
      strokedRectangle (strokeAttr attr) u u 
     
 
 
-dotCircle :: Fractional u => DrawingAttr -> GraphicF u
+dotCircle :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotCircle attr = disk (strokeAttr attr) (0.5*markHeight attr) 
 
 
-dotPentagon :: Floating u => DrawingAttr -> GraphicF u
+dotPentagon :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotPentagon attr = 
     wrapG . cstroke (strokeAttr attr) . vertexPath . polygonPointsV 5 hh
   where
@@ -165,7 +165,7 @@ dotPentagon attr =
 
  
 
-dotStar :: Floating u => DrawingAttr -> GraphicF u 
+dotStar :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u 
 dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
   where
     hh        = 0.5 * markHeight attr
@@ -174,7 +174,7 @@ dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
 
 
 
-dotAsterisk :: Floating u => DrawingAttr -> GraphicF u
+dotAsterisk :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotAsterisk attr = ls1 `cc` ls2 `cc` ls3
   where
     z        = markHeight attr
@@ -185,17 +185,16 @@ dotAsterisk attr = ls1 `cc` ls2 `cc` ls3
     ls3      = axialLine props (avec (half_pi + ang + ang) z)
 
 
-dotOPlus :: Fractional u
-         => DrawingAttr -> GraphicF u
+dotOPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotOPlus attr = dotCircle attr `cc` dotPlus attr
 
 
-dotOCross :: Floating u => DrawingAttr -> GraphicF u
+dotOCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotOCross attr = dotCircle attr `cc` dotCross attr
 
 
-dotFOCross :: Floating u => DrawingAttr -> GraphicF u
+dotFOCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotFOCross attr = dotCircle attr `cc` dotCross attr `cc` bkCircle attr 
 
-bkCircle :: Fractional u => DrawingAttr -> GraphicF u
+bkCircle :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 bkCircle attr = disk (fillAttr attr) (0.5*markHeight attr) 

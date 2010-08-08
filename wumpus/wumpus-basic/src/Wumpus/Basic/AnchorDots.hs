@@ -23,6 +23,8 @@ module Wumpus.Basic.AnchorDots
   -- * Existential anchor type
     DotAnchor
 
+  , adotCircle
+
   -- * Dots with anchor points
   , dotCircle
   , dotDisk
@@ -33,7 +35,8 @@ module Wumpus.Basic.AnchorDots
   ) where
 
 import Wumpus.Basic.Anchors
-import qualified Wumpus.Basic.Dots              as BD
+import qualified Wumpus.Basic.Dots                      as BD
+import qualified Wumpus.Basic.Graphic.DrawingAttr       as DA
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Basic.Monads.TraceClass
@@ -127,12 +130,17 @@ rectangleAnchor hw hh ctr =
 
 
 
+adotCircle :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
+adotCircle = AGraphic id (BD.dotDisk) mkF
+  where
+    mkF attr pt = circleAnchor (0.5* DA.markHeight attr) pt
+
 
 -- This draws to the trace then returns an opaque thing
 -- (a Circle) that supports anchors
 
 dotCircle :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-             , Floating u) 
+             , Floating u, FromPtSize u) 
           => MGraphicF m u (DotAnchor u)
 dotCircle = \pt -> askDrawingCtx                    >>= \attr -> 
                    markHeight                       >>= \h    ->
@@ -141,7 +149,7 @@ dotCircle = \pt -> askDrawingCtx                    >>= \attr ->
 
 
 dotDisk :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Floating u) 
+           , Floating u, FromPtSize u) 
         => MGraphicF m u (DotAnchor u)
 dotDisk = \pt -> askDrawingCtx                    >>= \attr -> 
                  markHeight                       >>= \h    ->
@@ -151,7 +159,7 @@ dotDisk = \pt -> askDrawingCtx                    >>= \attr ->
 
 
 dotSquare :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-             , Real u, Floating u) 
+             , Real u, Floating u, FromPtSize u) 
           => MGraphicF m u (DotAnchor u)
 dotSquare = \pt -> askDrawingCtx                >>= \attr -> 
                    markHeight                   >>= \h    ->
@@ -163,12 +171,12 @@ dotSquare = \pt -> askDrawingCtx                >>= \attr ->
 
 
 dotChar :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Real u, Floating u) 
+           , Real u, Floating u, FromPtSize u) 
           => Char -> MGraphicF m u (DotAnchor u)
 dotChar ch = dotText [ch]
 
 dotText :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Real u, Floating u) 
+           , Real u, Floating u, FromPtSize u) 
           => String -> MGraphicF m u (DotAnchor u)
 dotText str = \pt -> askDrawingCtx                  >>= \attr  -> 
                      textDimensions str             >>= \(w,h) ->

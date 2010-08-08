@@ -58,7 +58,7 @@ std_attr = standardAttr 12
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 
-makeDotPic :: (Real u, Floating u) 
+makeDotPic :: (Real u, Floating u, FromPtSize u) 
            => (DrawingAttr -> GraphicF u) -> [Point2 u] -> Picture u
 makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
   where
