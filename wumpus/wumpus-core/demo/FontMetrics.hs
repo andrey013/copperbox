@@ -55,7 +55,7 @@ char_pic = frameMulti $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
 type PrimF = DPoint2 -> DPrimitive
 
 bodyHeight  :: PrimF
-bodyHeight  = vertLine peru courier48_numeral_height
+bodyHeight  = vertLine peru $ fromPtSize courier48_numeral_height
 
 agraveU     :: PrimF
 agraveU     = textlabel (black, courier_attr) "&#Agrave"
@@ -67,9 +67,9 @@ letter ch pt = textlabel (black, courier_attr) [ch] pt
 vertLine :: DRGB -> Double -> DPoint2 -> DPrimitive
 vertLine rgb height pt = ostroke rgb $ vertexPath [pt, pt .+^ vvec height]
 
-haxis :: DRGB -> Double -> DPrimitive
+haxis :: DRGB -> PtSize -> DPrimitive
 haxis rgb ypos = 
     ostroke (rgb, dash_attr) $ vertexPath [ pt, pt .+^ hvec 440 ]
   where
     dash_attr = DashPattern (Dash 0 [(2,2)])
-    pt        = P2 0 ypos
+    pt        = P2 0 (fromPtSize ypos)

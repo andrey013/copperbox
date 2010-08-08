@@ -11,7 +11,7 @@ import System.Directory
 
 
 
-drawBounds :: (Floating u, Real u) => Picture u -> Picture u
+drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
 drawBounds p        = p `picOver` (frame $ cstroke () ph) 
   where
     ph            = vertexPath $ [bl,br,tr,tl]

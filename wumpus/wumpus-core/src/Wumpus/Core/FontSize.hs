@@ -55,8 +55,11 @@ module Wumpus.Core.FontSize
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
+import Wumpus.Core.PtSize
 
 import Data.AffineSpace                 -- package: vector-space
+
+
 
 type CharCount = Int
 type FontSize = Int
@@ -72,15 +75,15 @@ type FontSize = Int
 --
 -- > width = 26.0 
 --
-courier48_width :: Num u => u
-courier48_width = 26
+courier48_width :: PtSize
+courier48_width = 26.0
 
 -- | The point size of a character in Courier at 48 pt.
 --
 -- \*\* Naturally the height is 48.0 \*\*.
 --
-courier48_height :: Num u => u
-courier48_height = 48
+courier48_height :: PtSize 
+courier48_height = 48.0
 
 
 
@@ -92,8 +95,8 @@ courier48_height = 48
 --
 -- > numeral_height = 30.0 
 --
-courier48_numeral_height :: Num u => u 
-courier48_numeral_height = 30
+courier48_numeral_height :: PtSize 
+courier48_numeral_height = 30.0
 
 -- | The height of the body of a lower-case letter 
 --  (typically the letter  \'x\') in Courier at 48 pt. 
@@ -102,16 +105,16 @@ courier48_numeral_height = 30
 --
 -- > xheight = 20.0 
 -- 
-courier48_xheight :: Num u => u 
-courier48_xheight = 20
+courier48_xheight :: PtSize
+courier48_xheight = 20.0
 
 
 -- | The depth of a descender in Courier at 48 pt.
 -- 
 -- > descender_depth = 9.0
 -- 
-courier48_descender_depth :: Num u => u 
-courier48_descender_depth = 9
+courier48_descender_depth :: PtSize
+courier48_descender_depth = 9.0
 
 -- | The depth of an ascender in Courier at 48 pt.
 -- 
@@ -127,8 +130,8 @@ courier48_descender_depth = 9
 --
 -- > xheight + ascender_height == numeral_height
 --
-courier48_ascender_height :: Num u => u 
-courier48_ascender_height = 10
+courier48_ascender_height :: PtSize 
+courier48_ascender_height = 10.0
 
 
 -- | The spacing between letters printed directly with 
@@ -139,13 +142,13 @@ courier48_ascender_height = 10
 --
 -- > spacer_width = 3.0
 --
-courier48_spacer_width :: Num u => u
-courier48_spacer_width = 3
+courier48_spacer_width :: PtSize
+courier48_spacer_width = 3.0
 
 
 -- | Width of the supplied string when printed at 48pt.
 --
-widthAt48pt :: Fractional u => CharCount -> u
+widthAt48pt :: CharCount -> PtSize
 widthAt48pt n = courier48_width * len + courier48_spacer_width * len_sub
   where
     len      = fromIntegral n
@@ -155,34 +158,34 @@ widthAt48pt n = courier48_width * len + courier48_spacer_width * len_sub
 -- characters are counted literally - special chars may cause
 -- problems (this a current deficiency of Wumpus).
 --
-textWidth :: Fractional u => FontSize -> CharCount -> u
+textWidth :: FontSize -> CharCount -> PtSize
 textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
 
 
 -- | Text height is just identity/double-coercion of the Point size.
 -- i.e. @18 == 18.0@. The /size/ of a font is the maximum height:
 --
-textHeight :: Num u =>  FontSize -> u
+textHeight :: FontSize -> PtSize
 textHeight = fromIntegral
 
 -- | Approximate the height of a numeral using metrics derived 
 -- from the Courier monospaced font.
 --
-numeralHeight :: Fractional u => FontSize -> u
+numeralHeight :: FontSize -> PtSize
 numeralHeight sz = textHeight sz * (courier48_numeral_height / courier48_height)
 
 -- | Approximate the height of the lower-case char \'x\' using 
 -- metrics derived from the Courier monospaced font.
 --
-xcharHeight :: Fractional u => FontSize -> u
+xcharHeight :: FontSize -> PtSize
 xcharHeight sz = textHeight sz * (courier48_xheight / courier48_height)
 
 
 -- | Approximate the descender depth for font size @sz@ using
 -- metrics derived from the Courier monospaced font.
 -- 
-descenderDepth :: Fractional u => FontSize -> u
-descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
+descenderDepth :: FontSize -> PtSize
+descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
 
 -- | Find the bounding box for the character count at the 
 -- supplied font-size.
@@ -197,12 +200,12 @@ descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 -- For variable width fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: (Fractional u, Ord u) 
+textBounds :: (Fractional u, Ord u, FromPtSize u) 
            => FontSize -> Point2 u -> CharCount -> BoundingBox u
 textBounds sz body_bl n = bbox bl tr where
-    h           = textHeight sz
-    w           = textWidth  sz n
-    dd          = descenderDepth sz
+    h           = fromPtSize $ textHeight sz
+    w           = fromPtSize $ textWidth  sz n
+    dd          = fromPtSize $ descenderDepth sz
     bl          = body_bl .-^ V2 0 dd 
     tr          = bl .+^ V2 w h
   

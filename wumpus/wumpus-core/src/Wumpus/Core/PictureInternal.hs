@@ -73,6 +73,7 @@ import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
+import Wumpus.Core.PtSize
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
@@ -599,14 +600,14 @@ instance (Num u, Ord u) => Boundary (Path u) where
 -- Note - this will calculate an approximate bounding box for 
 -- text.
 
-instance (Real u, Floating u) => Boundary (Primitive u) where
+instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ p)        = boundary p
   boundary (PLabel (_,a) l)   = primLabelBoundary a l 
   boundary (PEllipse _ e)     = boundary e
 
 
 
-primLabelBoundary :: (Floating u, Real u) 
+primLabelBoundary :: (Floating u, Real u, FromPtSize u) 
                   => FontAttr -> Label u -> BoundingBox u
 primLabelBoundary attr (Label (P2 x y) xs ctm) = 
     retraceBoundary  (disp . (m33 *#)) untraf_bbox

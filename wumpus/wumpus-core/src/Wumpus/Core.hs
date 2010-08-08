@@ -34,6 +34,8 @@
 --
 -- * "Wumpus.Core.PictureLanguage"
 --
+-- * "Wumpus.Core.PtSize"
+--
 -- * "Wumpus.Core.TextEncoder"
 --
 -- * "Wumpus.Core.VersionNumber"
@@ -61,6 +63,7 @@ module Wumpus.Core
   , module Wumpus.Core.OutputPostScript
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
+  , module Wumpus.Core.PtSize
   , module Wumpus.Core.TextEncoder
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
@@ -76,6 +79,7 @@ import Wumpus.Core.GraphicsState hiding ( CTM, ToCTM )
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
+import Wumpus.Core.PtSize
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
