@@ -33,6 +33,8 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Anchors             -- package: wumpus-basic
 import Wumpus.Basic.Graphic
+import qualified Wumpus.Basic.Graphic.DrawingAttr as DA
+import Wumpus.Basic.Monads.Drawing 
 
 --------------------------------------------------------------------------------
 
@@ -46,6 +48,10 @@ type DCoordinate = Coordinate Double
 
 type instance DUnit (Coordinate u) = u
 
+
+
+updateCTM :: (CTM u -> CTM u) -> Coordinate u -> Coordinate u
+updateCTM f = star (\s i -> s { coord_ctm = f i}) coord_ctm 
 
 -- Instances 
 
@@ -67,6 +73,16 @@ instance Num u => Translate (Coordinate u) where
 
 coordinate :: Num u => Coordinate u
 coordinate = Coordinate identityCTM
+
+
+instance (Real u, Floating u) => Draw (Coordinate u) where
+  draw coord = AGraphic id df mf
+    where
+      df attr (P2 x y) = drawCoordinate (DA.fillAttr attr) $ 
+                            updateCTM (translateCTM x y) coord
+
+      mf _    (P2 x y) = updateCTM (translateCTM x y) coord 
+     
 
 -- Note - currently this takes no notice of any scaling 
 -- transformations in the CTM...

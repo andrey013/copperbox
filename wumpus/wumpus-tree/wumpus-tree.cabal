@@ -23,7 +23,7 @@ description:
   * Changed internals to use ConsDrawing monad as Wumpus-Basic
     has changed.
   .
-  * Internal change to use AGraphic rather than MGRaphicF 
+  * Internal change to use AGraphic rather than MGraphicF 
   .
   .
 build-type:         Simple
@@ -40,7 +40,7 @@ library
   build-depends:      base              <  5, 
                       containers        >= 0.3.0     && < 0.4.0,
                       vector-space      >= 0.6,
-                      wumpus-core       >= 0.22.0,
+                      wumpus-core       >= 0.23.0,
                       wumpus-basic      >= 0.4.0
 
   

@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,8 +19,10 @@
 module Wumpus.Shapes.Base
   ( 
 
+    liftAG
+
   -- * CTM 
-    CTM(..)
+  , CTM(..)
   , identityCTM
   , scaleCTM
   , rotateCTM
@@ -29,27 +32,37 @@ module Wumpus.Shapes.Base
 
   -- * Shape label
   , ShapeLabel(..)
-  , AddLabel(..)
-  , deconsLabel
-  , basicLabel
-  , updateText
   , drawShapeLabel
   , labelGraphic
-
   , DrawShape(..)
+
+  , Draw(..)
 
   ) where
 
 import Wumpus.Shapes.Utils
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Core.Colour ( black )
-
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.DrawingCtxClass
+import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Monads.TurtleClass
+
 
 import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
+
+
+-- Note - Need to think how to handle multi-line labels...
+
+
+liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+       => AGraphic u a -> m a
+liftAG = node
+
+
 
 
 --------------------------------------------------------------------------------
@@ -67,12 +80,12 @@ type instance DUnit (CTM u) = u
 
 identityCTM :: Num u => CTM u
 identityCTM = CTM { ctm_pos      = P2 0 0 
-                  , ctm_scale_x  = 1, ctm_scale_y = 1
+                  , ctm_scale_x  = 1
+                  , ctm_scale_y  = 1
                   , ctm_rotation = 0 }
 
 scaleCTM :: Num u => u -> u -> CTM u -> CTM u
-scaleCTM x1 y1 = star2 (\s x y -> s { ctm_scale_x = x1*x
-                                    , ctm_scale_y = y1*y })
+scaleCTM x1 y1 = star2 (\s x y -> s { ctm_scale_x = x1*x, ctm_scale_y = y1*y })
                        ctm_scale_x
                        ctm_scale_y
 
@@ -100,47 +113,47 @@ ctmCenter = ctmDisplace 0 0
 --------------------------------------------------------------------------------
 -- Shape label
 
-data ShapeLabel = ShapeLabel
-      { shapelabel_text         :: String
-      , shapelabel_font_props   :: FontAttr
-      , shapelabel_font_colour  :: DRGB
-      }
+-- Old - can be handled with with DrawingAttr from Wumpus-Basic.
+--
+-- TODO - am I going to consider multi-line labels?
+
+newtype ShapeLabel = ShapeLabel { getShapeLabel :: String }
   deriving (Eq,Show)
 
-basicLabel :: String -> ShapeLabel
-basicLabel text = ShapeLabel text wumpus_default_font black
 
-updateText :: String -> ShapeLabel -> ShapeLabel
-updateText text s = s { shapelabel_text = text } 
-
-deconsLabel :: ShapeLabel -> ((DRGB,FontAttr), String) 
-deconsLabel (ShapeLabel ss fa rgb) = ((rgb,fa),ss)
-
-drawShapeLabel :: (Real u, Floating u)
-               => ShapeLabel -> CTM u -> Primitive u
-drawShapeLabel sl ctm = rotatePrimitive ang $ textlabel (rgb,attr) text pt
+drawShapeLabel :: (Real u, Floating u, FromPtSize u)
+               => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Primitive u
+drawShapeLabel sl (rgb,attr) ctm = 
+    rotatePrimitive ang $ textlabel (rgb,attr) text pt
   where
     (ang,ctr)         = (ctm_rotation ctm, ctm_pos ctm)        
-    ((rgb,attr),text) = deconsLabel sl
+    text              = getShapeLabel sl
     font_sz           = font_size attr
-    twidth            = textWidth  font_sz (length text)
-    theight           = textHeight font_sz
+    twidth            = fromPtSize $ textWidth  font_sz (length text)
+    theight           = fromPtSize $ textHeight font_sz
     pt                = let p1 = ctr .-^ V2 (0.5 * twidth) (0.5 * theight)
                         in rotateAbout ang ctr p1
 
 -- Note - labels are not scaled ....
 --
-labelGraphic :: (Real u, Floating u) 
-             => CTM u -> ShapeLabel -> Graphic u
-labelGraphic ctm lbl = wrapG $ drawShapeLabel lbl ctm
+labelGraphic :: (Real u, Floating u, FromPtSize u) 
+             => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Graphic u
+labelGraphic lbl attrs ctm = wrapG $ drawShapeLabel lbl attrs ctm
 
 
--- can all shapes (except coordinates) be stroked and filled?
+-- OLD - stroke fill (and clip) should be lifters to AGraphic.
+
+-- Can all shapes (except coordinates) be stroked and filled?
+-- Probaly better to have separate type classes...
 
 class DrawShape sh where
   strokeShape :: (Stroke t, u ~ DUnit sh) => t -> sh -> Graphic u
   fillShape   :: (Fill t, u ~ DUnit sh)   => t -> sh -> Graphic u 
 
+{-
+class Stroke sh where
+  stroke :: (u ~ DUnit sh) => sh -> AGraphic u sh
+-} 
 
-class AddLabel t where
-  addLabel :: t -> ShapeLabel -> t
+class Draw sh where
+  draw :: (u ~ DUnit sh) => sh -> AGraphic u sh

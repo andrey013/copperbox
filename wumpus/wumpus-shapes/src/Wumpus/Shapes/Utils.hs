@@ -58,16 +58,3 @@ star4    :: (r -> a -> b -> c -> d -> ans)
 star4 f fa fb fc fd x = f x (fa x) (fb x) (fc x) (fd x)
 
 
-{-
-
--- |  - aka liftM on functions 
--- 
-esop :: (r -> a) -> (a -> ans) -> r -> ans
-esop g f r = f (g r)
-
--- | bigphi2 - a
--- 
-esop2 :: (r -> a) -> (r -> b) -> (a -> b -> ans) -> r -> ans
-esop2 fa fb f r = f (fa r) (fb r)
--}
-

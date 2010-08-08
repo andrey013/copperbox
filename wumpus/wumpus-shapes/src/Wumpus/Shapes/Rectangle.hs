@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,24 +17,26 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Shapes.Rectangle
-  ( 
-
+  (
     Rectangle(..)
   , DRectangle
 
   , rectangle
-  , strokeRectangle
-  , fillRectangle
-  
+  , rectangle_
+
 
   ) where
 
 import Wumpus.Shapes.Base
 import Wumpus.Shapes.Utils
 
-import Wumpus.Core                                -- package: wumpus-core
-import Wumpus.Basic.Anchors                       -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic hiding ( Rectangle, DRectangle )
+import qualified Wumpus.Basic.Graphic.DrawingAttr as DA
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.DrawingCtxClass
+
 
 -- | Rectangles.
 --
@@ -48,6 +51,10 @@ type DRectangle = Rectangle Double
 
 type instance DUnit (Rectangle u) = u
 
+
+
+updateCTM :: (CTM u -> CTM u) -> Rectangle u -> Rectangle u
+updateCTM f = star (\s i -> s { rect_ctm = f i}) rect_ctm 
 
 
 
@@ -80,10 +87,6 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
   southwest = calcPoint $ \ hw hh -> V2 (-hw) (-hh)
   northwest = calcPoint $ \ hw hh -> V2 (-hw) hh
 
--- helper
-updateCTM :: (CTM u -> CTM u) -> Rectangle u -> Rectangle u
-updateCTM f = star (\s m -> s { rect_ctm = f m } ) rect_ctm
-
 
 instance (Floating u, Real u) => Rotate (Rectangle u) where
   rotate r = updateCTM (rotateCTM r)
@@ -94,9 +97,6 @@ instance Num u => Scale (Rectangle u) where
 instance Num u => Translate (Rectangle u) where
   translate x y = updateCTM (translateCTM x y)
 
-
-instance AddLabel (Rectangle u) where
-  rect `addLabel` lbl = rect { rect_label = Just lbl }
      
 
 
@@ -113,31 +113,62 @@ rectangle w h = Rectangle { rect_half_width   = 0.5*w
                           , rect_label        = Nothing }
 
 
+rectangle_ :: Fractional u => u -> u -> String -> Rectangle u
+rectangle_ w h str = (rectangle w h) { rect_label = Just $ ShapeLabel str } 
+
+
+-- /fill/ & /stroke/ are probably lifters to AGraphic...
+
+
+strokeR :: (Real u, Floating u)
+        => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
+strokeR attr (P2 x y) =
+    strokeRectangle (DA.strokeAttr attr) . updateCTM (translateCTM x y)
+                       
+
+fillR :: (Real u, Floating u) 
+      => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
+fillR attr (P2 x y) =
+    fillRectangle (DA.fillAttr attr) . updateCTM (translateCTM x y)
+
+textR :: (Real u, Floating u, FromPtSize u) 
+      => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
+textR attr (P2 x y) rect = maybe id sk $ rect_label rect
+  where
+    ctm      = translateCTM x y $ rect_ctm rect
+    sk label = labelGraphic label (DA.textAttr attr) ctm 
+
+
+    
+make :: (Real u, Floating u) 
+     => DrawingAttr -> Point2 u -> Rectangle u -> Rectangle u
+make _ (P2 x y) = updateCTM (translateCTM x y)
+
+instance (Real u, Floating u, FromPtSize u) => Draw (Rectangle u) where
+  draw rect = AGraphic id df (\a p -> make a p rect)
+    where
+      df attr pt = textR attr pt rect . strokeR attr pt rect . fillR attr pt rect
+      
+
+
 --------------------------------------------------------------------------------
 -- Drawing 
 
 --
 
 
-drawRectangle :: (Real u, Floating u)   
-              => (Path u -> Primitive u) -> Rectangle u -> Graphic u
-drawRectangle drawF rect = labelpic . rectpic
-  where
-    labelpic = maybe id (labelGraphic (rect_ctm rect)) $ rect_label rect
-    rectpic   = wrapG $ drawF $ vertexPath $ extractVertexList rect
+strokeRectangle     :: (Real u, Floating u, Stroke t) 
+                    => t -> Rectangle u -> Graphic u
+strokeRectangle t   = wrapG . cstroke t . vertexPath . extractVertexList
 
-strokeRectangle :: (Real u, Floating u, Stroke t) 
-                => t -> Rectangle u -> Graphic u
-strokeRectangle t = drawRectangle (cstroke t)
-
-fillRectangle :: (Real u, Floating u, Fill t) 
-              => t -> Rectangle u -> Graphic u
-fillRectangle t = drawRectangle (fill t)
+fillRectangle       :: (Real u, Floating u, Fill t) 
+                    => t -> Rectangle u -> Graphic u
+fillRectangle t     = wrapG . fill t . vertexPath . extractVertexList
 
 
 instance (Real u, Floating u) => DrawShape (Rectangle u) where
-  strokeShape t = drawRectangle (cstroke t) 
-  fillShape   t = drawRectangle (fill t)
+  strokeShape = strokeRectangle 
+  fillShape   = fillRectangle
 
 extractVertexList :: (Real u, Floating u) => Rectangle u -> [Point2 u]
 extractVertexList rect = [bl,br,tr,tl]
