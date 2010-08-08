@@ -42,9 +42,9 @@ pic1 = drawGraphicU $ snd $ runFun  $ mf
 
 mf :: (Floating u, FromPtSize u) => ConsDrawing u ()
 mf = do 
-    a <- dotCircle zeroPt 
-    b <- dotCircle (P2 60 60)
-    _ <- liftAG $ adotCircle `atAG` (P2 45 45)
+    a <- node $ dotCircle `at` zeroPt 
+    b <- node $ dotCircle `at` (P2 60 60)
+    _ <- node $ dotCircle `at` (P2 45 45)
     let c = radialAnchor (pi/4)  a
     let d = radialAnchor (5* pi/4) b
     trace $ straightLine () (d .-. c) c

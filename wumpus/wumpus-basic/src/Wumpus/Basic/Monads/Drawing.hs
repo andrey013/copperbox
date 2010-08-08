@@ -20,14 +20,12 @@ module Wumpus.Basic.Monads.Drawing
   (
     
     AGraphic(..)
-  , liftAG 
-  , atAG
+  , node
+  , at
 
   -- OLD 
   , MGraphicF 
-  , traceG
-  , node
-  , at
+
   ) where
 
 import Wumpus.Basic.Graphic
@@ -54,8 +52,8 @@ instance Functor (AGraphic u) where
 -- This doesn't work like at on MGraphicF, as the point is not 
 -- scaled w.r.t. TurtleScaleM ...
 --
-atAG :: AGraphic u a -> Point2 u -> AGraphic u a
-atAG (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
+at :: AGraphic u a -> Point2 u -> AGraphic u a
+at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
                                           (\attr _ -> mf attr pt)
 
 instance Applicative (AGraphic u) where
@@ -70,9 +68,9 @@ instance Applicative (AGraphic u) where
 -- getPos should be a class method outside of Turtle
 -- those Bivariate context from PSC could implement it...
 
-liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+node :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
        => AGraphic u a -> m a
-liftAG (AGraphic af df mf) = 
+node (AGraphic af df mf) = 
     askDrawingCtx >>= \a0 ->
     getPos        >>= \pt ->
     let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
@@ -85,6 +83,8 @@ liftAG (AGraphic af df mf) =
 
 type MGraphicF m u a = Point2 u -> m a
 
+
+{-
 traceG :: (Monad m, TraceM m (Primitive u)) => GraphicF u -> MGraphicF m u ()
 traceG fn = \pt -> trace (fn pt)
 
@@ -95,9 +95,12 @@ node :: (TraceM m (Primitive u), TurtleScaleM m u, Num u)
 node mgF = getPos >>= \pt -> mgF pt
 
 
+
+
 infixr 6 `at` 
 
 at :: (Num u, TraceM m (Primitive u), TurtleScaleM m u) 
    => MGraphicF m u a -> (Int,Int) -> m a
 at mgF coord = scaleCoord coord >>= \pt -> mgF pt
 
+-}

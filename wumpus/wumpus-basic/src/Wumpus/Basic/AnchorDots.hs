@@ -23,8 +23,6 @@ module Wumpus.Basic.AnchorDots
   -- * Existential anchor type
     DotAnchor
 
-  , adotCircle
-
   -- * Dots with anchor points
   , dotCircle
   , dotDisk
@@ -36,10 +34,8 @@ module Wumpus.Basic.AnchorDots
 
 import Wumpus.Basic.Anchors
 import qualified Wumpus.Basic.Dots                      as BD
-import qualified Wumpus.Basic.Graphic.DrawingAttr       as DA
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.DrawingCtxClass
-import Wumpus.Basic.Monads.TraceClass
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -130,57 +126,34 @@ rectangleAnchor hw hh ctr =
 
 
 
-adotCircle :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
-adotCircle = AGraphic id (BD.dotDisk) mkF
+dotCircle :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotCircle = AGraphic id (BD.dotCircle) mkF
   where
-    mkF attr pt = circleAnchor (0.5* DA.markHeight attr) pt
+    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
--- This draws to the trace then returns an opaque thing
--- (a Circle) that supports anchors
-
-dotCircle :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-             , Floating u, FromPtSize u) 
-          => MGraphicF m u (DotAnchor u)
-dotCircle = \pt -> askDrawingCtx                    >>= \attr -> 
-                   markHeight                       >>= \h    ->
-                   trace (BD.dotCircle attr pt)     >> 
-                   return (circleAnchor (0.5*h) pt)
+dotDisk :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotDisk = AGraphic id (BD.dotDisk) mkF
+  where
+    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
-dotDisk :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Floating u, FromPtSize u) 
-        => MGraphicF m u (DotAnchor u)
-dotDisk = \pt -> askDrawingCtx                    >>= \attr -> 
-                 markHeight                       >>= \h    ->
-                 trace (BD.dotDisk attr pt)       >> 
-                 return (circleAnchor (0.5*h) pt)
+dotSquare :: (Floating u, Real u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotSquare = AGraphic id (BD.dotSquare) mkF
+  where
+    mkF attr pt = let h = markHeight attr in
+                  rectangleAnchor (0.5*h) (0.5*h) pt
 
 
-
-dotSquare :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-             , Real u, Floating u, FromPtSize u) 
-          => MGraphicF m u (DotAnchor u)
-dotSquare = \pt -> askDrawingCtx                >>= \attr -> 
-                   markHeight                   >>= \h    ->
-                   trace (BD.dotSquare attr pt) >> 
-                   return (rectangleAnchor (0.5*h) (0.5*h) pt)
-
-
-
-
-
-dotChar :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Real u, Floating u, FromPtSize u) 
-          => Char -> MGraphicF m u (DotAnchor u)
+dotChar :: (Floating u, Real u, FromPtSize u) 
+        => Char -> AGraphic u (DotAnchor u)
 dotChar ch = dotText [ch]
 
-dotText :: ( Monad m, TraceM m (Primitive u), DrawingCtxM m
-           , Real u, Floating u, FromPtSize u) 
-          => String -> MGraphicF m u (DotAnchor u)
-dotText str = \pt -> askDrawingCtx                  >>= \attr  -> 
-                     textDimensions str             >>= \(w,h) ->
-                     trace (BD.dotText str attr pt) >>
-                     return (rectangleAnchor (0.5*w) (0.5*h) pt)
+dotText :: (Floating u, Real u, FromPtSize u) 
+        => String -> AGraphic u (DotAnchor u) 
+dotText str = AGraphic id (BD.dotText str) mkF
+  where
+    mkF attr pt = let (w,h) = textDimensions str attr in
+                  rectangleAnchor (0.5*w) (0.5*h) pt
 
 
