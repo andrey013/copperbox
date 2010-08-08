@@ -28,7 +28,6 @@ module Wumpus.Tree.Base
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.AnchorDots                  -- package: wumpus-basic
 import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.ConsDrawing
 
 import Data.Tree
 
@@ -43,5 +42,5 @@ type TreePicture = Picture Double
 type CoordTree u a = Tree (Point2 u, a)
 
 
-type TreeNode = MGraphicF (ConsDrawing Double) Double (DotAnchor Double)
+type TreeNode = AGraphic Double (DotAnchor Double)
 

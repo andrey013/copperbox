@@ -40,18 +40,18 @@ drawTree drawF attr tree =
 
 
 drawTop :: (a -> TreeNode) -> CoordTree Double a -> ConsDrawing Double ()
-drawTop drawF (Node (pt,a) ns) = do 
-    ancr <- drawF a pt
-    mapM_ (draw1 drawF ancr) ns
+drawTop fn (Node (pt,a) ns) = do 
+    ancr <- node $ fn a `at` pt
+    mapM_ (draw1 fn ancr) ns
 
 draw1 :: (a -> TreeNode) 
       -> DotAnchor Double 
       -> CoordTree Double a 
       -> ConsDrawing Double ()
-draw1 drawF ancr_from (Node (pt,a) ns) = do
-    ancr <- drawF a pt
+draw1 fn ancr_from (Node (pt,a) ns) = do
+    ancr <- node $ fn a `at` pt
     connector ancr_from ancr
-    mapM_ (draw1 drawF ancr) ns   
+    mapM_ (draw1 fn ancr) ns   
 
 
 connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 

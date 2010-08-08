@@ -47,6 +47,7 @@ import Wumpus.Tree.Draw
 
 import Wumpus.Basic.AnchorDots                  -- package: wumpus-basic
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -154,7 +155,7 @@ textNode = dotText . uptoNewline
 circleNode :: DRGB -> (a -> TreeNode)
 circleNode rgb = const fn
   where
-    fn pt = withinModifiedCtx (\s -> s { stroke_colour = rgb}) (dotCircle $ pt)
+    fn = dotCircle `props` (\s -> s { stroke_colour = rgb})
 
 
 -- | Tree nodes with a filled circle.
@@ -164,7 +165,7 @@ circleNode rgb = const fn
 diskNode :: DRGB -> (a -> TreeNode)
 diskNode rgb = const fn
   where
-    fn pt = withinModifiedCtx (\s -> s { fill_colour = rgb}) (dotDisk $ pt)
+    fn = dotDisk `props` (\s -> s { fill_colour = rgb})
 
 
 

@@ -20,11 +20,11 @@ module Wumpus.Basic.Monads.Drawing
   (
     
     AGraphic(..)
+  , AGraphic2(..)
   , node
   , at
-
-  -- OLD 
-  , MGraphicF 
+  , connect
+  , props
 
   ) where
 
@@ -38,7 +38,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-
+-- | AGraphic2 for /nodes/...
+--
 data AGraphic u a = AGraphic 
        { agAttrF    :: DrawingAttr -> DrawingAttr
        , agDrawF    :: DrawingAttr -> Point2 u -> Graphic u
@@ -48,21 +49,44 @@ data AGraphic u a = AGraphic
 instance Functor (AGraphic u) where
   fmap f (AGraphic af df mf) = AGraphic af df (\attr pt -> f $ mf attr pt)
 
+instance Applicative (AGraphic u) where
+  pure a = AGraphic id (\_ _ -> id) (\_ _ -> a)
+  (AGraphic af1 df1 mf1) <*> (AGraphic af2 df2 mf2) = AGraphic af df mf
+      where
+        af           = af2 . af1
+        df attr pt   = df2 (af2 attr) pt . df1 (af1 attr) pt
+        mf attr pt   = mf1 attr pt $ mf2 attr pt
+
+-- | AGraphic2 for connectors...
+--
+data AGraphic2 u a = AGraphic2 
+       { ag2AttrF    :: DrawingAttr -> DrawingAttr
+       , ag2DrawF    :: DrawingAttr -> Point2 u -> Point2 u -> Graphic u
+       , ag2MakeF    :: DrawingAttr -> Point2 u -> Point2 u -> a
+       }
+
+instance Functor (AGraphic2 u) where
+  fmap f (AGraphic2 af df mf) = 
+      AGraphic2 af df (\attr p1 p2 -> f $ mf attr p1 p2)
+
+
+instance Applicative (AGraphic2 u) where
+  pure a = AGraphic2 id (\_ _ _ -> id) (\_ _ _ -> a)
+  (AGraphic2 af1 df1 mf1) <*> (AGraphic2 af2 df2 mf2) = AGraphic2 af df mf
+      where
+        af            = af2 . af1 
+        df attr p1 p2 = df2 (af2 attr) p1 p2 . df1 (af1 attr) p1 p2
+        mf attr p1 p2 = mf1 attr p1 p2 $ mf2 attr p1 p2
+
+
 
 -- This doesn't work like at on MGraphicF, as the point is not 
 -- scaled w.r.t. TurtleScaleM ...
 --
 at :: AGraphic u a -> Point2 u -> AGraphic u a
 at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
-                                          (\attr _ -> mf attr pt)
+                                        (\attr _ -> mf attr pt)
 
-instance Applicative (AGraphic u) where
-  pure a = AGraphic id (\_ _ -> id) (\_ _ -> a)
-  (AGraphic af1 df1 mf1) <*> (AGraphic af2 df2 mf2) = AGraphic af df mf
-     where
-       af           = af2 . af1
-       df attr pt   = df2 (af2 attr) pt . df1 (af1 attr) pt
-       mf attr pt   = mf1 attr pt $ mf2 attr pt
 
 
 -- getPos should be a class method outside of Turtle
@@ -77,30 +101,13 @@ node (AGraphic af df mf) =
 
 
 
--- OLD...
+connect :: (Num u, TraceM m (Primitive u), DrawingCtxM m) 
+        => AGraphic2 u a -> Point2 u -> Point2 u -> m a
+connect (AGraphic2 af df mf) p1 p2 = 
+    askDrawingCtx >>= \a0 ->
+    let attr = af a0 in trace (df attr p1 p2) >> return (mf attr p1 p2)
 
+infixr 7 `props`
 
-
-type MGraphicF m u a = Point2 u -> m a
-
-
-{-
-traceG :: (Monad m, TraceM m (Primitive u)) => GraphicF u -> MGraphicF m u ()
-traceG fn = \pt -> trace (fn pt)
-
--- MGraphic functions will have to trace themselves...
-
-node :: (TraceM m (Primitive u), TurtleScaleM m u, Num u) 
-     => MGraphicF m u a -> m a 
-node mgF = getPos >>= \pt -> mgF pt
-
-
-
-
-infixr 6 `at` 
-
-at :: (Num u, TraceM m (Primitive u), TurtleScaleM m u) 
-   => MGraphicF m u a -> (Int,Int) -> m a
-at mgF coord = scaleCoord coord >>= \pt -> mgF pt
-
--}
+props :: AGraphic u a -> (DrawingAttr -> DrawingAttr) -> AGraphic u a
+props (AGraphic attrF drawF mkF) updF = AGraphic (updF . attrF) drawF mkF

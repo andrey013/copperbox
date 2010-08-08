@@ -27,6 +27,8 @@ description:
     attention must be paid to the Z-order of drawing for any
     code that needs to transition.
   .
+  * Removed MGraphicF type added AGraphic.
+  .
   0.2.0 to 0.3.0 :
   . 
   * Added the anchors, monads, drawingAttrs...
