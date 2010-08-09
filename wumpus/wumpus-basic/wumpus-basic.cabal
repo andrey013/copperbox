@@ -76,6 +76,7 @@ library
   exposed-modules:
     Wumpus.Basic.Anchors,
     Wumpus.Basic.AnchorDots,
+    Wumpus.Basic.Arrowheads,
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,

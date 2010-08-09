@@ -76,6 +76,8 @@ description:
   * Added FromPtSize class constraints to various functions in
     @Core.Picture@.
   .
+  * Added @charWidth@ to @Core.FontSize@.
+  .
   0.21.0 to 0.22.0:
   .
   * Moved the deprecated module @Wumpus.Extra.PictureLanguage@

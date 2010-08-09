@@ -11,9 +11,9 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Anchor points on \"shapes\".
+-- Anchor points on shapes.
 --
--- ** WARNING ** this module is highly experimental, and may 
+-- \*\* WARNING \*\* this module is an experiment, and may 
 -- change significantly or even be dropped from future revisions.
 -- 
 --------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ class CardinalAnchor2 t where
 -- on the baseline.
 --
 class TextAnchor t where
-  textAnchor :: DUnit t ~ u => t -> Point2 u
+  baselineSW :: DUnit t ~ u => t -> Point2 u
 
 
 -- | Anchor on a border that can be identified with and angle.
