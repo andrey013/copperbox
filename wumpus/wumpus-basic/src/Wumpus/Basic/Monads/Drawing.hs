@@ -23,6 +23,8 @@ module Wumpus.Basic.Monads.Drawing
   , AGraphic2(..)
   , node
   , at
+  , liftAG
+  , liftAG2
   , connect
   , props
 
@@ -98,6 +100,21 @@ node (AGraphic af df mf) =
     askDrawingCtx >>= \a0 ->
     getPos        >>= \pt ->
     let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
+
+
+liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+       => AGraphic u a -> Point2 u -> m a
+liftAG (AGraphic af df mf) pt = 
+    askDrawingCtx >>= \a0 ->
+    let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
+
+
+liftAG2 :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+       => AGraphic2 u a -> Point2 u -> Point2 u -> m a
+liftAG2 (AGraphic2 af df mf) p1 p2 = 
+    askDrawingCtx >>= \a0 ->
+    let attr = af a0 in trace (df attr p1 p2) >> return (mf attr p1 p2)
+
 
 
 

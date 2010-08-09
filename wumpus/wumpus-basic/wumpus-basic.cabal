@@ -29,6 +29,8 @@ description:
   .
   * Removed MGraphicF type added AGraphic.
   .
+  * Initial work on arrow drawing.
+  .
   0.2.0 to 0.3.0 :
   . 
   * Added the anchors, monads, drawingAttrs...
@@ -77,6 +79,7 @@ library
     Wumpus.Basic.Anchors,
     Wumpus.Basic.AnchorDots,
     Wumpus.Basic.Arrowheads,
+    Wumpus.Basic.Arrows,
     Wumpus.Basic.Dots,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,

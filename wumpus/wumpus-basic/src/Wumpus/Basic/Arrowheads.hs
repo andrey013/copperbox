@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -40,16 +39,16 @@ import Data.AffineSpace                 -- package: vector-space
 
 tripoints :: Floating u
           => Radian -> u -> Radian -> Point2 u -> (Point2 u, Point2 u)
-tripoints triang height theta tip = (tip .+^ v1, tip .+^ v2)
+tripoints triang xchar_height theta tip = (tip .-^ v1, tip .-^ v2)
   where
     halfang = 0.5 * triang
-    d       = height * (fromRadian $ cos halfang)
+    d       = xchar_height / (fromRadian $ cos halfang)
     v1      = avec (theta + halfang) d
     v2      = avec (theta - halfang) d
 
 
 
--- height == char-width
+-- width = xchar_height
 -- filled with stroke colour!
 
 triAng :: (Floating u, Real u, FromPtSize u)
@@ -58,7 +57,7 @@ triAng :: (Floating u, Real u, FromPtSize u)
       -> DrawingAttr -> Radian -> GraphicF u
 triAng ang fn attr theta pt = wrapG $ fn attr $ vertexPath [pt,u,v]
   where
-    sz    = fromPtSize $ charWidth $ font_size $ font_props attr
+    sz    = fromPtSize $ xcharHeight $ font_size $ font_props attr
     (u,v) = tripoints ang sz theta  pt
 
 
