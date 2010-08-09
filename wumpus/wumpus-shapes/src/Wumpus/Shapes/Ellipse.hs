@@ -21,8 +21,7 @@ module Wumpus.Shapes.Ellipse
     Ellipse(..)
   , DEllipse
   , ellipse
-  , strokeEllipse
-  , fillEllipse
+  , ellipse_
 
   ) where
 
@@ -33,7 +32,8 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core hiding ( Ellipse, ellipse )        -- package: wumpus-core
 import Wumpus.Basic.Anchors                           -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-
+import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Monads.Drawing
 
 --------------------------------------------------------------------------------
 
@@ -63,6 +63,9 @@ calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> Ellipse u -> Point2 u
 calcPoint f = withGeom $ \ctm rx ry -> 
     let (V2 x y) = f rx ry in ctmDisplace x y ctm
 
+updateCTM :: (CTM u -> CTM u) -> Ellipse u -> Ellipse u
+updateCTM f = star (\s m -> s { ell_ctm = f m } ) ell_ctm
+
 
 -------------------------------------------------------------------------------- 
 
@@ -84,10 +87,6 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
   northwest = calcPoint $ \rx ry -> rescale rx ry $ avec (1.25*pi) rx
 
 
--- helper
-updateCTM :: (CTM u -> CTM u) -> Ellipse u -> Ellipse u
-updateCTM f = star (\s m -> s { ell_ctm = f m } ) ell_ctm
-
 instance (Real u, Floating u) => Rotate (Ellipse u) where
   rotate r = updateCTM (rotateCTM r)
 
@@ -97,10 +96,6 @@ instance Num u => Scale (Ellipse u) where
 instance Num u => Translate (Ellipse u) where
   translate x y = updateCTM (translateCTM x y)
 
-
-instance AddLabel (Ellipse u) where
-  ell `addLabel` lbl = ell { ell_label = Just lbl }
-     
 
 
 --------------------------------------------------------------------------------
@@ -113,6 +108,43 @@ ellipse rx ry = Ellipse { ell_radius_x = rx
                         , ell_label    = Nothing }
  
 
+ellipse_ :: Num u => u -> u -> String -> Ellipse u
+ellipse_ rx ry str = (ellipse rx ry) { ell_label = Just $ ShapeLabel str }
+ 
+
+
+strokeE :: (Real u, Floating u)
+        => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
+strokeE attr (P2 x y) = 
+    wrapG . cstroke (strokeAttr attr) . ellipsePath . translate x y 
+
+
+fillE :: (Real u, Floating u) 
+      => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
+fillE attr (P2 x y) = 
+    wrapG . fill (fillAttr attr) . ellipsePath . translate x y
+
+textE :: (Real u, Floating u, FromPtSize u) 
+      => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
+textE attr (P2 x y) ell = maybe id sk $ ell_label ell
+  where
+    ctm      = ell_ctm $ translate x y ell
+    sk label = labelGraphic label (textAttr attr) ctm 
+
+
+make :: (Real u, Floating u) 
+     => DrawingAttr -> Point2 u -> Ellipse u -> Ellipse u
+make _ (P2 x y) = translate x y
+
+
+instance (Real u, Floating u, FromPtSize u) => Draw (Ellipse u) where
+  draw ell = AGraphic id df (\a p -> make a p ell)
+    where
+      df attr pt = textE attr pt ell . strokeE attr pt ell
+                                     . fillE attr pt ell
+
+
+{-
 -- Hand-build the circle with bezier arcs.
 --
 -- This makes a better drawing than using PostScript\'s @arc@
@@ -125,7 +157,10 @@ drawEllipse drawF ell = labelpic . ellpic
   where
     labelpic = maybe id (labelGraphic (ell_ctm ell)) $ ell_label ell
     ellpic  = wrapG $ drawF $ curvedPath $ ellipsePoints ell
+-}
 
+ellipsePath :: (Real u, Floating u) => Ellipse u -> Path u
+ellipsePath = curvedPath . ellipsePoints
 
 ellipsePoints :: (Real u, Floating u) => Ellipse u -> [Point2 u]
 ellipsePoints (Ellipse { ell_ctm=ctm, ell_radius_x=rx, ell_radius_y=ry }) = 
@@ -141,14 +176,3 @@ rescale :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
 rescale rx ry = scale 1 (ry/rx) 
 
 
-strokeEllipse :: (Real u, Floating u, Stroke t) 
-             => t -> Ellipse u -> Graphic u
-strokeEllipse t  = drawEllipse (cstroke t)
-
-fillEllipse :: (Real u, Floating u, Fill t) 
-             => t -> Ellipse u -> Graphic u
-fillEllipse t  = drawEllipse (fill t)
-
-instance (Real u, Floating u) => DrawShape (Ellipse u) where
-  strokeShape t = drawEllipse (cstroke t) 
-  fillShape   t = drawEllipse (fill t)

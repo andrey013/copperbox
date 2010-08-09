@@ -3,11 +3,7 @@
 
 module Demo01 where
 
-import Wumpus.Shapes.Base
-import Wumpus.Shapes.Circle
-import Wumpus.Shapes.Coordinate
-import Wumpus.Shapes.Diamond
-import Wumpus.Shapes.Rectangle
+import Wumpus.Shapes
 
 import Wumpus.Core                                  -- package: wumpus-core
 import Wumpus.Basic.Anchors
@@ -29,13 +25,16 @@ main = do
 
 pic1 :: DPicture
 pic1 = drawGraphicU $ 
-         execConsDrawing (regularConfig 40) (0,0) (standardAttr 24) $ mf
+         execConsDrawing (regularConfig 40) (0,0) (standardAttr 14) $ mf
   where
     mf = do { r <- liftAG $ draw $ rotate30 $ translate 0 50 
-                                            $ rectangle_ 80 20 "rect"
+                                            $ rectangle_ 80 20 "rectangle"
             ; _ <- liftAG $ (draw $ coordinate) `at` (north r)
-            ; _ <- liftAG $ (draw $ circle_ 30 "circle")  `at` (P2 100 0)
-            ; _ <- liftAG $ (draw $ diamond_ 20 40 "diamond")  `at` (P2 100 40)
+            ; _ <- liftAG $ (draw $ circle_ 30 "circle")       `at` (P2 100 0)
+            ; _ <- liftAG $ (draw $ diamond_ 80 40 "diamond")  `at` (P2 100 60)
+            ; _ <- liftAG $ (draw $ ellipse_ 40 20 "ellipse")  `at` (P2 200 0)
+            ; _ <- liftAG $ (draw $ freeLabel "free-label")    `at` (P2 200 60)
+
             ; return ()
             }
 

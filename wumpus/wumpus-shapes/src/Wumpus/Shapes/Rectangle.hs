@@ -40,10 +40,10 @@ import Wumpus.Basic.Monads.Drawing
 -- | Rectangles.
 --
 data Rectangle u = Rectangle 
-      { rect_half_width    :: u
-      , rect_half_height   :: u
-      , rect_ctm           :: CTM u
-      , rect_label         :: Maybe ShapeLabel
+      { rect_half_width   :: u
+      , rect_half_height  :: u
+      , rect_ctm          :: CTM u
+      , rect_label        :: Maybe ShapeLabel
       }
 
 type DRectangle = Rectangle Double

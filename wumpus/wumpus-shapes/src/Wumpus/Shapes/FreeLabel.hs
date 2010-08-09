@@ -20,7 +20,6 @@ module Wumpus.Shapes.FreeLabel
     FreeLabel(..)
   , DFreeLabel
   , freeLabel
-  , drawFreeLabel
 
   ) where
 
@@ -31,15 +30,18 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Anchors             -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-
+import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Monads.Drawing
 
 --------------------------------------------------------------------------------
 -- Free floating label
 
 
 data FreeLabel u = FreeLabel
-      { flbl_label         :: ShapeLabel
-      , flbl_ctm           :: CTM u
+      { lbl_half_width    :: u
+      , lbl_half_height   :: u
+      , lbl_label         :: ShapeLabel
+      , lbl_ctm           :: CTM u
       }
 
 type DFreeLabel = FreeLabel Double
@@ -48,23 +50,38 @@ type DFreeLabel = FreeLabel Double
 type instance DUnit (FreeLabel u) = u
 
 
+-- FreeLabel is an exception.
+--
+-- It needs DrawingAttr to calculate geometries (i.e. anchor
+-- points). But DrawingAttr are supplied at lifting to AGraphic 
+-- time, not at construction time.
+--
+-- Don\'t know how to handle this at the moment...
+-- 
+-- Are all anchors intially the center, until the FreeLabel is 
+-- lifted to an AGraphic?
+--
 
 -- CTM * half_width * half_height      
 --
 withGeom :: Fractional u => (CTM u -> u -> u -> a) -> FreeLabel u -> a
-withGeom f (FreeLabel { flbl_ctm=ctm, flbl_label=lbl }) = 
-    f ctm (0.5*twidth) (0.5*theight)
+withGeom f (FreeLabel { lbl_ctm=ctm, lbl_half_width=hw, lbl_half_height=hh }) = 
+    f ctm hw hh
+
+{-
   where
     ((_,attr),text)   = deconsLabel lbl
     font_sz           = font_size attr
     twidth            = textWidth  font_sz (length text)
     theight           = textHeight font_sz
-    
+-}    
      
 calcPoint :: (Real u, Floating u) => (u -> u -> Vec2 u) -> FreeLabel u -> Point2 u
 calcPoint f = withGeom $ \ctm hw hh -> 
     let (V2 x y) = f hw hh in ctmDisplace x y ctm
 
+updateCTM :: (CTM u -> CTM u) -> FreeLabel u -> FreeLabel u
+updateCTM f = star (\s m -> s { lbl_ctm = f m } ) lbl_ctm
 
 
 
@@ -72,9 +89,6 @@ calcPoint f = withGeom $ \ctm hw hh ->
 -- instances
 
 
--- helper
-updateCTM :: (CTM u -> CTM u) -> FreeLabel u -> FreeLabel u
-updateCTM f = star (\s m -> s { flbl_ctm = f m } ) flbl_ctm
 
 instance (Floating u, Real u) => Rotate (FreeLabel u) where
   rotate r = updateCTM (rotateCTM r)
@@ -87,7 +101,7 @@ instance Num u => Translate (FreeLabel u) where
 
 
 instance (Real u, Floating u) => CenterAnchor (FreeLabel u) where
-    center = ctmCenter . flbl_ctm
+    center = ctmCenter . lbl_ctm
 
 
 instance (Real u, Floating u) => CardinalAnchor (FreeLabel u) where
@@ -103,10 +117,39 @@ instance (Real u, Floating u) => CardinalAnchor2 (FreeLabel u) where
   northwest = calcPoint $ \ hw hh -> V2 (-hw) hh
 
 
-freeLabel :: Num u => FontAttr -> DRGB -> String -> FreeLabel u
-freeLabel attr rgb s = FreeLabel (ShapeLabel s attr rgb) identityCTM
+
+--------------------------------------------------------------------------------
+
+freeLabel :: Num u => String -> FreeLabel u
+freeLabel s = FreeLabel { lbl_half_width    = 0
+                        , lbl_half_height   = 0
+                        , lbl_label         = ShapeLabel s
+                        , lbl_ctm           = identityCTM
+                        }
 
 
 
-drawFreeLabel :: (Real u, Floating u) => FreeLabel u -> Graphic u
-drawFreeLabel lbl = labelGraphic (flbl_ctm lbl) $ flbl_label lbl
+
+textC :: (Real u, Floating u, FromPtSize u) 
+      => DrawingAttr -> Point2 u -> FreeLabel u -> Graphic u
+textC attr (P2 x y) lbl = labelGraphic (lbl_label lbl) (textAttr attr) ctm 
+  where
+    ctm      = lbl_ctm $ translate x y lbl
+
+
+make :: (Real u, Floating u, FromPtSize u) 
+     => DrawingAttr -> Point2 u -> FreeLabel u -> FreeLabel u
+make attr (P2 x y) lbl = 
+    (translate x y lbl) { lbl_half_width = hw, lbl_half_height = hh }
+
+  where
+    (w,h)             = textDimensions (getShapeLabel $ lbl_label lbl) attr 
+    hw                = 0.5*w
+    hh                = 0.5*h
+    
+
+
+instance (Real u, Floating u, FromPtSize u) => Draw (FreeLabel u) where
+  draw lbl = AGraphic id (\a p -> textC a p lbl)  (\a p -> make a p lbl)
+
+

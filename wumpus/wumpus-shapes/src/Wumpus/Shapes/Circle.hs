@@ -143,22 +143,6 @@ instance (Real u, Floating u, FromPtSize u) => Draw (Circle u) where
                                       . fillC attr pt circ
 
 
-{-
-
--- Hand-build the circle with bezier arcs.
---
--- This makes a better drawing than using PostScript\'s @arc@
--- command (via ellipse in wumpus-core) as line width does not
--- get affected by the CTM.
---
-drawCircle :: (Real u, Floating u) 
-           => (Path u -> Primitive u) -> Circle u -> Graphic u
-drawCircle drawF circ = labelpic . circpic
-  where
-    labelpic = maybe id (labelGraphic (circ_ctm circ)) $ circ_label circ
-    circpic  = wrapG $ drawF $ curvedPath $ circlePoints circ
--}
-
 
 
 circlePath :: (Real u, Floating u) => Circle u -> Path u
@@ -171,14 +155,3 @@ circlePoints (Circle { circ_ctm=ctm, circ_radius=radius }) = map fn all_points
     all_points  = bezierCircle 2 radius zeroPt 
 
 
-{-
-
-strokeCircle :: (Real u, Floating u, Stroke t) 
-             => t -> Circle u -> Graphic u
-strokeCircle t  = drawCircle (cstroke t)
-
-fillCircle :: (Real u, Floating u, Fill t) 
-             => t -> Circle u -> Graphic u
-fillCircle t  = drawCircle (fill t)
-
--}

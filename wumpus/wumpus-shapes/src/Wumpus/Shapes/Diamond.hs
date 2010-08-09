@@ -40,8 +40,8 @@ import Data.VectorSpace
 -- | Diamond.
 --
 data Diamond u = Diamond 
-      { dia_half_height   :: u
-      , dia_half_width    :: u
+      { dia_half_width    :: u
+      , dia_half_height   :: u
       , dia_ctm           :: CTM u
       , dia_label         :: Maybe ShapeLabel
       }
@@ -158,26 +158,6 @@ instance (Real u, Floating u, FromPtSize u) => Draw (Diamond u) where
 
 
 --
-
-{-
-
-drawDiamond :: (Real u, Floating u)   
-            => (Path u -> Primitive u) -> Diamond u -> Graphic u
-drawDiamond drawF dia = labelpic . diapic
-  where
-    labelpic = maybe id (labelGraphic (dia_ctm dia)) $ dia_label dia
-    diapic   = wrapG $ drawF $ vertexPath $ extractVertexList dia
-
-
-strokeDiamond :: (Real u, Floating u, Stroke t) 
-              => t -> Diamond u -> Graphic u
-strokeDiamond t  = drawDiamond (cstroke t) 
-
-
-fillDiamond :: (Real u, Floating u, Fill t) 
-            => t -> Diamond u -> Graphic u
-fillDiamond t = drawDiamond (fill t)
--}
  
 
 diamondPath :: (Real u, Floating u) => Diamond u -> Path u
