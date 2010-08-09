@@ -21,20 +21,20 @@ module Wumpus.Shapes.Diamond
     Diamond(..)
   , DDiamond
   , diamond
-  , strokeDiamond
-  , fillDiamond
-  
+  , diamond_  
 
   ) where
 
 import Wumpus.Shapes.Base 
 import Wumpus.Shapes.Utils
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Monads.Drawing
 
-import Data.AffineSpace                 -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 -- | Diamond.
@@ -111,9 +111,6 @@ instance Num u => Translate (Diamond u) where
   translate x y = updateCTM (translateCTM x y)
 
 
-instance AddLabel (Diamond u) where
-  dia `addLabel` lbl = dia { dia_label = Just lbl }
-
 --------------------------------------------------------------------------------
 -- Construction
 
@@ -122,11 +119,47 @@ instance AddLabel (Diamond u) where
 diamond :: Fractional u => u -> u -> Diamond u
 diamond w h = Diamond (w*0.5) (h*0.5) identityCTM Nothing
 
+diamond_ :: Fractional u => u -> u -> String -> Diamond u
+diamond_ w h str = (diamond w h) { dia_label = Just $ ShapeLabel str }
 
 --------------------------------------------------------------------------------
--- Drawing 
+
+
+strokeD :: (Real u, Floating u)
+        => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
+strokeD attr (P2 x y) = 
+    wrapG . cstroke (strokeAttr attr) . diamondPath . translate x y 
+
+
+fillD :: (Real u, Floating u) 
+      => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
+fillD attr (P2 x y) = 
+    wrapG . fill (fillAttr attr) . diamondPath . translate x y
+
+textD :: (Real u, Floating u, FromPtSize u) 
+      => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
+textD attr (P2 x y) dia = maybe id sk $ dia_label dia
+  where
+    ctm      = dia_ctm $ translate x y dia
+    sk label = labelGraphic label (textAttr attr) ctm 
+
+
+make :: (Real u, Floating u) 
+     => DrawingAttr -> Point2 u -> Diamond u -> Diamond u
+make _ (P2 x y) = translate x y
+ 
+
+
+instance (Real u, Floating u, FromPtSize u) => Draw (Diamond u) where
+  draw dia = AGraphic id df (\a p -> make a p dia)
+    where
+      df attr pt = textD attr pt dia . strokeD attr pt dia
+                                     . fillD attr pt dia
+
 
 --
+
+{-
 
 drawDiamond :: (Real u, Floating u)   
             => (Path u -> Primitive u) -> Diamond u -> Graphic u
@@ -144,12 +177,12 @@ strokeDiamond t  = drawDiamond (cstroke t)
 fillDiamond :: (Real u, Floating u, Fill t) 
             => t -> Diamond u -> Graphic u
 fillDiamond t = drawDiamond (fill t)
-
+-}
  
 
-extractVertexList :: (Real u, Floating u) => Diamond u -> [Point2 u]
-extractVertexList = sequence [south,east,north,west]
+diamondPath :: (Real u, Floating u) => Diamond u -> Path u
+diamondPath = vertexPath . extractVertexPoints
 
-instance (Real u, Floating u) => DrawShape (Diamond u) where
-  strokeShape t = drawDiamond (cstroke t) 
-  fillShape   t = drawDiamond (fill t)
+extractVertexPoints :: (Real u, Floating u) => Diamond u -> [Point2 u]
+extractVertexPoints = sequence [south,east,north,west]
+

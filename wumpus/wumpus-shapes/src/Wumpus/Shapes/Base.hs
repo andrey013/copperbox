@@ -32,9 +32,7 @@ module Wumpus.Shapes.Base
 
   -- * Shape label
   , ShapeLabel(..)
-  , drawShapeLabel
   , labelGraphic
-  , DrawShape(..)
 
   , Draw(..)
 
@@ -121,10 +119,13 @@ newtype ShapeLabel = ShapeLabel { getShapeLabel :: String }
   deriving (Eq,Show)
 
 
-drawShapeLabel :: (Real u, Floating u, FromPtSize u)
-               => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Primitive u
-drawShapeLabel sl (rgb,attr) ctm = 
-    rotatePrimitive ang $ textlabel (rgb,attr) text pt
+
+-- Note - labels are not scaled ....
+--
+labelGraphic :: (Real u, Floating u, FromPtSize u) 
+             => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Graphic u
+labelGraphic sl (rgb,attr) ctm =
+    wrapG $ rotatePrimitive ang $ textlabel (rgb,attr) text pt
   where
     (ang,ctr)         = (ctm_rotation ctm, ctm_pos ctm)        
     text              = getShapeLabel sl
@@ -134,26 +135,18 @@ drawShapeLabel sl (rgb,attr) ctm =
     pt                = let p1 = ctr .-^ V2 (0.5 * twidth) (0.5 * theight)
                         in rotateAbout ang ctr p1
 
--- Note - labels are not scaled ....
---
-labelGraphic :: (Real u, Floating u, FromPtSize u) 
-             => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Graphic u
-labelGraphic lbl attrs ctm = wrapG $ drawShapeLabel lbl attrs ctm
-
 
 -- OLD - stroke fill (and clip) should be lifters to AGraphic.
 
 -- Can all shapes (except coordinates) be stroked and filled?
--- Probaly better to have separate type classes...
+-- Probably better to have separate type classes...
 
-class DrawShape sh where
-  strokeShape :: (Stroke t, u ~ DUnit sh) => t -> sh -> Graphic u
-  fillShape   :: (Fill t, u ~ DUnit sh)   => t -> sh -> Graphic u 
-
-{-
-class Stroke sh where
-  stroke :: (u ~ DUnit sh) => sh -> AGraphic u sh
--} 
 
 class Draw sh where
   draw :: (u ~ DUnit sh) => sh -> AGraphic u sh
+
+{-
+-- stroke okay, but fill has a name clash...
+class Stroke sh where
+  stroke :: (u ~ DUnit sh) => sh -> AGraphic u sh
+-} 
