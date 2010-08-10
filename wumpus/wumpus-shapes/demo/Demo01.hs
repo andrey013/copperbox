@@ -8,7 +8,8 @@ import Wumpus.Shapes
 import Wumpus.Core                                  -- package: wumpus-core
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic hiding ( DRectangle )   -- package: wumpus-basic
-import Wumpus.Basic.Monads.ConsDrawing
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.TurtleMonad
 -- import Wumpus.Basic.SVGColours
 
 import System.Directory
@@ -25,17 +26,18 @@ main = do
 
 pic1 :: DPicture
 pic1 = drawGraphicU $ 
-         execConsDrawing (regularConfig 40) (0,0) (standardAttr 14) $ mf
+         execTurtleDrawing (regularConfig 40) (0,0) (standardAttr 14) $ mf
   where
-    mf = do { r <- liftAG $ draw $ rotate30 $ translate 0 50 
+    mf = do { r <- node $ draw $ rotate30 $ translate 0 50 
                                             $ rectangle_ 80 20 "rectangle"
-            ; _ <- liftAG $ (draw $ coordinate) `at` (north r)
-            ; _ <- liftAG $ (draw $ circle_ 30 "circle")       `at` (P2 100 0)
-            ; _ <- liftAG $ (draw $ diamond_ 80 40 "diamond")  `at` (P2 100 60)
-            ; _ <- liftAG $ (draw $ ellipse_ 40 20 "ellipse")  `at` (P2 200 0)
-            ; _ <- liftAG $ (draw $ freeLabel "free-label")    `at` (P2 200 60)
+            ; _ <- node $ (draw $ coordinate) `at` (north r)
+            ; _ <- node $ (draw $ circle_ 30 "circle")       `at` (P2 100 0)
+            ; _ <- node $ (draw $ diamond_ 80 40 "diamond")  `at` (P2 100 60)
+            ; _ <- node $ (draw $ ellipse_ 40 20 "ellipse")  `at` (P2 200 0)
+            ; _ <- node $ (draw $ freeLabel "free-label")    `at` (P2 200 60)
 
             ; return ()
             }
+
 
 

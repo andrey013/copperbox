@@ -19,10 +19,9 @@
 module Wumpus.Shapes.Base
   ( 
 
-    liftAG
 
   -- * CTM 
-  , CTM(..)
+    CTM(..)
   , identityCTM
   , scaleCTM
   , rotateCTM
@@ -43,9 +42,6 @@ import Wumpus.Shapes.Utils
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Graphic             -- package: wumpus-basic
 import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.DrawingCtxClass
-import Wumpus.Basic.Monads.TraceClass
-import Wumpus.Basic.Monads.TurtleClass
 
 
 import Data.AffineSpace                 -- package: vector-space
@@ -55,10 +51,6 @@ import Control.Applicative
 
 -- Note - Need to think how to handle multi-line labels...
 
-
-liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
-       => AGraphic u a -> m a
-liftAG = node
 
 
 

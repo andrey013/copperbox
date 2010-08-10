@@ -40,7 +40,7 @@ sparkLine drawF ds = \bv -> drawF $ map (scaleXY `flip` bv) ds
 
 sparklineRectangle :: FontAttr -> Int -> DRectangle
 sparklineRectangle attr letter_count = 
-    Rectangle (textWidth sz letter_count) (fromIntegral sz)
+    Rectangle (fromPtSize $ textWidth sz letter_count) (fromIntegral sz)
   where
     sz = font_size attr
 

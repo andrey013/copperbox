@@ -8,6 +8,7 @@ import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.TurtleMonad
 import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -30,12 +31,12 @@ demo01 = do
 
 pic1 :: DPicture
 pic1 = drawGraphicU $ 
-           execConsDrawing (regularConfig 40) (0,0) (standardAttr 24) $ do
+           execTurtleDrawing (regularConfig 40) (0,0) (standardAttr 24) $ do
         a <- node dotCircle 
-        b <- dotText "text" `at` (1,2)
-        connect (northeast a) (radialAnchor (5*pi/4) b)
+        b <- node $ (dotText "text") `at` (P2 1 2)
+        connect' (northeast a) (radialAnchor (5*pi/4) b)
         
-connect :: (Num u, TraceM m (Primitive u)) => Point2 u -> Point2 u -> m ()
-connect a b = trace1 $ ostroke black $ vertexPath [a,b]  
+connect' :: Num u => Point2 u -> Point2 u -> TurtleDrawing u ()
+connect' a b = trace $ wrapG $ ostroke black $ vertexPath [a,b]  
 
 

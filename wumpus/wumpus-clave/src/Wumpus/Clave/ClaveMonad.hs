@@ -35,15 +35,12 @@ module Wumpus.Clave.ClaveMonad
 import Wumpus.Clave.Core
 import Wumpus.Clave.Drawing
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
-import Wumpus.Basic.Monads.TraceMonad
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Monads.TurtleMonad
 
-import MonadLib                         -- package: monadLib
-
-import Control.Applicative
+import MonadLib                                 -- package: monadLib
 
 
 data ClaveConfig = ClaveConfig 
@@ -51,9 +48,8 @@ data ClaveConfig = ClaveConfig
       , scalefun        :: Int -> Double 
       }
 
-newtype ClaveM a = ClaveM { getClaveM ::  TurtleT 
-                                        ( ReaderT ClaveConfig 
-                                        ( TraceT  DPrimitive  Id)) a }
+newtype ClaveM a = ClaveM { getClaveM ::  ReaderT ClaveConfig 
+                                        ( TurtleDrawing Double) a }
 
 
 instance Functor ClaveM where
@@ -63,58 +59,59 @@ instance Monad ClaveM where
   return a = ClaveM $ return a
   m >>= k  = ClaveM $ getClaveM m >>= getClaveM . k
 
-instance TraceM ClaveM DPrimitive where
-  trace  h = ClaveM $ lift $ lift $ trace h
-  trace1 i = ClaveM $ lift $ lift $ trace1 i
+instance TraceM ClaveM Double where
+  trace  h = ClaveM $ lift $ trace h
 
 instance ReaderM ClaveM ClaveConfig where
-  ask      = ClaveM $ lift $ ask
+  ask      = ClaveM $ ask
 
 instance TurtleM ClaveM where
-  getLoc   = ClaveM $ getLoc
-  setLoc c = ClaveM $ setLoc c
+  getLoc      = ClaveM $ lift $ getLoc
+  setLoc c    = ClaveM $ lift $ setLoc c
+  getOrigin   = ClaveM $ lift $ getOrigin
+  setOrigin o = ClaveM $ lift $ setOrigin o
+
+
+instance TurtleScaleM ClaveM Double where
+  xStep    = ClaveM $ lift $ xStep
+  yStep    = ClaveM $ lift $ yStep
 
 
 evalClaveM :: ClaveConfig -> ClaveM a -> DGraphic
 evalClaveM cfg mf = snd $ runClaveM cfg mf 
 
-runClaveM :: ClaveConfig -> ClaveM a -> ((a,(Int,Int)), DGraphic)
-runClaveM cfg mf = runId 
-                 ( runTraceT
-                 ( runReaderT cfg 
-                 ( runTurtleT $ getClaveM mf )))
+runClaveM :: ClaveConfig -> ClaveM a -> (a,DGraphic)
+runClaveM cfg mf = runTurtleDrawing (regularConfig 20) (0,0) (standardAttr 12)
+                 ( runReaderT cfg $ getClaveM mf )
 
 
-nextCoord :: ClaveM Coord
-nextCoord = setsLoc $ \(Coord x y) -> (Coord x y, Coord (x+1) y) 
-
+nextPoint :: ClaveM DPoint2
+nextPoint = moveRight >> getPos
 
 -- xdistance :: ClaveM Int
 -- xdistance = getLoc >>= \(Coord x _) -> return x
 
-scaleCoord :: Coord -> ClaveM DPoint2 
-scaleCoord (Coord x y) = (\sf -> P2 (sf x) (sf y)) <$> asks scalefun
 
 
 beat :: ClaveM ()
-beat = nextCoord >>= scaleCoord >>= \pt -> 
+beat = nextPoint                >>= \pt -> 
        asks box_height          >>= \h  ->
        trace (circleF h black pt)
 
 rest :: ClaveM ()
-rest = nextCoord >> return ()
+rest = nextPoint >> return ()
 
 endLine :: ClaveM ()
-endLine = getLoc                    >>= \(Coord n y) ->
-          asks box_height           >>= \h           ->
-          scaleCoord (Coord 0 y)    >>= \pt          ->
+endLine = getPos                    >>= \pt    ->
+          getLoc                    >>= \(n,_) ->
+          asks box_height           >>= \h     ->
           trace (gridF n h 0.5 pt)  >>
           nextLine
 
 -- Doesn't work well with monoid/writer...
  
 highlight :: Int -> DRGB -> ClaveM ()
-highlight n rgb = getLoc >>= scaleCoord     >>= \pt ->
+highlight n rgb = getPos                    >>= \pt ->
                   asks box_height           >>= \h  ->
                   trace (backgroundF n h rgb pt)
           
