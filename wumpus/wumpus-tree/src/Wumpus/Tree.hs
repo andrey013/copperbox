@@ -47,8 +47,8 @@ import Wumpus.Tree.Draw
 
 import Wumpus.Basic.AnchorDots                  -- package: wumpus-basic
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.DrawingCtxClass
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Maybe

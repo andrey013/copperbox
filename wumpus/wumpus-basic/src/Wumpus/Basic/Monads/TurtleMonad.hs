@@ -35,11 +35,18 @@ module Wumpus.Basic.Monads.TurtleMonad
   , runTurtle
   , runTurtleT
 
- 
+
+  , TurtleDrawing
+  , runTurtleDrawing
+  , execTurtleDrawing
+
+  , module Wumpus.Basic.Monads.DrawingMonad
+  , module Wumpus.Basic.Monads.TurtleClass
+   
   ) where
 
-import Wumpus.Basic.Monads.DrawingCtxClass
-import Wumpus.Basic.Monads.TraceClass
+import Wumpus.Basic.Graphic
+import Wumpus.Basic.Monads.DrawingMonad
 import Wumpus.Basic.Monads.TurtleClass
 
 
@@ -155,7 +162,69 @@ instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
 
 instance (Monad m, TraceM m i) => TraceM (TurtleT u m) i where
   trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
-  trace1 a = TurtleT $ \_ s -> trace1 a >> return ((),s)
 
 
+--------------------------------------------------------------------------------
+
+newtype TurtleDrawing u a = TurtleDrawing { 
+          getTurtleDrawing :: TurtleT u (Drawing u) a }
+
+instance Functor (TurtleDrawing u) where
+  fmap f = TurtleDrawing . fmap f . getTurtleDrawing
+
+-- Applicative 
+instance Applicative (TurtleDrawing u) where
+  pure a    = TurtleDrawing $ pure a
+  mf <*> ma = TurtleDrawing $ getTurtleDrawing mf <*> getTurtleDrawing ma
+
+
+-- Monad 
+
+instance Monad (TurtleDrawing u) where
+  return a = TurtleDrawing $ return a
+  m >>= k  = TurtleDrawing $ getTurtleDrawing m >>= (getTurtleDrawing . k)
+
+-- TurtleM
+
+instance TurtleM (TurtleDrawing u) where
+  getLoc      = TurtleDrawing $ getLoc 
+  setLoc c    = TurtleDrawing $ setLoc c
+  getOrigin   = TurtleDrawing $ getOrigin
+  setOrigin o = TurtleDrawing $ setOrigin o
+
+instance TurtleScaleM (TurtleDrawing u) u where
+  xStep    = TurtleDrawing $ xStep
+  yStep    = TurtleDrawing $ yStep
+
+-- TraceM 
+
+instance TraceM (TurtleDrawing u) u where
+  trace a = TurtleDrawing $ lift (trace a)
+
+
+-- DrawingCtxM
+
+instance DrawingCtxM (TurtleDrawing u) where
+  askDrawingCtx   = TurtleDrawing $ lift askDrawingCtx
+  localCtx ctx ma = TurtleDrawing $ localCtx ctx (getTurtleDrawing ma)
+
+
+runTurtleDrawing :: Num u 
+                 => TurtleConfig u 
+                 -> (Int,Int)
+                 -> DrawingAttr 
+                 -> TurtleDrawing u a 
+                 -> (a, Graphic u)
+runTurtleDrawing cfg ogin attr mf = 
+    runDrawing attr ( runTurtleT cfg ogin $ getTurtleDrawing mf)
+
+
+execTurtleDrawing :: Num u 
+                  => TurtleConfig u
+                  -> (Int,Int) 
+                  -> DrawingAttr 
+                  -> TurtleDrawing u a 
+                  -> Graphic u
+execTurtleDrawing cfg ogin attr mf = 
+    snd $ runTurtleDrawing cfg ogin attr mf
 

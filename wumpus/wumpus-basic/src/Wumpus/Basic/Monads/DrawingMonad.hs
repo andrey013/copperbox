@@ -29,6 +29,7 @@ module Wumpus.Basic.Monads.DrawingMonad
   , runDrawingT
   , execDrawingT
 
+  , module Wumpus.Basic.Graphic.DrawingAttr
   , module Wumpus.Basic.Monads.DrawingCtxClass
   , module Wumpus.Basic.Monads.TraceClass
 

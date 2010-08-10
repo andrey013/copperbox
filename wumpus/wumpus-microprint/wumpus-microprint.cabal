@@ -1,5 +1,5 @@
 name:             wumpus-microprint
-version:          0.3.0
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -20,6 +20,10 @@ description:
   \[1\] <http://scg.unibe.ch/archive/papers/Robb05b-microprintsESUG.pdf>
   .
   Changelog:
+  .
+  0.3.0 to 0.4.0:
+  .
+  * ??
   . 
   0.2.0 to 0.3.0:
   .
@@ -47,7 +51,7 @@ library
                       vector-space      >= 0.6,
                       monadLib          >= 3.6,
                       wumpus-core       >= 0.22.0,
-                      wumpus-basic      >= 0.3.0
+                      wumpus-basic      >= 0.4.0
 
   
   exposed-modules:

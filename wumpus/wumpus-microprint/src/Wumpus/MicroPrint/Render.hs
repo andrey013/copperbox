@@ -31,7 +31,7 @@ module Wumpus.MicroPrint.Render
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Monads.ConsDrawing
+import Wumpus.Basic.Monads.TurtleMonad
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.MicroPrint.DrawMonad ( Tile(..), Height ) 
@@ -78,7 +78,7 @@ vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
 vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]
     
 
-newtype RenderMonad a = RM { getRM :: ReaderT MP_config (ConsDrawing Double) a }
+newtype RenderMonad a = RM { getRM :: ReaderT MP_config (TurtleDrawing Double) a }
 
 instance Functor RenderMonad where
   fmap f = RM . fmap f . getRM
@@ -91,9 +91,8 @@ instance Applicative RenderMonad where
   pure  = return
   (<*>) = ap
 
-instance TraceM RenderMonad DPrimitive where
+instance TraceM RenderMonad Double where
   trace  h = RM $ lift $ trace h
-  trace1 i = RM $ lift $ trace1 i
 
 instance ReaderM RenderMonad MP_config where
   ask      = RM $ ask
@@ -114,7 +113,7 @@ drawMicroPrint cfg (xs,h) =
 
 runRender :: MP_config -> RenderMonad a -> (a, DGraphic)
 runRender cfg m = 
-    runConsDrawing (regularConfig 1) (0,0) (standardAttr 14) 
+    runTurtleDrawing (regularConfig 1) (0,0) (standardAttr 14) 
          $ runReaderT cfg $ getRM $ m
 
 interpret :: [Tile] -> RenderMonad ()
