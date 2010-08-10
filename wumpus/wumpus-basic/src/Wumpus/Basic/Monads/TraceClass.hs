@@ -25,10 +25,9 @@ module Wumpus.Basic.Monads.TraceClass
   ) where
 
 
-import Wumpus.Basic.Utils.HList
+import Wumpus.Basic.Graphic
 
 
-class TraceM  m i | m -> i where
-  trace  :: H i -> m ()
-  trace1 :: i -> m ()
+class TraceM  m u | m -> u where
+  trace  :: Graphic u -> m ()
 

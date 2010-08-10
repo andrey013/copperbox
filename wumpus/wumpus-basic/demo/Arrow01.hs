@@ -7,7 +7,8 @@ import Wumpus.Basic.Arrowheads
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.ConsDrawing hiding ( textAttr )
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.DrawingMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -39,8 +40,7 @@ pic1 = drawGraphicU $
            
          
 pic2 :: Picture Double 
-pic2 = drawGraphicU $ 
-           execConsDrawing (regularConfig 40) (0,0) (standardAttr 48) $
+pic2 = drawGraphicU $ execDrawing (standardAttr 48) $
        do { _ <- liftAG dotDisk (P2 0 0) 
           ; _ <- liftAG dotDisk (P2 100 0)  
           ; _ <- liftAG2 arrowOTri90 (P2 0 0) (P2 100 0) 

@@ -94,7 +94,7 @@ at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
 -- getPos should be a class method outside of Turtle
 -- those Bivariate context from PSC could implement it...
 
-node :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+node :: (Num u, TraceM m u, DrawingCtxM m, TurtleScaleM m u) 
        => AGraphic u a -> m a
 node (AGraphic af df mf) = 
     askDrawingCtx >>= \a0 ->
@@ -102,14 +102,14 @@ node (AGraphic af df mf) =
     let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
 
 
-liftAG :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+liftAG :: (Num u, TraceM m u, DrawingCtxM m) 
        => AGraphic u a -> Point2 u -> m a
 liftAG (AGraphic af df mf) pt = 
     askDrawingCtx >>= \a0 ->
     let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
 
 
-liftAG2 :: (Num u, TraceM m (Primitive u), DrawingCtxM m, TurtleScaleM m u) 
+liftAG2 :: (Num u, TraceM m u, DrawingCtxM m) 
        => AGraphic2 u a -> Point2 u -> Point2 u -> m a
 liftAG2 (AGraphic2 af df mf) p1 p2 = 
     askDrawingCtx >>= \a0 ->
@@ -118,7 +118,7 @@ liftAG2 (AGraphic2 af df mf) p1 p2 =
 
 
 
-connect :: (Num u, TraceM m (Primitive u), DrawingCtxM m) 
+connect :: (Num u, TraceM m u, DrawingCtxM m) 
         => AGraphic2 u a -> Point2 u -> Point2 u -> m a
 connect (AGraphic2 af df mf) p1 p2 = 
     askDrawingCtx >>= \a0 ->

@@ -7,14 +7,14 @@ import Wumpus.Basic.Anchors
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.ConsDrawing
+import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
-
+-- Not currently working - needs a Turtle + Drawing monad...
 
 main :: IO ()
 main = do 

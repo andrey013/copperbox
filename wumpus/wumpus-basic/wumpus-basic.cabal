@@ -22,10 +22,10 @@ description:
   .
   0.3.0 to 0.4.0:
   .
-  * Monads.STraceMonad and Monads.SnocDrawing removed. 
-    TraceMonad and ConsDrawing should be used instead, although
-    attention must be paid to the Z-order of drawing for any
-    code that needs to transition.
+  * Reworked the monads. Monads.DrawingMonad replaces 
+    Monads.Trace, Monads.DrawingCtx, Monads.ConsDrawing. The 
+    SnocDrawing monads have been removed as they were a design
+    mistake.
   .
   * Removed MGraphicF type added AGraphic.
   .
@@ -86,10 +86,9 @@ library
     Wumpus.Basic.Graphic.PointSupply,
     Wumpus.Basic.Monads.ConsDrawing,
     Wumpus.Basic.Monads.Drawing,
+    Wumpus.Basic.Maonds.DrawingMonad,
     Wumpus.Basic.Monads.DrawingCtxClass,
-    Wumpus.Basic.Monads.DrawingCtxMonad,
     Wumpus.Basic.Monads.TraceClass,
-    Wumpus.Basic.Monads.TraceMonad,
     Wumpus.Basic.Monads.TurtleClass,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.SafeFonts,

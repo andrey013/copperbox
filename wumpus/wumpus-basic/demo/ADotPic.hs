@@ -7,7 +7,8 @@ import Wumpus.Basic.Anchors
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.ConsDrawing
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Monads.DrawingMonad
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -33,18 +34,18 @@ demo01 = do
 std_attr :: DrawingAttr
 std_attr = standardAttr 24
 
-runFun :: Num u => ConsDrawing u a -> (a, Graphic u)
-runFun = runConsDrawing (regularConfig 20) (0,0) std_attr 
+-- runFun :: Num u => Drawing u a -> (a, Graphic u)
+-- runFun = runDrawing std_attr 
 
 pic1 :: DPicture
-pic1 = drawGraphicU $ snd $ runFun  $ mf 
+pic1 = drawGraphicU $ execDrawing std_attr  $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => ConsDrawing u ()
+mf :: (Floating u, FromPtSize u) => Drawing u ()
 mf = do 
-    a <- node $ dotCircle `at` zeroPt 
-    b <- node $ dotCircle `at` (P2 60 60)
-    _ <- node $ dotCircle `at` (P2 45 45)
+    a <- liftAG dotCircle zeroPt 
+    b <- liftAG dotCircle (P2 60 60)
+    _ <- liftAG dotCircle (P2 45 45)
     let c = radialAnchor (pi/4)  a
     let d = radialAnchor (5* pi/4) b
     trace $ straightLine () (d .-. c) c
