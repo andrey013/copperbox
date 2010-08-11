@@ -27,6 +27,10 @@ module Wumpus.Basic.Arrowheads
   , otri60
   , otri45
 
+  , barb90
+  , barb60
+  , barb45
+
   ) where
 
 import Wumpus.Basic.Graphic
@@ -75,10 +79,10 @@ tri45 :: (Floating u, Real u, FromPtSize u)
       => DrawingAttr -> Radian -> GraphicF u
 tri45 = triAng (pi/4) (\a p -> fill (stroke_colour a) p)
 
+
 otri90 :: (Floating u, Real u, FromPtSize u)
       => DrawingAttr -> Radian -> GraphicF u
 otri90 = triAng (pi/2) (\a p -> cstroke (strokeAttr a) p)
-
 
 otri60 :: (Floating u, Real u, FromPtSize u)
       => DrawingAttr -> Radian -> GraphicF u
@@ -87,3 +91,26 @@ otri60 = triAng (pi/3) (\a p -> cstroke (strokeAttr a) p)
 otri45 :: (Floating u, Real u, FromPtSize u)
       => DrawingAttr -> Radian -> GraphicF u
 otri45 = triAng (pi/4) (\a p -> cstroke (strokeAttr a) p)
+
+
+barbAng :: (Floating u, Real u, FromPtSize u)
+      => Radian -> DrawingAttr -> Radian -> GraphicF u
+barbAng ang attr theta pt = 
+    wrapG $ ostroke (strokeAttr attr) $ vertexPath [u,pt,v]
+  where
+    sz    = fromPtSize $ xcharHeight $ font_size $ font_props attr
+    (u,v) = tripoints ang sz theta  pt
+
+
+barb90 :: (Floating u, Real u, FromPtSize u) 
+       => DrawingAttr -> Radian -> GraphicF u
+barb90 = barbAng (pi/2)
+
+barb60 :: (Floating u, Real u, FromPtSize u) 
+       => DrawingAttr -> Radian -> GraphicF u
+barb60 = barbAng (pi/3)
+
+barb45 :: (Floating u, Real u, FromPtSize u) 
+       => DrawingAttr -> Radian -> GraphicF u
+barb45 = barbAng (pi/4)
+

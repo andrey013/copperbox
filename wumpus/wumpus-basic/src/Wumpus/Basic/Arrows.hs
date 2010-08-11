@@ -27,6 +27,7 @@ module Wumpus.Basic.Arrows
   , arrowOTri60
   , arrowOTri45
   
+  , 
 
   ) where
 

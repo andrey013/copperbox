@@ -20,24 +20,15 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Paths
-  ( 
-
-    BPath(..)
-  , toPath
-
-  , Curve(..)   -- Temp export
-  , Line(..)    -- Temp export
-  , lineLength
-
-  ) where
+module Wumpus.Basic.Paths where
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Data.Sequence ( Seq, ViewL(..), viewl ) 
+import Data.Maybe
+import Data.Sequence ( Seq, ViewL(..), viewl, singleton ) 
 
 -- It would be good not to have a name-clash with Wumpus-Core
 
@@ -68,6 +59,19 @@ data Line u = Line
   deriving (Eq,Ord,Show)
 
 
+path1c :: (Floating u, Ord u, InnerSpace (Vec2 u)) => Curve u -> BPath u
+path1c c = BPath len (singleton $ PCurve len c)
+  where
+    len = curveLength c
+
+
+cto :: Floating u => Point2 u -> Radian -> Point2 u -> Radian -> Curve u
+cto start cin end cout = Curve start (start .+^ v1) (end .+^ v2) end
+  where
+    sz     = 0.375 * (vlength $ pvec start end)
+    v1     = avec cin  sz
+    v2     = avec cout sz
+
 -- | Empty path returns Nothing.
 --
 -- Assumes path is properly formed - i.e. end point of one 
@@ -90,7 +94,21 @@ toPath = step1 . viewl . path_elements
     elemL (Line p1 p2)         = (p1, lineTo p2)
     elemC (Curve p1 p2 p3 p4)  = (p1, curveTo p2 p3 p4)
 
+toPathU :: BPath u -> Path u
+toPathU = fromMaybe errK . toPath
+  where
+    errK = error "toPathU - empty Path"
 
+
+incidenceL :: (Real u, Floating u) => Line u -> Radian
+incidenceL (Line p1 p2) = direction (pvec p2 p1)
+
+-- incidence on a curve is not the same as the incidence of the
+-- repective control point to the end point...
+
+
+--------------------------------------------------------------------------------
+--
 
 lineLength :: (Floating u, InnerSpace (Vec2 u)) => Line u -> u
 lineLength (Line p1 p2) = distance p1 p2
