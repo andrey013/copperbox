@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Arrow1 where
+module Arrow01 where
 
 import Wumpus.Basic.AnchorDots
 import Wumpus.Basic.Arrowheads

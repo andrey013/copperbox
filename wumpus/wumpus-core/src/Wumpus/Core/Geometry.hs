@@ -50,11 +50,12 @@ module Wumpus.Core.Geometry
 
   -- * Vector operations
   , vec
-  , direction
   , hvec
   , vvec
   , avec
   , pvec
+  , direction
+  , vlength
   , vangle
 
   -- * Point operations
@@ -433,11 +434,6 @@ instance Num u => MatrixMult (Point2 u) where
 vec :: Num u => u -> u -> Vec2 u
 vec = V2
 
--- | Direction of a vector - i.e. the counter-clockwise angle 
--- from the x-axis.
---
-direction :: (Floating u, Real u) => Vec2 u -> Radian
-direction (V2 x y) = langle (P2 0 0) (P2 x y)
 
 -- | Construct a vector with horizontal displacement.
 --
@@ -464,6 +460,17 @@ avec theta d = V2 x y where
 --
 pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
 pvec = flip (.-.)
+
+-- | Direction of a vector - i.e. the counter-clockwise angle 
+-- from the x-axis.
+--
+direction :: (Floating u, Real u) => Vec2 u -> Radian
+direction (V2 x y) = langle (P2 0 0) (P2 x y)
+
+-- | Length of a vector.
+--
+vlength :: Floating u => Vec2 u -> u
+vlength (V2 x y) = sqrt $ x*x + y*y
 
 -- | Extract the angle between two vectors.
 --
