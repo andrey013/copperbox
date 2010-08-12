@@ -27,7 +27,7 @@ module Wumpus.Basic.Arrows
   , arrowOTri60
   , arrowOTri45
   
-  , 
+  , arrowPerp
 
   ) where
 
@@ -100,3 +100,9 @@ arrowOTri45 = AGraphic2 id (arrTriGraphic otri45) mf
   where
     mf _    _  _  = ()
 
+arrowPerp :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
+arrowPerp = AGraphic2 id df mf
+  where
+    df attr p1 p2 = let theta = langle p1 p2 in
+                    lineGraphic attr p1 p2 . perp attr theta p2
+    mf _    _  _  = ()

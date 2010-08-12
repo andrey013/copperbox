@@ -64,7 +64,8 @@ path1c c = BPath len (singleton $ PCurve len c)
   where
     len = curveLength c
 
-
+-- | Curve-to
+--
 cto :: Floating u => Point2 u -> Radian -> Point2 u -> Radian -> Curve u
 cto start cin end cout = Curve start (start .+^ v1) (end .+^ v2) end
   where
@@ -111,7 +112,7 @@ incidenceL (Line p1 p2) = direction (pvec p2 p1)
 --
 
 lineLength :: (Floating u, InnerSpace (Vec2 u)) => Line u -> u
-lineLength (Line p1 p2) = distance p1 p2
+lineLength (Line p0 p1) = distance p0 p1
 
 
 -- | midpoint between two points
@@ -131,6 +132,24 @@ subdivide (Curve p0 p1 p2 p3) =
     p012  = pointMidpoint p01   p12
     p123  = pointMidpoint p12   p23
     p0123 = pointMidpoint p012  p123
+
+
+-- | subdivide with an affine weight along the line...
+--
+subdividet :: Real u
+           => u -> Curve u -> (Curve u, Curve u)
+subdividet t (Curve p0 p1 p2 p3) = 
+    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
+  where
+    p01   = affineCombination t p0    p1
+    p12   = affineCombination t p1    p2
+    p23   = affineCombination t p2    p3
+    p012  = affineCombination t p01   p12
+    p123  = affineCombination t p12   p23
+    p0123 = affineCombination t p012  p123
+
+affineCombination :: Real u => u -> Point2 u -> Point2 u -> Point2 u
+affineCombination a p1 p2 = p1 .+^ a *^ (p2 .-. p1)
 
 
 --------------------------------------------------------------------------------
@@ -162,3 +181,14 @@ ctrlPolyLength (Curve p0 p1 p2 p3) =
 cordLength ::(Floating u, InnerSpace (Vec2 u)) 
            => Curve u -> u
 cordLength (Curve p0 _ _ p3) = distance p0 p3
+
+
+--------------------------------------------------------------------------------
+-- tangents
+
+startTangent :: (Floating u, Real u) => Curve u -> Radian
+startTangent (Curve p0 p1 _ _) = direction $ pvec p0 p1
+
+endTangent :: (Floating u, Real u) => Curve u -> Radian
+endTangent (Curve _ _ p2 p3) = direction $ pvec p3 p2
+ 

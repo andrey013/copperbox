@@ -31,6 +31,8 @@ module Wumpus.Basic.Arrowheads
   , barb60
   , barb45
 
+  , perp
+
   ) where
 
 import Wumpus.Basic.Graphic
@@ -114,3 +116,11 @@ barb45 :: (Floating u, Real u, FromPtSize u)
        => DrawingAttr -> Radian -> GraphicF u
 barb45 = barbAng (pi/4)
 
+
+
+perp :: (Floating u, FromPtSize u) => DrawingAttr -> Radian -> GraphicF u
+perp attr theta = \pt -> 
+    wrapG $ ostroke (strokeAttr attr) $ vertexPath [ pt .+^ v, pt .-^ v]
+  where
+    half_sz = 0.5 * (fromPtSize $ xcharHeight $ font_size $ font_props attr)
+    v       = avec (theta + pi/2) half_sz

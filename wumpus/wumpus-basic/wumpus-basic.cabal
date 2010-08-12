@@ -70,6 +70,7 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base            <  5, 
+                      containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
                       monadLib        >= 3.6,
                       wumpus-core     >= 0.23.0

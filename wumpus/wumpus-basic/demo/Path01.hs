@@ -27,15 +27,16 @@ pic1 = drawGraphicU $
            barb90 std_attr 0 (P2 110 0)
          . barb60 std_attr 0 (P2 120 0)
          . barb45 std_attr 0 (P2 130 0)
+         . funny
          . curve1
          . curve2
          . curve3
          . circle1
-
+         
 curve1 :: Graphic Double
 curve1 = wrapG $ ostroke (strokeAttr std_attr) $ curvedPath xs
   where
-    xs = [P2 0 0, P2 28 0, P2 60 32, P2 60 60] 
+    xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 
 
 red_attr :: DrawingAttr
 red_attr = std_attr { line_width = 6, stroke_colour = red }
@@ -52,7 +53,22 @@ blue_attr = std_attr { line_width = 2, stroke_colour = blue }
 curve3 :: Graphic Double
 curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPathU path1
   where
-    path1 = path1c $ cto (P2 60 0) (pi/2) (P2 0 60) 0
+    path1 = path1c $ cto3
+
+cto3 :: Curve Double
+cto3 = cto (P2 60 0) (pi/2) (P2 0 60) 0
+
 
 circle1 :: Graphic Double
 circle1 = filledCircle (yellow) 2 60 zeroPt
+
+cto4 :: Curve Double
+cto4 = cto (P2 180 0) (pi/2) (P2 120 60) 0
+
+
+funny :: Graphic Double
+funny = c1 . barb60 std_attr (endTangent a) p3 
+  where
+    (a@(Curve _ _ _ p3),_) = subdividet 0.5 cto4
+    c1                     = wrapG $ ostroke (strokeAttr std_attr) 
+                                   $ toPathU $ path1c a
