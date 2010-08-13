@@ -25,13 +25,16 @@ module Wumpus.Basic.Paths.Datatypes
   , BPathSeg(..)
   , Curve(..)
   , Line(..)
-  , zeroPath
+  , emptyPath
   , pline
   , pcurve
   , addSegment
+  , segmentLength
+
   , toPath 
   , toPathU
   , subdivide
+  , subdividet
     
   ) where
 
@@ -75,13 +78,19 @@ data Line u = Line
   deriving (Eq,Ord,Show)
 
 
+emptyPath :: Num u => BPath u 
+emptyPath = BPath 0 S.empty
 
-zeroPath :: Num u => BPath u 
-zeroPath = BPath 0 S.empty
 
 addSegment :: Num u => BPath u -> BPathSeg u -> BPath u
 addSegment (BPath n se) e@(BLineSeg u _)  = BPath (n+u) (se |> e)
 addSegment (BPath n se) e@(BCurveSeg u _) = BPath (n+u) (se |> e)
+
+segmentLength :: BPathSeg u -> u
+segmentLength (BLineSeg  u _) = u
+segmentLength (BCurveSeg u _) = u
+
+
 
 
 pline :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> Point2 u -> BPathSeg u 
@@ -172,3 +181,21 @@ subdivide (Curve p0 p1 p2 p3) =
     p012  = pointMidpoint p01   p12
     p123  = pointMidpoint p12   p23
     p0123 = pointMidpoint p012  p123
+
+-- | subdivide with an affine weight along the line...
+--
+subdividet :: Real u
+           => u -> Curve u -> (Curve u, Curve u)
+subdividet t (Curve p0 p1 p2 p3) = 
+    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
+  where
+    p01   = affineCombination t p0    p1
+    p12   = affineCombination t p1    p2
+    p23   = affineCombination t p2    p3
+    p012  = affineCombination t p01   p12
+    p123  = affineCombination t p12   p23
+    p0123 = affineCombination t p012  p123
+
+affineCombination :: Real u => u -> Point2 u -> Point2 u -> Point2 u
+affineCombination a p1 p2 = p1 .+^ a *^ (p2 .-. p1)
+

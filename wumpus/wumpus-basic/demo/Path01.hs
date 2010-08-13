@@ -29,7 +29,6 @@ pic1 = drawGraphicU $
            barb90 std_attr 0 (P2 110 0)
          . barb60 std_attr 0 (P2 120 0)
          . barb45 std_attr 0 (P2 130 0)
-         . funny
          . curve1
          . curve2
          . curve3
@@ -46,26 +45,24 @@ red_attr = std_attr { line_width = 6, stroke_colour = red }
 curve2 :: Graphic Double
 curve2 = wrapG $ ostroke (strokeAttr red_attr) $ toPathU path1
   where
-    path1 = path1c $ cto (P2 0 0) 0 (P2 60 60) (3*pi/2)
+    path1 = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
 
 blue_attr :: DrawingAttr
 blue_attr = std_attr { line_width = 2, stroke_colour = blue }
 
 curve3 :: Graphic Double
-curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPathU path1
-  where
-    path1 = path1c $ cto3
+curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPathU $ shorten 10 path1
 
-cto3 :: Curve Double
-cto3 = cto (P2 60 0) (pi/2) (P2 0 60) 0
+path1 :: BPath Double
+path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
 circle1 = filledCircle (yellow) 2 60 zeroPt
 
-cto4 :: Curve Double
-cto4 = cto (P2 180 0) (pi/2) (P2 120 60) 0
+cto4 :: BPath Double
+cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 
 -- Note - the distance from the barb ends to the curve is not 
 -- evenly spaced
@@ -73,6 +70,8 @@ cto4 = cto (P2 180 0) (pi/2) (P2 120 60) 0
 -- Probably have to average the end tangent and the tangent of 
 -- the curve \'shortened\' by the arrow tips back distance.
 --
+
+{-
 
 funny :: Graphic Double
 funny = c1 . barb60 std_attr (endDirection a) p3 
@@ -88,3 +87,5 @@ dummy1 = endTangent $ fst $ subdividet 0.5 cto4
 
 dummy2 :: BPath Double
 dummy2 = execPath zeroPt (lineto (P2 20 20) >> curveto 0 (pi/4) (P2 40 20))
+
+-}

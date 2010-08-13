@@ -22,11 +22,14 @@ module Wumpus.Basic.Paths.Construction
   ( 
 
     MPath
+  , CPath
   , runPath
   , execPath
   , lineto
   , bezierto
   , curveto
+  , verticalHorizontal
+  , horizontalVertical
 
   ) where
 
@@ -46,6 +49,7 @@ data PathState u = PathState
 
 newtype MPath u a = MPath { getMPath :: PathState u -> (a,PathState u) }
 
+type CPath u = MPath u ()
 
 instance Functor (MPath u) where
   fmap f mf = MPath $ \s -> let (a,s') = getMPath mf s in (f a,s')
@@ -67,7 +71,7 @@ runPath :: Num u => Point2 u -> MPath u a -> (a, BPath u)
 runPath start mf = let (a,s') = getMPath mf s in (a, path_accum s')
   where
     s = PathState { current_point = start
-                  , path_accum    = zeroPath
+                  , path_accum    = emptyPath
                   }
 
 execPath :: Num u => Point2 u -> MPath u a -> BPath u
@@ -78,8 +82,11 @@ exchTip :: Point2 u -> (Point2 u -> BPath u -> BPath u) -> MPath u ()
 exchTip new updP = 
     MPath $ \(PathState old bp) -> ((), PathState new (updP old bp)) 
 
+tip :: MPath u (Point2 u)
+tip = MPath $ \s -> (current_point s,s)
 
-lineto :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> MPath u ()
+
+lineto :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
 lineto end = exchTip end upd
   where
     upd start bp = bp `addSegment` pline start end
@@ -87,14 +94,14 @@ lineto end = exchTip end upd
 
 
 bezierto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
-         => Point2 u -> Point2 u -> Point2 u -> MPath u ()
+         => Point2 u -> Point2 u -> Point2 u -> CPath u
 bezierto cp1 cp2 end = exchTip end upd 
   where
     upd start bp = bp `addSegment` pcurve start cp1 cp2 end
 
 
 curveto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
-        => Radian -> Radian -> Point2 u -> MPath u ()
+        => Radian -> Radian -> Point2 u -> CPath u
 curveto cin cout end = exchTip end upd
   where 
     upd start bp = bp `addSegment` pcurveAng start cin cout end
@@ -109,5 +116,10 @@ pcurveAng start cin cout end = pcurve start (start .+^ v1) (end .+^ v2) end
     v2     = avec cout sz
 
 
+verticalHorizontal :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
+verticalHorizontal (P2 x y) = 
+    tip >>= \(P2 x0 _) -> lineto (P2 x0 y) >> lineto (P2 x y)
 
-
+horizontalVertical :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
+horizontalVertical (P2 x y) = 
+    tip >>= \(P2 _ y0) -> lineto (P2 x y0) >> lineto (P2 x y)

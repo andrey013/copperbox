@@ -21,7 +21,13 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Paths 
-  where
+  ( 
+
+    shorten
+  , shortenL
+  , shortenR
+
+  ) where
 
 import Wumpus.Basic.Paths.Datatypes
 
@@ -30,33 +36,68 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Data.Sequence ( singleton ) 
-
--- It would be good not to have a name-clash with Wumpus-Core
+import Data.Sequence
 
 
 
-path1c :: (Floating u, Ord u, InnerSpace (Vec2 u)) => Curve u -> BPath u
-path1c c = BPath len (singleton $ BCurveSeg len c)
+
+shorten  :: (Real u, Floating u, Ord u) => u -> BPath u -> BPath u
+shorten u p = shortenL u $ shortenR u p
+
+--------------------------------------------------------------------------------
+-- shorten from the left...
+
+shortenL :: (Real u, Floating u, Ord u) => u -> BPath u -> BPath u
+shortenL n (BPath u bp) | n >= u         = emptyPath
+                        | otherwise      = step n (viewl bp)
   where
-    len = curveLength c
+    step _ EmptyL     = emptyPath
+    step d (e :< se)  = let z = segmentLength e in
+                        case compare d z of
+                          GT -> step (d-z) (viewl se)
+                          EQ -> BPath (u-n) se
+                          _  -> BPath (u-n) (shortenSegL d e <| se)
 
--- | Curve-to
---
-cto :: Floating u => Point2 u -> Radian -> Point2 u -> Radian -> Curve u
-cto start cin end cout = Curve start (start .+^ v1) (end .+^ v2) end
+
+shortenSegL :: (Real u, Floating u) => u -> BPathSeg u -> BPathSeg u
+shortenSegL n (BLineSeg  u l) = BLineSeg  (u-n) (shortenLineL n l) 
+shortenSegL n (BCurveSeg u c) = BCurveSeg (u-n) (snd $ subdividet (n/u) c)
+
+shortenLineL :: (Real u, Floating u) => u -> Line u -> Line u
+shortenLineL n (Line p1 p2) = Line (p1 .+^ v) p2
   where
-    sz     = 0.375 * (vlength $ pvec start end)
-    v1     = avec cin  sz
-    v2     = avec cout sz
+    v0 = p2 .-. p1
+    v  = avec (direction v0) n
+    
+--------------------------------------------------------------------------------
+-- shorten from the right ...
+ 
+shortenR :: (Real u, Floating u, Ord u) => u -> BPath u -> BPath u
+shortenR n (BPath u bp) | n >= u         = emptyPath
+                        | otherwise      = step n (viewr bp)
+  where
+    step _ EmptyR     = emptyPath
+    step d (se :> e)  = let z = segmentLength e in
+                        case compare d z of
+                          GT -> step (d-z) (viewr se)
+                          EQ -> BPath (u-n) se
+                          _  -> BPath (u-n) (se |> shortenSegR d e)
 
 
 
-incidenceL :: (Real u, Floating u) => Line u -> Radian
-incidenceL (Line p1 p2) = direction (pvec p2 p1)
+shortenSegR :: (Real u, Floating u) => u -> BPathSeg u -> BPathSeg u
+shortenSegR n (BLineSeg  u l) = BLineSeg  (u-n) (shortenLineR n l) 
+shortenSegR n (BCurveSeg u c) = BCurveSeg (u-n) (fst $ subdividet ((u-n)/u) c)
 
--- incidence on a curve is not the same as the incidence of the
--- repective control point to the end point...
+
+shortenLineR :: (Real u, Floating u) => u -> Line u -> Line u
+shortenLineR n (Line p1 p2) = Line p1 (p2 .+^ v)
+  where
+    v0 = p1 .-. p2
+    v  = avec (direction v0) n
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -69,55 +110,6 @@ incidenceL (Line p1 p2) = direction (pvec p2 p1)
 pointMidpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
 pointMidpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
-
-
--- | subdivide with an affine weight along the line...
---
-subdividet :: Real u
-           => u -> Curve u -> (Curve u, Curve u)
-subdividet t (Curve p0 p1 p2 p3) = 
-    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
-  where
-    p01   = affineCombination t p0    p1
-    p12   = affineCombination t p1    p2
-    p23   = affineCombination t p2    p3
-    p012  = affineCombination t p01   p12
-    p123  = affineCombination t p12   p23
-    p0123 = affineCombination t p012  p123
-
-affineCombination :: Real u => u -> Point2 u -> Point2 u -> Point2 u
-affineCombination a p1 p2 = p1 .+^ a *^ (p2 .-. p1)
-
-
---------------------------------------------------------------------------------
--- Curve length
-
-curveLength :: (Floating u, Ord u, InnerSpace (Vec2 u))
-               => Curve u -> u
-curveLength = gravesenLength 0.1
-
--- | Jens Gravesen\'s bezier arc-length approximation. 
---
--- Note this implementation is parametrized on error tolerance.
---
-gravesenLength :: (Floating u, Ord u, InnerSpace (Vec2 u))
-               => u -> Curve u -> u
-gravesenLength err_tol crv = step crv where
-  step c = let l1 = ctrlPolyLength c
-               l0 = cordLength c
-           in if   l1-l0 > err_tol
-              then let (a,b) = subdivide c in step a + step b
-              else 0.5*l0 + 0.5*l1
-
-
-ctrlPolyLength :: (Floating u, InnerSpace (Vec2 u)) 
-               => Curve u -> u
-ctrlPolyLength (Curve p0 p1 p2 p3) = 
-  distance p0 p1 + distance p1 p2 + distance p2 p3
-
-cordLength ::(Floating u, InnerSpace (Vec2 u)) 
-           => Curve u -> u
-cordLength (Curve p0 _ _ p3) = distance p0 p3
 
 
 --------------------------------------------------------------------------------
@@ -134,3 +126,11 @@ endDirection = step . endTangent
   where
     step r | r < pi    = r + pi
            | otherwise = r - pi
+
+
+
+incidenceL :: (Real u, Floating u) => Line u -> Radian
+incidenceL (Line p1 p2) = direction (pvec p2 p1)
+
+-- incidence on a curve is not the same as the incidence of the
+-- respective control point to the end point...
