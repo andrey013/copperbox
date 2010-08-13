@@ -6,6 +6,8 @@ import Wumpus.Basic.Arrowheads
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Paths
+import Wumpus.Basic.Paths.Construction
+import Wumpus.Basic.Paths.Datatypes
 import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -65,10 +67,24 @@ circle1 = filledCircle (yellow) 2 60 zeroPt
 cto4 :: Curve Double
 cto4 = cto (P2 180 0) (pi/2) (P2 120 60) 0
 
+-- Note - the distance from the barb ends to the curve is not 
+-- evenly spaced
+-- 
+-- Probably have to average the end tangent and the tangent of 
+-- the curve \'shortened\' by the arrow tips back distance.
+--
 
 funny :: Graphic Double
-funny = c1 . barb60 std_attr (endTangent a) p3 
+funny = c1 . barb60 std_attr (endDirection a) p3 
   where
     (a@(Curve _ _ _ p3),_) = subdividet 0.5 cto4
     c1                     = wrapG $ ostroke (strokeAttr std_attr) 
                                    $ toPathU $ path1c a
+
+
+dummy1 = endTangent $ fst $ subdividet 0.5 cto4
+
+-- monadic might actually be easier to think about...
+
+dummy2 :: BPath Double
+dummy2 = execPath zeroPt (lineto (P2 20 20) >> curveto 0 (pi/4) (P2 40 20))

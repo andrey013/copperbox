@@ -1,0 +1,113 @@
+{-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Basic.Paths.Construction
+-- Copyright   :  (c) Stephen Tetley 2010
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+-- Build paths.
+--
+-- \*\* WARNING \*\* this module is an experiment, and may 
+-- change significantly or even be dropped from future revisions.
+-- 
+--------------------------------------------------------------------------------
+
+module Wumpus.Basic.Paths.Construction
+  ( 
+
+    MPath
+  , runPath
+  , execPath
+  , lineto
+  , bezierto
+  , curveto
+
+  ) where
+
+import Wumpus.Basic.Paths.Datatypes
+
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
+
+import Control.Applicative
+
+data PathState u = PathState 
+      { current_point :: Point2 u 
+      , path_accum    :: BPath u
+      }
+
+newtype MPath u a = MPath { getMPath :: PathState u -> (a,PathState u) }
+
+
+instance Functor (MPath u) where
+  fmap f mf = MPath $ \s -> let (a,s') = getMPath mf s in (f a,s')
+
+
+instance Applicative (MPath u) where
+  pure a    = MPath $ \s -> (a,s)
+  mf <*> ma = MPath $ \s -> let (f,s')  = getMPath mf s
+                                (a,s'') = getMPath ma s'
+                            in (f a,s'')
+
+instance Monad (MPath u) where
+  return a  = MPath $ \s -> (a,s)
+  m >>= k   = MPath $ \s -> let (a,s') = getMPath m s in
+                            (getMPath . k) a s'
+
+
+runPath :: Num u => Point2 u -> MPath u a -> (a, BPath u)
+runPath start mf = let (a,s') = getMPath mf s in (a, path_accum s')
+  where
+    s = PathState { current_point = start
+                  , path_accum    = zeroPath
+                  }
+
+execPath :: Num u => Point2 u -> MPath u a -> BPath u
+execPath start mf = snd $ runPath start mf
+
+
+exchTip :: Point2 u -> (Point2 u -> BPath u -> BPath u) -> MPath u ()
+exchTip new updP = 
+    MPath $ \(PathState old bp) -> ((), PathState new (updP old bp)) 
+
+
+lineto :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> MPath u ()
+lineto end = exchTip end upd
+  where
+    upd start bp = bp `addSegment` pline start end
+
+
+
+bezierto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+         => Point2 u -> Point2 u -> Point2 u -> MPath u ()
+bezierto cp1 cp2 end = exchTip end upd 
+  where
+    upd start bp = bp `addSegment` pcurve start cp1 cp2 end
+
+
+curveto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+        => Radian -> Radian -> Point2 u -> MPath u ()
+curveto cin cout end = exchTip end upd
+  where 
+    upd start bp = bp `addSegment` pcurveAng start cin cout end
+
+
+pcurveAng :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+        => Point2 u -> Radian -> Radian -> Point2 u -> BPathSeg u
+pcurveAng start cin cout end = pcurve start (start .+^ v1) (end .+^ v2) end
+  where
+    sz     = 0.375 * (vlength $ pvec start end)
+    v1     = avec cin  sz
+    v2     = avec cout sz
+
+
+
+
