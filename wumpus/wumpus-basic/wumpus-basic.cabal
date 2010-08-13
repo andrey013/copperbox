@@ -92,6 +92,8 @@ library
     Wumpus.Basic.Monads.TurtleClass,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.Paths,
+    Wumpus.Basic.Paths.Construction,
+    Wumpus.Basic.Paths.Datatypes,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.SVGColours,
     Wumpus.Basic.X11Colours,

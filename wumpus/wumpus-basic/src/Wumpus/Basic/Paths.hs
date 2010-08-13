@@ -10,7 +10,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Extended path type - more amenable for complex drawings than
 -- the type in Wumpus-Core.
@@ -20,47 +20,24 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Paths where
+module Wumpus.Basic.Paths 
+  where
+
+import Wumpus.Basic.Paths.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Data.Maybe
-import Data.Sequence ( Seq, ViewL(..), viewl, singleton ) 
+import Data.Sequence ( singleton ) 
 
 -- It would be good not to have a name-clash with Wumpus-Core
 
-data BPath u = BPath 
-       { path_length    :: u 
-       , path_elements  :: Seq (PathSeg u)
-       }
-  deriving (Eq,Ord,Show)
-
-
--- Annotation is length...
-data PathSeg u = PLine  u (Line u)
-               | PCurve u (Curve u)
-  deriving (Eq,Ord,Show)
-
-data Curve u = Curve 
-      { curve_start :: Point2 u
-      , ctrl_point1 :: Point2 u
-      , ctrl_point2 :: Point2 u
-      , curve_end   :: Point2 u
-      }
-  deriving (Eq,Ord,Show)
-
-data Line u = Line 
-      { line_start  :: Point2 u
-      , line_end    :: Point2 u 
-      }
-  deriving (Eq,Ord,Show)
 
 
 path1c :: (Floating u, Ord u, InnerSpace (Vec2 u)) => Curve u -> BPath u
-path1c c = BPath len (singleton $ PCurve len c)
+path1c c = BPath len (singleton $ BCurveSeg len c)
   where
     len = curveLength c
 
@@ -73,32 +50,6 @@ cto start cin end cout = Curve start (start .+^ v1) (end .+^ v2) end
     v1     = avec cin  sz
     v2     = avec cout sz
 
--- | Empty path returns Nothing.
---
--- Assumes path is properly formed - i.e. end point of one 
--- segment is the same point as the start point of the next
--- segment.
---
-toPath :: BPath u -> Maybe (Path u)
-toPath = step1 . viewl . path_elements
-  where
-    step1 EmptyL               = Nothing
-    step1 (e :< se)            = let (p1,s) = elemP e in 
-                                 Just $ path p1 $ s : step2 (viewl se)
-
-    step2 EmptyL               = []
-    step2 (e :< se)            = snd (elemP e) : step2 (viewl se)
-    
-    elemP (PLine  _ l)          = elemL l
-    elemP (PCurve _ c)          = elemC c
- 
-    elemL (Line p1 p2)         = (p1, lineTo p2)
-    elemC (Curve p1 p2 p3 p4)  = (p1, curveTo p2 p3 p4)
-
-toPathU :: BPath u -> Path u
-toPathU = fromMaybe errK . toPath
-  where
-    errK = error "toPathU - empty Path"
 
 
 incidenceL :: (Real u, Floating u) => Line u -> Radian
@@ -111,8 +62,6 @@ incidenceL (Line p1 p2) = direction (pvec p2 p1)
 --------------------------------------------------------------------------------
 --
 
-lineLength :: (Floating u, InnerSpace (Vec2 u)) => Line u -> u
-lineLength (Line p0 p1) = distance p0 p1
 
 
 -- | midpoint between two points
@@ -120,18 +69,6 @@ lineLength (Line p0 p1) = distance p0 p1
 pointMidpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
 pointMidpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
--- | Curve subdivision via de Casteljau\'s algorithm.
---
-subdivide :: Fractional u => Curve u -> (Curve u, Curve u)
-subdivide (Curve p0 p1 p2 p3) =
-    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
-  where
-    p01   = pointMidpoint p0    p1
-    p12   = pointMidpoint p1    p2
-    p23   = pointMidpoint p2    p3
-    p012  = pointMidpoint p01   p12
-    p123  = pointMidpoint p12   p23
-    p0123 = pointMidpoint p012  p123
 
 
 -- | subdivide with an affine weight along the line...
@@ -192,3 +129,8 @@ startTangent (Curve p0 p1 _ _) = direction $ pvec p0 p1
 endTangent :: (Floating u, Real u) => Curve u -> Radian
 endTangent (Curve _ _ p2 p3) = direction $ pvec p3 p2
  
+endDirection :: (Floating u, Real u) => Curve u -> Radian
+endDirection = step . endTangent
+  where
+    step r | r < pi    = r + pi
+           | otherwise = r - pi
