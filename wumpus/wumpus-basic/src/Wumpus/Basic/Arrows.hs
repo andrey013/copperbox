@@ -40,69 +40,60 @@ import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space
 
--- connectors need to be something rather than () ...
 
+
+arrowWidth :: FromPtSize u => DrawingAttr -> u 
+arrowWidth = fromPtSize . xcharHeight . font_size . font_props
 
 
 line :: Num u => BPathF u -> AGraphic2 u (BPath u)
-line pathF = AGraphic2 id (pathGraphic pathF) mf
+line pathF = AGraphic2 id df mf
   where
-    mf _    spt ept = pathF spt ept
+    df attr p0 p1 = pathGraphic (pathF p0 p1) attr
+    mf _    p0 p1 = pathF p0 p1
 
 
-lineGraphic2 :: Num u => DrawingAttr -> GraphicF2 u
-lineGraphic2 attr = \p0 p1 ->
-    wrapG $ ostroke (strokeAttr attr) $ vertexPath [p0,p1]
+
+arrowTri90 :: (Real u, Floating u, FromPtSize u) 
+           => BPathF u -> AGraphic2 u (BPath u)
+arrowTri90 pathF = AGraphic2 id (mkDF_tipR pathF tri90) (\_ -> pathF)
+
+arrowTri60 :: (Real u, Floating u, FromPtSize u) 
+           => BPathF u -> AGraphic2 u (BPath u)
+arrowTri60 pathF = AGraphic2 id (mkDF_tipR pathF tri60) (\_ -> pathF)
+ 
+arrowTri45 :: (Real u, Floating u, FromPtSize u) 
+           => BPathF u -> AGraphic2 u (BPath u)
+arrowTri45 pathF = AGraphic2 id (mkDF_tipR pathF tri45) (\_ -> pathF)
+
+arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AGraphic2 u (BPath u)
+arrowOTri90 pathF = AGraphic2 id (mkDF_tipR pathF otri90) (\_ -> pathF)
+
+arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AGraphic2 u (BPath u)
+arrowOTri60 pathF = AGraphic2 id (mkDF_tipR pathF otri60) (\_ -> pathF)
+
+arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AGraphic2 u (BPath u)
+arrowOTri45 pathF = AGraphic2 id (mkDF_tipR pathF otri45) (\_ -> pathF)
 
 
-retractByCharWidth :: (Real u, Floating u, FromPtSize u) 
-                   => DrawingAttr -> Point2 u -> Point2 u -> Point2 u
-retractByCharWidth attr p1 p2 = p2 .-^ v
+
+mkDF_tipR :: (Real u, Floating u, FromPtSize u) 
+          => BPathF u 
+          -> (Radian -> DrawingAttr -> GraphicF u)
+          -> DrawingAttr -> Point2 u -> Point2 u 
+          -> Graphic u 
+mkDF_tipR pathF tipF attr p0 p1 = 
+    pathGraphic short_path attr . tipF theta attr p1
   where
-    v0 = p2 .-. p1
-    sz = fromPtSize $ xcharHeight $ font_size $ font_props attr
-    v  = avec (direction v0) sz
-
-arrTriGraphic :: (Real u, Floating u, FromPtSize u) 
-              => (DrawingAttr -> Radian -> GraphicF u)
-              -> DrawingAttr -> Point2 u -> Point2 u -> Graphic u
-arrTriGraphic tipF attr p1 p2 = lineGraphic2 attr p1 end . tipF attr theta p2 
-  where
-    end   = retractByCharWidth attr p1 p2
-    theta = langle p1 p2 
-
-
-arrowTri90 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowTri90 = AGraphic2 id (arrTriGraphic tri90) mf
-  where
-    mf _    _  _  = ()
-
-arrowTri60 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowTri60 = AGraphic2 id (arrTriGraphic tri60) mf
-  where
-    mf _    _  _  = ()
-
-arrowTri45 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowTri45 = AGraphic2 id (arrTriGraphic tri45) mf
-  where
-    mf _    _  _  = ()
-
-arrowOTri90 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowOTri90 = AGraphic2 id (arrTriGraphic otri90) mf
-  where
-    mf _    _  _  = ()
-
-arrowOTri60 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowOTri60 = AGraphic2 id (arrTriGraphic otri60) mf
-  where
-    mf _    _  _  = ()
-
-arrowOTri45 :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowOTri45 = AGraphic2 id (arrTriGraphic otri45) mf
-  where
-    mf _    _  _  = ()
+    sz          = arrowWidth attr
+    long_path   = pathF p0 p1
+    short_path  = shortenR sz long_path
+    theta       = directionR long_path
+                     
 
 
 
@@ -111,5 +102,5 @@ arrowPerp :: (Real u, Floating u, FromPtSize u)
 arrowPerp pathF = AGraphic2 id df mf
   where
     df attr p0 p1 = let theta = langle p0 p1  in
-                    pathGraphic pathF attr p0 p1 . perp attr theta p1
+                    pathGraphic (pathF p0 p1) attr . perp theta attr p1
     mf _    p0 p1 = pathF p0 p1

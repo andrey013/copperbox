@@ -22,7 +22,7 @@ module Wumpus.Basic.Paths
   ( 
 
     connectS
-  , pathGraphic 
+  , pathGraphic
 
   , shorten
   , shortenL
@@ -51,9 +51,11 @@ connectS = \p0 p1 -> execPath p0 $ lineto p1
 
 
 
-pathGraphic :: Num u => BPathF u -> DrawingAttr -> GraphicF2 u
-pathGraphic pathF attr = \spt ept -> 
-    wrapG $ ostroke (strokeAttr attr) $ toPathU $ pathF spt ept
+-- This one might be more useful...
+
+pathGraphic :: Num u => BPath u -> DrawingAttr -> Graphic u
+pathGraphic bpath attr = wrapG $ ostroke (strokeAttr attr) $ toPathU bpath
+
 
 
 
