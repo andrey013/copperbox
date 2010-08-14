@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,6 +24,9 @@ module Wumpus.Basic.Paths
     shorten
   , shortenL
   , shortenR
+  , midpoint
+  , directionL
+  , directionR
 
   ) where
 
@@ -34,7 +35,6 @@ import Wumpus.Basic.Paths.Datatypes
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 import Data.Sequence
 
@@ -98,39 +98,50 @@ shortenLineR n (Line p1 p2) = Line p1 (p2 .+^ v)
 
 
 
-
-
 --------------------------------------------------------------------------------
---
+
+midpoint :: (Real u, Floating u) => BPath u -> Point2 u
+midpoint (BPath u bp) = step (u/2) (viewl bp)
+  where
+    step _ EmptyL    = zeroPt
+    step d (e :< se) = let z = segmentLength e in
+                       case compare d z of
+                         GT -> step (d-z) (viewl se)
+                         EQ -> segmentEnd e
+                         _  -> segmentEnd $ shortenSegL d e 
 
 
-
--- | midpoint between two points
---
-pointMidpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-pointMidpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 
 --------------------------------------------------------------------------------
 -- tangents
 
-startTangent :: (Floating u, Real u) => Curve u -> Radian
-startTangent (Curve p0 p1 _ _) = direction $ pvec p0 p1
 
-endTangent :: (Floating u, Real u) => Curve u -> Radian
-endTangent (Curve _ _ p2 p3) = direction $ pvec p3 p2
- 
-endDirection :: (Floating u, Real u) => Curve u -> Radian
-endDirection = step . endTangent
+directionL :: (Real u, Floating u) => BPath u -> Radian
+directionL (BPath _ se) = step $ viewl se
   where
-    step r | r < pi    = r + pi
-           | otherwise = r - pi
+    step (BLineSeg  _ l :< _) = lineDirectionL l 
+    step (BCurveSeg _ c :< _) = curveDirectionL c
+    step _                    = 0
+
+directionR :: (Real u, Floating u) => BPath u -> Radian
+directionR (BPath _ se) = step $ viewr se
+  where
+    step (_ :> BLineSeg  _ l) = lineDirectionR l 
+    step (_ :> BCurveSeg _ c) = curveDirectionR c
+    step _                    = 0
 
 
+lineDirectionL :: (Real u, Floating u) => Line u -> Radian
+lineDirectionL (Line p0 p1) = direction (pvec p1 p0)
 
-incidenceL :: (Real u, Floating u) => Line u -> Radian
-incidenceL (Line p1 p2) = direction (pvec p2 p1)
+lineDirectionR :: (Real u, Floating u) => Line u -> Radian
+lineDirectionR (Line p0 p1) = direction (pvec p0 p1)
 
--- incidence on a curve is not the same as the incidence of the
--- respective control point to the end point...
+curveDirectionL :: (Real u, Floating u) => Curve u -> Radian
+curveDirectionL (Curve p0 p1 _ _) = direction $ pvec p1 p0
+
+curveDirectionR :: (Real u, Floating u) => Curve u -> Radian
+curveDirectionR (Curve _ _ p2 p3) = direction $ pvec p2 p3
+ 

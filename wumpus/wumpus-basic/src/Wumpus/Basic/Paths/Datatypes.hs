@@ -30,6 +30,8 @@ module Wumpus.Basic.Paths.Datatypes
   , pcurve
   , addSegment
   , segmentLength
+  , segmentStart
+  , segmentEnd
 
   , toPath 
   , toPathU
@@ -89,6 +91,14 @@ addSegment (BPath n se) e@(BCurveSeg u _) = BPath (n+u) (se |> e)
 segmentLength :: BPathSeg u -> u
 segmentLength (BLineSeg  u _) = u
 segmentLength (BCurveSeg u _) = u
+
+segmentStart :: BPathSeg u -> Point2 u
+segmentStart (BLineSeg  _ (Line p0 _))      = p0
+segmentStart (BCurveSeg _ (Curve p0 _ _ _)) = p0
+
+segmentEnd :: BPathSeg u -> Point2 u
+segmentEnd (BLineSeg  _ (Line _ p1))      = p1
+segmentEnd (BCurveSeg _ (Curve _ _ _ p3)) = p3
 
 
 
