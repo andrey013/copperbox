@@ -2,15 +2,17 @@
 
 module Path01 where
 
-import Wumpus.Basic.Arrowheads
+import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Paths
+import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
-import Wumpus.Basic.Paths.Datatypes
 import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
+
+import Data.AffineSpace
 
 import System.Directory
 
@@ -29,6 +31,7 @@ pic1 = drawGraphicU $
            barb90 std_attr 0 (P2 110 0)
          . barb60 std_attr 0 (P2 120 0)
          . barb45 std_attr 0 (P2 130 0)
+         . eastUpWest
          . curve1
          . curve2
          . curve3
@@ -71,21 +74,16 @@ cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 -- the curve \'shortened\' by the arrow tips back distance.
 --
 
-{-
-
-funny :: Graphic Double
-funny = c1 . barb60 std_attr (endDirection a) p3 
-  where
-    (a@(Curve _ _ _ p3),_) = subdividet 0.5 cto4
-    c1                     = wrapG $ ostroke (strokeAttr std_attr) 
-                                   $ toPathU $ path1c a
+eastUpWest :: Graphic Double
+eastUpWest = wrapG $ ostroke (strokeAttr blue_attr) $ mkP1 (P2 140 0) (P2 160 20)
 
 
-dummy1 = endTangent $ fst $ subdividet 0.5 cto4
-
--- monadic might actually be easier to think about...
-
-dummy2 :: BPath Double
-dummy2 = execPath zeroPt (lineto (P2 20 20) >> curveto 0 (pi/4) (P2 40 20))
-
--}
+-- Potentially this may introduce the style that using AGraphic2 
+-- would follow.
+--
+-- i.e. start and end are supplied, line manipulations are done
+-- by displacing them.
+--  
+mkP1 :: Floating u => Point2 u -> Point2 u -> Path u
+mkP1 start end = toPathU $ execPath start $ 
+                    horizontalVertical (end .+^ hvec 20) >> lineto end

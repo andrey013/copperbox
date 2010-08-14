@@ -3,8 +3,8 @@
 module Arrow01 where
 
 import Wumpus.Basic.AnchorDots
-import Wumpus.Basic.Arrowheads
 import Wumpus.Basic.Arrows
+import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing

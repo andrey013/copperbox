@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Arrowheads
+-- Module      :  Wumpus.Basic.Arrows.Tips
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Arrowheads
+module Wumpus.Basic.Arrows.Tips
   ( 
 
     tri90

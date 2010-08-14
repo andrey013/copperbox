@@ -33,12 +33,11 @@ module Wumpus.Basic.Paths.Construction
 
   ) where
 
-import Wumpus.Basic.Paths.Datatypes
+import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 import Control.Applicative
 
@@ -86,28 +85,28 @@ tip :: MPath u (Point2 u)
 tip = MPath $ \s -> (current_point s,s)
 
 
-lineto :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
+lineto :: Floating u => Point2 u -> CPath u
 lineto end = exchTip end upd
   where
     upd start bp = bp `addSegment` pline start end
 
 
 
-bezierto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+bezierto :: (Floating u, Ord u) 
          => Point2 u -> Point2 u -> Point2 u -> CPath u
 bezierto cp1 cp2 end = exchTip end upd 
   where
     upd start bp = bp `addSegment` pcurve start cp1 cp2 end
 
 
-curveto :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+curveto :: (Floating u, Ord u) 
         => Radian -> Radian -> Point2 u -> CPath u
 curveto cin cout end = exchTip end upd
   where 
     upd start bp = bp `addSegment` pcurveAng start cin cout end
 
 
-pcurveAng :: (Floating u, Ord u, InnerSpace (Vec2 u)) 
+pcurveAng :: (Floating u, Ord u) 
         => Point2 u -> Radian -> Radian -> Point2 u -> BPathSeg u
 pcurveAng start cin cout end = pcurve start (start .+^ v1) (end .+^ v2) end
   where
@@ -116,10 +115,10 @@ pcurveAng start cin cout end = pcurve start (start .+^ v1) (end .+^ v2) end
     v2     = avec cout sz
 
 
-verticalHorizontal :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
+verticalHorizontal :: Floating u => Point2 u -> CPath u
 verticalHorizontal (P2 x y) = 
     tip >>= \(P2 x0 _) -> lineto (P2 x0 y) >> lineto (P2 x y)
 
-horizontalVertical :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> CPath u
+horizontalVertical :: Floating u => Point2 u -> CPath u
 horizontalVertical (P2 x y) = 
     tip >>= \(P2 _ y0) -> lineto (P2 x y0) >> lineto (P2 x y)

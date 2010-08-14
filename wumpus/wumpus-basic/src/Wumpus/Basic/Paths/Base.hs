@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Paths.Datatypes
+-- Module      :  Wumpus.Basic.Paths.Base
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Paths.Datatypes
+module Wumpus.Basic.Paths.Base
   ( 
     BPath(..)
   , BPathSeg(..)
@@ -103,21 +103,24 @@ segmentEnd (BCurveSeg _ (Curve _ _ _ p3)) = p3
 
 
 
-pline :: (Floating u, InnerSpace (Vec2 u)) => Point2 u -> Point2 u -> BPathSeg u 
-pline p0 p1 = BLineSeg (distance p0 p1) (Line p0 p1)
+pline :: Floating u => Point2 u -> Point2 u -> BPathSeg u 
+pline p0 p1 = BLineSeg (vlength $ pvec p0 p1) (Line p0 p1)
 
-pcurve :: (Floating u, Ord u, InnerSpace (Vec2 u))
+pcurve :: (Floating u, Ord u)
        => Point2 u -> Point2 u -> Point2 u -> Point2 u -> BPathSeg u 
 pcurve p0 p1 p2 p3 = 
     let c = Curve p0 p1 p2 p3 in BCurveSeg (curveLength c) c
 
--- | Empty path returns Nothing.
+
+-- | Turn a BasicPath into an ordinary Path.
+--
+-- An empty path returns Nothing - the path representation in 
+-- Wumpus-Core does not allow empty paths - a path must always
+-- have at least start point.
 --
 -- Assumes path is properly formed - i.e. end point of one 
 -- segment is the same point as the start point of the next
 -- segment.
---
--- TODO - is an empty path actually a problem? ...
 --
 toPath :: BPath u -> Maybe (Path u)
 toPath = step1 . viewl . path_elements
@@ -145,16 +148,14 @@ toPathU = fromMaybe errK . toPath
 --------------------------------------------------------------------------------
 -- Curve length
 
-curveLength :: (Floating u, Ord u, InnerSpace (Vec2 u))
-            => Curve u -> u
+curveLength :: (Floating u, Ord u) => Curve u -> u
 curveLength = gravesenLength 0.1
 
 -- | Jens Gravesen\'s bezier arc-length approximation. 
 --
 -- Note this implementation is parametrized on error tolerance.
 --
-gravesenLength :: (Floating u, Ord u, InnerSpace (Vec2 u))
-               => u -> Curve u -> u
+gravesenLength :: (Floating u, Ord u) => u -> Curve u -> u
 gravesenLength err_tol crv = step crv where
   step c = let l1 = ctrlPolyLength c
                l0 = cordLength c
@@ -163,14 +164,13 @@ gravesenLength err_tol crv = step crv where
               else 0.5*l0 + 0.5*l1
 
 
-ctrlPolyLength :: (Floating u, InnerSpace (Vec2 u)) 
-               => Curve u -> u
-ctrlPolyLength (Curve p0 p1 p2 p3) = 
-  distance p0 p1 + distance p1 p2 + distance p2 p3
+ctrlPolyLength :: Floating u => Curve u -> u
+ctrlPolyLength (Curve p0 p1 p2 p3) = len p0 p1 + len p1 p2 + len p2 p3
+  where
+    len pa pb = vlength $ pvec pa pb
 
-cordLength ::(Floating u, InnerSpace (Vec2 u)) 
-           => Curve u -> u
-cordLength (Curve p0 _ _ p3) = distance p0 p3
+cordLength :: Floating u => Curve u -> u
+cordLength (Curve p0 _ _ p3) = vlength $ pvec p0 p3
 
 
 -- | midpoint between two points

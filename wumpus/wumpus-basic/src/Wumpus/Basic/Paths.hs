@@ -30,7 +30,7 @@ module Wumpus.Basic.Paths
 
   ) where
 
-import Wumpus.Basic.Paths.Datatypes
+import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 

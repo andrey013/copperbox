@@ -31,7 +31,7 @@ module Wumpus.Basic.Arrows
 
   ) where
 
-import Wumpus.Basic.Arrowheads
+import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
