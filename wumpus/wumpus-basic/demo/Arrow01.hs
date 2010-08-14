@@ -9,6 +9,7 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingMonad
+import Wumpus.Basic.Paths 
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -46,6 +47,6 @@ pic2 = drawGraphicU $ execDrawing (standardAttr 48) $
           ; _ <- liftAG2 arrowOTri90 (P2 0 0) (P2 100 0) 
           ; _ <- liftAG (dotText "k") (P2 120 6)
           ; _ <- liftAG (dotText "k") (P2 88  (-20))
-          ; _ <- liftAG2 arrowPerp (P2 130 0) (P2 160 0) 
+          ; _ <- liftAG2 (arrowPerp connectS) (P2 130 0) (P2 160 0) 
           ; return () 
           }  

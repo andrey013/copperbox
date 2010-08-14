@@ -35,6 +35,8 @@ import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Paths
+import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -42,15 +44,17 @@ import Data.AffineSpace                 -- package: vector-space
 
 -- connectors need to be something rather than () ...
 
-line :: Num u => AGraphic2 u ()
-line = AGraphic2 id lineGraphic mf
+
+
+line :: Num u => BPathF u -> AGraphic2 u (BPath u)
+line pathF = AGraphic2 id (pathGraphic pathF) mf
   where
-    mf _    _  _  = ()
+    mf _    spt ept = pathF spt ept
 
 
-lineGraphic :: Num u => DrawingAttr -> Point2 u -> Point2 u -> Graphic u
-lineGraphic attr p1 p2 = 
-    wrapG $ ostroke (strokeAttr attr) $ vertexPath [p1,p2]
+lineGraphic2 :: Num u => DrawingAttr -> GraphicF2 u
+lineGraphic2 attr = \p0 p1 ->
+    wrapG $ ostroke (strokeAttr attr) $ vertexPath [p0,p1]
 
 
 retractByCharWidth :: (Real u, Floating u, FromPtSize u) 
@@ -64,7 +68,7 @@ retractByCharWidth attr p1 p2 = p2 .-^ v
 arrTriGraphic :: (Real u, Floating u, FromPtSize u) 
               => (DrawingAttr -> Radian -> GraphicF u)
               -> DrawingAttr -> Point2 u -> Point2 u -> Graphic u
-arrTriGraphic tipF attr p1 p2 = lineGraphic attr p1 end . tipF attr theta p2 
+arrTriGraphic tipF attr p1 p2 = lineGraphic2 attr p1 end . tipF attr theta p2 
   where
     end   = retractByCharWidth attr p1 p2
     theta = langle p1 p2 
@@ -100,9 +104,12 @@ arrowOTri45 = AGraphic2 id (arrTriGraphic otri45) mf
   where
     mf _    _  _  = ()
 
-arrowPerp :: (Real u, Floating u, FromPtSize u) => AGraphic2 u ()
-arrowPerp = AGraphic2 id df mf
+
+
+arrowPerp :: (Real u, Floating u, FromPtSize u) 
+          => BPathF u -> AGraphic2 u (BPath u)
+arrowPerp pathF = AGraphic2 id df mf
   where
-    df attr p1 p2 = let theta = langle p1 p2 in
-                    lineGraphic attr p1 p2 . perp attr theta p2
-    mf _    _  _  = ()
+    df attr p0 p1 = let theta = langle p0 p1  in
+                    pathGraphic pathF attr p0 p1 . perp attr theta p1
+    mf _    p0 p1 = pathF p0 p1

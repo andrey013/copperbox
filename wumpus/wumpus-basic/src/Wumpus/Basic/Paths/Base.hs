@@ -21,7 +21,10 @@
 
 module Wumpus.Basic.Paths.Base
   ( 
-    BPath(..)
+
+    BPathF
+
+  , BPath(..)
   , BPathSeg(..)
   , Curve(..)
   , Line(..)
@@ -49,7 +52,9 @@ import Data.Maybe
 import Data.Sequence ( Seq, ViewL(..), viewl, (|>)  )
 import qualified Data.Sequence as S
 
--- It would be good not to have a name-clash with Wumpus-Core
+
+type BPathF u = Point2 u -> Point2 u -> BPath u
+
 
 data BPath u = BPath 
        { path_length    :: u 

@@ -21,7 +21,10 @@
 module Wumpus.Basic.Paths 
   ( 
 
-    shorten
+    connectS
+  , pathGraphic 
+
+  , shorten
   , shortenL
   , shortenR
   , midpoint
@@ -30,7 +33,10 @@ module Wumpus.Basic.Paths
 
   ) where
 
+import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Paths.Base
+import Wumpus.Basic.Paths.Construction
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -38,6 +44,16 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Data.Sequence
 
+
+
+connectS :: Floating u => BPathF u
+connectS = \p0 p1 -> execPath p0 $ lineto p1
+
+
+
+pathGraphic :: Num u => BPathF u -> DrawingAttr -> GraphicF2 u
+pathGraphic pathF attr = \spt ept -> 
+    wrapG $ ostroke (strokeAttr attr) $ toPathU $ pathF spt ept
 
 
 
