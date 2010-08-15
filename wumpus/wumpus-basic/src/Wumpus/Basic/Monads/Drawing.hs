@@ -68,8 +68,7 @@ import Control.Applicative
 -- the current point).
 --
 data AGraphic param u a = AGraphic 
-       { agAttrF    :: DrawingAttr -> DrawingAttr
-       , agDrawF    :: DrawingAttr -> param -> Graphic u
+       { agDrawF    :: DrawingAttr -> param -> Graphic u
        , agMakeF    :: DrawingAttr -> param -> a
        }
 
@@ -86,14 +85,13 @@ type AFreeGraphic u a = AGraphic () u a
 type AConnector u a = Point2 u -> Point2 u -> AFreeGraphic u a
 
 instance Functor (AGraphic pm u) where
-  fmap f (AGraphic af df mf) = AGraphic af df (\pt attr -> f $ mf pt attr)
+  fmap f (AGraphic df mf) = AGraphic df (\pt attr -> f $ mf pt attr)
 
 instance Applicative (AGraphic pm u) where
-  pure a = AGraphic id (\_ _ -> id) (\_ _ -> a)
-  (AGraphic af1 df1 mf1) <*> (AGraphic af2 df2 mf2) = AGraphic af df mf
+  pure a = AGraphic (\_ _ -> id) (\_ _ -> a)
+  (AGraphic df1 mf1) <*> (AGraphic df2 mf2) = AGraphic df mf
       where
-        af           = af2 . af1
-        df attr pt   = df2 (af2 attr) pt . df1 (af1 attr) pt
+        df attr pt   = df2 attr pt . df1 attr pt
         mf attr pt   = mf1 attr pt $ mf2 attr pt
 
 
@@ -101,8 +99,8 @@ instance Applicative (AGraphic pm u) where
 -- scaled w.r.t. TurtleScaleM ...
 --
 at :: ANode u a -> Point2 u -> ANode u a
-at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
-                                        (\attr _ -> mf attr pt)
+at (AGraphic df mf) pt = AGraphic (\attr _ -> df attr pt)
+                                  (\attr _ -> mf attr pt)
 
 
 
@@ -111,26 +109,24 @@ at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
 
 node :: (Num u, TraceM m u, DrawingCtxM m, TurtleScaleM m u) 
        => ANode u a -> m a
-node (AGraphic af df mf) = 
-    askDrawingCtx >>= \a0 ->
-    getPos        >>= \pt ->
-    let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
+node (AGraphic df mf) = 
+    askDrawingCtx >>= \attr ->
+    getPos        >>= \pt   ->
+    trace (df attr pt) >> return (mf attr pt)
 
 
 
 liftAFG :: (Num u, TraceM m u, DrawingCtxM m) 
         => AFreeGraphic u a -> m a
-liftAFG (AGraphic af df mf) = 
-    askDrawingCtx >>= \a0 ->
-    let attr = af a0 in trace (df attr ()) >> return (mf attr ())
+liftAFG (AGraphic df mf) = 
+    askDrawingCtx >>= \attr -> trace (df attr ()) >> return (mf attr ())
 
 
 
 connect :: (Num u, TraceM m u, DrawingCtxM m) 
         => AConnector u a -> Point2 u -> Point2 u -> m a
-connect conn p1 p2 = let (AGraphic af df mf) = conn p1 p2 in  
-    askDrawingCtx >>= \a0 ->
-    let attr = af a0 in trace (df attr ()) >> return (mf attr ())
+connect conn p1 p2 = let (AGraphic df mf) = conn p1 p2 in  
+    askDrawingCtx >>= \attr -> trace (df attr ()) >> return (mf attr ())
 
 
 -- This is a bit unfortunate - with a connector we can\'t touch
@@ -150,16 +146,19 @@ connect conn p1 p2 = let (AGraphic af df mf) = conn p1 p2 in
 connect_ :: (Num u, TraceM m u, DrawingCtxM m) 
          => (DrawingAttr -> DrawingAttr) 
          -> AConnector u a -> Point2 u -> Point2 u -> m a
-connect_ fn conn p1 p2 = let (AGraphic af df mf) = conn p1 p2 in  
+connect_ fn conn p1 p2 = let (AGraphic df mf) = conn p1 p2 in  
     askDrawingCtx >>= \a0 ->
-    let attr = fn $ af a0 in trace (df attr ()) >> return (mf attr ())
+    let attr = fn $ a0 in trace (df attr ()) >> return (mf attr ())
+
 
 
 
 infixr 7 `props`
 
 props :: AGraphic pm u a -> (DrawingAttr -> DrawingAttr) -> AGraphic pm u a
-props (AGraphic attrF drawF mkF) updF = AGraphic (updF . attrF) drawF mkF
+props (AGraphic df mf) upd = AGraphic (\attr p -> df (upd attr) p) 
+                                      (\attr p -> mf (upd attr) p)
+
 
 
 -- Just a doodle at the moment 

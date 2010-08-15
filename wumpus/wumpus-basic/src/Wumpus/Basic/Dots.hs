@@ -127,19 +127,19 @@ rectangleAnchor hw hh ctr =
 
 
 dotCircle :: (Floating u, FromPtSize u) => ANode u (DotAnchor u)
-dotCircle = AGraphic id (BD.dotCircle) mkF
+dotCircle = AGraphic (BD.dotCircle) mkF
   where
     mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
 dotDisk :: (Floating u, FromPtSize u) => ANode u (DotAnchor u)
-dotDisk = AGraphic id (BD.dotDisk) mkF
+dotDisk = AGraphic (BD.dotDisk) mkF
   where
     mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => ANode u (DotAnchor u)
-dotSquare = AGraphic id (BD.dotSquare) mkF
+dotSquare = AGraphic (BD.dotSquare) mkF
   where
     mkF attr pt = let h = markHeight attr in
                   rectangleAnchor (0.5*h) (0.5*h) pt
@@ -151,7 +151,7 @@ dotChar ch = dotText [ch]
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> ANode u (DotAnchor u) 
-dotText str = AGraphic id (BD.dotText str) mkF
+dotText str = AGraphic (BD.dotText str) mkF
   where
     mkF attr pt = let (w,h) = textDimensions str attr in
                   rectangleAnchor (0.5*w) (0.5*h) pt

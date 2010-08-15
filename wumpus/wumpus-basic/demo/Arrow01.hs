@@ -8,7 +8,6 @@ import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.DrawingMonad
 import Wumpus.Basic.Monads.TurtleMonad
 import Wumpus.Basic.Paths 
 
