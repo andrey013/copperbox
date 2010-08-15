@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ExistentialQuantification  #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -8,193 +11,149 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC with TypeFamilies, GADTs and more
 --
--- Dots
--- 
+-- Dots with anchors.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Dots
   ( 
 
+  -- * Existential anchor type
+    DotAnchor
 
-  -- * Dots
-    dotChar
-  , dotText
-  , dotHLine
-  , dotVLine
-  , dotX
-  , dotPlus
-  , dotCross
-  , dotDiamond
-  , dotFDiamond
+  -- * Dots with anchor points
+  , dotCircle
   , dotDisk
   , dotSquare
-  , dotCircle
-  , dotPentagon
-  , dotStar
-  , dotAsterisk
-  , dotOPlus
-  , dotOCross
-  , dotFOCross
+  , dotChar
+  , dotText
 
   ) where
 
-
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Anchors
+import qualified Wumpus.Basic.Dots.Base         as BD
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Graphic.PointSupply
-import Wumpus.Basic.Utils.HList
+import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Utils.Intersection
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space
-import Data.VectorSpace
+import Data.AffineSpace                         -- package: vector-space
 
--- Marks should be the height of a lower-case letter...
 
--- NOTES
+
+-- An existential thing that supports anchors.
+-- This means any dot can retun the same (opaque) structure
 --
--- Affine transforming Points, LineSegments etc. before
--- they become pictures is _GOOD_! The calculations are done in 
--- Wumpus and so don't cause extra (gsave... grestore) in 
--- PostScript.
+-- But it does mean that which anchor class are supported is 
+-- fixed - the datatype needs a field for each one.
+-- Supporting north, southeast etc. will also be tedious...
+--
+data DotAnchor u = forall s.  
+                    DotAnchor { center_anchor   :: Point2 u
+                              , radial_anchor   :: Radian   -> Point2 u
+                              , cardinal_anchor :: Cardinal -> Point2 u }
+
+data Cardinal = NN | NE | EE | SE | SS | SW | WW | NW
+  deriving (Eq,Show) 
+
+type instance DUnit (DotAnchor u) = u
+
+instance CenterAnchor (DotAnchor u) where
+  center (DotAnchor ca _ _) = ca
+
+instance RadialAnchor (DotAnchor u) where
+   radialAnchor theta (DotAnchor _ ra _) = ra theta
+
+instance CardinalAnchor (DotAnchor u) where
+   north (DotAnchor _ _ c1) = c1 NN
+   south (DotAnchor _ _ c1) = c1 SS
+   east  (DotAnchor _ _ c1) = c1 EE
+   west  (DotAnchor _ _ c1) = c1 WW
+
+
+
+instance CardinalAnchor2 (DotAnchor u) where
+   northeast (DotAnchor _ _ c1) = c1 NE
+   southeast (DotAnchor _ _ c1) = c1 SE
+   southwest (DotAnchor _ _ c1) = c1 SW
+   northwest (DotAnchor _ _ c1) = c1 NW
+
+
+circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
+circleAnchor rad ctr = DotAnchor ctr 
+                                 (\theta -> ctr .+^ (avec theta rad))
+                                 (radialCardinal rad ctr)
+
+
+
+
+radialCardinal :: Floating u => u -> Point2 u ->  Cardinal -> Point2 u
+radialCardinal rad ctr NN = ctr .+^ (avec (pi/2)     rad) 
+radialCardinal rad ctr NE = ctr .+^ (avec (pi/4)     rad) 
+radialCardinal rad ctr EE = ctr .+^ (avec  0         rad) 
+radialCardinal rad ctr SE = ctr .+^ (avec (7/4 * pi) rad) 
+radialCardinal rad ctr SS = ctr .+^ (avec (6/4 * pi) rad) 
+radialCardinal rad ctr SW = ctr .+^ (avec (5/4 * pi) rad) 
+radialCardinal rad ctr WW = ctr .+^ (avec  pi        rad) 
+radialCardinal rad ctr NW = ctr .+^ (avec (3/4 * pi) rad) 
+
+
+-- Rectangle cardinal points are at \"middles and corners\".
 --
 
-dotChar :: (Fractional u, FromPtSize u) => Char -> DrawingAttr -> GraphicF u
+rectCardinal :: Floating u => u ->  u -> Point2 u -> Cardinal -> Point2 u
+rectCardinal _  hh ctr NN = ctr .+^ (vvec hh) 
+rectCardinal hw hh ctr NE = ctr .+^ (vec  hw     hh) 
+rectCardinal hw _  ctr EE = ctr .+^ (hvec hw) 
+rectCardinal hw hh ctr SE = ctr .+^ (vec  hw    (-hh)) 
+rectCardinal _  hh ctr SS = ctr .+^ (vvec (-hh)) 
+rectCardinal hw hh ctr SW = ctr .+^ (vec  (-hw) (-hh) )
+rectCardinal hw _  ctr WW = ctr .+^ (hvec (-hw)) 
+rectCardinal hw hh ctr NW = ctr .+^ (vec  (-hw)  hh) 
+
+
+rectangleAnchor :: (Real u, Floating u) =>  u -> u -> Point2 u -> DotAnchor u
+rectangleAnchor hw hh ctr = 
+    DotAnchor { center_anchor   = ctr
+              , radial_anchor   = fn  
+              , cardinal_anchor = rectCardinal hw hh ctr }
+  where
+    fn theta =  maybe ctr id $ findIntersect ctr theta 
+                             $ rectangleLines ctr hw hh
+
+
+
+dotCircle :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotCircle = AGraphic id (BD.dotCircle) mkF
+  where
+    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
+
+
+dotDisk :: (Floating u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotDisk = AGraphic id (BD.dotDisk) mkF
+  where
+    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
+
+
+dotSquare :: (Floating u, Real u, FromPtSize u) => AGraphic u (DotAnchor u)
+dotSquare = AGraphic id (BD.dotSquare) mkF
+  where
+    mkF attr pt = let h = markHeight attr in
+                  rectangleAnchor (0.5*h) (0.5*h) pt
+
+
+dotChar :: (Floating u, Real u, FromPtSize u) 
+        => Char -> AGraphic u (DotAnchor u)
 dotChar ch = dotText [ch]
 
-dotText :: (Fractional u, FromPtSize u) => String -> DrawingAttr -> GraphicF u
-dotText str attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
-    wrapG $ textlabel (textAttr attr) str pt
+dotText :: (Floating u, Real u, FromPtSize u) 
+        => String -> AGraphic u (DotAnchor u) 
+dotText str = AGraphic id (BD.dotText str) mkF
   where
-    sz = font_size $ font_props attr
-    hh = fromPtSize $ 0.5 * numeralHeight sz
-    hw = fromPtSize $ 0.5 * textWidth sz (length str) 
-
--- | Supplied point is the center.
---
-axialLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
-axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
-    wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
- 
+    mkF attr pt = let (w,h) = textDimensions str attr in
+                  rectangleAnchor (0.5*w) (0.5*h) pt
 
 
-
-
--- Better would be a version of straightLine where the point is 
--- the center not the start...
--- 
-dotHLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
-dotHLine attr = let w = markHeight attr in 
-    axialLine (strokeAttr attr) (hvec w)
-    
-
-dotVLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
-dotVLine attr = let h = markHeight attr in 
-    axialLine (strokeAttr attr) (vvec h)
-
-
-dotX :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotX attr = ls1 `cc` ls2
-  where
-    h        = markHeight attr
-    w        = 0.75 * h
-    ls1      = axialLine (strokeAttr attr) (vec w    h)
-    ls2      = axialLine (strokeAttr attr) (vec (-w) h)
-
-
-dotPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotPlus attr = dotVLine attr `cc` dotHLine attr
-
-
-dotCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotCross attr = ls1 `cc` ls2
-  where
-    z        = markHeight attr
-    ls1      = axialLine (strokeAttr attr) (avec (pi*0.25)    z)
-    ls2      = axialLine (strokeAttr attr) (avec (negate $ pi*0.25) z)
-
-
--- needs horizontal pinch...
-
-pathDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> PathF u
-pathDiamond attr = vertexPath . sequence [dvs,dve,dvn,dvw]
-  where
-    hh    = 0.66  * markHeight attr
-    hw    = 0.5   * markHeight attr
-    dvs   = (.+^ vvec (-hh))
-    dve   = (.+^ hvec hw)
-    dvn   = (.+^ vvec hh)
-    dvw   = (.+^ hvec (-hw))
-
-type PathF u = Point2 u -> Path u
-
-dotDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotDiamond attr = 
-    wrapG . cstroke (strokeAttr attr) . pathDiamond attr
-
-dotFDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotFDiamond attr = dotDiamond attr `cc` filled 
-  where
-    filled = wrapG . fill (fillAttr attr) . pathDiamond attr
-
-
-
--- | Note disk is filled.
---
-dotDisk :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotDisk attr = disk (fill_colour attr) (0.5*markHeight attr) 
-
-
-dotSquare :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotSquare attr = let u = markHeight attr in
-     strokedRectangle (strokeAttr attr) u u 
-    
-
-
-dotCircle :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotCircle attr = disk (strokeAttr attr) (0.5*markHeight attr) 
-
-
-dotPentagon :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotPentagon attr = 
-    wrapG . cstroke (strokeAttr attr) . vertexPath . polygonPointsV 5 hh
-  where
-    hh      = 0.5 * markHeight attr
-
- 
-
-dotStar :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u 
-dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
-  where
-    hh        = 0.5 * markHeight attr
-    fn pt pt' = wrapG $ cstroke (strokeAttr attr) $ path pt [lineTo pt'] 
-
-
-
-
-dotAsterisk :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotAsterisk attr = ls1 `cc` ls2 `cc` ls3
-  where
-    z        = markHeight attr
-    props    = strokeAttr attr
-    ang      = two_pi / 6
-    ls1      = axialLine props (vvec z)
-    ls2      = axialLine props (avec (half_pi + ang)    z)
-    ls3      = axialLine props (avec (half_pi + ang + ang) z)
-
-
-dotOPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotOPlus attr = dotCircle attr `cc` dotPlus attr
-
-
-dotOCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotOCross attr = dotCircle attr `cc` dotCross attr
-
-
-dotFOCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotFOCross attr = dotCircle attr `cc` dotCross attr `cc` bkCircle attr 
-
-bkCircle :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-bkCircle attr = disk (fillAttr attr) (0.5*markHeight attr) 

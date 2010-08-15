@@ -12,14 +12,17 @@ import Wumpus.PSC.Core
 import Wumpus.PSC.ScatterPlot
 
 
-import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.Dots                        -- package: wumpus-basic
+-- Note - Dots.Base is the /wrong/ module. Needs work to
+-- move to Dots which hasd a different type...
+
+import Wumpus.Basic.Dots.Base                   -- package: wumpus-basic
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 

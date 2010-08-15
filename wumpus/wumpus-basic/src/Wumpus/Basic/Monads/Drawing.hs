@@ -12,7 +12,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Drawing operations
+-- Drawing types and lifters...
 --
 --------------------------------------------------------------------------------
 
@@ -27,6 +27,10 @@ module Wumpus.Basic.Monads.Drawing
   , liftAG2
   , connect
   , props
+
+  -- doodle
+  , thick
+  , thick2
 
   ) where
 
@@ -124,7 +128,37 @@ connect (AGraphic2 af df mf) p1 p2 =
     askDrawingCtx >>= \a0 ->
     let attr = af a0 in trace (df attr p1 p2) >> return (mf attr p1 p2)
 
+
+
+
 infixr 7 `props`
 
 props :: AGraphic u a -> (DrawingAttr -> DrawingAttr) -> AGraphic u a
 props (AGraphic attrF drawF mkF) updF = AGraphic (updF . attrF) drawF mkF
+
+
+-- Just a doodle at the moment 
+-- 
+-- Property changing could be composable...
+--
+-- Really ought to be (*2) as well, but for the moment (*4) is
+-- easier to see in the ouput. 
+--
+
+thick :: AGraphic u a -> AGraphic u a 
+thick (AGraphic af df mf) = AGraphic (upd . af) df mf
+  where
+    upd = star (\s i -> s { line_width = i*4 }) line_width
+
+-- Clearly having thick2 is bad...
+--
+thick2 :: AGraphic2 u a -> AGraphic2 u a 
+thick2 (AGraphic2 af df mf) = AGraphic2 (upd . af) df mf
+  where
+    upd = star (\s i -> s { line_width = i*4 }) line_width
+
+
+star     :: (r -> a -> ans) 
+         -> (r -> a) 
+         -> r -> ans
+star f fa x = f x (fa x)

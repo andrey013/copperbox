@@ -78,10 +78,10 @@ library
   
   exposed-modules:
     Wumpus.Basic.Anchors,
-    Wumpus.Basic.AnchorDots,
     Wumpus.Basic.Arrows,
     Wumpus.Basic.Arrows.Tips,
     Wumpus.Basic.Dots,
+    Wumpus.Basic.Dots.Base,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,
     Wumpus.Basic.Graphic.PointSupply,

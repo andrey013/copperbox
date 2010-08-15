@@ -2,7 +2,7 @@
 
 module Arrow01 where
 
-import Wumpus.Basic.AnchorDots
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
@@ -47,6 +47,6 @@ pic2 = drawGraphicU $ execDrawing (standardAttr 48) $
           ; _ <- liftAG2 (arrowOTri90 connectS) (P2 0 0) (P2 100 0) 
           ; _ <- liftAG (dotText "k") (P2 120 6)
           ; _ <- liftAG (dotText "k") (P2 88  (-20))
-          ; _ <- liftAG2 (arrowPerp connectS) (P2 130 0) (P2 160 0) 
+          ; _ <- connect (thick2 $ arrowPerp connectS) (P2 130 0) (P2 160 0) 
           ; return () 
           }  
