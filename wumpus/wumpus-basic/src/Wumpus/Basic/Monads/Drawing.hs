@@ -12,19 +12,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Drawing types and lifters...
+-- Graphic types and lifters...
 --
--- Note - there are problems with this module. AGraphic2 does not
--- model connectors well.
---
--- For drawings it turns out that a connector isn\'t really a
--- function from two points to a Graphic, because drawing modes
--- never supply two points (e.g. turtle mode only ever supplies
--- one point, the current turtle position).
---
--- Connectors actually derive start and end points from objects - 
--- anchors on dots, shapes - rather than derive points from the 
--- drawing mode. So really they are arity 0 rather arity 2.
 --
 --
 --------------------------------------------------------------------------------
@@ -167,19 +156,3 @@ props (AGraphic df mf) upd = AGraphic (\attr p -> df (upd attr) p)
 
 
 
--- Just a doodle at the moment 
--- 
--- Property changing could be composable...
---
--- Really ought to be (*2) as well, but for the moment (*4) is
--- easier to see in the ouput. 
---
-
-thick :: DrawingAttr -> DrawingAttr 
-thick = star (\s i -> s { line_width = i*4 }) line_width
-
-
-star     :: (r -> a -> ans) 
-         -> (r -> a) 
-         -> r -> ans
-star f fa x = f x (fa x)

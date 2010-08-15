@@ -151,10 +151,10 @@ make _ (P2 x y) = translate x y
 
 
 instance (Real u, Floating u, FromPtSize u) => Draw (Diamond u) where
-  draw dia = AGraphic id df (\a p -> make a p dia)
+  draw dia = AGraphic df (\a p -> make a p dia)
     where
       df attr pt = textD attr pt dia . strokeD attr pt dia
-                                     . fillD attr pt dia
+                                     . fillD   attr pt dia
 
 
 --

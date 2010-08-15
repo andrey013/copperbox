@@ -142,10 +142,10 @@ make :: (Real u, Floating u)
 make _ (P2 x y) = translate x y
 
 instance (Real u, Floating u, FromPtSize u) => Draw (Rectangle u) where
-  draw rect = AGraphic id df (\a p -> make a p rect)
+  draw rect = AGraphic df (\a p -> make a p rect)
     where
       df attr pt = textR attr pt rect . strokeR attr pt rect 
-                                      . fillR attr pt rect
+                                      . fillR   attr pt rect
       
 
 

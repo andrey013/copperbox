@@ -137,10 +137,10 @@ make _ (P2 x y) = translate x y
 
 
 instance (Real u, Floating u, FromPtSize u) => Draw (Circle u) where
-  draw circ = AGraphic id df (\a p -> make a p circ)
+  draw circ = AGraphic df (\a p -> make a p circ)
     where
       df attr pt = textC attr pt circ . strokeC attr pt circ
-                                      . fillC attr pt circ
+                                      . fillC   attr pt circ
 
 
 

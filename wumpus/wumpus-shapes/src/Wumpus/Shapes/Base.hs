@@ -135,7 +135,7 @@ labelGraphic sl (rgb,attr) ctm =
 
 
 class Draw sh where
-  draw :: (u ~ DUnit sh) => sh -> AGraphic u sh
+  draw :: (u ~ DUnit sh) => sh -> AGraphic (Point2 u) u sh
 
 {-
 -- stroke okay, but fill has a name clash...

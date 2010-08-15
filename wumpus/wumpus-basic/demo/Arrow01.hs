@@ -42,13 +42,13 @@ pic1 = drawGraphicU $
          
 pic2 :: Picture Double 
 pic2 = drawGraphicU $ 
-          execTurtleDrawing (regularConfig 1) (0,0) (standardAttr 48) $
-       do { _ <- node $ dotDisk `at` (P2 0 0) 
-          ; _ <- node $ dotDisk `at` (P2 100 0)  
+          execDrawing (standardAttr 48) $
+       do { _ <- nodeAt dotDisk  (P2 0 0) 
+          ; _ <- nodeAt dotDisk  (P2 100 0)  
           ; _ <- connect (arrowOTri90 connectS) (P2 0 0) (P2 100 0) 
-          ; _ <- node $ (dotText "k") `at` (P2 120 6)
-          ; _ <- node $ (dotText "k") `at` (P2 88  (-20))
-          ; _ <- connect_ thick  (arrowPerp connectS) (P2 130 0) (P2 160 0) 
+          ; _ <- nodeAt (dotText "k") (P2 120 6)
+          ; _ <- nodeAt (dotText "k") (P2 88  (-20))
+          ; _ <- connect_ ultrathick  (arrowPerp connectS) (P2 130 0) (P2 160 0) 
           ; return () 
           }  
 

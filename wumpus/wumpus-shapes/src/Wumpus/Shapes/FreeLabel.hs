@@ -150,6 +150,6 @@ make attr (P2 x y) lbl =
 
 
 instance (Real u, Floating u, FromPtSize u) => Draw (FreeLabel u) where
-  draw lbl = AGraphic id (\a p -> textC a p lbl)  (\a p -> make a p lbl)
+  draw lbl = AGraphic (\a p -> textC a p lbl)  (\a p -> make a p lbl)
 
 

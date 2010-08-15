@@ -75,7 +75,7 @@ coordinate = Coordinate identityCTM
 
 
 instance (Real u, Floating u) => Draw (Coordinate u) where
-  draw coord = AGraphic id df mf
+  draw coord = AGraphic df mf
     where
       df attr (P2 x y) = drawC attr $ translate x y $ coord
 

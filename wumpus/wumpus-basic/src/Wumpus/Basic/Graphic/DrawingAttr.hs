@@ -28,6 +28,11 @@ module Wumpus.Basic.Graphic.DrawingAttr
 
   , textDimensions
 
+  -- * Line widths
+  , thick
+  , ultrathick
+  , thin
+
   ) where
 
 
@@ -47,7 +52,7 @@ data DrawingAttr = DrawingAttr
   deriving (Eq,Show)
 
 standardAttr :: FontSize -> DrawingAttr
-standardAttr sz = DrawingAttr { line_width         = 1.0
+standardAttr sz = DrawingAttr { line_width         = std_line_width
                               , font_props         = courier sz
                               , stroke_colour      = black
                               , fill_colour        = gold  }
@@ -77,3 +82,32 @@ textDimensions str attr = (w,h)
     sz = font_size  $ font_props attr
     w  = fromPtSize $ textWidth  sz (1 + length str) 
     h  = fromPtSize $ textHeight sz
+
+
+
+--------------------------------------------------------------------------------
+-- line widths
+
+-- Note - some care might be needed if we ever define other unit 
+-- types...
+
+std_line_width      :: Double
+std_line_width      = 1.0
+
+thick_line          :: Double
+thick_line          = 2.0
+
+ultra_thick_line    :: Double
+ultra_thick_line    = 4.0
+
+thin_line           :: Double
+thin_line           = 0.5
+
+thick               :: DrawingAttr -> DrawingAttr
+thick attr          = attr { line_width = thick_line }
+
+ultrathick          :: DrawingAttr -> DrawingAttr
+ultrathick attr     = attr { line_width = ultra_thick_line }
+
+thin                :: DrawingAttr -> DrawingAttr
+thin attr           = attr { line_width = thin_line }

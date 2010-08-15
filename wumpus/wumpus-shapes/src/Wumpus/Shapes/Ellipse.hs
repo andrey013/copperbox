@@ -138,10 +138,10 @@ make _ (P2 x y) = translate x y
 
 
 instance (Real u, Floating u, FromPtSize u) => Draw (Ellipse u) where
-  draw ell = AGraphic id df (\a p -> make a p ell)
+  draw ell = AGraphic df (\a p -> make a p ell)
     where
       df attr pt = textE attr pt ell . strokeE attr pt ell
-                                     . fillE attr pt ell
+                                     . fillE   attr pt ell
 
 
 {-

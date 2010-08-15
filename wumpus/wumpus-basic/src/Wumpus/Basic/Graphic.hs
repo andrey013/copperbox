@@ -28,8 +28,6 @@ module Wumpus.Basic.Graphic
   , GraphicF
   , DGraphicF
 
-  , GraphicF2           -- e.g. connectors
-  , DGraphicF2
 
   -- * General combinators
   , cc
@@ -94,9 +92,6 @@ type GraphicF u         = Point2 u -> Graphic u
 
 type DGraphicF          = GraphicF Double
 
-type GraphicF2 u        = Point2 u -> Point2 u -> Graphic u
-
-type DGraphicF2         = GraphicF Double
 
 --------------------------------------------------------------------------------
 -- Combinators...

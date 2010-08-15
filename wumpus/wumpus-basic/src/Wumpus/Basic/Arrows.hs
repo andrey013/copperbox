@@ -27,7 +27,11 @@ module Wumpus.Basic.Arrows
   , arrowOTri90
   , arrowOTri60
   , arrowOTri45
-  
+
+  , arrowBarb90
+  , arrowBarb60
+  , arrowBarb45
+    
   , arrowPerp
 
   ) where
@@ -60,58 +64,91 @@ line pathF p0 p1 = AGraphic df mf
 arrowTri90 :: (Real u, Floating u, FromPtSize u) 
            => BPathF u -> AConnector u (BPath u)
 arrowTri90 pathF = \p0 p1 -> 
-    AGraphic (\attr () -> mkDF_tipR pathF tri90 p0 p1 attr) 
+    AGraphic (\attr () -> triTipRight pathF tri90 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowTri60 :: (Real u, Floating u, FromPtSize u) 
            => BPathF u -> AConnector u (BPath u)
 arrowTri60 pathF = \p0 p1 ->
-    AGraphic (\attr () -> mkDF_tipR pathF tri60 p0 p1 attr) 
+    AGraphic (\attr () -> triTipRight pathF tri60 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
  
 arrowTri45 :: (Real u, Floating u, FromPtSize u) 
            => BPathF u -> AConnector u (BPath u)
 arrowTri45 pathF = \p0 p1 ->
-    AGraphic (\attr () -> mkDF_tipR pathF tri45 p0 p1 attr) 
+    AGraphic (\attr () -> triTipRight pathF tri45 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
             => BPathF u -> AConnector u (BPath u)
 arrowOTri90 pathF = \p0 p1 ->
-    AGraphic (\attr () -> mkDF_tipR pathF otri90 p0 p1 attr) 
+    AGraphic (\attr () -> triTipRight pathF otri90 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
             => BPathF u -> AConnector u (BPath u)
 arrowOTri60 pathF = \p0 p1 -> 
-    AGraphic (\attr () -> mkDF_tipR pathF otri60 p0 p1 attr) 
+    AGraphic (\attr () -> triTipRight pathF otri60 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 
 arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
             => BPathF u -> AConnector u (BPath u)
 arrowOTri45 pathF = \p0 p1 ->
-    AGraphic (\attr () -> mkDF_tipR pathF otri45 p0 p1 attr)
+    AGraphic (\attr () -> triTipRight pathF otri45 p0 p1 attr)
+             (\_    () -> pathF p0 p1)
+
+
+arrowBarb90 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AConnector u (BPath u)
+arrowBarb90 pathF = \p0 p1 ->
+    AGraphic (\attr () -> barbTipRight pathF barb90 p0 p1 attr)
+             (\_    () -> pathF p0 p1)
+
+arrowBarb60 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AConnector u (BPath u)
+arrowBarb60 pathF = \p0 p1 ->
+    AGraphic (\attr () -> barbTipRight pathF barb60 p0 p1 attr)
+             (\_    () -> pathF p0 p1)
+
+arrowBarb45 :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u -> AConnector u (BPath u)
+arrowBarb45 pathF = \p0 p1 ->
+    AGraphic (\attr () -> barbTipRight pathF barb45 p0 p1 attr)
              (\_    () -> pathF p0 p1)
 
 
 
-
-mkDF_tipR :: (Real u, Floating u, FromPtSize u) 
-          => BPathF u 
-          -> (Radian -> DrawingAttr -> GraphicF u)
-          -> Point2 u -> Point2 u -> DrawingAttr 
-          -> Graphic u 
-mkDF_tipR pathF tipF p0 p1 attr = 
+triTipRight :: (Real u, Floating u, FromPtSize u) 
+            => BPathF u 
+            -> (Radian -> DrawingAttr -> GraphicF u)
+            -> Point2 u -> Point2 u -> DrawingAttr 
+            -> Graphic u 
+triTipRight pathF tipF p0 p1 attr = 
     pathGraphic short_path attr . tipF theta attr p1
   where
-    sz          = arrowWidth attr
-    long_path   = pathF p0 p1
-    short_path  = shortenR sz long_path
-    theta       = directionR long_path
+    sz              = arrowWidth attr
+    line_unit       = realToFrac $ (line_width attr)
+    long_path       = pathF p0 p1
+    short_path      = shortenR (sz+line_unit) long_path
+    mid_short_path  = shortenR (0.5*sz) long_path
+    theta           = directionR mid_short_path
                      
 
 
+barbTipRight :: (Real u, Floating u, FromPtSize u) 
+             => BPathF u 
+             -> (Radian -> DrawingAttr -> GraphicF u)
+             -> Point2 u -> Point2 u -> DrawingAttr 
+             -> Graphic u 
+barbTipRight pathF tipF p0 p1 attr = 
+    pathGraphic long_path attr . tipF theta attr p1
+  where
+    sz              = arrowWidth attr
+    long_path       = pathF p0 p1
+    mid_short_path  = shortenR (0.5*sz) long_path
+    theta           = directionR mid_short_path
+                     
 
 arrowPerp :: (Real u, Floating u, FromPtSize u) 
           => BPathF u -> AConnector u (BPath u)
