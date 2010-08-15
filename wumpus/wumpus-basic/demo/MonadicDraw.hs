@@ -4,7 +4,7 @@
 module MonadicDraw where
 
 import Wumpus.Basic.Anchors
-import Wumpus.Basic.AnchorDots
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing

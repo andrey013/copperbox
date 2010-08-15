@@ -20,6 +20,7 @@
 module Wumpus.Basic.Arrows
   ( 
     line
+
   , arrowTri90
   , arrowTri60
   , arrowTri45
@@ -47,46 +48,61 @@ arrowWidth :: FromPtSize u => DrawingAttr -> u
 arrowWidth = fromPtSize . xcharHeight . font_size . font_props
 
 
-line :: Num u => BPathF u -> AGraphic2 u (BPath u)
-line pathF = AGraphic2 id df mf
+line :: Num u => BPathF u -> AConnector u (BPath u)
+line pathF p0 p1 = AGraphic id df mf
   where
-    df attr p0 p1 = pathGraphic (pathF p0 p1) attr
-    mf _    p0 p1 = pathF p0 p1
+    df attr () = pathGraphic (pathF p0 p1) attr
+    mf _    () = pathF p0 p1
+
 
 
 
 arrowTri90 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AGraphic2 u (BPath u)
-arrowTri90 pathF = AGraphic2 id (mkDF_tipR pathF tri90) (\_ -> pathF)
+           => BPathF u -> AConnector u (BPath u)
+arrowTri90 pathF = \p0 p1 -> 
+    AGraphic id (\attr () -> mkDF_tipR pathF tri90 p0 p1 attr) 
+                (\_    () -> pathF p0 p1)
 
 arrowTri60 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AGraphic2 u (BPath u)
-arrowTri60 pathF = AGraphic2 id (mkDF_tipR pathF tri60) (\_ -> pathF)
+           => BPathF u -> AConnector u (BPath u)
+arrowTri60 pathF = \p0 p1 ->
+    AGraphic id (\attr () -> mkDF_tipR pathF tri60 p0 p1 attr) 
+                (\_    () -> pathF p0 p1)
  
 arrowTri45 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AGraphic2 u (BPath u)
-arrowTri45 pathF = AGraphic2 id (mkDF_tipR pathF tri45) (\_ -> pathF)
+           => BPathF u -> AConnector u (BPath u)
+arrowTri45 pathF = \p0 p1 ->
+    AGraphic id (\attr () -> mkDF_tipR pathF tri45 p0 p1 attr) 
+                (\_    () -> pathF p0 p1)
 
 arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AGraphic2 u (BPath u)
-arrowOTri90 pathF = AGraphic2 id (mkDF_tipR pathF otri90) (\_ -> pathF)
+            => BPathF u -> AConnector u (BPath u)
+arrowOTri90 pathF = \p0 p1 ->
+    AGraphic id (\attr () -> mkDF_tipR pathF otri90 p0 p1 attr) 
+                (\_    () -> pathF p0 p1)
 
 arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AGraphic2 u (BPath u)
-arrowOTri60 pathF = AGraphic2 id (mkDF_tipR pathF otri60) (\_ -> pathF)
+            => BPathF u -> AConnector u (BPath u)
+arrowOTri60 pathF = \p0 p1 -> 
+    AGraphic id (\attr () -> mkDF_tipR pathF otri60 p0 p1 attr) 
+                (\_    () -> pathF p0 p1)
+
 
 arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AGraphic2 u (BPath u)
-arrowOTri45 pathF = AGraphic2 id (mkDF_tipR pathF otri45) (\_ -> pathF)
+            => BPathF u -> AConnector u (BPath u)
+arrowOTri45 pathF = \p0 p1 ->
+    AGraphic id (\attr () -> mkDF_tipR pathF otri45 p0 p1 attr)
+                (\_    () -> pathF p0 p1)
+
 
 
 
 mkDF_tipR :: (Real u, Floating u, FromPtSize u) 
           => BPathF u 
           -> (Radian -> DrawingAttr -> GraphicF u)
-          -> DrawingAttr -> Point2 u -> Point2 u 
+          -> Point2 u -> Point2 u -> DrawingAttr 
           -> Graphic u 
-mkDF_tipR pathF tipF attr p0 p1 = 
+mkDF_tipR pathF tipF p0 p1 attr = 
     pathGraphic short_path attr . tipF theta attr p1
   where
     sz          = arrowWidth attr
@@ -98,9 +114,10 @@ mkDF_tipR pathF tipF attr p0 p1 =
 
 
 arrowPerp :: (Real u, Floating u, FromPtSize u) 
-          => BPathF u -> AGraphic2 u (BPath u)
-arrowPerp pathF = AGraphic2 id df mf
+          => BPathF u -> AConnector u (BPath u)
+arrowPerp pathF p0 p1 = AGraphic id df mf
   where
-    df attr p0 p1 = let theta = langle p0 p1  in
+    df attr () = let theta = langle p0 p1  in
                     pathGraphic (pathF p0 p1) attr . perp theta attr p1
-    mf _    p0 p1 = pathF p0 p1
+    mf _    () = pathF p0 p1
+

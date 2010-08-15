@@ -28,9 +28,9 @@ std_attr = standardAttr 19
 
 pic1 :: Picture Double
 pic1 = drawGraphicU $ 
-           barb90 std_attr 0 (P2 110 0)
-         . barb60 std_attr 0 (P2 120 0)
-         . barb45 std_attr 0 (P2 130 0)
+           barb90 0 std_attr (P2 110 0)
+         . barb60 0 std_attr (P2 120 0)
+         . barb45 0 std_attr (P2 130 0)
          . eastUpWest
          . curve1
          . curve2

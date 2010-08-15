@@ -9,6 +9,7 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingMonad
+import Wumpus.Basic.Monads.TurtleMonad
 import Wumpus.Basic.Paths 
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -41,12 +42,14 @@ pic1 = drawGraphicU $
            
          
 pic2 :: Picture Double 
-pic2 = drawGraphicU $ execDrawing (standardAttr 48) $
-       do { _ <- liftAG dotDisk (P2 0 0) 
-          ; _ <- liftAG dotDisk (P2 100 0)  
-          ; _ <- liftAG2 (arrowOTri90 connectS) (P2 0 0) (P2 100 0) 
-          ; _ <- liftAG (dotText "k") (P2 120 6)
-          ; _ <- liftAG (dotText "k") (P2 88  (-20))
-          ; _ <- connect (thick2 $ arrowPerp connectS) (P2 130 0) (P2 160 0) 
+pic2 = drawGraphicU $ 
+          execTurtleDrawing (regularConfig 1) (0,0) (standardAttr 48) $
+       do { _ <- node $ dotDisk `at` (P2 0 0) 
+          ; _ <- node $ dotDisk `at` (P2 100 0)  
+          ; _ <- connect (arrowOTri90 connectS) (P2 0 0) (P2 100 0) 
+          ; _ <- node $ (dotText "k") `at` (P2 120 6)
+          ; _ <- node $ (dotText "k") `at` (P2 88  (-20))
+          ; _ <- connect_ thick  (arrowPerp connectS) (P2 130 0) (P2 160 0) 
           ; return () 
           }  
+

@@ -14,23 +14,38 @@
 --
 -- Drawing types and lifters...
 --
+-- Note - there are problems with this module. AGraphic2 does not
+-- model connectors well.
+--
+-- For drawings it turns out that a connector isn\'t really a
+-- function from two points to a Graphic, because drawing modes
+-- never supply two points (e.g. turtle mode only ever supplies
+-- one point, the current turtle position).
+--
+-- Connectors actually derive start and end points from objects - 
+-- anchors on dots, shapes - rather than derive points from the 
+-- drawing mode. So really they are arity 0 rather arity 2.
+--
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Monads.Drawing
   (
     
     AGraphic(..)
-  , AGraphic2(..)
+  , ANode
+  , AFreeGraphic
+  , AConnector
+
   , node
   , at
-  , liftAG
-  , liftAG2
+  , liftAFG
   , connect
+  , connect_
   , props
 
   -- doodle
   , thick
-  , thick2
 
   ) where
 
@@ -44,18 +59,36 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
--- | AGraphic2 for /nodes/...
+-- | AGraphic 
+-- 
+-- param typically @Point2 u@ or @()@
 --
-data AGraphic u a = AGraphic 
+-- If the param is a point it will be supplied by the drawing 
+-- mode / drawing monad (e.g. the Turtle monad which supplies
+-- the current point).
+--
+data AGraphic param u a = AGraphic 
        { agAttrF    :: DrawingAttr -> DrawingAttr
-       , agDrawF    :: DrawingAttr -> Point2 u -> Graphic u
-       , agMakeF    :: DrawingAttr -> Point2 u -> a
+       , agDrawF    :: DrawingAttr -> param -> Graphic u
+       , agMakeF    :: DrawingAttr -> param -> a
        }
 
-instance Functor (AGraphic u) where
-  fmap f (AGraphic af df mf) = AGraphic af df (\attr pt -> f $ mf attr pt)
 
-instance Applicative (AGraphic u) where
+-- | ANode is drawn a a point supplied by the drawing 
+-- (e.g. current node of Turtle).
+--
+type ANode u a = AGraphic (Point2 u) u a
+
+-- /Free/ graphic
+--
+type AFreeGraphic u a = AGraphic () u a
+
+type AConnector u a = Point2 u -> Point2 u -> AFreeGraphic u a
+
+instance Functor (AGraphic pm u) where
+  fmap f (AGraphic af df mf) = AGraphic af df (\pt attr -> f $ mf pt attr)
+
+instance Applicative (AGraphic pm u) where
   pure a = AGraphic id (\_ _ -> id) (\_ _ -> a)
   (AGraphic af1 df1 mf1) <*> (AGraphic af2 df2 mf2) = AGraphic af df mf
       where
@@ -63,33 +96,11 @@ instance Applicative (AGraphic u) where
         df attr pt   = df2 (af2 attr) pt . df1 (af1 attr) pt
         mf attr pt   = mf1 attr pt $ mf2 attr pt
 
--- | AGraphic2 for connectors...
---
-data AGraphic2 u a = AGraphic2 
-       { ag2AttrF    :: DrawingAttr -> DrawingAttr
-       , ag2DrawF    :: DrawingAttr -> Point2 u -> Point2 u -> Graphic u
-       , ag2MakeF    :: DrawingAttr -> Point2 u -> Point2 u -> a
-       }
-
-instance Functor (AGraphic2 u) where
-  fmap f (AGraphic2 af df mf) = 
-      AGraphic2 af df (\attr p1 p2 -> f $ mf attr p1 p2)
-
-
-instance Applicative (AGraphic2 u) where
-  pure a = AGraphic2 id (\_ _ _ -> id) (\_ _ _ -> a)
-  (AGraphic2 af1 df1 mf1) <*> (AGraphic2 af2 df2 mf2) = AGraphic2 af df mf
-      where
-        af            = af2 . af1 
-        df attr p1 p2 = df2 (af2 attr) p1 p2 . df1 (af1 attr) p1 p2
-        mf attr p1 p2 = mf1 attr p1 p2 $ mf2 attr p1 p2
-
-
 
 -- This doesn't work like at on MGraphicF, as the point is not 
 -- scaled w.r.t. TurtleScaleM ...
 --
-at :: AGraphic u a -> Point2 u -> AGraphic u a
+at :: ANode u a -> Point2 u -> ANode u a
 at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
                                         (\attr _ -> mf attr pt)
 
@@ -99,41 +110,55 @@ at (AGraphic af df mf) pt = AGraphic af (\attr _ -> df attr pt)
 -- those Bivariate context from PSC could implement it...
 
 node :: (Num u, TraceM m u, DrawingCtxM m, TurtleScaleM m u) 
-       => AGraphic u a -> m a
+       => ANode u a -> m a
 node (AGraphic af df mf) = 
     askDrawingCtx >>= \a0 ->
     getPos        >>= \pt ->
     let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
 
 
-liftAG :: (Num u, TraceM m u, DrawingCtxM m) 
-       => AGraphic u a -> Point2 u -> m a
-liftAG (AGraphic af df mf) pt = 
+
+liftAFG :: (Num u, TraceM m u, DrawingCtxM m) 
+        => AFreeGraphic u a -> m a
+liftAFG (AGraphic af df mf) = 
     askDrawingCtx >>= \a0 ->
-    let attr = af a0 in trace (df attr pt) >> return (mf attr pt)
-
-
-liftAG2 :: (Num u, TraceM m u, DrawingCtxM m) 
-       => AGraphic2 u a -> Point2 u -> Point2 u -> m a
-liftAG2 (AGraphic2 af df mf) p1 p2 = 
-    askDrawingCtx >>= \a0 ->
-    let attr = af a0 in trace (df attr p1 p2) >> return (mf attr p1 p2)
-
+    let attr = af a0 in trace (df attr ()) >> return (mf attr ())
 
 
 
 connect :: (Num u, TraceM m u, DrawingCtxM m) 
-        => AGraphic2 u a -> Point2 u -> Point2 u -> m a
-connect (AGraphic2 af df mf) p1 p2 = 
+        => AConnector u a -> Point2 u -> Point2 u -> m a
+connect conn p1 p2 = let (AGraphic af df mf) = conn p1 p2 in  
     askDrawingCtx >>= \a0 ->
-    let attr = af a0 in trace (df attr p1 p2) >> return (mf attr p1 p2)
+    let attr = af a0 in trace (df attr ()) >> return (mf attr ())
 
+
+-- This is a bit unfortunate - with a connector we can\'t touch
+-- the drawingAttr inside the AGraphic becase a connecter  is
+--
+-- > pt -> pt -> AGraphic
+--
+-- and not
+--
+-- > AGraphic
+--
+--
+-- Maybe AGraphic shouldn\'t have the agAttrF field?
+--
+--
+--
+connect_ :: (Num u, TraceM m u, DrawingCtxM m) 
+         => (DrawingAttr -> DrawingAttr) 
+         -> AConnector u a -> Point2 u -> Point2 u -> m a
+connect_ fn conn p1 p2 = let (AGraphic af df mf) = conn p1 p2 in  
+    askDrawingCtx >>= \a0 ->
+    let attr = fn $ af a0 in trace (df attr ()) >> return (mf attr ())
 
 
 
 infixr 7 `props`
 
-props :: AGraphic u a -> (DrawingAttr -> DrawingAttr) -> AGraphic u a
+props :: AGraphic pm u a -> (DrawingAttr -> DrawingAttr) -> AGraphic pm u a
 props (AGraphic attrF drawF mkF) updF = AGraphic (updF . attrF) drawF mkF
 
 
@@ -145,17 +170,8 @@ props (AGraphic attrF drawF mkF) updF = AGraphic (updF . attrF) drawF mkF
 -- easier to see in the ouput. 
 --
 
-thick :: AGraphic u a -> AGraphic u a 
-thick (AGraphic af df mf) = AGraphic (upd . af) df mf
-  where
-    upd = star (\s i -> s { line_width = i*4 }) line_width
-
--- Clearly having thick2 is bad...
---
-thick2 :: AGraphic2 u a -> AGraphic2 u a 
-thick2 (AGraphic2 af df mf) = AGraphic2 (upd . af) df mf
-  where
-    upd = star (\s i -> s { line_width = i*4 }) line_width
+thick :: DrawingAttr -> DrawingAttr 
+thick = star (\s i -> s { line_width = i*4 }) line_width
 
 
 star     :: (r -> a -> ans) 
