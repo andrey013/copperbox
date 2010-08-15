@@ -38,6 +38,7 @@ module Wumpus.Basic.Monads.Drawing
   , AConnector
 
   , node
+  , nodeAt
   , at
   , liftAFG
   , connect
@@ -108,12 +109,17 @@ at (AGraphic df mf) pt = AGraphic (\attr _ -> df attr pt)
 -- those Bivariate context from PSC could implement it...
 
 node :: (Num u, TraceM m u, DrawingCtxM m, TurtleScaleM m u) 
-       => ANode u a -> m a
+     => ANode u a -> m a
 node (AGraphic df mf) = 
     askDrawingCtx >>= \attr ->
     getPos        >>= \pt   ->
     trace (df attr pt) >> return (mf attr pt)
 
+nodeAt :: (Num u, TraceM m u, DrawingCtxM m) 
+       => ANode u a -> Point2 u -> m a
+nodeAt (AGraphic df mf) pt = 
+    askDrawingCtx >>= \attr ->
+    trace (df attr pt) >> return (mf attr pt)
 
 
 liftAFG :: (Num u, TraceM m u, DrawingCtxM m) 

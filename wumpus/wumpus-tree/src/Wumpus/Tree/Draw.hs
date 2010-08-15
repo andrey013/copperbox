@@ -45,7 +45,7 @@ drawTree drawF attr tree = execDrawing attr $ drawTop drawF tree
 
 drawTop :: (a -> TreeNode) -> CoordTree Double a -> Drawing Double ()
 drawTop fn (Node (pt,a) ns) = do 
-    ancr <- liftAG (fn a) pt
+    ancr <- nodeAt (fn a) pt
     mapM_ (draw1 fn ancr) ns
 
 draw1 :: (a -> TreeNode) 
@@ -53,7 +53,7 @@ draw1 :: (a -> TreeNode)
       -> CoordTree Double a 
       -> Drawing Double ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
-    ancr <- liftAG (fn a) pt
+    ancr <- nodeAt (fn a) pt
     connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
 

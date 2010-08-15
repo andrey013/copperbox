@@ -42,5 +42,5 @@ type TreePicture = Picture Double
 type CoordTree u a = Tree (Point2 u, a)
 
 
-type TreeNode = AGraphic Double (DotAnchor Double)
+type TreeNode = ANode Double (DotAnchor Double)
 
