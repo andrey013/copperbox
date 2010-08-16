@@ -56,6 +56,7 @@ module Wumpus.Core.GraphicsState
 
   -- ** Font
   , FontAttr(..)
+  , FontFace(..)
   , SVGFontStyle(..)
 
   -- ** Colour
@@ -106,7 +107,7 @@ data DashPattern = Solid | Dash Int [(Int,Int)]
   deriving (Eq,Show)
 
 
--- | Font name and size. Equivalent fonts have different names
+-- | Font face and size. Equivalent fonts have different names
 -- in PostScript and SVG. A PostScript font name includes the 
 -- font style (e.g. @Times-BoldItalic@) whereas an SVG font has 
 -- a name (the @font-family@ attribute) and a style.
@@ -121,19 +122,29 @@ data DashPattern = Solid | Dash Int [(Int,Int)]
 --
 -- See the PostScript Language Reference Manual.
 --
-data FontAttr = FontAttr { 
-                    font_name       :: String,        -- for PostScript
-                    svg_font_family :: String,        -- for SVG
-                    svg_font_style  :: SVGFontStyle,
-                    font_size       :: Int 
-                  }
-  deriving (Eq,Show)
+data FontAttr = FontAttr 
+      { font_size  :: Int 
+      , font_face  :: FontFace
+      }
+  deriving (Eq,Ord,Show)
+
+-- | 'FontFace' : @ postscript_name * svg_font_family * svg_font_style @
+--
+data FontFace = FontFace
+      { font_name       :: String        -- for PostScript
+      , svg_font_family :: String        -- for SVG
+      , svg_font_style  :: SVGFontStyle
+      }
+  deriving (Eq,Ord,Show)
+
+
 
 -- | SVG font styles - potentially a style may generate both
 -- @font-weight@ and @font-style@ attributes in the SVG output.
+--
 data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
                   | SVG_OBLIQUE | SVG_BOLD_OBLIQUE
-  deriving (Eq,Show)
+  deriving (Eq,Ord,Show)
 
 type PSRgb = RGB3 Double
 

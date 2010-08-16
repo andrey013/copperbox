@@ -174,13 +174,15 @@ path (c,dp) p =
 --
 label :: (Real u, Floating u, PSUnit u) 
       => LabelProps -> Label u -> SvgM Element
-label (c,FontAttr _ fam style sz) (Label pt entxt ctm) = do 
+label (c,FontAttr sz face) (Label pt entxt ctm) = do 
      str <- encodedText entxt
      let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
      return $ element_text tspan_elt `snoc_attrs` coord_attrs
                                      `snoc_attrs` font_attrs 
                                      `snoc_attrs` (fontStyle style)
   where
+    style       = svg_font_style  face
+    fam         = svg_font_family face
     coord_attrs = if ctm == identityCTM then simpleLabelAttrs pt
                                         else transfLabelAttrs pt ctm
     font_attrs  = [ attr_font_family fam

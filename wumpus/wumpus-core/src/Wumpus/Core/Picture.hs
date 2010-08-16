@@ -201,16 +201,17 @@ curvedPath (x:xs) = Path x (fn xs) where
 
 
 -- | Constant for the default font, which is @Courier@ (aliased 
--- to @Courier New@ for SVG).
--- 
--- The font size is 24 point. Note that only a handful of font 
--- sizes are available directly to PostScript / GhostScript.
+-- to @Courier New@ for SVG) at 24 point.
 --
--- To get non-standard sizes, consider drawing the text and 
--- applying a 'uniformScale'.
 --
 wumpus_default_font :: FontAttr
-wumpus_default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 24
+wumpus_default_font = FontAttr 24 face 
+  where
+    face = FontFace { font_name         = "Courier"
+                    , svg_font_family   = "Courier New"
+                    , svg_font_style    = SVG_REGULAR
+                    }
+
 
 
 --------------------------------------------------------------------------------

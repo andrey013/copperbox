@@ -227,8 +227,8 @@ updateColour c ma = let rgbc = psColour c in do
 
 
 fontCommand :: FontAttr -> WumpusM ()
-fontCommand (FontAttr name _ _ sz) = do
-    ps_findfont name
+fontCommand (FontAttr sz face) = do
+    ps_findfont (font_name face)
     ps_scalefont sz
     ps_setfont
 

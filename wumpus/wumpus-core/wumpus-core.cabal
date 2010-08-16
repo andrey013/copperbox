@@ -63,6 +63,9 @@ description:
   .
   0.22.0 TO 0.23.0:
   . 
+  * @Basic.GraphicsState@ - extracted the font face fields from 
+    @FontAttr@ datatype into a separate datatype @FontFace@.
+  . 
   * Added @PtSize@ a numeric type wrapping Double. This is 
     specifically for text size calculations, vis the 
     @Core.FontSize@ module.

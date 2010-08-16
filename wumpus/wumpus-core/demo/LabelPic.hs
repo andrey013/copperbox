@@ -44,7 +44,7 @@ lbl1 :: Picture Double
 lbl1 = line1 `picBeside` line2 where
   line1 = frame (textlabel attrs "Hello" zeroPt)
   line2 = frame (textlabel attrs "World" zeroPt)
-  attrs = (peru, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 
+  attrs = (peru, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
 
 
 demo01 :: IO ()
@@ -93,7 +93,7 @@ bigT = bigLetter plum  'T'
 bigLetter :: PSRgb -> Char -> Picture Double
 bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs [ch] zeroPt
   where
-    attrs = (col, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 
+    attrs = (col, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
 
 
 -- | A should be above B, above T
