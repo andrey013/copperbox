@@ -33,11 +33,15 @@ module Wumpus.Basic.Graphic.DrawingAttr
   , ultrathick
   , thin
 
+  , fontsize
+  , fontface
+
   ) where
 
 
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.SVGColours
+import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -53,7 +57,7 @@ data DrawingAttr = DrawingAttr
 
 standardAttr :: FontSize -> DrawingAttr
 standardAttr sz = DrawingAttr { line_width         = std_line_width
-                              , font_props         = courier sz
+                              , font_props         = FontAttr sz courier
                               , stroke_colour      = black
                               , fill_colour        = gold  }
 
@@ -111,3 +115,14 @@ ultrathick attr     = attr { line_width = ultra_thick_line }
 
 thin                :: DrawingAttr -> DrawingAttr
 thin attr           = attr { line_width = thin_line }
+
+
+fontface            :: FontFace -> DrawingAttr -> DrawingAttr
+fontface ff         = star (\s i -> s { font_props = upd i }) font_props
+  where
+    upd (FontAttr sz _) = FontAttr sz ff
+
+fontsize            :: Int -> DrawingAttr -> DrawingAttr
+fontsize sz         = star (\s i -> s { font_props = upd i }) font_props
+  where
+    upd (FontAttr _ ff) = FontAttr sz ff

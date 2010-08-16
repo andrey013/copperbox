@@ -28,7 +28,7 @@ black :: PSRgb
 black = RGB3 0 0 0 
 
 courier_attr :: FontAttr
-courier_attr = FontAttr "Courier" "Courier New" SVG_REGULAR 48
+courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" SVG_REGULAR)
 
 metrics_pic :: DPicture
 metrics_pic = char_pic `picOver` lines_pic

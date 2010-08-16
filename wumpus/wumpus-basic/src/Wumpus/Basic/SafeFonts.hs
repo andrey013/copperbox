@@ -56,74 +56,74 @@ import Wumpus.Core
 --------------------------------------------------------------------------------
 -- Times-Roman
 
-timesRoman :: Int -> FontAttr
-timesRoman = FontAttr "Times-Roman" "Times New Roman" SVG_REGULAR
+timesRoman :: FontFace
+timesRoman = FontFace "Times-Roman" "Times New Roman" SVG_REGULAR
 
 -- Times Italic
 
-timesItalic :: Int -> FontAttr
-timesItalic = FontAttr "Times-Italic" "Times New Roman" SVG_ITALIC
+timesItalic :: FontFace
+timesItalic = FontFace "Times-Italic" "Times New Roman" SVG_ITALIC
 
 -- Times Bold
 
-timesBold :: Int -> FontAttr
-timesBold = FontAttr "Times-Bold" "Times New Roman" SVG_BOLD
+timesBold :: FontFace
+timesBold = FontFace "Times-Bold" "Times New Roman" SVG_BOLD
 
 -- Times Bold Italic
 
-timesBoldItalic :: Int -> FontAttr
+timesBoldItalic :: FontFace
 timesBoldItalic = 
-    FontAttr "Times-BoldItalic" "Times New Roman" SVG_BOLD_ITALIC
+    FontFace "Times-BoldItalic" "Times New Roman" SVG_BOLD_ITALIC
 
 
 --------------------------------------------------------------------------------
 -- Helvetica
 
-helvetica :: Int -> FontAttr
-helvetica = FontAttr "Helvetica" "Helvetica" SVG_REGULAR
+helvetica :: FontFace
+helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR
 
 
 -- Helvetica Oblique
 
-helveticaOblique :: Int -> FontAttr
-helveticaOblique = FontAttr "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE
+helveticaOblique :: FontFace
+helveticaOblique = FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE
 
 -- Helvetica Bold
 
-helveticaBold :: Int -> FontAttr
-helveticaBold = FontAttr "Helvetica-Bold" "Helvetica" SVG_BOLD
+helveticaBold :: FontFace
+helveticaBold = FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD
 
 
 -- Helvetica Bold Oblique
 
-helveticaBoldOblique :: Int -> FontAttr
+helveticaBoldOblique :: FontFace
 helveticaBoldOblique = 
-    FontAttr "Helvetica-Bold-Oblique" "Helvetica" SVG_BOLD_OBLIQUE
+    FontFace "Helvetica-Bold-Oblique" "Helvetica" SVG_BOLD_OBLIQUE
 
 
 
 --------------------------------------------------------------------------------
 -- Courier
 
-courier :: Int -> FontAttr
-courier = FontAttr "Courier" "Courier New" SVG_REGULAR
+courier :: FontFace
+courier = FontFace "Courier" "Courier New" SVG_REGULAR
 
 -- Courier Oblique
 
-courierOblique :: Int -> FontAttr
-courierOblique = FontAttr "Courier-Oblique" "Courier New" SVG_OBLIQUE
+courierOblique :: FontFace
+courierOblique = FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE
 
 -- Courier Bold
 
-courierBold :: Int -> FontAttr
-courierBold = FontAttr "Courier-Bold" "Courier New" SVG_BOLD
+courierBold :: FontFace
+courierBold = FontFace "Courier-Bold" "Courier New" SVG_BOLD
 
 
 -- Courier Bold Oblique
 
-courierBoldOblique :: Int -> FontAttr
+courierBoldOblique :: FontFace
 courierBoldOblique = 
-    FontAttr "Courier-Bold-Oblique" "Courier New" SVG_BOLD_OBLIQUE
+    FontFace "Courier-Bold-Oblique" "Courier New" SVG_BOLD_OBLIQUE
 
 --------------------------------------------------------------------------------
 -- Symbol
@@ -132,8 +132,8 @@ courierBoldOblique =
 -- Symbol does not appear to be well supported by SVG.
 -- It renders in Chrome but not in Firefox.
 
-symbol :: Int -> FontAttr
-symbol = FontAttr "Symbol" "Symbol" SVG_REGULAR
+symbol :: FontFace
+symbol = FontFace "Symbol" "Symbol" SVG_REGULAR
 
 
 

@@ -32,13 +32,13 @@ main = do
 makeFontLabel :: DRGB -> FontAttr -> DPoint2 -> DPrimitive
 makeFontLabel c fa = textlabel (c,fa) msg
   where
-    msg = unwords [ font_name fa, (show $ font_size fa) ++ "pt"]
+    msg = unwords [ font_name $ font_face fa, (show $ font_size fa) ++ "pt"]
 
-blueLabel :: (Int -> FontAttr) -> Int -> DPoint2 -> DPrimitive
-blueLabel f i = makeFontLabel steelBlue (f i)
+blueLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
+blueLabel ff i = makeFontLabel steelBlue (FontAttr i ff)
 
-redLabel :: (Int -> FontAttr) -> Int -> DPoint2 -> DPrimitive
-redLabel f i = makeFontLabel indianRed1 (f i)
+redLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
+redLabel ff i = makeFontLabel indianRed1 (FontAttr i ff)
 
 
 point_sizes :: [Int]

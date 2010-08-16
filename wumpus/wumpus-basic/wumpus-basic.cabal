@@ -97,6 +97,7 @@ library
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.SVGColours,
     Wumpus.Basic.X11Colours,
+    Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber,
