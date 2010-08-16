@@ -96,11 +96,12 @@ library
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.SVGColours,
-    Wumpus.Basic.X11Colours,
+    Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber,
+    Wumpus.Basic.X11Colours,
     Wumpus.Deprecated.PictureLanguage
 
   other-modules:

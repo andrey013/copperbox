@@ -33,6 +33,7 @@ module Wumpus.Basic.Graphic.DrawingAttr
   , ultrathick
   , thin
 
+  -- * Font properties
   , fontsize
   , fontface
 
