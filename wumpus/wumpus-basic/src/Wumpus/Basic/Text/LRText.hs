@@ -20,6 +20,8 @@ module Wumpus.Basic.Text.LRText
   , runTextM
 
   , text
+  , char
+  , newline
 
   ) where
 
@@ -30,6 +32,8 @@ import Wumpus.Basic.Utils.Combinators
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
+
+-- Need a note in wumpus-core and here about space:preserve
 
 
 -- Graphic or GraphicF ? ans. GraphicF
@@ -46,10 +50,10 @@ data Idx = Idx { idx_x :: !Int, idx_y :: !Int }
 
 
 rightn      :: Int -> Idx -> Idx 
-rightn n    = star (\s i -> s { idx_x = i+n} ) idx_x
+rightn n    = star (\s i -> s { idx_x = i+n }) idx_x
 
 down1       :: Idx -> Idx 
-down1       = star (\s i -> s { idx_y = i+1} ) idx_y
+down1       = star (\s i -> s { idx_y = i-1, idx_x =0 }) idx_y
 
 -- can track the /user vectors so far/ in the state...
 
@@ -72,8 +76,8 @@ newtype TextM u a = TextM { getTextM :: Env -> St u -> (a, St u) }
 --
 newtype TGraphicF u = TGraphicF { getTGraphicF :: GraphicF u }
 
-snocT :: Num u => TGraphicF u -> (Vec2 u, GraphicF u) -> TGraphicF u
-snocT tg (V2 x y, f) = TGraphicF $ (getTGraphicF tg) `cc` (f . disp x y)
+consT :: Num u => (Vec2 u, GraphicF u) -> TGraphicF u -> TGraphicF u
+consT (V2 x y, f) tg = TGraphicF $ (f . disp x y) `cc` (getTGraphicF tg) 
 
 
 instance Functor (TextM u) where
@@ -90,38 +94,57 @@ instance Monad (TextM u) where
   m >>= k   = TextM $ \r s -> let (a,s')  = getTextM m r s 
                               in (getTextM . k) a r s'
                               
+-- Note - post has to displace in the vertical to get the bottom 
+-- line at the base line...
 
-runTextM :: PtSize -> (DRGB,FontAttr) -> (TextM u a) -> (a,GraphicF u)
+runTextM :: (Num u, FromPtSize u) 
+         => PtSize -> (DRGB,FontAttr) -> (TextM u a) -> (a,GraphicF u)
 runTextM vdistance (rgb,font) ma = post $ getTextM ma env st
   where
-    post (a,s)  = (a, getTGraphicF $ acc_graphic s)
+    post (a,s)  = let gf = getTGraphicF $ acc_graphic s
+                      h  = fromIntegral $ idx_y $ xy_pos s
+                  in (a, gf . vdisp (negate $ h * fromPtSize vdistance))
+
     env         = (vdistance,rgb) 
+
     st          = St { xy_pos          = Idx 0 0 
                      , font_desc       = font
                      , horizontal_disp = 0
                      , acc_graphic     = TGraphicF (const emptyG) }
 
 
--- TODO tidy up...
 text :: (Num u, FromPtSize u) => String -> TextM u ()
 text str = TextM $ \r s -> ((), upd r s)
   where
-    len       = length str
-    upd (vdist,rgb) = star4 (\s idx font h acc -> 
-                             let g1 = textline (rgb,font) str 
-                                 v  = makeDisplacement (font_size font) h vdist idx
-                             in s { xy_pos = rightn len idx
-                                  , acc_graphic = acc `snocT` (v,g1) })
-                            xy_pos 
-                            font_desc
-                            horizontal_disp
-                            acc_graphic
+    upd (vdist,rgb) s@(St idx font h acc) = 
+        let g1  = textline (rgb,font) str 
+            v   = makeDisplacement (font_size font) h vdist idx
+        in s { xy_pos      = rightn (length str) idx
+             , acc_graphic = (v,g1) `consT` acc      }
+
+
+char :: (Num u, FromPtSize u) => Char -> TextM u ()
+char ch = TextM $ \r s -> ((), upd r s)
+  where
+    upd (vdist,rgb) s@(St idx font h acc) = 
+        let g1  = textline (rgb,font) [ch] 
+            v   = makeDisplacement (font_size font) h vdist idx
+        in s { xy_pos      = rightn 1 idx
+             , acc_graphic = (v,g1) `consT` acc }
+
+
 
 makeDisplacement :: (Num u, FromPtSize u) 
                  => FontSize -> PtSize -> PtSize -> Idx -> (Vec2 u)
 makeDisplacement font_sz lefth vdist (Idx x y) = 
-    vec ((ch_width * fromIntegral x) - fromPtSize lefth)   
+    vec (txt_width - fromPtSize lefth)   
         (fromPtSize vdist * fromIntegral y)
   where
-    ch_width = fromPtSize $ charWidth font_sz
+    txt_width = fromPtSize $ textWidth font_sz x
 
+
+newline :: TextM u ()
+newline = TextM $ \_ s -> ((), upd s)
+  where
+    upd = star (\s idx -> s { xy_pos = down1 idx, horizontal_disp = 0})
+               xy_pos

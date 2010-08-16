@@ -4,8 +4,9 @@ module LRText01 where
 
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Text.LRSymbol
+import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Text.LRText
+
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -27,12 +28,14 @@ std_attr :: DrawingAttr
 std_attr = standardAttr 14
 
 pic1 :: Picture Double 
-pic1 = drawGraphicU $ g1 (P2 0 0)
+pic1 = drawGraphicU $ g1 zeroPt . straightLine red (hvec 200) zeroPt
 
 two_line :: Num u => GraphicF u 
 two_line = textline (textAttr std_attr) "line one"
                   `cc` (textline (textAttr std_attr) "line two" . vdisp (-16))
 
+g1 :: DGraphicF
 g1 = snd $ runTextM 16 (stroke_colour std_attr, font_props std_attr) $ ma
   where
-    ma = text "one," >> text "    two" >> text ", three"
+    ma = text "ab" >> text ", cd" >> text ", ef" >> text ", gh" >> char '.'
+       >> newline >> text "rest" 
