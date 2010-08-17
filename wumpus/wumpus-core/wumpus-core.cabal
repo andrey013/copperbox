@@ -50,9 +50,6 @@ description:
   not offer distinct functionality. Some functions were removed in 
   revision 0.17.0 and some more are likely to follow. 
   .
-  The module @Extra.PictureLanguage@ is deprecated. At some point 
-  it will be superceded by @wumpus-basic@ but this will not be soon.
-  .
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 

@@ -1,4 +1,26 @@
 
+0.22.0 TO 0.23.0:
+ 
+  * @Basic.GraphicsState@ - extracted the font face fields from 
+    @FontAttr@ datatype into a separate datatype @FontFace@.
+ 
+  * Added @PtSize@ a numeric type wrapping Double. This is 
+    specifically for text size calculations, vis the 
+    @Core.FontSize@ module.
+
+  * Changed all functions in @Core.FontSize@ to return @PtSize@
+    instead of a polymorphic type @u@ (where @u@ is an instance 
+    of Fractional). To get to another unit type rather than 
+    FontSize use an explicit conversion that scales the value 
+    accordingly.
+
+  * Added FromPtSize class constraints to various functions in
+    @Core.Picture@.
+
+  * Added @charWidth@ to @Core.FontSize@.
+
+  * Added @vlength@ to @Core.Geometry@
+
 0.21.0 to 0.22.0:
 
   * Moved the deprecated module @Wumpus.Extra.PictureLanguage@

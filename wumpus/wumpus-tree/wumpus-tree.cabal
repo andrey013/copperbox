@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -17,6 +17,11 @@ description:
   .
   .
   Changelog:
+  .
+  0.2.0 to 0.3.0
+  .
+  * Updated to track changes in Wumpus-Basic. No new 
+    functionality.
   .
   0.1.0 to 0.2.0:
   .

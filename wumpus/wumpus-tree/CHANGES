@@ -1,5 +1,15 @@
 
+0.2.0 to 0.3.0
 
+  * Updated to track changes in Wumpus-Basic. No new 
+    functionality.
+
+0.1.0 to 0.2.0:
+
+  * Changed internals to use ConsDrawing monad as Wumpus-Basic
+    has changed.
+
+  * Internal change to use AGraphic rather than MGraphicF 
 
 0.1.0:
 
