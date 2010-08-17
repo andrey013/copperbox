@@ -96,6 +96,7 @@ library
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.SVGColours,
+    Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,

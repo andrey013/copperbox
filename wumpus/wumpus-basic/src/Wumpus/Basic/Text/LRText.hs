@@ -22,6 +22,7 @@ module Wumpus.Basic.Text.LRText
   , text
   , char
   , newline
+  , bracketFontFace
 
   ) where
 
@@ -113,6 +114,33 @@ runTextM vdistance (rgb,font) ma = post $ getTextM ma env st
                      , acc_graphic     = TGraphicF (const emptyG) }
 
 
+--------------------------------------------------------------------------------
+-- State monad ops.
+-- Note - not all the state should be accessible. 
+
+setFontAttr :: FontAttr -> TextM u ()
+setFontAttr fa = TextM $ \_ s -> ((), s { font_desc = fa })
+
+setsFontAttr :: (FontAttr -> FontAttr) -> TextM u ()
+setsFontAttr fn = TextM $ \_ st -> ((), upd st) 
+  where
+    upd = star (\s i -> s { font_desc = fn i} ) font_desc
+
+getFontAttr :: TextM u FontAttr
+getFontAttr = TextM $ \_ s -> (font_desc s,s)   
+
+
+--------------------------------------------------------------------------------
+
+makeDisplacement :: (Num u, FromPtSize u) 
+                 => FontSize -> PtSize -> PtSize -> Idx -> (Vec2 u)
+makeDisplacement font_sz lefth vdist (Idx x y) = 
+    vec (txt_width - fromPtSize lefth)   
+        (fromPtSize vdist * fromIntegral y)
+  where
+    txt_width = fromPtSize $ textWidth font_sz x
+
+
 text :: (Num u, FromPtSize u) => String -> TextM u ()
 text str = TextM $ \r s -> ((), upd r s)
   where
@@ -133,18 +161,20 @@ char ch = TextM $ \r s -> ((), upd r s)
              , acc_graphic = (v,g1) `consT` acc }
 
 
-
-makeDisplacement :: (Num u, FromPtSize u) 
-                 => FontSize -> PtSize -> PtSize -> Idx -> (Vec2 u)
-makeDisplacement font_sz lefth vdist (Idx x y) = 
-    vec (txt_width - fromPtSize lefth)   
-        (fromPtSize vdist * fromIntegral y)
-  where
-    txt_width = fromPtSize $ textWidth font_sz x
-
-
 newline :: TextM u ()
 newline = TextM $ \_ s -> ((), upd s)
   where
     upd = star (\s idx -> s { xy_pos = down1 idx, horizontal_disp = 0})
                xy_pos
+
+
+
+bracketFontFace :: FontFace -> TextM u a -> TextM u a
+bracketFontFace face mf = do
+    old <- getFontAttr
+    setsFontAttr fn
+    ans <- mf 
+    setFontAttr old 
+    return ans
+  where
+    fn attr = attr { font_face = face }

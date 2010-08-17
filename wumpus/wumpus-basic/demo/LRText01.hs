@@ -5,11 +5,13 @@ module LRText01 where
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.SVGColours
+import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
 
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Prelude hiding ( pi )
 
 import System.Directory
 
@@ -38,4 +40,7 @@ g1 :: DGraphicF
 g1 = snd $ runTextM 16 (stroke_colour std_attr, font_props std_attr) $ ma
   where
     ma = text "ab" >> text ", cd" >> text ", ef" >> text ", gh" >> char '.'
-       >> newline >> text "rest" 
+       >> newline
+       >> alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
+       >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
+       >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
