@@ -27,9 +27,9 @@ description:
     SnocDrawing monads have been removed as they were a design
     mistake.
   .
-  * Removed MGraphicF type added AGraphic.
+  * Removed MGraphicF type, added AGraphic.
   .
-  * Initial work on arrow drawing.
+  * Initial work on arrow drawing and extended text drawing.
   .
   0.2.0 to 0.3.0 :
   . 

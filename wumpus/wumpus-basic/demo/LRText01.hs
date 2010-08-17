@@ -44,3 +44,6 @@ g1 = snd $ runTextM 16 (stroke_colour std_attr, font_props std_attr) $ ma
        >> alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
        >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
        >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
+       >> newline
+       >> uGamma >> uDelta >> uTheta >> uLambda >> uXi >> uPi >> kern 2 >> uSigma
+       >> uUpsilon >> uPhi >> kern 2 >>  uPsi >> kern 2 >> uOmega

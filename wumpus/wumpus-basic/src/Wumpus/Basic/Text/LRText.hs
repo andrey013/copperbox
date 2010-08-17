@@ -21,6 +21,7 @@ module Wumpus.Basic.Text.LRText
 
   , text
   , char
+  , kern
   , newline
   , bracketFontFace
 
@@ -135,7 +136,7 @@ getFontAttr = TextM $ \_ s -> (font_desc s,s)
 makeDisplacement :: (Num u, FromPtSize u) 
                  => FontSize -> PtSize -> PtSize -> Idx -> (Vec2 u)
 makeDisplacement font_sz lefth vdist (Idx x y) = 
-    vec (txt_width - fromPtSize lefth)   
+    vec (txt_width + fromPtSize lefth)   
         (fromPtSize vdist * fromIntegral y)
   where
     txt_width = fromPtSize $ textWidth font_sz x
@@ -159,6 +160,14 @@ char ch = TextM $ \r s -> ((), upd r s)
             v   = makeDisplacement (font_size font) h vdist idx
         in s { xy_pos      = rightn 1 idx
              , acc_graphic = (v,g1) `consT` acc }
+
+
+kern :: (Num u, FromPtSize u) => PtSize ->  TextM u ()
+kern h = TextM $ \_ s -> ((), upd s)
+  where
+    upd = star (\s i -> s { horizontal_disp = i + h }) horizontal_disp
+
+
 
 
 newline :: TextM u ()
