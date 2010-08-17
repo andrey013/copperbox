@@ -10,7 +10,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Construction of pictures, paths and text labels.
 -- 

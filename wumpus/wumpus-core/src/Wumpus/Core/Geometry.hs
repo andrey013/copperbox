@@ -15,7 +15,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Objects and operations for 2D geometry.
 -- 
@@ -99,7 +99,7 @@ module Wumpus.Core.Geometry
 
   ) where
 
-import Wumpus.Core.Utils ( PSUnit(..), oo )
+import Wumpus.Core.Utils ( PSUnit(..) )
 
 
 import Data.AffineSpace
@@ -592,7 +592,7 @@ matrix2Frame (M3'3 e0x e1x ox
 --
 frameProduct :: (Num u, InnerSpace (Vec2 u)) 
              => Frame2 u -> Frame2 u -> Frame2 u
-frameProduct = matrix2Frame `oo` on (*) frame2Matrix
+frameProduct f1 f2 = matrix2Frame $ frame2Matrix f1 * frame2Matrix f2
 
 
 

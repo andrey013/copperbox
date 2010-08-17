@@ -10,7 +10,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 --
 -- Data types for stroke and label attributes and type classes 

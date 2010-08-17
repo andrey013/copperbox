@@ -10,7 +10,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 --
 -- RGB, HSB, Gray colour types, and conversions between them.

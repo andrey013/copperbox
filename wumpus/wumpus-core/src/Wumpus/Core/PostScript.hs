@@ -12,7 +12,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- PostScript generation via a Writer monad.
 --
@@ -203,11 +203,11 @@ instance MonadT PsT where
 
 
 pstId :: TextEncoder -> PsT Id a -> ((a,PostScriptGS),PsOutput)
-pstId = runId `oo` runPsT
+pstId enc mf = runId $ runPsT enc mf
 
 -- | Drop state and result, take the Writer trace.
 runWumpus :: TextEncoder -> WumpusM a -> String
-runWumpus = (toListH . snd) `oo` pstId
+runWumpus enc mf = (toListH . snd) $ pstId enc mf
 
 --------------------------------------------------------------------------------
 -- Escape special chars

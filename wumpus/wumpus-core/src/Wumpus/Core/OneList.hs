@@ -12,9 +12,6 @@
 --
 -- Data type for non-empty lists.
 -- 
--- Structurally the same as OneMany - but used for a different
--- purpose.
---
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.OneList
@@ -47,7 +44,6 @@ import Data.Traversable
 
 import Prelude hiding ( head )
 
--- type OneMany a = OneList a
 
 data OneList a = One a | Many a (OneList a)
   deriving (Eq)

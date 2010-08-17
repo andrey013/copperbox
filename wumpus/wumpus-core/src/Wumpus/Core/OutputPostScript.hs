@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Output PostScript - either PostScript (PS) files or 
 -- EPS (Encapusulated PostScript) files can be generated. 
@@ -273,7 +273,8 @@ updatePen c xs ma = let (mset, mreset) = strokeSetReset xs in
                     updateColour c $ do { mset ; ma ; mreset }
 
 strokeSetReset :: [StrokeAttr] -> (WumpusM (), WumpusM ())
-strokeSetReset = foldr (appro link cmd id) (return (), return ())
+strokeSetReset = 
+    foldr (\c acc -> link (cmd c) acc) (return (), return ())
   where
     link Nothing      funs    = funs 
     link (Just (f,g)) (fs,gs) = (fs >> f, gs >> g)

@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- SVG generation.
 --
@@ -142,11 +142,11 @@ instance MonadT SvgT where
 
 
 svgId :: TextEncoder -> SvgT Id a -> (a,SvgState)
-svgId = runId `oo` runSvgT  
+svgId enc mf = runId $ runSvgT enc mf
 
 -- | Run the SVG monad.
 runSVG :: TextEncoder -> SvgM a -> a
-runSVG = fst `oo` svgId
+runSVG enc mf = fst $ svgId enc mf
 
 
 -- | Get the current clip label.

@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Output SVG. 
 --
@@ -139,7 +139,7 @@ primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
 clipPath :: PSUnit u => Path u -> SvgM Element
 clipPath p = do
     name <- newClipLabel
-    return $ element_clippath ps `rap` add_attr (attr_id name)
+    return $ add_attr (attr_id name) $ element_clippath ps
   where
     ps = closePath $ pathInstructions p
 

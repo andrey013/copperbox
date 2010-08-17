@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  unstable 
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- This module re-exports types and functions from 
 -- "Wumpus.Core.PictureInternal" but makes them opaque. 

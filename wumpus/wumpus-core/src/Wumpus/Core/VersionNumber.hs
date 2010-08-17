@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Version number
 --
@@ -22,7 +22,7 @@ module Wumpus.Core.VersionNumber
 
 -- | Version number
 --
--- > (0,23,0)
+-- > (0,24,0)
 --
 wumpus_core_version :: (Int,Int,Int)
-wumpus_core_version = (0,23,0)
+wumpus_core_version = (0,24,0)

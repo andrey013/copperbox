@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.23.0
+version:          0.24.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -57,6 +57,11 @@ description:
   (bitmaps). 
   .
   Changelog:
+  .
+  0.23.0 to 0.24.0:
+  .
+  * Internal changes removed some code from the hidden Utils 
+    module.
   .
   0.22.0 TO 0.23.0:
   . 
