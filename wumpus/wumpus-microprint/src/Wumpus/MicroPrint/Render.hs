@@ -19,8 +19,8 @@
 module Wumpus.MicroPrint.Render
   (
 
-    DrawF  
-  , MP_config(..)
+    DrawWordF  
+  , MicroPrintConfig(..)
   , greekF
   , borderedF
 
@@ -42,23 +42,33 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 import Control.Monad
 
--- | 'DrawF' :
+-- | 'DrawWordF' :
 -- @ (num_chars, char_unit_width) * (full_width, full_height) -> rgb -> DGraphicF @
 --
-type DrawF = (Int,Double) -> (Double,Double) -> DRGB -> DGraphicF
+-- The libraries currently provides two styles - 'greekF' and
+-- 'borderedF'.
+--
+type DrawWordF = (Int,Double) -> (Double,Double) -> DRGB -> DGraphicF
 
 
-data MP_config = MP_config 
+-- | Style properties for micro-print drawing.
+--
+data MicroPrintConfig = MicroPrintConfig 
        { char_height    :: Double
        , char_width     :: Double
        , line_spacing   :: Double 
-       , drawF          :: DrawF
+       , drawWordF      :: DrawWordF
        }
 
-greekF :: DrawF
+-- | Draw the word as a single coloured rectangle.
+--
+greekF :: DrawWordF
 greekF _ (w,h) rgb = wrapG . fill rgb . rectanglePath w h 
 
-borderedF :: Double -> DrawF
+
+-- | Draw the word as a coloured rectangle, with a border grid.
+--
+borderedF :: Double -> DrawWordF
 borderedF ln_width (i,uw) (w,h) rgb = 
     srect `cc` seps `cc` greekF (i,uw) (w,h) rgb
   where
@@ -78,7 +88,9 @@ vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
 vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]
     
 
-newtype RenderMonad a = RM { getRM :: ReaderT MP_config (TurtleDrawing Double) a }
+newtype RenderMonad a = RM { 
+          getRM :: ReaderT MicroPrintConfig 
+                 ( TurtleDrawing Double ) a }
 
 instance Functor RenderMonad where
   fmap f = RM . fmap f . getRM
@@ -94,7 +106,7 @@ instance Applicative RenderMonad where
 instance TraceM RenderMonad Double where
   trace  h = RM $ lift $ trace h
 
-instance ReaderM RenderMonad MP_config where
+instance ReaderM RenderMonad MicroPrintConfig where
   ask      = RM $ ask
 
 instance TurtleM RenderMonad where
@@ -104,14 +116,14 @@ instance TurtleM RenderMonad where
   setOrigin o   = RM $ lift $ setOrigin o
 
 
-drawMicroPrint :: MP_config -> ([Tile],Height) -> Maybe DPicture
+drawMicroPrint :: MicroPrintConfig -> ([Tile],Height) -> Maybe DPicture
 drawMicroPrint cfg (xs,h) = 
     let (_,hf) = runRender cfg (moveUpN h >> interpret xs) in post $ hf []
   where
     post [] = Nothing
     post ps = Just $ frameMulti $ ps
 
-runRender :: MP_config -> RenderMonad a -> (a, DGraphic)
+runRender :: MicroPrintConfig -> RenderMonad a -> (a, DGraphic)
 runRender cfg m = 
     runTurtleDrawing (regularConfig 1) (0,0) (standardAttr 14) 
          $ runReaderT cfg $ getRM $ m
@@ -127,7 +139,7 @@ interp1 (Word rgb i)  = do
     h  <- asks char_height
     uw <- asks char_width
     pt <- scaleCurrentCoord
-    dF <- asks drawF
+    dF <- asks drawWordF
     trace (dF (i,uw) (w,h) rgb pt)
     moveRightN i
    

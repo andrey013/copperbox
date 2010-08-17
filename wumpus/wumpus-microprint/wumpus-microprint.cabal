@@ -17,13 +17,19 @@ description:
   for tokenizing input files, and at the moment it is really 
   just a test bed for Wumpus.
   .
+  Currently pictures are made within a monad providing /teletype/ 
+  style operations. Other methods of drawing are possible, but 
+  are yet to be implemented.
+  .
   \[1\] <http://scg.unibe.ch/archive/papers/Robb05b-microprintsESUG.pdf>
   .
   Changelog:
   .
   0.3.0 to 0.4.0:
   .
-  * ??
+  * Implementation modules are now hidden. Added some documentation.
+  .
+  * DrawF renamed DrawWordF, MP_config renamed MicroPrintConfig.
   . 
   0.2.0 to 0.3.0:
   .
@@ -56,11 +62,11 @@ library
   
   exposed-modules:
     Wumpus.MicroPrint,
-    Wumpus.MicroPrint.DrawMonad,
-    Wumpus.MicroPrint.Render,
     Wumpus.MicroPrint.VersionNumber
 
   other-modules:
+    Wumpus.MicroPrint.DrawMonad,
+    Wumpus.MicroPrint.Render
 
   extensions:
     

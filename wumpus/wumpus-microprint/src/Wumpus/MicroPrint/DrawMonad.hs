@@ -10,7 +10,9 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- MicroPrints drawing monad 
+-- MicroPrints drawing monad - drawing here is analogous to a 
+-- /teletype/ drawing characters, spaces and linebreaks one at a 
+-- time.
 --
 --------------------------------------------------------------------------------
 
@@ -49,7 +51,10 @@ type Trace      = Text
 type Height     = Int
 type State      = (TileState, DRGB, Height)
 
--- | A /microprint/ is really a monad in disguise...
+-- | Build a /microprint/ within a monad...
+--
+-- Drawings are made in a /teletype/ fashion emitting a character,
+-- space or line-break at each step.
 --
 newtype MicroPrint a = MicroPrint { 
           getMicroPrint :: Trace -> State -> (a,Trace,State) }
@@ -83,14 +88,19 @@ enqueueTile = MicroPrint $ \w (opt,rgb,h) ->
     step rgb (W0 n) = (\f -> f `snocH` (Word rgb n))
 
 
+-- | Emit a linebreak in the output.
+--
 linebreak :: MicroPrint ()
 linebreak = enqueueTile >> next
   where
     next = MicroPrint $ 
              \w (opt,rgb,h) -> ((),w `snocH` LineBreak, (opt,rgb,h+1))
 
--- Note - it is permissible to change colour mid-word.
--- But this is the same as having a no-space break.
+
+-- | Change the current drawing colour.
+--
+-- Note - it is permissible to change colour mid-word, but this 
+-- is the same as having a no-space break.
 --
 setRGB :: DRGB -> MicroPrint ()
 setRGB rgb = enqueueTile >> next
@@ -98,6 +108,10 @@ setRGB rgb = enqueueTile >> next
     -- tip will always be Start here...
     next = MicroPrint $ \w (tip,_,h) -> ((),w,(tip,rgb,h))
 
+
+-- | Draw a character - note in the microprint, characters will 
+-- be concatenated together to make a word.
+--
 char :: MicroPrint ()
 char = MicroPrint $ \w (tip,rgb,h) ->
     let (f,tip') = addChar tip in ((),f w,(tip',rgb,h))
@@ -106,7 +120,8 @@ char = MicroPrint $ \w (tip,rgb,h) ->
     addChar (W0 n) = (id, W0 $ n+1)
     addChar (S0 n) = (\f -> f `snocH` (Space n), W0 1)
 
-
+-- | Draw a space.
+--
 space :: MicroPrint ()
 space = MicroPrint $ \w (tip,rgb,h) ->
     let (f,tip') = addSpace tip rgb in ((),f w,(tip',rgb,h))

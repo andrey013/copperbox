@@ -38,12 +38,12 @@ drawChar ' '  = space
 drawChar _    = char
 
 
-cfg1 :: MP_config
-cfg1 = MP_config 
+cfg1 :: MicroPrintConfig
+cfg1 = MicroPrintConfig 
        { char_height    = 12.0
        , char_width     = 8.0
        , line_spacing   = 3.0
-       , drawF          = borderedF 1.0
+       , drawWordF      = borderedF 1.0
        }
  
 
