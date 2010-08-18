@@ -304,16 +304,16 @@ instance Ord Radian where
 -- Pretty printing
 
 instance Pretty u => Pretty (Vec2 u) where
-  pretty (V2 a b) = angles (char '|' <+> pretty a <+> pretty b <+> char '|')
+  pretty (V2 a b) = parens (text "V2" <+> pretty a <+> pretty b)
 
 instance Pretty u => Pretty (Point2 u) where
-  pretty (P2 a b) = brackets (char '|' <+> pretty a <+> pretty b <+> char '|')
+  pretty (P2 a b) = parens (pretty a <> comma <+> pretty b)
 
 instance Pretty u => Pretty (Frame2 u) where
-  pretty (Frame2 e0 e1 o) = braces $
-        text "e0:" <> pretty e0
-    <+> text "e1:" <> pretty e1
-    <+> text "o:" <> pretty o
+  pretty (Frame2 e0 e1 o) = 
+    parens (text "Frame" <+> text "e0=" <> pretty e0
+                         <+> text "e1=" <> pretty e1
+                         <+> text "o="  <> pretty o  )
 
 instance PSUnit u => Pretty (Matrix3'3 u) where
   pretty (M3'3 a b c  d e f  g h i) = 

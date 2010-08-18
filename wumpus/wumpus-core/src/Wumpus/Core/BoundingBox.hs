@@ -91,7 +91,8 @@ instance Ord u => Semigroup (BoundingBox u) where
 
 
 instance Pretty u => Pretty (BoundingBox u) where
-  pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
+  pretty (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> pretty p0 
+                                            <+> text "ur=" <> pretty p1) 
 
 
 --------------------------------------------------------------------------------

@@ -317,6 +317,7 @@ showArray f (x:xs) = sfun "]"
 
 
 -- | @ %% ... @
+--
 ps_comment :: String -> WumpusM ()
 ps_comment s = write "%% " >> writeln s
 
@@ -324,30 +325,37 @@ ps_comment s = write "%% " >> writeln s
 -- graphics state operators
 
 -- | @ gsave @
+--
 ps_gsave :: WumpusM ()
 ps_gsave = command "gsave" []
 
 -- | @ grestore @
+--
 ps_grestore :: WumpusM () 
 ps_grestore = command "grestore" []
 
 -- | @ ... setlinewidth @
+--
 ps_setlinewidth :: PSUnit u => u -> WumpusM ()
 ps_setlinewidth = command "setlinewidth" . return . dtrunc
 
 -- | @ ... setlinecap @
+--
 ps_setlinecap :: LineCap -> WumpusM ()
 ps_setlinecap = command "setlinecap" . return . show . fromEnum
 
 -- | @ ... setlinejoin @
+--
 ps_setlinejoin :: LineJoin -> WumpusM ()
 ps_setlinejoin = command "setlinejoin" . return . show . fromEnum
 
 -- | @ ... setmiterlimit @
+--
 ps_setmiterlimit :: PSUnit u => u -> WumpusM ()
 ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
 
 -- | @ [... ...] ... setdash @
+--
 ps_setdash :: DashPattern -> WumpusM ()
 ps_setdash Solid          = command "setdash" ["[]", "0"]
 ps_setdash (Dash n pairs) = command "setdash" [showArray shows arr, show n]
@@ -355,14 +363,17 @@ ps_setdash (Dash n pairs) = command "setdash" [showArray shows arr, show n]
     arr = foldr (\(x,y) a -> x:y:a) [] pairs
 
 -- | @ ... setgray @
+--
 ps_setgray :: PSUnit u => u -> WumpusM ()
 ps_setgray = command "setgray" . return . dtrunc 
 
 -- | @ ... ... ... setrgbcolor @
+--
 ps_setrgbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
 ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
 
 -- | @ ... ... ... sethsbcolor @
+--
 ps_sethsbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
 ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 

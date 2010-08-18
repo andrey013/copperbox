@@ -44,6 +44,9 @@ module Wumpus.Core.WumpusTypes
   , DrawPath
   , DrawEllipse
 
+  -- * Debug printing
+  , printPicture
+
   -- * Transformations on Primitives
   , translatePrimitive
   , rotatePrimitive

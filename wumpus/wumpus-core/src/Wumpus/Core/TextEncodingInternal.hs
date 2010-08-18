@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Extended character handling...
+-- Extended character handling.
 -- 
 --------------------------------------------------------------------------------
 

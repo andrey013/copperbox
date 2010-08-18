@@ -297,9 +297,10 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
     P2 x3 y3 = p3
 
 
--- | This is not very good - the use of PostScript's @concat@ 
--- operator will vary the line width during the drawing of a 
--- stroked ellipse.
+-- | This is unfortunate - but (probably) unavoidable.
+--
+-- The use of PostScript's @concat@ operator will vary the line 
+-- width during the drawing of a stroked ellipse.
 --
 outputEllipse :: (PSColour c, Real u, Floating u, PSUnit u)
               => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()

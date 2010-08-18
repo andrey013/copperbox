@@ -44,6 +44,8 @@ module Wumpus.Core.PictureInternal
 
   , PSUnit(..)
 
+  -- * Debug printing
+  , printPicture
 
   -- * Transformations on Primitives
   , translatePrimitive
@@ -75,7 +77,7 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextEncodingInternal
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils hiding ( parens )
 
 
 import Data.AffineSpace
@@ -258,6 +260,10 @@ type Locale u = (Frame2 u, BoundingBox u)
 --------------------------------------------------------------------------------
 -- Pretty printing
 
+printPicture :: (Num u, Pretty u) => Picture u -> IO ()
+printPicture pic = putDoc (pretty pic) >> putStrLn []
+
+
 instance (Num u, Pretty u) => Pretty (Picture u) where
   pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
@@ -269,30 +275,35 @@ instance (Num u, Pretty u) => Pretty (Picture u) where
                                   <$> indent 2 (pretty p)
 
 ppLocale :: (Num u, Pretty u) => Locale u -> Doc
-ppLocale (fr,bb) = align (ppfr <$> pretty bb) where
-   ppfr = if standardFrame fr then text "*std-frame*" else pretty fr
+ppLocale (fr,bb) = ppfr <$> pretty bb where
+   ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
 
 
 instance Pretty u => Pretty (Primitive u) where
-  pretty (PPath _ p)        = pretty "path:" <+> pretty p
+  pretty (PPath attr p)     = 
+    pretty "path:" <$> indent 2 (ppPathProps attr <$> pretty p)
+
   pretty (PLabel _ lbl)     = pretty lbl
   pretty (PEllipse _ e)     = pretty e 
 
 
 instance Pretty u => Pretty (Path u) where
-   pretty (Path pt ps) = pretty pt <> hcat (map pretty ps)
+   pretty (Path pt ps) = vcat (start  : map pretty ps) 
+      where
+        start = fill 12 (text "start_point") <> pretty pt
 
 instance Pretty u => Pretty (PathSegment u) where
-  pretty (PCurveTo p1 p2 p3)  = text ".*" <> pretty p1 <> text ",," <> pretty p2 
-                                          <> text "*." <> pretty p3
-  pretty (PLineTo pt)         = text "--" <> pretty pt
+  pretty (PCurveTo p1 p2 p3)  = 
+    fill 12 (text "curve_to") <> pretty p1 <+> pretty p2 <+> pretty p3
+
+  pretty (PLineTo pt)         = fill 12 (text "line_to") <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
   pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
                                               <+> pretty ctm
 
 instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse ctr w h ctm) = pretty "ellipse" <+> pretty ctr
+  pretty (PrimEllipse ctr w h ctm) = pretty "ellipse:" <+> pretty ctr
                                         <+> text "w:" <> pretty w
                                         <+> text "h:" <> pretty h
                                         <+> pretty ctm
@@ -300,7 +311,17 @@ instance Pretty u => Pretty (PrimEllipse u) where
 
 instance Pretty u => Pretty (PrimCTM u) where
   pretty (PrimCTM x y ang) = 
-      braces (pretty x <> comma <+> pretty y <> comma <+> pretty ang)
+      parens (text "CTM" <+> pretty x <+> pretty y <+> pretty ang)
+
+
+ppPathProps :: PathProps -> Doc
+ppPathProps (rgb, _) = pretty rgb
+
+{-
+DrawPath)
+type LabelProps   = (PSRgb, FontAttr)
+type EllipseProps = (PSRgb, DrawEllipse)
+-}
 
 --------------------------------------------------------------------------------
 

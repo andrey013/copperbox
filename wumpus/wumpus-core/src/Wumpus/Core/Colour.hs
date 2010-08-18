@@ -12,6 +12,10 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
+-- \*\* WARNING \*\* - the HSB and Gray types now seem extraneous
+-- to Wumpus-Core. It is likely they will be moved into 
+-- Wumpus-Basic at some point.
+--
 --
 -- RGB, HSB, Gray colour types, and conversions between them.
 --
@@ -60,10 +64,11 @@ module Wumpus.Core.Colour
 
   ) where
 
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils hiding ( parens )
 
 
-import Data.VectorSpace
+import Data.VectorSpace                         -- package: vector-space
+import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 -- | Red-Green-Blue - no alpha.
 --
@@ -168,6 +173,14 @@ instance Num a => VectorSpace (HSB3 a) where
 instance Num a => VectorSpace (Gray a) where
   type Scalar (Gray a) = a
   s *^ (Gray a) = Gray (s*a)
+
+--------------------------------------------------------------------------------
+-- pretty
+
+instance Pretty a => Pretty (RGB3 a) where
+  pretty (RGB3 r g b) = 
+    parens (text "RGB3" <+> pretty r <+> pretty g <+> pretty b)
+
 
 
 --------------------------------------------------------------------------------
