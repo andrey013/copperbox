@@ -99,7 +99,7 @@ module Wumpus.Core.Geometry
 
   ) where
 
-import Wumpus.Core.Utils ( PSUnit(..) )
+import Wumpus.Core.Utils ( PSUnit(..), dtruncPP )
 
 
 import Data.AffineSpace
@@ -303,13 +303,13 @@ instance Ord Radian where
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-instance Pretty u => Pretty (Vec2 u) where
-  pretty (V2 a b) = parens (text "V2" <+> pretty a <+> pretty b)
+instance PSUnit u => Pretty (Vec2 u) where
+  pretty (V2 a b) = parens (text "Vec" <+> dtruncPP a <+> dtruncPP b)
 
-instance Pretty u => Pretty (Point2 u) where
-  pretty (P2 a b) = parens (pretty a <> comma <+> pretty b)
+instance PSUnit u => Pretty (Point2 u) where
+  pretty (P2 a b) = parens (dtruncPP a <> comma <+> dtruncPP b)
 
-instance Pretty u => Pretty (Frame2 u) where
+instance PSUnit u => Pretty (Frame2 u) where
   pretty (Frame2 e0 e1 o) = 
     parens (text "Frame" <+> text "e0=" <> pretty e0
                          <+> text "e1=" <> pretty e1
@@ -320,7 +320,7 @@ instance PSUnit u => Pretty (Matrix3'3 u) where
       matline a b c <$> matline d e f <$> matline g h i
     where
       matline x y z = char '|' 
-         <+> (hcat $ map (fill 12 . text . dtrunc) [x,y,z]) 
+         <+> (hcat $ map (fill 12 . dtruncPP) [x,y,z]) 
          <+> char '|'   
 
 

@@ -85,7 +85,7 @@ import Data.Semigroup
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
-
+import qualified Data.Foldable as F
 
 -- | Picture is a leaf attributed tree - where attributes are 
 -- colour, line-width etc. It is parametric on the unit type 
@@ -260,68 +260,87 @@ type Locale u = (Frame2 u, BoundingBox u)
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-printPicture :: (Num u, Pretty u) => Picture u -> IO ()
+printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
 printPicture pic = putDoc (pretty pic) >> putStrLn []
 
 
-instance (Num u, Pretty u) => Pretty (Picture u) where
-  pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
-  pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
+instance (Num u, PSUnit u) => Pretty (Picture u) where
+  pretty (PicBlank m)       = 
+      text "** Blank-picture **" <+> ppLocale m
+
+  pretty (Single m prim)    = 
+      text "** Single-picture **" <$> ppLocale m <$> indent 2 (pretty prim)
+
   pretty (Picture m ones)   = 
-      ppLocale m <$> indent 2 (list $ toListF pretty ones)
+      text "** Multi-picture **"  <$> ppLocale m 
+                                  <$> indent 2 (ppPics ones)
 
   pretty (Clip m cpath p)   = 
-      text "Clip:" <+> ppLocale m <$> indent 2 (pretty cpath)
-                                  <$> indent 2 (pretty p)
+      text "** Clip-path **" <+> ppLocale m 
+                             <$> indent 2 (pretty cpath <$> pretty p)
 
-ppLocale :: (Num u, Pretty u) => Locale u -> Doc
+
+ppPics :: (Num u, PSUnit u) => OneList (Picture u) -> Doc
+ppPics ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, acc <$> text "-- leaf" <+> int n <$> pretty e <> line)
+
+ppLocale :: (Num u, PSUnit u) => Locale u -> Doc
 ppLocale (fr,bb) = ppfr <$> pretty bb where
    ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
 
 
-instance Pretty u => Pretty (Primitive u) where
+instance PSUnit u => Pretty (Primitive u) where
   pretty (PPath attr p)     = 
-    pretty "path:" <$> indent 2 (ppPathProps attr <$> pretty p)
+      text "path:"      <$> indent 2 (ppPathProps attr <$> pretty p)
 
-  pretty (PLabel _ lbl)     = pretty lbl
-  pretty (PEllipse _ e)     = pretty e 
+  pretty (PLabel attr l)  = 
+      text "label:"     <$> indent 2 (ppLabelProps attr <$> pretty l)
+
+  pretty (PEllipse attr e)  = 
+      text "ellipse:"   <$> indent 2 (ppEllipseProps attr <$> pretty e)
 
 
-instance Pretty u => Pretty (Path u) where
+instance PSUnit u => Pretty (Path u) where
    pretty (Path pt ps) = vcat (start  : map pretty ps) 
       where
         start = fill 12 (text "start_point") <> pretty pt
 
-instance Pretty u => Pretty (PathSegment u) where
+instance PSUnit u => Pretty (PathSegment u) where
   pretty (PCurveTo p1 p2 p3)  = 
     fill 12 (text "curve_to") <> pretty p1 <+> pretty p2 <+> pretty p3
 
   pretty (PLineTo pt)         = fill 12 (text "line_to") <> pretty pt
 
-instance Pretty u => Pretty (Label u) where
-  pretty (Label pt s ctm) = dquotes (pretty s) <> char '@' <> pretty pt
-                                              <+> pretty ctm
+instance PSUnit u => Pretty (Label u) where
+  pretty (Label pt s ctm) = 
+     dquotes (pretty s) <$> text "baseline_left=" <> pretty pt
+                        <+> text "ctm="           <> pretty ctm
 
-instance Pretty u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse ctr w h ctm) = pretty "ellipse:" <+> pretty ctr
-                                        <+> text "w:" <> pretty w
-                                        <+> text "h:" <> pretty h
-                                        <+> pretty ctm
+instance PSUnit u => Pretty (PrimEllipse u) where
+  pretty (PrimEllipse ctr w h ctm) = pretty "center=" <> pretty ctr
+                                 <+> text "w="        <> dtruncPP w
+                                 <+> text "h="        <> dtruncPP h
+                                 <+> text "ctm="      <> pretty ctm
   
 
-instance Pretty u => Pretty (PrimCTM u) where
+instance PSUnit u => Pretty (PrimCTM u) where
   pretty (PrimCTM x y ang) = 
-      parens (text "CTM" <+> pretty x <+> pretty y <+> pretty ang)
+      parens (text "CTM" <+> dtruncPP x <+> dtruncPP y <+> pretty ang)
 
 
 ppPathProps :: PathProps -> Doc
-ppPathProps (rgb, _) = pretty rgb
+ppPathProps (rgb, CFill)       = pretty rgb <+> text "Fill"
+ppPathProps (rgb, (CStroke _)) = pretty rgb <+> text "Closed-stroke"
+ppPathProps (rgb, _)           = pretty rgb <+> text "Open-strike"
 
-{-
-DrawPath)
-type LabelProps   = (PSRgb, FontAttr)
-type EllipseProps = (PSRgb, DrawEllipse)
--}
+ppLabelProps :: LabelProps -> Doc
+ppLabelProps (rgb, attr) = pretty rgb <+> text (font_name $ font_face attr)
+
+ppEllipseProps :: EllipseProps -> Doc
+ppEllipseProps (rgb, EFill) = pretty rgb <+> text "Fill"
+ppEllipseProps (rgb, _)     = pretty rgb <+> text "Stroke"
+
 
 --------------------------------------------------------------------------------
 

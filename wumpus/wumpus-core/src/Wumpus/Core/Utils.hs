@@ -28,9 +28,11 @@ module Wumpus.Core.Utils
 
   -- * Truncate / print a double
   , PSUnit(..)
+  , dtruncPP
+
   , truncateDouble
   , roundup
-
+  
 
   , rescale
   , clamp
@@ -58,6 +60,8 @@ module Wumpus.Core.Utils
 
   ) where
 
+
+import qualified Text.PrettyPrint.Leijen as PP  -- package: wl-pprint
 
 
 import Control.Applicative
@@ -109,6 +113,9 @@ instance PSUnit (Ratio Integer) where
 
 instance PSUnit (Ratio Int) where
   toDouble = realToFrac
+
+dtruncPP :: PSUnit a => a -> PP.Doc
+dtruncPP = PP.text . dtrunc
 
 
 -- | Truncate the printed decimal representation of a Double.

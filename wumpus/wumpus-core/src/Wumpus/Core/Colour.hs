@@ -177,9 +177,9 @@ instance Num a => VectorSpace (Gray a) where
 --------------------------------------------------------------------------------
 -- pretty
 
-instance Pretty a => Pretty (RGB3 a) where
+instance PSUnit a => Pretty (RGB3 a) where
   pretty (RGB3 r g b) = 
-    parens (text "RGB3" <+> pretty r <+> pretty g <+> pretty b)
+    parens (text "RGB3" <+> dtruncPP r <+> dtruncPP g <+> dtruncPP b)
 
 
 

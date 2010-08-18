@@ -63,6 +63,9 @@ description:
   * Internal changes removed some code from the hidden Utils 
     module.
   .
+  * Improved internal pretty printing and added the function 
+    @printPicture@ for debugging.
+  .
   0.22.0 TO 0.23.0:
   . 
   * @Basic.GraphicsState@ - extracted the font face fields from 

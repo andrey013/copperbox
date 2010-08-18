@@ -57,6 +57,7 @@ module Wumpus.Core.BoundingBox
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
+import Wumpus.Core.Utils ( PSUnit(..) )
 
 import Data.Semigroup
 
@@ -90,7 +91,7 @@ instance Ord u => Semigroup (BoundingBox u) where
   append = union
 
 
-instance Pretty u => Pretty (BoundingBox u) where
+instance PSUnit u => Pretty (BoundingBox u) where
   pretty (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> pretty p0 
                                             <+> text "ur=" <> pretty p1) 
 
