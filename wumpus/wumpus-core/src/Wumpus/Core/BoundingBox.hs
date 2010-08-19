@@ -59,9 +59,8 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( PSUnit(..) )
 
-import Data.Semigroup
-
-import Text.PrettyPrint.Leijen hiding ( width )
+import Data.Semigroup                           -- package: algebra
+import Text.PrettyPrint.Leijen hiding ( width ) -- package: wl-pprint
 
 
 

@@ -111,16 +111,15 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
-picture c (Leaf (fr,_) _ prims)   = do 
-    elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] prims
+picture c (Leaf (fr,_) _ ones)    = do 
+    elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
     return $ gElement (maybe [] return $ frameChange fr) elts
 
-picture c (Picture (fr,_) l r)    = do
-    b <- picture c r
-    a <- picture c l 
-    return $ gElement (maybe [] return $ frameChange fr) [b,a]
+picture c (Picture (fr,_) ones)   = do
+    elts <- F.foldlM (\acc e -> do { a <- picture c e; return (a:acc) }) [] ones
+    return $ gElement (maybe [] return $ frameChange fr) elts
   
-picture _ (Clip (fr,_) p a) = do 
+picture _ (Clip (fr,_) p a)       = do 
    cp <- clipPath p
    e1 <- picture True a
    return $ gElement (maybe [] return $ frameChange fr) [cp,e1]

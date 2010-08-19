@@ -80,8 +80,8 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils hiding ( parens )
 
 
-import Data.AffineSpace
-import Data.Semigroup
+import Data.AffineSpace                         -- package: vector-space
+import Data.Semigroup                           -- package: algebra
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
@@ -110,9 +110,9 @@ import qualified Data.Foldable as F
 -- changes in the PostScript code.
 --
 -- Omitting some details, Picture is a simple non-empty 
--- leaf-labelled binary tree via:
+-- leaf-labelled rose tree via:
 -- 
--- > Leaf (OneList Primitive) | Picture tree tree
+-- > Leaf primitives | Picture [tree]
 --
 -- Where OneList is a variant of the standard list type that 
 -- disallows empty lists.
@@ -125,11 +125,10 @@ import qualified Data.Foldable as F
 -- @Clip@ nests a picture (tree) inside a clipping path.
 --
 
-
 data Picture u = PicBlank (Locale u)
-               | Leaf     (Locale u) u            (OneList (Primitive u))
-               | Picture  (Locale u) (Picture u)  (Picture u)
-               | Clip     (Locale u) (Path u)     (Picture u)
+               | Leaf     (Locale u) u         (OneList (Primitive u))
+               | Picture  (Locale u)           (OneList (Picture u))
+               | Clip     (Locale u) (Path u)  (Picture u)
   deriving (Eq,Show) 
 
 -- Leaf stores \height\ as well as locale.
@@ -288,15 +287,19 @@ instance (Num u, PSUnit u) => Pretty (Picture u) where
                                   <+> text "height=" <> dtruncPP h
                                   <$> indent 2 (ppPrims prims)
 
-  pretty (Picture m l r)    = 
+  pretty (Picture m ones)   = 
       text "** Tree-pic **"   <$> ppLocale m 
-                              <$> indent 2 (    text "-- left" <$> pretty l
-                                            <$> text "-- right" <$> pretty r)
+                              <$> indent 2 (ppPics ones)
 
   pretty (Clip m cpath p)   = 
       text "** Clip-path **"  <+> ppLocale m 
                               <$> indent 2 (pretty cpath <$> pretty p)
 
+
+ppPics :: PSUnit u => OneList (Picture u) -> Doc
+ppPics ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, acc <$> text "-- " <+> int n <$> pretty e <> line)
 
 ppPrims :: PSUnit u => OneList (Primitive u) -> Doc
 ppPrims ones = snd $ F.foldl' fn (0,empty) ones
@@ -646,7 +649,7 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 instance Boundary (Picture u) where
   boundary (PicBlank (_,bb))     = bb
   boundary (Leaf     (_,bb) _ _) = bb
-  boundary (Picture  (_,bb) _ _) = bb
+  boundary (Picture  (_,bb) _)   = bb
   boundary (Clip     (_,bb) _ _) = bb
 
 instance (Num u, Ord u) => Boundary (Path u) where
@@ -706,9 +709,9 @@ ellipseBoundary = traceBoundary . ellipseControlPoints
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (PicBlank m)      = PicBlank (f m)
-mapLocale f (Leaf m h prim)   = Leaf (f m) h prim
-mapLocale f (Picture  m l r)  = Picture (f m) l r
-mapLocale f (Clip     m x p)  = Clip (f m) x p
+mapLocale f (Leaf m h ones)   = Leaf (f m) h ones
+mapLocale f (Picture m ones)  = Picture (f m) ones
+mapLocale f (Clip m x p)      = Clip (f m) x p
 
 
 movePic :: Num u => Vec2 u -> Picture u -> Picture u
@@ -726,7 +729,7 @@ moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_))     = fr
 extractFrame (Leaf     (fr,_) _ _) = fr
-extractFrame (Picture  (fr,_) _ _) = fr
+extractFrame (Picture  (fr,_) _)   = fr
 extractFrame (Clip     (fr,_) _ _) = fr
 
 

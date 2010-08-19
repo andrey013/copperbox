@@ -35,7 +35,7 @@ module Wumpus.Core.OneList
   ) where
 
 
-import Data.Semigroup           -- package: algebra
+import Data.Semigroup                           -- package: algebra
 
 import Control.Applicative
 import Data.Foldable

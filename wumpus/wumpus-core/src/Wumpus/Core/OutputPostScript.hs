@@ -40,8 +40,7 @@ import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 
-import MonadLib hiding ( Label )
-
+import MonadLib hiding ( Label )                -- package: monadLib
 
 
 --------------------------------------------------------------------------------
@@ -166,23 +165,24 @@ epsFooter = do
 outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 
-outputPicture (Leaf (fr,_) _ prim)      = 
-    updateFrame fr $ outputPrimitives prim
+outputPicture (Leaf (fr,_) _ ones)      = 
+    updateFrame fr (revMapM outputPrimitive ones)
 
 -- output right picture first, to satisfy zordering...
-outputPicture (Picture (fr,_) l r)      =
-    updateFrame fr (outputPicture r >> outputPicture l) 
+outputPicture (Picture (fr,_) ones)      =
+    updateFrame fr (revMapM outputPicture ones) 
 
 outputPicture (Clip (fr,_) cp p)        = 
     updateFrame fr (clipPath cp >> outputPicture p)
 
 
-outputPrimitives :: (Real u, Floating u, PSUnit u) 
-                 => OneList (Primitive u) -> WumpusM ()
-outputPrimitives = step . viewl
+
+
+revMapM ::  (a -> WumpusM ()) -> OneList a -> WumpusM ()
+revMapM mf = step . viewl
   where
-    step (OneL a)  = outputPrimitive a
-    step (a :< xs) = step (viewl xs) >> outputPrimitive a
+    step (OneL a)  = mf a
+    step (a :< xs) = step (viewl xs) >> mf a
 
 
 -- | @updateFrame@ relies on the current frame, when translated

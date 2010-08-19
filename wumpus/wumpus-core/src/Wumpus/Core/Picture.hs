@@ -74,7 +74,9 @@ import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextEncodingInternal
 
-import Data.Semigroup
+import Data.Semigroup                           -- package: algebra
+
+import qualified Data.Foldable as F
 
 
 --------------------------------------------------------------------------------
@@ -160,15 +162,15 @@ frameMulti (p:ps) = let (bb,ones) = step p ps
 -- This function throws an error when supplied the empty list.
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
-multi []     = error "Wumpus.Core.Picture.multi - empty list"
-multi [p]    = p
-multi (p:ps) = let q = multi ps in 
-               Picture (stdFrame, boundary p `append` boundary q) p q
+multi []       = error "Wumpus.Core.Picture.multi - empty list"
+multi xs@(x:_) = Picture (stdFrame, bb) ones 
+  where
+    ones = fromList xs
+    bb   = F.foldr (\a b -> b `append` boundary a) (boundary x) xs
 
 
-
--- | Create a Path from a start point and a list of 
--- PathSegments.
+-- | Create a Path from a start point and a list of PathSegments.
+--
 path :: Point2 u -> [PathSegment u] -> Path u
 path = Path 
 
@@ -514,7 +516,7 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb) a b
+a `picOver` b = Picture (ortho zeroPt, bb) (cons a $ one b)
   where
     bb = union (boundary a) (boundary b)
 
