@@ -27,9 +27,10 @@ module Wumpus.Core.PostScript
   (
   -- * Types
     PostScript
-  , WumpusM
+  , PsMonad
 
-  , runWumpus
+  , execPsMonad
+  , ask
 
   -- * Escape sepcial characters
   , escapeStringPS
@@ -95,9 +96,7 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils
 
-
-import MonadLib
-
+import Control.Applicative
 import Data.List ( foldl' )
 
 
@@ -121,9 +120,9 @@ import Data.List ( foldl' )
 -- This contrasts with the behaviour for stroke attributes
 -- which needs @undo@.
 
-data PostScriptGS = PostScriptGS { 
-        gs_font         :: Maybe FontAttr,
-        gs_rgb_colour   :: DRGB
+data St = St 
+      { st_font         :: Maybe FontAttr
+      , st_rgb_colour   :: DRGB
       }
   deriving (Eq,Show)
 
@@ -164,50 +163,52 @@ type PostScript = String
 
 type PsOutput = H Char
 
-type WumpusM a = PsT Id a
+
+-- WumpusM is a Reader-Writer-State monad.
+--
+newtype PsMonad a = PsMonad { 
+            getPsMonad :: TextEncoder -> St -> (a, St, PsOutput) }
 
 
-newtype PsT m a = PsT { 
-    unPsT :: StateT PostScriptGS 
-                    (WriterT PsOutput (ReaderT TextEncoder m)) a }
-
-gs_init :: PostScriptGS 
-gs_init = PostScriptGS { gs_font           = Nothing
-                       , gs_rgb_colour     = black 
-                       }
+st_zero :: St 
+st_zero = St { st_font           = Nothing
+             , st_rgb_colour     = black 
+             }
            
             
-runPsT :: Monad m 
-       => TextEncoder -> PsT m a -> m ((a,PostScriptGS),PsOutput)
-runPsT i m = runReaderT i $ runWriterT $ runStateT gs_init $ unPsT m
+runPsMonad :: TextEncoder -> PsMonad a -> (a, St, PsOutput)
+runPsMonad enc m = getPsMonad m enc st_zero
 
-instance Monad m => Functor (PsT m) where
-  fmap f (PsT mf) = PsT $ fmap f mf 
+instance Functor PsMonad where
+  fmap f mf = PsMonad $ \r s -> let (a,s',w) = getPsMonad mf r s 
+                                in (f a, s', w)
 
-instance Monad m => Monad (PsT m) where
-  return a  = PsT $ return a
-  ma >>= f  = PsT $ unPsT ma >>= unPsT . f
+instance Applicative PsMonad where
+  pure a    = PsMonad $ \_ s -> (a,s,id)
+  mf <*> ma = PsMonad $ \r s -> let (f,s1,w1) = getPsMonad mf r s
+                                    (a,s2,w2) = getPsMonad ma r s1
+                                in (f a, s2, w1 . w2)
 
-instance Monad m => WriterM (PsT m) PsOutput where
-  put = PsT . put
+instance Monad PsMonad where
+  return a  = PsMonad $ \_ s -> (a,s,id)
+  m >>= k   = PsMonad $ \r s -> let (a,s1,w1) = getPsMonad m r s
+                                    (b,s2,w2) = (getPsMonad . k) a r s1
+                                in (b, s2, w1 . w2)
 
-instance Monad m => ReaderM (PsT m) TextEncoder where
-  ask = PsT $ ask
-
-instance Monad m => StateM (PsT m) PostScriptGS where
-  set = PsT . set
-  get = PsT $ get
-
-instance MonadT PsT where
-  lift = PsT . lift . lift . lift
-
-
-pstId :: TextEncoder -> PsT Id a -> ((a,PostScriptGS),PsOutput)
-pstId enc mf = runId $ runPsT enc mf
 
 -- | Drop state and result, take the Writer trace.
-runWumpus :: TextEncoder -> WumpusM a -> String
-runWumpus enc mf = (toListH . snd) $ pstId enc mf
+execPsMonad :: TextEncoder -> PsMonad a -> PostScript
+execPsMonad enc mf = let (_,_,w) = runPsMonad enc mf in toListH w
+
+
+get :: PsMonad St
+get = PsMonad $ \_ s -> (s,s,id)
+
+sets_ :: (St -> St) -> PsMonad ()
+sets_ f = PsMonad $ \_ s -> ((), f s, id)
+
+ask :: PsMonad TextEncoder
+ask = PsMonad $ \r s -> (r,s,id)
 
 --------------------------------------------------------------------------------
 -- Escape special chars
@@ -228,23 +229,23 @@ ps_special = "\\()<>[]{}/%"
 --------------------------------------------------------------------------------
 -- "Deltas" of the graphics state
 
-deltaFontAttr :: FontAttr -> WumpusM (Maybe FontAttr)
-deltaFontAttr new = get >>= maybe update diff . gs_font
+deltaFontAttr :: FontAttr -> PsMonad (Maybe FontAttr)
+deltaFontAttr new = get >>= maybe update diff . st_font
   where
-    update :: WumpusM (Maybe FontAttr)
-    update = sets_ (\s -> s { gs_font = Just new }) >> return (Just new)
+    update :: PsMonad (Maybe FontAttr)
+    update = sets_ (\s -> s { st_font = Just new }) >> return (Just new)
     
-    diff :: FontAttr -> WumpusM (Maybe FontAttr)
+    diff :: FontAttr -> PsMonad (Maybe FontAttr)
     diff old | old == new = return Nothing
              | otherwise  = update
 
 
-deltaRgbColour :: DRGB -> WumpusM (Maybe DRGB)
-deltaRgbColour new = get >>= diff . gs_rgb_colour
+deltaRgbColour :: DRGB -> PsMonad (Maybe DRGB)
+deltaRgbColour new = get >>= diff . st_rgb_colour
   where
-    diff :: DRGB -> WumpusM (Maybe DRGB)
+    diff :: DRGB -> PsMonad (Maybe DRGB)
     diff old | old == new = return Nothing
-             | otherwise  = do { sets_ (\s -> s { gs_rgb_colour = new })
+             | otherwise  = do { sets_ (\s -> s { st_rgb_colour = new })
                                ; return (Just new)
                                }
 
@@ -280,22 +281,22 @@ deltaDashPattern p
 --------------------------------------------------------------------------------
 -- writer monad helpers
 
-tell :: WriterM m i => i -> m ()
-tell s = puts ((),s)
+tell :: H Char -> PsMonad ()
+tell msg = PsMonad $ \_ s -> ((),s,msg)
 
-writeChar :: WriterM m PsOutput => Char -> m ()
+writeChar :: Char -> PsMonad ()
 writeChar = tell . showChar 
 
 
-write :: WriterM m PsOutput => String -> m ()
+write :: String -> PsMonad ()
 write = tell . showString 
 
 
-writeln :: WriterM m PsOutput => String -> m ()
+writeln :: String -> PsMonad ()
 writeln s = write s >> writeChar '\n'
 
 
-writeArg :: WriterM m PsOutput => String -> m () 
+writeArg :: String -> PsMonad () 
 writeArg s = write s >> writeChar ' '
 
 
@@ -303,7 +304,7 @@ writeArg s = write s >> writeChar ' '
 
 type Command = String
 
-command :: Command -> [String] -> WumpusM ()
+command :: Command -> [String] -> PsMonad ()
 command cmd xs = mapM_ writeArg xs >> writeln cmd
 
 
@@ -318,7 +319,7 @@ showArray f (x:xs) = sfun "]"
 
 -- | @ %% ... @
 --
-ps_comment :: String -> WumpusM ()
+ps_comment :: String -> PsMonad ()
 ps_comment s = write "%% " >> writeln s
 
 --------------------------------------------------------------------------------
@@ -326,37 +327,37 @@ ps_comment s = write "%% " >> writeln s
 
 -- | @ gsave @
 --
-ps_gsave :: WumpusM ()
+ps_gsave :: PsMonad ()
 ps_gsave = command "gsave" []
 
 -- | @ grestore @
 --
-ps_grestore :: WumpusM () 
+ps_grestore :: PsMonad () 
 ps_grestore = command "grestore" []
 
 -- | @ ... setlinewidth @
 --
-ps_setlinewidth :: PSUnit u => u -> WumpusM ()
+ps_setlinewidth :: PSUnit u => u -> PsMonad ()
 ps_setlinewidth = command "setlinewidth" . return . dtrunc
 
 -- | @ ... setlinecap @
 --
-ps_setlinecap :: LineCap -> WumpusM ()
+ps_setlinecap :: LineCap -> PsMonad ()
 ps_setlinecap = command "setlinecap" . return . show . fromEnum
 
 -- | @ ... setlinejoin @
 --
-ps_setlinejoin :: LineJoin -> WumpusM ()
+ps_setlinejoin :: LineJoin -> PsMonad ()
 ps_setlinejoin = command "setlinejoin" . return . show . fromEnum
 
 -- | @ ... setmiterlimit @
 --
-ps_setmiterlimit :: PSUnit u => u -> WumpusM ()
+ps_setmiterlimit :: PSUnit u => u -> PsMonad ()
 ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
 
 -- | @ [... ...] ... setdash @
 --
-ps_setdash :: DashPattern -> WumpusM ()
+ps_setdash :: DashPattern -> PsMonad ()
 ps_setdash Solid          = command "setdash" ["[]", "0"]
 ps_setdash (Dash n pairs) = command "setdash" [showArray shows arr, show n]
   where
@@ -364,17 +365,17 @@ ps_setdash (Dash n pairs) = command "setdash" [showArray shows arr, show n]
 
 -- | @ ... setgray @
 --
-ps_setgray :: PSUnit u => u -> WumpusM ()
+ps_setgray :: PSUnit u => u -> PsMonad ()
 ps_setgray = command "setgray" . return . dtrunc 
 
 -- | @ ... ... ... setrgbcolor @
 --
-ps_setrgbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
+ps_setrgbcolor :: PSUnit u => u -> u -> u -> PsMonad ()
 ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
 
 -- | @ ... ... ... sethsbcolor @
 --
-ps_sethsbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
+ps_sethsbcolor :: PSUnit u => u -> u -> u -> PsMonad ()
 ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 
 
@@ -382,12 +383,12 @@ ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 -- coordinate system and matrix operators 
 
 -- | @ ... ... translate @
-ps_translate :: PSUnit u => u -> u -> WumpusM ()
+ps_translate :: PSUnit u => u -> u -> PsMonad ()
 ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
 
 -- | @ ... ... scale @
-ps_scale :: PSUnit u => u -> u -> WumpusM ()
+ps_scale :: PSUnit u => u -> u -> PsMonad ()
 ps_scale tx ty = do
     command "scale" $ map dtrunc [tx,ty]
 
@@ -395,7 +396,7 @@ ps_scale tx ty = do
 -- Do not use setmatrix for changing the CTM use concat...
 
 -- | @ [... ... ... ... ... ...] concat @
-ps_concat :: PSUnit u => CTM u -> WumpusM ()
+ps_concat :: PSUnit u => CTM u -> PsMonad ()
 ps_concat (CTM a b  c d  e f) = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
@@ -404,7 +405,7 @@ ps_concat (CTM a b  c d  e f) = command "concat" [mat] where
 -- Path construction operators
 
 -- | @ newpath @
-ps_newpath :: WumpusM ()
+ps_newpath :: PsMonad ()
 ps_newpath = command "newpath" []
 
 
@@ -413,53 +414,53 @@ ps_newpath = command "newpath" []
 -- quite expensive.
 
 -- | @ ... ... moveto @
-ps_moveto :: PSUnit u => u -> u -> WumpusM ()
+ps_moveto :: PSUnit u => u -> u -> PsMonad ()
 ps_moveto x y = command "moveto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... rmoveto @
-ps_rmoveto :: PSUnit u => u -> u -> WumpusM ()
+ps_rmoveto :: PSUnit u => u -> u -> PsMonad ()
 ps_rmoveto x y = command "rmoveto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... lineto @
-ps_lineto :: PSUnit u => u -> u -> WumpusM ()
+ps_lineto :: PSUnit u => u -> u -> PsMonad ()
 ps_lineto x y = command "lineto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... rlineto @
-ps_rlineto :: PSUnit u => u -> u -> WumpusM ()
+ps_rlineto :: PSUnit u => u -> u -> PsMonad ()
 ps_rlineto x y = command "rlineto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... ... ... ... arc @
-ps_arc :: PSUnit u => u -> u -> u -> u -> u -> WumpusM ()
+ps_arc :: PSUnit u => u -> u -> u -> u -> u -> PsMonad ()
 ps_arc x y r ang1 ang2 = 
     command "arc" $ map dtrunc [x,y,r,ang1,ang2]
 
 -- | @ ... ... ... ... ... arcn @
-ps_arcn :: PSUnit u => u -> u -> u -> u -> u -> WumpusM ()
+ps_arcn :: PSUnit u => u -> u -> u -> u -> u -> PsMonad ()
 ps_arcn x y r ang1 ang2 = 
     command "arcn" $ map dtrunc [x,y,r,ang1,ang2]
 
 -- | @ ... ... ... ... ... ... curveto @
-ps_curveto :: PSUnit u => u -> u -> u -> u -> u -> u -> WumpusM ()
+ps_curveto :: PSUnit u => u -> u -> u -> u -> u -> u -> PsMonad ()
 ps_curveto x1 y1 x2 y2 x3 y3 = 
     command "curveto" $ map dtrunc [x1,y1, x2,y2, x3,y3]
 
 -- | @ closepath @
-ps_closepath :: WumpusM ()
+ps_closepath :: PsMonad ()
 ps_closepath = command "closepath" []
 
 -- | @ clip @
-ps_clip :: WumpusM ()
+ps_clip :: PsMonad ()
 ps_clip = command "clip" []
 
 --------------------------------------------------------------------------------
 --  painting operators
 
 -- | @ fill @
-ps_fill :: WumpusM ()
+ps_fill :: PsMonad ()
 ps_fill = command "fill" []
 
 -- | @ stroke @
-ps_stroke :: WumpusM ()
+ps_stroke :: PsMonad ()
 ps_stroke = command "stroke" []
 
 
@@ -467,7 +468,7 @@ ps_stroke = command "stroke" []
 -- Output operators
 
 -- | @ showpage @
-ps_showpage :: WumpusM ()
+ps_showpage :: PsMonad ()
 ps_showpage = command "showpage" []
 
 
@@ -485,23 +486,23 @@ ps_showpage = command "showpage" []
 -- List from Bill Casselman \'Mathematical Illustrations\' p279.
 
 -- | @ /... findfont @
-ps_findfont :: String -> WumpusM () 
+ps_findfont :: String -> PsMonad () 
 ps_findfont = command "findfont" . return . ('/' :)
 
 -- | @ ... scalefont @
-ps_scalefont :: Int -> WumpusM ()
+ps_scalefont :: Int -> PsMonad ()
 ps_scalefont = command "scalefont" . return . show
 
 -- | @ setfont @
-ps_setfont :: WumpusM ()
+ps_setfont :: PsMonad ()
 ps_setfont = command "setfont" []
 
 -- | @ (...) show  @
-ps_show :: String -> WumpusM ()
+ps_show :: String -> PsMonad ()
 ps_show = command "show" . return . parens
 
 -- | @ (...) show  @
-ps_glyphshow :: String -> WumpusM ()
+ps_glyphshow :: String -> PsMonad ()
 ps_glyphshow = command "glyphshow" . return . ('/':)
 
 
@@ -509,21 +510,21 @@ ps_glyphshow = command "glyphshow" . return . ('/':)
 -- document structuring conventions
 
 -- | @ %!PS-Adobe-3.0 @
-bang_PS :: WumpusM ()
+bang_PS :: PsMonad ()
 bang_PS = writeln "%!PS-Adobe-3.0"
 
 -- | @ %!PS-Adobe-3.0 EPSF-3.0 @
-bang_EPS :: WumpusM ()
+bang_EPS :: PsMonad ()
 bang_EPS = writeln "%!PS-Adobe-3.0 EPSF-3.0"
 
 -- | @ %%...: ... @
-dsc_comment :: String -> [String] -> WumpusM ()
+dsc_comment :: String -> [String] -> PsMonad ()
 dsc_comment name [] = write "%%" >> writeln name
 dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln (hsep xs)
 
 
 -- | @ %%BoundingBox: ... ... ... ... @  /llx lly urx ury/
-dsc_BoundingBox :: PSUnit u => u -> u -> u -> u -> WumpusM ()
+dsc_BoundingBox :: PSUnit u => u -> u -> u -> u -> PsMonad ()
 dsc_BoundingBox llx lly urx ury = 
   dsc_comment "BoundingBox"  (map (roundup . toDouble) [llx,lly,urx,ury])
 
@@ -531,25 +532,25 @@ dsc_BoundingBox llx lly urx ury =
 -- 
 -- The creation date is informational and never interpreted, 
 -- thus the format is entirely arbitrary.
-dsc_CreationDate :: String -> WumpusM ()
+dsc_CreationDate :: String -> PsMonad ()
 dsc_CreationDate = dsc_comment "CreationDate" . return
 
 -- | @ %%Pages: ... @
-dsc_Pages :: Int -> WumpusM ()
+dsc_Pages :: Int -> PsMonad ()
 dsc_Pages = dsc_comment "Pages" . return . show
 
 
 -- | @ %%Page: ... ... @
-dsc_Page :: String -> Int -> WumpusM ()
+dsc_Page :: String -> Int -> PsMonad ()
 dsc_Page label ordinal = 
     dsc_comment "Page" [label, show ordinal]
 
 
 -- | @ %%EndComments @
-dsc_EndComments :: WumpusM ()
+dsc_EndComments :: PsMonad ()
 dsc_EndComments = dsc_comment "EndComments" []
 
 -- | @ %%EOF @
-dsc_EOF :: WumpusM ()
+dsc_EOF :: PsMonad ()
 dsc_EOF = dsc_comment "EOF" []
 

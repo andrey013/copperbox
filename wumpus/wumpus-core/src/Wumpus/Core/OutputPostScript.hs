@@ -40,7 +40,7 @@ import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 
-import MonadLib hiding ( Label )                -- package: monadLib
+import Control.Monad
 
 
 --------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
 -- | Draw a picture, generating PostScript output.
 psDraw :: (Real u, Floating u, PSUnit u) 
        => String -> TextEncoder -> [Picture u] -> PostScript
-psDraw timestamp enc pics = runWumpus enc $ do
+psDraw timestamp enc pics = execPsMonad enc $ do
     psHeader 1 timestamp
     zipWithM_ psDrawPage pages pics
     psFooter
@@ -94,7 +94,7 @@ psDraw timestamp enc pics = runWumpus enc $ do
 
 
 psDrawPage :: (Real u, Floating u, PSUnit u) 
-           => (String,Int) -> Picture u -> WumpusM ()
+           => (String,Int) -> Picture u -> PsMonad ()
 psDrawPage (lbl,ordinal) pic = do
     dsc_Page lbl ordinal
     ps_gsave
@@ -113,7 +113,7 @@ psDrawPage (lbl,ordinal) pic = do
 --
 epsDraw :: (Real u, Floating u, PSUnit u) 
         => String -> TextEncoder -> Picture u -> PostScript
-epsDraw timestamp enc pic = runWumpus enc $ do 
+epsDraw timestamp enc pic = execPsMonad enc $ do 
     epsHeader bb timestamp      
     ps_gsave
     cmdtrans
@@ -125,7 +125,7 @@ epsDraw timestamp enc pic = runWumpus enc $ do
     cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
      
 
-psHeader :: Int -> String -> WumpusM ()
+psHeader :: Int -> String -> PsMonad ()
 psHeader pagecount timestamp = do
     bang_PS
     dsc_Pages pagecount
@@ -133,7 +133,7 @@ psHeader pagecount timestamp = do
     dsc_EndComments
 
 
-epsHeader :: PSUnit u => BoundingBox u -> String -> WumpusM ()
+epsHeader :: PSUnit u => BoundingBox u -> String -> PsMonad ()
 epsHeader bb timestamp = do
     bang_EPS
     dsc_BoundingBox llx lly urx ury
@@ -145,11 +145,11 @@ epsHeader bb timestamp = do
 getBounds :: Num u => BoundingBox u -> (u,u,u,u)
 getBounds (BBox (P2 llx lly) (P2 urx ury)) = (llx,lly,urx,ury)
 
-psFooter :: WumpusM ()
+psFooter :: PsMonad ()
 psFooter = dsc_EOF
 
 
-epsFooter :: WumpusM ()
+epsFooter :: PsMonad ()
 epsFooter = do
     ps_showpage
     dsc_EOF
@@ -162,7 +162,7 @@ epsFooter = do
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
 --
-outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
+outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad ()
 outputPicture (PicBlank  _)             = return ()
 
 outputPicture (Leaf (fr,_) _ ones)      = 
@@ -178,7 +178,7 @@ outputPicture (Clip (fr,_) cp p)        =
 
 
 
-revMapM ::  (a -> WumpusM ()) -> OneList a -> WumpusM ()
+revMapM ::  (a -> PsMonad ()) -> OneList a -> PsMonad ()
 revMapM mf = step . viewl
   where
     step (OneL a)  = mf a
@@ -203,7 +203,7 @@ revMapM mf = step . viewl
 -- > [1 0 0 1 0 0] concat
 --
 
-updateFrame :: (Fractional u, PSUnit u) => Frame2 u -> WumpusM () -> WumpusM ()
+updateFrame :: (Fractional u, PSUnit u) => Frame2 u -> PsMonad () -> PsMonad ()
 updateFrame frm ma 
   | standardFrame frm = ma
   | otherwise         = let m1 = frame2Matrix frm in 
@@ -212,12 +212,12 @@ updateFrame frm ma
                            ; ps_concat $ toCTM $ invert m1
                            }
 
-outputPrimitive :: (Real u, Floating u, PSUnit u) => Primitive u -> WumpusM ()
+outputPrimitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad ()
 outputPrimitive (PPath (c,dp) p)    = outputPath dp c p 
 outputPrimitive (PLabel props l)    = updateFont props $ outputLabel l
 outputPrimitive (PEllipse (c,dp) e) = outputEllipse dp c e
 
-updateFont :: LabelProps -> WumpusM () -> WumpusM ()
+updateFont :: LabelProps -> PsMonad () -> PsMonad ()
 updateFont (c,fnt) ma = updateColour c $ do 
     mb_fnt <- deltaFontAttr fnt
     maybe (return ()) fontCommand mb_fnt
@@ -225,19 +225,19 @@ updateFont (c,fnt) ma = updateColour c $ do
     
 
 
-updateColour :: PSColour c => c -> WumpusM () -> WumpusM ()
+updateColour :: PSColour c => c -> PsMonad () -> PsMonad ()
 updateColour c ma = let rgbc = psColour c in do 
     mb_col  <- deltaRgbColour rgbc
     maybe (return ()) colourCommand mb_col
     ma
   where
-    colourCommand :: DRGB -> WumpusM ()
+    colourCommand :: DRGB -> PsMonad ()
     colourCommand (RGB3 r g b) = ps_setrgbcolor r g b
  
     
 
 
-fontCommand :: FontAttr -> WumpusM ()
+fontCommand :: FontAttr -> PsMonad ()
 fontCommand (FontAttr sz face) = do
     ps_findfont (font_name face)
     ps_scalefont sz
@@ -247,7 +247,7 @@ fontCommand (FontAttr sz face) = do
 
     
 outputPath :: (PSColour c, PSUnit u) 
-           => DrawPath -> c -> Path u -> WumpusM ()
+           => DrawPath -> c -> Path u -> PsMonad ()
 outputPath CFill        c p = updateColour c $ do  
     startPath p
     ps_closepath
@@ -263,7 +263,7 @@ outputPath (OStroke xs) c p = updatePen c xs $ do
     ps_stroke
   
 
-startPath :: PSUnit u => Path u -> WumpusM ()
+startPath :: PSUnit u => Path u -> PsMonad ()
 startPath (Path (P2 x y) xs) = do
     ps_newpath
     ps_moveto x y
@@ -271,7 +271,7 @@ startPath (Path (P2 x y) xs) = do
 
 
 
-clipPath :: PSUnit u => Path u -> WumpusM ()
+clipPath :: PSUnit u => Path u -> PsMonad ()
 clipPath p = do 
     startPath p
     ps_closepath
@@ -279,11 +279,11 @@ clipPath p = do
 
 
 
-updatePen :: PSColour c => c -> [StrokeAttr] -> WumpusM () -> WumpusM ()
+updatePen :: PSColour c => c -> [StrokeAttr] -> PsMonad () -> PsMonad ()
 updatePen c xs ma = let (mset, mreset) = strokeSetReset xs in 
                     updateColour c $ do { mset ; ma ; mreset }
 
-strokeSetReset :: [StrokeAttr] -> (WumpusM (), WumpusM ())
+strokeSetReset :: [StrokeAttr] -> (PsMonad (), PsMonad ())
 strokeSetReset = 
     foldr (\c acc -> link (cmd c) acc) (return (), return ())
   where
@@ -299,7 +299,7 @@ strokeSetReset =
     cmd (DashPattern dp) = mkSetReset ps_setdash       $ deltaDashPattern dp
 
 
-outputPathSeg :: PSUnit u => PathSegment u -> WumpusM ()
+outputPathSeg :: PSUnit u => PathSegment u -> PsMonad ()
 outputPathSeg (PLineTo (P2 x y))  = ps_lineto x y
 outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
   where
@@ -314,7 +314,7 @@ outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- width during the drawing of a stroked ellipse.
 --
 outputEllipse :: (PSColour c, Real u, Floating u, PSUnit u)
-              => DrawEllipse -> c -> PrimEllipse u -> WumpusM ()
+              => DrawEllipse -> c -> PrimEllipse u -> PsMonad ()
 outputEllipse dp c (PrimEllipse pt@(P2 x y) hw hh ctm)
     | hw==hh  && ctm == identityCTM = outputArc dp c x y hw
     | otherwise                     = 
@@ -327,7 +327,7 @@ outputEllipse dp c (PrimEllipse pt@(P2 x y) hw hh ctm)
                 }
 
 outputArc :: (PSColour c, PSUnit u) 
-          => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
+          => DrawEllipse -> c -> u -> u -> u -> PsMonad ()
 outputArc EFill        c x y r = updateColour c $ do 
     ps_newpath
     ps_arc x y r 0 360 
@@ -344,7 +344,7 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
 -- Note - for the otherwise case the x-and-y coordinates are 
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
-outputLabel :: (Real u, Floating u, PSUnit u) => Label u -> WumpusM ()
+outputLabel :: (Real u, Floating u, PSUnit u) => Label u -> PsMonad ()
 outputLabel (Label (P2 x y) entxt ctm) 
     | ctm == identityCTM  = do { ps_moveto x y; outputEncodedText entxt }
     | otherwise           = do { ps_concat $ toCTM matrix
@@ -355,10 +355,10 @@ outputLabel (Label (P2 x y) entxt ctm)
   where
     matrix = translMatrixRepCTM x y ctm
 
-outputEncodedText :: EncodedText -> WumpusM () 
+outputEncodedText :: EncodedText -> PsMonad () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText
 
-outputTextChunk :: TextChunk -> WumpusM () 
+outputTextChunk :: TextChunk -> PsMonad () 
 outputTextChunk (SText s)  = ps_show $ escapeStringPS s
 
 outputTextChunk (EscInt i) = 
@@ -368,7 +368,7 @@ outputTextChunk (EscInt i) =
 
 outputTextChunk (EscStr s) = ps_glyphshow s 
 
-missingCode :: CharCode -> GlyphName -> WumpusM ()
+missingCode :: CharCode -> GlyphName -> PsMonad ()
 missingCode i fallback =  do
     ps_comment $ "missing lookup for &#" ++ show i ++ ";" 
     ps_glyphshow fallback
