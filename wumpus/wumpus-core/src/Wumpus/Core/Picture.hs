@@ -104,8 +104,10 @@ blankPicture bb = PicBlank (stdFrame, bb)
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
 frame :: (Real u, Floating u, FromPtSize u) => Primitive u -> Picture u
-frame p = Leaf (stdFrame, boundary p) p 
-
+frame p = Leaf (stdFrame, bb) (bbyMax bb) (one p)
+  where
+    bb = boundary p
+ 
 -- | Frame a picture within the supplied bounding box
 -- 
 -- A text label uses the supplied bounding box as is - no 
@@ -122,10 +124,15 @@ frame p = Leaf (stdFrame, boundary p) p
 --
 frameWithin :: (Real u, Floating u, FromPtSize u) 
             => Primitive u -> BoundingBox u -> Picture u
-frameWithin p@(PLabel _ _) bb = Leaf (stdFrame,bb) p
-frameWithin p              bb = Leaf (stdFrame,bb `append` boundary p) p
+frameWithin p@(PLabel _ _) bb = Leaf (stdFrame, bb)  (bbyMax bb)  (one p)
+frameWithin p              bb = Leaf (stdFrame, bb') (bbyMax bb') (one p)
+  where 
+    bb' = bb `append` boundary p
 
 
+-- TEMP
+bbyMax :: BoundingBox u -> u
+bbyMax (BBox _ (P2 _ h)) = h
 
 
 -- | Lift a list of primitives to a composite picture, all 
@@ -138,25 +145,25 @@ frameWithin p              bb = Leaf (stdFrame,bb `append` boundary p) p
 --
 frameMulti :: (Real u, Floating u, FromPtSize u) 
            => [Primitive u] -> Picture u
-frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
-frameMulti xs = multi $ map frame xs
+frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
+frameMulti (p:ps) = let (bb,ones) = step p ps 
+                    in Leaf (stdFrame,bb) (bbyMax bb) ones 
+  where
+    step a []     = (boundary a, one a)
+    step a (x:xs) = let (bb',rest) = step x xs
+                    in (boundary a `append` bb', cons a rest)
 
 
--- | Place multiple pictures within the same affine frame.
+
+-- | Place multiple pictures within the standard affine frame.
 --
 -- This function throws an error when supplied the empty list.
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
-multi ps = Picture (stdFrame, sconcat $ map boundary ps) $ step ps
-  where 
-    sconcat []      = error err_msg
-    sconcat (x:xs)  = foldr append x xs
-
-    step [x]        = one x
-    step (x:xs)     = x `cons` step xs
-    step _          = error err_msg
-
-    err_msg         = "Wumpus.Core.Picture.multi - empty list"
+multi []     = error "Wumpus.Core.Picture.multi - empty list"
+multi [p]    = p
+multi (p:ps) = let q = multi ps in 
+               Picture (stdFrame, boundary p `append` boundary q) p q
 
 
 
@@ -507,7 +514,7 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb) (cons a $ one b) 
+a `picOver` b = Picture (ortho zeroPt, bb) a b
   where
     bb = union (boundary a) (boundary b)
 

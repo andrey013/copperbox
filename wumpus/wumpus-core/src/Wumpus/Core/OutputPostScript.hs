@@ -166,12 +166,15 @@ epsFooter = do
 --
 outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
-outputPicture (Leaf (fr,_) prim)        = 
-    updateFrame fr $ outputPrimitive prim
-outputPicture (Picture (fr,_) ones)     =
-    updateFrame fr $ F.foldrM (\p _ -> outputPicture p) () ones
+
+outputPicture (Leaf (fr,_) _ prim)      = 
+    updateFrame fr $ F.mapM_ outputPrimitive prim
+
+outputPicture (Picture (fr,_) l r)      =
+    updateFrame fr (outputPicture l >> outputPicture r)
+
 outputPicture (Clip (fr,_) cp p)        = 
-    updateFrame fr $ do { clipPath cp ; outputPicture p }
+    updateFrame fr (clipPath cp >> outputPicture p)
 
 
 -- | @updateFrame@ relies on the current frame, when translated

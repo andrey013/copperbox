@@ -109,10 +109,10 @@ import qualified Data.Foldable as F
 -- optimization to avoid generating excessive graphics state 
 -- changes in the PostScript code.
 --
--- Apropos the constructors, Picture is a simple non-empty 
--- leaf-labelled rose tree via:
+-- Omitting some details, Picture is a simple non-empty 
+-- leaf-labelled binary tree via:
 -- 
--- > Leaf (aka Single) | Picture (OneList tree)
+-- > Leaf (OneList Primitive) | Picture tree tree
 --
 -- Where OneList is a variant of the standard list type that 
 -- disallows empty lists.
@@ -127,10 +127,13 @@ import qualified Data.Foldable as F
 
 
 data Picture u = PicBlank (Locale u)
-               | Leaf     (Locale u)          (Primitive u)
-               | Picture  (Locale u)          (OneList (Picture u))
-               | Clip     (Locale u) (Path u) (Picture u)
+               | Leaf     (Locale u) u            (OneList (Primitive u))
+               | Picture  (Locale u) (Picture u)  (Picture u)
+               | Clip     (Locale u) (Path u)     (Picture u)
   deriving (Eq,Show) 
+
+-- Leaf stores \height\ as well as locale.
+
 
 -- Note - Single is rather inefficient in hindsight.
 -- 
@@ -141,6 +144,27 @@ data Picture u = PicBlank (Locale u)
 
 
 type DPicture = Picture Double
+
+
+-- | Locale = (current frame x bounding box)
+-- 
+-- Pictures (and sub-pictures) are located within an affine frame.
+-- So pictures can be arranged (vertical and horizontal 
+-- composition) their bounding box is cached.
+--
+-- In Wumpus, affine transformations (scalings, rotations...)
+-- transform the frame rather than the constituent points of 
+-- the primitives. Changes of frame are transmitted to PostScript
+-- as @concat@ commands (and matrix transforms in SVG) - the 
+-- @point-in-world-coordinate@ of a point on a path is never 
+-- calculated.
+--  
+-- So that picture composition is remains stable under affine
+-- transformation, the corners of bounding boxes are transformed
+-- pointwise when the picture is scaled, rotated etc.
+--
+type Locale u = (Frame2 u, BoundingBox u) 
+
 
 
 -- | Wumpus\'s drawings are built from two fundamental 
@@ -244,25 +268,6 @@ type PathProps    = (PSRgb, DrawPath)
 type LabelProps   = (PSRgb, FontAttr)
 type EllipseProps = (PSRgb, DrawEllipse)
 
--- | Locale = (current frame x bounding box)
--- 
--- Pictures (and sub-pictures) are located within an affine frame.
--- So pictures can be arranged (vertical and horizontal 
--- composition) their bounding box is cached.
---
--- In Wumpus, affine transformations (scalings, rotations...)
--- transform the frame rather than the constituent points of 
--- the primitives. Changes of frame are transmitted to PostScript
--- as @concat@ commands (and matrix transforms in SVG) - the 
--- @point-in-world-coordinate@ of a point on a path is never 
--- calculated.
---  
--- So that picture composition is remains stable under affine
--- transformation, the corners of bounding boxes are transformed
--- pointwise when the picture is scaled, rotated etc.
---
-type Locale u = (Frame2 u, BoundingBox u) 
-
 
 
 
@@ -276,22 +281,25 @@ printPicture pic = putDoc (pretty pic) >> putStrLn []
 
 instance (Num u, PSUnit u) => Pretty (Picture u) where
   pretty (PicBlank m)       = 
-      text "** Blank-picture **"  <+> ppLocale m
+      text "** Blank-pic **"  <+> ppLocale m
 
-  pretty (Leaf m prim)      = 
-      text "** Leaf-picture **"   <$> ppLocale m <$> indent 2 (pretty prim)
+  pretty (Leaf m h prims)   = 
+      text "** Leaf-pic **"   <$> ppLocale m 
+                                  <+> text "height=" <> dtruncPP h
+                                  <$> indent 2 (ppPrims prims)
 
-  pretty (Picture m ones)   = 
-      text "** Multi-picture **"  <$> ppLocale m 
-                                  <$> indent 2 (ppPics ones)
+  pretty (Picture m l r)    = 
+      text "** Tree-pic **"   <$> ppLocale m 
+                              <$> indent 2 (    text "-- left" <$> pretty l
+                                            <$> text "-- right" <$> pretty r)
 
   pretty (Clip m cpath p)   = 
-      text "** Clip-path **" <+> ppLocale m 
-                             <$> indent 2 (pretty cpath <$> pretty p)
+      text "** Clip-path **"  <+> ppLocale m 
+                              <$> indent 2 (pretty cpath <$> pretty p)
 
 
-ppPics :: (Num u, PSUnit u) => OneList (Picture u) -> Doc
-ppPics ones = snd $ F.foldl' fn (0,empty) ones
+ppPrims :: PSUnit u => OneList (Primitive u) -> Doc
+ppPrims ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, acc <$> text "-- leaf" <+> int n <$> pretty e <> line)
 
@@ -637,8 +645,8 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 
 instance Boundary (Picture u) where
   boundary (PicBlank (_,bb))     = bb
-  boundary (Leaf     (_,bb) _)   = bb
-  boundary (Picture  (_,bb) _)   = bb
+  boundary (Leaf     (_,bb) _ _) = bb
+  boundary (Picture  (_,bb) _ _) = bb
   boundary (Clip     (_,bb) _ _) = bb
 
 instance (Num u, Ord u) => Boundary (Path u) where
@@ -698,8 +706,8 @@ ellipseBoundary = traceBoundary . ellipseControlPoints
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (PicBlank m)      = PicBlank (f m)
-mapLocale f (Leaf     m prim) = Leaf (f m) prim
-mapLocale f (Picture  m ones) = Picture (f m) ones
+mapLocale f (Leaf m h prim)   = Leaf (f m) h prim
+mapLocale f (Picture  m l r)  = Picture (f m) l r
 mapLocale f (Clip     m x p)  = Clip (f m) x p
 
 
@@ -714,10 +722,11 @@ moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 
 
 -- | Should this really be public?
+--
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_))     = fr
-extractFrame (Leaf     (fr,_) _)   = fr
-extractFrame (Picture  (fr,_) _)   = fr
+extractFrame (Leaf     (fr,_) _ _) = fr
+extractFrame (Picture  (fr,_) _ _) = fr
 extractFrame (Clip     (fr,_) _ _) = fr
 
 

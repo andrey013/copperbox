@@ -43,19 +43,18 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.OneList ( toListFM )
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
-import Wumpus.Core.Utils
 
 
 import MonadLib hiding ( Label )
 
 import Text.XML.Light
 
-import qualified Data.Foldable as F
 
 type Clipped    = Bool
 
@@ -110,16 +109,15 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
-picture c (Leaf (fr,_) prim)      = do 
-    elt <- primitive c prim
-    return $ gElement (maybe [] return $ frameChange fr) [elt]
+picture c (Leaf (fr,_) _ prims)   = do 
+    elts <- toListFM (primitive c) prims
+    return $ gElement (maybe [] return $ frameChange fr) elts
 
-picture c (Picture (fr,_) ones)    = do
-    -- Note - list in zorder, so we want to draw the tail first 
-    es <- liftM toListH $ F.foldrM fn emptyH ones
-    return $ gElement (maybe [] return $ frameChange fr) es
-  where
-    fn e hl = picture c e >>= \a -> return $ hl `snocH` a
+picture c (Picture (fr,_) l r)    = do
+    -- Note - zorder to check....................
+    a <- picture c l
+    b <- picture c r 
+    return $ gElement (maybe [] return $ frameChange fr) [a,b]
   
 picture _ (Clip (fr,_) p a) = do 
    cp <- clipPath p

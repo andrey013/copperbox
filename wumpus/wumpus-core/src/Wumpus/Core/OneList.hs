@@ -28,6 +28,7 @@ module Wumpus.Core.OneList
   , fromList
 
   , toListF
+  , toListFM
   , accumMapL
   , isOne
   , isMany
@@ -117,6 +118,13 @@ toListF :: (a -> b) -> OneList a -> [b]
 toListF f = step where
   step (One x)     = [f x]
   step (Many x xs) = f x : step xs
+
+-- uncool... replace soon
+toListFM :: Monad m => (a -> m b) -> OneList a -> m [b]
+toListFM mf = step where
+  step (One x)     = mf x >>= \a -> return [a]
+  step (Many x xs) = mf x >>= \a -> step xs >>= \as -> return (a:as)
+
 
 
 accumMapL :: (x -> st -> (y,st)) -> OneList x -> st -> (OneList y,st)
