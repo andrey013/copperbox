@@ -50,7 +50,6 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
 
 
-import MonadLib hiding ( Label )                -- package: monadLib
 import Text.XML.Light                           -- package: xml
 
 import qualified Data.Foldable as F
@@ -84,7 +83,7 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> [Content]
-svgDraw enc pic = runSVG enc $ do
+svgDraw enc pic = execSvgMonad enc $ do
     elem1     <- picture False pic'
     prefixXmlDecls (topLevelPic mbvec elem1)
   where
@@ -92,7 +91,7 @@ svgDraw enc pic = runSVG enc $ do
     (_,mbvec) = repositionProperties pic'
 
 
-prefixXmlDecls :: Element -> SvgM [Content]
+prefixXmlDecls :: Element -> SvgMonad [Content]
 prefixXmlDecls e = do 
     enc <- asks svg_encoding_name
     let xmlv = xmlVersion enc
@@ -109,7 +108,7 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 -- zorder.
 --
 picture :: (Real u, Floating u, PSUnit u) 
-        => Clipped -> Picture u -> SvgM Element
+        => Clipped -> Picture u -> SvgMonad Element
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Leaf (fr,_) _ ones)    = do 
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
@@ -126,7 +125,7 @@ picture _ (Clip (fr,_) p a)       = do
 
 
 primitive :: (Real u, Floating u, PSUnit u) 
-          => Clipped -> Primitive u -> SvgM Element
+          => Clipped -> Primitive u -> SvgMonad Element
 primitive c (PPath props p)     = clipAttrib c $ path props p
 primitive c (PLabel props l)    = clipAttrib c $ label props l
 primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
@@ -134,7 +133,7 @@ primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
 
 
 -- All clipping paths are closed.
-clipPath :: PSUnit u => Path u -> SvgM Element
+clipPath :: PSUnit u => Path u -> SvgMonad Element
 clipPath p = do
     name <- newClipLabel
     return $ add_attr (attr_id name) $ element_clippath ps
@@ -143,7 +142,7 @@ clipPath p = do
 
 
 
-clipAttrib :: Clipped -> SvgM Element -> SvgM Element
+clipAttrib :: Clipped -> SvgMonad Element -> SvgMonad Element
 clipAttrib False melt = melt
 clipAttrib True  melt = do 
     s   <- currentClipLabel
@@ -152,9 +151,9 @@ clipAttrib True  melt = do
 
 
 -- None of the remaining translation functions need to be in the
--- SvgM monad.
+-- SvgMonad monad.
 
-path :: PSUnit u => PathProps -> Path u -> SvgM Element
+path :: PSUnit u => PathProps -> Path u -> SvgMonad Element
 path (c,dp) p = 
     return $ element_path ps `snoc_attrs` (fill_a : stroke_a : opts)
   where
@@ -171,7 +170,7 @@ path (c,dp) p =
 -- 
 --
 label :: (Real u, Floating u, PSUnit u) 
-      => LabelProps -> Label u -> SvgM Element
+      => LabelProps -> Label u -> SvgMonad Element
 label (c,FontAttr sz face) (Label pt entxt ctm) = do 
      str <- encodedText entxt
      let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
@@ -202,7 +201,7 @@ transfLabelAttrs (P2 x y) ctm =
     vmtrx     = valMatrix mtrx
 
 
-encodedText :: EncodedText -> SvgM String 
+encodedText :: EncodedText -> SvgMonad String 
 encodedText entxt = 
     let xs = getEncodedText entxt in mapM textChunk  xs >>= return . concat
 
@@ -212,7 +211,7 @@ encodedText entxt =
 -- as we go along. For SVG we are building an abstract syntax 
 -- tree.
 -- 
-textChunk :: TextChunk -> SvgM String
+textChunk :: TextChunk -> SvgMonad String
 textChunk (SText s)  = return s
 textChunk (EscInt i) = return $ escapeCharCode i
 textChunk (EscStr s) = 
@@ -237,7 +236,7 @@ fontStyle SVG_BOLD_OBLIQUE =
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: (Real u, Floating u, PSUnit u)
-        => EllipseProps -> PrimEllipse u -> SvgM Element
+        => EllipseProps -> PrimEllipse u -> SvgMonad Element
 ellipse (c,dp) (PrimEllipse pt hw hh ctm) 
     | hw == hh  = return $ element_circle  
                             `snoc_attrs` (circle_attrs  ++ style_attrs)

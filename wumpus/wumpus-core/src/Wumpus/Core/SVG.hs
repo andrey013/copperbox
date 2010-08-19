@@ -39,11 +39,14 @@
 module Wumpus.Core.SVG 
   (
   -- * SVG Monad 
-    SvgM
-  , runSVG
+    SvgMonad
+  , execSvgMonad
   , newClipLabel
   , currentClipLabel   
-
+  , set 
+  , get
+  , ask
+  , asks
 
   -- * Build SVG
   , SvgPath
@@ -106,55 +109,71 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils
 
-
-import MonadLib hiding ( version )
-import Text.XML.Light
+import Text.XML.Light                           -- package: xml
 
 
-data SvgState = SvgSt { clipCount :: Int }
+import Control.Applicative
+
+
+data St = St { clipCount :: Int }
+
+st_zero :: St
+st_zero = St { clipCount = 0 } 
 
 -- | The SVG monad - which wraps a state monad to generate 
 -- fresh names.
-type SvgM a = SvgT Id a
 
-newtype SvgT m a = SvgT { unSvgT :: StateT SvgState (ReaderT TextEncoder m) a }
+newtype SvgMonad a = SvgMonad { 
+          getSvgMonad :: TextEncoder -> St -> (a,St) }
 
-runSvgT :: Monad m => TextEncoder -> SvgT m a -> m (a,SvgState)
-runSvgT i m = runReaderT i $ runStateT st0 $ unSvgT m where
-    st0 = SvgSt { clipCount = 0 } 
-
-instance Monad m => Functor (SvgT m) where
-  fmap f (SvgT mf) = SvgT $ fmap f mf 
-
-instance Monad m => Monad (SvgT m) where
-  return a  = SvgT $ return a
-  ma >>= f  = SvgT $ unSvgT ma >>= unSvgT . f
-
-instance Monad m => StateM (SvgT m) SvgState where
-  get = SvgT $ get
-  set = SvgT . set
-
-instance Monad m => ReaderM (SvgT m) TextEncoder where
-  ask = SvgT $ ask
-
-instance MonadT SvgT where
-  lift = SvgT . lift . lift
+runSvgMonad :: TextEncoder -> SvgMonad a -> (a,St)
+runSvgMonad enc mf = getSvgMonad mf enc st_zero
 
 
-svgId :: TextEncoder -> SvgT Id a -> (a,SvgState)
-svgId enc mf = runId $ runSvgT enc mf
+instance Functor SvgMonad where
+  fmap f mf = SvgMonad $ \r s -> let (a,s') = getSvgMonad mf r s 
+                                 in (f a, s') 
+
+instance Applicative SvgMonad where
+  pure a    = SvgMonad $ \_ s -> (a,s)
+  mf <*> ma = SvgMonad $ \r s -> let (f,s1) = getSvgMonad mf r s
+                                     (a,s2) = getSvgMonad ma r s1
+                                 in (f a, s2)
+
+instance Monad SvgMonad where
+  return a  = SvgMonad $ \_ s -> (a,s)
+  m >>= k   = SvgMonad $ \r s -> let (a,s1) = getSvgMonad m r s
+                                 in (getSvgMonad . k) a r s1
+
+
+get :: SvgMonad St
+get = SvgMonad $ \_ s -> (s,s)
+
+set :: St -> SvgMonad ()
+set s = SvgMonad $ \_ _ -> ((),s)
+
+sets_ :: (St -> St) -> SvgMonad ()
+sets_ f = SvgMonad $ \_ s -> ((), f s)
+
+
+ask :: SvgMonad TextEncoder
+ask = SvgMonad $ \r s -> (r,s)
+
+asks :: (TextEncoder -> a) -> SvgMonad a
+asks f = SvgMonad $ \r s -> (f r,s)
+
 
 -- | Run the SVG monad.
-runSVG :: TextEncoder -> SvgM a -> a
-runSVG enc mf = fst $ svgId enc mf
+execSvgMonad :: TextEncoder -> SvgMonad a -> a
+execSvgMonad enc mf = fst $ runSvgMonad enc mf
 
 
 -- | Get the current clip label.
-currentClipLabel :: SvgM String
+currentClipLabel :: SvgMonad String
 currentClipLabel = get >>= return . clipname . clipCount
 
 -- | Generate a new clip label.
-newClipLabel :: SvgM String
+newClipLabel :: SvgMonad String
 newClipLabel = do 
   i <- (get >>= return . clipCount)
   sets_ (\s -> s { clipCount=i+1 })
