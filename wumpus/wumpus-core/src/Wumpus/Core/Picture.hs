@@ -104,7 +104,7 @@ blankPicture bb = PicBlank (stdFrame, bb)
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
 frame :: (Real u, Floating u, FromPtSize u) => Primitive u -> Picture u
-frame p = Single (stdFrame, boundary p) p 
+frame p = Leaf (stdFrame, boundary p) p 
 
 -- | Frame a picture within the supplied bounding box
 -- 
@@ -122,8 +122,8 @@ frame p = Single (stdFrame, boundary p) p
 --
 frameWithin :: (Real u, Floating u, FromPtSize u) 
             => Primitive u -> BoundingBox u -> Picture u
-frameWithin p@(PLabel _ _) bb = Single (stdFrame,bb) p
-frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
+frameWithin p@(PLabel _ _) bb = Leaf (stdFrame,bb) p
+frameWithin p              bb = Leaf (stdFrame,bb `append` boundary p) p
 
 
 

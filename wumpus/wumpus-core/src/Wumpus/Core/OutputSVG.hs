@@ -110,7 +110,7 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
-picture c (Single (fr,_) prim)    = do 
+picture c (Leaf (fr,_) prim)      = do 
     elt <- primitive c prim
     return $ gElement (maybe [] return $ frameChange fr) [elt]
 

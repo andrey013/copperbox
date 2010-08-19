@@ -166,7 +166,7 @@ epsFooter = do
 --
 outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
-outputPicture (Single (fr,_) prim)      = 
+outputPicture (Leaf (fr,_) prim)        = 
     updateFrame fr $ outputPrimitive prim
 outputPicture (Picture (fr,_) ones)     =
     updateFrame fr $ F.foldrM (\p _ -> outputPicture p) () ones

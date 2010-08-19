@@ -112,7 +112,7 @@ import qualified Data.Foldable as F
 -- Apropos the constructors, Picture is a simple non-empty 
 -- leaf-labelled rose tree via:
 -- 
--- > Single (aka leaf) | Picture (OneList tree)
+-- > Leaf (aka Single) | Picture (OneList tree)
 --
 -- Where OneList is a variant of the standard list type that 
 -- disallows empty lists.
@@ -127,10 +127,18 @@ import qualified Data.Foldable as F
 
 
 data Picture u = PicBlank (Locale u)
-               | Single   (Locale u) (Primitive u)
-               | Picture  (Locale u) (OneList (Picture u))
-               | Clip     (Locale u) (Path u)      (Picture u)
+               | Leaf     (Locale u)          (Primitive u)
+               | Picture  (Locale u)          (OneList (Picture u))
+               | Clip     (Locale u) (Path u) (Picture u)
   deriving (Eq,Show) 
+
+-- Note - Single is rather inefficient in hindsight.
+-- 
+-- A list of primitives would be better, and Leaf is probably a 
+-- better name.
+--
+
+
 
 type DPicture = Picture Double
 
@@ -144,8 +152,8 @@ type DPicture = Picture Double
 -- least eight curves. This is inconvenient for drawing dots 
 -- which can otherwise be drawn with a single @arc@ command.
 -- 
--- Wumpus does not follow PostScript and employ arcs as general 
--- path primitives - they are used only to draw ellipses. This 
+-- Wumpus does not follow PostScript employing arc as a general 
+-- path primitive - arcs are used only to draw ellipses. This 
 -- is because arcs do not enjoy the nice properties of Bezier 
 -- curves, whereby the affine transformation of a Bezier curve 
 -- can simply be achieved by the affine transformation of it\'s 
@@ -204,6 +212,8 @@ data PrimEllipse u = PrimEllipse
   deriving (Eq,Show)
 
 type DPrimEllipse = PrimEllipse Double
+
+
 
 
 data PrimCTM u = PrimCTM 
@@ -266,10 +276,10 @@ printPicture pic = putDoc (pretty pic) >> putStrLn []
 
 instance (Num u, PSUnit u) => Pretty (Picture u) where
   pretty (PicBlank m)       = 
-      text "** Blank-picture **" <+> ppLocale m
+      text "** Blank-picture **"  <+> ppLocale m
 
-  pretty (Single m prim)    = 
-      text "** Single-picture **" <$> ppLocale m <$> indent 2 (pretty prim)
+  pretty (Leaf m prim)      = 
+      text "** Leaf-picture **"   <$> ppLocale m <$> indent 2 (pretty prim)
 
   pretty (Picture m ones)   = 
       text "** Multi-picture **"  <$> ppLocale m 
@@ -292,10 +302,10 @@ ppLocale (fr,bb) = ppfr <$> pretty bb where
 
 instance PSUnit u => Pretty (Primitive u) where
   pretty (PPath attr p)     = 
-      text "path:"      <$> indent 2 (ppPathProps attr <$> pretty p)
+      text "path:"      <$> indent 2 (ppPathProps    attr <$> pretty p)
 
   pretty (PLabel attr l)  = 
-      text "label:"     <$> indent 2 (ppLabelProps attr <$> pretty l)
+      text "label:"     <$> indent 2 (ppLabelProps   attr <$> pretty l)
 
   pretty (PEllipse attr e)  = 
       text "ellipse:"   <$> indent 2 (ppEllipseProps attr <$> pretty e)
@@ -332,7 +342,7 @@ instance PSUnit u => Pretty (PrimCTM u) where
 ppPathProps :: PathProps -> Doc
 ppPathProps (rgb, CFill)       = pretty rgb <+> text "Fill"
 ppPathProps (rgb, (CStroke _)) = pretty rgb <+> text "Closed-stroke"
-ppPathProps (rgb, _)           = pretty rgb <+> text "Open-strike"
+ppPathProps (rgb, _)           = pretty rgb <+> text "Open-stroke"
 
 ppLabelProps :: LabelProps -> Doc
 ppLabelProps (rgb, attr) = pretty rgb <+> text (font_name $ font_face attr)
@@ -627,7 +637,7 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 
 instance Boundary (Picture u) where
   boundary (PicBlank (_,bb))     = bb
-  boundary (Single   (_,bb) _)   = bb
+  boundary (Leaf     (_,bb) _)   = bb
   boundary (Picture  (_,bb) _)   = bb
   boundary (Clip     (_,bb) _ _) = bb
 
@@ -688,7 +698,7 @@ ellipseBoundary = traceBoundary . ellipseControlPoints
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (PicBlank m)      = PicBlank (f m)
-mapLocale f (Single   m prim) = Single (f m) prim
+mapLocale f (Leaf     m prim) = Leaf (f m) prim
 mapLocale f (Picture  m ones) = Picture (f m) ones
 mapLocale f (Clip     m x p)  = Clip (f m) x p
 
@@ -706,7 +716,7 @@ moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 -- | Should this really be public?
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_))     = fr
-extractFrame (Single   (fr,_) _)   = fr
+extractFrame (Leaf     (fr,_) _)   = fr
 extractFrame (Picture  (fr,_) _)   = fr
 extractFrame (Clip     (fr,_) _ _) = fr
 
