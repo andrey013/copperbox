@@ -43,13 +43,6 @@ description:
   appears okay for Latin 1 but may be inadequate for other 
   character sets, so I may have to revise it significantly.
   .
-  WARNING...
-  .
-  The module @Core.BoundingBox@ is likely to be reworked 
-  significantly in the future. It has too many functions that do 
-  not offer distinct functionality. Some functions were removed in 
-  revision 0.17.0 and some more are likely to follow. 
-  .
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -65,6 +58,13 @@ description:
   .
   * Improved internal pretty printing and added the function 
     @printPicture@ for debugging.
+  .
+  * BoundingBox module changed significantly. The corner 
+    functions (@boundaryBottomLeft@, etc.) have been removed, 
+    along with the plane functions (@leftPlane@, etc.). Some 
+    functions have been given more verbose names - @corners@ is 
+    now @boundaryCorners@, @within@ is now @withinBoundary@ and 
+    @union@ is now @boundaryUnion@. 
   .
   0.22.0 TO 0.23.0:
   . 

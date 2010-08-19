@@ -518,7 +518,7 @@ infixr 6 `picBeside`, `picOver`
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picOver` b = Picture (ortho zeroPt, bb) (cons a $ one b)
   where
-    bb = union (boundary a) (boundary b)
+    bb = (boundary a) `append` (boundary b)
 
 -- | 'picMoveBy' : @ picture -> vector -> picture @
 -- 
@@ -535,7 +535,7 @@ p `picMoveBy` v = v `movePic` p
 picBeside :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
-    v = hvec $ rightPlane (boundary a) - leftPlane (boundary b) 
+    v = hvec $ boundaryWidth $ boundary a
 
 -- | 'illustrateBounds' : @ colour -> picture -> picture @
 -- 
@@ -569,7 +569,7 @@ boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t)
             => DRGB -> t -> [Primitive u]
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
-    (bl,br,tr,tl) = corners $ boundary a
+    (bl,br,tr,tl) = boundaryCorners $ boundary a
     bbox_rect     = cstroke rgb $ vertexPath [bl,br,tr,tl]
     bl_to_tr      = ostroke rgb $ vertexPath [bl,tr]
     br_to_tl      = ostroke rgb $ vertexPath [br,tl]

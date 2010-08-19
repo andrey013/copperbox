@@ -531,7 +531,7 @@ trafoBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
 trafoBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
   where
-    (bl,br,tr,tl) = corners bb
+    (bl,br,tr,tl) = boundaryCorners bb
 
 
 --------------------------------------------------------------------------------

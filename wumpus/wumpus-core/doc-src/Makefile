@@ -9,3 +9,5 @@ guide: Guide.lhs
 	dvipdfm -o ./out/Guide.pdf ./out/Guide.dvi 
 	cp ./out/Guide.pdf ../doc
 
+worldframe: WorldFrame.hs
+	runhaskell -i../src WorldFrame.hs

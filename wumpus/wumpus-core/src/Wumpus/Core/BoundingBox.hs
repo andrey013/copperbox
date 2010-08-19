@@ -17,10 +17,6 @@
 -- simplifies the implementation of pictures themselves and
 -- bounding boxes.
 -- 
--- WARNING - this module is no so tightly designed, with some 
--- of the functions seeming superfluous in hindsight. It is
--- likely to change in the future.
--- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.BoundingBox 
@@ -35,23 +31,16 @@ module Wumpus.Core.BoundingBox
   -- * Operations
   , bbox
   , obbox
-  , union 
+  , boundaryUnion 
   , traceBoundary
   , retraceBoundary
 
-  , corners
-  , within
+  , boundaryCorners
+  , withinBoundary
   , boundaryWidth
   , boundaryHeight
-  , boundaryBottomLeft
-  , boundaryTopRight
-  , boundaryTopLeft
-  , boundaryBottomRight
 
-  , leftPlane
-  , rightPlane
-  , lowerPlane
-  , upperPlane
+
 
   ) where
 
@@ -59,8 +48,8 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( PSUnit(..) )
 
-import Data.Semigroup                           -- package: algebra
-import Text.PrettyPrint.Leijen hiding ( width ) -- package: wl-pprint
+import Data.Semigroup                               -- package: algebra
+import Text.PrettyPrint.Leijen hiding ( width )     -- package: wl-pprint
 
 
 
@@ -87,7 +76,7 @@ type DBoundingBox = BoundingBox Double
 -- BBox is NOT monoidal - it\'s much simpler that way.
 
 instance Ord u => Semigroup (BoundingBox u) where
-  append = union
+  append = boundaryUnion
 
 
 instance PSUnit u => Pretty (BoundingBox u) where
@@ -102,7 +91,7 @@ type instance DUnit (BoundingBox u) = u
 
 instance (Num u, Ord u) => Scale (BoundingBox u) where
   scale x y bb     = traceBoundary $ map (scale x y) $ [bl,br,tr,tl]
-    where (bl,br,tr,tl) = corners bb
+    where (bl,br,tr,tl) = boundaryCorners bb
 
 
 
@@ -148,8 +137,8 @@ obbox w h = BBox zeroPt (P2 w h)
 -- | The union of two bounding boxes. This is also the @append@ 
 -- of BoundingBox\'s @Semigroup@ instance.
 --
-union :: Ord u => BoundingBox u -> BoundingBox u -> BoundingBox u
-BBox ll ur `union` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')
+boundaryUnion :: Ord u => BoundingBox u -> BoundingBox u -> BoundingBox u
+BBox ll ur `boundaryUnion` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')
 
 -- | Trace a list of points, retuning the BoundingBox that 
 -- includes them.
@@ -171,22 +160,22 @@ traceBoundary []     = error $ "BoundingBox.trace called in empty list"
 --
 retraceBoundary :: (Num u, Ord u) 
         => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-retraceBoundary f = traceBoundary . map f . fromCorners . corners
+retraceBoundary f = traceBoundary . map f . fromCorners . boundaryCorners
   where
     fromCorners (bl,br,tr,tl) = [bl,br,tr,tl]
 
 
 -- | Generate all the corners of a bounding box, counter-clock 
 -- wise from the bottom left, i.e. @(bl, br, tr, tl)@.
-corners :: BoundingBox u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
+boundaryCorners :: BoundingBox u -> (Point2 u, Point2 u, Point2 u, Point2 u)
+boundaryCorners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
     br = P2 x1 y0
     tl = P2 x0 y1
 
 -- | Within test - is the supplied point within the bounding box?
 --
-within :: Ord u => Point2 u -> BoundingBox u -> Bool
-within p (BBox ll ur) = (minPt p ll) == ll && (maxPt p ur) == ur
+withinBoundary :: Ord u => Point2 u -> BoundingBox u -> Bool
+withinBoundary p (BBox ll ur) = (minPt p ll) == ll && (maxPt p ur) == ur
 
 -- | Extract the width of a bounding box.
 --
@@ -197,54 +186,6 @@ boundaryWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 --
 boundaryHeight :: Num u => BoundingBox u -> u
 boundaryHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
-
-
---------------------------------------------------------------------------------
-
--- Points on the boundary
-
--- | Extract the bottom-left corner of the bounding box.
-boundaryBottomLeft  :: BoundingBox u -> Point2 u
-boundaryBottomLeft (BBox p0 _ ) = p0
-
--- | Extract the top-right corner of the bounding box.
-boundaryTopRight :: BoundingBox u -> Point2 u
-boundaryTopRight (BBox _ p1) = p1
-
--- | Extract the top-left corner of the bounding box.
-boundaryTopLeft :: BoundingBox u -> Point2 u
-boundaryTopLeft (BBox (P2 x _) (P2 _ y)) = P2 x y
-
--- | Extract the bottom-right corner of the bounding box.
-boundaryBottomRight :: BoundingBox u -> Point2 u
-boundaryBottomRight (BBox (P2 _ y) (P2 x _)) = P2 x y
-
-
-
-
---------------------------------------------------------------------------------
-
--- /planes/ on the bounding box
-
--- Are these really worthwhile ? ...
-
--- | Extract the unit of the left vertical plane.
-leftPlane :: BoundingBox u -> u
-leftPlane (BBox (P2 l _) _) = l
-
--- | Extract the unit of the right vertical plane.
-rightPlane :: BoundingBox u -> u
-rightPlane (BBox _ (P2 r _)) = r
-
--- | Extract the unit of the lower horizontal plane.
-lowerPlane :: BoundingBox u -> u
-lowerPlane (BBox (P2 _ l) _) = l
-
--- | Extract the unit of the upper horizontal plane.
-upperPlane :: BoundingBox u -> u
-upperPlane (BBox _ (P2 _ u)) = u
-
-
 
 
 
