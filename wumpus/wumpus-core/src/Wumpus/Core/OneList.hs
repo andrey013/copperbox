@@ -18,7 +18,7 @@ module Wumpus.Core.OneList
   (
    -- OneMany
     OneList
-  , ViewOL(..)
+  , ViewL(..)
 
   , one
   , cons
@@ -28,7 +28,6 @@ module Wumpus.Core.OneList
   , fromList
 
   , toListF
-  , toListFM
   , accumMapL
   , isOne
   , isMany
@@ -49,8 +48,10 @@ import Prelude hiding ( head )
 data OneList a = One a | Many a (OneList a)
   deriving (Eq)
 
-data ViewOL a = OneL a | a :<< (OneList a)
+data ViewL a = OneL a | a :< (OneList a)
   deriving (Eq)
+
+
 
 --------------------------------------------------------------------------------
 -- Instances
@@ -102,9 +103,9 @@ head :: OneList a -> a
 head (One a)    = a
 head (Many a _) = a
 
-viewl :: OneList a -> ViewOL a
+viewl :: OneList a -> ViewL a
 viewl (One a)     = OneL a
-viewl (Many a as) = a :<< as
+viewl (Many a as) = a :< as
 
 -- | Construct Many. Not this function throws a error if the list has
 -- zero or one elements
@@ -118,13 +119,6 @@ toListF :: (a -> b) -> OneList a -> [b]
 toListF f = step where
   step (One x)     = [f x]
   step (Many x xs) = f x : step xs
-
--- uncool... replace soon
-toListFM :: Monad m => (a -> m b) -> OneList a -> m [b]
-toListFM mf = step where
-  step (One x)     = mf x >>= \a -> return [a]
-  step (Many x xs) = mf x >>= \a -> step xs >>= \as -> return (a:as)
-
 
 
 accumMapL :: (x -> st -> (y,st)) -> OneList x -> st -> (OneList y,st)

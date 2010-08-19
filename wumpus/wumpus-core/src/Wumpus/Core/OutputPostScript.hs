@@ -31,6 +31,7 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.OneList ( OneList, ViewL(..), viewl )
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScript
 import Wumpus.Core.TextEncoder
@@ -40,8 +41,6 @@ import Wumpus.Core.Utils
 
 
 import MonadLib hiding ( Label )
-
-import qualified Data.Foldable as F
 
 
 
@@ -168,13 +167,22 @@ outputPicture :: (Real u, Floating u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 
 outputPicture (Leaf (fr,_) _ prim)      = 
-    updateFrame fr $ F.mapM_ outputPrimitive prim
+    updateFrame fr $ outputPrimitives prim
 
+-- output right picture first, to satisfy zordering...
 outputPicture (Picture (fr,_) l r)      =
-    updateFrame fr (outputPicture l >> outputPicture r)
+    updateFrame fr (outputPicture r >> outputPicture l) 
 
 outputPicture (Clip (fr,_) cp p)        = 
     updateFrame fr (clipPath cp >> outputPicture p)
+
+
+outputPrimitives :: (Real u, Floating u, PSUnit u) 
+                 => OneList (Primitive u) -> WumpusM ()
+outputPrimitives = step . viewl
+  where
+    step (OneL a)  = outputPrimitive a
+    step (a :< xs) = step (viewl xs) >> outputPrimitive a
 
 
 -- | @updateFrame@ relies on the current frame, when translated

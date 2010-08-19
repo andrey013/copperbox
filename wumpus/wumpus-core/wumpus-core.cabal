@@ -102,10 +102,11 @@ extra-source-files:
   demo/AffineTestBase.hs,
   demo/FontMetrics.hs
   demo/LabelPic.hs,
-  demo/MultiPic.hs
-  demo/Rotated.hs
-  demo/Scaled.hs
-  demo/Translated.hs
+  demo/MultiPic.hs,
+  demo/Rotated.hs,
+  demo/Scaled.hs,
+  demo/Translated.hs,
+  demo/ZOrderPic.hs,
   doc/Guide.pdf,
   doc-src/Guide.lhs,
   doc-src/Makefile,

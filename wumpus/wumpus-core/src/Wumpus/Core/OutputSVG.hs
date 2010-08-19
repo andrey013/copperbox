@@ -43,7 +43,6 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.OneList ( toListFM )
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
 import Wumpus.Core.TextEncoder
@@ -51,9 +50,10 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
 
 
-import MonadLib hiding ( Label )
+import MonadLib hiding ( Label )                -- package: monadLib
+import Text.XML.Light                           -- package: xml
 
-import Text.XML.Light
+import qualified Data.Foldable as F
 
 
 type Clipped    = Bool
@@ -105,19 +105,20 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
     trans_attr = attr_transform $ val_translate x y
 
 
-
+-- Note - Leaf case reverses the list as it goes to respect the 
+-- zorder.
+--
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Leaf (fr,_) _ prims)   = do 
-    elts <- toListFM (primitive c) prims
+    elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] prims
     return $ gElement (maybe [] return $ frameChange fr) elts
 
 picture c (Picture (fr,_) l r)    = do
-    -- Note - zorder to check....................
-    a <- picture c l
-    b <- picture c r 
-    return $ gElement (maybe [] return $ frameChange fr) [a,b]
+    b <- picture c r
+    a <- picture c l 
+    return $ gElement (maybe [] return $ frameChange fr) [b,a]
   
 picture _ (Clip (fr,_) p a) = do 
    cp <- clipPath p
