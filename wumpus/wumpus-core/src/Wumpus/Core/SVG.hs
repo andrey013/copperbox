@@ -42,6 +42,9 @@ module Wumpus.Core.SVG
   , execSvgMonad
   , newClipLabel
   , currentClipLabel   
+  , askEncodingName
+  , askGlyphName
+  , escapeCharCode
   , set 
   , get
   , ask
@@ -108,6 +111,7 @@ module Wumpus.Core.SVG
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
+import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
 import Text.XML.Light                           -- package: xml
@@ -186,8 +190,23 @@ newClipLabel = do
   return $ clipname i
 
 
+askEncodingName :: SvgMonad String
+askEncodingName = asks svg_encoding_name
+
+askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
+askGlyphName nm = SvgMonad $ \r s -> case lookupByGlyphName nm r of
+    Just a -> (Right $ escapeCharCode a, s)
+    Nothing -> (Left $ escapeCharCode $ svg_fallback r, s)
+
+escapeCharCode :: CharCode -> String
+escapeCharCode i = "&#" ++ show i ++ ";"
+
+    
+
 clipname :: Int -> String
 clipname = ("clip" ++) . show
+
+
 
 
 --------------------------------------------------------------------------------
