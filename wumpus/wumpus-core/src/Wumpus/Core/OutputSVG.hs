@@ -142,7 +142,7 @@ clipPath p = do
     name <- newClipLabel
     return $ element_clippath ps `snoc_attrs` attr_id name
   where
-    ps = closePath $ pathInstructions p
+    ps = closedPath p
 
 
 
@@ -184,24 +184,9 @@ label (c,FontAttr sz face) (Label pt entxt ctm) = do
   where
     style       = svg_font_style  face
     fam         = svg_font_family face
-    coord_attrs = if ctm == identityCTM then simpleLabelAttrs pt
-                                        else transfLabelAttrs pt ctm
+    coord_attrs = labelGeom pt ctm
     font_desc   = attr_font_family fam . attr_font_size sz 
                   
-
-simpleLabelAttrs :: PSUnit u => Point2 u -> HAttr
-simpleLabelAttrs pt = attr_x x . attr_y y . attr_transform mtrx
-  where
-    P2 x y    = coordChange pt
-    mtrx      = val_matrix 1 0 0 (-1) 0 dZero
-    
-transfLabelAttrs :: (Real u, Floating u, PSUnit u) 
-                 => Point2 u -> PrimCTM u -> HAttr
-transfLabelAttrs (P2 x y) ctm = 
-    attr_x dZero . attr_y dZero . attr_transform vmtrx
-  where
-    mtrx          = translMatrixRepCTM x y ctm * svg_reflection_matrix
-    vmtrx         = valMatrix mtrx
 
 
 encodedText :: EncodedText -> SvgMonad String 
@@ -231,39 +216,43 @@ ellipse (c,dp) (PrimEllipse pt hw hh ctm)
     | otherwise = return $ element_ellipse 
                             `snoc_attrs` (ellipse_attrs . style_attrs)
   where
-    circle_attrs  = if ctm == identityCTM 
-                      then simpleCircleAttrs pt hw
-                      else transfCircleAttrs pt hw ctm
+    circle_attrs  = ellipseGeom pt ctm . circleRadius hw
 
-    ellipse_attrs = if ctm == identityCTM 
-                      then simpleEllipseAttrs pt hw hh 
-                      else transfEllipseAttrs pt hw hh ctm
+    ellipse_attrs = ellipseGeom pt ctm . ellipseRadius hw hh
 
     style_attrs   = ellipseAttrs c dp
 
-simpleCircleAttrs :: PSUnit u => Point2 u -> u -> HAttr
-simpleCircleAttrs (P2 x y) radius = attr_cx x . attr_cy y . attr_r radius
 
-simpleEllipseAttrs :: PSUnit u => Point2 u -> u -> u -> HAttr
-simpleEllipseAttrs (P2 x y) hw hh = 
-    attr_cx x . attr_cy y . attr_rx hw . attr_ry hh
+--------------------------------------------------------------------------------
+-- 
+
+labelGeom :: (Real u, Floating u, PSUnit u) 
+          => Point2 u -> PrimCTM u -> HAttr
+labelGeom pt@(P2 x y) ctm 
+    | ctm == identityCTM = attr_x x' . attr_y y' . attr_transform flip_mtrx
+    | otherwise          = attr_x dZero . attr_y dZero 
+                                        . attr_transform traf_mtrx
+  where
+    P2 x' y'    = coordChange pt
+    flip_mtrx   = val_matrix 1 0 0 (-1) 0 dZero
+    traf_mtrx   = valMatrix $ translMatrixRepCTM x y ctm * svg_reflection_matrix
 
 
-transfCircleAttrs :: (Real u, Floating u, PSUnit u)
-                  => Point2 u -> u -> PrimCTM u -> HAttr
-transfCircleAttrs (P2 x y) radius ctm = 
-    attr_cx dZero . attr_cy dZero . attr_r radius . attr_transform mtrx 
+circleRadius :: PSUnit u => u -> HAttr
+circleRadius radius = attr_r radius
+
+ellipseRadius :: PSUnit u => u -> u -> HAttr
+ellipseRadius hw hh = attr_rx hw . attr_ry hh
+
+
+ellipseGeom :: (Real u, Floating u, PSUnit u)
+           => Point2 u -> PrimCTM u -> HAttr
+ellipseGeom (P2 x y) ctm 
+    | ctm == identityCTM = attr_cx x . attr_cy y 
+    | otherwise          = attr_transform mtrx . attr_cx dZero . attr_cy dZero 
   where
     mtrx  = valMatrix $ translMatrixRepCTM x y ctm * svg_reflection_matrix
 
-
-transfEllipseAttrs :: (Real u, Floating u, PSUnit u)
-                   => Point2 u -> u -> u -> PrimCTM u -> HAttr
-transfEllipseAttrs (P2 x y) hw hh ctm = 
-    attr_cx dZero . attr_cy dZero . attr_rx hw . attr_ry hh
-                  . attr_transform mtrx 
-  where
-    mtrx  = valMatrix $ translMatrixRepCTM x y ctm * svg_reflection_matrix
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
@@ -317,23 +306,24 @@ fontAttrs SVG_BOLD_OBLIQUE = attr_font_weight "bold" . attr_font_style "oblique"
 --------------------------------------------------------------------------------
 -- paths
 
--- Ah, can do better than this ...
-
-svgPath :: PSUnit u => DrawPath -> Path u -> SvgPath
-svgPath (OStroke _) p = pathInstructions p
-svgPath _           p = closePath $ pathInstructions p
+svgPath :: PSUnit u => DrawPath -> Path u -> String
+svgPath (OStroke _) p = toListH $ pathK p id
+svgPath _           p = closedPath p
 
 
-pathInstructions :: PSUnit u => Path u -> [String]
-pathInstructions (Path (P2 x y) xs) = path_m x y : map pathSegment xs
+closedPath :: PSUnit u => Path u -> String
+closedPath p = toListH $ pathK p (showString " Z")
 
-pathSegment :: PSUnit u => PathSegment u -> String
+pathK :: PSUnit u => Path u -> ShowS -> ShowS
+pathK (Path (P2 x y) xs) end = 
+    prefix . foldr (\e f -> pathSegment e . showChar ' ' . f) end xs
+  where
+    prefix = path_m x y . showChar ' '
+
+pathSegment :: PSUnit u => PathSegment u -> ShowS
 pathSegment (PLineTo (P2 x1 y1))                        = path_l x1 y1
 pathSegment (PCurveTo (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
     path_c x1 y1 x2 y2 x3 y3
-
-closePath :: SvgPath -> SvgPath 
-closePath xs = xs ++ ["Z"]
 
 
 --------------------------------------------------------------------------------

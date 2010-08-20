@@ -221,7 +221,7 @@ unqualAttr name val = Attr (unqual name) val
 --------------------------------------------------------------------------------
 -- SVG helpers
 
-type SvgPath = [String]
+type SvgPath = String
 
 
 -- | @ \<?xml version=\"1.0\" encoding=\"...\"?\> @
@@ -385,7 +385,7 @@ attr_id = wrapH . unqualAttr "id"
 -- | @ d="..." @
 --
 attr_d :: SvgPath -> HAttr
-attr_d = wrapH . unqualAttr "d" . hsep
+attr_d = wrapH . unqualAttr "d" 
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
 --
@@ -501,25 +501,36 @@ val_url s = "url" ++ parens ('#':s)
 val_translate :: PSUnit u => u -> u -> String
 val_translate x y = "translate" ++ tupled (map dtrunc [x,y])
   
+
+
+spaceS :: ShowS
+spaceS = showChar ' '
+
+dtruncS :: PSUnit u => u -> ShowS
+dtruncS = showString . dtrunc
+
 -- | @ M ... ... @
 --
 -- c.f. PostScript's @moveto@.
 --
-path_m :: PSUnit u => u -> u -> String
-path_m x y  = hsep $ "M" : map dtrunc [x,y]
+path_m :: PSUnit u => u -> u -> ShowS
+path_m x y  = showChar 'M' . spaceS . dtruncS x .spaceS . dtruncS y
 
 -- | @ L ... ... @
 --
 -- c.f. PostScript's @lineto@.
 --
-path_l :: PSUnit u => u -> u -> String
-path_l x y  = hsep $ "L" : map dtrunc [x,y]
+path_l :: PSUnit u => u -> u -> ShowS
+path_l x y  = showChar 'L' . spaceS . dtruncS x . spaceS . dtruncS y
 
 -- | @ S ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
 --
-path_c :: PSUnit u => u -> u -> u -> u -> u -> u -> String
-path_c x1 y1 x2 y2 x3 y3 =  hsep $ "C" : map dtrunc [x1,y1,x2,y2,x3,y3]
+path_c :: PSUnit u => u -> u -> u -> u -> u -> u -> ShowS
+path_c x1 y1 x2 y2 x3 y3 =  
+    showChar 'C' . spaceS . dtruncS x1 . spaceS . dtruncS y1
+                 . spaceS . dtruncS x2 . spaceS . dtruncS y2
+                 . spaceS . dtruncS x3 . spaceS . dtruncS y3
 
 
