@@ -48,7 +48,7 @@ import Wumpus.Core.SVG
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
-
+import Wumpus.Core.Utils
 
 import Text.XML.Light                           -- package: xml
 
@@ -56,6 +56,10 @@ import qualified Data.Foldable as F
 
 
 type Clipped    = Bool
+
+
+dZero :: Double
+dZero = 0
 
 
 coordChange ::  (Num u, Scale t, u ~ DUnit t) => t -> t
@@ -99,9 +103,9 @@ prefixXmlDecls e = do
 
 topLevelPic :: PSUnit u => Maybe (Vec2 u) -> Element -> Element
 topLevelPic Nothing         p = svgElement [p]
-topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]] 
+topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]] 
   where 
-    trans_attr = attr_transform $ val_translate x y
+    trans_attribs = toListH $ attr_transform $ val_translate x y
 
 
 -- Note - Leaf case reverses the list as it goes to respect the 
@@ -112,16 +116,16 @@ picture :: (Real u, Floating u, PSUnit u)
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Leaf (fr,_) _ ones)    = do 
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
-    return $ gElement (maybe [] return $ frameChange fr) elts
+    return $ gElement (toListH $ frameChange fr) elts
 
 picture c (Picture (fr,_) ones)   = do
     elts <- F.foldlM (\acc e -> do { a <- picture c e; return (a:acc) }) [] ones
-    return $ gElement (maybe [] return $ frameChange fr) elts
+    return $ gElement (toListH $ frameChange fr) elts
   
 picture _ (Clip (fr,_) p a)       = do 
    cp <- clipPath p
    e1 <- picture True a
-   return $ gElement (maybe [] return $ frameChange fr) [cp,e1]
+   return $ gElement (toListH $ frameChange fr) [cp,e1]
 
 
 primitive :: (Real u, Floating u, PSUnit u) 
@@ -136,7 +140,7 @@ primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
 clipPath :: PSUnit u => Path u -> SvgMonad Element
 clipPath p = do
     name <- newClipLabel
-    return $ add_attr (attr_id name) $ element_clippath ps
+    return $ element_clippath ps `snoc_attrs` attr_id name
   where
     ps = closePath $ pathInstructions p
 
@@ -147,7 +151,7 @@ clipAttrib False melt = melt
 clipAttrib True  melt = do 
     s   <- currentClipLabel
     elt <- melt
-    return $ add_attr (attr_clippath s) elt
+    return $ elt `snoc_attrs` (attr_clippath s)
 
 
 -- None of the remaining translation functions need to be in the
@@ -155,7 +159,7 @@ clipAttrib True  melt = do
 
 path :: PSUnit u => PathProps -> Path u -> SvgMonad Element
 path (c,dp) p = 
-    return $ element_path ps `snoc_attrs` (fill_a : stroke_a : opts)
+    return $ element_path ps `snoc_attrs` (fill_a . stroke_a . opts)
   where
     (fill_a,stroke_a,opts) = drawProperties c dp
     ps                     = svgPath dp p 
@@ -173,32 +177,31 @@ label :: (Real u, Floating u, PSUnit u)
       => LabelProps -> Label u -> SvgMonad Element
 label (c,FontAttr sz face) (Label pt entxt ctm) = do 
      str <- encodedText entxt
-     let tspan_elt = element_tspan str `snoc_attrs` [ attr_fill c ]
-     return $ element_text tspan_elt `snoc_attrs` coord_attrs
-                                     `snoc_attrs` font_attrs 
-                                     `snoc_attrs` (fontStyle style)
+     let tspan_elt = element_tspan str `snoc_attrs` (attr_fill c)
+     return $ element_text tspan_elt `snoc_attrs` ( coord_attrs
+                                                  . font_attrs 
+                                                  . fontStyle style )
   where
     style       = svg_font_style  face
     fam         = svg_font_family face
     coord_attrs = if ctm == identityCTM then simpleLabelAttrs pt
                                         else transfLabelAttrs pt ctm
-    font_attrs  = [ attr_font_family fam
-                  , attr_font_size sz 
-                  ]
+    font_attrs  = attr_font_family fam . attr_font_size sz 
+                  
 
-simpleLabelAttrs :: PSUnit u => Point2 u -> [Attr]     
-simpleLabelAttrs pt = [ attr_x x, attr_y y, attr_transform mtrx]
+simpleLabelAttrs :: PSUnit u => Point2 u -> HAttr
+simpleLabelAttrs pt = attr_x x . attr_y y . attr_transform mtrx
   where
     P2 x y    = coordChange pt
-    mtrx      = val_matrix 1 0 0 (-1) 0 (0::Double)
+    mtrx      = val_matrix 1 0 0 (-1) 0 dZero
     
 transfLabelAttrs :: (Real u, Floating u, PSUnit u) 
-                 => Point2 u -> PrimCTM u -> [Attr]     
+                 => Point2 u -> PrimCTM u -> HAttr
 transfLabelAttrs (P2 x y) ctm = 
-    [ attr_x (0::Double), attr_y (0 :: Double), attr_transform vmtrx]
+    attr_x dZero . attr_y dZero . attr_transform vmtrx
   where
-    mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
-    vmtrx     = valMatrix mtrx
+    mtrx          = translMatrixRepCTM x y ctm * svg_reflection_matrix
+    vmtrx         = valMatrix mtrx
 
 
 encodedText :: EncodedText -> SvgMonad String 
@@ -223,15 +226,13 @@ escapeCharCode :: CharCode -> String
 escapeCharCode i = "&#" ++ show i ++ ";"
 
  
-fontStyle :: SVGFontStyle -> [Attr]
-fontStyle SVG_REGULAR      = []
-fontStyle SVG_BOLD         = [attr_font_weight "bold"]
-fontStyle SVG_ITALIC       = [attr_font_style "italic"]
-fontStyle SVG_BOLD_ITALIC  = 
-    [attr_font_weight "bold", attr_font_style "italic"]
-fontStyle SVG_OBLIQUE      = [attr_font_style "oblique"]
-fontStyle SVG_BOLD_OBLIQUE = 
-    [attr_font_weight "bold", attr_font_style "oblique"]
+fontStyle :: SVGFontStyle -> HAttr
+fontStyle SVG_REGULAR      = emptyH
+fontStyle SVG_BOLD         = attr_font_weight "bold"
+fontStyle SVG_ITALIC       = attr_font_style "italic"
+fontStyle SVG_BOLD_ITALIC  = attr_font_weight "bold" . attr_font_style "italic"
+fontStyle SVG_OBLIQUE      = attr_font_style "oblique"
+fontStyle SVG_BOLD_OBLIQUE = attr_font_weight "bold" . attr_font_style "oblique"
 
 -- If w==h the draw the ellipse as a circle
 
@@ -239,9 +240,9 @@ ellipse :: (Real u, Floating u, PSUnit u)
         => EllipseProps -> PrimEllipse u -> SvgMonad Element
 ellipse (c,dp) (PrimEllipse pt hw hh ctm) 
     | hw == hh  = return $ element_circle  
-                            `snoc_attrs` (circle_attrs  ++ style_attrs)
+                            `snoc_attrs` (circle_attrs  . style_attrs)
     | otherwise = return $ element_ellipse 
-                            `snoc_attrs` (ellipse_attrs ++ style_attrs)
+                            `snoc_attrs` (ellipse_attrs . style_attrs)
   where
     circle_attrs  = if ctm == identityCTM 
                       then simpleCircleAttrs pt hw
@@ -251,32 +252,31 @@ ellipse (c,dp) (PrimEllipse pt hw hh ctm)
                       then simpleEllipseAttrs pt hw hh 
                       else transfEllipseAttrs pt hw hh ctm
 
-    style_attrs   = fill_a : stroke_a : opts
+    style_attrs   = fill_a . stroke_a . opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
 
-simpleCircleAttrs :: PSUnit u => Point2 u -> u -> [Attr]
-simpleCircleAttrs (P2 x y) radius = [attr_cx x, attr_cy y, attr_r radius]
+simpleCircleAttrs :: PSUnit u => Point2 u -> u -> HAttr
+simpleCircleAttrs (P2 x y) radius = attr_cx x . attr_cy y . attr_r radius
 
-simpleEllipseAttrs :: PSUnit u => Point2 u -> u -> u -> [Attr]
+simpleEllipseAttrs :: PSUnit u => Point2 u -> u -> u -> HAttr
 simpleEllipseAttrs (P2 x y) hw hh = 
-    [attr_cx x, attr_cy y, attr_rx hw, attr_ry hh]
+    attr_cx x . attr_cy y . attr_rx hw . attr_ry hh
 
 
 transfCircleAttrs :: (Real u, Floating u, PSUnit u)
-                  => Point2 u -> u -> PrimCTM u -> [Attr]
+                  => Point2 u -> u -> PrimCTM u -> HAttr
 transfCircleAttrs (P2 x y) radius ctm = 
-    [ attr_cx (0::Double), attr_cy (0::Double), attr_r radius
-    , attr_transform vmtrx ]
+    attr_cx dZero . attr_cy dZero . attr_r radius . attr_transform vmtrx 
   where
     mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
     vmtrx     = valMatrix mtrx
 
 
 transfEllipseAttrs :: (Real u, Floating u, PSUnit u)
-                   => Point2 u -> u -> u -> PrimCTM u -> [Attr]
+                   => Point2 u -> u -> u -> PrimCTM u -> HAttr
 transfEllipseAttrs (P2 x y) hw hh ctm = 
-    [ attr_cx (0::Double), attr_cy (0::Double), attr_rx hw, attr_ry hh
-    , attr_transform vmtrx ]
+    attr_cx dZero . attr_cy dZero . attr_rx hw . attr_ry hh
+                  . attr_transform vmtrx 
   where
     mtrx      = translMatrixRepCTM x y ctm * svg_reflection_matrix
     vmtrx     = valMatrix mtrx
@@ -291,29 +291,29 @@ transfEllipseAttrs (P2 x y) hw hh ctm =
 -- OStroke ==> stroke="..."  fill="none"
 --
 
-drawProperties :: PSColour c => c -> DrawPath -> (Attr, Attr, [Attr])
+drawProperties :: PSColour c => c -> DrawPath -> (HAttr, HAttr, HAttr)
 drawProperties = fn where
-  fn c CFill        = (attr_fill c, attr_stroke_none, [])
+  fn c CFill        = (attr_fill c, attr_stroke_none, id)
   fn c (OStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
   fn c (CStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
 
-drawEllipse :: PSColour c => c -> DrawEllipse -> (Attr, Attr, [Attr])
+drawEllipse :: PSColour c => c -> DrawEllipse -> (HAttr, HAttr, HAttr)
 drawEllipse = fn where
-  fn c EFill        = (attr_fill c, attr_stroke_none, [])
+  fn c EFill        = (attr_fill c, attr_stroke_none, id)
   fn c (EStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
  
 
-strokeAttributes :: [StrokeAttr] -> [Attr]
-strokeAttributes = foldr fn [] where
-  fn (LineWidth a)    = (:) (attr_stroke_width a)
-  fn (MiterLimit a)   = (:) (attr_stroke_miterlimit a)
-  fn (LineCap lc)     = (:) (attr_stroke_linecap lc)
-  fn (LineJoin lj)    = (:) (attr_stroke_linejoin lj)
+strokeAttributes :: [StrokeAttr] -> HAttr
+strokeAttributes = foldr fn id where
+  fn (LineWidth a)    = (.) (attr_stroke_width a)
+  fn (MiterLimit a)   = (.) (attr_stroke_miterlimit a)
+  fn (LineCap lc)     = (.) (attr_stroke_linecap lc)
+  fn (LineJoin lj)    = (.) (attr_stroke_linejoin lj)
   fn (DashPattern dp) = dash dp where
-    dash Solid       = (:) (attr_stroke_dasharray_none)
-    dash (Dash _ []) = (:) (attr_stroke_dasharray_none)
-    dash (Dash i xs) = (:) (attr_stroke_dashoffset i) . 
-                       (:) (attr_stroke_dasharray $ conv xs)
+    dash Solid       = (.) (attr_stroke_dasharray_none)
+    dash (Dash _ []) = (.) (attr_stroke_dasharray_none)
+    dash (Dash i xs) = (.) (attr_stroke_dashoffset i) . 
+                       (.) (attr_stroke_dasharray $ conv xs)
     conv = foldr (\(x,y) a -> x:y:a) []  
 
 
@@ -332,10 +332,10 @@ pathSegment (PCurveTo (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 
 
 
-frameChange :: PSUnit u => Frame2 u -> Maybe Attr
+frameChange :: PSUnit u => Frame2 u -> HAttr
 frameChange fr 
-    | standardFrame fr = Nothing
-    | otherwise        = Just $ attr_transform $ val_matrix a b c d e f 
+    | standardFrame fr = emptyH
+    | otherwise        = attr_transform $ val_matrix a b c d e f 
   where
     CTM a b c d e f = toCTM fr
 
@@ -344,8 +344,8 @@ frameChange fr
 closePath :: SvgPath -> SvgPath 
 closePath xs = xs ++ ["Z"]
 
-snoc_attrs :: Element -> [Attr] -> Element
-snoc_attrs = flip add_attrs
+snoc_attrs :: Element -> HAttr -> Element
+snoc_attrs e f = (toListH f) `add_attrs` e
 
 
 

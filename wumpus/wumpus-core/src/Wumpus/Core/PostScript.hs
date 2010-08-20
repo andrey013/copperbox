@@ -26,7 +26,6 @@ module Wumpus.Core.PostScript
   , PsMonad
 
   , execPsMonad
-  , ask
 
   -- * Escape sepcial characters
   , escapeStringPS
@@ -206,8 +205,6 @@ get = PsMonad $ \_ s -> (s,s,id)
 sets_ :: (St -> St) -> PsMonad ()
 sets_ f = PsMonad $ \_ s -> ((), f s, id)
 
-ask :: PsMonad TextEncoder
-ask = PsMonad $ \r s -> (r,s,id)
 
 --------------------------------------------------------------------------------
 -- Escape special chars

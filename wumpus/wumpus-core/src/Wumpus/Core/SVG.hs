@@ -50,6 +50,8 @@ module Wumpus.Core.SVG
   -- * Build SVG
   , SvgPath
 
+  , HAttr
+
   , unqualAttr
   , xmlVersion
   , svgDocType
@@ -114,6 +116,9 @@ import Text.XML.Light                           -- package: xml
 import Control.Applicative
 
 
+type HAttr = H Attr
+
+
 data St = St { clipCount :: Int }
 
 st_zero :: St
@@ -163,11 +168,13 @@ asks f = SvgMonad $ \r s -> (f r,s)
 
 
 -- | Run the SVG monad.
+--
 execSvgMonad :: TextEncoder -> SvgMonad a -> a
 execSvgMonad enc mf = fst $ runSvgMonad enc mf
 
 
 -- | Get the current clip label.
+--
 currentClipLabel :: SvgMonad String
 currentClipLabel = get >>= return . clipname . clipCount
 
@@ -187,6 +194,7 @@ clipname = ("clip" ++) . show
 -- Helpers for XML.Light and /data in strings/.
 
 -- | Helper for XML.Light
+--
 unqualAttr :: String -> String -> Attr
 unqualAttr name val = Attr (unqual name) val
 
@@ -250,35 +258,45 @@ element_ellipse :: Element
 element_ellipse = unode "ellipse" ()
 
 
+-- Attributes are one element Hughes lists so the can be 
+-- composed easily.
+--
 
 -- | @ x=\"...\" @
-attr_x :: PSUnit u => u -> Attr
-attr_x = unqualAttr "x" . dtrunc
+--
+attr_x :: PSUnit u => u -> HAttr
+attr_x = wrapH . unqualAttr "x" . dtrunc
 
 -- | @ y=\"...\" @
-attr_y :: PSUnit u => u -> Attr
-attr_y = unqualAttr "y" . dtrunc
+--
+attr_y :: PSUnit u => u -> HAttr
+attr_y = wrapH . unqualAttr "y" . dtrunc
 
 -- | @ r=\"...\" @
-attr_r :: PSUnit u => u -> Attr
-attr_r = unqualAttr "r" . dtrunc
+--
+attr_r :: PSUnit u => u -> HAttr
+attr_r = wrapH . unqualAttr "r" . dtrunc
 
 
 -- | @ rx=\"...\" @
-attr_rx :: PSUnit u => u -> Attr
-attr_rx = unqualAttr "rx" . dtrunc
+--
+attr_rx :: PSUnit u => u -> HAttr
+attr_rx = wrapH . unqualAttr "rx" . dtrunc
 
 -- | @ ry=\"...\" @
-attr_ry :: PSUnit u => u -> Attr
-attr_ry = unqualAttr "ry" . dtrunc
+--
+attr_ry :: PSUnit u => u -> HAttr
+attr_ry = wrapH . unqualAttr "ry" . dtrunc
 
 -- | @ cx=\"...\" @
-attr_cx :: PSUnit u => u -> Attr
-attr_cx = unqualAttr "cx" . dtrunc
+--
+attr_cx :: PSUnit u => u -> HAttr
+attr_cx = wrapH . unqualAttr "cx" . dtrunc
 
 -- | @ cy=\"...\" @
-attr_cy :: PSUnit u => u -> Attr
-attr_cy = unqualAttr "cy" . dtrunc
+--
+attr_cy :: PSUnit u => u -> HAttr
+attr_cy = wrapH . unqualAttr "cy" . dtrunc
 
 
 
@@ -288,8 +306,9 @@ attr_cy = unqualAttr "cy" . dtrunc
 --
 -- Note the argument to this function is an attribute rather
 -- than content. We have no use for empty paths.
+--
 element_path :: SvgPath -> Element
-element_path = unode "path" . attr_d
+element_path = unode "path" . toListH . attr_d
 
 -- |
 -- > <clipPath>
@@ -313,101 +332,127 @@ element_tspan = unode "tspan" . content_text
 
 
 -- | Render the string as 'CDataText' - see XML.Light.
+--
 content_text :: String -> Content
 content_text str = Text $ CData CDataRaw str Nothing
 
 
 -- | @ font-family=\"...\" @
-attr_font_family :: String -> Attr
-attr_font_family = unqualAttr "font-family" 
+--
+attr_font_family :: String -> HAttr
+attr_font_family = wrapH . unqualAttr "font-family" 
 
 -- | @ font-size=\"...\" @
-attr_font_size :: Int -> Attr
-attr_font_size = unqualAttr "font-size" . show
+--
+attr_font_size :: Int -> HAttr
+attr_font_size = wrapH . unqualAttr "font-size" . show
 
 -- | @ font-weight=\"...\" @
-attr_font_weight :: String -> Attr
-attr_font_weight = unqualAttr "font-weight"
+--
+attr_font_weight :: String -> HAttr
+attr_font_weight = wrapH . unqualAttr "font-weight"
 
 -- | @ font-style=\"...\" @
-attr_font_style :: String -> Attr
-attr_font_style = unqualAttr "font-style"
+--
+attr_font_style :: String -> HAttr
+attr_font_style = wrapH . unqualAttr "font-style"
 
 
 -- | @ id=\"...\" @
-attr_id :: String -> Attr
-attr_id = unqualAttr "id" 
+--
+attr_id :: String -> HAttr
+attr_id = wrapH . unqualAttr "id" 
 
 -- | @ d="..." @
-attr_d :: SvgPath -> Attr
-attr_d = unqualAttr "d" . hsep
+--
+attr_d :: SvgPath -> HAttr
+attr_d = wrapH . unqualAttr "d" . hsep
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
-attr_fill :: PSColour c => c -> Attr
-attr_fill = unqualAttr "fill" . val_colour
+--
+attr_fill :: PSColour c => c -> HAttr
+attr_fill = wrapH . unqualAttr "fill" . val_colour
 
 -- | @ fill=\"none\" @
-attr_fill_none :: Attr
-attr_fill_none = unqualAttr "fill" "none"
+--
+attr_fill_none :: HAttr
+attr_fill_none = wrapH $ unqualAttr "fill" "none"
 
 -- | @ stroke=\"rgb(..., ..., ...)\" @
-attr_stroke :: PSColour c => c -> Attr
-attr_stroke = unqualAttr "stroke" . val_colour
+attr_stroke :: PSColour c => c -> HAttr
+attr_stroke = wrapH . unqualAttr "stroke" . val_colour
 
 -- | @ stroke=\"none\" @
-attr_stroke_none :: Attr
-attr_stroke_none = unqualAttr "stroke" "none"
+--
+attr_stroke_none :: HAttr
+attr_stroke_none = wrapH $ unqualAttr "stroke" "none"
 
 -- | @ stroke-width=\"...\" @
-attr_stroke_width :: PSUnit u => u -> Attr
-attr_stroke_width = unqualAttr "stroke-width" . dtrunc
+--
+attr_stroke_width :: PSUnit u => u -> HAttr
+attr_stroke_width = wrapH . unqualAttr "stroke-width" . dtrunc
 
 
 -- | @ stroke-miterlimit=\"...\" @
-attr_stroke_miterlimit :: PSUnit u => u -> Attr
-attr_stroke_miterlimit = unqualAttr "stroke-miterlimit" . dtrunc
+--
+attr_stroke_miterlimit :: PSUnit u => u -> HAttr
+attr_stroke_miterlimit = wrapH . unqualAttr "stroke-miterlimit" . dtrunc
 
 -- | @ stroke-linejoin=\"...\" @
-attr_stroke_linejoin :: LineJoin -> Attr
-attr_stroke_linejoin JoinMiter = unqualAttr "stroke-linejoin" "miter"
-attr_stroke_linejoin JoinRound = unqualAttr "stroke-linejoin" "round"
-attr_stroke_linejoin JoinBevel = unqualAttr "stroke-linejoin" "bevel"
+--
+attr_stroke_linejoin :: LineJoin -> HAttr
+attr_stroke_linejoin = wrapH . unqualAttr "stroke-linejoin" . step 
+  where
+    step JoinMiter = "miter"
+    step JoinRound = "round"
+    step JoinBevel = "bevel"
 
 
-
-attr_stroke_linecap :: LineCap -> Attr
-attr_stroke_linecap CapButt   = unqualAttr "stroke-linecap" "butt"
-attr_stroke_linecap CapRound  = unqualAttr "stroke-linecap" "round"
-attr_stroke_linecap CapSquare = unqualAttr "stroke-linecap" "square"
+-- | @ stroke-linecap=\"...\" @
+--
+attr_stroke_linecap :: LineCap -> HAttr
+attr_stroke_linecap = wrapH . unqualAttr "stroke-linecap" . step
+  where
+    step CapButt   = "butt"
+    step CapRound  = "round"
+    step CapSquare = "square"
 
 
 -- | @ stroke-dasharray=\"...\" @
-attr_stroke_dasharray :: [Int] -> Attr
-attr_stroke_dasharray = unqualAttr "stroke-dasharray" . commasep . map show
+--
+attr_stroke_dasharray :: [Int] -> HAttr
+attr_stroke_dasharray = 
+    wrapH . unqualAttr "stroke-dasharray" . commasep . map show
 
 -- | @ stroke-dasharray=\"none\" @
-attr_stroke_dasharray_none :: Attr
-attr_stroke_dasharray_none = unqualAttr "stroke-dasharray" "none"
+--
+attr_stroke_dasharray_none :: HAttr
+attr_stroke_dasharray_none = wrapH $ unqualAttr "stroke-dasharray" "none"
 
 -- | @ stroke-dashoffset=\"...\" @
-attr_stroke_dashoffset :: Int -> Attr
-attr_stroke_dashoffset = unqualAttr "stroke-dashoffset" . show
+--
+attr_stroke_dashoffset :: Int -> HAttr
+attr_stroke_dashoffset = wrapH . unqualAttr "stroke-dashoffset" . show
 
 -- | @ color=\"rgb(..., ..., ...)\" @
 --
 -- Gray or HSB values will be converted to and rendered as RGB.
-attr_color :: PSColour c => c -> Attr
-attr_color = unqualAttr "color" . val_colour
+--
+attr_color :: PSColour c => c -> HAttr
+attr_color = wrapH . unqualAttr "color" . val_colour
 
 -- | @ clip-path=\"url(#...)\" @
-attr_clippath :: String -> Attr
-attr_clippath = unqualAttr "clip-path" . val_url
+--
+attr_clippath :: String -> HAttr
+attr_clippath = wrapH . unqualAttr "clip-path" . val_url
 
 -- | @ transform="..." @
-attr_transform :: String -> Attr
-attr_transform = unqualAttr "transform"
+--
+attr_transform :: String -> HAttr
+attr_transform = wrapH . unqualAttr "transform"
 
 -- | @ matrix(..., ..., ..., ..., ..., ...) @
+--
 val_matrix :: PSUnit u => u -> u -> u -> u -> u -> u -> String
 val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
 
@@ -416,38 +461,45 @@ val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
 -- | @ rgb(..., ..., ...) @
 -- 
 -- HSB and gray scale are translated to RGB values.
+--
 val_colour :: PSColour c => c -> String
 val_colour = val_rgb . psColour
 
 
 -- | @ rgb(..., ..., ...) @
+--
 val_rgb :: RGB3 Double -> String
 val_rgb (RGB3 r g b) = "rgb" ++ show (ramp255 r,ramp255 g,ramp255 b)
 
 
 -- | @ url(#...) @
+--
 val_url :: String -> String
 val_url s = "url" ++ parens ('#':s)
 
 -- | @ translate(..., ...) @
+--
 val_translate :: PSUnit u => u -> u -> String
 val_translate x y = "translate" ++ tupled (map dtrunc [x,y])
   
 -- | @ M ... ... @
 --
 -- c.f. PostScript's @moveto@.
+--
 path_m :: PSUnit u => u -> u -> String
 path_m x y  = hsep $ "M" : map dtrunc [x,y]
 
 -- | @ L ... ... @
 --
 -- c.f. PostScript's @lineto@.
+--
 path_l :: PSUnit u => u -> u -> String
 path_l x y  = hsep $ "L" : map dtrunc [x,y]
 
 -- | @ S ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
+--
 path_c :: PSUnit u => u -> u -> u -> u -> u -> u -> String
 path_c x1 y1 x2 y2 x3 y3 =  hsep $ "C" : map dtrunc [x1,y1,x2,y2,x3,y3]
 

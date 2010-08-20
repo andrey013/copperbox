@@ -55,8 +55,11 @@ module Wumpus.Core.Utils
   -- * Hughes list
   , H
   , emptyH
-  , toListH
+  , wrapH
+  , consH
   , snocH  
+  , appendH
+  , toListH
 
   ) where
 
@@ -227,10 +230,20 @@ type H a = [a] -> [a]
 emptyH :: H a
 emptyH = id
 
-toListH :: H a -> [a]
-toListH = ($ [])
+
+wrapH :: a -> H a
+wrapH a = consH a id 
+
+consH :: a -> H a -> H a
+consH a f = (a:) . f
 
 snocH :: H a -> a -> H a
 snocH hl a = hl . (a:)
+
+appendH :: H a -> H a -> H a
+appendH f g = f . g
+
+toListH :: H a -> [a]
+toListH = ($ [])
 
 
