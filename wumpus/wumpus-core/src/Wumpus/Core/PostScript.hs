@@ -1,7 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -34,8 +30,10 @@ module Wumpus.Core.PostScript
 
   -- * Escape sepcial characters
   , escapeStringPS
+  , askCharCode
 
   -- * Deltas 
+  , runDelta
   , deltaFontAttr
   , deltaRgbColour
 
@@ -94,6 +92,7 @@ module Wumpus.Core.PostScript
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
+import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
 import Control.Applicative
@@ -226,8 +225,19 @@ ps_special :: [Char]
 ps_special = "\\()<>[]{}/%"
 
 
+askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
+askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
+    Just n -> (Right n, s, id)
+    Nothing -> (Left $ ps_fallback r, s, id)
+
 --------------------------------------------------------------------------------
 -- "Deltas" of the graphics state
+
+runDelta :: PsMonad (Maybe a) -> (a -> PsMonad ()) -> PsMonad ()
+runDelta mbma mf = mbma >>= \mba -> 
+    case mba of Nothing -> return ()
+                Just a  -> mf a 
+
 
 deltaFontAttr :: FontAttr -> PsMonad (Maybe FontAttr)
 deltaFontAttr new = get >>= maybe update diff . st_font
@@ -248,7 +258,6 @@ deltaRgbColour new = get >>= diff . st_rgb_colour
              | otherwise  = do { sets_ (\s -> s { st_rgb_colour = new })
                                ; return (Just new)
                                }
-
 
 deltaStrokeWidth :: Double -> Maybe (Double,Double)
 deltaStrokeWidth n
@@ -275,6 +284,7 @@ deltaDashPattern :: DashPattern -> Maybe (DashPattern,DashPattern)
 deltaDashPattern p 
     | p == gs_dash_pattern = Nothing
     | otherwise            = Just (p,gs_dash_pattern)
+
 
 
 
