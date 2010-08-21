@@ -45,6 +45,9 @@ module Wumpus.Core.SVG
   , askEncodingName
   , askGlyphName
   , escapeCharCode
+  , setFrameHeight
+  , rescalePoint
+
   , set 
   , get
   , ask
@@ -109,6 +112,7 @@ module Wumpus.Core.SVG
   ) where
 
 import Wumpus.Core.Colour
+import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextEncodingInternal
@@ -123,77 +127,80 @@ import Control.Applicative
 type HAttr = H Attr
 
 
-data St = St { clipCount :: Int }
+data St u = St 
+      { clip_count    :: Int
+      , frame_height  :: u 
+      }
 
-st_zero :: St
-st_zero = St { clipCount = 0 } 
+st_zero :: Num u => St u
+st_zero = St { clip_count = 0, frame_height = 0 } 
 
 -- | The SVG monad - which wraps a state monad to generate 
 -- fresh names.
 
-newtype SvgMonad a = SvgMonad { 
-          getSvgMonad :: TextEncoder -> St -> (a,St) }
+newtype SvgMonad u a = SvgMonad { 
+          getSvgMonad :: TextEncoder -> St u -> (a, St u) }
 
-runSvgMonad :: TextEncoder -> SvgMonad a -> (a,St)
+runSvgMonad :: Num u => TextEncoder -> SvgMonad u a -> (a, St u)
 runSvgMonad enc mf = getSvgMonad mf enc st_zero
 
 
-instance Functor SvgMonad where
+instance Functor (SvgMonad u) where
   fmap f mf = SvgMonad $ \r s -> let (a,s') = getSvgMonad mf r s 
                                  in (f a, s') 
 
-instance Applicative SvgMonad where
+instance Applicative (SvgMonad u) where
   pure a    = SvgMonad $ \_ s -> (a,s)
   mf <*> ma = SvgMonad $ \r s -> let (f,s1) = getSvgMonad mf r s
                                      (a,s2) = getSvgMonad ma r s1
                                  in (f a, s2)
 
-instance Monad SvgMonad where
+instance Monad (SvgMonad u) where
   return a  = SvgMonad $ \_ s -> (a,s)
   m >>= k   = SvgMonad $ \r s -> let (a,s1) = getSvgMonad m r s
                                  in (getSvgMonad . k) a r s1
 
 
-get :: SvgMonad St
+get :: SvgMonad u (St u)
 get = SvgMonad $ \_ s -> (s,s)
 
-set :: St -> SvgMonad ()
+set :: St u -> SvgMonad u ()
 set s = SvgMonad $ \_ _ -> ((),s)
 
-sets_ :: (St -> St) -> SvgMonad ()
+sets_ :: (St u -> St u) -> SvgMonad u ()
 sets_ f = SvgMonad $ \_ s -> ((), f s)
 
 
-ask :: SvgMonad TextEncoder
+ask :: SvgMonad u TextEncoder
 ask = SvgMonad $ \r s -> (r,s)
 
-asks :: (TextEncoder -> a) -> SvgMonad a
+asks :: (TextEncoder -> a) -> SvgMonad u a
 asks f = SvgMonad $ \r s -> (f r,s)
 
 
 -- | Run the SVG monad.
 --
-execSvgMonad :: TextEncoder -> SvgMonad a -> a
+execSvgMonad :: Num u => TextEncoder -> SvgMonad u a -> a
 execSvgMonad enc mf = fst $ runSvgMonad enc mf
 
 
 -- | Get the current clip label.
 --
-currentClipLabel :: SvgMonad String
-currentClipLabel = get >>= return . clipname . clipCount
+currentClipLabel :: SvgMonad u String
+currentClipLabel = get >>= return . clipname . clip_count
 
 -- | Generate a new clip label.
-newClipLabel :: SvgMonad String
+newClipLabel :: SvgMonad u String
 newClipLabel = do 
-  i <- (get >>= return . clipCount)
-  sets_ (\s -> s { clipCount=i+1 })
+  i <- (get >>= return . clip_count)
+  sets_ (\s -> s { clip_count = i+1 })
   return $ clipname i
 
 
-askEncodingName :: SvgMonad String
+askEncodingName :: SvgMonad u String
 askEncodingName = asks svg_encoding_name
 
-askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
+askGlyphName :: String -> SvgMonad u (Either GlyphName GlyphName)
 askGlyphName nm = SvgMonad $ \r s -> case lookupByGlyphName nm r of
     Just a -> (Right $ escapeCharCode a, s)
     Nothing -> (Left $ escapeCharCode $ svg_fallback r, s)
@@ -201,13 +208,17 @@ askGlyphName nm = SvgMonad $ \r s -> case lookupByGlyphName nm r of
 escapeCharCode :: CharCode -> String
 escapeCharCode i = "&#" ++ show i ++ ";"
 
-    
 
 clipname :: Int -> String
 clipname = ("clip" ++) . show
 
 
+setFrameHeight :: u -> SvgMonad u ()
+setFrameHeight h = SvgMonad $ \_ s -> ((), s { frame_height = h })
 
+rescalePoint :: Num u => Point2 u -> SvgMonad u (Point2 u)
+rescalePoint (P2 x y) = SvgMonad $ \_ s -> let h = frame_height s in 
+                                           (P2 x (h - y), s) 
 
 --------------------------------------------------------------------------------
 -- Helpers for XML.Light and /data in strings/.
@@ -509,28 +520,36 @@ spaceS = showChar ' '
 dtruncS :: PSUnit u => u -> ShowS
 dtruncS = showString . dtrunc
 
+--------------------------------------------------------------------------------
+-- Monadic path functions, that translate the supplied points
+
 -- | @ M ... ... @
 --
 -- c.f. PostScript's @moveto@.
 --
-path_m :: PSUnit u => u -> u -> ShowS
-path_m x y  = showChar 'M' . spaceS . dtruncS x .spaceS . dtruncS y
+path_m :: PSUnit u => Point2 u -> SvgMonad u ShowS
+path_m pt = 
+    (\(P2 x y) -> showChar 'M' . spaceS . dtruncS x .spaceS . dtruncS y)
+      <$> rescalePoint pt
 
 -- | @ L ... ... @
 --
 -- c.f. PostScript's @lineto@.
 --
-path_l :: PSUnit u => u -> u -> ShowS
-path_l x y  = showChar 'L' . spaceS . dtruncS x . spaceS . dtruncS y
+path_l :: PSUnit u => Point2 u -> SvgMonad u ShowS
+path_l pt  = 
+    (\(P2 x y) -> showChar 'L' . spaceS . dtruncS x . spaceS . dtruncS y)
+      <$> rescalePoint pt
 
 -- | @ S ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
 --
-path_c :: PSUnit u => u -> u -> u -> u -> u -> u -> ShowS
-path_c x1 y1 x2 y2 x3 y3 =  
-    showChar 'C' . spaceS . dtruncS x1 . spaceS . dtruncS y1
+path_c :: PSUnit u => Point2 u -> Point2 u -> Point2 u -> SvgMonad u ShowS
+path_c p1 p2 p3 =  
+    (\(P2 x1 y1) (P2 x2 y2) (P2 x3 y3) -> showChar 'C' 
+                 . spaceS . dtruncS x1 . spaceS . dtruncS y1
                  . spaceS . dtruncS x2 . spaceS . dtruncS y2
-                 . spaceS . dtruncS x3 . spaceS . dtruncS y3
-
+                 . spaceS . dtruncS x3 . spaceS . dtruncS y3)
+      <$> rescalePoint p1 <*> rescalePoint p2 <*> rescalePoint p3
 

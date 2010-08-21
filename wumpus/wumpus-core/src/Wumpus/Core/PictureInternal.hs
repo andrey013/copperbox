@@ -580,14 +580,14 @@ identityCTM :: Num u => PrimCTM u
 identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
 
 scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
-scaleCTM x1 y1 (PrimCTM x y ang) = PrimCTM (x1*x) (y1*y) ang
+scaleCTM x1 y1 (PrimCTM sx sy ang) = PrimCTM (x1*sx) (y1*sy) ang
 
 rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
-rotateCTM ang1 (PrimCTM x y ang) = PrimCTM x y (circularModulo $ ang1+ang)
+rotateCTM ang1 (PrimCTM sx sy ang) = PrimCTM sx sy (circularModulo $ ang1+ang)
 
 matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
-matrixRepCTM (PrimCTM x y ang) = 
-    rotationMatrix (circularModulo ang) * scalingMatrix x y
+matrixRepCTM (PrimCTM sx sy ang) = 
+    rotationMatrix (circularModulo ang) * scalingMatrix sx sy
 
 
 -- Note - the order of combining a translation (i.e. the 
@@ -738,7 +738,7 @@ extractFrame (Clip     (fr,_) _ _) = fr
 
 
 -- If a picture has coordinates smaller than (P2 4 4) then it 
--- needs repositioning before it is drawn to PostSCript or SVG.
+-- needs repositioning before it is drawn to PostScript or SVG.
 -- 
 -- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
 -- user defined.

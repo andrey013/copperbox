@@ -40,7 +40,7 @@ module Wumpus.Core.OutputSVG
   
   ) where
 
-import Wumpus.Core.AffineTrans
+-- import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
@@ -52,6 +52,8 @@ import Wumpus.Core.Utils
 
 import Text.XML.Light                           -- package: xml
 
+import Control.Applicative
+import Control.Monad
 import qualified Data.Foldable as F
 
 
@@ -62,8 +64,8 @@ dZero :: Double
 dZero = 0
 
 
-coordChange ::  (Num u, Scale t, u ~ DUnit t) => t -> t
-coordChange = scale 1 (-1)
+-- coordChange ::  (Num u, Scale t, u ~ DUnit t) => t -> t
+-- coordChange = scale 1 (-1)
 
 svg_reflection_matrix :: Num u => Matrix3'3 u
 svg_reflection_matrix = scalingMatrix 1 (-1)
@@ -88,14 +90,13 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> [Content]
 svgDraw enc pic = execSvgMonad enc $ do
-    elem1     <- picture False pic'
+    elem1     <- picture False pic
     prefixXmlDecls (topLevelPic mbvec elem1)
   where
-    pic'      = coordChange pic
-    (_,mbvec) = repositionProperties pic'
+    (_,mbvec) = repositionProperties pic
 
 
-prefixXmlDecls :: Element -> SvgMonad [Content]
+prefixXmlDecls :: Element -> SvgMonad u [Content]
 prefixXmlDecls e = do 
     enc <- askEncodingName
     let xmlv = xmlVersion enc
@@ -108,13 +109,12 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]]
     trans_attribs = toListH $ attr_transform $ val_translate x y
 
 
--- Note - Leaf case reverses the list as it goes to respect the 
--- zorder.
---
+
 picture :: (Real u, Floating u, PSUnit u) 
-        => Clipped -> Picture u -> SvgMonad Element
+        => Clipped -> Picture u -> SvgMonad u Element
 picture _ (PicBlank _)            = return $ gElement [] []
-picture c (Leaf (fr,_) _ ones)    = do 
+picture c (Leaf (fr,_) h ones)    = do 
+    setFrameHeight h
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
     return $ gElement (toListH $ frameChange fr) elts
 
@@ -129,7 +129,7 @@ picture _ (Clip (fr,_) p a)       = do
 
 
 primitive :: (Real u, Floating u, PSUnit u) 
-          => Clipped -> Primitive u -> SvgMonad Element
+          => Clipped -> Primitive u -> SvgMonad u Element
 primitive c (PPath props p)     = clipAttrib c $ path props p
 primitive c (PLabel props l)    = clipAttrib c $ label props l
 primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
@@ -137,16 +137,13 @@ primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
 
 
 -- All clipping paths are closed.
-clipPath :: PSUnit u => Path u -> SvgMonad Element
-clipPath p = do
-    name <- newClipLabel
-    return $ element_clippath ps `snoc_attrs` attr_id name
-  where
-    ps = closedPath p
+clipPath :: PSUnit u => Path u -> SvgMonad u Element
+clipPath p = (\name ps -> element_clippath ps `snoc_attrs` attr_id name)
+                <$> newClipLabel <*> closedPath p
 
 
 
-clipAttrib :: Clipped -> SvgMonad Element -> SvgMonad Element
+clipAttrib :: Clipped -> SvgMonad u Element -> SvgMonad u Element
 clipAttrib False melt = melt
 clipAttrib True  melt = do 
     s   <- currentClipLabel
@@ -157,12 +154,11 @@ clipAttrib True  melt = do
 -- None of the remaining translation functions need to be in the
 -- SvgMonad monad.
 
-path :: PSUnit u => PathProps -> Path u -> SvgMonad Element
+path :: PSUnit u => PathProps -> Path u -> SvgMonad u Element
 path (c,dp) p = 
-    return $ element_path ps `snoc_attrs` attrs
+    svgPath dp p >>= \ ps -> return $ element_path ps `snoc_attrs` attrs
   where
     attrs = pathAttrs c dp
-    ps    = svgPath dp p 
 
 
 -- Labels need the coordinate system remapping otherwise
@@ -174,9 +170,10 @@ path (c,dp) p =
 -- 
 --
 label :: (Real u, Floating u, PSUnit u) 
-      => LabelProps -> Label u -> SvgMonad Element
+      => LabelProps -> Label u -> SvgMonad u Element
 label (c,FontAttr sz face) (Label pt entxt ctm) = do 
      str <- encodedText entxt
+     coord_attrs <- labelGeom pt ctm
      let tspan_elt = element_tspan str `snoc_attrs` (attr_fill c)
      return $ element_text tspan_elt `snoc_attrs` ( coord_attrs
                                                   . font_desc
@@ -184,12 +181,11 @@ label (c,FontAttr sz face) (Label pt entxt ctm) = do
   where
     style       = svg_font_style  face
     fam         = svg_font_family face
-    coord_attrs = labelGeom pt ctm
     font_desc   = attr_font_family fam . attr_font_size sz 
                   
 
 
-encodedText :: EncodedText -> SvgMonad String 
+encodedText :: EncodedText -> SvgMonad u String 
 encodedText entxt = 
     let xs = getEncodedText entxt in mapM textChunk  xs >>= return . concat
 
@@ -199,7 +195,7 @@ encodedText entxt =
 -- as we go along. For SVG we are building an abstract syntax 
 -- tree.
 -- 
-textChunk :: TextChunk -> SvgMonad String
+textChunk :: TextChunk -> SvgMonad u String
 textChunk (SText s)  = return s
 textChunk (EscInt i) = return $ escapeCharCode i
 textChunk (EscStr s) = askGlyphName s >>= either return return
@@ -209,17 +205,15 @@ textChunk (EscStr s) = askGlyphName s >>= either return return
 -- If w==h the draw the ellipse as a circle
 
 ellipse :: (Real u, Floating u, PSUnit u)
-        => EllipseProps -> PrimEllipse u -> SvgMonad Element
+        => EllipseProps -> PrimEllipse u -> SvgMonad u Element
 ellipse (c,dp) (PrimEllipse pt hw hh ctm) 
-    | hw == hh  = return $ element_circle  
-                            `snoc_attrs` (circle_attrs  . style_attrs)
-    | otherwise = return $ element_ellipse 
-                            `snoc_attrs` (ellipse_attrs . style_attrs)
+    | hw == hh  = (\geomf -> element_circle `snoc_attrs` 
+                              (circleRadius hw . geomf . style_attrs))
+                    <$> ellipseGeom pt ctm 
+    | otherwise = (\geomf -> element_ellipse `snoc_attrs` 
+                              (ellipseRadius hw hh . geomf . style_attrs))
+                    <$> ellipseGeom pt ctm
   where
-    circle_attrs  = ellipseGeom pt ctm . circleRadius hw
-
-    ellipse_attrs = ellipseGeom pt ctm . ellipseRadius hw hh
-
     style_attrs   = ellipseAttrs c dp
 
 
@@ -227,15 +221,17 @@ ellipse (c,dp) (PrimEllipse pt hw hh ctm)
 -- 
 
 labelGeom :: (Real u, Floating u, PSUnit u) 
-          => Point2 u -> PrimCTM u -> HAttr
-labelGeom pt@(P2 x y) ctm 
-    | ctm == identityCTM = attr_x x' . attr_y y' . attr_transform flip_mtrx
-    | otherwise          = attr_x dZero . attr_y dZero 
-                                        . attr_transform traf_mtrx
+          => Point2 u -> PrimCTM u -> SvgMonad u HAttr
+labelGeom pt ctm 
+    | ctm == identityCTM = (\(P2 x y) -> attr_x x . attr_y y) 
+                              <$> rescalePoint pt
+    | otherwise          = (\(P2 x y) -> attr_x dZero . attr_y dZero 
+                                                      . mtrxTrafo x y)
+                              <$> rescalePoint pt
   where
-    P2 x' y'    = coordChange pt
-    flip_mtrx   = val_matrix 1 0 0 (-1) 0 dZero
-    traf_mtrx   = valMatrix $ translMatrixRepCTM x y ctm * svg_reflection_matrix
+    mtrxTrafo x y = attr_transform $ valMatrix $ 
+                       translationMatrix x y * (invert $ matrixRepCTM ctm)
+
 
 
 circleRadius :: PSUnit u => u -> HAttr
@@ -244,14 +240,17 @@ circleRadius radius = attr_r radius
 ellipseRadius :: PSUnit u => u -> u -> HAttr
 ellipseRadius hw hh = attr_rx hw . attr_ry hh
 
-
 ellipseGeom :: (Real u, Floating u, PSUnit u)
-           => Point2 u -> PrimCTM u -> HAttr
-ellipseGeom (P2 x y) ctm 
-    | ctm == identityCTM = attr_cx x . attr_cy y 
-    | otherwise          = attr_transform mtrx . attr_cx dZero . attr_cy dZero 
+           => Point2 u -> PrimCTM u -> SvgMonad u HAttr
+ellipseGeom pt ctm 
+    | ctm == identityCTM = (\(P2 x y) -> attr_cx x . attr_cy y )
+                              <$> rescalePoint pt
+    | otherwise          = (\(P2 x y) -> attr_cx dZero . attr_cy dZero
+                                                       . mtrxTrafo x y ) 
+                              <$> rescalePoint pt
   where
-    mtrx  = valMatrix $ translMatrixRepCTM x y ctm * svg_reflection_matrix
+    mtrxTrafo x y = attr_transform $ valMatrix $ 
+                       translMatrixRepCTM x y ctm * svg_reflection_matrix
 
 
 
@@ -306,35 +305,52 @@ fontAttrs SVG_BOLD_OBLIQUE = attr_font_weight "bold" . attr_font_style "oblique"
 --------------------------------------------------------------------------------
 -- paths
 
-svgPath :: PSUnit u => DrawPath -> Path u -> String
-svgPath (OStroke _) p = toListH $ pathK p id
+svgPath :: PSUnit u => DrawPath -> Path u -> SvgMonad u String
+svgPath (OStroke _) p = liftM toListH $ pathK p id
 svgPath _           p = closedPath p
 
 
-closedPath :: PSUnit u => Path u -> String
-closedPath p = toListH $ pathK p (showString " Z")
+closedPath :: PSUnit u => Path u -> SvgMonad u String
+closedPath p = liftM toListH $ pathK p (showString " Z")
 
-pathK :: PSUnit u => Path u -> ShowS -> ShowS
-pathK (Path (P2 x y) xs) end = 
-    prefix . foldr (\e f -> pathSegment e . showChar ' ' . f) end xs
+pathK :: PSUnit u => Path u -> ShowS -> SvgMonad u ShowS
+pathK (Path start_pt xs) end =  (\prefix body -> prefix . body . end)
+    <$> path_m start_pt <*> pathSegments xs
+
+
+pathSegments :: PSUnit u => [PathSegment u] -> SvgMonad u ShowS
+pathSegments = F.foldrM mf id
   where
-    prefix = path_m x y . showChar ' '
+    mf e accf = pathSegment e >>= \f  -> return (showChar ' ' . f . accf)
 
-pathSegment :: PSUnit u => PathSegment u -> ShowS
-pathSegment (PLineTo (P2 x1 y1))                        = path_l x1 y1
-pathSegment (PCurveTo (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
-    path_c x1 y1 x2 y2 x3 y3
+
+pathSegment :: PSUnit u => PathSegment u -> SvgMonad u ShowS
+pathSegment (PLineTo pt)        = path_l pt
+pathSegment (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 
 
 --------------------------------------------------------------------------------
 
-frameChange :: PSUnit u => Frame2 u -> HAttr
-frameChange fr 
-    | standardFrame fr = emptyH
-    | otherwise        = attr_transform $ val_matrix a b c d e f 
-  where
-    CTM a b c d e f = toCTM fr
 
+frameChange :: PSUnit u => Frame2 u -> HAttr
+frameChange fr@(Frame2 e0 e1 (P2 x y)) 
+    | standardFrame fr = emptyH
+    | otherwise        = attr_transform $ valMatrix m3
+  where
+    m1 = frame2Matrix $ Frame2 e0 e1 zeroPt
+    (M3'3 _ _ ox _ _ oy _ _ _) = scalingMatrix 1 (-1) * translationMatrix x y
+
+    m3 = translationMatrix ox oy * m1
+
+
+{-
+frameChange :: PSUnit u => u -> Frame2 u -> HAttr
+frameChange h fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
+    | standardFrame fr = emptyH
+    | otherwise        = attr_transform $ val_matrix e0x e0y e1x e1y ox y
+  where
+    y = negate oy -- negate $ (e1x * h + e1y * h - h) + oy
+-}
 
 
 
