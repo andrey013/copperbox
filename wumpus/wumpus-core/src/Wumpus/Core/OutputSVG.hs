@@ -113,19 +113,19 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]]
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgMonad u Element
 picture _ (PicBlank _)            = return $ gElement [] []
-picture c (Leaf (fr,_) h ones)    = do 
+picture c (Leaf (fr,_,h) ones)    = do 
     setFrameHeight h
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
-    return $ gElement (toListH $ frameChange fr) elts
+    return $ gElement (toListH $ frameChange h h fr) elts
 
-picture c (Picture (fr,_) ones)   = do
+picture c (Picture (fr,_,_) ones)   = do
     elts <- F.foldlM (\acc e -> do { a <- picture c e; return (a:acc) }) [] ones
-    return $ gElement (toListH $ frameChange fr) elts
+    return $ gElement (toListH $ frameChange 0 0 fr) elts
   
-picture _ (Clip (fr,_) p a)       = do 
+picture _ (Clip (fr,_,_) p a)       = do 
    cp <- clipPath p
    e1 <- picture True a
-   return $ gElement (toListH $ frameChange fr) [cp,e1]
+   return $ gElement (toListH $ frameChange 0 0 fr) [cp,e1]
 
 
 primitive :: (Real u, Floating u, PSUnit u) 
@@ -332,6 +332,9 @@ pathSegment (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 --------------------------------------------------------------------------------
 
 
+-- this works - only when there is no scaling...
+{-
+
 frameChange :: PSUnit u => Frame2 u -> HAttr
 frameChange fr@(Frame2 e0 e1 (P2 x y)) 
     | standardFrame fr = emptyH
@@ -341,16 +344,16 @@ frameChange fr@(Frame2 e0 e1 (P2 x y))
     (M3'3 _ _ ox _ _ oy _ _ _) = scalingMatrix 1 (-1) * translationMatrix x y
 
     m3 = translationMatrix ox oy * m1
+-}
 
 
-{-
-frameChange :: PSUnit u => u -> Frame2 u -> HAttr
-frameChange h fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
+frameChange :: PSUnit u => u -> u -> Frame2 u -> HAttr
+frameChange h_frame h_page fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
     | standardFrame fr = emptyH
     | otherwise        = attr_transform $ val_matrix e0x e0y e1x e1y ox y
   where
-    y = negate oy -- negate $ (e1x * h + e1y * h - h) + oy
--}
+    y = negate $ (e1x * h_frame + e1y * h_frame - h_page) + oy
+
 
 
 

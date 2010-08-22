@@ -39,6 +39,9 @@ module Wumpus.Core.PictureInternal
   , DrawPath(..)                -- hide in Wumpus.Core export?
   , DrawEllipse(..)
   , Locale  
+
+  -- * Smart constructors
+  , locale
  
   -- * Type class
 
@@ -126,9 +129,9 @@ import qualified Data.Foldable as F
 --
 
 data Picture u = PicBlank (Locale u)
-               | Leaf     (Locale u) u         (OneList (Primitive u))
-               | Picture  (Locale u)           (OneList (Picture u))
-               | Clip     (Locale u) (Path u)  (Picture u)
+               | Leaf     (Locale u)          (OneList (Primitive u))
+               | Picture  (Locale u)          (OneList (Picture u))
+               | Clip     (Locale u) (Path u) (Picture u)
   deriving (Eq,Show) 
 
 -- Leaf stores \height\ as well as locale.
@@ -145,7 +148,7 @@ data Picture u = PicBlank (Locale u)
 type DPicture = Picture Double
 
 
--- | Locale = (current frame x bounding box)
+-- | Locale = (current frame * bounding box * height)
 -- 
 -- Pictures (and sub-pictures) are located within an affine frame.
 -- So pictures can be arranged (vertical and horizontal 
@@ -162,7 +165,11 @@ type DPicture = Picture Double
 -- transformation, the corners of bounding boxes are transformed
 -- pointwise when the picture is scaled, rotated etc.
 --
-type Locale u = (Frame2 u, BoundingBox u) 
+-- Height is synthesized from the bounding box but, it is stored 
+-- anyway.
+--
+
+type Locale u = (Frame2 u, BoundingBox u, u) 
 
 
 
@@ -268,6 +275,11 @@ type LabelProps   = (PSRgb, FontAttr)
 type EllipseProps = (PSRgb, DrawEllipse)
 
 
+--------------------------------------------------------------------------------
+-- smart constructors 
+
+locale :: Num u => Frame2 u -> BoundingBox u -> Locale u 
+locale frm bb = (frm, bb, boundaryHeight bb) 
 
 
 
@@ -282,9 +294,8 @@ instance (Num u, PSUnit u) => Pretty (Picture u) where
   pretty (PicBlank m)       = 
       text "** Blank-pic **"  <+> ppLocale m
 
-  pretty (Leaf m h prims)   = 
+  pretty (Leaf m prims)     = 
       text "** Leaf-pic **"   <$> ppLocale m 
-                                  <+> text "height=" <> dtruncPP h
                                   <$> indent 2 (ppPrims prims)
 
   pretty (Picture m ones)   = 
@@ -307,8 +318,9 @@ ppPrims ones = snd $ F.foldl' fn (0,empty) ones
     fn (n,acc) e = (n+1, acc <$> text "-- leaf" <+> int n <$> pretty e <> line)
 
 ppLocale :: (Num u, PSUnit u) => Locale u -> Doc
-ppLocale (fr,bb) = ppfr <$> pretty bb where
-   ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
+ppLocale (fr,bb,h) = ppfr <$> pretty bb <$> text "height=" <> dtruncPP h
+  where
+    ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
 
 
 instance PSUnit u => Pretty (Primitive u) where
@@ -513,7 +525,7 @@ trafoPicture :: (Num u, Ord u)
              -> Picture u 
              -> Picture u
 trafoPicture fp fv = 
-    mapLocale $ \(frm,bb) -> (trafoFrame fp fv frm, trafoBBox fp bb)
+    mapLocale $ \(frm,bb,_) -> locale (trafoFrame fp fv frm) (trafoBBox fp bb)
 
 
 
@@ -647,10 +659,10 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 -- Boundary
 
 instance Boundary (Picture u) where
-  boundary (PicBlank (_,bb))     = bb
-  boundary (Leaf     (_,bb) _ _) = bb
-  boundary (Picture  (_,bb) _)   = bb
-  boundary (Clip     (_,bb) _ _) = bb
+  boundary (PicBlank (_,bb,_))     = bb
+  boundary (Leaf     (_,bb,_) _)   = bb
+  boundary (Picture  (_,bb,_) _)   = bb
+  boundary (Clip     (_,bb,_) _ _) = bb
 
 instance (Num u, Ord u) => Boundary (Path u) where
   boundary (Path st xs) = traceBoundary $ st : foldr f [] xs where
@@ -709,7 +721,7 @@ ellipseBoundary = traceBoundary . ellipseControlPoints
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (PicBlank m)      = PicBlank (f m)
-mapLocale f (Leaf m h ones)   = Leaf (f m) h ones
+mapLocale f (Leaf m ones)     = Leaf (f m) ones
 mapLocale f (Picture m ones)  = Picture (f m) ones
 mapLocale f (Clip m x p)      = Clip (f m) x p
 
@@ -719,7 +731,7 @@ movePic v = mapLocale (moveLocale v)
 
   
 moveLocale :: Num u => Vec2 u -> Locale u -> Locale u
-moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
+moveLocale v (fr,bb,_) = locale (displaceOrigin v fr) (pointwise (.+^ v) bb)
 
 --------------------------------------------------------------------------------
 
@@ -727,10 +739,10 @@ moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 -- | Should this really be public?
 --
 extractFrame :: Num u => Picture u -> Frame2 u
-extractFrame (PicBlank (fr,_))     = fr
-extractFrame (Leaf     (fr,_) _ _) = fr
-extractFrame (Picture  (fr,_) _)   = fr
-extractFrame (Clip     (fr,_) _ _) = fr
+extractFrame (PicBlank (fr,_,_))     = fr
+extractFrame (Leaf     (fr,_,_) _)   = fr
+extractFrame (Picture  (fr,_,_) _)   = fr
+extractFrame (Clip     (fr,_,_) _ _) = fr
 
 
 -- This needs is for PostScript and SVG output - it should be 

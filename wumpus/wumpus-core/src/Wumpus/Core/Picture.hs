@@ -100,15 +100,13 @@ stdFrame = ortho zeroPt
 -- This is useful for spacing rows or columns of pictures.
 --
 blankPicture :: Num u => BoundingBox u -> Picture u
-blankPicture bb = PicBlank (stdFrame, bb)
+blankPicture bb = PicBlank (locale stdFrame bb)
 
 
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
 frame :: (Real u, Floating u, FromPtSize u) => Primitive u -> Picture u
-frame p = Leaf (stdFrame, bb) (bbyMax bb) (one p)
-  where
-    bb = boundary p
+frame p = Leaf (locale stdFrame (boundary p)) (one p)
  
 -- | Frame a picture within the supplied bounding box
 -- 
@@ -126,15 +124,11 @@ frame p = Leaf (stdFrame, bb) (bbyMax bb) (one p)
 --
 frameWithin :: (Real u, Floating u, FromPtSize u) 
             => Primitive u -> BoundingBox u -> Picture u
-frameWithin p@(PLabel _ _) bb = Leaf (stdFrame, bb)  (bbyMax bb)  (one p)
-frameWithin p              bb = Leaf (stdFrame, bb') (bbyMax bb') (one p)
+frameWithin p@(PLabel _ _) bb = Leaf (locale stdFrame bb)  (one p)
+frameWithin p              bb = Leaf (locale stdFrame bb') (one p)
   where 
     bb' = bb `append` boundary p
 
-
--- TEMP
-bbyMax :: BoundingBox u -> u
-bbyMax (BBox _ (P2 _ h)) = h
 
 
 -- | Lift a list of primitives to a composite picture, all 
@@ -149,7 +143,7 @@ frameMulti :: (Real u, Floating u, FromPtSize u)
            => [Primitive u] -> Picture u
 frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti (p:ps) = let (bb,ones) = step p ps 
-                    in Leaf (stdFrame,bb) (bbyMax bb) ones 
+                    in Leaf (locale stdFrame bb)  ones 
   where
     step a []     = (boundary a, one a)
     step a (x:xs) = let (bb',rest) = step x xs
@@ -163,7 +157,7 @@ frameMulti (p:ps) = let (bb,ones) = step p ps
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi []       = error "Wumpus.Core.Picture.multi - empty list"
-multi xs@(x:_) = Picture (stdFrame, bb) ones 
+multi xs@(x:_) = Picture (locale stdFrame bb) ones 
   where
     ones = fromList xs
     bb   = F.foldr (\a b -> b `append` boundary a) (boundary x) xs
@@ -339,7 +333,7 @@ zfill = fillPath psBlack
 -- | Clip a picture with respect to the supplied path.
 --
 clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
-clip cp p = Clip (ortho zeroPt, boundary cp) cp p
+clip cp p = Clip (locale (ortho zeroPt) (boundary cp)) cp p
 
 
 --------------------------------------------------------------------------------
@@ -496,7 +490,8 @@ zellipse = uncurry mkEllipse ellipseDefault
 -- This function cannot be used to shrink a boundary.
 --
 extendBoundary :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb)) 
+extendBoundary x y = 
+    mapLocale $ \(fr,bb,_) -> locale fr (extBB (posve x) (posve y) bb)
   where
     extBB x' y' (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
         pt1 = P2 (x0-x') (y0-y')
@@ -516,7 +511,7 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb) (cons a $ one b)
+a `picOver` b = Picture (ortho zeroPt, bb, boundaryHeight bb) (cons a $ one b)
   where
     bb = (boundary a) `append` (boundary b)
 

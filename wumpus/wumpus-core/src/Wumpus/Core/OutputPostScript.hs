@@ -165,14 +165,14 @@ outputPicture :: (Real u, Floating u, PSUnit u)
               => Picture u -> PsMonad ()
 outputPicture (PicBlank  _)             = return ()
 
-outputPicture (Leaf (fr,_) _ ones)      = 
+outputPicture (Leaf (fr,_,_) ones)      = 
     updateFrame fr (revMapM outputPrimitive ones)
 
 -- output right picture first, to satisfy zordering...
-outputPicture (Picture (fr,_) ones)      =
+outputPicture (Picture (fr,_,_) ones)   =
     updateFrame fr (revMapM outputPicture ones) 
 
-outputPicture (Clip (fr,_) cp p)        = 
+outputPicture (Clip (fr,_,_) cp p)      = 
     updateFrame fr (clipPath cp >> outputPicture p)
 
 
