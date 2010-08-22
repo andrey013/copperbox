@@ -39,10 +39,13 @@ module Wumpus.Core.PictureInternal
   , DrawPath(..)                -- hide in Wumpus.Core export?
   , DrawEllipse(..)
   , Locale  
+  , YRange(..)
 
-  -- * Smart constructors
-  , locale
- 
+--  -- * Smart constructors
+--  , locale
+  , boundaryYRange
+  , primitiveYRange
+
   -- * Type class
 
   , PSUnit(..)
@@ -67,6 +70,8 @@ module Wumpus.Core.PictureInternal
   , movePic
   , moveLocale
   , extractFrame
+  , extractYRange
+  , frameHeight
   , repositionProperties
   , ellipseControlPoints
 
@@ -165,12 +170,14 @@ type DPicture = Picture Double
 -- transformation, the corners of bounding boxes are transformed
 -- pointwise when the picture is scaled, rotated etc.
 --
--- Height is synthesized from the bounding box but, it is stored 
--- anyway.
---
 
-type Locale u = (Frame2 u, BoundingBox u, u) 
+type Locale u = (Frame2 u, BoundingBox u, YRange u) 
 
+data YRange u = YRange 
+      { y_max :: u
+      , y_min :: u
+      }
+  deriving (Eq,Ord,Show)   
 
 
 -- | Wumpus\'s drawings are built from two fundamental 
@@ -276,11 +283,17 @@ type EllipseProps = (PSRgb, DrawEllipse)
 
 
 --------------------------------------------------------------------------------
--- smart constructors 
 
-locale :: Num u => Frame2 u -> BoundingBox u -> Locale u 
-locale frm bb = (frm, bb, boundaryHeight bb) 
 
+-- locale :: Num u => Frame2 u -> BoundingBox u -> Locale u 
+-- locale frm bb = (frm, bb, heightRange bb) 
+
+boundaryYRange :: BoundingBox u -> YRange u
+boundaryYRange (BBox (P2 _ ylo) (P2 _ yhi)) = YRange { y_max=yhi, y_min=ylo }
+
+primitiveYRange :: (Real u, Floating u, FromPtSize u) 
+                => Primitive u -> YRange u
+primitiveYRange = boundaryYRange . boundary
 
 
 --------------------------------------------------------------------------------
@@ -296,7 +309,7 @@ instance (Num u, PSUnit u) => Pretty (Picture u) where
 
   pretty (Leaf m prims)     = 
       text "** Leaf-pic **"   <$> ppLocale m 
-                                  <$> indent 2 (ppPrims prims)
+                              <$> indent 2 (ppPrims prims)
 
   pretty (Picture m ones)   = 
       text "** Tree-pic **"   <$> ppLocale m 
@@ -318,10 +331,16 @@ ppPrims ones = snd $ F.foldl' fn (0,empty) ones
     fn (n,acc) e = (n+1, acc <$> text "-- leaf" <+> int n <$> pretty e <> line)
 
 ppLocale :: (Num u, PSUnit u) => Locale u -> Doc
-ppLocale (fr,bb,h) = ppfr <$> pretty bb <$> text "height=" <> dtruncPP h
+ppLocale (fr,bb,hr) = ppfr <$> pretty bb <$> pretty hr
   where
     ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
 
+
+instance (Num u, PSUnit u) => Pretty (YRange u) where
+  pretty (YRange yhi ylo) = 
+      text "y_range=" <> (dtruncPP $ yhi - ylo) <+> dif
+    where
+      dif = parens (dtruncPP yhi <+> char '-' <+> dtruncPP ylo)
 
 instance PSUnit u => Pretty (Primitive u) where
   pretty (PPath attr p)     = 
@@ -335,7 +354,7 @@ instance PSUnit u => Pretty (Primitive u) where
 
 
 instance PSUnit u => Pretty (Path u) where
-   pretty (Path pt ps) = vcat (start  : map pretty ps) 
+   pretty (Path pt ps) = vcat (start : map pretty ps) 
       where
         start = fill 12 (text "start_point") <> pretty pt
 
@@ -379,6 +398,9 @@ ppEllipseProps (rgb, _)     = pretty rgb <+> text "Stroke"
 
 -- | Paths are sensibly a Semigroup - there is no notion of 
 -- /empty path/.
+
+instance Ord u => Semigroup (YRange u) where
+  YRange hi1 lo1 `append` YRange hi2 lo2 = YRange (max hi1 hi2) (min lo1 lo2)
 
 instance Semigroup (Path u) where
   Path st xs `append` Path st' xs' = Path st (xs ++ (PLineTo st' : xs'))
@@ -514,10 +536,7 @@ scalePicture x y = trafoPicture (scale x y) (scale x y)
 translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
 translatePicture x y = trafoPicture (translate x y) (translate x y)
 
--- TODO - the nameing for these functions is confusing now that
--- I've added a Transform typeclass.
---
--- Look to unifying the naming scheme in someway.
+-- Note - YRange remains constant.
 --
 trafoPicture :: (Num u, Ord u) 
              => (Point2 u -> Point2 u) 
@@ -525,7 +544,7 @@ trafoPicture :: (Num u, Ord u)
              -> Picture u 
              -> Picture u
 trafoPicture fp fv = 
-    mapLocale $ \(frm,bb,_) -> locale (trafoFrame fp fv frm) (trafoBBox fp bb)
+    mapLocale $ \(frm,bb,yr) -> (trafoFrame fp fv frm, trafoBBox fp bb, yr)
 
 
 
@@ -706,11 +725,13 @@ ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
 ellipseBoundary = traceBoundary . ellipseControlPoints
 
 -- PROBLEM:
--- Currently a rotated circle has a different BBox to a 
--- non-rotated circle, because of how tangents are selected...
+-- A rotated circle has a different BBox to a non-rotated 
+-- circle, because of how tangents are selected...
 -- 
 -- This is the same as a diamond having a larger BBox
 -- than a square with same side-length
+--
+-- (This is unlikely to be addressed).
 --
 
 --------------------------------------------------------------------------------
@@ -730,19 +751,33 @@ movePic :: Num u => Vec2 u -> Picture u -> Picture u
 movePic v = mapLocale (moveLocale v) 
 
   
+-- HeightRange remains unchanged.
+--
 moveLocale :: Num u => Vec2 u -> Locale u -> Locale u
-moveLocale v (fr,bb,_) = locale (displaceOrigin v fr) (pointwise (.+^ v) bb)
+moveLocale v (fr,bb,hr) =(displaceOrigin v fr, pointwise (.+^ v) bb, hr)
 
 --------------------------------------------------------------------------------
 
 
 -- | Should this really be public?
 --
-extractFrame :: Num u => Picture u -> Frame2 u
+extractFrame :: Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_,_))     = fr
 extractFrame (Leaf     (fr,_,_) _)   = fr
 extractFrame (Picture  (fr,_,_) _)   = fr
 extractFrame (Clip     (fr,_,_) _ _) = fr
+
+extractYRange :: Picture u -> YRange u
+extractYRange (PicBlank (_,_,yr))     = yr
+extractYRange (Leaf     (_,_,yr) _)   = yr
+extractYRange (Picture  (_,_,yr) _)   = yr
+extractYRange (Clip     (_,_,yr) _ _) = yr
+
+
+frameHeight :: Num u => YRange u -> u
+frameHeight (YRange yhi ylo) = yhi - ylo
+
+
 
 
 -- This needs is for PostScript and SVG output - it should be 

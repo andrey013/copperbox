@@ -113,10 +113,11 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]]
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgMonad u Element
 picture _ (PicBlank _)            = return $ gElement [] []
+
 picture c (Leaf (fr,_,h) ones)    = do 
-    setFrameHeight h
+    setFrameHeight $ frameHeight h
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
-    return $ gElement (toListH $ frameChange h h fr) elts
+    return $ gElement (toListH $ frameChange (frameHeight h) (frameHeight h) fr) elts
 
 picture c (Picture (fr,_,_) ones)   = do
     elts <- F.foldlM (\acc e -> do { a <- picture c e; return (a:acc) }) [] ones

@@ -68,6 +68,7 @@ import qualified Text.PrettyPrint.Leijen as PP  -- package: wl-pprint
 
 
 import Control.Applicative
+import Control.Monad
 import Data.List ( intersperse )
 import Data.Ratio
 import Data.Time
@@ -178,7 +179,7 @@ ramp255 = clamp 0 255  . ceiling . (*255)
 -- information and so the representation is arbitrary.
 
 mkTimeStamp :: IO String
-mkTimeStamp = getZonedTime >>= return . format . zonedTimeToLocalTime
+mkTimeStamp = liftM (format . zonedTimeToLocalTime) getZonedTime
   where
     format t  = mkTime t ++ " " ++ mkDate t
     mkTime = concat . intersperse ":" . sequenceA tfuns . localTimeOfDay

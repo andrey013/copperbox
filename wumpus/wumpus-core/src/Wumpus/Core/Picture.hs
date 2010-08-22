@@ -100,13 +100,13 @@ stdFrame = ortho zeroPt
 -- This is useful for spacing rows or columns of pictures.
 --
 blankPicture :: Num u => BoundingBox u -> Picture u
-blankPicture bb = PicBlank (locale stdFrame bb)
+blankPicture bb = PicBlank (stdFrame, bb, boundaryYRange bb)
 
 
 -- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 --
 frame :: (Real u, Floating u, FromPtSize u) => Primitive u -> Picture u
-frame p = Leaf (locale stdFrame (boundary p)) (one p)
+frame p = Leaf (stdFrame, boundary p, primitiveYRange p) (one p)
  
 -- | Frame a picture within the supplied bounding box
 -- 
@@ -124,8 +124,8 @@ frame p = Leaf (locale stdFrame (boundary p)) (one p)
 --
 frameWithin :: (Real u, Floating u, FromPtSize u) 
             => Primitive u -> BoundingBox u -> Picture u
-frameWithin p@(PLabel _ _) bb = Leaf (locale stdFrame bb)  (one p)
-frameWithin p              bb = Leaf (locale stdFrame bb') (one p)
+frameWithin p@(PLabel _ _) bb = Leaf (stdFrame, bb, primitiveYRange p)  (one p)
+frameWithin p              bb = Leaf (stdFrame, bb', primitiveYRange p) (one p)
   where 
     bb' = bb `append` boundary p
 
@@ -142,12 +142,14 @@ frameWithin p              bb = Leaf (locale stdFrame bb') (one p)
 frameMulti :: (Real u, Floating u, FromPtSize u) 
            => [Primitive u] -> Picture u
 frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
-frameMulti (p:ps) = let (bb,ones) = step p ps 
-                    in Leaf (locale stdFrame bb)  ones 
+frameMulti (p:ps) = let (bb,yr,ones) = step p ps in Leaf (stdFrame,bb,yr) ones
   where
-    step a []     = (boundary a, one a)
-    step a (x:xs) = let (bb',rest) = step x xs
-                    in (boundary a `append` bb', cons a rest)
+    step a []     = (boundary a, primitiveYRange a, one a)
+    step a (x:xs) = let (bb',yr',rest) = step x xs
+                    in ( boundary a `append` bb'
+                       , primitiveYRange a `append` yr'
+                       , cons a rest
+                       )
 
 
 
@@ -157,10 +159,11 @@ frameMulti (p:ps) = let (bb,ones) = step p ps
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi []       = error "Wumpus.Core.Picture.multi - empty list"
-multi xs@(x:_) = Picture (locale stdFrame bb) ones 
+multi xs@(x:_) = Picture (stdFrame,bb,yr) ones 
   where
-    ones = fromList xs
-    bb   = F.foldr (\a b -> b `append` boundary a) (boundary x) xs
+    ones        = fromList xs
+    (bb,yr)     = F.foldr fn (boundary x, extractYRange x) xs
+    fn a (b,y)  = (b `append` boundary a, y `append` extractYRange a)
 
 
 -- | Create a Path from a start point and a list of PathSegments.
@@ -333,7 +336,7 @@ zfill = fillPath psBlack
 -- | Clip a picture with respect to the supplied path.
 --
 clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
-clip cp p = Clip (locale (ortho zeroPt) (boundary cp)) cp p
+clip cp p = Clip (ortho zeroPt, boundary cp, extractYRange p) cp p
 
 
 --------------------------------------------------------------------------------
@@ -490,15 +493,18 @@ zellipse = uncurry mkEllipse ellipseDefault
 -- This function cannot be used to shrink a boundary.
 --
 extendBoundary :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-extendBoundary x y = 
-    mapLocale $ \(fr,bb,_) -> locale fr (extBB (posve x) (posve y) bb)
+extendBoundary dx dy =  mapLocale $ \(fr,bb,yr) -> 
+    (fr, extBB (posve dx) (posve dy) bb, extYR (posve dy) yr)
   where
-    extBB x' y' (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
-        pt1 = P2 (x0-x') (y0-y')
-        pt2 = P2 (x1+x') (y1+y')
+    extBB x y (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
+        pt1 = P2 (x0-x) (y0-y)
+        pt2 = P2 (x1+x) (y1+y)
     
     posve n | n < 0     = 0
             | otherwise = n 
+
+
+    extYR y (YRange hi lo) = YRange (hi+y) (lo-y)
 
 --------------------------------------------------------------------------------
 -- Minimal support for Picture composition
@@ -511,10 +517,10 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb, boundaryHeight bb) (cons a $ one b)
+a `picOver` b = Picture (ortho zeroPt, bb, yr) (cons a $ one b)
   where
-    bb = (boundary a) `append` (boundary b)
-
+    bb = boundary a `append` boundary b
+    yr = extractYRange a `append` extractYRange b
 -- | 'picMoveBy' : @ picture -> vector -> picture @
 -- 
 --  Move a picture by the supplied vector. 
