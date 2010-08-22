@@ -500,11 +500,11 @@ extendBoundary dx dy =  mapLocale $ \(fr,bb,yr) ->
         pt1 = P2 (x0-x) (y0-y)
         pt2 = P2 (x1+x) (y1+y)
     
+    extYR y (YRange hi lo) = YRange (hi+y) (lo-y)
+    
     posve n | n < 0     = 0
             | otherwise = n 
 
-
-    extYR y (YRange hi lo) = YRange (hi+y) (lo-y)
 
 --------------------------------------------------------------------------------
 -- Minimal support for Picture composition

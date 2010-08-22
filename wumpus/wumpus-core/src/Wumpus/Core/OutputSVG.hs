@@ -40,7 +40,7 @@ module Wumpus.Core.OutputSVG
   
   ) where
 
--- import Wumpus.Core.AffineTrans
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
@@ -89,12 +89,12 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> [Content]
-svgDraw enc pic = execSvgMonad enc $ do
+svgDraw enc pic = execSvgMonad enc pg_height $ do
     elem1     <- picture False pic
     prefixXmlDecls (topLevelPic mbvec elem1)
   where
     (_,mbvec) = repositionProperties pic
-
+    pg_height = boundaryHeight $ boundary pic
 
 prefixXmlDecls :: Element -> SvgMonad u [Content]
 prefixXmlDecls e = do 
@@ -112,21 +112,25 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]]
 
 picture :: (Real u, Floating u, PSUnit u) 
         => Clipped -> Picture u -> SvgMonad u Element
-picture _ (PicBlank _)            = return $ gElement [] []
+picture _ (PicBlank _)              = return $ gElement [] []
 
-picture c (Leaf (fr,_,h) ones)    = do 
+picture c (Leaf (fr,bb,h) ones)     = do 
     setFrameHeight $ frameHeight h
     elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
-    return $ gElement (toListH $ frameChange (frameHeight h) (frameHeight h) fr) elts
+    fr_attrs <- frameChangeLeaf (boundaryHeight bb) fr
+    return $ gElement (toListH fr_attrs) elts
 
-picture c (Picture (fr,_,_) ones)   = do
-    elts <- F.foldlM (\acc e -> do { a <- picture c e; return (a:acc) }) [] ones
-    return $ gElement (toListH $ frameChange 0 0 fr) elts
+picture c (Picture (fr,bb,_) ones)  = do
+    (fr_attrs,dy) <- frameChangeNode (boundaryHeight bb) fr 
+    elts <- withExtDelta dy $ F.foldlM (\acc e -> do { a <- picture c e
+                                                     ; return (a:acc) }) [] ones
+    return $ gElement (toListH fr_attrs) elts
   
-picture _ (Clip (fr,_,_) p a)       = do 
-   cp <- clipPath p
-   e1 <- picture True a
-   return $ gElement (toListH $ frameChange 0 0 fr) [cp,e1]
+picture _ (Clip (fr,bb,_) p a)      = do 
+    (fr_attrs,dy) <- frameChangeNode (boundaryHeight bb) fr 
+    cp <- clipPath p
+    e1 <- withExtDelta dy $ picture True a
+    return $ gElement (toListH fr_attrs) [cp,e1]
 
 
 primitive :: (Real u, Floating u, PSUnit u) 
@@ -332,28 +336,20 @@ pathSegment (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 
 --------------------------------------------------------------------------------
 
-
--- this works - only when there is no scaling...
-{-
-
-frameChange :: PSUnit u => Frame2 u -> HAttr
-frameChange fr@(Frame2 e0 e1 (P2 x y)) 
-    | standardFrame fr = emptyH
-    | otherwise        = attr_transform $ valMatrix m3
+frameChangeNode :: PSUnit u => u -> Frame2 u -> SvgMonad u (HAttr,u)
+frameChangeNode _  fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy))
+    | standardFrame fr  = return (id,0)
+    | otherwise         = return (mtrx_attr,oy)
   where
-    m1 = frame2Matrix $ Frame2 e0 e1 zeroPt
-    (M3'3 _ _ ox _ _ oy _ _ _) = scalingMatrix 1 (-1) * translationMatrix x y
-
-    m3 = translationMatrix ox oy * m1
--}
+    mtrx_attr = attr_transform $ val_matrix e0x e0y e1x e1y ox 0
 
 
-frameChange :: PSUnit u => u -> u -> Frame2 u -> HAttr
-frameChange h_frame h_page fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
-    | standardFrame fr = emptyH
-    | otherwise        = attr_transform $ val_matrix e0x e0y e1x e1y ox y
+frameChangeLeaf :: PSUnit u => u -> Frame2 u -> SvgMonad u HAttr
+frameChangeLeaf bb_height (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) =
+    (\pg_height inh_delta -> mk $ pg_height - bb_height - inh_delta - oy)
+       <$> askPageHeight <*> getInhDelta      
   where
-    y = negate $ (e1x * h_frame + e1y * h_frame - h_page) + oy
+    mk y = attr_transform $ val_matrix e0x e0y e1x e1y ox y
 
 
 

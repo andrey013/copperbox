@@ -50,8 +50,10 @@ module Wumpus.Core.SVG
 
   , set 
   , get
-  , ask
-  , asks
+  , askTextEncoder
+  , askPageHeight
+  , getInhDelta
+  , withExtDelta
 
   -- * Build SVG
   , SvgPath
@@ -128,21 +130,33 @@ type HAttr = H Attr
 
 
 data St u = St 
-      { clip_count    :: Int
-      , frame_height  :: u 
+      { clip_count    :: !Int
+      , frame_height  :: !u 
       }
 
 st_zero :: Num u => St u
 st_zero = St { clip_count = 0, frame_height = 0 } 
 
+data Env u = Env
+      { text_enc    :: TextEncoder
+      , page_height :: !u
+      , inh_y_delta :: !u
+      }
+
 -- | The SVG monad - which wraps a state monad to generate 
 -- fresh names.
 
 newtype SvgMonad u a = SvgMonad { 
-          getSvgMonad :: TextEncoder -> St u -> (a, St u) }
+          getSvgMonad :: Env u -> St u -> (a, St u) }
 
-runSvgMonad :: Num u => TextEncoder -> SvgMonad u a -> (a, St u)
-runSvgMonad enc mf = getSvgMonad mf enc st_zero
+runSvgMonad :: Num u => TextEncoder -> u -> SvgMonad u a -> (a, St u)
+runSvgMonad enc pg_height mf = getSvgMonad mf env st_zero
+  where
+    env = Env { text_enc    = enc
+              , page_height = pg_height
+              , inh_y_delta = 0
+              }
+
 
 
 instance Functor (SvgMonad u) where
@@ -171,17 +185,24 @@ sets_ :: (St u -> St u) -> SvgMonad u ()
 sets_ f = SvgMonad $ \_ s -> ((), f s)
 
 
-ask :: SvgMonad u TextEncoder
-ask = SvgMonad $ \r s -> (r,s)
+askTextEncoder :: SvgMonad u TextEncoder
+askTextEncoder = SvgMonad $ \r s -> (text_enc r,s)
 
-asks :: (TextEncoder -> a) -> SvgMonad u a
-asks f = SvgMonad $ \r s -> (f r,s)
+askPageHeight :: SvgMonad u u
+askPageHeight = SvgMonad $ \r s -> (page_height r,s)
 
+getInhDelta :: SvgMonad u u
+getInhDelta = SvgMonad $ \r s -> (inh_y_delta r,s)
+
+withExtDelta :: Num u => u -> SvgMonad u a -> SvgMonad u a
+withExtDelta dy mf = SvgMonad $ \r s -> getSvgMonad mf (upd r) s 
+  where
+    upd env@(Env {inh_y_delta=i}) = env { inh_y_delta = i + dy} 
 
 -- | Run the SVG monad.
 --
-execSvgMonad :: Num u => TextEncoder -> SvgMonad u a -> a
-execSvgMonad enc mf = fst $ runSvgMonad enc mf
+execSvgMonad :: Num u => TextEncoder -> u -> SvgMonad u a -> a
+execSvgMonad enc pg_height mf = fst $ runSvgMonad enc pg_height mf
 
 
 -- | Get the current clip label.
@@ -198,12 +219,12 @@ newClipLabel = do
 
 
 askEncodingName :: SvgMonad u String
-askEncodingName = asks svg_encoding_name
+askEncodingName = svg_encoding_name <$> askTextEncoder
 
 askGlyphName :: String -> SvgMonad u (Either GlyphName GlyphName)
-askGlyphName nm = SvgMonad $ \r s -> case lookupByGlyphName nm r of
+askGlyphName nm = SvgMonad $ \r s -> case lookupByGlyphName nm (text_enc r) of
     Just a -> (Right $ escapeCharCode a, s)
-    Nothing -> (Left $ escapeCharCode $ svg_fallback r, s)
+    Nothing -> (Left $ escapeCharCode $ svg_fallback (text_enc r), s)
 
 escapeCharCode :: CharCode -> String
 escapeCharCode i = "&#" ++ show i ++ ";"
