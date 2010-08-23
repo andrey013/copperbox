@@ -29,9 +29,9 @@ description:
   .
   For actually drawing pictures, diagrams, etc. Wumpus is very 
   low level. There is a supplemantary package @wumpus-basic@ 
-  available that helps create certain types of diagram, but even 
-  this lacks the higher-level stuff (polygons, arrows etc.) that 
-  would make creating general drawings easy.
+  available that helps create certain types of diagram, but it is
+  experimental - functionality is added an dropped between 
+  releases.
   .
   Some of the design decisions made for wumpus-core are not 
   sophisticated (e.g. how attributes like colour are handled, 

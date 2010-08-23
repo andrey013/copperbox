@@ -120,74 +120,18 @@ rgbEllipse rgb = ellipse rgb 60 30 zeroPt
 
 rgbPath :: DRGB -> DPrimitive
 rgbPath rgb = ostroke rgb $ dog_kennel
-
-
---------------------------------------------------------------------------------
--- Hughes Lists for Hughes Paths
-
--- At some point /wumpus-extra/ will have code along these lines...
-
-type H a = [a] -> [a]
-
-emptyH :: H a
-emptyH = id
-
-
--- NOTE - this is redundant if we want consH 
--- rather than snocH.
--- 
--- Some of the drawings do appear to have problems with 
--- Z-order so we'll keep it for now.
---
-consH :: a -> H a -> H a
-consH a hf = hf . (a:)
-
-toListH :: H a -> [a]
-toListH = ($ [])
-
-
-
---------------------------------------------------------------------------------
--- /Hughes/ paths
-
-
-type HPath u = (Point2 u, H (PathSegment u))
-
-makePath :: HPath u -> Path u
-makePath (s,hf) = path s (toListH hf)
-
-
-start_path :: (u,u) -> HPath u
-start_path (x,y) = (P2 x y, emptyH)
-
-infixl 6 `line_to`, `curve_to`
-
-line_to :: HPath u -> (u,u) -> HPath u
-line_to (s,f) (x,y) = (s, lineTo (P2 x y) `consH` f)
-
-curve_to :: HPath u -> ((u,u),(u,u),(u,u)) -> HPath u
-curve_to (s,f) ((c1x,c1y),(c2x,c2y),(ex,ey)) = 
-    (s, curveTo (P2 c1x c1y) (P2 c2x c2y) (P2 ex ey) `consH` f)
-
-
---
--- vertical (length) & horizontal (length) might
--- be handy...
--- 
--- But we would need to track current position, vis-a-vis a 
--- state monad, so this is taking things towards a big module.
---
---
-
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...
 
+
 dog_kennel :: DPath
-dog_kennel = makePath $ 
-    start_path (0,0) `line_to`  (0,60)   `line_to` (40,100)
-                     `line_to`  (80,60)  `line_to` (80,0)
-                     `line_to`  (60,0)   `line_to` (60,30)
-                     `curve_to` ((60,50), (50,60), (40,60))
-                     `curve_to` ((30,60), (20,50), (20,30))
-                     `line_to`  (20,0)
-                        
+dog_kennel = path zeroPt [ lineTo  (P2 0 60) 
+                         , lineTo  (P2 40 100)
+                         , lineTo  (P2 80 60)
+                         , lineTo  (P2 80 0)
+                         , lineTo  (P2 60 0)  
+                         , lineTo  (P2 60 30)
+                         , curveTo (P2 60 50) (P2 50 60) (P2 40 60)
+                         , curveTo (P2 30 60) (P2 20 50) (P2 20 30)
+                         , lineTo  (P2 20 0)
+                         ]

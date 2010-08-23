@@ -528,6 +528,7 @@ a `picOver` b = Picture (ortho zeroPt, bb, yr) (cons a $ one b)
 picMoveBy :: Num u => Picture u -> Vec2 u -> Picture u
 p `picMoveBy` v = v `movePic` p 
 
+
 -- | 'picBeside' : @ picture -> picture -> picture @
 --
 -- Move the second picture to sit at the right side of the
@@ -536,7 +537,10 @@ p `picMoveBy` v = v `movePic` p
 picBeside :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
-    v = hvec $ boundaryWidth $ boundary a
+    (P2 x1 _) = ur_corner $ boundary a
+    (P2 x2 _) = ll_corner $ boundary b 
+    v         = hvec $ x1 - x2 
+
 
 -- | 'illustrateBounds' : @ colour -> picture -> picture @
 -- 
@@ -557,10 +561,8 @@ illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p)
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
                      => DRGB -> Primitive u -> Picture u
-illustrateBoundsPrim rgb p = frameMulti (boundsPrims rgb p ++ [p])
+illustrateBoundsPrim rgb p = frameMulti (p : boundsPrims rgb p)
 
--- Note - above has to use snoc (++ [p]) to get the picture to
--- draw above the bounding box image.
 
 
 -- | Draw a the rectangle of a bounding box, plus cross lines

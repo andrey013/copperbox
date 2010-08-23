@@ -64,11 +64,6 @@ dZero :: Double
 dZero = 0
 
 
--- coordChange ::  (Num u, Scale t, u ~ DUnit t) => t -> t
--- coordChange = scale 1 (-1)
-
-svg_reflection_matrix :: Num u => Matrix3'3 u
-svg_reflection_matrix = scalingMatrix 1 (-1)
 
 --------------------------------------------------------------------------------
 
@@ -255,8 +250,7 @@ ellipseGeom pt ctm
                               <$> rescalePoint pt
   where
     mtrxTrafo x y = attr_transform $ valMatrix $ 
-                       translMatrixRepCTM x y ctm * svg_reflection_matrix
-
+                       translationMatrix x y * (invert $ matrixRepCTM ctm)
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
@@ -336,22 +330,33 @@ pathSegment (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 
 --------------------------------------------------------------------------------
 
-frameChangeNode :: PSUnit u => u -> Frame2 u -> SvgMonad u (HAttr,u)
-frameChangeNode _  fr@(Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy))
+frameChangeNode :: (Fractional u, PSUnit u) 
+                => u -> Frame2 u -> SvgMonad u (HAttr,u)
+frameChangeNode _  fr@(Frame2 e0 e1 (P2 ox oy))
     | standardFrame fr  = return (id,0)
     | otherwise         = return (mtrx_attr,oy)
   where
-    mtrx_attr = attr_transform $ val_matrix e0x e0y e1x e1y ox 0
+    basis     = basisMatrix e0 e1 
+    mtrx_attr = attr_transform $ valMatrix $ translationMatrix  ox 0 * basis
 
 
-frameChangeLeaf :: PSUnit u => u -> Frame2 u -> SvgMonad u HAttr
-frameChangeLeaf bb_height (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) =
-    (\pg_height inh_delta -> mk $ pg_height - bb_height - inh_delta - oy)
+frameChangeLeaf :: (Fractional u, PSUnit u)
+                => u -> Frame2 u -> SvgMonad u HAttr
+frameChangeLeaf bb_height (Frame2 e0 e1 (P2 ox oy)) =
+    (\pg_height inh_delta -> mk $ pg_height - (bb_height + inh_delta + oy))
        <$> askPageHeight <*> getInhDelta      
   where
-    mk y = attr_transform $ val_matrix e0x e0y e1x e1y ox y
+    basis = basisMatrix e0 e1
+    mk y  = attr_transform $ valMatrix $ translationMatrix ox y * basis
+
+-- scaling apparently works, roatation doesn\'t...
+--
+basisMatrix :: Fractional u => Vec2 u -> Vec2 u -> Matrix3'3 u
+basisMatrix e0 e1 = frame2Matrix $ Frame2 e0 e1 zeroPt
 
 
+-- svg_sm :: Num u => Matrix3'3 u
+-- svg_sm = scalingMatrix 1 (-1)
 
 
 snoc_attrs :: Element -> HAttr -> Element
