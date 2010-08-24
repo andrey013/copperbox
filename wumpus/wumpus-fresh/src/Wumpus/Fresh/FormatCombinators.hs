@@ -19,6 +19,7 @@ module Wumpus.Fresh.FormatCombinators
     Doc
   , Format(..)
   , empty
+  , showsDoc
   , (<>)
   , (<+>)  
   , hcat
@@ -102,6 +103,10 @@ infixr 6 <>, <+>
 empty :: Doc
 empty = Doc 0 id
 
+-- | Create a document from a ShowS function.
+--
+showsDoc :: ShowS -> Doc
+showsDoc = Doc 0 
 
 
 -- | Horizontally concatenate two documents with no space 
@@ -125,7 +130,9 @@ hcat = foldr (<>) empty
 -- | Horizontally concatenate a list of documents with @(\<+\>)@.
 --
 hsep :: [Doc] -> Doc
-hsep = foldr (<+>) empty
+hsep []     = empty 
+hsep [a]    = a
+hsep (a:as) = foldl' (<+>) a as
 
 -- | Vertically concatenate a list of documents, one doc per 
 -- line.

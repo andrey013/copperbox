@@ -31,7 +31,7 @@ module Wumpus.Fresh.BoundingBox
   -- * Operations
   , bbox
   , obbox
-  , destBox
+  , destBoundingBox
   , boundaryUnion 
   , traceBoundary
   , retraceBoundary
@@ -134,8 +134,8 @@ obbox w h = BBox zeroPt (P2 w h)
 -- Arguably this is easier to pattern match upon as it removes a 
 -- layer of nesting.
 --
-destBox :: BoundingBox u -> (u,u,u,u)
-destBox (BBox (P2 llx lly) (P2 urx ury)) = (llx, lly, urx, ury) 
+destBoundingBox :: BoundingBox u -> (u,u,u,u)
+destBoundingBox (BBox (P2 llx lly) (P2 urx ury)) = (llx, lly, urx, ury) 
 
 
 -- | The union of two bounding boxes. This is also the @append@ 

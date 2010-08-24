@@ -34,7 +34,10 @@ library
     Wumpus.Fresh.FormatCombinators,
     Wumpus.Fresh.FreshIR,
     Wumpus.Fresh.Geometry,
+    Wumpus.Fresh.GraphicsState,
     Wumpus.Fresh.OneList,
+    Wumpus.Fresh.PostScript,
+    Wumpus.Fresh.PostScriptDoc,
     Wumpus.Fresh.PtSize,
     Wumpus.Fresh.SVG,
     Wumpus.Fresh.Utils

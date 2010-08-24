@@ -18,7 +18,9 @@
 
 module Wumpus.Fresh.FreshIR
   ( 
-    Picture(..)
+
+    RGB255(..)
+  , Picture(..)
   , DPicture
 
   , Primitive(..)
@@ -39,6 +41,7 @@ module Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.BoundingBox
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.GraphicsState
 import Wumpus.Fresh.OneList
 import Wumpus.Fresh.Utils
 
@@ -47,19 +50,40 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
+import Data.Word
+
+-- | Colours levels are in the range [0..255]
+-- 
+-- Note - this is the format used by SVG, whereas PostScript uses 
+-- [0..1]. 
+--
+-- It is more efficient to prefer SVG here.
+--
+data RGB255 = RGB255 !Word8 !Word8 !Word8
+  deriving (Eq,Ord,Show)
 
 data Picture u = Leaf (Locale u) (OneList (Primitive u))
   deriving (Eq,Show)
 
 type DPicture = Picture Double
 
-data Primitive u = PEllipse (PrimEllipse u)
+data Primitive u = PEllipse EllipseProps (PrimEllipse u)
   deriving (Eq,Show)
 
 type DPrimitive = Primitive Double
 
 
 type Locale u = BoundingBox u
+
+
+-- | Ellipses and circles are always closed.
+--
+data EllipseProps = EFill RGB255
+                  | EStroke [StrokeAttr] RGB255 
+
+                  -- Note - first colour fill, second colour stroke.
+                  | EFillStroke RGB255 [StrokeAttr] RGB255 
+  deriving (Eq,Show)
 
 
 -- Ellipse represented by center and half_width * half_height
@@ -95,6 +119,12 @@ type instance DUnit (PrimEllipse u) = u
 --------------------------------------------------------------------------------
 -- instances
 
+instance Format RGB255 where
+  format (RGB255 0   0   0)    = text "*black*"
+  format (RGB255 255 255 255)  = text "*white*"
+  format (RGB255 r   g   b)    = integral r <> comma <> integral g 
+                                            <> comma <> integral b
+
 instance (Num u, PSUnit u) => Format (Picture u) where
   format (Leaf m prims)     = vcat [ text "** Leaf-pic **"
                                    , fmtLocale m 
@@ -111,8 +141,8 @@ fmtLocale bb = format bb
 
 
 instance PSUnit u => Format (Primitive u) where
-  format (PEllipse e)  = 
-      vcat [text "ellipse:", indent 2 (format e) ]
+  format (PEllipse props e)  = 
+      vcat [text "ellipse:" <> format props, indent 2 (format e) ]
 
 
 instance PSUnit u => Format (PrimEllipse u) where
@@ -129,12 +159,17 @@ instance PSUnit u => Format (PrimCTM u) where
                          <+> text "ang="  <+> format ang)
 
 
+instance Format EllipseProps where
+  format (EFill rgb)          = format rgb <+> text "Fill"
+  format (EStroke _ rgb)      = format rgb <+> text "Stroke"
+  format (EFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
+                            <+> format s <+> text "Stroke"   
 
 
 --------------------------------------------------------------------------------
 
 instance (Real u, Floating u) => Boundary (Primitive u) where
-  boundary (PEllipse e)     = boundary e
+  boundary (PEllipse _ e) = boundary e
 
 
 instance (Real u, Floating u) => Boundary (PrimEllipse u) where
@@ -195,7 +230,7 @@ identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
 
 
 ellipse_ :: Num u => u -> u -> Point2 u -> Primitive u
-ellipse_ hw hh pt = PEllipse body
+ellipse_ hw hh pt = PEllipse (EFill (RGB255 127 0 0))body
   where
     body = PrimEllipse { ellipse_center        = pt
                        , ellipse_half_width    = hw

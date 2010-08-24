@@ -32,9 +32,8 @@ module Wumpus.Fresh.Utils
   
 
 
-  -- * PostScript timetmap
-  , mkTimeStamp
-
+  -- * PostScript time stamp
+  , psTimeStamp
 
   -- * Hughes list
   , H
@@ -128,6 +127,14 @@ mkTimeStamp = liftM (toListH . format . zonedTimeToLocalTime) getZonedTime
     format t  = (timeOfDay $ localTimeOfDay  t) . showChar ' ' . localDayS t
     localDayS = showString . showGregorian . localDay
 
+-- | To be used with getZonedTime
+
+psTimeStamp :: ZonedTime -> ShowS
+psTimeStamp zt = localTimeS . showChar ' ' . localDayS
+  where
+    local_tim   = zonedTimeToLocalTime zt
+    localTimeS  = timeOfDay  $ localTimeOfDay $ local_tim
+    localDayS   = showString $ showGregorian  $ localDay local_tim
 
 timeOfDay :: TimeOfDay -> ShowS
 timeOfDay t = 

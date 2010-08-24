@@ -10,18 +10,32 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Fresh SVG.
+-- Fresh PostScript.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Fresh.PostScript
   where
 
-import Wumpus.Fresh.BoundingBox
+import Wumpus.Fresh.FormatCombinators
+import Wumpus.Fresh.FreshIR
+import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.PostScriptDoc
 import Wumpus.Fresh.Utils
 
-import Text.PrettyPrint.Leijen                  -- package: wl-pprint
+-- import Data.Time
 
 
-epsPrologue :: PSUnit u => BoundingBox u -> Doc
-epsPrologue bb = undefined
+-- This will need to become monadic to handle /colour delta/.
+--
+fillEllipse :: PSUnit u => RGB255 -> u -> Point2 u -> Doc
+fillEllipse rgb radius (P2 x y) = 
+    vcat [ ps_newpath,  ps_arc x y radius 0 360, ps_closepath, ps_fill ]
+
+strokeEllipse :: PSUnit u => RGB255 -> u -> Point2 u -> Doc
+strokeEllipse rgb radius (P2 x y) = 
+    vcat [ ps_newpath,  ps_arc x y radius 0 360, ps_closepath, ps_stroke ]
+
+
+
+
