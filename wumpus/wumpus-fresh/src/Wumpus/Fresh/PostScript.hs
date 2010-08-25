@@ -69,19 +69,18 @@ askCharCode i = PsMonad $ \r -> case lookupByCharCode i r of
 
 
 primPath :: PSUnit u
-           => PathProps -> PrimPath u -> PsMonad Doc
-primPath (CFill rgb)     p = 
+         => PathProps -> PrimPath u -> PsMonad Doc
+primPath (CFill _rgb)     p = 
     (\doc -> vcat [doc, ps_closepath, ps_fill]) <$> startPath p
 
-primPath (CStroke _ rgb) p = 
+primPath (CStroke _ _rgb) p = 
     (\doc -> vcat [doc, ps_closepath, ps_stroke]) <$> startPath p
  
-primPath (OStroke _ rgb) p = 
+primPath (OStroke _ _rgb) p = 
     (\doc -> vcat [doc, ps_stroke]) <$> startPath p
 
-
-primPath (CFillStroke f attrs s) p = (\d1 d2 -> vcat [d1,d2]) 
-    <$> primPath (CFill f) p <*> primPath (CStroke attrs f) p
+primPath (CFillStroke fc attrs sc) p = (\d1 d2 -> vcat [d1,d2]) 
+    <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
 
 {-
 outputPath (CStroke xs) c p =
@@ -116,23 +115,23 @@ pathSegment (PCurveTo p1 p2 p3) = pure $ ps_curveto p1 p2 p3
 --
 primEllipse :: (Real u, Floating u, PSUnit u) 
             => EllipseProps -> PrimEllipse u -> PsMonad Doc
-primEllipse props ell@(PrimEllipse center hw hh ctm) =
+primEllipse props (PrimEllipse center hw hh ctm) =
     bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
   where
     drawF (EFill rgb)               pt = fillArcPath rgb hw pt
-    drawF (EStroke attrs rgb)       pt = strokeArcPath rgb hw pt
-    drawF (EFillStroke fc attrs sc) pt = 
+    drawF (EStroke _attrs rgb)       pt = strokeArcPath rgb hw pt
+    drawF (EFillStroke fc _attrs sc) pt = 
         vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc hw pt
                        
 
 -- This will need to become monadic to handle /colour delta/.
 --
 fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
-fillArcPath rgb radius pt = pure $ 
+fillArcPath _rgb radius pt = pure $ 
     vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_fill ]
 
 strokeArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
-strokeArcPath rgb radius pt = pure $ 
+strokeArcPath _rgb radius pt = pure $ 
     vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_stroke ]
 
 

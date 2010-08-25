@@ -193,9 +193,9 @@ instance Format RGB255 where
                                             <> comma <> integral b
 
 instance (Num u, PSUnit u) => Format (Picture u) where
-  format (Leaf m prims)     = vcat [ text "** Leaf-pic **"
-                                   , fmtLocale m 
-                                   , indent 2 (fmtPrims prims) ]
+  format (Leaf m prims)     = hangLines 2 [ text "** Leaf-pic **"
+                                          , fmtLocale m 
+                                          , fmtPrims prims ]
 
 
 fmtPrims :: PSUnit u => OneList (Primitive u) -> Doc
@@ -209,13 +209,13 @@ fmtLocale bb = format bb
 
 instance PSUnit u => Format (Primitive u) where
   format (PPath props _ p)    = 
-      vcat [ text "path:" <+> format props, indent 2 (format p) ]
+      hangLines 2 [ text "path:" <+> format props, format p ]
 
   format (PLabel props _ l)   =
-      vcat [ text "label:" <+> format props, indent 2 (format l) ]
+      hangLines 2 [ text "label:" <+> format props, format l ]
 
   format (PEllipse props _ e) = 
-      vcat [ text "ellipse:" <+> format props, indent 2 (format e) ]
+      hangLines 2 [ text "ellipse:" <+> format props, format e ]
 
 
 instance PSUnit u => Format (PrimPath u) where

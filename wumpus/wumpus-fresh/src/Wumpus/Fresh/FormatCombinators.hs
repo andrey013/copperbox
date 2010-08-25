@@ -65,20 +65,32 @@ module Wumpus.Fresh.FormatCombinators
   , tupled
   , semiBraces
 
-  , indent
+  , indentH
   , indentLines
   , hangLines
     
   ) where
 
 import Data.Monoid
-import Data.List ( foldl' )
 import Numeric
 
-data Doc = Doc { _indent_level :: !Int, _doc_shows :: ShowS }
+-- | Doc is a Join List ...
+--
+data Doc = Doc1 ShowS 
+         | Join Doc   Doc
+         | Line !Int  Doc 
 
 unDoc :: Doc -> ShowS
-unDoc (Doc i sf) = if (i < 1) then sf else showString (replicate i ' ') . sf
+unDoc = step 0
+  where
+   step _ (Doc1 sf)  = sf
+   step n (Join a b) = step n a . step n b
+   step n (Line i d) = indentS (n+i) (step (n+i) d) . showChar '\n'
+
+
+indentS :: Int -> ShowS -> ShowS
+indentS i sf | i < 1     = sf
+             | otherwise = (showString $ replicate i ' ')  . sf
 
 runDoc :: Doc -> String
 runDoc = ($ "") . unDoc
@@ -103,31 +115,31 @@ infixr 6 <>, <+>
 -- | Create an empty, zero length document.
 --
 empty :: Doc
-empty = Doc 0 id
+empty = Doc1 id
 
 -- | Create a document from a ShowS function.
 --
 showsDoc :: ShowS -> Doc
-showsDoc = Doc 0 
+showsDoc = Doc1
 
 
 -- | Horizontally concatenate two documents with no space 
 -- between them.
 -- 
 (<>) :: Doc -> Doc -> Doc
-Doc i a <> doc = Doc i $ a . unDoc doc 
+a <> b = Join a b 
 
 
 -- | Horizontally concatenate two documents with a single space 
 -- between them.
 -- 
 (<+>) :: Doc -> Doc -> Doc
-Doc i a <+> doc = Doc i $ a . showChar ' ' . unDoc doc
+a <+> b = Join a (Join space b)
 
--- | Vertical concatenate two documents with a a line break.
+-- | Vertical concatenate two documents with a line break.
 -- 
 vconcat :: Doc -> Doc -> Doc
-vconcat (Doc i a)  doc2 = Doc i $ a . showChar '\n' . unDoc doc2
+vconcat a b = Join (Line 0 a) b
 
 
 
@@ -151,24 +163,20 @@ hsep = separate space
 -- | Vertically concatenate a list of documents, with a line 
 -- break between each doc.
 --
--- Note - the tail of the list of docs is /rendered/, so applying
--- indent to the result of 'vcat' will only indent the first line.
--- 
 vcat :: [Doc] -> Doc
-vcat []            = Doc 0 id
-vcat [a]           = a
-vcat (Doc i sf:as) = Doc i (sf . foldl' fn id as)
+vcat []     = empty
+vcat (x:xs) = step x xs 
   where
-    fn acc e = acc . showChar '\n' . unDoc e
-
+    step acc (z:zs) = step (acc `vconcat` z) zs
+    step acc []     = acc
 
 -- | Create a document from a literal string.
 -- 
--- The string should not contain tabs or newlines (though this
--- is not enforced). 
+-- The string should not contain newlines (though this is not 
+-- enforced). 
 --
 text :: String -> Doc
-text = Doc 0 . showString
+text = Doc1 . showString
 
 
 -- | Create a document from a literal character.
@@ -176,34 +184,34 @@ text = Doc 0 . showString
 -- The char should not be a tab or newline. 
 --
 char :: Char -> Doc
-char = Doc 0 . showChar
+char = Doc1 . showChar
 
 -- | Show the Int as a Doc.
 --
 -- > int  = text . show
 --
 int :: Int -> Doc
-int  = Doc 0 . showInt
+int  = Doc1 . showInt
 
 -- | Show the Integer as a Doc.
 --
 integer :: Integer -> Doc
-integer = Doc 0 . showInt
+integer = Doc1 . showInt
 
 -- | Show an \"integral value\" as a Doc via 'fromIntegral'.
 --
 integral :: Integral a => a -> Doc
-integral = Doc 0 . showInt
+integral = Doc1 . showInt
 
 -- | Show the Float as a Doc.
 --
 float :: Double -> Doc
-float = Doc 0 . showFloat
+float = Doc1 . showFloat
 
 -- | Show the Double as a Doc.
 --
 double :: Double -> Doc
-double = Doc 0 . showFloat
+double = Doc1 . showFloat
  
 -- | Create a Doc containing a single space character.
 --
@@ -237,7 +245,7 @@ line = char '\n'
 -- Also it should only be used for single line Doc\'s.
 -- 
 fill :: Int -> Doc -> Doc
-fill i d = Doc 0 (padr i ' ' $ unDoc d) 
+fill i d = Doc1 (padr i ' ' $ unDoc d) 
 
 padr :: Int -> Char -> ShowS -> ShowS
 padr i c df = step (length $ df []) 
@@ -357,46 +365,36 @@ semiBraces = braces . punctuate semicolon
 
 
 
--- | Indent a Doc
---
-indent :: Int -> Doc -> Doc
-indent i (Doc n sf)  = Doc (n+i) sf
 
 
--- | Indent a list of Docs.
+-- | Horizontally indent a Doc.
 --
--- Note - the tail of the list of docs is /rendered/ to the 
--- supplied indent level, so identLines cannot be applied twice. 
+-- Note - this space-prefixes the Doc on /the current line/. It
+-- does not indent subsequent lines if the Doc spans multiple 
+-- lines.
 --
--- > indentLines 2 [indentLines 2 [text "Aaa", text "Bbb", text "Ccc"]] 
---
--- Gives (with dot representing a space):
---
--- > ....Aaa 
--- > ..Bbb
--- > ..Ccc
+indentH :: Int -> Doc -> Doc
+indentH i d | i < 1     = d
+            | otherwise = Join (text $ replicate i ' ') d
+
+-- | Indent a list of the lines.
 --
 indentLines :: Int -> [Doc] -> Doc
-indentLines _ []            = empty
-indentLines i (Doc n sf:ds) = Doc (i+n) (sf . rest) 
+indentLines _ []     = empty
+indentLines i (x:xs) = step (Line i x) xs 
   where
-    rest = foldr (\e acc -> (unDoc $ indent i e) . acc) id ds
+    step acc (z:zs) = step (Join acc (Line i z)) zs
+    step acc []     = acc
+
 
 
 -- | Print the first line at the current indentation level, then 
--- indent all subsequent lines by the initial indentation level  
--- plus the supplied Int.
+-- further indent all subsequent lines the supplied size.
 --
--- > hangLines 3 [text "Aaa", text "Bbb", text "Ccc"]
---
--- Gives (with dot representing a space):
---
--- > Aaa 
--- > ...Bbb
--- > ...Ccc
 --
 hangLines :: Int -> [Doc] -> Doc
-hangLines _ []            = empty
-hangLines i (Doc n sf:ds) = Doc n (sf . rest) 
+hangLines _ []     = empty
+hangLines i (x:xs) = step (Line 0 x) xs 
   where
-    rest = foldr (\e acc -> (unDoc $ indent (i+n) e) . acc) id ds 
+    step acc (z:zs) = step (Join acc (Line i z)) zs
+    step acc []     = acc

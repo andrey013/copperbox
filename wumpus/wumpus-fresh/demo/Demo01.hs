@@ -21,3 +21,16 @@ demo02 = runPsMonad latin1Encoder $ fillArcPath (RGB255 0 0 0) (20::Double) zero
 
 demo03 :: Doc
 demo03 = hsep (map int [1..10]) <> text "next"
+
+
+demo04 :: Doc
+demo04 = vcat [ text "one...", indentH 2 (text "two."), text "three." ]
+
+demo05 :: Doc
+demo05 = hangLines 4 $ map text ["one...", "two...", "three.", "four..", "five.."]
+
+demo06 :: Doc
+demo06 = indentLines 2 $ map text ["one...", "two...", "three.", "four..", "five.."]
+
+demo07 :: Doc
+demo07 = indentLines 2 [text ".....", demo05]
