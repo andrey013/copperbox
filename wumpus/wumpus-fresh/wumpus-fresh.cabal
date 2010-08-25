@@ -32,6 +32,7 @@ library
   exposed-modules:
     Wumpus.Fresh.BoundingBox,
     Wumpus.Fresh.FormatCombinators,
+    Wumpus.Fresh.FontSize,
     Wumpus.Fresh.FreshIR,
     Wumpus.Fresh.Geometry,
     Wumpus.Fresh.GraphicsState,
@@ -40,6 +41,9 @@ library
     Wumpus.Fresh.PostScriptDoc,
     Wumpus.Fresh.PtSize,
     Wumpus.Fresh.SVG,
+    Wumpus.Fresh.TextEncoder,
+    Wumpus.Fresh.TextInternal,
+    Wumpus.Fresh.TextLatin1,
     Wumpus.Fresh.Utils
 
 

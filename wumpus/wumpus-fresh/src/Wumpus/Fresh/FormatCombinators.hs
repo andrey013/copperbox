@@ -22,6 +22,7 @@ module Wumpus.Fresh.FormatCombinators
   , showsDoc
   , (<>)
   , (<+>)  
+  , separate
   , hcat
   , hsep
   , vcat
@@ -122,6 +123,14 @@ Doc i a <> doc = Doc i $ a . unDoc doc
 (<+>) :: Doc -> Doc -> Doc
 Doc i a <+> doc = Doc i $ a . showChar ' ' . unDoc doc
 
+
+separate :: Doc -> [Doc] -> Doc
+separate _   []     = empty
+separate sep (a:as) = step a as
+  where
+    step acc []     = acc
+    step acc (x:xs) = step (acc <> sep <> x) xs
+
 -- | Horizontally concatenate a list of documents with @(\<\>)@.
 --
 hcat :: [Doc] -> Doc
@@ -130,9 +139,7 @@ hcat = foldr (<>) empty
 -- | Horizontally concatenate a list of documents with @(\<+\>)@.
 --
 hsep :: [Doc] -> Doc
-hsep []     = empty 
-hsep [a]    = a
-hsep (a:as) = foldl' (<+>) a as
+hsep = separate space
 
 -- | Vertically concatenate a list of documents, one doc per 
 -- line.

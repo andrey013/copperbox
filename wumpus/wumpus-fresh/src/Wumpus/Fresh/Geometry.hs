@@ -29,7 +29,7 @@ module Wumpus.Fresh.Geometry
   , DVec2
   , Point2(..)
   , DPoint2
-  , Matrix3'3
+  , Matrix3'3(..)
   , DMatrix3'3
 
   , Radian

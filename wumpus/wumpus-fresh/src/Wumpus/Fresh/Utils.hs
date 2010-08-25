@@ -50,7 +50,6 @@ module Wumpus.Fresh.Utils
 import qualified Wumpus.Fresh.FormatCombinators as Fmt
 
 
-import Control.Monad
 import Data.Ratio
 import Data.Time
 
@@ -117,15 +116,6 @@ ceilingi = ceiling
 
 --------------------------------------------------------------------------------
 
--- | Generate a time stamp for the output files. Note PostScript
--- does no interpretation of the time stamp, it is solely for 
--- information and so the representation is arbitrary.
-
-mkTimeStamp :: IO String
-mkTimeStamp = liftM (toListH . format . zonedTimeToLocalTime) getZonedTime
-  where
-    format t  = (timeOfDay $ localTimeOfDay  t) . showChar ' ' . localDayS t
-    localDayS = showString . showGregorian . localDay
 
 -- | To be used with getZonedTime
 

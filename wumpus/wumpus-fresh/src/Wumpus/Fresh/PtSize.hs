@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.PtSize
+-- Module      :  Wumpus.Fresh.PtSize
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -11,15 +11,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Numeric type representing Point size (1/72 inch) which is 
--- PostScript and Wumpus-Core\'s internal unit size.
---
--- Other unit types (e.g. centimeter) should define an 
--- appropriate instance of FromPtSize.
+-- Fresh PtSize
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.PtSize
+module Wumpus.Fresh.PtSize
   ( 
   
   -- * Point size type
