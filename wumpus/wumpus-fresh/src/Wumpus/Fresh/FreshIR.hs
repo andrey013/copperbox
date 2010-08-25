@@ -27,6 +27,7 @@ module Wumpus.Fresh.FreshIR
   , DPrimitive
 
   , PrimPath(..)
+  , PathProps(..)
   , PrimPathSegment(..)
   , PrimLabel(..)
   , LabelProps(..)

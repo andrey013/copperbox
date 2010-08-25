@@ -56,6 +56,9 @@ instance Monad PsMonad where
                                 in b
 
 
+runPsMonad :: TextEncoder -> PsMonad a -> a
+runPsMonad enc mf = getPsMonad mf enc
+
 askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
 askCharCode i = PsMonad $ \r -> case lookupByCharCode i r of
     Just n  -> Right n
@@ -63,22 +66,87 @@ askCharCode i = PsMonad $ \r -> case lookupByCharCode i r of
 
 --------------------------------------------------------------------------------
 
--- outputting labels needs an environment containing a TextEncoder
+
+
+primPath :: PSUnit u
+           => PathProps -> PrimPath u -> PsMonad Doc
+primPath (CFill rgb)     p = 
+    (\doc -> vcat [doc, ps_closepath, ps_fill]) <$> startPath p
+
+primPath (CStroke _ rgb) p = 
+    (\doc -> vcat [doc, ps_closepath, ps_stroke]) <$> startPath p
+ 
+primPath (OStroke _ rgb) p = 
+    (\doc -> vcat [doc, ps_stroke]) <$> startPath p
+
+
+primPath (CFillStroke f attrs s) p = (\d1 d2 -> vcat [d1,d2]) 
+    <$> primPath (CFill f) p <*> primPath (CStroke attrs f) p
+
+{-
+outputPath (CStroke xs) c p =
+    updatePen c xs $ startPath p >> ps_closepath >> ps_stroke
+
+outputPath (OStroke xs) c p =
+    updatePen c xs $ startPath p >> ps_stroke
+-}
+
+startPath :: PSUnit u => PrimPath u -> PsMonad Doc
+startPath (PrimPath start xs) = 
+    (\docs -> vcat $ ps_newpath : ps_moveto start : docs)
+      <$> mapM pathSegment xs
+
+
+-- Monadic or pure?
+--
+pathSegment :: PSUnit u => PrimPathSegment u -> PsMonad Doc
+pathSegment (PLineTo p1)        = pure $ ps_lineto p1 
+pathSegment (PCurveTo p1 p2 p3) = pure $ ps_curveto p1 p2 p3 
+
+
+-- | Drawing stroked ellipse has an unfortunate - but (probably) 
+-- unavoidable deficiency.
+--
+-- The use of PostScript\'s @concat@ operator to alter the arc 
+-- hw/hh will vary the line width during the drawing of a stroked 
+-- ellipse.
+--
+-- For good stroked ellipses, Bezier curves constructed from 
+-- PrimPaths should be used.
+--
+primEllipse :: (Real u, Floating u, PSUnit u) 
+            => EllipseProps -> PrimEllipse u -> PsMonad Doc
+primEllipse props ell@(PrimEllipse center hw hh ctm) =
+    bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
+  where
+    drawF (EFill rgb)               pt = fillArcPath rgb hw pt
+    drawF (EStroke attrs rgb)       pt = strokeArcPath rgb hw pt
+    drawF (EFillStroke fc attrs sc) pt = 
+        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc hw pt
+                       
 
 -- This will need to become monadic to handle /colour delta/.
 --
-fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> Doc
-fillArcPath rgb radius pt = 
+fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
+fillArcPath rgb radius pt = pure $ 
     vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_fill ]
 
-strokeArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> Doc
-strokeArcPath rgb radius pt = 
+strokeArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
+strokeArcPath rgb radius pt = pure $ 
     vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_stroke ]
 
 
-pathSegment :: PSUnit u => PrimPathSegment u -> Doc
-pathSegment (PLineTo p1)        = ps_lineto p1 
-pathSegment (PCurveTo p1 p2 p3) = ps_curveto p1 p2 p3 
+
+-- Note - for the otherwise case, the x-and-y coordinates are 
+-- encoded in the matrix, hence the @ 0 0 moveto @.
+--
+primLabel :: (Real u, Floating u, PSUnit u) => PrimLabel u -> PsMonad Doc
+primLabel (PrimLabel basept txt ctm) = bracketPrimCTM basept ctm mf
+  where
+    mf pt = (\doc -> vcat [ ps_moveto pt, doc ]) <$> encodedText txt
+
+encodedText :: EncodedText -> PsMonad Doc 
+encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
 
 
 textChunk :: TextChunk -> PsMonad Doc
@@ -90,11 +158,11 @@ textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i
 
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
-               => Point2 u -> PrimCTM u -> PsMonad Doc -> PsMonad Doc
+               => Point2 u -> PrimCTM u 
+               -> (Point2 u -> PsMonad Doc) -> PsMonad Doc
 bracketPrimCTM pt@(P2 x y) ctm mf 
-    | ctm == identityCTM  = (\doc -> vcat [ps_moveto pt,doc]) <$> mf
-    | otherwise           = (\doc -> vcat [inn, ps_moveto zeroPt', doc, out])
-                              <$> mf
+    | ctm == identityCTM  = mf pt
+    | otherwise           = (\doc -> vcat [inn, doc, out]) <$> mf zeroPt'
   where
     zeroPt' :: Point2 u
     zeroPt' = zeroPt

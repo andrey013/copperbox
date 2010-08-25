@@ -22,6 +22,7 @@ module Wumpus.Fresh.FormatCombinators
   , showsDoc
   , (<>)
   , (<+>)  
+  , vconcat
   , separate
   , hcat
   , hsep
@@ -123,6 +124,12 @@ Doc i a <> doc = Doc i $ a . unDoc doc
 (<+>) :: Doc -> Doc -> Doc
 Doc i a <+> doc = Doc i $ a . showChar ' ' . unDoc doc
 
+-- | Vertical concatenate two documents with a a line break.
+-- 
+vconcat :: Doc -> Doc -> Doc
+vconcat (Doc i a)  doc2 = Doc i $ a . showChar '\n' . unDoc doc2
+
+
 
 separate :: Doc -> [Doc] -> Doc
 separate _   []     = empty
@@ -141,8 +148,8 @@ hcat = foldr (<>) empty
 hsep :: [Doc] -> Doc
 hsep = separate space
 
--- | Vertically concatenate a list of documents, one doc per 
--- line.
+-- | Vertically concatenate a list of documents, with a line 
+-- break between each doc.
 --
 -- Note - the tail of the list of docs is /rendered/, so applying
 -- indent to the result of 'vcat' will only indent the first line.

@@ -41,6 +41,7 @@ library
     Wumpus.Fresh.PostScriptDoc,
     Wumpus.Fresh.PtSize,
     Wumpus.Fresh.SVG,
+    Wumpus.Fresh.SVGDoc,
     Wumpus.Fresh.TextEncoder,
     Wumpus.Fresh.TextInternal,
     Wumpus.Fresh.TextLatin1,
