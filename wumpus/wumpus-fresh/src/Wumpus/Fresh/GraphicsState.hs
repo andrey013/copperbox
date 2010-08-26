@@ -38,6 +38,9 @@ module Wumpus.Fresh.GraphicsState
 
 -- Graphics state datatypes
 
+-- data GraphicsState
+
+
 -- | Stroke attributes are an algebriac type rather than a 
 -- record type. This is for convenience when attributing paths -
 -- paths can be attibuted with just the differences from the 

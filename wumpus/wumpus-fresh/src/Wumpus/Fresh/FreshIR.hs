@@ -19,8 +19,7 @@
 module Wumpus.Fresh.FreshIR
   ( 
 
-    RGB255(..)
-  , Picture(..)
+    Picture(..)
   , DPicture
 
   , Primitive(..)
@@ -52,6 +51,7 @@ module Wumpus.Fresh.FreshIR
   ) where
 
 import Wumpus.Fresh.BoundingBox
+import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FontSize
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
@@ -66,19 +66,11 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
-import Data.Word
 
--- | Colours levels are in the range [0..255]
--- 
--- Note - this is the format used by SVG, whereas PostScript uses 
--- [0..1]. 
---
--- It is more efficient to prefer SVG here.
---
-data RGB255 = RGB255 !Word8 !Word8 !Word8
-  deriving (Eq,Ord,Show)
+-- For local shared graphics state updates add a new constructor:
+-- Group (GS -> GS) (Picture u)
 
-data Picture u = Leaf (Locale u) (OneList (Primitive u))
+data Picture u = Leaf  (Locale u) (OneList (Primitive u))
   deriving (Eq,Show)
 
 type Locale u = BoundingBox u
@@ -186,11 +178,6 @@ type instance DUnit (PrimEllipse u) = u
 --------------------------------------------------------------------------------
 -- instances
 
-instance Format RGB255 where
-  format (RGB255 0   0   0)    = text "*black*"
-  format (RGB255 255 255 255)  = text "*white*"
-  format (RGB255 r   g   b)    = integral r <> comma <> integral g 
-                                            <> comma <> integral b
 
 instance (Num u, PSUnit u) => Format (Picture u) where
   format (Leaf m prims)     = hangLines 2 [ text "** Leaf-pic **"

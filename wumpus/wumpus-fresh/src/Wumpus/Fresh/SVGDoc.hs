@@ -54,6 +54,7 @@ module Wumpus.Fresh.SVGDoc
 
   ) where
 
+import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry

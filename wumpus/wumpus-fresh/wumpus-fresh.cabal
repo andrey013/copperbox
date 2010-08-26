@@ -30,6 +30,7 @@ library
                         
   exposed-modules:
     Wumpus.Fresh.BoundingBox,
+    Wumpus.Fresh.Colour,
     Wumpus.Fresh.FormatCombinators,
     Wumpus.Fresh.FontSize,
     Wumpus.Fresh.FreshIR,
