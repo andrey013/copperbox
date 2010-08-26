@@ -7,7 +7,7 @@ import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.PostScript
-import Wumpus.Fresh.SVG
+import qualified Wumpus.Fresh.SVG       as SVG
 import Wumpus.Fresh.TextLatin1
 
 demo01 :: IO ()
@@ -34,3 +34,9 @@ demo06 = indentLines 2 $ map text ["one...", "two...", "three.", "four..", "five
 
 demo07 :: Doc
 demo07 = indentLines 2 [text ".....", demo05]
+
+demo08 :: Doc
+demo08 = SVG.runSvgMonad latin1Encoder $ 
+    SVG.primPath (CFill (RGB255 0 0 0)) (PrimPath zeroPt [PLineTo p2])
+  where
+    p2 = P2 (50::Double) 50
