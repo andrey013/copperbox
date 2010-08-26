@@ -20,9 +20,10 @@
 module Wumpus.Fresh.GraphicsState 
   (
   -- * Data types  
+    GraphicsState(..)
   
   -- ** Stroke attributes
-    StrokeAttr(..)
+  , StrokeAttr(..)
   , LineCap(..)
   , LineJoin(..)
   , DashPattern(..)
@@ -32,13 +33,26 @@ module Wumpus.Fresh.GraphicsState
   , FontFace(..)
   , SVGFontStyle(..)
 
+  -- ** Default graphic state
+  , zeroGS
 
   ) where
 
+import Wumpus.Fresh.Colour
 
 -- Graphics state datatypes
 
--- data GraphicsState
+data GraphicsState = GraphicsState
+      { gs_draw_colour  :: RGB255
+      , gs_font_size    :: Int
+      , gs_font_face    :: FontFace
+      , gs_line_width   :: Double
+      , gs_miter_limit  :: Double
+      , gs_line_cap     :: LineCap
+      , gs_line_join    :: LineJoin
+      , gs_dash_pattern :: DashPattern 
+      }
+  deriving (Eq,Show)
 
 
 -- | Stroke attributes are an algebriac type rather than a 
@@ -56,15 +70,18 @@ data StrokeAttr = LineWidth   Double
 
 
 -- | Line cap - default in output is butt.
+--
 data LineCap = CapButt | CapRound | CapSquare
   deriving (Enum,Eq,Show)
 
 -- | Line join - default in output is miter.
+--
 data LineJoin = JoinMiter | JoinRound | JoinBevel
   deriving (Enum,Eq,Show)
 
 -- | Dash pattern - either a solid line or a list of on-off pairs
 -- together with an /offset/ into the dashes.
+--
 data DashPattern = Solid | Dash Int [(Int,Int)]
   deriving (Eq,Show)
 
@@ -108,3 +125,18 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
                   | SVG_OBLIQUE | SVG_BOLD_OBLIQUE
   deriving (Eq,Ord,Show)
 
+
+-- | The initial graphics state
+
+zeroGS ::  GraphicsState 
+zeroGS = GraphicsState { gs_draw_colour  = black
+                       , gs_font_size    = -1
+                       , gs_font_face    = unmatchable_face
+                       , gs_line_width   = 1
+                       , gs_miter_limit  = 1
+                       , gs_line_cap     = CapButt
+                       , gs_line_join    = JoinMiter
+                       , gs_dash_pattern = Solid
+                       }
+  where
+    unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE

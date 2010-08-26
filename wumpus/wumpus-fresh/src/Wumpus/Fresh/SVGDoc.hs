@@ -48,6 +48,13 @@ module Wumpus.Fresh.SVGDoc
   , attr_stroke
   , attr_stroke_none
   , attr_stroke_width
+  , attr_stroke_miterlimit
+  , attr_stroke_linecap
+  , attr_stroke_linejoin
+
+  , attr_stroke_dasharray
+  , attr_stroke_dasharray_none
+  , attr_stroke_dashoffset
 
   , attr_transform
   , val_matrix
@@ -58,6 +65,7 @@ import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.GraphicsState
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.Utils
 
@@ -241,6 +249,53 @@ attr_stroke_none = svgAttr "stroke" (text "none")
 --
 attr_stroke_width :: PSUnit u => u -> Doc
 attr_stroke_width = svgAttr "stroke-width" . dtruncFmt
+
+
+-- | @ stroke-miterlimit=\"...\" @
+--
+attr_stroke_miterlimit :: PSUnit u => u -> Doc
+attr_stroke_miterlimit = svgAttr "stroke-miterlimit" . dtruncFmt
+
+-- | @ stroke-linejoin=\"...\" @
+--
+attr_stroke_linejoin :: LineJoin -> Doc
+attr_stroke_linejoin = svgAttr "stroke-linejoin" . step 
+  where
+    step JoinMiter = text "miter"
+    step JoinRound = text "round"
+    step JoinBevel = text "bevel"
+
+
+-- | @ stroke-linecap=\"...\" @
+--
+attr_stroke_linecap :: LineCap -> Doc
+attr_stroke_linecap = svgAttr "stroke-linecap" . step
+  where
+    step CapButt   = text "butt"
+    step CapRound  = text "round"
+    step CapSquare = text "square"
+
+
+-- | @ stroke-dasharray=\"...\" @
+--
+attr_stroke_dasharray :: [(Int,Int)] -> Doc
+attr_stroke_dasharray = svgAttr "stroke-dasharray" . step 
+  where
+    step []         = empty
+    step [(a,b)]    = int a <> comma                     -- Don\'t print b 
+    step ((a,b):xs) = int a <> comma <> int b <> step xs
+
+-- | @ stroke-dasharray=\"none\" @
+--
+attr_stroke_dasharray_none :: Doc
+attr_stroke_dasharray_none = svgAttr "stroke-dasharray" (text "none")
+
+-- | @ stroke-dashoffset=\"...\" @
+--
+attr_stroke_dashoffset :: Int -> Doc
+attr_stroke_dashoffset = svgAttr "stroke-dashoffset" . int
+
+
 
 -- | @ transform="..." @
 --

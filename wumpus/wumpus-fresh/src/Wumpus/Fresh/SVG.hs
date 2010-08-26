@@ -32,37 +32,52 @@ import Control.Applicative hiding ( empty )
 
 type DocS = Doc -> Doc
 
--- SvgMonad is at least a Reader monad...
+-- SvgMonad is at least a two Readers...
 --
 newtype SvgMonad a = SvgMonad { 
-            getSvgMonad :: TextEncoder -> a }
+            getSvgMonad :: TextEncoder -> GraphicsState -> a }
 
 instance Functor SvgMonad where
-  fmap f mf = SvgMonad $ \r -> let a = getSvgMonad mf r
-                               in f a
+  fmap f mf = SvgMonad $ \r1 r2 -> let a = getSvgMonad mf r1 r2 in f a
 
 instance Applicative SvgMonad where
-  pure a    = SvgMonad $ \_ -> a
-  mf <*> ma = SvgMonad $ \r -> let f = getSvgMonad mf r
-                                   a = getSvgMonad ma r
-                               in f a
+  pure a    = SvgMonad $ \_  _  -> a
+  mf <*> ma = SvgMonad $ \r1 r2 -> let f = getSvgMonad mf r1 r2
+                                       a = getSvgMonad ma r1 r2
+                                   in f a
 
 instance Monad SvgMonad where
-  return a  = SvgMonad $ \_ -> a
-  m >>= k   = SvgMonad $ \r -> let a = getSvgMonad m r
-                                   b = (getSvgMonad . k) a r
-                                in b
+  return a  = SvgMonad $ \_  _  -> a
+  m >>= k   = SvgMonad $ \r1 r2 -> let a = getSvgMonad m r1 r2
+                                       b = (getSvgMonad . k) a r1 r2
+                                   in b
 
 
 runSvgMonad :: TextEncoder -> SvgMonad a -> a
-runSvgMonad enc mf = getSvgMonad mf enc
+runSvgMonad enc mf = getSvgMonad mf enc zeroGS
 
 askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
-askGlyphName nm = SvgMonad $ \r -> case lookupByGlyphName nm r of
+askGlyphName nm = SvgMonad $ \r1 _ -> case lookupByGlyphName nm r1 of
     Just a  -> Right $ escapeSpecial a
-    Nothing -> Left  $ escapeSpecial $ svg_fallback r
+    Nothing -> Left  $ escapeSpecial $ svg_fallback r1
 
+askFontAttr :: SvgMonad FontAttr
+askFontAttr = SvgMonad $ \_ r2 -> FontAttr (gs_font_size r2) (gs_font_face r2)
 
+askLineWidth    :: SvgMonad Double
+askLineWidth    = SvgMonad $ \_ r2 -> gs_line_width r2
+
+askMiterLimit   :: SvgMonad Double
+askMiterLimit   = SvgMonad $ \_ r2 -> gs_miter_limit r2
+
+askLineCap      :: SvgMonad LineCap
+askLineCap      = SvgMonad $ \_ r2 -> gs_line_cap r2
+
+askLineJoin     :: SvgMonad LineJoin
+askLineJoin     = SvgMonad $ \_ r2 -> gs_line_join r2
+
+askDashPattern  :: SvgMonad DashPattern
+askDashPattern  = SvgMonad $ \_ r2 -> gs_dash_pattern r2
 
 -- Note - it will be wise to make coordinate remapping and output
 -- separate passes (unlike in Wumpus-Core). Then I\'ll at least 
@@ -83,6 +98,7 @@ path (PrimPath start xs) =
     seg (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 
 -- Return - drawing props, plus a function to close the path (or not). 
+--
 pathProps :: PathProps -> SvgMonad (Doc, Doc -> Doc)
 pathProps props = case props of
     CFill rgb                   -> pure (fillNotStroke rgb, suffixClose) 
@@ -94,7 +110,7 @@ pathProps props = case props of
     fillNotStroke rgb = attr_fill rgb <+> attr_stroke_none 
     strokeNotFill rgb = attr_stroke rgb <+> attr_fill_none
 
-    suffixClose doc = doc <+> char 'Z'
+    suffixClose       = (<+> char 'Z')
  
 
 
@@ -125,7 +141,33 @@ ellipseProps (EStroke attrs rgb) = pure $ attr_stroke rgb <+> attr_fill_none
 ellipseProps (EFillStroke frgb attrs srgb) = 
     pure $ attr_fill frgb <+> attr_stroke srgb
 
+deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
+deltaStrokeAttrs xs = hcat <$> mapM df xs
+  where
+    df (LineWidth d)    = (\a -> if d==a then empty 
+                                         else attr_stroke_width d) 
+                            <$> askLineWidth
 
+    df (MiterLimit d)   = (\a -> if d==a then empty 
+                                         else attr_stroke_miterlimit d)
+                            <$> askMiterLimit
+
+    df (LineCap d)      = (\a -> if d==a then empty 
+                                         else attr_stroke_linecap d)
+                            <$> askLineCap
+
+    df (LineJoin d)     = (\a -> if d==a then empty 
+                                         else attr_stroke_linejoin d)
+                            <$> askLineJoin
+
+    df (DashPattern d)  = (\a -> if d==a then empty 
+                                         else makeDashPattern d) 
+                            <$> askDashPattern
+
+makeDashPattern :: DashPattern -> Doc
+makeDashPattern Solid       = attr_stroke_dasharray_none
+makeDashPattern (Dash n xs) = 
+    attr_stroke_dashoffset n <+> attr_stroke_dasharray xs
 
 -- Note - Rendering coloured text seemed convoluted 
 -- (mandating the tspan element). 
@@ -138,32 +180,28 @@ primLabel :: (Real u, Floating u, PSUnit u)
       => LabelProps -> PrimLabel u -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel pt etext ctm) = 
     (\fa ca txt -> elem_text (fa <+> ca) txt)
-      <$> fontAttrs attrs <*> bracketPrimCTM pt ctm mkXY <*> tspan rgb etext
+      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm mkXY 
+                               <*> tspan rgb etext
   where
     mkXY (P2 x y) = pure $ attr_x x <+> attr_y y    
 
 
-fontAttrs :: FontAttr -> SvgMonad Doc
-fontAttrs (FontAttr sz face) = 
-   (\szd df -> df szd) <$> fontSize sz <*> fontStyle (svg_font_style face)
+deltaFontAttrs :: FontAttr -> SvgMonad Doc
+deltaFontAttrs fa  = 
+    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> askFontAttr
 
-fontSize :: Int -> SvgMonad Doc
-fontSize sz = pure (attr_font_size sz) 
-
-fontStyle :: SVGFontStyle -> SvgMonad DocS
-fontStyle SVG_REGULAR      = pure id
-
-fontStyle SVG_BOLD         = pure (<+> attr_font_weight "bold")
-
-fontStyle SVG_ITALIC       = pure (<+> attr_font_style "italic")
-
-fontStyle SVG_BOLD_ITALIC  = 
-    pure (<+> attr_font_weight "bold" <+> attr_font_style "italic")
-
-fontStyle SVG_OBLIQUE      = pure (<+> attr_font_style "oblique")
-
-fontStyle SVG_BOLD_OBLIQUE = 
-    pure (<+> attr_font_weight "bold" <+> attr_font_style "oblique")
+makeFontAttrs :: FontAttr -> Doc
+makeFontAttrs (FontAttr sz face) = 
+    sf (svg_font_style face) $ attr_font_size sz
+  where  
+    sf SVG_REGULAR      = id
+    sf SVG_BOLD         = (<+> attr_font_weight "bold")
+    sf SVG_ITALIC       = (<+> attr_font_style "italic")
+    sf SVG_BOLD_ITALIC  = (<+> attr_font_weight "bold" 
+                           <+> attr_font_style "italic")
+    sf SVG_OBLIQUE      = (<+> attr_font_style "oblique")
+    sf SVG_BOLD_OBLIQUE = (<+> attr_font_weight "bold" 
+                           <+> attr_font_style "oblique")
 
 
 tspan :: RGB255 -> EncodedText -> SvgMonad Doc
