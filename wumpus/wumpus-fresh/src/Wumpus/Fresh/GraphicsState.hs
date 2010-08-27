@@ -130,7 +130,7 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
 
 zeroGS ::  GraphicsState 
 zeroGS = GraphicsState { gs_draw_colour  = black
-                       , gs_font_size    = -1
+                       , gs_font_size    = (-1)
                        , gs_font_face    = unmatchable_face
                        , gs_line_width   = 1
                        , gs_miter_limit  = 1

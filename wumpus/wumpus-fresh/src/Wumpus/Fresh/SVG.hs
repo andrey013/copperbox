@@ -30,7 +30,6 @@ import Wumpus.Fresh.Utils
 
 import Control.Applicative hiding ( empty )
 
-type DocS = Doc -> Doc
 
 -- SvgMonad is at least a two Readers...
 --
@@ -100,17 +99,23 @@ path (PrimPath start xs) =
 -- Return - drawing props, plus a function to close the path (or not). 
 --
 pathProps :: PathProps -> SvgMonad (Doc, Doc -> Doc)
-pathProps props = case props of
-    CFill rgb                   -> pure (fillNotStroke rgb, suffixClose) 
-    CStroke attrs rgb           -> pure (strokeNotFill rgb, suffixClose)
-    OStroke attrs rgb           -> pure (strokeNotFill rgb, id)
-    CFillStroke frgb attrs srgb -> pure (attr_fill frgb <+> attr_stroke srgb
-                                        , suffixClose) 
+pathProps props = fn props
   where
-    fillNotStroke rgb = attr_fill rgb <+> attr_stroke_none 
-    strokeNotFill rgb = attr_stroke rgb <+> attr_fill_none
+    fn (CFill rgb)                = pure (fillNotStroke rgb, close) 
 
-    suffixClose       = (<+> char 'Z')
+    fn (CStroke attrs rgb)        = 
+        (\a -> (strokeNotFill rgb <+> a, close))   <$> deltaStrokeAttrs attrs
+
+    fn (OStroke attrs rgb)        = 
+        (\a -> (strokeNotFill rgb <+> a, id))      <$> deltaStrokeAttrs attrs
+
+    fn (CFillStroke fc attrs sc)  =
+        (\a -> (fillAndStroke fc sc <+> a, close)) <$> deltaStrokeAttrs attrs
+
+    fillNotStroke rgb             = attr_fill rgb   <+> attr_stroke_none 
+    strokeNotFill rgb             = attr_stroke rgb <+> attr_fill_none
+    fillAndStroke a b             = attr_fill a     <+> attr_stroke b
+    close                         = (<+> char 'Z')
  
 
 
@@ -134,40 +139,16 @@ primEllipse props (PrimEllipse pt hw hh ctm)
  
 
 ellipseProps :: EllipseProps -> SvgMonad Doc
-ellipseProps (EFill rgb)        = pure $ attr_fill rgb <+> attr_stroke_none
+ellipseProps (EFill rgb)                   = 
+    pure (attr_fill rgb <+> attr_stroke_none)
 
-ellipseProps (EStroke attrs rgb) = pure $ attr_stroke rgb <+> attr_fill_none 
+ellipseProps (EStroke attrs rgb)           = 
+    (\a -> attr_stroke rgb <+> attr_fill_none <+> a)  <$> deltaStrokeAttrs attrs
 
 ellipseProps (EFillStroke frgb attrs srgb) = 
-    pure $ attr_fill frgb <+> attr_stroke srgb
+    (\a -> attr_fill frgb <+> attr_stroke srgb <+> a) <$> deltaStrokeAttrs attrs
 
-deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
-deltaStrokeAttrs xs = hcat <$> mapM df xs
-  where
-    df (LineWidth d)    = (\a -> if d==a then empty 
-                                         else attr_stroke_width d) 
-                            <$> askLineWidth
 
-    df (MiterLimit d)   = (\a -> if d==a then empty 
-                                         else attr_stroke_miterlimit d)
-                            <$> askMiterLimit
-
-    df (LineCap d)      = (\a -> if d==a then empty 
-                                         else attr_stroke_linecap d)
-                            <$> askLineCap
-
-    df (LineJoin d)     = (\a -> if d==a then empty 
-                                         else attr_stroke_linejoin d)
-                            <$> askLineJoin
-
-    df (DashPattern d)  = (\a -> if d==a then empty 
-                                         else makeDashPattern d) 
-                            <$> askDashPattern
-
-makeDashPattern :: DashPattern -> Doc
-makeDashPattern Solid       = attr_stroke_dasharray_none
-makeDashPattern (Dash n xs) = 
-    attr_stroke_dashoffset n <+> attr_stroke_dasharray xs
 
 -- Note - Rendering coloured text seemed convoluted 
 -- (mandating the tspan element). 
@@ -184,6 +165,53 @@ primLabel (LabelProps rgb attrs) (PrimLabel pt etext ctm) =
                                <*> tspan rgb etext
   where
     mkXY (P2 x y) = pure $ attr_x x <+> attr_y y    
+
+tspan :: RGB255 -> EncodedText -> SvgMonad Doc
+tspan rgb enctext = 
+    (\txt -> elem_tspan (attr_fill rgb) txt) 
+      <$> encodedText enctext
+
+encodedText :: EncodedText -> SvgMonad Doc
+encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
+
+
+textChunk :: TextChunk -> SvgMonad Doc
+textChunk (SText s)  = pure $ text s
+textChunk (EscInt i) = pure $ text $ escapeSpecial i
+textChunk (EscStr s) = either text text <$> askGlyphName s 
+
+
+--------------------------------------------------------------------------------
+-- Stroke and font attribute delta
+
+deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
+deltaStrokeAttrs xs = hcat <$> mapM df xs
+  where
+    df (LineWidth d)    = (\inh -> if d==inh then empty 
+                                         else attr_stroke_width d) 
+                            <$> askLineWidth
+
+    df (MiterLimit d)   = (\inh -> if d==inh then empty 
+                                         else attr_stroke_miterlimit d)
+                            <$> askMiterLimit
+
+    df (LineCap d)      = (\inh -> if d==inh then empty 
+                                         else attr_stroke_linecap d)
+                            <$> askLineCap
+
+    df (LineJoin d)     = (\inh -> if d==inh then empty 
+                                         else attr_stroke_linejoin d)
+                            <$> askLineJoin
+
+    df (DashPattern d)  = (\inh -> if d==inh then empty 
+                                             else makeDashPattern d) 
+                            <$> askDashPattern
+
+makeDashPattern :: DashPattern -> Doc
+makeDashPattern Solid       = attr_stroke_dasharray_none
+makeDashPattern (Dash n xs) = 
+    attr_stroke_dashoffset n <+> attr_stroke_dasharray xs
+
 
 
 deltaFontAttrs :: FontAttr -> SvgMonad Doc
@@ -204,21 +232,9 @@ makeFontAttrs (FontAttr sz face) =
                            <+> attr_font_style "oblique")
 
 
-tspan :: RGB255 -> EncodedText -> SvgMonad Doc
-tspan rgb enctext = 
-    (\txt -> elem_tspan (attr_fill rgb) txt) 
-      <$> encodedText enctext
 
-encodedText :: EncodedText -> SvgMonad Doc
-encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
-
-
-textChunk :: TextChunk -> SvgMonad Doc
-textChunk (SText s)  = pure $ text s
-textChunk (EscInt i) = pure $ text $ escapeSpecial i
-textChunk (EscStr s) = either text text <$> askGlyphName s 
-
-
+--------------------------------------------------------------------------------
+-- PrimCTM
 
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)

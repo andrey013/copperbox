@@ -26,6 +26,13 @@ module Wumpus.Fresh.PostScriptDoc
   , command
   , ps_comment
 
+  , ps_setlinewidth
+  , ps_setlinecap
+  , ps_setlinejoin
+  , ps_setmiterlimit
+  , ps_setdash
+  , ps_setrgbcolor
+
   , ps_concat
 
   , ps_newpath
@@ -48,9 +55,11 @@ module Wumpus.Fresh.PostScriptDoc
   )  where
 
 import Wumpus.Fresh.BoundingBox
+import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.GraphicsState
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.Utils
 
@@ -120,6 +129,48 @@ command cmd ds = hsep ds <+> text cmd
 --
 ps_comment :: String -> Doc
 ps_comment ss = text "%%" <+> text ss
+
+--------------------------------------------------------------------------------
+-- Graphics state operators
+
+-- | @ ... setlinewidth @
+--
+ps_setlinewidth :: PSUnit u => u -> Doc
+ps_setlinewidth u = command "setlinewidth" [dtruncFmt u]
+
+-- | @ ... setlinecap @
+--
+ps_setlinecap :: LineCap -> Doc
+ps_setlinecap a = command "setlinecap" [int $ fromEnum a]
+
+-- | @ ... setlinejoin @
+--
+ps_setlinejoin :: LineJoin -> Doc
+ps_setlinejoin a = command "setlinejoin" [int $ fromEnum a]
+
+-- | @ ... setmiterlimit @
+--
+ps_setmiterlimit :: PSUnit u => u -> Doc
+ps_setmiterlimit u = command "setmiterlimit" [dtruncFmt u]
+
+-- | @ [... ...] ... setdash @
+--
+ps_setdash :: DashPattern -> Doc
+ps_setdash Solid          = command "setdash" [text "[]", char '0']
+ps_setdash (Dash n pairs) = command "setdash" [brackets $ step pairs, int n]
+  where
+    step []         = empty
+    step [(a,b)]    = int a <+> int b
+    step ((a,b):xs) = int a <+> int b <+> step xs  
+
+-- | @ ... ... ... setrgbcolor @
+--
+ps_setrgbcolor :: RGB255 -> Doc
+ps_setrgbcolor (RGB255 r g b) = command "setrgbcolor" [fn r, fn g, fn b]
+  where
+    fn i = dtruncFmt $ (fromIntegral i / d255)
+    d255 :: Double
+    d255 = 255.0
 
 --------------------------------------------------------------------------------
 -- coordinate system and matrix operators 

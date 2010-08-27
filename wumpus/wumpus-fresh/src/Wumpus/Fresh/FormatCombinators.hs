@@ -17,6 +17,7 @@
 module Wumpus.Fresh.FormatCombinators
   (
     Doc
+  , DocS
   , Format(..)
   , empty
   , showsDoc
@@ -79,6 +80,9 @@ import Numeric
 data Doc = Doc1 ShowS 
          | Join Doc   Doc
          | Line !Int  Doc 
+
+
+type DocS = Doc -> Doc
 
 unDoc :: Doc -> ShowS
 unDoc = step 0

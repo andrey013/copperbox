@@ -22,48 +22,80 @@ import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.GraphicsState
 import Wumpus.Fresh.PostScriptDoc
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.TextInternal
 import Wumpus.Fresh.Utils
 
-import Control.Applicative
+import Control.Applicative hiding ( empty )
 -- import Data.Time
 
 
 --------------------------------------------------------------------------------
 -- PsMonad
 
--- PsMonad is at least a Reader monad...
+-- PsMonad is at least a Reader and a State...
+--
+-- Graphics state works differently to SVG - PostScript has no 
+-- nesting (at least not in the code Wumpus generates) so there
+-- are no /savings/ by diffing from an outer environment, instead
+-- the diff is with the last drawn object.
 --
 newtype PsMonad a = PsMonad { 
-            getPsMonad :: TextEncoder -> a }
+            getPsMonad :: TextEncoder -> GraphicsState -> (a,GraphicsState) }
 
 
 instance Functor PsMonad where
-  fmap f mf = PsMonad $ \r -> let a = getPsMonad mf r
-                              in f a
+  fmap f mf = PsMonad $ \r s -> let (a,s1) = getPsMonad mf r s in (f a,s1)
 
 instance Applicative PsMonad where
-  pure a    = PsMonad $ \_ -> a
-  mf <*> ma = PsMonad $ \r -> let f = getPsMonad mf r
-                                  a = getPsMonad ma r
-                                in f a
+  pure a    = PsMonad $ \_ s -> (a,s)
+  mf <*> ma = PsMonad $ \r s -> let (f,s1) = getPsMonad mf r s
+                                    (a,s2) = getPsMonad ma r s1
+                                  in (f a,s2)
 
 instance Monad PsMonad where
-  return a  = PsMonad $ \_ -> a
-  m >>= k   = PsMonad $ \r -> let a = getPsMonad m r
-                                  b = (getPsMonad . k) a r
-                                in b
-
+  return a  = PsMonad $ \_ s  -> (a,s)
+  m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
+                                in (getPsMonad . k) a r s1
+                              
 
 runPsMonad :: TextEncoder -> PsMonad a -> a
-runPsMonad enc mf = getPsMonad mf enc
+runPsMonad enc mf = fst $ getPsMonad mf enc zeroGS
 
 askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
-askCharCode i = PsMonad $ \r -> case lookupByCharCode i r of
-    Just n  -> Right n
-    Nothing -> Left $ ps_fallback r
+askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
+    Just n  -> (Right n,s)
+    Nothing -> (Left $ ps_fallback r,s)
+
+getDrawColour   :: PsMonad RGB255
+getDrawColour   = PsMonad $ \_ s -> (gs_draw_colour s,s)
+
+setDrawColour   :: RGB255 -> PsMonad ()
+setDrawColour c = PsMonad $ \_ s -> ((), s {gs_draw_colour=c})
+
+getFontAttr :: PsMonad FontAttr
+getFontAttr = PsMonad $ \_ s -> (FontAttr (gs_font_size s) (gs_font_face s),s)
+
+getLineWidth    :: PsMonad Double
+getLineWidth    = PsMonad $ \_ s -> (gs_line_width s,s)
+
+setLineWidth    :: Double -> PsMonad ()
+setLineWidth u  = PsMonad $ \_ s -> ((), s { gs_line_width=u })
+
+
+getMiterLimit   :: PsMonad Double
+getMiterLimit   = PsMonad $ \_ s -> (gs_miter_limit s,s)
+
+getLineCap      :: PsMonad LineCap
+getLineCap      = PsMonad $ \_ s -> (gs_line_cap s,s)
+
+getLineJoin     :: PsMonad LineJoin
+getLineJoin     = PsMonad $ \_ s -> (gs_line_join s,s)
+
+getDashPattern  :: PsMonad DashPattern
+getDashPattern  = PsMonad $ \_ s -> (gs_dash_pattern s,s)
 
 --------------------------------------------------------------------------------
 
@@ -71,8 +103,9 @@ askCharCode i = PsMonad $ \r -> case lookupByCharCode i r of
 
 primPath :: PSUnit u
          => PathProps -> PrimPath u -> PsMonad Doc
-primPath (CFill _rgb)     p = 
-    (\doc -> vcat [doc, ps_closepath, ps_fill]) <$> startPath p
+primPath (CFill rgb)     p = 
+    (\docrgb -> vcat [docrgb, makeStartPath p, ps_closepath, ps_fill]) 
+      <$> deltaDrawColour rgb
 
 primPath (CStroke _ _rgb) p = 
     (\doc -> vcat [doc, ps_closepath, ps_stroke]) <$> startPath p
@@ -91,17 +124,19 @@ outputPath (OStroke xs) c p =
     updatePen c xs $ startPath p >> ps_stroke
 -}
 
+
 startPath :: PSUnit u => PrimPath u -> PsMonad Doc
-startPath (PrimPath start xs) = 
-    (\docs -> vcat $ ps_newpath : ps_moveto start : docs)
-      <$> mapM pathSegment xs
+startPath = pure . makeStartPath
+
+makeStartPath :: PSUnit u => PrimPath u -> Doc
+makeStartPath (PrimPath start xs) = 
+    vcat $ ps_newpath : ps_moveto start : map makePathSegment xs
 
 
--- Monadic or pure?
---
-pathSegment :: PSUnit u => PrimPathSegment u -> PsMonad Doc
-pathSegment (PLineTo p1)        = pure $ ps_lineto p1 
-pathSegment (PCurveTo p1 p2 p3) = pure $ ps_curveto p1 p2 p3 
+
+makePathSegment :: PSUnit u => PrimPathSegment u -> Doc
+makePathSegment (PLineTo p1)        = ps_lineto p1 
+makePathSegment (PCurveTo p1 p2 p3) = ps_curveto p1 p2 p3 
 
 
 -- | Drawing stroked ellipse has an unfortunate - but (probably) 
@@ -156,6 +191,64 @@ textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i
   where
     failk gname = missingCharCode i gname
 
+--------------------------------------------------------------------------------
+-- Stroke, font and drawing colour attribute delta
+
+-- This needs more thought than SVG as there is no natural 
+-- nesting to benefit from...
+
+-- All graphics are annotated with colour - the graphics state
+-- doesn\'t tell us the actual colour of anything, only if we 
+-- need to write a colour change to the output.
+-- 
+-- So we compare the current colour with the state - if it is
+-- different we put the new colour in the state and output a 
+-- @setrgbcolor@ message.
+--
+
+deltaDrawColour :: RGB255 -> PsMonad Doc
+deltaDrawColour rgb = getDrawColour >>= \inh -> 
+   if rgb==inh then return empty
+               else setDrawColour rgb >> return (ps_setrgbcolor rgb)
+
+
+
+-- Wrong - should follow delta draw colour...
+deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
+deltaStrokeAttrs xs = hcat <$> mapM df xs
+  where
+    df (LineWidth d)    = (\inh -> if d==inh then empty 
+                                             else ps_setlinewidth d) 
+                            <$> getLineWidth
+
+    df (MiterLimit d)   = (\inh -> if d==inh then empty 
+                                             else ps_setmiterlimit d)
+                            <$> getMiterLimit
+
+    df (LineCap d)      = (\inh -> if d==inh then empty 
+                                             else ps_setlinecap d)
+                            <$> getLineCap
+
+    df (LineJoin d)     = (\inh -> if d==inh then empty 
+                                             else ps_setlinejoin d)
+                            <$> getLineJoin
+
+    df (DashPattern d)  = (\inh -> if d==inh then empty 
+                                             else ps_setdash d) 
+                            <$> getDashPattern
+
+-- wrong...
+deltaFontAttrs :: FontAttr -> PsMonad Doc
+deltaFontAttrs fa  = 
+    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> getFontAttr
+
+makeFontAttrs :: FontAttr -> Doc
+makeFontAttrs (FontAttr sz face) = 
+    vcat [ ps_findfont (font_name face), ps_scalefont sz, ps_setfont ]
+
+
+--------------------------------------------------------------------------------
+-- PrimCTM
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
                => Point2 u -> PrimCTM u 
