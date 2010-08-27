@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Fresh.FreshIR
+-- Module      :  Wumpus.Fresh.PictureInternal
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,14 +16,16 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Fresh.FreshIR
+module Wumpus.Fresh.PictureInternal
   ( 
 
     Picture(..)
   , DPicture
+  , GSUpdate(..)
 
   , Primitive(..)
   , DPrimitive
+  , XLink(..)
 
   , PrimPath(..)
   , PathProps(..)
@@ -34,8 +36,6 @@ module Wumpus.Fresh.FreshIR
   , EllipseProps(..)
   , PrimCTM(..)
 
-  , printPicture
-  , frameMulti
 
   -- * PrimCTM
   , identityCTM
@@ -46,7 +46,6 @@ module Wumpus.Fresh.FreshIR
 
   , deconsMatrix
   
-  , ellipse_
 
   ) where
 
@@ -63,20 +62,38 @@ import Wumpus.Fresh.Utils
 
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
+import Data.Sequence ( Seq )
+
 
 -- For local shared graphics state updates add a new constructor:
 -- Group (GS -> GS) (Picture u)
 
-data Picture u = Leaf  (Locale u) (OneList (Primitive u))
-  deriving (Eq,Show)
+data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
+               | Picture  (Locale u)              (OneList (Picture u))
+               | Clip     (Locale u) (PrimPath u) (Picture u)
+               | Group    (Locale u) GSUpdate     (Picture u)
+  deriving (Show)
 
-type Locale u = BoundingBox u
+newtype GSUpdate = GSUpdate { getGSU :: GraphicsState -> GraphicsState }
 
+instance Show GSUpdate where
+  show _ = "*function*"
+
+
+type Locale u = (BoundingBox u, Seq (AffineTrafo u))
 
 type DPicture = Picture Double
+
+
+data AffineTrafo u = Matrix (Matrix3'3 u)
+                   | Rotate Radian
+                   | RotAbout Radian (Point2 u)
+                   | Scale u u
+                   | Translate u u
+  deriving (Eq,Show)                 
+
 
 data Primitive u = PPath    PathProps    XLink (PrimPath u)
                  | PLabel   LabelProps   XLink (PrimLabel u)
@@ -184,6 +201,24 @@ instance (Num u, PSUnit u) => Format (Picture u) where
                                           , fmtLocale m 
                                           , fmtPrims prims ]
 
+  format (Picture m pics)   = hangLines 2 [ text "** Tree-pic **"
+                                          , fmtLocale m
+                                          , fmtPics pics ]
+ 
+  format (Clip m path pic)  = hangLines 2 [ text "** Clip-path **"
+                                          , fmtLocale m
+                                          , format path
+                                          , format pic  ]
+
+  format (Group m _ pic)    = hangLines 2 [ text "** Group **"
+                                          , fmtLocale m
+                                          , format pic  ]
+
+
+fmtPics :: PSUnit u => OneList (Picture u) -> Doc
+fmtPics ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
 
 fmtPrims :: PSUnit u => OneList (Primitive u) -> Doc
 fmtPrims ones = snd $ F.foldl' fn (0,empty) ones
@@ -191,7 +226,7 @@ fmtPrims ones = snd $ F.foldl' fn (0,empty) ones
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
 
 fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
-fmtLocale bb = format bb
+fmtLocale (bb,_) = format bb
 
 
 instance PSUnit u => Format (Primitive u) where
@@ -232,9 +267,9 @@ instance PSUnit u => Format (PrimEllipse u) where
 
 instance PSUnit u => Format (PrimCTM u) where
   format (PrimCTM x y ang) = 
-      parens (text "CTM" <+> text "sx="   <+> dtruncFmt x 
-                         <+> text "sy="   <+> dtruncFmt y 
-                         <+> text "ang="  <+> format ang)
+      parens (text "CTM" <+> text "sx="   <> dtruncFmt x 
+                         <+> text "sy="   <> dtruncFmt y 
+                         <+> text "ang="  <> format ang  )
 
 
 instance Format PathProps where
@@ -318,21 +353,6 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 
 --------------------------------------------------------------------------------
 
-printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
-printPicture pic = putStrLn (show $ format pic) >> putStrLn []
-
--- This function throws an error when supplied the empty list.
---
-frameMulti :: (Real u, Floating u, FromPtSize u) 
-           => [Primitive u] -> Picture u
-frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
-frameMulti (p:ps) = let (bb,ones) = step p ps 
-                    in Leaf bb ones 
-  where
-    step a []     = (boundary a, one a)
-    step a (x:xs) = let (bb',rest) = step x xs
-                    in (boundary a `append` bb', cons a rest)
-
 
 
 --------------------------------------------------------------------------------
@@ -386,13 +406,4 @@ deconsMatrix (M3'3 e0x e1x ox
 
 --------------------------------------------------------------------------------
 
-
-ellipse_ :: Num u => u -> u -> Point2 u -> Primitive u
-ellipse_ hw hh pt = PEllipse (EFill (RGB255 127 0 0)) NoLink body
-  where
-    body = PrimEllipse { ellipse_center        = pt
-                       , ellipse_half_width    = hw
-                       , ellipse_half_height   = hh
-                       , ellipse_ctm           = identityCTM
-                       } 
 

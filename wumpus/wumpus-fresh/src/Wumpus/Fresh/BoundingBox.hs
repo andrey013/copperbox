@@ -89,13 +89,6 @@ instance PSUnit u => Format (BoundingBox u) where
 
 type instance DUnit (BoundingBox u) = u
 
-{-
-
-instance (Num u, Ord u) => Scale (BoundingBox u) where
-  scale x y bb     = traceBoundary $ map (scale x y) $ [bl,br,tr,tl]
-    where (bl,br,tr,tl) = boundaryCorners bb
-
--}
 
 --------------------------------------------------------------------------------
 -- Boundary class

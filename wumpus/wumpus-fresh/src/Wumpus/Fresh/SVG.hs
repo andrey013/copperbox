@@ -20,9 +20,9 @@ module Wumpus.Fresh.SVG
 
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
-import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
+import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.SVGDoc
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.TextInternal
@@ -77,6 +77,9 @@ askLineJoin     = SvgMonad $ \_ r2 -> gs_line_join r2
 
 askDashPattern  :: SvgMonad DashPattern
 askDashPattern  = SvgMonad $ \_ r2 -> gs_dash_pattern r2
+
+
+--------------------------------------------------------------------------------
 
 -- Note - it will be wise to make coordinate remapping and output
 -- separate passes (unlike in Wumpus-Core). Then I\'ll at least 

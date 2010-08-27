@@ -4,8 +4,9 @@ module Demo01 where
 
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
-import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
+import Wumpus.Fresh.Picture
+import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.PostScript
 import qualified Wumpus.Fresh.SVG       as SVG
 import Wumpus.Fresh.TextLatin1

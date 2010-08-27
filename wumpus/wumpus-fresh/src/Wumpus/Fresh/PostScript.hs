@@ -20,9 +20,9 @@ module Wumpus.Fresh.PostScript
 
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
-import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
+import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.PostScriptDoc
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.TextInternal
@@ -224,7 +224,7 @@ textChunk (SText s)  = pure (ps_show $ escapeSpecial s)
 textChunk (EscStr s) = pure (ps_glyphshow s)
 textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i 
   where
-    failk gname = missingCharCode i gname
+    failk gly_name = missingCharCode i gly_name
 
 --------------------------------------------------------------------------------
 -- Stroke, font and drawing colour attribute delta

@@ -25,7 +25,7 @@ module Wumpus.Fresh.Geometry
     DUnit
   
   -- * Data types
-  ,  Vec2(..)
+  , Vec2(..)
   , DVec2
   , Point2(..)
   , DPoint2

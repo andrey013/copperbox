@@ -57,9 +57,9 @@ module Wumpus.Fresh.PostScriptDoc
 import Wumpus.Fresh.BoundingBox
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
-import Wumpus.Fresh.FreshIR
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
+import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.Utils
 
