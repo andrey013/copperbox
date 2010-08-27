@@ -69,33 +69,56 @@ askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
     Just n  -> (Right n,s)
     Nothing -> (Left $ ps_fallback r,s)
 
-getDrawColour   :: PsMonad RGB255
-getDrawColour   = PsMonad $ \_ s -> (gs_draw_colour s,s)
+getDrawColour       :: PsMonad RGB255
+getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
 
-setDrawColour   :: RGB255 -> PsMonad ()
-setDrawColour c = PsMonad $ \_ s -> ((), s {gs_draw_colour=c})
-
-getFontAttr :: PsMonad FontAttr
-getFontAttr = PsMonad $ \_ s -> (FontAttr (gs_font_size s) (gs_font_face s),s)
-
-getLineWidth    :: PsMonad Double
-getLineWidth    = PsMonad $ \_ s -> (gs_line_width s,s)
-
-setLineWidth    :: Double -> PsMonad ()
-setLineWidth u  = PsMonad $ \_ s -> ((), s { gs_line_width=u })
+setDrawColour       :: RGB255 -> PsMonad ()
+setDrawColour a     = PsMonad $ \_ s -> ((), s {gs_draw_colour=a})
 
 
-getMiterLimit   :: PsMonad Double
-getMiterLimit   = PsMonad $ \_ s -> (gs_miter_limit s,s)
+getFontAttr         :: PsMonad FontAttr
+getFontAttr         = PsMonad $ \_ s -> let sz = gs_font_size s 
+                                            ff = gs_font_face s
+                                        in (FontAttr sz ff, s)
 
-getLineCap      :: PsMonad LineCap
-getLineCap      = PsMonad $ \_ s -> (gs_line_cap s,s)
+setFontAttr         :: FontAttr -> PsMonad ()
+setFontAttr (FontAttr sz ff) = 
+    PsMonad $ \_ s -> ((), s { gs_font_size=sz,gs_font_face=ff })
 
-getLineJoin     :: PsMonad LineJoin
-getLineJoin     = PsMonad $ \_ s -> (gs_line_join s,s)
+  
+getLineWidth        :: PsMonad Double
+getLineWidth        = PsMonad $ \_ s -> (gs_line_width s, s)
 
-getDashPattern  :: PsMonad DashPattern
-getDashPattern  = PsMonad $ \_ s -> (gs_dash_pattern s,s)
+setLineWidth        :: Double -> PsMonad ()
+setLineWidth a      = PsMonad $ \_ s -> ((), s { gs_line_width=a })
+
+
+getMiterLimit       :: PsMonad Double
+getMiterLimit       = PsMonad $ \_ s -> (gs_miter_limit s,s)
+
+setMiterLimit       :: Double -> PsMonad ()
+setMiterLimit a     = PsMonad $ \_ s -> ((), s { gs_miter_limit=a })
+
+
+getLineCap          :: PsMonad LineCap
+getLineCap          = PsMonad $ \_ s -> (gs_line_cap s,s)
+
+setLineCap          :: LineCap -> PsMonad ()
+setLineCap a        = PsMonad $ \_ s -> ((), s { gs_line_cap=a })
+
+
+getLineJoin         :: PsMonad LineJoin
+getLineJoin         = PsMonad $ \_ s -> (gs_line_join s,s)
+
+setLineJoin         :: LineJoin -> PsMonad ()
+setLineJoin a       = PsMonad $ \_ s -> ((), s { gs_line_join=a })
+
+
+getDashPattern      :: PsMonad DashPattern
+getDashPattern      = PsMonad $ \_ s -> (gs_dash_pattern s,s)
+
+setDashPattern      :: DashPattern -> PsMonad ()
+setDashPattern a    = PsMonad $ \_ s -> ((), s { gs_dash_pattern=a })
 
 --------------------------------------------------------------------------------
 
@@ -104,25 +127,21 @@ getDashPattern  = PsMonad $ \_ s -> (gs_dash_pattern s,s)
 primPath :: PSUnit u
          => PathProps -> PrimPath u -> PsMonad Doc
 primPath (CFill rgb)     p = 
-    (\docrgb -> vcat [docrgb, makeStartPath p, ps_closepath, ps_fill]) 
-      <$> deltaDrawColour rgb
+    (\rgbd -> vcat [rgbd, makeStartPath p, ps_closepath, ps_fill]) 
+      <$> deltaDrawColour rgb  
 
-primPath (CStroke _ _rgb) p = 
-    (\doc -> vcat [doc, ps_closepath, ps_stroke]) <$> startPath p
+primPath (CStroke attrs rgb) p = 
+    (\rgbd attrd -> vcat [rgbd, attrd, makeStartPath p
+                         , ps_closepath, ps_stroke])
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
  
-primPath (OStroke _ _rgb) p = 
-    (\doc -> vcat [doc, ps_stroke]) <$> startPath p
+primPath (OStroke attrs rgb) p = 
+    (\rgbd attrd -> vcat [rgbd, attrd, makeStartPath p, ps_stroke]) 
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
 
-primPath (CFillStroke fc attrs sc) p = (\d1 d2 -> vcat [d1,d2]) 
-    <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
-
-{-
-outputPath (CStroke xs) c p =
-    updatePen c xs $ startPath p >> ps_closepath >> ps_stroke
-
-outputPath (OStroke xs) c p =
-    updatePen c xs $ startPath p >> ps_stroke
--}
+primPath (CFillStroke fc attrs sc) p = 
+    (\d1 d2 -> vcat [d1,d2])
+      <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
 
 
 startPath :: PSUnit u => PrimPath u -> PsMonad Doc
@@ -155,30 +174,46 @@ primEllipse props (PrimEllipse center hw hh ctm) =
     bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
   where
     drawF (EFill rgb)               pt = fillArcPath rgb hw pt
-    drawF (EStroke _attrs rgb)       pt = strokeArcPath rgb hw pt
-    drawF (EFillStroke fc _attrs sc) pt = 
-        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc hw pt
+    drawF (EStroke attrs rgb)       pt = strokeArcPath rgb attrs hw pt
+    drawF (EFillStroke fc attrs sc) pt = 
+        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc attrs hw pt
                        
+
 
 -- This will need to become monadic to handle /colour delta/.
 --
 fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
-fillArcPath _rgb radius pt = pure $ 
-    vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_fill ]
+fillArcPath rgb radius pt = 
+    (\rgbd -> vcat [ rgbd
+                   , ps_newpath
+                   , ps_arc pt radius 0 360
+                   , ps_closepath
+                   , ps_fill ])
+      <$> deltaDrawColour rgb
 
-strokeArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
-strokeArcPath _rgb radius pt = pure $ 
-    vcat [ ps_newpath,  ps_arc pt radius 0 360, ps_closepath, ps_stroke ]
-
+strokeArcPath :: PSUnit u 
+              => RGB255 -> [StrokeAttr] -> u -> Point2 u -> PsMonad Doc
+strokeArcPath rgb attrs radius pt =
+    (\rgbd attrd -> vcat [ rgbd
+                         , attrd
+                         , ps_newpath
+                         , ps_arc pt radius 0 360
+                         , ps_closepath
+                         , ps_stroke ])
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
 
 
 -- Note - for the otherwise case, the x-and-y coordinates are 
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
-primLabel :: (Real u, Floating u, PSUnit u) => PrimLabel u -> PsMonad Doc
-primLabel (PrimLabel basept txt ctm) = bracketPrimCTM basept ctm mf
+primLabel :: (Real u, Floating u, PSUnit u) 
+          => LabelProps -> PrimLabel u -> PsMonad Doc
+primLabel (LabelProps rgb font) (PrimLabel basept txt ctm) = 
+    bracketPrimCTM basept ctm mf
   where
-    mf pt = (\doc -> vcat [ ps_moveto pt, doc ]) <$> encodedText txt
+    mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, ps_moveto pt, showd ]) 
+              <$> deltaDrawColour rgb <*> deltaFontAttrs font 
+                                      <*> encodedText txt
 
 encodedText :: EncodedText -> PsMonad Doc 
 encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
@@ -217,30 +252,37 @@ deltaDrawColour rgb = getDrawColour >>= \inh ->
 deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
 deltaStrokeAttrs xs = hcat <$> mapM df xs
   where
-    df (LineWidth d)    = (\inh -> if d==inh then empty 
-                                             else ps_setlinewidth d) 
-                            <$> getLineWidth
+    df (LineWidth d)    = getLineWidth >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineWidth d >> 
+                                         return (ps_setlinewidth d)
 
-    df (MiterLimit d)   = (\inh -> if d==inh then empty 
-                                             else ps_setmiterlimit d)
-                            <$> getMiterLimit
+    df (MiterLimit d)   = getMiterLimit >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setMiterLimit d >> 
+                                         return (ps_setmiterlimit d)
+                            
+    df (LineCap d)      = getLineCap >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineCap d >> 
+                                         return (ps_setlinecap d)
+                      
+    df (LineJoin d)     = getLineJoin >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineJoin d >> 
+                                         return (ps_setlinejoin d)
 
-    df (LineCap d)      = (\inh -> if d==inh then empty 
-                                             else ps_setlinecap d)
-                            <$> getLineCap
+    df (DashPattern d)  = getDashPattern >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setDashPattern d >> 
+                                         return (ps_setdash d)
+           
 
-    df (LineJoin d)     = (\inh -> if d==inh then empty 
-                                             else ps_setlinejoin d)
-                            <$> getLineJoin
 
-    df (DashPattern d)  = (\inh -> if d==inh then empty 
-                                             else ps_setdash d) 
-                            <$> getDashPattern
-
--- wrong...
 deltaFontAttrs :: FontAttr -> PsMonad Doc
-deltaFontAttrs fa  = 
-    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> getFontAttr
+deltaFontAttrs fa  = getFontAttr >>= \inh ->
+    if fa==inh then return empty 
+               else setFontAttr fa >> return (makeFontAttrs fa)
 
 makeFontAttrs :: FontAttr -> Doc
 makeFontAttrs (FontAttr sz face) = 
