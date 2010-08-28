@@ -2,6 +2,7 @@
 
 module Demo01 where
 
+import Wumpus.Fresh.AffineTrans
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry

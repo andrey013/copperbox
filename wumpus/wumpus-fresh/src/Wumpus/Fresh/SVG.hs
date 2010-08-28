@@ -87,6 +87,18 @@ askDashPattern  = SvgMonad $ \_ r2 -> gs_dash_pattern r2
 --
 
 
+
+primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
+primitive (PPath props xl pp)     = drawXLink xl <$> primPath props pp
+primitive (PLabel props xl lbl)   = drawXLink xl <$> primLabel props lbl
+primitive (PEllipse props xl ell) = drawXLink xl <$> primEllipse props ell
+ 
+
+drawXLink :: XLink -> Doc -> Doc
+drawXLink NoLink           doc = doc
+drawXLink (XLinkHRef href) doc = elem_a_xlink href doc
+
+
 primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
 primPath props pp = (\(a,f) d -> elem_path a (f d)) 
                       <$> pathProps props <*> path pp

@@ -44,6 +44,7 @@ module Wumpus.Fresh.PictureInternal
   , matrixRepCTM
   , translMatrixRepCTM
 
+  , concatTrafos
   , deconsMatrix
   
 
@@ -64,7 +65,6 @@ import Wumpus.Fresh.Utils
 import Data.AffineSpace                         -- package: vector-space
 
 import qualified Data.Foldable                  as F
-import Data.Sequence ( Seq )
 
 
 -- For local shared graphics state updates add a new constructor:
@@ -82,7 +82,7 @@ instance Show GSUpdate where
   show _ = "*function*"
 
 
-type Locale u = (BoundingBox u, Seq (AffineTrafo u))
+type Locale u = (BoundingBox u, [AffineTrafo u])
 
 type DPicture = Picture Double
 
@@ -384,6 +384,21 @@ translMatrixRepCTM :: (Floating u, Real u)
                    => u -> u -> PrimCTM u -> Matrix3'3 u
 translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 
+
+--------------------------------------------------------------------------------
+
+
+concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
+concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
+
+matrixRepr :: (Floating u, Real u) => AffineTrafo u -> Matrix3'3 u
+matrixRepr (Matrix mtrx)        = mtrx
+matrixRepr (Rotate theta)       = rotationMatrix theta
+matrixRepr (RotAbout theta pt)  = originatedRotationMatrix theta pt
+matrixRepr (Scale sx sy)        = scalingMatrix sx sy 
+matrixRepr (Translate dx dy)    = translationMatrix dx dy
+
+
 -- | Destructor for Matrix3'3.
 -- 
 -- Pattern matching on 6-tuple may be more convenient than using 
@@ -404,6 +419,5 @@ deconsMatrix (M3'3 e0x e1x ox
 
 
 
---------------------------------------------------------------------------------
 
 

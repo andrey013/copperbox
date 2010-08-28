@@ -124,6 +124,12 @@ setDashPattern a    = PsMonad $ \_ s -> ((), s { gs_dash_pattern=a })
 
 
 
+primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
+primitive (PPath props _ pp)     = primPath props pp
+primitive (PLabel props _ lbl)   = primLabel props lbl
+primitive (PEllipse props _ ell) = primEllipse props ell
+
+
 primPath :: PSUnit u
          => PathProps -> PrimPath u -> PsMonad Doc
 primPath (CFill rgb)     p = 

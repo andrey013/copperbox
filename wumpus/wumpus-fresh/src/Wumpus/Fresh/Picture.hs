@@ -35,7 +35,6 @@ import Wumpus.Fresh.Utils
 
 import Data.Semigroup                           -- package: algebra
 
-import qualified Data.Sequence                  as S
 
 
 -- This function throws an error when supplied the empty list.
@@ -44,7 +43,7 @@ frameMulti :: (Real u, Floating u, FromPtSize u)
            => [Primitive u] -> Picture u
 frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti (p:ps) = let (bb,ones) = step p ps 
-                    in Leaf (bb,S.empty) ones 
+                    in Leaf (bb,[]) ones 
   where
     step a []     = (boundary a, one a)
     step a (x:xs) = let (bb',rest) = step x xs

@@ -29,6 +29,7 @@ library
                       algebra         >= 0.0.0.1
                         
   exposed-modules:
+    Wumpus.Fresh.AffineTrans,
     Wumpus.Fresh.BoundingBox,
     Wumpus.Fresh.Colour,
     Wumpus.Fresh.FormatCombinators,
