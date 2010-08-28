@@ -21,11 +21,17 @@ module Wumpus.Fresh.PostScriptDoc
     
   , psHeader
   , epsHeader
+  , psFooter
+  , epsFooter
+  , dsc_Page
+
   , missingCharCode
 
   , command
   , ps_comment
 
+  , ps_gsave
+  , ps_grestore
   , ps_setlinewidth
   , ps_setlinecap
   , ps_setlinejoin
@@ -33,6 +39,7 @@ module Wumpus.Fresh.PostScriptDoc
   , ps_setdash
   , ps_setrgbcolor
 
+  , ps_translate
   , ps_concat
 
   , ps_newpath
@@ -41,6 +48,7 @@ module Wumpus.Fresh.PostScriptDoc
   , ps_arc
   , ps_curveto
   , ps_closepath
+  , ps_clip
 
   , ps_fill 
   , ps_stroke
@@ -108,6 +116,21 @@ epsHeader bb tod = vcat $
     (llx,lly,urx,ury) = destBoundingBox bb 
 
 
+
+psFooter :: Doc
+psFooter = text "%%EOF"
+
+
+epsFooter :: Doc
+epsFooter = vcat [ text "showpage", text "%%EOF" ]
+
+
+-- | @ %%Page: ... ... @
+--
+dsc_Page :: String -> Int -> Doc
+dsc_Page label ordinal = text "%%Page:" <+> text label <+> int ordinal
+
+
 missingCharCode :: CharCode -> GlyphName -> Doc
 missingCharCode i fallback = vcat $
     [ ps_comment $ "missing lookup for &#" ++ show i ++ ";" 
@@ -132,6 +155,18 @@ ps_comment ss = text "%%" <+> text ss
 
 --------------------------------------------------------------------------------
 -- Graphics state operators
+
+-- | @ gsave @
+--
+ps_gsave :: Doc
+ps_gsave = command "gsave" []
+
+-- | @ grestore @
+--
+ps_grestore :: Doc
+ps_grestore = command "grestore" []
+
+
 
 -- | @ ... setlinewidth @
 --
@@ -174,6 +209,10 @@ ps_setrgbcolor (RGB255 r g b) = command "setrgbcolor" [fn r, fn g, fn b]
 
 --------------------------------------------------------------------------------
 -- coordinate system and matrix operators 
+
+-- | @ ... ... translate @
+ps_translate :: PSUnit u => (Vec2 u) -> Doc
+ps_translate (V2 dx dy) = command "translate" [dtruncFmt dx, dtruncFmt dy]
 
 
 -- Note - Do not use @setmatrix@ for changing the CTM use 
@@ -241,6 +280,13 @@ ps_curveto (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) =
 --
 ps_closepath :: Doc
 ps_closepath = command "closepath" []
+
+
+-- | @ clip @
+--
+ps_clip :: Doc
+ps_clip = command "clip" []
+
 
 --------------------------------------------------------------------------------
 --  painting operators

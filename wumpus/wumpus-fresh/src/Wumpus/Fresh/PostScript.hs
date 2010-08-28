@@ -22,14 +22,18 @@ import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
+import Wumpus.Fresh.OneList
 import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.PostScriptDoc
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.TextInternal
+import Wumpus.Fresh.TextLatin1
 import Wumpus.Fresh.Utils
 
 import Control.Applicative hiding ( empty )
--- import Data.Time
+import qualified Data.Foldable          as F
+import Control.Monad
+import Data.Time
 
 
 --------------------------------------------------------------------------------
@@ -68,6 +72,10 @@ askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
 askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
     Just n  -> (Right n,s)
     Nothing -> (Left $ ps_fallback r,s)
+
+runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
+runLocalGS upd mf = 
+    PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
 
 getDrawColour       :: PsMonad RGB255
 getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
@@ -120,8 +128,112 @@ getDashPattern      = PsMonad $ \_ s -> (gs_dash_pattern s,s)
 setDashPattern      :: DashPattern -> PsMonad ()
 setDashPattern a    = PsMonad $ \_ s -> ((), s { gs_dash_pattern=a })
 
+
+--------------------------------------------------------------------------------
+-- Render to PostScript
+
+-- | Output a series of pictures to a Postscript file. Each 
+-- picture will be printed on a separate page. 
+--
+writePS :: (Real u, Floating u, PSUnit u) 
+        => FilePath -> TextEncoder -> [Picture u] -> IO ()
+writePS filepath enc pic = 
+    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim enc pic)
+
+-- | Output a picture to an EPS (Encapsulated PostScript) file. 
+-- The .eps file can then be imported or embedded in another 
+-- document.
+--
+writeEPS :: (Real u, Floating u, PSUnit u)  
+         => FilePath -> TextEncoder -> Picture u -> IO ()
+writeEPS filepath enc pic =
+    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim enc pic)
+
+
+-- | Version of 'writePS' - using Latin1 encoding.
+-- 
+writePS_latin1 :: (Real u, Floating u, PSUnit u) 
+               => FilePath -> [Picture u] -> IO ()
+writePS_latin1 filepath = writePS filepath latin1Encoder
+
+-- | Version of 'writeEPS' - using Latin1 encoding. 
+--
+writeEPS_latin1 :: (Real u, Floating u, PSUnit u)  
+                => FilePath -> Picture u -> IO ()
+writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
+
+--------------------------------------------------------------------------------
+-- Internals
+
+
+-- | Draw a picture, generating PostScript output.
+--
+-- Note - the bounding box may /below the origin/ - if it is, it
+-- will need translating.
+--
+
+psDraw :: (Real u, Floating u, PSUnit u) 
+       => ZonedTime -> TextEncoder -> [Picture u] -> Doc
+psDraw timestamp enc pics = 
+    let body = vcat $ runPsMonad enc $ zipWithM psDrawPage pages pics
+    in vcat [ psHeader 1 timestamp
+            , body
+            , psFooter 
+            ]
+  where
+    pages = map (\i -> (show i,i)) [1..]
+
+-- | Note the bounding box may /below the origin/ - if it is, it
+-- will need translating.
+--
+psDrawPage :: (Real u, Floating u, PSUnit u)
+           => (String,Int) -> Picture u -> PsMonad Doc
+psDrawPage (lbl,ordinal) pic = do
+    (\doc -> vcat [ dsc_Page lbl ordinal
+                  , ps_gsave
+                  , cmdtrans
+                  , doc
+                  , ps_grestore
+                  , ps_showpage
+                  ]) 
+      <$> picture pic
+  where
+    (_,mbv)   = repositionDeltas pic
+    cmdtrans  = maybe empty ps_translate mbv
+
+-- | Note the bounding box may /below the origin/ - if it is, it
+-- will need translating.
+--
+epsDraw :: (Real u, Floating u, PSUnit u)
+        => ZonedTime -> TextEncoder -> Picture u -> Doc
+epsDraw timestamp enc pic = 
+    let body = runPsMonad enc (picture pic) 
+    in vcat [ epsHeader bb timestamp
+            , ps_gsave
+            , cmdtrans
+            , body
+            , ps_grestore
+            , epsFooter
+            ]
+  where
+    (bb,mbv)  = repositionDeltas pic
+    cmdtrans  = maybe empty ps_translate mbv
+
+
 --------------------------------------------------------------------------------
 
+
+picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
+picture (Leaf (_,xs) ones)    = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs) ones) = bracketTrafos xs $ revConcat picture ones
+picture (Clip (_,xs) cp pic)  = bracketTrafos xs $
+                                  (vconcat <$> clipPath cp <*> picture pic)
+picture (Group (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+
+revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
+revConcat fn ones = F.foldrM step empty ones
+  where
+    step e ac = (\d -> d `vconcat` ac) <$> fn e
 
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
@@ -148,6 +260,10 @@ primPath (OStroke attrs rgb) p =
 primPath (CFillStroke fc attrs sc) p = 
     (\d1 d2 -> vcat [d1,d2])
       <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
+
+
+clipPath :: PSUnit u => PrimPath u -> PsMonad Doc
+clipPath p = (\doc -> vcat [doc, ps_closepath, ps_clip]) <$> startPath p
 
 
 startPath :: PSUnit u => PrimPath u -> PsMonad Doc
@@ -296,7 +412,21 @@ makeFontAttrs (FontAttr sz face) =
 
 
 --------------------------------------------------------------------------------
--- PrimCTM
+-- Bracketing matrix or PrimCTM trafos
+
+bracketTrafos :: (Real u, Floating u, PSUnit u) 
+              => [AffineTrafo u] -> PsMonad Doc -> PsMonad Doc
+bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
+
+bracketMatrix :: (Fractional u, PSUnit u) 
+              => Matrix3'3 u -> PsMonad Doc -> PsMonad Doc
+bracketMatrix mtrx ma 
+    | mtrx == identityMatrix = ma
+    | otherwise              = (\doc -> vcat [inn, doc, out]) <$> ma
+  where
+    inn   = ps_concat $ mtrx
+    out   = ps_concat $ invert mtrx
+
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
                => Point2 u -> PrimCTM u 
@@ -311,3 +441,4 @@ bracketPrimCTM pt@(P2 x y) ctm mf
     mtrx  = translMatrixRepCTM x y ctm
     inn   = ps_concat $ mtrx
     out   = ps_concat $ invert mtrx
+

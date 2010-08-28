@@ -22,6 +22,7 @@ module Wumpus.Fresh.PictureInternal
     Picture(..)
   , DPicture
   , Locale
+  , AffineTrafo(..)
   , GSUpdate(..)
 
   , Primitive(..)
@@ -47,7 +48,7 @@ module Wumpus.Fresh.PictureInternal
 
   , concatTrafos
   , deconsMatrix
-  
+  , repositionDeltas
 
   ) where
 
@@ -363,17 +364,20 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 -- Affine transformations
 
 instance (Num u, Ord u) => Transform (Picture u) where
-  transform mtrx = mapLocale (\(bb,xs) -> (transform mtrx bb, Matrix mtrx : xs))
+  transform mtrx = 
+    mapLocale (\(bb,xs) -> (transform mtrx bb, Matrix mtrx : xs))
 
 instance (Real u, Floating u) => Rotate (Picture u) where
-  rotate theta = mapLocale (\(bb,xs) -> (rotate theta bb, Rotate theta : xs))
+  rotate theta = 
+    mapLocale (\(bb,xs) -> (rotate theta bb, Rotate theta : xs))
 
 instance (Real u, Floating u) => RotateAbout (Picture u) where
   rotateAbout theta pt = 
     mapLocale (\(bb,xs) -> (rotateAbout theta pt bb, RotAbout theta pt : xs))
 
 instance (Num u, Ord u) => Scale (Picture u) where
-  scale sx sy = mapLocale (\(bb,xs) -> (scale sx sy bb, Scale sx sy : xs))
+  scale sx sy = 
+    mapLocale (\(bb,xs) -> (scale sx sy bb, Scale sx sy : xs))
 
 instance (Num u, Ord u) => Translate (Picture u) where
   translate dx dy = 
@@ -446,7 +450,28 @@ deconsMatrix (M3'3 e0x e1x ox
 
 
 
+-- This needs is for PostScript and SVG output - it should be 
+-- hidden in the export list of Wumpus.Core
 
+
+-- If a picture has coordinates smaller than (P2 4 4) then it 
+-- needs repositioning before it is drawn to PostScript or SVG.
+-- 
+-- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
+-- user defined.
+--
+repositionDeltas :: (Num u, Ord u) 
+                 => Picture u -> (BoundingBox u, Maybe (Vec2 u))
+repositionDeltas = step . boundary 
+  where
+    step bb@(BBox (P2 llx lly) (P2 urx ury))
+        | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
+        | otherwise           = (bb, Nothing)
+      where 
+        x  = 4 - llx
+        y  = 4 - lly
+        ll = P2 (llx+x) (lly+y)
+        ur = P2 (urx+x) (ury+y) 
 
 
 
