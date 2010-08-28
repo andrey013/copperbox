@@ -21,6 +21,7 @@ module Wumpus.Fresh.PictureInternal
 
     Picture(..)
   , DPicture
+  , Locale
   , GSUpdate(..)
 
   , Primitive(..)
@@ -50,6 +51,7 @@ module Wumpus.Fresh.PictureInternal
 
   ) where
 
+import Wumpus.Fresh.AffineTrans
 import Wumpus.Fresh.BoundingBox
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FontSize
@@ -294,6 +296,12 @@ instance Format EllipseProps where
 
 --------------------------------------------------------------------------------
 
+instance Boundary (Picture u) where
+  boundary (Leaf (bb,_) _)    = bb
+  boundary (Picture (bb,_) _) = bb
+  boundary (Clip (bb,_) _ _)  = bb
+  boundary (Group (bb,_) _ _) = bb
+
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ _ p)      = pathBoundary p
   boundary (PLabel a _ l)     = labelBoundary (label_font a) l
@@ -352,8 +360,31 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 
 
 --------------------------------------------------------------------------------
+-- Affine transformations
+
+instance (Num u, Ord u) => Transform (Picture u) where
+  transform mtrx = mapLocale (\(bb,xs) -> (transform mtrx bb, Matrix mtrx : xs))
+
+instance (Real u, Floating u) => Rotate (Picture u) where
+  rotate theta = mapLocale (\(bb,xs) -> (rotate theta bb, Rotate theta : xs))
+
+instance (Real u, Floating u) => RotateAbout (Picture u) where
+  rotateAbout theta pt = 
+    mapLocale (\(bb,xs) -> (rotateAbout theta pt bb, RotAbout theta pt : xs))
+
+instance (Num u, Ord u) => Scale (Picture u) where
+  scale sx sy = mapLocale (\(bb,xs) -> (scale sx sy bb, Scale sx sy : xs))
+
+instance (Num u, Ord u) => Translate (Picture u) where
+  translate dx dy = 
+    mapLocale (\(bb,xs) -> (translate dx dy bb, Translate dx dy : xs))
 
 
+mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
+mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
+mapLocale f (Picture lc ones)  = Picture (f lc) ones
+mapLocale f (Clip lc pp pic)   = Clip (f lc) pp pic
+mapLocale f (Group lc upd pic) = Group (f lc) upd pic
 
 --------------------------------------------------------------------------------
 -- Manipulating the PrimCTM

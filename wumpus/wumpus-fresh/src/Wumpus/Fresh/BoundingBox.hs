@@ -45,6 +45,7 @@ module Wumpus.Fresh.BoundingBox
 
   ) where
 
+import Wumpus.Fresh.AffineTrans
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.Utils ( PSUnit(..) )
@@ -88,6 +89,28 @@ instance PSUnit u => Format (BoundingBox u) where
 -- 
 
 type instance DUnit (BoundingBox u) = u
+
+pointTransform :: (Num u , Ord u)
+               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
+pointTransform fn bb = traceBoundary $ map fn $ [bl,br,tr,tl]
+    where 
+      (bl,br,tr,tl) = boundaryCorners bb
+
+
+instance (Num u, Ord u) => Transform (BoundingBox u) where
+  transform mtrx = pointTransform  (mtrx *#)
+
+instance (Real u, Floating u) => Rotate (BoundingBox u) where
+  rotate theta = pointTransform (rotate theta)
+
+instance (Real u, Floating u) => RotateAbout (BoundingBox u) where
+  rotateAbout theta pt = pointTransform (rotateAbout theta pt)
+
+instance (Num u, Ord u) => Scale (BoundingBox u) where
+  scale sx sy = pointTransform (scale sx sy)
+
+instance (Num u, Ord u) => Translate (BoundingBox u) where
+  translate dx dy = pointTransform (translate dx dy)
 
 
 --------------------------------------------------------------------------------

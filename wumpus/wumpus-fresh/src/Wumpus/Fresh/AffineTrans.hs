@@ -105,10 +105,10 @@ class Scale t where
   scale :: u ~ DUnit t => u -> u -> t -> t
 
 instance Num u => Scale (Point2 u) where
-  scale x y = ((scalingMatrix x y) *#) 
+  scale sx sy = ((scalingMatrix sx sy) *#) 
 
 instance Num u => Scale (Vec2 u) where
-  scale x y = ((scalingMatrix x y) *#) 
+  scale sx sy = ((scalingMatrix sx sy) *#) 
 
 --------------------------------------------------------------------------------
 -- Translate
@@ -118,10 +118,10 @@ class Translate t where
   translate :: DUnit t -> DUnit t -> t -> t
 
 instance Num u => Translate (Point2 u) where
-  translate x y = ((translationMatrix x y) *#)
+  translate dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 instance Num u => Translate (Vec2 u) where
-  translate x y = ((translationMatrix x y) *#)
+  translate dx dy (V2 x y) = V2 (x+dx) (y+dy)
 
 
 -------------------------------------------------------------------------------- 
