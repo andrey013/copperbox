@@ -124,7 +124,7 @@ xml_version :: Doc
 xml_version = text "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"
 
 doctype :: Doc 
-doctype = angles (    text "DOCTYPE svg PUBLIC" 
+doctype = angles (    text "!DOCTYPE svg PUBLIC" 
                   <+> dquoteText "-//W3C//DTD SVG 1.1//EN"
                   <+> dquoteText svg_url )
   where
@@ -134,9 +134,9 @@ doctype = angles (    text "DOCTYPE svg PUBLIC"
 elem_svg :: Doc -> Doc 
 elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) [body]
   where 
-    svgns = svgAttr "xmlns"       (dquoteText "http://www.w3.org/2000/svg")
-    svgvn = svgAttr "version"     (dquoteText "1.1")
-    xlink = svgAttr "xmlns:xlink" (dquoteText "http://www.w3.org/1999/xlink")
+    svgns = svgAttr "xmlns"       (text "http://www.w3.org/2000/svg")
+    svgvn = svgAttr "version"     (text "1.1")
+    xlink = svgAttr "xmlns:xlink" (text "http://www.w3.org/1999/xlink")
 
 -- | @ \<g ...\> ... \</g\> @ 
 --

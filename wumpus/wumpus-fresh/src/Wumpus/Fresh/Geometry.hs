@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -36,9 +37,21 @@ module Wumpus.Fresh.Geometry
 
   , MatrixMult(..)
 
+  -- * Vector operations
+  , vec
+  , hvec
+  , vvec
+  , avec
+  , pvec
+  , direction
+  , vlength
+  , vangle
+
+  -- * Point operations
   , zeroPt
   , maxPt
   , minPt
+  , lineDirection
 
   -- * Matrix contruction
   , identityMatrix
@@ -329,6 +342,34 @@ instance Num u => MatrixMult (Point2 u) where
 --------------------------------------------------------------------------------
 -- Vectors
 
+
+-- | 'vec' - a synonym for the constructor 'V2' with a Num 
+-- constraint on the arguments.
+--
+-- Essentially superfluous, but it can be slightly more 
+-- typographically pleasant when used in lists of vectors:
+--
+-- > [ vec 2 2, vvec 4, hvec 4, vec 2 2 ]
+--
+-- Versus:
+--
+-- > [ V2 2 2, vvec 4, hvec 4, V2 2 2 ]
+--  
+vec :: Num u => u -> u -> Vec2 u
+vec = V2
+
+
+-- | Construct a vector with horizontal displacement.
+--
+hvec :: Num u => u -> Vec2 u
+hvec d = V2 d 0
+
+-- | Construct a vector with vertical displacement.
+--
+vvec :: Num u => u -> Vec2 u
+vvec d = V2 0 d
+
+
 -- | Construct a vector from an angle and magnitude.
 --
 avec :: Floating u => Radian -> u -> Vec2 u
@@ -337,6 +378,30 @@ avec theta d = V2 x y
     ang = fromRadian theta
     x   = d * cos ang
     y   = d * sin ang
+
+-- | The vector between two points
+--
+-- > pvec = flip (.-.)
+--
+pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
+pvec = flip (.-.)
+
+-- | Direction of a vector - i.e. the counter-clockwise angle 
+-- from the x-axis.
+--
+direction :: (Floating u, Real u) => Vec2 u -> Radian
+direction (V2 x y) = lineDirection (P2 0 0) (P2 x y)
+
+-- | Length of a vector.
+--
+vlength :: Floating u => Vec2 u -> u
+vlength (V2 x y) = sqrt $ x*x + y*y
+
+-- | Extract the angle between two vectors.
+--
+vangle :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+       => Vec2 u -> Vec2 u -> Radian
+vangle u v = realToFrac $ acos $ (u <.> v) / (magnitude u * magnitude v)
 
 
 --------------------------------------------------------------------------------
@@ -369,6 +434,25 @@ minPt (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
 maxPt :: Ord u => Point2 u -> Point2 u -> Point2 u
 maxPt (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 
+-- | Calculate the counter-clockwise angle between two points 
+-- and the x-axis.
+--
+lineDirection :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
+lineDirection (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
+  where
+    -- north-east quadrant 
+    step x y | pve x && pve y = toRadian $ atan (y/x)          
+    
+    -- north-west quadrant
+    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
+
+    -- south-east quadrant
+    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
+
+    -- otherwise... south-west quadrant
+    step x y                  = pi     + (toRadian $ atan (y/x))
+
+    pve a = signum a >= 0
 
 
 --------------------------------------------------------------------------------

@@ -41,6 +41,7 @@ module Wumpus.Fresh.PictureInternal
   , EllipseProps(..)
   , PrimCTM(..)
 
+  , pathBoundary
 
   -- * PrimCTM
   , identityCTM
