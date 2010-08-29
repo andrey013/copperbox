@@ -18,13 +18,21 @@ module Wumpus.Fresh.SVGDoc
   (
     escapeSpecial
 
+  , xml_version
+  , doctype
+  , elem_svg
+  , elem_g
+  , elem_g_no_attrs
+
   , elem_a_xlink  
+  , elem_clipPath
   , elem_path
   , elem_text
   , elem_tspan
   , elem_ellipse
   , elem_circle
 
+  , attr_id
   , attr_x
   , attr_y
   , attr_r
@@ -57,8 +65,10 @@ module Wumpus.Fresh.SVGDoc
   , attr_stroke_dasharray_none
   , attr_stroke_dashoffset
 
+  , attr_clip_path
   , attr_transform
   , val_matrix
+  , val_translate
 
   ) where
 
@@ -75,7 +85,6 @@ escapeSpecial :: CharCode -> String
 escapeSpecial i = "&#" ++ show i ++ ";"
 
 
-
 -- Note - it is easier put particular attrs at the end (esp. d 
 -- for paths) if attrs are treated as a Doc. 
 
@@ -87,6 +96,12 @@ svgElemB :: String -> Doc -> [Doc] -> Doc
 svgElemB name attrs elems = vcat [ open, indentLines 2 elems, close ]
   where
     open  = angles (text name <+> attrs)
+    close = angles (char '/' <> text name)
+
+svgElemB_no_attrs :: String -> [Doc] -> Doc
+svgElemB_no_attrs name elems = vcat [ open, indentLines 2 elems, close ]
+  where
+    open  = angles (text name)
     close = angles (char '/' <> text name)
 
 -- 1 line version of svgElemB
@@ -101,14 +116,50 @@ svgElemB1 name attrs elems = open <> elems <> close
 svgAttr :: String -> Doc -> Doc
 svgAttr name val = text name <> char '=' <> dquotes val
  
-
+dquoteText :: String -> Doc
+dquoteText = dquotes . text 
 
 --------------------------------------------------------------------------------
+xml_version :: Doc
+xml_version = text "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"
+
+doctype :: Doc 
+doctype = angles (    text "DOCTYPE svg PUBLIC" 
+                  <+> dquoteText "-//W3C//DTD SVG 1.1//EN"
+                  <+> dquoteText svg_url )
+  where
+    svg_url = "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"
+
+
+elem_svg :: Doc -> Doc 
+elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) [body]
+  where 
+    svgns = svgAttr "xmlns"       (dquoteText "http://www.w3.org/2000/svg")
+    svgvn = svgAttr "version"     (dquoteText "1.1")
+    xlink = svgAttr "xmlns:xlink" (dquoteText "http://www.w3.org/1999/xlink")
+
+-- | @ \<g ...\> ... \</g\> @ 
+--
+elem_g :: Doc -> Doc -> Doc
+elem_g attrs body = svgElemB "g" attrs [body]
+
+-- | @ \<g\> ... \<g/\> @ 
+--
+elem_g_no_attrs :: Doc -> Doc
+elem_g_no_attrs body = svgElemB_no_attrs "g" [body]
+
+-- | @ \<clipPath ...\> ... \</clipPath\> @ 
+--
+elem_clipPath :: Doc -> Doc -> Doc
+elem_clipPath attrs body = svgElemB "clipPath" attrs [body]
+
 
 elem_a_xlink :: String -> Doc -> Doc
 elem_a_xlink href body = svgElemB "a" attrs [body]
   where
     attrs = svgAttr "xlink:href" (text href)
+
+
 
 -- | @ \<path ... d=... /\> @
 --
@@ -136,6 +187,11 @@ elem_circle attrs = svgElem "circle" attrs
 --
 elem_ellipse :: Doc -> Doc
 elem_ellipse attrs = svgElem "ellipse" attrs
+
+-- | @ id=\"...\" @
+--
+attr_id :: String -> Doc
+attr_id = svgAttr "id" . text
 
 
 -- | @ x=\"...\" @
@@ -302,6 +358,10 @@ attr_stroke_dasharray_none = svgAttr "stroke-dasharray" (text "none")
 attr_stroke_dashoffset :: Int -> Doc
 attr_stroke_dashoffset = svgAttr "stroke-dashoffset" . int
 
+-- | @ clip_path="url(#...)" @
+--
+attr_clip_path :: String -> Doc
+attr_clip_path ss = svgAttr "transform" (text "url" <> parens (text $ '#':ss)) 
 
 
 -- | @ transform="..." @
@@ -315,3 +375,8 @@ val_matrix :: PSUnit u => Matrix3'3 u -> Doc
 val_matrix mtrx = text "matrix" <> tupled (map dtruncFmt [a,b,c,d,e,f])
   where
     (a,b,c,d,e,f) = deconsMatrix mtrx
+
+-- | @ translate(..., ..., ..., ..., ..., ...) @
+--
+val_translate :: PSUnit u => Vec2 u -> Doc
+val_translate (V2 x y) = text "translate" <> tupled [dtruncFmt x, dtruncFmt y]

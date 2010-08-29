@@ -16,7 +16,15 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Fresh.PostScript
-  where
+  ( 
+  -- * Output PostScript
+    writePS
+  , writeEPS
+  
+  , writePS_latin1
+  , writeEPS_latin1
+
+  ) where
 
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
@@ -412,7 +420,7 @@ makeFontAttrs (FontAttr sz face) =
 
 
 --------------------------------------------------------------------------------
--- Bracketing matrix or PrimCTM trafos
+-- Bracket matrix and PrimCTM trafos
 
 bracketTrafos :: (Real u, Floating u, PSUnit u) 
               => [AffineTrafo u] -> PsMonad Doc -> PsMonad Doc

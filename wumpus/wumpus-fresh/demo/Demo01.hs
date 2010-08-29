@@ -17,8 +17,8 @@ demo01 = printPicture pic1
 pic1 :: DPicture
 pic1 = frameMulti [ ellipse_ 20 10 zeroPt ]
 
-demo02 :: Doc
-demo02 = runPsMonad latin1Encoder $ fillArcPath (RGB255 0 0 0) (20::Double) zeroPt
+-- demo02 :: Doc
+-- demo02 = runPsMonad latin1Encoder $ fillArcPath (RGB255 0 0 0) (20::Double) zeroPt
 
 demo03 :: Doc
 demo03 = hsep (map int [1..10]) <> text "next"
@@ -36,8 +36,10 @@ demo06 = indentLines 2 $ map text ["one...", "two...", "three.", "four..", "five
 demo07 :: Doc
 demo07 = indentLines 2 [text ".....", demo05]
 
+{-
 demo08 :: Doc
 demo08 = SVG.runSvgMonad latin1Encoder $ 
     SVG.primPath (CFill (RGB255 0 0 0)) (PrimPath zeroPt [PLineTo p2])
   where
     p2 = P2 (50::Double) 50
+-}

@@ -16,67 +16,118 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Fresh.SVG 
-  where
+  (
+
+  -- * Output SVG
+    writeSVG
+
+  , writeSVG_latin1
+
+  ) where
 
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
+import Wumpus.Fresh.OneList
 import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.SVGDoc
 import Wumpus.Fresh.TextEncoder
 import Wumpus.Fresh.TextInternal
+import Wumpus.Fresh.TextLatin1
 import Wumpus.Fresh.Utils
 
 import Control.Applicative hiding ( empty )
+import qualified Data.Foldable as F
 
-
--- SvgMonad is at least a two Readers...
+-- SvgMonad is two Readers plus Int state for clip paths...
 --
 newtype SvgMonad a = SvgMonad { 
-            getSvgMonad :: TextEncoder -> GraphicsState -> a }
+            getSvgMonad :: TextEncoder -> GraphicsState -> Int -> (a,Int) }
+
+
 
 instance Functor SvgMonad where
-  fmap f mf = SvgMonad $ \r1 r2 -> let a = getSvgMonad mf r1 r2 in f a
+  fmap f mf = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad mf r1 r2 s
+                                     in (f a,s1)
 
 instance Applicative SvgMonad where
-  pure a    = SvgMonad $ \_  _  -> a
-  mf <*> ma = SvgMonad $ \r1 r2 -> let f = getSvgMonad mf r1 r2
-                                       a = getSvgMonad ma r1 r2
-                                   in f a
+  pure a    = SvgMonad $ \_  _  s -> (a,s)
+  mf <*> ma = SvgMonad $ \r1 r2 s -> let (f,s1) = getSvgMonad mf r1 r2 s
+                                         (a,s2) = getSvgMonad ma r1 r2 s1
+                                   in (f a, s2)
 
 instance Monad SvgMonad where
-  return a  = SvgMonad $ \_  _  -> a
-  m >>= k   = SvgMonad $ \r1 r2 -> let a = getSvgMonad m r1 r2
-                                       b = (getSvgMonad . k) a r1 r2
-                                   in b
+  return a  = SvgMonad $ \_  _  s -> (a,s)
+  m >>= k   = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad m r1 r2 s
+                                     in (getSvgMonad . k) a r1 r2 s1
+                            
 
 
 runSvgMonad :: TextEncoder -> SvgMonad a -> a
-runSvgMonad enc mf = getSvgMonad mf enc zeroGS
+runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS 0
+
+newClipLabel :: SvgMonad String
+newClipLabel = SvgMonad $ \_ _ s -> ('c':'l':'i':'p':show s, s+1)
 
 askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
-askGlyphName nm = SvgMonad $ \r1 _ -> case lookupByGlyphName nm r1 of
-    Just a  -> Right $ escapeSpecial a
-    Nothing -> Left  $ escapeSpecial $ svg_fallback r1
+askGlyphName nm = SvgMonad $ \r1 _ s -> case lookupByGlyphName nm r1 of
+    Just a  -> (Right $ escapeSpecial a, s)
+    Nothing -> (Left  $ escapeSpecial $ svg_fallback r1, s)
+
+-- This is different to the PsMonad version, as SVG is nested 
+-- (and /graphics state/ is via a Reader), so it is the same as 
+-- local with a Reader monad.
+--
+runLocalGS :: GSUpdate -> SvgMonad a -> SvgMonad a
+runLocalGS upd mf = 
+    SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (getGSU upd r2) s
+
 
 askFontAttr :: SvgMonad FontAttr
-askFontAttr = SvgMonad $ \_ r2 -> FontAttr (gs_font_size r2) (gs_font_face r2)
+askFontAttr = 
+    SvgMonad $ \_ r2 s -> (FontAttr (gs_font_size r2) (gs_font_face r2), s)
 
 askLineWidth    :: SvgMonad Double
-askLineWidth    = SvgMonad $ \_ r2 -> gs_line_width r2
+askLineWidth    = SvgMonad $ \_ r2 s -> (gs_line_width r2, s)
 
 askMiterLimit   :: SvgMonad Double
-askMiterLimit   = SvgMonad $ \_ r2 -> gs_miter_limit r2
+askMiterLimit   = SvgMonad $ \_ r2 s -> (gs_miter_limit r2, s)
 
 askLineCap      :: SvgMonad LineCap
-askLineCap      = SvgMonad $ \_ r2 -> gs_line_cap r2
+askLineCap      = SvgMonad $ \_ r2 s -> (gs_line_cap r2, s)
 
 askLineJoin     :: SvgMonad LineJoin
-askLineJoin     = SvgMonad $ \_ r2 -> gs_line_join r2
+askLineJoin     = SvgMonad $ \_ r2 s -> (gs_line_join r2, s)
 
 askDashPattern  :: SvgMonad DashPattern
-askDashPattern  = SvgMonad $ \_ r2 -> gs_dash_pattern r2
+askDashPattern  = SvgMonad $ \_ r2 s -> (gs_dash_pattern r2, s)
+
+--------------------------------------------------------------------------------
+
+-- | Output a picture to a SVG file. 
+--
+writeSVG :: (Real u, Floating u, PSUnit u) 
+         => FilePath -> TextEncoder -> Picture u -> IO ()
+writeSVG filepath enc pic = 
+    writeFile filepath $ show $ svgDraw enc pic 
+
+-- | Version of 'writeSVG' - using Latin1 encoding. 
+--
+writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
+                => FilePath -> Picture u -> IO ()
+writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
+
+svgDraw :: (Real u, Floating u, PSUnit u) 
+        => TextEncoder -> Picture u -> Doc
+svgDraw enc pic = 
+    let body = runSvgMonad enc (picture pic)
+    in vcat [ xml_version, doctype, elem_svg $ reframe body ]
+  where
+    (_,mbvec)    = repositionDeltas pic
+    reframe body = case mbvec of 
+                     Nothing -> body 
+                     Just v  -> elem_g (attr_transform (val_translate v)) body
 
 
 --------------------------------------------------------------------------------
@@ -88,6 +139,24 @@ askDashPattern  = SvgMonad $ \_ r2 -> gs_dash_pattern r2
 
 
 
+picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
+picture (Leaf (_,xs) ones)    = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs) ones) = bracketTrafos xs $ revConcat picture ones
+picture (Clip (_,xs) cp pic)  = 
+    bracketTrafos xs $ do { lbl <- newClipLabel
+                          ; d1  <- clipPath lbl cp
+                          ; d2  <- picture pic
+                          ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
+                          } 
+picture (Group (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+
+
+revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
+revConcat fn ones = F.foldrM step empty ones
+  where
+    step e ac = (\d -> d `vconcat` ac) <$> fn e
+
+
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
 primitive (PPath props xl pp)     = drawXLink xl <$> primPath props pp
 primitive (PLabel props xl lbl)   = drawXLink xl <$> primLabel props lbl
@@ -97,6 +166,9 @@ primitive (PEllipse props xl ell) = drawXLink xl <$> primEllipse props ell
 drawXLink :: XLink -> Doc -> Doc
 drawXLink NoLink           doc = doc
 drawXLink (XLinkHRef href) doc = elem_a_xlink href doc
+
+clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
+clipPath clip_id pp = (\doc -> elem_clipPath (attr_id clip_id) doc) <$> path pp
 
 
 primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
@@ -249,7 +321,19 @@ makeFontAttrs (FontAttr sz face) =
 
 
 --------------------------------------------------------------------------------
--- PrimCTM
+-- Bracket matrix and PrimCTM trafos
+
+bracketTrafos :: (Real u, Floating u, PSUnit u) 
+              => [AffineTrafo u] -> SvgMonad Doc -> SvgMonad Doc
+bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
+
+bracketMatrix :: (Fractional u, PSUnit u) 
+              => Matrix3'3 u -> SvgMonad Doc -> SvgMonad Doc
+bracketMatrix mtrx ma 
+    | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$>  ma
+    | otherwise              = (\doc -> elem_g trafo doc) <$> ma
+  where
+    trafo = attr_transform $ val_matrix mtrx
 
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
