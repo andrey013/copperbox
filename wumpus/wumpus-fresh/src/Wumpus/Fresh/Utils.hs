@@ -23,6 +23,8 @@ module Wumpus.Fresh.Utils
   -- | Conditional application
     applyIf
 
+  , rescale
+
   -- * Truncate / print a double
   , PSUnit(..)
   , dtruncFmt
@@ -57,6 +59,18 @@ import Data.Time
 
 applyIf :: Bool -> (a -> a) -> a -> a
 applyIf cond fn a = if cond then fn a else a
+
+
+-- rescale a (originally in the range amin to amax) within the 
+-- the range bmin to bmax.
+--
+rescale :: Fractional a => (a,a) -> (a,a) -> a -> a
+rescale (amin,amax) (bmin,bmax) a = 
+    bmin + apos * (brange / arange)  
+  where
+    arange = amax - amin
+    brange = bmax - bmin
+    apos   = a - amin
 
 
 --------------------------------------------------------------------------------

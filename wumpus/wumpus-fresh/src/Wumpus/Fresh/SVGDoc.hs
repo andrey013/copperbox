@@ -345,7 +345,7 @@ attr_stroke_dasharray :: [(Int,Int)] -> Doc
 attr_stroke_dasharray = svgAttr "stroke-dasharray" . step 
   where
     step []         = empty
-    step [(a,_)]    = int a <> comma                     -- Don\'t print b 
+    step [(a,b)]    = int a <> comma <> int b 
     step ((a,b):xs) = int a <> comma <> int b <> step xs
 
 -- | @ stroke-dasharray=\"none\" @
