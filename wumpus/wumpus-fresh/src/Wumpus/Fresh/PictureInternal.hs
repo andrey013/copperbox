@@ -30,9 +30,12 @@ module Wumpus.Fresh.PictureInternal
   , XLink(..)
 
   , PrimPath(..)
+  , DPrimPath
   , PathProps(..)
   , PrimPathSegment(..)
+  , DPrimPathSegment
   , PrimLabel(..)
+  , DPrimLabel
   , LabelProps(..)
   , PrimEllipse(..)
   , EllipseProps(..)
@@ -46,9 +49,15 @@ module Wumpus.Fresh.PictureInternal
   , matrixRepCTM
   , translMatrixRepCTM
 
+  , rotatePrimitive
+  , scalePrimitive
+  , uniformScalePrimitive
+  , translatePrimitive
+
   , concatTrafos
   , deconsMatrix
   , repositionDeltas
+
 
   ) where
 
@@ -114,6 +123,7 @@ data XLink = NoLink
 data PrimPath u = PrimPath (Point2 u) [PrimPathSegment u]
   deriving (Eq,Show)
 
+type DPrimPath = PrimPath Double
 
 -- | PrimPathSegment - either a cubic Bezier curve or a line.
 --
@@ -121,6 +131,7 @@ data PrimPathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
                        | PLineTo   (Point2 u)
   deriving (Eq,Show)
 
+type DPrimPathSegment = PrimPathSegment Double
 
 -- | Note when drawn /filled/ and drawn /stroked/ the same
 -- polygon will have (slightly) different size:
@@ -147,6 +158,7 @@ data PrimLabel u = PrimLabel
       }
   deriving (Eq,Show)
 
+type DPrimLabel = PrimLabel Double
 
 data LabelProps   = LabelProps 
       { label_colour :: RGB255
@@ -422,6 +434,179 @@ translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 
 --------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
+-- Transform primitives
+
+
+-- | Rotate a Primitive.
+-- 
+-- Note - this is not an affine transformation as Primitives are
+-- not regarded as being in an affine frame.
+--
+-- * Paths are rotated about their start point.
+--
+-- * Labels are rotated about the bottom-left corner.
+--
+-- * Ellipses are rotated about the center.
+--
+-- For Primitives and Ellipses applying a rotation and or a scale 
+-- will generate an additional matrix transformation in the 
+-- generated PostScript. For Paths all transformations are
+-- \"cost-free\".
+--
+rotatePrimitive :: (Real u, Floating u) 
+                => Radian -> Primitive u -> Primitive u
+rotatePrimitive ang (PPath a xl path)   = PPath a xl $ rotatePath ang path
+rotatePrimitive ang (PLabel a xl lbl)   = PLabel a xl $ rotateLabel ang lbl
+rotatePrimitive ang (PEllipse a xl ell) = PEllipse a xl $ rotateEllipse ang ell
+
+
+-- | Scale a Primitive.
+-- 
+-- Note - this is not an affine transformation as Primitives are
+-- not regarded as being in an affine frame.
+--
+-- An affine scaling uniformly scales all the elements in a 
+-- Picture. It is just a change of the Picture\'s basis vectors.
+-- The elements within the Picture are unchanged - though 
+-- obviously rendering changes according to the transformation.
+--
+-- By contrast, the scaling operation on Primitives changes the 
+-- properties of the object as it is applied - e.g. for a path
+-- the vector between the start point and all subsequent points
+-- is changed with respect to the x,y scaling factors; for an
+-- ellipse the half-width and half-height of the ellipse is
+-- scaled.
+--
+-- For Primitives and Ellipses applying a rotation and or a scale 
+-- will generate an additional matrix transformation in the 
+-- generated PostScript. For Paths all transformations are 
+-- \"cost-free\".
+--
+scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
+scalePrimitive x y (PPath a xl path)   = PPath    a xl $ scalePath x y path
+scalePrimitive x y (PLabel a xl lbl)   = PLabel   a xl $ scaleLabel x y lbl
+scalePrimitive x y (PEllipse a xl ell) = PEllipse a xl $ scaleEllipse x y ell
+
+-- | Apply a uniform scale to a Primitive.
+--
+uniformScalePrimitive :: Num u => u -> Primitive u -> Primitive u
+uniformScalePrimitive d = scalePrimitive d d 
+
+-- | Translate a primitive.
+--
+-- Translation is essentially \"cost-free\" for the generated 
+-- PostScript or SVG. Paths are translated before the PostScript 
+-- is generated. For Ellipses and Labels, translation will 
+-- either move the bottom-left origin (Label) or center 
+-- (Ellipse); or if they are also scaled or rotated the 
+-- translation will be concatenated into the matrix operation in 
+-- the generated output. 
+-- 
+translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
+translatePrimitive x y (PPath a xl path)   = 
+    PPath a xl $ translatePath x y path
+
+translatePrimitive x y (PLabel a xl lbl)   = 
+    PLabel a xl $ translateLabel x y lbl
+
+translatePrimitive x y (PEllipse a xl ell) = 
+    PEllipse a xl $ translateEllipse x y ell
+
+
+
+--------------------------------------------------------------------------------
+-- Paths
+
+-- Cannot support general matrix transform or rotateAbout on 
+-- Ellipses or Labels so there are not supported on Paths.
+--
+
+-- rotatePath - rotate the path about its start point.
+-- 
+-- This is a visually intuitive interpretation - Primitives are
+-- not in an affine space (they have an origin, i.e. the location 
+-- (0,0), but don\'t not basis vectors) so manipulating them 
+-- cannot follow the standard affine interpretation.
+-- 
+rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
+rotatePath ang (PrimPath start xs) = PrimPath start $ map (mapSeg fn) xs 
+  where
+    fn = rotateAbout ang start
+
+-- scalePath - scale the vector between each point and the start 
+-- point.
+--
+-- This produces visually inituitive results. As primitives 
+-- don\'t exist in an affine space / affine frame until they
+-- are lifted to Pictures their manipulation cannot correspond
+-- to the standard affine manipulations.
+--
+scalePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+scalePath x y (PrimPath pt xs) = PrimPath pt $ map (mapSeg fn) xs
+  where
+    fn p1 = let dif = p1 .-. pt in pt .+^ (scale x y $ dif)
+
+-- translatePath - move all points in the path by the supplied 
+-- x and y values.
+--
+translatePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+translatePath x y = mapPath (translate x y)
+
+
+mapPath :: (Point2 u -> Point2 u) -> PrimPath u -> PrimPath u
+mapPath fn (PrimPath st xs) = PrimPath (fn st) (map (mapSeg fn) xs)
+
+mapSeg :: (Point2 u -> Point2 u) -> PrimPathSegment u -> PrimPathSegment u
+mapSeg fn (PLineTo p)         = PLineTo (fn p)
+mapSeg fn (PCurveTo p1 p2 p3) = PCurveTo (fn p1) (fn p2) (fn p3)
+
+--------------------------------------------------------------------------------
+-- Labels
+
+
+
+-- Rotations on a (primitive) Label are interpreted as rotating
+-- about the bottom-left corner.
+--
+rotateLabel :: Radian -> PrimLabel u -> PrimLabel u
+rotateLabel ang (PrimLabel pt txt ctm) = PrimLabel pt txt (rotateCTM ang ctm)
+
+scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
+scaleLabel x y (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM x y ctm)
+
+
+-- Change the bottom-left corner.
+--
+translateLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
+translateLabel x y (PrimLabel pt txt ctm) = PrimLabel (translate x y pt) txt ctm
+
+--------------------------------------------------------------------------------
+-- Ellipse
+
+
+rotateEllipse :: Radian -> PrimEllipse u -> PrimEllipse u
+rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (rotateCTM ang ctm)
+    
+
+
+scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh (scaleCTM x y ctm)
+    
+
+
+-- Change the point
+--
+translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+translateEllipse x y (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate x y pt) hw hh ctm
+
+
+
+--------------------------------------------------------------------------------
+-- Additional operations
 
 concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
 concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
@@ -472,8 +657,4 @@ repositionDeltas = step . boundary
         y  = 4 - lly
         ll = P2 (llx+x) (lly+y)
         ur = P2 (urx+x) (ury+y) 
-
-
-
-
 
