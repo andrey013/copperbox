@@ -154,7 +154,7 @@ picture (Group (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
 revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
 revConcat fn ones = F.foldrM step empty ones
   where
-    step e ac = (\d -> d `vconcat` ac) <$> fn e
+    step e ac = (\d -> ac `vconcat` d) <$> fn e
 
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc

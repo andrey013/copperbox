@@ -341,7 +341,7 @@ ps_setfont = command "setfont" []
 -- | @ (...) show  @
 --
 ps_show :: String -> Doc
-ps_show ss = command "show" [text ss]
+ps_show ss = command "show" [parens $ text ss]
 
 -- | @ (/...) show  @
 --
