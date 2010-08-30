@@ -48,8 +48,12 @@ transLocale :: Num u => u -> Locale u -> Locale u
 transLocale ymax (bb,xs,yr) = 
     (transBBox ymax bb, map transAT xs, yr)
 
-transAT :: AffineTrafo u -> AffineTrafo u
-transAT a = a
+transAT :: Num u => AffineTrafo u -> AffineTrafo u
+transAT (Matrix  mtrx)      = Matrix $ scalingMatrix 1 (-1) * mtrx 
+transAT (Rotate theta)      = Rotate $ negate theta
+transAT (RotAbout theta pt) = RotAbout (negate theta) pt   -- TODO
+transAT (Scale sx sy)       = Scale sx sy      -- THIS IS WRONG
+transAT (Translate dx dy)   = Translate dx dy   -- TODO
 
 transPrim :: Num u => u -> Primitive u -> Primitive u
 transPrim ymax (PPath a xl pp)     = PPath a xl (transPath ymax pp)
@@ -81,7 +85,9 @@ transBBox ymax (BBox ll ur) = BBox (transPoint ymax ll) (transPoint ymax ur)
 transPoint :: Num u => u -> Point2 u -> Point2 u
 transPoint ymax (P2 x y) = P2 x (ymax - y) 
 
--- What to do here?
+-- Is the translation here just negating the angle with scaling
+-- left untouched?
 --
 transPrimCTM :: PrimCTM u -> PrimCTM u
-transPrimCTM ctm = ctm
+transPrimCTM (PrimCTM sx sy theta) = PrimCTM sx sy (negate theta)
+

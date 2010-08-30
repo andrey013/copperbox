@@ -25,6 +25,7 @@ module Wumpus.Fresh.SVG
 
   ) where
 
+import Wumpus.Fresh.BoundingBox
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
@@ -121,17 +122,22 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> Doc
-svgDraw enc pic = 
-    let body = runSvgMonad enc (picture $ translatePageCoordinates pic)
-    in vcat [ xml_version, doctype, elem_svg body ]
-
-{-
+svgDraw enc original_pic = 
+    let body = runSvgMonad enc $ picture pic
+    in vcat [ xml_version, doctype, elem_svg $ reframe body ]
   where
-    (_,mbvec)    = repositionDeltas pic
-    reframe body = case mbvec of 
-                     Nothing -> body 
-                     Just v  -> elem_g (attr_transform (val_translate v)) body
--}
+    pic          = translatePageCoordinates original_pic
+    reframe      = pictureDisplace pic 
+
+-- Picture is translated at this point...
+--
+pictureDisplace :: (Ord u, PSUnit u) => Picture u -> (Doc -> Doc)
+pictureDisplace pic = step $ ll_corner $ boundary pic
+  where
+    step (P2 x _) 
+        | x < 0     = let attr = attr_transform $ val_translate $ hvec (abs x)
+                      in (\body -> elem_g attr body)
+        | otherwise = id      
 
 --------------------------------------------------------------------------------
 
@@ -310,16 +316,22 @@ deltaFontAttrs fa  =
 
 makeFontAttrs :: FontAttr -> Doc
 makeFontAttrs (FontAttr sz face) = 
-    sf (svg_font_style face) $ attr_font_size sz
+    attr_font_family (svg_font_family face) <+> attr_font_size sz 
+                                            <> suffix (svg_font_style face) 
   where  
-    sf SVG_REGULAR      = id
-    sf SVG_BOLD         = (<+> attr_font_weight "bold")
-    sf SVG_ITALIC       = (<+> attr_font_style "italic")
-    sf SVG_BOLD_ITALIC  = (<+> attr_font_weight "bold" 
-                           <+> attr_font_style "italic")
-    sf SVG_OBLIQUE      = (<+> attr_font_style "oblique")
-    sf SVG_BOLD_OBLIQUE = (<+> attr_font_weight "bold" 
-                           <+> attr_font_style "oblique")
+    suffix SVG_REGULAR      = empty
+
+    suffix SVG_BOLD         = space <> attr_font_weight "bold"
+
+    suffix SVG_ITALIC       = space <> attr_font_style "italic"
+
+    suffix SVG_BOLD_ITALIC  = 
+        space <> attr_font_weight "bold" <+> attr_font_style "italic"
+
+    suffix SVG_OBLIQUE      = space <> attr_font_style "oblique"
+
+    suffix SVG_BOLD_OBLIQUE = 
+        space <> attr_font_weight "bold" <+> attr_font_style "oblique"
 
 
 

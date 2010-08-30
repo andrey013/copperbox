@@ -446,7 +446,9 @@ p `picMoveBy` (V2 dx dy) = translate dx dy p
 picBeside :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
-    v = hvec $ boundaryWidth $ boundary a
+    (P2 x1 _) = ur_corner $ boundary a
+    (P2 x2 _) = ll_corner $ boundary b 
+    v         = hvec $ x1 - x2 
 
 --------------------------------------------------------------------------------
 -- Illustrating pictures and primitives
