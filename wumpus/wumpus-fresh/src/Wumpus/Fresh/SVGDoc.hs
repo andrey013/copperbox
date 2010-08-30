@@ -176,7 +176,7 @@ elem_text attrs body1 = svgElemB "text" attrs [body1]
 -- | @ \<tspan ... >...\</tspan\> @
 --
 elem_tspan :: Doc -> Doc -> Doc
-elem_tspan attrs body1 = svgElemB1 "text" attrs body1
+elem_tspan attrs body1 = svgElemB1 "tspan" attrs body1
 
 -- @ \<circle ... /\>
 --

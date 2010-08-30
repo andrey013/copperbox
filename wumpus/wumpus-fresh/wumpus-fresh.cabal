@@ -38,6 +38,7 @@ library
     Wumpus.Fresh.Geometry,
     Wumpus.Fresh.GraphicsState,
     Wumpus.Fresh.OneList,
+    Wumpus.Fresh.PageTranslation, 
     Wumpus.Fresh.Picture,
     Wumpus.Fresh.PictureInternal,
     Wumpus.Fresh.PostScript,

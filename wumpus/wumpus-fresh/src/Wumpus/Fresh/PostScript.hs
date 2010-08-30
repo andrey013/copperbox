@@ -271,11 +271,8 @@ primPath (CFillStroke fc attrs sc) p =
 
 
 clipPath :: PSUnit u => PrimPath u -> PsMonad Doc
-clipPath p = (\doc -> vcat [doc, ps_closepath, ps_clip]) <$> startPath p
+clipPath p = pure $ vcat [makeStartPath p , ps_closepath, ps_clip]
 
-
-startPath :: PSUnit u => PrimPath u -> PsMonad Doc
-startPath = pure . makeStartPath
 
 makeStartPath :: PSUnit u => PrimPath u -> Doc
 makeStartPath (PrimPath start xs) = 

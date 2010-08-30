@@ -30,6 +30,7 @@ import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
 import Wumpus.Fresh.GraphicsState
 import Wumpus.Fresh.OneList
+import Wumpus.Fresh.PageTranslation
 import Wumpus.Fresh.PictureInternal
 import Wumpus.Fresh.SVGDoc
 import Wumpus.Fresh.TextEncoder
@@ -121,14 +122,16 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> Doc
 svgDraw enc pic = 
-    let body = runSvgMonad enc (picture pic)
-    in vcat [ xml_version, doctype, elem_svg $ reframe body ]
+    let body = runSvgMonad enc (picture $ translatePageCoordinates pic)
+    in vcat [ xml_version, doctype, elem_svg body ]
+
+{-
   where
     (_,mbvec)    = repositionDeltas pic
     reframe body = case mbvec of 
                      Nothing -> body 
                      Just v  -> elem_g (attr_transform (val_translate v)) body
-
+-}
 
 --------------------------------------------------------------------------------
 
