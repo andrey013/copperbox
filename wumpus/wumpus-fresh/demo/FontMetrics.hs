@@ -34,7 +34,7 @@ metrics_pic :: DPicture
 metrics_pic = char_pic `picOver` lines_pic
 
 lines_pic   :: DPicture
-lines_pic   = frameMulti $ 
+lines_pic   = frame $ 
     [ ascender_line, numeral_line, xheight_line, baseline, descender_line ]
   where
     descender_pos   = 0 - courier48_descender_depth
@@ -48,7 +48,7 @@ lines_pic   = frameMulti $
 
 
 char_pic :: Picture Double
-char_pic = frameMulti $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
+char_pic = frame $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
   where
     chars = (map letter "ABXabdgjxy12") ++ [agraveU]
 

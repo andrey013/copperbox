@@ -232,11 +232,11 @@ epsDraw timestamp enc pic =
 
 
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
-picture (Leaf (_,xs) ones)    = bracketTrafos xs $ revConcat primitive ones
-picture (Picture (_,xs) ones) = bracketTrafos xs $ revConcat picture ones
-picture (Clip (_,xs) cp pic)  = bracketTrafos xs $
-                                  (vconcat <$> clipPath cp <*> picture pic)
-picture (Group (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+picture (Leaf (_,xs,_) ones)    = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs,_) ones) = bracketTrafos xs $ revConcat picture ones
+picture (Clip (_,xs,_) cp pic)  = bracketTrafos xs $
+                                    (vconcat <$> clipPath cp <*> picture pic)
+picture (Group (_,xs,_) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
 
 revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
 revConcat fn ones = F.foldrM step empty ones
@@ -257,8 +257,8 @@ primPath (CFill rgb)     p =
       <$> deltaDrawColour rgb  
 
 primPath (CStroke attrs rgb) p = 
-    (\rgbd attrd -> vcat [rgbd, attrd, makeStartPath p
-                         , ps_closepath, ps_stroke])
+    (\rgbd attrd -> vcat [ rgbd, attrd, makeStartPath p
+                         , ps_closepath, ps_stroke ])
       <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
  
 primPath (OStroke attrs rgb) p = 

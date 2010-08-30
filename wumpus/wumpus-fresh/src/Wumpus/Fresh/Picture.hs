@@ -21,7 +21,8 @@ module Wumpus.Fresh.Picture
   ( 
 
   -- * Construction
-    frameMulti
+    frame
+  , multi
   , path
   , lineTo
   , curveTo
@@ -79,17 +80,39 @@ import Data.Semigroup                           -- package: algebra
 -- Construction
 
 
+-- | Lift a list of primitives to a composite picture.
+--
+-- The order of the list maps to the zorder - the front of the
+-- list is drawn at the top.
+--
 -- This function throws an error when supplied the empty list.
 --
-frameMulti :: (Real u, Floating u, FromPtSize u) 
-           => [Primitive u] -> Picture u
-frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
-frameMulti (p:ps) = let (bb,ones) = step p ps 
-                    in Leaf (bb,[]) ones 
+frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
+frame []     = error "Wumpus.Core.Picture.frame - empty list"
+frame (p:ps) = let (bb,yr,ones) = step p ps in Leaf (bb,[],yr) ones 
   where
-    step a []     = (boundary a, one a)
-    step a (x:xs) = let (bb',rest) = step x xs
-                    in (boundary a `append` bb', cons a rest)
+    step a []     = (boundary a, primitiveYRange a, one a)
+    step a (x:xs) = let (bb', yr', rest) = step x xs
+                    in ( boundary a `append` bb'
+                       , primitiveYRange a `append` yr'
+                       , cons a rest )
+
+
+
+-- | Place multiple pictures within the standard affine frame.
+--
+-- This function throws an error when supplied the empty list.
+--
+multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
+multi []      = error "Wumpus.Core.Picture.multi - empty list"
+multi (p:ps)  = let (bb,yr,ones) = step p ps in Picture (bb,[],yr) ones 
+  where
+    step a []     = (boundary a, yrange a, one a)
+    step a (x:xs) = let (bb',yr',rest) = step x xs
+                    in ( boundary a `append` bb'
+                       , yrange a `append` yr'
+                       , cons a rest )
+
 
 
 -- | Create a Path from a start point and a list of PathSegments.
@@ -250,7 +273,7 @@ zfill = fillPath black NoLink
 -- | Clip a picture with respect to the supplied path.
 --
 clip :: (Num u, Ord u) => PrimPath u -> Picture u -> Picture u
-clip cp p = Clip (pathBoundary cp,[]) cp p
+clip cp p = Clip (pathBoundary cp, [], yrange p) cp p
 
 --------------------------------------------------------------------------------
 -- Labels to primitive
@@ -403,9 +426,10 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (bb, []) (cons a $ one b)
+a `picOver` b = Picture (bb,[],yr) (cons a $ one b)
   where
-    bb = (boundary a) `append` (boundary b)
+    bb = boundary a `append` boundary b
+    yr = yrange a   `append` yrange b
 
 -- | 'picMoveBy' : @ picture -> vector -> picture @
 -- 
@@ -440,7 +464,7 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 --
 illustrateBounds :: (Real u, Floating u, FromPtSize u) 
                  => RGB255 -> Picture u -> Picture u
-illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p) 
+illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p) 
 
 
 -- | 'illustrateBoundsPrim' : @ colour -> primitive -> picture @
@@ -452,7 +476,7 @@ illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p)
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
                      => RGB255 -> Primitive u -> Picture u
-illustrateBoundsPrim rgb p = frameMulti (boundsPrims rgb p ++ [p])
+illustrateBoundsPrim rgb p = frame (boundsPrims rgb p ++ [p])
 
 -- Note - above has to use snoc (++ [p]) to get the picture to
 -- draw above the bounding box image.
@@ -486,9 +510,9 @@ illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
                         => RGB255 -> Primitive u -> Picture u
 illustrateControlPoints rgb prim = step prim
   where
-    step (PEllipse _ _ e) = frameMulti (prim : ellipseCtrlLines rgb e)
-    step (PPath    _ _ p) = frameMulti (prim : pathCtrlLines rgb p)
-    step _                = frameMulti [prim]
+    step (PEllipse _ _ e) = frame (prim : ellipseCtrlLines rgb e)
+    step (PPath    _ _ p) = frame (prim : pathCtrlLines rgb p)
+    step _                = frame [prim]
 
 -- Genrate lines illustrating the control points of curves on 
 -- a Path.

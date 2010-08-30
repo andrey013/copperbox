@@ -23,6 +23,7 @@ module Wumpus.Fresh.PictureInternal
   , DPicture
   , Locale
   , AffineTrafo(..)
+  , YRange(..)
   , GSUpdate(..)
 
   , Primitive(..)
@@ -55,6 +56,9 @@ module Wumpus.Fresh.PictureInternal
   , uniformScalePrimitive
   , translatePrimitive
 
+  -- * Additional operations
+  , yrange
+  , primitiveYRange
   , concatTrafos
   , deconsMatrix
   , repositionDeltas
@@ -76,6 +80,7 @@ import Wumpus.Fresh.Utils
 
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
 
@@ -95,7 +100,7 @@ instance Show GSUpdate where
   show _ = "*function*"
 
 
-type Locale u = (BoundingBox u, [AffineTrafo u])
+type Locale u = (BoundingBox u, [AffineTrafo u], YRange u)
 
 type DPicture = Picture Double
 
@@ -107,6 +112,11 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
                    | Translate u u
   deriving (Eq,Show)                 
 
+data YRange u = YRange 
+      { y_max :: u
+      , y_min :: u
+      }
+  deriving (Eq,Ord,Show)  
 
 data Primitive u = PPath    PathProps    XLink (PrimPath u)
                  | PLabel   LabelProps   XLink (PrimLabel u)
@@ -115,6 +125,8 @@ data Primitive u = PPath    PathProps    XLink (PrimPath u)
 
 type DPrimitive = Primitive Double
 
+-- | Primitives can be annotated with hyperlinks in SVG output.
+--
 data XLink = NoLink
            | XLinkHRef String
   deriving (Eq,Show)
@@ -242,7 +254,7 @@ fmtPrims ones = snd $ F.foldl' fn (0,empty) ones
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
 
 fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
-fmtLocale (bb,_) = format bb
+fmtLocale (bb,_,_) = format bb
 
 
 instance PSUnit u => Format (Primitive u) where
@@ -310,11 +322,16 @@ instance Format EllipseProps where
 
 --------------------------------------------------------------------------------
 
+instance Ord u => Semigroup (YRange u) where
+  YRange hi1 lo1 `append` YRange hi2 lo2 = YRange (max hi1 hi2) (min lo1 lo2)
+
+--------------------------------------------------------------------------------
+
 instance Boundary (Picture u) where
-  boundary (Leaf (bb,_) _)    = bb
-  boundary (Picture (bb,_) _) = bb
-  boundary (Clip (bb,_) _ _)  = bb
-  boundary (Group (bb,_) _ _) = bb
+  boundary (Leaf (bb,_,_) _)    = bb
+  boundary (Picture (bb,_,_) _) = bb
+  boundary (Clip (bb,_,_) _ _)  = bb
+  boundary (Group (bb,_,_) _ _) = bb
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ _ p)      = pathBoundary p
@@ -376,25 +393,29 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 --------------------------------------------------------------------------------
 -- Affine transformations
 
+-- Note YRange remains constant (as do the actually points 
+-- within the primitives).
+
 instance (Num u, Ord u) => Transform (Picture u) where
   transform mtrx = 
-    mapLocale (\(bb,xs) -> (transform mtrx bb, Matrix mtrx : xs))
+    mapLocale $ \(bb,xs,yr) -> (transform mtrx bb, Matrix mtrx:xs, yr)
 
 instance (Real u, Floating u) => Rotate (Picture u) where
   rotate theta = 
-    mapLocale (\(bb,xs) -> (rotate theta bb, Rotate theta : xs))
+    mapLocale $ \(bb,xs,yr) -> (rotate theta bb, Rotate theta:xs, yr)
+
 
 instance (Real u, Floating u) => RotateAbout (Picture u) where
   rotateAbout theta pt = 
-    mapLocale (\(bb,xs) -> (rotateAbout theta pt bb, RotAbout theta pt : xs))
+    mapLocale $ \(bb,xs,yr) -> (rotateAbout theta pt bb,RotAbout theta pt:xs,yr)
 
 instance (Num u, Ord u) => Scale (Picture u) where
   scale sx sy = 
-    mapLocale (\(bb,xs) -> (scale sx sy bb, Scale sx sy : xs))
+    mapLocale $ \(bb,xs,yr) -> (scale sx sy bb, Scale sx sy : xs, yr)
 
 instance (Num u, Ord u) => Translate (Picture u) where
   translate dx dy = 
-    mapLocale (\(bb,xs) -> (translate dx dy bb, Translate dx dy : xs))
+    mapLocale $ \(bb,xs,yr) -> (translate dx dy bb, Translate dx dy:xs, yr)
 
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
@@ -433,7 +454,6 @@ translMatrixRepCTM :: (Floating u, Real u)
 translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 
 
---------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- Transform primitives
@@ -608,6 +628,21 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 
 --------------------------------------------------------------------------------
 -- Additional operations
+
+yrange :: Picture u -> YRange u
+yrange (Leaf (_,_,yr) _)    = yr
+yrange (Picture (_,_,yr) _) = yr
+yrange (Clip (_,_,yr) _ _)  = yr
+yrange (Group (_,_,yr) _ _) = yr
+
+
+
+primitiveYRange :: (Real u, Floating u, FromPtSize u) 
+                => Primitive u -> YRange u
+primitiveYRange = boundaryYRange . boundary
+  where
+    boundaryYRange (BBox (P2 _ ylo) (P2 _ yhi)) = YRange { y_max=yhi, y_min=ylo }
+
 
 concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
 concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
