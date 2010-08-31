@@ -39,7 +39,7 @@ import Wumpus.Fresh.TextInternal
 import Wumpus.Fresh.TextLatin1
 import Wumpus.Fresh.Utils
 
-import Control.Applicative hiding ( empty )
+import Control.Applicative hiding ( empty, some )
 import qualified Data.Foldable          as F
 import Control.Monad
 import Data.Time
@@ -242,10 +242,13 @@ picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
                                     (vconcat <$> clipPath cp <*> picture pic)
 picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
 
+
 revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
-revConcat fn ones = F.foldrM step empty ones
+revConcat fn ones = some empty <$> F.foldrM step None ones
   where
-    step e ac = (\d -> ac `vconcat` d) <$> fn e
+    step e ac = (\d -> d `conc` ac) <$> fn e
+    conc d None      = Some d
+    conc d (Some ac) = Some $ ac `vconcat` d
 
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc

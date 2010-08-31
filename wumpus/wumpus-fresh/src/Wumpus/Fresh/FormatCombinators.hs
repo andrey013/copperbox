@@ -66,9 +66,7 @@ module Wumpus.Fresh.FormatCombinators
   , tupled
   , semiBraces
 
-  , indentH
-  , indentLines
-  , hangLines
+  , indent
     
   ) where
 
@@ -85,13 +83,16 @@ data Doc = Doc1   ShowS
 
 type DocS = Doc -> Doc
 
+
+-- Join could be improved...
+--
 unDoc :: Doc -> ShowS
-unDoc = step 0
+unDoc = step 0 id
   where
-   step _ (Doc1 sf)    = sf
-   step n (Join a b)   = step n a . step n b
-   step n Line         = showChar '\n' . indentS n
-   step n (Indent i d) = step (n+i) d
+   step _ acc (Doc1 sf)    = acc . sf
+   step n acc (Join a b)   = let acc' = step n acc a in step n acc' b
+   step n acc Line         = acc . showChar '\n' . indentS n
+   step n acc (Indent i d) = step (n+i) (acc . (indentS i)) d
 
 
 indentS :: Int -> ShowS
@@ -370,37 +371,14 @@ semiBraces :: [Doc] -> Doc
 semiBraces = braces . punctuate semicolon
 
 
-
-
-
 -- | Horizontally indent a Doc.
 --
 -- Note - this space-prefixes the Doc on /the current line/. It
 -- does not indent subsequent lines if the Doc spans multiple 
 -- lines.
 --
-indentH :: Int -> Doc -> Doc
-indentH i d | i < 1     = d
-            | otherwise = Join (text $ replicate i ' ') d
-
--- | Indent a list of the lines.
---
-indentLines :: Int -> [Doc] -> Doc
-indentLines _ []     = empty
-indentLines i (x:xs) = step (Indent i x) xs 
-  where
-    step acc (z:zs) = step (Join acc (Indent i z)) zs
-    step acc []     = acc
+indent :: Int -> Doc -> Doc
+indent i d | i < 1     = d
+           | otherwise = Indent i d
 
 
-
--- | Print the first line at the current indentation level, then 
--- further indent all subsequent lines the supplied size.
---
---
-hangLines :: Int -> [Doc] -> Doc
-hangLines _ []     = empty
-hangLines i (x:xs) = step (Indent 0 x) xs 
-  where
-    step acc (z:zs) = step (Join acc (Indent i z)) zs
-    step acc []     = acc

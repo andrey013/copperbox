@@ -39,7 +39,7 @@ import Wumpus.Fresh.TextInternal
 import Wumpus.Fresh.TextLatin1
 import Wumpus.Fresh.Utils
 
-import Control.Applicative hiding ( empty )
+import Control.Applicative hiding ( empty, some )
 import qualified Data.Foldable as F
 
 -- SvgMonad is two Readers plus Int state for clip paths...
@@ -158,11 +158,24 @@ picture (Clip    (_,xs) cp pic) =
 picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
 
 
+
+-- This starts with an empty line...
+--
+
+revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
+revConcat fn ones = some empty <$> F.foldrM step None ones
+  where
+    step e ac = (\d -> d `conc` ac) <$> fn e
+    conc d None      = Some d
+    conc d (Some ac) = Some $ ac `vconcat` d
+
+
+{-
 revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
 revConcat fn ones = F.foldrM step empty ones
   where
     step e ac = (\d -> ac `vconcat` d) <$> fn e
-
+-}
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
 primitive (PPath props xl pp)     = drawXLink xl <$> primPath props pp

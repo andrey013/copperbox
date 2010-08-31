@@ -19,9 +19,12 @@
 module Wumpus.Fresh.Utils
   ( 
 
+  -- | Opt - maybe strict in Many
+    Opt(..)
+  , some
 
   -- | Conditional application
-    applyIf
+  , applyIf
 
   , rescale
 
@@ -55,7 +58,12 @@ import qualified Wumpus.Fresh.FormatCombinators as Fmt
 import Data.Ratio
 import Data.Time
 
+data Opt a = None | Some !a 
+  deriving (Eq,Show)
 
+some :: a -> Opt a -> a
+some dflt None     = dflt
+some _    (Some a) = a 
 
 applyIf :: Bool -> (a -> a) -> a -> a
 applyIf cond fn a = if cond then fn a else a

@@ -216,22 +216,22 @@ type instance DUnit (PrimEllipse u) = u
 
 
 instance (Num u, PSUnit u) => Format (Picture u) where
-  format (Leaf m prims)     = hangLines 2 [ text "** Leaf-pic **"
-                                          , fmtLocale m 
-                                          , fmtPrims prims ]
+  format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
+                                              , fmtLocale m 
+                                              , fmtPrims prims ]
 
-  format (Picture m pics)   = hangLines 2 [ text "** Tree-pic **"
-                                          , fmtLocale m
-                                          , fmtPics pics ]
+  format (Picture m pics)   = indent 2 $ vcat [ text "** Tree-pic **"
+                                              , fmtLocale m
+                                              , fmtPics pics ]
  
-  format (Clip m path pic)  = hangLines 2 [ text "** Clip-path **"
-                                          , fmtLocale m
-                                          , format path
-                                          , format pic  ]
+  format (Clip m path pic)  = indent 2 $ vcat [ text "** Clip-path **"
+                                              , fmtLocale m
+                                              , format path
+                                              , format pic  ]
 
-  format (Group m _ pic)    = hangLines 2 [ text "** Group **"
-                                          , fmtLocale m
-                                          , format pic  ]
+  format (Group m _ pic)    = indent 2 $ vcat [ text "** Group **"
+                                              , fmtLocale m
+                                              , format pic  ]
 
 
 fmtPics :: PSUnit u => OneList (Picture u) -> Doc
@@ -250,13 +250,13 @@ fmtLocale (bb,_) = format bb
 
 instance PSUnit u => Format (Primitive u) where
   format (PPath props _ p)    = 
-      hangLines 2 [ text "path:" <+> format props, format p ]
+      indent 2 $ vcat [ text "path:" <+> format props, format p ]
 
   format (PLabel props _ l)   =
-      hangLines 2 [ text "label:" <+> format props, format l ]
+      indent 2 $ vcat [ text "label:" <+> format props, format l ]
 
   format (PEllipse props _ e) = 
-      hangLines 2 [ text "ellipse:" <+> format props, format e ]
+      indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
 
 
 instance PSUnit u => Format (PrimPath u) where

@@ -92,14 +92,14 @@ escapeSpecial i = "&#" ++ show i ++ ";"
 svgElem :: String -> Doc -> Doc
 svgElem name attrs = angles (text name <+> attrs <+> char '/')
 
-svgElemB :: String -> Doc -> [Doc] -> Doc
-svgElemB name attrs elems = vcat [ open, indentLines 2 elems, close ]
+svgElemB :: String -> Doc -> Doc -> Doc
+svgElemB name attrs body = vcat [ open, indent 2 body, close ]
   where
     open  = angles (text name <+> attrs)
     close = angles (char '/' <> text name)
 
-svgElemB_no_attrs :: String -> [Doc] -> Doc
-svgElemB_no_attrs name elems = vcat [ open, indentLines 2 elems, close ]
+svgElemB_no_attrs :: String -> Doc -> Doc
+svgElemB_no_attrs name body = vcat [ open, indent 2 body, close ]
   where
     open  = angles (text name)
     close = angles (char '/' <> text name)
@@ -107,7 +107,7 @@ svgElemB_no_attrs name elems = vcat [ open, indentLines 2 elems, close ]
 -- 1 line version of svgElemB
 --
 svgElemB1 :: String -> Doc -> Doc -> Doc
-svgElemB1 name attrs elems = open <> elems <> close
+svgElemB1 name attrs body = open <> body <> close
   where
     open  = angles (text name <+> attrs)
     close = angles (char '/' <> text name)
@@ -132,7 +132,7 @@ doctype = angles (    text "!DOCTYPE svg PUBLIC"
 
 
 elem_svg :: Doc -> Doc 
-elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) [body]
+elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) body
   where 
     svgns = svgAttr "xmlns"       (text "http://www.w3.org/2000/svg")
     svgvn = svgAttr "version"     (text "1.1")
@@ -141,21 +141,21 @@ elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) [body]
 -- | @ \<g ...\> ... \</g\> @ 
 --
 elem_g :: Doc -> Doc -> Doc
-elem_g attrs body = svgElemB "g" attrs [body]
+elem_g attrs body = svgElemB "g" attrs body
 
 -- | @ \<g\> ... \<g/\> @ 
 --
 elem_g_no_attrs :: Doc -> Doc
-elem_g_no_attrs body = svgElemB_no_attrs "g" [body]
+elem_g_no_attrs body = svgElemB_no_attrs "g" body
 
 -- | @ \<clipPath ...\> ... \</clipPath\> @ 
 --
 elem_clipPath :: Doc -> Doc -> Doc
-elem_clipPath attrs body = svgElemB "clipPath" attrs [body]
+elem_clipPath attrs body = svgElemB "clipPath" attrs body
 
 
 elem_a_xlink :: String -> Doc -> Doc
-elem_a_xlink href body = svgElemB "a" attrs [body]
+elem_a_xlink href body = svgElemB "a" attrs body
   where
     attrs = svgAttr "xlink:href" (text href)
 
@@ -170,7 +170,7 @@ elem_path attrs path = svgElem "path" (attrs <+> svgAttr "d" path)
 -- | @ \<text ... >...\</text\> @
 --
 elem_text :: Doc -> Doc -> Doc
-elem_text attrs body1 = svgElemB "text" attrs [body1]
+elem_text attrs body = svgElemB "text" attrs body
 
 
 -- | @ \<tspan ... >...\</tspan\> @
