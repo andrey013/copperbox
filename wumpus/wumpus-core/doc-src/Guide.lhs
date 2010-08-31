@@ -164,25 +164,22 @@ transform to each text element.
 
 Once labels and paths are assembled as a \emph{Picture} they are
 transformable with the usual affine transformations (scaling, 
-rotation, translation) and multiple pictures can be composed with
-the operations provided by the \texttt{PictureLanguage} module.
-The operations should be largely familiar from pretty-printing 
-libraries although here they are extended to 2 dimensions.
+rotation, translation).
 
 Once assembled into pictures graphics properties (e.g. colour) 
 are opaque - it is not possible to write a transformation function
 that turns a picture blue. In some ways this is a limitation - 
 for instance, the \texttt{Diagrams} library appears to support 
-some notion of attribute overriding; however it is conceptually 
-simple. If one wanted to make blue arrows or red arrows with 
-\wumpuscore one would make colour a parameter of the arrow 
-creating function.
+some notion of attribute overriding; however it does keep 
+\wumpuscore conceptually simple. If one wanted to draw blue or red 
+arrows with \wumpuscore, one would make drawing colour a parameter 
+of the arrow creation function.
 
 %-----------------------------------------------------------------
 \section{Affine transformations}
 %-----------------------------------------------------------------
 
-For affine transformations Wumpus uses the \texttt{Matrix3} data 
+For affine transformations Wumpus uses the \texttt{Matrix3'3} data 
 type to represent 3x3 matrices in row-major form. The constructor
  \texttt{(M3'3 a b c  d e f  g h i)} builds this matrix:
 
@@ -220,7 +217,7 @@ output if a picture needs to be debugged, though as this might
 not be very helpful in practice. Internally \wumpuscore only 
 performs the transformation on the pictures bounding box - it 
 needs to do this so transformed pictures can still be composed 
-with the picture language operations.
+with the \texttt{picBeside} combinator.
 
 PostScript uses column-major form and uses a six element matrix
 rather than a nine element one. The translation matrix above 
@@ -231,7 +228,7 @@ would produce this concat command:
 \end{verbatim}
 
 Similarly, it would be communicated to SVG via a 
-\texttt{<g ...> </g>} element:
+\texttt{group} element:
 
 \begin{verbatim}
 <g transform="matrix(1.0, 0.0, 0.0, 1.0, 10.0, 20.0)"> ... </g>
@@ -239,11 +236,12 @@ Similarly, it would be communicated to SVG via a
 
 For efficiency reasons \wumpuscore supports some transformations
 on Primitives. These are not affine transformations as Primitives
-are not in an affine frame until they are lifted to Pictures.
-For Paths, all the transformations are precomputed before the 
-output is generated. Unfortunately scaling and rotation cannot be 
-precomputed for labels and ellipses, so matrix operations are 
-generated in the PostScript and SVG output.
+are not in an affine frame until they are lifted to Pictures 
+(Primitives have no notion of origin). For Paths, all the 
+transformations are precomputed before the output is generated. 
+Unfortunately scaling and rotation cannot be precomputed for 
+labels and ellipses, so matrix operations are generated in the 
+PostScript and SVG output.
 
 
 %-----------------------------------------------------------------
@@ -255,20 +253,21 @@ of text label is only estimated - based on the length of the
 label's string rather than the metrics of the individual letters 
 encoded in the font. Accessing the glyph metrics in a font would 
 require a font loader to read TrueType font files. This would be 
-a significant effort, probably larger than the effort put into 
-\wumpuscore itself; for \wumpuscore's intended use - producing 
-diagrams and pictures rather than high quality text - its 
-primitive font handling is not such a draw back.
+a significant development effort, probably larger than the effort 
+put into \wumpuscore itself; for \wumpuscore's intended use - 
+producing diagrams and pictures rather than high quality text - 
+its primitive font handling is not such a draw back.
 
 
 In both PostScript and SVG mis-named fonts can cause somewhat
 inscrutable printing anomalies - usually falling back to a default 
-font but not always. PostScript may do no subsequent drawing after
-a font load error. \wumpuscore uses @scalefont@ in the generated
-PostScript, this semingly works for any integer size and not just
-the regular font sizes (10, 12, 18, 24, 36). Older versions of
-\wumpuscore mention that using non-standard sizes may cause font
-loading problems, however this does not appear to be the case.
+font but not always. At worst, PostScript may do no subsequent 
+drawing after a font load error. \wumpuscore uses @scalefont@ in 
+the generated PostScript, this semingly works for any integer size 
+and not just the regular font sizes (10, 12, 18, 24, 36). Older 
+versions of \wumpuscore mention that using non-standard sizes may 
+cause font loading problems, however this does not appear to be 
+the case.
 
 
 The following table lists PostScript fonts and their SVG 

@@ -23,6 +23,7 @@
 module Wumpus.Core.Colour
   ( 
 
+  -- * RGB colour type  
     RGB255(..)
 
   -- * Predefined colours
