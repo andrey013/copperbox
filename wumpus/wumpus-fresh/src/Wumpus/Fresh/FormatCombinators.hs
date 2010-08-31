@@ -77,9 +77,10 @@ import Numeric
 
 -- | Doc is a Join List ...
 --
-data Doc = Doc1 ShowS 
-         | Join Doc   Doc
-         | Line !Int  Doc 
+data Doc = Doc1   ShowS 
+         | Join   Doc   Doc
+         | Line
+         | Indent !Int  Doc 
 
 
 type DocS = Doc -> Doc
@@ -87,14 +88,15 @@ type DocS = Doc -> Doc
 unDoc :: Doc -> ShowS
 unDoc = step 0
   where
-   step _ (Doc1 sf)  = sf
-   step n (Join a b) = step n a . step n b
-   step n (Line i d) = indentS (n+i) (step (n+i) d) . showChar '\n'
+   step _ (Doc1 sf)    = sf
+   step n (Join a b)   = step n a . step n b
+   step n Line         = showChar '\n' . indentS n
+   step n (Indent i d) = step (n+i) d
 
 
-indentS :: Int -> ShowS -> ShowS
-indentS i sf | i < 1     = sf
-             | otherwise = (showString $ replicate i ' ')  . sf
+indentS :: Int -> ShowS
+indentS i | i < 1     = id
+          | otherwise = showString $ replicate i ' '
 
 runDoc :: Doc -> String
 runDoc = ($ "") . unDoc
@@ -143,7 +145,7 @@ a <+> b = Join a (Join space b)
 -- | Vertical concatenate two documents with a line break.
 -- 
 vconcat :: Doc -> Doc -> Doc
-vconcat a b = Join (Line 0 a) b
+vconcat a b = a <> Line <> b
 
 
 
@@ -385,9 +387,9 @@ indentH i d | i < 1     = d
 --
 indentLines :: Int -> [Doc] -> Doc
 indentLines _ []     = empty
-indentLines i (x:xs) = step (Line i x) xs 
+indentLines i (x:xs) = step (Indent i x) xs 
   where
-    step acc (z:zs) = step (Join acc (Line i z)) zs
+    step acc (z:zs) = step (Join acc (Indent i z)) zs
     step acc []     = acc
 
 
@@ -398,7 +400,7 @@ indentLines i (x:xs) = step (Line i x) xs
 --
 hangLines :: Int -> [Doc] -> Doc
 hangLines _ []     = empty
-hangLines i (x:xs) = step (Line 0 x) xs 
+hangLines i (x:xs) = step (Indent 0 x) xs 
   where
-    step acc (z:zs) = step (Join acc (Line i z)) zs
+    step acc (z:zs) = step (Join acc (Indent i z)) zs
     step acc []     = acc
