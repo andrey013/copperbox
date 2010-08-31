@@ -26,6 +26,7 @@ module Wumpus.Fresh.PostScript
 
   ) where
 
+import Wumpus.Fresh.BoundingBox
 import Wumpus.Fresh.Colour
 import Wumpus.Fresh.FormatCombinators
 import Wumpus.Fresh.Geometry
@@ -196,7 +197,8 @@ psDraw timestamp enc pics =
 --
 psDrawPage :: (Real u, Floating u, PSUnit u)
            => (String,Int) -> Picture u -> PsMonad Doc
-psDrawPage (lbl,ordinal) pic = do
+psDrawPage (lbl,ordinal) pic = 
+    let (_,cmdtrans) = imageTranslation pic in 
     (\doc -> vcat [ dsc_Page lbl ordinal
                   , ps_gsave
                   , cmdtrans
@@ -205,17 +207,16 @@ psDrawPage (lbl,ordinal) pic = do
                   , ps_showpage
                   ]) 
       <$> picture pic
-  where
-    (_,mbv)   = repositionDeltas pic
-    cmdtrans  = maybe empty ps_translate mbv
+
 
 -- | Note the bounding box may /below the origin/ - if it is, it
 -- will need translating.
 --
 epsDraw :: (Real u, Floating u, PSUnit u)
         => ZonedTime -> TextEncoder -> Picture u -> Doc
-epsDraw timestamp enc pic = 
-    let body = runPsMonad enc (picture pic) 
+epsDraw timestamp enc pic =
+    let (bb,cmdtrans) = imageTranslation pic 
+        body          = runPsMonad enc (picture pic) 
     in vcat [ epsHeader bb timestamp
             , ps_gsave
             , cmdtrans
@@ -223,9 +224,12 @@ epsDraw timestamp enc pic =
             , ps_grestore
             , epsFooter
             ]
-  where
-    (bb,mbv)  = repositionDeltas pic
-    cmdtrans  = maybe empty ps_translate mbv
+
+
+imageTranslation :: (Ord u, PSUnit u) => Picture u -> (BoundingBox u, Doc)
+imageTranslation pic = case repositionDeltas pic of
+  (bb, Nothing) -> (bb, empty)
+  (bb, Just v)  -> (bb, ps_translate v)
 
 
 --------------------------------------------------------------------------------

@@ -123,21 +123,19 @@ writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> Doc
 svgDraw enc original_pic = 
-    let body = runSvgMonad enc $ picture pic
-    in vcat [ xml_version, doctype, elem_svg $ reframe body ]
-  where
-    pic          = translatePageCoordinates original_pic
-    reframe      = pictureDisplace pic 
+    let pic          = trivialTranslation original_pic
+        (_,imgTrafo) = imageTranslation pic
+        body         = runSvgMonad enc $ picture pic
+    in vcat [ xml_version, doctype, elem_svg $ imgTrafo body ]
 
--- Picture is translated at this point...
---
-pictureDisplace :: (Ord u, PSUnit u) => Picture u -> (Doc -> Doc)
-pictureDisplace pic = step $ ll_corner $ boundary pic
-  where
-    step (P2 x _) 
-        | x < 0     = let attr = attr_transform $ val_translate $ hvec (abs x)
-                      in (\body -> elem_g attr body)
-        | otherwise = id      
+
+
+imageTranslation :: (Ord u, PSUnit u) 
+                 => Picture u -> (BoundingBox u, Doc -> Doc)
+imageTranslation pic = case repositionDeltas pic of
+  (bb, Nothing) -> (bb, id)
+  (bb, Just v)  -> let attr = attr_transform (val_translate v) 
+                   in (bb, elem_g attr)
 
 --------------------------------------------------------------------------------
 

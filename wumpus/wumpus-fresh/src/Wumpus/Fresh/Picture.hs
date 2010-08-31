@@ -478,10 +478,8 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p)
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
                      => RGB255 -> Primitive u -> Picture u
-illustrateBoundsPrim rgb p = frame (boundsPrims rgb p ++ [p])
+illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 
--- Note - above has to use snoc (++ [p]) to get the picture to
--- draw above the bounding box image.
 
 
 -- | Draw a the rectangle of a bounding box, plus cross lines

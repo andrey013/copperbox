@@ -395,28 +395,39 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 
 -- Note YRange remains constant (as do the actually points 
 -- within the primitives).
+-- 
+-- TO DO - this is potentially wrong...
+
 
 instance (Num u, Ord u) => Transform (Picture u) where
   transform mtrx = 
-    mapLocale $ \(bb,xs,yr) -> (transform mtrx bb, Matrix mtrx:xs, yr)
+    mapLocale $ \(bb,xs,_) -> let bb' = transform mtrx bb
+                              in (bb', Matrix mtrx:xs, yrangeBB bb')
 
 instance (Real u, Floating u) => Rotate (Picture u) where
   rotate theta = 
-    mapLocale $ \(bb,xs,yr) -> (rotate theta bb, Rotate theta:xs, yr)
+    mapLocale $ \(bb,xs,_) -> let bb' = rotate theta bb
+                              in (bb', Rotate theta:xs, yrangeBB bb')
 
 
 instance (Real u, Floating u) => RotateAbout (Picture u) where
   rotateAbout theta pt = 
-    mapLocale $ \(bb,xs,yr) -> (rotateAbout theta pt bb,RotAbout theta pt:xs,yr)
+    mapLocale $ \(bb,xs,_) -> let bb' = rotateAbout theta pt bb
+                              in (bb', RotAbout theta pt:xs, yrangeBB bb')
 
 instance (Num u, Ord u) => Scale (Picture u) where
   scale sx sy = 
-    mapLocale $ \(bb,xs,yr) -> (scale sx sy bb, Scale sx sy : xs, yr)
+    mapLocale $ \(bb,xs,_) -> let bb' = scale sx sy bb
+                              in (bb', Scale sx sy : xs, yrangeBB bb')
 
 instance (Num u, Ord u) => Translate (Picture u) where
   translate dx dy = 
-    mapLocale $ \(bb,xs,yr) -> (translate dx dy bb, Translate dx dy:xs, yr)
+    mapLocale $ \(bb,xs,_) -> let bb' = translate dx dy bb
+                              in (bb', Translate dx dy:xs, yrangeBB bb')
 
+
+yrangeBB :: BoundingBox u -> YRange u
+yrangeBB (BBox (P2 _ lo) (P2 _ hi)) = YRange hi lo
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
@@ -630,10 +641,10 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 -- Additional operations
 
 yrange :: Picture u -> YRange u
-yrange (Leaf (_,_,yr) _)    = yr
-yrange (Picture (_,_,yr) _) = yr
-yrange (Clip (_,_,yr) _ _)  = yr
-yrange (Group (_,_,yr) _ _) = yr
+yrange (Leaf    (_,_,yr) _)   = yr
+yrange (Picture (_,_,yr) _)   = yr
+yrange (Clip    (_,_,yr) _ _) = yr
+yrange (Group   (_,_,yr) _ _) = yr
 
 
 
