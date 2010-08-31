@@ -12,10 +12,10 @@ import System.Directory
 
 
 drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
-drawBounds p        = p `picOver` (frame $ cstroke () ph) 
+drawBounds p        = p `picOver` (frame [cstroke () ph])
   where
     ph            = vertexPath $ [bl,br,tr,tl]
-    (bl,br,tr,tl) = corners $ boundary p
+    (bl,br,tr,tl) = boundaryCorners $ boundary p
 
 
 -- | The center of a picture.
@@ -28,22 +28,21 @@ center a = P2 hcenter vcenter
 
 --------------------------------------------------------------------------------
 
+peru :: RGB255
+peru = RGB255 205  133  63
 
-peru :: PSRgb
-peru = RGB3 0.804  0.522  0.247
+plum :: RGB255
+plum = RGB255 221  160  221
 
-plum :: PSRgb
-plum = RGB3 0.867  0.627  0.867
-
-black :: PSRgb
-black = RGB3 0 0 0 
+black :: RGB255
+black = RGB255 0 0 0 
 
 
 
 lbl1 :: Picture Double
 lbl1 = line1 `picBeside` line2 where
-  line1 = frame (textlabel attrs "Hello" zeroPt)
-  line2 = frame (textlabel attrs "World" zeroPt)
+  line1 = frame [textlabel attrs "Hello" zeroPt]
+  line2 = frame [textlabel attrs "World" zeroPt]
   attrs = (peru, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
 
 
@@ -90,8 +89,8 @@ bigA = bigLetter black 'A'
 bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
-bigLetter :: PSRgb -> Char -> Picture Double
-bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs [ch] zeroPt
+bigLetter :: RGB255 -> Char -> Picture Double
+bigLetter col ch = uniformScale 5 $ frame [textlabel attrs [ch] zeroPt]
   where
     attrs = (col, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
 

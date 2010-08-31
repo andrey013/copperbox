@@ -1,32 +1,27 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Geometry
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Objects and operations for 2D geometry.
--- 
--- Vector, point, affine frame, 3x3 matrix, and radian 
--- representations, plus a type family @DUnit@ for parameterizing
--- type classes with some /dimension/.
+-- Core geometry.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.Geometry 
+
+module Wumpus.Core.Geometry
   ( 
+
   -- * Type family 
     DUnit
   
@@ -35,17 +30,11 @@ module Wumpus.Core.Geometry
   , DVec2
   , Point2(..)
   , DPoint2
-  , Frame2(..)
-  , DFrame2
   , Matrix3'3(..)
   , DMatrix3'3
+
   , Radian
 
-
-  -- * Pointwise type class
-  , Pointwise(..)
-
-  -- * Matrix multiply type class
   , MatrixMult(..)
 
   -- * Vector operations
@@ -60,18 +49,9 @@ module Wumpus.Core.Geometry
 
   -- * Point operations
   , zeroPt
-  , minPt
   , maxPt
-  , langle
-
-  -- * Frame operations
-  , ortho
-  , displaceOrigin
-  , pointInFrame
-  , frame2Matrix
-  , matrix2Frame
-  , frameProduct
-  , standardFrame
+  , minPt
+  , lineDirection
 
   -- * Matrix contruction
   , identityMatrix
@@ -86,36 +66,39 @@ module Wumpus.Core.Geometry
   , transpose
 
   -- * Radian operations
-  , req
   , toRadian
   , fromRadian
   , d2r
   , r2d
   , circularModulo
 
-  -- * Bezier curves
   , bezierArc
   , bezierCircle
 
   ) where
 
-import Wumpus.Core.Utils ( PSUnit(..), dtruncPP )
 
+import Wumpus.Core.FormatCombinators
+import Wumpus.Core.Utils
 
-import Data.AffineSpace
+import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Text.PrettyPrint.Leijen hiding ( langle )
 
-import Data.Function ( on )
-import Data.Monoid
+
 
 
 --------------------------------------------------------------------------------
 
 -- | Some unit of dimension usually double.
-
+--
+-- This very useful for reducing the kind of type classes to *.
+-- 
+-- Doing this then allows constraints on the Unit type on the 
+-- instances rather than in the class declaration.
+-- 
 type family DUnit a :: *
+
 
 
 
@@ -123,39 +106,28 @@ type family DUnit a :: *
 
 -- | 2D Vector - both components are strict.
 --
-data Vec2 u = V2 !u !u
+data Vec2 u = V2 
+      { vector_x :: !u 
+      , vector_y :: !u
+      }
   deriving (Eq,Show)
 
 type DVec2 = Vec2 Double
+
+
 
 -- | 2D Point - both components are strict.
 -- 
 -- Note - Point2 derives Ord so it can be used as a key in 
 -- Data.Map etc.
 --
-data Point2 u = P2 !u !u
+data Point2 u = P2 
+      { point_x    :: !u
+      , point_y    :: !u
+      }
   deriving (Eq,Ord,Show)
 
 type DPoint2 = Point2 Double
-
-
-
--- | A two dimensional frame.
--- 
--- The components are the two basis vectors @e0@ and @e1@ and 
--- the origin @o@.
---
--- Typically these names for the elements will be used:
---
--- > Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
--- 
-
-data Frame2 u = Frame2 (Vec2 u) (Vec2 u) (Point2 u)
-  deriving (Eq,Show)
-
-type DFrame2 = Frame2 Double
-
-
 
 
 
@@ -199,21 +171,19 @@ data Matrix3'3 u = M3'3 !u !u !u  !u !u !u  !u !u !u
 type DMatrix3'3 = Matrix3'3 Double
 
 
-
 -- | Radian is represented with a distinct type. 
 -- Equality and ordering are approximate where the epsilon 
 -- is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
-
 --------------------------------------------------------------------------------
 -- Family instances
 
 type instance DUnit (Point2 u)    = u
 type instance DUnit (Vec2 u)      = u
-type instance DUnit (Frame2 u)    = u
 type instance DUnit (Matrix3'3 u) = u
+
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
@@ -222,13 +192,11 @@ lift2Vec2 :: (u -> u -> u) -> Vec2 u -> Vec2 u -> Vec2 u
 lift2Vec2 op (V2 x y) (V2 x' y') = V2 (x `op` x') (y `op` y')
 
 
-
 lift2Matrix3'3 :: (u -> u -> u) -> Matrix3'3 u -> Matrix3'3 u -> Matrix3'3 u
 lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) = 
       M3'3 (a `op` m) (b `op` n) (c `op` o)  
            (d `op` p) (e `op` q) (f `op` r)  
            (g `op` s) (h `op` t) (i `op` u)
-
 
 
 --------------------------------------------------------------------------------
@@ -245,24 +213,8 @@ instance Functor Point2 where
 
 
 instance Functor Matrix3'3 where
-  fmap f (M3'3 m n o p q r s t u) = 
-    M3'3 (f m) (f n) (f o) (f p) (f q) (f r) (f s) (f t) (f u)
-
-
--- Monoid
-
--- Vectors have a sensible Monoid instance as addition, points don't
-
-instance Num u => Monoid (Vec2 u) where
-  mempty  = V2 0 0
-  mappend = lift2Vec2 (+) 
-
-
--- Affine frames also have a sensible Monoid instance
-
-instance (Num u, InnerSpace (Vec2 u)) => Monoid (Frame2 u) where
-  mempty = ortho zeroPt
-  mappend = frameProduct
+  fmap f (M3'3 m n o   p q r   s t u) = 
+    M3'3 (f m) (f n) (f o)   (f p) (f q) (f r)   (f s) (f t) (f u)
 
 
 -- Show
@@ -289,6 +241,7 @@ instance Num u => Num (Matrix3'3 u) where
   signum = fmap signum
   fromInteger a = M3'3 a' a' a'  a' a' a'  a' a' a' where a' = fromInteger a 
 
+--------------------------------------------------------------------------------
 -- Instances for Radian which are 'special'.
 
 instance Show Radian where
@@ -300,32 +253,28 @@ instance Ord Radian where
   compare a b | a `req` b = EQ
               | otherwise = getRadian a `compare` getRadian b
 
+
+
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-instance PSUnit u => Pretty (Vec2 u) where
-  pretty (V2 a b) = parens (text "Vec" <+> dtruncPP a <+> dtruncPP b)
+instance PSUnit u => Format (Vec2 u) where
+  format (V2 a b) = parens (text "Vec" <+> dtruncFmt a <+> dtruncFmt b)
 
-instance PSUnit u => Pretty (Point2 u) where
-  pretty (P2 a b) = parens (dtruncPP a <> comma <+> dtruncPP b)
+instance PSUnit u => Format (Point2 u) where
+  format (P2 a b) = parens (dtruncFmt a <> comma <+> dtruncFmt b)
 
-instance PSUnit u => Pretty (Frame2 u) where
-  pretty (Frame2 e0 e1 o) = 
-    parens (text "Frame" <+> text "e0=" <> pretty e0
-                         <+> text "e1=" <> pretty e1
-                         <+> text "o="  <> pretty o  )
-
-instance PSUnit u => Pretty (Matrix3'3 u) where
-  pretty (M3'3 a b c  d e f  g h i) = 
-      matline a b c <$> matline d e f <$> matline g h i
+instance PSUnit u => Format (Matrix3'3 u) where
+  format (M3'3 a b c  d e f  g h i) = 
+      vcat [matline a b c, matline d e f, matline g h i]
     where
       matline x y z = char '|' 
-         <+> (hcat $ map (fill 12 . dtruncPP) [x,y,z]) 
+         <+> (hcat $ map (fill 12 . dtruncFmt) [x,y,z]) 
          <+> char '|'   
 
 
-instance Pretty Radian where
-  pretty (Radian d) = double d <> text ":rad"
+instance Format Radian where
+  format (Radian d) = double d <> text ":rad"
 
 --------------------------------------------------------------------------------
 -- Vector space instances
@@ -342,12 +291,12 @@ instance Num u => VectorSpace (Vec2 u) where
 
 
 -- scalar (dot / inner) product via the class InnerSpace
-
+--
 -- This definition mandates UndecidableInstances, but this seems
 -- in line with Data.VectorSpace...
 --
 
-instance (Num u, InnerSpace u, Scalar u ~ u) 
+instance (Num u, InnerSpace u, u ~ Scalar u) 
     => InnerSpace (Vec2 u) where
   (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')
 
@@ -368,37 +317,10 @@ instance Num u => VectorSpace (Matrix3'3 u) where
   type Scalar (Matrix3'3 u) = u
   s *^ m = fmap (s*) m 
 
---------------------------------------------------------------------------------
-
--- | Pointwise is a Functor like type class, except that the 
--- container/element relationship is defined via an associated 
--- type rather than a type parameter. This means that applied 
--- function must be type preserving.
---
-class Pointwise sh where
-  type Pt sh :: *
-  pointwise :: (Pt sh -> Pt sh) -> sh -> sh
-
-
-instance Pointwise (a -> a) where
-  type Pt (a->a) = a
-  pointwise f pf = \a -> pf (f a)
-
-instance Pointwise a => Pointwise [a] where 
-  type Pt [a] = Pt a
-  pointwise f pts = map (pointwise f) pts 
-
-instance Pointwise (Vec2 u) where
-  type Pt (Vec2 u) = Vec2 u
-  pointwise f v = f v
-
-instance Pointwise (Point2 u) where
-  type Pt (Point2 u) = Point2 u
-  pointwise f pt = f pt
-
 
 --------------------------------------------------------------------------------
 -- Matrix multiply
+
 
 infixr 7 *# 
 
@@ -416,11 +338,13 @@ instance Num u => MatrixMult (Vec2 u) where
 instance Num u => MatrixMult (Point2 u) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
+
 --------------------------------------------------------------------------------
 -- Vectors
 
--- | A synonym for the constructor 'V2' with a Num constraint on 
--- the arguments.
+
+-- | 'vec' - a synonym for the constructor 'V2' with a Num 
+-- constraint on the arguments.
 --
 -- Essentially superfluous, but it can be slightly more 
 -- typographically pleasant when used in lists of vectors:
@@ -445,14 +369,15 @@ hvec d = V2 d 0
 vvec :: Num u => u -> Vec2 u
 vvec d = V2 0 d
 
+
 -- | Construct a vector from an angle and magnitude.
 --
 avec :: Floating u => Radian -> u -> Vec2 u
-avec theta d = V2 x y where
-  ang = fromRadian theta
-  x   = d * cos ang
-  y   = d * sin ang
-
+avec theta d = V2 x y 
+  where
+    ang = fromRadian theta
+    x   = d * cos ang
+    y   = d * sin ang
 
 -- | The vector between two points
 --
@@ -465,7 +390,7 @@ pvec = flip (.-.)
 -- from the x-axis.
 --
 direction :: (Floating u, Real u) => Vec2 u -> Radian
-direction (V2 x y) = langle (P2 0 0) (P2 x y)
+direction (V2 x y) = lineDirection (P2 0 0) (P2 x y)
 
 -- | Length of a vector.
 --
@@ -476,7 +401,8 @@ vlength (V2 x y) = sqrt $ x*x + y*y
 --
 vangle :: (Floating u, Real u, InnerSpace (Vec2 u)) 
        => Vec2 u -> Vec2 u -> Radian
-vangle u v = realToFrac $ acos $ (u <.> v) / (on (*) magnitude u v)
+vangle u v = realToFrac $ acos $ (u <.> v) / (magnitude u * magnitude v)
+
 
 --------------------------------------------------------------------------------
 -- Points
@@ -508,12 +434,11 @@ minPt (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
 maxPt :: Ord u => Point2 u -> Point2 u -> Point2 u
 maxPt (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 
-
 -- | Calculate the counter-clockwise angle between two points 
 -- and the x-axis.
 --
-langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
-langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
+lineDirection :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
+lineDirection (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
   where
     -- north-east quadrant 
     step x y | pve x && pve y = toRadian $ atan (y/x)          
@@ -528,80 +453,6 @@ langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
     step x y                  = pi     + (toRadian $ atan (y/x))
 
     pve a = signum a >= 0
-
-
-
---------------------------------------------------------------------------------
--- Frame operations
-
--- | Create a frame with standard (orthonormal bases) at the 
--- supplied point.
---
-ortho :: Num u => Point2 u -> Frame2 u
-ortho o = Frame2 (V2 1 0) (V2 0 1) o
-
--- | Displace the origin of the frame by the supplied vector.
---
-displaceOrigin :: Num u => Vec2 u -> Frame2 u -> Frame2 u
-displaceOrigin v (Frame2 e0 e1 o) = Frame2 e0 e1 (o.+^v)
-
--- | \'World coordinate\' calculation of a point in the supplied
--- frame.
---
-pointInFrame :: Num u => Point2 u -> Frame2 u -> Point2 u
-pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
-
--- | Concatenate the elements of the frame as columns forming a
--- 3x3 matrix. Points and vectors are considered homogeneous 
--- coordinates - triples where the least element is either 0 
--- indicating a vector or 1 indicating a point:
---
--- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
--- 
--- becomes
---
--- > (M3'3 e0x e1x ox
--- >       e0y e1y oy
--- >        0   0   1  )
---
-
-frame2Matrix :: Num u =>  Frame2 u -> Matrix3'3 u
-frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) = 
-    M3'3 e0x e1x ox  
-         e0y e1y oy 
-         0   0   1
-
-
--- | Interpret the matrix as columns forming a frame.
---
--- > (M3'3 e0x e1x ox
--- >       e0y e1y oy
--- >        0   0   1  )
---
--- becomes
---
--- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
--- 
-matrix2Frame :: Matrix3'3 u -> Frame2 u
-matrix2Frame (M3'3 e0x e1x ox 
-                   e0y e1y oy
-                   _   _   _ ) = Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
-
-
--- | /Multiplication/ of frames to form their product.
---
-frameProduct :: (Num u, InnerSpace (Vec2 u)) 
-             => Frame2 u -> Frame2 u -> Frame2 u
-frameProduct f1 f2 = matrix2Frame $ frame2Matrix f1 * frame2Matrix f2
-
-
-
--- | Is the origin at (0,0) and are the basis vectors orthogonal 
--- with unit length?
---
-standardFrame :: Num u => Frame2 u -> Bool
-standardFrame (Frame2 (V2 1 0) (V2 0 1) (P2 0 0)) = True
-standardFrame _                                   = False
 
 
 --------------------------------------------------------------------------------
@@ -743,6 +594,8 @@ mofm (M3'3 a b c
 
 
 
+
+
 --------------------------------------------------------------------------------
 -- Radians
 
@@ -785,6 +638,8 @@ circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
     i       :: Integer
     dec     :: Double
     (i,dec) = properFraction $ r2d r
+
+
 
 
 --------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextEncodingInternal
+-- Module      :  Wumpus.Core.TextInternal
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -10,11 +10,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Extended character handling.
+-- Fresh.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextEncodingInternal
+module Wumpus.Core.TextInternal
   ( 
 
     EncodedText(..)    
@@ -28,9 +28,8 @@ module Wumpus.Core.TextEncodingInternal
 
   ) where
 
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.TextEncoder
-
-import Text.PrettyPrint.Leijen hiding ( SText )
 
 import Data.Char
 
@@ -46,13 +45,13 @@ data TextChunk = SText  String
 
 --------------------------------------------------------------------------------
 
-instance Pretty EncodedText where
-  pretty = hcat . map pretty . getEncodedText
+instance Format EncodedText where
+  format = hcat . map format . getEncodedText
 
-instance Pretty TextChunk where
-  pretty (SText s)   = string s
-  pretty (EscInt i)  = text "&#" <> int i  <> semi
-  pretty (EscStr s)  = text "&#" <> text s <> semi
+instance Format TextChunk where
+  format (SText s)   = text s
+  format (EscInt i)  = text "&#" <> int i  <> semicolon
+  format (EscStr s)  = text "&#" <> text s <> semicolon
 
 --------------------------------------------------------------------------------
 

@@ -1,22 +1,21 @@
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.OutputPostScript
+-- Module      :  Wumpus.Core.PostScript
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Output PostScript - either PostScript (PS) files or 
--- EPS (Encapusulated PostScript) files can be generated. 
---
+-- Core PostScript.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.OutputPostScript 
+module Wumpus.Core.OutputPostScript
   ( 
   -- * Output PostScript
     writePS
@@ -29,18 +28,114 @@ module Wumpus.Core.OutputPostScript
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.OneList ( OneList, ViewL(..), viewl )
+import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.PostScript
+import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.TextEncoder
-import Wumpus.Core.TextEncodingInternal
+import Wumpus.Core.TextInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
-
+import Control.Applicative hiding ( empty, some )
+import qualified Data.Foldable          as F
 import Control.Monad
+import Data.Time
+
+
+--------------------------------------------------------------------------------
+-- PsMonad
+
+-- PsMonad is at least a Reader and a State...
+--
+-- Graphics state works differently to SVG - PostScript has no 
+-- nesting (at least not in the code Wumpus generates) so there
+-- are no /savings/ by diffing from an outer environment, instead
+-- the diff is with the last drawn object.
+--
+newtype PsMonad a = PsMonad { 
+            getPsMonad :: TextEncoder -> GraphicsState -> (a,GraphicsState) }
+
+
+instance Functor PsMonad where
+  fmap f mf = PsMonad $ \r s -> let (a,s1) = getPsMonad mf r s in (f a,s1)
+
+instance Applicative PsMonad where
+  pure a    = PsMonad $ \_ s -> (a,s)
+  mf <*> ma = PsMonad $ \r s -> let (f,s1) = getPsMonad mf r s
+                                    (a,s2) = getPsMonad ma r s1
+                                  in (f a,s2)
+
+instance Monad PsMonad where
+  return a  = PsMonad $ \_ s  -> (a,s)
+  m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
+                                in (getPsMonad . k) a r s1
+                              
+
+runPsMonad :: TextEncoder -> PsMonad a -> a
+runPsMonad enc mf = fst $ getPsMonad mf enc zeroGS
+
+askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
+askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
+    Just n  -> (Right n,s)
+    Nothing -> (Left $ ps_fallback r,s)
+
+runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
+runLocalGS upd mf = 
+    PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
+
+getDrawColour       :: PsMonad RGB255
+getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
+
+setDrawColour       :: RGB255 -> PsMonad ()
+setDrawColour a     = PsMonad $ \_ s -> ((), s {gs_draw_colour=a})
+
+
+getFontAttr         :: PsMonad FontAttr
+getFontAttr         = PsMonad $ \_ s -> let sz = gs_font_size s 
+                                            ff = gs_font_face s
+                                        in (FontAttr sz ff, s)
+
+setFontAttr         :: FontAttr -> PsMonad ()
+setFontAttr (FontAttr sz ff) = 
+    PsMonad $ \_ s -> ((), s { gs_font_size=sz,gs_font_face=ff })
+
+  
+getLineWidth        :: PsMonad Double
+getLineWidth        = PsMonad $ \_ s -> (gs_line_width s, s)
+
+setLineWidth        :: Double -> PsMonad ()
+setLineWidth a      = PsMonad $ \_ s -> ((), s { gs_line_width=a })
+
+
+getMiterLimit       :: PsMonad Double
+getMiterLimit       = PsMonad $ \_ s -> (gs_miter_limit s,s)
+
+setMiterLimit       :: Double -> PsMonad ()
+setMiterLimit a     = PsMonad $ \_ s -> ((), s { gs_miter_limit=a })
+
+
+getLineCap          :: PsMonad LineCap
+getLineCap          = PsMonad $ \_ s -> (gs_line_cap s,s)
+
+setLineCap          :: LineCap -> PsMonad ()
+setLineCap a        = PsMonad $ \_ s -> ((), s { gs_line_cap=a })
+
+
+getLineJoin         :: PsMonad LineJoin
+getLineJoin         = PsMonad $ \_ s -> (gs_line_join s,s)
+
+setLineJoin         :: LineJoin -> PsMonad ()
+setLineJoin a       = PsMonad $ \_ s -> ((), s { gs_line_join=a })
+
+
+getDashPattern      :: PsMonad DashPattern
+getDashPattern      = PsMonad $ \_ s -> (gs_dash_pattern s,s)
+
+setDashPattern      :: DashPattern -> PsMonad ()
+setDashPattern a    = PsMonad $ \_ s -> ((), s { gs_dash_pattern=a })
 
 
 --------------------------------------------------------------------------------
@@ -52,7 +147,7 @@ import Control.Monad
 writePS :: (Real u, Floating u, PSUnit u) 
         => FilePath -> TextEncoder -> [Picture u] -> IO ()
 writePS filepath enc pic = 
-    mkTimeStamp >>= \tims -> writeFile filepath (psDraw tims enc pic)
+    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim enc pic)
 
 -- | Output a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
@@ -61,14 +156,14 @@ writePS filepath enc pic =
 writeEPS :: (Real u, Floating u, PSUnit u)  
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeEPS filepath enc pic =
-    mkTimeStamp >>= \tims -> writeFile filepath (epsDraw tims enc pic)
+    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim enc pic)
 
 
 -- | Version of 'writePS' - using Latin1 encoding.
 -- 
 writePS_latin1 :: (Real u, Floating u, PSUnit u) 
                => FilePath -> [Picture u] -> IO ()
-writePS_latin1 filepath = writePS filepath latin1Encoder 
+writePS_latin1 filepath = writePS filepath latin1Encoder
 
 -- | Version of 'writeEPS' - using Latin1 encoding. 
 --
@@ -76,273 +171,291 @@ writeEPS_latin1 :: (Real u, Floating u, PSUnit u)
                 => FilePath -> Picture u -> IO ()
 writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
 
-
-
 --------------------------------------------------------------------------------
 -- Internals
 
 
 -- | Draw a picture, generating PostScript output.
 --
+-- Note - the bounding box may /below the origin/ - if it is, it
+-- will need translating.
+--
+
 psDraw :: (Real u, Floating u, PSUnit u) 
-       => String -> TextEncoder -> [Picture u] -> PostScript
-psDraw timestamp enc pics = execPsMonad enc $ do
-    psHeader 1 timestamp
-    zipWithM_ psDrawPage pages pics
-    psFooter
+       => ZonedTime -> TextEncoder -> [Picture u] -> Doc
+psDraw timestamp enc pics = 
+    let body = vcat $ runPsMonad enc $ zipWithM psDrawPage pages pics
+    in vcat [ psHeader 1 timestamp
+            , body
+            , psFooter 
+            ]
   where
     pages = map (\i -> (show i,i)) [1..]
 
-
-psDrawPage :: (Real u, Floating u, PSUnit u) 
-           => (String,Int) -> Picture u -> PsMonad ()
-psDrawPage (lbl,ordinal) pic = do
-    dsc_Page lbl ordinal
-    ps_gsave
-    cmdtrans
-    outputPicture pic
-    ps_grestore
-    ps_showpage
-  where
-    (_,mbv)   = repositionProperties pic
-    cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
-  
-
-
--- | Note the bounding box may /below the origin/ - if it is, it 
+-- | Note the bounding box may /below the origin/ - if it is, it
 -- will need translating.
 --
-epsDraw :: (Real u, Floating u, PSUnit u) 
-        => String -> TextEncoder -> Picture u -> PostScript
-epsDraw timestamp enc pic = execPsMonad enc $ do 
-    epsHeader bb timestamp      
-    ps_gsave
-    cmdtrans
-    outputPicture pic
-    ps_grestore
-    epsFooter  
-  where
-    (bb,mbv)  = repositionProperties pic
-    cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
-     
-
-psHeader :: Int -> String -> PsMonad ()
-psHeader pagecount timestamp = do
-    bang_PS
-    dsc_Pages           pagecount
-    dsc_CreationDate    (parens timestamp)
-    dsc_EndComments
+psDrawPage :: (Real u, Floating u, PSUnit u)
+           => (String,Int) -> Picture u -> PsMonad Doc
+psDrawPage (lbl,ordinal) pic = 
+    let (_,cmdtrans) = imageTranslation pic in 
+    (\doc -> vcat [ dsc_Page lbl ordinal
+                  , ps_gsave
+                  , cmdtrans
+                  , doc
+                  , ps_grestore
+                  , ps_showpage
+                  ]) 
+      <$> picture pic
 
 
-epsHeader :: PSUnit u => BoundingBox u -> String -> PsMonad ()
-epsHeader bb timestamp = do
-    bang_EPS
-    dsc_BoundingBox     llx lly urx ury
-    dsc_CreationDate    (parens timestamp)
-    dsc_EndComments
-  where
-    (llx,lly,urx,ury) = getBounds bb
-
-getBounds :: Num u => BoundingBox u -> (u,u,u,u)
-getBounds (BBox (P2 llx lly) (P2 urx ury)) = (llx,lly,urx,ury)
-
-psFooter :: PsMonad ()
-psFooter = dsc_EOF
-
-
-epsFooter :: PsMonad ()
-epsFooter = ps_showpage >> dsc_EOF
-
--- Create margins at the left and bottom of 4 points...
-
-
--- | outputPicture 
--- Frame changes, representing scalings translation, rotations...
--- are drawn when they are encountered as a @concat@ statement in a 
--- block of @gsave ... grestore@.
+-- | Note the bounding box may /below the origin/ - if it is, it
+-- will need translating.
 --
-outputPicture :: (Real u, Floating u, PSUnit u) 
-              => Picture u -> PsMonad ()
-outputPicture (PicBlank  _)             = return ()
-
-outputPicture (Leaf (fr,_,_) ones)      = 
-    updateFrame fr (revMapM outputPrimitive ones)
-
--- output right picture first, to satisfy zordering...
-outputPicture (Picture (fr,_,_) ones)   =
-    updateFrame fr (revMapM outputPicture ones) 
-
-outputPicture (Clip (fr,_,_) cp p)      = 
-    updateFrame fr (clipPath cp >> outputPicture p)
-
+epsDraw :: (Real u, Floating u, PSUnit u)
+        => ZonedTime -> TextEncoder -> Picture u -> Doc
+epsDraw timestamp enc pic =
+    let (bb,cmdtrans) = imageTranslation pic 
+        body          = runPsMonad enc (picture pic) 
+    in vcat [ epsHeader bb timestamp
+            , ps_gsave
+            , cmdtrans
+            , body
+            , ps_grestore
+            , epsFooter
+            ]
 
 
+imageTranslation :: (Ord u, PSUnit u) => Picture u -> (BoundingBox u, Doc)
+imageTranslation pic = case repositionDeltas pic of
+  (bb, Nothing) -> (bb, empty)
+  (bb, Just v)  -> (bb, ps_translate v)
 
-revMapM ::  (a -> PsMonad ()) -> OneList a -> PsMonad ()
-revMapM mf = step . viewl
+
+--------------------------------------------------------------------------------
+
+
+picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
+picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
+                                    (vconcat <$> clipPath cp <*> picture pic)
+picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+
+
+revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
+revConcat fn ones = some empty <$> F.foldrM step None ones
   where
-    step (OneL a)  = mf a
-    step (a :< xs) = step (viewl xs) >> mf a
+    step e ac = (\d -> d `conc` ac) <$> fn e
+    conc d None      = Some d
+    conc d (Some ac) = Some $ ac `vconcat` d
 
 
--- | @updateFrame@ relies on the current frame, when translated
--- to a matrix being invertible.
---
--- This is an allowable optimization because the current frame
--- is only manipulated with the affine transformations (scalings, 
--- rotations...) which are invertible. 
--- 
--- It also performs another optimization:
---
--- If the frame is the standard frame @ [1 0 0 1 0 0] @ then 
--- the monadic action is run as-is rather than being nested
--- in a block:
--- 
--- > [1 0 0 1 0 0] concat
--- > ...
--- > [1 0 0 1 0 0] concat
---
+primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
+primitive (PPath props _ pp)     = primPath props pp
+primitive (PLabel props _ lbl)   = primLabel props lbl
+primitive (PEllipse props _ ell) = primEllipse props ell
 
-updateFrame :: (Fractional u, PSUnit u) 
-            => Frame2 u -> PsMonad () -> PsMonad ()
-updateFrame frm ma | standardFrame frm = ma
-                   | otherwise         = bracketMatrix (frame2Matrix frm) ma 
-                  
 
-outputPrimitive :: (Real u, Floating u, PSUnit u) 
-                => Primitive u -> PsMonad ()
-outputPrimitive (PPath (c,dp) p)    = outputPath dp c p 
-outputPrimitive (PLabel props l)    = updateFont props $ outputLabel l
-outputPrimitive (PEllipse (c,dp) e) = outputEllipse dp c e
+primPath :: PSUnit u
+         => PathProps -> PrimPath u -> PsMonad Doc
+primPath (CFill rgb)     p = 
+    (\rgbd -> vcat [rgbd, makeStartPath p, ps_closepath, ps_fill]) 
+      <$> deltaDrawColour rgb  
 
-updateFont :: LabelProps -> PsMonad () -> PsMonad ()
-updateFont (c,fnt) ma = 
-    updateColour c $ runDelta (deltaFontAttr fnt) fontCommand >> ma
-   
-    
-updateColour :: PSColour c => c -> PsMonad () -> PsMonad ()
-updateColour c ma = let rgbc = psColour c in
-    runDelta (deltaRgbColour rgbc) colourCommand >> ma
-  where
-    colourCommand (RGB3 r g b) = ps_setrgbcolor r g b
+primPath (CStroke attrs rgb) p = 
+    (\rgbd attrd -> vcat [ rgbd, attrd, makeStartPath p
+                         , ps_closepath, ps_stroke ])
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
  
-    
-fontCommand :: FontAttr -> PsMonad ()
-fontCommand (FontAttr sz face) = 
-    ps_findfont (font_name face) >> ps_scalefont sz >> ps_setfont
+primPath (OStroke attrs rgb) p = 
+    (\rgbd attrd -> vcat [rgbd, attrd, makeStartPath p, ps_stroke]) 
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
+
+primPath (CFillStroke fc attrs sc) p = 
+    (\d1 d2 -> vcat [d1,d2])
+      <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
 
 
-outputPath :: (PSColour c, PSUnit u) 
-           => DrawPath -> c -> Path u -> PsMonad ()
-outputPath CFill        c p = 
-    updateColour c $ startPath p >> ps_closepath >> ps_fill
+clipPath :: PSUnit u => PrimPath u -> PsMonad Doc
+clipPath p = pure $ vcat [makeStartPath p , ps_closepath, ps_clip]
 
-outputPath (CStroke xs) c p = 
-    updatePen c xs $ startPath p >> ps_closepath >> ps_stroke
 
-outputPath (OStroke xs) c p = 
-    updatePen c xs $ startPath p >> ps_stroke
-  
-
-startPath :: PSUnit u => Path u -> PsMonad ()
-startPath (Path (P2 x y) xs) =
-    ps_newpath >> ps_moveto x y >> mapM_ outputPathSeg xs
+makeStartPath :: PSUnit u => PrimPath u -> Doc
+makeStartPath (PrimPath start xs) = 
+    vcat $ ps_newpath : ps_moveto start : map makePathSegment xs
 
 
 
-clipPath :: PSUnit u => Path u -> PsMonad ()
-clipPath p = startPath p >> ps_closepath >> ps_clip
+makePathSegment :: PSUnit u => PrimPathSegment u -> Doc
+makePathSegment (PLineTo p1)        = ps_lineto p1 
+makePathSegment (PCurveTo p1 p2 p3) = ps_curveto p1 p2 p3 
 
 
-updatePen :: PSColour c => c -> [StrokeAttr] -> PsMonad () -> PsMonad ()
-updatePen c xs ma = let (mset, mreset) = strokeSetReset xs in 
-    updateColour c $ mset >> ma >> mreset
-
--- needs a re-think...
-strokeSetReset :: [StrokeAttr] -> (PsMonad (), PsMonad ())
-strokeSetReset = 
-    foldr (\c acc -> link (cmd c) acc) (return (), return ())
-  where
-    link Nothing      funs    = funs 
-    link (Just (f,g)) (fs,gs) = (fs >> f, gs >> g)
-    
-    mkSetReset mf        = maybe Nothing (\(a,b) -> Just (mf a, mf b))
-    
-    cmd (LineWidth d)    = mkSetReset ps_setlinewidth  $ deltaStrokeWidth d
-    cmd (MiterLimit d)   = mkSetReset ps_setmiterlimit $ deltaMiterLimit d
-    cmd (LineCap lc)     = mkSetReset ps_setlinecap    $ deltaLineCap lc
-    cmd (LineJoin lj)    = mkSetReset ps_setlinejoin   $ deltaLineJoin lj
-    cmd (DashPattern dp) = mkSetReset ps_setdash       $ deltaDashPattern dp
-
-
-outputPathSeg :: PSUnit u => PathSegment u -> PsMonad ()
-outputPathSeg (PLineTo (P2 x y))  = ps_lineto x y
-outputPathSeg (PCurveTo p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
-  where
-    P2 x1 y1 = p1
-    P2 x2 y2 = p2
-    P2 x3 y3 = p3
-
-
--- | This is unfortunate - but (probably) unavoidable.
+-- | Drawing stroked ellipse has an unfortunate - but (probably) 
+-- unavoidable deficiency.
 --
--- The use of PostScript's @concat@ operator will vary the line 
--- width during the drawing of a stroked ellipse.
+-- The use of PostScript\'s @concat@ operator to alter the arc 
+-- hw/hh will vary the line width during the drawing of a stroked 
+-- ellipse.
 --
--- 
-outputEllipse :: (PSColour c, Real u, Floating u, PSUnit u)
-              => DrawEllipse -> c -> PrimEllipse u -> PsMonad ()
-outputEllipse dp c (PrimEllipse (P2 x y) hw hh ctm)
-    | hw==hh  && ctm == identityCTM = outputArc dp c x y hw
-    | otherwise                     = 
-          let mtrx = translMatrixRepCTM x y $ scaleCTM 1 (hh/hw) ctm
-          in bracketMatrix mtrx (outputArc dp c 0 0 hw)
+-- For good stroked ellipses, Bezier curves constructed from 
+-- PrimPaths should be used.
+--
+primEllipse :: (Real u, Floating u, PSUnit u) 
+            => EllipseProps -> PrimEllipse u -> PsMonad Doc
+primEllipse props (PrimEllipse center hw hh ctm) =
+    bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
+  where
+    drawF (EFill rgb)               pt = fillArcPath rgb hw pt
+    drawF (EStroke attrs rgb)       pt = strokeArcPath rgb attrs hw pt
+    drawF (EFillStroke fc attrs sc) pt = 
+        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc attrs hw pt
+                       
 
 
-outputArc :: (PSColour c, PSUnit u) 
-          => DrawEllipse -> c -> u -> u -> u -> PsMonad ()
-outputArc EFill        c x y r = updateColour c $ do 
-    ps_newpath >> ps_arc x y r 0 360 >> ps_closepath >> ps_fill
+-- This will need to become monadic to handle /colour delta/.
+--
+fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
+fillArcPath rgb radius pt = 
+    (\rgbd -> vcat [ rgbd
+                   , ps_newpath
+                   , ps_arc pt radius 0 360
+                   , ps_closepath
+                   , ps_fill ])
+      <$> deltaDrawColour rgb
 
-outputArc (EStroke xs) c x y r = updatePen c xs $ do 
-    ps_newpath >> ps_arc x y r 0 360 >> ps_closepath >> ps_stroke
-
+strokeArcPath :: PSUnit u 
+              => RGB255 -> [StrokeAttr] -> u -> Point2 u -> PsMonad Doc
+strokeArcPath rgb attrs radius pt =
+    (\rgbd attrd -> vcat [ rgbd
+                         , attrd
+                         , ps_newpath
+                         , ps_arc pt radius 0 360
+                         , ps_closepath
+                         , ps_stroke ])
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
 
 
 -- Note - for the otherwise case, the x-and-y coordinates are 
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
-outputLabel :: (Real u, Floating u, PSUnit u) => Label u -> PsMonad ()
-outputLabel (Label (P2 x y) entxt ctm) 
-    | ctm == identityCTM  = ps_moveto x y >> outputEncodedText entxt
-    | otherwise           = bracketMatrix matrix 
-                               ( ps_moveto 0 (0::Double) >> 
-                                 outputEncodedText entxt    )
+primLabel :: (Real u, Floating u, PSUnit u) 
+          => LabelProps -> PrimLabel u -> PsMonad Doc
+primLabel (LabelProps rgb font) (PrimLabel basept txt ctm) = 
+    bracketPrimCTM basept ctm mf
   where
-    matrix = translMatrixRepCTM x y ctm
+    mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, ps_moveto pt, showd ]) 
+              <$> deltaDrawColour rgb <*> deltaFontAttrs font 
+                                      <*> encodedText txt
 
-outputEncodedText :: EncodedText -> PsMonad () 
-outputEncodedText etext = mapM_ outputTextChunk $ getEncodedText etext
+encodedText :: EncodedText -> PsMonad Doc 
+encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
 
 
-outputTextChunk :: TextChunk -> PsMonad () 
-outputTextChunk (SText s)  = ps_show $ escapeStringPS s
-outputTextChunk (EscStr s) = ps_glyphshow s 
-outputTextChunk (EscInt i) = askCharCode i >>= either failk ps_glyphshow 
+textChunk :: TextChunk -> PsMonad Doc
+textChunk (SText s)  = pure (ps_show $ escapeSpecial s)
+textChunk (EscStr s) = pure (ps_glyphshow s)
+textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i 
   where
-    failk = missingCode i
+    failk gly_name = missingCharCode i gly_name
+
+--------------------------------------------------------------------------------
+-- Stroke, font and drawing colour attribute delta
+
+-- This needs more thought than SVG as there is no natural 
+-- nesting to benefit from...
+
+-- All graphics are annotated with colour - the graphics state
+-- doesn\'t tell us the actual colour of anything, only if we 
+-- need to write a colour change to the output.
+-- 
+-- So we compare the current colour with the state - if it is
+-- different we put the new colour in the state and output a 
+-- @setrgbcolor@ message.
+--
+--
+-- Note - because these combinators return /empty/ for no 
+-- difference some extraneous blank lines are produced in the 
+-- output.
+--
+
+deltaDrawColour :: RGB255 -> PsMonad Doc
+deltaDrawColour rgb = getDrawColour >>= \inh -> 
+   if rgb==inh then return empty
+               else setDrawColour rgb >> return (ps_setrgbcolor rgb)
 
 
-missingCode :: CharCode -> GlyphName -> PsMonad ()
-missingCode i fallback =  do
-    ps_comment $ "missing lookup for &#" ++ show i ++ ";" 
-    ps_glyphshow fallback
-            
 
+-- Wrong - should follow delta draw colour...
+deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
+deltaStrokeAttrs xs = hcat <$> mapM df xs
+  where
+    df (LineWidth d)    = getLineWidth >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineWidth d >> 
+                                         return (ps_setlinewidth d)
+
+    df (MiterLimit d)   = getMiterLimit >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setMiterLimit d >> 
+                                         return (ps_setmiterlimit d)
+                            
+    df (LineCap d)      = getLineCap >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineCap d >> 
+                                         return (ps_setlinecap d)
+                      
+    df (LineJoin d)     = getLineJoin >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setLineJoin d >> 
+                                         return (ps_setlinejoin d)
+
+    df (DashPattern d)  = getDashPattern >>= \inh -> 
+                          if d==inh then return empty 
+                                    else setDashPattern d >> 
+                                         return (ps_setdash d)
+           
+
+
+deltaFontAttrs :: FontAttr -> PsMonad Doc
+deltaFontAttrs fa  = getFontAttr >>= \inh ->
+    if fa==inh then return empty 
+               else setFontAttr fa >> return (makeFontAttrs fa)
+
+makeFontAttrs :: FontAttr -> Doc
+makeFontAttrs (FontAttr sz face) = 
+    vcat [ ps_findfont (font_name face), ps_scalefont sz, ps_setfont ]
+
+
+--------------------------------------------------------------------------------
+-- Bracket matrix and PrimCTM trafos
+
+bracketTrafos :: (Real u, Floating u, PSUnit u) 
+              => [AffineTrafo u] -> PsMonad Doc -> PsMonad Doc
+bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
 bracketMatrix :: (Fractional u, PSUnit u) 
-              => Matrix3'3 u -> PsMonad a -> PsMonad a
-bracketMatrix mtrx ma = 
-    ps_concat (toCTM mtrx)          >> ma        >>= \a -> 
-    ps_concat (toCTM $ invert mtrx) >> return a  
+              => Matrix3'3 u -> PsMonad Doc -> PsMonad Doc
+bracketMatrix mtrx ma 
+    | mtrx == identityMatrix = ma
+    | otherwise              = (\doc -> vcat [inn, doc, out]) <$> ma
+  where
+    inn   = ps_concat $ mtrx
+    out   = ps_concat $ invert mtrx
+
+
+bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
+               => Point2 u -> PrimCTM u 
+               -> (Point2 u -> PsMonad Doc) -> PsMonad Doc
+bracketPrimCTM pt@(P2 x y) ctm mf 
+    | ctm == identityCTM  = mf pt
+    | otherwise           = (\doc -> vcat [inn, doc, out]) <$> mf zeroPt'
+  where
+    zeroPt' :: Point2 u
+    zeroPt' = zeroPt
+
+    mtrx  = translMatrixRepCTM x y ctm
+    inn   = ps_concat $ mtrx
+    out   = ps_concat $ invert mtrx
 

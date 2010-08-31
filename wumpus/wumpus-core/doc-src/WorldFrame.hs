@@ -11,9 +11,9 @@ main = writeEPS_latin1 "WorldFrame.eps" world_frame
 
 world_frame :: DPicture
 world_frame = uniformScale 0.75 $ 
-    frameMulti [ ogin, btm_right, top_left, top_right
-               , x_axis, y_axis, line1
-               ]
+    frame [ ogin, btm_right, top_left, top_right
+          , x_axis, y_axis, line1
+          ]
   where
     ogin      = makeLabelPrim "(0,0)"     (P2 0  0)
     btm_right = makeLabelPrim "(100,0)"   (P2 96 0)

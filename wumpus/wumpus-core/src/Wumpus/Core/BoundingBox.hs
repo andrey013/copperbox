@@ -31,6 +31,7 @@ module Wumpus.Core.BoundingBox
   -- * Operations
   , bbox
   , obbox
+  , destBoundingBox
   , boundaryUnion 
   , traceBoundary
   , retraceBoundary
@@ -45,11 +46,11 @@ module Wumpus.Core.BoundingBox
   ) where
 
 import Wumpus.Core.AffineTrans
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( PSUnit(..) )
 
 import Data.Semigroup                               -- package: algebra
-import Text.PrettyPrint.Leijen hiding ( width )     -- package: wl-pprint
 
 
 
@@ -79,9 +80,9 @@ instance Ord u => Semigroup (BoundingBox u) where
   append = boundaryUnion
 
 
-instance PSUnit u => Pretty (BoundingBox u) where
-  pretty (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> pretty p0 
-                                            <+> text "ur=" <> pretty p1) 
+instance PSUnit u => Format (BoundingBox u) where
+  format (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> format p0 
+                                            <+> text "ur=" <> format p1) 
 
 
 --------------------------------------------------------------------------------
@@ -89,10 +90,27 @@ instance PSUnit u => Pretty (BoundingBox u) where
 
 type instance DUnit (BoundingBox u) = u
 
-instance (Num u, Ord u) => Scale (BoundingBox u) where
-  scale x y bb     = traceBoundary $ map (scale x y) $ [bl,br,tr,tl]
-    where (bl,br,tr,tl) = boundaryCorners bb
+pointTransform :: (Num u , Ord u)
+               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
+pointTransform fn bb = traceBoundary $ map fn $ [bl,br,tr,tl]
+    where 
+      (bl,br,tr,tl) = boundaryCorners bb
 
+
+instance (Num u, Ord u) => Transform (BoundingBox u) where
+  transform mtrx = pointTransform  (mtrx *#)
+
+instance (Real u, Floating u) => Rotate (BoundingBox u) where
+  rotate theta = pointTransform (rotate theta)
+
+instance (Real u, Floating u) => RotateAbout (BoundingBox u) where
+  rotateAbout theta pt = pointTransform (rotateAbout theta pt)
+
+instance (Num u, Ord u) => Scale (BoundingBox u) where
+  scale sx sy = pointTransform (scale sx sy)
+
+instance (Num u, Ord u) => Translate (BoundingBox u) where
+  translate dx dy = pointTransform (translate dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -101,16 +119,8 @@ instance (Num u, Ord u) => Scale (BoundingBox u) where
 -- | Type class extracting the bounding box of an object - 
 -- Picture, Path etc.
 --
-class Boundary a where
-  boundary :: DUnit a ~ u => a -> BoundingBox u 
-
-
---------------------------------------------------------------------------------
-
-
-instance Pointwise (BoundingBox u) where
-  type Pt (BoundingBox u) = Point2 u
-  pointwise f (BBox bl tr) = BBox (f bl) (f tr)
+class Boundary t where
+  boundary :: u ~ DUnit t => t -> BoundingBox u 
 
 
 --------------------------------------------------------------------------------
@@ -132,6 +142,16 @@ bbox ll@(P2 x0 y0) ur@(P2 x1 y1)
 --
 obbox :: Num u => u -> u -> BoundingBox u
 obbox w h = BBox zeroPt (P2 w h)
+
+-- | Destructor for BoundingBox.
+--
+-- Assembles a four-tuple @ (ll_x, ll_y, ur_x, ur_y) @.
+-- 
+-- Arguably this is easier to pattern match upon as it removes a 
+-- layer of nesting.
+--
+destBoundingBox :: BoundingBox u -> (u,u,u,u)
+destBoundingBox (BBox (P2 llx lly) (P2 urx ury)) = (llx, lly, urx, ury) 
 
 
 -- | The union of two bounding boxes. This is also the @append@ 

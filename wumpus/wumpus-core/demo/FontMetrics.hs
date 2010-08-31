@@ -17,15 +17,14 @@ main = do
     writeSVG_latin1 "./out/font_metrics.svg" metrics_pic
 
 
+peru :: RGB255
+peru = RGB255 205  133  63
 
-peru :: PSRgb
-peru = RGB3 0.804  0.522  0.247
+plum :: RGB255
+plum = RGB255 221  160  221
 
-plum :: PSRgb
-plum = RGB3 0.867  0.627  0.867
-
-black :: PSRgb
-black = RGB3 0 0 0 
+black :: RGB255
+black = RGB255 0 0 0 
 
 courier_attr :: FontAttr
 courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" SVG_REGULAR)
@@ -34,7 +33,7 @@ metrics_pic :: DPicture
 metrics_pic = char_pic `picOver` lines_pic
 
 lines_pic   :: DPicture
-lines_pic   = frameMulti $ 
+lines_pic   = frame $ 
     [ ascender_line, numeral_line, xheight_line, baseline, descender_line ]
   where
     descender_pos   = 0 - courier48_descender_depth
@@ -48,7 +47,7 @@ lines_pic   = frameMulti $
 
 
 char_pic :: Picture Double
-char_pic = frameMulti $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
+char_pic = frame $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
   where
     chars = (map letter "ABXabdgjxy12") ++ [agraveU]
 
@@ -64,10 +63,10 @@ letter :: Char -> DPoint2 -> DPrimitive
 letter ch pt = textlabel (black, courier_attr) [ch] pt
 
 
-vertLine :: DRGB -> Double -> DPoint2 -> DPrimitive
+vertLine :: RGB255 -> Double -> DPoint2 -> DPrimitive
 vertLine rgb height pt = ostroke rgb $ vertexPath [pt, pt .+^ vvec height]
 
-haxis :: DRGB -> PtSize -> DPrimitive
+haxis :: RGB255 -> PtSize -> DPrimitive
 haxis rgb ypos = 
     ostroke (rgb, dash_attr) $ vertexPath [ pt, pt .+^ hvec 440 ]
   where

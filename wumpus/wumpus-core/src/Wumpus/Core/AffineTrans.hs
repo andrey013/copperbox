@@ -13,25 +13,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Affine transformations.
+-- Core affine transformations.
 -- 
--- The common affine transformations represented as type classes -
--- scaling, rotation, translation.
---
--- Unlike other functional graphics systems (e.g. Clastic), Wumpus
--- performs the affine transformations as matrix operations. This 
--- simplifies the implementation of pictures 
--- ("Wumpus.Core.PictureInternal"). When a picture is composed and 
--- transformed, transformations will be performed only on the 
--- bounding box in Wumpus but the transformation of the 
--- picture content (paths or text labels) will be communicated to 
--- PostScript or SVG to render. This is because Wumpus has no 
--- access to the paths that make fonts so cannot transform them 
--- directly.
--- 
--- To generate efficient PostScript, Wumpus relies on the matrix
--- representations of the affine transformations being invertible.
--- Please do not scale elements by zero.
 --
 --------------------------------------------------------------------------------
 
@@ -122,10 +105,10 @@ class Scale t where
   scale :: u ~ DUnit t => u -> u -> t -> t
 
 instance Num u => Scale (Point2 u) where
-  scale x y = ((scalingMatrix x y) *#) 
+  scale sx sy = ((scalingMatrix sx sy) *#) 
 
 instance Num u => Scale (Vec2 u) where
-  scale x y = ((scalingMatrix x y) *#) 
+  scale sx sy = ((scalingMatrix sx sy) *#) 
 
 --------------------------------------------------------------------------------
 -- Translate
@@ -135,10 +118,10 @@ class Translate t where
   translate :: DUnit t -> DUnit t -> t -> t
 
 instance Num u => Translate (Point2 u) where
-  translate x y = ((translationMatrix x y) *#)
+  translate dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 instance Num u => Translate (Vec2 u) where
-  translate x y = ((translationMatrix x y) *#)
+  translate dx dy (V2 x y) = V2 (x+dx) (y+dy)
 
 
 -------------------------------------------------------------------------------- 

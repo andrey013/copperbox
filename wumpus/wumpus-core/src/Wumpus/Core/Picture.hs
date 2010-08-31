@@ -8,148 +8,92 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Construction of pictures, paths and text labels.
--- 
+-- Core picture.
+--
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.Picture 
-  (
-  
-   -- * Construction
-    blankPicture
-  , frame
-  , frameWithin
-  , frameMulti
+
+module Wumpus.Core.Picture
+  ( 
+
+  -- * Construction
+    frame
   , multi
-
-
   , path
   , lineTo
   , curveTo
-  , vertexPath  
+  , vertexPath
   , curvedPath
-
-  , wumpus_default_font
+  , xlinkhref
 
   -- * Constructing primitives
   , Stroke(..)
   , zostroke
   , zcstroke
-
   , Fill(..)
   , zfill
-  
+  , Ellipse(..)
+  , zellipse
+
   , clip
 
   , TextLabel(..)
   , ztextlabel
 
-  , Ellipse(..)
-  , zellipse
 
-  -- * Operations
-  , extendBoundary
-
-
-  -- * Minimal - picture composition
-  , picMoveBy
+  -- * Picture composition
   , picOver
+  , picMoveBy
   , picBeside
+
+  -- * Illustrating pictures and primitives
+  , printPicture
   , illustrateBounds
-  , illustrateBoundsPrim 
+  , illustrateBoundsPrim
   , illustrateControlPoints
 
   ) where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
-import Wumpus.Core.TextEncodingInternal
+import Wumpus.Core.TextInternal
+import Wumpus.Core.Utils
 
+import Data.AffineSpace                         -- package: vector-space
 import Data.Semigroup                           -- package: algebra
 
-import qualified Data.Foldable as F
 
-
---------------------------------------------------------------------------------
-
--- Default attributes
-
-psBlack :: PSRgb
-psBlack = RGB3 0 0 0
- 
--- aka the standard frame
-stdFrame :: Num u => Frame2 u 
-stdFrame = ortho zeroPt
 
 
 --------------------------------------------------------------------------------
 -- Construction
 
 
-
--- | Create a blank 'Picture' sized to the supplied bounding box.
--- This is useful for spacing rows or columns of pictures.
---
-blankPicture :: Num u => BoundingBox u -> Picture u
-blankPicture bb = PicBlank (stdFrame, bb, boundaryYRange bb)
-
-
--- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
---
-frame :: (Real u, Floating u, FromPtSize u) => Primitive u -> Picture u
-frame p = Leaf (stdFrame, boundary p, primitiveYRange p) (one p)
- 
--- | Frame a picture within the supplied bounding box
--- 
--- A text label uses the supplied bounding box as is - no 
--- clipping is performed if the bounding box is 
--- smaller than the boundary size of the text. This may 
--- cause strange overlap for subsequent composite pictures, and
--- incorrect bounding box annotations in the prologue of the 
--- generated EPS file. 
--- 
--- Paths and ellipses are bound within the union of the supplied 
--- bounding box and the inherent bounding box or the path or 
--- ellipse. Thus the bounding box will never reframed to a 
--- smaller size than the /natural/ bounding box.
---
-frameWithin :: (Real u, Floating u, FromPtSize u) 
-            => Primitive u -> BoundingBox u -> Picture u
-frameWithin p@(PLabel _ _) bb = Leaf (stdFrame, bb, primitiveYRange p)  (one p)
-frameWithin p              bb = Leaf (stdFrame, bb', primitiveYRange p) (one p)
-  where 
-    bb' = bb `append` boundary p
-
-
-
--- | Lift a list of primitives to a composite picture, all 
--- primitives will be located within the standard frame.
+-- | Lift a list of primitives to a composite picture.
 --
 -- The order of the list maps to the zorder - the front of the
 -- list is drawn at the top.
 --
 -- This function throws an error when supplied the empty list.
 --
-frameMulti :: (Real u, Floating u, FromPtSize u) 
-           => [Primitive u] -> Picture u
-frameMulti []     = error "Wumpus.Core.Picture.frameMulti - empty list"
-frameMulti (p:ps) = let (bb,yr,ones) = step p ps in Leaf (stdFrame,bb,yr) ones
+frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
+frame []     = error "Wumpus.Core.Picture.frame - empty list"
+frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
-    step a []     = (boundary a, primitiveYRange a, one a)
-    step a (x:xs) = let (bb',yr',rest) = step x xs
-                    in ( boundary a `append` bb'
-                       , primitiveYRange a `append` yr'
-                       , cons a rest
-                       )
+    step a []     = (boundary a, one a)
+    step a (x:xs) = let (bb', rest) = step x xs
+                    in ( boundary a `append` bb', cons a rest )
 
 
 
@@ -158,36 +102,37 @@ frameMulti (p:ps) = let (bb,yr,ones) = step p ps in Leaf (stdFrame,bb,yr) ones
 -- This function throws an error when supplied the empty list.
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
-multi []       = error "Wumpus.Core.Picture.multi - empty list"
-multi xs@(x:_) = Picture (stdFrame,bb,yr) ones 
+multi []      = error "Wumpus.Core.Picture.multi - empty list"
+multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones 
   where
-    ones        = fromList xs
-    (bb,yr)     = F.foldr fn (boundary x, extractYRange x) xs
-    fn a (b,y)  = (b `append` boundary a, y `append` extractYRange a)
+    step a []     = (boundary a, one a)
+    step a (x:xs) = let (bb', rest) = step x xs
+                    in ( boundary a `append` bb', cons a rest )
+
 
 
 -- | Create a Path from a start point and a list of PathSegments.
 --
-path :: Point2 u -> [PathSegment u] -> Path u
-path = Path 
+path :: Point2 u -> [PrimPathSegment u] -> PrimPath u
+path = PrimPath 
 
 -- | Create a straight-line PathSegment.
 --
-lineTo :: Point2 u -> PathSegment u
+lineTo :: Point2 u -> PrimPathSegment u
 lineTo = PLineTo
 
 -- | Create a curved PathSegment.
 --
-curveTo :: Point2 u -> Point2 u -> Point2 u -> PathSegment u
+curveTo :: Point2 u -> Point2 u -> Point2 u -> PrimPathSegment u
 curveTo = PCurveTo
 
 
 -- | Convert the list of vertices to a path of straight line 
 -- segments.
 --
-vertexPath :: [Point2 u] -> Path u
+vertexPath :: [Point2 u] -> PrimPath u
 vertexPath []     = error "Picture.vertexPath - empty point list"
-vertexPath (x:xs) = Path x (map PLineTo xs)
+vertexPath (x:xs) = PrimPath x (map PLineTo xs)
 
 
 
@@ -196,39 +141,29 @@ vertexPath (x:xs) = Path x (map PLineTo xs)
 -- segment thereafter takes 3 points. /Spare/ points at the end 
 -- are discarded. 
 --
-curvedPath :: [Point2 u] -> Path u
+curvedPath :: [Point2 u] -> PrimPath u
 curvedPath []     = error "Picture.curvedPath - empty point list"
-curvedPath (x:xs) = Path x (fn xs) where
-  fn (a:b:c:ys) = PCurveTo a b c : fn ys 
-  fn _          = []
-
-
-  
-
-
--- | Constant for the default font, which is @Courier@ (aliased 
--- to @Courier New@ for SVG) at 24 point.
---
---
-wumpus_default_font :: FontAttr
-wumpus_default_font = FontAttr 24 face 
+curvedPath (x:xs) = PrimPath x (step xs) 
   where
-    face = FontFace { font_name         = "Courier"
-                    , svg_font_family   = "Courier New"
-                    , svg_font_style    = SVG_REGULAR
-                    }
+    step (a:b:c:ys) = PCurveTo a b c : step ys 
+    step _          = []
 
 
+xlinkhref :: String -> XLink
+xlinkhref = XLinkHRef
 
 --------------------------------------------------------------------------------
 -- Take Paths to Primitives
 
+-- *** Stroke
 
-ostrokePath :: Num u => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
-ostrokePath c attrs p = PPath (c, OStroke attrs) p
+ostrokePath :: Num u 
+            => RGB255 -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
+ostrokePath rgb attrs xlink p = PPath (OStroke attrs rgb) xlink p
 
-cstrokePath :: Num u => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
-cstrokePath c attrs p = PPath (c, CStroke attrs) p
+cstrokePath :: Num u 
+            => RGB255 -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
+cstrokePath rgb attrs xlink p = PPath (CStroke attrs rgb) xlink p
 
 -- | Create a open, stroked path (@ostroke@) or a closed, stroked
 -- path (@cstroke@).
@@ -237,79 +172,74 @@ cstrokePath c attrs p = PPath (c, CStroke attrs) p
 -- the path more convenient.
 -- 
 class Stroke t where
-  ostroke :: Num u => t -> Path u -> Primitive u
-  cstroke :: Num u => t -> Path u -> Primitive u
+  ostroke :: Num u => t -> PrimPath u -> Primitive u
+  cstroke :: Num u => t -> PrimPath u -> Primitive u
 
 instance Stroke () where
-  ostroke () = ostrokePath psBlack []
-  cstroke () = cstrokePath psBlack []
+  ostroke () = ostrokePath black [] NoLink
+  cstroke () = cstrokePath black [] NoLink
 
-instance Stroke (RGB3 Double) where
-  ostroke c = ostrokePath (psColour c) []
-  cstroke c = cstrokePath (psColour c) []
-
-instance Stroke (HSB3 Double) where
-  ostroke c = ostrokePath (psColour c) []
-  cstroke c = cstrokePath (psColour c) []
-
-instance Stroke (Gray Double) where
-  ostroke c = ostrokePath (psColour c) []
-  cstroke c = cstrokePath (psColour c) []
-
+instance Stroke RGB255 where
+  ostroke rgb = ostrokePath rgb [] NoLink
+  cstroke rgb = cstrokePath rgb [] NoLink
 
 instance Stroke StrokeAttr where
-  ostroke x = ostrokePath psBlack [x]
-  cstroke x = cstrokePath psBlack [x]
+  ostroke x = ostrokePath black [x] NoLink
+  cstroke x = cstrokePath black [x] NoLink
 
 instance Stroke [StrokeAttr] where
-  ostroke xs = ostrokePath psBlack xs
-  cstroke xs = cstrokePath psBlack xs
+  ostroke xs = ostrokePath black xs NoLink
+  cstroke xs = cstrokePath black xs NoLink
+
+instance Stroke XLink where
+  ostroke xlink = ostrokePath black [] xlink
+  cstroke xlink = cstrokePath black [] xlink
 
 
+instance Stroke (RGB255,StrokeAttr) where
+  ostroke (rgb,x) = ostrokePath rgb [x] NoLink
+  cstroke (rgb,x) = cstrokePath rgb [x] NoLink
 
-instance Stroke (RGB3 Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (psColour c) [x]
-  cstroke (c,x) = cstrokePath (psColour c) [x]
+instance Stroke (RGB255,[StrokeAttr]) where
+  ostroke (rgb,xs) = ostrokePath rgb xs NoLink
+  cstroke (rgb,xs) = cstrokePath rgb xs NoLink
 
-instance Stroke (HSB3 Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (psColour c) [x]
-  cstroke (c,x) = cstrokePath (psColour c) [x]
+instance Stroke (RGB255,XLink) where
+  ostroke (rgb,xlink) = ostrokePath rgb [] xlink
+  cstroke (rgb,xlink) = cstrokePath rgb [] xlink
 
-instance Stroke (Gray Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (psColour c) [x]
-  cstroke (c,x) = cstrokePath (psColour c) [x]
+instance Stroke (StrokeAttr,XLink) where
+  ostroke (x,xlink) = ostrokePath black [x] xlink
+  cstroke (x,xlink) = cstrokePath black [x] xlink
 
-instance Stroke (RGB3 Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (psColour c) xs
-  cstroke (c,xs) = cstrokePath (psColour c) xs
+instance Stroke ([StrokeAttr],XLink) where
+  ostroke (xs,xlink) = ostrokePath black xs xlink
+  cstroke (xs,xlink) = cstrokePath black xs xlink
 
-instance Stroke (HSB3 Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (psColour c) xs
-  cstroke (c,xs) = cstrokePath (psColour c) xs
+instance Stroke (RGB255,StrokeAttr,XLink) where
+  ostroke (rgb,x,xlink) = ostrokePath rgb [x] xlink
+  cstroke (rgb,x,xlink) = cstrokePath rgb [x] xlink
 
-instance Stroke (Gray Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (psColour c) xs
-  cstroke (c,xs) = cstrokePath (psColour c) xs
+instance Stroke (RGB255,[StrokeAttr],XLink) where
+  ostroke (rgb,xs,xlink) = ostrokePath rgb xs xlink
+  cstroke (rgb,xs,xlink) = cstrokePath rgb xs xlink
 
 
 -- | Create an open stoke coloured black.
 --
-zostroke :: Num u => Path u -> Primitive u
-zostroke = ostrokePath psBlack []
+zostroke :: Num u => PrimPath u -> Primitive u
+zostroke = ostrokePath black [] NoLink
  
 -- | Create a closed stroke coloured black.
 --
-zcstroke :: Num u => Path u -> Primitive u
-zcstroke = cstrokePath psBlack []
+zcstroke :: Num u => PrimPath u -> Primitive u
+zcstroke = cstrokePath black [] NoLink
 
 
+-- *** Fill
 
-
-
-
-
-fillPath :: Num u => PSRgb -> Path u -> Primitive u
-fillPath c p = PPath (c,CFill) p
+fillPath :: Num u => RGB255 -> XLink -> PrimPath u -> Primitive u
+fillPath rgb xlink p = PPath (CFill rgb) xlink p
 
 -- | Create a filled path (@fill@). Fills only have one 
 -- property - colour. But there are various representations of 
@@ -318,34 +248,49 @@ fillPath c p = PPath (c,CFill) p
 -- @ fill () @ will fill with the default colour - black.
 -- 
 class Fill t where
-  fill :: Num u => t -> Path u -> Primitive u
+  fill :: Num u => t -> PrimPath u -> Primitive u
  
 
-instance Fill ()                where fill () = fillPath psBlack 
-instance Fill (RGB3 Double)     where fill = fillPath . psColour
-instance Fill (HSB3 Double)     where fill = fillPath . psColour
-instance Fill (Gray Double)     where fill = fillPath . psColour
+instance Fill ()                where fill ()    = fillPath black NoLink
+instance Fill RGB255            where fill rgb   = fillPath rgb   NoLink
+instance Fill XLink             where fill xlink = fillPath black xlink
+
+instance Fill (RGB255,XLink) where
+  fill (rgb,xlink) = fillPath rgb xlink
+
 
 -- | Create a filled path coloured black. 
-zfill :: Num u => Path u -> Primitive u
-zfill = fillPath psBlack
+zfill :: Num u => PrimPath u -> Primitive u
+zfill = fillPath black NoLink
 
 --------------------------------------------------------------------------------
 -- Clipping 
 
 -- | Clip a picture with respect to the supplied path.
 --
-clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
-clip cp p = Clip (ortho zeroPt, boundary cp, extractYRange p) cp p
-
+clip :: (Num u, Ord u) => PrimPath u -> Picture u -> Picture u
+clip cp p = Clip (pathBoundary cp, []) cp p
 
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
-mkTextLabel :: Num u => PSRgb -> FontAttr -> String -> Point2 u -> Primitive u
-mkTextLabel c attr txt pt = PLabel (c,attr) lbl 
+mkTextLabel :: Num u 
+            => RGB255 -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
+mkTextLabel rgb attr xlink txt pt = PLabel (LabelProps rgb attr) xlink lbl 
   where
-    lbl = Label pt (lexLabel txt) identityCTM
+    lbl = PrimLabel pt (lexLabel txt) identityCTM
+
+-- | Constant for the default font, which is @Courier@ (aliased 
+-- to @Courier New@ for SVG) at 14 point.
+--
+--
+wumpus_default_font :: FontAttr
+wumpus_default_font = FontAttr 14 face 
+  where
+    face = FontFace { font_name         = "Courier"
+                    , svg_font_family   = "Courier New"
+                    , svg_font_style    = SVG_REGULAR
+                    }
 
 
 -- | Create a text label. The string should not contain newline
@@ -355,7 +300,7 @@ mkTextLabel c attr txt pt = PLabel (c,attr) lbl
 -- @textlabel@ is overloaded to make attributing the label more 
 -- convenient.
 --
--- Unless a 'FontAttr' is specified, the label will use 12pt 
+-- Unless a 'FontAttr' is specified, the label will use 14pt 
 -- Courier.
 --
 -- The supplied point is is the bottom left corner.
@@ -365,45 +310,47 @@ class TextLabel t where
 
 
 instance TextLabel () where 
-    textlabel () = mkTextLabel psBlack wumpus_default_font
+    textlabel () = mkTextLabel black wumpus_default_font NoLink
 
-instance TextLabel (RGB3 Double) where
-  textlabel c = mkTextLabel (psColour c) wumpus_default_font
-
-instance TextLabel (HSB3 Double) where
-  textlabel c = mkTextLabel (psColour c) wumpus_default_font
-
-instance TextLabel (Gray Double) where
-  textlabel c = mkTextLabel (psColour c) wumpus_default_font
+instance TextLabel RGB255 where
+  textlabel rgb = mkTextLabel rgb wumpus_default_font NoLink
 
 instance TextLabel FontAttr where
-  textlabel a = mkTextLabel psBlack a
+  textlabel a = mkTextLabel black a NoLink
 
-instance TextLabel (RGB3 Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (psColour c) a
+instance TextLabel XLink where
+    textlabel xlink = mkTextLabel black wumpus_default_font xlink
 
-instance TextLabel (HSB3 Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (psColour c) a
 
-instance TextLabel (Gray Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (psColour c) a
+instance TextLabel (RGB255,FontAttr) where
+  textlabel (rgb,a) = mkTextLabel rgb a NoLink
 
--- | Create a label where the font is @Courier@, text size is 24pt
+instance TextLabel (RGB255,XLink) where
+  textlabel (rgb,xlink) = mkTextLabel rgb wumpus_default_font xlink
+
+instance TextLabel (FontAttr,XLink) where
+  textlabel (a,xlink) = mkTextLabel black a xlink
+
+instance TextLabel (RGB255,FontAttr,XLink) where
+  textlabel (rgb,a,xlink) = mkTextLabel rgb a xlink
+
+-- | Create a label where the font is @Courier@, text size is 14pt
 -- and colour is black.
+--
 ztextlabel :: Num u => String -> Point2 u -> Primitive u
-ztextlabel = mkTextLabel psBlack wumpus_default_font
-
+ztextlabel = mkTextLabel black wumpus_default_font NoLink
 
 
 --------------------------------------------------------------------------------
 
 mkEllipse :: Num u 
-          => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
-mkEllipse c dp hw hh pt = PEllipse (c,dp) (PrimEllipse pt hw hh identityCTM)
+          => EllipseProps -> XLink -> u -> u -> Point2 u -> Primitive u
+mkEllipse props xlink hw hh pt = 
+    PEllipse props xlink (PrimEllipse pt hw hh identityCTM)
 
 
 ellipseDefault :: EllipseProps
-ellipseDefault = (psBlack, EFill)
+ellipseDefault = EFill black
 
 
 -- | Create an ellipse, the ellipse will be filled unless the 
@@ -426,84 +373,42 @@ ellipseDefault = (psBlack, EFill)
 class Ellipse t where
   ellipse :: Fractional u => t -> u -> u -> Point2 u -> Primitive u
 
+
 instance Ellipse ()             where ellipse () = zellipse
-instance Ellipse DrawEllipse    where ellipse dp = mkEllipse psBlack dp
 
-instance Ellipse StrokeAttr     where 
-    ellipse = mkEllipse psBlack . EStroke . return
+instance Ellipse RGB255 where 
+  ellipse rgb = mkEllipse (EFill rgb) NoLink
 
-instance Ellipse [StrokeAttr]   where 
-    ellipse = mkEllipse psBlack . EStroke
+instance Ellipse StrokeAttr where
+  ellipse x = mkEllipse (EStroke [x] black) NoLink
 
-instance Ellipse (RGB3 Double) where 
-    ellipse c = mkEllipse (psColour c) EFill
+instance Ellipse [StrokeAttr] where
+  ellipse xs = mkEllipse (EStroke xs black) NoLink
 
-instance Ellipse (HSB3 Double) where 
-    ellipse c = mkEllipse (psColour c) EFill
+instance Ellipse XLink where 
+  ellipse xlink = mkEllipse (EFill black) xlink
 
-instance Ellipse (Gray Double) where 
-    ellipse c = mkEllipse (psColour c) EFill
+instance Ellipse (RGB255,StrokeAttr) where
+  ellipse (rgb,x) = mkEllipse (EStroke [x] rgb) NoLink
 
+instance Ellipse (RGB255,[StrokeAttr]) where
+  ellipse (rgb,xs) = mkEllipse (EStroke xs rgb) NoLink
 
-instance Ellipse (RGB3 Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (psColour c) dp
+instance Ellipse (RGB255,XLink) where
+  ellipse (rgb,xlink) = mkEllipse (EFill rgb) xlink
 
-instance Ellipse (HSB3 Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (psColour c) dp
+instance Ellipse (StrokeAttr,XLink) where
+  ellipse (x,xlink) = mkEllipse (EStroke [x] black) xlink
 
-instance Ellipse (Gray Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (psColour c) dp
+instance Ellipse ([StrokeAttr],XLink) where
+  ellipse (xs,xlink) = mkEllipse (EStroke xs black) xlink
 
-
-instance Ellipse (RGB3 Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
-
-instance Ellipse (HSB3 Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
-
-instance Ellipse (Gray Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
-
-instance Ellipse (RGB3 Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
-
-instance Ellipse (HSB3 Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
-
-instance Ellipse (Gray Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
-
+instance Ellipse (RGB255,[StrokeAttr],XLink) where
+  ellipse (rgb,xs,xlink) = mkEllipse (EStroke xs rgb) xlink
 
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
-zellipse = uncurry mkEllipse ellipseDefault
-
-
---------------------------------------------------------------------------------
-
--- Operations on pictures and paths
-
-
-
-
--- | Extend the bounding box of a picture. 
---
--- The bounding box is both horizontal directions by @x@ and 
--- both vertical directions by @y@. @x@ and @y@ must be positive
--- This function cannot be used to shrink a boundary.
---
-extendBoundary :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-extendBoundary dx dy =  mapLocale $ \(fr,bb,yr) -> 
-    (fr, extBB (posve dx) (posve dy) bb, extYR (posve dy) yr)
-  where
-    extBB x y (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
-        pt1 = P2 (x0-x) (y0-y)
-        pt2 = P2 (x1+x) (y1+y)
-    
-    extYR y (YRange hi lo) = YRange (hi+y) (lo-y)
-    
-    posve n | n < 0     = 0
-            | otherwise = n 
+zellipse hw hh pt = mkEllipse ellipseDefault NoLink hw hh pt
 
 
 --------------------------------------------------------------------------------
@@ -517,17 +422,16 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (ortho zeroPt, bb, yr) (cons a $ one b)
+a `picOver` b = Picture (bb,[]) (cons a $ one b)
   where
     bb = boundary a `append` boundary b
-    yr = extractYRange a `append` extractYRange b
+
 -- | 'picMoveBy' : @ picture -> vector -> picture @
 -- 
 --  Move a picture by the supplied vector. 
 --
-picMoveBy :: Num u => Picture u -> Vec2 u -> Picture u
-p `picMoveBy` v = v `movePic` p 
-
+picMoveBy :: (Num u, Ord u) => Picture u -> Vec2 u -> Picture u
+p `picMoveBy` (V2 dx dy) = translate dx dy p 
 
 -- | 'picBeside' : @ picture -> picture -> picture @
 --
@@ -541,6 +445,14 @@ a `picBeside` b = a `picOver` (b `picMoveBy` v)
     (P2 x2 _) = ll_corner $ boundary b 
     v         = hvec $ x1 - x2 
 
+--------------------------------------------------------------------------------
+-- Illustrating pictures and primitives
+
+-- | Print the syntax tree of a Picture to the console.
+--
+printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
+printPicture pic = putStrLn (show $ format pic) >> putStrLn []
+
 
 -- | 'illustrateBounds' : @ colour -> picture -> picture @
 -- 
@@ -548,8 +460,8 @@ a `picBeside` b = a `picOver` (b `picMoveBy` v)
 -- The bounding box image will be drawn in the supplied colour.
 --
 illustrateBounds :: (Real u, Floating u, FromPtSize u) 
-                 => DRGB -> Picture u -> Picture u
-illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p) 
+                 => RGB255 -> Picture u -> Picture u
+illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p) 
 
 
 -- | 'illustrateBoundsPrim' : @ colour -> primitive -> picture @
@@ -560,8 +472,8 @@ illustrateBounds rgb p = p `picOver` (frameMulti $ boundsPrims rgb p)
 -- The result will be lifted from Primitive to Picture.
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
-                     => DRGB -> Primitive u -> Picture u
-illustrateBoundsPrim rgb p = frameMulti (p : boundsPrims rgb p)
+                     => RGB255 -> Primitive u -> Picture u
+illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 
 
 
@@ -569,13 +481,14 @@ illustrateBoundsPrim rgb p = frameMulti (p : boundsPrims rgb p)
 -- joining the corners.
 --
 boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
-            => DRGB -> t -> [Primitive u]
+            => RGB255 -> t -> [Primitive u]
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
     bbox_rect     = cstroke rgb $ vertexPath [bl,br,tr,tl]
     bl_to_tr      = ostroke rgb $ vertexPath [bl,tr]
     br_to_tl      = ostroke rgb $ vertexPath [br,tl]
+
 
 
 -- | Generate the control points illustrating the Bezier 
@@ -589,12 +502,12 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 -- @arc@ command.  
 --
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
-                        => DRGB -> Primitive u -> Picture u
+                        => RGB255 -> Primitive u -> Picture u
 illustrateControlPoints rgb prim = step prim
   where
-    step (PEllipse _ e) = frameMulti (prim : ellipseCtrlLines rgb e)
-    step (PPath    _ p) = frameMulti (prim : pathCtrlLines rgb p)
-    step _              = frame prim
+    step (PEllipse _ _ e) = frame (prim : ellipseCtrlLines rgb e)
+    step (PPath    _ _ p) = frame (prim : pathCtrlLines rgb p)
+    step _                = frame [prim]
 
 -- Genrate lines illustrating the control points of curves on 
 -- a Path.
@@ -604,15 +517,15 @@ illustrateControlPoints rgb prim = step prim
 --
 -- Nothing is generated for a straight line.
 --
-pathCtrlLines :: (Num u, Ord u) => DRGB -> Path u -> [Primitive u]
-pathCtrlLines rgb (Path start ss) = step start ss
+pathCtrlLines :: (Num u, Ord u) => RGB255 -> PrimPath u -> [Primitive u]
+pathCtrlLines rgb (PrimPath start ss) = step start ss
   where 
     -- trail the current end point through the recursion...
     step _ []                    = []
     step _ (PLineTo e:xs)        = step e xs
     step s (PCurveTo c1 c2 e:xs) = mkLine s c1 : mkLine c2 e : step e xs 
 
-    mkLine s e                   = ostroke rgb (Path s [lineTo e]) 
+    mkLine s e                   = ostroke rgb (PrimPath s [lineTo e]) 
 
 
 -- Generate lines illustrating the control points of an 
@@ -622,7 +535,7 @@ pathCtrlLines rgb (Path start ss) = step start ss
 -- start-point to control-point1; control-point2 to end-point
 --
 ellipseCtrlLines :: (Real u, Floating u) 
-                 => DRGB -> PrimEllipse u -> [Primitive u]
+                 => RGB255 -> PrimEllipse u -> [Primitive u]
 ellipseCtrlLines rgb pe = start all_points
   where 
     -- list in order: 
@@ -636,6 +549,41 @@ ellipseCtrlLines rgb pe = start all_points
     rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
     rest _ _             = []
 
-    mkLine s e           = ostroke rgb (Path s [lineTo e]) 
+    mkLine s e           = ostroke rgb (PrimPath s [lineTo e]) 
 
+
+
+-- | Get the control points as a list
+-- 
+-- There are no duplicates in the list except for the final 
+-- /wrap-around/. We take 4 points initially (start,cp1,cp2,end)
+-- then (cp1,cp2,end) for the other three quadrants.
+--
+ellipseControlPoints :: (Floating u, Real u)
+                     => PrimEllipse u -> [Point2 u]
+ellipseControlPoints (PrimEllipse (P2 x y) hw hh ctm) = 
+    map (disp . (new_mtrx *#)) circ
+  where
+    disp             = (.+^ V2 x y)
+    (radius,(dx,dy)) = circleScalingProps hw hh
+    new_mtrx         = matrixRepCTM $ scaleCTM dx dy ctm
+    circ             = bezierCircle 1 radius (P2 0 0)
+
+    -- subdivide the bezierCircle with 1 to get two
+    -- control points per quadrant.    
+
+
+--
+-- I don't know how to calculate bezier arcs (and thus control
+-- points) for an ellipse but I know how to do it for a circle...
+--
+-- So a make a circle with the largest of half-width and 
+-- half-height then apply a scale to the points
+-- 
+circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
+circleScalingProps hw hh  = (radius, (dx,dy))
+  where
+    radius     = max hw hh
+    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
+                                 else (rescale (0,hh) (0,1) hw, 1)
 

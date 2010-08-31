@@ -11,11 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Numeric type representing Point size (1/72 inch) which is 
--- PostScript and Wumpus-Core\'s internal unit size.
---
--- Other unit types (e.g. centimeter) should define an 
--- appropriate instance of FromPtSize.
+-- Core PtSize
 -- 
 --------------------------------------------------------------------------------
 
@@ -34,7 +30,9 @@ module Wumpus.Core.PtSize
   ) where
 
 
--- | Wumpus-Core 
+-- | Wrapped Double representing /Point size/ for font metrics 
+-- etc.
+-- 
 newtype PtSize = PtSize { ptSize :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional)
 

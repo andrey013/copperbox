@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -7,63 +7,103 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Output SVG. 
---
--- This is complicated by two differences with PostScript.
---
--- 1. The coordinate space of SVG is /origin top-left/, for 
--- PostScript it is /origin bottom-left/.
--- 
--- 2. Clipping in PostScript works by changing the graphics state
--- Clip a path, then all subsequent drawing be rendered only 
--- when it is within the clip bounds. Clearly using clipping 
--- paths within a @gsave ... grestore@ block is a good idea...
---
--- SVG uses /tagging/. A clipPath element is declared and named 
--- then referenced in subsequent elements via the clip-path 
--- attribute - @clip-path=\"url(#clip_path_tag)\"@.
---
+-- Fresh SVG.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.OutputSVG
-  ( 
-  
+module Wumpus.Core.OutputSVG 
+  (
+
   -- * Output SVG
     writeSVG
 
   , writeSVG_latin1
-  
+
   ) where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.OneList
+import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.SVG
+import Wumpus.Core.SVGDoc
 import Wumpus.Core.TextEncoder
-import Wumpus.Core.TextEncodingInternal
+import Wumpus.Core.TextInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
-import Text.XML.Light                           -- package: xml
-
-import Control.Applicative
-import Control.Monad
+import Control.Applicative hiding ( empty, some )
 import qualified Data.Foldable as F
 
-
-type Clipped    = Bool
-
-
-dZero :: Double
-dZero = 0
+-- SvgMonad is two Readers plus Int state for clip paths...
+--
+newtype SvgMonad a = SvgMonad { 
+            getSvgMonad :: TextEncoder -> GraphicsState -> Int -> (a,Int) }
 
 
+
+instance Functor SvgMonad where
+  fmap f mf = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad mf r1 r2 s
+                                     in (f a,s1)
+
+instance Applicative SvgMonad where
+  pure a    = SvgMonad $ \_  _  s -> (a,s)
+  mf <*> ma = SvgMonad $ \r1 r2 s -> let (f,s1) = getSvgMonad mf r1 r2 s
+                                         (a,s2) = getSvgMonad ma r1 r2 s1
+                                   in (f a, s2)
+
+instance Monad SvgMonad where
+  return a  = SvgMonad $ \_  _  s -> (a,s)
+  m >>= k   = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad m r1 r2 s
+                                     in (getSvgMonad . k) a r1 r2 s1
+                            
+
+
+runSvgMonad :: TextEncoder -> SvgMonad a -> a
+runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS 0
+
+newClipLabel :: SvgMonad String
+newClipLabel = SvgMonad $ \_ _ s -> ('c':'l':'i':'p':show s, s+1)
+
+askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
+askGlyphName nm = SvgMonad $ \r1 _ s -> case lookupByGlyphName nm r1 of
+    Just a  -> (Right $ escapeSpecial a, s)
+    Nothing -> (Left  $ escapeSpecial $ svg_fallback r1, s)
+
+-- This is different to the PsMonad version, as SVG is nested 
+-- (and /graphics state/ is via a Reader), so it is the same as 
+-- local with a Reader monad.
+--
+runLocalGS :: GSUpdate -> SvgMonad a -> SvgMonad a
+runLocalGS upd mf = 
+    SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (getGSU upd r2) s
+
+
+askFontAttr :: SvgMonad FontAttr
+askFontAttr = 
+    SvgMonad $ \_ r2 s -> (FontAttr (gs_font_size r2) (gs_font_face r2), s)
+
+askLineWidth    :: SvgMonad Double
+askLineWidth    = SvgMonad $ \_ r2 s -> (gs_line_width r2, s)
+
+askMiterLimit   :: SvgMonad Double
+askMiterLimit   = SvgMonad $ \_ r2 s -> (gs_miter_limit r2, s)
+
+askLineCap      :: SvgMonad LineCap
+askLineCap      = SvgMonad $ \_ r2 s -> (gs_line_cap r2, s)
+
+askLineJoin     :: SvgMonad LineJoin
+askLineJoin     = SvgMonad $ \_ r2 s -> (gs_line_join r2, s)
+
+askDashPattern  :: SvgMonad DashPattern
+askDashPattern  = SvgMonad $ \_ r2 s -> (gs_dash_pattern r2, s)
 
 --------------------------------------------------------------------------------
 
@@ -72,299 +112,258 @@ dZero = 0
 writeSVG :: (Real u, Floating u, PSUnit u) 
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeSVG filepath enc pic = 
-    writeFile filepath $ unlines $ map ppContent $ svgDraw enc pic 
+    writeFile filepath $ show $ svgDraw enc pic 
 
 -- | Version of 'writeSVG' - using Latin1 encoding. 
 --
 writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
                 => FilePath -> Picture u -> IO ()
-writeSVG_latin1 filepath = writeSVG filepath latin1Encoder 
-
-
+writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
-        => TextEncoder -> Picture u -> [Content]
-svgDraw enc pic = execSvgMonad enc pg_height $ do
-    elem1     <- picture False pic
-    prefixXmlDecls (topLevelPic mbvec elem1)
-  where
-    (_,mbvec) = repositionProperties pic
-    pg_height = boundaryHeight $ boundary pic
-
-prefixXmlDecls :: Element -> SvgMonad u [Content]
-prefixXmlDecls e = do 
-    enc <- askEncodingName
-    let xmlv = xmlVersion enc
-    return $ [Text xmlv, Text svgDocType, Elem e]    
-
-topLevelPic :: PSUnit u => Maybe (Vec2 u) -> Element -> Element
-topLevelPic Nothing         p = svgElement [p]
-topLevelPic (Just (V2 x y)) p = svgElement [gElement trans_attribs [p]] 
-  where 
-    trans_attribs = toListH $ attr_transform $ val_translate x y
+        => TextEncoder -> Picture u -> Doc
+svgDraw enc original_pic = 
+    let pic          = trivialTranslation original_pic
+        (_,imgTrafo) = imageTranslation pic
+        body         = runSvgMonad enc $ picture pic
+    in vcat [ xml_version, doctype, elem_svg $ imgTrafo body ]
 
 
 
-picture :: (Real u, Floating u, PSUnit u) 
-        => Clipped -> Picture u -> SvgMonad u Element
-picture _ (PicBlank _)              = return $ gElement [] []
-
-picture c (Leaf (fr,bb,h) ones)     = do 
-    setFrameHeight $ frameHeight h
-    elts <- F.foldlM (\acc e -> do { a <- primitive c e; return (a:acc) }) [] ones
-    fr_attrs <- frameChangeLeaf (boundaryHeight bb) fr
-    return $ gElement (toListH fr_attrs) elts
-
-picture c (Picture (fr,bb,_) ones)  = do
-    (fr_attrs,dy) <- frameChangeNode (boundaryHeight bb) fr 
-    elts <- withExtDelta dy $ F.foldlM (\acc e -> do { a <- picture c e
-                                                     ; return (a:acc) }) [] ones
-    return $ gElement (toListH fr_attrs) elts
-  
-picture _ (Clip (fr,bb,_) p a)      = do 
-    (fr_attrs,dy) <- frameChangeNode (boundaryHeight bb) fr 
-    cp <- clipPath p
-    e1 <- withExtDelta dy $ picture True a
-    return $ gElement (toListH fr_attrs) [cp,e1]
-
-
-primitive :: (Real u, Floating u, PSUnit u) 
-          => Clipped -> Primitive u -> SvgMonad u Element
-primitive c (PPath props p)     = clipAttrib c $ path props p
-primitive c (PLabel props l)    = clipAttrib c $ label props l
-primitive c (PEllipse props e)  = clipAttrib c $ ellipse props e
-
-
-
--- All clipping paths are closed.
-clipPath :: PSUnit u => Path u -> SvgMonad u Element
-clipPath p = (\name ps -> element_clippath ps `snoc_attrs` attr_id name)
-                <$> newClipLabel <*> closedPath p
-
-
-
-clipAttrib :: Clipped -> SvgMonad u Element -> SvgMonad u Element
-clipAttrib False melt = melt
-clipAttrib True  melt = do 
-    s   <- currentClipLabel
-    elt <- melt
-    return $ elt `snoc_attrs` (attr_clippath s)
-
-
--- None of the remaining translation functions need to be in the
--- SvgMonad monad.
-
-path :: PSUnit u => PathProps -> Path u -> SvgMonad u Element
-path (c,dp) p = 
-    svgPath dp p >>= \ ps -> return $ element_path ps `snoc_attrs` attrs
-  where
-    attrs = pathAttrs c dp
-
-
--- Labels need the coordinate system remapping otherwise
--- the will be printed upside down. Both the start point and 
--- the label itself need transforming.
--- 
--- Also rendering coloured text is convoluted (needing the
--- tspan element).
--- 
---
-label :: (Real u, Floating u, PSUnit u) 
-      => LabelProps -> Label u -> SvgMonad u Element
-label (c,FontAttr sz face) (Label pt entxt ctm) = do 
-     str <- encodedText entxt
-     coord_attrs <- labelGeom pt ctm
-     let tspan_elt = element_tspan str `snoc_attrs` (attr_fill c)
-     return $ element_text tspan_elt `snoc_attrs` ( coord_attrs
-                                                  . font_desc
-                                                  . fontAttrs style )
-  where
-    style       = svg_font_style  face
-    fam         = svg_font_family face
-    font_desc   = attr_font_family fam . attr_font_size sz 
-                  
-
-
-encodedText :: EncodedText -> SvgMonad u String 
-encodedText entxt = 
-    let xs = getEncodedText entxt in mapM textChunk  xs >>= return . concat
-
--- | Unfortunately we can\'t readily put a comment in the 
--- generated SVG when glyph-name lookup fails. Doing similar in 
--- PostScript is easy because we are emiting /linear/ PostScript 
--- as we go along. For SVG we are building an abstract syntax 
--- tree.
--- 
-textChunk :: TextChunk -> SvgMonad u String
-textChunk (SText s)  = return s
-textChunk (EscInt i) = return $ escapeCharCode i
-textChunk (EscStr s) = askGlyphName s >>= either return return
-
-
-
--- If w==h the draw the ellipse as a circle
-
-ellipse :: (Real u, Floating u, PSUnit u)
-        => EllipseProps -> PrimEllipse u -> SvgMonad u Element
-ellipse (c,dp) (PrimEllipse pt hw hh ctm) 
-    | hw == hh  = (\geomf -> element_circle `snoc_attrs` 
-                              (circleRadius hw . geomf . style_attrs))
-                    <$> ellipseGeom pt ctm 
-    | otherwise = (\geomf -> element_ellipse `snoc_attrs` 
-                              (ellipseRadius hw hh . geomf . style_attrs))
-                    <$> ellipseGeom pt ctm
-  where
-    style_attrs   = ellipseAttrs c dp
-
+imageTranslation :: (Ord u, PSUnit u) 
+                 => Picture u -> (BoundingBox u, Doc -> Doc)
+imageTranslation pic = case repositionDeltas pic of
+  (bb, Nothing) -> (bb, id)
+  (bb, Just v)  -> let attr = attr_transform (val_translate v) 
+                   in (bb, elem_g attr)
 
 --------------------------------------------------------------------------------
--- 
 
-labelGeom :: (Real u, Floating u, PSUnit u) 
-          => Point2 u -> PrimCTM u -> SvgMonad u HAttr
-labelGeom pt ctm 
-    | ctm == identityCTM = (\(P2 x y) -> attr_x x . attr_y y) 
-                              <$> rescalePoint pt
-    | otherwise          = (\(P2 x y) -> attr_x dZero . attr_y dZero 
-                                                      . mtrxTrafo x y)
-                              <$> rescalePoint pt
-  where
-    mtrxTrafo x y = attr_transform $ valMatrix $ 
-                       translationMatrix x y * (invert $ matrixRepCTM ctm)
-
-
-
-circleRadius :: PSUnit u => u -> HAttr
-circleRadius radius = attr_r radius
-
-ellipseRadius :: PSUnit u => u -> u -> HAttr
-ellipseRadius hw hh = attr_rx hw . attr_ry hh
-
-ellipseGeom :: (Real u, Floating u, PSUnit u)
-           => Point2 u -> PrimCTM u -> SvgMonad u HAttr
-ellipseGeom pt ctm 
-    | ctm == identityCTM = (\(P2 x y) -> attr_cx x . attr_cy y )
-                              <$> rescalePoint pt
-    | otherwise          = (\(P2 x y) -> attr_cx dZero . attr_cy dZero
-                                                       . mtrxTrafo x y ) 
-                              <$> rescalePoint pt
-  where
-    mtrxTrafo x y = attr_transform $ valMatrix $ 
-                       translationMatrix x y * (invert $ matrixRepCTM ctm)
-
-
--- A rule of thumb seems to be that SVG (at least SVG in Firefox)
--- will try to fill unless told not to. So always label paths
--- with @fill=...@ even if fill is @\"none\"@.
---
--- CFill   ==> stroke="none" fill="..."
--- CStroke ==> stroke="..."  fill="none"
--- OStroke ==> stroke="..."  fill="none"
+-- Note - it will be wise to make coordinate remapping and output
+-- separate passes (unlike in Wumpus-Core). Then I\'ll at least 
+-- be able to debug the remapped Picture.
 --
 
-pathAttrs :: PSColour c => c -> DrawPath -> HAttr
-pathAttrs c CFill        = attr_fill c . attr_stroke_none
-pathAttrs c (OStroke xs) = attr_fill_none . attr_stroke c . strokeAttrs xs
-pathAttrs c (CStroke xs) = attr_fill_none . attr_stroke c . strokeAttrs xs
 
-ellipseAttrs :: PSColour c => c -> DrawEllipse -> HAttr
-ellipseAttrs c EFill        = attr_fill c . attr_stroke_none
-ellipseAttrs c (EStroke xs) = attr_fill_none . attr_stroke c . strokeAttrs xs
+
+picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
+picture (Clip    (_,xs) cp pic) = 
+    bracketTrafos xs $ do { lbl <- newClipLabel
+                          ; d1  <- clipPath lbl cp
+                          ; d2  <- picture pic
+                          ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
+                          } 
+picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+
+
+
+-- This starts with an empty line...
+--
+
+revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
+revConcat fn ones = some empty <$> F.foldrM step None ones
+  where
+    step e ac = (\d -> d `conc` ac) <$> fn e
+    conc d None      = Some d
+    conc d (Some ac) = Some $ ac `vconcat` d
+
+
+
+primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
+primitive (PPath props xl pp)     = drawXLink xl <$> primPath props pp
+primitive (PLabel props xl lbl)   = drawXLink xl <$> primLabel props lbl
+primitive (PEllipse props xl ell) = drawXLink xl <$> primEllipse props ell
  
 
-strokeAttrs :: [StrokeAttr] -> HAttr
-strokeAttrs = foldr (\a f -> stroke1 a . f) id
+drawXLink :: XLink -> Doc -> Doc
+drawXLink NoLink           doc = doc
+drawXLink (XLinkHRef href) doc = elem_a_xlink href doc
 
-stroke1 :: StrokeAttr -> HAttr
-stroke1 (LineWidth a)    = attr_stroke_width a
-stroke1 (MiterLimit a)   = attr_stroke_miterlimit a
-stroke1 (LineCap lc)     = attr_stroke_linecap lc
-stroke1 (LineJoin lj)    = attr_stroke_linejoin lj
-stroke1 (DashPattern dp) = dashAttrs dp
+clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
+clipPath clip_id pp = (\doc -> elem_clipPath (attr_id clip_id) doc) <$> path pp
 
-dashAttrs :: DashPattern -> HAttr
-dashAttrs Solid       = attr_stroke_dasharray_none
-dashAttrs (Dash _ []) = attr_stroke_dasharray_none
-dashAttrs (Dash i xs) = 
-    attr_stroke_dashoffset i . (attr_stroke_dasharray $ conv xs)
+
+primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
+primPath props pp = (\(a,f) d -> elem_path a (f d)) 
+                      <$> pathProps props <*> path pp
+
+
+path :: PSUnit u => PrimPath u -> SvgMonad Doc
+path (PrimPath start xs) = 
+    pure $ path_m start <+> hsep (map seg xs)
   where
-    conv = foldr (\(x,y) a -> x:y:a) []  
+    seg (PLineTo pt)        = path_l pt
+    seg (PCurveTo p1 p2 p3) = path_c p1 p2 p3
 
+-- Return - drawing props, plus a function to close the path (or not). 
+--
+pathProps :: PathProps -> SvgMonad (Doc, Doc -> Doc)
+pathProps props = fn props
+  where
+    fn (CFill rgb)                = pure (fillNotStroke rgb, close) 
+
+    fn (CStroke attrs rgb)        = 
+        (\a -> (strokeNotFill rgb <+> a, close))   <$> deltaStrokeAttrs attrs
+
+    fn (OStroke attrs rgb)        = 
+        (\a -> (strokeNotFill rgb <+> a, id))      <$> deltaStrokeAttrs attrs
+
+    fn (CFillStroke fc attrs sc)  =
+        (\a -> (fillAndStroke fc sc <+> a, close)) <$> deltaStrokeAttrs attrs
+
+    fillNotStroke rgb             = attr_fill rgb   <+> attr_stroke_none 
+    strokeNotFill rgb             = attr_stroke rgb <+> attr_fill_none
+    fillAndStroke a b             = attr_fill a     <+> attr_stroke b
+    close                         = (<+> char 'Z')
+ 
+
+
+
+
+-- Note - if hw==hh then draw the ellipse as a circle.
+--
+primEllipse :: (Real u, Floating u, PSUnit u)
+            => EllipseProps -> PrimEllipse u -> SvgMonad Doc
+primEllipse props (PrimEllipse pt hw hh ctm) 
+    | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
+                    <$> bracketPrimCTM pt ctm mkCXCY <*> ellipseProps props
+    | otherwise = (\a b -> elem_ellipse (a <+> ellipse_radius <+> b))
+                    <$> bracketPrimCTM pt ctm mkCXCY <*> ellipseProps props
+  where
+   mkCXCY (P2 x y) = pure $ attr_cx x <+> attr_cy y
+   
+   circle_radius   = attr_r hw
+   ellipse_radius  = attr_rx hw <+> attr_ry hh
 
  
-fontAttrs :: SVGFontStyle -> HAttr
-fontAttrs SVG_REGULAR      = emptyH
-fontAttrs SVG_BOLD         = attr_font_weight "bold"
-fontAttrs SVG_ITALIC       = attr_font_style "italic"
-fontAttrs SVG_BOLD_ITALIC  = attr_font_weight "bold" . attr_font_style "italic"
-fontAttrs SVG_OBLIQUE      = attr_font_style "oblique"
-fontAttrs SVG_BOLD_OBLIQUE = attr_font_weight "bold" . attr_font_style "oblique"
+
+ellipseProps :: EllipseProps -> SvgMonad Doc
+ellipseProps (EFill rgb)                   = 
+    pure (attr_fill rgb <+> attr_stroke_none)
+
+ellipseProps (EStroke attrs rgb)           = 
+    (\a -> attr_stroke rgb <+> attr_fill_none <+> a)  <$> deltaStrokeAttrs attrs
+
+ellipseProps (EFillStroke frgb attrs srgb) = 
+    (\a -> attr_fill frgb <+> attr_stroke srgb <+> a) <$> deltaStrokeAttrs attrs
 
 
---------------------------------------------------------------------------------
--- paths
 
-svgPath :: PSUnit u => DrawPath -> Path u -> SvgMonad u String
-svgPath (OStroke _) p = liftM toListH $ pathK p id
-svgPath _           p = closedPath p
-
-
-closedPath :: PSUnit u => Path u -> SvgMonad u String
-closedPath p = liftM toListH $ pathK p (showString " Z")
-
-pathK :: PSUnit u => Path u -> ShowS -> SvgMonad u ShowS
-pathK (Path start_pt xs) end =  (\prefix body -> prefix . body . end)
-    <$> path_m start_pt <*> pathSegments xs
-
-
-pathSegments :: PSUnit u => [PathSegment u] -> SvgMonad u ShowS
-pathSegments = F.foldrM mf id
-  where
-    mf e accf = pathSegment e >>= \f  -> return (showChar ' ' . f . accf)
-
-
-pathSegment :: PSUnit u => PathSegment u -> SvgMonad u ShowS
-pathSegment (PLineTo pt)        = path_l pt
-pathSegment (PCurveTo p1 p2 p3) = path_c p1 p2 p3
-
-
---------------------------------------------------------------------------------
-
-frameChangeNode :: (Fractional u, PSUnit u) 
-                => u -> Frame2 u -> SvgMonad u (HAttr,u)
-frameChangeNode _  fr@(Frame2 e0 e1 (P2 ox oy))
-    | standardFrame fr  = return (id,0)
-    | otherwise         = return (mtrx_attr,oy)
-  where
-    basis     = basisMatrix e0 e1 
-    mtrx_attr = attr_transform $ valMatrix $ translationMatrix  ox 0 * basis
-
-
-frameChangeLeaf :: (Fractional u, PSUnit u)
-                => u -> Frame2 u -> SvgMonad u HAttr
-frameChangeLeaf bb_height (Frame2 e0 e1 (P2 ox oy)) =
-    (\pg_height inh_delta -> mk $ pg_height - (bb_height + inh_delta + oy))
-       <$> askPageHeight <*> getInhDelta      
-  where
-    basis = basisMatrix e0 e1
-    mk y  = attr_transform $ valMatrix $ translationMatrix ox y * basis
-
--- scaling apparently works, roatation doesn\'t...
+-- Note - Rendering coloured text seemed convoluted 
+-- (mandating the tspan element). 
 --
-basisMatrix :: Fractional u => Vec2 u -> Vec2 u -> Matrix3'3 u
-basisMatrix e0 e1 = frame2Matrix $ Frame2 e0 e1 zeroPt
+-- TO CHECK - is this really the case?
+-- 
+--
 
-
--- svg_sm :: Num u => Matrix3'3 u
--- svg_sm = scalingMatrix 1 (-1)
-
-
-snoc_attrs :: Element -> HAttr -> Element
-snoc_attrs e f = (toListH f) `add_attrs` e
-
-
-
-valMatrix :: PSUnit u => Matrix3'3 u -> String
-valMatrix m33 = val_matrix a b c d x y
+primLabel :: (Real u, Floating u, PSUnit u) 
+      => LabelProps -> PrimLabel u -> SvgMonad Doc
+primLabel (LabelProps rgb attrs) (PrimLabel pt etext ctm) = 
+    (\fa ca txt -> elem_text (fa <+> ca) txt)
+      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm mkXY 
+                               <*> tspan rgb etext
   where
-    CTM a b c d x y = toCTM m33
+    mkXY (P2 x y) = pure $ attr_x x <+> attr_y y    
+
+tspan :: RGB255 -> EncodedText -> SvgMonad Doc
+tspan rgb enctext = 
+    (\txt -> elem_tspan (attr_fill rgb) txt) 
+      <$> encodedText enctext
+
+encodedText :: EncodedText -> SvgMonad Doc
+encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
+
+
+textChunk :: TextChunk -> SvgMonad Doc
+textChunk (SText s)  = pure $ text s
+textChunk (EscInt i) = pure $ text $ escapeSpecial i
+textChunk (EscStr s) = either text text <$> askGlyphName s 
+
+
+--------------------------------------------------------------------------------
+-- Stroke and font attribute delta
+
+deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
+deltaStrokeAttrs xs = hcat <$> mapM df xs
+  where
+    df (LineWidth d)    = (\inh -> if d==inh then empty 
+                                         else attr_stroke_width d) 
+                            <$> askLineWidth
+
+    df (MiterLimit d)   = (\inh -> if d==inh then empty 
+                                         else attr_stroke_miterlimit d)
+                            <$> askMiterLimit
+
+    df (LineCap d)      = (\inh -> if d==inh then empty 
+                                         else attr_stroke_linecap d)
+                            <$> askLineCap
+
+    df (LineJoin d)     = (\inh -> if d==inh then empty 
+                                         else attr_stroke_linejoin d)
+                            <$> askLineJoin
+
+    df (DashPattern d)  = (\inh -> if d==inh then empty 
+                                             else makeDashPattern d) 
+                            <$> askDashPattern
+
+makeDashPattern :: DashPattern -> Doc
+makeDashPattern Solid       = attr_stroke_dasharray_none
+makeDashPattern (Dash n xs) = 
+    attr_stroke_dashoffset n <+> attr_stroke_dasharray xs
+
+
+
+deltaFontAttrs :: FontAttr -> SvgMonad Doc
+deltaFontAttrs fa  = 
+    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> askFontAttr
+
+makeFontAttrs :: FontAttr -> Doc
+makeFontAttrs (FontAttr sz face) = 
+    attr_font_family (svg_font_family face) <+> attr_font_size sz 
+                                            <> suffix (svg_font_style face) 
+  where  
+    suffix SVG_REGULAR      = empty
+
+    suffix SVG_BOLD         = space <> attr_font_weight "bold"
+
+    suffix SVG_ITALIC       = space <> attr_font_style "italic"
+
+    suffix SVG_BOLD_ITALIC  = 
+        space <> attr_font_weight "bold" <+> attr_font_style "italic"
+
+    suffix SVG_OBLIQUE      = space <> attr_font_style "oblique"
+
+    suffix SVG_BOLD_OBLIQUE = 
+        space <> attr_font_weight "bold" <+> attr_font_style "oblique"
+
+
+
+--------------------------------------------------------------------------------
+-- Bracket matrix and PrimCTM trafos
+
+bracketTrafos :: (Real u, Floating u, PSUnit u) 
+              => [AffineTrafo u] -> SvgMonad Doc -> SvgMonad Doc
+bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
+
+bracketMatrix :: (Fractional u, PSUnit u) 
+              => Matrix3'3 u -> SvgMonad Doc -> SvgMonad Doc
+bracketMatrix mtrx ma 
+    | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$>  ma
+    | otherwise              = (\doc -> elem_g trafo doc) <$> ma
+  where
+    trafo = attr_transform $ val_matrix mtrx
+
+
+bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
+               => Point2 u -> PrimCTM u 
+               -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
+bracketPrimCTM pt@(P2 x y) ctm pf 
+    | ctm == identityCTM  = pf pt
+    | otherwise           = (\xy -> xy <+> attr_transform mtrx) <$> pf zeroPt'
+  where
+    zeroPt' :: Point2 u
+    zeroPt' = zeroPt
+
+    mtrx  = val_matrix $ translMatrixRepCTM x y ctm

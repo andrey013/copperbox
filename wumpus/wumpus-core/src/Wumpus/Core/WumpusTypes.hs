@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.WumpusTypes
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -28,30 +28,28 @@ module Wumpus.Core.WumpusTypes
   -- * Picture types
     Picture
   , DPicture
+  , GSUpdate
   , Primitive
   , DPrimitive
-  , Path
-  , DPath
-  , PathSegment
-  , DPathSegment
-  , Label
-  , DLabel
+  , PrimPath
+  , DPrimPath
+  , PrimPathSegment
+  , DPrimPathSegment
+  , PrimLabel
+  , DPrimLabel
 
   -- * Drawing styles
   , PathProps       
   , LabelProps
   , EllipseProps
-  , DrawPath
-  , DrawEllipse
 
-  -- * Debug printing
-  , printPicture
+
 
   -- * Transformations on Primitives
-  , translatePrimitive
   , rotatePrimitive
   , scalePrimitive
   , uniformScalePrimitive
+  , translatePrimitive
 
 
   -- * Printable unit for PostScript
@@ -61,5 +59,5 @@ module Wumpus.Core.WumpusTypes
 
 
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils ()
+import Wumpus.Core.Utils ( PSUnit(..) )
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -8,235 +7,169 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  unstable
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Internal representation of Pictures 
--- 
+-- Fresh picture.
+--
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.PictureInternal 
-  (
-  -- * Data types
+
+module Wumpus.Core.PictureInternal
+  ( 
+
     Picture(..)
   , DPicture
+  , Locale
+  , AffineTrafo(..)
+  , GSUpdate(..)
+
   , Primitive(..)
   , DPrimitive
-  , Path(..)
-  , DPath
-  , PathSegment(..)
-  , DPathSegment
-  , Label(..)
-  , DLabel
+  , XLink(..)
+
+  , PrimPath(..)
+  , DPrimPath
+  , PathProps(..)
+  , PrimPathSegment(..)
+  , DPrimPathSegment
+  , PrimLabel(..)
+  , DPrimLabel
+  , LabelProps(..)
   , PrimEllipse(..)
-  , DPrimEllipse
-  , PrimCTM
+  , EllipseProps(..)
+  , PrimCTM(..)
 
-  , PathProps                   -- hide in Wumpus.Core export?
-  , LabelProps                  -- hide in Wumpus.Core export?
-  , EllipseProps                -- 
-  , DrawPath(..)                -- hide in Wumpus.Core export?
-  , DrawEllipse(..)
-  , Locale  
-  , YRange(..)
-
---  -- * Smart constructors
---  , locale
-  , boundaryYRange
-  , primitiveYRange
-
-  -- * Type class
-
-  , PSUnit(..)
-
-  -- * Debug printing
-  , printPicture
-
-  -- * Transformations on Primitives
-  , translatePrimitive
-  , rotatePrimitive
-  , scalePrimitive
-  , uniformScalePrimitive
+  , pathBoundary
 
   -- * PrimCTM
   , identityCTM
   , scaleCTM
+  , rotateCTM
   , matrixRepCTM
   , translMatrixRepCTM
-  
-  -- * Extras
-  , mapLocale
-  , movePic
-  , moveLocale
-  , extractFrame
-  , extractYRange
-  , frameHeight
-  , repositionProperties
-  , ellipseControlPoints
+
+  , rotatePrimitive
+  , scalePrimitive
+  , uniformScalePrimitive
+  , translatePrimitive
+
+  -- * Additional operations
+  , concatTrafos
+  , deconsMatrix
+  , repositionDeltas
+
 
   ) where
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour
 import Wumpus.Core.FontSize
+import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PtSize
-import Wumpus.Core.TextEncodingInternal
-import Wumpus.Core.Utils hiding ( parens )
+import Wumpus.Core.TextInternal
+import Wumpus.Core.Utils
 
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.Semigroup                           -- package: algebra
 
-import Text.PrettyPrint.Leijen          -- package: wl-pprint
-
-import qualified Data.Foldable as F
-
--- | Picture is a leaf attributed tree - where attributes are 
--- colour, line-width etc. It is parametric on the unit type 
--- of points (typically Double).
--- 
--- Wumpus\'s leaf attributed tree, is not directly matched to 
--- PostScript\'s picture representation, which might be 
--- considered a node attributed tree (if you consider graphics
--- state changes less imperatively - setting attributes rather 
--- than global state change).
---
--- Considered as a node-attributed tree PostScript precolates 
--- graphics state updates downwards in the tree (vis-a-vis 
--- inherited attributes in an attibute grammar), where a 
--- graphics state change deeper in the tree overrides a higher 
--- one.
--- 
--- Wumpus on the other hand, simply labels each leaf with its
--- drawing attributes - there is no attribute inheritance.
--- When it draws the PostScript picture it does some 
--- optimization to avoid generating excessive graphics state 
--- changes in the PostScript code.
---
--- Omitting some details, Picture is a simple non-empty 
--- leaf-labelled rose tree via:
--- 
--- > Leaf primitives | Picture [tree]
---
--- Where OneList is a variant of the standard list type that 
--- disallows empty lists.
--- 
--- The additional constructors are convenience:
---
--- @PicBlank@ has a bounding box but no content and is useful for
--- some picture language operations (e.g. @hsep@).
---
--- @Clip@ nests a picture (tree) inside a clipping path.
---
-
-data Picture u = PicBlank (Locale u)
-               | Leaf     (Locale u)          (OneList (Primitive u))
-               | Picture  (Locale u)          (OneList (Picture u))
-               | Clip     (Locale u) (Path u) (Picture u)
-  deriving (Eq,Show) 
-
--- Leaf stores \height\ as well as locale.
+import qualified Data.Foldable                  as F
 
 
--- Note - Single is rather inefficient in hindsight.
--- 
--- A list of primitives would be better, and Leaf is probably a 
--- better name.
---
+-- For local shared graphics state updates add a new constructor:
+-- Group (GS -> GS) (Picture u)
+
+data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
+               | Picture  (Locale u)              (OneList (Picture u))
+               | Clip     (Locale u) (PrimPath u) (Picture u)
+               | Group    (Locale u) GSUpdate     (Picture u)
+  deriving (Show)
+
+newtype GSUpdate = GSUpdate { getGSU :: GraphicsState -> GraphicsState }
+
+instance Show GSUpdate where
+  show _ = "*function*"
 
 
+type Locale u = (BoundingBox u, [AffineTrafo u])
 
 type DPicture = Picture Double
 
 
--- | Locale = (current frame * bounding box * height)
--- 
--- Pictures (and sub-pictures) are located within an affine frame.
--- So pictures can be arranged (vertical and horizontal 
--- composition) their bounding box is cached.
---
--- In Wumpus, affine transformations (scalings, rotations...)
--- transform the frame rather than the constituent points of 
--- the primitives. Changes of frame are transmitted to PostScript
--- as @concat@ commands (and matrix transforms in SVG) - the 
--- @point-in-world-coordinate@ of a point on a path is never 
--- calculated.
---  
--- So that picture composition is remains stable under affine
--- transformation, the corners of bounding boxes are transformed
--- pointwise when the picture is scaled, rotated etc.
---
-
-type Locale u = (Frame2 u, BoundingBox u, YRange u) 
-
-data YRange u = YRange 
-      { y_max :: u
-      , y_min :: u
-      }
-  deriving (Eq,Ord,Show)   
+data AffineTrafo u = Matrix (Matrix3'3 u)
+                   | Rotate Radian
+                   | RotAbout Radian (Point2 u)
+                   | Scale u u
+                   | Translate u u
+  deriving (Eq,Show)                 
 
 
--- | Wumpus\'s drawings are built from two fundamental 
--- primitives: paths (line segments and Bezier curves) and 
--- labels (single lines of text). 
--- 
--- Ellipses are a included as a primitive only for optimization 
--- - drawing a reasonable circle with Bezier curves needs at 
--- least eight curves. This is inconvenient for drawing dots 
--- which can otherwise be drawn with a single @arc@ command.
--- 
--- Wumpus does not follow PostScript employing arc as a general 
--- path primitive - arcs are used only to draw ellipses. This 
--- is because arcs do not enjoy the nice properties of Bezier 
--- curves, whereby the affine transformation of a Bezier curve 
--- can simply be achieved by the affine transformation of it\'s 
--- control points.
---
--- Ellipses are represented by their center, half-width and 
--- half-height. Half-width and half-height are used so the 
--- bounding box can be calculated using only multiplication, and 
--- thus initially only obliging a Num constraint on the unit.
--- Though typically for affine transformations a Fractional 
--- constraint is also obliged.
---
-
-data Primitive u = PPath    PathProps    (Path u)
-                 | PLabel   LabelProps   (Label u) 
-                 | PEllipse EllipseProps (PrimEllipse u)
+data Primitive u = PPath    PathProps    XLink (PrimPath u)
+                 | PLabel   LabelProps   XLink (PrimLabel u)
+                 | PEllipse EllipseProps XLink (PrimEllipse u)
   deriving (Eq,Show)
 
 type DPrimitive = Primitive Double
 
-
--- | Path - start point and a list of path segments.
+-- | Primitives can be annotated with hyperlinks in SVG output.
 --
-data Path u = Path (Point2 u) [PathSegment u]
+data XLink = NoLink
+           | XLinkHRef String
   deriving (Eq,Show)
 
-type DPath = Path Double
-
--- | PathSegment - either a cubic Bezier curve or a line.
---  
-data PathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
-                   | PLineTo   (Point2 u)
+-- | PrimPath - start point and a list of path segments.
+--
+data PrimPath u = PrimPath (Point2 u) [PrimPathSegment u]
   deriving (Eq,Show)
 
-type DPathSegment = PathSegment Double
+type DPrimPath = PrimPath Double
 
--- | Label - represented by bottom left corner and text.
+-- | PrimPathSegment - either a cubic Bezier curve or a line.
 --
-data Label u = Label 
-      { label_bottom_left :: Point2 u
-      , label_text        :: EncodedText
-      , label_ctm         :: PrimCTM u
+data PrimPathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
+                       | PLineTo   (Point2 u)
+  deriving (Eq,Show)
+
+type DPrimPathSegment = PrimPathSegment Double
+
+-- | Note when drawn /filled/ and drawn /stroked/ the same
+-- polygon will have (slightly) different size:
+--
+-- * A filled shape fills /within/ the boundary of the shape
+--
+-- * A stroked shape draws a pen line around the boundary
+--   of the shape. The actual size depends on the thickness
+--   of the line (stroke width).
+--
+data PathProps = CFill RGB255 
+               | CStroke [StrokeAttr] RGB255
+               | OStroke [StrokeAttr] RGB255
+               | CFillStroke RGB255 [StrokeAttr] RGB255
+  deriving (Eq,Show)
+
+
+-- | Label - represented by /baseline/ left point and text.
+--
+data PrimLabel u = PrimLabel 
+      { label_baseline_left :: Point2 u
+      , label_text          :: EncodedText
+      , label_ctm           :: PrimCTM u
       }
   deriving (Eq,Show)
 
-type DLabel = Label Double
+type DPrimLabel = PrimLabel Double
+
+data LabelProps   = LabelProps 
+      { label_colour :: RGB255
+      , label_font   :: FontAttr
+      }
+  deriving (Eq,Ord,Show)
+
 
 -- Ellipse represented by center and half_width * half_height
 --
@@ -248,11 +181,21 @@ data PrimEllipse u = PrimEllipse
       } 
   deriving (Eq,Show)
 
-type DPrimEllipse = PrimEllipse Double
+
+-- | Ellipses and circles are always closed.
+--
+data EllipseProps = EFill RGB255
+                  | EStroke [StrokeAttr] RGB255 
+
+                  -- Note - first colour fill, second colour stroke.
+                  | EFillStroke RGB255 [StrokeAttr] RGB255 
+  deriving (Eq,Show)
 
 
 
-
+-- Note - primitives are not considered to exist in an affine 
+-- space. 
+--
 data PrimCTM u = PrimCTM 
       { ctm_scale_x     :: u
       , ctm_scale_y     :: u
@@ -261,190 +204,249 @@ data PrimCTM u = PrimCTM
   deriving (Eq,Show)
 
 
--- | Note when drawn /filled/ and drawn /stroked/ the same 
--- polygon will have (slightly) different size: 
--- 
--- * A filled shape fills /within/ the boundary of the shape
--- 
--- * A stroked shape draws a pen line around the boundary 
---   of the shape. The actual size depends on the thickness
---   of the line (stroke width).
---
-data DrawPath = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
-  deriving (Eq,Show)
-
--- | Ellipses and circles are always closed.
-data DrawEllipse = EFill | EStroke [StrokeAttr]
-  deriving (Eq,Show)
-
-type PathProps    = (PSRgb, DrawPath)
-type LabelProps   = (PSRgb, FontAttr)
-type EllipseProps = (PSRgb, DrawEllipse)
-
-
 --------------------------------------------------------------------------------
-
-
--- locale :: Num u => Frame2 u -> BoundingBox u -> Locale u 
--- locale frm bb = (frm, bb, heightRange bb) 
-
-boundaryYRange :: BoundingBox u -> YRange u
-boundaryYRange (BBox (P2 _ ylo) (P2 _ yhi)) = YRange { y_max=yhi, y_min=ylo }
-
-primitiveYRange :: (Real u, Floating u, FromPtSize u) 
-                => Primitive u -> YRange u
-primitiveYRange = boundaryYRange . boundary
-
-
---------------------------------------------------------------------------------
--- Pretty printing
-
-printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
-printPicture pic = putDoc (pretty pic) >> putStrLn []
-
-
-instance (Num u, PSUnit u) => Pretty (Picture u) where
-  pretty (PicBlank m)       = 
-      text "** Blank-pic **"  <+> ppLocale m
-
-  pretty (Leaf m prims)     = 
-      text "** Leaf-pic **"   <$> ppLocale m 
-                              <$> indent 2 (ppPrims prims)
-
-  pretty (Picture m ones)   = 
-      text "** Tree-pic **"   <$> ppLocale m 
-                              <$> indent 2 (ppPics ones)
-
-  pretty (Clip m cpath p)   = 
-      text "** Clip-path **"  <+> ppLocale m 
-                              <$> indent 2 (pretty cpath <$> pretty p)
-
-
-ppPics :: PSUnit u => OneList (Picture u) -> Doc
-ppPics ones = snd $ F.foldl' fn (0,empty) ones
-  where
-    fn (n,acc) e = (n+1, acc <$> text "-- " <+> int n <$> pretty e <> line)
-
-ppPrims :: PSUnit u => OneList (Primitive u) -> Doc
-ppPrims ones = snd $ F.foldl' fn (0,empty) ones
-  where
-    fn (n,acc) e = (n+1, acc <$> text "-- leaf" <+> int n <$> pretty e <> line)
-
-ppLocale :: (Num u, PSUnit u) => Locale u -> Doc
-ppLocale (fr,bb,hr) = ppfr <$> pretty bb <$> pretty hr
-  where
-    ppfr = if standardFrame fr then text "* std-frame *" else pretty fr
-
-
-instance (Num u, PSUnit u) => Pretty (YRange u) where
-  pretty (YRange yhi ylo) = 
-      text "y_range=" <> (dtruncPP $ yhi - ylo) <+> dif
-    where
-      dif = parens (dtruncPP yhi <+> char '-' <+> dtruncPP ylo)
-
-instance PSUnit u => Pretty (Primitive u) where
-  pretty (PPath attr p)     = 
-      text "path:"      <$> indent 2 (ppPathProps    attr <$> pretty p)
-
-  pretty (PLabel attr l)  = 
-      text "label:"     <$> indent 2 (ppLabelProps   attr <$> pretty l)
-
-  pretty (PEllipse attr e)  = 
-      text "ellipse:"   <$> indent 2 (ppEllipseProps attr <$> pretty e)
-
-
-instance PSUnit u => Pretty (Path u) where
-   pretty (Path pt ps) = vcat (start : map pretty ps) 
-      where
-        start = fill 12 (text "start_point") <> pretty pt
-
-instance PSUnit u => Pretty (PathSegment u) where
-  pretty (PCurveTo p1 p2 p3)  = 
-    fill 12 (text "curve_to") <> pretty p1 <+> pretty p2 <+> pretty p3
-
-  pretty (PLineTo pt)         = fill 12 (text "line_to") <> pretty pt
-
-instance PSUnit u => Pretty (Label u) where
-  pretty (Label pt s ctm) = 
-     dquotes (pretty s) <$> text "baseline_left=" <> pretty pt
-                        <+> text "ctm="           <> pretty ctm
-
-instance PSUnit u => Pretty (PrimEllipse u) where
-  pretty (PrimEllipse ctr w h ctm) = pretty "center=" <> pretty ctr
-                                 <+> text "w="        <> dtruncPP w
-                                 <+> text "h="        <> dtruncPP h
-                                 <+> text "ctm="      <> pretty ctm
-  
-
-instance PSUnit u => Pretty (PrimCTM u) where
-  pretty (PrimCTM x y ang) = 
-      parens (text "CTM" <+> dtruncPP x <+> dtruncPP y <+> pretty ang)
-
-
-ppPathProps :: PathProps -> Doc
-ppPathProps (rgb, CFill)       = pretty rgb <+> text "Fill"
-ppPathProps (rgb, (CStroke _)) = pretty rgb <+> text "Closed-stroke"
-ppPathProps (rgb, _)           = pretty rgb <+> text "Open-stroke"
-
-ppLabelProps :: LabelProps -> Doc
-ppLabelProps (rgb, attr) = pretty rgb <+> text (font_name $ font_face attr)
-
-ppEllipseProps :: EllipseProps -> Doc
-ppEllipseProps (rgb, EFill) = pretty rgb <+> text "Fill"
-ppEllipseProps (rgb, _)     = pretty rgb <+> text "Stroke"
-
-
---------------------------------------------------------------------------------
-
--- | Paths are sensibly a Semigroup - there is no notion of 
--- /empty path/.
-
-instance Ord u => Semigroup (YRange u) where
-  YRange hi1 lo1 `append` YRange hi2 lo2 = YRange (max hi1 hi2) (min lo1 lo2)
-
-instance Semigroup (Path u) where
-  Path st xs `append` Path st' xs' = Path st (xs ++ (PLineTo st' : xs'))
-
-
-instance Pointwise (Path u) where
-  type Pt (Path u) = Point2 u
-  pointwise f (Path st xs) = Path (f st) (map (pointwise f) xs)
-
-instance Pointwise (PathSegment u) where
-  type Pt (PathSegment u) = Point2 u
-  pointwise f (PLineTo p)         = PLineTo (f p)
-  pointwise f (PCurveTo p1 p2 p3) = PCurveTo (f p1) (f p2) (f p3)
-  
-
-
---------------------------------------------------------------------------------
--- Affine trans instances
+-- family instances
 
 type instance DUnit (Picture u)     = u
 type instance DUnit (Primitive u)   = u
-type instance DUnit (Path u)        = u
 type instance DUnit (PrimEllipse u) = u
 
+--------------------------------------------------------------------------------
+-- instances
+
+
+instance (Num u, PSUnit u) => Format (Picture u) where
+  format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
+                                              , fmtLocale m 
+                                              , fmtPrims prims ]
+
+  format (Picture m pics)   = indent 2 $ vcat [ text "** Tree-pic **"
+                                              , fmtLocale m
+                                              , fmtPics pics ]
+ 
+  format (Clip m path pic)  = indent 2 $ vcat [ text "** Clip-path **"
+                                              , fmtLocale m
+                                              , format path
+                                              , format pic  ]
+
+  format (Group m _ pic)    = indent 2 $ vcat [ text "** Group **"
+                                              , fmtLocale m
+                                              , format pic  ]
+
+
+fmtPics :: PSUnit u => OneList (Picture u) -> Doc
+fmtPics ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
+
+fmtPrims :: PSUnit u => OneList (Primitive u) -> Doc
+fmtPrims ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
+
+fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
+fmtLocale (bb,_) = format bb
+
+
+instance PSUnit u => Format (Primitive u) where
+  format (PPath props _ p)    = 
+      indent 2 $ vcat [ text "path:" <+> format props, format p ]
+
+  format (PLabel props _ l)   =
+      indent 2 $ vcat [ text "label:" <+> format props, format l ]
+
+  format (PEllipse props _ e) = 
+      indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
+
+
+instance PSUnit u => Format (PrimPath u) where
+   format (PrimPath pt ps) = vcat (start : map format ps)
+      where
+        start = text "start_point " <> format pt
+
+instance PSUnit u => Format (PrimPathSegment u) where
+  format (PCurveTo p1 p2 p3)  =
+    text "curve_to    " <> format p1 <+> format p2 <+> format p3
+
+  format (PLineTo pt)         = text "line_to     " <> format pt
+
+instance PSUnit u => Format (PrimLabel u) where
+  format (PrimLabel pt s ctm) = 
+     vcat [ dquotes (format s)
+          ,     text "baseline_left=" <> format pt
+            <+> text "ctm="           <> format ctm
+          ]
+
+instance PSUnit u => Format (PrimEllipse u) where
+  format (PrimEllipse ctr hw hh ctm) = text "center="   <> format ctr
+                                   <+> text "hw="       <> dtruncFmt hw
+                                   <+> text "hh="       <> dtruncFmt hh
+                                   <+> text "ctm="      <> format ctm
+  
+
+instance PSUnit u => Format (PrimCTM u) where
+  format (PrimCTM x y ang) = 
+      parens (text "CTM" <+> text "sx="   <> dtruncFmt x 
+                         <+> text "sy="   <> dtruncFmt y 
+                         <+> text "ang="  <> format ang  )
+
+
+instance Format PathProps where
+  format (CFill rgb)          = format rgb <+> text "Fill"
+  format (CStroke _ rgb)      = format rgb <+> text "Closed-stroke"
+  format (OStroke _ rgb)      = format rgb <+> text "Open-stroke"
+  format (CFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
+                            <+> format s <+> text "Stroke"   
+
+
+
+instance Format LabelProps where
+  format (LabelProps rgb attr) = format rgb 
+                             <+> text (font_name $ font_face attr)
+
+instance Format EllipseProps where
+  format (EFill rgb)          = format rgb <+> text "Fill"
+  format (EStroke _ rgb)      = format rgb <+> text "Stroke"
+  format (EFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
+                            <+> format s <+> text "Stroke"   
+
+
+
+--------------------------------------------------------------------------------
+
+instance Boundary (Picture u) where
+  boundary (Leaf    (bb,_) _)   = bb
+  boundary (Picture (bb,_) _)   = bb
+  boundary (Clip    (bb,_) _ _) = bb
+  boundary (Group   (bb,_) _ _) = bb
+
+instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
+  boundary (PPath _ _ p)      = pathBoundary p
+  boundary (PLabel a _ l)     = labelBoundary (label_font a) l
+  boundary (PEllipse _ _ e)   = ellipseBoundary e
+
+
+
+pathBoundary :: Ord u => PrimPath u -> BoundingBox u
+pathBoundary (PrimPath st xs) = step (st,st) xs
+  where
+    step (lo,hi) []                       = BBox lo hi 
+    step (lo,hi) (PLineTo p1:rest)        = step (lo2 lo p1, hi2 hi p1) rest
+    step (lo,hi) (PCurveTo p1 p2 p3:rest) = let lo' = lo4 lo p1 p2 p3 
+                                                hi' = hi4 hi p1 p2 p3
+                                            in step (lo',hi') rest 
+
+    lo2 (P2 x1 y1) (P2 x2 y2) = P2 (min x1 x2) (min y1 y2)
+
+    hi2 (P2 x1 y1) (P2 x2 y2) = P2 (max x1 x2) (max y1 y2)
+
+    lo4 (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) (P2 x4 y4) = 
+        P2 (min x1 $ min x2 $ min x3 x4) (min y1 $ min y2 $ min y3 y4) 
+
+    hi4 (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) (P2 x4 y4) = 
+        P2 (max x1 $ max x2 $ max x3 x4) (max y1 $ max y2 $ max y3 y4) 
+ 
+
+
+labelBoundary :: (Floating u, Real u, FromPtSize u) 
+              => FontAttr -> PrimLabel u -> BoundingBox u
+labelBoundary attr (PrimLabel (P2 x y) xs ctm) = 
+    retraceBoundary  (disp . (m33 *#)) untraf_bbox
+  where
+    disp        = (.+^ V2 x y)
+    m33         = matrixRepCTM ctm
+    untraf_bbox = textBounds (font_size attr) zeroPt char_count
+    char_count  = textLength xs
+
+
+
+-- | Ellipse bbox is the bounding rectangle, rotated as necessary 
+-- then retraced.
+--
+ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
+ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) = 
+    traceBoundary $ applyIf (theta /= 0) (map (rotm *#)) [ll,lr,ur,ul]
+  where
+    hw   = hw0 * sx
+    hh   = hh0 * sy
+    ll   = pt .+^ V2 (-hw) (-hh) 
+    lr   = pt .+^ V2   hw  (-hh) 
+    ur   = pt .+^ V2   hw    hh 
+    ul   = pt .+^ V2 (-hw)   hh 
+    rotm = rotationMatrix theta
+
+
+
+--------------------------------------------------------------------------------
+-- Affine transformations
+
+-- Note YRange remains constant (as do the actually points 
+-- within the primitives).
+-- 
+-- TO DO - this is potentially wrong...
+
+
 instance (Num u, Ord u) => Transform (Picture u) where
-  transform ctm pic = trafoPicture (transform ctm) (transform ctm) pic
+  transform mtrx = 
+    mapLocale $ \(bb,xs) -> (transform mtrx bb, Matrix mtrx:xs)
+
+instance (Real u, Floating u) => Rotate (Picture u) where
+  rotate theta = 
+    mapLocale $ \(bb,xs) -> (rotate theta bb, Rotate theta:xs)
 
 
-instance (Floating u, Real u) => Rotate (Picture u) where
-  rotate = rotatePicture 
-
-instance (Floating u, Real u) => RotateAbout (Picture u) where
-  rotateAbout = rotatePictureAbout
+instance (Real u, Floating u) => RotateAbout (Picture u) where
+  rotateAbout theta pt = 
+    mapLocale $ \(bb,xs) -> (rotateAbout theta pt bb, RotAbout theta pt:xs)
 
 instance (Num u, Ord u) => Scale (Picture u) where
-  scale = scalePicture
+  scale sx sy = 
+    mapLocale $ \(bb,xs) -> (scale sx sy bb, Scale sx sy : xs)
 
 instance (Num u, Ord u) => Translate (Picture u) where
-  translate = translatePicture
+  translate dx dy = 
+    mapLocale $ \(bb,xs) -> (translate dx dy bb, Translate dx dy:xs)
+
+
+mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
+mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
+mapLocale f (Picture lc ones)  = Picture (f lc) ones
+mapLocale f (Clip lc pp pic)   = Clip (f lc) pp pic
+mapLocale f (Group lc upd pic) = Group (f lc) upd pic
+
+--------------------------------------------------------------------------------
+-- Manipulating the PrimCTM
+
+identityCTM :: Num u => PrimCTM u
+identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
 
 
 
+scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
+scaleCTM x1 y1 (PrimCTM sx sy ang) = PrimCTM (x1*sx) (y1*sy) ang
 
--- Primitives
+rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
+rotateCTM ang1 (PrimCTM sx sy ang) = PrimCTM sx sy (circularModulo $ ang1+ang)
+
+matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
+matrixRepCTM (PrimCTM sx sy ang) = 
+    rotationMatrix (circularModulo ang) * scalingMatrix sx sy
+
+
+-- Note - the order of combining a translation (i.e. the 
+-- location of a point) and the CTM is crucial as matrix
+-- multiplication is not commutative.
+--
+-- This function encapsulates the correct order.
+--
+translMatrixRepCTM :: (Floating u, Real u) 
+                   => u -> u -> PrimCTM u -> Matrix3'3 u
+translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
+
+
+
+--------------------------------------------------------------------------------
+-- Transform primitives
 
 
 -- | Rotate a Primitive.
@@ -465,9 +467,9 @@ instance (Num u, Ord u) => Translate (Picture u) where
 --
 rotatePrimitive :: (Real u, Floating u) 
                 => Radian -> Primitive u -> Primitive u
-rotatePrimitive ang (PPath    a path) = PPath    a $ rotatePath ang path
-rotatePrimitive ang (PLabel   a lbl)  = PLabel   a $ rotateLabel ang lbl
-rotatePrimitive ang (PEllipse a ell)  = PEllipse a $ rotateEllipse ang ell
+rotatePrimitive ang (PPath a xl path)   = PPath a xl $ rotatePath ang path
+rotatePrimitive ang (PLabel a xl lbl)   = PLabel a xl $ rotateLabel ang lbl
+rotatePrimitive ang (PEllipse a xl ell) = PEllipse a xl $ rotateEllipse ang ell
 
 
 -- | Scale a Primitive.
@@ -493,9 +495,9 @@ rotatePrimitive ang (PEllipse a ell)  = PEllipse a $ rotateEllipse ang ell
 -- \"cost-free\".
 --
 scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-scalePrimitive x y (PPath    a path) = PPath    a $ scalePath x y path
-scalePrimitive x y (PLabel   a lbl)  = PLabel   a $ scaleLabel x y lbl
-scalePrimitive x y (PEllipse a ell)  = PEllipse a $ scaleEllipse x y ell
+scalePrimitive x y (PPath a xl path)   = PPath    a xl $ scalePath x y path
+scalePrimitive x y (PLabel a xl lbl)   = PLabel   a xl $ scaleLabel x y lbl
+scalePrimitive x y (PEllipse a xl ell) = PEllipse a xl $ scaleEllipse x y ell
 
 -- | Apply a uniform scale to a Primitive.
 --
@@ -513,56 +515,15 @@ uniformScalePrimitive d = scalePrimitive d d
 -- the generated output. 
 -- 
 translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-translatePrimitive x y (PPath    a path) = PPath a $ translatePath x y path
-translatePrimitive x y (PLabel   a lbl)  = PLabel a $ translateLabel x y lbl
-translatePrimitive x y (PEllipse a ell)  = PEllipse a $ translateEllipse x y ell
+translatePrimitive x y (PPath a xl path)   = 
+    PPath a xl $ translatePath x y path
 
+translatePrimitive x y (PLabel a xl lbl)   = 
+    PLabel a xl $ translateLabel x y lbl
 
---------------------------------------------------------------------------------
+translatePrimitive x y (PEllipse a xl ell) = 
+    PEllipse a xl $ translateEllipse x y ell
 
--- Helpers for the affine transformations
-
-rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
-rotatePicture ang = trafoPicture (rotate ang) (rotate ang)
-
-rotatePictureAbout :: (Real u, Floating u) 
-                   => Radian -> Point2 u -> Picture u -> Picture u
-rotatePictureAbout ang pt = 
-    trafoPicture (rotateAbout ang pt) (rotateAbout ang pt)
-  
-scalePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-scalePicture x y = trafoPicture (scale x y) (scale x y)
-
-translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-translatePicture x y = trafoPicture (translate x y) (translate x y)
-
--- Note - YRange remains constant.
---
-trafoPicture :: (Num u, Ord u) 
-             => (Point2 u -> Point2 u) 
-             -> (Vec2 u -> Vec2 u) 
-             -> Picture u 
-             -> Picture u
-trafoPicture fp fv = 
-    mapLocale $ \(frm,bb,yr) -> (trafoFrame fp fv frm, trafoBBox fp bb, yr)
-
-
-
-trafoFrame :: Num u
-           => (Point2 u -> Point2 u) 
-           -> (Vec2 u -> Vec2 u) 
-           -> Frame2 u 
-           -> Frame2 u
-trafoFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
-
-
--- Bounding boxes need recalculating after a transformation.
--- For instance after a reflection in the y-axis br becomes bl.
-trafoBBox :: (Num u, Ord u)
-              => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-trafoBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
-  where
-    (bl,br,tr,tl) = boundaryCorners bb
 
 
 --------------------------------------------------------------------------------
@@ -579,9 +540,10 @@ trafoBBox fp bb = traceBoundary $ map fp $ [bl,br,tl,tr]
 -- (0,0), but don\'t not basis vectors) so manipulating them 
 -- cannot follow the standard affine interpretation.
 -- 
-rotatePath :: (Real u, Floating u) => Radian -> Path u -> Path u
-rotatePath ang (Path start xs) = 
-    Path start $ map (pointwise (rotateAbout ang start)) xs
+rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
+rotatePath ang (PrimPath start xs) = PrimPath start $ map (mapSeg fn) xs 
+  where
+    fn = rotateAbout ang start
 
 -- scalePath - scale the vector between each point and the start 
 -- point.
@@ -591,45 +553,24 @@ rotatePath ang (Path start xs) =
 -- are lifted to Pictures their manipulation cannot correspond
 -- to the standard affine manipulations.
 --
-scalePath :: Num u => u -> u -> Path u -> Path u
-scalePath x y (Path pt xs) = Path pt (map (pointwise fn) xs) 
+scalePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+scalePath x y (PrimPath pt xs) = PrimPath pt $ map (mapSeg fn) xs
   where
     fn p1 = let dif = p1 .-. pt in pt .+^ (scale x y $ dif)
 
 -- translatePath - move all points in the path by the supplied 
 -- x and y values.
 --
-translatePath :: Num u => u -> u -> Path u -> Path u
-translatePath x y = pointwise (translate x y)
+translatePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+translatePath x y = mapPath (translate x y)
 
 
+mapPath :: (Point2 u -> Point2 u) -> PrimPath u -> PrimPath u
+mapPath fn (PrimPath st xs) = PrimPath (fn st) (map (mapSeg fn) xs)
 
---------------------------------------------------------------------------------
--- Manipulating the Primitive CTM
-
-identityCTM :: Num u => PrimCTM u
-identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
-
-scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
-scaleCTM x1 y1 (PrimCTM sx sy ang) = PrimCTM (x1*sx) (y1*sy) ang
-
-rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
-rotateCTM ang1 (PrimCTM sx sy ang) = PrimCTM sx sy (circularModulo $ ang1+ang)
-
-matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
-matrixRepCTM (PrimCTM sx sy ang) = 
-    rotationMatrix (circularModulo ang) * scalingMatrix sx sy
-
-
--- Note - the order of combining a translation (i.e. the 
--- location of a point) and the CTM is crucial as matrix
--- multiplication is not commutative.
---
--- The function encapsulated the correct order.
---
-translMatrixRepCTM :: (Floating u, Real u) 
-                   => u -> u -> PrimCTM u -> Matrix3'3 u
-translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
+mapSeg :: (Point2 u -> Point2 u) -> PrimPathSegment u -> PrimPathSegment u
+mapSeg fn (PLineTo p)         = PLineTo (fn p)
+mapSeg fn (PCurveTo p1 p2 p3) = PCurveTo (fn p1) (fn p2) (fn p3)
 
 --------------------------------------------------------------------------------
 -- Labels
@@ -639,17 +580,17 @@ translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 -- Rotations on a (primitive) Label are interpreted as rotating
 -- about the bottom-left corner.
 --
-rotateLabel :: Radian -> Label u -> Label u
-rotateLabel ang (Label pt txt ctm) = Label pt txt (rotateCTM ang ctm)
+rotateLabel :: Radian -> PrimLabel u -> PrimLabel u
+rotateLabel ang (PrimLabel pt txt ctm) = PrimLabel pt txt (rotateCTM ang ctm)
 
-scaleLabel :: Num u => u -> u -> Label u -> Label u
-scaleLabel x y (Label pt txt ctm) = Label pt txt (scaleCTM x y ctm)
+scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
+scaleLabel x y (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM x y ctm)
 
 
 -- Change the bottom-left corner.
 --
-translateLabel :: Num u => u -> u -> Label u -> Label u
-translateLabel x y (Label pt txt ctm) = Label (translate x y pt) txt ctm
+translateLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
+translateLabel x y (PrimLabel pt txt ctm) = PrimLabel (translate x y pt) txt ctm
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -672,111 +613,37 @@ scaleEllipse x y (PrimEllipse pt hw hh ctm) =
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
 translateEllipse x y (PrimEllipse pt hw hh ctm) = 
     PrimEllipse (translate x y pt) hw hh ctm
-    
+
+
 
 --------------------------------------------------------------------------------
--- Boundary
-
-instance Boundary (Picture u) where
-  boundary (PicBlank (_,bb,_))     = bb
-  boundary (Leaf     (_,bb,_) _)   = bb
-  boundary (Picture  (_,bb,_) _)   = bb
-  boundary (Clip     (_,bb,_) _ _) = bb
-
-instance (Num u, Ord u) => Boundary (Path u) where
-  boundary (Path st xs) = traceBoundary $ st : foldr f [] xs where
-      f (PLineTo p1)        acc  = p1 : acc
-      f (PCurveTo p1 p2 p3) acc  = p1 : p2 : p3 : acc 
+-- Additional operations
 
 
--- Note - this will calculate an approximate bounding box for 
--- text.
+concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
+concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
 
-instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
-  boundary (PPath _ p)        = boundary p
-  boundary (PLabel (_,a) l)   = primLabelBoundary a l 
-  boundary (PEllipse _ e)     = boundary e
+matrixRepr :: (Floating u, Real u) => AffineTrafo u -> Matrix3'3 u
+matrixRepr (Matrix mtrx)        = mtrx
+matrixRepr (Rotate theta)       = rotationMatrix theta
+matrixRepr (RotAbout theta pt)  = originatedRotationMatrix theta pt
+matrixRepr (Scale sx sy)        = scalingMatrix sx sy 
+matrixRepr (Translate dx dy)    = translationMatrix dx dy
 
 
-
-primLabelBoundary :: (Floating u, Real u, FromPtSize u) 
-                  => FontAttr -> Label u -> BoundingBox u
-primLabelBoundary attr (Label (P2 x y) xs ctm) = 
-    retraceBoundary  (disp . (m33 *#)) untraf_bbox
-  where
-    disp        = (.+^ V2 x y)
-    m33         = matrixRepCTM ctm
-    untraf_bbox = textBounds (font_size attr) zeroPt char_count
-    char_count  = textLength xs
-
-instance (Real u, Floating u) => Boundary (PrimEllipse u) where
-  boundary = ellipseBoundary
-
--- Find the bbox of an ellipse by drawing it as four bezier 
--- curves then trace all the points and control points to find
--- the bbox.
+-- | Destructor for Matrix3'3.
 -- 
--- Note all_points takes three of the four points to avoid 
--- duplicating
--- /matched/ start-end points
+-- Pattern matching on 6-tuple may be more convenient than using 
+-- the Matrix3'3 directly.
 --
-
-ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
-ellipseBoundary = traceBoundary . ellipseControlPoints
-
--- PROBLEM:
--- A rotated circle has a different BBox to a non-rotated 
--- circle, because of how tangents are selected...
--- 
--- This is the same as a diamond having a larger BBox
--- than a square with same side-length
---
--- (This is unlikely to be addressed).
---
-
---------------------------------------------------------------------------------
---
-
-
-
-
-mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
-mapLocale f (PicBlank m)      = PicBlank (f m)
-mapLocale f (Leaf m ones)     = Leaf (f m) ones
-mapLocale f (Picture m ones)  = Picture (f m) ones
-mapLocale f (Clip m x p)      = Clip (f m) x p
-
-
-movePic :: Num u => Vec2 u -> Picture u -> Picture u
-movePic v = mapLocale (moveLocale v) 
-
-  
--- HeightRange remains unchanged.
---
-moveLocale :: Num u => Vec2 u -> Locale u -> Locale u
-moveLocale v (fr,bb,hr) =(displaceOrigin v fr, pointwise (.+^ v) bb, hr)
-
---------------------------------------------------------------------------------
-
-
--- | Should this really be public?
---
-extractFrame :: Picture u -> Frame2 u
-extractFrame (PicBlank (fr,_,_))     = fr
-extractFrame (Leaf     (fr,_,_) _)   = fr
-extractFrame (Picture  (fr,_,_) _)   = fr
-extractFrame (Clip     (fr,_,_) _ _) = fr
-
-extractYRange :: Picture u -> YRange u
-extractYRange (PicBlank (_,_,yr))     = yr
-extractYRange (Leaf     (_,_,yr) _)   = yr
-extractYRange (Picture  (_,_,yr) _)   = yr
-extractYRange (Clip     (_,_,yr) _ _) = yr
-
-
-frameHeight :: Num u => YRange u -> u
-frameHeight (YRange yhi ylo) = yhi - ylo
-
+-- > (M3'3 e0x e1x ox  
+-- >       e0y e1y oy  
+-- >       _   _   _  ) = (e0x,e0y,  e1x,e1y,  ox,oy)
+--  
+deconsMatrix :: Matrix3'3 u -> (u,u,u,u,u,u)
+deconsMatrix (M3'3 e0x e1x ox  
+                   e0y e1y oy  
+                   _   _   _  ) = (e0x,e0y,  e1x,e1y,  ox,oy)
 
 
 
@@ -790,52 +657,16 @@ frameHeight (YRange yhi ylo) = yhi - ylo
 -- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
 -- user defined.
 --
-repositionProperties :: (Num u, Ord u) 
-                     => Picture u -> (BoundingBox u, Maybe (Vec2 u))
-repositionProperties = fn . boundary where
-  fn bb@(BBox (P2 llx lly) (P2 urx ury))
-      | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
-      | otherwise           = (bb, Nothing)
-    where 
-      x  = 4 - llx
-      y  = 4 - lly
-      ll = P2 (llx+x) (lly+y)
-      ur = P2 (urx+x) (ury+y)  
-
-
--- | Get the control points as a list
--- 
--- There are no duplicates in the list except for the final 
--- /wrap-around/. We take 4 points initially (start,cp1,cp2,end)
--- then (cp1,cp2,end) for the other three quadrants.
---
-ellipseControlPoints :: (Floating u, Real u)
-                     => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse (P2 x y) hw hh ctm) = 
-    map (disp . (new_mtrx *#)) circ
+repositionDeltas :: (Num u, Ord u) 
+                 => Picture u -> (BoundingBox u, Maybe (Vec2 u))
+repositionDeltas = step . boundary 
   where
-    disp             = (.+^ V2 x y)
-    (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = matrixRepCTM $ scaleCTM dx dy ctm
-    circ             = bezierCircle 1 radius (P2 0 0)
-
-    -- subdivide the bezierCircle with 1 to get two
-    -- control points per quadrant.    
-
-
---
--- I don't know how to calculate bezier arcs (and thus control
--- points) for an ellipse but I know how to do it for a circle...
---
--- So a make a circle with the largest of half-width and 
--- half-height then apply a scale to the points
--- 
-circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
-circleScalingProps hw hh  = (radius, (dx,dy))
-  where
-    radius     = max hw hh
-    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
-                                 else (rescale (0,hh) (0,1) hw, 1)
-
-
+    step bb@(BBox (P2 llx lly) (P2 urx ury))
+        | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
+        | otherwise           = (bb, Nothing)
+      where 
+        x  = 4 - llx
+        y  = 4 - lly
+        ll = P2 (llx+x) (lly+y)
+        ur = P2 (urx+x) (ury+y) 
 

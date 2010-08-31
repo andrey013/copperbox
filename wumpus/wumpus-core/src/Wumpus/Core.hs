@@ -75,7 +75,7 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour hiding ( black, white, red, green, blue )
 import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState hiding ( CTM, ToCTM )
+import Wumpus.Core.GraphicsState
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture

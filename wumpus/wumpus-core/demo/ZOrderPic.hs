@@ -20,10 +20,10 @@ combined_pic :: DPicture
 combined_pic = multi [pic1,pic2]
 
 pic1 :: DPicture
-pic1 = frameMulti $ prim_list zeroPt
+pic1 = frame $ prim_list zeroPt
 
 pic2 :: DPicture 
-pic2 = multi $ map frame $ prim_list (P2 200 0)
+pic2 = multi $ map (\a -> frame [a]) $ prim_list (P2 200 0)
 
 
 
