@@ -147,15 +147,15 @@ imageTranslation pic = case repositionDeltas pic of
 
 
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
-picture (Leaf (_,xs,_) ones)    = bracketTrafos xs $ revConcat primitive ones
-picture (Picture (_,xs,_) ones) = bracketTrafos xs $ revConcat picture ones
-picture (Clip (_,xs,_) cp pic)  = 
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primitive ones
+picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
+picture (Clip    (_,xs) cp pic) = 
     bracketTrafos xs $ do { lbl <- newClipLabel
                           ; d1  <- clipPath lbl cp
                           ; d2  <- picture pic
                           ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
                           } 
-picture (Group (_,xs,_) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
 
 
 revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc

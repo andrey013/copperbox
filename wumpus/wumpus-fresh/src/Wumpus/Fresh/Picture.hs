@@ -89,13 +89,11 @@ import Data.Semigroup                           -- package: algebra
 --
 frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
-frame (p:ps) = let (bb,yr,ones) = step p ps in Leaf (bb,[],yr) ones 
+frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
-    step a []     = (boundary a, primitiveYRange a, one a)
-    step a (x:xs) = let (bb', yr', rest) = step x xs
-                    in ( boundary a `append` bb'
-                       , primitiveYRange a `append` yr'
-                       , cons a rest )
+    step a []     = (boundary a, one a)
+    step a (x:xs) = let (bb', rest) = step x xs
+                    in ( boundary a `append` bb', cons a rest )
 
 
 
@@ -105,13 +103,11 @@ frame (p:ps) = let (bb,yr,ones) = step p ps in Leaf (bb,[],yr) ones
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi []      = error "Wumpus.Core.Picture.multi - empty list"
-multi (p:ps)  = let (bb,yr,ones) = step p ps in Picture (bb,[],yr) ones 
+multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones 
   where
-    step a []     = (boundary a, yrange a, one a)
-    step a (x:xs) = let (bb',yr',rest) = step x xs
-                    in ( boundary a `append` bb'
-                       , yrange a `append` yr'
-                       , cons a rest )
+    step a []     = (boundary a, one a)
+    step a (x:xs) = let (bb', rest) = step x xs
+                    in ( boundary a `append` bb', cons a rest )
 
 
 
@@ -273,7 +269,7 @@ zfill = fillPath black NoLink
 -- | Clip a picture with respect to the supplied path.
 --
 clip :: (Num u, Ord u) => PrimPath u -> Picture u -> Picture u
-clip cp p = Clip (pathBoundary cp, [], yrange p) cp p
+clip cp p = Clip (pathBoundary cp, []) cp p
 
 --------------------------------------------------------------------------------
 -- Labels to primitive
@@ -426,10 +422,9 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (bb,[],yr) (cons a $ one b)
+a `picOver` b = Picture (bb,[]) (cons a $ one b)
   where
     bb = boundary a `append` boundary b
-    yr = yrange a   `append` yrange b
 
 -- | 'picMoveBy' : @ picture -> vector -> picture @
 -- 
