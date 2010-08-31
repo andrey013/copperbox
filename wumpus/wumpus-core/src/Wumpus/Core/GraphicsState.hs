@@ -10,8 +10,31 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
+-- Data types for stroke and label attributes and type classes 
+-- for conversion to PostScript\'s colour and matrix 
+-- representations. 
+-- 
+-- Wumpus represents pictures as trees - a leaf represents a 
+-- path or text label. All attributes of a path or text label 
+-- (colour, stroke width, font, ...) are stored in the leaf. So
+-- a picture is a leaf labelled tree.
+-- 
+-- By contrast, PostScript maintains a /graphics state/. A 
+-- PostScript program is free to modify the graphics state 
+-- anywhere in the program. Stroke width is a general property  
+-- shared by all elements (initially it has the default value 1).
+-- Only stroked paths actually regard stroke width, fonts and 
+-- filled and clipping paths ignore it. PostScript allows more 
+-- control over the graphics state by allowing the current state
+-- to be saved and restored with the @gsave@ and @grestore@. 
+-- This is useful for modularity but is a comparatively expensive
+-- procedure.
 --
--- Core graphics state. 
+-- When Wumpus renders Pictures as PostScript it maintains a 
+-- limited graphics state with just current colour and current 
+-- font. This is so Wumpus can avoid repeating @setrgbcolor@ and
+-- @findfont@ operations in the generated PostScript if 
+-- subsequent elements share the same values.
 -- 
 --   
 --------------------------------------------------------------------------------
@@ -42,6 +65,10 @@ import Wumpus.Core.Colour
 
 -- Graphics state datatypes
 
+-- | Graphics state used by the rendering monads.
+--
+-- This type is hidden by the top-level module @Wumpus.Core@.
+--
 data GraphicsState = GraphicsState
       { gs_draw_colour  :: RGB255
       , gs_font_size    :: Int

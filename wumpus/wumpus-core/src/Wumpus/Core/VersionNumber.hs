@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Version number
+-- Version number.
 --
 --------------------------------------------------------------------------------
 
@@ -20,7 +20,7 @@ module Wumpus.Core.VersionNumber
 
   ) where
 
--- | Version number
+-- | Version number.
 --
 -- > (0,30,0)
 --

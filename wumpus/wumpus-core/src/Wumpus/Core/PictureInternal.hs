@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Fresh picture.
+-- Internal representation of Pictures.
 --
 --------------------------------------------------------------------------------
 
@@ -81,26 +81,88 @@ import Data.AffineSpace                         -- package: vector-space
 import qualified Data.Foldable                  as F
 
 
--- For local shared graphics state updates add a new constructor:
--- Group (GS -> GS) (Picture u)
 
+-- | Picture is a leaf attributed tree - where attributes are 
+-- colour, line-width etc. It is parametric on the unit type 
+-- of points (typically Double).
+-- 
+-- Wumpus\'s leaf attributed tree, is not directly matched to 
+-- PostScript\'s picture representation, which might be 
+-- considered a node attributed tree (if you consider graphics
+-- state changes less imperatively - setting attributes rather 
+-- than global state change).
+--
+-- Considered as a node-attributed tree PostScript precolates 
+-- graphics state updates downwards in the tree (vis-a-vis 
+-- inherited attributes in an attibute grammar), where a 
+-- graphics state change deeper in the tree overrides a higher 
+-- one.
+-- 
+-- Wumpus on the other hand, simply labels each leaf with its
+-- drawing attributes - there is no attribute inheritance.
+-- When it draws the PostScript picture it does some 
+-- optimization to avoid generating excessive graphics state 
+-- changes in the PostScript code.
+--
+-- Omitting some details, Picture is a simple non-empty 
+-- leaf-labelled rose tree via:
+-- 
+-- > Leaf primitives | Picture [tree]
+--
+-- Where OneList is a variant of the standard list type that 
+-- disallows empty lists.
+-- 
+-- The additional constructors are convenience:
+--
+-- @Clip@ nests a picture (tree) inside a clipping path.
+--
+-- The @Group@ constructor allows local shared graphics state 
+-- updates for the SVG renderer - in some instances this can 
+-- improve the code size of the generated SVG.
+--
 data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
                | Picture  (Locale u)              (OneList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
                | Group    (Locale u) GSUpdate     (Picture u)
   deriving (Show)
 
+
+-- | Update the graphics state for SVG rendering. 
+-- 
+-- Note - this does not change how any of the Primitives are 
+-- drawn, nor does it change the default colour or font style. 
+-- It is solely a backdoor into the SVG renderer to potential 
+-- allow some code size reductions.
+--
 newtype GSUpdate = GSUpdate { getGSU :: GraphicsState -> GraphicsState }
 
 instance Show GSUpdate where
   show _ = "*function*"
 
-
+-- | Locale = (bounding box * current translation matrix)
+-- 
+-- Pictures (and sub-pictures) are located frame consisting of a 
+-- bounding box and a translation matrix (represented as a list 
+-- of affine transformations). So that pictures can be arranged 
+-- via vertical and horizontal composition their bounding box is 
+-- cached.
+--
+-- In Wumpus, affine transformations (scalings, rotations...)
+-- transform the CTM rather than the constituent points of 
+-- the primitives. Changes of CTM are transmitted to PostScript
+-- as @concat@ commands (and matrix transforms in SVG).
+--  
+-- So that picture composition is remains stable under affine
+-- transformation, the corners of bounding boxes are transformed
+-- pointwise when the picture is scaled, rotated etc.
+--
 type Locale u = (BoundingBox u, [AffineTrafo u])
 
 type DPicture = Picture Double
 
-
+-- | Affine transformations are represented as /syntax/ so they
+-- can be manipulated easily.
+--
 data AffineTrafo u = Matrix (Matrix3'3 u)
                    | Rotate Radian
                    | RotAbout Radian (Point2 u)
@@ -108,7 +170,29 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
                    | Translate u u
   deriving (Eq,Show)                 
 
-
+-- | Wumpus\'s drawings are built from two fundamental 
+-- primitives: paths (line segments and Bezier curves) and 
+-- labels (single lines of text). 
+-- 
+-- Ellipses are a included as a primitive only for optimization 
+-- - drawing a reasonable circle with Bezier curves needs at 
+-- least eight curves. This is inconvenient for drawing dots 
+-- which can otherwise be drawn with a single @arc@ command.
+-- 
+-- Wumpus does not follow PostScript employing arc as a general 
+-- path primitive - arcs are used only to draw ellipses. This 
+-- is because arcs do not enjoy the nice properties of Bezier 
+-- curves, whereby the affine transformation of a Bezier curve 
+-- can simply be achieved by the affine transformation of it\'s 
+-- control points.
+--
+-- Ellipses are represented by their center, half-width and 
+-- half-height. Half-width and half-height are used so the 
+-- bounding box can be calculated using only multiplication, and 
+-- thus initially only obliging a Num constraint on the unit.
+-- Though typically for affine transformations a Fractional 
+-- constraint is also obliged.
+--
 data Primitive u = PPath    PathProps    XLink (PrimPath u)
                  | PLabel   LabelProps   XLink (PrimLabel u)
                  | PEllipse EllipseProps XLink (PrimEllipse u)
@@ -645,10 +729,6 @@ deconsMatrix (M3'3 e0x e1x ox
                    e0y e1y oy  
                    _   _   _  ) = (e0x,e0y,  e1x,e1y,  ox,oy)
 
-
-
--- This needs is for PostScript and SVG output - it should be 
--- hidden in the export list of Wumpus.Core
 
 
 -- If a picture has coordinates smaller than (P2 4 4) then it 

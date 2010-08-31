@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.24.0
+version:          0.30.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -51,19 +51,41 @@ description:
   .
   Changelog:
   .
-  0.24.0 to 0.30.0:
+  0.23.0 to 0.30.0:
   .
-  * Substantial changes.
+  * Substantial changes - the output machinery has been heavily 
+    modified, the intention was to reduce the use of matrix 
+    transformations in SVG output. Though this goal has not been 
+    achieved, some code-size improvements in the SVG ouput have 
+    ben made. 
   .
-  0.23.0 to 0.24.0:
+  * The code generation monads have been changed - Wumpus no 
+    longer uses a writer monad for code generation, but it will
+    keep them Wumpus name.
   .
-  * Internal changes removed some code from the hidden Utils 
-    module.
+  * Added support for hyperlinks in the SVG output.
   .
   * Improved internal pretty printing and added the function 
     @printPicture@ for debugging.
   .
-  * BoundingBox module changed significantly. The corner 
+  * The @Core.Colour@ module has been simplified to support just 
+    one (new) type - RGB255, and the conversion type class 
+    @PSColour@ has been eliminated.
+  .
+  * @Core.Picture@ - the type of the @frame@ function has been 
+    changed to take a list of Primitives rather than a single 
+    Primitive. The function @frameMulti@ which previously 
+    provided this functionality has been removed. SVG hyperlinks
+    are now supported for Primitives. 
+  . 
+  * The default font size has been changed to 14 pt. 
+  .
+  * The Path datatype has been renamed PrimPath, likewise Ellipse 
+    is now PrimEllispe and Label becomes PrimLabel.
+  .
+  * @Core.Geometry@ now longer defines an affine frame datatype.
+  .
+  * @Core.BoundingBox@ module changed significantly. The corner 
     functions (@boundaryBottomLeft@, etc.) have been removed, 
     along with the plane functions (@leftPlane@, etc.). Some 
     functions have been given more verbose names - @corners@ is 

@@ -10,7 +10,29 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Core text encoder
+-- Extended character code handling.
+-- 
+-- Wumpus uses SVG style escaping to embed character codes or 
+-- names in regular strings:
+--
+-- > "regular ascii text &#egrave; more ascii text"
+--  
+-- i.e. character names and codes are delimited by @&#@ on the 
+-- left and @;@ on the right.
+--
+-- In Wumpus strings both character names and character codes can
+-- be embedded - it seems conventional for PostScript to use 
+-- names e.g.:  
+--
+-- > (myst) show /egrave glyphshow (re) show
+-- 
+-- ... and SVG to use codes, e.g.: 
+--
+-- > myst&#232;re
+--
+-- To accommodate both Wumpus defines a TextEncoder record which 
+-- provides a two-way mapping between character codes and glyph 
+-- names for a character set.
 --
 --------------------------------------------------------------------------------
 

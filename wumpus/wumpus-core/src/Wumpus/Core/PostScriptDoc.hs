@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Core PostScript.
+-- PostScript Doc combinators.
 --
 --------------------------------------------------------------------------------
 

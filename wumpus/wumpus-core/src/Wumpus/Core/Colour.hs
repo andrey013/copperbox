@@ -10,7 +10,12 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Core colour.
+-- Colour represented as RGB with each component in the range 
+-- [0..255].
+-- 
+-- Note - the predifined colours are hidden when importing the
+-- /top-level/ module @Wumpus.Core@, import this module directly
+-- to use them.
 --
 --------------------------------------------------------------------------------
 

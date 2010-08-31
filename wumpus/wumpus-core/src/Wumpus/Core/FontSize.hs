@@ -10,7 +10,18 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Core font size.
+-- Font size calculation for Label\'s and their bounding boxes.
+-- 
+-- Calculations are based on metrics derived from Courier at 
+-- 48pt. As Courier is a monospaced font, bounding boxes 
+-- calculated for other font families will usually have longer 
+-- width than is necessary for the printed text. 
+-- 
+-- This is a deficiency of Wumpus, and limits its text handling
+-- capabilities (for example, text cannot be automatically 
+-- centered). However, alternatives would need access to font 
+-- metrics - this would require a font loader and add 
+-- significant implementation complexity.
 -- 
 --------------------------------------------------------------------------------
 

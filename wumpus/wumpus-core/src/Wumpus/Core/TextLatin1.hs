@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Core Latin1.
+-- A TextEncoder record instance for Latin1 characters.
 -- 
 --------------------------------------------------------------------------------
 

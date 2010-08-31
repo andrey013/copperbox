@@ -11,7 +11,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Core PostScript.
+-- Output PostScript - either PostScript (PS) files or 
+-- EPS (Encapusulated PostScript) files can be generated. 
 --
 --------------------------------------------------------------------------------
 

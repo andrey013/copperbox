@@ -11,7 +11,22 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Fresh SVG.
+-- Output SVG. 
+--
+-- This is complicated by two differences with PostScript.
+--
+-- 1. The coordinate space of SVG is /origin top-left/, for 
+-- PostScript it is /origin bottom-left/.
+-- 
+-- 2. Clipping in PostScript works by changing the graphics state
+-- Clip a path, then all subsequent drawing be rendered only 
+-- when it is within the clip bounds. Clearly using clipping 
+-- paths within a @gsave ... grestore@ block is a good idea...
+--
+-- SVG uses /tagging/. A clipPath element is declared and named 
+-- then referenced in subsequent elements via the clip-path 
+-- attribute - @clip-path=\"url(#clip_path_tag)\"@.
+--
 --
 --------------------------------------------------------------------------------
 

@@ -12,7 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Core picture.
+-- Construction of pictures, paths and text labels.
 --
 --------------------------------------------------------------------------------
 

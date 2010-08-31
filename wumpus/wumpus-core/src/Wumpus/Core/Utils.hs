@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Fresh utils.
+-- Utility functions and a Hughes list.
 --
 --------------------------------------------------------------------------------
 

@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Fresh.
+-- Extended character handling.
 -- 
 --------------------------------------------------------------------------------
 

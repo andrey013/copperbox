@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Fresh formatting.
+-- Formatting combinators - pretty printers without the fitting.
 --
 --------------------------------------------------------------------------------
 

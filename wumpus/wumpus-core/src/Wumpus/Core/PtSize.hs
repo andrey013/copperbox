@@ -11,7 +11,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Core PtSize
+-- Numeric type representing Point size (1/72 inch) which is 
+-- PostScript and Wumpus-Core\'s internal unit size.
+--
+-- Other unit types (e.g. centimeter) should define an 
+-- appropriate instance of FromPtSize.
 -- 
 --------------------------------------------------------------------------------
 

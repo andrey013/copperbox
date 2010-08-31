@@ -14,7 +14,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Core geometry.
+-- Objects and operations for 2D geometry.
+-- 
+-- Vector, point, 3x3 matrix, and radian representations, 
+-- plus a type family @DUnit@ for parameterizing type classes 
+-- with some /dimension/.
 --
 --------------------------------------------------------------------------------
 
@@ -601,31 +605,37 @@ mofm (M3'3 a b c
 
 
 -- | The epislion used for floating point equality on radians.
+--
 radian_epsilon :: Double
 radian_epsilon = 0.0001
 
 -- | Equality on radians, this is the operation used for (==) in
 -- Radian\'s Eq instance.
+--
 req :: Radian -> Radian -> Bool
 req a b = (fromRadian $ abs (a-b)) < radian_epsilon
 
 
 
 -- | Convert to radians.
+--
 toRadian :: Real a => a -> Radian 
 toRadian = Radian . realToFrac
 
 
 -- | Convert from radians.
+--
 fromRadian :: Fractional a => Radian -> a
 fromRadian = realToFrac . getRadian
 
 
 -- | Degrees to radians.
+--
 d2r :: (Floating a, Real a) => a -> Radian
 d2r = Radian . realToFrac . (*) (pi/180)
 
 -- | Radians to degrees.
+--
 r2d :: (Floating a, Real a) => Radian -> a
 r2d = (*) (180/pi) . fromRadian
 
