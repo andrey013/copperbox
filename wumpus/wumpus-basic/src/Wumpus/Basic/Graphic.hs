@@ -122,7 +122,7 @@ drawGraphic :: (Real u, Floating u, FromPtSize u)
 drawGraphic f = post $ f []
   where
     post [] = Nothing
-    post xs = Just $ frameMulti $ xs 
+    post xs = Just $ frame xs 
 
 
 -- | /Unsafe/ version of 'drawGraphic' - this function throws 
@@ -170,12 +170,12 @@ strokedRectangle t w h = wrapG . cstroke t . rectangle w h
 filledRectangle :: (Fill t, Fractional u) => t -> u -> u -> GraphicF u
 filledRectangle t w h = wrapG . fill t . rectangle w h
 
-rectangle :: Fractional u => u -> u -> Point2 u -> Path u
+rectangle :: Fractional u => u -> u -> Point2 u -> PrimPath u
 rectangle w h ctr = rectanglePath w h (ctr .-^ vec (0.5*w) (0.5*h))
 
 -- | Supplied point is /bottom-left/.
 --
-rectanglePath :: Num u => u -> u -> Point2 u -> Path u
+rectanglePath :: Num u => u -> u -> Point2 u -> PrimPath u
 rectanglePath w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
   where
     br = bl .+^ hvec w

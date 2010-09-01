@@ -43,7 +43,7 @@ import Control.Applicative
 
 data PathState u = PathState 
       { current_point :: Point2 u 
-      , path_accum    :: BPath u
+      , path_accum    :: Path u
       }
 
 newtype MPath u a = MPath { getMPath :: PathState u -> (a,PathState u) }
@@ -66,18 +66,18 @@ instance Monad (MPath u) where
                             (getMPath . k) a s'
 
 
-runPath :: Num u => Point2 u -> MPath u a -> (a, BPath u)
+runPath :: Num u => Point2 u -> MPath u a -> (a, Path u)
 runPath start mf = let (a,s') = getMPath mf s in (a, path_accum s')
   where
     s = PathState { current_point = start
                   , path_accum    = emptyPath
                   }
 
-execPath :: Num u => Point2 u -> MPath u a -> BPath u
+execPath :: Num u => Point2 u -> MPath u a -> Path u
 execPath start mf = snd $ runPath start mf
 
 
-exchTip :: Point2 u -> (Point2 u -> BPath u -> BPath u) -> MPath u ()
+exchTip :: Point2 u -> (Point2 u -> Path u -> Path u) -> MPath u ()
 exchTip new updP = 
     MPath $ \(PathState old bp) -> ((), PathState new (updP old bp)) 
 
@@ -107,7 +107,7 @@ curveto cin cout end = exchTip end upd
 
 
 pcurveAng :: (Floating u, Ord u) 
-        => Point2 u -> Radian -> Radian -> Point2 u -> BPathSeg u
+        => Point2 u -> Radian -> Radian -> Point2 u -> PathSeg u
 pcurveAng start cin cout end = pcurve start (start .+^ v1) (end .+^ v2) end
   where
     sz     = 0.375 * (vlength $ pvec start end)

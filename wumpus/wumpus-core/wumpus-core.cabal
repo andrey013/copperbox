@@ -56,12 +56,12 @@ description:
   * Substantial changes - the output machinery has been heavily 
     modified, the intention was to reduce the use of matrix 
     transformations in SVG output. Though this goal has not been 
-    achieved, some code-size improvements in the SVG ouput have 
-    ben made. 
+    achieved, some code-size improvements in the SVG output have 
+    been made. 
   .
   * The code generation monads have been changed - Wumpus no 
     longer uses a writer monad for code generation, but it will
-    keep them Wumpus name.
+    keep the Wumpus name.
   .
   * Added support for hyperlinks in the SVG output.
   .

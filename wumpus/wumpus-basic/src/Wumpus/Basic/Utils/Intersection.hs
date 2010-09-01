@@ -27,7 +27,7 @@ module Wumpus.Basic.Utils.Intersection
   , intersection
 
   , rectangleLines
-
+  , langle
   ) 
   where
 
@@ -92,7 +92,7 @@ findIntersect ctr theta = step
 
 quadrantCheck :: (Real u, Floating u) 
               => Radian -> Point2 u -> Point2 u -> Bool
-quadrantCheck theta ctr pt = theta `req` langle ctr pt
+quadrantCheck theta ctr pt = theta == langle ctr pt
 
 intersection :: (Fractional u, Ord u) 
              => LineSegment u -> LineEqn u -> Maybe (Point2 u)
@@ -131,3 +131,25 @@ rectangleLines ctr hw hh = [LS br tr, LS tr tl, LS tl bl, LS bl br]
     tr = ctr .+^ (vec hw    hh)
     tl = ctr .+^ (vec (-hw) hh)
     bl = ctr .+^ (vec (-hw) (-hh))
+
+
+
+-- | Calculate the counter-clockwise angle between two points 
+-- and the x-axis.
+--
+langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
+langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
+  where
+    -- north-east quadrant 
+    step x y | pve x && pve y = toRadian $ atan (y/x)          
+    
+    -- north-west quadrant
+    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
+
+    -- south-east quadrant
+    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
+
+    -- otherwise... south-west quadrant
+    step x y                  = pi     + (toRadian $ atan (y/x))
+
+    pve a                     = signum a >= 0

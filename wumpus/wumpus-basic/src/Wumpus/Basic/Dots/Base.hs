@@ -128,7 +128,7 @@ pathDiamond attr = vertexPath . sequence [dvs,dve,dvn,dvw]
     dvn   = (.+^ vvec hh)
     dvw   = (.+^ hvec (-hw))
 
-type PathF u = Point2 u -> Path u
+type PathF u = Point2 u -> PrimPath u
 
 dotDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotDiamond attr = 

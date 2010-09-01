@@ -25,6 +25,7 @@ module Wumpus.Core.Colour
 
   -- * RGB colour type  
     RGB255(..)
+  , iRGB
 
   -- * Predefined colours
   , black
@@ -49,6 +50,13 @@ import Data.Word
 data RGB255 = RGB255 !Word8 !Word8 !Word8
   deriving (Eq,Ord,Show)
 
+-- | Alternative constructor for RGB255.
+-- 
+-- The 255 suffix can be visually distracting when defining 
+-- constants (e.g. the X11 or SVG colours).
+--
+iRGB :: Word8 -> Word8 -> Word8 -> RGB255
+iRGB = RGB255
 
 --------------------------------------------------------------------------------
 -- instances
@@ -61,6 +69,7 @@ instance Format RGB255 where
 
 
 --------------------------------------------------------------------------------
+
 
 -- Some colours
 

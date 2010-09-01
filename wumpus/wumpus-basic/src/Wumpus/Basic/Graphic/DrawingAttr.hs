@@ -41,7 +41,7 @@ module Wumpus.Basic.Graphic.DrawingAttr
 
 
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -51,8 +51,8 @@ import Control.Applicative
 data DrawingAttr = DrawingAttr 
       { line_width         :: Double
       , font_props         :: FontAttr
-      , stroke_colour      :: DRGB
-      , fill_colour        :: DRGB
+      , stroke_colour      :: RGB255
+      , fill_colour        :: RGB255
       }
   deriving (Eq,Show)
 
@@ -63,13 +63,13 @@ standardAttr sz = DrawingAttr { line_width         = std_line_width
                               , fill_colour        = gold  }
 
  
-strokeAttr :: DrawingAttr -> (DRGB, StrokeAttr)
+strokeAttr :: DrawingAttr -> (RGB255, StrokeAttr)
 strokeAttr = liftA2 (,) stroke_colour (LineWidth . line_width)
 
-fillAttr :: DrawingAttr -> DRGB
+fillAttr :: DrawingAttr -> RGB255
 fillAttr = fill_colour
 
-textAttr :: DrawingAttr -> (DRGB,FontAttr)
+textAttr :: DrawingAttr -> (RGB255,FontAttr)
 textAttr = liftA2 (,) stroke_colour font_props
 
 -- | A Mark is consider to be the height of a lowercase letter

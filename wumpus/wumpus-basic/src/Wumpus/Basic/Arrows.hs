@@ -42,6 +42,7 @@ import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
+import Wumpus.Basic.Utils.Intersection ( langle )
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -52,7 +53,7 @@ arrowWidth :: FromPtSize u => DrawingAttr -> u
 arrowWidth = fromPtSize . xcharHeight . font_size . font_props
 
 
-line :: Num u => BPathF u -> AConnector u (BPath u)
+line :: Num u => PathF u -> AConnector u (Path u)
 line pathF p0 p1 = AGraphic df mf
   where
     df attr () = pathGraphic (pathF p0 p1) attr
@@ -62,57 +63,57 @@ line pathF p0 p1 = AGraphic df mf
 
 
 arrowTri90 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AConnector u (BPath u)
+           => PathF u -> AConnector u (Path u)
 arrowTri90 pathF = \p0 p1 -> 
     AGraphic (\attr () -> triTipRight pathF tri90 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowTri60 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AConnector u (BPath u)
+           => PathF u -> AConnector u (Path u)
 arrowTri60 pathF = \p0 p1 ->
     AGraphic (\attr () -> triTipRight pathF tri60 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
  
 arrowTri45 :: (Real u, Floating u, FromPtSize u) 
-           => BPathF u -> AConnector u (BPath u)
+           => PathF u -> AConnector u (Path u)
 arrowTri45 pathF = \p0 p1 ->
     AGraphic (\attr () -> triTipRight pathF tri45 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowOTri90 pathF = \p0 p1 ->
     AGraphic (\attr () -> triTipRight pathF otri90 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowOTri60 pathF = \p0 p1 -> 
     AGraphic (\attr () -> triTipRight pathF otri60 p0 p1 attr) 
              (\_    () -> pathF p0 p1)
 
 
 arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowOTri45 pathF = \p0 p1 ->
     AGraphic (\attr () -> triTipRight pathF otri45 p0 p1 attr)
              (\_    () -> pathF p0 p1)
 
 
 arrowBarb90 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowBarb90 pathF = \p0 p1 ->
     AGraphic (\attr () -> barbTipRight pathF barb90 p0 p1 attr)
              (\_    () -> pathF p0 p1)
 
 arrowBarb60 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowBarb60 pathF = \p0 p1 ->
     AGraphic (\attr () -> barbTipRight pathF barb60 p0 p1 attr)
              (\_    () -> pathF p0 p1)
 
 arrowBarb45 :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u -> AConnector u (BPath u)
+            => PathF u -> AConnector u (Path u)
 arrowBarb45 pathF = \p0 p1 ->
     AGraphic (\attr () -> barbTipRight pathF barb45 p0 p1 attr)
              (\_    () -> pathF p0 p1)
@@ -120,7 +121,7 @@ arrowBarb45 pathF = \p0 p1 ->
 
 
 triTipRight :: (Real u, Floating u, FromPtSize u) 
-            => BPathF u 
+            => PathF u 
             -> (Radian -> DrawingAttr -> GraphicF u)
             -> Point2 u -> Point2 u -> DrawingAttr 
             -> Graphic u 
@@ -137,7 +138,7 @@ triTipRight pathF tipF p0 p1 attr =
 
 
 barbTipRight :: (Real u, Floating u, FromPtSize u) 
-             => BPathF u 
+             => PathF u 
              -> (Radian -> DrawingAttr -> GraphicF u)
              -> Point2 u -> Point2 u -> DrawingAttr 
              -> Graphic u 
@@ -151,7 +152,7 @@ barbTipRight pathF tipF p0 p1 attr =
                      
 
 arrowPerp :: (Real u, Floating u, FromPtSize u) 
-          => BPathF u -> AConnector u (BPath u)
+          => PathF u -> AConnector u (Path u)
 arrowPerp pathF p0 p1 = AGraphic df mf
   where
     df attr () = let theta = langle p0 p1  in

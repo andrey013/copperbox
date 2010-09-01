@@ -22,10 +22,10 @@
 module Wumpus.Basic.Paths.Base
   ( 
 
-    BPathF
+    PathF
 
-  , BPath(..)
-  , BPathSeg(..)
+  , Path(..)
+  , PathSeg(..)
   , Curve(..)
   , Line(..)
   , emptyPath
@@ -36,8 +36,8 @@ module Wumpus.Basic.Paths.Base
   , segmentStart
   , segmentEnd
 
-  , toPath 
-  , toPathU
+  , toPrimPath 
+  , toPrimPathU
   , subdivide
   , subdividet
     
@@ -53,20 +53,20 @@ import Data.Sequence ( Seq, ViewL(..), viewl, (|>)  )
 import qualified Data.Sequence as S
 
 
-type BPathF u = Point2 u -> Point2 u -> BPath u
+type PathF u = Point2 u -> Point2 u -> Path u
 
 
-data BPath u = BPath 
+data Path u = Path 
        { path_length    :: u 
-       , path_elements  :: Seq (BPathSeg u)
+       , path_elements  :: Seq (PathSeg u)
        }
   deriving (Eq,Ord,Show)
 
 
 -- Annotation is length...
 -- 
-data BPathSeg u = BLineSeg  u (Line u)
-                | BCurveSeg u (Curve u)
+data PathSeg u = LineSeg  u (Line u)
+               | CurveSeg u (Curve u)
   deriving (Eq,Ord,Show)
 
 
@@ -85,36 +85,36 @@ data Line u = Line
   deriving (Eq,Ord,Show)
 
 
-emptyPath :: Num u => BPath u 
-emptyPath = BPath 0 S.empty
+emptyPath :: Num u => Path u 
+emptyPath = Path 0 S.empty
 
 
-addSegment :: Num u => BPath u -> BPathSeg u -> BPath u
-addSegment (BPath n se) e@(BLineSeg u _)  = BPath (n+u) (se |> e)
-addSegment (BPath n se) e@(BCurveSeg u _) = BPath (n+u) (se |> e)
+addSegment :: Num u => Path u -> PathSeg u -> Path u
+addSegment (Path n se) e@(LineSeg u _)  = Path (n+u) (se |> e)
+addSegment (Path n se) e@(CurveSeg u _) = Path (n+u) (se |> e)
 
-segmentLength :: BPathSeg u -> u
-segmentLength (BLineSeg  u _) = u
-segmentLength (BCurveSeg u _) = u
+segmentLength :: PathSeg u -> u
+segmentLength (LineSeg  u _) = u
+segmentLength (CurveSeg u _) = u
 
-segmentStart :: BPathSeg u -> Point2 u
-segmentStart (BLineSeg  _ (Line p0 _))      = p0
-segmentStart (BCurveSeg _ (Curve p0 _ _ _)) = p0
+segmentStart :: PathSeg u -> Point2 u
+segmentStart (LineSeg  _ (Line p0 _))      = p0
+segmentStart (CurveSeg _ (Curve p0 _ _ _)) = p0
 
-segmentEnd :: BPathSeg u -> Point2 u
-segmentEnd (BLineSeg  _ (Line _ p1))      = p1
-segmentEnd (BCurveSeg _ (Curve _ _ _ p3)) = p3
-
-
+segmentEnd :: PathSeg u -> Point2 u
+segmentEnd (LineSeg  _ (Line _ p1))      = p1
+segmentEnd (CurveSeg _ (Curve _ _ _ p3)) = p3
 
 
-pline :: Floating u => Point2 u -> Point2 u -> BPathSeg u 
-pline p0 p1 = BLineSeg (vlength $ pvec p0 p1) (Line p0 p1)
+
+
+pline :: Floating u => Point2 u -> Point2 u -> PathSeg u 
+pline p0 p1 = LineSeg (vlength $ pvec p0 p1) (Line p0 p1)
 
 pcurve :: (Floating u, Ord u)
-       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> BPathSeg u 
+       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> PathSeg u 
 pcurve p0 p1 p2 p3 = 
-    let c = Curve p0 p1 p2 p3 in BCurveSeg (curveLength c) c
+    let c = Curve p0 p1 p2 p3 in CurveSeg (curveLength c) c
 
 
 -- | Turn a BasicPath into an ordinary Path.
@@ -127,8 +127,8 @@ pcurve p0 p1 p2 p3 =
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPath :: BPath u -> Maybe (Path u)
-toPath = step1 . viewl . path_elements
+toPrimPath :: Path u -> Maybe (PrimPath u)
+toPrimPath = step1 . viewl . path_elements
   where
     step1 EmptyL               = Nothing
     step1 (e :< se)            = let (p1,s) = elemP e in 
@@ -137,14 +137,14 @@ toPath = step1 . viewl . path_elements
     step2 EmptyL               = []
     step2 (e :< se)            = snd (elemP e) : step2 (viewl se)
     
-    elemP (BLineSeg  _ l)      = elemL l
-    elemP (BCurveSeg _ c)      = elemC c
+    elemP (LineSeg  _ l)       = elemL l
+    elemP (CurveSeg _ c)       = elemC c
  
     elemL (Line p1 p2)         = (p1, lineTo p2)
     elemC (Curve p1 p2 p3 p4)  = (p1, curveTo p2 p3 p4)
 
-toPathU :: BPath u -> Path u
-toPathU = fromMaybe errK . toPath
+toPrimPathU :: Path u -> PrimPath u
+toPrimPathU = fromMaybe errK . toPrimPath
   where
     errK = error "toPathU - empty Path"
 
