@@ -3,8 +3,8 @@
 module FontPic where
 
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours ( steelBlue )
-import Wumpus.Basic.X11Colours ( indianRed1 )
+import Wumpus.Basic.Colour.SVGColours ( steel_blue )
+import Wumpus.Basic.Colour.X11Colours ( indian_red1 )
 import Wumpus.Deprecated.PictureLanguage
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -29,16 +29,16 @@ main = do
     writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
 
 
-makeFontLabel :: DRGB -> FontAttr -> DPoint2 -> DPrimitive
+makeFontLabel :: RGBi -> FontAttr -> DPoint2 -> DPrimitive
 makeFontLabel c fa = textlabel (c,fa) msg
   where
     msg = unwords [ font_name $ font_face fa, (show $ font_size fa) ++ "pt"]
 
 blueLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
-blueLabel ff i = makeFontLabel steelBlue (FontAttr i ff)
+blueLabel ff i = makeFontLabel steel_blue (FontAttr i ff)
 
 redLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
-redLabel ff i = makeFontLabel indianRed1 (FontAttr i ff)
+redLabel ff i = makeFontLabel indian_red1 (FontAttr i ff)
 
 
 point_sizes :: [Int]
@@ -48,76 +48,79 @@ point_sizes = [10, 12, 18, 24, 36, 48]
 -- Times
 
 times_pic :: Picture Double
-times_pic = timesroman_pic -//- timesitalic_pic -//- timesbold_pic
-                           -//- timesbolditalic_pic
+times_pic = timesroman_pic `nextToV` timesitalic_pic     `nextToV` timesbold_pic
+                           `nextToV` timesbolditalic_pic
 
 
 
 timesroman_pic :: Picture Double
 timesroman_pic = 
-    frameMulti $ zipWith (blueLabel timesRoman) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel timesRoman) point_sizes (mkPoints 1.5)
 
 timesitalic_pic :: Picture Double
 timesitalic_pic = 
-    frameMulti $ zipWith (redLabel timesItalic) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel timesItalic) point_sizes (mkPoints 1.5)
 
 timesbold_pic :: Picture Double
 timesbold_pic = 
-    frameMulti $ zipWith (blueLabel timesBold) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel timesBold) point_sizes (mkPoints 1.5)
 
 timesbolditalic_pic :: Picture Double
 timesbolditalic_pic = 
-    frameMulti $ zipWith (redLabel timesBoldItalic) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel timesBoldItalic) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 helvetica_pic :: Picture Double
-helvetica_pic = helvetica_pic1 -//- helveticaoblique_pic -//- helveticabold_pic
-                           -//- helveticaboldoblique_pic
+helvetica_pic = vcat helvetica_pic1 [ helveticaoblique_pic  
+                                    , helveticabold_pic
+                                    , helveticaboldoblique_pic ]
+                     
 
 helvetica_pic1 :: Picture Double
 helvetica_pic1 = 
-    frameMulti $ zipWith (blueLabel helvetica) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel helvetica) point_sizes (mkPoints 1.5)
 
 helveticaoblique_pic :: Picture Double
 helveticaoblique_pic = 
-    frameMulti $ zipWith (redLabel helveticaOblique) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel helveticaOblique) point_sizes (mkPoints 1.5)
     
 helveticabold_pic :: Picture Double
 helveticabold_pic = 
-    frameMulti $ zipWith (blueLabel helveticaBold) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel helveticaBold) point_sizes (mkPoints 1.5)
     
 helveticaboldoblique_pic :: Picture Double
 helveticaboldoblique_pic = 
-    frameMulti $ zipWith (redLabel helveticaBoldOblique) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel helveticaBoldOblique) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 
 courier_pic :: Picture Double
-courier_pic = courier_pic1 -//- courieroblique_pic -//- courierbold_pic
-                           -//- courierboldoblique_pic
+courier_pic = vcat courier_pic1 [ courieroblique_pic
+                                , courierbold_pic
+                                , courierboldoblique_pic ]
     
 courier_pic1 :: Picture Double
 courier_pic1 = 
-    frameMulti $ zipWith (blueLabel courier) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel courier) point_sizes (mkPoints 1.5)
     
 courieroblique_pic :: Picture Double
 courieroblique_pic = 
-    frameMulti $ zipWith (redLabel courierOblique) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel courierOblique) point_sizes (mkPoints 1.5)
     
 courierbold_pic :: Picture Double
 courierbold_pic = 
-    frameMulti $ zipWith (blueLabel courierBold) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel courierBold) point_sizes (mkPoints 1.5)
     
 courierboldoblique_pic :: Picture Double
 courierboldoblique_pic = 
-    frameMulti $ zipWith (redLabel courierBoldOblique) point_sizes (mkPoints 1.5)
+    frame $ zipWith (redLabel courierBoldOblique) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 
     
 symbol_pic :: Picture Double
 symbol_pic = 
-    frameMulti $ zipWith (blueLabel symbol) point_sizes (mkPoints 1.5)
+    frame $ zipWith (blueLabel symbol) point_sizes (mkPoints 1.5)
 
 
 --------------------------------------------------------------------------------

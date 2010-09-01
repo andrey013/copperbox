@@ -3,10 +3,10 @@
 module DotPic where
 
 
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Utils.HList
 import Wumpus.Deprecated.PictureLanguage
 

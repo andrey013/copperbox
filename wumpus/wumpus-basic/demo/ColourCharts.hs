@@ -40,7 +40,7 @@ x11_portrait = mkPic all_x11_colours (ixDownLeftRight 5 72 (scalePt 140))
 
 -- Note - this is code from an old project that needs tidying up...
 
-mkPic :: [(String,DRGB)] -> [DPoint2] -> DPicture 
+mkPic :: [(String,RGBi)] -> [DPoint2] -> DPicture 
 mkPic cs pts = fromMaybe errK $ 
                  drawGraphic $ concatH $ zipWith colourSample cs pts
   where
@@ -50,7 +50,7 @@ scalePt :: Num u => u -> Point2 u -> Point2 u
 scalePt w (P2 x y) = P2 (x*w) (y*12) 
 
 colourSample :: (Fractional u, Floating u, Ord u) 
-             => (String,DRGB) -> GraphicF u
+             => (String,RGBi) -> GraphicF u
 colourSample (name,rgb) = block `cc` lbl 
   where
     block = filledRectangle rgb  15 10

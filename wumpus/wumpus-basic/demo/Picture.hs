@@ -2,8 +2,10 @@
 
 module Picture where
 
-import Wumpus.Core
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Deprecated.PictureLanguage
+
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
@@ -15,36 +17,30 @@ main = do
                , demo06, demo07, demo08, demo09, demo10
                , demo11, demo12, demo13, demo14 ]
 
-peru :: PSRgb
-peru = RGB3 0.804  0.522  0.247
-
-plum :: PSRgb
-plum = RGB3 0.867  0.627  0.867
-
-black :: PSRgb
-black = RGB3 0 0 0 
 
 
 square :: DPicture 
-square = frame $ cstroke () $ vertexPath
-  [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
+square = frame [cstroke () $ vertexPath xs]
+  where
+    xs = [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
 
 funnyshape :: DPicture
-funnyshape = frame $ cstroke () $ vertexPath
-  [ P2 0 0, P2 20 0, P2 20 10, P2 30 10, P2 30 20, P2 0 20 ]
+funnyshape = frame [cstroke () $ vertexPath xs]
+  where
+    xs = [ P2 0 0, P2 20 0, P2 20 10, P2 30 10, P2 30 20, P2 0 20 ]
 
 
 demo01 :: IO ()
 demo01 = do 
-  writePS_latin1  "./out/picture01.ps"    [funnyshape ->- square]
-  writeSVG_latin1 "./out/picture01.svg" $ funnyshape ->- square
+  writePS_latin1  "./out/picture01.ps"    [funnyshape `nextToH` square]
+  writeSVG_latin1 "./out/picture01.svg" $ funnyshape `nextToH` square
 
 
 pic1 :: Picture Double
-pic1 = square ->- (funnyshape ->- funnyshape) ->- square
+pic1 = square `nextToH` (funnyshape `nextToH` funnyshape) `nextToH` square
 
 squares :: Picture Double
-squares = square ->- square ->- square
+squares = square `nextToH` square `nextToH` square
 
 demo02 :: IO ()
 demo02 = do 
@@ -57,7 +53,7 @@ demo03 = do
     writeEPS_latin1 "./out/picture03.eps" p1 
     writeSVG_latin1 "./out/picture03.svg" p1
   where     
-    p1 = square ->- (rotate45About (center squares) squares) ->- square
+    p1 = square `nextToH` (rotate45About (center squares) squares) `nextToH` square
 
 
 demo04 :: IO ()
@@ -65,7 +61,7 @@ demo04 = do
     writeEPS_latin1 "./out/picture04.eps" p1
     writeSVG_latin1 "./out/picture04.svg" p1
   where
-    p1 = square -//- squares
+    p1 = square `nextToV` squares
    
 
 demo05 :: IO ()
@@ -96,7 +92,7 @@ demo07 = do
     writeSVG_latin1 "./out/picture07a.svg" p2
   where
     p1 = square `over` p2
-    p2 = (square `at` (P2 100 30))  -@- (rotate45 square)
+    p2 = (square `atPoint` (P2 100 30))  `centerOver` (rotate45 square)
 
 
 demo08 :: IO ()
@@ -106,9 +102,9 @@ demo08 = do
   where
     p1 = hspace 20 square square
 
-mkFilledSquare :: (PSColour c, Fill c) => c -> Double -> DPicture 
-mkFilledSquare col n = frame $ fill col $ vertexPath
-  [ P2 0 0, P2 n 0, P2 n n, P2 0 n ]
+mkFilledSquare :: RGBi -> Double -> DPicture 
+mkFilledSquare rgb n = frame 
+  [fill rgb $ vertexPath [ P2 0 0, P2 n 0, P2 n n, P2 0 n ]]
 
 
 demo09 :: IO ()
@@ -142,9 +138,9 @@ demo11 = do
     writeSVG_latin1 "./out/picture11.svg" pic
   where
     pic :: Picture Double
-    pic = p1 -//- p2
-    p1 = scale 6 12 $ frame $ ellipse (plum, LineWidth 2) 4 6 zeroPt
-    p2 = scale 6 12 $ frame $ ellipse (peru, LineWidth 2) 6 6 zeroPt
+    pic = p1 `nextToV` p2
+    p1 = scale 6 12 $ frame [ellipse (plum, LineWidth 2) 4 6 zeroPt]
+    p2 = scale 6 12 $ frame [ellipse (peru, LineWidth 2) 6 6 zeroPt]
 
 
 -- Note the movement of the plum square won't be regarded by 
@@ -155,14 +151,13 @@ demo12 = do
     writeSVG_latin1 "./out/picture12.svg" pic
   where
     pic :: Picture Double
-    pic = p1 -//- p2 -//- p3 -//- p4
-    p1 = small_black -@- large_plum     -- moves black
-    p2 = large_plum  -@- small_black    -- moves plum
-    p3 = small_black ->- large_plum     -- moves plum
-    p4 = small_black -<- large_plum     -- moves black
+    pic = p1 `nextToV` p2 `nextToV` p3
+    p1 = small_black `centerOver` large_plum     -- moves black
+    p2 = large_plum  `centerOver` small_black    -- moves plum
+    p3 = small_black `nextToH` large_plum        -- moves plum
 
-    small_black = mkFilledSquare black 10 `at` P2 30 0
-    large_plum  = mkFilledSquare plum  40 `at` P2 100 0
+    small_black = mkFilledSquare black 10 `atPoint` P2 30 0
+    large_plum  = mkFilledSquare plum  40 `atPoint` P2 100 0
 
 
 demo13 :: IO ()
@@ -171,14 +166,14 @@ demo13 = do
     writeSVG_latin1 "./out/picture13.svg" pic
   where
     pic :: Picture Double
-    pic = (p1 `at` P2 20 20) ->- (p2 `at` P2 60 20) 
+    pic = (p1 `atPoint` P2 20 20) `nextToH` (p2 `atPoint` P2 60 20) 
 
-    p1 = small_black `below` small_peru   -- moves small black
-    p2 = small_black `above` small_plum   -- moves small black
+    p1 = small_black `nextToV` small_peru
+    p2 = small_black `nextToV` small_plum
 
-    small_black = mkFilledSquare black 10 `at` P2 50 0
-    small_plum  = mkFilledSquare plum  10 `at` P2 50 0
-    small_peru  = mkFilledSquare peru  10 `at` P2 50 0
+    small_black = mkFilledSquare black 10 `atPoint` P2 50 0
+    small_plum  = mkFilledSquare plum  10 `atPoint` P2 50 0
+    small_peru  = mkFilledSquare peru  10 `atPoint` P2 50 0
 
 demo14 :: IO ()
 demo14 = do 
@@ -196,12 +191,12 @@ demo14 = do
     p5 = alignV VRight  mid_black small_plum
     p6 = alignV VCenter mid_black small_peru
 
-    small_black = mkFilledSquare black 10 `at` P2 10 0
-    mid_plum    = mkFilledSquare plum  25 `at` P2 50 0
-    mid_peru    = mkFilledSquare peru  25 `at` P2 50 0
+    small_black = mkFilledSquare black 10 `atPoint` P2 10 0
+    mid_plum    = mkFilledSquare plum  25 `atPoint` P2 50 0
+    mid_peru    = mkFilledSquare peru  25 `atPoint` P2 50 0
 
-    mid_black   = mkFilledSquare black 25 `at` P2 10 10
-    small_plum  = mkFilledSquare plum  10 `at` P2 10 50
-    small_peru  = mkFilledSquare peru  10 `at` P2 10 50
+    mid_black   = mkFilledSquare black 25 `atPoint` P2 10 10
+    small_plum  = mkFilledSquare plum  10 `atPoint` P2 10 50
+    small_peru  = mkFilledSquare peru  10 `atPoint` P2 10 50
 
 

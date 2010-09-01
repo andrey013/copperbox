@@ -130,8 +130,8 @@ module Wumpus.Basic.Colour.SVGColours
   , pale_green
   , pale_turquoise
   , pale_violet_red
-  , papayawhip
-  , peachpuff
+  , papaya_whip
+  , peach_puff
   , peru
   , pink
   , plum
@@ -169,7 +169,7 @@ module Wumpus.Basic.Colour.SVGColours
   ) where
 
 
-import Wumpus.Core.Colour ( RGB255(..), iRGB )
+import Wumpus.Core.Colour ( RGBi(..) )
 
 
 import Prelude ( )
@@ -178,445 +178,448 @@ import Prelude ( )
 
 --------------------------------------------------------------------------------
   
-alice_blue              :: RGB255
-alice_blue              = iRGB 0xf0 0xf8 0xff
+alice_blue              :: RGBi
+alice_blue              = RGBi 0xf0 0xf8 0xff
 
-antique_white           :: RGB255 
-antique_white           = iRGB 0xfa 0xeb 0xd7
+antique_white           :: RGBi 
+antique_white           = RGBi 0xfa 0xeb 0xd7
 
-aqua                    :: RGB255
-aqua                    = iRGB 0x00 0xff 0xff
+aqua                    :: RGBi
+aqua                    = RGBi 0x00 0xff 0xff
 
-aquamarine              :: RGB255
-aquamarine              = iRGB 0x7f 0xff 0xd4
+aquamarine              :: RGBi
+aquamarine              = RGBi 0x7f 0xff 0xd4
 
-azure                   :: RGB255
-azure                   = iRGB 0xf0 0xff 0xff
+azure                   :: RGBi
+azure                   = RGBi 0xf0 0xff 0xff
 
-beige                   :: RGB255
-beige                   = iRGB 0xf5 0xf5 0xdc
+beige                   :: RGBi
+beige                   = RGBi 0xf5 0xf5 0xdc
 
-bisque                  :: RGB255
-bisque                  = iRGB 0xff 0xe4 0xc4
+bisque                  :: RGBi
+bisque                  = RGBi 0xff 0xe4 0xc4
 
-black                   :: RGB255
-black                   = iRGB 0x00 0x00 0x00
+black                   :: RGBi
+black                   = RGBi 0x00 0x00 0x00
 
-blanched_almond         :: RGB255
-blanched_almond         = iRGB 0xff 0xeb 0xcd
+blanched_almond         :: RGBi
+blanched_almond         = RGBi 0xff 0xeb 0xcd
 
-blue                    :: RGB255
-blue                    = iRGB 0x00 0x00 0xff
+blue                    :: RGBi
+blue                    = RGBi 0x00 0x00 0xff
 
-blue_violet             :: RGB255
-blue_violet             = iRGB 0x8a 0x2b 0xe2
+blue_violet             :: RGBi
+blue_violet             = RGBi 0x8a 0x2b 0xe2
 
-brown                   :: RGB255
-brown                   = iRGB 0xa5 0x2a 0x2a
+brown                   :: RGBi
+brown                   = RGBi 0xa5 0x2a 0x2a
 
-burlywood               :: RGB255
-burlywood               = iRGB 0xde 0xb8 0x87
+burlywood               :: RGBi
+burlywood               = RGBi 0xde 0xb8 0x87
 
-cadet_blue              :: RGB255
-cadet_blue              = iRGB 0x5f 0x9e 0xa0
+cadet_blue              :: RGBi
+cadet_blue              = RGBi 0x5f 0x9e 0xa0
 
-chartreuse              :: RGB255
-chartreuse              = iRGB 0x7f 0xff 0x00
+chartreuse              :: RGBi
+chartreuse              = RGBi 0x7f 0xff 0x00
 
-chocolate               :: RGB255
-chocolate               = iRGB 0xd2 0x69 0x1e
+chocolate               :: RGBi
+chocolate               = RGBi 0xd2 0x69 0x1e
 
-coral                   :: RGB255
-coral                   = iRGB 0xff 0x7f 0x50
+coral                   :: RGBi
+coral                   = RGBi 0xff 0x7f 0x50
 
-cornflower_blue         :: RGB255
-cornflower_blue         = iRGB 0x64 0x95 0xed
+cornflower_blue         :: RGBi
+cornflower_blue         = RGBi 0x64 0x95 0xed
 
-cornsilk                :: RGB255
-cornsilk                = iRGB 0xff 0xf8 0xdc
+cornsilk                :: RGBi
+cornsilk                = RGBi 0xff 0xf8 0xdc
 
-crimson                 :: RGB255
-crimson                 = iRGB 0xdc 0x14 0x3c
+crimson                 :: RGBi
+crimson                 = RGBi 0xdc 0x14 0x3c
 
-cyan                    :: RGB255
-cyan                    = iRGB 0x00 0xff 0xff
+cyan                    :: RGBi
+cyan                    = RGBi 0x00 0xff 0xff
 
-dark_blue               :: RGB255
-dark_blue               = iRGB 0x00 0x00 0x8b
+dark_blue               :: RGBi
+dark_blue               = RGBi 0x00 0x00 0x8b
 
-dark_cyan               :: RGB255
-dark_cyan               = iRGB 0x00 0x8b 0x8b
+dark_cyan               :: RGBi
+dark_cyan               = RGBi 0x00 0x8b 0x8b
 
-dark_goldenrod          :: RGB255
-dark_goldenrod          = iRGB 0xb8 0x86 0x0b
+dark_goldenrod          :: RGBi
+dark_goldenrod          = RGBi 0xb8 0x86 0x0b
 
-dark_gray               :: RGB255
-dark_gray               = iRGB 0xa9 0xa9 0xa9
+dark_gray               :: RGBi
+dark_gray               = RGBi 0xa9 0xa9 0xa9
 
-dark_green              :: RGB255
-dark_green              = iRGB 0x00 0x64 0x00
+dark_green              :: RGBi
+dark_green              = RGBi 0x00 0x64 0x00
 
-dark_grey               :: RGB255
-dark_grey               = iRGB 0xa9 0xa9 0xa9
+dark_grey               :: RGBi
+dark_grey               = RGBi 0xa9 0xa9 0xa9
 
-dark_khaki              :: RGB255
-dark_khaki              = iRGB 0xbd 0xb7 0x6b
+dark_khaki              :: RGBi
+dark_khaki              = RGBi 0xbd 0xb7 0x6b
 
-dark_magenta            :: RGB255
-dark_magenta            = iRGB 0x8b 0x00 0x8b
+dark_magenta            :: RGBi
+dark_magenta            = RGBi 0x8b 0x00 0x8b
 
-dark_olive_green        :: RGB255
-dark_olive_green        = iRGB 0x55 0x6b 0x2f
+dark_olive_green        :: RGBi
+dark_olive_green        = RGBi 0x55 0x6b 0x2f
 
-dark_orange             :: RGB255
-dark_orange             = iRGB 0xff 0x8c 0x00
+dark_orange             :: RGBi
+dark_orange             = RGBi 0xff 0x8c 0x00
 
-dark_orchid             :: RGB255
-dark_orchid             = iRGB 0x99 0x32 0xcc
+dark_orchid             :: RGBi
+dark_orchid             = RGBi 0x99 0x32 0xcc
 
-dark_red                :: RGB255
-dark_red                = iRGB 0x8b 0x00 0x00
+dark_red                :: RGBi
+dark_red                = RGBi 0x8b 0x00 0x00
 
-dark_salmon             :: RGB255
-dark_salmon             = iRGB 0xe9 0x96 0x7a
+dark_salmon             :: RGBi
+dark_salmon             = RGBi 0xe9 0x96 0x7a
 
-dark_sea_green          :: RGB255
-dark_sea_green          = iRGB 0x8f 0xbc 0x8f
+dark_sea_green          :: RGBi
+dark_sea_green          = RGBi 0x8f 0xbc 0x8f
 
-dark_slate_blue         :: RGB255
-dark_slate_blue         = iRGB 0x48 0x3d 0x8b
+dark_slate_blue         :: RGBi
+dark_slate_blue         = RGBi 0x48 0x3d 0x8b
 
-dark_slate_gray         :: RGB255
-dark_slate_gray         = iRGB 0x2f 0x4f 0x4f
+dark_slate_gray         :: RGBi
+dark_slate_gray         = RGBi 0x2f 0x4f 0x4f
 
-dark_slate_grey         :: RGB255
-dark_slate_grey         = iRGB 0x2f 0x4f 0x4f
+dark_slate_grey         :: RGBi
+dark_slate_grey         = RGBi 0x2f 0x4f 0x4f
 
-dark_turquoise          :: RGB255
-dark_turquoise          = iRGB 0x00 0xce 0xd1
+dark_turquoise          :: RGBi
+dark_turquoise          = RGBi 0x00 0xce 0xd1
 
-dark_violet             :: RGB255
-dark_violet             = iRGB 0x94 0x00 0xd3
+dark_violet             :: RGBi
+dark_violet             = RGBi 0x94 0x00 0xd3
 
-deep_pink               :: RGB255
-deep_pink               = iRGB 0xff 0x14 0x93
+deep_pink               :: RGBi
+deep_pink               = RGBi 0xff 0x14 0x93
 
-deep_sky_blue           :: RGB255
-deep_sky_blue           = iRGB 0x00 0xbf 0xff
+deep_sky_blue           :: RGBi
+deep_sky_blue           = RGBi 0x00 0xbf 0xff
 
-dim_gray                :: RGB255
-dim_gray                = iRGB 0x69 0x69 0x69
+dim_gray                :: RGBi
+dim_gray                = RGBi 0x69 0x69 0x69
 
-dim_grey                :: RGB255
-dim_grey                = iRGB 0x69 0x69 0x69
+dim_grey                :: RGBi
+dim_grey                = RGBi 0x69 0x69 0x69
 
-dodger_blue             :: RGB255
-dodger_blue             = iRGB 0x1e 0x90 0xff
+dodger_blue             :: RGBi
+dodger_blue             = RGBi 0x1e 0x90 0xff
 
-firebrick               :: RGB255
-firebrick               = iRGB 0xb2 0x22 0x22
+firebrick               :: RGBi
+firebrick               = RGBi 0xb2 0x22 0x22
 
-floral_white            :: RGB255
-floral_white            = iRGB 0xff 0xfa 0xf0
+floral_white            :: RGBi
+floral_white            = RGBi 0xff 0xfa 0xf0
 
-forest_green            :: RGB255
-forest_green            = iRGB 0x22 0x8b 0x22
+forest_green            :: RGBi
+forest_green            = RGBi 0x22 0x8b 0x22
 
-fuchsia                 :: RGB255
-fuchsia                 = iRGB 0xff 0x00 0xff
+fuchsia                 :: RGBi
+fuchsia                 = RGBi 0xff 0x00 0xff
 
-gainsboro               :: RGB255
-gainsboro               = iRGB 0xdc 0xdc 0xdc
+gainsboro               :: RGBi
+gainsboro               = RGBi 0xdc 0xdc 0xdc
 
-ghost_white             :: RGB255
-ghost_white             = iRGB 0xf8 0xf8 0xff
+ghost_white             :: RGBi
+ghost_white             = RGBi 0xf8 0xf8 0xff
 
-gold                    :: RGB255
-gold                    = iRGB 0xff 0xd7 0x00
+gold                    :: RGBi
+gold                    = RGBi 0xff 0xd7 0x00
 
-goldenrod               :: RGB255
-goldenrod               = iRGB 0xda 0xa5 0x20
+goldenrod               :: RGBi
+goldenrod               = RGBi 0xda 0xa5 0x20
 
-gray                    :: RGB255
-gray                    = iRGB 0x80 0x80 0x80
+gray                    :: RGBi
+gray                    = RGBi 0x80 0x80 0x80
 
-green                   :: RGB255
-green                   = iRGB 0x00 0x80 0x00
+green                   :: RGBi
+green                   = RGBi 0x00 0x80 0x00
 
-green_yellow            :: RGB255
-green_yellow            = iRGB 0xad 0xff 0x2f
+green_yellow            :: RGBi
+green_yellow            = RGBi 0xad 0xff 0x2f
 
-grey                    :: RGB255
-grey                    = iRGB 0x80 0x80 0x80
+grey                    :: RGBi
+grey                    = RGBi 0x80 0x80 0x80
 
-honeydew                :: RGB255
-honeydew                = iRGB 0xf0 0xff 0xf0
+honeydew                :: RGBi
+honeydew                = RGBi 0xf0 0xff 0xf0
 
-hot_pink                :: RGB255
-hot_pink                = iRGB 0xff 0x69 0xb4
+hot_pink                :: RGBi
+hot_pink                = RGBi 0xff 0x69 0xb4
 
-indian_red              :: RGB255
-indian_red              = iRGB 0xcd 0x5c 0x5c
+indian_red              :: RGBi
+indian_red              = RGBi 0xcd 0x5c 0x5c
 
-indigo                  :: RGB255
-indigo                  = iRGB 0x4b 0x00 0x82
+indigo                  :: RGBi
+indigo                  = RGBi 0x4b 0x00 0x82
 
-ivory                   :: RGB255
-ivory                   = iRGB 0xff 0xff 0xf0
+ivory                   :: RGBi
+ivory                   = RGBi 0xff 0xff 0xf0
 
-khaki                   :: RGB255
-khaki                   = iRGB 0xf0 0xe6 0x8c
+khaki                   :: RGBi
+khaki                   = RGBi 0xf0 0xe6 0x8c
 
-lavender                :: RGB255
-lavender                = iRGB 0xe6 0xe6 0xfa
+lavender                :: RGBi
+lavender                = RGBi 0xe6 0xe6 0xfa
 
-lavender_blush          :: RGB255
-lavender_blush          = iRGB 0xff 0xf0 0xf5
+lavender_blush          :: RGBi
+lavender_blush          = RGBi 0xff 0xf0 0xf5
 
-lawn_green              :: RGB255
-lawn_green              = iRGB 0x7c 0xfc 0x00
+lawn_green              :: RGBi
+lawn_green              = RGBi 0x7c 0xfc 0x00
 
-lemon_chiffon           :: RGB255
-lemon_chiffon           = iRGB 0xff 0xfa 0xcd
+lemon_chiffon           :: RGBi
+lemon_chiffon           = RGBi 0xff 0xfa 0xcd
 
-light_blue              :: RGB255
-light_blue              = iRGB 0xad 0xd8 0xe6
+light_blue              :: RGBi
+light_blue              = RGBi 0xad 0xd8 0xe6
 
-light_coral             :: RGB255
-light_coral             = iRGB 0xf0 0x80 0x80
+light_coral             :: RGBi
+light_coral             = RGBi 0xf0 0x80 0x80
 
-light_cyan              :: RGB255
-light_cyan              = iRGB 0xe0 0xff 0xff
+light_cyan              :: RGBi
+light_cyan              = RGBi 0xe0 0xff 0xff
 
-light_goldenrod_yellow  :: RGB255
-light_goldenrod_yellow  = iRGB 0xfa 0xfa 0xd2
+light_goldenrod_yellow  :: RGBi
+light_goldenrod_yellow  = RGBi 0xfa 0xfa 0xd2
 
-light_gray              :: RGB255
-light_gray              = iRGB 0xd3 0xd3 0xd3
+light_gray              :: RGBi
+light_gray              = RGBi 0xd3 0xd3 0xd3
 
-light_green             :: RGB255
-light_green             = iRGB 0x90 0xee 0x90
+light_green             :: RGBi
+light_green             = RGBi 0x90 0xee 0x90
 
-light_grey              :: RGB255
-light_grey              = iRGB 0xd3 0xd3 0xd3
+light_grey              :: RGBi
+light_grey              = RGBi 0xd3 0xd3 0xd3
 
-light_pink              :: RGB255
-light_pink              = iRGB 0xff 0xb6 0xc1
+light_pink              :: RGBi
+light_pink              = RGBi 0xff 0xb6 0xc1
 
-light_salmon            :: RGB255
-light_salmon            = iRGB 0xff 0xa0 0x7a
+light_salmon            :: RGBi
+light_salmon            = RGBi 0xff 0xa0 0x7a
 
-light_sea_green         :: RGB255
-light_sea_green         = iRGB 0x20 0xb2 0xaa
+light_sea_green         :: RGBi
+light_sea_green         = RGBi 0x20 0xb2 0xaa
 
-light_sky_blue          :: RGB255
-light_sky_blue          = iRGB 0x87 0xce 0xfa
+light_sky_blue          :: RGBi
+light_sky_blue          = RGBi 0x87 0xce 0xfa
 
-light_slate_gray        :: RGB255
-light_slate_gray        = iRGB 0x77 0x88 0x99
+light_slate_gray        :: RGBi
+light_slate_gray        = RGBi 0x77 0x88 0x99
 
-light_slate_grey        :: RGB255
-light_slate_grey        = iRGB 0x77 0x88 0x99
+light_slate_grey        :: RGBi
+light_slate_grey        = RGBi 0x77 0x88 0x99
 
-light_steel_blue        :: RGB255
-light_steel_blue        = iRGB 0xb0 0xc4 0xde
+light_steel_blue        :: RGBi
+light_steel_blue        = RGBi 0xb0 0xc4 0xde
 
-light_yellow            :: RGB255
-light_yellow            = iRGB 0xff 0xff 0xe0
+light_yellow            :: RGBi
+light_yellow            = RGBi 0xff 0xff 0xe0
 
-lime                    :: RGB255
-lime                    = iRGB 0x00 0xff 0x00
+lime                    :: RGBi
+lime                    = RGBi 0x00 0xff 0x00
 
-lime_green              :: RGB255
-lime_green              = iRGB 0x32 0xcd 0x32
+lime_green              :: RGBi
+lime_green              = RGBi 0x32 0xcd 0x32
 
-linen                   :: RGB255
-linen                   = iRGB 0xfa 0xf0 0xe6
+linen                   :: RGBi
+linen                   = RGBi 0xfa 0xf0 0xe6
 
-magenta                 :: RGB255
-magenta                 = iRGB 0xff 0x00 0xff
+magenta                 :: RGBi
+magenta                 = RGBi 0xff 0x00 0xff
 
-maroon                  :: RGB255
-maroon                  = iRGB 0x80 0x00 0x00
+maroon                  :: RGBi
+maroon                  = RGBi 0x80 0x00 0x00
 
-medium_aquamarine       :: RGB255
-medium_aquamarine       = iRGB 0x66 0xcd 0xaa
+medium_aquamarine       :: RGBi
+medium_aquamarine       = RGBi 0x66 0xcd 0xaa
 
-medium_blue             :: RGB255
-medium_blue             = iRGB 0x00 0x00 0xcd
+medium_blue             :: RGBi
+medium_blue             = RGBi 0x00 0x00 0xcd
 
-medium_orchid           :: RGB255
-medium_orchid           = iRGB 0xba 0x55 0xd3
+medium_orchid           :: RGBi
+medium_orchid           = RGBi 0xba 0x55 0xd3
 
-medium_purple           :: RGB255
-medium_purple           = iRGB 0x93 0x70 0xdb
+medium_purple           :: RGBi
+medium_purple           = RGBi 0x93 0x70 0xdb
 
-medium_sea_green        :: RGB255
-medium_sea_green        = iRGB 0x3c 0xb3 0x71
+medium_sea_green        :: RGBi
+medium_sea_green        = RGBi 0x3c 0xb3 0x71
 
-medium_slate_blue       :: RGB255
-medium_slate_blue       = iRGB 0x7b 0x68 0xee
+medium_slate_blue       :: RGBi
+medium_slate_blue       = RGBi 0x7b 0x68 0xee
 
-medium_spring_green     :: RGB255
-medium_spring_green     = iRGB 0x00 0xfa 0x9a
+medium_spring_green     :: RGBi
+medium_spring_green     = RGBi 0x00 0xfa 0x9a
 
-medium_turquoise        :: RGB255
-medium_turquoise        = iRGB 0x48 0xd1 0xcc
+medium_turquoise        :: RGBi
+medium_turquoise        = RGBi 0x48 0xd1 0xcc
 
-medium_violet_red       :: RGB255
-medium_violet_red       = iRGB 0xc7 0x15 0x85
+medium_violet_red       :: RGBi
+medium_violet_red       = RGBi 0xc7 0x15 0x85
 
-midnight_blue           :: RGB255
-midnight_blue           = iRGB 0x19 0x19 0x70
+midnight_blue           :: RGBi
+midnight_blue           = RGBi 0x19 0x19 0x70
 
-mintcream               :: RGB255
-mintcream               = iRGB 0xf5 0xff 0xfa
+mintcream               :: RGBi
+mintcream               = RGBi 0xf5 0xff 0xfa
 
-mistyrose               :: RGB255
-mistyrose               = iRGB 0xff 0xe4 0xe1
+mistyrose               :: RGBi
+mistyrose               = RGBi 0xff 0xe4 0xe1
 
-moccasin                :: RGB255
-moccasin                = iRGB 0xff 0xe4 0xb5
+moccasin                :: RGBi
+moccasin                = RGBi 0xff 0xe4 0xb5
 
-navajo_white            :: RGB255
-navajo_white            = iRGB 0xff 0xde 0xad
+navajo_white            :: RGBi
+navajo_white            = RGBi 0xff 0xde 0xad
 
-navy                    :: RGB255
-navy                    = iRGB 0x00 0x00 0x80
+navy                    :: RGBi
+navy                    = RGBi 0x00 0x00 0x80
 
-old_lace                :: RGB255
-old_lace                = iRGB 0xfd 0xf5 0xe6
+old_lace                :: RGBi
+old_lace                = RGBi 0xfd 0xf5 0xe6
 
-olive                   :: RGB255
-olive                   = iRGB 0x80 0x80 0x00
+olive                   :: RGBi
+olive                   = RGBi 0x80 0x80 0x00
 
-olive_drab              :: RGB255
-olive_drab              = iRGB 0x6b 0x8e 0x23
+olive_drab              :: RGBi
+olive_drab              = RGBi 0x6b 0x8e 0x23
 
-orange                  :: RGB255
-orange                  = iRGB 0xff 0xa5 0x00
+orange                  :: RGBi
+orange                  = RGBi 0xff 0xa5 0x00
 
-orange_red              :: RGB255
-orange_red              = iRGB 0xff 0x45 0x00
+orange_red              :: RGBi
+orange_red              = RGBi 0xff 0x45 0x00
 
-orchid                  :: RGB255
-orchid                  = iRGB 0xda 0x70 0xd6
+orchid                  :: RGBi
+orchid                  = RGBi 0xda 0x70 0xd6
 
-pale_goldenrod          :: RGB255
-pale_goldenrod          = iRGB 0xee 0xe8 0xaa
+pale_goldenrod          :: RGBi
+pale_goldenrod          = RGBi 0xee 0xe8 0xaa
 
-pale_green              :: RGB255
-pale_green              = iRGB 0x98 0xfb 0x98
+pale_green              :: RGBi
+pale_green              = RGBi 0x98 0xfb 0x98
 
-pale_turquoise          :: RGB255
-pale_turquoise          = iRGB 0xaf 0xee 0xee
+pale_turquoise          :: RGBi
+pale_turquoise          = RGBi 0xaf 0xee 0xee
 
-pale_violet_red         :: RGB255
-pale_violet_red         = iRGB 0xdb 0x70 0x93
+pale_violet_red         :: RGBi
+pale_violet_red         = RGBi 0xdb 0x70 0x93
 
-papayawhip              :: RGB255
-papayawhip              = iRGB 0xff 0xef 0xd5
+papaya_whip             :: RGBi
+papaya_whip             = RGBi 0xff 0xef 0xd5
 
-peachpuff               :: RGB255
-peachpuff               = iRGB 0xff 0xda 0xb9
+peach_puff              :: RGBi
+peach_puff              = RGBi 0xff 0xda 0xb9
 
-peru                    :: RGB255
-peru                    = iRGB 0xcd 0x85 0x3f
+peru                    :: RGBi
+peru                    = RGBi 0xcd 0x85 0x3f
 
-pink                    :: RGB255
-pink                    = iRGB 0xff 0xc0 0xcb
+pink                    :: RGBi
+pink                    = RGBi 0xff 0xc0 0xcb
 
-plum                    :: RGB255
-plum                    = iRGB 0xdd 0xa0 0xdd
+plum                    :: RGBi
+plum                    = RGBi 0xdd 0xa0 0xdd
 
-powder_blue             :: RGB255
-powder_blue             = iRGB 0xb0 0xe0 0xe6
+powder_blue             :: RGBi
+powder_blue             = RGBi 0xb0 0xe0 0xe6
 
-purple                  :: RGB255
-purple                  = iRGB 0x80 0x00 0x80
+purple                  :: RGBi
+purple                  = RGBi 0x80 0x00 0x80
 
-red                     :: RGB255
-red                     = iRGB 0xff 0x00 0x00
+red                     :: RGBi
+red                     = RGBi 0xff 0x00 0x00
 
-rosy_brown              :: RGB255
-rosy_brown              = iRGB 0xbc 0x8f 0x8f
+rosy_brown              :: RGBi
+rosy_brown              = RGBi 0xbc 0x8f 0x8f
 
-royal_blue              :: RGB255
-royal_blue              = iRGB 0x41 0x69 0xe1
+royal_blue              :: RGBi
+royal_blue              = RGBi 0x41 0x69 0xe1
 
-saddle_brown            :: RGB255
-saddle_brown            = iRGB 0x8b 0x45 0x13
+saddle_brown            :: RGBi
+saddle_brown            = RGBi 0x8b 0x45 0x13
 
-salmon                  :: RGB255
-salmon                  = iRGB 0xfa 0x80 0x72
+salmon                  :: RGBi
+salmon                  = RGBi 0xfa 0x80 0x72
 
-sandy_brown             :: RGB255
-sandy_brown             = iRGB 0xf4 0xa4 0x60
+sandy_brown             :: RGBi
+sandy_brown             = RGBi 0xf4 0xa4 0x60
 
-sea_green               :: RGB255
-sea_green               = iRGB 0x2e 0x8b 0x57
+sea_green               :: RGBi
+sea_green               = RGBi 0x2e 0x8b 0x57
 
-seashell                :: RGB255
-seashell                = iRGB 0xff 0xf5 0xee
+seashell                :: RGBi
+seashell                = RGBi 0xff 0xf5 0xee
 
-sienna                  :: RGB255
-sienna                  = iRGB 0xa0 0x52 0x2d
+sienna                  :: RGBi
+sienna                  = RGBi 0xa0 0x52 0x2d
 
-silver                  :: RGB255
-silver                  = iRGB 0xc0 0xc0 0xc0
+silver                  :: RGBi
+silver                  = RGBi 0xc0 0xc0 0xc0
 
-sky_blue                :: RGB255
-sky_blue                = iRGB 0x87 0xce 0xeb
+sky_blue                :: RGBi
+sky_blue                = RGBi 0x87 0xce 0xeb
 
-slate_blue              :: RGB255
-slate_blue              = iRGB 0x6a 0x5a 0xcd
+slate_blue              :: RGBi
+slate_blue              = RGBi 0x6a 0x5a 0xcd
 
-slate_gray              :: RGB255
-slate_gray              = iRGB 0x70 0x80 0x90
+slate_gray              :: RGBi
+slate_gray              = RGBi 0x70 0x80 0x90
 
-slate_grey              :: RGB255
-slate_grey              = iRGB 0x70 0x80 0x90
+slate_grey              :: RGBi
+slate_grey              = RGBi 0x70 0x80 0x90
 
-snow                    :: RGB255
-snow                    = iRGB 0xff 0xfa 0xfa
+snow                    :: RGBi
+snow                    = RGBi 0xff 0xfa 0xfa
 
-spring_green            :: RGB255
-spring_green            = iRGB 0x00 0xff 0x7f
+spring_green            :: RGBi
+spring_green            = RGBi 0x00 0xff 0x7f
 
-steel_blue              :: RGB255
-steel_blue              = iRGB 0x46 0x82 0xb4
+steel_blue              :: RGBi
+steel_blue              = RGBi 0x46 0x82 0xb4
 
-tan                     :: RGB255
-tan                     = iRGB 0xd2 0xb4 0x8c
+tan                     :: RGBi
+tan                     = RGBi 0xd2 0xb4 0x8c
 
-teal                    :: RGB255
-teal                    = iRGB 0x00 0x80 0x80
+teal                    :: RGBi
+teal                    = RGBi 0x00 0x80 0x80
 
-thistle                 :: RGB255
-thistle                 = iRGB 0xd8 0xbf 0xd8
+thistle                 :: RGBi
+thistle                 = RGBi 0xd8 0xbf 0xd8
 
-tomato                  :: RGB255
-tomato                  = iRGB 0xff 0x63 0x47
+tomato                  :: RGBi
+tomato                  = RGBi 0xff 0x63 0x47
 
-turquoise               :: RGB255
-turquoise               = iRGB 0x40 0xe0 0xd0
+turquoise               :: RGBi
+turquoise               = RGBi 0x40 0xe0 0xd0
 
-violet                  :: RGB255
-violet                  = iRGB 0xee 0x82 0xee
+violet                  :: RGBi
+violet                  = RGBi 0xee 0x82 0xee
 
-wheat                   :: RGB255
-wheat                   = iRGB 0xf5 0xde 0xb3
+wheat                   :: RGBi
+wheat                   = RGBi 0xf5 0xde 0xb3
 
-white                   :: RGB255
-white                   = iRGB 0xff 0xff 0xff
+white                   :: RGBi
+white                   = RGBi 0xff 0xff 0xff
 
-whitesmoke              :: RGB255
-whitesmoke              = iRGB 0xf5 0xf5 0xf5
+whitesmoke              :: RGBi
+whitesmoke              = RGBi 0xf5 0xf5 0xf5
 
-yellow                  :: RGB255
-yellow                  = iRGB 0xff 0xff 0x00
+yellow                  :: RGBi
+yellow                  = RGBi 0xff 0xff 0x00
 
-yellow_green            :: RGB255
-yellow_green            = iRGB 0x9a 0xcd 0x32
+yellow_green            :: RGBi
+yellow_green            = RGBi 0x9a 0xcd 0x32
+
+
+
 
 

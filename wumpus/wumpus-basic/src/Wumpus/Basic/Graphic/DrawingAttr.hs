@@ -51,8 +51,8 @@ import Control.Applicative
 data DrawingAttr = DrawingAttr 
       { line_width         :: Double
       , font_props         :: FontAttr
-      , stroke_colour      :: RGB255
-      , fill_colour        :: RGB255
+      , stroke_colour      :: RGBi
+      , fill_colour        :: RGBi
       }
   deriving (Eq,Show)
 
@@ -63,13 +63,13 @@ standardAttr sz = DrawingAttr { line_width         = std_line_width
                               , fill_colour        = gold  }
 
  
-strokeAttr :: DrawingAttr -> (RGB255, StrokeAttr)
+strokeAttr :: DrawingAttr -> (RGBi, StrokeAttr)
 strokeAttr = liftA2 (,) stroke_colour (LineWidth . line_width)
 
-fillAttr :: DrawingAttr -> RGB255
+fillAttr :: DrawingAttr -> RGBi
 fillAttr = fill_colour
 
-textAttr :: DrawingAttr -> (RGB255,FontAttr)
+textAttr :: DrawingAttr -> (RGBi,FontAttr)
 textAttr = liftA2 (,) stroke_colour font_props
 
 -- | A Mark is consider to be the height of a lowercase letter

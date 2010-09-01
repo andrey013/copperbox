@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.4.0
+version:          0.5.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -19,6 +19,12 @@ description:
   .
   .
   Changelog:
+  .
+  0.4.0 to 0.5.0:
+  .
+  * Re-worked the PictureLanguage module.
+  .
+  * SVGColours and X11Colours moved into @Wumpus.Basic.Colour@.
   .
   0.3.0 to 0.4.0:
   .
@@ -73,13 +79,15 @@ library
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
                       monadLib        >= 3.6,
-                      wumpus-core     >= 0.23.0
+                      wumpus-core     >= 0.30.0
 
   
   exposed-modules:
     Wumpus.Basic.Anchors,
     Wumpus.Basic.Arrows,
     Wumpus.Basic.Arrows.Tips,
+    Wumpus.Basic.Colour.SVGColours,
+    Wumpus.Basic.Colour.X11Colours,
     Wumpus.Basic.Dots,
     Wumpus.Basic.Dots.Base,
     Wumpus.Basic.Graphic,
@@ -95,15 +103,13 @@ library
     Wumpus.Basic.Paths.Base,
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.SafeFonts,
-    Wumpus.Basic.SVGColours,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
-    Wumpus.Basic.VersionNumber,
-    Wumpus.Basic.X11Colours,
-    Wumpus.Deprecated.PictureLanguage
+    Wumpus.Basic.VersionNumber
+--    Wumpus.Deprecated.PictureLanguage
 
   other-modules:
 
