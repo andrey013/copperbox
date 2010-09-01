@@ -282,7 +282,7 @@ primLabel (LabelProps rgb attrs) (PrimLabel pt etext ctm) =
   where
     mkXY (P2 x y) = pure $ attr_x x <+> attr_y y    
 
-tspan :: RGB255 -> EncodedText -> SvgMonad Doc
+tspan :: RGBi -> EncodedText -> SvgMonad Doc
 tspan rgb enctext = 
     (\txt -> elem_tspan (attr_fill rgb) txt) 
       <$> encodedText enctext

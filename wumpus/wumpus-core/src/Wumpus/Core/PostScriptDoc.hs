@@ -200,8 +200,8 @@ ps_setdash (Dash n pairs) = command "setdash" [brackets $ step pairs, int n]
 
 -- | @ ... ... ... setrgbcolor @
 --
-ps_setrgbcolor :: RGB255 -> Doc
-ps_setrgbcolor (RGB255 r g b) = command "setrgbcolor" [fn r, fn g, fn b]
+ps_setrgbcolor :: RGBi -> Doc
+ps_setrgbcolor (RGBi r g b) = command "setrgbcolor" [fn r, fn g, fn b]
   where
     fn i = dtruncFmt $ (fromIntegral i / d255)
     d255 :: Double

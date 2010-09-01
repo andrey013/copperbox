@@ -25,8 +25,8 @@ import Wumpus.Core.Colour ( black, red, blue )
 import System.Directory
 
 
-light_blue :: RGB255
-light_blue = RGB255 176 224 231
+light_blue :: RGBi
+light_blue = RGBi 176 224 231
 
 
 runAlgs :: [AffineTrafoAlg] -> [ControlPointAlg] -> IO ()
@@ -39,7 +39,7 @@ data AffineTrafoAlg = AffineTrafoAlg
       { ata_console_msg         :: String
       , ata_eps_file            :: FilePath
       , ata_svg_file            :: FilePath
-      , ata_prim_constructor    :: RGB255 -> DPrimitive
+      , ata_prim_constructor    :: RGBi -> DPrimitive
       , ata_pic_transformer     :: DPicture -> DPicture
       , ata_prim_transformer    :: DPrimitive -> DPrimitive
       }
@@ -56,7 +56,7 @@ runATA ata = do
                           (ata_prim_transformer ata)
 
 
-buildPictureATA :: (RGB255 -> DPrimitive) 
+buildPictureATA :: (RGBi -> DPrimitive) 
          -> (DPicture -> DPicture) 
          -> (DPrimitive -> DPrimitive) 
          -> DPicture
@@ -85,7 +85,7 @@ data ControlPointAlg = ControlPointAlg
       { cpa_console_msg         :: String
       , cpa_eps_file            :: FilePath
       , cpa_svg_file            :: FilePath
-      , cpa_prim_constructor    :: RGB255 -> DPrimitive
+      , cpa_prim_constructor    :: RGBi -> DPrimitive
       , cpa_prim_transformer    :: DPrimitive -> DPrimitive 
       }
 
@@ -98,7 +98,7 @@ runCPA cpa = do
   where
     pic = cpPicture (cpa_prim_constructor cpa) (cpa_prim_transformer cpa)
 
-cpPicture :: (RGB255 -> DPrimitive) -> (DPrimitive -> DPrimitive) -> DPicture
+cpPicture :: (RGBi -> DPrimitive) -> (DPrimitive -> DPrimitive) -> DPicture
 cpPicture constr trafo = 
     illustrateBounds light_blue $ illustrateControlPoints black 
                                 $ transformed_prim
@@ -109,16 +109,16 @@ cpPicture constr trafo =
 
 --------------------------------------------------------------------------------
 
-rgbLabel :: RGB255 -> DPrimitive
+rgbLabel :: RGBi -> DPrimitive
 rgbLabel rgb = textlabel rgb "Wumpus!" zeroPt
 
-rgbCircle :: RGB255 -> DPrimitive
+rgbCircle :: RGBi -> DPrimitive
 rgbCircle rgb = ellipse rgb 60 60 zeroPt
 
-rgbEllipse :: RGB255 -> DPrimitive
+rgbEllipse :: RGBi -> DPrimitive
 rgbEllipse rgb = ellipse rgb 60 30 zeroPt
 
-rgbPath :: RGB255 -> DPrimitive
+rgbPath :: RGBi -> DPrimitive
 rgbPath rgb = ostroke rgb $ dog_kennel
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...

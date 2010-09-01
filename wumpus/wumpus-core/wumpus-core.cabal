@@ -69,7 +69,7 @@ description:
     @printPicture@ for debugging.
   .
   * The @Core.Colour@ module has been simplified to support just 
-    one (new) type - RGB255, and the conversion type class 
+    one (new) type - RGBi, and the conversion type class 
     @PSColour@ has been eliminated.
   .
   * @Core.Picture@ - the type of the @frame@ function has been 

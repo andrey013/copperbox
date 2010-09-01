@@ -262,8 +262,8 @@ path_c (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) =
              <+> dtruncFmt x3 <+> dtruncFmt y3
 
 
-val_rgb :: RGB255 -> Doc
-val_rgb (RGB255 r g b) = 
+val_rgb :: RGBi -> Doc
+val_rgb (RGBi r g b) = 
     text "rgb" <> tupled [integral r, integral g, integral b]
 
 
@@ -290,7 +290,7 @@ attr_font_style = svgAttr "font-style" . text
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
 --
-attr_fill :: RGB255 -> Doc
+attr_fill :: RGBi -> Doc
 attr_fill = svgAttr "fill" . val_rgb 
 
 -- | @ fill=\"none\" @
@@ -300,7 +300,7 @@ attr_fill_none = svgAttr "fill" (text "none")
 
 -- | @ stroke=\"rgb(..., ..., ...)\" @
 --
-attr_stroke :: RGB255 -> Doc
+attr_stroke :: RGBi -> Doc
 attr_stroke = svgAttr "stroke" . val_rgb
 
 -- | @ stroke=\"none\" @

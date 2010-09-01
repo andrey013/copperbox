@@ -28,14 +28,14 @@ center a = P2 hcenter vcenter
 
 --------------------------------------------------------------------------------
 
-peru :: RGB255
-peru = RGB255 205  133  63
+peru :: RGBi
+peru = RGBi 205  133  63
 
-plum :: RGB255
-plum = RGB255 221  160  221
+plum :: RGBi
+plum = RGBi 221  160  221
 
-black :: RGB255
-black = RGB255 0 0 0 
+black :: RGBi
+black = RGBi 0 0 0 
 
 
 
@@ -89,7 +89,7 @@ bigA = bigLetter black 'A'
 bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
-bigLetter :: RGB255 -> Char -> Picture Double
+bigLetter :: RGBi -> Char -> Picture Double
 bigLetter col ch = uniformScale 5 $ frame [textlabel attrs [ch] zeroPt]
   where
     attrs = (col, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 

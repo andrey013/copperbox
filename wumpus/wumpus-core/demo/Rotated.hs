@@ -51,20 +51,20 @@ pic3 = illustrateBounds grey $ frame $
     ]
 
 
-square :: (Num u, Ord u) => RGB255 -> u -> Point2 u -> Primitive u
+square :: (Num u, Ord u) => RGBi -> u -> Point2 u -> Primitive u
 square rgb sidelen bl = fill rgb $ vertexPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 
 
 
-ellipseHH :: Fractional u => RGB255 -> u -> Point2 u -> Primitive u
+ellipseHH :: Fractional u => RGBi -> u -> Point2 u -> Primitive u
 ellipseHH rgb radius ctr = ellipse rgb radius (0.5*radius) ctr
  
-label :: Num u => RGB255 -> Point2 u -> Primitive u
+label :: Num u => RGBi -> Point2 u -> Primitive u
 label rgb bl = textlabel rgb "Wumpus" bl
 
 
-grey :: RGB255
-grey = RGB255 176 197 223
+grey :: RGBi
+grey = RGBi 176 197 223
 
 

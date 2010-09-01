@@ -230,10 +230,10 @@ type DPrimPathSegment = PrimPathSegment Double
 --   of the shape. The actual size depends on the thickness
 --   of the line (stroke width).
 --
-data PathProps = CFill RGB255 
-               | CStroke [StrokeAttr] RGB255
-               | OStroke [StrokeAttr] RGB255
-               | CFillStroke RGB255 [StrokeAttr] RGB255
+data PathProps = CFill RGBi 
+               | CStroke [StrokeAttr] RGBi
+               | OStroke [StrokeAttr] RGBi
+               | CFillStroke RGBi [StrokeAttr] RGBi
   deriving (Eq,Show)
 
 
@@ -249,7 +249,7 @@ data PrimLabel u = PrimLabel
 type DPrimLabel = PrimLabel Double
 
 data LabelProps   = LabelProps 
-      { label_colour :: RGB255
+      { label_colour :: RGBi
       , label_font   :: FontAttr
       }
   deriving (Eq,Ord,Show)
@@ -268,11 +268,10 @@ data PrimEllipse u = PrimEllipse
 
 -- | Ellipses and circles are always closed.
 --
-data EllipseProps = EFill RGB255
-                  | EStroke [StrokeAttr] RGB255 
-
+data EllipseProps = EFill RGBi
+                  | EStroke [StrokeAttr] RGBi 
                   -- Note - first colour fill, second colour stroke.
-                  | EFillStroke RGB255 [StrokeAttr] RGB255 
+                  | EFillStroke RGBi [StrokeAttr] RGBi 
   deriving (Eq,Show)
 
 

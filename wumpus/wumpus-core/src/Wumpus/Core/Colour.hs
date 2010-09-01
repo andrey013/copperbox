@@ -24,8 +24,7 @@ module Wumpus.Core.Colour
   ( 
 
   -- * RGB colour type  
-    RGB255(..)
-  , iRGB
+    RGBi(..)
 
   -- * Predefined colours
   , black
@@ -47,24 +46,17 @@ import Data.Word
 --
 -- It is more efficient to prefer SVG here.
 --
-data RGB255 = RGB255 !Word8 !Word8 !Word8
+data RGBi = RGBi !Word8 !Word8 !Word8
   deriving (Eq,Ord,Show)
 
--- | Alternative constructor for RGB255.
--- 
--- The 255 suffix can be visually distracting when defining 
--- constants (e.g. the X11 or SVG colours).
---
-iRGB :: Word8 -> Word8 -> Word8 -> RGB255
-iRGB = RGB255
 
 --------------------------------------------------------------------------------
 -- instances
 
-instance Format RGB255 where
-  format (RGB255 0   0   0)    = text "*black*"
-  format (RGB255 255 255 255)  = text "*white*"
-  format (RGB255 r   g   b)    = integral r <> comma <> integral g 
+instance Format RGBi where
+  format (RGBi 0   0   0)    = text "*black*"
+  format (RGBi 255 255 255)  = text "*white*"
+  format (RGBi r   g   b)    = integral r <> comma <> integral g 
                                             <> comma <> integral b
 
 
@@ -77,25 +69,25 @@ instance Format RGB255 where
 
 -- | Black - 0, 0, 0.
 --
-black :: RGB255
-black = RGB255 0 0 0
+black :: RGBi
+black = RGBi 0 0 0
 
 -- | White - 255, 255, 255.
 --
-white :: RGB255
-white = RGB255 255 255 255
+white :: RGBi
+white = RGBi 255 255 255
 
 -- | Red - 255, 0, 0.
 --
-red :: RGB255
-red = RGB255 255 0 0
+red :: RGBi
+red = RGBi 255 0 0
 
 -- | Green - 0, 255, 0.
 --
-green :: RGB255 
-green = RGB255 0 255 0
+green :: RGBi 
+green = RGBi 0 255 0
 
 -- | Blue - 0, 0, 255.
 --
-blue :: RGB255
-blue = RGB255 0 0 255
+blue :: RGBi
+blue = RGBi 0 0 255

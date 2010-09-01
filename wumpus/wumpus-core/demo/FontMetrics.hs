@@ -17,14 +17,14 @@ main = do
     writeSVG_latin1 "./out/font_metrics.svg" metrics_pic
 
 
-peru :: RGB255
-peru = RGB255 205  133  63
+peru :: RGBi
+peru = RGBi 205  133  63
 
-plum :: RGB255
-plum = RGB255 221  160  221
+plum :: RGBi
+plum = RGBi 221  160  221
 
-black :: RGB255
-black = RGB255 0 0 0 
+black :: RGBi
+black = RGBi 0 0 0 
 
 courier_attr :: FontAttr
 courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" SVG_REGULAR)
@@ -63,10 +63,10 @@ letter :: Char -> DPoint2 -> DPrimitive
 letter ch pt = textlabel (black, courier_attr) [ch] pt
 
 
-vertLine :: RGB255 -> Double -> DPoint2 -> DPrimitive
+vertLine :: RGBi -> Double -> DPoint2 -> DPrimitive
 vertLine rgb height pt = ostroke rgb $ vertexPath [pt, pt .+^ vvec height]
 
-haxis :: RGB255 -> PtSize -> DPrimitive
+haxis :: RGBi -> PtSize -> DPrimitive
 haxis rgb ypos = 
     ostroke (rgb, dash_attr) $ vertexPath [ pt, pt .+^ hvec 440 ]
   where

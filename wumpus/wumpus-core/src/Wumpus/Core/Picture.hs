@@ -158,11 +158,11 @@ xlinkhref = XLinkHRef
 -- *** Stroke
 
 ostrokePath :: Num u 
-            => RGB255 -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
+            => RGBi -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
 ostrokePath rgb attrs xlink p = PPath (OStroke attrs rgb) xlink p
 
 cstrokePath :: Num u 
-            => RGB255 -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
+            => RGBi -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
 cstrokePath rgb attrs xlink p = PPath (CStroke attrs rgb) xlink p
 
 -- | Create a open, stroked path (@ostroke@) or a closed, stroked
@@ -179,7 +179,7 @@ instance Stroke () where
   ostroke () = ostrokePath black [] NoLink
   cstroke () = cstrokePath black [] NoLink
 
-instance Stroke RGB255 where
+instance Stroke RGBi where
   ostroke rgb = ostrokePath rgb [] NoLink
   cstroke rgb = cstrokePath rgb [] NoLink
 
@@ -196,15 +196,15 @@ instance Stroke XLink where
   cstroke xlink = cstrokePath black [] xlink
 
 
-instance Stroke (RGB255,StrokeAttr) where
+instance Stroke (RGBi,StrokeAttr) where
   ostroke (rgb,x) = ostrokePath rgb [x] NoLink
   cstroke (rgb,x) = cstrokePath rgb [x] NoLink
 
-instance Stroke (RGB255,[StrokeAttr]) where
+instance Stroke (RGBi,[StrokeAttr]) where
   ostroke (rgb,xs) = ostrokePath rgb xs NoLink
   cstroke (rgb,xs) = cstrokePath rgb xs NoLink
 
-instance Stroke (RGB255,XLink) where
+instance Stroke (RGBi,XLink) where
   ostroke (rgb,xlink) = ostrokePath rgb [] xlink
   cstroke (rgb,xlink) = cstrokePath rgb [] xlink
 
@@ -216,11 +216,11 @@ instance Stroke ([StrokeAttr],XLink) where
   ostroke (xs,xlink) = ostrokePath black xs xlink
   cstroke (xs,xlink) = cstrokePath black xs xlink
 
-instance Stroke (RGB255,StrokeAttr,XLink) where
+instance Stroke (RGBi,StrokeAttr,XLink) where
   ostroke (rgb,x,xlink) = ostrokePath rgb [x] xlink
   cstroke (rgb,x,xlink) = cstrokePath rgb [x] xlink
 
-instance Stroke (RGB255,[StrokeAttr],XLink) where
+instance Stroke (RGBi,[StrokeAttr],XLink) where
   ostroke (rgb,xs,xlink) = ostrokePath rgb xs xlink
   cstroke (rgb,xs,xlink) = cstrokePath rgb xs xlink
 
@@ -238,7 +238,7 @@ zcstroke = cstrokePath black [] NoLink
 
 -- *** Fill
 
-fillPath :: Num u => RGB255 -> XLink -> PrimPath u -> Primitive u
+fillPath :: Num u => RGBi -> XLink -> PrimPath u -> Primitive u
 fillPath rgb xlink p = PPath (CFill rgb) xlink p
 
 -- | Create a filled path (@fill@). Fills only have one 
@@ -252,10 +252,10 @@ class Fill t where
  
 
 instance Fill ()                where fill ()    = fillPath black NoLink
-instance Fill RGB255            where fill rgb   = fillPath rgb   NoLink
+instance Fill RGBi              where fill rgb   = fillPath rgb   NoLink
 instance Fill XLink             where fill xlink = fillPath black xlink
 
-instance Fill (RGB255,XLink) where
+instance Fill (RGBi,XLink) where
   fill (rgb,xlink) = fillPath rgb xlink
 
 
@@ -275,7 +275,7 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 -- Labels to primitive
 
 mkTextLabel :: Num u 
-            => RGB255 -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
+            => RGBi -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
 mkTextLabel rgb attr xlink txt pt = PLabel (LabelProps rgb attr) xlink lbl 
   where
     lbl = PrimLabel pt (lexLabel txt) identityCTM
@@ -312,7 +312,7 @@ class TextLabel t where
 instance TextLabel () where 
     textlabel () = mkTextLabel black wumpus_default_font NoLink
 
-instance TextLabel RGB255 where
+instance TextLabel RGBi where
   textlabel rgb = mkTextLabel rgb wumpus_default_font NoLink
 
 instance TextLabel FontAttr where
@@ -322,16 +322,16 @@ instance TextLabel XLink where
     textlabel xlink = mkTextLabel black wumpus_default_font xlink
 
 
-instance TextLabel (RGB255,FontAttr) where
+instance TextLabel (RGBi,FontAttr) where
   textlabel (rgb,a) = mkTextLabel rgb a NoLink
 
-instance TextLabel (RGB255,XLink) where
+instance TextLabel (RGBi,XLink) where
   textlabel (rgb,xlink) = mkTextLabel rgb wumpus_default_font xlink
 
 instance TextLabel (FontAttr,XLink) where
   textlabel (a,xlink) = mkTextLabel black a xlink
 
-instance TextLabel (RGB255,FontAttr,XLink) where
+instance TextLabel (RGBi,FontAttr,XLink) where
   textlabel (rgb,a,xlink) = mkTextLabel rgb a xlink
 
 -- | Create a label where the font is @Courier@, text size is 14pt
@@ -376,7 +376,7 @@ class Ellipse t where
 
 instance Ellipse ()             where ellipse () = zellipse
 
-instance Ellipse RGB255 where 
+instance Ellipse RGBi where 
   ellipse rgb = mkEllipse (EFill rgb) NoLink
 
 instance Ellipse StrokeAttr where
@@ -388,13 +388,13 @@ instance Ellipse [StrokeAttr] where
 instance Ellipse XLink where 
   ellipse xlink = mkEllipse (EFill black) xlink
 
-instance Ellipse (RGB255,StrokeAttr) where
+instance Ellipse (RGBi,StrokeAttr) where
   ellipse (rgb,x) = mkEllipse (EStroke [x] rgb) NoLink
 
-instance Ellipse (RGB255,[StrokeAttr]) where
+instance Ellipse (RGBi,[StrokeAttr]) where
   ellipse (rgb,xs) = mkEllipse (EStroke xs rgb) NoLink
 
-instance Ellipse (RGB255,XLink) where
+instance Ellipse (RGBi,XLink) where
   ellipse (rgb,xlink) = mkEllipse (EFill rgb) xlink
 
 instance Ellipse (StrokeAttr,XLink) where
@@ -403,7 +403,7 @@ instance Ellipse (StrokeAttr,XLink) where
 instance Ellipse ([StrokeAttr],XLink) where
   ellipse (xs,xlink) = mkEllipse (EStroke xs black) xlink
 
-instance Ellipse (RGB255,[StrokeAttr],XLink) where
+instance Ellipse (RGBi,[StrokeAttr],XLink) where
   ellipse (rgb,xs,xlink) = mkEllipse (EStroke xs rgb) xlink
 
 -- | Create a black, filled ellipse. 
@@ -460,7 +460,7 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 -- The bounding box image will be drawn in the supplied colour.
 --
 illustrateBounds :: (Real u, Floating u, FromPtSize u) 
-                 => RGB255 -> Picture u -> Picture u
+                 => RGBi -> Picture u -> Picture u
 illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p) 
 
 
@@ -472,7 +472,7 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p)
 -- The result will be lifted from Primitive to Picture.
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
-                     => RGB255 -> Primitive u -> Picture u
+                     => RGBi -> Primitive u -> Picture u
 illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 
 
@@ -481,7 +481,7 @@ illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 -- joining the corners.
 --
 boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
-            => RGB255 -> t -> [Primitive u]
+            => RGBi -> t -> [Primitive u]
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
@@ -502,7 +502,7 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 -- @arc@ command.  
 --
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
-                        => RGB255 -> Primitive u -> Picture u
+                        => RGBi -> Primitive u -> Picture u
 illustrateControlPoints rgb prim = step prim
   where
     step (PEllipse _ _ e) = frame (prim : ellipseCtrlLines rgb e)
@@ -517,7 +517,7 @@ illustrateControlPoints rgb prim = step prim
 --
 -- Nothing is generated for a straight line.
 --
-pathCtrlLines :: (Num u, Ord u) => RGB255 -> PrimPath u -> [Primitive u]
+pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> [Primitive u]
 pathCtrlLines rgb (PrimPath start ss) = step start ss
   where 
     -- trail the current end point through the recursion...
@@ -535,7 +535,7 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
 -- start-point to control-point1; control-point2 to end-point
 --
 ellipseCtrlLines :: (Real u, Floating u) 
-                 => RGB255 -> PrimEllipse u -> [Primitive u]
+                 => RGBi -> PrimEllipse u -> [Primitive u]
 ellipseCtrlLines rgb pe = start all_points
   where 
     -- list in order: 

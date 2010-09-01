@@ -70,7 +70,7 @@ import Wumpus.Core.Colour
 -- This type is hidden by the top-level module @Wumpus.Core@.
 --
 data GraphicsState = GraphicsState
-      { gs_draw_colour  :: RGB255
+      { gs_draw_colour  :: RGBi
       , gs_font_size    :: Int
       , gs_font_face    :: FontFace
       , gs_line_width   :: Double

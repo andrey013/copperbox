@@ -87,10 +87,10 @@ runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
 runLocalGS upd mf = 
     PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
 
-getDrawColour       :: PsMonad RGB255
+getDrawColour       :: PsMonad RGBi
 getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
 
-setDrawColour       :: RGB255 -> PsMonad ()
+setDrawColour       :: RGBi -> PsMonad ()
 setDrawColour a     = PsMonad $ \_ s -> ((), s {gs_draw_colour=a})
 
 
@@ -317,7 +317,7 @@ primEllipse props (PrimEllipse center hw hh ctm) =
 
 -- This will need to become monadic to handle /colour delta/.
 --
-fillArcPath :: PSUnit u => RGB255 -> u -> Point2 u -> PsMonad Doc
+fillArcPath :: PSUnit u => RGBi -> u -> Point2 u -> PsMonad Doc
 fillArcPath rgb radius pt = 
     (\rgbd -> vcat [ rgbd
                    , ps_newpath
@@ -327,7 +327,7 @@ fillArcPath rgb radius pt =
       <$> deltaDrawColour rgb
 
 strokeArcPath :: PSUnit u 
-              => RGB255 -> [StrokeAttr] -> u -> Point2 u -> PsMonad Doc
+              => RGBi -> [StrokeAttr] -> u -> Point2 u -> PsMonad Doc
 strokeArcPath rgb attrs radius pt =
     (\rgbd attrd -> vcat [ rgbd
                          , attrd
@@ -381,7 +381,7 @@ textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i
 -- output.
 --
 
-deltaDrawColour :: RGB255 -> PsMonad Doc
+deltaDrawColour :: RGBi -> PsMonad Doc
 deltaDrawColour rgb = getDrawColour >>= \inh -> 
    if rgb==inh then return empty
                else setDrawColour rgb >> return (ps_setrgbcolor rgb)
