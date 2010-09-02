@@ -301,7 +301,7 @@ textChunk (EscStr s) = either text text <$> askGlyphName s
 -- Stroke and font attribute delta
 
 deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
-deltaStrokeAttrs xs = hcat <$> mapM df xs
+deltaStrokeAttrs xs = hsep <$> mapM df xs
   where
     df (LineWidth d)    = (\inh -> if d==inh then empty 
                                          else attr_stroke_width d) 

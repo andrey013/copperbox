@@ -41,8 +41,10 @@ import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
-import qualified Data.Foldable          as F
 import Control.Monad
+
+import qualified Data.Foldable          as F
+import Data.Maybe 
 import Data.Time
 
 
@@ -387,36 +389,77 @@ deltaDrawColour rgb = getDrawColour >>= \inh ->
                else setDrawColour rgb >> return (ps_setrgbcolor rgb)
 
 
+-- Note - the current way of handling Stroke Deltas for 
+-- PostScript uses an awful lot of operations. 
+-- 
+-- The GraphicsState data types need some more thought 
+--
 
--- Wrong - should follow delta draw colour...
-deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
-deltaStrokeAttrs xs = hcat <$> mapM df xs
+data StrokeDelta = StrokeDelta
+      { sd_line_width   :: Double
+      , sd_miter_limit  :: Double
+      , sd_line_cap     :: LineCap
+      , sd_line_join    :: LineJoin
+      , sd_dash_pattern :: DashPattern
+      }
+
+-- | Note - the values here must be in- sync with zeroGS.
+--
+zeroSD :: StrokeDelta
+zeroSD = StrokeDelta { sd_line_width   = 1
+                     , sd_miter_limit  = 1
+                     , sd_line_cap     = CapButt
+                     , sd_line_join    = JoinMiter
+                     , sd_dash_pattern = Solid
+                     }
+
+
+makeStrokeDelta :: [StrokeAttr] -> StrokeDelta
+makeStrokeDelta = foldr fn zeroSD
   where
-    df (LineWidth d)    = getLineWidth >>= \inh -> 
-                          if d==inh then return empty 
-                                    else setLineWidth d >> 
-                                         return (ps_setlinewidth d)
+    fn (LineWidth a)    sd = sd { sd_line_width = a }
+    fn (MiterLimit a)   sd = sd { sd_miter_limit = a }
+    fn (LineCap a)      sd = sd { sd_line_cap = a }
+    fn (LineJoin a)     sd = sd { sd_line_join = a }
+    fn (DashPattern a)  sd = sd { sd_dash_pattern = a} 
 
-    df (MiterLimit d)   = getMiterLimit >>= \inh -> 
-                          if d==inh then return empty 
-                                    else setMiterLimit d >> 
-                                         return (ps_setmiterlimit d)
+
+deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
+deltaStrokeAttrs xs = step $ makeStrokeDelta xs
+  where
+    step sd = (\d1 d2 d3 d4 d5 -> hcat $ catMaybes [d1,d2,d3,d4,d5])  
+                <$> lw sd <*> ml sd <*> lc sd <*> lj sd <*> dp sd
+
+    lw sd = let d = sd_line_width sd in 
+            getLineWidth >>= \inh -> 
+            if d == inh 
+              then return Nothing 
+              else setLineWidth d >> return (Just $ ps_setlinewidth d)
+
+    ml sd = let d = sd_miter_limit sd in 
+            getMiterLimit >>= \inh -> 
+            if d==inh 
+              then return Nothing 
+              else setMiterLimit d >> return (Just $ ps_setmiterlimit d)
                             
-    df (LineCap d)      = getLineCap >>= \inh -> 
-                          if d==inh then return empty 
-                                    else setLineCap d >> 
-                                         return (ps_setlinecap d)
+    lc sd = let d = sd_line_cap sd in
+            getLineCap >>= \inh -> 
+            if d==inh 
+              then return Nothing
+              else setLineCap d >> return (Just $ ps_setlinecap d)
                       
-    df (LineJoin d)     = getLineJoin >>= \inh -> 
-                          if d==inh then return empty 
-                                    else setLineJoin d >> 
-                                         return (ps_setlinejoin d)
+    lj sd = let d = sd_line_join sd in 
+            getLineJoin >>= \inh -> 
+            if d==inh 
+              then return Nothing
+              else setLineJoin d >> return (Just $ ps_setlinejoin d)
 
-    df (DashPattern d)  = getDashPattern >>= \inh -> 
-                          if d==inh then return empty 
-                                    else setDashPattern d >> 
-                                         return (ps_setdash d)
-           
+    dp sd  = let d = sd_dash_pattern sd in
+             getDashPattern >>= \inh -> 
+             if d==inh 
+               then return Nothing
+               else setDashPattern d >> return (Just $ ps_setdash d)
+
 
 
 deltaFontAttrs :: FontAttr -> PsMonad Doc

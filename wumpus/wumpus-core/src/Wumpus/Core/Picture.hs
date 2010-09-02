@@ -485,10 +485,11 @@ boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t)
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
-    bbox_rect     = cstroke rgb $ vertexPath [bl,br,tr,tl]
-    bl_to_tr      = ostroke rgb $ vertexPath [bl,tr]
-    br_to_tl      = ostroke rgb $ vertexPath [br,tl]
+    bbox_rect     = cstroke (rgb, line_attr) $ vertexPath [bl,br,tr,tl]
+    bl_to_tr      = ostroke (rgb, line_attr) $ vertexPath [bl,tr]
+    br_to_tl      = ostroke (rgb, line_attr) $ vertexPath [br,tl]
 
+    line_attr     = [LineCap $ CapRound, DashPattern $ Dash 0 [(1,2)]]
 
 
 -- | Generate the control points illustrating the Bezier 
