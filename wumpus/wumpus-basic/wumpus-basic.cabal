@@ -25,6 +25,8 @@ description:
   * Re-worked the PictureLanguage module.
   .
   * SVGColours and X11Colours moved into @Wumpus.Basic.Colour@.
+    Naming scheme for colours changed to use underscore between 
+    words rather than camelCase.
   .
   * Updates to work with wumpus-core-0.30.0.
   .
