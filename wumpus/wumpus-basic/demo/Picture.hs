@@ -19,7 +19,9 @@ main = do
     >> writeSVG_latin1 "./out/picture_lang.svg" pictures
 
 pictures :: DPicture
-pictures = vsep 20 pic12 [ pic13, pic14 ]
+pictures = vsep 12 pic1 [ pic2,  pic3,  pic4,  pic5
+                        , pic6,  pic7,  pic8,  pic9
+                        , pic10, pic11, pic12, pic13 ]
 
 pic1 :: DPicture
 pic1 = picAnno pic "red `over` green `over` blue"
@@ -67,8 +69,6 @@ pic6 = picAnno pic "[red, green] `stackOver` blue"
     pic = illustrateBounds blue $ 
             [rect_red, rect_green] `stackOver` rect_blue
 
-
-
 pic7 :: DPicture
 pic7 = picAnno pic "zconcat red [green, blue]"
   where
@@ -78,52 +78,44 @@ pic7 = picAnno pic "zconcat red [green, blue]"
 
 
 pic8 :: DPicture
-pic8 = picAnno pic "zconcat red [green, blue]"
-  where
-    pic :: DPicture
-    pic = illustrateBounds blue $ 
-            zconcat rect_red [rect_green, rect_blue]
-
-
-pic9 :: DPicture
-pic9 = picAnno pic "hcat red [green, blue]"
+pic8 = picAnno pic "hcat red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
             hcat rect_red [rect_green, rect_blue]
 
-pic10 :: DPicture
-pic10 = picAnno pic "vcat red [green, blue]"
+pic9 :: DPicture
+pic9 = picAnno pic "vcat red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
             vcat rect_red [rect_green, rect_blue]
 
-pic11 :: DPicture
-pic11 = picAnno pic "hsep 20 red [green, blue]"
+pic10 :: DPicture
+pic10 = picAnno pic "hsep 20 red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
             hsep 20 rect_red [rect_green, rect_blue]
 
-pic12 :: DPicture
-pic12 = picAnno pic "vsep 20 red [green, blue]"
+pic11 :: DPicture
+pic11 = picAnno pic "vsep 20 red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
             vsep 20 rect_red [rect_green, rect_blue]
 
 
-pic13 :: DPicture
-pic13 = picAnno pic "hcatA HTop red [green, blue]"
+pic12 :: DPicture
+pic12 = picAnno pic "hcatA HTop red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
             hcatA HTop rect_red [rect_green, rect_blue]
 
 
-pic14 :: DPicture
-pic14 = picAnno pic "vcatA VCenter red [green, blue]"
+pic13 :: DPicture
+pic13 = picAnno pic "vcatA VCenter red [green, blue]"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
@@ -140,16 +132,16 @@ picAnno pic msg = alignHSep HCenter 30 pic lbl
 
 
 rect_red :: DPicture
-rect_red = drawGraphicU $ supply (P2 0 20) $ 
-          strokedRectangle black 40 20 `cc` filledRectangle indian_red 40 20
+rect_red = drawGraphicU $ supply (P2 0 10) $ 
+          strokedRectangle black 30 10 `cc` filledRectangle indian_red 30 10
 
 rect_green :: DPicture
-rect_green = drawGraphicU $ supply (P2 20 20) $ 
-    strokedRectangle black 25 25 `cc` filledRectangle olive_drab 25 25
+rect_green = drawGraphicU $ supply (P2 10 10) $ 
+    strokedRectangle black 15 15 `cc` filledRectangle olive_drab 15 15
 
 
 rect_blue :: DPicture
-rect_blue = drawGraphicU $ supply (P2 20 0) $ 
-    strokedRectangle black 30 40 `cc` filledRectangle powder_blue 30 40
+rect_blue = drawGraphicU $ supply (P2 10 0) $ 
+    strokedRectangle black 20 30 `cc` filledRectangle powder_blue 20 30
 
 

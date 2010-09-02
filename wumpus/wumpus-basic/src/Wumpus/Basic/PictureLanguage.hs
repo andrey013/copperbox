@@ -385,12 +385,14 @@ vecMove :: (Num u, Ord u) => Picture u -> Picture u -> (Vec2 u) -> Picture u
 vecMove a b v = a `over` (move v b)
 
 
--- Helpers
 
--- \"moves and concatenates\".
---
+-- | > alignH align a b
+-- 
+-- Horizontal composition - move @b@, placing it to the right 
+-- of @a@ and align it with the top, center or bottom of @a@.
+-- 
 alignH :: (Fractional u, Ord u) 
-           =>  HAlign -> Picture u -> Picture u -> Picture u
+       =>  HAlign -> Picture u -> Picture u -> Picture u
 alignH align p1 p2 = vecMove p1 p2 $ fn align
   where
     fn HTop    = topright p1    .-. topleft p2
@@ -398,8 +400,11 @@ alignH align p1 p2 = vecMove p1 p2 $ fn align
     fn HBottom = bottomright p1 .-. bottomleft p2
 
 
---  \"moves and concatenates\".
---
+-- | > alignV align a b
+-- 
+-- Vertical composition - move @b@, placing it below @a@ 
+-- and align it with the left, center or right of @a@.
+-- 
 alignV :: (Fractional u, Ord u) 
            => VAlign -> Picture u -> Picture u -> Picture u
 alignV align p1 p2 = vecMove p1 p2 $ fn align
@@ -410,8 +415,11 @@ alignV align p1 p2 = vecMove p1 p2 $ fn align
 
 
 
--- \"moves and concatenates\".
---
+-- | > alignHSep align sep a b
+-- 
+-- Spacing version of alignH - move @b@ to the right of @a@ 
+-- separated by @sep@ units, align @b@ according to @align@.
+-- 
 alignHSep :: (Fractional u, Ord u) 
               =>  HAlign -> u -> Picture u -> Picture u -> Picture u
 alignHSep align dx p1 p2 = vecMove p1 p2 $ hvec dx ^+^ fn align
@@ -420,8 +428,11 @@ alignHSep align dx p1 p2 = vecMove p1 p2 $ hvec dx ^+^ fn align
     fn HCenter = rightmid p1    .-. leftmid p2
     fn HBottom = bottomright p1 .-. bottomleft p2
 
--- \"moves and concatenates\".
---
+-- | > alignHSep align sep a b
+-- 
+-- Spacing version of alignV - move @b@ below @a@ 
+-- separated by @sep@ units, align @b@ according to @align@.
+-- 
 alignVSep :: (Fractional u, Ord u) 
            => VAlign -> u -> Picture u -> Picture u -> Picture u
 alignVSep align dy p1 p2 = vecMove p1 p2 $ vvec (-dy) ^+^ fn align
@@ -462,8 +473,9 @@ hsepA ha n = foldl' op
 --
 vsepA :: (Fractional u, Ord u) 
       => VAlign -> u -> Picture u -> [Picture u] -> Picture u
-vsepA va n = foldl' op where 
-   a `op` b = alignVSep va n a b 
+vsepA va n = foldl' op 
+  where 
+    a `op` b = alignVSep va n a b 
 
 
 
