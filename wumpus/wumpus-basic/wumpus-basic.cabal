@@ -78,7 +78,6 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
-                      monadLib        >= 3.6,
                       wumpus-core     >= 0.30.0
 
   
@@ -108,8 +107,8 @@ library
     Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
-    Wumpus.Basic.VersionNumber
---    Wumpus.Deprecated.PictureLanguage
+    Wumpus.Basic.VersionNumber,
+    Wumpus.Basic.PictureLanguage
 
   other-modules:
 

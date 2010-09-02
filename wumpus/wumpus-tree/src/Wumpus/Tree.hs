@@ -152,7 +152,7 @@ textNode = dotText . uptoNewline
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-circleNode :: DRGB -> (a -> TreeNode)
+circleNode :: RGBi -> (a -> TreeNode)
 circleNode rgb = const fn
   where
     fn = dotCircle `props` (\s -> s { stroke_colour = rgb})
@@ -162,7 +162,7 @@ circleNode rgb = const fn
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-diskNode :: DRGB -> (a -> TreeNode)
+diskNode :: RGBi -> (a -> TreeNode)
 diskNode rgb = const fn
   where
     fn = dotDisk `props` (\s -> s { fill_colour = rgb})

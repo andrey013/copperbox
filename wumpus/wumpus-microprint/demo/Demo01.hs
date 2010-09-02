@@ -6,8 +6,8 @@ module Demo01 where
 
 import Wumpus.MicroPrint
 
-import Wumpus.Core
-import Wumpus.Basic.SVGColours
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
 
 import Data.Maybe
 import System.Directory

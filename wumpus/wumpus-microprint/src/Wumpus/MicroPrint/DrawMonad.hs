@@ -39,7 +39,7 @@ import Wumpus.Basic.Utils.HList
 
 import Control.Monad
 
-data Tile = LineBreak | Space Int | Word DRGB Int
+data Tile = LineBreak | Space Int | Word RGBi Int
 
 -- Interim version without colour annotation...
 data TileState = Start | S0 Int | W0 Int
@@ -49,7 +49,7 @@ data TileState = Start | S0 Int | W0 Int
 type Text       = H Tile
 type Trace      = Text
 type Height     = Int
-type State      = (TileState, DRGB, Height)
+type State      = (TileState, RGBi, Height)
 
 -- | Build a /microprint/ within a monad...
 --
@@ -102,7 +102,7 @@ linebreak = enqueueTile >> next
 -- Note - it is permissible to change colour mid-word, but this 
 -- is the same as having a no-space break.
 --
-setRGB :: DRGB -> MicroPrint ()
+setRGB :: RGBi -> MicroPrint ()
 setRGB rgb = enqueueTile >> next
   where
     -- tip will always be Start here...

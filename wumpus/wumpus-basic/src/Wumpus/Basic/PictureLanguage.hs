@@ -1,24 +1,20 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Deprecated.PictureLanguage
+-- Module      :  Wumpus.Basic.PictureLanguage
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
--- Type classes and derived functions to compose 2D /pictures/.
---
--- WARNING - this module is deprecated.
+-- Composition operators for Pictures.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Deprecated.PictureLanguage 
+module Wumpus.Basic.PictureLanguage 
   (
   -- * Data types for alignment 
     HAlign(..)
@@ -88,7 +84,6 @@ data VAlign = VLeft | VCenter | VRight
 
 -- Operations on bounds
 
--- $boundsdoc
 -- Corresponding operations are available on bounding boxes - the 
 -- definitions here have different type class obligations.
 
@@ -216,12 +211,11 @@ infixr 5 `nextToV`
 infixr 6 `nextToH`, `centerOver`
 
 
--- | > a `centerOver` b
--- 
--- Center @a@ on top of @b@, @a@ is potentially moved and drawn 
--- 'over' @b@.
--- 
--- `centerOver` was previously the (-@-) operator.
+-- | Draw a centered over b .
+--
+-- > a `centerOver` b 
+--
+-- 'centerOver' was previously the (-\@-) operator.
 -- 
 centerOver :: (Fractional u, Ord u) => Picture u -> Picture u -> Picture u
 p1 `centerOver` p2 = (move x y p1) `over` p2 
@@ -234,7 +228,7 @@ p1 `centerOver` p2 = (move x y p1) `over` p2
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@.
 -- 
--- `nextToH` was previously the (->-) operator.
+-- 'nextToH' was previously the (->-) operator.
 --
 nextToH :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `nextToH` b = a `over` moveH disp b 

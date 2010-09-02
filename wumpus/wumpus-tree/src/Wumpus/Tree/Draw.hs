@@ -26,12 +26,12 @@ import Wumpus.Tree.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic   
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.DrawingMonad
-import Wumpus.Basic.SVGColours
 
 import Data.VectorSpace                         -- package: vector-space
 

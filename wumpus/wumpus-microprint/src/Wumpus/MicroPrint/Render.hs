@@ -48,7 +48,7 @@ import Control.Monad
 -- The libraries currently provides two styles - 'greekF' and
 -- 'borderedF'.
 --
-type DrawWordF = (Int,Double) -> (Double,Double) -> DRGB -> DGraphicF
+type DrawWordF = (Int,Double) -> (Double,Double) -> RGBi -> DGraphicF
 
 
 -- | Style properties for micro-print drawing.
@@ -121,7 +121,7 @@ drawMicroPrint cfg (xs,h) =
     let (_,hf) = runRender cfg (moveUpN h >> interpret xs) in post $ hf []
   where
     post [] = Nothing
-    post ps = Just $ frameMulti $ ps
+    post ps = Just $ frame ps
 
 runRender :: MicroPrintConfig -> RenderMonad a -> (a, DGraphic)
 runRender cfg m = 

@@ -70,7 +70,7 @@ data St u = St
 -- Vertical distance between baselines.
 type VDist = PtSize       
 
-type Env = (VDist, DRGB)
+type Env = (VDist, RGBi)
 
 newtype TextM u a = TextM { getTextM :: Env -> St u -> (a, St u) }
 
@@ -100,7 +100,7 @@ instance Monad (TextM u) where
 -- line at the base line...
 
 runTextM :: (Num u, FromPtSize u) 
-         => PtSize -> (DRGB,FontAttr) -> (TextM u a) -> (a,GraphicF u)
+         => PtSize -> (RGBi,FontAttr) -> (TextM u a) -> (a,GraphicF u)
 runTextM vdistance (rgb,font) ma = post $ getTextM ma env st
   where
     post (a,s)  = let gf = getTGraphicF $ acc_graphic s

@@ -35,7 +35,6 @@ module Wumpus.Basic.Monads.TurtleMonad
   , runTurtle
   , runTurtleT
 
-
   , TurtleDrawing
   , runTurtleDrawing
   , execTurtleDrawing
@@ -50,7 +49,6 @@ import Wumpus.Basic.Monads.DrawingMonad
 import Wumpus.Basic.Monads.TurtleClass
 
 
-import MonadLib ( MonadT(..) )          -- package: monadLib
 
 import Control.Applicative
 import Control.Monad
@@ -112,9 +110,6 @@ instance Monad m => Monad (TurtleT u m) where
                                (getTurtleT . k) a r s' >>= \(b,s'') ->
                                return (b,s'')
 
-instance MonadT (TurtleT u) where
-  lift m = TurtleT $ \_ s -> m >>= \a -> return (a,s)
-
 
 
 instance TurtleM (Turtle u) where
@@ -147,6 +142,7 @@ runTurtle cfg ogin mf = fst $ getTurtle mf cfg (TurtleState ogin ogin)
 runTurtleT :: (Monad m, Num u) 
            => TurtleConfig u -> (Int,Int) -> TurtleT u m a -> m a
 runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
+
 
 
 
@@ -196,16 +192,19 @@ instance TurtleScaleM (TurtleDrawing u) u where
   xStep    = TurtleDrawing $ xStep
   yStep    = TurtleDrawing $ yStep
 
+
+-- Lifters no longer supplied...
 -- TraceM 
 
 instance TraceM (TurtleDrawing u) u where
-  trace a = TurtleDrawing $ lift (trace a)
+  trace a = TurtleDrawing $ trace a
+
 
 
 -- DrawingCtxM
 
 instance DrawingCtxM (TurtleDrawing u) where
-  askDrawingCtx   = TurtleDrawing $ lift askDrawingCtx
+  askDrawingCtx   = TurtleDrawing $ askDrawingCtx
   localCtx ctx ma = TurtleDrawing $ localCtx ctx (getTurtleDrawing ma)
 
 
