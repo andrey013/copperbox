@@ -12,6 +12,10 @@
 --
 -- Composition operators for Pictures.
 --
+-- Note - empty pictures cannot exist in Wumpus hence the /list/ 
+-- functions in this module are always supplied with an initial 
+-- picture, as well as the (possibly empty) list.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.PictureLanguage 
@@ -21,14 +25,11 @@ module Wumpus.Basic.PictureLanguage
   , VAlign(..)
 
   -- * Operations on boundary
-  , center
+  , centerPoint
 
   -- * Composition
   , over 
-  , beneath
-  , move
-  , moveH
-  , moveV
+  , under
 
   , centerOver
   , nextToH
@@ -37,10 +38,12 @@ module Wumpus.Basic.PictureLanguage
   , atPoint 
   , centeredAt
 
-  , stackOnto
+  , stackOver
+  , zconcat
+
   , hcat 
   , vcat
-  , stackOntoCenter
+  , stackOverCenter
 
 
   , hspace
@@ -51,6 +54,8 @@ module Wumpus.Basic.PictureLanguage
   -- * Compose with alignment
   , alignH
   , alignV
+  , alignHSep
+  , alignVSep
   , hcatA
   , vcatA
   , hsepA
@@ -88,8 +93,8 @@ data VAlign = VLeft | VCenter | VRight
 -- definitions here have different type class obligations.
 
 -- | The center of a picture.
-center :: Fractional u => Picture u -> Point2 u
-center = fn . boundary
+centerPoint :: Fractional u => Picture u -> Point2 u
+centerPoint = fn . boundary
   where  
     fn (BBox (P2 x0 y0) (P2 x1 y1)) = P2 (x0 + ((x1-x0)*0.5)) 
                                          (y0 + ((y1-y0)*0.5))
@@ -129,29 +134,24 @@ over    :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 over = picOver
 
 
--- | > a `beneath` b
+-- | > a `under` b
 --
--- Similarly @beneath@ draws the first picture behind 
+-- Similarly @under@ draws the first picture behind 
 -- the second but move neither.
 --
+-- @under@ was previously @beneath@.
+--
+under :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 
-beneath :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-
-beneath = flip over
+under = flip over
 
 
   
 -- | Move in both the horizontal and vertical.
 --
-move :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
-move dx dy p = p `picMoveBy` (V2 dx dy)
+move :: (Num u, Ord u) => Vec2 u -> Picture u -> Picture u
+move = flip picMoveBy
 
-
-moveH :: (Num u, Ord u) => u -> Picture u -> Picture u
-moveH dx p = move dx 0 p
-
-moveV :: (Num u , Ord u) => u -> Picture u -> Picture u
-moveV dy p = move 0 dy p
 
 
 
@@ -211,16 +211,19 @@ infixr 5 `nextToV`
 infixr 6 `nextToH`, `centerOver`
 
 
--- | Draw a centered over b .
+-- Note - `centerOver` moves the first argument, whereas other 
+-- functions move the second...
+
+-- | Draw a centered over b - a is moved, b is static.
 --
 -- > a `centerOver` b 
 --
 -- 'centerOver' was previously the (-\@-) operator.
 -- 
 centerOver :: (Fractional u, Ord u) => Picture u -> Picture u -> Picture u
-p1 `centerOver` p2 = (move x y p1) `over` p2 
+p1 `centerOver` p2 = (move v p1) `over` p2 
   where 
-    V2 x y = center p2 .-. center p1
+    v = centerPoint p2 .-. centerPoint p1
 
 
 -- | > a `nextToH` b
@@ -231,9 +234,9 @@ p1 `centerOver` p2 = (move x y p1) `over` p2
 -- 'nextToH' was previously the (->-) operator.
 --
 nextToH :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `nextToH` b = a `over` moveH disp b 
+a `nextToH` b = a `over` move hv b 
   where 
-    disp = rightBound a - leftBound b 
+    hv = hvec $ rightBound a - leftBound b 
 
 
 
@@ -244,9 +247,9 @@ a `nextToH` b = a `over` moveH disp b
 -- nextToV  was previously the (-//-) operator.
 --
 nextToV :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `nextToV` b = a `over` moveV disp b 
+a `nextToV` b = a `over` move vv b 
   where 
-    disp = bottomBound a - topBound b 
+    vv = vvec $ bottomBound a - topBound b 
 
 
 -- | Place the picture at the supplied point.
@@ -254,13 +257,13 @@ a `nextToV` b = a `over` moveV disp b
 -- `atPoint` was previous the `at` operator.
 -- 
 atPoint :: (Num u, Ord u) => Picture u -> Point2 u  -> Picture u
-p `atPoint` (P2 x y) = move x y p
+p `atPoint` (P2 x y) = move (V2 x y) p
 
 
 -- | Center the picture at the supplied point.
 --
 centeredAt :: (Fractional u, Ord u) => Picture u -> Point2 u ->Picture u
-centeredAt p (P2 x y) = move dx dy p 
+centeredAt p (P2 x y) = move (vec dx dy) p 
   where
     bb = boundary p
     dx = x - (boundaryWidth  bb * 0.5)
@@ -268,15 +271,33 @@ centeredAt p (P2 x y) = move dx dy p
 
 
 
--- | > xs `stackOnto` a
+-- | > xs `stackOver` x
 -- 
--- Stack the list of pictures @xs@ 'over' @a@.
+-- Stack the list of pictures @xs@ 'over' @x@.
 --
--- Note, the first picture in the list is drawn at the top, the
--- last picture is draw 'over' @a@.
+-- Note, the first picture in the list is drawn at the top, all 
+-- the pictures in the list are drawn \'over\' @x@. No pictures
+-- are moved 
 --
-stackOnto :: (Num u, Ord u) => [Picture u] -> Picture u -> Picture u
-stackOnto = flip (foldr over)
+-- @ [p1,p2,p3] `stackOver` p4 => [p1,p2,p3,p4] @
+--
+stackOver :: (Num u, Ord u) => [Picture u] -> Picture u -> Picture u
+stackOver = flip (foldr over)
+
+
+
+-- | > x `zconcat` xs
+-- 
+-- Concatenate @x@ over the list of pictures @xs@. 
+--
+-- @x@ is drawn at the top. No pictures are moved. 
+--
+-- @ p1 `zconcat` [p2,p3,p4] => [p1,p2,p3,p4] @
+--
+zconcat :: (Num u, Ord u) => Picture u -> [Picture u] -> Picture u
+zconcat = foldl' over
+
+
 
 
 
@@ -299,9 +320,9 @@ vcat = foldl' nextToV
 -- picture in the list is drawn at the top, last picture is on 
 -- drawn at the bottom.
 --
-stackOntoCenter :: (Fractional u, Ord u) 
+stackOverCenter :: (Fractional u, Ord u) 
                 => [Picture u] -> Picture u -> Picture u
-stackOntoCenter = flip $ foldr centerOver
+stackOverCenter = flip $ foldr centerOver
 
 
 
@@ -316,9 +337,9 @@ stackOntoCenter = flip $ foldr centerOver
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
 hspace :: (Num u, Ord u) => u -> Picture u -> Picture u -> Picture u
-hspace n a b = a `over` moveH (disp + n) b
+hspace n a b = a `over` move hv b
   where
-    disp = rightBound a - leftBound b 
+    hv = hvec $ n + rightBound a - leftBound b 
 
     
 
@@ -330,9 +351,9 @@ hspace n a b = a `over` moveH (disp + n) b
 -- vertical gap of @n@ separating the pictures.
 --
 vspace :: (Num u, Ord u) => u -> Picture u -> Picture u -> Picture u
-vspace n a b = a `over` moveV (disp + n) b 
+vspace n a b = a `over` move vv b 
   where 
-    disp = bottomBound a - topBound b 
+    vv = vvec $ bottomBound a - topBound b - n
 
 
 
@@ -361,55 +382,27 @@ vsep n = foldl' (vspace n)
 -- Aligning pictures
 
 vecMove :: (Num u, Ord u) => Picture u -> Picture u -> (Vec2 u) -> Picture u 
-vecMove a b (V2 x y) = a `over` (move x y) b 
-
-
--- | > alignH z a b
---
--- Move picture @b@ up or down to be horizontally aligned along a 
--- line from the top, center or bottom of picture @a@
--- 
-alignH :: (Fractional u, Ord u) 
-       => HAlign -> Picture u -> Picture u -> Picture u
-alignH align p1 p2 = vecMove p1 p2 $ fn align
-  where
-    fn HTop    = vvec $ topBound p1    - topBound p2
-    fn HBottom = vvec $ bottomBound p1 - bottomBound p2
-    fn HCenter = vvec v where (V2 _ v) = rightmid p1    .-. leftmid p2
-
-
--- | > alignV z a b
---
--- Move picture @b@ left or right to be vertically aligned along a 
--- line from the left side, center or right side of picture @a@
--- 
-alignV :: (Fractional u, Ord u) 
-       => VAlign -> Picture u -> Picture u -> Picture u
-alignV align p1 p2 = vecMove p1 p2 $ fn align
-  where
-    fn VLeft   = hvec $ leftBound p1  - leftBound p2
-    fn VRight  = hvec $ rightBound p1 - rightBound p2
-    fn VCenter = hvec h where (V2 h _) = bottommid p1   .-. topmid p2
+vecMove a b v = a `over` (move v b)
 
 
 -- Helpers
 
--- Unlike alignH this function \"moves and concatenates\".
+-- \"moves and concatenates\".
 --
-moveAlignH :: (Fractional u, Ord u) 
+alignH :: (Fractional u, Ord u) 
            =>  HAlign -> Picture u -> Picture u -> Picture u
-moveAlignH align p1 p2 = vecMove p1 p2 $ fn align
+alignH align p1 p2 = vecMove p1 p2 $ fn align
   where
     fn HTop    = topright p1    .-. topleft p2
     fn HCenter = rightmid p1    .-. leftmid p2
     fn HBottom = bottomright p1 .-. bottomleft p2
 
 
--- Unlike alignV this function \"moves and concatenates\".
+--  \"moves and concatenates\".
 --
-moveAlignV :: (Fractional u, Ord u) 
+alignV :: (Fractional u, Ord u) 
            => VAlign -> Picture u -> Picture u -> Picture u
-moveAlignV align p1 p2 = vecMove p1 p2 $ fn align
+alignV align p1 p2 = vecMove p1 p2 $ fn align
   where
     fn VLeft   = bottomleft p1  .-. topleft p2
     fn VCenter = bottommid p1   .-. topmid p2
@@ -417,21 +410,21 @@ moveAlignV align p1 p2 = vecMove p1 p2 $ fn align
 
 
 
--- Unlike alignH this function \"moves and concatenates\".
+-- \"moves and concatenates\".
 --
-moveAlignHSep :: (Fractional u, Ord u) 
+alignHSep :: (Fractional u, Ord u) 
               =>  HAlign -> u -> Picture u -> Picture u -> Picture u
-moveAlignHSep align dx p1 p2 = vecMove p1 p2 $ hvec (-dx) ^+^ fn align
+alignHSep align dx p1 p2 = vecMove p1 p2 $ hvec dx ^+^ fn align
   where
     fn HTop    = topright p1    .-. topleft p2
     fn HCenter = rightmid p1    .-. leftmid p2
     fn HBottom = bottomright p1 .-. bottomleft p2
 
--- Unlike alignV this function \"moves and concatenates\".
+-- \"moves and concatenates\".
 --
-moveAlignVSep :: (Fractional u, Ord u) 
+alignVSep :: (Fractional u, Ord u) 
            => VAlign -> u -> Picture u -> Picture u -> Picture u
-moveAlignVSep align dy p1 p2 = vecMove p1 p2 $ vvec (-dy) ^+^ fn align
+alignVSep align dy p1 p2 = vecMove p1 p2 $ vvec (-dy) ^+^ fn align
   where
     fn VLeft   = bottomleft p1  .-. topleft p2
     fn VCenter = bottommid p1   .-. topmid p2
@@ -444,14 +437,14 @@ moveAlignVSep align dy p1 p2 = vecMove p1 p2 $ vvec (-dy) ^+^ fn align
 --
 hcatA :: (Fractional u, Ord u) 
       => HAlign -> Picture u -> [Picture u] -> Picture u
-hcatA ha = foldl' (moveAlignH ha)
+hcatA ha = foldl' (alignH ha)
 
 -- | Variant of 'vcat' that aligns the pictures as well as
 -- concatenating them.
 --
 vcatA :: (Fractional u, Ord u) 
       => VAlign -> Picture u -> [Picture u] -> Picture u
-vcatA va = foldl' (moveAlignV va)
+vcatA va = foldl' (alignV va)
 
 
 -- | Variant of @hsep@ that aligns the pictures as well as
@@ -461,7 +454,7 @@ hsepA :: (Fractional u, Ord u)
       => HAlign -> u -> Picture u -> [Picture u] -> Picture u
 hsepA ha n = foldl' op 
   where 
-    a `op` b = moveAlignHSep ha n a b 
+    a `op` b = alignHSep ha n a b 
 
 
 -- | Variant of @vsep@ that aligns the pictures as well as
@@ -470,7 +463,7 @@ hsepA ha n = foldl' op
 vsepA :: (Fractional u, Ord u) 
       => VAlign -> u -> Picture u -> [Picture u] -> Picture u
 vsepA va n = foldl' op where 
-   a `op` b = moveAlignVSep va n a b 
+   a `op` b = alignVSep va n a b 
 
 
 
