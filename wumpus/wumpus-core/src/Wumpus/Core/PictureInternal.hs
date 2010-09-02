@@ -42,6 +42,7 @@ module Wumpus.Core.PictureInternal
   , PrimCTM(..)
 
   , pathBoundary
+  , mapLocale
 
   -- * PrimCTM
   , identityCTM

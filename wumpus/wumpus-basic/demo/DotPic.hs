@@ -7,8 +7,8 @@ import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.PictureLanguage
 import Wumpus.Basic.Utils.HList
-import Wumpus.Deprecated.PictureLanguage
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -29,7 +29,7 @@ demo01 = do
     writeSVG_latin1 "./out/dots01.svg" pic
   where 
     pic :: Picture Double
-    pic = extendBoundary 10 10 $ 
+    pic = extendBoundary 10 10 $
           uniformScale 2       $ 
             vsepA VLeft 10 p1 [p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14
                               ,p15,p16,p17]
@@ -63,7 +63,7 @@ makeDotPic :: (Real u, Floating u, FromPtSize u)
 makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
   where
     dashline = wrapG $ ostroke attr $ vertexPath xs
-    attr     = (cadetBlue, DashPattern $ evenDashes 1)
+    attr     = (cadet_blue, DashPattern $ evenDashes 1)
 
 
 errK :: a

@@ -44,6 +44,8 @@ module Wumpus.Core.Picture
   , TextLabel(..)
   , ztextlabel
 
+  -- * Operations
+  , extendBoundary  
 
   -- * Picture composition
   , picOver
@@ -410,6 +412,24 @@ instance Ellipse (RGBi,[StrokeAttr],XLink) where
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
 zellipse hw hh pt = mkEllipse ellipseDefault NoLink hw hh pt
 
+--------------------------------------------------------------------------------
+-- Operations
+
+-- | Extend the bounding box of a picture. 
+--
+-- The bounding box is both horizontal directions by @x@ and 
+-- both vertical directions by @y@. @x@ and @y@ must be positive
+-- This function cannot be used to shrink a boundary.
+--
+extendBoundary :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
+extendBoundary x y = mapLocale (\(bb,xs) -> (extBB (posve x) (posve y) bb, xs)) 
+  where
+    extBB x' y' (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
+        pt1 = P2 (x0-x') (y0-y')
+        pt2 = P2 (x1+x') (y1+y')
+    
+    posve n | n < 0     = 0
+            | otherwise = n 
 
 --------------------------------------------------------------------------------
 -- Minimal support for Picture composition
