@@ -110,16 +110,16 @@ cpPicture constr trafo =
 --------------------------------------------------------------------------------
 
 rgbLabel :: RGBi -> DPrimitive
-rgbLabel rgb = textlabel rgb "Wumpus!" zeroPt
+rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" zeroPt
 
 rgbCircle :: RGBi -> DPrimitive
-rgbCircle rgb = ellipse rgb 60 60 zeroPt
+rgbCircle rgb = fillEllipse rgb 60 60 zeroPt
 
 rgbEllipse :: RGBi -> DPrimitive
-rgbEllipse rgb = ellipse rgb 60 30 zeroPt
+rgbEllipse rgb = fillEllipse rgb 60 30 zeroPt
 
 rgbPath :: RGBi -> DPrimitive
-rgbPath rgb = ostroke rgb $ dog_kennel
+rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...
 

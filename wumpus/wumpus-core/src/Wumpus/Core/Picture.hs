@@ -31,20 +31,32 @@ module Wumpus.Core.Picture
   , xlinkhref
 
   -- * Constructing primitives
-  , Stroke(..)
+  , ostroke
+  , cstroke
+  , xostroke
+  , xcstroke
   , zostroke
   , zcstroke
-  , Fill(..)
+
+  , fill
+  , xfill
   , zfill
-  , Bordered(..)
+
+  , bordered
+  , xbordered
   , clip
 
-  , TextLabel(..)
+  , textlabel
+  , xtextlabel
   , ztextlabel
+  , wumpus_default_font
 
-  , Ellipse(..)
+  , strokeEllipse
+  , fillEllipse
+  , xstrokeEllipse
+  , xfillEllipse
   , zellipse
-  , BorderedEllipse(..)
+  , borderedEllipse
   
 
 
@@ -67,7 +79,7 @@ module Wumpus.Core.Picture
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
-import Wumpus.Core.FormatCombinators
+import Wumpus.Core.FormatCombinators hiding ( fill )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
@@ -155,6 +167,8 @@ curvedPath (x:xs) = PrimPath x (step xs)
     step _          = []
 
 
+-- | Constructor for SVG hyperlinks.
+--
 xlinkhref :: String -> XLink
 xlinkhref = XLinkHRef
 
@@ -185,144 +199,94 @@ xlinkhref = XLinkHRef
 
 -- *** Stroke
 
-ostrokePath :: Num u 
-            => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
-ostrokePath rgb sa xlink p = PPath (OStroke sa rgb) xlink p
-
-cstrokePath :: Num u 
-            => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
-cstrokePath rgb sa xlink p = PPath (CStroke sa rgb) xlink p
-
--- | Create a open, stroked path (@ostroke@) or a closed, stroked
--- path (@cstroke@).
+-- | Create a open, stroked path.
 --
--- @ostroke@ and @cstroke@ are overloaded to make attributing 
--- the path more convenient.
--- 
-class Stroke t where
-  ostroke :: Num u => t -> PrimPath u -> Primitive u
-  cstroke :: Num u => t -> PrimPath u -> Primitive u
-
-instance Stroke () where
-  ostroke () = ostrokePath black defaultSA NoLink
-  cstroke () = cstrokePath black defaultSA NoLink
-
-instance Stroke RGBi where
-  ostroke rgb = ostrokePath rgb defaultSA NoLink
-  cstroke rgb = cstrokePath rgb defaultSA NoLink
-
-instance Stroke StrokeAttr where
-  ostroke sa = ostrokePath black sa NoLink
-  cstroke sa = cstrokePath black sa NoLink
-
-instance Stroke XLink where
-  ostroke xlink = ostrokePath black defaultSA xlink
-  cstroke xlink = cstrokePath black defaultSA xlink
+ostroke :: Num u 
+        => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
+ostroke rgb sa p = PPath (OStroke sa rgb) NoLink p
 
 
-instance Stroke (RGBi,StrokeAttr) where
-  ostroke (rgb,sa) = ostrokePath rgb sa NoLink
-  cstroke (rgb,sa) = cstrokePath rgb sa NoLink
+-- | Create a closed, stroked path.
+--
+cstroke :: Num u 
+        => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
+cstroke rgb sa p = PPath (CStroke sa rgb) NoLink p
+
+-- | Create a open, stroked path with a hyperlink.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xostroke :: Num u 
+         => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
+xostroke rgb sa xlink p = PPath (OStroke sa rgb) xlink p
 
 
-instance Stroke (RGBi,XLink) where
-  ostroke (rgb,xlink) = ostrokePath rgb defaultSA xlink
-  cstroke (rgb,xlink) = cstrokePath rgb defaultSA xlink
-
-instance Stroke (StrokeAttr,XLink) where
-  ostroke (sa,xlink) = ostrokePath black sa xlink
-  cstroke (sa,xlink) = cstrokePath black sa xlink
-
-
-instance Stroke (RGBi,StrokeAttr,XLink) where
-  ostroke (rgb,sa,xlink) = ostrokePath rgb sa xlink
-  cstroke (rgb,sa,xlink) = cstrokePath rgb sa xlink
+-- | Create a closed, stroked path with a hyperlink.
+--
+--  Note - hyperlinks are only rendered in SVG output.
+--
+xcstroke :: Num u 
+         => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
+xcstroke rgb sa xlink p = PPath (CStroke sa rgb) xlink p
 
 
 
--- | Create an open stoke coloured black.
+
+-- | Create an open, stroked path using the default stroke 
+-- attributes and coloured black.
 --
 zostroke :: Num u => PrimPath u -> Primitive u
-zostroke = ostrokePath black defaultSA NoLink
+zostroke = ostroke black default_stroke_attr
  
--- | Create a closed stroke coloured black.
+-- | Create a closed stroked path using the default stroke 
+-- attributes and coloured black.
 --
 zcstroke :: Num u => PrimPath u -> Primitive u
-zcstroke = cstrokePath black defaultSA NoLink
+zcstroke = cstroke black default_stroke_attr
 
-
+--------------------------------------------------------------------------------
 -- *** Fill
 
-fillPath :: Num u => RGBi -> XLink -> PrimPath u -> Primitive u
-fillPath rgb xlink p = PPath (CFill rgb) xlink p
 
--- | Create a filled path (@fill@). Fills only have one 
--- property - colour. But there are various representations of 
--- colour.
+-- | Create a filled path.
 --
--- @ fill () @ will fill with the default colour - black.
--- 
-class Fill t where
-  fill :: Num u => t -> PrimPath u -> Primitive u
- 
+fill :: Num u => RGBi -> PrimPath u -> Primitive u
+fill rgb p = PPath (CFill rgb) NoLink p
 
-instance Fill ()                where fill ()    = fillPath black NoLink
-instance Fill RGBi              where fill rgb   = fillPath rgb   NoLink
-instance Fill XLink             where fill xlink = fillPath black xlink
 
-instance Fill (RGBi,XLink) where
-  fill (rgb,xlink) = fillPath rgb xlink
-
+-- | Create a filled path with a hyperlink.
+--
+--  Note - hyperlinks are only rendered in SVG output.
+--
+xfill :: Num u => RGBi -> XLink -> PrimPath u -> Primitive u
+xfill rgb xlink p = PPath (CFill rgb) xlink p
 
 -- | Create a filled path coloured black. 
 zfill :: Num u => PrimPath u -> Primitive u
-zfill = fillPath black NoLink
+zfill = fill black
 
 
 --------------------------------------------------------------------------------
 -- Bordered (closed) paths
 
 
--- | fill colour * stroke attrs * stroke_colour * ...
---
-borderedPath :: Num u 
-            => RGBi -> StrokeAttr -> RGBi -> XLink -> PrimPath u -> Primitive u
-borderedPath frgb sa srgb xlink p = PPath (CFillStroke frgb sa srgb) xlink p
-
-
--- | Create a closed path - that is filled and stroked (the fill
+-- | Create a closed path that is both filled and stroked (the fill
 -- is below in the zorder).
 --
--- Fill colour must always be supplied, stroke colour and stroke 
--- attributes are optional. The default stroke colour is black.
+-- > fill colour * stroke attrs * stroke_colour * ...
 --
--- 
-class Bordered t where
-  bordered :: Num u => RGBi -> t -> PrimPath u -> Primitive u
+bordered :: Num u 
+        => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> Primitive u
+bordered frgb sa srgb p = PPath (CFillStroke frgb sa srgb) NoLink p
 
-instance Bordered () where 
-  bordered frgb () = borderedPath frgb defaultSA black NoLink
 
-instance Bordered RGBi where 
-  bordered frgb srgb = borderedPath frgb defaultSA srgb NoLink
-
-instance Bordered StrokeAttr where
-  bordered frgb sa = borderedPath frgb sa black NoLink
-
-instance Bordered XLink where 
-  bordered frgb xlink = borderedPath frgb defaultSA black xlink
-
-instance Bordered (RGBi,StrokeAttr) where
-  bordered frgb (srgb,sa) = borderedPath frgb sa srgb NoLink
-
-instance Bordered (RGBi,XLink) where
-  bordered frgb (srgb,xlink) = borderedPath frgb defaultSA srgb xlink
-
-instance Bordered (StrokeAttr,XLink) where
-  bordered frgb (sa,xlink) = borderedPath frgb sa black xlink
-
-instance Bordered (RGBi,StrokeAttr,XLink) where
-  bordered frgb (srgb,sa,xlink) = borderedPath frgb sa srgb xlink
+-- | Create a bordered, closed path with a hyperlink.
+--
+--  Note - hyperlinks are only rendered in SVG output.
+--
+xbordered :: Num u 
+        => RGBi -> StrokeAttr -> RGBi -> XLink -> PrimPath u -> Primitive u
+xbordered frgb sa srgb xlink p = PPath (CFillStroke frgb sa srgb) xlink p
 
 
 
@@ -337,11 +301,36 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
-mkTextLabel :: Num u 
-            => RGBi -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
-mkTextLabel rgb attr xlink txt pt = PLabel (LabelProps rgb attr) xlink lbl 
+-- | Create a text label. The string should not contain newline
+-- or tab characters.
+--
+-- The supplied point is the left baseline.
+--
+textlabel :: Num u 
+          => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
+textlabel rgb attr txt = xtextlabel rgb attr NoLink txt 
+
+
+-- | Create a text label with a hyperlink. The string should not 
+-- contain newline or tab characters.
+--
+-- The supplied point is the left baseline.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xtextlabel :: Num u 
+           => RGBi -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
+xtextlabel rgb attr xlink txt pt = PLabel (LabelProps rgb attr) xlink lbl 
   where
     lbl = PrimLabel pt (lexLabel txt) identityCTM
+
+
+-- | Create a label where the font is @Courier@, text size is 14pt
+-- and colour is black.
+--
+ztextlabel :: Num u => String -> Point2 u -> Primitive u
+ztextlabel = xtextlabel black wumpus_default_font NoLink
+
 
 -- | Constant for the default font, which is @Courier@ (aliased 
 -- to @Courier New@ for SVG) at 14 point.
@@ -356,152 +345,78 @@ wumpus_default_font = FontAttr 14 face
                     }
 
 
--- | Create a text label. The string should not contain newline
--- or tab characters. Use 'multilabel' to create text with 
--- multiple lines.
--- 
--- @textlabel@ is overloaded to make attributing the label more 
--- convenient.
---
--- Unless a 'FontAttr' is specified, the label will use 14pt 
--- Courier.
---
--- The supplied point is is the bottom left corner.
---
-class TextLabel t where 
-  textlabel :: Num u => t -> String -> Point2 u -> Primitive u
-
-
-instance TextLabel () where 
-    textlabel () = mkTextLabel black wumpus_default_font NoLink
-
-instance TextLabel RGBi where
-  textlabel rgb = mkTextLabel rgb wumpus_default_font NoLink
-
-instance TextLabel FontAttr where
-  textlabel a = mkTextLabel black a NoLink
-
-instance TextLabel XLink where
-    textlabel xlink = mkTextLabel black wumpus_default_font xlink
-
-
-instance TextLabel (RGBi,FontAttr) where
-  textlabel (rgb,a) = mkTextLabel rgb a NoLink
-
-instance TextLabel (RGBi,XLink) where
-  textlabel (rgb,xlink) = mkTextLabel rgb wumpus_default_font xlink
-
-instance TextLabel (FontAttr,XLink) where
-  textlabel (a,xlink) = mkTextLabel black a xlink
-
-instance TextLabel (RGBi,FontAttr,XLink) where
-  textlabel (rgb,a,xlink) = mkTextLabel rgb a xlink
-
--- | Create a label where the font is @Courier@, text size is 14pt
--- and colour is black.
---
-ztextlabel :: Num u => String -> Point2 u -> Primitive u
-ztextlabel = mkTextLabel black wumpus_default_font NoLink
-
 
 --------------------------------------------------------------------------------
 
-mkEllipse :: Num u 
-          => EllipseProps -> XLink -> u -> u -> Point2 u -> Primitive u
-mkEllipse props xlink hw hh pt = 
-    PEllipse props xlink (PrimEllipse pt hw hh identityCTM)
 
-
-ellipseDefault :: EllipseProps
-ellipseDefault = EFill black
-
-
--- | Create an ellipse, the ellipse will be filled unless the 
--- supplied attributes /imply/ a stroked ellipse, e.g.:
---
--- > ellipse (LineWidth 4) zeroPt 40 40 
+-- | Create a stroked ellipse.
 --
 -- Note - within Wumpus, ellipses are considered an unfortunate
 -- but useful /optimization/. Drawing good cicles with Beziers 
 -- needs at least eight curves, but drawing them with 
--- PostScript\'s @arc@ command is a single operation.  For 
+-- PostScript\'s @arc@ command needs a single operation. For 
 -- drawings with many dots (e.g. scatter plots) it seems sensible
--- to employ this optimaztion.
+-- to employ this optimization.
 --
 -- A deficiency of Wumpus\'s ellipse is that (non-uniformly)
 -- scaling a stroked ellipse also (non-uniformly) scales the pen 
 -- it is drawn with. Where the ellipse is wider, the pen stroke 
 -- will be wider too. 
 --
-class Ellipse t where
-  ellipse :: Num u => t -> u -> u -> Point2 u -> Primitive u
+-- Avoid non-uniform scaling stroked ellipses!
+--
+strokeEllipse :: Num u 
+             => RGBi -> StrokeAttr -> u -> u -> Point2 u -> Primitive u
+strokeEllipse rgb sa = xstrokeEllipse rgb sa NoLink
 
 
-instance Ellipse ()             where ellipse () = zellipse
+-- | Create a filled ellipse.
+--
+fillEllipse :: Num u 
+             => RGBi -> u -> u -> Point2 u -> Primitive u
+fillEllipse rgb = xfillEllipse rgb NoLink
 
-instance Ellipse RGBi where 
-  ellipse rgb = mkEllipse (EFill rgb) NoLink
+-- | Create a stroked ellipse with a hyperlink.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xstrokeEllipse :: Num u 
+             => RGBi -> StrokeAttr -> XLink -> u -> u -> Point2 u -> Primitive u
+xstrokeEllipse rgb sa xlink hw hh pt = 
+    PEllipse (EStroke sa rgb) xlink (PrimEllipse pt hw hh identityCTM)
 
-instance Ellipse StrokeAttr where
-  ellipse sa = mkEllipse (EStroke sa black) NoLink
+-- | Create a filled ellipse.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+-- 
+xfillEllipse :: Num u 
+             => RGBi -> XLink -> u -> u -> Point2 u -> Primitive u
+xfillEllipse rgb xlink hw hh pt = 
+    PEllipse (EFill rgb) xlink (PrimEllipse pt hw hh identityCTM)
 
-instance Ellipse XLink where 
-  ellipse xlink = mkEllipse (EFill black) xlink
-
-instance Ellipse (RGBi,StrokeAttr) where
-  ellipse (rgb,sa) = mkEllipse (EStroke sa rgb) NoLink
-
-instance Ellipse (RGBi,XLink) where
-  ellipse (rgb,xlink) = mkEllipse (EFill rgb) xlink
-
-instance Ellipse (StrokeAttr,XLink) where
-  ellipse (sa,xlink) = mkEllipse (EStroke sa black) xlink
-
-
-instance Ellipse (RGBi,StrokeAttr,XLink) where
-  ellipse (rgb,sa,xlink) = mkEllipse (EStroke sa rgb) xlink
 
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
-zellipse hw hh pt = mkEllipse ellipseDefault NoLink hw hh pt
+zellipse hw hh pt = xfillEllipse black NoLink hw hh pt
 
---------------------------------------------------------------------------------
--- Bordered (filled and stroked) ellipse
 
-mkBorderedEllipse :: Num u 
-          => RGBi -> StrokeAttr -> RGBi -> XLink -> u -> u -> Point2 u 
-          -> Primitive u
-mkBorderedEllipse frgb sa srgb xlink hw hh pt = 
+-- | Create a bordered (i.e. filled and stroked) ellipse.
+--
+borderedEllipse :: Num u 
+                => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
+                -> Primitive u
+borderedEllipse frgb sa srgb = xborderedEllipse frgb sa srgb NoLink
+
+-- | Create a bordered (i.e. filled and stroked) ellipse with a 
+-- hyperlink.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xborderedEllipse :: Num u 
+                 => RGBi -> StrokeAttr -> RGBi -> XLink -> u -> u -> Point2 u 
+                 -> Primitive u
+xborderedEllipse frgb sa srgb xlink hw hh pt = 
     PEllipse (EFillStroke frgb sa srgb) xlink (PrimEllipse pt hw hh identityCTM)
-
-class BorderedEllipse t where
-  borderedEllipse :: Num u => RGBi -> t -> u -> u -> Point2 u -> Primitive u
-
-
-instance BorderedEllipse () where 
-  borderedEllipse frgb () = mkBorderedEllipse frgb defaultSA black NoLink
-
-instance BorderedEllipse RGBi where 
-  borderedEllipse frgb srgb = mkBorderedEllipse frgb defaultSA srgb NoLink
-
-instance BorderedEllipse StrokeAttr where
-  borderedEllipse frgb sa = mkBorderedEllipse frgb sa black NoLink
-
-instance BorderedEllipse XLink where 
-  borderedEllipse frgb xlink = mkBorderedEllipse frgb defaultSA black xlink
-
-instance BorderedEllipse (RGBi,StrokeAttr) where
-  borderedEllipse frgb (srgb,sa) = mkBorderedEllipse frgb sa srgb NoLink
-
-instance BorderedEllipse (RGBi,XLink) where
-  borderedEllipse frgb (srgb,xlink) = mkBorderedEllipse frgb defaultSA srgb xlink
-
-instance BorderedEllipse (StrokeAttr,XLink) where
-  borderedEllipse frgb (sa,xlink) = mkBorderedEllipse frgb sa black xlink
-
-instance BorderedEllipse (RGBi,StrokeAttr,XLink) where
-  borderedEllipse frgb (srgb,sa,xlink) = mkBorderedEllipse frgb sa srgb xlink
-
 
 
 --------------------------------------------------------------------------------
@@ -597,12 +512,12 @@ boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t)
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
-    bbox_rect     = cstroke (rgb, line_attr) $ vertexPath [bl,br,tr,tl]
-    bl_to_tr      = ostroke (rgb, line_attr) $ vertexPath [bl,tr]
-    br_to_tl      = ostroke (rgb, line_attr) $ vertexPath [br,tl]
+    bbox_rect     = cstroke rgb line_attr $ vertexPath [bl,br,tr,tl]
+    bl_to_tr      = ostroke rgb line_attr $ vertexPath [bl,tr]
+    br_to_tl      = ostroke rgb line_attr $ vertexPath [br,tl]
 
-    line_attr     = defaultSA { line_cap     = CapRound
-                              , dash_pattern = Dash 0 [(1,2)] }
+    line_attr     = default_stroke_attr { line_cap     = CapRound
+                                        , dash_pattern = Dash 0 [(1,2)] }
 
 
 -- | Generate the control points illustrating the Bezier 
@@ -639,7 +554,8 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
     step _ (PLineTo e:xs)        = step e xs
     step s (PCurveTo c1 c2 e:xs) = mkLine s c1 : mkLine c2 e : step e xs 
 
-    mkLine s e                   = ostroke rgb (PrimPath s [lineTo e]) 
+    mkLine s e                   = let pp = (PrimPath s [lineTo e]) in 
+                                   ostroke rgb default_stroke_attr pp 
 
 
 -- Generate lines illustrating the control points of an 
@@ -663,7 +579,7 @@ ellipseCtrlLines rgb pe = start all_points
     rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
     rest _ _             = []
 
-    mkLine s e           = ostroke rgb (PrimPath s [lineTo e]) 
+    mkLine s e  = ostroke rgb default_stroke_attr (PrimPath s [lineTo e]) 
 
 
 

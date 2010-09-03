@@ -51,10 +51,10 @@ square rgb sidelen bl = fill rgb $ vertexPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 
 ellipseHH :: Fractional u => RGBi -> u -> Point2 u -> Primitive u
-ellipseHH rgb radius ctr = ellipse rgb radius (0.5*radius) ctr
+ellipseHH rgb radius ctr = fillEllipse rgb radius (0.5*radius) ctr
  
 label :: Num u => RGBi -> Point2 u -> Primitive u
-label rgb bl = textlabel rgb "Wumpus" bl
+label rgb bl = textlabel rgb wumpus_default_font "Wumpus" bl
 
 
 grey :: RGBi

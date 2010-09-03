@@ -57,18 +57,19 @@ bodyHeight  :: PrimF
 bodyHeight  = vertLine peru $ fromPtSize courier48_numeral_height
 
 agraveU     :: PrimF
-agraveU     = textlabel (black, courier_attr) "&#Agrave"
+agraveU     = textlabel black courier_attr "&#Agrave"
 
 letter :: Char -> DPoint2 -> DPrimitive
-letter ch pt = textlabel (black, courier_attr) [ch] pt
+letter ch pt = textlabel black courier_attr [ch] pt
 
 
 vertLine :: RGBi -> Double -> DPoint2 -> DPrimitive
-vertLine rgb height pt = ostroke rgb $ vertexPath [pt, pt .+^ vvec height]
+vertLine rgb height pt = 
+    ostroke rgb default_stroke_attr $ vertexPath [pt, pt .+^ vvec height]
 
 haxis :: RGBi -> PtSize -> DPrimitive
 haxis rgb ypos = 
-    ostroke (rgb, dash_attr) $ vertexPath [ pt, pt .+^ hvec 440 ]
+    ostroke rgb dash_attr $ vertexPath [ pt, pt .+^ hvec 440 ]
   where
-    dash_attr = DashPattern (Dash 0 [(2,2)])
+    dash_attr = default_stroke_attr { dash_pattern = Dash 0 [(2,2)] }
     pt        = P2 0 (fromPtSize ypos)

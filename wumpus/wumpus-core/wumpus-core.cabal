@@ -53,6 +53,17 @@ description:
   .
   0.30.0 to 0.31.0:
   .
+  * Major API change - the Primitive constructors defined in 
+    @Core.PictureLanguage@ are no longer overloaded (@cstroke@, 
+    @ostroke@, @fill@, @textlabel@, @ellipse@). The respective 
+    classes (@Stroke@, @TextLabel@, @Ellipse@) have been removed
+    and the constructors now have monomorphic types. This is 
+    because Wumpus-Core now only has one colour type and stroke
+    attributes are now a single type, so polymorphism became
+    less useful (and the simplicity of monomorphic types became
+    more favourable). @ellipse@ is no longer a constructor 
+    instead there variants @fillEllipse@ and @strokeEllipse@.
+  .
   * Added support for /bordered/ closed paths - i.e. paths that
     are both stroked and filled. These can be efficiently drawn 
     in SVG with a single @path@ element.

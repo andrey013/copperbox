@@ -95,11 +95,11 @@ Functions to write SVG files.
 
 \item[\texttt{Wumpus.Core.Picture.}]
 Operations to build \emph{pictures} - paths and labels within
-an affine frame. Type classes overloading convenience 
-constructors for building paths, labels, ellipses... The 
-constructors are convenient in that attributes - colour, line
-width, etc. - may be specified or not. The technique is due to 
-Iavor S. Diatchki's XML-Light.
+an affine frame. Generally the functions here are convenience 
+constructors for types from the hidden module 
+\texttt{Wumpus.Core.PictureInternal}. The types from this
+module are exported as opaque signatures by 
+\texttt{Wumpus.Core.WumpusTypes}.
 
 \item[\texttt{Wumpus.Core.PtSize.}]
 Text size calculations in \texttt{Core.FontSize} use points 

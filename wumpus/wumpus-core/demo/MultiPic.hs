@@ -19,8 +19,8 @@ main = do
 
 pic1 :: DPicture
 pic1 = uniformScale 2 $ frame $ 
-    [ ellipse blue 10 10 zeroPt
-    , ellipse red 10 10 (P2 40 40)
+    [ fillEllipse blue 10 10 zeroPt
+    , fillEllipse red 10 10 (P2 40 40)
     , ztextlabel "Wumpus!" (P2 40 20)
     , square red 5 (P2 50 10)  
     ]

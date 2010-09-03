@@ -12,7 +12,7 @@ import System.Directory
 
 
 drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
-drawBounds p        = p `picOver` (frame [cstroke () ph])
+drawBounds p        = p `picOver` (frame [zcstroke ph])
   where
     ph            = vertexPath $ [bl,br,tr,tl]
     (bl,br,tr,tl) = boundaryCorners $ boundary p
@@ -41,9 +41,9 @@ black = RGBi 0 0 0
 
 lbl1 :: Picture Double
 lbl1 = line1 `picBeside` line2 where
-  line1 = frame [textlabel attrs "Hello" zeroPt]
-  line2 = frame [textlabel attrs "World" zeroPt]
-  attrs = (peru, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
+  line1 = frame [textlabel peru attrs "Hello" zeroPt]
+  line2 = frame [textlabel peru attrs "World" zeroPt]
+  attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)
 
 
 demo01 :: IO ()
@@ -90,9 +90,9 @@ bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
 bigLetter :: RGBi -> Char -> Picture Double
-bigLetter col ch = uniformScale 5 $ frame [textlabel attrs [ch] zeroPt]
+bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] zeroPt]
   where
-    attrs = (col, FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)) 
+    attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)
 
 
 -- | A should be above B, above T

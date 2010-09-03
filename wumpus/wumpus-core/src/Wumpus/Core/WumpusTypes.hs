@@ -31,6 +31,7 @@ module Wumpus.Core.WumpusTypes
   , GSUpdate
   , Primitive
   , DPrimitive
+  , XLink
   , PrimPath
   , DPrimPath
   , PrimPathSegment

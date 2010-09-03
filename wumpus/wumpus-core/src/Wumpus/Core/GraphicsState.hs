@@ -58,7 +58,7 @@ module Wumpus.Core.GraphicsState
 
   -- * Initial graphic state
   , zeroGS
-  , defaultSA
+  , default_stroke_attr
 
   ) where
 
@@ -154,7 +154,7 @@ zeroGS ::  GraphicsState
 zeroGS = GraphicsState { gs_draw_colour  = black
                        , gs_font_size    = (-1)
                        , gs_font_face    = unmatchable_face
-                       , gs_stroke_attr  = defaultSA
+                       , gs_stroke_attr  = default_stroke_attr
                        }
   where
     unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE
@@ -162,10 +162,10 @@ zeroGS = GraphicsState { gs_draw_colour  = black
 
 -- | Default stroke attributes.
 --
-defaultSA :: StrokeAttr
-defaultSA = StrokeAttr { line_width      = 1
-                       , miter_limit     = 1
-                       , line_cap        = CapButt
-                       , line_join       = JoinMiter
-                       , dash_pattern    = Solid
-                       }
+default_stroke_attr :: StrokeAttr
+default_stroke_attr = StrokeAttr { line_width      = 1
+                                 , miter_limit     = 1
+                                 , line_cap        = CapButt
+                                 , line_join       = JoinMiter
+                                 , dash_pattern    = Solid
+                                 }
