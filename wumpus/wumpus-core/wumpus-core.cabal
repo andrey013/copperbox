@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.30.0
+version:          0.31.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -21,7 +21,7 @@ description:
   Pictures in Wumpus are made from /paths/ and text /labels/. 
   Paths themselves are made from points. The usual affine 
   transformations (rotations, scaling, translations) can be
-  applied to geometric objects. Unlike PostScript there is no 
+  applied to Pictures. Unlike PostScript there is no 
   notion of a current point, Wumpus builds pictures in a
   coordinate-free style. 
   .
@@ -50,6 +50,12 @@ description:
   (bitmaps). 
   .
   Changelog:
+  .
+  0.30.0 to 0.31.0:
+  .
+  * Added support for /bordered/ closed paths - i.e. paths that
+    are both stroked and filled. These can be efficiently drawn 
+    in SVG with a single @path@ element.
   .
   0.23.0 to 0.30.0:
   .
@@ -92,27 +98,6 @@ description:
     now @boundaryCorners@, @within@ is now @withinBoundary@ and 
     @union@ is now @boundaryUnion@. 
   .
-  0.22.0 TO 0.23.0:
-  . 
-  * @Basic.GraphicsState@ - extracted the font face fields from 
-    @FontAttr@ datatype into a separate datatype @FontFace@.
-  . 
-  * Added @PtSize@ a numeric type wrapping Double. This is 
-    specifically for text size calculations, vis the 
-    @Core.FontSize@ module.
-  .
-  * Changed all functions in @Core.FontSize@ to return @PtSize@
-    instead of a polymorphic type @u@ (where @u@ is an instance 
-    of Fractional). To get to another unit type rather than 
-    FontSize use an explicit conversion that scales the value 
-    accordingly.
-  .
-  * Added FromPtSize class constraints to various functions in
-    @Core.Picture@.
-  .
-  * Added @charWidth@ to @Core.FontSize@.
-  .
-  * Added @vlength@ to @Core.Geometry@
   .
   .
 build-type:         Simple

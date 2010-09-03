@@ -1,4 +1,46 @@
 
+
+0.23.0 to 0.30.0:
+
+  * Substantial changes - the output machinery has been heavily 
+    modified, the intention was to reduce the use of matrix 
+    transformations in SVG output. Though this goal has not been 
+    achieved, some code-size improvements in the SVG output have 
+    been made. 
+
+  * The code generation monads have been changed - Wumpus no 
+    longer uses a writer monad for code generation, but it will
+    keep the Wumpus name.
+
+  * Added support for hyperlinks in the SVG output.
+
+  * Improved internal pretty printing and added the function 
+    @printPicture@ for debugging.
+
+  * The @Core.Colour@ module has been simplified to support just 
+    one (new) type - RGBi, and the conversion type class 
+    @PSColour@ has been eliminated.
+
+  * @Core.Picture@ - the type of the @frame@ function has been 
+    changed to take a list of Primitives rather than a single 
+    Primitive. The function @frameMulti@ which previously 
+    provided this functionality has been removed. SVG hyperlinks
+    are now supported for Primitives. 
+ 
+  * The default font size has been changed to 14 pt. 
+
+  * The Path datatype has been renamed PrimPath, likewise Ellipse 
+    is now PrimEllispe and Label becomes PrimLabel.
+
+  * @Core.Geometry@ now longer defines an affine frame datatype.
+
+  * @Core.BoundingBox@ module changed significantly. The corner 
+    functions (@boundaryBottomLeft@, etc.) have been removed, 
+    along with the plane functions (@leftPlane@, etc.). Some 
+    functions have been given more verbose names - @corners@ is 
+    now @boundaryCorners@, @within@ is now @withinBoundary@ and 
+    @union@ is now @boundaryUnion@. 
+
 0.22.0 TO 0.23.0:
  
   * @Basic.GraphicsState@ - extracted the font face fields from 
@@ -41,7 +83,6 @@
 
   * Exposed the PSUnit type class. 
 
-
 0.20.0 to 0.21.0:
 
   * Removed the Primitive instances of the Affine transformation 
@@ -70,7 +111,6 @@
   * Removed the Ord superclass constriant from the @Stroke@ and
     @Fill@ classes and derived operations (e.g. @zostroke@).
 
-
 0.19.0 to 0.20.0:
   
   * Removed the modules:
@@ -93,7 +133,6 @@
   
   * Guide updated regarding the new package @wumpus-basic@.
   
-
 0.18.0 to 0.19.0:
   
   * Added @Transform@ type class to apply a matrix transformation
@@ -149,7 +188,6 @@
     missing with the generated file @WorldFrame.eps@ incorrectly 
     included instead.
 
-
 0.16.0 to 0.17.0:
   
   * Added Core.WumpusTypes to export opaque versions of
@@ -175,7 +213,6 @@
     PrimEllipse type - internal change.
   
   * Removed dependency on \'old-time\'.
-
 
 0.15.0 to 0.16.0:
 
@@ -216,12 +253,10 @@
   
   * Removed DList dependency.
 
-
 0.13.0 to 0.13.1:
 
   * Wumpus.Core.SVG changed path_s to path_c - \'S\' was the 
     wrongSVG command to match PostScript\'s @curveto@.
-
 
 0.12.0 to 0.13.0:
 

@@ -36,13 +36,17 @@ module Wumpus.Core.Picture
   , zcstroke
   , Fill(..)
   , zfill
-  , Ellipse(..)
-  , zellipse
-
+  , Bordered(..)
   , clip
 
   , TextLabel(..)
   , ztextlabel
+
+  , Ellipse(..)
+  , zellipse
+  , BorderedEllipse(..)
+  
+
 
   -- * Operations
   , extendBoundary  
@@ -153,6 +157,28 @@ curvedPath (x:xs) = PrimPath x (step xs)
 
 xlinkhref :: String -> XLink
 xlinkhref = XLinkHRef
+
+
+--------------------------------------------------------------------------------
+-- 
+
+-- Design issue.
+--
+-- The overloading style below - patterned after Iavor S. 
+-- Diatchki\'s XML-Light - is (probably) not as valuable as first 
+-- anticipated. 
+--
+-- Wumpus-Basic takes graphic styles from a reader monad, so it 
+-- \'always\' calls the overloaded operations with the same 
+-- argument types and therefore doesn\'t need overloading.
+--
+-- It\'s perhaps unlikely that any other software would want to 
+-- use Wumpus-Core directly, if it did then it is quite possible 
+-- the exact argument types would again be uniform and no
+-- shorthand via overloading would be necessary.
+--
+--
+
 
 --------------------------------------------------------------------------------
 -- Take Paths to Primitives
@@ -265,6 +291,65 @@ instance Fill (RGBi,XLink) where
 zfill :: Num u => PrimPath u -> Primitive u
 zfill = fillPath black NoLink
 
+
+--------------------------------------------------------------------------------
+-- Bordered (closed) paths
+
+
+-- | fill colour * stroke attrs * stroke_colour * ...
+--
+borderedPath :: Num u 
+            => RGBi -> [StrokeAttr] -> RGBi -> XLink -> PrimPath u -> Primitive u
+borderedPath frgb attrs srgb xlink p = PPath (CFillStroke frgb attrs srgb) xlink p
+
+
+-- | Create a closed path - that is filled and stroked (the fill
+-- is below in the zorder).
+--
+-- Fill colour must always be supplied, stroke colour and stroke 
+-- attributes are optional. The default stroke colour is black.
+--
+-- 
+class Bordered t where
+  bordered :: Num u => RGBi -> t -> PrimPath u -> Primitive u
+
+instance Bordered () where 
+  bordered frgb () = borderedPath frgb [] black NoLink
+
+instance Bordered RGBi where 
+  bordered frgb srgb = borderedPath frgb [] srgb NoLink
+
+instance Bordered StrokeAttr where
+  bordered frgb x = borderedPath frgb [x] black NoLink
+
+instance Bordered [StrokeAttr] where
+  bordered frgb xs = borderedPath frgb xs black NoLink
+
+instance Bordered XLink where 
+  bordered frgb xlink = borderedPath frgb [] black xlink
+
+instance Bordered (RGBi,StrokeAttr) where
+  bordered frgb (srgb,x) = borderedPath frgb [x] srgb NoLink
+
+instance Bordered (RGBi,[StrokeAttr]) where
+  bordered frgb (srgb,xs) = borderedPath frgb xs srgb NoLink
+
+instance Bordered (RGBi,XLink) where
+  bordered frgb (srgb,xlink) = borderedPath frgb [] srgb xlink
+
+instance Bordered (StrokeAttr,XLink) where
+  bordered frgb (x,xlink) = borderedPath frgb [x] black xlink
+
+instance Bordered ([StrokeAttr],XLink) where
+  bordered frgb (xs,xlink) = borderedPath frgb xs black xlink
+
+instance Bordered (RGBi,StrokeAttr,XLink) where
+  bordered frgb (srgb,x,xlink) = borderedPath frgb [x] srgb xlink
+
+instance Bordered (RGBi,[StrokeAttr],XLink) where
+  bordered frgb (srgb,xs,xlink) = borderedPath frgb xs srgb xlink
+
+
 --------------------------------------------------------------------------------
 -- Clipping 
 
@@ -373,7 +458,7 @@ ellipseDefault = EFill black
 -- will be wider too. 
 --
 class Ellipse t where
-  ellipse :: Fractional u => t -> u -> u -> Point2 u -> Primitive u
+  ellipse :: Num u => t -> u -> u -> Point2 u -> Primitive u
 
 
 instance Ellipse ()             where ellipse () = zellipse
@@ -411,6 +496,54 @@ instance Ellipse (RGBi,[StrokeAttr],XLink) where
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
 zellipse hw hh pt = mkEllipse ellipseDefault NoLink hw hh pt
+
+--------------------------------------------------------------------------------
+-- Bordered (filled and stroked) ellipse
+
+mkBorderedEllipse :: Num u 
+          => RGBi -> [StrokeAttr] -> RGBi -> XLink -> u -> u -> Point2 u 
+          -> Primitive u
+mkBorderedEllipse frgb xs srgb xlink hw hh pt = 
+    PEllipse (EFillStroke frgb xs srgb) xlink (PrimEllipse pt hw hh identityCTM)
+
+class BorderedEllipse t where
+  borderedEllipse :: Num u => RGBi -> t -> u -> u -> Point2 u -> Primitive u
+
+
+instance BorderedEllipse () where 
+  borderedEllipse frgb () = mkBorderedEllipse frgb [] black NoLink
+
+instance BorderedEllipse RGBi where 
+  borderedEllipse frgb srgb = mkBorderedEllipse frgb [] srgb NoLink
+
+instance BorderedEllipse StrokeAttr where
+  borderedEllipse frgb x = mkBorderedEllipse frgb [x] black NoLink
+
+instance BorderedEllipse [StrokeAttr] where
+  borderedEllipse frgb xs = mkBorderedEllipse frgb xs black NoLink
+
+instance BorderedEllipse XLink where 
+  borderedEllipse frgb xlink = mkBorderedEllipse frgb [] black xlink
+
+instance BorderedEllipse (RGBi,StrokeAttr) where
+  borderedEllipse frgb (srgb,x) = mkBorderedEllipse frgb [x] srgb NoLink
+
+instance BorderedEllipse (RGBi,[StrokeAttr]) where
+  borderedEllipse frgb (srgb,xs) = mkBorderedEllipse frgb xs srgb NoLink
+
+instance BorderedEllipse (RGBi,XLink) where
+  borderedEllipse frgb (srgb,xlink) = mkBorderedEllipse frgb [] srgb xlink
+
+instance BorderedEllipse (StrokeAttr,XLink) where
+  borderedEllipse frgb (x,xlink) = mkBorderedEllipse frgb [x] black xlink
+
+instance BorderedEllipse ([StrokeAttr],XLink) where
+  borderedEllipse frgb (xs,xlink) = mkBorderedEllipse frgb xs black xlink
+
+instance BorderedEllipse (RGBi,[StrokeAttr],XLink) where
+  borderedEllipse frgb (srgb,xs,xlink) = mkBorderedEllipse frgb xs srgb xlink
+
+
 
 --------------------------------------------------------------------------------
 -- Operations
