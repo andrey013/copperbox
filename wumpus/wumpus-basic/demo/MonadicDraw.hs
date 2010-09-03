@@ -4,12 +4,12 @@
 module MonadicDraw where
 
 import Wumpus.Basic.Anchors
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
 import Wumpus.Basic.Monads.TurtleMonad
-import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
 

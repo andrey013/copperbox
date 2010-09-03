@@ -4,6 +4,7 @@ module ADotPic where
 
 
 import Wumpus.Basic.Anchors
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Monads.Drawing
@@ -42,9 +43,9 @@ pic1 = drawGraphicU $ execDrawing std_attr  $ mf
 
 mf :: (Floating u, FromPtSize u) => Drawing u ()
 mf = do 
-    a <- liftAG dotCircle zeroPt 
-    b <- liftAG dotCircle (P2 60 60)
-    _ <- liftAG dotCircle (P2 45 45)
+    a <- nodeAt dotCircle zeroPt 
+    b <- nodeAt dotCircle (P2 60 60)
+    _ <- nodeAt dotCircle (P2 45 45)
     let c = radialAnchor (pi/4)  a
     let d = radialAnchor (5* pi/4) b
     trace $ straightLine () (d .-. c) c

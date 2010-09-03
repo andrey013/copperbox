@@ -49,7 +49,7 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 
 data DrawingAttr = DrawingAttr 
-      { line_width         :: Double
+      { stroke_props       :: StrokeAttr
       , font_props         :: FontAttr
       , stroke_colour      :: RGBi
       , fill_colour        :: RGBi
@@ -57,14 +57,14 @@ data DrawingAttr = DrawingAttr
   deriving (Eq,Show)
 
 standardAttr :: FontSize -> DrawingAttr
-standardAttr sz = DrawingAttr { line_width         = std_line_width
+standardAttr sz = DrawingAttr { stroke_props       = defaultSA
                               , font_props         = FontAttr sz courier
                               , stroke_colour      = black
                               , fill_colour        = gold  }
 
  
 strokeAttr :: DrawingAttr -> (RGBi, StrokeAttr)
-strokeAttr = liftA2 (,) stroke_colour (LineWidth . line_width)
+strokeAttr = liftA2 (,) stroke_colour stroke_props
 
 fillAttr :: DrawingAttr -> RGBi
 fillAttr = fill_colour
@@ -96,8 +96,8 @@ textDimensions str attr = (w,h)
 -- Note - some care might be needed if we ever define other unit 
 -- types...
 
-std_line_width      :: Double
-std_line_width      = 1.0
+-- std_line_width      :: Double
+-- std_line_width      = 1.0
 
 thick_line          :: Double
 thick_line          = 2.0
@@ -108,14 +108,20 @@ ultra_thick_line    = 4.0
 thin_line           :: Double
 thin_line           = 0.5
 
+setLineWidth       :: Double -> DrawingAttr -> DrawingAttr
+setLineWidth d      = star (\s i -> s { stroke_props = upd i} ) stroke_props
+  where
+   upd attrs        = attrs { line_width = d }
+
+
 thick               :: DrawingAttr -> DrawingAttr
-thick attr          = attr { line_width = thick_line }
+thick               = setLineWidth thick_line
 
 ultrathick          :: DrawingAttr -> DrawingAttr
-ultrathick attr     = attr { line_width = ultra_thick_line }
+ultrathick          = setLineWidth ultra_thick_line
 
 thin                :: DrawingAttr -> DrawingAttr
-thin attr           = attr { line_width = thin_line }
+thin                = setLineWidth thin_line
 
 
 fontface            :: FontFace -> DrawingAttr -> DrawingAttr

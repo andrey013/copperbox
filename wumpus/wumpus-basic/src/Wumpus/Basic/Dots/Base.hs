@@ -55,11 +55,10 @@ import Data.VectorSpace
 
 -- NOTES
 --
--- Affine transforming Points, LineSegments etc. before
--- they become pictures is _GOOD_! The calculations are done in 
--- Wumpus and so don't cause extra (gsave... grestore) in 
--- PostScript.
+-- TikZ has both stroked and bordered (filled and outline-stroked)
+-- marks e.g. square and square*
 --
+
 
 dotChar :: (Fractional u, FromPtSize u) => Char -> DrawingAttr -> GraphicF u
 dotChar ch = dotText [ch]

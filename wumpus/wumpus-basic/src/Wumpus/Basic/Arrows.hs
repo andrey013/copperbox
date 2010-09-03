@@ -129,7 +129,7 @@ triTipRight pathF tipF p0 p1 attr =
     pathGraphic short_path attr . tipF theta attr p1
   where
     sz              = arrowWidth attr
-    line_unit       = realToFrac $ (line_width attr)
+    line_unit       = realToFrac $ (line_width $ stroke_props attr)
     long_path       = pathF p0 p1
     short_path      = shortenR (sz+line_unit) long_path
     mid_short_path  = shortenR (0.5*sz) long_path

@@ -3,12 +3,12 @@
 module Path01 where
 
 import Wumpus.Basic.Arrows.Tips
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
-import Wumpus.Basic.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -43,28 +43,28 @@ curve1 = wrapG $ ostroke (strokeAttr std_attr) $ curvedPath xs
     xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 
 
 red_attr :: DrawingAttr
-red_attr = std_attr { line_width = 6, stroke_colour = red }
+red_attr = std_attr { stroke_colour = red }
 
 curve2 :: Graphic Double
-curve2 = wrapG $ ostroke (strokeAttr red_attr) $ toPathU path1
+curve2 = wrapG $ ostroke (strokeAttr red_attr) $ toPrimPathU path1
   where
     path1 = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
 
 blue_attr :: DrawingAttr
-blue_attr = std_attr { line_width = 2, stroke_colour = blue }
+blue_attr = std_attr { stroke_colour = blue }
 
 curve3 :: Graphic Double
-curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPathU $ shorten 10 path1
+curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPrimPathU $ shorten 10 path1
 
-path1 :: BPath Double
+path1 :: Path Double
 path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
 circle1 = filledCircle (yellow) 2 60 zeroPt
 
-cto4 :: BPath Double
+cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 
 -- Note - the distance from the barb ends to the curve is not 
@@ -84,6 +84,6 @@ eastUpWest = wrapG $ ostroke (strokeAttr blue_attr) $ mkP1 (P2 140 0) (P2 160 20
 -- i.e. start and end are supplied, line manipulations are done
 -- by displacing them.
 --  
-mkP1 :: Floating u => Point2 u -> Point2 u -> Path u
-mkP1 start end = toPathU $ execPath start $ 
+mkP1 :: Floating u => Point2 u -> Point2 u -> PrimPath u
+mkP1 start end = toPrimPathU $ execPath start $ 
                     horizontalVertical (end .+^ hvec 20) >> lineto end
