@@ -45,7 +45,7 @@ pic1 = drawGraphicU $
             ; return ()
             }
 
-curvePath :: (Floating u, Ord u) => Point2 u -> Point2 u -> BPath u
+curvePath :: (Floating u, Ord u) => Point2 u -> Point2 u -> Path u
 curvePath p0 p1 = execPath p0 $ 
                      curveto (d2r (270 :: Double)) (d2r (285 :: Double)) p1
 

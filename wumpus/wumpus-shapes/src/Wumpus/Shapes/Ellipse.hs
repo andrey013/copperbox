@@ -159,7 +159,7 @@ drawEllipse drawF ell = labelpic . ellpic
     ellpic  = wrapG $ drawF $ curvedPath $ ellipsePoints ell
 -}
 
-ellipsePath :: (Real u, Floating u) => Ellipse u -> Path u
+ellipsePath :: (Real u, Floating u) => Ellipse u -> PrimPath u
 ellipsePath = curvedPath . ellipsePoints
 
 ellipsePoints :: (Real u, Floating u) => Ellipse u -> [Point2 u]

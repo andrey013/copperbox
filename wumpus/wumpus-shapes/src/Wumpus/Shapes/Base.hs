@@ -115,7 +115,7 @@ newtype ShapeLabel = ShapeLabel { getShapeLabel :: String }
 -- Note - labels are not scaled ....
 --
 labelGraphic :: (Real u, Floating u, FromPtSize u) 
-             => ShapeLabel -> (DRGB,FontAttr) -> CTM u -> Graphic u
+             => ShapeLabel -> (RGBi,FontAttr) -> CTM u -> Graphic u
 labelGraphic sl (rgb,attr) ctm =
     wrapG $ rotatePrimitive ang $ textlabel (rgb,attr) text pt
   where
@@ -136,6 +136,8 @@ labelGraphic sl (rgb,attr) ctm =
 
 class Draw sh where
   draw :: (u ~ DUnit sh) => sh -> AGraphic (Point2 u) u sh
+
+-- outline is a good synonym for stroke
 
 {-
 -- stroke okay, but fill has a name clash...

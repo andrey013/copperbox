@@ -25,8 +25,8 @@ library
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
                       monadLib          >= 3.6,
-                      wumpus-core       >= 0.23.0,
-                      wumpus-basic      >= 0.4.0
+                      wumpus-core       >= 0.30.0,
+                      wumpus-basic      >= 0.5.0
 
   
   exposed-modules:

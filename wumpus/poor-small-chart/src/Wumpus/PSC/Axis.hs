@@ -120,17 +120,17 @@ yAxisi orY step drawF bv = pointHylo2 phi drawF (yaxisIxStarti step bv)
 --------------------------------------------------------------------------------
 
 type TickDraw  t u = (t, Point2T u, Vec2 u)
-type LabelDraw   u = (DRGB, FontAttr, Point2T u)
+type LabelDraw   u = (RGBi, FontAttr, Point2T u)
 
 data TickLabelConfig ua = TickLabelConfig 
-      { tick_label_font_colour    :: DRGB
+      { tick_label_font_colour    :: RGBi
       , tick_label_font_attr      :: FontAttr
       , tick_label_text_fun       :: ua -> String
-      , tick_label_line_colour    :: DRGB
+      , tick_label_line_colour    :: RGBi
       , tick_label_line_width     :: Double
       }
 
-tickLabelConfig :: DRGB -> FontAttr -> (ua -> String) -> TickLabelConfig ua
+tickLabelConfig :: RGBi -> FontAttr -> (ua -> String) -> TickLabelConfig ua
 tickLabelConfig rgb font_attr textF = 
     TickLabelConfig { tick_label_font_colour    = rgb
                     , tick_label_font_attr      = font_attr
@@ -139,12 +139,12 @@ tickLabelConfig rgb font_attr textF =
                     , tick_label_line_width     = 1.0
                     }
 
-lineAttrs :: TickLabelConfig ua -> (DRGB, StrokeAttr)
+lineAttrs :: TickLabelConfig ua -> (RGBi, StrokeAttr)
 lineAttrs (TickLabelConfig 
             { tick_label_line_colour = rgb
             , tick_label_line_width  = lw} ) = (rgb, LineWidth lw)
 
-textAttrs :: TickLabelConfig ua -> (DRGB, FontAttr)
+textAttrs :: TickLabelConfig ua -> (RGBi, FontAttr)
 textAttrs (TickLabelConfig 
             { tick_label_font_colour = rgb
             , tick_label_font_attr   = attr} ) = (rgb,attr)

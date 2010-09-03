@@ -13,10 +13,10 @@ import Wumpus.PSC.Core
 import Wumpus.PSC.ScatterPlot
 
 
-import Wumpus.Core                              -- package: wupus-core
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Graphic                     
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours
 
 import System.Directory
 
@@ -43,13 +43,13 @@ xaxis_graphic :: BivariateGraphic Double Double
 xaxis_graphic = xAxis OXBottom 5 tickfun 
   where
     tickfun = tickdown_textdownH 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) ifloor
+    cfg     = tickLabelConfig black (FontAttr 12 helvetica) ifloor
 
 yaxis_graphic :: BivariateGraphic Double Double
 yaxis_graphic = yAxis OYLeft 2 tickfun
   where
     tickfun = tickleftV 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) ifloor
+    cfg     = tickLabelConfig black (FontAttr 12 helvetica) ifloor
 
 border_graphic :: BivariateGraphic Double Double 
 border_graphic = rectangleBorder (black, LineWidth 1.0)

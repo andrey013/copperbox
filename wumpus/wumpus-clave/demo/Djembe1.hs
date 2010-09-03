@@ -5,9 +5,9 @@ module Djembe1 where
 import Wumpus.Clave.DjembeStrokes
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Colour.SVGColours   -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours
 
 import Data.AffineSpace                 -- package: vector-space
 
@@ -27,7 +27,8 @@ errK :: a
 errK = error "no picture"
 
 textSample :: DPicture
-textSample = frame $ textlabel (black, helvetica 12) "Helvetica 12 pt" (P2 0 (-60))
+textSample = frame [ textlabel (black, FontAttr 12 helvetica) 
+                               "Helvetica 12 pt" (P2 0 (-60)) ]
 
 line1 :: DGraphic
 line1 = mk [bass, muffledBass, tone, muffledTone, slap, paren bass, paren slap

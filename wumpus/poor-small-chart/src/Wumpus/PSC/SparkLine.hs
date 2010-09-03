@@ -30,7 +30,7 @@ import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 type SparkLineF = [DPoint2] -> DGraphic
 
 
-simpleLine :: DRGB -> Double -> SparkLineF
+simpleLine :: RGBi -> Double -> SparkLineF
 simpleLine rgb lw = wrapG . ostroke (rgb, LineWidth lw) . vertexPath
 
 
@@ -55,7 +55,7 @@ sparklineRectangle attr letter_count =
 
 
 
-rangeBand :: (Num ux, Num uy) => Range uy -> DRGB -> BivariateGraphic ux uy
+rangeBand :: (Num ux, Num uy) => Range uy -> RGBi -> BivariateGraphic ux uy
 rangeBand (y0 ::: y1) rgb = \bv -> 
     draw (borderWidth bv) (scaleY (y1 - y0) bv) (bx bv) (scaleY y0 bv) 
   where

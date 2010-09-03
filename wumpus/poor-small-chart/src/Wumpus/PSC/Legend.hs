@@ -31,9 +31,9 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 import Data.AffineSpace                 -- package: vector-space 
 
-type LegendElementDrawF u = DRGB -> String -> DPoint2 -> Graphic u
+type LegendElementDrawF u = RGBi -> String -> DPoint2 -> Graphic u
 
-type ColourLegend = [(DRGB,String)]
+type ColourLegend = [(RGBi,String)]
 
 drawLegend :: LegendElementDrawF u -> Double -> ColourLegend -> Graphic u
 drawLegend drawF height xs = 
@@ -41,13 +41,13 @@ drawLegend drawF height xs =
   where
     points          = iterate (.-^ vvec (height + 4)) (P2 4 4)
 
-simpleLegendElementDraw :: DRGB -> FontAttr -> LegendElementDrawF Double
-simpleLegendElementDraw text_rgb font_props = 
-    \rgb text pt -> let height  = numeralHeight $ font_size font_props
-                        square  = filledRectangle rgb height height pt
-                        pt2     = pt .+^ hvec (height + 4)
-                        label   = wrapG $ textlabel (text_rgb,font_props) text pt2
-                    in square . label 
+simpleLegendElementDraw :: RGBi -> FontAttr -> LegendElementDrawF Double
+simpleLegendElementDraw text_rgb font_props = \rgb text pt -> 
+    let height  = fromPtSize $ numeralHeight $ font_size font_props
+        square  = filledRectangle rgb height height pt
+        pt2     = pt .+^ hvec (height + 4)
+        label   = wrapG $ textlabel (text_rgb,font_props) text pt2
+    in square . label 
     
 
 longestName :: ColourLegend -> String

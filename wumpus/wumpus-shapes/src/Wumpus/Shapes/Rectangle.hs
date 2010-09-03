@@ -154,7 +154,7 @@ instance (Real u, Floating u, FromPtSize u) => Draw (Rectangle u) where
 
 
 
-rectPath :: (Real u, Floating u) => Rectangle u -> Path u
+rectPath :: (Real u, Floating u) => Rectangle u -> PrimPath u
 rectPath = vertexPath . extractVertexPoints
 
 extractVertexPoints :: (Real u, Floating u) => Rectangle u -> [Point2 u]

@@ -13,16 +13,17 @@ import Wumpus.PSC.ScatterPlot
 
 
 
--- Note - Dots.Base is the /wrong/ module. Needs work to
--- move to Dots which hasd a different type...
+import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.Dots.Base                   -- package: wumpus-basic
+-- Note - Dots.Base is the /wrong/ module. Needs work to
+-- move to Dots which has a different type...
+
+import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Dots.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours
 
-import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
@@ -47,13 +48,13 @@ xaxis_graphic :: BivariateGraphic Int uy
 xaxis_graphic = xAxisi OXBottom 1 tickfun
   where
     tickfun = tickdown_textdownH 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) show
+    cfg     = tickLabelConfig black (FontAttr 12 helvetica) show
 
 yaxis_graphic :: BivariateGraphic ux Double
 yaxis_graphic = yAxis OYLeft 1.75 tickfun
   where
     tickfun = tickleftV 4 10 cfg
-    cfg     = tickLabelConfig black (helvetica 12) (ffloat 2)
+    cfg     = tickLabelConfig black (FontAttr 12 helvetica) (ffloat 2)
 
 
 

@@ -145,7 +145,7 @@ instance (Real u, Floating u, FromPtSize u) => Draw (Circle u) where
 
 
 
-circlePath :: (Real u, Floating u) => Circle u -> Path u
+circlePath :: (Real u, Floating u) => Circle u -> PrimPath u
 circlePath = curvedPath . circlePoints 
 
 circlePoints :: (Real u, Floating u) => Circle u -> [Point2 u]

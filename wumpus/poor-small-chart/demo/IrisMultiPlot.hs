@@ -14,11 +14,11 @@ import Wumpus.PSC.ScatterPlot
 
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Extra.PictureLanguage
-import Wumpus.Basic.Dots                        -- package: wumpus-basic
+import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.PictureLanguage
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours
 
 import Data.List
 import Data.Maybe
@@ -245,7 +245,7 @@ dot_virginica   :: DotF
 dot_virginica   = outlinedDot blue   2
 
 
-outlinedDot :: DRGB -> Int -> DGraphicF
+outlinedDot :: RGBi -> Int -> DGraphicF
 outlinedDot rgb n = dotDisk ((standardAttr n) { mark_colour = rgb })
 
 extractData :: (IrisData -> Double, IrisData -> Double) -> IrisData -> (Double,Double)

@@ -110,7 +110,7 @@ endLine = getPos                    >>= \pt    ->
 
 -- Doesn't work well with monoid/writer...
  
-highlight :: Int -> DRGB -> ClaveM ()
+highlight :: Int -> RGBi -> ClaveM ()
 highlight n rgb = getPos                    >>= \pt ->
                   asks box_height           >>= \h  ->
                   trace (backgroundF n h rgb pt)

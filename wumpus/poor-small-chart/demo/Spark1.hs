@@ -7,11 +7,10 @@ import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 import Wumpus.PSC.SparkLine
 
-import Wumpus.Core
-
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.SVGColours 
 
 import System.Directory
 
@@ -49,7 +48,7 @@ output_rect :: RectangleLoc Double
 output_rect = (sparklineRectangle spark_font 10, zeroPt)
 
 spark_font :: FontAttr
-spark_font = courier 24
+spark_font = FontAttr 24 courier
 
 
 data_points :: Dataset Double Double

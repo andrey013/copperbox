@@ -137,7 +137,7 @@ flamStem = openPath line_props vec_path . displaceStem
   where
     vec_path = [vvec 20, vec (-5) (-5), vvec (-10)]
 
-line_props :: (DRGB, StrokeAttr)
+line_props :: (RGBi, StrokeAttr)
 line_props = (black, LineWidth 1.0)
 
 
@@ -170,11 +170,11 @@ displaceCharHeight = vdisp (-10)
 
 -- Where to have the  origin....
 letter :: Char -> DGraphicF
-letter ch = wrapG . textlabel (black,helvetica 12) [ch] . disp (-4) (-5)
+letter ch = wrapG . textlabel (black,FontAttr 12 helvetica) [ch] . disp (-4) (-5)
 
 -- For flam...
 smallLetter :: Char -> DGraphicF
-smallLetter ch = wrapG . textlabel (black,helvetica 9) [ch] . disp (-3) (-5)
+smallLetter ch = wrapG . textlabel (black,FontAttr 9 helvetica) [ch] . disp (-3) (-5)
 
 
 -- Candidates for Basic.Graphic

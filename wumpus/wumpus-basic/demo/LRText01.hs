@@ -2,9 +2,9 @@
 
 module LRText01 where
 
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.SVGColours
 import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
 

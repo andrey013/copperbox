@@ -54,7 +54,7 @@ divi a b = fromIntegral a / fromIntegral b
 
 
 textlineRect :: (Fractional u, FromPtSize u) 
-             => (DRGB,FontAttr) -> String -> (Rectangle u, GraphicF u)
+             => (RGBi,FontAttr) -> String -> (Rectangle u, GraphicF u)
 textlineRect (rgb,attr) text  = 
     (Rectangle text_width text_height, wrapG . textlabel (rgb,attr) text)
   where

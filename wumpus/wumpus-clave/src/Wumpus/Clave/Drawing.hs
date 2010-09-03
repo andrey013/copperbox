@@ -41,14 +41,14 @@ import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 
 
-circleF :: BoxHeight -> DRGB -> DGraphicF
+circleF :: BoxHeight -> RGBi -> DGraphicF
 circleF h rgb = disk rgb radius . disp (radius+dd) (radius+dd)
   where
     radius = fromPtSize $ 0.5 * numeralHeight h
     dd     = fromPtSize $ descenderDepth h
 
 
-barF :: BoxHeight -> DRGB -> DPoint2 -> DGraphic
+barF :: BoxHeight -> RGBi -> DPoint2 -> DGraphic
 barF h rgb = filledRectangle rgb width height  . disp xdisp dd
   where
     height = fromPtSize $ numeralHeight h
@@ -65,7 +65,7 @@ gridF n h lw = border props rect `cc` verts
     verts = grid props (fromIntegral h) (fromIntegral h) rect
 
 
-backgroundF :: Int -> BoxHeight -> DRGB -> DPoint2 -> DGraphic
+backgroundF :: Int -> BoxHeight -> RGBi -> DPoint2 -> DGraphic
 backgroundF n h rgb = wrapG . fill rgb . rectanglePath width height
   where
     height    = fromPtSize $ textHeight h

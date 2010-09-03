@@ -160,7 +160,7 @@ instance (Real u, Floating u, FromPtSize u) => Draw (Diamond u) where
 --
  
 
-diamondPath :: (Real u, Floating u) => Diamond u -> Path u
+diamondPath :: (Real u, Floating u) => Diamond u -> PrimPath u
 diamondPath = vertexPath . extractVertexPoints
 
 extractVertexPoints :: (Real u, Floating u) => Diamond u -> [Point2 u]

@@ -37,7 +37,7 @@ pic2 = picAnno pic "red `under` green `under` blue"
 
 
 pic3 :: DPicture 
-pic3 = picAnno pic "rect_red `centerOver` rect_green `centerOver` rect_blue"
+pic3 = picAnno pic "red `centerOver` green `centerOver` blue"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
@@ -46,7 +46,7 @@ pic3 = picAnno pic "rect_red `centerOver` rect_green `centerOver` rect_blue"
 -- Note - nextToH only moves pictures in the horizontal.
 --
 pic4 :: DPicture 
-pic4 = picAnno pic "rect_red `nextToH` rect_green `nextToH` rect_blue"
+pic4 = picAnno pic "red `nextToH` green `nextToH` blue"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
@@ -55,7 +55,7 @@ pic4 = picAnno pic "rect_red `nextToH` rect_green `nextToH` rect_blue"
 -- Note - nextToV only moves pictures in the vertical.
 --
 pic5 :: DPicture 
-pic5 = picAnno pic "rect_red `nextToV` rect_green `nextToV` rect_blue"
+pic5 = picAnno pic "red `nextToV` green `nextToV` blue"
   where
     pic :: DPicture
     pic = illustrateBounds blue $ 
