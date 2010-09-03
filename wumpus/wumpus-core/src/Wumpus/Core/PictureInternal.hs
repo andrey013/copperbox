@@ -232,9 +232,9 @@ type DPrimPathSegment = PrimPathSegment Double
 --   of the line (stroke width).
 --
 data PathProps = CFill RGBi 
-               | CStroke [StrokeAttr] RGBi
-               | OStroke [StrokeAttr] RGBi
-               | CFillStroke RGBi [StrokeAttr] RGBi
+               | CStroke StrokeAttr RGBi
+               | OStroke StrokeAttr RGBi
+               | CFillStroke RGBi StrokeAttr RGBi
   deriving (Eq,Show)
 
 
@@ -270,9 +270,9 @@ data PrimEllipse u = PrimEllipse
 -- | Ellipses and circles are always closed.
 --
 data EllipseProps = EFill RGBi
-                  | EStroke [StrokeAttr] RGBi 
+                  | EStroke StrokeAttr RGBi 
                   -- Note - first colour fill, second colour stroke.
-                  | EFillStroke RGBi [StrokeAttr] RGBi 
+                  | EFillStroke RGBi StrokeAttr RGBi 
   deriving (Eq,Show)
 
 

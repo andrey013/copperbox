@@ -186,12 +186,12 @@ xlinkhref = XLinkHRef
 -- *** Stroke
 
 ostrokePath :: Num u 
-            => RGBi -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
-ostrokePath rgb attrs xlink p = PPath (OStroke attrs rgb) xlink p
+            => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
+ostrokePath rgb sa xlink p = PPath (OStroke sa rgb) xlink p
 
 cstrokePath :: Num u 
-            => RGBi -> [StrokeAttr] -> XLink -> PrimPath u -> Primitive u
-cstrokePath rgb attrs xlink p = PPath (CStroke attrs rgb) xlink p
+            => RGBi -> StrokeAttr -> XLink -> PrimPath u -> Primitive u
+cstrokePath rgb sa xlink p = PPath (CStroke sa rgb) xlink p
 
 -- | Create a open, stroked path (@ostroke@) or a closed, stroked
 -- path (@cstroke@).
@@ -204,64 +204,51 @@ class Stroke t where
   cstroke :: Num u => t -> PrimPath u -> Primitive u
 
 instance Stroke () where
-  ostroke () = ostrokePath black [] NoLink
-  cstroke () = cstrokePath black [] NoLink
+  ostroke () = ostrokePath black zeroSA NoLink
+  cstroke () = cstrokePath black zeroSA NoLink
 
 instance Stroke RGBi where
-  ostroke rgb = ostrokePath rgb [] NoLink
-  cstroke rgb = cstrokePath rgb [] NoLink
+  ostroke rgb = ostrokePath rgb zeroSA NoLink
+  cstroke rgb = cstrokePath rgb zeroSA NoLink
 
 instance Stroke StrokeAttr where
-  ostroke x = ostrokePath black [x] NoLink
-  cstroke x = cstrokePath black [x] NoLink
-
-instance Stroke [StrokeAttr] where
-  ostroke xs = ostrokePath black xs NoLink
-  cstroke xs = cstrokePath black xs NoLink
+  ostroke sa = ostrokePath black sa NoLink
+  cstroke sa = cstrokePath black sa NoLink
 
 instance Stroke XLink where
-  ostroke xlink = ostrokePath black [] xlink
-  cstroke xlink = cstrokePath black [] xlink
+  ostroke xlink = ostrokePath black zeroSA xlink
+  cstroke xlink = cstrokePath black zeroSA xlink
 
 
 instance Stroke (RGBi,StrokeAttr) where
-  ostroke (rgb,x) = ostrokePath rgb [x] NoLink
-  cstroke (rgb,x) = cstrokePath rgb [x] NoLink
+  ostroke (rgb,sa) = ostrokePath rgb sa NoLink
+  cstroke (rgb,sa) = cstrokePath rgb sa NoLink
 
-instance Stroke (RGBi,[StrokeAttr]) where
-  ostroke (rgb,xs) = ostrokePath rgb xs NoLink
-  cstroke (rgb,xs) = cstrokePath rgb xs NoLink
 
 instance Stroke (RGBi,XLink) where
-  ostroke (rgb,xlink) = ostrokePath rgb [] xlink
-  cstroke (rgb,xlink) = cstrokePath rgb [] xlink
+  ostroke (rgb,xlink) = ostrokePath rgb zeroSA xlink
+  cstroke (rgb,xlink) = cstrokePath rgb zeroSA xlink
 
 instance Stroke (StrokeAttr,XLink) where
-  ostroke (x,xlink) = ostrokePath black [x] xlink
-  cstroke (x,xlink) = cstrokePath black [x] xlink
+  ostroke (sa,xlink) = ostrokePath black sa xlink
+  cstroke (sa,xlink) = cstrokePath black sa xlink
 
-instance Stroke ([StrokeAttr],XLink) where
-  ostroke (xs,xlink) = ostrokePath black xs xlink
-  cstroke (xs,xlink) = cstrokePath black xs xlink
 
 instance Stroke (RGBi,StrokeAttr,XLink) where
-  ostroke (rgb,x,xlink) = ostrokePath rgb [x] xlink
-  cstroke (rgb,x,xlink) = cstrokePath rgb [x] xlink
+  ostroke (rgb,sa,xlink) = ostrokePath rgb sa xlink
+  cstroke (rgb,sa,xlink) = cstrokePath rgb sa xlink
 
-instance Stroke (RGBi,[StrokeAttr],XLink) where
-  ostroke (rgb,xs,xlink) = ostrokePath rgb xs xlink
-  cstroke (rgb,xs,xlink) = cstrokePath rgb xs xlink
 
 
 -- | Create an open stoke coloured black.
 --
 zostroke :: Num u => PrimPath u -> Primitive u
-zostroke = ostrokePath black [] NoLink
+zostroke = ostrokePath black zeroSA NoLink
  
 -- | Create a closed stroke coloured black.
 --
 zcstroke :: Num u => PrimPath u -> Primitive u
-zcstroke = cstrokePath black [] NoLink
+zcstroke = cstrokePath black zeroSA NoLink
 
 
 -- *** Fill
@@ -299,8 +286,8 @@ zfill = fillPath black NoLink
 -- | fill colour * stroke attrs * stroke_colour * ...
 --
 borderedPath :: Num u 
-            => RGBi -> [StrokeAttr] -> RGBi -> XLink -> PrimPath u -> Primitive u
-borderedPath frgb attrs srgb xlink p = PPath (CFillStroke frgb attrs srgb) xlink p
+            => RGBi -> StrokeAttr -> RGBi -> XLink -> PrimPath u -> Primitive u
+borderedPath frgb sa srgb xlink p = PPath (CFillStroke frgb sa srgb) xlink p
 
 
 -- | Create a closed path - that is filled and stroked (the fill
@@ -314,40 +301,29 @@ class Bordered t where
   bordered :: Num u => RGBi -> t -> PrimPath u -> Primitive u
 
 instance Bordered () where 
-  bordered frgb () = borderedPath frgb [] black NoLink
+  bordered frgb () = borderedPath frgb zeroSA black NoLink
 
 instance Bordered RGBi where 
-  bordered frgb srgb = borderedPath frgb [] srgb NoLink
+  bordered frgb srgb = borderedPath frgb zeroSA srgb NoLink
 
 instance Bordered StrokeAttr where
-  bordered frgb x = borderedPath frgb [x] black NoLink
-
-instance Bordered [StrokeAttr] where
-  bordered frgb xs = borderedPath frgb xs black NoLink
+  bordered frgb sa = borderedPath frgb sa black NoLink
 
 instance Bordered XLink where 
-  bordered frgb xlink = borderedPath frgb [] black xlink
+  bordered frgb xlink = borderedPath frgb zeroSA black xlink
 
 instance Bordered (RGBi,StrokeAttr) where
-  bordered frgb (srgb,x) = borderedPath frgb [x] srgb NoLink
-
-instance Bordered (RGBi,[StrokeAttr]) where
-  bordered frgb (srgb,xs) = borderedPath frgb xs srgb NoLink
+  bordered frgb (srgb,sa) = borderedPath frgb sa srgb NoLink
 
 instance Bordered (RGBi,XLink) where
-  bordered frgb (srgb,xlink) = borderedPath frgb [] srgb xlink
+  bordered frgb (srgb,xlink) = borderedPath frgb zeroSA srgb xlink
 
 instance Bordered (StrokeAttr,XLink) where
-  bordered frgb (x,xlink) = borderedPath frgb [x] black xlink
-
-instance Bordered ([StrokeAttr],XLink) where
-  bordered frgb (xs,xlink) = borderedPath frgb xs black xlink
+  bordered frgb (sa,xlink) = borderedPath frgb sa black xlink
 
 instance Bordered (RGBi,StrokeAttr,XLink) where
-  bordered frgb (srgb,x,xlink) = borderedPath frgb [x] srgb xlink
+  bordered frgb (srgb,sa,xlink) = borderedPath frgb sa srgb xlink
 
-instance Bordered (RGBi,[StrokeAttr],XLink) where
-  bordered frgb (srgb,xs,xlink) = borderedPath frgb xs srgb xlink
 
 
 --------------------------------------------------------------------------------
@@ -467,31 +443,23 @@ instance Ellipse RGBi where
   ellipse rgb = mkEllipse (EFill rgb) NoLink
 
 instance Ellipse StrokeAttr where
-  ellipse x = mkEllipse (EStroke [x] black) NoLink
-
-instance Ellipse [StrokeAttr] where
-  ellipse xs = mkEllipse (EStroke xs black) NoLink
+  ellipse sa = mkEllipse (EStroke sa black) NoLink
 
 instance Ellipse XLink where 
   ellipse xlink = mkEllipse (EFill black) xlink
 
 instance Ellipse (RGBi,StrokeAttr) where
-  ellipse (rgb,x) = mkEllipse (EStroke [x] rgb) NoLink
-
-instance Ellipse (RGBi,[StrokeAttr]) where
-  ellipse (rgb,xs) = mkEllipse (EStroke xs rgb) NoLink
+  ellipse (rgb,sa) = mkEllipse (EStroke sa rgb) NoLink
 
 instance Ellipse (RGBi,XLink) where
   ellipse (rgb,xlink) = mkEllipse (EFill rgb) xlink
 
 instance Ellipse (StrokeAttr,XLink) where
-  ellipse (x,xlink) = mkEllipse (EStroke [x] black) xlink
+  ellipse (sa,xlink) = mkEllipse (EStroke sa black) xlink
 
-instance Ellipse ([StrokeAttr],XLink) where
-  ellipse (xs,xlink) = mkEllipse (EStroke xs black) xlink
 
-instance Ellipse (RGBi,[StrokeAttr],XLink) where
-  ellipse (rgb,xs,xlink) = mkEllipse (EStroke xs rgb) xlink
+instance Ellipse (RGBi,StrokeAttr,XLink) where
+  ellipse (rgb,sa,xlink) = mkEllipse (EStroke sa rgb) xlink
 
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
@@ -501,47 +469,38 @@ zellipse hw hh pt = mkEllipse ellipseDefault NoLink hw hh pt
 -- Bordered (filled and stroked) ellipse
 
 mkBorderedEllipse :: Num u 
-          => RGBi -> [StrokeAttr] -> RGBi -> XLink -> u -> u -> Point2 u 
+          => RGBi -> StrokeAttr -> RGBi -> XLink -> u -> u -> Point2 u 
           -> Primitive u
-mkBorderedEllipse frgb xs srgb xlink hw hh pt = 
-    PEllipse (EFillStroke frgb xs srgb) xlink (PrimEllipse pt hw hh identityCTM)
+mkBorderedEllipse frgb sa srgb xlink hw hh pt = 
+    PEllipse (EFillStroke frgb sa srgb) xlink (PrimEllipse pt hw hh identityCTM)
 
 class BorderedEllipse t where
   borderedEllipse :: Num u => RGBi -> t -> u -> u -> Point2 u -> Primitive u
 
 
 instance BorderedEllipse () where 
-  borderedEllipse frgb () = mkBorderedEllipse frgb [] black NoLink
+  borderedEllipse frgb () = mkBorderedEllipse frgb zeroSA black NoLink
 
 instance BorderedEllipse RGBi where 
-  borderedEllipse frgb srgb = mkBorderedEllipse frgb [] srgb NoLink
+  borderedEllipse frgb srgb = mkBorderedEllipse frgb zeroSA srgb NoLink
 
 instance BorderedEllipse StrokeAttr where
-  borderedEllipse frgb x = mkBorderedEllipse frgb [x] black NoLink
-
-instance BorderedEllipse [StrokeAttr] where
-  borderedEllipse frgb xs = mkBorderedEllipse frgb xs black NoLink
+  borderedEllipse frgb sa = mkBorderedEllipse frgb sa black NoLink
 
 instance BorderedEllipse XLink where 
-  borderedEllipse frgb xlink = mkBorderedEllipse frgb [] black xlink
+  borderedEllipse frgb xlink = mkBorderedEllipse frgb zeroSA black xlink
 
 instance BorderedEllipse (RGBi,StrokeAttr) where
-  borderedEllipse frgb (srgb,x) = mkBorderedEllipse frgb [x] srgb NoLink
-
-instance BorderedEllipse (RGBi,[StrokeAttr]) where
-  borderedEllipse frgb (srgb,xs) = mkBorderedEllipse frgb xs srgb NoLink
+  borderedEllipse frgb (srgb,sa) = mkBorderedEllipse frgb sa srgb NoLink
 
 instance BorderedEllipse (RGBi,XLink) where
-  borderedEllipse frgb (srgb,xlink) = mkBorderedEllipse frgb [] srgb xlink
+  borderedEllipse frgb (srgb,xlink) = mkBorderedEllipse frgb zeroSA srgb xlink
 
 instance BorderedEllipse (StrokeAttr,XLink) where
-  borderedEllipse frgb (x,xlink) = mkBorderedEllipse frgb [x] black xlink
+  borderedEllipse frgb (sa,xlink) = mkBorderedEllipse frgb sa black xlink
 
-instance BorderedEllipse ([StrokeAttr],XLink) where
-  borderedEllipse frgb (xs,xlink) = mkBorderedEllipse frgb xs black xlink
-
-instance BorderedEllipse (RGBi,[StrokeAttr],XLink) where
-  borderedEllipse frgb (srgb,xs,xlink) = mkBorderedEllipse frgb xs srgb xlink
+instance BorderedEllipse (RGBi,StrokeAttr,XLink) where
+  borderedEllipse frgb (srgb,sa,xlink) = mkBorderedEllipse frgb sa srgb xlink
 
 
 
@@ -642,7 +601,8 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
     bl_to_tr      = ostroke (rgb, line_attr) $ vertexPath [bl,tr]
     br_to_tl      = ostroke (rgb, line_attr) $ vertexPath [br,tl]
 
-    line_attr     = [LineCap $ CapRound, DashPattern $ Dash 0 [(1,2)]]
+    line_attr     = zeroSA { line_cap     = CapRound
+                           , dash_pattern = Dash 0 [(1,2)] }
 
 
 -- | Generate the control points illustrating the Bezier 

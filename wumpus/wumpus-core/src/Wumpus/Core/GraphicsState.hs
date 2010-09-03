@@ -58,6 +58,7 @@ module Wumpus.Core.GraphicsState
 
   -- ** Default graphic state
   , zeroGS
+  , zeroSA
 
   ) where
 
@@ -73,27 +74,20 @@ data GraphicsState = GraphicsState
       { gs_draw_colour  :: RGBi
       , gs_font_size    :: Int
       , gs_font_face    :: FontFace
-      , gs_line_width   :: Double
-      , gs_miter_limit  :: Double
-      , gs_line_cap     :: LineCap
-      , gs_line_join    :: LineJoin
-      , gs_dash_pattern :: DashPattern 
+      , gs_stroke_attr  :: StrokeAttr 
       }
   deriving (Eq,Show)
 
 
--- | Stroke attributes are an algebriac type rather than a 
--- record type. This is for convenience when attributing paths -
--- paths can be attibuted with just the differences from the 
--- default settings, rather than all the settings whether or not
--- they are important.
---
-data StrokeAttr = LineWidth   Double
-                | MiterLimit  Double
-                | LineCap     LineCap
-                | LineJoin    LineJoin
-                | DashPattern DashPattern 
+data StrokeAttr = StrokeAttr
+      { line_width      :: Double
+      , miter_limit     :: Double
+      , line_cap        :: LineCap
+      , line_join       :: LineJoin
+      , dash_pattern    :: DashPattern
+      }
   deriving (Eq,Show)
+
 
 
 -- | Line cap - default in output is butt.
@@ -159,11 +153,15 @@ zeroGS ::  GraphicsState
 zeroGS = GraphicsState { gs_draw_colour  = black
                        , gs_font_size    = (-1)
                        , gs_font_face    = unmatchable_face
-                       , gs_line_width   = 1
-                       , gs_miter_limit  = 1
-                       , gs_line_cap     = CapButt
-                       , gs_line_join    = JoinMiter
-                       , gs_dash_pattern = Solid
+                       , gs_stroke_attr  = zeroSA
                        }
   where
     unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE
+
+zeroSA :: StrokeAttr
+zeroSA = StrokeAttr { line_width      = 1
+                    , miter_limit     = 1
+                    , line_cap        = CapButt
+                    , line_join       = JoinMiter
+                    , dash_pattern    = Solid
+                    }

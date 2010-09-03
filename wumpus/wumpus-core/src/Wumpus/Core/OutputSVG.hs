@@ -56,6 +56,7 @@ import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
 import qualified Data.Foldable as F
+import Data.Maybe
 
 -- SvgMonad is two Readers plus Int state for clip paths...
 --
@@ -106,19 +107,19 @@ askFontAttr =
     SvgMonad $ \_ r2 s -> (FontAttr (gs_font_size r2) (gs_font_face r2), s)
 
 askLineWidth    :: SvgMonad Double
-askLineWidth    = SvgMonad $ \_ r2 s -> (gs_line_width r2, s)
+askLineWidth    = SvgMonad $ \_ r2 s -> (line_width $ gs_stroke_attr r2, s)
 
 askMiterLimit   :: SvgMonad Double
-askMiterLimit   = SvgMonad $ \_ r2 s -> (gs_miter_limit r2, s)
+askMiterLimit   = SvgMonad $ \_ r2 s -> (miter_limit $ gs_stroke_attr r2, s)
 
 askLineCap      :: SvgMonad LineCap
-askLineCap      = SvgMonad $ \_ r2 s -> (gs_line_cap r2, s)
+askLineCap      = SvgMonad $ \_ r2 s -> (line_cap $ gs_stroke_attr r2, s)
 
 askLineJoin     :: SvgMonad LineJoin
-askLineJoin     = SvgMonad $ \_ r2 s -> (gs_line_join r2, s)
+askLineJoin     = SvgMonad $ \_ r2 s -> (line_join $ gs_stroke_attr r2, s)
 
 askDashPattern  :: SvgMonad DashPattern
-askDashPattern  = SvgMonad $ \_ r2 s -> (gs_dash_pattern r2, s)
+askDashPattern  = SvgMonad $ \_ r2 s -> (dash_pattern $ gs_stroke_attr r2, s)
 
 --------------------------------------------------------------------------------
 
@@ -300,28 +301,35 @@ textChunk (EscStr s) = either text text <$> askGlyphName s
 --------------------------------------------------------------------------------
 -- Stroke and font attribute delta
 
-deltaStrokeAttrs :: [StrokeAttr] -> SvgMonad Doc
-deltaStrokeAttrs xs = hsep <$> mapM df xs
+deltaStrokeAttrs :: StrokeAttr -> SvgMonad Doc
+deltaStrokeAttrs sa = 
+    (\d1 d2 d3 d4 d5 -> hcat $ catMaybes [d1,d2,d3,d4,d5])  
+      <$> lw <*> ml <*> lc <*> lj <*> dp
   where
-    df (LineWidth d)    = (\inh -> if d==inh then empty 
-                                         else attr_stroke_width d) 
-                            <$> askLineWidth
+    lw = let d = line_width sa in
+         askLineWidth >>= \inh -> 
+         if d==inh then return Nothing 
+                   else return (Just $ attr_stroke_width d) 
+         
+    ml = let d = miter_limit sa in
+         askMiterLimit >>= \inh -> 
+         if d==inh then return Nothing 
+                   else return (Just $ attr_stroke_miterlimit d)
 
-    df (MiterLimit d)   = (\inh -> if d==inh then empty 
-                                         else attr_stroke_miterlimit d)
-                            <$> askMiterLimit
+    lc = let d = line_cap sa in
+         askLineCap >>= \inh -> 
+         if d==inh then return Nothing 
+                   else return (Just $ attr_stroke_linecap d)
 
-    df (LineCap d)      = (\inh -> if d==inh then empty 
-                                         else attr_stroke_linecap d)
-                            <$> askLineCap
+    lj = let d = line_join sa in
+         askLineJoin >>= \inh -> 
+         if d==inh then return Nothing 
+                   else return (Just $ attr_stroke_linejoin d)
 
-    df (LineJoin d)     = (\inh -> if d==inh then empty 
-                                         else attr_stroke_linejoin d)
-                            <$> askLineJoin
-
-    df (DashPattern d)  = (\inh -> if d==inh then empty 
-                                             else makeDashPattern d) 
-                            <$> askDashPattern
+    dp = let d = dash_pattern sa in 
+         askDashPattern >>= \inh -> 
+         if d==inh then return Nothing 
+                   else return (Just $ makeDashPattern d) 
 
 makeDashPattern :: DashPattern -> Doc
 makeDashPattern Solid       = attr_stroke_dasharray_none

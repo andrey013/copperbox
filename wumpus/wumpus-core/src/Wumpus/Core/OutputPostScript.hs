@@ -107,38 +107,52 @@ setFontAttr (FontAttr sz ff) =
 
   
 getLineWidth        :: PsMonad Double
-getLineWidth        = PsMonad $ \_ s -> (gs_line_width s, s)
+getLineWidth        = PsMonad $ \_ s -> (line_width $ gs_stroke_attr s, s)
 
 setLineWidth        :: Double -> PsMonad ()
-setLineWidth a      = PsMonad $ \_ s -> ((), s { gs_line_width=a })
-
+setLineWidth a      = PsMonad $ \_ s -> 
+    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
+  where
+    fn sa = sa { line_width = a }
 
 getMiterLimit       :: PsMonad Double
-getMiterLimit       = PsMonad $ \_ s -> (gs_miter_limit s,s)
+getMiterLimit       = PsMonad $ \_ s -> (miter_limit $ gs_stroke_attr s,s)
 
 setMiterLimit       :: Double -> PsMonad ()
-setMiterLimit a     = PsMonad $ \_ s -> ((), s { gs_miter_limit=a })
+setMiterLimit a     = PsMonad $ \_ s -> 
+    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
+  where
+    fn sa = sa { miter_limit = a }
 
 
 getLineCap          :: PsMonad LineCap
-getLineCap          = PsMonad $ \_ s -> (gs_line_cap s,s)
+getLineCap          = PsMonad $ \_ s -> (line_cap $ gs_stroke_attr s,s)
 
 setLineCap          :: LineCap -> PsMonad ()
-setLineCap a        = PsMonad $ \_ s -> ((), s { gs_line_cap=a })
+setLineCap a        = PsMonad $ \_ s ->
+    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
+  where
+    fn sa = sa { line_cap = a }
 
 
 getLineJoin         :: PsMonad LineJoin
-getLineJoin         = PsMonad $ \_ s -> (gs_line_join s,s)
+getLineJoin         = PsMonad $ \_ s -> (line_join $ gs_stroke_attr s,s)
 
 setLineJoin         :: LineJoin -> PsMonad ()
-setLineJoin a       = PsMonad $ \_ s -> ((), s { gs_line_join=a })
+setLineJoin a       = PsMonad $ \_ s ->
+    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
+  where
+    fn sa = sa { line_join = a }
 
 
 getDashPattern      :: PsMonad DashPattern
-getDashPattern      = PsMonad $ \_ s -> (gs_dash_pattern s,s)
+getDashPattern      = PsMonad $ \_ s -> (dash_pattern $ gs_stroke_attr s,s)
 
 setDashPattern      :: DashPattern -> PsMonad ()
-setDashPattern a    = PsMonad $ \_ s -> ((), s { gs_dash_pattern=a })
+setDashPattern a    = PsMonad $ \_ s -> 
+    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
+  where
+    fn sa = sa { dash_pattern = a }
 
 
 --------------------------------------------------------------------------------
@@ -310,10 +324,10 @@ primEllipse :: (Real u, Floating u, PSUnit u)
 primEllipse props (PrimEllipse center hw hh ctm) =
     bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
   where
-    drawF (EFill rgb)               pt = fillArcPath rgb hw pt
-    drawF (EStroke attrs rgb)       pt = strokeArcPath rgb attrs hw pt
-    drawF (EFillStroke fc attrs sc) pt = 
-        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc attrs hw pt
+    drawF (EFill rgb)            pt = fillArcPath rgb hw pt
+    drawF (EStroke sa rgb)       pt = strokeArcPath rgb sa hw pt
+    drawF (EFillStroke fc sa sc) pt = 
+        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc sa hw pt
                        
 
 
@@ -329,15 +343,15 @@ fillArcPath rgb radius pt =
       <$> deltaDrawColour rgb
 
 strokeArcPath :: PSUnit u 
-              => RGBi -> [StrokeAttr] -> u -> Point2 u -> PsMonad Doc
-strokeArcPath rgb attrs radius pt =
+              => RGBi -> StrokeAttr -> u -> Point2 u -> PsMonad Doc
+strokeArcPath rgb sa radius pt =
     (\rgbd attrd -> vcat [ rgbd
                          , attrd
                          , ps_newpath
                          , ps_arc pt radius 0 360
                          , ps_closepath
                          , ps_stroke ])
-      <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs sa
 
 
 -- Note - for the otherwise case, the x-and-y coordinates are 
@@ -389,74 +403,38 @@ deltaDrawColour rgb = getDrawColour >>= \inh ->
                else setDrawColour rgb >> return (ps_setrgbcolor rgb)
 
 
--- Note - the current way of handling Stroke Deltas for 
--- PostScript uses an awful lot of operations. 
--- 
--- The GraphicsState data types need some more thought 
---
-
-data StrokeDelta = StrokeDelta
-      { sd_line_width   :: Double
-      , sd_miter_limit  :: Double
-      , sd_line_cap     :: LineCap
-      , sd_line_join    :: LineJoin
-      , sd_dash_pattern :: DashPattern
-      }
-
--- | Note - the values here must be in- sync with zeroGS.
---
-zeroSD :: StrokeDelta
-zeroSD = StrokeDelta { sd_line_width   = 1
-                     , sd_miter_limit  = 1
-                     , sd_line_cap     = CapButt
-                     , sd_line_join    = JoinMiter
-                     , sd_dash_pattern = Solid
-                     }
-
-
-makeStrokeDelta :: [StrokeAttr] -> StrokeDelta
-makeStrokeDelta = foldr fn zeroSD
+deltaStrokeAttrs :: StrokeAttr -> PsMonad Doc
+deltaStrokeAttrs sa = 
+    (\d1 d2 d3 d4 d5 -> hcat $ catMaybes [d1,d2,d3,d4,d5])  
+      <$> lw <*> ml <*> lc <*> lj <*> dp
   where
-    fn (LineWidth a)    sd = sd { sd_line_width = a }
-    fn (MiterLimit a)   sd = sd { sd_miter_limit = a }
-    fn (LineCap a)      sd = sd { sd_line_cap = a }
-    fn (LineJoin a)     sd = sd { sd_line_join = a }
-    fn (DashPattern a)  sd = sd { sd_dash_pattern = a} 
-
-
-deltaStrokeAttrs :: [StrokeAttr] -> PsMonad Doc
-deltaStrokeAttrs xs = step $ makeStrokeDelta xs
-  where
-    step sd = (\d1 d2 d3 d4 d5 -> hcat $ catMaybes [d1,d2,d3,d4,d5])  
-                <$> lw sd <*> ml sd <*> lc sd <*> lj sd <*> dp sd
-
-    lw sd = let d = sd_line_width sd in 
-            getLineWidth >>= \inh -> 
-            if d == inh 
+    lw = let d = line_width sa in 
+         getLineWidth >>= \inh -> 
+         if d == inh 
               then return Nothing 
               else setLineWidth d >> return (Just $ ps_setlinewidth d)
 
-    ml sd = let d = sd_miter_limit sd in 
-            getMiterLimit >>= \inh -> 
-            if d==inh 
+    ml = let d = miter_limit sa in 
+         getMiterLimit >>= \inh -> 
+         if d==inh 
               then return Nothing 
               else setMiterLimit d >> return (Just $ ps_setmiterlimit d)
                             
-    lc sd = let d = sd_line_cap sd in
-            getLineCap >>= \inh -> 
-            if d==inh 
+    lc = let d = line_cap sa in
+         getLineCap >>= \inh -> 
+         if d==inh 
               then return Nothing
               else setLineCap d >> return (Just $ ps_setlinecap d)
                       
-    lj sd = let d = sd_line_join sd in 
-            getLineJoin >>= \inh -> 
-            if d==inh 
+    lj = let d = line_join sa in 
+         getLineJoin >>= \inh -> 
+         if d==inh 
               then return Nothing
               else setLineJoin d >> return (Just $ ps_setlinejoin d)
 
-    dp sd  = let d = sd_dash_pattern sd in
-             getDashPattern >>= \inh -> 
-             if d==inh 
+    dp = let d = dash_pattern sa in
+         getDashPattern >>= \inh -> 
+         if d==inh 
                then return Nothing
                else setDashPattern d >> return (Just $ ps_setdash d)
 
