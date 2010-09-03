@@ -57,6 +57,10 @@ description:
     are both stroked and filled. These can be efficiently drawn 
     in SVG with a single @path@ element.
   .
+  * Changed StrokeAttr representation to be a regular data type
+    rather than a list of /deltas/ - i.e. differences to the 
+    graphics state.
+  .
   0.23.0 to 0.30.0:
   .
   * Substantial changes - the output machinery has been heavily 

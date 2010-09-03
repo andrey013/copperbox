@@ -303,7 +303,7 @@ textChunk (EscStr s) = either text text <$> askGlyphName s
 
 deltaStrokeAttrs :: StrokeAttr -> SvgMonad Doc
 deltaStrokeAttrs sa = 
-    (\d1 d2 d3 d4 d5 -> hcat $ catMaybes [d1,d2,d3,d4,d5])  
+    (\d1 d2 d3 d4 d5 -> hsep $ catMaybes [d1,d2,d3,d4,d5])  
       <$> lw <*> ml <*> lc <*> lj <*> dp
   where
     lw = let d = line_width sa in

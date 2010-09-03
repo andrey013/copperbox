@@ -56,9 +56,9 @@ module Wumpus.Core.GraphicsState
   , FontFace(..)
   , SVGFontStyle(..)
 
-  -- ** Default graphic state
+  -- * Initial graphic state
   , zeroGS
-  , zeroSA
+  , defaultSA
 
   ) where
 
@@ -78,7 +78,8 @@ data GraphicsState = GraphicsState
       }
   deriving (Eq,Show)
 
-
+-- | Stroke attributes for drawing paths.
+--
 data StrokeAttr = StrokeAttr
       { line_width      :: Double
       , miter_limit     :: Double
@@ -153,15 +154,18 @@ zeroGS ::  GraphicsState
 zeroGS = GraphicsState { gs_draw_colour  = black
                        , gs_font_size    = (-1)
                        , gs_font_face    = unmatchable_face
-                       , gs_stroke_attr  = zeroSA
+                       , gs_stroke_attr  = defaultSA
                        }
   where
     unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE
 
-zeroSA :: StrokeAttr
-zeroSA = StrokeAttr { line_width      = 1
-                    , miter_limit     = 1
-                    , line_cap        = CapButt
-                    , line_join       = JoinMiter
-                    , dash_pattern    = Solid
-                    }
+
+-- | Default stroke attributes.
+--
+defaultSA :: StrokeAttr
+defaultSA = StrokeAttr { line_width      = 1
+                       , miter_limit     = 1
+                       , line_cap        = CapButt
+                       , line_join       = JoinMiter
+                       , dash_pattern    = Solid
+                       }
