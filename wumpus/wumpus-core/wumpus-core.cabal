@@ -72,6 +72,9 @@ description:
     rather than a list of /deltas/ - i.e. differences to the 
     graphics state.
   .
+  * Added SVG attribute /delta optimizations/ to @Core.Picture@
+    to help reduce SVG code size.
+  .
   0.23.0 to 0.30.0:
   .
   * Substantial changes - the output machinery has been heavily 
@@ -126,6 +129,7 @@ extra-source-files:
   demo/AffineTest02.hs,
   demo/AffineTest03.hs,
   demo/AffineTestBase.hs,
+  demo/DeltaPic.hs,
   demo/FontMetrics.hs
   demo/LabelPic.hs,
   demo/MultiPic.hs,
