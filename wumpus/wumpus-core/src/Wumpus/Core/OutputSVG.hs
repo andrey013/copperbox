@@ -102,24 +102,30 @@ runLocalGS upd mf =
     SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (getGSU upd r2) s
 
 
+askGraphicsState :: SvgMonad GraphicsState
+askGraphicsState = SvgMonad $ \_ r2 s -> (r2,s)
+
+asksGraphicsState :: (GraphicsState -> a) -> SvgMonad a
+asksGraphicsState fn = SvgMonad $ \_ r2 s -> (fn r2,s)
+
 askFontAttr :: SvgMonad FontAttr
 askFontAttr = 
-    SvgMonad $ \_ r2 s -> (FontAttr (gs_font_size r2) (gs_font_face r2), s)
+    asksGraphicsState $ \r -> FontAttr (gs_font_size r) (gs_font_face r)
 
 askLineWidth    :: SvgMonad Double
-askLineWidth    = SvgMonad $ \_ r2 s -> (line_width $ gs_stroke_attr r2, s)
+askLineWidth    = asksGraphicsState (line_width . gs_stroke_attr)
 
 askMiterLimit   :: SvgMonad Double
-askMiterLimit   = SvgMonad $ \_ r2 s -> (miter_limit $ gs_stroke_attr r2, s)
+askMiterLimit   = asksGraphicsState (miter_limit . gs_stroke_attr)
 
 askLineCap      :: SvgMonad LineCap
-askLineCap      = SvgMonad $ \_ r2 s -> (line_cap $ gs_stroke_attr r2, s)
+askLineCap      = asksGraphicsState (line_cap . gs_stroke_attr)
 
 askLineJoin     :: SvgMonad LineJoin
-askLineJoin     = SvgMonad $ \_ r2 s -> (line_join $ gs_stroke_attr r2, s)
+askLineJoin     = asksGraphicsState (line_join . gs_stroke_attr)
 
 askDashPattern  :: SvgMonad DashPattern
-askDashPattern  = SvgMonad $ \_ r2 s -> (dash_pattern $ gs_stroke_attr r2, s)
+askDashPattern  = asksGraphicsState (dash_pattern . gs_stroke_attr)
 
 --------------------------------------------------------------------------------
 
@@ -171,7 +177,8 @@ picture (Clip    (_,xs) cp pic) =
                           ; d2  <- picture pic
                           ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
                           } 
-picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+picture (Group   (_,xs) fn pic) = 
+    bracketTrafos xs $ bracketGS fn (picture pic) -- $ runLocalGS fn (picture pic)
 
 
 
@@ -339,11 +346,11 @@ makeDashPattern (Dash n xs) =
 
 
 deltaFontAttrs :: FontAttr -> SvgMonad Doc
-deltaFontAttrs fa  = 
-    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> askFontAttr
+deltaFontAttrs fa@(FontAttr sz ff)  = 
+    (\inh -> if fa ==inh then empty else makeFontAttrs sz ff) <$> askFontAttr
 
-makeFontAttrs :: FontAttr -> Doc
-makeFontAttrs (FontAttr sz face) = 
+makeFontAttrs :: Int -> FontFace -> Doc
+makeFontAttrs sz face = 
     attr_font_family (svg_font_family face) <+> attr_font_size sz 
                                             <> suffix (svg_font_style face) 
   where  
@@ -361,6 +368,25 @@ makeFontAttrs (FontAttr sz face) =
     suffix SVG_BOLD_OBLIQUE = 
         space <> attr_font_weight "bold" <+> attr_font_style "oblique"
 
+
+-- NOTE - as is only practical to delta the FontFace attributes 
+-- it might be good to specialize / simplify the graphics state
+-- GSUpdate to a simpler type rather than a functional one...
+
+bracketGS :: GSUpdate -> SvgMonad Doc -> SvgMonad Doc
+bracketGS fn mf = (\old body -> mkElem old (getGSU fn $ old) body)
+                    <$> askGraphicsState <*> runLocalGS fn mf
+  where
+    mkElem old new body 
+      | fontMatch old new = elem_g_no_attrs body
+      | otherwise         = let a = makeFontAttrs (gs_font_size new) 
+                                                  (gs_font_face new)
+                            in elem_g a body
+
+
+fontMatch :: GraphicsState -> GraphicsState -> Bool
+fontMatch a b = 
+   gs_font_size b == gs_font_size a && gs_font_face a == gs_font_face b
 
 
 --------------------------------------------------------------------------------

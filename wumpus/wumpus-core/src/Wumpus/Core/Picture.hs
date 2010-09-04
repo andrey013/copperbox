@@ -63,7 +63,6 @@ module Wumpus.Core.Picture
   , composeDelta
   , deltaFontSize 
   , deltaFontFace
-  , deltaStrokeAttr
 
   -- * Operations
   , extendBoundary  
@@ -494,16 +493,12 @@ deltaFontFace :: FontFace -> GSUpdate
 deltaFontFace i = GSUpdate $ \s -> s { gs_font_face = i }
 
 
--- | Set the /delta/ stroke properties attribute. 
+-- Note - stroke and colour attributes - cannot be set. 
 --
--- \*\*CAUTION\*\* - except for very stylized pictures, changing 
--- this from the default is actually likely to produce \*worse\* 
--- SVG, i.e. Wumpus will find more differences with the 
--- enclosing group (g) element and have to add more attributes 
--- to child nodes.
+-- Doing so would be likely to produce \*worse\* SVG, i.e. 
+-- Wumpus will find more differences with the enclosing group 
+-- (g) element and have to add more attributes to child nodes.
 --  
-deltaStrokeAttr :: StrokeAttr -> GSUpdate
-deltaStrokeAttr i = GSUpdate $ \s -> s { gs_stroke_attr = i }
 
 --------------------------------------------------------------------------------
 -- Operations

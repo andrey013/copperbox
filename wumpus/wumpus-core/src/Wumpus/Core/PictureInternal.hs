@@ -140,6 +140,7 @@ newtype GSUpdate = GSUpdate { getGSU :: GraphicsState -> GraphicsState }
 instance Show GSUpdate where
   show _ = "*function*"
 
+
 -- | Locale = (bounding box * current translation matrix)
 -- 
 -- Pictures (and sub-pictures) are located frame consisting of a 
