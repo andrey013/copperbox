@@ -23,7 +23,7 @@ module Wumpus.Core.Picture
   -- * Construction
     frame
   , multi
-  , renderContext
+  , fontDeltaContext
   , path
   , lineTo
   , curveTo
@@ -59,10 +59,6 @@ module Wumpus.Core.Picture
   , zellipse
   , borderedEllipse
   
-  -- * SVG \'delta' optimizations
-  , composeDelta
-  , deltaFontSize 
-  , deltaFontFace
 
   -- * Operations
   , extendBoundary  
@@ -132,14 +128,15 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
                     in ( boundary a `append` bb', cons a rest )
 
 
--- | Update the rendering graphics state for SVG output.
+-- | Update the font /delta/ attributes for SVG output.
 --
--- Note - 'renderWith' does not set the graphics properties of
+-- Note - 'fontDeltaContext' does not set the font properties of
 -- elements in the supplied Picture, it is solely a mechanism to
 -- help reduce the code size of the generated SVG by factoring 
 -- common attributes into a group (g) element. For instance, 
--- settting the font properties with renderWidth can eliminate 
--- the repeated use of font-family and font-size in this code:
+-- settting the font properties with 'fontDeltaContext' can 
+-- eliminate the repeated use of font-family and font-size in 
+-- this code:
 --
 -- > <text font-family="Helvetica" font-size="12"> ... </text>
 -- > <text font-family="Helvetica" font-size="12"> ... </text>
@@ -154,13 +151,13 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
 -- >   <text > ... </text>
 -- > </g>
 --
--- Wumpus ignores 'renderWith' directives when generating 
+-- Wumpus ignores 'fontDeltaContext' directives when generating 
 -- PostScript. Unlike SVG, PostScript is not naturally nested, so 
 -- introducing nesting with @gsave@ and @grestore@ is not likely
 -- to improve the code Wumpus generates.
 --
-renderContext :: GSUpdate -> Picture u -> Picture u
-renderContext upd p = Group (boundary p, []) upd p
+fontDeltaContext :: FontAttr -> Picture u -> Picture u
+fontDeltaContext fa p = Group (boundary p, []) (FontCtx fa) p
 
 
 -- | Create a Path from a start point and a list of PathSegments.
@@ -453,52 +450,6 @@ xborderedEllipse frgb sa srgb xlink hw hh pt =
     PEllipse (EFillStroke frgb sa srgb) xlink (PrimEllipse pt hw hh identityCTM)
 
 
---------------------------------------------------------------------------------
--- SVG delta operations
-
--- | Compose SVG /delta/ updates to the rendering state.
---
-composeDelta :: GSUpdate -> GSUpdate -> GSUpdate
-composeDelta a b = GSUpdate $ getGSU a . getGSU b
-
--- | Set the /delta/ font size attribute. 
---
--- For SVG Ouput, text elements within the modified rendering 
--- context will only be annotated with a @font-size@ attribute 
--- if the size differs from the /delta/ size in the enclosing
--- group (g) element.
---
--- Note - there is no /inheritance/ of drawing styles in
--- Wumpus-Core. Setting the delta font size only changes 
--- (optimizes) how the SVG is generated; it does not change the 
--- size of any text elements.
---
-deltaFontSize :: Int -> GSUpdate
-deltaFontSize i = GSUpdate $ \s -> s { gs_font_size = i }
-
-
--- | Set the /delta/ font face attribute. 
---
--- For SVG Ouput, text elements within the modified rendering 
--- context will only be annotated with a @font-family@, 
--- @font-weight@ and @font-style@ attributes if the differ from 
--- the /deltas/ in the enclosing group (g) element.
---
--- Note - there is no /inheritance/ of drawing styles in
--- Wumpus-Core. Setting the delta font face only changes 
--- (optimizes) how the SVG is generated; it does not change the 
--- font properties of any text elements.
---
-deltaFontFace :: FontFace -> GSUpdate
-deltaFontFace i = GSUpdate $ \s -> s { gs_font_face = i }
-
-
--- Note - stroke and colour attributes - cannot be set. 
---
--- Doing so would be likely to produce \*worse\* SVG, i.e. 
--- Wumpus will find more differences with the enclosing group 
--- (g) element and have to add more attributes to child nodes.
---  
 
 --------------------------------------------------------------------------------
 -- Operations

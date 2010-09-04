@@ -28,7 +28,7 @@ module Wumpus.Core.WumpusTypes
   -- * Picture types
     Picture
   , DPicture
-  , GSUpdate
+  , FontCtx
   , Primitive
   , DPrimitive
   , XLink

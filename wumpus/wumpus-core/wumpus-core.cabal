@@ -72,8 +72,9 @@ description:
     rather than a list of /deltas/ - i.e. differences to the 
     graphics state.
   .
-  * Added SVG attribute /delta optimizations/ to @Core.Picture@
-    to help reduce SVG code size.
+  * Added SVG font attribute /delta optimizations/ to help reduce 
+    SVG code size - via the @fontDeltaContext@ function in 
+    @Core.Picture@.
   .
   0.23.0 to 0.30.0:
   .

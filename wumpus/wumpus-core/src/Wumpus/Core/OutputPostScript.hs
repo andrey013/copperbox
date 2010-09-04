@@ -85,9 +85,9 @@ askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
     Just n  -> (Right n,s)
     Nothing -> (Left $ ps_fallback r,s)
 
-runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
-runLocalGS upd mf = 
-    PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
+-- runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
+-- runLocalGS upd mf = 
+--     PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
 
 getDrawColour       :: PsMonad RGBi
 getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
@@ -251,13 +251,15 @@ imageTranslation pic = case repositionDeltas pic of
 
 --------------------------------------------------------------------------------
 
-
+-- Note - PostScript ignotes any FontCtx changes via the @Group@
+-- constructor.
+--
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
 picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
                                     (vconcat <$> clipPath cp <*> picture pic)
-picture (Group   (_,xs) fn pic) = bracketTrafos xs (runLocalGS fn (picture pic))
+picture (Group   (_,xs) _ pic) = bracketTrafos xs (picture pic)
 
 
 revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc

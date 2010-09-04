@@ -23,7 +23,7 @@ module Wumpus.Core.PictureInternal
   , DPicture
   , Locale
   , AffineTrafo(..)
-  , GSUpdate(..)
+  , FontCtx(..)
 
   , Primitive(..)
   , DPrimitive
@@ -124,21 +124,18 @@ import qualified Data.Foldable                  as F
 data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
                | Picture  (Locale u)              (OneList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
-               | Group    (Locale u) GSUpdate     (Picture u)
+               | Group    (Locale u) FontCtx      (Picture u)
   deriving (Show)
 
 
--- | Update the graphics state for SVG rendering. 
+-- | Set the font /delta/ for SVG rendering. 
 -- 
--- Note - this does not change how any of the Primitives are 
--- drawn, nor does it change the default colour or font style. 
+-- Note - this does not change the default colour or font style. 
 -- It is solely a backdoor into the SVG renderer to potential 
 -- allow some code size reductions.
 --
-newtype GSUpdate = GSUpdate { getGSU :: GraphicsState -> GraphicsState }
-
-instance Show GSUpdate where
-  show _ = "*function*"
+newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
+  deriving (Eq,Show)
 
 
 -- | Locale = (bounding box * current translation matrix)

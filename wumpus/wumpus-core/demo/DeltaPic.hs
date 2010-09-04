@@ -25,13 +25,13 @@ main = do
 
 
 pic1 :: DPicture
-pic1 = renderContext delta_ctx $ frame 
+pic1 = fontDeltaContext delta_ctx $ frame 
           [ helveticaLabel 18 "Optimized - size and face"  (P2 0 60)
           , helveticaLabel 14 "Optimized - face only"      (P2 0 40)
           , courierLabel      "No optimization"            (P2 0 20)
           ]
   where
-   delta_ctx  = deltaFontSize 18 `composeDelta` deltaFontFace common_ff
+   delta_ctx  = FontAttr 18 common_ff
  
 
 common_ff :: FontFace

@@ -97,9 +97,9 @@ askGlyphName nm = SvgMonad $ \r1 _ s -> case lookupByGlyphName nm r1 of
 -- (and /graphics state/ is via a Reader), so it is the same as 
 -- local with a Reader monad.
 --
-runLocalGS :: GSUpdate -> SvgMonad a -> SvgMonad a
+runLocalGS :: (GraphicsState -> GraphicsState) -> SvgMonad a -> SvgMonad a
 runLocalGS upd mf = 
-    SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (getGSU upd r2) s
+    SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (upd r2) s
 
 
 askGraphicsState :: SvgMonad GraphicsState
@@ -346,11 +346,11 @@ makeDashPattern (Dash n xs) =
 
 
 deltaFontAttrs :: FontAttr -> SvgMonad Doc
-deltaFontAttrs fa@(FontAttr sz ff)  = 
-    (\inh -> if fa ==inh then empty else makeFontAttrs sz ff) <$> askFontAttr
+deltaFontAttrs fa = 
+    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> askFontAttr
 
-makeFontAttrs :: Int -> FontFace -> Doc
-makeFontAttrs sz face = 
+makeFontAttrs :: FontAttr -> Doc
+makeFontAttrs (FontAttr sz face) = 
     attr_font_family (svg_font_family face) <+> attr_font_size sz 
                                             <> suffix (svg_font_style face) 
   where  
@@ -373,20 +373,23 @@ makeFontAttrs sz face =
 -- it might be good to specialize / simplify the graphics state
 -- GSUpdate to a simpler type rather than a functional one...
 
-bracketGS :: GSUpdate -> SvgMonad Doc -> SvgMonad Doc
-bracketGS fn mf = (\old body -> mkElem old (getGSU fn $ old) body)
-                    <$> askGraphicsState <*> runLocalGS fn mf
+bracketGS :: FontCtx -> SvgMonad Doc -> SvgMonad Doc
+bracketGS (FontCtx new_font) mf = 
+    (\old body -> mkElem old body) 
+        <$> askGraphicsState <*> runLocalGS updateF mf
   where
-    mkElem old new body 
-      | fontMatch old new = elem_g_no_attrs body
-      | otherwise         = let a = makeFontAttrs (gs_font_size new) 
-                                                  (gs_font_face new)
-                            in elem_g a body
+    mkElem old body 
+      | fontMatch old new_font = elem_g_no_attrs body
+      | otherwise              = let a = makeFontAttrs new_font
+                                 in elem_g a body
 
+    updateF s = s { gs_font_size = font_size new_font
+                  , gs_font_face = font_face new_font }
+                
 
-fontMatch :: GraphicsState -> GraphicsState -> Bool
-fontMatch a b = 
-   gs_font_size b == gs_font_size a && gs_font_face a == gs_font_face b
+fontMatch :: GraphicsState -> FontAttr -> Bool
+fontMatch gs fa = 
+   gs_font_size gs == font_size fa && gs_font_face gs == font_face fa
 
 
 --------------------------------------------------------------------------------
