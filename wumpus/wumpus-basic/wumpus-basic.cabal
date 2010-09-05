@@ -22,7 +22,12 @@ description:
   .
   0.5.0 to 0.6.0:
   .
-  * 
+  * Updates to work with wumpus-core-0.30.0.
+  .
+  * The code from @Basic.Graphic@ has been moved in to 
+    @Basic.Graphic.Primitive@ - this module is due a major 
+    overhaul. @Basic.Graphic@ is now an /import/ shim for
+    @Basic.Graphic.Primitive@.
   .
   0.4.0 to 0.5.0:
   .
@@ -53,7 +58,7 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
-                      wumpus-core     >= 0.30.0
+                      wumpus-core     == 0.31.0
 
   
   exposed-modules:

@@ -10,11 +10,10 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Graphic type and opertations
+-- Graphic types and operations.
 --
--- \*\* WARNING \*\* - this module is highly experimental, and 
--- may change significantly or even be dropped from future 
--- revisions.
+-- \*\* WARNING \*\* - this due a major revision and will change
+-- significantly (or disappear...).
 --
 --
 --------------------------------------------------------------------------------
