@@ -9,8 +9,6 @@ category:         Graphics
 synopsis:         Pure Haskell PostScript and SVG generation. 
 description:
   .
-  Wumpus - (W)riter (M)onad (P)ost (S)cript. 
-  .
   Wumpus is a kernel library for generating 2D vector pictures, 
   its salient feature is portability due to no FFI dependencies. 
   It can generate PostScript (EPS) files and SVG files. The 
@@ -37,12 +35,8 @@ description:
   sophisticated (e.g. how attributes like colour are handled, 
   and how the bounding boxes of text labels are calculated), so 
   Wumpus might be limited compared to other systems. However, 
-  the design permits a fairly simple implementation - which is 
-  a priority. Text encoding an exception - I\'m not sure how 
-  reasonable the design is. The current implementation 
-  appears okay for Latin 1 but may be inadequate for other 
-  character sets, so I may have to revise it significantly.
-  .
+  the design permits a fairly simple implementation, which is a 
+  priority. 
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -53,7 +47,9 @@ description:
   .
   0.30.0 to 0.31.0:
   .
-  * Added ability to /kern/ text labels.
+  * Extended the label type to optionally handle horizontal
+    or vertical \"kerning\". This can be efficiently implemented 
+    in SVG.
   .
   * Major API change - the Primitive constructors defined in 
     @Core.PictureLanguage@ are no longer overloaded (@cstroke@, 
@@ -76,8 +72,9 @@ description:
   .
   * Added SVG font attribute /delta optimizations/ to help reduce 
     SVG code size - via the @fontDeltaContext@ function in 
-    @Core.Picture@. Previously this was present but unimplemented 
-    in @Core.GraphicsState@ as @GSUpdate@, it is now @FontCtx@.
+    @Core.Picture@. This functionality was partially inplemented 
+    in the last release using the @GSUpdate@ datatype - this 
+    datatype it is now called @FontCtx@.
   .
   * Some internal work documenting text encoding.
   .

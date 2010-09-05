@@ -162,7 +162,7 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
 -- Wumpus ignores 'fontDeltaContext' directives when generating 
 -- PostScript. Unlike SVG, PostScript is not naturally nested, so 
 -- introducing nesting with @gsave@ and @grestore@ is not likely
--- to improve the code Wumpus generates.
+-- to improve the PostScript Wumpus generates.
 --
 fontDeltaContext :: FontAttr -> Picture u -> Picture u
 fontDeltaContext fa p = Group (boundary p, []) (FontCtx fa) p
@@ -206,7 +206,7 @@ curvedPath (x:xs) = PrimPath x (step xs)
     step _          = []
 
 
--- | Constructor for SVG hyperlinks.
+-- | Create a hyperlink for SVG output.
 --
 xlinkhref :: String -> XLink
 xlinkhref = XLinkHRef

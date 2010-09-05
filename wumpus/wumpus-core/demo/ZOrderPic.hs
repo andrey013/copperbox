@@ -28,8 +28,8 @@ pic2 = multi $ map (\a -> frame [a]) $ prim_list (P2 200 0)
 
 
 prim_list :: DPoint2 -> [DPrimitive]
-prim_list = sequence [ ellipse red   20 20
-                     , \p -> ellipse green 20 20 (p .+^ hvec 20)
-                     , \p -> ellipse blue  20 20 (p .+^ hvec 40)
+prim_list = sequence [ fillEllipse red   20 20
+                     , \p -> fillEllipse green 20 20 (p .+^ hvec 20)
+                     , \p -> fillEllipse blue  20 20 (p .+^ hvec 40)
                      ]
 

@@ -17,20 +17,22 @@
 --
 -- > "regular ascii text &#egrave; more ascii text"
 --  
--- i.e. character names and codes are delimited by @&#@ on the 
+-- i.e. character names and codes are delimited by @&\#@ on the 
 -- left and @;@ on the right.
 --
--- In Wumpus strings both character names and character codes can
--- be embedded - it seems conventional for PostScript to use 
--- names e.g.:  
+-- In Wumpus both character names and character codes can
+-- be embedded in strings - (e.g. @ &\#egrave; or &\#232; @).
+--
+-- In the generated PostScript, Wumpus uses the character name, 
+-- e.g.:  
 --
 -- > (myst) show /egrave glyphshow (re) show
 -- 
--- ... and SVG to use codes, e.g.: 
+-- The generated SVG uses the numeric code, e.g.: 
 --
 -- > myst&#232;re
 --
--- To accommodate both Wumpus defines a TextEncoder record which 
+-- To accommodate both, Wumpus defines a TextEncoder record which
 -- provides a two-way mapping between character codes and glyph 
 -- names for a character set.
 --
