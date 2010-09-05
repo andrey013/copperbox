@@ -34,7 +34,7 @@ pic1 = drawGraphicU $
            tri90 0 std_attr (P2 10 0)
          . tri60 0 std_attr (P2 20 0)
          . tri45 0 std_attr (P2 30 0)
-         . textline (textAttr $ std_attr) "sample" (P2 30 (-4))
+         . textline (stroke_colour std_attr) (font_props std_attr) "sample" (P2 30 (-4))
          . otri90 0 std_attr (P2 110 0)
          . otri60 0 std_attr (P2 120 0)
          . otri45 0 std_attr (P2 130 0)

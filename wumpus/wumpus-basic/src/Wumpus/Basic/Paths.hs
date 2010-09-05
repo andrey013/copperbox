@@ -54,7 +54,8 @@ connectS = \p0 p1 -> execPath p0 $ lineto p1
 -- This one might be more useful...
 
 pathGraphic :: Num u => Path u -> DrawingAttr -> Graphic u
-pathGraphic bpath attr = wrapG $ ostroke (strokeAttr attr) $ toPrimPathU bpath
+pathGraphic bpath attr = 
+    wrapG $ ostroke (stroke_colour attr) (stroke_props attr) $ toPrimPathU bpath
 
 
 

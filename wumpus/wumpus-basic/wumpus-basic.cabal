@@ -43,9 +43,9 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/DotPic.hs,
-  demo/FontPic.hs,
   demo/ColourCharts.hs,
   demo/ColourDefns.hs,
+  demo/FontPic.hs,
   demo/Picture.hs
 
 library
@@ -66,6 +66,7 @@ library
     Wumpus.Basic.Dots.Base,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,
+    Wumpus.Basic.Graphic.Primitive,
     Wumpus.Basic.Graphic.PointSupply,
     Wumpus.Basic.Monads.Drawing,
     Wumpus.Basic.Monads.DrawingMonad,

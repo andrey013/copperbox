@@ -88,21 +88,21 @@ tri45 = triAng (pi/4) (\p a -> fill (stroke_colour a) p)
 
 otri90 :: (Floating u, Real u, FromPtSize u)
       => Radian -> DrawingAttr -> GraphicF u
-otri90 = triAng (pi/2) (\p a -> cstroke (strokeAttr a) p)
+otri90 = triAng (pi/2) (\p a -> cstroke (stroke_colour a) (stroke_props a) p)
 
 otri60 :: (Floating u, Real u, FromPtSize u)
       => Radian -> DrawingAttr -> GraphicF u
-otri60 = triAng (pi/3) (\p a -> cstroke (strokeAttr a) p)
+otri60 = triAng (pi/3) (\p a -> cstroke (stroke_colour a) (stroke_props a) p)
 
 otri45 :: (Floating u, Real u, FromPtSize u)
       => Radian -> DrawingAttr -> GraphicF u
-otri45 = triAng (pi/4) (\p a -> cstroke (strokeAttr a) p)
+otri45 = triAng (pi/4) (\p a -> cstroke (stroke_colour a) (stroke_props a) p)
 
 
 barbAng :: (Floating u, Real u, FromPtSize u)
       => Radian -> Radian -> DrawingAttr -> GraphicF u
 barbAng ang theta attr pt = 
-    wrapG $ ostroke (strokeAttr attr) $ vertexPath [u,pt,v]
+    wrapG $ ostroke (stroke_colour attr) (stroke_props attr) $ vertexPath [u,pt,v]
   where
     sz    = fromPtSize $ xcharHeight $ font_size $ font_props attr
     (u,v) = tripoints ang sz theta  pt
@@ -124,7 +124,8 @@ barb45 = barbAng (pi/4)
 
 perp :: (Floating u, FromPtSize u) => Radian -> DrawingAttr -> GraphicF u
 perp theta attr = \pt -> 
-    wrapG $ ostroke (strokeAttr attr) $ vertexPath [ pt .+^ v, pt .-^ v]
+    wrapG $ ostroke (stroke_colour attr) (stroke_props attr) 
+          $ vertexPath [ pt .+^ v, pt .-^ v]
   where
     half_sz = 0.5 * (fromPtSize $ xcharHeight $ font_size $ font_props attr)
     v       = avec (theta + pi/2) half_sz

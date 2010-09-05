@@ -57,7 +57,7 @@ data DrawingAttr = DrawingAttr
   deriving (Eq,Show)
 
 standardAttr :: FontSize -> DrawingAttr
-standardAttr sz = DrawingAttr { stroke_props       = defaultSA
+standardAttr sz = DrawingAttr { stroke_props       = default_stroke_attr
                               , font_props         = FontAttr sz courier
                               , stroke_colour      = black
                               , fill_colour        = gold  }

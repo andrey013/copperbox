@@ -30,7 +30,7 @@ main = do
 
 
 makeFontLabel :: RGBi -> FontAttr -> DPoint2 -> DPrimitive
-makeFontLabel c fa = textlabel (c,fa) msg
+makeFontLabel rgb fa = textlabel rgb fa msg
   where
     msg = unwords [ font_name $ font_face fa, (show $ font_size fa) ++ "pt"]
 

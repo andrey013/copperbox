@@ -62,8 +62,8 @@ makeDotPic :: (Real u, Floating u, FromPtSize u)
            => (DrawingAttr -> GraphicF u) -> [Point2 u] -> Picture u
 makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
   where
-    dashline = wrapG $ ostroke attr $ vertexPath xs
-    attr     = (cadet_blue, defaultSA { dash_pattern = evenDashes 1 })
+    dashline = wrapG $ ostroke cadet_blue attr $ vertexPath xs
+    attr     = default_stroke_attr { dash_pattern = evenDashes 1 }
 
 
 errK :: a

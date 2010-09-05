@@ -128,20 +128,21 @@ picAnno :: DPicture -> String -> DPicture
 picAnno pic msg = alignHSep HCenter 30 pic lbl
   where
     lbl = drawGraphicU $ supply (P2 0 0) $ 
-            textline (black,FontAttr 14 courier) msg
+            textline black (FontAttr 14 courier) msg
 
 
 rect_red :: DPicture
 rect_red = drawGraphicU $ supply (P2 0 10) $ 
-          strokedRectangle black 30 10 `cc` filledRectangle indian_red 30 10
+          strokedRectangle black zeroSA 30 10 `cc` filledRectangle indian_red 30 10
 
 rect_green :: DPicture
 rect_green = drawGraphicU $ supply (P2 10 10) $ 
-    strokedRectangle black 15 15 `cc` filledRectangle olive_drab 15 15
+    strokedRectangle black zeroSA 15 15 `cc` filledRectangle olive_drab 15 15
 
 
 rect_blue :: DPicture
 rect_blue = drawGraphicU $ supply (P2 10 0) $ 
-    strokedRectangle black 20 30 `cc` filledRectangle powder_blue 20 30
+    strokedRectangle black zeroSA 20 30 `cc` filledRectangle powder_blue 20 30
 
-
+zeroSA :: StrokeAttr
+zeroSA = default_stroke_attr

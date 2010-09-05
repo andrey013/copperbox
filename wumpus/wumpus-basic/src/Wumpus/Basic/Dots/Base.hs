@@ -65,17 +65,17 @@ dotChar ch = dotText [ch]
 
 dotText :: (Fractional u, FromPtSize u) => String -> DrawingAttr -> GraphicF u
 dotText str attr = \ctr -> let pt = disp (-hw) (-hh) ctr in
-    wrapG $ textlabel (textAttr attr) str pt
+    wrapG $ textlabel (stroke_colour attr) (font_props attr) str pt
   where
-    sz = font_size $ font_props attr
+    sz = font_size  $ font_props attr
     hh = fromPtSize $ 0.5 * numeralHeight sz
     hw = fromPtSize $ 0.5 * textWidth sz (length str) 
 
 -- | Supplied point is the center.
 --
-axialLine :: (Stroke t, Fractional u) => t -> Vec2 u -> GraphicF u
-axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
-    wrapG $ ostroke t $ path pt [lineTo $ pt .+^ v]
+axialLine :: Fractional u => RGBi -> StrokeAttr -> Vec2 u -> GraphicF u
+axialLine rgb attr v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
+    wrapG $ ostroke rgb attr $ path pt [lineTo $ pt .+^ v]
  
 
 
@@ -86,12 +86,12 @@ axialLine t v = \ctr -> let pt = ctr .-^ (0.5 *^ v) in
 -- 
 dotHLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
 dotHLine attr = let w = markHeight attr in 
-    axialLine (strokeAttr attr) (hvec w)
+    axialLine (stroke_colour attr) (stroke_props attr) (hvec w)
     
 
 dotVLine :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u 
 dotVLine attr = let h = markHeight attr in 
-    axialLine (strokeAttr attr) (vvec h)
+    axialLine (stroke_colour attr) (stroke_props attr) (vvec h)
 
 
 dotX :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
@@ -99,8 +99,8 @@ dotX attr = ls1 `cc` ls2
   where
     h        = markHeight attr
     w        = 0.75 * h
-    ls1      = axialLine (strokeAttr attr) (vec w    h)
-    ls2      = axialLine (strokeAttr attr) (vec (-w) h)
+    ls1      = axialLine (stroke_colour attr) (stroke_props attr) (vec w h)
+    ls2      = axialLine (stroke_colour attr) (stroke_props attr) (vec (-w) h)
 
 
 dotPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
@@ -111,8 +111,8 @@ dotCross :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotCross attr = ls1 `cc` ls2
   where
     z        = markHeight attr
-    ls1      = axialLine (strokeAttr attr) (avec (pi*0.25)    z)
-    ls2      = axialLine (strokeAttr attr) (avec (negate $ pi*0.25) z)
+    ls1      = axialLine (stroke_colour attr) (stroke_props attr) (avec (pi*0.25) z)
+    ls2      = axialLine (stroke_colour attr) (stroke_props attr) (avec (negate $ pi*0.25) z)
 
 
 -- needs horizontal pinch...
@@ -131,12 +131,12 @@ type PathF u = Point2 u -> PrimPath u
 
 dotDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotDiamond attr = 
-    wrapG . cstroke (strokeAttr attr) . pathDiamond attr
+    wrapG . cstroke (stroke_colour attr) (stroke_props attr) . pathDiamond attr
 
 dotFDiamond :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotFDiamond attr = dotDiamond attr `cc` filled 
   where
-    filled = wrapG . fill (fillAttr attr) . pathDiamond attr
+    filled = wrapG . fill (fill_colour attr) . pathDiamond attr
 
 
 
@@ -148,17 +148,18 @@ dotDisk attr = disk (fill_colour attr) (0.5*markHeight attr)
 
 dotSquare :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotSquare attr = let u = markHeight attr in
-     strokedRectangle (strokeAttr attr) u u 
+     strokedRectangle (stroke_colour attr) (stroke_props attr) u u 
     
 
 
 dotCircle :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u
-dotCircle attr = disk (strokeAttr attr) (0.5*markHeight attr) 
+dotCircle attr = disk (stroke_colour attr) (0.5*markHeight attr) 
 
 
 dotPentagon :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotPentagon attr = 
-    wrapG . cstroke (strokeAttr attr) . vertexPath . polygonPointsV 5 hh
+    wrapG . cstroke (stroke_colour attr) (stroke_props attr) 
+          . vertexPath . polygonPointsV 5 hh
   where
     hh      = 0.5 * markHeight attr
 
@@ -168,7 +169,8 @@ dotStar :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
   where
     hh        = 0.5 * markHeight attr
-    fn pt pt' = wrapG $ cstroke (strokeAttr attr) $ path pt [lineTo pt'] 
+    fn pt pt' = wrapG $ cstroke (stroke_colour attr) (stroke_props attr) 
+                      $ path pt [lineTo pt'] 
 
 
 
@@ -176,12 +178,12 @@ dotStar attr = \pt -> veloH (fn pt) $ polygonPointsV 5 hh pt
 dotAsterisk :: (Floating u, FromPtSize u) => DrawingAttr -> GraphicF u
 dotAsterisk attr = ls1 `cc` ls2 `cc` ls3
   where
-    z        = markHeight attr
-    props    = strokeAttr attr
-    ang      = two_pi / 6
-    ls1      = axialLine props (vvec z)
-    ls2      = axialLine props (avec (half_pi + ang)    z)
-    ls3      = axialLine props (avec (half_pi + ang + ang) z)
+    z         = markHeight attr
+    (rgb,sa)  = strokeAttr attr
+    ang       = two_pi / 6
+    ls1       = axialLine rgb sa (vvec z)
+    ls2       = axialLine rgb sa (avec (half_pi + ang)    z)
+    ls3       = axialLine rgb sa (avec (half_pi + ang + ang) z)
 
 
 dotOPlus :: (Fractional u, FromPtSize u) => DrawingAttr -> GraphicF u

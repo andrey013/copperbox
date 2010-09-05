@@ -5,6 +5,7 @@ module ColourCharts where
 import ColourDefns
 
 import Wumpus.Core
+import Wumpus.Basic.Colour.SVGColours ( black )
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Utils.HList
@@ -54,7 +55,7 @@ colourSample :: (Fractional u, Floating u, Ord u)
 colourSample (name,rgb) = block `cc` lbl 
   where
     block = filledRectangle rgb  15 10
-    lbl   = textline (FontAttr 10 courier) name . (.+^ hvec 18)
+    lbl   = textline black (FontAttr 10 courier) name . (.+^ hvec 18)
 
 
 
