@@ -72,20 +72,20 @@ borderedF :: Double -> DrawWordF
 borderedF ln_width (i,uw) (w,h) rgb = 
     srect `cc` seps `cc` greekF (i,uw) (w,h) rgb
   where
-    props = (black, LineWidth ln_width)
+    props = default_stroke_attr { line_width = ln_width }
 
     srect :: DGraphicF
-    srect = wrapG . cstroke props . rectanglePath w h
+    srect = wrapG . cstroke black props . rectanglePath w h
  
     seps  :: DGraphicF
     seps  = \pt -> unfoldrH (phi pt) (1,uw) 
     
     phi pt (n,hshift) | n >= i    = Nothing
-                      | otherwise = let ln = vline props h (pt .+^ hvec hshift)
+                      | otherwise = let ln = vline black props h (pt .+^ hvec hshift)
                                     in  Just (ln,(n+1,hshift+uw))
  
-vline :: (Stroke t, Num u, Ord u) => t -> u -> Point2 u -> Primitive u
-vline t h = \pt -> ostroke t $ path pt [lineTo $ pt .+^ vvec h]
+vline :: (Num u, Ord u) => RGBi -> StrokeAttr -> u -> Point2 u -> Primitive u
+vline rgb attr h = \pt -> ostroke rgb attr $ path pt [lineTo $ pt .+^ vvec h]
     
 
 newtype RenderMonad a = RM { 

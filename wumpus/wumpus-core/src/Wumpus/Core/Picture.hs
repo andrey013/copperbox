@@ -150,7 +150,7 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
 -- > <text font-family="Helvetica" font-size="12"> ... </text>
 -- > <text font-family="Helvetica" font-size="12"> ... </text>
 --
--- With the appropriate GSUpdate function, this code will be
+-- With the appropriate font delta context, this code will be
 -- generated:
 -- 
 -- > <g font-family="Helvetica" font-size="12">
@@ -211,26 +211,6 @@ curvedPath (x:xs) = PrimPath x (step xs)
 xlinkhref :: String -> XLink
 xlinkhref = XLinkHRef
 
-
---------------------------------------------------------------------------------
--- 
-
--- Design issue.
---
--- The overloading style below - patterned after Iavor S. 
--- Diatchki\'s XML-Light - is (probably) not as valuable as first 
--- anticipated. 
---
--- Wumpus-Basic takes graphic styles from a reader monad, so it 
--- \'always\' calls the overloaded operations with the same 
--- argument types and therefore doesn\'t need overloading.
---
--- It\'s perhaps unlikely that any other software would want to 
--- use Wumpus-Core directly, if it did then it is quite possible 
--- the exact argument types would again be uniform and no
--- shorthand via overloading would be necessary.
---
---
 
 
 --------------------------------------------------------------------------------

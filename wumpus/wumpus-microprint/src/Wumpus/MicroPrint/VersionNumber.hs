@@ -22,7 +22,7 @@ module Wumpus.MicroPrint.VersionNumber
 
 -- | Version number
 --
--- > (0,5,0)
+-- > (0,6,0)
 --
 wumpus_microprint_version :: (Int,Int,Int)
-wumpus_microprint_version = (0,5,0)
+wumpus_microprint_version = (0,6,0)

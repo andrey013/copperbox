@@ -12,6 +12,9 @@
 --
 -- LRText monad - left-to-right text.
 -- 
+-- \*\* WARNING \*\* - This is out dated now that Wumpus-Core has
+-- support for /kerned/ labels.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Text.LRText
@@ -146,7 +149,7 @@ text :: (Num u, FromPtSize u) => String -> TextM u ()
 text str = TextM $ \r s -> ((), upd r s)
   where
     upd (vdist,rgb) s@(St idx font h acc) = 
-        let g1  = textline (rgb,font) str 
+        let g1  = textline rgb font str 
             v   = makeDisplacement (font_size font) h vdist idx
         in s { xy_pos      = rightn (length str) idx
              , acc_graphic = (v,g1) `consT` acc      }
@@ -156,7 +159,7 @@ char :: (Num u, FromPtSize u) => Char -> TextM u ()
 char ch = TextM $ \r s -> ((), upd r s)
   where
     upd (vdist,rgb) s@(St idx font h acc) = 
-        let g1  = textline (rgb,font) [ch] 
+        let g1  = textline rgb font [ch] 
             v   = makeDisplacement (font_size font) h vdist idx
         in s { xy_pos      = rightn 1 idx
              , acc_graphic = (v,g1) `consT` acc }

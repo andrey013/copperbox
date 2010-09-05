@@ -60,11 +60,12 @@ draw1 fn ancr_from (Node (pt,a) ns) = do
 
 connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 
           => DotAnchor u -> DotAnchor u -> Drawing u ()
-connector afrom ato = trace $ wrapG $ ostroke black $ vertexPath [p0,p1]
-   where  
-     (ang0,ang1)    = anchorAngles (center afrom) (center ato)
-     p0             = radialAnchor ang0 afrom
-     p1             = radialAnchor ang1 ato 
+connector afrom ato = 
+    trace $ wrapG $ ostroke black default_stroke_attr $ vertexPath [p0,p1]
+  where  
+    (ang0,ang1)    = anchorAngles (center afrom) (center ato)
+    p0             = radialAnchor ang0 afrom
+    p1             = radialAnchor ang1 ato 
 
 
 
