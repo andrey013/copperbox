@@ -53,6 +53,8 @@ description:
   .
   0.30.0 to 0.31.0:
   .
+  * Added ability to /kern/ text labels.
+  .
   * Major API change - the Primitive constructors defined in 
     @Core.PictureLanguage@ are no longer overloaded (@cstroke@, 
     @ostroke@, @fill@, @textlabel@, @ellipse@). The respective 
@@ -77,7 +79,7 @@ description:
     @Core.Picture@. Previously this was present but unimplemented 
     in @Core.GraphicsState@ as @GSUpdate@, it is now @FontCtx@.
   .
-  * Some internal work on text encoding.
+  * Some internal work documenting text encoding.
   .
   0.23.0 to 0.30.0:
   .
@@ -134,7 +136,8 @@ extra-source-files:
   demo/AffineTest03.hs,
   demo/AffineTestBase.hs,
   demo/DeltaPic.hs,
-  demo/FontMetrics.hs
+  demo/FontMetrics.hs,
+  demo/KernPic.hs,
   demo/LabelPic.hs,
   demo/Latin1Pic.hs,
   demo/MultiPic.hs,

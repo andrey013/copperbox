@@ -283,29 +283,71 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 primLabel :: (Real u, Floating u, PSUnit u) 
       => LabelProps -> PrimLabel u -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel pt body ctm) = 
-    (\fa ca txt -> elem_text (fa <+> ca) txt)
-      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm mkXY 
-                               <*> tspan rgb body
-  where
-    mkXY (P2 x y) = pure $ attr_x x <+> attr_y y  -- will change... 04/09/2010  
+    (\fa ca dtxt -> elem_text (fa <+> ca) (makeTspan rgb dtxt))
+      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm (labelBodyCoords body)
+                               <*> labelBodyText body
+    
 
-tspan :: RGBi -> LabelBody u -> SvgMonad Doc
-tspan rgb body = 
-    (\txt -> elem_tspan (attr_fill rgb) txt) 
-      <$> labelBody body
 
-labelBody :: LabelBody u -> SvgMonad Doc
-labelBody (StdLayout enctext) = encodedText enctext
+labelBodyCoords :: PSUnit u => LabelBody u -> Point2 u -> SvgMonad Doc
+labelBodyCoords (StdLayout _)  pt = pure $ makeXY pt
+labelBodyCoords (KernTextH xs) pt = pure $ makeXsY pt xs        
+labelBodyCoords (KernTextV xs) pt = pure $ makeXYs pt xs
+
+labelBodyText :: LabelBody u -> SvgMonad Doc
+labelBodyText (StdLayout enctext) = encodedText enctext
+labelBodyText (KernTextH xs)      = hcat <$> mapM kerningChar xs
+labelBodyText (KernTextV xs)      = hcat <$> mapM kerningChar xs
+
 
 encodedText :: EncodedText -> SvgMonad Doc
 encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
-
 
 textChunk :: TextChunk -> SvgMonad Doc
 textChunk (TextSpan s)    = pure $ text s
 textChunk (TextEscInt i)  = pure $ text $ escapeSpecial i
 textChunk (TextEscName s) = either text text <$> askGlyphName s 
 
+kerningChar :: KerningChar u -> SvgMonad Doc
+kerningChar (_, CharLiteral c) = pure $ char c
+kerningChar (_, CharEscInt i)  = pure $ text $ escapeSpecial i
+kerningChar (_, CharEscName s) = either text text <$> askGlyphName s 
+
+
+makeTspan :: RGBi -> Doc -> Doc
+makeTspan rgb body = elem_tspan (attr_fill rgb) body
+
+makeXY :: PSUnit u => Point2 u -> Doc
+makeXY (P2 x y) = attr_x x <+> attr_y y
+
+-- This is for horizontal kerning text, the output is of the 
+-- form:
+-- 
+-- > x="0 10 25 35" y="0"
+--
+makeXsY :: PSUnit u => Point2 u -> [KerningChar u] -> Doc
+makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
+  where 
+    step ax ((d,_):ds) = let a = ax+d in a : step a ds 
+    step _  []         = []
+
+
+-- This is for vertical kerning text, the output is of the 
+-- form:
+-- 
+-- > x="0 0 0 0" y="0 10 25 35"
+--
+-- Note - this is different to the horizontal version as the 
+-- x-coord needs to be /realigned/ at each step.
+--
+makeXYs :: PSUnit u => Point2 u -> [KerningChar u] -> Doc
+makeXYs (P2 x y) ks = attr_xs xcoords <+> attr_ys (step y ks)
+  where 
+    xcoords            = replicate (length ks) x
+    step ay ((d,_):ds) = let a = ay+d in a : step a ds 
+    step _  []         = []
+    
+    
 
 --------------------------------------------------------------------------------
 -- Stroke and font attribute delta

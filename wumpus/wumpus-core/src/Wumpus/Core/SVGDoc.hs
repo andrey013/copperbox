@@ -34,7 +34,9 @@ module Wumpus.Core.SVGDoc
 
   , attr_id
   , attr_x
+  , attr_xs
   , attr_y
+  , attr_ys
   , attr_r
   , attr_rx
   , attr_ry
@@ -199,10 +201,28 @@ attr_id = svgAttr "id" . text
 attr_x :: PSUnit u => u -> Doc
 attr_x = svgAttr "x" . dtruncFmt
 
+
+-- | @ x=\"... ... ...\" @
+--
+-- /List/ version of attr_x
+-- 
+attr_xs :: PSUnit u => [u] -> Doc
+attr_xs = svgAttr "x" . hsep . map dtruncFmt
+
+
 -- | @ y=\"...\" @
 --
 attr_y :: PSUnit u => u -> Doc
 attr_y = svgAttr "y" . dtruncFmt
+
+
+-- | @ y=\"... ... ...\" @
+--
+-- /List/ version of attr_y
+-- 
+attr_ys :: PSUnit u => [u] -> Doc
+attr_ys = svgAttr "y" . hsep . map dtruncFmt
+
 
 -- | @ r=\"...\" @
 --
