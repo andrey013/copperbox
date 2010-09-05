@@ -18,6 +18,7 @@ module Wumpus.Core.PostScriptDoc
   ( 
  
     escapeSpecial
+  , escapeSpecialChar
     
   , psHeader
   , epsHeader
@@ -44,6 +45,7 @@ module Wumpus.Core.PostScriptDoc
 
   , ps_newpath
   , ps_moveto
+  , ps_rmoveto
   , ps_lineto
   , ps_arc
   , ps_curveto
@@ -88,6 +90,11 @@ escapeSpecial = foldr f ""
   where
     f c ss | c `elem` ps_special = '\\' : c : ss
            | otherwise           = c : ss
+
+-- Note - this has to promote the Char to a String...
+escapeSpecialChar :: Char -> String
+escapeSpecialChar c | c `elem` ps_special = ['\\', c]
+                    | otherwise           = [c]
 
 ps_special :: [Char]
 ps_special = "\\()<>[]{}/%"
@@ -249,6 +256,12 @@ ps_newpath = command "newpath" []
 ps_moveto :: PSUnit u => Point2 u -> Doc
 ps_moveto (P2 x y) = command "moveto" [dtruncFmt x, dtruncFmt y]
 
+-- | @ ... ... rmoveto @
+--
+-- /Relative/ moveto.
+-- 
+ps_rmoveto :: PSUnit u => Point2 u -> Doc
+ps_rmoveto (P2 x y) = command "rmoveto" [dtruncFmt x, dtruncFmt y]
 
 -- | @ ... ... lineto @
 --

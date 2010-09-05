@@ -209,7 +209,7 @@ descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
 -- For variable width fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: (Fractional u, Ord u, FromPtSize u) 
+textBounds :: (Num u, Ord u, FromPtSize u) 
            => FontSize -> Point2 u -> CharCount -> BoundingBox u
 textBounds sz body_bl n = bbox bl tr where
     h           = fromPtSize $ textHeight sz

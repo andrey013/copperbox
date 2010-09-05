@@ -368,8 +368,11 @@ primLabel (LabelProps rgb font) (PrimLabel basept body ctm) =
               <$> deltaDrawColour rgb <*> deltaFontAttrs font 
                                       <*> labelBody body
 
-labelBody :: LabelBody u -> PsMonad Doc
+labelBody :: PSUnit u => LabelBody u -> PsMonad Doc
 labelBody (StdLayout txt) = encodedText txt
+labelBody (KernTextH xs)  = vcat <$> mapM kernTextH1 xs
+labelBody (KernTextV xs)  = vcat <$> mapM kernTextV1 xs
+
 
 encodedText :: EncodedText -> PsMonad Doc 
 encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
@@ -381,6 +384,22 @@ textChunk (TextEscName s) = pure (ps_glyphshow s)
 textChunk (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i 
   where
     failk gly_name = missingCharCode i gly_name
+
+kernTextH1 :: PSUnit u => KerningChar u -> PsMonad Doc
+kernTextH1 (dx,ch) = 
+    (\doc -> ps_rmoveto (P2 dx 0) `vconcat` doc) <$> encodedChar ch
+
+kernTextV1 :: PSUnit u => (u,EncodedChar) -> PsMonad Doc
+kernTextV1 (dy,ch) = 
+    (\doc -> ps_rmoveto (P2 0 dy) `vconcat` doc) <$> encodedChar ch
+
+encodedChar :: EncodedChar -> PsMonad Doc
+encodedChar (CharLiteral c) = pure (ps_show $ escapeSpecialChar c)
+encodedChar (CharEscName s) = pure (ps_glyphshow s)
+encodedChar (CharEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i 
+  where
+    failk gly_name = missingCharCode i gly_name
+
 
 --------------------------------------------------------------------------------
 -- Stroke, font and drawing colour attribute delta

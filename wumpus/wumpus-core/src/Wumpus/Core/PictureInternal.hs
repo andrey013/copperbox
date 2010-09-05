@@ -38,6 +38,9 @@ module Wumpus.Core.PictureInternal
   , DPrimLabel
   , LabelProps(..)
   , LabelBody(..)
+  , DLabelBody
+  , KerningChar
+  , DKerningChar  
   , PrimEllipse(..)
   , EllipseProps(..)
   , PrimCTM(..)
@@ -257,12 +260,32 @@ data LabelProps   = LabelProps
   deriving (Eq,Ord,Show)
 
 
--- | The standard layout uses @show@ for PostScript and a single 
+-- | Label can be draw with 3 layouts.
+-- 
+-- The standard layout uses @show@ for PostScript and a single 
 -- initial point for SVG.
+--
+-- Kerned horizontal layout - each character is encoded with the
+-- rightwards horizontal distance from the last charcaters left 
+-- base-line.
+-- 
+-- Kerned vertical layout - each character is encoded with the
+-- upwards distance from the last charcaters left base-line.
 -- 
 data LabelBody u = StdLayout EncodedText
+                 | KernTextH [KerningChar u]
+                 | KernTextV [KerningChar u]
   deriving (Eq,Show)
 
+type DLabelBody = LabelBody Double
+
+
+-- | A Char (possibly escaped) paired with is displacement from 
+-- the previous KerningChar.
+--
+type KerningChar u = (u,EncodedChar) 
+
+type DKerningChar = KerningChar Double
 
 -- Ellipse represented by center and half_width * half_height
 --
@@ -371,6 +394,9 @@ instance PSUnit u => Format (PrimLabel u) where
 
 instance PSUnit u => Format (LabelBody u) where
   format (StdLayout enctext) = format enctext
+  format (KernTextH xs)      = text "(KernH)" <+> hcat (map (format .snd) xs)
+  format (KernTextV xs)      = text "(KernV)" <+> hcat (map (format .snd) xs)
+
 
 instance PSUnit u => Format (PrimEllipse u) where
   format (PrimEllipse ctr hw hh ctm) = text "center="   <> format ctr
@@ -450,11 +476,48 @@ labelBoundary attr (PrimLabel (P2 x y) body ctm) =
   where
     disp        = (.+^ V2 x y)
     m33         = matrixRepCTM ctm
-    untraf_bbox = textBounds (font_size attr) zeroPt char_count
-    char_count  = labelLength body  -- Note - this will need to change...
+    untraf_bbox = labelBodyBoundary (font_size attr) body
 
-labelLength :: LabelBody u -> Int
-labelLength (StdLayout enctext) = textLength enctext
+labelBodyBoundary :: (Num u, Ord u, FromPtSize u) 
+                  => FontSize -> LabelBody u -> BoundingBox u
+labelBodyBoundary sz (StdLayout etxt) = stdLayoutBB sz (textLength etxt)
+labelBodyBoundary sz (KernTextH xs)   = hKerningBB sz xs
+labelBodyBoundary sz (KernTextV xs)   = vKerningBB sz xs
+
+
+stdLayoutBB :: (Num u, Ord u, FromPtSize u) 
+            => FontSize -> CharCount -> BoundingBox u
+stdLayoutBB sz len = textBounds sz zeroPt len
+
+-- Note - this assumes positive deltas (and a nonempty list)...
+--
+-- Kern deltas are relative to the left basepoint, so they are
+-- irrespective of the actual charater width. Thus to calculate
+-- the bounding box Wumpus calculates the bounds of one character
+-- then expands the right edge with the sum of the (rightwards)
+-- displacements.
+-- 
+hKerningBB :: (Num u, Ord u, FromPtSize u) 
+           => FontSize -> [(u,EncodedChar)] -> BoundingBox u
+hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt 1
+  where
+    sumDiffs                          = foldr (\(u,_) i -> i+u)  0
+    rightGrow u (BBox ll (P2 x1 y1))  = BBox ll (P2 (x1+u) y1)
+
+
+-- Note - likewise same assumptions as horizontal version...
+--
+-- Again the kern delta is relative to the left basepoint, so
+-- character height is irrespective when summing the deltas.
+-- 
+vKerningBB :: (Num u, Ord u, FromPtSize u) 
+           => FontSize -> [(u,EncodedChar)] -> BoundingBox u
+vKerningBB sz xs = upGrow (sumDiffs xs) $ textBounds sz zeroPt 1
+  where
+    sumDiffs                          = foldr (\(u,_) i -> i+u)  0
+    upGrow u (BBox ll (P2 x1 y1))  = BBox ll (P2 x1 (y1+u))
+
+
 
 -- | Ellipse bbox is the bounding rectangle, rotated as necessary 
 -- then retraced.

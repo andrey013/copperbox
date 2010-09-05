@@ -64,6 +64,12 @@ instance Format TextChunk where
   format (TextEscInt i)  = text "&#" <> int i  <> semicolon
   format (TextEscName s) = text "&#" <> text s <> semicolon
 
+instance Format EncodedChar where
+  format (CharLiteral c) = char c
+  format (CharEscInt i)  = text "&#" <> int i  <> semicolon
+  format (CharEscName s) = text "&#" <> text s <> semicolon
+
+
 --------------------------------------------------------------------------------
 
 textLength :: EncodedText -> Int

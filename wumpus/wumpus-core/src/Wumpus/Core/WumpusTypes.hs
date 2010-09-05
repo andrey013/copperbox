@@ -38,6 +38,8 @@ module Wumpus.Core.WumpusTypes
   , DPrimPathSegment
   , PrimLabel
   , DPrimLabel
+  , KerningChar
+  , DKerningChar
 
   -- * Drawing styles
   , PathProps       

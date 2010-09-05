@@ -52,6 +52,14 @@ module Wumpus.Core.Picture
   , ztextlabel
   , wumpus_default_font
 
+  , hkernlabel
+  , vkernlabel
+  , xhkernlabel
+  , xvkernlabel
+  , kernchar
+  , kernEscInt
+  , kernEscName
+
   , strokeEllipse
   , fillEllipse
   , xstrokeEllipse
@@ -375,7 +383,102 @@ wumpus_default_font = FontAttr 14 face
                     , svg_font_style    = SVG_REGULAR
                     }
 
+--------------------------------------------------------------------------------
 
+-- | Create a text label with horizontal /kerning/ for each 
+-- character. 
+--
+-- Note - kerning is relative to the left baseline of the 
+-- previous character, it is \*not relative\* to the right-hand
+-- boundary of the previous char. While the later would be more
+-- obvious it would take a lot of effort to implement as it would 
+-- need access to the metrics encoded in font files. 
+--
+-- Characters are expected to be drawn left to right, so 
+-- displacements should not be negative. If the displacement is
+-- zero the character will be drawn ontop of the previous char.
+-- 
+-- The charcters should not contain newline or tab characters.
+--
+-- The supplied point is the left baseline.
+--
+hkernlabel :: Num u 
+            => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
+            -> Primitive u
+hkernlabel rgb attr xs = xvkernlabel rgb attr NoLink xs 
+
+
+ 
+-- | Create a horizontally kerned text label with a hyperlink.
+--
+-- The is the hyperlink version of 'hkernlabel'.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xhkernlabel :: Num u 
+            => RGBi -> FontAttr -> XLink -> [KerningChar u] -> Point2 u 
+            -> Primitive u
+xhkernlabel rgb attr xlink xs pt = PLabel (LabelProps rgb attr) xlink lbl 
+  where
+    lbl = PrimLabel pt (KernTextH xs) identityCTM
+
+
+
+-- | Create a text label with vertical /kerning/ for each 
+-- character - the text is expected to grow upwards. 
+--
+-- Note - kerning is relative to the baseline of the previous 
+-- character, it is \*not relative\* to the top of previous char. 
+-- While the later would be more obvious it would take a lot of 
+-- effort to implement as it would need access to the metrics 
+-- encoded in font files. 
+--
+-- Characters are expected to be drawn left to right, so 
+-- displacements should not be negative. If the displacement is
+-- zero the character will be drawn ontop of the previous char.
+-- 
+-- The charcters should not contain newline or tab characters.
+--
+-- The supplied point is the left baseline.
+--
+vkernlabel :: Num u 
+            => RGBi -> FontAttr ->[KerningChar u] -> Point2 u 
+            -> Primitive u
+vkernlabel rgb attr xs = xvkernlabel rgb attr NoLink xs 
+
+
+-- | Create a vertically drawn text label with a hyperlink.
+--
+-- The is the hyperlink version of 'vkernlabel'.
+--
+-- Note - hyperlinks are only rendered in SVG output.
+--
+xvkernlabel :: Num u 
+            => RGBi -> FontAttr -> XLink -> [KerningChar u] -> Point2 u 
+            -> Primitive u
+xvkernlabel rgb attr xlink xs pt = PLabel (LabelProps rgb attr) xlink lbl 
+  where
+    lbl = PrimLabel pt (KernTextV xs) identityCTM
+
+
+
+-- | Construct a regular (i.e. non-special) Char along with its 
+-- displacement from the left-baseline of the previous Char.
+--
+kernchar :: u -> Char -> KerningChar u
+kernchar u c = (u, CharLiteral c)
+
+-- | Construct a Char by its character code along with its 
+-- displacement from the left-baseline of the previous Char.
+--
+kernEscInt :: u -> Int -> KerningChar u
+kernEscInt u i = (u, CharEscInt i)
+
+-- | Construct a Char by its character name along with its 
+-- displacement from the left-baseline of the previous Char.
+--
+kernEscName :: u -> String -> KerningChar u
+kernEscName u s = (u, CharEscName s)
 
 --------------------------------------------------------------------------------
 
