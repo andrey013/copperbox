@@ -361,21 +361,24 @@ strokeArcPath rgb sa radius pt =
 --
 primLabel :: (Real u, Floating u, PSUnit u) 
           => LabelProps -> PrimLabel u -> PsMonad Doc
-primLabel (LabelProps rgb font) (PrimLabel basept txt ctm) = 
+primLabel (LabelProps rgb font) (PrimLabel basept body ctm) = 
     bracketPrimCTM basept ctm mf
   where
     mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, ps_moveto pt, showd ]) 
               <$> deltaDrawColour rgb <*> deltaFontAttrs font 
-                                      <*> encodedText txt
+                                      <*> labelBody body
+
+labelBody :: LabelBody u -> PsMonad Doc
+labelBody (StdLayout txt) = encodedText txt
 
 encodedText :: EncodedText -> PsMonad Doc 
 encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
 
 
 textChunk :: TextChunk -> PsMonad Doc
-textChunk (SText s)  = pure (ps_show $ escapeSpecial s)
-textChunk (EscStr s) = pure (ps_glyphshow s)
-textChunk (EscInt i) = (either failk ps_glyphshow) <$> askCharCode i 
+textChunk (TextSpan s)    = pure (ps_show $ escapeSpecial s)
+textChunk (TextEscName s) = pure (ps_glyphshow s)
+textChunk (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i 
   where
     failk gly_name = missingCharCode i gly_name
 

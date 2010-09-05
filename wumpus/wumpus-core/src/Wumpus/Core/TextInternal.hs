@@ -19,6 +19,7 @@ module Wumpus.Core.TextInternal
 
     EncodedText(..)    
   , TextChunk(..)
+  , EncodedChar(..)
 
   , textLength
   , lookupByCharCode  
@@ -36,10 +37,20 @@ import Data.Char
 newtype EncodedText = EncodedText { getEncodedText :: [TextChunk] }
   deriving (Eq,Show)
 
+-- | Wumpus supports both escaped names e.g. @egrave@ and escaped
+-- (numeric decimal) character codes in the input string for a 
+-- TextLabel.
+-- 
+data TextChunk = TextSpan    String
+               | TextEscInt  Int
+               | TextEscName GlyphName
+  deriving (Eq,Show)
 
-data TextChunk = SText  String
-               | EscInt Int
-               | EscStr GlyphName
+-- | For KernLabels Wumpus needs a Char version of TextChunk.
+--
+data EncodedChar = CharLiteral Char
+                 | CharEscInt  Int
+                 | CharEscName GlyphName
   deriving (Eq,Show)
 
 
@@ -49,16 +60,16 @@ instance Format EncodedText where
   format = hcat . map format . getEncodedText
 
 instance Format TextChunk where
-  format (SText s)   = text s
-  format (EscInt i)  = text "&#" <> int i  <> semicolon
-  format (EscStr s)  = text "&#" <> text s <> semicolon
+  format (TextSpan s)    = text s
+  format (TextEscInt i)  = text "&#" <> int i  <> semicolon
+  format (TextEscName s) = text "&#" <> text s <> semicolon
 
 --------------------------------------------------------------------------------
 
 textLength :: EncodedText -> Int
 textLength = foldr add 0 . getEncodedText where 
-    add (SText s) n = n + length s
-    add _         n = n + 1
+    add (TextSpan s) n = n + length s
+    add _            n = n + 1
 
 
 lookupByCharCode :: CharCode -> TextEncoder -> Maybe GlyphName
@@ -68,17 +79,27 @@ lookupByGlyphName :: GlyphName -> TextEncoder -> Maybe CharCode
 lookupByGlyphName i enc = (svg_lookup enc) i
 
 
--- | Output to PostScript as @ /egrave glyphshow @
-
--- Output to SVG as an escaped decimal, e.g. @ &#232; @
+-- | 'lexLabel' input is regular text and escaped glyph names or
+-- decimal character codes. Escaping follows the SVG convention,
+-- start with @&#@ (ampersand hash) end with @;@ (semicolon).
+--
+-- Special chars are output to PostScript as:
+--
+-- > /egrave glyphshow
+--
+-- Special chars are output to SVG as an escaped decimal, e.g.:
+--
+-- > &#232;
 --
 -- Note, HTML entity names do not seem to be supported in SVG,
 -- @ &egrave; @ does not work in FireFox or Chrome.
-
-
+--
 lexLabel :: String -> EncodedText
 lexLabel = EncodedText . lexer
 
+-- Note - the lexer reads number spans with isDigit, so reads 
+-- decimals only.
+-- 
 lexer :: String -> [TextChunk]
 lexer []            = []
 
@@ -87,14 +108,14 @@ lexer ('&':'#':xs)  = esc xs
     esc (c:cs) | isDigit c = let (s,cs') = span isDigit cs 
                              in  intval (c:s) cs'
                | otherwise = let (s,cs') = span isAlpha cs 
-                             in EscStr (c:s) : optsemi cs'
+                             in TextEscName (c:s) : optsemi cs'
     esc []                 = []
 
     optsemi (';':cs)   = lexer cs      -- let ill-formed go through
     optsemi cs         = lexer cs
 
     intval [] rest  = optsemi rest
-    intval cs rest  = EscInt (read cs) : optsemi rest
+    intval cs rest  = TextEscInt (read cs) : optsemi rest
 
 lexer (x:xs)        = let (s,xs') = span (/= '&') xs 
-                      in SText (x:s) : lexer xs'
+                      in TextSpan (x:s) : lexer xs'

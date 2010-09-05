@@ -37,6 +37,7 @@ module Wumpus.Core.PictureInternal
   , PrimLabel(..)
   , DPrimLabel
   , LabelProps(..)
+  , LabelBody(..)
   , PrimEllipse(..)
   , EllipseProps(..)
   , PrimCTM(..)
@@ -240,18 +241,27 @@ data PathProps = CFill RGBi
 --
 data PrimLabel u = PrimLabel 
       { label_baseline_left :: Point2 u
-      , label_text          :: EncodedText
+      , label_body          :: LabelBody u
       , label_ctm           :: PrimCTM u
       }
   deriving (Eq,Show)
 
 type DPrimLabel = PrimLabel Double
 
+-- | Font rendering properties for a PrimLabel.
+--
 data LabelProps   = LabelProps 
       { label_colour :: RGBi
       , label_font   :: FontAttr
       }
   deriving (Eq,Ord,Show)
+
+
+-- | The standard layout uses @show@ for PostScript and a single 
+-- initial point for SVG.
+-- 
+data LabelBody u = StdLayout EncodedText
+  deriving (Eq,Show)
 
 
 -- Ellipse represented by center and half_width * half_height
@@ -359,6 +369,9 @@ instance PSUnit u => Format (PrimLabel u) where
             <+> text "ctm="           <> format ctm
           ]
 
+instance PSUnit u => Format (LabelBody u) where
+  format (StdLayout enctext) = format enctext
+
 instance PSUnit u => Format (PrimEllipse u) where
   format (PrimEllipse ctr hw hh ctm) = text "center="   <> format ctr
                                    <+> text "hw="       <> dtruncFmt hw
@@ -432,15 +445,16 @@ pathBoundary (PrimPath st xs) = step (st,st) xs
 
 labelBoundary :: (Floating u, Real u, FromPtSize u) 
               => FontAttr -> PrimLabel u -> BoundingBox u
-labelBoundary attr (PrimLabel (P2 x y) xs ctm) = 
+labelBoundary attr (PrimLabel (P2 x y) body ctm) = 
     retraceBoundary  (disp . (m33 *#)) untraf_bbox
   where
     disp        = (.+^ V2 x y)
     m33         = matrixRepCTM ctm
     untraf_bbox = textBounds (font_size attr) zeroPt char_count
-    char_count  = textLength xs
+    char_count  = labelLength body  -- Note - this will need to change...
 
-
+labelLength :: LabelBody u -> Int
+labelLength (StdLayout enctext) = textLength enctext
 
 -- | Ellipse bbox is the bounding rectangle, rotated as necessary 
 -- then retraced.

@@ -74,7 +74,10 @@ description:
   .
   * Added SVG font attribute /delta optimizations/ to help reduce 
     SVG code size - via the @fontDeltaContext@ function in 
-    @Core.Picture@.
+    @Core.Picture@. Previously this was present but unimplemented 
+    in @Core.GraphicsState@ as @GSUpdate@, it is now @FontCtx@.
+  .
+  * Some internal work on text encoding.
   .
   0.23.0 to 0.30.0:
   .
@@ -133,6 +136,7 @@ extra-source-files:
   demo/DeltaPic.hs,
   demo/FontMetrics.hs
   demo/LabelPic.hs,
+  demo/Latin1Pic.hs,
   demo/MultiPic.hs,
   demo/Rotated.hs,
   demo/Scaled.hs,

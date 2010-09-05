@@ -177,8 +177,7 @@ picture (Clip    (_,xs) cp pic) =
                           ; d2  <- picture pic
                           ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
                           } 
-picture (Group   (_,xs) fn pic) = 
-    bracketTrafos xs $ bracketGS fn (picture pic) -- $ runLocalGS fn (picture pic)
+picture (Group   (_,xs) fn pic) = bracketTrafos xs $ bracketGS fn (picture pic)
 
 
 
@@ -283,26 +282,29 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 
 primLabel :: (Real u, Floating u, PSUnit u) 
       => LabelProps -> PrimLabel u -> SvgMonad Doc
-primLabel (LabelProps rgb attrs) (PrimLabel pt etext ctm) = 
+primLabel (LabelProps rgb attrs) (PrimLabel pt body ctm) = 
     (\fa ca txt -> elem_text (fa <+> ca) txt)
       <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm mkXY 
-                               <*> tspan rgb etext
+                               <*> tspan rgb body
   where
-    mkXY (P2 x y) = pure $ attr_x x <+> attr_y y    
+    mkXY (P2 x y) = pure $ attr_x x <+> attr_y y  -- will change... 04/09/2010  
 
-tspan :: RGBi -> EncodedText -> SvgMonad Doc
-tspan rgb enctext = 
+tspan :: RGBi -> LabelBody u -> SvgMonad Doc
+tspan rgb body = 
     (\txt -> elem_tspan (attr_fill rgb) txt) 
-      <$> encodedText enctext
+      <$> labelBody body
+
+labelBody :: LabelBody u -> SvgMonad Doc
+labelBody (StdLayout enctext) = encodedText enctext
 
 encodedText :: EncodedText -> SvgMonad Doc
 encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
 
 
 textChunk :: TextChunk -> SvgMonad Doc
-textChunk (SText s)  = pure $ text s
-textChunk (EscInt i) = pure $ text $ escapeSpecial i
-textChunk (EscStr s) = either text text <$> askGlyphName s 
+textChunk (TextSpan s)    = pure $ text s
+textChunk (TextEscInt i)  = pure $ text $ escapeSpecial i
+textChunk (TextEscName s) = either text text <$> askGlyphName s 
 
 
 --------------------------------------------------------------------------------

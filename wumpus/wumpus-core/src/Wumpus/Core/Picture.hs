@@ -353,7 +353,7 @@ xtextlabel :: Num u
            => RGBi -> FontAttr -> XLink -> String -> Point2 u -> Primitive u
 xtextlabel rgb attr xlink txt pt = PLabel (LabelProps rgb attr) xlink lbl 
   where
-    lbl = PrimLabel pt (lexLabel txt) identityCTM
+    lbl = PrimLabel pt (StdLayout $ lexLabel txt) identityCTM
 
 
 -- | Create a label where the font is @Courier@, text size is 14pt
