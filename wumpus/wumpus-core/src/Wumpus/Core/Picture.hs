@@ -405,7 +405,7 @@ wumpus_default_font = FontAttr 14 face
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> Primitive u
-hkernlabel rgb attr xs = xvkernlabel rgb attr NoLink xs 
+hkernlabel rgb attr xs = xhkernlabel rgb attr NoLink xs 
 
 
  
@@ -425,21 +425,24 @@ xhkernlabel rgb attr xlink xs pt = PLabel (LabelProps rgb attr) xlink lbl
 
 
 -- | Create a text label with vertical /kerning/ for each 
--- character - the text is expected to grow upwards. 
+-- character - the text is expected to grow downwards. 
 --
--- Note - kerning is relative to the baseline of the previous 
--- character, it is \*not relative\* to the top of previous char. 
--- While the later would be more obvious it would take a lot of 
--- effort to implement as it would need access to the metrics 
--- encoded in font files. 
+-- Note - /kerning/ here is the measure between baselines of 
+-- sucessive characters, it is \*not\* the distance between the 
+-- bottom of one chararter and the top of the next character.
+-- 
+-- While the later maybe be more obvious from a drawing 
+-- perspective, it would take a lot of effort to implement as it 
+-- would need access to the metrics encoded in font files. 
 --
--- Characters are expected to be drawn left to right, so 
--- displacements should not be negative. If the displacement is
--- zero the character will be drawn ontop of the previous char.
+-- Characters are expected to be drawn downwards - a positive 
+-- number represents the downward displacement - so displacements 
+-- should not be negative. If the displacement is zero the 
+-- character will be drawn ontop of the previous char.
 -- 
 -- The charcters should not contain newline or tab characters.
 --
--- The supplied point is the left baseline.
+-- The supplied point is the left baseline of the top character.
 --
 vkernlabel :: Num u 
             => RGBi -> FontAttr ->[KerningChar u] -> Point2 u 

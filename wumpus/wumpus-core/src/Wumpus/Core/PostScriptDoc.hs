@@ -45,7 +45,6 @@ module Wumpus.Core.PostScriptDoc
 
   , ps_newpath
   , ps_moveto
-  , ps_rmoveto
   , ps_lineto
   , ps_arc
   , ps_curveto
@@ -256,12 +255,6 @@ ps_newpath = command "newpath" []
 ps_moveto :: PSUnit u => Point2 u -> Doc
 ps_moveto (P2 x y) = command "moveto" [dtruncFmt x, dtruncFmt y]
 
--- | @ ... ... rmoveto @
---
--- /Relative/ moveto.
--- 
-ps_rmoveto :: PSUnit u => Point2 u -> Doc
-ps_rmoveto (P2 x y) = command "rmoveto" [dtruncFmt x, dtruncFmt y]
 
 -- | @ ... ... lineto @
 --

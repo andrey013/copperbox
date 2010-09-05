@@ -505,18 +505,21 @@ hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt 1
     rightGrow u (BBox ll (P2 x1 y1))  = BBox ll (P2 (x1+u) y1)
 
 
--- Note - likewise same assumptions as horizontal version...
+-- Note - likewise same assumptions as horizontal version.
+-- (A postive distance represents a move downwards)...
 --
--- Again the kern delta is relative to the left basepoint, so
--- character height is irrespective when summing the deltas.
+-- The kern delta is the distance between baselines of successive
+-- characters, so character height is irrespective when summing 
+-- the deltas.
 -- 
+-- Also note, that the Label /grows/ downwards...
+--
 vKerningBB :: (Num u, Ord u, FromPtSize u) 
            => FontSize -> [(u,EncodedChar)] -> BoundingBox u
-vKerningBB sz xs = upGrow (sumDiffs xs) $ textBounds sz zeroPt 1
+vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt 1
   where
-    sumDiffs                          = foldr (\(u,_) i -> i+u)  0
-    upGrow u (BBox ll (P2 x1 y1))  = BBox ll (P2 x1 (y1+u))
-
+    sumDiffs                                = foldr (\(u,_) i -> i+u)  0
+    downGrow u (BBox (P2 x0 y0) (P2 x1 y1)) = BBox (P2 x0 (y0-u)) (P2 x1 y1)
 
 
 -- | Ellipse bbox is the bounding rectangle, rotated as necessary 

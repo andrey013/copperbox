@@ -364,14 +364,15 @@ primLabel :: (Real u, Floating u, PSUnit u)
 primLabel (LabelProps rgb font) (PrimLabel basept body ctm) = 
     bracketPrimCTM basept ctm mf
   where
-    mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, ps_moveto pt, showd ]) 
+    mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, showd ]) 
               <$> deltaDrawColour rgb <*> deltaFontAttrs font 
-                                      <*> labelBody body
+                                      <*> labelBody pt body
 
-labelBody :: PSUnit u => LabelBody u -> PsMonad Doc
-labelBody (StdLayout txt) = encodedText txt
-labelBody (KernTextH xs)  = vcat <$> mapM kernTextH1 xs
-labelBody (KernTextV xs)  = vcat <$> mapM kernTextV1 xs
+labelBody :: PSUnit u => Point2 u -> LabelBody u -> PsMonad Doc
+labelBody pt (StdLayout txt) = (\d1 -> ps_moveto pt `vconcat` d1) 
+                                 <$> encodedText txt
+labelBody pt (KernTextH xs)  = kernTextH pt xs
+labelBody pt (KernTextV xs)  = kernTextV pt xs
 
 
 encodedText :: EncodedText -> PsMonad Doc 
@@ -385,13 +386,22 @@ textChunk (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i
   where
     failk gly_name = missingCharCode i gly_name
 
-kernTextH1 :: PSUnit u => KerningChar u -> PsMonad Doc
-kernTextH1 (dx,ch) = 
-    (\doc -> ps_rmoveto (P2 dx 0) `vconcat` doc) <$> encodedChar ch
+kernTextH :: PSUnit u => Point2 u -> [KerningChar u] -> PsMonad Doc
+kernTextH pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+  where
+    fn (P2 x y,acc) (dx,ch) = (\doc1 -> let pt = P2 (x+dx) y in
+                                        (pt, vcat [acc, ps_moveto pt, doc1]))
+                                <$> encodedChar ch
 
-kernTextV1 :: PSUnit u => (u,EncodedChar) -> PsMonad Doc
-kernTextV1 (dy,ch) = 
-    (\doc -> ps_rmoveto (P2 0 dy) `vconcat` doc) <$> encodedChar ch
+-- Note - vertical labels grow downwards...
+--
+kernTextV :: PSUnit u => Point2 u -> [KerningChar u] -> PsMonad Doc
+kernTextV pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+  where
+    fn (P2 x y,acc) (dy,ch) = (\doc1 -> let pt = P2 x (y-dy) in
+                                        (pt, vcat [acc, ps_moveto pt, doc1]))
+                                <$> encodedChar ch
+
 
 encodedChar :: EncodedChar -> PsMonad Doc
 encodedChar (CharLiteral c) = pure (ps_show $ escapeSpecialChar c)
