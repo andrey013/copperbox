@@ -72,6 +72,7 @@ library
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.DrawingAttr,
     Wumpus.Basic.Graphic.Primitive,
+    Wumpus.Basic.Graphic.OldPrimitive,
     Wumpus.Basic.Graphic.PointSupply,
     Wumpus.Basic.Monads.Drawing,
     Wumpus.Basic.Monads.DrawingMonad,

@@ -10,19 +10,17 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Import shim for @Wumpus.Basic.Graphic.Primitive@.
+-- Import shim for @Wumpus.Basic.Graphic.OldPrimitive@.
 --
--- \*\* WARNING \*\* - this module is highly experimental, and 
--- may change significantly or even be dropped from future 
--- revisions.
+-- \*\* WARNING \*\* - this module is will change!
 --
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Graphic
   (
-    module Wumpus.Basic.Graphic.Primitive
+    module Wumpus.Basic.Graphic.OldPrimitive
   
   ) where
 
-import Wumpus.Basic.Graphic.Primitive
+import Wumpus.Basic.Graphic.OldPrimitive
