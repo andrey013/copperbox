@@ -21,6 +21,8 @@ module Wumpus.Basic.Graphic.Graphic
   , drawGraphicU
 
   , supplyPt
+  , localCF
+
   , textline
   , xtextline
 
@@ -117,6 +119,10 @@ supplyPt pt gf = gf pt
 
 --------------------------------------------------------------------------------
 
+localCF :: (DrawingContext -> DrawingContext) -> CFGraphic u -> CFGraphic u
+localCF upd gf = \pt attr -> gf pt (upd attr) 
+
+
 -- | Text should not contain newlines.
 --
 -- Note the supplied point is the \'left-baseline\'.
@@ -208,7 +214,7 @@ borderedRectangle = xborderedRectangle NoLink
 --
 xborderedRectangle :: Fractional u => XLink -> u -> u -> CFGraphic u
 xborderedRectangle xlink w h = 
-    combCF3 (\srgb sa frgb pt -> 
+    combCF3 (\frgb sa srgb pt -> 
                 wrapH $ xbordered srgb sa frgb xlink $ rectangleCtr w h pt)
             primary_colour
             stroke_props
@@ -251,7 +257,7 @@ borderedCircle = xborderedCircle NoLink
 
 xborderedCircle :: Floating u => XLink -> Int -> u -> CFGraphic u
 xborderedCircle xlink n r = 
-    combCF3 (\srgb sa frgb pt -> 
+    combCF3 (\frgb sa srgb pt -> 
                 wrapH $ xbordered srgb sa frgb xlink 
                       $ curvedPath $ bezierCircle n r pt)
            primary_colour

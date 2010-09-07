@@ -1,29 +1,25 @@
 {-# OPTIONS -Wall #-}
 
-module ColourCharts where
+module ColourChart where
 
 import ColourDefns
 
-import Wumpus.Core
-import Wumpus.Basic.Colour.SVGColours ( black )
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Graphic
+import Wumpus.Basic.Graphic.Primitive
 import Wumpus.Basic.Utils.HList
 
-import Data.AffineSpace
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
 
 import Data.List
-import Data.Maybe
-
 import System.Directory
 
+
 main :: IO ()
-main = do
-   createDirectoryIfMissing True "./out/"
-   test01
- 
-test01 :: IO ()
-test01 = do 
+main = do 
+    createDirectoryIfMissing True "./out/"
     writeEPS_latin1 "./out/SVGcolours.eps" svg
     writeSVG_latin1 "./out/SVGcolours.svg" svg
     writeEPS_latin1 "./out/X11colours.eps" $ uniformScale 0.75 x11_portrait
@@ -42,24 +38,31 @@ x11_portrait = mkPic all_x11_colours (ixDownLeftRight 5 72 (scalePt 140))
 -- Note - this is code from an old project that needs tidying up...
 
 mkPic :: [(String,RGBi)] -> [DPoint2] -> DPicture 
-mkPic cs pts = fromMaybe errK $ 
-                 drawGraphic $ concatH $ zipWith colourSample cs pts
+mkPic cs pts = drawGraphicU (standardContext 10) $ mkPrims cs pts
+                 
+
+mkPrims :: [(String,RGBi)] -> [DPoint2] -> Graphic Double 
+mkPrims cs pts = concatG $ zipWith fn cs pts
   where
-    errK = error "Empty Picture"
+    fn (name,rgb) pt = supplyPt pt $ colourSample name rgb
+
+concatG :: [Graphic u] -> Graphic u
+concatG xs = \attr -> veloH (\f -> f attr) xs  
+
+colourSample :: Fractional u => String -> RGBi -> CFGraphic u
+colourSample name rgb = localCF (secondaryColour rgb) $ 
+    disperse2 (.+^ vec 12 (-3)) (borderedRectangle 15 10) (textline name)
+
+
+disperse2 :: (Point2 u -> Point2 u) -> CFGraphic u -> CFGraphic u -> CFGraphic u
+disperse2 ptF gf1 gf2 = \pt attr ->  gf1 pt attr `appendH` gf2 (ptF pt) attr    
+
+
+-----------------------------------------------------
+-- at some point this will be done by PointSupply...
 
 scalePt :: Num u => u -> Point2 u -> Point2 u
 scalePt w (P2 x y) = P2 (x*w) (y*12) 
-
-colourSample :: (Fractional u, Floating u, Ord u) 
-             => (String,RGBi) -> GraphicF u
-colourSample (name,rgb) = block `cc` lbl 
-  where
-    block = filledRectangle rgb  15 10
-    lbl   = textline black (FontAttr 10 courier) name . (.+^ hvec 18)
-
-
-
----------------------------
 
 -- | Generate points in a grid - move down a whole column, move 
 -- right one, move down the next column.

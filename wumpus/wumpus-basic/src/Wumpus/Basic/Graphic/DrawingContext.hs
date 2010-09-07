@@ -40,7 +40,9 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- ** Colour
   , swapColours
-
+  , primaryColour
+  , secondaryColour 
+  
   ) where
 
 
@@ -140,4 +142,12 @@ swapColours :: DrawingContext -> DrawingContext
 swapColours = 
     star2 (\s a b -> s { primary_colour = b, secondary_colour = a })
           primary_colour
-          secondary_colour               
+          secondary_colour
+
+primaryColour :: RGBi -> DrawingContext -> DrawingContext
+primaryColour rgb = \s -> s { primary_colour = rgb } 
+
+
+secondaryColour :: RGBi -> DrawingContext -> DrawingContext
+secondaryColour rgb = \s -> s { secondary_colour = rgb } 
+
