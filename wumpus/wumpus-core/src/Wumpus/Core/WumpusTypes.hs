@@ -20,7 +20,8 @@
 -- Having this module just re-exporting types should make 
 -- the Haddock documentation more cohesive. Modules
 -- in wumpus-core should not use this module.
-
+-- 
+-- Note - XLink only exports the NoLink constructors.
 
 module Wumpus.Core.WumpusTypes
   (
@@ -31,7 +32,7 @@ module Wumpus.Core.WumpusTypes
   , FontCtx
   , Primitive
   , DPrimitive
-  , XLink
+  , XLink ( NoLink ) 
   , PrimPath
   , DPrimPath
   , PrimPathSegment
