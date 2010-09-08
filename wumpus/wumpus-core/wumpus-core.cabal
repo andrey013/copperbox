@@ -46,6 +46,12 @@ description:
   Changelog:
   0.31.0 to 0.32.0:
   .
+  * @Core.FontSize@ - the arguments to the function @textBounds@
+    have been changed to take the String in question, rather than 
+    its precomputed length. The size of the string is then 
+    calculated with the new function @charCount@ which takes into 
+    account escaped characters.
+  .
   * Exported the @NoLink@ constructor from @XLink@.
   .
   0.30.0 to 0.31.0:

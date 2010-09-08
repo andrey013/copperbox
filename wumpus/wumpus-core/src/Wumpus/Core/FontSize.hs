@@ -51,12 +51,15 @@ module Wumpus.Core.FontSize
   , xcharHeight
   , descenderDepth
   , textBounds
+  , textBoundsEnc       -- hidden by toplevel Wumpus.Core
+  , charCount
 
   ) where
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.PtSize
+import Wumpus.Core.TextInternal
 
 import Data.AffineSpace                 -- package: vector-space
 
@@ -210,11 +213,53 @@ descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
 -- usually be too long.
 --
 textBounds :: (Num u, Ord u, FromPtSize u) 
-           => FontSize -> Point2 u -> CharCount -> BoundingBox u
-textBounds sz body_bl n = bbox bl tr where
+           => FontSize -> Point2 u -> String -> BoundingBox u
+textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
+
+
+-- | Version of textBounds for EncodedText.
+-- 
+-- Note this function is hidded by the top-level module 
+-- @Wumpus.Core@.
+--
+textBoundsEnc :: (Num u, Ord u, FromPtSize u) 
+           => FontSize -> Point2 u -> EncodedText -> BoundingBox u
+textBoundsEnc sz pt enc = textBoundsBody sz pt (textLength enc) 
+
+
+textBoundsBody :: (Num u, Ord u, FromPtSize u) 
+               => FontSize -> Point2 u -> Int -> BoundingBox u
+textBoundsBody sz body_bl len = bbox bl tr 
+  where
     h           = fromPtSize $ textHeight sz
-    w           = fromPtSize $ textWidth  sz n
+    w           = fromPtSize $ textWidth  sz len
     dd          = fromPtSize $ descenderDepth sz
     bl          = body_bl .-^ V2 0 dd 
     tr          = bl .+^ V2 w h
-  
+
+
+
+
+-- | Count the charcters in the supplied string.
+--
+-- Note escapes count as one character - for instance the length 
+-- of this string:
+--
+-- > abcd&#egrave;f
+--
+-- ... is 6.
+-- 
+charCount :: String -> CharCount
+charCount = outstep 0 
+  where
+    outstep n ('&':'#':xs)  = instep n xs
+    outstep n (_:xs)        = outstep (n+1) xs
+    outstep n []            = n
+    
+    instep  n (';':xs)      = outstep (n+1) xs
+    instep  n (_:xs)        = instep  n xs
+    instep  n []            = n                
+
+-- Note - the last case of instep indicates a malformed string, 
+-- but there is nothing that can be done. Promoting to Maybe or 
+-- Either would complicated the interface.
