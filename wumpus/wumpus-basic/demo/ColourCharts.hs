@@ -38,25 +38,35 @@ x11_portrait = mkPic all_x11_colours (ixDownLeftRight 5 72 (scalePt 140))
 -- Note - this is code from an old project that needs tidying up...
 
 mkPic :: [(String,RGBi)] -> [DPoint2] -> DPicture 
-mkPic cs pts = drawGraphicU (standardContext 10) $ mkPrims cs pts
+mkPic cs pts = drawImageU (standardContext 10) $ mkPrims cs pts
                  
 
-mkPrims :: [(String,RGBi)] -> [DPoint2] -> Graphic Double 
-mkPrims cs pts = concatG $ zipWith fn cs pts
+mkPrims :: [(String,RGBi)] -> [DPoint2] -> Image Double 
+mkPrims cs pts = concatImg $ zipWith fn cs pts
   where
     fn (name,rgb) pt = supplyPt pt $ colourSample name rgb
 
-concatG :: [Graphic u] -> Graphic u
-concatG xs = \attr -> veloH (\f -> f attr) xs  
 
-colourSample :: Fractional u => String -> RGBi -> CFGraphic u
-colourSample name rgb = localCF (secondaryColour rgb) $ 
-    disperse2 (.+^ vec 12 (-3)) (borderedRectangle 15 10) (textline name)
+concatImg :: [Image u] -> Image u
+concatImg []     = error "BAD!"
+concatImg (z:zs) = step z zs
+  where
+    step ac []     = ac
+    step ac (e:es) = step (ac `pend` e) es
 
 
-disperse2 :: (Point2 u -> Point2 u) -> CFGraphic u -> CFGraphic u -> CFGraphic u
-disperse2 ptF gf1 gf2 = \pt attr ->  gf1 pt attr `appendH` gf2 (ptF pt) attr    
+colourSample :: (Fractional u, FromPtSize u) 
+             => String -> RGBi -> CFImage u
+colourSample name rgb = localDrawingContext (secondaryColour rgb) $ 
+    disperse2 (.+^ vec 12 (-3)) (borderedRectangle 15 10) (textline RECT_LLC name)
 
+
+disperse2 :: (Point2 u -> Point2 u) -> CFImage u -> CFImage u -> CFImage u
+disperse2 upd img1 img2 = \pt ->  img1 pt `pend` img2 (upd pt)    
+
+pend :: Image u -> Image u -> Image u
+pend img1 img2 = 
+    RImage $ \ctx -> (getRImage img1 ctx) `appendH` (getRImage img2 ctx)
 
 -----------------------------------------------------
 -- at some point this will be done by PointSupply...

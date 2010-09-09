@@ -87,8 +87,8 @@ textDimensions :: FromPtSize u => String -> DrawingContext -> (u,u)
 textDimensions str attr = (w,h)
   where
     sz = font_size  $ font_props attr
-    w  = fromPtSize $ textWidth  sz (1 + length str) 
-    h  = fromPtSize $ textHeight sz
+    w  = fromPtSize $ textWidth  sz (charCount str)
+    h  = fromPtSize $ numeralHeight sz
 
 
 

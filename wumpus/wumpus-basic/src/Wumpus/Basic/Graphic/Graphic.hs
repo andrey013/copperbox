@@ -17,39 +17,30 @@
 
 module Wumpus.Basic.Graphic.Graphic
   (
-    drawGraphic
-  , drawGraphicU
+    drawImage
+  , drawImageU
+
+
 
   , supplyPt
-  , localCF
+  , localDrawingContext
+  , localPoint
 
+  , RectOrientation(..)
   , textline
-  , xtextline
 
   , straightLine
-  , xstraightLine
 
   , strokedRectangle
-  , xstrokedRectangle
-
   , filledRectangle
-  , xfilledRectangle
-
   , borderedRectangle
-  , xborderedRectangle
 
 
   , strokedCircle
-  , xstrokedCircle
-
   , filledCircle
-  , xfilledCircle
-
   , borderedCircle
-  , xborderedCircle
   
   , disk
-  , xdisk
 
   ) where
 
@@ -57,212 +48,203 @@ import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.Primitive
 import Wumpus.Basic.Utils.HList
 
-import Wumpus.Core                              -- package: wumpus-core
+import qualified Wumpus.Core            as WC   -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
--- | Draw a graphic with an initial drawing context.
--- 
--- Note - a Picture cannot be empty whereas a Graphic can.
--- Hence this function returns via Maybe.
---
-drawGraphic :: (Real u, Floating u, FromPtSize u) 
-            => DrawingContext -> Graphic u -> Maybe (Picture u)
-drawGraphic ctx gf = post $ gf ctx []
+import Control.Applicative
+
+drawImage :: (Real u, Floating u, WC.FromPtSize u) 
+          => DrawingContext -> Image u -> Maybe (WC.Picture u)
+drawImage ctx img = post $ runImage ctx img
   where
-    post [] = Nothing
-    post xs = Just $ frame xs
+    post hf = let xs = toListH hf in 
+              if null xs then Nothing else Just (WC.frame xs)
+
+drawImageU :: (Real u, Floating u, WC.FromPtSize u) 
+          => DrawingContext -> Image u -> WC.Picture u
+drawImageU ctx img = post $ runImage ctx img
+  where
+    post hf = let xs = toListH hf in 
+              if null xs then errK else WC.frame xs
+    errK    = error "drawImageU - empty Image."
 
 
--- | /Unsafe/ version of 'drawGraphic' - this function throws 
--- an error when the graphic is empty.
---
-drawGraphicU :: (Real u, Floating u, FromPtSize u) 
-             => DrawingContext -> Graphic u -> Picture u
-drawGraphicU ctx gf = post $ gf ctx []
-  where
-    post [] = error "drawGraphicU - empty graphic."
-    post xs = frame xs
+
+-- BIG NOTICE - there is some value in redoing the Core.Picture 
+-- interface with extraction from DrawingContext, it should clear
+-- up a lot of this code...
+
+
+ostroke :: Num u => WC.PrimPath u -> Image u
+ostroke path = (\rgb attr -> wrapH $ WC.ostroke rgb attr path) 
+                  <$> asks primary_colour <*> asks stroke_props
+
+
+cstroke :: Num u => WC.PrimPath u -> Image u
+cstroke path = (\rgb attr -> wrapH $ WC.cstroke rgb attr path) 
+                  <$> asks primary_colour <*> asks stroke_props
+
+
+fill :: Num u => WC.PrimPath u -> Image u
+fill path = (\rgb -> wrapH $ WC.fill rgb path) 
+              <$> asks secondary_colour
+
+
+bordered :: Num u => WC.PrimPath u -> Image u
+bordered path = (\frgb attr srgb -> wrapH $ WC.bordered frgb attr srgb path) 
+                  <$> asks secondary_colour <*> asks stroke_props 
+                  <*> asks primary_colour
+
+
+textlabel :: Num u => String -> CFImage u
+textlabel ss baseline_left =
+    (\(rgb,attr) -> wrapH $ WC.textlabel rgb attr ss baseline_left) 
+       <$> asks textAttr
+
+
+strokeEllipse :: Num u => u -> u -> CFImage u
+strokeEllipse hw hh pt =  
+    (\rgb attr -> wrapH $ WC.strokeEllipse rgb attr hw hh pt) 
+       <$> asks primary_colour <*> asks stroke_props
+
+fillEllipse :: Num u => u -> u -> CFImage u
+fillEllipse hw hh pt =  
+    (\rgb -> wrapH $ WC.fillEllipse rgb hw hh pt) 
+       <$> asks secondary_colour
+
+borderedEllipse :: Num u => u -> u -> CFImage u
+borderedEllipse hw hh pt = 
+    (\frgb attr srgb -> wrapH $ WC.borderedEllipse frgb attr srgb hw hh pt) 
+        <$> asks secondary_colour <*> asks stroke_props 
+        <*> asks primary_colour
 
 
 --------------------------------------------------------------------------------
-
-
--- | The C' combinator (cardinal prime).
---
--- For CFGraphic, this models looking into the DrawingCtx but
--- using the initial point as is.
---
-combCF :: (a -> r1 -> ans) -> (r2 -> a) -> r1 -> r2 -> ans
-combCF f pf r1 r2 = f (pf r2) r1
-
--- Version of combCF with two functions to project from the 
--- DrawingCtx
---
-combCF2 :: (a -> b -> r1 -> ans) -> (r2 -> a) -> (r2 -> b)
-        -> r1 -> r2 -> ans
-combCF2 f pf1 pf2 r1 r2 = f (pf1 r2) (pf2 r2) r1
-
--- Version of combCF with three functions to project from the 
--- DrawingCtx
---
-combCF3 :: (a -> b -> c -> r1 -> ans) -> (r2 -> a) -> (r2 -> b) -> (r2 -> c)
-        -> r1 -> r2 -> ans
-combCF3 f pf1 pf2 pf3 r1 r2 = f (pf1 r2) (pf2 r2) (pf3 r2) r1
 
 
 -- | Supplying a point to a 'CFGraphic' takes it to a regular 
 -- 'Graphic'.
 --
-supplyPt :: Point2 u -> CFGraphic u -> Graphic u
+supplyPt :: WC.Point2 u -> CFImage u -> Image u
 supplyPt pt gf = gf pt 
+
+
 
 --------------------------------------------------------------------------------
 
-localCF :: (DrawingContext -> DrawingContext) -> CFGraphic u -> CFGraphic u
-localCF upd gf = \pt attr -> gf pt (upd attr) 
+displace :: Num u => u -> u -> WC.Point2 u -> WC.Point2 u
+displace dx dy (WC.P2 x y) = WC.P2 (x+dx) (y+dy)
 
 
--- | Text should not contain newlines.
+localDrawingContext :: 
+    (DrawingContext -> DrawingContext) -> CFImage u -> CFImage u
+localDrawingContext upd img = \pt -> localCtx upd (img pt) 
+
+localPoint :: (WC.Point2 u -> WC.Point2 u) -> CFImage u -> CFImage u
+localPoint upd gf = \pt -> gf (upd pt)
+
+-- some things need to be monadic...
+contextualPoint :: (DrawingContext -> a) 
+               -> (a -> WC.Point2 u -> WC.Point2 u) 
+               -> CFImage u 
+               -> CFImage u
+contextualPoint extr upd img pt = asks extr >>= \a -> img (upd a pt)
+
+
+straightLine :: Fractional u => WC.Vec2 u -> CFImage u
+straightLine v = \pt -> ostroke $ WC.path pt [WC.lineTo $ pt .+^ v]
+           
+
+
+-- Note - its reasonable to want text (and rectangles) drawn in 
+-- two ways:
 --
--- Note the supplied point is the \'left-baseline\'.
+-- 1 - supplied point is center
+-- 2 - supplied point is bottom left (baseline left for text)
 --
-textline :: Num u => String -> CFGraphic u
-textline ss = \pt ctx -> let (rgb,attr) = textAttr ctx 
-                         in wrapH $ textlabel rgb attr ss pt
 
--- | Hyperlink version of 'textline'.
---
-xtextline :: Num u => XLink -> String -> CFGraphic u
-xtextline xlink ss = 
-    combCF (\(rgb,attr) -> wrapH . xtextlabel rgb attr xlink ss)
-           textAttr
+data RectOrientation = RECT_LLC | RECT_CTR
+  deriving (Eq,Ord,Show)
 
 
--- | Vector is applied to the point.
---
-straightLine :: Fractional u => Vec2 u -> CFGraphic u
-straightLine v = 
-    combCF2 (\rgb attr pt -> let pp = path pt [lineTo $ pt .+^ v] in
-                             wrapH $ ostroke rgb attr pp)
-            primary_colour 
-            stroke_props 
 
 
--- | Vector is applied to the point.
---
-xstraightLine :: Fractional u => XLink -> Vec2 u -> CFGraphic u
-xstraightLine xlink v = 
-    combCF2 (\rgb attr pt -> let pp = path pt [lineTo $ pt .+^ v] in
-                             wrapH $ xostroke rgb attr xlink pp)
-            primary_colour 
-            stroke_props 
+textline :: (Fractional u, WC.FromPtSize u)
+           => RectOrientation -> String -> CFImage u
+textline RECT_LLC ss = textlabel ss
+textline RECT_CTR ss = 
+    contextualPoint (textDimensions ss) 
+                    (\(w,h) -> displace (0.5 * (-w)) (0.5 * (-h)))
+                    (textlabel ss)
+
 
 
 --------------------------------------------------------------------------------
 -- Rectangles
 
-rectangleCtr :: Fractional u => u -> u -> Point2 u -> PrimPath u
-rectangleCtr w h ctr = rectangleBL w h (ctr .-^ vec (0.5*w) (0.5*h))
+rectangleCtr :: Fractional u => u -> u -> WC.Point2 u -> WC.PrimPath u
+rectangleCtr w h ctr = rectangleBL w h (ctr .-^ WC.vec (0.5*w) (0.5*h))
 
 -- | Supplied point is /bottom-left/.
 --
-rectangleBL :: Num u => u -> u -> Point2 u -> PrimPath u
-rectangleBL w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
+rectangleBL :: Num u => u -> u -> WC.Point2 u -> WC.PrimPath u
+rectangleBL w h bl = WC.path bl [ WC.lineTo br, WC.lineTo tr, WC.lineTo tl ]
   where
-    br = bl .+^ hvec w
-    tr = br .+^ vvec h
-    tl = bl .+^ vvec h 
+    br = bl .+^ WC.hvec w
+    tr = br .+^ WC.vvec h
+    tl = bl .+^ WC.vvec h 
 
 
 
 -- | Supplied point is center.
 --
-strokedRectangle :: Fractional u => u -> u -> CFGraphic u
-strokedRectangle = xstrokedRectangle NoLink
+strokedRectangle :: Fractional u => u -> u -> CFImage u
+strokedRectangle w h pt = 
+    (\rgb attr -> wrapH $ WC.cstroke rgb attr $ rectangleCtr w h pt)
+      <$> asks primary_colour <*> asks stroke_props
 
--- | Supplied point is center.
---
-xstrokedRectangle :: Fractional u => XLink -> u -> u -> CFGraphic u
-xstrokedRectangle xlink w h = 
-    combCF2 (\rgb attr pt -> 
-                wrapH $ xcstroke rgb attr xlink $ rectangleCtr w h pt)
-            primary_colour
-            stroke_props
 
 
 -- | Supplied point is center.
 --
-filledRectangle :: Fractional u => u -> u -> CFGraphic u
-filledRectangle = xfilledRectangle NoLink
-
-
--- | Supplied point is center.
---
-xfilledRectangle :: Fractional u => XLink -> u -> u -> CFGraphic u
-xfilledRectangle xlink w h = 
-    combCF (\rgb pt -> wrapH $ xfill rgb xlink $ rectangleCtr w h pt)
-           secondary_colour
+filledRectangle :: Fractional u => u -> u -> CFImage u
+filledRectangle w h pt = 
+    (\rgb -> wrapH $ WC.fill rgb $ rectangleCtr w h pt)
+       <$> asks secondary_colour
   
 
 -- | Supplied point is center.
 --
-borderedRectangle :: Fractional u => u -> u -> CFGraphic u
-borderedRectangle = xborderedRectangle NoLink
-
--- | Supplied point is center.
---
-xborderedRectangle :: Fractional u => XLink -> u -> u -> CFGraphic u
-xborderedRectangle xlink w h = 
-    combCF3 (\frgb sa srgb pt -> 
-                wrapH $ xbordered srgb sa frgb xlink $ rectangleCtr w h pt)
-            primary_colour
-            stroke_props
-            secondary_colour
+borderedRectangle :: Fractional u => u -> u -> CFImage u
+borderedRectangle w h pt = 
+    (\frgb sa srgb -> wrapH $ WC.bordered srgb sa frgb $ rectangleCtr w h pt)
+      <$> asks primary_colour <*> asks stroke_props <*> asks secondary_colour
 
 --------------------------------------------------------------------------------
 
--- | 'strokedCircle' : @ num_subs * radius -> CFGraphic @
---
--- Draw a stroked circle made from Bezier curves. @num_subs@ is 
--- the number of subdivisions per quadrant.
---
--- The result is a HOF (GraphicF :: Point -> Graphic) where the 
--- point is the center. 
--- 
-strokedCircle :: Floating u => Int -> u -> CFGraphic u
-strokedCircle = xstrokedCircle NoLink
+
+strokedCircle :: Floating u => Int -> u -> CFImage u
+strokedCircle n r pt = 
+    (\rgb attr -> wrapH $ WC.cstroke rgb attr 
+                        $ WC.curvedPath $ WC.bezierCircle n r pt)
+      <$> asks primary_colour <*> asks stroke_props
 
 
-xstrokedCircle :: Floating u => XLink -> Int -> u -> CFGraphic u
-xstrokedCircle xlink n r = 
-    combCF2 (\rgb attr pt -> wrapH $ xcstroke rgb attr xlink 
-                                   $ curvedPath $ bezierCircle n r pt)
-            primary_colour
-            stroke_props
 
-
-filledCircle :: Floating u => Int -> u -> CFGraphic u
-filledCircle = xfilledCircle NoLink
-
-xfilledCircle :: Floating u => XLink -> Int -> u -> CFGraphic u
-xfilledCircle xlink n r = 
-    combCF (\rgb pt -> 
-                wrapH $ xfill rgb xlink $ curvedPath $ bezierCircle n r pt)
-           secondary_colour
+filledCircle :: Floating u => Int -> u -> CFImage u
+filledCircle n r pt = 
+    (\rgb -> wrapH $ WC.fill rgb $ WC.curvedPath $ WC.bezierCircle n r pt)
+        <$> asks secondary_colour
       
 
-borderedCircle :: Floating u => Int -> u -> CFGraphic u
-borderedCircle = xborderedCircle NoLink
 
-xborderedCircle :: Floating u => XLink -> Int -> u -> CFGraphic u
-xborderedCircle xlink n r = 
-    combCF3 (\frgb sa srgb pt -> 
-                wrapH $ xbordered srgb sa frgb xlink 
-                      $ curvedPath $ bezierCircle n r pt)
-           primary_colour
-           stroke_props
-           secondary_colour
+borderedCircle :: Floating u => Int -> u -> CFImage u
+borderedCircle n r pt = 
+    (\frgb sa srgb -> wrapH $ WC.bordered srgb sa frgb
+                            $ WC.curvedPath $ WC.bezierCircle n r pt)
+      <$> asks primary_colour <*> asks stroke_props
+                              <*> asks secondary_colour
       
 
 
@@ -277,10 +259,5 @@ xborderedCircle xlink n r =
 -- For stroked circles that can be scaled, consider making the 
 -- circle from Bezier curves.
 --
-disk ::  Fractional u => u -> CFGraphic u
-disk = xdisk NoLink
-
-xdisk :: Fractional u => XLink -> u -> CFGraphic u
-xdisk xlink radius = 
-    combCF (\rgb pt -> wrapH $ xfillEllipse rgb xlink radius radius pt)
-           secondary_colour
+disk ::  Fractional u => u -> CFImage u
+disk radius = fillEllipse radius radius

@@ -17,9 +17,15 @@
 
 module Wumpus.Basic.Graphic.Primitive
   (
-    HPrim
+    HPrimitive
   , Graphic 
   , Image
+  , RImage(..)
+
+  , asks
+  , localCtx
+
+  , runImage
 
   , CFGraphic  
   , CFImage
@@ -31,6 +37,7 @@ import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Control.Applicative
 
 -- | Graphics objects, even simple ones (line, arrow, dot) might 
 -- need more than one primitive (path or text label) for their
@@ -46,7 +53,55 @@ import Wumpus.Core                      -- package: wumpus-core
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
-type HPrim u = H (Primitive u)
+type HPrimitive u = H (Primitive u)
+
+
+-- If this is extended to a two params we can /hide/ xlink
+-- within the type and not need hyperlink versions of all 
+-- functions 
+--
+-- img = DrawingContext -> XLink -> a
+--
+-- Or maybe a link version of /fontDeltaContext/ is needed...
+-- ... the latter is the one to follow...
+-- 
+
+newtype RImage a = RImage { getRImage :: DrawingContext -> a }
+
+type Image u = RImage (HPrimitive u)
+
+
+
+instance Functor RImage where
+  fmap f ma = RImage $ \ctx -> f $ getRImage ma ctx 
+
+
+-- Applicative
+
+instance Applicative RImage where
+  pure a    = RImage $ \_   -> a
+  mf <*> ma = RImage $ \ctx -> let f = getRImage mf ctx
+                                   a = getRImage ma ctx
+                               in f a
+
+-- Monad 
+
+instance Monad RImage where
+  return a  = RImage $ \_   -> a
+  ma >>= k  = RImage $ \ctx -> let a = getRImage ma ctx
+                               in (getRImage . k) a ctx 
+
+asks :: (DrawingContext -> a) -> RImage a
+asks fn = RImage $ \ctx -> fn ctx
+
+localCtx :: (DrawingContext -> DrawingContext) -> RImage a -> RImage a
+localCtx upd img = RImage $ \ctx -> getRImage img (upd ctx)
+
+runImage :: DrawingContext -> Image u -> HPrimitive u
+runImage ctx img = (getRImage img) ctx
+
+
+--------------------------------------------------------------------------------
 
 
 -- | Specifying the drawing properties of a graphic (line width, 
@@ -54,7 +109,7 @@ type HPrim u = H (Primitive u)
 -- a DrawingContext (c.f. the reader monad) to drawing functions
 -- is good.
 -- 
-type Graphic u = DrawingContext -> HPrim u
+type Graphic u = DrawingContext -> HPrimitive u
 
 
 
@@ -67,7 +122,7 @@ type Graphic u = DrawingContext -> HPrim u
 -- taking /anchors/ so connectors can be drawn between points on
 -- the nodes border.
 --
-type Image a u = DrawingContext -> (a, HPrim u)
+-- type Image a u = DrawingContext -> (a, HPrimitive u)
 
 
 -- | Some graphics take a start point as well as a drawing 
@@ -80,5 +135,6 @@ type CFGraphic u = Point2 u -> Graphic u
 
 -- | A /coordinate free/ Image.
 --
-type CFImage a u = Point2 u -> Image a u
+type CFImage u = Point2 u -> Image u
+
 
