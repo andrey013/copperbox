@@ -212,17 +212,16 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
 -- Though typically for affine transformations a Fractional 
 -- constraint is also obliged.
 --
-data Primitive u = PPath    PathProps    XLink (PrimPath u)
-                 | PLabel   LabelProps   XLink (PrimLabel u)
-                 | PEllipse EllipseProps XLink (PrimEllipse u)
+data Primitive u = PPath    PathProps    (PrimPath u)
+                 | PLabel   LabelProps   (PrimLabel u)
+                 | PEllipse EllipseProps (PrimEllipse u)
   deriving (Eq,Show)
 
 type DPrimitive = Primitive Double
 
--- | Primitives can be annotated with hyperlinks in SVG output.
+-- | Primitives can be grouped with hyperlinks in SVG output.
 --
-data XLink = NoLink
-           | XLinkHRef String
+newtype XLink = XLink { getXLink :: String }
   deriving (Eq,Show)
 
 -- | PrimPath - start point and a list of path segments.
@@ -387,13 +386,13 @@ fmtLocale (bb,_) = format bb
 
 
 instance PSUnit u => Format (Primitive u) where
-  format (PPath props _ p)    = 
+  format (PPath props p)    = 
       indent 2 $ vcat [ text "path:" <+> format props, format p ]
 
-  format (PLabel props _ l)   =
+  format (PLabel props l)   =
       indent 2 $ vcat [ text "label:" <+> format props, format l ]
 
-  format (PEllipse props _ e) = 
+  format (PEllipse props e) = 
       indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
 
 
@@ -455,8 +454,7 @@ instance Format EllipseProps where
                             <+> format s <+> text "Stroke"   
 
 instance Format XLink where
-  format NoLink         = text "no-link"
-  format (XLinkHRef ss) = text "xlink" <+> text ss
+  format (XLink ss) = text "xlink" <+> text ss
 
 
 --------------------------------------------------------------------------------
@@ -479,9 +477,9 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (PrimElement u) where
       inner bb (a :< as) = inner (bb `append` boundary a) (viewl as)
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
-  boundary (PPath _ _ p)      = pathBoundary p
-  boundary (PLabel a _ l)     = labelBoundary (label_font a) l
-  boundary (PEllipse _ _ e)   = ellipseBoundary e
+  boundary (PPath _ p)      = pathBoundary p
+  boundary (PLabel a l)     = labelBoundary (label_font a) l
+  boundary (PEllipse _ e)   = ellipseBoundary e
 
 
 
@@ -666,9 +664,9 @@ translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 --
 rotatePrimitive :: (Real u, Floating u) 
                 => Radian -> Primitive u -> Primitive u
-rotatePrimitive ang (PPath a xl path)   = PPath a xl $ rotatePath ang path
-rotatePrimitive ang (PLabel a xl lbl)   = PLabel a xl $ rotateLabel ang lbl
-rotatePrimitive ang (PEllipse a xl ell) = PEllipse a xl $ rotateEllipse ang ell
+rotatePrimitive ang (PPath a path)   = PPath    a $ rotatePath ang path
+rotatePrimitive ang (PLabel a lbl)   = PLabel   a $ rotateLabel ang lbl
+rotatePrimitive ang (PEllipse a ell) = PEllipse a $ rotateEllipse ang ell
 
 
 -- | Scale a Primitive.
@@ -694,9 +692,9 @@ rotatePrimitive ang (PEllipse a xl ell) = PEllipse a xl $ rotateEllipse ang ell
 -- \"cost-free\".
 --
 scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-scalePrimitive x y (PPath a xl path)   = PPath    a xl $ scalePath x y path
-scalePrimitive x y (PLabel a xl lbl)   = PLabel   a xl $ scaleLabel x y lbl
-scalePrimitive x y (PEllipse a xl ell) = PEllipse a xl $ scaleEllipse x y ell
+scalePrimitive x y (PPath a path)   = PPath    a $ scalePath x y path
+scalePrimitive x y (PLabel a lbl)   = PLabel   a $ scaleLabel x y lbl
+scalePrimitive x y (PEllipse a ell) = PEllipse a $ scaleEllipse x y ell
 
 -- | Apply a uniform scale to a Primitive.
 --
@@ -714,14 +712,9 @@ uniformScalePrimitive d = scalePrimitive d d
 -- the generated output. 
 -- 
 translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-translatePrimitive x y (PPath a xl path)   = 
-    PPath a xl $ translatePath x y path
-
-translatePrimitive x y (PLabel a xl lbl)   = 
-    PLabel a xl $ translateLabel x y lbl
-
-translatePrimitive x y (PEllipse a xl ell) = 
-    PEllipse a xl $ translateEllipse x y ell
+translatePrimitive x y (PPath a path)   = PPath a $ translatePath x y path
+translatePrimitive x y (PLabel a lbl)   = PLabel a $ translateLabel x y lbl
+translatePrimitive x y (PEllipse a ell) = PEllipse a $ translateEllipse x y ell
 
 
 

@@ -34,7 +34,7 @@ module Wumpus.Core.WumpusTypes
   , FontCtx
   , Primitive
   , DPrimitive
-  , XLink ( NoLink ) 
+  , XLink
   , PrimPath
   , DPrimPath
   , PrimPathSegment

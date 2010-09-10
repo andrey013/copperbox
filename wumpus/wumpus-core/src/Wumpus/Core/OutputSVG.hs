@@ -197,14 +197,13 @@ primElement (Atom prim)          = primitive prim
 primElement (XLinkGroup xl ones) = drawXLink xl <$> revConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
-primitive (PPath props xl pp)     = drawXLink xl <$> primPath props pp
-primitive (PLabel props xl lbl)   = drawXLink xl <$> primLabel props lbl
-primitive (PEllipse props xl ell) = drawXLink xl <$> primEllipse props ell
+primitive (PPath props pp)     = primPath props pp
+primitive (PLabel props lbl)   = primLabel props lbl
+primitive (PEllipse props ell) = primEllipse props ell
  
 
 drawXLink :: XLink -> Doc -> Doc
-drawXLink NoLink           doc = doc
-drawXLink (XLinkHRef href) doc = elem_a_xlink href doc
+drawXLink (XLink href) doc = elem_a_xlink href doc
 
 clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
 clipPath clip_id pp = (\doc -> elem_clipPath (attr_id clip_id) doc) <$> path pp

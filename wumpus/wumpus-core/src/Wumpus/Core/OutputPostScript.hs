@@ -277,9 +277,9 @@ primElement (Atom prim)         = primitive prim
 primElement (XLinkGroup _ ones) = revConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
-primitive (PPath props _ pp)     = primPath props pp
-primitive (PLabel props _ lbl)   = primLabel props lbl
-primitive (PEllipse props _ ell) = primEllipse props ell
+primitive (PPath props pp)     = primPath props pp
+primitive (PLabel props lbl)   = primLabel props lbl
+primitive (PEllipse props ell) = primEllipse props ell
 
 
 primPath :: PSUnit u

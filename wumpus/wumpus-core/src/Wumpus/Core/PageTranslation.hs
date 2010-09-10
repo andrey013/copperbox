@@ -49,9 +49,9 @@ trivPrimElt (Atom prim)          = Atom (trivPrim prim)
 trivPrimElt (XLinkGroup xl ones) = XLinkGroup xl $ fmap trivPrimElt ones
 
 trivPrim :: Num u => Primitive u -> Primitive u
-trivPrim (PPath a xl pp)     = PPath a xl pp
-trivPrim (PLabel a xl lbl)   = PLabel a xl (trivLabel lbl)
-trivPrim (PEllipse a xl ell) = PEllipse a xl (trivEllipse ell)
+trivPrim (PPath a pp)     = PPath a pp
+trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
+trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
 
 
 trivLabel :: Num u => PrimLabel u -> PrimLabel u

@@ -36,36 +36,27 @@ module Wumpus.Core.Picture
   -- * Constructing primitives
   , ostroke
   , cstroke
-  , xostroke
-  , xcstroke
   , zostroke
   , zcstroke
 
   , fill
-  , xfill
   , zfill
 
   , bordered
-  , xbordered
   , clip
 
   , textlabel
-  , xtextlabel
   , ztextlabel
   , wumpus_default_font
 
   , hkernlabel
   , vkernlabel
-  , xhkernlabel
-  , xvkernlabel
   , kernchar
   , kernEscInt
   , kernEscName
 
   , strokeEllipse
   , fillEllipse
-  , xstrokeEllipse
-  , xfillEllipse
   , zellipse
   , borderedEllipse
   
@@ -211,7 +202,7 @@ curvedPath (x:xs) = PrimPath x (step xs)
 -- | Create a hyperlink for SVG output.
 --
 xlinkhref :: String -> XLink
-xlinkhref = XLinkHRef
+xlinkhref = XLink
 
 
 -- | Create a hyperlinked group of Primitives.
@@ -232,33 +223,14 @@ xlinkGroup xlink (x:xs) = XLinkGroup xlink (step x xs)
 --
 ostroke :: Num u 
         => RGBi -> StrokeAttr -> PrimPath u -> PrimElement u
-ostroke rgb sa p = Atom $ PPath (OStroke sa rgb) NoLink p
+ostroke rgb sa p = Atom $ PPath (OStroke sa rgb) p
 
 
 -- | Create a closed, stroked path.
 --
 cstroke :: Num u 
         => RGBi -> StrokeAttr -> PrimPath u -> PrimElement u
-cstroke rgb sa p = Atom $ PPath (CStroke sa rgb) NoLink p
-
--- | Create a open, stroked path with a hyperlink.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xostroke :: Num u 
-         => RGBi -> StrokeAttr -> XLink -> PrimPath u -> PrimElement u
-xostroke rgb sa xlink p = Atom $ PPath (OStroke sa rgb) xlink p
-
-
--- | Create a closed, stroked path with a hyperlink.
---
---  Note - hyperlinks are only rendered in SVG output.
---
-xcstroke :: Num u 
-         => RGBi -> StrokeAttr -> XLink -> PrimPath u -> PrimElement u
-xcstroke rgb sa xlink p = Atom $ PPath (CStroke sa rgb) xlink p
-
-
+cstroke rgb sa p = Atom $ PPath (CStroke sa rgb) p
 
 
 -- | Create an open, stroked path using the default stroke 
@@ -280,15 +252,7 @@ zcstroke = cstroke black default_stroke_attr
 -- | Create a filled path.
 --
 fill :: Num u => RGBi -> PrimPath u -> PrimElement u
-fill rgb p = Atom $ PPath (CFill rgb) NoLink p
-
-
--- | Create a filled path with a hyperlink.
---
---  Note - hyperlinks are only rendered in SVG output.
---
-xfill :: Num u => RGBi -> XLink -> PrimPath u -> PrimElement u
-xfill rgb xlink p = Atom $ PPath (CFill rgb) xlink p
+fill rgb p = Atom $ PPath (CFill rgb) p
 
 -- | Create a filled path coloured black. 
 zfill :: Num u => PrimPath u -> PrimElement u
@@ -306,16 +270,8 @@ zfill = fill black
 --
 bordered :: Num u 
         => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> PrimElement u
-bordered frgb sa srgb p = Atom $ PPath (CFillStroke frgb sa srgb) NoLink p
+bordered frgb sa srgb p = Atom $ PPath (CFillStroke frgb sa srgb) p
 
-
--- | Create a bordered, closed path with a hyperlink.
---
---  Note - hyperlinks are only rendered in SVG output.
---
-xbordered :: Num u 
-        => RGBi -> StrokeAttr -> RGBi -> XLink -> PrimPath u -> PrimElement u
-xbordered frgb sa srgb xlink p = Atom $ PPath (CFillStroke frgb sa srgb) xlink p
 
 
 
@@ -336,20 +292,8 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 -- The supplied point is the left baseline.
 --
 textlabel :: Num u 
-          => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
-textlabel rgb attr txt = xtextlabel rgb attr NoLink txt 
-
-
--- | Create a text label with a hyperlink. The string should not 
--- contain newline or tab characters.
---
--- The supplied point is the left baseline.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xtextlabel :: Num u 
-           => RGBi -> FontAttr -> XLink -> String -> Point2 u -> PrimElement u
-xtextlabel rgb attr xlink txt pt = Atom $ PLabel (LabelProps rgb attr) xlink lbl 
+           => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
+textlabel rgb attr txt pt = Atom $ PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (StdLayout $ lexLabel txt) identityCTM
 
@@ -358,7 +302,7 @@ xtextlabel rgb attr xlink txt pt = Atom $ PLabel (LabelProps rgb attr) xlink lbl
 -- and colour is black.
 --
 ztextlabel :: Num u => String -> Point2 u -> PrimElement u
-ztextlabel = xtextlabel black wumpus_default_font NoLink
+ztextlabel = textlabel black wumpus_default_font
 
 
 -- | Constant for the default font, which is @Courier@ (aliased 
@@ -395,20 +339,7 @@ wumpus_default_font = FontAttr 14 face
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> PrimElement u
-hkernlabel rgb attr xs = xhkernlabel rgb attr NoLink xs 
-
-
- 
--- | Create a horizontally kerned text label with a hyperlink.
---
--- The is the hyperlink version of 'hkernlabel'.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xhkernlabel :: Num u 
-            => RGBi -> FontAttr -> XLink -> [KerningChar u] -> Point2 u 
-            -> PrimElement u
-xhkernlabel rgb attr xlink xs pt = Atom $ PLabel (LabelProps rgb attr) xlink lbl 
+hkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (KernTextH xs) identityCTM
 
@@ -435,21 +366,9 @@ xhkernlabel rgb attr xlink xs pt = Atom $ PLabel (LabelProps rgb attr) xlink lbl
 -- The supplied point is the left baseline of the top character.
 --
 vkernlabel :: Num u 
-            => RGBi -> FontAttr ->[KerningChar u] -> Point2 u 
+            => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> PrimElement u
-vkernlabel rgb attr xs = xvkernlabel rgb attr NoLink xs 
-
-
--- | Create a vertically drawn text label with a hyperlink.
---
--- The is the hyperlink version of 'vkernlabel'.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xvkernlabel :: Num u 
-            => RGBi -> FontAttr -> XLink -> [KerningChar u] -> Point2 u 
-            -> PrimElement u
-xvkernlabel rgb attr xlink xs pt = Atom $ PLabel (LabelProps rgb attr) xlink lbl 
+vkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (KernTextV xs) identityCTM
 
@@ -494,56 +413,29 @@ kernEscName u s = (u, CharEscName s)
 --
 strokeEllipse :: Num u 
              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> PrimElement u
-strokeEllipse rgb sa = xstrokeEllipse rgb sa NoLink
-
+strokeEllipse rgb sa hw hh pt = 
+    Atom $ PEllipse (EStroke sa rgb) (PrimEllipse pt hw hh identityCTM)
 
 -- | Create a filled ellipse.
 --
 fillEllipse :: Num u 
              => RGBi -> u -> u -> Point2 u -> PrimElement u
-fillEllipse rgb = xfillEllipse rgb NoLink
-
--- | Create a stroked ellipse with a hyperlink.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xstrokeEllipse :: Num u 
-             => RGBi -> StrokeAttr -> XLink -> u -> u -> Point2 u -> PrimElement u
-xstrokeEllipse rgb sa xlink hw hh pt = 
-    Atom $ PEllipse (EStroke sa rgb) xlink (PrimEllipse pt hw hh identityCTM)
-
--- | Create a filled ellipse.
---
--- Note - hyperlinks are only rendered in SVG output.
--- 
-xfillEllipse :: Num u 
-             => RGBi -> XLink -> u -> u -> Point2 u -> PrimElement u
-xfillEllipse rgb xlink hw hh pt = 
-    Atom $ PEllipse (EFill rgb) xlink (PrimEllipse pt hw hh identityCTM)
+fillEllipse rgb hw hh pt = 
+    Atom $ PEllipse (EFill rgb) (PrimEllipse pt hw hh identityCTM)
 
 
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> PrimElement u
-zellipse hw hh pt = xfillEllipse black NoLink hw hh pt
+zellipse hw hh pt = fillEllipse black hw hh pt
 
 
 -- | Create a bordered (i.e. filled and stroked) ellipse.
 --
 borderedEllipse :: Num u 
-                => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
-                -> PrimElement u
-borderedEllipse frgb sa srgb = xborderedEllipse frgb sa srgb NoLink
-
--- | Create a bordered (i.e. filled and stroked) ellipse with a 
--- hyperlink.
---
--- Note - hyperlinks are only rendered in SVG output.
---
-xborderedEllipse :: Num u 
-                 => RGBi -> StrokeAttr -> RGBi -> XLink -> u -> u -> Point2 u 
+                 => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
                  -> PrimElement u
-xborderedEllipse frgb sa srgb xlink hw hh pt = 
-    Atom $ PEllipse (EFillStroke frgb sa srgb) xlink (PrimEllipse pt hw hh identityCTM)
+borderedEllipse frgb sa srgb hw hh pt = 
+    Atom $ PEllipse (EFillStroke frgb sa srgb) (PrimEllipse pt hw hh identityCTM)
 
 
 
@@ -662,12 +554,12 @@ illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
                         => RGBi -> PrimElement u -> Picture u
 illustrateControlPoints rgb elt = outer elt
   where
-    outer a@(Atom prim)   = frame (a : step prim)
-    outer a               = frame [a]
+    outer a@(Atom prim) = frame (a : step prim)
+    outer a             = frame [a]
 
-    step (PEllipse _ _ e) = ellipseCtrlLines rgb e
-    step (PPath    _ _ p) = pathCtrlLines rgb p
-    step _                = []
+    step (PEllipse _ e) = ellipseCtrlLines rgb e
+    step (PPath    _ p) = pathCtrlLines rgb p
+    step _              = []
 
 -- Genrate lines illustrating the control points of curves on 
 -- a Path.
