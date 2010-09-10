@@ -25,6 +25,8 @@ module Wumpus.Core.PictureInternal
   , AffineTrafo(..)
   , FontCtx(..)
 
+  , PrimElement(..)
+  , DPrimElement
   , Primitive(..)
   , DPrimitive
   , XLink(..)
@@ -82,6 +84,7 @@ import Wumpus.Core.Utils
 
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
 
@@ -125,11 +128,25 @@ import qualified Data.Foldable                  as F
 -- updates for the SVG renderer - in some instances this can 
 -- improve the code size of the generated SVG.
 --
-data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
+data Picture u = Leaf     (Locale u)              (OneList (PrimElement u))
                | Picture  (Locale u)              (OneList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
                | Group    (Locale u) FontCtx      (Picture u)
   deriving (Show)
+
+type DPicture = Picture Double
+
+-- | To represent XLink hyperlinks, Primitives in a Leaf are 
+-- encoded in a tree rather a list.
+--
+-- (This is rather unfortunate as it expends an extra wrapper
+-- for ever element regardless of whether hyerlinks are needed).
+--
+data PrimElement u = Atom             (Primitive u)
+                   | XLinkGroup XLink (OneList (PrimElement u))
+  deriving (Show)
+
+type DPrimElement = PrimElement Double
 
 
 -- | Set the font /delta/ for SVG rendering. 
@@ -161,7 +178,6 @@ newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
 --
 type Locale u = (BoundingBox u, [AffineTrafo u])
 
-type DPicture = Picture Double
 
 -- | Affine transformations are represented as /syntax/ so they
 -- can be manipulated easily.
@@ -323,6 +339,7 @@ data PrimCTM u = PrimCTM
 -- family instances
 
 type instance DUnit (Picture u)     = u
+type instance DUnit (PrimElement u) = u
 type instance DUnit (Primitive u)   = u
 type instance DUnit (PrimEllipse u) = u
 
@@ -333,7 +350,7 @@ type instance DUnit (PrimEllipse u) = u
 instance (Num u, PSUnit u) => Format (Picture u) where
   format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
                                               , fmtLocale m 
-                                              , fmtPrims prims ]
+                                              , fmtPrimElems prims ]
 
   format (Picture m pics)   = indent 2 $ vcat [ text "** Tree-pic **"
                                               , fmtLocale m
@@ -354,10 +371,16 @@ fmtPics ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
 
-fmtPrims :: PSUnit u => OneList (Primitive u) -> Doc
-fmtPrims ones = snd $ F.foldl' fn (0,empty) ones
+fmtPrimElems :: PSUnit u => OneList (PrimElement u) -> Doc
+fmtPrimElems ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
+
+instance PSUnit u => Format (PrimElement u) where
+  format (Atom prim)          = format prim
+  format (XLinkGroup xl ones) = vcat [ text "-- xlink " <+> format xl 
+                                     , fmtPrimElems ones  ]
+                                     
 
 fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
 fmtLocale (bb,_) = format bb
@@ -431,6 +454,9 @@ instance Format EllipseProps where
   format (EFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
                             <+> format s <+> text "Stroke"   
 
+instance Format XLink where
+  format NoLink         = text "no-link"
+  format (XLinkHRef ss) = text "xlink" <+> text ss
 
 
 --------------------------------------------------------------------------------
@@ -440,6 +466,17 @@ instance Boundary (Picture u) where
   boundary (Picture (bb,_) _)   = bb
   boundary (Clip    (bb,_) _ _) = bb
   boundary (Group   (bb,_) _ _) = bb
+
+
+instance (Real u, Floating u, FromPtSize u) => Boundary (PrimElement u) where
+  boundary (Atom prim)         = boundary prim
+  boundary (XLinkGroup _ ones) = outer $ viewl ones 
+    where
+      outer (OneL a)     = boundary a
+      outer (a :< as)    = inner (boundary a) (viewl as)
+
+      inner bb (OneL a)  = bb `append` boundary a
+      inner bb (a :< as) = inner (bb `append` boundary a) (viewl as)
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ _ p)      = pathBoundary p

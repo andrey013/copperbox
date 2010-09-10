@@ -255,7 +255,7 @@ imageTranslation pic = case repositionDeltas pic of
 -- constructor.
 --
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
-picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primitive ones
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primElement ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
 picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
                                     (vconcat <$> clipPath cp <*> picture pic)
@@ -269,6 +269,12 @@ revConcat fn ones = some empty <$> F.foldrM step None ones
     conc d None      = Some d
     conc d (Some ac) = Some $ ac `vconcat` d
 
+
+-- No action is taken for hyperlinks in PostScript.
+--
+primElement :: (Real u, Floating u, PSUnit u) => PrimElement u -> PsMonad Doc
+primElement (Atom prim)         = primitive prim
+primElement (XLinkGroup _ ones) = revConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
 primitive (PPath props _ pp)     = primPath props pp

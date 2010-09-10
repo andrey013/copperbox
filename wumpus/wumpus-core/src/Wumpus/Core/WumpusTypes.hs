@@ -29,6 +29,8 @@ module Wumpus.Core.WumpusTypes
   -- * Picture types
     Picture
   , DPicture
+  , PrimElement
+  , DPrimElement
   , FontCtx
   , Primitive
   , DPrimitive
