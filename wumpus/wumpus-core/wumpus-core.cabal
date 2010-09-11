@@ -54,10 +54,12 @@ description:
     complicated, and has mandated significant changes to the 
     Picture API. All the hyperlink variants of the Primitive 
     constructors have been removed (xcstroke, xfill, xtextlabel, 
-    ...), and hyperlinks are now created with @xlinkGroup@. The 
-    type signatures for the /primitive/ constructors (fill, 
-    cstroke, textlabel, ...) are now more complicated as there 
-    is an extra layer of indirection in the type hierarchy.
+    ...), and hyperlinks are now created with @xlinkGroup@. 
+  .
+  * The type signatures for the /primitive/ constructors (fill, 
+    cstroke, textlabel, ...) in the Picture API have changed and 
+    are now more complicated as there is an extra layer of 
+    indirection in the type hierarchy.
   .
   * @Core.FontSize@ - the arguments to the function @textBounds@
     have been changed to take the String in question, rather than 

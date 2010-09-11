@@ -19,8 +19,8 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
 translate_20x40 :: (Translate t, Fractional u, u ~ DUnit t) => t -> t
 translate_20x40 = translate 20.0 40.0
 
-translate_20x40P :: Fractional u => Primitive u -> Primitive u
-translate_20x40P = translatePrimitive 20.0 40.0
+translate_20x40P :: Fractional u => PrimElement u -> PrimElement u
+translate_20x40P = translatePrim 20.0 40.0
 
 -- Primitive - Text
 

@@ -51,11 +51,11 @@ module Wumpus.Core.WumpusTypes
 
 
 
-  -- * Transformations on Primitives
-  , rotatePrimitive
-  , scalePrimitive
-  , uniformScalePrimitive
-  , translatePrimitive
+  -- * Transformations on PrimElements
+  , rotatePrim
+  , scalePrim
+  , uniformScalePrim
+  , translatePrim
 
 
   -- * Printable unit for PostScript

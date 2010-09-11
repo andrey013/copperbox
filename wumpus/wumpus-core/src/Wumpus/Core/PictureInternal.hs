@@ -57,10 +57,10 @@ module Wumpus.Core.PictureInternal
   , matrixRepCTM
   , translMatrixRepCTM
 
-  , rotatePrimitive
-  , scalePrimitive
-  , uniformScalePrimitive
-  , translatePrimitive
+  , rotatePrim
+  , scalePrim
+  , uniformScalePrim
+  , translatePrim
 
   -- * Additional operations
   , concatTrafos
@@ -662,6 +662,13 @@ translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 -- generated PostScript. For Paths all transformations are
 -- \"cost-free\".
 --
+rotatePrim :: (Real u, Floating u) 
+           => Radian -> PrimElement u -> PrimElement u
+rotatePrim ang (Atom prim)             = Atom $ rotatePrimitive ang prim
+rotatePrim ang (XLinkGroup xlink ones) = 
+    XLinkGroup xlink $ fmap (rotatePrim ang) ones
+
+
 rotatePrimitive :: (Real u, Floating u) 
                 => Radian -> Primitive u -> Primitive u
 rotatePrimitive ang (PPath a path)   = PPath    a $ rotatePath ang path
@@ -691,6 +698,12 @@ rotatePrimitive ang (PEllipse a ell) = PEllipse a $ rotateEllipse ang ell
 -- generated PostScript. For Paths all transformations are 
 -- \"cost-free\".
 --
+scalePrim :: Num u => u -> u -> PrimElement u -> PrimElement u
+scalePrim x y (Atom prim)             = Atom $ scalePrimitive x y prim
+scalePrim x y (XLinkGroup xlink ones) = 
+    XLinkGroup xlink $ fmap (scalePrim x y) ones
+
+
 scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
 scalePrimitive x y (PPath a path)   = PPath    a $ scalePath x y path
 scalePrimitive x y (PLabel a lbl)   = PLabel   a $ scaleLabel x y lbl
@@ -698,8 +711,8 @@ scalePrimitive x y (PEllipse a ell) = PEllipse a $ scaleEllipse x y ell
 
 -- | Apply a uniform scale to a Primitive.
 --
-uniformScalePrimitive :: Num u => u -> Primitive u -> Primitive u
-uniformScalePrimitive d = scalePrimitive d d 
+uniformScalePrim :: Num u => u -> PrimElement u -> PrimElement u
+uniformScalePrim d = scalePrim d d 
 
 -- | Translate a primitive.
 --
@@ -711,6 +724,13 @@ uniformScalePrimitive d = scalePrimitive d d
 -- translation will be concatenated into the matrix operation in 
 -- the generated output. 
 -- 
+translatePrim :: Num u => u -> u -> PrimElement u -> PrimElement u
+translatePrim x y (Atom prim)             = 
+    Atom $ translatePrimitive x y prim
+
+translatePrim x y (XLinkGroup xlink ones) = 
+    XLinkGroup xlink $ fmap (translatePrim x y) ones
+
 translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
 translatePrimitive x y (PPath a path)   = PPath a $ translatePath x y path
 translatePrimitive x y (PLabel a lbl)   = PLabel a $ translateLabel x y lbl

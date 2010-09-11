@@ -39,10 +39,10 @@ mystere = [ kernchar 0  'm'
           , kernchar 6 'e'
           ]
 
-helveticaLabelH :: [KerningChar Double] -> DPoint2 -> DPrimitive
+helveticaLabelH :: [KerningChar Double] -> DPoint2 -> DPrimElement
 helveticaLabelH xs pt = hkernlabel black helvetica18 xs pt
 
-helveticaLabelV :: [KerningChar Double] -> DPoint2 -> DPrimitive
+helveticaLabelV :: [KerningChar Double] -> DPoint2 -> DPrimElement
 helveticaLabelV xs pt = vkernlabel black helvetica18 xs pt
 
 

@@ -20,8 +20,8 @@ scale_onehalf_x_two :: (Scale t, Fractional u, u ~ DUnit t) => t -> t
 scale_onehalf_x_two = scale 1.5 2.0
 
 
-scale_onehalf_x_twoP :: Fractional u => Primitive u -> Primitive u
-scale_onehalf_x_twoP = scalePrimitive 1.5 2.0
+scale_onehalf_x_twoP :: Fractional u => PrimElement u -> PrimElement u
+scale_onehalf_x_twoP = scalePrim 1.5 2.0
 
 -- Primitive - Text
 
