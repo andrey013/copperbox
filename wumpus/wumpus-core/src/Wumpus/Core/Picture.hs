@@ -42,7 +42,7 @@ module Wumpus.Core.Picture
   , fill
   , zfill
 
-  , bordered
+  , fillStroke
   , clip
 
   , textlabel
@@ -58,7 +58,7 @@ module Wumpus.Core.Picture
   , strokeEllipse
   , fillEllipse
   , zellipse
-  , borderedEllipse
+  , fillStrokeEllipse
   
 
   -- * Operations
@@ -260,7 +260,7 @@ zfill = fill black
 
 
 --------------------------------------------------------------------------------
--- Bordered (closed) paths
+-- Filled and stroked (closed) paths
 
 
 -- | Create a closed path that is both filled and stroked (the fill
@@ -268,9 +268,9 @@ zfill = fill black
 --
 -- > fill colour * stroke attrs * stroke_colour * ...
 --
-bordered :: Num u 
+fillStroke :: Num u 
         => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> PrimElement u
-bordered frgb sa srgb p = Atom $ PPath (CFillStroke frgb sa srgb) p
+fillStroke frgb sa srgb p = Atom $ PPath (CFillStroke frgb sa srgb) p
 
 
 
@@ -431,10 +431,10 @@ zellipse hw hh pt = fillEllipse black hw hh pt
 
 -- | Create a bordered (i.e. filled and stroked) ellipse.
 --
-borderedEllipse :: Num u 
+fillStrokeEllipse :: Num u 
                  => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
                  -> PrimElement u
-borderedEllipse frgb sa srgb hw hh pt = 
+fillStrokeEllipse frgb sa srgb hw hh pt = 
     Atom $ PEllipse (EFillStroke frgb sa srgb) (PrimEllipse pt hw hh identityCTM)
 
 

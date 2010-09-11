@@ -61,6 +61,10 @@ description:
     are now more complicated as there is an extra layer of 
     indirection in the type hierarchy.
   .
+  * The primitive constructors for filled and stroked paths and 
+    ellipses have been renamed: @bordered is now @fillStroke@,
+    @borderedEllipse@ is now @fillStrokeEllipse@.
+  .
   * @Core.FontSize@ - the arguments to the function @textBounds@
     have been changed to take the String in question, rather than 
     its precomputed length. The size of the string is then 
