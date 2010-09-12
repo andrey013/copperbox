@@ -25,23 +25,24 @@ module Wumpus.Basic.Dots
 
   -- * Dots with anchor points
   , dotCircle
-  , dotDisk
-  , dotSquare
-  , dotChar
-  , dotText
+--  , dotDisk
+--  , dotSquare
+--  , dotChar
+--  , dotText
 
   ) where
 
 import Wumpus.Basic.Anchors
-import qualified Wumpus.Basic.Dots.Base         as BD
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+import qualified Wumpus.Basic.Dots.Primitive         as BD
+import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
+import Control.Applicative
 
 
 -- An existential thing that supports anchors.
@@ -87,7 +88,8 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (\theta -> ctr .+^ (avec theta rad))
                                  (radialCardinal rad ctr)
 
-
+circleLDO :: (Floating u, FromPtSize u) => LocDrawingObject u (DotAnchor u)
+circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksObj markHeight 
 
 
 radialCardinal :: Floating u => u -> Point2 u ->  Cardinal -> Point2 u
@@ -115,7 +117,7 @@ rectCardinal hw _  ctr WW = ctr .+^ (hvec (-hw))
 rectCardinal hw hh ctr NW = ctr .+^ (vec  (-hw)  hh) 
 
 
-rectangleAnchor :: (Real u, Floating u) =>  u -> u -> Point2 u -> DotAnchor u
+rectangleAnchor :: (Real u, Floating u) => u -> u -> Point2 u -> DotAnchor u
 rectangleAnchor hw hh ctr = 
     DotAnchor { center_anchor   = ctr
               , radial_anchor   = fn  
@@ -125,12 +127,16 @@ rectangleAnchor hw hh ctr =
                              $ rectangleLines ctr hw hh
 
 
+type DotLocImage u = LocImage u (DotAnchor u) 
 
-dotCircle :: (Floating u, FromPtSize u) => ANode u (DotAnchor u)
-dotCircle = AGraphic (BD.dotCircle) mkF
-  where
-    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
+dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
+dotCircle = intoLocImage circleLDO BD.dotCircle
+--   where
+--    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
+
+
+{-
 
 dotDisk :: (Floating u, FromPtSize u) => ANode u (DotAnchor u)
 dotDisk = AGraphic (BD.dotDisk) mkF
@@ -155,5 +161,7 @@ dotText str = AGraphic (BD.dotText str) mkF
   where
     mkF attr pt = let (w,h) = textDimensions str attr in
                   rectangleAnchor (0.5*w) (0.5*h) pt
+
+-}
 
 

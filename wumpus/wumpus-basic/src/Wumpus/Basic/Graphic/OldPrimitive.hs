@@ -41,7 +41,6 @@ module Wumpus.Basic.Graphic.OldPrimitive
 
   -- * Graphic primitives
   , textline
-  , xtextline
   , straightLine
   , strokedRectangle
   , filledRectangle
@@ -84,7 +83,7 @@ import Data.Maybe
 -- | Note - this representation allows for zero, one or more
 -- Primitives to be collected together.
 --
-type Graphic u          = H (Primitive u)
+type Graphic u          = H (PrimElement u)
 
 type DGraphic           = Graphic Double
 
@@ -134,9 +133,9 @@ drawGraphicU = fromMaybe errK . drawGraphic
     errK = error "drawGraphic - empty Graphic."
 
 
--- | Lift a Primitive to a Graphic
+-- | Lift a PrimElement to a Graphic
 --
-wrapG :: Primitive u -> Graphic u
+wrapG :: PrimElement u -> Graphic u
 wrapG = wrapH 
 
 -- | The empty graphic.
@@ -153,8 +152,6 @@ emptyG = emptyH
 textline :: Num u => RGBi -> FontAttr -> String -> GraphicF u
 textline rgb attr ss = wrapG . textlabel rgb attr ss 
 
-xtextline :: Num u => RGBi -> FontAttr -> XLink -> String -> GraphicF u
-xtextline rgb attr xl ss = wrapG . xtextlabel rgb attr xl ss 
 
 
 

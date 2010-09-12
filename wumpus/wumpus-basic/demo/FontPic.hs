@@ -29,15 +29,15 @@ main = do
     writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
 
 
-makeFontLabel :: RGBi -> FontAttr -> DPoint2 -> DPrimitive
+makeFontLabel :: RGBi -> FontAttr -> DPoint2 -> DPrimElement
 makeFontLabel rgb fa = textlabel rgb fa msg
   where
     msg = unwords [ font_name $ font_face fa, (show $ font_size fa) ++ "pt"]
 
-blueLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
+blueLabel :: FontFace -> Int -> DPoint2 -> DPrimElement
 blueLabel ff i = makeFontLabel steel_blue (FontAttr i ff)
 
-redLabel :: FontFace -> Int -> DPoint2 -> DPrimitive
+redLabel :: FontFace -> Int -> DPoint2 -> DPrimElement
 redLabel ff i = makeFontLabel indian_red1 (FontAttr i ff)
 
 

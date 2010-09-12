@@ -48,7 +48,7 @@ module Wumpus.Basic.Dots.Primitive
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.Graphic
 import Wumpus.Basic.Graphic.Image
-import Wumpus.Basic.Graphic.PointSupply ( polygonPointsV )
+-- import Wumpus.Basic.Graphic.PointSupply ( polygonPointsV )
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -69,26 +69,26 @@ import Control.Applicative
 -- | Composition operator...
 --
 --
-cc :: LocImage u -> LocImage u -> LocImage u
-cc f g = \pt -> f pt `appendImage` g pt
+cc :: LocGraphic u -> LocGraphic u -> LocGraphic u
+cc f g = \pt -> f pt `appendGraphic` g pt
 
 
 
 -- | A dot is the height of a lowercase \'x\'.
 -- 
-standardSize :: FromPtSize u => (u -> LocImage u) -> LocImage u
+standardSize :: FromPtSize u => (u -> LocGraphic u) -> LocGraphic u
 standardSize f = \pt -> asksObj markHeight >>= \h -> f h pt
 
 halfHeightSize :: (Fractional u, FromPtSize u) 
-               => (u -> LocImage u) -> LocImage u
+               => (u -> LocGraphic u) -> LocGraphic u
 halfHeightSize f = \pt -> asksObj markHeight >>= \h -> f (h * 0.5) pt
 
 
 
-shiftOrigin :: Num u => u -> u -> LocImage u -> LocImage u
+shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy f = \pt -> f (displace dx dy pt)
 
-dotChar :: (Fractional u, FromPtSize u) => Char -> LocImage u
+dotChar :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
 dotChar ch = dotText [ch]
 
 
@@ -96,7 +96,7 @@ dotChar ch = dotText [ch]
 
 -- Note - eta-expanded (?)
 --
-dotText :: (Fractional u, FromPtSize u) => String -> LocImage u
+dotText :: (Fractional u, FromPtSize u) => String -> LocGraphic u
 dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
                 shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) pt
 
@@ -106,30 +106,30 @@ dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) ->
 
 -- | Supplied point is the center.
 --
-axialLine :: Fractional u => Vec2 u -> LocImage u
+axialLine :: Fractional u => Vec2 u -> LocGraphic u
 axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 
-dotHLine :: (Fractional u, FromPtSize u) => LocImage u 
+dotHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
 dotHLine = standardSize (\h -> axialLine (hvec h))
     
 
-dotVLine :: (Fractional u, FromPtSize u) => LocImage u 
+dotVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
 dotVLine = standardSize (\h -> axialLine (vvec h)) 
 
 
-dotX :: (Fractional u, FromPtSize u) => LocImage u
+dotX :: (Fractional u, FromPtSize u) => LocGraphic u
 dotX = standardSize (\h -> let w = 0.75 * h in
                            axialLine (vec w h) `cc` axialLine (vec (-w) h))
 
 
 
-dotPlus :: (Fractional u, FromPtSize u) =>  LocImage u
+dotPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
 dotPlus = dotVLine `cc` dotHLine
 
 
-dotCross :: (Floating u, FromPtSize u) =>  LocImage u
+dotCross :: (Floating u, FromPtSize u) =>  LocGraphic u
 dotCross = standardSize 
              (\h -> axialLine (avec ang h) `cc` axialLine (avec (-ang) h))
   where
@@ -152,37 +152,37 @@ pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h
 
 
 
-dotDiamond :: (Fractional u, FromPtSize u) => LocImage u
+dotDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
 dotDiamond = \pt -> pathDiamond pt >>= closedStroke  
 
 
-dotBDiamond :: (Fractional u, FromPtSize u) => LocImage u
+dotBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
 dotBDiamond = \pt -> pathDiamond pt >>= borderedPath
 
 
 -- | Note disk is filled.
 --
-dotDisk :: (Fractional u, FromPtSize u) => LocImage u
+dotDisk :: (Fractional u, FromPtSize u) => LocGraphic u
 dotDisk = halfHeightSize filledDisk 
 
 
 
-dotSquare :: (Fractional u, FromPtSize u) => LocImage u
+dotSquare :: (Fractional u, FromPtSize u) => LocGraphic u
 dotSquare = standardSize (\h -> let d = 0.5*(-h) in 
                                 shiftOrigin d d $ strokedRectangle h h) 
     
 
 
-dotCircle :: (Fractional u, FromPtSize u) => LocImage u
-dotCircle = standardSize strokedDisk 
+dotCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+dotCircle = halfHeightSize strokedDisk 
 
 
-dotBCircle :: (Fractional u, FromPtSize u) => LocImage u
-dotBCircle = standardSize borderedDisk 
+dotBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+dotBCircle = halfHeightSize borderedDisk 
 
 
 {-
-dotPentagon :: (Floating u, FromPtSize u) => LocImage u
+dotPentagon :: (Floating u, FromPtSize u) => LocGraphic u
 dotPentagon attr = 
     wrapG . cstroke (stroke_colour attr) (stroke_props attr) 
           . vertexPath . polygonPointsV 5 hh
@@ -192,7 +192,7 @@ dotPentagon attr =
 -} 
 
 {-
-dotStar :: (Floating u, FromPtSize u) => LocImage u 
+dotStar :: (Floating u, FromPtSize u) => LocGraphic u 
 dotStar pt = asksObj markHeight >>= \h -> 
              let ps = polygonPointsV 5 (h * 0.5) pt in step ps
   where
@@ -201,7 +201,7 @@ dotStar pt = asksObj markHeight >>= \h ->
 -}
 
 
-dotAsterisk :: (Floating u, FromPtSize u) => LocImage u
+dotAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
 dotAsterisk = standardSize (\h -> lineF1 h `cc` lineF2 h `cc` lineF3 h)
   where
     ang       = (pi*2) / 6
@@ -211,18 +211,18 @@ dotAsterisk = standardSize (\h -> lineF1 h `cc` lineF2 h `cc` lineF3 h)
 
 
 
-dotOPlus :: (Fractional u, FromPtSize u) => LocImage u
+dotOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 dotOPlus = dotCircle `cc` dotPlus
 
 
-dotOCross :: (Floating u, FromPtSize u) => LocImage u
+dotOCross :: (Floating u, FromPtSize u) => LocGraphic u
 dotOCross = dotCircle `cc` dotCross
 
 
-dotFOCross :: (Floating u, FromPtSize u) => LocImage u
+dotFOCross :: (Floating u, FromPtSize u) => LocGraphic u
 dotFOCross = dotCross `cc` dotBCircle 
 
 
--- bkCircle :: (Fractional u, FromPtSize u) => LocImage u
+-- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u
 -- bkCircle = disk (fillAttr attr) (0.5*markHeight attr) 
 

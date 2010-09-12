@@ -36,6 +36,7 @@ module Wumpus.Basic.Graphic.Drawing
 
   , draw
   , drawAt
+  , drawAtImg
   , node
 
   -- temporarily located here
@@ -201,19 +202,25 @@ execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
 
 --------------------------------------------------------------------------------
 
-draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u -> m ()
-draw img = askCtx >>= \ctx -> trace (runImage ctx img)
+draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
+draw gf = askCtx >>= \ctx -> trace (runGraphic ctx gf)
 
 drawAt :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-       => Point2 u ->LocImage u -> m ()
-drawAt pt imgL = askCtx >>= \ctx -> trace (runImage ctx (imgL pt))
+       => Point2 u ->LocGraphic u -> m ()
+drawAt pt gfL = askCtx >>= \ctx -> trace (runGraphic ctx (gfL pt))
 
+drawAtImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+          => Point2 u -> LocImage u a -> m a
+drawAtImg pt imgL = askCtx >>= \ctx -> 
+                    let (a,o) = runImage ctx (imgL pt)
+                    in trace o >> return a
+     
 
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
-     => LocImage u -> m ()
-node imgL = askCtx   >>= \ctx -> 
-            position >>= \pt  -> trace (runImage ctx $ imgL pt)
+     => LocGraphic u -> m ()
+node gfL = askCtx   >>= \ctx -> 
+           position >>= \pt  -> trace (runGraphic ctx $ gfL pt)
 
 
 

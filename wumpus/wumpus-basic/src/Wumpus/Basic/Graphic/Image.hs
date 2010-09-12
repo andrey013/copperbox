@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Iamge types.
+-- Image types.
 --
 --
 --------------------------------------------------------------------------------
@@ -20,16 +20,22 @@ module Wumpus.Basic.Graphic.Image
     HPrim
   , Point2T
   , DrawingObject(..)
-  , Image
+  , Graphic
 
-  , appendImage
+  , appendGraphic
   
   , asksObj
   , localCtxObj
 
-  , runImage
+  , runGraphic
 
+  , LocDrawingObject
+  , LocGraphic
+  , Image
   , LocImage
+  , runImage
+  , intoImage
+  , intoLocImage
 
   ) where
 
@@ -66,8 +72,7 @@ type Point2T u = Point2 u -> Point2 u
 newtype DrawingObject a = DrawingObject { 
           getDrawingObject :: DrawingContext -> a }
 
-type Image u = DrawingObject (HPrim u)
-
+type Graphic u = DrawingObject (HPrim u)
 
 
 instance Functor DrawingObject where
@@ -89,9 +94,9 @@ instance Monad DrawingObject where
   ma >>= k  = DrawingObject $ \ctx -> let a = getDrawingObject ma ctx
                                       in (getDrawingObject . k) a ctx 
 
-appendImage :: Image u -> Image u -> Image u
-appendImage img1 img2 = DrawingObject $ \ctx ->          
-      (getDrawingObject img1 ctx) `appendH` (getDrawingObject img2 ctx)
+appendGraphic :: Graphic u -> Graphic u -> Graphic u
+appendGraphic gf1 gf2 = DrawingObject $ \ctx ->          
+      (getDrawingObject gf1 ctx) `appendH` (getDrawingObject gf2 ctx)
 
 
 
@@ -100,23 +105,40 @@ asksObj fn = DrawingObject $ \ctx -> fn ctx
 
 localCtxObj :: (DrawingContext -> DrawingContext) 
             -> DrawingObject a -> DrawingObject a
-localCtxObj upd img = DrawingObject $ \ctx -> getDrawingObject img (upd ctx)
+localCtxObj upd gf = DrawingObject $ \ctx -> getDrawingObject gf (upd ctx)
 
-runImage :: DrawingContext -> Image u -> HPrim u
-runImage ctx img = (getDrawingObject img) ctx
+runGraphic :: DrawingContext -> Graphic u -> HPrim u
+runGraphic ctx gf = (getDrawingObject gf) ctx
 
 
 --------------------------------------------------------------------------------
 
 
+type LocDrawingObject u a = Point2 u -> DrawingObject a
 
-
--- | Commonly images take a start point as well as a drawing 
+-- | Commonly graphics take a start point as well as a drawing 
 -- context.
 -- 
--- Here they are called a LocImage - image with a (starting) 
+-- Here they are called a LocGraphic - graphic with a (starting) 
 -- location.
 --
-type LocImage u = Point2 u -> Image u
+type LocGraphic u = Point2 u -> Graphic u
 
 
+type Image u a = DrawingObject (a, HPrim u)
+
+type LocImage u a = Point2 u -> Image u a
+
+
+runImage :: DrawingContext -> Image u a -> (a,HPrim u)
+runImage ctx img = (getDrawingObject img) ctx
+
+
+intoImage :: DrawingObject a -> Graphic u -> Image u a
+intoImage f g = DrawingObject $ \ctx -> 
+    let a = getDrawingObject f ctx; o = getDrawingObject g ctx in (a,o)
+
+
+intoLocImage :: LocDrawingObject u a -> LocGraphic u -> LocImage u a
+intoLocImage f g pt = DrawingObject $ \ctx -> 
+    let a = getDrawingObject (f pt) ctx; o = getDrawingObject (g pt) ctx in (a,o)

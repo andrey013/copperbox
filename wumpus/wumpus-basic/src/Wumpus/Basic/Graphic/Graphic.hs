@@ -16,8 +16,8 @@
 
 module Wumpus.Basic.Graphic.Graphic
   (
-    drawImage
-  , drawImageU
+    drawGraphic
+  , drawGraphicU
 
 
   , openStroke
@@ -62,62 +62,62 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
-drawImage :: (Real u, Floating u, FromPtSize u) 
-          => DrawingContext -> Image u -> Maybe (Picture u)
-drawImage ctx img = post $ runImage ctx img
+drawGraphic :: (Real u, Floating u, FromPtSize u) 
+            => DrawingContext -> Graphic u -> Maybe (Picture u)
+drawGraphic ctx gf = post $ runGraphic ctx gf
   where
     post hf = let xs = toListH hf in 
               if null xs then Nothing else Just (frame xs)
 
-drawImageU :: (Real u, Floating u, FromPtSize u) 
-          => DrawingContext -> Image u -> Picture u
-drawImageU ctx img = post $ runImage ctx img
+drawGraphicU :: (Real u, Floating u, FromPtSize u) 
+             => DrawingContext -> Graphic u -> Picture u
+drawGraphicU ctx gf = post $ runGraphic ctx gf
   where
     post hf = let xs = toListH hf in 
               if null xs then errK else frame xs
-    errK    = error "drawImageU - empty Image."
+    errK    = error "drawGraphicU - empty Graphic."
 
 
 -- having the same names is actually not so useful...
 
-openStroke :: Num u => PrimPath u -> Image u
+openStroke :: Num u => PrimPath u -> Graphic u
 openStroke pp = (\rgb attr -> wrapH $ ostroke rgb attr pp) 
                     <$> asksObj primary_colour <*> asksObj stroke_props
 
 
-closedStroke :: Num u => PrimPath u -> Image u
+closedStroke :: Num u => PrimPath u -> Graphic u
 closedStroke pp = (\rgb attr -> wrapH $ cstroke rgb attr pp) 
                       <$> asksObj primary_colour <*> asksObj stroke_props
 
 
-filledPath :: Num u => PrimPath u -> Image u
+filledPath :: Num u => PrimPath u -> Graphic u
 filledPath pp = (\rgb -> wrapH $ fill rgb pp) 
                     <$> asksObj secondary_colour
 
 
-borderedPath :: Num u => PrimPath u -> Image u
+borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
     (\frgb attr srgb -> wrapH $ fillStroke frgb attr srgb pp) 
         <$> asksObj secondary_colour <*> asksObj stroke_props <*> asksObj primary_colour
 
 
-textline :: Num u => String -> LocImage u
+textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
     (\(rgb,attr) -> wrapH $ textlabel rgb attr ss baseline_left) 
        <$> asksObj textAttr
 
 
-strokedEllipse :: Num u => u -> u -> LocImage u
+strokedEllipse :: Num u => u -> u -> LocGraphic u
 strokedEllipse hw hh pt =  
     (\rgb attr -> wrapH $ strokeEllipse rgb attr hw hh pt) 
        <$> asksObj primary_colour <*> asksObj stroke_props
 
-filledEllipse :: Num u => u -> u -> LocImage u
+filledEllipse :: Num u => u -> u -> LocGraphic u
 filledEllipse hw hh pt =  
     (\rgb -> wrapH $ fillEllipse rgb hw hh pt) 
        <$> asksObj secondary_colour
 
-borderedEllipse :: Num u => u -> u -> LocImage u
+borderedEllipse :: Num u => u -> u -> LocGraphic u
 borderedEllipse hw hh pt = 
     (\frgb attr srgb -> wrapH $ fillStrokeEllipse frgb attr srgb hw hh pt) 
         <$> asksObj secondary_colour <*> asksObj stroke_props 
@@ -130,7 +130,7 @@ borderedEllipse hw hh pt =
 -- | Supplying a point to a 'CFGraphic' takes it to a regular 
 -- 'Graphic'.
 --
-supplyPt :: Point2 u -> LocImage u -> Image u
+supplyPt :: Point2 u -> LocGraphic u -> Graphic u
 supplyPt pt gf = gf pt 
 
 
@@ -139,17 +139,17 @@ displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 
 localDrawingContext :: 
-    (DrawingContext -> DrawingContext) -> LocImage u -> LocImage u
+    (DrawingContext -> DrawingContext) -> LocGraphic u -> LocGraphic u
 localDrawingContext upd img = \pt -> localCtxObj upd (img pt) 
 
-localPoint :: (Point2 u -> Point2 u) -> LocImage u -> LocImage u
+localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u
 localPoint upd gf = \pt -> gf (upd pt)
 
 
 --------------------------------------------------------------------------------
 
 
-straightLine :: Fractional u => Vec2 u -> LocImage u
+straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = \pt -> openStroke $ path pt [lineTo $ pt .+^ v]
            
 
@@ -166,20 +166,20 @@ rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
 
 -- | Supplied point is /bottom left/.
 --
-strokedRectangle :: Fractional u => u -> u -> LocImage u
+strokedRectangle :: Fractional u => u -> u -> LocGraphic u
 strokedRectangle w h = closedStroke . rectangle w h
 
 
 
 -- | Supplied point is /bottom left/.
 --
-filledRectangle :: Fractional u => u -> u -> LocImage u
+filledRectangle :: Fractional u => u -> u -> LocGraphic u
 filledRectangle w h = filledPath . rectangle w h
   
 
 -- | Supplied point is /bottom left/.
 --
-borderedRectangle :: Fractional u => u -> u -> LocImage u
+borderedRectangle :: Fractional u => u -> u -> LocGraphic u
 borderedRectangle w h = borderedPath . rectangle w h
 
 --------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ borderedRectangle w h = borderedPath . rectangle w h
 -- | Supplied point is center. Circle is drawn with Bezier 
 -- curves. 
 --
-strokedCircle :: Floating u => Int -> u -> LocImage u
+strokedCircle :: Floating u => Int -> u -> LocGraphic u
 strokedCircle n r = closedStroke . curvedPath . bezierCircle n r
 
 
@@ -196,14 +196,14 @@ strokedCircle n r = closedStroke . curvedPath . bezierCircle n r
 -- | Supplied point is center. Circle is drawn with Bezier 
 -- curves. 
 --
-filledCircle :: Floating u => Int -> u -> LocImage u
+filledCircle :: Floating u => Int -> u -> LocGraphic u
 filledCircle n r = filledPath . curvedPath . bezierCircle n r
 
 
 -- | Supplied point is center. Circle is drawn with Bezier 
 -- curves. 
 --
-borderedCircle :: Floating u => Int -> u -> LocImage u
+borderedCircle :: Floating u => Int -> u -> LocGraphic u
 borderedCircle n r = borderedPath . curvedPath . bezierCircle n r
 
 
@@ -218,12 +218,12 @@ borderedCircle n r = borderedPath . curvedPath . bezierCircle n r
 -- For stroked circles that can be scaled, consider making the 
 -- circle from Bezier curves.
 --
-strokedDisk :: Num u => u -> LocImage u
+strokedDisk :: Num u => u -> LocGraphic u
 strokedDisk radius = strokedEllipse radius radius
 
 
-filledDisk :: Num u => u -> LocImage u
+filledDisk :: Num u => u -> LocGraphic u
 filledDisk radius = filledEllipse radius radius
 
-borderedDisk :: Num u => u -> LocImage u
+borderedDisk :: Num u => u -> LocGraphic u
 borderedDisk radius = borderedEllipse radius radius
