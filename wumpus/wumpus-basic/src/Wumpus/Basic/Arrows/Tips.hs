@@ -59,7 +59,7 @@ tripoints triang xchar_height theta tip = (tip .-^ v1, tip .-^ v2)
 
 triAng :: (Floating u, Real u, FromPtSize u)
       => Radian 
-      -> (PrimPath u -> DrawingAttr -> Primitive u) 
+      -> (PrimPath u -> DrawingAttr -> PrimElement u) 
       -> Radian -> DrawingAttr -> GraphicF u
 triAng ang fn theta attr pt = wrapG $ fn (vertexPath [pt,u,v]) attr
   where

@@ -10,8 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Elementary functions for the Graphic type.
---
+-- Elementary functions for the Image type.
 --
 --------------------------------------------------------------------------------
 
@@ -21,13 +20,19 @@ module Wumpus.Basic.Graphic.Graphic
   , drawImageU
 
 
+  , openStroke
+  , closedStroke
+  , filledPath
+  , borderedPath
+  , textline
+  , strokedEllipse
+  , filledEllipse  
+  , borderedEllipse
 
   , supplyPt
   , localDrawingContext
   , localPoint
-
-  , RectOrientation(..)
-  , textline
+  , displace
 
   , straightLine
 
@@ -40,84 +45,83 @@ module Wumpus.Basic.Graphic.Graphic
   , filledCircle
   , borderedCircle
   
-  , disk
+  , strokedDisk
+  , filledDisk
+  , borderedDisk
+  
 
   ) where
 
 import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Primitive
+import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Utils.HList
 
-import qualified Wumpus.Core            as WC   -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
-drawImage :: (Real u, Floating u, WC.FromPtSize u) 
-          => DrawingContext -> Image u -> Maybe (WC.Picture u)
+drawImage :: (Real u, Floating u, FromPtSize u) 
+          => DrawingContext -> Image u -> Maybe (Picture u)
 drawImage ctx img = post $ runImage ctx img
   where
     post hf = let xs = toListH hf in 
-              if null xs then Nothing else Just (WC.frame xs)
+              if null xs then Nothing else Just (frame xs)
 
-drawImageU :: (Real u, Floating u, WC.FromPtSize u) 
-          => DrawingContext -> Image u -> WC.Picture u
+drawImageU :: (Real u, Floating u, FromPtSize u) 
+          => DrawingContext -> Image u -> Picture u
 drawImageU ctx img = post $ runImage ctx img
   where
     post hf = let xs = toListH hf in 
-              if null xs then errK else WC.frame xs
+              if null xs then errK else frame xs
     errK    = error "drawImageU - empty Image."
 
 
+-- having the same names is actually not so useful...
 
--- BIG NOTICE - there is some value in redoing the Core.Picture 
--- interface with extraction from DrawingContext, it should clear
--- up a lot of this code...
-
-
-ostroke :: Num u => WC.PrimPath u -> Image u
-ostroke path = (\rgb attr -> wrapH $ WC.ostroke rgb attr path) 
-                  <$> asks primary_colour <*> asks stroke_props
+openStroke :: Num u => PrimPath u -> Image u
+openStroke pp = (\rgb attr -> wrapH $ ostroke rgb attr pp) 
+                    <$> asksObj primary_colour <*> asksObj stroke_props
 
 
-cstroke :: Num u => WC.PrimPath u -> Image u
-cstroke path = (\rgb attr -> wrapH $ WC.cstroke rgb attr path) 
-                  <$> asks primary_colour <*> asks stroke_props
+closedStroke :: Num u => PrimPath u -> Image u
+closedStroke pp = (\rgb attr -> wrapH $ cstroke rgb attr pp) 
+                      <$> asksObj primary_colour <*> asksObj stroke_props
 
 
-fill :: Num u => WC.PrimPath u -> Image u
-fill path = (\rgb -> wrapH $ WC.fill rgb path) 
-              <$> asks secondary_colour
+filledPath :: Num u => PrimPath u -> Image u
+filledPath pp = (\rgb -> wrapH $ fill rgb pp) 
+                    <$> asksObj secondary_colour
 
 
-bordered :: Num u => WC.PrimPath u -> Image u
-bordered path = (\frgb attr srgb -> wrapH $ WC.bordered frgb attr srgb path) 
-                  <$> asks secondary_colour <*> asks stroke_props 
-                  <*> asks primary_colour
+borderedPath :: Num u => PrimPath u -> Image u
+borderedPath pp = 
+    (\frgb attr srgb -> wrapH $ fillStroke frgb attr srgb pp) 
+        <$> asksObj secondary_colour <*> asksObj stroke_props <*> asksObj primary_colour
 
 
-textlabel :: Num u => String -> CFImage u
-textlabel ss baseline_left =
-    (\(rgb,attr) -> wrapH $ WC.textlabel rgb attr ss baseline_left) 
-       <$> asks textAttr
+textline :: Num u => String -> LocImage u
+textline ss baseline_left =
+    (\(rgb,attr) -> wrapH $ textlabel rgb attr ss baseline_left) 
+       <$> asksObj textAttr
 
 
-strokeEllipse :: Num u => u -> u -> CFImage u
-strokeEllipse hw hh pt =  
-    (\rgb attr -> wrapH $ WC.strokeEllipse rgb attr hw hh pt) 
-       <$> asks primary_colour <*> asks stroke_props
+strokedEllipse :: Num u => u -> u -> LocImage u
+strokedEllipse hw hh pt =  
+    (\rgb attr -> wrapH $ strokeEllipse rgb attr hw hh pt) 
+       <$> asksObj primary_colour <*> asksObj stroke_props
 
-fillEllipse :: Num u => u -> u -> CFImage u
-fillEllipse hw hh pt =  
-    (\rgb -> wrapH $ WC.fillEllipse rgb hw hh pt) 
-       <$> asks secondary_colour
+filledEllipse :: Num u => u -> u -> LocImage u
+filledEllipse hw hh pt =  
+    (\rgb -> wrapH $ fillEllipse rgb hw hh pt) 
+       <$> asksObj secondary_colour
 
-borderedEllipse :: Num u => u -> u -> CFImage u
+borderedEllipse :: Num u => u -> u -> LocImage u
 borderedEllipse hw hh pt = 
-    (\frgb attr srgb -> wrapH $ WC.borderedEllipse frgb attr srgb hw hh pt) 
-        <$> asks secondary_colour <*> asks stroke_props 
-        <*> asks primary_colour
+    (\frgb attr srgb -> wrapH $ fillStrokeEllipse frgb attr srgb hw hh pt) 
+        <$> asksObj secondary_colour <*> asksObj stroke_props 
+        <*> asksObj primary_colour
 
 
 --------------------------------------------------------------------------------
@@ -126,126 +130,81 @@ borderedEllipse hw hh pt =
 -- | Supplying a point to a 'CFGraphic' takes it to a regular 
 -- 'Graphic'.
 --
-supplyPt :: WC.Point2 u -> CFImage u -> Image u
+supplyPt :: Point2 u -> LocImage u -> Image u
 supplyPt pt gf = gf pt 
 
 
-
---------------------------------------------------------------------------------
-
-displace :: Num u => u -> u -> WC.Point2 u -> WC.Point2 u
-displace dx dy (WC.P2 x y) = WC.P2 (x+dx) (y+dy)
+displace :: Num u => u -> u -> Point2 u -> Point2 u
+displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 
 localDrawingContext :: 
-    (DrawingContext -> DrawingContext) -> CFImage u -> CFImage u
-localDrawingContext upd img = \pt -> localCtx upd (img pt) 
+    (DrawingContext -> DrawingContext) -> LocImage u -> LocImage u
+localDrawingContext upd img = \pt -> localCtxObj upd (img pt) 
 
-localPoint :: (WC.Point2 u -> WC.Point2 u) -> CFImage u -> CFImage u
+localPoint :: (Point2 u -> Point2 u) -> LocImage u -> LocImage u
 localPoint upd gf = \pt -> gf (upd pt)
-
--- some things need to be monadic...
-contextualPoint :: (DrawingContext -> a) 
-               -> (a -> WC.Point2 u -> WC.Point2 u) 
-               -> CFImage u 
-               -> CFImage u
-contextualPoint extr upd img pt = asks extr >>= \a -> img (upd a pt)
-
-
-straightLine :: Fractional u => WC.Vec2 u -> CFImage u
-straightLine v = \pt -> ostroke $ WC.path pt [WC.lineTo $ pt .+^ v]
-           
-
-
--- Note - its reasonable to want text (and rectangles) drawn in 
--- two ways:
---
--- 1 - supplied point is center
--- 2 - supplied point is bottom left (baseline left for text)
---
-
-data RectOrientation = RECT_LLC | RECT_CTR
-  deriving (Eq,Ord,Show)
-
-
-
-
-textline :: (Fractional u, WC.FromPtSize u)
-           => RectOrientation -> String -> CFImage u
-textline RECT_LLC ss = textlabel ss
-textline RECT_CTR ss = 
-    contextualPoint (textDimensions ss) 
-                    (\(w,h) -> displace (0.5 * (-w)) (0.5 * (-h)))
-                    (textlabel ss)
-
 
 
 --------------------------------------------------------------------------------
--- Rectangles
 
-rectangleCtr :: Fractional u => u -> u -> WC.Point2 u -> WC.PrimPath u
-rectangleCtr w h ctr = rectangleBL w h (ctr .-^ WC.vec (0.5*w) (0.5*h))
+
+straightLine :: Fractional u => Vec2 u -> LocImage u
+straightLine v = \pt -> openStroke $ path pt [lineTo $ pt .+^ v]
+           
 
 -- | Supplied point is /bottom-left/.
 --
-rectangleBL :: Num u => u -> u -> WC.Point2 u -> WC.PrimPath u
-rectangleBL w h bl = WC.path bl [ WC.lineTo br, WC.lineTo tr, WC.lineTo tl ]
+rectangle :: Num u => u -> u -> Point2 u -> PrimPath u
+rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
   where
-    br = bl .+^ WC.hvec w
-    tr = br .+^ WC.vvec h
-    tl = bl .+^ WC.vvec h 
+    br = bl .+^ hvec w
+    tr = br .+^ vvec h
+    tl = bl .+^ vvec h 
 
 
 
--- | Supplied point is center.
+-- | Supplied point is /bottom left/.
 --
-strokedRectangle :: Fractional u => u -> u -> CFImage u
-strokedRectangle w h pt = 
-    (\rgb attr -> wrapH $ WC.cstroke rgb attr $ rectangleCtr w h pt)
-      <$> asks primary_colour <*> asks stroke_props
+strokedRectangle :: Fractional u => u -> u -> LocImage u
+strokedRectangle w h = closedStroke . rectangle w h
 
 
 
--- | Supplied point is center.
+-- | Supplied point is /bottom left/.
 --
-filledRectangle :: Fractional u => u -> u -> CFImage u
-filledRectangle w h pt = 
-    (\rgb -> wrapH $ WC.fill rgb $ rectangleCtr w h pt)
-       <$> asks secondary_colour
+filledRectangle :: Fractional u => u -> u -> LocImage u
+filledRectangle w h = filledPath . rectangle w h
   
 
--- | Supplied point is center.
+-- | Supplied point is /bottom left/.
 --
-borderedRectangle :: Fractional u => u -> u -> CFImage u
-borderedRectangle w h pt = 
-    (\frgb sa srgb -> wrapH $ WC.bordered srgb sa frgb $ rectangleCtr w h pt)
-      <$> asks primary_colour <*> asks stroke_props <*> asks secondary_colour
+borderedRectangle :: Fractional u => u -> u -> LocImage u
+borderedRectangle w h = borderedPath . rectangle w h
 
 --------------------------------------------------------------------------------
 
 
-strokedCircle :: Floating u => Int -> u -> CFImage u
-strokedCircle n r pt = 
-    (\rgb attr -> wrapH $ WC.cstroke rgb attr 
-                        $ WC.curvedPath $ WC.bezierCircle n r pt)
-      <$> asks primary_colour <*> asks stroke_props
+-- | Supplied point is center. Circle is drawn with Bezier 
+-- curves. 
+--
+strokedCircle :: Floating u => Int -> u -> LocImage u
+strokedCircle n r = closedStroke . curvedPath . bezierCircle n r
 
 
 
-filledCircle :: Floating u => Int -> u -> CFImage u
-filledCircle n r pt = 
-    (\rgb -> wrapH $ WC.fill rgb $ WC.curvedPath $ WC.bezierCircle n r pt)
-        <$> asks secondary_colour
-      
+-- | Supplied point is center. Circle is drawn with Bezier 
+-- curves. 
+--
+filledCircle :: Floating u => Int -> u -> LocImage u
+filledCircle n r = filledPath . curvedPath . bezierCircle n r
 
 
-borderedCircle :: Floating u => Int -> u -> CFImage u
-borderedCircle n r pt = 
-    (\frgb sa srgb -> wrapH $ WC.bordered srgb sa frgb
-                            $ WC.curvedPath $ WC.bezierCircle n r pt)
-      <$> asks primary_colour <*> asks stroke_props
-                              <*> asks secondary_colour
-      
+-- | Supplied point is center. Circle is drawn with Bezier 
+-- curves. 
+--
+borderedCircle :: Floating u => Int -> u -> LocImage u
+borderedCircle n r = borderedPath . curvedPath . bezierCircle n r
 
 
 -- | 'disk' is drawn with Wumpus-Core\'s @ellipse@ primitive.
@@ -259,5 +218,12 @@ borderedCircle n r pt =
 -- For stroked circles that can be scaled, consider making the 
 -- circle from Bezier curves.
 --
-disk ::  Fractional u => u -> CFImage u
-disk radius = fillEllipse radius radius
+strokedDisk :: Num u => u -> LocImage u
+strokedDisk radius = strokedEllipse radius radius
+
+
+filledDisk :: Num u => u -> LocImage u
+filledDisk radius = filledEllipse radius radius
+
+borderedDisk :: Num u => u -> LocImage u
+borderedDisk radius = borderedEllipse radius radius
