@@ -4,8 +4,10 @@ module Path01 where
 
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Graphic.Drawing
+import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Graphic
+import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
@@ -22,13 +24,22 @@ main = createDirectoryIfMissing True "./out/"
     >> writeEPS_latin1 "./out/path01.eps" pic1
     >> writeSVG_latin1 "./out/path01.svg" pic1 
 
-
-std_attr :: DrawingAttr
-std_attr = standardAttr 19
+-- note draws from background first
 
 pic1 :: Picture Double
-pic1 = drawGraphicU $ 
-           barb90 0 std_attr (P2 110 0)
+pic1 = execDrawing (standardContext 19) $ 
+    do { draw circle1
+       ; draw curve3
+       ; draw curve2
+       ; draw curve1
+       ; draw eastUpWest
+       ; drawAt (P2 110 0) (barb90 0)
+       ; drawAt (P2 120 0) (barb60 0)
+       ; drawAt (P2 130 0) (barb45 0)
+       ; return ()
+       }
+    
+{-
          . barb60 0 std_attr (P2 120 0)
          . barb45 0 std_attr (P2 130 0)
          . eastUpWest
@@ -36,36 +47,38 @@ pic1 = drawGraphicU $
          . curve2
          . curve3
          . circle1
+-}
+
+
          
 curve1 :: Graphic Double
-curve1 = wrapG $ ostroke (strokeAttr std_attr) $ curvedPath xs
+curve1 = openStroke $ curvedPath xs
   where
     xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 
 
-red_attr :: DrawingAttr
-red_attr = std_attr { stroke_colour = red }
 
 curve2 :: Graphic Double
-curve2 = wrapG $ ostroke (strokeAttr red_attr) $ toPrimPathU path1
+curve2 =  localCtxObj (primaryColour red) (openStroke $ toPrimPathU path_one)
   where
-    path1 = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
+    path_one = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
 
-blue_attr :: DrawingAttr
-blue_attr = std_attr { stroke_colour = blue }
 
 curve3 :: Graphic Double
-curve3 = wrapG $ ostroke (strokeAttr blue_attr) $ toPrimPathU $ shorten 10 path1
+curve3 = localCtxObj (primaryColour blue) 
+                     (openStroke $ toPrimPathU $ shorten 10 path1)
+
 
 path1 :: Path Double
 path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = filledCircle (yellow) 2 60 zeroPt
+circle1 = localCtxObj (secondaryColour yellow) (filledCircle 2 60 zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
+
 
 -- Note - the distance from the barb ends to the curve is not 
 -- evenly spaced
@@ -75,7 +88,8 @@ cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 --
 
 eastUpWest :: Graphic Double
-eastUpWest = wrapG $ ostroke (strokeAttr blue_attr) $ mkP1 (P2 140 0) (P2 160 20)
+eastUpWest = localCtxObj (primaryColour blue) 
+                         (openStroke $ mkP1 (P2 140 0) (P2 160 20))
 
 
 -- Potentially this may introduce the style that using AGraphic2 
@@ -87,3 +101,4 @@ eastUpWest = wrapG $ ostroke (strokeAttr blue_attr) $ mkP1 (P2 140 0) (P2 160 20
 mkP1 :: Floating u => Point2 u -> Point2 u -> PrimPath u
 mkP1 start end = toPrimPathU $ execPath start $ 
                     horizontalVertical (end .+^ hvec 20) >> lineto end
+

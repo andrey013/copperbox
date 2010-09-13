@@ -104,11 +104,10 @@ otri45 :: (Floating u, Real u, FromPtSize u)
       => Radian -> LocGraphic u
 otri45 theta = triAng (pi/4) theta closedStroke
 
-
 barbAng :: (Floating u, Real u, FromPtSize u)
       => Radian -> Radian -> LocGraphic u
 barbAng ang theta pt = 
-    tripoints ang theta pt >>= \(u,v) -> openStroke (vertexPath [pt,u,v])
+    tripoints ang theta pt >>= \(u,v) -> openStroke (vertexPath [u,pt,v])
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) 
