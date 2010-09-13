@@ -21,7 +21,7 @@ module Wumpus.Basic.Graphic.Image
   , Point2T
   , DrawingObject(..)
   , LocDrawingObject
-
+  , liftDrawingObject 
   , Graphic
   , appendGraphic
   
@@ -101,6 +101,10 @@ instance Monad DrawingObject where
   ma >>= k  = DrawingObject $ \ctx -> let a = getDrawingObject ma ctx
                                       in (getDrawingObject . k) a ctx 
 
+
+liftDrawingObject :: a -> DrawingObject a
+liftDrawingObject a = DrawingObject $ \ _ctx -> a 
+
 -- Simple drawing - representing one or more prims
 
 type Graphic u = DrawingObject (HPrim u)
@@ -150,7 +154,7 @@ intoImage f g = DrawingObject $ \ctx ->
 
 intoLocImage :: LocDrawingObject u a -> LocGraphic u -> LocImage u a
 intoLocImage f g pt = DrawingObject $ \ctx -> 
-    let a = getDrawingObject (f pt) ctx; 
+    let a = getDrawingObject (f pt) ctx
         o = getDrawingObject (g pt) ctx 
     in (a,o)
 
@@ -169,6 +173,6 @@ type ConnImage u a = Point2 u -> Point2 u -> Image u a
 
 intoConnImage :: ConnDrawingObject u a -> ConnGraphic u -> ConnImage u a
 intoConnImage f g p1 p2 = DrawingObject $ \ctx -> 
-    let a = getDrawingObject (f p1 p2) ctx; 
+    let a = getDrawingObject (f p1 p2) ctx
         o = getDrawingObject (g p1 p2) ctx 
     in (a,o)

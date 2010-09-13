@@ -21,7 +21,7 @@ module Wumpus.Basic.Arrows
   ( 
     line
 
-{-
+
   , arrowTri90
   , arrowTri60
   , arrowTri45
@@ -34,12 +34,12 @@ module Wumpus.Basic.Arrows
   , arrowBarb45
     
   , arrowPerp
--}
+
   ) where
 
 import Wumpus.Basic.Arrows.Tips
--- import Wumpus.Basic.Graphic
 import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Graphic
 import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
@@ -47,10 +47,7 @@ import Wumpus.Basic.Utils.Intersection ( langle )
 
 import Wumpus.Core                      -- package: wumpus-core
 
-
-
-arrowWidth :: FromPtSize u => DrawingObject u 
-arrowWidth = asksObj lowerxHeight
+import Control.Applicative
 
 
 liftPathF :: PathF u -> ConnDrawingObject u (Path u)
@@ -60,103 +57,113 @@ line :: Num u => PathF u -> ConnImage u (Path u)
 line pathF = intoConnImage (liftPathF pathF) (pathGraphic pathF)
 
 
-{-
-
-arrowTri90 :: (Real u, Floating u, FromPtSize u) 
-           => PathF u -> AConnector u (Path u)
-arrowTri90 pathF = \p0 p1 -> 
-    AGraphic (\attr () -> triTipRight pathF tri90 p0 p1 attr) 
-             (\_    () -> pathF p0 p1)
-
-arrowTri60 :: (Real u, Floating u, FromPtSize u) 
-           => PathF u -> AConnector u (Path u)
-arrowTri60 pathF = \p0 p1 ->
-    AGraphic (\attr () -> triTipRight pathF tri60 p0 p1 attr) 
-             (\_    () -> pathF p0 p1)
- 
-arrowTri45 :: (Real u, Floating u, FromPtSize u) 
-           => PathF u -> AConnector u (Path u)
-arrowTri45 pathF = \p0 p1 ->
-    AGraphic (\attr () -> triTipRight pathF tri45 p0 p1 attr) 
-             (\_    () -> pathF p0 p1)
-
-arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowOTri90 pathF = \p0 p1 ->
-    AGraphic (\attr () -> triTipRight pathF otri90 p0 p1 attr) 
-             (\_    () -> pathF p0 p1)
-
-arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowOTri60 pathF = \p0 p1 -> 
-    AGraphic (\attr () -> triTipRight pathF otri60 p0 p1 attr) 
-             (\_    () -> pathF p0 p1)
+-- Here the path is already shortened - we have accounted for the
+-- points already, so it is just a graphic. 
+lineTipR :: Num u => Path u -> Graphic u -> Graphic u
+lineTipR bpath tip = openStroke (toPrimPathU bpath) `appendGraphic` tip
+   
 
 
-arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowOTri45 pathF = \p0 p1 ->
-    AGraphic (\attr () -> triTipRight pathF otri45 p0 p1 attr)
-             (\_    () -> pathF p0 p1)
 
+-- | Returns two items:
+-- 
+-- 1. Shorten the line by the line width - this stops the path
+-- tip puncturing the arrow head (particulary visible on open 
+-- triangle tips).
+-- 
+-- 2. Calculate the direction back along the line at half the 
+-- lower_x_height - this gets a good angle for the tip on curved
+-- path segments.
+--
+rightPathProps :: (Real u, Floating u, FromPtSize u) 
+               => PathF u -> ConnDrawingObject u (Path u,Radian)
+rightPathProps pathF p1 p2 = 
+    (\h sw -> (shortenPath h sw, calcTheta h))
+      <$> asksObj lowerxHeight <*> asksObj (line_width . stroke_props)  
+  where
+    long_path          = pathF p1 p2  
+    shortenPath lxh sw = shortenR (lxh + (realToFrac sw)) long_path 
+    calcTheta lxh      = directionR $ shortenR (0.5*lxh) long_path
 
-arrowBarb90 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowBarb90 pathF = \p0 p1 ->
-    AGraphic (\attr () -> barbTipRight pathF barb90 p0 p1 attr)
-             (\_    () -> pathF p0 p1)
-
-arrowBarb60 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowBarb60 pathF = \p0 p1 ->
-    AGraphic (\attr () -> barbTipRight pathF barb60 p0 p1 attr)
-             (\_    () -> pathF p0 p1)
-
-arrowBarb45 :: (Real u, Floating u, FromPtSize u) 
-            => PathF u -> AConnector u (Path u)
-arrowBarb45 pathF = \p0 p1 ->
-    AGraphic (\attr () -> barbTipRight pathF barb45 p0 p1 attr)
-             (\_    () -> pathF p0 p1)
 
 
 
 triTipRight :: (Real u, Floating u, FromPtSize u) 
-            => PathF u 
-            -> (Radian -> DrawingAttr -> GraphicF u)
-            -> Point2 u -> Point2 u -> DrawingAttr 
-            -> Graphic u 
-triTipRight pathF tipF p0 p1 attr = 
-    pathGraphic short_path attr . tipF theta attr p1
-  where
-    sz              = arrowWidth attr
-    line_unit       = realToFrac $ (line_width $ stroke_props attr)
-    long_path       = pathF p0 p1
-    short_path      = shortenR (sz+line_unit) long_path
-    mid_short_path  = shortenR (0.5*sz) long_path
-    theta           = directionR mid_short_path
-                     
+            => PathF u -> (Radian -> LocGraphic u) -> ConnImage u (Path u) 
+triTipRight pathF tipF p1 p2 =
+    rightPathProps pathF p1 p2          >>= \(shortF,theta) -> 
+    lineTipR shortF (tipF theta p2)     >>= \arrow_pic      ->
+    return (pathF p1 p2, arrow_pic)
 
 
+
+
+-- This version does not /retract/ the path...
+--
 barbTipRight :: (Real u, Floating u, FromPtSize u) 
-             => PathF u 
-             -> (Radian -> DrawingAttr -> GraphicF u)
-             -> Point2 u -> Point2 u -> DrawingAttr 
-             -> Graphic u 
-barbTipRight pathF tipF p0 p1 attr = 
-    pathGraphic long_path attr . tipF theta attr p1
+             => PathF u -> (Radian -> LocGraphic u) -> ConnImage u (Path u)  
+barbTipRight pathF tipF p1 p2 = 
+    rightPathProps pathF p1 p2          >>= \(_,theta) -> 
+    lineTipR path_zero (tipF theta p2)  >>= \arrow_pic  ->
+    return (path_zero, arrow_pic)
   where
-    sz              = arrowWidth attr
-    long_path       = pathF p0 p1
-    mid_short_path  = shortenR (0.5*sz) long_path
-    theta           = directionR mid_short_path
+    path_zero = pathF p1 p2
+
+
+
+arrowTri90 :: (Real u, Floating u, FromPtSize u) 
+           => PathF u -> ConnImage u (Path u)
+arrowTri90 pathF = triTipRight pathF tri90
+ 
+          
+
+
+arrowTri60 :: (Real u, Floating u, FromPtSize u) 
+           => PathF u -> ConnImage u (Path u)
+arrowTri60 pathF = triTipRight pathF tri60
+
+ 
+arrowTri45 :: (Real u, Floating u, FromPtSize u) 
+           => PathF u -> ConnImage u (Path u)
+arrowTri45 pathF = triTipRight pathF tri45
+
+
+arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowOTri90 pathF = triTipRight pathF otri90
+     
+
+arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowOTri60 pathF = triTipRight pathF otri60 
+
+
+
+arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowOTri45 pathF = triTipRight pathF otri45
+
+
+
+arrowBarb90 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowBarb90 pathF = barbTipRight pathF barb90
+
+arrowBarb60 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowBarb60 pathF = barbTipRight pathF barb60
+
+arrowBarb45 :: (Real u, Floating u, FromPtSize u) 
+            => PathF u -> ConnImage u (Path u)
+arrowBarb45 pathF = barbTipRight pathF barb45
+
+
                      
-
 arrowPerp :: (Real u, Floating u, FromPtSize u) 
-          => PathF u -> AConnector u (Path u)
-arrowPerp pathF p0 p1 = AGraphic df mf
+          => PathF u -> ConnImage u (Path u)
+arrowPerp pathF p1 p2 = 
+    lineTipR path_zero perp_tip >>= \arrow_pic -> return (path_zero, arrow_pic)
   where
-    df attr () = let theta = langle p0 p1  in
-                 pathGraphic (pathF p0 p1) attr . perp theta attr p1
-    mf _    () = pathF p0 p1
-
--}
+    path_zero = pathF  p1 p2
+    theta     = langle p1 p2
+    perp_tip  = perp theta p2

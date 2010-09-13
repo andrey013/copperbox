@@ -25,10 +25,10 @@ module Wumpus.Basic.Dots
 
   -- * Dots with anchor points
   , dotCircle
---  , dotDisk
---  , dotSquare
---  , dotChar
---  , dotText
+  , dotDisk
+  , dotSquare
+  , dotChar
+  , dotText
 
   ) where
 
@@ -83,15 +83,6 @@ instance CardinalAnchor2 (DotAnchor u) where
    northwest (DotAnchor _ _ c1) = c1 NW
 
 
-circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
-circleAnchor rad ctr = DotAnchor ctr 
-                                 (\theta -> ctr .+^ (avec theta rad))
-                                 (radialCardinal rad ctr)
-
-circleLDO :: (Floating u, FromPtSize u) => LocDrawingObject u (DotAnchor u)
-circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksObj markHeight 
-
-
 radialCardinal :: Floating u => u -> Point2 u ->  Cardinal -> Point2 u
 radialCardinal rad ctr NN = ctr .+^ (avec (pi/2)     rad) 
 radialCardinal rad ctr NE = ctr .+^ (avec (pi/4)     rad) 
@@ -126,42 +117,49 @@ rectangleAnchor hw hh ctr =
     fn theta =  maybe ctr id $ findIntersect ctr theta 
                              $ rectangleLines ctr hw hh
 
+rectangleLDO :: (Real u, Floating u) 
+             => u -> u -> LocDrawingObject u (DotAnchor u)
+rectangleLDO w h pt = liftDrawingObject $ rectangleAnchor (w*0.5) (h*0.5) pt
+
+
+circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
+circleAnchor rad ctr = DotAnchor ctr 
+                                 (\theta -> ctr .+^ (avec theta rad))
+                                 (radialCardinal rad ctr)
+
+circleLDO :: (Floating u, FromPtSize u) => LocDrawingObject u (DotAnchor u)
+circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksObj markHeight 
+
+
+
+--------------------------------------------------------------------------------
 
 type DotLocImage u = LocImage u (DotAnchor u) 
 
 
 dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
 dotCircle = intoLocImage circleLDO BD.dotCircle
---   where
---    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
-{-
-
-dotDisk :: (Floating u, FromPtSize u) => ANode u (DotAnchor u)
-dotDisk = AGraphic (BD.dotDisk) mkF
-  where
-    mkF attr pt = circleAnchor (0.5 * markHeight attr) pt
 
 
-dotSquare :: (Floating u, Real u, FromPtSize u) => ANode u (DotAnchor u)
-dotSquare = AGraphic (BD.dotSquare) mkF
-  where
-    mkF attr pt = let h = markHeight attr in
-                  rectangleAnchor (0.5*h) (0.5*h) pt
+dotDisk :: (Floating u, FromPtSize u) => DotLocImage u
+dotDisk = intoLocImage circleLDO BD.dotDisk
+
+
+dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
+dotSquare pt = asksObj markHeight >>= \ h ->
+               intoLocImage (rectangleLDO h h) BD.dotSquare pt
+
 
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
-        => Char -> ANode u (DotAnchor u)
-dotChar ch = dotText [ch]
+        => Char -> DotLocImage u
+dotChar ch pt = asksObj (textDimensions [ch]) >>= \(w,h) -> 
+                intoLocImage (rectangleLDO w h) (BD.dotChar ch) pt
+
 
 dotText :: (Floating u, Real u, FromPtSize u) 
-        => String -> ANode u (DotAnchor u) 
-dotText str = AGraphic (BD.dotText str) mkF
-  where
-    mkF attr pt = let (w,h) = textDimensions str attr in
-                  rectangleAnchor (0.5*w) (0.5*h) pt
-
--}
-
-
+        => String -> DotLocImage u 
+dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
+                intoLocImage (rectangleLDO w h) (BD.dotText ss) pt

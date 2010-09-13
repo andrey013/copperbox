@@ -37,6 +37,8 @@ module Wumpus.Basic.Graphic.Drawing
   , draw
   , drawAt
   , drawAtImg
+  , drawConn
+  , drawConnImg
   , node
 
   -- temporarily located here
@@ -214,7 +216,19 @@ drawAtImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m)
 drawAtImg pt imgL = askCtx >>= \ctx -> 
                     let (a,o) = runImage ctx (imgL pt)
                     in trace o >> return a
+
+
      
+drawConn :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+         => Point2 u -> Point2 u -> ConnGraphic u -> m ()
+drawConn p1 p2 connL = askCtx >>= \ctx -> trace (runGraphic ctx (connL p1 p2))
+     
+drawConnImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+            => Point2 u -> Point2 u -> ConnImage u a -> m a
+drawConnImg p1 p2 connL = askCtx >>= \ctx -> 
+                          let (a,o) = runImage ctx (connL p1 p2)
+                          in trace o >> return a
+            
 
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
