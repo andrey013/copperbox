@@ -33,8 +33,8 @@ module Wumpus.Basic.Paths
 
   ) where
 
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.Graphic.Graphic
+import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
 
@@ -53,9 +53,8 @@ connectS = \p0 p1 -> execPath p0 $ lineto p1
 
 -- This one might be more useful...
 
-pathGraphic :: Num u => Path u -> DrawingAttr -> Graphic u
-pathGraphic bpath attr = 
-    wrapG $ ostroke (stroke_colour attr) (stroke_props attr) $ toPrimPathU bpath
+pathGraphic :: Num u => PathF u -> ConnGraphic u
+pathGraphic bpath = \p1 p2 -> openStroke $ toPrimPathU $ bpath p1 p2
 
 
 

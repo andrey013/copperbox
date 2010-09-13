@@ -21,6 +21,7 @@ module Wumpus.Basic.Arrows
   ( 
     line
 
+{-
   , arrowTri90
   , arrowTri60
   , arrowTri45
@@ -33,13 +34,13 @@ module Wumpus.Basic.Arrows
   , arrowBarb45
     
   , arrowPerp
-
+-}
   ) where
 
 import Wumpus.Basic.Arrows.Tips
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+-- import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Image
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Utils.Intersection ( langle )
@@ -48,19 +49,18 @@ import Wumpus.Core                      -- package: wumpus-core
 
 
 
-
-arrowWidth :: FromPtSize u => DrawingAttr -> u 
-arrowWidth = fromPtSize . xcharHeight . font_size . font_props
-
-
-line :: Num u => PathF u -> AConnector u (Path u)
-line pathF p0 p1 = AGraphic df mf
-  where
-    df attr () = pathGraphic (pathF p0 p1) attr
-    mf _    () = pathF p0 p1
+arrowWidth :: FromPtSize u => DrawingObject u 
+arrowWidth = asksObj lowerxHeight
 
 
+liftPathF :: PathF u -> ConnDrawingObject u (Path u)
+liftPathF pF p1 p2 = DrawingObject $ \ _ -> pF p1 p2
 
+line :: Num u => PathF u -> ConnImage u (Path u)
+line pathF = intoConnImage (liftPathF pathF) (pathGraphic pathF)
+
+
+{-
 
 arrowTri90 :: (Real u, Floating u, FromPtSize u) 
            => PathF u -> AConnector u (Path u)
@@ -159,3 +159,4 @@ arrowPerp pathF p0 p1 = AGraphic df mf
                  pathGraphic (pathF p0 p1) attr . perp theta attr p1
     mf _    () = pathF p0 p1
 
+-}

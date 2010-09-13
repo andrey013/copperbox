@@ -71,6 +71,9 @@ description:
     calculated with the new function @charCount@ which takes into 
     account escaped characters.
   .
+  * Added @yellow@, @cyan@ and @magenta@ to the predefined 
+    colours in @Core.Colour@.
+  .
   0.30.0 to 0.31.0:
   .
   * Extended the label type to optionally handle horizontal

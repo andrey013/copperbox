@@ -20,8 +20,9 @@ module Wumpus.Basic.Graphic.Image
     HPrim
   , Point2T
   , DrawingObject(..)
-  , Graphic
+  , LocDrawingObject
 
+  , Graphic
   , appendGraphic
   
   , asksObj
@@ -29,13 +30,18 @@ module Wumpus.Basic.Graphic.Image
 
   , runGraphic
 
-  , LocDrawingObject
   , LocGraphic
   , Image
   , LocImage
   , runImage
   , intoImage
   , intoLocImage
+
+  , ConnDrawingObject
+  , ConnGraphic
+  , ConnImage
+
+  , intoConnImage
 
   ) where
 
@@ -72,7 +78,8 @@ type Point2T u = Point2 u -> Point2 u
 newtype DrawingObject a = DrawingObject { 
           getDrawingObject :: DrawingContext -> a }
 
-type Graphic u = DrawingObject (HPrim u)
+type LocDrawingObject u a = Point2 u -> DrawingObject a 
+
 
 
 instance Functor DrawingObject where
@@ -94,6 +101,10 @@ instance Monad DrawingObject where
   ma >>= k  = DrawingObject $ \ctx -> let a = getDrawingObject ma ctx
                                       in (getDrawingObject . k) a ctx 
 
+-- Simple drawing - representing one or more prims
+
+type Graphic u = DrawingObject (HPrim u)
+
 appendGraphic :: Graphic u -> Graphic u -> Graphic u
 appendGraphic gf1 gf2 = DrawingObject $ \ctx ->          
       (getDrawingObject gf1 ctx) `appendH` (getDrawingObject gf2 ctx)
@@ -113,8 +124,6 @@ runGraphic ctx gf = (getDrawingObject gf) ctx
 
 --------------------------------------------------------------------------------
 
-
-type LocDrawingObject u a = Point2 u -> DrawingObject a
 
 -- | Commonly graphics take a start point as well as a drawing 
 -- context.
@@ -141,4 +150,25 @@ intoImage f g = DrawingObject $ \ctx ->
 
 intoLocImage :: LocDrawingObject u a -> LocGraphic u -> LocImage u a
 intoLocImage f g pt = DrawingObject $ \ctx -> 
-    let a = getDrawingObject (f pt) ctx; o = getDrawingObject (g pt) ctx in (a,o)
+    let a = getDrawingObject (f pt) ctx; 
+        o = getDrawingObject (g pt) ctx 
+    in (a,o)
+
+type ConnDrawingObject u a = Point2 u -> Point2 u -> DrawingObject a
+
+-- | ConnGraphic is a connector drawn between two points 
+-- contructing a Graphic.
+--
+type ConnGraphic u = Point2 u -> Point2 u -> Graphic u
+
+-- | ConImage is a connector drawn between two points 
+-- constructing an Image.
+--
+type ConnImage u a = Point2 u -> Point2 u -> Image u a
+
+
+intoConnImage :: ConnDrawingObject u a -> ConnGraphic u -> ConnImage u a
+intoConnImage f g p1 p2 = DrawingObject $ \ctx -> 
+    let a = getDrawingObject (f p1 p2) ctx; 
+        o = getDrawingObject (g p1 p2) ctx 
+    in (a,o)

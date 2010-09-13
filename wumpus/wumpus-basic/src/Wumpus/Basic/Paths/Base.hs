@@ -43,6 +43,7 @@ module Wumpus.Basic.Paths.Base
     
   ) where
 
+
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
@@ -52,7 +53,9 @@ import Data.Maybe
 import Data.Sequence ( Seq, ViewL(..), viewl, (|>)  )
 import qualified Data.Sequence as S
 
-
+-- Note - path doesn\'t need a drawing context for 
+-- construction...
+--
 type PathF u = Point2 u -> Point2 u -> Path u
 
 

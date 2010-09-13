@@ -32,6 +32,9 @@ module Wumpus.Core.Colour
   , red
   , green
   , blue
+  , yellow
+  , cyan
+  , magenta
     
   ) where
 
@@ -69,25 +72,40 @@ instance Format RGBi where
 
 -- | Black - 0, 0, 0.
 --
-black :: RGBi
-black = RGBi 0 0 0
+black           :: RGBi
+black           = RGBi 0 0 0
 
 -- | White - 255, 255, 255.
 --
-white :: RGBi
-white = RGBi 255 255 255
+white           :: RGBi
+white           = RGBi 255 255 255
 
 -- | Red - 255, 0, 0.
 --
-red :: RGBi
-red = RGBi 255 0 0
+red             :: RGBi
+red             = RGBi 255 0 0
 
 -- | Green - 0, 255, 0.
 --
-green :: RGBi 
-green = RGBi 0 255 0
+green           :: RGBi 
+green           = RGBi 0 255 0
 
 -- | Blue - 0, 0, 255.
 --
-blue :: RGBi
-blue = RGBi 0 0 255
+blue            :: RGBi
+blue            = RGBi 0 0 255
+
+-- | Yellow - 255, 255, 0.
+--
+yellow          :: RGBi
+yellow          = RGBi 255 255 0
+
+-- | Cyan - 0, 255, 255.
+--
+cyan            :: RGBi
+cyan            = RGBi 0 255 255
+
+-- | Magenta - 255, 0, 255.
+--
+magenta         :: RGBi
+magenta         = RGBi 255 0 255

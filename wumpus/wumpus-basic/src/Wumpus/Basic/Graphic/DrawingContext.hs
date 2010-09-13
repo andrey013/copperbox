@@ -14,6 +14,9 @@
 --
 -- Note - this module will replace @Basic.Graphic.DrawingAttr@ 
 -- in due course.
+--
+-- Note - also, synthesized attributes (e.g. lowerxHeight) need a 
+-- naming scheme.
 -- 
 --------------------------------------------------------------------------------
 
@@ -26,6 +29,7 @@ module Wumpus.Basic.Graphic.DrawingContext
   , standardContext
   , textAttr
   , markHeight
+  , lowerxHeight
   , textDimensions
 
   -- * Modifiers 
@@ -76,9 +80,19 @@ textAttr = liftA2 (,) primary_colour font_props
 
 -- | A Mark is consider to be the height of a lowercase letter
 -- in the current font.
---
+-- 
+-- Note better to use xlowerHeight
+-- 
 markHeight :: FromPtSize u => DrawingContext -> u
 markHeight = fromPtSize . xcharHeight . font_size . font_props
+
+
+-- | Height of a lower case \'x\' in Courier.
+--  
+-- \'x\' has no ascenders or descenders. 
+-- 
+lowerxHeight :: FromPtSize u => DrawingContext -> u
+lowerxHeight = fromPtSize . xcharHeight . font_size . font_props
 
 
 -- | textDimensions : text -> DrawingContext -> (width,height)
