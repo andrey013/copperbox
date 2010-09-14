@@ -4,9 +4,7 @@ module Arrow01 where
 
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Arrows
-import Wumpus.Basic.Arrows.Tips
-import Wumpus.Basic.Graphic.Drawing
-import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -21,7 +19,7 @@ main = createDirectoryIfMissing True "./out/"
 
          
 pic1 :: Picture Double 
-pic1 = execDrawing (standardContext 48) $
+pic1 = liftToPictureU $ execDrawing (standardContext 48) $
     do { _ <- drawAtImg (P2 0 0)    dotDisk
        ; _ <- drawAtImg (P2 100 0)  dotDisk
        ; _ <- drawConnImg (P2 0 0) (P2 100 0) (arrowOTri90 connectS)

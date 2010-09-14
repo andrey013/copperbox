@@ -124,6 +124,11 @@ instance Monad m => Monad (DrawingT u m) where
 
 -- TraceM 
 
+-- Note -  @ a `appendH` s @ means the last expression in a 
+-- monadic drawing is top of the Z-order.
+-- 
+-- This rather contradicts Wumpus-Core.
+-- 
 
 instance TraceM (Drawing u) where
   trace a = Drawing $ \_ s -> ((),a `appendH` s)
@@ -148,7 +153,15 @@ instance Monad m => DrawingCtxM (DrawingT u m) where
 
 
 
-
+-- Note - the result type of runDrawing and friends needs more 
+-- thought and may change. 
+--
+-- Possibly a wrapped HPrim that only supports concat and safe
+-- extraction is best.
+--
+-- Or it could generate a picture, but then separate drawings
+-- need the picture combinators to put them together. 
+-- 
 
 
 runDrawing :: DrawingContext -> Drawing u a -> (a, HPrim u)

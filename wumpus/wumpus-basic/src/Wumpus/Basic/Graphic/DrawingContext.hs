@@ -52,7 +52,6 @@ module Wumpus.Basic.Graphic.DrawingContext
 
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -125,7 +124,7 @@ thin_line           :: Double
 thin_line           = 0.5
 
 setLineWidth       :: Double -> DrawingContext -> DrawingContext
-setLineWidth d      = star (\s i -> s { stroke_props = upd i} ) stroke_props
+setLineWidth d      = (\s i -> s { stroke_props = upd i} ) <*> stroke_props
   where
    upd attrs        = attrs { line_width = d }
 
@@ -141,12 +140,12 @@ thin                = setLineWidth thin_line
 
 
 fontface            :: FontFace -> DrawingContext -> DrawingContext
-fontface ff         = star (\s i -> s { font_props = upd i }) font_props
+fontface ff         = (\s i -> s { font_props = upd i }) <*> font_props
   where
     upd (FontAttr sz _) = FontAttr sz ff
 
 fontsize            :: Int -> DrawingContext -> DrawingContext
-fontsize sz         = star (\s i -> s { font_props = upd i }) font_props
+fontsize sz         =  (\s i -> s { font_props = upd i }) <*> font_props
   where
     upd (FontAttr _ ff) = FontAttr sz ff
 
@@ -154,9 +153,8 @@ fontsize sz         = star (\s i -> s { font_props = upd i }) font_props
 
 swapColours :: DrawingContext -> DrawingContext
 swapColours = 
-    star2 (\s a b -> s { primary_colour = b, secondary_colour = a })
-          primary_colour
-          secondary_colour
+    (\s a b -> s { primary_colour = b, secondary_colour = a })
+        <*> primary_colour <*> secondary_colour
 
 primaryColour :: RGBi -> DrawingContext -> DrawingContext
 primaryColour rgb = \s -> s { primary_colour = rgb } 

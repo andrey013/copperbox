@@ -4,10 +4,7 @@ module Path01 where
 
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Graphic.Drawing
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
@@ -27,7 +24,7 @@ main = createDirectoryIfMissing True "./out/"
 -- note draws from background first
 
 pic1 :: Picture Double
-pic1 = execDrawing (standardContext 19) $ 
+pic1 = liftToPictureU $ execDrawing (standardContext 18) $ 
     do { draw circle1
        ; draw curve3
        ; draw curve2
@@ -39,16 +36,6 @@ pic1 = execDrawing (standardContext 19) $
        ; return ()
        }
     
-{-
-         . barb60 0 std_attr (P2 120 0)
-         . barb45 0 std_attr (P2 130 0)
-         . eastUpWest
-         . curve1
-         . curve2
-         . curve3
-         . circle1
--}
-
 
          
 curve1 :: Graphic Double
