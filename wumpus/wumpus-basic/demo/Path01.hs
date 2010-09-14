@@ -21,7 +21,8 @@ main = createDirectoryIfMissing True "./out/"
     >> writeEPS_latin1 "./out/path01.eps" pic1
     >> writeSVG_latin1 "./out/path01.svg" pic1 
 
--- note draws from background first
+-- Note - the current drawing order (Basic.Graphic.Drawing) is not 
+-- necessarily ideal as it does not match Wumpus.Core - frame.
 
 pic1 :: Picture Double
 pic1 = liftToPictureU $ execDrawing (standardContext 18) $ 

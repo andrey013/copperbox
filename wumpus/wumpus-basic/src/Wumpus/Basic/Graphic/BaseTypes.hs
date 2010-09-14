@@ -23,10 +23,16 @@ module Wumpus.Basic.Graphic.BaseTypes
 
     HPrim
   , Point2T
+  , DPoint2T
+
   , DrawingObject(..)
   , LocDrawingObject
+  , DLocDrawingObject
+
   , liftDrawingObject 
+
   , Graphic
+  , DGraphic
   , appendGraphic
   
   , asksObj
@@ -35,15 +41,24 @@ module Wumpus.Basic.Graphic.BaseTypes
   , runGraphic
 
   , LocGraphic
+  , DLocGraphic
+  , appendAt
+
   , Image
+  , DImage
   , LocImage
+  , DLocImage
+
   , runImage
   , intoImage
   , intoLocImage
 
   , ConnDrawingObject
+  , DConnDrawingObject
   , ConnGraphic
+  , DConnGraphic
   , ConnImage
+  , DConnImage
 
   , intoConnImage
 
@@ -83,11 +98,17 @@ type HPrim u = H (PrimElement u)
 --
 type Point2T u = Point2 u -> Point2 u
 
+type DPoint2T = Point2T Double
+
 
 newtype DrawingObject a = DrawingObject { 
           getDrawingObject :: DrawingContext -> a }
 
+
+
 type LocDrawingObject u a = Point2 u -> DrawingObject a 
+
+type DLocDrawingObject a = LocDrawingObject Double a
 
 
 
@@ -118,6 +139,9 @@ liftDrawingObject a = DrawingObject $ \ _ctx -> a
 
 type Graphic u = DrawingObject (HPrim u)
 
+type DGraphic = Graphic Double
+
+
 appendGraphic :: Graphic u -> Graphic u -> Graphic u
 appendGraphic gf1 gf2 = DrawingObject $ \ctx ->          
       (getDrawingObject gf1 ctx) `appendH` (getDrawingObject gf2 ctx)
@@ -146,11 +170,33 @@ runGraphic ctx gf = (getDrawingObject gf) ctx
 --
 type LocGraphic u = Point2 u -> Graphic u
 
+type DLocGraphic = LocGraphic Double
 
+
+
+
+-- | Composition operator for LocGraphic - both LocGraphics
+-- are drawn at the same origin and the results concatenated.
+--
+--
+appendAt :: LocGraphic u -> LocGraphic u -> LocGraphic u
+appendAt f g = \pt -> f pt `appendGraphic` g pt
+
+
+--------------------------------------------------------------------------------
+
+
+-- | Images return a value as well as drawing. A /node/ is a 
+-- typical example - nodes are drawing but the also support 
+-- taking anchor points.
+--
 type Image u a = DrawingObject (a, HPrim u)
+
+type DImage a = Image Double a
 
 type LocImage u a = Point2 u -> Image u a
 
+type DLocImage a = LocImage Double a
 
 runImage :: DrawingContext -> Image u a -> (a,HPrim u)
 runImage ctx img = (getDrawingObject img) ctx
@@ -169,15 +215,21 @@ intoLocImage f g pt = DrawingObject $ \ctx ->
 
 type ConnDrawingObject u a = Point2 u -> Point2 u -> DrawingObject a
 
+type DConnDrawingObject a = ConnDrawingObject Double a
+
 -- | ConnGraphic is a connector drawn between two points 
 -- contructing a Graphic.
 --
 type ConnGraphic u = Point2 u -> Point2 u -> Graphic u
 
+type DConnGraphic = ConnGraphic Double
+
 -- | ConImage is a connector drawn between two points 
 -- constructing an Image.
 --
 type ConnImage u a = Point2 u -> Point2 u -> Image u a
+
+type DConnImage a = ConnImage Double a
 
 
 intoConnImage :: ConnDrawingObject u a -> ConnGraphic u -> ConnImage u a

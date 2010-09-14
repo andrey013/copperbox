@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -30,16 +31,21 @@
 
 module Wumpus.Basic.Monads.TurtleMonad
   (
+    -- * Re-exports
+    module Wumpus.Basic.Monads.TurtleClass
 
-
-    TurtleT
+  -- * Turtle transformer
+  , TurtleT
   , runTurtleT
 
-
-  , module Wumpus.Basic.Monads.TurtleClass
+  -- * Turtle combined with Drawing
+  , TurtleDrawing
+  , runTurtleDrawing
+  , execTurtleDrawing
    
   ) where
 
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Monads.TurtleClass
 
 
@@ -63,6 +69,7 @@ data TurtleState = TurtleState
 newtype TurtleT u m a = TurtleT { 
           getTurtleT :: TurtleConfig u -> TurtleState -> m (a, TurtleState) }
 
+type instance MonUnit (TurtleT u m) = u
 
 -- Functor
 
@@ -110,26 +117,31 @@ runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
 
 
 
-{-
+
 
 ----------------------------------------------------------------------------------
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  askDrawingCtx   = TurtleT $ \_ s -> askDrawingCtx >>= \ ctx -> return (ctx,s)
+  askCtx   = TurtleT $ \_ s -> askCtx >>= \ ctx -> return (ctx,s)
   localCtx ctx mf = TurtleT $ \r s -> localCtx ctx (getTurtleT mf r s)
 
 
 -- This needs undecidable instances...
 
-instance (Monad m, TraceM m i) => TraceM (TurtleT u m) i where
+instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (TurtleT u m) where
   trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
 
 
 --------------------------------------------------------------------------------
 
+
 newtype TurtleDrawing u a = TurtleDrawing { 
           getTurtleDrawing :: TurtleT u (Drawing u) a }
+
+
+type instance MonUnit (TurtleDrawing u) = u
+
 
 instance Functor (TurtleDrawing u) where
   fmap f = TurtleDrawing . fmap f . getTurtleDrawing
@@ -162,7 +174,7 @@ instance TurtleScaleM (TurtleDrawing u) u where
 -- Lifters no longer supplied...
 -- TraceM 
 
-instance TraceM (TurtleDrawing u) u where
+instance TraceM (TurtleDrawing u) where
   trace a = TurtleDrawing $ trace a
 
 
@@ -170,27 +182,24 @@ instance TraceM (TurtleDrawing u) u where
 -- DrawingCtxM
 
 instance DrawingCtxM (TurtleDrawing u) where
-  askDrawingCtx   = TurtleDrawing $ askDrawingCtx
+  askCtx          = TurtleDrawing $ askCtx
   localCtx ctx ma = TurtleDrawing $ localCtx ctx (getTurtleDrawing ma)
 
 
 runTurtleDrawing :: Num u 
                  => TurtleConfig u 
                  -> (Int,Int)
-                 -> DrawingAttr 
+                 -> DrawingContext
                  -> TurtleDrawing u a 
-                 -> (a, Graphic u)
-runTurtleDrawing cfg ogin attr mf = 
-    runDrawing attr ( runTurtleT cfg ogin $ getTurtleDrawing mf)
+                 -> (a, HPrim u)
+runTurtleDrawing cfg ogin ctx mf = 
+    runDrawing ctx ( runTurtleT cfg ogin $ getTurtleDrawing mf)
 
 
 execTurtleDrawing :: Num u 
                   => TurtleConfig u
                   -> (Int,Int) 
-                  -> DrawingAttr 
+                  -> DrawingContext
                   -> TurtleDrawing u a 
-                  -> Graphic u
-execTurtleDrawing cfg ogin attr mf = 
-    snd $ runTurtleDrawing cfg ogin attr mf
-
--}
+                  -> HPrim u
+execTurtleDrawing cfg ogin ctx mf = snd $ runTurtleDrawing cfg ogin ctx mf

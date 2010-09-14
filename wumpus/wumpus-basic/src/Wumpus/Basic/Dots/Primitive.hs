@@ -64,11 +64,6 @@ import Control.Applicative
 --
 
 
--- | Composition operator...
---
---
-cc :: LocGraphic u -> LocGraphic u -> LocGraphic u
-cc f g = \pt -> f pt `appendGraphic` g pt
 
 
 
@@ -119,17 +114,17 @@ dotVLine = standardSize (\h -> axialLine (vvec h))
 
 dotX :: (Fractional u, FromPtSize u) => LocGraphic u
 dotX = standardSize (\h -> let w = 0.75 * h in
-                           axialLine (vec w h) `cc` axialLine (vec (-w) h))
+                           axialLine (vec w h) `appendAt` axialLine (vec (-w) h))
 
 
 
 dotPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-dotPlus = dotVLine `cc` dotHLine
+dotPlus = dotVLine `appendAt` dotHLine
 
 
 dotCross :: (Floating u, FromPtSize u) =>  LocGraphic u
 dotCross = standardSize 
-             (\h -> axialLine (avec ang h) `cc` axialLine (avec (-ang) h))
+             (\h -> axialLine (avec ang h) `appendAt` axialLine (avec (-ang) h))
   where
     ang = pi*0.25  
 
@@ -200,7 +195,7 @@ dotStar pt = asksObj markHeight >>= \h ->
 
 
 dotAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-dotAsterisk = standardSize (\h -> lineF1 h `cc` lineF2 h `cc` lineF3 h)
+dotAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF3 h)
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -210,15 +205,15 @@ dotAsterisk = standardSize (\h -> lineF1 h `cc` lineF2 h `cc` lineF3 h)
 
 
 dotOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-dotOPlus = dotCircle `cc` dotPlus
+dotOPlus = dotCircle `appendAt` dotPlus
 
 
 dotOCross :: (Floating u, FromPtSize u) => LocGraphic u
-dotOCross = dotCircle `cc` dotCross
+dotOCross = dotCircle `appendAt` dotCross
 
 
 dotFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-dotFOCross = dotCross `cc` dotBCircle 
+dotFOCross = dotCross `appendAt` dotBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u

@@ -78,7 +78,6 @@ library
     Wumpus.Basic.Graphic.Chain,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
-    Wumpus.Basic.Graphic.OldPointSupply,
     Wumpus.Basic.Graphic.PrimGraphic,
     Wumpus.Basic.Monads.TurtleClass,
     Wumpus.Basic.Monads.TurtleMonad,
