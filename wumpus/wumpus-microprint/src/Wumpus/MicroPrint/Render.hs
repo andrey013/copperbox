@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -29,18 +30,17 @@ module Wumpus.MicroPrint.Render
   ) where
 
 import Wumpus.Core
-import Wumpus.Core.Colour ( black )
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Monads.TurtleMonad
-import Wumpus.Basic.Utils.HList
 
 import Wumpus.MicroPrint.DrawMonad ( Tile(..), Height ) 
 
-import MonadLib                         -- package: monadLib
 import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
 import Control.Monad
+import Data.List
+
 
 -- | 'DrawWordF' :
 -- @ (num_chars, char_unit_width) * (full_width, full_height) -> rgb -> DGraphicF @
@@ -48,7 +48,7 @@ import Control.Monad
 -- The libraries currently provides two styles - 'greekF' and
 -- 'borderedF'.
 --
-type DrawWordF = (Int,Double) -> (Double,Double) -> RGBi -> DGraphicF
+type DrawWordF = (Int,Double) -> (Double,Double) -> RGBi -> DLocGraphic
 
 
 -- | Style properties for micro-print drawing.
@@ -63,57 +63,80 @@ data MicroPrintConfig = MicroPrintConfig
 -- | Draw the word as a single coloured rectangle.
 --
 greekF :: DrawWordF
-greekF _ (w,h) rgb = wrapG . fill rgb . rectanglePath w h 
+greekF _ (w,h) rgb = 
+    localDrawingContext (secondaryColour rgb) (filledRectangle w h) 
 
 
 -- | Draw the word as a coloured rectangle, with a border grid.
 --
-borderedF :: Double -> DrawWordF
-borderedF ln_width (i,uw) (w,h) rgb = 
-    srect `cc` seps `cc` greekF (i,uw) (w,h) rgb
+borderedF :: DrawWordF
+borderedF (i,uw) (w,h) rgb = concatAt srect seps
   where
-    props = default_stroke_attr { line_width = ln_width }
+    srect :: DLocGraphic
+    srect = localDrawingContext (secondaryColour rgb) (borderedRectangle w h)
 
-    srect :: DGraphicF
-    srect = wrapG . cstroke black props . rectanglePath w h
- 
-    seps  :: DGraphicF
-    seps  = \pt -> unfoldrH (phi pt) (1,uw) 
+    seps  :: [DLocGraphic]
+    seps  = unfoldr phi (1,uw) 
     
-    phi pt (n,hshift) | n >= i    = Nothing
-                      | otherwise = let ln = vline black props h (pt .+^ hvec hshift)
-                                    in  Just (ln,(n+1,hshift+uw))
- 
-vline :: (Num u, Ord u) => RGBi -> StrokeAttr -> u -> Point2 u -> Primitive u
-vline rgb attr h = \pt -> ostroke rgb attr $ path pt [lineTo $ pt .+^ vvec h]
+    phi (n,hshift) | n >= i    = Nothing
+                   | otherwise = let fn = \pt -> vline h (pt .+^ hvec hshift)
+                                 in  Just (fn,(n+1,hshift+uw))
+
+-- Note - this is was hacked to work with recent changes to 
+-- Wumpus-Basic.
+-- 
+-- It needs a rethink.
+--
+
+
+-- Note - this needs attention due to changes to Wumpus-Basic 
+-- Z-Order (hence the use of flip).
+--
+-- Currently it works, but it needs testing at each revision. 
+--
+concatAt :: DLocGraphic -> [DLocGraphic] -> DLocGraphic 
+concatAt x [] = x
+concatAt x xs = foldl' (flip appendAt) x xs
+
+vline :: (Num u, Ord u) => u -> LocGraphic u
+vline h = \pt -> openStroke $ path pt [lineTo $ pt .+^ vvec h]
     
 
 newtype RenderMonad a = RM { 
-          getRM :: ReaderT MicroPrintConfig 
-                 ( TurtleDrawing Double ) a }
+          getRM :: MicroPrintConfig -> TurtleDrawing Double a }
+
+
+type instance MonUnit RenderMonad = Double
 
 instance Functor RenderMonad where
-  fmap f = RM . fmap f . getRM
+  fmap f ma = RM $ \cfg -> fmap f $ getRM ma cfg
 
 instance Monad RenderMonad where
-  return a = RM $ return a
-  m >>= k  = RM $ getRM m >>= getRM . k
+  return a = RM $ \_   -> return a
+  m >>= k  = RM $ \cfg -> getRM m cfg >>= \a -> (getRM . k) a cfg
 
 instance Applicative RenderMonad where
   pure  = return
   (<*>) = ap
 
-instance TraceM RenderMonad Double where
-  trace  h = RM $ lift $ trace h
+instance TraceM RenderMonad where
+  trace  h = RM $ \_ -> trace h
 
-instance ReaderM RenderMonad MicroPrintConfig where
-  ask      = RM $ ask
+instance DrawingCtxM RenderMonad where
+  askCtx          = RM $ \ _ -> askCtx
+  localCtx ctx ma = RM $ \cfg -> localCtx ctx (getRM ma cfg)
+
+ask :: RenderMonad MicroPrintConfig
+ask = RM $ \cfg -> return cfg
+
+asks :: (MicroPrintConfig -> a) -> RenderMonad a
+asks f = f <$> ask
 
 instance TurtleM RenderMonad where
-  getLoc        = RM $ lift $ getLoc
-  setLoc c      = RM $ lift $ setLoc c
-  getOrigin     = RM $ lift $ getOrigin
-  setOrigin o   = RM $ lift $ setOrigin o
+  getLoc        = RM $ \_ -> getLoc
+  setLoc c      = RM $ \_ -> setLoc c
+  getOrigin     = RM $ \_ -> getOrigin
+  setOrigin o   = RM $ \_ -> setOrigin o
 
 
 drawMicroPrint :: MicroPrintConfig -> ([Tile],Height) -> Maybe DPicture
@@ -123,10 +146,10 @@ drawMicroPrint cfg (xs,h) =
     post [] = Nothing
     post ps = Just $ frame ps
 
-runRender :: MicroPrintConfig -> RenderMonad a -> (a, DGraphic)
+runRender :: MicroPrintConfig -> RenderMonad a -> (a, HPrim Double)
 runRender cfg m = 
-    runTurtleDrawing (regularConfig 1) (0,0) (standardAttr 14) 
-         $ runReaderT cfg $ getRM $ m
+    runTurtleDrawing (regularConfig 1) (0,0) (standardContext 14) 
+         $ (getRM m) cfg
 
 interpret :: [Tile] -> RenderMonad ()
 interpret = mapM_ interp1
@@ -140,7 +163,7 @@ interp1 (Word rgb i)  = do
     uw <- asks char_width
     pt <- scaleCurrentCoord
     dF <- asks drawWordF
-    trace (dF (i,uw) (w,h) rgb pt)
+    drawAt pt (dF (i,uw) (w,h) rgb)
     moveRightN i
    
 moveRightN   :: Int -> RenderMonad ()

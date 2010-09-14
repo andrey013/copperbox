@@ -43,7 +43,7 @@ cfg1 = MicroPrintConfig
        { char_height    = 12.0
        , char_width     = 8.0
        , line_spacing   = 3.0
-       , drawWordF      = borderedF 1.0
+       , drawWordF      = borderedF
        }
  
 
