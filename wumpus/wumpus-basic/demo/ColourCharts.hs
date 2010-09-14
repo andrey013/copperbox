@@ -4,9 +4,7 @@ module ColourChart where
 
 import ColourDefns
 
-import Wumpus.Basic.Graphic.Drawing
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
+import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -32,7 +30,7 @@ x11_portrait = makePicture 72 140 all_x11_colours
 
 makePicture :: Int -> Double -> [(String,RGBi)] -> DPicture 
 makePicture row_count unit_width xs = 
-    execDrawing (standardContext 10) $ 
+    liftToPictureU $ execDrawing (standardContext 10) $ 
         downLeftRight row_count unit_width $ mapM_ fn xs
    where
      fn (name,rgb) = colourSample name rgb
@@ -40,7 +38,7 @@ makePicture row_count unit_width xs =
 
 -- Note - cannot use node twice as it increments the point supply.
 --
-colourSample :: String -> RGBi -> PointSupplyT Double (Drawing Double) ()
+colourSample :: String -> RGBi -> ChainT Double (Drawing Double) ()
 colourSample name rgb = localCtx (secondaryColour rgb) $ do 
     { pt <- position 
     ; drawAt pt (borderedRectangle 15 10)
@@ -50,8 +48,8 @@ colourSample name rgb = localCtx (secondaryColour rgb) $ do
 
 
 downLeftRight :: (Monad m, Num u, Ord u) 
-              => Int -> u -> PointSupplyT u m a -> m a
-downLeftRight row_count width ma = runPointSupplyT fn start_pt ma
+              => Int -> u -> ChainT u m a -> m a
+downLeftRight row_count width ma = runChainT fn start_pt ma
   where
     y_top       = 12 * fromIntegral row_count
     start_pt    = P2 0 y_top

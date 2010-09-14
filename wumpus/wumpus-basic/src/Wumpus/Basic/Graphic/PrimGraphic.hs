@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Graphic.Graphic
+-- Module      :  Wumpus.Basic.Graphic.PrimGraphic
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,11 +10,15 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Elementary functions for the Image type.
+-- Elementary functions for the Graphic and LocGraphic types.
+--
+-- The functions here are generally analogeous to the Picture 
+-- API in @Wumpus.Core@, but here they exploit the implicit 
+-- @DrawingContext@.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Graphic.Graphic
+module Wumpus.Basic.Graphic.PrimGraphic
   (
     drawGraphic
   , drawGraphicU
@@ -53,7 +57,7 @@ module Wumpus.Basic.Graphic.Graphic
   ) where
 
 import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic.BaseTypes
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core

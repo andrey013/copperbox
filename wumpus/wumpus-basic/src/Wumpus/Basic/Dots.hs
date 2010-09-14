@@ -34,8 +34,7 @@ module Wumpus.Basic.Dots
 
 import Wumpus.Basic.Anchors
 import qualified Wumpus.Basic.Dots.Primitive         as BD
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core

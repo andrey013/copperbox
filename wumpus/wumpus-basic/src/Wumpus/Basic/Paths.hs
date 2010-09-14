@@ -33,8 +33,7 @@ module Wumpus.Basic.Paths
 
   ) where
 
-import Wumpus.Basic.Graphic.Graphic
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Construction
 

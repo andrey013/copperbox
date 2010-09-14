@@ -36,9 +36,7 @@ module Wumpus.Basic.Arrows.Tips
 
   ) where
 
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic
 
 import Wumpus.Core                      -- package: wumpus-core
 

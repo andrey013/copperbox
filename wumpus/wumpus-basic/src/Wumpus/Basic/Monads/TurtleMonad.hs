@@ -39,13 +39,10 @@ module Wumpus.Basic.Monads.TurtleMonad
   , runTurtleDrawing
   , execTurtleDrawing
 
-  , module Wumpus.Basic.Monads.DrawingMonad
-  , module Wumpus.Basic.Monads.TurtleClass
+--  , module Wumpus.Basic.Monads.TurtleClass
    
   ) where
 
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Monads.DrawingMonad
 import Wumpus.Basic.Monads.TurtleClass
 
 

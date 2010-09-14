@@ -5,9 +5,7 @@ module ADotPic where
 
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Dots
-import Wumpus.Basic.Graphic.Drawing
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
+import Wumpus.Basic.Graphic
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -35,7 +33,7 @@ std_attr = standardContext 24
 
 
 pic1 :: DPicture
-pic1 = execDrawing std_attr $ mf 
+pic1 = liftToPictureU $ execDrawing std_attr $ mf 
 
 
 mf :: (Floating u, FromPtSize u) => Drawing u ()

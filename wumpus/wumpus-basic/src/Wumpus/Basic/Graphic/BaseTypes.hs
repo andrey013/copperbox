@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,13 +11,16 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Image types.
+-- Base types for Drawing Objects, Graphics / Images (a Graphic 
+-- that also returns an answer), etc.
 --
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Graphic.Image
+module Wumpus.Basic.Graphic.BaseTypes
   (
+    
+
     HPrim
   , Point2T
   , DrawingObject(..)
@@ -52,6 +56,11 @@ import Wumpus.Core                      -- package: wumpus-core
 
 
 import Control.Applicative
+
+
+
+
+
 
 -- | Graphics objects, even simple ones (line, arrow, dot) might 
 -- need more than one primitive (path or text label) for their

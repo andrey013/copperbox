@@ -31,7 +31,6 @@ module Wumpus.Basic.Text.LRText
   ) where
 
 
-import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                              -- package: wumpus-core

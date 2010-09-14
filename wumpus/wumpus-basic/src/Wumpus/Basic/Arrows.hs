@@ -38,9 +38,7 @@ module Wumpus.Basic.Arrows
   ) where
 
 import Wumpus.Basic.Arrows.Tips
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
-import Wumpus.Basic.Graphic.Image
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Utils.Intersection ( langle )

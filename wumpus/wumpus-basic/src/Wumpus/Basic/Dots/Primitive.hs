@@ -45,10 +45,8 @@ module Wumpus.Basic.Dots.Primitive
   ) where
 
 
-import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Graphic
-import Wumpus.Basic.Graphic.Image
--- import Wumpus.Basic.Graphic.PointSupply ( polygonPointsV )
+import Wumpus.Basic.Graphic
+-- import Wumpus.Basic.Graphic.OldPointSupply ( polygonPointsV )
 
 import Wumpus.Core                      -- package: wumpus-core
 
