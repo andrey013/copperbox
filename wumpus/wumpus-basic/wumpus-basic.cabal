@@ -19,9 +19,13 @@ description:
   .
   .
   Changelog:
+  .
   0.6.0 to 0.7.0:
   .
   * Major rework of everything...
+  .
+  * LRText and LRSymbol modules temporarily removed as they 
+    contradict the new, optimized kerning in @Wumpus.Core@.
   .
   0.5.0 to 0.6.0:
   .

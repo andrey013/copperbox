@@ -28,6 +28,7 @@ module Wumpus.Basic.Dots.Primitive
   , dotPlus
   , dotCross
   , dotDiamond
+  , dotFDiamond
   , dotBDiamond 
   , dotDisk
   , dotSquare
@@ -148,6 +149,8 @@ pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h
 dotDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
 dotDiamond = \pt -> pathDiamond pt >>= closedStroke  
 
+dotFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+dotFDiamond = \pt -> pathDiamond pt >>= filledPath  
 
 dotBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
 dotBDiamond = \pt -> pathDiamond pt >>= borderedPath

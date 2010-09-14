@@ -38,6 +38,9 @@ module Wumpus.Basic.Graphic.DrawingContext
   , ultrathick
   , thin
 
+  -- ** Dash Pattern
+  , dashPattern
+
   -- ** Font properties
   , fontsize
   , fontface
@@ -46,6 +49,9 @@ module Wumpus.Basic.Graphic.DrawingContext
   , swapColours
   , primaryColour
   , secondaryColour 
+
+
+
   
   ) where
 
@@ -105,6 +111,15 @@ textDimensions str attr = (w,h)
 
 
 
+updateStrokeProps :: (StrokeAttr -> StrokeAttr) 
+                  -> DrawingContext -> DrawingContext
+updateStrokeProps fn = (\s i -> s { stroke_props = fn i }) <*> stroke_props
+
+updateFontProps :: (FontAttr -> FontAttr) 
+                -> DrawingContext -> DrawingContext
+updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
+
+
 --------------------------------------------------------------------------------
 -- line widths
 
@@ -124,9 +139,7 @@ thin_line           :: Double
 thin_line           = 0.5
 
 setLineWidth       :: Double -> DrawingContext -> DrawingContext
-setLineWidth d      = (\s i -> s { stroke_props = upd i} ) <*> stroke_props
-  where
-   upd attrs        = attrs { line_width = d }
+setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
 
 thick               :: DrawingContext -> DrawingContext
@@ -139,15 +152,17 @@ thin                :: DrawingContext -> DrawingContext
 thin                = setLineWidth thin_line
 
 
+dashPattern         :: DashPattern -> DrawingContext -> DrawingContext
+dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })        
+
+--------------------------------------------------------------------------------
+
+
 fontface            :: FontFace -> DrawingContext -> DrawingContext
-fontface ff         = (\s i -> s { font_props = upd i }) <*> font_props
-  where
-    upd (FontAttr sz _) = FontAttr sz ff
+fontface ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
 
 fontsize            :: Int -> DrawingContext -> DrawingContext
-fontsize sz         =  (\s i -> s { font_props = upd i }) <*> font_props
-  where
-    upd (FontAttr _ ff) = FontAttr sz ff
+fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 
 --------------------------------------------------------------------------------
 

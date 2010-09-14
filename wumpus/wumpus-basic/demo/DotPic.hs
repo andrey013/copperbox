@@ -2,13 +2,13 @@
 
 module DotPic where
 
+-- NOTE - some dots (Pentagon / Star) are not currently 
+-- implemented.
 
 import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Dots.Base
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
 import Wumpus.Basic.PictureLanguage
-import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -52,18 +52,26 @@ demo01 = do
     p16 = makeDotPic dotFDiamond    points
     p17 = makeDotPic (dotText "AA") points
  
-std_attr :: DrawingAttr
-std_attr = standardAttr 12
+std_ctx :: DrawingContext
+std_ctx = standardContext 12
 
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 
+
+-- Note - order of drawing is may need to change with future
+-- revisions.
+--
 makeDotPic :: (Real u, Floating u, FromPtSize u) 
-           => (DrawingAttr -> GraphicF u) -> [Point2 u] -> Picture u
-makeDotPic fn xs = drawGraphicU $ veloH (fn std_attr) xs . dashline
+           => DotLocImage u -> [Point2 u] -> Picture u
+makeDotPic dotImg xs = liftToPictureU $ execDrawing std_ctx $ do 
+    dashline
+    mapM_ (\pt -> drawAtImg pt dotImg) xs
   where
-    dashline = wrapG $ ostroke cadet_blue attr $ vertexPath xs
-    attr     = default_stroke_attr { dash_pattern = evenDashes 1 }
+    dashline = localCtx attrUpd (draw $ openStroke $ vertexPath xs)
+
+    attrUpd  :: DrawingContext -> DrawingContext
+    attrUpd  =  dashPattern (evenDashes 1) . primaryColour cadet_blue
 
 
 errK :: a

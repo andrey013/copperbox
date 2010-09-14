@@ -27,11 +27,26 @@ module Wumpus.Basic.Dots
   , DDotLocImage
 
   -- * Dots with anchor points
-  , dotCircle
-  , dotDisk
-  , dotSquare
   , dotChar
   , dotText
+  , dotHLine
+  , dotVLine
+  , dotX
+  , dotPlus
+  , dotCross
+  , dotDiamond
+  , dotFDiamond
+
+  , dotDisk
+  , dotSquare
+  , dotCircle
+  , dotPentagon
+  , dotStar
+
+  , dotAsterisk
+  , dotOPlus
+  , dotOCross
+  , dotFOCross
 
   ) where
 
@@ -140,11 +155,40 @@ type DotLocImage u = LocImage u (DotAnchor u)
 
 type DDotLocImage = DotLocImage Double 
 
+dotChar :: (Floating u, Real u, FromPtSize u) 
+        => Char -> DotLocImage u
+dotChar ch pt = asksObj (textDimensions [ch]) >>= \(w,h) -> 
+                intoLocImage (rectangleLDO w h) (BD.dotChar ch) pt
 
 
-dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
-dotCircle = intoLocImage circleLDO BD.dotCircle
+dotText :: (Floating u, Real u, FromPtSize u) 
+        => String -> DotLocImage u 
+dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
+                intoLocImage (rectangleLDO w h) (BD.dotText ss) pt
 
+
+dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
+dotHLine = intoLocImage circleLDO BD.dotHLine
+
+
+dotVLine :: (Floating u, FromPtSize u) => DotLocImage u
+dotVLine = intoLocImage circleLDO BD.dotVLine
+
+
+dotX :: (Floating u, FromPtSize u) => DotLocImage u
+dotX = intoLocImage circleLDO BD.dotX
+
+dotPlus :: (Floating u, FromPtSize u) => DotLocImage u
+dotPlus = intoLocImage circleLDO BD.dotPlus
+
+dotCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotCross = intoLocImage circleLDO BD.dotCross
+
+dotDiamond :: (Floating u, FromPtSize u) => DotLocImage u
+dotDiamond = intoLocImage circleLDO BD.dotDiamond
+
+dotFDiamond :: (Floating u, FromPtSize u) => DotLocImage u
+dotFDiamond = intoLocImage circleLDO BD.dotFDiamond
 
 
 
@@ -158,13 +202,30 @@ dotSquare pt = asksObj markHeight >>= \ h ->
 
 
 
-dotChar :: (Floating u, Real u, FromPtSize u) 
-        => Char -> DotLocImage u
-dotChar ch pt = asksObj (textDimensions [ch]) >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (BD.dotChar ch) pt
+
+dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
+dotCircle = intoLocImage circleLDO BD.dotCircle
 
 
-dotText :: (Floating u, Real u, FromPtSize u) 
-        => String -> DotLocImage u 
-dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (BD.dotText ss) pt
+-- | WARNING - Not implemented - currently draws a diamond...
+--
+dotPentagon :: (Floating u, FromPtSize u) => DotLocImage u
+dotPentagon = intoLocImage circleLDO BD.dotBDiamond
+
+-- | WARNING - Not implemented - currently draws a diamond...
+--
+dotStar :: (Floating u, FromPtSize u) => DotLocImage u
+dotStar = intoLocImage circleLDO BD.dotBDiamond
+
+
+dotAsterisk :: (Floating u, FromPtSize u) => DotLocImage u
+dotAsterisk = intoLocImage circleLDO BD.dotAsterisk
+
+dotOPlus :: (Floating u, FromPtSize u) => DotLocImage u
+dotOPlus = intoLocImage circleLDO BD.dotOPlus
+
+dotOCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotOCross = intoLocImage circleLDO BD.dotOCross
+
+dotFOCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotFOCross = intoLocImage circleLDO BD.dotFOCross

@@ -5,7 +5,6 @@ module Picture where
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.PictureLanguage
-import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
