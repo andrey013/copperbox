@@ -19,8 +19,8 @@ module Wumpus.Tree
 
 
   -- * Render a Data.Tree to a TreePicture
-  , DrawingAttr(..)             -- re-export
-  , standardAttr                -- re-export
+  , DrawingContext(..)                  -- re-export
+  , standardContext                     -- re-export
 
 
   , ScaleFactors(..)
@@ -47,11 +47,9 @@ import Wumpus.Tree.Draw
 
 import Wumpus.Basic.Dots                        -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Maybe
 import Data.Tree hiding ( drawTree )
 
 -- | Output a 'TreePicture', generating an EPS file.
@@ -104,15 +102,17 @@ uniformScaling u = ScaleFactors u u
 --
 --
 drawTreePicture :: (a -> TreeNode) 
-                -> DrawingAttr 
+                -> DrawingContext
                 -> ScaleFactors 
                 -> Tree a 
                 -> TreePicture
-drawTreePicture drawF attr sfactors tree = 
-    fromMaybe errK $ drawGraphic $ drawTree drawF attr $ design funs tree
+drawTreePicture drawF ctx sfactors tree = 
+    post $ drawTree drawF ctx $ design funs tree
   where
     funs = scalingFunctions sfactors
-
+    post f = let xs = f [] in 
+             if null xs then errK else frame xs
+                        
 errK :: a
 errK = error "treePicture - empty tree drawing." 
 
@@ -153,9 +153,7 @@ textNode = dotText . uptoNewline
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 circleNode :: RGBi -> (a -> TreeNode)
-circleNode rgb = const fn
-  where
-    fn = dotCircle `props` (\s -> s { stroke_colour = rgb})
+circleNode rgb = \_ pt -> localCtxObj (primaryColour rgb) (dotCircle pt)
 
 
 -- | Tree nodes with a filled circle.
@@ -163,9 +161,7 @@ circleNode rgb = const fn
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 diskNode :: RGBi -> (a -> TreeNode)
-diskNode rgb = const fn
-  where
-    fn = dotDisk `props` (\s -> s { fill_colour = rgb})
+diskNode rgb = \_ pt -> localCtxObj (secondaryColour rgb) (dotDisk pt)
 
 
 

@@ -29,9 +29,6 @@ import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic   
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
-import Wumpus.Basic.Monads.DrawingMonad
 
 import Data.VectorSpace                         -- package: vector-space
 
@@ -39,13 +36,13 @@ import Data.Tree hiding ( drawTree )
 
 -- Don\'t actually need the Turtle of ConsDrawing...
 
-drawTree :: (a -> TreeNode) -> DrawingAttr -> CoordTree Double a -> DGraphic
-drawTree drawF attr tree = execDrawing attr $ drawTop drawF tree 
+drawTree :: (a -> TreeNode) -> DrawingContext -> CoordTree Double a -> HPrim Double
+drawTree drawF ctx tree = execDrawing ctx $ drawTop drawF tree 
 
 
 drawTop :: (a -> TreeNode) -> CoordTree Double a -> Drawing Double ()
 drawTop fn (Node (pt,a) ns) = do 
-    ancr <- nodeAt (fn a) pt
+    ancr <- drawAtImg pt (fn a)
     mapM_ (draw1 fn ancr) ns
 
 draw1 :: (a -> TreeNode) 
@@ -53,19 +50,18 @@ draw1 :: (a -> TreeNode)
       -> CoordTree Double a 
       -> Drawing Double ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
-    ancr <- nodeAt (fn a) pt
-    connector ancr_from ancr
+    ancr <- drawAtImg pt (fn a)
+    draw $ connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
 
 
 connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 
-          => DotAnchor u -> DotAnchor u -> Drawing u ()
-connector afrom ato = 
-    trace $ wrapG $ ostroke black default_stroke_attr $ vertexPath [p0,p1]
+          => DotAnchor u -> DotAnchor u -> Graphic u
+connector a1 a2 = openStroke $ vertexPath [p1,p2]
   where  
-    (ang0,ang1)    = anchorAngles (center afrom) (center ato)
-    p0             = radialAnchor ang0 afrom
-    p1             = radialAnchor ang1 ato 
+    (ang0,ang1)    = anchorAngles (center a1) (center a2)
+    p1             = radialAnchor ang0 a1
+    p2             = radialAnchor ang1 a2 
 
 
 

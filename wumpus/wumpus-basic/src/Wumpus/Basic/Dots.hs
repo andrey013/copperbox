@@ -22,6 +22,9 @@ module Wumpus.Basic.Dots
 
   -- * Existential anchor type
     DotAnchor
+ 
+  , DotLocImage
+  , DDotLocImage
 
   -- * Dots with anchor points
   , dotCircle
@@ -134,6 +137,9 @@ circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksObj markHeight
 --------------------------------------------------------------------------------
 
 type DotLocImage u = LocImage u (DotAnchor u) 
+
+type DDotLocImage = DotLocImage Double 
+
 
 
 dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
