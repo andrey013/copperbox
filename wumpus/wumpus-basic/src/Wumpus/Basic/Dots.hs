@@ -15,6 +15,10 @@
 --
 -- Dots with anchors.
 --
+-- In many cases a surrounding circle is used to locate anchor
+-- points - this could be improved to use the actual dot border 
+-- at some point.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Dots
@@ -207,15 +211,11 @@ dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
 dotCircle = intoLocImage circleLDO BD.dotCircle
 
 
--- | WARNING - Not implemented - currently draws a diamond...
---
 dotPentagon :: (Floating u, FromPtSize u) => DotLocImage u
-dotPentagon = intoLocImage circleLDO BD.dotBDiamond
+dotPentagon = intoLocImage circleLDO BD.dotPentagon
 
--- | WARNING - Not implemented - currently draws a diamond...
---
 dotStar :: (Floating u, FromPtSize u) => DotLocImage u
-dotStar = intoLocImage circleLDO BD.dotBDiamond
+dotStar = intoLocImage circleLDO BD.dotStar
 
 
 dotAsterisk :: (Floating u, FromPtSize u) => DotLocImage u

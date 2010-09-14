@@ -9,9 +9,10 @@ category:         Graphics
 synopsis:         Common drawing utilities built on wumpus-core.
 description:
   .
-  \*\* WARNING \*\* - this package is sub-alpha. It is only on 
-  Hackage to support other packages (Wumpus-Tree, 
-  Wumpus-Microprint) that are slighly more stable.
+  \*\* WARNING \*\* - this package is sub-alpha. It was released 
+  to Hackage prematurely - designing a higher-level drawing 
+  library turns out to be much more demanding than designing a 
+  low-level one (Wumpus-Core). 
   .
   A few of the modules (SafeFonts, SVGColours, X11Colours) are
   fairly stable others simply aren\'t and may even disappear in
@@ -22,10 +23,20 @@ description:
   .
   0.6.0 to 0.7.0:
   .
-  * Major rework of everything...
+  * Major rework of Graphic types, the old types (AGraphic, 
+    GraphicF etc.) and the old drawing monads have been removed. 
+    The new types are based on the AGraphic and related types but 
+    their implementation is different. The new types track the 
+    /graphics state/ within the type (the DrawingContext) plus 
+    how to draw themselves. For real drawings, graphics are 
+    collected with a Writer-like monad the @Basic.Graphic.Drawing@ 
+    monad which replaces the DrawingCtx and Trace monads. The 
+    Turtle monad remains and has been updated to work with the new
+    drawing monads.
   .
   * LRText and LRSymbol modules temporarily removed as they 
-    contradict the new, optimized kerning in @Wumpus.Core@.
+    contradict the new, optimized kerning functionality in 
+    @Wumpus.Core@.
   .
   0.5.0 to 0.6.0:
   .

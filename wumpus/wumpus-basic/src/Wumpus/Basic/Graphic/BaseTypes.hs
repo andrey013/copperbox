@@ -34,6 +34,7 @@ module Wumpus.Basic.Graphic.BaseTypes
   , Graphic
   , DGraphic
   , appendGraphic
+  , gcat
   
   , asksObj
   , localCtxObj
@@ -146,7 +147,12 @@ appendGraphic :: Graphic u -> Graphic u -> Graphic u
 appendGraphic gf1 gf2 = DrawingObject $ \ctx ->          
       (getDrawingObject gf1 ctx) `appendH` (getDrawingObject gf2 ctx)
 
-
+gcat :: Graphic u -> [Graphic u] -> Graphic u
+gcat a = step a 
+  where
+    step ac []     = ac
+    step ac (x:xs) = step (ac `appendGraphic` x) xs
+ 
 
 asksObj :: (DrawingContext -> a) -> DrawingObject a
 asksObj fn = DrawingObject $ \ctx -> fn ctx

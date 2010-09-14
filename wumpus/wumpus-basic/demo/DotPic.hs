@@ -2,8 +2,6 @@
 
 module DotPic where
 
--- NOTE - some dots (Pentagon / Star) are not currently 
--- implemented.
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots
@@ -53,7 +51,7 @@ demo01 = do
     p17 = makeDotPic (dotText "AA") points
  
 std_ctx :: DrawingContext
-std_ctx = standardContext 12
+std_ctx = secondaryColour peru $ standardContext 12
 
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]

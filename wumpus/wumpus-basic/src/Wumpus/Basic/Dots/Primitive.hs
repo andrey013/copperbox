@@ -32,11 +32,9 @@ module Wumpus.Basic.Dots.Primitive
   , dotBDiamond 
   , dotDisk
   , dotSquare
-  , dotCircle
-{-  
+  , dotCircle  
   , dotPentagon
   , dotStar
--}
   , dotAsterisk
   , dotOPlus
   , dotOCross
@@ -47,7 +45,6 @@ module Wumpus.Basic.Dots.Primitive
 
 
 import Wumpus.Basic.Graphic
--- import Wumpus.Basic.Graphic.OldPointSupply ( polygonPointsV )
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -55,6 +52,7 @@ import Data.AffineSpace                 -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
+import Data.List
 
 -- Marks should be the height of a lower-case letter...
 
@@ -65,6 +63,15 @@ import Control.Applicative
 --
 
 
+-- | 'polygonPoints' : @ num_points * radius * center -> [point] @ 
+--
+polygonPoints :: Floating u => Int -> u -> Point2 u -> [Point2 u]
+polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
+  where
+    theta = (pi*2) / fromIntegral n
+    
+    phi (i,ang) | i < n     = Just (ctr .+^ avec ang radius, (i+1,ang+theta))
+                | otherwise = Nothing
 
 
 
@@ -177,24 +184,21 @@ dotBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
 dotBCircle = halfHeightSize borderedDisk 
 
 
-{-
+
 dotPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-dotPentagon attr = 
-    wrapG . cstroke (stroke_colour attr) (stroke_props attr) 
-          . vertexPath . polygonPointsV 5 hh
-  where
-    hh      = 0.5 * markHeight attr
+dotPentagon pt = asksObj markHeight >>= \h ->
+                 closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
--} 
+ 
 
-{-
+
 dotStar :: (Floating u, FromPtSize u) => LocGraphic u 
 dotStar pt = asksObj markHeight >>= \h -> 
-             let ps = polygonPointsV 5 (h * 0.5) pt in step ps
+             let (p:ps) = polygonPoints 5 (0.5*h) pt in gcat (fn p) $ map fn ps
   where
-    fn p1 p2  = openStroke $ path p1 [lineTo p2] 
+    fn p1  = openStroke $ path pt [lineTo p1] 
 
--}
+
 
 
 dotAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
