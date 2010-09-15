@@ -55,7 +55,7 @@ module Wumpus.Basic.Dots
   ) where
 
 import Wumpus.Basic.Anchors
-import qualified Wumpus.Basic.Dots.Primitive         as BD
+import Wumpus.Basic.Dots.Primitive
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.Intersection
 
@@ -162,70 +162,70 @@ type DDotLocImage = DotLocImage Double
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
 dotChar ch pt = asksObj (textDimensions [ch]) >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (BD.dotChar ch) pt
+                intoLocImage (rectangleLDO w h) (markChar ch) pt
 
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
 dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (BD.dotText ss) pt
+                intoLocImage (rectangleLDO w h) (markText ss) pt
 
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
-dotHLine = intoLocImage circleLDO BD.dotHLine
+dotHLine = intoLocImage circleLDO markHLine
 
 
 dotVLine :: (Floating u, FromPtSize u) => DotLocImage u
-dotVLine = intoLocImage circleLDO BD.dotVLine
+dotVLine = intoLocImage circleLDO markVLine
 
 
 dotX :: (Floating u, FromPtSize u) => DotLocImage u
-dotX = intoLocImage circleLDO BD.dotX
+dotX = intoLocImage circleLDO markX
 
 dotPlus :: (Floating u, FromPtSize u) => DotLocImage u
-dotPlus = intoLocImage circleLDO BD.dotPlus
+dotPlus = intoLocImage circleLDO markPlus
 
 dotCross :: (Floating u, FromPtSize u) => DotLocImage u
-dotCross = intoLocImage circleLDO BD.dotCross
+dotCross = intoLocImage circleLDO markCross
 
 dotDiamond :: (Floating u, FromPtSize u) => DotLocImage u
-dotDiamond = intoLocImage circleLDO BD.dotDiamond
+dotDiamond = intoLocImage circleLDO markDiamond
 
 dotFDiamond :: (Floating u, FromPtSize u) => DotLocImage u
-dotFDiamond = intoLocImage circleLDO BD.dotFDiamond
+dotFDiamond = intoLocImage circleLDO markFDiamond
 
 
 
 dotDisk :: (Floating u, FromPtSize u) => DotLocImage u
-dotDisk = intoLocImage circleLDO BD.dotDisk
+dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
 dotSquare pt = asksObj markHeight >>= \ h ->
-               intoLocImage (rectangleLDO h h) BD.dotSquare pt
+               intoLocImage (rectangleLDO h h) markSquare pt
 
 
 
 
 dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
-dotCircle = intoLocImage circleLDO BD.dotCircle
+dotCircle = intoLocImage circleLDO markCircle
 
 
 dotPentagon :: (Floating u, FromPtSize u) => DotLocImage u
-dotPentagon = intoLocImage circleLDO BD.dotPentagon
+dotPentagon = intoLocImage circleLDO markPentagon
 
 dotStar :: (Floating u, FromPtSize u) => DotLocImage u
-dotStar = intoLocImage circleLDO BD.dotStar
+dotStar = intoLocImage circleLDO markStar
 
 
 dotAsterisk :: (Floating u, FromPtSize u) => DotLocImage u
-dotAsterisk = intoLocImage circleLDO BD.dotAsterisk
+dotAsterisk = intoLocImage circleLDO markAsterisk
 
 dotOPlus :: (Floating u, FromPtSize u) => DotLocImage u
-dotOPlus = intoLocImage circleLDO BD.dotOPlus
+dotOPlus = intoLocImage circleLDO markOPlus
 
 dotOCross :: (Floating u, FromPtSize u) => DotLocImage u
-dotOCross = intoLocImage circleLDO BD.dotOCross
+dotOCross = intoLocImage circleLDO markOCross
 
 dotFOCross :: (Floating u, FromPtSize u) => DotLocImage u
-dotFOCross = intoLocImage circleLDO BD.dotFOCross
+dotFOCross = intoLocImage circleLDO markFOCross

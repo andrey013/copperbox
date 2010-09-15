@@ -57,8 +57,8 @@ library
   build-depends:      base              <  5, 
                       containers        >= 0.3.0     && < 0.4.0,
                       vector-space      >= 0.6,
-                      wumpus-core       == 0.31.0,
-                      wumpus-basic      == 0.6.0
+                      wumpus-core       == 0.32.0,
+                      wumpus-basic      == 0.7.0
 
   
   exposed-modules:

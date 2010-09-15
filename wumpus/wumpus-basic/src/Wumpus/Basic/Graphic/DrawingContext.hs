@@ -12,11 +12,11 @@
 --
 -- Drawing attributes
 --
--- Note - this module will replace @Basic.Graphic.DrawingAttr@ 
--- in due course.
+-- \*\* WARNING \*\* - this module needs systematic naming 
+-- schemes both for update functions (primaryColour, ...) and 
+-- for synthesized selectors (e.g. lowerxHeight). The current 
+-- names will change.
 --
--- Note - also, synthesized attributes (e.g. lowerxHeight) need a 
--- naming scheme.
 -- 
 --------------------------------------------------------------------------------
 

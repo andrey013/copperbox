@@ -11,7 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Version number
+-- Drawing the tree using Wumpus-Basic.
 --
 --------------------------------------------------------------------------------
 
@@ -26,7 +26,6 @@ import Wumpus.Tree.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic   
 

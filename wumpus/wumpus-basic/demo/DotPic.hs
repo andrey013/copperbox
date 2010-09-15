@@ -72,9 +72,6 @@ makeDotPic dotImg xs = liftToPictureU $ execDrawing std_ctx $ do
     attrUpd  =  dashPattern (evenDashes 1) . primaryColour cadet_blue
 
 
-errK :: a
-errK = error "no picture"
-
 
 
 -- Should these produce a DashPattern or a StrokeAttr?

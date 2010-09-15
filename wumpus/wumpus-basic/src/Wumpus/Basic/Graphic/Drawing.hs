@@ -17,6 +17,11 @@
 -- Drawing with trace and drawing context (i.e. reader monad
 -- of attributes - fill_colour etc.).
 --
+-- \*\* WARNING \*\* - some names are expected to change 
+-- particularly the naming of the @draw@, @drawAt@, @node@, @...@ 
+-- functions.
+--
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Graphic.Drawing
@@ -123,19 +128,25 @@ instance Monad m => Monad (DrawingT u m) where
 
 
 -- TraceM 
-
--- Note -  @ a `appendH` s @ means the last expression in a 
--- monadic drawing is top of the Z-order.
+--
+-- Note -  @ state `appendH` a @ means the first expression in a 
+-- monadic drawing is top of the Z-Order.
 -- 
--- This rather contradicts Wumpus-Core.
+-- This is the matches a list of Prims in Wumpus-Core where the 
+-- first element is drawn on top, however is not necessarily
+-- intuitive if you regard the do-block as a sequence of 
+-- /actions/.
+--
+-- Ideally some control over the Z-Order, possibly adding 
+-- /layers/ to the drawing model would be valuable. 
 -- 
 
 instance TraceM (Drawing u) where
-  trace a = Drawing $ \_ s -> ((),a `appendH` s)
+  trace a = Drawing $ \_ s -> ((),s `appendH` a)
 
 
 instance Monad m => TraceM (DrawingT u m) where
-  trace a = DrawingT $ \_ s -> return ((),a `appendH` s)
+  trace a = DrawingT $ \_ s -> return ((),s `appendH` a)
 
 
 

@@ -10,7 +10,10 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Dots
+-- Marks - dots without anchor handles.
+--
+-- \*\* WARNING \*\* - names are expected to change - filled and
+-- background-filled marks need a naming convention.
 -- 
 --------------------------------------------------------------------------------
 
@@ -18,27 +21,27 @@ module Wumpus.Basic.Dots.Primitive
   ( 
 
 
-  -- * Dots
-    dotChar
-  , dotText
+  -- * Marks
+    markChar
+  , markText
 
-  , dotHLine
-  , dotVLine
-  , dotX
-  , dotPlus
-  , dotCross
-  , dotDiamond
-  , dotFDiamond
-  , dotBDiamond 
-  , dotDisk
-  , dotSquare
-  , dotCircle  
-  , dotPentagon
-  , dotStar
-  , dotAsterisk
-  , dotOPlus
-  , dotOCross
-  , dotFOCross
+  , markHLine
+  , markVLine
+  , markX
+  , markPlus
+  , markCross
+  , markDiamond
+  , markFDiamond
+  , markBDiamond 
+  , markDisk
+  , markSquare
+  , markCircle  
+  , markPentagon
+  , markStar
+  , markAsterisk
+  , markOPlus
+  , markOCross
+  , markFOCross
 
 
   ) where
@@ -75,7 +78,7 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 
 
 
--- | A dot is the height of a lowercase \'x\'.
+-- | A mark is the height of a lowercase \'x\'.
 -- 
 standardSize :: FromPtSize u => (u -> LocGraphic u) -> LocGraphic u
 standardSize f = \pt -> asksObj markHeight >>= \h -> f h pt
@@ -89,17 +92,17 @@ halfHeightSize f = \pt -> asksObj markHeight >>= \h -> f (h * 0.5) pt
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy f = \pt -> f (displace dx dy pt)
 
-dotChar :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
-dotChar ch = dotText [ch]
+markChar :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
+markChar ch = markText [ch]
 
 
 
 
 -- Note - eta-expanded (?)
 --
-dotText :: (Fractional u, FromPtSize u) => String -> LocGraphic u
-dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
-                shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) pt
+markText :: (Fractional u, FromPtSize u) => String -> LocGraphic u
+markText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
+                 shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) pt
 
 
 
@@ -112,26 +115,26 @@ axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 
-dotHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-dotHLine = standardSize (\h -> axialLine (hvec h))
+markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
+markHLine = standardSize (\h -> axialLine (hvec h))
     
 
-dotVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-dotVLine = standardSize (\h -> axialLine (vvec h)) 
+markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
+markVLine = standardSize (\h -> axialLine (vvec h)) 
 
 
-dotX :: (Fractional u, FromPtSize u) => LocGraphic u
-dotX = standardSize (\h -> let w = 0.75 * h in
-                           axialLine (vec w h) `appendAt` axialLine (vec (-w) h))
+markX :: (Fractional u, FromPtSize u) => LocGraphic u
+markX = standardSize (\h -> let w = 0.75 * h in
+                            axialLine (vec w h) `appendAt` axialLine (vec (-w) h))
 
 
 
-dotPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-dotPlus = dotVLine `appendAt` dotHLine
+markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
+markPlus = markVLine `appendAt` markHLine
 
 
-dotCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-dotCross = standardSize 
+markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
+markCross = standardSize 
              (\h -> axialLine (avec ang h) `appendAt` axialLine (avec (-ang) h))
   where
     ang = pi*0.25  
@@ -153,56 +156,56 @@ pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h
 
 
 
-dotDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-dotDiamond = \pt -> pathDiamond pt >>= closedStroke  
+markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markDiamond = \pt -> pathDiamond pt >>= closedStroke  
 
-dotFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-dotFDiamond = \pt -> pathDiamond pt >>= filledPath  
+markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markFDiamond = \pt -> pathDiamond pt >>= filledPath  
 
-dotBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-dotBDiamond = \pt -> pathDiamond pt >>= borderedPath
+markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markBDiamond = \pt -> pathDiamond pt >>= borderedPath
 
 
 -- | Note disk is filled.
 --
-dotDisk :: (Fractional u, FromPtSize u) => LocGraphic u
-dotDisk = halfHeightSize filledDisk 
+markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
+markDisk = halfHeightSize filledDisk 
 
 
 
-dotSquare :: (Fractional u, FromPtSize u) => LocGraphic u
-dotSquare = standardSize (\h -> let d = 0.5*(-h) in 
-                                shiftOrigin d d $ strokedRectangle h h) 
+markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
+markSquare = standardSize (\h -> let d = 0.5*(-h) in 
+                                 shiftOrigin d d $ strokedRectangle h h) 
     
 
 
-dotCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-dotCircle = halfHeightSize strokedDisk 
+markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+markCircle = halfHeightSize strokedDisk 
 
 
-dotBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-dotBCircle = halfHeightSize borderedDisk 
+markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+markBCircle = halfHeightSize borderedDisk 
 
 
 
-dotPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-dotPentagon pt = asksObj markHeight >>= \h ->
-                 closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
+markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
+markPentagon pt = asksObj markHeight >>= \h ->
+                  closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
 
-dotStar :: (Floating u, FromPtSize u) => LocGraphic u 
-dotStar pt = asksObj markHeight >>= \h -> 
-             let (p:ps) = polygonPoints 5 (0.5*h) pt in gcat (fn p) $ map fn ps
+markStar :: (Floating u, FromPtSize u) => LocGraphic u 
+markStar pt = asksObj markHeight >>= \h -> 
+              let (p:ps) = polygonPoints 5 (0.5*h) pt in gcat (fn p) $ map fn ps
   where
     fn p1  = openStroke $ path pt [lineTo p1] 
 
 
 
 
-dotAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-dotAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF3 h)
+markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
+markAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF3 h)
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -211,16 +214,16 @@ dotAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF3
 
 
 
-dotOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-dotOPlus = dotCircle `appendAt` dotPlus
+markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+markOPlus = markCircle `appendAt` markPlus
 
 
-dotOCross :: (Floating u, FromPtSize u) => LocGraphic u
-dotOCross = dotCircle `appendAt` dotCross
+markOCross :: (Floating u, FromPtSize u) => LocGraphic u
+markOCross = markCircle `appendAt` markCross
 
 
-dotFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-dotFOCross = dotCross `appendAt` dotBCircle 
+markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
+markFOCross = markCross `appendAt` markBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u

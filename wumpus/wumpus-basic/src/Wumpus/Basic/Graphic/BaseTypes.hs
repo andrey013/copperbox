@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -14,6 +13,8 @@
 -- Base types for Drawing Objects, Graphics / Images (a Graphic 
 -- that also returns an answer), etc.
 --
+-- \*\* WARNING \*\* - some names are expected to change 
+-- particularly the naming of the /append/ and /concat/ functions.
 --
 --------------------------------------------------------------------------------
 

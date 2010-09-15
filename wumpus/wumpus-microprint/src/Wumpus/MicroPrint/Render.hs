@@ -82,21 +82,15 @@ borderedF (i,uw) (w,h) rgb = concatAt srect seps
                    | otherwise = let fn = \pt -> vline h (pt .+^ hvec hshift)
                                  in  Just (fn,(n+1,hshift+uw))
 
--- Note - this is was hacked to work with recent changes to 
--- Wumpus-Basic.
--- 
--- It needs a rethink.
---
 
 
--- Note - this needs attention due to changes to Wumpus-Basic 
--- Z-Order (hence the use of flip).
---
--- Currently it works, but it needs testing at each revision. 
+-- Note - this needs attention due to Z-Order handling in 
+-- Wumpus-Basic. There are better ways to accomplish what 
+-- borderedF does...
 --
 concatAt :: DLocGraphic -> [DLocGraphic] -> DLocGraphic 
 concatAt x [] = x
-concatAt x xs = foldl' (flip appendAt) x xs
+concatAt x xs = foldr appendAt x xs
 
 vline :: (Num u, Ord u) => u -> LocGraphic u
 vline h = \pt -> openStroke $ path pt [lineTo $ pt .+^ vvec h]

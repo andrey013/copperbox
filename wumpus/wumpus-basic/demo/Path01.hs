@@ -21,19 +21,19 @@ main = createDirectoryIfMissing True "./out/"
     >> writeEPS_latin1 "./out/path01.eps" pic1
     >> writeSVG_latin1 "./out/path01.svg" pic1 
 
--- Note - the current drawing order (Basic.Graphic.Drawing) is not 
--- necessarily ideal as it does not match Wumpus.Core - frame.
+-- Note - the drawing order (Basic.Graphic.Drawing) is first 
+-- element in the do-block is top of the Z-Order.
 
 pic1 :: Picture Double
 pic1 = liftToPictureU $ execDrawing (standardContext 18) $ 
-    do { draw circle1
-       ; draw curve3
-       ; draw curve2
-       ; draw curve1
-       ; draw eastUpWest
-       ; drawAt (P2 110 0) (barb90 0)
+    do { drawAt (P2 130 0) (barb45 0)
        ; drawAt (P2 120 0) (barb60 0)
-       ; drawAt (P2 130 0) (barb45 0)
+       ; drawAt (P2 110 0) (barb90 0)
+       ; draw eastUpWest
+       ; draw curve1
+       ; draw curve2
+       ; draw curve3
+       ; draw circle1
        ; return ()
        }
     
