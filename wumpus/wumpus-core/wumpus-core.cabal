@@ -62,7 +62,7 @@ description:
     indirection in the type hierarchy.
   .
   * The primitive constructors for filled and stroked paths and 
-    ellipses have been renamed: @bordered is now @fillStroke@,
+    ellipses have been renamed: @bordered@ is now @fillStroke@,
     @borderedEllipse@ is now @fillStrokeEllipse@.
   .
   * @Core.FontSize@ - the arguments to the function @textBounds@

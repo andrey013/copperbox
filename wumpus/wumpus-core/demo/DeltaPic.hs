@@ -41,10 +41,10 @@ common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR
 -- Note - each label is fully attributed with the font style.
 -- There really is not attribute inheritance.
 --
-helveticaLabel :: Int -> String -> DPoint2 -> DPrimitive
+helveticaLabel :: Int -> String -> DPoint2 -> DPrimElement
 helveticaLabel sz ss pt = textlabel peru attrs ss pt
   where
     attrs = FontAttr sz common_ff
 
-courierLabel :: String -> DPoint2 -> DPrimitive
+courierLabel :: String -> DPoint2 -> DPrimElement
 courierLabel ss pt = textlabel black wumpus_default_font ss pt
