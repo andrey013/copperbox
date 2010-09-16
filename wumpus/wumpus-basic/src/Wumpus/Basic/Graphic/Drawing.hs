@@ -40,6 +40,7 @@ module Wumpus.Basic.Graphic.Drawing
   , execFdcDrawingT
 
   , liftToPictureU
+  , mbPictureU
  
   , draw
   , xdraw
@@ -52,12 +53,6 @@ module Wumpus.Basic.Graphic.Drawing
 
   , node
   , nodei
-
-  -- * Obsolete
-  , drawAt
-  , drawAtImg
-  , drawConn
-  , drawConnImg
 
   ) where
 
@@ -145,24 +140,20 @@ instance Monad m => Monad (DrawingT u m) where
 
 -- TraceM 
 --
--- Note -  @ state `appendH` a @ means the first expression in a 
--- monadic drawing is top of the Z-Order.
--- 
--- This is the matches a list of Prims in Wumpus-Core where the 
--- first element is drawn on top, however is not necessarily
--- intuitive if you regard the do-block as a sequence of 
--- /actions/.
+-- Note -  @ state `mappend` a @ means the first expression in a 
+-- monadic drawing is the first element in the output file. It is
+-- also \*\* at the back \*\* in the the Z-Order.
 --
--- Ideally some control over the Z-Order, possibly adding 
--- /layers/ to the drawing model would be valuable. 
+-- Some control over the Z-Order, possibly by adding /layers/ to 
+-- the drawing model would be valuable. 
 -- 
 
 instance TraceM (Drawing u) where
-  trace a = Drawing $ \_ s -> ((),s `mappend` a)
+  trace a = Drawing $ \_ s -> ((), s `mappend` a)
 
 
 instance Monad m => TraceM (DrawingT u m) where
-  trace a = DrawingT $ \_ s -> return ((),s `mappend` a)
+  trace a = DrawingT $ \_ s -> return ((), s `mappend` a)
 
 
 
@@ -236,10 +227,15 @@ execFdcDrawingT ctx ma = liftM snd $ runFdcDrawingT ctx ma
 
 
 liftToPictureU :: (Real u, Floating u, FromPtSize u) => HPrim u -> Picture u
-liftToPictureU hf = let prims = hprimToList hf in 
-                    if null prims then errK else frame prims
+liftToPictureU hf = 
+    let prims = hprimToList hf in if null prims then errK else frame prims
   where
-    errK = error "liftToPictureU - empty prims list."
+    errK = error "toPictureU - empty prims list."
+
+mbPictureU :: (Real u, Floating u, FromPtSize u) 
+           => Maybe (Picture u) -> Picture u
+mbPictureU Nothing  = error "mbPictureU - empty picture."
+mbPictureU (Just a) = a
 
 
 
@@ -305,32 +301,4 @@ nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m)
 nodei imgL = askCtx   >>= \ctx -> 
              position >>= \pt  -> 
              let (a,o) = runImage ctx (imgL pt) in trace o >> return a
-
---------------------------------------------------------------------------------
--- OBSOLETE
-drawAt :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-       => Point2 u -> LocGraphic u -> m ()
-drawAt pt gfL = askCtx >>= \ctx -> trace (runGraphic ctx (gfL pt))
-
--- OBSOLETE
-drawAtImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-          => Point2 u -> LocImage u a -> m a
-drawAtImg pt imgL = askCtx >>= \ctx -> 
-                    let (a,o) = runImage ctx (imgL pt)
-                    in trace o >> return a
-
-
-     
--- OBSOLETE
-drawConn :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-         => Point2 u -> Point2 u -> ConnGraphic u -> m ()
-drawConn p1 p2 connL = askCtx >>= \ctx -> trace (runGraphic ctx (connL p1 p2))
-     
--- OBSOLETE
-drawConnImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-            => Point2 u -> Point2 u -> ConnImage u a -> m a
-drawConnImg p1 p2 connL = askCtx >>= \ctx -> 
-                          let (a,o) = runImage ctx (connL p1 p2)
-                          in trace o >> return a
-            
 

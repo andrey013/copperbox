@@ -64,7 +64,7 @@ makeDotPic :: (Real u, Floating u, FromPtSize u)
            => DotLocImage u -> [Point2 u] -> Picture u
 makeDotPic dotImg xs = liftToPictureU $ execDrawing std_ctx $ do 
     dashline
-    mapM_ (\pt -> drawAtImg pt dotImg) xs
+    mapM_ (\pt -> drawi $ dotImg `ati` pt) xs
   where
     dashline = localCtx attrUpd (draw $ openStroke $ vertexPath xs)
 

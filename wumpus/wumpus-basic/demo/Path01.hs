@@ -26,14 +26,14 @@ main = createDirectoryIfMissing True "./out/"
 
 pic1 :: Picture Double
 pic1 = liftToPictureU $ execDrawing (standardContext 18) $ 
-    do { drawAt (P2 130 0) (barb45 0)
-       ; drawAt (P2 120 0) (barb60 0)
-       ; drawAt (P2 110 0) (barb90 0)
-       ; draw eastUpWest
+    do { draw circle1
        ; draw curve1
        ; draw curve2
        ; draw curve3
-       ; draw circle1
+       ; draw eastUpWest
+       ; draw $ (barb45 0) `at` (P2 130 0) 
+       ; draw $ (barb60 0) `at` (P2 120 0) 
+       ; draw $ (barb90 0) `at` (P2 110 0) 
        ; return ()
        }
     
@@ -46,14 +46,14 @@ curve1 = openStroke $ curvedPath xs
 
 
 curve2 :: Graphic Double
-curve2 =  localCtxObj (primaryColour red) (openStroke $ toPrimPathU path_one)
+curve2 =  localDF (primaryColour red) (openStroke $ toPrimPathU path_one)
   where
     path_one = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
 
 
 curve3 :: Graphic Double
-curve3 = localCtxObj (primaryColour blue) 
+curve3 = localDF (primaryColour blue) 
                      (openStroke $ toPrimPathU $ shorten 10 path1)
 
 
@@ -62,7 +62,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localCtxObj (secondaryColour gold) (filledCircle 2 60 zeroPt)
+circle1 = localDF (secondaryColour gold) (filledCircle 2 60 zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
@@ -76,7 +76,7 @@ cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 --
 
 eastUpWest :: Graphic Double
-eastUpWest = localCtxObj (primaryColour blue) 
+eastUpWest = localDF (primaryColour blue) 
                          (openStroke $ mkP1 (P2 140 0) (P2 160 20))
 
 

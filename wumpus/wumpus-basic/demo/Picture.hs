@@ -130,22 +130,22 @@ picAnno :: DPicture -> String -> DPicture
 picAnno pic msg = alignHSep HCenter 30 pic lbl
   where
     lbl = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-            drawAt zeroPt (textline msg)
+            draw $ textline msg `at` zeroPt
 
 
 rect_red :: DPicture
 rect_red = liftToPictureU $ execDrawing pic_drawing_ctx $ 
               localCtx (secondaryColour indian_red)
-                       (drawAt (P2 0 10) $ borderedRectangle 30 10)
+                       (draw $ borderedRectangle 30 10 `at` (P2 0 10))
                  
 rect_green :: DPicture
 rect_green = liftToPictureU $ execDrawing pic_drawing_ctx $ 
               localCtx (secondaryColour olive_drab)
-                       (drawAt (P2 10 10) $ borderedRectangle 15 15)
+                       (draw $ borderedRectangle 15 15 `at` (P2 10 10))
 
 
 rect_blue :: DPicture
 rect_blue = liftToPictureU $ execDrawing pic_drawing_ctx $ 
               localCtx (secondaryColour powder_blue)
-                       (drawAt (P2 10 0) $ borderedRectangle 20 30)
+                       (draw $ borderedRectangle 20 30 `at` (P2 10 0))
 

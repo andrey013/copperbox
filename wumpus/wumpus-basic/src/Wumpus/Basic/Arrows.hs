@@ -49,7 +49,7 @@ import Control.Applicative
 import Data.Monoid
 
 liftPathF :: PathF u -> ConnDrawingF u (Path u)
-liftPathF pF p1 p2 = liftDF $ pF p1 p2
+liftPathF pF p1 p2 = pureDF $ pF p1 p2
 
 line :: Num u => PathF u -> ConnImage u (Path u)
 line pathF = intoConnImage (liftPathF pathF) (pathGraphic pathF)

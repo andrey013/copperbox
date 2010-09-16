@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module ColourChart where
+module ColourCharts where
 
 import ColourDefns
 
@@ -41,8 +41,8 @@ makePicture row_count unit_width xs =
 colourSample :: String -> RGBi -> ChainT Double (Drawing Double) ()
 colourSample name rgb = localCtx (secondaryColour rgb) $ do 
     { pt <- position 
-    ; drawAt pt (borderedRectangle 15 10)
-    ; drawAt (displace 20 2 pt) (textline name)
+    ; draw $ borderedRectangle 15 10 `at` pt
+    ; draw $ textline name `at` displace 20 2 pt 
     }    
 
 
