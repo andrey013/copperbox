@@ -72,7 +72,8 @@ module Wumpus.Core
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
-import Wumpus.Core.Colour hiding ( black, white, red, green, blue )
+import Wumpus.Core.Colour hiding ( black, white, red, green, blue, yellow, 
+                                   cyan, magenta )
 import Wumpus.Core.FontSize hiding ( textBoundsEnc )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState hiding ( GraphicsState )

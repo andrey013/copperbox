@@ -58,7 +58,6 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.BaseTypes
-import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -70,14 +69,14 @@ drawGraphic :: (Real u, Floating u, FromPtSize u)
             => DrawingContext -> Graphic u -> Maybe (Picture u)
 drawGraphic ctx gf = post $ runGraphic ctx gf
   where
-    post hf = let xs = toListH hf in 
+    post hf = let xs = hprimToList hf in 
               if null xs then Nothing else Just (frame xs)
 
 drawGraphicU :: (Real u, Floating u, FromPtSize u) 
              => DrawingContext -> Graphic u -> Picture u
 drawGraphicU ctx gf = post $ runGraphic ctx gf
   where
-    post hf = let xs = toListH hf in 
+    post hf = let xs = hprimToList hf in 
               if null xs then errK else frame xs
     errK    = error "drawGraphicU - empty Graphic."
 
@@ -85,47 +84,47 @@ drawGraphicU ctx gf = post $ runGraphic ctx gf
 -- having the same names is actually not so useful...
 
 openStroke :: Num u => PrimPath u -> Graphic u
-openStroke pp = (\rgb attr -> wrapH $ ostroke rgb attr pp) 
-                    <$> asksObj primary_colour <*> asksObj stroke_props
+openStroke pp = (\rgb attr -> singleH $ ostroke rgb attr pp) 
+                    <$> asksDF primary_colour <*> asksDF stroke_props
 
 
 closedStroke :: Num u => PrimPath u -> Graphic u
-closedStroke pp = (\rgb attr -> wrapH $ cstroke rgb attr pp) 
-                      <$> asksObj primary_colour <*> asksObj stroke_props
+closedStroke pp = (\rgb attr -> singleH $ cstroke rgb attr pp) 
+                      <$> asksDF primary_colour <*> asksDF stroke_props
 
 
 filledPath :: Num u => PrimPath u -> Graphic u
-filledPath pp = (\rgb -> wrapH $ fill rgb pp) 
-                    <$> asksObj secondary_colour
+filledPath pp = (\rgb -> singleH $ fill rgb pp) 
+                    <$> asksDF secondary_colour
 
 
 borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
-    (\frgb attr srgb -> wrapH $ fillStroke frgb attr srgb pp) 
-        <$> asksObj secondary_colour <*> asksObj stroke_props <*> asksObj primary_colour
+    (\frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp) 
+        <$> asksDF secondary_colour <*> asksDF stroke_props <*> asksDF primary_colour
 
 
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
-    (\(rgb,attr) -> wrapH $ textlabel rgb attr ss baseline_left) 
-       <$> asksObj textAttr
+    (\(rgb,attr) -> singleH $ textlabel rgb attr ss baseline_left) 
+       <$> asksDF textAttr
 
 
 strokedEllipse :: Num u => u -> u -> LocGraphic u
 strokedEllipse hw hh pt =  
-    (\rgb attr -> wrapH $ strokeEllipse rgb attr hw hh pt) 
-       <$> asksObj primary_colour <*> asksObj stroke_props
+    (\rgb attr -> singleH $ strokeEllipse rgb attr hw hh pt) 
+       <$> asksDF primary_colour <*> asksDF stroke_props
 
 filledEllipse :: Num u => u -> u -> LocGraphic u
 filledEllipse hw hh pt =  
-    (\rgb -> wrapH $ fillEllipse rgb hw hh pt) 
-       <$> asksObj secondary_colour
+    (\rgb -> singleH $ fillEllipse rgb hw hh pt) 
+       <$> asksDF secondary_colour
 
 borderedEllipse :: Num u => u -> u -> LocGraphic u
 borderedEllipse hw hh pt = 
-    (\frgb attr srgb -> wrapH $ fillStrokeEllipse frgb attr srgb hw hh pt) 
-        <$> asksObj secondary_colour <*> asksObj stroke_props 
-        <*> asksObj primary_colour
+    (\frgb attr srgb -> singleH $ fillStrokeEllipse frgb attr srgb hw hh pt) 
+        <$> asksDF secondary_colour <*> asksDF stroke_props 
+        <*> asksDF primary_colour
 
 
 --------------------------------------------------------------------------------
@@ -144,7 +143,7 @@ displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 localDrawingContext :: 
     (DrawingContext -> DrawingContext) -> LocGraphic u -> LocGraphic u
-localDrawingContext upd img = \pt -> localCtxObj upd (img pt) 
+localDrawingContext upd img = \pt -> localDF upd (img pt) 
 
 localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u
 localPoint upd gf = \pt -> gf (upd pt)

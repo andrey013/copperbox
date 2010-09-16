@@ -62,7 +62,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localCtxObj (secondaryColour yellow) (filledCircle 2 60 zeroPt)
+circle1 = localCtxObj (secondaryColour gold) (filledCircle 2 60 zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)

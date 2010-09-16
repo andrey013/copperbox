@@ -47,11 +47,11 @@ import Control.Applicative
 -- | tripoints takes dimensions from the xlowerHeight.
 --
 tripoints :: (Floating u, FromPtSize u)
-          => Radian -> Radian -> LocDrawingObject u (Point2 u, Point2 u)
+          => Radian -> Radian -> LocDrawingF u (Point2 u, Point2 u)
 tripoints triang theta tip = 
     (\h -> let d = h / (fromRadian $ cos halfang) 
            in (tip .-^ v1 d, tip .-^ v2 d))
-      <$> asksObj lowerxHeight
+      <$> asksDF lowerxHeight
   where
     halfang = 0.5 * triang
     v1 d    = avec (theta + halfang) d
@@ -124,7 +124,7 @@ barb45 = barbAng (pi/4)
 
 perp :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
 perp theta pt =  
-    asksObj lowerxHeight >>= \ h -> 
+    asksDF lowerxHeight >>= \ h -> 
     let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
   where
     makeV h  = avec (theta + pi/2) (0.5 * h)

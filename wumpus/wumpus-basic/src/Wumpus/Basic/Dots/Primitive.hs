@@ -56,6 +56,7 @@ import Data.VectorSpace
 
 import Control.Applicative
 import Data.List
+import Data.Monoid
 
 -- Marks should be the height of a lower-case letter...
 
@@ -81,11 +82,11 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 -- | A mark is the height of a lowercase \'x\'.
 -- 
 standardSize :: FromPtSize u => (u -> LocGraphic u) -> LocGraphic u
-standardSize f = \pt -> asksObj markHeight >>= \h -> f h pt
+standardSize f = \pt -> asksDF markHeight >>= \h -> f h pt
 
 halfHeightSize :: (Fractional u, FromPtSize u) 
                => (u -> LocGraphic u) -> LocGraphic u
-halfHeightSize f = \pt -> asksObj markHeight >>= \h -> f (h * 0.5) pt
+halfHeightSize f = \pt -> asksDF markHeight >>= \h -> f (h * 0.5) pt
 
 
 
@@ -101,7 +102,7 @@ markChar ch = markText [ch]
 -- Note - eta-expanded (?)
 --
 markText :: (Fractional u, FromPtSize u) => String -> LocGraphic u
-markText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
+markText ss pt = asksDF (textDimensions ss) >>= \(w,h) -> 
                  shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) pt
 
 
@@ -125,17 +126,17 @@ markVLine = standardSize (\h -> axialLine (vvec h))
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
 markX = standardSize (\h -> let w = 0.75 * h in
-                            axialLine (vec w h) `appendAt` axialLine (vec (-w) h))
+                            axialLine (vec w h) `lgappend` axialLine (vec (-w) h))
 
 
 
 markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-markPlus = markVLine `appendAt` markHLine
+markPlus = markVLine `lgappend` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
 markCross = standardSize 
-             (\h -> axialLine (avec ang h) `appendAt` axialLine (avec (-ang) h))
+             (\h -> axialLine (avec ang h) `lgappend` axialLine (avec (-ang) h))
   where
     ang = pi*0.25  
 
@@ -144,10 +145,10 @@ markCross = standardSize
 -- needs horizontal pinch...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
-            => Point2 u -> DrawingObject (PrimPath u)
+            => Point2 u -> DrawingF (PrimPath u)
 pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h 
                         in vertexPath [dvs hh, dve hw,dvn hh, dvw hw])
-                   <$> asksObj markHeight
+                   <$> asksDF markHeight
   where
     dvs hh = pt .+^ vvec (-hh)
     dve hw = pt .+^ hvec hw
@@ -189,15 +190,15 @@ markBCircle = halfHeightSize borderedDisk
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon pt = asksObj markHeight >>= \h ->
+markPentagon pt = asksDF markHeight >>= \h ->
                   closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
-markStar pt = asksObj markHeight >>= \h -> 
-              let (p:ps) = polygonPoints 5 (0.5*h) pt in gcat (fn p) $ map fn ps
+markStar pt = asksDF markHeight >>= \h -> 
+              let ps = polygonPoints 5 (0.5*h) pt in mconcat $ map fn ps
   where
     fn p1  = openStroke $ path pt [lineTo p1] 
 
@@ -205,7 +206,7 @@ markStar pt = asksObj markHeight >>= \h ->
 
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF3 h)
+markAsterisk = standardSize (\h -> lineF1 h `lgappend` lineF2 h `lgappend` lineF3 h)
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -215,15 +216,15 @@ markAsterisk = standardSize (\h -> lineF1 h `appendAt` lineF2 h `appendAt` lineF
 
 
 markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-markOPlus = markCircle `appendAt` markPlus
+markOPlus = markCircle `lgappend` markPlus
 
 
 markOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markOCross = markCircle `appendAt` markCross
+markOCross = markCircle `lgappend` markCross
 
 
 markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markFOCross = markCross `appendAt` markBCircle 
+markFOCross = markCross `lgappend` markBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u

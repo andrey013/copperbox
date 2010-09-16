@@ -46,10 +46,10 @@ import Wumpus.Basic.Utils.Intersection ( langle )
 import Wumpus.Core                      -- package: wumpus-core
 
 import Control.Applicative
+import Data.Monoid
 
-
-liftPathF :: PathF u -> ConnDrawingObject u (Path u)
-liftPathF pF p1 p2 = DrawingObject $ \ _ -> pF p1 p2
+liftPathF :: PathF u -> ConnDrawingF u (Path u)
+liftPathF pF p1 p2 = liftDF $ pF p1 p2
 
 line :: Num u => PathF u -> ConnImage u (Path u)
 line pathF = intoConnImage (liftPathF pathF) (pathGraphic pathF)
@@ -58,7 +58,7 @@ line pathF = intoConnImage (liftPathF pathF) (pathGraphic pathF)
 -- Here the path is already shortened - we have accounted for the
 -- points already, so it is just a graphic. 
 lineTipR :: Num u => Path u -> Graphic u -> Graphic u
-lineTipR bpath tip = openStroke (toPrimPathU bpath) `appendGraphic` tip
+lineTipR bpath tip = openStroke (toPrimPathU bpath) `mappend` tip
    
 
 
@@ -74,10 +74,10 @@ lineTipR bpath tip = openStroke (toPrimPathU bpath) `appendGraphic` tip
 -- path segments.
 --
 rightPathProps :: (Real u, Floating u, FromPtSize u) 
-               => PathF u -> ConnDrawingObject u (Path u,Radian)
+               => PathF u -> ConnDrawingF u (Path u,Radian)
 rightPathProps pathF p1 p2 = 
     (\h sw -> (shortenPath h sw, calcTheta h))
-      <$> asksObj lowerxHeight <*> asksObj (line_width . stroke_props)  
+      <$> asksDF lowerxHeight <*> asksDF (line_width . stroke_props)  
   where
     long_path          = pathF p1 p2  
     shortenPath lxh sw = shortenR (lxh + (realToFrac sw)) long_path 

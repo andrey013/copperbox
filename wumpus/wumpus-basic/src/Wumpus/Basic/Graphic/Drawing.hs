@@ -36,11 +36,19 @@ module Wumpus.Basic.Graphic.Drawing
   , liftToPictureU
  
   , draw
+  , drawi
+  , at
+  , ati
+  , conn
+
+  , node
+  , nodei
+
+  -- * Obsolete
   , drawAt
   , drawAtImg
   , drawConn
   , drawConnImg
-  , node
 
   ) where
 
@@ -48,14 +56,13 @@ module Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.BaseClasses
 import Wumpus.Basic.Graphic.BaseTypes
 import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Utils.HList
  
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
-
+import Data.Monoid
 
 
 
@@ -142,11 +149,11 @@ instance Monad m => Monad (DrawingT u m) where
 -- 
 
 instance TraceM (Drawing u) where
-  trace a = Drawing $ \_ s -> ((),s `appendH` a)
+  trace a = Drawing $ \_ s -> ((),s `mappend` a)
 
 
 instance Monad m => TraceM (DrawingT u m) where
-  trace a = DrawingT $ \_ s -> return ((),s `appendH` a)
+  trace a = DrawingT $ \_ s -> return ((),s `mappend` a)
 
 
 
@@ -176,7 +183,7 @@ instance Monad m => DrawingCtxM (DrawingT u m) where
 
 
 runDrawing :: DrawingContext -> Drawing u a -> (a, HPrim u)
-runDrawing ctx ma = getDrawing ma ctx emptyH
+runDrawing ctx ma = getDrawing ma ctx mempty
 
 execDrawing :: DrawingContext -> Drawing u a -> HPrim u
 execDrawing ctx ma = snd $ runDrawing ctx ma
@@ -184,27 +191,73 @@ execDrawing ctx ma = snd $ runDrawing ctx ma
 
 
 runDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (a, HPrim u) 
-runDrawingT ctx ma = getDrawingT ma ctx emptyH
+runDrawingT ctx ma = getDrawingT ma ctx mempty
 
 execDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (HPrim u)
 execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
 
 
 liftToPictureU :: (Real u, Floating u, FromPtSize u) => HPrim u -> Picture u
-liftToPictureU hf = let prims = toListH hf in 
+liftToPictureU hf = let prims = hprimToList hf in 
                     if null prims then errK else frame prims
   where
     errK = error "liftToPictureU - empty prims list."
 
 --------------------------------------------------------------------------------
 
+-- | Draw a Graphic taking the drawing style from the 
+-- /drawing context/. 
+--
+-- This operation is analogeous to @tell@ in a Writer monad.
+-- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
 draw gf = askCtx >>= \ctx -> trace (runGraphic ctx gf)
 
+
+-- | Draw a Image taking the drawing style from the 
+-- /drawing context/. 
+--
+-- The graphic representation of the Image is drawn in the Trace 
+-- monad, and the result is returned.
+-- 
+drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
+drawi img = askCtx >>= \ctx -> 
+            let (a,o) = runImage ctx img in trace o >> return a
+
+
+infixr 1 `at`, `ati`
+at :: LocGraphic u -> Point2 u -> Graphic u
+at = ($)
+
+ati :: LocImage u a -> Point2 u -> Image u a
+ati = ($)
+
+
+
+infixl 1 `conn`
+conn :: ConnImage u a -> Point2 u -> LocImage u a
+conn = ($)
+
+
+node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
+     => LocGraphic u -> m ()
+node gfL = askCtx   >>= \ctx -> 
+           position >>= \pt  -> trace (runGraphic ctx $ gfL pt)
+
+
+nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
+     => LocImage u a -> m a
+nodei imgL = askCtx   >>= \ctx -> 
+             position >>= \pt  -> 
+             let (a,o) = runImage ctx (imgL pt) in trace o >> return a
+
+--------------------------------------------------------------------------------
+-- OBSOLETE
 drawAt :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-       => Point2 u ->LocGraphic u -> m ()
+       => Point2 u -> LocGraphic u -> m ()
 drawAt pt gfL = askCtx >>= \ctx -> trace (runGraphic ctx (gfL pt))
 
+-- OBSOLETE
 drawAtImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
           => Point2 u -> LocImage u a -> m a
 drawAtImg pt imgL = askCtx >>= \ctx -> 
@@ -213,21 +266,16 @@ drawAtImg pt imgL = askCtx >>= \ctx ->
 
 
      
+-- OBSOLETE
 drawConn :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
          => Point2 u -> Point2 u -> ConnGraphic u -> m ()
 drawConn p1 p2 connL = askCtx >>= \ctx -> trace (runGraphic ctx (connL p1 p2))
      
+-- OBSOLETE
 drawConnImg :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
             => Point2 u -> Point2 u -> ConnImage u a -> m a
 drawConnImg p1 p2 connL = askCtx >>= \ctx -> 
                           let (a,o) = runImage ctx (connL p1 p2)
                           in trace o >> return a
             
-
-
-node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
-     => LocGraphic u -> m ()
-node gfL = askCtx   >>= \ctx -> 
-           position >>= \pt  -> trace (runGraphic ctx $ gfL pt)
-
 

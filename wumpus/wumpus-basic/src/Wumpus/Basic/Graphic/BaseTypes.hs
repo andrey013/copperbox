@@ -23,28 +23,30 @@ module Wumpus.Basic.Graphic.BaseTypes
     
 
     HPrim
+  , hprimToList
+  , singleH
+
   , Point2T
   , DPoint2T
 
-  , DrawingObject(..)
-  , LocDrawingObject
-  , DLocDrawingObject
+  , DrawingF
+  , LocDrawingF
+  , DLocDrawingF
 
-  , liftDrawingObject 
+  , runDF
+  , liftDF 
+  , asksDF
+  , localDF
 
   , Graphic
   , DGraphic
-  , appendGraphic
-  , gcat
   
-  , asksObj
-  , localCtxObj
 
   , runGraphic
 
   , LocGraphic
   , DLocGraphic
-  , appendAt
+  , lgappend
 
   , Image
   , DImage
@@ -55,8 +57,8 @@ module Wumpus.Basic.Graphic.BaseTypes
   , intoImage
   , intoLocImage
 
-  , ConnDrawingObject
-  , DConnDrawingObject
+  , ConnDrawingF
+  , DConnDrawingF
   , ConnGraphic
   , DConnGraphic
   , ConnImage
@@ -73,9 +75,7 @@ import Wumpus.Core                      -- package: wumpus-core
 
 
 import Control.Applicative
-
-
-
+import Data.Monoid
 
 
 
@@ -93,8 +93,22 @@ import Control.Applicative
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
-type HPrim u = H (PrimElement u)
+newtype HPrim u = HPrim { getHPrim :: H (PrimElement u) }
 
+-- Note - only a Monoid instance for HPrim - they cannot be 
+-- shown, fmapped etc.
+
+instance Monoid (HPrim u) where
+  mempty          = HPrim emptyH
+  ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
+
+
+hprimToList :: HPrim u -> [PrimElement u]
+hprimToList = toListH . getHPrim
+
+
+singleH :: PrimElement u -> HPrim u
+singleH = HPrim . wrapH 
 
 -- | Point transformation function.
 --
@@ -102,68 +116,82 @@ type Point2T u = Point2 u -> Point2 u
 
 type DPoint2T = Point2T Double
 
+--------------------------------------------------------------------------------
+--
 
-newtype DrawingObject a = DrawingObject { 
-          getDrawingObject :: DrawingContext -> a }
+-- | Drawings in Wumpus-Basic have an implicit /graphics state/ 
+-- the @DrawingContext@, the most primitive building block is 
+-- a function from the DrawingContext to some polymorphic answer.
+-- 
+-- This functional type is represented concretely as @DrawingF@.
+-- 
+-- > DrawingF :: DrawingContext -> a 
+--
+newtype DrawingF a = DrawingF { getDrawingF :: DrawingContext -> a }
 
 
+instance Functor DrawingF where
+  fmap f ma = DrawingF $ \ctx -> f $ getDrawingF ma ctx 
 
-type LocDrawingObject u a = Point2 u -> DrawingObject a 
-
-type DLocDrawingObject a = LocDrawingObject Double a
-
-
-
-instance Functor DrawingObject where
-  fmap f ma = DrawingObject $ \ctx -> f $ getDrawingObject ma ctx 
-
+-- The monoid instance seems sensible...
+--
+instance Monoid a => Monoid (DrawingF a) where 
+  mempty          = DrawingF $ \_   -> mempty
+  fa `mappend` fb = DrawingF $ \ctx -> 
+                      getDrawingF fa ctx `mappend` getDrawingF fb ctx
 
 -- Applicative
 
-instance Applicative DrawingObject where
-  pure a    = DrawingObject $ \_   -> a
-  mf <*> ma = DrawingObject $ \ctx -> let f = getDrawingObject mf ctx
-                                          a = getDrawingObject ma ctx
-                                      in f a
+instance Applicative DrawingF where
+  pure a    = DrawingF $ \_   -> a
+  mf <*> ma = DrawingF $ \ctx -> let f = getDrawingF mf ctx
+                                     a = getDrawingF ma ctx
+                                 in f a
 
 -- Monad 
 
-instance Monad DrawingObject where
-  return a  = DrawingObject $ \_   -> a
-  ma >>= k  = DrawingObject $ \ctx -> let a = getDrawingObject ma ctx
-                                      in (getDrawingObject . k) a ctx 
+instance Monad DrawingF where
+  return a  = DrawingF $ \_   -> a
+  ma >>= k  = DrawingF $ \ctx -> let a = getDrawingF ma ctx
+                                 in (getDrawingF . k) a ctx 
+
+-- | Run a /Drawing Function/ with the supplied /Drawing Context/.
+--
+runDF :: DrawingContext -> DrawingF a -> a
+runDF ctx df = getDrawingF df ctx
 
 
-liftDrawingObject :: a -> DrawingObject a
-liftDrawingObject a = DrawingObject $ \ _ctx -> a 
+-- | Lift into a DrawingF
+--
+liftDF :: a -> DrawingF a
+liftDF a = DrawingF $ \ _ctx -> a 
+
+asksDF :: (DrawingContext -> a) -> DrawingF a
+asksDF fn = DrawingF $ \ctx -> fn ctx
+
+localDF :: (DrawingContext -> DrawingContext) 
+        -> DrawingF a -> DrawingF a
+localDF upd gf = DrawingF $ \ctx -> getDrawingF gf (upd ctx)
+
+
+
+type LocDrawingF u a = Point2 u -> DrawingF a 
+
+type DLocDrawingF a = LocDrawingF Double a
+
+
+--------------------------------------------------------------------------------
+
 
 -- Simple drawing - representing one or more prims
 
-type Graphic u = DrawingObject (HPrim u)
+type Graphic u = DrawingF (HPrim u)
 
 type DGraphic = Graphic Double
 
 
-appendGraphic :: Graphic u -> Graphic u -> Graphic u
-appendGraphic gf1 gf2 = DrawingObject $ \ctx ->          
-      (getDrawingObject gf1 ctx) `appendH` (getDrawingObject gf2 ctx)
-
-gcat :: Graphic u -> [Graphic u] -> Graphic u
-gcat a = step a 
-  where
-    step ac []     = ac
-    step ac (x:xs) = step (ac `appendGraphic` x) xs
- 
-
-asksObj :: (DrawingContext -> a) -> DrawingObject a
-asksObj fn = DrawingObject $ \ctx -> fn ctx
-
-localCtxObj :: (DrawingContext -> DrawingContext) 
-            -> DrawingObject a -> DrawingObject a
-localCtxObj upd gf = DrawingObject $ \ctx -> getDrawingObject gf (upd ctx)
-
 runGraphic :: DrawingContext -> Graphic u -> HPrim u
-runGraphic ctx gf = (getDrawingObject gf) ctx
+runGraphic ctx gf = (getDrawingF gf) ctx
 
 
 --------------------------------------------------------------------------------
@@ -186,8 +214,8 @@ type DLocGraphic = LocGraphic Double
 -- are drawn at the same origin and the results concatenated.
 --
 --
-appendAt :: LocGraphic u -> LocGraphic u -> LocGraphic u
-appendAt f g = \pt -> f pt `appendGraphic` g pt
+lgappend :: LocGraphic u -> LocGraphic u -> LocGraphic u
+lgappend f g = \pt -> f pt `mappend` g pt
 
 
 --------------------------------------------------------------------------------
@@ -197,7 +225,7 @@ appendAt f g = \pt -> f pt `appendGraphic` g pt
 -- typical example - nodes are drawing but the also support 
 -- taking anchor points.
 --
-type Image u a = DrawingObject (a, HPrim u)
+type Image u a = DrawingF (a, HPrim u)
 
 type DImage a = Image Double a
 
@@ -206,23 +234,24 @@ type LocImage u a = Point2 u -> Image u a
 type DLocImage a = LocImage Double a
 
 runImage :: DrawingContext -> Image u a -> (a,HPrim u)
-runImage ctx img = (getDrawingObject img) ctx
+runImage ctx img = (getDrawingF img) ctx
 
 
-intoImage :: DrawingObject a -> Graphic u -> Image u a
-intoImage f g = DrawingObject $ \ctx -> 
-    let a = getDrawingObject f ctx; o = getDrawingObject g ctx in (a,o)
+intoImage :: DrawingF a -> Graphic u -> Image u a
+intoImage f g = DrawingF $ \ctx -> 
+    let a = getDrawingF f ctx; o = getDrawingF g ctx in (a,o)
 
 
-intoLocImage :: LocDrawingObject u a -> LocGraphic u -> LocImage u a
-intoLocImage f g pt = DrawingObject $ \ctx -> 
-    let a = getDrawingObject (f pt) ctx
-        o = getDrawingObject (g pt) ctx 
-    in (a,o)
+intoLocImage :: LocDrawingF u a -> LocGraphic u -> LocImage u a
+intoLocImage f g pt = DrawingF $ \ctx -> 
+    let a = getDrawingF (f pt) ctx; o = getDrawingF (g pt) ctx in (a,o)
 
-type ConnDrawingObject u a = Point2 u -> Point2 u -> DrawingObject a
+--------------------------------------------------------------------------------
+--
 
-type DConnDrawingObject a = ConnDrawingObject Double a
+type ConnDrawingF u a = Point2 u -> Point2 u -> DrawingF a
+
+type DConnDrawingF a = ConnDrawingF Double a
 
 -- | ConnGraphic is a connector drawn between two points 
 -- contructing a Graphic.
@@ -239,8 +268,6 @@ type ConnImage u a = Point2 u -> Point2 u -> Image u a
 type DConnImage a = ConnImage Double a
 
 
-intoConnImage :: ConnDrawingObject u a -> ConnGraphic u -> ConnImage u a
-intoConnImage f g p1 p2 = DrawingObject $ \ctx -> 
-    let a = getDrawingObject (f p1 p2) ctx
-        o = getDrawingObject (g p1 p2) ctx 
-    in (a,o)
+intoConnImage :: ConnDrawingF u a -> ConnGraphic u -> ConnImage u a
+intoConnImage f g p1 p2 = DrawingF $ \ctx -> 
+    let a = getDrawingF (f p1 p2) ctx; o = getDrawingF (g p1 p2) ctx in (a,o)

@@ -139,8 +139,8 @@ rectangleAnchor hw hh ctr =
                              $ rectangleLines ctr hw hh
 
 rectangleLDO :: (Real u, Floating u) 
-             => u -> u -> LocDrawingObject u (DotAnchor u)
-rectangleLDO w h pt = liftDrawingObject $ rectangleAnchor (w*0.5) (h*0.5) pt
+             => u -> u -> LocDrawingF u (DotAnchor u)
+rectangleLDO w h pt = liftDF $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -148,8 +148,8 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (\theta -> ctr .+^ (avec theta rad))
                                  (radialCardinal rad ctr)
 
-circleLDO :: (Floating u, FromPtSize u) => LocDrawingObject u (DotAnchor u)
-circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksObj markHeight 
+circleLDO :: (Floating u, FromPtSize u) => LocDrawingF u (DotAnchor u)
+circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksDF markHeight 
 
 
 
@@ -161,13 +161,13 @@ type DDotLocImage = DotLocImage Double
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
-dotChar ch pt = asksObj (textDimensions [ch]) >>= \(w,h) -> 
+dotChar ch pt = asksDF (textDimensions [ch]) >>= \(w,h) -> 
                 intoLocImage (rectangleLDO w h) (markChar ch) pt
 
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
-dotText ss pt = asksObj (textDimensions ss) >>= \(w,h) -> 
+dotText ss pt = asksDF (textDimensions ss) >>= \(w,h) -> 
                 intoLocImage (rectangleLDO w h) (markText ss) pt
 
 
@@ -201,7 +201,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
-dotSquare pt = asksObj markHeight >>= \ h ->
+dotSquare pt = asksDF markHeight >>= \ h ->
                intoLocImage (rectangleLDO h h) markSquare pt
 
 
