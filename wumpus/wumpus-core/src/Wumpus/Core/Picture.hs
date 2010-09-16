@@ -101,8 +101,10 @@ import Data.Semigroup                           -- package: algebra
 
 -- | Lift a list of primitives to a composite picture.
 --
--- The order of the list maps to the zorder - the front of the
--- list is drawn at the top.
+-- The order of the list maps to the order of printing - the 
+-- front of the list is drawn first in the file. This also means
+-- that the front of the list is drawn /at the back/ in the 
+-- Z-Order.
 --
 -- This function throws an error when supplied the empty list.
 --

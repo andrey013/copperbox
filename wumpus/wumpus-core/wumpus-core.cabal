@@ -47,6 +47,13 @@ description:
   .
   0.32.0 to 0.33.0:
   .
+  * Major change - the printing order has been changed. The first 
+    element in a @frame@ of Prims is draw first. This means it 
+    appears first in the output file (this makes sense) - it also 
+    means it is at the back in the Z-Order. This latter point 
+    might not be so intuitive, but changing the printing order at 
+    least makes Wumpus-Core match SVG and PostScript.
+  .
   * Changed the visiblity of the new colours (yellow, cyan, 
     magenta) to be hidden at the top level. They can be exposed
     by importing @Wumpus.Core.Colour@. 

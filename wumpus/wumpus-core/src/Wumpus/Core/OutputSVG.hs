@@ -55,7 +55,6 @@ import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
-import qualified Data.Foldable as F
 import Data.Maybe
 
 -- SvgMonad is two Readers plus Int state for clip paths...
@@ -169,8 +168,8 @@ imageTranslation pic = case repositionDeltas pic of
 
 
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
-picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primElement ones
-picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primElement ones
+picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 picture (Clip    (_,xs) cp pic) = 
     bracketTrafos xs $ do { lbl <- newClipLabel
                           ; d1  <- clipPath lbl cp
@@ -181,20 +180,20 @@ picture (Group   (_,xs) fn pic) = bracketTrafos xs $ bracketGS fn (picture pic)
 
 
 
--- This starts with an empty line...
---
 
-revConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
-revConcat fn ones = some empty <$> F.foldrM step None ones
+oneConcat :: (a -> SvgMonad Doc) -> OneList a -> SvgMonad Doc
+oneConcat fn ones = outstep (viewl ones)
   where
-    step e ac = (\d -> d `conc` ac) <$> fn e
-    conc d None      = Some d
-    conc d (Some ac) = Some $ ac `vconcat` d
+    outstep (e :< rest)   = fn e >>= \a -> instep a (viewl rest)
+    outstep (OneL e)      = fn e
+    
+    instep ac (OneL e)    = fn e >>= \a -> return (ac `vconcat` a)
+    instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
 primElement :: (Real u, Floating u, PSUnit u) => PrimElement u -> SvgMonad Doc
 primElement (Atom prim)          = primitive prim
-primElement (XLinkGroup xl ones) = drawXLink xl <$> revConcat primElement ones
+primElement (XLinkGroup xl ones) = drawXLink xl <$> oneConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
 primitive (PPath props pp)     = primPath props pp

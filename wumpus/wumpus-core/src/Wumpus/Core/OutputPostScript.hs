@@ -255,26 +255,28 @@ imageTranslation pic = case repositionDeltas pic of
 -- constructor.
 --
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
-picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ revConcat primElement ones
-picture (Picture (_,xs) ones)   = bracketTrafos xs $ revConcat picture ones
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primElement ones
+picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
                                     (vconcat <$> clipPath cp <*> picture pic)
 picture (Group   (_,xs) _ pic) = bracketTrafos xs (picture pic)
 
 
-revConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
-revConcat fn ones = some empty <$> F.foldrM step None ones
+oneConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
+oneConcat fn ones = outstep (viewl ones)
   where
-    step e ac = (\d -> d `conc` ac) <$> fn e
-    conc d None      = Some d
-    conc d (Some ac) = Some $ ac `vconcat` d
+    outstep (e :< rest)   = fn e >>= \a -> instep a (viewl rest)
+    outstep (OneL e)      = fn e
+    
+    instep ac (OneL e)    = fn e >>= \a -> return (ac `vconcat` a)
+    instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
 -- No action is taken for hyperlinks in PostScript.
 --
 primElement :: (Real u, Floating u, PSUnit u) => PrimElement u -> PsMonad Doc
 primElement (Atom prim)         = primitive prim
-primElement (XLinkGroup _ ones) = revConcat primElement ones
+primElement (XLinkGroup _ ones) = oneConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
 primitive (PPath props pp)     = primPath props pp

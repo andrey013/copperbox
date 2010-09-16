@@ -47,10 +47,12 @@ movements \texttt{lineto}, \texttt{moveto} etc., instead
 
 \begin{description}
 \item[\texttt{Wumpus.Core.}]
-Top-level import module, re-exports the exposed modules. Exports 
-as opaque some of the internal data types, where the export is 
-necessary for writing type signatures to user functions but access
-to the objects themselves is hidden by \emph{smart} constructors.
+Top-level \emph{shim} module to import all the exposed modules. 
+Some internal data types are also exported as opaque - the 
+implementation is hidden, but the type name is exposed so it can 
+be used in the type signatures of \emph{userland} functions. 
+Typically, where these data types need to be \emph{instantiated}, 
+smart constructors are provided.
 
 \item[\texttt{Wumpus.Core.AffineTrans.}]
 The standard affine transformations (scaling, rotation, 
@@ -60,15 +62,16 @@ common angles.
 
 \item[\texttt{Wumpus.Core.BoundingBox.}]
 Data type representing bounding boxes and operations on them. 
-This module is potentially important for defining higher-level
-graphics objects (arrowheads and the like).
+Bounding boxes are important for Pictures and they support the 
+definition of \emph{Picture composition operators}.
 
 \item[\texttt{Wumpus.Core.Colour.}]
-Colour types (RGB, grayscale and HSB) and conversion between 
-them. Some named colours, which should be hidden or import
-qualified if a more extensive package of colours (e.g. the named
-SVG colours) is used. RGB is the default format, where black is 
-\texttt{(0.0, 0.0, 0.0)}, and white is \texttt{(1.0, 1.0, 1.0)}.
+A single colour type \texttt{RGBi} is supported. This type defines 
+colour as a triple of integers (Word8) - black is 0, 0, 0; white 
+is 255, 255, 255.  Some named colours are defined, although they 
+are hidden by the top level shim module to avoid name clashes. 
+\texttt{Wumpus.Core.Colour} can be imported directly if the named 
+colours are required.
 
 \item[\texttt{Wumpus.Core.FontSize.}]
 Various calculations for font size metrics. Generally not useful 
@@ -97,8 +100,8 @@ Functions to write SVG files.
 Operations to build \emph{pictures} - paths and labels within
 an affine frame. Generally the functions here are convenience 
 constructors for types from the hidden module 
-\texttt{Wumpus.Core.PictureInternal}. The types from this
-module are exported as opaque signatures by 
+\texttt{Wumpus.Core.PictureInternal}. The types from 
+\texttt{PictureInternal} are exported as opaque signatures by 
 \texttt{Wumpus.Core.WumpusTypes}.
 
 \item[\texttt{Wumpus.Core.PtSize.}]
@@ -138,14 +141,15 @@ horizontal line of text - multiple lines must be composed from
 multiple labels.
 
 Primitives are attributed with drawing styles - font name and 
-size for labels; line width, colour, etc. for paths - and 
-place within a picture. The function \texttt{frame} lifts a 
-primitive to a picture within the standard affine frame (the 
-standard frame has origin at (0,0) and unit bases for the X and
-Y axes). The function \texttt{frameMulti} places one or more 
-primitives in a frame - this will produce more efficient 
-PostScript and should be preferred for creating scatter-plots 
-and the like.
+size for labels; line width, colour, etc. for paths. Drawing 
+Primitives is unfortunately complicated due to the need to 
+support hyperlinks in SVG output. Primitives have to be lifted 
+to a \texttt{PrimElement} before they can be placed within a 
+\texttt{Picture} - using the shorthand constructors in 
+\texttt{Wumpus.Core.Picture} does this lifting automatically.
+The function \texttt{frame} assembles a list of primitives 
+into a \texttt{Picture} with a standard affine frame where the 
+origin is at (0,0) and the X and Y axes have the unit bases. 
 
 \begin{figure}
 \centering
@@ -153,7 +157,7 @@ and the like.
 \caption{The world frame, with origin at the bottom left.}
 \end{figure}
 
-\wumpuscore uses the same picture frame as PostScript with 
+\wumpuscore uses the same picture frame as PostScript where 
 the origin at the bottom left, see Figure 1. This contrasts to SVG 
 where the origin at the top-left. When \wumpuscore generates SVG, 
 the whole picture is produced within a matrix transformation 
