@@ -140,7 +140,7 @@ rectangleAnchor hw hh ctr =
 
 rectangleLDO :: (Real u, Floating u) 
              => u -> u -> LocDrawingF u (DotAnchor u)
-rectangleLDO w h pt = liftDF $ rectangleAnchor (w*0.5) (h*0.5) pt
+rectangleLDO w h pt = pureDF $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u

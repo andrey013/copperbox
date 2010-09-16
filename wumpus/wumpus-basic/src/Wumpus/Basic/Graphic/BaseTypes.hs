@@ -34,7 +34,8 @@ module Wumpus.Basic.Graphic.BaseTypes
   , DLocDrawingF
 
   , runDF
-  , liftDF 
+  , pureDF 
+  , askDF
   , asksDF
   , localDF
 
@@ -43,6 +44,7 @@ module Wumpus.Basic.Graphic.BaseTypes
   
 
   , runGraphic
+  , xlinkGraphic
 
   , LocGraphic
   , DLocGraphic
@@ -56,6 +58,7 @@ module Wumpus.Basic.Graphic.BaseTypes
   , runImage
   , intoImage
   , intoLocImage
+  , xlinkImage
 
   , ConnDrawingF
   , DConnDrawingF
@@ -161,10 +164,16 @@ runDF :: DrawingContext -> DrawingF a -> a
 runDF ctx df = getDrawingF df ctx
 
 
--- | Lift into a DrawingF
+-- | Wrap a value into a DrawingF.
 --
-liftDF :: a -> DrawingF a
-liftDF a = DrawingF $ \ _ctx -> a 
+-- Note the value is /pure/ it does depend on the DrawingContext
+-- (it is /context free/).
+--
+pureDF :: a -> DrawingF a
+pureDF a = DrawingF $ \ _ctx -> a 
+
+askDF :: DrawingF DrawingContext
+askDF = DrawingF id
 
 asksDF :: (DrawingContext -> a) -> DrawingF a
 asksDF fn = DrawingF $ \ctx -> fn ctx
@@ -192,6 +201,11 @@ type DGraphic = Graphic Double
 
 runGraphic :: DrawingContext -> Graphic u -> HPrim u
 runGraphic ctx gf = (getDrawingF gf) ctx
+
+
+xlinkGraphic :: XLink -> Graphic u -> Graphic u
+xlinkGraphic xlink gf = askDF >>= \ctx -> 
+    let xs = hprimToList $ runGraphic ctx gf in pureDF (singleH $ xlinkGroup xlink xs)
 
 
 --------------------------------------------------------------------------------
@@ -246,6 +260,12 @@ intoLocImage :: LocDrawingF u a -> LocGraphic u -> LocImage u a
 intoLocImage f g pt = DrawingF $ \ctx -> 
     let a = getDrawingF (f pt) ctx; o = getDrawingF (g pt) ctx in (a,o)
 
+
+xlinkImage :: XLink -> Image u a -> Image u a
+xlinkImage xlink img = askDF >>= \ctx -> 
+    let (a,hp) = runImage ctx img 
+    in pureDF (a, singleH $ xlinkGroup xlink $ hprimToList hp)
+
 --------------------------------------------------------------------------------
 --
 
@@ -271,3 +291,7 @@ type DConnImage a = ConnImage Double a
 intoConnImage :: ConnDrawingF u a -> ConnGraphic u -> ConnImage u a
 intoConnImage f g p1 p2 = DrawingF $ \ctx -> 
     let a = getDrawingF (f p1 p2) ctx; o = getDrawingF (g p1 p2) ctx in (a,o)
+
+
+
+

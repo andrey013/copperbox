@@ -81,6 +81,8 @@ drawGraphicU ctx gf = post $ runGraphic ctx gf
     errK    = error "drawGraphicU - empty Graphic."
 
 
+
+
 -- having the same names is actually not so useful...
 
 openStroke :: Num u => PrimPath u -> Graphic u

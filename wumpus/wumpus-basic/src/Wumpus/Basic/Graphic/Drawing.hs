@@ -33,10 +33,19 @@ module Wumpus.Basic.Graphic.Drawing
   , execDrawing
   , runDrawingT
   , execDrawingT
+
+  , runFdcDrawing
+  , execFdcDrawing
+  , runFdcDrawingT
+  , execFdcDrawingT
+
   , liftToPictureU
  
   , draw
+  , xdraw
   , drawi
+  , xdrawi
+
   , at
   , ati
   , conn
@@ -197,11 +206,42 @@ execDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (HPrim u)
 execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
 
 
+runFdcDrawing :: (Real u, Floating u, FromPtSize u)
+             => DrawingContext -> Drawing u a -> (a, Maybe (Picture u))
+runFdcDrawing ctx ma = 
+    let (a,hp) = runDrawing ctx ma
+        ps     = hprimToList hp
+        fdc    = font_props ctx
+    in if null ps then (a, Nothing)
+                 else (a, Just $ fontDeltaContext fdc $ frame ps)
+         
+execFdcDrawing :: (Real u, Floating u, FromPtSize u)
+             => DrawingContext -> Drawing u a -> Maybe (Picture u)
+execFdcDrawing ctx ma = snd $ runFdcDrawing ctx ma
+
+
+runFdcDrawingT :: (Real u, Floating u, FromPtSize u, Monad m)
+             => DrawingContext -> DrawingT u m a -> m (a, Maybe (Picture u))
+runFdcDrawingT ctx ma = 
+    runDrawingT ctx ma >>= \(a,hp) -> 
+    let ps     = hprimToList hp
+        fdc    = font_props ctx
+    in if null ps then return (a, Nothing)
+                  else return (a, Just $ fontDeltaContext fdc $ frame ps)
+  
+       
+execFdcDrawingT :: (Real u, Floating u, FromPtSize u, Monad m)
+             => DrawingContext -> DrawingT u m a -> m (Maybe (Picture u))
+execFdcDrawingT ctx ma = liftM snd $ runFdcDrawingT ctx ma
+
+
 liftToPictureU :: (Real u, Floating u, FromPtSize u) => HPrim u -> Picture u
 liftToPictureU hf = let prims = hprimToList hf in 
                     if null prims then errK else frame prims
   where
     errK = error "liftToPictureU - empty prims list."
+
+
 
 --------------------------------------------------------------------------------
 
@@ -213,6 +253,13 @@ liftToPictureU hf = let prims = hprimToList hf in
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
 draw gf = askCtx >>= \ctx -> trace (runGraphic ctx gf)
 
+-- | Hyperlink version of 'draw'.
+--
+xdraw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+      => XLink -> Graphic u -> m ()
+xdraw xl gf = draw (xlinkGraphic xl gf)
+
+
 
 -- | Draw a Image taking the drawing style from the 
 -- /drawing context/. 
@@ -223,6 +270,14 @@ draw gf = askCtx >>= \ctx -> trace (runGraphic ctx gf)
 drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askCtx >>= \ctx -> 
             let (a,o) = runImage ctx img in trace o >> return a
+
+-- | Hyperlink version of 'drawi'.
+--
+xdrawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+       => XLink -> Image u a -> m a
+xdrawi xl img = drawi (xlinkImage xl img)
+
+
 
 
 infixr 1 `at`, `ati`
