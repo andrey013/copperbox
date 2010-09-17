@@ -45,6 +45,7 @@ module Wumpus.Core.FontSize
   -- * Metrics calculation
   , widthAt48pt
   , charWidth
+  , spacerWidth
   , textWidth
   , textHeight
   , numeralHeight
@@ -165,6 +166,15 @@ widthAt48pt n = (courier48_width * len) + (courier48_spacer_width * len_sub)
 --
 charWidth :: FontSize -> PtSize
 charWidth sz = (fromIntegral sz)/48 * courier48_width
+
+
+-- | Approximate the width of a spacer between monospace 
+-- characters using metrics derived from the Courier font.
+--
+spacerWidth :: FontSize -> PtSize
+spacerWidth sz = (fromIntegral sz)/48 * courier48_spacer_width
+
+
 
 -- | Text width at @sz@ point size of the string @s@. All
 -- characters are counted literally - special chars may cause

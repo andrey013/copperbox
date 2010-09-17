@@ -289,12 +289,15 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 -- Labels to primitive
 
 -- | Create a text label. The string should not contain newline
--- or tab characters.
+-- or tab characters. Also double-spaces should not be used - a 
+-- rendering agent for SVG will coalesce double-spaces into a 
+-- single space. For precise control of spacing and kerning use
+-- 'hkernlabel'.
 --
 -- The supplied point is the left baseline.
 --
 textlabel :: Num u 
-           => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
+          => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
 textlabel rgb attr txt pt = Atom $ PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (StdLayout $ lexLabel txt) identityCTM
