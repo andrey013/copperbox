@@ -34,6 +34,8 @@ module Wumpus.Basic.Text.LRText
   , kern
   , char
   , symb
+  , symbi
+  , symbEscInt
 
   ) where
 
@@ -45,6 +47,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
+import Data.Char ( chr )
 import Data.Monoid
 
 
@@ -184,5 +187,11 @@ symb sy = gets delta_sym           >>= \u ->
           snocSymb (kernchar u sy) >> symbMove
 
 
+symbi :: Num u => Int -> TextM u ()
+symbi i = symb (chr i) 
 
+
+symbEscInt :: Num u => Int -> TextM u ()
+symbEscInt i = gets delta_sym            >>= \u -> 
+               snocSymb (kernEscInt u i) >> symbMove
 

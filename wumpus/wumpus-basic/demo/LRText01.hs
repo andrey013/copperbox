@@ -58,22 +58,16 @@ pic3 = liftToPictureU $ execDrawing std_ctx $ do
 
 
 
-{-
+
 
 two_line :: Num u => GraphicF u 
 two_line = textline (textAttr std_attr) "line one"
                   `cc` (textline (textAttr std_attr) "line two" . vdisp (-16))
 
-g1 :: DGraphicF
-g1 = snd $ runTextM 16 (stroke_colour std_attr, font_props std_attr) $ ma
-  where
-    ma = text "ab" >> text ", cd" >> text ", ef" >> text ", gh" >> char '.'
-       >> newline
-       >> alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
-       >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
-       >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
-       >> newline
-       >> uGamma >> uDelta >> uTheta >> uLambda >> uXi >> uPi >> kern 2 >> uSigma
-       >> uUpsilon >> uPhi >> kern 2 >>  uPsi >> kern 2 >> uOmega
+g1 :: TextM Double ()
+g1 =   alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
+    >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
+    >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
+    >> uGamma >> uDelta >> uTheta >> uLambda >> uXi >> uPi >> kern 2 >> uSigma
+    >> uUpsilon >> uPhi >> kern 2 >>  uPsi >> kern 2 >> uOmega
 
--}

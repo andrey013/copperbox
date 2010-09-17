@@ -120,6 +120,8 @@ library
     Wumpus.Basic.Paths.Base,
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.SafeFonts,
+    Wumpus.Basic.Text.LRSymbol,
+    Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber,

@@ -22,7 +22,7 @@
 module Wumpus.Basic.Text.LRSymbol
   ( 
 
-  -- * Lower case
+  -- * Lower case Greek letters
 
     alpha
   , beta
@@ -48,7 +48,7 @@ module Wumpus.Basic.Text.LRSymbol
   , psi
   , omega
 
-  -- * Upper case
+  -- * Upper case Greek letters
   , uGamma
   , uDelta
   , uTheta
@@ -61,13 +61,15 @@ module Wumpus.Basic.Text.LRSymbol
   , uPsi
   , uOmega
 
+  , otimes
+  , oplus
+
   ) where
 
 
 import Wumpus.Basic.Text.LRText
 
 
-import Data.Char ( chr )
 import Prelude hiding ( pi )
 
 -- Note - due to a optimization in Wumpus-Core, the PostScript
@@ -182,10 +184,15 @@ uPi         = symb 'P'
 uSigma      :: Num u => TextM u ()
 uSigma      = symb 'S'
 
--- | Not working, though 161 should be uUpsilon.
+-- | Not working in PostScript, @\&\#161;@ works for SVG but 
+-- PostScript needs an encoding table for Symbol-Font not Latin1!
+--
+-- For PostScript, Latin1 @161@ maps to @exclamdown@ not 
+-- @Upsilon1@, extending Wumpus-Core to support this will require 
+-- quite some work...
 --
 uUpsilon    :: Num u => TextM u ()
-uUpsilon    = symb $ chr 161
+uUpsilon    = symbEscInt 161
 
 uPhi        :: Num u => TextM u ()
 uPhi        = symb 'F'
@@ -196,3 +203,11 @@ uPsi        = symb 'Y'
 uOmega      :: Num u => TextM u ()
 uOmega      = symb 'W'
 
+
+--------------------------------------------------------------------------------
+
+otimes      :: Num u => TextM u ()
+otimes      = symbi 0xc4
+
+oplus       :: Num u => TextM u ()
+oplus       = symbi 0xc5
