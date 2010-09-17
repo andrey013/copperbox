@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,82 +11,91 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- LRText monad - left-to-right text.
+-- LRText monad - left-to-right text, with kerning.
 -- 
--- \*\* WARNING \*\* - This is out dated now that Wumpus-Core has
--- support for /kerned/ labels.
+-- Note - because Wumpus has no access to the metrics data inside
+-- a font file, the default spacing is not good and it is 
+-- expected that kerning will need to be added per-letter for
+-- variable width fonts.
 --
+-- This module makes precise text spacing \*possible\* - it does 
+-- not make it \*easy\*.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Text.LRText
   ( 
+
+
     TextM
   , runTextM
+  , execTextM
 
-  , text
-  , char
   , kern
-  , newline
-  , bracketFontFace
+  , char
+  , symb
 
   ) where
 
-
-import Wumpus.Basic.Utils.Combinators
+import Wumpus.Basic.Graphic
+import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
+import Control.Monad
+import Data.Monoid
+
+
+
+
 
 -- Need a note in wumpus-core and here about space:preserve
 
+-- Note - if we have font change (e.g. to symbol font) then we 
+-- have to generate more than one hkernline.
+-- 
+-- If one wants to be really prissy about optimization, one could
+-- generate two simultaneous and overlayed lines - one in regular 
+-- font, one in Symbol. 
+--
+-- Result should be a LocGraphic (so cannot do a trace as we go). 
+--
 
--- Graphic or GraphicF ? ans. GraphicF
-
--- Note - should be compatible with free-label and shape labels.
--- This seems to favour GraphicF.
-
--- Not quite the same as a trace monad because it needs the 
--- result to a function \"from Point -> ... \"
-
-
-data Idx = Idx { idx_x :: !Int, idx_y :: !Int }
-  deriving (Eq,Ord,Show)
-
-
-rightn      :: Int -> Idx -> Idx 
-rightn n    = star (\s i -> s { idx_x = i+n }) idx_x
-
-down1       :: Idx -> Idx 
-down1       = star (\s i -> s { idx_y = i-1, idx_x =0 }) idx_y
-
--- can track the /user vectors so far/ in the state...
-
+-- Note - the the state tracks two kernlines: one for symbols,  
 
 data St u = St 
-      { xy_pos          :: Idx
-      , font_desc       :: FontAttr
-      , horizontal_disp :: PtSize
-      , acc_graphic     :: TGraphicF u
+      { delta_chr       :: !u
+      , delta_sym       :: !u
+      , acc_chr         :: H (KerningChar u)
+      , acc_sym         :: H (KerningChar u)
       }
 
--- Vertical distance between baselines.
-type VDist = PtSize       
 
-type Env = (VDist, RGBi)
+data Env u = Env 
+      { char_width      :: !u
+      , spacer_width    :: !u
+      }
 
-newtype TextM u a = TextM { getTextM :: Env -> St u -> (a, St u) }
-
--- wrap GraphicF as it has /special/ construction.
+-- Note - unlike Turtle for example, Text is a monad not a 
+-- transformer.
 --
-newtype TGraphicF u = TGraphicF { getTGraphicF :: GraphicF u }
+-- The rationale for this is to avoid complications percolating 
+-- from the Drawing monad. It Text were built over the Drawing
+-- monad what would it do on a font change, a colour change...
+-- 
+-- That say Text must still be run /within/ the Drawing so it 
+-- can take the initial font size, stroke colour etc.
+--
 
-consT :: Num u => (Vec2 u, GraphicF u) -> TGraphicF u -> TGraphicF u
-consT (V2 x y, f) tg = TGraphicF $ (f . disp x y) `cc` (getTGraphicF tg) 
+newtype TextM u a = TextM { getTextM :: Env u -> St u -> (a, St u) }
 
+type instance MonUnit (TextM u) = u
 
 instance Functor (TextM u) where
   fmap f mf = TextM $ \r s -> let (a,s') = getTextM mf r s in (f a,s')
+
 
 instance Applicative (TextM u) where
   pure a    = TextM $ \_ s -> (a,s)
@@ -97,95 +107,82 @@ instance Monad (TextM u) where
   return a  = TextM $ \_ s -> (a,s)
   m >>= k   = TextM $ \r s -> let (a,s')  = getTextM m r s 
                               in (getTextM . k) a r s'
+
                               
 -- Note - post has to displace in the vertical to get the bottom 
 -- line at the base line...
 
-runTextM :: (Num u, FromPtSize u) 
-         => PtSize -> (RGBi,FontAttr) -> (TextM u a) -> (a,GraphicF u)
-runTextM vdistance (rgb,font) ma = post $ getTextM ma env st
+runTextM :: (Num u, FromPtSize u, DrawingCtxM m, u ~ MonUnit m) 
+         => TextM u a -> m (a, LocGraphic u)
+runTextM ma = askCtx >>= \ctx -> 
+    let e = runDF ctx envZero in post $ getTextM ma e stZero
   where
-    post (a,s)  = let gf = getTGraphicF $ acc_graphic s
-                      h  = fromIntegral $ idx_y $ xy_pos s
-                  in (a, gf . vdisp (negate $ h * fromPtSize vdistance))
+    post (a,st)  = let sG = updCtxSym $ mkHKern $ toListH $ acc_sym st
+                       cG = mkHKern $ toListH $ acc_chr st
+                   in return (a, sG `lgappend` cG)
 
-    env         = (vdistance,rgb) 
+    mkHKern []   = const mempty
+    mkHKern xs   = hkernline xs
 
-    st          = St { xy_pos          = Idx 0 0 
-                     , font_desc       = font
-                     , horizontal_disp = 0
-                     , acc_graphic     = TGraphicF (const emptyG) }
+    updCtxSym lg = localLG (fontface symbol) lg
 
 
---------------------------------------------------------------------------------
--- State monad ops.
--- Note - not all the state should be accessible. 
+execTextM :: (Num u, FromPtSize u, DrawingCtxM m, u ~ MonUnit m) 
+          => TextM u a -> m (LocGraphic u)
+execTextM ma = liftM snd $ runTextM ma  
 
-setFontAttr :: FontAttr -> TextM u ()
-setFontAttr fa = TextM $ \_ s -> ((), s { font_desc = fa })
 
-setsFontAttr :: (FontAttr -> FontAttr) -> TextM u ()
-setsFontAttr fn = TextM $ \_ st -> ((), upd st) 
+stZero :: Num u => St u
+stZero = St { delta_chr       = 0
+            , delta_sym       = 0
+            , acc_chr         = emptyH
+            , acc_sym         = emptyH }
+
+envZero :: FromPtSize u => DrawingF (Env u)
+envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
+                      , spacer_width = fromPtSize $ spacerWidth sz })
+            <$> asksDF (font_size . font_props)
+
+
+gets :: (St u -> a) -> TextM u a
+gets fn = TextM $ \_ s -> (fn s, s)
+
+charMove :: Num u => TextM u ()
+charMove = TextM $ \(Env {char_width=cw, spacer_width=sw}) s -> 
+             let step_width = cw + sw    
+                 d_sym      = (delta_sym s) + step_width
+             in ((), s { delta_chr = step_width, delta_sym = d_sym }) 
+
+symbMove :: Num u => TextM u ()
+symbMove = TextM $ \(Env {char_width=cw, spacer_width=sw}) s -> 
+             let step_width = cw + sw
+                 d_chr      = (delta_chr s) + step_width
+             in ((), s { delta_chr = d_chr, delta_sym = step_width }) 
+
+snocSymb :: KerningChar u -> TextM u ()
+snocSymb kc = TextM $ \_ s -> ((), upd s)
   where
-    upd = star (\s i -> s { font_desc = fn i} ) font_desc
+    upd = (\s a -> s { acc_sym = a `snocH` kc}) <*> acc_sym
 
-getFontAttr :: TextM u FontAttr
-getFontAttr = TextM $ \_ s -> (font_desc s,s)   
-
-
---------------------------------------------------------------------------------
-
-makeDisplacement :: (Num u, FromPtSize u) 
-                 => FontSize -> PtSize -> PtSize -> Idx -> (Vec2 u)
-makeDisplacement font_sz lefth vdist (Idx x y) = 
-    vec (txt_width + fromPtSize lefth)   
-        (fromPtSize vdist * fromIntegral y)
+snocChar :: KerningChar u -> TextM u ()
+snocChar kc = TextM $ \_ s -> ((), upd s)
   where
-    txt_width = fromPtSize $ textWidth font_sz x
+    upd = (\s a -> s { acc_chr = a `snocH` kc}) <*> acc_chr
 
-
-text :: (Num u, FromPtSize u) => String -> TextM u ()
-text str = TextM $ \r s -> ((), upd r s)
+kern :: Num u => u -> TextM u ()
+kern dx = TextM $ \_ s -> ((), upd s)
   where
-    upd (vdist,rgb) s@(St idx font h acc) = 
-        let g1  = textline rgb font str 
-            v   = makeDisplacement (font_size font) h vdist idx
-        in s { xy_pos      = rightn (length str) idx
-             , acc_graphic = (v,g1) `consT` acc      }
+    upd = (\s a b -> s { delta_chr = a+dx, delta_sym = b+dx}) 
+            <*> delta_chr <*> delta_sym
 
+char :: Num u => Char -> TextM u ()
+char ch = gets delta_chr           >>= \u -> 
+          snocChar (kernchar u ch) >> charMove
 
-char :: (Num u, FromPtSize u) => Char -> TextM u ()
-char ch = TextM $ \r s -> ((), upd r s)
-  where
-    upd (vdist,rgb) s@(St idx font h acc) = 
-        let g1  = textline rgb font [ch] 
-            v   = makeDisplacement (font_size font) h vdist idx
-        in s { xy_pos      = rightn 1 idx
-             , acc_graphic = (v,g1) `consT` acc }
-
-
-kern :: (Num u, FromPtSize u) => PtSize ->  TextM u ()
-kern h = TextM $ \_ s -> ((), upd s)
-  where
-    upd = star (\s i -> s { horizontal_disp = i + h }) horizontal_disp
+symb :: Num u => Char -> TextM u ()
+symb sy = gets delta_sym           >>= \u -> 
+          snocSymb (kernchar u sy) >> symbMove
 
 
 
 
-newline :: TextM u ()
-newline = TextM $ \_ s -> ((), upd s)
-  where
-    upd = star (\s idx -> s { xy_pos = down1 idx, horizontal_disp = 0})
-               xy_pos
-
-
-
-bracketFontFace :: FontFace -> TextM u a -> TextM u a
-bracketFontFace face mf = do
-    old <- getFontAttr
-    setsFontAttr fn
-    ans <- mf 
-    setFontAttr old 
-    return ans
-  where
-    fn attr = attr { font_face = face }

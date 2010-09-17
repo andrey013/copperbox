@@ -38,7 +38,7 @@ import Control.Monad
 
 
 newtype ChainT u m a = ChainT { 
-          getChainT :: Point2T u -> Point2 u -> m (a, Point2 u) }
+          getChainT :: Point2F u -> Point2 u -> m (a, Point2 u) }
 
 
 type instance MonUnit (ChainT u m) = u
@@ -68,7 +68,7 @@ instance Monad m => PointSupplyM (ChainT u m) where
   position = ChainT $ \rf s -> return (s, rf s)
 
 runChainT :: Monad m 
-          => Point2T u -> Point2 u -> ChainT u m a -> m a
+          => Point2F u -> Point2 u -> ChainT u m a -> m a
 runChainT f pt0 ma = liftM fst $ getChainT ma f pt0
 
 horizontal :: (Num u, Monad m)

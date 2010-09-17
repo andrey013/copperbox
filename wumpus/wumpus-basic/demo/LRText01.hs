@@ -4,7 +4,8 @@ module LRText01 where
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
+import Wumpus.Basic.PictureLanguage
+import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
 
@@ -23,14 +24,41 @@ main = do
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/lrtext01.eps" pic1
-    writeSVG_latin1 "./out/lrtext01.svg" pic1
+    writeEPS_latin1 "./out/lrtext01.eps" combo_pic
+    writeSVG_latin1 "./out/lrtext01.svg" combo_pic
 
-std_attr :: DrawingAttr
-std_attr = standardAttr 14
+std_ctx :: DrawingContext
+std_ctx = fontface timesRoman $ standardContext 48
 
-pic1 :: Picture Double 
-pic1 = drawGraphicU $ g1 zeroPt . straightLine red (hvec 200) zeroPt
+combo_pic :: DPicture
+combo_pic = vcat pic1 [pic2,pic3]
+
+
+pic1 :: DPicture
+pic1 = liftToPictureU $ execDrawing std_ctx $ 
+          draw $ hkernline ks `at` zeroPt
+  where
+    ks :: [KerningChar Double]
+    ks = [ kernchar 0 'A', kernchar 34 'B', kernchar 29 'C' ] 
+
+-- 
+pic2 :: DPicture
+pic2 = liftToPictureU $ execDrawing std_ctx $ 
+          draw $ hkernline ks `at` zeroPt
+  where
+    ks :: [KerningChar Double]
+    ks = map (kernchar 0) $ "No kerning" 
+
+
+pic3 :: DPicture 
+pic3 = liftToPictureU $ execDrawing std_ctx $ do
+         abc <- execTextM (char 'a' >> char 'b' >> epsilon >> char 'c')
+         draw $ abc `at` (P2 0 3) 
+         localCtx (primaryColour red) $ draw $ straightLine (hvec 200) `at` zeroPt
+
+
+
+{-
 
 two_line :: Num u => GraphicF u 
 two_line = textline (textAttr std_attr) "line one"
@@ -47,3 +75,5 @@ g1 = snd $ runTextM 16 (stroke_colour std_attr, font_props std_attr) $ ma
        >> newline
        >> uGamma >> uDelta >> uTheta >> uLambda >> uXi >> uPi >> kern 2 >> uSigma
        >> uUpsilon >> uPhi >> kern 2 >>  uPsi >> kern 2 >> uOmega
+
+-}

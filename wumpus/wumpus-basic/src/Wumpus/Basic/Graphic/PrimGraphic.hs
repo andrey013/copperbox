@@ -29,12 +29,15 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , filledPath
   , borderedPath
   , textline
+  , hkernline
+  , vkernline
+
+
   , strokedEllipse
   , filledEllipse  
   , borderedEllipse
 
   , supplyPt
-  , localDrawingContext
   , localPoint
   , displace
 
@@ -103,13 +106,30 @@ filledPath pp = (\rgb -> singleH $ fill rgb pp)
 borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
     (\frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp) 
-        <$> asksDF secondary_colour <*> asksDF stroke_props <*> asksDF primary_colour
+        <$> asksDF secondary_colour <*> asksDF stroke_props 
+                                    <*> asksDF primary_colour
 
+
+--------------------------------------------------------------------------------
+-- 
 
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
     (\(rgb,attr) -> singleH $ textlabel rgb attr ss baseline_left) 
        <$> asksDF textAttr
+
+hkernline :: Num u => [KerningChar u] -> LocGraphic u
+hkernline ks baseline_left = 
+    (\(rgb,attr) -> singleH $ hkernlabel rgb attr ks baseline_left) 
+       <$> asksDF textAttr
+
+vkernline :: Num u => [KerningChar u] -> LocGraphic u
+vkernline ks baseline_left = 
+    (\(rgb,attr) -> singleH $ vkernlabel rgb attr ks baseline_left) 
+       <$> asksDF textAttr
+
+
+--------------------------------------------------------------------------------
 
 
 strokedEllipse :: Num u => u -> u -> LocGraphic u
@@ -143,9 +163,6 @@ displace :: Num u => u -> u -> Point2 u -> Point2 u
 displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 
-localDrawingContext :: 
-    (DrawingContext -> DrawingContext) -> LocGraphic u -> LocGraphic u
-localDrawingContext upd img = \pt -> localDF upd (img pt) 
 
 localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u
 localPoint upd gf = \pt -> gf (upd pt)

@@ -64,10 +64,8 @@ module Wumpus.Basic.Text.LRSymbol
   ) where
 
 
-import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText
 
-import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Char ( chr )
 import Prelude hiding ( pi )
@@ -85,119 +83,116 @@ import Prelude hiding ( pi )
 -- Wumpus-Core\'s SVG rendering will work at some point.
 -- 
 
-useSymbol :: TextM u a -> TextM u a
-useSymbol = bracketFontFace symbol
-
 
 --------------------------------------------------------------------------------
 -- lower case
 
 
-alpha       :: (Num u, FromPtSize u) => TextM u ()
-alpha       = useSymbol $ char 'a'
+alpha       :: Num u => TextM u ()
+alpha       = symb 'a'
 
-beta        :: (Num u, FromPtSize u) => TextM u ()
-beta        = useSymbol $ char 'b'
+beta        :: Num u => TextM u ()
+beta        = symb 'b'
 
-gamma       :: (Num u, FromPtSize u) => TextM u ()
-gamma       = useSymbol $ char 'g'
+gamma       :: Num u => TextM u ()
+gamma       = symb 'g'
 
-delta       :: (Num u, FromPtSize u) => TextM u ()
-delta       = useSymbol $ char 'd'
+delta       :: Num u => TextM u ()
+delta       = symb 'd'
 
-epsilon     :: (Num u, FromPtSize u) => TextM u ()
-epsilon     = useSymbol $ char 'e'
+epsilon     :: Num u => TextM u ()
+epsilon     = symb 'e'
 
-zeta        :: (Num u, FromPtSize u) => TextM u ()
-zeta        = useSymbol $ char 'z'
+zeta        :: Num u => TextM u ()
+zeta        = symb 'z'
 
-eta         :: (Num u, FromPtSize u) => TextM u ()
-eta         = useSymbol $ char 'h'
+eta         :: Num u => TextM u ()
+eta         = symb 'h'
 
-theta       :: (Num u, FromPtSize u) => TextM u ()
-theta       = useSymbol $ char 'q'
+theta       :: Num u => TextM u ()
+theta       = symb 'q'
 
-iota        :: (Num u, FromPtSize u) => TextM u ()
-iota        = useSymbol $ char 'i'
+iota        :: Num u => TextM u ()
+iota        = symb 'i'
 
-kappa       :: (Num u, FromPtSize u) => TextM u ()
-kappa       = useSymbol $ char 'k'
+kappa       :: Num u => TextM u ()
+kappa       = symb 'k'
 
-lambda      :: (Num u, FromPtSize u) => TextM u ()
-lambda      = useSymbol $ char 'l'
+lambda      :: Num u => TextM u ()
+lambda      = symb 'l'
 
-mu          :: (Num u, FromPtSize u) => TextM u ()
-mu          = useSymbol $ char 'm'
+mu          :: Num u => TextM u ()
+mu          = symb 'm'
 
-nu          :: (Num u, FromPtSize u) => TextM u ()
-nu          = useSymbol $ char 'n'
+nu          :: Num u => TextM u ()
+nu          = symb 'n'
 
-xi          :: (Num u, FromPtSize u) => TextM u ()
-xi          = useSymbol $ char 'x'
+xi          :: Num u => TextM u ()
+xi          = symb 'x'
 
-pi          :: (Num u, FromPtSize u) => TextM u ()
-pi          = useSymbol $ char 'p'
+pi          :: Num u => TextM u ()
+pi          = symb 'p'
 
-rho         :: (Num u, FromPtSize u) => TextM u ()
-rho         = useSymbol $ char 'r'
+rho         :: Num u => TextM u ()
+rho         = symb 'r'
 
-sigma       :: (Num u, FromPtSize u) => TextM u ()
-sigma       = useSymbol $ char 's'
+sigma       :: Num u => TextM u ()
+sigma       = symb 's'
 
-tau         :: (Num u, FromPtSize u) => TextM u ()
-tau         = useSymbol $ char 't'
+tau         :: Num u => TextM u ()
+tau         = symb 't'
 
-upsilon     :: (Num u, FromPtSize u) => TextM u ()
-upsilon     = useSymbol $ char 'u'
+upsilon     :: Num u => TextM u ()
+upsilon     = symb 'u'
 
-phi         :: (Num u, FromPtSize u) => TextM u ()
-phi         = useSymbol $ char 'j'
+phi         :: Num u => TextM u ()
+phi         = symb 'j'
 
-chi         :: (Num u, FromPtSize u) => TextM u ()
-chi         = useSymbol $ char 'c'
+chi         :: Num u => TextM u ()
+chi         = symb 'c'
 
-psi         :: (Num u, FromPtSize u) => TextM u ()
-psi         = useSymbol $ char 'y'
+psi         :: Num u => TextM u ()
+psi         = symb 'y'
 
-omega       :: (Num u, FromPtSize u) => TextM u ()
-omega       = useSymbol $ char 'w'
+omega       :: Num u => TextM u ()
+omega       = symb 'w'
 
 
 --------------------------------------------------------------------------------
 -- upper case
 
-uGamma      :: (Num u, FromPtSize u) => TextM u ()
-uGamma      = useSymbol $ char 'G'
+uGamma      :: Num u => TextM u ()
+uGamma      = symb 'G'
 
-uDelta      :: (Num u, FromPtSize u) => TextM u ()
-uDelta      = useSymbol $ char 'D'
+uDelta      :: Num u => TextM u ()
+uDelta      = symb 'D'
 
-uTheta      :: (Num u, FromPtSize u) => TextM u ()
-uTheta      = useSymbol $ char 'Q'
+uTheta      :: Num u => TextM u ()
+uTheta      = symb 'Q'
 
-uLambda     :: (Num u, FromPtSize u) => TextM u ()
-uLambda     = useSymbol $ char 'L'
+uLambda     :: Num u => TextM u ()
+uLambda     = symb 'L'
 
-uXi         :: (Num u, FromPtSize u) => TextM u ()
-uXi         = useSymbol $ char 'X'
+uXi         :: Num u => TextM u ()
+uXi         = symb 'X'
 
-uPi         :: (Num u, FromPtSize u) => TextM u ()
-uPi         = useSymbol $ char 'P'
+uPi         :: Num u => TextM u ()
+uPi         = symb 'P'
 
-uSigma      :: (Num u, FromPtSize u) => TextM u ()
-uSigma      = useSymbol $ char 'S'
+uSigma      :: Num u => TextM u ()
+uSigma      = symb 'S'
 
 -- | Not working, though 161 should be uUpsilon.
 --
-uUpsilon    :: (Num u, FromPtSize u) => TextM u ()
-uUpsilon    = useSymbol $ char $ chr 161
+uUpsilon    :: Num u => TextM u ()
+uUpsilon    = symb $ chr 161
 
-uPhi        :: (Num u, FromPtSize u) => TextM u ()
-uPhi        = useSymbol $ char 'F'
+uPhi        :: Num u => TextM u ()
+uPhi        = symb 'F'
 
-uPsi        :: (Num u, FromPtSize u) => TextM u ()
-uPsi        = useSymbol $ char 'Y'
+uPsi        :: Num u => TextM u ()
+uPsi        = symb 'Y'
 
-uOmega      :: (Num u, FromPtSize u) => TextM u ()
-uOmega      = useSymbol $ char 'W'
+uOmega      :: Num u => TextM u ()
+uOmega      = symb 'W'
 

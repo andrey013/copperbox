@@ -26,8 +26,8 @@ module Wumpus.Basic.Graphic.BaseTypes
   , hprimToList
   , singleH
 
-  , Point2T
-  , DPoint2T
+  , Point2F
+  , DPoint2F
 
   , DrawingF
   , LocDrawingF
@@ -48,6 +48,7 @@ module Wumpus.Basic.Graphic.BaseTypes
 
   , LocGraphic
   , DLocGraphic
+  , localLG
   , lgappend
 
   , Image
@@ -115,9 +116,9 @@ singleH = HPrim . wrapH
 
 -- | Point transformation function.
 --
-type Point2T u = Point2 u -> Point2 u
+type Point2F u = Point2 u -> Point2 u
 
-type DPoint2T = Point2T Double
+type DPoint2F = Point2F Double
 
 --------------------------------------------------------------------------------
 --
@@ -222,6 +223,9 @@ type LocGraphic u = Point2 u -> Graphic u
 type DLocGraphic = LocGraphic Double
 
 
+localLG :: 
+    (DrawingContext -> DrawingContext) -> LocGraphic u -> LocGraphic u
+localLG upd img = \pt -> localDF upd (img pt) 
 
 
 -- | Composition operator for LocGraphic - both LocGraphics

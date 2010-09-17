@@ -14,13 +14,9 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Drawing with trace and drawing context (i.e. reader monad
--- of attributes - fill_colour etc.).
---
--- \*\* WARNING \*\* - some names are expected to change 
--- particularly the naming of the @draw@, @drawAt@, @node@, @...@ 
--- functions.
---
+-- Drawing with /trace/ - a Writer like monad collecting 
+-- intermediate graphics - and /drawing context/ - a reader monad
+-- of attributes - font_face, fill_colour etc.
 --
 --------------------------------------------------------------------------------
 
@@ -196,7 +192,13 @@ runDrawingT ctx ma = getDrawingT ma ctx mempty
 execDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (HPrim u)
 execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
 
-
+-- | Run the Drawing generating a Picture /within/ a 
+-- \"font delta context\" using the font-family and font-size 
+-- from the intial DrawingContext.
+--
+-- Using a /font delta context/ can reduce the code size of the
+-- generated SVG file (PostScript ignores the FDC).
+--
 runFdcDrawing :: (Real u, Floating u, FromPtSize u)
              => DrawingContext -> Drawing u a -> (a, Maybe (Picture u))
 runFdcDrawing ctx ma = 
@@ -205,12 +207,15 @@ runFdcDrawing ctx ma =
         fdc    = font_props ctx
     in if null ps then (a, Nothing)
                  else (a, Just $ fontDeltaContext fdc $ frame ps)
-         
+
+-- | /exec/ version of 'runFdcContext'.
+--
 execFdcDrawing :: (Real u, Floating u, FromPtSize u)
              => DrawingContext -> Drawing u a -> Maybe (Picture u)
 execFdcDrawing ctx ma = snd $ runFdcDrawing ctx ma
 
-
+-- | Transformer version of 'runFdcDrawing'.
+--
 runFdcDrawingT :: (Real u, Floating u, FromPtSize u, Monad m)
              => DrawingContext -> DrawingT u m a -> m (a, Maybe (Picture u))
 runFdcDrawingT ctx ma = 
@@ -220,18 +225,33 @@ runFdcDrawingT ctx ma =
     in if null ps then return (a, Nothing)
                   else return (a, Just $ fontDeltaContext fdc $ frame ps)
   
-       
+-- | Transformer version of 'execFdcDrawing'.
+--       
 execFdcDrawingT :: (Real u, Floating u, FromPtSize u, Monad m)
              => DrawingContext -> DrawingT u m a -> m (Maybe (Picture u))
 execFdcDrawingT ctx ma = liftM snd $ runFdcDrawingT ctx ma
 
-
+-- | /Unsafe/ promotion of @HPrim@ to @Picture@.
+--
+-- If the HPrim is empty, a run-time error is thrown.
+-- 
 liftToPictureU :: (Real u, Floating u, FromPtSize u) => HPrim u -> Picture u
 liftToPictureU hf = 
     let prims = hprimToList hf in if null prims then errK else frame prims
   where
     errK = error "toPictureU - empty prims list."
 
+-- | /Unsafe/ promotion of @(Maybe Picture)@ to @Picture@.
+--
+-- This is equivalent to:
+--
+-- > fromMaybe (error "empty") $ pic
+--
+-- This function is solely a convenience, using it saves one 
+-- import and a few characters.
+--
+-- If the supplied value is @Nothing@ a run-time error is thrown.
+-- 
 mbPictureU :: (Real u, Floating u, FromPtSize u) 
            => Maybe (Picture u) -> Picture u
 mbPictureU Nothing  = error "mbPictureU - empty picture."
@@ -257,7 +277,7 @@ xdraw xl gf = draw (xlinkGraphic xl gf)
 
 
 
--- | Draw a Image taking the drawing style from the 
+-- | Draw an Image taking the drawing style from the 
 -- /drawing context/. 
 --
 -- The graphic representation of the Image is drawn in the Trace 
