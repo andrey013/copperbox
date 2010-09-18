@@ -29,7 +29,8 @@ world_frame = uniformScale 0.75 $
 makeLabelPrim :: String -> DPoint2 -> DPrimElement
 makeLabelPrim = textlabel black attrs 
   where
-    attrs     = FontAttr 10 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)
+    attrs     = FontAttr 10 (FontFace "Helvetica" "Helvetica" 
+                                      SVG_REGULAR latin1_font_encoder)
 
 makeLinePrim :: Double -> DPoint2 -> DPoint2 -> DPrimElement
 makeLinePrim lw a b = ostroke black attrs $ path a [lineTo b]

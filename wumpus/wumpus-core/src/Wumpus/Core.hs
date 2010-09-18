@@ -38,6 +38,10 @@
 --
 -- * "Wumpus.Core.TextEncoder"
 --
+-- * "Wumpus.Core.TextLatin1"
+--
+-- * "Wumpus.Core.TextSymbolFont"
+--
 -- * "Wumpus.Core.VersionNumber"
 --
 -- * "Wumpus.Core.WumpusTypes"
@@ -65,8 +69,11 @@ module Wumpus.Core
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PtSize
   , module Wumpus.Core.TextEncoder
+  , module Wumpus.Core.TextLatin1
+  , module Wumpus.Core.TextSymbolFont
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
+
 
   ) where
 
@@ -82,6 +89,8 @@ import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextEncoder
+import Wumpus.Core.TextLatin1
+import Wumpus.Core.TextSymbolFont
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
 

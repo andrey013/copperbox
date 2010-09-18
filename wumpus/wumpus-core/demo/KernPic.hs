@@ -4,8 +4,6 @@ module KernPic where
 
 import Wumpus.Core
 import Wumpus.Core.Colour
-import Wumpus.Core.TextLatin1
-import Wumpus.Core.TextSymbolFont
 
 import System.Directory
 

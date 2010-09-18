@@ -31,4 +31,5 @@ helveticaLabel :: String -> DPoint2 -> DPrimElement
 helveticaLabel ss pt = textlabel black helvetica18 ss pt
 
 helvetica18 :: FontAttr
-helvetica18 = FontAttr 18 (FontFace "Helvetica" "Helvetica" SVG_REGULAR)
+helvetica18 = FontAttr 18 (FontFace "Helvetica" "Helvetica" 
+                                    SVG_REGULAR latin1_font_encoder)

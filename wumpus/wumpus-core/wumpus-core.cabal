@@ -53,7 +53,8 @@ description:
     data type has been changed and there is a new @FontEncoder@ 
     data type. There are also new modules for the Symbol Font 
     encoder table and for the /Default Encoder/ which 
-    accommodates both Latin1 and the Symbol font.
+    accommodates both Latin1 and the Symbol font. This has also 
+    mandated changes to the @FontFace@ data type.
   . 
   * Major change - the printing order has been changed. The first 
     element in a @frame@ of Prims is draw first. This means it 

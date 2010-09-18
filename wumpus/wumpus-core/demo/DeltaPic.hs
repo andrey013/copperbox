@@ -35,7 +35,7 @@ pic1 = fontDeltaContext delta_ctx $ frame
  
 
 common_ff :: FontFace
-common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR
+common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder
 
 
 -- Note - each label is fully attributed with the font style.

@@ -27,7 +27,8 @@ black :: RGBi
 black = RGBi 0 0 0 
 
 courier_attr :: FontAttr
-courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" SVG_REGULAR)
+courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" 
+                                     SVG_REGULAR latin1_font_encoder)
 
 metrics_pic :: DPicture
 metrics_pic = char_pic `picOver` lines_pic
