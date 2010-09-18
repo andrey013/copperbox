@@ -213,9 +213,10 @@ library
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
     Wumpus.Core.PtSize,
-    Wumpus.Core.TextSymbolFont,
+    Wumpus.Core.TextDefaultEncoder,
     Wumpus.Core.TextEncoder,
     Wumpus.Core.TextLatin1,
+    Wumpus.Core.TextSymbolFont,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 

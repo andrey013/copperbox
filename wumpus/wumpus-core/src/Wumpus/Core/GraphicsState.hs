@@ -63,6 +63,8 @@ module Wumpus.Core.GraphicsState
   ) where
 
 import Wumpus.Core.Colour
+import Wumpus.Core.TextEncoder
+import Wumpus.Core.TextLatin1
 
 -- Graphics state datatypes
 
@@ -124,8 +126,8 @@ data DashPattern = Solid | Dash Int [(Int,Int)]
 -- See the PostScript Language Reference Manual.
 --
 data FontAttr = FontAttr 
-      { font_size  :: Int 
-      , font_face  :: FontFace
+      { font_size       :: Int 
+      , font_face       :: FontFace
       }
   deriving (Eq,Ord,Show)
 
@@ -135,6 +137,7 @@ data FontFace = FontFace
       { font_name       :: String        -- for PostScript
       , svg_font_family :: String        -- for SVG
       , svg_font_style  :: SVGFontStyle
+      , font_enc_name   :: FontEncoderName
       }
   deriving (Eq,Ord,Show)
 
@@ -157,7 +160,7 @@ zeroGS = GraphicsState { gs_draw_colour  = black
                        , gs_stroke_attr  = default_stroke_attr
                        }
   where
-    unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE
+    unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE latin1_font_encoder
 
 
 -- | Default stroke attributes.

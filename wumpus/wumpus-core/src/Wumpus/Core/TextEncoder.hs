@@ -44,11 +44,14 @@ module Wumpus.Core.TextEncoder
   , CharCode
   , PostScriptLookup
   , SVGLookup
+
+  , FontEncoderName(..)
   , TextEncoder(..)
+  , FontEncoder(..)
 
   ) where
 
-
+import Data.Map
 
 type GlyphName        = String
 type CharCode         = Int 
@@ -57,28 +60,56 @@ type PostScriptLookup = CharCode -> Maybe GlyphName
 type SVGLookup        = GlyphName -> Maybe CharCode
 
 
--- | A TextEncoder
+
+-- | Font encoder name - a newtype wrapped String.
+-- 
+-- The newtype wrapping is only to highlight that a
+-- FontEncoderName is somewhat special - each FontEncoder should
+-- have exactly one FontEncoderName.
+-- 
+newtype FontEncoderName = FontEncoderName { getFontEncoderName :: String }
+  deriving (Eq,Ord)
+
+instance Show FontEncoderName where
+  show = getFontEncoderName
+
+-- | 'TextEncoder'
 --
 -- An /instance/ needs: 
 --
--- * The functions for looking up codes by glyph-name and 
--- glyph-name by code. 
--- 
+-- * A map of FontEncoderNames to FontEncoders.
+--
 -- * The name of the encoding - this is printed in the xml 
 -- prologue of the SVG file as the @encoding@ attribute. Latin 
--- 1\'s official name is \"ISO-8859-1\". 
+-- 1\'s official name is seemingly \"ISO-8859-1\". 
+-- 
+-- * The name of the default encoder - this should naturally be 
+-- in the Font Encoder map.
+-- 
+-- 
+data TextEncoder = TextEncoder
+      { svg_encoding_name       :: String
+      , default_encoder_name    :: FontEncoderName
+      , font_encoder_map        :: Map FontEncoderName FontEncoder
+      }
+
+-- | 'FontEncoder'.
+--
+-- * The functions for looking up codes by glyph-name and 
+-- glyph-name by code. 
 -- 
 -- * Fallback glyph-names and char codes in case lookup fails.
 -- 
 -- "Wumpus.Core.TextLatin1" defines an implementation for Latin 1.
 --
-data TextEncoder = TextEncoder  {
-                       ps_lookup         :: PostScriptLookup,
-                       svg_lookup        :: SVGLookup,
-                       svg_encoding_name :: String,
-                       ps_fallback       :: GlyphName,
-                       svg_fallback      :: CharCode
-                     }
+data FontEncoder = FontEncoder  
+      { ps_lookup           :: PostScriptLookup
+      , svg_lookup          :: SVGLookup
+      , ps_fallback         :: GlyphName
+      , svg_fallback        :: CharCode
+      }
                      
 
 -- no show instance as a TextEncoder contains functions.
+
+

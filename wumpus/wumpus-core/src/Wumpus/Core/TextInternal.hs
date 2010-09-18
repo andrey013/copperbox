@@ -21,10 +21,13 @@ module Wumpus.Core.TextInternal
   , TextChunk(..)
   , EncodedChar(..)
 
+  , getDefaultFontEncoder
+  , getFontEncoder
+
   , textLength
   , lookupByCharCode  
   , lookupByGlyphName
-
+  
   , lexLabel
 
   ) where
@@ -33,6 +36,7 @@ import Wumpus.Core.FormatCombinators
 import Wumpus.Core.TextEncoder
 
 import Data.Char
+import qualified Data.Map as Map
 
 newtype EncodedText = EncodedText { getEncodedText :: [TextChunk] }
   deriving (Eq,Show)
@@ -72,16 +76,40 @@ instance Format EncodedChar where
 
 --------------------------------------------------------------------------------
 
+
+-- | Get the default font encoder in a TextEncoder.
+--
+-- This function throws a runtime error on failure.
+-- 
+getDefaultFontEncoder :: TextEncoder -> FontEncoder
+getDefaultFontEncoder enc = 
+    case Map.lookup (default_encoder_name enc) (font_encoder_map enc) of
+       Nothing -> error "TextEncoder error - cannot find the default font."
+       Just a  -> a
+
+
+-- | Lookup a font encoder in a TextEncoder.
+--
+-- This function throws a runtime error on failure.
+-- 
+getFontEncoder :: FontEncoderName -> TextEncoder -> FontEncoder
+getFontEncoder name enc = case Map.lookup name (font_encoder_map enc) of
+    Nothing -> error err_msg
+    Just a  -> a
+  where
+    err_msg = "TextEncoder error - cannot find the encoder: " 
+              ++ show name ++ "."
+
 textLength :: EncodedText -> Int
 textLength = foldr add 0 . getEncodedText where 
     add (TextSpan s) n = n + length s
     add _            n = n + 1
 
 
-lookupByCharCode :: CharCode -> TextEncoder -> Maybe GlyphName
+lookupByCharCode :: CharCode -> FontEncoder -> Maybe GlyphName
 lookupByCharCode i enc = (ps_lookup enc) i
 
-lookupByGlyphName :: GlyphName -> TextEncoder -> Maybe CharCode
+lookupByGlyphName :: GlyphName -> FontEncoder -> Maybe CharCode
 lookupByGlyphName i enc = (svg_lookup enc) i
 
 

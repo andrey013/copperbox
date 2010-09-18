@@ -87,6 +87,7 @@ import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextInternal
+import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 import Data.AffineSpace                         -- package: vector-space
@@ -320,6 +321,7 @@ wumpus_default_font = FontAttr 14 face
     face = FontFace { font_name         = "Courier"
                     , svg_font_family   = "Courier New"
                     , svg_font_style    = SVG_REGULAR
+                    , font_enc_name     = latin1_font_encoder
                     }
 
 --------------------------------------------------------------------------------

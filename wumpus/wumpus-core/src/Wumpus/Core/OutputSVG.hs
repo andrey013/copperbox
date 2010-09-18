@@ -49,9 +49,9 @@ import Wumpus.Core.OneList
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVGDoc
+import Wumpus.Core.TextDefaultEncoder
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextInternal
-import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
@@ -59,8 +59,11 @@ import Data.Maybe
 
 -- SvgMonad is two Readers plus Int state for clip paths...
 --
+
+data St = St { clip_num :: Int, current_font_encoder :: FontEncoder }
+
 newtype SvgMonad a = SvgMonad { 
-            getSvgMonad :: TextEncoder -> GraphicsState -> Int -> (a,Int) }
+          getSvgMonad :: TextEncoder -> GraphicsState -> St -> (a,St) }
 
 
 
@@ -80,17 +83,25 @@ instance Monad SvgMonad where
                                      in (getSvgMonad . k) a r1 r2 s1
                             
 
+makeSt :: TextEncoder -> St
+makeSt enc = St { clip_num = 0
+                , current_font_encoder = getDefaultFontEncoder enc }
 
 runSvgMonad :: TextEncoder -> SvgMonad a -> a
-runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS 0
+runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS (makeSt enc)
 
 newClipLabel :: SvgMonad String
-newClipLabel = SvgMonad $ \_ _ s -> ('c':'l':'i':'p':show s, s+1)
+newClipLabel = SvgMonad $ \_ _ s -> let str = show $ clip_num s
+                                    in ('c':'l':'i':'p':str, upd s)
+  where
+    upd = (\s i -> s { clip_num = i+1 }) <*> clip_num
 
-askGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
-askGlyphName nm = SvgMonad $ \r1 _ s -> case lookupByGlyphName nm r1 of
-    Just a  -> (Right $ escapeSpecial a, s)
-    Nothing -> (Left  $ escapeSpecial $ svg_fallback r1, s)
+getGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
+getGlyphName nm = SvgMonad $ \_ _ s -> 
+    let font_enc = current_font_encoder s in 
+    case lookupByGlyphName nm font_enc of
+      Just a  -> (Right $ escapeSpecial a, s)
+      Nothing -> (Left  $ escapeSpecial $ svg_fallback font_enc, s)
 
 -- This is different to the PsMonad version, as SVG is nested 
 -- (and /graphics state/ is via a Reader), so it is the same as 
@@ -108,8 +119,8 @@ asksGraphicsState :: (GraphicsState -> a) -> SvgMonad a
 asksGraphicsState fn = SvgMonad $ \_ r2 s -> (fn r2,s)
 
 askFontAttr :: SvgMonad FontAttr
-askFontAttr = 
-    asksGraphicsState $ \r -> FontAttr (gs_font_size r) (gs_font_face r)
+askFontAttr = asksGraphicsState $ \r -> 
+                FontAttr (gs_font_size r) (gs_font_face r)
 
 askLineWidth    :: SvgMonad Double
 askLineWidth    = asksGraphicsState (line_width . gs_stroke_attr)
@@ -135,11 +146,11 @@ writeSVG :: (Real u, Floating u, PSUnit u)
 writeSVG filepath enc pic = 
     writeFile filepath $ show $ svgDraw enc pic 
 
--- | Version of 'writeSVG' - using Latin1 encoding. 
+-- | Version of 'writeSVG' - using Latin1 and Symbol font encodings. 
 --
 writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
                 => FilePath -> Picture u -> IO ()
-writeSVG_latin1 filepath = writeSVG filepath latin1Encoder
+writeSVG_latin1 filepath = writeSVG filepath defaultEncoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
         => TextEncoder -> Picture u -> Doc
@@ -307,12 +318,12 @@ encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
 textChunk :: TextChunk -> SvgMonad Doc
 textChunk (TextSpan s)    = pure $ text s
 textChunk (TextEscInt i)  = pure $ text $ escapeSpecial i
-textChunk (TextEscName s) = either text text <$> askGlyphName s 
+textChunk (TextEscName s) = either text text <$> getGlyphName s 
 
 kerningChar :: KerningChar u -> SvgMonad Doc
 kerningChar (_, CharLiteral c) = pure $ char c
 kerningChar (_, CharEscInt i)  = pure $ text $ escapeSpecial i
-kerningChar (_, CharEscName s) = either text text <$> askGlyphName s 
+kerningChar (_, CharEscName s) = either text text <$> getGlyphName s 
 
 
 makeTspan :: RGBi -> Doc -> Doc
@@ -392,7 +403,7 @@ makeDashPattern (Dash n xs) =
 
 deltaFontAttrs :: FontAttr -> SvgMonad Doc
 deltaFontAttrs fa = 
-    (\inh -> if fa ==inh then empty else makeFontAttrs fa) <$> askFontAttr
+    (\inh -> if fa == inh then empty else makeFontAttrs fa) <$> askFontAttr
 
 makeFontAttrs :: FontAttr -> Doc
 makeFontAttrs (FontAttr sz face) = 

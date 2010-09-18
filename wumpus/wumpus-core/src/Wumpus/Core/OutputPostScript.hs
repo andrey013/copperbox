@@ -35,9 +35,9 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
+import Wumpus.Core.TextDefaultEncoder
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextInternal
-import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
@@ -58,8 +58,11 @@ import Data.Time
 -- are no /savings/ by diffing from an outer environment, instead
 -- the diff is with the last drawn object.
 --
+
+data St = St { graphics_st :: GraphicsState, current_font_encoder :: FontEncoder }
+
 newtype PsMonad a = PsMonad { 
-            getPsMonad :: TextEncoder -> GraphicsState -> (a,GraphicsState) }
+            getPsMonad :: TextEncoder -> St -> (a,St) }
 
 
 instance Functor PsMonad where
@@ -76,83 +79,83 @@ instance Monad PsMonad where
   m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
                                 in (getPsMonad . k) a r s1
                               
+makeSt :: TextEncoder -> St
+makeSt enc = St { graphics_st = zeroGS
+                , current_font_encoder = getDefaultFontEncoder enc }
 
 runPsMonad :: TextEncoder -> PsMonad a -> a
-runPsMonad enc mf = fst $ getPsMonad mf enc zeroGS
+runPsMonad enc mf = fst $ getPsMonad mf enc (makeSt enc)
 
 askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
-askCharCode i = PsMonad $ \r s -> case lookupByCharCode i r of
-    Just n  -> (Right n,s)
-    Nothing -> (Left $ ps_fallback r,s)
+askCharCode i = PsMonad $ \_ s -> 
+    let font_enc = current_font_encoder s in
+    case lookupByCharCode i font_enc of
+      Just n  -> (Right n, s)
+      Nothing -> (Left $ ps_fallback font_enc, s)
 
 -- runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
 -- runLocalGS upd mf = 
 --     PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
 
+getsGS :: (GraphicsState -> a) -> PsMonad a
+getsGS fn = PsMonad $ \_ s -> (fn $ graphics_st s,s)
+
+setsGS :: (GraphicsState -> GraphicsState) -> PsMonad ()
+setsGS fn = PsMonad $ \_ s -> ((),upd s)
+  where
+    upd = (\s i -> s { graphics_st = fn i}) <*> graphics_st
+
+setsSA :: (StrokeAttr -> StrokeAttr) -> PsMonad ()
+setsSA fn = getsGS gs_stroke_attr >>= \sa -> 
+            setsGS (\s -> s { gs_stroke_attr = fn sa })
+
 getDrawColour       :: PsMonad RGBi
-getDrawColour       = PsMonad $ \_ s -> (gs_draw_colour s, s)
+getDrawColour       = getsGS gs_draw_colour
 
 setDrawColour       :: RGBi -> PsMonad ()
-setDrawColour a     = PsMonad $ \_ s -> ((), s {gs_draw_colour=a})
+setDrawColour a     = setsGS (\s -> s { gs_draw_colour=a})
 
 
 getFontAttr         :: PsMonad FontAttr
-getFontAttr         = PsMonad $ \_ s -> let sz = gs_font_size s 
-                                            ff = gs_font_face s
-                                        in (FontAttr sz ff, s)
+getFontAttr         = getsGS (\s -> FontAttr (gs_font_size s) (gs_font_face s))
 
 setFontAttr         :: FontAttr -> PsMonad ()
 setFontAttr (FontAttr sz ff) = 
-    PsMonad $ \_ s -> ((), s { gs_font_size=sz,gs_font_face=ff })
+    setsGS (\s -> s { gs_font_size=sz, gs_font_face=ff })
 
   
 getLineWidth        :: PsMonad Double
-getLineWidth        = PsMonad $ \_ s -> (line_width $ gs_stroke_attr s, s)
+getLineWidth        = getsGS (line_width . gs_stroke_attr)
 
 setLineWidth        :: Double -> PsMonad ()
-setLineWidth a      = PsMonad $ \_ s -> 
-    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
-  where
-    fn sa = sa { line_width = a }
+setLineWidth a      = setsSA (\s -> s { line_width = a } )
 
 getMiterLimit       :: PsMonad Double
-getMiterLimit       = PsMonad $ \_ s -> (miter_limit $ gs_stroke_attr s,s)
+getMiterLimit       = getsGS (miter_limit . gs_stroke_attr)
 
 setMiterLimit       :: Double -> PsMonad ()
-setMiterLimit a     = PsMonad $ \_ s -> 
-    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
-  where
-    fn sa = sa { miter_limit = a }
+setMiterLimit a     = setsSA (\s -> s { miter_limit = a } )
 
 
 getLineCap          :: PsMonad LineCap
-getLineCap          = PsMonad $ \_ s -> (line_cap $ gs_stroke_attr s,s)
+getLineCap          = getsGS (line_cap . gs_stroke_attr)
 
 setLineCap          :: LineCap -> PsMonad ()
-setLineCap a        = PsMonad $ \_ s ->
-    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
-  where
-    fn sa = sa { line_cap = a }
+setLineCap a        = setsSA (\s -> s { line_cap = a })
 
 
 getLineJoin         :: PsMonad LineJoin
-getLineJoin         = PsMonad $ \_ s -> (line_join $ gs_stroke_attr s,s)
+getLineJoin         = getsGS (line_join . gs_stroke_attr)
 
 setLineJoin         :: LineJoin -> PsMonad ()
-setLineJoin a       = PsMonad $ \_ s ->
-    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
-  where
-    fn sa = sa { line_join = a }
+setLineJoin a       = setsSA (\s -> s { line_join = a })
 
 
 getDashPattern      :: PsMonad DashPattern
-getDashPattern      = PsMonad $ \_ s -> (dash_pattern $ gs_stroke_attr s,s)
+getDashPattern      = getsGS (dash_pattern . gs_stroke_attr)
 
 setDashPattern      :: DashPattern -> PsMonad ()
-setDashPattern a    = PsMonad $ \_ s -> 
-    ((), s { gs_stroke_attr = fn $ gs_stroke_attr s })
-  where
-    fn sa = sa { dash_pattern = a }
+setDashPattern a    = setsSA (\s -> s { dash_pattern = a })
 
 
 --------------------------------------------------------------------------------
@@ -180,13 +183,13 @@ writeEPS filepath enc pic =
 -- 
 writePS_latin1 :: (Real u, Floating u, PSUnit u) 
                => FilePath -> [Picture u] -> IO ()
-writePS_latin1 filepath = writePS filepath latin1Encoder
+writePS_latin1 filepath = writePS filepath defaultEncoder
 
 -- | Version of 'writeEPS' - using Latin1 encoding. 
 --
 writeEPS_latin1 :: (Real u, Floating u, PSUnit u)  
                 => FilePath -> Picture u -> IO ()
-writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
+writeEPS_latin1 filepath = writeEPS filepath defaultEncoder
 
 --------------------------------------------------------------------------------
 -- Internals
