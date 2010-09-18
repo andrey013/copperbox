@@ -60,10 +60,9 @@ import Data.Maybe
 -- SvgMonad is two Readers plus Int state for clip paths...
 --
 
-data St = St { clip_num :: Int, current_font_encoder :: FontEncoder }
 
 newtype SvgMonad a = SvgMonad { 
-          getSvgMonad :: TextEncoder -> GraphicsState -> St -> (a,St) }
+          getSvgMonad :: TextEncoder -> GraphicsState -> Int -> (a,Int) }
 
 
 
@@ -83,25 +82,19 @@ instance Monad SvgMonad where
                                      in (getSvgMonad . k) a r1 r2 s1
                             
 
-makeSt :: TextEncoder -> St
-makeSt enc = St { clip_num = 0
-                , current_font_encoder = getDefaultFontEncoder enc }
 
 runSvgMonad :: TextEncoder -> SvgMonad a -> a
-runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS (makeSt enc)
+runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS 0
 
 newClipLabel :: SvgMonad String
-newClipLabel = SvgMonad $ \_ _ s -> let str = show $ clip_num s
-                                    in ('c':'l':'i':'p':str, upd s)
-  where
-    upd = (\s i -> s { clip_num = i+1 }) <*> clip_num
+newClipLabel = SvgMonad $ \_ _ s -> ('c':'l':'i':'p':show s, s+1)
 
-getGlyphName :: String -> SvgMonad (Either GlyphName GlyphName)
-getGlyphName nm = SvgMonad $ \_ _ s -> 
-    let font_enc = current_font_encoder s in 
-    case lookupByGlyphName nm font_enc of
+
+getGlyphName :: FontEncoderName -> String -> SvgMonad (Either GlyphName GlyphName)
+getGlyphName fen glyname = SvgMonad $ \r1 _ s -> 
+    case lookupByGlyphName fen glyname r1 of
       Just a  -> (Right $ escapeSpecial a, s)
-      Nothing -> (Left  $ escapeSpecial $ svg_fallback font_enc, s)
+      Nothing -> (Left  $ escapeSpecial $ getSvgFallback fen r1, s)
 
 -- This is different to the PsMonad version, as SVG is nested 
 -- (and /graphics state/ is via a Reader), so it is the same as 
@@ -136,6 +129,8 @@ askLineJoin     = asksGraphicsState (line_join . gs_stroke_attr)
 
 askDashPattern  :: SvgMonad DashPattern
 askDashPattern  = asksGraphicsState (dash_pattern . gs_stroke_attr)
+
+
 
 --------------------------------------------------------------------------------
 
@@ -297,8 +292,9 @@ primLabel :: (Real u, Floating u, PSUnit u)
 primLabel (LabelProps rgb attrs) (PrimLabel pt body ctm) = 
     (\fa ca dtxt -> elem_text (fa <+> ca) (makeTspan rgb dtxt))
       <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm (labelBodyCoords body)
-                               <*> labelBodyText body
-    
+                               <*> labelBodyText fen body
+  where
+    fen = font_enc_name $ font_face attrs    
 
 
 labelBodyCoords :: PSUnit u => LabelBody u -> Point2 u -> SvgMonad Doc
@@ -306,24 +302,24 @@ labelBodyCoords (StdLayout _)  pt = pure $ makeXY pt
 labelBodyCoords (KernTextH xs) pt = pure $ makeXsY pt xs        
 labelBodyCoords (KernTextV xs) pt = pure $ makeXYs pt xs
 
-labelBodyText :: LabelBody u -> SvgMonad Doc
-labelBodyText (StdLayout enctext) = encodedText enctext
-labelBodyText (KernTextH xs)      = hcat <$> mapM kerningChar xs
-labelBodyText (KernTextV xs)      = hcat <$> mapM kerningChar xs
+labelBodyText :: FontEncoderName -> LabelBody u -> SvgMonad Doc
+labelBodyText nm (StdLayout enctext) = encodedText nm enctext
+labelBodyText nm (KernTextH xs)      = hcat <$> mapM (kerningChar nm) xs
+labelBodyText nm (KernTextV xs)      = hcat <$> mapM (kerningChar nm) xs
 
 
-encodedText :: EncodedText -> SvgMonad Doc
-encodedText enctext = hcat <$> mapM textChunk (getEncodedText enctext)
+encodedText :: FontEncoderName -> EncodedText -> SvgMonad Doc
+encodedText nm enctext = hcat <$> mapM (textChunk nm) (getEncodedText enctext)
 
-textChunk :: TextChunk -> SvgMonad Doc
-textChunk (TextSpan s)    = pure $ text s
-textChunk (TextEscInt i)  = pure $ text $ escapeSpecial i
-textChunk (TextEscName s) = either text text <$> getGlyphName s 
+textChunk :: FontEncoderName -> TextChunk -> SvgMonad Doc
+textChunk _  (TextSpan s)    = pure $ text s
+textChunk _  (TextEscInt i)  = pure $ text $ escapeSpecial i
+textChunk nm (TextEscName s) = either text text <$> getGlyphName nm s 
 
-kerningChar :: KerningChar u -> SvgMonad Doc
-kerningChar (_, CharLiteral c) = pure $ char c
-kerningChar (_, CharEscInt i)  = pure $ text $ escapeSpecial i
-kerningChar (_, CharEscName s) = either text text <$> getGlyphName s 
+kerningChar :: FontEncoderName -> KerningChar u -> SvgMonad Doc
+kerningChar _  (_, CharLiteral c) = pure $ char c
+kerningChar _  (_, CharEscInt i)  = pure $ text $ escapeSpecial i
+kerningChar nm (_, CharEscName s) = either text text <$> getGlyphName nm s 
 
 
 makeTspan :: RGBi -> Doc -> Doc
@@ -475,3 +471,4 @@ bracketPrimCTM pt@(P2 x y) ctm pf
     zeroPt' = zeroPt
 
     mtrx  = val_matrix $ translMatrixRepCTM x y ctm
+

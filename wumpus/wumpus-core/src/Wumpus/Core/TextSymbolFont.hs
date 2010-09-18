@@ -31,8 +31,10 @@ import qualified Data.Map as Map
 
 -- | Symbol Font Encoder name 
 --
+-- (Number 1)
+-- 
 symbol_font_encoder :: FontEncoderName
-symbol_font_encoder = FontEncoderName "Symbol_font_encoder"
+symbol_font_encoder = FontEncoderName 1
 
 
 

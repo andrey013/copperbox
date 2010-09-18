@@ -34,7 +34,6 @@ import Data.Map
 defaultEncoder :: TextEncoder
 defaultEncoder = TextEncoder
       { svg_encoding_name       = "ISO-8859-1"
-      , default_encoder_name    = latin1_font_encoder
       , font_encoder_map        = fem
       }
   where

@@ -52,6 +52,7 @@ module Wumpus.Core.TextEncoder
   ) where
 
 import Data.Map
+import Data.Word
 
 type GlyphName        = String
 type CharCode         = Int 
@@ -61,17 +62,38 @@ type SVGLookup        = GlyphName -> Maybe CharCode
 
 
 
--- | Font encoder name - a newtype wrapped String.
+-- | Font encoder name - a newtype wrapped /number/.
 -- 
--- The newtype wrapping is only to highlight that a
--- FontEncoderName is somewhat special - each FontEncoder should
--- have exactly one FontEncoderName.
+-- Ideally this would be an enumerated type, but it has to be 
+-- open - new encoders need to be added, so an enum is out of the
+-- question.
+--
+-- A String would be good, but would have slow lookup when used 
+-- as a key. Dealing with multiple encoders was added late to 
+-- Wumpus-Core - it is necessary, but taking a performace hit 
+-- because of it is chagrin. So instead /uniquely/ asssigned
+-- numbers are used.
+--
+-- Numbers below 10000 are reserved for Wumpus, though it is 
+-- unlikely to need more than a handful. Numbers above are free 
+-- to use (clearly clashes are possible, but probably unlikely).
 -- 
-newtype FontEncoderName = FontEncoderName { getFontEncoderName :: String }
+-- Wumpus-Core assigns the following, other Wumpus libraries may 
+-- assign more:
+--
+-- > 0 - Latin1 (for Helvetica, Times Roman, Courier...)
+--
+-- > 1 - Symbol Font
+-- 
+newtype FontEncoderName = FontEncoderName { getFontEncoderName :: Word16 }
   deriving (Eq,Ord)
 
 instance Show FontEncoderName where
-  show = getFontEncoderName
+  show = step . getFontEncoderName
+    where
+      step 0 = "Latin1"
+      step 1 = "Symbol-Font"
+      step n = show n
 
 -- | 'TextEncoder'
 --
@@ -89,7 +111,6 @@ instance Show FontEncoderName where
 -- 
 data TextEncoder = TextEncoder
       { svg_encoding_name       :: String
-      , default_encoder_name    :: FontEncoderName
       , font_encoder_map        :: Map FontEncoderName FontEncoder
       }
 

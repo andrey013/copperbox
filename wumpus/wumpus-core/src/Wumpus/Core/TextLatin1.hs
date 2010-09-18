@@ -29,9 +29,11 @@ import qualified Data.Map as Map
 
 
 -- | Latin1 Font Encoder name 
+--  
+-- (Number 0) 
 --
 latin1_font_encoder :: FontEncoderName
-latin1_font_encoder = FontEncoderName "Latin1_encoder"
+latin1_font_encoder = FontEncoderName 0
 
 -- | Latin1 FontEncoder instance.
 latin1FontEncoder :: FontEncoder

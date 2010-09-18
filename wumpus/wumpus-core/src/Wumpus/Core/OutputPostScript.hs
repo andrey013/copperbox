@@ -59,10 +59,9 @@ import Data.Time
 -- the diff is with the last drawn object.
 --
 
-data St = St { graphics_st :: GraphicsState, current_font_encoder :: FontEncoder }
 
 newtype PsMonad a = PsMonad { 
-            getPsMonad :: TextEncoder -> St -> (a,St) }
+            getPsMonad :: TextEncoder -> GraphicsState -> (a,GraphicsState) }
 
 
 instance Functor PsMonad where
@@ -79,31 +78,26 @@ instance Monad PsMonad where
   m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
                                 in (getPsMonad . k) a r s1
                               
-makeSt :: TextEncoder -> St
-makeSt enc = St { graphics_st = zeroGS
-                , current_font_encoder = getDefaultFontEncoder enc }
 
 runPsMonad :: TextEncoder -> PsMonad a -> a
-runPsMonad enc mf = fst $ getPsMonad mf enc (makeSt enc)
+runPsMonad enc mf = fst $ getPsMonad mf enc zeroGS
 
-askCharCode :: Int -> PsMonad (Either GlyphName GlyphName)
-askCharCode i = PsMonad $ \_ s -> 
-    let font_enc = current_font_encoder s in
-    case lookupByCharCode i font_enc of
+askCharCode :: FontEncoderName -> Int -> PsMonad (Either GlyphName GlyphName)
+askCharCode fen i = PsMonad $ \r s -> 
+    case lookupByCharCode fen i r of
       Just n  -> (Right n, s)
-      Nothing -> (Left $ ps_fallback font_enc, s)
+      Nothing -> (Left $ getPsFallback fen r, s)
 
 -- runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
 -- runLocalGS upd mf = 
 --     PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
 
 getsGS :: (GraphicsState -> a) -> PsMonad a
-getsGS fn = PsMonad $ \_ s -> (fn $ graphics_st s,s)
+getsGS fn = PsMonad $ \_ s -> (fn s,s)
 
 setsGS :: (GraphicsState -> GraphicsState) -> PsMonad ()
-setsGS fn = PsMonad $ \_ s -> ((),upd s)
-  where
-    upd = (\s i -> s { graphics_st = fn i}) <*> graphics_st
+setsGS fn = PsMonad $ \_ s -> ((),fn s)
+
 
 setsSA :: (StrokeAttr -> StrokeAttr) -> PsMonad ()
 setsSA fn = getsGS gs_stroke_attr >>= \sa -> 
@@ -372,52 +366,59 @@ strokeArcPath rgb sa radius pt =
 --
 primLabel :: (Real u, Floating u, PSUnit u) 
           => LabelProps -> PrimLabel u -> PsMonad Doc
-primLabel (LabelProps rgb font) (PrimLabel basept body ctm) = 
+primLabel (LabelProps rgb attrs) (PrimLabel basept body ctm) = 
     bracketPrimCTM basept ctm mf
   where
     mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, showd ]) 
-              <$> deltaDrawColour rgb <*> deltaFontAttrs font 
-                                      <*> labelBody pt body
-
-labelBody :: PSUnit u => Point2 u -> LabelBody u -> PsMonad Doc
-labelBody pt (StdLayout txt) = (\d1 -> ps_moveto pt `vconcat` d1) 
-                                 <$> encodedText txt
-labelBody pt (KernTextH xs)  = kernTextH pt xs
-labelBody pt (KernTextV xs)  = kernTextV pt xs
+              <$> deltaDrawColour rgb <*> deltaFontAttrs attrs
+                                      <*> labelBody fen pt body
+    
+    fen = font_enc_name $ font_face attrs    
 
 
-encodedText :: EncodedText -> PsMonad Doc 
-encodedText etext = vcat <$> (mapM textChunk $ getEncodedText etext)
+
+labelBody :: PSUnit u 
+          => FontEncoderName -> Point2 u -> LabelBody u -> PsMonad Doc
+labelBody nm pt (StdLayout txt) = (\d1 -> ps_moveto pt `vconcat` d1) 
+                                 <$> encodedText nm txt
+labelBody nm pt (KernTextH xs)  = kernTextH nm pt xs
+labelBody nm pt (KernTextV xs)  = kernTextV nm pt xs
 
 
-textChunk :: TextChunk -> PsMonad Doc
-textChunk (TextSpan s)    = pure (ps_show $ escapeSpecial s)
-textChunk (TextEscName s) = pure (ps_glyphshow s)
-textChunk (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i 
+encodedText :: FontEncoderName -> EncodedText -> PsMonad Doc 
+encodedText nm etext = vcat <$> (mapM (textChunk nm) $ getEncodedText etext)
+
+
+textChunk :: FontEncoderName -> TextChunk -> PsMonad Doc
+textChunk _  (TextSpan s)    = pure (ps_show $ escapeSpecial s)
+textChunk _  (TextEscName s) = pure (ps_glyphshow s)
+textChunk nm (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode nm i
   where
     failk gly_name = missingCharCode i gly_name
 
-kernTextH :: PSUnit u => Point2 u -> [KerningChar u] -> PsMonad Doc
-kernTextH pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+kernTextH :: PSUnit u 
+          => FontEncoderName -> Point2 u -> [KerningChar u] -> PsMonad Doc
+kernTextH nm pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dx,ch) = (\doc1 -> let pt = P2 (x+dx) y in
                                         (pt, vcat [acc, ps_moveto pt, doc1]))
-                                <$> encodedChar ch
+                                <$> encodedChar nm ch
 
 -- Note - vertical labels grow downwards...
 --
-kernTextV :: PSUnit u => Point2 u -> [KerningChar u] -> PsMonad Doc
-kernTextV pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+kernTextV :: PSUnit u 
+          => FontEncoderName -> Point2 u -> [KerningChar u] -> PsMonad Doc
+kernTextV nm pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dy,ch) = (\doc1 -> let pt = P2 x (y-dy) in
                                         (pt, vcat [acc, ps_moveto pt, doc1]))
-                                <$> encodedChar ch
+                                <$> encodedChar nm ch
 
 
-encodedChar :: EncodedChar -> PsMonad Doc
-encodedChar (CharLiteral c) = pure (ps_show $ escapeSpecialChar c)
-encodedChar (CharEscName s) = pure (ps_glyphshow s)
-encodedChar (CharEscInt i)  = (either failk ps_glyphshow) <$> askCharCode i 
+encodedChar :: FontEncoderName -> EncodedChar -> PsMonad Doc
+encodedChar _  (CharLiteral c) = pure (ps_show $ escapeSpecialChar c)
+encodedChar _  (CharEscName s) = pure (ps_glyphshow s)
+encodedChar nm (CharEscInt i)  = (either failk ps_glyphshow) <$> askCharCode nm i 
   where
     failk gly_name = missingCharCode i gly_name
 

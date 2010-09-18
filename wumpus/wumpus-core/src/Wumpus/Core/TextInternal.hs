@@ -21,12 +21,11 @@ module Wumpus.Core.TextInternal
   , TextChunk(..)
   , EncodedChar(..)
 
-  , getDefaultFontEncoder
-  , getFontEncoder
-
   , textLength
   , lookupByCharCode  
   , lookupByGlyphName
+  , getSvgFallback
+  , getPsFallback
   
   , lexLabel
 
@@ -77,40 +76,30 @@ instance Format EncodedChar where
 --------------------------------------------------------------------------------
 
 
--- | Get the default font encoder in a TextEncoder.
---
--- This function throws a runtime error on failure.
--- 
-getDefaultFontEncoder :: TextEncoder -> FontEncoder
-getDefaultFontEncoder enc = 
-    case Map.lookup (default_encoder_name enc) (font_encoder_map enc) of
-       Nothing -> error "TextEncoder error - cannot find the default font."
-       Just a  -> a
-
-
--- | Lookup a font encoder in a TextEncoder.
---
--- This function throws a runtime error on failure.
--- 
-getFontEncoder :: FontEncoderName -> TextEncoder -> FontEncoder
-getFontEncoder name enc = case Map.lookup name (font_encoder_map enc) of
-    Nothing -> error err_msg
-    Just a  -> a
-  where
-    err_msg = "TextEncoder error - cannot find the encoder: " 
-              ++ show name ++ "."
-
 textLength :: EncodedText -> Int
 textLength = foldr add 0 . getEncodedText where 
     add (TextSpan s) n = n + length s
     add _            n = n + 1
 
 
-lookupByCharCode :: CharCode -> FontEncoder -> Maybe GlyphName
-lookupByCharCode i enc = (ps_lookup enc) i
+lookupByCharCode :: FontEncoderName -> CharCode -> TextEncoder -> Maybe GlyphName
+lookupByCharCode name i enc = 
+    Map.lookup name (font_encoder_map enc) >>= \a -> (ps_lookup a) i
 
-lookupByGlyphName :: GlyphName -> FontEncoder -> Maybe CharCode
-lookupByGlyphName i enc = (svg_lookup enc) i
+lookupByGlyphName :: FontEncoderName -> GlyphName -> TextEncoder -> Maybe CharCode
+lookupByGlyphName name i enc = 
+    Map.lookup name (font_encoder_map enc) >>= \a -> (svg_lookup a) i
+
+
+getSvgFallback :: FontEncoderName -> TextEncoder -> CharCode
+getSvgFallback name enc = case Map.lookup name (font_encoder_map enc) of
+   Just fe -> svg_fallback fe 
+   Nothing -> 0o040                     -- wild guess
+
+getPsFallback :: FontEncoderName -> TextEncoder -> GlyphName
+getPsFallback name enc = case Map.lookup name (font_encoder_map enc) of
+   Just fe -> ps_fallback fe 
+   Nothing -> "space"                    -- wild guess
 
 
 -- | 'lexLabel' input is regular text and escaped glyph names or
