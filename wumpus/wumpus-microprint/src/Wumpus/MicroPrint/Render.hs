@@ -83,14 +83,11 @@ borderedF (i,uw) (w,h) rgb = concatAt srect seps
                                  in  Just (fn,(n+1,hshift+uw))
 
 
-
--- Note - this needs attention due to Z-Order handling in 
--- Wumpus-Basic. There are better ways to accomplish what 
--- borderedF does...
+-- At some point this needs a rethink...
 --
 concatAt :: DLocGraphic -> [DLocGraphic] -> DLocGraphic 
 concatAt x [] = x
-concatAt x xs = foldr lgappend x xs
+concatAt x xs = foldl' lgappend x xs
 
 vline :: (Num u, Ord u) => u -> LocGraphic u
 vline h = \pt -> openStroke $ path pt [lineTo $ pt .+^ vvec h]
