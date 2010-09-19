@@ -39,7 +39,10 @@ description:
     combinators.
   .
   * Changes to @Basic.Graphic.PrimGraphic@ - @localDrawingContext@
-    renamed to @localLG@ and moved to @Basic.GRaphic.BaseTypes@.
+    renamed to @localLG@ and moved to @Basic.Graphic.BaseTypes@.
+  .
+  * Updates to @Basic.SafeFonts@ to work with changes to 
+    @Wumpus.Core@.
   .
   0.6.0 to 0.7.0:
   .

@@ -58,12 +58,6 @@ pic3 = liftToPictureU $ execDrawing std_ctx $ do
 
 
 
-
-
-two_line :: Num u => GraphicF u 
-two_line = textline (textAttr std_attr) "line one"
-                  `cc` (textline (textAttr std_attr) "line two" . vdisp (-16))
-
 g1 :: TextM Double ()
 g1 =   alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
     >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi

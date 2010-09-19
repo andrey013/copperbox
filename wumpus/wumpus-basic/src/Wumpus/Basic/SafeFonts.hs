@@ -54,86 +54,106 @@ import Wumpus.Core
 
 -}
 --------------------------------------------------------------------------------
--- Times-Roman
+-- 
 
+-- | Times-Roman
+-- 
 timesRoman :: FontFace
-timesRoman = FontFace "Times-Roman" "Times New Roman" SVG_REGULAR
+timesRoman = 
+    FontFace "Times-Roman" "Times New Roman" SVG_REGULAR latin1_font_encoder
 
--- Times Italic
-
+-- | Times Italic
+--
 timesItalic :: FontFace
-timesItalic = FontFace "Times-Italic" "Times New Roman" SVG_ITALIC
-
--- Times Bold
-
+timesItalic = 
+    FontFace "Times-Italic" "Times New Roman" SVG_ITALIC latin1_font_encoder
+                       
+-- | Times Bold
+--
 timesBold :: FontFace
-timesBold = FontFace "Times-Bold" "Times New Roman" SVG_BOLD
+timesBold = 
+    FontFace "Times-Bold" "Times New Roman" SVG_BOLD latin1_font_encoder
 
--- Times Bold Italic
-
+-- | Times Bold Italic
+--
 timesBoldItalic :: FontFace
-timesBoldItalic = 
-    FontFace "Times-BoldItalic" "Times New Roman" SVG_BOLD_ITALIC
+timesBoldItalic = FontFace "Times-BoldItalic" 
+                           "Times New Roman" 
+                           SVG_BOLD_ITALIC 
+                           latin1_font_encoder
 
 
 --------------------------------------------------------------------------------
 -- Helvetica
 
+-- | Helvetica 
+--
 helvetica :: FontFace
-helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR
+helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder
 
 
--- Helvetica Oblique
-
+-- | Helvetica Oblique
+--
 helveticaOblique :: FontFace
-helveticaOblique = FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE
+helveticaOblique = 
+    FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE latin1_font_encoder
 
--- Helvetica Bold
-
+-- | Helvetica Bold
+-- 
 helveticaBold :: FontFace
-helveticaBold = FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD
+helveticaBold = 
+    FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD latin1_font_encoder
 
 
--- Helvetica Bold Oblique
-
+-- | Helvetica Bold Oblique
+--
 helveticaBoldOblique :: FontFace
-helveticaBoldOblique = 
-    FontFace "Helvetica-Bold-Oblique" "Helvetica" SVG_BOLD_OBLIQUE
+helveticaBoldOblique = FontFace "Helvetica-Bold-Oblique" 
+                                "Helvetica" 
+                                SVG_BOLD_OBLIQUE 
+                                latin1_font_encoder
 
 
 
 --------------------------------------------------------------------------------
--- Courier
 
+-- | Courier
+-- 
 courier :: FontFace
-courier = FontFace "Courier" "Courier New" SVG_REGULAR
+courier = FontFace "Courier" "Courier New" SVG_REGULAR latin1_font_encoder
 
--- Courier Oblique
-
+-- | Courier Oblique
+-- 
 courierOblique :: FontFace
-courierOblique = FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE
+courierOblique = 
+    FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE latin1_font_encoder
 
--- Courier Bold
-
+-- | Courier Bold
+-- 
 courierBold :: FontFace
-courierBold = FontFace "Courier-Bold" "Courier New" SVG_BOLD
+courierBold = 
+    FontFace "Courier-Bold" "Courier New" SVG_BOLD latin1_font_encoder
 
 
--- Courier Bold Oblique
-
+-- | Courier Bold Oblique
+-- 
 courierBoldOblique :: FontFace
-courierBoldOblique = 
-    FontFace "Courier-Bold-Oblique" "Courier New" SVG_BOLD_OBLIQUE
+courierBoldOblique = FontFace "Courier-Bold-Oblique" 
+                              "Courier New" 
+                              SVG_BOLD_OBLIQUE 
+                              latin1_font_encoder
 
 --------------------------------------------------------------------------------
 -- Symbol
 
--- $symboldoc
--- Symbol does not appear to be well supported by SVG.
--- It renders in Chrome but not in Firefox.
-
+-- | Symbol
+--
+-- Note - Symbol does not appear to be well supported by some SVG
+-- renders. Seemingly Chrome is fine but Firefox defaults to some
+-- serif font.
+-- 
 symbol :: FontFace
-symbol = FontFace "Symbol" "Symbol" SVG_REGULAR
+symbol = FontFace "Symbol" "Symbol" SVG_REGULAR symbol_font_encoder
 
 
 

@@ -31,7 +31,7 @@ SVG (Scalable Vector Graphics) is supported.
 \wumpuscore is rather primitive, the basic drawing objects are 
 paths and text labels. A second library \texttt{wumpus-basic}
 contains code for higher level drawing but it is still missing 
-main functionalities e.g. shapes, arrowheads.
+main functionalities e.g. connectors, arrowheads.
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
 PostScript's notion of an (implicit) current point and the 
@@ -115,7 +115,12 @@ perhaps under-cooked although it appears adequate for Latin-1.
 
 \item[\texttt{Wumpus.Core.TextLatin1.}]
 A instance of the TextEncoder type for mapping Latin 1 characters
-to the PostScript and SVG escape characters.
+to the PostScript and SVG escape characters. Typically this 
+encoder is associated with the fonts - Helvetica, Courier and 
+Times-Roman.
+
+\item[\texttt{Wumpus.Core.TextSymbol.}]
+A instance of the TextEncoder type for the Symbol font.
 
 \item[\texttt{Wumpus.Core.VersionNumber.}]
 Current version number of \wumpuscore.
@@ -275,8 +280,7 @@ the case.
 
 
 The following table lists PostScript fonts and their SVG 
-equivalents. As of revision 0.20.0, the package 
-\texttt{wumpus-basic} includes a module 
+equivalents, the package \texttt{wumpus-basic} includes a module 
 \texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
 to avoid typographical slips.
 
