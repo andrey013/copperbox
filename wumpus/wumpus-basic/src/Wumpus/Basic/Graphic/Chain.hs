@@ -16,6 +16,10 @@
 --
 -- Supply points in an iterated chain.
 --
+-- WARNING - this module is likely to change. The monadic version 
+-- seems too /heavy/ to want to use, generating lists then 
+-- zipping them might be more appropriate.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Graphic.Chain
@@ -34,6 +38,8 @@ import Wumpus.Core                              -- package: wumpus-core
        
 import Control.Applicative
 import Control.Monad
+
+
 
 
 

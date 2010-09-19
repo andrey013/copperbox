@@ -8,8 +8,11 @@ import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
 
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
+import Data.AffineSpace                         -- package: vector-space
+
+import Control.Monad
 import Prelude hiding ( pi )
 
 import System.Directory
@@ -26,24 +29,81 @@ demo01 = do
     writeSVG_latin1 "./out/symbols.svg" pic1
 
 std_ctx :: DrawingContext
-std_ctx = fontface timesRoman $ standardContext 24
+std_ctx = fontface timesRoman $ standardContext 12
 
 pic1 :: DPicture 
 pic1 = liftToPictureU $ execDrawing std_ctx $ do
-         mdraw greek_lower (P2 0 100)
-         mdraw greek_upper (P2 0 75)
+         zipWithM_ mdraw letters_01 column_01
+         zipWithM_ sdraw letters_01 column_01
+         zipWithM_ mdraw letters_02 column_02
+         zipWithM_ sdraw letters_02 column_02
+
   where
-    mdraw ma pt = ma >>= \a -> draw $ a `at` pt
+    mdraw (_,ma) pt = execTextM ma >>= \a -> draw $ a `at` pt
+    sdraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16
 
+letters_01 :: [(String, TextM Double ())]
+letters_01 = 
+    [ ("uAlpha",                uAlpha) 
+    , ("uBeta",                 uBeta)
+    , ("uChi",                  uChi)
+    , ("uDelta",                uDelta)
+    , ("uEpsilon",              uEpsilon)
+    , ("uEta",                  uEta)
+    , ("uEuro",                 uEuro)
+    , ("uGamma",                uGamma)
+    , ("uIfraktur",             uIfraktur)
+    , ("uIota",                 uIota)
+    , ("uKappa",                uKappa)
+    , ("uLambda",               uLambda)
+    , ("uMu",                   uMu)
+    , ("uNu",                   uNu)
+    , ("uOmega",                uOmega)
+    , ("uOmicron",              uOmicron)
+    , ("uPhi",                  uPhi)
+    , ("uPi",                   uPi)
+    , ("uPsi",                  uPsi)
+    , ("uRfraktur",             uRfraktur)
+    , ("uRho",                  uRho)
+    , ("uSigma",                uSigma)
+    , ("uTau",                  uTau)
+    , ("uTheta",                uTheta)
+    , ("uUpsilon",              uUpsilon)
+    , ("uUpsilon1",             uUpsilon1)
+    , ("uXi",                   uXi)
+    , ("uZeta",                 uZeta)
+    , ("aleph",                 aleph)
+    , ("alpha",                 alpha)
+    , ("ampersand",             ampersand)
+    , ("angle",                 angle)
+    , ("angleleft",             angleleft)
+    , ("angleright",            angleright)
+    , ("approxequal",           approxequal)
+    ]
 
-greek_lower :: (Num u, FromPtSize u) => Drawing u (LocGraphic u)
-greek_lower = execTextM $ 
-       alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
-    >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
-    >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
+letters_02 :: [(String, TextM Double ())]
+letters_02 = 
+    [ ("arrowboth",             arrowboth) 
+    , ("arrowdblboth",          arrowdblboth)
+    , ("arrowdbldown",          arrowdbldown)
+    , ("arrowdblleft",          arrowdblleft)
+    , ("arrowdblright",         arrowdblright)
+    , ("arrowdblup",            arrowdblup)
+    , ("arrowdown",             arrowdown)
+    , ("arrowleft",             arrowleft)
+    , ("arrowright",            arrowright)
+    , ("arrowup",               arrowup)
+    , ("asteriskmath",          asteriskmath)
+    , ("bar",                   bar)
+    , ("beta",                  beta)
+    , ("braceleft",             braceleft)
+    , ("braceright",            braceright)
+    , ("bracketleft",           bracketleft)
+    , ("bracketright",          bracketright)
+    ]
 
+column_01 :: Num u => [Point2 u]
+column_01 = iterate (.+^ vvec (-16)) (P2 0 600)
 
-greek_upper :: (Num u, FromPtSize u) => Drawing u (LocGraphic u)
-greek_upper = execTextM $ 
-       uGamma >> uDelta >> uTheta >> uLambda >> uXi >> uPi >> kern 2 >> uSigma
-    >> uUpsilon >> uPhi >> kern 2 >>  uPsi >> kern 2 >> uOmega
+column_02 :: Num u => [Point2 u]
+column_02 = iterate (.+^ vvec (-16)) (P2 100 600)
