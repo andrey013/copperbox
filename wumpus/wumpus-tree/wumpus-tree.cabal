@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.6.0
+version:          0.7.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -18,29 +18,9 @@ description:
   .
   Changelog:
   .
-  0.5.0 to 0.6.0:
+  0.6.0 to 0.7.0:
   . 
   * Updated to track changes in Wumpus-Basic.
-  .
-  0.4.0 to 0.5.0:
-  .
-  * Updated to track changes in Wumpus-Basic. Nothing new.
-  .
-  0.3.0 to 0.4.0:
-  .
-  * Updated to track changes in Wumpus-Basic. Nothing new.
-  .
-  0.2.0 to 0.3.0:
-  .
-  * Updated to track changes in Wumpus-Basic. No new 
-    functionality.
-  .
-  0.1.0 to 0.2.0:
-  .
-  * Changed internals to use ConsDrawing monad as Wumpus-Basic
-    has changed.
-  .
-  * Internal change to use AGraphic rather than MGraphicF 
   .
   .
 build-type:         Simple

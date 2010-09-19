@@ -1,5 +1,5 @@
 name:             wumpus-microprint
-version:          0.7.0
+version:          0.8.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -25,35 +25,9 @@ description:
   .
   Changelog:
   .
-  0.6.0 to 0.7.0:
+  0.7.0 to 0.8.0:
   .
-  * Again, internal changes to work with latest @Wumpus-Basic@.
-  .
-  0.5.0 to 0.6.0:
-  .
-  * Updated internals to work with latest @wumpus-core@ and 
-    @wumpus-basic@.
-  . 
-  0.4.0 to 0.5.0:
-  .
-  * Updated internals to work with latest @wumpus-core@ and 
-    @wumpus-basic@.
-  .
-  0.3.0 to 0.4.0:
-  .
-  * Implementation modules are now hidden. Added some documentation.
-  .
-  * DrawF renamed DrawWordF, MP_config renamed MicroPrintConfig.
-  . 
-  0.2.0 to 0.3.0:
-  .
-  * Updated to use ConsDrawing monad from Wumpus-Basic.
-  .
-  0.1.1 to 0.2.0:
-  .
-  * Updated to use Basic.Graphic types from wumpus-basic-0.2.0
-  .
-  * Added bordered printing that marks the unit character width.
+  * Internal changes to work with latest @Wumpus-Basic@.
   .
   .
 build-type:         Simple

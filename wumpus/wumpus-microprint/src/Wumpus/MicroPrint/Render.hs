@@ -64,7 +64,7 @@ data MicroPrintConfig = MicroPrintConfig
 --
 greekF :: DrawWordF
 greekF _ (w,h) rgb = 
-    localDrawingContext (secondaryColour rgb) (filledRectangle w h) 
+    localLG (secondaryColour rgb) (filledRectangle w h) 
 
 
 -- | Draw the word as a coloured rectangle, with a border grid.
@@ -73,7 +73,7 @@ borderedF :: DrawWordF
 borderedF (i,uw) (w,h) rgb = concatAt srect seps
   where
     srect :: DLocGraphic
-    srect = localDrawingContext (secondaryColour rgb) (borderedRectangle w h)
+    srect = localLG (secondaryColour rgb) (borderedRectangle w h)
 
     seps  :: [DLocGraphic]
     seps  = unfoldr phi (1,uw) 
@@ -90,7 +90,7 @@ borderedF (i,uw) (w,h) rgb = concatAt srect seps
 --
 concatAt :: DLocGraphic -> [DLocGraphic] -> DLocGraphic 
 concatAt x [] = x
-concatAt x xs = foldr appendAt x xs
+concatAt x xs = foldr lgappend x xs
 
 vline :: (Num u, Ord u) => u -> LocGraphic u
 vline h = \pt -> openStroke $ path pt [lineTo $ pt .+^ vvec h]
@@ -135,10 +135,7 @@ instance TurtleM RenderMonad where
 
 drawMicroPrint :: MicroPrintConfig -> ([Tile],Height) -> Maybe DPicture
 drawMicroPrint cfg (xs,h) = 
-    let (_,hf) = runRender cfg (moveUpN h >> interpret xs) in post $ hf []
-  where
-    post [] = Nothing
-    post ps = Just $ frame ps
+    let (_,hf) = runRender cfg (moveUpN h >> interpret xs) in liftToPictureMb hf
 
 runRender :: MicroPrintConfig -> RenderMonad a -> (a, HPrim Double)
 runRender cfg m = 
@@ -157,7 +154,7 @@ interp1 (Word rgb i)  = do
     uw <- asks char_width
     pt <- scaleCurrentCoord
     dF <- asks drawWordF
-    drawAt pt (dF (i,uw) (w,h) rgb)
+    draw $ (dF (i,uw) (w,h) rgb) `at` pt
     moveRightN i
    
 moveRightN   :: Int -> RenderMonad ()

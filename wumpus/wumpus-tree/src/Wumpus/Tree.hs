@@ -107,14 +107,9 @@ drawTreePicture :: (a -> TreeNode)
                 -> Tree a 
                 -> TreePicture
 drawTreePicture drawF ctx sfactors tree = 
-    post $ drawTree drawF ctx $ design funs tree
+    liftToPictureU $ drawTree drawF ctx $ design funs tree
   where
     funs = scalingFunctions sfactors
-    post f = let xs = f [] in 
-             if null xs then errK else frame xs
-                        
-errK :: a
-errK = error "treePicture - empty tree drawing." 
 
 
 scalingFunctions :: ScaleFactors -> (Double -> Double, Int -> Double)
@@ -153,7 +148,7 @@ textNode = dotText . uptoNewline
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 circleNode :: RGBi -> (a -> TreeNode)
-circleNode rgb = \_ pt -> localCtxObj (primaryColour rgb) (dotCircle pt)
+circleNode rgb = \_ pt -> localDF (primaryColour rgb) (dotCircle pt)
 
 
 -- | Tree nodes with a filled circle.
@@ -161,7 +156,7 @@ circleNode rgb = \_ pt -> localCtxObj (primaryColour rgb) (dotCircle pt)
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 diskNode :: RGBi -> (a -> TreeNode)
-diskNode rgb = \_ pt -> localCtxObj (secondaryColour rgb) (dotDisk pt)
+diskNode rgb = \_ pt -> localDF (secondaryColour rgb) (dotDisk pt)
 
 
 

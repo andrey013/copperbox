@@ -133,6 +133,9 @@ instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (TurtleT u m) where
   trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
 
 
+instance (Monad m, u ~ MonUnit m, Num u) => PointSupplyM (TurtleT u m) where
+  position = getPos
+
 --------------------------------------------------------------------------------
 
 
@@ -171,19 +174,22 @@ instance TurtleScaleM (TurtleDrawing u) u where
   yStep    = TurtleDrawing $ yStep
 
 
--- Lifters no longer supplied...
+
 -- TraceM 
 
 instance TraceM (TurtleDrawing u) where
   trace a = TurtleDrawing $ trace a
-
-
 
 -- DrawingCtxM
 
 instance DrawingCtxM (TurtleDrawing u) where
   askCtx          = TurtleDrawing $ askCtx
   localCtx ctx ma = TurtleDrawing $ localCtx ctx (getTurtleDrawing ma)
+
+-- PointSupplyM
+
+instance Num u => PointSupplyM (TurtleDrawing u) where
+  position = getPos
 
 
 runTurtleDrawing :: Num u 

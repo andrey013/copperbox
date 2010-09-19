@@ -36,6 +36,7 @@ module Wumpus.Basic.Graphic.Drawing
   , execFdcDrawingT
 
   , liftToPictureU
+  , liftToPictureMb
   , mbPictureU
  
   , draw
@@ -240,6 +241,17 @@ liftToPictureU hf =
     let prims = hprimToList hf in if null prims then errK else frame prims
   where
     errK = error "toPictureU - empty prims list."
+
+-- | /Safe/ promotion of @HPrim@ to @(Maybe Picture)@.
+--
+-- If the HPrim is empty, then @Nothing@ is returned.
+-- 
+liftToPictureMb :: (Real u, Floating u, FromPtSize u) 
+               => HPrim u -> Maybe (Picture u)
+liftToPictureMb hf = let prims = hprimToList hf in 
+    if null prims then Nothing else Just (frame prims)
+
+
 
 -- | /Unsafe/ promotion of @(Maybe Picture)@ to @Picture@.
 --

@@ -36,7 +36,6 @@ module Wumpus.Basic.SafeFonts
   , courierBoldOblique
 
   -- * Symbol
-  -- $symboldoc
   , symbol
 
   ) where
@@ -45,14 +44,13 @@ module Wumpus.Basic.SafeFonts
 
 import Wumpus.Core
 
-{-
+-- Supported fonts are:
+--
+-- Times-Roman  Times-Italic       Times-Bold      Times-BoldItalic
+-- Helvetica    Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
+-- Courier      Courier-Oblique    Courier-Bold    Courier-Bold-Oblique
+-- Symbol
 
- Times-Roman  Times-Italic  Times-Bold  Times-BoldItalic
- Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
- Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
- Symbol
-
--}
 --------------------------------------------------------------------------------
 -- 
 

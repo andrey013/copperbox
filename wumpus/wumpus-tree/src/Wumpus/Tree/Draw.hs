@@ -41,7 +41,7 @@ drawTree drawF ctx tree = execDrawing ctx $ drawTop drawF tree
 
 drawTop :: (a -> TreeNode) -> CoordTree Double a -> Drawing Double ()
 drawTop fn (Node (pt,a) ns) = do 
-    ancr <- drawAtImg pt (fn a)
+    ancr <- drawi $ fn a `ati` pt
     mapM_ (draw1 fn ancr) ns
 
 draw1 :: (a -> TreeNode) 
@@ -49,7 +49,7 @@ draw1 :: (a -> TreeNode)
       -> CoordTree Double a 
       -> Drawing Double ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
-    ancr <- drawAtImg pt (fn a)
+    ancr <- drawi $ fn a `ati` pt
     draw $ connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
 
