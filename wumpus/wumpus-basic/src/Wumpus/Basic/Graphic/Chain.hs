@@ -41,8 +41,6 @@ import Control.Monad
 
 
 
-
-
 newtype ChainT u m a = ChainT { 
           getChainT :: Point2F u -> Point2 u -> m (a, Point2 u) }
 

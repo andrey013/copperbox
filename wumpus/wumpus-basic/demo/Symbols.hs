@@ -13,7 +13,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Monad
-import Prelude hiding ( pi )
+import Prelude hiding ( pi, product )
 
 import System.Directory
 
@@ -37,6 +37,14 @@ pic1 = liftToPictureU $ execDrawing std_ctx $ do
          zipWithM_ sdraw letters_01 column_01
          zipWithM_ mdraw letters_02 column_02
          zipWithM_ sdraw letters_02 column_02
+         zipWithM_ mdraw letters_03 column_03
+         zipWithM_ sdraw letters_03 column_03
+         zipWithM_ mdraw letters_04 column_04
+         zipWithM_ sdraw letters_04 column_04
+         zipWithM_ mdraw letters_05 column_05
+         zipWithM_ sdraw letters_05 column_05
+         zipWithM_ mdraw letters_06 column_06
+         zipWithM_ sdraw letters_06 column_06
 
   where
     mdraw (_,ma) pt = execTextM ma >>= \a -> draw $ a `at` pt
@@ -100,10 +108,153 @@ letters_02 =
     , ("braceright",            braceright)
     , ("bracketleft",           bracketleft)
     , ("bracketright",          bracketright)
+    , ("bullet",                bullet)
+    , ("carriagereturn",        carriagereturn)
+    , ("chi",                   chi)
     ]
+
+letters_03 :: [(String, TextM Double ())]
+letters_03 = 
+    [ ("circlemultiply",        circlemultiply) 
+    , ("circleplus",            circleplus)
+    , ("club",                  club)
+    , ("colon",                 colon)
+    , ("comma",                 comma)
+    , ("congruent",             congruent)
+    , ("copyrightsans",         copyrightsans)
+    , ("copyrightserif",        copyrightserif)
+    , ("degree",                degree)
+    , ("delta",                 delta)
+    , ("diamond",               diamond)
+    , ("divide",                divide)
+    , ("dotmath",               dotmath)
+    , ("eight",                 eight)
+    , ("element",               element)
+    , ("ellipsis",              ellipsis)
+    , ("emptyset",              emptyset)
+    , ("epsilon",               epsilon)
+    , ("equal",                 equal)
+    , ("equivalence",           equivalence)
+    , ("eta",                   eta)
+    , ("exclam",                exclam)
+    , ("existential",           existential)
+    , ("five",                  five)
+    , ("florin",                florin)
+    , ("four",                  four)
+    , ("fraction",              fraction)
+    , ("gamma",                 gamma)
+    , ("gradient",              gradient)
+    , ("greater",               greater)
+    , ("greaterequal",          greaterequal)
+    , ("heart",                 heart)
+    , ("infinity",              infinity)
+    , ("integral",              integral)
+    ]
+
+
+letters_04 :: [(String, TextM Double ())]
+letters_04 = 
+    [ ("intersection",          intersection)
+    , ("iota",                  iota)
+    , ("kappa",                 kappa)
+    , ("lambda",                lambda)
+    , ("less",                  less)
+    , ("lessequal",             lessequal)
+    , ("logicaland",            logicaland)
+    , ("logicalnot",            logicalnot)
+    , ("logicalor",             logicalor)
+    , ("lozenge",               lozenge)
+    , ("minus",                 minus)
+    , ("minute",                minute)
+    , ("mu",                    mu)
+    , ("multiply",              multiply)
+    , ("nine",                  nine)
+    , ("notelement",            notelement)
+    , ("notequal",              notequal)
+    , ("notsubset",             notsubset)
+    , ("nu",                    nu)
+    , ("numbersign",            numbersign)
+    , ("omega",                 omega)
+    , ("omega1",                omega1)
+    , ("omicron",               omicron)
+    , ("one",                   one)
+    , ("parenleft",             parenleft)
+    , ("parenright",            parenright)
+    ]
+
+letters_05 :: [(String, TextM Double ())]
+letters_05 = 
+    [ ("partialdiff",           partialdiff)
+    , ("percent",               percent)
+    , ("period",                period)
+    , ("perpendicular",         perpendicular)
+    , ("phi",                   phi)
+    , ("phi1",                  phi1)
+    , ("pi",                    pi)
+    , ("plus",                  plus)
+    , ("plusminus",             plusminus)
+    , ("product",               product)
+    , ("propersubset",          propersubset)
+    , ("propersuperset",        propersuperset)
+    , ("proportional",          proportional)
+    , ("psi",                   psi)
+    , ("question",              question)
+    , ("radical",               radical)
+    , ("radicalex",             radicalex)
+    , ("reflexsubset",          reflexsubset)
+    , ("reflexsuperset",        reflexsuperset)
+    , ("registersans",          registersans)
+    , ("registerserif",         registerserif)
+    , ("rho",                   rho)
+    ]
+
+letters_06 :: [(String, TextM Double ())]
+letters_06 = 
+    [ ("second",                second)
+    , ("semicolon",             semicolon)
+    , ("seven",                 seven)
+    , ("sigma",                 sigma)
+    , ("sigma1",                sigma1)
+    , ("similar",               similar)
+    , ("six",                   six)
+    , ("slash",                 slash)
+    , ("space",                 space)
+    , ("spade",                 spade)
+    , ("suchthat",              suchthat)
+    , ("summation",             summation)
+    , ("tau",                   tau)
+    , ("therefore",             therefore)
+    , ("theta",                 theta)
+    , ("theta1",                theta1)
+    , ("three",                 three)
+    , ("trademarksans",         trademarksans)
+    , ("trademarkserif",        trademarkserif)
+    , ("two",                   two)
+    , ("underscore",            underscore)
+    , ("union",                 union)
+    , ("universal",             universal)
+    , ("upsilon",               upsilon)
+    , ("weierstrass",           weierstrass)
+    , ("xi",                    xi)
+    , ("zero",                  zero)
+    , ("zeta",                  zeta)
+    ]
+
 
 column_01 :: Num u => [Point2 u]
 column_01 = iterate (.+^ vvec (-16)) (P2 0 600)
 
 column_02 :: Num u => [Point2 u]
 column_02 = iterate (.+^ vvec (-16)) (P2 100 600)
+
+column_03 :: Num u => [Point2 u]
+column_03 = iterate (.+^ vvec (-16)) (P2 200 600)
+
+column_04 :: Num u => [Point2 u]
+column_04 = iterate (.+^ vvec (-16)) (P2 300 600)
+
+column_05 :: Num u => [Point2 u]
+column_05 = iterate (.+^ vvec (-16)) (P2 400 600)
+
+column_06 :: Num u => [Point2 u]
+column_06 = iterate (.+^ vvec (-16)) (P2 500 600)
