@@ -2,16 +2,19 @@
 
 module FontPic where
 
-import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.Chains
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Colour.SVGColours ( steel_blue )
 import Wumpus.Basic.Colour.X11Colours ( indian_red1 )
 import Wumpus.Basic.PictureLanguage
+import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
+import Control.Monad
 import Data.List ( unfoldr )
 
 import System.Directory
@@ -29,103 +32,83 @@ main = do
     writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
 
 
-makeFontLabel :: RGBi -> FontAttr -> DPoint2 -> DPrimElement
-makeFontLabel rgb fa = textlabel rgb fa msg
+fontMsg :: FontFace -> Int -> String
+fontMsg ff sz = msgF []
   where
-    msg = unwords [ font_name $ font_face fa, (show $ font_size fa) ++ "pt"]
+    msgF = showString (font_name ff) . showChar ' ' . shows sz . showString "pt"
 
-blueLabel :: FontFace -> Int -> DPoint2 -> DPrimElement
-blueLabel ff i = makeFontLabel steel_blue (FontAttr i ff)
 
-redLabel :: FontFace -> Int -> DPoint2 -> DPrimElement
-redLabel ff i = makeFontLabel indian_red1 (FontAttr i ff)
+makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic
+makeLabel rgb ff sz = 
+    localLG (primaryColour rgb . fontsize sz . fontface ff) 
+            (textline $ fontMsg ff sz)
 
+-- indian_red1
+-- steel_blue
 
 point_sizes :: [Int]
 point_sizes = [10, 12, 18, 24, 36, 48]
+
+positions :: [Int]
+positions = [0, 12, 27, 49, 78, 122] 
+
+
+pointChain :: DPoint2 -> Chain Double
+pointChain pt = 
+    chainFrom pt fromIntegral fromIntegral $ verticals $ positions
+
+fontGraphic :: RGBi -> FontFace -> DPoint2 -> Drawing Double ()
+fontGraphic rgb ff pt = let ps = unchain $ pointChain pt in 
+   zipWithM_ (\pt sz -> draw $ makeLabel rgb ff sz `at` pt) ps point_sizes
+
+
+std_ctx :: DrawingContext
+std_ctx = standardContext 10
+
+
+fontPicture :: [(RGBi,FontFace)] -> DPicture
+fontPicture xs = liftToPictureU $ execDrawing std_ctx $  
+                   zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
+  where
+    ps = unchain $ tableDown 4 1 180 1 
+                                 
+
 
 --------------------------------------------------------------------------------
 -- Times
 
 times_pic :: Picture Double
-times_pic = timesroman_pic `nextToV` timesitalic_pic     `nextToV` timesbold_pic
-                           `nextToV` timesbolditalic_pic
+times_pic = 
+    fontPicture [ (steel_blue,  timesRoman)
+                , (indian_red1, timesItalic)
+                , (steel_blue,  timesBold)
+                , (indian_red1, timesBoldItalic)
+                ] 
 
-
-
-timesroman_pic :: Picture Double
-timesroman_pic = 
-    frame $ zipWith (blueLabel timesRoman) point_sizes (mkPoints 1.5)
-
-timesitalic_pic :: Picture Double
-timesitalic_pic = 
-    frame $ zipWith (redLabel timesItalic) point_sizes (mkPoints 1.5)
-
-timesbold_pic :: Picture Double
-timesbold_pic = 
-    frame $ zipWith (blueLabel timesBold) point_sizes (mkPoints 1.5)
-
-timesbolditalic_pic :: Picture Double
-timesbolditalic_pic = 
-    frame $ zipWith (redLabel timesBoldItalic) point_sizes (mkPoints 1.5)
-
---------------------------------------------------------------------------------
 helvetica_pic :: Picture Double
-helvetica_pic = vcat helvetica_pic1 [ helveticaoblique_pic  
-                                    , helveticabold_pic
-                                    , helveticaboldoblique_pic ]
-                     
+helvetica_pic = 
+    fontPicture [ (steel_blue,  helvetica)
+                , (indian_red1, helveticaOblique)
+                , (steel_blue,  helveticaBold)
+                , (indian_red1, helveticaBoldOblique)
+                ] 
 
-helvetica_pic1 :: Picture Double
-helvetica_pic1 = 
-    frame $ zipWith (blueLabel helvetica) point_sizes (mkPoints 1.5)
 
-helveticaoblique_pic :: Picture Double
-helveticaoblique_pic = 
-    frame $ zipWith (redLabel helveticaOblique) point_sizes (mkPoints 1.5)
-    
-helveticabold_pic :: Picture Double
-helveticabold_pic = 
-    frame $ zipWith (blueLabel helveticaBold) point_sizes (mkPoints 1.5)
-    
-helveticaboldoblique_pic :: Picture Double
-helveticaboldoblique_pic = 
-    frame $ zipWith (redLabel helveticaBoldOblique) point_sizes (mkPoints 1.5)
 
 --------------------------------------------------------------------------------
 
 courier_pic :: Picture Double
-courier_pic = vcat courier_pic1 [ courieroblique_pic
-                                , courierbold_pic
-                                , courierboldoblique_pic ]
-    
-courier_pic1 :: Picture Double
-courier_pic1 = 
-    frame $ zipWith (blueLabel courier) point_sizes (mkPoints 1.5)
-    
-courieroblique_pic :: Picture Double
-courieroblique_pic = 
-    frame $ zipWith (redLabel courierOblique) point_sizes (mkPoints 1.5)
-    
-courierbold_pic :: Picture Double
-courierbold_pic = 
-    frame $ zipWith (blueLabel courierBold) point_sizes (mkPoints 1.5)
-    
-courierboldoblique_pic :: Picture Double
-courierboldoblique_pic = 
-    frame $ zipWith (redLabel courierBoldOblique) point_sizes (mkPoints 1.5)
+courier_pic = 
+    fontPicture [ (steel_blue,  courier)
+                , (indian_red1, courierOblique)
+                , (steel_blue,  courierBold)
+                , (indian_red1, courierBoldOblique)
+                ] 
+
 
 --------------------------------------------------------------------------------
 
     
 symbol_pic :: Picture Double
 symbol_pic = 
-    frame $ zipWith (blueLabel symbol) point_sizes (mkPoints 1.5)
-
-
---------------------------------------------------------------------------------
-
-
-mkPoints :: Num u => u -> [Point2 u]
-mkPoints n = unfoldr phi zeroPt where
-  phi pt = Just (pt, pt .+^ (V2 0 15 ^* n))
+    fontPicture [ (steel_blue, symbol) ]

@@ -18,12 +18,21 @@
 
 module Wumpus.Basic.Chains.Derived
   (
+    
+    chainFrom
 
-    univariateX
+  , univariateX
   , univariateY
 
   , tableDown
+  , tableDownB
   , tableRight
+
+  , horizontal
+  , vertical
+
+  , horizontals
+  , verticals
 
   , rescale
 
@@ -31,8 +40,13 @@ module Wumpus.Basic.Chains.Derived
 
 import Wumpus.Basic.Chains.Base
 
--- import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
+
+chainFrom :: Num u
+          => Point2 u -> (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> Chain u
+chainFrom (P2 x0 y0) fx fy alg = 
+    chain (\x -> x0 + fx x) (\y -> y0 + fy y) alg
 
 univariateX :: (Fractional uy, Num ux) 
             => [ux] -> BivariateAlg ux uy
@@ -59,13 +73,16 @@ univariateY zs = bivariate (0,zs) gstep
 -- Tables
 
 
+tableDownB :: Int -> Int -> BivariateAlg Int Int
+tableDownB rows cols = 
+    bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
+
+
 tableDown :: Num u => Int -> Int -> u -> u -> Chain u
 tableDown rows cols row_height col_width = 
     chain (\x -> col_width  * fromIntegral x) 
           (\y -> row_height * fromIntegral y)
-          alg
-  where
-    alg = bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
+          (tableDownB rows cols)
 
 
 downstep :: Int -> (Int,Int) -> (Int,Int)
@@ -87,6 +104,34 @@ rightstep :: Int -> (Int,Int) -> (Int,Int)
 rightstep col_count (x,y) | x == (col_count-1) = (0,y-1)
 rightstep _         (x,y)                      = (x+1,y)
 
+
+horizontal :: Int -> BivariateAlg Int Int
+horizontal count = bivariate 0 alg
+  where
+    alg st | st == count = Done
+    alg st               = Step (st,0) (st+1)
+
+
+vertical :: Int -> BivariateAlg Int Int
+vertical count = bivariate 0 alg
+  where
+    alg st | st == count = Done
+    alg st               = Step (0,st) (st+1)
+
+
+
+horizontals :: Num u => [u] -> BivariateAlg u u
+horizontals xs0 = bivariate xs0 alg
+  where
+    alg []     = Done
+    alg (x:xs) = Step (x,0) xs
+
+
+verticals :: Num u => [u] -> BivariateAlg u u
+verticals ys0 = bivariate ys0 alg
+  where
+    alg []     = Done
+    alg (y:ys) = Step (0,y) ys
 
 
 --------------------------------------------------------------------------------
