@@ -26,6 +26,9 @@ description:
   * Re-worked @Basic.Text.LRSymbol@ adding more symbols and added
     new demo @Symbols.hs@.
   .
+  * @Basic.Graphic.Chain@ removed. It is now superseded by
+    @Basic.Chains@.
+  .
   0.7.0 to 0.8.0:
   .
   * Re-introduced LRText and LRSymbol - they now work with 
@@ -76,6 +79,9 @@ library
     Wumpus.Basic.Anchors,
     Wumpus.Basic.Arrows,
     Wumpus.Basic.Arrows.Tips,
+    Wumpus.Basic.Chains,
+    Wumpus.Basic.Chains.Base,
+    Wumpus.Basic.Chains.Derived,
     Wumpus.Basic.Colour.SVGColours,
     Wumpus.Basic.Colour.X11Colours,
     Wumpus.Basic.Dots,
@@ -83,7 +89,6 @@ library
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.BaseClasses,
     Wumpus.Basic.Graphic.BaseTypes,
-    Wumpus.Basic.Graphic.Chain,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
     Wumpus.Basic.Graphic.PrimGraphic,

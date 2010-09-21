@@ -1,10 +1,8 @@
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Graphic.Chain
+-- Module      :  Wumpus.Basic.Chains.Derived
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -18,17 +16,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Graphic.Chain
+module Wumpus.Basic.Chains.Derived
   (
-    Chain
-  , unchain
-  
-  , IterSequence
-  , iteration
-  , bounded
-  , pairOnXs
-  , pairOnYs
-  , univariateX
+
+    univariateX
   , univariateY
 
   , tableDown
@@ -36,79 +27,9 @@ module Wumpus.Basic.Graphic.Chain
 
   ) where
 
+import Wumpus.Basic.Chains.Base
 
-import Wumpus.Core                              -- package: wumpus-core
-
-
--- | Chains are built as unfolds - AnaAlg avoids the pair 
--- constructor in the usual definition of unfoldr and makes the
--- state strict.
---
--- It is expected that all Chains built on unfolds will terminate. 
---
-data AnaAlg st a = Done | Step a !st
-
-
--- | IterAlg is a variant of AnaAlg that builds infinite 
--- sequences (iterations).
--- 
--- When lifted to a Chain an iteration is bounded by a count so
--- it will terminate.
---
-data IterAlg st a = IterStep a !st 
-
-
-data Chain ux uy u = forall st. Chain
-      { proj_x      :: ux -> u
-      , proj_y      :: uy -> u
-      , st_zero     :: st
-      , gen_step    :: st -> AnaAlg st (ux,uy)
-      }
-
-unchain :: Chain ux uy u -> [Point2 u]
-unchain (Chain { proj_x = fX, proj_y = fY, st_zero = st0, gen_step = step }) = 
-    go $ step st0
-  where
-    go Done     = []
-    go (Step (x,y) next) = P2 (fX x) (fY y) : go (step next)
-
-
-data IterSequence a = forall st. IterSequence
-      { initial_st  :: st
-      , iter_step   :: st -> IterAlg st a
-      }
-
-iteration :: (a -> a) -> a -> IterSequence a
-iteration fn s0 = IterSequence { initial_st = s0, iter_step = step }
-  where
-    step s = IterStep s (fn s)
-
-
-bounded :: Int -> IterSequence (ux,uy) -> (ux->u) -> (uy->u) -> Chain ux uy u
-bounded n (IterSequence a0 fn) fX fY =
-    Chain { proj_x      = fX
-          , proj_y      = fY
-          , st_zero     = (0,a0)
-          , gen_step    = gstep  }
-  where
-    gstep (i,s) | i < n = let (IterStep ans next) = fn s in Step ans (i+1,next)
-    gstep _             = Done
-
-
-
-
-pairOnXs :: (ux -> uy) -> IterSequence ux -> IterSequence (ux,uy)
-pairOnXs fn (IterSequence { initial_st = s0, iter_step = step }) = 
-    IterSequence s0 step2
-  where
-    step2 s = let (IterStep a s') = step s in IterStep (a, fn a) s'
-
-
-pairOnYs :: (r -> l) -> IterSequence r -> IterSequence (l,r) 
-pairOnYs fn (IterSequence { initial_st = s0, iter_step = step }) = 
-    IterSequence s0 step2
-  where
-    step2 s = let (IterStep a s') = step s in IterStep (fn a, a) s'
+-- import Wumpus.Core                              -- package: wumpus-core
 
 
 -- Note - should this be a type representing:
