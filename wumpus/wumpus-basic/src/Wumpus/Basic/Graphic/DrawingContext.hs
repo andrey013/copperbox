@@ -29,6 +29,7 @@ module Wumpus.Basic.Graphic.DrawingContext
   , standardContext
   , textAttr
   , markHeight
+  , lineSpacing
   , lowerxHeight
   , textDimensions
 
@@ -64,24 +65,32 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 
 data DrawingContext = DrawingContext
-      { stroke_props       :: StrokeAttr
-      , font_props         :: FontAttr
-      , primary_colour     :: RGBi      -- usually the stroke colour
-      , secondary_colour   :: RGBi      -- usually the fill colour
+      { stroke_props          :: StrokeAttr
+      , font_props            :: FontAttr
+      , primary_colour        :: RGBi      -- usually the stroke colour
+      , secondary_colour      :: RGBi      -- usually the fill colour
+      , line_spacing_factor   :: Double
       }
   deriving (Eq,Show)
 
+
 standardContext :: FontSize -> DrawingContext
-standardContext sz = DrawingContext { stroke_props      = default_stroke_attr
-                                    , font_props        = FontAttr sz courier
-                                    , primary_colour    = black
-                                    , secondary_colour  = light_gray  }
+standardContext sz = 
+    DrawingContext { stroke_props           = default_stroke_attr
+                   , font_props             = FontAttr sz courier
+                   , primary_colour         = black
+                   , secondary_colour       = light_gray
+                   , line_spacing_factor    = 1.2  
+                   }
 
 
 
 textAttr :: DrawingContext -> (RGBi,FontAttr)
 textAttr = liftA2 (,) primary_colour font_props
 
+lineSpacing :: Fractional u => DrawingContext -> u
+lineSpacing = (\sz factor -> realToFrac $ factor * fromIntegral sz)
+                <$> (font_size . font_props) <*> line_spacing_factor
 
 -- | A Mark is consider to be the height of a lowercase letter
 -- in the current font.

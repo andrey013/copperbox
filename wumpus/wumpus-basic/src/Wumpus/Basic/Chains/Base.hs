@@ -24,11 +24,16 @@ module Wumpus.Basic.Chains.Base
     AnaAlg(..)
   , IterAlg(..)
 
-  , Chain(..)   -- temporarily open, should be opaque...
+  , Chain
+  , chain
   , unchain
+
+  , BivariateAlg
+  , bivariate
   
-  , IterSequence
+  , SequenceAlg
   , iteration
+
   , bounded
   , pairOnXs
   , pairOnYs
@@ -58,42 +63,61 @@ data IterAlg st a = IterStep a !st
 
 -- Maybe ux and uy should be exitensially hidden...
 --
-data Chain ux uy u = forall st. Chain
+data Chain u = forall ux uy st. Chain
       { proj_x      :: ux -> u
       , proj_y      :: uy -> u
-      , st_zero     :: st
-      , gen_step    :: st -> AnaAlg st (ux,uy)
+      , bi_alg      :: BivariateAlg ux uy
       }
+
+
+chain :: (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> Chain u
+chain fx fy alg = Chain { proj_x = fx
+                        , proj_y = fy
+                        , bi_alg = alg }
+
+unchain :: Chain u -> [Point2 u]
+unchain (Chain { proj_x = fx, proj_y = fy, bi_alg = biv}) = 
+    runBivariate fx fy biv
+
 
 -- Probably there should be another type representing the unfold.
 -- Most Chain building functions implemented so far are agnostic 
 -- to the scaling functions.
 
-unchain :: Chain ux uy u -> [Point2 u]
-unchain (Chain { proj_x = fX, proj_y = fY, st_zero = st0, gen_step = step }) = 
-    go $ step st0
+data BivariateAlg ux uy = forall st. BivariateAlg
+      { st_zero     :: st
+      , gen_step    :: st -> AnaAlg st (ux,uy)
+      }
+
+bivariate :: st -> (st -> AnaAlg st (ux,uy)) -> BivariateAlg ux uy
+bivariate st0 step_alg = BivariateAlg { st_zero = st0
+                                      , gen_step = step_alg }
+
+
+runBivariate :: (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> [Point2 u]
+runBivariate fx fy (BivariateAlg { st_zero = st0, gen_step = step}) = 
+    go (step st0)   
   where
-    go Done     = []
-    go (Step (x,y) next) = P2 (fX x) (fY y) : go (step next)
+    go Done              = []
+    go (Step (x,y) next) = P2 (fx x) (fy y) : go (step next)
 
 
-data IterSequence a = forall st. IterSequence
+
+data SequenceAlg a = forall st. SequenceAlg
       { initial_st  :: st
       , iter_step   :: st -> IterAlg st a
       }
 
-iteration :: (a -> a) -> a -> IterSequence a
-iteration fn s0 = IterSequence { initial_st = s0, iter_step = step }
+iteration :: (a -> a) -> a -> SequenceAlg a
+iteration fn s0 = SequenceAlg { initial_st = s0, iter_step = step }
   where
     step s = IterStep s (fn s)
 
 
-bounded :: Int -> IterSequence (ux,uy) -> (ux->u) -> (uy->u) -> Chain ux uy u
-bounded n (IterSequence a0 fn) fX fY =
-    Chain { proj_x      = fX
-          , proj_y      = fY
-          , st_zero     = (0,a0)
-          , gen_step    = gstep  }
+bounded :: Int -> SequenceAlg (ux,uy) -> BivariateAlg ux uy
+bounded n (SequenceAlg a0 fn) =
+    BivariateAlg { st_zero     = (0,a0)
+                 , gen_step    = gstep  }
   where
     gstep (i,s) | i < n = let (IterStep ans next) = fn s in Step ans (i+1,next)
     gstep _             = Done
@@ -101,16 +125,16 @@ bounded n (IterSequence a0 fn) fX fY =
 
 
 
-pairOnXs :: (ux -> uy) -> IterSequence ux -> IterSequence (ux,uy)
-pairOnXs fn (IterSequence { initial_st = s0, iter_step = step }) = 
-    IterSequence s0 step2
+pairOnXs :: (ux -> uy) -> SequenceAlg ux -> SequenceAlg (ux,uy)
+pairOnXs fn (SequenceAlg { initial_st = s0, iter_step = step }) = 
+    SequenceAlg s0 step2
   where
     step2 s = let (IterStep a s') = step s in IterStep (a, fn a) s'
 
 
-pairOnYs :: (r -> l) -> IterSequence r -> IterSequence (l,r) 
-pairOnYs fn (IterSequence { initial_st = s0, iter_step = step }) = 
-    IterSequence s0 step2
+pairOnYs :: (r -> l) -> SequenceAlg r -> SequenceAlg (l,r) 
+pairOnYs fn (SequenceAlg { initial_st = s0, iter_step = step }) = 
+    SequenceAlg  s0 step2
   where
     step2 s = let (IterStep a s') = step s in IterStep (fn a, a) s'
 

@@ -25,6 +25,8 @@ module Wumpus.Basic.Chains.Derived
   , tableDown
   , tableRight
 
+  , rescale
+
   ) where
 
 import Wumpus.Basic.Chains.Base
@@ -32,20 +34,9 @@ import Wumpus.Basic.Chains.Base
 -- import Wumpus.Core                              -- package: wumpus-core
 
 
--- Note - should this be a type representing:
---
--- > ScaleX -> ScaleY -> Chain
---
--- After all, the use-case in mind always constructs it as a
--- partial function.
--- 
 univariateX :: (Fractional uy, Num ux) 
-            => [ux] -> (ux -> u) -> (uy -> u) -> Chain ux uy u
-univariateX zs fX fY = 
-    Chain { proj_x      = fX
-          , proj_y      = fY
-          , st_zero     = (0,zs)
-          , gen_step    = gstep  }
+            => [ux] -> BivariateAlg ux uy
+univariateX zs = bivariate (0,zs) gstep
   where
     gstep (_,[])     = Done 
     gstep (n,x:xs)   = Step (x,n) (n+i,xs)
@@ -54,12 +45,8 @@ univariateX zs fX fY =
 
 
 univariateY :: (Fractional ux, Num uy) 
-            => [uy] -> (ux -> u) -> (uy -> u) -> Chain ux uy u
-univariateY zs fX fY = 
-    Chain { proj_x      = fX
-          , proj_y      = fY
-          , st_zero     = (0,zs)
-          , gen_step    = gstep  }
+            => [uy] -> BivariateAlg ux uy
+univariateY zs = bivariate (0,zs) gstep
   where
     gstep (_,[])     = Done 
     gstep (n,y:ys)   = Step (n,y) (n+i,ys)
@@ -72,9 +59,13 @@ univariateY zs fX fY =
 -- Tables
 
 
-tableDown :: Num u => Int -> Int -> Chain Int Int u 
-tableDown rows cols = 
-    bounded (rows*cols) (iteration (downstep rows) (0,rows-1)) fromIntegral fromIntegral
+tableDown :: Num u => Int -> Int -> u -> u -> Chain u
+tableDown rows cols row_height col_width = 
+    chain (\x -> col_width  * fromIntegral x) 
+          (\y -> row_height * fromIntegral y)
+          alg
+  where
+    alg = bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
 
 
 downstep :: Int -> (Int,Int) -> (Int,Int)
@@ -83,9 +74,13 @@ downstep _         (x,y)          = (x,y-1)
 
 
 
-tableRight :: Num u => Int -> Int -> Chain Int Int u 
-tableRight rows cols = 
-    bounded (rows*cols) (iteration (rightstep cols) (0,rows-1)) fromIntegral fromIntegral
+tableRight :: Num u => Int -> Int -> u -> u -> Chain u
+tableRight rows cols row_height col_width =
+    chain (\x -> col_width  * fromIntegral x) 
+          (\y -> row_height * fromIntegral y)
+          alg
+  where
+    alg = bounded (rows*cols) (iteration (rightstep cols) (0,rows-1))
 
 
 rightstep :: Int -> (Int,Int) -> (Int,Int)

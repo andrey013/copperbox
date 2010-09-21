@@ -29,6 +29,10 @@ description:
   * @Basic.Graphic.Chain@ removed. It is now superseded by
     @Basic.Chains@.
   .
+  * Added new property to @DrawingContext@ for line spacing 
+    scaling factor, and added a new drawing primitive 
+    @textlineMulti@ for multi-line, left justified labels.
+  .
   0.7.0 to 0.8.0:
   .
   * Re-introduced LRText and LRSymbol - they now work with 

@@ -29,6 +29,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , filledPath
   , borderedPath
   , textline
+  , textlineMulti
   , hkernline
   , vkernline
 
@@ -67,6 +68,10 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
+import Control.Monad
+import Data.Foldable ( foldrM )
+import Data.Monoid
+
 
 drawGraphic :: (Real u, Floating u, FromPtSize u) 
             => DrawingContext -> Graphic u -> Maybe (Picture u)
@@ -117,6 +122,19 @@ textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
     (\(rgb,attr) -> singleH $ textlabel rgb attr ss baseline_left) 
        <$> asksDF textAttr
+
+
+-- | Point is the baseline left of the bottom line.
+--
+textlineMulti :: Fractional u => [String] -> LocGraphic u
+textlineMulti xs baseline_left = liftM snd $ 
+    asksDF lineSpacing >>= \dy -> 
+    foldrM (foldStep dy) (baseline_left,mempty) xs
+  where
+    foldStep dy str (pt,gfic) = (\a -> (pt .+^ vvec dy, a `mappend` gfic))
+                                    <$> textline str pt
+                                
+
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
 hkernline ks baseline_left = 
