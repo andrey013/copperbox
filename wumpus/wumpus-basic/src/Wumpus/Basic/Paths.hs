@@ -23,6 +23,7 @@ module Wumpus.Basic.Paths
 
     connectS
   , pathGraphic
+  , fillPath
 
   , shorten
   , shortenL
@@ -30,6 +31,9 @@ module Wumpus.Basic.Paths
   , midpoint
   , directionL
   , directionR
+
+  , module Wumpus.Basic.Paths.Base
+  , module Wumpus.Basic.Paths.Construction
 
   ) where
 
@@ -55,6 +59,13 @@ connectS = \p0 p1 -> execPath p0 $ lineto p1
 pathGraphic :: Num u => PathF u -> ConnGraphic u
 pathGraphic bpath = \p1 p2 -> openStroke $ toPrimPathU $ bpath p1 p2
 
+
+-- Mind out for name clash...
+
+-- | Closes and fills a path
+--
+fillPath :: Num u => Path u -> Graphic u
+fillPath = filledPath . toPrimPathU
 
 
 

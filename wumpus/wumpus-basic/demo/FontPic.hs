@@ -6,16 +6,11 @@ import Wumpus.Basic.Chains
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Colour.SVGColours ( steel_blue )
 import Wumpus.Basic.Colour.X11Colours ( indian_red1 )
-import Wumpus.Basic.PictureLanguage
 import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
-
 import Control.Monad
-import Data.List ( unfoldr )
 
 import System.Directory
 
@@ -59,7 +54,7 @@ pointChain pt =
 
 fontGraphic :: RGBi -> FontFace -> DPoint2 -> Drawing Double ()
 fontGraphic rgb ff pt = let ps = unchain $ pointChain pt in 
-   zipWithM_ (\pt sz -> draw $ makeLabel rgb ff sz `at` pt) ps point_sizes
+   zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
 
 
 std_ctx :: DrawingContext

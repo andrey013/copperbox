@@ -26,6 +26,9 @@ module Wumpus.Basic.Paths.Construction
   , runPath
   , execPath
   , lineto
+  , rlineto
+  , vline
+  , hline
   , bezierto
   , curveto
   , verticalHorizontal
@@ -91,6 +94,15 @@ lineto end = exchTip end upd
     upd start bp = bp `addSegment` pline start end
 
 
+rlineto :: Floating u => Vec2 u -> CPath u
+rlineto (V2 dx dy) = tip >>= \(P2 x y) -> lineto (P2 (x+dx) (y+dy))
+
+hline :: Floating u => u -> CPath u
+hline dx = tip >>= \(P2 x y) -> lineto (P2 (x+dx) y)
+
+vline :: Floating u => u -> CPath u
+vline dy = tip >>= \(P2 x y) -> lineto (P2 x (y+dy))
+ 
 
 bezierto :: (Floating u, Ord u) 
          => Point2 u -> Point2 u -> Point2 u -> CPath u

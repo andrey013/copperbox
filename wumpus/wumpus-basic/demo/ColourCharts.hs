@@ -49,17 +49,3 @@ colourSample name rgb pt = localCtx (secondaryColour rgb) $ do
     draw $ textline name `at` displace 20 2 pt 
         
 
-
-{-
-
-downLeftRight :: (Monad m, Num u, Ord u) 
-              => Int -> u -> ChainT u m a -> m a
-downLeftRight row_count width ma = runChainT fn start_pt ma
-  where
-    y_top       = 12 * fromIntegral row_count
-    start_pt    = P2 0 y_top
-    
-    fn (P2 x y) | y < 0     = P2 (x+width) y_top
-                | otherwise = P2 x (y - 12)   
-
--}
