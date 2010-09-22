@@ -43,6 +43,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , displace
 
   , straightLine
+  , straightLineBetween
 
   , strokedRectangle
   , filledRectangle
@@ -191,7 +192,12 @@ localPoint upd gf = \pt -> gf (upd pt)
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = \pt -> openStroke $ path pt [lineTo $ pt .+^ v]
-           
+          
+
+straightLineBetween :: Fractional u => Point2 u -> Point2 u -> Graphic u
+straightLineBetween p1 p2 = openStroke $ path p1 [lineTo p2]
+
+
 
 -- | Supplied point is /bottom-left/.
 --

@@ -77,11 +77,11 @@ tableDownB :: Int -> Int -> BivariateAlg Int Int
 tableDownB rows cols = 
     bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
 
-
+-- | num_rows * num_cols * unit_width * unit_height
 tableDown :: Num u => Int -> Int -> u -> u -> Chain u
-tableDown rows cols row_height col_width = 
-    chain (\x -> col_width  * fromIntegral x) 
-          (\y -> row_height * fromIntegral y)
+tableDown rows cols unit_width unit_height = 
+    chain (\x -> unit_width  * fromIntegral x) 
+          (\y -> unit_height * fromIntegral y)
           (tableDownB rows cols)
 
 
@@ -92,9 +92,9 @@ downstep _         (x,y)          = (x,y-1)
 
 
 tableRight :: Num u => Int -> Int -> u -> u -> Chain u
-tableRight rows cols row_height col_width =
-    chain (\x -> col_width  * fromIntegral x) 
-          (\y -> row_height * fromIntegral y)
+tableRight rows cols unit_width unit_height =
+    chain (\x -> unit_width  * fromIntegral x) 
+          (\y -> unit_height * fromIntegral y)
           alg
   where
     alg = bounded (rows*cols) (iteration (rightstep cols) (0,rows-1))

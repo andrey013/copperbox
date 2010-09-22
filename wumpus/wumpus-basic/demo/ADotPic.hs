@@ -9,8 +9,6 @@ import Wumpus.Basic.Graphic
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space
-
 import System.Directory
 
 main :: IO ()
@@ -40,10 +38,10 @@ mf :: (Floating u, FromPtSize u) => Drawing u ()
 mf = do 
     a <- drawi $ dotCircle `ati` zeroPt
     b <- drawi $ dotCircle `ati` (P2 60 60)
-    _ <- drawi $ dotCircle `ati` (P2 45 45)
-    let c = radialAnchor (pi/4)  a
-    let d = radialAnchor (5* pi/4) b
-    xdraw link1 $ straightLine (d .-. c) `at` c
+    c <- drawi $ dotCircle `ati` (P2 120 0)
+    let p1 = radialAnchor (pi/4)    a
+    let p2 = radialAnchor (5* pi/4) b
+    xdraw link1 $ straightLineBetween p1 p2
   where
     link1 = xlinkhref "http://www.haskell.org"
 
