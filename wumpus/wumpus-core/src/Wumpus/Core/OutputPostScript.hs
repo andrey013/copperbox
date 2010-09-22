@@ -98,6 +98,9 @@ getsGS fn = PsMonad $ \_ s -> (fn s,s)
 setsGS :: (GraphicsState -> GraphicsState) -> PsMonad ()
 setsGS fn = PsMonad $ \_ s -> ((),fn s)
 
+resetGS :: PsMonad ()
+resetGS = PsMonad $ \ _ _ -> ((),zeroGS)
+
 
 setsSA :: (StrokeAttr -> StrokeAttr) -> PsMonad ()
 setsSA fn = getsGS gs_stroke_attr >>= \sa -> 
@@ -251,12 +254,19 @@ imageTranslation pic = case repositionDeltas pic of
 -- Note - PostScript ignotes any FontCtx changes via the @Group@
 -- constructor.
 --
+-- Also - because Clip uses gsave grestore it has to resetGS on
+-- ending, otherwise the next picture will be diffing against
+-- a modified state (in Wumpus land) that contradicts the PostScript 
+-- state. 
+--
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primElement ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
-picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
-                                    (vconcat <$> clipPath cp <*> picture pic)
 picture (Group   (_,xs) _ pic) = bracketTrafos xs (picture pic)
+picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
+    (\d1 d2 -> vcat [ps_gsave,d1,d2,ps_grestore])
+      <$> clipPath cp <*> picture pic <* resetGS
+
 
 
 oneConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc

@@ -211,7 +211,9 @@ drawXLink :: XLink -> Doc -> Doc
 drawXLink (XLink href) doc = elem_a_xlink href doc
 
 clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
-clipPath clip_id pp = (\doc -> elem_clipPath (attr_id clip_id) doc) <$> path pp
+clipPath clip_id pp = 
+    (\doc -> elem_clipPath (attr_id clip_id) (elem_path_no_attrs doc)) 
+      <$> path pp
 
 
 primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc

@@ -27,6 +27,7 @@ module Wumpus.Core.SVGDoc
   , elem_a_xlink  
   , elem_clipPath
   , elem_path
+  , elem_path_no_attrs
   , elem_text
   , elem_tspan
   , elem_ellipse
@@ -167,6 +168,12 @@ elem_a_xlink href body = svgElemB "a" attrs body
 --
 elem_path :: Doc -> Doc -> Doc
 elem_path attrs path = svgElem "path" (attrs <+> svgAttr "d" path)
+
+
+-- | @ \<path d=... /\> @
+--
+elem_path_no_attrs :: Doc -> Doc
+elem_path_no_attrs path = svgElem "path" (svgAttr "d" path)
 
 
 -- | @ \<text ... >...\</text\> @
@@ -381,7 +388,7 @@ attr_stroke_dashoffset = svgAttr "stroke-dashoffset" . int
 -- | @ clip_path="url(#...)" @
 --
 attr_clip_path :: String -> Doc
-attr_clip_path ss = svgAttr "transform" (text "url" <> parens (text $ '#':ss)) 
+attr_clip_path ss = svgAttr "clip-path" (text "url" <> parens (text $ '#':ss)) 
 
 
 -- | @ transform="..." @

@@ -23,7 +23,7 @@ main = do
 
 
 pic_drawing_ctx :: DrawingContext
-pic_drawing_ctx = standardContext 9
+pic_drawing_ctx = standardContext 14
 
 
 pic :: DPicture
@@ -46,19 +46,19 @@ background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $
                      mapM_ iheartHaskell ps
 
    where
-     ps = unchain $ tableDown 8 4 56 12
+     ps = unchain $ tableDown 18 8 86 16
 
 cpic1 :: DPicture 
-cpic1 = clip (toPrimPathU path01) (background medium_slate_blue)
+cpic1 = clip (toPrimPathU path01) (background black)
   
 cpic2 :: DPicture 
-cpic2 = clip (toPrimPathU path02) (background powder_blue)
+cpic2 = clip (toPrimPathU path02) (background medium_violet_red)
 
 cpic3 :: DPicture 
-cpic3 = clip (toPrimPathU path03) (background medium_slate_blue)
+cpic3 = clip (toPrimPathU path03) (background black)
 
 cpic4 :: DPicture 
-cpic4 = clip (toPrimPathU path04) (background medium_slate_blue)
+cpic4 = clip (toPrimPathU path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> Drawing u () 
@@ -68,25 +68,25 @@ iheartHaskell = \pt -> mf >>= \a -> (draw $ a `at` pt)
 
 
 path01 :: Floating u => Path u
-path01 = execPath zeroPt $ hline 20 >> rlineto (vec 28 40) 
-                                    >> rlineto (vec (-28) 40)
-                                    >> hline (-20)
-                                    >> rlineto (vec 28 (-40))
-                                    >> rlineto (vec (-28) (-40))
+path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160) 
+                                    >> rlineto (vec (-112) 160)
+                                    >> hline (-80)
+                                    >> rlineto (vec 112 (-160))
+                                    >> rlineto (vec (-112) (-160))
  
 
 path02 :: Floating u => Path u
-path02 = execPath (P2 28 0) $ hline 20 >> rlineto (vec 18 28)
-                                       >> rlineto (vec 18 (-28))
-                                       >> hline 20
-                                       >> rlineto (vec (-56) 80)
-                                       >> hline (-20)
-                                       >> rlineto (vec 28 (-40))
-                                       >> rlineto (vec (-28) (-40))
+path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
+                                        >> rlineto (vec 72 (-112))
+                                        >> hline 80
+                                        >> rlineto (vec (-224) 320)
+                                        >> hline (-80)
+                                        >> rlineto (vec 112 (-160))
+                                        >> rlineto (vec (-112) (-160))
 
 path03 :: Floating u => Path u
-path03 = execPath (P2 96 24) $ hline 24 >> vline 14 >> hline (-34) 
+path03 = execPath (P2 384 96) $ hline 96 >> vline 56 >> hline (-136) 
 
 path04 :: Floating u => Path u
-path04 = execPath (P2 82 48) $ hline 38 >> vline 14 >> hline (-48) 
+path04 = execPath (P2 328 192) $ hline 152 >> vline 56 >> hline (-192) 
 
