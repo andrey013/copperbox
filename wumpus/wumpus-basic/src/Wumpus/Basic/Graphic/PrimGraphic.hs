@@ -30,6 +30,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , borderedPath
   
   , textline
+  , centermonoTextline
   , textlineMulti
   , hkernline
   , vkernline
@@ -42,6 +43,8 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , supplyPt
   , localPoint
   , displace
+  , hdisplace
+  , vdisplace
 
   , straightLine
   , straightLineBetween
@@ -122,6 +125,14 @@ textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
     withTextAttr $ \rgb attr -> singleH $ textlabel rgb attr ss baseline_left
      
+centermonoTextline :: (Fractional u, Ord u, FromPtSize u) 
+                   => String -> LocGraphic u
+centermonoTextline ss pt = textDimensions ss  >>= \(w,h) ->
+                           monoDescenderDepth >>= \dy    ->
+                           textline ss (displace (0.5*(-w)) (dy + 0.5*(-h)) pt)
+
+
+
 
 
 -- | Point is the baseline left of the bottom line.
@@ -177,6 +188,11 @@ supplyPt pt gf = gf pt
 displace :: Num u => u -> u -> Point2 u -> Point2 u
 displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
+hdisplace :: Num u => u -> Point2 u -> Point2 u
+hdisplace dx (P2 x y) = P2 (x+dx) y
+
+vdisplace :: Num u => u -> Point2 u -> Point2 u
+vdisplace dy (P2 x y) = P2 x (y+dy)
 
 
 localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u

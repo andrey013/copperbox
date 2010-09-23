@@ -36,6 +36,11 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- ** Dash Pattern
   , dashPattern
+  , unit_dash_pattern
+  , phase
+  , dphase
+  , doublegaps
+  , doubledashes
 
   -- ** Font properties
   , fontsize
@@ -130,9 +135,36 @@ ultrathick          = setLineWidth ultra_thick_line
 thin                :: DrawingContext -> DrawingContext
 thin                = setLineWidth thin_line
 
+--------------------------------------------------------------------------------
 
 dashPattern         :: DashPattern -> DrawingContext -> DrawingContext
 dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })        
+
+unit_dash_pattern   :: DashPattern
+unit_dash_pattern   = Dash 0 [(1,1)]
+
+-- oblivious
+phase               :: Int -> DashPattern -> DashPattern
+phase _ Solid       = Solid
+phase i (Dash _ xs) = Dash i xs
+
+-- non-oblivious
+dphase               :: Int -> DashPattern -> DashPattern
+dphase _ Solid       = Solid
+dphase d (Dash i xs) = Dash (i+d) xs
+
+doublegaps              :: DashPattern -> DashPattern
+doublegaps Solid        = Solid
+doublegaps (Dash i xs)  = Dash i (map fn xs)
+  where
+    fn (a,b) = (a,2*b)
+
+doubledashes              :: DashPattern -> DashPattern
+doubledashes Solid        = Solid
+doubledashes (Dash i xs)  = Dash i (map fn xs)
+  where
+    fn (a,b) = (a*2,b)
+
 
 --------------------------------------------------------------------------------
 

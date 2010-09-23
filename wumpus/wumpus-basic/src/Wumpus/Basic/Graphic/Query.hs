@@ -35,8 +35,8 @@ module Wumpus.Basic.Graphic.Query
   , textDimensions
   , markHeight
   , lineSpacing
-  , lowerxHeight
-
+  , monoLowerxHeight
+  , monoDescenderDepth
   
   ) where
 
@@ -137,6 +137,9 @@ markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDF font_props
 --  
 -- \'x\' has no ascenders or descenders. 
 -- 
-lowerxHeight :: FromPtSize u => DrawingF u
-lowerxHeight = fromPtSize . xcharHeight . font_size <$> asksDF font_props
+monoLowerxHeight :: FromPtSize u => DrawingF u
+monoLowerxHeight = fromPtSize . xcharHeight . font_size <$> asksDF font_props
 
+monoDescenderDepth :: FromPtSize u => DrawingF u
+monoDescenderDepth = 
+    fromPtSize . descenderDepth . font_size <$> asksDF font_props

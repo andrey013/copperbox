@@ -36,7 +36,9 @@ description:
   * Synthezied attribute /getters/ such as @textDimensions@ moved
     from @Basic.Graphic.DrawingContext@ to the new module
     @Basic.Graphic.Query@. The type of all the functions has 
-    changed to DrawingF.
+    changed to DrawingF. @lowerxHeight@ is renamed 
+    @monoLowerxHeight@ emphasizing that the metrics pertain to
+    monospaced Courier font.
   .
   0.7.0 to 0.8.0:
   .
