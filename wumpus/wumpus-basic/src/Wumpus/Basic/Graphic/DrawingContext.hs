@@ -31,7 +31,6 @@ module Wumpus.Basic.Graphic.DrawingContext
   , markHeight
   , lineSpacing
   , lowerxHeight
-  , textDimensions
 
   -- * Modifiers 
   -- ** Line widths
@@ -88,6 +87,18 @@ standardContext sz =
 textAttr :: DrawingContext -> (RGBi,FontAttr)
 textAttr = liftA2 (,) primary_colour font_props
 
+
+-- Maybe these functions are better as queries - i.e. functions
+-- of type DrawingF, e.g.
+-- 
+-- > lineSpacing :: Fractional u => DrawingF u
+-- 
+-- Then the /client/ can just bound the answer directly
+-- rather than using 
+--
+-- > askDF lineSpacing >>= \u -> ...
+--
+
 lineSpacing :: Fractional u => DrawingContext -> u
 lineSpacing = (\sz factor -> realToFrac $ factor * fromIntegral sz)
                 <$> (font_size . font_props) <*> line_spacing_factor
@@ -107,16 +118,6 @@ markHeight = fromPtSize . xcharHeight . font_size . font_props
 -- 
 lowerxHeight :: FromPtSize u => DrawingContext -> u
 lowerxHeight = fromPtSize . xcharHeight . font_size . font_props
-
-
--- | textDimensions : text -> DrawingContext -> (width,height)
---
-textDimensions :: FromPtSize u => String -> DrawingContext -> (u,u)
-textDimensions str attr = (w,h)
-  where
-    sz = font_size  $ font_props attr
-    w  = fromPtSize $ textWidth  sz (charCount str)
-    h  = fromPtSize $ numeralHeight sz
 
 
 

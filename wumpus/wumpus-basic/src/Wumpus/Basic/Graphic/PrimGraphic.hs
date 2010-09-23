@@ -28,6 +28,8 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , closedStroke
   , filledPath
   , borderedPath
+  
+  , textDimensions
   , textline
   , textlineMulti
   , hkernline
@@ -118,6 +120,24 @@ borderedPath pp =
 
 --------------------------------------------------------------------------------
 -- 
+
+-- | Query the dimensions of the text using the current font size
+-- and metrics derived from Courier.
+--
+-- Note - the width will generally be a over-estimate for 
+-- non-monospace fonts.
+-- 
+textDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
+textDimensions ss = 
+    (\sz -> post $ textBounds sz zeroPt ss) 
+      <$> asksDF (font_size . font_props)
+  where
+    post bb = (boundaryWidth bb, boundaryHeight bb)
+
+-- Design note - this is a /query/ - the DrawingContext API might 
+-- be better if there were more queries and less direct use of 
+-- askDF.
+
 
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =

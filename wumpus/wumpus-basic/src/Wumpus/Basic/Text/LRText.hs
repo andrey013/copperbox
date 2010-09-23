@@ -28,6 +28,8 @@ module Wumpus.Basic.Text.LRText
 
 
     TextM
+
+  , drawTextM
   , runTextM
   , execTextM
 
@@ -59,9 +61,8 @@ import Data.Monoid
 -- Note - if we have font change (e.g. to symbol font) then we 
 -- have to generate more than one hkernline.
 -- 
--- If one wants to be really prissy about optimization, one could
--- generate two simultaneous and overlayed lines - one in regular 
--- font, one in Symbol. 
+-- Apropos /optimization/ we have two two simultaneous and 
+-- overlayed lines - one in the regular font, and one in Symbol. 
 --
 -- Result should be a LocGraphic (so cannot do a trace as we go). 
 --
@@ -111,9 +112,35 @@ instance Monad (TextM u) where
   m >>= k   = TextM $ \r s -> let (a,s')  = getTextM m r s 
                               in (getTextM . k) a r s'
 
+
+-- | This is the principal /run/ function.
+-- 
+-- Motivation:
+-- 
+-- > draw $ something 20 20 `at` zeroPt
+-- > a <- drawTextM zeroPt $ char 'x' >> char 'y' >> char 'z'
+-- > draw $ somethingElse `at` zeroPt
+--
+-- Otherwise it is convoluted to get the drawing (via bind) and
+-- then draw it:
+--
+-- > (a,textg) <- runTextM $ char 'x' >> char 'y' >> char 'z'
+-- > draw $ textg `at` zeroPt
+--
+--
+
+drawTextM :: (Num u, FromPtSize u, TraceM m ,DrawingCtxM m, u ~ MonUnit m) 
+          => Point2 u -> TextM u a -> m a
+drawTextM pt ma = runTextM ma      >>= \(a,g) -> 
+                  draw (g `at` pt) >>
+                  return a 
                               
 -- Note - post has to displace in the vertical to get the bottom 
 -- line at the base line...
+-- 
+-- Also run has to be in the DrawingCtxM to get the font size, 
+-- font face, primary colour...
+--
 
 runTextM :: (Num u, FromPtSize u, DrawingCtxM m, u ~ MonUnit m) 
          => TextM u a -> m (a, LocGraphic u)

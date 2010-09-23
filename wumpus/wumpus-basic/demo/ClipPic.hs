@@ -1,5 +1,15 @@
 {-# OPTIONS -Wall #-}
 
+-- Note - how the background is built in this example is very 
+-- expensive, i.e. it generates large PostScript and SVG files
+-- because the text elements are drawn many more times than they
+-- are actually seen.
+--
+-- This example just illustrates that clipping-paths work and 
+-- uses a complicated background to make that point.
+--
+
+
 module ClipPic where
 
 import Wumpus.Basic.Chains
@@ -62,9 +72,7 @@ cpic4 = clip (toPrimPathU path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> Drawing u () 
-iheartHaskell = \pt -> mf >>= \a -> (draw $ a `at` pt)
-  where
-    mf = execTextM $ char 'I' >> heart >> mapM_ char "Haskell"
+iheartHaskell pt = drawTextM pt $ char 'I' >> heart >> mapM_ char "Haskell"
 
 
 path01 :: Floating u => Path u

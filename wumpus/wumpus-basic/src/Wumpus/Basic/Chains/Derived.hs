@@ -77,6 +77,11 @@ tableDownB :: Int -> Int -> BivariateAlg Int Int
 tableDownB rows cols = 
     bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
 
+
+-- Note - Turtle has similar scaling requirements needing a pair 
+-- of (unit_width * unit_height)
+--
+
 -- | num_rows * num_cols * unit_width * unit_height
 tableDown :: Num u => Int -> Int -> u -> u -> Chain u
 tableDown rows cols unit_width unit_height = 

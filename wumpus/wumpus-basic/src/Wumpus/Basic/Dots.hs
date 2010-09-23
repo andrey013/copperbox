@@ -161,13 +161,13 @@ type DDotLocImage = DotLocImage Double
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
-dotChar ch pt = asksDF (textDimensions [ch]) >>= \(w,h) -> 
+dotChar ch pt = textDimensions [ch] >>= \(w,h) -> 
                 intoLocImage (rectangleLDO w h) (markChar ch) pt
 
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
-dotText ss pt = asksDF (textDimensions ss) >>= \(w,h) -> 
+dotText ss pt = textDimensions ss >>= \(w,h) -> 
                 intoLocImage (rectangleLDO w h) (markText ss) pt
 
 
