@@ -171,7 +171,7 @@ stZero = St { delta_chr       = 0
 envZero :: FromPtSize u => DrawingF (Env u)
 envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
                       , spacer_width = fromPtSize $ spacerWidth sz })
-            <$> asksDF (font_size . font_props)
+            <$> fontSize
 
 
 gets :: (St u -> a) -> TextM u a

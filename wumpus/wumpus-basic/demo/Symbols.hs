@@ -47,7 +47,7 @@ pic1 = liftToPictureU $ execDrawing std_ctx $ do
          zipWithM_ sdraw letters_06 column_06
 
   where
-    mdraw (_,ma) pt = execTextM ma >>= \a -> draw $ a `at` pt
+    mdraw (_,ma) pt = drawTextM pt ma
     sdraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16
 
 letters_01 :: [(String, TextM Double ())]
@@ -240,6 +240,7 @@ letters_06 =
     , ("zeta",                  zeta)
     ]
 
+-- TODO - this should use a chain when the Chain API stablizes.
 
 column_01 :: Num u => [Point2 u]
 column_01 = iterate (.+^ vvec (-16)) (P2 0 600)

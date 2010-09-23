@@ -41,6 +41,10 @@ module Wumpus.Basic.Graphic.DrawingContext
   , fontsize
   , fontface
 
+  -- ** Mark drawing size
+  , doublesize
+  , halfsize
+
   -- ** Colour
   , swapColours
   , primaryColour
@@ -112,7 +116,11 @@ thin_line           = 0.5
 setLineWidth       :: Double -> DrawingContext -> DrawingContext
 setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
-
+-- | Set the line width to a /thick/.
+--
+-- Note this context update is /oblivious/ - operationally the 
+-- line width is set to exactly @2.0@.
+--
 thick               :: DrawingContext -> DrawingContext
 thick               = setLineWidth thick_line
 
@@ -134,6 +142,26 @@ fontface ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
 
 fontsize            :: Int -> DrawingContext -> DrawingContext
 fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
+
+--------------------------------------------------------------------------------
+
+-- | Set the font size to double the current size, note the font
+-- size also controls the size of dots, arrowsheads etc.
+-- 
+doublesize          :: DrawingContext -> DrawingContext
+doublesize          = (\s sz -> fontsize (sz*2) s) <*> (font_size . font_props)
+
+
+-- | Set the font size to half the current size, note the font
+-- size also controls the size of dots, arrowsheads etc.
+-- 
+-- As fontsize is an integer this is not exact - half size of
+-- 15pt type is 7pt.
+-- 
+halfsize            :: DrawingContext -> DrawingContext
+halfsize            = (\s sz -> fontsize (sz `div` 2) s) 
+                        <*> (font_size . font_props)
+
 
 --------------------------------------------------------------------------------
 

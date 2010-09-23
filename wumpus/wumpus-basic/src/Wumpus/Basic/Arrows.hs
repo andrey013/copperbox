@@ -40,7 +40,6 @@ module Wumpus.Basic.Arrows
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Utils.Intersection ( langle )
 
 import Wumpus.Core                      -- package: wumpus-core

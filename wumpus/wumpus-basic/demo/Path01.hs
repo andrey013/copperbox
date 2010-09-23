@@ -6,8 +6,6 @@ import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Paths.Base
-import Wumpus.Basic.Paths.Construction
 
 import Wumpus.Core                      -- package: wumpus-core
 

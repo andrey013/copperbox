@@ -37,21 +37,19 @@ errK = error "error - empty Picture"
 
 mf :: (Floating u, FromPtSize u) => Drawing u ()
 mf = do 
-    draw $ line1 `at` (P2 0  50)
-    draw $ line2 `at` (P2 0  25)
-    draw $ line3 `at` (P2 0  0)
-    
+    draw $ line1 `at` (P2 0 100)
+    draw $ line2 `at` (P2 0  75)
+    draw $ line3 `at` (P2 0  50)
+    draw $ line4 `at` (P2 0  25)
+    draw $ line5 `at` (P2 0   0) 
   where
-    line1 = textline "All the lines of this drawing should be grouped"
-    line2 = textline "within a SVG g-element, from where they inherit"
-    line3 = textline "the font-family and font-size attributes."
+    line1 = textline "All the lines of this drawing" 
+    line2 = textline "should be grouped within a SVG"
+    line3 = textline "g-element, from where they"
+    line4 = textline "inherit the font-family and"
+    line5 = textline "font-size attributes."
 
 
--- Note - lines are drawn in the reverse order (3 2 1) in both 
--- PS and SVG output. Maybe the drawing order in the Draw monad 
--- should be top to bottom after all...
-
--- TODO - this should have shorter lines (too big for PS at the 
--- moment) and use a chain...
+-- TODO - this should use a chain...
 
 

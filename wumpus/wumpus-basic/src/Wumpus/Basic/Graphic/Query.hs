@@ -95,7 +95,7 @@ fontSize = font_size <$> asksDF font_props
 -- and metrics derived from Courier.
 --
 -- Note - the width will generally be a over-estimate for 
--- non-monospace fonts.
+-- non-monospaced fonts.
 -- 
 textDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
 textDimensions ss = 
@@ -103,10 +103,6 @@ textDimensions ss =
       <$> asksDF (font_size . font_props)
   where
     post bb = (boundaryWidth bb, boundaryHeight bb)
-
--- Design note - this is a /query/ - the DrawingContext API might 
--- be better if there were more queries and less direct use of 
--- askDF.
 
 
 -- Maybe these functions are better as queries - i.e. functions
