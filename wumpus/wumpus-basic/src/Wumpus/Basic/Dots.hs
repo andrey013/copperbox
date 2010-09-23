@@ -149,7 +149,7 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (radialCardinal rad ctr)
 
 circleLDO :: (Floating u, FromPtSize u) => LocDrawingF u (DotAnchor u)
-circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> asksDF markHeight 
+circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> markHeight 
 
 
 
@@ -201,7 +201,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
-dotSquare pt = asksDF markHeight >>= \ h ->
+dotSquare pt = markHeight >>= \ h ->
                intoLocImage (rectangleLDO h h) markSquare pt
 
 

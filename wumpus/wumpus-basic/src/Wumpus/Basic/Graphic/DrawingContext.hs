@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Graphic.DrawingAttr
+-- Module      :  Wumpus.Basic.Graphic.DrawingContext
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -27,10 +27,6 @@ module Wumpus.Basic.Graphic.DrawingContext
     DrawingContext(..)
 
   , standardContext
-  , textAttr
-  , markHeight
-  , lineSpacing
-  , lowerxHeight
 
   -- * Modifiers 
   -- ** Line widths
@@ -83,41 +79,6 @@ standardContext sz =
                    }
 
 
-
-textAttr :: DrawingContext -> (RGBi,FontAttr)
-textAttr = liftA2 (,) primary_colour font_props
-
-
--- Maybe these functions are better as queries - i.e. functions
--- of type DrawingF, e.g.
--- 
--- > lineSpacing :: Fractional u => DrawingF u
--- 
--- Then the /client/ can just bound the answer directly
--- rather than using 
---
--- > askDF lineSpacing >>= \u -> ...
---
-
-lineSpacing :: Fractional u => DrawingContext -> u
-lineSpacing = (\sz factor -> realToFrac $ factor * fromIntegral sz)
-                <$> (font_size . font_props) <*> line_spacing_factor
-
--- | A Mark is consider to be the height of a lowercase letter
--- in the current font.
--- 
--- Note better to use xlowerHeight
--- 
-markHeight :: FromPtSize u => DrawingContext -> u
-markHeight = fromPtSize . xcharHeight . font_size . font_props
-
-
--- | Height of a lower case \'x\' in Courier.
---  
--- \'x\' has no ascenders or descenders. 
--- 
-lowerxHeight :: FromPtSize u => DrawingContext -> u
-lowerxHeight = fromPtSize . xcharHeight . font_size . font_props
 
 
 

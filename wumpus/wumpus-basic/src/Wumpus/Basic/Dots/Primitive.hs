@@ -82,18 +82,18 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 -- | A mark is the height of a lowercase \'x\'.
 -- 
 standardSize :: FromPtSize u => (u -> LocGraphic u) -> LocGraphic u
-standardSize f = \pt -> asksDF markHeight >>= \h -> f h pt
+standardSize f = \pt -> markHeight >>= \h -> f h pt
 
 halfHeightSize :: (Fractional u, FromPtSize u) 
                => (u -> LocGraphic u) -> LocGraphic u
-halfHeightSize f = \pt -> asksDF markHeight >>= \h -> f (h * 0.5) pt
+halfHeightSize f = \pt -> markHeight >>= \h -> f (h * 0.5) pt
 
 
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy f = \pt -> f (displace dx dy pt)
 
-markChar :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
+markChar :: (Fractional u, Ord u, FromPtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]
 
 
@@ -101,9 +101,11 @@ markChar ch = markText [ch]
 
 -- Note - eta-expanded (?)
 --
-markText :: (Fractional u, FromPtSize u) => String -> LocGraphic u
-markText ss pt = asksDF (textDimensions ss) >>= \(w,h) -> 
-                 shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) pt
+markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
+markText ss ctr = textDimensions ss >>= \(w,_) ->
+                  fontSize          >>= \sz    ->
+                  let h = fromPtSize $ numeralHeight sz in
+                  shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) ctr
 
 
 
@@ -148,7 +150,7 @@ pathDiamond :: (Fractional u, FromPtSize u)
             => Point2 u -> DrawingF (PrimPath u)
 pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h 
                         in vertexPath [dvs hh, dve hw,dvn hh, dvw hw])
-                   <$> asksDF markHeight
+                   <$> markHeight
   where
     dvs hh = pt .+^ vvec (-hh)
     dve hw = pt .+^ hvec hw
@@ -190,14 +192,14 @@ markBCircle = halfHeightSize borderedDisk
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon pt = asksDF markHeight >>= \h ->
+markPentagon pt = markHeight >>= \h ->
                   closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
-markStar pt = asksDF markHeight >>= \h -> 
+markStar pt = markHeight >>= \h -> 
               let ps = polygonPoints 5 (0.5*h) pt in mconcat $ map fn ps
   where
     fn p1  = openStroke $ path pt [lineTo p1] 

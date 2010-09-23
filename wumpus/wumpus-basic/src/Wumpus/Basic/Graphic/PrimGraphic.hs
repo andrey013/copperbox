@@ -29,7 +29,6 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , filledPath
   , borderedPath
   
-  , textDimensions
   , textline
   , textlineMulti
   , hkernline
@@ -63,8 +62,9 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
   ) where
 
-import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -97,60 +97,38 @@ drawGraphicU ctx gf = post $ runGraphic ctx gf
 -- having the same names is actually not so useful...
 
 openStroke :: Num u => PrimPath u -> Graphic u
-openStroke pp = (\rgb attr -> singleH $ ostroke rgb attr pp) 
-                    <$> asksDF primary_colour <*> asksDF stroke_props
-
+openStroke pp = 
+    withStrokeAttr $ \rgb attr -> singleH $ ostroke rgb attr pp
 
 closedStroke :: Num u => PrimPath u -> Graphic u
-closedStroke pp = (\rgb attr -> singleH $ cstroke rgb attr pp) 
-                      <$> asksDF primary_colour <*> asksDF stroke_props
-
+closedStroke pp = 
+    withStrokeAttr $ \rgb attr -> singleH $ cstroke rgb attr pp
 
 filledPath :: Num u => PrimPath u -> Graphic u
-filledPath pp = (\rgb -> singleH $ fill rgb pp) 
-                    <$> asksDF secondary_colour
+filledPath pp = withFillAttr $ \rgb -> singleH $ fill rgb pp
+                 
 
 
 borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
-    (\frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp) 
-        <$> asksDF secondary_colour <*> asksDF stroke_props 
-                                    <*> asksDF primary_colour
-
+    withBorderedAttr $ \frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp
 
 --------------------------------------------------------------------------------
 -- 
 
--- | Query the dimensions of the text using the current font size
--- and metrics derived from Courier.
---
--- Note - the width will generally be a over-estimate for 
--- non-monospace fonts.
--- 
-textDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
-textDimensions ss = 
-    (\sz -> post $ textBounds sz zeroPt ss) 
-      <$> asksDF (font_size . font_props)
-  where
-    post bb = (boundaryWidth bb, boundaryHeight bb)
-
--- Design note - this is a /query/ - the DrawingContext API might 
--- be better if there were more queries and less direct use of 
--- askDF.
 
 
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
-    (\(rgb,attr) -> singleH $ textlabel rgb attr ss baseline_left) 
-       <$> asksDF textAttr
+    withTextAttr $ \rgb attr -> singleH $ textlabel rgb attr ss baseline_left
+     
 
 
 -- | Point is the baseline left of the bottom line.
 --
 textlineMulti :: Fractional u => [String] -> LocGraphic u
 textlineMulti xs baseline_left = liftM snd $ 
-    asksDF lineSpacing >>= \dy -> 
-    foldrM (foldStep dy) (baseline_left,mempty) xs
+    lineSpacing >>= \dy -> foldrM (foldStep dy) (baseline_left,mempty) xs
   where
     foldStep dy str (pt,gfic) = (\a -> (pt .+^ vvec dy, a `mappend` gfic))
                                     <$> textline str pt
@@ -159,13 +137,13 @@ textlineMulti xs baseline_left = liftM snd $
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
 hkernline ks baseline_left = 
-    (\(rgb,attr) -> singleH $ hkernlabel rgb attr ks baseline_left) 
-       <$> asksDF textAttr
+    withTextAttr $ \rgb attr -> singleH $ hkernlabel rgb attr ks baseline_left
+      
 
 vkernline :: Num u => [KerningChar u] -> LocGraphic u
 vkernline ks baseline_left = 
-    (\(rgb,attr) -> singleH $ vkernlabel rgb attr ks baseline_left) 
-       <$> asksDF textAttr
+    withTextAttr $ \rgb attr -> singleH $ vkernlabel rgb attr ks baseline_left
+  
 
 
 --------------------------------------------------------------------------------
@@ -173,20 +151,18 @@ vkernline ks baseline_left =
 
 strokedEllipse :: Num u => u -> u -> LocGraphic u
 strokedEllipse hw hh pt =  
-    (\rgb attr -> singleH $ strokeEllipse rgb attr hw hh pt) 
-       <$> asksDF primary_colour <*> asksDF stroke_props
+    withStrokeAttr $ \rgb attr -> singleH $ strokeEllipse rgb attr hw hh pt
+   
 
 filledEllipse :: Num u => u -> u -> LocGraphic u
 filledEllipse hw hh pt =  
-    (\rgb -> singleH $ fillEllipse rgb hw hh pt) 
-       <$> asksDF secondary_colour
+    withFillAttr $ \rgb -> singleH $ fillEllipse rgb hw hh pt
+  
 
 borderedEllipse :: Num u => u -> u -> LocGraphic u
 borderedEllipse hw hh pt = 
-    (\frgb attr srgb -> singleH $ fillStrokeEllipse frgb attr srgb hw hh pt) 
-        <$> asksDF secondary_colour <*> asksDF stroke_props 
-        <*> asksDF primary_colour
-
+    withBorderedAttr $ \frgb attr srgb -> 
+      singleH $ fillStrokeEllipse frgb attr srgb hw hh pt
 
 --------------------------------------------------------------------------------
 

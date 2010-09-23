@@ -38,7 +38,7 @@ mf :: (Floating u, FromPtSize u) => Drawing u ()
 mf = do 
     a <- drawi $ dotCircle `ati` zeroPt
     b <- drawi $ dotCircle `ati` (P2 60 60)
-    c <- drawi $ dotCircle `ati` (P2 120 0)
+    _ <- drawi $ dotCircle `ati` (P2 120 0)
     let p1 = radialAnchor (pi/4)    a
     let p2 = radialAnchor (5* pi/4) b
     xdraw link1 $ straightLineBetween p1 p2

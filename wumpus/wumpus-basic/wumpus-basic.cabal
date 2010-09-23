@@ -33,8 +33,10 @@ description:
     scaling factor, and added a new drawing primitive 
     @textlineMulti@ for multi-line, left justified labels.
   .
-  * @textDimensions@ re-implemented and moved from 
-    @Basic.Graphic.DrawingContext@ to @Basic.Graphic.PrimGraphic@
+  * Synthezied attribute /getters/ such as @textDimensions@ moved
+    from @Basic.Graphic.DrawingContext@ to the new module
+    @Basic.Graphic.Query@. The type of all the functions has 
+    changed to DrawingF.
   .
   0.7.0 to 0.8.0:
   .
@@ -100,6 +102,7 @@ library
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
     Wumpus.Basic.Graphic.PrimGraphic,
+    Wumpus.Basic.Graphic.Query,
     Wumpus.Basic.Monads.TurtleClass,
     Wumpus.Basic.Monads.TurtleMonad,
     Wumpus.Basic.Paths,

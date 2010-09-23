@@ -77,7 +77,7 @@ rightPathProps :: (Real u, Floating u, FromPtSize u)
                => PathF u -> ConnDrawingF u (Path u,Radian)
 rightPathProps pathF p1 p2 = 
     (\h sw -> (shortenPath h sw, calcTheta h))
-      <$> asksDF lowerxHeight <*> asksDF (line_width . stroke_props)  
+      <$> lowerxHeight <*> lineWidth
   where
     long_path          = pathF p1 p2  
     shortenPath lxh sw = shortenR (lxh + (realToFrac sw)) long_path 
