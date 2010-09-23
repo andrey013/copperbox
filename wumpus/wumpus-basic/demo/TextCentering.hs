@@ -51,8 +51,8 @@ coordinate = localDF (halfsize . primaryColour red) . (fmap snd . dotPlus)
 
 textSquare :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
 textSquare ss pt = 
-     textDimensions ss  >>= \(w,h) ->
-     monoDescenderDepth >>= \dy    ->
+     monoTextDimensions ss  >>= \(w,h) ->
+     monoDescenderDepth     >>= \dy    ->
      localDF (primaryColour medium_sea_green . dashPattern dp)
              (strokedRectangle w h (vdisplace (-dy) pt))
   where
@@ -62,7 +62,7 @@ textSquare ss pt =
 textSquareCtr :: (Fractional u, Ord u, FromPtSize u) 
               => String -> LocGraphic u
 textSquareCtr ss pt = 
-    textDimensions ss >>= \(w,h) ->
+    monoTextDimensions ss >>= \(w,h) ->
     localDF (primaryColour dim_gray . dashPattern dp)
             (strokedRectangle w h (displace (0.5*(-w)) (0.5*(-h)) pt))
   where

@@ -51,7 +51,7 @@ tripoints :: (Floating u, FromPtSize u)
 tripoints triang theta tip = 
     (\h -> let d = h / (fromRadian $ cos halfang) 
            in (tip .-^ v1 d, tip .-^ v2 d))
-      <$> lowerxHeight
+      <$> markHeight
   where
     halfang = 0.5 * triang
     v1 d    = avec (theta + halfang) d
@@ -124,7 +124,7 @@ barb45 = barbAng (pi/4)
 
 perp :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
 perp theta pt =  
-    lowerxHeight >>= \ h -> 
+    markHeight >>= \ h -> 
     let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
   where
     makeV h  = avec (theta + pi/2) (0.5 * h)

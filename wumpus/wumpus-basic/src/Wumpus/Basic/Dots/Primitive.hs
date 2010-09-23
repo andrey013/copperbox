@@ -102,10 +102,7 @@ markChar ch = markText [ch]
 -- Note - eta-expanded (?)
 --
 markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-markText ss ctr = textDimensions ss >>= \(w,_) ->
-                  fontSize          >>= \sz    ->
-                  let h = fromPtSize $ numeralHeight sz in
-                  shiftOrigin (0.5 * (-w)) (0.5 * (-h)) (textline ss) ctr
+markText ss = centermonoTextline ss
 
 
 

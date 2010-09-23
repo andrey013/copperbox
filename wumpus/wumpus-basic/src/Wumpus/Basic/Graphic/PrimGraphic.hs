@@ -127,8 +127,8 @@ textline ss baseline_left =
      
 centermonoTextline :: (Fractional u, Ord u, FromPtSize u) 
                    => String -> LocGraphic u
-centermonoTextline ss pt = textDimensions ss  >>= \(w,h) ->
-                           monoDescenderDepth >>= \dy    ->
+centermonoTextline ss pt = monoTextDimensions ss  >>= \(w,h) ->
+                           monoDescenderDepth     >>= \dy    ->
                            textline ss (displace (0.5*(-w)) (dy + 0.5*(-h)) pt)
 
 

@@ -32,11 +32,18 @@ module Wumpus.Basic.Graphic.Query
 
   , lineWidth
   , fontSize
-  , textDimensions
   , markHeight
   , lineSpacing
+
+  -- 
+  , monoCharWidth
+  , monoSpacerWidth
+  , monoTextWidth
+  , monoTextHeight
+  , monoNumeralHeight
   , monoLowerxHeight
   , monoDescenderDepth
+  , monoTextDimensions
   
   ) where
 
@@ -91,18 +98,6 @@ fontSize :: DrawingF Int
 fontSize = font_size <$> asksDF font_props
 
 
--- | Query the dimensions of the text using the current font size
--- and metrics derived from Courier.
---
--- Note - the width will generally be a over-estimate for 
--- non-monospaced fonts.
--- 
-textDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
-textDimensions ss = 
-    (\sz -> post $ textBounds sz zeroPt ss) 
-      <$> asksDF (font_size . font_props)
-  where
-    post bb = (boundaryWidth bb, boundaryHeight bb)
 
 
 -- Maybe these functions are better as queries - i.e. functions
@@ -133,13 +128,53 @@ markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDF font_props
 -- markHeight to merit a withMarkHeight function.
 
 
+
+
+
+
+--------------------------------------------------------------------------------
+
+withFontSize :: (FontSize -> u) -> DrawingF u
+withFontSize fn = fn . font_size <$> asksDF font_props
+
+monoCharWidth :: FromPtSize u => DrawingF u
+monoCharWidth = withFontSize (fromPtSize . charWidth)
+
+monoSpacerWidth :: FromPtSize u => DrawingF u
+monoSpacerWidth = withFontSize (fromPtSize . spacerWidth)
+
+
+monoTextWidth :: FromPtSize u => String -> DrawingF u
+monoTextWidth ss = 
+    withFontSize $ \sz -> fromPtSize $ textWidth sz (charCount ss)
+
+monoTextHeight :: FromPtSize u => DrawingF u
+monoTextHeight = withFontSize (fromPtSize . textHeight)
+
+monoNumeralHeight :: FromPtSize u => DrawingF u
+monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
+
+
 -- | Height of a lower case \'x\' in Courier.
 --  
 -- \'x\' has no ascenders or descenders. 
 -- 
 monoLowerxHeight :: FromPtSize u => DrawingF u
-monoLowerxHeight = fromPtSize . xcharHeight . font_size <$> asksDF font_props
+monoLowerxHeight = withFontSize (fromPtSize . xcharHeight)
 
 monoDescenderDepth :: FromPtSize u => DrawingF u
-monoDescenderDepth = 
-    fromPtSize . descenderDepth . font_size <$> asksDF font_props
+monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
+
+
+-- | Query the dimensions of the text using the current font size
+-- but using metrics derived from Courier.
+--
+-- Note - the width will generally be a over-estimate for 
+-- non-monospaced fonts.
+-- 
+monoTextDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
+monoTextDimensions ss = 
+    (\sz -> post $ textBounds sz zeroPt ss) 
+      <$> asksDF (font_size . font_props)
+  where
+    post bb = (boundaryWidth bb, boundaryHeight bb)
