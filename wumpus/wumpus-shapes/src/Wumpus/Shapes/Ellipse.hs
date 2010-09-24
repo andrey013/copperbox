@@ -27,13 +27,14 @@ module Wumpus.Shapes.Ellipse
 
 
 import Wumpus.Shapes.Base
-import Wumpus.Shapes.Utils
 
-import Wumpus.Core hiding ( Ellipse, ellipse )        -- package: wumpus-core
-import Wumpus.Basic.Anchors                           -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+
+import Control.Applicative
+import Data.Monoid
 
 --------------------------------------------------------------------------------
 
@@ -64,7 +65,7 @@ calcPoint f = withGeom $ \ctm rx ry ->
     let (V2 x y) = f rx ry in ctmDisplace x y ctm
 
 updateCTM :: (CTM u -> CTM u) -> Ellipse u -> Ellipse u
-updateCTM f = star (\s m -> s { ell_ctm = f m } ) ell_ctm
+updateCTM f = (\s m -> s { ell_ctm = f m } ) <*> ell_ctm
 
 
 -------------------------------------------------------------------------------- 
@@ -113,51 +114,28 @@ ellipse_ rx ry str = (ellipse rx ry) { ell_label = Just $ ShapeLabel str }
  
 
 
-strokeE :: (Real u, Floating u)
-        => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
-strokeE attr (P2 x y) = 
-    wrapG . cstroke (strokeAttr attr) . ellipsePath . translate x y 
+strokeE :: (Real u, Floating u) => Ellipse u -> Graphic u
+strokeE = closedStroke . ellipsePath
 
 
-fillE :: (Real u, Floating u) 
-      => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
-fillE attr (P2 x y) = 
-    wrapG . fill (fillAttr attr) . ellipsePath . translate x y
+borderedE :: (Real u, Floating u) => Ellipse u -> Graphic u
+borderedE = borderedPath . ellipsePath 
+
+
 
 textE :: (Real u, Floating u, FromPtSize u) 
-      => DrawingAttr -> Point2 u -> Ellipse u -> Graphic u
-textE attr (P2 x y) ell = maybe id sk $ ell_label ell
+      => Ellipse u -> Graphic u
+textE ell = maybe mempty sk $ ell_label ell
   where
-    ctm      = ell_ctm $ translate x y ell
-    sk label = labelGraphic label (textAttr attr) ctm 
+    sk label = labelGraphic label (ell_ctm ell) 
+
+instance (Real u, Floating u, FromPtSize u) => DrawShape (Ellipse u) where
+  drawShape ell = intoImage (pureDF ell) (borderedE ell `mappend` textE ell)
+
+instance (Real u, Floating u, FromPtSize u) => OutlineShape (Ellipse u) where
+  outlineShape ell = intoImage (pureDF ell) (strokeE ell `mappend` textE ell)
 
 
-make :: (Real u, Floating u) 
-     => DrawingAttr -> Point2 u -> Ellipse u -> Ellipse u
-make _ (P2 x y) = translate x y
-
-
-instance (Real u, Floating u, FromPtSize u) => Draw (Ellipse u) where
-  draw ell = AGraphic df (\a p -> make a p ell)
-    where
-      df attr pt = textE attr pt ell . strokeE attr pt ell
-                                     . fillE   attr pt ell
-
-
-{-
--- Hand-build the circle with bezier arcs.
---
--- This makes a better drawing than using PostScript\'s @arc@
--- command (via ellipse in wumpus-core) as line width does not
--- get affected by the CTM.
---
-drawEllipse :: (Real u, Floating u) 
-           => (Path u -> Primitive u) -> Ellipse u -> Graphic u
-drawEllipse drawF ell = labelpic . ellpic
-  where
-    labelpic = maybe id (labelGraphic (ell_ctm ell)) $ ell_label ell
-    ellpic  = wrapG $ drawF $ curvedPath $ ellipsePoints ell
--}
 
 ellipsePath :: (Real u, Floating u) => Ellipse u -> PrimPath u
 ellipsePath = curvedPath . ellipsePoints

@@ -28,14 +28,13 @@ module Wumpus.Shapes.Rectangle
   ) where
 
 import Wumpus.Shapes.Base
-import Wumpus.Shapes.Utils
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
-import Wumpus.Basic.Graphic hiding ( Rectangle, DRectangle )
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+import Wumpus.Basic.Graphic
 
+import Control.Applicative
+import Data.Monoid
 
 -- | Rectangles.
 --
@@ -53,7 +52,7 @@ type instance DUnit (Rectangle u) = u
 
 
 updateCTM :: (CTM u -> CTM u) -> Rectangle u -> Rectangle u
-updateCTM f = star (\s i -> s { rect_ctm = f i}) rect_ctm 
+updateCTM f = (\s i -> s { rect_ctm = f i}) <*> rect_ctm 
 
 
 
@@ -116,37 +115,29 @@ rectangle_ :: Fractional u => u -> u -> String -> Rectangle u
 rectangle_ w h str = (rectangle w h) { rect_label = Just $ ShapeLabel str } 
 
 
--- /fill/ & /stroke/ are probably lifters to AGraphic...
-
 
 strokeR :: (Real u, Floating u)
-        => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
-strokeR attr (P2 x y) = 
-    wrapG . cstroke (strokeAttr attr) . rectPath . translate x y 
+        => Rectangle u -> Graphic u
+strokeR = closedStroke . rectPath
                        
 
-fillR :: (Real u, Floating u) 
-      => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
-fillR attr (P2 x y) = 
-    wrapG . fill (fillAttr attr) . rectPath . translate x y
+borderedR :: (Real u, Floating u) 
+          => Rectangle u -> Graphic u
+borderedR = borderedPath . rectPath
+
 
 textR :: (Real u, Floating u, FromPtSize u) 
-      => DrawingAttr -> Point2 u -> Rectangle u -> Graphic u
-textR attr (P2 x y) rect = maybe id sk $ rect_label rect
+      => Rectangle u -> Graphic u
+textR rect = maybe mempty sk $ rect_label rect
   where
-    ctm      = rect_ctm $ translate x y rect
-    sk label = labelGraphic label (textAttr attr) ctm 
-    
-make :: (Real u, Floating u) 
-     => DrawingAttr -> Point2 u -> Rectangle u -> Rectangle u
-make _ (P2 x y) = translate x y
+    sk label = labelGraphic label (rect_ctm rect) 
 
-instance (Real u, Floating u, FromPtSize u) => Draw (Rectangle u) where
-  draw rect = AGraphic df (\a p -> make a p rect)
-    where
-      df attr pt = textR attr pt rect . strokeR attr pt rect 
-                                      . fillR   attr pt rect
-      
+
+instance (Real u, Floating u, FromPtSize u) => DrawShape (Rectangle u) where
+  drawShape rect = intoImage (pureDF rect) (borderedR rect `mappend` textR rect)
+
+instance (Real u, Floating u, FromPtSize u) => OutlineShape (Rectangle u) where
+  outlineShape rect = intoImage (pureDF rect) (strokeR rect `mappend` textR rect)
 
 
 --------------------------------------------------------------------------------

@@ -42,6 +42,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
   , supplyPt
   , localPoint
+  , vecdisplace
   , displace
   , hdisplace
   , vdisplace
@@ -72,6 +73,7 @@ import Wumpus.Basic.Graphic.Query
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Control.Applicative
 import Control.Monad
@@ -124,12 +126,16 @@ borderedPath pp =
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
     withTextAttr $ \rgb attr -> singleH $ textlabel rgb attr ss baseline_left
-     
+
+-- | As 'textline' but the supplied point is the /center/.
+--
+-- Centered is inexact - it is calculated with monospaced font
+-- metrics.
+-- 
 centermonoTextline :: (Fractional u, Ord u, FromPtSize u) 
                    => String -> LocGraphic u
-centermonoTextline ss pt = monoTextDimensions ss  >>= \(w,h) ->
-                           monoDescenderDepth     >>= \dy    ->
-                           textline ss (displace (0.5*(-w)) (dy + 0.5*(-h)) pt)
+centermonoTextline ss pt = monoVecToCenter ss  >>= \v ->
+                           textline ss (vecdisplace (negateV v) pt)
 
 
 
@@ -183,6 +189,9 @@ borderedEllipse hw hh pt =
 --
 supplyPt :: Point2 u -> LocGraphic u -> Graphic u
 supplyPt pt gf = gf pt 
+
+vecdisplace :: Num u => Vec2 u -> Point2 u -> Point2 u
+vecdisplace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
 
 
 displace :: Num u => u -> u -> Point2 u -> Point2 u

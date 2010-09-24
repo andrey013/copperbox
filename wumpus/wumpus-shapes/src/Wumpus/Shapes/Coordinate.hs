@@ -27,13 +27,13 @@ module Wumpus.Shapes.Coordinate
   ) where
 
 import Wumpus.Shapes.Base
-import Wumpus.Shapes.Utils
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing 
+
+import Control.Applicative
 
 --------------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ type instance DUnit (Coordinate u) = u
 
 
 updateCTM :: (CTM u -> CTM u) -> Coordinate u -> Coordinate u
-updateCTM f = star (\s i -> s { coord_ctm = f i}) coord_ctm 
+updateCTM f = (\s i -> s { coord_ctm = f i}) <*> coord_ctm 
 
 -- Instances 
 
@@ -74,18 +74,14 @@ coordinate :: Num u => Coordinate u
 coordinate = Coordinate identityCTM
 
 
-instance (Real u, Floating u) => Draw (Coordinate u) where
-  draw coord = AGraphic df mf
-    where
-      df attr (P2 x y) = drawC attr $ translate x y $ coord
-
-      mf _    (P2 x y) = translate x y $ coord 
+instance (Real u, Floating u) => DrawShape (Coordinate u) where
+  drawShape coord = intoImage (pureDF coord) (drawC coord)
      
 
 -- Note - this takes no notice of any scaling 
 -- transformations in the CTM...
 --
 drawC :: (Real u, Floating u) 
-      => DrawingAttr -> Coordinate u -> Graphic u
-drawC attr coord = wrapG $ ellipse (fillAttr attr) 2 2 (center coord)
+      => Coordinate u -> Graphic u
+drawC coord = filledEllipse 2 2 (center coord)
 

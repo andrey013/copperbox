@@ -44,7 +44,7 @@ module Wumpus.Basic.Graphic.Query
   , monoLowerxHeight
   , monoDescenderDepth
   , monoTextDimensions
-  
+  , monoVecToCenter  
   ) where
 
 import Wumpus.Basic.Graphic.BaseTypes
@@ -178,3 +178,10 @@ monoTextDimensions ss =
       <$> asksDF (font_size . font_props)
   where
     post bb = (boundaryWidth bb, boundaryHeight bb)
+
+
+-- | Vector from baseline left to center
+monoVecToCenter :: (Fractional u, Ord u, FromPtSize u) 
+                => String -> DrawingF (Vec2 u)
+monoVecToCenter ss = (\(w,h) dy -> vec (0.5*w) (0.5*h - dy)) 
+                       <$> monoTextDimensions ss <*> monoDescenderDepth

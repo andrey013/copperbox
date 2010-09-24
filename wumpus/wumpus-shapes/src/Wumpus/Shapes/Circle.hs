@@ -27,13 +27,13 @@ module Wumpus.Shapes.Circle
 
 
 import Wumpus.Shapes.Base
-import Wumpus.Shapes.Utils
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+
+import Control.Applicative
+import Data.Monoid
 
 --------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
 
 -- helper
 updateCTM :: (CTM u -> CTM u) -> Circle u -> Circle u
-updateCTM f = star (\s m -> s { circ_ctm = f m } ) circ_ctm
+updateCTM f = (\s m -> s { circ_ctm = f m } ) <*> circ_ctm
 
 instance (Real u, Floating u) => Rotate (Circle u) where
   rotate r = updateCTM (rotateCTM r)
@@ -113,36 +113,26 @@ circle_ r str = (circle r) { circ_label = Just $ ShapeLabel str }
 --------------------------------------------------------------------------------
 
 strokeC :: (Real u, Floating u)
-        => DrawingAttr -> Point2 u -> Circle u -> Graphic u
-strokeC attr (P2 x y) = 
-    wrapG . cstroke (strokeAttr attr) . circlePath . translate x y 
+        => Circle u -> Graphic u
+strokeC = closedStroke . circlePath
 
+borderedC :: (Real u, Floating u) 
+      => Circle u -> Graphic u
+borderedC =  borderedPath . circlePath
 
-fillC :: (Real u, Floating u) 
-      => DrawingAttr -> Point2 u -> Circle u -> Graphic u
-fillC attr (P2 x y) = 
-    wrapG . fill (fillAttr attr) . circlePath . translate x y
 
 textC :: (Real u, Floating u, FromPtSize u) 
-      => DrawingAttr -> Point2 u -> Circle u -> Graphic u
-textC attr (P2 x y) circ = maybe id sk $ circ_label circ
+      => Circle u -> Graphic u
+textC circ = maybe mempty sk $ circ_label circ
   where
-    ctm      = circ_ctm $ translate x y circ
-    sk label = labelGraphic label (textAttr attr) ctm 
+    sk label = labelGraphic label (circ_ctm circ)
 
 
-make :: (Real u, Floating u) 
-     => DrawingAttr -> Point2 u -> Circle u -> Circle u
-make _ (P2 x y) = translate x y
+instance (Real u, Floating u, FromPtSize u) => DrawShape (Circle u) where
+  drawShape circ = intoImage (pureDF circ) (borderedC circ `mappend` textC circ)
 
-
-instance (Real u, Floating u, FromPtSize u) => Draw (Circle u) where
-  draw circ = AGraphic df (\a p -> make a p circ)
-    where
-      df attr pt = textC attr pt circ . strokeC attr pt circ
-                                      . fillC   attr pt circ
-
-
+instance (Real u, Floating u, FromPtSize u) => OutlineShape (Circle u) where
+  outlineShape circ = intoImage (pureDF circ) (strokeC circ `mappend` textC circ)
 
 
 circlePath :: (Real u, Floating u) => Circle u -> PrimPath u

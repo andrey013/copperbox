@@ -25,13 +25,13 @@ module Wumpus.Shapes.FreeLabel
 
 
 import Wumpus.Shapes.Base
-import Wumpus.Shapes.Utils
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Anchors             -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
+
+import Control.Applicative
 
 --------------------------------------------------------------------------------
 -- Free floating label
@@ -81,7 +81,7 @@ calcPoint f = withGeom $ \ctm hw hh ->
     let (V2 x y) = f hw hh in ctmDisplace x y ctm
 
 updateCTM :: (CTM u -> CTM u) -> FreeLabel u -> FreeLabel u
-updateCTM f = star (\s m -> s { lbl_ctm = f m } ) lbl_ctm
+updateCTM f = (\s m -> s { lbl_ctm = f m } ) <*> lbl_ctm
 
 
 
@@ -128,28 +128,13 @@ freeLabel s = FreeLabel { lbl_half_width    = 0
                         }
 
 
-
-
 textC :: (Real u, Floating u, FromPtSize u) 
-      => DrawingAttr -> Point2 u -> FreeLabel u -> Graphic u
-textC attr (P2 x y) lbl = labelGraphic (lbl_label lbl) (textAttr attr) ctm 
-  where
-    ctm      = lbl_ctm $ translate x y lbl
+      => FreeLabel u -> Graphic u
+textC lbl = labelGraphic (lbl_label lbl) (lbl_ctm lbl)
 
 
-make :: (Real u, Floating u, FromPtSize u) 
-     => DrawingAttr -> Point2 u -> FreeLabel u -> FreeLabel u
-make attr (P2 x y) lbl = 
-    (translate x y lbl) { lbl_half_width = hw, lbl_half_height = hh }
 
-  where
-    (w,h)             = textDimensions (getShapeLabel $ lbl_label lbl) attr 
-    hw                = 0.5*w
-    hh                = 0.5*h
-    
-
-
-instance (Real u, Floating u, FromPtSize u) => Draw (FreeLabel u) where
-  draw lbl = AGraphic (\a p -> textC a p lbl)  (\a p -> make a p lbl)
+instance (Real u, Floating u, FromPtSize u) => DrawShape (FreeLabel u) where
+  drawShape lbl = intoImage (pureDF lbl) (textC lbl)
 
 

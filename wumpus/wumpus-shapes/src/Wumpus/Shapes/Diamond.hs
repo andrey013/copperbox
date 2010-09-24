@@ -26,16 +26,17 @@ module Wumpus.Shapes.Diamond
   ) where
 
 import Wumpus.Shapes.Base 
-import Wumpus.Shapes.Utils
 
 import Wumpus.Core                              -- package: wumpus-core
+
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.DrawingAttr
-import Wumpus.Basic.Monads.Drawing
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
+
+import Control.Applicative
+import Data.Monoid
 
 -- | Diamond.
 --
@@ -99,7 +100,7 @@ instance (Real u, Floating u) =>  CardinalAnchor2 (Diamond u) where
 
 -- helper
 updateCTM :: (CTM u -> CTM u) -> Diamond u -> Diamond u
-updateCTM f = star (\s m -> s { dia_ctm = f m } ) dia_ctm
+updateCTM f = (\s m -> s { dia_ctm = f m } ) <*> dia_ctm
 
 instance (Floating u, Real u) => Rotate (Diamond u) where
   rotate r = updateCTM (rotateCTM r) 
@@ -125,36 +126,28 @@ diamond_ w h str = (diamond w h) { dia_label = Just $ ShapeLabel str }
 --------------------------------------------------------------------------------
 
 
-strokeD :: (Real u, Floating u)
-        => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
-strokeD attr (P2 x y) = 
-    wrapG . cstroke (strokeAttr attr) . diamondPath . translate x y 
+strokeD :: (Real u, Floating u) => Diamond u -> Graphic u
+strokeD = closedStroke . diamondPath
 
 
-fillD :: (Real u, Floating u) 
-      => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
-fillD attr (P2 x y) = 
-    wrapG . fill (fillAttr attr) . diamondPath . translate x y
+borderedD :: (Real u, Floating u) => Diamond u -> Graphic u
+borderedD = borderedPath . diamondPath
+
 
 textD :: (Real u, Floating u, FromPtSize u) 
-      => DrawingAttr -> Point2 u -> Diamond u -> Graphic u
-textD attr (P2 x y) dia = maybe id sk $ dia_label dia
+      => Diamond u -> Graphic u
+textD dia = maybe mempty sk $ dia_label dia
   where
-    ctm      = dia_ctm $ translate x y dia
-    sk label = labelGraphic label (textAttr attr) ctm 
+    sk label = labelGraphic label (dia_ctm dia)
 
 
-make :: (Real u, Floating u) 
-     => DrawingAttr -> Point2 u -> Diamond u -> Diamond u
-make _ (P2 x y) = translate x y
- 
 
 
-instance (Real u, Floating u, FromPtSize u) => Draw (Diamond u) where
-  draw dia = AGraphic df (\a p -> make a p dia)
-    where
-      df attr pt = textD attr pt dia . strokeD attr pt dia
-                                     . fillD   attr pt dia
+instance (Real u, Floating u, FromPtSize u) => DrawShape (Diamond u) where
+  drawShape dia = intoImage (pureDF dia) (borderedD dia `mappend` textD dia)
+
+instance (Real u, Floating u, FromPtSize u) => OutlineShape (Diamond u) where
+  outlineShape dia = intoImage (pureDF dia) (strokeD dia `mappend` textD dia)
 
 
 --
