@@ -20,10 +20,24 @@
 module Wumpus.Basic.Shapes.Derived
   ( 
     Rectangle
+  , DRectangle
   , rectangle
 
   , Circle
+  , DCircle
   , circle
+
+  , Coordinate
+  , DCoordinate
+  , coordinate
+
+  , Diamond
+  , DDiamond
+  , diamond
+
+  , Ellipse
+  , DEllipse
+  , ellipse
 
   ) where
 
@@ -32,14 +46,15 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Shapes.Base
 
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
+import Data.AffineSpace                         -- package: vector-space 
 
 -- import Control.Applicative
 
 
 --------------------------------------------------------------------------------
--- Rectangles
+-- Rectangle
 
 data Rectangle u = Rectangle 
       { rect_ctm    :: ShapeCTM u
@@ -47,6 +62,8 @@ data Rectangle u = Rectangle
       , rect_hh     :: !u 
       }
   deriving (Eq,Show)
+
+type DRectangle = Rectangle Double
 
 -- Not deriving much value from Shape...
 
@@ -61,7 +78,7 @@ instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
 
 calcRectPoint :: (Real u, Floating u) 
               => (u -> u -> Point2 u) -> Rectangle u -> Point2 u
-calcRectPoint f (Rectangle { rect_ctm=ctm, rect_hw = hw, rect_hh = hh }) =
+calcRectPoint f (Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }) =
     let pt = f hw hh in ctmDisplace pt ctm
 
 instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
@@ -85,17 +102,9 @@ rectangle hw hh = Shape { src_ctm = identityCTM
 
 outputRect :: (Real u, Floating u) 
            => u -> u -> ShapeCTM u -> Image u (Rectangle u)
-outputRect hw hh ctm = intoImage (pureDF rect) (drawRect rect) 
+outputRect hw hh ctm = intoImage (pureDF a) (drawRect a) 
   where
-    rect = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
-
-
-
--- Ideally don\'t want to be able to (re-)draw a SRect only take 
--- anchor points from it...
---
--- Does this matter? Yes and its solved!
---
+    a = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
 
 
 drawRect :: (Real u, Floating u) => Rectangle u -> Graphic u
@@ -103,21 +112,18 @@ drawRect = borderedPath . rectPath
 
 
 rectPath :: (Real u, Floating u) => Rectangle u -> PrimPath u
-rectPath = vertexPath . extractVertexPoints
+rectPath rect = vertexPath [ southwest rect
+                           , southeast rect
+                           , northeast rect
+                           , northwest rect
+                           ]
 
-extractVertexPoints :: (Real u, Floating u) => Rectangle u -> [Point2 u]
-extractVertexPoints rect = [bl,br,tr,tl]
-  where
-    bl        = southwest rect
-    tr        = northeast rect
-    br        = southeast rect
-    tl        = northwest rect
 
 
 
 
 --------------------------------------------------------------------------------
-
+-- Circle
 
 data Circle u = Circle 
       { circ_ctm    :: ShapeCTM u
@@ -125,12 +131,34 @@ data Circle u = Circle
       }
   deriving (Eq,Show)
   
-
+type DCircle = Circle Double
 
 type instance DUnit (Circle u) = u
 
 instance (Real u, Floating u) => CenterAnchor (Circle u) where
   center = ctmCenter . circ_ctm
+
+
+calcCircPoint :: (Real u, Floating u) 
+              => (u -> Point2 u) -> Circle u -> Point2 u
+calcCircPoint f (Circle { circ_ctm = ctm, circ_radius = rad }) =
+    let pt = f rad in ctmDisplace pt ctm
+
+instance (Real u, Floating u) => CardinalAnchor (Circle u) where
+  north = calcCircPoint $ \ r -> P2 0  r
+  south = calcCircPoint $ \ r -> P2 0 (-r)
+  east  = calcCircPoint $ \ r -> P2 r  0
+  west  = calcCircPoint $ \ r -> P2 (-r) 0
+
+instance (Real u, Floating u) => RadialAnchor (Circle u) where
+  radialAnchor theta = calcCircPoint $ \r -> zeroPt .+^ avec theta r
+
+
+instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (0.75*pi)
+  northwest = radialAnchor (1.25*pi)
 
 
 circle :: (Floating u, Real u) => u -> Shape u (Circle u)
@@ -141,9 +169,9 @@ circle radius = Shape { src_ctm = identityCTM
 
 outputCirc :: (Real u, Floating u) 
            => u -> ShapeCTM u -> Image u (Circle u)
-outputCirc rad ctm = intoImage (pureDF rect) (drawCirc rect) 
+outputCirc rad ctm = intoImage (pureDF a) (drawCirc a) 
   where
-    rect = Circle { circ_ctm = ctm, circ_radius = rad }
+    a = Circle { circ_ctm = ctm, circ_radius = rad }
 
 
 drawCirc :: (Real u, Floating u) => Circle u -> Graphic u
@@ -158,3 +186,138 @@ circlePoints (Circle { circ_ctm=ctm, circ_radius=radius }) = map fn all_points
   where
     fn pt       = ctmDisplace pt ctm
     all_points  = bezierCircle 2 radius zeroPt 
+
+
+--------------------------------------------------------------------------------
+-- | Coordinate
+
+data Coordinate u = Coordinate
+      { coord_ctm   :: ShapeCTM u 
+      }
+
+type DCoordinate = Coordinate Double
+
+type instance DUnit (Coordinate u) = u
+
+instance (Real u, Floating u) => CenterAnchor (Coordinate u) where
+  center = ctmCenter . coord_ctm
+
+
+coordinate :: (Real u, Floating u) => Shape u (Coordinate u)
+coordinate = Shape { src_ctm = identityCTM
+                   , out_fun = outputCoord
+                   }
+
+outputCoord :: (Real u, Floating u) => ShapeCTM u -> Image u (Coordinate u)
+outputCoord ctm = intoImage (pureDF a) (drawCoord a) 
+  where
+    a = Coordinate { coord_ctm = ctm }
+
+
+drawCoord :: (Real u, Floating u) => Coordinate u -> Graphic u
+drawCoord coord = filledEllipse 2 2 (center coord)
+
+--------------------------------------------------------------------------------
+-- Diamond
+
+
+data Diamond u = Diamond 
+      { dia_ctm   :: ShapeCTM u
+      , dia_hw    :: u
+      , dia_hh    :: u
+      }
+
+type DDiamond = Diamond Double
+
+type instance DUnit (Diamond u) = u
+
+
+instance (Real u, Floating u) => CenterAnchor (Diamond u) where
+  center = ctmCenter . dia_ctm
+
+
+calcDiaPoint :: (Real u, Floating u) 
+             => (u -> u -> Point2 u) -> Diamond u -> Point2 u
+calcDiaPoint f (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) =
+    let pt = f hw hh in ctmDisplace pt ctm
+
+instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
+  north = calcDiaPoint $ \ _  hh -> P2 0 hh
+  south = calcDiaPoint $ \ _  hh -> P2 0 (-hh)
+  east  = calcDiaPoint $ \ hw _  -> P2 hw 0
+  west  = calcDiaPoint $ \ hw _  -> P2 (-hw) 0
+
+diamond :: (Floating u, Real u) => u -> u -> Shape u (Diamond u)
+diamond hw hh = Shape { src_ctm = identityCTM
+                      , out_fun = outputDia hw hh
+                      }
+
+
+outputDia :: (Real u, Floating u) 
+          => u -> u -> ShapeCTM u -> Image u (Diamond u)
+outputDia hw hh ctm = intoImage (pureDF a) (drawDia a) 
+  where
+    a = Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
+
+
+drawDia :: (Real u, Floating u) => Diamond u -> Graphic u
+drawDia = borderedPath . diamondPath
+
+
+diamondPath :: (Real u, Floating u) => Diamond u -> PrimPath u
+diamondPath dia = vertexPath [ south dia, east dia, north dia, west dia ]
+
+
+--------------------------------------------------------------------------------
+-- Ellipse
+
+
+data Ellipse u = Ellipse
+      { ell_ctm     :: ShapeCTM u 
+      , ell_rx      :: u
+      , ell_ry      :: u
+      }
+
+type DEllipse = Ellipse Double
+
+type instance DUnit (Ellipse u) = u
+
+
+
+instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
+  center = ctmCenter . ell_ctm
+
+
+ellipse :: (Floating u, Real u) => u -> u -> Shape u (Ellipse u)
+ellipse rx ry = Shape { src_ctm = identityCTM
+                      , out_fun = outputEll rx ry
+                      }
+
+
+outputEll :: (Real u, Floating u) 
+          => u -> u -> ShapeCTM u -> Image u (Ellipse u)
+outputEll rx ry ctm = intoImage (pureDF a) (drawEll a) 
+  where
+    a = Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
+
+
+drawEll :: (Real u, Floating u) => Ellipse u -> Graphic u
+drawEll = borderedPath . ellipsePath
+
+
+ellipsePath :: (Real u, Floating u) => Ellipse u -> PrimPath u
+ellipsePath = curvedPath . ellipsePoints
+
+ellipsePoints :: (Real u, Floating u) => Ellipse u -> [Point2 u]
+ellipsePoints (Ellipse { ell_ctm=ctm, ell_rx=rx, ell_ry=ry }) = 
+    map (ctmDisplace `flip` ctm) all_points
+  where
+    all_points  = map (rescale rx ry) $ bezierCircle 2 rx zeroPt 
+
+
+-- | x_radius is the unit length.
+--
+rescale :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
+rescale rx ry = scale 1 (ry/rx) 
+
+

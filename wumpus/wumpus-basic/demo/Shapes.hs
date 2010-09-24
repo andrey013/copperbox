@@ -30,6 +30,9 @@ main = do
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
-         _ <- drawi $ drawShape $ rectangle 80 10
-         _ <- drawi $ drawShape $ translate 100 0 $ circle 10
+         _ <- drawi $ drawShape $ rectangle 80  10
+         _ <- drawi $ drawShape $ translate 100  0 $ circle 10
+         _ <- drawi $ drawShape $ translate 120  0 $ coordinate
+         _ <- drawi $ drawShape $ translate 0   40 $ diamond 10 10
+         _ <- drawi $ drawShape $ translate 100 40 $ ellipse 20 10
          return ()
