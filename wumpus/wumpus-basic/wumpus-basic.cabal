@@ -40,6 +40,8 @@ description:
     @monoLowerxHeight@ emphasizing that the metrics pertain to
     monospaced Courier font.
   .
+  * Added Shapes modules.
+  .
   0.7.0 to 0.8.0:
   .
   * Re-introduced LRText and LRSymbol - they now work with 
@@ -111,6 +113,8 @@ library
     Wumpus.Basic.Paths.Base,
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.SafeFonts,
+    Wumpus.Basic.Shapes.Base,
+    Wumpus.Basic.Shapes.Derived,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
