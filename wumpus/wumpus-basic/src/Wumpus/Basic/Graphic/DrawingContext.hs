@@ -52,6 +52,8 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- ** Colour
   , swapColours
+  , bothPrimary
+  , bothSecondary
   , primaryColour
   , secondaryColour 
 
@@ -201,6 +203,14 @@ swapColours :: DrawingContext -> DrawingContext
 swapColours = 
     (\s a b -> s { primary_colour = b, secondary_colour = a })
         <*> primary_colour <*> secondary_colour
+
+bothPrimary :: DrawingContext -> DrawingContext
+bothPrimary = (\s a -> s { secondary_colour = a }) <*> primary_colour
+
+bothSecondary :: DrawingContext -> DrawingContext
+bothSecondary = (\s a -> s { primary_colour = a }) <*> secondary_colour
+
+
 
 primaryColour :: RGBi -> DrawingContext -> DrawingContext
 primaryColour rgb = \s -> s { primary_colour = rgb } 

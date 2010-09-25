@@ -98,17 +98,17 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
   northwest = calcRectPoint $ \ hw hh -> P2 (-hw) hh
 
 
-rectangle :: (Floating u, Real u) => u -> u -> Shape u (Rectangle u)
-rectangle hw hh = Shape { src_ctm = identityCTM
-                        , out_fun = outputRect hw hh nolabel
-                        }
+rectangle :: (Real u, Floating u) => u -> u -> Shape u (Rectangle u)
+rectangle w h = Shape { src_ctm = identityCTM
+                      , out_fun = outputRect (0.5*w) (0.5*h) nolabel
+                      }
 
 
 lrectangle :: (Floating u, Real u, FromPtSize u) 
            => u -> u -> String -> Shape u (Rectangle u)
-lrectangle hw hh ss = Shape { src_ctm = identityCTM
-                            , out_fun = outputRect hw hh (shapelabel ss)
-                            }
+lrectangle w h ss = Shape { src_ctm = identityCTM
+                          , out_fun = outputRect (0.5*w) (0.5*h) (shapelabel ss)
+                          }
 
 
 outputRect :: (Real u, Floating u) 
@@ -169,8 +169,8 @@ instance (Real u, Floating u) => RadialAnchor (Circle u) where
 instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
-  southwest = radialAnchor (0.75*pi)
-  northwest = radialAnchor (1.25*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
 circle :: (Floating u, Real u) => u -> Shape u (Circle u)

@@ -68,7 +68,8 @@ triAng :: (Floating u, Real u, FromPtSize u)
       -> (PrimPath u -> Graphic u) 
       -> LocGraphic u
 triAng triang theta gf pt = 
-    tripoints triang theta pt >>= \(u,v) -> gf (vertexPath [pt,u,v])
+    tripoints triang theta pt >>= \(u,v) -> 
+    localDF bothPrimary (gf $  vertexPath [pt,u,v])
 
 
 

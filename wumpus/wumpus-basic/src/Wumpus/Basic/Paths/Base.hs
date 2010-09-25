@@ -22,9 +22,7 @@
 module Wumpus.Basic.Paths.Base
   ( 
 
-    PathF
-
-  , Path(..)
+    Path(..)
   , PathSeg(..)
   , Curve(..)
   , Line(..)
@@ -56,7 +54,7 @@ import qualified Data.Sequence as S
 -- Note - path doesn\'t need a drawing context for 
 -- construction...
 --
-type PathF u = Point2 u -> Point2 u -> Path u
+-- type PathF u = Point2 u -> Point2 u -> Path u
 
 
 data Path u = Path 
