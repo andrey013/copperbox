@@ -4,10 +4,11 @@
 
 module Shapes where
 
-import Wumpus.Basic.Anchors
-import Wumpus.Basic.Arrows
+-- import Wumpus.Basic.Anchors
+-- import Wumpus.Basic.Arrows
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Paths
+-- import Wumpus.Basic.Paths
 import Wumpus.Basic.Shapes.Base
 import Wumpus.Basic.Shapes.Derived
 
@@ -30,9 +31,12 @@ main = do
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
-         _ <- drawi $ drawShape $ rectangle 80  10
-         _ <- drawi $ drawShape $ translate 100  0 $ circle 10
-         _ <- drawi $ drawShape $ translate 120  0 $ coordinate
-         _ <- drawi $ drawShape $ translate 0   40 $ diamond 10 10
-         _ <- drawi $ drawShape $ translate 100 40 $ ellipse 20 10
+         _ <- drawi $ drawShape $ translate 220 10 $ rotate30
+                                                   $ lrectangle 60 30 "Rectangle"
+         _ <- drawi $ drawShape $ translate 100  0 $ lcircle 10 "C0"
+   
+         _ <- localCtx (primaryColour red) $ 
+                       drawi $ drawShape $ translate 220 10 $ rotate30 $ coordinate
+         _ <- drawi $ drawShape $ translate 0   40 $ ldiamond 10 10 "d1"
+         _ <- drawi $ drawShape $ translate 400 50 $ lrectangle 20 100 "R2"
          return ()

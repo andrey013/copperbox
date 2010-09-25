@@ -22,10 +22,12 @@ module Wumpus.Basic.Shapes.Derived
     Rectangle
   , DRectangle
   , rectangle
+  , lrectangle
 
   , Circle
   , DCircle
   , circle
+  , lcircle
 
   , Coordinate
   , DCoordinate
@@ -34,10 +36,12 @@ module Wumpus.Basic.Shapes.Derived
   , Diamond
   , DDiamond
   , diamond
+  , ldiamond
 
   , Ellipse
   , DEllipse
   , ellipse
+  , lellipse
 
   ) where
 
@@ -50,7 +54,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space 
 
--- import Control.Applicative
+import Data.Monoid
 
 
 --------------------------------------------------------------------------------
@@ -96,15 +100,23 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
 
 rectangle :: (Floating u, Real u) => u -> u -> Shape u (Rectangle u)
 rectangle hw hh = Shape { src_ctm = identityCTM
-                        , out_fun = outputRect hw hh
+                        , out_fun = outputRect hw hh nolabel
                         }
 
 
+lrectangle :: (Floating u, Real u, FromPtSize u) 
+           => u -> u -> String -> Shape u (Rectangle u)
+lrectangle hw hh ss = Shape { src_ctm = identityCTM
+                            , out_fun = outputRect hw hh (shapelabel ss)
+                            }
+
+
 outputRect :: (Real u, Floating u) 
-           => u -> u -> ShapeCTM u -> Image u (Rectangle u)
-outputRect hw hh ctm = intoImage (pureDF a) (drawRect a) 
+           => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Rectangle u)
+outputRect hw hh shl ctm = intoImage (pureDF a) (drawRect a `mappend` label) 
   where
-    a = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
+    a     = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
+    label = runShapeLabel ctm shl
 
 
 drawRect :: (Real u, Floating u) => Rectangle u -> Graphic u
@@ -163,15 +175,22 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
 
 circle :: (Floating u, Real u) => u -> Shape u (Circle u)
 circle radius = Shape { src_ctm = identityCTM
-                      , out_fun = outputCirc radius
+                      , out_fun = outputCirc radius nolabel
                       }
 
 
+lcircle :: (Floating u, Real u, FromPtSize u) 
+        => u -> String -> Shape u (Circle u)
+lcircle radius ss = Shape { src_ctm = identityCTM
+                          , out_fun = outputCirc radius (shapelabel ss)
+                          }
+
 outputCirc :: (Real u, Floating u) 
-           => u -> ShapeCTM u -> Image u (Circle u)
-outputCirc rad ctm = intoImage (pureDF a) (drawCirc a) 
+           => u -> ShapeLabel u -> ShapeCTM u -> Image u (Circle u)
+outputCirc rad shl ctm = intoImage (pureDF a) (drawCirc a `mappend` label) 
   where
-    a = Circle { circ_ctm = ctm, circ_radius = rad }
+    a     = Circle { circ_ctm = ctm, circ_radius = rad }
+    label = runShapeLabel ctm shl
 
 
 drawCirc :: (Real u, Floating u) => Circle u -> Graphic u
@@ -215,7 +234,7 @@ outputCoord ctm = intoImage (pureDF a) (drawCoord a)
 
 
 drawCoord :: (Real u, Floating u) => Coordinate u -> Graphic u
-drawCoord coord = filledEllipse 2 2 (center coord)
+drawCoord coord = localDF swapColours $ filledEllipse 2 2 (center coord)
 
 --------------------------------------------------------------------------------
 -- Diamond
@@ -249,16 +268,24 @@ instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
 
 diamond :: (Floating u, Real u) => u -> u -> Shape u (Diamond u)
 diamond hw hh = Shape { src_ctm = identityCTM
-                      , out_fun = outputDia hw hh
+                      , out_fun = outputDia hw hh nolabel
                       }
 
 
-outputDia :: (Real u, Floating u) 
-          => u -> u -> ShapeCTM u -> Image u (Diamond u)
-outputDia hw hh ctm = intoImage (pureDF a) (drawDia a) 
-  where
-    a = Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
+ldiamond :: (Floating u, Real u, FromPtSize u) 
+         => u -> u -> String -> Shape u (Diamond u)
+ldiamond hw hh ss = Shape { src_ctm = identityCTM
+                          , out_fun = outputDia hw hh (shapelabel ss)
+                          }
 
+
+
+outputDia :: (Real u, Floating u) 
+          => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Diamond u)
+outputDia hw hh shl ctm = intoImage (pureDF a) (drawDia a `mappend` label) 
+  where
+    a     = Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
+    label = runShapeLabel ctm shl
 
 drawDia :: (Real u, Floating u) => Diamond u -> Graphic u
 drawDia = borderedPath . diamondPath
@@ -288,17 +315,24 @@ instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
   center = ctmCenter . ell_ctm
 
 
-ellipse :: (Floating u, Real u) => u -> u -> Shape u (Ellipse u)
+ellipse :: (Real u, Floating u) => u -> u -> Shape u (Ellipse u)
 ellipse rx ry = Shape { src_ctm = identityCTM
-                      , out_fun = outputEll rx ry
+                      , out_fun = outputEll rx ry nolabel
                       }
+
+lellipse :: (Real u, Floating u, FromPtSize u) 
+         => u -> u -> String -> Shape u (Ellipse u)
+lellipse rx ry ss = Shape { src_ctm = identityCTM
+                          , out_fun = outputEll rx ry (shapelabel ss)
+                          }
 
 
 outputEll :: (Real u, Floating u) 
-          => u -> u -> ShapeCTM u -> Image u (Ellipse u)
-outputEll rx ry ctm = intoImage (pureDF a) (drawEll a) 
+          => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Ellipse u)
+outputEll rx ry shl ctm = intoImage (pureDF a) (drawEll a `mappend` label)
   where
-    a = Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
+    a     = Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
+    label = runShapeLabel ctm shl
 
 
 drawEll :: (Real u, Floating u) => Ellipse u -> Graphic u

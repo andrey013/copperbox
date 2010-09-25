@@ -31,14 +31,23 @@ module Wumpus.Basic.Shapes.Base
   , ctmDisplace
   , ctmCenter
 
+  , ShapeLabel
+  , runShapeLabel
+  , nolabel
+  , shapelabel
+
   ) where
 
-import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Graphic
+
+
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
 
 
 import Control.Applicative
-
+import Data.Monoid
 
 
 data Shape u sh =  Shape 
@@ -47,6 +56,10 @@ data Shape u sh =  Shape
       }
 
 type instance DUnit (Shape u sh) = u
+
+
+
+
 
 drawShape :: Shape u sh -> Image u sh
 drawShape (Shape { src_ctm = ctm, out_fun = fn }) = fn ctm 
@@ -121,3 +134,29 @@ ctmDisplace (P2 x y) (ShapeCTM { ctm_trans_x  = dx, ctm_trans_y  = dy
 ctmCenter :: (Real u, Floating u) => ShapeCTM u -> Point2 u
 ctmCenter = ctmDisplace zeroPt
 
+
+newtype ShapeLabel u = ShapeLabel { getShapeLabel :: ShapeCTM u -> Graphic u }
+
+runShapeLabel :: ShapeCTM u -> ShapeLabel u -> Graphic u
+runShapeLabel ctm sl = getShapeLabel sl ctm
+
+nolabel :: ShapeLabel u
+nolabel = ShapeLabel $ \_ -> mempty
+
+-- | No scaling - change font size if needed.
+--
+shapelabel :: (Real u, Floating u, FromPtSize u) 
+             => String -> ShapeLabel u
+shapelabel text = 
+   ShapeLabel $ \(ShapeCTM { ctm_trans_x=dx, ctm_trans_y=dy
+                           , ctm_rotation = ang }) ->
+                   monoVecToCenter text >>= \v -> 
+                   let ctr = P2 dx dy; bl = ctr .-^ v in 
+                   rotTextline ang text (rotateAbout ang ctr bl)
+
+
+rotTextline :: (Real u, Floating u) => Radian -> String -> LocGraphic u
+rotTextline theta ss baseline_left = 
+    withTextAttr $ \rgb attr -> 
+        singleH $ rotatePrim theta $ textlabel rgb attr ss baseline_left
+     
