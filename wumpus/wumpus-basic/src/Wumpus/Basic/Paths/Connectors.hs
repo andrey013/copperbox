@@ -27,6 +27,8 @@ module Wumpus.Basic.Paths.Connectors
   , hvconn
   , arbv
   , arbh
+  , curveconn
+  , joint
   , pathGraphic
   , fillPath
 
@@ -73,6 +75,16 @@ arbh h p1@(P2 x1 y1) (P2 x2 y2) = execPath p1 $ hline h >> vline dy >> hline dx
     dx = x2 - (x1+h)
     dy = y2 - y1
 
+curveconn :: (Floating u, Ord u) => Radian -> Radian -> ConnPath u
+curveconn r1 r2 p1 p2 = execPath p1 $ curveto r1 r2 p2
+
+
+joint :: (Real u, Floating u) => u -> ConnPath u 
+joint u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
+    execPath p1 $ lineto (mid_pt .+^ avec perp_ang u) >> lineto p2
+  where
+    mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
+    perp_ang  = (pi*0.5) + direction (pvec p2 p1) 
 
 -- This one might be more useful...
 -- 
