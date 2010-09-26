@@ -125,20 +125,49 @@ lexLabel = EncodedText . lexer
 -- 
 lexer :: String -> [TextChunk]
 lexer []            = []
+lexer ('&':'#':cs)  = escStart cs
+lexer (c:cs)        = let (ss,rest) = span (/= '&') cs 
+                      in TextSpan (c:ss) : lexer rest
 
-lexer ('&':'#':xs)  = esc xs
+escStart :: String -> [TextChunk]
+escStart ('0':'o':cs)           = escOct cs
+escStart ('0':'O':cs)           = escOct cs
+escStart ('0':'x':cs)           = escHex cs
+escStart ('0':'X':cs)           = escHex cs
+escStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
+escStart (c:cs)                 = let (ss,rest) = span isAlphaNum cs 
+                                  in TextEscName (c:ss) : chompToSemi rest
+escStart []                     = [] 
+
+-- | One digit consumed already...
+--
+escDec :: Int -> String -> [TextChunk]
+escDec n (c:cs) | isDigit c = escDec (n*10 + digitToInt c) cs
+escDec n cs     | n > 0     = TextEscInt n : chompToSemi cs
+                | otherwise = chompToSemi cs
+
+escHex :: String -> [TextChunk]
+escHex = step 0
   where
-    esc (c:cs) | isDigit c = let (s,cs') = span isDigit cs 
-                             in  intval (c:s) cs'
-               | otherwise = let (s,cs') = span isAlpha cs 
-                             in TextEscName (c:s) : optsemi cs'
-    esc []                 = []
+    step n (c:cs) | isHexDigit c = step (n*16 + digitToInt c) cs
+    step n cs     | n > 0        = TextEscInt n : chompToSemi cs
+                  | otherwise    = chompToSemi cs 
 
-    optsemi (';':cs)   = lexer cs      -- let ill-formed go through
-    optsemi cs         = lexer cs
 
-    intval [] rest  = optsemi rest
-    intval cs rest  = TextEscInt (read cs) : optsemi rest
+escOct :: String -> [TextChunk]
+escOct = step 0
+  where
+    step n (c:cs) | isHexDigit c = step (n*8 + digitToInt c) cs
+    step n cs     | n > 0        = TextEscInt n : chompToSemi cs
+                  | otherwise    = chompToSemi cs 
 
-lexer (x:xs)        = let (s,xs') = span (/= '&') xs 
-                      in TextSpan (x:s) : lexer xs'
+
+
+-- The last two conditions both indicate ill-formed input, but it
+-- is /best/ if the lexer does not throw errors.
+-- 
+chompToSemi :: String -> [TextChunk]
+chompToSemi (';':cs) = lexer cs
+chompToSemi (_:cs)   = chompToSemi cs           
+chompToSemi []       = []
+
