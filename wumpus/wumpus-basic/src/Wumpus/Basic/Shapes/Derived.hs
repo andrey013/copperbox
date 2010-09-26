@@ -43,12 +43,16 @@ module Wumpus.Basic.Shapes.Derived
   , ellipse
   , lellipse
 
+  , FreeLabel
+  , DFreeLabel
+  , freelabel
+
   ) where
 
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Shapes.Base
-
+import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -68,10 +72,6 @@ data Rectangle u = Rectangle
   deriving (Eq,Show)
 
 type DRectangle = Rectangle Double
-
--- Not deriving much value from Shape...
-
--- type SRectangle u = SRectangle { getRectangle :: Shape Rectangle u }
 
 type instance DUnit (Rectangle u) = u
 
@@ -97,6 +97,14 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
   southwest = calcRectPoint $ \ hw hh -> P2 (-hw) (-hh)
   northwest = calcRectPoint $ \ hw hh -> P2 (-hw) hh
 
+
+-- Not working properly...
+--
+instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
+  radialAnchor theta rect@(Rectangle { rect_hw=hw, rect_hh=hh }) = 
+      maybe ctr id $ findIntersect ctr theta $ rectangleLines ctr hw hh 
+    where 
+      ctr = ctmCenter $ rect_ctm rect
 
 rectangle :: (Real u, Floating u) => u -> u -> Shape u (Rectangle u)
 rectangle w h = Shape { src_ctm = identityCTM
@@ -355,3 +363,51 @@ rescale :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
 rescale rx ry = scale 1 (ry/rx) 
 
 
+--------------------------------------------------------------------------------
+-- Free label
+
+-- Free label is a rectangle that /is not drawn/, the 
+-- constructor should always create some text.
+
+newtype FreeLabel u = FreeLabel { getFreeLabel :: Rectangle u }
+
+
+type DFreeLabel = FreeLabel Double
+
+type instance DUnit (FreeLabel u) = u
+
+
+instance (Real u, Floating u) => CenterAnchor (FreeLabel u) where
+  center = center . getFreeLabel
+
+
+instance (Real u, Floating u) => CardinalAnchor (FreeLabel u) where
+  north = north . getFreeLabel
+  south = south . getFreeLabel
+  east  = east . getFreeLabel
+  west  = west . getFreeLabel
+
+instance (Real u, Floating u) => CardinalAnchor2 (FreeLabel u) where
+  northeast = northeast . getFreeLabel
+  southeast = southeast . getFreeLabel
+  southwest = southwest . getFreeLabel
+  northwest = northwest . getFreeLabel
+
+instance (Real u, Floating u) => RadialAnchor (FreeLabel u) where
+  radialAnchor theta = radialAnchor theta . getFreeLabel
+
+freelabel :: (Real u, Floating u, FromPtSize u) 
+          => String -> Shape u (FreeLabel u)
+freelabel ss = Shape { src_ctm = identityCTM
+                     , out_fun = outputStringLbl ss
+                     }
+
+outputStringLbl :: (Real u, Floating u, FromPtSize u) 
+                => String -> ShapeCTM u -> Image u (FreeLabel u)
+outputStringLbl ss ctm = 
+    intoImage (monoTextDimensions ss >>= \(w,h) -> return (mkrect w h)) label
+  where
+    mkrect w h = FreeLabel $ Rectangle { rect_ctm = ctm
+                                       , rect_hw  = 0.5*w
+                                       , rect_hh  = 0.5*h }
+    label = runShapeLabel ctm (shapelabel ss)

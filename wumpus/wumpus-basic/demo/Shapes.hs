@@ -1,6 +1,9 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
+-- Acknowledgment - the petri net is taken from Claus Reinke\'s
+-- paper /Haskell-Coloured Petri Nets/.
+
 
 module Shapes where
 
@@ -25,8 +28,8 @@ main = do
     createDirectoryIfMissing True "./out/"
     writeEPS_latin1 "./out/shapes01.eps" pic1
     writeSVG_latin1 "./out/shapes01.svg" pic1
-    writeEPS_latin1 "./out/shapes02.eps" petri_net
-    writeSVG_latin1 "./out/shapes02.svg" petri_net
+    writeEPS_latin1 "./out/petri_net.eps" petri_net
+    writeSVG_latin1 "./out/petri.svg" petri_net
     
 
 pic1 :: DPicture
@@ -80,13 +83,13 @@ petri_net = liftToPictureU $ execDrawing (standardContext 14) $ do
               draw $ lblParensParens `at` (P2 (-36) 150)
               draw $ lblParensParens `at` (P2 300 60)
               draw $ lblParensParensParens `at` (P2 (-52) (-14))
-              draw $ lblBold "processing_w" `at` (P2 (-50) 110)
-              draw $ lblBold "ready_to_write" `at` (P2 90 110)
-              draw $ lblBold "writing" `at` (P2 254 110)
-              draw $ lblBold "resource" `at` (P2 300 72)
-              draw $ lblBold "processing_r" `at` (P2 (-50) 20)
-              draw $ lblBold "ready_to_read" `at` (P2 90 20)
-              draw $ lblBold "reading" `at` (P2 254 20)
+              draw $ lblBold "processing_w"   `at` (southwards 12 pw)
+              draw $ lblBold "ready_to_write" `at` (southwards 12 rtw)
+              draw $ lblBold "writing"        `at` (southwards 12 w)
+              draw $ lblBold' "resource"      `at` (P2 300 72)
+              draw $ lblBold "processing_r"   `at` (northwards 12 pr)
+              draw $ lblBold "ready_to_read"  `at` (northwards 12 rtr)
+              draw $ lblBold "reading"        `at` (northwards 12 r)
               return ()
 
 greenFill :: DrawingCtxM m => m a -> m a
@@ -130,5 +133,9 @@ lblParensParensParens :: Num u => LocGraphic u
 lblParensParensParens = localLG (fontface helvetica) $ textline "(),(),()"
 
 
-lblBold :: Num u => String -> LocGraphic u
-lblBold ss = localLG (fontface helveticaBold) $ textline ss
+lblBold' :: Num u => String -> LocGraphic u
+lblBold' ss = localLG (fontface helveticaBold) $ textline ss
+
+
+lblBold :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
+lblBold ss = localLG (fontface helveticaBold) $ centermonoTextline ss

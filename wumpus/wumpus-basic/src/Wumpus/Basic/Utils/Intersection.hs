@@ -81,8 +81,9 @@ data IntersectionResult u = Intersects u u | Contained | NoIntersect
 --
 findIntersect :: (Floating u, Real u, Ord u)
                => Point2 u -> Radian -> [LineSegment u] -> Maybe (Point2 u)
-findIntersect ctr theta = step 
+findIntersect ctr ang0 = step 
   where
+    theta       = circularModulo ang0
     eqn         = toLineEqn $ pointSlope ctr theta
     step []     = Nothing
     step (x:xs) = case intersection x eqn of 
