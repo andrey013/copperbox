@@ -18,16 +18,23 @@
 -- The common affine transformations represented as type classes -
 -- scaling, rotation, translation.
 --
--- Unlike other functional graphics systems (e.g. Clastic), Wumpus
--- performs the affine transformations as matrix operations. This 
--- simplifies the implementation of pictures 
--- ("Wumpus.Core.PictureInternal"). When a picture is composed and 
--- transformed, transformations will be performed only on the 
--- bounding box in Wumpus but the transformation of the 
--- picture content (paths or text labels) will be communicated to 
--- PostScript or SVG to render. This is because Wumpus has no 
--- access to the paths that make fonts so cannot transform them 
--- directly.
+-- When a picture is composed and transformed, transformations 
+-- will be performed only on the bounding box in Wumpus but the 
+-- transformation of the picture content (paths or text labels) 
+-- will be communicated to PostScript or SVG to render. This is 
+-- because Wumpus has no access to the paths that make fonts so 
+-- cannot transform them directly.
+--
+-- As well as Pictures, some elements - e.g. Vectors, Points and 
+-- BoundingBoxes - are also instances of the affine classes. The
+-- implementation of the instances considers that under 
+-- transformation these objects implicitly are in the standard 
+-- affine frame (origin at point zero and unit basis vectors for 
+-- the horizontal and vertical). 
+--
+-- This assumption cannot hold for primitives because text is 
+-- special in PostScript and SVG, so there are no instances of 
+-- the affine classes for Primitive or PrimElement.
 -- 
 -- To generate efficient PostScript, Wumpus relies on the matrix
 -- representations of the affine transformations being invertible.

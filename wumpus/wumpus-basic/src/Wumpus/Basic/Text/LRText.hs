@@ -27,11 +27,10 @@ module Wumpus.Basic.Text.LRText
   ( 
 
 
-    TextM
+    LRText
 
-  , drawTextM
-  , runTextM
-  , execTextM
+  , runLRText
+  , execLRText
 
   , kern
   , char
@@ -93,24 +92,24 @@ data Env u = Env
 -- can take the initial font size, stroke colour etc.
 --
 
-newtype TextM u a = TextM { getTextM :: Env u -> St u -> (a, St u) }
+newtype LRText u a = LRText { getLRText :: Env u -> St u -> (a, St u) }
 
-type instance MonUnit (TextM u) = u
+type instance MonUnit (LRText u) = u
 
-instance Functor (TextM u) where
-  fmap f mf = TextM $ \r s -> let (a,s') = getTextM mf r s in (f a,s')
+instance Functor (LRText u) where
+  fmap f mf = LRText $ \r s -> let (a,s') = getLRText mf r s in (f a,s')
 
 
-instance Applicative (TextM u) where
-  pure a    = TextM $ \_ s -> (a,s)
-  mf <*> ma = TextM $ \r s -> let (f,s')  = getTextM mf r s
-                                  (a,s'') = getTextM ma r s'
-                              in (f a,s'')
+instance Applicative (LRText u) where
+  pure a    = LRText $ \_ s -> (a,s)
+  mf <*> ma = LRText $ \r s -> let (f,s')  = getLRText mf r s
+                                   (a,s'') = getLRText ma r s'
+                               in (f a,s'')
 
-instance Monad (TextM u) where
-  return a  = TextM $ \_ s -> (a,s)
-  m >>= k   = TextM $ \r s -> let (a,s')  = getTextM m r s 
-                              in (getTextM . k) a r s'
+instance Monad (LRText u) where
+  return a  = LRText $ \_ s -> (a,s)
+  m >>= k   = LRText $ \r s -> let (a,s')  = getLRText m r s 
+                               in (getLRText . k) a r s'
 
 
 -- | This is the principal /run/ function.
@@ -118,55 +117,46 @@ instance Monad (TextM u) where
 -- Motivation:
 -- 
 -- > draw $ something 20 20 `at` zeroPt
--- > a <- drawTextM zeroPt $ char 'x' >> char 'y' >> char 'z'
+-- > a <- drawLRText zeroPt $ char 'x' >> char 'y' >> char 'z'
 -- > draw $ somethingElse `at` zeroPt
 --
 -- Otherwise it is convoluted to get the drawing (via bind) and
 -- then draw it:
 --
--- > (a,textg) <- runTextM $ char 'x' >> char 'y' >> char 'z'
+-- > (a,textg) <- runLRText $ char 'x' >> char 'y' >> char 'z'
 -- > draw $ textg `at` zeroPt
 --
 --
-
-drawTextM :: (Num u, FromPtSize u, TraceM m ,DrawingCtxM m, u ~ MonUnit m) 
-          => Point2 u -> TextM u a -> m a
-drawTextM pt ma = runTextM ma      >>= \(a,g) -> 
+{-
+drawLRText :: (Num u, FromPtSize u, TraceM m ,DrawingCtxM m, u ~ MonUnit m) 
+          => Point2 u -> LRText u a -> m a
+drawLRText pt ma = runLRText ma      >>= \(a,g) -> 
                   draw (g `at` pt) >>
                   return a 
-                              
--- Note - post has to displace in the vertical to get the bottom 
--- line at the base line...
--- 
--- Also run has to be in the DrawingCtxM to get the font size, 
--- font face, primary colour...
---
+-}
 
-runTextM :: (Num u, FromPtSize u, DrawingCtxM m, u ~ MonUnit m) 
-         => TextM u a -> m (a, LocGraphic u)
-runTextM ma = askCtx >>= \ctx -> 
-    let e = runDF ctx envZero in post $ getTextM ma e stZero
+
+runLRText :: (Num u, FromPtSize u) => LRText u a -> LocImage u a
+runLRText ma = \pt -> envZero >>= \e1 -> 
+                   let (a,st) = getLRText ma e1 st_zero 
+                   in mkline pt (acc_chr st) >>= \g1 ->
+                      localDF (fontface symbol) (mkline pt (acc_sym st)) >>= \g2 ->
+                      return (a,g1 `mappend` g2)
   where
-    post (a,st)  = let sG = updCtxSym $ mkHKern $ toListH $ acc_sym st
-                       cG = mkHKern $ toListH $ acc_chr st
-                   in return (a, sG `lgappend` cG)
-
-    mkHKern []   = const mempty
-    mkHKern xs   = hkernline xs
-
-    updCtxSym lg = localLG (fontface symbol) lg
+    mkline pt h = case toListH h of
+                   [] -> return mempty
+                   xs -> hkernline xs pt
 
 
-execTextM :: (Num u, FromPtSize u, DrawingCtxM m, u ~ MonUnit m) 
-          => TextM u a -> m (LocGraphic u)
-execTextM ma = liftM snd $ runTextM ma  
+execLRText :: (Num u, FromPtSize u) => LRText u a -> LocGraphic u
+execLRText ma = \pt -> liftM snd (runLRText ma pt) 
 
-
-stZero :: Num u => St u
-stZero = St { delta_chr       = 0
-            , delta_sym       = 0
-            , acc_chr         = emptyH
-            , acc_sym         = emptyH }
+st_zero :: Num u => St u
+st_zero = St { delta_chr       = 0
+             , delta_sym       = 0
+             , acc_chr         = emptyH
+             , acc_sym         = emptyH }
+ 
 
 envZero :: FromPtSize u => DrawingF (Env u)
 envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
@@ -174,51 +164,51 @@ envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
             <$> fontSize
 
 
-gets :: (St u -> a) -> TextM u a
-gets fn = TextM $ \_ s -> (fn s, s)
+gets :: (St u -> a) -> LRText u a
+gets fn = LRText $ \_ s -> (fn s, s)
 
-charMove :: Num u => TextM u ()
-charMove = TextM $ \(Env {char_width=cw, spacer_width=sw}) s -> 
+charMove :: Num u => LRText u ()
+charMove = LRText $ \(Env {char_width=cw, spacer_width=sw}) s -> 
              let step_width = cw + sw    
                  d_sym      = (delta_sym s) + step_width
              in ((), s { delta_chr = step_width, delta_sym = d_sym }) 
 
-symbMove :: Num u => TextM u ()
-symbMove = TextM $ \(Env {char_width=cw, spacer_width=sw}) s -> 
+symbMove :: Num u => LRText u ()
+symbMove = LRText $ \(Env {char_width=cw, spacer_width=sw}) s -> 
              let step_width = cw + sw
                  d_chr      = (delta_chr s) + step_width
              in ((), s { delta_chr = d_chr, delta_sym = step_width }) 
 
-snocSymb :: KerningChar u -> TextM u ()
-snocSymb kc = TextM $ \_ s -> ((), upd s)
+snocSymb :: KerningChar u -> LRText u ()
+snocSymb kc = LRText $ \_ s -> ((), upd s)
   where
     upd = (\s a -> s { acc_sym = a `snocH` kc}) <*> acc_sym
 
-snocChar :: KerningChar u -> TextM u ()
-snocChar kc = TextM $ \_ s -> ((), upd s)
+snocChar :: KerningChar u -> LRText u ()
+snocChar kc = LRText $ \_ s -> ((), upd s)
   where
     upd = (\s a -> s { acc_chr = a `snocH` kc}) <*> acc_chr
 
-kern :: Num u => u -> TextM u ()
-kern dx = TextM $ \_ s -> ((), upd s)
+kern :: Num u => u -> LRText u ()
+kern dx = LRText $ \_ s -> ((), upd s)
   where
     upd = (\s a b -> s { delta_chr = a+dx, delta_sym = b+dx}) 
             <*> delta_chr <*> delta_sym
 
-char :: Num u => Char -> TextM u ()
+char :: Num u => Char -> LRText u ()
 char ch = gets delta_chr           >>= \u -> 
           snocChar (kernchar u ch) >> charMove
 
-symb :: Num u => Char -> TextM u ()
+symb :: Num u => Char -> LRText u ()
 symb sy = gets delta_sym           >>= \u -> 
           snocSymb (kernchar u sy) >> symbMove
 
 
-symbi :: Num u => Int -> TextM u ()
+symbi :: Num u => Int -> LRText u ()
 symbi i = symb (chr i) 
 
 
-symbEscInt :: Num u => Int -> TextM u ()
+symbEscInt :: Num u => Int -> LRText u ()
 symbEscInt i = gets delta_sym            >>= \u -> 
                snocSymb (kernEscInt u i) >> symbMove
 

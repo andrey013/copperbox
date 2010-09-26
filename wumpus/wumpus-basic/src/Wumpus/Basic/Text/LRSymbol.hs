@@ -212,112 +212,112 @@ import Prelude hiding ( pi, product )
 
 -- | Note - prints as \'A\'.
 --
-uAlpha          :: Num u => TextM u ()
+uAlpha          :: Num u => LRText u ()
 uAlpha          = symb 'A'
 
 -- | Note - prints as \'B\'.
 --
-uBeta           :: Num u => TextM u ()
+uBeta           :: Num u => LRText u ()
 uBeta           = symb 'B'
 
 -- | Note - prints as \'X\'.
 --
-uChi            :: Num u => TextM u ()
+uChi            :: Num u => LRText u ()
 uChi            = symb 'C'
 
-uDelta          :: Num u => TextM u ()
+uDelta          :: Num u => LRText u ()
 uDelta          = symb 'D'
 
 -- | Note - prints as \'E\'.
 --
-uEpsilon        :: Num u => TextM u ()
+uEpsilon        :: Num u => LRText u ()
 uEpsilon        = symb 'E'
 
 -- | Note - prints as \'H\'.
 --
-uEta            :: Num u => TextM u ()
+uEta            :: Num u => LRText u ()
 uEta            = symb 'H'
 
 
 -- | Note - does not appear to print in Chrome.
 --
-uEuro           :: Num u => TextM u ()
+uEuro           :: Num u => LRText u ()
 uEuro           = symbEscInt 0o240
 
-uGamma          :: Num u => TextM u ()
+uGamma          :: Num u => LRText u ()
 uGamma          = symb 'G'
 
-uIfraktur       :: Num u => TextM u ()
+uIfraktur       :: Num u => LRText u ()
 uIfraktur       = symbEscInt 0o301
 
 -- | Note - prints as \'I\'.
 --
-uIota           :: Num u => TextM u ()
+uIota           :: Num u => LRText u ()
 uIota           = symb 'I'
 
 -- | Note - prints as \'K\'.
 --
-uKappa          :: Num u => TextM u ()
+uKappa          :: Num u => LRText u ()
 uKappa          = symb 'K'
 
-uLambda         :: Num u => TextM u ()
+uLambda         :: Num u => LRText u ()
 uLambda         = symb 'L'
 
 -- | Note - prints as \'M\'.
 --
-uMu             :: Num u => TextM u ()
+uMu             :: Num u => LRText u ()
 uMu             = symb 'M'
 
 -- | Note - prints as \'N\'.
 --
-uNu             :: Num u => TextM u ()
+uNu             :: Num u => LRText u ()
 uNu             = symb 'N'
 
-uOmega          :: Num u => TextM u ()
+uOmega          :: Num u => LRText u ()
 uOmega          = symbEscInt 0o127
 
-uOmicron        :: Num u => TextM u ()
+uOmicron        :: Num u => LRText u ()
 uOmicron        = symbEscInt 0o117
 
-uPhi            :: Num u => TextM u ()
+uPhi            :: Num u => LRText u ()
 uPhi            = symbEscInt 0o106
 
-uPi             :: Num u => TextM u ()
+uPi             :: Num u => LRText u ()
 uPi             = symb 'P'
 
-uPsi            :: Num u => TextM u ()
+uPsi            :: Num u => LRText u ()
 uPsi            = symbEscInt 0o131
 
-uRfraktur       :: Num u => TextM u ()
+uRfraktur       :: Num u => LRText u ()
 uRfraktur       = symbEscInt 0o302
 
-uRho            :: Num u => TextM u ()
+uRho            :: Num u => LRText u ()
 uRho            = symbEscInt 0o122
 
-uSigma          :: Num u => TextM u ()
+uSigma          :: Num u => LRText u ()
 uSigma          = symb 'S'
 
-uTau            :: Num u => TextM u ()
+uTau            :: Num u => LRText u ()
 uTau            = symb 'T'
 
 
-uTheta          :: Num u => TextM u ()
+uTheta          :: Num u => LRText u ()
 uTheta          = symb 'Q'
 
 -- | Note - prints as \'Y\'.
 --
-uUpsilon        :: Num u => TextM u ()
+uUpsilon        :: Num u => LRText u ()
 uUpsilon        = symbEscInt 0o125
 
 -- | Note - this is the /pretty/ Upsilon.
 --
-uUpsilon1       :: Num u => TextM u ()
+uUpsilon1       :: Num u => LRText u ()
 uUpsilon1       = symbEscInt 0o241
 
-uXi             :: Num u => TextM u ()
+uXi             :: Num u => LRText u ()
 uXi             = symb 'X'
 
-uZeta           :: Num u => TextM u ()
+uZeta           :: Num u => LRText u ()
 uZeta           = symb 'Z'
 
 
@@ -325,73 +325,73 @@ uZeta           = symb 'Z'
 -- lower case Greek letters
 
 
-alpha           :: Num u => TextM u ()
+alpha           :: Num u => LRText u ()
 alpha           = symb 'a'
 
-beta            :: Num u => TextM u ()
+beta            :: Num u => LRText u ()
 beta            = symb 'b'
 
-gamma           :: Num u => TextM u ()
+gamma           :: Num u => LRText u ()
 gamma           = symb 'g'
 
-delta           :: Num u => TextM u ()
+delta           :: Num u => LRText u ()
 delta           = symb 'd'
 
-epsilon         :: Num u => TextM u ()
+epsilon         :: Num u => LRText u ()
 epsilon         = symb 'e'
 
-zeta            :: Num u => TextM u ()
+zeta            :: Num u => LRText u ()
 zeta            = symb 'z'
 
-eta             :: Num u => TextM u ()
+eta             :: Num u => LRText u ()
 eta             = symb 'h'
 
-theta           :: Num u => TextM u ()
+theta           :: Num u => LRText u ()
 theta           = symb 'q'
 
-iota            :: Num u => TextM u ()
+iota            :: Num u => LRText u ()
 iota            = symb 'i'
 
-kappa           :: Num u => TextM u ()
+kappa           :: Num u => LRText u ()
 kappa           = symb 'k'
 
-lambda          :: Num u => TextM u ()
+lambda          :: Num u => LRText u ()
 lambda          = symb 'l'
 
-mu              :: Num u => TextM u ()
+mu              :: Num u => LRText u ()
 mu              = symb 'm'
 
-nu              :: Num u => TextM u ()
+nu              :: Num u => LRText u ()
 nu              = symb 'n'
 
-xi              :: Num u => TextM u ()
+xi              :: Num u => LRText u ()
 xi              = symb 'x'
 
-pi              :: Num u => TextM u ()
+pi              :: Num u => LRText u ()
 pi              = symb 'p'
 
-rho             :: Num u => TextM u ()
+rho             :: Num u => LRText u ()
 rho             = symb 'r'
 
-sigma           :: Num u => TextM u ()
+sigma           :: Num u => LRText u ()
 sigma           = symb 's'
 
-tau             :: Num u => TextM u ()
+tau             :: Num u => LRText u ()
 tau             = symb 't'
 
-upsilon         :: Num u => TextM u ()
+upsilon         :: Num u => LRText u ()
 upsilon         = symb 'u'
 
-phi             :: Num u => TextM u ()
+phi             :: Num u => LRText u ()
 phi             = symb 'j'
 
-chi             :: Num u => TextM u ()
+chi             :: Num u => LRText u ()
 chi             = symb 'c'
 
-psi             :: Num u => TextM u ()
+psi             :: Num u => LRText u ()
 psi             = symb 'y'
 
-omega           :: Num u => TextM u ()
+omega           :: Num u => LRText u ()
 omega           = symb 'w'
 
 
@@ -399,347 +399,347 @@ omega           = symb 'w'
 --------------------------------------------------------------------------------
 -- Miscellaneous chars
 
-aleph           :: Num u => TextM u ()
+aleph           :: Num u => LRText u ()
 aleph           = symbEscInt 0o300
 
-ampersand       :: Num u => TextM u ()
+ampersand       :: Num u => LRText u ()
 ampersand       = symbEscInt 0o046
 
-angle           :: Num u => TextM u ()
+angle           :: Num u => LRText u ()
 angle           = symbEscInt 0o320
 
-angleleft       :: Num u => TextM u ()
+angleleft       :: Num u => LRText u ()
 angleleft       = symbEscInt 0o341
 
-angleright      :: Num u => TextM u ()
+angleright      :: Num u => LRText u ()
 angleright      = symbEscInt 0o361
 
-approxequal     :: Num u => TextM u ()
+approxequal     :: Num u => LRText u ()
 approxequal     = symbEscInt 0o273
 
-arrowboth       :: Num u => TextM u ()
+arrowboth       :: Num u => LRText u ()
 arrowboth       = symbEscInt 0o253
 
-arrowdblboth    :: Num u => TextM u ()
+arrowdblboth    :: Num u => LRText u ()
 arrowdblboth    = symbEscInt 0o333
 
-arrowdbldown    :: Num u => TextM u ()
+arrowdbldown    :: Num u => LRText u ()
 arrowdbldown    = symbEscInt 0o337
 
-arrowdblleft    :: Num u => TextM u ()
+arrowdblleft    :: Num u => LRText u ()
 arrowdblleft    = symbEscInt 0o334
 
-arrowdblright   :: Num u => TextM u ()
+arrowdblright   :: Num u => LRText u ()
 arrowdblright   = symbEscInt 0o336
 
-arrowdblup      :: Num u => TextM u ()
+arrowdblup      :: Num u => LRText u ()
 arrowdblup      = symbEscInt 0o335
 
-arrowdown       :: Num u => TextM u ()
+arrowdown       :: Num u => LRText u ()
 arrowdown       = symbEscInt 0o257
 
-arrowleft       :: Num u => TextM u ()
+arrowleft       :: Num u => LRText u ()
 arrowleft       = symbEscInt 0o254
 
-arrowright      :: Num u => TextM u ()
+arrowright      :: Num u => LRText u ()
 arrowright      = symbEscInt 0o256
 
-arrowup         :: Num u => TextM u ()
+arrowup         :: Num u => LRText u ()
 arrowup         = symbEscInt 0o255
 
-asteriskmath    :: Num u => TextM u ()
+asteriskmath    :: Num u => LRText u ()
 asteriskmath    = symbEscInt 0o052
 
-bar             :: Num u => TextM u ()
+bar             :: Num u => LRText u ()
 bar             = symbEscInt 0o174
 
-braceleft       :: Num u => TextM u ()
+braceleft       :: Num u => LRText u ()
 braceleft       = symbEscInt 0o173
 
-braceright      :: Num u => TextM u ()
+braceright      :: Num u => LRText u ()
 braceright      = symbEscInt 0o175
 
-bracketleft     :: Num u => TextM u ()
+bracketleft     :: Num u => LRText u ()
 bracketleft     = symbEscInt 0o133
 
-bracketright    :: Num u => TextM u ()
+bracketright    :: Num u => LRText u ()
 bracketright    = symbEscInt 0o135
 
-bullet          :: Num u => TextM u ()
+bullet          :: Num u => LRText u ()
 bullet          = symbEscInt 0o267
 
-carriagereturn  :: Num u => TextM u ()
+carriagereturn  :: Num u => LRText u ()
 carriagereturn  = symbEscInt 0o277
 
 
-circlemultiply  :: Num u => TextM u ()
+circlemultiply  :: Num u => LRText u ()
 circlemultiply  = symbEscInt 0o304
 
-circleplus      :: Num u => TextM u ()
+circleplus      :: Num u => LRText u ()
 circleplus      = symbEscInt 0o305
 
-club            :: Num u => TextM u ()
+club            :: Num u => LRText u ()
 club            = symbEscInt 0o247
 
-colon           :: Num u => TextM u ()
+colon           :: Num u => LRText u ()
 colon           = symbEscInt 0o072
 
-comma           :: Num u => TextM u ()
+comma           :: Num u => LRText u ()
 comma           = symbEscInt 0o054
 
-congruent       :: Num u => TextM u ()
+congruent       :: Num u => LRText u ()
 congruent             = symbEscInt 0o100
 
-copyrightsans   :: Num u => TextM u ()
+copyrightsans   :: Num u => LRText u ()
 copyrightsans         = symbEscInt 0o343
 
-copyrightserif  :: Num u => TextM u ()
+copyrightserif  :: Num u => LRText u ()
 copyrightserif  = symbEscInt 0o323
 
-degree          :: Num u => TextM u ()
+degree          :: Num u => LRText u ()
 degree          = symbEscInt 0o260
 
-diamond         :: Num u => TextM u ()
+diamond         :: Num u => LRText u ()
 diamond         = symbEscInt 0o250
 
-divide          :: Num u => TextM u ()
+divide          :: Num u => LRText u ()
 divide          = symbEscInt 0o270
 
-dotmath         :: Num u => TextM u ()
+dotmath         :: Num u => LRText u ()
 dotmath         = symbEscInt 0o327
 
-eight           :: Num u => TextM u ()
+eight           :: Num u => LRText u ()
 eight           = symbEscInt 0o070
 
-element         :: Num u => TextM u ()
+element         :: Num u => LRText u ()
 element         = symbEscInt 0o316
 
-ellipsis        :: Num u => TextM u ()
+ellipsis        :: Num u => LRText u ()
 ellipsis        = symbEscInt 0o274
 
-emptyset        :: Num u => TextM u ()
+emptyset        :: Num u => LRText u ()
 emptyset        = symbEscInt 0o306
 
-equal           :: Num u => TextM u ()
+equal           :: Num u => LRText u ()
 equal           = symbEscInt 0o075
 
-equivalence     :: Num u => TextM u ()
+equivalence     :: Num u => LRText u ()
 equivalence     = symbEscInt 0o272
 
-exclam          :: Num u => TextM u ()
+exclam          :: Num u => LRText u ()
 exclam          = symbEscInt 0o041
 
-existential     :: Num u => TextM u ()
+existential     :: Num u => LRText u ()
 existential     = symbEscInt 0o044
 
-five            :: Num u => TextM u ()
+five            :: Num u => LRText u ()
 five            = symbEscInt 0o065
 
-florin          :: Num u => TextM u ()
+florin          :: Num u => LRText u ()
 florin          = symbEscInt 0o246
 
-four            :: Num u => TextM u ()
+four            :: Num u => LRText u ()
 four            = symbEscInt 0o064
 
-fraction        :: Num u => TextM u ()
+fraction        :: Num u => LRText u ()
 fraction        = symbEscInt 0o244
 
-gradient        :: Num u => TextM u ()
+gradient        :: Num u => LRText u ()
 gradient        = symbEscInt 0o321
 
-greater         :: Num u => TextM u ()
+greater         :: Num u => LRText u ()
 greater         = symbEscInt 0o076
 
-greaterequal    :: Num u => TextM u ()
+greaterequal    :: Num u => LRText u ()
 greaterequal    = symbEscInt 0o263
 
-heart           :: Num u => TextM u ()
+heart           :: Num u => LRText u ()
 heart           = symbEscInt 0o251
 
-infinity        :: Num u => TextM u ()
+infinity        :: Num u => LRText u ()
 infinity        = symbEscInt 0o245
 
-integral        :: Num u => TextM u ()
+integral        :: Num u => LRText u ()
 integral        = symbEscInt 0o362
 
-intersection    :: Num u => TextM u ()
+intersection    :: Num u => LRText u ()
 intersection    = symbEscInt 0o307
 
-less            :: Num u => TextM u ()
+less            :: Num u => LRText u ()
 less            = symbEscInt 0o074
 
-lessequal       :: Num u => TextM u ()
+lessequal       :: Num u => LRText u ()
 lessequal       = symbEscInt 0o243
 
-logicaland      :: Num u => TextM u ()
+logicaland      :: Num u => LRText u ()
 logicaland      = symbEscInt 0o331
 
-logicalnot      :: Num u => TextM u ()
+logicalnot      :: Num u => LRText u ()
 logicalnot      = symbEscInt 0o330
 
-logicalor       :: Num u => TextM u ()
+logicalor       :: Num u => LRText u ()
 logicalor       = symbEscInt 0o332
 
-lozenge         :: Num u => TextM u ()
+lozenge         :: Num u => LRText u ()
 lozenge         = symbEscInt 0o340
 
-minus           :: Num u => TextM u ()
+minus           :: Num u => LRText u ()
 minus           = symbEscInt 0o055
 
-minute          :: Num u => TextM u ()
+minute          :: Num u => LRText u ()
 minute          = symbEscInt 0o242
 
-multiply        :: Num u => TextM u ()
+multiply        :: Num u => LRText u ()
 multiply        = symbEscInt 0o264
 
-nine            :: Num u => TextM u ()
+nine            :: Num u => LRText u ()
 nine            = symbEscInt 0o071
 
-notelement      :: Num u => TextM u ()
+notelement      :: Num u => LRText u ()
 notelement      = symbEscInt 0o317
 
-notequal        :: Num u => TextM u ()
+notequal        :: Num u => LRText u ()
 notequal        = symbEscInt 0o271
 
-notsubset       :: Num u => TextM u ()
+notsubset       :: Num u => LRText u ()
 notsubset       = symbEscInt 0o313
 
-numbersign      :: Num u => TextM u ()
+numbersign      :: Num u => LRText u ()
 numbersign      = symbEscInt 0o043
 
-omega1          :: Num u => TextM u ()
+omega1          :: Num u => LRText u ()
 omega1          = symbEscInt 0o166
 
-omicron         :: Num u => TextM u ()
+omicron         :: Num u => LRText u ()
 omicron         = symbEscInt 0o157
 
-one             :: Num u => TextM u ()
+one             :: Num u => LRText u ()
 one             = symbEscInt 0o061
 
-parenleft       :: Num u => TextM u ()
+parenleft       :: Num u => LRText u ()
 parenleft       = symbEscInt 0o050
 
-parenright      :: Num u => TextM u ()
+parenright      :: Num u => LRText u ()
 parenright      = symbEscInt 0o051
 
-partialdiff     :: Num u => TextM u ()
+partialdiff     :: Num u => LRText u ()
 partialdiff     = symbEscInt 0o266
 
-percent         :: Num u => TextM u ()
+percent         :: Num u => LRText u ()
 percent         = symbEscInt 0o045
 
-period          :: Num u => TextM u ()
+period          :: Num u => LRText u ()
 period          = symbEscInt 0o056
 
-perpendicular   :: Num u => TextM u ()
+perpendicular   :: Num u => LRText u ()
 perpendicular   = symbEscInt 0o136
 
-phi1            :: Num u => TextM u ()
+phi1            :: Num u => LRText u ()
 phi1            = symbEscInt 0o152
 
-plus            :: Num u => TextM u ()
+plus            :: Num u => LRText u ()
 plus            = symbEscInt 0o053
 
-plusminus       :: Num u => TextM u ()
+plusminus       :: Num u => LRText u ()
 plusminus       = symbEscInt 0o261
 
-product         :: Num u => TextM u ()
+product         :: Num u => LRText u ()
 product         = symbEscInt 0o325
 
-propersubset    :: Num u => TextM u ()
+propersubset    :: Num u => LRText u ()
 propersubset    = symbEscInt 0o314
 
-propersuperset  :: Num u => TextM u ()
+propersuperset  :: Num u => LRText u ()
 propersuperset  = symbEscInt 0o311
 
-proportional    :: Num u => TextM u ()
+proportional    :: Num u => LRText u ()
 proportional    = symbEscInt 0o265
 
-question        :: Num u => TextM u ()
+question        :: Num u => LRText u ()
 question        = symbEscInt 0o077
 
-radical         :: Num u => TextM u ()
+radical         :: Num u => LRText u ()
 radical         = symbEscInt 0o326
 
-radicalex       :: Num u => TextM u ()
+radicalex       :: Num u => LRText u ()
 radicalex       = symbEscInt 0o140
 
-reflexsubset    :: Num u => TextM u ()
+reflexsubset    :: Num u => LRText u ()
 reflexsubset    = symbEscInt 0o315
 
-reflexsuperset  :: Num u => TextM u ()
+reflexsuperset  :: Num u => LRText u ()
 reflexsuperset  = symbEscInt 0o312
 
-registersans    :: Num u => TextM u ()
+registersans    :: Num u => LRText u ()
 registersans    = symbEscInt 0o342
 
-registerserif   :: Num u => TextM u ()
+registerserif   :: Num u => LRText u ()
 registerserif   = symbEscInt 0o322
 
-second          :: Num u => TextM u ()
+second          :: Num u => LRText u ()
 second          = symbEscInt 0o262
 
-semicolon       :: Num u => TextM u ()
+semicolon       :: Num u => LRText u ()
 semicolon       = symbEscInt 0o073
 
-seven           :: Num u => TextM u ()
+seven           :: Num u => LRText u ()
 seven           = symbEscInt 0o067
 
-sigma1          :: Num u => TextM u ()
+sigma1          :: Num u => LRText u ()
 sigma1          = symbEscInt 0o126
 
-similar         :: Num u => TextM u ()
+similar         :: Num u => LRText u ()
 similar         = symbEscInt 0o176
 
-six             :: Num u => TextM u ()
+six             :: Num u => LRText u ()
 six             = symbEscInt 0o066
 
-slash           :: Num u => TextM u ()
+slash           :: Num u => LRText u ()
 slash           = symbEscInt 0o057
 
-space           :: Num u => TextM u ()
+space           :: Num u => LRText u ()
 space           = symbEscInt 0o040
 
-spade           :: Num u => TextM u ()
+spade           :: Num u => LRText u ()
 spade           = symbEscInt 0o252
 
-suchthat        :: Num u => TextM u ()
+suchthat        :: Num u => LRText u ()
 suchthat        = symbEscInt 0o047
 
-summation       :: Num u => TextM u ()
+summation       :: Num u => LRText u ()
 summation       = symbEscInt 0o345
 
-therefore       :: Num u => TextM u ()
+therefore       :: Num u => LRText u ()
 therefore       = symbEscInt 0o134
 
-theta1          :: Num u => TextM u ()
+theta1          :: Num u => LRText u ()
 theta1          = symbEscInt 0o112
 
-three           :: Num u => TextM u ()
+three           :: Num u => LRText u ()
 three           = symbEscInt 0o063
 
-trademarksans   :: Num u => TextM u ()
+trademarksans   :: Num u => LRText u ()
 trademarksans   = symbEscInt 0o344
 
-trademarkserif  :: Num u => TextM u ()
+trademarkserif  :: Num u => LRText u ()
 trademarkserif  = symbEscInt 0o324
 
-two             :: Num u => TextM u ()
+two             :: Num u => LRText u ()
 two             = symbEscInt 0o062
 
-underscore      :: Num u => TextM u ()
+underscore      :: Num u => LRText u ()
 underscore      = symbEscInt 0o137
 
-union           :: Num u => TextM u ()
+union           :: Num u => LRText u ()
 union           = symbEscInt 0o310
 
-universal       :: Num u => TextM u ()
+universal       :: Num u => LRText u ()
 universal       = symbEscInt 0o042
 
-weierstrass     :: Num u => TextM u ()
+weierstrass     :: Num u => LRText u ()
 weierstrass     = symbEscInt 0o303
 
-zero            :: Num u => TextM u ()
+zero            :: Num u => LRText u ()
 zero            = symbEscInt 0o060
 
 

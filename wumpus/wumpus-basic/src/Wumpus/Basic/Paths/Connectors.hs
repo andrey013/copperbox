@@ -162,6 +162,8 @@ shortenLineR n (Line p1 p2) = Line p1 (p2 .+^ v)
 
 --------------------------------------------------------------------------------
 
+-- This should return direction as well...
+--
 midpoint :: (Real u, Floating u) => Path u -> Point2 u
 midpoint (Path u bp) = step (u/2) (viewl bp)
   where
@@ -170,7 +172,7 @@ midpoint (Path u bp) = step (u/2) (viewl bp)
                        case compare d z of
                          GT -> step (d-z) (viewl se)
                          EQ -> segmentEnd e
-                         _  -> segmentEnd $ shortenSegL d e 
+                         _  -> segmentEnd $ shortenSegR d e 
 
 
 

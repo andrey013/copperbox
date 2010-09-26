@@ -72,7 +72,8 @@ cpic4 = clip (toPrimPathU path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> Drawing u () 
-iheartHaskell pt = drawTextM pt $ char 'I' >> heart >> mapM_ char "Haskell"
+iheartHaskell pt = 
+    draw $ (execLRText $ char 'I' >> heart >> mapM_ char "Haskell") `at` pt
 
 
 path01 :: Floating u => Path u

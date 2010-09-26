@@ -47,10 +47,10 @@ pic1 = liftToPictureU $ execDrawing std_ctx $ do
          zipWithM_ sdraw letters_06 column_06
 
   where
-    mdraw (_,ma) pt = drawTextM pt ma
+    mdraw (_,ma) pt = draw $ execLRText ma `at` pt
     sdraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16
 
-letters_01 :: [(String, TextM Double ())]
+letters_01 :: [(String, LRText Double ())]
 letters_01 = 
     [ ("uAlpha",                uAlpha) 
     , ("uBeta",                 uBeta)
@@ -89,7 +89,7 @@ letters_01 =
     , ("approxequal",           approxequal)
     ]
 
-letters_02 :: [(String, TextM Double ())]
+letters_02 :: [(String, LRText Double ())]
 letters_02 = 
     [ ("arrowboth",             arrowboth) 
     , ("arrowdblboth",          arrowdblboth)
@@ -113,7 +113,7 @@ letters_02 =
     , ("chi",                   chi)
     ]
 
-letters_03 :: [(String, TextM Double ())]
+letters_03 :: [(String, LRText Double ())]
 letters_03 = 
     [ ("circlemultiply",        circlemultiply) 
     , ("circleplus",            circleplus)
@@ -152,7 +152,7 @@ letters_03 =
     ]
 
 
-letters_04 :: [(String, TextM Double ())]
+letters_04 :: [(String, LRText Double ())]
 letters_04 = 
     [ ("intersection",          intersection)
     , ("iota",                  iota)
@@ -182,7 +182,7 @@ letters_04 =
     , ("parenright",            parenright)
     ]
 
-letters_05 :: [(String, TextM Double ())]
+letters_05 :: [(String, LRText Double ())]
 letters_05 = 
     [ ("partialdiff",           partialdiff)
     , ("percent",               percent)
@@ -208,7 +208,7 @@ letters_05 =
     , ("rho",                   rho)
     ]
 
-letters_06 :: [(String, TextM Double ())]
+letters_06 :: [(String, LRText Double ())]
 letters_06 = 
     [ ("second",                second)
     , ("semicolon",             semicolon)

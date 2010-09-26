@@ -20,8 +20,10 @@ main = do
 -- supports escapes as either numbers or names...
 --
 pic1 :: DPicture
-pic1 = frame [ helveticaLabel "myst&#232;re"      (P2 0 40)
-             , helveticaLabel "myst&#egrave;re"   (P2 0 20)
+pic1 = frame [ helveticaLabel "myst&#232;re"      (P2 0 60)
+             , helveticaLabel "myst&#egrave;re"   (P2 0 40)
+             , helveticaLabel "myst&#0o350;re"    (P2 0 20)
+             , helveticaLabel "myst&#0XE8;re"     (P2 0 00)
              ]
  
 

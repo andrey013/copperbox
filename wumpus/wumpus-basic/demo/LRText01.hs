@@ -52,13 +52,13 @@ pic2 = liftToPictureU $ execDrawing std_ctx $
 
 pic3 :: DPicture 
 pic3 = liftToPictureU $ execDrawing std_ctx $ do
-         abc <- execTextM (char 'a' >> char 'b' >> epsilon >> char 'c')
+         let abc = execLRText (char 'a' >> char 'b' >> epsilon >> char 'c')
          draw $ abc `at` (P2 0 3) 
          localCtx (primaryColour red) $ draw $ straightLine (hvec 200) `at` zeroPt
 
 
 
-g1 :: TextM Double ()
+g1 :: LRText Double ()
 g1 =   alpha >> beta >> gamma >> delta >> epsilon >> zeta >> eta
     >> theta >> iota >> kappa >> lambda >> mu >> nu >> xi >> pi
     >> rho >> sigma >> tau >> upsilon >> phi >> chi >> psi >> omega
