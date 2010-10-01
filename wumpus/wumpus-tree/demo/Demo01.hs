@@ -10,23 +10,19 @@ import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
 import Data.Tree hiding ( drawTree )
 import System.Directory
 
-
-
-
-
-
 main :: IO ()
-main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_TreePicture "./out/tree01.eps"  pic1
-    >> writeSVG_TreePicture "./out/tree01.svg"  pic1
-    >> writeEPS_TreePicture "./out/tree02.eps"  pic2
-    >> writeSVG_TreePicture "./out/tree02.svg"  pic2
-    >> writeEPS_TreePicture "./out/tree03.eps"  pic3
-    >> writeSVG_TreePicture "./out/tree03.svg"  pic3
-    >> writeEPS_TreePicture "./out/tree04.eps"  pic4
-    >> writeSVG_TreePicture "./out/tree04.svg"  pic4
-    >> writeEPS_TreePicture "./out/tree05.eps"  pic5
-    >> writeSVG_TreePicture "./out/tree05.svg"  pic5
+main = do 
+    createDirectoryIfMissing True "./out/"
+    writeEPS_TreePicture "./out/tree01.eps"  pic1
+    writeSVG_TreePicture "./out/tree01.svg"  pic1
+    writeEPS_TreePicture "./out/tree02.eps"  pic2
+    writeSVG_TreePicture "./out/tree02.svg"  pic2
+    writeEPS_TreePicture "./out/tree03.eps"  pic3
+    writeSVG_TreePicture "./out/tree03.svg"  pic3
+    writeEPS_TreePicture "./out/tree04.eps"  pic4
+    writeSVG_TreePicture "./out/tree04.svg"  pic4
+    writeEPS_TreePicture "./out/tree05.eps"  pic5
+    writeSVG_TreePicture "./out/tree05.svg"  pic5
 
 
 pic1 :: TreePicture
@@ -35,18 +31,19 @@ pic1 = drawTreePicture charNode (standardContext 18) (uniformScaling 30) tree1
 pic2 :: TreePicture
 pic2 = drawTreePicture (diskNode red) (standardContext 24) (uniformScaling 30) tree2
 
+-- This should be drawn in the /family tree/ style...
 pic3 :: TreePicture
-pic3 = drawTreePicture charNode (standardContext 14) (uniformScaling 30) tree3
+pic3 = drawFamilyTreePicture charNode (standardContext 14) (uniformScaling 30) tree3
 
 pic4 :: TreePicture
 pic4 = drawTreePicture (circleNode black) 
                        (standardContext 24) 
-                       (ScaleFactors 20 30) 
+                       (scaleFactors 20 30) 
                        tree4
 pic5 :: TreePicture
 pic5 = drawTreePicture (circleNode black) 
                        (standardContext 24) 
-                       (ScaleFactors 20 30) 
+                       (scaleFactors 20 30) 
                        tree5
 
 

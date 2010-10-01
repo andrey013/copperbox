@@ -23,10 +23,12 @@ module Wumpus.Tree
   , standardContext                     -- re-export
 
 
-  , ScaleFactors(..)
+  , ScaleFactors
   , uniformScaling
+  , scaleFactors
 
   , drawTreePicture
+  , drawFamilyTreePicture
 
   -- * Output to file
   , writeEPS_TreePicture
@@ -74,16 +76,21 @@ writeSVG_TreePicture = writeSVG_latin1
 -- In the horizontal, 1 unit is the smallest possible distance 
 -- between child nodes.
 --
-data ScaleFactors = ScaleFactors
-      { dx_scale :: Double
-      , dy_scale :: Double 
-      }
-  deriving (Eq,Show)
+type ScaleFactors = ScalingContext Double Int Double
+
+
+
 
 -- | Build uniform x- and y-scaling factors, i.e. @ x == y @.
 --
 uniformScaling :: Double -> ScaleFactors
-uniformScaling u = ScaleFactors u u 
+uniformScaling u = ScalingContext (\x -> u * x)
+                                  (\y -> u * fromIntegral y) 
+
+scaleFactors :: Double -> Double -> ScaleFactors
+scaleFactors sx sy = ScalingContext (\x -> sx * x)
+                                    (\y -> sy * fromIntegral y)	
+
 
 -- | 'drawTreePicture' : @ draw_fun * attr * scale_factors * tree -> TreePicture @
 --
@@ -106,17 +113,19 @@ drawTreePicture :: (a -> TreeNode)
                 -> ScaleFactors 
                 -> Tree a 
                 -> TreePicture
-drawTreePicture drawF ctx sfactors tree = 
-    liftToPictureU $ drawTree drawF ctx $ design funs tree
-  where
-    funs = scalingFunctions sfactors
+drawTreePicture drawF dctx sfactors tree = 
+    liftToPictureU $ drawTree drawF dctx $ design sfactors tree
 
 
-scalingFunctions :: ScaleFactors -> (Double -> Double, Int -> Double)
-scalingFunctions (ScaleFactors sx sy) = (fx,fy)
-  where
-    fx d = sx * d
-    fy d = sy * fromIntegral d
+
+
+drawFamilyTreePicture :: (a -> TreeNode) 
+                -> DrawingContext
+                -> ScaleFactors 
+                -> Tree a 
+                -> TreePicture
+drawFamilyTreePicture drawF dctx sfactors tree = 
+    liftToPictureU $ drawFamilyTree drawF dctx $ design sfactors tree
 
 --------------------------------------------------------------------------------
 -- Drawing functions

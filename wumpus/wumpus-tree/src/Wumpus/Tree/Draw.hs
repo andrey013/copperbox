@@ -18,6 +18,7 @@
 module Wumpus.Tree.Draw 
   (
     drawTree
+  , drawFamilyTree
 
   ) where
 
@@ -31,11 +32,18 @@ import Wumpus.Basic.Graphic
 
 import Data.VectorSpace                         -- package: vector-space
 
+import Data.Monoid
 import Data.Tree hiding ( drawTree )
 
--- Don\'t actually need the Turtle of ConsDrawing...
 
-drawTree :: (a -> TreeNode) -> DrawingContext -> CoordTree Double a -> HPrim Double
+
+---------------------------------------------------------------------------------
+-- Draw individual connector between parent and each child node.
+
+drawTree :: (a -> TreeNode) 
+         -> DrawingContext 
+         -> CoordTree Double a 
+         -> HPrim Double
 drawTree drawF ctx tree = execDrawing ctx $ drawTop drawF tree 
 
 
@@ -74,3 +82,53 @@ anchorAngles f t = (theta0, theta1)
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
     
 
+--------------------------------------------------------------------------------
+-- Draw in /family tree/ style
+
+drawFamilyTree :: (a -> TreeNode) 
+               -> DrawingContext 
+               -> CoordTree Double a 
+               -> HPrim Double
+drawFamilyTree drawF ctx tree = execDrawing ctx $ drawFamily drawF tree 
+
+
+drawFamily :: (a -> TreeNode)  
+           -> CoordTree Double a 
+           -> Drawing Double (DotAnchor Double)
+drawFamily fn (Node (pt,a) ns) = do
+    ancr <- drawi $ fn a `ati` pt
+    xs   <- mapM (drawFamily fn) ns   
+    draw $ famconn (south ancr) (map north xs)
+    return ancr
+
+famconn :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
+famconn _       []         = mempty
+famconn pt_from [p1]       = famconn1 pt_from p1
+famconn pt_from xs@(p1:_)  = mconcat $ downtick : horizontal : upticks
+   where
+     hh         = halfHeight pt_from p1
+     downtick   = straightLine (vvec (-hh)) pt_from
+     horizontal = midline (vdisplace (-hh) pt_from) xs 
+     upticks    = map (straightLine (vvec hh)) xs
+
+midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
+midline _        []          = mempty
+midline (P2 _ y) (P2 x0 _:zs) = 
+    let (a,b) = foldr fn (x0,x0) zs in straightLineBetween (P2 a y) (P2 b y)
+  where   
+    fn (P2 x _) (lo,hi) | x < lo    = (x,hi)
+                        | x > hi    = (lo,x)
+                        | otherwise = (lo,hi)
+
+halfHeight :: Fractional u => Point2 u -> Point2 u -> u
+halfHeight (P2 _ ya) (P2 _ yb) = 0.5 * (abs $ ya - yb)
+ 
+-- special case - should always be a vertical, but...
+famconn1 :: Fractional u => Point2 u -> Point2 u -> Graphic u
+famconn1 a@(P2 xa _) b@(P2 xb _) 
+    | xa == xb  = straightLineBetween a b
+    | otherwise = openStroke $ vertexPath [a,m1,m2,b] 
+  where
+    hh = halfHeight a b
+    m1 = vecdisplace (vvec (-hh)) a  
+    m2 = vecdisplace (hvec $ xb - xa) m1

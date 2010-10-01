@@ -31,8 +31,7 @@ module Wumpus.Tree.Design
 
 import Wumpus.Tree.Base
 
-
-import Wumpus.Core ( Point2(..) )       -- package: wumpus-core
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
 
 import Data.List 
 import Data.Maybe
@@ -176,8 +175,8 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
     ext1            = xpos `extlink` ext0
 
 
-design :: (Double -> u, Int -> u) -> Tree a -> CoordTree u a
-design (fx,fy) t = label 0 t3
+design :: ScalingContext Double Int u -> Tree a -> CoordTree u a
+design sctx t = runScaling sctx (label 0 t3)
   where
     (t1,ext)                    = designl t
     (h,S xmin xmax)             = stats ext
@@ -187,10 +186,10 @@ design (fx,fy) t = label 0 t3
     -- reconcile the left and right drawings...
     t3                          = treeZipWith zfn t1 t2
     
-    mkPt x lvl                  = P2 (fx x) (fy $ h - lvl)
-    label lvl (Node (x,a) kids) = Node (mkPt x lvl, a) kids'
-       where
-         kids' = map (label (lvl+1)) kids 
+    mkPt x lvl                  = scalePt x (h - lvl)
+    label lvl (Node (x,a) kids) = do pt <- mkPt x lvl
+                                     kids' <- mapM (label (lvl+1)) kids
+                                     return $ Node (pt,a) kids'
 
     zfn (x0,a) (x1,_)           = (mean x0 x1,a)
 
