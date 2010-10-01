@@ -16,24 +16,17 @@
 
 module Wumpus.PSC.Core
   (
-  -- * Types
-    Chart
-  , Dataset
+  -- * Dantaset
+    Dataset
+  , univariateVerticals
+  , univariateHorizontals
   
-  , PointSize
-  , LineWidth
+  -- * Range (strict pair)
   , Range(..)
-
-  -- * Output
-  , writeChartEPS
-  , writeChartSVG
-
-  -- * Drawing rectangles
   , rangeDist
   , withinRange
-  , RangeProjection
-  , projection
-  
+  , resize
+  , rangeScalingContext
 
   -- * functions
   , rescale
@@ -46,78 +39,71 @@ module Wumpus.PSC.Core
   ) where
 
 
-
-import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 
 import Numeric
 
 
-
-type Chart = DPicture
-
 type Dataset ux uy = [(ux,uy)]
 
+-- | Interpret the data as positions in the vertical, evenly
+-- spaced in the horixontal between [0..1].
+--
+univariateVerticals :: Fractional ux => [uy] -> Dataset ux uy
+univariateVerticals [] = []
+univariateVerticals ys = zip (iterate (+ ux) 0) ys
+  where
+    ux = 1 / (fromIntegral $ length ys - 1)
+
+
+-- | Interpret the data as positions in the horizontal, evenly
+-- spaced in the vertical between [0..1].
+--
+univariateHorizontals :: Fractional uy => [ux] -> Dataset ux uy
+univariateHorizontals [] = []
+univariateHorizontals xs = zip xs (iterate (+ uy) 0)
+  where
+    uy = 1 / (fromIntegral $ length xs - 1)
 
 
 --------------------------------------------------------------------------------
-
-
--- | PointSize - synonymously font size.
---
-type PointSize = Int
-
-
--- | LineWidth - 1 = 1%72 of an inch.
--- 
-type LineWidth = Double
 
 -- | 'Range' @ (min, max) @
 --
-data Range u = u ::: u
+data Range u = Range !u !u
   deriving (Eq,Ord,Show)
-
-
-
-
---------------------------------------------------------------------------------
--- Output
-
-writeChartEPS :: FilePath -> Chart -> IO ()
-writeChartEPS = writeEPS_latin1 
-
-
-writeChartSVG :: FilePath -> Chart -> IO ()
-writeChartSVG = writeSVG_latin1 
-
-
-
-
---------------------------------------------------------------------------------
 
 
 
 -- | 'rangeDist' - max - min.
 --
 rangeDist :: Num u => Range u -> u
-rangeDist (u ::: v) = v-u
+rangeDist (Range u v) = v-u
 
 withinRange :: Ord u => u -> Range u -> Bool
-withinRange a (u ::: v) = u <= a && a <= v
+withinRange a (Range u v) = u <= a && a <= v
 
-
--- for Wumpus.Basic.Graphic ?
--- 
-
-type Projection      ua u = ua -> u
-type RangeProjection ua u = (Range ua, ua -> u)
-
-projection :: Fractional u
-           => Range ua -> Range u -> (ua -> u) -> Projection ua u
-projection (ua0 ::: ua1) (u0 ::: u1) fromUA = 
-   rescale (fromUA ua0) (fromUA ua1) u0 u1 . fromUA
+-- @rescale old_min old_max  new_min new_max  a@
+--
+resize :: (Num a, Fractional b) => Range a -> Range b -> (a -> b) -> a -> b
+resize (Range amin amax) (Range bmin bmax) fn a = 
+    bmin + offset * (output_range / input_range)  
+  where
+    input_range   = fn $ amax - amin
+    output_range  = bmax - bmin
+    offset        = fn $ a - amin 
 
 
 
+rangeScalingContext :: (Num ux, Num uy, Fractional u) 
+                    => Range ux -> Range u -> (ux -> u) 
+                    -> Range uy -> Range u -> (uy -> u) 
+                    -> ScalingContext ux uy u
+rangeScalingContext rux rx fX ruy ry fY = 
+    ScalingContext (\x -> resize rux rx fX x) (\y -> resize ruy ry fY y)
+
+
+--------------------------------------------------------------------------------
 
 -- @rescale old_min old_max  new_min new_max  a@
 --
@@ -128,6 +114,8 @@ rescale amin amax bmin bmax a =
     input_range   = amax - amin
     output_range  = bmax - bmin
     offset        = a - amin 
+
+
 
 
 -- | @clamp min max a@ - clamp a to be with in the bounds 

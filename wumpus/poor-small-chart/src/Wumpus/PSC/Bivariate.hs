@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,26 +11,19 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Handling bivariate data and its projection into a drawing 
--- rectangle.
+-- Handling bivariate data and its projection into the dimensions
+-- of a  drawing.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.PSC.Bivariate
   (
-    Bivariate(..)
-  , bivariate
-  , xRange
-  , yRange
-  , borderRectangle
-  , borderOrigin
-  , borderWidth
-  , borderHeight
-  , withinBorderRect
-  , withinRangeBi
-  , scaleX
-  , scaleY
-  , scaleXY
+    Bivariate
+  , runBivariate
+  , xrange
+  , yrange
+  , rangeCorners
+  , rangeDimensions
 
   ) where
 
@@ -38,70 +32,73 @@ import Wumpus.PSC.Core
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 
-data Bivariate ux uy = Bivariate 
-      { bvp_xrange     :: Range ux
-      , bvp_xproj      :: ux -> Double
-      , bvp_yrange     :: Range uy
-      , bvp_yproj      :: uy -> Double
-      , bvp_rect       :: DRectangleLoc
-      }
+import Control.Applicative
 
-
-
-bivariate :: (Range ux, ux -> Double) 
-          -> (Range uy, uy -> Double)
-          -> DRectangleLoc
-          -> Bivariate ux uy
-bivariate (xr,fx) (yr,fy) rect@(Rectangle w h, P2 x y)  =  Bivariate 
-    { bvp_xrange     = xr
-    , bvp_xproj      = xproj
-    , bvp_yrange     = yr
-    , bvp_yproj      = yproj
-    , bvp_rect       = rect
-    }
-  where
-   xproj = projection xr (x ::: (x+w)) fx
-   yproj = projection yr (y ::: (y+h)) fy
-
-  
-xRange :: Bivariate ux uy -> Range ux
-xRange = bvp_xrange
-
-yRange :: Bivariate ux uy -> Range uy
-yRange = bvp_yrange
-
-borderRectangle :: Bivariate ux uy -> DRectangleLoc
-borderRectangle = bvp_rect
-
-borderOrigin :: Bivariate ux uy -> DPoint2
-borderOrigin = snd . borderRectangle
-
-borderWidth :: Bivariate ux uy -> Double
-borderWidth = rect_width . fst . borderRectangle
-
-borderHeight :: Bivariate ux uy -> Double
-borderHeight = rect_height . fst . borderRectangle
-
-
-withinBorderRect :: DPoint2 -> Bivariate ux uy -> Bool
-withinBorderRect pt = withinRectangleLoc pt . borderRectangle
-
-withinRangeBi :: (Ord ux, Ord uy) => (ux,uy) -> Bivariate ux uy -> Bool
-withinRangeBi (ux,uy) bv = 
-    withinRange ux (bvp_xrange bv) && withinRange uy (bvp_yrange bv)
-
--- | Might not fit in the drawing rectangle...
+-- Bivariate is an extension over the (reader) Scaling Monad with
+-- more static arguments for X-drawing-range and Y-drawing-range.
 --
-scaleX :: ux -> Bivariate ux uy -> Double
-scaleX ux bv = (bvp_xproj bv) ux
 
--- | Might not fit in the drawing rectangle...
---
-scaleY :: uy -> Bivariate ux uy -> Double
-scaleY uy bv = (bvp_yproj bv) uy
+newtype Bivariate ux uy u a = Bivariate { 
+          getBivariate :: Range ux -> Range uy -> Scaling ux uy u a }
+
+type instance MonUnit (Bivariate ux uy u) = u
 
 
-scaleXY :: (ux,uy) -> Bivariate ux uy -> DPoint2
-scaleXY (ux,uy) bv = P2 (scaleX ux bv) (scaleY uy bv)
+instance Functor (Bivariate ux uy u) where
+  fmap f ma = Bivariate $ \rux ruy -> 
+                getBivariate ma rux ruy >>= \a -> return (f a) 
+
+instance Applicative (Bivariate ux uy u) where
+  pure a    = Bivariate $ \_   _   -> return a
+  mf <*> ma = Bivariate $ \rux ruy -> 
+                getBivariate mf rux ruy >>= \f ->
+                getBivariate ma rux ruy >>= \a -> 
+                return (f a)
+
+instance Monad (Bivariate ux uy u) where
+  return a  = Bivariate $ \_   _   -> return a
+  m >>= k   = Bivariate $ \rux ruy ->
+                getBivariate m rux ruy >>= \a ->
+                (getBivariate . k) a rux ruy   
+
+
+runBivariate :: Range ux -> Range uy 
+             -> ScalingContext ux uy u -> Bivariate ux uy u a -> a
+runBivariate rux ruy ctx ma = runScaling ctx (getBivariate ma rux ruy)
+
+
+liftScaling :: Scaling ux uy u a -> Bivariate ux uy u a
+liftScaling mf = Bivariate $ \_ _ -> mf
+
+instance ScalingM (Bivariate ux uy u) where
+  type XDim (Bivariate ux uy u) = ux
+  type YDim (Bivariate ux uy u) = uy
+  scaleX u = liftScaling (scaleX u)
+  scaleY u = liftScaling (scaleY u)
+  scalePt u v  = liftScaling (scalePt u v)
+  scaleVec u v = liftScaling (scaleVec u v)
+
+
+
+xrange :: Bivariate ux uy u (Range ux)
+xrange = Bivariate $ \rux _ -> return rux
+
+yrange :: Bivariate ux uy u (Range uy) 
+yrange = Bivariate $ \_ ruy -> return ruy
+
+
+
+rangeCorners :: Bivariate ux uy u (Point2 u, Point2 u)
+rangeCorners = Bivariate $ \(Range x0 x1) (Range y0 y1) -> 
+                 scalePt x0 y0 >>= \bl ->
+                 scalePt x1 y1 >>= \tr ->
+                 return (bl,tr)
+
+
+-- | (w,h) in u
+-- 
+rangeDimensions :: Num u => Bivariate ux uy u (u,u)
+rangeDimensions = 
+    (\(P2 x0 y0, P2 x1 y1) -> (x1-x0, y1-y0)) <$> rangeCorners
 
 

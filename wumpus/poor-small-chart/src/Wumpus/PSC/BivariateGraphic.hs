@@ -25,13 +25,13 @@ module Wumpus.PSC.BivariateGraphic
 
 import Wumpus.PSC.Bivariate
 
-import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 
+import Control.Applicative
 
 type BivariateGraphic ux uy       = Bivariate ux uy -> DGraphic
 
 
-rectangleBorder :: Stroke t => t -> BivariateGraphic ux uy
-rectangleBorder t = \bv -> wrapG $ cstroke t $ 
-    rectanglePath (borderWidth bv) (borderHeight bv) (borderOrigin bv)
+rectangleBorder :: BivariateGraphic ux uy
+rectangleBorder = strokedRectangle <$> borderWidth <*> borderHeight <*> borderOrigin
+

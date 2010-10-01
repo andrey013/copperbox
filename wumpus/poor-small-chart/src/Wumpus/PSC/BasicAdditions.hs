@@ -16,7 +16,8 @@
 
 module Wumpus.PSC.BasicAdditions
   (
-  
+
+{-  
     IndexAlg
   , ixStart
   , ixStarti
@@ -26,6 +27,7 @@ module Wumpus.PSC.BasicAdditions
   , frameNorth
   , pointHylo
   , pointHylo2
+-}
 
   ) where
 
@@ -33,7 +35,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 
-
+{-
 
 
 -- (min,step)
@@ -99,3 +101,5 @@ pointHylo2 :: (st -> Maybe ((a,Point2 u), st))
            -> st 
            -> Graphic u
 pointHylo2 g f  = hylor g (\(a,pt) acc -> acc . f a pt) emptyG
+
+-}

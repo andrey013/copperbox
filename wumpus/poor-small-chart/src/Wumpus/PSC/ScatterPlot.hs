@@ -29,18 +29,19 @@ module Wumpus.PSC.ScatterPlot
 import Wumpus.PSC.Bivariate
 import Wumpus.PSC.Core ( Dataset )
 
+import Wumpus.Basic.Dots
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Utils.HList
 
-type DotF = DGraphicF 
+type DotF = DDotLocImage 
 
 type ScatterPlotLayer ux uy = (DotF, Dataset ux uy)
 
 
 plotLayers :: [ScatterPlotLayer ux uy] -> Bivariate ux uy -> DGraphic
-plotLayers xs bv = veloH (makeLayer `flip` bv) xs
+plotLayers xs bv = undefined -- veloH (makeLayer `flip` bv) xs
 
 makeLayer :: (DotF, Dataset ux uy) -> Bivariate ux uy -> DGraphic
-makeLayer (dotF,ds) bv = veloH (\pt -> dotF (scaleXY pt bv)) ds 
+makeLayer (dotF,ds) bv = undefined -- veloH (\pt -> dotF (scaleXY pt bv)) ds 
  
 

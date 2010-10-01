@@ -3,7 +3,6 @@
 module Spark1 where
 
 import Wumpus.PSC.Bivariate
-import Wumpus.PSC.BivariateGraphic
 import Wumpus.PSC.Core
 import Wumpus.PSC.SparkLine
 
@@ -16,41 +15,61 @@ import System.Directory
 
 
 main :: IO ()
-main =  createDirectoryIfMissing True "./out/"
-     >> writeChartEPS "./out/spark1.eps" chart1
-     >> writeChartSVG "./out/spark1.svg" chart1
+main =  do 
+    createDirectoryIfMissing True "./out/"
+    writeEPS_latin1 "./out/spark1.eps" chart1
+    writeSVG_latin1 "./out/spark1.svg" chart1
 
-chart1 :: Chart
-chart1 = drawGraphicU $ supply spark_bv $ 
-            spark_line `cc` spark_rangeband
+chart1 :: DPicture
+chart1 = liftToPictureU $ execDrawing ctx $ do
+            draw $ runSparkline 10 spark_line `at` (P2 0 20)  
+            draw $ textline "0123456789" `at` zeroPt
+  where
+    ctx = (secondaryColour aquamarine) $ standardContext 18
 
 
-spark_line :: BivariateGraphic Double Double
+-- Sparklines could have a standard Univariate interpretation 
+-- where each data point is a /char/ and Y takes the range from
+-- the minimum and maximum in the data.
+
+runSparkline :: (Fractional u, FromPtSize u) => Int -> SparkLine u u u -> LocGraphic u
+runSparkline len spark = \pt ->
+    sparklineScaling len (Range 0.0 1.0) id (Range 0.0 1.0) id >>= \sctx -> 
+    let f = runBivariate (Range 0.0 1.0) (Range 0.0 1.0) sctx spark in f pt
+
+
+
+-- This needs ranges from Bivariate, char-width and numeral-height 
+-- from DrawingF, but don\'t want an amalgamation of Bivariate and
+-- DrawingF so Ranges are parameters.
+
+sparklineScaling :: (Num ux, Num uy, Fractional u, FromPtSize u) 
+                 => Int -> Range ux -> (ux -> u) -> Range uy -> (uy -> u)
+                 -> DrawingF (ScalingContext ux uy u)
+sparklineScaling len rux fromUX ruy fromUY = 
+    monoNumeralHeight    >>= \h -> 
+    monoTextWidth    len >>= \w ->
+    return $ rangeScalingContext rux (Range 0 w) fromUX ruy (Range 0 h) fromUY
+   
+
+spark_line :: SparkLine Double Double Double
 spark_line = sparkLine spark_stroke data_points
 
-spark_stroke :: SparkLineF
-spark_stroke = simpleLine black 1.0
+spark_stroke :: SparkLineF Double
+spark_stroke = simpleLine -- black 1.0
 
 
-spark_rangeband :: BivariateGraphic Double Double
-spark_rangeband = rangeBand (0.3 ::: 0.8) aquamarine
+spark_rangeband :: BivLocGraphic Double Double Double
+spark_rangeband = rangeBand 0.3 0.8 -- aquamarine
 
 
-
-spark_bv :: Bivariate Double Double
-spark_bv = bivariate (0.1 ::: 1.0, id) 
-                     (0.0 ::: 1.0, id) 
-                     output_rect
+data_points :: Dataset Double Double
+data_points =  univariateVerticals $  
+    [ 0.95, 0.8, 0.3, 0.52, 0.62, 0.7, 0.5, 0.4, 0.25, 0.2 ]
 
 
 
-output_rect :: RectangleLoc Double
-output_rect = (sparklineRectangle spark_font 10, zeroPt)
-
-spark_font :: FontAttr
-spark_font = FontAttr 24 courier
-
-
+{-
 data_points :: Dataset Double Double
 data_points = 
     [ (0.1, 0.95)
@@ -64,4 +83,4 @@ data_points =
     , (0.9, 0.25) 
     , (1,   0.2)
     ]
-
+-}
