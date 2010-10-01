@@ -25,6 +25,14 @@ description:
   .
   Changelog:
   .
+  0.8.0 to 0.9.0:
+  .
+  * Made internal modules visible rather than hidden and changed 
+    the module path to be @Wumpus.Microprint@ (lower-case p) 
+    rather then @Wumpus.MicroPrint@ (upper-case P).
+  .
+  * Added a more efficient builder than the Teletype.
+  .
   0.7.0 to 0.8.0:
   .
   * Internal changes to work with latest @Wumpus-Basic@.
@@ -43,17 +51,19 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
-                      wumpus-core       == 0.33.0,
-                      wumpus-basic      == 0.8.0
+                      wumpus-core       == 0.34.0,
+                      wumpus-basic      == 0.9.0
 
   
   exposed-modules:
-    Wumpus.MicroPrint,
-    Wumpus.MicroPrint.VersionNumber
+    Wumpus.Microprint,
+    Wumpus.Microprint.Datatypes,
+    Wumpus.Microprint.Teletype,
+    Wumpus.Microprint.Render,
+    Wumpus.Microprint.Tokenizer,
+    Wumpus.Microprint.VersionNumber
 
   other-modules:
-    Wumpus.MicroPrint.DrawMonad,
-    Wumpus.MicroPrint.Render
 
   extensions:
     

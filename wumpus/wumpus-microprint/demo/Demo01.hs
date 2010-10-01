@@ -4,46 +4,41 @@
 
 module Demo01 where
 
-import Wumpus.MicroPrint
+import Wumpus.Microprint.Datatypes
+import Wumpus.Microprint.Render
+import Wumpus.Microprint.Tokenizer
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
-import Data.Maybe
 import System.Directory
 
 main :: IO ()
 main = do 
-    { createDirectoryIfMissing True "./out/"
-    ; micro1 <- filePic
-    ; let pic1 = fromMaybe errK $ renderMicroPrint cfg1 (prefix micro1)
-    ; writeEPS_latin1 "./out/mp01.eps" pic1
-    ; writeSVG_latin1 "./out/mp01.svg" pic1
-    }
+    createDirectoryIfMissing True "./out/"
+    inp <- readFile "Demo01.hs"	  -- This file
+    let gtext = runTokenizer (haskellTokenizer moccasin green) inp
+    let pic1  = makePicture gtext
+    writeEPS_latin1 "./out/microprint01.eps" pic1
+    writeSVG_latin1 "./out/microprint01.svg" pic1
+    let pic2  = makeBordered gtext
+    writeEPS_latin1 "./out/microprint02.eps" pic2
+    writeSVG_latin1 "./out/microprint02.svg" pic2
+
+
+makePicture :: GreekText -> DPicture
+makePicture gtext = liftToPictureU $ execDrawing (standardContext 14) $ 
+    render sctx strokelineF gtext
   where
-    prefix mp = setRGB moccasin >> mp
+    sctx = makeRenderScaling (\x -> fromIntegral $ 2*x) 
+                             (\y -> fromIntegral $ 3*y)
 
-errK :: a
-errK = error "no picture"
-
-filePic :: IO (MicroPrint ())
-filePic = do
-  xs <- readFile "Demo01.hs"
-  return $ foldr (\a acc -> drawChar a >> acc) (return ()) xs
-
-drawChar :: Char -> MicroPrint ()
-drawChar '\n' = linebreak
-drawChar '\t' = space >> space >> space >> space
-drawChar ' '  = space
-drawChar _    = char
-
-
-cfg1 :: MicroPrintConfig
-cfg1 = MicroPrintConfig 
-       { char_height    = 12.0
-       , char_width     = 8.0
-       , line_spacing   = 3.0
-       , drawWordF      = borderedF
-       }
+makeBordered :: GreekText -> DPicture
+makeBordered gtext = liftToPictureU $ execDrawing (standardContext 14) $ 
+    render sctx borderedF gtext
+  where
+    sctx = makeRenderScaling (\x -> fromIntegral $ 6*x) 
+                             (\y -> fromIntegral $ 8*y)
  
 
