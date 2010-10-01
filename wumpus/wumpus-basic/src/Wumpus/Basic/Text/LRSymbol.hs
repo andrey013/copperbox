@@ -12,10 +12,11 @@
 --
 -- Named literals from Symbol font, drawn with the LRText monad.
 -- 
--- Note - currently the techinique used here generates adequate
--- PostScript, but very ineficient SVG.
--- 
--- Also uUpsilon is not mapped to the correct character...
+-- Note - Symbol font handling and precise letter placing in SVG 
+-- viewers is mixed. Chrome works well good, Firefox (3.6.3) and 
+-- Safari (5.0.1) are unsatisfactory.
+--  
+--   
 --
 --------------------------------------------------------------------------------
 
@@ -491,7 +492,7 @@ congruent       :: Num u => LRText u ()
 congruent             = symbEscInt 0o100
 
 copyrightsans   :: Num u => LRText u ()
-copyrightsans         = symbEscInt 0o343
+copyrightsans   = symbEscInt 0o343
 
 copyrightserif  :: Num u => LRText u ()
 copyrightserif  = symbEscInt 0o323

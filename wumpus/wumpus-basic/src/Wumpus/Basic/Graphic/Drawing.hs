@@ -269,7 +269,9 @@ mbPictureU :: (Real u, Floating u, FromPtSize u)
 mbPictureU Nothing  = error "mbPictureU - empty picture."
 mbPictureU (Just a) = a
 
-
+-- Note - need an equivalent to Parsec\`s parseTest that provides
+-- a very simple way to run graphics without concern for return 
+-- type or initial drawing context.
 
 --------------------------------------------------------------------------------
 

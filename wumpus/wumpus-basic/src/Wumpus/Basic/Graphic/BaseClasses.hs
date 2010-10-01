@@ -28,6 +28,8 @@ module Wumpus.Basic.Graphic.BaseClasses
   , DrawingCtxM(..)
   , asksCtx  
 
+  , ScalingM(..)
+ 
   , PointSupplyM(..)
 
   ) where
@@ -41,8 +43,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
--- DUnit is always for fully saturated types, so (seemingly) an equivalent
--- type family is needed.
+-- DUnit is always for fully saturated type constructors, so 
+-- (seemingly) an equivalent type family is needed for monads.
 
 type family MonUnit m :: * 
 
@@ -63,6 +65,19 @@ class Monad m => DrawingCtxM (m :: * -> *) where
 --
 asksCtx :: DrawingCtxM m => (DrawingContext -> a) -> m a
 asksCtx f = askCtx >>= (return . f)
+
+
+-- | Scaling...
+--
+class ScalingM m where
+  type XDim m :: *
+  type YDim m :: *
+  scaleX :: (u ~ MonUnit m, ux ~ XDim m) => ux -> m u
+  scaleY :: (u ~ MonUnit m, uy ~ YDim m) => uy -> m u
+  scalePt  :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
+           => ux -> uy -> m (Point2 u)
+  scaleVec :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
+           => ux -> uy -> m (Vec2 u)
 
 
 -- | A monad that supplies points, e.g. a turtle monad. 

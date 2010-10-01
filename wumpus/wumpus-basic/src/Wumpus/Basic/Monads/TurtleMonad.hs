@@ -38,10 +38,6 @@ module Wumpus.Basic.Monads.TurtleMonad
   , TurtleT
   , runTurtleT
 
-  -- * Turtle combined with Drawing
-  , TurtleDrawing
-  , runTurtleDrawing
-  , execTurtleDrawing
    
   ) where
 
@@ -53,6 +49,11 @@ import Wumpus.Basic.Monads.TurtleClass
 import Control.Applicative
 import Control.Monad
 
+
+-- Note - if Turtle is now just a /local effect/ monad is the 
+-- Turtle class still needed? Afterall, there is (probably)
+-- only ever going to be one instance.
+--
 
 -- Turtle is a Reader / State monad
 -- 
@@ -66,56 +67,57 @@ data TurtleState = TurtleState
       , _current_coord   :: (Int,Int)
       }
 
+type TurtleScalingT u m a = ScalingT Int Int u m a
+
 newtype TurtleT u m a = TurtleT { 
-          getTurtleT :: TurtleConfig u -> TurtleState -> m (a, TurtleState) }
+          getTurtleT :: TurtleState -> TurtleScalingT u m (a, TurtleState) }
 
 type instance MonUnit (TurtleT u m) = u
+    
+
 
 -- Functor
 
 
+
 instance Monad m => Functor (TurtleT u m) where
-  fmap f m = TurtleT $ \r s -> getTurtleT m r s >>= \(a,s') ->
-                               return (f a, s')
+  fmap f m = TurtleT $ \s -> getTurtleT m s >>= \(a,s') ->
+                             return (f a, s')
+
 
 -- Applicative 
 
 instance Monad m => Applicative (TurtleT u m) where
-  pure a    = TurtleT $ \_ s -> return (a,s)
-  mf <*> ma = TurtleT $ \r s -> getTurtleT mf r s  >>= \(f,s')  ->
-                                getTurtleT ma r s' >>= \(a,s'') ->
-                                return (f a,s'') 
+  pure a    = TurtleT $ \s -> return (a,s)
+  mf <*> ma = TurtleT $ \s -> getTurtleT mf s  >>= \(f,s')  ->
+                              getTurtleT ma s' >>= \(a,s'') ->
+                              return (f a,s'') 
 
 
 -- Monad 
 
 instance Monad m => Monad (TurtleT u m) where
-  return a = TurtleT $ \_ s -> return (a,s)
-  m >>= k  = TurtleT $ \r s -> getTurtleT m r s        >>= \(a,s')  ->
-                               (getTurtleT . k) a r s' >>= \(b,s'') ->
-                               return (b,s'')
+  return a = TurtleT $ \s -> return (a,s)
+  m >>= k  = TurtleT $ \s -> getTurtleT m s        >>= \(a,s')  ->
+                             (getTurtleT . k) a s' >>= \(b,s'') ->
+                             return (b,s'')
 
 
 
 
 instance Monad m => TurtleM (TurtleT u m) where
-  getLoc      = TurtleT $ \_ s@(TurtleState _ c) -> return (c,s)
-  setLoc c    = TurtleT $ \_   (TurtleState o _) -> return ((),TurtleState o c)
-  getOrigin   = TurtleT $ \_ s@(TurtleState o _) -> return (o,s)
-  setOrigin o = TurtleT $ \_   (TurtleState _ c) -> return ((),TurtleState o c)
+  getLoc      = TurtleT $ \s@(TurtleState _ c) -> return (c,s)
+  setLoc c    = TurtleT $ \(TurtleState o _)   -> return ((),TurtleState o c)
+  getOrigin   = TurtleT $ \s@(TurtleState o _) -> return (o,s)
+  setOrigin o = TurtleT $ \(TurtleState _ c)   -> return ((),TurtleState o c)
 
-instance Monad m => TurtleScaleM (TurtleT u m) u where
-  xStep    = TurtleT $ \r s -> return (xstep r,s)
-  yStep    = TurtleT $ \r s -> return (ystep r,s)
-
-
--- Run functions discard the state...
 
 runTurtleT :: (Monad m, Num u) 
-           => TurtleConfig u -> (Int,Int) -> TurtleT u m a -> m a
-runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
-
-
+           => (Int,Int) -> ScalingContext Int Int u -> TurtleT u m a -> m a
+runTurtleT ogin cfg mf = 
+    runScalingT cfg (getTurtleT mf st0) >>= \(a,_) -> return a
+  where 
+    st0 = TurtleState ogin ogin 
 
 
 
@@ -123,89 +125,16 @@ runTurtleT cfg ogin mf = liftM fst $ getTurtleT mf cfg (TurtleState ogin ogin)
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  askCtx   = TurtleT $ \_ s -> askCtx >>= \ ctx -> return (ctx,s)
-  localCtx ctx mf = TurtleT $ \r s -> localCtx ctx (getTurtleT mf r s)
+  askCtx   = TurtleT $ \s -> askCtx >>= \ ctx -> return (ctx,s)
+  localCtx ctx mf = TurtleT $ \s -> localCtx ctx (getTurtleT mf s)
 
 
 -- This needs undecidable instances...
 
 instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (TurtleT u m) where
-  trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
+  trace a  = TurtleT $ \s -> trace a >> return ((),s)
 
 
 instance (Monad m, u ~ MonUnit m, Num u) => PointSupplyM (TurtleT u m) where
-  position = getPos
+  position = TurtleT $ \s@(TurtleState _ (x,y)) -> scalePt x y >>= \pt -> return (pt,s)
 
---------------------------------------------------------------------------------
-
-
-newtype TurtleDrawing u a = TurtleDrawing { 
-          getTurtleDrawing :: TurtleT u (Drawing u) a }
-
-
-type instance MonUnit (TurtleDrawing u) = u
-
-
-instance Functor (TurtleDrawing u) where
-  fmap f = TurtleDrawing . fmap f . getTurtleDrawing
-
--- Applicative 
-instance Applicative (TurtleDrawing u) where
-  pure a    = TurtleDrawing $ pure a
-  mf <*> ma = TurtleDrawing $ getTurtleDrawing mf <*> getTurtleDrawing ma
-
-
--- Monad 
-
-instance Monad (TurtleDrawing u) where
-  return a = TurtleDrawing $ return a
-  m >>= k  = TurtleDrawing $ getTurtleDrawing m >>= (getTurtleDrawing . k)
-
--- TurtleM
-
-instance TurtleM (TurtleDrawing u) where
-  getLoc      = TurtleDrawing $ getLoc 
-  setLoc c    = TurtleDrawing $ setLoc c
-  getOrigin   = TurtleDrawing $ getOrigin
-  setOrigin o = TurtleDrawing $ setOrigin o
-
-instance TurtleScaleM (TurtleDrawing u) u where
-  xStep    = TurtleDrawing $ xStep
-  yStep    = TurtleDrawing $ yStep
-
-
-
--- TraceM 
-
-instance TraceM (TurtleDrawing u) where
-  trace a = TurtleDrawing $ trace a
-
--- DrawingCtxM
-
-instance DrawingCtxM (TurtleDrawing u) where
-  askCtx          = TurtleDrawing $ askCtx
-  localCtx ctx ma = TurtleDrawing $ localCtx ctx (getTurtleDrawing ma)
-
--- PointSupplyM
-
-instance Num u => PointSupplyM (TurtleDrawing u) where
-  position = getPos
-
-
-runTurtleDrawing :: Num u 
-                 => TurtleConfig u 
-                 -> (Int,Int)
-                 -> DrawingContext
-                 -> TurtleDrawing u a 
-                 -> (a, HPrim u)
-runTurtleDrawing cfg ogin ctx mf = 
-    runDrawing ctx ( runTurtleT cfg ogin $ getTurtleDrawing mf)
-
-
-execTurtleDrawing :: Num u 
-                  => TurtleConfig u
-                  -> (Int,Int) 
-                  -> DrawingContext
-                  -> TurtleDrawing u a 
-                  -> HPrim u
-execTurtleDrawing cfg ogin ctx mf = snd $ runTurtleDrawing cfg ogin ctx mf

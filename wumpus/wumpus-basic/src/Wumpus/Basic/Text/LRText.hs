@@ -18,8 +18,8 @@
 -- expected that kerning will need to be added per-letter for
 -- variable width fonts.
 --
--- This module makes precise text spacing \*possible\* - it does 
--- not make it \*easy\*.
+-- This module makes precise horizontal text spacing \*possible\*, 
+-- it does not make it \*easy\*.
 -- 
 --------------------------------------------------------------------------------
 
@@ -34,9 +34,11 @@ module Wumpus.Basic.Text.LRText
 
   , kern
   , char
+  , escInt
+  , escName
   , symb
-  , symbi
   , symbEscInt
+  , symbEscName
 
   ) where
 
@@ -48,7 +50,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
-import Data.Char ( chr )
 import Data.Monoid
 
 
@@ -112,28 +113,6 @@ instance Monad (LRText u) where
                                in (getLRText . k) a r s'
 
 
--- | This is the principal /run/ function.
--- 
--- Motivation:
--- 
--- > draw $ something 20 20 `at` zeroPt
--- > a <- drawLRText zeroPt $ char 'x' >> char 'y' >> char 'z'
--- > draw $ somethingElse `at` zeroPt
---
--- Otherwise it is convoluted to get the drawing (via bind) and
--- then draw it:
---
--- > (a,textg) <- runLRText $ char 'x' >> char 'y' >> char 'z'
--- > draw $ textg `at` zeroPt
---
---
-{-
-drawLRText :: (Num u, FromPtSize u, TraceM m ,DrawingCtxM m, u ~ MonUnit m) 
-          => Point2 u -> LRText u a -> m a
-drawLRText pt ma = runLRText ma      >>= \(a,g) -> 
-                  draw (g `at` pt) >>
-                  return a 
--}
 
 
 runLRText :: (Num u, FromPtSize u) => LRText u a -> LocImage u a
@@ -199,16 +178,24 @@ char :: Num u => Char -> LRText u ()
 char ch = gets delta_chr           >>= \u -> 
           snocChar (kernchar u ch) >> charMove
 
+escInt ::  Num u => Int -> LRText u ()
+escInt i = gets delta_chr            >>= \u -> 
+           snocChar (kernEscInt u i) >> charMove
+
+escName ::  Num u => String -> LRText u ()
+escName s = gets delta_chr             >>= \u -> 
+            snocChar (kernEscName u s) >> charMove
+
+
 symb :: Num u => Char -> LRText u ()
 symb sy = gets delta_sym           >>= \u -> 
           snocSymb (kernchar u sy) >> symbMove
-
-
-symbi :: Num u => Int -> LRText u ()
-symbi i = symb (chr i) 
 
 
 symbEscInt :: Num u => Int -> LRText u ()
 symbEscInt i = gets delta_sym            >>= \u -> 
                snocSymb (kernEscInt u i) >> symbMove
 
+symbEscName :: Num u => String -> LRText u ()
+symbEscName s = gets delta_sym             >>= \u -> 
+                snocSymb (kernEscName u s) >> symbMove

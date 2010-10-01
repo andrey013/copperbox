@@ -21,12 +21,16 @@
 module Wumpus.Basic.Chains.Base
   (
 
-    AnaAlg(..)
-  , IterAlg(..)
 
-  , Chain
+    Chain
+  , LocChain
   , chain
+  , chainFrom
   , unchain
+
+
+  , AnaAlg(..)
+  , IterAlg(..)
 
   , BivariateAlg
   , bivariate
@@ -40,9 +44,31 @@ module Wumpus.Basic.Chains.Base
 
   ) where
 
+import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+-- Chain uses the Scaling monad, but it is not itself a monad.
+
+
+newtype Chain ux uy u = Chain { getChain :: Scaling ux uy u [Point2 u] }
+
+
+type LocChain ux uy u = Point2 u -> Chain ux uy u
+
+
+
+chain :: BivariateAlg ux uy -> Chain ux uy u
+chain alg = Chain (scaledBivariatePt alg)
+
+chainFrom :: Num u => BivariateAlg ux uy -> LocChain ux uy u
+chainFrom alg start = Chain (scaledBivariateVec alg start)
+
+
+unchain :: ScalingContext ux uy u -> Chain ux uy u -> [Point2 u]
+unchain ctx ch = runScaling ctx $ getChain ch
+ 
 
 -- | Chains are built as unfolds - AnaAlg avoids the pair 
 -- constructor in the usual definition of unfoldr and makes the
@@ -61,28 +87,6 @@ data AnaAlg st a = Done | Step a !st
 --
 data IterAlg st a = IterStep a !st 
 
--- Maybe ux and uy should be exitensially hidden...
---
-data Chain u = forall ux uy st. Chain
-      { proj_x      :: ux -> u
-      , proj_y      :: uy -> u
-      , bi_alg      :: BivariateAlg ux uy
-      }
-
-
-chain :: (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> Chain u
-chain fx fy alg = Chain { proj_x = fx
-                        , proj_y = fy
-                        , bi_alg = alg }
-
-unchain :: Chain u -> [Point2 u]
-unchain (Chain { proj_x = fx, proj_y = fy, bi_alg = biv}) = 
-    runBivariate fx fy biv
-
-
--- Probably there should be another type representing the unfold.
--- Most Chain building functions implemented so far are agnostic 
--- to the scaling functions.
 
 data BivariateAlg ux uy = forall st. BivariateAlg
       { st_zero     :: st
@@ -94,13 +98,30 @@ bivariate st0 step_alg = BivariateAlg { st_zero = st0
                                       , gen_step = step_alg }
 
 
-runBivariate :: (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> [Point2 u]
-runBivariate fx fy (BivariateAlg { st_zero = st0, gen_step = step}) = 
+scaledBivariatePt :: BivariateAlg ux uy -> Scaling ux uy u [Point2 u]
+scaledBivariatePt (BivariateAlg { st_zero = st0, gen_step = step}) = 
     go (step st0)   
   where
-    go Done              = []
-    go (Step (x,y) next) = P2 (fx x) (fy y) : go (step next)
+    go Done              = return []
+    go (Step (x,y) next) = scalePt x y    >>= \pt   ->
+                           go (step next) >>= \rest ->  
+                           return  (pt:rest)
 
+-- Note - cannot encode this with (.+^) from Data.AffineSpace.
+-- The u (u ~ MonUnit m) extracted from the Scaling Context is 
+-- not compatible with the u that forms Points (u ~ Diff (Point2 u)).
+
+scaledBivariateVec :: Num u 
+                   => BivariateAlg ux uy 
+                   -> Point2 u 
+                   -> Scaling ux uy u [Point2 u]
+scaledBivariateVec (BivariateAlg { st_zero = st0, gen_step = step}) (P2 x0 y0) = 
+    go (step st0)   
+  where
+    go Done              = return []
+    go (Step (x,y) next) = scaleVec x y   >>= \(V2 dx dy)   ->
+                           go (step next) >>= \rest ->  
+                           return (P2 (x0+dx) (y0+dy):rest)
 
 
 data SequenceAlg a = forall st. SequenceAlg

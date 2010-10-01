@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,8 +16,12 @@
 -- drawing - sending commands to update the a cursor.
 --
 -- While Wumpus generally aims for a more compositional,
--- \"coordinate-free\" style of drawing, some types of 
--- diagram are more easily expressed in the LOGO style.
+-- \"coordinate-free\" style of drawing, some types of diagram 
+-- are more easily expressed in the LOGO style.
+--
+-- Note - as turtle drawing with Wumpus is a /local effect/, 
+-- there is only one instance of TurtleM. Potentially TurtleM 
+-- will be removed and the functions implemented directly. 
 --
 --------------------------------------------------------------------------------
 
@@ -27,13 +29,9 @@ module Wumpus.Basic.Monads.TurtleClass
   (
 
     Coord
-  , TurtleConfig(..)
-  , regularConfig 
 
   , TurtleM(..)
-  , TurtleScaleM(..)
 
-  , askSteps
   , setsLoc
   , setsLoc_
 
@@ -45,32 +43,12 @@ module Wumpus.Basic.Monads.TurtleClass
   , moveDown
   , nextLine
  
-  , getPos
-  , scaleCoord
 
   ) where
 
 
-import Wumpus.Core                      -- package: wumpus-core
-
-import Control.Monad
 
 type Coord = (Int,Int)
-
-
--- Might want to expand this with an initial y-value,
--- otherwise using nextLine will get you negative y-values
--- without care...
-
-data TurtleConfig u = TurtleConfig 
-      { xstep :: !u
-      , ystep :: !u 
-      }  
-  deriving (Eq,Show)
-
-
-regularConfig :: u -> TurtleConfig u
-regularConfig u = TurtleConfig u u 
 
 
 class Monad m => TurtleM m where
@@ -79,13 +57,7 @@ class Monad m => TurtleM m where
   getOrigin  :: m (Int,Int)
   setOrigin  :: (Int,Int) -> m ()
 
-class TurtleM m => TurtleScaleM m u | m -> u where 
-  xStep     :: m u
-  yStep     :: m u
 
-
-askSteps :: TurtleScaleM m u => m (u,u)
-askSteps = liftM2 (,) xStep yStep
 
 setsLoc :: TurtleM m => (Coord -> (a,Coord)) -> m a
 setsLoc f = getLoc      >>= \coord -> 
@@ -93,7 +65,6 @@ setsLoc f = getLoc      >>= \coord ->
 
 setsLoc_ :: TurtleM m => (Coord -> Coord) -> m ()
 setsLoc_ f = getLoc     >>= \coord ->  setLoc (f coord)
-
 
 
 resetLoc    :: TurtleM m => m ()
@@ -117,14 +88,4 @@ moveDown    = setsLoc_ $ \(x,y) -> (x ,y-1)
 nextLine    :: TurtleM m => m ()
 nextLine    = getOrigin >>= \(ox,_) ->
               setsLoc_ $ \(_,y) -> (ox,y-1)
-
-
-getPos :: (TurtleScaleM m u, Num u) => m (Point2 u)
-getPos = getLoc   >>= \(x,y)   ->
-         askSteps >>= \(sx,sy) ->
-         return $ P2 (sx * fromIntegral x) (sy * fromIntegral y)
-
-scaleCoord  :: (TurtleScaleM m u, Num u) => (Int,Int) -> m (Point2 u)
-scaleCoord (x,y) = askSteps >>= \(sx,sy) ->
-                   return $ P2 (sx * fromIntegral x) (sy * fromIntegral y)
 

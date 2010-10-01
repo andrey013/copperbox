@@ -98,8 +98,6 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
   northwest = calcRectPoint $ \ hw hh -> P2 (-hw) hh
 
 
--- Not working properly...
---
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
   radialAnchor theta rect@(Rectangle { rect_hw=hw, rect_hh=hh }) = 
       maybe ctr id $ findIntersect ctr theta $ rectangleLines ctr hw hh 
@@ -112,7 +110,7 @@ rectangle w h = Shape { src_ctm = identityCTM
                       }
 
 
-lrectangle :: (Floating u, Real u, FromPtSize u) 
+lrectangle :: (Real u, Floating u, FromPtSize u) 
            => u -> u -> String -> Shape u (Rectangle u)
 lrectangle w h ss = Shape { src_ctm = identityCTM
                           , out_fun = outputRect (0.5*w) (0.5*h) (shapelabel ss)
@@ -181,13 +179,13 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   northwest = radialAnchor (0.75*pi)
 
 
-circle :: (Floating u, Real u) => u -> Shape u (Circle u)
+circle :: (Real u, Floating u) => u -> Shape u (Circle u)
 circle radius = Shape { src_ctm = identityCTM
                       , out_fun = outputCirc radius nolabel
                       }
 
 
-lcircle :: (Floating u, Real u, FromPtSize u) 
+lcircle :: (Real u, Floating u, FromPtSize u) 
         => u -> String -> Shape u (Circle u)
 lcircle radius ss = Shape { src_ctm = identityCTM
                           , out_fun = outputCirc radius (shapelabel ss)
@@ -250,8 +248,8 @@ drawCoord coord = localDF swapColours $ filledEllipse 2 2 (center coord)
 
 data Diamond u = Diamond 
       { dia_ctm   :: ShapeCTM u
-      , dia_hw    :: u
-      , dia_hh    :: u
+      , dia_hw    :: !u
+      , dia_hh    :: !u
       }
 
 type DDiamond = Diamond Double
@@ -274,13 +272,13 @@ instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
   east  = calcDiaPoint $ \ hw _  -> P2 hw 0
   west  = calcDiaPoint $ \ hw _  -> P2 (-hw) 0
 
-diamond :: (Floating u, Real u) => u -> u -> Shape u (Diamond u)
+diamond :: (Real u, Floating u) => u -> u -> Shape u (Diamond u)
 diamond hw hh = Shape { src_ctm = identityCTM
                       , out_fun = outputDia hw hh nolabel
                       }
 
 
-ldiamond :: (Floating u, Real u, FromPtSize u) 
+ldiamond :: (Real u, Floating u, FromPtSize u) 
          => u -> u -> String -> Shape u (Diamond u)
 ldiamond hw hh ss = Shape { src_ctm = identityCTM
                           , out_fun = outputDia hw hh (shapelabel ss)
@@ -309,8 +307,8 @@ diamondPath dia = vertexPath [ south dia, east dia, north dia, west dia ]
 
 data Ellipse u = Ellipse
       { ell_ctm     :: ShapeCTM u 
-      , ell_rx      :: u
-      , ell_ry      :: u
+      , ell_rx      :: !u
+      , ell_ry      :: !u
       }
 
 type DEllipse = Ellipse Double

@@ -36,7 +36,6 @@ module Wumpus.Basic.Paths.Construction
 
   ) where
 
-import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -75,11 +74,12 @@ instance Monad (PathM u) where
 -- DrawingCtx would make things complicated.
 --
 
+{-
 openStrokePathM :: (Num u, TraceM m, DrawingCtxM m, u ~ MonUnit m) 
                 => Point2 u -> PathM u a -> m a
 openStrokePathM pt ma = let (a,p) = runPath pt ma  in 
     draw (openStroke $ toPrimPathU p) >> return a
-
+-}
 
 -- Running the path is agnostic to the DrawingCtx.
 

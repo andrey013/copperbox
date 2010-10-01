@@ -19,13 +19,10 @@
 module Wumpus.Basic.Chains.Derived
   (
     
-    chainFrom
-
-  , univariateX
+    univariateX
   , univariateY
 
   , tableDown
-  , tableDownB
   , tableRight
 
   , horizontal
@@ -40,17 +37,12 @@ module Wumpus.Basic.Chains.Derived
 
 import Wumpus.Basic.Chains.Base
 
-import Wumpus.Core                              -- package: wumpus-core
 
 
-chainFrom :: Num u
-          => Point2 u -> (ux -> u) -> (uy -> u) -> BivariateAlg ux uy -> Chain u
-chainFrom (P2 x0 y0) fx fy alg = 
-    chain (\x -> x0 + fx x) (\y -> y0 + fy y) alg
 
-univariateX :: (Fractional uy, Num ux) 
-            => [ux] -> BivariateAlg ux uy
-univariateX zs = bivariate (0,zs) gstep
+univariateX :: (Fractional uy, Num ux, Num u) 
+            => [ux] -> LocChain ux uy u
+univariateX zs = chainFrom $ bivariate (0,zs) gstep
   where
     gstep (_,[])     = Done 
     gstep (n,x:xs)   = Step (x,n) (n+i,xs)
@@ -58,9 +50,9 @@ univariateX zs = bivariate (0,zs) gstep
     i                = rescale 0 1 0 (fromIntegral $ len-1) 1
 
 
-univariateY :: (Fractional ux, Num uy) 
-            => [uy] -> BivariateAlg ux uy
-univariateY zs = bivariate (0,zs) gstep
+univariateY :: (Fractional ux, Num uy, Num u) 
+            => [uy] -> LocChain ux uy u
+univariateY zs = chainFrom $ bivariate (0,zs) gstep
   where
     gstep (_,[])     = Done 
     gstep (n,y:ys)   = Step (n,y) (n+i,ys)
@@ -73,21 +65,10 @@ univariateY zs = bivariate (0,zs) gstep
 -- Tables
 
 
-tableDownB :: Int -> Int -> BivariateAlg Int Int
-tableDownB rows cols = 
-    bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
+tableDown :: Int -> Int -> Chain Int Int u
+tableDown rows cols = 
+    chain $ bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
 
-
--- Note - Turtle has similar scaling requirements needing a pair 
--- of (unit_width * unit_height)
---
-
--- | num_rows * num_cols * unit_width * unit_height
-tableDown :: Num u => Int -> Int -> u -> u -> Chain u
-tableDown rows cols unit_width unit_height = 
-    chain (\x -> unit_width  * fromIntegral x) 
-          (\y -> unit_height * fromIntegral y)
-          (tableDownB rows cols)
 
 
 downstep :: Int -> (Int,Int) -> (Int,Int)
@@ -96,13 +77,9 @@ downstep _         (x,y)          = (x,y-1)
 
 
 
-tableRight :: Num u => Int -> Int -> u -> u -> Chain u
-tableRight rows cols unit_width unit_height =
-    chain (\x -> unit_width  * fromIntegral x) 
-          (\y -> unit_height * fromIntegral y)
-          alg
-  where
-    alg = bounded (rows*cols) (iteration (rightstep cols) (0,rows-1))
+tableRight :: Num u => Int -> Int -> Chain Int Int u
+tableRight rows cols = 
+    chain $ bounded (rows*cols) (iteration (rightstep cols) (0,rows-1))
 
 
 rightstep :: Int -> (Int,Int) -> (Int,Int)
@@ -110,30 +87,30 @@ rightstep col_count (x,y) | x == (col_count-1) = (0,y-1)
 rightstep _         (x,y)                      = (x+1,y)
 
 
-horizontal :: Int -> BivariateAlg Int Int
-horizontal count = bivariate 0 alg
+horizontal :: Int -> Chain Int Int u
+horizontal count = chain $ bivariate 0 alg
   where
     alg st | st == count = Done
     alg st               = Step (st,0) (st+1)
 
 
-vertical :: Int -> BivariateAlg Int Int
-vertical count = bivariate 0 alg
+vertical :: Int -> Chain Int Int u
+vertical count = chain $ bivariate 0 alg
   where
     alg st | st == count = Done
     alg st               = Step (0,st) (st+1)
 
 
 
-horizontals :: Num u => [u] -> BivariateAlg u u
-horizontals xs0 = bivariate xs0 alg
+horizontals :: (Num ua, Num u) => [ua] -> LocChain ua ua u
+horizontals xs0 = chainFrom $ bivariate xs0 alg
   where
     alg []     = Done
     alg (x:xs) = Step (x,0) xs
 
 
-verticals :: Num u => [u] -> BivariateAlg u u
-verticals ys0 = bivariate ys0 alg
+verticals :: (Num ua, Num u)  => [ua] -> LocChain ua ua u
+verticals ys0 = chainFrom $ bivariate ys0 alg
   where
     alg []     = Done
     alg (y:ys) = Step (0,y) ys

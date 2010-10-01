@@ -46,8 +46,9 @@ pic1 = liftToPictureU $ execDrawing (standardContext 9) $ do
     lower3     <- italiclabel 244   0 "H(A) &#multiply; J(B)"
     lower4     <- italiclabel 312   0 "J(B)"
     pconnector upper2 upper1 (timesGraphic "h")
-    pconnector upper2 upper3 (lrtextGraphic $ alpha >> multiply >> char 'I')
-    pconnector upper3 upper4 (symbolGraphic " ")
+    pconnector upper2 upper3 (lrtextGraphic $ alpha >> escName "multiply" 
+                                                    >> char 'I')
+    pconnector upper3 upper4 (lrtextGraphic $ char 'g' >> escName "onesuperior")
     pconnector lower1 lower0 (timesGraphic "f")
     pconnector lower2 lower1 (symbolGraphic " ")
     pconnector lower3 lower2 (timesGraphic " ")

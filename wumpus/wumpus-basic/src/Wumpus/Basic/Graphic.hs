@@ -23,6 +23,7 @@ module Wumpus.Basic.Graphic
   , module Wumpus.Basic.Graphic.DrawingContext
   , module Wumpus.Basic.Graphic.PrimGraphic
   , module Wumpus.Basic.Graphic.Query
+  , module Wumpus.Basic.Graphic.ScalingContext
   ) where
 
 import Wumpus.Basic.Graphic.BaseClasses
@@ -31,3 +32,4 @@ import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.PrimGraphic
 import Wumpus.Basic.Graphic.Query
+import Wumpus.Basic.Graphic.ScalingContext

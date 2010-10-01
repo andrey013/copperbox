@@ -39,6 +39,7 @@ module Wumpus.Basic.Graphic.Query
   , monoCharWidth
   , monoSpacerWidth
   , monoTextWidth
+  , monoTextLength
   , monoTextHeight
   , monoNumeralHeight
   , monoLowerxHeight
@@ -144,9 +145,13 @@ monoSpacerWidth :: FromPtSize u => DrawingF u
 monoSpacerWidth = withFontSize (fromPtSize . spacerWidth)
 
 
-monoTextWidth :: FromPtSize u => String -> DrawingF u
-monoTextWidth ss = 
-    withFontSize $ \sz -> fromPtSize $ textWidth sz (charCount ss)
+monoTextWidth :: FromPtSize u => Int -> DrawingF u
+monoTextWidth n = withFontSize $ \sz -> fromPtSize $ textWidth sz n
+
+
+monoTextLength :: FromPtSize u => String -> DrawingF u
+monoTextLength ss = monoTextWidth $ charCount ss
+
 
 monoTextHeight :: FromPtSize u => DrawingF u
 monoTextHeight = withFontSize (fromPtSize . textHeight)
