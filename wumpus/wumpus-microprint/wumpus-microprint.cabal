@@ -1,5 +1,5 @@
 name:             wumpus-microprint
-version:          0.8.0
+version:          0.9.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,14 +12,13 @@ description:
   A library to produce /microprints/ [1] sometimes known as 
   \"greek-text\". 
   .
-  Note this library only provides the graphically half of the 
-  functionality needed to make microprints. There is no support 
-  for tokenizing input files, and at the moment it is really 
-  just a test bed for Wumpus.
+  A rudimentary tokenizer is provided, but it is largely 
+  untested. 
   .
-  Currently pictures are made within a monad providing /teletype/ 
-  style operations. Other methods of drawing are possible, but 
-  are yet to be implemented.
+  Version 0.9.0 adds some new functionality, but the API is
+  undercooked and is unsuitable for real use. The API will improve 
+  as Wumpus-Basic improves...
+  .
   .
   \[1\] <http://scg.unibe.ch/archive/papers/Robb05b-microprintsESUG.pdf>
   .

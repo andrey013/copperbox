@@ -12,6 +12,9 @@
 --
 -- MicroPrints
 --
+-- \*\* WARNING \*\* - This module is out-of-date and is due a 
+-- rethink. Teletype is no longer the recommended drawing style.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Microprint
