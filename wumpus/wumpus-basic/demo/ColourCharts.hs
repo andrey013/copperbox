@@ -22,27 +22,26 @@ main = do
     writeSVG_latin1 "./out/X11colours.svg" x11_landscape
 
 svg :: Picture Double
-svg = makePicture 60 all_svg_colours
+svg = makePicture 52 all_svg_colours
 
 x11_landscape :: Picture Double
-x11_landscape = makePicture 60 all_x11_colours
+x11_landscape = makePicture 52 all_x11_colours
 
 x11_portrait :: Picture Double
 x11_portrait = makePicture 72 all_x11_colours     
 
 makePicture :: Int -> [(String,RGBi)] -> DPicture 
 makePicture row_count xs = 
-    liftToPictureU $ execDrawing (standardContext 10) $ 
+    liftToPictureU $ execDrawing (standardContext 9) $ 
         tableGraphic row_count xs
 
 tableGraphic :: Int -> [(String,RGBi)] -> Drawing Double ()
 tableGraphic row_count xs = 
     zipWithM_ (\(name,rgb) pt -> colourSample name rgb pt) xs ps
   where
-    ps = unchain $ tableDown row_count 10 160 13
+    ps = unchain (coordinateScalingContext 152 11) $ tableDown row_count 10 
 
--- Note - cannot use node twice as it increments the point supply.
---
+
 colourSample :: String -> RGBi -> DPoint2 -> Drawing Double ()
 colourSample name rgb pt = localCtx (secondaryColour rgb) $ do 
     draw $ borderedRectangle 15 10 `at` pt

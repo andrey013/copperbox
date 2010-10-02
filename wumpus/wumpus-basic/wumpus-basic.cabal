@@ -89,6 +89,7 @@ extra-source-files:
   demo/ColourDefns.hs,
   demo/FontPic.hs,
   demo/Picture.hs,
+  demo/Shapes.hs,
   demo/Symbols.hs
 
 library

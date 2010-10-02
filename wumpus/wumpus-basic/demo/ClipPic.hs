@@ -56,7 +56,7 @@ background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $
                      mapM_ iheartHaskell ps
 
    where
-     ps = unchain $ tableDown 18 8 86 16
+     ps = unchain (coordinateScalingContext 86 16) $ tableDown 18 8
 
 cpic1 :: DPicture 
 cpic1 = clip (toPrimPathU path01) (background black)

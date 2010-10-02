@@ -48,13 +48,13 @@ positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
 
-pointChain :: DPoint2 -> Chain Double
-pointChain pt = 
-    chainFrom pt fromIntegral fromIntegral $ verticals $ positions
+pointChain :: LocChain Int Int Double
+pointChain = verticals positions
 
 fontGraphic :: RGBi -> FontFace -> DPoint2 -> Drawing Double ()
-fontGraphic rgb ff pt = let ps = unchain $ pointChain pt in 
-   zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
+fontGraphic rgb ff pt = 
+    let ps = unchain (coordinateScalingContext 1 1) $ pointChain pt in 
+      zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
 
 
 std_ctx :: DrawingContext
@@ -65,8 +65,8 @@ fontPicture :: [(RGBi,FontFace)] -> DPicture
 fontPicture xs = liftToPictureU $ execDrawing std_ctx $  
                    zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
   where
-    ps = unchain $ tableDown 4 1 180 1 
-                                 
+    ps = unchain (coordinateScalingContext 1 180) $ tableDown 4 1
+
 
 
 --------------------------------------------------------------------------------
