@@ -12,46 +12,15 @@
 --
 -- Common interface to Wumpus.Core.
 --
--- This module re-exports types and functions from:
+-- This is a /shim/ module re-exporting types and functions from
+-- the exposed Wumpus-Core modules. In most cases, importing just 
+-- this module should be sufficient to use Wumpus-Core. 
 --
--- * "Wumpus.Core.AffineTrans"
---
--- * "Wumpus.Core.BoundingBox"
---
--- * "Wumpus.Core.Colour"
---
--- * "Wumpus.Core.FontSize"
---
--- * "Wumpus.Core.Geometry"
---
--- * "Wumpus.Core.GraphicsState"
---
--- * "Wumpus.Core.OutputPostScript"
---
--- * "Wumpus.Core.OutputSVG"
---
--- * "Wumpus.Core.Picture"
---
--- * "Wumpus.Core.PictureLanguage"
---
--- * "Wumpus.Core.PtSize"
---
--- * "Wumpus.Core.TextEncoder"
---
--- * "Wumpus.Core.TextLatin1"
---
--- * "Wumpus.Core.TextSymbolFont"
---
--- * "Wumpus.Core.VersionNumber"
---
--- * "Wumpus.Core.WumpusTypes"
---
--- Named colours ( black, white etc.) are hidden from 
+-- Named colours ( black, white etc.) are hidden from the module
 -- "Wumpus.Core.Colour" to avoid collisions with modules that
--- define colour sets (e.g. all the SVG colours). If needed, 
--- the module can be imported directly.
--- 
---
+-- define colour sets (e.g. all the SVG colours). If named 
+-- colours are needed, "Wumpus.Core.Colour" can be imported 
+-- directly.
 -- 
 --------------------------------------------------------------------------------
 

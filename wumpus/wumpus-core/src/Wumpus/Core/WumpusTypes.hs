@@ -12,7 +12,7 @@
 --
 -- This module re-exports types and functions from 
 -- "Wumpus.Core.PictureInternal" but makes them opaque. 
-
+-- Contructors are provided by "Wumpus.Core.Picture".
 -- 
 --------------------------------------------------------------------------------
 

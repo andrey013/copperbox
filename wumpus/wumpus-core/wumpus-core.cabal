@@ -37,7 +37,7 @@ description:
   Wumpus might be limited compared to other systems. However, 
   the design permits a fairly simple implementation, which is a 
   priority. 
-  .
+  .  
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -51,8 +51,9 @@ description:
   * Clipping paths fixed. Previously they did not work for SVG or
     PostScript.
   .
-  * @picOver@ fixed. This was not updated in 0.33.0 to match the 
-    changes in drawing order - it should have been.
+  * @picOver@ fixed. Drawing order was changed in version 0.33.0, 
+    but @picOver@ was not updated accordingly (so it actually 
+    started drawing pictures /under/). It now works correctly.
   .
   * The lexer for escape characters embedded in label strings has 
     been rewritten. It now supports octal and hexadecimal codes.

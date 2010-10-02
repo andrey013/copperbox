@@ -13,9 +13,12 @@
 -- Colour represented as RGB with each component in the range 
 -- [0..255].
 -- 
--- Note - the predifined colours are hidden when importing the
--- /top-level/ module @Wumpus.Core@, import this module directly
--- to use them.
+-- Note - the predefined colours are hidden when importing the
+-- /top-level/ shim module @Wumpus.Core@, import 
+-- @Wumpus.Core.Colour@ directly to use them.
+--
+-- PostScript has no support for RGB-alpha and hence does not
+-- transparency. Thus Wumpus in turn cannot support transparency.
 --
 --------------------------------------------------------------------------------
 

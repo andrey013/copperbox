@@ -115,11 +115,8 @@ import qualified Data.Foldable                  as F
 -- Omitting some details, Picture is a simple non-empty 
 -- leaf-labelled rose tree via:
 -- 
--- > Leaf primitives | Picture [tree]
+-- > tree = Leaf [primitive] | Picture [tree]
 --
--- Where OneList is a variant of the standard list type that 
--- disallows empty lists.
--- 
 -- The additional constructors are convenience:
 --
 -- @Clip@ nests a picture (tree) inside a clipping path.
@@ -137,10 +134,15 @@ data Picture u = Leaf     (Locale u)              (OneList (PrimElement u))
 type DPicture = Picture Double
 
 -- | To represent XLink hyperlinks, Primitives in a Leaf are 
--- encoded in a tree rather a list.
+-- actualy encoded in a tree rather a list.
 --
--- (This is rather unfortunate as it expends an extra wrapper
--- for ever element regardless of whether hyerlinks are needed).
+-- As a design, this is rather unfortunate as it demands an extra 
+-- wrapper for ever element regardless of whether hyperlinks are 
+-- actually used. But it does mean that one hyperlink can cover a 
+-- complex graphic element - for example an arrow might be drawn 
+-- with one or more paths, plus extra (filled or stroked) paths 
+-- for the tip and tail, but each element should be within the 
+-- link. 
 --
 data PrimElement u = Atom             (Primitive u)
                    | XLinkGroup XLink (OneList (PrimElement u))
@@ -190,8 +192,8 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
   deriving (Eq,Show)                 
 
 -- | Wumpus\'s drawings are built from two fundamental 
--- primitives: paths (line segments and Bezier curves) and 
--- labels (single lines of text). 
+-- primitives: paths (straight line segments and Bezier curves) 
+-- and labels (single lines of text). 
 -- 
 -- Ellipses are a included as a primitive only for optimization 
 -- - drawing a reasonable circle with Bezier curves needs at 
@@ -649,7 +651,7 @@ translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
 -- | Rotate a Primitive.
 -- 
 -- Note - this is not an affine transformation as Primitives are
--- not regarded as being in an affine frame.
+-- not regarded as being within an affine frame.
 --
 -- * Paths are rotated about their start point.
 --
@@ -679,7 +681,7 @@ rotatePrimitive ang (PEllipse a ell) = PEllipse a $ rotateEllipse ang ell
 -- | Scale a Primitive.
 -- 
 -- Note - this is not an affine transformation as Primitives are
--- not regarded as being in an affine frame.
+-- not regarded as being within an affine frame.
 --
 -- An affine scaling uniformly scales all the elements in a 
 -- Picture. It is just a change of the Picture\'s basis vectors.
@@ -749,8 +751,8 @@ translatePrimitive x y (PEllipse a ell) = PEllipse a $ translateEllipse x y ell
 -- 
 -- This is a visually intuitive interpretation - Primitives are
 -- not in an affine space (they have an origin, i.e. the location 
--- (0,0), but don\'t not basis vectors) so manipulating them 
--- cannot follow the standard affine interpretation.
+-- (0,0), but do not have tangible basis vectors) so manipulating 
+-- them cannot follow the standard affine interpretation.
 -- 
 rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang (PrimPath start xs) = PrimPath start $ map (mapSeg fn) xs 

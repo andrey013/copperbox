@@ -14,8 +14,7 @@
 -- Bounding box with no notion of \'empty\'.
 --
 -- Empty pictures cannot be created with Wumpus. This greatly 
--- simplifies the implementation of pictures themselves and
--- bounding boxes.
+-- simplifies the implementation of pictures and bounding boxes.
 -- 
 --------------------------------------------------------------------------------
 

@@ -13,14 +13,16 @@
 -- Font size calculation for Label\'s and their bounding boxes.
 -- 
 -- Calculations are based on metrics derived from Courier at 
--- 48pt. As Courier is a monospaced font, bounding boxes 
--- calculated for other font families will usually have longer 
--- width than is necessary for the printed text. 
+-- 48pt. As Courier is a monospaced font, applying these metrics
+-- to other font families will usually produce over-estimates
+-- (bounding boxes will be longer than the true visual length
+-- of the text).
 -- 
 -- This is a deficiency of Wumpus, and limits its text handling
--- capabilities (for example, text cannot be automatically 
--- centered). However, alternatives would need access to font 
--- metrics - this would require a font loader and add 
+-- capabilities - for example, text cannot be reliably centered
+-- as its true length is not known. However, more powerful 
+-- alternatives would need access to the metrics embedded within
+-- font files. This would require a font loader and add 
 -- significant implementation complexity.
 -- 
 --------------------------------------------------------------------------------

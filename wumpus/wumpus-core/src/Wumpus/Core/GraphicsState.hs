@@ -10,25 +10,17 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Data types for stroke and label attributes and type classes 
--- for conversion to PostScript\'s colour and matrix 
--- representations. 
+-- Data types for stroke and label attributes. 
 -- 
 -- Wumpus represents pictures as trees - a leaf represents a 
 -- path or text label. All attributes of a path or text label 
 -- (colour, stroke width, font, ...) are stored in the leaf. So
 -- a picture is a leaf labelled tree.
 -- 
--- By contrast, PostScript maintains a /graphics state/. A 
+-- By contrast, PostScript maintains a global /graphics state/. A 
 -- PostScript program is free to modify the graphics state 
--- anywhere in the program. Stroke width is a general property  
--- shared by all elements (initially it has the default value 1).
--- Only stroked paths actually regard stroke width, fonts and 
--- filled and clipping paths ignore it. PostScript allows more 
--- control over the graphics state by allowing the current state
--- to be saved and restored with the @gsave@ and @grestore@. 
--- This is useful for modularity but is a comparatively expensive
--- procedure.
+-- anywhere in the program and subsequent elements are all drawn 
+-- according to the modified graphics state. 
 --
 -- When Wumpus renders Pictures as PostScript it maintains a 
 -- limited graphics state with just current colour and current 
