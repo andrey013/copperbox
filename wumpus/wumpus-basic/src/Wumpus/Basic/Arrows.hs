@@ -19,7 +19,7 @@
 
 module Wumpus.Basic.Arrows
   ( 
-    line
+    cline
 
 
   , arrowTri90
@@ -50,8 +50,8 @@ import Data.Monoid
 liftConnPath :: ConnPath u -> ConnDrawingF u (Path u)
 liftConnPath pF p1 p2 = pureDF $ pF p1 p2
 
-line :: Num u => ConnPath u -> ConnImage u (Path u)
-line pathF = intoConnImage (liftConnPath pathF) (pathGraphic pathF)
+cline :: Num u => ConnPath u -> ConnImage u (Path u)
+cline pathF = intoConnImage (liftConnPath pathF) (pathGraphic pathF)
 
 
 -- Here the path is already shortened - we have accounted for the

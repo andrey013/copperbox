@@ -33,11 +33,7 @@ module Wumpus.Basic.Paths.Connectors
   , fillPath
 
   , shorten
-  , shortenL
-  , shortenR
   , midpoint
-  , directionL
-  , directionR
 
   ) where
 
@@ -49,7 +45,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Data.Sequence
+import Prelude hiding ( length )
 
 type ConnPath u = Point2 u -> Point2 u -> Path u
 
@@ -107,105 +103,10 @@ shorten  :: (Real u, Floating u, Ord u) => u -> Path u -> Path u
 shorten u p = shortenL u $ shortenR u p
 
 --------------------------------------------------------------------------------
--- shorten from the left...
-
-shortenL :: (Real u, Floating u, Ord u) => u -> Path u -> Path u
-shortenL n (Path u bp) | n >= u         = emptyPath
-                       | otherwise      = step n (viewl bp)
-  where
-    step _ EmptyL     = emptyPath
-    step d (e :< se)  = let z = segmentLength e in
-                        case compare d z of
-                          GT -> step (d-z) (viewl se)
-                          EQ -> Path (u-n) se
-                          _  -> Path (u-n) (shortenSegL d e <| se)
-
-
-shortenSegL :: (Real u, Floating u) => u -> PathSeg u -> PathSeg u
-shortenSegL n (LineSeg  u l) = LineSeg  (u-n) (shortenLineL n l) 
-shortenSegL n (CurveSeg u c) = CurveSeg (u-n) (snd $ subdividet (n/u) c)
-
-shortenLineL :: (Real u, Floating u) => u -> Line u -> Line u
-shortenLineL n (Line p1 p2) = Line (p1 .+^ v) p2
-  where
-    v0 = p2 .-. p1
-    v  = avec (direction v0) n
-    
---------------------------------------------------------------------------------
--- shorten from the right ...
- 
-shortenR :: (Real u, Floating u, Ord u) => u -> Path u -> Path u
-shortenR n (Path u bp) | n >= u         = emptyPath
-                       | otherwise      = step n (viewr bp)
-  where
-    step _ EmptyR     = emptyPath
-    step d (se :> e)  = let z = segmentLength e in
-                        case compare d z of
-                          GT -> step (d-z) (viewr se)
-                          EQ -> Path (u-n) se
-                          _  -> Path (u-n) (se |> shortenSegR d e)
-
-
-
-shortenSegR :: (Real u, Floating u) => u -> PathSeg u -> PathSeg u
-shortenSegR n (LineSeg  u l) = LineSeg  (u-n) (shortenLineR n l) 
-shortenSegR n (CurveSeg u c) = CurveSeg (u-n) (fst $ subdividet ((u-n)/u) c)
-
-
-shortenLineR :: (Real u, Floating u) => u -> Line u -> Line u
-shortenLineR n (Line p1 p2) = Line p1 (p2 .+^ v)
-  where
-    v0 = p1 .-. p2
-    v  = avec (direction v0) n
-
-
-
---------------------------------------------------------------------------------
 
 -- This should return direction as well...
 --
-midpoint :: (Real u, Floating u) => Path u -> Point2 u
-midpoint (Path u bp) = step (u/2) (viewl bp)
-  where
-    step _ EmptyL    = zeroPt
-    step d (e :< se) = let z = segmentLength e in
-                       case compare d z of
-                         GT -> step (d-z) (viewl se)
-                         EQ -> segmentEnd e
-                         _  -> segmentEnd $ shortenSegR d e 
+midpoint :: (Real u, Floating u) => Path u -> Maybe (Point2 u)
+midpoint pa = let u = length pa in
+  if u == 0 then Nothing else tipR $ shortenR (u/2) pa
 
-
-
-
-
---------------------------------------------------------------------------------
--- tangents
-
-
-directionL :: (Real u, Floating u) => Path u -> Radian
-directionL (Path _ se) = step $ viewl se
-  where
-    step (LineSeg  _ l :< _) = lineDirectionL l 
-    step (CurveSeg _ c :< _) = curveDirectionL c
-    step _                   = 0
-
-directionR :: (Real u, Floating u) => Path u -> Radian
-directionR (Path _ se) = step $ viewr se
-  where
-    step (_ :> LineSeg  _ l) = lineDirectionR l 
-    step (_ :> CurveSeg _ c) = curveDirectionR c
-    step _                   = 0
-
-
-lineDirectionL :: (Real u, Floating u) => Line u -> Radian
-lineDirectionL (Line p0 p1) = direction (pvec p1 p0)
-
-lineDirectionR :: (Real u, Floating u) => Line u -> Radian
-lineDirectionR (Line p0 p1) = direction (pvec p0 p1)
-
-curveDirectionL :: (Real u, Floating u) => Curve u -> Radian
-curveDirectionL (Curve p0 p1 _ _) = direction $ pvec p1 p0
-
-curveDirectionR :: (Real u, Floating u) => Curve u -> Radian
-curveDirectionR (Curve _ _ p2 p3) = direction $ pvec p2 p3
- 
