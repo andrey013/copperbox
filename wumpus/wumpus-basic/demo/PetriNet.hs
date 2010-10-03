@@ -91,7 +91,7 @@ connector :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m ()
 connector p1 p2 = do
-   _ <- drawi $ arrowTri60 connectS `conn` p1 $ p2
+   _ <- drawi $ arrowTri60 connect `conn` p1 $ p2
    return ()
 
 
@@ -99,7 +99,7 @@ connectorC :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
 connectorC v p1 p2 = do
-    _ <- drawi $ arrowTri60 (arbv v) `conn` p1 $ p2
+    _ <- drawi $ arrowTri60 (vhvconn v) `conn` p1 $ p2
     return ()
 
 connectorD :: ( Real u, Floating u, FromPtSize u

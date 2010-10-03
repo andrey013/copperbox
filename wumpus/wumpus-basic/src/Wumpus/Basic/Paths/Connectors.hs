@@ -10,8 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extended path type - more amenable for complex drawings than
--- the type in Wumpus-Core.
+-- Library of connector paths...
 --
 -- \*\* WARNING \*\* this module is an experiment, and may 
 -- change significantly or even be dropped from future revisions.
@@ -21,25 +20,20 @@
 module Wumpus.Basic.Paths.Connectors 
   ( 
 
-    ConnPath
-  , connectS
+    Connector
+  , connect
   , vhconn
   , hvconn
-  , arbv
-  , arbh
+  , vhvconn
+  , hvhconn
   , curveconn
   , joint
-  , pathGraphic
-  , fillPath
 
-  , shorten
-  , midpoint
+
 
   ) where
 
-import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths.Base
-import Wumpus.Basic.Paths.Construction
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -47,66 +41,46 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Prelude hiding ( length )
 
-type ConnPath u = Point2 u -> Point2 u -> Path u
+type Connector u = Point2 u -> Point2 u -> Path u
 
-connectS :: Floating u => ConnPath u
-connectS = \p1 p2 -> execPath p1 $ lineto p2
+connect :: Floating u => Connector u
+connect = line
 
-vhconn :: Floating u => ConnPath u
-vhconn p1 p2 = execPath p1 $ verticalHorizontal p2
+vhconn :: Floating u => Connector u
+vhconn p1@(P2 x1 _) p2@(P2 _ y2) = 
+    let mid = P2 x1 y2 in tracePoints [p1, mid, p2]
 
-hvconn :: Floating u => ConnPath u
-hvconn p1 p2 = execPath p1 $ horizontalVertical p2
+hvconn :: Floating u => Connector u
+hvconn p1@(P2 _ y1) p2@(P2 x2 _) = 
+    let mid = P2 x2 y1 in tracePoints [p1, mid, p2]
 
-arbv :: Floating u => u -> ConnPath u
-arbv v p1@(P2 x1 y1) (P2 x2 y2) = execPath p1 $ vline v >> hline dx >> vline dy
+vhvconn :: Floating u => u -> Connector u
+vhvconn v p1@(P2 x1 _) p2@(P2 x2 _) = tracePoints [p1, a1, a2, p2]
   where
-    dx = x2 - x1
-    dy = y2 - (y1+v)
+    a1 = p1 .+^ vvec v
+    a2 = a1 .+^ hvec (x2 - x1)
 
 
-arbh :: Floating u => u -> ConnPath u
-arbh h p1@(P2 x1 y1) (P2 x2 y2) = execPath p1 $ hline h >> vline dy >> hline dx
+hvhconn :: Floating u => u -> Connector u
+hvhconn h p1@(P2 _ y1) p2@(P2 _ y2) = tracePoints [p1,a1,a2,p2]
   where
-    dx = x2 - (x1+h)
-    dy = y2 - y1
+    a1 = p1 .+^ hvec h
+    a2 = a1 .+^ vvec (y2 - y1)
 
-curveconn :: (Floating u, Ord u) => Radian -> Radian -> ConnPath u
-curveconn r1 r2 p1 p2 = execPath p1 $ curveto r1 r2 p2
+curveconn :: (Floating u, Ord u) => Radian -> Radian -> Connector u
+curveconn r1 r2 p1 p2 = curveByAngles p1 r1 r2 p2
 
 
-joint :: (Real u, Floating u) => u -> ConnPath u 
+joint :: (Real u, Floating u) => u -> Connector u 
 joint u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    execPath p1 $ lineto (mid_pt .+^ avec perp_ang u) >> lineto p2
+    tracePoints [p1, mid_pt .+^ avec perp_ang u, p2]
   where
     mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
     perp_ang  = (pi*0.5) + direction (pvec p2 p1) 
 
--- This one might be more useful...
--- 
--- ... No - can\'t a add tips to this one.
---
-pathGraphic :: Num u => ConnPath u -> ConnGraphic u
-pathGraphic bpath = \p1 p2 -> openStroke $ toPrimPathU $ bpath p1 p2
 
 
--- Mind out for name clash...
-
--- | Closes and fills a path
---
-fillPath :: Num u => Path u -> Graphic u
-fillPath = filledPath . toPrimPathU
-
-
-
-shorten  :: (Real u, Floating u, Ord u) => u -> Path u -> Path u
-shorten u p = shortenL u $ shortenR u p
 
 --------------------------------------------------------------------------------
 
--- This should return direction as well...
---
-midpoint :: (Real u, Floating u) => Path u -> Maybe (Point2 u)
-midpoint pa = let u = length pa in
-  if u == 0 then Nothing else tipR $ shortenR (u/2) pa
 

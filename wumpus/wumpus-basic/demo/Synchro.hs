@@ -88,8 +88,8 @@ connector :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m (Point2 u)
 connector p1 p2 = localCtx thin $ do
-   p <- drawi $ arrowBarb60 connectS `conn` p1 $ p2
-   return (midpoint p)
+   p <- drawi $ arrowBarb60 connect `conn` p1 $ p2
+   return (maybe p1 fst $ midpoint p)
 
 pconnector :: ( Real u, Floating u, FromPtSize u
               , DrawingCtxM m, TraceM m, u ~ MonUnit m )

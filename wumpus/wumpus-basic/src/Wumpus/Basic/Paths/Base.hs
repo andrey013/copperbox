@@ -27,6 +27,8 @@ module Wumpus.Basic.Paths.Base
   , length
   , line
   , curve
+  , tracePoints
+  , curveByAngles
 
   , toPrimPath 
   , toPrimPathU
@@ -35,10 +37,13 @@ module Wumpus.Basic.Paths.Base
   , tipL
   , tipR
 
+  , shortenBoth
   , shortenL
   , shortenR
   , directionL
   , directionR
+
+  , midpoint
   
   ) where
 
@@ -113,6 +118,11 @@ append (Path len1 start1 se1 end1) (Path len2 start2 se2 end2)
                        in Path total_len start1 (se1 >< (join <| se2)) end2 
 
 
+instance Floating u => Monoid (Path u) where
+  mempty  = PathEmpty
+  mappend = append
+
+
 
 segmentLength :: PathSeg u -> u
 segmentLength (LineSeg u _ _)       = u
@@ -144,9 +154,22 @@ curve p0 p1 p2 p3 = let v = curveLength p0 p1 p2 p3
                     in Path v p0 (S.singleton $ CurveSeg v p0 p1 p2 p3) p3
 
 
-instance Floating u => Monoid (Path u) where
-  mempty  = PathEmpty
-  mappend = append
+tracePoints :: Floating u => [Point2 u] -> Path u
+tracePoints []       = PathEmpty
+tracePoints [a]      = line a a
+tracePoints (a:b:xs) = step (line a b) b xs
+  where
+    step acc _ []     = acc
+    step acc e (y:ys) = step (acc `mappend` line e y) y ys
+
+
+curveByAngles :: (Floating u, Ord u) 
+              => Point2 u -> Radian -> Radian -> Point2 u -> Path u
+curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
+  where
+    sz     = 0.375 * (vlength $ pvec start end)
+    v1     = avec cin  sz
+    v2     = avec cout sz
 
 
 
@@ -265,6 +288,12 @@ tipR :: Path u -> Maybe (Point2 u)
 tipR PathEmpty       = Nothing
 tipR (Path _ _ _ ep) = Just ep
 
+
+-- | Shorten both ends...
+--
+shortenBoth :: (Real u, Floating u) => u -> Path u -> Path u
+shortenBoth u p = shortenL u $ shortenR u p
+
 --------------------------------------------------------------------------------
 -- shorten from the left...
 
@@ -351,6 +380,8 @@ shortenLineR n p0 p1 = p1 .+^ v
     v  = avec (direction v0) n
 
 
+
+
 --------------------------------------------------------------------------------
 -- line direction
 
@@ -384,3 +415,16 @@ directionR (Path _ _ se _) = step $ viewr se
 lineDirection :: (Real u, Floating u) => Point2 u -> Point2 u -> Radian
 lineDirection p0 p1 = direction (pvec p0 p1)
 -}
+
+
+
+--------------------------------------------------------------------------------
+
+
+-- Return direction as well because the calculation is expensive...
+--
+midpoint :: (Real u, Floating u) => Path u -> Maybe (Point2 u, Radian)
+midpoint pa = let u = length pa in
+  if u == 0 then Nothing 
+            else let pa1 = shortenR (u/2) pa 
+                 in fmap (\a -> (a,directionR pa1)) $ tipR pa1

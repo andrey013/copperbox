@@ -52,7 +52,7 @@ curve2 =  localDF (primaryColour red) (openStroke $ toPrimPathU path_one)
 
 curve3 :: Graphic Double
 curve3 = localDF (primaryColour blue) 
-                     (openStroke $ toPrimPathU $ shorten 10 path1)
+                     (openStroke $ toPrimPathU $ shortenBoth 10 path1)
 
 
 path1 :: Path Double

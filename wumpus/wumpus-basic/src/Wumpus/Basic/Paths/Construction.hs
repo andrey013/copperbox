@@ -145,13 +145,6 @@ curveto cin cout end = PathM $ \(St p0 ac) ->
     in ((), St end1 ac1) 
 
 
-curveByAngles :: (Floating u, Ord u) 
-              => Point2 u -> Radian -> Radian -> Point2 u -> Path u
-curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
-  where
-    sz     = 0.375 * (vlength $ pvec start end)
-    v1     = avec cin  sz
-    v2     = avec cout sz
 
 
 verticalHorizontal :: Floating u => Point2 u -> PathM u ()
