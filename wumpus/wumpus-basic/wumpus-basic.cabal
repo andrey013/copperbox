@@ -23,9 +23,11 @@ description:
   .
   0.9.0 to 0.10.0:
   .
-  * Reworked Paths modules - enirely different.
+  * Re-worked the Path modules - base types entirely different,
+    connectors entirely different, monadic path construction 
+    largely the same.
   .
-  * Initial work on round cornered polygons.
+  * Initial work on round cornered paths.
   .
   0.8.0 to 0.9.0:
   .
@@ -132,6 +134,7 @@ library
     Wumpus.Basic.Paths.Base,
     Wumpus.Basic.Paths.Connectors,
     Wumpus.Basic.Paths.Construction,
+    Wumpus.Basic.Paths.RoundCorners,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.Shapes.Base,
     Wumpus.Basic.Shapes.Derived,

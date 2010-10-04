@@ -24,6 +24,7 @@ module Wumpus.Basic.Paths.Base
   ( 
 
     Path
+  , DPath
   , length
   , line
   , curve
@@ -44,7 +45,16 @@ module Wumpus.Basic.Paths.Base
   , directionR
 
   , midpoint
-  
+
+  , PathViewL(..)
+  , DPathViewL
+  , PathViewR(..)
+  , DPathViewR
+  , PathSegment(..)
+  , DPathSegment
+  , pathViewL
+  , pathViewR
+
   ) where
 
 
@@ -69,6 +79,7 @@ data Path u = PathEmpty
                    }
   deriving (Eq,Ord,Show)
 
+type DPath = Path Double
 
 -- Annotating each segment with length is \*\* good \*\*.
 -- Makes it much more efficient to find the midpoint.
@@ -428,3 +439,44 @@ midpoint pa = let u = length pa in
   if u == 0 then Nothing 
             else let pa1 = shortenR (u/2) pa 
                  in fmap (\a -> (a,directionR pa1)) $ tipR pa1
+
+
+--------------------------------------------------------------------------------
+
+data PathViewL u = EmptyPathL
+                 | PathSegment u :<< Path u
+  deriving (Eq,Ord,Show) 
+
+type DPathViewL = PathViewL Double
+
+data PathViewR u = EmptyPathR
+                 | Path u :>> PathSegment u
+  deriving (Eq,Ord,Show) 
+
+type DPathViewR = PathViewR Double
+
+
+data PathSegment u = Line1  (Point2 u) (Point2 u)
+                   | Curve1 (Point2 u) (Point2 u) (Point2 u) (Point2 u)
+  deriving (Eq,Ord,Show) 
+
+type DPathSegment = PathSegment Double
+
+type instance DUnit (PathViewL u)   = u
+type instance DUnit (PathViewR u)   = u
+type instance DUnit (PathSegment u) = u
+
+pathViewL :: Num u => Path u -> PathViewL u
+pathViewL PathEmpty          = EmptyPathL
+pathViewL (Path u _ segs ep) = case viewl segs of
+    EmptyL                         -> EmptyPathL 
+    (LineSeg v p0 p1 :< se)        -> Line1 p0 p1 :<< Path (u-v) p1 se ep
+    (CurveSeg v p0 p1 p2 p3 :< se) -> Curve1 p0 p1 p2 p3 :<< Path (u-v) p3 se ep
+
+
+pathViewR :: Num u => Path u -> PathViewR u
+pathViewR PathEmpty          = EmptyPathR
+pathViewR (Path u _ segs ep) = case viewr segs of
+    EmptyR                         -> EmptyPathR
+    (se :> LineSeg v p0 p1)        -> Path (u-v) p1 se ep :>> Line1 p0 p1
+    (se :> CurveSeg v p0 p1 p2 p3) -> Path (u-v) p3 se ep :>> Curve1 p0 p1 p2 p3

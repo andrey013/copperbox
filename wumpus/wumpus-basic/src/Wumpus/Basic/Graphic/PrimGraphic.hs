@@ -49,6 +49,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
   , straightLine
   , straightLineBetween
+  , curveBetween
 
   , strokedRectangle
   , filledRectangle
@@ -217,6 +218,10 @@ straightLine v = \pt -> openStroke $ path pt [lineTo $ pt .+^ v]
 
 straightLineBetween :: Fractional u => Point2 u -> Point2 u -> Graphic u
 straightLineBetween p1 p2 = openStroke $ path p1 [lineTo p2]
+
+curveBetween :: Fractional u 
+             => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
+curveBetween sp cp1 cp2 ep = openStroke $ path sp [curveTo cp1 cp2 ep]
 
 
 
