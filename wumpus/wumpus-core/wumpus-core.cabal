@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.34.0
+version:          0.35.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -45,6 +45,13 @@ description:
   (bitmaps). 
   .
   Changelog:
+  .
+  0.34.0 to 0.35.0:
+  .
+  * Bug fix - PostScript output - when more than one stroke 
+    property changed the changes were concatenated without 
+    a separator. This generated invalid PostScript. Now fixed.
+  .
   .
   0.33.0 to 0.34.0:
   .

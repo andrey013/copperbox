@@ -343,6 +343,12 @@ wumpus_default_font = FontAttr 14 face
 --
 -- The supplied point is the left baseline.
 --
+-- \*\* CAUTION \*\* - @hkernlabel@ generates a coordinate list 
+-- for X-positions rather than a single start point. This is 
+-- perfectly valid SVG, but it is not universally supported by 
+-- renderers. Chrome support is fine, but Firefox and Safari 
+-- currently seem lacking. 
+--
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> PrimElement u
@@ -371,6 +377,12 @@ hkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl
 -- The charcters should not contain newline or tab characters.
 --
 -- The supplied point is the left baseline of the top character.
+--
+-- \*\* CAUTION \*\* - @vkernlabel@ generates a coordinate list 
+-- for Y-positions rather than a single start point. This is 
+-- perfectly valid SVG, but it is not universally supported by 
+-- renderers. Chrome support is fine, but Firefox and Safari 
+-- currently seem lacking. 
 --
 vkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
