@@ -19,6 +19,7 @@ module Wumpus.Basic.Graphic
   (
     module Wumpus.Basic.Graphic.BaseClasses
   , module Wumpus.Basic.Graphic.BaseTypes
+  , module Wumpus.Basic.Graphic.DirectionContext
   , module Wumpus.Basic.Graphic.Drawing
   , module Wumpus.Basic.Graphic.DrawingContext
   , module Wumpus.Basic.Graphic.PrimGraphic
@@ -28,6 +29,7 @@ module Wumpus.Basic.Graphic
 
 import Wumpus.Basic.Graphic.BaseClasses
 import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.DirectionContext
 import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.PrimGraphic

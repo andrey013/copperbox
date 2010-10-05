@@ -29,6 +29,7 @@ module Wumpus.Basic.Graphic.BaseClasses
   , asksCtx  
 
   , ScalingM(..)
+  , DirectionM(..)
  
   , PointSupplyM(..)
 
@@ -69,7 +70,7 @@ asksCtx f = askCtx >>= (return . f)
 
 -- | Scaling...
 --
-class ScalingM m where
+class Monad m => ScalingM m where
   type XDim m :: *
   type YDim m :: *
   scaleX :: (u ~ MonUnit m, ux ~ XDim m) => ux -> m u
@@ -78,6 +79,17 @@ class ScalingM m where
            => ux -> uy -> m (Point2 u)
   scaleVec :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
            => ux -> uy -> m (Vec2 u)
+
+
+
+-- Should this use MonUnit for consistency ??
+
+class Monad m => DirectionM m where
+  localTheta    :: Radian -> m a -> m a
+  asksTheta     :: (Radian -> a) -> m a 
+  parallel      :: Floating u => u -> m (Vec2 u)
+  perpendicular :: Floating u => u -> m (Vec2 u)
+
 
 
 -- | A monad that supplies points, e.g. a turtle monad. 

@@ -33,6 +33,7 @@ module Wumpus.Basic.Graphic.Query
   , lineWidth
   , fontSize
   , markHeight
+  , markHalfHeight
   , lineSpacing
 
   -- 
@@ -125,6 +126,11 @@ lineSpacing =
 -- 
 markHeight :: FromPtSize u => DrawingF u
 markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDF font_props
+
+
+markHalfHeight :: (Fractional u, FromPtSize u) => DrawingF u
+markHalfHeight = (0.5*) <$> markHeight
+
 
 -- Note - there are probably enough functions that use just 
 -- markHeight to merit a withMarkHeight function.

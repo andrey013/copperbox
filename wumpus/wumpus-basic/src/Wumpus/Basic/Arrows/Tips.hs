@@ -196,3 +196,14 @@ perp theta pt =
     let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
   where
     makeV h  = avec (theta + pi/2) (0.5 * h)
+
+
+fwdBracket :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
+fwdBracket theta pt = markHalfHeight >>= \hh -> 
+   runDirection theta $ 
+     displacePerp   hh  pt >>= \p1 ->
+     displacePara (-hh) p1 >>= \p0 ->
+     displacePerp (-hh) pt >>= \p2 ->
+     displacePara (-hh) p2 >>= \p3 ->
+     return (openStroke $ vertexPath [p0,p1,p2,p3]) 
+   
