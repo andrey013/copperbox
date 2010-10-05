@@ -34,6 +34,14 @@ module Wumpus.Basic.Graphic.DrawingContext
   , ultrathick
   , thin
 
+  , capButt
+  , capRound
+  , capSquare
+
+  , joinMiter
+  , joinRound
+  , joinBevel
+
   -- ** Dash Pattern
   , dashPattern
   , unit_dash_pattern
@@ -136,6 +144,35 @@ ultrathick          = setLineWidth ultra_thick_line
 
 thin                :: DrawingContext -> DrawingContext
 thin                = setLineWidth thin_line
+
+
+setLineCap          :: LineCap -> DrawingContext -> DrawingContext
+setLineCap d        = updateStrokeProps (\s -> s { line_cap = d })
+
+
+capButt             :: DrawingContext -> DrawingContext
+capButt             = setLineCap CapButt
+
+capRound            :: DrawingContext -> DrawingContext
+capRound            = setLineCap CapRound
+
+capSquare           :: DrawingContext -> DrawingContext
+capSquare           = setLineCap CapSquare
+
+
+setLineJoin         :: LineJoin -> DrawingContext -> DrawingContext
+setLineJoin d       = updateStrokeProps (\s -> s { line_join = d })
+
+
+joinMiter           :: DrawingContext -> DrawingContext
+joinMiter           = setLineJoin JoinMiter
+
+joinRound           :: DrawingContext -> DrawingContext
+joinRound           = setLineJoin JoinRound
+
+joinBevel           :: DrawingContext -> DrawingContext
+joinBevel           = setLineJoin JoinBevel
+
 
 --------------------------------------------------------------------------------
 

@@ -44,18 +44,84 @@ import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
 
--- | tripoints takes dimensions from the xlowerHeight.
+
+
+-- | Tiplen is length of the tip \*along the line it follows\*. 
 --
-tripoints :: (Floating u, FromPtSize u)
-          => Radian -> Radian -> LocDrawingF u (Point2 u, Point2 u)
-tripoints triang theta tip = 
-    (\h -> let d = h / (fromRadian $ cos halfang) 
-           in (tip .-^ v1 d, tip .-^ v2 d))
-      <$> markHeight
+-- > |\
+-- > | \
+-- > | /
+-- > |/
+-- > 
+-- > |  |  -- tip len
+--
+
+-- | Tip width is the distance between upper and lower 
+-- arrow points.
+--
+-- >       __
+-- > |\    
+-- > | \   tip
+-- > | /   width
+-- > |/    __
+-- >       
+
+
+
+-- | This one is for triangular tips defined by their tip angle
+-- e.g. 90deg, 60deg, 45deg.
+--
+-- The tip width will be variable (tip length should be the 
+-- markHeight).
+-- 
+triVecsByAngle :: Floating u => u -> Radian -> Radian -> (Vec2 u, Vec2 u)
+triVecsByAngle tiplen halfang theta = (vec_to_upper, vec_to_lower)
   where
-    halfang = 0.5 * triang
-    v1 d    = avec (theta + halfang) d
-    v2 d    = avec (theta - halfang) d
+    hypo_len     = tiplen / (fromRadian $ cos halfang)
+    rtheta       = pi + theta        -- theta in the opposite direction
+    vec_to_upper = avec (circularModulo $ rtheta - halfang) hypo_len
+    vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
+
+
+-- | This one is for triangles when the tip height and tip width
+-- are known.
+--
+triVecsByDist  :: (Real u, Floating u) 
+               => u -> u -> Radian -> (Vec2 u, Vec2 u)
+triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
+  where
+    hypo_len     = sqrt $ (tiplen*tiplen) + (half_tipwidth*half_tipwidth)
+    halfang      = toRadian $ atan (half_tipwidth / tiplen) 
+    rtheta       = pi + theta        -- theta in the opposite direction
+    vec_to_upper = avec (circularModulo $ rtheta - halfang) hypo_len
+    vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
+
+
+--------------------------------------------------------------------------------
+
+-- | Tripoints takes the \*tip length\* is the mark height.
+--
+-- This means that the 90deg tip has a tip width greater-than the
+-- mark height (but that is okay - seemingly this is how TikZ 
+-- does it!).
+--
+tripointsByAngle :: (Floating u, FromPtSize u)
+                 => Radian -> Radian -> LocDrawingF u (Point2 u, Point2 u)
+tripointsByAngle triang theta tip = 
+    (\h -> let (vupper,vlower) = triVecsByAngle h (0.5*triang) theta
+           in  (tip .+^ vupper, tip .+^ vlower))
+      <$> markHeight
+
+
+
+tripointsByDist :: (Real u, Floating u, FromPtSize u)
+                => (u -> u) -> (u -> u) -> Radian 
+                -> LocDrawingF u (Point2 u, Point2 u)
+tripointsByDist lenF halfwidthF theta tip = 
+    (\h -> let (vup,vlo) = triVecsByDist (lenF h) (halfwidthF $ 0.5*h) theta
+           in  (tip .+^ vup, tip .+^ vlo))
+      <$> markHeight
+
 
 
 
@@ -68,7 +134,7 @@ triAng :: (Floating u, Real u, FromPtSize u)
       -> (PrimPath u -> Graphic u) 
       -> LocGraphic u
 triAng triang theta gf pt = 
-    tripoints triang theta pt >>= \(u,v) -> 
+    tripointsByAngle triang theta pt >>= \(u,v) -> 
     localDF bothPrimary (gf $  vertexPath [pt,u,v])
 
 
@@ -106,7 +172,8 @@ otri45 theta = triAng (pi/4) theta closedStroke
 barbAng :: (Floating u, Real u, FromPtSize u)
       => Radian -> Radian -> LocGraphic u
 barbAng ang theta pt = 
-    tripoints ang theta pt >>= \(u,v) -> openStroke (vertexPath [u,pt,v])
+    tripointsByAngle ang theta pt >>= \(u,v) -> 
+    openStroke (vertexPath [u,pt,v])
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) 

@@ -62,7 +62,7 @@ pathGraphic bpath = \p1 p2 -> openStroke $ toPrimPathU $ bpath p1 p2
 -- Here the path is already shortened - we have accounted for the
 -- points already, so it is just a graphic. 
 lineTipR :: Num u => Path u -> Graphic u -> Graphic u
-lineTipR bpath tip = openStroke (toPrimPathU bpath) `mappend` tip
+lineTipR bpath arrtip = openStroke (toPrimPathU bpath) `mappend` arrtip
    
 
 

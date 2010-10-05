@@ -50,6 +50,21 @@ import Control.Applicative
 import Data.Monoid
 
 
+-- | Note - this formulation prevents rounded corner shapes...
+--
+-- Currently shapes that aren\'t paths:
+--
+-- > Coordinate
+-- > FreeLabel
+--
+-- Alternative 
+--
+-- > out_fun :: ShapeCTM u -> (Path u,sh)
+--
+-- All shapes expect FreeLabel are oblivious to the 
+-- DrawingContext for the /shape/
+--
+
 data Shape u sh =  Shape 
       { src_ctm :: ShapeCTM u 
       , out_fun :: ShapeCTM u -> Image u sh

@@ -117,10 +117,11 @@ lineSpacing =
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
       <$> asksDF (font_size . font_props) <*> asksDF line_spacing_factor
 
--- | A Mark is consider to be the height of a lowercase letter
--- in the current font.
--- 
--- Note better to use xlowerHeight
+-- | The /mark/ height is the height of a lowercase letter in the 
+-- current font.
+--
+-- Arrowheads, dots etc. should generally be drawn at the mark 
+-- height.
 -- 
 markHeight :: FromPtSize u => DrawingF u
 markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDF font_props

@@ -25,7 +25,6 @@ module Wumpus.Basic.Anchors
     CenterAnchor(..)
   , CardinalAnchor(..)
   , CardinalAnchor2(..)
-  , TextAnchor(..)
   , RadialAnchor(..)
 
   -- * extended anchor points
@@ -66,12 +65,6 @@ class CardinalAnchor2 t where
   southeast :: DUnit t ~ u => t -> Point2 u
   southwest :: DUnit t ~ u => t -> Point2 u
   northwest :: DUnit t ~ u => t -> Point2 u
-
--- | 'textAnchor' is the Bottom left corner 
--- on the baseline.
---
-class TextAnchor t where
-  baselineSW :: DUnit t ~ u => t -> Point2 u
 
 
 -- | Anchor on a border that can be identified with and angle.
