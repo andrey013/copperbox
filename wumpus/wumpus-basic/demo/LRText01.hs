@@ -54,7 +54,7 @@ pic3 :: DPicture
 pic3 = liftToPictureU $ execDrawing std_ctx $ do
          let abc = execLRText (char 'a' >> char 'b' >> epsilon >> char 'c')
          draw $ abc `at` (P2 0 3) 
-         localCtx (primaryColour red) $ draw $ straightLine (hvec 200) `at` zeroPt
+         localize (strokeColour red) $ draw $ straightLine (hvec 200) `at` zeroPt
 
 
 

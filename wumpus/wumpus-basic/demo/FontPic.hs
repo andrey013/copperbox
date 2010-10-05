@@ -34,9 +34,9 @@ fontMsg ff sz = msgF []
 
 
 makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic
-makeLabel rgb ff sz = 
-    localLG (fillColour rgb . fontsize sz . fontface ff) 
-            (textline $ fontMsg ff sz)
+makeLabel rgb ff sz = localize upd . (textline $ fontMsg ff sz)
+  where
+    upd = fillColour rgb . fontsize sz . fontface ff
 
 -- indian_red1
 -- steel_blue

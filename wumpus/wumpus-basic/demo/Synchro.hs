@@ -65,20 +65,20 @@ pic1 = liftToPictureU $ execDrawing (standardContext 9) $ do
 italiclabel :: ( Real u, Floating u, FromPtSize u
                , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
             => u -> u -> String -> m (FreeLabel u)
-italiclabel x y ss = localCtx (fontface timesItalic)
+italiclabel x y ss = localize (fontface timesItalic)
                               (drawi $ drawShape $ translate x y $ freelabel ss)
 
 
 symbolGraphic :: Num u => String -> LocGraphic u
-symbolGraphic ss = localLG (fontface symbol) (textline ss)
+symbolGraphic ss = localize (fontface symbol) . (textline ss)
 
 timesGraphic :: Num u => String -> LocGraphic u
-timesGraphic ss = localLG (fontface timesItalic) (textline ss)
+timesGraphic ss = localize (fontface timesItalic) . (textline ss)
 
 
 lrtextGraphic :: (Num u, FromPtSize u) 
               => LRText u a -> LocGraphic u
-lrtextGraphic ma = localLG (fontface timesItalic) (execLRText ma)
+lrtextGraphic ma = localize (fontface timesItalic) . (execLRText ma)
 
 
 
@@ -87,7 +87,7 @@ lrtextGraphic ma = localLG (fontface timesItalic) (execLRText ma)
 connector :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m (Point2 u)
-connector p1 p2 = localCtx thin $ do
+connector p1 p2 = localize thin $ do
    p <- drawi $ arrowBarb60 connect `conn` p1 $ p2
    return (maybe p1 fst $ midpoint p)
 

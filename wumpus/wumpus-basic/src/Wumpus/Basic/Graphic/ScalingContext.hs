@@ -17,7 +17,9 @@
 
 module Wumpus.Basic.Graphic.ScalingContext
   (
-    ScalingContext(..)
+
+    ScalingM(..)
+  , ScalingContext(..)
 
   , Scaling
   , runScaling
@@ -38,6 +40,22 @@ import Wumpus.Basic.Graphic.Base
 import Wumpus.Core				-- package: wumpus-core
 
 import Control.Applicative
+
+
+
+-- | Scaling...
+--
+class Monad m => ScalingM m where
+  type XDim m :: *
+  type YDim m :: *
+  scaleX :: (u ~ MonUnit m, ux ~ XDim m) => ux -> m u
+  scaleY :: (u ~ MonUnit m, uy ~ YDim m) => uy -> m u
+  scalePt  :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
+           => ux -> uy -> m (Point2 u)
+  scaleVec :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
+           => ux -> uy -> m (Vec2 u)
+
+
 
 data ScalingContext ux uy u = ScalingContext
       { scale_in_x  :: ux -> u

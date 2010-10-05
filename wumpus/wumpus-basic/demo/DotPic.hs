@@ -51,7 +51,7 @@ demo01 = do
     p17 = makeDotPic (dotText "AA") points
  
 std_ctx :: DrawingContext
-std_ctx = secondaryColour peru $ standardContext 12
+std_ctx = fillColour peru $ standardContext 12
 
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
@@ -66,10 +66,10 @@ makeDotPic dotImg xs = liftToPictureU $ execDrawing std_ctx $ do
     dashline
     mapM_ (\pt -> drawi $ dotImg `ati` pt) xs
   where
-    dashline = localCtx attrUpd (draw $ openStroke $ vertexPath xs)
+    dashline = localize attrUpd (draw $ openStroke $ vertexPath xs)
 
     attrUpd  :: DrawingContext -> DrawingContext
-    attrUpd  =  dashPattern (evenDashes 1) . primaryColour cadet_blue
+    attrUpd  =  dashPattern (evenDashes 1) . strokeColour cadet_blue
 
 
 

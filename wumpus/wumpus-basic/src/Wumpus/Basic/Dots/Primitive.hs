@@ -116,26 +116,27 @@ axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markHLine = standardSize (\h -> axialLine (hvec h))
+markHLine = standardSize $ \h -> axialLine (hvec h)
     
 
 markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markVLine = standardSize (\h -> axialLine (vvec h)) 
+markVLine = standardSize $ \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
-markX = standardSize (\h -> let w = 0.75 * h in
-                            axialLine (vec w h) `lgappend` axialLine (vec (-w) h))
+markX = standardSize $ \h -> 
+    let w = 0.75 * h 
+    in mappend <$> axialLine (vec w h) <*> axialLine (vec (-w) h)
 
 
 
 markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-markPlus = markVLine `lgappend` markHLine
+markPlus = mappend <$> markVLine <*> markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = standardSize 
-             (\h -> axialLine (avec ang h) `lgappend` axialLine (avec (-ang) h))
+markCross = standardSize $ \h -> 
+    mappend <$> axialLine (avec ang h) <*> axialLine (avec (-ang) h)
   where
     ang = pi*0.25  
 
@@ -205,7 +206,8 @@ markStar pt = markHeight >>= \h ->
 
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = standardSize (\h -> lineF1 h `lgappend` lineF2 h `lgappend` lineF3 h)
+markAsterisk = standardSize $ \h -> 
+    (\a b c -> a `mappend` b `mappend` c) <$> lineF1 h <*> lineF2 h <*> lineF3 h
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -215,15 +217,15 @@ markAsterisk = standardSize (\h -> lineF1 h `lgappend` lineF2 h `lgappend` lineF
 
 
 markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-markOPlus = markCircle `lgappend` markPlus
+markOPlus = mappend <$> markCircle <*> markPlus
 
 
 markOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markOCross = markCircle `lgappend` markCross
+markOCross = mappend <$> markCircle <*> markCross
 
 
 markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markFOCross = markCross `lgappend` markBCircle 
+markFOCross = liftA2 mappend markCross markBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u

@@ -14,18 +14,19 @@ description:
   library turns out to be much more demanding than designing a 
   low-level one (Wumpus-Core). 
   .
-  A few of the modules (SafeFonts, SVGColours, X11Colours) are
-  fairly stable others simply aren\'t and may even disappear in
-  subsequent updates.
+  Some of the modules (SafeFonts, SVGColours, X11Colours) are
+  relatively stable, the @Basic.Graphic@ modules are somewhat 
+  robust if not stable. Other modules are essentially sketches 
+  and may even disappear in subsequent updates.
   .
   .
   Changelog:
   .
   0.9.0 to 0.10.0:
   .
-  * Major organiztion change. @Basic.Graphic.BaseClasses@ and
-    @Basic.Graphic.BaseTypes@ merged into same module so they 
-    can depend on each other without orphans instances.
+  * @Basic.Graphic.BaseClasses@ and @Basic.Graphic.BaseTypes@ 
+    merged into same module so they can depend on each other 
+    without orphans instances.
   .
   * @DrawingF@ renamed to @DrawingR@, the related type synonyms
     have also been changed, e.g. @LocDrawingF@ is now 
@@ -33,9 +34,10 @@ description:
   .
   * Method names in the @DrawingCtxM@ class changed - @askCtx@ is
     now @askDC@, @localCtx@ is now @localize@. Removed the 
-    functions @askDF@, @asksDF@ that worked for @DrawingF@ (now 
-    @DrawingR@), @DrawingR@ now uses the @DrawingCtxM@ class for
-    thes functionalities.
+    functions @askDF@, @asksDF@, @pureDF@ that worked for 
+    @DrawingF@ (now @DrawingR@), @DrawingR@ now uses the 
+    Applicative\'s @pure@ and the @DrawingCtxM@ class for these 
+    functionalities.
   .
   * @Basic.Graphic.DrawingContext@ - renamed @primary_colour@ to
     @stroke_colour@ and @secondary_colour@ to @fill_colour@. The 
@@ -57,59 +59,9 @@ description:
   . 
   * Added @DirectionContext@ to @Basic.Graphic@.
   .
-  0.8.0 to 0.9.0:
-  .
-  * Re-worked @Basic.Text.LRSymbol@ changed the type name and the
-    types of the run functions. Added more symbols and a new demo 
-    @Symbols.hs@.
-  .
-  * @ScalingContext@ added to @Basic.Graphic@. Changed 
-    @monoTextWidth@ to take a character count, the old behaviour 
-    is recreated by the new function @monoTextLength@. 
-  .
-  * @Basic.Graphic.Chain@ removed. It is now superseded by
-    @Basic.Chains@.
-  .
-  * Added new property to @DrawingContext@ for line spacing 
-    scaling factor, and added a new drawing primitive 
-    @textlineMulti@ for multi-line, left justified labels.
-  .
-  * Synthezied attribute /getters/ such as @textDimensions@ moved
-    from @Basic.Graphic.DrawingContext@ to the new module
-    @Basic.Graphic.Query@. The type of all the functions has 
-    changed to DrawingF. @lowerxHeight@ is renamed 
-    @monoLowerxHeight@ emphasizing that the metrics pertain to
-    monospaced Courier font.
-  .
-  * Added Shapes modules.
-  . 
-  * TurtleMonad module - the TurtleDrawing type and run functions
-    have been removed and the internals have been reworked. 
-    Turtle is now run solely as a /local effect/ within the 
-    Drawing monad. 
-  .
-  0.7.0 to 0.8.0:
-  .
-  * Re-introduced LRText and LRSymbol - they now work with 
-    Wumpus-Core\'s kerning support.
-  . 
-  * Changes to @Graphic.Basic.BaseTypes@ - @DrawingObject@ 
-    renamed to @DrawingF@. @HPrim@ wrapped as a newtype to 
-    support a Monoid instance. Removed @appendGraphic@ and @gcat@ 
-    as they can be achieved with @mappend@ and @mconcat@. 
-    @appendAt@ renamed to @lgappend@. @PointT@ remaned to 
-    @PointF@.
-  .
-  * Changes to @Graphic.Basic.Drawing@ - @drawAt@, @drawAtImg@, 
-    @drawConn@, @drawConnImg@ all removed. They are replaced 
-    by @draw@ and @drawi@ together with then new @at@ and @conn@
-    combinators.
-  .
-  * Changes to @Basic.Graphic.PrimGraphic@ - @localDrawingContext@
-    renamed to @localLG@ and moved to @Basic.Graphic.BaseTypes@.
-  .
-  * Updates to @Basic.SafeFonts@ to work with changes to 
-    @Wumpus.Core@.
+  * @localLG@ removed it can be acheived with composition -
+    @localize upd . loc_graphic_function@. @lgappend@ is also 
+    removed - it can be recreated applicatively.
   .
   .
 build-type:         Simple

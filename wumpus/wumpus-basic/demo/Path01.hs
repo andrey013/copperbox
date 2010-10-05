@@ -44,15 +44,15 @@ curve1 = openStroke $ curvedPath xs
 
 
 curve2 :: Graphic Double
-curve2 =  localDF (strokeColour red) (openStroke $ toPrimPathU path_one)
+curve2 =  localize (strokeColour red) (openStroke $ toPrimPathU path_one)
   where
     path_one = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
 
 
 curve3 :: Graphic Double
-curve3 = localDF (strokeColour blue) 
-                     (openStroke $ toPrimPathU $ shortenBoth 10 path1)
+curve3 = localize (strokeColour blue) 
+                  (openStroke $ toPrimPathU $ shortenBoth 10 path1)
 
 
 path1 :: Path Double
@@ -60,7 +60,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localDF (fillColour gold) (filledCircle 2 60 zeroPt)
+circle1 = localize (fillColour gold) (filledCircle 2 60 zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
@@ -74,8 +74,8 @@ cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 --
 
 eastUpWest :: Graphic Double
-eastUpWest = localDF (strokeColour blue) 
-                         (openStroke $ mkP1 (P2 140 0) (P2 160 20))
+eastUpWest = localize (strokeColour blue) 
+                      (openStroke $ mkP1 (P2 140 0) (P2 160 20))
 
 
 -- Potentially this may introduce the style that using AGraphic2 

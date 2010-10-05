@@ -19,7 +19,8 @@
 module Wumpus.Basic.Graphic.DirectionContext
   (
 
-    Direction
+    DirectionM(..)
+  , Direction
   , runDirection
   , DirectionT
   , runDirectionT
@@ -37,6 +38,14 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
+
+-- Should this use MonUnit for consistency ??
+
+class Monad m => DirectionM m where
+  localTheta    :: Radian -> m a -> m a
+  asksTheta     :: (Radian -> a) -> m a 
+  parallel      :: Floating u => u -> m (Vec2 u)
+  perpendicular :: Floating u => u -> m (Vec2 u)
 
 
 --

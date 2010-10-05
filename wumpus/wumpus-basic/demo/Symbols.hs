@@ -2,7 +2,7 @@
 
 module Symbols where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Graphic hiding ( perpendicular )
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText

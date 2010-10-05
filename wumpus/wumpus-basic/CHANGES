@@ -1,4 +1,36 @@
 
+0.8.0 to 0.9.0:
+
+  * Re-worked @Basic.Text.LRSymbol@ changed the type name and the
+    types of the run functions. Added more symbols and a new demo 
+    @Symbols.hs@.
+
+  * @ScalingContext@ added to @Basic.Graphic@. Changed 
+    @monoTextWidth@ to take a character count, the old behaviour 
+    is recreated by the new function @monoTextLength@. 
+
+  * @Basic.Graphic.Chain@ removed. It is now superseded by
+    @Basic.Chains@.
+
+  * Added new property to @DrawingContext@ for line spacing 
+    scaling factor, and added a new drawing primitive 
+    @textlineMulti@ for multi-line, left justified labels.
+
+  * Synthezied attribute /getters/ such as @textDimensions@ moved
+    from @Basic.Graphic.DrawingContext@ to the new module
+    @Basic.Graphic.Query@. The type of all the functions has 
+    changed to DrawingF. @lowerxHeight@ is renamed 
+    @monoLowerxHeight@ emphasizing that the metrics pertain to
+    monospaced Courier font.
+
+  * Added Shapes modules.
+ 
+  * TurtleMonad module - the TurtleDrawing type and run functions
+    have been removed and the internals have been reworked. 
+    Turtle is now run solely as a /local effect/ within the 
+    Drawing monad. 
+
+
 0.7.0 to 0.8.0:
 
   * Re-introduced LRText and LRSymbol - they now work with 

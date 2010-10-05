@@ -47,13 +47,13 @@ pic1 = liftToPictureU $ execDrawing (standardContext 24) $ do
 
 
 coordinate :: (Floating u, FromPtSize u) => LocGraphic u
-coordinate = localDF (halfsize . primaryColour red) . (fmap snd . dotPlus)
+coordinate = localize (halfsize . strokeColour red) . (fmap snd . dotPlus)
 
 textSquare :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
 textSquare ss pt = 
      monoTextDimensions ss  >>= \(w,h) ->
      monoDescenderDepth     >>= \dy    ->
-     localDF (primaryColour medium_sea_green . dashPattern dp)
+     localize (strokeColour medium_sea_green . dashPattern dp)
              (strokedRectangle w h (vdisplace (-dy) pt))
   where
     dp = doublegaps unit_dash_pattern 
@@ -63,8 +63,8 @@ textSquareCtr :: (Fractional u, Ord u, FromPtSize u)
               => String -> LocGraphic u
 textSquareCtr ss pt = 
     monoTextDimensions ss >>= \(w,h) ->
-    localDF (primaryColour dim_gray . dashPattern dp)
-            (strokedRectangle w h (displace (0.5*(-w)) (0.5*(-h)) pt))
+    localize (strokeColour dim_gray . dashPattern dp)
+             (strokedRectangle w h (displace (0.5*(-w)) (0.5*(-h)) pt))
   where
     dp = doublegaps unit_dash_pattern 
 

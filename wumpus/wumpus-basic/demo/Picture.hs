@@ -135,17 +135,17 @@ picAnno pic msg = alignHSep HCenter 30 pic lbl
 
 rect_red :: DPicture
 rect_red = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-              localCtx (secondaryColour indian_red)
+              localize (fillColour indian_red)
                        (draw $ borderedRectangle 30 10 `at` (P2 0 10))
                  
 rect_green :: DPicture
 rect_green = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-              localCtx (secondaryColour olive_drab)
+              localize (fillColour olive_drab)
                        (draw $ borderedRectangle 15 15 `at` (P2 10 10))
 
 
 rect_blue :: DPicture
 rect_blue = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-              localCtx (secondaryColour powder_blue)
+              localize (fillColour powder_blue)
                        (draw $ borderedRectangle 20 30 `at` (P2 10 0))
 

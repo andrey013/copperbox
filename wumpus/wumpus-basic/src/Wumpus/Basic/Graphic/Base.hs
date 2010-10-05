@@ -28,8 +28,7 @@
 --
 -- The suffix @M@ is used for classes defining monadic actions.
 --
--- \*\* WARNING \*\* - some names are expected to change 
--- particularly the naming of the /append/ and /concat/ functions.
+-- \*\* WARNING \*\* - some names are expected to change.
 --
 --------------------------------------------------------------------------------
 
@@ -41,9 +40,6 @@ module Wumpus.Basic.Graphic.Base
   , TraceM(..)
   , DrawingCtxM(..)
   , asksDC
-
-  , ScalingM(..)
-  , DirectionM(..)
  
   , PointSupplyM(..)
 
@@ -70,8 +66,6 @@ module Wumpus.Basic.Graphic.Base
 
   , LocGraphic
   , DLocGraphic
-  , localLG
-  , lgappend
 
   , Image
   , DImage
@@ -131,27 +125,7 @@ asksDC :: DrawingCtxM m => (DrawingContext -> a) -> m a
 asksDC f = askDC >>= (return . f)
 
 
--- | Scaling...
---
-class Monad m => ScalingM m where
-  type XDim m :: *
-  type YDim m :: *
-  scaleX :: (u ~ MonUnit m, ux ~ XDim m) => ux -> m u
-  scaleY :: (u ~ MonUnit m, uy ~ YDim m) => uy -> m u
-  scalePt  :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
-           => ux -> uy -> m (Point2 u)
-  scaleVec :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
-           => ux -> uy -> m (Vec2 u)
 
-
-
--- Should this use MonUnit for consistency ??
-
-class Monad m => DirectionM m where
-  localTheta    :: Radian -> m a -> m a
-  asksTheta     :: (Radian -> a) -> m a 
-  parallel      :: Floating u => u -> m (Vec2 u)
-  perpendicular :: Floating u => u -> m (Vec2 u)
 
 
 
@@ -293,17 +267,6 @@ type LocGraphic u = Point2 u -> Graphic u
 type DLocGraphic = LocGraphic Double
 
 
-localLG :: 
-    (DrawingContext -> DrawingContext) -> LocGraphic u -> LocGraphic u
-localLG upd img = \pt -> localize upd (img pt) 
-
-
--- | Composition operator for LocGraphic - both LocGraphics
--- are drawn at the same origin and the results concatenated.
---
---
-lgappend :: LocGraphic u -> LocGraphic u -> LocGraphic u
-lgappend f g = \pt -> f pt `mappend` g pt
 
 
 --------------------------------------------------------------------------------
