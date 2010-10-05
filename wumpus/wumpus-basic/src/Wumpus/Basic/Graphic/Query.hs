@@ -59,36 +59,36 @@ import Control.Applicative
 
 
 textAttr :: DrawingF (RGBi,FontAttr)
-textAttr = (,) <$> asksDF primary_colour <*> asksDF font_props
+textAttr = (,) <$> asksDF stroke_colour <*> asksDF font_props
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
 withTextAttr :: (RGBi -> FontAttr -> a) -> DrawingF a
-withTextAttr fn = fn <$> asksDF primary_colour <*> asksDF font_props
+withTextAttr fn = fn <$> asksDF stroke_colour <*> asksDF font_props
 
 
 strokeAttr :: DrawingF (RGBi, StrokeAttr)
-strokeAttr = (,) <$> asksDF primary_colour <*> asksDF stroke_props
+strokeAttr = (,) <$> asksDF stroke_colour <*> asksDF stroke_props
 
 withStrokeAttr :: (RGBi -> StrokeAttr -> a) -> DrawingF a
-withStrokeAttr fn = fn <$> asksDF primary_colour <*> asksDF stroke_props
+withStrokeAttr fn = fn <$> asksDF stroke_colour <*> asksDF stroke_props
 
 
 fillAttr :: DrawingF RGBi
-fillAttr = asksDF secondary_colour
+fillAttr = asksDF fill_colour
 
 withFillAttr :: (RGBi -> a) -> DrawingF a
-withFillAttr fn = fn <$> asksDF secondary_colour
+withFillAttr fn = fn <$> asksDF fill_colour
 
 borderedAttr :: DrawingF (RGBi, StrokeAttr, RGBi)
-borderedAttr = (,,) <$> asksDF secondary_colour <*> asksDF stroke_props 
-                                                <*> asksDF primary_colour
+borderedAttr = (,,) <$> asksDF fill_colour <*> asksDF stroke_props 
+                                                <*> asksDF stroke_colour
 
 withBorderedAttr :: (RGBi -> StrokeAttr -> RGBi -> a) -> DrawingF a
 withBorderedAttr fn = 
-    fn <$> asksDF secondary_colour <*> asksDF stroke_props 
-                                   <*> asksDF primary_colour
+    fn <$> asksDF fill_colour <*> asksDF stroke_props 
+                              <*> asksDF stroke_colour
 
 
 

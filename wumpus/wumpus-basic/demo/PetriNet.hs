@@ -77,7 +77,7 @@ petri_net = liftToPictureU $ execDrawing (standardContext 14) $ do
               return ()
 
 greenFill :: DrawingCtxM m => m a -> m a
-greenFill = localCtx (secondaryColour lime_green)
+greenFill = localCtx (fillColour lime_green)
 
 place :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
       => u -> u -> m (Circle u)

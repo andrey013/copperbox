@@ -135,7 +135,7 @@ triAng :: (Floating u, Real u, FromPtSize u)
       -> LocGraphic u
 triAng triang theta gf pt = 
     tripointsByAngle triang theta pt >>= \(u,v) -> 
-    localDF bothPrimary (gf $  vertexPath [pt,u,v])
+    localDF bothStrokeColour (gf $  vertexPath [pt,u,v])
 
 
 

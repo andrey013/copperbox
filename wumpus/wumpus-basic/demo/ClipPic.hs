@@ -39,12 +39,14 @@ pic_drawing_ctx = standardContext 14
 pic :: DPicture
 pic = pic1 `nextToV` (stackOver [cpic1, cpic2, cpic3] cpic4)
 
+fillPath :: Num u => Path u -> Graphic u
+fillPath = filledPath . toPrimPathU
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-         localCtx (secondaryColour medium_slate_blue) $ do
+         localCtx (fillColour medium_slate_blue) $ do
             draw $ fillPath path01
-            localCtx (secondaryColour powder_blue) $ 
+            localCtx (fillColour powder_blue) $ 
                      draw $ fillPath path02
             draw $ fillPath path03
             draw $ fillPath path04
@@ -52,7 +54,7 @@ pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $
 
 background :: RGBi -> DPicture 
 background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-                   localCtx (primaryColour rgb) $ do                  
+                   localCtx (strokeColour rgb) $ do                  
                      mapM_ iheartHaskell ps
 
    where

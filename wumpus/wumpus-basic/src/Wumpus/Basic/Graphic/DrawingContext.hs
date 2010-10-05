@@ -25,8 +25,10 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- * Drawing context
     DrawingContext(..)
+  , DrawingContextF
 
   , standardContext
+  , default_drawing_context
 
   -- * Modifiers 
   -- ** Line widths
@@ -60,10 +62,10 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- ** Colour
   , swapColours
-  , bothPrimary
-  , bothSecondary
-  , primaryColour
-  , secondaryColour 
+  , bothStrokeColour
+  , bothFillColour
+  , strokeColour
+  , fillColour 
 
 
 
@@ -81,32 +83,34 @@ import Control.Applicative
 data DrawingContext = DrawingContext
       { stroke_props          :: StrokeAttr
       , font_props            :: FontAttr
-      , primary_colour        :: RGBi      -- usually the stroke colour
-      , secondary_colour      :: RGBi      -- usually the fill colour
+      , stroke_colour         :: RGBi      -- also text colour...
+      , fill_colour           :: RGBi      
       , line_spacing_factor   :: Double
       }
   deriving (Eq,Show)
 
+type DrawingContextF = DrawingContext -> DrawingContext
+
 
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
-    DrawingContext { stroke_props           = default_stroke_attr
-                   , font_props             = FontAttr sz courier
-                   , primary_colour         = black
-                   , secondary_colour       = light_gray
-                   , line_spacing_factor    = 1.2  
+    DrawingContext { stroke_props         = default_stroke_attr
+                   , font_props           = FontAttr sz courier
+                   , stroke_colour        = black
+                   , fill_colour          = light_gray
+                   , line_spacing_factor  = 1.2  
                    }
 
 
+default_drawing_context :: DrawingContext
+default_drawing_context = 
+    standardContext (font_size wumpus_default_font)
 
 
-
-updateStrokeProps :: (StrokeAttr -> StrokeAttr) 
-                  -> DrawingContext -> DrawingContext
+updateStrokeProps :: (StrokeAttr -> StrokeAttr) -> DrawingContextF
 updateStrokeProps fn = (\s i -> s { stroke_props = fn i }) <*> stroke_props
 
-updateFontProps :: (FontAttr -> FontAttr) 
-                -> DrawingContext -> DrawingContext
+updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
 updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 
 
@@ -128,7 +132,7 @@ ultra_thick_line    = 4.0
 thin_line           :: Double
 thin_line           = 0.5
 
-setLineWidth       :: Double -> DrawingContext -> DrawingContext
+setLineWidth       :: Double -> DrawingContextF
 setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
 -- | Set the line width to a /thick/.
@@ -136,47 +140,47 @@ setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 -- Note this context update is /oblivious/ - operationally the 
 -- line width is set to exactly @2.0@.
 --
-thick               :: DrawingContext -> DrawingContext
+thick               :: DrawingContextF
 thick               = setLineWidth thick_line
 
-ultrathick          :: DrawingContext -> DrawingContext
+ultrathick          :: DrawingContextF
 ultrathick          = setLineWidth ultra_thick_line
 
-thin                :: DrawingContext -> DrawingContext
+thin                :: DrawingContextF
 thin                = setLineWidth thin_line
 
 
-setLineCap          :: LineCap -> DrawingContext -> DrawingContext
+setLineCap          :: LineCap -> DrawingContextF
 setLineCap d        = updateStrokeProps (\s -> s { line_cap = d })
 
 
-capButt             :: DrawingContext -> DrawingContext
+capButt             :: DrawingContextF
 capButt             = setLineCap CapButt
 
-capRound            :: DrawingContext -> DrawingContext
+capRound            :: DrawingContextF
 capRound            = setLineCap CapRound
 
-capSquare           :: DrawingContext -> DrawingContext
+capSquare           :: DrawingContextF
 capSquare           = setLineCap CapSquare
 
 
-setLineJoin         :: LineJoin -> DrawingContext -> DrawingContext
+setLineJoin         :: LineJoin -> DrawingContextF
 setLineJoin d       = updateStrokeProps (\s -> s { line_join = d })
 
 
-joinMiter           :: DrawingContext -> DrawingContext
+joinMiter           :: DrawingContextF
 joinMiter           = setLineJoin JoinMiter
 
-joinRound           :: DrawingContext -> DrawingContext
+joinRound           :: DrawingContextF
 joinRound           = setLineJoin JoinRound
 
-joinBevel           :: DrawingContext -> DrawingContext
+joinBevel           :: DrawingContextF
 joinBevel           = setLineJoin JoinBevel
 
 
 --------------------------------------------------------------------------------
 
-dashPattern         :: DashPattern -> DrawingContext -> DrawingContext
+dashPattern         :: DashPattern -> DrawingContextF
 dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })        
 
 unit_dash_pattern   :: DashPattern
@@ -208,10 +212,10 @@ doubledashes (Dash i xs)  = Dash i (map fn xs)
 --------------------------------------------------------------------------------
 
 
-fontface            :: FontFace -> DrawingContext -> DrawingContext
+fontface            :: FontFace -> DrawingContextF
 fontface ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
 
-fontsize            :: Int -> DrawingContext -> DrawingContext
+fontsize            :: Int -> DrawingContextF
 fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 
 --------------------------------------------------------------------------------
@@ -219,7 +223,7 @@ fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 -- | Set the font size to double the current size, note the font
 -- size also controls the size of dots, arrowsheads etc.
 -- 
-doublesize          :: DrawingContext -> DrawingContext
+doublesize          :: DrawingContextF
 doublesize          = (\s sz -> fontsize (sz*2) s) <*> (font_size . font_props)
 
 
@@ -229,30 +233,30 @@ doublesize          = (\s sz -> fontsize (sz*2) s) <*> (font_size . font_props)
 -- As fontsize is an integer this is not exact - half size of
 -- 15pt type is 7pt.
 -- 
-halfsize            :: DrawingContext -> DrawingContext
+halfsize            :: DrawingContextF
 halfsize            = (\s sz -> fontsize (sz `div` 2) s) 
                         <*> (font_size . font_props)
 
 
 --------------------------------------------------------------------------------
 
-swapColours :: DrawingContext -> DrawingContext
+swapColours :: DrawingContextF
 swapColours = 
-    (\s a b -> s { primary_colour = b, secondary_colour = a })
-        <*> primary_colour <*> secondary_colour
+    (\s a b -> s { stroke_colour = b, fill_colour = a })
+        <*> stroke_colour <*> fill_colour
 
-bothPrimary :: DrawingContext -> DrawingContext
-bothPrimary = (\s a -> s { secondary_colour = a }) <*> primary_colour
+bothStrokeColour :: DrawingContextF
+bothStrokeColour = (\s a -> s { fill_colour = a }) <*> stroke_colour
 
-bothSecondary :: DrawingContext -> DrawingContext
-bothSecondary = (\s a -> s { primary_colour = a }) <*> secondary_colour
-
-
-
-primaryColour :: RGBi -> DrawingContext -> DrawingContext
-primaryColour rgb = \s -> s { primary_colour = rgb } 
+bothFillColour :: DrawingContextF
+bothFillColour = (\s a -> s { stroke_colour = a }) <*> fill_colour
 
 
-secondaryColour :: RGBi -> DrawingContext -> DrawingContext
-secondaryColour rgb = \s -> s { secondary_colour = rgb } 
+
+strokeColour :: RGBi -> DrawingContextF
+strokeColour rgb = \s -> s { stroke_colour = rgb } 
+
+
+fillColour :: RGBi -> DrawingContextF
+fillColour rgb = \s -> s { fill_colour = rgb } 
 

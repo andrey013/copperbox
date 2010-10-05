@@ -23,6 +23,14 @@ description:
   .
   0.9.0 to 0.10.0:
   .
+  * @Basic.Graphic.DrawingContext@ - renamed @primary_colour@ to
+    @stroke_colour@ and @secondary_colour@ to @fill_colour@. The 
+    setter functions has been similarly renamed.
+  .
+  * Added the type synonym @DrawingContextF@ to 
+    @Basic.Graphic.DrawingContext@. Changed relevant function
+    signatures to use it.
+  .
   * Re-worked the Path modules - base types entirely different,
     connectors entirely different, monadic path construction 
     largely the same.

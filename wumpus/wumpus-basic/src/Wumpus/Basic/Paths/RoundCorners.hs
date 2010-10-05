@@ -82,7 +82,7 @@ twoParts u a b c = line p1 p2 `mappend` cornerCurve p2 b p3
 --
 
 illustratePath :: Fractional u => Path u -> Graphic u
-illustratePath = localDF (primaryColour black) . step1 . pathViewL
+illustratePath = localDF (strokeColour black) . step1 . pathViewL
   where
     step1 EmptyPathL = mempty
     step1 (e :<< se) = drawPathBoth e `mappend` rest (pathViewL se)
@@ -105,10 +105,10 @@ drawPath1 (Curve1 p1 p2 p3 p4) =
 
 bezierCtrl :: Fractional u => Point2 u -> Point2 u -> Graphic u
 bezierCtrl p1 p2 = 
-    localDF (primaryColour light_steel_blue . secondaryColour red) $
+    localDF (strokeColour light_steel_blue . fillColour red) $
       straightLineBetween p1 p2 `mappend` filledDisk 1 p2
 
 
 pathPoint :: Num u => Point2 u -> Graphic u
-pathPoint = localDF bothPrimary . filledDisk 1
+pathPoint = localDF bothStrokeColour . filledDisk 1
 
