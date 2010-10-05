@@ -119,7 +119,7 @@ lrectangle w h ss = Shape { src_ctm = identityCTM
 
 outputRect :: (Real u, Floating u) 
            => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Rectangle u)
-outputRect hw hh shl ctm = intoImage (pureDF a) (drawRect a `mappend` label) 
+outputRect hw hh shl ctm = intoImage (return a) (drawRect a `mappend` label) 
   where
     a     = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
     label = runShapeLabel ctm shl
@@ -193,7 +193,7 @@ lcircle radius ss = Shape { src_ctm = identityCTM
 
 outputCirc :: (Real u, Floating u) 
            => u -> ShapeLabel u -> ShapeCTM u -> Image u (Circle u)
-outputCirc rad shl ctm = intoImage (pureDF a) (drawCirc a `mappend` label) 
+outputCirc rad shl ctm = intoImage (return a) (drawCirc a `mappend` label) 
   where
     a     = Circle { circ_ctm = ctm, circ_radius = rad }
     label = runShapeLabel ctm shl
@@ -234,13 +234,13 @@ coordinate = Shape { src_ctm = identityCTM
                    }
 
 outputCoord :: (Real u, Floating u) => ShapeCTM u -> Image u (Coordinate u)
-outputCoord ctm = intoImage (pureDF a) (drawCoord a) 
+outputCoord ctm = intoImage (return a) (drawCoord a) 
   where
     a = Coordinate { coord_ctm = ctm }
 
 
 drawCoord :: (Real u, Floating u) => Coordinate u -> Graphic u
-drawCoord coord = localDF swapColours $ filledEllipse 2 2 (center coord)
+drawCoord coord = localize swapColours $ filledEllipse 2 2 (center coord)
 
 --------------------------------------------------------------------------------
 -- Diamond
@@ -288,7 +288,7 @@ ldiamond hw hh ss = Shape { src_ctm = identityCTM
 
 outputDia :: (Real u, Floating u) 
           => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Diamond u)
-outputDia hw hh shl ctm = intoImage (pureDF a) (drawDia a `mappend` label) 
+outputDia hw hh shl ctm = intoImage (return a) (drawDia a `mappend` label) 
   where
     a     = Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
     label = runShapeLabel ctm shl
@@ -335,7 +335,7 @@ lellipse rx ry ss = Shape { src_ctm = identityCTM
 
 outputEll :: (Real u, Floating u) 
           => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Ellipse u)
-outputEll rx ry shl ctm = intoImage (pureDF a) (drawEll a `mappend` label)
+outputEll rx ry shl ctm = intoImage (return a) (drawEll a `mappend` label)
   where
     a     = Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
     label = runShapeLabel ctm shl

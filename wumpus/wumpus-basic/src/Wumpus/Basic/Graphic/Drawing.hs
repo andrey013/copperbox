@@ -54,8 +54,7 @@ module Wumpus.Basic.Graphic.Drawing
   ) where
 
 
-import Wumpus.Basic.Graphic.BaseClasses
-import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
  
 
@@ -157,14 +156,14 @@ instance Monad m => TraceM (DrawingT u m) where
 -- DrawingCtxM
 
 instance DrawingCtxM (Drawing u) where
-  askCtx         = Drawing $ \ctx s -> (ctx, s)
-  localCtx cF ma = Drawing $ \ctx  s -> getDrawing ma (cF ctx) s
+  askDC           = Drawing $ \ctx s -> (ctx, s)
+  localize upd ma = Drawing $ \ctx s -> getDrawing ma (upd ctx) s
 
 
 
 instance Monad m => DrawingCtxM (DrawingT u m) where
-  askCtx         = DrawingT $ \ctx s -> return (ctx,s)
-  localCtx cF ma = DrawingT $ \ctx s -> getDrawingT ma (cF ctx) s
+  askDC           = DrawingT $ \ctx s -> return (ctx,s)
+  localize upd ma = DrawingT $ \ctx s -> getDrawingT ma (upd ctx) s
 
 
 
@@ -281,7 +280,7 @@ mbPictureU (Just a) = a
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
-draw gf = askCtx >>= \ctx -> trace (runGraphic ctx gf)
+draw gf = askDC >>= \ctx -> trace (runGraphic ctx gf)
 
 -- | Hyperlink version of 'draw'.
 --
@@ -298,7 +297,7 @@ xdraw xl gf = draw (xlinkGraphic xl gf)
 -- monad, and the result is returned.
 -- 
 drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
-drawi img = askCtx >>= \ctx -> 
+drawi img = askDC >>= \ctx -> 
             let (a,o) = runImage ctx img in trace o >> return a
 
 -- | Hyperlink version of 'drawi'.
@@ -326,13 +325,13 @@ conn = ($)
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocGraphic u -> m ()
-node gfL = askCtx   >>= \ctx -> 
+node gfL = askDC   >>= \ctx -> 
            position >>= \pt  -> trace (runGraphic ctx $ gfL pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocImage u a -> m a
-nodei imgL = askCtx   >>= \ctx -> 
+nodei imgL = askDC   >>= \ctx -> 
              position >>= \pt  -> 
              let (a,o) = runImage ctx (imgL pt) in trace o >> return a
 

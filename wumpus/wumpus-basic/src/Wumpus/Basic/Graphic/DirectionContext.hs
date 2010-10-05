@@ -29,7 +29,7 @@ module Wumpus.Basic.Graphic.DirectionContext
 
   ) where
 
-import Wumpus.Basic.Graphic.BaseClasses
+import Wumpus.Basic.Graphic.Base
 
 import Wumpus.Core				-- package: wumpus-core
 
@@ -106,8 +106,8 @@ instance Monad m => DirectionM (DirectionT m) where
 -- Cross instances - needed to run SalingT /locally/ in Drawing.
 
 instance DrawingCtxM m => DrawingCtxM (DirectionT m) where
-  askCtx   = DirectionT $ \_ -> askCtx >>= \dctx -> return dctx
-  localCtx ctx mf = DirectionT $ \r -> localCtx ctx (getDirectionT mf r)
+  askDC           = DirectionT $ \_ -> askDC >>= \dctx -> return dctx
+  localize ctx mf = DirectionT $ \r -> localize ctx (getDirectionT mf r)
 
 
 instance (Monad m, TraceM m) => TraceM (DirectionT m) where

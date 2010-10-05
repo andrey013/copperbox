@@ -117,10 +117,10 @@ instance Monad (LRText u) where
 
 runLRText :: (Num u, FromPtSize u) => LRText u a -> LocImage u a
 runLRText ma = \pt -> envZero >>= \e1 -> 
-                   let (a,st) = getLRText ma e1 st_zero 
-                   in mkline pt (acc_chr st) >>= \g1 ->
-                      localDF (fontface symbol) (mkline pt (acc_sym st)) >>= \g2 ->
-                      return (a,g1 `mappend` g2)
+    let (a,st) = getLRText ma e1 st_zero 
+    in mkline pt (acc_chr st) >>= \g1 ->
+       localize (fontface symbol) (mkline pt (acc_sym st)) >>= \g2 ->
+       return (a,g1 `mappend` g2)
   where
     mkline pt h = case toListH h of
                    [] -> return mempty
@@ -137,7 +137,7 @@ st_zero = St { delta_chr       = 0
              , acc_sym         = emptyH }
  
 
-envZero :: FromPtSize u => DrawingF (Env u)
+envZero :: FromPtSize u => DrawingR (Env u)
 envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
                       , spacer_width = fromPtSize $ spacerWidth sz })
             <$> fontSize

@@ -49,7 +49,7 @@ module Wumpus.Basic.Graphic.Query
   , monoVecToCenter  
   ) where
 
-import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
 
 
@@ -58,54 +58,57 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 
 
-textAttr :: DrawingF (RGBi,FontAttr)
-textAttr = (,) <$> asksDF stroke_colour <*> asksDF font_props
+textAttr :: (Applicative m, DrawingCtxM m) => m (RGBi,FontAttr)
+textAttr = (,) <$> asksDC stroke_colour <*> asksDC font_props
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
-withTextAttr :: (RGBi -> FontAttr -> a) -> DrawingF a
-withTextAttr fn = fn <$> asksDF stroke_colour <*> asksDF font_props
+withTextAttr :: (Applicative m, DrawingCtxM m) 
+             => (RGBi -> FontAttr -> a) -> m a
+withTextAttr fn = fn <$> asksDC stroke_colour <*> asksDC font_props
 
 
-strokeAttr :: DrawingF (RGBi, StrokeAttr)
-strokeAttr = (,) <$> asksDF stroke_colour <*> asksDF stroke_props
+strokeAttr :: (Applicative m, DrawingCtxM m) => m (RGBi, StrokeAttr)
+strokeAttr = (,) <$> asksDC stroke_colour <*> asksDC stroke_props
 
-withStrokeAttr :: (RGBi -> StrokeAttr -> a) -> DrawingF a
-withStrokeAttr fn = fn <$> asksDF stroke_colour <*> asksDF stroke_props
+withStrokeAttr :: (Applicative m, DrawingCtxM m) 
+               => (RGBi -> StrokeAttr -> a) -> m a
+withStrokeAttr fn = fn <$> asksDC stroke_colour <*> asksDC stroke_props
 
 
-fillAttr :: DrawingF RGBi
-fillAttr = asksDF fill_colour
+fillAttr :: (Applicative m, DrawingCtxM m) => m RGBi
+fillAttr = asksDC fill_colour
 
-withFillAttr :: (RGBi -> a) -> DrawingF a
-withFillAttr fn = fn <$> asksDF fill_colour
+withFillAttr :: (Applicative m, DrawingCtxM m) => (RGBi -> a) -> m a
+withFillAttr fn = fn <$> asksDC fill_colour
 
-borderedAttr :: DrawingF (RGBi, StrokeAttr, RGBi)
-borderedAttr = (,,) <$> asksDF fill_colour <*> asksDF stroke_props 
-                                                <*> asksDF stroke_colour
+borderedAttr :: (Applicative m, DrawingCtxM m) => m (RGBi, StrokeAttr, RGBi)
+borderedAttr = (,,) <$> asksDC fill_colour <*> asksDC stroke_props 
+                                           <*> asksDC stroke_colour
 
-withBorderedAttr :: (RGBi -> StrokeAttr -> RGBi -> a) -> DrawingF a
+withBorderedAttr :: (Applicative m, DrawingCtxM m) 
+                 => (RGBi -> StrokeAttr -> RGBi -> a) -> m a
 withBorderedAttr fn = 
-    fn <$> asksDF fill_colour <*> asksDF stroke_props 
-                              <*> asksDF stroke_colour
+    fn <$> asksDC fill_colour <*> asksDC stroke_props 
+                              <*> asksDC stroke_colour
 
 
 
 
-lineWidth :: DrawingF Double
-lineWidth = line_width <$> asksDF stroke_props
+lineWidth :: (Applicative m, DrawingCtxM m) => m Double
+lineWidth = line_width <$> asksDC stroke_props
 
-fontSize :: DrawingF Int
-fontSize = font_size <$> asksDF font_props
+fontSize :: (Applicative m, DrawingCtxM m) => m Int
+fontSize = font_size <$> asksDC font_props
 
 
 
 
 -- Maybe these functions are better as queries - i.e. functions
--- of type DrawingF, e.g.
+-- of type DrawingR, e.g.
 -- 
--- > lineSpacing :: Fractional u => DrawingF u
+-- > lineSpacing :: Fractional u => DrawingR u
 -- 
 -- Then the /client/ can just bound the answer directly
 -- rather than using 
@@ -113,10 +116,10 @@ fontSize = font_size <$> asksDF font_props
 -- > askDF lineSpacing >>= \u -> ...
 --
 
-lineSpacing :: Fractional u => DrawingF u
+lineSpacing :: (Applicative m, DrawingCtxM m, Fractional u) => m u
 lineSpacing = 
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
-      <$> asksDF (font_size . font_props) <*> asksDF line_spacing_factor
+      <$> asksDC (font_size . font_props) <*> asksDC line_spacing_factor
 
 -- | The /mark/ height is the height of a lowercase letter in the 
 -- current font.
@@ -124,11 +127,12 @@ lineSpacing =
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: FromPtSize u => DrawingF u
-markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDF font_props
+markHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDC font_props
 
 
-markHalfHeight :: (Fractional u, FromPtSize u) => DrawingF u
+markHalfHeight :: (Applicative m, DrawingCtxM m, Fractional u, FromPtSize u) 
+               => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 
@@ -142,28 +146,28 @@ markHalfHeight = (0.5*) <$> markHeight
 
 --------------------------------------------------------------------------------
 
-withFontSize :: (FontSize -> u) -> DrawingF u
-withFontSize fn = fn . font_size <$> asksDF font_props
+withFontSize :: (Applicative m, DrawingCtxM m) => (FontSize -> u) -> m u
+withFontSize fn = (fn . font_size) <$> asksDC font_props
 
-monoCharWidth :: FromPtSize u => DrawingF u
+monoCharWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoCharWidth = withFontSize (fromPtSize . charWidth)
 
-monoSpacerWidth :: FromPtSize u => DrawingF u
+monoSpacerWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoSpacerWidth = withFontSize (fromPtSize . spacerWidth)
 
 
-monoTextWidth :: FromPtSize u => Int -> DrawingF u
+monoTextWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => Int -> m u
 monoTextWidth n = withFontSize $ \sz -> fromPtSize $ textWidth sz n
 
 
-monoTextLength :: FromPtSize u => String -> DrawingF u
+monoTextLength :: (Applicative m, DrawingCtxM m, FromPtSize u) => String -> m u
 monoTextLength ss = monoTextWidth $ charCount ss
 
 
-monoTextHeight :: FromPtSize u => DrawingF u
+monoTextHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoTextHeight = withFontSize (fromPtSize . textHeight)
 
-monoNumeralHeight :: FromPtSize u => DrawingF u
+monoNumeralHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
 
 
@@ -171,10 +175,10 @@ monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
 --  
 -- \'x\' has no ascenders or descenders. 
 -- 
-monoLowerxHeight :: FromPtSize u => DrawingF u
+monoLowerxHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoLowerxHeight = withFontSize (fromPtSize . xcharHeight)
 
-monoDescenderDepth :: FromPtSize u => DrawingF u
+monoDescenderDepth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
 monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
 
 
@@ -184,16 +188,18 @@ monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
 -- Note - the width will generally be a over-estimate for 
 -- non-monospaced fonts.
 -- 
-monoTextDimensions :: (Num u, Ord u, FromPtSize u) => String -> DrawingF (u,u)
+monoTextDimensions :: (Applicative m, DrawingCtxM m, Num u, Ord u, FromPtSize u)
+                   => String -> m (u,u)
 monoTextDimensions ss = 
     (\sz -> post $ textBounds sz zeroPt ss) 
-      <$> asksDF (font_size . font_props)
+      <$> asksDC (font_size . font_props)
   where
     post bb = (boundaryWidth bb, boundaryHeight bb)
 
 
 -- | Vector from baseline left to center
-monoVecToCenter :: (Fractional u, Ord u, FromPtSize u) 
-                => String -> DrawingF (Vec2 u)
+monoVecToCenter :: ( Applicative m, DrawingCtxM m
+                   , Fractional u, Ord u, FromPtSize u ) 
+                => String -> m (Vec2 u)
 monoVecToCenter ss = (\(w,h) dy -> vec (0.5*w) (0.5*h - dy)) 
                        <$> monoTextDimensions ss <*> monoDescenderDepth

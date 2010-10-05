@@ -44,9 +44,9 @@ fillPath = filledPath . toPrimPathU
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-         localCtx (fillColour medium_slate_blue) $ do
+         localize (fillColour medium_slate_blue) $ do
             draw $ fillPath path01
-            localCtx (fillColour powder_blue) $ 
+            localize (fillColour powder_blue) $ 
                      draw $ fillPath path02
             draw $ fillPath path03
             draw $ fillPath path04
@@ -54,7 +54,7 @@ pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $
 
 background :: RGBi -> DPicture 
 background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $ 
-                   localCtx (strokeColour rgb) $ do                  
+                   localize (strokeColour rgb) $ do                  
                      mapM_ iheartHaskell ps
 
    where

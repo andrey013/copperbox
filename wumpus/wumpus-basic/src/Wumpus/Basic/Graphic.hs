@@ -17,8 +17,7 @@
 
 module Wumpus.Basic.Graphic
   (
-    module Wumpus.Basic.Graphic.BaseClasses
-  , module Wumpus.Basic.Graphic.BaseTypes
+    module Wumpus.Basic.Graphic.Base
   , module Wumpus.Basic.Graphic.DirectionContext
   , module Wumpus.Basic.Graphic.Drawing
   , module Wumpus.Basic.Graphic.DrawingContext
@@ -27,8 +26,7 @@ module Wumpus.Basic.Graphic
   , module Wumpus.Basic.Graphic.ScalingContext
   ) where
 
-import Wumpus.Basic.Graphic.BaseClasses
-import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DirectionContext
 import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext

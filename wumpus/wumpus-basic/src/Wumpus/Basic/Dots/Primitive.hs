@@ -144,7 +144,7 @@ markCross = standardSize
 -- needs horizontal pinch...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
-            => Point2 u -> DrawingF (PrimPath u)
+            => Point2 u -> DrawingR (PrimPath u)
 pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h 
                         in vertexPath [dvs hh, dve hw,dvn hh, dvw hw])
                    <$> markHeight

@@ -125,8 +125,8 @@ runTurtleT ogin cfg mf =
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  askCtx   = TurtleT $ \s -> askCtx >>= \ ctx -> return (ctx,s)
-  localCtx ctx mf = TurtleT $ \s -> localCtx ctx (getTurtleT mf s)
+  askDC           = TurtleT $ \s -> askDC >>= \ ctx -> return (ctx,s)
+  localize upd mf = TurtleT $ \s -> localize upd (getTurtleT mf s)
 
 
 -- This needs undecidable instances...

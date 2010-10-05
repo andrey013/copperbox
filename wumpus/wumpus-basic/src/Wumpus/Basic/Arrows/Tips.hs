@@ -106,7 +106,7 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
 -- does it!).
 --
 tripointsByAngle :: (Floating u, FromPtSize u)
-                 => Radian -> Radian -> LocDrawingF u (Point2 u, Point2 u)
+                 => Radian -> Radian -> LocDrawingR u (Point2 u, Point2 u)
 tripointsByAngle triang theta tip = 
     (\h -> let (vupper,vlower) = triVecsByAngle h (0.5*triang) theta
            in  (tip .+^ vupper, tip .+^ vlower))
@@ -116,7 +116,7 @@ tripointsByAngle triang theta tip =
 
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
                 => (u -> u) -> (u -> u) -> Radian 
-                -> LocDrawingF u (Point2 u, Point2 u)
+                -> LocDrawingR u (Point2 u, Point2 u)
 tripointsByDist lenF halfwidthF theta tip = 
     (\h -> let (vup,vlo) = triVecsByDist (lenF h) (halfwidthF $ 0.5*h) theta
            in  (tip .+^ vup, tip .+^ vlo))
@@ -135,7 +135,7 @@ triAng :: (Floating u, Real u, FromPtSize u)
       -> LocGraphic u
 triAng triang theta gf pt = 
     tripointsByAngle triang theta pt >>= \(u,v) -> 
-    localDF bothStrokeColour (gf $  vertexPath [pt,u,v])
+    localize bothStrokeColour (gf $  vertexPath [pt,u,v])
 
 
 

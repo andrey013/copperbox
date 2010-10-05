@@ -33,7 +33,7 @@ module Wumpus.Basic.Graphic.ScalingContext
 
   ) where
 
-import Wumpus.Basic.Graphic.BaseClasses
+import Wumpus.Basic.Graphic.Base
 
 import Wumpus.Core				-- package: wumpus-core
 
@@ -128,8 +128,8 @@ instance Monad m => ScalingM (ScalingT ux uy u m) where
 -- Cross instances - needed to run SalingT /locally/ in Drawing.
 
 instance DrawingCtxM m => DrawingCtxM (ScalingT ux uy u m) where
-  askCtx   = ScalingT $ \_ -> askCtx >>= \dctx -> return dctx
-  localCtx ctx mf = ScalingT $ \sctx -> localCtx ctx (getScalingT mf sctx)
+  askDC           = ScalingT $ \_    -> askDC >>= \dctx -> return dctx
+  localize upd mf = ScalingT $ \sctx -> localize upd (getScalingT mf sctx)
 
 
 instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (ScalingT ux uy u m) where

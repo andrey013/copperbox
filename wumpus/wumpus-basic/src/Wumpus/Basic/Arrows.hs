@@ -47,8 +47,8 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 import Data.Monoid
 
-liftConnector :: Connector u -> ConnDrawingF u (Path u)
-liftConnector pF p1 p2 = pureDF $ pF p1 p2
+liftConnector :: Connector u -> ConnDrawingR u (Path u)
+liftConnector pF p1 p2 = pure $ pF p1 p2
 
 cline :: Num u => Connector u -> ConnImage u (Path u)
 cline pathF = intoConnImage (liftConnector pathF) (pathGraphic pathF)
@@ -78,7 +78,7 @@ lineTipR bpath arrtip = openStroke (toPrimPathU bpath) `mappend` arrtip
 -- path segments.
 --
 rightPathProps :: (Real u, Floating u, FromPtSize u) 
-               => Connector u -> ConnDrawingF u (Path u,Radian)
+               => Connector u -> ConnDrawingR u (Path u,Radian)
 rightPathProps pathF p1 p2 = 
     (\h sw -> (shortenPath h sw, calcTheta h))
       <$> markHeight <*> lineWidth

@@ -23,6 +23,20 @@ description:
   .
   0.9.0 to 0.10.0:
   .
+  * Major organiztion change. @Basic.Graphic.BaseClasses@ and
+    @Basic.Graphic.BaseTypes@ merged into same module so they 
+    can depend on each other without orphans instances.
+  .
+  * @DrawingF@ renamed to @DrawingR@, the related type synonyms
+    have also been changed, e.g. @LocDrawingF@ is now 
+    @LocDrawingR@.
+  .
+  * Method names in the @DrawingCtxM@ class changed - @askCtx@ is
+    now @askDC@, @localCtx@ is now @localize@. Removed the 
+    functions @askDF@, @asksDF@ that worked for @DrawingF@ (now 
+    @DrawingR@), @DrawingR@ now uses the @DrawingCtxM@ class for
+    thes functionalities.
+  .
   * @Basic.Graphic.DrawingContext@ - renamed @primary_colour@ to
     @stroke_colour@ and @secondary_colour@ to @fill_colour@. The 
     setter functions has been similarly renamed.
@@ -135,8 +149,7 @@ library
     Wumpus.Basic.Dots,
     Wumpus.Basic.Dots.Primitive,
     Wumpus.Basic.Graphic,
-    Wumpus.Basic.Graphic.BaseClasses,
-    Wumpus.Basic.Graphic.BaseTypes,
+    Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.DirectionContext,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,

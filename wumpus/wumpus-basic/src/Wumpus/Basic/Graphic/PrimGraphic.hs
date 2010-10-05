@@ -67,7 +67,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
   ) where
 
-import Wumpus.Basic.Graphic.BaseTypes
+import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.Query
 

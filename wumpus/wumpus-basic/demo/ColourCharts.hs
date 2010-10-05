@@ -43,7 +43,7 @@ tableGraphic row_count xs =
 
 
 colourSample :: String -> RGBi -> DPoint2 -> Drawing Double ()
-colourSample name rgb pt = localCtx (fillColour rgb) $ do 
+colourSample name rgb pt = localize (fillColour rgb) $ do 
     draw $ borderedRectangle 15 10 `at` pt
     draw $ textline name `at` displace 20 2 pt 
         
