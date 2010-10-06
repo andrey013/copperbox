@@ -6,6 +6,7 @@ module Demo01 where
 import Wumpus.Tree
 
 import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 import Data.Tree hiding ( drawTree )
 import System.Directory

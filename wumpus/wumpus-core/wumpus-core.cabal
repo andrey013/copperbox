@@ -16,8 +16,8 @@ description:
   efficient as the use of stack operations, i.e @gsave@ and 
   @grestore@, is minimized.
   .
-  Pictures in Wumpus are made from /paths/ and text /labels/. 
-  Paths themselves are made from points. The usual affine 
+  Wumpus makes pictures from /paths/ and text /labels/. Paths 
+  themselves are made from points. The usual affine 
   transformations (rotations, scaling, translations) can be
   applied to Pictures. Unlike PostScript there is no 
   notion of a current point, Wumpus builds pictures in a
@@ -26,12 +26,12 @@ description:
   GENERAL DRAWBACKS...
   .
   For actually drawing pictures, diagrams, etc. Wumpus is very 
-  low level. There is a supplemantary package @wumpus-basic@ 
+  low-level. There is a supplemantary package @wumpus-basic@ 
   available that helps create certain types of diagram, but it is
   experimental - functionality is added and dropped between 
-  releases.
+  releases, it has no stable API.
   .
-  Some of the design decisions made for Wumpus-core are not 
+  Some of the design decisions made for @wumpus-core@ are not 
   sophisticated (e.g. how attributes like colour are handled, 
   and how the bounding boxes of text labels are calculated), so 
   Wumpus might be limited compared to other systems. However, 
@@ -53,43 +53,6 @@ description:
     a separator. This generated invalid PostScript. Now fixed.
   .
   * Documentation updates to the guide and the Haddock docs.
-  .
-  0.33.0 to 0.34.0:
-  .
-  * Clipping paths fixed. Previously they did not work for SVG or
-    PostScript.
-  .
-  * @picOver@ fixed. Drawing order was changed in version 0.33.0, 
-    but @picOver@ was not updated accordingly (so it actually 
-    started drawing pictures /under/). It now works correctly.
-  .
-  * The lexer for escape characters embedded in label strings has 
-    been rewritten. It now supports octal and hexadecimal codes.
-  .  
-  0.32.0 to 0.33.0:
-  .
-  * Major change - reworked support for text encoding. Encoding 
-    maps are now linked with fonts - it was spotted that the 
-    Symbol font does not use the Latin1 names. The @TextEncoder@ 
-    data type has been changed and there is a new @FontEncoder@ 
-    data type. There are also new modules for the Symbol Font 
-    encoder table and for the /Default Encoder/ which 
-    accommodates both Latin1 and the Symbol font. This has also 
-    mandated changes to the @FontFace@ data type.
-  . 
-  * Major change - the printing order has been changed. The first 
-    element in a @frame@ of Prims is draw first. This means it 
-    appears first in the output file (this makes sense) - it also 
-    means it is at the back in the Z-Order. This latter point 
-    might not be so intuitive, but changing the printing order at 
-    least makes Wumpus-Core match SVG and PostScript.
-  .
-  * Changed the visiblity of the new colours (yellow, cyan, 
-    magenta) to be hidden at the top level. They can be exposed
-    by importing @Wumpus.Core.Colour@. 
-  .
-  * @Wumpus.Core.FontSize@ - added @spacerWidth@ function.
-  .
   .
   .
 build-type:         Simple

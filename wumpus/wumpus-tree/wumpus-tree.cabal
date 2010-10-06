@@ -21,22 +21,13 @@ description:
   .
   0.8.0 to 0.9.0:
   .
-  * Updated to track changes in Wumpus-Basic.
-  . 
-  0.7.0 to 0.8.0:
+  * Stopped re-exporting @DrawingContext@ from Wumpus-Basic in 
+    the module Wumpus.Tree. Clients must now import 
+    @Wumpus.Basic.Graphic@ to get the @DrawingContext@ type and 
+    the constructor @StandardContext@.
   .
-  * Changed drawTreePicture to use the @ScalingContext@ datatype
-    from Wumpus.Basic. The type @ScaleFactors@ is now a type
-    synonym for @SalingContext@ operation on all Doubles. 
+  * Internal changes to track updates to Wumpus-Basic.
   . 
-  * Added an alternative drawing style /family tree/.
-  . 
-  0.6.0 to 0.7.0:
-  . 
-  * More example trees in Demo01.hs.
-  .
-  * Updated to track changes in Wumpus-Basic.
-  .
   .
 build-type:         Simple
 stability:          highly unstable
@@ -58,12 +49,12 @@ library
   
   exposed-modules:
     Wumpus.Tree,
+    Wumpus.Tree.Base,
+    Wumpus.Tree.Design,
+    Wumpus.Tree.Draw,
     Wumpus.Tree.VersionNumber
 
   other-modules:
-    Wumpus.Tree.Base,
-    Wumpus.Tree.Design,
-    Wumpus.Tree.Draw
 
   extensions:
     

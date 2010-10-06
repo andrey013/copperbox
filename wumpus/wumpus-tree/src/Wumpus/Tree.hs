@@ -17,12 +17,6 @@ module Wumpus.Tree
   -- * The type of rendered trees
     TreePicture
 
-
-  -- * Render a Data.Tree to a TreePicture
-  , DrawingContext(..)                  -- re-export
-  , standardContext                     -- re-export
-
-
   , ScaleFactors
   , uniformScaling
   , scaleFactors

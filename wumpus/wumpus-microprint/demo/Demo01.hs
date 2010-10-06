@@ -18,7 +18,7 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     inp <- readFile "Demo01.hs"	  -- This file
-    let gtext = runTokenizer (haskellTokenizer moccasin green) inp
+    let gtext = runTokenizer (haskellTokenizer indian_red teal) inp
     let pic1  = makePicture gtext
     writeEPS_latin1 "./out/microprint01.eps" pic1
     writeSVG_latin1 "./out/microprint01.svg" pic1
