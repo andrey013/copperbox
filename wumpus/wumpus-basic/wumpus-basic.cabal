@@ -15,9 +15,12 @@ description:
   low-level one (Wumpus-Core). 
   .
   Some of the modules (SafeFonts, SVGColours, X11Colours) are
-  relatively stable, the @Basic.Graphic@ modules are somewhat 
-  robust if not stable. Other modules are essentially sketches 
-  and may even disappear in subsequent updates.
+  relatively stable. The core modules of @Basic.Graphic@ (@Base@,
+  @PrimGraphic@, @DrawingContext@) are quite weather-beaten if 
+  not exactly stable, although the newer modules 
+  (@ScalingContext@, @DirectionContext@) are still quite green.
+  Other modules (Paths, Chains, Shapes) are essentially sketches 
+  and may be radically different in subsequent updates.
   .
   .
   Changelog:

@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Drawing attributes
 --
@@ -36,10 +36,12 @@ module Wumpus.Basic.Graphic.DrawingContext
   , ultrathick
   , thin
 
+  -- ** Line caps
   , capButt
   , capRound
   , capSquare
 
+  -- ** Line joins
   , joinMiter
   , joinRound
   , joinBevel
@@ -52,15 +54,15 @@ module Wumpus.Basic.Graphic.DrawingContext
   , doublegaps
   , doubledashes
 
-  -- ** Font properties
+  -- * Font properties
   , fontsize
   , fontface
 
-  -- ** Mark drawing size
+  -- * Font / mark drawing size
   , doublesize
   , halfsize
 
-  -- ** Colour
+  -- * Colour
   , swapColours
   , bothStrokeColour
   , bothFillColour

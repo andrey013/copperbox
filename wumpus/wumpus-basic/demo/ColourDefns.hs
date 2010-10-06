@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- All the SVG / X11 \"named colours\" listed in tables. 
 --

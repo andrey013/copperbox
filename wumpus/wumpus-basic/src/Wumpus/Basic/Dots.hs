@@ -11,7 +11,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies, GADTs and more
+-- Portability :  GHC
 --
 -- Dots with anchors.
 --

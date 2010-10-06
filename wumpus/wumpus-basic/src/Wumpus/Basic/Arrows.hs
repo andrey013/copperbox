@@ -8,12 +8,12 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
--- Anchor points on shapes.
+-- Draw arrows.
 --
--- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- \*\* WARNING \*\* - the types are /wrong/ here and need more 
+-- thought.
 -- 
 --------------------------------------------------------------------------------
 
@@ -34,6 +34,7 @@ module Wumpus.Basic.Arrows
   , arrowBarb45
     
   , arrowPerp
+  , arrowRBracket
 
   ) where
 
@@ -169,3 +170,13 @@ arrowPerp pathF p1 p2 =
     path_zero = pathF  p1 p2
     theta     = langle p1 p2
     perp_tip  = perp theta p2
+
+
+arrowRBracket :: (Real u, Floating u, FromPtSize u) 
+              => Connector u -> ConnImage u (Path u)
+arrowRBracket pathF p1 p2 = 
+    lineTipR path_zero perp_tip >>= \arrow_pic -> return (path_zero, arrow_pic)
+  where
+    path_zero = pathF  p1 p2
+    theta     = langle p1 p2
+    perp_tip  = rbracket theta p2

@@ -36,6 +36,7 @@ import Wumpus.Basic.Graphic			-- package: wumpus-basic
 
 import Data.AffineSpace				-- package: vector-space
 
+import Control.Applicative
 import Data.Monoid
 
 --------------------------------------------------------------------------------
@@ -58,13 +59,13 @@ type DrawWordF = RGBi -> Double -> Double -> Int -> DLocGraphic
 -- | Just a filled rectangle.
 --
 greekF :: DrawWordF
-greekF rgb w h _ = localLG (secondaryColour rgb) (filledRectangle w h)
+greekF rgb w h _ = localize (fillColour rgb) . (filledRectangle w h)
 
 
 borderedF :: DrawWordF
-borderedF rgb w h i = background `lgappend` ticks
+borderedF rgb w h i = mappend <$> background <*> ticks
   where
-    background  = localLG (secondaryColour rgb) (borderedRectangle w h)
+    background  = localize (fillColour rgb) . (borderedRectangle w h)
     v1          = hvec $ w / fromIntegral i
     ticks pt    = mconcat $ map (straightLine (vvec h)) 
     	                  $ take (i-1) $ iterate (.+^ v1) (pt .+^ v1)
@@ -73,7 +74,7 @@ borderedF rgb w h i = background `lgappend` ticks
 -- | A stroked line.
 --
 strokelineF :: DrawWordF
-strokelineF rgb w _ _ = localLG (primaryColour rgb) (straightLine (hvec w))
+strokelineF rgb w _ _ = localize (strokeColour rgb) . (straightLine (hvec w))
 
 
 render :: RenderScalingCtx -> DrawWordF -> GreekText -> Drawing Double ()

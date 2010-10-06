@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Handling bivariate data and its projection into the dimensions
 -- of a  drawing.

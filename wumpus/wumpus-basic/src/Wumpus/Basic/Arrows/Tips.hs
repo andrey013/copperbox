@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Portability :  GHC
 --
 -- Anchor points on shapes.
 --
@@ -33,6 +33,8 @@ module Wumpus.Basic.Arrows.Tips
   , barb45
 
   , perp
+
+  , rbracket
 
   ) where
 
@@ -198,8 +200,8 @@ perp theta pt =
     makeV h  = avec (theta + pi/2) (0.5 * h)
 
 
-fwdBracket :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
-fwdBracket theta pt = markHalfHeight >>= \hh -> 
+rbracket :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
+rbracket theta pt = markHalfHeight >>= \hh -> 
    runDirection theta $ 
      displacePerp   hh  pt >>= \p1 ->
      displacePara (-hh) p1 >>= \p0 ->

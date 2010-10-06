@@ -157,7 +157,7 @@ textNode = dotText . uptoNewline
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 circleNode :: RGBi -> (a -> TreeNode)
-circleNode rgb = \_ pt -> localDF (primaryColour rgb) (dotCircle pt)
+circleNode rgb = \_ pt -> localize (strokeColour rgb) (dotCircle pt)
 
 
 -- | Tree nodes with a filled circle.
@@ -165,7 +165,7 @@ circleNode rgb = \_ pt -> localDF (primaryColour rgb) (dotCircle pt)
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 diskNode :: RGBi -> (a -> TreeNode)
-diskNode rgb = \_ pt -> localDF (secondaryColour rgb) (dotDisk pt)
+diskNode rgb = \_ pt -> localize (fillColour rgb) (dotDisk pt)
 
 
 

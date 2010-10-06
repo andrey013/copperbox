@@ -7,8 +7,8 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC with TypeFamilies and more
+-- Stability   :  unstable
+-- Portability :  GHC
 --
 -- The X11 \'named colours\', as rgb [0,1] values 
 --
