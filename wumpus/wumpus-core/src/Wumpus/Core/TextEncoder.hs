@@ -23,6 +23,13 @@
 -- In Wumpus both character names and character codes can
 -- be embedded in strings - (e.g. @ &\#egrave; or &\#232; @).
 --
+-- Character codes can be also be expressed as octal or 
+-- hexadecimal:
+--
+-- > myst&#0o350;re
+--
+-- > myst&#0xE8;re
+--
 -- In the generated PostScript, Wumpus uses the character name, 
 -- e.g.:  
 --

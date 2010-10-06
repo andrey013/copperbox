@@ -23,6 +23,8 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
+This guide was last updated for \wumpuscore version 0.35.0.
+
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
 no dependencies on foreign C libraries. Output to PostScript and 
@@ -30,8 +32,9 @@ SVG (Scalable Vector Graphics) is supported.
 
 \wumpuscore is rather primitive, the basic drawing objects are 
 paths and text labels. A second library \texttt{wumpus-basic}
-contains code for higher level drawing but it is still missing 
-main functionalities e.g. connectors, arrowheads.
+contains code for higher level drawing but it experimental and the 
+APIs are a long way from stable (it should probably be considered 
+a \emph{technology preview}).
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
 PostScript's notion of an (implicit) current point and the 
@@ -63,32 +66,43 @@ common angles.
 \item[\texttt{Wumpus.Core.BoundingBox.}]
 Data type representing bounding boxes and operations on them. 
 Bounding boxes are important for Pictures and they support the 
-definition of \emph{Picture composition operators}.
+definition of \emph{picture composition} operators.
 
 \item[\texttt{Wumpus.Core.Colour.}]
 A single colour type \texttt{RGBi} is supported. This type defines 
-colour as a triple of integers (Word8) - black is 0, 0, 0; white 
-is 255, 255, 255.  Some named colours are defined, although they 
-are hidden by the top level shim module to avoid name clashes. 
+colour as a triple of integers (Word8) - black is (0, 0, 0); white 
+is (255, 255, 255). Some named colours are defined, although they 
+are hidden by the top level shim module to avoid name clashes with
+libraries providing more extensive lists of colours. 
 \texttt{Wumpus.Core.Colour} can be imported directly if the named 
 colours are required.
 
 \item[\texttt{Wumpus.Core.FontSize.}]
-Various calculations for font size metrics. Generally not useful 
-to a user but exposed so that variations of the standard Label 
-type are possible.
+Various calculations for font size metrics. \wumpuscore has 
+limited handling of font / character size as it cannot interpret
+the metrics within font files (doing so would be a huge task).
+Instead this module provides some metrics based on the Courier
+mono-spaced font that can be used for rudimentary size
+calculations on text labels.
 
 \item[\texttt{Wumpus.Core.Geometry.}]
-Usual types an operations from affine geometry - points, vectors 
-and frames. The \texttt{Pointwise} type class which is essential
-for defining transformable drawable types. 
+The usual types an operations from affine geometry - points, 
+vectors and 3x3 matrices. Also the \texttt{DUnit} type family - 
+essentially this type family is a trick used heavily within 
+\wumpuscore to avoid annotating class declarations with 
+constraints on the unit, class constraints like 
+\texttt{Fractional u} can then be shifted to the instance 
+declaration rather than the class declaration.
 
 \item[\texttt{Wumpus.Core.GraphicsState.}]
 Data types modelling the attributes of PostScript's graphics 
-state (stroke style, dash pattern, etc.). Note \wumpuscore 
-annotates primitives - paths, text labels - with their rendering 
-style. PostScript has a mutable graphics state, changing via 
-inheritance how the curent object is drawn.
+state (stroke style, dash pattern, etc.). Note that 
+\wumpuscore annotates all primitives - paths, text labels - with 
+their rendering style, the \texttt{GraphicsState} here is an 
+internal detail used to generate more efficient PostScript and 
+SVG. The \emph{smaller} types in this module such as 
+\texttt{StrokeAttr} are the only ones relevant for the public 
+API.
 
 \item[\texttt{Wumpus.Core.OutputPostScript.}]
 Functions to write PostScript or encapsulated PostScript files.
@@ -110,8 +124,14 @@ Text size calculations in \texttt{Core.FontSize} use points
 type to represent them.
 
 \item[\texttt{Wumpus.Core.TextEncoder.}]
-Types for handling non-ASCII character codes. This module is
-perhaps under-cooked although it appears adequate for Latin-1.
+Types for handling extended character codes e.g. for accented 
+characters or the Symbol font. Special characters generally have 
+to be escaped in the PostScript and SVG output, this module 
+provides data types for lookup tables between the escaped 
+character code and its PostScript or SVG representation. 
+Text encoders are associated with fonts - glyphs within a font 
+are located by their character name / code. Currently 
+\wumpuscore has encoders for Latin1 and the Symbol font. 
 
 \item[\texttt{Wumpus.Core.TextLatin1.}]
 A instance of the TextEncoder type for mapping Latin 1 characters
@@ -120,7 +140,10 @@ encoder is associated with the fonts - Helvetica, Courier and
 Times-Roman.
 
 \item[\texttt{Wumpus.Core.TextSymbol.}]
-A instance of the TextEncoder type for the Symbol font.
+A instance of the TextEncoder type for the Symbol font. Note, 
+unfortunately escape codes for the Symbol font seem to cause
+problems for some SVG renderers. Chrome appears fine, but Safari 
+and Firefox currently have problems.
 
 \item[\texttt{Wumpus.Core.VersionNumber.}]
 Current version number of \wumpuscore.
@@ -147,14 +170,16 @@ multiple labels.
 
 Primitives are attributed with drawing styles - font name and 
 size for labels; line width, colour, etc. for paths. Drawing 
-Primitives is unfortunately complicated due to the need to 
+\emph{primitives} is unfortunately complicated due to the need to 
 support hyperlinks in SVG output. Primitives have to be lifted 
 to a \texttt{PrimElement} before they can be placed within a 
-\texttt{Picture} - using the shorthand constructors in 
-\texttt{Wumpus.Core.Picture} does this lifting automatically.
-The function \texttt{frame} assembles a list of primitives 
-into a \texttt{Picture} with a standard affine frame where the 
-origin is at (0,0) and the X and Y axes have the unit bases. 
+\texttt{Picture} - in practive this lifting is done automatically 
+by using the shorthand constructors in 
+\texttt{Wumpus.Core.Picture}. The function \texttt{frame} 
+assembles a list of primitives into a \texttt{Picture} with the 
+standard affine frame where the origin is at (0,0) and the X and 
+Y axes have the unit bases (i.e. they have a \emph{scaling} value 
+of 1). 
 
 \begin{figure}
 \centering
@@ -165,7 +190,7 @@ origin is at (0,0) and the X and Y axes have the unit bases.
 \wumpuscore uses the same picture frame as PostScript where 
 the origin at the bottom left, see Figure 1. This contrasts to SVG 
 where the origin at the top-left. When \wumpuscore generates SVG, 
-the whole picture is produced within a matrix transformation 
+the whole picture is generated within a matrix transformation 
 [ 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 ] that changes the picture to use 
 PostScript coordinates. This has the side-effect that text is 
 otherwise drawn upside down, so \wumpuscore adds a rectifying 
@@ -175,14 +200,15 @@ Once labels and paths are assembled as a \emph{Picture} they are
 transformable with the usual affine transformations (scaling, 
 rotation, translation).
 
-Once assembled into pictures graphics properties (e.g. colour) 
-are opaque - it is not possible to write a transformation function
-that turns a picture blue. In some ways this is a limitation - 
-for instance, the \texttt{Diagrams} library appears to support 
-some notion of attribute overriding; however it does keep 
-\wumpuscore conceptually simple. If one wanted to draw blue or red 
-arrows with \wumpuscore, one would make drawing colour a parameter 
-of the arrow creation function.
+Graphics properties (e.g colour) are opaque once primitives are
+assembled into pictures - it is not possible to write a 
+transformation function that turns elements in a picture blue. 
+In some ways this is a limitation - for instance, the 
+\texttt{Diagrams} library appears to support some notion of 
+attribute overriding; however avoiding mutable attributes does 
+keep this part of \wumpuscore conceptually simple. If one wanted 
+to draw blue or red arrows with \wumpuscore, one would make the 
+drawing colour a parameter of the arrow creation function.
 
 %-----------------------------------------------------------------
 \section{Affine transformations}
@@ -224,9 +250,10 @@ transformations itself, delegating all the work to PostScript or
 SVG. This means transformations can generally be located in the 
 output if a picture needs to be debugged, though as this might 
 not be very helpful in practice. Internally \wumpuscore only 
-performs the transformation on the pictures bounding box - it 
-needs to do this so transformed pictures can still be composed 
-with the \texttt{picBeside} combinator.
+performs the transformation on the bounding box of a picture - it 
+needs to do this to maintain the size metrics of a picture 
+allowing transformed pictures to be composed with picture 
+composition operators like the \texttt{picBeside} combinator.
 
 PostScript uses column-major form and uses a six element matrix
 rather than a nine element one. The translation matrix above 
@@ -265,7 +292,7 @@ require a font loader to read TrueType font files. This would be
 a significant development effort, probably larger than the effort 
 put into \wumpuscore itself; for \wumpuscore's intended use - 
 producing diagrams and pictures rather than high quality text - 
-its primitive font handling is not such a draw back.
+the primitive font handling is not such a draw back.
 
 
 In both PostScript and SVG mis-named fonts can cause somewhat
@@ -273,16 +300,13 @@ inscrutable printing anomalies - usually falling back to a default
 font but not always. At worst, PostScript may do no subsequent 
 drawing after a font load error. \wumpuscore uses @scalefont@ in 
 the generated PostScript, this semingly works for any integer size 
-and not just the regular font sizes (10, 12, 18, 24, 36). Older 
-versions of \wumpuscore mention that using non-standard sizes may 
-cause font loading problems, however this does not appear to be 
-the case.
+and not just the regular font sizes (10, 12, 18, 24, 36). 
 
 
 The following table lists PostScript fonts and their SVG 
 equivalents, the package \texttt{wumpus-basic} includes a module 
 \texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
-to avoid typographical slips.
+and matching them to their appropriate \texttt{TextEncoder}.
 
 
 \begin{tabular}{ l l }
