@@ -48,15 +48,25 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 import Data.Monoid
 
-liftConnector :: Connector u -> ConnDrawingR u (Path u)
-liftConnector pF p1 p2 = pure $ pF p1 p2
 
-cline :: Num u => Connector u -> ConnImage u (Path u)
-cline pathF = intoConnImage (liftConnector pathF) (pathGraphic pathF)
+
+-- A ConnectorPath gets wrapped with how it is drawn into
+-- another type.
+
+
+-- larrow :: Arrowhead u -> ConnectorPath u -> WrappedConnector u
+
+-- The code below is old and wrong...
+
+liftConnectorPath :: ConnectorPath u -> ConnectorDrawingR u (Path u)
+liftConnectorPath pF p1 p2 = pure $ pF p1 p2
+
+cline :: Num u => ConnectorPath u -> ConnectorImage u (Path u)
+cline pathF = intoConnectorImage (liftConnectorPath pathF) (pathGraphic pathF)
 
 -- ... No - can\'t a add tips to this one.
 --
-pathGraphic :: Num u => Connector u -> ConnGraphic u
+pathGraphic :: Num u => ConnectorPath u -> ConnectorGraphic u
 pathGraphic bpath = \p1 p2 -> openStroke $ toPrimPathU $ bpath p1 p2
 
 
@@ -79,7 +89,7 @@ lineTipR bpath arrtip = openStroke (toPrimPathU bpath) `mappend` arrtip
 -- path segments.
 --
 rightPathProps :: (Real u, Floating u, FromPtSize u) 
-               => Connector u -> ConnDrawingR u (Path u,Radian)
+               => ConnectorPath u -> ConnectorDrawingR u (Path u,Radian)
 rightPathProps pathF p1 p2 = 
     (\h sw -> (shortenPath h sw, calcTheta h))
       <$> markHeight <*> lineWidth
@@ -92,7 +102,9 @@ rightPathProps pathF p1 p2 =
 
 
 triTipRight :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> (Radian -> LocGraphic u) -> ConnImage u (Path u) 
+            => ConnectorPath u 
+            -> (Radian -> LocGraphic u) 
+            -> ConnectorImage u (Path u) 
 triTipRight pathF tipF p1 p2 =
     rightPathProps pathF p1 p2          >>= \(shortF,theta) -> 
     lineTipR shortF (tipF theta p2)     >>= \arrow_pic      ->
@@ -104,7 +116,9 @@ triTipRight pathF tipF p1 p2 =
 -- This version does not /retract/ the path...
 --
 barbTipRight :: (Real u, Floating u, FromPtSize u) 
-             => Connector u -> (Radian -> LocGraphic u) -> ConnImage u (Path u)  
+             => ConnectorPath u 
+             -> (Radian -> LocGraphic u) 
+             -> ConnectorImage u (Path u)  
 barbTipRight pathF tipF p1 p2 = 
     rightPathProps pathF p1 p2          >>= \(_,theta) -> 
     lineTipR path_zero (tipF theta p2)  >>= \arrow_pic  ->
@@ -115,55 +129,55 @@ barbTipRight pathF tipF p1 p2 =
 
 
 arrowTri90 :: (Real u, Floating u, FromPtSize u) 
-           => Connector u -> ConnImage u (Path u)
+           => ConnectorPath u -> ConnectorImage u (Path u)
 arrowTri90 pathF = triTipRight pathF tri90
  
           
 
 
 arrowTri60 :: (Real u, Floating u, FromPtSize u) 
-           => Connector u -> ConnImage u (Path u)
+           => ConnectorPath u -> ConnectorImage u (Path u)
 arrowTri60 pathF = triTipRight pathF tri60
 
  
 arrowTri45 :: (Real u, Floating u, FromPtSize u) 
-           => Connector u -> ConnImage u (Path u)
+           => ConnectorPath u -> ConnectorImage u (Path u)
 arrowTri45 pathF = triTipRight pathF tri45
 
 
 arrowOTri90 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowOTri90 pathF = triTipRight pathF otri90
      
 
 arrowOTri60 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowOTri60 pathF = triTipRight pathF otri60 
 
 
 
 arrowOTri45 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowOTri45 pathF = triTipRight pathF otri45
 
 
 
 arrowBarb90 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowBarb90 pathF = barbTipRight pathF barb90
 
 arrowBarb60 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowBarb60 pathF = barbTipRight pathF barb60
 
 arrowBarb45 :: (Real u, Floating u, FromPtSize u) 
-            => Connector u -> ConnImage u (Path u)
+            => ConnectorPath u -> ConnectorImage u (Path u)
 arrowBarb45 pathF = barbTipRight pathF barb45
 
 
                      
 arrowPerp :: (Real u, Floating u, FromPtSize u) 
-          => Connector u -> ConnImage u (Path u)
+          => ConnectorPath u -> ConnectorImage u (Path u)
 arrowPerp pathF p1 p2 = 
     lineTipR path_zero perp_tip >>= \arrow_pic -> return (path_zero, arrow_pic)
   where
@@ -173,7 +187,7 @@ arrowPerp pathF p1 p2 =
 
 
 arrowRBracket :: (Real u, Floating u, FromPtSize u) 
-              => Connector u -> ConnImage u (Path u)
+              => ConnectorPath u -> ConnectorImage u (Path u)
 arrowRBracket pathF p1 p2 = 
     lineTipR path_zero perp_tip >>= \arrow_pic -> return (path_zero, arrow_pic)
   where

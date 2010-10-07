@@ -16,8 +16,9 @@
 -- 
 -- Base classes for monadic drawing.
 --
--- Note on suffix names. Function types suffixed @F@ are functions 
--- from same-to-same, e.g.:
+-- Notes on prefix and suffix names:
+--
+-- Function types suffixed @F@ are functions from same-to-same, e.g.:
 --
 -- > type Point2F u = Point2 u -> Point2 u
 --
@@ -28,6 +29,9 @@
 --
 -- The suffix @M@ is used for classes defining monadic actions.
 --
+-- The prefix @Loc@ indicates a functional type 
+-- /from Point2 to something.../
+-- 
 -- \*\* WARNING \*\* - some names are expected to change.
 --
 --------------------------------------------------------------------------------
@@ -77,14 +81,14 @@ module Wumpus.Basic.Graphic.Base
   , intoLocImage
   , xlinkImage
 
-  , ConnDrawingR
-  , DConnDrawingR
-  , ConnGraphic
-  , DConnGraphic
-  , ConnImage
-  , DConnImage
+  , ConnectorDrawingR
+  , DConnectorDrawingR
+  , ConnectorGraphic
+  , DConnectorGraphic
+  , ConnectorImage
+  , DConnectorImage
 
-  , intoConnImage
+  , intoConnectorImage
 
   ) where
 
@@ -306,27 +310,29 @@ xlinkImage xlink img = DrawingR $ \ctx ->
 --------------------------------------------------------------------------------
 --
 
-type ConnDrawingR u a = Point2 u -> Point2 u -> DrawingR a
+type ConnectorDrawingR u a = Point2 u -> Point2 u -> DrawingR a
 
-type DConnDrawingR a = ConnDrawingR Double a
+type DConnectorDrawingR a = ConnectorDrawingR Double a
 
--- | ConnGraphic is a connector drawn between two points 
+-- | ConnectorGraphic is a connector drawn between two points 
 -- contructing a Graphic.
 --
-type ConnGraphic u = Point2 u -> Point2 u -> Graphic u
+type ConnectorGraphic u = Point2 u -> Point2 u -> Graphic u
 
-type DConnGraphic = ConnGraphic Double
+type DConnectorGraphic = ConnectorGraphic Double
 
 -- | ConImage is a connector drawn between two points 
 -- constructing an Image.
 --
-type ConnImage u a = Point2 u -> Point2 u -> Image u a
+type ConnectorImage u a = Point2 u -> Point2 u -> Image u a
 
-type DConnImage a = ConnImage Double a
+type DConnectorImage a = ConnectorImage Double a
 
 
-intoConnImage :: ConnDrawingR u a -> ConnGraphic u -> ConnImage u a
-intoConnImage f g p1 p2 = DrawingR $ \ctx -> 
+intoConnectorImage :: ConnectorDrawingR u a 
+                   -> ConnectorGraphic u 
+                   -> ConnectorImage u a
+intoConnectorImage f g p1 p2 = DrawingR $ \ctx -> 
     let a = getDrawingR (f p1 p2) ctx; o = getDrawingR (g p1 p2) ctx in (a,o)
 
 

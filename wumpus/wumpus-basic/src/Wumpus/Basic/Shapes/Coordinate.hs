@@ -30,7 +30,6 @@ module Wumpus.Basic.Shapes.Coordinate
 
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Shapes.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 

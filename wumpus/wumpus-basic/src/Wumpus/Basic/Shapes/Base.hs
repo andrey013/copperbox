@@ -42,11 +42,8 @@ import Wumpus.Basic.Paths
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-
 
 import Control.Applicative
-import Data.Monoid
 
 
 -- | Note - this formulation prevents rounded corner shapes...

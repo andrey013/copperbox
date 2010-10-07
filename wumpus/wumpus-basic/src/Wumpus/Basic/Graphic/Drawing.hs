@@ -332,7 +332,7 @@ ati = ($)
 
 
 infixl 1 `conn`
-conn :: ConnImage u a -> Point2 u -> LocImage u a
+conn :: ConnectorImage u a -> Point2 u -> LocImage u a
 conn = ($)
 
 

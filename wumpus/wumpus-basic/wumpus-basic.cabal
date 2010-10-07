@@ -30,6 +30,14 @@ description:
   * Reworked shapes - internally shapes now create a @Path@ rather 
     than an @Graphic@ this means the path can be manipulated (e.g. 
     round cornered rectangles, diamonds... can be constructed).
+    @Coordinate@ is no longer a @Shape@ - it is now similar object 
+    but of a different type. Likewise, @FreeLabel@ has been 
+    replaced by @Plaintext@ which is not a @Shape@, but has some 
+    similar properties.
+  .
+  * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGracphic@ etc.
+    have had their names expanded to @ConnectorDrawingR@, 
+    @ConnectorGraphic@... 
   .
   0.9.0 to 0.10.0:
   .

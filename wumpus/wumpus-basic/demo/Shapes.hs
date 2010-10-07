@@ -5,8 +5,7 @@ module Shapes where
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Shapes.Base
-import Wumpus.Basic.Shapes.Derived
+import Wumpus.Basic.Shapes
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -24,14 +23,15 @@ main = do
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
-         _ <- drawi $ drawShape $ translate 220 10 $ rotate30
-                                                   $ lrectangle 90 30 "Rectangle"
-         _ <- drawi $ drawShape $ translate 100  0 $ lcircle 10 "C0"
+         _ <- drawi $ borderedShape $ translate 220 10 
+                                    $ rotate30
+                                    $ rectangle 90 30 -- "Rectangle"
+         _ <- drawi $ borderedShape $ translate 100  0 $ circle 10 -- "C0"
    
          _ <- localize (strokeColour red) $ 
-                       drawi $ drawShape $ translate 220 10 $ rotate30 $ coordinate
-         _ <- drawi $ drawShape $ translate 0   40 $ ldiamond 10 10 "d1"
-         _ <- drawi $ drawShape $ translate 400 50 $ lrectangle 20 100 "R2"
+                       drawi $ coordinateMark $ coordinate (P2 220 10)
+         _ <- drawi $ borderedShape $ translate 0   40 $ diamond 10 10 -- "d1"
+         _ <- drawi $ borderedShape $ translate 400 50 $ rectangle 20 100 -- "R2"
          return ()
 
 
