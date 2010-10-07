@@ -119,6 +119,11 @@ borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
     withBorderedAttr $ \frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp
 
+
+-- Note - clipping needs a picture as well as a path, so there is
+-- no analogous @clippedPath@ function.
+
+
 --------------------------------------------------------------------------------
 -- 
 

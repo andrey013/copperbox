@@ -22,35 +22,30 @@ module Wumpus.Basic.Shapes.Derived
     Rectangle
   , DRectangle
   , rectangle
-  , lrectangle
+  , rrectangle
+
 
   , Circle
   , DCircle
   , circle
-  , lcircle
 
-  , Coordinate
-  , DCoordinate
-  , coordinate
 
   , Diamond
   , DDiamond
   , diamond
-  , ldiamond
+  , rdiamond
+
 
   , Ellipse
   , DEllipse
   , ellipse
-  , lellipse
 
-  , FreeLabel
-  , DFreeLabel
-  , freelabel
 
   ) where
 
 import Wumpus.Basic.Anchors
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Paths
+import Wumpus.Basic.Paths.RoundCorners
 import Wumpus.Basic.Shapes.Base
 import Wumpus.Basic.Utils.Intersection
 
@@ -58,7 +53,9 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space 
 
-import Data.Monoid
+
+remapPoints :: (Real u, Floating u) => [Point2 u] -> ShapeCTM u -> [Point2 u]
+remapPoints xs ctm = map (ctmDisplace `flip` ctm) xs
 
 
 --------------------------------------------------------------------------------
@@ -104,37 +101,38 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
     where 
       ctr = ctmCenter $ rect_ctm rect
 
-rectangle :: (Real u, Floating u) => u -> u -> Shape u (Rectangle u)
-rectangle w h = Shape { src_ctm = identityCTM
-                      , out_fun = outputRect (0.5*w) (0.5*h) nolabel
-                      }
+rectangle :: (Real u, Floating u) => u -> u -> Shape u Rectangle
+rectangle w h = 
+    Shape { src_ctm   = identityCTM
+          , path_fun  = tracePoints . rectanglePoints (0.5*w) (0.5*h)
+          , cons_fun  = mkRectangle (0.5*w) (0.5*h)  
+          }
+
+rrectangle :: (Real u, Floating u) => u -> u -> u -> Shape u Rectangle
+rrectangle round_dist w h = 
+    Shape { src_ctm   = identityCTM
+          , path_fun  = roundEvery round_dist . rectanglePoints (0.5*w) (0.5*h)
+          , cons_fun  = mkRectangle (0.5*w) (0.5*h)  
+          }
 
 
-lrectangle :: (Real u, Floating u, FromPtSize u) 
-           => u -> u -> String -> Shape u (Rectangle u)
-lrectangle w h ss = Shape { src_ctm = identityCTM
-                          , out_fun = outputRect (0.5*w) (0.5*h) (shapelabel ss)
-                          }
+
+mkRectangle :: u -> u -> ShapeConstructor u Rectangle
+mkRectangle hw hh = \ctm -> 
+    Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
 
 
-outputRect :: (Real u, Floating u) 
-           => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Rectangle u)
-outputRect hw hh shl ctm = intoImage (return a) (drawRect a `mappend` label) 
+
+-- Note - the Paths modules should define a function for building
+-- rectangles (and polygons, bezier curves / ellipses ...)
+--
+rectanglePoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
+rectanglePoints hw hh = remapPoints [ se, ne, nw, sw ]
   where
-    a     = Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }
-    label = runShapeLabel ctm shl
-
-
-drawRect :: (Real u, Floating u) => Rectangle u -> Graphic u
-drawRect = borderedPath . rectPath
-
-
-rectPath :: (Real u, Floating u) => Rectangle u -> PrimPath u
-rectPath rect = vertexPath [ southwest rect
-                           , southeast rect
-                           , northeast rect
-                           , northwest rect
-                           ]
+    se = P2   hw  (-hh)
+    ne = P2   hw    hh
+    nw = P2 (-hw)   hh
+    sw = P2 (-hw) (-hh) 
 
 
 
@@ -178,69 +176,25 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
-
-circle :: (Real u, Floating u) => u -> Shape u (Circle u)
-circle radius = Shape { src_ctm = identityCTM
-                      , out_fun = outputCirc radius nolabel
-                      }
-
-
-lcircle :: (Real u, Floating u, FromPtSize u) 
-        => u -> String -> Shape u (Circle u)
-lcircle radius ss = Shape { src_ctm = identityCTM
-                          , out_fun = outputCirc radius (shapelabel ss)
-                          }
-
-outputCirc :: (Real u, Floating u) 
-           => u -> ShapeLabel u -> ShapeCTM u -> Image u (Circle u)
-outputCirc rad shl ctm = intoImage (return a) (drawCirc a `mappend` label) 
-  where
-    a     = Circle { circ_ctm = ctm, circ_radius = rad }
-    label = runShapeLabel ctm shl
+circle :: (Real u, Floating u) => u -> Shape u Circle
+circle radius = 
+    Shape { src_ctm  = identityCTM
+          , path_fun = tracePointsCurve . circlePoints radius
+          , cons_fun = mkCircle radius
+          }
 
 
-drawCirc :: (Real u, Floating u) => Circle u -> Graphic u
-drawCirc = borderedPath . circlePath
+mkCircle :: u -> ShapeConstructor u Circle
+mkCircle radius = \ctm -> Circle { circ_ctm = ctm, circ_radius = radius }
 
 
-circlePath :: (Real u, Floating u) => Circle u -> PrimPath u
-circlePath = curvedPath . circlePoints 
-
-circlePoints :: (Real u, Floating u) => Circle u -> [Point2 u]
-circlePoints (Circle { circ_ctm=ctm, circ_radius=radius }) = map fn all_points
+circlePoints :: (Real u, Floating u) => u -> ShapeCTM u -> [Point2 u]
+circlePoints radius ctm = map fn all_points
   where
     fn pt       = ctmDisplace pt ctm
     all_points  = bezierCircle 2 radius zeroPt 
 
 
---------------------------------------------------------------------------------
--- | Coordinate
-
-data Coordinate u = Coordinate
-      { coord_ctm   :: ShapeCTM u 
-      }
-
-type DCoordinate = Coordinate Double
-
-type instance DUnit (Coordinate u) = u
-
-instance (Real u, Floating u) => CenterAnchor (Coordinate u) where
-  center = ctmCenter . coord_ctm
-
-
-coordinate :: (Real u, Floating u) => Shape u (Coordinate u)
-coordinate = Shape { src_ctm = identityCTM
-                   , out_fun = outputCoord
-                   }
-
-outputCoord :: (Real u, Floating u) => ShapeCTM u -> Image u (Coordinate u)
-outputCoord ctm = intoImage (return a) (drawCoord a) 
-  where
-    a = Coordinate { coord_ctm = ctm }
-
-
-drawCoord :: (Real u, Floating u) => Coordinate u -> Graphic u
-drawCoord coord = localize swapColours $ filledEllipse 2 2 (center coord)
 
 --------------------------------------------------------------------------------
 -- Diamond
@@ -272,33 +226,38 @@ instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
   east  = calcDiaPoint $ \ hw _  -> P2 hw 0
   west  = calcDiaPoint $ \ hw _  -> P2 (-hw) 0
 
-diamond :: (Real u, Floating u) => u -> u -> Shape u (Diamond u)
-diamond hw hh = Shape { src_ctm = identityCTM
-                      , out_fun = outputDia hw hh nolabel
-                      }
+-- | TODO - params are hw hw, should they be w h?
+--
+diamond :: (Real u, Floating u) => u -> u -> Shape u Diamond
+diamond hw hh = 
+    Shape { src_ctm  = identityCTM
+          , path_fun = tracePoints . diamondPoints hw hh
+          , cons_fun = mkDiamond hw hh
+          }
+
+-- | TODO - params are hw hw, should they be w h?
+--
+rdiamond :: (Real u, Floating u) => u -> u -> u -> Shape u Diamond
+rdiamond round_dist hw hh = 
+    Shape { src_ctm  = identityCTM
+          , path_fun = roundEvery round_dist . diamondPoints hw hh
+          , cons_fun = mkDiamond hw hh
+          }
 
 
-ldiamond :: (Real u, Floating u, FromPtSize u) 
-         => u -> u -> String -> Shape u (Diamond u)
-ldiamond hw hh ss = Shape { src_ctm = identityCTM
-                          , out_fun = outputDia hw hh (shapelabel ss)
-                          }
 
 
+mkDiamond :: (Real u, Floating u) => u -> u -> ShapeConstructor u Diamond
+mkDiamond hw hh = \ctm -> Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
 
-outputDia :: (Real u, Floating u) 
-          => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Diamond u)
-outputDia hw hh shl ctm = intoImage (return a) (drawDia a `mappend` label) 
+
+diamondPoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
+diamondPoints hw hh = remapPoints [ s, e, n, w ]
   where
-    a     = Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }
-    label = runShapeLabel ctm shl
-
-drawDia :: (Real u, Floating u) => Diamond u -> Graphic u
-drawDia = borderedPath . diamondPath
-
-
-diamondPath :: (Real u, Floating u) => Diamond u -> PrimPath u
-diamondPath dia = vertexPath [ south dia, east dia, north dia, west dia ]
+    s = P2   0  (-hh)
+    e = P2   hw    0
+    n = P2   0    hh
+    w = P2 (-hw)   0 
 
 
 --------------------------------------------------------------------------------
@@ -321,91 +280,26 @@ instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
   center = ctmCenter . ell_ctm
 
 
-ellipse :: (Real u, Floating u) => u -> u -> Shape u (Ellipse u)
-ellipse rx ry = Shape { src_ctm = identityCTM
-                      , out_fun = outputEll rx ry nolabel
-                      }
-
-lellipse :: (Real u, Floating u, FromPtSize u) 
-         => u -> u -> String -> Shape u (Ellipse u)
-lellipse rx ry ss = Shape { src_ctm = identityCTM
-                          , out_fun = outputEll rx ry (shapelabel ss)
-                          }
+ellipse :: (Real u, Floating u) => u -> u -> Shape u Ellipse
+ellipse rx ry = 
+    Shape { src_ctm  = identityCTM
+          , path_fun = tracePointsCurve . ellipsePoints rx ry
+          , cons_fun = mkEllipse rx ry  
+          }
 
 
-outputEll :: (Real u, Floating u) 
-          => u -> u -> ShapeLabel u -> ShapeCTM u -> Image u (Ellipse u)
-outputEll rx ry shl ctm = intoImage (return a) (drawEll a `mappend` label)
-  where
-    a     = Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
-    label = runShapeLabel ctm shl
 
+mkEllipse :: (Real u, Floating u) => u -> u -> ShapeConstructor u Ellipse
+mkEllipse rx ry = \ctm -> Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }
 
-drawEll :: (Real u, Floating u) => Ellipse u -> Graphic u
-drawEll = borderedPath . ellipsePath
-
-
-ellipsePath :: (Real u, Floating u) => Ellipse u -> PrimPath u
-ellipsePath = curvedPath . ellipsePoints
-
-ellipsePoints :: (Real u, Floating u) => Ellipse u -> [Point2 u]
-ellipsePoints (Ellipse { ell_ctm=ctm, ell_rx=rx, ell_ry=ry }) = 
-    map (ctmDisplace `flip` ctm) all_points
-  where
-    all_points  = map (rescale rx ry) $ bezierCircle 2 rx zeroPt 
+ellipsePoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
+ellipsePoints rx ry ctm = 
+    map ((ctmDisplace `flip` ctm) . scaleEll rx ry) $ bezierCircle 2 rx zeroPt 
 
 
 -- | x_radius is the unit length.
 --
-rescale :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
-rescale rx ry = scale 1 (ry/rx) 
+scaleEll :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
+scaleEll rx ry = scale 1 (ry/rx) 
 
 
---------------------------------------------------------------------------------
--- Free label
-
--- Free label is a rectangle that /is not drawn/, the 
--- constructor should always create some text.
-
-newtype FreeLabel u = FreeLabel { getFreeLabel :: Rectangle u }
-
-
-type DFreeLabel = FreeLabel Double
-
-type instance DUnit (FreeLabel u) = u
-
-
-instance (Real u, Floating u) => CenterAnchor (FreeLabel u) where
-  center = center . getFreeLabel
-
-
-instance (Real u, Floating u) => CardinalAnchor (FreeLabel u) where
-  north = north . getFreeLabel
-  south = south . getFreeLabel
-  east  = east . getFreeLabel
-  west  = west . getFreeLabel
-
-instance (Real u, Floating u) => CardinalAnchor2 (FreeLabel u) where
-  northeast = northeast . getFreeLabel
-  southeast = southeast . getFreeLabel
-  southwest = southwest . getFreeLabel
-  northwest = northwest . getFreeLabel
-
-instance (Real u, Floating u) => RadialAnchor (FreeLabel u) where
-  radialAnchor theta = radialAnchor theta . getFreeLabel
-
-freelabel :: (Real u, Floating u, FromPtSize u) 
-          => String -> Shape u (FreeLabel u)
-freelabel ss = Shape { src_ctm = identityCTM
-                     , out_fun = outputStringLbl ss
-                     }
-
-outputStringLbl :: (Real u, Floating u, FromPtSize u) 
-                => String -> ShapeCTM u -> Image u (FreeLabel u)
-outputStringLbl ss ctm = 
-    intoImage (monoTextDimensions ss >>= \(w,h) -> return (mkrect w h)) label
-  where
-    mkrect w h = FreeLabel $ Rectangle { rect_ctm = ctm
-                                       , rect_hw  = 0.5*w
-                                       , rect_hh  = 0.5*h }
-    label = runShapeLabel ctm (shapelabel ss)

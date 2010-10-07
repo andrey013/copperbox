@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.10.0
+version:          0.11.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -24,6 +24,12 @@ description:
   .
   .
   Changelog:
+  .
+  0.10.0 to 0.11.0:
+  . 
+  * Reworked shapes - internally shapes now create a @Path@ rather 
+    than an @Graphic@ this means the path can be manipulated (e.g. 
+    round cornered rectangle can be constructed).
   .
   0.9.0 to 0.10.0:
   .
@@ -120,6 +126,7 @@ library
     Wumpus.Basic.Paths.RoundCorners,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.Shapes.Base,
+    Wumpus.Basic.Shapes.Coordinate,
     Wumpus.Basic.Shapes.Derived,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,

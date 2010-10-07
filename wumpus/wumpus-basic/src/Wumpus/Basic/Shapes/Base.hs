@@ -21,8 +21,11 @@ module Wumpus.Basic.Shapes.Base
 
 
     Shape(..)
+  , ShapeConstructor
 
-  , drawShape
+  , borderedShape
+  , filledShape
+  , strokedShape
 
   -- * ShapeCTM 
   , ShapeCTM(..)
@@ -39,7 +42,7 @@ module Wumpus.Basic.Shapes.Base
   ) where
 
 import Wumpus.Basic.Graphic
-
+import Wumpus.Basic.Paths
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -65,19 +68,30 @@ import Data.Monoid
 -- DrawingContext for the /shape/
 --
 
-data Shape u sh =  Shape 
-      { src_ctm :: ShapeCTM u 
-      , out_fun :: ShapeCTM u -> Image u sh
+data Shape u t =  Shape 
+      { src_ctm   :: ShapeCTM u 
+      , path_fun  :: ShapeCTM u -> Path u
+      , cons_fun   :: ShapeCTM u -> t u
       }
 
 type instance DUnit (Shape u sh) = u
 
 
+type ShapeConstructor u t = ShapeCTM u -> t u 
 
 
 
-drawShape :: Shape u sh -> Image u sh
-drawShape (Shape { src_ctm = ctm, out_fun = fn }) = fn ctm 
+borderedShape :: Num u => Shape u t -> Image u (t u)
+borderedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
+   intoImage (pure $ objf ctm) (borderedPath $ toPrimPathU $ pf ctm)
+
+filledShape :: Num u => Shape u t -> Image u (t u)
+filledShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
+   intoImage (pure $ objf ctm) (filledPath $ toPrimPathU $ pf ctm)
+
+strokedShape :: Num u => Shape u t -> Image u (t u)
+strokedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
+   intoImage (pure $ objf ctm) (closedStroke $ toPrimPathU $ pf ctm)
 
 
 instance (Real u, Floating u) => Rotate (Shape u sh) where
@@ -90,7 +104,7 @@ instance Num u => Translate (Shape u sh) where
   translate x y = updateCTM (translateCTM x y)
 
 updateCTM :: (ShapeCTM u -> ShapeCTM u) -> Shape u sh -> Shape u sh
-updateCTM fn (Shape ctm out) = Shape (fn ctm) out
+updateCTM fn (Shape ctm pf mkf) = Shape (fn ctm) pf mkf
 
 --------------------------------------------------------------------------------
 -- CTM

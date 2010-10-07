@@ -29,6 +29,7 @@ module Wumpus.Basic.Paths.Base
   , line
   , curve
   , tracePoints
+  , tracePointsCurve
   , curveByAngles
 
   , toPrimPath 
@@ -172,6 +173,15 @@ tracePoints (a:b:xs) = step (line a b) b xs
   where
     step acc _ []     = acc
     step acc e (y:ys) = step (acc `mappend` line e y) y ys
+
+
+tracePointsCurve :: (Floating u, Ord u) => [Point2 u] -> Path u
+tracePointsCurve (a:b:c:d:xs) = step (curve a b c d) d xs
+  where
+    step acc p0 (x:y:z:zs) = step (acc `mappend` curve p0 x y z) z zs
+    step acc _  _          = acc
+
+tracePointsCurve _            = PathEmpty
 
 
 curveByAngles :: (Floating u, Ord u) 

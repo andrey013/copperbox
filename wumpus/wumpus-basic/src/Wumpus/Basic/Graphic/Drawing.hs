@@ -42,7 +42,9 @@ module Wumpus.Basic.Graphic.Drawing
   , draw
   , xdraw
   , drawi
+  , drawi_
   , xdrawi
+  , xdrawi_
 
   , at
   , ati
@@ -300,6 +302,12 @@ drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
             let (a,o) = runImage ctx img in trace o >> return a
 
+-- | Forgetful 'drawi'.
+--
+drawi_ ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m ()
+drawi_ img = drawi img >> return ()
+
+
 -- | Hyperlink version of 'drawi'.
 --
 xdrawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
@@ -307,6 +315,11 @@ xdrawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m)
 xdrawi xl img = drawi (xlinkImage xl img)
 
 
+-- | Forgetful 'xdrawi'.
+--
+xdrawi_ ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+        => XLink -> Image u a -> m ()
+xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 infixr 1 `at`, `ati`
