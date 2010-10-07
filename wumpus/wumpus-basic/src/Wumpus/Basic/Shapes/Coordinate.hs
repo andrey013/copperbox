@@ -73,6 +73,9 @@ instance Num u => Translate (Coordinate u) where
 coordinate :: Num u => Point2 u -> Coordinate u
 coordinate (P2 x y) = Coordinate $ CoordinateAnchor { coord_x = x, coord_y = y }
 
+-- Note - should @coordinate@ take a point, Shapes don\'t.
+
+
 coordinateMark :: (Real u, Floating u) 
                => Coordinate u -> Image u (CoordinateAnchor u)
 coordinateMark x = intoImage (return $ getCoordinate x) (drawCoord x)

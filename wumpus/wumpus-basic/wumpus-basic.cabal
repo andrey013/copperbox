@@ -29,7 +29,7 @@ description:
   . 
   * Reworked shapes - internally shapes now create a @Path@ rather 
     than an @Graphic@ this means the path can be manipulated (e.g. 
-    round cornered rectangle can be constructed).
+    round cornered rectangles, diamonds... can be constructed).
   .
   0.9.0 to 0.10.0:
   .
@@ -128,6 +128,7 @@ library
     Wumpus.Basic.Shapes.Base,
     Wumpus.Basic.Shapes.Coordinate,
     Wumpus.Basic.Shapes.Derived,
+    Wumpus.Basic.Shapes.Plaintext,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,

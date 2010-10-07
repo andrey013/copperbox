@@ -24,6 +24,7 @@ module Wumpus.Basic.Shapes.Derived
   , rectangle
   , rrectangle
 
+  , mkRectangle   -- hidden in Shim module
 
   , Circle
   , DCircle
@@ -66,7 +67,7 @@ data Rectangle u = Rectangle
       , rect_hw     :: !u
       , rect_hh     :: !u 
       }
-  deriving (Eq,Show)
+  deriving (Eq,Ord,Show)
 
 type DRectangle = Rectangle Double
 
