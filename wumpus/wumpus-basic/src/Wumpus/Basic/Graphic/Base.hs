@@ -32,6 +32,9 @@
 -- The prefix @Loc@ indicates a functional type 
 -- /from Point2 to something.../
 -- 
+-- The prefix @ThetaLoc@ indicates a functional type 
+-- /from Direction (radian) then Point to something.../
+--
 -- \*\* WARNING \*\* - some names are expected to change.
 --
 --------------------------------------------------------------------------------
@@ -89,6 +92,13 @@ module Wumpus.Basic.Graphic.Base
   , DConnectorImage
 
   , intoConnectorImage
+
+  , ThetaLocDrawingR
+  , DThetaLocDrawingR
+  , ThetaLocGraphic
+  , DThetaLocGraphic
+  , ThetaLocImage
+  , DThetaLocImage
 
   ) where
 
@@ -334,6 +344,22 @@ intoConnectorImage :: ConnectorDrawingR u a
                    -> ConnectorImage u a
 intoConnectorImage f g p1 p2 = DrawingR $ \ctx -> 
     let a = getDrawingR (f p1 p2) ctx; o = getDrawingR (g p1 p2) ctx in (a,o)
+
+
+
+type ThetaLocDrawingR u a = Radian -> LocDrawingR u a 
+
+type DThetaLocDrawingR a = ThetaLocDrawingR Double a
+
+-- | A function from /Radian -\> Point -\> Graphic/...
+--
+type ThetaLocGraphic u = Radian -> LocGraphic u
+
+type DThetaLocGraphic = ThetaLocGraphic Double
+
+type ThetaLocImage u a = Radian -> LocImage u a
+
+type DThetaLocImage a = ThetaLocImage Double a 
 
 
 

@@ -20,8 +20,9 @@
 module Wumpus.Basic.Arrows.Tips
   ( 
 
+    Arrowhead(..)
 
-    tri90
+  , tri90
   , tri60
   , tri45
   , otri90
@@ -46,6 +47,10 @@ import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
 
+data Arrowhead u = Arrowhead
+      { retract_dist :: !u
+      , arrow_draw   :: ThetaLocGraphic u 
+      }
 
 
 -- | Tiplen is length of the tip \*along the line it follows\*. 
@@ -108,7 +113,7 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
 -- does it!).
 --
 tripointsByAngle :: (Floating u, FromPtSize u)
-                 => Radian -> Radian -> LocDrawingR u (Point2 u, Point2 u)
+                 => Radian ->  ThetaLocDrawingR u (Point2 u, Point2 u)
 tripointsByAngle triang theta tip = 
     (\h -> let (vupper,vlower) = triVecsByAngle h (0.5*triang) theta
            in  (tip .+^ vupper, tip .+^ vlower))
@@ -117,8 +122,8 @@ tripointsByAngle triang theta tip =
 
 
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
-                => (u -> u) -> (u -> u) -> Radian 
-                -> LocDrawingR u (Point2 u, Point2 u)
+                => (u -> u) -> (u -> u)  
+                -> ThetaLocDrawingR u (Point2 u, Point2 u)
 tripointsByDist lenF halfwidthF theta tip = 
     (\h -> let (vup,vlo) = triVecsByDist (lenF h) (halfwidthF $ 0.5*h) theta
            in  (tip .+^ vup, tip .+^ vlo))
@@ -131,11 +136,8 @@ tripointsByDist lenF halfwidthF theta tip =
 -- filled with stroke colour!
 
 triAng :: (Floating u, Real u, FromPtSize u)
-      => Radian 
-      -> Radian
-      -> (PrimPath u -> Graphic u) 
-      -> LocGraphic u
-triAng triang theta gf pt = 
+       => Radian -> (PrimPath u -> Graphic u) -> ThetaLocGraphic u
+triAng triang gf theta pt = 
     tripointsByAngle triang theta pt >>= \(u,v) -> 
     localize bothStrokeColour (gf $  vertexPath [pt,u,v])
 
@@ -143,56 +145,48 @@ triAng triang theta gf pt =
 
 -- TODO - maybe filling needs to use swapColours
 
-tri90 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-tri90 theta = triAng (pi/2) theta filledPath
+tri90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+tri90 = triAng (pi/2) filledPath
 
 
-tri60 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-tri60 theta = triAng (pi/3) theta filledPath
+tri60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+tri60 = triAng (pi/3) filledPath
 
 
-tri45 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-tri45 theta = triAng (pi/4) theta filledPath
+tri45 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+tri45 = triAng (pi/4) filledPath
 
 
-otri90 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-otri90 theta = triAng (pi/2) theta closedStroke
+otri90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+otri90 = triAng (pi/2) closedStroke
 
 
-otri60 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-otri60 theta = triAng (pi/3) theta closedStroke
+otri60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+otri60 = triAng (pi/3) closedStroke
 
-otri45 :: (Floating u, Real u, FromPtSize u)
-      => Radian -> LocGraphic u
-otri45 theta = triAng (pi/4) theta closedStroke
+otri45 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
+otri45 = triAng (pi/4) closedStroke
 
-barbAng :: (Floating u, Real u, FromPtSize u)
-      => Radian -> Radian -> LocGraphic u
+barbAng :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
 barbAng ang theta pt = 
     tripointsByAngle ang theta pt >>= \(u,v) -> 
     openStroke (vertexPath [u,pt,v])
 
 
-barb90 :: (Floating u, Real u, FromPtSize u) 
-       => Radian -> LocGraphic u
+barb90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
 barb90 = barbAng (pi/2)
 
-barb60 :: (Floating u, Real u, FromPtSize u) 
-       => Radian -> LocGraphic u
+barb60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
 barb60 = barbAng (pi/3)
 
-barb45 :: (Floating u, Real u, FromPtSize u) 
-       => Radian -> LocGraphic u
-barb45 = barbAng (pi/4)
+-- ********** 
+barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+barb45 = Arrowhead { retract_dist = 0
+                   , arrow_draw   = barbAng (pi/4) }
 
 
 
-perp :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
+perp :: (Floating u, FromPtSize u) => ThetaLocGraphic u
 perp theta pt =  
     markHeight >>= \ h -> 
     let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
@@ -200,7 +194,7 @@ perp theta pt =
     makeV h  = avec (theta + pi/2) (0.5 * h)
 
 
-rbracket :: (Floating u, FromPtSize u) => Radian -> LocGraphic u
+rbracket :: (Floating u, FromPtSize u) => ThetaLocGraphic u
 rbracket theta pt = markHalfHeight >>= \hh -> 
    runDirection theta $ 
      displacePerp   hh  pt >>= \p1 ->

@@ -46,20 +46,20 @@ petri_net = liftToPictureU $ execDrawing (standardContext 14) $ do
               tl2    <- transition 210 0
               r      <- place 280 0
               tl3    <- transition 350 0
-              connector (east pw)  (west tu1)              
-              connector (east tu1) (west rtw)
-              connector (east rtw) (west tu2)
-              connector (east tu2) (west w)
-              connector (east w)   (west tu3)
+              connector' (east pw)  (west tu1)              
+              connector' (east tu1) (west rtw)
+              connector' (east rtw) (west tu2)
+              connector' (east tu2) (west w)
+              connector' (east w)   (west tu3)
               connectorC 32 (north tu3) (north pw)
-              connector (east pr)  (west tl1)              
-              connector (east tl1) (west rtr)
-              connector (east rtr) (west tl2)
-              connector (east tl2) (west r)
-              connector (east r)   (west tl3)
+              connector' (east pr)  (west tl1)              
+              connector' (east tl1) (west rtr)
+              connector' (east rtr) (west tl2)
+              connector' (east tl2) (west r)
+              connector' (east r)   (west tl3)
               connectorC (-32) (south tl3) (south pr)
-              connector (southwest res) (northeast tl2)
-              connector (northwest tl3) (southeast res)
+              connector' (southwest res) (northeast tl2)
+              connector' (northwest tl3) (southeast res)
               connectorD 6    (southwest tu3) (northeast res)
               connectorD (-6) (southwest tu3) (northeast res) 
               connectorD 6    (northwest res) (southeast tu2)
@@ -87,10 +87,10 @@ transition :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m)
            => u -> u -> m (Rectangle u)
 transition x y = greenFill $ drawi $ borderedShape $ translate x y $ rectangle 32 22
 
-connector :: ( Real u, Floating u, FromPtSize u
+connector' :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m ()
-connector p1 p2 = do
+connector' p1 p2 = do
    _ <- drawi $ arrowTri60 connect `conn` p1 $ p2
    return ()
 
