@@ -74,18 +74,18 @@ fontPicture xs = liftToPictureU $ execDrawing std_ctx $
 
 times_pic :: Picture Double
 times_pic = 
-    fontPicture [ (steel_blue,  timesRoman)
-                , (indian_red1, timesItalic)
-                , (steel_blue,  timesBold)
-                , (indian_red1, timesBoldItalic)
+    fontPicture [ (steel_blue,  times_roman)
+                , (indian_red1, times_italic)
+                , (steel_blue,  times_bold)
+                , (indian_red1, times_bold_italic)
                 ] 
 
 helvetica_pic :: Picture Double
 helvetica_pic = 
     fontPicture [ (steel_blue,  helvetica)
-                , (indian_red1, helveticaOblique)
-                , (steel_blue,  helveticaBold)
-                , (indian_red1, helveticaBoldOblique)
+                , (indian_red1, helvetica_oblique)
+                , (steel_blue,  helvetica_bold)
+                , (indian_red1, helvetica_bold_oblique)
                 ] 
 
 
@@ -95,9 +95,9 @@ helvetica_pic =
 courier_pic :: Picture Double
 courier_pic = 
     fontPicture [ (steel_blue,  courier)
-                , (indian_red1, courierOblique)
-                , (steel_blue,  courierBold)
-                , (indian_red1, courierBoldOblique)
+                , (indian_red1, courier_oblique)
+                , (steel_blue,  courier_bold)
+                , (indian_red1, courier_bold_oblique)
                 ] 
 
 

@@ -28,7 +28,7 @@ description:
   0.10.0 to 0.11.0:
   . 
   * Reworked arrowheads and connectors - connectors are now 
-    configurable, there are functions to make connectors with 
+    configurable: there are functions to make connectors with 
     a left arrowhead, right arrowhead, none or both.  
   .
   * Reworked shapes - internally shapes now create a @Path@ rather 
@@ -42,6 +42,10 @@ description:
   * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGracphic@ etc.
     have had their names expanded to @ConnectorDrawingR@, 
     @ConnectorGraphic@... 
+  .
+  * @Basic.SafeFont@ - font names changed to use underscore 
+    separators rather than camelCase. Wumpus generally uses 
+    underscored names for /constants/.
   .
   0.9.0 to 0.10.0:
   .
@@ -92,10 +96,10 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
-  demo/DotPic.hs,
   demo/ClipPic.hs,
   demo/ColourCharts.hs,
   demo/ColourDefns.hs,
+  demo/DotPic.hs,
   demo/FontPic.hs,
   demo/PetriNet.hs,
   demo/Picture.hs,

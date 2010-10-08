@@ -29,7 +29,7 @@ demo01 = do
     writeSVG_latin1 "./out/symbols.svg" pic1
 
 std_ctx :: DrawingContext
-std_ctx = fontface timesRoman $ standardContext 12
+std_ctx = fontface times_roman $ standardContext 12
 
 pic1 :: DPicture 
 pic1 = liftToPictureU $ execDrawing std_ctx $ do

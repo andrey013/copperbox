@@ -117,8 +117,8 @@ lblParensParensParens = localize (fontface helvetica) . textline "(),(),()"
 
 
 lblBold' :: Num u => String -> LocGraphic u
-lblBold' ss = localize (fontface helveticaBold) . textline ss
+lblBold' ss = localize (fontface helvetica_bold) . textline ss
 
 
 lblBold :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontface helveticaBold) . centermonoTextline ss
+lblBold ss = localize (fontface helvetica_bold) . centermonoTextline ss

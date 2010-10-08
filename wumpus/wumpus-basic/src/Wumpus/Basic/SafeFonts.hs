@@ -18,22 +18,22 @@
 module Wumpus.Basic.SafeFonts
   ( 
   -- * Times Roman
-    timesRoman
-  , timesItalic
-  , timesBold
-  , timesBoldItalic
+    times_roman
+  , times_italic
+  , times_bold
+  , times_bold_italic
 
   -- * Helvetica
   , helvetica
-  , helveticaOblique
-  , helveticaBold
-  , helveticaBoldOblique
+  , helvetica_oblique
+  , helvetica_bold
+  , helvetica_bold_oblique
 
   -- * Courier
   , courier
-  , courierOblique
-  , courierBold
-  , courierBoldOblique
+  , courier_oblique
+  , courier_bold
+  , courier_bold_oblique
 
   -- * Symbol
   , symbol
@@ -56,29 +56,29 @@ import Wumpus.Core
 
 -- | Times-Roman
 -- 
-timesRoman :: FontFace
-timesRoman = 
+times_roman :: FontFace
+times_roman = 
     FontFace "Times-Roman" "Times New Roman" SVG_REGULAR latin1_font_encoder
 
 -- | Times Italic
 --
-timesItalic :: FontFace
-timesItalic = 
+times_italic :: FontFace
+times_italic = 
     FontFace "Times-Italic" "Times New Roman" SVG_ITALIC latin1_font_encoder
                        
 -- | Times Bold
 --
-timesBold :: FontFace
-timesBold = 
+times_bold :: FontFace
+times_bold = 
     FontFace "Times-Bold" "Times New Roman" SVG_BOLD latin1_font_encoder
 
 -- | Times Bold Italic
 --
-timesBoldItalic :: FontFace
-timesBoldItalic = FontFace "Times-BoldItalic" 
-                           "Times New Roman" 
-                           SVG_BOLD_ITALIC 
-                           latin1_font_encoder
+times_bold_italic :: FontFace
+times_bold_italic = FontFace "Times-BoldItalic" 
+                             "Times New Roman" 
+                             SVG_BOLD_ITALIC 
+                             latin1_font_encoder
 
 
 --------------------------------------------------------------------------------
@@ -92,24 +92,24 @@ helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder
 
 -- | Helvetica Oblique
 --
-helveticaOblique :: FontFace
-helveticaOblique = 
+helvetica_oblique :: FontFace
+helvetica_oblique = 
     FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE latin1_font_encoder
 
 -- | Helvetica Bold
 -- 
-helveticaBold :: FontFace
-helveticaBold = 
+helvetica_bold :: FontFace
+helvetica_bold = 
     FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD latin1_font_encoder
 
 
 -- | Helvetica Bold Oblique
 --
-helveticaBoldOblique :: FontFace
-helveticaBoldOblique = FontFace "Helvetica-Bold-Oblique" 
-                                "Helvetica" 
-                                SVG_BOLD_OBLIQUE 
-                                latin1_font_encoder
+helvetica_bold_oblique :: FontFace
+helvetica_bold_oblique = FontFace "Helvetica-Bold-Oblique" 
+                                  "Helvetica" 
+                                  SVG_BOLD_OBLIQUE 
+                                  latin1_font_encoder
 
 
 
@@ -122,24 +122,24 @@ courier = FontFace "Courier" "Courier New" SVG_REGULAR latin1_font_encoder
 
 -- | Courier Oblique
 -- 
-courierOblique :: FontFace
-courierOblique = 
+courier_oblique :: FontFace
+courier_oblique = 
     FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE latin1_font_encoder
 
 -- | Courier Bold
 -- 
-courierBold :: FontFace
-courierBold = 
+courier_bold :: FontFace
+courier_bold = 
     FontFace "Courier-Bold" "Courier New" SVG_BOLD latin1_font_encoder
 
 
 -- | Courier Bold Oblique
 -- 
-courierBoldOblique :: FontFace
-courierBoldOblique = FontFace "Courier-Bold-Oblique" 
-                              "Courier New" 
-                              SVG_BOLD_OBLIQUE 
-                              latin1_font_encoder
+courier_bold_oblique :: FontFace
+courier_bold_oblique = FontFace "Courier-Bold-Oblique" 
+                                "Courier New" 
+                                SVG_BOLD_OBLIQUE 
+                                latin1_font_encoder
 
 --------------------------------------------------------------------------------
 -- Symbol
