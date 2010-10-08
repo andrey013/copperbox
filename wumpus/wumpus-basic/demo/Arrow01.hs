@@ -19,13 +19,12 @@ main = createDirectoryIfMissing True "./out/"
 
          
 pic1 :: Picture Double 
-pic1 = liftToPictureU $ execDrawing (standardContext 48) $
-    do { _ <- drawi $ dotDisk `ati` (P2 0 0)
-       ; _ <- drawi $ dotDisk `ati` (P2 100 0)
-       ; _ <- drawi $ arrowOTri60 connect `conn` (P2 0 0) $ (P2 100 0) 
-       ; _ <- drawi $ dotText "k" `ati` (P2 120 6)  
-       ; _ <- drawi $ dotText "k" `ati` (P2 88  (-20))
-       ; _ <- drawi $ arrowRBracket connect `conn` (P2 130 0) $ (P2 160 0) 
-       ; return () 
-       }  
+pic1 = liftToPictureU $ execDrawing (standardContext 48) $ do
+    drawi_ $ dotDisk `ati` (P2 0 0)
+    drawi_ $ dotDisk `ati` (P2 100 0)
+    drawi_ $ strokeConnector (rightArrow connect otri60) (P2 0 0) (P2 100 0) 
+    drawi_ $ dotText "k" `ati` (P2 120 6)  
+    drawi_ $ dotText "k" `ati` (P2 88  (-20))
+    drawi_ $ strokeConnector (rightArrow connect rbracket) (P2 130 0) (P2 160 0) 
+      
 

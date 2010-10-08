@@ -87,27 +87,26 @@ transition :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m)
            => u -> u -> m (Rectangle u)
 transition x y = greenFill $ drawi $ borderedShape $ translate x y $ rectangle 32 22
 
-connector' :: ( Real u, Floating u, FromPtSize u
-             , DrawingCtxM m, TraceM m, u ~ MonUnit m )
-          => Point2 u -> Point2 u -> m ()
-connector' p1 p2 = do
-   _ <- drawi $ arrowTri60 connect `conn` p1 $ p2
-   return ()
+
+
+
+connector' :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
+         , Real u, Floating u, FromPtSize u ) 
+      => Point2 u -> Point2 u -> m ()
+connector' p0 p1 = drawi_ $ strokeConnector (rightArrow connect tri45) p0 p1
 
 
 connectorC :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
-connectorC v p1 p2 = do
-    _ <- drawi $ arrowTri60 (vhvconn v) `conn` p1 $ p2
-    return ()
+connectorC v p0 p1 = 
+    drawi_ $ strokeConnector (rightArrow (vhvconn v) tri45) p0 p1
 
 connectorD :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
-connectorD u p1 p2 = do
-    _ <- drawi $ arrowTri60 (joint u) `conn` p1 $ p2
-    return ()
+connectorD u p0 p1 = 
+    drawi_ $ strokeConnector (rightArrow (joint u) tri45) p0 p1
 
 
 lblParensParens :: Num u => LocGraphic u

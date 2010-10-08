@@ -48,7 +48,7 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 
 data Arrowhead u = Arrowhead
-      { retract_dist :: !u
+      { retract_dist :: DrawingR u
       , arrow_draw   :: ThetaLocGraphic u 
       }
 
@@ -90,6 +90,7 @@ triVecsByAngle tiplen halfang theta = (vec_to_upper, vec_to_lower)
     vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
 
 
+{-
 -- | This one is for triangles when the tip height and tip width
 -- are known.
 --
@@ -102,6 +103,15 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
     rtheta       = pi + theta        -- theta in the opposite direction
     vec_to_upper = avec (circularModulo $ rtheta - halfang) hypo_len
     vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
+-}
+
+
+
+
+mark_height_plus_line_width :: (Fractional u, FromPtSize u) => DrawingR u
+mark_height_plus_line_width = 
+    (\h lw -> h + realToFrac lw) <$> markHeight <*> lineWidth
+
 
 
 --------------------------------------------------------------------------------
@@ -120,7 +130,7 @@ tripointsByAngle triang theta tip =
       <$> markHeight
 
 
-
+{-
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
                 => (u -> u) -> (u -> u)  
                 -> ThetaLocDrawingR u (Point2 u, Point2 u)
@@ -128,7 +138,7 @@ tripointsByDist lenF halfwidthF theta tip =
     (\h -> let (vup,vlo) = triVecsByDist (lenF h) (halfwidthF $ 0.5*h) theta
            in  (tip .+^ vup, tip .+^ vlo))
       <$> markHeight
-
+-}
 
 
 
@@ -145,27 +155,27 @@ triAng triang gf theta pt =
 
 -- TODO - maybe filling needs to use swapColours
 
-tri90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-tri90 = triAng (pi/2) filledPath
+tri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+tri90 = Arrowhead markHeight (triAng (pi/2) filledPath)
 
 
-tri60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-tri60 = triAng (pi/3) filledPath
+tri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+tri60 = Arrowhead markHeight (triAng (pi/3) filledPath)
 
 
-tri45 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-tri45 = triAng (pi/4) filledPath
+tri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+tri45 = Arrowhead markHeight (triAng (pi/4) filledPath)
+
+otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+otri90 = Arrowhead mark_height_plus_line_width (triAng (pi/2) closedStroke)
+
+otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+otri60 = Arrowhead mark_height_plus_line_width (triAng (pi/3) closedStroke)
+
+otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+otri45 = Arrowhead mark_height_plus_line_width (triAng (pi/4) closedStroke)
 
 
-otri90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-otri90 = triAng (pi/2) closedStroke
-
-
-otri60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-otri60 = triAng (pi/3) closedStroke
-
-otri45 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-otri45 = triAng (pi/4) closedStroke
 
 barbAng :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
 barbAng ang theta pt = 
@@ -173,29 +183,31 @@ barbAng ang theta pt =
     openStroke (vertexPath [u,pt,v])
 
 
-barb90 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-barb90 = barbAng (pi/2)
+barb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+barb90 = Arrowhead (pure 0) (barbAng (pi/2))
 
-barb60 :: (Floating u, Real u, FromPtSize u) => ThetaLocGraphic u
-barb60 = barbAng (pi/3)
+barb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+barb60 = Arrowhead (pure 0) (barbAng (pi/3))
 
--- ********** 
+
 barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb45 = Arrowhead { retract_dist = 0
-                   , arrow_draw   = barbAng (pi/4) }
+barb45 = Arrowhead (pure 0) (barbAng (pi/4))
 
 
 
-perp :: (Floating u, FromPtSize u) => ThetaLocGraphic u
-perp theta pt =  
+perpAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
+perpAng theta pt =  
     markHeight >>= \ h -> 
     let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
   where
     makeV h  = avec (theta + pi/2) (0.5 * h)
 
 
-rbracket :: (Floating u, FromPtSize u) => ThetaLocGraphic u
-rbracket theta pt = markHalfHeight >>= \hh -> 
+perp :: (Floating u, FromPtSize u) => Arrowhead u
+perp = Arrowhead (pure 0) perpAng
+
+rbracketAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
+rbracketAng theta pt = markHalfHeight >>= \hh -> 
    runDirection theta $ 
      displacePerp   hh  pt >>= \p1 ->
      displacePara (-hh) p1 >>= \p0 ->
@@ -203,3 +215,6 @@ rbracket theta pt = markHalfHeight >>= \hh ->
      displacePara (-hh) p2 >>= \p3 ->
      return (openStroke $ vertexPath [p0,p1,p2,p3]) 
    
+
+rbracket :: (Floating u, FromPtSize u) => Arrowhead u
+rbracket = Arrowhead (pure 0) rbracketAng
