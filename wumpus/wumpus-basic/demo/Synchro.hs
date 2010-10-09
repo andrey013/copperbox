@@ -12,8 +12,7 @@ import Wumpus.Basic.Anchors
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Shapes.Base
-import Wumpus.Basic.Shapes.Derived
+import Wumpus.Basic.Shapes
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText
 import Wumpus.Basic.Text.LRSymbol
@@ -45,54 +44,54 @@ pic1 = liftToPictureU $ execDrawing (standardContext 9) $ do
     lower2     <- italiclabel 154   0 "H(A &#plus; G(A) &#multiply; B)"
     lower3     <- italiclabel 244   0 "H(A) &#multiply; J(B)"
     lower4     <- italiclabel 312   0 "J(B)"
-    pconnector upper2 upper1 (timesGraphic "h")
-    pconnector upper2 upper3 (lrtextGraphic $ alpha >> escName "multiply" 
+    lblconn upper2 upper1 (timesGraphic "h")
+    lblconn upper2 upper3 (lrtextGraphic $ alpha >> escName "multiply" 
                                                     >> char 'I')
-    pconnector upper3 upper4 (lrtextGraphic $ char 'g' >> escName "onesuperior")
-    pconnector lower1 lower0 (timesGraphic "f")
-    pconnector lower2 lower1 (symbolGraphic " ")
-    pconnector lower3 lower2 (timesGraphic " ")
-    pconnector lower0 upper1 (symbolGraphic "&#phi1;")
-    pconnector lower1 upper1 (timesGraphic " ")
-    pconnector upper2 lower2 (timesGraphic "g")
-    pconnector upper2 lower3 (symbolGraphic " ")
-    pconnector upper3 lower3 (symbolGraphic " ")
-    pconnector upper3 lower4 (symbolGraphic " ")
-    pconnector upper4 lower4 (symbolGraphic " ")
+    lblconn upper3 upper4 (lrtextGraphic $ char 'g' >> escName "onesuperior")
+    lblconn lower1 lower0 (timesGraphic "f")
+    lblconn lower2 lower1 (symbolGraphic " ")
+    lblconn lower3 lower2 (timesGraphic " ")
+    lblconn lower0 upper1 (symbolGraphic "&#phi1;")
+    lblconn lower1 upper1 (timesGraphic " ")
+    lblconn upper2 lower2 (timesGraphic "g")
+    lblconn upper2 lower3 (symbolGraphic " ")
+    lblconn upper3 lower3 (symbolGraphic " ")
+    lblconn upper3 lower4 (symbolGraphic " ")
+    lblconn upper4 lower4 (symbolGraphic " ")
     return ()
 
 
 italiclabel :: ( Real u, Floating u, FromPtSize u
                , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
-            => u -> u -> String -> m (FreeLabel u)
-italiclabel x y ss = localize (fontface timesItalic)
-                              (drawi $ drawShape $ translate x y $ freelabel ss)
+            => u -> u -> String -> m (PlaintextAnchor u)
+italiclabel x y ss = localize (fontface times_italic)
+                              (drawi $ drawText $ translate x y $ plaintext ss)
 
 
 symbolGraphic :: Num u => String -> LocGraphic u
 symbolGraphic ss = localize (fontface symbol) . (textline ss)
 
 timesGraphic :: Num u => String -> LocGraphic u
-timesGraphic ss = localize (fontface timesItalic) . (textline ss)
+timesGraphic ss = localize (fontface times_italic) . (textline ss)
 
 
 lrtextGraphic :: (Num u, FromPtSize u) 
               => LRText u a -> LocGraphic u
-lrtextGraphic ma = localize (fontface timesItalic) . (execLRText ma)
+lrtextGraphic ma = localize (fontface times_italic) . (execLRText ma)
 
 
 
 
 
-connector :: ( Real u, Floating u, FromPtSize u
+conn :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m (Point2 u)
-connector p1 p2 = localize thin $ do
-   p <- drawi $ arrowBarb60 connect `conn` p1 $ p2
-   return (maybe p1 fst $ midpoint p)
+conn p1 p2 = localize thin $ do
+   p <- drawi $ strokeConnector (rightArrow connect barb45) p1 p2
+   return (fst $ midpoint p)
 
-pconnector :: ( Real u, Floating u, FromPtSize u
+lblconn :: ( Real u, Floating u, FromPtSize u
               , DrawingCtxM m, TraceM m, u ~ MonUnit m )
-           => FreeLabel u -> FreeLabel u -> LocGraphic u -> m ()
-pconnector a b gf = 
-    (uncurry connector $ radialConnectorPoints a b) >>= \pt -> draw $ gf pt
+           => PlaintextAnchor u -> PlaintextAnchor u -> LocGraphic u -> m ()
+lblconn a b gf = 
+    (uncurry conn $ radialConnectorPoints a b) >>= \pt -> draw $ gf pt

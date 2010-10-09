@@ -28,7 +28,7 @@ demo01 = do
     writeSVG_latin1 "./out/lrtext01.svg" combo_pic
 
 std_ctx :: DrawingContext
-std_ctx = fontface timesRoman $ standardContext 48
+std_ctx = fontface times_roman $ standardContext 48
 
 combo_pic :: DPicture
 combo_pic = vcat pic1 [pic2,pic3]

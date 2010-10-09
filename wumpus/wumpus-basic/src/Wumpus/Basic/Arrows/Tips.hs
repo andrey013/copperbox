@@ -21,6 +21,7 @@ module Wumpus.Basic.Arrows.Tips
   ( 
 
     Arrowhead(..)
+  , arrowheadTip
 
   , tri90
   , tri60
@@ -52,6 +53,9 @@ data Arrowhead u = Arrowhead
       , arrow_draw   :: ThetaLocGraphic u 
       }
 
+
+arrowheadTip :: Arrowhead u -> Radian -> LocGraphic u
+arrowheadTip (Arrowhead _ gf) theta = gf theta
 
 -- | Tiplen is length of the tip \*along the line it follows\*. 
 --

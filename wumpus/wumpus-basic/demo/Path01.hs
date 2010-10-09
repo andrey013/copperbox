@@ -29,9 +29,9 @@ pic1 = liftToPictureU $ execDrawing (standardContext 18) $
        ; draw curve2
        ; draw curve3
        ; draw eastUpWest
-       ; draw $ (barb45 0) `at` (P2 130 0) 
-       ; draw $ (barb60 0) `at` (P2 120 0) 
-       ; draw $ (barb90 0) `at` (P2 110 0) 
+       ; draw $ (arrowheadTip barb45 0) `at` (P2 130 0) 
+       ; draw $ (arrowheadTip barb60 0) `at` (P2 120 0) 
+       ; draw $ (arrowheadTip barb90 0) `at` (P2 110 0) 
        ; return ()
        }
     
@@ -44,7 +44,7 @@ curve1 = openStroke $ curvedPath xs
 
 
 curve2 :: Graphic Double
-curve2 =  localize (strokeColour red) (openStroke $ toPrimPathU path_one)
+curve2 =  localize (strokeColour red) (openStroke $ toPrimPath path_one)
   where
     path_one = execPath zeroPt $ curveto 0 (3*pi/2) (P2 60 60)
 
@@ -52,7 +52,7 @@ curve2 =  localize (strokeColour red) (openStroke $ toPrimPathU path_one)
 
 curve3 :: Graphic Double
 curve3 = localize (strokeColour blue) 
-                  (openStroke $ toPrimPathU $ shortenBoth 10 path1)
+                  (openStroke $ toPrimPath $ shortenBoth 10 path1)
 
 
 path1 :: Path Double
@@ -85,6 +85,6 @@ eastUpWest = localize (strokeColour blue)
 -- by displacing them.
 --  
 mkP1 :: Floating u => Point2 u -> Point2 u -> PrimPath u
-mkP1 start end = toPrimPathU $ execPath start $ 
+mkP1 start end = toPrimPath $ execPath start $ 
                     horizontalVertical (end .+^ hvec 20) >> lineto end
 

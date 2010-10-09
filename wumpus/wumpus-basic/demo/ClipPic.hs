@@ -40,7 +40,7 @@ pic :: DPicture
 pic = pic1 `nextToV` (stackOver [cpic1, cpic2, cpic3] cpic4)
 
 fillPath :: Num u => Path u -> Graphic u
-fillPath = filledPath . toPrimPathU
+fillPath = filledPath . toPrimPath
 
 pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $ 
@@ -61,16 +61,16 @@ background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $
      ps = unchain (coordinateScalingContext 86 16) $ tableDown 18 8
 
 cpic1 :: DPicture 
-cpic1 = clip (toPrimPathU path01) (background black)
+cpic1 = clip (toPrimPath path01) (background black)
   
 cpic2 :: DPicture 
-cpic2 = clip (toPrimPathU path02) (background medium_violet_red)
+cpic2 = clip (toPrimPath path02) (background medium_violet_red)
 
 cpic3 :: DPicture 
-cpic3 = clip (toPrimPathU path03) (background black)
+cpic3 = clip (toPrimPath path03) (background black)
 
 cpic4 :: DPicture 
-cpic4 = clip (toPrimPathU path04) (background black)
+cpic4 = clip (toPrimPath path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> Drawing u () 
