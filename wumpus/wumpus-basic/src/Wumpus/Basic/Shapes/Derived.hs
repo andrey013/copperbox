@@ -102,13 +102,18 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
     where 
       ctr = ctmCenter $ rect_ctm rect
 
+
+-- | 'rectangle'  : @ width * height -> shape @
+--
 rectangle :: (Real u, Floating u) => u -> u -> Shape u Rectangle
 rectangle w h = 
     Shape { src_ctm   = identityCTM
-          , path_fun  = tracePoints . rectanglePoints (0.5*w) (0.5*h)
+          , path_fun  = traceLinePoints . rectanglePoints (0.5*w) (0.5*h)
           , cons_fun  = mkRectangle (0.5*w) (0.5*h)  
           }
 
+-- | 'rectangle'  : @ round_length * width * height -> shape @
+--
 rrectangle :: (Real u, Floating u) => u -> u -> u -> Shape u Rectangle
 rrectangle round_dist w h = 
     Shape { src_ctm   = identityCTM
@@ -161,14 +166,16 @@ calcCircPoint :: (Real u, Floating u)
 calcCircPoint f (Circle { circ_ctm = ctm, circ_radius = rad }) =
     let pt = f rad in ctmDisplace pt ctm
 
-instance (Real u, Floating u) => CardinalAnchor (Circle u) where
-  north = calcCircPoint $ \ r -> P2 0  r
-  south = calcCircPoint $ \ r -> P2 0 (-r)
-  east  = calcCircPoint $ \ r -> P2 r  0
-  west  = calcCircPoint $ \ r -> P2 (-r) 0
+
 
 instance (Real u, Floating u) => RadialAnchor (Circle u) where
   radialAnchor theta = calcCircPoint $ \r -> zeroPt .+^ avec theta r
+
+instance (Real u, Floating u) => CardinalAnchor (Circle u) where
+  north = calcCircPoint $ \r -> P2 0    r
+  south = calcCircPoint $ \r -> P2 0  (-r)
+  east  = calcCircPoint $ \r -> P2 r    0
+  west  = calcCircPoint $ \r -> P2 (-r) 0
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
@@ -177,10 +184,12 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
+-- | 'circle'  : @ radius -> shape @
+--
 circle :: (Real u, Floating u) => u -> Shape u Circle
 circle radius = 
     Shape { src_ctm  = identityCTM
-          , path_fun = tracePointsCurve . circlePoints radius
+          , path_fun = traceCurvePoints . circlePoints radius
           , cons_fun = mkCircle radius
           }
 
@@ -216,6 +225,10 @@ instance (Real u, Floating u) => CenterAnchor (Diamond u) where
   center = ctmCenter . dia_ctm
 
 
+
+
+
+
 calcDiaPoint :: (Real u, Floating u) 
              => (u -> u -> Point2 u) -> Diamond u -> Point2 u
 calcDiaPoint f (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) =
@@ -227,16 +240,23 @@ instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
   east  = calcDiaPoint $ \ hw _  -> P2 hw 0
   west  = calcDiaPoint $ \ hw _  -> P2 (-hw) 0
 
--- | TODO - params are hw hw, should they be w h?
+
+
+
+-- | 'diamond'  : @ half_width * half_height -> shape @
+--
+-- Note - args might change to tull_width and full_height...
 --
 diamond :: (Real u, Floating u) => u -> u -> Shape u Diamond
 diamond hw hh = 
     Shape { src_ctm  = identityCTM
-          , path_fun = tracePoints . diamondPoints hw hh
+          , path_fun = traceLinePoints . diamondPoints hw hh
           , cons_fun = mkDiamond hw hh
           }
 
--- | TODO - params are hw hw, should they be w h?
+-- | 'rdiamond'  : @ round_length * half_width * half_height -> shape @
+--
+-- Note - args might change to full_width and full_height...
 --
 rdiamond :: (Real u, Floating u) => u -> u -> u -> Shape u Diamond
 rdiamond round_dist hw hh = 
@@ -281,10 +301,36 @@ instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
   center = ctmCenter . ell_ctm
 
 
+calcEllPoint :: (Real u, Floating u) 
+              => (u -> Point2 u) -> Ellipse u -> Point2 u
+calcEllPoint f (Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }) =
+    let p   = f rx; p'  = scaleEll rx ry p
+    in ctmDisplace p' ctm
+
+instance (Real u, Floating u) => RadialAnchor (Ellipse u) where
+  radialAnchor theta = calcEllPoint $ \rx -> zeroPt .+^ avec theta rx
+
+
+instance (Real u, Floating u) => CardinalAnchor (Ellipse u) where
+  north = radialAnchor (0.5*pi)
+  south = radialAnchor (1.5*pi)
+  east  = radialAnchor  0
+  west  = radialAnchor  pi
+
+
+instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
+
+
+-- | 'ellipse'  : @ x_radii * y_radii -> shape @
+--
 ellipse :: (Real u, Floating u) => u -> u -> Shape u Ellipse
 ellipse rx ry = 
     Shape { src_ctm  = identityCTM
-          , path_fun = tracePointsCurve . ellipsePoints rx ry
+          , path_fun = traceCurvePoints . ellipsePoints rx ry
           , cons_fun = mkEllipse rx ry  
           }
 

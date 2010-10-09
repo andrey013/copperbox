@@ -26,15 +26,15 @@ module Wumpus.Basic.Paths.Base
     Path
   , DPath
   , length
+  , append
+  , pconcat
   , line
   , curve
-  , tracePoints
-  , tracePointsCurve
+  , traceLinePoints
+  , traceCurvePoints
   , curveByAngles
 
   , toPrimPath 
-  , toPrimPathU
-
 
   , tipL
   , tipR
@@ -64,16 +64,14 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Data.Maybe
-import Data.Monoid
+import Data.List ( foldl' ) 
 import Data.Sequence ( Seq, (><), ViewL(..), viewl
                      , ViewR(..), viewr, (<|) , (|>) )
 import qualified Data.Sequence as S
 
 import Prelude hiding ( length )
 
-data Path u = PathEmpty 
-            | Path { _path_length   :: u 
+data Path u = Path { _path_length   :: u 
                    , _path_start    :: Point2 u
                    , _path_elements :: Seq (PathSeg u)
                    , _path_end      :: Point2 u
@@ -117,24 +115,17 @@ type instance DUnit (PathSeg u) = u
 
 
 length :: Num u => Path u -> u
-length PathEmpty      = 0
 length (Path u _ _ _) = u
 
 append :: Floating u => Path u -> Path u -> Path u
-append PathEmpty b         = b
-append a         PathEmpty = a
 append (Path len1 start1 se1 end1) (Path len2 start2 se2 end2) 
     | end1 == start2 = Path (len1+len2) start1 (se1 >< se2) end2 
     | otherwise      = let join      = lineSegment end1 start2
                            total_len = len1 + len2 + segmentLength join
                        in Path total_len start1 (se1 >< (join <| se2)) end2 
 
-
-instance Floating u => Monoid (Path u) where
-  mempty  = PathEmpty
-  mappend = append
-
-
+pconcat :: Floating u => Path u -> [Path u] -> Path u
+pconcat p0 ps = foldl' append p0 ps
 
 segmentLength :: PathSeg u -> u
 segmentLength (LineSeg u _ _)       = u
@@ -165,23 +156,33 @@ curve :: (Floating u, Ord u)
 curve p0 p1 p2 p3 = let v = curveLength p0 p1 p2 p3
                     in Path v p0 (S.singleton $ CurveSeg v p0 p1 p2 p3) p3
 
-
-tracePoints :: Floating u => [Point2 u] -> Path u
-tracePoints []       = PathEmpty
-tracePoints [a]      = line a a
-tracePoints (a:b:xs) = step (line a b) b xs
+-- | 'traceLinePoints' throws a runtime error if the supplied list
+-- is empty. 
+--
+traceLinePoints :: Floating u => [Point2 u] -> Path u
+traceLinePoints []       = error "traceLinePoints - empty point list."
+traceLinePoints [a]      = line a a
+traceLinePoints (a:b:xs) = step (line a b) b xs
   where
     step acc _ []     = acc
-    step acc e (y:ys) = step (acc `mappend` line e y) y ys
+    step acc e (y:ys) = step (acc `append` line e y) y ys
 
 
-tracePointsCurve :: (Floating u, Ord u) => [Point2 u] -> Path u
-tracePointsCurve (a:b:c:d:xs) = step (curve a b c d) d xs
+-- | 'traceCurvePoints' consumes 4 points from the list on the 
+-- intial step (start, control1, control2, end) then steps 
+-- through the list taking 3 points at a time thereafter
+-- (control1,control2, end). Leftover points are discarded.    
+-- 
+-- 'traceCurvePoints' throws a runtime error if the supplied list
+-- is has less than 4 elements (start, control1, control2, end). 
+--
+traceCurvePoints :: (Floating u, Ord u) => [Point2 u] -> Path u
+traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
   where
-    step acc p0 (x:y:z:zs) = step (acc `mappend` curve p0 x y z) z zs
+    step acc p0 (x:y:z:zs) = step (acc `append` curve p0 x y z) z zs
     step acc _  _          = acc
 
-tracePointsCurve _            = PathEmpty
+traceCurvePoints _            = error "tracePointsCurve - less than 4 elems."
 
 
 curveByAngles :: (Floating u, Ord u) 
@@ -196,21 +197,16 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 
 -- | Turn a Path into an ordinary PrimPath.
 --
--- An empty path returns Nothing - the path representation in 
--- Wumpus-Core does not allow empty paths - a path must always
--- have at least start point.
---
 -- Assumes path is properly formed - i.e. end point of one 
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: Path u -> Maybe (PrimPath u)
-toPrimPath PathEmpty         = Nothing
+toPrimPath :: Path u -> PrimPath u
 toPrimPath (Path _ _ segs _) = step1 $ viewl segs
   where
-    step1 EmptyL                  = Nothing
+    step1 EmptyL                  = error "toPrimPath - (not) unreachable."
     step1 (e :< se)               = let (start,a) = seg1 e in 
-                                    Just $ path start $ a : step2 (viewl se)
+                                    path start $ a : step2 (viewl se)
 
     step2 EmptyL                  = []
     step2 (e :< se)               = seg2 e : step2 (viewl se)
@@ -220,11 +216,6 @@ toPrimPath (Path _ _ segs _) = step1 $ viewl segs
  
     seg2 (LineSeg  _ _  p1)       = lineTo p1
     seg2 (CurveSeg _ _  p1 p2 p3) = curveTo p1 p2 p3
- 
-toPrimPathU :: Path u -> PrimPath u
-toPrimPathU = fromMaybe errK . toPrimPath
-  where
-    errK = error "toPathU - empty Path"
 
 
 
@@ -300,17 +291,17 @@ affineCombination a p1 p2 = p1 .+^ a *^ (p2 .-. p1)
 --------------------------------------------------------------------------------
 -- tips 
 
-tipL :: Path u -> Maybe (Point2 u)
-tipL PathEmpty       = Nothing
-tipL (Path _ sp _ _) = Just sp
+tipL :: Path u -> Point2 u
+tipL (Path _ sp _ _) = sp
 
 
-tipR :: Path u -> Maybe (Point2 u)
-tipR PathEmpty       = Nothing
-tipR (Path _ _ _ ep) = Just ep
+tipR :: Path u -> Point2 u
+tipR (Path _ _ _ ep) = ep
 
 
 -- | Shorten both ends...
+--
+-- u should be less-than half the path length
 --
 shortenBoth :: (Real u, Floating u) => u -> Path u -> Path u
 shortenBoth u p = shortenL u $ shortenR u p
@@ -318,13 +309,16 @@ shortenBoth u p = shortenL u $ shortenR u p
 --------------------------------------------------------------------------------
 -- shorten from the left...
 
+-- | Note - shortening a line from the left by 
+-- greater-than-or-equal its length is operationally equivalent 
+-- to making a zero-length line at the end point.
+--
 shortenL :: (Real u, Floating u) => u -> Path u -> Path u
-shortenL _ PathEmpty          = PathEmpty
 shortenL n (Path u _ segs ep) 
-    | n >= u                  = PathEmpty
+    | n >= u                  = line ep ep
     | otherwise               = step n (viewl segs)
   where
-    step _ EmptyL     = PathEmpty
+    step _ EmptyL     = line ep ep      -- should be unreachable
     step d (e :< se)  = let z  = segmentLength e in
                         case compare d z of
                           GT -> step (d-z) (viewl se)
@@ -333,10 +327,10 @@ shortenL n (Path u _ segs ep)
                                 in Path (u-n) (segmentStart e1) (e1 <| se) ep
 
 
-makeLeftPath :: u -> Seq (PathSeg u) -> Point2 u -> Path u
+makeLeftPath :: Floating u => u -> Seq (PathSeg u) -> Point2 u -> Path u
 makeLeftPath u se ep = 
     case viewl se of
-      EmptyL   -> PathEmpty 
+      EmptyL   -> line ep ep
       (e :< _) -> Path u (segmentStart e) se ep
 
 
@@ -361,13 +355,16 @@ shortenLineL n p0 p1 = p0 .+^ v
 --------------------------------------------------------------------------------
 -- shorten from the right ...
  
+-- | Note - shortening a line from the right by 
+-- greater-than-or-equal its length is operationally equivalent 
+-- to making a zero-length line at the start point.
+--
 shortenR :: (Real u, Floating u) => u -> Path u -> Path u
-shortenR _ PathEmpty          = PathEmpty
 shortenR n (Path u sp segs _) 
-    | n >= u                  = PathEmpty
+    | n >= u                  = line sp sp
     | otherwise               = step n (viewr segs)
   where
-    step _ EmptyR     = PathEmpty
+    step _ EmptyR     = line sp sp      -- should be unreachable
     step d (se :> e)  = let z = segmentLength e in
                         case compare d z of
                           GT -> step (d-z) (viewr se)
@@ -376,10 +373,10 @@ shortenR n (Path u sp segs _)
                                 in Path (u-n) sp (se |> e1) (segmentEnd e1)
                          
 
-makeRightPath :: u -> Point2 u -> Seq (PathSeg u) -> Path u
+makeRightPath :: Floating u => u -> Point2 u -> Seq (PathSeg u) -> Path u
 makeRightPath u sp se = 
     case viewr se of
-      EmptyR   -> PathEmpty 
+      EmptyR   -> line sp sp
       (_ :> e) -> Path u sp se (segmentEnd e)
 
 
@@ -409,23 +406,21 @@ shortenLineR n p0 p1 = p1 .+^ v
 -- | Direction of empty path is considered to be 0.
 --
 directionL :: (Real u, Floating u) => Path u -> Radian
-directionL PathEmpty        = 0
 directionL (Path _ _ se _)  = step $ viewl se
   where
     step (LineSeg  _ p0 p1 :< _)      = lineDirection p1 p0  -- 1-to-0
     step (CurveSeg _ p0 p1 _ _ :< _)  = lineDirection p1 p0
-    step _                            = 0
+    step _                            = 0       -- should be unreachable
 
 
 -- | Direction of empty path is considered to be 0.
 --
 directionR :: (Real u, Floating u) => Path u -> Radian
-directionR PathEmpty       = 0
 directionR (Path _ _ se _) = step $ viewr se
   where
     step (_ :> LineSeg  _ p0 p1)      = lineDirection p0 p1
     step (_ :> CurveSeg _ _  _ p2 p3) = lineDirection p2 p3
-    step _                            = 0
+    step _                            = 0       -- should be unreachable             
 
 {-
 -- Note - previously Paths were using this version of 
@@ -444,22 +439,21 @@ lineDirection p0 p1 = direction (pvec p0 p1)
 
 -- Return direction as well because the calculation is expensive...
 --
-midpoint :: (Real u, Floating u) => Path u -> Maybe (Point2 u, Radian)
-midpoint pa = let u = length pa in
-  if u == 0 then Nothing 
-            else let pa1 = shortenR (u/2) pa 
-                 in fmap (\a -> (a,directionR pa1)) $ tipR pa1
+midpoint :: (Real u, Floating u) => Path u -> (Point2 u, Radian)
+midpoint pa@(Path u sp _ _) 
+    | u == 0    = (sp,0)
+    | otherwise = let pa1 = shortenR (u/2) pa in (tipR pa1, directionR pa1)
 
 
 --------------------------------------------------------------------------------
 
-data PathViewL u = EmptyPathL
+data PathViewL u = PathOneL (PathSegment u)
                  | PathSegment u :<< Path u
   deriving (Eq,Ord,Show) 
 
 type DPathViewL = PathViewL Double
 
-data PathViewR u = EmptyPathR
+data PathViewR u = PathOneR (PathSegment u)
                  | Path u :>> PathSegment u
   deriving (Eq,Ord,Show) 
 
@@ -477,16 +471,29 @@ type instance DUnit (PathViewR u)   = u
 type instance DUnit (PathSegment u) = u
 
 pathViewL :: Num u => Path u -> PathViewL u
-pathViewL PathEmpty          = EmptyPathL
-pathViewL (Path u _ segs ep) = case viewl segs of
-    EmptyL                         -> EmptyPathL 
-    (LineSeg v p0 p1 :< se)        -> Line1 p0 p1 :<< Path (u-v) p1 se ep
-    (CurveSeg v p0 p1 p2 p3 :< se) -> Curve1 p0 p1 p2 p3 :<< Path (u-v) p3 se ep
+pathViewL (Path u _ segs ep) = go (viewl segs)
+  where
+    go EmptyL                   = error "pathViewL - (not) unreachable."
+     
+    go (LineSeg v p0 p1 :< se)
+        | S.null se             = PathOneL (Line1 p0 p1)
+        | otherwise             = Line1 p0 p1 :<< Path (u-v) p1 se ep
+
+    go (CurveSeg v p0 p1 p2 p3 :< se) 
+        | S.null se             = PathOneL (Curve1 p0 p1 p2 p3)
+        | otherwise             = Curve1 p0 p1 p2 p3 :<< Path (u-v) p3 se ep
 
 
 pathViewR :: Num u => Path u -> PathViewR u
-pathViewR PathEmpty          = EmptyPathR
-pathViewR (Path u _ segs ep) = case viewr segs of
-    EmptyR                         -> EmptyPathR
-    (se :> LineSeg v p0 p1)        -> Path (u-v) p1 se ep :>> Line1 p0 p1
-    (se :> CurveSeg v p0 p1 p2 p3) -> Path (u-v) p3 se ep :>> Curve1 p0 p1 p2 p3
+pathViewR (Path u _ segs ep) = go (viewr segs)
+  where
+    go EmptyR                   = error "pathViewR - (not) unreachable."
+
+    go (se :> LineSeg v p0 p1) 
+        | S.null se             = PathOneR (Line1 p0 p1)
+        | otherwise             = Path (u-v) p1 se ep :>> Line1 p0 p1
+
+    go (se :> CurveSeg v p0 p1 p2 p3) 
+        | S.null se             = PathOneR (Curve1 p0 p1 p2 p3)
+        | otherwise             = Path (u-v) p3 se ep :>> Curve1 p0 p1 p2 p3
+

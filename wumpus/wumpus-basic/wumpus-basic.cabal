@@ -39,13 +39,26 @@ description:
     replaced by @Plaintext@ which is not a @Shape@, but has some 
     similar properties.
   .
-  * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGracphic@ etc.
+  * @Basic.Paths.Base@ - @Path@ type changed, @PathEmpty@ 
+    constructor removed so empty paths cannot be created. This 
+    allows a better API for taking points on a path. It also 
+    means @Path@ is no longer an instance of Monoid. Type changes 
+    to various functions (e.g. @tipR@, @tipL@) reflecting that as 
+    paths cannot now be empty, functions on them can generally be 
+    total. @toPrimPathU@ removed as converting to a PrimPath as 
+    now always /safe/. @tracePoints@ renamed @traceLinePoints@, 
+    @tracePointsCurve@ renamed @traceCurvePoints@.
+  .
+  * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGraphic@ etc.
     have had their names expanded to @ConnectorDrawingR@, 
     @ConnectorGraphic@... 
   .
   * @Basic.SafeFont@ - font names changed to use underscore 
     separators rather than camelCase. Wumpus generally uses 
     underscored names for /constants/.
+  .
+  * Removed @conn@ from @Basic.Graphic.Drawing@. Connectors should 
+    be used instead.
   .
   0.9.0 to 0.10.0:
   .
@@ -96,6 +109,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/ArrowCircuit.hs,
   demo/ClipPic.hs,
   demo/ColourCharts.hs,
   demo/ColourDefns.hs,
@@ -103,7 +117,6 @@ extra-source-files:
   demo/FontPic.hs,
   demo/PetriNet.hs,
   demo/Picture.hs,
-  demo/Shapes.hs,
   demo/Symbols.hs
 
 library

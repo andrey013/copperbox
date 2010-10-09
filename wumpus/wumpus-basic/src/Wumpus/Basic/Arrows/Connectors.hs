@@ -109,7 +109,7 @@ strokeConnector (Connector cpF opt_la opt_ra) = \p0 p1 ->
     fn pathc ma p0 mb p1 = do 
        (path1,tipl) <- applyTipL ma p0 pathc
        (path2,tipr) <- applyTipR mb p1 path1
-       return $ maybe mempty (drawF tipl tipr) $ toPrimPath path2
+       return $ drawF tipl tipr $ toPrimPath path2
 
     drawF t1 t2 primpath = (openStroke primpath) `mappend` t1 `mappend` t2
    

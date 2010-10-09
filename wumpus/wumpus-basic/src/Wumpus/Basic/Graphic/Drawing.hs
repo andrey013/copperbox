@@ -48,7 +48,6 @@ module Wumpus.Basic.Graphic.Drawing
 
   , at
   , ati
-  , conn
 
   , node
   , nodei
@@ -330,11 +329,11 @@ ati :: LocImage u a -> Point2 u -> Image u a
 ati = ($)
 
 
-
+{-
 infixl 1 `conn`
 conn :: ConnectorImage u a -> Point2 u -> LocImage u a
 conn = ($)
-
+-}
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocGraphic u -> m ()

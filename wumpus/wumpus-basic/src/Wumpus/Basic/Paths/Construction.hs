@@ -42,14 +42,14 @@ module Wumpus.Basic.Paths.Construction
   ) where
 
 import Wumpus.Basic.Paths.Base
+import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
-import Data.Maybe
-import Data.Monoid
+import Data.List
 
 
 -- Are connectors and paths quite different things?
@@ -60,11 +60,11 @@ import Data.Monoid
 
 
 -- State monad version is quite good - it ameliorates the problem
--- of joing to the end point of an empty path...
+-- of joining to the end point of an empty path...
 
 data St u = St
       { current_point :: Point2 u 
-      , path_acc      :: Path u
+      , path_acc      :: H (Path u)
       }
 
 
@@ -91,18 +91,21 @@ instance Monad (PathM u) where
 -- Running the path is (probably) agnostic to the DrawingCtx.
 --
 runPath :: Floating u => Point2 u -> PathM u a -> (a, Path u)
-runPath start mf = let (a,s') = getPathM mf s in (a, path_acc s')
+runPath start mf = 
+    let (a,s') = getPathM mf s in (a, post $ toListH $ path_acc s')
   where
     s = St { current_point = start
-           , path_acc      = mempty
+           , path_acc      = emptyH
            }
+    post []     = line start start
+    post (x:xs) = foldl' append x xs  
 
 execPath :: Floating u => Point2 u -> PathM u a -> Path u
 execPath start mf = snd $ runPath start mf
 
 snocline :: Floating u => Vec2 u -> PathM u ()
 snocline v = PathM $ \(St pt ac) -> let ep = pt .+^ v 
-                                    in ((), St ep (ac `mappend` line pt ep))
+                                    in ((), St ep (ac `snocH` line pt ep))
 
 
 tip :: PathM u (Point2 u)
@@ -110,7 +113,7 @@ tip = PathM $ \s -> (current_point s,s)
 
 
 lineto :: Floating u => Point2 u -> PathM u ()
-lineto pt = PathM $ \(St p0 ac) -> ((), St pt (ac `mappend` line p0 pt))
+lineto pt = PathM $ \(St p0 ac) -> ((), St pt (ac `snocH` line p0 pt))
 
 rlineto :: Floating u => Vec2 u -> PathM u ()
 rlineto (V2 dx dy) = tip >>= \(P2 x y) -> lineto (P2 (x+dx) (y+dy))
@@ -127,7 +130,7 @@ vline len = snocline (vvec len)
 bezierto :: (Floating u, Ord u) 
          => Point2 u -> Point2 u -> Point2 u -> PathM u ()
 bezierto c1 c2 ep = PathM $ \(St p0 ac) -> 
-    ((), St ep (ac `mappend` curve p0 c1 c2 ep))
+    ((), St ep (ac `snocH` curve p0 c1 c2 ep))
 
 
 
@@ -140,8 +143,8 @@ curveto :: (Floating u, Ord u)
         => Radian -> Radian -> Point2 u -> PathM u ()
 curveto cin cout end = PathM $ \(St p0 ac) -> 
     let seg  = curveByAngles p0 cin cout end 
-        ac1  = ac `mappend` seg
-        end1 = fromMaybe end $ tipR ac1
+        ac1  = ac `snocH` seg
+        end1 = tipR seg
     in ((), St end1 ac1) 
 
 

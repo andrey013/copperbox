@@ -76,15 +76,15 @@ type ShapeConstructor u t = ShapeCTM u -> t u
 
 borderedShape :: Num u => Shape u t -> Image u (t u)
 borderedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (borderedPath $ toPrimPathU $ pf ctm)
+   intoImage (pure $ objf ctm) (borderedPath $ toPrimPath $ pf ctm)
 
 filledShape :: Num u => Shape u t -> Image u (t u)
 filledShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (filledPath $ toPrimPathU $ pf ctm)
+   intoImage (pure $ objf ctm) (filledPath $ toPrimPath $ pf ctm)
 
 strokedShape :: Num u => Shape u t -> Image u (t u)
 strokedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (closedStroke $ toPrimPathU $ pf ctm)
+   intoImage (pure $ objf ctm) (closedStroke $ toPrimPath $ pf ctm)
 
 
 instance (Real u, Floating u) => Rotate (Shape u sh) where

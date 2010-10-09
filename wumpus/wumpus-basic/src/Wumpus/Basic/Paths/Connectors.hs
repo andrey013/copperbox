@@ -48,21 +48,21 @@ connect = line
 
 vhconn :: Floating u => ConnectorPath u
 vhconn p1@(P2 x1 _) p2@(P2 _ y2) = 
-    let mid = P2 x1 y2 in tracePoints [p1, mid, p2]
+    let mid = P2 x1 y2 in traceLinePoints [p1, mid, p2]
 
 hvconn :: Floating u => ConnectorPath u
 hvconn p1@(P2 _ y1) p2@(P2 x2 _) = 
-    let mid = P2 x2 y1 in tracePoints [p1, mid, p2]
+    let mid = P2 x2 y1 in traceLinePoints [p1, mid, p2]
 
 vhvconn :: Floating u => u -> ConnectorPath u
-vhvconn v p1@(P2 x1 _) p2@(P2 x2 _) = tracePoints [p1, a1, a2, p2]
+vhvconn v p1@(P2 x1 _) p2@(P2 x2 _) = traceLinePoints [p1, a1, a2, p2]
   where
     a1 = p1 .+^ vvec v
     a2 = a1 .+^ hvec (x2 - x1)
 
 
 hvhconn :: Floating u => u -> ConnectorPath u
-hvhconn h p1@(P2 _ y1) p2@(P2 _ y2) = tracePoints [p1,a1,a2,p2]
+hvhconn h p1@(P2 _ y1) p2@(P2 _ y2) = traceLinePoints [p1,a1,a2,p2]
   where
     a1 = p1 .+^ hvec h
     a2 = a1 .+^ vvec (y2 - y1)
@@ -73,7 +73,7 @@ curveconn r1 r2 p1 p2 = curveByAngles p1 r1 r2 p2
 
 joint :: (Real u, Floating u) => u -> ConnectorPath u 
 joint u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    tracePoints [p1, mid_pt .+^ avec perp_ang u, p2]
+    traceLinePoints [p1, mid_pt .+^ avec perp_ang u, p2]
   where
     mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
     perp_ang  = (pi*0.5) + direction (pvec p2 p1) 
