@@ -27,8 +27,10 @@ module Wumpus.Basic.Graphic.Drawing
   , DrawingT
   , runDrawing
   , execDrawing
+  , evalDrawing
   , runDrawingT
   , execDrawingT
+  , evalDrawingT
 
   , runFdcDrawing
   , execFdcDrawing
@@ -182,8 +184,21 @@ instance Monad m => DrawingCtxM (DrawingT u m) where
 runDrawing :: DrawingContext -> Drawing u a -> (a, HPrim u)
 runDrawing ctx ma = getDrawing ma ctx mempty
 
+-- | Run the drawing returning only the output it produces, drop
+-- any answer from the monadic computation.
+--
 execDrawing :: DrawingContext -> Drawing u a -> HPrim u
 execDrawing ctx ma = snd $ runDrawing ctx ma
+
+-- | Run the drawing ignoring the output it produces, return the 
+-- answer from the monadic computation.
+--
+-- Note - this useful for testing, generally one would want the 
+-- opposite behaviour (return the drawing, ignore than the 
+-- answer).
+-- 
+evalDrawing :: DrawingContext -> Drawing u a -> a
+evalDrawing ctx ma = fst $ runDrawing ctx ma
 
 
 
@@ -192,6 +207,12 @@ runDrawingT ctx ma = getDrawingT ma ctx mempty
 
 execDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (HPrim u)
 execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
+
+
+evalDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m a
+evalDrawingT ctx ma = liftM fst $ runDrawingT ctx ma
+
+
 
 -- | Run the Drawing generating a Picture /within/ a 
 -- \"font delta context\" using the font-family and font-size 

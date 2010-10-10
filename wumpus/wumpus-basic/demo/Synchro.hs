@@ -88,7 +88,7 @@ conn :: ( Real u, Floating u, FromPtSize u
           => Point2 u -> Point2 u -> m (Point2 u)
 conn p1 p2 = localize thin $ do
    p <- drawi $ strokeConnector (rightArrow connect barb45) p1 p2
-   return (fst $ midpoint p)
+   return (midway_ p)
 
 lblconn :: ( Real u, Floating u, FromPtSize u
               , DrawingCtxM m, TraceM m, u ~ MonUnit m )

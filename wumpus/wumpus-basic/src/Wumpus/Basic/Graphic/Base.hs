@@ -128,7 +128,7 @@ type family MonUnit m :: *
 class Monad m => TraceM (m :: * -> *) where
   trace  :: HPrim (MonUnit m) -> m ()
 
-class Monad m => DrawingCtxM (m :: * -> *) where
+class (Applicative m, Monad m) => DrawingCtxM (m :: * -> *) where
   askDC    :: m DrawingContext
   localize :: (DrawingContext -> DrawingContext) -> m a -> m a
 

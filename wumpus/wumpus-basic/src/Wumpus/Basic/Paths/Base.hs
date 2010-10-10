@@ -45,7 +45,12 @@ module Wumpus.Basic.Paths.Base
   , directionL
   , directionR
 
-  , midpoint
+  , midway
+  , midway_
+  , atstart
+  , atstart_
+  , atend
+  , atend_
 
   , PathViewL(..)
   , DPathViewL
@@ -81,7 +86,7 @@ data Path u = Path { _path_length   :: u
 type DPath = Path Double
 
 -- Annotating each segment with length is \*\* good \*\*.
--- Makes it much more efficient to find the midpoint.
+-- Makes it much more efficient to find the midway point.
 --
 -- But what do we do about the start point:
 --
@@ -251,7 +256,7 @@ cordLength :: Floating u => StrictCurve u -> u
 cordLength (Curve p0 _ _ p3) = vlength $ pvec p0 p3
 
 
--- | midpoint between two points
+-- | mid-point between two points
 --
 pointMidpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
 pointMidpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
@@ -422,15 +427,6 @@ directionR (Path _ _ se _) = step $ viewr se
     step (_ :> CurveSeg _ _  _ p2 p3) = lineDirection p2 p3
     step _                            = 0       -- should be unreachable             
 
-{-
--- Note - previously Paths were using this version of 
--- lineDirection
--- 
--- Needs testing as to whether the new one does what is expected. 
---
-lineDirection :: (Real u, Floating u) => Point2 u -> Point2 u -> Radian
-lineDirection p0 p1 = direction (pvec p0 p1)
--}
 
 
 
@@ -439,10 +435,33 @@ lineDirection p0 p1 = direction (pvec p0 p1)
 
 -- Return direction as well because the calculation is expensive...
 --
-midpoint :: (Real u, Floating u) => Path u -> (Point2 u, Radian)
-midpoint pa@(Path u sp _ _) 
+midway :: (Real u, Floating u) => Path u -> (Point2 u, Radian)
+midway pa@(Path u sp _ _) 
     | u == 0    = (sp,0)
     | otherwise = let pa1 = shortenR (u/2) pa in (tipR pa1, directionR pa1)
+
+-- Just the midway point.
+--
+midway_ :: (Real u, Floating u) => Path u -> Point2 u
+midway_ = fst . midway
+
+
+atstart :: (Real u, Floating u) => Path u -> (Point2 u, Radian)
+atstart pa@(Path _ sp _ _) = (sp, directionL pa)
+
+atstart_ :: Path u -> Point2 u
+atstart_ (Path _ sp _ _) = sp
+
+
+atend :: (Real u, Floating u) => Path u -> (Point2 u, Radian)
+atend pa@(Path _ _ _ ep) = (ep, directionR pa)
+ 
+
+atend_ :: Path u -> Point2 u
+atend_ (Path _ _ _ ep) = ep
+
+
+-- nearstart, nearend, verynear ...
 
 
 --------------------------------------------------------------------------------

@@ -47,7 +47,8 @@ description:
     paths cannot now be empty, functions on them can generally be 
     total. @toPrimPathU@ removed as converting to a PrimPath as 
     now always /safe/. @tracePoints@ renamed @traceLinePoints@, 
-    @tracePointsCurve@ renamed @traceCurvePoints@.
+    @tracePointsCurve@ renamed @traceCurvePoints@, @midpoint@ 
+    renamed @midway@.
   .
   * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGraphic@ etc.
     have had their names expanded to @ConnectorDrawingR@, 
@@ -59,6 +60,10 @@ description:
   .
   * Removed @conn@ from @Basic.Graphic.Drawing@. Connectors should 
     be used instead.
+  .
+  * The class @DrawingCtxM@ now has @Applicative@ as a superclass. 
+  .
+  * @lineSpacing@ renamed @baselineSpacing@.
   .
   0.9.0 to 0.10.0:
   .
@@ -154,6 +159,7 @@ library
     Wumpus.Basic.Paths.Construction,
     Wumpus.Basic.Paths.RoundCorners,
     Wumpus.Basic.SafeFonts,
+    Wumpus.Basic.Shapes,
     Wumpus.Basic.Shapes.Base,
     Wumpus.Basic.Shapes.Coordinate,
     Wumpus.Basic.Shapes.Derived,

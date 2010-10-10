@@ -34,7 +34,7 @@ module Wumpus.Basic.Graphic.Query
   , fontSize
   , markHeight
   , markHalfHeight
-  , lineSpacing
+  , baselineSpacing
 
   -- 
   , monoCharWidth
@@ -46,6 +46,8 @@ module Wumpus.Basic.Graphic.Query
   , monoLowerxHeight
   , monoDescenderDepth
   , monoTextDimensions
+  , monoMultiLineTextHeight
+  , monoDefaultPadding
   , monoVecToCenter  
   ) where
 
@@ -58,37 +60,34 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 
 
-textAttr :: (Applicative m, DrawingCtxM m) => m (RGBi,FontAttr)
+textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
 textAttr = (,) <$> asksDC stroke_colour <*> asksDC font_props
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
-withTextAttr :: (Applicative m, DrawingCtxM m) 
-             => (RGBi -> FontAttr -> a) -> m a
+withTextAttr :: DrawingCtxM m => (RGBi -> FontAttr -> a) -> m a
 withTextAttr fn = fn <$> asksDC stroke_colour <*> asksDC font_props
 
 
-strokeAttr :: (Applicative m, DrawingCtxM m) => m (RGBi, StrokeAttr)
+strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
 strokeAttr = (,) <$> asksDC stroke_colour <*> asksDC stroke_props
 
-withStrokeAttr :: (Applicative m, DrawingCtxM m) 
-               => (RGBi -> StrokeAttr -> a) -> m a
+withStrokeAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> a) -> m a
 withStrokeAttr fn = fn <$> asksDC stroke_colour <*> asksDC stroke_props
 
 
-fillAttr :: (Applicative m, DrawingCtxM m) => m RGBi
+fillAttr :: DrawingCtxM m => m RGBi
 fillAttr = asksDC fill_colour
 
-withFillAttr :: (Applicative m, DrawingCtxM m) => (RGBi -> a) -> m a
+withFillAttr :: DrawingCtxM m => (RGBi -> a) -> m a
 withFillAttr fn = fn <$> asksDC fill_colour
 
-borderedAttr :: (Applicative m, DrawingCtxM m) => m (RGBi, StrokeAttr, RGBi)
+borderedAttr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
 borderedAttr = (,,) <$> asksDC fill_colour <*> asksDC stroke_props 
                                            <*> asksDC stroke_colour
 
-withBorderedAttr :: (Applicative m, DrawingCtxM m) 
-                 => (RGBi -> StrokeAttr -> RGBi -> a) -> m a
+withBorderedAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> RGBi -> a) -> m a
 withBorderedAttr fn = 
     fn <$> asksDC fill_colour <*> asksDC stroke_props 
                               <*> asksDC stroke_colour
@@ -96,28 +95,21 @@ withBorderedAttr fn =
 
 
 
-lineWidth :: (Applicative m, DrawingCtxM m) => m Double
+lineWidth :: DrawingCtxM m => m Double
 lineWidth = line_width <$> asksDC stroke_props
 
-fontSize :: (Applicative m, DrawingCtxM m) => m Int
+fontSize :: DrawingCtxM m => m Int
 fontSize = font_size <$> asksDC font_props
 
 
 
 
--- Maybe these functions are better as queries - i.e. functions
--- of type DrawingR, e.g.
--- 
--- > lineSpacing :: Fractional u => DrawingR u
--- 
--- Then the /client/ can just bound the answer directly
--- rather than using 
---
--- > askDF lineSpacing >>= \u -> ...
---
 
-lineSpacing :: (Applicative m, DrawingCtxM m, Fractional u) => m u
-lineSpacing = 
+-- | Vertical distance between baselines of consecutive text 
+-- lines.
+--
+baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
+baselineSpacing = 
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
       <$> asksDC (font_size . font_props) <*> asksDC line_spacing_factor
 
@@ -127,12 +119,11 @@ lineSpacing =
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+markHeight :: (DrawingCtxM m, FromPtSize u) => m u
 markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDC font_props
 
 
-markHalfHeight :: (Applicative m, DrawingCtxM m, Fractional u, FromPtSize u) 
-               => m u
+markHalfHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 
@@ -146,28 +137,28 @@ markHalfHeight = (0.5*) <$> markHeight
 
 --------------------------------------------------------------------------------
 
-withFontSize :: (Applicative m, DrawingCtxM m) => (FontSize -> u) -> m u
+withFontSize :: DrawingCtxM m => (FontSize -> u) -> m u
 withFontSize fn = (fn . font_size) <$> asksDC font_props
 
-monoCharWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoCharWidth :: (DrawingCtxM m, FromPtSize u) => m u
 monoCharWidth = withFontSize (fromPtSize . charWidth)
 
-monoSpacerWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoSpacerWidth :: (DrawingCtxM m, FromPtSize u) => m u
 monoSpacerWidth = withFontSize (fromPtSize . spacerWidth)
 
 
-monoTextWidth :: (Applicative m, DrawingCtxM m, FromPtSize u) => Int -> m u
+monoTextWidth :: (DrawingCtxM m, FromPtSize u) => Int -> m u
 monoTextWidth n = withFontSize $ \sz -> fromPtSize $ textWidth sz n
 
 
-monoTextLength :: (Applicative m, DrawingCtxM m, FromPtSize u) => String -> m u
+monoTextLength :: (DrawingCtxM m, FromPtSize u) => String -> m u
 monoTextLength ss = monoTextWidth $ charCount ss
 
 
-monoTextHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoTextHeight :: (DrawingCtxM m, FromPtSize u) => m u
 monoTextHeight = withFontSize (fromPtSize . textHeight)
 
-monoNumeralHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoNumeralHeight :: (DrawingCtxM m, FromPtSize u) => m u
 monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
 
 
@@ -175,10 +166,10 @@ monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
 --  
 -- \'x\' has no ascenders or descenders. 
 -- 
-monoLowerxHeight :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoLowerxHeight :: (DrawingCtxM m, FromPtSize u) => m u
 monoLowerxHeight = withFontSize (fromPtSize . xcharHeight)
 
-monoDescenderDepth :: (Applicative m, DrawingCtxM m, FromPtSize u) => m u
+monoDescenderDepth :: (DrawingCtxM m, FromPtSize u) => m u
 monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
 
 
@@ -188,7 +179,7 @@ monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
 -- Note - the width will generally be a over-estimate for 
 -- non-monospaced fonts.
 -- 
-monoTextDimensions :: (Applicative m, DrawingCtxM m, Num u, Ord u, FromPtSize u)
+monoTextDimensions :: (DrawingCtxM m, Num u, Ord u, FromPtSize u)
                    => String -> m (u,u)
 monoTextDimensions ss = 
     (\sz -> post $ textBounds sz zeroPt ss) 
@@ -197,9 +188,22 @@ monoTextDimensions ss =
     post bb = (boundaryWidth bb, boundaryHeight bb)
 
 
+monoMultiLineTextHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) 
+                        => Int -> m u
+monoMultiLineTextHeight n | n < 0   = pure 0
+monoMultiLineTextHeight n           = 
+    (\h lsf -> h + (fromIntegral $ n-1) * (h * realToFrac lsf))
+      <$> monoTextHeight <*> asksDC line_spacing_factor
+ 
+
+-- | The default padding is half of the /char width/.
+--
+monoDefaultPadding :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
+monoDefaultPadding = (0.5*) <$> monoCharWidth
+
 -- | Vector from baseline left to center
-monoVecToCenter :: ( Applicative m, DrawingCtxM m
-                   , Fractional u, Ord u, FromPtSize u ) 
+--
+monoVecToCenter :: (DrawingCtxM m, Fractional u, Ord u, FromPtSize u) 
                 => String -> m (Vec2 u)
 monoVecToCenter ss = (\(w,h) dy -> vec (0.5*w) (0.5*h - dy)) 
                        <$> monoTextDimensions ss <*> monoDescenderDepth

@@ -147,11 +147,13 @@ centermonoTextline ss pt = monoVecToCenter ss  >>= \v ->
 
 
 
--- | Point is the baseline left of the bottom line.
+-- | Point is the baseline left of the bottom line, text is 
+-- left-aligned.
 --
 textlineMulti :: Fractional u => [String] -> LocGraphic u
 textlineMulti xs baseline_left = liftM snd $ 
-    lineSpacing >>= \dy -> foldrM (foldStep dy) (baseline_left,mempty) xs
+    baselineSpacing >>= \dy -> 
+    foldrM (foldStep dy) (baseline_left,mempty) xs
   where
     foldStep dy str (pt,gfic) = (\a -> (pt .+^ vvec dy, a `mappend` gfic))
                                     <$> textline str pt
