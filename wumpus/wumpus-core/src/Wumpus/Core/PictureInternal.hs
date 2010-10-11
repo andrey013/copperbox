@@ -22,7 +22,6 @@ module Wumpus.Core.PictureInternal
     Picture(..)
   , DPicture
   , Locale
-  , AffineTrafo(..)
   , FontCtx(..)
 
   , PrimElement(..)
@@ -72,9 +71,9 @@ import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
-import Wumpus.Core.PrimCTM
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextInternal
+import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils
 
 
@@ -176,15 +175,6 @@ newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
 type Locale u = (BoundingBox u, [AffineTrafo u])
 
 
--- | Affine transformations are represented as /syntax/ so they
--- can be manipulated easily.
---
-data AffineTrafo u = Matrix (Matrix3'3 u)
-                   | Rotate Radian
-                   | RotAbout Radian (Point2 u)
-                   | Scale u u
-                   | Translate u u
-  deriving (Eq,Show)                 
 
 -- | Wumpus\'s drawings are built from two fundamental 
 -- primitives: paths (straight line segments and Bezier curves) 
@@ -782,17 +772,6 @@ translateEllipse x y (PrimEllipse pt hw hh ctm) =
 
 --------------------------------------------------------------------------------
 -- Additional operations
-
-
-concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
-concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
-
-matrixRepr :: (Floating u, Real u) => AffineTrafo u -> Matrix3'3 u
-matrixRepr (Matrix mtrx)        = mtrx
-matrixRepr (Rotate theta)       = rotationMatrix theta
-matrixRepr (RotAbout theta pt)  = originatedRotationMatrix theta pt
-matrixRepr (Scale sx sy)        = scalingMatrix sx sy 
-matrixRepr (Translate dx dy)    = translationMatrix dx dy
 
 
 -- | Destructor for Matrix3'3.

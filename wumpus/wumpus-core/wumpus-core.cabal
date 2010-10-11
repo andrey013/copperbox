@@ -119,11 +119,11 @@ library
     Wumpus.Core.FormatCombinators,
     Wumpus.Core.PageTranslation,
     Wumpus.Core.PictureInternal,
-    Wumpus.Core.PrimCTM,
     Wumpus.Core.PostScriptDoc,
     Wumpus.Core.SVGDoc,
     Wumpus.Core.OneList,
     Wumpus.Core.TextInternal,
+    Wumpus.Core.TrafoInternal,
     Wumpus.Core.Utils
     
   extensions:

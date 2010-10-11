@@ -44,11 +44,11 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.PrimCTM
 import Wumpus.Core.SVGDoc
 import Wumpus.Core.TextDefaultEncoder
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextInternal
+import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils
 
 import Control.Applicative hiding ( empty, some )
