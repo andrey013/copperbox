@@ -81,7 +81,7 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.TextInternal

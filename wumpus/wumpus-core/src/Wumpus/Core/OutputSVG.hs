@@ -39,7 +39,7 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVGDoc

@@ -32,19 +32,17 @@ module Wumpus.Core.PictureInternal
 
   , PrimPath(..)
   , DPrimPath
-  , PathProps(..)
   , PrimPathSegment(..)
   , DPrimPathSegment
   , PrimLabel(..)
   , DPrimLabel
-  , LabelProps(..)
   , LabelBody(..)
   , DLabelBody
   , KerningChar
   , DKerningChar  
   , PrimEllipse(..)
-  , EllipseProps(..)
-  , PrimCTM(..)
+
+  , GraphicsState(..)
 
   , pathBoundary
   , mapLocale
@@ -60,6 +58,7 @@ module Wumpus.Core.PictureInternal
   , deconsMatrix
   , repositionDeltas
 
+  , zeroGS
 
   ) where
 
@@ -68,8 +67,9 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.PtSize
+import Wumpus.Core.Text.Latin1
 import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
@@ -226,20 +226,6 @@ data PrimPathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
 
 type DPrimPathSegment = PrimPathSegment Double
 
--- | Note when drawn /filled/ and drawn /stroked/ the same
--- polygon will have (slightly) different size:
---
--- * A filled shape fills /within/ the boundary of the shape
---
--- * A stroked shape draws a pen line around the boundary
---   of the shape. The actual size depends on the thickness
---   of the line (stroke width).
---
-data PathProps = CFill RGBi 
-               | CStroke StrokeAttr RGBi
-               | OStroke StrokeAttr RGBi
-               | CFillStroke RGBi StrokeAttr RGBi
-  deriving (Eq,Show)
 
 
 -- | Label - represented by /baseline/ left point and text.
@@ -252,14 +238,6 @@ data PrimLabel u = PrimLabel
   deriving (Eq,Show)
 
 type DPrimLabel = PrimLabel Double
-
--- | Font rendering properties for a PrimLabel.
---
-data LabelProps   = LabelProps 
-      { label_colour :: RGBi
-      , label_font   :: FontAttr
-      }
-  deriving (Eq,Ord,Show)
 
 
 -- | Label can be draw with 3 layouts.
@@ -300,15 +278,24 @@ data PrimEllipse u = PrimEllipse
   deriving (Eq,Show)
 
 
--- | Ellipses and circles are always closed.
+
+
+
+
+
+-- Graphics state datatypes
+
+-- | Graphics state used by the rendering monads.
 --
-data EllipseProps = EFill RGBi
-                  | EStroke StrokeAttr RGBi 
-                  -- Note - first colour fill, second colour stroke.
-                  | EFillStroke RGBi StrokeAttr RGBi 
+-- This type is hidden by the top-level module @Wumpus.Core@.
+--
+data GraphicsState = GraphicsState
+      { gs_draw_colour  :: RGBi
+      , gs_font_size    :: Int
+      , gs_font_face    :: FontFace
+      , gs_stroke_attr  :: StrokeAttr 
+      }
   deriving (Eq,Show)
-
-
 
 
 --------------------------------------------------------------------------------
@@ -403,25 +390,6 @@ instance PSUnit u => Format (PrimEllipse u) where
                                    <+> text "hh="       <> dtruncFmt hh
                                    <+> text "ctm="      <> format ctm
   
-
-instance Format PathProps where
-  format (CFill rgb)          = format rgb <+> text "Fill"
-  format (CStroke _ rgb)      = format rgb <+> text "Closed-stroke"
-  format (OStroke _ rgb)      = format rgb <+> text "Open-stroke"
-  format (CFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
-                            <+> format s <+> text "Stroke"   
-
-
-
-instance Format LabelProps where
-  format (LabelProps rgb attr) = format rgb 
-                             <+> text (font_name $ font_face attr)
-
-instance Format EllipseProps where
-  format (EFill rgb)          = format rgb <+> text "Fill"
-  format (EStroke _ rgb)      = format rgb <+> text "Stroke"
-  format (EFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
-                            <+> format s <+> text "Stroke"   
 
 instance Format XLink where
   format (XLink ss) = text "xlink" <+> text ss
@@ -807,4 +775,24 @@ repositionDeltas = step . boundary
         y  = 4 - lly
         ll = P2 (llx+x) (lly+y)
         ur = P2 (urx+x) (ury+y) 
+
+
+--------------------------------------------------------------------------------
+
+-- | The initial graphics state
+
+zeroGS ::  GraphicsState 
+zeroGS = GraphicsState { gs_draw_colour  = black
+                       , gs_font_size    = (-1)
+                       , gs_font_face    = unmatchable_face
+                       , gs_stroke_attr  = default_stroke_attr
+                       }
+  where
+    unmatchable_face = FontFace "DONT_MATCH"     "" 
+                                SVG_BOLD_OBLIQUE latin1_font_encoder
+
+-- PostScript has no default font so we always want the first 
+-- /delta/ operation not to match. PostScript @findfont@ commands
+-- are only written in the output on /deltas/ to reduce the 
+-- output size...
 

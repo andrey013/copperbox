@@ -77,7 +77,7 @@ module Wumpus.Core.SVGDoc
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.Common

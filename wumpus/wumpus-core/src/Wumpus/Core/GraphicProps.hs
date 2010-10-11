@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.GraphicsState
+-- Module      :  Wumpus.Core.GraphicProps
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -10,67 +10,49 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Data types for stroke and label attributes. 
--- 
--- Wumpus represents pictures as trees - a leaf represents a 
--- path or text label. All attributes of a path or text label 
--- (colour, stroke width, font, ...) are stored in the leaf. So
--- a picture is a leaf labelled tree.
--- 
--- By contrast, PostScript maintains a global /graphics state/. A 
--- PostScript program is free to modify the graphics state 
--- anywhere in the program and subsequent elements are all drawn 
--- according to the modified graphics state. 
+-- Data types for stroke and label styles corresponding to the
+-- styles provided by PostScript / SVG.
 --
--- When Wumpus renders Pictures as PostScript it maintains a 
--- limited graphics state with just current colour and current 
--- font. This is so Wumpus can avoid repeating @setrgbcolor@ and
--- @findfont@ operations in the generated PostScript if 
--- subsequent elements share the same values.
+-- Datatypes for annotating Primitives (@PathProps@ etc.) with 
+-- their drawing style. Wumpus represents pictures as trees and
+-- decorates all elements (paths, text-labels) with their drawing
+-- style. This is boardly similar to how SVG handles attributes. 
+-- For PostScript output, Wumpus renders attribute changes as 
+-- graphics state updates. 
+--
 -- 
 --   
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.GraphicsState 
+module Wumpus.Core.GraphicProps
   (
-  -- * Data types  
-    GraphicsState(..)
   
-  -- ** Stroke attributes
-  , StrokeAttr(..)
+  -- * Stroke attributes
+    StrokeAttr(..)
   , LineCap(..)
   , LineJoin(..)
   , DashPattern(..)
 
-  -- ** Font
+  -- * Font
   , FontAttr(..)
   , FontFace(..)
   , SVGFontStyle(..)
 
-  -- * Initial graphic state
-  , zeroGS
+
+  -- * Drawing styles for Primitives
+  , PathProps(..)
+  , LabelProps(..)
+  , EllipseProps(..)
+
+  -- * Defaults
   , default_stroke_attr
 
   ) where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Text.Encoder
-import Wumpus.Core.Text.Latin1
-
--- Graphics state datatypes
-
--- | Graphics state used by the rendering monads.
---
--- This type is hidden by the top-level module @Wumpus.Core@.
---
-data GraphicsState = GraphicsState
-      { gs_draw_colour  :: RGBi
-      , gs_font_size    :: Int
-      , gs_font_face    :: FontFace
-      , gs_stroke_attr  :: StrokeAttr 
-      }
-  deriving (Eq,Show)
+import Wumpus.Core.Utils.FormatCombinators
 
 -- | Stroke attributes for drawing paths.
 --
@@ -143,17 +125,68 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
   deriving (Eq,Ord,Show)
 
 
--- | The initial graphics state
+--------------------------------------------------------------------------------
 
-zeroGS ::  GraphicsState 
-zeroGS = GraphicsState { gs_draw_colour  = black
-                       , gs_font_size    = (-1)
-                       , gs_font_face    = unmatchable_face
-                       , gs_stroke_attr  = default_stroke_attr
-                       }
-  where
-    unmatchable_face = FontFace "DONT_MATCH" "" SVG_BOLD_OBLIQUE latin1_font_encoder
+-- | Note when drawn /filled/ and drawn /stroked/ the same
+-- polygon will have (slightly) different size:
+--
+-- * A filled shape fills /within/ the boundary of the shape
+--
+-- * A stroked shape draws a pen line around the boundary
+--   of the shape. The actual size depends on the thickness
+--   of the line (stroke width).
+--
+data PathProps = CFill RGBi 
+               | CStroke StrokeAttr RGBi
+               | OStroke StrokeAttr RGBi
+               | CFillStroke RGBi StrokeAttr RGBi
+  deriving (Eq,Show)
 
+
+-- | Font rendering properties for a PrimLabel.
+--
+data LabelProps   = LabelProps 
+      { label_colour :: RGBi
+      , label_font   :: FontAttr
+      }
+  deriving (Eq,Ord,Show)
+
+
+
+-- | Ellipses and circles are always closed.
+--
+data EllipseProps = EFill RGBi
+                  | EStroke StrokeAttr RGBi 
+                  -- Note - first colour fill, second colour stroke.
+                  | EFillStroke RGBi StrokeAttr RGBi 
+  deriving (Eq,Show)
+
+
+
+
+--------------------------------------------------------------------------------
+
+instance Format PathProps where
+  format (CFill rgb)          = format rgb <+> text "Fill"
+  format (CStroke _ rgb)      = format rgb <+> text "Closed-stroke"
+  format (OStroke _ rgb)      = format rgb <+> text "Open-stroke"
+  format (CFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
+                                         <+> format s <+> text "Stroke"   
+
+
+
+instance Format LabelProps where
+  format (LabelProps rgb attr) = format rgb 
+                             <+> text (font_name $ font_face attr)
+
+instance Format EllipseProps where
+  format (EFill rgb)          = format rgb <+> text "Fill"
+  format (EStroke _ rgb)      = format rgb <+> text "Stroke"
+  format (EFillStroke f _ s)  = format f <+> text "Fill" <> char '/'
+                            <+> format s <+> text "Stroke"   
+
+--------------------------------------------------------------------------------
+-- Defaults
 
 -- | Default stroke attributes.
 --

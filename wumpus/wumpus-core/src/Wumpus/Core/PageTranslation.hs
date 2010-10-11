@@ -24,7 +24,7 @@ module Wumpus.Core.PageTranslation
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.PictureInternal
-
+import Wumpus.Core.TrafoInternal
 
 
 --------------------------------------------------------------------------------

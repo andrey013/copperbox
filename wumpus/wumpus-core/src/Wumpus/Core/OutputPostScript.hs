@@ -30,7 +30,7 @@ module Wumpus.Core.OutputPostScript
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.Text.DefaultEncoder

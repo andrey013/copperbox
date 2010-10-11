@@ -57,6 +57,10 @@ description:
     equivalent @append@ operation on @BoundingBox@ is 
     @boundaryUnion@.
   .
+  * Renamed the @Core.GraphicsState@ to @Core.GraphicProps@. 
+    Moved the property datatypes from @Core.PictureInternal@ into 
+    @Core.GraphicProps@ (StrokeProps, LabelProps, etc.).
+  .
   0.34.0 to 0.35.0:
   .
   * Bug fix - PostScript output - when more than one stroke 
@@ -108,7 +112,7 @@ library
     Wumpus.Core.Colour,
     Wumpus.Core.FontSize,
     Wumpus.Core.Geometry,
-    Wumpus.Core.GraphicsState,
+    Wumpus.Core.GraphicProps,
     Wumpus.Core.OutputPostScript,
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,

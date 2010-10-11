@@ -32,7 +32,7 @@ module Wumpus.Core
   , module Wumpus.Core.Colour
   , module Wumpus.Core.FontSize
   , module Wumpus.Core.Geometry
-  , module Wumpus.Core.GraphicsState
+  , module Wumpus.Core.GraphicProps
   , module Wumpus.Core.OutputPostScript
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
@@ -52,7 +52,7 @@ import Wumpus.Core.Colour hiding ( black, white, red, green, blue, yellow,
                                    cyan, magenta )
 import Wumpus.Core.FontSize hiding ( textBoundsEnc )
 import Wumpus.Core.Geometry
-import Wumpus.Core.GraphicsState hiding ( GraphicsState )
+import Wumpus.Core.GraphicProps
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture

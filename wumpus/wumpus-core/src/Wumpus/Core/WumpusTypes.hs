@@ -44,11 +44,6 @@ module Wumpus.Core.WumpusTypes
   , KerningChar
   , DKerningChar
 
-  -- * Drawing styles
-  , PathProps       
-  , LabelProps
-  , EllipseProps
-
 
 
   -- * Transformations on PrimElements
