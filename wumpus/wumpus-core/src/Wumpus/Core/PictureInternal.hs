@@ -50,12 +50,6 @@ module Wumpus.Core.PictureInternal
   , pathBoundary
   , mapLocale
 
-  -- * PrimCTM
-  , identityCTM
-  , scaleCTM
-  , rotateCTM
-  , matrixRepCTM
-  , translMatrixRepCTM
 
   , rotatePrim
   , scalePrim
@@ -78,6 +72,7 @@ import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
+import Wumpus.Core.PrimCTM
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextInternal
 import Wumpus.Core.Utils
@@ -226,6 +221,7 @@ type DPrimitive = Primitive Double
 newtype XLink = XLink { getXLink :: String }
   deriving (Eq,Show)
 
+
 -- | PrimPath - start point and a list of path segments.
 --
 data PrimPath u = PrimPath (Point2 u) [PrimPathSegment u]
@@ -325,16 +321,6 @@ data EllipseProps = EFill RGBi
 
 
 
--- Note - primitives are not considered to exist in an affine 
--- space. 
---
-data PrimCTM u = PrimCTM 
-      { ctm_scale_x     :: u
-      , ctm_scale_y     :: u
-      , ctm_rotation    :: Radian 
-      }
-  deriving (Eq,Show)
-
 
 --------------------------------------------------------------------------------
 -- family instances
@@ -429,13 +415,6 @@ instance PSUnit u => Format (PrimEllipse u) where
                                    <+> text "ctm="      <> format ctm
   
 
-instance PSUnit u => Format (PrimCTM u) where
-  format (PrimCTM x y ang) = 
-      parens (text "CTM" <+> text "sx="   <> dtruncFmt x 
-                         <+> text "sy="   <> dtruncFmt y 
-                         <+> text "ang="  <> format ang  )
-
-
 instance Format PathProps where
   format (CFill rgb)          = format rgb <+> text "Fill"
   format (CStroke _ rgb)      = format rgb <+> text "Closed-stroke"
@@ -526,6 +505,7 @@ stdLayoutBB :: (Num u, Ord u, FromPtSize u)
             => FontSize -> EncodedText -> BoundingBox u
 stdLayoutBB sz etxt = textBoundsEnc sz zeroPt etxt
 
+
 -- Note - this assumes positive deltas (and a nonempty list)...
 --
 -- Kern deltas are relative to the left basepoint, so they are
@@ -579,11 +559,11 @@ ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) =
 --------------------------------------------------------------------------------
 -- Affine transformations
 
--- Note YRange remains constant (as do the actually points 
--- within the primitives).
--- 
--- TO DO - this is potentially wrong...
-
+-- Affine transformation of Pictures only transforms the 
+-- BoundingBox, the primitives within the picture are untouched.
+-- The transformation is transmitted to PostScript as a matrix 
+-- update (frame change).
+--
 
 instance (Num u, Ord u) => Transform (Picture u) where
   transform mtrx = 
@@ -612,36 +592,6 @@ mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
 mapLocale f (Picture lc ones)  = Picture (f lc) ones
 mapLocale f (Clip lc pp pic)   = Clip (f lc) pp pic
 mapLocale f (Group lc upd pic) = Group (f lc) upd pic
-
---------------------------------------------------------------------------------
--- Manipulating the PrimCTM
-
-identityCTM :: Num u => PrimCTM u
-identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
-
-
-
-scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
-scaleCTM x1 y1 (PrimCTM sx sy ang) = PrimCTM (x1*sx) (y1*sy) ang
-
-rotateCTM :: Radian -> PrimCTM u -> PrimCTM u
-rotateCTM ang1 (PrimCTM sx sy ang) = PrimCTM sx sy (circularModulo $ ang1+ang)
-
-matrixRepCTM :: (Floating u, Real u) => PrimCTM u -> Matrix3'3 u
-matrixRepCTM (PrimCTM sx sy ang) = 
-    rotationMatrix (circularModulo ang) * scalingMatrix sx sy
-
-
--- Note - the order of combining a translation (i.e. the 
--- location of a point) and the CTM is crucial as matrix
--- multiplication is not commutative.
---
--- This function encapsulates the correct order.
---
-translMatrixRepCTM :: (Floating u, Real u) 
-                   => u -> u -> PrimCTM u -> Matrix3'3 u
-translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
-
 
 
 --------------------------------------------------------------------------------

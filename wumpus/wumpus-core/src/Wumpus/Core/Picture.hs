@@ -85,6 +85,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.PrimCTM
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextInternal
 import Wumpus.Core.TextLatin1

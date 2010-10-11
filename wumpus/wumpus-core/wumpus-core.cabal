@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.35.0
+version:          0.36.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -45,6 +45,11 @@ description:
   (bitmaps). 
   .
   Changelog:
+  .
+  0.35.0 to 0.36.0:
+  .
+  * Internal change - moved @PrimCTM@ from @Core.PictureInternal@
+    into separate module.
   .
   0.34.0 to 0.35.0:
   .
@@ -114,6 +119,7 @@ library
     Wumpus.Core.FormatCombinators,
     Wumpus.Core.PageTranslation,
     Wumpus.Core.PictureInternal,
+    Wumpus.Core.PrimCTM,
     Wumpus.Core.PostScriptDoc,
     Wumpus.Core.SVGDoc,
     Wumpus.Core.OneList,

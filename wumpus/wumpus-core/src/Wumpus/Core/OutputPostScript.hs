@@ -34,6 +34,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.PrimCTM
 import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.TextDefaultEncoder
 import Wumpus.Core.TextEncoder
