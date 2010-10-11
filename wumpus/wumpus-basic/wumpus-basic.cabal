@@ -16,12 +16,23 @@ description:
   .
   Some of the modules (SafeFonts, SVGColours, X11Colours) are
   relatively stable. The core modules of @Basic.Graphic@ (@Base@,
-  @PrimGraphic@, @DrawingContext@) are quite weather-beaten if 
-  not exactly stable, although the newer modules 
-  (@ScalingContext@, @DirectionContext@) are still quite green.
-  Other modules (Paths, Chains, Shapes) are essentially sketches 
-  and may be radically different in subsequent updates.
+  @PrimGraphic@, @DrawingContext@) seem to support a good set
+  primitive functions, but the exact types of drawing objects do 
+  not feel right at the moment. Other modules (Paths, Chains, 
+  Shapes) are essentially sketches and are expected to be
+  substantially revised in subsequent updates.
   .
+  Version 0.11.0 is an interim release. It is expected that the 
+  next release will substantially rework Shapes and likely change
+  the @Graphic.Base@ types. As quite a large amount of code has 
+  already changed since version 0.10.0 (to support better 
+  arrowheads and connectors) it seems sensible to release 0.11.0 
+  now, rather than have a huge delta after Shapes have been 
+  reworked again. The current versions of @Wumpus-Tree@ and 
+  @Wumpus-Microprint@ will work with version 0.11.0 if their 
+  respective @.cabal@ files are edited to bump the version number. 
+  There will be no matching releases to work automatically with 
+  version 0.11.0 of Wumpus-Basic.
   .
   Changelog:
   .
@@ -32,12 +43,14 @@ description:
     a left arrowhead, right arrowhead, none or both.  
   .
   * Reworked shapes - internally shapes now create a @Path@ rather 
-    than an @Graphic@ this means the path can be manipulated (e.g. 
+    than a @Graphic@ this means the path can be manipulated (e.g. 
     round cornered rectangles, diamonds... can be constructed).
     @Coordinate@ is no longer a @Shape@ - it is now similar object 
     but of a different type. Likewise, @FreeLabel@ has been 
     replaced by @Plaintext@ which is not a @Shape@, but has some 
-    similar properties.
+    similar properties. Unfortunately, the Shape types are still 
+    difficult to work with and a larger reworking is still 
+    necessary.
   .
   * @Basic.Paths.Base@ - @Path@ type changed, @PathEmpty@ 
     constructor removed so empty paths cannot be created. This 
@@ -64,47 +77,6 @@ description:
   * The class @DrawingCtxM@ now has @Applicative@ as a superclass. 
   .
   * @lineSpacing@ renamed @baselineSpacing@.
-  .
-  0.9.0 to 0.10.0:
-  .
-  * @Basic.Graphic.BaseClasses@ and @Basic.Graphic.BaseTypes@ 
-    merged into same module so they can depend on each other 
-    without orphans instances.
-  .
-  * @DrawingF@ renamed to @DrawingR@, the related type synonyms
-    have also been changed, e.g. @LocDrawingF@ is now 
-    @LocDrawingR@.
-  .
-  * Method names in the @DrawingCtxM@ class changed - @askCtx@ is
-    now @askDC@, @localCtx@ is now @localize@. Removed the 
-    functions @askDF@, @asksDF@, @pureDF@ that worked for 
-    @DrawingF@ (now @DrawingR@), @DrawingR@ now uses the 
-    Applicative\'s @pure@ and the @DrawingCtxM@ class for these 
-    functionalities.
-  .
-  * @Basic.Graphic.DrawingContext@ - renamed @primary_colour@ to
-    @stroke_colour@ and @secondary_colour@ to @fill_colour@. The 
-    setter functions has been similarly renamed.
-  .
-  * Added the type synonym @DrawingContextF@ to 
-    @Basic.Graphic.DrawingContext@. Changed relevant function
-    signatures to use it.
-  .
-  * Re-worked the Path modules - base types entirely different,
-    connectors entirely different, monadic path construction 
-    largely the same.
-  .
-  * Initial work on round cornered paths.
-  . 
-  * Removed the type class @TextAnchor@ from @Basic.Anchors@. 
-    This was a left-over from a previous implementation of 
-    Shapes and is not relevant to the current implementation.
-  . 
-  * Added @DirectionContext@ to @Basic.Graphic@.
-  .
-  * @localLG@ removed it can be acheived with composition -
-    @localize upd . loc_graphic_function@. @lgappend@ is also 
-    removed - it can be recreated applicatively.
   .
   .
 build-type:         Simple
@@ -135,6 +107,7 @@ library
   exposed-modules:
     Wumpus.Basic.Anchors,
     Wumpus.Basic.Arrows,
+    Wumpus.Basic.Arrows.Connectors,
     Wumpus.Basic.Arrows.Tips,
     Wumpus.Basic.Chains,
     Wumpus.Basic.Chains.Base,

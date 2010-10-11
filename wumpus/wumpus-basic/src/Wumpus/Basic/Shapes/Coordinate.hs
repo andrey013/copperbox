@@ -14,6 +14,9 @@
 -- Coordinate is a bit like a shape but does not generate a path 
 -- and cannot be scaled or rotated (it can be translated).
 -- 
+-- \*\* WARNING \*\* - the types of Shapes and Coordinate are not
+-- ideal and are pending revision.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Shapes.Coordinate
