@@ -780,7 +780,12 @@ repositionDeltas = step . boundary
 --------------------------------------------------------------------------------
 
 -- | The initial graphics state
-
+--
+-- PostScript has no default font so we always want the first 
+-- /delta/ operation not to match. PostScript @findfont@ commands
+-- are only written in the output on /deltas/ to reduce the 
+-- output size...
+--
 zeroGS ::  GraphicsState 
 zeroGS = GraphicsState { gs_draw_colour  = black
                        , gs_font_size    = (-1)
@@ -791,8 +796,4 @@ zeroGS = GraphicsState { gs_draw_colour  = black
     unmatchable_face = FontFace "DONT_MATCH"     "" 
                                 SVG_BOLD_OBLIQUE latin1_font_encoder
 
--- PostScript has no default font so we always want the first 
--- /delta/ operation not to match. PostScript @findfont@ commands
--- are only written in the output on /deltas/ to reduce the 
--- output size...
 
