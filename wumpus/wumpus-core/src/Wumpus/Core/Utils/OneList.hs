@@ -35,7 +35,6 @@ module Wumpus.Core.Utils.OneList
   ) where
 
 
-import Data.Semigroup                           -- package: algebra
 
 import Control.Applicative
 import Data.Foldable
@@ -84,9 +83,6 @@ instance Traversable OneList where
   traverse f (Many a as)  = Many <$> f a <*> traverse f as
 
 
-instance Semigroup (OneList e) where
-  (One a)     `append` bs  = Many a bs
-  (Many a as) `append` bs  = Many a (as `append` bs)
 
 --------------------------------------------------------------------------------
 -- | Construct One.
