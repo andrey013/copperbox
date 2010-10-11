@@ -84,8 +84,8 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
-import Wumpus.Core.TextInternal
-import Wumpus.Core.TextLatin1
+import Wumpus.Core.Text.TextInternal
+import Wumpus.Core.Text.Latin1
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )

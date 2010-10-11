@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextSymbolFont
+-- Module      :  Wumpus.Core.Text.SymbolFont
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextSymbolFont
+module Wumpus.Core.Text.SymbolFont
   ( 
   
     symbol_font_encoder
@@ -23,7 +23,7 @@ module Wumpus.Core.TextSymbolFont
 
   ) where
 
-import Wumpus.Core.TextEncoder
+import Wumpus.Core.Text.Encoder
 
 import qualified Data.Map as Map
 

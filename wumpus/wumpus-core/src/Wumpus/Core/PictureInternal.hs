@@ -70,7 +70,7 @@ import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PtSize
-import Wumpus.Core.TextInternal
+import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators

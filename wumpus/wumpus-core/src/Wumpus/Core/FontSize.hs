@@ -62,7 +62,7 @@ module Wumpus.Core.FontSize
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.PtSize
-import Wumpus.Core.TextInternal
+import Wumpus.Core.Text.TextInternal
 
 import Data.AffineSpace                 -- package: vector-space
 

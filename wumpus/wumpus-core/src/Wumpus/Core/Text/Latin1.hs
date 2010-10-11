@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextLatin1
+-- Module      :  Wumpus.Core.Text.Latin1
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextLatin1
+module Wumpus.Core.Text.Latin1
   ( 
   
     latin1_font_encoder
@@ -23,7 +23,7 @@ module Wumpus.Core.TextLatin1
 
   ) where
 
-import Wumpus.Core.TextEncoder
+import Wumpus.Core.Text.Encoder
 
 import qualified Data.Map as Map
 

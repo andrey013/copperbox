@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextEncoder
+-- Module      :  Wumpus.Core.Text.Encoder
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -45,7 +45,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextEncoder
+module Wumpus.Core.Text.Encoder
   ( 
     GlyphName
   , CharCode

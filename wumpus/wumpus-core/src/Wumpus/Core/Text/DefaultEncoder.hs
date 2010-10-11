@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextDefaultEncoder
+-- Module      :  Wumpus.Core.Text.DefaultEncoder
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,15 +15,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextDefaultEncoder
+module Wumpus.Core.Text.DefaultEncoder
   ( 
     defaultEncoder
 
   ) where
 
-import Wumpus.Core.TextEncoder
-import Wumpus.Core.TextLatin1
-import Wumpus.Core.TextSymbolFont
+import Wumpus.Core.Text.Encoder
+import Wumpus.Core.Text.Latin1
+import Wumpus.Core.Text.SymbolFont
 
 import Data.Map
 

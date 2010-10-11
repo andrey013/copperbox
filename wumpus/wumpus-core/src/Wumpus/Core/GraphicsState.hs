@@ -55,8 +55,8 @@ module Wumpus.Core.GraphicsState
   ) where
 
 import Wumpus.Core.Colour
-import Wumpus.Core.TextEncoder
-import Wumpus.Core.TextLatin1
+import Wumpus.Core.Text.Encoder
+import Wumpus.Core.Text.Latin1
 
 -- Graphics state datatypes
 

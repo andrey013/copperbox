@@ -33,9 +33,9 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
-import Wumpus.Core.TextDefaultEncoder
-import Wumpus.Core.TextEncoder
-import Wumpus.Core.TextInternal
+import Wumpus.Core.Text.DefaultEncoder
+import Wumpus.Core.Text.Encoder
+import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.OneList

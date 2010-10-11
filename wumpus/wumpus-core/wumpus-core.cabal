@@ -49,7 +49,9 @@ description:
   0.35.0 to 0.36.0:
   .
   * Internal change - moved @PrimCTM@ from @Core.PictureInternal@
-    into separate module.
+    into separate module. Moved /utility/ modules into their own 
+    directory @Utils@. Move /text/ modules into their own 
+    directory @Text@.
   .
   0.34.0 to 0.35.0:
   .
@@ -108,10 +110,10 @@ library
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
     Wumpus.Core.PtSize,
-    Wumpus.Core.TextDefaultEncoder,
-    Wumpus.Core.TextEncoder,
-    Wumpus.Core.TextLatin1,
-    Wumpus.Core.TextSymbolFont,
+    Wumpus.Core.Text.DefaultEncoder,
+    Wumpus.Core.Text.Encoder,
+    Wumpus.Core.Text.Latin1,
+    Wumpus.Core.Text.SymbolFont,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 
@@ -120,7 +122,7 @@ library
     Wumpus.Core.PictureInternal,
     Wumpus.Core.PostScriptDoc,
     Wumpus.Core.SVGDoc,
-    Wumpus.Core.TextInternal,
+    Wumpus.Core.Text.TextInternal,
     Wumpus.Core.TrafoInternal,
     Wumpus.Core.Utils.Common,
     Wumpus.Core.Utils.OneList,

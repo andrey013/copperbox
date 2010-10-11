@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextInternal
+-- Module      :  Wumpus.Core.Text.TextInternal
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextInternal
+module Wumpus.Core.Text.TextInternal
   ( 
 
     EncodedText(..)    
@@ -31,7 +31,7 @@ module Wumpus.Core.TextInternal
 
   ) where
 
-import Wumpus.Core.TextEncoder
+import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Char
