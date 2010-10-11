@@ -92,8 +92,6 @@ import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
 import Wumpus.Core.Utils.OneList
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.Semigroup                           -- package: algebra
-
 
 
 
@@ -116,7 +114,7 @@ frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones
   where
     step a []     = (boundary a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundary a `append` bb', cons a rest )
+                    in ( boundary a `boundaryUnion` bb', cons a rest )
 
 
 
@@ -130,7 +128,7 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
   where
     step a []     = (boundary a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundary a `append` bb', cons a rest )
+                    in ( boundary a `boundaryUnion` bb', cons a rest )
 
 
 -- | Update the font /delta/ attributes for SVG output.
@@ -491,7 +489,7 @@ infixr 6 `picBeside`, `picOver`
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 a `picOver` b = Picture (bb,[]) (cons b $ one a) 
   where
-    bb = boundary a `append` boundary b
+    bb = boundary a `boundaryUnion` boundary b
 
 -- picOver note - draw b, put b first in the list, so it draws 
 -- first in the output (this is also @behind@ in the Z-Order).

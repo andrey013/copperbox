@@ -49,16 +49,16 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.Utils.Common ( PSUnit(..) )
 import Wumpus.Core.Utils.FormatCombinators
 
-import Data.Semigroup                               -- package: algebra
-
-
 
 -- | Bounding box of a picture, represented by the lower left and
 -- upper right corners.
 -- 
 -- We cannot construct empty pictures - so bounding boxes are 
--- spared the obligation to be /empty/. BoundingBox is an instance
--- of the Semigroup class where @append@ is the union operation.
+-- spared the obligation to be /empty/. 
+-- 
+-- BoundingBox /is/ a semigroup where @boundaryUnion@ is the
+-- /addition/ operation.
+-- 
 -- 
 data BoundingBox u = BBox 
       { ll_corner :: Point2 u
@@ -73,10 +73,6 @@ type DBoundingBox = BoundingBox Double
 --------------------------------------------------------------------------------
 -- instances
 
--- BBox is NOT monoidal - it\'s much simpler that way.
-
-instance Ord u => Semigroup (BoundingBox u) where
-  append = boundaryUnion
 
 
 instance PSUnit u => Format (BoundingBox u) where
@@ -153,8 +149,7 @@ destBoundingBox :: BoundingBox u -> (u,u,u,u)
 destBoundingBox (BBox (P2 llx lly) (P2 urx ury)) = (llx, lly, urx, ury) 
 
 
--- | The union of two bounding boxes. This is also the @append@ 
--- of BoundingBox\'s @Semigroup@ instance.
+-- | The union of two bounding boxes. 
 --
 boundaryUnion :: Ord u => BoundingBox u -> BoundingBox u -> BoundingBox u
 BBox ll ur `boundaryUnion` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')

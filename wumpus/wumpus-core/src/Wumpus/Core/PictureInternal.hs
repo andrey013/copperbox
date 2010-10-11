@@ -78,7 +78,6 @@ import Wumpus.Core.Utils.OneList
 
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.Semigroup                           -- package: algebra
 
 import qualified Data.Foldable                  as F
 
@@ -444,8 +443,8 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (PrimElement u) where
       outer (OneL a)     = boundary a
       outer (a :< as)    = inner (boundary a) (viewl as)
 
-      inner bb (OneL a)  = bb `append` boundary a
-      inner bb (a :< as) = inner (bb `append` boundary a) (viewl as)
+      inner bb (OneL a)  = bb `boundaryUnion` boundary a
+      inner bb (a :< as) = inner (bb `boundaryUnion` boundary a) (viewl as)
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ p)      = pathBoundary p
