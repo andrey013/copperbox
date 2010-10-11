@@ -45,7 +45,6 @@ module Wumpus.Core.WumpusTypes
   , DKerningChar
 
 
-
   -- * Transformations on PrimElements
   , rotatePrim
   , scalePrim

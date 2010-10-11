@@ -13,14 +13,12 @@
 -- Data types for stroke and label styles corresponding to the
 -- styles provided by PostScript / SVG.
 --
--- Datatypes for annotating Primitives (@PathProps@ etc.) with 
+-- Data types for annotating Primitives (@PathProps@ etc.) with 
 -- their drawing style. Wumpus represents pictures as trees and
 -- decorates all elements (paths, text-labels) with their drawing
 -- style. This is boardly similar to how SVG handles attributes. 
 -- For PostScript output, Wumpus renders attribute changes as 
 -- graphics state updates. 
---
--- 
 --   
 --------------------------------------------------------------------------------
 
@@ -53,6 +51,8 @@ module Wumpus.Core.GraphicProps
 import Wumpus.Core.Colour
 import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.FormatCombinators
+
+
 
 -- | Stroke attributes for drawing paths.
 --
@@ -139,15 +139,16 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
 data PathProps = CFill RGBi 
                | CStroke StrokeAttr RGBi
                | OStroke StrokeAttr RGBi
+               -- Note - first colour fill, second colur stroke.
                | CFillStroke RGBi StrokeAttr RGBi
   deriving (Eq,Show)
 
 
 -- | Font rendering properties for a PrimLabel.
 --
-data LabelProps   = LabelProps 
-      { label_colour :: RGBi
-      , label_font   :: FontAttr
+data LabelProps = LabelProps 
+      { label_colour    :: RGBi
+      , label_font      :: FontAttr
       }
   deriving (Eq,Ord,Show)
 
