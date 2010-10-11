@@ -45,9 +45,9 @@ module Wumpus.Core.BoundingBox
   ) where
 
 import Wumpus.Core.AffineTrans
-import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
-import Wumpus.Core.Utils ( PSUnit(..) )
+import Wumpus.Core.Utils.Common ( PSUnit(..) )
+import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Semigroup                               -- package: algebra
 

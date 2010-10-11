@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.Utils
+-- Module      :  Wumpus.Core.Utils.Common
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Utils
+module Wumpus.Core.Utils.Common
   ( 
 
   -- | Opt - maybe strict in Some
@@ -52,7 +52,7 @@ module Wumpus.Core.Utils
   ) where
 
 
-import qualified Wumpus.Core.FormatCombinators as Fmt
+import qualified Wumpus.Core.Utils.FormatCombinators as Fmt
 
 
 import Data.Ratio

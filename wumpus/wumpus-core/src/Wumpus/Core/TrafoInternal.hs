@@ -43,9 +43,9 @@ module Wumpus.Core.TrafoInternal
   ) where
 
 
-import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils.Common
+import Wumpus.Core.Utils.FormatCombinators
 
 
 -- Note - primitives are not considered to exist in an affine 

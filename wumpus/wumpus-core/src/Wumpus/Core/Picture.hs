@@ -80,16 +80,16 @@ module Wumpus.Core.Picture
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
-import Wumpus.Core.FormatCombinators hiding ( fill )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.TextInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils.Common
+import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
+import Wumpus.Core.Utils.OneList
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.Semigroup                           -- package: algebra

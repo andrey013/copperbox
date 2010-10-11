@@ -82,8 +82,8 @@ module Wumpus.Core.Geometry
   ) where
 
 
-import Wumpus.Core.FormatCombinators
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils.Common
+import Wumpus.Core.Utils.FormatCombinators
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace

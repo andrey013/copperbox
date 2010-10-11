@@ -65,5 +65,5 @@ module Wumpus.Core.WumpusTypes
 
 
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils ( PSUnit(..) )
+import Wumpus.Core.Utils.Common ( PSUnit(..) )
 

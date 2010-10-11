@@ -29,17 +29,18 @@ module Wumpus.Core.OutputPostScript
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
-import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.OneList
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.TextDefaultEncoder
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.TextInternal
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils.Common
+import Wumpus.Core.Utils.OneList
+import Wumpus.Core.Utils.FormatCombinators
+
 
 import Control.Applicative hiding ( empty, some )
 import Control.Monad

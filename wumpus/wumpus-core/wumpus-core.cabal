@@ -116,15 +116,15 @@ library
     Wumpus.Core.WumpusTypes
 
   other-modules:
-    Wumpus.Core.FormatCombinators,
     Wumpus.Core.PageTranslation,
     Wumpus.Core.PictureInternal,
     Wumpus.Core.PostScriptDoc,
     Wumpus.Core.SVGDoc,
-    Wumpus.Core.OneList,
     Wumpus.Core.TextInternal,
     Wumpus.Core.TrafoInternal,
-    Wumpus.Core.Utils
+    Wumpus.Core.Utils.Common,
+    Wumpus.Core.Utils.OneList,
+    Wumpus.Core.Utils.FormatCombinators
     
   extensions:
     

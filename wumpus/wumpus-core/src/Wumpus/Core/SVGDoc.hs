@@ -76,12 +76,12 @@ module Wumpus.Core.SVGDoc
   ) where
 
 import Wumpus.Core.Colour
-import Wumpus.Core.FormatCombinators
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.TextEncoder
-import Wumpus.Core.Utils
+import Wumpus.Core.Utils.Common
+import Wumpus.Core.Utils.FormatCombinators
 
 
 escapeSpecial :: CharCode -> String

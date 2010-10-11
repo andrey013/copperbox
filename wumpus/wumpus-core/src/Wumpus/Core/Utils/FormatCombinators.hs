@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.FormatCombinators
+-- Module      :  Wumpus.Core.Utils.FormatCombinators
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.FormatCombinators
+module Wumpus.Core.Utils.FormatCombinators
   (
     Doc
   , DocS

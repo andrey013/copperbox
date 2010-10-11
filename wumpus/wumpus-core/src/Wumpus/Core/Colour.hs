@@ -41,7 +41,7 @@ module Wumpus.Core.Colour
     
   ) where
 
-import Wumpus.Core.FormatCombinators
+import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Word
 

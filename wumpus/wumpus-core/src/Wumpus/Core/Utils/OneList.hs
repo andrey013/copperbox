@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.OneList
+-- Module      :  Wumpus.Core.Utils.OneList
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.OneList
+module Wumpus.Core.Utils.OneList
   (
    -- OneMany
     OneList

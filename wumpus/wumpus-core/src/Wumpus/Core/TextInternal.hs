@@ -31,8 +31,8 @@ module Wumpus.Core.TextInternal
 
   ) where
 
-import Wumpus.Core.FormatCombinators
 import Wumpus.Core.TextEncoder
+import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Char
 import qualified Data.Map as Map
