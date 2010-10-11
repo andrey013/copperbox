@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.PrimCTM
+-- Module      :  Wumpus.Core.TrafoInternal
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -22,19 +22,24 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.PrimCTM
+module Wumpus.Core.TrafoInternal
   (
 
-  -- * PrimCTM type
+  -- * Types
     PrimCTM(..)
+  , AffineTrafo(..) 
 
-  -- * Manipulations
+  -- * CTM operations
   , identityCTM
   , scaleCTM
   , rotateCTM
   , matrixRepCTM
   , translMatrixRepCTM
 
+  -- * AffineTrafo operations
+  , concatTrafos
+  , matrixRepr
+  
   ) where
 
 
@@ -53,6 +58,18 @@ data PrimCTM u = PrimCTM
       }
   deriving (Eq,Show)
 
+
+
+
+-- | Affine transformations are represented as /syntax/ so they
+-- can be manipulated easily.
+--
+data AffineTrafo u = Matrix (Matrix3'3 u)
+                   | Rotate Radian
+                   | RotAbout Radian (Point2 u)
+                   | Scale u u
+                   | Translate u u
+  deriving (Eq,Show)                 
 
 
 
@@ -94,4 +111,20 @@ matrixRepCTM (PrimCTM sx sy ang) =
 translMatrixRepCTM :: (Floating u, Real u) 
                    => u -> u -> PrimCTM u -> Matrix3'3 u
 translMatrixRepCTM x y ctm = translationMatrix x y * matrixRepCTM ctm
+
+
+--------------------------------------------------------------------------------
+-- AffineTrafo operations
+
+
+
+concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
+concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
+
+matrixRepr :: (Floating u, Real u) => AffineTrafo u -> Matrix3'3 u
+matrixRepr (Matrix mtrx)        = mtrx
+matrixRepr (Rotate theta)       = rotationMatrix theta
+matrixRepr (RotAbout theta pt)  = originatedRotationMatrix theta pt
+matrixRepr (Scale sx sy)        = scalingMatrix sx sy 
+matrixRepr (Translate dx dy)    = translationMatrix dx dy
 
