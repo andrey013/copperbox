@@ -646,34 +646,72 @@ translatePrimitive x y (PLabel a lbl)   = PLabel a $ translateLabel x y lbl
 translatePrimitive x y (PEllipse a ell) = PEllipse a $ translateEllipse x y ell
 
 
+-- Note - Primitives are not instances of transform
+-- (ShapeCTM is not a real matrix).
+
+
+instance (Real u, Floating u) => Rotate (PrimElement u) where
+  rotate r (Atom prim)             = Atom $ rotate r prim
+  rotate r (XLinkGroup xlink ones) = XLinkGroup xlink $ fmap (rotate r) ones
+
+instance (Real u, Floating u) => Rotate (Primitive u) where
+  rotate r (PPath a path)   = PPath a    $ rotatePath r path
+  rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
+  rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
+ 
+
+instance (Real u, Floating u) => RotateAbout (PrimElement u) where
+  rotateAbout r pt (Atom prim)             = Atom $ rotateAbout r pt prim
+  rotateAbout r pt (XLinkGroup xlink ones) = 
+      XLinkGroup xlink $ fmap (rotateAbout r pt) ones
+
+instance (Real u, Floating u) => RotateAbout (Primitive u) where
+  rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
+  rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
+  rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
+
+
+
+
+instance Num u => Scale (PrimElement u) where
+  scale sx sy (Atom prim)             = Atom $ scale sx sy prim
+  scale sx sy (XLinkGroup xlink ones) = 
+      XLinkGroup xlink $ fmap (scale sx sy) ones
+
+instance Num u => Scale (Primitive u) where
+  scale sx sy (PPath a path)   = PPath a    $ scalePath sx sy path
+  scale sx sy (PLabel a lbl)   = PLabel a   $ scaleLabel sx sy lbl
+  scale sx sy (PEllipse a ell) = PEllipse a $ scaleEllipse sx sy ell
+
+
+instance Num u => Translate (PrimElement u) where
+  translate dx dy (Atom prim)             = Atom $ translate dx dy prim
+  translate dx dy (XLinkGroup xlink ones) = 
+      XLinkGroup xlink $ fmap (translate dx dy) ones
+
+instance Num u => Translate (Primitive u) where
+  translate dx dy (PPath a path)   = PPath a    $ translatePath dx dy path
+  translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
+  translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
+
 
 --------------------------------------------------------------------------------
 -- Paths
 
 
--- rotate- rotate all points inside the path.
--- 
 rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
-rotatePath ang (PrimPath start xs) = PrimPath start $ map (mapSeg fn) xs 
-  where
-    fn = rotate ang
+rotatePath ang = mapPath (rotate ang)
 
--- scalePath - scale the vector between each point and the start 
--- point.
---
--- This produces visually inituitive results. As primitives 
--- don\'t exist in an affine space / affine frame until they
--- are lifted to Pictures their manipulation cannot correspond
--- to the standard affine manipulations.
---
+
+rotateAboutPath :: (Real u, Floating u) 
+                => Radian -> Point2 u -> PrimPath u -> PrimPath u
+rotateAboutPath ang pt = mapPath (rotateAbout ang pt) 
+
+
 scalePath :: Num u => u -> u -> PrimPath u -> PrimPath u
-scalePath x y (PrimPath pt xs) = PrimPath pt $ map (mapSeg fn) xs
-  where
-    fn p1 = let dif = p1 .-. pt in pt .+^ (scale x y $ dif)
+scalePath sx sy = mapPath (scale sx sy)
 
--- translatePath - move all points in the path by the supplied 
--- x and y values.
---
+
 translatePath :: Num u => u -> u -> PrimPath u -> PrimPath u
 translatePath x y = mapPath (translate x y)
 
@@ -698,14 +736,24 @@ rotateLabel :: (Real u, Floating u)
 rotateLabel ang (PrimLabel pt txt ctm) = 
     PrimLabel (rotate ang pt) txt (rotateCTM ang ctm)
 
+
+-- /rotateAbout/ the start-point, /rotate/ the the CTM.
+--
+rotateAboutLabel :: (Real u, Floating u) 
+                 => Radian -> Point2 u -> PrimLabel u -> PrimLabel u
+rotateAboutLabel ang pt0 (PrimLabel pt txt ctm) = 
+    PrimLabel (rotateAbout ang pt0 pt) txt (rotateCTM ang ctm)
+
+
 scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-scaleLabel x y (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM x y ctm)
+scaleLabel sx sy (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM sx sy ctm)
 
 
 -- Change the bottom-left corner.
 --
 translateLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-translateLabel x y (PrimLabel pt txt ctm) = PrimLabel (translate x y pt) txt ctm
+translateLabel dx dy (PrimLabel pt txt ctm) = 
+    PrimLabel (translate dx dy pt) txt ctm
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -717,18 +765,23 @@ rotateEllipse ang (PrimEllipse pt hw hh ctm) =
     PrimEllipse (rotate ang pt) hw hh (rotateCTM ang ctm)
     
 
+rotateAboutEllipse :: (Real u, Floating u) 
+              => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
+rotateAboutEllipse ang pt0 (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (rotateAbout ang pt0 pt) hw hh (rotateCTM ang ctm)
+
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-scaleEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (translate x y pt) hw hh (scaleCTM x y ctm)
+scaleEllipse sx sy (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse pt hw hh (scaleCTM sx sy ctm)
     
 
 
 -- Change the point
 --
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse x y (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (translate x y pt) hw hh ctm
+translateEllipse dx dy (PrimEllipse pt hw hh ctm) = 
+    PrimEllipse (translate dx dy pt) hw hh ctm
 
 
 

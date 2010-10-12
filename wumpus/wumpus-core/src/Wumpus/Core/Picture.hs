@@ -413,6 +413,8 @@ kernEscName u s = (u, CharEscName s)
 
 -- | Create a stroked ellipse.
 --
+-- 'strokeEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+--
 -- Note - within Wumpus, ellipses are considered an unfortunate
 -- but useful /optimization/. Drawing good cicles with Beziers 
 -- needs at least eight curves, but drawing them with 
@@ -434,55 +436,72 @@ strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 -- | Create a stroked ellipse rotated about the center by /theta/.
 --
+-- 'rstrokeEllipse' : @fill colour * stroke attrs * rx * ry * theta 
+--                                 * center -> Primtive@
+--
 rstrokeEllipse :: Num u 
                => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
                -> PrimElement u
-rstrokeEllipse rgb sa hw hh theta pt = 
-    Atom $ PEllipse (EStroke sa rgb) (mkPrimEllipse hw hh theta pt)
+rstrokeEllipse rgb sa rx ry theta pt = 
+    Atom $ PEllipse (EStroke sa rgb) (mkPrimEllipse rx ry theta pt)
 
 
 
 -- | Create a filled ellipse.
 --
+-- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+--
 fillEllipse :: Num u 
              => RGBi -> u -> u -> Point2 u -> PrimElement u
-fillEllipse rgb hw hh pt = rfillEllipse rgb hw hh 0 pt
+fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
 -- | Create a filled ellipse rotated about the center by /theta/.
 --
+-- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+--
 rfillEllipse :: Num u 
              => RGBi -> u -> u -> Radian -> Point2 u -> PrimElement u
-rfillEllipse rgb hw hh theta pt = 
-    Atom $ PEllipse (EFill rgb) (mkPrimEllipse hw hh theta pt)
+rfillEllipse rgb rx ry theta pt = 
+    Atom $ PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
+
 
 -- | Create a black, filled ellipse. 
+--
+-- 'zellipse' : @rx * ry -> Primtive@
+--
 zellipse :: Num u => u -> u -> Point2 u -> PrimElement u
 zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
 -- | Create a bordered (i.e. filled and stroked) ellipse.
 --
+-- 'fillStrokeEllipse' : @fill_colour * stroke attrs * stroke_colour * rx * ry 
+--   * center -> Primtive@
+--
 fillStrokeEllipse :: Num u 
                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
                   -> PrimElement u
-fillStrokeEllipse frgb sa srgb hw hh pt = 
-    rfillStrokeEllipse frgb sa srgb hw hh 0 pt
+fillStrokeEllipse frgb sa srgb rx ry pt = 
+    rfillStrokeEllipse frgb sa srgb rx ry 0 pt
     
 
 
 -- | Create a bordered (i.e. filled and stroked) ellipse rotated 
 -- about the center by /theta/.
 --
+-- 'rfillStrokeEllipse' : @fill_colour * stroke attrs * stroke_colour * rx * ry 
+--   * theta * center -> Primtive@
+--
 rfillStrokeEllipse :: Num u 
                    => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
                    -> PrimElement u
-rfillStrokeEllipse frgb sa srgb hw hh theta pt = 
-    Atom $ PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse hw hh theta pt)
+rfillStrokeEllipse frgb sa srgb rx ry theta pt = 
+    Atom $ PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse rx ry theta pt)
 
 
 mkPrimEllipse :: Num u => u -> u -> Radian -> Point2 u -> PrimEllipse u
-mkPrimEllipse hw hh theta pt = PrimEllipse pt hw hh (thetaCTM theta)
+mkPrimEllipse rx ry theta pt = PrimEllipse pt rx ry (thetaCTM theta)
 
 --------------------------------------------------------------------------------
 -- Operations

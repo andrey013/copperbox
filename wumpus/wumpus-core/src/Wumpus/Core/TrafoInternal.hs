@@ -50,8 +50,13 @@ import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
 
--- Note - primitives are not considered to exist in an affine 
--- space. 
+-- Note - primitives can have pseudo affine transformations.
+-- The control points of a path, baseline-left of text or center
+-- of ellipse are transformed as points; scaling and rotation 
+-- or text and ellipses are transmitted to PostScript.
+-- 
+-- However, line thickness of a stroked path will not be scaled
+-- (for instance).
 --
 data PrimCTM u = PrimCTM 
       { ctm_scale_x     :: u
