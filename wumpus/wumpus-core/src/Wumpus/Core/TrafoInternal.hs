@@ -31,6 +31,8 @@ module Wumpus.Core.TrafoInternal
 
   -- * CTM operations
   , identityCTM
+  , thetaCTM
+
   , scaleCTM
   , rotateCTM
   , matrixRepCTM
@@ -89,7 +91,8 @@ instance PSUnit u => Format (PrimCTM u) where
 identityCTM :: Num u => PrimCTM u
 identityCTM = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = 0 }
 
-
+thetaCTM :: Num u => Radian -> PrimCTM u
+thetaCTM ang = PrimCTM { ctm_scale_x = 1, ctm_scale_y = 1, ctm_rotation = ang }
 
 scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
 scaleCTM x1 y1 (PrimCTM sx sy ang) = PrimCTM (x1*sx) (y1*sy) ang

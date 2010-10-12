@@ -7,44 +7,13 @@ import Wumpus.Core
 
 import System.Directory
 
---------------------------------------------------------------------------------
 
+main :: IO ()
+main = do 
+  createDirectoryIfMissing True "./out/"
+  sequence_ [ demo01, demo02, demo03, demo04, demo05
+            , demo06, demo07 ]
 
-
-drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
-drawBounds p        = p `picOver` (frame [zcstroke ph])
-  where
-    ph            = vertexPath $ [bl,br,tr,tl]
-    (bl,br,tr,tl) = boundaryCorners $ boundary p
-
-
--- | The center of a picture.
-center :: (Boundary a, Fractional u, DUnit a ~ u) => a -> Point2 u
-center a = P2 hcenter vcenter 
-  where  
-    BBox (P2 x0 y0) (P2 x1 y1) = boundary a
-    hcenter                    = x0 + 0.5 * (x1 - x0)
-    vcenter                    = y0 + 0.5 * (y1 - y0)
-
---------------------------------------------------------------------------------
-
-peru :: RGBi
-peru = RGBi 205  133  63
-
-plum :: RGBi
-plum = RGBi 221  160  221
-
-black :: RGBi
-black = RGBi 0 0 0 
-
-
-
-lbl1 :: Picture Double
-lbl1 = line1 `picBeside` line2 where
-  line1 = frame [textlabel peru attrs "Hello" zeroPt]
-  line2 = frame [textlabel peru attrs "World" zeroPt]
-  attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
-                                SVG_REGULAR latin1_font_encoder)
 
 
 demo01 :: IO ()
@@ -131,8 +100,44 @@ demo07 = do
     pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
-main :: IO ()
-main = do 
-  createDirectoryIfMissing True "./out/"
-  sequence_ [ demo01, demo02, demo03, demo04, demo05
-            , demo06, demo07 ]
+
+
+--------------------------------------------------------------------------------
+
+
+
+drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
+drawBounds p        = p `picOver` (frame [zcstroke ph])
+  where
+    ph            = vertexPath $ [bl,br,tr,tl]
+    (bl,br,tr,tl) = boundaryCorners $ boundary p
+
+
+-- | The center of a picture.
+center :: (Boundary a, Fractional u, DUnit a ~ u) => a -> Point2 u
+center a = P2 hcenter vcenter 
+  where  
+    BBox (P2 x0 y0) (P2 x1 y1) = boundary a
+    hcenter                    = x0 + 0.5 * (x1 - x0)
+    vcenter                    = y0 + 0.5 * (y1 - y0)
+
+--------------------------------------------------------------------------------
+
+peru :: RGBi
+peru = RGBi 205  133  63
+
+plum :: RGBi
+plum = RGBi 221  160  221
+
+black :: RGBi
+black = RGBi 0 0 0 
+
+
+
+lbl1 :: Picture Double
+lbl1 = line1 `picBeside` line2 where
+  line1 = frame [textlabel peru attrs "Hello" zeroPt]
+  line2 = frame [textlabel peru attrs "World" zeroPt]
+  attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
+                                SVG_REGULAR latin1_font_encoder)
+

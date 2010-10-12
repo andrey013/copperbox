@@ -48,6 +48,23 @@ description:
   .
   0.35.0 to 0.36.0:
   .
+  * API / behaviour change - rotation on primitives changed. New 
+    functions have been added to create rotated text labels and 
+    ellipses (@rtextlabel@, @rstrokeEllipse@, etc.). The 
+    transformations on Primitives now work more like affine 
+    transformations. Rotation rotates about the (implicit) origin 
+    (0,0) rather than the baseline-left (textlabel) or center 
+    (ellipse).
+  .
+  * @Core.PtSize@ - the class @FromPtSize@ has been given a @Num@
+    superclass constraint. This can shorten type signatures of 
+    functions that use @fromPtSize@.
+  .
+  * Corrected a bug where textlabels would generate an invalid
+    bounding box and cause a runtime error when supplied with an
+    empty string. Now there is no runtime error - and /no-ops/ 
+    are generated in the output.
+  .
   * Internal changes - moved @PrimCTM@ from @Core.PictureInternal@
     into separate module. Moved /utility/ modules into their own 
     directory @Utils@. Move /text/ modules into their own 
@@ -61,13 +78,8 @@ description:
     Moved the property datatypes from @Core.PictureInternal@ into 
     @Core.GraphicProps@ (StrokeProps, LabelProps, etc.).
   .
-  0.34.0 to 0.35.0:
-  .
-  * Bug fix - PostScript output - when more than one stroke 
-    property changed the changes were concatenated without 
-    a separator. This generated invalid PostScript. Now fixed.
-  .
-  * Documentation updates to the guide and the Haddock docs.
+  * Moved @wumpus_default_font@ from @Core.Picture@ into 
+    @Core.Graphic.Props@.
   .
   .
 build-type:         Simple

@@ -45,11 +45,13 @@ module Wumpus.Core.GraphicProps
 
   -- * Defaults
   , default_stroke_attr
+  , wumpus_default_font
 
   ) where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Text.Encoder
+import Wumpus.Core.Text.Latin1
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -198,3 +200,16 @@ default_stroke_attr = StrokeAttr { line_width      = 1
                                  , line_join       = JoinMiter
                                  , dash_pattern    = Solid
                                  }
+
+-- | Constant for the default font, which is @Courier@ (aliased 
+-- to @Courier New@ for SVG) at 14 point.
+--
+--
+wumpus_default_font :: FontAttr
+wumpus_default_font = FontAttr 14 face 
+  where
+    face = FontFace { font_name         = "Courier"
+                    , svg_font_family   = "Courier New"
+                    , svg_font_style    = SVG_REGULAR
+                    , font_enc_name     = latin1_font_encoder
+                    }

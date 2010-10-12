@@ -49,7 +49,7 @@ instance Show PtSize where
 -- Note - the Double instance perfoms no scaling, this
 -- is because internally Wumpus-Core works in points.
 -- 
-class FromPtSize u where
+class Num u => FromPtSize u where
   fromPtSize :: PtSize -> u
 
 instance FromPtSize Double where

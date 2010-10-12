@@ -46,8 +46,8 @@ module Wumpus.Core.Picture
   , clip
 
   , textlabel
+  , rtextlabel
   , ztextlabel
-  , wumpus_default_font
 
   , hkernlabel
   , vkernlabel
@@ -56,10 +56,12 @@ module Wumpus.Core.Picture
   , kernEscName
 
   , strokeEllipse
+  , rstrokeEllipse
   , fillEllipse
+  , rfillEllipse
   , zellipse
   , fillStrokeEllipse
-  
+  , rfillStrokeEllipse  
 
   -- * Operations
   , extendBoundary  
@@ -85,7 +87,6 @@ import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.TextInternal
-import Wumpus.Core.Text.Latin1
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
@@ -298,9 +299,18 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 --
 textlabel :: Num u 
           => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
-textlabel rgb attr txt pt = Atom $ PLabel (LabelProps rgb attr) lbl 
+textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
+
+-- | Create a text label rotated by the supplied angle about the 
+-- baseline-left. 
+--
+-- The supplied point is the left baseline.
+--
+rtextlabel :: Num u 
+           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> PrimElement u
+rtextlabel rgb attr txt theta pt = Atom $ PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel pt (StdLayout $ lexLabel txt) identityCTM
+    lbl = PrimLabel pt (StdLayout $ lexLabel txt) (thetaCTM theta)
 
 
 -- | Create a label where the font is @Courier@, text size is 14pt
@@ -310,18 +320,6 @@ ztextlabel :: Num u => String -> Point2 u -> PrimElement u
 ztextlabel = textlabel black wumpus_default_font
 
 
--- | Constant for the default font, which is @Courier@ (aliased 
--- to @Courier New@ for SVG) at 14 point.
---
---
-wumpus_default_font :: FontAttr
-wumpus_default_font = FontAttr 14 face 
-  where
-    face = FontFace { font_name         = "Courier"
-                    , svg_font_family   = "Courier New"
-                    , svg_font_style    = SVG_REGULAR
-                    , font_enc_name     = latin1_font_encoder
-                    }
 
 --------------------------------------------------------------------------------
 
@@ -431,31 +429,60 @@ kernEscName u s = (u, CharEscName s)
 --
 strokeEllipse :: Num u 
              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> PrimElement u
-strokeEllipse rgb sa hw hh pt = 
-    Atom $ PEllipse (EStroke sa rgb) (PrimEllipse pt hw hh identityCTM)
+strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
+
+
+-- | Create a stroked ellipse rotated about the center by /theta/.
+--
+rstrokeEllipse :: Num u 
+               => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
+               -> PrimElement u
+rstrokeEllipse rgb sa hw hh theta pt = 
+    Atom $ PEllipse (EStroke sa rgb) (mkPrimEllipse hw hh theta pt)
+
+
 
 -- | Create a filled ellipse.
 --
 fillEllipse :: Num u 
              => RGBi -> u -> u -> Point2 u -> PrimElement u
-fillEllipse rgb hw hh pt = 
-    Atom $ PEllipse (EFill rgb) (PrimEllipse pt hw hh identityCTM)
+fillEllipse rgb hw hh pt = rfillEllipse rgb hw hh 0 pt
+ 
 
+-- | Create a filled ellipse rotated about the center by /theta/.
+--
+rfillEllipse :: Num u 
+             => RGBi -> u -> u -> Radian -> Point2 u -> PrimElement u
+rfillEllipse rgb hw hh theta pt = 
+    Atom $ PEllipse (EFill rgb) (mkPrimEllipse hw hh theta pt)
 
 -- | Create a black, filled ellipse. 
 zellipse :: Num u => u -> u -> Point2 u -> PrimElement u
-zellipse hw hh pt = fillEllipse black hw hh pt
+zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
 -- | Create a bordered (i.e. filled and stroked) ellipse.
 --
 fillStrokeEllipse :: Num u 
-                 => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
-                 -> PrimElement u
+                  => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
+                  -> PrimElement u
 fillStrokeEllipse frgb sa srgb hw hh pt = 
-    Atom $ PEllipse (EFillStroke frgb sa srgb) (PrimEllipse pt hw hh identityCTM)
+    rfillStrokeEllipse frgb sa srgb hw hh 0 pt
+    
 
 
+-- | Create a bordered (i.e. filled and stroked) ellipse rotated 
+-- about the center by /theta/.
+--
+rfillStrokeEllipse :: Num u 
+                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
+                   -> PrimElement u
+rfillStrokeEllipse frgb sa srgb hw hh theta pt = 
+    Atom $ PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse hw hh theta pt)
+
+
+mkPrimEllipse :: Num u => u -> u -> Radian -> Point2 u -> PrimEllipse u
+mkPrimEllipse hw hh theta pt = PrimEllipse pt hw hh (thetaCTM theta)
 
 --------------------------------------------------------------------------------
 -- Operations

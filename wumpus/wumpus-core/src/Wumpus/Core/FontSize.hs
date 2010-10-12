@@ -183,7 +183,8 @@ spacerWidth sz = (fromIntegral sz)/48 * courier48_spacer_width
 -- problems (this a current deficiency of Wumpus).
 --
 textWidth :: FontSize -> CharCount -> PtSize
-textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
+textWidth _  n | n <= 0 = 0
+textWidth sz n          = (fromIntegral sz)/48 * widthAt48pt n
 
 
 -- | Text height is just identity/double-coercion of the Point size.

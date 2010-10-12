@@ -650,21 +650,13 @@ translatePrimitive x y (PEllipse a ell) = PEllipse a $ translateEllipse x y ell
 --------------------------------------------------------------------------------
 -- Paths
 
--- Cannot support general matrix transform or rotateAbout on 
--- Ellipses or Labels so there are not supported on Paths.
---
 
--- rotatePath - rotate the path about its start point.
--- 
--- This is a visually intuitive interpretation - Primitives are
--- not in an affine space (they have an origin, i.e. the location 
--- (0,0), but do not have tangible basis vectors) so manipulating 
--- them cannot follow the standard affine interpretation.
+-- rotate- rotate all points inside the path.
 -- 
 rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang (PrimPath start xs) = PrimPath start $ map (mapSeg fn) xs 
   where
-    fn = rotateAbout ang start
+    fn = rotate ang
 
 -- scalePath - scale the vector between each point and the start 
 -- point.
@@ -698,11 +690,13 @@ mapSeg fn (PCurveTo p1 p2 p3) = PCurveTo (fn p1) (fn p2) (fn p3)
 
 
 
--- Rotations on a (primitive) Label are interpreted as rotating
--- about the bottom-left corner.
+-- Rotate the baseline-left start point _AND_ the CTM of the 
+-- label.
 --
-rotateLabel :: Radian -> PrimLabel u -> PrimLabel u
-rotateLabel ang (PrimLabel pt txt ctm) = PrimLabel pt txt (rotateCTM ang ctm)
+rotateLabel :: (Real u, Floating u) 
+            => Radian -> PrimLabel u -> PrimLabel u
+rotateLabel ang (PrimLabel pt txt ctm) = 
+    PrimLabel (rotate ang pt) txt (rotateCTM ang ctm)
 
 scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
 scaleLabel x y (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM x y ctm)
@@ -717,9 +711,10 @@ translateLabel x y (PrimLabel pt txt ctm) = PrimLabel (translate x y pt) txt ctm
 -- Ellipse
 
 
-rotateEllipse :: Radian -> PrimEllipse u -> PrimEllipse u
+rotateEllipse :: (Real u, Floating u) 
+              => Radian -> PrimEllipse u -> PrimEllipse u
 rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (rotateCTM ang ctm)
+    PrimEllipse (rotate ang pt) hw hh (rotateCTM ang ctm)
     
 
 
