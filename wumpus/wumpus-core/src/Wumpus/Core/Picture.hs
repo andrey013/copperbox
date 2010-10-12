@@ -31,7 +31,7 @@ module Wumpus.Core.Picture
   , curvedPath
   , xlinkhref
   , xlinkGroup
-
+  , primGroup
 
   -- * Constructing primitives
   , ostroke
@@ -109,7 +109,7 @@ import Data.AffineSpace                         -- package: vector-space
 --
 -- This function throws an error when supplied the empty list.
 --
-frame :: (Real u, Floating u, FromPtSize u) => [PrimElement u] -> Picture u
+frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
 frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
@@ -210,9 +210,25 @@ xlinkhref = XLink
 
 -- | Create a hyperlinked group of Primitives.
 --
-xlinkGroup :: XLink -> [PrimElement u] -> PrimElement u
-xlinkGroup _     [] = error "Picture.xlinkGroup - empty prims list"
-xlinkGroup xlink (x:xs) = XLinkGroup xlink (step x xs)
+-- This function throws a runtime error when supplied with an
+-- empty list.
+-- 
+xlinkGroup :: XLink -> [Primitive u] -> Primitive u
+xlinkGroup _     []     = error "Picture.xlinkGroup - empty prims list"
+xlinkGroup xlink (x:xs) = PGroup (Just xlink) (step x xs)
+  where
+    step a []     = one a
+    step a (y:ys) = cons a (step y ys) 
+
+
+-- | Group a list of primitives.
+--
+-- This function throws a runtime error when supplied with an
+-- empty list.
+--
+primGroup :: [Primitive u] -> Primitive u
+primGroup []     = error "Picture.primGroup - empty prims list"
+primGroup (x:xs) = PGroup Nothing (step x xs)
   where
     step a []     = one a
     step a (y:ys) = cons a (step y ys) 
@@ -225,27 +241,27 @@ xlinkGroup xlink (x:xs) = XLinkGroup xlink (step x xs)
 -- | Create a open, stroked path.
 --
 ostroke :: Num u 
-        => RGBi -> StrokeAttr -> PrimPath u -> PrimElement u
-ostroke rgb sa p = Atom $ PPath (OStroke sa rgb) p
+        => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
+ostroke rgb sa p = PPath (OStroke sa rgb) p
 
 
 -- | Create a closed, stroked path.
 --
 cstroke :: Num u 
-        => RGBi -> StrokeAttr -> PrimPath u -> PrimElement u
-cstroke rgb sa p = Atom $ PPath (CStroke sa rgb) p
+        => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
+cstroke rgb sa p = PPath (CStroke sa rgb) p
 
 
 -- | Create an open, stroked path using the default stroke 
 -- attributes and coloured black.
 --
-zostroke :: Num u => PrimPath u -> PrimElement u
+zostroke :: Num u => PrimPath u -> Primitive u
 zostroke = ostroke black default_stroke_attr
  
 -- | Create a closed stroked path using the default stroke 
 -- attributes and coloured black.
 --
-zcstroke :: Num u => PrimPath u -> PrimElement u
+zcstroke :: Num u => PrimPath u -> Primitive u
 zcstroke = cstroke black default_stroke_attr
 
 --------------------------------------------------------------------------------
@@ -254,11 +270,11 @@ zcstroke = cstroke black default_stroke_attr
 
 -- | Create a filled path.
 --
-fill :: Num u => RGBi -> PrimPath u -> PrimElement u
-fill rgb p = Atom $ PPath (CFill rgb) p
+fill :: Num u => RGBi -> PrimPath u -> Primitive u
+fill rgb p = PPath (CFill rgb) p
 
 -- | Create a filled path coloured black. 
-zfill :: Num u => PrimPath u -> PrimElement u
+zfill :: Num u => PrimPath u -> Primitive u
 zfill = fill black
 
 
@@ -272,8 +288,8 @@ zfill = fill black
 -- > fill colour * stroke attrs * stroke_colour * ...
 --
 fillStroke :: Num u 
-        => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> PrimElement u
-fillStroke frgb sa srgb p = Atom $ PPath (CFillStroke frgb sa srgb) p
+        => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> Primitive u
+fillStroke frgb sa srgb p = PPath (CFillStroke frgb sa srgb) p
 
 
 
@@ -298,7 +314,7 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 -- The supplied point is the left baseline.
 --
 textlabel :: Num u 
-          => RGBi -> FontAttr -> String -> Point2 u -> PrimElement u
+          => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
 textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
 -- | Create a text label rotated by the supplied angle about the 
@@ -307,8 +323,8 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 -- The supplied point is the left baseline.
 --
 rtextlabel :: Num u 
-           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> PrimElement u
-rtextlabel rgb attr txt theta pt = Atom $ PLabel (LabelProps rgb attr) lbl 
+           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> Primitive u
+rtextlabel rgb attr txt theta pt = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (StdLayout $ lexLabel txt) (thetaCTM theta)
 
@@ -316,7 +332,7 @@ rtextlabel rgb attr txt theta pt = Atom $ PLabel (LabelProps rgb attr) lbl
 -- | Create a label where the font is @Courier@, text size is 14pt
 -- and colour is black.
 --
-ztextlabel :: Num u => String -> Point2 u -> PrimElement u
+ztextlabel :: Num u => String -> Point2 u -> Primitive u
 ztextlabel = textlabel black wumpus_default_font
 
 
@@ -348,8 +364,8 @@ ztextlabel = textlabel black wumpus_default_font
 --
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
-            -> PrimElement u
-hkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl 
+            -> Primitive u
+hkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (KernTextH xs) identityCTM
 
@@ -383,8 +399,8 @@ hkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl
 --
 vkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
-            -> PrimElement u
-vkernlabel rgb attr xs pt = Atom $ PLabel (LabelProps rgb attr) lbl 
+            -> Primitive u
+vkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (KernTextV xs) identityCTM
 
@@ -430,7 +446,7 @@ kernEscName u s = (u, CharEscName s)
 -- Avoid non-uniform scaling stroked ellipses!
 --
 strokeEllipse :: Num u 
-             => RGBi -> StrokeAttr -> u -> u -> Point2 u -> PrimElement u
+             => RGBi -> StrokeAttr -> u -> u -> Point2 u -> Primitive u
 strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 
@@ -441,9 +457,9 @@ strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 --
 rstrokeEllipse :: Num u 
                => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
-               -> PrimElement u
+               -> Primitive u
 rstrokeEllipse rgb sa rx ry theta pt = 
-    Atom $ PEllipse (EStroke sa rgb) (mkPrimEllipse rx ry theta pt)
+    PEllipse (EStroke sa rgb) (mkPrimEllipse rx ry theta pt)
 
 
 
@@ -452,7 +468,7 @@ rstrokeEllipse rgb sa rx ry theta pt =
 -- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
 --
 fillEllipse :: Num u 
-             => RGBi -> u -> u -> Point2 u -> PrimElement u
+             => RGBi -> u -> u -> Point2 u -> Primitive u
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
@@ -461,16 +477,16 @@ fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
 -- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
 --
 rfillEllipse :: Num u 
-             => RGBi -> u -> u -> Radian -> Point2 u -> PrimElement u
+             => RGBi -> u -> u -> Radian -> Point2 u -> Primitive u
 rfillEllipse rgb rx ry theta pt = 
-    Atom $ PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
+    PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
 
 
 -- | Create a black, filled ellipse. 
 --
 -- 'zellipse' : @rx * ry -> Primtive@
 --
-zellipse :: Num u => u -> u -> Point2 u -> PrimElement u
+zellipse :: Num u => u -> u -> Point2 u -> Primitive u
 zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
@@ -481,7 +497,7 @@ zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 --
 fillStrokeEllipse :: Num u 
                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
-                  -> PrimElement u
+                  -> Primitive u
 fillStrokeEllipse frgb sa srgb rx ry pt = 
     rfillStrokeEllipse frgb sa srgb rx ry 0 pt
     
@@ -495,9 +511,9 @@ fillStrokeEllipse frgb sa srgb rx ry pt =
 --
 rfillStrokeEllipse :: Num u 
                    => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
-                   -> PrimElement u
+                   -> Primitive u
 rfillStrokeEllipse frgb sa srgb rx ry theta pt = 
-    Atom $ PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse rx ry theta pt)
+    PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse rx ry theta pt)
 
 
 mkPrimEllipse :: Num u => u -> u -> Radian -> Point2 u -> PrimEllipse u
@@ -587,7 +603,7 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p)
 -- The result will be lifted from Primitive to Picture.
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
-                     => RGBi -> PrimElement u -> Picture u
+                     => RGBi -> Primitive u -> Picture u
 illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 
 
@@ -596,7 +612,7 @@ illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 -- joining the corners.
 --
 boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
-            => RGBi -> t -> [PrimElement u]
+            => RGBi -> t -> [Primitive u]
 boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
@@ -612,22 +628,19 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 -- within a picture.
 -- 
 -- This has no effect on TextLabels. Nor does it draw Beziers of 
--- a hyperlinked obkect.
+-- a hyperlinked object.
 -- 
 -- Pseudo control points are generated for ellipses, although 
 -- strictly speaking ellipses do not use Bezier curves - they 
 -- are implemented with PostScript\'s @arc@ command.  
 --
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
-                        => RGBi -> PrimElement u -> Picture u
-illustrateControlPoints rgb elt = outer elt
+                        => RGBi -> Primitive u -> Picture u
+illustrateControlPoints rgb elt = frame $ step elt
   where
-    outer a@(Atom prim) = frame (a : step prim)
-    outer a             = frame [a]
-
     step (PEllipse _ e) = ellipseCtrlLines rgb e
     step (PPath    _ p) = pathCtrlLines rgb p
-    step _              = []
+    step a              = [a]
 
 -- Genrate lines illustrating the control points of curves on 
 -- a Path.
@@ -637,7 +650,7 @@ illustrateControlPoints rgb elt = outer elt
 --
 -- Nothing is generated for a straight line.
 --
-pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> [PrimElement u]
+pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> [Primitive u]
 pathCtrlLines rgb (PrimPath start ss) = step start ss
   where 
     -- trail the current end point through the recursion...
@@ -656,7 +669,7 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
 -- start-point to control-point1; control-point2 to end-point
 --
 ellipseCtrlLines :: (Real u, Floating u) 
-                 => RGBi -> PrimEllipse u -> [PrimElement u]
+                 => RGBi -> PrimEllipse u -> [Primitive u]
 ellipseCtrlLines rgb pe = start all_points
   where 
     -- list in order: 

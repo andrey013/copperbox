@@ -68,8 +68,8 @@ pic5 = txt `picOver` ch `picOver` xy_frame "translate -70 -10"
 
 
 mkBlackTextlabel :: (Real u, Floating u, FromPtSize u) 
-             => (PrimElement u -> PrimElement u) 
-             -> Point2 u -> Picture u
+                 => (Primitive u -> Primitive u) 
+                 -> Point2 u -> Picture u
 mkBlackTextlabel trafo bl = 
     frame [ trafo $ textlabel black wumpus_default_font "rhubarb" bl ] 
 
@@ -90,8 +90,8 @@ burlywood = RGBi 222 184 135
 
 xy_frame :: (Real u, Floating u, FromPtSize u) => String -> Picture u
 xy_frame ss = 
-    frame [ mkline (P2 (-4) 0) (P2 100 0)
-          , mkline (P2 0 (-4)) (P2 0 100) 
+    frame [ mkline (P2 (-4) 0) (P2 150 0)
+          , mkline (P2 0 (-4)) (P2 0 150) 
           , textlabel black wumpus_default_font ss (P2 0 (-20))
           ]
 

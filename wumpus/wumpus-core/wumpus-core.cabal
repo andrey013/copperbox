@@ -50,11 +50,20 @@ description:
   .
   * API / behaviour change - rotation on primitives changed. New 
     functions have been added to create rotated text labels and 
-    ellipses (@rtextlabel@, @rstrokeEllipse@, etc.). The 
-    transformations on Primitives now work more like affine 
-    transformations. Rotation rotates about the (implicit) origin 
-    (0,0) rather than the baseline-left (textlabel) or center 
-    (ellipse).
+    ellipses (@rtextlabel@, @rstrokeEllipse@, etc.), and 
+    Primitives have been made instances of the Affine classes
+    except for the general matrix Transform class. The old
+    functions for transforming Primitives (@rotatePrim@, 
+    @scalePrim@, etc.) have been removed.
+  .
+  * Major change - removed the PrimElement type. The (opaque) 
+    Primitive type has been changed to incorporate a grouping 
+    constructor equivalent to PrimElement\'s @XLinkGroup@ 
+    contructor. The change has made the implementation of SVG 
+    hyperlinks more efficient, but has forced various type 
+    signatures to change in @Core.Picture@. Client code will 
+    also have to change type signatures - @PrimElement@ becomes
+    @Primitive@.
   .
   * @Core.PtSize@ - the class @FromPtSize@ has been given a @Num@
     superclass constraint. This can shorten type signatures of 

@@ -171,7 +171,7 @@ imageTranslation pic = case repositionDeltas pic of
 
 
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
-picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primElement ones
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 picture (Clip    (_,xs) cp pic) = 
     bracketTrafos xs $ do { lbl <- newClipLabel
@@ -194,14 +194,14 @@ oneConcat fn ones = outstep (viewl ones)
     instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
-primElement :: (Real u, Floating u, PSUnit u) => PrimElement u -> SvgMonad Doc
-primElement (Atom prim)          = primitive prim
-primElement (XLinkGroup xl ones) = drawXLink xl <$> oneConcat primElement ones
-
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
 primitive (PPath props pp)     = primPath props pp
 primitive (PLabel props lbl)   = primLabel props lbl
 primitive (PEllipse props ell) = primEllipse props ell
+primitive (PGroup mb ones)     = 
+    case mb of
+      Nothing -> oneConcat primitive ones
+      Just xl -> drawXLink xl <$> oneConcat primitive ones
  
 
 drawXLink :: XLink -> Doc -> Doc

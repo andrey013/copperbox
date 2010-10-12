@@ -262,7 +262,7 @@ imageTranslation pic = case repositionDeltas pic of
 -- state. 
 --
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
-picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primElement ones
+picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 picture (Group   (_,xs) _ pic) = bracketTrafos xs (picture pic)
 picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
@@ -283,14 +283,12 @@ oneConcat fn ones = outstep (viewl ones)
 
 -- No action is taken for hyperlinks in PostScript.
 --
-primElement :: (Real u, Floating u, PSUnit u) => PrimElement u -> PsMonad Doc
-primElement (Atom prim)         = primitive prim
-primElement (XLinkGroup _ ones) = oneConcat primElement ones
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
 primitive (PPath props pp)     = primPath props pp
 primitive (PLabel props lbl)   = primLabel props lbl
 primitive (PEllipse props ell) = primEllipse props ell
+primitive (PGroup _ ones)      = oneConcat primitive ones
 
 
 primPath :: PSUnit u

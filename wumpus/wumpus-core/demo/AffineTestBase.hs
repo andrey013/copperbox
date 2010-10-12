@@ -39,9 +39,9 @@ data AffineTrafoAlg = AffineTrafoAlg
       { ata_console_msg         :: String
       , ata_eps_file            :: FilePath
       , ata_svg_file            :: FilePath
-      , ata_prim_constructor    :: RGBi -> DPrimElement
+      , ata_prim_constructor    :: RGBi -> DPrimitive
       , ata_pic_transformer     :: DPicture -> DPicture
-      , ata_prim_transformer    :: DPrimElement -> DPrimElement
+      , ata_prim_transformer    :: DPrimitive -> DPrimitive
       }
 
 runATA :: AffineTrafoAlg -> IO ()
@@ -56,9 +56,9 @@ runATA ata = do
                           (ata_prim_transformer ata)
 
 
-buildPictureATA :: (RGBi -> DPrimElement) 
+buildPictureATA :: (RGBi -> DPrimitive) 
          -> (DPicture -> DPicture) 
-         -> (DPrimElement -> DPrimElement) 
+         -> (DPrimitive -> DPrimitive) 
          -> DPicture
 buildPictureATA mk picF primF = 
     picture1 `picBeside` picture2 `picBeside` picture3
@@ -72,7 +72,7 @@ buildPictureATA mk picF primF =
     picture3 :: DPicture
     picture3 = illustrateBoundsPrim light_blue $ prim
       where
-        prim :: DPrimElement
+        prim :: DPrimitive
         prim = primF $ mk red
 
 
@@ -85,8 +85,8 @@ data ControlPointAlg = ControlPointAlg
       { cpa_console_msg         :: String
       , cpa_eps_file            :: FilePath
       , cpa_svg_file            :: FilePath
-      , cpa_prim_constructor    :: RGBi -> DPrimElement
-      , cpa_prim_transformer    :: DPrimElement -> DPrimElement
+      , cpa_prim_constructor    :: RGBi -> DPrimitive
+      , cpa_prim_transformer    :: DPrimitive -> DPrimitive
       }
 
 runCPA :: ControlPointAlg -> IO ()
@@ -98,27 +98,27 @@ runCPA cpa = do
   where
     pic = cpPicture (cpa_prim_constructor cpa) (cpa_prim_transformer cpa)
 
-cpPicture :: (RGBi -> DPrimElement) -> (DPrimElement -> DPrimElement) -> DPicture
+cpPicture :: (RGBi -> DPrimitive) -> (DPrimitive -> DPrimitive) -> DPicture
 cpPicture constr trafo = 
     illustrateBounds light_blue $ illustrateControlPoints black 
                                 $ transformed_prim
   where
-   transformed_prim :: DPrimElement
+   transformed_prim :: DPrimitive
    transformed_prim = trafo $ constr red
 
 
 --------------------------------------------------------------------------------
 
-rgbLabel :: RGBi -> DPrimElement
+rgbLabel :: RGBi -> DPrimitive
 rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" zeroPt
 
-rgbCircle :: RGBi -> DPrimElement
+rgbCircle :: RGBi -> DPrimitive
 rgbCircle rgb = fillEllipse rgb 60 60 zeroPt
 
-rgbEllipse :: RGBi -> DPrimElement
+rgbEllipse :: RGBi -> DPrimitive
 rgbEllipse rgb = fillEllipse rgb 60 30 zeroPt
 
-rgbPath :: RGBi -> DPrimElement
+rgbPath :: RGBi -> DPrimitive
 rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...

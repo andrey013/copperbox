@@ -24,8 +24,6 @@ module Wumpus.Core.PictureInternal
   , Locale
   , FontCtx(..)
 
-  , PrimElement(..)
-  , DPrimElement
   , Primitive(..)
   , DPrimitive
   , XLink(..)
@@ -46,12 +44,6 @@ module Wumpus.Core.PictureInternal
 
   , pathBoundary
   , mapLocale
-
-
-  , rotatePrim
-  , scalePrim
-  , uniformScalePrim
-  , translatePrim
 
   -- * Additional operations
   , concatTrafos
@@ -118,30 +110,13 @@ import qualified Data.Foldable                  as F
 -- updates for the SVG renderer - in some instances this can 
 -- improve the code size of the generated SVG.
 --
-data Picture u = Leaf     (Locale u)              (OneList (PrimElement u))
+data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
                | Picture  (Locale u)              (OneList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
                | Group    (Locale u) FontCtx      (Picture u)
   deriving (Show)
 
 type DPicture = Picture Double
-
--- | To represent XLink hyperlinks, Primitives in a Leaf are 
--- actualy encoded in a tree rather a list.
---
--- As a design, this is rather unfortunate as it demands an extra 
--- wrapper for ever element regardless of whether hyperlinks are 
--- actually used. But it does mean that one hyperlink can cover a 
--- complex graphic element - for example an arrow might be drawn 
--- with one or more paths, plus extra (filled or stroked) paths 
--- for the tip and tail, but each element should be within the 
--- link. 
---
-data PrimElement u = Atom             (Primitive u)
-                   | XLinkGroup XLink (OneList (PrimElement u))
-  deriving (Show)
-
-type DPrimElement = PrimElement Double
 
 
 -- | Set the font /delta/ for SVG rendering. 
@@ -198,9 +173,14 @@ type Locale u = (BoundingBox u, [AffineTrafo u])
 -- Though typically for affine transformations a Fractional 
 -- constraint is also obliged.
 --
-data Primitive u = PPath    PathProps    (PrimPath u)
-                 | PLabel   LabelProps   (PrimLabel u)
-                 | PEllipse EllipseProps (PrimEllipse u)
+-- To represent XLink hyperlinks, Primitives can be grouped 
+-- together at the same type (so Primitives aren\'t strictly)
+-- /primitive/ as the actual implementation is a tree.
+-- 
+data Primitive u = PPath    PathProps     (PrimPath u)
+                 | PLabel   LabelProps    (PrimLabel u)
+                 | PEllipse EllipseProps  (PrimEllipse u)
+                 | PGroup   (Maybe XLink) (OneList (Primitive u))
   deriving (Eq,Show)
 
 type DPrimitive = Primitive Double
@@ -302,9 +282,10 @@ data GraphicsState = GraphicsState
 -- family instances
 
 type instance DUnit (Picture u)     = u
-type instance DUnit (PrimElement u) = u
 type instance DUnit (Primitive u)   = u
 type instance DUnit (PrimEllipse u) = u
+type instance DUnit (PrimLabel u)   = u
+type instance DUnit (PrimPath u)    = u
 
 --------------------------------------------------------------------------------
 -- instances
@@ -334,16 +315,10 @@ fmtPics ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
 
-fmtPrimElems :: PSUnit u => OneList (PrimElement u) -> Doc
+fmtPrimElems :: PSUnit u => OneList (Primitive u) -> Doc
 fmtPrimElems ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
-
-instance PSUnit u => Format (PrimElement u) where
-  format (Atom prim)          = format prim
-  format (XLinkGroup xl ones) = vcat [ text "-- xlink " <+> format xl 
-                                     , fmtPrimElems ones  ]
-                                     
 
 fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
 fmtLocale (bb,_) = format bb
@@ -358,6 +333,9 @@ instance PSUnit u => Format (Primitive u) where
 
   format (PEllipse props e) = 
       indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
+
+  format (PGroup xl ones)   = 
+      vcat [ text "-- group " <+> (maybe empty format xl), fmtPrimElems ones  ]
 
 
 instance PSUnit u => Format (PrimPath u) where
@@ -404,9 +382,11 @@ instance Boundary (Picture u) where
   boundary (Group   (bb,_) _ _) = bb
 
 
-instance (Real u, Floating u, FromPtSize u) => Boundary (PrimElement u) where
-  boundary (Atom prim)         = boundary prim
-  boundary (XLinkGroup _ ones) = outer $ viewl ones 
+instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
+  boundary (PPath _ p)      = pathBoundary p
+  boundary (PLabel a l)     = labelBoundary (label_font a) l
+  boundary (PEllipse _ e)   = ellipseBoundary e
+  boundary (PGroup _ ones)  = outer $ viewl ones 
     where
       outer (OneL a)     = boundary a
       outer (a :< as)    = inner (boundary a) (viewl as)
@@ -414,10 +394,6 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (PrimElement u) where
       inner bb (OneL a)  = bb `boundaryUnion` boundary a
       inner bb (a :< as) = inner (bb `boundaryUnion` boundary a) (viewl as)
 
-instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
-  boundary (PPath _ p)      = pathBoundary p
-  boundary (PLabel a l)     = labelBoundary (label_font a) l
-  boundary (PEllipse _ e)   = ellipseBoundary e
 
 
 
@@ -555,144 +531,36 @@ mapLocale f (Group lc upd pic) = Group (f lc) upd pic
 -- Transform primitives
 
 
--- | Rotate a Primitive.
--- 
--- Note - this is not an affine transformation as Primitives are
--- not regarded as being within an affine frame.
---
--- * Paths are rotated about their start point.
---
--- * Labels are rotated about the bottom-left corner.
---
--- * Ellipses are rotated about the center.
---
--- For Primitives and Ellipses applying a rotation and or a scale 
--- will generate an additional matrix transformation in the 
--- generated PostScript. For Paths all transformations are
--- \"cost-free\".
---
-rotatePrim :: (Real u, Floating u) 
-           => Radian -> PrimElement u -> PrimElement u
-rotatePrim ang (Atom prim)             = Atom $ rotatePrimitive ang prim
-rotatePrim ang (XLinkGroup xlink ones) = 
-    XLinkGroup xlink $ fmap (rotatePrim ang) ones
-
-
-rotatePrimitive :: (Real u, Floating u) 
-                => Radian -> Primitive u -> Primitive u
-rotatePrimitive ang (PPath a path)   = PPath    a $ rotatePath ang path
-rotatePrimitive ang (PLabel a lbl)   = PLabel   a $ rotateLabel ang lbl
-rotatePrimitive ang (PEllipse a ell) = PEllipse a $ rotateEllipse ang ell
-
-
--- | Scale a Primitive.
--- 
--- Note - this is not an affine transformation as Primitives are
--- not regarded as being within an affine frame.
---
--- An affine scaling uniformly scales all the elements in a 
--- Picture. It is just a change of the Picture\'s basis vectors.
--- The elements within the Picture are unchanged - though 
--- obviously rendering changes according to the transformation.
---
--- By contrast, the scaling operation on Primitives changes the 
--- properties of the object as it is applied - e.g. for a path
--- the vector between the start point and all subsequent points
--- is changed with respect to the x,y scaling factors; for an
--- ellipse the half-width and half-height of the ellipse is
--- scaled.
---
--- For Primitives and Ellipses applying a rotation and or a scale 
--- will generate an additional matrix transformation in the 
--- generated PostScript. For Paths all transformations are 
--- \"cost-free\".
---
-scalePrim :: Num u => u -> u -> PrimElement u -> PrimElement u
-scalePrim x y (Atom prim)             = Atom $ scalePrimitive x y prim
-scalePrim x y (XLinkGroup xlink ones) = 
-    XLinkGroup xlink $ fmap (scalePrim x y) ones
-
-
-scalePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-scalePrimitive x y (PPath a path)   = PPath    a $ scalePath x y path
-scalePrimitive x y (PLabel a lbl)   = PLabel   a $ scaleLabel x y lbl
-scalePrimitive x y (PEllipse a ell) = PEllipse a $ scaleEllipse x y ell
-
--- | Apply a uniform scale to a Primitive.
---
-uniformScalePrim :: Num u => u -> PrimElement u -> PrimElement u
-uniformScalePrim d = scalePrim d d 
-
--- | Translate a primitive.
---
--- Translation is essentially \"cost-free\" for the generated 
--- PostScript or SVG. Paths are translated before the PostScript 
--- is generated. For Ellipses and Labels, translation will 
--- either move the bottom-left origin (Label) or center 
--- (Ellipse); or if they are also scaled or rotated the 
--- translation will be concatenated into the matrix operation in 
--- the generated output. 
--- 
-translatePrim :: Num u => u -> u -> PrimElement u -> PrimElement u
-translatePrim x y (Atom prim)             = 
-    Atom $ translatePrimitive x y prim
-
-translatePrim x y (XLinkGroup xlink ones) = 
-    XLinkGroup xlink $ fmap (translatePrim x y) ones
-
-translatePrimitive :: Num u => u -> u -> Primitive u -> Primitive u
-translatePrimitive x y (PPath a path)   = PPath a $ translatePath x y path
-translatePrimitive x y (PLabel a lbl)   = PLabel a $ translateLabel x y lbl
-translatePrimitive x y (PEllipse a ell) = PEllipse a $ translateEllipse x y ell
-
-
 -- Note - Primitives are not instances of transform
 -- (ShapeCTM is not a real matrix).
-
-
-instance (Real u, Floating u) => Rotate (PrimElement u) where
-  rotate r (Atom prim)             = Atom $ rotate r prim
-  rotate r (XLinkGroup xlink ones) = XLinkGroup xlink $ fmap (rotate r) ones
+-- 
 
 instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PPath a path)   = PPath a    $ rotatePath r path
   rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
   rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
+  rotate r (PGroup xln xs)  = PGroup xln $ fmap (rotate r) xs
  
-
-instance (Real u, Floating u) => RotateAbout (PrimElement u) where
-  rotateAbout r pt (Atom prim)             = Atom $ rotateAbout r pt prim
-  rotateAbout r pt (XLinkGroup xlink ones) = 
-      XLinkGroup xlink $ fmap (rotateAbout r pt) ones
 
 instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
+  rotateAbout r pt (PGroup xln xs)  = PGroup xln $ fmap (rotateAbout r pt) xs
 
-
-
-
-instance Num u => Scale (PrimElement u) where
-  scale sx sy (Atom prim)             = Atom $ scale sx sy prim
-  scale sx sy (XLinkGroup xlink ones) = 
-      XLinkGroup xlink $ fmap (scale sx sy) ones
 
 instance Num u => Scale (Primitive u) where
-  scale sx sy (PPath a path)   = PPath a    $ scalePath sx sy path
-  scale sx sy (PLabel a lbl)   = PLabel a   $ scaleLabel sx sy lbl
-  scale sx sy (PEllipse a ell) = PEllipse a $ scaleEllipse sx sy ell
+  scale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
+  scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
+  scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
+  scale sx sy (PGroup xln xs)   = PGroup xln $ fmap (scale sx sy) xs
 
-
-instance Num u => Translate (PrimElement u) where
-  translate dx dy (Atom prim)             = Atom $ translate dx dy prim
-  translate dx dy (XLinkGroup xlink ones) = 
-      XLinkGroup xlink $ fmap (translate dx dy) ones
 
 instance Num u => Translate (Primitive u) where
   translate dx dy (PPath a path)   = PPath a    $ translatePath dx dy path
   translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
   translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
+  translate dx dy (PGroup xln xs)  = PGroup xln $ fmap (translate dx dy) xs
 
 
 --------------------------------------------------------------------------------

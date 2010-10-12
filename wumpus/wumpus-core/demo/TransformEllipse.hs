@@ -69,7 +69,7 @@ pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
 
 
 mkRedEllipse :: (Real u, Floating u, FromPtSize u) 
-             => (PrimElement u -> PrimElement u) 
+             => (Primitive u -> Primitive u) 
              -> u -> u -> Point2 u -> Picture u
 mkRedEllipse trafo rx ry pt = frame [ trafo $ fillEllipse red rx ry pt] 
 
@@ -86,8 +86,8 @@ crossbar rx ry ctr = frame [ostroke black default_stroke_attr $ path west ps]
 
 xy_frame :: (Real u, Floating u, FromPtSize u) => String -> Picture u
 xy_frame ss = 
-    frame [ mkline (P2 (-4) 0) (P2 100 0)
-          , mkline (P2 0 (-4)) (P2 0 100) 
+    frame [ mkline (P2 (-4) 0) (P2 150 0)
+          , mkline (P2 0 (-4)) (P2 0 150) 
           , textlabel black wumpus_default_font ss (P2 0 (-20))
           ]
 

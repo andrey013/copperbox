@@ -21,7 +21,7 @@ rot30 :: (Rotate t, Fractional u, u ~ DUnit t) => t -> t
 rot30 = rotate30
 
 rot30P :: (Real u, Floating u) => PrimElement u -> PrimElement u
-rot30P = rotatePrim (d2r (30.0::Double))
+rot30P = rotate (d2r (30.0::Double))
 
 -- Primitive - Text
 

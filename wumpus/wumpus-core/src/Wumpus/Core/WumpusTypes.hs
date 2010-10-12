@@ -29,8 +29,6 @@ module Wumpus.Core.WumpusTypes
   -- * Picture types
     Picture
   , DPicture
-  , PrimElement
-  , DPrimElement
   , FontCtx
   , Primitive
   , DPrimitive
@@ -43,14 +41,6 @@ module Wumpus.Core.WumpusTypes
   , DPrimLabel
   , KerningChar
   , DKerningChar
-
-
-  -- * Transformations on PrimElements
-  , rotatePrim
-  , scalePrim
-  , uniformScalePrim
-  , translatePrim
-
 
   -- * Printable unit for PostScript
   , PSUnit(..)

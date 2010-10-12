@@ -12,6 +12,11 @@
 --
 -- Core page translation for SVG.
 --
+-- Note - initially an optimized translate was planned - smaller 
+-- SVG code size and less use of /rectifying/ transformations for 
+-- text. However working out a translation scheme proved to be 
+-- tricky and Wumpus is stuck with the /trivialTransformation/.
+--
 --------------------------------------------------------------------------------
 
 
@@ -39,19 +44,16 @@ trivialTranslation :: (Num u, Ord u) => Picture u -> Picture u
 trivialTranslation pic = scale 1 (-1) (trivPic pic)
 
 trivPic :: Num u => Picture u -> Picture u
-trivPic (Leaf lc ones)      = Leaf lc $ fmap trivPrimElt ones
+trivPic (Leaf lc ones)      = Leaf lc $ fmap trivPrim ones
 trivPic (Picture lc ones)   = Picture lc $ fmap trivPic ones
 trivPic (Clip lc pp pic)    = Clip lc pp $ trivPic pic
 trivPic (Group lc upd pic)  = Group lc upd $ trivPic pic
-
-trivPrimElt :: Num u => PrimElement u -> PrimElement u
-trivPrimElt (Atom prim)          = Atom (trivPrim prim)
-trivPrimElt (XLinkGroup xl ones) = XLinkGroup xl $ fmap trivPrimElt ones
 
 trivPrim :: Num u => Primitive u -> Primitive u
 trivPrim (PPath a pp)     = PPath a pp
 trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
 trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
+trivPrim (PGroup xl ones) = PGroup xl $ fmap trivPrim ones
 
 
 trivLabel :: Num u => PrimLabel u -> PrimLabel u
