@@ -746,7 +746,8 @@ rotateAboutLabel ang pt0 (PrimLabel pt txt ctm) =
 
 
 scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-scaleLabel sx sy (PrimLabel pt txt ctm) = PrimLabel pt txt (scaleCTM sx sy ctm)
+scaleLabel sx sy (PrimLabel pt txt ctm) = 
+    PrimLabel (scale sx sy pt) txt (scaleCTM sx sy ctm)
 
 
 -- Change the bottom-left corner.
@@ -773,7 +774,7 @@ rotateAboutEllipse ang pt0 (PrimEllipse pt hw hh ctm) =
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
 scaleEllipse sx sy (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse pt hw hh (scaleCTM sx sy ctm)
+    PrimEllipse (scale sx sy pt) hw hh (scaleCTM sx sy ctm)
     
 
 
