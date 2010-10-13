@@ -18,28 +18,30 @@
 -- The common affine transformations represented as type classes -
 -- scaling, rotation, translation.
 --
--- Internally, when a picture is composed and transformed, Wumpus
+--
+-- Internally, when a Picture is composed and transformed, Wumpus
 -- only transforms the bounding box - transformations of the 
 -- picture content (paths or text labels) are communicated to 
 -- PostScript or SVG for final rendering. This is because Wumpus 
 -- has no access to the paths that make fonts so cannot transform 
 -- them directly.
 --
--- As well as Pictures, some elements - e.g. Vectors, Points and 
--- BoundingBoxes - are also instances of the affine classes. The
--- implementation of the instances considers that under 
--- transformation these objects are implicitly within the standard 
--- affine frame (origin at point zero and unit basis vectors for 
--- the horizontal and vertical). 
+-- Other elements - Vectors, Points, BoundingBoxes and Primtives - 
+-- are also instances of the affine classes. However, generally 
+-- Wumpus transforms these elements directly rather than 
+-- delegating the transformation to PostScript or SVG (the 
+-- situation for the Label primitive is more complicated - the 
+-- /start/ point is transformed by Wumpus but a matrix 
+-- transformation is sent to PostScript to manipulate the opaque 
+-- character objects).
 --
--- Primitives are also intances of the affine classes, an like 
--- points are consider to exist within the standard affine frame.
--- However, the transformations are applied to the control points 
--- of the primitive not the drawing itself. A scaled, stroked 
--- path will be drawn with the standard line and not a thicker 
--- line. Note that text may not render pleasantly after it has 
--- been transformed, PostScript references seem to caution 
--- against transforming text. 
+-- Note - transformations on Primitives are applied to the control 
+-- points of the primitive not the /drawing/. A scaled, stroked 
+-- path will be drawn with at the standard line width rather than 
+-- with a thicker line. Also, text may not render pleasantly after 
+-- it has been transformed, PostScript references seem to caution 
+-- against transforming text and recommend changing @/scalefont@ 
+-- instead of scaling via a transfomation. 
 -- 
 -- To generate efficient PostScript, Wumpus relies on the matrix
 -- representations of the affine transformations being invertible.

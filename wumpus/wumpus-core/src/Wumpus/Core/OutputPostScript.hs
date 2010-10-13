@@ -163,6 +163,11 @@ setDashPattern a    = setsSA (\s -> s { dash_pattern = a })
 -- | Output a series of pictures to a Postscript file. Each 
 -- picture will be printed on a separate page. 
 --
+-- Generally an encoder should always support the principal
+-- encoders for the fonts used (e.g. Latin1) /and/ the encoder 
+-- for the Symbol font, as characters from the Symbol font may 
+-- be used as decorations for plot marks, etc.
+--
 writePS :: (Real u, Floating u, PSUnit u) 
         => FilePath -> TextEncoder -> [Picture u] -> IO ()
 writePS filepath enc pic = 
@@ -172,13 +177,23 @@ writePS filepath enc pic =
 -- The .eps file can then be imported or embedded in another 
 -- document.
 --
+-- Generally an encoder should always support the principal
+-- encoders for the fonts used (e.g. Latin1) /and/ the encoder for
+-- the Symbol font, as characters from the Symbol font may be used 
+-- as decorations for plot marks, etc.
+--
 writeEPS :: (Real u, Floating u, PSUnit u)  
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeEPS filepath enc pic =
     getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim enc pic)
 
 
--- | Version of 'writePS' - using Latin1 encoding.
+-- | Version of 'writePS' - using the /default encoder/ which 
+-- supports Latin1 and the Symbol font.
+-- 
+-- Generally an encoder should always support the principal
+-- encoder (e.g. Latin1) /and/ the Symbol font, as characters from
+-- the Symbol font may be used as decorations for plot marks, etc.
 -- 
 writePS_latin1 :: (Real u, Floating u, PSUnit u) 
                => FilePath -> [Picture u] -> IO ()

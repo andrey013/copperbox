@@ -133,12 +133,22 @@ askDashPattern  = asksGraphicsState (dash_pattern . gs_stroke_attr)
 
 -- | Output a picture to a SVG file. 
 --
+-- Generally an encoder should always support the principal
+-- encoders for the fonts used (e.g. Latin1) /and/ the encoder for
+-- the Symbol font, as characters from the Symbol font may be used 
+-- as decorations for plot marks, etc.
+--
 writeSVG :: (Real u, Floating u, PSUnit u) 
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeSVG filepath enc pic = 
     writeFile filepath $ show $ svgDraw enc pic 
 
--- | Version of 'writeSVG' - using Latin1 and Symbol font encodings. 
+-- | Version of 'writeSVG' - using Latin1 and Symbol font encoders. 
+--
+-- Generally an encoder should always support the principal
+-- encoders for the fonts used (e.g. Latin1) /and/ the encoder for 
+-- the Symbol font, as characters from the Symbol font may be used 
+-- as decorations for plot marks, etc.
 --
 writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
                 => FilePath -> Picture u -> IO ()

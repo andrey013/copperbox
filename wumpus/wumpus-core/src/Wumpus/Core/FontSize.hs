@@ -19,10 +19,10 @@
 -- of the text).
 -- 
 -- This is a deficiency of Wumpus, and limits its text handling
--- capabilities - for example, text cannot be reliably centered
--- as its true length is not known. However, more powerful 
--- alternatives would need access to the metrics embedded within
--- font files. This would require a font loader and add 
+-- capabilities - for example, text cannot be reliably centered 
+-- or right aligned as its true length is not known. However, more 
+-- powerful alternatives would need access to the metrics embedded 
+-- within font files. This would require a font loader and add 
 -- significant implementation complexity.
 -- 
 --------------------------------------------------------------------------------
@@ -153,9 +153,10 @@ courier48_spacer_width :: PtSize
 courier48_spacer_width = 3.0
 
 
--- | Width of the supplied string when printed at 48pt.
+-- | Width of the supplied string when printed at 48pt (i.e. n 
+-- chars + (n-1) spacers).
 --
--- (i.e. n chars + (n-1) spacers)
+-- Use 'charCount' to calculate the @CharCount@.
 --
 widthAt48pt :: CharCount -> PtSize
 widthAt48pt n = (courier48_width * len) + (courier48_spacer_width * len_sub)
@@ -212,10 +213,12 @@ xcharHeight sz = textHeight sz * (courier48_xheight / courier48_height)
 descenderDepth :: FontSize -> PtSize
 descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
 
--- | Find the bounding box for the character count at the 
+-- | 'textBounds' : @ font_size * baseline_left * text -> BBox@
+--
+-- Find the bounding box for the character count at the 
 -- supplied font-size.
 -- 
--- The supplied point represents the bottom left corner of the 
+-- The supplied point represents the baseline left corner of the 
 -- a regular upper-case letter (that is without descenders).
 -- The bounding box will always be /dropped/ to accommodate 
 -- ascenders - no interpretation of the string takes place to 
@@ -230,7 +233,9 @@ textBounds :: (Num u, Ord u, FromPtSize u)
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
 
--- | Version of textBounds for EncodedText.
+-- | 'textBoundsEnc' : @ font_size * baseline_left * encoded_text -> BBox@
+-- 
+--  Version of textBounds for EncodedText.
 -- 
 -- Note this function is hidded by the top-level module 
 -- @Wumpus.Core@.
@@ -242,12 +247,12 @@ textBoundsEnc sz pt enc = textBoundsBody sz pt (textLength enc)
 
 textBoundsBody :: (Num u, Ord u, FromPtSize u) 
                => FontSize -> Point2 u -> Int -> BoundingBox u
-textBoundsBody sz body_bl len = bbox bl tr 
+textBoundsBody sz baseline_left len = bbox bl tr 
   where
     h           = fromPtSize $ textHeight sz
     w           = fromPtSize $ textWidth  sz len
     dd          = fromPtSize $ descenderDepth sz
-    bl          = body_bl .-^ V2 0 dd 
+    bl          = baseline_left .-^ V2 0 dd 
     tr          = bl .+^ V2 w h
 
 

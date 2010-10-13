@@ -18,7 +18,8 @@
 -- @Wumpus.Core.Colour@ directly to use them.
 --
 -- PostScript has no support for RGB-alpha and hence does not
--- transparency. Thus Wumpus in turn cannot support transparency.
+-- support transparency. Thus Wumpus in turn cannot support 
+-- transparency.
 --
 --------------------------------------------------------------------------------
 

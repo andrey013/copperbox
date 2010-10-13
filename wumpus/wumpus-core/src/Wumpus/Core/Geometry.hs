@@ -76,6 +76,7 @@ module Wumpus.Core.Geometry
   , r2d
   , circularModulo
 
+  -- * Bezier curves
   , bezierArc
   , bezierCircle
 
@@ -411,7 +412,7 @@ vangle u v = realToFrac $ acos $ (u <.> v) / (magnitude u * magnitude v)
 --------------------------------------------------------------------------------
 -- Points
 
--- | Construct a point at 0 0.
+-- | Construct a point at (0,0).
 --
 zeroPt :: Num u => Point2 u
 zeroPt = P2 0 0
@@ -640,7 +641,7 @@ r2d :: (Floating a, Real a) => Radian -> a
 r2d = (*) (180/pi) . fromRadian
 
 
--- | Modulate a (positive) angle to be in the range 0..2*pi
+-- | Modulo a (positive) angle into the range @0..2*pi@.
 --
 circularModulo :: Radian -> Radian
 circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
@@ -655,7 +656,10 @@ circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
 --------------------------------------------------------------------------------
 -- Bezier curves
 
--- | Create an arc - this construction is the analogue of 
+-- | 'bezierArc' : @ radius * ang1 * ang2 * center -> 
+--       (start_point, control_point1, control_point2, end_point) @
+-- 
+-- Create an arc - this construction is the analogue of 
 -- PostScript\'s @arc@ command, but the arc is created as a 
 -- Bezier curve so it should span less than 90deg.
 --
@@ -674,7 +678,9 @@ bezierArc r ang1 ang2 pt = (p0,p1,p2,p3)
     p3    = pt .+^ avec ang2 r
 
 
--- | Make a circle from Bezier curves - @n@ is the number of 
+-- | 'bezierCircle' : @ n * radius * center -> [Point] @ 
+-- 
+-- Make a circle from Bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
 --
 bezierCircle :: (Fractional u, Floating u) 

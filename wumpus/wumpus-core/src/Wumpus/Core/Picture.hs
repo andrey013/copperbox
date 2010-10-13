@@ -169,12 +169,20 @@ fontDeltaContext fa p = Group (boundary p, []) (FontCtx fa) p
 path :: Point2 u -> [PrimPathSegment u] -> PrimPath u
 path = PrimPath 
 
--- | Create a straight-line PathSegment.
+-- | 'lineTo' : @ end_point -> path_segment @
+-- 
+-- Create a straight-line PathSegment, the start point is 
+-- implicitly the previous point in a path.
 --
 lineTo :: Point2 u -> PrimPathSegment u
 lineTo = PLineTo
 
--- | Create a curved PathSegment.
+-- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
+--        path_segment @
+-- 
+-- Create a curved PathSegment, the start point is 
+-- implicitly the previous point in a path.
+--
 --
 curveTo :: Point2 u -> Point2 u -> Point2 u -> PrimPathSegment u
 curveTo = PCurveTo
@@ -221,7 +229,7 @@ xlinkGroup xlink (x:xs) = PGroup (Just xlink) (step x xs)
     step a (y:ys) = cons a (step y ys) 
 
 
--- | Group a list of primitives.
+-- | Group a list of Primitives.
 --
 -- This function throws a runtime error when supplied with an
 -- empty list.
@@ -238,27 +246,35 @@ primGroup (x:xs) = PGroup Nothing (step x xs)
 
 -- *** Stroke
 
--- | Create a open, stroked path.
+-- | 'ostroke' : @ rgb * stroke_attr * path -> Primitive @
+--
+-- Create a open, stroked path.
 --
 ostroke :: Num u 
         => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
 ostroke rgb sa p = PPath (OStroke sa rgb) p
 
 
--- | Create a closed, stroked path.
+-- | 'cstroke' : @ rgb * stroke_attr * path -> Primitive @
+-- 
+-- Create a closed, stroked path.
 --
 cstroke :: Num u 
         => RGBi -> StrokeAttr -> PrimPath u -> Primitive u
 cstroke rgb sa p = PPath (CStroke sa rgb) p
 
 
--- | Create an open, stroked path using the default stroke 
+-- | 'zostroke' : @ path -> Primitive @
+--
+-- Create an open, stroked path using the default stroke 
 -- attributes and coloured black.
 --
 zostroke :: Num u => PrimPath u -> Primitive u
 zostroke = ostroke black default_stroke_attr
  
--- | Create a closed stroked path using the default stroke 
+-- | 'zcstroke' : @ path -> Primitive @
+--
+-- Create a closed stroked path using the default stroke 
 -- attributes and coloured black.
 --
 zcstroke :: Num u => PrimPath u -> Primitive u
@@ -268,12 +284,16 @@ zcstroke = cstroke black default_stroke_attr
 -- *** Fill
 
 
--- | Create a filled path.
+-- | 'fill' : @ rgb * path -> Primitive @
+--
+--  Create a filled path.
 --
 fill :: Num u => RGBi -> PrimPath u -> Primitive u
 fill rgb p = PPath (CFill rgb) p
 
--- | Create a filled path coloured black. 
+-- | 'zfill' : @ path -> Primitive @
+--
+-- Create a filled path coloured black. 
 zfill :: Num u => PrimPath u -> Primitive u
 zfill = fill black
 
@@ -282,10 +302,10 @@ zfill = fill black
 -- Filled and stroked (closed) paths
 
 
--- | Create a closed path that is both filled and stroked (the fill
--- is below in the zorder).
+-- | 'fillStroke' : @ fill_rgb * stroke_attr * stroke_rgb * path -> Primitive @
 --
--- > fill colour * stroke attrs * stroke_colour * ...
+-- Create a closed path that is both filled and stroked (the fill
+-- is below in the zorder).
 --
 fillStroke :: Num u 
         => RGBi -> StrokeAttr -> RGBi -> PrimPath u -> Primitive u
@@ -297,7 +317,9 @@ fillStroke frgb sa srgb p = PPath (CFillStroke frgb sa srgb) p
 --------------------------------------------------------------------------------
 -- Clipping 
 
--- | Clip a picture with respect to the supplied path.
+-- | 'clip' : @ path * picture -> Picture @
+-- 
+-- Clip a picture with respect to the supplied path.
 --
 clip :: (Num u, Ord u) => PrimPath u -> Picture u -> Picture u
 clip cp p = Clip (pathBoundary cp, []) cp p
@@ -305,7 +327,9 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
--- | Create a text label. The string should not contain newline
+-- | 'textlabel' : @ rgb * font_attr * string * baseline_left -> Primitive @
+--
+-- Create a text label. The string should not contain newline
 -- or tab characters. Also double-spaces should not be used - a 
 -- rendering agent for SVG will coalesce double-spaces into a 
 -- single space. For precise control of spacing and kerning use
@@ -317,7 +341,10 @@ textlabel :: Num u
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
 textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
--- | Create a text label rotated by the supplied angle about the 
+-- | 'rtextlabel' : @ rgb * font_attr * string * rotation * 
+--      baseline_left -> Primitive @
+--
+-- Create a text label rotated by the supplied angle about the 
 -- baseline-left. 
 --
 -- The supplied point is the left baseline.
@@ -329,7 +356,9 @@ rtextlabel rgb attr txt theta pt = PLabel (LabelProps rgb attr) lbl
     lbl = PrimLabel pt (StdLayout $ lexLabel txt) (thetaCTM theta)
 
 
--- | Create a label where the font is @Courier@, text size is 14pt
+-- | 'ztextlabel' : @ string * baseline_left -> Primitive @
+--
+-- Create a label where the font is @Courier@, text size is 14pt
 -- and colour is black.
 --
 ztextlabel :: Num u => String -> Point2 u -> Primitive u
@@ -339,7 +368,10 @@ ztextlabel = textlabel black wumpus_default_font
 
 --------------------------------------------------------------------------------
 
--- | Create a text label with horizontal /kerning/ for each 
+-- | 'hkernlabel' : @ rgb * font_attr * kerning_chars * 
+--        baseline_left -> Primitive @
+--
+-- Create a text label with horizontal /kerning/ for each 
 -- character. 
 --
 -- Note - kerning is relative to the left baseline of the 
@@ -371,7 +403,10 @@ hkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl
 
 
 
--- | Create a text label with vertical /kerning/ for each 
+-- | 'vkernlabel' : @ rgb * font_attr * kerning_chars * 
+--        baseline_left -> Primitive @
+--
+-- Create a text label with vertical /kerning/ for each 
 -- character - the text is expected to grow downwards. 
 --
 -- Note - /kerning/ here is the measure between baselines of 
@@ -406,19 +441,27 @@ vkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl
 
 
 
--- | Construct a regular (i.e. non-special) Char along with its 
+-- | 'kernchar' : @ displacement * char -> KerningChar @
+-- 
+-- Construct a regular (i.e. non-special) Char along with its 
 -- displacement from the left-baseline of the previous Char.
 --
 kernchar :: u -> Char -> KerningChar u
 kernchar u c = (u, CharLiteral c)
 
--- | Construct a Char by its character code along with its 
+
+-- | 'kernEscInt' : @ displacement * char_code -> KerningChar @
+-- 
+-- Construct a Char by its character code along with its 
 -- displacement from the left-baseline of the previous Char.
 --
 kernEscInt :: u -> Int -> KerningChar u
 kernEscInt u i = (u, CharEscInt i)
 
--- | Construct a Char by its character name along with its 
+
+-- | 'kernEscName' : @ displacement * char_name -> KerningChar @
+-- 
+-- Construct a Char by its character name along with its 
 -- displacement from the left-baseline of the previous Char.
 --
 kernEscName :: u -> String -> KerningChar u
@@ -427,9 +470,9 @@ kernEscName u s = (u, CharEscName s)
 --------------------------------------------------------------------------------
 
 
--- | Create a stroked ellipse.
---
--- 'strokeEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+-- | 'strokeEllipse' : @ rgb * stroke_attr * rx * ry * center -> Primtive @
+-- 
+-- Create a stroked ellipse.
 --
 -- Note - within Wumpus, ellipses are considered an unfortunate
 -- but useful /optimization/. Drawing good cicles with Beziers 
@@ -450,10 +493,10 @@ strokeEllipse :: Num u
 strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 
--- | Create a stroked ellipse rotated about the center by /theta/.
---
--- 'rstrokeEllipse' : @fill colour * stroke attrs * rx * ry * theta 
---                                 * center -> Primtive@
+-- | 'rstrokeEllipse' : @ rgb * stroke_attr * rx * ry * rotation * 
+--      center -> Primtive @
+-- 
+-- Create a stroked ellipse rotated about the center by /theta/.
 --
 rstrokeEllipse :: Num u 
                => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
@@ -463,18 +506,19 @@ rstrokeEllipse rgb sa rx ry theta pt =
 
 
 
--- | Create a filled ellipse.
+-- | 'fillEllipse' : @ rgb * stroke_attr * rx * ry * center -> Primtive @
 --
--- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+-- Create a filled ellipse.
 --
 fillEllipse :: Num u 
              => RGBi -> u -> u -> Point2 u -> Primitive u
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
--- | Create a filled ellipse rotated about the center by /theta/.
+-- | 'rfillEllipse' : @ colour * stroke_attr * rx * ry * 
+--      rotation * center -> Primtive @
 --
--- 'fillEllipse' : @colour * stroke attrs * rx * ry * center -> Primtive@
+-- Create a filled ellipse rotated about the center by /theta/.
 --
 rfillEllipse :: Num u 
              => RGBi -> u -> u -> Radian -> Point2 u -> Primitive u
@@ -482,18 +526,18 @@ rfillEllipse rgb rx ry theta pt =
     PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
 
 
--- | Create a black, filled ellipse. 
+-- | 'zellipse' : @ rx * ry * center -> Primtive @
 --
--- 'zellipse' : @rx * ry -> Primtive@
+-- Create a black, filled ellipse. 
 --
 zellipse :: Num u => u -> u -> Point2 u -> Primitive u
 zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
--- | Create a bordered (i.e. filled and stroked) ellipse.
+-- | 'fillStrokeEllipse' : @ fill_rgb * stroke_attr * stroke_rgb * rx * ry *
+--      center -> Primtive @
 --
--- 'fillStrokeEllipse' : @fill_colour * stroke attrs * stroke_colour * rx * ry 
---   * center -> Primtive@
+-- Create a bordered (i.e. filled and stroked) ellipse.
 --
 fillStrokeEllipse :: Num u 
                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
@@ -503,11 +547,11 @@ fillStrokeEllipse frgb sa srgb rx ry pt =
     
 
 
--- | Create a bordered (i.e. filled and stroked) ellipse rotated 
--- about the center by /theta/.
+-- | 'rfillStrokeEllipse' : @ fill_rgb * stroke_attr * stroke_rgb * rx * ry *
+--      theta * center -> Primtive @
 --
--- 'rfillStrokeEllipse' : @fill_colour * stroke attrs * stroke_colour * rx * ry 
---   * theta * center -> Primtive@
+-- Create a bordered (i.e. filled and stroked) ellipse rotated 
+-- about the center by /theta/.
 --
 rfillStrokeEllipse :: Num u 
                    => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
@@ -522,7 +566,9 @@ mkPrimEllipse rx ry theta pt = PrimEllipse pt rx ry (thetaCTM theta)
 --------------------------------------------------------------------------------
 -- Operations
 
--- | Extend the bounding box of a picture. 
+-- | 'extendBoundary' : @ x * y * picture -> Picture @
+-- 
+-- Extend the bounding box of a picture. 
 --
 -- The bounding box is both horizontal directions by @x@ and 
 -- both vertical directions by @y@. @x@ and @y@ must be positive
@@ -543,7 +589,7 @@ extendBoundary x y = mapLocale (\(bb,xs) -> (extBB (posve x) (posve y) bb, xs))
 
 infixr 6 `picBeside`, `picOver`
 
--- | 'picOver' : @ picture -> picture -> picture @
+-- | 'picOver' : @ picture * picture -> Picture @
 --
 -- Draw the first picture on top of the second picture - 
 -- neither picture will be moved.
@@ -557,14 +603,14 @@ a `picOver` b = Picture (bb,[]) (cons b $ one a)
 -- first in the output (this is also @behind@ in the Z-Order).
 
 
--- | 'picMoveBy' : @ picture -> vector -> picture @
+-- | 'picMoveBy' : @ picture * vector -> Picture @
 -- 
 --  Move a picture by the supplied vector. 
 --
 picMoveBy :: (Num u, Ord u) => Picture u -> Vec2 u -> Picture u
 p `picMoveBy` (V2 dx dy) = translate dx dy p 
 
--- | 'picBeside' : @ picture -> picture -> picture @
+-- | 'picBeside' : @ picture * picture -> Picture @
 --
 -- Move the second picture to sit at the right side of the
 -- first picture
@@ -585,7 +631,7 @@ printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
 printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 
 
--- | 'illustrateBounds' : @ colour -> picture -> picture @
+-- | 'illustrateBounds' : @ bbox_rgb * picture -> Picture @
 -- 
 -- Draw the picture on top of an image of its bounding box.
 -- The bounding box image will be drawn in the supplied colour.
@@ -595,7 +641,7 @@ illustrateBounds :: (Real u, Floating u, FromPtSize u)
 illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p) 
 
 
--- | 'illustrateBoundsPrim' : @ colour -> primitive -> picture @
+-- | 'illustrateBoundsPrim' : @ bbox_rgb * primitive -> Picture @
 -- 
 -- Draw the primitive on top of an image of its bounding box.
 -- The bounding box image will be drawn in the supplied colour.
@@ -624,7 +670,9 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
                                         , dash_pattern = Dash 0 [(1,2)] }
 
 
--- | Generate the control points illustrating the Bezier curves 
+-- | 'illustrateControlPoints' : @ control_point_rgb * primitive -> Picture @
+-- 
+-- Generate the control points illustrating the Bezier curves 
 -- within a picture.
 -- 
 -- This has no effect on TextLabels. Nor does it draw Beziers of 

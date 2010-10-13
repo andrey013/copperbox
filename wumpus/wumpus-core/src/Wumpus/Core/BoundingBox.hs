@@ -15,6 +15,10 @@
 --
 -- Empty pictures cannot be created with Wumpus. This greatly 
 -- simplifies the implementation of pictures and bounding boxes.
+--
+-- Note - some of the functions exposed by this module are 
+-- expected to be pertinent only to Wumpus-Core itself.
+-- 
 -- 
 --------------------------------------------------------------------------------
 
@@ -56,8 +60,8 @@ import Wumpus.Core.Utils.FormatCombinators
 -- We cannot construct empty pictures - so bounding boxes are 
 -- spared the obligation to be /empty/. 
 -- 
--- BoundingBox /is/ a semigroup where @boundaryUnion@ is the
--- /addition/ operation.
+-- BoundingBox operates as a semigroup where @boundaryUnion@ is the
+-- addition.
 -- 
 -- 
 data BoundingBox u = BBox 
@@ -120,7 +124,9 @@ class Boundary t where
 
 --------------------------------------------------------------------------------
 
--- | Contruct a bounding box, vis the BBox constructor with range 
+-- | 'bbox' : @lower_left_corner * upper_right_corner -> BoundingBox@
+--
+-- Contruct a bounding box, vis the BBox constructor with range 
 -- checking on the corner points.
 --
 -- @bbox@ throws an error if the width or height of the 
@@ -132,17 +138,21 @@ bbox ll@(P2 x0 y0) ur@(P2 x1 y1)
    | otherwise            = error "Wumpus.Core.BoundingBox.bbox - malformed."
 
 
--- | Create a BoundingBox with bottom left corner at the origin,
+-- | 'obbox' : @width * height -> BoundingBox@
+--
+-- Create a BoundingBox with bottom left corner at the origin,
 -- and dimensions @w@ and @h@.
 --
 obbox :: Num u => u -> u -> BoundingBox u
 obbox w h = BBox zeroPt (P2 w h)
 
--- | Destructor for BoundingBox.
+-- | 'destBoundingBox' : @ bbox -> (lower_left_x, lower_lefy_y, 
+--      upper_right_x, upper_right_y)@
 --
--- Assembles a four-tuple @ (ll_x, ll_y, ur_x, ur_y) @.
+-- Destructor for BoundingBox, assembles a four-tuple of the x 
+-- and y values of the corner points.
 -- 
--- Arguably this is easier to pattern match upon as it removes a 
+-- Arguably this is easier to pattern match upon, as it removes a 
 -- layer of nesting.
 --
 destBoundingBox :: BoundingBox u -> (u,u,u,u)
@@ -179,8 +189,12 @@ retraceBoundary f = traceBoundary . map f . fromCorners . boundaryCorners
     fromCorners (bl,br,tr,tl) = [bl,br,tr,tl]
 
 
--- | Generate all the corners of a bounding box, counter-clock 
+-- | 'boundaryCorners' : @bbox -> (bottom_left, bottm_right,
+--      top_right, top_left)@
+-- 
+-- Generate all the corners of a bounding box, counter-clock 
 -- wise from the bottom left, i.e. @(bl, br, tr, tl)@.
+--
 boundaryCorners :: BoundingBox u -> (Point2 u, Point2 u, Point2 u, Point2 u)
 boundaryCorners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
     br = P2 x1 y0

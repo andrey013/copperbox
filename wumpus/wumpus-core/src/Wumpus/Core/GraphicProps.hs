@@ -11,10 +11,10 @@
 -- Portability :  GHC
 --
 -- Data types for stroke and label styles corresponding to the
--- styles provided by PostScript / SVG.
+-- styles provided by PostScript / SVG (@StrokeAttr@, etc.).
 --
--- Data types for annotating Primitives (@PathProps@ etc.) with 
--- their drawing style. Wumpus represents pictures as trees and
+-- Data types for annotating Primitives with their drawing style
+-- (@PathProps@, etc.). Wumpus represents pictures as trees and
 -- decorates all elements (paths, text-labels) with their drawing
 -- style. This is boardly similar to how SVG handles attributes. 
 -- For PostScript output, Wumpus renders attribute changes as 
@@ -32,7 +32,7 @@ module Wumpus.Core.GraphicProps
   , LineJoin(..)
   , DashPattern(..)
 
-  -- * Font
+  -- * Font attributes
   , FontAttr(..)
   , FontFace(..)
   , SVGFontStyle(..)

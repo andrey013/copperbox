@@ -113,6 +113,8 @@ description:
   * Moved @wumpus_default_font@ from @Core.Picture@ into 
     @Core.Graphic.Props@.
   .
+  * Haddock docs improved.
+  .
   .
 build-type:         Simple
 stability:          unstable
