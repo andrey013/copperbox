@@ -54,7 +54,7 @@ description:
   change, /but all/ type signatures referencing @PrimElement@ will 
   need to replace @PrimElement@ with @Primitive@.
   .
-  Rotations (and scalings) on Primitives has changed again.
+  Rotations and scalings on Primitives have changed again.
   Primitives are now instances of the affine classes so support - 
   @rotate@, @rotateAbout@, @scale@, @translate@. Primitives are 
   now considered to be in the implicit affine frame with origin at 

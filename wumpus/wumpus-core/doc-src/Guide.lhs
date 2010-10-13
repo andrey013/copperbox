@@ -23,7 +23,7 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
-This guide was last updated for \wumpuscore version 0.35.0.
+This guide was last updated for \wumpuscore version 0.36.0.
 
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
@@ -54,7 +54,7 @@ Top-level \emph{shim} module to import all the exposed modules.
 Some internal data types are also exported as opaque - the 
 implementation is hidden, but the type name is exposed so it can 
 be used in the type signatures of \emph{userland} functions. 
-Typically, where these data types need to be \emph{instantiated}, 
+Typically, where these data types need to be \emph{instantiated}
 smart constructors are provided.
 
 \item[\texttt{Wumpus.Core.AffineTrans.}]
@@ -87,10 +87,10 @@ calculations on text labels.
 
 \item[\texttt{Wumpus.Core.Geometry.}]
 The usual types an operations from affine geometry - points, 
-vectors and 3x3 matrices. Also the \texttt{DUnit} type family - 
-essentially this type family is a trick used heavily within 
+vectors and 3x3 matrices, also the \texttt{DUnit} type family.
+Essentially this type family is a trick used heavily within 
 \wumpuscore to avoid annotating class declarations with 
-constraints on the unit, class constraints like 
+constraints on the unit - class constraints like 
 \texttt{Fractional u} can then be shifted to the instance 
 declaration rather than the class declaration.
 
@@ -169,17 +169,13 @@ horizontal line of text - multiple lines must be composed from
 multiple labels.
 
 Primitives are attributed with drawing styles - font name and 
-size for labels; line width, colour, etc. for paths. Drawing 
-\emph{primitives} is unfortunately complicated due to the need to 
-support hyperlinks in SVG output. Primitives have to be lifted 
-to a \texttt{PrimElement} before they can be placed within a 
-\texttt{Picture} - in practive this lifting is done automatically 
-by using the shorthand constructors in 
-\texttt{Wumpus.Core.Picture}. The function \texttt{frame} 
-assembles a list of primitives into a \texttt{Picture} with the 
-standard affine frame where the origin is at (0,0) and the X and 
-Y axes have the unit bases (i.e. they have a \emph{scaling} value 
-of 1). 
+size for labels; line width, colour, etc. for paths. Primitives
+can be grouped to support support hyperlinks in SVG output (so 
+Primitives are not strictly \emph{primitive}). The function 
+\texttt{frame} assembles a list of primitives into a 
+\texttt{Picture} with the standard affine frame where the origin
+ is at (0,0) and the X and Y axes have the unit bases (i.e. they 
+have a \emph{scaling} value of 1). 
 
 \begin{figure}
 \centering
@@ -206,9 +202,9 @@ transformation function that turns elements in a picture blue.
 In some ways this is a limitation - for instance, the 
 \texttt{Diagrams} library appears to support some notion of 
 attribute overriding; however avoiding mutable attributes does 
-keep this part of \wumpuscore conceptually simple. If one wanted 
-to draw blue or red arrows with \wumpuscore, one would make the 
-drawing colour a parameter of the arrow creation function.
+keep this part of \wumpuscore conceptually simple. To make 
+a blue or red arrow with \wumpuscore, one would make drawing 
+colour a parameter of the arrow constructor function.
 
 %-----------------------------------------------------------------
 \section{Affine transformations}
@@ -270,15 +266,29 @@ Similarly, it would be communicated to SVG via a
 <g transform="matrix(1.0, 0.0, 0.0, 1.0, 10.0, 20.0)"> ... </g>
 \end{verbatim}
 
-For efficiency reasons \wumpuscore supports some transformations
-on Primitives. These are not affine transformations as Primitives
-are not in an affine frame until they are lifted to Pictures 
-(Primitives have no notion of origin). For Paths, all the 
-transformations are precomputed before the output is generated. 
-Unfortunately scaling and rotation cannot be precomputed for 
-labels and ellipses, so matrix operations are generated in the 
-PostScript and SVG output.
+\wumpuscore also supports the regular affine transformations 
+on Primitives (the arbitrary matrix transformation 
+\texttt{transform} is not supported). Like points and vectors, 
+transformations on Primitives are implicitly interpreted in the 
+standard affine frame - origin at (0,0) and unit scaling vectors 
+for the bases. 
 
+For paths, all the transformations are precomputed on the control 
+points before the output is generated. For labels and ellipses the 
+\emph{start point} of the primitive (baseline-left for label, 
+center for ellipse) is transformed by \wumpuscore and matrix 
+operations are transmitted to PostScript to transform the actual 
+drawing (\wumpuscore has no access to the paths that describe 
+fonts so it cannot precompute transformations on them).
+
+One consequence of transformations operating on the control points
+of primitives is that scalings do not scale the tip of the 
+\emph{drawing pen}. If a path is stroked, lifted to a Picture and
+then scaled the whole graphics state is effectively scaled 
+including the pen tip so the path is drawn with a thicker outline. 
+However if a path is stoked and then scaled as a Primitive, the 
+drawing pen is not scaled so the path will be drawn with the 
+regular line width.
 
 %-----------------------------------------------------------------
 \section{Font handling}

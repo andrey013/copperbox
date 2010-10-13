@@ -37,7 +37,9 @@
 -- However, the transformations are applied to the control points 
 -- of the primitive not the drawing itself. A scaled, stroked 
 -- path will be drawn with the standard line and not a thicker 
--- line.
+-- line. Note that text may not render pleasantly after it has 
+-- been transformed, PostScript references seem to caution 
+-- against transforming text. 
 -- 
 -- To generate efficient PostScript, Wumpus relies on the matrix
 -- representations of the affine transformations being invertible.
