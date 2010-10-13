@@ -10,8 +10,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- This is the default Text encoder with lookups for both Latin1
--- and Symbol font.
+-- This is the default @TextEncoder@ with lookups for both Latin1
+-- character codes / names and Symbol font.
 --
 --------------------------------------------------------------------------------
 

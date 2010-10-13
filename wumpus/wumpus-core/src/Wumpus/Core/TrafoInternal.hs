@@ -50,13 +50,13 @@ import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
 
--- Note - primitives can have pseudo affine transformations.
+-- Primitives support affine transformations.
+--
 -- The control points of a path, baseline-left of text or center
 -- of ellipse are transformed as points; scaling and rotation 
--- or text and ellipses are transmitted to PostScript.
+-- or text and ellipses are transmitted to PostScript and SVG.
 -- 
--- However, line thickness of a stroked path will not be scaled
--- (for instance).
+-- Note - line thickness of a stroked path will not be scaled.
 --
 data PrimCTM u = PrimCTM 
       { ctm_scale_x     :: u
@@ -68,8 +68,8 @@ data PrimCTM u = PrimCTM
 
 
 
--- | Affine transformations are represented as /syntax/ so they
--- can be manipulated easily.
+-- | For Pictures - Affine transformations are represented as 
+-- /syntax/ so they can be manipulated easily.
 --
 data AffineTrafo u = Matrix (Matrix3'3 u)
                    | Rotate Radian
@@ -110,9 +110,9 @@ matrixRepCTM (PrimCTM sx sy ang) =
     rotationMatrix (circularModulo ang) * scalingMatrix sx sy
 
 
--- Note - the order of combining a translation (i.e. the 
--- location of a point) and the CTM is crucial as matrix
--- multiplication is not commutative.
+-- Note - the order of combining a translation (i.e. the location 
+-- of a point) and the CTM is crucial as matrix multiplication is 
+-- not commutative.
 --
 -- This function encapsulates the correct order.
 --

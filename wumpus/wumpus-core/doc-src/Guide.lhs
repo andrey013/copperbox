@@ -240,14 +240,11 @@ For example a translation matrix moving 10 units in the X-axis and
 \end{array}
 \end{displaymath}
 
-Affine transformations are communicated to PostScript as 
-\texttt{concat} commands. Effectively \wumpuscore performs no
+Affine transformations on Pictures are communicated to PostScript
+as \texttt{concat} commands. For Pictures, \wumpuscore performs no
 transformations itself, delegating all the work to PostScript or
-SVG. This means transformations can generally be located in the 
-output if a picture needs to be debugged, though as this might 
-not be very helpful in practice. Internally \wumpuscore only 
-performs the transformation on the bounding box of a picture - it 
-needs to do this to maintain the size metrics of a picture 
+SVG. Internally \wumpuscore transforms the bounding boxes of  
+Pictures - it needs to do this to maintain their size metrics 
 allowing transformed pictures to be composed with picture 
 composition operators like the \texttt{picBeside} combinator.
 
@@ -268,25 +265,25 @@ Similarly, it would be communicated to SVG via a
 
 \wumpuscore also supports the regular affine transformations 
 on Primitives (the arbitrary matrix transformation 
-\texttt{transform} is not supported). Like points and vectors, 
-transformations on Primitives are implicitly interpreted in the 
-standard affine frame - origin at (0,0) and unit scaling vectors 
-for the bases. 
+\texttt{transform} is not supported). Transformations are 
+implicitly interpreted in the standard affine frame - origin at 
+(0,0) and unit scaling vectors for the bases. 
 
 For paths, all the transformations are precomputed on the control 
 points before the output is generated. For labels and ellipses the 
 \emph{start point} of the primitive (baseline-left for label, 
 center for ellipse) is transformed by \wumpuscore and matrix 
-operations are transmitted to PostScript to transform the actual 
-drawing (\wumpuscore has no access to the paths that describe 
-fonts so it cannot precompute transformations on them).
+operations are transmitted to PostScript and SVG to transform the 
+actual drawing (\wumpuscore has no access to the paths that 
+describe character glyphs so it cannot precompute transformations 
+on them).
 
 One consequence of transformations operating on the control points
 of primitives is that scalings do not scale the tip of the 
 \emph{drawing pen}. If a path is stroked, lifted to a Picture and
 then scaled the whole graphics state is effectively scaled 
 including the pen tip so the path is drawn with a thicker outline. 
-However if a path is stoked and then scaled as a Primitive, the 
+However, if a path is stoked and then scaled as a Primitive, the 
 drawing pen is not scaled so the path will be drawn with the 
 regular line width.
 

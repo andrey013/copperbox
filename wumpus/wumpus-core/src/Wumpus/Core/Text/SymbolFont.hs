@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- A TextEncoder record instance for Symbol font characters.
+-- A @TextEncoder@ record instance for Symbol font characters.
 -- 
 --------------------------------------------------------------------------------
 

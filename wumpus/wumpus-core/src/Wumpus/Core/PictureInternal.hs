@@ -262,7 +262,7 @@ data PrimEllipse u = PrimEllipse
 
 
 
-
+--------------------------------------------------------------------------------
 -- Graphics state datatypes
 
 -- | Graphics state used by the rendering monads.
@@ -534,6 +534,7 @@ mapLocale f (Group lc upd pic) = Group (f lc) upd pic
 
 
 -- Note - Primitives are not instances of transform
+--
 -- (ShapeCTM is not a real matrix).
 -- 
 
@@ -698,12 +699,13 @@ repositionDeltas = step . boundary
 
 --------------------------------------------------------------------------------
 
--- | The initial graphics state
+-- | The initial graphics state.
 --
 -- PostScript has no default font so we always want the first 
--- /delta/ operation not to match. PostScript @findfont@ commands
--- are only written in the output on /deltas/ to reduce the 
--- output size...
+-- /delta/ operation not to find a match and cause a @findfint@
+-- command to be generated (PostScript @findfont@ commands are 
+-- only written in the output on /deltas/ to reduce the 
+-- output size).
 --
 zeroGS ::  GraphicsState 
 zeroGS = GraphicsState { gs_draw_colour  = black
