@@ -26,7 +26,7 @@ pic1 = uniformScale 2 $ frame $
     ]
 
 
-square :: (Num u, Ord u) => RGBi -> u -> Point2 u -> PrimElement u
+square :: (Num u, Ord u) => RGBi -> u -> Point2 u -> Primitive u
 square rgb sidelen bl = fill rgb $ vertexPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 

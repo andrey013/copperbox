@@ -29,7 +29,7 @@ pic1 = frame [ helveticaLabel "myst&#232;re"      (P2 0 60)
 
 
 
-helveticaLabel :: String -> DPoint2 -> DPrimElement
+helveticaLabel :: String -> DPoint2 -> DPrimitive
 helveticaLabel ss pt = textlabel black helvetica18 ss pt
 
 helvetica18 :: FontAttr

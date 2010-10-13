@@ -52,7 +52,7 @@ char_pic = frame $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
   where
     chars = (map letter "ABXabdgjxy12") ++ [agraveU]
 
-type PrimF = DPoint2 -> DPrimElement
+type PrimF = DPoint2 -> DPrimitive
 
 bodyHeight  :: PrimF
 bodyHeight  = vertLine peru $ fromPtSize courier48_numeral_height
@@ -60,15 +60,15 @@ bodyHeight  = vertLine peru $ fromPtSize courier48_numeral_height
 agraveU     :: PrimF
 agraveU     = textlabel black courier_attr "&#Agrave"
 
-letter :: Char -> DPoint2 -> DPrimElement
+letter :: Char -> DPoint2 -> DPrimitive
 letter ch pt = textlabel black courier_attr [ch] pt
 
 
-vertLine :: RGBi -> Double -> DPoint2 -> DPrimElement
+vertLine :: RGBi -> Double -> DPoint2 -> DPrimitive
 vertLine rgb height pt = 
     ostroke rgb default_stroke_attr $ vertexPath [pt, pt .+^ vvec height]
 
-haxis :: RGBi -> PtSize -> DPrimElement
+haxis :: RGBi -> PtSize -> DPrimitive
 haxis rgb ypos = 
     ostroke rgb dash_attr $ vertexPath [ pt, pt .+^ hvec 440 ]
   where

@@ -19,7 +19,7 @@ main = do
 zorder_msg :: String
 zorder_msg = unlines $ 
     [ ""
-    , "Wumpus-core draws lists of 'PrimElement' left-to-right."
+    , "Wumpus-core draws lists of Primitives left-to-right."
     , "The head of the list will be drawn first - it will appear"
     , "at the top of the output file. It will also be drawn at"
     , "the back of the Z-Order."
@@ -38,7 +38,7 @@ pic1 = frame $ prim_list zeroPt
 pic2 :: DPicture 
 pic2 = multi $ map (\a -> frame [a]) $ prim_list (P2 200 0)
 
-prim_list :: DPoint2 -> [DPrimElement]
+prim_list :: DPoint2 -> [DPrimitive]
 prim_list = sequence [ fillEllipse red   20 20
                      , \p -> fillEllipse green 20 20 (p .+^ hvec 20)
                      , \p -> fillEllipse blue  20 20 (p .+^ hvec 40)

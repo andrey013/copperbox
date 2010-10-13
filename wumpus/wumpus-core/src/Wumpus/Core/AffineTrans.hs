@@ -30,11 +30,14 @@
 -- implementation of the instances considers that under 
 -- transformation these objects are implicitly within the standard 
 -- affine frame (origin at point zero and unit basis vectors for 
--- the horizontal and vertical). Primitives are also intances of
--- the affine classes, however, the transformations are applied 
--- to the control points of the primitive not the drawing itself.
--- A scaled, stroked path will be drawn with the standard line
--- and not a thicker line.
+-- the horizontal and vertical). 
+--
+-- Primitives are also intances of the affine classes, an like 
+-- points are consider to exist within the standard affine frame.
+-- However, the transformations are applied to the control points 
+-- of the primitive not the drawing itself. A scaled, stroked 
+-- path will be drawn with the standard line and not a thicker 
+-- line.
 -- 
 -- To generate efficient PostScript, Wumpus relies on the matrix
 -- representations of the affine transformations being invertible.

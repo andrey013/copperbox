@@ -294,7 +294,7 @@ type instance DUnit (PrimPath u)    = u
 instance (Num u, PSUnit u) => Format (Picture u) where
   format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
                                               , fmtLocale m 
-                                              , fmtPrimElems prims ]
+                                              , fmtPrimlist prims ]
 
   format (Picture m pics)   = indent 2 $ vcat [ text "** Tree-pic **"
                                               , fmtLocale m
@@ -315,10 +315,6 @@ fmtPics ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
 
-fmtPrimElems :: PSUnit u => OneList (Primitive u) -> Doc
-fmtPrimElems ones = snd $ F.foldl' fn (0,empty) ones
-  where
-    fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
 
 fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
 fmtLocale (bb,_) = format bb
@@ -335,7 +331,13 @@ instance PSUnit u => Format (Primitive u) where
       indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
 
   format (PGroup xl ones)   = 
-      vcat [ text "-- group " <+> (maybe empty format xl), fmtPrimElems ones  ]
+      vcat [ text "-- group " <+> (maybe empty format xl), fmtPrimlist ones  ]
+
+
+fmtPrimlist :: PSUnit u => OneList (Primitive u) -> Doc
+fmtPrimlist ones = snd $ F.foldl' fn (0,empty) ones
+  where
+    fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
 
 
 instance PSUnit u => Format (PrimPath u) where

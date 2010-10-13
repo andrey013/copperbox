@@ -47,13 +47,13 @@ mystere = [ kernchar 0  'm'
 uUpsilon :: [ DKerningChar ]
 uUpsilon = [ kernEscInt 6 0o241, kernchar 12 'a', kernchar 12 'b' ] 
 
-helveticaLabelH :: [KerningChar Double] -> DPoint2 -> DPrimElement
+helveticaLabelH :: [KerningChar Double] -> DPoint2 -> DPrimitive
 helveticaLabelH xs pt = hkernlabel black helvetica18 xs pt
 
-helveticaLabelV :: [KerningChar Double] -> DPoint2 -> DPrimElement
+helveticaLabelV :: [KerningChar Double] -> DPoint2 -> DPrimitive
 helveticaLabelV xs pt = vkernlabel black helvetica18 xs pt
 
-symbolLabelH :: [KerningChar Double] -> DPoint2 -> DPrimElement
+symbolLabelH :: [KerningChar Double] -> DPoint2 -> DPrimitive
 symbolLabelH xs pt = hkernlabel black symbol18 xs pt
 
 
