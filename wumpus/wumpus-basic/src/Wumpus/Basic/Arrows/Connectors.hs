@@ -37,7 +37,6 @@ import Wumpus.Basic.Paths
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Data.Monoid
 
 -- An arrowhead always know how to draws itself (filled tri, 
 -- stroked barb, etc.)
@@ -108,29 +107,29 @@ strokeConnector (Connector cpF opt_la opt_ra) = \p0 p1 ->
     fn pathc ma p0 mb p1 = do 
        (path1,tipl) <- applyTipL ma p0 pathc
        (path2,tipr) <- applyTipR mb p1 path1
-       return $ (openStroke $ toPrimPath path2) `mappend` tipl `mappend` tipr
+       return $ (tipr $ tipl $ openStroke $ toPrimPath path2)
    
 
 
 applyTipL :: (Real u, Floating u) 
           => Maybe (Arrowhead u) -> Point2 u -> Path u 
-          -> DrawingR (Path u, Graphic u)
-applyTipL Nothing    _   pathc = return (pathc,mempty)
+          -> DrawingR (Path u, GraphicF u)
+applyTipL Nothing    _   pathc = return (pathc,id)
 applyTipL (Just arw) ptL pathc = 
     retract_dist arw >>= \ dx -> 
-    if dx > 0 then return (shortenL dx pathc, grafik) 
-              else return (pathc, grafik)
+    if dx > 0 then return (shortenL dx pathc, (`oplus` grafik) )
+              else return (pathc, (`oplus` grafik))
   where
     grafik = (arrow_draw arw) (directionL pathc) ptL
 
 applyTipR :: (Real u, Floating u) 
           => Maybe (Arrowhead u) -> Point2 u -> Path u 
-          -> DrawingR (Path u, Graphic u)
-applyTipR Nothing    _   pathc = return (pathc,mempty)
+          -> DrawingR (Path u, GraphicF u)
+applyTipR Nothing    _   pathc = return (pathc,id)
 applyTipR (Just arw) ptR pathc = 
     retract_dist arw >>= \dx -> 
-    if dx > 0 then return (shortenR dx pathc, grafik) 
-              else return (pathc, grafik)
+    if dx > 0 then return (shortenR dx pathc, (`oplus` grafik))
+              else return (pathc, (`oplus` grafik))
   where
     grafik = (arrow_draw arw) (directionR pathc) ptR 
 

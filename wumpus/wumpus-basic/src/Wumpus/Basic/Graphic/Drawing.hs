@@ -59,7 +59,7 @@ module Wumpus.Basic.Graphic.Drawing
 
 import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
- 
+-- import Wumpus.Basic.Utils.HList 
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -79,10 +79,10 @@ import Data.Monoid
 
 
 newtype Drawing u a   = Drawing { 
-          getDrawing :: DrawingContext -> HPrim u -> (a, HPrim u) }
+          getDrawing :: DrawingContext -> (a, HPrim u) }
 
 newtype DrawingT u m a = DrawingT { 
-          getDrawingT :: DrawingContext -> HPrim u -> m (a, HPrim u) }
+          getDrawingT :: DrawingContext -> m (a, HPrim u) }
 
 
 
@@ -94,45 +94,47 @@ type instance MonUnit (DrawingT u m) = u
 -- Functor
 
 instance Functor (Drawing u) where
-  fmap f ma = Drawing $ \ctx s -> 
-                let (a,s1) = getDrawing ma ctx s in (f a,s1)
+  fmap f ma = Drawing $ \ctx -> 
+                let (a,w) = getDrawing ma ctx in (f a,w)
 
 
 instance Monad m => Functor (DrawingT u m) where
-  fmap f ma = DrawingT $ \ctx s -> 
-                getDrawingT ma ctx s >>= \(a,s1) -> return (f a,s1)
+  fmap f ma = DrawingT $ \ctx -> 
+                getDrawingT ma ctx >>= \(a,w) -> return (f a,w)
 
 
 
 -- Applicative
 
 instance Applicative (Drawing u) where
-  pure a    = Drawing $ \_   s -> (a, s)
-  mf <*> ma = Drawing $ \ctx s -> let (f,s1) = getDrawing mf ctx s
-                                      (a,s2) = getDrawing ma ctx s1
-                                 in (f a, s2)
+  pure a    = Drawing $ \_   -> (a, mempty)
+  mf <*> ma = Drawing $ \ctx -> let (f,w1) = getDrawing mf ctx
+                                    (a,w2) = getDrawing ma ctx
+                                in (f a, w1 `mappend` w2)
 
 
 instance Monad m => Applicative (DrawingT u m) where
-  pure a    = DrawingT $ \_   s -> return (a, s)
-  mf <*> ma = DrawingT $ \ctx s -> getDrawingT mf ctx s  >>= \(f,s1) ->
-                                   getDrawingT ma ctx s1 >>= \(a,s2) ->
-                                   return (f a, s2)
+  pure a    = DrawingT $ \_   -> return (a,mempty)
+  mf <*> ma = DrawingT $ \ctx -> getDrawingT mf ctx >>= \(f,w1) ->
+                                 getDrawingT ma ctx >>= \(a,w2) ->
+                                 return (f a, w1 `mappend` w2)
 
 -- Monad
 
 instance Monad (Drawing u) where
-  return a  = Drawing $ \_   s -> (a, s)
-  ma >>= k  = Drawing $ \ctx s -> let (a,s1) = getDrawing ma ctx s
-                                  in (getDrawing . k) a ctx s1
+  return a  = Drawing $ \_   -> (a, mempty)
+  ma >>= k  = Drawing $ \ctx -> let (a,w1) = getDrawing ma ctx
+                                    (b,w2) = (getDrawing . k) a ctx
+                                in (b,w1 `mappend` w2)
                                
 
 
 
 instance Monad m => Monad (DrawingT u m) where
-  return a  = DrawingT $ \_   s -> return (a, s)
-  ma >>= k  = DrawingT $ \ctx s -> getDrawingT ma ctx s       >>= \(a,s1) ->
-                                   (getDrawingT . k) a ctx s1
+  return a  = DrawingT $ \_   -> return (a, mempty)
+  ma >>= k  = DrawingT $ \ctx -> getDrawingT ma ctx      >>= \(a,w1) ->
+                                 (getDrawingT . k) a ctx >>= \(b,w2) -> 
+                                 return (b, w1 `mappend` w2)
                                  
 
 
@@ -148,25 +150,25 @@ instance Monad m => Monad (DrawingT u m) where
 -- 
 
 instance TraceM (Drawing u) where
-  trace a = Drawing $ \_ s -> ((), s `mappend` a)
+  trace a = Drawing $ \_ -> ((), a)
 
 
 instance Monad m => TraceM (DrawingT u m) where
-  trace a = DrawingT $ \_ s -> return ((), s `mappend` a)
+  trace a = DrawingT $ \_ -> return ((), a)
 
 
 
 -- DrawingCtxM
 
 instance DrawingCtxM (Drawing u) where
-  askDC           = Drawing $ \ctx s -> (ctx, s)
-  localize upd ma = Drawing $ \ctx s -> getDrawing ma (upd ctx) s
+  askDC           = Drawing $ \ctx -> (ctx, mempty)
+  localize upd ma = Drawing $ \ctx -> getDrawing ma (upd ctx)
 
 
 
 instance Monad m => DrawingCtxM (DrawingT u m) where
-  askDC           = DrawingT $ \ctx s -> return (ctx,s)
-  localize upd ma = DrawingT $ \ctx s -> getDrawingT ma (upd ctx) s
+  askDC           = DrawingT $ \ctx -> return (ctx,mempty)
+  localize upd ma = DrawingT $ \ctx -> getDrawingT ma (upd ctx)
 
 
 
@@ -182,7 +184,7 @@ instance Monad m => DrawingCtxM (DrawingT u m) where
 
 
 runDrawing :: DrawingContext -> Drawing u a -> (a, HPrim u)
-runDrawing ctx ma = getDrawing ma ctx mempty
+runDrawing ctx ma = getDrawing ma ctx
 
 -- | Run the drawing returning only the output it produces, drop
 -- any answer from the monadic computation.
@@ -203,7 +205,7 @@ evalDrawing ctx ma = fst $ runDrawing ctx ma
 
 
 runDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (a, HPrim u) 
-runDrawingT ctx ma = getDrawingT ma ctx mempty
+runDrawingT ctx ma = getDrawingT ma ctx
 
 execDrawingT :: Monad m => DrawingContext -> DrawingT u m a -> m (HPrim u)
 execDrawingT ctx ma = liftM snd $ runDrawingT ctx ma
@@ -302,7 +304,7 @@ mbPictureU (Just a) = a
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
-draw gf = askDC >>= \ctx -> trace (runGraphic ctx gf)
+draw gf = askDC >>= \ctx -> trace (collectH $ runGraphic ctx gf)
 
 -- | Hyperlink version of 'draw'.
 --
@@ -320,7 +322,7 @@ xdraw xl gf = draw (xlinkGraphic xl gf)
 -- 
 drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
-            let (a,o) = runImage ctx img in trace o >> return a
+            let (a,o) = runImage ctx img in trace (collectH o) >> return a
 
 -- | Forgetful 'drawi'.
 --
@@ -350,21 +352,18 @@ ati :: LocImage u a -> Point2 u -> Image u a
 ati = ($)
 
 
-{-
-infixl 1 `conn`
-conn :: ConnectorImage u a -> Point2 u -> LocImage u a
-conn = ($)
--}
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocGraphic u -> m ()
-node gfL = askDC   >>= \ctx -> 
-           position >>= \pt  -> trace (runGraphic ctx $ gfL pt)
+node gfL = askDC    >>= \ctx -> 
+           position >>= \pt  -> 
+           trace (collectH $ runGraphic ctx $ gfL pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocImage u a -> m a
 nodei imgL = askDC   >>= \ctx -> 
              position >>= \pt  -> 
-             let (a,o) = runImage ctx (imgL pt) in trace o >> return a
+             let (a,o) = runImage ctx (imgL pt) 
+             in trace (collectH o) >> return a
 

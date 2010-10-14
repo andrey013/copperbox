@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.11.0
+version:          0.12.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -35,6 +35,13 @@ description:
   version 0.11.0 of Wumpus-Basic.
   .
   Changelog:
+  .
+  0.11.0 to 0.12.0:
+  .
+  * Changes Base types in  @Basic.Graphic@. The @Graphic@ and 
+    @Image@ types now produce (wrapped) @Primitives@, rather than 
+    Hughes lists of @Primitives@. This means they can now be 
+    transformed with the affine transformations.
   .
   0.10.0 to 0.11.0:
   . 
@@ -101,7 +108,7 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
-                      wumpus-core     == 0.35.0
+                      wumpus-core     == 0.36.0
 
   
   exposed-modules:

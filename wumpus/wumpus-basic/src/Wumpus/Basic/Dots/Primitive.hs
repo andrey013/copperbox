@@ -56,7 +56,6 @@ import Data.VectorSpace
 
 import Control.Applicative
 import Data.List
-import Data.Monoid
 
 -- Marks should be the height of a lower-case letter...
 
@@ -126,17 +125,17 @@ markVLine = standardSize $ \h -> axialLine (vvec h)
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
 markX = standardSize $ \h -> 
     let w = 0.75 * h 
-    in mappend <$> axialLine (vec w h) <*> axialLine (vec (-w) h)
+    in oplus <$> axialLine (vec w h) <*> axialLine (vec (-w) h)
 
 
 
 markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-markPlus = mappend <$> markVLine <*> markHLine
+markPlus = oplus <$> markVLine <*> markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
 markCross = standardSize $ \h -> 
-    mappend <$> axialLine (avec ang h) <*> axialLine (avec (-ang) h)
+    oplus <$> axialLine (avec ang h) <*> axialLine (avec (-ang) h)
   where
     ang = pi*0.25  
 
@@ -198,16 +197,17 @@ markPentagon pt = markHeight >>= \h ->
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
 markStar pt = markHeight >>= \h -> 
-              let ps = polygonPoints 5 (0.5*h) pt in mconcat $ map fn ps
+              let ps = polygonPoints 5 (0.5*h) pt in step $ map fn ps
   where
-    fn p1  = openStroke $ path pt [lineTo p1] 
-
+    fn p1       = openStroke $ path pt [lineTo p1] 
+    step (x:xs) = oconcat x xs
+    step _      = error "markStar - unreachable"
 
 
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
 markAsterisk = standardSize $ \h -> 
-    (\a b c -> a `mappend` b `mappend` c) <$> lineF1 h <*> lineF2 h <*> lineF3 h
+    (\a b c -> a `oplus` b `oplus` c) <$> lineF1 h <*> lineF2 h <*> lineF3 h
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -217,15 +217,15 @@ markAsterisk = standardSize $ \h ->
 
 
 markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-markOPlus = mappend <$> markCircle <*> markPlus
+markOPlus = oplus <$> markCircle <*> markPlus
 
 
 markOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markOCross = mappend <$> markCircle <*> markCross
+markOCross = oplus <$> markCircle <*> markCross
 
 
 markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markFOCross = liftA2 mappend markCross markBCircle 
+markFOCross = liftA2 oplus markCross markBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u

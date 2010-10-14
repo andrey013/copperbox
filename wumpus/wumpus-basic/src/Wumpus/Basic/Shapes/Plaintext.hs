@@ -147,4 +147,4 @@ drawOneLine (Plaintext { text_text = ss, text_x=dx, text_y=dy
 rotTextline :: (Real u, Floating u) => Radian -> String -> LocGraphic u
 rotTextline theta ss baseline_left = 
     withTextAttr $ \rgb attr -> 
-        singleH $ rotatePrim theta $ textlabel rgb attr ss baseline_left
+        wrapPrim $ rtextlabel rgb attr ss theta baseline_left

@@ -21,8 +21,6 @@
 module Wumpus.Basic.Graphic.PrimGraphic
   (
     drawGraphic
-  , drawGraphicU
-
 
   , openStroke
   , closedStroke
@@ -30,6 +28,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , borderedPath
   
   , textline
+  , rtextline
   , centermonoTextline
   , textlineMulti
   , hkernline
@@ -77,25 +76,12 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
-import Control.Monad
 import Data.Foldable ( foldrM )
-import Data.Monoid
 
 
 drawGraphic :: (Real u, Floating u, FromPtSize u) 
-            => DrawingContext -> Graphic u -> Maybe (Picture u)
-drawGraphic ctx gf = post $ runGraphic ctx gf
-  where
-    post hf = let xs = hprimToList hf in 
-              if null xs then Nothing else Just (frame xs)
-
-drawGraphicU :: (Real u, Floating u, FromPtSize u) 
-             => DrawingContext -> Graphic u -> Picture u
-drawGraphicU ctx gf = post $ runGraphic ctx gf
-  where
-    post hf = let xs = hprimToList hf in 
-              if null xs then errK else frame xs
-    errK    = error "drawGraphicU - empty Graphic."
+            => DrawingContext -> Graphic u -> Picture u
+drawGraphic ctx gf = frame [getPrimGraphic $ runGraphic ctx gf]
 
 
 
@@ -104,20 +90,20 @@ drawGraphicU ctx gf = post $ runGraphic ctx gf
 
 openStroke :: Num u => PrimPath u -> Graphic u
 openStroke pp = 
-    withStrokeAttr $ \rgb attr -> singleH $ ostroke rgb attr pp
+    withStrokeAttr $ \rgb attr -> wrapPrim $ ostroke rgb attr pp
 
 closedStroke :: Num u => PrimPath u -> Graphic u
 closedStroke pp = 
-    withStrokeAttr $ \rgb attr -> singleH $ cstroke rgb attr pp
+    withStrokeAttr $ \rgb attr -> wrapPrim $ cstroke rgb attr pp
 
 filledPath :: Num u => PrimPath u -> Graphic u
-filledPath pp = withFillAttr $ \rgb -> singleH $ fill rgb pp
+filledPath pp = withFillAttr $ \rgb -> wrapPrim $ fill rgb pp
                  
 
 
 borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp = 
-    withBorderedAttr $ \frgb attr srgb -> singleH $ fillStroke frgb attr srgb pp
+    withBorderedAttr $ \frgb attr srgb -> wrapPrim $ fillStroke frgb attr srgb pp
 
 
 -- Note - clipping needs a picture as well as a path, so there is
@@ -131,7 +117,12 @@ borderedPath pp =
 
 textline :: Num u => String -> LocGraphic u
 textline ss baseline_left =
-    withTextAttr $ \rgb attr -> singleH $ textlabel rgb attr ss baseline_left
+    withTextAttr $ \rgb attr -> wrapPrim $ textlabel rgb attr ss baseline_left
+
+rtextline :: Num u => String -> ThetaLocGraphic u
+rtextline ss theta baseline_left =
+    withTextAttr $ \rgb attr -> 
+      wrapPrim $ rtextlabel rgb attr ss theta baseline_left
 
 -- | As 'textline' but the supplied point is the /center/.
 --
@@ -151,23 +142,24 @@ centermonoTextline ss pt = monoVecToCenter ss  >>= \v ->
 -- left-aligned.
 --
 textlineMulti :: Fractional u => [String] -> LocGraphic u
-textlineMulti xs baseline_left = liftM snd $ 
+textlineMulti xs baseline_left =  
     baselineSpacing >>= \dy -> 
-    foldrM (foldStep dy) (baseline_left,mempty) xs
+    foldrM (foldStep dy) (baseline_left,[]) xs >>= \(_,gs) ->
+    return (wrapPrim $ primGroup gs)
   where
-    foldStep dy str (pt,gfic) = (\a -> (pt .+^ vvec dy, a `mappend` gfic))
-                                    <$> textline str pt
+    foldStep dy str (pt,ac) = (\a -> (pt .+^ vvec dy, (getPrimGraphic a) : ac)) 
+                                <$> textline str pt
                                 
 
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
 hkernline ks baseline_left = 
-    withTextAttr $ \rgb attr -> singleH $ hkernlabel rgb attr ks baseline_left
+    withTextAttr $ \rgb attr -> wrapPrim $ hkernlabel rgb attr ks baseline_left
       
 
 vkernline :: Num u => [KerningChar u] -> LocGraphic u
 vkernline ks baseline_left = 
-    withTextAttr $ \rgb attr -> singleH $ vkernlabel rgb attr ks baseline_left
+    withTextAttr $ \rgb attr -> wrapPrim $ vkernlabel rgb attr ks baseline_left
   
 
 
@@ -176,18 +168,18 @@ vkernline ks baseline_left =
 
 strokedEllipse :: Num u => u -> u -> LocGraphic u
 strokedEllipse hw hh pt =  
-    withStrokeAttr $ \rgb attr -> singleH $ strokeEllipse rgb attr hw hh pt
+    withStrokeAttr $ \rgb attr -> wrapPrim $ strokeEllipse rgb attr hw hh pt
    
 
 filledEllipse :: Num u => u -> u -> LocGraphic u
 filledEllipse hw hh pt =  
-    withFillAttr $ \rgb -> singleH $ fillEllipse rgb hw hh pt
+    withFillAttr $ \rgb -> wrapPrim $ fillEllipse rgb hw hh pt
   
 
 borderedEllipse :: Num u => u -> u -> LocGraphic u
 borderedEllipse hw hh pt = 
     withBorderedAttr $ \frgb attr srgb -> 
-      singleH $ fillStrokeEllipse frgb attr srgb hw hh pt
+      wrapPrim $ fillStrokeEllipse frgb attr srgb hw hh pt
 
 --------------------------------------------------------------------------------
 

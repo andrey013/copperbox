@@ -120,11 +120,9 @@ runLRText ma = \pt -> envZero >>= \e1 ->
     let (a,st) = getLRText ma e1 st_zero 
     in mkline pt (acc_chr st) >>= \g1 ->
        localize (fontface symbol) (mkline pt (acc_sym st)) >>= \g2 ->
-       return (a,g1 `mappend` g2)
+       return (a, g1 `oplus` g2)
   where
-    mkline pt h = case toListH h of
-                   [] -> return mempty
-                   xs -> hkernline xs pt
+    mkline pt h = hkernline (toListH h) pt
 
 
 execLRText :: (Num u, FromPtSize u) => LRText u a -> LocGraphic u

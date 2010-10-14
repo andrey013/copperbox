@@ -41,9 +41,13 @@
 
 module Wumpus.Basic.Graphic.Base
   (
+
+  -- A semigroup class.
+    OPlus(..)
+  , oconcat
     
   -- * Drawing monads.
-    MonUnit
+  , MonUnit
   , TraceM(..)
   , DrawingCtxM(..)
   , asksDC
@@ -64,9 +68,15 @@ module Wumpus.Basic.Graphic.Base
 
   , runDrawingR
 
+  , PrimGraphic
+  , getPrimGraphic
+  , wrapPrim
+
+  , collectH
+
   , Graphic
   , DGraphic
-  
+  , GraphicF  
 
   , runGraphic
   , xlinkGraphic
@@ -111,6 +121,31 @@ import Wumpus.Core                      -- package: wumpus-core
 import Control.Applicative
 import Data.Monoid
 
+
+
+infixr 6 `oplus`
+
+-- | A Semigroup class.
+-- 
+class OPlus t where
+  oplus :: t -> t -> t
+
+oconcat :: OPlus t => t -> [t] -> t
+oconcat t = step t
+  where
+    step ac []     = ac
+    step ac (x:xs) = step (ac `oplus` x) xs
+
+
+-- Note - this produces tall-skinny trees in Wumpus-core.
+-- This does not impact on the generated PostScript but it is 
+-- (probably) inefficient for traversals in Wumpus.
+--
+-- There is scope to modify the Primitive type in Wumpus-Core 
+-- (make Group indepenent of XLink) so wider trees can be made.
+
+instance OPlus (Primitive u) where
+  oplus a b = primGroup [a,b]
 
 --------------------------------------------------------------------------------
 -- Monadic drawing
@@ -166,7 +201,7 @@ class Monad m => PointSupplyM (m :: * -> *) where
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
-newtype HPrim u = HPrim { getHPrim :: H (PrimElement u) }
+newtype HPrim u = HPrim { getHPrim :: H (Primitive u) }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
 -- shown, fmapped etc.
@@ -176,11 +211,11 @@ instance Monoid (HPrim u) where
   ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
 
 
-hprimToList :: HPrim u -> [PrimElement u]
+hprimToList :: HPrim u -> [Primitive u]
 hprimToList = toListH . getHPrim
 
 
-singleH :: PrimElement u -> HPrim u
+singleH :: Primitive u -> HPrim u
 singleH = HPrim . wrapH 
 
 -- | Point transformation function.
@@ -205,6 +240,11 @@ newtype DrawingR a = DrawingR { getDrawingR :: DrawingContext -> a }
 
 instance Functor DrawingR where
   fmap f ma = DrawingR $ \ctx -> f $ getDrawingR ma ctx 
+
+
+instance OPlus a => OPlus (DrawingR a)  where
+  fa `oplus` fb = DrawingR $ \ctx -> 
+                      getDrawingR fa ctx `oplus` getDrawingR fb ctx
 
 -- The monoid instance seems sensible...
 --
@@ -249,23 +289,65 @@ type DLocDrawingR a = LocDrawingR Double a
 
 --------------------------------------------------------------------------------
 
+-- As of version 0.36.0, Wumpus-Core supports grouping primitives
+-- together (a common operation in vector drawing editors). 
+--
+-- For Wumpus-Basic this means e.g. a line with arrowheads can 
+-- still be a primitive.
+--
+-- Still, we wrap Primitive as a newtype...
+--
+
+newtype PrimGraphic u = PrimGraphic { getPrimGraphic :: Primitive u }
+  deriving (Eq,Show)
+
+type instance DUnit (PrimGraphic u) = u
+
+instance OPlus (PrimGraphic u) where
+  oplus a b = PrimGraphic $ getPrimGraphic a `oplus` getPrimGraphic b
+
+instance (Real u, Floating u) => Rotate (PrimGraphic u) where
+  rotate ang = PrimGraphic . rotate ang . getPrimGraphic
+
+
+instance (Real u, Floating u) => RotateAbout (PrimGraphic u) where
+  rotateAbout ang pt = PrimGraphic . rotateAbout ang pt . getPrimGraphic
+
+
+instance Num u => Scale (PrimGraphic u) where
+  scale sx sy = PrimGraphic . scale sx sy . getPrimGraphic
+
+
+instance Num u => Translate (PrimGraphic u) where
+  translate dx dy = PrimGraphic . translate dx dy . getPrimGraphic
+
+
+wrapPrim :: Primitive u -> PrimGraphic u 
+wrapPrim = PrimGraphic
+
+collectH :: PrimGraphic u -> HPrim u
+collectH = singleH . getPrimGraphic
+
+
 
 -- Simple drawing - representing one or more prims
 
-type Graphic u = DrawingR (HPrim u)
+type Graphic u = DrawingR (PrimGraphic u)
 
 type DGraphic = Graphic Double
 
 
-runGraphic :: DrawingContext -> Graphic u -> HPrim u
+runGraphic :: DrawingContext -> Graphic u -> PrimGraphic u
 runGraphic ctx gf = (getDrawingR gf) ctx
 
 
 xlinkGraphic :: XLink -> Graphic u -> Graphic u
 xlinkGraphic xlink gf = DrawingR $ \ctx -> 
-    let xs = hprimToList $ runGraphic ctx gf 
-    in (singleH $ xlinkGroup xlink xs)
+    let a = runGraphic ctx gf 
+    in PrimGraphic $ xlinkGroup xlink [getPrimGraphic a]
 
+
+type GraphicF u = Graphic u -> Graphic u
 
 --------------------------------------------------------------------------------
 
@@ -290,7 +372,7 @@ type DLocGraphic = LocGraphic Double
 -- typical example - nodes are drawing but the also support 
 -- taking anchor points.
 --
-type Image u a = DrawingR (a, HPrim u)
+type Image u a = DrawingR (a, PrimGraphic u)
 
 type DImage a = Image Double a
 
@@ -298,7 +380,7 @@ type LocImage u a = Point2 u -> Image u a
 
 type DLocImage a = LocImage Double a
 
-runImage :: DrawingContext -> Image u a -> (a,HPrim u)
+runImage :: DrawingContext -> Image u a -> (a,PrimGraphic u)
 runImage ctx img = (getDrawingR img) ctx
 
 
@@ -314,8 +396,8 @@ intoLocImage f g pt = DrawingR $ \ctx ->
 
 xlinkImage :: XLink -> Image u a -> Image u a
 xlinkImage xlink img = DrawingR $ \ctx -> 
-    let (a,hp) = runImage ctx img 
-    in (a, singleH $ xlinkGroup xlink $ hprimToList hp)
+    let (a,pg) = runImage ctx img 
+    in (a, PrimGraphic $ xlinkGroup xlink [getPrimGraphic pg])
 
 --------------------------------------------------------------------------------
 --
@@ -344,7 +426,6 @@ intoConnectorImage :: ConnectorDrawingR u a
                    -> ConnectorImage u a
 intoConnectorImage f g p1 p2 = DrawingR $ \ctx -> 
     let a = getDrawingR (f p1 p2) ctx; o = getDrawingR (g p1 p2) ctx in (a,o)
-
 
 
 type ThetaLocDrawingR u a = Radian -> LocDrawingR u a 

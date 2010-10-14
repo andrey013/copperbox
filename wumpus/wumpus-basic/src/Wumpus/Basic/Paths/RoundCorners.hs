@@ -32,7 +32,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Data.Monoid
 
 -- | The length of the control-point vector wants to be slighly 
 -- longer than half of /d/ (d - being the distance between the 
@@ -88,28 +87,28 @@ illustratePath :: Fractional u => Path u -> Graphic u
 illustratePath = localize (strokeColour black) . step1 . pathViewL
   where
     step1 (PathOneL e)  = drawPath1 e
-    step1 (e :<< se)    = drawPathBoth e `mappend` rest (pathViewL se)
+    step1 (e :<< se)    = drawPathBoth e `oplus` rest (pathViewL se)
 
     rest (PathOneL e)   = drawPath1 e
-    rest (e :<< se)     = drawPath1 e `mappend` rest (pathViewL se)
+    rest (e :<< se)     = drawPath1 e `oplus` rest (pathViewL se)
 
 drawPathBoth :: Fractional u => PathSegment u -> Graphic u
-drawPathBoth pa@(Line1 p1 _)      = drawPath1 pa `mappend` pathPoint p1
-drawPathBoth pa@(Curve1 p1 _ _ _) = drawPath1 pa `mappend` pathPoint p1
+drawPathBoth pa@(Line1 p1 _)      = drawPath1 pa `oplus` pathPoint p1
+drawPathBoth pa@(Curve1 p1 _ _ _) = drawPath1 pa `oplus` pathPoint p1
 
 drawPath1 :: Fractional u => PathSegment u -> Graphic u
 drawPath1 (Line1 p1 p2)        = 
-    straightLineBetween p1 p2 `mappend` pathPoint p2
+    straightLineBetween p1 p2 `oplus` pathPoint p2
 
 drawPath1 (Curve1 p1 p2 p3 p4) =  
-    mconcat [bezierCtrl p1 p2, bezierCtrl p4 p3, curveBetween p1 p2 p3 p4
-                             , pathPoint p4 ]
+    oconcat (bezierCtrl p1 p2) [ bezierCtrl p4 p3, curveBetween p1 p2 p3 p4
+                               , pathPoint p4 ]
 
 
 bezierCtrl :: Fractional u => Point2 u -> Point2 u -> Graphic u
 bezierCtrl p1 p2 = 
     localize (strokeColour light_steel_blue . fillColour red) $
-      straightLineBetween p1 p2 `mappend` filledDisk 1 p2
+      straightLineBetween p1 p2 `oplus` filledDisk 1 p2
 
 
 pathPoint :: Num u => Point2 u -> Graphic u
