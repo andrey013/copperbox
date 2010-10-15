@@ -20,9 +20,14 @@
 module Wumpus.Basic.Arrows.Tips
   ( 
 
-    Arrowhead(..)
-  , arrowheadTip
+    Arrowhead
+  , arrowheadLocGraphic
+  , retractDistance 
+  , makeArrowhead
 
+  -- TEMP
+  , Arrhead(..), tri90Z
+ 
   , tri90
   , tri60
   , tri45
@@ -48,14 +53,33 @@ import Data.AffineSpace                 -- package: vector-space
 
 import Control.Applicative
 
+
+-- Arrowhead is actually very much like an ThetaLocImage...
+-- (retract_dist is oblivoious to theta)
+
+
 data Arrowhead u = Arrowhead
-      { retract_dist :: DrawingR u
-      , arrow_draw   :: ThetaLocGraphic u 
+      { retract_dist     :: DrawingR u
+      , arrowhead_draw   :: ThetaLocGraphic u 
       }
 
 
-arrowheadTip :: Arrowhead u -> Radian -> LocGraphic u
-arrowheadTip (Arrowhead _ gf) theta = gf theta
+retractDistance :: Arrowhead u -> DrawingR u
+retractDistance = retract_dist
+
+arrowheadLocGraphic :: Arrowhead u -> Radian -> LocGraphic u
+arrowheadLocGraphic arh theta = arrowhead_draw arh theta
+
+makeArrowhead :: DrawingR u -> ThetaLocGraphic u -> Arrowhead u
+makeArrowhead = Arrowhead
+
+
+newtype Arrhead u = Arrhead { getArrhead :: ThetaLocImage u u }
+
+tri90Z :: (Floating u, Real u, FromPtSize u) => Arrhead u
+tri90Z = Arrhead $ \ang -> intoLocImage (const markHeight) (triAng (pi/2) filledPath ang)
+
+
 
 -- | Tiplen is length of the tip \*along the line it follows\*. 
 --

@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -45,7 +46,9 @@ module Wumpus.Basic.Graphic.Base
   -- A semigroup class.
     OPlus(..)
   , oconcat
-    
+  , anterior    
+  , superior
+
   -- * Drawing monads.
   , MonUnit
   , TraceM(..)
@@ -76,7 +79,10 @@ module Wumpus.Basic.Graphic.Base
 
   , Graphic
   , DGraphic
-  , GraphicF  
+  , GraphicTransformerF
+  , applyGraphicTransformer
+  , superiorGraphic
+  , anteriorGraphic  
 
   , runGraphic
   , xlinkGraphic
@@ -86,6 +92,10 @@ module Wumpus.Basic.Graphic.Base
 
   , Image
   , DImage
+  , ImageTransformerF
+  , intoImageTransformerF
+  , applyImageTransformer
+
   , LocImage
   , DLocImage
 
@@ -110,9 +120,13 @@ module Wumpus.Basic.Graphic.Base
   , ThetaLocImage
   , DThetaLocImage
 
+  , intoThetaLocImage
+
+
   ) where
 
 import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Utils.Combinators
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -136,6 +150,12 @@ oconcat t = step t
     step ac []     = ac
     step ac (x:xs) = step (ac `oplus` x) xs
 
+anterior :: OPlus t => t -> (t -> t)
+anterior a = (a `oplus`)
+
+superior :: OPlus t => t -> (t -> t)
+superior a = (`oplus` a)
+
 
 -- Note - this produces tall-skinny trees in Wumpus-core.
 -- This does not impact on the generated PostScript but it is 
@@ -146,6 +166,10 @@ oconcat t = step t
 
 instance OPlus (Primitive u) where
   oplus a b = primGroup [a,b]
+
+instance (OPlus a, OPlus b) => OPlus (a,b) where
+   (a,b) `oplus` (a',b') = (a `oplus` a', b `oplus` b')
+
 
 --------------------------------------------------------------------------------
 -- Monadic drawing
@@ -287,6 +311,11 @@ type LocDrawingR u a = Point2 u -> DrawingR a
 type DLocDrawingR a = LocDrawingR Double a
 
 
+
+-- Affine instances - cannot be manufactured. There is no 
+-- DUnit @u@ to get a handle on.
+--
+
 --------------------------------------------------------------------------------
 
 -- As of version 0.36.0, Wumpus-Core supports grouping primitives
@@ -305,6 +334,9 @@ type instance DUnit (PrimGraphic u) = u
 
 instance OPlus (PrimGraphic u) where
   oplus a b = PrimGraphic $ getPrimGraphic a `oplus` getPrimGraphic b
+
+
+-- Affine transformations
 
 instance (Real u, Floating u) => Rotate (PrimGraphic u) where
   rotate ang = PrimGraphic . rotate ang . getPrimGraphic
@@ -328,13 +360,16 @@ wrapPrim = PrimGraphic
 collectH :: PrimGraphic u -> HPrim u
 collectH = singleH . getPrimGraphic
 
+--------------------------------------------------------------------------------
 
-
--- Simple drawing - representing one or more prims
+-- Simple drawing - produce a primitive, access the DrawingContext
+-- if required.
 
 type Graphic u = DrawingR (PrimGraphic u)
 
 type DGraphic = Graphic Double
+
+type instance DUnit (Graphic u) = u
 
 
 runGraphic :: DrawingContext -> Graphic u -> PrimGraphic u
@@ -347,7 +382,40 @@ xlinkGraphic xlink gf = DrawingR $ \ctx ->
     in PrimGraphic $ xlinkGroup xlink [getPrimGraphic a]
 
 
-type GraphicF u = Graphic u -> Graphic u
+-- Affine instances
+
+instance (Real u, Floating u) => Rotate (Graphic u) where
+  rotate ang = liftA (rotate ang) 
+
+
+instance (Real u, Floating u) => RotateAbout (Graphic u) where
+  rotateAbout ang pt = liftA (rotateAbout ang pt)
+
+
+instance Num u => Scale (Graphic u) where
+  scale sx sy = liftA (scale sx sy)
+
+
+instance Num u => Translate (Graphic u) where
+  translate dx dy = liftA (translate dx dy)
+
+
+
+
+type GraphicTransformerF u = DrawingR (PrimGraphic u -> PrimGraphic u)
+
+
+applyGraphicTransformer :: GraphicTransformerF u -> Graphic u -> Graphic u
+applyGraphicTransformer trafo grafic = trafo <*> grafic
+
+
+
+anteriorGraphic :: Graphic u -> DrawingR (PrimGraphic u -> PrimGraphic u)
+anteriorGraphic = (anterior <$>)
+
+superiorGraphic :: Graphic u -> GraphicTransformerF u
+superiorGraphic = (superior <$>)
+
 
 --------------------------------------------------------------------------------
 
@@ -376,22 +444,57 @@ type Image u a = DrawingR (a, PrimGraphic u)
 
 type DImage a = Image Double a
 
-type LocImage u a = Point2 u -> Image u a
+type instance DUnit (Image u a) = u
 
-type DLocImage a = LocImage Double a
 
-runImage :: DrawingContext -> Image u a -> (a,PrimGraphic u)
+
+runImage :: DrawingContext -> Image u a -> (a, PrimGraphic u)
 runImage ctx img = (getDrawingR img) ctx
 
 
 intoImage :: DrawingR a -> Graphic u -> Image u a
-intoImage f g = DrawingR $ \ctx -> 
-    let a = getDrawingR f ctx; o = getDrawingR g ctx in (a,o)
+intoImage f g = forkA f g
 
+
+-- Affine instances
+
+instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
+    Rotate (Image u a) where
+  rotate ang = liftA (prod (rotate ang) (rotate ang))
+
+
+instance (Real u, Floating u, RotateAbout a, DUnit a ~ u) => 
+    RotateAbout (Image u a) where
+  rotateAbout ang pt = liftA (prod (rotateAbout ang pt) (rotateAbout ang pt))
+
+
+instance (Num u, Scale a, DUnit a ~ u) => Scale (Image u a) where
+  scale sx sy = liftA (prod (scale sx sy) (scale sx sy))
+
+
+instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
+  translate dx dy = liftA (prod (translate dx dy) (translate dx dy))
+
+
+
+type ImageTransformerF u a = DrawingR (a -> a, PrimGraphic u -> PrimGraphic u)
+
+-- needs a naming scheme...
+intoImageTransformerF :: DrawingR (a -> a) -> GraphicTransformerF u 
+                      -> ImageTransformerF u a
+intoImageTransformerF dtf gtf = forkA dtf gtf
+
+
+applyImageTransformer :: ImageTransformerF u a -> Image u a -> Image u a
+applyImageTransformer trafo img = uncurry prod <$> trafo <*> img
+ 
+
+type LocImage u a = Point2 u -> Image u a
+
+type DLocImage a = LocImage Double a
 
 intoLocImage :: LocDrawingR u a -> LocGraphic u -> LocImage u a
-intoLocImage f g pt = DrawingR $ \ctx -> 
-    let a = getDrawingR (f pt) ctx; o = getDrawingR (g pt) ctx in (a,o)
+intoLocImage f g pt = forkA (f pt) (g pt)
 
 
 xlinkImage :: XLink -> Image u a -> Image u a
@@ -413,8 +516,11 @@ type ConnectorGraphic u = Point2 u -> Point2 u -> Graphic u
 
 type DConnectorGraphic = ConnectorGraphic Double
 
--- | ConImage is a connector drawn between two points 
+-- | ConnectorImage is a connector drawn between two points 
 -- constructing an Image.
+--
+-- Usually the answer type of a ConnectorImage will be a Path so
+-- the Points ar @midway@, @atstart@ etc. can be taken on it.
 --
 type ConnectorImage u a = Point2 u -> Point2 u -> Image u a
 
@@ -424,8 +530,7 @@ type DConnectorImage a = ConnectorImage Double a
 intoConnectorImage :: ConnectorDrawingR u a 
                    -> ConnectorGraphic u 
                    -> ConnectorImage u a
-intoConnectorImage f g p1 p2 = DrawingR $ \ctx -> 
-    let a = getDrawingR (f p1 p2) ctx; o = getDrawingR (g p1 p2) ctx in (a,o)
+intoConnectorImage f g p1 p2 = forkA (f p1 p2) (g p1 p2)
 
 
 type ThetaLocDrawingR u a = Radian -> LocDrawingR u a 
@@ -443,5 +548,35 @@ type ThetaLocImage u a = Radian -> LocImage u a
 type DThetaLocImage a = ThetaLocImage Double a 
 
 
+intoThetaLocImage :: ThetaLocDrawingR u a 
+                  -> ThetaLocGraphic u 
+                  -> ThetaLocImage u a
+intoThetaLocImage f g theta pt = forkA (f theta pt) (g theta pt) 
 
 
+
+{-
+
+-- TEMP
+
+type ImageF u a = Image u a -> Image u a
+
+
+
+
+-- This is horrible but GraphicF seems a valuable type to construct... 
+--
+-- > annotate :: Graphic u -> GraphicF u
+-- > annotate a = (`oplus` a)
+--
+
+modifyImage :: GraphicF u -> ImageF u a
+modifyImage f img = DrawingR $ \ctx -> 
+    let (a,prim) = getDrawingR img ctx 
+        b        = f (pure prim)
+    in (a, getDrawingR b ctx)
+
+
+-- type GraphicF = DrawingCtx 
+
+-}

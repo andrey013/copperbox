@@ -146,6 +146,7 @@ library
     Wumpus.Basic.Shapes.Plaintext,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
+    Wumpus.Basic.Utils.Combinators,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.VersionNumber,

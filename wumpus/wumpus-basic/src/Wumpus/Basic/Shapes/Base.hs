@@ -49,8 +49,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
--- | Note - this formulation prevents rounded corner shapes...
---
 -- Currently shapes that aren\'t paths:
 --
 -- > Coordinate

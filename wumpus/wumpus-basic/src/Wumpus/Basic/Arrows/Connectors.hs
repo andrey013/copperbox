@@ -34,9 +34,11 @@ module Wumpus.Basic.Arrows.Connectors
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
+import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Control.Applicative
 
 -- An arrowhead always know how to draws itself (filled tri, 
 -- stroked barb, etc.)
@@ -97,9 +99,9 @@ leftrightArrow cp la ra =
               }
 
 
-strokeConnector :: (Real u, Floating u) 
+strokeConnector_OLD :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
-strokeConnector (Connector cpF opt_la opt_ra) = \p0 p1 ->
+strokeConnector_OLD (Connector cpF opt_la opt_ra) = \p0 p1 ->
     let pathc = cpF p0 p1 in 
     (fn pathc opt_la p0 opt_ra p1) >>= \grafic ->
     intoImage (return pathc) grafic
@@ -110,26 +112,66 @@ strokeConnector (Connector cpF opt_la opt_ra) = \p0 p1 ->
        return $ (tipr $ tipl $ openStroke $ toPrimPath path2)
    
 
+-- OUT_OF_DATE
+type GraphicF u = Graphic u -> Graphic u
+
+unmarked :: GraphicF u
+unmarked = id
 
 applyTipL :: (Real u, Floating u) 
           => Maybe (Arrowhead u) -> Point2 u -> Path u 
           -> DrawingR (Path u, GraphicF u)
 applyTipL Nothing    _   pathc = return (pathc,id)
 applyTipL (Just arw) ptL pathc = 
-    retract_dist arw >>= \ dx -> 
-    if dx > 0 then return (shortenL dx pathc, (`oplus` grafik) )
-              else return (pathc, (`oplus` grafik))
+    retractDistance arw >>= \ dx -> 
+    if dx > 0 then return (shortenL dx pathc, (superior grafik) )
+              else return (pathc, (superior grafik))
   where
-    grafik = (arrow_draw arw) (directionL pathc) ptL
+    grafik = arrowheadLocGraphic arw (directionL pathc) ptL
+
 
 applyTipR :: (Real u, Floating u) 
           => Maybe (Arrowhead u) -> Point2 u -> Path u 
           -> DrawingR (Path u, GraphicF u)
-applyTipR Nothing    _   pathc = return (pathc,id)
-applyTipR (Just arw) ptR pathc = 
-    retract_dist arw >>= \dx -> 
-    if dx > 0 then return (shortenR dx pathc, (`oplus` grafik))
-              else return (pathc, (`oplus` grafik))
+applyTipR Nothing    _  pathc = return (pathc, unmarked)
+applyTipR (Just arw) pt pathc = 
+    retractDistance arw >>= \dx -> 
+    if dx > 0 then return (shortenR dx pathc, (superior grafik))
+              else return (pathc, (superior grafik))
   where
-    grafik = (arrow_draw arw) (directionR pathc) ptR 
+    grafik = arrowheadLocGraphic arw (directionR pathc) pt
+
+-- Whoa - applyTipR returns a modified path AND a graphic modifier!
+-- This seems like mixed tense
+
+
+
+strokeConnector :: (Real u, Floating u) 
+                => Connector u -> ConnectorImage u (Path u)
+strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
+    let trafL = tipTrafo opt_la (directionL pathc) p0
+        trafR = tipTrafo opt_ra (directionR pathc) p1
+    in applyImageTransformer trafR $ applyImageTransformer trafL 
+                                   $ mkPathImg pathc
+  where
+    pathc       = cpF p0 p1
+    mkPathImg a = intoImage (pure a) (openStroke $ toPrimPath a)
+   
+
+
+
+tipTrafo :: (Real u, Floating u) 
+       => Maybe (Arrowhead u) -> Radian -> Point2 u -> ImageTransformerF u (Path u)
+tipTrafo Nothing    _     _  = intoImageTransformerF (pure id) unmarkedF
+tipTrafo (Just arw) theta pt = 
+    retractDistance arw >>= \dx -> 
+    if dx > 0 then intoImageTransformerF (pure $ shortenR dx) gtrafo
+              else intoImageTransformerF (pure id) gtrafo
+  where
+    gtrafo = superiorGraphic $ arrowheadLocGraphic arw theta pt
+
+
+
+unmarkedF :: GraphicTransformerF u
+unmarkedF = pure id
 
