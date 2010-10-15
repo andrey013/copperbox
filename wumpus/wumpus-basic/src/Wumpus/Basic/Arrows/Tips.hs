@@ -74,10 +74,14 @@ makeArrowhead :: DrawingR u -> ThetaLocGraphic u -> Arrowhead u
 makeArrowhead = Arrowhead
 
 
+
+-- This new formulation seems preferable...
+--
 newtype Arrhead u = Arrhead { getArrhead :: ThetaLocImage u u }
 
 tri90Z :: (Floating u, Real u, FromPtSize u) => Arrhead u
-tri90Z = Arrhead $ \ang -> intoLocImage (const markHeight) (triAng (pi/2) filledPath ang)
+tri90Z = Arrhead $ \ang -> 
+    intoLocImage (const markHeight) (triAng (pi/2) filledPath ang)
 
 
 

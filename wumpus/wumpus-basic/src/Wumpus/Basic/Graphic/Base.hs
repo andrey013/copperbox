@@ -79,8 +79,10 @@ module Wumpus.Basic.Graphic.Base
 
   , Graphic
   , DGraphic
-  , GraphicTransformerF
-  , applyGraphicTransformer
+  , GraphicTrafoF
+  , applyGraphicTrafo
+  , combineGraphicTrafo
+
   , superiorGraphic
   , anteriorGraphic  
 
@@ -92,9 +94,10 @@ module Wumpus.Basic.Graphic.Base
 
   , Image
   , DImage
-  , ImageTransformerF
-  , intoImageTransformerF
-  , applyImageTransformer
+  , ImageTrafoF
+  , intoImageTrafo
+  , applyImageTrafo
+  , combineImageTrafo
 
   , LocImage
   , DLocImage
@@ -402,19 +405,23 @@ instance Num u => Translate (Graphic u) where
 
 
 
-type GraphicTransformerF u = DrawingR (PrimGraphic u -> PrimGraphic u)
+type GraphicTrafoF u = DrawingR (PrimGraphic u -> PrimGraphic u)
 
 
-applyGraphicTransformer :: GraphicTransformerF u -> Graphic u -> Graphic u
-applyGraphicTransformer trafo grafic = trafo <*> grafic
+applyGraphicTrafo :: GraphicTrafoF u -> Graphic u -> Graphic u
+applyGraphicTrafo trafo grafic = trafo <*> grafic
 
 
 
 anteriorGraphic :: Graphic u -> DrawingR (PrimGraphic u -> PrimGraphic u)
 anteriorGraphic = (anterior <$>)
 
-superiorGraphic :: Graphic u -> GraphicTransformerF u
+superiorGraphic :: Graphic u -> GraphicTrafoF u
 superiorGraphic = (superior <$>)
+
+
+combineGraphicTrafo :: GraphicTrafoF u -> GraphicTrafoF u -> GraphicTrafoF u
+combineGraphicTrafo gt1 gt2 = (.) <$> gt1 <*> gt2 
 
 
 --------------------------------------------------------------------------------
@@ -477,17 +484,23 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
 
 
 
-type ImageTransformerF u a = DrawingR (a -> a, PrimGraphic u -> PrimGraphic u)
+type ImageTrafoF u a = DrawingR (a -> a, PrimGraphic u -> PrimGraphic u)
 
 -- needs a naming scheme...
-intoImageTransformerF :: DrawingR (a -> a) -> GraphicTransformerF u 
-                      -> ImageTransformerF u a
-intoImageTransformerF dtf gtf = forkA dtf gtf
+intoImageTrafo :: DrawingR (a -> a) -> GraphicTrafoF u -> ImageTrafoF u a
+intoImageTrafo dtf gtf = forkA dtf gtf
 
 
-applyImageTransformer :: ImageTransformerF u a -> Image u a -> Image u a
-applyImageTransformer trafo img = uncurry prod <$> trafo <*> img
+applyImageTrafo :: ImageTrafoF u a -> Image u a -> Image u a
+applyImageTrafo trafo img = uncurry prod <$> trafo <*> img
  
+
+
+combineImageTrafo :: ImageTrafoF u a -> ImageTrafoF u a -> ImageTrafoF u a
+combineImageTrafo itf1 itf2 = 
+    (\(f,g) (r,s) -> (f . r, g . s)) <$> itf1 <*> itf2
+
+
 
 type LocImage u a = Point2 u -> Image u a
 

@@ -34,7 +34,6 @@ module Wumpus.Basic.Arrows.Connectors
 import Wumpus.Basic.Arrows.Tips
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -99,79 +98,44 @@ leftrightArrow cp la ra =
               }
 
 
-strokeConnector_OLD :: (Real u, Floating u) 
-                => Connector u -> ConnectorImage u (Path u)
-strokeConnector_OLD (Connector cpF opt_la opt_ra) = \p0 p1 ->
-    let pathc = cpF p0 p1 in 
-    (fn pathc opt_la p0 opt_ra p1) >>= \grafic ->
-    intoImage (return pathc) grafic
-  where
-    fn pathc ma p0 mb p1 = do 
-       (path1,tipl) <- applyTipL ma p0 pathc
-       (path2,tipr) <- applyTipR mb p1 path1
-       return $ (tipr $ tipl $ openStroke $ toPrimPath path2)
-   
 
--- OUT_OF_DATE
-type GraphicF u = Graphic u -> Graphic u
-
-unmarked :: GraphicF u
-unmarked = id
-
-applyTipL :: (Real u, Floating u) 
-          => Maybe (Arrowhead u) -> Point2 u -> Path u 
-          -> DrawingR (Path u, GraphicF u)
-applyTipL Nothing    _   pathc = return (pathc,id)
-applyTipL (Just arw) ptL pathc = 
-    retractDistance arw >>= \ dx -> 
-    if dx > 0 then return (shortenL dx pathc, (superior grafik) )
-              else return (pathc, (superior grafik))
-  where
-    grafik = arrowheadLocGraphic arw (directionL pathc) ptL
-
-
-applyTipR :: (Real u, Floating u) 
-          => Maybe (Arrowhead u) -> Point2 u -> Path u 
-          -> DrawingR (Path u, GraphicF u)
-applyTipR Nothing    _  pathc = return (pathc, unmarked)
-applyTipR (Just arw) pt pathc = 
-    retractDistance arw >>= \dx -> 
-    if dx > 0 then return (shortenR dx pathc, (superior grafik))
-              else return (pathc, (superior grafik))
-  where
-    grafik = arrowheadLocGraphic arw (directionR pathc) pt
-
--- Whoa - applyTipR returns a modified path AND a graphic modifier!
--- This seems like mixed tense
-
-
+-- Actually this is wrong.
+-- It is not shortening the drawn path... 
 
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
 strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
-    let trafL = tipTrafo opt_la (directionL pathc) p0
-        trafR = tipTrafo opt_ra (directionR pathc) p1
-    in applyImageTransformer trafR $ applyImageTransformer trafL 
-                                   $ mkPathImg pathc
+    feed pathc trafo (openStroke . toPrimPath)
   where
     pathc       = cpF p0 p1
-    mkPathImg a = intoImage (pure a) (openStroke $ toPrimPath a)
+    trafL       = tipTrafo opt_la (directionL pathc) p0
+    trafR       = tipTrafo opt_ra (directionR pathc) p1
+    trafo       = trafL `combineImageTrafo` trafR
    
 
 
 
+-- Note - feed returns the original @a@, but draws with the 
+-- modified @a'@, so this is very much a special case combinator
+-- for drawing arrows.
+--
+feed :: a -> ImageTrafoF u a -> (a -> Graphic u) -> Image u a
+feed a trf mk = 
+    trf >>= \(fa,fg) -> let a' = fa a in intoImage (pure a) (fg <$> mk a')
+
+
 tipTrafo :: (Real u, Floating u) 
-       => Maybe (Arrowhead u) -> Radian -> Point2 u -> ImageTransformerF u (Path u)
-tipTrafo Nothing    _     _  = intoImageTransformerF (pure id) unmarkedF
+         => Maybe (Arrowhead u) -> Radian -> Point2 u -> ImageTrafoF u (Path u)
+tipTrafo Nothing    _     _  = intoImageTrafo (pure id) unmarked
 tipTrafo (Just arw) theta pt = 
     retractDistance arw >>= \dx -> 
-    if dx > 0 then intoImageTransformerF (pure $ shortenR dx) gtrafo
-              else intoImageTransformerF (pure id) gtrafo
+    if dx > 0 then intoImageTrafo (pure $ shortenR dx) gtrafo
+              else intoImageTrafo (pure id) gtrafo
   where
     gtrafo = superiorGraphic $ arrowheadLocGraphic arw theta pt
 
 
 
-unmarkedF :: GraphicTransformerF u
-unmarkedF = pure id
+unmarked :: GraphicTrafoF u
+unmarked = pure id
 
