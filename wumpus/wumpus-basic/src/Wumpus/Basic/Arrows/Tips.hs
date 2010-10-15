@@ -20,13 +20,8 @@
 module Wumpus.Basic.Arrows.Tips
   ( 
 
-    Arrowhead
-  , arrowheadLocGraphic
-  , retractDistance 
-  , makeArrowhead
 
-  -- TEMP
-  , Arrhead(..), tri90Z
+    Arrowhead(..)
  
   , tri90
   , tri60
@@ -54,34 +49,10 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 
 
--- Arrowhead is actually very much like an ThetaLocImage...
--- (retract_dist is oblivoious to theta)
-
-
-data Arrowhead u = Arrowhead
-      { retract_dist     :: DrawingR u
-      , arrowhead_draw   :: ThetaLocGraphic u 
-      }
-
-
-retractDistance :: Arrowhead u -> DrawingR u
-retractDistance = retract_dist
-
-arrowheadLocGraphic :: Arrowhead u -> Radian -> LocGraphic u
-arrowheadLocGraphic arh theta = arrowhead_draw arh theta
-
-makeArrowhead :: DrawingR u -> ThetaLocGraphic u -> Arrowhead u
-makeArrowhead = Arrowhead
-
-
-
 -- This new formulation seems preferable...
 --
-newtype Arrhead u = Arrhead { getArrhead :: ThetaLocImage u u }
+newtype Arrowhead u = Arrowhead { getArrowhead :: ThetaLocImage u u }
 
-tri90Z :: (Floating u, Real u, FromPtSize u) => Arrhead u
-tri90Z = Arrhead $ \ang -> 
-    intoLocImage (const markHeight) (triAng (pi/2) filledPath ang)
 
 
 
@@ -140,11 +111,23 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
 
 
 
-mark_height_plus_line_width :: (Fractional u, FromPtSize u) => DrawingR u
-mark_height_plus_line_width = 
+markHeightPlusLineWidth :: (Fractional u, FromPtSize u) => DrawingR u
+markHeightPlusLineWidth = 
     (\h lw -> h + realToFrac lw) <$> markHeight <*> lineWidth
 
 
+-- noRetract ignores both the angle and the point.
+--
+-- Its common for the rectraction not to care about the angle or 
+-- the point and only care about the DrawingCtx.
+--
+noRetract :: Num u => ThetaLocDrawingR u u
+noRetract _ _ = pure 0 
+
+-- Here\'s a lifter to ignore angle and point...
+--
+queryCtx :: DrawingR a -> ThetaLocDrawingR u a
+queryCtx af = \_ _ -> af
 
 --------------------------------------------------------------------------------
 
@@ -185,27 +168,36 @@ triAng triang gf theta pt =
 
 
 
--- TODO - maybe filling needs to use swapColours
+
 
 tri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri90 = Arrowhead markHeight (triAng (pi/2) filledPath)
+tri90 = Arrowhead $ 
+    intoThetaLocImage (queryCtx markHeight) (triAng (pi/2) filledPath)
 
 
 tri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri60 = Arrowhead markHeight (triAng (pi/3) filledPath)
+tri60 = Arrowhead $
+    intoThetaLocImage (queryCtx markHeight) (triAng (pi/3) filledPath)
 
 
 tri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri45 = Arrowhead markHeight (triAng (pi/4) filledPath)
+tri45 = Arrowhead $ 
+    intoThetaLocImage (queryCtx markHeight) (triAng (pi/4) filledPath)
 
 otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri90 = Arrowhead mark_height_plus_line_width (triAng (pi/2) closedStroke)
+otri90 = Arrowhead $
+    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
+                      (triAng (pi/2) closedStroke)
 
 otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri60 = Arrowhead mark_height_plus_line_width (triAng (pi/3) closedStroke)
+otri60 = Arrowhead $   
+    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
+                      (triAng (pi/3) closedStroke)
 
 otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri45 = Arrowhead mark_height_plus_line_width (triAng (pi/4) closedStroke)
+otri45 = Arrowhead $ 
+    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
+                      (triAng (pi/4) closedStroke)
 
 
 
@@ -216,14 +208,14 @@ barbAng ang theta pt =
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb90 = Arrowhead (pure 0) (barbAng (pi/2))
+barb90 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/2))
 
 barb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb60 = Arrowhead (pure 0) (barbAng (pi/3))
+barb60 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/3))
 
 
 barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb45 = Arrowhead (pure 0) (barbAng (pi/4))
+barb45 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/4))
 
 
 
@@ -236,7 +228,7 @@ perpAng theta pt =
 
 
 perp :: (Floating u, FromPtSize u) => Arrowhead u
-perp = Arrowhead (pure 0) perpAng
+perp = Arrowhead $ intoThetaLocImage noRetract perpAng
 
 rbracketAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
 rbracketAng theta pt = markHalfHeight >>= \hh -> 
@@ -249,4 +241,4 @@ rbracketAng theta pt = markHalfHeight >>= \hh ->
    
 
 rbracket :: (Floating u, FromPtSize u) => Arrowhead u
-rbracket = Arrowhead (pure 0) rbracketAng
+rbracket = Arrowhead $ intoThetaLocImage noRetract rbracketAng

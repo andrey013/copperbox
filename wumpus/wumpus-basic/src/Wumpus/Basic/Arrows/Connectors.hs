@@ -39,7 +39,7 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import Control.Applicative
 
--- An arrowhead always know how to draws itself (filled tri, 
+-- An arrowhead always know how to draw itself (filled triangle, 
 -- stroked barb, etc.)
 --
 -- A Path might will typically be drawn with openStroke,
@@ -49,9 +49,6 @@ import Control.Applicative
 
 -- A ConnectorPath gets wrapped with how it is drawn into
 -- another type.
-
-
--- larrow :: Arrowhead u -> ConnectorPath u -> WrappedConnector u
 
 
 data Connector u = Connector 
@@ -128,11 +125,11 @@ tipTrafo :: (Real u, Floating u)
          => Maybe (Arrowhead u) -> Radian -> Point2 u -> ImageTrafoF u (Path u)
 tipTrafo Nothing    _     _  = intoImageTrafo (pure id) unmarked
 tipTrafo (Just arw) theta pt = 
-    retractDistance arw >>= \dx -> 
-    if dx > 0 then intoImageTrafo (pure $ shortenR dx) gtrafo
-              else intoImageTrafo (pure id) gtrafo
+    getArrowhead arw theta pt >>= \(dx,prim) -> 
+    if dx > 0 then intoImageTrafo (pure $ shortenR dx) (superiorPrim prim)
+              else intoImageTrafo (pure id) (superiorPrim prim)
   where
-    gtrafo = superiorGraphic $ arrowheadLocGraphic arw theta pt
+    superiorPrim = superiorGraphic . pure
 
 
 

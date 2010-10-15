@@ -567,29 +567,3 @@ intoThetaLocImage :: ThetaLocDrawingR u a
 intoThetaLocImage f g theta pt = forkA (f theta pt) (g theta pt) 
 
 
-
-{-
-
--- TEMP
-
-type ImageF u a = Image u a -> Image u a
-
-
-
-
--- This is horrible but GraphicF seems a valuable type to construct... 
---
--- > annotate :: Graphic u -> GraphicF u
--- > annotate a = (`oplus` a)
---
-
-modifyImage :: GraphicF u -> ImageF u a
-modifyImage f img = DrawingR $ \ctx -> 
-    let (a,prim) = getDrawingR img ctx 
-        b        = f (pure prim)
-    in (a, getDrawingR b ctx)
-
-
--- type GraphicF = DrawingCtx 
-
--}
