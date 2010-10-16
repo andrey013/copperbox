@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -48,6 +49,7 @@ module Wumpus.Basic.Graphic.Base
   , oconcat
   , anterior    
   , superior
+  , oplusR2
 
   -- * Drawing monads.
   , MonUnit
@@ -160,6 +162,8 @@ superior :: OPlus t => t -> (t -> t)
 superior a = (`oplus` a)
 
 
+
+
 -- Note - this produces tall-skinny trees in Wumpus-core.
 -- This does not impact on the generated PostScript but it is 
 -- (probably) inefficient for traversals in Wumpus.
@@ -168,10 +172,34 @@ superior a = (`oplus` a)
 -- (make Group indepenent of XLink) so wider trees can be made.
 
 instance OPlus (Primitive u) where
-  oplus a b = primGroup [a,b]
+  a `oplus` b = primGroup [a,b]
 
 instance (OPlus a, OPlus b) => OPlus (a,b) where
-   (a,b) `oplus` (a',b') = (a `oplus` a', b `oplus` b')
+  (a,b) `oplus` (a',b') = (a `oplus` a', b `oplus` b')
+
+
+instance OPlus a => OPlus (r -> a) where
+  f `oplus` g = \x -> f x `oplus` g x
+
+
+
+-- | Version of the functional instance of OPlus for two 
+-- /static arguments/.
+--
+-- > oplusR2 f g = \x y -> f x y `oplus` g x y
+--
+-- Unfortunately, if implemented as an instance of OPlus it 
+-- overlaps with the single static argument version:
+--
+-- > instance OPlus a => OPlus (r1 -> r2 -> a) where
+--
+-- Overlaps 
+--
+-- > instance OPlus a => OPlus (r -> a) where
+--
+oplusR2 :: OPlus a => (r1 -> r2 -> a) -> (r1 -> r2 -> a) -> r1 -> r2 -> a 
+oplusR2 f g = \x y -> f x y `oplus` g x y
+
 
 
 --------------------------------------------------------------------------------
@@ -413,7 +441,7 @@ applyGraphicTrafo trafo grafic = trafo <*> grafic
 
 
 
-anteriorGraphic :: Graphic u -> DrawingR (PrimGraphic u -> PrimGraphic u)
+anteriorGraphic :: Graphic u -> GraphicTrafoF u
 anteriorGraphic = (anterior <$>)
 
 superiorGraphic :: Graphic u -> GraphicTrafoF u

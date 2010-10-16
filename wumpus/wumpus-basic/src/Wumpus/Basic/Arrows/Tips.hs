@@ -13,7 +13,7 @@
 -- Anchor points on shapes.
 --
 -- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- change significantly in future revisions.
 -- 
 --------------------------------------------------------------------------------
 
@@ -237,7 +237,7 @@ rbracketAng theta pt = markHalfHeight >>= \hh ->
      displacePara (-hh) p1 >>= \p0 ->
      displacePerp (-hh) pt >>= \p2 ->
      displacePara (-hh) p2 >>= \p3 ->
-     return (openStroke $ vertexPath [p0,p1,p2,p3]) 
+     return $ openStroke $ vertexPath [p0,p1,p2,p3]
    
 
 rbracket :: (Floating u, FromPtSize u) => Arrowhead u

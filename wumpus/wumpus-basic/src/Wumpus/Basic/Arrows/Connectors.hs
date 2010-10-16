@@ -12,9 +12,6 @@
 --
 -- Draw arrows.
 --
--- \*\* WARNING \*\* - the types are /wrong/ here and need more 
--- thought.
--- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Arrows.Connectors

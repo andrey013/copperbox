@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Dots
+-- Module      :  Wumpus.Basic.Dots.AnchorDots
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -21,7 +21,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Dots
+module Wumpus.Basic.Dots.AnchorDots
   ( 
 
   -- * Existential anchor type
@@ -55,7 +55,7 @@ module Wumpus.Basic.Dots
   ) where
 
 import Wumpus.Basic.Anchors
-import Wumpus.Basic.Dots.Primitive
+import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.Intersection
 

@@ -4,7 +4,7 @@ module DotPic where
 
 
 import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Dots
+import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.PictureLanguage
 
@@ -62,9 +62,9 @@ points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]
 --
 makeDotPic :: (Real u, Floating u, FromPtSize u) 
            => DotLocImage u -> [Point2 u] -> Picture u
-makeDotPic dotImg xs = liftToPictureU $ execDrawing std_ctx $ do 
+makeDotPic dot_img xs = liftToPictureU $ execDrawing std_ctx $ do 
     dashline
-    mapM_ (\pt -> drawi $ dotImg `ati` pt) xs
+    mapM_ (\pt -> drawi $ dot_img `ati` pt) xs
   where
     dashline = localize attrUpd (draw $ openStroke $ vertexPath xs)
 

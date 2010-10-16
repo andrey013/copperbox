@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Dots.Primitive
+-- Module      :  Wumpus.Basic.Dots.Marks
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Dots.Primitive
+module Wumpus.Basic.Dots.Marks
   ( 
 
 
@@ -48,6 +48,7 @@ module Wumpus.Basic.Dots.Primitive
 
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -85,7 +86,7 @@ standardSize f = \pt -> markHeight >>= \h -> f h pt
 
 halfHeightSize :: (Fractional u, FromPtSize u) 
                => (u -> LocGraphic u) -> LocGraphic u
-halfHeightSize f = \pt -> markHeight >>= \h -> f (h * 0.5) pt
+halfHeightSize f = (const markHeight) `bindR` \h -> f (h * 0.5)
 
 
 
@@ -98,8 +99,6 @@ markChar ch = markText [ch]
 
 
 
--- Note - eta-expanded (?)
---
 markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
 markText ss = centermonoTextline ss
 
@@ -130,16 +129,14 @@ markX = standardSize $ \h ->
 
 
 markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
-markPlus = oplus <$> markVLine <*> markHLine
+markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = standardSize $ \h -> 
-    oplus <$> axialLine (avec ang h) <*> axialLine (avec (-ang) h)
+markCross = standardSize $ 
+    (axialLine . avec ang) `oplusR2` (axialLine . avec (-ang))
   where
     ang = pi*0.25  
-
-
 
 -- needs horizontal pinch...
 
@@ -159,11 +156,26 @@ pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h
 markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
 markDiamond = \pt -> pathDiamond pt >>= closedStroke  
 
+-- Point-free...
 markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markFDiamond = \pt -> pathDiamond pt >>= filledPath  
+markFDiamond = pathDiamond `bindR` (const . filledPath)  
+
+
+-- Note - the (const . fn) composition doesn\'t /tell/ much about
+-- what is going on - though obviously it can be decoded - make 
+-- the function obvious to the second argument. 
+-- 
+-- A named combinator might be better.
+--
 
 markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markBDiamond = \pt -> pathDiamond pt >>= borderedPath
+markBDiamond = pathDiamond `bindR` (\a _ -> borderedPath a)
+
+
+{-
+strip :: a -> b -> b
+strip _ b = b
+-}
 
 
 -- | Note disk is filled.
@@ -204,10 +216,11 @@ markStar pt = markHeight >>= \h ->
     step _      = error "markStar - unreachable"
 
 
+-- Note - relies on the functional instance of OPlus
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
 markAsterisk = standardSize $ \h -> 
-    (\a b c -> a `oplus` b `oplus` c) <$> lineF1 h <*> lineF2 h <*> lineF3 h
+    lineF1 h `oplus` lineF2 h `oplus` lineF3 h
   where
     ang       = (pi*2) / 6
     lineF1 z  = axialLine (vvec z)
@@ -217,15 +230,15 @@ markAsterisk = standardSize $ \h ->
 
 
 markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-markOPlus = oplus <$> markCircle <*> markPlus
+markOPlus = markCircle `oplus` markPlus
 
 
 markOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markOCross = oplus <$> markCircle <*> markCross
+markOCross = markCircle `oplus` markCross
 
 
 markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
-markFOCross = liftA2 oplus markCross markBCircle 
+markFOCross = markCross `oplus` markBCircle 
 
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u
