@@ -25,6 +25,11 @@ module Wumpus.Basic.Utils.Combinators
   , bindR
   , bindAsk
   , bindInto
+  , rlift1
+
+  , bindR2
+  , rlift2
+
 
   ) where
 
@@ -42,13 +47,12 @@ forkA af ab = (,) <$> af <*> ab
 
 
 
-infixl 1 `bindR`
+infixl 1 `bindR`, `bindR2`
 
 -- Monadic bind with 1 static argument.
 --
 bindR :: Monad m => (r -> m a) -> (a -> r -> m b) -> r -> m b
 bindR cxma cxmf = \x -> cxma x >>= \a -> cxmf a x
-
 
 -- 'bindAsk' takes a monadic function oblivious to R1 upto bindR.
 -- (lift and bind).
@@ -62,3 +66,20 @@ bindAsk mq cxmf r1 = mq >>= \a -> cxmf a r1
 --
 bindInto :: Monad m => (r1 -> m a) -> (a -> m b) -> r1 -> m b 
 bindInto cxma mf r1 = cxma r1 >>= \a -> mf a
+
+rlift1 :: Monad m => m a -> (r -> m a)
+rlift1 ma = \_ -> ma
+
+
+
+-- Monadic bind with 2 static arguments.
+--
+bindR2 :: Monad m 
+       => (r1 -> r2 -> m a) -> (a -> r1 -> r2 -> m b) -> r1 -> r2 -> m b
+bindR2 cxma cxmf = \x y -> cxma x y >>= \a -> cxmf a x y
+
+
+
+rlift2 :: Monad m => m a -> (r1 -> r2 -> m a)
+rlift2 ma = \_ _ -> ma
+

@@ -43,6 +43,8 @@ description:
     Hughes lists of @Primitives@. This means they can now be 
     transformed with the affine transformations.
   .
+  * Added @Basic.Utils.Combinators@.
+  .
   * Arrowheads and Connectors reworked - Arrowheads are now a 
     functional type, Connectors use new Image combining 
     operations from @Basic.Graphic.Base@.
@@ -102,6 +104,7 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/ArrowCircuit.hs,
+  demo/Arrowheads.hs,
   demo/ClipPic.hs,
   demo/ColourCharts.hs,
   demo/ColourDefns.hs,

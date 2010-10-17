@@ -36,11 +36,12 @@ module Wumpus.Basic.Arrows.Tips
 
   , perp
 
-  , rbracket
+  , bracket
 
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -122,12 +123,8 @@ markHeightPlusLineWidth =
 -- the point and only care about the DrawingCtx.
 --
 noRetract :: Num u => ThetaLocDrawingR u u
-noRetract _ _ = pure 0 
+noRetract = rlift2 $ pure 0 
 
--- Here\'s a lifter to ignore angle and point...
---
-queryCtx :: DrawingR a -> ThetaLocDrawingR u a
-queryCtx af = \_ _ -> af
 
 --------------------------------------------------------------------------------
 
@@ -162,9 +159,9 @@ tripointsByDist lenF halfwidthF theta tip =
 
 triAng :: (Floating u, Real u, FromPtSize u)
        => Radian -> (PrimPath u -> Graphic u) -> ThetaLocGraphic u
-triAng triang gf theta pt = 
-    tripointsByAngle triang theta pt >>= \(u,v) -> 
-    localize bothStrokeColour (gf $  vertexPath [pt,u,v])
+triAng triang drawF = 
+    tripointsByAngle triang `bindR2` \(u,v) -> 
+        (\_ pt -> localize bothStrokeColour $ drawF $ vertexPath [pt,u,v])
 
 
 
@@ -172,39 +169,36 @@ triAng triang gf theta pt =
 
 tri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri90 = Arrowhead $ 
-    intoThetaLocImage (queryCtx markHeight) (triAng (pi/2) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/2) filledPath)
 
 
 tri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri60 = Arrowhead $
-    intoThetaLocImage (queryCtx markHeight) (triAng (pi/3) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/3) filledPath)
 
 
 tri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri45 = Arrowhead $ 
-    intoThetaLocImage (queryCtx markHeight) (triAng (pi/4) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/4) filledPath)
 
 otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri90 = Arrowhead $
-    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
-                      (triAng (pi/2) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/2) closedStroke)
 
 otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri60 = Arrowhead $   
-    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
-                      (triAng (pi/3) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/3) closedStroke)
 
 otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri45 = Arrowhead $ 
-    intoThetaLocImage (queryCtx markHeightPlusLineWidth) 
-                      (triAng (pi/4) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triAng (pi/4) closedStroke)
 
 
 
 barbAng :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
-barbAng ang theta pt = 
-    tripointsByAngle ang theta pt >>= \(u,v) -> 
-    openStroke (vertexPath [u,pt,v])
+barbAng ang = 
+    tripointsByAngle ang `bindR2` \(u,v) -> 
+        (\_ pt -> openStroke $ vertexPath [u,pt,v])
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
@@ -230,8 +224,8 @@ perpAng theta pt =
 perp :: (Floating u, FromPtSize u) => Arrowhead u
 perp = Arrowhead $ intoThetaLocImage noRetract perpAng
 
-rbracketAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
-rbracketAng theta pt = markHalfHeight >>= \hh -> 
+bracketAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
+bracketAng theta pt = markHalfHeight >>= \hh -> 
    runDirection theta $ 
      displacePerp   hh  pt >>= \p1 ->
      displacePara (-hh) p1 >>= \p0 ->
@@ -240,5 +234,5 @@ rbracketAng theta pt = markHalfHeight >>= \hh ->
      return $ openStroke $ vertexPath [p0,p1,p2,p3]
    
 
-rbracket :: (Floating u, FromPtSize u) => Arrowhead u
-rbracket = Arrowhead $ intoThetaLocImage noRetract rbracketAng
+bracket :: (Floating u, FromPtSize u) => Arrowhead u
+bracket = Arrowhead $ intoThetaLocImage noRetract bracketAng

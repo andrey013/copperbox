@@ -102,8 +102,8 @@ strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
     feed pathc trafo (openStroke . toPrimPath)
   where
     pathc       = cpF p0 p1
-    trafL       = tipTrafo opt_la (directionL pathc) p0
-    trafR       = tipTrafo opt_ra (directionR pathc) p1
+    trafL       = tipTrafo opt_la shortenL (directionL pathc) p0
+    trafR       = tipTrafo opt_ra shortenR (directionR pathc) p1
     trafo       = trafL `combineImageTrafo` trafR
    
 
@@ -119,11 +119,12 @@ feed a trf mk =
 
 
 tipTrafo :: (Real u, Floating u) 
-         => Maybe (Arrowhead u) -> Radian -> Point2 u -> ImageTrafoF u (Path u)
-tipTrafo Nothing    _     _  = intoImageTrafo (pure id) unmarked
-tipTrafo (Just arw) theta pt = 
+         => Maybe (Arrowhead u) -> (u -> Path u -> Path u) 
+         -> Radian -> Point2 u -> ImageTrafoF u (Path u)
+tipTrafo Nothing    _        _     _  = intoImageTrafo (pure id) unmarked
+tipTrafo (Just arw) shortenF theta pt = 
     getArrowhead arw theta pt >>= \(dx,prim) -> 
-    if dx > 0 then intoImageTrafo (pure $ shortenR dx) (superiorPrim prim)
+    if dx > 0 then intoImageTrafo (pure $ shortenF dx) (superiorPrim prim)
               else intoImageTrafo (pure id) (superiorPrim prim)
   where
     superiorPrim = superiorGraphic . pure
