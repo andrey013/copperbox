@@ -79,14 +79,10 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 
 
 
--- | A mark is the height of a lowercase \'x\'.
--- 
-standardSize :: FromPtSize u => (u -> LocGraphic u) -> LocGraphic u
-standardSize f = \pt -> markHeight >>= \h -> f h pt
 
 halfHeightSize :: (Fractional u, FromPtSize u) 
                => (u -> LocGraphic u) -> LocGraphic u
-halfHeightSize f = (const markHeight) `bindR` \h -> f (h * 0.5)
+halfHeightSize f = bindAsk markHeight $ \h -> f (h * 0.5)
 
 
 
@@ -112,19 +108,17 @@ axialLine :: Fractional u => Vec2 u -> LocGraphic u
 axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
-
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markHLine = standardSize $ \h -> axialLine (hvec h)
-    
+markHLine = bindAsk markHeight $ \h -> axialLine (hvec h)
+
 
 markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markVLine = standardSize $ \h -> axialLine (vvec h) 
+markVLine = bindAsk markHeight $ \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
-markX = standardSize $ \h -> 
-    let w = 0.75 * h 
-    in oplus <$> axialLine (vec w h) <*> axialLine (vec (-w) h)
+markX = bindAsk markHeight $ \h -> 
+    let w = 0.75 * h in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
 
 
 
@@ -133,8 +127,8 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = standardSize $ 
-    (axialLine . avec ang) `oplusR2` (axialLine . avec (-ang))
+markCross = bindAsk markHeight $ \h ->  
+    (axialLine $ avec ang h) `oplus` (axialLine $ avec (-ang) h)
   where
     ang = pi*0.25  
 
@@ -154,11 +148,10 @@ pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h
 
 
 markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markDiamond = \pt -> pathDiamond pt >>= closedStroke  
+markDiamond = pathDiamond `bindInto` closedStroke  
 
--- Point-free...
 markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markFDiamond = pathDiamond `bindR` (const . filledPath)  
+markFDiamond = pathDiamond `bindInto` filledPath
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -169,13 +162,7 @@ markFDiamond = pathDiamond `bindR` (const . filledPath)
 --
 
 markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markBDiamond = pathDiamond `bindR` (\a _ -> borderedPath a)
-
-
-{-
-strip :: a -> b -> b
-strip _ b = b
--}
+markBDiamond = pathDiamond `bindInto` borderedPath
 
 
 -- | Note disk is filled.
@@ -186,8 +173,8 @@ markDisk = halfHeightSize filledDisk
 
 
 markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
-markSquare = standardSize (\h -> let d = 0.5*(-h) in 
-                                 shiftOrigin d d $ strokedRectangle h h) 
+markSquare = bindAsk markHeight $ \h -> 
+    let d = 0.5*(-h) in shiftOrigin d d $ strokedRectangle h h
     
 
 
@@ -201,8 +188,8 @@ markBCircle = halfHeightSize borderedDisk
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon pt = markHeight >>= \h ->
-                  closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
+markPentagon = bindAsk markHeight $ \h ->
+    closedStroke . vertexPath . polygonPoints 5 (0.5*h)
 
  
 
@@ -219,7 +206,7 @@ markStar pt = markHeight >>= \h ->
 -- Note - relies on the functional instance of OPlus
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = standardSize $ \h -> 
+markAsterisk = bindAsk markHeight $ \h -> 
     lineF1 h `oplus` lineF2 h `oplus` lineF3 h
   where
     ang       = (pi*2) / 6

@@ -57,6 +57,7 @@ module Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Utils.Combinators
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -161,14 +162,14 @@ type DDotLocImage = DotLocImage Double
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
-dotChar ch pt = monoTextDimensions [ch] >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (markChar ch) pt
+dotChar ch = bindAsk (monoTextDimensions [ch]) $  \(w,h) -> 
+    intoLocImage (rectangleLDO w h) (markChar ch)
 
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
-dotText ss pt = monoTextDimensions ss >>= \(w,h) -> 
-                intoLocImage (rectangleLDO w h) (markText ss) pt
+dotText ss = bindAsk (monoTextDimensions ss) $ \(w,h) -> 
+    intoLocImage (rectangleLDO w h) (markText ss) 
 
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
@@ -201,8 +202,8 @@ dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
-dotSquare pt = markHeight >>= \ h ->
-               intoLocImage (rectangleLDO h h) markSquare pt
+dotSquare = bindAsk markHeight $ \ h ->
+    intoLocImage (rectangleLDO h h) markSquare
 
 
 

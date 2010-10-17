@@ -49,7 +49,6 @@ module Wumpus.Basic.Graphic.Base
   , oconcat
   , anterior    
   , superior
-  , oplusR2
 
   -- * Drawing monads.
   , MonUnit
@@ -181,25 +180,8 @@ instance (OPlus a, OPlus b) => OPlus (a,b) where
 instance OPlus a => OPlus (r -> a) where
   f `oplus` g = \x -> f x `oplus` g x
 
-
-
--- | Version of the functional instance of OPlus for two 
--- /static arguments/.
---
--- > oplusR2 f g = \x y -> f x y `oplus` g x y
---
--- Unfortunately, if implemented as an instance of OPlus it 
--- overlaps with the single static argument version:
---
--- > instance OPlus a => OPlus (r1 -> r2 -> a) where
---
--- Overlaps 
---
--- > instance OPlus a => OPlus (r -> a) where
---
-oplusR2 :: OPlus a => (r1 -> r2 -> a) -> (r1 -> r2 -> a) -> r1 -> r2 -> a 
-oplusR2 f g = \x y -> f x y `oplus` g x y
-
+-- The functional instance (r -> a) also covers (r1 -> r2 -> a),
+-- (r1 -> r2 -> r3 -> a) etc.
 
 
 --------------------------------------------------------------------------------

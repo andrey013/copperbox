@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Pairing functions... 
+-- Combiantors - pairing, /static argument/ functions, ...
 --
 --------------------------------------------------------------------------------
 
@@ -21,7 +21,10 @@ module Wumpus.Basic.Utils.Combinators
     fork
   , prod
   , forkA
+
   , bindR
+  , bindAsk
+  , bindInto
 
   ) where
 
@@ -40,7 +43,22 @@ forkA af ab = (,) <$> af <*> ab
 
 
 infixl 1 `bindR`
+
 -- Monadic bind with 1 static argument.
 --
 bindR :: Monad m => (r -> m a) -> (a -> r -> m b) -> r -> m b
-bindR ma mf = \x -> ma x >>= \a -> mf a x
+bindR cxma cxmf = \x -> cxma x >>= \a -> cxmf a x
+
+
+-- 'bindAsk' takes a monadic function oblivious to R1 upto bindR.
+-- (lift and bind).
+--
+bindAsk :: Monad m => m a -> (a -> r1 -> m b) -> r1 -> m b 
+bindAsk mq cxmf r1 = mq >>= \a -> cxmf a r1
+
+
+-- 'bindInto' takes a monadic action dependent on R1 and binds
+-- it into a mondic function oblivious to R1. 
+--
+bindInto :: Monad m => (r1 -> m a) -> (a -> m b) -> r1 -> m b 
+bindInto cxma mf r1 = cxma r1 >>= \a -> mf a
