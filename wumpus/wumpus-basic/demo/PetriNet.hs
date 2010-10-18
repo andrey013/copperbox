@@ -81,11 +81,11 @@ greenFill = localize (fillColour lime_green)
 
 place :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
       => u -> u -> m (Circle u)
-place x y = greenFill $ drawi $ borderedShape $ translate x y $ circle 14
+place x y = greenFill $ drawi $ borderedShape $ circle 14 `at` P2 x y
 
 transition :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
            => u -> u -> m (Rectangle u)
-transition x y = greenFill $ drawi $ borderedShape $ translate x y $ rectangle 32 22
+transition x y = greenFill $ drawi $ borderedShape $ rectangle 32 22 `at` P2 x y
 
 
 

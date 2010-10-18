@@ -49,7 +49,6 @@ module Wumpus.Basic.Graphic.Drawing
   , xdrawi_
 
   , at
-  , ati
 
   , node
   , nodei
@@ -344,18 +343,10 @@ xdrawi_ ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m)
 xdrawi_ xl img = xdrawi xl img >> return ()
 
 
-infixr 1 `at`, `ati`
+infixr 1 `at`
 at :: (Point2 u -> a) -> Point2 u -> a
 at = ($)
 
-
--- | Note - having `ati` probably doesn\'t make type error 
--- messages more meaningful.
---
--- It should be scrapped soon.
---
-ati :: LocImage u a -> Point2 u -> Image u a
-ati = ($)
 
 
 

@@ -68,7 +68,7 @@ makeDotDrawing :: (Real u, Floating u, FromPtSize u)
               => DotLocImage u -> Point2 u -> Drawing u ()
 makeDotDrawing dotF pt = do 
     dashline
-    mapM_ (\v -> drawi $ dotF `ati` pt .+^ v) displacements
+    mapM_ (\v -> drawi $ dotF `at` pt .+^ v) displacements
   where
     all_pts  = map (pt .+^) displacements
     dashline = localize attrUpd (draw $ openStroke $ vertexPath all_pts)

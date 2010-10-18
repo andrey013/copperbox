@@ -93,44 +93,33 @@ leftrightArrow cp la ra =
 
 
 
--- Actually this is wrong.
--- It is not shortening the drawn path... 
 
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
 strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
-    feed pathc trafo (openStroke . toPrimPath)
+    tipEval opt_la (directionL pathc) p0 >>= \(dl,gfL)  -> 
+    tipEval opt_ra (directionR pathc) p1 >>= \(dr,gfR) ->
+    intoImage (pure pathc) (gfR $ gfL $ drawP $ shortenPath dl dr pathc) 
   where
     pathc       = cpF p0 p1
-    trafL       = tipTrafo opt_la shortenL (directionL pathc) p0
-    trafR       = tipTrafo opt_ra shortenR (directionR pathc) p1
-    trafo       = trafL `combineImageTrafo` trafR
-   
+    drawP       = openStroke . toPrimPath   
 
-
-
--- Note - feed returns the original @a@, but draws with the 
--- modified @a'@, so this is very much a special case combinator
--- for drawing arrows.
+-- for Paths.Base ?
 --
-feed :: a -> ImageTrafoF u a -> (a -> Graphic u) -> Image u a
-feed a trf mk = 
-    trf >>= \(fa,fg) -> let a' = fa a in intoImage (pure a) (fg <$> mk a')
+shortenPath :: (Real u , Floating u) =>  u  -> u -> Path u -> Path u
+shortenPath l r = shortenL l .  shortenR r 
 
 
-tipTrafo :: (Real u, Floating u) 
-         => Maybe (Arrowhead u) -> (u -> Path u -> Path u) 
-         -> Radian -> Point2 u -> ImageTrafoF u (Path u)
-tipTrafo Nothing    _        _     _  = intoImageTrafo (pure id) unmarked
-tipTrafo (Just arw) shortenF theta pt = 
-    getArrowhead arw theta pt >>= \(dx,prim) -> 
-    if dx > 0 then intoImageTrafo (pure $ shortenF dx) (superiorPrim prim)
-              else intoImageTrafo (pure id) (superiorPrim prim)
-  where
-    superiorPrim = superiorGraphic . pure
+
+tipEval :: Num u 
+        => Maybe (Arrowhead u) -> Radian -> Point2 u 
+        -> DrawingR (u, GraphicTrafoF u)
+tipEval Nothing    _     _  = return (0,unmarked)
+tipEval (Just arw) theta pt = getArrowhead arw theta pt >>= \(dx,prim) -> 
+                              return (dx, superior $ pure prim)
 
 
 
 unmarked :: GraphicTrafoF u
-unmarked = pure id
+unmarked = id
 

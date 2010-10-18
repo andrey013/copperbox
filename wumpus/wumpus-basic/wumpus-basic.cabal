@@ -41,7 +41,8 @@ description:
   * Changes Base types in  @Basic.Graphic@. The @Graphic@ and 
     @Image@ types now produce (wrapped) @Primitives@, rather than 
     Hughes lists of @Primitives@. This means they can now be 
-    transformed with the affine transformations.
+    transformed with the affine transformations. Removed the 
+    function @ati@, it is replaced by @at@.
   .
   * Added @Basic.Utils.Combinators@.
   .

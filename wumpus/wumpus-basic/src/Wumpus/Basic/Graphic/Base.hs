@@ -70,6 +70,8 @@ module Wumpus.Basic.Graphic.Base
   , LocDrawingR
   , DLocDrawingR
 
+  , DrawingTrafoF 
+
   , runDrawingR
 
   , PrimGraphic
@@ -81,8 +83,6 @@ module Wumpus.Basic.Graphic.Base
   , Graphic
   , DGraphic
   , GraphicTrafoF
-  , applyGraphicTrafo
-  , combineGraphicTrafo
 
   , superiorGraphic
   , anteriorGraphic  
@@ -95,10 +95,11 @@ module Wumpus.Basic.Graphic.Base
 
   , Image
   , DImage
+
   , ImageTrafoF
   , intoImageTrafo
-  , applyImageTrafo
-  , combineImageTrafo
+  , imageTrafoDrawing
+  , imageTrafoGraphic
 
   , LocImage
   , DLocImage
@@ -324,6 +325,8 @@ type LocDrawingR u a = Point2 u -> DrawingR a
 type DLocDrawingR a = LocDrawingR Double a
 
 
+type DrawingTrafoF a = DrawingR a -> DrawingR a
+
 
 -- Affine instances - cannot be manufactured. There is no 
 -- DUnit @u@ to get a handle on.
@@ -415,23 +418,14 @@ instance Num u => Translate (Graphic u) where
 
 
 
-type GraphicTrafoF u = DrawingR (PrimGraphic u -> PrimGraphic u)
-
-
-applyGraphicTrafo :: GraphicTrafoF u -> Graphic u -> Graphic u
-applyGraphicTrafo trafo grafic = trafo <*> grafic
-
-
+-- Maybe back to this ...
+type GraphicTrafoF u = Graphic u -> Graphic u
 
 anteriorGraphic :: Graphic u -> GraphicTrafoF u
-anteriorGraphic = (anterior <$>)
+anteriorGraphic = anterior
 
 superiorGraphic :: Graphic u -> GraphicTrafoF u
-superiorGraphic = (superior <$>)
-
-
-combineGraphicTrafo :: GraphicTrafoF u -> GraphicTrafoF u -> GraphicTrafoF u
-combineGraphicTrafo gt1 gt2 = (.) <$> gt1 <*> gt2 
+superiorGraphic = superior
 
 
 --------------------------------------------------------------------------------
@@ -494,21 +488,18 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
 
 
 
-type ImageTrafoF u a = DrawingR (a -> a, PrimGraphic u -> PrimGraphic u)
-
--- needs a naming scheme...
-intoImageTrafo :: DrawingR (a -> a) -> GraphicTrafoF u -> ImageTrafoF u a
-intoImageTrafo dtf gtf = forkA dtf gtf
+type ImageTrafoF u a = Image u a -> Image u a
 
 
-applyImageTrafo :: ImageTrafoF u a -> Image u a -> Image u a
-applyImageTrafo trafo img = uncurry prod <$> trafo <*> img
- 
+intoImageTrafo :: DrawingTrafoF a -> GraphicTrafoF u -> ImageTrafoF u a
+intoImageTrafo df gf img = img >>= \(a,prim) -> 
+    intoImage (df $ pure a) (gf $ pure prim)
 
+imageTrafoDrawing :: DrawingTrafoF a -> ImageTrafoF u a
+imageTrafoDrawing df = intoImageTrafo df id
 
-combineImageTrafo :: ImageTrafoF u a -> ImageTrafoF u a -> ImageTrafoF u a
-combineImageTrafo itf1 itf2 = 
-    (\(f,g) (r,s) -> (f . r, g . s)) <$> itf1 <*> itf2
+imageTrafoGraphic :: GraphicTrafoF u -> ImageTrafoF u a
+imageTrafoGraphic gf = intoImageTrafo id gf
 
 
 

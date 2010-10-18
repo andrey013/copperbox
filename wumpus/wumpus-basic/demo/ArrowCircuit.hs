@@ -38,13 +38,13 @@ times_ctx = fontface times_roman $ standardContext 11
          
 pic1 :: Picture Double 
 pic1 = liftToPictureU $ execDrawing times_ctx $ do
-    a1 <- drawi $ strokedShape $ translate 0   72 $ rrectangle 12 66 30
+    a1 <- drawi $ strokedShape $ rrectangle 12 66 30 `at` P2 0 72
     atext a1 "CONST 0"
-    a2 <- drawi $ strokedShape $ translate 120 60 $ circle 16
+    a2 <- drawi $ strokedShape $ circle 16 `at` P2 120 60
     atext a2 "IF"
-    a3 <- drawi $ strokedShape $ translate 240 28 $ circle 16
+    a3 <- drawi $ strokedShape $ circle 16 `at` P2 240 28
     atext a3 "+1"
-    a4 <- drawi $ strokedShape $ translate 120  0 $ rectangle 66 30
+    a4 <- drawi $ strokedShape $ rectangle 66 30 `at` P2 120 0
     atext a4 "DELAY 0"
     connWith connect (east a1) (east a1 .+^ hvec 76)
     connWith connect (east a2) (east a2 .+^ hvec 180)
