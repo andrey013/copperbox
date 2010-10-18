@@ -45,6 +45,11 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , displace
   , hdisplace
   , vdisplace
+  , parallelvec
+  , perpendicularvec
+  , displaceParallel
+  , displacePerpendicular
+
 
   , straightLine
   , straightLineBetween
@@ -202,6 +207,20 @@ hdisplace dx (P2 x y) = P2 (x+dx) y
 
 vdisplace :: Num u => u -> Point2 u -> Point2 u
 vdisplace dy (P2 x y) = P2 x (y+dy)
+
+
+
+parallelvec :: Floating u => u -> Radian -> Vec2 u
+parallelvec d r         = avec (circularModulo r) d
+
+perpendicularvec :: Floating u => u -> Radian -> Vec2 u
+perpendicularvec d r    = avec (circularModulo $ (0.5*pi) + r) d
+
+displaceParallel :: Floating u => u -> Radian -> Point2F u
+displaceParallel d r pt = pt .+^ parallelvec d r
+
+displacePerpendicular :: Floating u => u -> Radian -> Point2F u
+displacePerpendicular d r pt = pt .+^ perpendicularvec d r
 
 
 localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u

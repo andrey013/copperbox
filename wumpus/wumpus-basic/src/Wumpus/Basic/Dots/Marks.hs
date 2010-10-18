@@ -80,12 +80,6 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 
 
 
-halfHeightSize :: (Fractional u, FromPtSize u) 
-               => (u -> LocGraphic u) -> LocGraphic u
-halfHeightSize f = bindAsk markHeight $ \h -> f (h * 0.5)
-
-
-
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy f = \pt -> f (displace dx dy pt)
 
@@ -168,7 +162,7 @@ markBDiamond = pathDiamond `bindInto` borderedPath
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
-markDisk = halfHeightSize filledDisk 
+markDisk = bindAsk markHalfHeight filledDisk 
 
 
 
@@ -179,11 +173,11 @@ markSquare = bindAsk markHeight $ \h ->
 
 
 markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markCircle = halfHeightSize strokedDisk 
+markCircle = bindAsk markHalfHeight strokedDisk 
 
 
 markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markBCircle = halfHeightSize borderedDisk 
+markBCircle = bindAsk markHalfHeight borderedDisk 
 
 
 

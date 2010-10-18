@@ -28,6 +28,7 @@ module Wumpus.Basic.Utils.Combinators
   , rlift1
 
   , bindR2
+  , bindAskR2
   , rlift2
 
 
@@ -58,7 +59,7 @@ bindR cxma cxmf = \x -> cxma x >>= \a -> cxmf a x
 -- (lift and bind).
 --
 bindAsk :: Monad m => m a -> (a -> r1 -> m b) -> r1 -> m b 
-bindAsk mq cxmf r1 = mq >>= \a -> cxmf a r1
+bindAsk ma cxmf r1 = ma >>= \a -> cxmf a r1
 
 
 -- 'bindInto' takes a monadic action dependent on R1 and binds
@@ -78,6 +79,12 @@ bindR2 :: Monad m
        => (r1 -> r2 -> m a) -> (a -> r1 -> r2 -> m b) -> r1 -> r2 -> m b
 bindR2 cxma cxmf = \x y -> cxma x y >>= \a -> cxmf a x y
 
+
+-- 'bindAskR2' takes a monadic function oblivious to R1 and R2 upto bindR2.
+-- (lift and bind).
+--
+bindAskR2 :: Monad m => m a -> (a -> r1 -> r2 -> m b) -> r1 -> r2 -> m b 
+bindAskR2 ma cxmf r1 r2 = ma >>= \a -> cxmf a r1 r2
 
 
 rlift2 :: Monad m => m a -> (r1 -> r2 -> m a)

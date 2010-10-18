@@ -111,11 +111,11 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
 
 
 
-
+{-
 markHeightPlusLineWidth :: (Fractional u, FromPtSize u) => DrawingR u
 markHeightPlusLineWidth = 
     (\h lw -> h + realToFrac lw) <$> markHeight <*> lineWidth
-
+-}
 
 -- noRetract ignores both the angle and the point.
 --
@@ -157,11 +157,10 @@ tripointsByDist lenF halfwidthF theta tip =
 -- width = xchar_height
 -- filled with stroke colour!
 
-triAng :: (Floating u, Real u, FromPtSize u)
+triTLG :: (Floating u, Real u, FromPtSize u)
        => Radian -> (PrimPath u -> Graphic u) -> ThetaLocGraphic u
-triAng triang drawF = 
-    tripointsByAngle triang `bindR2` \(u,v) -> 
-        (\_ pt -> localize bothStrokeColour $ drawF $ vertexPath [pt,u,v])
+triTLG triang drawF = tripointsByAngle triang `bindR2` \(u,v) -> 
+    rlift1 $ \pt -> localize bothStrokeColour $ drawF $ vertexPath [pt,u,v]
 
 
 
@@ -169,70 +168,73 @@ triAng triang drawF =
 
 tri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri90 = Arrowhead $ 
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/2) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/2) filledPath)
 
 
 tri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri60 = Arrowhead $
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/3) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/3) filledPath)
 
 
 tri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 tri45 = Arrowhead $ 
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/4) filledPath)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/4) filledPath)
 
 otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri90 = Arrowhead $
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/2) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/2) closedStroke)
 
 otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri60 = Arrowhead $   
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/3) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/3) closedStroke)
 
 otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri45 = Arrowhead $ 
-    intoThetaLocImage (rlift2 markHeight) (triAng (pi/4) closedStroke)
+    intoThetaLocImage (rlift2 markHeight) (triTLG (pi/4) closedStroke)
 
 
 
-barbAng :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
-barbAng ang = 
-    tripointsByAngle ang `bindR2` \(u,v) -> 
-        (\_ pt -> openStroke $ vertexPath [u,pt,v])
+barbTLG :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
+barbTLG ang = tripointsByAngle ang `bindR2` \(u,v) -> 
+    rlift1 $ \pt -> openStroke $ vertexPath [u,pt,v]
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb90 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/2))
+barb90 = Arrowhead $ intoThetaLocImage noRetract (barbTLG (pi/2))
 
 barb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb60 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/3))
+barb60 = Arrowhead $ intoThetaLocImage noRetract (barbTLG (pi/3))
 
 
 barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb45 = Arrowhead $ intoThetaLocImage noRetract (barbAng (pi/4))
+barb45 = Arrowhead $ intoThetaLocImage noRetract (barbTLG (pi/4))
 
 
 
-perpAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
-perpAng theta pt =  
-    markHeight >>= \ h -> 
-    let v = makeV h in openStroke $ vertexPath [ pt .+^ v, pt .-^ v]
-  where
-    makeV h  = avec (theta + pi/2) (0.5 * h)
+perpTLG :: (Floating u, FromPtSize u) => ThetaLocGraphic u
+perpTLG = bindAskR2 markHalfHeight $ \hh ->
+    \theta pt -> let p0 = displacePerpendicular   hh  theta pt
+                     p1 = displacePerpendicular (-hh) theta pt  
+                 in straightLineBetween p0 p1
 
 
 perp :: (Floating u, FromPtSize u) => Arrowhead u
-perp = Arrowhead $ intoThetaLocImage noRetract perpAng
+perp = Arrowhead $ intoThetaLocImage noRetract perpTLG
 
-bracketAng :: (Floating u, FromPtSize u) => ThetaLocGraphic u
-bracketAng theta pt = markHalfHeight >>= \hh -> 
-   runDirection theta $ 
-     displacePerp   hh  pt >>= \p1 ->
-     displacePara (-hh) p1 >>= \p0 ->
-     displacePerp (-hh) pt >>= \p2 ->
-     displacePara (-hh) p2 >>= \p3 ->
-     return $ openStroke $ vertexPath [p0,p1,p2,p3]
-   
+
+
+bracketTLG :: (Floating u, FromPtSize u) => ThetaLocGraphic u
+bracketTLG = bindAskR2 markHalfHeight $ \hh -> 
+    \theta pt -> let p1 = displacePerpendicular   hh  theta pt
+                     p0 = displaceParallel      (-hh) theta p1
+                     p2 = displacePerpendicular (-hh) theta pt
+                     p3 = displaceParallel      (-hh) theta p2
+                 in openStroke $ vertexPath [p0,p1,p2,p3]
+
+
+
 
 bracket :: (Floating u, FromPtSize u) => Arrowhead u
-bracket = Arrowhead $ intoThetaLocImage noRetract bracketAng
+bracket = Arrowhead $ intoThetaLocImage noRetract bracketTLG
+
+
