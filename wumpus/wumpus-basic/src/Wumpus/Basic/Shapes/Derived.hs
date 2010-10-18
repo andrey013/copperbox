@@ -57,6 +57,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space 
 
+import Control.Applicative
 
 remapPoints :: (Real u, Floating u) => [Point2 u] -> ShapeCTM u -> [Point2 u]
 remapPoints xs ctm = map (ctmDisplace `flip` ctm) xs
@@ -73,6 +74,7 @@ data Rectangle u = Rectangle
   deriving (Eq,Ord,Show)
 
 type DRectangle = Rectangle Double
+
 
 type instance DUnit (Rectangle u) = u
 
@@ -108,21 +110,19 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
-rectangle :: (Real u, Floating u) => u -> u -> Shape u Rectangle
+rectangle :: (Real u, Floating u) => u -> u -> LocShape u Rectangle
 rectangle w h = 
-    Shape { src_ctm   = identityCTM
-          , path_fun  = traceLinePoints . rectanglePoints (0.5*w) (0.5*h)
-          , cons_fun  = mkRectangle (0.5*w) (0.5*h)  
-          }
+    makeShape (traceLinePoints . rectanglePoints (0.5*w) (0.5*h))
+              (mkRectangle (0.5*w) (0.5*h))
+          
 
 -- | 'rectangle'  : @ round_length * width * height -> shape @
 --
-rrectangle :: (Real u, Floating u) => u -> u -> u -> Shape u Rectangle
+rrectangle :: (Real u, Floating u) => u -> u -> u -> LocShape u Rectangle
 rrectangle round_dist w h = 
-    Shape { src_ctm   = identityCTM
-          , path_fun  = roundEvery round_dist . rectanglePoints (0.5*w) (0.5*h)
-          , cons_fun  = mkRectangle (0.5*w) (0.5*h)  
-          }
+    makeShape (roundEvery round_dist . rectanglePoints (0.5*w) (0.5*h))
+              (mkRectangle (0.5*w) (0.5*h))
+         
 
 
 
@@ -189,12 +189,11 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
 
 -- | 'circle'  : @ radius -> shape @
 --
-circle :: (Real u, Floating u) => u -> Shape u Circle
+circle :: (Real u, Floating u) => u -> LocShape u Circle
 circle radius = 
-    Shape { src_ctm  = identityCTM
-          , path_fun = traceCurvePoints . circlePoints radius
-          , cons_fun = mkCircle radius
-          }
+    makeShape (traceCurvePoints . circlePoints radius)
+              (mkCircle radius)
+          
 
 
 mkCircle :: u -> ShapeConstructor u Circle
@@ -224,6 +223,9 @@ type DDiamond = Diamond Double
 type instance DUnit (Diamond u) = u
 
 
+instance Num u => Translate (Diamond u) where
+  translate dx dy = (\s i -> s { dia_ctm = translate dx dy i } ) <*> dia_ctm
+
 instance (Real u, Floating u) => CenterAnchor (Diamond u) where
   center = ctmCenter . dia_ctm
 
@@ -250,23 +252,21 @@ instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
 --
 -- Note - args might change to tull_width and full_height...
 --
-diamond :: (Real u, Floating u) => u -> u -> Shape u Diamond
+diamond :: (Real u, Floating u) => u -> u -> LocShape u Diamond
 diamond hw hh = 
-    Shape { src_ctm  = identityCTM
-          , path_fun = traceLinePoints . diamondPoints hw hh
-          , cons_fun = mkDiamond hw hh
-          }
+    makeShape (traceLinePoints . diamondPoints hw hh)
+              (mkDiamond hw hh)
+          
 
 -- | 'rdiamond'  : @ round_length * half_width * half_height -> shape @
 --
 -- Note - args might change to full_width and full_height...
 --
-rdiamond :: (Real u, Floating u) => u -> u -> u -> Shape u Diamond
+rdiamond :: (Real u, Floating u) => u -> u -> u -> LocShape u Diamond
 rdiamond round_dist hw hh = 
-    Shape { src_ctm  = identityCTM
-          , path_fun = roundEvery round_dist . diamondPoints hw hh
-          , cons_fun = mkDiamond hw hh
-          }
+    makeShape (roundEvery round_dist . diamondPoints hw hh)
+              (mkDiamond hw hh)
+         
 
 
 
@@ -305,7 +305,7 @@ instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
 
 
 calcEllPoint :: (Real u, Floating u) 
-              => (u -> Point2 u) -> Ellipse u -> Point2 u
+             => (u -> Point2 u) -> Ellipse u -> Point2 u
 calcEllPoint f (Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }) =
     let p   = f rx; p'  = scaleEll rx ry p
     in ctmDisplace p' ctm
@@ -330,12 +330,11 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
 
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
-ellipse :: (Real u, Floating u) => u -> u -> Shape u Ellipse
+ellipse :: (Real u, Floating u) => u -> u -> LocShape u Ellipse
 ellipse rx ry = 
-    Shape { src_ctm  = identityCTM
-          , path_fun = traceCurvePoints . ellipsePoints rx ry
-          , cons_fun = mkEllipse rx ry  
-          }
+    makeShape (traceCurvePoints . ellipsePoints rx ry)
+              (mkEllipse rx ry)
+          
 
 
 

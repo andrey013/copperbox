@@ -345,9 +345,15 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 infixr 1 `at`, `ati`
-at :: LocGraphic u -> Point2 u -> Graphic u
+at :: (Point2 u -> a) -> Point2 u -> a
 at = ($)
 
+
+-- | Note - having `ati` probably doesn\'t make type error 
+-- messages more meaningful.
+--
+-- It should be scrapped soon.
+--
 ati :: LocImage u a -> Point2 u -> Image u a
 ati = ($)
 

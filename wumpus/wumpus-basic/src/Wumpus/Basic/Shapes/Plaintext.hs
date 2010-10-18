@@ -121,18 +121,17 @@ drawText x = intoImage (oneLineRect x) (drawOneLine x)
 
 
 
+textCTM :: Num u => u -> u -> Radian -> ShapeCTM u
+textCTM x y theta = rotate theta $ makeShapeCTM (P2 x y)
+
 oneLineRect :: (Fractional u, Ord u, FromPtSize u) 
         => Plaintext u -> DrawingR (PlaintextAnchor u)
 oneLineRect ptext = 
     monoTextDimensions (text_text ptext) >>= \(w,h) -> 
     return (PlaintextAnchor $ mkRectangle (0.5*w) (0.5*h) ctm)
   where
-    ctm = ShapeCTM { ctm_trans_x    = text_x ptext
-                   , ctm_trans_y    = text_y ptext
-                   , ctm_scale_x    = 1
-                   , ctm_scale_y    = 1
-                   , ctm_rotation   = text_ang ptext
-                   }
+    ctm = textCTM (text_x ptext) (text_y ptext) (text_ang ptext)
+                   
 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
             => Plaintext u -> Graphic u 

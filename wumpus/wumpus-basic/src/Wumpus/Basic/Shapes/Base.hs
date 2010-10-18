@@ -23,7 +23,10 @@ module Wumpus.Basic.Shapes.Base
   ( 
 
 
-    Shape(..)
+    Shape
+  , LocShape
+  , makeShape
+
   , ShapeConstructor
 
   , borderedShape
@@ -31,8 +34,8 @@ module Wumpus.Basic.Shapes.Base
   , strokedShape
 
   -- * ShapeCTM 
-  , ShapeCTM(..)
-  , identityCTM
+  , ShapeCTM
+  , makeShapeCTM
 
   , ctmDisplace
   , ctmCenter
@@ -62,40 +65,59 @@ import Control.Applicative
 -- DrawingContext for the /shape/
 --
 
+newtype ShapeR u a = ShapeR { getShapeR :: ShapeCTM u -> a }
+
+runShapeR :: ShapeCTM u -> ShapeR u a -> a
+runShapeR ctm sf = getShapeR sf ctm
+
+
 data Shape u t =  Shape 
-      { src_ctm   :: ShapeCTM u 
-      , path_fun  :: ShapeCTM u -> Path u
-      , cons_fun   :: ShapeCTM u -> t u
+      { shape_ctm   :: ShapeCTM u 
+      , path_fun    :: ShapeR u (Path u)
+      , cons_fun    :: ShapeR u (t u)
       }
 
 type instance DUnit (Shape u sh) = u
 
 
+type LocShape u t = Point2 u -> Shape u t
+
 type ShapeConstructor u t = ShapeCTM u -> t u 
 
 
+makeShape :: Num u 
+          => (ShapeCTM u -> Path u) -> (ShapeCTM u -> t u) -> LocShape u t
+makeShape pf mkf = \pt -> Shape { shape_ctm = makeShapeCTM pt
+                                , path_fun  = ShapeR pf
+                                , cons_fun  = ShapeR mkf
+                                } 
+
+
+shapeImage :: Num u => (PrimPath u -> Graphic u) -> Shape u t -> Image u (t u)
+shapeImage drawF (Shape { shape_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
+   intoImage (pure $ runShapeR ctm objf) 
+             (drawF $ toPrimPath $ runShapeR ctm pf)
+
 
 borderedShape :: Num u => Shape u t -> Image u (t u)
-borderedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (borderedPath $ toPrimPath $ pf ctm)
+borderedShape = shapeImage borderedPath
 
 filledShape :: Num u => Shape u t -> Image u (t u)
-filledShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (filledPath $ toPrimPath $ pf ctm)
+filledShape = shapeImage filledPath
 
 strokedShape :: Num u => Shape u t -> Image u (t u)
-strokedShape (Shape { src_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ objf ctm) (closedStroke $ toPrimPath $ pf ctm)
+strokedShape = shapeImage closedStroke 
+
 
 
 instance (Real u, Floating u) => Rotate (Shape u sh) where
-  rotate r = updateCTM (rotateCTM r)
+  rotate r = updateCTM (rotate r)
 
 instance Num u => Scale (Shape u sh) where
-  scale x y = updateCTM (scaleCTM x y)
+  scale sx sy = updateCTM (scale sx sy)
 
 instance Num u => Translate (Shape u sh) where
-  translate x y = updateCTM (translateCTM x y)
+  translate dx dy = updateCTM (translate dx dy)
 
 updateCTM :: (ShapeCTM u -> ShapeCTM u) -> Shape u sh -> Shape u sh
 updateCTM fn (Shape ctm pf mkf) = Shape (fn ctm) pf mkf
@@ -108,8 +130,7 @@ updateCTM fn (Shape ctm pf mkf) = Shape (fn ctm) pf mkf
 --
 
 data ShapeCTM u = ShapeCTM 
-      { ctm_trans_x             :: !u
-      , ctm_trans_y             :: !u
+      { ctm_center              :: Point2 u
       , ctm_scale_x             :: !u
       , ctm_scale_y             :: !u
       , ctm_rotation            :: Radian
@@ -118,38 +139,42 @@ data ShapeCTM u = ShapeCTM
 
 type instance DUnit (ShapeCTM u) = u
 
-identityCTM :: Num u => ShapeCTM u
-identityCTM = ShapeCTM { ctm_trans_x  = 0 
-                       , ctm_trans_y  = 0 
-                       , ctm_scale_x  = 1
-                       , ctm_scale_y  = 1
-                       , ctm_rotation = 0 }
+makeShapeCTM :: Num u => Point2 u -> ShapeCTM u
+makeShapeCTM pt = ShapeCTM { ctm_center   = pt
+                           , ctm_scale_x  = 1
+                           , ctm_scale_y  = 1
+                           , ctm_rotation = 0 }
 
 
 
 
 
-scaleCTM :: Num u => u -> u -> ShapeCTM u -> ShapeCTM u
-scaleCTM sx sy = 
-    (\s x y -> s { ctm_scale_x = x*sx, ctm_scale_y = y*sy })
-      <*> ctm_scale_x <*> ctm_scale_y
+instance Num u => Scale (ShapeCTM u) where
+  scale sx sy = (\s x y -> s { ctm_scale_x = x*sx, ctm_scale_y = y*sy })
+                  <*> ctm_scale_x <*> ctm_scale_y
 
 
-rotateCTM :: Radian -> ShapeCTM u -> ShapeCTM u
-rotateCTM ang1 = 
-    (\s ang -> s { ctm_rotation = circularModulo $ ang1+ang })
-      <*> ctm_rotation
+instance Rotate (ShapeCTM u) where
+  rotate ang = (\s i -> s { ctm_rotation = circularModulo $ i+ang })
+                  <*> ctm_rotation
+
+instance (Real u, Floating u) => RotateAbout (ShapeCTM u) where
+  rotateAbout ang pt = 
+    (\s ctr i -> s { ctm_rotation = circularModulo $ i+ang
+                   , ctm_center   = rotateAbout ang pt ctr })
+      <*> ctm_center <*> ctm_rotation
 
 
-translateCTM :: Num u => u -> u -> ShapeCTM u -> ShapeCTM u
-translateCTM dx dy = 
-    (\s x y -> s { ctm_trans_x = x+dx, ctm_trans_y = y+dy })
-      <*> ctm_trans_x <*> ctm_trans_y
+instance Num u => Translate (ShapeCTM u) where
+  translate dx dy = (\s (P2 x y) -> s { ctm_center = P2 (x+dx) (y+dy) })
+                      <*> ctm_center
+
 
 
 ctmDisplace :: (Real u, Floating u) => Point2 u -> ShapeCTM u -> Point2 u
-ctmDisplace (P2 x y) (ShapeCTM { ctm_trans_x  = dx, ctm_trans_y  = dy 
-                               , ctm_scale_x  = sx, ctm_scale_y  = sy
+ctmDisplace (P2 x y) (ShapeCTM { ctm_center   = (P2 dx dy) 
+                               , ctm_scale_x  = sx
+                               , ctm_scale_y  = sy
                                , ctm_rotation = theta }) = 
     translate dx dy $ rotate theta $ P2 (sx*x) (sy*y)
 

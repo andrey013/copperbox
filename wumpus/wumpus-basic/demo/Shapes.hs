@@ -25,13 +25,13 @@ pic1 :: DPicture
 pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
          _ <- drawi $ borderedShape $ translate 220 10 
                                     $ rotate30
-                                    $ rectangle 90 30 -- "Rectangle"
-         _ <- drawi $ borderedShape $ translate 100  0 $ circle 10 -- "C0"
+                                    $ rectangle 90 30 `at` zeroPt -- "Rectangle"
+         _ <- drawi $ borderedShape $ circle 10 `at` P2 100 0  -- "C0"
    
          _ <- localize (strokeColour red) $ 
                        drawi $ coordinateMark $ coordinate (P2 220 10)
-         _ <- drawi $ borderedShape $ translate 0   40 $ diamond 10 10 -- "d1"
-         _ <- drawi $ borderedShape $ translate 400 50 $ rectangle 20 100 -- "R2"
+         _ <- drawi $ borderedShape $ diamond 10 10 `at` (P2 40 0) -- "d1"
+         _ <- drawi $ borderedShape $ rectangle 20 100 `at` (P2 400 50) -- "R2"
          return ()
 
 
