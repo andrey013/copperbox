@@ -30,13 +30,30 @@ module Wumpus.Basic.Arrows.Tips
   , otri60
   , otri45
 
+  , revtri90
+  , revtri60
+  , revtri45
+  , orevtri90
+  , orevtri60
+  , orevtri45
+
   , barb90
   , barb60
   , barb45
+  , revbarb90
+  , revbarb60
+  , revbarb45
 
   , perp
 
   , bracket
+
+  , diskTip
+  , odiskTip
+  , squareTip
+  , osquareTip
+  , diamondTip
+  , odiamondTip
 
   ) where
 
@@ -50,7 +67,12 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 
 
--- This new formulation seems preferable...
+-- | Encode an arrowhead as an image where the /answer/ is the
+-- retract distance.
+--
+-- The retract distance is context sensitive - usually just on
+-- the markHeight (or halfMarkHeight) so it has to be calculated
+-- w.r.t. the DrawingCtx.
 --
 newtype Arrowhead u = Arrowhead { getArrowhead :: ThetaLocImage u u }
 
@@ -117,6 +139,12 @@ markHeightPlusLineWidth =
     (\h lw -> h + realToFrac lw) <$> markHeight <*> lineWidth
 -}
 
+
+markHeightLessLineWidth :: (Fractional u, FromPtSize u) => DrawingR u
+markHeightLessLineWidth = 
+    (\h lw -> h - realToFrac lw) <$> markHeight <*> lineWidth
+
+
 -- noRetract ignores both the angle and the point.
 --
 -- Its common for the rectraction not to care about the angle or 
@@ -132,7 +160,7 @@ noRetract = rlift2 $ pure 0
 --
 -- This means that the 90deg tip has a tip width greater-than the
 -- mark height (but that is okay - seemingly this is how TikZ 
--- does it!).
+-- does it).
 --
 tripointsByAngle :: (Floating u, FromPtSize u)
                  => Radian ->  ThetaLocDrawingR u (Point2 u, Point2 u)
@@ -140,6 +168,19 @@ tripointsByAngle triang theta tip =
     (\h -> let (vupper,vlower) = triVecsByAngle h (0.5*triang) theta
            in  (tip .+^ vupper, tip .+^ vlower))
       <$> markHeight
+
+
+revtripointsByAngle :: (Floating u, FromPtSize u)
+                    => Radian 
+                    ->  ThetaLocDrawingR u (Point2 u, Point2 u, Point2 u)
+revtripointsByAngle triang theta tip = 
+    (\h -> let theta'          = circularModulo $ pi+theta 
+               (vupper,vlower) = triVecsByAngle h (0.5*triang) theta'
+               back_tip        = tip .-^ avec theta h 
+           in (back_tip .+^ vupper, back_tip, back_tip .+^ vlower) )
+      <$> markHeight
+
+
 
 
 {-
@@ -194,6 +235,47 @@ otri45 = Arrowhead $
 
 
 
+-- width = xchar_height
+-- filled with stroke colour!
+
+revtriTLG :: (Floating u, Real u, FromPtSize u)
+          => Radian -> (PrimPath u -> Graphic u) -> ThetaLocGraphic u
+revtriTLG triang drawF = revtripointsByAngle triang `bindR2` \(u,pt,v) -> 
+    rlift2 $ localize bothStrokeColour $ drawF $ vertexPath [u,pt,v]
+
+
+revtri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revtri90 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/2) filledPath)
+
+revtri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revtri60 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/3) filledPath)
+
+revtri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revtri45 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/4) filledPath)
+
+
+orevtri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+orevtri90 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/2) closedStroke)
+
+orevtri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+orevtri60 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/3) closedStroke)
+
+orevtri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+orevtri45 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeightLessLineWidth) 
+                      (revtriTLG (pi/4) closedStroke)
+
+
 barbTLG :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
 barbTLG ang = tripointsByAngle ang `bindR2` \(u,v) -> 
     rlift1 $ \pt -> openStroke $ vertexPath [u,pt,v]
@@ -209,6 +291,24 @@ barb60 = Arrowhead $ intoThetaLocImage noRetract (barbTLG (pi/3))
 barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 barb45 = Arrowhead $ intoThetaLocImage noRetract (barbTLG (pi/4))
 
+
+
+revbarbTLG :: (Floating u, Real u, FromPtSize u) => Radian -> ThetaLocGraphic u
+revbarbTLG ang = revtripointsByAngle ang `bindR2` \(u,pt,v) -> 
+    rlift2 $ openStroke $ vertexPath [u,pt,v]
+
+revbarb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revbarb90 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeight) (revbarbTLG (pi/2))
+
+
+revbarb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revbarb60 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeight) (revbarbTLG (pi/3))
+
+revbarb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
+revbarb45 = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeight) (revbarbTLG (pi/4))
 
 
 perpTLG :: (Floating u, FromPtSize u) => ThetaLocGraphic u
@@ -237,4 +337,62 @@ bracketTLG = bindAskR2 markHalfHeight $ \hh ->
 bracket :: (Floating u, FromPtSize u) => Arrowhead u
 bracket = Arrowhead $ intoThetaLocImage noRetract bracketTLG
 
+diskTLG :: (Floating u, FromPtSize u) 
+        => (u -> Point2 u -> Graphic u) -> ThetaLocGraphic u
+diskTLG drawF = bindAskR2 markHalfHeight $ \hh ->
+    \theta pt -> let ctr = pt .-^ avec theta hh
+                 in drawF hh ctr
 
+diskTip :: (Floating u, FromPtSize u) => Arrowhead u
+diskTip = Arrowhead $ intoThetaLocImage (rlift2 markHeight) (diskTLG drawF)
+  where
+    drawF r pt = localize bothStrokeColour $ filledDisk r pt
+
+
+odiskTip :: (Floating u, FromPtSize u) => Arrowhead u
+odiskTip = Arrowhead $ intoThetaLocImage (rlift2 markHeight) (diskTLG drawF)
+  where
+    drawF r pt = strokedDisk r pt
+
+
+squareTLG :: (Floating u, FromPtSize u) 
+        => (PrimPath u -> Graphic u) -> ThetaLocGraphic u
+squareTLG drawF = bindAskR2 markHalfHeight $ \hh ->
+    \theta pt -> let p0 = displacePerpendicular     hh  theta pt
+                     p3 = displacePerpendicular   (-hh) theta pt
+                     p1 = displaceParallel      (-2*hh) theta p0
+                     p2 = displaceParallel      (-2*hh) theta p3
+                 in drawF $ vertexPath [p0,p1,p2,p3]
+
+squareTip :: (Floating u, FromPtSize u) => Arrowhead u
+squareTip = Arrowhead $ intoThetaLocImage (rlift2 markHeight) (squareTLG drawF)
+  where
+    drawF = localize bothStrokeColour . filledPath
+
+
+osquareTip :: (Floating u, FromPtSize u) => Arrowhead u
+osquareTip = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeight) (squareTLG closedStroke)
+
+
+diamondTLG :: (Floating u, FromPtSize u) 
+        => (PrimPath u -> Graphic u) -> ThetaLocGraphic u
+diamondTLG drawF = bindAskR2 markHalfHeight $ \hh ->
+    \theta pt -> let ctr = displaceParallel       (-2*hh) theta pt
+                     p1  = displacePerpendicular     hh   theta ctr
+                     p3  = displacePerpendicular   (-hh)  theta ctr
+                     p2  = displaceParallel       (-4*hh) theta pt
+                 in drawF $ vertexPath [pt,p1,p2,p3]
+
+
+diamondTip :: (Floating u, FromPtSize u) => Arrowhead u
+diamondTip = Arrowhead $ 
+    intoThetaLocImage (rlift2 $ fmap (2*) markHeightLessLineWidth) 
+                      (diamondTLG drawF)
+  where
+    drawF = localize bothStrokeColour . filledPath
+
+
+odiamondTip :: (Floating u, FromPtSize u) => Arrowhead u
+odiamondTip = Arrowhead $ 
+    intoThetaLocImage (rlift2 $ fmap (2*) markHeight) (diamondTLG closedStroke)

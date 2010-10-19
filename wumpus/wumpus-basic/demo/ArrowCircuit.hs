@@ -46,12 +46,12 @@ pic1 = liftToPictureU $ execDrawing times_ctx $ do
     atext a3 "+1"
     a4 <- drawi $ strokedShape $ rectangle 66 30 `at` P2 120 0
     atext a4 "DELAY 0"
-    connWith connect (east a1) (east a1 .+^ hvec 76)
-    connWith connect (east a2) (east a2 .+^ hvec 180)
-    connWith connect (north a2 .+^ vvec 40) (north a2)
-    connWith connect (north a3 .+^ vvec 16) (north a3)  
-    connWith vhconn  (south a3) (east a4)
-    connWith (hvhconn (-30)) (west a4)  (southwest a2)
+    connWith connLine (east a1) (east a1 .+^ hvec 76)
+    connWith connLine (east a2) (east a2 .+^ hvec 180)
+    connWith connLine (north a2 .+^ vvec 40) (north a2)
+    connWith connLine (north a3 .+^ vvec 16) (north a3)  
+    connWith connRightVH  (south a3) (east a4)
+    connWith (connRightHVH (-30)) (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
     ptext (P2 152 100) "reset"
     ptext (P2 252  72) "output"

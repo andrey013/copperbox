@@ -97,7 +97,7 @@ leftrightArrow cp la ra =
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
 strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
-    tipEval opt_la (directionL pathc) p0 >>= \(dl,gfL)  -> 
+    tipEval opt_la (directionL pathc) p0 >>= \(dl,gfL) -> 
     tipEval opt_ra (directionR pathc) p1 >>= \(dr,gfR) ->
     intoImage (pure pathc) (gfR $ gfL $ drawP $ shortenPath dl dr pathc) 
   where
@@ -110,6 +110,23 @@ shortenPath :: (Real u , Floating u) =>  u  -> u -> Path u -> Path u
 shortenPath l r = shortenL l .  shortenR r 
 
 
+-- 'tipEval' is a bit of an oddity. It has to evaluate the 
+-- Arrowhead / Image in the DrawingCtx to get the retract 
+-- distance. But doing so evaluates the tips to PrimGraphics, thus 
+-- it has to wrap the tips back up as Graphics with @pure@ so they 
+-- can be concatenated to the drawn path as GraphicTrafos.
+--
+-- The Arrowhead type could be changed, so rather than returning 
+-- an Image (retract_distance, PrimGraphic) it returns 
+-- (retract_distance, GraphicTrafo) but that would burden all 
+-- arrowheads with some extra complexity.
+-- 
+-- In short - the code here works but it isn\'t exemplary, and it 
+-- doesn\'t show whether or not GraphicTrafo is a valuable type or
+-- if it is implemented correctly (as GraphicTrafo could having
+-- different implementations according to how it regards the 
+-- DrawingCtx).
+--
 
 tipEval :: Num u 
         => Maybe (Arrowhead u) -> Radian -> Point2 u 
@@ -122,4 +139,8 @@ tipEval (Just arw) theta pt = getArrowhead arw theta pt >>= \(dx,prim) ->
 
 unmarked :: GraphicTrafoF u
 unmarked = id
+
+
+
+
 

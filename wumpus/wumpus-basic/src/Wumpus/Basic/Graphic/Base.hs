@@ -58,6 +58,7 @@ module Wumpus.Basic.Graphic.Base
  
   , PointSupplyM(..)
 
+
   -- * Base types
   , HPrim
   , hprimToList
@@ -328,6 +329,8 @@ type DLocDrawingR a = LocDrawingR Double a
 type DrawingTrafoF a = DrawingR a -> DrawingR a
 
 
+
+
 -- Affine instances - cannot be manufactured. There is no 
 -- DUnit @u@ to get a handle on.
 --
@@ -418,7 +421,6 @@ instance Num u => Translate (Graphic u) where
 
 
 
--- Maybe back to this ...
 type GraphicTrafoF u = Graphic u -> Graphic u
 
 anteriorGraphic :: Graphic u -> GraphicTrafoF u
@@ -426,6 +428,8 @@ anteriorGraphic = anterior
 
 superiorGraphic :: Graphic u -> GraphicTrafoF u
 superiorGraphic = superior
+
+
 
 
 --------------------------------------------------------------------------------
@@ -489,6 +493,8 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
 
 
 type ImageTrafoF u a = Image u a -> Image u a
+
+
 
 
 intoImageTrafo :: DrawingTrafoF a -> GraphicTrafoF u -> ImageTrafoF u a
