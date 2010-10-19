@@ -34,10 +34,16 @@ module Wumpus.Basic.Paths.Connectors
   , connIsosceles2
   , connLightningBolt
 
+
+  , connIsoscelesCurve
+  , connSquareCurve
+  , connUSquareCurve
+
   , curveconn
 
   ) where
 
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths.Base
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -136,6 +142,58 @@ connLightningBolt u p1@(P2 x1 y1) p2@(P2 x2 y2) =
 --------------------------------------------------------------------------------
 
 
+
+-- | Form a curve inside an isosceles triangle. 
+--
+-- The two Bezier control points take the same point - the
+-- altitude of the triangle. The curve tends to be quite shallow
+-- 
+-- @u@ is the altitude of the triangle.
+--
+connIsoscelesCurve :: (Real u, Floating u) => u -> ConnectorPath u 
+connIsoscelesCurve u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
+    traceCurvePoints [p1, control_pt, control_pt, p2]
+  where
+    mid_pt      = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
+    control_pt  = mid_pt .+^ avec perp_ang u
+    perp_ang    = (pi*0.5) + direction (pvec p1 p2) 
+
+
+-- Square curves
+
+mkSquareCurve :: (Real u, Floating u) => (u -> u) -> ConnectorPath u 
+mkSquareCurve fn p1 p2 = 
+    traceCurvePoints [p1, cp1, cp2, p2]
+  where
+    base_vec  = pvec p1 p2
+    side_len  = vlength base_vec
+    theta     = direction base_vec
+    cp1       = displacePerpendicular (fn side_len) theta p1
+    cp2       = displacePerpendicular (fn side_len) theta p2
+
+
+
+-- | Form a curve inside a square. 
+--
+-- The two Bezier control points take the /top/ corners. The
+-- curve tends to be very deep.
+-- 
+connSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connSquareCurve = mkSquareCurve id
+
+-- | Form a curve inside a square. 
+--
+-- As per 'connSquareCurve' but the curve is drawn /underneath/
+-- the line formed between the start and end points.
+-- 
+-- (Underneath is modulo the direction, of course).
+-- 
+connUSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connUSquareCurve = mkSquareCurve negate
+
+
+-- connTrapezoidCurve :: (Real u, Floating u) => u -> u -> ConnectorPath u 
+-- connTrapezoidCurve
 
 -- OLD ...
 --
