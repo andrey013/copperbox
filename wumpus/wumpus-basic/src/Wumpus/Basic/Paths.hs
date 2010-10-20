@@ -20,10 +20,12 @@ module Wumpus.Basic.Paths
     module Wumpus.Basic.Paths.Base
   , module Wumpus.Basic.Paths.Connectors
   , module Wumpus.Basic.Paths.Construction
+  , module Wumpus.Basic.Paths.ControlPoints
 
   ) where
 
 import Wumpus.Basic.Paths.Base
 import Wumpus.Basic.Paths.Connectors
 import Wumpus.Basic.Paths.Construction
+import Wumpus.Basic.Paths.ControlPoints
 

@@ -61,6 +61,8 @@ arrtable =
     , (osquareTip,  osquareTip)
     , (diamondTip,  diamondTip)
     , (odiamondTip, odiamondTip)
+    , (curveTip,    curveTip)
+    , (revcurveTip, revcurveTip)
     ]
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 

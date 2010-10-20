@@ -55,9 +55,13 @@ module Wumpus.Basic.Arrows.Tips
   , diamondTip
   , odiamondTip
 
+  , curveTip
+  , revcurveTip
+
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Paths
 import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -116,7 +120,7 @@ triVecsByAngle tiplen halfang theta = (vec_to_upper, vec_to_lower)
     vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
 
 
-{-
+
 -- | This one is for triangles when the tip height and tip width
 -- are known.
 --
@@ -129,7 +133,7 @@ triVecsByDist tiplen half_tipwidth theta = (vec_to_upper, vec_to_lower)
     rtheta       = pi + theta        -- theta in the opposite direction
     vec_to_upper = avec (circularModulo $ rtheta - halfang) hypo_len
     vec_to_lower = avec (circularModulo $ rtheta + halfang) hypo_len 
--}
+
 
 
 
@@ -154,6 +158,7 @@ noRetract :: Num u => ThetaLocDrawingR u u
 noRetract = rlift2 $ pure 0 
 
 
+
 --------------------------------------------------------------------------------
 
 -- | Tripoints takes the \*tip length\* is the mark height.
@@ -164,34 +169,39 @@ noRetract = rlift2 $ pure 0
 --
 tripointsByAngle :: (Floating u, FromPtSize u)
                  => Radian ->  ThetaLocDrawingR u (Point2 u, Point2 u)
-tripointsByAngle triang theta tip = 
+tripointsByAngle triang theta pt = 
     (\h -> let (vupper,vlower) = triVecsByAngle h (0.5*triang) theta
-           in  (tip .+^ vupper, tip .+^ vlower))
+           in  (pt .+^ vupper, pt .+^ vlower))
       <$> markHeight
 
 
 revtripointsByAngle :: (Floating u, FromPtSize u)
                     => Radian 
-                    ->  ThetaLocDrawingR u (Point2 u, Point2 u, Point2 u)
-revtripointsByAngle triang theta tip = 
+                    -> ThetaLocDrawingR u (Point2 u, Point2 u, Point2 u)
+revtripointsByAngle triang theta pt = 
     (\h -> let theta'          = circularModulo $ pi+theta 
                (vupper,vlower) = triVecsByAngle h (0.5*triang) theta'
-               back_tip        = tip .-^ avec theta h 
+               back_tip        = pt .-^ avec theta h 
            in (back_tip .+^ vupper, back_tip, back_tip .+^ vlower) )
       <$> markHeight
 
 
-
-
-{-
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
-                => (u -> u) -> (u -> u)  
-                -> ThetaLocDrawingR u (Point2 u, Point2 u)
-tripointsByDist lenF halfwidthF theta tip = 
-    (\h -> let (vup,vlo) = triVecsByDist (lenF h) (halfwidthF $ 0.5*h) theta
-           in  (tip .+^ vup, tip .+^ vlo))
+                => ThetaLocDrawingR u (Point2 u, Point2 u)
+tripointsByDist theta pt = 
+    (\h -> let (vup,vlo) = triVecsByDist h (0.5*h) theta
+           in  (pt .+^ vup, pt .+^ vlo))
       <$> markHeight
--}
+
+
+revtripointsByDist :: (Real u, Floating u, FromPtSize u)
+                   => ThetaLocDrawingR u (Point2 u, Point2 u, Point2 u)
+revtripointsByDist theta pt = 
+    (\h -> let theta'    = circularModulo $ pi+theta 
+               (vup,vlo) = triVecsByDist h (0.5*h) theta'
+               back_tip  = pt .-^ avec theta h 
+           in  (back_tip .+^ vup, back_tip, back_tip .+^ vlo))
+      <$> markHeight
 
 
 
@@ -376,7 +386,7 @@ osquareTip = Arrowhead $
 
 
 diamondTLG :: (Floating u, FromPtSize u) 
-        => (PrimPath u -> Graphic u) -> ThetaLocGraphic u
+           => (PrimPath u -> Graphic u) -> ThetaLocGraphic u
 diamondTLG drawF = bindAskR2 markHalfHeight $ \hh ->
     \theta pt -> let ctr = displaceParallel       (-2*hh) theta pt
                      p1  = displacePerpendicular     hh   theta ctr
@@ -396,3 +406,39 @@ diamondTip = Arrowhead $
 odiamondTip :: (Floating u, FromPtSize u) => Arrowhead u
 odiamondTip = Arrowhead $ 
     intoThetaLocImage (rlift2 $ fmap (2*) markHeight) (diamondTLG closedStroke)
+
+
+-- Note - points flipped to get the second trapezium to 
+-- draw /underneath/.
+--
+curveTLG :: (Real u, Floating u, FromPtSize u) => ThetaLocGraphic u
+curveTLG theta pt = 
+    markHalfHeight           >>= \hh        -> 
+    tripointsByDist theta pt >>= \(tup,tlo) -> 
+    let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
+        (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo pt 
+        tpath   = curve tup u2 u1 pt `append` curve pt l1 l2 tlo
+    in localize (joinRound . capRound) 
+                (openStroke $ toPrimPath $ tpath)
+
+curveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
+curveTip = Arrowhead $ 
+    intoThetaLocImage (rlift2 $ fmap realToFrac lineWidth) curveTLG
+
+
+-- Note - points flipped to get the second trapezium to 
+-- draw /underneath/.
+--
+revcurveTLG :: (Real u, Floating u, FromPtSize u) => ThetaLocGraphic u
+revcurveTLG theta pt = 
+    markHalfHeight              >>= \hh           -> 
+    revtripointsByDist theta pt >>= \(tup,p1,tlo) -> 
+    let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
+        (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
+        tpath   = curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
+    in localize (joinRound . capRound) 
+                (openStroke $ toPrimPath $ tpath)
+
+revcurveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
+revcurveTip = Arrowhead $ 
+    intoThetaLocImage (rlift2 markHeight) revcurveTLG

@@ -51,6 +51,7 @@ conntable =
     , connSquareCurve
     , connUSquareCurve
     , connTrapezoidCurve 40 0.5
+    , connTrapezoidCurve (-40) 0.5
     , connZSquareCurve   
     , connUZSquareCurve   
     ]
@@ -71,7 +72,7 @@ std_ctx = fillColour peru $ standardContext 18
 makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
                  => ConnectorPath u -> Point2 u -> Drawing u ()
 makeConnDrawing conn p0 = 
-    drawi_ $ strokeConnector (dblArrow conn barb45) p0 p1
+    drawi_ $ strokeConnector (dblArrow conn curveTip) p0 p1
   where
     p1 = p0 .+^ vec 100 40
   

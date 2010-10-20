@@ -30,6 +30,7 @@ module Wumpus.Basic.Paths.Base
   , pconcat
   , line
   , curve
+  , pivot
   , traceLinePoints
   , traceCurvePoints
   , curveByAngles
@@ -118,6 +119,7 @@ type instance DUnit (Path u)    = u
 type instance DUnit (PathSeg u) = u
 
 
+infixr 1 `append`
 
 length :: Num u => Path u -> u
 length (Path u _ _ _) = u
@@ -160,6 +162,16 @@ curve :: (Floating u, Ord u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Path u 
 curve p0 p1 p2 p3 = let v = curveLength p0 p1 p2 p3
                     in Path v p0 (S.singleton $ CurveSeg v p0 p1 p2 p3) p3
+
+-- | A draw a /straight line/ at the supplied point, nothing is
+-- actually drawing. 
+--
+-- This is /might/ be useful in concatenating curved paths
+-- as it introduces and extra control point.
+-- 
+pivot :: Floating u => Point2 u -> Path u 
+pivot p0 = Path 0 p0 (S.singleton $ LineSeg 0 p0 p0) p0
+
 
 -- | 'traceLinePoints' throws a runtime error if the supplied list
 -- is empty. 
