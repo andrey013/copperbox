@@ -32,6 +32,7 @@ pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
                        drawi $ coordinateMark $ coordinate (P2 220 10)
          _ <- drawi $ borderedShape $ diamond 10 10 `at` (P2 40 0) -- "d1"
          _ <- drawi $ borderedShape $ rectangle 20 100 `at` (P2 400 50) -- "R2"
+         _ <- drawi $ borderedShape $ ellipse 20 10 `at` (P2 0 50)
          return ()
 
 

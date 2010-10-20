@@ -163,8 +163,7 @@ curve :: (Floating u, Ord u)
 curve p0 p1 p2 p3 = let v = curveLength p0 p1 p2 p3
                     in Path v p0 (S.singleton $ CurveSeg v p0 p1 p2 p3) p3
 
--- | A draw a /straight line/ at the supplied point, nothing is
--- actually drawing. 
+-- | A draw a /straight line/ of length 0 at the supplied point. 
 --
 -- This is /might/ be useful in concatenating curved paths
 -- as it introduces and extra control point.

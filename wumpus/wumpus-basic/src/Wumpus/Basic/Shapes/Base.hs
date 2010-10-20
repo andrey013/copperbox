@@ -37,9 +37,10 @@ module Wumpus.Basic.Shapes.Base
   , ShapeCTM
   , makeShapeCTM
 
-  , ctmDisplace
-  , ctmCenter
-
+  , ShapeGeom
+  , runShapeGeom
+  , projectPoint
+  , shapeCenter
 
   ) where
 
@@ -113,11 +114,15 @@ strokedShape = shapeImage closedStroke
 instance (Real u, Floating u) => Rotate (Shape u sh) where
   rotate r = updateCTM (rotate r)
 
+instance (Real u, Floating u) => RotateAbout (Shape u sh) where
+  rotateAbout r pt = updateCTM (rotateAbout r pt)
+
 instance Num u => Scale (Shape u sh) where
   scale sx sy = updateCTM (scale sx sy)
 
 instance Num u => Translate (Shape u sh) where
   translate dx dy = updateCTM (translate dx dy)
+
 
 updateCTM :: (ShapeCTM u -> ShapeCTM u) -> Shape u sh -> Shape u sh
 updateCTM fn (Shape ctm pf mkf) = Shape (fn ctm) pf mkf
@@ -136,6 +141,7 @@ data ShapeCTM u = ShapeCTM
       , ctm_rotation            :: Radian
       }
   deriving (Eq,Ord,Show)
+
 
 type instance DUnit (ShapeCTM u) = u
 
@@ -170,16 +176,45 @@ instance Num u => Translate (ShapeCTM u) where
                       <*> ctm_center
 
 
+--------------------------------------------------------------------------------
 
-ctmDisplace :: (Real u, Floating u) => Point2 u -> ShapeCTM u -> Point2 u
-ctmDisplace (P2 x y) (ShapeCTM { ctm_center   = (P2 dx dy) 
-                               , ctm_scale_x  = sx
-                               , ctm_scale_y  = sy
-                               , ctm_rotation = theta }) = 
+newtype ShapeGeom u a = ShapeGeom { getShapeGeom :: ShapeCTM u -> a }
+
+
+type instance MonUnit (ShapeGeom u) = u
+
+
+instance Functor (ShapeGeom u) where
+  fmap f ma = ShapeGeom $ \ctx -> let a = getShapeGeom ma ctx in f a
+
+instance Applicative (ShapeGeom u) where
+  pure a    = ShapeGeom $ \_   -> a
+  mf <*> ma = ShapeGeom $ \ctx -> let f = getShapeGeom mf ctx
+                                      a = getShapeGeom ma ctx
+             			  in (f a)
+
+instance Monad (ShapeGeom u) where
+  return a = ShapeGeom $ \_   -> a
+  m >>= k  = ShapeGeom $ \ctx -> let a = getShapeGeom m ctx
+    	     	                 in (getShapeGeom . k) a ctx
+
+
+
+runShapeGeom :: ShapeCTM u -> ShapeGeom u a -> a
+runShapeGeom ctm mf = getShapeGeom mf ctm
+
+shapeCenter :: (Real u, Floating u) => ShapeGeom u (Point2 u)
+shapeCenter = ShapeGeom $ \r -> ctm_center r
+
+
+
+
+projectPoint :: (Real u, Floating u) => Point2 u -> ShapeGeom u (Point2 u)
+projectPoint (P2 x y) = ShapeGeom $ 
+    \(ShapeCTM { ctm_center   = (P2 dx dy)
+               , ctm_scale_x  = sx
+               , ctm_scale_y  = sy
+               , ctm_rotation = theta }) -> 
     translate dx dy $ rotate theta $ P2 (sx*x) (sy*y)
-
-
-ctmCenter :: (Real u, Floating u) => ShapeCTM u -> Point2 u
-ctmCenter = ctmDisplace zeroPt
 
 
