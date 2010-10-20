@@ -12,8 +12,8 @@
 --
 -- Library of connector paths...
 --
--- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- \*\* WARNING \*\* this module is experimental and may change 
+-- significantly in future revisions.
 -- 
 --------------------------------------------------------------------------------
 
@@ -39,12 +39,14 @@ module Wumpus.Basic.Paths.Connectors
   , connSquareCurve
   , connUSquareCurve
 
-  , curveconn
+  , connTrapezoidCurve
+  , connZSquareCurve
+  , connUZSquareCurve
 
   ) where
 
-import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths.Base
+import Wumpus.Basic.Paths.ControlPoints
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -104,11 +106,9 @@ connRightHVH h p1@(P2 _ y1) p2@(P2 _ y2) = traceLinePoints [p1,a1,a2,p2]
 -- @u@ is the altitude of the triangle.
 --
 connIsosceles :: (Real u, Floating u) => u -> ConnectorPath u 
-connIsosceles u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    traceLinePoints [p1, mid_pt .+^ avec perp_ang u, p2]
+connIsosceles dy p1 p2 = traceLinePoints [p1, mid_pt, p2]
   where
-    mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
-    perp_ang  = (pi*0.5) + direction (pvec p1 p2) 
+    mid_pt  = midpointIsosceles dy p1 p2
 
 
 
@@ -117,27 +117,21 @@ connIsosceles u p1@(P2 x1 y1) p2@(P2 x2 y2) =
 -- @u@ is the altitude of the triangle.
 --
 connIsosceles2 :: (Real u, Floating u) => u -> ConnectorPath u 
-connIsosceles2 u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    traceLinePoints $ 
-      [ p1, mid1 .+^ avec perp_ang u, mid2 .-^ avec perp_ang u, p2 ]
+connIsosceles2 u p1 p2 = traceLinePoints [ p1, cp1, cp2, p2 ]
   where
-    mid1      = P2 (x1 + 0.33*(x2-x1)) (y1 + 0.33*(y2-y1))
-    mid2      = P2 (x1 + 0.66*(x2-x1)) (y1 + 0.66*(y2-y1))
-    perp_ang  = (pi*0.5) + direction (pvec p1 p2) 
+    (cp1,cp2) = dblpointIsosceles u p1 p2
 
 
--- | /Triangular/ joint.
+-- | /Lightning bolt/ joint - a two joint connector with an /axis/
+-- perpendicular to the connector direction.
 -- 
--- @u@ is the altitude of the triangle.
+-- @u@ is the half length of the of the axis.
 --
 connLightningBolt :: (Real u, Floating u) => u -> ConnectorPath u 
-connLightningBolt u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    traceLinePoints $ 
-      [ p1, mid_pt .+^ avec perp_ang u, mid_pt .-^ avec perp_ang u, p2]
+connLightningBolt u p1 p2 = traceLinePoints [ p1, cp1, cp2, p2 ]
   where
-    mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
-    perp_ang  = (pi*0.5) + direction (pvec p1 p2) 
-
+    cp1 = midpointIsosceles   u  p1 p2
+    cp2 = midpointIsosceles (-u) p1 p2
 
 --------------------------------------------------------------------------------
 
@@ -147,30 +141,15 @@ connLightningBolt u p1@(P2 x1 y1) p2@(P2 x2 y2) =
 --
 -- The two Bezier control points take the same point - the
 -- altitude of the triangle. The curve tends to be quite shallow
--- 
+-- relative to the altitude.
+--
 -- @u@ is the altitude of the triangle.
 --
 connIsoscelesCurve :: (Real u, Floating u) => u -> ConnectorPath u 
-connIsoscelesCurve u p1@(P2 x1 y1) p2@(P2 x2 y2) = 
-    traceCurvePoints [p1, control_pt, control_pt, p2]
+connIsoscelesCurve u p1 p2 = traceCurvePoints [p1, control_pt, control_pt, p2]
   where
-    mid_pt      = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
-    control_pt  = mid_pt .+^ avec perp_ang u
-    perp_ang    = (pi*0.5) + direction (pvec p1 p2) 
-
-
--- Square curves
-
-mkSquareCurve :: (Real u, Floating u) => (u -> u) -> ConnectorPath u 
-mkSquareCurve fn p1 p2 = 
-    traceCurvePoints [p1, cp1, cp2, p2]
-  where
-    base_vec  = pvec p1 p2
-    side_len  = vlength base_vec
-    theta     = direction base_vec
-    cp1       = displacePerpendicular (fn side_len) theta p1
-    cp2       = displacePerpendicular (fn side_len) theta p2
-
+    control_pt  = midpointIsosceles u p1 p2
+    
 
 
 -- | Form a curve inside a square. 
@@ -179,7 +158,9 @@ mkSquareCurve fn p1 p2 =
 -- curve tends to be very deep.
 -- 
 connSquareCurve :: (Real u, Floating u) => ConnectorPath u 
-connSquareCurve = mkSquareCurve id
+connSquareCurve p1 p2 = traceCurvePoints [p1, cp1, cp2, p2]
+  where
+    (cp1,cp2) = squareFromBasePoints p1 p2
 
 -- | Form a curve inside a square. 
 --
@@ -189,13 +170,37 @@ connSquareCurve = mkSquareCurve id
 -- (Underneath is modulo the direction, of course).
 -- 
 connUSquareCurve :: (Real u, Floating u) => ConnectorPath u 
-connUSquareCurve = mkSquareCurve negate
+connUSquareCurve p1 p2 = traceCurvePoints [p1, cp1, cp2, p2]
+  where
+    (cp1,cp2) = usquareFromBasePoints p1 p2
 
 
--- connTrapezoidCurve :: (Real u, Floating u) => u -> u -> ConnectorPath u 
--- connTrapezoidCurve
 
--- OLD ...
+-- | altitude * ratio_to_base 
 --
-curveconn :: (Floating u, Ord u) => Radian -> Radian -> ConnectorPath u
-curveconn r1 r2 p1 p2 = curveByAngles p1 r1 r2 p2
+-- Form a curve inside a trapeziod.
+-- 
+connTrapezoidCurve :: (Real u, Floating u) => u -> u -> ConnectorPath u 
+connTrapezoidCurve u ratio_to_base p1 p2 = traceCurvePoints [p1, cp1, cp2, p2]
+  where
+    (cp1,cp2)  = trapezoidFromBasePoints u ratio_to_base p1 p2
+
+
+-- | Make a curve within a square, following the corner points as
+-- a Z.
+--
+connZSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connZSquareCurve p1 p2 = traceCurvePoints [p1,cp1,cp2,p2]
+   where
+     (cp1,cp2)  = squareFromCornerPoints p1 p2 
+      
+-- | Make a curve within a square, following the corner points as
+-- a Z.
+--
+-- The order of tracing flips the control points, so this is an
+-- /underneath/ version of 'connZSquareCurve'.
+-- 
+connUZSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connUZSquareCurve p1 p2 = traceCurvePoints [p1,cp2,cp1,p2]
+   where
+     (cp1,cp2)  = squareFromCornerPoints p1 p2 

@@ -50,7 +50,9 @@ conntable =
     , connIsoscelesCurve (-25)
     , connSquareCurve
     , connUSquareCurve
-
+    , connTrapezoidCurve 40 0.5
+    , connZSquareCurve   
+    , connUZSquareCurve   
     ]
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 

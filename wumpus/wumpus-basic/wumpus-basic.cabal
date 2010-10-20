@@ -151,6 +151,7 @@ library
     Wumpus.Basic.Paths.Base,
     Wumpus.Basic.Paths.Connectors,
     Wumpus.Basic.Paths.Construction,
+    Wumpus.Basic.Paths.ControlPoints,
     Wumpus.Basic.Paths.RoundCorners,
     Wumpus.Basic.SafeFonts,
     Wumpus.Basic.Shapes,
