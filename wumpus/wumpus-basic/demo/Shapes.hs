@@ -3,6 +3,7 @@
 
 module Shapes where
 
+import Wumpus.Basic.Anchors
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Shapes
@@ -30,9 +31,18 @@ pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
    
          _ <- localize (strokeColour red) $ 
                        drawi $ coordinateMark $ coordinate (P2 220 10)
-         _ <- drawi $ borderedShape $ diamond 10 10 `at` (P2 40 0) -- "d1"
+         a <- drawi $ borderedShape $ diamond 10 10 `at` (P2 40 0) -- "d1"
+         redCoord $ radialAnchor (0.5*pi) a
          _ <- drawi $ borderedShape $ rectangle 20 100 `at` (P2 400 50) -- "R2"
          _ <- drawi $ borderedShape $ ellipse 20 10 `at` (P2 0 50)
+        
          return ()
 
 
+redCoord :: (Real u, Floating u) => Point2 u -> Drawing u ()
+redCoord pt = localize (strokeColour red) $ do 
+    _ <- drawi $ coordinateMark $ coordinate `at` pt
+    return ()
+
+    -- NOTE - should coordinates even have a center anchor?
+    -- After all you always know where you drew them...

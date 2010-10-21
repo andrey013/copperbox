@@ -27,6 +27,7 @@ module Wumpus.Basic.Utils.Intersection
   , intersection
 
   , rectangleLines
+  , polygonLines
   , langle
   ) 
   where
@@ -35,6 +36,13 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
+
+
+-- WARNING - This module is not very good (neither particularly 
+-- robust, nor efficient).
+-- 
+-- I really need to find an algorithm that does this properly.
+--
 
 data LineSegment u = LS (Point2 u) (Point2 u)
   deriving (Eq,Ord,Show)
@@ -108,7 +116,7 @@ intersect1 :: (Num u, Ord u)
            => LineSegment u -> LineEqn u -> IntersectionResult u
 intersect1 (LS p q) eqn = 
      if inters fp fq then Intersects fp fq
-        else if contained fp fq then Contained else NoIntersect
+                     else if contained fp fq then Contained else NoIntersect
   where
     inters a b    = (a < 0 && b >= 0) || (a > 0 && b <= 0)
     contained a b = a == 0 && b == 0
@@ -124,7 +132,6 @@ affineComb p q t = p .+^ t *^ (q .-. p)
 
 
 
-
 rectangleLines :: Num u => Point2 u -> u -> u -> [LineSegment u]
 rectangleLines ctr hw hh = [LS br tr, LS tr tl, LS tl bl, LS bl br]
   where
@@ -132,6 +139,14 @@ rectangleLines ctr hw hh = [LS br tr, LS tr tl, LS tl bl, LS bl br]
     tr = ctr .+^ (vec hw    hh)
     tl = ctr .+^ (vec (-hw) hh)
     bl = ctr .+^ (vec (-hw) (-hh))
+
+
+polygonLines :: [Point2 u] -> [LineSegment u]
+polygonLines []     = error "polygonLines - emptyList"
+polygonLines (x:xs) = step x xs 
+  where
+    step a []        = [LS a x]
+    step a (b:bs)    = LS a b : step b bs
 
 
 

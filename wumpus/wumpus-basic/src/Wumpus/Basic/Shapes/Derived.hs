@@ -56,7 +56,10 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space 
 import Data.VectorSpace
 
--- Note - Specific shapes - Rectangle, Circle, etc. - should _not_
+import Control.Applicative
+
+
+-- Note - Specific shapes - Rectangle, Circle, etc. - should _NOT_
 -- have affine instances. 
 --
 -- Transformations should only operate on the Shape type. Once a
@@ -104,12 +107,14 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
 
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
   radialAnchor theta = runRectangle $ \hw hh -> 
-    projectPoint $ rectangleIntersect hw hh theta zeroPt
+    projectPoint $ rectangleIntersect hw hh theta
 
+-- Note - the answer needs projecting with the CTM...
+--
 rectangleIntersect :: (Real u, Floating u) 
-                   => u -> u -> Radian -> Point2 u -> Point2 u
-rectangleIntersect hw hh theta ctr = 
-    maybe ctr id $ findIntersect ctr theta $ rectangleLines ctr hw hh 
+                   => u -> u -> Radian -> Point2 u
+rectangleIntersect hw hh theta = 
+    maybe zeroPt id $ findIntersect zeroPt theta $ rectangleLines zeroPt hw hh 
 
 
 -- | 'rectangle'  : @ width * height -> shape @
@@ -244,8 +249,20 @@ instance (Real u, Floating u, Fractional u) => CardinalAnchor2 (Diamond u) where
   southwest x = midpoint (south x) (west x)
   northwest x = midpoint (north x) (west x)
 
--- instance RadialAnchor _TODO_
+
+
+instance (Real u, Floating u) => RadialAnchor (Diamond u) where
+   radialAnchor = diamondIntersect
+
 -- Utils.Intersection needs improving...
+
+
+diamondIntersect :: (Real u, Floating u) 
+                 => Radian -> Diamond u -> Point2 u
+diamondIntersect theta = runDiamond $ \hw hh ->  
+    (\ctr ctm -> let ps = diamondPoints hw hh ctm 
+                 in maybe ctr id $ findIntersect ctr theta $ polygonLines ps)
+      <$> shapeCenter <*> askCTM 
 
 
 midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u

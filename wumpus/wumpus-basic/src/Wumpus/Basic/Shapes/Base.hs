@@ -39,6 +39,7 @@ module Wumpus.Basic.Shapes.Base
 
   , ShapeGeom
   , runShapeGeom
+  , askCTM
   , projectPoint
   , shapeCenter
 
@@ -202,6 +203,9 @@ instance Monad (ShapeGeom u) where
 
 runShapeGeom :: ShapeCTM u -> ShapeGeom u a -> a
 runShapeGeom ctm mf = getShapeGeom mf ctm
+
+askCTM :: ShapeGeom u (ShapeCTM u)
+askCTM = ShapeGeom $ \ctm -> ctm
 
 shapeCenter :: (Real u, Floating u) => ShapeGeom u (Point2 u)
 shapeCenter = ShapeGeom $ \r -> ctm_center r
