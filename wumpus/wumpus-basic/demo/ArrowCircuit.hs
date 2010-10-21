@@ -58,7 +58,6 @@ pic1 = liftToPictureU $ execDrawing times_ctx $ do
     return ()
 
 
--- Note - conn from Basic.Graphic is now questionable...
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
             , Real u, Floating u, FromPtSize u ) 

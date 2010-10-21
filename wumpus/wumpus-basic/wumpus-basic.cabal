@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.12.0
+version:          0.13.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -26,6 +26,10 @@ description:
   Unfortunately Shapes are still undercooked.
   .
   Changelog:
+  .
+  0.12.0 to 0.13.0:
+  .
+  * ?
   .
   0.11.0 to 0.12.0:
   .
@@ -106,6 +110,7 @@ extra-source-files:
   demo/ColourDefns.hs,
   demo/Connectors.hs
   demo/DotPic.hs,
+  demo/FeatureModel.hs,
   demo/FontPic.hs,
   demo/PetriNet.hs,
   demo/Picture.hs,
