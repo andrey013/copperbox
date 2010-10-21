@@ -13,8 +13,8 @@
 --
 -- Anchor points on shapes.
 --
--- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- \*\* WARNING \*\* this module is experimental, it may change 
+-- significantly in future revisions.
 -- 
 --------------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ module Wumpus.Basic.Anchors
   , CardinalAnchor2(..)
   , RadialAnchor(..)
 
-  -- * extended anchor points
+  -- * Extended anchor points
   , northwards
   , southwards
   , eastwards

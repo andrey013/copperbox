@@ -10,7 +10,6 @@ import Wumpus.Basic.Shapes
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
 import System.Directory
 
 
@@ -30,7 +29,7 @@ pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
          _ <- drawi $ borderedShape $ circle 10 `at` P2 100 0  -- "C0"
    
          _ <- localize (strokeColour red) $ 
-                       drawi $ coordinateMark $ coordinate (P2 220 10)
+                       drawi $ coordinateDot $ coordinate (P2 220 10)
          a <- drawi $ borderedShape $ diamond 10 10 `at` (P2 40 0) -- "d1"
          redCoord $ radialAnchor (0.5*pi) a
          _ <- drawi $ borderedShape $ rectangle 20 100 `at` (P2 400 50) -- "R2"
@@ -39,9 +38,9 @@ pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
          return ()
 
 
-redCoord :: (Real u, Floating u) => Point2 u -> Drawing u ()
+redCoord :: (Real u, Floating u, FromPtSize u) => Point2 u -> Drawing u ()
 redCoord pt = localize (strokeColour red) $ do 
-    _ <- drawi $ coordinateMark $ coordinate `at` pt
+    _ <- drawi  $ coordinateX $ coordinate `at` pt
     return ()
 
     -- NOTE - should coordinates even have a center anchor?

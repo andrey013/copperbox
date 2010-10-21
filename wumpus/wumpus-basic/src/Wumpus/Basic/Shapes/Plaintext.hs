@@ -14,8 +14,8 @@
 -- Plaintext is a bit like a shape but does not generate a path 
 -- and cannot be scaled (it can be rotated or translated).
 --
--- \*\* WARNING \*\* - the types of Shapes and Plaintext are not
--- ideal and are pending revision.
+-- \*\* WARNING \*\* - the type of Plaintext is not ideal. This
+-- module is pending substantial revision.
 -- 
 --------------------------------------------------------------------------------
 
