@@ -37,7 +37,6 @@ import Wumpus.Basic.Graphic			-- package: wumpus-basic
 import Data.AffineSpace				-- package: vector-space
 
 import Control.Applicative
-import Data.Monoid
 
 --------------------------------------------------------------------------------
 
@@ -63,11 +62,11 @@ greekF rgb w h _ = localize (fillColour rgb) . (filledRectangle w h)
 
 
 borderedF :: DrawWordF
-borderedF rgb w h i = mappend <$> background <*> ticks
+borderedF rgb w h i = oconcat <$> background <*> ticks
   where
     background  = localize (fillColour rgb) . (borderedRectangle w h)
     v1          = hvec $ w / fromIntegral i
-    ticks pt    = mconcat $ map (straightLine (vvec h)) 
+    ticks pt    = map (straightLine (vvec h)) 
     	                  $ take (i-1) $ iterate (.+^ v1) (pt .+^ v1)
 
  

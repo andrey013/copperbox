@@ -19,20 +19,11 @@ description:
   @PrimGraphic@, @DrawingContext@) seem to support a good set
   primitive functions, but the exact types of drawing objects do 
   not feel right at the moment. Other modules (Paths, Chains, 
-  Shapes) are essentially sketches and are expected to be
-  substantially revised in subsequent updates.
+  Shapes) are still being worked out and may be substantially 
+  revised in subsequent updates.
   .
-  Version 0.11.0 is an interim release. It is expected that the 
-  next release will substantially rework Shapes and likely change
-  the @Graphic.Base@ types. As quite a large amount of code has 
-  already changed since version 0.10.0 (to support better 
-  arrowheads and connectors) it seems sensible to release 0.11.0 
-  now, rather than have a huge delta after Shapes have been 
-  reworked again. The current versions of @Wumpus-Tree@ and 
-  @Wumpus-Microprint@ will work with version 0.11.0 if their 
-  respective @.cabal@ files are edited to bump the version number. 
-  There will be no matching releases to work automatically with 
-  version 0.11.0 of Wumpus-Basic.
+  Version 0.12.0 extends the sets of arrowheads and connectors.
+  Unfortunately Shapes are still undercooked.
   .
   Changelog:
   .
@@ -55,6 +46,8 @@ description:
   * Dot hierarchy changed - @Basic.Dots@ becomes 
     @Basic.Dots.AnchorDots@; @Basic.Dots.Primitive@ becomes
     @Basic.Dots.Marks@.
+  .
+  * @Basic.Shapes@ - internals reworked.
   .
   0.10.0 to 0.11.0:
   . 

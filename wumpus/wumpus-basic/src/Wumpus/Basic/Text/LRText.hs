@@ -50,8 +50,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
-import Data.Monoid
-
 
 
 

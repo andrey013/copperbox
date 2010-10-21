@@ -26,7 +26,7 @@ module Wumpus.Tree.Base
 
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Dots                        -- package: wumpus-basic
+import Wumpus.Basic.Dots.AnchorDots             -- package: wumpus-basic
 
 import Data.Tree
 

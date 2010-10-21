@@ -27,12 +27,12 @@ import Wumpus.Tree.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.Anchors                     -- package: wumpus-basic
-import Wumpus.Basic.Dots
+import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Graphic   
 
 import Data.VectorSpace                         -- package: vector-space
 
-import Data.Monoid
+import Control.Monad
 import Data.Tree hiding ( drawTree )
 
 
@@ -49,7 +49,7 @@ drawTree drawF ctx tree = execDrawing ctx $ drawTop drawF tree
 
 drawTop :: (a -> TreeNode) -> CoordTree Double a -> Drawing Double ()
 drawTop fn (Node (pt,a) ns) = do 
-    ancr <- drawi $ fn a `ati` pt
+    ancr <- drawi $ fn a `at` pt
     mapM_ (draw1 fn ancr) ns
 
 draw1 :: (a -> TreeNode) 
@@ -57,7 +57,7 @@ draw1 :: (a -> TreeNode)
       -> CoordTree Double a 
       -> Drawing Double ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
-    ancr <- drawi $ fn a `ati` pt
+    ancr <- drawi $ fn a `at` pt
     draw $ connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
 
@@ -96,15 +96,15 @@ drawFamily :: (a -> TreeNode)
            -> CoordTree Double a 
            -> Drawing Double (DotAnchor Double)
 drawFamily fn (Node (pt,a) ns) = do
-    ancr <- drawi $ fn a `ati` pt
+    ancr <- drawi $ fn a `at` pt
     xs   <- mapM (drawFamily fn) ns   
-    draw $ famconn (south ancr) (map north xs)
+    when (not $ null xs) $ draw $ famconn (south ancr) (map north xs)
     return ancr
 
 famconn :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
-famconn _       []         = mempty
+famconn _       []         = error "famconn - empty list"
 famconn pt_from [p1]       = famconn1 pt_from p1
-famconn pt_from xs@(p1:_)  = mconcat $ downtick : horizontal : upticks
+famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
    where
      hh         = halfHeight pt_from p1
      downtick   = straightLine (vvec (-hh)) pt_from
@@ -112,7 +112,7 @@ famconn pt_from xs@(p1:_)  = mconcat $ downtick : horizontal : upticks
      upticks    = map (straightLine (vvec hh)) xs
 
 midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
-midline _        []          = mempty
+midline _        []           = error "midline - empty list" 
 midline (P2 _ y) (P2 x0 _:zs) = 
     let (a,b) = foldr fn (x0,x0) zs in straightLineBetween (P2 a y) (P2 b y)
   where   
