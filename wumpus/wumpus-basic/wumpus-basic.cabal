@@ -29,7 +29,9 @@ description:
   .
   0.12.0 to 0.13.0:
   .
-  * ?
+  * @Basic.Shapes.Coordinate@ re-worked. The Coordinate type is 
+    now more like the Shapes types (excepting the intentional 
+    difference in drawing style).
   .
   0.11.0 to 0.12.0:
   .

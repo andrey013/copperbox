@@ -42,6 +42,7 @@ module Wumpus.Basic.Shapes.Base
   , askCTM
   , projectPoint
   , shapeCenter
+  , shapeAngle
 
   ) where
 
@@ -207,9 +208,11 @@ runShapeGeom ctm mf = getShapeGeom mf ctm
 askCTM :: ShapeGeom u (ShapeCTM u)
 askCTM = ShapeGeom $ \ctm -> ctm
 
-shapeCenter :: (Real u, Floating u) => ShapeGeom u (Point2 u)
-shapeCenter = ShapeGeom $ \r -> ctm_center r
+shapeCenter :: ShapeGeom u (Point2 u)
+shapeCenter = ShapeGeom $ \ctm -> ctm_center ctm
 
+shapeAngle :: ShapeGeom u Radian
+shapeAngle = ShapeGeom $ \ctm -> ctm_rotation ctm
 
 
 

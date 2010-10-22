@@ -26,6 +26,7 @@ module Wumpus.Basic.Shapes.Plaintext
   , DPlaintextAnchor
   , Plaintext
   , DPlaintext
+  , LocPlaintext
 
   , plaintext
   , drawText
@@ -54,17 +55,14 @@ import Control.Applicative
 
 newtype PlaintextAnchor u = PlaintextAnchor  { getPlaintext :: Rectangle u }
 
-
 type DPlaintextAnchor = PlaintextAnchor Double
 
 type instance DUnit (PlaintextAnchor u) = u
 
 
 data Plaintext u = Plaintext
-      { text_text :: String     -- Note - generalize this for multi-line...
-      , text_x    :: !u
-      , text_y    :: !u
-      , text_ang  :: !Radian
+      { text_ctm  :: ShapeCTM u
+      , text_text :: String     -- Note - generalize this for multi-line...
       }
   deriving (Eq,Ord,Show)
 
@@ -72,6 +70,7 @@ type DPlaintext = Plaintext Double
 
 type instance DUnit (Plaintext u) = u
 
+type LocPlaintext u = Point2 u -> Plaintext u
 
 instance (Real u, Floating u) => CenterAnchor (PlaintextAnchor u) where
   center = center . getPlaintext
@@ -89,29 +88,35 @@ instance (Real u, Floating u) => CardinalAnchor2 (PlaintextAnchor u) where
   southwest = southwest . getPlaintext
   northwest = northwest . getPlaintext
 
+
 instance (Real u, Floating u) => RadialAnchor (PlaintextAnchor u) where
   radialAnchor theta = radialAnchor theta . getPlaintext
 
 
+updateCTM :: (ShapeCTM u -> ShapeCTM u) -> Plaintext u -> Plaintext u
+updateCTM fn = (\s i -> s { text_ctm = fn i }) <*> text_ctm
 
-instance Rotate (Plaintext u) where
-  rotate dr = (\s i -> s { text_ang = i+dr }) <*> text_ang
 
--- Note - cannot scale Plaintext
+instance (Real u, Floating u) => Rotate (Plaintext u) where
+  rotate r = updateCTM (rotate r)
+
+instance (Real u, Floating u) => RotateAbout (Plaintext u) where
+  rotateAbout r pt = updateCTM (rotateAbout r pt)
+
+-- Note scaling doe not scale the text...
+
+instance Num u => Scale (Plaintext u) where
+  scale sx sy = updateCTM (scale sx sy)
 
 
 instance Num u => Translate (Plaintext u) where
-  translate dx dy = (\s x y -> s { text_x = x+dx, text_y = y+dy }) 
-                      <*> text_x <*> text_y
+  translate dx dy = updateCTM (translate dx dy)
 
 
 
-plaintext :: Num u => String -> Plaintext u
-plaintext ss = Plaintext { text_text  = ss
-                         , text_x     = 0
-                         , text_y     = 0
-                         , text_ang   = 0 }
-
+plaintext :: Num u => String -> LocPlaintext u
+plaintext ss pt = Plaintext { text_ctm  = makeShapeCTM pt
+                            , text_text = ss }
 
 
 
@@ -121,25 +126,20 @@ drawText x = intoImage (oneLineRect x) (drawOneLine x)
 
 
 
-textCTM :: Num u => u -> u -> Radian -> ShapeCTM u
-textCTM x y theta = rotate theta $ makeShapeCTM (P2 x y)
-
 oneLineRect :: (Fractional u, Ord u, FromPtSize u) 
         => Plaintext u -> DrawingR (PlaintextAnchor u)
 oneLineRect ptext = 
     monoTextDimensions (text_text ptext) >>= \(w,h) -> 
-    return (PlaintextAnchor $ mkRectangle (0.5*w) (0.5*h) ctm)
-  where
-    ctm = textCTM (text_x ptext) (text_y ptext) (text_ang ptext)
+    return $ PlaintextAnchor $ mkRectangle (0.5*w) (0.5*h) (text_ctm ptext)
                    
 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
             => Plaintext u -> Graphic u 
-drawOneLine (Plaintext { text_text = ss, text_x=dx, text_y=dy
-                       , text_ang = ang }) =
-    monoVecToCenter ss >>= \v -> 
-    let ctr = P2 dx dy; bl = ctr .-^ v in 
-    rotTextline ang ss (rotateAbout ang ctr bl)
+drawOneLine (Plaintext { text_text = ss, text_ctm = ctm }) =
+    let (ctr,ang) = runShapeGeom ctm ((,) <$> shapeCenter <*> shapeAngle)
+    in monoVecToCenter ss >>= \v -> 
+       let bl = ctr .-^ v
+       in rotTextline ang ss (rotateAbout ang ctr bl)
 
 
 
