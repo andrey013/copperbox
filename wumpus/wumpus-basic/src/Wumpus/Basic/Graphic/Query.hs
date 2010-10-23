@@ -198,6 +198,9 @@ monoTextDimensions ss =
     post bb = (boundaryWidth bb, boundaryHeight bb)
 
 
+-- | The heigth of @n@ lines of text, which is 
+-- @n lines + n-1 line spacers@
+--
 monoMultiLineTextHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) 
                         => Int -> m u
 monoMultiLineTextHeight n | n < 0   = pure 0

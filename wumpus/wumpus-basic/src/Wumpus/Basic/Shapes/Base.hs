@@ -44,6 +44,8 @@ module Wumpus.Basic.Shapes.Base
   , shapeCenter
   , shapeAngle
 
+  , swapCenter
+
   ) where
 
 import Wumpus.Basic.Graphic
@@ -224,4 +226,6 @@ projectPoint (P2 x y) = ShapeGeom $
                , ctm_rotation = theta }) -> 
     translate dx dy $ rotate theta $ P2 (sx*x) (sy*y)
 
-
+-- Note - this is a hack...
+swapCenter :: Point2 u -> ShapeGeom u (ShapeCTM u)
+swapCenter pt = ShapeGeom $ \ctm -> ctm { ctm_center = pt }

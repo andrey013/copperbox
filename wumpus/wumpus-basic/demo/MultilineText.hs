@@ -34,7 +34,7 @@ pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
     draw $ textline ss `at` zeroPt
     draw $ textlineMulti xs `at` (P2 500 0)
     let m = regularMargin 4 (-46)
-    a <- drawi $ drawText $ mplaintext m "The slow..." `at` P2 50 120
+    a <- drawi $ drawText $ mplaintext2 m "The slow" "loris crawled" `at` P2 50 120
     drawi_ $ coordinateX $ coordinate `at` (north a)
     drawi_ $ coordinateX $ coordinate `at` (south a)
     drawi_ $ coordinateX $ coordinate `at` (east a)
@@ -46,5 +46,5 @@ pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
 
 
 
-mplaintext :: Num u => BoxMargin u -> String -> LocPlaintext u
-mplaintext a ss = setMargin a . plaintext ss
+mplaintext2 :: Num u => BoxMargin u -> String -> String -> LocPlaintext u
+mplaintext2 a ss ts = setMargin a . plaintext2 ss ts 

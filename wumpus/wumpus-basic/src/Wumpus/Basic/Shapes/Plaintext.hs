@@ -33,6 +33,7 @@ module Wumpus.Basic.Shapes.Plaintext
   , setMargin
 
   , plaintext
+  , plaintext2
   , drawText
 
   ) where
@@ -72,10 +73,13 @@ data BoxMargin u = BoxMargin
       }
   deriving (Eq,Ord,Show)
 
+data DxString u = DxString !u String
+  deriving (Eq,Ord,Show)
+
 
 data Plaintext u = Plaintext
       { text_ctm      :: ShapeCTM u
-      , text_text     :: String     -- Note - generalize this for multi-line...
+      , text_text     :: [DxString u]
       , text_margin   :: BoxMargin u 
       }
   deriving (Eq,Ord,Show)
@@ -140,8 +144,17 @@ instance Num u => Translate (Plaintext u) where
 
 plaintext :: Num u => String -> LocPlaintext u
 plaintext ss pt = Plaintext { text_ctm    = makeShapeCTM pt
-                            , text_text   = ss
+                            , text_text   = [DxString 0 ss]
                             , text_margin = zero_box_margin }
+
+
+
+plaintext2 :: Num u => String -> String -> LocPlaintext u
+plaintext2 ss ts pt = 
+    Plaintext { text_ctm    = makeShapeCTM pt
+              , text_text   = [DxString 0 ss, DxString 0 ts]
+              , text_margin = zero_box_margin }
+
 
 
 zero_box_margin :: Num u => BoxMargin u
@@ -179,24 +192,43 @@ setMargin i = (\s -> s { text_margin = i })
 
 drawText :: (Real u, Floating u, FromPtSize u)
          => Plaintext u -> Image u (PlaintextAnchor u)
-drawText x = intoImage (oneLineRect x) (drawOneLine x)
+drawText x = intoImage (multiLineRect x) (drawMultiLines x)
 
 
 
 
+multiLineRect :: (Fractional u, Ord u, FromPtSize u) 
+              => Plaintext u -> DrawingR (PlaintextAnchor u)
+multiLineRect (Plaintext { text_ctm=ctm, text_margin=box, text_text=xs }) = 
+   (\w h -> PlaintextAnchor $ expandedRectangle box w h ctm)
+    <$> maxWidth xs <*> monoMultiLineTextHeight (length xs)
 
-oneLineRect :: (Fractional u, Ord u, FromPtSize u) 
-        => Plaintext u -> DrawingR (PlaintextAnchor u)
-oneLineRect (Plaintext { text_ctm=ctm, text_margin=box, text_text=ss }) = 
-    (\(w,h) -> PlaintextAnchor $ expandedRectangle box w h ctm)
-      <$> monoTextDimensions ss
- 
-                   
+maxWidth :: (Ord u, FromPtSize u) => [DxString u] -> DrawingR u
+maxWidth xs = maximum <$> mapM lineWidth1 xs
+  where
+    lineWidth1 (DxString dx ss) = (\w -> w+dx) <$> monoTextLength ss                   
 
+
+drawMultiLines :: (Real u, Floating u, FromPtSize u) 
+               => Plaintext u -> Graphic u
+drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = 
+    let ctr      = runShapeGeom ctm shapeCenter
+        num_rows = length xs
+    in multilineCenters num_rows ctr   >>= \pts -> 
+       cat $ zipWith fn xs pts
+  where
+    cat (y:ys) = oconcat y ys
+    cat []     = error "Plaintext supplied with empty string"
+
+    fn dxs pt = drawOneLine dxs (runShapeGeom ctm (swapCenter pt))
+            
+
+-- 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
-            => Plaintext u -> Graphic u 
-drawOneLine (Plaintext { text_text = ss, text_ctm = ctm }) =
-    let (ctr,ang) = runShapeGeom ctm ((,) <$> shapeCenter <*> shapeAngle)
+            => DxString u -> ShapeCTM u -> Graphic u 
+drawOneLine (DxString dx ss) ctm =
+    let (ctr0,ang) = runShapeGeom ctm ((,) <$> shapeCenter <*> shapeAngle)
+        ctr        = ctr0 .+^ hvec dx
     in monoVecToCenter ss >>= \v -> 
        let bl = ctr .-^ v
        in rotTextline ang ss (rotateAbout ang ctr bl)
@@ -220,3 +252,22 @@ expandedRectangle (BoxMargin { margin_left=xl, margin_right=xr
     dx  = 0.5 * (xr - xl)
     dy  = 0.5 * (yt - yb)
     
+
+
+
+multilineCenters :: (Fractional u, FromPtSize u)  
+                 => Int -> Point2 u -> DrawingR [Point2 u]
+multilineCenters num_rows ctr = 
+   (\height ptsize spacing -> 
+        let dy = 0.5 * height - 0.5 * ptsize
+        in headIterate num_rows (.+^ vvec spacing) (ctr .-^ vvec dy))
+      <$> monoMultiLineTextHeight num_rows 
+      <*> monoFontPointSize <*> baselineSpacing
+
+
+headIterate :: Int -> (a -> a) -> a -> [a]
+headIterate n f a = step 0 a []
+  where
+    step i x xs | i < n = step (i+1) (f x) (x:xs)
+    step _ _ xs         = xs
+
