@@ -37,6 +37,8 @@ module Wumpus.Basic.Graphic.Query
   , baselineSpacing
 
   -- 
+
+  , monoFontPointSize
   , monoCharWidth
   , monoSpacerWidth
   , monoTextWidth
@@ -139,6 +141,14 @@ markHalfHeight = (0.5*) <$> markHeight
 
 withFontSize :: DrawingCtxM m => (FontSize -> u) -> m u
 withFontSize fn = (fn . font_size) <$> asksDC font_props
+
+
+-- NOTE - textHeight in Wumpus-Core should be renamed as it is
+-- (probably) more indiactive of Cap height than /font point size/
+--
+
+monoFontPointSize :: (DrawingCtxM m, FromPtSize u) => m u
+monoFontPointSize = withFontSize (fromPtSize . textHeight)
 
 monoCharWidth :: (DrawingCtxM m, FromPtSize u) => m u
 monoCharWidth = withFontSize (fromPtSize . charWidth)

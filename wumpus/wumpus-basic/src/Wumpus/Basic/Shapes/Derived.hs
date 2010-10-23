@@ -85,7 +85,7 @@ type instance DUnit (Rectangle u) = u
 
 
 runRectangle :: (u -> u -> ShapeGeom u a) -> Rectangle u -> a
-runRectangle mf (Rectangle { rect_ctm =ctm, rect_hw = hw, rect_hh = hh }) = 
+runRectangle mf (Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }) = 
    runShapeGeom ctm $ mf hw hh 
 
 instance (Real u, Floating u) => CenterAnchor (Rectangle u) where

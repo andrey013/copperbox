@@ -109,11 +109,14 @@ coordinateDot :: (Real u, Floating u, FromPtSize u)
               => Coordinate u -> Image u (CoordinateAnchor u)
 coordinateDot x = intoImage (return $ getCoordinate x) (drawDot x)
 
+
+
 -- | Note - the @x@ is drawn /regardless/ of any scaling or rotation.
 --
 coordinateX :: (Real u, Floating u, FromPtSize u) 
             => Coordinate u -> Image u (CoordinateAnchor u)
 coordinateX x = intoImage (return $ getCoordinate x) (drawX x)
+
 
 
 quarterMarkHeight :: (Fractional u, FromPtSize u) => DrawingR u

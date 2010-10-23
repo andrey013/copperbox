@@ -41,6 +41,8 @@ module Wumpus.Basic.Graphic.Drawing
   , liftToPictureMb
   , mbPictureU
  
+
+  , query
   , draw
   , xdraw
   , drawi
@@ -297,6 +299,10 @@ mbPictureU (Just a) = a
 
 --------------------------------------------------------------------------------
 
+query :: DrawingCtxM m => DrawingR a -> m a
+query df = askDC >>= \ctx -> return $ runDrawingR ctx df
+
+
 -- | Draw a Graphic taking the drawing style from the 
 -- /drawing context/. 
 --
@@ -319,7 +325,7 @@ xdraw xl gf = draw (xlinkGraphic xl gf)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawi ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
+drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
             let (a,o) = runImage ctx img in trace (collectH o) >> return a
 

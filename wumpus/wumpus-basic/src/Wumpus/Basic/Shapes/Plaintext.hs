@@ -27,6 +27,10 @@ module Wumpus.Basic.Shapes.Plaintext
   , Plaintext
   , DPlaintext
   , LocPlaintext
+  , BoxMargin(..)
+  , uniformMargin
+  , regularMargin
+  , setMargin
 
   , plaintext
   , drawText
@@ -60,9 +64,19 @@ type DPlaintextAnchor = PlaintextAnchor Double
 type instance DUnit (PlaintextAnchor u) = u
 
 
+data BoxMargin u = BoxMargin
+      { margin_left     :: !u
+      , margin_right    :: !u
+      , margin_top      :: !u
+      , margin_bottom   :: !u
+      }
+  deriving (Eq,Ord,Show)
+
+
 data Plaintext u = Plaintext
-      { text_ctm  :: ShapeCTM u
-      , text_text :: String     -- Note - generalize this for multi-line...
+      { text_ctm      :: ShapeCTM u
+      , text_text     :: String     -- Note - generalize this for multi-line...
+      , text_margin   :: BoxMargin u 
       }
   deriving (Eq,Ord,Show)
 
@@ -113,11 +127,54 @@ instance Num u => Translate (Plaintext u) where
   translate dx dy = updateCTM (translate dx dy)
 
 
+-- Note - To be consistent with Shapes and Coordinate, the 
+-- plaintext constructor should be /context-free/ regarding the 
+-- DrawingCtx.
+--
+-- This means plaintext cannot derive a default margin based on 
+-- the FontSize. In practice only Courier is likely to have an
+-- acceptable default margin, Wumpus-Basic generally greatly
+-- overestimates the length of text in non-monospaced fonts and
+-- margins will have to be judged /by eye/.
+-- 
 
 plaintext :: Num u => String -> LocPlaintext u
-plaintext ss pt = Plaintext { text_ctm  = makeShapeCTM pt
-                            , text_text = ss }
+plaintext ss pt = Plaintext { text_ctm    = makeShapeCTM pt
+                            , text_text   = ss
+                            , text_margin = zero_box_margin }
 
+
+zero_box_margin :: Num u => BoxMargin u
+zero_box_margin = BoxMargin { margin_left     = 0
+                            , margin_right    = 0
+                            , margin_top      = 0
+                            , margin_bottom   = 0 }
+
+uniformMargin :: (Num u, FromPtSize u) => u -> DrawingR (BoxMargin u)
+uniformMargin scaling_factor = 
+   (\sz -> let u = scaling_factor * sz in BoxMargin { margin_left     = u
+                                                    , margin_right    = u
+                                                    , margin_top      = u
+                                                    , margin_bottom   = u })
+    <$> monoFontPointSize
+
+-- | 'regularMargin' : 
+-- @ unit_margin * right_margin -> BoxMargin @
+--
+-- Create a box margin where left, top and bottom margin are all  
+-- set to the unit_margin. The right_margin is an independent
+-- parameter as it is used to accommodate the over-estimation of
+-- textlabel widths by Wumpus - typically it will be \*negative\*.
+-- 
+regularMargin :: u -> u -> BoxMargin u
+regularMargin um rm = BoxMargin { margin_left     = um
+                                , margin_right    = rm
+                                , margin_top      = um
+                                , margin_bottom   = um }
+
+
+setMargin :: BoxMargin u -> Plaintext u -> Plaintext u
+setMargin i = (\s -> s { text_margin = i }) 
 
 
 drawText :: (Real u, Floating u, FromPtSize u)
@@ -126,11 +183,14 @@ drawText x = intoImage (oneLineRect x) (drawOneLine x)
 
 
 
+
+
 oneLineRect :: (Fractional u, Ord u, FromPtSize u) 
         => Plaintext u -> DrawingR (PlaintextAnchor u)
-oneLineRect ptext = 
-    monoTextDimensions (text_text ptext) >>= \(w,h) -> 
-    return $ PlaintextAnchor $ mkRectangle (0.5*w) (0.5*h) (text_ctm ptext)
+oneLineRect (Plaintext { text_ctm=ctm, text_margin=box, text_text=ss }) = 
+    (\(w,h) -> PlaintextAnchor $ expandedRectangle box w h ctm)
+      <$> monoTextDimensions ss
+ 
                    
 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
@@ -147,3 +207,16 @@ rotTextline :: (Real u, Floating u) => Radian -> String -> LocGraphic u
 rotTextline theta ss baseline_left = 
     withTextAttr $ \rgb attr -> 
         wrapPrim $ rtextlabel rgb attr ss theta baseline_left
+
+
+expandedRectangle :: Fractional u 
+                  => BoxMargin u -> u -> u -> ShapeCTM u -> Rectangle u
+expandedRectangle (BoxMargin { margin_left=xl, margin_right=xr
+                             , margin_top=yt,  margin_bottom=yb }) w h ctm = 
+    mkRectangle hw hh (translate dx dy ctm)
+  where
+    hw  = 0.5 * (xl + xr + w)
+    hh  = 0.5 * (yt + yb + h)
+    dx  = 0.5 * (xr - xl)
+    dy  = 0.5 * (yt - yb)
+    
