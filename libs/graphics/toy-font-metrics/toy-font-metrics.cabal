@@ -1,0 +1,53 @@
+name:             toy-font-metrics
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Simple font metrics extraction from AFM files
+description:
+  .
+  Simple font metrics extraction from AFM files.
+  .
+  This package is intended for demonstrating the internals of AFM 
+  files and for simple scripting, it is not intended for 
+  incorporation in other packages. Other programs should expect 
+  to define their own datatypes, so the parser and datatypes 
+  defined here are not readily reusable (the datatypes here are
+  really a concrete syntax which is too large for actual work). 
+  Also, AFM files describe Type 1 format fonts that are somewhat 
+  out-of-date these days, although they are used by GhostScript.  
+  .
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  LICENSE,
+  demo/Demo01.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base            <  5, 
+                      containers      >= 0.3     && <= 0.4, 
+
+  
+  exposed-modules:
+    Graphics.ToyFontMetrics.Datatypes,
+    Graphics.ToyFontMetrics.Parser
+
+  other-modules:
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
