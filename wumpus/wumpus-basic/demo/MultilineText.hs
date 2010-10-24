@@ -33,8 +33,10 @@ pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
     draw $ textline ss `at` (zeroPt .+^ vvec (1.2 * 24))
     draw $ textline ss `at` zeroPt
     draw $ textlineMulti xs `at` (P2 500 0)
-    let m = regularMargin 4 (-46)
-    a <- drawi $ drawText $ mplaintext2 m "The slow" "loris crawled" `at` P2 50 120
+    let m = regularMargin 6 (-24)
+    a <- drawi $ drawText $ rotate30About (P2 50 120) $ 
+                 mplaintext2 m [(10,"The quick"), (0,"black dog")] `at` P2 50 120
+    drawi_ $ coordinateDot $ coordinate `at` P2 50 120
     drawi_ $ coordinateX $ coordinate `at` (north a)
     drawi_ $ coordinateX $ coordinate `at` (south a)
     drawi_ $ coordinateX $ coordinate `at` (east a)
@@ -46,5 +48,8 @@ pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
 
 
 
-mplaintext2 :: Num u => BoxMargin u -> String -> String -> LocPlaintext u
-mplaintext2 a ss ts = setMargin a . plaintext2 ss ts 
+mplaintext1 :: Num u => BoxMargin u -> String -> LocPlaintext u
+mplaintext1 a ss = setMargin a . plaintext ss
+
+mplaintext2 :: Num u => BoxMargin u -> [(u,String)] -> LocPlaintext u
+mplaintext2 a xs = setMargin a . multitext xs 

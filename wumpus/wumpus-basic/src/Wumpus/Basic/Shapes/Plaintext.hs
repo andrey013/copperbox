@@ -33,7 +33,7 @@ module Wumpus.Basic.Shapes.Plaintext
   , setMargin
 
   , plaintext
-  , plaintext2
+  , multitext
   , drawText
 
   ) where
@@ -149,10 +149,10 @@ plaintext ss pt = Plaintext { text_ctm    = makeShapeCTM pt
 
 
 
-plaintext2 :: Num u => String -> String -> LocPlaintext u
-plaintext2 ss ts pt = 
+multitext :: Num u => [(u,String)] -> LocPlaintext u
+multitext xs pt = 
     Plaintext { text_ctm    = makeShapeCTM pt
-              , text_text   = [DxString 0 ss, DxString 0 ts]
+              , text_text   = map (uncurry DxString) xs
               , text_margin = zero_box_margin }
 
 
@@ -201,7 +201,7 @@ multiLineRect :: (Fractional u, Ord u, FromPtSize u)
               => Plaintext u -> DrawingR (PlaintextAnchor u)
 multiLineRect (Plaintext { text_ctm=ctm, text_margin=box, text_text=xs }) = 
    (\w h -> PlaintextAnchor $ expandedRectangle box w h ctm)
-    <$> maxWidth xs <*> monoMultiLineTextHeight (length xs)
+    <$> maxWidth xs <*> monoMultiLineHeight (length xs)
 
 maxWidth :: (Ord u, FromPtSize u) => [DxString u] -> DrawingR u
 maxWidth xs = maximum <$> mapM lineWidth1 xs
@@ -212,26 +212,22 @@ maxWidth xs = maximum <$> mapM lineWidth1 xs
 drawMultiLines :: (Real u, Floating u, FromPtSize u) 
                => Plaintext u -> Graphic u
 drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = 
-    let ctr      = runShapeGeom ctm shapeCenter
-        num_rows = length xs
-    in multilineCenters num_rows ctr   >>= \pts -> 
-       cat $ zipWith fn xs pts
+    let (ctr,ang) = runShapeGeom ctm $ (,) <$> shapeCenter <*> shapeAngle
+        num_rows  = length xs
+    in maxWidth xs                   >>= \w   ->
+       baselineLefts num_rows w ctr  >>= \pts -> 
+       cat $ zipWith (drawOneLine ang) xs (map (rotateAbout ang ctr) pts)
   where
     cat (y:ys) = oconcat y ys
     cat []     = error "Plaintext supplied with empty string"
 
-    fn dxs pt = drawOneLine dxs (runShapeGeom ctm (swapCenter pt))
+  
             
 
--- 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
-            => DxString u -> ShapeCTM u -> Graphic u 
-drawOneLine (DxString dx ss) ctm =
-    let (ctr0,ang) = runShapeGeom ctm ((,) <$> shapeCenter <*> shapeAngle)
-        ctr        = ctr0 .+^ hvec dx
-    in monoVecToCenter ss >>= \v -> 
-       let bl = ctr .-^ v
-       in rotTextline ang ss (rotateAbout ang ctr bl)
+            => Radian -> DxString u -> Point2 u -> Graphic u 
+drawOneLine ang (DxString dx ss) bl =
+    rotTextline ang ss (bl .+^ avec ang dx)
 
 
 
@@ -255,14 +251,18 @@ expandedRectangle (BoxMargin { margin_left=xl, margin_right=xr
 
 
 
-multilineCenters :: (Fractional u, FromPtSize u)  
-                 => Int -> Point2 u -> DrawingR [Point2 u]
-multilineCenters num_rows ctr = 
-   (\height ptsize spacing -> 
-        let dy = 0.5 * height - 0.5 * ptsize
-        in headIterate num_rows (.+^ vvec spacing) (ctr .-^ vvec dy))
-      <$> monoMultiLineTextHeight num_rows 
-      <*> monoFontPointSize <*> baselineSpacing
+
+
+baselineLefts :: (Fractional u, FromPtSize u)  
+                 => Int -> u -> Point2 u -> DrawingR [Point2 u]
+baselineLefts num_rows max_width ctr = 
+   (\rect_height ptsize spacing descender_depth -> 
+        let dy = 0.5 * rect_height - 0.5 * ptsize
+            v1 = vec (0.5 * max_width) (dy + descender_depth)
+        in headIterate num_rows (.+^ vvec spacing) (ctr .-^ v1) )
+      <$> monoMultiLineHeight num_rows 
+                <*> monoFontPointSize <*> baselineSpacing <*> monoDescenderDepth
+
 
 
 headIterate :: Int -> (a -> a) -> a -> [a]

@@ -48,7 +48,7 @@ module Wumpus.Basic.Graphic.Query
   , monoLowerxHeight
   , monoDescenderDepth
   , monoTextDimensions
-  , monoMultiLineTextHeight
+  , monoMultiLineHeight
   , monoDefaultPadding
   , monoVecToCenter  
   ) where
@@ -201,10 +201,10 @@ monoTextDimensions ss =
 -- | The heigth of @n@ lines of text, which is 
 -- @n lines + n-1 line spacers@
 --
-monoMultiLineTextHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) 
+monoMultiLineHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) 
                         => Int -> m u
-monoMultiLineTextHeight n | n < 0   = pure 0
-monoMultiLineTextHeight n           = 
+monoMultiLineHeight n | n < 0   = pure 0
+monoMultiLineHeight n           = 
     (\h lsf -> h + (fromIntegral $ n-1) * (h * realToFrac lsf))
       <$> monoTextHeight <*> asksDC line_spacing_factor
  
