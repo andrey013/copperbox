@@ -19,30 +19,19 @@ module Graphics.ToyFontMetrics.Parser
 
 
 import Graphics.ToyFontMetrics.Datatypes
+import Graphics.ToyFontMetrics.ParserCombinators
 
-import Text.ParserCombinators.Parsec
-import qualified Text.ParserCombinators.Parsec.Token as P
-import Text.ParserCombinators.Parsec.Language
+import Control.Applicative
 
-versionNumber :: Parser String
-versionNumber = symbol "StartFontMetrics" >> many1 (digit <|> char '.')
+-- Type error mixing a parser and a lexer / char parser...
+
+versionNumber :: Parser Char String
+versionNumber = keyword "StartFontMetrics" >> many1 (digit <|> char '.')
 
 
 
--------------------------------------------------------------------------------
--- Tokens
--------------------------------------------------------------------------------
 
-lexer             :: P.TokenParser st
-lexer             = P.makeTokenParser lexerDef
+keyword :: String -> Parser Char ()
+keyword ss = lexeme $ mapM symbol ss >> return ()
 
-lexerDef = emptyDef
-  { commentLine  = "Comment"                                 
-  }
 
-whiteSpace        = P.whiteSpace lexer 
-reserved          = P.reserved lexer
-parens            = P.parens lexer
-
-symbol            :: String -> CharParser st String
-symbol            = P.symbol lexer

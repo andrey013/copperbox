@@ -35,4 +35,4 @@ data NameData = NameData
       , full_name   :: String
       , family_name :: String
       }
-  derving (Eq,Show)
+  deriving (Eq,Show)

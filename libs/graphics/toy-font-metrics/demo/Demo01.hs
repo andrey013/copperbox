@@ -6,8 +6,8 @@ module Demo01 where
 
 
 import Graphics.ToyFontMetrics.Parser
+import Graphics.ToyFontMetrics.ParserCombinators
 
-import Text.ParserCombinators.Parsec
 
 import System.Directory
 
@@ -18,4 +18,5 @@ main = do
     return ()
 
 
-demo01 = parse versionNumber  "" "StartFontMetrics 3.0"
+demo01 = runParser integer  "120"
+demo02 = runParser versionNumber "StartFontMetrics 3.0"
