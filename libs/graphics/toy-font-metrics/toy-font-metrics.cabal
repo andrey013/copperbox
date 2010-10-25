@@ -32,12 +32,15 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base            <  5, 
-                      containers      >= 0.3     && <= 0.4, 
+                      containers      >= 0.3     && <= 0.4
 
   
   exposed-modules:
     Graphics.ToyFontMetrics.Datatypes,
-    Graphics.ToyFontMetrics.Parser
+    Graphics.ToyFontMetrics.Parser,
+    Graphics.ToyFontMetrics.ParserCombinators,
+    Graphics.ToyFontMetrics.TokenParser
+    
 
   other-modules:
 

@@ -20,18 +20,47 @@ module Graphics.ToyFontMetrics.Parser
 
 import Graphics.ToyFontMetrics.Datatypes
 import Graphics.ToyFontMetrics.ParserCombinators
+import qualified Graphics.ToyFontMetrics.TokenParser as P
 
 import Control.Applicative
 
--- Type error mixing a parser and a lexer / char parser...
+
+record :: String -> CharParser a -> CharParser a
+record name p = symbol name *> p <* newlineOrEOF
 
 versionNumber :: Parser Char String
-versionNumber = keyword "StartFontMetrics" >> many1 (digit <|> char '.')
+versionNumber = record "StartFontMetrics" $ many1 (digit <|> char '.')
 
 
+keyword :: String -> CharParser ()
+keyword ss = skipOne $ symbol ss
 
 
-keyword :: String -> Parser Char ()
-keyword ss = lexeme $ mapM symbol ss >> return ()
+newlineOrEOF :: CharParser ()
+newlineOrEOF = skipOne newline <|> eof
 
 
+newline :: CharParser Char
+newline = lexeme $ char '\n'
+
+
+--------------------------------------------------------------------------------
+
+-- no newline in whitespace
+
+afm_lexer :: LexerDef
+afm_lexer = emptyDef { whitespace_chars = "\t "
+                     , comment_line     = "Comment" }
+
+tp :: P.TokenParsers
+tp = P.makeTokenParsers afm_lexer
+
+
+lexeme          :: CharParser a -> CharParser a
+lexeme          = P.lexeme tp
+
+symbol          :: String -> CharParser String
+symbol          = P.symbol tp
+
+whiteSpace      :: CharParser ()
+whiteSpace      = P.whiteSpace tp

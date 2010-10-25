@@ -16,7 +16,49 @@
 --------------------------------------------------------------------------------
 
 module Graphics.ToyFontMetrics.ParserCombinators
-  where
+  (
+    Parser
+  , CharParser
+  , runParser
+  , apply
+  , failure
+  , eof
+  , equals
+  , satisfy
+  , oneOf
+  , noneOf
+
+  , chainl1
+  , chainr1
+  , chainl
+  , chainr
+  , choice
+  , count
+  , between
+  , option
+  , optionMaybe
+  , optionUnit
+  , skipOne
+  , skipMany
+  , skipMany1
+  , many1
+  , sepBy
+  , sepBy1
+  , sepEndBy
+  , sepEndBy1
+  , manyTill  
+  , manyTill1
+
+  , char
+  , string
+  , digit
+  , anyChar
+
+  -- lexer
+  , LexerDef(..)
+  , emptyDef
+
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -35,6 +77,10 @@ newtype Parser s r = Parser {
           getParser :: forall ans. SK s r ans -> FK s ans -> [s] -> Result s ans }
 
 
+type CharParser a = Parser Char a
+
+
+
 runParser :: Parser s a -> [s] -> Result s a
 runParser p = getParser p skZero fkZero
   where
@@ -42,9 +88,8 @@ runParser p = getParser p skZero fkZero
     fkZero = Fail []
 
 
-failure :: Parser s a
-failure = Parser $ \_ fk _ -> fk
-
+-- @return@ of Monad, @pure@ of Applicative
+--
 yield  :: a -> Parser s a
 yield a = Parser $ \sk fk ss -> sk a fk ss
 
@@ -58,6 +103,11 @@ infixl 5 `apply`
 
 apply :: Functor f => f a -> (a -> b) -> f b
 apply = flip fmap
+
+
+failure :: Parser s a
+failure = Parser $ \_ fk _ -> fk
+
 
 -- eager-many / zero-or-more (many of Applicative)
 --
@@ -98,8 +148,14 @@ instance MonadPlus (Parser s) where
 --------------------------------------------------------------------------------
 -- Combinators
 
-symbol :: Eq s => s -> Parser s s
-symbol sym = Parser go
+eof :: Parser s ()
+eof = Parser go
+  where
+    go sk fk [] = sk () fk []
+    go _  fk _  = fk
+
+equals :: Eq s => s -> Parser s s
+equals sym = Parser go
   where
     go sk fk (s:ss) | s == sym = sk s fk ss
     go _  fk _                 = fk
@@ -111,11 +167,6 @@ satisfy test = Parser go
     go sk fk (s:ss) | test s = sk s fk ss 
     go _  fk _               = fk
 
-any :: Parser s s
-any = Parser go
-  where
-   go sk fk (s:ss) = sk s fk ss
-   go _  fk _      = fk
 
 oneOf           :: Eq s => [s] -> Parser s s
 oneOf cs        = satisfy (`elem` cs)
@@ -177,6 +228,8 @@ optionMaybe = optional
 optionUnit :: Alternative f => f a -> f ()
 optionUnit p = () <$ p <|> pure ()
 
+skipOne :: Applicative f => f a -> f ()
+skipOne p = p *> pure ()
 
 skipMany :: Alternative f => f a -> f ()
 skipMany p = many_p
@@ -218,18 +271,41 @@ manyTill1 p end = p <:> step where
 --------------------------------------------------------------------------------
 -- Char parsers
 
-type CharParser a = Parser Char a
-
 
 char :: Char -> CharParser Char
 char ch = satisfy (==ch)
+
+string :: String -> CharParser String
+string ss = mapM char ss
+
+anyChar :: CharParser Char
+anyChar = Parser go
+  where
+   go sk fk (s:ss) = sk s fk ss
+   go _  fk _      = fk
 
 
 digit :: CharParser Char
 digit = satisfy isDigit 
 
+--------------------------------------------------------------------------------
+-- LexerDefs
 
--- Note - lexeme doesn\'t gobble newlines
+-- Acknowledgment - this is a smaller version Parsec\'s 
+-- LanguageDef.
 --
-lexeme :: Parser Char a -> Parser Char a
-lexeme p = p <* many1 (oneOf "\t ")
+-- Credit and thanks for the technique is owed to Daan Leijen. 
+--
+
+data LexerDef = LexerDef
+      { whitespace_chars :: [Char]
+      , comment_start    :: String
+      , comment_end      :: String
+      , comment_line     :: String
+      }
+
+emptyDef :: LexerDef
+emptyDef = LexerDef { whitespace_chars = "\t\n " 
+                    , comment_start    = ""
+                    , comment_end      = ""
+                    , comment_line     = "" }
