@@ -1,0 +1,49 @@
+name:             wumpus-fontkit
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Font handling for Wumpus-Basic
+description:
+  .
+  Font metrics extraction from AFM files for use with 
+  Wumpus-Basic.
+  .
+  .
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  LICENSE,
+  demo/Demo01.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base                <  5, 
+                      containers          >= 0.3     && <= 0.4,
+                      action-permutations >= 0.0 && <= 1.0
+  
+  exposed-modules:
+    Wumpus.FontKit.AfmV2Datatypes,
+    Wumpus.FontKit.AfmV2Parser,
+    Wumpus.FontKit.Utils.ParserCombinators,
+    Wumpus.FontKit.Utils.TokenParser
+    
+
+  other-modules:
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
