@@ -31,13 +31,13 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base            <  5, 
-                      containers      >= 0.3     && <= 0.4
-
+  build-depends:      base                <  5, 
+                      containers          >= 0.3     && <= 0.4,
+                      action-permutations >= 0.0 && <= 1.0
   
   exposed-modules:
-    Graphics.ToyFontMetrics.Datatypes,
-    Graphics.ToyFontMetrics.Parser,
+    Graphics.ToyFontMetrics.DatatypesV2,
+    Graphics.ToyFontMetrics.ParserV2,
     Graphics.ToyFontMetrics.ParserCombinators,
     Graphics.ToyFontMetrics.TokenParser
     
