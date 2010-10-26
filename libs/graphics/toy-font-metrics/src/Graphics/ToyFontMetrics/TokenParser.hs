@@ -56,14 +56,18 @@ makeTokenParsers lexer_def =
       | otherwise          = skipMany (whiteChar <|> lineComment 
                                                  <|> spanComment)
 
-    whiteChar = skipOne $ oneOf $ whitespace_chars lexer_def
+    whiteChar     = skipOne $ oneOf $ whitespace_chars lexer_def
 
-    lineComment = string (comment_line lexer_def) *> 
-                  manyTill anyChar (char '\n')    *> return () 
+    lineComment   = string (comment_line lexer_def) *> 
+                    manyTill anyChar endLine        *> return () 
 
-    spanComment = startComment *> manyTill anyChar endComment *> return ()
+    spanComment   = startComment *> manyTill anyChar endComment *> return ()
 
-    startComment = string (comment_start lexer_def)
-    endComment   = string (comment_end   lexer_def)
-    no_line      = null   (comment_line  lexer_def)
-    no_span      = null   (comment_start lexer_def)
+    endLine       = skipOne (char '\n') <|> eof
+    
+    startComment  = string (comment_start lexer_def)
+    endComment    = string (comment_end   lexer_def)
+    no_line       = null   (comment_line  lexer_def)
+    no_span       = null   (comment_start lexer_def)
+
+   

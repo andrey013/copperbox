@@ -17,22 +17,31 @@
 module Graphics.ToyFontMetrics.Datatypes
   ( 
     AfmFile(..)
-
+  , AfmHeader(..)
+  , MetricProps(..)
   ) where
 
 data AfmFile = AfmFile
-      { afm_file_metrics_version :: String
+      { header          :: AfmHeader
+      , metric_props    :: MetricProps
       }
   deriving (Eq,Show)
 
-data Header = Header
-      { name_data   :: NameData
+-- | @font_name@ is the name used by PostScript\'s @findfont@
+-- command. Note, though that GhostScript aliases the font names
+-- of the /standard/ fonts (Times, Helvetica, Courier and Symbol).
+--
+--
+data AfmHeader = AfmHeader
+      { afm_version     :: String
+      , metrics_sets    :: Int     
+      , font_name       :: String -- This is used by PostScript\'s @findfont@
+      , full_name       :: String
+      , family_name     :: String
       }
   deriving (Eq,Show)
 
-data NameData = NameData 
-      { font_name   :: String -- This is used by PostScript\'s @findfont@
-      , full_name   :: String
-      , family_name :: String
-      }
+-- | Note the /unit/ is 1\/1000 of a point size.
+--
+data MetricProps = MetricProps
   deriving (Eq,Show)

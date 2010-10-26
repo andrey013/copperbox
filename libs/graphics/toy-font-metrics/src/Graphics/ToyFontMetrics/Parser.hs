@@ -23,13 +23,36 @@ import Graphics.ToyFontMetrics.ParserCombinators
 import qualified Graphics.ToyFontMetrics.TokenParser as P
 
 import Control.Applicative
+import Control.Applicative.Permutation
 
+
+afmFile :: CharParser AfmFile
+afmFile = AfmFile <$> afmHeader <*> metricProps
+
+afmHeader :: CharParser AfmHeader
+afmHeader = runPerms $ 
+   AfmHeader <$> atom         versionNumber
+             <*> optAtom 0    metricsSets
+             <*> atom         fontName
+             <*> atom       (record "FullName" whiteString)
+             <*> atom       (record "FamilyName" whiteString)
+
+
+metricProps :: CharParser MetricProps
+metricProps = pure MetricProps
 
 record :: String -> CharParser a -> CharParser a
 record name p = symbol name *> p <* newlineOrEOF
 
-versionNumber :: Parser Char String
-versionNumber = record "StartFontMetrics" $ many1 (digit <|> char '.')
+versionNumber   :: CharParser String
+versionNumber   = record "StartFontMetrics" $ many1 (digit <|> char '.')
+
+metricsSets     :: CharParser Int
+metricsSets     = record "MetricsSets" $ lexeme natural
+
+fontName        :: CharParser String
+fontName        = record "FontName" whiteString
+
 
 
 keyword :: String -> CharParser ()
@@ -43,6 +66,8 @@ newlineOrEOF = skipOne newline <|> eof
 newline :: CharParser Char
 newline = lexeme $ char '\n'
 
+whiteString :: CharParser String
+whiteString = many (noneOf ['\n'])
 
 --------------------------------------------------------------------------------
 

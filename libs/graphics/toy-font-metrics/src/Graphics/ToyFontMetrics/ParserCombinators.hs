@@ -19,6 +19,7 @@ module Graphics.ToyFontMetrics.ParserCombinators
   (
     Parser
   , CharParser
+  , CharResult
   , runParser
   , apply
   , failure
@@ -53,6 +54,7 @@ module Graphics.ToyFontMetrics.ParserCombinators
   , string
   , digit
   , anyChar
+  , natural
 
   -- lexer
   , LexerDef(..)
@@ -78,7 +80,7 @@ newtype Parser s r = Parser {
 
 
 type CharParser a = Parser Char a
-
+type CharResult a = Result Char a
 
 
 runParser :: Parser s a -> [s] -> Result s a
@@ -287,6 +289,10 @@ anyChar = Parser go
 
 digit :: CharParser Char
 digit = satisfy isDigit 
+
+
+natural :: CharParser Int
+natural = liftA read (many1 digit)
 
 --------------------------------------------------------------------------------
 -- LexerDefs
