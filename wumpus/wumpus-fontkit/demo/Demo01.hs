@@ -23,10 +23,10 @@ demo03 = runParser (whiteSpace *> char 'z')  "Comment one-two-three\nz"
 demo04 = runParser (manyTill anyChar newline) "one-two-three \n" 
 demo05 = runParser (lexeme newline) "\n"
 demo06 = runParser eof ""
-demo07 = runParser eof "FAILURE"
+demo07 = runParserEither (eof <?> "not EOF") "FAILURE"
 
 filetest :: FilePath -> IO ()
-filetest name = readFile name >>= print . runParser afmFile
+filetest name = readFile name >>= print . runParserEither afmFile
 
 demo08 :: IO ()
 demo08 = print $ runParser globalInfo sample2

@@ -26,7 +26,8 @@ library
   hs-source-dirs:     src
   build-depends:      base                <  5, 
                       containers          >= 0.3     && <= 0.4,
-                      action-permutations >= 0.0 && <= 1.0
+                      action-permutations >= 0.0 && <= 1.0,
+                      wumpus-core         >= 0.36.0
   
   exposed-modules:
     Wumpus.FontKit.AfmV2Datatypes,

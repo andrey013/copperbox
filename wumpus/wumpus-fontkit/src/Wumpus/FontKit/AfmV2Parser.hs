@@ -25,49 +25,120 @@ import Wumpus.FontKit.AfmV2Datatypes
 import Wumpus.FontKit.Utils.ParserCombinators
 import qualified Wumpus.FontKit.Utils.TokenParser as P
 
+import Wumpus.Core                              -- package: wumpus-core
+
 import Control.Applicative
-import Control.Applicative.Permutation
 
 import Data.Char
 import qualified Data.Map as Map
 
 afmFile :: CharParser AfmFile
-afmFile = AfmFile <$> globalInfo 
+afmFile = AfmFile <$> 
+    versionNumber <*> globalInfo <*> startCharMetrics <*> many characterMetrics
 
 globalInfo :: CharParser GlobalInfo
 globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty) 
-               <$> (versionNumber *> sepBy record newline)
+               <$> manyTill (record <* lexeme newline) (peek startCharMetrics)
 
 
 
-{-
-        atom            versionNumber
-    <*> atom            (record "FontName"            whiteString)
-    <*> optAtom ""      (record "FullName"            whiteString)
-    <*> optAtom ""      (record "FamilyName"          whiteString)
-    <*> optAtom ""      (record "Weight"              whiteString)
-    <*> optAtom 0       (record "ItalicAngle"         number)
-    <*> optAtom False   (record "IsFixedPitch"        bool)
-    <*> atom            fontBBox
-    <*> optAtom 0       (record "UnderlinePosition"   $ lexeme number)
-    <*> optAtom 0       (record "UnderlineThickness"  $ lexeme number)
-    <*> optAtom ""      (record "Version"             whiteString)
-    <*> optAtom ""      (record "Notice"              whiteString)
-    <*> optAtom ""      (record "EncodingScheme"      whiteString)
-    <*> optAtom 0       (record "CapHeight"           $ lexeme number)
-    <*> optAtom 0       (record "XHeight"             $ lexeme number)
-    <*> optAtom 0       (record "Ascender"            $ lexeme number)
-    <*> optAtom 0       (record "Descender"           $ lexeme number) 
+textQuery :: String -> GlobalInfo -> Maybe String
+textQuery = Map.lookup
+ 
+runQuery :: String -> CharParser a -> GlobalInfo -> Maybe a
+runQuery field_name p table = 
+    Map.lookup field_name table >>= extr . runParser p
   where
-    versionNumber   = record "StartFontMetrics" $ many1 (digit <|> char '.')
-    fontBBox        = record "FontBBox" $ (,,,) 
-                        <$> lexeme int <*> lexeme int <*> lexeme int 
-                                       <*> lexeme int
+    extr (Okay a _) = Just a
+    extr _          = Nothing
+
+
+
+fontName            :: GlobalInfo -> Maybe String
+fontName            = textQuery "FontName" 
+
+fullName            :: GlobalInfo -> Maybe String
+fullName            = textQuery "FullName"
+
+familyName          :: GlobalInfo -> Maybe String
+familyName          = textQuery "FamilyName"
+
+weight              :: GlobalInfo -> Maybe String
+weight              = textQuery "Weight"
+
+italicAngle         :: GlobalInfo -> Maybe Double
+italicAngle         = runQuery "ItalicAngle" number
+
+isFixedPitch        :: GlobalInfo -> Maybe Bool
+isFixedPitch        = runQuery "IsFixedPitch" bool
+
+fontBBox            :: GlobalInfo -> Maybe FontBBox
+fontBBox            = runQuery "FontBBox" go
+  where
+    go = (\llx lly urx ury -> bbox (P2 llx lly) (P2 urx ury)) 
+           <$> int <*> int <*> int <*> int
+
+underlinePosition   :: GlobalInfo -> Maybe Double
+underlinePosition   = runQuery "UnderlinePosition" number
+
+underlineThickness  :: GlobalInfo -> Maybe Double
+underlineThickness  = runQuery "UnderlineThickness" number
+
+version             :: GlobalInfo -> Maybe String
+version             = textQuery "Version"
+
+notice              :: GlobalInfo -> Maybe String
+notice              = textQuery "Notice"
+
+encodingScheme      :: GlobalInfo -> Maybe String
+encodingScheme      = textQuery "EncodingScheme"
+
+capHeight           :: GlobalInfo -> Maybe Double
+capHeight           = runQuery "CapHeight" number
+
+xHeight             :: GlobalInfo -> Maybe Double
+xHeight             = runQuery "XHeight" number
+
+ascender            :: GlobalInfo -> Maybe Double
+ascender            = runQuery "Ascender" number
+
+descender           :: GlobalInfo -> Maybe Double
+descender           = runQuery "Descender" number
+
 
 
 characterMetrics :: CharParser CharacterMetrics
+characterMetrics = CharacterMetrics <$>
+        metric "C" (-1) int
+    <*> widthVector
+    <*> metric "N" "" name1
+    <*> charBBox
+    <*  many (symbol "L" *> ligature_body <* semi)
+    <*  newlineOrEOF
+  where
+    ligature_body = ((,) <$> name <*> name)
+    
+widthVector :: CharParser WidthVector
+widthVector =  (symbol "WX" *> ((\w -> vec w 0) <$> number) <* semi)
+           <|> (symbol "W"  *> (vec <$> number <*> number)  <* semi)
+
+charBBox :: CharParser CharBBox
+charBBox = symbol "B" *> go <* semi
+  where
+    go = (\llx lly urx ury -> bbox (P2 llx lly) (P2 urx ury))
+           <$> number <*> number <*> number <*> number
+
+metric :: String -> a -> CharParser a -> CharParser a
+metric name dfault p = option dfault go
+  where
+    go = symbol name *> p <* semi
+
+
+{-
+
+characterMetrics :: CharParser CharacterMetrics
 characterMetrics = runPerms $ CharacterMetrics <$>
-        optAtom (-1) (metric "C"                     $ lexeme int)
+        optAtom (-1) (metric "C"  int)
     <*> atom         widthVector
     <*> atom         (metric "N"                     name1)
     <*> atom         (metric "B"                     bbox)
@@ -82,22 +153,21 @@ characterMetrics = runPerms $ CharacterMetrics <$>
 -}
 
 record :: CharParser (AfmKey,String)
-record = (,) <$> keyName <*> whiteString <* newlineOrEOF
+record = (,) <$> keyName <*> whiteString -- <* newlineOrEOF
 
 versionNumber :: CharParser String
 versionNumber = 
     symbol "StartFontMetrics" *> many1 (digit <|> char '.') <* newlineOrEOF
 
 
+startCharMetrics :: CharParser Int
+startCharMetrics = 
+    symbol "StartCharMetrics" *> int <* newlineOrEOF
+
+
+
 keyName :: CharParser AfmKey
-keyName = lexeme (many $ satisfy isAlphaNum) 
-
-
-metric :: String -> CharParser a -> CharParser a
-metric name p = symbol name *> p <* semi
-
-
-
+keyName = lexeme (many1 $ satisfy isAlphaNum) 
 
 
 
@@ -106,7 +176,7 @@ keyword ss = skipOne $ symbol ss
 
 
 newlineOrEOF :: CharParser ()
-newlineOrEOF = skipOne newline <|> eof
+newlineOrEOF = skipOne (lexeme newline) <|> eof
 
 name :: CharParser String
 name = lexeme $ many (noneOf ";\n")
@@ -115,27 +185,27 @@ name1 :: CharParser String
 name1 = lexeme $ many (noneOf "; \t\n")
 
 
-newline :: CharParser Char
-newline = lexeme $ char '\n'
 
 semi :: CharParser Char
 semi = lexeme $ char ';'
 
 whiteString :: CharParser String
-whiteString = many (noneOf ['\n'])
+whiteString = many1 (noneOf ['\n'])
 
 number :: CharParser Double
-number = (\signf intpart fracpart -> signf $ intpart + fracpart)
-          <$> psign <*> onatural <*> ofrac
+number = lexeme go 
   where
-    psign    = option id (negate <$ char '-')
-    onatural = option 0  (fromIntegral <$> natural)
-    ofrac    = option 0  ((\xs -> read $ '.':xs) <$> (char '.' *> (many1 digit)))
+    go        = (\signf intpart fracpart -> signf $ intpart + fracpart)
+                  <$> psign <*> onatural <*> ofrac
+    psign     = option id (negate <$ char '-')
+    onatural  = option 0  (fromIntegral <$> natural)
+    ofrac     = option 0  ((\xs -> read $ '.':xs) <$> (char '.' *> (many1 digit)))
 
 int :: CharParser Int
-int = ($) <$> psign <*> natural
+int = lexeme go
   where
-    psign    = option id (negate <$ char '-')
+    go    = ($) <$> psign <*> natural
+    psign = option id (negate <$ char '-')
 
 
 bool :: CharParser Bool

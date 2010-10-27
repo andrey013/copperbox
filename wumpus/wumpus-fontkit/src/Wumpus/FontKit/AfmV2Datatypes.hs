@@ -19,12 +19,17 @@ module Wumpus.FontKit.AfmV2Datatypes
     AfmNumber
   , AfmName
   , AfmKey
+  , FontBBox
+  , CharBBox
+  , WidthVector
   , AfmFile(..)
   , GlobalInfo
-
+  , CharacterMetrics(..)
 
   ) where
 
+
+import Wumpus.Core
 
 import Data.Map
 
@@ -37,13 +42,18 @@ import Data.Map
 --
 
 
-type AfmNumber  = Double
-type AfmKey     = String
-type AfmName    = String
+type AfmNumber      = Double
+type AfmKey         = String
+type AfmName        = String
+type CharBBox       = BoundingBox AfmNumber
+type FontBBox       = BoundingBox Int
+type WidthVector    = Vec2 AfmNumber
 
 data AfmFile = AfmFile
-      { global_info     :: GlobalInfo
---      , metric_props    :: MetricProps
+      { version_number          :: String
+      , global_info             :: GlobalInfo
+      , char_metrics_count      :: Int
+      , char_metrics            :: [CharacterMetrics]
       }
   deriving (Eq,Show)
 
@@ -53,46 +63,12 @@ data AfmFile = AfmFile
 type GlobalInfo = Map AfmKey String
 
 
-{-
-
--- | @font_name@ is the name used by PostScript\'s @findfont@
--- command. Note, though that GhostScript aliases the font names
--- of the /standard/ fonts (Times, Helvetica, Courier and Symbol).
---
---
-data GlobalInfo = GlobalInfo
-      { afm_version             :: String
-      , font_name               :: String
-      , full_name               :: String
-      , family_name             :: String
-      , weight                  :: String
-      , italic_angle            :: AfmNumber
-      , is_fixed_pitch          :: Bool
-      , font_bbox               :: (Int,Int,Int,Int)
-      , underline_pos           :: AfmNumber
-      , underline_thick         :: AfmNumber
-      , version                 :: String
-      , notice                  :: String
-      , encoding_scheme         :: String
-      , cap_height              :: AfmNumber
-      , x_height                :: AfmNumber
-      , ascender                :: AfmNumber
-      , descender               :: AfmNumber
-      }
-  deriving (Eq,Show)
-
--- | Note the /unit/ is 1\/1000 of a point size.
---
-data MetricProps = MetricProps
-  deriving (Eq,Show)
-
 data CharacterMetrics = CharacterMetrics
       { char_code               :: Int
-      , width_vector            :: (AfmNumber, AfmNumber)
+      , width_vector            :: WidthVector
       , char_name               :: AfmName
-      , char_bbox               :: (AfmNumber, AfmNumber, AfmNumber, AfmNumber)
-      , ligature_sequence       :: [(AfmName, AfmName)]
+      , char_bbox               :: CharBBox
       }
   deriving (Eq,Show)
 
--}
+

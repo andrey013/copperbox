@@ -18,11 +18,18 @@
 module Wumpus.FontKit.Utils.ParserCombinators
   (
     Parser
+  , Result(..)
   , CharParser
   , CharResult
+  , ParseError
+
   , runParser
+  , runParserEither
   , apply
   , failure
+  , (<?>)
+  , lookahead
+  , peek
   , eof
   , equals
   , satisfy
@@ -50,10 +57,21 @@ module Wumpus.FontKit.Utils.ParserCombinators
   , manyTill  
   , manyTill1
 
+  -- * Char parsers
   , char
   , string
-  , digit
   , anyChar
+  , upper
+  , lower
+  , letter
+  , alphaNum
+  , digit
+  , hexDigit
+  , octDigit
+  , newline
+  , tab
+  , space
+
   , natural
 
   -- lexer
@@ -67,7 +85,7 @@ import Control.Monad
 import Data.Char
 
 
-data Result s ans = Fail [s] | Okay ans [s]
+data Result s ans = Fail String [s] | Okay ans [s]
   deriving (Eq,Ord,Show)
 
 
@@ -81,13 +99,20 @@ newtype Parser s r = Parser {
 
 type CharParser a = Parser Char a
 type CharResult a = Result Char a
-
+type ParseError   = String
 
 runParser :: Parser s a -> [s] -> Result s a
 runParser p = getParser p skZero fkZero
   where
     skZero = \ans _ ss -> Okay ans ss
-    fkZero = Fail []
+    fkZero = Fail "" []
+
+
+runParserEither :: Parser s a -> [s] -> Either ParseError a
+runParserEither p = post . runParser p
+  where    
+    post (Okay a _)   = Right a
+    post (Fail err _) = Left err
 
 
 -- @return@ of Monad, @pure@ of Applicative
@@ -150,6 +175,30 @@ instance MonadPlus (Parser s) where
 --------------------------------------------------------------------------------
 -- Combinators
 
+
+infixr 0 <?>
+
+(<?>) :: Parser s a -> String -> Parser s a
+p <?> err_msg = Parser $ \sk _ ss -> getParser p sk (fk ss) ss
+  where
+    fk ss = Fail err_msg ss
+
+-- This one is from Chris Okasaki\'s \"Even Higher-Order 
+-- Functions for Parsing\".
+--
+lookahead :: Parser s a -> (a -> Parser s b) -> Parser s b 
+lookahead p mf  = Parser $ \sk fk -> 
+    getParser p (\a fk2 -> getParser (mf a) sk fk2) fk
+
+
+-- Peek tries the supplied parse, but does not consume input 
+-- \*\* even when the parse succeeds \*\*.
+--
+peek :: Parser s a -> Parser s a
+peek p = Parser $ \sk fk ss -> 
+    getParser p (\a fk2 _ -> sk a fk2 ss) fk ss
+
+
 eof :: Parser s ()
 eof = Parser go
   where
@@ -182,22 +231,22 @@ noneOf cs       = satisfy (`notElem` cs)
 -- to any MonadPlus.
 --
 
-chainl1 :: Parser s a -> Parser s (a -> a -> a) -> Parser s a
+chainl1 :: MonadPlus m => m a -> m (a -> a -> a) -> m a
 chainl1 p op = p >>= rest 
   where 
     rest x = mplus (op >>= \f -> p >>= \a -> rest (f x a)) (return x) 
                
 
-chainr1 :: Parser s a -> Parser s (a -> a -> a) -> Parser s a
+chainr1 :: MonadPlus m => m a -> m (a -> a -> a) -> m a
 chainr1 p op = scan 
    where 
      scan   = p >>= rest 
      rest x = mplus (op >>= \f -> scan >>= \a -> rest (f x a)) (return x) 
 
-chainl :: Parser s a -> Parser s (a -> a -> a) -> a -> Parser s a
+chainl :: MonadPlus m => m a -> m (a -> a -> a) -> a -> m a
 chainl p op v = mplus (chainl1 p op) (return v)
 
-chainr :: Parser s a -> Parser s (a -> a -> a) -> a -> Parser s a
+chainr :: MonadPlus m => m a -> m (a -> a -> a) -> a -> m a
 chainr p op v = mplus (chainr1 p op) (return v)
 
 
@@ -235,8 +284,9 @@ skipOne p = p *> pure ()
 
 skipMany :: Alternative f => f a -> f ()
 skipMany p = many_p
-  where many_p = some_p <|> pure ()
-        some_p = p       *> many_p
+  where 
+    many_p = some_p <|> pure ()
+    some_p = p       *> many_p
 
 skipMany1 :: Alternative f => f a -> f ()
 skipMany1 p = p *> skipMany p
@@ -250,22 +300,26 @@ sepBy :: Alternative f => f a -> f b -> f [a]
 sepBy p sep = sepBy1 p sep <|> pure []
 
 sepBy1 :: Alternative f => f a -> f b -> f [a]
-sepBy1 p sep = p <:> step where
+sepBy1 p sep = p <:> step 
+  where 
     step = (sep *> p) <:> step <|> pure []
 
 sepEndBy :: Alternative f => f a -> f b -> f [a]
 sepEndBy p sep = sepEndBy1 p sep <|> pure []
 
 sepEndBy1 :: Alternative f => f a -> f b -> f [a]
-sepEndBy1 p sep = (p <* sep) <:> step where
+sepEndBy1 p sep = (p <* sep) <:> step 
+  where
     step = (p <* sep) <:> step <|> pure []
     
 manyTill :: Alternative f => f a -> f b -> f [a]
-manyTill p end = step <|> pure [] where
+manyTill p end = step <|> pure [] 
+  where
     step = p <:> ((end `apply` pure[]) <|> step)
 
 manyTill1 :: Alternative f => f a -> f b -> f [a]
-manyTill1 p end = p <:> step where
+manyTill1 p end = p <:> step 
+  where
     step = (end `apply` pure []) <|> (p <:> step)
     
 
@@ -287,10 +341,38 @@ anyChar = Parser go
    go _  fk _      = fk
 
 
-digit :: CharParser Char
-digit = satisfy isDigit 
+upper       :: CharParser Char
+upper       = satisfy isUpper
 
+lower       :: CharParser Char
+lower       = satisfy isLower
 
+letter      :: CharParser Char
+letter      = satisfy isAlpha
+
+alphaNum    :: CharParser Char
+alphaNum    = satisfy isAlphaNum
+
+digit       :: CharParser Char
+digit       = satisfy isDigit 
+
+hexDigit    :: CharParser Char
+hexDigit    = satisfy isHexDigit
+
+octDigit    :: CharParser Char
+octDigit    = satisfy isOctDigit
+
+newline     :: CharParser Char
+newline     = equals '\n'
+
+tab         :: CharParser Char
+tab         = equals '\t'
+
+space       :: CharParser Char
+space       = satisfy isSpace
+
+-- This is one for TokenParser as it should be a lexeme parser.
+--
 natural :: CharParser Int
 natural = liftA read (many1 digit)
 
@@ -309,6 +391,13 @@ data LexerDef = LexerDef
       , comment_end      :: String
       , comment_line     :: String
       }
+
+-- Note - lexer defs probably should not generate hex and octal
+-- parsers. For instance PostScript represents octal with a 
+-- prefix of single slash @\100@, but hex numbers are enclosed in
+-- angles @<F0>@.
+--
+
 
 emptyDef :: LexerDef
 emptyDef = LexerDef { whitespace_chars = "\t\n " 
