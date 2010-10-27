@@ -16,8 +16,7 @@
 
 module Wumpus.FontKit.AfmV2Datatypes
   ( 
-    AfmNumber
-  , AfmName
+    AfmName
   , AfmKey
   , FontBBox
   , CharBBox
@@ -33,6 +32,7 @@ import Wumpus.Core
 
 import Data.Map
 
+
 -- Note - for robustness there is some merit in building a simple
 -- map between field names and strings representing unparsed 
 -- answers.
@@ -42,12 +42,11 @@ import Data.Map
 --
 
 
-type AfmNumber      = Double
 type AfmKey         = String
 type AfmName        = String
-type CharBBox       = BoundingBox AfmNumber
+type CharBBox       = BoundingBox AfmUnit
 type FontBBox       = BoundingBox Int
-type WidthVector    = Vec2 AfmNumber
+type WidthVector    = Vec2 AfmUnit
 
 data AfmFile = AfmFile
       { version_number          :: String

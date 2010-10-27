@@ -66,8 +66,8 @@ familyName          = textQuery "FamilyName"
 weight              :: GlobalInfo -> Maybe String
 weight              = textQuery "Weight"
 
-italicAngle         :: GlobalInfo -> Maybe Double
-italicAngle         = runQuery "ItalicAngle" number
+italicAngle         :: GlobalInfo -> Maybe Radian
+italicAngle         = runQuery "ItalicAngle" degree
 
 isFixedPitch        :: GlobalInfo -> Maybe Bool
 isFixedPitch        = runQuery "IsFixedPitch" bool
@@ -78,10 +78,10 @@ fontBBox            = runQuery "FontBBox" go
     go = (\llx lly urx ury -> bbox (P2 llx lly) (P2 urx ury)) 
            <$> int <*> int <*> int <*> int
 
-underlinePosition   :: GlobalInfo -> Maybe Double
+underlinePosition   :: GlobalInfo -> Maybe AfmUnit
 underlinePosition   = runQuery "UnderlinePosition" number
 
-underlineThickness  :: GlobalInfo -> Maybe Double
+underlineThickness  :: GlobalInfo -> Maybe AfmUnit
 underlineThickness  = runQuery "UnderlineThickness" number
 
 version             :: GlobalInfo -> Maybe String
@@ -93,23 +93,23 @@ notice              = textQuery "Notice"
 encodingScheme      :: GlobalInfo -> Maybe String
 encodingScheme      = textQuery "EncodingScheme"
 
-capHeight           :: GlobalInfo -> Maybe Double
+capHeight           :: GlobalInfo -> Maybe AfmUnit
 capHeight           = runQuery "CapHeight" number
 
-xHeight             :: GlobalInfo -> Maybe Double
+xHeight             :: GlobalInfo -> Maybe AfmUnit
 xHeight             = runQuery "XHeight" number
 
-ascender            :: GlobalInfo -> Maybe Double
+ascender            :: GlobalInfo -> Maybe AfmUnit
 ascender            = runQuery "Ascender" number
 
-descender           :: GlobalInfo -> Maybe Double
+descender           :: GlobalInfo -> Maybe AfmUnit
 descender           = runQuery "Descender" number
 
 
 
 characterMetrics :: CharParser CharacterMetrics
 characterMetrics = CharacterMetrics <$>
-        metric "C" (-1) int
+        metric "C" (-1) cint
     <*> widthVector
     <*> metric "N" "" name1
     <*> charBBox
@@ -129,28 +129,11 @@ charBBox = symbol "B" *> go <* semi
            <$> number <*> number <*> number <*> number
 
 metric :: String -> a -> CharParser a -> CharParser a
-metric name dfault p = option dfault go
+metric iden dfault p = option dfault go
   where
-    go = symbol name *> p <* semi
+    go = symbol iden *> p <* semi
 
 
-{-
-
-characterMetrics :: CharParser CharacterMetrics
-characterMetrics = runPerms $ CharacterMetrics <$>
-        optAtom (-1) (metric "C"  int)
-    <*> atom         widthVector
-    <*> atom         (metric "N"                     name1)
-    <*> atom         (metric "B"                     bbox)
-    <*> optAtom []   (many $ metric "L" ((,) <$> name <*> name))
-  where
-    widthVector =  (metric "WX" ((\w -> (w,0)) <$> lexeme number))
-               <|> (metric "W"  ((,) <$> lexeme number <*> lexeme number))
-
-    bbox        = (,,,) <$> lexeme number <*> lexeme number <*> lexeme number
-                                          <*> lexeme number
-
--}
 
 record :: CharParser (AfmKey,String)
 record = (,) <$> keyName <*> whiteString -- <* newlineOrEOF
@@ -192,8 +175,15 @@ semi = lexeme $ char ';'
 whiteString :: CharParser String
 whiteString = many1 (noneOf ['\n'])
 
-number :: CharParser Double
-number = lexeme go 
+degree :: CharParser Radian
+degree = liftA d2r double
+
+number :: CharParser AfmUnit
+number = liftA realToFrac double
+
+
+double :: CharParser Double
+double = lexeme go 
   where
     go        = (\signf intpart fracpart -> signf $ intpart + fracpart)
                   <$> psign <*> onatural <*> ofrac
@@ -201,12 +191,28 @@ number = lexeme go
     onatural  = option 0  (fromIntegral <$> natural)
     ofrac     = option 0  ((\xs -> read $ '.':xs) <$> (char '.' *> (many1 digit)))
 
+
+cint :: CharParser Int
+cint = hexInt <|> octInt <|> int
+
+
+hexInt :: CharParser Int
+hexInt = char '<' *> body  <* char '>'
+  where
+    body = (\xs -> read $ '0':'x':xs) <$> many1 hexDigit
+
+octInt :: CharParser Int
+octInt = char '\\' *> body
+  where
+    body = (\xs -> read $ '0':'o':xs) <$> many1 octDigit
+
+
+
 int :: CharParser Int
 int = lexeme go
   where
     go    = ($) <$> psign <*> natural
     psign = option id (negate <$ char '-')
-
 
 bool :: CharParser Bool
 bool =  False <$ symbol "false"
