@@ -14,6 +14,9 @@
 -- Numeric type representing Point size (1/72 inch) which is 
 -- PostScript and Wumpus-Core\'s internal unit size.
 --
+-- Plus, AfmUnit numeric type representing the unit of measurement in 
+-- AFM font specification files.
+--
 -- Other unit types (e.g. centimeter) should define an 
 -- appropriate instance of FromPtSize.
 -- 
@@ -31,6 +34,12 @@ module Wumpus.Core.PtSize
   -- * Conversion class
   , FromPtSize(..)
 
+  -- * AFM file measurement unit
+  , AfmUnit
+  , afmUnit
+
+  , afmValue
+
   ) where
 
 
@@ -38,7 +47,7 @@ module Wumpus.Core.PtSize
 -- etc.
 -- 
 newtype PtSize = PtSize { ptSize :: Double } 
-  deriving (Eq,Ord,Num,Floating,Fractional)
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
 instance Show PtSize where
   showsPrec p d = showsPrec p (ptSize d)
@@ -55,5 +64,23 @@ class Num u => FromPtSize u where
 instance FromPtSize Double where
   fromPtSize = ptSize
 
+
+
+-- | Wrapped Double representing 1\/1000 of the scale factor
+-- (Point size) of a font. AFM files encode all measurements 
+-- as these units. 
+-- 
+newtype AfmUnit = AfmUnit { afmUnit :: Double } 
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+instance Show AfmUnit where
+  showsPrec p d = showsPrec p (afmUnit d)
+
+
+-- | Compute the size of a measurement in Afm units scaled by the
+-- point size of the font.
+--
+afmValue :: AfmUnit -> PtSize -> Double
+afmValue u pt = afmUnit u * (ptSize pt / 1000)
 
 
