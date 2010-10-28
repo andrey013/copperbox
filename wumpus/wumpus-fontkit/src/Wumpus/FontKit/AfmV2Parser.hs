@@ -238,3 +238,6 @@ symbol          = P.symbol tp
 
 whiteSpace      :: CharParser ()
 whiteSpace      = P.whiteSpace tp
+
+natural         :: CharParser Int
+natural         = P.natural tp

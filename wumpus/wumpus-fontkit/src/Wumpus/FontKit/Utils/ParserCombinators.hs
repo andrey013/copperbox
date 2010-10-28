@@ -72,7 +72,6 @@ module Wumpus.FontKit.Utils.ParserCombinators
   , tab
   , space
 
-  , natural
 
   -- lexer
   , LexerDef(..)
@@ -371,10 +370,6 @@ tab         = equals '\t'
 space       :: CharParser Char
 space       = satisfy isSpace
 
--- This is one for TokenParser as it should be a lexeme parser.
---
-natural :: CharParser Int
-natural = liftA read (many1 digit)
 
 --------------------------------------------------------------------------------
 -- LexerDefs
@@ -384,6 +379,9 @@ natural = liftA read (many1 digit)
 --
 -- Credit and thanks for the technique is owed to Daan Leijen. 
 --
+
+-- Export LexerDef from this module then instances can be defined
+-- without qulaified name prefixes.
 
 data LexerDef = LexerDef
       { whitespace_chars :: [Char]

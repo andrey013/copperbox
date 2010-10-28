@@ -12,6 +12,10 @@ description:
   Font metrics extraction from AFM files for use with 
   Wumpus-Basic.
   .
+  \*\* CAUTION \*\* - this package is intended just to enable
+  Wumpus-Basic to use font metrics for the \"Core 14\"
+  PostScript fonts (Helvetica, Times, Courier, Symbol). It does
+  not extend Wumpus to work with arbitrary fonts. 
   .
 build-type:         Simple
 stability:          highly unstable
@@ -20,6 +24,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/AfmTables.hs,
   demo/Demo01.hs
 
 library
@@ -33,7 +38,8 @@ library
     Wumpus.FontKit.AfmV2Datatypes,
     Wumpus.FontKit.AfmV2Parser,
     Wumpus.FontKit.Utils.ParserCombinators,
-    Wumpus.FontKit.Utils.TokenParser
+    Wumpus.FontKit.Utils.TokenParser,
+    Wumpus.FontKit.VersionNumber
     
 
   other-modules:

@@ -24,6 +24,8 @@ module Wumpus.FontKit.Utils.TokenParser
     TokenParsers(..)
   , makeTokenParsers
 
+  , natural
+
   ) where
 
 import Wumpus.FontKit.Utils.ParserCombinators
@@ -36,6 +38,14 @@ data TokenParsers  = TokenParsers
       , whiteSpace :: CharParser ()
       }
 
+-- This formulation seems preferable to a jamming the LexerDef 
+-- into a reader monad and carrying it around in the parser. 
+-- 
+-- With a /parameterized module/ parser definitions e.g. 
+-- whiteSpace are static so should be more efficient.
+--
+-- This module could do some rexporting lifting though...
+--
 
 makeTokenParsers :: LexerDef -> TokenParsers
 makeTokenParsers lexer_def = 
@@ -70,4 +80,14 @@ makeTokenParsers lexer_def =
     no_line       = null   (comment_line  lexer_def)
     no_span       = null   (comment_start lexer_def)
 
-   
+
+
+-- Extra token parsers can be defined without needing to add fields
+-- to the TokenParsers data type...
+--
+
+natural :: TokenParsers -> CharParser Int
+natural cfg = lexeme cfg natural_
+
+natural_ :: CharParser Int
+natural_ = liftA read (many1 digit)
