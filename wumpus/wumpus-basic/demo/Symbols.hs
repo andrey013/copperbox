@@ -2,6 +2,7 @@
 
 module Symbols where
 
+import Wumpus.Basic.Chains
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRSymbol
@@ -31,27 +32,23 @@ demo01 = do
 std_ctx :: DrawingContext
 std_ctx = fontface times_roman $ standardContext 12
 
+
+-- Because the font changes, we draw the all the symbols in one
+-- run and all the labels in a second run. This helps Wumpus-Core 
+-- generate better PostScript as there are less changes to the 
+-- /graphics state/.
+--
 pic1 :: DPicture 
 pic1 = liftToPictureU $ execDrawing std_ctx $ do
-         zipWithM_ mdraw letters_01 column_01
-         zipWithM_ sdraw letters_01 column_01
-         zipWithM_ mdraw letters_02 column_02
-         zipWithM_ sdraw letters_02 column_02
-         zipWithM_ mdraw letters_03 column_03
-         zipWithM_ sdraw letters_03 column_03
-         zipWithM_ mdraw letters_04 column_04
-         zipWithM_ sdraw letters_04 column_04
-         zipWithM_ mdraw letters_05 column_05
-         zipWithM_ sdraw letters_05 column_05
-         zipWithM_ mdraw letters_06 column_06
-         zipWithM_ sdraw letters_06 column_06
-
+         zipWithM_ sdraw all_letters ps
+         zipWithM_ ldraw all_letters ps
   where
-    mdraw (_,ma) pt = draw $ execLRText ma `at` pt
-    sdraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16
+    sdraw (_,ma) pt = draw $ execLRText ma `at` pt
+    ldraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16
+    ps              = unchain (coordinateScalingContext 100 20) $ tableDown 30 6
 
-letters_01 :: [(String, LRText Double ())]
-letters_01 = 
+all_letters :: [(String, LRText Double ())]
+all_letters = 
     [ ("uAlpha",                uAlpha) 
     , ("uBeta",                 uBeta)
     , ("uChi",                  uChi)
@@ -87,11 +84,9 @@ letters_01 =
     , ("angleleft",             angleleft)
     , ("angleright",            angleright)
     , ("approxequal",           approxequal)
-    ]
 
-letters_02 :: [(String, LRText Double ())]
-letters_02 = 
-    [ ("arrowboth",             arrowboth) 
+    -- 
+    , ("arrowboth",             arrowboth) 
     , ("arrowdblboth",          arrowdblboth)
     , ("arrowdbldown",          arrowdbldown)
     , ("arrowdblleft",          arrowdblleft)
@@ -111,11 +106,9 @@ letters_02 =
     , ("bullet",                bullet)
     , ("carriagereturn",        carriagereturn)
     , ("chi",                   chi)
-    ]
 
-letters_03 :: [(String, LRText Double ())]
-letters_03 = 
-    [ ("circlemultiply",        circlemultiply) 
+    --
+    , ("circlemultiply",        circlemultiply) 
     , ("circleplus",            circleplus)
     , ("club",                  club)
     , ("colon",                 colon)
@@ -149,12 +142,9 @@ letters_03 =
     , ("heart",                 heart)
     , ("infinity",              infinity)
     , ("integral",              integral)
-    ]
 
-
-letters_04 :: [(String, LRText Double ())]
-letters_04 = 
-    [ ("intersection",          intersection)
+    -- 
+    , ("intersection",          intersection)
     , ("iota",                  iota)
     , ("kappa",                 kappa)
     , ("lambda",                lambda)
@@ -180,11 +170,9 @@ letters_04 =
     , ("one",                   one)
     , ("parenleft",             parenleft)
     , ("parenright",            parenright)
-    ]
 
-letters_05 :: [(String, LRText Double ())]
-letters_05 = 
-    [ ("partialdiff",           partialdiff)
+    --
+    , ("partialdiff",           partialdiff)
     , ("percent",               percent)
     , ("period",                period)
     , ("perpendicular",         perpendicular)
@@ -206,11 +194,9 @@ letters_05 =
     , ("registersans",          registersans)
     , ("registerserif",         registerserif)
     , ("rho",                   rho)
-    ]
-
-letters_06 :: [(String, LRText Double ())]
-letters_06 = 
-    [ ("second",                second)
+    
+    -- 
+    , ("second",                second)
     , ("semicolon",             semicolon)
     , ("seven",                 seven)
     , ("sigma",                 sigma)
@@ -240,22 +226,3 @@ letters_06 =
     , ("zeta",                  zeta)
     ]
 
--- TODO - this should use a chain when the Chain API stablizes.
-
-column_01 :: Num u => [Point2 u]
-column_01 = iterate (.+^ vvec (-16)) (P2 0 600)
-
-column_02 :: Num u => [Point2 u]
-column_02 = iterate (.+^ vvec (-16)) (P2 100 600)
-
-column_03 :: Num u => [Point2 u]
-column_03 = iterate (.+^ vvec (-16)) (P2 200 600)
-
-column_04 :: Num u => [Point2 u]
-column_04 = iterate (.+^ vvec (-16)) (P2 300 600)
-
-column_05 :: Num u => [Point2 u]
-column_05 = iterate (.+^ vvec (-16)) (P2 400 600)
-
-column_06 :: Num u => [Point2 u]
-column_06 = iterate (.+^ vvec (-16)) (P2 500 600)

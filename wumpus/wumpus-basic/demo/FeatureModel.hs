@@ -65,8 +65,7 @@ makeBox :: (Real u, Floating u, FromPtSize u)
         => u -> String -> Point2 u -> Drawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ strokedShape $ rectangle w 20 `at` pt
-    let (P2 x y) = center a
-    drawi_ $ drawText $ translate x y $ plaintext ss
+    drawi_ $ drawText $ plaintext ss `at` center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 

@@ -70,12 +70,12 @@ atext :: ( CenterAnchor t, DUnit t ~ u
          , Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
-atext ancr ss = let (P2 x y) = center ancr in
-   drawi_ $ drawText $ translate x y $ plaintext ss
+atext ancr ss = let pt = center ancr in
+   drawi_ $ drawText $ plaintext ss `at` pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
-ptext (P2 x y) ss = localize (fontsize 14 . fontface times_italic) $ 
-    drawi_ $ drawText $ translate x y $ plaintext ss
+ptext pt ss = localize (fontsize 14 . fontface times_italic) $ 
+    drawi_ $ drawText $ plaintext ss `at` pt

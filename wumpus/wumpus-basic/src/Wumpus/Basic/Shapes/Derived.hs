@@ -15,9 +15,6 @@
 --
 -- Simple shapes - rectangle, circle diamond, ellipse.
 -- 
--- \*\* WARNING \*\* - the types of Shapes and Plaintext are not
--- ideal and are pending revision.
--- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Shapes.Derived

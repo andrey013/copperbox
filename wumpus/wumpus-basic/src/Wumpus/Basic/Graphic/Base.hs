@@ -110,6 +110,11 @@ module Wumpus.Basic.Graphic.Base
   , intoLocImage
   , xlinkImage
 
+  , VecGraphic
+  , DVecGraphic
+
+  , intoVecGraphic
+
   , ConnectorDrawingR
   , DConnectorDrawingR
   , ConnectorGraphic
@@ -521,6 +526,19 @@ xlinkImage :: XLink -> Image u a -> Image u a
 xlinkImage xlink img = DrawingR $ \ctx -> 
     let (a,pg) = runImage ctx img 
     in (a, PrimGraphic $ xlinkGroup xlink [getPrimGraphic pg])
+
+
+--------------------------------------------------------------------------------
+
+type VecGraphic u = LocImage u (Point2 u)
+
+type DVecGraphic = VecGraphic Double
+
+
+-- does the point transformer need Ctx?
+
+intoVecGraphic :: (Point2 u -> Point2 u) -> LocGraphic u -> VecGraphic u
+intoVecGraphic f g = \pt -> intoImage (pure $ f pt) (g pt)
 
 --------------------------------------------------------------------------------
 --
