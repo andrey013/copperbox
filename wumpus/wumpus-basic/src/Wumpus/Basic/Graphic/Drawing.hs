@@ -60,7 +60,7 @@ module Wumpus.Basic.Graphic.Drawing
 
 import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
--- import Wumpus.Basic.Utils.HList 
+import Wumpus.Basic.Graphic.Prim
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -350,23 +350,23 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 infixr 1 `at`
-at :: (Point2 u -> a) -> Point2 u -> a
-at = ($)
+at :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
+at = idstarstar
 
 
 
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocGraphic u -> m ()
-node gfL = askDC    >>= \ctx -> 
-           position >>= \pt  -> 
-           trace (collectH $ runGraphic ctx $ gfL pt)
+node gf = askDC    >>= \ctx -> 
+          position >>= \pt  -> 
+          let f    = runDrawingR ctx gf in trace (collectH $ f pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocImage u a -> m a
 nodei imgL = askDC   >>= \ctx -> 
              position >>= \pt  -> 
-             let (a,o) = runImage ctx (imgL pt) 
+             let (a,o) = runLocImage ctx imgL pt
              in trace (collectH o) >> return a
 

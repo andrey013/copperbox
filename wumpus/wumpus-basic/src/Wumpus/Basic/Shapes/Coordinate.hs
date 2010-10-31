@@ -124,7 +124,9 @@ quarterMarkHeight = liftM (0.25*) markHeight
 
 drawDot :: (Real u, Floating u, FromPtSize u) => Coordinate u -> Graphic u
 drawDot coord = quarterMarkHeight >>= \qh -> 
-   localize bothStrokeColour $ filledEllipse qh qh (center $ getCoordinate coord)
+    localize bothStrokeColour (filledEllipse qh qh `at` ctr)
+  where
+    ctr = center $ getCoordinate coord
 
 drawX :: (Real u, Floating u, FromPtSize u) => Coordinate u -> Graphic u
 drawX coord = quarterMarkHeight >>= \qh -> line1 qh `oplus` line2 qh

@@ -26,6 +26,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , closedStroke
   , filledPath
   , borderedPath
+
   
   , textline
   , rtextline
@@ -55,6 +56,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , straightLineBetween
   , curveBetween
 
+
   , strokedRectangle
   , filledRectangle
   , borderedRectangle
@@ -73,6 +75,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
 
 import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.Prim
 import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -80,8 +83,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Control.Applicative
-import Data.Foldable ( foldrM )
+
 
 
 drawGraphic :: (Real u, Floating u, FromPtSize u) 
@@ -91,24 +93,23 @@ drawGraphic ctx gf = frame [getPrimGraphic $ runGraphic ctx gf]
 
 
 
--- having the same names is actually not so useful...
-
 openStroke :: Num u => PrimPath u -> Graphic u
 openStroke pp = 
-    withStrokeAttr $ \rgb attr -> wrapPrim $ ostroke rgb attr pp
+    withStrokeAttr $ \rgb attr -> primGraphic $ ostroke rgb attr pp
 
 closedStroke :: Num u => PrimPath u -> Graphic u
 closedStroke pp = 
-    withStrokeAttr $ \rgb attr -> wrapPrim $ cstroke rgb attr pp
+    withStrokeAttr $ \rgb attr -> primGraphic $ cstroke rgb attr pp
 
 filledPath :: Num u => PrimPath u -> Graphic u
-filledPath pp = withFillAttr $ \rgb -> wrapPrim $ fill rgb pp
+filledPath pp = withFillAttr $ \rgb -> primGraphic $ fill rgb pp
                  
 
 
 borderedPath :: Num u => PrimPath u -> Graphic u
-borderedPath pp = 
-    withBorderedAttr $ \frgb attr srgb -> wrapPrim $ fillStroke frgb attr srgb pp
+borderedPath pp =
+    withBorderedAttr $ \frgb attr srgb -> 
+                           primGraphic $ fillStroke frgb attr srgb pp
 
 
 -- Note - clipping needs a picture as well as a path, so there is
@@ -118,16 +119,26 @@ borderedPath pp =
 --------------------------------------------------------------------------------
 -- 
 
+locPrimGraphic :: (Point2 u -> Primitive u) -> (Point2 u -> PrimGraphic u)
+locPrimGraphic fn = primGraphic . fn
+
+thetaLocPrimGraphic :: (Radian -> Point2 u -> Primitive u) 
+                    -> (Radian -> Point2 u -> PrimGraphic u) 
+thetaLocPrimGraphic fn = \theta pt -> primGraphic (fn theta pt) 
+
+
 
 
 textline :: Num u => String -> LocGraphic u
-textline ss baseline_left =
-    withTextAttr $ \rgb attr -> wrapPrim $ textlabel rgb attr ss baseline_left
+textline ss =
+    withTextAttr $ \rgb attr -> locPrimGraphic (textlabel rgb attr ss)
+
+
 
 rtextline :: Num u => String -> ThetaLocGraphic u
-rtextline ss theta baseline_left =
-    withTextAttr $ \rgb attr -> 
-      wrapPrim $ rtextlabel rgb attr ss theta baseline_left
+rtextline ss = 
+    withTextAttr $ \rgb attr -> thetaLocPrimGraphic (rtextlabel rgb attr ss)
+
 
 -- | As 'textline' but the supplied point is the /center/.
 --
@@ -136,8 +147,8 @@ rtextline ss theta baseline_left =
 -- 
 centermonoTextline :: (Fractional u, Ord u, FromPtSize u) 
                    => String -> LocGraphic u
-centermonoTextline ss pt = monoVecToCenter ss  >>= \v ->
-                           textline ss (vecdisplace (negateV v) pt)
+centermonoTextline ss = monoVecToCenter ss >>= \v ->
+                          moveLoc (vecdisplace (negateV v)) (textline ss)
 
 
 
@@ -147,24 +158,49 @@ centermonoTextline ss pt = monoVecToCenter ss  >>= \v ->
 -- left-aligned.
 --
 textlineMulti :: Fractional u => [String] -> LocGraphic u
-textlineMulti xs baseline_left =  
-    baselineSpacing >>= \dy -> 
-    foldrM (foldStep dy) (baseline_left,[]) xs >>= \(_,gs) ->
-    return (wrapPrim $ primGroup gs)
+textlineMulti xs = baselineSpacing >>= \dy -> 
+    extrLocGraphic $ go (tmStep dy) xs
   where
-    foldStep dy str (pt,ac) = (\a -> (pt .+^ vvec dy, (getPrimGraphic a) : ac)) 
-                                <$> textline str pt
-                                
+    -- go /starts/ at the end of the list and works back.
+    go fn []      = fn ""       -- not ideal, better than error
+    go fn [s]     = fn s
+    go fn (s:ss)  = let ans = go fn ss in ans `feedPt` fn s
+
+-- LocImage u (Point2 u) deserved to be a new type synonym
+-- as it models PostScript\'s @show@ 
+
+
+tmStep :: Num u => u -> String -> LocImage u (Point2 u) 
+tmStep dy str = intoLocImage (raise $ \pt -> pt .+^ vvec dy) (textline str)
+
+
+-- Maybe this has to be a primitive...
+--
+-- Needs new name.
+-- 
+feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
+feedPt f g = DrawingR $ \ctx pt -> 
+               let (p1,g1) = getDrawingR f ctx pt
+                   (p2,g2) = getDrawingR g ctx p1
+               in (p2, g1 `oplus` g2)
+
+extrGraphic :: Image u a -> Graphic u
+extrGraphic img = DrawingR $ \ctx -> snd $ getDrawingR img ctx 
+
+
+extrLocGraphic :: LocImage u a -> LocGraphic u
+extrLocGraphic img = DrawingR $ \ctx pt -> snd $ getDrawingR img ctx pt
+
 
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
-hkernline ks baseline_left = 
-    withTextAttr $ \rgb attr -> wrapPrim $ hkernlabel rgb attr ks baseline_left
+hkernline ks = 
+    withTextAttr $ \rgb attr -> locPrimGraphic (hkernlabel rgb attr ks)
       
 
 vkernline :: Num u => [KerningChar u] -> LocGraphic u
-vkernline ks baseline_left = 
-    withTextAttr $ \rgb attr -> wrapPrim $ vkernlabel rgb attr ks baseline_left
+vkernline ks = 
+    withTextAttr $ \rgb attr -> locPrimGraphic (vkernlabel rgb attr ks)
   
 
 
@@ -172,19 +208,19 @@ vkernline ks baseline_left =
 
 
 strokedEllipse :: Num u => u -> u -> LocGraphic u
-strokedEllipse hw hh pt =  
-    withStrokeAttr $ \rgb attr -> wrapPrim $ strokeEllipse rgb attr hw hh pt
+strokedEllipse hw hh =  
+    withStrokeAttr $ \rgb attr -> locPrimGraphic (strokeEllipse rgb attr hw hh)
    
 
 filledEllipse :: Num u => u -> u -> LocGraphic u
-filledEllipse hw hh pt =  
-    withFillAttr $ \rgb -> wrapPrim $ fillEllipse rgb hw hh pt
+filledEllipse hw hh =  
+    withFillAttr $ \rgb -> locPrimGraphic (fillEllipse rgb hw hh)
   
 
 borderedEllipse :: Num u => u -> u -> LocGraphic u
-borderedEllipse hw hh pt = 
+borderedEllipse hw hh = 
     withBorderedAttr $ \frgb attr srgb -> 
-      wrapPrim $ fillStrokeEllipse frgb attr srgb hw hh pt
+      locPrimGraphic (fillStrokeEllipse frgb attr srgb hw hh)
 
 --------------------------------------------------------------------------------
 
@@ -193,7 +229,7 @@ borderedEllipse hw hh pt =
 -- 'Graphic'.
 --
 supplyPt :: Point2 u -> LocGraphic u -> Graphic u
-supplyPt pt gf = gf pt 
+supplyPt pt gf = fmap ($ pt) gf 
 
 vecdisplace :: Num u => Vec2 u -> Point2 u -> Point2 u
 vecdisplace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
@@ -224,18 +260,23 @@ displacePerpendicular d r pt = pt .+^ perpendicularvec d r
 
 
 localPoint :: (Point2 u -> Point2 u) -> LocGraphic u -> LocGraphic u
-localPoint upd gf = \pt -> gf (upd pt)
+localPoint = moveLoc
+
 
 
 --------------------------------------------------------------------------------
 
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
-straightLine v = \pt -> openStroke $ path pt [lineTo $ pt .+^ v]
+straightLine v = 
+    promote openStroke `compose` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
+
           
 
 straightLineBetween :: Fractional u => Point2 u -> Point2 u -> Graphic u
 straightLineBetween p1 p2 = openStroke $ path p1 [lineTo p2]
+
+
 
 curveBetween :: Fractional u 
              => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
@@ -252,25 +293,32 @@ rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
     tr = br .+^ vvec h
     tl = bl .+^ vvec h 
 
+-- > promote __ `compose` (raise $ __) 
+--
+-- is a pattern captured by the cardinal' combinator.
+-- 
 
+drawWith :: (PrimPath u -> Graphic u) -> (Point2 u -> PrimPath u) -> LocGraphic u 
+drawWith = cardinalprime
 
 -- | Supplied point is /bottom left/.
 --
 strokedRectangle :: Fractional u => u -> u -> LocGraphic u
-strokedRectangle w h = closedStroke . rectangle w h
-
+strokedRectangle w h = drawWith closedStroke (rectangle w h)
 
 
 -- | Supplied point is /bottom left/.
 --
 filledRectangle :: Fractional u => u -> u -> LocGraphic u
-filledRectangle w h = filledPath . rectangle w h
-  
+filledRectangle w h = drawWith borderedPath (rectangle w h) 
 
 -- | Supplied point is /bottom left/.
 --
 borderedRectangle :: Fractional u => u -> u -> LocGraphic u
-borderedRectangle w h = borderedPath . rectangle w h
+borderedRectangle w h = drawWith borderedPath (rectangle w h) 
+
+
+
 
 --------------------------------------------------------------------------------
 
@@ -279,7 +327,7 @@ borderedRectangle w h = borderedPath . rectangle w h
 -- curves. 
 --
 strokedCircle :: Floating u => Int -> u -> LocGraphic u
-strokedCircle n r = closedStroke . curvedPath . bezierCircle n r
+strokedCircle n r = drawWith closedStroke (curvedPath . bezierCircle n r)
 
 
 
@@ -287,14 +335,16 @@ strokedCircle n r = closedStroke . curvedPath . bezierCircle n r
 -- curves. 
 --
 filledCircle :: Floating u => Int -> u -> LocGraphic u
-filledCircle n r = filledPath . curvedPath . bezierCircle n r
+filledCircle n r = drawWith filledPath (curvedPath . bezierCircle n r)
+
 
 
 -- | Supplied point is center. Circle is drawn with Bezier 
 -- curves. 
 --
 borderedCircle :: Floating u => Int -> u -> LocGraphic u
-borderedCircle n r = borderedPath . curvedPath . bezierCircle n r
+borderedCircle n r = drawWith borderedPath (curvedPath . bezierCircle n r)
+
 
 
 -- | 'disk' is drawn with Wumpus-Core\'s @ellipse@ primitive.
@@ -317,3 +367,4 @@ filledDisk radius = filledEllipse radius radius
 
 borderedDisk :: Num u => u -> LocGraphic u
 borderedDisk radius = borderedEllipse radius radius
+

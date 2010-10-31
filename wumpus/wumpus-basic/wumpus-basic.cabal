@@ -125,7 +125,7 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
-                      wumpus-core     == 0.36.0
+                      wumpus-core     == 0.37.0
 
   
   exposed-modules:
@@ -144,6 +144,7 @@ library
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
+    Wumpus.Basic.Graphic.Prim,
     Wumpus.Basic.Graphic.PrimGraphic,
     Wumpus.Basic.Graphic.Query,
     Wumpus.Basic.Graphic.ScalingContext,
