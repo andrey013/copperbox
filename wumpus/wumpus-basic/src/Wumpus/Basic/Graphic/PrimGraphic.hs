@@ -122,9 +122,9 @@ borderedPath pp =
 locPrimGraphic :: (Point2 u -> Primitive u) -> (Point2 u -> PrimGraphic u)
 locPrimGraphic fn = primGraphic . fn
 
-thetaLocPrimGraphic :: (Radian -> Point2 u -> Primitive u) 
-                    -> (Radian -> Point2 u -> PrimGraphic u) 
-thetaLocPrimGraphic fn = \theta pt -> primGraphic (fn theta pt) 
+thetaLocPrimGraphic :: (Point2 u -> Radian -> Primitive u) 
+                    -> (Point2 u -> Radian -> PrimGraphic u) 
+thetaLocPrimGraphic fn = \pt theta -> primGraphic (fn pt theta)
 
 
 
@@ -134,10 +134,13 @@ textline ss =
     withTextAttr $ \rgb attr -> locPrimGraphic (textlabel rgb attr ss)
 
 
+-- Note - rtextlabel in Wumpus-Core needs changing as it has 
+-- args (now) in the wrong order.
 
-rtextline :: Num u => String -> ThetaLocGraphic u
+rtextline :: Num u => String -> LocThetaGraphic u
 rtextline ss = 
-    withTextAttr $ \rgb attr -> thetaLocPrimGraphic (rtextlabel rgb attr ss)
+    withTextAttr $ \rgb attr -> thetaLocPrimGraphic 
+                                  (\pt ang -> rtextlabel rgb attr ss ang pt)
 
 
 -- | As 'textline' but the supplied point is the /center/.
@@ -183,13 +186,6 @@ feedPt f g = DrawingR $ \ctx pt ->
                let (p1,g1) = getDrawingR f ctx pt
                    (p2,g2) = getDrawingR g ctx p1
                in (p2, g1 `oplus` g2)
-
-extrGraphic :: Image u a -> Graphic u
-extrGraphic img = DrawingR $ \ctx -> snd $ getDrawingR img ctx 
-
-
-extrLocGraphic :: LocImage u a -> LocGraphic u
-extrLocGraphic img = DrawingR $ \ctx pt -> snd $ getDrawingR img ctx pt
 
 
 
@@ -269,7 +265,7 @@ localPoint = moveLoc
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = 
-    promote openStroke `compose` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
+    promote1 openStroke `compose` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
 
           
 

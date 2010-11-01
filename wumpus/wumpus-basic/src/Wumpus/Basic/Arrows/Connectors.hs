@@ -92,17 +92,37 @@ leftrightArrow cp la ra =
               }
 
 
+-- Where do p0 and p1 come from?
+-- 
+-- Maybe the type is ...
+--
+-- > Connector u -> Point2 u -> Point2 u -> Image u (Path u)
+--
+-- I.e. Connector Images might not usefully exist  
+--
+-- If they do exist, this is (long windedly) how they would work:
+-- 
+-- > a <- drawi $ strokeConnector __ `startPt` p1 `endPt` p2
+
+-- > infixr 1 `startPt`
+-- > startPt :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
+-- > startPt = idstarstar
+
+-- > infixr 1 `endPt`
+-- > endPt :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
+-- > endPt = idstarstar
 
 
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
-strokeConnector (Connector cpF opt_la opt_ra) p0 p1 =
-    tipEval opt_la (directionL pathc) p0 >>= \(dl,gfL) -> 
-    tipEval opt_ra (directionR pathc) p1 >>= \(dr,gfR) ->
-    intoImage (pure pathc) (gfR $ gfL $ drawP $ shortenPath dl dr pathc) 
+strokeConnector (Connector cpF opt_la opt_ra) =
+    promote2 $ \p0 p1 -> let pathc = cpF p0 p1 in 
+       tipEval opt_la p0 (directionL pathc) >>= \(dl,gfL) -> 
+       tipEval opt_ra p1 (directionR pathc) >>= \(dr,gfR) ->
+       intoImage (pure pathc) (gfR $ gfL $ drawP $ shortenPath dl dr pathc) 
   where
-    pathc       = cpF p0 p1
     drawP       = openStroke . toPrimPath   
+
 
 -- for Paths.Base ?
 --
@@ -129,18 +149,26 @@ shortenPath l r = shortenL l .  shortenR r
 --
 
 tipEval :: Num u 
-        => Maybe (Arrowhead u) -> Radian -> Point2 u 
+        => Maybe (Arrowhead u) -> Point2 u -> Radian
         -> DrawingR (u, GraphicTrafoF u)
-tipEval Nothing    _     _  = return (0,unmarked)
-tipEval (Just arw) theta pt = getArrowhead arw theta pt >>= \(dx,prim) -> 
-                              return (dx, superior $ pure prim)
-
+tipEval Nothing    _  _     = return (0,unmarked)
+tipEval (Just arw) pt theta = operation (op2 (getArrowhead arw) pt theta)
 
 
 unmarked :: GraphicTrafoF u
 unmarked = id
 
+-- > (ctx -> (a,prim)) -> (ctx -> (a, prim -> prim))
 
+-- Note - Graphic trafo probably at the wrong type, the @pure@ is
+-- most likely superfluous.
 
+operation :: Image u a -> DrawingR (a, GraphicTrafoF u)
+operation img = DrawingR $ \ctx -> 
+    let (a,prim) = getDrawingR img ctx in (a, superior $ pure prim)
 
+-- > (ctx -> a -> b -> c) -> a -> b -> ctx -> c
+ 
+op2 :: DrawingR (a -> b -> c) -> a -> b -> DrawingR c 
+op2 mf a b = DrawingR $ \ctx -> getDrawingR mf ctx a b  
 

@@ -81,7 +81,7 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
-shiftOrigin dx dy f = \pt -> f (displace dx dy pt)
+shiftOrigin dx dy = trafo1 (displace dx dy)
 
 markChar :: (Fractional u, Ord u, FromPtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]
@@ -103,15 +103,15 @@ axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markHLine = bindAsk markHeight $ \h -> axialLine (hvec h)
+markHLine = bind1 (static1 markHeight) $ \h -> axialLine (hvec h)
 
 
 markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markVLine = bindAsk markHeight $ \h -> axialLine (vvec h) 
+markVLine = bind1 (static1 markHeight) $ \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
-markX = bindAsk markHeight $ \h -> 
+markX = bind1 (static1 markHeight) $ \h -> 
     let w = 0.75 * h in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
 
 
@@ -121,7 +121,7 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = bindAsk markHeight $ \h ->  
+markCross = bind1 (static1 markHeight) $ \h ->  
     (axialLine $ avec ang h) `oplus` (axialLine $ avec (-ang) h)
   where
     ang = pi*0.25  
@@ -129,23 +129,25 @@ markCross = bindAsk markHeight $ \h ->
 -- needs horizontal pinch...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
-            => Point2 u -> DrawingR (PrimPath u)
-pathDiamond pt = (\h -> let hh    = 0.66 * h; hw = 0.5 * h 
-                        in vertexPath [dvs hh, dve hw,dvn hh, dvw hw])
-                   <$> markHeight
-  where
-    dvs hh = pt .+^ vvec (-hh)
-    dve hw = pt .+^ hvec hw
-    dvn hh = pt .+^ vvec hh
-    dvw hw = pt .+^ hvec (-hw)
+            => LocDrawingR u (PrimPath u)
+pathDiamond = bind1 (static1 markHeight) $ \h -> promote1 $ \pt ->
+    let hh    = 0.66 * h; hw = 0.5 * h 
+        s     = pt .+^ vvec (-hh)
+        e     = pt .+^ hvec hw
+        n     = pt .+^ vvec hh
+        w     = pt .+^ hvec (-hw)
+    in pure $ vertexPath [s,e,n,w]
 
 
+-- closedStroke :: (a -> ctx -> prim) 
+-- pathDiamond  :: (ctx -> pt -> a)
+-- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markDiamond = pathDiamond `bindInto` closedStroke  
+markDiamond = pathDiamond `bind1` (static1 . closedStroke)
 
 markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markFDiamond = pathDiamond `bindInto` filledPath
+markFDiamond = pathDiamond `bind1` (static1 . filledPath)
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -156,43 +158,43 @@ markFDiamond = pathDiamond `bindInto` filledPath
 --
 
 markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markBDiamond = pathDiamond `bindInto` borderedPath
+markBDiamond = pathDiamond `bind1` (static1 . borderedPath)
 
 
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
-markDisk = bindAsk markHalfHeight filledDisk 
+markDisk = bind1 (static1 markHalfHeight) filledDisk 
 
 
 
 markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
-markSquare = bindAsk markHeight $ \h -> 
+markSquare = bind1 (static1 markHeight) $ \h -> 
     let d = 0.5*(-h) in shiftOrigin d d $ strokedRectangle h h
     
 
 
 markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markCircle = bindAsk markHalfHeight strokedDisk 
+markCircle = bind1 (static1 markHalfHeight) strokedDisk 
 
 
 markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markBCircle = bindAsk markHalfHeight borderedDisk 
+markBCircle = bind1 (static1 markHalfHeight) borderedDisk 
 
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon = bindAsk markHeight $ \h ->
-    closedStroke . vertexPath . polygonPoints 5 (0.5*h)
+markPentagon = bind1 (static1 markHeight) $ \h ->
+    promote1 $ \pt -> closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
-markStar pt = markHeight >>= \h -> 
-              let ps = polygonPoints 5 (0.5*h) pt in step $ map fn ps
+markStar = bind1 (static1 markHeight) $ \h -> 
+    promote1 $ \pt -> let ps = polygonPoints 5 (0.5*h) pt in step $ map (fn pt) ps
   where
-    fn p1       = openStroke $ path pt [lineTo p1] 
+    fn st p1    = openStroke $ path st [lineTo p1] 
     step (x:xs) = oconcat x xs
     step _      = error "markStar - unreachable"
 
@@ -200,7 +202,7 @@ markStar pt = markHeight >>= \h ->
 -- Note - relies on the functional instance of OPlus
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = bindAsk markHeight $ \h -> 
+markAsterisk = bind1 (static1 markHeight) $ \h -> 
     lineF1 h `oplus` lineF2 h `oplus` lineF3 h
   where
     ang       = (pi*2) / 6

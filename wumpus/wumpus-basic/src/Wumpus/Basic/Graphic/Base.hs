@@ -45,34 +45,34 @@ module Wumpus.Basic.Graphic.Base
     DrawingR(..) -- temporarily open
 
   , LocDrawingR
-  , ThetaLocDrawingR
+  , LocThetaDrawingR
   , ConnectorDrawingR
   , DLocDrawingR
-  , DThetaLocDrawingR
+  , DLocThetaDrawingR
   , DConnectorDrawingR
 
 
   -- * Graphic  
   , Graphic
   , LocGraphic
-  , ThetaLocGraphic
+  , LocThetaGraphic
   , ConnectorGraphic
 
   , DGraphic
   , DLocGraphic
-  , DThetaLocGraphic
+  , DLocThetaGraphic
   , DConnectorGraphic
 
 
   -- * Image
   , Image
   , LocImage
-  , ThetaLocImage
+  , LocThetaImage
   , ConnectorImage
 
   , DImage
   , DLocImage
-  , DThetaLocImage
+  , DLocThetaImage
   , DConnectorImage
 
 
@@ -85,11 +85,12 @@ module Wumpus.Basic.Graphic.Base
 
   -- * Extractors
   , drawingCtx
+  , queryDrawing
   , locCtx
   , locPoint
-  , thetaLocCtx
-  , thetaLocAng
-  , thetaLocPoint
+  , locThetaCtx
+  , locThetaAng
+  , locThetaPoint
   , connCtx
   , connStart
   , connEnd
@@ -97,17 +98,39 @@ module Wumpus.Basic.Graphic.Base
   -- * Combinators
   , moveLoc
 
-  , promote
+  , wrap
+  , wrap1
+  , wrap2
+
+  , promote1
+  , promote2
+
   , raise
+  , raise1
+  , raise2
+
+  , static1 
+  , static2
+  , dblstatic
+
   , compose
+
+  , bind
+  , bind1
+  , bind2
 
   , cardinalprime
   , idstarstar
 
+
   -- * Pre-transformers
-  , trafo2
-  , trafo3a
-  , trafo3b
+  , trafo1
+  , trafo2a
+  , trafo2b
+
+  -- * Dropping answers
+  , extrGraphic
+  , extrLocGraphic
 
   -- * Cruft
 
@@ -138,7 +161,7 @@ module Wumpus.Basic.Graphic.Base
 
   , intoVecGraphic
   , intoConnectorImage
-  , intoThetaLocImage
+  , intoLocThetaImage
 
 
   ) where
@@ -171,14 +194,14 @@ newtype DrawingR a = DrawingR { getDrawingR :: DrawingContext -> a }
 
 type LocDrawingR        u a = DrawingR (Point2 u -> a)
 
-type ThetaLocDrawingR   u a = DrawingR (Radian -> Point2 u -> a)
+type LocThetaDrawingR   u a = LocDrawingR u (Radian -> a)
 
-type ConnectorDrawingR  u a = DrawingR (Point2 u -> Point2 u -> a)
+type ConnectorDrawingR  u a = LocDrawingR u (Point2 u -> a)
 
 
 
 type DLocDrawingR a         = LocDrawingR       Double a
-type DThetaLocDrawingR a    = ThetaLocDrawingR  Double a
+type DLocThetaDrawingR a    = LocThetaDrawingR  Double a
 type DConnectorDrawingR a   = ConnectorDrawingR Double a
 
 
@@ -199,9 +222,9 @@ type Graphic u      = DrawingR (PrimGraphic u)
 type LocGraphic u   = LocDrawingR u (PrimGraphic u)
 
 
--- | A function from @angle * point -> graphic@
+-- | A function from @point * angle -> graphic@
 --
-type ThetaLocGraphic u          = ThetaLocDrawingR u (PrimGraphic u)
+type LocThetaGraphic u          = LocThetaDrawingR u (PrimGraphic u)
 
 -- | ConnectorGraphic is a connector drawn between two points 
 -- contructing a Graphic.
@@ -213,7 +236,7 @@ type ConnectorGraphic u         = ConnectorDrawingR u (PrimGraphic u)
 
 type DGraphic           = Graphic Double
 type DLocGraphic        = LocGraphic Double
-type DThetaLocGraphic   = ThetaLocGraphic Double
+type DLocThetaGraphic   = LocThetaGraphic Double
 type DConnectorGraphic  = ConnectorGraphic Double
 
 
@@ -231,7 +254,7 @@ type Image u a          = DrawingR (a, PrimGraphic u)
 
 type LocImage u a       = LocDrawingR u (a,PrimGraphic u)
 
-type ThetaLocImage u a  = ThetaLocDrawingR u (a,PrimGraphic u)
+type LocThetaImage u a  = LocThetaDrawingR u (a,PrimGraphic u)
 
 -- | ConnectorImage is a connector drawn between two points 
 -- constructing an Image.
@@ -247,7 +270,7 @@ type ConnectorImage u a = ConnectorDrawingR u (a, PrimGraphic u)
 
 type DImage a           = Image Double a
 type DLocImage a        = LocImage Double a
-type DThetaLocImage a   = ThetaLocImage Double a 
+type DLocThetaImage a   = LocThetaImage Double a 
 type DConnectorImage a  = ConnectorImage Double a
 
 
@@ -377,6 +400,8 @@ runLocImage ctx img = (getDrawingR img) ctx
 drawingCtx      :: DrawingR DrawingContext
 drawingCtx      = DrawingR $ \ctx -> ctx
 
+queryDrawing    :: (DrawingContext -> a) -> DrawingR a
+queryDrawing f  = DrawingR $ \ctx -> f ctx
 
 locCtx          :: LocDrawingR u DrawingContext
 locCtx          = DrawingR $ \ctx _  -> ctx
@@ -385,14 +410,14 @@ locPoint        :: LocDrawingR u (Point2 u)
 locPoint        = DrawingR $ \_ pt -> pt
 
 
-thetaLocCtx     :: ThetaLocDrawingR u DrawingContext
-thetaLocCtx     = DrawingR $ \ctx _ _ -> ctx
+locThetaCtx     :: LocThetaDrawingR u DrawingContext
+locThetaCtx     = DrawingR $ \ctx _ _ -> ctx
 
-thetaLocAng     :: ThetaLocDrawingR u Radian
-thetaLocAng     = DrawingR $ \_ ang _ -> ang
+locThetaAng     :: LocThetaDrawingR u Radian
+locThetaAng     = DrawingR $ \_ _ ang -> ang
 
-thetaLocPoint   :: ThetaLocDrawingR u (Point2 u)
-thetaLocPoint   = DrawingR $ \_ _ pt -> pt
+locThetaPoint   :: LocThetaDrawingR u (Point2 u)
+locThetaPoint   = DrawingR $ \_ pt _ -> pt
 
 
 connCtx         :: ConnectorDrawingR u DrawingContext
@@ -408,23 +433,158 @@ connEnd         = DrawingR $ \_ _ pt -> pt
 -- Combinators
 
 moveLoc :: (Point2 u -> Point2 u) -> LocDrawingR u a -> LocDrawingR u a
-moveLoc pf mf =  trafo2 pf mf
+moveLoc = trafo1
+
+
+-- | Lift a pure value into a Drawing. The Drawing Context is 
+-- /ignored/.
+--
+-- > ans -> (ctx -> ans)
+--
+-- This is the same as the 'raise' combinator at when raising into
+-- the drawing Context. But the /arity family/ of wrap combinators 
+-- is different.
+--
+wrap :: a -> DrawingR a
+wrap = pure
+
+
+-- | Lift a pure value into a Drawing, ignoring both the Drawing 
+-- Context and the functional argument (e.g. start point for a 
+-- @LocDrawing@).
+--
+-- > ans -> (ctx -> r1 -> ans)
+--
+wrap1 :: a -> DrawingR (r1 -> a)
+wrap1 = pure . pure
+
+-- | Lift a pure value into a Drawing, ignoring both the Drawing 
+-- Context and the two functional arguments (e.g. start point and 
+-- theta for a @LocThetaDrawing@).
+--
+-- > ans -> (ctx -> r1 -> r2 -> ans)
+--
+wrap2 :: a -> DrawingR (r1 -> r2 -> a)
+wrap2 = pure . pure . pure
+
    
 
-
-
-promote :: (a -> DrawingR b) -> DrawingR (a -> b)
-promote f = DrawingR $ \ctx a -> getDrawingR (f a) ctx
-
--- | Type specialized @pure@.
+-- | Promote a one argument drawing function into a one argument 
+-- drawing /functional/.
 --
-raise :: (a -> b) -> DrawingR (a -> b) 
+-- The type signature is probably more illustrative of the 
+-- operation than this description:
+--
+-- > (r1 -> ctx -> ans) -> (ctx -> r1 -> ans)
+--
+-- This is essentially the @cardinal@ combinator - @flip@
+-- in Haskell.
+--
+promote1 :: (r1 -> DrawingR ans) -> DrawingR (r1 -> ans)
+promote1 f = DrawingR $ \ctx a -> getDrawingR (f a) ctx
+
+
+-- | Promote a two argument drawing function into a two argument 
+-- drawing /functional/.
+--
+-- The type signature is probably more illustrative of the 
+-- operation than this description:
+--
+-- > (r1 -> r2 -> ctx -> ans) -> (ctx -> r1 -> r2 -> ans)
+--
+promote2 :: (r1 -> r2 -> DrawingR ans) -> DrawingR (r1 -> r2 -> ans)
+promote2 df = DrawingR $ \ctx a b -> getDrawingR (df a b) ctx
+
+
+-- | Lift a value into a Drawing.
+--
+-- > ans -> (ctx -> ans)
+--
+-- Essentially this is the @kestrel@ combinator - @const@ in Haskell.
+--
+raise :: a -> DrawingR a
 raise = pure
+
+
+-- | Lift a one argument function into a Drawing /functional/.
+--
+-- This is 'ctxFree' with a specialized type signature. 
+--
+raise1 :: (r1 -> ans) -> DrawingR (r1 -> ans) 
+raise1 = pure
+
+-- | Lift a two argument function into a Drawing /functional/.
+--
+-- This is 'ctxFree' with a specialized type signature.
+--
+raise2 :: (r1 -> r2 -> ans) -> DrawingR (r1 -> r2 -> ans) 
+raise2 = pure
+
+
+-- | Extend the arity of a /drawing functional/, the original 
+-- function is oblivious to the added argument.
+--
+-- Typically this combinator is used to take a @Graphic@ to a
+-- @LocGraphic@ ingoring the start point (figuratively a @Graphic@ 
+-- is not /coordinate free/). 
+--
+-- > (ctx -> ans) -> (ctx -> r1 -> ans)
+--
+-- This was called the J-combinator by Joy, Rayward-Smith and
+-- Burton (ref. /Compling Functional Languages/ by Antoni 
+-- Diller), however it is not the J combinator commonly in the 
+-- Literature. 
+--
+static1 :: DrawingR ans -> DrawingR (r1 -> ans)
+static1 df = DrawingR $ \ctx _ -> getDrawingR df ctx
+
+
+-- | Extend the arity of a /drawing functional/, the original 
+-- function is oblivious to the added argument.
+--
+-- Typically this combinator is used to take a @LocGraphic@ to a
+-- @LocThetaGraphic@ ingoring the angle of direction.
+--
+-- > (ctx -> r1 -> ans) -> (ctx -> r1 -> r2 -> ans)
+--
+-- This was called the J-Prime combinator by Joy, Rayward-Smith 
+-- and Burton (ref. /Compling Functional Languages/ by Antoni 
+-- Diller). 
+--
+static2 :: DrawingR (r1 -> ans) -> DrawingR (r1 -> r2 -> ans)
+static2 df = DrawingR $ \ctx a _ -> getDrawingR df ctx a
+
+
+-- needs new name!
+--
+-- > (ctx -> ans) -> (ctx -> r1 -> r2 -> ans)
+--
+dblstatic :: DrawingR ans -> DrawingR (r1 -> r2 -> ans)
+dblstatic df = DrawingR $ \ctx _ _ -> getDrawingR df ctx
 
 
 
 compose :: DrawingR (b -> c) -> DrawingR (a -> b) -> DrawingR (a -> c)
 compose f g = DrawingR $ \ctx a -> getDrawingR f ctx (getDrawingR g ctx a)
+
+
+
+
+bind :: DrawingR a -> (a -> DrawingR ans) -> DrawingR ans
+bind df dk = DrawingR $ \ctx -> 
+    let z = getDrawingR df ctx in getDrawingR (dk z) ctx
+
+
+bind1 :: DrawingR (r1 -> a) -> (a -> DrawingR (r1 -> ans)) -> DrawingR (r1 -> ans)
+bind1 df dk = DrawingR $ \ctx a -> 
+    let z = getDrawingR df ctx a in getDrawingR (dk z) ctx a
+
+bind2 :: DrawingR (r1 -> r2 -> a) -> (a -> DrawingR (r1 -> r2 -> ans)) 
+      -> DrawingR (r1 -> r2 -> ans)
+bind2 df dk = DrawingR $ \ctx a b -> 
+    let z = getDrawingR df ctx a b in getDrawingR (dk z) ctx a b
+
+
 
 
 -- cardinal'  :: (a -> r1 -> ans) -> (r2 -> a) -> r1 -> r2 -> ans
@@ -434,7 +594,7 @@ compose f g = DrawingR $ \ctx a -> getDrawingR f ctx (getDrawingR g ctx a)
 -- (b -> ctx -> c) -> (a -> b) -> ctx -> a -> c
 --
 cardinalprime :: (b -> DrawingR c) -> (a -> b) -> DrawingR (a -> c)
-cardinalprime f g = promote f `compose` (raise g)
+cardinalprime f g = promote1 f `compose` (raise g)
 
 
 -- idstarstar  :: (r1 -> r2 -> ans) -> r1 -> r2 -> ans
@@ -444,7 +604,9 @@ cardinalprime f g = promote f `compose` (raise g)
 -- > (ctx -> a -> b) -> a -> ctx -> b
 --
 idstarstar :: DrawingR (a -> b) -> a -> DrawingR b
-idstarstar mf a = DrawingR $ \ctx -> getDrawingR mf ctx a
+idstarstar df a = DrawingR $ \ctx -> getDrawingR df ctx a
+
+
 
 
 --------------------------------------------------------------------------------
@@ -453,7 +615,7 @@ idstarstar mf a = DrawingR $ \ctx -> getDrawingR mf ctx a
 -- The primary /pre-transformation/ function is @localize@, here 
 -- it is without the newtype wrapper or the specific types:
 --
--- > fn :: (r -> r) -> (r -> a) -> r -> a
+-- > fn :: (ctx -> ctx) -> (ctx -> ans) -> ctx -> ans
 -- > fn f g = \ctx -> g (f ctx)
 --
 -- This a a type restricted version of reverse appliction, the T
@@ -477,14 +639,26 @@ idstarstar mf a = DrawingR $ \ctx -> getDrawingR mf ctx a
 -- > localizeDR2 = localize
 -- 
 
-trafo2 :: (r1 -> a) -> DrawingR (a -> b) -> DrawingR (r1 -> b)
-trafo2 f mf = DrawingR $ \ctx a -> getDrawingR mf ctx (f a)
+trafo1 :: (r1 -> a) -> DrawingR (a -> b) -> DrawingR (r1 -> b)
+trafo1 f mf = DrawingR $ \ctx a -> getDrawingR mf ctx (f a)
 
-trafo3a :: (r1 -> a) -> DrawingR (a -> r2 -> b) -> DrawingR (r1 -> r2 -> b)
-trafo3a f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx (f a) b
+trafo2a :: (r1 -> a) -> DrawingR (a -> r2 -> b) -> DrawingR (r1 -> r2 -> b)
+trafo2a f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx (f a) b
 
-trafo3b :: (r2 -> a) -> DrawingR (r1 -> a -> b) -> DrawingR (r1 -> r2 -> b)
-trafo3b f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx a (f b)
+trafo2b :: (r2 -> a) -> DrawingR (r1 -> a -> b) -> DrawingR (r1 -> r2 -> b)
+trafo2b f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx a (f b)
+
+
+-------------------------------------------------------------------------------
+-- Dropping /answers/
+
+
+extrGraphic :: Image u a -> Graphic u
+extrGraphic img = DrawingR $ \ctx -> snd $ getDrawingR img ctx 
+
+
+extrLocGraphic :: LocImage u a -> LocGraphic u
+extrLocGraphic img = DrawingR $ \ctx pt -> snd $ getDrawingR img ctx pt
 
 
 
@@ -602,9 +776,9 @@ intoConnectorImage f g = undefined -- forkA (f p1 p2) (g p1 p2)
 
 
 
-intoThetaLocImage :: ThetaLocDrawingR u a 
-                  -> ThetaLocGraphic u 
-                  -> ThetaLocImage u a
-intoThetaLocImage f g = undefined -- forkA (f theta pt) (g theta pt) 
+intoLocThetaImage :: LocThetaDrawingR u a 
+                  -> LocThetaGraphic u 
+                  -> LocThetaImage u a
+intoLocThetaImage f g = undefined -- forkA (f theta pt) (g theta pt) 
 
 

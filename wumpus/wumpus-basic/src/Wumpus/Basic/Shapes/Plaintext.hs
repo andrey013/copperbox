@@ -211,7 +211,8 @@ maxWidth xs = maximum <$> mapM lineWidth1 xs
 
 drawMultiLines :: (Real u, Floating u, FromPtSize u) 
                => Plaintext u -> Graphic u
-drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = 
+drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = undefined
+{-
     let (ctr,ang) = runShapeGeom ctm $ (,) <$> shapeCenter <*> shapeAngle
         num_rows  = length xs
     in maxWidth xs                   >>= \w   ->
@@ -220,21 +221,21 @@ drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) =
   where
     cat (y:ys) = oconcat y ys
     cat []     = error "Plaintext supplied with empty string"
-
+-}
   
             
 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
-            => Radian -> DxString u -> Point2 u -> Graphic u 
-drawOneLine ang (DxString dx ss) bl =
-    rotTextline ang ss (bl .+^ avec ang dx)
+            => Radian -> DxString u -> LocGraphic u 
+drawOneLine ang (DxString dx ss) =
+    promote1 (\bl -> rotTextline ang ss `at` bl .+^ avec ang dx)
 
 
 
 rotTextline :: (Real u, Floating u) => Radian -> String -> LocGraphic u
-rotTextline theta ss baseline_left = 
-    withTextAttr $ \rgb attr -> 
-        wrapPrim $ rtextlabel rgb attr ss theta baseline_left
+rotTextline theta ss = 
+    promote1 (\baseline_left -> withTextAttr $ \rgb attr -> 
+                         primGraphic $ rtextlabel rgb attr ss theta baseline_left)
 
 
 expandedRectangle :: Fractional u 

@@ -57,14 +57,12 @@ module Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Anchors
 import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Utils.Combinators
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Control.Applicative
 
 
 -- An existential thing that supports anchors.
@@ -141,7 +139,7 @@ rectangleAnchor hw hh ctr =
 
 rectangleLDO :: (Real u, Floating u) 
              => u -> u -> LocDrawingR u (DotAnchor u)
-rectangleLDO w h pt = pure $ rectangleAnchor (w*0.5) (h*0.5) pt
+rectangleLDO w h = promote1 $ \pt -> wrap $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -150,7 +148,8 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (radialCardinal rad ctr)
 
 circleLDO :: (Floating u, FromPtSize u) => LocDrawingR u (DotAnchor u)
-circleLDO pt = (\diam -> circleAnchor (diam * 0.5) pt) <$> markHeight 
+circleLDO = bind1 (static1 markHeight) $ \diam -> 
+    promote1 $ \pt -> wrap $ circleAnchor (diam * 0.5) pt
 
 
 
@@ -162,13 +161,13 @@ type DDotLocImage = DotLocImage Double
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
-dotChar ch = bindAsk (monoTextDimensions [ch]) $  \(w,h) -> 
+dotChar ch = bind1 (static1 $ monoTextDimensions [ch]) $  \(w,h) -> 
     intoLocImage (rectangleLDO w h) (markChar ch)
 
 
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
-dotText ss = bindAsk (monoTextDimensions ss) $ \(w,h) -> 
+dotText ss = bind1 (static1 $ monoTextDimensions ss) $ \(w,h) -> 
     intoLocImage (rectangleLDO w h) (markText ss) 
 
 
@@ -202,7 +201,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
-dotSquare = bindAsk markHeight $ \ h ->
+dotSquare = bind1 (static1 markHeight) $ \ h ->
     intoLocImage (rectangleLDO h h) markSquare
 
 
