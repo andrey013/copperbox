@@ -19,21 +19,14 @@ main = createDirectoryIfMissing True "./out/"
     >> writeEPS_latin1 "./out/path01.eps" pic1
     >> writeSVG_latin1 "./out/path01.svg" pic1 
 
--- Note - the drawing order (Basic.Graphic.Drawing) is first 
--- element in the do-block is top of the Z-Order.
-
 pic1 :: Picture Double
-pic1 = liftToPictureU $ execDrawing (standardContext 18) $ 
-    do { draw circle1
-       ; draw curve1
-       ; draw curve2
-       ; draw curve3
-       ; draw eastUpWest
-       ; draw $ (arrowheadTip barb45 0) `at` (P2 130 0) 
-       ; draw $ (arrowheadTip barb60 0) `at` (P2 120 0) 
-       ; draw $ (arrowheadTip barb90 0) `at` (P2 110 0) 
-       ; return ()
-       }
+pic1 = liftToPictureU $ execDrawing (standardContext 18) $ do
+    draw circle1
+    draw curve1
+    draw curve2
+    draw curve3
+    draw eastUpWest
+    
     
 
          
@@ -60,7 +53,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localize (fillColour gold) (filledCircle 2 60 zeroPt)
+circle1 = localize (fillColour gold) (filledCircle 2 60 `at` zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)

@@ -33,19 +33,19 @@ draw_ctx = fontface courier_bold $ standardContext 18
          
 pic1 :: Picture Double 
 pic1 = liftToPictureU $ execDrawing draw_ctx $ do
-    lea <- widebox "e" `at` P2 150 160    
-    lra <- widebox "r" `at` P2  60  80
-    lsa <- widebox "s" `at` P2 240  80
+    lea <- widebox "e" $ P2 150 160    
+    lra <- widebox "r" $ P2  60  80
+    lsa <- widebox "s" $ P2 240  80
     cmandatory_ lea lra
     cmandatory_ lea lsa
 
-    uGa <- box "G" `at` P2   0 0
-    uHa <- box "H" `at` P2  60 0
-    uIa <- box "I" `at` P2 120 0
+    uGa <- box "G" $ P2   0 0
+    uHa <- box "H" $ P2  60 0
+    uIa <- box "I" $ P2 120 0
 
-    uAa <- box "A" `at` P2 180 0
-    uBa <- box "B" `at` P2 240 0
-    uCa <- box "C" `at` P2 300 0
+    uAa <- box "A" $ P2 180 0
+    uBa <- box "B" $ P2 240 0
+    uCa <- box "C" $ P2 300 0
 
     cmandatory_ lra uGa
     cmandatory_ lra uHa
@@ -64,8 +64,8 @@ type Box u = Rectangle u
 makeBox :: (Real u, Floating u, FromPtSize u) 
         => u -> String -> Point2 u -> Drawing u (Box u)
 makeBox w ss pt = do 
-    a <- drawi $ strokedShape $ rectangle w 20 `at` pt
-    drawi_ $ drawText $ plaintext ss `at` center a
+    a <- drawi $ strokedShape $ rectangle w 20 $ pt
+    drawi_ $ drawText $ plaintext ss $ center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 
@@ -83,7 +83,7 @@ connWith arrh b0 b1 = do
    lw <- lineWidth
    let p0 = south b0
    let p1 = northwards (realToFrac lw) b1
-   drawi $ strokeConnector (rightArrow connLine arrh) p0 p1
+   drawi $ situ2 (strokeConnector (rightArrow connLine arrh)) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

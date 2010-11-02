@@ -2,7 +2,7 @@
 
 module TextCentering where
 
-import Wumpus.Basic.Dots
+import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 
@@ -47,25 +47,25 @@ pic1 = liftToPictureU $ execDrawing (standardContext 24) $ do
 
 
 coordinate :: (Floating u, FromPtSize u) => LocGraphic u
-coordinate = localize (halfsize . strokeColour red) . (fmap snd . dotPlus)
+coordinate = localize (halfsize . strokeColour red) (postpro1 snd dotPlus)
 
 textSquare :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-textSquare ss pt = 
+textSquare ss =
      monoTextDimensions ss  >>= \(w,h) ->
      monoDescenderDepth     >>= \dy    ->
      localize (strokeColour medium_sea_green . dashPattern dp)
-             (strokedRectangle w h (vdisplace (-dy) pt))
+              (prepro1 (vdisplace (-dy)) $ strokedRectangle w h)
   where
     dp = doublegaps unit_dash_pattern 
 
 
 textSquareCtr :: (Fractional u, Ord u, FromPtSize u) 
               => String -> LocGraphic u
-textSquareCtr ss pt = 
+textSquareCtr ss =  
     monoTextDimensions ss >>= \(w,h) ->
     localize (strokeColour dim_gray . dashPattern dp)
-             (strokedRectangle w h (displace (0.5*(-w)) (0.5*(-h)) pt))
+             (prepro1 (mkmove w h) (strokedRectangle w h))
   where
-    dp = doublegaps unit_dash_pattern 
-
+    dp         = doublegaps unit_dash_pattern 
+    mkmove w h = displace (0.5*(-w)) (0.5*(-h))
 

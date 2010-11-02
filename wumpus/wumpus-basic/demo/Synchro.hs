@@ -65,19 +65,19 @@ italiclabel :: ( Real u, Floating u, FromPtSize u
                , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
             => u -> u -> String -> m (PlaintextAnchor u)
 italiclabel x y ss = localize (fontface times_italic)
-                              (drawi $ drawText $ translate x y $ plaintext ss)
+                              (drawi $ drawText $ plaintext ss $ P2 x y)
 
 
 symbolGraphic :: Num u => String -> LocGraphic u
-symbolGraphic ss = localize (fontface symbol) . (textline ss)
+symbolGraphic ss = localize (fontface symbol) (textline ss)
 
 timesGraphic :: Num u => String -> LocGraphic u
-timesGraphic ss = localize (fontface times_italic) . (textline ss)
+timesGraphic ss = localize (fontface times_italic) (textline ss)
 
 
 lrtextGraphic :: (Num u, FromPtSize u) 
               => LRText u a -> LocGraphic u
-lrtextGraphic ma = localize (fontface times_italic) . (execLRText ma)
+lrtextGraphic ma = localize (fontface times_italic) (execLRText ma)
 
 
 
@@ -87,11 +87,11 @@ conn :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
           => Point2 u -> Point2 u -> m (Point2 u)
 conn p1 p2 = localize thin $ do
-   p <- drawi $ strokeConnector (rightArrow connect barb45) p1 p2
+   p <- drawi $ situ2 (strokeConnector (rightArrow connLine barb45)) p1 p2
    return (midway_ p)
 
 lblconn :: ( Real u, Floating u, FromPtSize u
               , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => PlaintextAnchor u -> PlaintextAnchor u -> LocGraphic u -> m ()
 lblconn a b gf = 
-    (uncurry conn $ radialConnectorPoints a b) >>= \pt -> draw $ gf pt
+    (uncurry conn $ radialConnectorPoints a b) >>= \pt -> draw $ gf `at` pt

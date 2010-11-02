@@ -35,12 +35,12 @@ pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
     draw $ textlineMulti xs `at` (P2 500 0)
     let m = regularMargin 6 (-24)
     a <- drawi $ drawText $ rotate30About (P2 50 120) $ 
-                 mplaintext2 m [(10,"The quick"), (0,"black dog")] `at` P2 50 120
-    drawi_ $ coordinateDot $ coordinate `at` P2 50 120
-    drawi_ $ coordinateX $ coordinate `at` (north a)
-    drawi_ $ coordinateX $ coordinate `at` (south a)
-    drawi_ $ coordinateX $ coordinate `at` (east a)
-    drawi_ $ coordinateX $ coordinate `at` (west a)
+                 mplaintext2 m [(10,"The quick"), (0,"black dog")] $ P2 50 120
+    drawi_ $ coordinateDot $ coordinate $ P2 50 120
+    drawi_ $ coordinateX $ coordinate $ (north a)
+    drawi_ $ coordinateX $ coordinate $ (south a)
+    drawi_ $ coordinateX $ coordinate $ (east a)
+    drawi_ $ coordinateX $ coordinate $ (west a)
     return ()
   where
     ss = "The quick brown fox jumped over the lazy dog."

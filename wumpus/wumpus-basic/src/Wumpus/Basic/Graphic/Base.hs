@@ -16,25 +16,6 @@
 -- Base types for Drawing Objects, Graphics / Images (a Graphic 
 -- that also returns an answer), etc.
 -- 
--- Notes on prefix and suffix names:
---
--- Function types suffixed @F@ are functions from same-to-same, e.g.:
---
--- > type Point2F u = Point2 u -> Point2 u
---
--- Functional types subfixed @R@ are functions from some static 
--- context to the answer type (c.f the ReaderMonad), e.g.:
---
--- > newtype DrawingR a = DrawingR { getDrawingR :: DrawingContext -> a }
---
--- The suffix @M@ is used for classes defining monadic actions.
---
--- The prefix @Loc@ indicates a functional type 
--- /from Point2 to something.../
--- 
--- The prefix @ThetaLoc@ indicates a functional type 
--- /from Direction (radian) then Point to something.../
---
 -- \*\* WARNING \*\* - some names are expected to change.
 --
 --------------------------------------------------------------------------------
@@ -113,15 +94,21 @@ module Wumpus.Basic.Graphic.Base
   , static2
   , dblstatic
 
-  , compose
-
   , bind
   , bind1
   , bind2
 
-  , cardinalprime
+
   , situ1
   , situ2
+
+  , apply
+  , apply1
+  , apply2
+
+
+  , compose
+  , cardinalprime
 
 
   -- * Pre-transformers
@@ -604,8 +591,20 @@ situ2 df a b = DrawingR $ \ctx -> getDrawingR df ctx a b
 
 
 
+apply :: DrawingR (a -> ans) -> DrawingR a -> DrawingR ans
+apply df da = DrawingR $ \ctx -> getDrawingR df ctx (getDrawingR da ctx)
 
--- These two haven\'t been looked at systemmatically vis arity...
+
+apply1 :: DrawingR (r1 -> a -> ans) -> DrawingR (r1 -> a) -> DrawingR (r1 -> ans)
+apply1 df da = DrawingR $ \ctx a -> getDrawingR df ctx a (getDrawingR da ctx a)
+
+
+apply2 :: DrawingR (r1 -> r2 -> a -> ans) -> DrawingR (r1 -> r2 -> a) 
+       -> DrawingR (r1 -> r2 -> ans)
+apply2 df da = DrawingR $ \ctx a b -> 
+                 getDrawingR df ctx a b (getDrawingR da ctx a b)
+
+-- These combiantors haven\'t been looked at systemmatically vis arity...
 
 compose :: DrawingR (b -> c) -> DrawingR (a -> b) -> DrawingR (a -> c)
 compose f g = DrawingR $ \ctx a -> getDrawingR f ctx (getDrawingR g ctx a)
