@@ -20,7 +20,7 @@ main = createDirectoryIfMissing True "./out/"
     >> writeSVG_latin1 "./out/path01.svg" pic1 
 
 pic1 :: Picture Double
-pic1 = liftToPictureU $ execDrawing (standardContext 18) $ do
+pic1 = liftToPictureU $ execTraceDrawing (standardContext 18) $ do
     draw circle1
     draw curve1
     draw curve2

@@ -30,7 +30,7 @@ demo01 = do
     writeSVG_latin1 "./out/dots01.svg" pic1
 
 pic1 :: Picture Double
-pic1 = liftToPictureU $ execDrawing std_ctx $ tableGraphic $ 
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ tableGraphic $ 
     [ dotHLine
     , dotVLine
     , dotX
@@ -52,7 +52,7 @@ pic1 = liftToPictureU $ execDrawing std_ctx $ tableGraphic $
 
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
-             => [DotLocImage u] -> Drawing u ()
+             => [DotLocImage u] -> TraceDrawing u ()
 tableGraphic imgs = zipWithM_ makeDotDrawing imgs ps
   where
     ps = unchain (coordinateScalingContext 1 36) $ tableDown (length imgs) 1
@@ -65,7 +65,7 @@ std_ctx = fillColour peru $ standardContext 24
 
 
 makeDotDrawing :: (Real u, Floating u, FromPtSize u) 
-              => DotLocImage u -> Point2 u -> Drawing u ()
+               => DotLocImage u -> Point2 u -> TraceDrawing u ()
 makeDotDrawing dotF pt = do 
     dashline
     mapM_ (\v -> drawi $ dotF `at` pt .+^ v) displacements

@@ -32,7 +32,7 @@ main = do
 
 
 petri_net :: DPicture
-petri_net = liftToPictureU $ execDrawing (standardContext 14) $ do
+petri_net = liftToPictureU $ execTraceDrawing (standardContext 14) $ do
               pw     <- place 0 140
               tu1    <- transition 70 140
               rtw    <- place 140 140

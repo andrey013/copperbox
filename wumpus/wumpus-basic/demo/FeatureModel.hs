@@ -32,7 +32,7 @@ draw_ctx = fontface courier_bold $ standardContext 18
 --
          
 pic1 :: Picture Double 
-pic1 = liftToPictureU $ execDrawing draw_ctx $ do
+pic1 = liftToPictureU $ execTraceDrawing draw_ctx $ do
     lea <- widebox "e" $ P2 150 160    
     lra <- widebox "r" $ P2  60  80
     lsa <- widebox "s" $ P2 240  80
@@ -62,23 +62,23 @@ type Box u = Rectangle u
 
 
 makeBox :: (Real u, Floating u, FromPtSize u) 
-        => u -> String -> Point2 u -> Drawing u (Box u)
+        => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ strokedShape $ rectangle w 20 $ pt
     drawi_ $ drawText $ plaintext ss $ center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 
-    => String -> Point2 u -> Drawing u (Box u)
+    => String -> Point2 u -> TraceDrawing u (Box u)
 box = makeBox 40
 
 widebox :: (Real u, Floating u, FromPtSize u) 
-        => String -> Point2 u -> Drawing u (Box u)
+        => String -> Point2 u -> TraceDrawing u (Box u)
 widebox = makeBox 60
 
 
 connWith :: ( Real u, Floating u, FromPtSize u ) 
-         => Arrowhead u -> Box u -> Box u -> Drawing u (Path u)
+         => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
 connWith arrh b0 b1 = do
    lw <- lineWidth
    let p0 = south b0
@@ -88,18 +88,18 @@ connWith arrh b0 b1 = do
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 
 cmandatory :: ( Real u, Floating u, FromPtSize u ) 
-           => Box u -> Box u -> Drawing u (Path u)
+           => Box u -> Box u -> TraceDrawing u (Path u)
 cmandatory = connWith diskTip
 
 coptional :: ( Real u, Floating u, FromPtSize u ) 
-          => Box u -> Box u -> Drawing u (Path u)
+          => Box u -> Box u -> TraceDrawing u (Path u)
 coptional = connWith odiskTip
 
 
 cmandatory_ :: ( Real u, Floating u, FromPtSize u ) 
-            => Box u -> Box u -> Drawing u ()
+            => Box u -> Box u -> TraceDrawing u ()
 cmandatory_ p0 p1 = connWith diskTip p0 p1 >> return ()
 
 coptional_ :: ( Real u, Floating u, FromPtSize u ) 
-           => Box u -> Box u -> Drawing u ()
+           => Box u -> Box u -> TraceDrawing u ()
 coptional_ p0 p1 = connWith odiskTip p0 p1 >> return ()

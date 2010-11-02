@@ -31,10 +31,10 @@ std_attr = standardContext 24
 
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing std_attr $ mf 
+pic1 = liftToPictureU $ execTraceDrawing std_attr $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => Drawing u ()
+mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
 mf = do 
     a <- drawi $ dotCircle `at` zeroPt
     b <- drawi $ dotCircle `at` (P2 60 60)

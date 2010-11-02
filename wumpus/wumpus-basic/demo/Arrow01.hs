@@ -36,46 +36,45 @@ times_ctx = fontface times_roman $ standardContext 11
 --
          
 pic1 :: Picture Double 
-pic1 = liftToPictureU $ execDrawing times_ctx $ do
-    a1 <- drawi $ strokedShape $ translate 0   72 $ rrectangle 12 66 30
+pic1 = liftToPictureU $ execTraceDrawing times_ctx $ do
+    a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
-    a2 <- drawi $ strokedShape $ translate 120 60 $ circle 16
+    a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60
     atext a2 "IF"
-    a3 <- drawi $ strokedShape $ translate 240 28 $ circle 16
+    a3 <- drawi $ strokedShape $ circle 16 $ P2 240 28
     atext a3 "+1"
-    a4 <- drawi $ strokedShape $ translate 120  0 $ rectangle 66 30
+    a4 <- drawi $ strokedShape $ rectangle 66 30 $ P2 120 0
     atext a4 "DELAY 0"
-    connWith connect (east a1) (east a1 .+^ hvec 76)
-    connWith connect (east a2) (east a2 .+^ hvec 180)
-    connWith connect (north a2 .+^ vvec 40) (north a2)
-    connWith connect (north a3 .+^ vvec 16) (north a3)  
-    connWith vhconn  (south a3) (east a4)
-    connWith (hvhconn (-30)) (west a4)  (southwest a2)
+    connWith connLine (east a1) (east a1 .+^ hvec 76)
+    connWith connLine (east a2) (east a2 .+^ hvec 180)
+    connWith connLine (north a2 .+^ vvec 40) (north a2)
+    connWith connLine (north a3 .+^ vvec 16) (north a3)  
+    connWith connRightVH  (south a3) (east a4)
+    connWith (connRightHVH (-30)) (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
     ptext (P2 152 100) "reset"
     ptext (P2 252  72) "output"
     return ()
 
 
--- Note - conn from Basic.Graphic is now questionable...
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
             , Real u, Floating u, FromPtSize u ) 
          => ConnectorPath u -> Point2 u -> Point2 u -> m ()
-connWith con p0 p1 = localize doublesize $ 
-    drawi_ $ strokeConnector (rightArrow con tri45) p0 p1
+connWith conn p0 p1 = localize doublesize $ 
+    drawi_ $ situ2 (strokeConnector (rightArrow conn tri45)) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u
          , Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
-atext ancr ss = let (P2 x y) = center ancr in
-   drawi_ $ drawText $ translate x y $ plaintext ss
+atext ancr ss = let pt = center ancr in
+   drawi_ $ drawText $ plaintext ss $ pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
-ptext (P2 x y) ss = localize (fontsize 14 . fontface times_italic) $ 
-    drawi_ $ drawText $ translate x y $ plaintext ss
+ptext pt ss = localize (fontsize 14 . fontface times_italic) $ 
+    drawi_ $ drawText $ plaintext ss $ pt

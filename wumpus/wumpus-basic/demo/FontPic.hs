@@ -51,7 +51,7 @@ positions = [0, 12, 27, 49, 78, 122]
 pointChain :: LocChain Int Int Double
 pointChain = verticals positions
 
-fontGraphic :: RGBi -> FontFace -> DPoint2 -> Drawing Double ()
+fontGraphic :: RGBi -> FontFace -> DPoint2 -> TraceDrawing Double ()
 fontGraphic rgb ff pt = 
     let ps = unchain (coordinateScalingContext 1 1) $ pointChain pt in 
       zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
@@ -62,7 +62,7 @@ std_ctx = standardContext 10
 
 
 fontPicture :: [(RGBi,FontFace)] -> DPicture
-fontPicture xs = liftToPictureU $ execDrawing std_ctx $  
+fontPicture xs = liftToPictureU $ execTraceDrawing std_ctx $  
                    zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
   where
     ps = unchain (coordinateScalingContext 1 180) $ tableDown 4 1

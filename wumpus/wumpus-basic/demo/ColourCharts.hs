@@ -32,17 +32,17 @@ x11_portrait = makePicture 72 all_x11_colours
 
 makePicture :: Int -> [(String,RGBi)] -> DPicture 
 makePicture row_count xs = 
-    liftToPictureU $ execDrawing (standardContext 9) $ 
+    liftToPictureU $ execTraceDrawing (standardContext 9) $ 
         tableGraphic row_count xs
 
-tableGraphic :: Int -> [(String,RGBi)] -> Drawing Double ()
+tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = 
     zipWithM_ (\(name,rgb) pt -> colourSample name rgb pt) xs ps
   where
     ps = unchain (coordinateScalingContext 152 11) $ tableDown row_count 10 
 
 
-colourSample :: String -> RGBi -> DPoint2 -> Drawing Double ()
+colourSample :: String -> RGBi -> DPoint2 -> TraceDrawing Double ()
 colourSample name rgb pt = localize (fillColour rgb) $ do 
     draw $ borderedRectangle 15 10 `at` pt
     draw $ textline name `at` displace 20 2 pt 

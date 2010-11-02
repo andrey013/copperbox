@@ -32,7 +32,7 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing (standardContext 24) $ do
+pic1 = liftToPictureU $ execTraceDrawing (standardContext 24) $ do
           draw $ textline sample_text `at` zeroPt
           draw $ coordinate `at` zeroPt
           draw $ textSquare sample_text `at` zeroPt

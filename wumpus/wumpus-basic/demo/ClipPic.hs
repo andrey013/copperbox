@@ -43,7 +43,7 @@ fillPath :: Num u => Path u -> Graphic u
 fillPath = filledPath . toPrimPath
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $ 
+pic1 = liftToPictureU $ execTraceDrawing pic_drawing_ctx $ 
          localize (fillColour medium_slate_blue) $ do
             draw $ fillPath path01
             localize (fillColour powder_blue) $ 
@@ -53,7 +53,7 @@ pic1 = liftToPictureU $ execDrawing pic_drawing_ctx $
 
 
 background :: RGBi -> DPicture 
-background rgb = liftToPictureU $ execDrawing pic_drawing_ctx $ 
+background rgb = liftToPictureU $ execTraceDrawing pic_drawing_ctx $ 
                    localize (strokeColour rgb) $ do                  
                      mapM_ iheartHaskell ps
 
@@ -73,7 +73,7 @@ cpic4 :: DPicture
 cpic4 = clip (toPrimPath path04) (background black)
 
 
-iheartHaskell :: Num u => FromPtSize u => Point2 u -> Drawing u () 
+iheartHaskell :: Num u => FromPtSize u => Point2 u -> TraceDrawing u () 
 iheartHaskell pt = 
     draw $ (execLRText $ char 'I' >> heart >> mapM_ char "Haskell") `at` pt
 

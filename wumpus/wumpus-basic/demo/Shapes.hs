@@ -22,7 +22,7 @@ main = do
     
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
+pic1 = liftToPictureU $ execTraceDrawing (standardContext 14) $ do
          _ <- drawi $ borderedShape $ translate 220 10 
                                     $ rotate30
                                     $ rectangle 90 30 $ zeroPt -- "Rectangle"
@@ -38,7 +38,7 @@ pic1 = liftToPictureU $ execDrawing (standardContext 14) $ do
          return ()
 
 
-redCoord :: (Real u, Floating u, FromPtSize u) => Point2 u -> Drawing u ()
+redCoord :: (Real u, Floating u, FromPtSize u) => Point2 u -> TraceDrawing u ()
 redCoord pt = localize (strokeColour red) $ do 
     _ <- drawi  $ coordinateX $ coordinate $ pt
     return ()

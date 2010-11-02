@@ -31,7 +31,7 @@ dctx :: DrawingContext
 dctx = fontface courier_bold $ standardContext 24
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing dctx $ do 
+pic1 = liftToPictureU $ execTraceDrawing dctx $ do 
     draw $ dv (redA `catv` greenB `catv` blueC) `at` zeroPt
 
 dv :: VecGraphic u -> LocGraphic u

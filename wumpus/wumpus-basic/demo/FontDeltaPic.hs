@@ -30,12 +30,12 @@ std_attr = standardContext 24
 
 
 pic1 :: DPicture
-pic1 = fromMaybe errK $ execFdcDrawing std_attr $ mf 
+pic1 = fromMaybe errK $ execFdcTraceDrawing std_attr $ mf 
 
 errK :: a
 errK = error "error - empty Picture"
 
-mf :: (Floating u, FromPtSize u) => Drawing u ()
+mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
 mf = do 
     draw $ line1 `at` (P2 0 100)
     draw $ line2 `at` (P2 0  75)

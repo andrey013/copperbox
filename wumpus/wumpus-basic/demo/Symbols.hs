@@ -39,7 +39,7 @@ std_ctx = fontface times_roman $ standardContext 12
 -- /graphics state/.
 --
 pic1 :: DPicture 
-pic1 = liftToPictureU $ execDrawing std_ctx $ do
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ do
          zipWithM_ sdraw all_letters ps
          zipWithM_ ldraw all_letters ps
   where

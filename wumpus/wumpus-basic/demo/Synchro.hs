@@ -34,7 +34,7 @@ main = do
 -- This would save all the cardinals...
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing (standardContext 9) $ do
+pic1 = liftToPictureU $ execTraceDrawing (standardContext 9) $ do
     upper1     <- italiclabel  66 50 "C"
     upper2     <- italiclabel 154 50 "G(A)&#multiply;B"
     upper3     <- italiclabel 244 50 "H(A)&#multiply;B"

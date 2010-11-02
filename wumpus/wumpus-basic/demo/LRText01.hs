@@ -35,7 +35,7 @@ combo_pic = vcat pic1 [pic2,pic3]
 
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing std_ctx $ 
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ 
           draw $ hkernline ks `at` zeroPt
   where
     ks :: [KerningChar Double]
@@ -43,7 +43,7 @@ pic1 = liftToPictureU $ execDrawing std_ctx $
 
 -- 
 pic2 :: DPicture
-pic2 = liftToPictureU $ execDrawing std_ctx $ 
+pic2 = liftToPictureU $ execTraceDrawing std_ctx $ 
           draw $ hkernline ks `at` zeroPt
   where
     ks :: [KerningChar Double]
@@ -51,7 +51,7 @@ pic2 = liftToPictureU $ execDrawing std_ctx $
 
 
 pic3 :: DPicture 
-pic3 = liftToPictureU $ execDrawing std_ctx $ do
+pic3 = liftToPictureU $ execTraceDrawing std_ctx $ do
          let abc = execLRText (char 'a' >> char 'b' >> epsilon >> char 'c')
          draw $ abc `at` (P2 0 3) 
          localize (strokeColour red) $ draw $ straightLine (hvec 200) `at` zeroPt

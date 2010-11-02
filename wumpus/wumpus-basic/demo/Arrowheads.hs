@@ -31,7 +31,7 @@ demo01 = do
     writeSVG_latin1 "./out/arrowheads01.svg" pic1
 
 pic1 :: Picture Double
-pic1 = liftToPictureU $ execDrawing std_ctx $ tableGraphic $ arrtable
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ tableGraphic $ arrtable
 
 arrtable :: [(Arrowhead Double, Arrowhead Double)]
 arrtable = 
@@ -66,7 +66,7 @@ arrtable =
     ]
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
-             => [(Arrowhead u, Arrowhead u)] -> Drawing u ()
+             => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
 tableGraphic tips = zipWithM_ makeArrowDrawing tips ps
   where
     ps = unchain (coordinateScalingContext 120 24) $ tableDown 20 4
@@ -79,7 +79,8 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 makeArrowDrawing :: (Real u, Floating u, FromPtSize u) 
-                 => (Arrowhead u, Arrowhead u) -> Point2 u -> Drawing u ()
+                 => (Arrowhead u, Arrowhead u) -> Point2 u 
+                 -> TraceDrawing u ()
 makeArrowDrawing (arrl,arrr) p0 = 
     drawi_ $ situ2 (strokeConnector (leftrightArrow connLine arrl arrr)) p0 p1
   where

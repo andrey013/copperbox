@@ -39,7 +39,7 @@ times_ctx = fontface times_roman $ standardContext 11
 -- Note `at` currently does not work for Shapes.
          
 pic1 :: Picture Double 
-pic1 = liftToPictureU $ execDrawing times_ctx $ do
+pic1 = liftToPictureU $ execTraceDrawing times_ctx $ do
     a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60

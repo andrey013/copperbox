@@ -29,7 +29,7 @@ times_roman_ctx = fontface times_roman $ standardContext 24
 -- Note - for multiline text 1.2 * font size seems good vertical spacing
 --
 pic1 :: DPicture
-pic1 = liftToPictureU $ execDrawing times_roman_ctx $ do
+pic1 = liftToPictureU $ execTraceDrawing times_roman_ctx $ do
     draw $ textline ss `at` (zeroPt .+^ vvec (1.2 * 24))
     draw $ textline ss `at` zeroPt
     draw $ textlineMulti xs `at` (P2 500 0)

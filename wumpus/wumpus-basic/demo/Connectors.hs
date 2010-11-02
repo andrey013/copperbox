@@ -31,7 +31,7 @@ demo01 = do
     writeSVG_latin1 "./out/connectors01.svg" pic1
 
 pic1 :: Picture Double
-pic1 = liftToPictureU $ execDrawing std_ctx $ tableGraphic $ conntable
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ tableGraphic $ conntable
 
 conntable :: [ConnectorPath Double]
 conntable = 
@@ -57,7 +57,7 @@ conntable =
     ]
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
-             => [ConnectorPath u] -> Drawing u ()
+             => [ConnectorPath u] -> TraceDrawing u ()
 tableGraphic conns = zipWithM_ makeConnDrawing conns ps
   where
     ps = unchain (coordinateScalingContext 120 52) $ tableDown 10 6
@@ -70,7 +70,7 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
-                 => ConnectorPath u -> Point2 u -> Drawing u ()
+                 => ConnectorPath u -> Point2 u -> TraceDrawing u ()
 makeConnDrawing conn p0 = 
     drawi_ $ situ2 (strokeConnector (dblArrow conn curveTip)) p0 p1
   where
