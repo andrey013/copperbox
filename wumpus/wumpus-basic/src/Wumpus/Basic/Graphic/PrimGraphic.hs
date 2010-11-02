@@ -41,6 +41,7 @@ module Wumpus.Basic.Graphic.PrimGraphic
   , borderedEllipse
 
   , supplyPt
+  , PointDisplace
   , localPoint
   , vecdisplace
   , displace
@@ -177,17 +178,6 @@ tmStep :: Num u => u -> String -> LocImage u (Point2 u)
 tmStep dy str = intoLocImage (raise $ \pt -> pt .+^ vvec dy) (textline str)
 
 
--- Maybe this has to be a primitive...
---
--- Needs new name.
--- 
-feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
-feedPt f g = DrawingR $ \ctx pt -> 
-               let (p1,g1) = getDrawingR f ctx pt
-                   (p2,g2) = getDrawingR g ctx p1
-               in (p2, g1 `oplus` g2)
-
-
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
 hkernline ks = 
@@ -227,18 +217,23 @@ borderedEllipse hw hh =
 supplyPt :: Point2 u -> LocGraphic u -> Graphic u
 supplyPt pt gf = fmap ($ pt) gf 
 
-vecdisplace :: Num u => Vec2 u -> Point2 u -> Point2 u
+
+type PointDisplace u = Point2 u -> Point2 u
+
+
+vecdisplace :: Num u => Vec2 u -> PointDisplace u
 vecdisplace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
 
 
-displace :: Num u => u -> u -> Point2 u -> Point2 u
+displace :: Num u => u -> u -> PointDisplace u
 displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
-hdisplace :: Num u => u -> Point2 u -> Point2 u
+hdisplace :: Num u => u -> PointDisplace u
 hdisplace dx (P2 x y) = P2 (x+dx) y
 
-vdisplace :: Num u => u -> Point2 u -> Point2 u
+vdisplace :: Num u => u -> PointDisplace u
 vdisplace dy (P2 x y) = P2 x (y+dy)
+
 
 
 
@@ -248,10 +243,10 @@ parallelvec d r         = avec (circularModulo r) d
 perpendicularvec :: Floating u => u -> Radian -> Vec2 u
 perpendicularvec d r    = avec (circularModulo $ (0.5*pi) + r) d
 
-displaceParallel :: Floating u => u -> Radian -> Point2F u
+displaceParallel :: Floating u => u -> Radian -> PointDisplace u
 displaceParallel d r pt = pt .+^ parallelvec d r
 
-displacePerpendicular :: Floating u => u -> Radian -> Point2F u
+displacePerpendicular :: Floating u => u -> Radian -> PointDisplace u
 displacePerpendicular d r pt = pt .+^ perpendicularvec d r
 
 

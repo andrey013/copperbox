@@ -119,7 +119,7 @@ strokeConnector (Connector cpF opt_la opt_ra) =
     promote2 $ \p0 p1 -> let pathc = cpF p0 p1 in 
        tipEval opt_la p0 (directionL pathc) >>= \(dl,gfL) -> 
        tipEval opt_ra p1 (directionR pathc) >>= \(dr,gfR) ->
-       intoImage (pure pathc) (gfR $ gfL $ drawP $ shortenPath dl dr pathc) 
+       intoImage (pure pathc) (postpro (gfR . gfL) $ drawP $ shortenPath dl dr pathc) 
   where
     drawP       = openStroke . toPrimPath   
 
@@ -128,6 +128,8 @@ strokeConnector (Connector cpF opt_la opt_ra) =
 --
 shortenPath :: (Real u , Floating u) =>  u  -> u -> Path u -> Path u
 shortenPath l r = shortenL l .  shortenR r 
+
+type ArrowMark u = PrimGraphic u -> PrimGraphic u
 
 
 -- 'tipEval' is a bit of an oddity. It has to evaluate the 
@@ -150,25 +152,17 @@ shortenPath l r = shortenL l .  shortenR r
 
 tipEval :: Num u 
         => Maybe (Arrowhead u) -> Point2 u -> Radian
-        -> DrawingR (u, GraphicTrafoF u)
+        -> DrawingR (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
-tipEval (Just arw) pt theta = operation (op2 (getArrowhead arw) pt theta)
+tipEval (Just arw) pt theta = makeMark (situ2 (getArrowhead arw) pt theta)
 
 
-unmarked :: GraphicTrafoF u
+unmarked :: ArrowMark u
 unmarked = id
 
--- > (ctx -> (a,prim)) -> (ctx -> (a, prim -> prim))
 
--- Note - Graphic trafo probably at the wrong type, the @pure@ is
--- most likely superfluous.
+makeMark :: Image u a -> DrawingR (a, ArrowMark u)
+makeMark = postpro (\(a,prim) -> (a, superior prim))
 
-operation :: Image u a -> DrawingR (a, GraphicTrafoF u)
-operation img = DrawingR $ \ctx -> 
-    let (a,prim) = getDrawingR img ctx in (a, superior $ pure prim)
 
--- > (ctx -> a -> b -> c) -> a -> b -> ctx -> c
- 
-op2 :: DrawingR (a -> b -> c) -> a -> b -> DrawingR c 
-op2 mf a b = DrawingR $ \ctx -> getDrawingR mf ctx a b  
 

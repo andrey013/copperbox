@@ -81,7 +81,7 @@ std_ctx = fillColour peru $ standardContext 18
 makeArrowDrawing :: (Real u, Floating u, FromPtSize u) 
                  => (Arrowhead u, Arrowhead u) -> Point2 u -> Drawing u ()
 makeArrowDrawing (arrl,arrr) p0 = 
-    drawi_ $ strokeConnector (leftrightArrow connLine arrl arrr) p0 p1
+    drawi_ $ situ2 (strokeConnector (leftrightArrow connLine arrl arrr)) p0 p1
   where
     p1 = p0 .+^ hvec 100
   

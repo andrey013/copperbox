@@ -114,17 +114,17 @@ instance Monad (LRText u) where
 
 
 runLRText :: (Num u, FromPtSize u) => LRText u a -> LocImage u a
-runLRText ma = \pt -> envZero >>= \e1 -> 
+runLRText ma = promote1 $ \pt -> envZero >>= \e1 -> 
     let (a,st) = getLRText ma e1 st_zero 
     in mkline pt (acc_chr st) >>= \g1 ->
        localize (fontface symbol) (mkline pt (acc_sym st)) >>= \g2 ->
        return (a, g1 `oplus` g2)
   where
-    mkline pt h = hkernline (toListH h) pt
+    mkline pt h = hkernline (toListH h) `at` pt
 
 
 execLRText :: (Num u, FromPtSize u) => LRText u a -> LocGraphic u
-execLRText ma = \pt -> liftM snd (runLRText ma pt) 
+execLRText ma = postpro1 snd $ runLRText ma
 
 st_zero :: Num u => St u
 st_zero = St { delta_chr       = 0

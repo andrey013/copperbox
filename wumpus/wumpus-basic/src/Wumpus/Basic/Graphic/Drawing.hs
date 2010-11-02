@@ -351,7 +351,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 infixr 1 `at`
 at :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
-at = idstarstar
+at = situ1
 
 
 
@@ -365,7 +365,7 @@ node gf = askDC    >>= \ctx ->
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocImage u a -> m a
-nodei imgL = askDC   >>= \ctx -> 
+nodei imgL = askDC    >>= \ctx -> 
              position >>= \pt  -> 
              let (a,o) = runLocImage ctx imgL pt
              in trace (collectH o) >> return a

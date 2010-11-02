@@ -211,8 +211,7 @@ maxWidth xs = maximum <$> mapM lineWidth1 xs
 
 drawMultiLines :: (Real u, Floating u, FromPtSize u) 
                => Plaintext u -> Graphic u
-drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = undefined
-{-
+drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = 
     let (ctr,ang) = runShapeGeom ctm $ (,) <$> shapeCenter <*> shapeAngle
         num_rows  = length xs
     in maxWidth xs                   >>= \w   ->
@@ -221,14 +220,13 @@ drawMultiLines (Plaintext { text_ctm=ctm, text_text=xs }) = undefined
   where
     cat (y:ys) = oconcat y ys
     cat []     = error "Plaintext supplied with empty string"
--}
   
             
 
 drawOneLine :: (Real u, Floating u, FromPtSize u) 
-            => Radian -> DxString u -> LocGraphic u 
-drawOneLine ang (DxString dx ss) =
-    promote1 (\bl -> rotTextline ang ss `at` bl .+^ avec ang dx)
+            => Radian -> DxString u -> Point2 u -> Graphic u 
+drawOneLine ang (DxString dx ss) bl =
+    rotTextline ang ss `at` bl .+^ avec ang dx
 
 
 

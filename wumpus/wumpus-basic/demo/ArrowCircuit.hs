@@ -35,16 +35,18 @@ times_ctx = fontface times_roman $ standardContext 11
 -- rather than using anchors directly - e.g. the placing of the 
 -- ptext labels and the anchors displaced by vectors.
 --
+
+-- Note `at` currently does not work for Shapes.
          
 pic1 :: Picture Double 
 pic1 = liftToPictureU $ execDrawing times_ctx $ do
-    a1 <- drawi $ strokedShape $ rrectangle 12 66 30 `at` P2 0 72
+    a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
-    a2 <- drawi $ strokedShape $ circle 16 `at` P2 120 60
+    a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60
     atext a2 "IF"
-    a3 <- drawi $ strokedShape $ circle 16 `at` P2 240 28
+    a3 <- drawi $ strokedShape $ circle 16 $ P2 240 28
     atext a3 "+1"
-    a4 <- drawi $ strokedShape $ rectangle 66 30 `at` P2 120 0
+    a4 <- drawi $ strokedShape $ rectangle 66 30 $ P2 120 0
     atext a4 "DELAY 0"
     connWith connLine (east a1) (east a1 .+^ hvec 76)
     connWith connLine (east a2) (east a2 .+^ hvec 180)
@@ -63,7 +65,7 @@ connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
             , Real u, Floating u, FromPtSize u ) 
          => ConnectorPath u -> Point2 u -> Point2 u -> m ()
 connWith con p0 p1 = localize doublesize $ 
-    drawi_ $ strokeConnector (rightArrow con tri45) p0 p1
+    drawi_ $ situ2 (strokeConnector (rightArrow con tri45)) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u
@@ -71,11 +73,11 @@ atext :: ( CenterAnchor t, DUnit t ~ u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
-   drawi_ $ drawText $ plaintext ss `at` pt
+   drawi_ $ drawText $ plaintext ss $ pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (fontsize 14 . fontface times_italic) $ 
-    drawi_ $ drawText $ plaintext ss `at` pt
+    drawi_ $ drawText $ plaintext ss $ pt

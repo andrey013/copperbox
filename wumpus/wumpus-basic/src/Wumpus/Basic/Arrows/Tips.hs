@@ -55,16 +55,14 @@ module Wumpus.Basic.Arrows.Tips
   , osquareTip
   , diamondTip
   , odiamondTip
-{-
+
   , curveTip
   , revcurveTip
--}
 
   ) where
 
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -446,42 +444,42 @@ odiamondTip = Arrowhead $
     intoLocThetaImage (dblstatic $ fmap (2*) markHeight) (diamondTLG closedStroke)
 
 
-{-
+
 -- Note - points flipped to get the second trapezium to 
 -- draw /underneath/.
 --
 curveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
-curveTLG theta pt = 
-    markHalfHeight           >>= \hh        -> 
-    tripointsByDist theta pt >>= \(tup,tlo) -> 
-    let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
-        (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo pt 
-        tpath   = curve tup u2 u1 pt `append` curve pt l1 l2 tlo
-    in localize (joinRound . capRound) 
-                (openStroke $ toPrimPath $ tpath)
+curveTLG = bindLocThetaTip (dblstatic markHalfHeight) fn
+  where
+    fn hh = promote2 $ \pt theta -> 
+              situ2 tripointsByDist pt theta >>= \(tup,tlo) -> 
+              let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
+                  (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo pt 
+                  tpath   = curve tup u2 u1 pt `append` curve pt l1 l2 tlo
+              in localize (joinRound . capRound) 
+                          (openStroke $ toPrimPath $ tpath)
 
 
 curveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
 curveTip = Arrowhead $ 
-    intoLocThetaImage (rlift2 $ fmap realToFrac lineWidth) curveTLG
+    intoLocThetaImage (dblstatic $ fmap realToFrac lineWidth) curveTLG
 
 
 -- Note - points flipped to get the second trapezium to 
 -- draw /underneath/.
 --
 revcurveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
-revcurveTLG theta pt = 
-    markHalfHeight              >>= \hh           -> 
-    revtripointsByDist theta pt >>= \(tup,p1,tlo) -> 
-    let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
-        (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
-        tpath   = curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
-    in localize (joinRound . capRound) 
-                (openStroke $ toPrimPath $ tpath)
+revcurveTLG = bindLocThetaTip (dblstatic markHalfHeight) fn 
+  where
+   fn hh = promote2 $ \pt theta ->
+             situ2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
+             let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
+                 (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
+                 tpath   = curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
+             in localize (joinRound . capRound) 
+                         (openStroke $ toPrimPath $ tpath)
 
 revcurveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
 revcurveTip = Arrowhead $ 
-    intoLocThetaImage (rlift2 markHeight) revcurveTLG
+    intoLocThetaImage (dblstatic markHeight) revcurveTLG
 
-
--}

@@ -48,7 +48,6 @@ module Wumpus.Basic.Dots.Marks
 
 
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Utils.Combinators
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -81,7 +80,7 @@ polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
 
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
-shiftOrigin dx dy = trafo1 (displace dx dy)
+shiftOrigin dx dy = prepro1 (displace dx dy)
 
 markChar :: (Fractional u, Ord u, FromPtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]

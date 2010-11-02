@@ -42,7 +42,7 @@
 module Wumpus.Basic.Graphic.Base
   (
 
-    DrawingR(..) -- temporarily open
+    DrawingR  -- (..) -- temporarily open
 
   , LocDrawingR
   , LocThetaDrawingR
@@ -120,56 +120,48 @@ module Wumpus.Basic.Graphic.Base
   , bind2
 
   , cardinalprime
-  , idstarstar
+  , situ1
+  , situ2
 
 
   -- * Pre-transformers
-  , trafo1
-  , trafo2a
-  , trafo2b
+  , prepro1
+  , prepro2a
+  , prepro2b
+
+  -- * Post-transformers
+  , postpro
+  , postpro1
+  , postpro2
+
+  -- * Post-combiners
+  , postcomb
+  , postcomb1
+  , postcomb2
 
   -- * Dropping answers
   , extrGraphic
   , extrLocGraphic
 
-  -- * Cruft
-
-  , Point2F
-  , DPoint2F
-
-  , DrawingTrafoF 
-  , GraphicTrafoF
-
-  , superiorGraphic
-  , anteriorGraphic  
-
   , xlinkGraphic
-
-
-
-  , ImageTrafoF
-  , intoImageTrafo
-  , imageTrafoDrawing
-  , imageTrafoGraphic
+  , xlinkImage
 
   , intoImage
   , intoLocImage
-  , xlinkImage
+  , intoConnectorImage
+  , intoLocThetaImage
+
+  -- * Cruft
 
   , VecGraphic
   , DVecGraphic
-
-  , intoVecGraphic
-  , intoConnectorImage
-  , intoLocThetaImage
+  , feedPt
 
 
   ) where
 
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.Prim
-import Wumpus.Basic.Utils.Combinators
--- import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -328,41 +320,43 @@ instance DrawingCtxM DrawingR where
 -- Affine instances
 
 instance (Real u, Floating u) => Rotate (Graphic u) where
-  rotate ang = liftA (rotate ang) 
+  rotate ang = postpro (rotate ang) 
 
 
 instance (Real u, Floating u) => RotateAbout (Graphic u) where
-  rotateAbout ang pt = liftA (rotateAbout ang pt)
+  rotateAbout ang pt = postpro (rotateAbout ang pt)
 
 
 instance Num u => Scale (Graphic u) where
-  scale sx sy = liftA (scale sx sy)
+  scale sx sy = postpro (scale sx sy)
 
 
 instance Num u => Translate (Graphic u) where
-  translate dx dy = liftA (translate dx dy)
+  translate dx dy = postpro (translate dx dy)
 
 --------------------------------------------------------------------------------
 -- Image instances
 
 -- Affine instances
 
+
 instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
     Rotate (Image u a) where
-  rotate ang = liftA (prod (rotate ang) (rotate ang))
+  rotate ang = postpro (\(a,b) -> (rotate ang a, rotate ang b))
 
 
 instance (Real u, Floating u, RotateAbout a, DUnit a ~ u) => 
     RotateAbout (Image u a) where
-  rotateAbout ang pt = liftA (prod (rotateAbout ang pt) (rotateAbout ang pt))
+  rotateAbout ang pt = 
+      postpro (\(a,b) -> (rotateAbout ang pt a, rotateAbout ang pt b))
 
 
 instance (Num u, Scale a, DUnit a ~ u) => Scale (Image u a) where
-  scale sx sy = liftA (prod (scale sx sy) (scale sx sy))
+  scale sx sy = postpro (\(a,b) -> (scale sx sy a, scale sx sy b))
 
 
 instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
-  translate dx dy = liftA (prod (translate dx dy) (translate dx dy))
+  translate dx dy = postpro (\(a,b) -> (translate dx dy a, translate dx dy b))
 
 
 
@@ -433,7 +427,7 @@ connEnd         = DrawingR $ \_ _ pt -> pt
 -- Combinators
 
 moveLoc :: (Point2 u -> Point2 u) -> LocDrawingR u a -> LocDrawingR u a
-moveLoc = trafo1
+moveLoc = prepro1
 
 
 -- | Lift a pure value into a Drawing. The Drawing Context is 
@@ -555,7 +549,9 @@ static2 :: DrawingR (r1 -> ans) -> DrawingR (r1 -> r2 -> ans)
 static2 df = DrawingR $ \ctx a _ -> getDrawingR df ctx a
 
 
--- needs new name!
+-- | Complementary combinator to static2. 
+--
+-- This combinator raises a function two levels rather than one.
 --
 -- > (ctx -> ans) -> (ctx -> r1 -> r2 -> ans)
 --
@@ -563,9 +559,6 @@ dblstatic :: DrawingR ans -> DrawingR (r1 -> r2 -> ans)
 dblstatic df = DrawingR $ \ctx _ _ -> getDrawingR df ctx
 
 
-
-compose :: DrawingR (b -> c) -> DrawingR (a -> b) -> DrawingR (a -> c)
-compose f g = DrawingR $ \ctx a -> getDrawingR f ctx (getDrawingR g ctx a)
 
 
 
@@ -585,6 +578,38 @@ bind2 df dk = DrawingR $ \ctx a b ->
     let z = getDrawingR df ctx a b in getDrawingR (dk z) ctx a b
 
 
+-- idstar  :: (r1 -> r2 -> ans) -> r1 -> r2 -> ans
+
+-- | Supply the arguments to an arity 1 drawing so it can be 
+-- /situated/. Typically this is supplying the start point to a 
+-- @LocGraphic@ or @LocImage@.
+--
+-- > (ctx -> r1 -> ans) -> r1 -> (ctx -> ans)
+--
+-- This is equivalent to the @id**@ combinator.
+--
+situ1 :: DrawingR (r1 -> ans) -> r1 -> DrawingR ans
+situ1 df a = DrawingR $ \ctx -> getDrawingR df ctx a
+
+
+
+-- | Supply the arguments to an arity 2 drawing so it can be 
+-- /situated/. Typically this is supplying the start point and 
+-- angle to a @LocThetaGraphic@ or @LocThetaImage@.
+--
+-- > (ctx -> r1 -> r2 -> ans) -> r1 -> r2 -> (ctx -> ans)
+--
+situ2 :: DrawingR (r1 -> r2 -> ans) -> r1 -> r2 -> DrawingR ans
+situ2 df a b = DrawingR $ \ctx -> getDrawingR df ctx a b
+
+
+
+
+-- These two haven\'t been looked at systemmatically vis arity...
+
+compose :: DrawingR (b -> c) -> DrawingR (a -> b) -> DrawingR (a -> c)
+compose f g = DrawingR $ \ctx a -> getDrawingR f ctx (getDrawingR g ctx a)
+
 
 
 -- cardinal'  :: (a -> r1 -> ans) -> (r2 -> a) -> r1 -> r2 -> ans
@@ -597,14 +622,7 @@ cardinalprime :: (b -> DrawingR c) -> (a -> b) -> DrawingR (a -> c)
 cardinalprime f g = promote1 f `compose` (raise g)
 
 
--- idstarstar  :: (r1 -> r2 -> ans) -> r1 -> r2 -> ans
---
--- | /id**/
---
--- > (ctx -> a -> b) -> a -> ctx -> b
---
-idstarstar :: DrawingR (a -> b) -> a -> DrawingR b
-idstarstar df a = DrawingR $ \ctx -> getDrawingR df ctx a
+
 
 
 
@@ -639,14 +657,49 @@ idstarstar df a = DrawingR $ \ctx -> getDrawingR df ctx a
 -- > localizeDR2 = localize
 -- 
 
-trafo1 :: (r1 -> a) -> DrawingR (a -> b) -> DrawingR (r1 -> b)
-trafo1 f mf = DrawingR $ \ctx a -> getDrawingR mf ctx (f a)
+prepro1 :: (r1 -> a) -> DrawingR (a -> ans) -> DrawingR (r1 -> ans)
+prepro1 f mf = DrawingR $ \ctx a -> getDrawingR mf ctx (f a)
 
-trafo2a :: (r1 -> a) -> DrawingR (a -> r2 -> b) -> DrawingR (r1 -> r2 -> b)
-trafo2a f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx (f a) b
 
-trafo2b :: (r2 -> a) -> DrawingR (r1 -> a -> b) -> DrawingR (r1 -> r2 -> b)
-trafo2b f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx a (f b)
+prepro2a :: (r1 -> a) -> DrawingR (a -> r2 -> b) -> DrawingR (r1 -> r2 -> b)
+prepro2a f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx (f a) b
+
+prepro2b :: (r2 -> a) -> DrawingR (r1 -> a -> b) -> DrawingR (r1 -> r2 -> b)
+prepro2b f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx a (f b)
+
+------------------------------------------------------------------------------
+-- Post-transfomers
+
+
+postpro :: (a -> b) -> DrawingR a -> DrawingR b
+postpro = fmap
+
+postpro1 :: (a -> b) -> DrawingR (r1 -> a) -> DrawingR (r1 -> b)
+postpro1 = postpro . fmap  
+
+postpro2 :: (a -> b) -> DrawingR (r1 -> r2 -> a) -> DrawingR (r1 -> r2 -> b)
+postpro2 = postpro1 . fmap  
+
+--------------------------------------------------------------------------------
+-- Post-combiners
+
+-- (a -> b -> c) -> (ctx -> a) -> (ctx -> b) -> (ctx -> c)
+
+postcomb :: (a -> b -> c) -> DrawingR a -> DrawingR b -> DrawingR c
+postcomb op df dg = DrawingR $ \ctx -> 
+    getDrawingR df ctx `op` getDrawingR dg ctx
+
+postcomb1 :: (a -> b -> c) -> DrawingR (r1 -> a) -> DrawingR (r1 -> b) 
+          -> DrawingR (r1 -> c)
+postcomb1 op df dg = DrawingR $ \ctx a -> 
+    getDrawingR df ctx a `op` getDrawingR dg ctx a
+
+
+postcomb2 :: (a -> b -> c) -> DrawingR (r1 -> r2 -> a) -> DrawingR (r1 -> r2 -> b) 
+          -> DrawingR (r1 -> r2 -> c)
+postcomb2 op df dg = DrawingR $ \ctx a b -> 
+    getDrawingR df ctx a b `op` getDrawingR dg ctx a b
+
 
 
 -------------------------------------------------------------------------------
@@ -654,97 +707,59 @@ trafo2b f mf = DrawingR $ \ctx a b -> getDrawingR mf ctx a (f b)
 
 
 extrGraphic :: Image u a -> Graphic u
-extrGraphic img = DrawingR $ \ctx -> snd $ getDrawingR img ctx 
+extrGraphic = postpro snd
 
 
 extrLocGraphic :: LocImage u a -> LocGraphic u
-extrLocGraphic img = DrawingR $ \ctx pt -> snd $ getDrawingR img ctx pt
+extrLocGraphic = postpro1 snd 
 
 
 
 --------------------------------------------------------------------------------
 
-
-
-type DrawingTrafoF a = DrawingR a -> DrawingR a
-
-
-
--- | Point transformation function.
---
-type Point2F u = Point2 u -> Point2 u
-
-type DPoint2F = Point2F Double
 
 
 
 
 
 xlinkGraphic :: XLink -> Graphic u -> Graphic u
-xlinkGraphic xlink gf = DrawingR $ \ctx -> 
-    let a = runGraphic ctx gf 
-    in primGraphic $ xlinkGroup xlink [getPrimGraphic a]
+xlinkGraphic xlink =  
+    postpro (\prim -> primGraphic $ xlinkGroup xlink [getPrimGraphic prim])
 
 
-
-
-
-type GraphicTrafoF u = Graphic u -> Graphic u
-
-anteriorGraphic :: Graphic u -> GraphicTrafoF u
-anteriorGraphic = anterior
-
-superiorGraphic :: Graphic u -> GraphicTrafoF u
-superiorGraphic = superior
-
-
-
-
---------------------------------------------------------------------------------
-
-
-
---------------------------------------------------------------------------------
-
-
+xlinkImage :: XLink -> Image u a -> Image u a
+xlinkImage xlink = 
+    postpro (\(a,prim) -> (a, primGraphic $ xlinkGroup xlink [getPrimGraphic prim]))
 
 
 
 
 
 intoImage :: DrawingR a -> Graphic u -> Image u a
-intoImage f g = forkA f g
-
-
-
-
-type ImageTrafoF u a = Image u a -> Image u a
-
-
-
-
-intoImageTrafo :: DrawingTrafoF a -> GraphicTrafoF u -> ImageTrafoF u a
-intoImageTrafo df gf img = img >>= \(a,prim) -> 
-    intoImage (df $ pure a) (gf $ pure prim)
-
-imageTrafoDrawing :: DrawingTrafoF a -> ImageTrafoF u a
-imageTrafoDrawing df = intoImageTrafo df id
-
-imageTrafoGraphic :: GraphicTrafoF u -> ImageTrafoF u a
-imageTrafoGraphic gf = intoImageTrafo id gf
-
+intoImage = postcomb (,)
 
 
 
 intoLocImage :: LocDrawingR u a -> LocGraphic u -> LocImage u a
-intoLocImage f g = 
-    DrawingR $ \ctx pt -> (getDrawingR f ctx pt, getDrawingR g ctx pt)
+intoLocImage = postcomb1 (,)
+
+--    DrawingR $ \ctx a -> (getDrawingR f ctx a, getDrawingR g ctx a)
 
 
-xlinkImage :: XLink -> Image u a -> Image u a
-xlinkImage xlink img = DrawingR $ \ctx -> 
-    let (a,pg) = runImage ctx img 
-    in (a, primGraphic $ xlinkGroup xlink [getPrimGraphic pg])
+intoConnectorImage :: ConnectorDrawingR u a 
+                   -> ConnectorGraphic u 
+                   -> ConnectorImage u a
+intoConnectorImage = postcomb2 (,)
+
+
+
+intoLocThetaImage :: LocThetaDrawingR u a 
+                  -> LocThetaGraphic u 
+                  -> LocThetaImage u a
+intoLocThetaImage = postcomb2 (,)
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -754,31 +769,22 @@ type VecGraphic u = LocImage u (Point2 u)
 type DVecGraphic = VecGraphic Double
 
 
--- does the point transformer need Ctx?
+-- Maybe this has to be a primitive...
+--
+-- Needs new name.
+-- 
+feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
+feedPt f g = DrawingR $ \ctx pt -> 
+               let (p1,g1) = getDrawingR f ctx pt
+                   (p2,g2) = getDrawingR g ctx p1
+               in (p2, g1 `oplus` g2)
 
-intoVecGraphic :: (Point2 u -> Point2 u) -> LocGraphic u -> VecGraphic u
-intoVecGraphic f g = undefined -- \pt -> intoImage (pure $ f pt) (g pt)
+
+
 
 --------------------------------------------------------------------------------
 --
 
 
-
-
-
-intoConnectorImage :: ConnectorDrawingR u a 
-                   -> ConnectorGraphic u 
-                   -> ConnectorImage u a
-intoConnectorImage f g = undefined -- forkA (f p1 p2) (g p1 p2)
-
-
-
-
-
-
-intoLocThetaImage :: LocThetaDrawingR u a 
-                  -> LocThetaGraphic u 
-                  -> LocThetaImage u a
-intoLocThetaImage f g = undefined -- forkA (f theta pt) (g theta pt) 
 
 
