@@ -138,7 +138,7 @@ rectangleAnchor hw hh ctr =
                              $ rectangleLines ctr hw hh
 
 rectangleLDO :: (Real u, Floating u) 
-             => u -> u -> LocDrawingR u (DotAnchor u)
+             => u -> u -> LocDrawing u (DotAnchor u)
 rectangleLDO w h = promote1 $ \pt -> wrap $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
@@ -147,7 +147,7 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (\theta -> ctr .+^ (avec theta rad))
                                  (radialCardinal rad ctr)
 
-circleLDO :: (Floating u, FromPtSize u) => LocDrawingR u (DotAnchor u)
+circleLDO :: (Floating u, FromPtSize u) => LocDrawing u (DotAnchor u)
 circleLDO = bind1 (static1 markHeight) $ \diam -> 
     promote1 $ \pt -> wrap $ circleAnchor (diam * 0.5) pt
 

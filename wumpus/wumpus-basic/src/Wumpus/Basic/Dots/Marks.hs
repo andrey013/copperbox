@@ -128,7 +128,7 @@ markCross = bind1 (static1 markHeight) $ \h ->
 -- needs horizontal pinch...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
-            => LocDrawingR u (PrimPath u)
+            => LocDrawing u (PrimPath u)
 pathDiamond = bind1 (static1 markHeight) $ \h -> promote1 $ \pt ->
     let hh    = 0.66 * h; hw = 0.5 * h 
         s     = pt .+^ vvec (-hh)

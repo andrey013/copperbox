@@ -29,8 +29,11 @@ description:
   .
   0.12.0 to 0.13.0:
   .
-  * Major changes to @Basic.Graphic@ modules. @DrawingR@ type 
-    substantially changed. 
+  * Major changes to @Basic.Graphic@ modules. @DrawingR@ is 
+    renamed @Drawing@ and is substantially re-worked. Graphic 
+    /functional/ types are now encapulated in the Drawing 
+    constructor @Drawing (ctx -> pt -> prim)@ rather than 
+    partially outside it @pt -> Drawing (ctx -> prim)@. 
     @Drawing@ monad renamed @TraceDrawing@ and @DrawingT@ 
     transformer renamed @TraceDrawingT@.
   .
@@ -147,9 +150,10 @@ library
     Wumpus.Basic.Dots.Marks,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Base,
+    Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
-    Wumpus.Basic.Graphic.Prim,
-    Wumpus.Basic.Graphic.PrimGraphic,
+    Wumpus.Basic.Graphic.GraphicOperations,
+    Wumpus.Basic.Graphic.GraphicTypes,
     Wumpus.Basic.Graphic.Query,
     Wumpus.Basic.Graphic.ScalingContext,
     Wumpus.Basic.Graphic.TraceDrawing,

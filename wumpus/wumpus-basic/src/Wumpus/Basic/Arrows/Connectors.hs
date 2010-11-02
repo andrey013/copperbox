@@ -92,25 +92,16 @@ leftrightArrow cp la ra =
               }
 
 
--- Where do p0 and p1 come from?
--- 
--- Maybe the type is ...
---
--- > Connector u -> Point2 u -> Point2 u -> Image u (Path u)
---
--- I.e. Connector Images might not usefully exist  
---
--- If they do exist, this is (long windedly) how they would work:
 -- 
 -- > a <- drawi $ strokeConnector __ `startPt` p1 `endPt` p2
 
 -- > infixr 1 `startPt`
--- > startPt :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
--- > startPt = idstarstar
+-- > startPt :: Drawing (Point2 u -> b) -> Point2 u -> Drawing b
+-- > startPt = situ1
 
 -- > infixr 1 `endPt`
--- > endPt :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
--- > endPt = idstarstar
+-- > endPt :: Drawing (Point2 u -> b) -> Point2 u -> Drawing b
+-- > endPt = situ1
 
 
 strokeConnector :: (Real u, Floating u) 
@@ -152,7 +143,7 @@ type ArrowMark u = PrimGraphic u -> PrimGraphic u
 
 tipEval :: Num u 
         => Maybe (Arrowhead u) -> Point2 u -> Radian
-        -> DrawingR (u, ArrowMark u)
+        -> Drawing (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
 tipEval (Just arw) pt theta = makeMark (situ2 (getArrowhead arw) pt theta)
 
@@ -161,7 +152,7 @@ unmarked :: ArrowMark u
 unmarked = id
 
 
-makeMark :: Image u a -> DrawingR (a, ArrowMark u)
+makeMark :: Image u a -> Drawing (a, ArrowMark u)
 makeMark = postpro (\(a,prim) -> (a, superior prim))
 
 

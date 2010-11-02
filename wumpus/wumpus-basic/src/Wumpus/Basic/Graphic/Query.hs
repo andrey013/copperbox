@@ -53,7 +53,7 @@ module Wumpus.Basic.Graphic.Query
   , monoVecToCenter  
   ) where
 
-import Wumpus.Basic.Graphic.Prim
+import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
 
 import Wumpus.Core                      -- package: wumpus-core

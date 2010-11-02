@@ -133,7 +133,7 @@ st_zero = St { delta_chr       = 0
              , acc_sym         = emptyH }
  
 
-envZero :: FromPtSize u => DrawingR (Env u)
+envZero :: FromPtSize u => Drawing (Env u)
 envZero = (\sz -> Env { char_width   = fromPtSize $ charWidth sz
                       , spacer_width = fromPtSize $ spacerWidth sz })
             <$> fontSize

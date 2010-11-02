@@ -50,8 +50,6 @@ module Wumpus.Basic.Graphic.TraceDrawing
   , xdrawi
   , xdrawi_
 
-  , at
-
   , node
   , nodei
 
@@ -59,8 +57,9 @@ module Wumpus.Basic.Graphic.TraceDrawing
 
 
 import Wumpus.Basic.Graphic.Base
+import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Prim
+import Wumpus.Basic.Graphic.GraphicTypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -310,8 +309,8 @@ mbPictureU (Just a) = a
 
 --------------------------------------------------------------------------------
 
-query :: DrawingCtxM m => DrawingR a -> m a
-query df = askDC >>= \ctx -> return $ runDrawingR ctx df
+query :: DrawingCtxM m => Drawing a -> m a
+query df = askDC >>= \ctx -> return $ runDrawing ctx df
 
 
 -- | Draw a Graphic taking the drawing style from the 
@@ -360,20 +359,13 @@ xdrawi_ ::  (TraceM m, DrawingCtxM m, u ~ MonUnit m)
 xdrawi_ xl img = xdrawi xl img >> return ()
 
 
--- move to another module...
-
-infixr 1 `at`
-at :: DrawingR (Point2 u -> b) -> Point2 u -> DrawingR b
-at = situ1
-
-
 
 
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 
      => LocGraphic u -> m ()
 node gf = askDC    >>= \ctx -> 
           position >>= \pt  -> 
-          let f    = runDrawingR ctx gf in trace (collectH $ f pt)
+          let f    = runDrawing ctx gf in trace (collectH $ f pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 

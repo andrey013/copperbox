@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Graphic.PrimGraphic
+-- Module      :  Wumpus.Basic.Graphic.GraphicOperations
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -18,7 +18,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Graphic.PrimGraphic
+module Wumpus.Basic.Graphic.GraphicOperations
   (
     drawGraphic
 
@@ -75,8 +75,9 @@ module Wumpus.Basic.Graphic.PrimGraphic
   ) where
 
 import Wumpus.Basic.Graphic.Base
+import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext
-import Wumpus.Basic.Graphic.Prim
+import Wumpus.Basic.Graphic.GraphicTypes
 import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -177,7 +178,8 @@ textlineMulti xs = baselineSpacing >>= \dy ->
 tmStep :: Num u => u -> String -> LocImage u (Point2 u) 
 tmStep dy str = intoLocImage (raise $ \pt -> pt .+^ vvec dy) (textline str)
 
-
+feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
+feedPt = accumulate1 oplus
 
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
 hkernline ks = 

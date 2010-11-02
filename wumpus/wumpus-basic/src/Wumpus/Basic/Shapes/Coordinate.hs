@@ -119,7 +119,7 @@ coordinateX x = intoImage (return $ getCoordinate x) (drawX x)
 
 
 
-quarterMarkHeight :: (Fractional u, FromPtSize u) => DrawingR u
+quarterMarkHeight :: (Fractional u, FromPtSize u) => Drawing u
 quarterMarkHeight = liftM (0.25*) markHeight
 
 drawDot :: (Real u, Floating u, FromPtSize u) => Coordinate u -> Graphic u

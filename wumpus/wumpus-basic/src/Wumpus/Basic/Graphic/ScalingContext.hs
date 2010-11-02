@@ -35,7 +35,7 @@ module Wumpus.Basic.Graphic.ScalingContext
 
   ) where
 
-import Wumpus.Basic.Graphic.Prim
+import Wumpus.Basic.Graphic.Base
 
 import Wumpus.Core				-- package: wumpus-core
 
