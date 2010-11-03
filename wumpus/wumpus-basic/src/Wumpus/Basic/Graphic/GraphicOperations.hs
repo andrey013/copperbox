@@ -41,7 +41,6 @@ module Wumpus.Basic.Graphic.GraphicOperations
   , borderedEllipse
 
   , supplyPt
-  , PointDisplace
   , localPoint
   , vecdisplace
   , displace
@@ -220,8 +219,6 @@ supplyPt :: Point2 u -> LocGraphic u -> Graphic u
 supplyPt pt gf = fmap ($ pt) gf 
 
 
-type PointDisplace u = Point2 u -> Point2 u
-
 
 vecdisplace :: Num u => Vec2 u -> PointDisplace u
 vecdisplace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
@@ -286,7 +283,7 @@ rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
     tr = br .+^ vvec h
     tl = bl .+^ vvec h 
 
--- > promote __ `compose` (raise $ __) 
+-- > promote __ `cxpost1` (raise $ __) 
 --
 -- is a pattern captured by the cardinal' combinator.
 -- 

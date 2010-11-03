@@ -23,9 +23,11 @@ module Wumpus.Basic.Graphic.GraphicTypes
   (
 
 
+  -- * Function from Point to Point
+    PointDisplace
 
   -- * Graphic  
-    Graphic
+  , Graphic
   , LocGraphic
   , LocThetaGraphic
   , ConnectorGraphic
@@ -72,7 +74,7 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , intoLocImage
   , intoConnectorImage
   , intoLocThetaImage
-
+  , makeIterGraphic
 
 
   ) where
@@ -82,6 +84,11 @@ import Wumpus.Basic.Graphic.Drawing
 import Wumpus.Basic.Graphic.DrawingContext
 
 import Wumpus.Core                      -- package: wumpus-core
+
+
+
+type PointDisplace u = Point2 u -> Point2 u
+
 
 
 
@@ -311,24 +318,14 @@ intoLocThetaImage :: LocThetaDrawing u a
 intoLocThetaImage = postcomb2 (,)
 
 
-
-
-
---------------------------------------------------------------------------------
-
--- need new names ...
-
-{-
--- Needs new name.
--- 
-feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
-feedPt = accumulate1 oplus
-
--}
-
-
---------------------------------------------------------------------------------
+-- | Construction is different to intoZZ functions hence the 
+-- different name.
 --
+makeIterGraphic :: PointDisplace u
+                -> LocGraphic u 
+                -> IterGraphic u
+makeIterGraphic pf df = postcomb1 (,) (postpro1 pf locPoint) df
+
 
 
 
