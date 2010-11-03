@@ -10,10 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Base types for Drawing Objects, Graphics / Images (a Graphic 
--- that also returns an answer), etc.
--- 
--- \*\* WARNING \*\* - some names are expected to change.
+-- The primary Drawing type and base combinators to manipulate it. 
 --
 --------------------------------------------------------------------------------
 
@@ -40,8 +37,8 @@ module Wumpus.Basic.Graphic.Drawing
   , locCtx
   , locPoint
   , locThetaCtx
-  , locThetaAng
   , locThetaPoint
+  , locThetaAng
   , connCtx
   , connStart
   , connEnd
@@ -75,12 +72,12 @@ module Wumpus.Basic.Graphic.Drawing
   , apply2
 
 
-  , compose
   , cardinalprime
 
 
   -- * Pre-transformers
   , prepro1
+  , prepro2
   , prepro2a
   , prepro2b
 
@@ -88,6 +85,8 @@ module Wumpus.Basic.Graphic.Drawing
   , postpro
   , postpro1
   , postpro2
+
+  , cxpost1
 
   -- * Post-combiners
   , postcomb
@@ -197,35 +196,76 @@ runDrawing ctx df = getDrawing df ctx
 --------------------------------------------------------------------------------
 -- extractors 
 
+-- | Extract the drawing context from a Drawing.
+--
+-- > (ctx -> ctx)
+-- 
 drawingCtx      :: Drawing DrawingContext
 drawingCtx      = Drawing $ \ctx -> ctx
 
+-- | Apply the projection function to the drawing context.
+--
+-- > (ctx -> a) -> (ctx -> a)
+--
 queryDrawing    :: (DrawingContext -> a) -> Drawing a
 queryDrawing f  = Drawing $ \ctx -> f ctx
 
+
+-- | Extract the drawing context from a LocDrawing.
+--
+-- > (ctx -> pt -> ctx)
+--
 locCtx          :: LocDrawing u DrawingContext
 locCtx          = Drawing $ \ctx _  -> ctx
 
+-- | Extract the /start/ point from a LocDrawing.
+--
+-- > (ctx -> pt -> pt)
+--
 locPoint        :: LocDrawing u (Point2 u)
 locPoint        = Drawing $ \_ pt -> pt
 
 
+-- | Extract the drawing context from a LocThetaDrawing.
+--
+-- > (ctx -> pt -> ang -> ctx)
+--
 locThetaCtx     :: LocThetaDrawing u DrawingContext
 locThetaCtx     = Drawing $ \ctx _ _ -> ctx
 
-locThetaAng     :: LocThetaDrawing u Radian
-locThetaAng     = Drawing $ \_ _ ang -> ang
 
+-- | Extract the /start/ point from a LocThetaDrawing.
+--
+-- > (ctx -> pt -> ang -> pt)
+--
 locThetaPoint   :: LocThetaDrawing u (Point2 u)
 locThetaPoint   = Drawing $ \_ pt _ -> pt
 
+-- | Extract the angle from a LocThetaDrawing.
+--
+-- > (ctx -> pt -> ang -> ang)
+--
+locThetaAng     :: LocThetaDrawing u Radian
+locThetaAng     = Drawing $ \_ _ ang -> ang
 
+-- | Extract the drawing context from a ConnectorDrawing.
+--
+-- > (ctx -> pt1 -> pt2 -> ctx)
+--
 connCtx         :: ConnectorDrawing u DrawingContext
 connCtx         = Drawing $ \ctx _ _ -> ctx
 
+-- | Extract the start point from a ConnectorDrawing.
+--
+-- > (ctx -> pt1 -> pt2 -> pt1)
+--
 connStart       :: ConnectorDrawing u (Point2 u) 
 connStart       = Drawing $ \_ pt _ -> pt
 
+-- | Extract the end point from a ConnectorDrawing.
+--
+-- > (ctx -> pt1 -> pt2 -> pt2)
+--
 connEnd         :: ConnectorDrawing u (Point2 u) 
 connEnd         = Drawing $ \_ _ pt -> pt
 
@@ -238,8 +278,8 @@ connEnd         = Drawing $ \_ _ pt -> pt
 -- > ans -> (ctx -> ans)
 --
 -- This is the same as the 'raise' combinator at when raising into
--- the drawing Context. But the /arity family/ of wrap combinators 
--- is different.
+-- the drawing Context. But the /arity family/ of @wrap@ 
+-- combinators is different.
 --
 wrap :: a -> Drawing a
 wrap = pure
@@ -256,7 +296,7 @@ wrap1 = pure . pure
 
 -- | Lift a pure value into a Drawing, ignoring both the Drawing 
 -- Context and the two functional arguments (e.g. start point and 
--- theta for a @LocThetaDrawing@).
+-- angle for a @LocThetaDrawing@).
 --
 -- > ans -> (ctx -> r1 -> r2 -> ans)
 --
@@ -296,7 +336,9 @@ promote2 df = Drawing $ \ctx a b -> getDrawing (df a b) ctx
 --
 -- > ans -> (ctx -> ans)
 --
--- Essentially this is the @kestrel@ combinator - @const@ in Haskell.
+-- Essentially this is the @kestrel@ combinator - @const@ in 
+-- Haskell, though due to newtype wrapping it is @pure@ from the
+-- Applicative class.
 --
 raise :: a -> Drawing a
 raise = pure
@@ -304,14 +346,16 @@ raise = pure
 
 -- | Lift a one argument function into a Drawing /functional/.
 --
--- This is 'ctxFree' with a specialized type signature. 
+-- This is Applicative\'s 'pure' with a specialized type 
+-- signature. 
 --
 raise1 :: (r1 -> ans) -> Drawing (r1 -> ans) 
 raise1 = pure
 
 -- | Lift a two argument function into a Drawing /functional/.
 --
--- This is 'ctxFree' with a specialized type signature.
+-- This is Applicative\'s 'pure' with a specialized type 
+-- signature.
 --
 raise2 :: (r1 -> r2 -> ans) -> Drawing (r1 -> r2 -> ans) 
 raise2 = pure
@@ -364,16 +408,35 @@ dblstatic df = Drawing $ \ctx _ _ -> getDrawing df ctx
 
 
 
-
+-- | Supply the output from the first function to the second 
+-- function.
+--
+-- This is just monadic bind - specialized to the Drawing 
+-- functional type.
+--
+-- > (ctx -> a) -> (a -> ctx -> ans) -> (ctx -> ans)
+-- 
 bind :: Drawing a -> (a -> Drawing ans) -> Drawing ans
 bind df dk = Drawing $ \ctx -> 
     let z = getDrawing df ctx in getDrawing (dk z) ctx
 
 
+-- | Supply the output from the first function to the second 
+-- function, /sharing/ the drawing context and the static 
+-- argument @r1@.
+--
+-- > (ctx -> r1 -> a) -> (a -> ctx -> -> r1 -> ans) -> (ctx -> r1 -> ans)
+-- 
 bind1 :: Drawing (r1 -> a) -> (a -> Drawing (r1 -> ans)) -> Drawing (r1 -> ans)
-bind1 df dk = Drawing $ \ctx a -> 
+bind1 df dk = Drawing $ \ctx a ->
     let z = getDrawing df ctx a in getDrawing (dk z) ctx a
 
+-- | Supply the output from the first function to the second 
+-- function, /sharing/ the drawing context and the two static 
+-- arguments @r1@ and @r2@.
+--
+-- > (ctx -> r1 -> r2 -> a) -> (a -> ctx -> -> r1 -> r2 -> ans) -> (ctx -> r1 -> r2 -> ans)
+-- 
 bind2 :: Drawing (r1 -> r2 -> a) -> (a -> Drawing (r1 -> r2 -> ans)) 
       -> Drawing (r1 -> r2 -> ans)
 bind2 df dk = Drawing $ \ctx a b -> 
@@ -405,35 +468,55 @@ situ2 :: Drawing (r1 -> r2 -> ans) -> r1 -> r2 -> Drawing ans
 situ2 df a b = Drawing $ \ctx -> getDrawing df ctx a b
 
 
-
+-- | Apply the the functional produced by the first argument to
+-- the value produced by the second.
+--
+-- > (ctx -> a -> ans) -> (ctx -> a) -> (ctx -> ans) 
+--
 apply :: Drawing (a -> ans) -> Drawing a -> Drawing ans
 apply df da = Drawing $ \ctx -> getDrawing df ctx (getDrawing da ctx)
 
 
+-- | Apply the the functional produced by the first argument to
+-- the value produced by the second /sharing/ the context of the 
+-- first functional argument @r1@ (usually a Point2) as well as 
+-- the drawing context.
+--
+-- > (ctx -> r1 -> a -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> ans) 
+--
 apply1 :: Drawing (r1 -> a -> ans) -> Drawing (r1 -> a) -> Drawing (r1 -> ans)
 apply1 df da = Drawing $ \ctx a -> getDrawing df ctx a (getDrawing da ctx a)
 
 
+-- | Apply the the functional produced by the first argument to
+-- the value produced by the second /sharing/ the context of the 
+-- two functional arguments @r1@ and @r2@ as well as the drawing 
+-- context.
+--
+-- > (ctx -> r1 -> r2 -> a -> ans) -> (ctx -> r1 -> r2 -> a) -> (ctx -> r1 -> r2 -> ans) 
+--
 apply2 :: Drawing (r1 -> r2 -> a -> ans) -> Drawing (r1 -> r2 -> a) 
        -> Drawing (r1 -> r2 -> ans)
 apply2 df da = Drawing $ \ctx a b -> 
                  getDrawing df ctx a b (getDrawing da ctx a b)
 
--- These combiantors haven\'t been looked at systemmatically vis arity...
+-- These combinators haven\'t been looked at systemmatically vis arity...
 
-compose :: Drawing (b -> c) -> Drawing (a -> b) -> Drawing (a -> c)
-compose f g = Drawing $ \ctx a -> getDrawing f ctx (getDrawing g ctx a)
+
 
 
 
 -- cardinal'  :: (a -> r1 -> ans) -> (r2 -> a) -> r1 -> r2 -> ans
 
--- | This is a /Cardinal-prime/
+-- | Note - this combinator seems useful, but perhaps it is not 
+-- /primitive/ and it may be removed or renamed. 
 --
--- (b -> ctx -> c) -> (a -> b) -> ctx -> a -> c
+-- (a -> ctx -> ans) -> (r1 -> a) -> (ctx -> r1 -> ans)
 --
-cardinalprime :: (b -> Drawing c) -> (a -> b) -> Drawing (a -> c)
-cardinalprime f g = promote1 f `compose` (raise g)
+-- This is a /Cardinal-prime/ combinator.
+--
+cardinalprime :: (a -> Drawing ans) -> (r1 -> a) -> Drawing (r1 -> ans)
+cardinalprime f g = promote1 f `cxpost1` (raise g)
 
 
 
@@ -471,80 +554,169 @@ cardinalprime f g = promote1 f `compose` (raise g)
 -- > localizeDR2 = localize
 -- 
 
+
+-- | Apply the static argument transfomer @(r1 -> a)@ to the 
+-- static argument /before/ applying the drawing functional.
+--
+-- > (r1 -> a) -> (ctx -> a -> ans) -> (ctx -> r1 -> ans)
+-- 
 prepro1 :: (r1 -> a) -> Drawing (a -> ans) -> Drawing (r1 -> ans)
 prepro1 f mf = Drawing $ \ctx a -> getDrawing mf ctx (f a)
 
 
-prepro2a :: (r1 -> a) -> Drawing (a -> r2 -> b) -> Drawing (r1 -> r2 -> b)
+-- | Apply the static argument transfomers to their respective
+-- static arguments /before/ applying the drawing functional.
+--
+-- > (r1 -> a) -> (r2 -> b) -> (ctx -> a -> b -> ans) -> (ctx -> r1 -> r2 -> ans)
+-- 
+prepro2 :: (r1 -> a) -> (r2 -> b) -> Drawing (a -> b -> ans) 
+        -> Drawing (r1 -> r2 -> ans)
+prepro2 f g mf = Drawing $ \ctx a b -> getDrawing mf ctx (f a) (g b)
+
+
+-- | Apply the static argument transfomer to the first static
+-- argument of a two static argument functional /before/ applying 
+-- the drawing functional.
+--
+-- > (r1 -> a) -> (ctx -> a -> r2 -> ans) -> (ctx -> r1 -> r2 -> ans)
+-- 
+prepro2a :: (r1 -> a) -> Drawing (a -> r2 -> ans) -> Drawing (r1 -> r2 -> ans)
 prepro2a f mf = Drawing $ \ctx a b -> getDrawing mf ctx (f a) b
 
-prepro2b :: (r2 -> a) -> Drawing (r1 -> a -> b) -> Drawing (r1 -> r2 -> b)
+-- | Apply the static argument transfomer to the second static
+-- argument of a two static argument functional /before/ applying 
+-- the drawing functional.
+--
+-- > (r2 -> a) -> (ctx -> r1 -> a -> ans) -> (ctx -> r1 -> r2 -> ans)
+-- 
+prepro2b :: (r2 -> a) -> Drawing (r1 -> a -> ans) -> Drawing (r1 -> r2 -> ans)
 prepro2b f mf = Drawing $ \ctx a b -> getDrawing mf ctx a (f b)
 
 ------------------------------------------------------------------------------
 -- Post-transfomers
 
-
-postpro :: (a -> b) -> Drawing a -> Drawing b
+-- | Apply the post-transformer to the result of the drawing 
+-- functional.
+--
+-- > (a -> ans) -> (ctx -> a) -> (ctx -> ans) 
+--
+postpro :: (a -> ans) -> Drawing a -> Drawing ans
 postpro = fmap
 
-postpro1 :: (a -> b) -> Drawing (r1 -> a) -> Drawing (r1 -> b)
+-- | Apply the post-transformer to the result of the drawing 
+-- functional. Version for one static argument.
+--
+-- Note - the drawing context is always present so it is never 
+-- counted as a static argument.
+--
+-- > (a -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> ans) 
+--
+postpro1 :: (a -> ans) -> Drawing (r1 -> a) -> Drawing (r1 -> ans)
 postpro1 = postpro . fmap  
 
-postpro2 :: (a -> b) -> Drawing (r1 -> r2 -> a) -> Drawing (r1 -> r2 -> b)
+-- | Apply the post-transformer to the result of the drawing 
+-- functional. Version for two static arguments.
+--
+-- Note - the drawing context is always present so it is never 
+-- counted as a static argument.
+--
+--
+-- > (a -> ans) -> (ctx -> r1 -> r2 -> a) -> (ctx -> r1 -> r2 -> ans) 
+--
+postpro2 :: (a -> ans) -> Drawing (r1 -> r2 -> a) -> Drawing (r1 -> r2 -> ans)
 postpro2 = postpro1 . fmap  
+
+
+
+-- | Post-process the result of an one-static-argument drawing
+-- with a /contextual/ transformer. 
+--
+-- > (ctx -> a -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> ans)
+-- 
+cxpost1 :: Drawing (a -> ans) -> Drawing (r1 -> a) -> Drawing (r1 -> ans)
+cxpost1 f g = Drawing $ \ctx a -> getDrawing f ctx (getDrawing g ctx a)
 
 --------------------------------------------------------------------------------
 -- Post-combiners
 
--- (a -> b -> c) -> (ctx -> a) -> (ctx -> b) -> (ctx -> c)
-
-postcomb :: (a -> b -> c) -> Drawing a -> Drawing b -> Drawing c
+-- | Combine the results of the two drawings with the supplied 
+-- operator.
+--
+-- > (a -> b -> ans) -> (ctx -> a) -> (ctx -> b) -> (ctx -> ans)
+--
+postcomb :: (a -> b -> ans) -> Drawing a -> Drawing b -> Drawing ans
 postcomb op df dg = Drawing $ \ctx -> 
     getDrawing df ctx `op` getDrawing dg ctx
 
+-- | Combine the results of the two one-static-argument drawings 
+-- with the supplied operator.
+--
+-- > (a -> b -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> b) -> (ctx -> r1 -> ans)
+--
 postcomb1 :: (a -> b -> c) -> Drawing (r1 -> a) -> Drawing (r1 -> b) 
           -> Drawing (r1 -> c)
 postcomb1 op df dg = Drawing $ \ctx a -> 
     getDrawing df ctx a `op` getDrawing dg ctx a
 
 
-postcomb2 :: (a -> b -> c) -> Drawing (r1 -> r2 -> a) -> Drawing (r1 -> r2 -> b) 
-          -> Drawing (r1 -> r2 -> c)
+-- | Combine the results of the two two-static-argument drawings 
+-- with the supplied operator.
+--
+-- > (a -> b -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> b) -> (ctx -> r1 -> ans)
+--
+postcomb2 :: (a -> b -> ans) -> Drawing (r1 -> r2 -> a) -> Drawing (r1 -> r2 -> b) 
+          -> Drawing (r1 -> r2 -> ans)
 postcomb2 op df dg = Drawing $ \ctx a b -> 
     getDrawing df ctx a b `op` getDrawing dg ctx a b
 
 
 
--- | This models chaining start points together e.g. how 
--- PostScript text.
+-- | Iteration combinator - the initial argument @s1@ is not 
+-- shared bewteen the drawings.
+--
+-- Evaluate the first drawing with the drawing context and the 
+-- /initial state/ @st0@. The result of the evaluation is a new 
+-- /state/ @st1@ and and answer @a1@. 
+--
+-- Evaluate the second drawing with the drawing context and the
+-- new state @st1@, producing a new state @s2@ and an answer @a2@
+--
+-- Return the result of combinig the answers with @op :: (ans -> ans -> ans)@
+-- and the second state @s2@.
+--
+-- @ (ans -> ans -> ans) -> (ctx -> s1 -> (s1,ans)) @
+-- @                     -> (ctx -> s1 -> (s1,ans)) -> (ctx -> s1 -> (s1,ans)) @
+--
+-- This models chaining start points together, shich is the model
+-- PostScript uses for succesively calling the @show@ operator.
 -- 
-accumulate1 :: (a -> a -> a) 
-            -> Drawing (r1 -> (r1,a)) -> Drawing (r1 -> (r1,a)) 
-            -> Drawing (r1 -> (r1,a)) 
-accumulate1 op f g = Drawing $ \ctx pt -> 
-                        let (p1,a1) = getDrawing f ctx pt
-                            (p2,a2) = getDrawing g ctx p1
-                        in (p2, a1 `op` a2)
+accumulate1 :: (ans -> ans -> ans) 
+            -> Drawing (s1 -> (s1,ans)) -> Drawing (s1 -> (s1,ans)) 
+            -> Drawing (s1 -> (s1,ans)) 
+accumulate1 op f g = Drawing $ \ctx s -> 
+                        let (s1,a1) = getDrawing f ctx s
+                            (s2,a2) = getDrawing g ctx s1
+                        in (s2, a1 `op` a2)
 
 
 
 -- | Arity two version of accumulate1 - this is not expected to be
 -- useful!
 --
-accumulate2 :: (a -> a -> a) 
-            -> Drawing (r1 -> r2 -> (r1,r2,a)) 
-            -> Drawing (r1 -> r2 -> (r1,r2,a)) 
-            -> Drawing (r1 -> r2 -> (r1,r2,a)) 
-accumulate2 op f g = Drawing $ \ctx pt r -> 
-                        let (p1,r1,a1) = getDrawing f ctx pt r
-                            (p2,r2,a2) = getDrawing g ctx p1 r1
-                        in (p2, r2, a1 `op` a2)
-
-
-
---------------------------------------------------------------------------------
+-- @ (ans -> ans -> ans) -> (ctx -> s1 -> -> s2 (s1,s2,ans)) @
+-- @     -> (ctx -> s1 -> s2 -> (s1,s2,ans)) @
+-- @     -> (ctx -> s1 -> s2 -> (s1,s2,ans)) @
 --
+accumulate2 :: (ans -> ans -> ans) 
+            -> Drawing (s1 -> s2 -> (s1,s2,ans)) 
+            -> Drawing (s1 -> s2 -> (s1,s2,ans)) 
+            -> Drawing (s1 -> s2 -> (s1,s2,ans)) 
+accumulate2 op f g = Drawing $ \ctx s t -> 
+                        let (s1,t1,a1) = getDrawing f ctx s t
+                            (s2,t2,a2) = getDrawing g ctx s1 t1
+                        in (s2, t2, a1 `op` a2)
+
+
 
 
 

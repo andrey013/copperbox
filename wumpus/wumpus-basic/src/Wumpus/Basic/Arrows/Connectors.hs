@@ -117,7 +117,7 @@ strokeConnector (Connector cpF opt_la opt_ra) =
 
 -- for Paths.Base ?
 --
-shortenPath :: (Real u , Floating u) =>  u  -> u -> Path u -> Path u
+shortenPath :: (Real u , Floating u) => u  -> u -> Path u -> Path u
 shortenPath l r = shortenL l .  shortenR r 
 
 type ArrowMark u = PrimGraphic u -> PrimGraphic u

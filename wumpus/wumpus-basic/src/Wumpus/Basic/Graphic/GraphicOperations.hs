@@ -262,7 +262,7 @@ localPoint = moveLoc
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = 
-    promote1 openStroke `compose` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
+    promote1 openStroke `cxpost1` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
 
           
 

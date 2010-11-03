@@ -47,6 +47,9 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , DLocThetaImage
   , DConnectorImage
 
+  -- * Iterated graphic
+  , IterGraphic
+  , DIterGraphic
 
   -- * Run functions
   , runGraphic
@@ -70,10 +73,6 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , intoConnectorImage
   , intoLocThetaImage
 
-  -- * Cruft
-
-  , VecGraphic
-  , DVecGraphic
 
 
   ) where
@@ -159,7 +158,16 @@ type DConnectorImage a  = ConnectorImage Double a
 type instance DUnit (Image u a) = u
 
 
+--------------------------------------------------------------------------------
 
+
+-- | Iterated Graphic - this partially models the @show@ command 
+-- which draws the text and moves the /current point/ to the end 
+-- of the text ready for the next words to be drawn.
+--
+type IterGraphic u      = LocImage u (Point2 u)
+
+type DIterGraphic       = IterGraphic Double
 
 
 --------------------------------------------------------------------------------
@@ -309,10 +317,6 @@ intoLocThetaImage = postcomb2 (,)
 --------------------------------------------------------------------------------
 
 -- need new names ...
-
-type VecGraphic u = LocImage u (Point2 u)
-
-type DVecGraphic = VecGraphic Double
 
 {-
 -- Needs new name.
