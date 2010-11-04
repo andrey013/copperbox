@@ -29,14 +29,17 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base                <  5, 
-                      containers          >= 0.3     && <= 0.4,
-                      action-permutations >= 0.0 && <= 1.0,
-                      wumpus-core         >= 0.37.0
+  build-depends:      
+    base                        <  5, 
+    containers                  >= 0.3        && <= 0.4,
+    action-permutations         >= 0.0        && <= 1.0,
+    xhtml                       >= 3000.2     && < 3010,
+    wumpus-core                 >= 0.37.0
   
   exposed-modules:
     Wumpus.FontKit.AfmV2Datatypes,
     Wumpus.FontKit.AfmV2Parser,
+    Wumpus.FontKit.HtmlReport
     Wumpus.FontKit.Utils.ParserCombinators,
     Wumpus.FontKit.Utils.TokenParser,
     Wumpus.FontKit.VersionNumber

@@ -72,11 +72,10 @@ italicAngle         = runQuery "ItalicAngle" degree
 isFixedPitch        :: GlobalInfo -> Maybe Bool
 isFixedPitch        = runQuery "IsFixedPitch" bool
 
-fontBBox            :: GlobalInfo -> Maybe FontBBox
-fontBBox            = runQuery "FontBBox" go
-  where
-    go = (\llx lly urx ury -> bbox (P2 llx lly) (P2 urx ury)) 
-           <$> int <*> int <*> int <*> int
+-- | Strictly speaking a fontBBox is measured in integer units.
+--
+fontBBox            :: GlobalInfo -> Maybe CharBBox
+fontBBox            = runQuery "FontBBox" charBBox
 
 underlinePosition   :: GlobalInfo -> Maybe AfmUnit
 underlinePosition   = runQuery "UnderlinePosition" number

@@ -18,7 +18,6 @@ module Wumpus.FontKit.AfmV2Datatypes
   ( 
     AfmName
   , AfmKey
-  , FontBBox
   , CharBBox
   , WidthVector
   , AfmFile(..)
@@ -44,8 +43,13 @@ import Data.Map
 
 type AfmKey         = String
 type AfmName        = String
-type CharBBox       = BoundingBox AfmUnit
-type FontBBox       = BoundingBox Int
+
+-- This should be a newtype (wumpus bbox union not appropriate 
+-- for CharBBox as /origin/ means different things).
+--
+-- It should also be moved to Wumpus-Basic.
+-- 
+type CharBBox       = BoundingBox AfmUnit       
 type WidthVector    = Vec2 AfmUnit
 
 data AfmFile = AfmFile
