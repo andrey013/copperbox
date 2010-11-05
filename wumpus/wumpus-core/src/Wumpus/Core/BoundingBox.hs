@@ -31,9 +31,11 @@ module Wumpus.Core.BoundingBox
   -- * Type class
   , Boundary(..)
   
+  -- * Constructors
+  , boundingBox
+  , oboundingBox
+  
   -- * Operations
-  , bbox
-  , obbox
   , destBoundingBox
   , boundaryUnion 
   , traceBoundary
@@ -124,27 +126,32 @@ class Boundary t where
 
 --------------------------------------------------------------------------------
 
--- | 'bbox' : @lower_left_corner * upper_right_corner -> BoundingBox@
+-- | 'boundingBox' : @lower_left_corner * upper_right_corner -> BoundingBox@
 --
 -- Contruct a bounding box, vis the BBox constructor with range 
 -- checking on the corner points.
 --
--- @bbox@ throws an error if the width or height of the 
+-- 'boundingBox' throws an error if the width or height of the 
 -- constructed bounding box is negative.
 --
-bbox :: Ord u => Point2 u -> Point2 u -> BoundingBox u
-bbox ll@(P2 x0 y0) ur@(P2 x1 y1) 
-   | x0 <= x1 && y0 <= y1 = BBox ll ur 
-   | otherwise            = error "Wumpus.Core.BoundingBox.bbox - malformed."
+boundingBox :: Ord u => Point2 u -> Point2 u -> BoundingBox u
+boundingBox ll@(P2 x0 y0) ur@(P2 x1 y1) 
+    | x0 <= x1 && y0 <= y1 = BBox ll ur 
+    | otherwise            = error "Wumpus.Core.boundingBox - malformed."
 
 
--- | 'obbox' : @width * height -> BoundingBox@
+-- | 'oboundingBbox' : @width * height -> BoundingBox@
 --
 -- Create a BoundingBox with bottom left corner at the origin,
 -- and dimensions @w@ and @h@.
 --
-obbox :: Num u => u -> u -> BoundingBox u
-obbox w h = BBox zeroPt (P2 w h)
+-- 'oboundingBox' throws an error if either the suppplied width 
+-- or height is negative.
+-- 
+oboundingBox :: (Num u, Ord u) => u -> u -> BoundingBox u
+oboundingBox w h 
+    | h >= 0 && w >= 0 = BBox zeroPt (P2 w h)
+    | otherwise        = error "Wumpus.Core.oboundingBox - malformed."
 
 -- | 'destBoundingBox' : @ bbox -> (lower_left_x, lower_lefy_y, 
 --      upper_right_x, upper_right_y)@

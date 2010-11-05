@@ -49,8 +49,15 @@ description:
   . 
   0.36.0 to 0.37.0:
   .
-  * Internal changes to the Picture types for a more efficient
-    representation of Primitives (better concatenation).
+  * The bounding box constructors have been renamed - @bbox@ is 
+    now @boundingBox@ and @obbox@ becomes @oboundingBox@. The 
+    rationale for this change is that the names very cryptic in 
+    the first place and the constructors are used infrequently 
+    when @bbox@ in particular makes a descriptive variable name.
+  .
+  * Changes to the Picture and Primitive types to enable better
+    concatenation which is used heavily by Wumpus-Basic. The 
+    Picture API exposes a new function @primCat@.
   .
   * SVG /font delta context/ change - font deltas are now 
     annotated on Primitives not Pictures. The type of the 

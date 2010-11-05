@@ -32,6 +32,8 @@ module Wumpus.Core.Picture
   , xlinkhref
   , xlink
   , primGroup
+  , primCat
+
 
   -- * Constructing primitives
   , ostroke
@@ -233,6 +235,29 @@ primGroup (x:xs) = PGroup (step x xs)
   where
     step a []     = one a
     step a (y:ys) = cons a (step y ys) 
+
+
+-- | Concatenate two Primitives.
+--
+-- If both primitves are groups, then the groups are merged.
+--
+-- If one or other primitive is a group, the singleton is added
+-- into the group at the respective end.
+--
+-- Otherwise a group is formed adding both elements as /children/.
+--
+-- The Primitive type in Wumpus is a tree. In theory 'primCat' 
+-- can make flatter and wider trees than 'primGroup', though in 
+-- practice this may have no noticeable benefit as Wumpus has very 
+-- simple access patterns into the Primitive tree. 
+--
+primCat :: Primitive u -> Primitive u -> Primitive u
+primCat (PGroup a) (PGroup b) = PGroup $ join a b
+primCat (PGroup a) prim       = PGroup $ join a (one prim) 
+primCat prim       (PGroup b) = PGroup $ join (one prim) b
+primCat p1         p2         = PGroup $ join (one p1) (one p2) 
+
+
 
 --------------------------------------------------------------------------------
 -- Take Paths to Primitives

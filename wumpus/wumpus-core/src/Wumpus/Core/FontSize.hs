@@ -247,7 +247,7 @@ textBoundsEnc sz pt enc = textBoundsBody sz pt (textLength enc)
 
 textBoundsBody :: (Num u, Ord u, FromPtSize u) 
                => FontSize -> Point2 u -> Int -> BoundingBox u
-textBoundsBody sz baseline_left len = bbox bl tr 
+textBoundsBody sz baseline_left len = boundingBox bl tr 
   where
     h           = fromPtSize $ textHeight sz
     w           = fromPtSize $ textWidth  sz len
