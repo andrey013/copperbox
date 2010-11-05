@@ -233,7 +233,7 @@ drawOneLine ang (DxString dx ss) bl =
 rotTextline :: (Real u, Floating u) => Radian -> String -> LocGraphic u
 rotTextline theta ss = 
     promote1 (\baseline_left -> withTextAttr $ \rgb attr -> 
-                         primGraphic $ rtextlabel rgb attr ss theta baseline_left)
+                 primGraphic $ rtextlabel rgb attr ss baseline_left theta)
 
 
 expandedRectangle :: Fractional u 

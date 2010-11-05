@@ -32,6 +32,8 @@ module Wumpus.Basic.Graphic.Query
 
   , lineWidth
   , fontSize
+  , fontFace
+  , fontAttr
   , markHeight
   , markHalfHeight
   , baselineSpacing
@@ -99,9 +101,14 @@ withBorderedAttr fn =
 lineWidth :: DrawingCtxM m => m Double
 lineWidth = line_width <$> asksDC stroke_props
 
+fontAttr :: DrawingCtxM m => m FontAttr
+fontAttr = asksDC font_props
+
 fontSize :: DrawingCtxM m => m Int
 fontSize = font_size <$> asksDC font_props
 
+fontFace :: DrawingCtxM m => m FontFace
+fontFace = font_face <$> asksDC font_props
 
 
 

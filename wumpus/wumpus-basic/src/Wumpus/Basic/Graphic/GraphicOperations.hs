@@ -141,7 +141,7 @@ textline ss =
 rtextline :: Num u => String -> LocThetaGraphic u
 rtextline ss = 
     withTextAttr $ \rgb attr -> thetaLocPrimGraphic 
-                                  (\pt ang -> rtextlabel rgb attr ss ang pt)
+                                  (\pt ang -> rtextlabel rgb attr ss pt ang)
 
 
 -- | As 'textline' but the supplied point is the /center/.

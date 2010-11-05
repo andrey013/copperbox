@@ -32,11 +32,6 @@ module Wumpus.Basic.Graphic.TraceDrawing
   , execTraceDrawingT
   , evalTraceDrawingT
 
-  , runFdcTraceDrawing
-  , execFdcTraceDrawing
-  , runFdcTraceDrawingT
-  , execFdcTraceDrawingT
-
   , liftToPictureU
   , liftToPictureMb
   , mbPictureU
@@ -222,6 +217,7 @@ evalTraceDrawingT :: Monad m
 evalTraceDrawingT ctx ma = liftM fst $ runTraceDrawingT ctx ma
 
 
+{-
 
 -- | Run the TraceDrawing generating a Picture /within/ a 
 -- \"font delta context\" using the font-family and font-size 
@@ -265,6 +261,8 @@ execFdcTraceDrawingT :: (Real u, Floating u, FromPtSize u, Monad m)
                      => DrawingContext -> TraceDrawingT u m a 
                      -> m (Maybe (Picture u))
 execFdcTraceDrawingT ctx ma = liftM snd $ runFdcTraceDrawingT ctx ma
+
+-}
 
 -- | /Unsafe/ promotion of @HPrim@ to @Picture@.
 --

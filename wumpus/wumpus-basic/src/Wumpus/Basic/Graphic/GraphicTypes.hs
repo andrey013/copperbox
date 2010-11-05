@@ -67,6 +67,9 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , extrGraphic
   , extrLocGraphic
 
+
+  , fontDeltaGraphic
+  , fontDeltaImage
   , xlinkGraphic
   , xlinkImage
 
@@ -277,18 +280,29 @@ extrLocGraphic = postpro1 snd
 --------------------------------------------------------------------------------
 
 
+metamorphPrim :: (Primitive u -> Primitive u) -> PrimGraphic u -> PrimGraphic u
+metamorphPrim f = primGraphic . f . getPrimGraphic
 
+fontDeltaGraphic :: Graphic u -> Graphic u
+fontDeltaGraphic df = 
+    drawingCtx `bind` \ctx -> postpro (fun $ font_props ctx) df
+  where 
+    fun attr = metamorphPrim (fontDeltaContext attr)
 
+fontDeltaImage :: Image u a -> Image u a
+fontDeltaImage df = 
+    drawingCtx `bind` \ctx -> postpro (fun $ font_props ctx) df
+  where 
+    fun attr = \(a,prim) -> (a, metamorphPrim (fontDeltaContext attr) prim)
 
 
 xlinkGraphic :: XLink -> Graphic u -> Graphic u
-xlinkGraphic xlink =  
-    postpro (\prim -> primGraphic $ xlinkGroup xlink [getPrimGraphic prim])
+xlinkGraphic hypl = postpro (metamorphPrim (xlink hypl))
 
 
 xlinkImage :: XLink -> Image u a -> Image u a
-xlinkImage xlink = 
-    postpro (\(a,prim) -> (a, primGraphic $ xlinkGroup xlink [getPrimGraphic prim]))
+xlinkImage hypl = 
+    postpro (\(a,prim) -> (a, metamorphPrim (xlink hypl) prim))
 
 
 
