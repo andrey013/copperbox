@@ -90,7 +90,7 @@ import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
-import Wumpus.Core.Utils.OneList
+import Wumpus.Core.Utils.JoinList
 
 import Data.AffineSpace                         -- package: vector-space
 
@@ -592,11 +592,11 @@ infixr 6 `picBeside`, `picOver`
 -- neither picture will be moved.
 --
 picOver :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-a `picOver` b = Picture (bb,[]) (cons b $ one a) 
+a `picOver` b = Picture (bb,[]) (join (one b) (one a))   
   where
     bb = boundary a `boundaryUnion` boundary b
 
--- picOver note - draw b, put b first in the list, so it draws 
+-- NOTE - picOver - draw b, put b first in the list, so it draws 
 -- first in the output (this is also @behind@ in the Z-Order).
 
 

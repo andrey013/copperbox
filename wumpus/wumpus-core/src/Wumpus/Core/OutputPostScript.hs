@@ -38,7 +38,7 @@ import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
-import Wumpus.Core.Utils.OneList
+import Wumpus.Core.Utils.JoinList
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -285,7 +285,7 @@ picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
 
 
 
-oneConcat :: (a -> PsMonad Doc) -> OneList a -> PsMonad Doc
+oneConcat :: (a -> PsMonad Doc) -> JoinList a -> PsMonad Doc
 oneConcat fn ones = outstep (viewl ones)
   where
     outstep (e :< rest)   = fn e >>= \a -> instep a (viewl rest)

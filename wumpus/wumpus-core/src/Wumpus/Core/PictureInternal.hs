@@ -66,7 +66,7 @@ import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
-import Wumpus.Core.Utils.OneList
+import Wumpus.Core.Utils.JoinList
 
 
 import Data.AffineSpace                         -- package: vector-space
@@ -110,8 +110,8 @@ import qualified Data.Foldable                  as F
 -- updates for the SVG renderer - in some instances this can 
 -- improve the code size of the generated SVG.
 --
-data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
-               | Picture  (Locale u)              (OneList (Picture u))
+data Picture u = Leaf     (Locale u)              (JoinList (Primitive u))
+               | Picture  (Locale u)              (JoinList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
   deriving (Show)
 
@@ -177,7 +177,7 @@ data Primitive u = PPath    PathProps     (PrimPath u)
                  | PEllipse EllipseProps  (PrimEllipse u)
                  | PContext FontCtx       (Primitive u)
                  | PLink    XLink         (Primitive u)
-                 | PGroup   (OneList (Primitive u))
+                 | PGroup   (JoinList (Primitive u))
   deriving (Eq,Show)
 
 
@@ -314,7 +314,7 @@ instance (Num u, PSUnit u) => Format (Picture u) where
                                               , format pic  ]
 
 
-fmtPics :: PSUnit u => OneList (Picture u) -> Doc
+fmtPics :: PSUnit u => JoinList (Picture u) -> Doc
 fmtPics ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
@@ -344,7 +344,7 @@ instance PSUnit u => Format (Primitive u) where
       vcat [ text "-- group ", fmtPrimlist ones  ]
 
 
-fmtPrimlist :: PSUnit u => OneList (Primitive u) -> Doc
+fmtPrimlist :: PSUnit u => JoinList (Primitive u) -> Doc
 fmtPrimlist ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
