@@ -279,7 +279,6 @@ imageTranslation pic = case repositionDeltas pic of
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
-picture (Group   (_,xs) _ pic) = bracketTrafos xs (picture pic)
 picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
     (\d1 d2 -> vcat [ps_gsave,d1,d2,ps_grestore])
       <$> clipPath cp <*> picture pic <* resetGS
@@ -296,7 +295,8 @@ oneConcat fn ones = outstep (viewl ones)
     instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
--- No action is taken for hyperlinks in PostScript.
+-- No action is taken for hyperlinks or font context changes in 
+-- PostScript.
 --
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
@@ -304,6 +304,7 @@ primitive (PPath props pp)     = primPath props pp
 primitive (PLabel props lbl)   = primLabel props lbl
 primitive (PEllipse props ell) = primEllipse props ell
 primitive (PContext _ chi)     = primitive chi
+primitive (PLink _ chi)        = primitive chi
 primitive (PGroup ones)        = oneConcat primitive ones
 
 

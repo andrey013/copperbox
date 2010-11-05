@@ -30,7 +30,7 @@ module Wumpus.Core.Picture
   , vertexPath
   , curvedPath
   , xlinkhref
-  , xlinkGroup
+  , xlink
   , primGroup
 
   -- * Constructing primitives
@@ -160,8 +160,8 @@ multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones
 -- introducing nesting with @gsave@ and @grestore@ is not likely
 -- to improve the PostScript Wumpus generates.
 --
-fontDeltaContext :: FontAttr -> Picture u -> Picture u
-fontDeltaContext fa p = Group (boundary p, []) (FontCtx fa) p
+fontDeltaContext :: FontAttr -> Primitive u -> Primitive u
+fontDeltaContext fa p = PContext (FontCtx fa) p
 
 
 -- | Create a Path from a start point and a list of PathSegments.
@@ -216,17 +216,10 @@ xlinkhref :: String -> XLink
 xlinkhref = XLink
 
 
--- | Create a hyperlinked group of Primitives.
+-- | Create a hyperlinked Primitive.
 --
--- This function throws a runtime error when supplied with an
--- empty list.
--- 
-xlinkGroup :: XLink -> [Primitive u] -> Primitive u
-xlinkGroup _     []     = error "Picture.xlinkGroup - empty prims list"
-xlinkGroup xlink (x:xs) = PContext (Just xlink) (PGroup $ step x xs)
-  where
-    step a []     = one a
-    step a (y:ys) = cons a (step y ys) 
+xlink :: XLink -> Primitive u -> Primitive u
+xlink hypl p = PLink hypl p  
 
 
 -- | Group a list of Primitives.
@@ -341,8 +334,8 @@ textlabel :: Num u
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
 textlabel rgb attr txt pt = rtextlabel rgb attr txt pt 0
 
--- | 'rtextlabel' : @ rgb * font_attr * string * rotation * 
---      baseline_left -> Primitive @
+-- | 'rtextlabel' : @ rgb * font_attr * string * baseline_left * 
+--      rotation -> Primitive @
 --
 -- Create a text label rotated by the supplied angle about the 
 -- baseline-left. 
@@ -394,6 +387,8 @@ ztextlabel = textlabel black wumpus_default_font
 -- renderers. Chrome support is fine, but Firefox and Safari 
 -- currently seem lacking. 
 --
+-- Also, currently the generated PostScript is inefficient.
+--
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> Primitive u
@@ -431,6 +426,8 @@ hkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl
 -- perfectly valid SVG, but it is not universally supported by 
 -- renderers. Chrome support is fine, but Firefox and Safari 
 -- currently seem lacking. 
+--
+-- Also, currently the generated PostScript is inefficient.
 --
 vkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 

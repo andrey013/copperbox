@@ -47,13 +47,13 @@ trivPic :: Num u => Picture u -> Picture u
 trivPic (Leaf lc ones)      = Leaf lc $ fmap trivPrim ones
 trivPic (Picture lc ones)   = Picture lc $ fmap trivPic ones
 trivPic (Clip lc pp pic)    = Clip lc pp $ trivPic pic
-trivPic (Group lc upd pic)  = Group lc upd $ trivPic pic
 
 trivPrim :: Num u => Primitive u -> Primitive u
 trivPrim (PPath a pp)     = PPath a pp
 trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
 trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
 trivPrim (PContext a chi) = PContext a (trivPrim chi)
+trivPrim (PLink a chi)    = PLink a (trivPrim chi)
 trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
 
 

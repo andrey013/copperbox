@@ -25,14 +25,14 @@ main = do
 
 
 pic1 :: DPicture
-pic1 = fontDeltaContext delta_ctx $ frame 
+pic1 = frame1 $ fontDeltaContext delta_ctx $ primGroup  
           [ helveticaLabel 18 "Optimized - size and face"  (P2 0 60)
           , helveticaLabel 14 "Optimized - face only"      (P2 0 40)
           , courierLabel      "No optimization"            (P2 0 20)
           ]
   where
    delta_ctx  = FontAttr 18 common_ff
- 
+   frame1 a   = frame [a] 
 
 common_ff :: FontFace
 common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder

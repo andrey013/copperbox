@@ -150,7 +150,7 @@ instance Num u => Scale (Vec2 u) where
 -- | Type class for translation.
 --
 class Translate t where
-  translate :: DUnit t -> DUnit t -> t -> t
+  translate :: u ~ DUnit t => u -> u -> t -> t
 
 instance Num u => Translate (Point2 u) where
   translate dx dy (P2 x y) = P2 (x+dx) (y+dy)

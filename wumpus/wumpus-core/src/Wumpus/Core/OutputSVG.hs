@@ -106,7 +106,7 @@ askGraphicsState :: SvgMonad GraphicsState
 askGraphicsState = SvgMonad $ \_ r2 s -> (r2,s)
 
 asksGraphicsState :: (GraphicsState -> a) -> SvgMonad a
-asksGraphicsState fn = SvgMonad $ \_ r2 s -> (fn r2,s)
+asksGraphicsState fn = fmap fn askGraphicsState
 
 askFontAttr :: SvgMonad FontAttr
 askFontAttr = asksGraphicsState $ \r -> 
@@ -189,7 +189,6 @@ picture (Clip    (_,xs) cp pic) =
                           ; d2  <- picture pic
                           ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
                           } 
-picture (Group   (_,xs) fn pic) = bracketTrafos xs $ bracketGS fn (picture pic)
 
 
 
@@ -208,10 +207,8 @@ primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
 primitive (PPath props pp)      = primPath props pp
 primitive (PLabel props lbl)    = primLabel props lbl
 primitive (PEllipse props ell)  = primEllipse props ell
-primitive (PContext mb chi)     = 
-    case mb of
-      Nothing -> primitive chi
-      Just xl -> drawXLink xl <$> primitive chi
+primitive (PContext fa chi)     = bracketGS fa (primitive chi)
+primitive (PLink hypl chi)      = drawXLink hypl <$> primitive chi
 primitive (PGroup ones)         = oneConcat primitive ones
  
 
@@ -406,11 +403,27 @@ makeDashPattern (Dash n xs) =
     attr_stroke_dashoffset n <+> attr_stroke_dasharray xs
 
 
+data FontMatch = FullMatch | DeltaPtSize | DeltaFont
+  deriving (Eq,Show,Ord) 
+
 
 deltaFontAttrs :: FontAttr -> SvgMonad Doc
-deltaFontAttrs fa = 
-    (\inh -> if fa == inh then empty else makeFontAttrs fa) <$> askFontAttr
+deltaFontAttrs fa = (\inh -> step $ fontMatch inh fa) <$> askFontAttr
+  where
+    step FullMatch      = empty
+    step DeltaPtSize    = attr_font_size $ font_size fa
+    step DeltaFont      = makeFontAttrs fa
 
+
+fontMatch :: FontAttr -> FontAttr -> FontMatch
+fontMatch (FontAttr s1 f1) (FontAttr s2 f2) 
+   | s1 == s2 && f1 == f2 = FullMatch
+   | f1 == f2             = DeltaPtSize
+   | otherwise            = DeltaFont
+
+-- Note this is always adding FontSize - there are cases where 
+-- this is redundant. 
+--
 makeFontAttrs :: FontAttr -> Doc
 makeFontAttrs (FontAttr sz face) = 
     attr_font_family (svg_font_family face) <+> attr_font_size sz 
@@ -431,27 +444,23 @@ makeFontAttrs (FontAttr sz face) =
         space <> attr_font_weight "bold" <+> attr_font_style "oblique"
 
 
--- NOTE - as is only practical to delta the FontFace attributes 
--- it might be good to specialize / simplify the graphics state
--- GSUpdate to a simpler type rather than a functional one...
 
+-- Always update both the size and font-family even if only one
+-- changes.
+--
+-- This seems more in the spirit of a font delta operation.
+--
 bracketGS :: FontCtx -> SvgMonad Doc -> SvgMonad Doc
 bracketGS (FontCtx new_font) mf = 
-    (\old body -> mkElem old body) 
-        <$> askGraphicsState <*> runLocalGS updateF mf
+    (\old body -> mkElem (old == new_font) body) 
+        <$> askFontAttr <*> runLocalGS updateF mf
   where
-    mkElem old body 
-      | fontMatch old new_font = elem_g_no_attrs body
-      | otherwise              = let a = makeFontAttrs new_font
-                                 in elem_g a body
+    mkElem True body = elem_g_no_attrs body
+    mkElem _    body = let a = makeFontAttrs new_font in elem_g a body
 
     updateF s = s { gs_font_size = font_size new_font
                   , gs_font_face = font_face new_font }
                 
-
-fontMatch :: GraphicsState -> FontAttr -> Bool
-fontMatch gs fa = 
-   gs_font_size gs == font_size fa && gs_font_face gs == font_face fa
 
 
 --------------------------------------------------------------------------------

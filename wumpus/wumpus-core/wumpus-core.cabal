@@ -71,6 +71,16 @@ description:
   * Internal changes to the Picture types for a more efficient
     representation of Primitives (better concatenation).
   .
+  * SVG /font delta context/ change - font deltas are now 
+    annotated on Primitives not Pictures. The type of the 
+    function @fontDeltaContext@ in @Core.Picture@ has changed 
+    accordingly.
+  .
+  * SVG hyperlink change - hyperlinks no longer group primitives
+    (although a group of primitives can be hyperlinked). The 
+    function @xlinkGroup@ has been removed from @Core.Picture@, 
+    it is replaced by @xlink@.
+  .
   * @Core.Picture@ - the argument order for the function 
     @rtextlabel@ has been changed, the positions of the angle and 
     bottom-left corner have been swapped.

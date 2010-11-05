@@ -113,20 +113,10 @@ import qualified Data.Foldable                  as F
 data Picture u = Leaf     (Locale u)              (OneList (Primitive u))
                | Picture  (Locale u)              (OneList (Picture u))
                | Clip     (Locale u) (PrimPath u) (Picture u)
-               | Group    (Locale u) FontCtx      (Picture u)
   deriving (Show)
 
 type DPicture = Picture Double
 
-
--- | Set the font /delta/ for SVG rendering. 
--- 
--- Note - this does not change the default colour or font style. 
--- It is solely a backdoor into the SVG renderer to potential 
--- allow some code size reductions.
---
-newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
-  deriving (Eq,Show)
 
 
 -- | Locale = (bounding box * current translation matrix)
@@ -174,22 +164,34 @@ type Locale u = (BoundingBox u, [AffineTrafo u])
 -- constraint is also obliged.
 --
 -- To represent XLink hyperlinks, Primitives can be annotated 
--- with some context (a hyperlink, also a font change for better
--- SVG code generation) and grouped - an hyperlinked arrow would
--- want the tip and the arrow body both to be link though they 
--- will two drawings. This means that Primitives aren\'t strictly
--- /primitive/ as the actual implementation is a tree.
+-- with some a hyperlink (similarly a a font change for better
+-- SVG code generation) and grouped - a hyperlinked arrow would
+-- want the tip and the arrow body both to be incorporated in the
+-- link even though they are two drawings. 
+--
+-- This means that Primitives aren\'t strictly /primitive/ as 
+-- the actual implementation is a tree.
 -- 
 data Primitive u = PPath    PathProps     (PrimPath u)
                  | PLabel   LabelProps    (PrimLabel u)
                  | PEllipse EllipseProps  (PrimEllipse u)
-                 | PContext (Maybe XLink) (Primitive u)
+                 | PContext FontCtx       (Primitive u)
+                 | PLink    XLink         (Primitive u)
                  | PGroup   (OneList (Primitive u))
   deriving (Eq,Show)
 
 
-
 type DPrimitive = Primitive Double
+
+
+-- | Set the font /delta/ for SVG rendering. 
+-- 
+-- Note - this does not change the default colour or font style. 
+-- It is solely a backdoor into the SVG renderer to potential 
+-- allow some code size reductions.
+--
+newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
+  deriving (Eq,Show)
 
 -- | Primitives can be grouped with hyperlinks in SVG output.
 --
@@ -311,10 +313,6 @@ instance (Num u, PSUnit u) => Format (Picture u) where
                                               , format path
                                               , format pic  ]
 
-  format (Group m _ pic)    = indent 2 $ vcat [ text "** Group **"
-                                              , fmtLocale m
-                                              , format pic  ]
-
 
 fmtPics :: PSUnit u => OneList (Picture u) -> Doc
 fmtPics ones = snd $ F.foldl' fn (0,empty) ones
@@ -337,7 +335,10 @@ instance PSUnit u => Format (Primitive u) where
       indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
 
   format (PContext _ a)     = 
-      vcat [ text "-- ctx change " , format a ]
+      vcat [ text "-- svg ctx change " , format a ]
+
+  format (PLink _ a)     = 
+      vcat [ text "-- svg link " , format a ]
 
   format (PGroup ones)      = 
       vcat [ text "-- group ", fmtPrimlist ones  ]
@@ -390,7 +391,6 @@ instance Boundary (Picture u) where
   boundary (Leaf    (bb,_) _)   = bb
   boundary (Picture (bb,_) _)   = bb
   boundary (Clip    (bb,_) _ _) = bb
-  boundary (Group   (bb,_) _ _) = bb
 
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
@@ -398,6 +398,7 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PLabel a l)     = labelBoundary (label_font a) l
   boundary (PEllipse _ e)   = ellipseBoundary e
   boundary (PContext _ a)   = boundary a
+  boundary (PLink _ a)      = boundary a
   boundary (PGroup ones)    = outer $ viewl ones 
     where
       outer (OneL a)     = boundary a
@@ -536,7 +537,6 @@ mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
 mapLocale f (Picture lc ones)  = Picture (f lc) ones
 mapLocale f (Clip lc pp pic)   = Clip (f lc) pp pic
-mapLocale f (Group lc upd pic) = Group (f lc) upd pic
 
 
 --------------------------------------------------------------------------------
@@ -553,6 +553,7 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
   rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
   rotate r (PContext a chi) = PContext a $ rotate r chi 
+  rotate r (PLink a chi)    = PLink a    $ rotate r chi 
   rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
  
 
@@ -561,6 +562,7 @@ instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
   rotateAbout r pt (PContext a chi) = PContext a $ rotateAbout r pt chi
+  rotateAbout r pt (PLink a chi)    = PLink a    $ rotateAbout r pt chi
   rotateAbout r pt (PGroup xs)      = PGroup     $ fmap (rotateAbout r pt) xs
 
 
@@ -569,6 +571,7 @@ instance Num u => Scale (Primitive u) where
   scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
   scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
   scale sx sy (PContext a chi)  = PContext a $ scale sx sy chi
+  scale sx sy (PLink a chi)     = PLink a    $ scale sx sy chi
   scale sx sy (PGroup xs)       = PGroup     $ fmap (scale sx sy) xs
 
 
@@ -577,6 +580,7 @@ instance Num u => Translate (Primitive u) where
   translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
   translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
   translate dx dy (PContext a chi) = PContext a $ translate dx dy chi
+  translate dx dy (PLink a chi)    = PLink a    $ translate dx dy chi
   translate dx dy (PGroup xs)      = PGroup     $ fmap (translate dx dy) xs
 
 
