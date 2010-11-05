@@ -53,7 +53,8 @@ trivPrim :: Num u => Primitive u -> Primitive u
 trivPrim (PPath a pp)     = PPath a pp
 trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
 trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
-trivPrim (PGroup xl ones) = PGroup xl $ fmap trivPrim ones
+trivPrim (PContext a chi) = PContext a (trivPrim chi)
+trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
 
 
 trivLabel :: Num u => PrimLabel u -> PrimLabel u

@@ -205,13 +205,14 @@ oneConcat fn ones = outstep (viewl ones)
 
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
-primitive (PPath props pp)     = primPath props pp
-primitive (PLabel props lbl)   = primLabel props lbl
-primitive (PEllipse props ell) = primEllipse props ell
-primitive (PGroup mb ones)     = 
+primitive (PPath props pp)      = primPath props pp
+primitive (PLabel props lbl)    = primLabel props lbl
+primitive (PEllipse props ell)  = primEllipse props ell
+primitive (PContext mb chi)     = 
     case mb of
-      Nothing -> oneConcat primitive ones
-      Just xl -> drawXLink xl <$> oneConcat primitive ones
+      Nothing -> primitive chi
+      Just xl -> drawXLink xl <$> primitive chi
+primitive (PGroup ones)         = oneConcat primitive ones
  
 
 drawXLink :: XLink -> Doc -> Doc

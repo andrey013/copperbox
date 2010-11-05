@@ -223,7 +223,7 @@ xlinkhref = XLink
 -- 
 xlinkGroup :: XLink -> [Primitive u] -> Primitive u
 xlinkGroup _     []     = error "Picture.xlinkGroup - empty prims list"
-xlinkGroup xlink (x:xs) = PGroup (Just xlink) (step x xs)
+xlinkGroup xlink (x:xs) = PContext (Just xlink) (PGroup $ step x xs)
   where
     step a []     = one a
     step a (y:ys) = cons a (step y ys) 
@@ -236,7 +236,7 @@ xlinkGroup xlink (x:xs) = PGroup (Just xlink) (step x xs)
 --
 primGroup :: [Primitive u] -> Primitive u
 primGroup []     = error "Picture.primGroup - empty prims list"
-primGroup (x:xs) = PGroup Nothing (step x xs)
+primGroup (x:xs) = PGroup (step x xs)
   where
     step a []     = one a
     step a (y:ys) = cons a (step y ys) 
@@ -339,7 +339,7 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 --
 textlabel :: Num u 
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
-textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
+textlabel rgb attr txt pt = rtextlabel rgb attr txt pt 0
 
 -- | 'rtextlabel' : @ rgb * font_attr * string * rotation * 
 --      baseline_left -> Primitive @
@@ -350,8 +350,8 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 -- The supplied point is the left baseline.
 --
 rtextlabel :: Num u 
-           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> Primitive u
-rtextlabel rgb attr txt theta pt = PLabel (LabelProps rgb attr) lbl 
+           => RGBi -> FontAttr -> String -> Point2 u -> Radian -> Primitive u
+rtextlabel rgb attr txt pt theta = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (StdLayout $ lexLabel txt) (thetaCTM theta)
 

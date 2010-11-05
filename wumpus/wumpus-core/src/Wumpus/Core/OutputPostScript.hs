@@ -303,7 +303,8 @@ primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
 primitive (PPath props pp)     = primPath props pp
 primitive (PLabel props lbl)   = primLabel props lbl
 primitive (PEllipse props ell) = primEllipse props ell
-primitive (PGroup _ ones)      = oneConcat primitive ones
+primitive (PContext _ chi)     = primitive chi
+primitive (PGroup ones)        = oneConcat primitive ones
 
 
 primPath :: PSUnit u

@@ -173,15 +173,21 @@ type Locale u = (BoundingBox u, [AffineTrafo u])
 -- Though typically for affine transformations a Fractional 
 -- constraint is also obliged.
 --
--- To represent XLink hyperlinks, Primitives can be grouped 
--- together at the same type (so Primitives aren\'t strictly)
+-- To represent XLink hyperlinks, Primitives can be annotated 
+-- with some context (a hyperlink, also a font change for better
+-- SVG code generation) and grouped - an hyperlinked arrow would
+-- want the tip and the arrow body both to be link though they 
+-- will two drawings. This means that Primitives aren\'t strictly
 -- /primitive/ as the actual implementation is a tree.
 -- 
 data Primitive u = PPath    PathProps     (PrimPath u)
                  | PLabel   LabelProps    (PrimLabel u)
                  | PEllipse EllipseProps  (PrimEllipse u)
-                 | PGroup   (Maybe XLink) (OneList (Primitive u))
+                 | PContext (Maybe XLink) (Primitive u)
+                 | PGroup   (OneList (Primitive u))
   deriving (Eq,Show)
+
+
 
 type DPrimitive = Primitive Double
 
@@ -330,8 +336,11 @@ instance PSUnit u => Format (Primitive u) where
   format (PEllipse props e) = 
       indent 2 $ vcat [ text "ellipse:" <+> format props, format e ]
 
-  format (PGroup xl ones)   = 
-      vcat [ text "-- group " <+> (maybe empty format xl), fmtPrimlist ones  ]
+  format (PContext _ a)     = 
+      vcat [ text "-- ctx change " , format a ]
+
+  format (PGroup ones)      = 
+      vcat [ text "-- group ", fmtPrimlist ones  ]
 
 
 fmtPrimlist :: PSUnit u => OneList (Primitive u) -> Doc
@@ -388,7 +397,8 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PPath _ p)      = pathBoundary p
   boundary (PLabel a l)     = labelBoundary (label_font a) l
   boundary (PEllipse _ e)   = ellipseBoundary e
-  boundary (PGroup _ ones)  = outer $ viewl ones 
+  boundary (PContext _ a)   = boundary a
+  boundary (PGroup ones)    = outer $ viewl ones 
     where
       outer (OneL a)     = boundary a
       outer (a :< as)    = inner (boundary a) (viewl as)
@@ -542,28 +552,32 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PPath a path)   = PPath a    $ rotatePath r path
   rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
   rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
-  rotate r (PGroup xln xs)  = PGroup xln $ fmap (rotate r) xs
+  rotate r (PContext a chi) = PContext a $ rotate r chi 
+  rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
  
 
 instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
-  rotateAbout r pt (PGroup xln xs)  = PGroup xln $ fmap (rotateAbout r pt) xs
+  rotateAbout r pt (PContext a chi) = PContext a $ rotateAbout r pt chi
+  rotateAbout r pt (PGroup xs)      = PGroup     $ fmap (rotateAbout r pt) xs
 
 
 instance Num u => Scale (Primitive u) where
   scale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
   scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
   scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
-  scale sx sy (PGroup xln xs)   = PGroup xln $ fmap (scale sx sy) xs
+  scale sx sy (PContext a chi)  = PContext a $ scale sx sy chi
+  scale sx sy (PGroup xs)       = PGroup     $ fmap (scale sx sy) xs
 
 
 instance Num u => Translate (Primitive u) where
   translate dx dy (PPath a path)   = PPath a    $ translatePath dx dy path
   translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
   translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
-  translate dx dy (PGroup xln xs)  = PGroup xln $ fmap (translate dx dy) xs
+  translate dx dy (PContext a chi) = PContext a $ translate dx dy chi
+  translate dx dy (PGroup xs)      = PGroup     $ fmap (translate dx dy) xs
 
 
 --------------------------------------------------------------------------------
