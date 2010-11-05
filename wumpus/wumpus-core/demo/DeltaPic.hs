@@ -1,6 +1,9 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
+-- SVG ouptut has some ability to minimization font change code.
+-- This example demonstrates it.
+
 module DeltaPic where
 
 import Wumpus.Core
