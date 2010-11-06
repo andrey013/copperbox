@@ -10,14 +10,10 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Named literals from Symbol font, drawn with the LRText monad.
+-- \*\* WARNING \*\* this module is considered obsolete.
 -- 
--- Note - Symbol font handling and precise letter placing in SVG 
--- viewers is mixed. Chrome works well good, Firefox (3.6.3) and 
--- Safari (5.0.1) are unsatisfactory.
---  
---   
---
+-- LRText no longer seems a satisfactory way to build text.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Text.LRSymbol

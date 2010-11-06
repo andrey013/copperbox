@@ -49,9 +49,9 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , DLocThetaImage
   , DConnectorImage
 
-  -- * Iterated graphic
-  , IterGraphic
-  , DIterGraphic
+  -- * /Advance vector/ graphic
+  , AdvGraphic
+  , DAdvGraphic
 
   -- * Run functions
   , runGraphic
@@ -77,7 +77,7 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , intoLocImage
   , intoConnectorImage
   , intoLocThetaImage
-  , makeIterGraphic
+  , makeAdvGraphic
 
 
   ) where
@@ -171,13 +171,13 @@ type instance DUnit (Image u a) = u
 --------------------------------------------------------------------------------
 
 
--- | Iterated Graphic - this partially models the @show@ command 
--- which draws the text and moves the /current point/ to the end 
--- of the text ready for the next words to be drawn.
+-- | /Advance vector/ graphic - this partially models the 
+-- PostScript @show@ command which moves the /current point/ by the
+-- width (advance) vector as each character is drawn.
 --
-type IterGraphic u      = LocImage u (Point2 u)
+type AdvGraphic u      = LocImage u (Point2 u)
 
-type DIterGraphic       = IterGraphic Double
+type DAdvGraphic       = AdvGraphic Double
 
 
 --------------------------------------------------------------------------------
@@ -335,10 +335,10 @@ intoLocThetaImage = postcomb2 (,)
 -- | Construction is different to intoZZ functions hence the 
 -- different name.
 --
-makeIterGraphic :: PointDisplace u
-                -> LocGraphic u 
-                -> IterGraphic u
-makeIterGraphic pf df = postcomb1 (,) (postpro1 pf locPoint) df
+makeAdvGraphic :: PointDisplace u
+               -> LocGraphic u 
+               -> AdvGraphic u
+makeAdvGraphic pf df = postcomb1 (,) (postpro1 pf locPoint) df
 
 
 

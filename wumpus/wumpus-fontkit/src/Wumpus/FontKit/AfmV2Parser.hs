@@ -26,6 +26,7 @@ import Wumpus.FontKit.Utils.ParserCombinators
 import qualified Wumpus.FontKit.Utils.TokenParser as P
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Text.Datatypes              -- package: wumpus-basic
 
 import Control.Applicative
 
@@ -124,7 +125,7 @@ widthVector =  (symbol "WX" *> ((\w -> vec w 0) <$> number) <* semi)
 charBBox :: CharParser CharBBox
 charBBox = symbol "B" *> go <* semi
   where
-    go = (\llx lly urx ury -> bbox (P2 llx lly) (P2 urx ury))
+    go = (\llx lly urx ury -> boundingBox (P2 llx lly) (P2 urx ury))
            <$> number <*> number <*> number <*> number
 
 metric :: String -> a -> CharParser a -> CharParser a

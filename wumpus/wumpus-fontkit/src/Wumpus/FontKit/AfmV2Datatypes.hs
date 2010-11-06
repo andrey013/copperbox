@@ -28,6 +28,7 @@ module Wumpus.FontKit.AfmV2Datatypes
 
 
 import Wumpus.Core
+import Wumpus.Basic.Text.Datatypes
 
 import Data.Map
 

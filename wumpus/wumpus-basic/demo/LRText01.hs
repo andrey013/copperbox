@@ -1,5 +1,8 @@
 {-# OPTIONS -Wall #-}
 
+-- WARNING - This example is now considered obsolete.
+-- LRText no longer seems a satisfactory way to build text.
+
 module LRText01 where
 
 import Wumpus.Basic.Colour.SVGColours

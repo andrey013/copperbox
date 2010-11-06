@@ -11,15 +11,9 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- LRText monad - left-to-right text, with kerning.
+-- \*\* WARNING \*\* this module is considered obsolete.
 -- 
--- Note - because Wumpus has no access to the metrics data inside
--- a font file, the default spacing is not good and it is 
--- expected that kerning will need to be added per-letter for
--- variable width fonts.
---
--- This module makes precise horizontal text spacing \*possible\*, 
--- it does not make it \*easy\*.
+-- LRText no longer seems a satisfactory way to build text.
 -- 
 --------------------------------------------------------------------------------
 

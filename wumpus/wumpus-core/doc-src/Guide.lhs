@@ -23,7 +23,7 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
-This guide was last updated for \wumpuscore version 0.36.0.
+This guide was last updated for \wumpuscore version 0.37.0.
 
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
@@ -124,14 +124,15 @@ Text size calculations in \texttt{Core.FontSize} use points
 type to represent them.
 
 \item[\texttt{Wumpus.Core.TextEncoder.}]
-Types for handling extended character codes e.g. for accented 
-characters or the Symbol font. Special characters generally have 
-to be escaped in the PostScript and SVG output, this module 
-provides data types for lookup tables between the escaped 
-character code and its PostScript or SVG representation. 
+Types for handling extended character codes within fonts e.g. 
+for accented characters or the Symbol font. Special characters 
+generally have to be escaped in the PostScript and SVG output, 
+this module provides data types for lookup tables between the 
+escaped character code and its PostScript or SVG representation. 
 Text encoders are associated with fonts - glyphs within a font 
 are located by their character name / code. Currently 
-\wumpuscore has encoders for Latin1 and the Symbol font. 
+\wumpuscore has encoders for the Standard Latin Encoding table 
+and the Symbol font character set. 
 
 \item[\texttt{Wumpus.Core.TextLatin1.}]
 A instance of the TextEncoder type for mapping Latin 1 characters
@@ -315,6 +316,9 @@ equivalents, the package \texttt{wumpus-basic} includes a module
 \texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
 and matching them to their appropriate \texttt{TextEncoder}.
 
+Note that the Symbol font, whilst incredibly useful, is a taboo
+with the W3C and they do not condone its use in SVG or HTML.
+Likewise, certain browsers reject it out of course.
 
 \begin{tabular}{ l l }
 PostScript name   & SVG name      \\
@@ -331,7 +335,7 @@ Courier           & Courier New \\
 Courier-Oblique   & Courier New - style="italic" \\
 Courier-Bold      & Courier New - font-weight="bold" \\
 Courier-Bold-Oblique & Courier New - style="italic", font-weight="bold" \\
-Symbol & Symbol \\
+Symbol & (Symbol - see text) \\
 \hline
 \end{tabular}
 

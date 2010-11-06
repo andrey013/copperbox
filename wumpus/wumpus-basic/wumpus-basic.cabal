@@ -171,6 +171,7 @@ library
     Wumpus.Basic.Shapes.Coordinate,
     Wumpus.Basic.Shapes.Derived,
     Wumpus.Basic.Shapes.Plaintext,
+    Wumpus.Basic.Text.Datatypes,
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,

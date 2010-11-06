@@ -28,6 +28,7 @@ module Wumpus.FontKit.HtmlReport
 import Wumpus.FontKit.AfmV2Datatypes    -- TEMP
 
 import Wumpus.Core                              -- package: wumpus-core  
+import Wumpus.Basic.Text.Datatypes              -- package: wumpus-basic
 
 import Text.XHtml hiding ( code )               -- package: xhtml
 
@@ -37,14 +38,14 @@ import Numeric
 
 
 htmlReport :: String -> [(String, Int, CharBBox)] -> Html
-htmlReport font_name cs = mkHeader font_name +++ b
+htmlReport fontname cs = mkHeader fontname +++ b
   where
     b = body << charTable cs
 
 mkHeader :: String -> Html
-mkHeader font_name = header << dtitle +++ dstyle
+mkHeader fontname = header << dtitle +++ dstyle
   where
-    dtitle      = thetitle << font_name
+    dtitle      = thetitle << fontname
     dstyle      = style ! [thetype "text/css"] << inline_stylesheet
 
 
@@ -60,20 +61,13 @@ charTable xs = table << (tcaption +++ trows)
    tcaption     = caption  << "Characters "
    trows        = tbody    << zipWith charRow [1..] xs  
 
-{-
--- probably doesn\'t render...
-columnIds :: [Html]
-columnIds = map fn ["ixCol", "nameCol", "codeCol", "octCol", "bbCol"]
-  where
-    fn ss = col ! [identifier ss] << noHtml
--}
 
 charRow :: Int -> (String, Int, CharBBox) -> Html
-charRow n (name, code, bb) = 
+charRow n (charname, code, bb) = 
     tr ! [mkClass n] << [tix, tname, tcode, tcode_oct, tbb]
   where
     tix         = td ! [theclass "ixCol"]   << (stringToHtml $ show n)
-    tname       = td ! [theclass "nameCol"] << (stringToHtml $ name)
+    tname       = td ! [theclass "nameCol"] << (stringToHtml $ charname)
     tcode       = td ! [theclass "codeCol"] << (stringToHtml $ show code)
     tcode_oct   = td ! [theclass "octCol"]  << octal code
     tbb         = td ! [theclass "bbCol"]   << boundingbox bb
@@ -138,14 +132,27 @@ inline_stylesheet = primHtml $ unlines $
   , "  width: 40px;"
   , "}"
   , ""
+  , ".nameCol {" 
+  , "  text-align: left;"
+  , "  padding-left: 10px;"
+  , "  width: 160px;"
+  , "}"
+  , ""
   , ".codeCol {" 
   , "  text-align: right;"
   , "  width: 50px;"
   , "}"
   , ""
   , ".octCol {" 
-  , "  text-align: right;"
-  , "  width: 70px;"
+  , "  text-align: left;"
+  , "  padding-left: 10px;"
+  , "  width: 60px;"
+  , "}"
+  , ""
+  , ".bbCol {" 
+  , "  text-align: left;"
+  , "  padding-left: 10px;"
+  , "  width: 160px;"
   , "}"
   , ""
   , ".odd {" 
