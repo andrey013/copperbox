@@ -84,9 +84,9 @@ data AdvanceMulti u = AdvanceMulti
        , multi_graphic      :: LocGraphic u
        }       
 
-runAdvanceMulti :: Point2 u -> AdvanceMulti u -> Image u (BoundingBox u)
-runAdvanceMulti p0 (AdvanceMulti bbox _ gf) = 
-    intoImage (wrap $ runLocBoundingBox p0 bbox) (gf `at` p0)
+runAdvanceMulti :: AdvanceMulti u -> LocImage u (BoundingBox u)
+runAdvanceMulti (AdvanceMulti bbox _ gf) = 
+    intoLocImage (promote1 $ \pt -> wrap $ runLocBoundingBox pt bbox) (gf)
 
 
 vcombine :: Num u 
@@ -117,11 +117,11 @@ alignRightH :: (Num u, Ord u)
             => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
 alignRightH dy a b = AdvanceMulti bbox dimm grafic
   where
-    V2 xa ya  = multi_dimension a
-    V2 xb yb  = multi_dimension b
-    vmove     = vec (negate xb) (negate $ dy + ya)
+    V2 wa ha  = multi_dimension a
+    V2 wb hb  = multi_dimension b
+    vmove     = vec (wa - wb) (negate $ dy + ha)
     bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
-    dimm      = V2 (max xa xb) (dy + ya + yb)
+    dimm      = V2 (max wa wb) (dy + ha + hb)
     grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
 
 
@@ -129,11 +129,11 @@ alignLeftH :: (Num u, Ord u)
            => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
 alignLeftH dy a b = AdvanceMulti bbox dimm grafic
   where
-    V2 xa ya  = multi_dimension a
-    V2 xb yb  = multi_dimension b
-    vmove     = vvec (negate $ dy + ya)
+    V2 wa ha  = multi_dimension a
+    V2 wb hb  = multi_dimension b
+    vmove     = vvec (negate $ dy + ha)
     bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
-    dimm      = V2 (max xa xb) (dy + ya + yb)
+    dimm      = V2 (max wa wb) (dy + ha + hb)
     grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
 
 
@@ -141,10 +141,10 @@ alignCenterH :: (Fractional u, Ord u)
              => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
 alignCenterH dy a b = AdvanceMulti bbox dimm grafic
   where
-    V2 xa ya  = multi_dimension a
-    V2 xb yb  = multi_dimension b
-    vmove     = vec (negate $ (0.5*xa) + (0.5*xb)) (negate $ dy + ya)
+    V2 wa ha  = multi_dimension a
+    V2 wb hb  = multi_dimension b
+    vmove     = vec (0.5 * (wa-wb)) (negate $ dy + ha)
     bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
-    dimm      = V2 (max xa xb) (dy + ya + yb)
+    dimm      = V2 (max wa wb) (dy + ha + hb)
     grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
 

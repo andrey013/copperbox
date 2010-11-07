@@ -3,6 +3,7 @@
 
 module NewText where
 
+import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.Advance
@@ -39,13 +40,32 @@ testLine n = makeSingle bbox av (straightLine av)
     bbox   = oLocBoundingBox width 10
     av     = hvec width 
 
-dummyText :: (Fractional u, Ord u) => AdvanceMulti u
-dummyText = mk1 5 `align` (mk1 4 `align` mk1 6) 
+
+type CatF u = AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
+
+
+dummyText :: (Fractional u, Ord u) => CatF u -> AdvanceMulti u
+dummyText op = (((mk1 10 `op` mk1 4) `op` mk1 5) `op` mk1 6) `op` mk1 4
   where
-    align = alignRightH 16 
     mk1   = oneLineH . testLine
 
 
 pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing std_ctx $ 
-          drawi_ $ runAdvanceMulti zeroPt dummyText
+pic1 = liftToPictureU $ execTraceDrawing std_ctx $ do
+          drawi_ $ right_text  `at` P2 0 200
+          drawi_ $ left_text   `at` P2 0 100
+          drawi_ $ center_text `at` P2 0   0
+
+
+
+right_text :: (Fractional u, Ord u) => LocImage u (BoundingBox u)
+right_text = localize (strokeColour red) $ 
+               runAdvanceMulti (dummyText $ alignRightH 16)
+
+left_text :: (Fractional u, Ord u) => LocImage u (BoundingBox u)
+left_text = localize (strokeColour green) $ 
+               runAdvanceMulti (dummyText $ alignLeftH 16)
+
+center_text :: (Fractional u, Ord u) => LocImage u (BoundingBox u)
+center_text = localize (strokeColour blue) $ 
+               runAdvanceMulti (dummyText $ alignCenterH 16)
