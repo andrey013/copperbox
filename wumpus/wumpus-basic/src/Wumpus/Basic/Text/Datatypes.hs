@@ -11,10 +11,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- AfmUnit - a numeric type representing the unit of measurement in 
--- AFM font specification files.
+-- Datatypes for handling font metrics.
 --
- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Text.Datatypes
@@ -28,11 +26,20 @@ module Wumpus.Basic.Text.Datatypes
 
   , afmValue
 
-  ) where
+  , CharBoundingBox
+  , charBoundingBox
+  , destCharBoundingBox
 
+  , CharGeometry
+  , CharMetricsTable(..)
+
+
+  ) where
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+import qualified Data.Map as Map
 
 -- | a Unicode code-point.
 --
@@ -53,7 +60,32 @@ instance Show AfmUnit where
 -- | Compute the size of a measurement in Afm units scaled by the
 -- point size of the font.
 --
-afmValue :: AfmUnit -> PtSize -> Double
-afmValue u pt = afmUnit u * (ptSize pt / 1000)
+afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
+afmValue u pt = fromPtSize $ (realToFrac $ afmUnit u) * (pt / 1000)
 
+
+-- | Character bounding boxes have different coordinates to 
+-- the /normal/ bounding boxes in Wumpus. 
+--
+-- Also, they might tpically have a different unit to a Wumpus 
+-- drawing.
+-- 
+newtype CharBoundingBox cu = CharBoundingBox { 
+          getCharBoundingBox :: BoundingBox cu }
+  deriving (Eq,Show)
+
+charBoundingBox :: cu -> cu -> cu -> cu -> CharBoundingBox cu
+charBoundingBox llx lly urx ury = 
+    CharBoundingBox $ BBox (P2 llx lly) (P2 urx ury)
+
+destCharBoundingBox :: CharBoundingBox cu -> (cu,cu,cu,cu)
+destCharBoundingBox = destBoundingBox . getCharBoundingBox
+
+
+type CharGeometry cu = (CharBoundingBox cu, Vec2 cu)
+
+data CharMetricsTable cu = CharMetricsTable
+       { default_geom   :: CharGeometry cu
+       , char_geoms     :: Map.Map CodePoint (CharGeometry cu) 
+       }
 

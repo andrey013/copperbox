@@ -236,16 +236,16 @@ runGraphic :: DrawingContext -> Graphic u -> PrimGraphic u
 runGraphic ctx df = runDrawing ctx df
 
 
-runLocGraphic :: DrawingContext -> LocGraphic u -> Point2 u -> PrimGraphic u
-runLocGraphic ctx df = runDrawing ctx df
+runLocGraphic :: DrawingContext -> Point2 u -> LocGraphic u -> PrimGraphic u
+runLocGraphic ctx pt df = runDrawing ctx (situ1 df pt)
 
 
 
 runImage :: DrawingContext -> Image u a -> (a, PrimGraphic u)
 runImage ctx img = runDrawing ctx img
 
-runLocImage :: DrawingContext -> LocImage u a -> Point2 u -> (a, PrimGraphic u)
-runLocImage ctx img = runDrawing ctx img
+runLocImage :: DrawingContext -> Point2 u -> LocImage u a -> (a, PrimGraphic u)
+runLocImage ctx pt img = runDrawing ctx (situ1 img pt)
 
 
 --------------------------------------------------------------------------------
