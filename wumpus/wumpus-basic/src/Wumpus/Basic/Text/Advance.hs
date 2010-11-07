@@ -20,15 +20,19 @@ module Wumpus.Basic.Text.Advance
   
 
     AdvanceVec
-  , AdvancePath
-  , TextPath
 
-  , textLocGraphic
-  , advance
+  , AdvanceSingle
+  , AdvanceMulti
 
-  , endAlignLR
-  , startAlignLR
-  , centerAlignLR
+  , runAdvanceMulti 
+
+  , makeSingle
+  
+  , advanceR
+  , oneLineH
+  , alignRightH
+  , alignLeftH
+  , alignCenterH
 
   ) where
 
@@ -55,113 +59,92 @@ appendAdvanceVec a b = AdvanceVec $ getAdvanceVec a ^+^ getAdvanceVec b
 --
 -- It is assumed that any deviation from zero in the height
 -- component represents that the end vector is in super- or 
--- sub-script mode. As 'advanceHMax' is used to make the next 
--- line, losing the mode seems acceptable.
+-- sub-script mode. As 'advanceHMax' is used in multi-line 
+-- concatenation, losing the mode seems acceptable.
 --
-advanceHMax :: (Num u, Ord u) 
-            => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
-advanceHMax (AdvanceVec (V2 w1 _)) (AdvanceVec (V2 w2 _)) = 
-    AdvanceVec $ hvec (max w1 w2)
-
-
--- | Halve the horizontal component of the vector.
---
--- It is assumed that any deviation from zero in the height
--- component represents that the end vector is in super- or 
--- sub-script mode. Losing the mode seems acceptable.
---
-halfH :: Fractional u => AdvanceVec u -> u
-halfH (AdvanceVec (V2 w1 _)) = 0.5*w1
+advanceH :: Num u => AdvanceVec u -> Vec2 u
+advanceH (AdvanceVec (V2 w _))  = V2 w 0
 
 
 
--- | v is some measurement - generally a bounding box
---   u is the unit of the drawing (usually Double represeting a PS point).
---   a is the element - for text this is a LocGraphic.
---
-data AdvancePath u v a = 
-          Single v                    -- annotated measure - usually BBox
-                 (AdvanceVec u)       -- dimensions as a vector
-                 a                    -- element - usually a LocGraphic
 
-        | Join   v                    -- annotated measure - usually BBox 
-                 (AdvanceVec u)       -- dimensions as a vector
-                 (AdvancePath u v a)  -- left-hand-side
-                 (AdvanceVec u)       -- displacement from lhs-end to rhs-start
-                 (AdvancePath u v a)  -- right-hand-side
-  deriving (Eq,Show)
-
-type TextPath u = AdvancePath u (LocBoundingBox u) (LocGraphic u)
+-- Whoa - there\'s a lot in favour of having /Line/ and 
+-- /MultiLine/ at different types.
 
 
+data AdvanceSingle u = AdvanceSingle
+       { single_bbox        :: LocBoundingBox u
+       , single_adv_vec     :: AdvanceVec u
+       , single_graphic     :: LocGraphic u
+       }
 
-endVector :: AdvancePath u v a -> Vec2 u
-endVector (Single _ wh  _)  = getAdvanceVec wh 
-endVector (Join _ wh _ _ _) = getAdvanceVec wh 
+data AdvanceMulti u = AdvanceMulti 
+       { multi_bbox         :: LocBoundingBox u
+       , multi_dimension    :: Vec2 u
+       , multi_graphic      :: LocGraphic u
+       }       
 
--- For wumpus-core
-vreverse :: Num u => Vec2 u -> Vec2 u
-vreverse (V2 x y) = V2 (negate x) (negate y) 
-
-
-pathMeasure :: AdvancePath u v a -> v
-pathMeasure (Single v _ _)    = v
-pathMeasure (Join v _ _ _ _)  = v
-
-pathDimensions :: AdvancePath u v a -> AdvanceVec u
-pathDimensions (Single _ d _)    = d
-pathDimensions (Join _ d _ _ _)  = d
+runAdvanceMulti :: Point2 u -> AdvanceMulti u -> Image u (BoundingBox u)
+runAdvanceMulti p0 (AdvanceMulti bbox _ gf) = 
+    intoImage (wrap $ runLocBoundingBox p0 bbox) (gf `at` p0)
 
 
+vcombine :: Num u 
+         => LocGraphic u -> Vec2 u -> LocGraphic u -> LocGraphic u
+vcombine a v b = promote1 $ \p0 -> 
+    let p1   = p0 .+^ v  in (a `at` p0) `oplus` (b `at` p1)
 
-textLocGraphic :: Num u => TextPath u -> LocGraphic u
-textLocGraphic (Single _ _ a) = a
-textLocGraphic (Join _ _ l v r) = promote1 $ \p0 -> 
-    let end1 = endVector l
-        p1   = p0 .+^ (end1 ^+^ getAdvanceVec v)
-    in (textLocGraphic l `at` p0) `oplus` (textLocGraphic r `at` p1)
-
--- Concatenation operators are not associative.
+makeSingle :: LocBoundingBox u -> Vec2 u -> LocGraphic u -> AdvanceSingle u
+makeSingle bbox v gf = AdvanceSingle bbox (AdvanceVec v) gf
 
 -- | Place the second TextPath at the end of the first.
 --
-advance :: (Num u, Ord u) => TextPath u -> TextPath u -> TextPath u 
-advance a b = Join bbox dimv a nomove b
+advanceR :: (Num u, Ord u) 
+        => AdvanceSingle u -> AdvanceSingle u -> AdvanceSingle u 
+advanceR a b = AdvanceSingle bbox adv grafic
   where
-    bbox    = shiftUnion (pathMeasure a) (endVector a) (pathMeasure b)
-    dimv    = pathDimensions a `appendAdvanceVec` pathDimensions b
-    nomove  = AdvanceVec $ vec 0 0 
+    vmove   = getAdvanceVec $ single_adv_vec a
+    bbox    = shiftUnion (single_bbox a) vmove (single_bbox b)
+    adv     = single_adv_vec a `appendAdvanceVec` single_adv_vec b
+    grafic  = vcombine (single_graphic a) vmove (single_graphic b)
 
--- Whoa, this looks wrong...
--- It is only moving one line regardless of the height of @a@.
---
-endAlignLR :: (Num u, Ord u) => u -> TextPath u -> TextPath u -> TextPath u
-endAlignLR dy a b = Join bbox dimv a move b
+
+oneLineH :: Num u => AdvanceSingle u -> AdvanceMulti u
+oneLineH (AdvanceSingle bbox adv gf) = AdvanceMulti bbox (advanceH adv) gf
+
+
+alignRightH :: (Num u, Ord u) 
+            => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
+alignRightH dy a b = AdvanceMulti bbox dimm grafic
   where
-    vmove   = vreverse (endVector b) ^+^ vvec (-dy)
-    bbox    = shiftUnion (pathMeasure a) vmove (pathMeasure b)
-    dimv    = advanceHMax (pathDimensions a) (pathDimensions b)
-    move    = AdvanceVec vmove  
+    V2 xa ya  = multi_dimension a
+    V2 xb yb  = multi_dimension b
+    vmove     = vec (negate xb) (negate $ dy + ya)
+    bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
+    dimm      = V2 (max xa xb) (dy + ya + yb)
+    grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
 
 
--- Whoa, this looks wrong...
--- It is only moving one line regardless of the height of @a@.
---
-startAlignLR :: (Num u, Ord u) => u -> TextPath u -> TextPath u -> TextPath u
-startAlignLR dy a b = Join bbox dimv a move b
+alignLeftH :: (Num u, Ord u) 
+           => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
+alignLeftH dy a b = AdvanceMulti bbox dimm grafic
   where
-    vmove   = vvec (-dy)
-    bbox    = shiftUnion (pathMeasure a) vmove (pathMeasure b)
-    dimv    = advanceHMax (pathDimensions a) (pathDimensions b)
-    move    = AdvanceVec vmove  
+    V2 xa ya  = multi_dimension a
+    V2 xb yb  = multi_dimension b
+    vmove     = vvec (negate $ dy + ya)
+    bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
+    dimm      = V2 (max xa xb) (dy + ya + yb)
+    grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
 
 
-centerAlignLR :: (Fractional u, Ord u) 
-              => u -> TextPath u -> TextPath u -> TextPath u
-centerAlignLR dy a b = Join bbox dimv a move b
+alignCenterH :: (Fractional u, Ord u) 
+             => u -> AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
+alignCenterH dy a b = AdvanceMulti bbox dimm grafic
   where
-    dx      = halfH (pathDimensions a) + halfH (pathDimensions b)
-    vmove   = vec (-dx) (-dy)
-    bbox    = shiftUnion (pathMeasure a) vmove (pathMeasure b)
-    dimv    = advanceHMax (pathDimensions a) (pathDimensions b)
-    move    = AdvanceVec vmove  
+    V2 xa ya  = multi_dimension a
+    V2 xb yb  = multi_dimension b
+    vmove     = vec (negate $ (0.5*xa) + (0.5*xb)) (negate $ dy + ya)
+    bbox      = shiftUnion (multi_bbox a) vmove (multi_bbox b)
+    dimm      = V2 (max xa xb) (dy + ya + yb)
+    grafic    = vcombine (multi_graphic a) vmove (multi_graphic b)  
+
