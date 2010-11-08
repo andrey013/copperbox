@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,10 +17,7 @@
 module Wumpus.Basic.Text.Advance
   ( 
   
-
-    AdvanceVec
-
-  , AdvanceSingle
+    AdvanceSingle
   , AdvanceMulti
 
   , runAdvanceMulti 
@@ -37,39 +33,13 @@ module Wumpus.Basic.Text.Advance
   ) where
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Text.Datatypes
 import Wumpus.Basic.Text.LocBoundingBox
 
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
-
-
-
-newtype AdvanceVec u = AdvanceVec { getAdvanceVec :: Vec2 u }
-  deriving (Eq,Show)
-
-type instance DUnit (AdvanceVec u) = u
-
-appendAdvanceVec :: Num u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
-appendAdvanceVec a b = AdvanceVec $ getAdvanceVec a ^+^ getAdvanceVec b
-
--- | Take the max width and set the height to zero.
---
--- It is assumed that any deviation from zero in the height
--- component represents that the end vector is in super- or 
--- sub-script mode. As 'advanceHMax' is used in multi-line 
--- concatenation, losing the mode seems acceptable.
---
-advanceH :: Num u => AdvanceVec u -> Vec2 u
-advanceH (AdvanceVec (V2 w _))  = V2 w 0
-
-
-
-
--- Whoa - there\'s a lot in favour of having /Line/ and 
--- /MultiLine/ at different types.
 
 
 data AdvanceSingle u = AdvanceSingle
@@ -95,7 +65,7 @@ vcombine a v b = promote1 $ \p0 ->
     let p1   = p0 .+^ v  in (a `at` p0) `oplus` (b `at` p1)
 
 makeSingle :: LocBoundingBox u -> Vec2 u -> LocGraphic u -> AdvanceSingle u
-makeSingle bbox v gf = AdvanceSingle bbox (AdvanceVec v) gf
+makeSingle bbox (V2 x y) gf = AdvanceSingle bbox (advanceVec x y) gf
 
 -- | Place the second TextPath at the end of the first.
 --

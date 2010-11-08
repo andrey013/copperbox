@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,18 +27,25 @@ module Wumpus.Basic.Text.Datatypes
 
   , afmValue
 
+  , AdvanceVec
+  , getAdvanceVec
+  , advanceVec
+  , appendAdvanceVec
+  , advanceH
+
   , CharBoundingBox
   , charBoundingBox
   , destCharBoundingBox
 
-  , CharGeometry
   , CharMetricsTable(..)
-
+  , AfmCharMetricsTable
 
   ) where
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+import Data.VectorSpace                         -- package: vector-space
 
 import qualified Data.Map as Map
 
@@ -64,10 +72,39 @@ afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
 afmValue u pt = fromPtSize $ (realToFrac $ afmUnit u) * (pt / 1000)
 
 
+
+
+newtype AdvanceVec u = AdvanceVec { getAdvanceVec :: Vec2 u }
+  deriving (Eq,Show)
+
+type instance DUnit (AdvanceVec u) = u
+
+advanceVec :: u -> u -> AdvanceVec u
+advanceVec x y = AdvanceVec $ V2 x y
+
+
+
+appendAdvanceVec :: Num u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
+appendAdvanceVec a b = AdvanceVec $ getAdvanceVec a ^+^ getAdvanceVec b
+
+-- | Take the max width and set the height to zero.
+--
+-- It is assumed that any deviation from zero in the height
+-- component represents that the end vector is in super- or 
+-- sub-script mode. As 'advanceHMax' is used in multi-line 
+-- concatenation, losing the mode seems acceptable.
+--
+advanceH :: Num u => AdvanceVec u -> Vec2 u
+advanceH (AdvanceVec (V2 w _))  = V2 w 0
+
+
+
+
+
 -- | Character bounding boxes have different coordinates to 
 -- the /normal/ bounding boxes in Wumpus. 
 --
--- Also, they might tpically have a different unit to a Wumpus 
+-- Also, they might typically have a different unit to a Wumpus 
 -- drawing.
 -- 
 newtype CharBoundingBox cu = CharBoundingBox { 
@@ -82,10 +119,24 @@ destCharBoundingBox :: CharBoundingBox cu -> (cu,cu,cu,cu)
 destCharBoundingBox = destBoundingBox . getCharBoundingBox
 
 
-type CharGeometry cu = (CharBoundingBox cu, Vec2 cu)
 
 data CharMetricsTable cu = CharMetricsTable
-       { default_geom   :: CharGeometry cu
-       , char_geoms     :: Map.Map CodePoint (CharGeometry cu) 
+       { glyph_max_height   :: cu 
+       , default_adv_vec    :: Vec2 cu
+       , char_adv_vecs      :: Map.Map CodePoint (Vec2 cu)
        }
 
+type AfmCharMetricsTable = CharMetricsTable AfmUnit
+
+
+-- Note - the bounding box of a glyph is seemingly _not_ useful 
+-- for calculating the bound box of a string. For instance, 
+-- /space/ has a zero-width, zero-height bounding box as it has no
+-- content, however when drawn it does take up physical space.
+-- The size of this space is determined by its advance vector.
+--
+-- Height can be extracted from the Font bounding box.
+--
+-- Note the Font bounding box is very wide to use as a default 
+-- width...
+--

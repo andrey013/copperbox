@@ -10,8 +10,10 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Safe to use fonts.
+-- Safe to use \"Core 13\" fonts that are expected to be present
+-- for any PostScript interpreter.
 --
+-- Note - regrettably Symbol is not safe to use for SVG.
 --
 --------------------------------------------------------------------------------
 
@@ -146,9 +148,9 @@ courier_bold_oblique = FontFace "Courier-Bold-Oblique"
 
 -- | Symbol
 --
--- Note - Symbol does not appear to be well supported by some SVG
--- renders. Seemingly Chrome is fine but Firefox defaults to some
--- serif font.
+-- Note - Symbol is intentionally not supported for SVG by some 
+-- renderers (Firefox). Chrome is fine, but the use of symbol 
+-- should be still be avoided for web graphics.
 -- 
 symbol :: FontFace
 symbol = FontFace "Symbol" "Symbol" SVG_REGULAR symbol_font_encoder
