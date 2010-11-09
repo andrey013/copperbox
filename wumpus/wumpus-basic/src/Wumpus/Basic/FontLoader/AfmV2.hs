@@ -18,9 +18,13 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.FontLoader.AfmV2
-  where
+  ( 
+    AfmV2File(..)
+  , parseAfmV2File
+  
+  ) where
 
-
+import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
 
@@ -32,29 +36,27 @@ import Control.Applicative
 import Data.Char
 import qualified Data.Map as Map
 
-
 type AfmKey         = String
-type AfmName        = String
 type GlobalInfo     = Map.Map AfmKey String
 
--- These are obsolete...
-type WidthVector    = Vec2 AfmUnit
-type CharBBox       = BoundingBox AfmUnit       
 
-data CharacterMetrics = CharacterMetrics
-      { char_code               :: Int
-      , width_vector            :: WidthVector
-      , char_name               :: AfmName
-      , char_bbox               :: CharBBox
+data AfmV2File = AfmV2File 
+      { afm_v2_encoding     :: Maybe String
+      , afm_font_bbox       :: Maybe AfmBoundingBox
+      , afm_char_metrics    :: [AfmCharacterMetrics]
       }
-  deriving (Eq,Show)
+  deriving (Show) 
+
+parseAfmV2File :: FilePath -> IO (Either ParseError AfmV2File)
+parseAfmV2File filepath = runParserEither afmFile <$> readFile filepath
 
 
-{-
-afmFile :: CharParser AfmFile
-afmFile = AfmFile <$> 
-    versionNumber <*> globalInfo <*> startCharMetrics <*> many characterMetrics
--}
+afmFile :: CharParser AfmV2File
+afmFile = 
+    (\info xs -> AfmV2File (encodingScheme info) (fontBBox info) xs) 
+      <$> (versionNumber    *> globalInfo) 
+      <*> (startCharMetrics *> many characterMetrics)
+
 
 
 globalInfo :: CharParser GlobalInfo
@@ -75,74 +77,33 @@ runQuery field_name p table =
 
 
 
-fontName            :: GlobalInfo -> Maybe String
-fontName            = textQuery "FontName" 
-
-fullName            :: GlobalInfo -> Maybe String
-fullName            = textQuery "FullName"
-
-familyName          :: GlobalInfo -> Maybe String
-familyName          = textQuery "FamilyName"
-
-weight              :: GlobalInfo -> Maybe String
-weight              = textQuery "Weight"
-
-italicAngle         :: GlobalInfo -> Maybe Radian
-italicAngle         = runQuery "ItalicAngle" degree
-
-isFixedPitch        :: GlobalInfo -> Maybe Bool
-isFixedPitch        = runQuery "IsFixedPitch" bool
-
 -- | Strictly speaking a fontBBox is measured in integer units.
 --
-fontBBox            :: GlobalInfo -> Maybe CharBBox
+fontBBox            :: GlobalInfo -> Maybe AfmBoundingBox
 fontBBox            = runQuery "FontBBox" charBBox
 
-underlinePosition   :: GlobalInfo -> Maybe AfmUnit
-underlinePosition   = runQuery "UnderlinePosition" number
-
-underlineThickness  :: GlobalInfo -> Maybe AfmUnit
-underlineThickness  = runQuery "UnderlineThickness" number
-
-version             :: GlobalInfo -> Maybe String
-version             = textQuery "Version"
-
-notice              :: GlobalInfo -> Maybe String
-notice              = textQuery "Notice"
 
 encodingScheme      :: GlobalInfo -> Maybe String
 encodingScheme      = textQuery "EncodingScheme"
 
-capHeight           :: GlobalInfo -> Maybe AfmUnit
-capHeight           = runQuery "CapHeight" number
-
-xHeight             :: GlobalInfo -> Maybe AfmUnit
-xHeight             = runQuery "XHeight" number
-
-ascender            :: GlobalInfo -> Maybe AfmUnit
-ascender            = runQuery "Ascender" number
-
-descender           :: GlobalInfo -> Maybe AfmUnit
-descender           = runQuery "Descender" number
 
 
-
-characterMetrics :: CharParser CharacterMetrics
-characterMetrics = CharacterMetrics <$>
+characterMetrics :: CharParser AfmCharacterMetrics
+characterMetrics = AfmCharacterMetrics <$>
         metric "C" (-1) cint
     <*> widthVector
     <*> metric "N" "" name1
-    <*> charBBox
+    <*  charBBox
     <*  many (symbol "L" *> ligature_body <* semi)
     <*  newlineOrEOF
   where
     ligature_body = ((,) <$> name <*> name)
     
-widthVector :: CharParser WidthVector
+widthVector :: CharParser (Vec2 AfmUnit)
 widthVector =  (symbol "WX" *> ((\w -> vec w 0) <$> number) <* semi)
            <|> (symbol "W"  *> (vec <$> number <*> number)  <* semi)
 
-charBBox :: CharParser CharBBox
+charBBox :: CharParser AfmBoundingBox
 charBBox = symbol "B" *> go <* semi
   where
     go = (\llx lly urx ury -> boundingBox (P2 llx lly) (P2 urx ury))
@@ -174,9 +135,6 @@ keyName = lexeme (many1 $ satisfy isAlphaNum)
 
 
 
-keyword :: String -> CharParser ()
-keyword ss = skipOne $ symbol ss
-
 
 newlineOrEOF :: CharParser ()
 newlineOrEOF = skipOne (lexeme newline) <|> eof
@@ -195,9 +153,6 @@ semi = lexeme $ char ';'
 whiteString :: CharParser String
 whiteString = many1 (noneOf ['\n'])
 
-degree :: CharParser Radian
-degree = liftA d2r double
-
 number :: CharParser AfmUnit
 number = liftA realToFrac double
 
@@ -209,26 +164,13 @@ cint = hexInt <|> octInt <|> int
 
 
 hexInt :: CharParser Int
-hexInt = char '<' *> body  <* char '>'
-  where
-    body = (\xs -> read $ '0':'x':xs) <$> many1 hexDigit
+hexInt = lexeme $ between (char '<') (char '>') P.hexBase
+
 
 octInt :: CharParser Int
-octInt = char '\\' *> body
-  where
-    body = (\xs -> read $ '0':'o':xs) <$> many1 octDigit
+octInt = lexeme $ char '\\' *> P.octBase
 
 
-
-int :: CharParser Int
-int = lexeme go
-  where
-    go    = ($) <$> psign <*> natural
-    psign = option id (negate <$ char '-')
-
-bool :: CharParser Bool
-bool =  False <$ symbol "false"
-    <|> True  <$ symbol "true"
 
 --------------------------------------------------------------------------------
 
@@ -245,11 +187,15 @@ lexeme          = P.lexeme lp
 symbol          :: String -> CharParser String
 symbol          = lexeme . string
 
-whiteSpace      :: CharParser ()
-whiteSpace      = P.whiteSpace lp
+-- whiteSpace      :: CharParser ()
+-- whiteSpace      = P.whiteSpace lp
 
-natural         :: CharParser Int
-natural         = lexeme P.natural
+
+integer         :: CharParser Integer
+integer         = lexeme P.integer
+
+int             :: CharParser Int
+int             = fromIntegral <$> integer
 
 double          :: CharParser Double
 double          = lexeme P.double

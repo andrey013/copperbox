@@ -148,6 +148,8 @@ library
     Wumpus.Basic.Colour.X11Colours,
     Wumpus.Basic.Dots.AnchorDots,
     Wumpus.Basic.Dots.Marks,
+    Wumpus.Basic.FontLoader.AfmV2,
+    Wumpus.Basic.FontLoader.Base,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.Drawing,
@@ -178,6 +180,8 @@ library
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.Intersection,
+    Wumpus.Basic.Utils.ParserCombinators,
+    Wumpus.Basic.Utils.TokenParsers,
     Wumpus.Basic.VersionNumber,
     Wumpus.Basic.PictureLanguage
 

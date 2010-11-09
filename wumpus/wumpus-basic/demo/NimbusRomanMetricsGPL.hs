@@ -15,13 +15,13 @@ import Wumpus.Basic.Text.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import qualified Data.Map as Map
+import qualified Data.IntMap as IntMap
 
 nimbus_metrics :: CharMetricsTable AfmUnit
 nimbus_metrics = 
     CharMetricsTable { glyph_max_height = nimbus_max_height
                      , default_adv_vec  = wx 722
-                     , char_adv_vecs    = Map.fromList nimbus_char_map }
+                     , char_adv_vecs    = IntMap.fromList nimbus_char_map }
 
 
 nimbus_max_height :: AfmUnit

@@ -32,10 +32,13 @@ module Wumpus.Basic.Utils.TokenParsers
   , lexeme
   , whiteSpace
 
-  , octalBase
-  , haskOctal
+  , octBase
+  , octHask
   
+  , hexBase
+
   , natural
+  , integer
   , double
 
   ) where
@@ -100,18 +103,29 @@ whiteSpace = getLexemeParser
 
 
 
-octalBase :: CharParser Int
-octalBase = (\cs -> read $ '0':'o':cs) <$> many1 octDigit
+octBase :: CharParser Int
+octBase = (\cs -> read $ '0':'o':cs) <$> many1 octDigit
 
-haskOctal :: CharParser Int
-haskOctal = (string "0o" <|> string "0O") *> octalBase
+octHask :: CharParser Int
+octHask = (string "0o" <|> string "0O") *> octBase
 
 
--- integer :: CharParser Int
--- integer  
+hexBase :: CharParser Int
+hexBase = (\xs -> read $ '0':'x':xs) <$> many1 hexDigit
 
-natural :: CharParser Int
+
+
+--------------------------------------------------------------------------------
+
+natural :: CharParser Integer
 natural = liftA read (many1 digit)
+
+
+integer :: CharParser Integer
+integer = ($) <$> psign <*> natural
+  where
+    psign = option id (negate <$ char '-')
+
 
 double :: CharParser Double
 double = (\signf intpart fracpart -> signf $ intpart + fracpart)

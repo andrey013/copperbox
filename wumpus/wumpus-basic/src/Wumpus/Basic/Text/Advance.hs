@@ -45,7 +45,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Char
-import qualified Data.Map as Map
+import qualified Data.IntMap as IntMap
 import Data.Maybe
 
 
@@ -157,5 +157,5 @@ scaleVector sz (V2 x y) = vec (afmValue x sz) (afmValue y sz)
 
 lookupCodePoint :: CodePoint -> AfmCharMetricsTable -> Vec2 AfmUnit
 lookupCodePoint n t = 
-    fromMaybe (default_adv_vec t) $ Map.lookup n (char_adv_vecs t)
+    fromMaybe (default_adv_vec t) $ IntMap.lookup n (char_adv_vecs t)
 

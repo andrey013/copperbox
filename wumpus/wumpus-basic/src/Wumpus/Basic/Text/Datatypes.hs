@@ -23,7 +23,6 @@ module Wumpus.Basic.Text.Datatypes
 
   -- * AFM file measurement unit
   , AfmUnit
-  , afmUnit
 
   , afmValue
 
@@ -42,7 +41,7 @@ module Wumpus.Basic.Text.Datatypes
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import qualified Data.Map as Map
+import qualified Data.IntMap as IntMap
 
 -- | a Unicode code-point.
 --
@@ -53,18 +52,18 @@ type CodePoint = Int
 -- (Point size) of a font. AFM files encode all measurements 
 -- as these units. 
 -- 
-newtype AfmUnit = AfmUnit { afmUnit :: Double } 
+newtype AfmUnit = AfmUnit { getAfmUnit :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
 instance Show AfmUnit where
-  showsPrec p d = showsPrec p (afmUnit d)
+  showsPrec p d = showsPrec p (getAfmUnit d)
 
 
 -- | Compute the size of a measurement in Afm units scaled by the
 -- point size of the font.
 --
 afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
-afmValue u pt = fromPtSize $ (realToFrac $ afmUnit u) * (pt / 1000)
+afmValue u pt = fromPtSize $ (realToFrac $ getAfmUnit u) * (pt / 1000)
 
 
 
@@ -107,7 +106,7 @@ destCharBoundingBox = destBoundingBox . getCharBoundingBox
 data CharMetricsTable cu = CharMetricsTable
        { glyph_max_height   :: cu 
        , default_adv_vec    :: Vec2 cu
-       , char_adv_vecs      :: Map.Map CodePoint (Vec2 cu)
+       , char_adv_vecs      :: IntMap.IntMap (Vec2 cu)
        }
 
 type AfmCharMetricsTable = CharMetricsTable AfmUnit
