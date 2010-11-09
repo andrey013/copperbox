@@ -28,9 +28,6 @@ module Wumpus.Basic.Text.Datatypes
   , afmValue
 
   , AdvanceVec
-  , getAdvanceVec
-  , advanceVec
-  , appendAdvanceVec
   , advanceH
 
   , CharBoundingBox
@@ -44,8 +41,6 @@ module Wumpus.Basic.Text.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
-import Data.VectorSpace                         -- package: vector-space
 
 import qualified Data.Map as Map
 
@@ -74,18 +69,7 @@ afmValue u pt = fromPtSize $ (realToFrac $ afmUnit u) * (pt / 1000)
 
 
 
-newtype AdvanceVec u = AdvanceVec { getAdvanceVec :: Vec2 u }
-  deriving (Eq,Show)
-
-type instance DUnit (AdvanceVec u) = u
-
-advanceVec :: u -> u -> AdvanceVec u
-advanceVec x y = AdvanceVec $ V2 x y
-
-
-
-appendAdvanceVec :: Num u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
-appendAdvanceVec a b = AdvanceVec $ getAdvanceVec a ^+^ getAdvanceVec b
+type AdvanceVec u = Vec2 u
 
 -- | Take the max width and set the height to zero.
 --
@@ -95,7 +79,7 @@ appendAdvanceVec a b = AdvanceVec $ getAdvanceVec a ^+^ getAdvanceVec b
 -- concatenation, losing the mode seems acceptable.
 --
 advanceH :: Num u => AdvanceVec u -> Vec2 u
-advanceH (AdvanceVec (V2 w _))  = V2 w 0
+advanceH (V2 w _)  = V2 w 0
 
 
 
@@ -140,3 +124,5 @@ type AfmCharMetricsTable = CharMetricsTable AfmUnit
 -- Note the Font bounding box is very wide to use as a default 
 -- width...
 --
+
+
