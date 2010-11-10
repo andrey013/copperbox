@@ -6,7 +6,6 @@ module AfmTables where
 import Wumpus.FontKit.AfmV2Datatypes
 import Wumpus.FontKit.AfmV2Parser
 import Wumpus.FontKit.HtmlReport
-import Wumpus.FontKit.Utils.ParserCombinators
 
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -14,7 +13,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Chains 
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
-
+import Wumpus.Basic.Utils.ParserCombinators
 
 import Text.XHtml hiding ( name )               -- package: xhtml
 

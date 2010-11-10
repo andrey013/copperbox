@@ -22,8 +22,8 @@ module Wumpus.FontKit.AfmV2Parser
 
 
 import Wumpus.FontKit.AfmV2Datatypes
-import Wumpus.FontKit.Utils.ParserCombinators
-import qualified Wumpus.FontKit.Utils.TokenParser as P
+import Wumpus.Basic.Utils.ParserCombinators
+import qualified Wumpus.Basic.Utils.TokenParsers as P
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Text.Datatypes              -- package: wumpus-basic
@@ -182,37 +182,16 @@ number :: CharParser AfmUnit
 number = liftA realToFrac double
 
 
-double :: CharParser Double
-double = lexeme go 
-  where
-    go        = (\signf intpart fracpart -> signf $ intpart + fracpart)
-                  <$> psign <*> onatural <*> ofrac
-    psign     = option id (negate <$ char '-')
-    onatural  = option 0  (fromIntegral <$> natural)
-    ofrac     = option 0  ((\xs -> read $ '.':xs) <$> (char '.' *> (many1 digit)))
-
-
 cint :: CharParser Int
 cint = hexInt <|> octInt <|> int
 
 
 hexInt :: CharParser Int
-hexInt = char '<' *> body  <* char '>'
-  where
-    body = (\xs -> read $ '0':'x':xs) <$> many1 hexDigit
+hexInt = lexeme $ between (char '<') (char '>') P.hexBase
 
 octInt :: CharParser Int
-octInt = char '\\' *> body
-  where
-    body = (\xs -> read $ '0':'o':xs) <$> many1 octDigit
+octInt = lexeme $ char '\\' *> P.octBase
 
-
-
-int :: CharParser Int
-int = lexeme go
-  where
-    go    = ($) <$> psign <*> natural
-    psign = option id (negate <$ char '-')
 
 bool :: CharParser Bool
 bool =  False <$ symbol "false"
@@ -222,22 +201,27 @@ bool =  False <$ symbol "false"
 
 -- no newline in whitespace
 
-afm_lexer :: LexerDef
-afm_lexer = emptyDef { whitespace_chars = "\t "
-                     , comment_line     = "Comment" }
 
-tp :: P.TokenParsers
-tp = P.makeTokenParsers afm_lexer
+
+lp :: P.LexemeParser
+lp = P.commentLineLexemeParser "Comment" [' ', '\t']
 
 
 lexeme          :: CharParser a -> CharParser a
-lexeme          = P.lexeme tp
+lexeme          = P.lexeme lp
 
 symbol          :: String -> CharParser String
-symbol          = P.symbol tp
+symbol          = lexeme . string
 
-whiteSpace      :: CharParser ()
-whiteSpace      = P.whiteSpace tp
+-- whiteSpace      :: CharParser ()
+-- whiteSpace      = P.whiteSpace lp
 
-natural         :: CharParser Int
-natural         = P.natural tp
+
+integer         :: CharParser Integer
+integer         = lexeme P.integer
+
+int             :: CharParser Int
+int             = fromIntegral <$> integer
+
+double          :: CharParser Double
+double          = lexeme P.double

@@ -104,11 +104,12 @@ runParser p = getParser p skZero fkZero
     fkZero = Fail "" []
 
 
-runParserEither :: Parser s a -> [s] -> Either ParseError a
+runParserEither :: Show s => Parser s a -> [s] -> Either ParseError a
 runParserEither p = post . runParser p
   where    
-    post (Okay a _)   = Right a
-    post (Fail err _) = Left err
+    post (Okay a _)    = Right a
+    post (Fail err []) = Left $ err ++ "\nUnexpected EOF"
+    post (Fail err ss) = Left $ err ++ "\n" ++ (take 20 $ show ss)
 
 
 -- @return@ of Monad, @pure@ of Applicative

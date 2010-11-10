@@ -94,7 +94,7 @@ boundingbox (BBox (P2 llx lly) (P2 urx ury)) =
 -- Strings ...
 
 afmunitS :: AfmUnit -> ShowS
-afmunitS = step . afmUnit
+afmunitS = step . realToFrac
   where
     step d  = let d'= tol d in if d == d' then top d else dec d
 
