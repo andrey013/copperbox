@@ -20,24 +20,26 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.FontKit.GlyphList
-  where
+  ( 
+    gen_GlyphNamesModule 
+  , gen_GlyphIndicesModule
+
+  ) where
 
 import Wumpus.FontKit.GlyphListParser
 
 import Wumpus.Basic.Utils.FormatCombinators
 
-import qualified Data.IntMap as IntMap
+import qualified Data.IntMap    as IntMap
+import qualified Data.Map       as Map
 import Data.Time
 
 
-remap :: GlyphList -> IntMap.IntMap String
-remap = foldr step IntMap.empty
-  where
-    step (s,ns) acc = foldr (\i a -> IntMap.insert i s a) acc ns
+--------------------------------------------------------------------------------
+-- 
 
-
-gen_GlyphListModule :: [(String,UCode)] -> ZonedTime -> Doc
-gen_GlyphListModule xs ztime = 
+gen_GlyphNamesModule :: [(String,UCode)] -> ZonedTime -> Doc
+gen_GlyphNamesModule xs ztime = 
     vcat [ wallDirective, empty, modu_comment, empty
          , modu_start
          , empty
@@ -88,6 +90,61 @@ gen_psGlyphTable (x:xs) =
     fn (i,s)   = let ix = text "0x" <> hex4 i
                  in lparen <+> ix <> comma <+> (dquotes $ text s) <+> rparen
 
+--------------------------------------------------------------------------------
+-- Glyph indices
+
+gen_GlyphIndicesModule :: [(String,UCode)] -> ZonedTime -> Doc
+gen_GlyphIndicesModule xs ztime = 
+    vcat [ wallDirective, empty, modu_comment, empty
+         , modu_start
+         , empty
+         , modu_imports
+         , empty
+         , table_body 
+         , empty
+         ]
+  where
+    qmodname     = "Wumpus.Core.Text.GlyphIndices"
+    year_string  = yearName ztime
+    descr_body   = [ "Map of PostScript glyph names to Unicode code points."
+                   , ""
+                   , "\\*\\* This file is auto-generated. \\*\\*" ]
+    
+    modu_comment = gen_haddockModuleBlock qmodname year_string descr_body ztime
+    modu_start   = gen_moduleDecl qmodname ["ps_glyph_indices"]
+    modu_imports = lhspre $ text "import Data.Map ( Map, fromAscList )"
+    table_body   = gen_PSGlyphIndices $ buildGlyphIndices xs
+
+
+
+buildGlyphIndices :: [(String,UCode)] -> Map.Map String Int
+buildGlyphIndices = foldr fn Map.empty
+  where
+    fn (s,ixs) acc = foldr (\i a -> Map.insert s i a) acc ixs
+
+
+gen_PSGlyphIndices :: Map.Map String Int -> Doc
+gen_PSGlyphIndices mm =
+    vcat [ haddockComment doc_string, empty, type_sig, fun_decl ]
+  where
+    doc_string = [ "Lookup table mapping from PostScript glyph name"
+                 , "to the corresponding Unicode code point." ]
+
+    type_sig   = lhspre $ text "ps_glyph_indices :: Map String Int"
+    fun_decl   = vconcat (lhspre $ text "ps_glyph_indices = fromAscList $")
+                         (gen_psIndexTable $ Map.toAscList mm)
+
+
+gen_psIndexTable :: [(String,Int)] -> Doc
+gen_psIndexTable []     = lhspre $ text "    [ ]"
+gen_psIndexTable (x:xs) = 
+    vcat [ first_elem,  rest_elems, lhspre $ text "   ]" ]
+  where
+    first_elem = lhspre $ text "    [" <> fn x
+    rest_elems = vcat $ map (\a -> lhspre $ text "    ," <> fn a) xs
+
+    fn (s,i)   = let ix = text "0x" <> hex4 i
+                 in lparen <+> (dquotes $ text s) <> comma <+> ix <+> rparen
 
 --------------------------------------------------------------------------------
 

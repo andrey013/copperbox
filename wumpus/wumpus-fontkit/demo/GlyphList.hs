@@ -9,14 +9,13 @@ import Wumpus.FontKit.GlyphListParser
 import Wumpus.Basic.Utils.FormatCombinators ( writeDoc )
 import Wumpus.Basic.Utils.ParserCombinators
 
-import Wumpus.Core.Text.GlyphNames
+-- check to see of generated code compiles...
+-- import Wumpus.Core.Text.GlyphNames
+-- import Wumpus.Core.Text.GlyphIndices
 
 import Data.Time
 import System.Directory
 
-dummy = do 
-    ztime <- getZonedTime 
-    putStr $ show $ gen_GlyphListModule [] ztime
 
 
 -- Edit this path!
@@ -48,5 +47,7 @@ process1 = do
     case ans of
       Left err -> print $ err
       Right xs -> do ztime  <- getZonedTime
-                     let doc = gen_GlyphListModule xs ztime
-                     writeDoc "out/GlyphNames.lhs" doc
+                     let d1 = gen_GlyphNamesModule xs ztime
+                     writeDoc "out/GlyphNames.lhs" d1
+                     let d2 = gen_GlyphIndicesModule xs ztime
+                     writeDoc "out/GlyphIndices.lhs" d2
