@@ -179,6 +179,7 @@ library
     Wumpus.Basic.Text.LRSymbol,
     Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
+    Wumpus.Basic.Utils.FormatCombinators,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.Utils.ParserCombinators,
     Wumpus.Basic.Utils.TokenParsers,

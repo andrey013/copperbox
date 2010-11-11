@@ -4,10 +4,20 @@
 module GlyphList where
 
 import Wumpus.FontKit.GlyphList
+import Wumpus.FontKit.GlyphListParser
 
+import Wumpus.Basic.Utils.FormatCombinators ( writeDoc )
 import Wumpus.Basic.Utils.ParserCombinators
 
+import Wumpus.Core.Text.GlyphNames
+
+import Data.Time
 import System.Directory
+
+dummy = do 
+    ztime <- getZonedTime 
+    putStr $ show $ gen_GlyphListModule [] ztime
+
 
 -- Edit this path!
 -- ***************
@@ -16,8 +26,6 @@ pathto_glyphlist :: FilePath
 pathto_glyphlist = "./samples/glyphlist.txt"
 
 
-demo1 = runParserEither glyphDesc "A;0041"
-demo2 = runParserEither glyphName "A;0041"
 
 
 main :: IO ()
@@ -36,7 +44,9 @@ process1 :: IO ()
 process1 = do
     putStrLn $ "Processing glyphlist..."
     ss <- readFile $ pathto_glyphlist
-    let ans = runParserEither afmFile ss
+    let ans = runParserEither glyphList ss
     case ans of
       Left err -> print $ err
-      Right xs -> print $ show (length xs) ++ " enties..."
+      Right xs -> do ztime  <- getZonedTime
+                     let doc = gen_GlyphListModule xs ztime
+                     writeDoc "out/GlyphNames.lhs" doc

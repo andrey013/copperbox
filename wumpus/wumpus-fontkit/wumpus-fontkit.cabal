@@ -39,9 +39,9 @@ library
   exposed-modules:
     Wumpus.FontKit.AfmV2Datatypes,
     Wumpus.FontKit.AfmV2Parser,
-    Wumpus.FontKit.HtmlReport
-    Wumpus.FontKit.Utils.ParserCombinators,
-    Wumpus.FontKit.Utils.TokenParser,
+    Wumpus.FontKit.GlyphList,
+    Wumpus.FontKit.GlyphListParser,
+    Wumpus.FontKit.HtmlReport,
     Wumpus.FontKit.VersionNumber
     
 
