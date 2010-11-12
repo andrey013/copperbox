@@ -79,13 +79,12 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
 
-escapeSpecial :: CharCode -> String
-escapeSpecial i = "&#" ++ show i ++ ";"
+escapeSpecial :: Int -> Doc
+escapeSpecial i = text "&#" <> int i <> char ';'
 
 
 -- Note - it is easier put particular attrs at the end (esp. d 

@@ -37,9 +37,6 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PtSize
-  , module Wumpus.Core.Text.Encoder
-  , module Wumpus.Core.Text.Latin1
-  , module Wumpus.Core.Text.SymbolFont
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
 
@@ -57,9 +54,6 @@ import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PtSize
-import Wumpus.Core.Text.Encoder
-import Wumpus.Core.Text.Latin1
-import Wumpus.Core.Text.SymbolFont
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
 

@@ -61,8 +61,8 @@ import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PtSize
-import Wumpus.Core.Text.Latin1
-import Wumpus.Core.Text.TextInternal
+import Wumpus.Core.Text.Base
+import Wumpus.Core.Text.StandardEncoding
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
@@ -733,6 +733,6 @@ zeroGS = GraphicsState { gs_draw_colour  = black
                        }
   where
     unmatchable_face = FontFace "DONT_MATCH"     "" 
-                                SVG_BOLD_OBLIQUE latin1_font_encoder
+                                SVG_BOLD_OBLIQUE standard_encoding
 
 

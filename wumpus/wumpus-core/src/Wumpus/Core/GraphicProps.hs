@@ -51,8 +51,8 @@ module Wumpus.Core.GraphicProps
   ) where
 
 import Wumpus.Core.Colour
-import Wumpus.Core.Text.Encoder
-import Wumpus.Core.Text.Latin1
+import Wumpus.Core.Text.Base
+import Wumpus.Core.Text.StandardEncoding
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -111,10 +111,10 @@ data FontAttr = FontAttr
 -- | 'FontFace' : @ postscript_name * svg_font_family * svg_font_style @
 --
 data FontFace = FontFace
-      { font_name       :: String        -- for PostScript
-      , svg_font_family :: String        -- for SVG
-      , svg_font_style  :: SVGFontStyle
-      , font_enc_name   :: FontEncoderName
+      { ps_font_name            :: String
+      , svg_font_family         :: String
+      , svg_font_style          :: SVGFontStyle
+      , font_enc_vector         :: EncodingVector
       }
   deriving (Eq,Ord,Show)
 
@@ -181,7 +181,7 @@ instance Format PathProps where
 
 instance Format LabelProps where
   format (LabelProps rgb attr) = format rgb 
-                             <+> text (font_name $ font_face attr)
+                             <+> text (ps_font_name $ font_face attr)
 
 instance Format EllipseProps where
   format (EFill rgb)          = format rgb <+> text "Fill"
@@ -211,10 +211,10 @@ default_stroke_attr = StrokeAttr { line_width      = 1
 defaultFont :: Int -> FontAttr
 defaultFont sz = FontAttr sz face 
   where
-    face = FontFace { font_name         = "Courier"
+    face = FontFace { ps_font_name      = "Courier"
                     , svg_font_family   = "Courier New"
                     , svg_font_style    = SVG_REGULAR
-                    , font_enc_name     = latin1_font_encoder
+                    , font_enc_vector   = standard_encoding
                     }
 
 

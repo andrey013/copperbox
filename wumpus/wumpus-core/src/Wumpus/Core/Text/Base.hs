@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.Text.TextInternal
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Module      :  Wumpus.Core.Text.Base
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -14,47 +14,37 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.Text.TextInternal
+module Wumpus.Core.Text.Base
   ( 
 
     EncodedText(..)    
-  , TextChunk(..)
   , EncodedChar(..)
+  , EncodingVector
 
-  , textLength
-  , lookupByCharCode  
-  , lookupByGlyphName
-  , getSvgFallback
-  , getPsFallback
-  
+  , textLength  
   , lexLabel
 
   ) where
 
-import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Char
-import qualified Data.Map as Map
+import qualified Data.IntMap as IntMap
 
-newtype EncodedText = EncodedText { getEncodedText :: [TextChunk] }
+newtype EncodedText = EncodedText { getEncodedText :: [EncodedChar] }
   deriving (Eq,Show)
 
--- | Wumpus supports both escaped names e.g. @egrave@ and escaped
--- (numeric decimal) character codes in the input string for a 
--- TextLabel.
--- 
-data TextChunk = TextSpan    String
-               | TextEscInt  Int
-               | TextEscName GlyphName
-  deriving (Eq,Show)
 
 -- | For KernLabels Wumpus needs a Char version of TextChunk.
 --
 data EncodedChar = CharLiteral Char
                  | CharEscInt  Int
-                 | CharEscName GlyphName
+                 | CharEscName String
   deriving (Eq,Show)
+
+
+
+type EncodingVector = IntMap.IntMap String
 
 
 --------------------------------------------------------------------------------
@@ -62,10 +52,6 @@ data EncodedChar = CharLiteral Char
 instance Format EncodedText where
   format = hcat . map format . getEncodedText
 
-instance Format TextChunk where
-  format (TextSpan s)    = text s
-  format (TextEscInt i)  = text "&#" <> int i  <> semicolon
-  format (TextEscName s) = text "&#" <> text s <> semicolon
 
 instance Format EncodedChar where
   format (CharLiteral c) = char c
@@ -77,29 +63,7 @@ instance Format EncodedChar where
 
 
 textLength :: EncodedText -> Int
-textLength = foldr add 0 . getEncodedText where 
-    add (TextSpan s) n = n + length s
-    add _            n = n + 1
-
-
-lookupByCharCode :: FontEncoderName -> CharCode -> TextEncoder -> Maybe GlyphName
-lookupByCharCode name i enc = 
-    Map.lookup name (font_encoder_map enc) >>= \a -> (ps_lookup a) i
-
-lookupByGlyphName :: FontEncoderName -> GlyphName -> TextEncoder -> Maybe CharCode
-lookupByGlyphName name i enc = 
-    Map.lookup name (font_encoder_map enc) >>= \a -> (svg_lookup a) i
-
-
-getSvgFallback :: FontEncoderName -> TextEncoder -> CharCode
-getSvgFallback name enc = case Map.lookup name (font_encoder_map enc) of
-   Just fe -> svg_fallback fe 
-   Nothing -> 0o040                     -- wild guess
-
-getPsFallback :: FontEncoderName -> TextEncoder -> GlyphName
-getPsFallback name enc = case Map.lookup name (font_encoder_map enc) of
-   Just fe -> ps_fallback fe 
-   Nothing -> "space"                    -- wild guess
+textLength = length . getEncodedText where 
 
 
 -- | 'lexLabel' input is regular text and escaped glyph names or
@@ -123,42 +87,41 @@ lexLabel = EncodedText . lexer
 -- Note - the lexer reads number spans with isDigit, so reads 
 -- decimals only.
 -- 
-lexer :: String -> [TextChunk]
+lexer :: String -> [EncodedChar]
 lexer []            = []
 lexer ('&':'#':cs)  = escStart cs
-lexer (c:cs)        = let (ss,rest) = span (/= '&') cs 
-                      in TextSpan (c:ss) : lexer rest
+lexer (c:cs)        = CharLiteral c : lexer cs
 
-escStart :: String -> [TextChunk]
+escStart :: String -> [EncodedChar]
 escStart ('0':'o':cs)           = escOct cs
 escStart ('0':'O':cs)           = escOct cs
 escStart ('0':'x':cs)           = escHex cs
 escStart ('0':'X':cs)           = escHex cs
 escStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
 escStart (c:cs)                 = let (ss,rest) = span isAlphaNum cs 
-                                  in TextEscName (c:ss) : chompToSemi rest
+                                  in CharEscName (c:ss) : chompToSemi rest
 escStart []                     = [] 
 
 -- | One digit consumed already...
 --
-escDec :: Int -> String -> [TextChunk]
+escDec :: Int -> String -> [EncodedChar]
 escDec n (c:cs) | isDigit c = escDec (n*10 + digitToInt c) cs
-escDec n cs     | n > 0     = TextEscInt n : chompToSemi cs
+escDec n cs     | n > 0     = CharEscInt n : chompToSemi cs
                 | otherwise = chompToSemi cs
 
-escHex :: String -> [TextChunk]
+escHex :: String -> [EncodedChar]
 escHex = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*16 + digitToInt c) cs
-    step n cs     | n > 0        = TextEscInt n : chompToSemi cs
+    step n cs     | n > 0        = CharEscInt n : chompToSemi cs
                   | otherwise    = chompToSemi cs 
 
 
-escOct :: String -> [TextChunk]
+escOct :: String -> [EncodedChar]
 escOct = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*8 + digitToInt c) cs
-    step n cs     | n > 0        = TextEscInt n : chompToSemi cs
+    step n cs     | n > 0        = CharEscInt n : chompToSemi cs
                   | otherwise    = chompToSemi cs 
 
 
@@ -166,7 +129,7 @@ escOct = step 0
 -- The last two conditions both indicate ill-formed input, but it
 -- is /best/ if the lexer does not throw errors.
 -- 
-chompToSemi :: String -> [TextChunk]
+chompToSemi :: String -> [EncodedChar]
 chompToSemi (';':cs) = lexer cs
 chompToSemi (_:cs)   = chompToSemi cs           
 chompToSemi []       = []

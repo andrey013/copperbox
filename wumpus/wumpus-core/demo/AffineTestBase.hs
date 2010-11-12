@@ -47,8 +47,8 @@ data AffineTrafoAlg = AffineTrafoAlg
 runATA :: AffineTrafoAlg -> IO ()
 runATA ata = do 
     { putStrLn $ ata_console_msg ata
-    ; writeEPS_latin1 (ata_eps_file ata) pic
-    ; writeSVG_latin1 (ata_svg_file ata) pic 
+    ; writeEPS (ata_eps_file ata) pic
+    ; writeSVG (ata_svg_file ata) pic 
     }
   where
     pic = buildPictureATA (ata_prim_constructor ata) 
@@ -92,8 +92,8 @@ data ControlPointAlg = ControlPointAlg
 runCPA :: ControlPointAlg -> IO ()
 runCPA cpa = do 
     { putStrLn $ cpa_console_msg cpa
-    ; writeEPS_latin1 (cpa_eps_file cpa) pic
-    ; writeSVG_latin1 (cpa_svg_file cpa) pic
+    ; writeEPS (cpa_eps_file cpa) pic
+    ; writeSVG (cpa_svg_file cpa) pic
     }
   where
     pic = cpPicture (cpa_prim_constructor cpa) (cpa_prim_transformer cpa)

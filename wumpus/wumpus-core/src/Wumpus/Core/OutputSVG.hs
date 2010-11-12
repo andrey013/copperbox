@@ -32,7 +32,6 @@ module Wumpus.Core.OutputSVG
   -- * Output SVG
     writeSVG
 
-  , writeSVG_latin1
 
   ) where
 
@@ -43,55 +42,52 @@ import Wumpus.Core.GraphicProps
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVGDoc
-import Wumpus.Core.Text.DefaultEncoder
-import Wumpus.Core.Text.Encoder
-import Wumpus.Core.Text.TextInternal
 import Wumpus.Core.TrafoInternal
+import Wumpus.Core.Text.Base
+import Wumpus.Core.Text.GlyphIndices
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
 import Control.Applicative hiding ( empty, some )
+import Data.Char
+import qualified Data.Map as Map
 import Data.Maybe
 
 -- SvgMonad is two Readers plus Int state for clip paths...
 --
 
+type ClipCount = Int
 
 newtype SvgMonad a = SvgMonad { 
-          getSvgMonad :: TextEncoder -> GraphicsState -> Int -> (a,Int) }
+          getSvgMonad :: GraphicsState -> ClipCount -> (a,ClipCount) }
 
 
 
 instance Functor SvgMonad where
-  fmap f mf = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad mf r1 r2 s
-                                     in (f a,s1)
+  fmap f mf = SvgMonad $ \r s -> let (a,s1) = getSvgMonad mf r s
+                                 in (f a,s1)
 
 instance Applicative SvgMonad where
-  pure a    = SvgMonad $ \_  _  s -> (a,s)
-  mf <*> ma = SvgMonad $ \r1 r2 s -> let (f,s1) = getSvgMonad mf r1 r2 s
-                                         (a,s2) = getSvgMonad ma r1 r2 s1
-                                   in (f a, s2)
+  pure a    = SvgMonad $ \_ s -> (a,s)
+  mf <*> ma = SvgMonad $ \r s -> let (f,s1) = getSvgMonad mf r s
+                                     (a,s2) = getSvgMonad ma r s1
+                                 in (f a, s2)
 
 instance Monad SvgMonad where
-  return a  = SvgMonad $ \_  _  s -> (a,s)
-  m >>= k   = SvgMonad $ \r1 r2 s -> let (a,s1) = getSvgMonad m r1 r2 s
-                                     in (getSvgMonad . k) a r1 r2 s1
+  return a  = SvgMonad $ \_ s -> (a,s)
+  m >>= k   = SvgMonad $ \r s -> let (a,s1) = getSvgMonad m r s
+                                 in (getSvgMonad . k) a r s1
                             
 
 
-runSvgMonad :: TextEncoder -> SvgMonad a -> a
-runSvgMonad enc mf = fst $ getSvgMonad mf enc zeroGS 0
+runSvgMonad :: SvgMonad a -> a
+runSvgMonad mf = fst $ getSvgMonad mf zeroGS 0
 
 newClipLabel :: SvgMonad String
-newClipLabel = SvgMonad $ \_ _ s -> ('c':'l':'i':'p':show s, s+1)
+newClipLabel = SvgMonad $ \_ s -> ('c':'l':'i':'p':show s, s+1)
 
 
-getGlyphName :: FontEncoderName -> String -> SvgMonad (Either GlyphName GlyphName)
-getGlyphName fen glyname = SvgMonad $ \r1 _ s -> 
-    case lookupByGlyphName fen glyname r1 of
-      Just a  -> (Right $ escapeSpecial a, s)
-      Nothing -> (Left  $ escapeSpecial $ getSvgFallback fen r1, s)
 
 -- This is different to the PsMonad version, as SVG is nested 
 -- (and /graphics state/ is via a Reader), so it is the same as 
@@ -99,11 +95,11 @@ getGlyphName fen glyname = SvgMonad $ \r1 _ s ->
 --
 runLocalGS :: (GraphicsState -> GraphicsState) -> SvgMonad a -> SvgMonad a
 runLocalGS upd mf = 
-    SvgMonad $ \r1 r2 s -> getSvgMonad mf r1 (upd r2) s
+    SvgMonad $ \r s -> getSvgMonad mf (upd r) s
 
 
 askGraphicsState :: SvgMonad GraphicsState
-askGraphicsState = SvgMonad $ \_ r2 s -> (r2,s)
+askGraphicsState = SvgMonad $ \r s -> (r,s)
 
 asksGraphicsState :: (GraphicsState -> a) -> SvgMonad a
 asksGraphicsState fn = fmap fn askGraphicsState
@@ -128,38 +124,32 @@ askDashPattern  :: SvgMonad DashPattern
 askDashPattern  = asksGraphicsState (dash_pattern . gs_stroke_attr)
 
 
+--------------------------------------------------------------------------------
+
+
+svgChar :: EncodedChar -> Doc
+svgChar (CharLiteral c) | ord c < 0x80  = char c
+svgChar (CharLiteral c)                 = escapeSpecial $ ord c
+svgChar (CharEscInt i)                  = escapeSpecial i
+svgChar (CharEscName s)                 = 
+   escapeSpecial $ fromMaybe 0x0020 $ Map.lookup s ps_glyph_indices 
 
 --------------------------------------------------------------------------------
 
 -- | Output a picture to a SVG file. 
 --
--- Generally an encoder should always support the principal
--- encoders for the fonts used (e.g. Latin1) /and/ the encoder for
--- the Symbol font, as characters from the Symbol font may be used 
--- as decorations for plot marks, etc.
---
 writeSVG :: (Real u, Floating u, PSUnit u) 
-         => FilePath -> TextEncoder -> Picture u -> IO ()
-writeSVG filepath enc pic = 
-    writeFile filepath $ show $ svgDraw enc pic 
+         => FilePath -> Picture u -> IO ()
+writeSVG filepath pic = 
+    writeFile filepath $ show $ svgDraw pic 
 
--- | Version of 'writeSVG' - using Latin1 and Symbol font encoders. 
---
--- Generally an encoder should always support the principal
--- encoders for the fonts used (e.g. Latin1) /and/ the encoder for 
--- the Symbol font, as characters from the Symbol font may be used 
--- as decorations for plot marks, etc.
---
-writeSVG_latin1 :: (Real u, Floating u, PSUnit u) 
-                => FilePath -> Picture u -> IO ()
-writeSVG_latin1 filepath = writeSVG filepath defaultEncoder
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
-        => TextEncoder -> Picture u -> Doc
-svgDraw enc original_pic = 
+        => Picture u -> Doc
+svgDraw original_pic = 
     let pic          = trivialTranslation original_pic
         (_,imgTrafo) = imageTranslation pic
-        body         = runSvgMonad enc $ picture pic
+        body         = runSvgMonad $ picture pic
     in vcat [ xml_version, doctype, elem_svg $ imgTrafo body ]
 
 
@@ -172,12 +162,6 @@ imageTranslation pic = case repositionDeltas pic of
                    in (bb, elem_g attr)
 
 --------------------------------------------------------------------------------
-
--- Note - it will be wise to make coordinate remapping and output
--- separate passes (unlike in Wumpus-Core). Then I\'ll at least 
--- be able to debug the remapped Picture.
---
-
 
 
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
@@ -297,36 +281,30 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 primLabel :: (Real u, Floating u, PSUnit u) 
       => LabelProps -> PrimLabel u -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel pt body ctm) = 
-    (\fa ca dtxt -> elem_text (fa <+> ca) (makeTspan rgb dtxt))
-      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm (labelBodyCoords body)
-                               <*> labelBodyText fen body
+    (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
+      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm coordf
+                               
   where
-    fen = font_enc_name $ font_face attrs    
+    coordf = \p0 -> pure $ labelBodyCoords body p0
+    dtext  = labelBodyText body
+
+labelBodyCoords :: PSUnit u => LabelBody u -> Point2 u -> Doc
+labelBodyCoords (StdLayout _)  pt = makeXY pt
+labelBodyCoords (KernTextH xs) pt = makeXsY pt xs        
+labelBodyCoords (KernTextV xs) pt = makeXYs pt xs
+
+labelBodyText :: LabelBody u -> Doc
+labelBodyText (StdLayout enctext) = encodedText enctext
+labelBodyText (KernTextH xs)      = kerningText xs
+labelBodyText (KernTextV xs)      = kerningText xs
 
 
-labelBodyCoords :: PSUnit u => LabelBody u -> Point2 u -> SvgMonad Doc
-labelBodyCoords (StdLayout _)  pt = pure $ makeXY pt
-labelBodyCoords (KernTextH xs) pt = pure $ makeXsY pt xs        
-labelBodyCoords (KernTextV xs) pt = pure $ makeXYs pt xs
+encodedText :: EncodedText -> Doc
+encodedText enctext = hcat $ map svgChar $ getEncodedText enctext
 
-labelBodyText :: FontEncoderName -> LabelBody u -> SvgMonad Doc
-labelBodyText nm (StdLayout enctext) = encodedText nm enctext
-labelBodyText nm (KernTextH xs)      = hcat <$> mapM (kerningChar nm) xs
-labelBodyText nm (KernTextV xs)      = hcat <$> mapM (kerningChar nm) xs
+kerningText :: [KerningChar u] -> Doc
+kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
 
-
-encodedText :: FontEncoderName -> EncodedText -> SvgMonad Doc
-encodedText nm enctext = hcat <$> mapM (textChunk nm) (getEncodedText enctext)
-
-textChunk :: FontEncoderName -> TextChunk -> SvgMonad Doc
-textChunk _  (TextSpan s)    = pure $ text s
-textChunk _  (TextEscInt i)  = pure $ text $ escapeSpecial i
-textChunk nm (TextEscName s) = either text text <$> getGlyphName nm s 
-
-kerningChar :: FontEncoderName -> KerningChar u -> SvgMonad Doc
-kerningChar _  (_, CharLiteral c) = pure $ char c
-kerningChar _  (_, CharEscInt i)  = pure $ text $ escapeSpecial i
-kerningChar nm (_, CharEscName s) = either text text <$> getGlyphName nm s 
 
 
 makeTspan :: RGBi -> Doc -> Doc

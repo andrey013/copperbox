@@ -4,6 +4,7 @@ module Latin1Pic where
 
 import Wumpus.Core
 import Wumpus.Core.Colour
+import Wumpus.Core.Text.StandardEncoding
 
 import System.Directory
 
@@ -12,8 +13,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/latin1_pic01.eps" pic1
-    writeSVG_latin1 "./out/latin1_pic01.svg" pic1
+    writeEPS "./out/latin1_pic01.eps" pic1
+    writeSVG "./out/latin1_pic01.svg" pic1
 
 
 -- | Provided the respective lookups can be found, Wumpus 
@@ -34,4 +35,4 @@ helveticaLabel ss pt = textlabel black helvetica18 ss pt
 
 helvetica18 :: FontAttr
 helvetica18 = FontAttr 18 (FontFace "Helvetica" "Helvetica" 
-                                    SVG_REGULAR latin1_font_encoder)
+                                    SVG_REGULAR standard_encoding)

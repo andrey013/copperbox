@@ -7,7 +7,7 @@
 module DeltaPic where
 
 import Wumpus.Core
-
+import Wumpus.Core.Text.StandardEncoding ( standard_encoding )
 import System.Directory
 
 
@@ -23,8 +23,8 @@ black = RGBi 0 0 0
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/delta_pic01.eps" pic1
-    writeSVG_latin1 "./out/delta_pic01.svg" pic1
+    writeEPS "./out/delta_pic01.eps" pic1
+    writeSVG "./out/delta_pic01.svg" pic1
 
 
 pic1 :: DPicture
@@ -38,7 +38,7 @@ pic1 = frame1 $ fontDeltaContext delta_ctx $ primGroup
    frame1 a   = frame [a] 
 
 common_ff :: FontFace
-common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder
+common_ff = FontFace "Helvetica" "Helvetica" SVG_REGULAR standard_encoding
 
 
 -- Note - each label is fully attributed with the font style.

@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.37.0
+version:          0.40.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -38,13 +38,14 @@ description:
   the design permits a fairly simple implementation, which is a 
   priority. 
   .  
-  NOTE version 0.37.0 - there will be no release of Wumpus-Basic
-  to match this release of Wumpus-Core. Wumpus-Basic is 
-  undergoing substantial change to accommodate glyph metrics and
-  thus enable proper text bounding boxes and right and center
-  aligned text. The improvements to Wumpus-Core merit a release
-  so that there is not a large hiatus between the APIs of the 
-  Hackage published latest version and the SVN repository.
+  UPDATING to 0.40.0
+  .
+  The Text API has changed substantially, however most user code
+  should only need minor changes. The functions @writePS_latin1@, 
+  @writeEPS_latin1@ and @writeSVG_latin1@ have been removed, code 
+  should be changed to use @writePS@, @writeEPS@ and and 
+  @writeSVG@ respectively. These three functions no longer take a 
+  @TextEncoder@ argument as TextEncoders no longer exist.
   .
   .
   \[1\] Because the output is simple, straight-line PostScript 
@@ -54,6 +55,10 @@ description:
   .
   .
   Changelog:
+  . 
+  0.37.0 to 0.40.0: 
+  .
+  * Text handling substantially revised.
   . 
   0.36.0 to 0.37.0:
   .
@@ -130,10 +135,10 @@ library
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
     Wumpus.Core.PtSize,
-    Wumpus.Core.Text.DefaultEncoder,
-    Wumpus.Core.Text.Encoder,
-    Wumpus.Core.Text.Latin1,
-    Wumpus.Core.Text.SymbolFont,
+    Wumpus.Core.Text.Base,
+    Wumpus.Core.Text.GlyphIndices,
+    Wumpus.Core.Text.GlyphNames,
+    Wumpus.Core.Text.StandardEncoding,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 
@@ -142,7 +147,6 @@ library
     Wumpus.Core.PictureInternal,
     Wumpus.Core.PostScriptDoc,
     Wumpus.Core.SVGDoc,
-    Wumpus.Core.Text.TextInternal,
     Wumpus.Core.TrafoInternal,
     Wumpus.Core.Utils.Common,
     Wumpus.Core.Utils.JoinList,

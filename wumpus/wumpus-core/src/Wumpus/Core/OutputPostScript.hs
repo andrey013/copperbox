@@ -22,8 +22,6 @@ module Wumpus.Core.OutputPostScript
     writePS
   , writeEPS
   
-  , writePS_latin1
-  , writeEPS_latin1
 
   ) where
 
@@ -33,19 +31,20 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
-import Wumpus.Core.Text.DefaultEncoder
-import Wumpus.Core.Text.Encoder
-import Wumpus.Core.Text.TextInternal
+import Wumpus.Core.Text.Base
+import Wumpus.Core.Text.GlyphNames
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
-import Wumpus.Core.Utils.JoinList
+import Wumpus.Core.Utils.JoinList hiding ( cons )
 import Wumpus.Core.Utils.FormatCombinators
 
 
 import Control.Applicative hiding ( empty, some )
 import Control.Monad
 
+import Data.Char
 import qualified Data.Foldable          as F
+import qualified Data.IntMap            as IntMap
 import Data.Maybe 
 import Data.Time
 
@@ -63,45 +62,42 @@ import Data.Time
 
 
 newtype PsMonad a = PsMonad { 
-            getPsMonad :: TextEncoder -> GraphicsState -> (a,GraphicsState) }
+            getPsMonad :: GraphicsState -> (a,GraphicsState) }
 
 
 instance Functor PsMonad where
-  fmap f mf = PsMonad $ \r s -> let (a,s1) = getPsMonad mf r s in (f a,s1)
+  fmap f mf = PsMonad $ \s -> let (a,s1) = getPsMonad mf s in (f a,s1)
 
 instance Applicative PsMonad where
-  pure a    = PsMonad $ \_ s -> (a,s)
-  mf <*> ma = PsMonad $ \r s -> let (f,s1) = getPsMonad mf r s
-                                    (a,s2) = getPsMonad ma r s1
-                                  in (f a,s2)
+  pure a    = PsMonad $ \s -> (a,s)
+  mf <*> ma = PsMonad $ \s -> let (f,s1) = getPsMonad mf s
+                                  (a,s2) = getPsMonad ma s1
+                              in (f a,s2)
 
 instance Monad PsMonad where
-  return a  = PsMonad $ \_ s  -> (a,s)
-  m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
-                                in (getPsMonad . k) a r s1
+  return a  = PsMonad $ \s  -> (a,s)
+  m >>= k   = PsMonad $ \s -> let (a,s1) = getPsMonad m s
+                              in (getPsMonad . k) a s1
                               
 
-runPsMonad :: TextEncoder -> PsMonad a -> a
-runPsMonad enc mf = fst $ getPsMonad mf enc zeroGS
+runPsMonad :: PsMonad a -> a
+runPsMonad mf = fst $ getPsMonad mf zeroGS
 
-askCharCode :: FontEncoderName -> Int -> PsMonad (Either GlyphName GlyphName)
-askCharCode fen i = PsMonad $ \r s -> 
-    case lookupByCharCode fen i r of
-      Just n  -> (Right n, s)
-      Nothing -> (Left $ getPsFallback fen r, s)
+
+
 
 -- runLocalGS :: GSUpdate -> PsMonad a -> PsMonad a
 -- runLocalGS upd mf = 
---     PsMonad $ \r s -> let (a,_) = getPsMonad mf r (getGSU upd s) in (a,s)
+--     PsMonad $ \s -> let (a,_) = getPsMonad mf (getGSU upd s) in (a,s)
 
 getsGS :: (GraphicsState -> a) -> PsMonad a
-getsGS fn = PsMonad $ \_ s -> (fn s,s)
+getsGS fn = PsMonad $ \s -> (fn s,s)
 
 setsGS :: (GraphicsState -> GraphicsState) -> PsMonad ()
-setsGS fn = PsMonad $ \_ s -> ((),fn s)
+setsGS fn = PsMonad $ \s -> ((),fn s)
 
 resetGS :: PsMonad ()
-resetGS = PsMonad $ \ _ _ -> ((),zeroGS)
+resetGS = PsMonad $ \_ -> ((),zeroGS)
 
 
 setsSA :: (StrokeAttr -> StrokeAttr) -> PsMonad ()
@@ -163,47 +159,20 @@ setDashPattern a    = setsSA (\s -> s { dash_pattern = a })
 -- | Output a series of pictures to a Postscript file. Each 
 -- picture will be printed on a separate page. 
 --
--- Generally an encoder should always support the principal
--- encoders for the fonts used (e.g. Latin1) /and/ the encoder 
--- for the Symbol font, as characters from the Symbol font may 
--- be used as decorations for plot marks, etc.
---
 writePS :: (Real u, Floating u, PSUnit u) 
-        => FilePath -> TextEncoder -> [Picture u] -> IO ()
-writePS filepath enc pic = 
-    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim enc pic)
+        => FilePath -> [Picture u] -> IO ()
+writePS filepath pics = 
+    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim pics)
 
 -- | Output a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
 -- document.
 --
--- Generally an encoder should always support the principal
--- encoders for the fonts used (e.g. Latin1) /and/ the encoder for
--- the Symbol font, as characters from the Symbol font may be used 
--- as decorations for plot marks, etc.
---
 writeEPS :: (Real u, Floating u, PSUnit u)  
-         => FilePath -> TextEncoder -> Picture u -> IO ()
-writeEPS filepath enc pic =
-    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim enc pic)
+         => FilePath -> Picture u -> IO ()
+writeEPS filepath pic =
+    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim pic)
 
-
--- | Version of 'writePS' - using the /default encoder/ which 
--- supports Latin1 and the Symbol font.
--- 
--- Generally an encoder should always support the principal
--- encoder (e.g. Latin1) /and/ the Symbol font, as characters from
--- the Symbol font may be used as decorations for plot marks, etc.
--- 
-writePS_latin1 :: (Real u, Floating u, PSUnit u) 
-               => FilePath -> [Picture u] -> IO ()
-writePS_latin1 filepath = writePS filepath defaultEncoder
-
--- | Version of 'writeEPS' - using Latin1 encoding. 
---
-writeEPS_latin1 :: (Real u, Floating u, PSUnit u)  
-                => FilePath -> Picture u -> IO ()
-writeEPS_latin1 filepath = writeEPS filepath defaultEncoder
 
 --------------------------------------------------------------------------------
 -- Internals
@@ -216,9 +185,9 @@ writeEPS_latin1 filepath = writeEPS filepath defaultEncoder
 --
 
 psDraw :: (Real u, Floating u, PSUnit u) 
-       => ZonedTime -> TextEncoder -> [Picture u] -> Doc
-psDraw timestamp enc pics = 
-    let body = vcat $ runPsMonad enc $ zipWithM psDrawPage pages pics
+       => ZonedTime -> [Picture u] -> Doc
+psDraw timestamp pics = 
+    let body = vcat $ runPsMonad $ zipWithM psDrawPage pages pics
     in vcat [ psHeader 1 timestamp
             , body
             , psFooter 
@@ -247,10 +216,10 @@ psDrawPage (lbl,ordinal) pic =
 -- will need translating.
 --
 epsDraw :: (Real u, Floating u, PSUnit u)
-        => ZonedTime -> TextEncoder -> Picture u -> Doc
-epsDraw timestamp enc pic =
+        => ZonedTime -> Picture u -> Doc
+epsDraw timestamp pic =
     let (bb,cmdtrans) = imageTranslation pic 
-        body          = runPsMonad enc (picture pic) 
+        body          = runPsMonad (picture pic) 
     in vcat [ epsHeader bb timestamp
             , ps_gsave
             , cmdtrans
@@ -264,6 +233,46 @@ imageTranslation :: (Ord u, PSUnit u) => Picture u -> (BoundingBox u, Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, empty)
   (bb, Just v)  -> (bb, ps_translate v)
+
+--------------------------------------------------------------------------------
+-- 
+
+
+
+findGlyphName :: Int -> EncodingVector -> Either String String
+findGlyphName i ev = 
+    case IntMap.lookup i ev of
+      Just n  -> Right n
+      Nothing -> Left $ fromMaybe "space" $ IntMap.lookup i ps_glyph_names
+
+
+psText :: EncodingVector -> EncodedText -> Doc
+psText ev enc_text = cons $ foldr fn ([],empty) $ getEncodedText enc_text
+  where
+    cons ([],doc)               = doc
+    cons (cs,doc)               = ps_show cs `vconcat` doc
+
+    fn (CharLiteral c) (cs,doc) | ord c < 0x80  = (c:cs,doc)
+    fn (CharLiteral c) acc      = ([], psSpecial ev (ord c) `vconcat` cons acc) 
+    fn (CharEscInt i)  acc      = ([], psSpecial ev i `vconcat` cons acc)
+    fn (CharEscName s) acc      = ([], ps_glyphshow s `vconcat` cons acc)  
+
+psChar :: EncodingVector -> EncodedChar -> Doc
+psChar _  (CharLiteral c) | ord c < 0x80  = ps_show [c]
+psChar ev (CharLiteral c)                 = psSpecial ev (ord c) 
+psChar ev (CharEscInt i)                  = psSpecial ev i
+psChar _  (CharEscName s)                 = ps_glyphshow s  
+
+
+psSpecial :: EncodingVector -> Int -> Doc
+psSpecial ev i = case findGlyphName i ev of
+    Left fallback  -> missingComment i `vconcat` ps_glyphshow fallback
+    Right ss       -> ps_glyphshow ss     
+
+
+missingComment :: Int -> Doc
+missingComment i = 
+    ps_comment $ "lookup in encoding vector failed for " ++ show i
 
 
 --------------------------------------------------------------------------------
@@ -396,58 +405,38 @@ primLabel :: (Real u, Floating u, PSUnit u)
 primLabel (LabelProps rgb attrs) (PrimLabel basept body ctm) = 
     bracketPrimCTM basept ctm mf
   where
-    mf pt = (\rgbd fontd showd -> vcat [ rgbd, fontd, showd ]) 
+    ev    = font_enc_vector $ font_face attrs    
+    mf pt = (\rgbd fontd -> vcat [ rgbd, fontd, labelBody ev pt body ]) 
               <$> deltaDrawColour rgb <*> deltaFontAttrs attrs
-                                      <*> labelBody fen pt body
     
-    fen = font_enc_name $ font_face attrs    
 
 
 
 labelBody :: PSUnit u 
-          => FontEncoderName -> Point2 u -> LabelBody u -> PsMonad Doc
-labelBody nm pt (StdLayout txt) = (\d1 -> ps_moveto pt `vconcat` d1) 
-                                 <$> encodedText nm txt
-labelBody nm pt (KernTextH xs)  = kernTextH nm pt xs
-labelBody nm pt (KernTextV xs)  = kernTextV nm pt xs
+          => EncodingVector -> Point2 u -> LabelBody u -> Doc
+labelBody ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
+labelBody ev pt (KernTextH xs)  = kernTextH ev pt xs
+labelBody ev pt (KernTextV xs)  = kernTextV ev pt xs
 
 
-encodedText :: FontEncoderName -> EncodedText -> PsMonad Doc 
-encodedText nm etext = vcat <$> (mapM (textChunk nm) $ getEncodedText etext)
-
-
-textChunk :: FontEncoderName -> TextChunk -> PsMonad Doc
-textChunk _  (TextSpan s)    = pure (ps_show $ escapeSpecial s)
-textChunk _  (TextEscName s) = pure (ps_glyphshow s)
-textChunk nm (TextEscInt i)  = (either failk ps_glyphshow) <$> askCharCode nm i
-  where
-    failk gly_name = missingCharCode i gly_name
 
 kernTextH :: PSUnit u 
-          => FontEncoderName -> Point2 u -> [KerningChar u] -> PsMonad Doc
-kernTextH nm pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+          => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
+kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
-    fn (P2 x y,acc) (dx,ch) = (\doc1 -> let pt = P2 (x+dx) y in
-                                        (pt, vcat [acc, ps_moveto pt, doc1]))
-                                <$> encodedChar nm ch
+    fn (P2 x y,acc) (dx,ch) = let doc1 = psChar ev ch
+                                  pt   = P2 (x+dx) y 
+                              in (pt, vcat [acc, ps_moveto pt, doc1])
 
 -- Note - vertical labels grow downwards...
 --
 kernTextV :: PSUnit u 
-          => FontEncoderName -> Point2 u -> [KerningChar u] -> PsMonad Doc
-kernTextV nm pt0 xs = snd <$> F.foldlM fn (pt0,empty) xs
+          => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
+kernTextV ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
-    fn (P2 x y,acc) (dy,ch) = (\doc1 -> let pt = P2 x (y-dy) in
-                                        (pt, vcat [acc, ps_moveto pt, doc1]))
-                                <$> encodedChar nm ch
-
-
-encodedChar :: FontEncoderName -> EncodedChar -> PsMonad Doc
-encodedChar _  (CharLiteral c) = pure (ps_show $ escapeSpecialChar c)
-encodedChar _  (CharEscName s) = pure (ps_glyphshow s)
-encodedChar nm (CharEscInt i)  = (either failk ps_glyphshow) <$> askCharCode nm i 
-  where
-    failk gly_name = missingCharCode i gly_name
+    fn (P2 x y,acc) (dy,ch) = let doc1 = psChar ev ch
+                                  pt   = P2 x (y-dy) 
+                              in (pt, vcat [acc, ps_moveto pt, doc1])
 
 
 --------------------------------------------------------------------------------
@@ -520,7 +509,7 @@ deltaFontAttrs fa  = getFontAttr >>= \inh ->
 
 makeFontAttrs :: FontAttr -> Doc
 makeFontAttrs (FontAttr sz face) = 
-    vcat [ ps_findfont (font_name face), ps_scalefont sz, ps_setfont ]
+    vcat [ ps_findfont (ps_font_name face), ps_scalefont sz, ps_setfont ]
 
 
 --------------------------------------------------------------------------------

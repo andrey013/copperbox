@@ -68,7 +68,6 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Text.Encoder
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -137,7 +136,7 @@ dsc_Page :: String -> Int -> Doc
 dsc_Page label ordinal = text "%%Page:" <+> text label <+> int ordinal
 
 
-missingCharCode :: CharCode -> GlyphName -> Doc
+missingCharCode :: Int -> String -> Doc
 missingCharCode i fallback = vcat $
     [ ps_comment $ "missing lookup for &#" ++ show i ++ ";" 
     , ps_glyphshow fallback
