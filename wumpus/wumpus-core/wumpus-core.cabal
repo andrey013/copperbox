@@ -139,6 +139,7 @@ library
     Wumpus.Core.Text.GlyphIndices,
     Wumpus.Core.Text.GlyphNames,
     Wumpus.Core.Text.StandardEncoding,
+    Wumpus.Core.Text.Symbol,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 

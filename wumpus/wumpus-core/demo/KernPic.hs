@@ -4,7 +4,8 @@ module KernPic where
 
 import Wumpus.Core
 import Wumpus.Core.Colour
-
+import Wumpus.Core.Text.StandardEncoding
+import Wumpus.Core.Text.Symbol
 import System.Directory
 
 
@@ -12,8 +13,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/kern_pic01.eps" kern_pic
-    writeSVG_latin1 "./out/kern_pic01.svg" kern_pic
+    writeEPS "./out/kern_pic01.eps" kern_pic
+    writeSVG "./out/kern_pic01.svg" kern_pic
 
 
 kern_pic :: DPicture
@@ -61,14 +62,14 @@ helvetica18 :: FontAttr
 helvetica18 = FontAttr 18 (FontFace "Helvetica" 
                                     "Helvetica" 
                                     SVG_REGULAR 
-                                    latin1_font_encoder)
+                                    standard_encoding)
 
 
 symbol18 :: FontAttr
 symbol18 = FontAttr 18 (FontFace "Symbol" 
                                  "Symbol" 
                                  SVG_REGULAR
-                                 symbol_font_encoder)
+                                 symbol_encoding)
 
 blue_violet             :: RGBi
 blue_violet             = RGBi 0x8a 0x2b 0xe2

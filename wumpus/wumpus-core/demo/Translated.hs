@@ -12,12 +12,12 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/trans_square.eps"  pic1
-    writeSVG_latin1 "./out/trans_square.svg"  pic1
-    writeEPS_latin1 "./out/trans_circle.eps"  pic2
-    writeSVG_latin1 "./out/trans_circle.svg"  pic2
-    writeEPS_latin1 "./out/trans_label.eps"   pic3
-    writeSVG_latin1 "./out/trans_label.svg"   pic3
+    writeEPS "./out/trans_square.eps"  pic1
+    writeSVG "./out/trans_square.svg"  pic1
+    writeEPS "./out/trans_circle.eps"  pic2
+    writeSVG "./out/trans_circle.svg"  pic2
+    writeEPS "./out/trans_label.eps"   pic3
+    writeSVG "./out/trans_label.svg"   pic3
 
 
 -- These are out-of-date for version 0.36.0

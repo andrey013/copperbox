@@ -4,10 +4,10 @@ module WorldFrame where
 
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
-
+import Wumpus.Core.Text.StandardEncoding
 
 main :: IO ()
-main = writeEPS_latin1 "WorldFrame.eps" world_frame
+main = writeEPS "WorldFrame.eps" world_frame
 
 world_frame :: DPicture
 world_frame = uniformScale 0.75 $ 
@@ -30,7 +30,7 @@ makeLabelPrim :: String -> DPoint2 -> DPrimitive
 makeLabelPrim = textlabel black attrs 
   where
     attrs     = FontAttr 10 (FontFace "Helvetica" "Helvetica" 
-                                      SVG_REGULAR latin1_font_encoder)
+                                      SVG_REGULAR standard_encoding)
 
 makeLinePrim :: Double -> DPoint2 -> DPoint2 -> DPrimitive
 makeLinePrim lw a b = ostroke black attrs $ path a [lineTo b]

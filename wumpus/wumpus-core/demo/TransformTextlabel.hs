@@ -13,16 +13,16 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/transform_textlabel01.eps" pic1
-    writeSVG_latin1 "./out/transform_textlabel01.svg" pic1
-    writeEPS_latin1 "./out/transform_textlabel02.eps" pic2
-    writeSVG_latin1 "./out/transform_textlabel02.svg" pic2
-    writeEPS_latin1 "./out/transform_textlabel03.eps" pic3
-    writeSVG_latin1 "./out/transform_textlabel03.svg" pic3
-    writeEPS_latin1 "./out/transform_textlabel04.eps" pic4
-    writeSVG_latin1 "./out/transform_textlabel04.svg" pic4
-    writeEPS_latin1 "./out/transform_textlabel05.eps" pic5
-    writeSVG_latin1 "./out/transform_textlabel05.svg" pic5
+    writeEPS "./out/transform_textlabel01.eps" pic1
+    writeSVG "./out/transform_textlabel01.svg" pic1
+    writeEPS "./out/transform_textlabel02.eps" pic2
+    writeSVG "./out/transform_textlabel02.svg" pic2
+    writeEPS "./out/transform_textlabel03.eps" pic3
+    writeSVG "./out/transform_textlabel03.svg" pic3
+    writeEPS "./out/transform_textlabel04.eps" pic4
+    writeSVG "./out/transform_textlabel04.svg" pic4
+    writeEPS "./out/transform_textlabel05.eps" pic5
+    writeSVG "./out/transform_textlabel05.svg" pic5
 
 
 

@@ -13,8 +13,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     putStrLn zorder_msg
-    writeEPS_latin1 "./out/zorder01.eps" combined_pic
-    writeSVG_latin1 "./out/zorder01.svg" combined_pic
+    writeEPS "./out/zorder01.eps" combined_pic
+    writeSVG "./out/zorder01.svg" combined_pic
 
 zorder_msg :: String
 zorder_msg = unlines $ 

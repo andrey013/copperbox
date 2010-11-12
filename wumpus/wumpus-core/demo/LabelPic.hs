@@ -4,6 +4,7 @@
 module LabelPic where
 
 import Wumpus.Core
+import Wumpus.Core.Text.StandardEncoding
 
 import System.Directory
 
@@ -18,13 +19,13 @@ main = do
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/label01.eps" lbl1
-    writeSVG_latin1 "./out/label01.svg" lbl1
+    writeEPS "./out/label01.eps" lbl1
+    writeSVG "./out/label01.svg" lbl1
 
 demo02 :: IO ()
 demo02 = do 
-    writeEPS_latin1 "./out/label02.eps" p1
-    writeSVG_latin1 "./out/label02.svg" p1
+    writeEPS "./out/label02.eps" p1
+    writeSVG "./out/label02.svg" p1
   where
     p1 = lbl1 `picBeside` lbl1 
               `picBeside` (rotateAbout (pi/4) (center lbl1) lbl1) 
@@ -32,8 +33,8 @@ demo02 = do
 
 demo03 :: IO ()
 demo03 = do 
-    writeEPS_latin1 "./out/label03.eps" p1
-    writeSVG_latin1 "./out/label03.svg" p1
+    writeEPS "./out/label03.eps" p1
+    writeSVG "./out/label03.svg" p1
   where
     p1 = (drawBounds lbl1) `picBeside` 
          (drawBounds lbl1) `picBeside` 
@@ -44,8 +45,8 @@ demo03 = do
 
 demo04 :: IO ()
 demo04 = do
-    writeEPS_latin1 "./out/label04.eps" p1
-    writeSVG_latin1 "./out/label04.svg" p1
+    writeEPS "./out/label04.eps" p1
+    writeSVG "./out/label04.svg" p1
   where
     p1 =           (drawBounds lbl1) 
          `picOver` (drawBounds $ scale 2 2 lbl1)
@@ -63,14 +64,14 @@ bigLetter :: RGBi -> Char -> Picture Double
 bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] zeroPt]
   where
     attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
-                                  SVG_REGULAR latin1_font_encoder)
+                                  SVG_REGULAR standard_encoding)
 
 
 -- | A should be above B, above T
 demo05 :: IO ()
 demo05 = do 
-    writeEPS_latin1 "./out/label05.eps" p1
-    writeSVG_latin1 "./out/label05.svg" p1
+    writeEPS "./out/label05.eps" p1
+    writeSVG "./out/label05.svg" p1
   where
     p1 = uniformScale 10 $ bigA `picOver` bigB `picOver` bigT
 
@@ -78,8 +79,8 @@ demo05 = do
 
 demo06 :: IO ()
 demo06 = do 
-    writeEPS_latin1 "./out/label06.eps" p1
-    writeSVG_latin1 "./out/label06.svg" p1
+    writeEPS "./out/label06.eps" p1
+    writeSVG "./out/label06.svg" p1
   where
     p1 = pA `picBeside` pB `picBeside` pC `picBeside` pA
     
@@ -90,8 +91,8 @@ demo06 = do
 
 demo07 :: IO ()
 demo07 = do 
-    writeEPS_latin1 "./out/label07.eps" p1
-    writeSVG_latin1 "./out/label07.svg" p1
+    writeEPS "./out/label07.eps" p1
+    writeSVG "./out/label07.svg" p1
   where
     p1 = pA `picBeside` pB `picBeside` pC
     
@@ -139,5 +140,5 @@ lbl1 = line1 `picBeside` line2 where
   line1 = frame [textlabel peru attrs "Hello" zeroPt]
   line2 = frame [textlabel peru attrs "World" zeroPt]
   attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
-                                SVG_REGULAR latin1_font_encoder)
+                                SVG_REGULAR standard_encoding)
 

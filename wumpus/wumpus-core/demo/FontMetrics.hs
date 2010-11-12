@@ -3,6 +3,7 @@
 module FontMetrics where
 
 import Wumpus.Core
+import Wumpus.Core.Text.StandardEncoding
 
 import Data.AffineSpace                 -- package: vector-space
 
@@ -13,8 +14,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/font_metrics.eps" metrics_pic
-    writeSVG_latin1 "./out/font_metrics.svg" metrics_pic
+    writeEPS "./out/font_metrics.eps" metrics_pic
+    writeSVG "./out/font_metrics.svg" metrics_pic
 
 
 peru :: RGBi
@@ -28,7 +29,7 @@ black = RGBi 0 0 0
 
 courier_attr :: FontAttr
 courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" 
-                                     SVG_REGULAR latin1_font_encoder)
+                                     SVG_REGULAR standard_encoding)
 
 metrics_pic :: DPicture
 metrics_pic = char_pic `picOver` lines_pic
