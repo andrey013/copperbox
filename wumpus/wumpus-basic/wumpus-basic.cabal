@@ -133,7 +133,7 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.4, 
                       vector-space    >= 0.6,
-                      wumpus-core     == 0.37.0
+                      wumpus-core     == 0.40.0
 
   
   exposed-modules:

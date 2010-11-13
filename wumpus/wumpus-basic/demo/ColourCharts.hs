@@ -16,10 +16,10 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/SVGcolours.eps" svg
-    writeSVG_latin1 "./out/SVGcolours.svg" svg
-    writeEPS_latin1 "./out/X11colours.eps" $ uniformScale 0.75 x11_portrait
-    writeSVG_latin1 "./out/X11colours.svg" x11_landscape
+    writeEPS "./out/SVGcolours.eps" svg
+    writeSVG "./out/SVGcolours.svg" svg
+    writeEPS "./out/X11colours.eps" $ uniformScale 0.75 x11_portrait
+    writeSVG "./out/X11colours.svg" x11_landscape
 
 svg :: Picture Double
 svg = makePicture 52 all_svg_colours

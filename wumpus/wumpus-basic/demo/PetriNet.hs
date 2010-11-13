@@ -26,8 +26,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/petri_net.eps" petri_net
-    writeSVG_latin1 "./out/petri_net.svg" petri_net
+    writeEPS "./out/petri_net.eps" petri_net
+    writeSVG "./out/petri_net.svg" petri_net
     
 
 

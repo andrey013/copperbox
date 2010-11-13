@@ -17,20 +17,20 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/font_courier.eps"   courier_pic
-    writeSVG_latin1 "./out/font_courier.svg"   courier_pic
-    writeEPS_latin1 "./out/font_times.eps"     times_pic
-    writeSVG_latin1 "./out/font_times.svg"     times_pic
-    writeEPS_latin1 "./out/font_helvetica.eps" helvetica_pic
-    writeSVG_latin1 "./out/font_helvetica.svg" helvetica_pic
-    writeEPS_latin1 "./out/font_symbol.eps"    symbol_pic
-    writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
+    writeEPS "./out/font_courier.eps"   courier_pic
+    writeSVG "./out/font_courier.svg"   courier_pic
+    writeEPS "./out/font_times.eps"     times_pic
+    writeSVG "./out/font_times.svg"     times_pic
+    writeEPS "./out/font_helvetica.eps" helvetica_pic
+    writeSVG "./out/font_helvetica.svg" helvetica_pic
+    writeEPS "./out/font_symbol.eps"    symbol_pic
+    writeSVG "./out/font_symbol.svg"    symbol_pic
 
 
 fontMsg :: FontFace -> Int -> String
 fontMsg ff sz = msgF []
   where
-    msgF = showString (font_name ff) . showChar ' ' . shows sz . showString "pt"
+    msgF = showString (ps_font_name ff) . showChar ' ' . shows sz . showString "pt"
 
 
 makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic

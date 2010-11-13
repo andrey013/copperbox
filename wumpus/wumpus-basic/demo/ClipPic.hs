@@ -28,8 +28,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/clip_pic.eps" pic
-    >> writeSVG_latin1 "./out/clip_pic.svg" pic
+    writeEPS "./out/clip_pic.eps" pic
+    writeSVG "./out/clip_pic.svg" pic
 
 
 pic_drawing_ctx :: DrawingContext

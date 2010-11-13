@@ -15,9 +15,10 @@ import System.Directory
 
 
 main :: IO ()
-main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/path01.eps" pic1
-    >> writeSVG_latin1 "./out/path01.svg" pic1 
+main = do 
+    createDirectoryIfMissing True "./out/"
+    writeEPS "./out/path01.eps" pic1
+    writeSVG "./out/path01.svg" pic1 
 
 pic1 :: Picture Double
 pic1 = liftToPictureU $ execTraceDrawing (standardContext 18) $ do

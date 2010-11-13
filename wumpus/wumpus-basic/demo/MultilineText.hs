@@ -19,8 +19,8 @@ demo00 = take 10 $ iterate (+2) 0
 
 main :: IO ()
 main = do 
-    writeEPS_latin1 "./out/multiline_text.eps" pic1
-    writeSVG_latin1 "./out/multiline_text.svg" pic1
+    writeEPS "./out/multiline_text.eps" pic1
+    writeSVG "./out/multiline_text.svg" pic1
 
 
 times_roman_ctx :: DrawingContext

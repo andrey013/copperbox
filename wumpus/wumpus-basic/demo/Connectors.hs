@@ -27,8 +27,8 @@ pt2 = P2 100 10
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/connectors01.eps" pic1
-    writeSVG_latin1 "./out/connectors01.svg" pic1
+    writeEPS "./out/connectors01.eps" pic1
+    writeSVG "./out/connectors01.svg" pic1
 
 pic1 :: Picture Double
 pic1 = liftToPictureU $ execTraceDrawing std_ctx $ tableGraphic $ conntable

@@ -26,8 +26,8 @@ main = do
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/new_text01.eps" pic1
-    writeSVG_latin1 "./out/new_text01.svg" pic1
+    writeEPS "./out/new_text01.eps" pic1
+    writeSVG "./out/new_text01.svg" pic1
 
 std_ctx :: DrawingContext
 std_ctx = fontface times_roman $ standardContext 18

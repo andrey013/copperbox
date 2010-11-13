@@ -24,8 +24,8 @@ ignore ma = ma >> return ()
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/text_centering01.eps" pic1
-    writeSVG_latin1 "./out/text_centering01.svg" pic1
+    writeEPS "./out/text_centering01.eps" pic1
+    writeSVG "./out/text_centering01.svg" pic1
 
 
 std_attr :: DrawingContext

@@ -22,8 +22,8 @@ pt2 = P2 100 10
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS_latin1 "./out/anchor_dots01.eps" pic1
-    writeSVG_latin1 "./out/anchor_dots01.svg" pic1
+    writeEPS "./out/anchor_dots01.eps" pic1
+    writeSVG "./out/anchor_dots01.svg" pic1
 
 
 std_attr :: DrawingContext

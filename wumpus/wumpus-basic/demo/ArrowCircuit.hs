@@ -25,8 +25,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/arrow_circuit.eps" pic1
-    writeSVG_latin1 "./out/arrow_circuit.svg" pic1 
+    writeEPS "./out/arrow_circuit.eps" pic1
+    writeSVG "./out/arrow_circuit.svg" pic1 
 
 times_ctx :: DrawingContext
 times_ctx = fontface times_roman $ standardContext 11

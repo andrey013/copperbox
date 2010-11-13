@@ -21,8 +21,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/feature_model.eps" pic1
-    writeSVG_latin1 "./out/feature_model.svg" pic1 
+    writeEPS "./out/feature_model.eps" pic1
+    writeSVG "./out/feature_model.svg" pic1 
 
 draw_ctx :: DrawingContext
 draw_ctx = fontface courier_bold $ standardContext 18

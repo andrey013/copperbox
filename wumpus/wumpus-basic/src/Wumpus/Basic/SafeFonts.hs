@@ -15,6 +15,10 @@
 --
 -- Note - regrettably Symbol is not safe to use for SVG.
 --
+-- \*\* WARNING \*\* - this module is in flux due to changes to 
+-- Text encoding in Wumpus-Core and adding font metrics to 
+-- Wumpus-Basic. The code here is likely to be revised.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.SafeFonts
@@ -45,6 +49,8 @@ module Wumpus.Basic.SafeFonts
 
 
 import Wumpus.Core
+import Wumpus.Core.Text.StandardEncoding
+import Wumpus.Core.Text.Symbol
 
 -- Supported fonts are:
 --
@@ -60,19 +66,19 @@ import Wumpus.Core
 -- 
 times_roman :: FontFace
 times_roman = 
-    FontFace "Times-Roman" "Times New Roman" SVG_REGULAR latin1_font_encoder
+    FontFace "Times-Roman" "Times New Roman" SVG_REGULAR standard_encoding
 
 -- | Times Italic
 --
 times_italic :: FontFace
 times_italic = 
-    FontFace "Times-Italic" "Times New Roman" SVG_ITALIC latin1_font_encoder
+    FontFace "Times-Italic" "Times New Roman" SVG_ITALIC standard_encoding
                        
 -- | Times Bold
 --
 times_bold :: FontFace
 times_bold = 
-    FontFace "Times-Bold" "Times New Roman" SVG_BOLD latin1_font_encoder
+    FontFace "Times-Bold" "Times New Roman" SVG_BOLD standard_encoding
 
 -- | Times Bold Italic
 --
@@ -80,7 +86,7 @@ times_bold_italic :: FontFace
 times_bold_italic = FontFace "Times-BoldItalic" 
                              "Times New Roman" 
                              SVG_BOLD_ITALIC 
-                             latin1_font_encoder
+                             standard_encoding
 
 
 --------------------------------------------------------------------------------
@@ -89,20 +95,20 @@ times_bold_italic = FontFace "Times-BoldItalic"
 -- | Helvetica 
 --
 helvetica :: FontFace
-helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR latin1_font_encoder
+helvetica = FontFace "Helvetica" "Helvetica" SVG_REGULAR standard_encoding
 
 
 -- | Helvetica Oblique
 --
 helvetica_oblique :: FontFace
 helvetica_oblique = 
-    FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE latin1_font_encoder
+    FontFace "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE standard_encoding
 
 -- | Helvetica Bold
 -- 
 helvetica_bold :: FontFace
 helvetica_bold = 
-    FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD latin1_font_encoder
+    FontFace "Helvetica-Bold" "Helvetica" SVG_BOLD standard_encoding
 
 
 -- | Helvetica Bold Oblique
@@ -111,7 +117,7 @@ helvetica_bold_oblique :: FontFace
 helvetica_bold_oblique = FontFace "Helvetica-Bold-Oblique" 
                                   "Helvetica" 
                                   SVG_BOLD_OBLIQUE 
-                                  latin1_font_encoder
+                                  standard_encoding
 
 
 
@@ -120,19 +126,19 @@ helvetica_bold_oblique = FontFace "Helvetica-Bold-Oblique"
 -- | Courier
 -- 
 courier :: FontFace
-courier = FontFace "Courier" "Courier New" SVG_REGULAR latin1_font_encoder
+courier = FontFace "Courier" "Courier New" SVG_REGULAR standard_encoding
 
 -- | Courier Oblique
 -- 
 courier_oblique :: FontFace
 courier_oblique = 
-    FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE latin1_font_encoder
+    FontFace "Courier-Oblique" "Courier New" SVG_OBLIQUE standard_encoding
 
 -- | Courier Bold
 -- 
 courier_bold :: FontFace
 courier_bold = 
-    FontFace "Courier-Bold" "Courier New" SVG_BOLD latin1_font_encoder
+    FontFace "Courier-Bold" "Courier New" SVG_BOLD standard_encoding
 
 
 -- | Courier Bold Oblique
@@ -141,7 +147,7 @@ courier_bold_oblique :: FontFace
 courier_bold_oblique = FontFace "Courier-Bold-Oblique" 
                                 "Courier New" 
                                 SVG_BOLD_OBLIQUE 
-                                latin1_font_encoder
+                                standard_encoding
 
 --------------------------------------------------------------------------------
 -- Symbol
@@ -153,7 +159,7 @@ courier_bold_oblique = FontFace "Courier-Bold-Oblique"
 -- should be still be avoided for web graphics.
 -- 
 symbol :: FontFace
-symbol = FontFace "Symbol" "Symbol" SVG_REGULAR symbol_font_encoder
+symbol = FontFace "Symbol" "Symbol" SVG_REGULAR symbol_encoding
 
 
 

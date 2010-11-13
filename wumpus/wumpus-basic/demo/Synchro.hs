@@ -26,8 +26,8 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_latin1 "./out/synchro.eps" pic1
-    writeSVG_latin1 "./out/synchro.svg" pic1
+    writeEPS "./out/synchro.eps" pic1
+    writeSVG "./out/synchro.svg" pic1
 
 -- Note - connector could create radial anchors if it took the 
 -- vector ctr -> ctr then found its direction.
