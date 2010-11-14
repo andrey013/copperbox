@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -34,10 +35,10 @@ module Wumpus.Basic.FontLoader.Base
 
   -- * Font loading
   , FontName
-  , FontParseErr
-  , FontParseResult
+  , FontLoadErr
+  , FontLoadResult
   , FontLoader(..)
-
+  , loadFont
 
   ) where
 
@@ -46,6 +47,8 @@ import Wumpus.Basic.Text.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import System.Directory
+import System.FilePath
 
 
 
@@ -91,38 +94,34 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 -- the last part of the parsing process...
 
 type FontName           = String
-type FontParseErr       = String
-type FontParseResult cu = Either FontParseErr (CharMetricsTable cu)
+type FontLoadErr        = String
+type FontLoadResult cu  = Either FontLoadErr (GlyphMetricsTable cu)
 
-data FontLoader cu = FontLoader 
+data FontLoader u = forall interim. FontLoader 
       { path_to_font_dir    :: FilePath
       , file_name_locator   :: FontName -> FilePath
-      , font_parser         :: FilePath -> IO (FontParseResult cu)
+      , font_parser         :: FilePath -> IO (Either String interim)
+      , post_process        :: interim -> GlyphMetricsTable u
       }
 
-      
+
+loadFont :: FontLoader cu -> FontName -> IO (FontLoadResult cu)
+loadFont loader font_name = 
+    locateStep loader font_name >>= \ans -> case ans of
+      Nothing        -> return $ Left $ "Cannot find font " ++ font_name
+      Just full_path -> parseStep loader full_path
+
+locateStep :: FontLoader cu -> FontName -> IO (Maybe FilePath)
+locateStep loader font_name = 
+    doesFileExist full_path >>= \check -> 
+    if check then return $ Just full_path
+             else return $ Nothing
+  where
+    full_path = normalise $ path_to_font_dir loader 
+                             </> file_name_locator loader font_name
 
 
-{-
-
--- | Character bounding boxes have different coordinates to 
--- the /normal/ bounding boxes in Wumpus. 
---
--- Also, they might typically have a different unit to a Wumpus 
--- drawing.
--- 
-newtype CharBoundingBox cu = CharBoundingBox { 
-          getCharBoundingBox :: BoundingBox cu }
-  deriving (Eq,Show)
-
-charBoundingBox :: cu -> cu -> cu -> cu -> CharBoundingBox cu
-charBoundingBox llx lly urx ury = 
-    CharBoundingBox $ BBox (P2 llx lly) (P2 urx ury)
-
-destCharBoundingBox :: CharBoundingBox cu -> (cu,cu,cu,cu)
-destCharBoundingBox = destBoundingBox . getCharBoundingBox
-
--}
-
-
+parseStep :: FontLoader cu -> FilePath -> IO (FontLoadResult cu)
+parseStep (FontLoader _ _ parser post) valid_path = 
+    fmap (either Left (Right . post)) $ parser valid_path
 

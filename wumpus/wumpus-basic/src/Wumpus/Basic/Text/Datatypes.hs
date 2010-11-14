@@ -24,7 +24,7 @@ module Wumpus.Basic.Text.Datatypes
   , AdvanceVec
   , advanceH
 
-  , CharMetricsTable(..)
+  , GlyphMetricsTable(..)
   , glyphMaxHeight
   , defaultAdvanceVector
   , advanceVector
@@ -59,23 +59,23 @@ advanceH (V2 w _)  = V2 w 0
 
 
 
-data CharMetricsTable u = forall cu . CharMetricsTable
+data GlyphMetricsTable u = forall cu . GlyphMetricsTable
        { unit_scale_fun     :: PtSize -> cu -> u
        , glyph_max_height   :: cu 
        , default_adv_vec    :: Vec2 cu
-       , char_adv_vecs      :: IntMap.IntMap (Vec2 cu)
+       , glyph_adv_vecs     :: IntMap.IntMap (Vec2 cu)
        }
 
-glyphMaxHeight :: CharMetricsTable u -> PtSize -> u
-glyphMaxHeight (CharMetricsTable usf h _ _) sz = (usf sz h)
+glyphMaxHeight :: GlyphMetricsTable u -> PtSize -> u
+glyphMaxHeight (GlyphMetricsTable usf h _ _) sz = (usf sz h)
 
 
-defaultAdvanceVector :: CharMetricsTable u -> PtSize -> Vec2 u
-defaultAdvanceVector (CharMetricsTable usf _ (V2 x y) _) sz = 
+defaultAdvanceVector :: GlyphMetricsTable u -> PtSize -> Vec2 u
+defaultAdvanceVector (GlyphMetricsTable usf _ (V2 x y) _) sz = 
     V2 (usf sz x) (usf sz y)
 
-advanceVector :: CharMetricsTable u -> PtSize -> Int -> Maybe (Vec2 u)
-advanceVector (CharMetricsTable usf _ _ im) sz ix = 
+advanceVector :: GlyphMetricsTable u -> PtSize -> Int -> Maybe (Vec2 u)
+advanceVector (GlyphMetricsTable usf _ _ im) sz ix = 
     fmap fn $ IntMap.lookup ix im 
   where
      fn (V2 x y) = V2 (usf sz x) (usf sz y)

@@ -20,6 +20,7 @@
 module Wumpus.Basic.FontLoader.AfmV2
   ( 
     AfmV2File(..)
+  , buildGlyphMetricsTable
   , parseAfmV2File
   
   ) where
@@ -27,14 +28,16 @@ module Wumpus.Basic.FontLoader.AfmV2
 import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
+import Wumpus.Basic.Text.Datatypes              
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Text.Datatypes              
+import Wumpus.Core.Text.GlyphIndices
 
 import Control.Applicative
 
 import Data.Char
-import qualified Data.Map as Map
+import qualified Data.IntMap            as IntMap
+import qualified Data.Map               as Map
 
 type AfmKey         = String
 type GlobalInfo     = Map.Map AfmKey String
@@ -43,9 +46,35 @@ type GlobalInfo     = Map.Map AfmKey String
 data AfmV2File = AfmV2File 
       { afm_v2_encoding     :: Maybe String
       , afm_font_bbox       :: Maybe AfmBoundingBox
-      , afm_gylf_metrics    :: [AfmGlyphMetrics]
+      , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
+
+
+buildGlyphMetricsTable :: FromPtSize u
+                       => AfmUnit -> Vec2 AfmUnit -> AfmV2File 
+                       -> GlyphMetricsTable u
+buildGlyphMetricsTable default_max_height default_vec afm = 
+    GlyphMetricsTable 
+      { unit_scale_fun     = flip afmValue
+      , glyph_max_height   = max_h
+      , default_adv_vec    = default_vec
+      , glyph_adv_vecs     = makeAdvVecs $ afm_glyph_metrics afm
+      }  
+  where
+    max_h = maybe default_max_height boundaryHeight $ afm_font_bbox afm
+
+
+makeAdvVecs :: [AfmGlyphMetrics] -> IntMap.IntMap (Vec2 AfmUnit)
+makeAdvVecs  = foldr fn IntMap.empty
+  where
+    fn (AfmGlyphMetrics _ v ss) table = case Map.lookup ss ps_glyph_indices of
+        Nothing -> table
+        Just i  -> IntMap.insert i v table
+
+
+--------------------------------------------------------------------------------
+-- parser
 
 parseAfmV2File :: FilePath -> IO (Either ParseError AfmV2File)
 parseAfmV2File filepath = runParserEither afmFile <$> readFile filepath

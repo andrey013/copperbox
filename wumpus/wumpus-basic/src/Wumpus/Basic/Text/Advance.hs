@@ -45,7 +45,6 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Char
-import qualified Data.IntMap as IntMap
 import Data.Maybe
 
 
@@ -131,7 +130,7 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 -- PtSize should be from the DrawingCtx...
 
 singleLine :: Num u 
-           => String -> PtSize -> CharMetricsTable u -> AdvanceSingle u
+           => String -> PtSize -> GlyphMetricsTable u -> AdvanceSingle u
 singleLine ss sz cm = makeSingle bbox av (textline ss)
   where
     av     = stringVector sz cm ss 
@@ -141,11 +140,11 @@ singleLine ss sz cm = makeSingle bbox av (textline ss)
 -- TODO - this should account for escape characters...
 --
 stringVector :: Num u 
-             => PtSize -> CharMetricsTable u -> String -> AdvanceVec u
+             => PtSize -> GlyphMetricsTable u -> String -> AdvanceVec u
 stringVector sz cm ss = 
    foldr (\c v -> v ^+^ charVector sz cm c) (vec 0 0) ss
 
 
-charVector :: PtSize -> CharMetricsTable u -> Char -> AdvanceVec u
+charVector :: PtSize -> GlyphMetricsTable u -> Char -> AdvanceVec u
 charVector sz cm c =
     fromMaybe (defaultAdvanceVector cm sz) $ advanceVector cm sz (ord c)
