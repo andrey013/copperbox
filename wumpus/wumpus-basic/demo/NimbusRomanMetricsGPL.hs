@@ -11,27 +11,28 @@
 
 module NimbusRomanMetricsGPL where
 
+import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Text.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import qualified Data.IntMap as IntMap
 
-nimbus_metrics :: CharMetricsTable AfmUnit
+nimbus_metrics :: FromPtSize u => CharMetricsTable u
 nimbus_metrics = 
-    CharMetricsTable { glyph_max_height = nimbus_max_height
+    CharMetricsTable { unit_scale_fun   = fn
+                     , glyph_max_height = nimbus_max_height
                      , default_adv_vec  = wx 722
                      , char_adv_vecs    = IntMap.fromList nimbus_char_map }
-
+  where
+    fn = flip afmValue 
 
 nimbus_max_height :: AfmUnit
 nimbus_max_height = 942 + negate (-281)
 
-nimbus_bbox :: CharBoundingBox AfmUnit
-nimbus_bbox = charBoundingBox (-168) (-281) 1031 924
+-- nimbus_bbox :: CharBoundingBox AfmUnit
+-- nimbus_bbox = charBoundingBox (-168) (-281) 1031 924
 
-bb :: AfmUnit -> AfmUnit -> AfmUnit -> AfmUnit -> CharBoundingBox AfmUnit
-bb = charBoundingBox
 
 wx :: AfmUnit -> Vec2 AfmUnit
 wx = hvec

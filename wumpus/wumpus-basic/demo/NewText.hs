@@ -16,8 +16,6 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
-dummy :: CharBoundingBox AfmUnit
-dummy = charBoundingBox (-115) (-240) 1151 1009
 
 main :: IO ()
 main = do 

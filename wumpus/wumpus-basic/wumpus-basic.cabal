@@ -150,6 +150,7 @@ library
     Wumpus.Basic.Dots.Marks,
     Wumpus.Basic.FontLoader.AfmV2,
     Wumpus.Basic.FontLoader.Base,
+    Wumpus.Basic.FontLoader.GsFontMap,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.Drawing,

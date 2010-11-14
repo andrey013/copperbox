@@ -1,5 +1,5 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,20 +21,13 @@ module Wumpus.Basic.Text.Datatypes
   
     CodePoint
 
-  -- * AFM file measurement unit
-  , AfmUnit
-
-  , afmValue
-
   , AdvanceVec
   , advanceH
 
-  , CharBoundingBox
-  , charBoundingBox
-  , destCharBoundingBox
-
   , CharMetricsTable(..)
-  , AfmCharMetricsTable
+  , glyphMaxHeight
+  , defaultAdvanceVector
+  , advanceVector
 
   ) where
 
@@ -47,23 +40,6 @@ import qualified Data.IntMap as IntMap
 --
 type CodePoint = Int
 
-
--- | Wrapped Double representing 1\/1000 of the scale factor
--- (Point size) of a font. AFM files encode all measurements 
--- as these units. 
--- 
-newtype AfmUnit = AfmUnit { getAfmUnit :: Double } 
-  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
-
-instance Show AfmUnit where
-  showsPrec p d = showsPrec p (getAfmUnit d)
-
-
--- | Compute the size of a measurement in Afm units scaled by the
--- point size of the font.
---
-afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
-afmValue u pt = fromPtSize $ (realToFrac $ getAfmUnit u) * (pt / 1000)
 
 
 
@@ -83,34 +59,26 @@ advanceH (V2 w _)  = V2 w 0
 
 
 
-
--- | Character bounding boxes have different coordinates to 
--- the /normal/ bounding boxes in Wumpus. 
---
--- Also, they might typically have a different unit to a Wumpus 
--- drawing.
--- 
-newtype CharBoundingBox cu = CharBoundingBox { 
-          getCharBoundingBox :: BoundingBox cu }
-  deriving (Eq,Show)
-
-charBoundingBox :: cu -> cu -> cu -> cu -> CharBoundingBox cu
-charBoundingBox llx lly urx ury = 
-    CharBoundingBox $ BBox (P2 llx lly) (P2 urx ury)
-
-destCharBoundingBox :: CharBoundingBox cu -> (cu,cu,cu,cu)
-destCharBoundingBox = destBoundingBox . getCharBoundingBox
-
-
-
-data CharMetricsTable cu = CharMetricsTable
-       { glyph_max_height   :: cu 
+data CharMetricsTable u = forall cu . CharMetricsTable
+       { unit_scale_fun     :: PtSize -> cu -> u
+       , glyph_max_height   :: cu 
        , default_adv_vec    :: Vec2 cu
        , char_adv_vecs      :: IntMap.IntMap (Vec2 cu)
        }
 
-type AfmCharMetricsTable = CharMetricsTable AfmUnit
+glyphMaxHeight :: CharMetricsTable u -> PtSize -> u
+glyphMaxHeight (CharMetricsTable usf h _ _) sz = (usf sz h)
 
+
+defaultAdvanceVector :: CharMetricsTable u -> PtSize -> Vec2 u
+defaultAdvanceVector (CharMetricsTable usf _ (V2 x y) _) sz = 
+    V2 (usf sz x) (usf sz y)
+
+advanceVector :: CharMetricsTable u -> PtSize -> Int -> Maybe (Vec2 u)
+advanceVector (CharMetricsTable usf _ _ im) sz ix = 
+    fmap fn $ IntMap.lookup ix im 
+  where
+     fn (V2 x y) = V2 (usf sz x) (usf sz y)
 
 -- Note - the bounding box of a glyph is seemingly _not_ useful 
 -- for calculating the bound box of a string. For instance, 

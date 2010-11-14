@@ -130,32 +130,22 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 
 -- PtSize should be from the DrawingCtx...
 
-singleLine :: FromPtSize u
-           => String -> PtSize -> AfmCharMetricsTable -> AdvanceSingle u
+singleLine :: Num u 
+           => String -> PtSize -> CharMetricsTable u -> AdvanceSingle u
 singleLine ss sz cm = makeSingle bbox av (textline ss)
   where
     av     = stringVector sz cm ss 
     width  = vector_x av
-    bbox   = oLocBoundingBox width (afmValue (glyph_max_height cm) sz)
+    bbox   = oLocBoundingBox width (glyphMaxHeight cm sz)
 
 -- TODO - this should account for escape characters...
 --
-stringVector :: FromPtSize u 
-             => PtSize -> AfmCharMetricsTable -> String -> AdvanceVec u
+stringVector :: Num u 
+             => PtSize -> CharMetricsTable u -> String -> AdvanceVec u
 stringVector sz cm ss = 
    foldr (\c v -> v ^+^ charVector sz cm c) (vec 0 0) ss
 
 
-charVector :: FromPtSize u 
-           => PtSize -> AfmCharMetricsTable -> Char -> AdvanceVec u
-charVector sz cm c = scaleVector sz $ lookupCodePoint (ord c) cm
-
-
-scaleVector :: FromPtSize u 
-            => PtSize -> Vec2 AfmUnit -> AdvanceVec u
-scaleVector sz (V2 x y) = vec (afmValue x sz) (afmValue y sz)
-
-lookupCodePoint :: CodePoint -> AfmCharMetricsTable -> Vec2 AfmUnit
-lookupCodePoint n t = 
-    fromMaybe (default_adv_vec t) $ IntMap.lookup n (char_adv_vecs t)
-
+charVector :: PtSize -> CharMetricsTable u -> Char -> AdvanceVec u
+charVector sz cm c =
+    fromMaybe (defaultAdvanceVector cm sz) $ advanceVector cm sz (ord c)

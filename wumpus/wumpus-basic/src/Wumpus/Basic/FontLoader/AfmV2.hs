@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- AFM file parser.
+-- AFM file parser for Version 2.0.
 --
 -- Note - AFM Version 2.0 used by GhostScript and Version 3.0+
 -- have numerous differences. 
@@ -43,7 +43,7 @@ type GlobalInfo     = Map.Map AfmKey String
 data AfmV2File = AfmV2File 
       { afm_v2_encoding     :: Maybe String
       , afm_font_bbox       :: Maybe AfmBoundingBox
-      , afm_char_metrics    :: [AfmCharacterMetrics]
+      , afm_gylf_metrics    :: [AfmGlyphMetrics]
       }
   deriving (Show) 
 
@@ -55,7 +55,7 @@ afmFile :: CharParser AfmV2File
 afmFile = 
     (\info xs -> AfmV2File (encodingScheme info) (fontBBox info) xs) 
       <$> (versionNumber    *> globalInfo) 
-      <*> (startCharMetrics *> many characterMetrics)
+      <*> (startCharMetrics *> many charMetrics)
 
 
 
@@ -88,8 +88,8 @@ encodingScheme      = textQuery "EncodingScheme"
 
 
 
-characterMetrics :: CharParser AfmCharacterMetrics
-characterMetrics = AfmCharacterMetrics <$>
+charMetrics :: CharParser AfmGlyphMetrics
+charMetrics = AfmGlyphMetrics <$>
         metric "C" (-1) cint
     <*> widthVector
     <*> metric "N" "" name1
