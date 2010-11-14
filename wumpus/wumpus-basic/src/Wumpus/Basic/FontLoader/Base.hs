@@ -40,6 +40,9 @@ module Wumpus.Basic.FontLoader.Base
   , FontLoader(..)
   , loadFont
 
+  , BaseGlyphMetrics
+  , loadBaseGlyphMetrics
+
   ) where
 
 import Wumpus.Basic.Text.Datatypes              
@@ -47,6 +50,8 @@ import Wumpus.Basic.Text.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Foldable ( foldrM )
+import qualified Data.Map as Map
 import System.Directory
 import System.FilePath
 
@@ -124,4 +129,23 @@ locateStep loader font_name =
 parseStep :: FontLoader cu -> FilePath -> IO (FontLoadResult cu)
 parseStep (FontLoader _ _ parser post) valid_path = 
     fmap (either Left (Right . post)) $ parser valid_path
+
+--------------------------------------------------------------------------------
+
+type BaseGlyphMetrics u = Map.Map FontName (GlyphMetricsTable u)
+
+
+loadBaseGlyphMetrics :: FontLoader u -> [FontName] -> IO (BaseGlyphMetrics u)
+loadBaseGlyphMetrics loader xs = foldrM fn Map.empty xs
+  where
+    fn font_name acc = loadFont loader font_name >>= \ans -> 
+                       case ans of
+                         Left err -> reportBaseError font_name err >> return acc
+                         Right table -> return $ Map.insert font_name table acc
+
+
+reportBaseError :: FontName -> FontLoadErr -> IO ()
+reportBaseError font_name err = do 
+    putStrLn $ "The font " ++ font_name ++ " failed to load, with the error:"
+    putStrLn $ err
 

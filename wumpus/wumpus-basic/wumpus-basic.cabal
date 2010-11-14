@@ -131,7 +131,9 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base            <  5, 
-                      containers      >= 0.3     && <= 0.4, 
+                      containers      >= 0.3     && <= 0.4,
+                      directory       >= 1.0     && <  2.0, 
+                      filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6,
                       wumpus-core     == 0.40.0
 

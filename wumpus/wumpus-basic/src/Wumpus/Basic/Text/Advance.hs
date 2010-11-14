@@ -128,6 +128,7 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 --------------------------------------------------------------------------------
 
 -- PtSize should be from the DrawingCtx...
+-- ... so should glyph metrics.
 
 singleLine :: Num u 
            => String -> PtSize -> GlyphMetricsTable u -> AdvanceSingle u

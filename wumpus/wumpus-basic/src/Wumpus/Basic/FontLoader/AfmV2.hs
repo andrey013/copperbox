@@ -20,12 +20,14 @@
 module Wumpus.Basic.FontLoader.AfmV2
   ( 
     AfmV2File(..)
+  , ghostScriptFontLoader
   , buildGlyphMetricsTable
   , parseAfmV2File
   
   ) where
 
 import Wumpus.Basic.FontLoader.Base
+import Wumpus.Basic.FontLoader.GSFontMap
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
 import Wumpus.Basic.Text.Datatypes              
@@ -34,6 +36,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
 
 import Control.Applicative
+import Data.Maybe
 
 import Data.Char
 import qualified Data.IntMap            as IntMap
@@ -49,6 +52,19 @@ data AfmV2File = AfmV2File
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
+
+-- | This is the default loader...
+-- 
+ghostScriptFontLoader :: FromPtSize u => FilePath -> FontLoader u 
+ghostScriptFontLoader font_dir_path = FontLoader
+      { path_to_font_dir    = font_dir_path
+      , file_name_locator   = buildName
+      , font_parser         = parseAfmV2File
+      , post_process        = buildGlyphMetricsTable 1093 (V2 600 0)
+      }
+  where
+    buildName :: FontName -> FilePath
+    buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
 
 
 buildGlyphMetricsTable :: FromPtSize u

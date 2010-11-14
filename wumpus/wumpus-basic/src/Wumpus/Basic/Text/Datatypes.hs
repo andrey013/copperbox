@@ -58,7 +58,13 @@ advanceH (V2 w _)  = V2 w 0
 
 
 
-
+-- | NOTE - the @u@ and @unit_scale_fun@ could be problematic if
+-- Wumpus ever allows different drawing units to Doubles (which 
+-- represent PostScript points).
+--
+-- Maybe the GMT should be parametric on @cu@ instead and not 
+-- have the @unit_scale_fun@.
+--
 data GlyphMetricsTable u = forall cu . GlyphMetricsTable
        { unit_scale_fun     :: PtSize -> cu -> u
        , glyph_max_height   :: cu 
