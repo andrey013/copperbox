@@ -155,7 +155,7 @@ library
     Wumpus.Basic.FontLoader.GsFontMap,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Base,
-    Wumpus.Basic.Graphic.Drawing,
+    Wumpus.Basic.Graphic.ContextFunction,
     Wumpus.Basic.Graphic.DrawingContext,
     Wumpus.Basic.Graphic.GraphicOperations,
     Wumpus.Basic.Graphic.GraphicTypes,

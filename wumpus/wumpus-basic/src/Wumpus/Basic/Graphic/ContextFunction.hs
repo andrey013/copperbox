@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Graphic.Drawing
+-- Module      :  Wumpus.Basic.Graphic.ContextFunction
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Graphic.Drawing
+module Wumpus.Basic.Graphic.ContextFunction
   (
 
     CF

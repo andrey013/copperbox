@@ -83,7 +83,7 @@ module Wumpus.Basic.Graphic.GraphicTypes
   ) where
 
 import Wumpus.Basic.Graphic.Base
-import Wumpus.Basic.Graphic.Drawing
+import Wumpus.Basic.Graphic.ContextFunction
 import Wumpus.Basic.Graphic.DrawingContext
 
 import Wumpus.Core                      -- package: wumpus-core

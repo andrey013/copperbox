@@ -18,7 +18,7 @@
 module Wumpus.Basic.Graphic
   (
     module Wumpus.Basic.Graphic.Base
-  , module Wumpus.Basic.Graphic.Drawing
+  , module Wumpus.Basic.Graphic.ContextFunction
   , module Wumpus.Basic.Graphic.DrawingContext
   , module Wumpus.Basic.Graphic.GraphicOperations
   , module Wumpus.Basic.Graphic.GraphicTypes
@@ -28,7 +28,7 @@ module Wumpus.Basic.Graphic
   ) where
 
 import Wumpus.Basic.Graphic.Base
-import Wumpus.Basic.Graphic.Drawing
+import Wumpus.Basic.Graphic.ContextFunction
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.GraphicOperations
 import Wumpus.Basic.Graphic.GraphicTypes
