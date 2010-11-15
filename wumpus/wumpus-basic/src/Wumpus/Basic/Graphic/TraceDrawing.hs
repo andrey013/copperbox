@@ -261,8 +261,8 @@ mbPictureU (Just a) = a
 
 --------------------------------------------------------------------------------
 
-query :: DrawingCtxM m => Drawing a -> m a
-query df = askDC >>= \ctx -> return $ runDrawing ctx df
+query :: DrawingCtxM m => CF a -> m a
+query df = askDC >>= \ctx -> return $ runCF ctx df
 
 
 -- | Draw a Graphic taking the drawing style from the 
@@ -317,7 +317,7 @@ node :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m)
      => LocGraphic u -> m ()
 node gf = askDC    >>= \ctx -> 
           position >>= \pt  -> 
-          let f    = runDrawing ctx gf in trace (collectH $ f pt)
+          let f    = runCF ctx gf in trace (collectH $ f pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, u ~ MonUnit m) 

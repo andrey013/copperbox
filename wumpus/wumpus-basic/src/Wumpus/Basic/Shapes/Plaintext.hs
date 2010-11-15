@@ -163,7 +163,7 @@ zero_box_margin = BoxMargin { margin_left     = 0
                             , margin_top      = 0
                             , margin_bottom   = 0 }
 
-uniformMargin :: (Num u, FromPtSize u) => u -> Drawing (BoxMargin u)
+uniformMargin :: (Num u, FromPtSize u) => u -> CF (BoxMargin u)
 uniformMargin scaling_factor = 
    (\sz -> let u = scaling_factor * sz in BoxMargin { margin_left     = u
                                                     , margin_right    = u
@@ -198,12 +198,12 @@ drawText x = intoImage (multiLineRect x) (drawMultiLines x)
 
 
 multiLineRect :: (Fractional u, Ord u, FromPtSize u) 
-              => Plaintext u -> Drawing (PlaintextAnchor u)
+              => Plaintext u -> CF (PlaintextAnchor u)
 multiLineRect (Plaintext { text_ctm=ctm, text_margin=box, text_text=xs }) = 
    (\w h -> PlaintextAnchor $ expandedRectangle box w h ctm)
     <$> maxWidth xs <*> monoMultiLineHeight (length xs)
 
-maxWidth :: (Ord u, FromPtSize u) => [DxString u] -> Drawing u
+maxWidth :: (Ord u, FromPtSize u) => [DxString u] -> CF u
 maxWidth xs = maximum <$> mapM lineWidth1 xs
   where
     lineWidth1 (DxString dx ss) = (\w -> w+dx) <$> monoTextLength ss                   
@@ -253,7 +253,7 @@ expandedRectangle (BoxMargin { margin_left=xl, margin_right=xr
 
 
 baselineLefts :: (Fractional u, FromPtSize u)  
-                 => Int -> u -> Point2 u -> Drawing [Point2 u]
+                 => Int -> u -> Point2 u -> CF [Point2 u]
 baselineLefts num_rows max_width ctr = 
    (\rect_height ptsize spacing descender_depth -> 
         let dy = 0.5 * rect_height - 0.5 * ptsize

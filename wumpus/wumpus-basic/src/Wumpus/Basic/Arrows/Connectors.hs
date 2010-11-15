@@ -143,7 +143,7 @@ type ArrowMark u = PrimGraphic u -> PrimGraphic u
 
 tipEval :: Num u 
         => Maybe (Arrowhead u) -> Point2 u -> Radian
-        -> Drawing (u, ArrowMark u)
+        -> CF (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
 tipEval (Just arw) pt theta = makeMark (situ2 (getArrowhead arw) pt theta)
 
@@ -152,7 +152,7 @@ unmarked :: ArrowMark u
 unmarked = id
 
 
-makeMark :: Image u a -> Drawing (a, ArrowMark u)
+makeMark :: Image u a -> CF (a, ArrowMark u)
 makeMark = postpro (\(a,prim) -> (a, superior prim))
 
 

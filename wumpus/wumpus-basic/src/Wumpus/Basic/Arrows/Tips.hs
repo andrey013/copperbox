@@ -144,7 +144,7 @@ markHeightPlusLineWidth =
 -}
 
 
-markHeightLessLineWidth :: (Fractional u, FromPtSize u) => Drawing u
+markHeightLessLineWidth :: (Fractional u, FromPtSize u) => CF u
 markHeightLessLineWidth = 
     (\h lw -> h - realToFrac lw) <$> markHeight <*> lineWidth
 
@@ -154,7 +154,7 @@ markHeightLessLineWidth =
 -- Its common for the rectraction not to care about the angle or 
 -- the point and only care about the DrawingCtx.
 --
-noRetract :: Num u => LocThetaDrawing u u
+noRetract :: Num u => LocThetaCF u u
 noRetract = wrap2 0 
 
 
@@ -171,7 +171,7 @@ noRetract = wrap2 0
 -- does it).
 --
 tripointsByAngle :: (Floating u, FromPtSize u)
-                 => Radian ->  LocThetaDrawing u (Point2 u, Point2 u)
+                 => Radian ->  LocThetaCF u (Point2 u, Point2 u)
 tripointsByAngle triang = markHeight >>= \h -> 
     raise2 $ \pt theta -> let (vup,vlo) = triVecsByAngle h (0.5*triang) theta
                           in  (pt .+^ vup, pt .+^ vlo)
@@ -179,7 +179,7 @@ tripointsByAngle triang = markHeight >>= \h ->
 
 revtripointsByAngle :: (Floating u, FromPtSize u)
                     => Radian 
-                    -> LocThetaDrawing u (Point2 u, Point2 u, Point2 u)
+                    -> LocThetaCF u (Point2 u, Point2 u, Point2 u)
 revtripointsByAngle triang = markHeight >>= \h -> 
     raise2 $ \pt theta -> let theta'    = circularModulo $ pi+theta 
                               (vup,vlo) = triVecsByAngle h (0.5*triang) theta'
@@ -189,7 +189,7 @@ revtripointsByAngle triang = markHeight >>= \h ->
 
 
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
-                => LocThetaDrawing u (Point2 u, Point2 u)
+                => LocThetaCF u (Point2 u, Point2 u)
 tripointsByDist = markHeight >>= \h ->
     raise2 $ \pt theta -> let (vup,vlo) = triVecsByDist h (0.5*h) theta
                           in  (pt .+^ vup, pt .+^ vlo)
@@ -197,7 +197,7 @@ tripointsByDist = markHeight >>= \h ->
 
 
 revtripointsByDist :: (Real u, Floating u, FromPtSize u)
-                   => LocThetaDrawing u (Point2 u, Point2 u, Point2 u)
+                   => LocThetaCF u (Point2 u, Point2 u, Point2 u)
 revtripointsByDist = markHeight >>= \h -> 
     raise2 $ \pt theta -> let theta'    = circularModulo $ pi+theta 
                               (vup,vlo) = triVecsByDist h (0.5*h) theta'
@@ -207,10 +207,10 @@ revtripointsByDist = markHeight >>= \h ->
 
 
 
-bindLocTip :: LocThetaDrawing u a -> (a -> LocGraphic u) -> LocThetaGraphic u
+bindLocTip :: LocThetaCF u a -> (a -> LocGraphic u) -> LocThetaGraphic u
 bindLocTip df da = bind2 df (\a -> static2 $ da a) 
 
-bindLocThetaTip :: LocThetaDrawing u a -> (a -> LocThetaGraphic u) 
+bindLocThetaTip :: LocThetaCF u a -> (a -> LocThetaGraphic u) 
                 -> LocThetaGraphic u
 bindLocThetaTip = bind2 
 

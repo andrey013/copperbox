@@ -101,7 +101,7 @@ type PointDisplace u = Point2 u -> Point2 u
 -- Simple drawing - produce a primitive, access the DrawingContext
 -- if required.
 --
-type Graphic u      = Drawing (PrimGraphic u)
+type Graphic u      = CF (PrimGraphic u)
 
 -- | Commonly graphics take a start point as well as a drawing 
 -- context.
@@ -109,17 +109,17 @@ type Graphic u      = Drawing (PrimGraphic u)
 -- Here they are called a LocGraphic - graphic with a (starting) 
 -- location.
 --
-type LocGraphic u   = LocDrawing u (PrimGraphic u)
+type LocGraphic u   = LocCF u (PrimGraphic u)
 
 
 -- | A function from @point * angle -> graphic@
 --
-type LocThetaGraphic u          = LocThetaDrawing u (PrimGraphic u)
+type LocThetaGraphic u          = LocThetaCF u (PrimGraphic u)
 
 -- | ConnectorGraphic is a connector drawn between two points 
 -- contructing a Graphic.
 --
-type ConnectorGraphic u         = ConnectorDrawing u (PrimGraphic u)
+type ConnectorGraphic u         = ConnectorCF u (PrimGraphic u)
 
 
 
@@ -140,11 +140,11 @@ type instance DUnit (Graphic u) = u
 -- typical example - nodes are drawing but the also support 
 -- taking anchor points.
 --
-type Image u a          = Drawing (a, PrimGraphic u)
+type Image u a          = CF (a, PrimGraphic u)
 
-type LocImage u a       = LocDrawing u (a,PrimGraphic u)
+type LocImage u a       = LocCF u (a,PrimGraphic u)
 
-type LocThetaImage u a  = LocThetaDrawing u (a,PrimGraphic u)
+type LocThetaImage u a  = LocThetaCF u (a,PrimGraphic u)
 
 -- | ConnectorImage is a connector drawn between two points 
 -- constructing an Image.
@@ -152,7 +152,7 @@ type LocThetaImage u a  = LocThetaDrawing u (a,PrimGraphic u)
 -- Usually the answer type of a ConnectorImage will be a Path so
 -- the Points ar @midway@, @atstart@ etc. can be taken on it.
 --
-type ConnectorImage u a = ConnectorDrawing u (a, PrimGraphic u)
+type ConnectorImage u a = ConnectorCF u (a, PrimGraphic u)
 
 
 
@@ -233,32 +233,31 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
 
 
 runGraphic :: DrawingContext -> Graphic u -> PrimGraphic u
-runGraphic ctx df = runDrawing ctx df
+runGraphic ctx df = runCF ctx df
 
 
 runLocGraphic :: DrawingContext -> Point2 u -> LocGraphic u -> PrimGraphic u
-runLocGraphic ctx pt df = runDrawing ctx (situ1 df pt)
+runLocGraphic ctx pt df = runCF ctx (situ1 df pt)
 
 
 
 runImage :: DrawingContext -> Image u a -> (a, PrimGraphic u)
-runImage ctx img = runDrawing ctx img
+runImage ctx img = runCF ctx img
 
 runLocImage :: DrawingContext -> Point2 u -> LocImage u a -> (a, PrimGraphic u)
-runLocImage ctx pt img = runDrawing ctx (situ1 img pt)
+runLocImage ctx pt img = runCF ctx (situ1 img pt)
 
 
 --------------------------------------------------------------------------------
 -- Combinators
 
-moveLoc :: (Point2 u -> Point2 u) -> LocDrawing u a -> LocDrawing u a
+moveLoc :: (Point2 u -> Point2 u) -> LocCF u a -> LocCF u a
 moveLoc = prepro1
 
 
--- move to another module...
 
 infixr 1 `at`
-at :: Drawing (Point2 u -> b) -> Point2 u -> Drawing b
+at :: CF (Point2 u -> b) -> Point2 u -> CF b
 at = situ1
 
 
@@ -308,25 +307,25 @@ xlinkImage hypl =
 
 
 
-intoImage :: Drawing a -> Graphic u -> Image u a
+intoImage :: CF a -> Graphic u -> Image u a
 intoImage = postcomb (,)
 
 
 
-intoLocImage :: LocDrawing u a -> LocGraphic u -> LocImage u a
+intoLocImage :: LocCF u a -> LocGraphic u -> LocImage u a
 intoLocImage = postcomb1 (,)
 
 --    Drawing $ \ctx a -> (getDrawing f ctx a, getDrawing g ctx a)
 
 
-intoConnectorImage :: ConnectorDrawing u a 
+intoConnectorImage :: ConnectorCF u a 
                    -> ConnectorGraphic u 
                    -> ConnectorImage u a
 intoConnectorImage = postcomb2 (,)
 
 
 
-intoLocThetaImage :: LocThetaDrawing u a 
+intoLocThetaImage :: LocThetaCF u a 
                   -> LocThetaGraphic u 
                   -> LocThetaImage u a
 intoLocThetaImage = postcomb2 (,)
