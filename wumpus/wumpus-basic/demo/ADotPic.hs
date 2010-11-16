@@ -11,6 +11,7 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"    
