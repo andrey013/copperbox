@@ -38,7 +38,11 @@ module Wumpus.Basic.Graphic.Query
   , markHalfHeight
   , baselineSpacing
 
-  -- 
+  -- * Glyph metrics
+  , maxGlyphHeight
+  , avLookupTable
+
+  -- * Default monospace metrics
 
   , monoFontPointSize
   , monoCharWidth
@@ -57,6 +61,7 @@ module Wumpus.Basic.Graphic.Query
 
 import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
+import Wumpus.Basic.Graphic.GlyphMetrics
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -139,8 +144,18 @@ markHalfHeight = (0.5*) <$> markHeight
 -- markHeight to merit a withMarkHeight function.
 
 
+--------------------------------------------------------------------------------
 
 
+
+maxGlyphHeight :: (FromPtSize u, DrawingCtxM m) => m u
+maxGlyphHeight = 
+    (\ctx -> withFontMetrics (\rec sz -> get_max_height rec sz) ctx) <$> askDC
+
+
+avLookupTable :: (FromPtSize u, DrawingCtxM m) => m (Int -> Vec2 u)
+avLookupTable = 
+    (\ctx -> withFontMetrics (\rec sz -> get_av_lookup rec sz) ctx) <$> askDC
 
 
 --------------------------------------------------------------------------------

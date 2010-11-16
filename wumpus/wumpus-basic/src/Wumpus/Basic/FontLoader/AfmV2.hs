@@ -28,9 +28,9 @@ module Wumpus.Basic.FontLoader.AfmV2
 
 import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.FontLoader.GSFontMap
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
-import Wumpus.Basic.Text.Datatypes              
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
@@ -55,9 +55,10 @@ data AfmV2File = AfmV2File
 
 -- | This is the default loader...
 -- 
-ghostScriptFontLoader :: FromPtSize u => FilePath -> FontLoader u 
+ghostScriptFontLoader :: FilePath -> FontLoader AfmUnit
 ghostScriptFontLoader font_dir_path = FontLoader
-      { path_to_font_dir    = font_dir_path
+      { unit_scale_fun      = afmUnitScale
+      , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
       , font_parser         = parseAfmV2File
       , post_process        = buildGlyphMetricsTable 1093 (V2 600 0)
@@ -67,18 +68,18 @@ ghostScriptFontLoader font_dir_path = FontLoader
     buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
 
 
-buildGlyphMetricsTable :: FromPtSize u
-                       => AfmUnit -> Vec2 AfmUnit -> AfmV2File 
-                       -> GlyphMetricsTable u
+buildGlyphMetricsTable :: AfmUnit -> Vec2 AfmUnit -> AfmV2File 
+                       -> GlyphMetricsTable AfmUnit
 buildGlyphMetricsTable default_max_height default_vec afm = 
     GlyphMetricsTable 
-      { unit_scale_fun     = flip afmValue
-      , glyph_max_height   = max_h
+      { glyph_max_height   = max_h
       , default_adv_vec    = default_vec
       , glyph_adv_vecs     = makeAdvVecs $ afm_glyph_metrics afm
       }  
   where
     max_h = maybe default_max_height boundaryHeight $ afm_font_bbox afm
+    
+    --   unit_scale_fun     = flip afmValue
 
 
 makeAdvVecs :: [AfmGlyphMetrics] -> IntMap.IntMap (Vec2 AfmUnit)

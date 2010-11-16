@@ -12,7 +12,7 @@
 module NimbusRomanMetricsGPL where
 
 import Wumpus.Basic.FontLoader.Base
-import Wumpus.Basic.Text.Datatypes
+import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 

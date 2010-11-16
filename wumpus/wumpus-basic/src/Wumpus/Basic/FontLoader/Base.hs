@@ -25,6 +25,7 @@ module Wumpus.Basic.FontLoader.Base
   -- * Afm Unit
     AfmUnit
   , afmValue
+  , afmUnitScale
   
   -- * Glyph metrics
 
@@ -34,7 +35,6 @@ module Wumpus.Basic.FontLoader.Base
   , AfmGlyphMetrics(..)
 
   -- * Font loading
-  , FontName
   , FontLoadErr
   , FontLoadResult
   , FontLoader(..)
@@ -45,7 +45,7 @@ module Wumpus.Basic.FontLoader.Base
 
   ) where
 
-import Wumpus.Basic.Text.Datatypes              
+import Wumpus.Basic.Graphic
 
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -74,6 +74,8 @@ instance Show AfmUnit where
 afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
 afmValue u pt = fromPtSize $ (realToFrac $ getAfmUnit u) * (pt / 1000)
 
+afmUnitScale :: AfmUnit -> PtSize 
+afmUnitScale u = (realToFrac $ getAfmUnit u / 1000)
 
 
 -- | Afm files index glyphs by /PostScript character code/.
@@ -97,16 +99,19 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 
 -- Maybe the CharMetricsTable should be scaled to Wumpus units as 
 -- the last part of the parsing process...
+--
+-- No it shouldn\'t - this would disallow drawings in centimeters
+-- 
 
-type FontName           = String
 type FontLoadErr        = String
 type FontLoadResult cu  = Either FontLoadErr (GlyphMetricsTable cu)
 
-data FontLoader u = forall interim. FontLoader 
-      { path_to_font_dir    :: FilePath
+data FontLoader cu = forall interim. FontLoader 
+      { unit_scale_fun      :: cu -> PtSize
+      , path_to_font_dir    :: FilePath
       , file_name_locator   :: FontName -> FilePath
       , font_parser         :: FilePath -> IO (Either String interim)
-      , post_process        :: interim -> GlyphMetricsTable u
+      , post_process        :: interim -> GlyphMetricsTable cu
       }
 
 
@@ -127,23 +132,24 @@ locateStep loader font_name =
 
 
 parseStep :: FontLoader cu -> FilePath -> IO (FontLoadResult cu)
-parseStep (FontLoader _ _ parser post) valid_path = 
+parseStep (FontLoader _ _ _ parser post) valid_path = 
     fmap (either Left (Right . post)) $ parser valid_path
 
 --------------------------------------------------------------------------------
 
-type BaseGlyphMetrics u = Map.Map FontName (GlyphMetricsTable u)
 
 
-loadBaseGlyphMetrics :: FontLoader u -> [FontName] -> IO (BaseGlyphMetrics u)
+loadBaseGlyphMetrics :: FontLoader u -> [FontName] -> IO BaseGlyphMetrics
 loadBaseGlyphMetrics loader xs = foldrM fn Map.empty xs
   where
     fn font_name acc = loadFont loader font_name >>= \ans -> 
                        case ans of
                          Left err -> reportBaseError font_name err >> return acc
-                         Right table -> return $ Map.insert font_name table acc
+                         Right table -> return $ 
+                             Map.insert font_name (tableToGM table) acc
 
-
+    tableToGM = buildMetrics (unit_scale_fun loader)  
+    
 reportBaseError :: FontName -> FontLoadErr -> IO ()
 reportBaseError font_name err = do 
     putStrLn $ "The font " ++ font_name ++ " failed to load, with the error:"

@@ -16,8 +16,11 @@
 
 module Wumpus.Basic.Text.Advance
   ( 
+
+    AdvanceVec
+  , advanceH
   
-    AdvanceSingle
+  , AdvanceSingle
   , AdvanceMulti
 
   , runAdvanceMulti 
@@ -35,7 +38,6 @@ module Wumpus.Basic.Text.Advance
   ) where
 
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Text.Datatypes
 import Wumpus.Basic.Text.LocBoundingBox
 
 
@@ -45,7 +47,21 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Char
-import Data.Maybe
+import Data.Foldable ( foldrM )
+
+
+type AdvanceVec u = Vec2 u
+
+-- | Take the max width and set the height to zero.
+--
+-- It is assumed that any deviation from zero in the height
+-- component represents that the end vector is in super- or 
+-- sub-script mode. As 'advanceHMax' is used in multi-line 
+-- concatenation, losing the mode seems acceptable.
+--
+advanceH :: Num u => AdvanceVec u -> Vec2 u
+advanceH (V2 w _)  = V2 w 0
+
 
 
 data AdvanceSingle u = AdvanceSingle
@@ -127,25 +143,23 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 
 --------------------------------------------------------------------------------
 
--- PtSize should be from the DrawingCtx...
--- ... so should glyph metrics.
 
-singleLine :: Num u 
-           => String -> PtSize -> GlyphMetricsTable u -> AdvanceSingle u
-singleLine ss sz cm = makeSingle bbox av (textline ss)
-  where
-    av     = stringVector sz cm ss 
-    width  = vector_x av
-    bbox   = oLocBoundingBox width (glyphMaxHeight cm sz)
+singleLine :: FromPtSize u => String -> CF (AdvanceSingle u)
+singleLine ss = 
+    stringVector ss >>= \av -> 
+    maxGlyphHeight  >>= \max_h ->
+    let width = vector_x av
+        bbox  = oLocBoundingBox width max_h
+    in  return  (makeSingle bbox av (textline ss))
+
 
 -- TODO - this should account for escape characters...
 --
-stringVector :: Num u 
-             => PtSize -> GlyphMetricsTable u -> String -> AdvanceVec u
-stringVector sz cm ss = 
-   foldr (\c v -> v ^+^ charVector sz cm c) (vec 0 0) ss
+stringVector :: FromPtSize  u =>  String -> CF (AdvanceVec u)
+stringVector ss = 
+   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) ss
 
 
-charVector :: PtSize -> GlyphMetricsTable u -> Char -> AdvanceVec u
-charVector sz cm c =
-    fromMaybe (defaultAdvanceVector cm sz) $ advanceVector cm sz (ord c)
+
+charVector :: FromPtSize u => Char -> CF (AdvanceVec u)
+charVector c = avLookupTable `situ1` (ord c)

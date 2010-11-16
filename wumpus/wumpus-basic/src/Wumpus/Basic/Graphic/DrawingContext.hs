@@ -28,6 +28,8 @@ module Wumpus.Basic.Graphic.DrawingContext
   , DrawingContextF
 
   , standardContext
+  , metricsContext
+
   , default_drawing_context
 
   -- * Modifiers 
@@ -69,39 +71,76 @@ module Wumpus.Basic.Graphic.DrawingContext
   , strokeColour
   , fillColour 
 
-
+  -- * Glyph metrics
+  , withFontMetrics
 
   
   ) where
 
 
-import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.Colour.SVGColours
+import Wumpus.Basic.Graphic.GlyphMetrics
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Text.StandardEncoding
 
 import Control.Applicative
+import qualified Data.Map as Map
+import Data.Maybe
+
 
 data DrawingContext = DrawingContext
-      { stroke_props          :: StrokeAttr
+      { glyph_tables          :: BaseGlyphMetrics
+      , fallback_metrics      :: GlyphMetrics      
+      , stroke_props          :: StrokeAttr
       , font_props            :: FontAttr
       , stroke_colour         :: RGBi      -- also text colour...
       , fill_colour           :: RGBi      
       , line_spacing_factor   :: Double
       }
-  deriving (Eq,Show)
+
+-- TODO - hand craft a Show instance 
 
 type DrawingContextF = DrawingContext -> DrawingContext
 
 
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
-    DrawingContext { stroke_props         = default_stroke_attr
-                   , font_props           = FontAttr sz courier
-                   , stroke_colour        = black
-                   , fill_colour          = light_gray
+    DrawingContext { glyph_tables         = Map.empty
+                   , fallback_metrics     = monospace_metrics
+                   , stroke_props         = default_stroke_attr
+                   , font_props           = FontAttr sz wumpus_courier
+                   , stroke_colour        = wumpus_black
+                   , fill_colour          = wumpus_light_gray
                    , line_spacing_factor  = 1.2  
                    }
+
+
+metricsContext :: FontSize -> BaseGlyphMetrics -> DrawingContext
+metricsContext sz bgm = 
+    DrawingContext { glyph_tables         = bgm
+                   , fallback_metrics     = monospace_metrics
+                   , stroke_props         = default_stroke_attr
+                   , font_props           = FontAttr sz wumpus_courier
+                   , stroke_colour        = wumpus_black
+                   , fill_colour          = wumpus_light_gray
+                   , line_spacing_factor  = 1.2  
+                   }
+
+
+
+
+wumpus_black            :: RGBi
+wumpus_black            = RGBi 0 0 0 
+
+wumpus_light_gray       :: RGBi
+wumpus_light_gray       = RGBi 200 200 200
+
+
+-- | Courier
+-- 
+wumpus_courier :: FontFace
+wumpus_courier = FontFace "Courier" "Courier New" SVG_REGULAR standard_encoding
+
 
 
 default_drawing_context :: DrawingContext
@@ -262,3 +301,31 @@ strokeColour rgb = \s -> s { stroke_colour = rgb }
 fillColour :: RGBi -> DrawingContextF
 fillColour rgb = \s -> s { fill_colour = rgb } 
 
+
+
+
+
+--------------------------------------------------------------------------------
+-- Glyph metrics
+
+-- These are directly on the DrawingContext /for efficiency/.
+
+
+
+withFontMetrics :: (GlyphMetrics -> PtSize -> u) -> DrawingContext -> u
+withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) = 
+      fn metric_set point_sz
+  where 
+    ps_name     = ps_font_name $ font_face font_stats
+    point_sz    = fromIntegral $ font_size font_stats 
+    metric_set  = fromMaybe (fallback_metrics ctx) $ 
+                    Map.lookup ps_name (glyph_tables ctx) 
+
+
+{-
+maxGlyphHeight :: FromPtSize u => DrawingContext -> u
+maxGlyphHeight = withFontMetrics (\rec sz -> get_max_height rec sz)
+
+avLookupTable :: FromPtSize u => DrawingContext -> (Int -> Vec2 u)
+avLookupTable = withFontMetrics (\rec sz -> get_av_lookup rec sz)
+-}
