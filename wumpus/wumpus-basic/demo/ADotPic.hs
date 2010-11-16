@@ -13,15 +13,8 @@ import System.Directory
 
 main :: IO ()
 main = do 
-    createDirectoryIfMissing True "./out/"
-    demo01
-
-pt2 :: Point2 Double
-pt2 = P2 100 10
-
-
-demo01 :: IO ()
-demo01 = do 
+    createDirectoryIfMissing True "./out/"    
+    let pic1 = runDrawingU std_attr dot_drawing 
     writeEPS "./out/anchor_dots01.eps" pic1
     writeSVG "./out/anchor_dots01.svg" pic1
 
@@ -30,8 +23,8 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing std_attr $ mf 
+dot_drawing :: DDrawing
+dot_drawing = drawTracing mf 
 
 
 mf :: (Floating u, FromPtSize u) => TraceDrawing u ()

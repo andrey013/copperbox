@@ -25,6 +25,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU times_ctx circuit_drawing
     writeEPS "./out/arrow_circuit.eps" pic1
     writeSVG "./out/arrow_circuit.svg" pic1 
 
@@ -38,8 +39,8 @@ times_ctx = fontface times_roman $ standardContext 11
 
 -- Note `at` currently does not work for Shapes.
          
-pic1 :: Picture Double 
-pic1 = liftToPictureU $ execTraceDrawing times_ctx $ do
+circuit_drawing :: Drawing Double 
+circuit_drawing = drawTracing $ do
     a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60

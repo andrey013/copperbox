@@ -6,8 +6,8 @@
 module LRText01 where
 
 import Wumpus.Basic.Colour.SVGColours
+import Wumpus.Basic.DrawingComposition
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.PictureLanguage
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
@@ -22,39 +22,33 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo01
-
-
-demo01 :: IO ()
-demo01 = do 
-    writeEPS "./out/lrtext01.eps" combo_pic
-    writeSVG "./out/lrtext01.svg" combo_pic
+    let pic = runDrawingU std_ctx combo_pic
+    writeEPS "./out/lrtext01.eps" pic
+    writeSVG "./out/lrtext01.svg" pic
 
 std_ctx :: DrawingContext
 std_ctx = fontface times_roman $ standardContext 48
 
-combo_pic :: DPicture
-combo_pic = vcat pic1 [pic2,pic3]
+combo_pic :: DDrawing
+combo_pic = vcat [pic1,pic2,pic3]
 
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing std_ctx $ 
-          draw $ hkernline ks `at` zeroPt
+pic1 :: DDrawing
+pic1 = drawTracing $ draw $ hkernline ks `at` zeroPt
   where
     ks :: [KerningChar Double]
     ks = [ kernchar 0 'A', kernchar 34 'B', kernchar 29 'C' ] 
 
 -- 
-pic2 :: DPicture
-pic2 = liftToPictureU $ execTraceDrawing std_ctx $ 
-          draw $ hkernline ks `at` zeroPt
+pic2 :: DDrawing
+pic2 = drawTracing $ draw $ hkernline ks `at` zeroPt
   where
     ks :: [KerningChar Double]
     ks = map (kernchar 0) $ "No kerning" 
 
 
-pic3 :: DPicture 
-pic3 = liftToPictureU $ execTraceDrawing std_ctx $ do
+pic3 :: DDrawing
+pic3 = drawTracing $ do
          let abc = execLRText (char 'a' >> char 'b' >> epsilon >> char 'c')
          draw $ abc `at` (P2 0 3) 
          localize (strokeColour red) $ draw $ straightLine (hvec 200) `at` zeroPt

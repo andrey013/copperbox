@@ -18,19 +18,13 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo01
-
-pt2 :: Point2 Double
-pt2 = P2 100 10
-
-
-demo01 :: IO ()
-demo01 = do 
+    let pic1 = runDrawingU std_ctx dot_drawing
     writeEPS "./out/dots01.eps" pic1
     writeSVG "./out/dots01.svg" pic1
+ 
 
-pic1 :: Picture Double
-pic1 = liftToPictureU $ execTraceDrawing std_ctx $ tableGraphic $ 
+dot_drawing :: Drawing Double
+dot_drawing = drawTracing $ tableGraphic $ 
     [ dotHLine
     , dotVLine
     , dotX

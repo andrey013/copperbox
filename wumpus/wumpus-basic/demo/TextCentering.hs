@@ -14,25 +14,19 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo01
-
-pt2 :: Point2 Double
-pt2 = P2 100 10
-
-ignore :: Monad m => m a -> m ()
-ignore ma = ma >> return ()
-
-demo01 :: IO ()
-demo01 = do 
+    let pic1 = runDrawingU std_attr text_drawing
     writeEPS "./out/text_centering01.eps" pic1
     writeSVG "./out/text_centering01.svg" pic1
+
+-- ignore :: Monad m => m a -> m ()
+-- ignore ma = ma >> return ()
 
 
 std_attr :: DrawingContext
 std_attr = standardContext 24
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing (standardContext 24) $ do
+text_drawing :: DDrawing
+text_drawing = drawTracing $ do
           draw $ textline sample_text `at` zeroPt
           draw $ coordinate `at` zeroPt
           draw $ textSquare sample_text `at` zeroPt

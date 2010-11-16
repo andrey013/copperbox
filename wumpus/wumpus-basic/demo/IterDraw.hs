@@ -15,19 +15,15 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo01
-
-
-demo01 :: IO ()
-demo01 = do 
+    let pic1 = runDrawingU dctx iter_drawing
     writeEPS "./out/iter_draw01.eps" pic1
     writeSVG "./out/iter_draw01.svg" pic1
 
 dctx :: DrawingContext
 dctx = fontface courier_bold $ standardContext 24
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing dctx $ do 
+iter_drawing :: DDrawing
+iter_drawing = drawTracing $ do 
     draw $ extr (redA `catv` greenB `catv` blueC) `at` zeroPt
 
 extr :: AdvGraphic u -> LocGraphic u

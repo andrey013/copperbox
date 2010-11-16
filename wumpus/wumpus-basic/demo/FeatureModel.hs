@@ -21,6 +21,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU draw_ctx feature_model
     writeEPS "./out/feature_model.eps" pic1
     writeSVG "./out/feature_model.svg" pic1 
 
@@ -31,8 +32,8 @@ draw_ctx = fontface courier_bold $ standardContext 18
 -- @repetitions@ yet.
 --
          
-pic1 :: Picture Double 
-pic1 = liftToPictureU $ execTraceDrawing draw_ctx $ do
+feature_model :: Drawing Double 
+feature_model = drawTracing $ do
     lea <- widebox "e" $ P2 150 160    
     lra <- widebox "r" $ P2  60  80
     lsa <- widebox "s" $ P2 240  80

@@ -25,6 +25,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU times_ctx arrow_drawing
     writeEPS "./out/arrow01.eps" pic1
     writeSVG "./out/arrow01.svg" pic1 
 
@@ -36,8 +37,8 @@ times_ctx = fontface times_roman $ standardContext 11
 -- ptext labels and the anchors displaced by vectors.
 --
          
-pic1 :: Picture Double 
-pic1 = liftToPictureU $ execTraceDrawing times_ctx $ do
+arrow_drawing :: Drawing Double 
+arrow_drawing = drawTracing $ do
     a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60

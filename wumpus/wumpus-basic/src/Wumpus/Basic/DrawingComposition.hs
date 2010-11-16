@@ -18,13 +18,8 @@
 
 module Wumpus.Basic.DrawingComposition
   (
-  -- * Data types for alignment 
-    HAlign(..)
-  , VAlign(..)
-
-
   -- * Composition
-  , over 
+    over 
   , under
 
   , centerOver
@@ -59,32 +54,14 @@ module Wumpus.Basic.DrawingComposition
   ) where
 
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Graphic.Drawing
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AdditiveGroup
 import Data.AffineSpace
 
-import Control.Applicative
 import Data.List ( foldl' )
 
-
---------------------------------------------------------------------------------
--- Data types
-
--- Alignment
-
--- | Horizontal alignment - align to the top, center or bottom.
-data HAlign = HTop | HCenter | HBottom
-  deriving (Eq,Show)
-
--- | Vertical alignment - align to the left, center or bottom.
-data VAlign = VLeft | VCenter | VRight
-  deriving (Eq,Show)
-
-
---------------------------------------------------------------------------------
 
   
 -- Note - do not export the empty drawing. It is easier to 

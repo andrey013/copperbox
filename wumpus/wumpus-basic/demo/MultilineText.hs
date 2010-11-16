@@ -11,6 +11,8 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
 
+import System.Directory
+
 
 -- Note - [0,2,4,6 ... ]
 demo00 :: [Int]
@@ -19,6 +21,9 @@ demo00 = take 10 $ iterate (+2) 0
 
 main :: IO ()
 main = do 
+    createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU times_roman_ctx $ multiline_drawing
+
     writeEPS "./out/multiline_text.eps" pic1
     writeSVG "./out/multiline_text.svg" pic1
 
@@ -28,8 +33,8 @@ times_roman_ctx = fontface times_roman $ standardContext 24
 
 -- Note - for multiline text 1.2 * font size seems good vertical spacing
 --
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing times_roman_ctx $ do
+multiline_drawing :: DDrawing
+multiline_drawing = drawTracing $ do
     draw $ textline ss `at` (zeroPt .+^ vvec (1.2 * 24))
     draw $ textline ss `at` zeroPt
     draw $ textlineMulti xs `at` (P2 500 0)

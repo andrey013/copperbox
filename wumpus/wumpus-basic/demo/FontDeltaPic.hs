@@ -11,14 +11,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    demo01
-
-pt2 :: Point2 Double
-pt2 = P2 100 10
-
-
-demo01 :: IO ()
-demo01 = do 
+    let pic1 = runDrawingU std_attr drawing01
     writeEPS "./out/font_delta01.eps" pic1
     writeSVG "./out/font_delta01.svg" pic1
 
@@ -27,11 +20,9 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing std_attr $ mf 
+drawing01 :: DDrawing
+drawing01 = drawTracing $ mf 
 
-errK :: a
-errK = error "error - empty Picture"
 
 mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
 mf = do 

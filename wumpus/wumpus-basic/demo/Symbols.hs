@@ -21,6 +21,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU std_ctx symbols
     writeEPS "./out/symbols.eps" pic1
     writeSVG "./out/symbols.svg" pic1
 
@@ -34,10 +35,10 @@ std_ctx = fontface times_roman $ standardContext 12
 -- generate better PostScript as there are less changes to the 
 -- /graphics state/.
 --
-pic1 :: DPicture 
-pic1 = liftToPictureU $ execTraceDrawing std_ctx $ do
-         zipWithM_ sdraw all_letters ps
-         zipWithM_ ldraw all_letters ps
+symbols :: DDrawing
+symbols = drawTracing $ do
+    zipWithM_ sdraw all_letters ps
+    zipWithM_ ldraw all_letters ps
   where
     sdraw (_,ma) pt = draw $ execLRText ma `at` pt
     ldraw (s,_)  pt = draw $ textline s `at` pt .+^ hvec 16

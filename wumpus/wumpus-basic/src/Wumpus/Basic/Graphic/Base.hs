@@ -30,6 +30,10 @@ module Wumpus.Basic.Graphic.Base
   , anterior    
   , superior
 
+  -- * Alignment.
+  , HAlign(..)
+  , VAlign(..)  
+
   -- * Drawing monads.
   , MonUnit
   , TraceM(..)
@@ -103,6 +107,21 @@ instance OPlus a => OPlus (r -> a) where
 
 -- The functional instance (r -> a) also covers (r1 -> r2 -> a),
 -- (r1 -> r2 -> r3 -> a) etc.
+
+
+--------------------------------------------------------------------------------
+
+-- Alignment
+
+-- | Horizontal alignment - align to the top, center or bottom.
+data HAlign = HTop | HCenter | HBottom
+  deriving (Enum,Eq,Ord,Show)
+
+-- | Vertical alignment - align to the left, center or bottom.
+data VAlign = VLeft | VCenter | VRight
+  deriving (Enum,Eq,Ord,Show)
+
+
 
 
 --------------------------------------------------------------------------------

@@ -17,12 +17,13 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic1 = runDrawingU (standardContext 14) shapes
     writeEPS "./out/shapes01.eps" pic1
     writeSVG "./out/shapes01.svg" pic1
     
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing (standardContext 14) $ do
+shapes :: DDrawing
+shapes = drawTracing $ do
          _ <- drawi $ borderedShape $ translate 220 10 
                                     $ rotate30
                                     $ rectangle 90 30 $ zeroPt -- "Rectangle"

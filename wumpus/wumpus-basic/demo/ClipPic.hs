@@ -14,9 +14,9 @@ module ClipPic where
 
 import Wumpus.Basic.Chains
 import Wumpus.Basic.Colour.SVGColours
+import Wumpus.Basic.DrawingComposition
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.PictureLanguage
 import Wumpus.Basic.Text.LRSymbol
 import Wumpus.Basic.Text.LRText
 
@@ -28,6 +28,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    let pic = runDrawingU pic_drawing_ctx big_pic
     writeEPS "./out/clip_pic.eps" pic
     writeSVG "./out/clip_pic.svg" pic
 
@@ -36,14 +37,14 @@ pic_drawing_ctx :: DrawingContext
 pic_drawing_ctx = standardContext 14
 
 
-pic :: DPicture
-pic = pic1 `nextToV` (stackOver [cpic1, cpic2, cpic3] cpic4)
+big_pic :: DDrawing
+big_pic = pic1 `nextToV` zconcat [cpic1, cpic2, cpic3, cpic4]
 
 fillPath :: Num u => Path u -> Graphic u
 fillPath = filledPath . toPrimPath
 
-pic1 :: DPicture
-pic1 = liftToPictureU $ execTraceDrawing pic_drawing_ctx $ 
+pic1 :: DDrawing
+pic1 = drawTracing $
          localize (fillColour medium_slate_blue) $ do
             draw $ fillPath path01
             localize (fillColour powder_blue) $ 
@@ -52,25 +53,23 @@ pic1 = liftToPictureU $ execTraceDrawing pic_drawing_ctx $
             draw $ fillPath path04
 
 
-background :: RGBi -> DPicture 
-background rgb = liftToPictureU $ execTraceDrawing pic_drawing_ctx $ 
-                   localize (strokeColour rgb) $ do                  
-                     mapM_ iheartHaskell ps
-
+background :: RGBi -> DDrawing
+background rgb = drawTracing $ 
+    localize (strokeColour rgb) $ mapM_ iheartHaskell ps
    where
      ps = unchain (coordinateScalingContext 86 16) $ tableDown 18 8
 
-cpic1 :: DPicture 
-cpic1 = clip (toPrimPath path01) (background black)
+cpic1 :: DDrawing 
+cpic1 = clipDrawing (toPrimPath path01) (background black)
   
-cpic2 :: DPicture 
-cpic2 = clip (toPrimPath path02) (background medium_violet_red)
+cpic2 :: DDrawing
+cpic2 = clipDrawing (toPrimPath path02) (background medium_violet_red)
 
-cpic3 :: DPicture 
-cpic3 = clip (toPrimPath path03) (background black)
+cpic3 :: DDrawing 
+cpic3 = clipDrawing (toPrimPath path03) (background black)
 
-cpic4 :: DPicture 
-cpic4 = clip (toPrimPath path04) (background black)
+cpic4 :: DDrawing 
+cpic4 = clipDrawing (toPrimPath path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> TraceDrawing u () 

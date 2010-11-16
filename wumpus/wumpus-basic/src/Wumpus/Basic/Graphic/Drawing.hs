@@ -29,10 +29,12 @@ module Wumpus.Basic.Graphic.Drawing
   (
 
     Drawing
+  , DDrawing
   , runDrawing
   , runDrawingU
   , drawTracing
 
+  , clipDrawing
   , modifyDrawing
   , drawingConcat
 
@@ -46,7 +48,12 @@ import Wumpus.Core                              -- package: wumpus-core
 
 newtype Drawing u = Drawing { getDrawing :: CF (Maybe (Picture u)) }
 
+type DDrawing = Drawing Double
+
+
 type instance DUnit (Drawing u) = u
+
+
 
 
 runDrawing :: DrawingContext -> Drawing u -> Maybe (Picture u)
@@ -79,6 +86,10 @@ drawTracing mf = Drawing $
 -- more complicated)? 
 --
 --------------------------------------------------------------------------------
+
+clipDrawing :: (Num u, Ord u) => (PrimPath u) -> Drawing u -> Drawing u
+clipDrawing cpath = modifyDrawing (clip cpath)
+
 
 modifyDrawing :: (Picture u -> Picture u) -> Drawing u -> Drawing u
 modifyDrawing pf = Drawing . postpro (fmap pf) . getDrawing

@@ -150,12 +150,14 @@ library
     Wumpus.Basic.Colour.X11Colours,
     Wumpus.Basic.Dots.AnchorDots,
     Wumpus.Basic.Dots.Marks,
+    Wumpus.Basic.DrawingComposition,
     Wumpus.Basic.FontLoader.AfmV2,
     Wumpus.Basic.FontLoader.Base,
     Wumpus.Basic.FontLoader.GsFontMap,
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.ContextFunction,
+    Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
     Wumpus.Basic.Graphic.GraphicOperations,
     Wumpus.Basic.Graphic.GraphicTypes,
@@ -186,8 +188,7 @@ library
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.Utils.ParserCombinators,
     Wumpus.Basic.Utils.TokenParsers,
-    Wumpus.Basic.VersionNumber,
-    Wumpus.Basic.PictureLanguage
+    Wumpus.Basic.VersionNumber
 
   other-modules:
 

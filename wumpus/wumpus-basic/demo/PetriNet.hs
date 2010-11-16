@@ -26,55 +26,56 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS "./out/petri_net.eps" petri_net
-    writeSVG "./out/petri_net.svg" petri_net
+    let pic1 = runDrawingU (standardContext 14) petri_net
+    writeEPS "./out/petri_net.eps" pic1
+    writeSVG "./out/petri_net.svg" pic1
     
 
 
-petri_net :: DPicture
-petri_net = liftToPictureU $ execTraceDrawing (standardContext 14) $ do
-              pw     <- place 0 140
-              tu1    <- transition 70 140
-              rtw    <- place 140 140
-              tu2    <- transition 210 140
-              w      <- place 280 140
-              tu3    <- transition 350 140
-              res    <- place 280 70
-              pr     <- place 0 0
-              tl1    <- transition 70 0
-              rtr    <- place 140 0
-              tl2    <- transition 210 0
-              r      <- place 280 0
-              tl3    <- transition 350 0
-              connector' (east pw)  (west tu1)              
-              connector' (east tu1) (west rtw)
-              connector' (east rtw) (west tu2)
-              connector' (east tu2) (west w)
-              connector' (east w)   (west tu3)
-              connectorC 32 (north tu3) (north pw)
-              connector' (east pr)  (west tl1)              
-              connector' (east tl1) (west rtr)
-              connector' (east rtr) (west tl2)
-              connector' (east tl2) (west r)
-              connector' (east r)   (west tl3)
-              connectorC (-32) (south tl3) (south pr)
-              connector' (southwest res) (northeast tl2)
-              connector' (northwest tl3) (southeast res)
-              connectorD 6    (southwest tu3) (northeast res)
-              connectorD (-6) (southwest tu3) (northeast res) 
-              connectorD 6    (northwest res) (southeast tu2)
-              connectorD (-6) (northwest res) (southeast tu2) 
-              draw $ lblParensParens `at` (P2 (-36) 150)
-              draw $ lblParensParens `at` (P2 300 60)
-              draw $ lblParensParensParens `at` (P2 (-52) (-14))
-              draw $ lblBold "processing_w"   `at` (southwards 12 pw)
-              draw $ lblBold "ready_to_write" `at` (southwards 12 rtw)
-              draw $ lblBold "writing"        `at` (southwards 12 w)
-              draw $ lblBold' "resource"      `at` (P2 300 72)
-              draw $ lblBold "processing_r"   `at` (northwards 12 pr)
-              draw $ lblBold "ready_to_read"  `at` (northwards 12 rtr)
-              draw $ lblBold "reading"        `at` (northwards 12 r)
-              return ()
+petri_net :: DDrawing
+petri_net = drawTracing $ do
+    pw     <- place 0 140
+    tu1    <- transition 70 140
+    rtw    <- place 140 140
+    tu2    <- transition 210 140
+    w      <- place 280 140
+    tu3    <- transition 350 140
+    res    <- place 280 70
+    pr     <- place 0 0
+    tl1    <- transition 70 0
+    rtr    <- place 140 0
+    tl2    <- transition 210 0
+    r      <- place 280 0
+    tl3    <- transition 350 0
+    connector' (east pw)  (west tu1)              
+    connector' (east tu1) (west rtw)
+    connector' (east rtw) (west tu2)
+    connector' (east tu2) (west w)
+    connector' (east w)   (west tu3)
+    connectorC 32 (north tu3) (north pw)
+    connector' (east pr)  (west tl1)              
+    connector' (east tl1) (west rtr)
+    connector' (east rtr) (west tl2)
+    connector' (east tl2) (west r)
+    connector' (east r)   (west tl3)
+    connectorC (-32) (south tl3) (south pr)
+    connector' (southwest res) (northeast tl2)
+    connector' (northwest tl3) (southeast res)
+    connectorD 6    (southwest tu3) (northeast res)
+    connectorD (-6) (southwest tu3) (northeast res) 
+    connectorD 6    (northwest res) (southeast tu2)
+    connectorD (-6) (northwest res) (southeast tu2) 
+    draw $ lblParensParens `at` (P2 (-36) 150)
+    draw $ lblParensParens `at` (P2 300 60)
+    draw $ lblParensParensParens `at` (P2 (-52) (-14))
+    draw $ lblBold "processing_w"   `at` (southwards 12 pw)
+    draw $ lblBold "ready_to_write" `at` (southwards 12 rtw)
+    draw $ lblBold "writing"        `at` (southwards 12 w)
+    draw $ lblBold' "resource"      `at` (P2 300 72)
+    draw $ lblBold "processing_r"   `at` (northwards 12 pr)
+    draw $ lblBold "ready_to_read"  `at` (northwards 12 rtr)
+    draw $ lblBold "reading"        `at` (northwards 12 r)
+    return ()
 
 greenFill :: DrawingCtxM m => m a -> m a
 greenFill = localize (fillColour lime_green)

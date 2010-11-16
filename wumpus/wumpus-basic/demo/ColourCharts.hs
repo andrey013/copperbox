@@ -16,24 +16,30 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS "./out/SVGcolours.eps" svg
-    writeSVG "./out/SVGcolours.svg" svg
-    writeEPS "./out/X11colours.eps" $ uniformScale 0.75 x11_portrait
-    writeSVG "./out/X11colours.svg" x11_landscape
+    --
+    let svg_pic = runDrawingU draw_ctx svg 
+    writeEPS "./out/SVGcolours.eps" svg_pic
+    writeSVG "./out/SVGcolours.svg" svg_pic
+    --
+    let x11_p = runDrawingU draw_ctx x11_portrait
+    writeEPS "./out/X11colours.eps" $ uniformScale 0.75 x11_p
+    let x11_l = runDrawingU draw_ctx x11_landscape
+    writeSVG "./out/X11colours.svg" x11_l
 
-svg :: Picture Double
-svg = makePicture 52 all_svg_colours
+draw_ctx :: DrawingContext
+draw_ctx = (standardContext 9)
 
-x11_landscape :: Picture Double
-x11_landscape = makePicture 52 all_x11_colours
+svg :: Drawing Double
+svg = makeDrawing 52 all_svg_colours
 
-x11_portrait :: Picture Double
-x11_portrait = makePicture 72 all_x11_colours     
+x11_landscape :: Drawing Double
+x11_landscape = makeDrawing 52 all_x11_colours
 
-makePicture :: Int -> [(String,RGBi)] -> DPicture 
-makePicture row_count xs = 
-    liftToPictureU $ execTraceDrawing (standardContext 9) $ 
-        tableGraphic row_count xs
+x11_portrait :: Drawing Double
+x11_portrait = makeDrawing 72 all_x11_colours     
+
+makeDrawing :: Int -> [(String,RGBi)] -> DDrawing
+makeDrawing row_count xs = drawTracing $ tableGraphic row_count xs
 
 tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = 
