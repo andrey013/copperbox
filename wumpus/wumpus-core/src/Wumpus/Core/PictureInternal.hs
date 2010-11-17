@@ -62,7 +62,6 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
-import Wumpus.Core.Text.StandardEncoding
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
@@ -72,7 +71,7 @@ import Wumpus.Core.Utils.JoinList
 import Data.AffineSpace                         -- package: vector-space
 
 import qualified Data.Foldable                  as F
-
+import qualified Data.IntMap                    as IntMap
 
 
 -- | Picture is a leaf attributed tree - where attributes are 
@@ -733,6 +732,8 @@ zeroGS = GraphicsState { gs_draw_colour  = black
                        }
   where
     unmatchable_face = FontFace "DONT_MATCH"     "" 
-                                SVG_BOLD_OBLIQUE standard_encoding
+                                SVG_BOLD_OBLIQUE no_encoding
+
+    no_encoding      = IntMap.empty 
 
 

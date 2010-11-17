@@ -7,7 +7,7 @@
 module DeltaPic where
 
 import Wumpus.Core
-import Wumpus.Core.Text.StandardEncoding ( standard_encoding )
+import Wumpus.Core.Text.StandardEncoding
 import System.Directory
 
 

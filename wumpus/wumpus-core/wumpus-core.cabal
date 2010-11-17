@@ -81,33 +81,6 @@ description:
     strings that have been parsed for escape characters 
     /Escaped Text/ rather than /Encoded Text/.
   .
-  0.36.0 to 0.37.0:
-  .
-  * The bounding box constructors have been renamed - @bbox@ is 
-    now @boundingBox@ and @obbox@ becomes @oboundingBox@. The 
-    rationale for this change is that the names very cryptic in 
-    the first place and the constructors are used infrequently 
-    when @bbox@ in particular makes a descriptive variable name.
-  .
-  * Changes to the Picture and Primitive types to enable better
-    concatenation which is used heavily by Wumpus-Basic. The 
-    Picture API exposes a new function @primCat@.
-  .
-  * SVG /font delta context/ change - font deltas are now 
-    annotated on Primitives not Pictures. The type of the 
-    function @fontDeltaContext@ in @Core.Picture@ has changed 
-    accordingly.
-  .
-  * SVG hyperlink change - hyperlinks no longer group primitives
-    (although a group of primitives can be hyperlinked). The 
-    function @xlinkGroup@ has been removed from @Core.Picture@, 
-    it is replaced by @xlink@. Primitives are now grouped with the
-    function @primGroup@.
-  .
-  * @Core.Picture@ - the argument order for the function 
-    @rtextlabel@ has been changed, the positions of the angle and 
-    bottom-left corner have been swapped.
-  .
   .
 build-type:         Simple
 stability:          unstable

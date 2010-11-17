@@ -208,6 +208,15 @@ default_stroke_attr = StrokeAttr { line_width      = 1
 -- | Constructor for the default font, which is @Courier@ (aliased 
 -- to @Courier New@ for SVG) at the supplied size.
 --
+-- Note - the font uses the Standard encoding - this is common to 
+-- fonts but uses different indices to the more common Latin1.
+--
+-- For instance 232 is Lslash not egrave. 
+--
+-- Both GhostScript and the standard AFM /Core 14/ metrics 
+-- supplied by Adobe use Standard Encoding but include further 
+-- characters (e.g. egrave) in the non-indexed /higher-region/.
+-- 
 defaultFont :: Int -> FontAttr
 defaultFont sz = FontAttr sz face 
   where

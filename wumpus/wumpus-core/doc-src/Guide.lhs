@@ -23,7 +23,7 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
-This guide was last updated for \wumpuscore version 0.37.0.
+This guide was last updated for \wumpuscore version 0.40.0.
 
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
@@ -124,27 +124,52 @@ Text size calculations in \texttt{Core.FontSize} use points
 type to represent them.
 
 \item[\texttt{Wumpus.Core.Text.Base.}]
-Types for handling extended character codes within fonts e.g. 
-for accented characters or the Symbol font. Special characters 
-generally have to be escaped in the PostScript and SVG output, 
-this module provides data types for lookup tables between the 
-escaped character code and its PostScript or SVG representation. 
-Text encoders are associated with fonts - glyphs within a font 
-are located by their character name / code. Currently 
-\wumpuscore has encoders for the Standard Latin Encoding table 
-and the Symbol font character set. 
+Types for handling escaped \emph{special} charcters within input 
+text. Wumpus mostly follows SVG conventions for escaping strings, 
+although glyph names should \emph{always} correspond to PostScript 
+names and never XML / SVG ones, e.g. for \texttt{\&} use 
+\texttt{\#ampersand;} not \texttt{\#amp;}. 
 
-\item[\texttt{Wumpus.Core.TextLatin1.}]
-A instance of the TextEncoder type for mapping Latin 1 characters
-to the PostScript and SVG escape characters. Typically this 
-encoder is associated with the fonts - Helvetica, Courier and 
-Times-Roman.
+Also note, unless you are generating only SVG output, glyph 
+names should be used rather than char codes. For PostScript the 
+resolution of char codes is dependent on the encoding of the font 
+used to render it. As core fonts do not use the common Latin1 
+encoding, using using numeric char codes in the input text may 
+produce unexpected results.
 
-\item[\texttt{Wumpus.Core.TextSymbol.}]
-A instance of the TextEncoder type for the Symbol font. Note, 
-unfortunately escape codes for the Symbol font seem to cause
-problems for some SVG renderers. Chrome appears fine, but Safari 
-and Firefox currently have problems.
+Unfortunately fonts are often missing characters you might want, 
+and a PostScript renderer cannot do anything about it (SVG appears 
+to support glyph subsitution from other fonts). \wumpuscore is 
+oblivious to the contents of fonts so it cannot issue a warning 
+if a glyph is not present when it generates a document.
+
+
+\item[\texttt{Wumpus.Core.Text.GlyphIndices.}]
+An map of PostScript glyph names to Unicode code points. 
+
+\item[\texttt{Wumpus.Core.Text.GlyphNames.}]
+An map of Unicode code points to PostScript glyph names. 
+Unfortunately this table is \emph{lossy} - some code points have 
+more than one name, and as this file is auto-generated the 
+resolution of which glyph name matches a code point is arbtirary. 
+\wumpuscore uses this table only as a fallback if PostScript glyph 
+name resolution cannot be solved through an encoding vector.
+
+\item[\texttt{Wumpus.Core.Text.Latin1Encoding.}]
+An encoding vector for the Latin 1 character set. 
+
+\item[\texttt{Wumpus.Core.Text.StandardEncoding.}]
+An encoding vector for the PostScript StandardEncoding set. This 
+encoder is associated with the core text fonts - Helvetica, 
+Courier and Times-Roman. Typically core fonts will include further 
+glyphs not indexed by the Standard Encoding, for PostScript these 
+glyphs are addressable only by name and not by index.
+
+\item[\texttt{Wumpus.Core.Text.Symbol.}]
+An encoding vector for the Symbol font which uses distinct glyph 
+names. Unfortunately whilst the Symbol font is useful for 
+PostScript, its use in SVG is actively discouraged by the W3C and
+some browsers.
 
 \item[\texttt{Wumpus.Core.VersionNumber.}]
 Current version number of \wumpuscore.
@@ -295,30 +320,31 @@ regular line width.
 Font handling is quite primitive in \wumpuscore. The bounding box 
 of text label is only estimated - based on the length of the 
 label's string rather than the metrics of the individual letters 
-encoded in the font. Accessing the glyph metrics in a font would 
-require a font loader to read TrueType font files. This would be 
-a significant development effort, probably larger than the effort 
-put into \wumpuscore itself; for \wumpuscore's intended use - 
-producing diagrams and pictures rather than high quality text - 
-the primitive font handling is not such a draw back.
+encoded in the font. Accessing the glyph metrics in a font 
+requires a font loader - work has been done on this for 
+\texttt{wumpus-basic} but this is considered a special requirement
+and adds a lot of code. As \wumpuscore is considered to be a 
+fairly minimal system for generating pictures it can live without
+font metrics.
 
+In PostScript, mis-named fonts can cause somewhat inscrutable 
+printing anomalies depending on the implementation. At worst, 
+GhostScript may do no subsequent drawing after a failing to load a 
+font. SVG renderers fallback to some common font if a font cannot 
+be found. 
 
-In both PostScript and SVG mis-named fonts can cause somewhat
-inscrutable printing anomalies - usually falling back to a default 
-font but not always. At worst, PostScript may do no subsequent 
-drawing after a font load error. \wumpuscore uses @scalefont@ in 
-the generated PostScript, this semingly works for any integer size 
-and not just the regular font sizes (10, 12, 18, 24, 36). 
+A PostScript interpreter should have built-in support for the 
+\emph{Core 14} fonts. For the \emph{writing} fonts, SVG renderers 
+appear to support literal analogues quite well rather than needing 
+general descriptors (e.g. \texttt{sans-serif} or 
+\texttt{monospace}). The symbolic fonts Symbol and ZapfDingbats 
+should be avoided for SVG - the W3C does not condone their use in 
+SVG or HTML. Likewise, certain browsers reject them out of course.
 
-
-The following table lists PostScript fonts and their SVG 
-equivalents, the package \texttt{wumpus-basic} includes a module 
+The following table lists the Core 14 PostScript fonts and their 
+SVG analogues, \texttt{wumpus-basic} includes a module 
 \texttt{Wumpus.Basic.SafeFonts} encoding the fonts in this list 
-and matching them to their appropriate \texttt{TextEncoder}.
-
-Note that the Symbol font, whilst incredibly useful, is a taboo
-with the W3C and they do not condone its use in SVG or HTML.
-Likewise, certain browsers reject it out of course.
+and matching them to their appropriate encoding vectors.
 
 \begin{tabular}{ l l }
 PostScript name   & SVG name      \\
@@ -335,7 +361,8 @@ Courier           & Courier New \\
 Courier-Oblique   & Courier New - style="italic" \\
 Courier-Bold      & Courier New - font-weight="bold" \\
 Courier-Bold-Oblique & Courier New - style="italic", font-weight="bold" \\
-Symbol & (Symbol - see text) \\
+Symbol            & (see text) \\
+ZapfDingbats      & (see text) \\
 \hline
 \end{tabular}
 

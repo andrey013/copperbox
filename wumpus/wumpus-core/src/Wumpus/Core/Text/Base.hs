@@ -47,6 +47,18 @@
 --
 -- > myst&#232;re
 --
+-- Unless you are generating only SVG, you should favour glyph 
+-- names rather than code points as they are unambiguously 
+-- interpreted by Wumpus. Character codes are context-dependent
+-- on the encoding of the font used to render the text. 
+-- /Standard / fonts use the Standard Encoding is which has 
+-- some differnces to Latin1. 
+--
+-- Unfortunately if a glyph is not present in a font it cannot 
+-- be rendered in PostScript. Wumpus-Core is oblivious to the 
+-- contents of fonts and does not warn about missing glyphs or 
+-- attempt to substitute them.
+-- 
 --------------------------------------------------------------------------------
 
 
@@ -116,7 +128,8 @@ instance Format EscapedChar where
 -- | 'escapeString' input is regular text and escaped glyph names 
 -- or decimal character codes. Escaping in the input string should 
 -- follow the SVG convention - the escape sequence starts with 
--- @&#@ (ampersand hash) and end with @;@ (semicolon).
+-- @&@ (ampresand) for glyph names or @&#@ (ampersand hash) for
+-- char codes and ends with @;@ (semicolon).
 --
 -- Escaped characters are output to PostScript as their respective
 -- glyph names:
@@ -127,6 +140,10 @@ instance Format EscapedChar where
 -- e.g.:
 --
 -- > &#232;
+--
+-- Note - for SVG output, Wumpus automatically escapes characters 
+-- where the char code is above 128. This is the convention used 
+-- by the @Text.XHtml@ library.
 --
 escapeString :: String -> EscapedText
 escapeString = EscapedText . lexer

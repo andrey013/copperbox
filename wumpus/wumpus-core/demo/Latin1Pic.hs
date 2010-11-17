@@ -4,7 +4,7 @@ module Latin1Pic where
 
 import Wumpus.Core
 import Wumpus.Core.Colour
-import Wumpus.Core.Text.Latin1Encoding
+import Wumpus.Core.Text.StandardEncoding
 
 import System.Directory
 
@@ -18,12 +18,22 @@ main = do
     writeSVG "./out/latin1_pic01.svg" pic1
   where
     ps_msg = unlines $ 
-        [ "The data for this demo uses char code 0xE8 (egrave)."
-        , "In the Latin1 encoding this is egrave in the Standard"
-        , "encoding this code is Lslash."
+        [ "Expected output:"
+        , "  SVG - egrave in all four lines."
+        , "  PostScript - Lslash / egrave / Lslash / Lslash." 
         , ""
-        , "Check the PostScript output to verify Wumpus has"
-        , "consistently used egrave and not Lslash..."
+        , "Explanation:"
+        , "The data for this demo uses char code 232 (0xE8) corresponding"
+        , "to (egrave) in the common Latin1 character set."
+        , "This is printed as expected for SVG."
+        , ""
+        , "However, in the PostScript _Standard Encoding_ 232 corresponds"
+        , "to Lslash, and GhostScript and other fonts generally appear use" 
+        , "Standard Encoding so Wumpus matches the font Helvetica with this"
+        , "encoding."
+        , ""
+        , "To get the expected character in both PostScript and SVG use the"
+        , "glyph name as the escape token."
         , ""
         ]
 
@@ -48,4 +58,4 @@ helveticaLabel ss pt = textlabel black helvetica18 ss pt
 
 helvetica18 :: FontAttr
 helvetica18 = FontAttr 18 (FontFace "Helvetica" "Helvetica" 
-                                    SVG_REGULAR latin1_encoding)
+                                    SVG_REGULAR standard_encoding)
