@@ -29,7 +29,7 @@ symbolEncoding =
              }
   where
     modu_descr  = [ "Encoding vector for the Symbol font." ]
-    table_descr = [ "Table mapping character numbers to Glyph names for the"
+    table_descr = [ "Table mapping character numbers to glyph names for the"
                   , "Symbol font." ]
 
 
@@ -44,8 +44,22 @@ stdEncoding =
              }
   where
     modu_descr  = [ "Encoding vector for the Standard Encoding." ]
-    table_descr = [ "Table mapping character numbers to Glyph names for the"
+    table_descr = [ "Table mapping character numbers to glyph names for the"
                   , "Standard Encoding." ]
+
+
+
+latin1Encoding :: Encoding 
+latin1Encoding = 
+    Encoding { encoding_module_name    = "Wumpus.Core.Text.Latin1Encoding"
+             , encoding_module_descr   = modu_descr
+             , encoding_table_name     = "latin1_encoding"
+             , encoding_table_descr    = table_descr
+             }
+  where
+    modu_descr  = [ "Encoding vector for the Latin1 Encoding." ]
+    table_descr = [ "Table mapping character numbers to glyph names for the"
+                  , "Latin1 Encoding." ]
 
 
 encoding_tables :: [(FilePath, Encoding, CharParser Int, FilePath)]
@@ -53,6 +67,8 @@ encoding_tables =
     [ ("./input/symbolfont.txt", symbolEncoding, octcode, "out/Symbol.lhs")
     , ("./input/standardencoding.txt", stdEncoding, deccode
                                      , "out/StandardEncoding.lhs")
+    , ("./input/latin1encoding.txt", latin1Encoding, deccode
+                                     , "out/Latin1Encoding.lhs")
     ]
 
 

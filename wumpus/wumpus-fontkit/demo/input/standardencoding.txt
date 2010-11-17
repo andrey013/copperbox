@@ -1,6 +1,6 @@
 # Format: Semicolon-delimited fields:
 #            (1) glyph name
-#            (1) octal code
+#            (1) decimal code
 space;32 
 exclam;33
 quotedbl;34 

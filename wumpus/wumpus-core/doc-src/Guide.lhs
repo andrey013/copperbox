@@ -65,7 +65,7 @@ common angles.
 
 \item[\texttt{Wumpus.Core.BoundingBox.}]
 Data type representing bounding boxes and operations on them. 
-Bounding boxes are important for Pictures and they support the 
+Bounding boxes are important for Pictures as they support the 
 definition of \emph{picture composition} operators.
 
 \item[\texttt{Wumpus.Core.Colour.}]
@@ -123,7 +123,7 @@ Text size calculations in \texttt{Core.FontSize} use points
 (i.e. 1/72 of an inch). The \texttt{PtSize} module is a numeric 
 type to represent them.
 
-\item[\texttt{Wumpus.Core.TextEncoder.}]
+\item[\texttt{Wumpus.Core.Text.Base.}]
 Types for handling extended character codes within fonts e.g. 
 for accented characters or the Symbol font. Special characters 
 generally have to be escaped in the PostScript and SVG output, 

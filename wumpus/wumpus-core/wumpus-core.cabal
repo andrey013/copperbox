@@ -62,6 +62,14 @@ description:
     better aligned to Unicode. The encoding tables for PostScript
     have been re-thought.
   .
+  * The rules for escaping special characters has been clarified.
+    Previously the documentation suggested 
+    @ampersand-name-semicolon@ could be used to escape glyph names
+    however only @ampersand-hash-name-semicolon@ worked.
+    @ampersand-name-semicolon@ is now the correct way. The 
+    ampersand-hash prefix is for numeric literals - 
+    @ampersand-hash-num_literal-semicolon@.
+  .
   * Versions of the textlabel functions have been added to 
     @Core.Picture@ for pre-encoded text. It is useful for higher
     level software to encode the text, do some calculations then 
@@ -146,6 +154,7 @@ library
     Wumpus.Core.Text.Base,
     Wumpus.Core.Text.GlyphIndices,
     Wumpus.Core.Text.GlyphNames,
+    Wumpus.Core.Text.Latin1Encoding,
     Wumpus.Core.Text.StandardEncoding,
     Wumpus.Core.Text.Symbol,
     Wumpus.Core.VersionNumber,

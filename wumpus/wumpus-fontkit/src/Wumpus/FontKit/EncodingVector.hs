@@ -83,7 +83,7 @@ gen_PSEncodingVector enc_data im =
     doc_string = encoding_table_descr enc_data
     decl_name  = encoding_table_name  enc_data
 
-    type_sig   = lhspre $ text decl_name <+> text ":: IntMap.IntMap String"
+    type_sig   = lhspre $ text decl_name <+> text ":: EncodingVector"
     fun_decl   = vconcat (lhspre $ text decl_name <+> text "= IntMap.fromAscList $")
                          (pairList ix (dquotes . text) $ IntMap.toAscList im)
     ix         = \i -> text "0x" <> hex4 i

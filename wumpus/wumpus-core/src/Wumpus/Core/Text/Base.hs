@@ -10,9 +10,45 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Extended character handling.
+-- Extended character code handling.
 -- 
+-- Wumpus uses an escaping style derived from SVG to embed 
+-- character codes and PostScript glyph names in regular strings. 
+--
+-- > "regular ascii text &#38; more ascii text"
+--  
+-- i.e. character codes are delimited by @&\#@ on the 
+-- left and @;@ on the right.
+--
+-- Glyph names are delimited by @&@ on the 
+-- left and @;@ on the right.
+--
+-- > "regular ascii text &ampersand; more ascii text"
+--
+-- Note that glyph names \*\* should always \*\* correspond to
+-- PostScript glyph names not SVG / HTML glyph names.
+--
+-- In Wumpus both character names and character codes can
+-- be embedded in strings - (e.g. @ &\egrave; or &\#232; @).
+--
+-- Character codes can be also be expressed as octal or 
+-- hexadecimal:
+--
+-- > myst&#0o350;re
+--
+-- > myst&#0xE8;re
+--
+-- In the generated PostScript, Wumpus uses the character name, 
+-- e.g.:  
+--
+-- > (myst) show /egrave glyphshow (re) show
+-- 
+-- The generated SVG uses the numeric code, e.g.: 
+--
+-- > myst&#232;re
+--
 --------------------------------------------------------------------------------
+
 
 module Wumpus.Core.Text.Base
   ( 
@@ -54,7 +90,9 @@ data EncodedChar = CharLiteral Char
   deriving (Eq,Show)
 
 
-
+-- | 'EncodingVecor' - a map from code point to PostScript glyph
+-- name.
+-- 
 type EncodingVector = IntMap.IntMap String
 
 
@@ -67,7 +105,7 @@ instance Format EncodedText where
 instance Format EncodedChar where
   format (CharLiteral c) = char c
   format (CharEscInt i)  = text "&#" <> int i  <> semicolon
-  format (CharEscName s) = text "&#" <> text s <> semicolon
+  format (CharEscName s) = text "&" <> text s <> semicolon
 
 
 --------------------------------------------------------------------------------
@@ -100,24 +138,28 @@ textLength :: EncodedText -> Int
 textLength = length . getEncodedText where 
 
 
-
--- Note - the lexer reads number spans with isDigit, so reads 
--- decimals only.
--- 
+ 
 lexer :: String -> [EncodedChar]
 lexer []            = []
-lexer ('&':'#':cs)  = escStart cs
+lexer ('&':'#':cs)  = escNumStart cs
+lexer ('&':cs)      = escName cs
 lexer (c:cs)        = CharLiteral c : lexer cs
 
-escStart :: String -> [EncodedChar]
-escStart ('0':'o':cs)           = escOct cs
-escStart ('0':'O':cs)           = escOct cs
-escStart ('0':'x':cs)           = escHex cs
-escStart ('0':'X':cs)           = escHex cs
-escStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
-escStart (c:cs)                 = let (ss,rest) = span isAlphaNum cs 
-                                  in CharEscName (c:ss) : chompToSemi rest
-escStart []                     = [] 
+-- Input is malformed if this reaches the @rest@ case.
+-- 
+escNumStart :: String -> [EncodedChar]
+escNumStart ('0':'o':cs)           = escOct cs
+escNumStart ('0':'O':cs)           = escOct cs
+escNumStart ('0':'x':cs)           = escHex cs
+escNumStart ('0':'X':cs)           = escHex cs
+escNumStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
+escNumStart rest                   = chompToSemi rest      
+
+escName :: String -> [EncodedChar]
+escName (c:cs)                     = let (ss,rest) = span isAlphaNum cs 
+                                     in specialEscape (c:ss) : chompToSemi rest
+escName []                         = [] 
+
 
 -- | One digit consumed already...
 --
@@ -151,3 +193,11 @@ chompToSemi (';':cs) = lexer cs
 chompToSemi (_:cs)   = chompToSemi cs           
 chompToSemi []       = []
 
+
+-- | Special processing for @amp@ because it is so common.
+--
+-- Are there other cases to add to this function?
+--
+specialEscape :: String -> EncodedChar
+specialEscape ['a','m','p'] = CharEscName "ampersand"
+specialEscape cs            = CharEscName cs

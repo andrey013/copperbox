@@ -14,7 +14,7 @@
 > -- 
 > -- \*\* This file is auto-generated. \*\*
 > -- 
-> -- Generated - 2010-11-13 18:20
+> -- Generated - 2010-11-17 15:24
 > -- 
 > ------------------------------------------------------------------------------
 
@@ -28,10 +28,10 @@
 > import qualified Data.IntMap as IntMap
 
 
-> -- | Table mapping character numbers to Glyph names for the
+> -- | Table mapping character numbers to glyph names for the
 > -- Symbol font.
 
-> symbol_encoding :: IntMap.IntMap String
+> symbol_encoding :: EncodingVector
 > symbol_encoding = IntMap.fromAscList $
 >     [ ( 0x0020, "space" )
 >     , ( 0x0021, "exclam" )
