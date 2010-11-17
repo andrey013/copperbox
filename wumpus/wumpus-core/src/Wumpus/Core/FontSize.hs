@@ -54,7 +54,7 @@ module Wumpus.Core.FontSize
   , xcharHeight
   , descenderDepth
   , textBounds
-  , textBoundsEnc       -- hidden by toplevel Wumpus.Core
+  , textBoundsEsc
   , charCount
 
   ) where
@@ -233,16 +233,13 @@ textBounds :: (Num u, Ord u, FromPtSize u)
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
 
--- | 'textBoundsEnc' : @ font_size * baseline_left * encoded_text -> BBox@
+-- | 'textBoundsEnc' : @ font_size * baseline_left * escaped_text -> BBox@
 -- 
---  Version of textBounds for EncodedText.
+--  Version of textBounds for EscapedText.
 -- 
--- Note this function is hidded by the top-level module 
--- @Wumpus.Core@.
---
-textBoundsEnc :: (Num u, Ord u, FromPtSize u) 
-           => FontSize -> Point2 u -> EncodedText -> BoundingBox u
-textBoundsEnc sz pt enc = textBoundsBody sz pt (textLength enc) 
+textBoundsEsc :: (Num u, Ord u, FromPtSize u) 
+           => FontSize -> Point2 u -> EscapedText -> BoundingBox u
+textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc) 
 
 
 textBoundsBody :: (Num u, Ord u, FromPtSize u) 

@@ -66,9 +66,9 @@ module Wumpus.Core.Picture
   , rtextlabel
   , ztextlabel
 
-  , encodedlabel
-  , rencodedlabel
-  , zencodedlabel
+  , escapedlabel
+  , rescapedlabel
+  , zescapedlabel
 
   , hkernlabel
   , vkernlabel
@@ -389,7 +389,7 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt pt 0
 rtextlabel :: Num u 
            => RGBi -> FontAttr -> String -> Point2 u -> Radian -> Primitive u
 rtextlabel rgb attr txt pt theta = 
-    rencodedlabel rgb attr (encodeString txt) pt theta
+    rescapedlabel rgb attr (escapeString txt) pt theta
 
 
 -- | 'ztextlabel' : @ string * baseline_left -> Primitive @
@@ -402,39 +402,39 @@ ztextlabel = textlabel black wumpus_default_font
 
 
 
--- | 'encodedlabel' : @ rgb * font_attr * encoded_text * baseline_left -> Primitive @
+-- | 'escapedlabel' : @ rgb * font_attr * escaped_text * baseline_left -> Primitive @
 --
 -- Version of 'textlabel' where the label text has already been 
--- encoded.
+-- parsed for special characters.
 --
 -- The supplied point is the left baseline.
 --
-encodedlabel :: Num u 
-             => RGBi -> FontAttr -> EncodedText -> Point2 u -> Primitive u
-encodedlabel rgb attr txt pt = rencodedlabel rgb attr txt pt 0
+escapedlabel :: Num u 
+             => RGBi -> FontAttr -> EscapedText -> Point2 u -> Primitive u
+escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt pt 0
 
--- | 'rencodedlabel' : @ rgb * font_attr * encoded_text * baseline_left * 
+-- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * baseline_left * 
 --      rotation -> Primitive @
 --
 -- Version of 'rtextlabel' where the label text has already been 
--- encoded.
+-- parsed for special characters.
 --
 -- The supplied point is the left baseline.
 --
-rencodedlabel :: Num u 
-              => RGBi -> FontAttr -> EncodedText -> Point2 u -> Radian -> Primitive u
-rencodedlabel rgb attr txt pt theta = PLabel (LabelProps rgb attr) lbl 
+rescapedlabel :: Num u 
+              => RGBi -> FontAttr -> EscapedText -> Point2 u -> Radian -> Primitive u
+rescapedlabel rgb attr txt pt theta = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel pt (StdLayout txt) (thetaCTM theta)
 
 
--- | 'zencodedlabel' : @ encoded_text * baseline_left -> Primitive @
+-- | 'zescapedlabel' : @ escaped_text * baseline_left -> Primitive @
 --
 -- Version of 'ztextlabel' where the label text has already been 
 -- encoded.
 --
-zencodedlabel :: Num u => EncodedText -> Point2 u -> Primitive u
-zencodedlabel = encodedlabel black wumpus_default_font
+zescapedlabel :: Num u => EscapedText -> Point2 u -> Primitive u
+zescapedlabel = escapedlabel black wumpus_default_font
 
 
 

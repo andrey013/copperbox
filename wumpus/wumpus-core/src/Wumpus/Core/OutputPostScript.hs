@@ -246,8 +246,8 @@ findGlyphName i ev =
       Nothing -> Left $ fromMaybe "space" $ IntMap.lookup i ps_glyph_names
 
 
-psText :: EncodingVector -> EncodedText -> Doc
-psText ev enc_text = cons $ foldr fn ([],empty) $ getEncodedText enc_text
+psText :: EncodingVector -> EscapedText -> Doc
+psText ev enc_text = cons $ foldr fn ([],empty) $ getEscapedText enc_text
   where
     cons ([],doc)               = doc
     cons (cs,doc)               = ps_show cs `vconcat` doc
@@ -257,7 +257,7 @@ psText ev enc_text = cons $ foldr fn ([],empty) $ getEncodedText enc_text
     fn (CharEscInt i)  acc      = ([], psSpecial ev i `vconcat` cons acc)
     fn (CharEscName s) acc      = ([], ps_glyphshow s `vconcat` cons acc)  
 
-psChar :: EncodingVector -> EncodedChar -> Doc
+psChar :: EncodingVector -> EscapedChar -> Doc
 psChar _  (CharLiteral c) | ord c < 0x80  = ps_show [c]
 psChar ev (CharLiteral c)                 = psSpecial ev (ord c) 
 psChar ev (CharEscInt i)                  = psSpecial ev i

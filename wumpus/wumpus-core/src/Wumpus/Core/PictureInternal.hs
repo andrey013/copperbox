@@ -240,7 +240,7 @@ type DPrimLabel = PrimLabel Double
 -- Kerned vertical layout - each character is encoded with the
 -- upwards distance from the last charcaters left base-line.
 -- 
-data LabelBody u = StdLayout EncodedText
+data LabelBody u = StdLayout EscapedText
                  | KernTextH [KerningChar u]
                  | KernTextV [KerningChar u]
   deriving (Eq,Show)
@@ -251,7 +251,7 @@ type DLabelBody = LabelBody Double
 -- | A Char (possibly escaped) paired with is displacement from 
 -- the previous KerningChar.
 --
-type KerningChar u = (u,EncodedChar) 
+type KerningChar u = (u,EscapedChar) 
 
 type DKerningChar = KerningChar Double
 
@@ -448,8 +448,8 @@ labelBodyBoundary sz (KernTextV xs)   = vKerningBB sz xs
 
 
 stdLayoutBB :: (Num u, Ord u, FromPtSize u) 
-            => FontSize -> EncodedText -> BoundingBox u
-stdLayoutBB sz etxt = textBoundsEnc sz zeroPt etxt
+            => FontSize -> EscapedText -> BoundingBox u
+stdLayoutBB sz etxt = textBoundsEsc sz zeroPt etxt
 
 
 -- Note - this assumes positive deltas (and a nonempty list)...
@@ -461,7 +461,7 @@ stdLayoutBB sz etxt = textBoundsEnc sz zeroPt etxt
 -- displacements.
 -- 
 hKerningBB :: (Num u, Ord u, FromPtSize u) 
-           => FontSize -> [(u,EncodedChar)] -> BoundingBox u
+           => FontSize -> [(u,EscapedChar)] -> BoundingBox u
 hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
   where
     sumDiffs                          = foldr (\(u,_) i -> i+u)  0
@@ -478,7 +478,7 @@ hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
 -- Also note, that the Label /grows/ downwards...
 --
 vKerningBB :: (Num u, Ord u, FromPtSize u) 
-           => FontSize -> [(u,EncodedChar)] -> BoundingBox u
+           => FontSize -> [(u,EscapedChar)] -> BoundingBox u
 vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
   where
     sumDiffs                                = foldr (\(u,_) i -> i+u)  0

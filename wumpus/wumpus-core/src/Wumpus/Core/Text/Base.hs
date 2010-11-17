@@ -53,11 +53,11 @@
 module Wumpus.Core.Text.Base
   ( 
 
-    EncodedText(..)    
-  , EncodedChar(..)
+    EscapedText(..)    
+  , EscapedChar(..)
   , EncodingVector
 
-  , encodeString
+  , escapeString
   , textLength  
 
   ) where
@@ -70,21 +70,21 @@ import qualified Data.IntMap as IntMap
 
 -- | Internal string representation for Wumpus-Core.
 -- 
--- 'EncodedText' is a list of characters, where each character 
+-- 'EscapedText' is a list of characters, where each character 
 -- may be either a regular character, an integer representing a 
 -- Unicode code-point or a PostScript glyph name.
 -- 
-newtype EncodedText = EncodedText { getEncodedText :: [EncodedChar] }
+newtype EscapedText = EscapedText { getEscapedText :: [EscapedChar] }
   deriving (Eq,Show)
 
 
 -- | Internal character representation for Wumpus-Core.
 -- 
--- An 'EncodedChar' may be either a regular character, an integer
+-- An 'EscapedChar' may be either a regular character, an integer
 -- representing a Unicode code-point or a PostScript glyph
 -- name.
 -- 
-data EncodedChar = CharLiteral Char
+data EscapedChar = CharLiteral Char
                  | CharEscInt  Int
                  | CharEscName String
   deriving (Eq,Show)
@@ -98,13 +98,13 @@ type EncodingVector = IntMap.IntMap String
 
 --------------------------------------------------------------------------------
 
-instance Format EncodedText where
-  format = hcat . map format . getEncodedText
+instance Format EscapedText where
+  format = hcat . map format . getEscapedText
 
 
-instance Format EncodedChar where
+instance Format EscapedChar where
   format (CharLiteral c) = char c
-  format (CharEscInt i)  = text "&#" <> int i  <> semicolon
+  format (CharEscInt i)  = text "&#" <> int i <> semicolon
   format (CharEscName s) = text "&" <> text s <> semicolon
 
 
@@ -113,7 +113,7 @@ instance Format EncodedChar where
 
 
 
--- | 'encodeString' input is regular text and escaped glyph names 
+-- | 'escapeString' input is regular text and escaped glyph names 
 -- or decimal character codes. Escaping in the input string should 
 -- follow the SVG convention - the escape sequence starts with 
 -- @&#@ (ampersand hash) and end with @;@ (semicolon).
@@ -128,18 +128,25 @@ instance Format EncodedChar where
 --
 -- > &#232;
 --
-encodeString :: String -> EncodedText
-encodeString = EncodedText . lexer
+escapeString :: String -> EscapedText
+escapeString = EscapedText . lexer
 
 
--- | Get the character count of an 'EncodedText' string.
+-- | Get the character count of an 'EscapedText' string.
 --
-textLength :: EncodedText -> Int
-textLength = length . getEncodedText where 
+textLength :: EscapedText -> Int
+textLength = length . getEscapedText 
 
+--
+-- Design note.
+--
+-- There is a fair argument that the lexer function should be 
+-- supplied with an encoding table and the actual encoding is 
+-- perfomed here rather than just escaping...
+--
 
  
-lexer :: String -> [EncodedChar]
+lexer :: String -> [EscapedChar]
 lexer []            = []
 lexer ('&':'#':cs)  = escNumStart cs
 lexer ('&':cs)      = escName cs
@@ -147,7 +154,7 @@ lexer (c:cs)        = CharLiteral c : lexer cs
 
 -- Input is malformed if this reaches the @rest@ case.
 -- 
-escNumStart :: String -> [EncodedChar]
+escNumStart :: String -> [EscapedChar]
 escNumStart ('0':'o':cs)           = escOct cs
 escNumStart ('0':'O':cs)           = escOct cs
 escNumStart ('0':'x':cs)           = escHex cs
@@ -155,7 +162,7 @@ escNumStart ('0':'X':cs)           = escHex cs
 escNumStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
 escNumStart rest                   = chompToSemi rest      
 
-escName :: String -> [EncodedChar]
+escName :: String -> [EscapedChar]
 escName (c:cs)                     = let (ss,rest) = span isAlphaNum cs 
                                      in specialEscape (c:ss) : chompToSemi rest
 escName []                         = [] 
@@ -163,12 +170,12 @@ escName []                         = []
 
 -- | One digit consumed already...
 --
-escDec :: Int -> String -> [EncodedChar]
+escDec :: Int -> String -> [EscapedChar]
 escDec n (c:cs) | isDigit c = escDec (n*10 + digitToInt c) cs
 escDec n cs     | n > 0     = CharEscInt n : chompToSemi cs
                 | otherwise = chompToSemi cs
 
-escHex :: String -> [EncodedChar]
+escHex :: String -> [EscapedChar]
 escHex = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*16 + digitToInt c) cs
@@ -176,7 +183,7 @@ escHex = step 0
                   | otherwise    = chompToSemi cs 
 
 
-escOct :: String -> [EncodedChar]
+escOct :: String -> [EscapedChar]
 escOct = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*8 + digitToInt c) cs
@@ -188,7 +195,7 @@ escOct = step 0
 -- The last two conditions both indicate ill-formed input, but it
 -- is /best/ if the lexer does not throw errors.
 -- 
-chompToSemi :: String -> [EncodedChar]
+chompToSemi :: String -> [EscapedChar]
 chompToSemi (';':cs) = lexer cs
 chompToSemi (_:cs)   = chompToSemi cs           
 chompToSemi []       = []
@@ -198,6 +205,6 @@ chompToSemi []       = []
 --
 -- Are there other cases to add to this function?
 --
-specialEscape :: String -> EncodedChar
+specialEscape :: String -> EscapedChar
 specialEscape ['a','m','p'] = CharEscName "ampersand"
 specialEscape cs            = CharEscName cs

@@ -127,7 +127,7 @@ askDashPattern  = asksGraphicsState (dash_pattern . gs_stroke_attr)
 --------------------------------------------------------------------------------
 
 
-svgChar :: EncodedChar -> Doc
+svgChar :: EscapedChar -> Doc
 svgChar (CharLiteral c) | ord c < 0x80  = char c
 svgChar (CharLiteral c)                 = escapeSpecial $ ord c
 svgChar (CharEscInt i)                  = escapeSpecial i
@@ -299,8 +299,8 @@ labelBodyText (KernTextH xs)      = kerningText xs
 labelBodyText (KernTextV xs)      = kerningText xs
 
 
-encodedText :: EncodedText -> Doc
-encodedText enctext = hcat $ map svgChar $ getEncodedText enctext
+encodedText :: EscapedText -> Doc
+encodedText enctext = hcat $ map svgChar $ getEscapedText enctext
 
 kerningText :: [KerningChar u] -> Doc
 kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
