@@ -21,8 +21,8 @@ module Wumpus.Core.Text.Base
   , EncodedChar(..)
   , EncodingVector
 
+  , encodeString
   , textLength  
-  , lexLabel
 
   ) where
 
@@ -31,12 +31,23 @@ import Wumpus.Core.Utils.FormatCombinators
 import Data.Char
 import qualified Data.IntMap as IntMap
 
+
+-- | Internal string representation for Wumpus-Core.
+-- 
+-- 'EncodedText' is a list of characters, where each character 
+-- may be either a regular character, an integer representing a 
+-- Unicode code-point or a PostScript glyph name.
+-- 
 newtype EncodedText = EncodedText { getEncodedText :: [EncodedChar] }
   deriving (Eq,Show)
 
 
--- | For KernLabels Wumpus needs a Char version of TextChunk.
---
+-- | Internal character representation for Wumpus-Core.
+-- 
+-- An 'EncodedChar' may be either a regular character, an integer
+-- representing a Unicode code-point or a PostScript glyph
+-- name.
+-- 
 data EncodedChar = CharLiteral Char
                  | CharEscInt  Int
                  | CharEscName String
@@ -62,27 +73,33 @@ instance Format EncodedChar where
 --------------------------------------------------------------------------------
 
 
+
+
+-- | 'encodeString' input is regular text and escaped glyph names 
+-- or decimal character codes. Escaping in the input string should 
+-- follow the SVG convention - the escape sequence starts with 
+-- @&#@ (ampersand hash) and end with @;@ (semicolon).
+--
+-- Escaped characters are output to PostScript as their respective
+-- glyph names:
+--
+-- > /egrave glyphshow
+--
+-- Escaped chararacters are output to SVG as an escaped decimal, 
+-- e.g.:
+--
+-- > &#232;
+--
+encodeString :: String -> EncodedText
+encodeString = EncodedText . lexer
+
+
+-- | Get the character count of an 'EncodedText' string.
+--
 textLength :: EncodedText -> Int
 textLength = length . getEncodedText where 
 
 
--- | 'lexLabel' input is regular text and escaped glyph names or
--- decimal character codes. Escaping follows the SVG convention,
--- start with @&#@ (ampersand hash) end with @;@ (semicolon).
---
--- Special chars are output to PostScript as:
---
--- > /egrave glyphshow
---
--- Special chars are output to SVG as an escaped decimal, e.g.:
---
--- > &#232;
---
--- Note, HTML entity names do not seem to be supported in SVG,
--- @ &egrave; @ does not work in FireFox or Chrome.
---
-lexLabel :: String -> EncodedText
-lexLabel = EncodedText . lexer
 
 -- Note - the lexer reads number spans with isDigit, so reads 
 -- decimals only.
