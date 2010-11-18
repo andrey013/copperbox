@@ -40,18 +40,18 @@ module Wumpus.Basic.Text.Advance
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Text.LocBoundingBox
 
-
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Text.GlyphIndices
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Char
 import Data.Foldable ( foldrM )
+import qualified Data.Map               as Map
+import Data.Maybe 
 
-
-type AdvanceVec u = Vec2 u
-
+{-
 -- | Take the max width and set the height to zero.
 --
 -- It is assumed that any deviation from zero in the height
@@ -61,7 +61,7 @@ type AdvanceVec u = Vec2 u
 --
 advanceH :: Num u => AdvanceVec u -> Vec2 u
 advanceH (V2 w _)  = V2 w 0
-
+-}
 
 
 data AdvanceSingle u = AdvanceSingle
@@ -102,7 +102,7 @@ advanceR a b = AdvanceSingle bbox adv grafic
 
 
 oneLineH :: Num u => AdvanceSingle u -> AdvanceMulti u
-oneLineH (AdvanceSingle bbox adv gf) = AdvanceMulti bbox (advanceH adv) gf
+oneLineH (AdvanceSingle bbox adv gf) = AdvanceMulti bbox (hvec $ advanceH adv) gf
 
 
 alignRightH :: (Num u, Ord u) 
@@ -146,20 +146,24 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 
 singleLine :: FromPtSize u => String -> CF (AdvanceSingle u)
 singleLine ss = 
-    stringVector ss >>= \av -> 
-    maxGlyphHeight  >>= \max_h ->
+    let cs = escapeString ss in 
+    stringVector cs >>= \av -> 
+    glyphHeightRange  >>= \(ymin,ymax) ->
     let width = vector_x av
-        bbox  = oLocBoundingBox width max_h
-    in  return  (makeSingle bbox av (textline ss))
+        bbox  = oLocBoundingBox width (ymax-ymin)
+    in  return  (makeSingle bbox av (escapedline cs))
 
 
--- TODO - this should account for escape characters...
---
-stringVector :: FromPtSize  u =>  String -> CF (AdvanceVec u)
-stringVector ss = 
-   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) ss
+stringVector :: FromPtSize  u => EscapedText -> CF (AdvanceVec u)
+stringVector ss = let cs = getEscapedText ss in 
+   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
 
 
+charVector :: FromPtSize u => EscapedChar -> CF (AdvanceVec u)
+charVector (CharLiteral c) = avLookupTable `situ1` (ord c)
+charVector (CharEscInt i)  = avLookupTable `situ1` i
+charVector (CharEscName s) = avLookupTable `situ1` ix
+  where
+    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
-charVector :: FromPtSize u => Char -> CF (AdvanceVec u)
-charVector c = avLookupTable `situ1` (ord c)
+

@@ -31,6 +31,9 @@ module Wumpus.Basic.Graphic.GraphicOperations
   , textline
   , rtextline
   , centermonoTextline
+  , escapedline
+  , rescapedline
+
   , textlineMulti
   , hkernline
   , vkernline
@@ -80,10 +83,15 @@ import Wumpus.Basic.Graphic.GraphicTypes
 import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Text.GlyphIndices
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
+import Data.Char
+import Data.Foldable ( foldrM )
+import qualified Data.Map               as Map
+import Data.Maybe 
 
 
 
@@ -135,13 +143,45 @@ textline ss =
     withTextAttr $ \rgb attr -> locPrimGraphic (textlabel rgb attr ss)
 
 
--- Note - rtextlabel in Wumpus-Core needs changing as it has 
--- args (now) in the wrong order.
 
 rtextline :: Num u => String -> LocThetaGraphic u
 rtextline ss = 
     withTextAttr $ \rgb attr -> thetaLocPrimGraphic 
                                   (\pt ang -> rtextlabel rgb attr ss pt ang)
+
+
+-- Needs descender depth? ...
+
+singleLine :: (Ord u, FromPtSize u) => String -> LocImage u (BoundingBox u)
+singleLine ss = 
+    let cs = escapeString ss in 
+    textVector cs     >>= \av    -> 
+    glyphHeightRange  >>= \y_range ->
+    intoLocImage (raise1 $ measuredTextBBox (advanceH av) y_range)
+                 (escapedline cs)  
+
+
+-- | Measured text box for left-to-right text.
+-- 
+-- Supplied point is baseline left.
+-- 
+measuredTextBBox :: (Num u, Ord u) => u -> (u,u) -> Point2 u -> BoundingBox u
+measuredTextBBox w (ymin,ymax) (P2 x y) = 
+    boundingBox (P2 x (y-ymin)) (P2 (x+w) (y+ymax))
+
+textVector :: FromPtSize  u => EscapedText -> CF (AdvanceVec u)
+textVector ss = let cs = getEscapedText ss in 
+   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
+
+
+charVector :: FromPtSize u => EscapedChar -> CF (AdvanceVec u)
+charVector (CharLiteral c) = avLookupTable `situ1` (ord c)
+charVector (CharEscInt i)  = avLookupTable `situ1` i
+charVector (CharEscName s) = avLookupTable `situ1` ix
+  where
+    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
+
+
 
 
 -- | As 'textline' but the supplied point is the /center/.
@@ -155,6 +195,16 @@ centermonoTextline ss = monoVecToCenter ss >>= \v ->
                           moveLoc (vecdisplace (negateV v)) (textline ss)
 
 
+
+escapedline :: Num u => EscapedText -> LocGraphic u
+escapedline ss =
+    withTextAttr $ \rgb attr -> locPrimGraphic (escapedlabel rgb attr ss)
+
+
+rescapedline :: Num u => EscapedText -> LocThetaGraphic u
+rescapedline ss = 
+    withTextAttr $ \rgb attr -> thetaLocPrimGraphic 
+                                  (\pt ang -> rescapedlabel rgb attr ss pt ang)
 
 
 

@@ -60,7 +60,8 @@ description:
   .
   * Text handling substantially revised. SVG text output is now 
     better aligned to Unicode. The encoding tables for PostScript
-    have been re-thought.
+    have been re-thought, the previous implementation had some 
+    serious design flaws that should now be rectified.
   .
   * The rules for escaping special characters has been clarified.
     Previously the documentation suggested 
@@ -71,10 +72,10 @@ description:
     @ampersand-hash-num_literal-semicolon@.
   .
   * Versions of the textlabel functions have been added to 
-    @Core.Picture@ for pre-encoded text. It is useful for higher
-    level software to encode the text, do some calculations then 
-    render it - going back to un-encoded text for the rendering 
-    would be inefficient.
+    @Core.Picture@ for escape-parsed text. It is useful for 
+    higher-level software to escape the text, do some calculations 
+    then render it - going back to un-escaped text for the 
+    rendering would be inefficient.
   .
   * Name change - in @Core.FontSize@ the function @textBoundsEnc@
     has been renamed to @textBoundsEsc@. Wumpus-Core now calls 

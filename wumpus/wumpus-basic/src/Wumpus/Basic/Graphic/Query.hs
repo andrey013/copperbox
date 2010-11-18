@@ -39,7 +39,8 @@ module Wumpus.Basic.Graphic.Query
   , baselineSpacing
 
   -- * Glyph metrics
-  , maxGlyphHeight
+  , glyphBoundingBox
+  , glyphHeightRange
   , avLookupTable
 
   -- * Default monospace metrics
@@ -147,10 +148,15 @@ markHalfHeight = (0.5*) <$> markHeight
 --------------------------------------------------------------------------------
 
 
+glyphBoundingBox :: (FromPtSize u, DrawingCtxM m) => m (BoundingBox u)
+glyphBoundingBox = 
+    (\ctx -> withFontMetrics (\rec sz -> get_bounding_box rec sz) ctx) <$> askDC
 
-maxGlyphHeight :: (FromPtSize u, DrawingCtxM m) => m u
-maxGlyphHeight = 
-    (\ctx -> withFontMetrics (\rec sz -> get_max_height rec sz) ctx) <$> askDC
+
+glyphHeightRange :: (FromPtSize u, DrawingCtxM m) => m (u,u)
+glyphHeightRange = fn <$> glyphBoundingBox
+  where
+    fn (BBox (P2 _ ymin) (P2 _ ymax)) = (ymin,ymax)
 
 
 avLookupTable :: (FromPtSize u, DrawingCtxM m) => m (Int -> Vec2 u)

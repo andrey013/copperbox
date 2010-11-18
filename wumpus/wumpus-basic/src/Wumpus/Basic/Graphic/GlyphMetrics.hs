@@ -45,9 +45,9 @@ type CodePoint = Int
 -- /Character unit/ and not on the usual @u@.
 --
 data GlyphMetricsTable cu = GlyphMetricsTable
-       { glyph_max_height   :: cu 
-       , default_adv_vec    :: Vec2 cu
-       , glyph_adv_vecs     :: IntMap.IntMap (Vec2 cu)
+       { glyph_bounding_box     :: BoundingBox cu 
+       , default_adv_vec        :: Vec2 cu
+       , glyph_adv_vecs         :: IntMap.IntMap (Vec2 cu)
        }
 
 
@@ -58,8 +58,8 @@ data GlyphMetricsTable cu = GlyphMetricsTable
 --
 
 data GlyphMetrics = GlyphMetrics 
-      { get_max_height :: forall u. FromPtSize u => PtSize -> u 
-      , get_av_lookup  :: forall u. FromPtSize u => PtSize -> (CodePoint -> Vec2 u)
+      { get_bounding_box  :: forall u. FromPtSize u => PtSize -> BoundingBox u 
+      , get_av_lookup     :: forall u. FromPtSize u => PtSize -> (CodePoint -> Vec2 u)
       }
 
 
@@ -70,26 +70,35 @@ type BaseGlyphMetrics = Map.Map FontName GlyphMetrics
 --
 monospace_metrics :: GlyphMetrics
 monospace_metrics = GlyphMetrics
-      { get_max_height  = \sz -> fromPtSize $ sz * max_height
-      , get_av_lookup   = \sz _ -> hvec (fromPtSize $ sz * width_vec) 
+      { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
+      , get_av_lookup     = \sz _ -> hvec (upscale sz width_vec) 
       }
   where
-    max_height = 1055 / 1000
-    width_vec  = 600 / 1000
+    llx           = (-23)  / 1000
+    lly           = (-250) / 1000
+    urx           = 715    / 1000
+    ury           = 805    / 1000
+    width_vec     = 600    / 1000
+
+    upscale sz d  = fromPtSize $ sz * d
+    lowerLeft sz  = P2 (upscale sz llx) (upscale sz lly) 
+    upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
 
 
 buildMetrics :: (cu -> PtSize) -> GlyphMetricsTable cu -> GlyphMetrics
-buildMetrics fn (GlyphMetricsTable max_height (V2 vx vy) vec_table) = 
+
+buildMetrics fn (GlyphMetricsTable (BBox ll ur) (V2 vx vy) vec_table) = 
     GlyphMetrics
-      { get_max_height  = \sz -> ptScale sz $ fn max_height
-      , get_av_lookup   = \sz i -> 
-            maybe (defaultAV sz) (scaleFun sz) $ IntMap.lookup i vec_table 
+      { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
+      , get_av_lookup     = \sz i -> 
+            maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
       }
   where
-    ptScale sz d            = fromPtSize $ sz * d 
+    upscale sz d            = fromPtSize $ sz * d 
  
-    defaultAV sz            = V2 (ptScale sz $ fn vx) (ptScale sz $ fn vy) 
-    scaleFun sz (V2 cx cy)  = V2 (ptScale sz $ fn cx) (ptScale sz $ fn cy) 
+    defaultAV sz            = V2 (upscale sz $ fn vx) (upscale sz $ fn vy) 
+    scalePt  sz (P2 cx cy)  = P2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
+    scaleVec sz (V2 cx cy)  = V2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
 
 
 

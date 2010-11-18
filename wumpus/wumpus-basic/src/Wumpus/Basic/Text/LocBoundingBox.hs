@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
@@ -14,6 +13,9 @@
 --
 -- Bounding Box as a functional from some start point.
 --
+-- Note - should be able to live without this once AdvanceText is
+-- re-written. 
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Text.LocBoundingBox
@@ -39,6 +41,8 @@ import Data.AffineSpace
 
 newtype LocBoundingBox u = LocBoundingBox 
           { getLocBoundingBox :: Point2 u -> BoundingBox u }
+
+type instance DUnit (LocBoundingBox u) = u
 
 runLocBoundingBox :: Point2 u -> LocBoundingBox u -> BoundingBox u
 runLocBoundingBox pt bb = getLocBoundingBox bb pt

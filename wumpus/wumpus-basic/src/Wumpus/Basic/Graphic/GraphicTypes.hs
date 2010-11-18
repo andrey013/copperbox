@@ -26,6 +26,9 @@ module Wumpus.Basic.Graphic.GraphicTypes
   -- * Function from Point to Point
     PointDisplace
 
+  -- * Advance vector
+  , AdvanceVec
+
   -- * Graphic  
   , Graphic
   , LocGraphic
@@ -52,6 +55,10 @@ module Wumpus.Basic.Graphic.GraphicTypes
   -- * /Advance vector/ graphic
   , AdvGraphic
   , DAdvGraphic
+
+  -- * Extract from an Advance vector
+  , advanceH
+  , advanceV
 
   -- * Run functions
   , runGraphic
@@ -93,6 +100,7 @@ import Wumpus.Core                      -- package: wumpus-core
 type PointDisplace u = Point2 u -> Point2 u
 
 
+type AdvanceVec u = Vec2 u
 
 
 --------------------------------------------------------------------------------
@@ -225,6 +233,27 @@ instance (Num u, Scale a, DUnit a ~ u) => Scale (Image u a) where
 instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
   translate dx dy = postpro (\(a,b) -> (translate dx dy a, translate dx dy b))
 
+
+
+--------------------------------------------------------------------------------
+
+-- | Extract the horizontal component of an advance vector.
+--
+-- For left-to-right latin text, the vertical component of an
+-- advance vector is expected to be 0. Ingoring it seems 
+-- permissible, e.g. when calculating bounding boxes for 
+-- left-to-right text.
+--
+advanceH :: Num u => AdvanceVec u -> u
+advanceH (V2 w _)  = w
+
+-- | Extract the verticaltal component of an advance vector.
+--
+-- For left-to-right latin text, the vertical component of an
+-- advance vector is expected to be 0.
+--
+advanceV :: Num u => AdvanceVec u -> u
+advanceV (V2 _ h)  = h
 
 
 --------------------------------------------------------------------------------

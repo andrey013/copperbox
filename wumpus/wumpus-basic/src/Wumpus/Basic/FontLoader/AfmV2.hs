@@ -61,25 +61,22 @@ ghostScriptFontLoader font_dir_path = FontLoader
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
       , font_parser         = parseAfmV2File
-      , post_process        = buildGlyphMetricsTable 1093 (V2 600 0)
+      , post_process        = buildGlyphMetricsTable bbox (V2 600 0)
       }
   where
     buildName :: FontName -> FilePath
     buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
 
+    bbox           = BBox (P2 (-23) (-250)) (P2 715 805)
 
-buildGlyphMetricsTable :: AfmUnit -> Vec2 AfmUnit -> AfmV2File 
+buildGlyphMetricsTable :: BoundingBox AfmUnit -> Vec2 AfmUnit -> AfmV2File 
                        -> GlyphMetricsTable AfmUnit
-buildGlyphMetricsTable default_max_height default_vec afm = 
+buildGlyphMetricsTable bbox default_vec afm = 
     GlyphMetricsTable 
-      { glyph_max_height   = max_h
+      { glyph_bounding_box = bbox
       , default_adv_vec    = default_vec
       , glyph_adv_vecs     = makeAdvVecs $ afm_glyph_metrics afm
       }  
-  where
-    max_h = maybe default_max_height boundaryHeight $ afm_font_bbox afm
-    
-    --   unit_scale_fun     = flip afmValue
 
 
 makeAdvVecs :: [AfmGlyphMetrics] -> IntMap.IntMap (Vec2 AfmUnit)

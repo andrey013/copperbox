@@ -20,19 +20,20 @@
 -- i.e. character codes are delimited by @&\#@ on the 
 -- left and @;@ on the right.
 --
--- Glyph names are delimited by @&@ on the 
--- left and @;@ on the right.
+-- Glyph names are delimited by @&@ on the left and @;@ on the 
+-- right.
 --
 -- > "regular ascii text &ampersand; more ascii text"
 --
--- Note that glyph names \*\* should always \*\* correspond to
+-- Note that glyph names \*\* /should always/ \*\* correspond to
 -- PostScript glyph names not SVG / HTML glyph names.
 --
--- In Wumpus both character names and character codes can
--- be embedded in strings - (e.g. @ &\egrave; or &\#232; @).
+-- In Wumpus both glyph names and character codes can
+-- be embedded in strings - (e.g. @&\egrave;@ or @&\#232;@) 
+-- although glyph names are preferred for PostScript (see below).
 --
 -- Character codes can be also be expressed as octal or 
--- hexadecimal:
+-- hexadecimal numbers:
 --
 -- > myst&#0o350;re
 --
@@ -51,12 +52,13 @@
 -- names rather than code points as they are unambiguously 
 -- interpreted by Wumpus. Character codes are context-dependent
 -- on the encoding of the font used to render the text. 
--- /Standard / fonts use the Standard Encoding is which has 
--- some differnces to Latin1. 
+-- /Standard/ fonts (e.g. Helvetica, Times, Courier) use the 
+-- Standard Encoding is which has some differences to the 
+-- common Latin1 character set. 
 --
 -- Unfortunately if a glyph is not present in a font it cannot 
 -- be rendered in PostScript. Wumpus-Core is oblivious to the 
--- contents of fonts and does not warn about missing glyphs or 
+-- contents of fonts, it does not warn about missing glyphs or 
 -- attempt to substitute them.
 -- 
 --------------------------------------------------------------------------------

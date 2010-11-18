@@ -26,7 +26,7 @@ font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Times-Roman"]
+    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
     let pic1 = runDrawingU (makeStdCtx base_metrics) text_drawing 
     writeEPS "./out/new_text01.eps" pic1
     writeSVG "./out/new_text01.svg" pic1
@@ -34,7 +34,7 @@ main = do
     loader = ghostScriptFontLoader font_directory
 
 makeStdCtx :: BaseGlyphMetrics -> DrawingContext
-makeStdCtx = fontface times_roman . metricsContext 18
+makeStdCtx = fontface helvetica . metricsContext 18
 
 
 type CatF u = AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u

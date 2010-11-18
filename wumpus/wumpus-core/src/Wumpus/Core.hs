@@ -37,6 +37,7 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PtSize
+  , module Wumpus.Core.Text.Base
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
 
@@ -54,6 +55,7 @@ import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PtSize
+import Wumpus.Core.Text.Base
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
 
