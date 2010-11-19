@@ -54,7 +54,6 @@ module Wumpus.Basic.Dots.AnchorDots
 
   ) where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.Intersection

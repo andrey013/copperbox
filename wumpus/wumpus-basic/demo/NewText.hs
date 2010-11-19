@@ -16,6 +16,8 @@ import Wumpus.Core                      -- package: wumpus-core
 import System.Directory
 
 
+import Wumpus.Basic.Graphic.BoundedOperations
+
 -- Edit this path!
 -- ***************
 --
@@ -44,7 +46,7 @@ dummyText :: (Fractional u, Ord u, FromPtSize u)
 dummyText op = (((mk1 "One Two Three" `join` mk1 "Four")
                   `join` mk1 "Five") `join` mk1 "Six") `join` mk1 "Seven"
   where
-    mk1 ss = postpro oneLineH $ singleLine ss 
+    mk1 ss = postpro oneLineH $ singleLineLR ss 
     join a b = postcomb op a b 
 
 

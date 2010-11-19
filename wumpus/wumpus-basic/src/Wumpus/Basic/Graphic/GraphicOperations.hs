@@ -30,6 +30,7 @@ module Wumpus.Basic.Graphic.GraphicOperations
   
   , textline
   , rtextline
+  , singleLine
   , centermonoTextline
   , escapedline
   , rescapedline

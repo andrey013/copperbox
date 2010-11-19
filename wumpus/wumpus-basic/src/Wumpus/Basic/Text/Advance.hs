@@ -33,7 +33,7 @@ module Wumpus.Basic.Text.Advance
   , alignLeftH
   , alignCenterH
 
-  , singleLine
+  , singleLineLR
 
   ) where
 
@@ -51,17 +51,9 @@ import Data.Foldable ( foldrM )
 import qualified Data.Map               as Map
 import Data.Maybe 
 
-{-
--- | Take the max width and set the height to zero.
---
--- It is assumed that any deviation from zero in the height
--- component represents that the end vector is in super- or 
--- sub-script mode. As 'advanceHMax' is used in multi-line 
--- concatenation, losing the mode seems acceptable.
---
-advanceH :: Num u => AdvanceVec u -> Vec2 u
-advanceH (V2 w _)  = V2 w 0
--}
+-- Note - LocImage u (BoundingBox u) needs a name.
+-- This type also enjoys composition operators along the lines
+-- of DrawingComposition.
 
 
 data AdvanceSingle u = AdvanceSingle
@@ -144,8 +136,8 @@ alignCenterH dy a b = AdvanceMulti bbox dimm grafic
 --------------------------------------------------------------------------------
 
 
-singleLine :: FromPtSize u => String -> CF (AdvanceSingle u)
-singleLine ss = 
+singleLineLR :: FromPtSize u => String -> CF (AdvanceSingle u)
+singleLineLR ss = 
     let cs = escapeString ss in 
     stringVector cs >>= \av -> 
     glyphHeightRange  >>= \(ymin,ymax) ->

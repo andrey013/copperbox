@@ -22,7 +22,7 @@ module Wumpus.Basic.DrawingComposition
     over 
   , under
 
-  , centerOver
+  , centric
   , nextToH
   , nextToV
   
@@ -73,9 +73,6 @@ empty_drawing = drawTracing $ return ()
 
 -- Operations on bounds
 
--- Corresponding operations are available on bounding boxes - the 
--- definitions here have different type class obligations.
-
 -- | The center of a picture.
 centerPoint :: Fractional u => Picture u -> Point2 u
 centerPoint = fn . boundary
@@ -111,38 +108,31 @@ topBound = fn . ur_corner . boundary
 --------------------------------------------------------------------------------
 -- Composition operators
 
--- Note - these operators are in some ways /anti-combinators/, it
--- seems easier to think about composing drawings if we do 
--- work on the result Pictures directly rather than build 
--- combinators to manipulate Drawings (I hope this works...)
+-- Note - the megaCombR operator is in some way an
+-- /anti-combinator/. It seems easier to think about composing 
+-- drawings if we do work on the result Pictures directly rather 
+-- than build combinators to manipulate Drawings.
+--
+-- The idea of combining pre- and post- operating combinators
+-- makes me worry about circular programs even though I know 
+-- lazy evaluation allows me to write them (in some cicumstances).
 --
 
 
-
-megaCombL :: (Picture u -> a) -> (Picture u -> a) 
+-- Picture /mega-combiner/ - moves only the second argument aka the 
+-- right picture.
+--
+megaCombR :: (Num u, Ord u)
+          => (Picture u -> a) -> (Picture u -> a) 
           -> (a -> a -> Picture u -> Picture u) 
-          -> (Picture u -> Picture u -> Picture u)
           -> Drawing u -> Drawing u
           -> Drawing u
-megaCombL qL qR trafoL comb = drawingConcat fn
-  where
-    fn pic1 pic2 = let a    = qL pic1
-                       b    = qR pic2
-                       p1   = trafoL a b pic1
-                   in p1 `comb` pic2
-
-
-megaCombR :: (Picture u -> a) -> (Picture u -> a) 
-          -> (a -> a -> Picture u -> Picture u) 
-          -> (Picture u -> Picture u -> Picture u)
-          -> Drawing u -> Drawing u
-          -> Drawing u
-megaCombR qL qR trafoR comb = drawingConcat fn
+megaCombR qL qR trafoR = drawingConcat fn
   where
     fn pic1 pic2 = let a    = qL pic1
                        b    = qR pic2
                        p2   = trafoR a b pic2
-                   in pic1 `comb` p2
+                   in pic1 `picOver` p2
 
 
 
@@ -178,6 +168,7 @@ move v = modifyDrawing (\p -> p `picMoveBy` v)
 
 
 
+
 -- | Extract the top-left corner.
 --
 topleft       :: Picture u -> Point2 u
@@ -206,8 +197,6 @@ bottomright   = fn . boundary
 --------------------------------------------------------------------------------
 -- Internal helpers
 
--- simpler to use BB directly...
-
 leftmid       :: Fractional u => Picture u -> Point2 u
 leftmid       = fn . boundary
    where
@@ -232,6 +221,7 @@ bottommid     = fn . boundary
   where
     fn (BBox (P2 llx lly) (P2 urx _)) = P2 (midpt llx urx) lly
 
+
 midpt :: Fractional a => a -> a -> a
 midpt a b = a + 0.5*(b-a)
 
@@ -239,23 +229,22 @@ midpt a b = a + 0.5*(b-a)
 --------------------------------------------------------------------------------
 -- Composition
 
--- infixr 5 `nextToV`
--- infixr 6 `nextToH`, `centerOver`
+infixr 5 `nextToV`
+infixr 6 `nextToH`, `centric`
 
 
 
 
--- | Draw a centered over b - a is moved, b is static.
+-- | Draw @a@, move @b@ so its center is at the same center as 
+-- @a@, @b@ is drawn over underneath in the zorder.
 --
--- > a `centerOver` b 
+-- > a `centeric` b 
 --
--- Note - `centerOver` moves the first argument, whereas most 
--- other functions move the second
--- 
-centerOver :: (Fractional u, Ord u) => Drawing u -> Drawing u -> Drawing u
-centerOver = megaCombL centerPoint centerPoint moveFun picOver
+--
+centric :: (Fractional u, Ord u) => Drawing u -> Drawing u -> Drawing u
+centric = megaCombR centerPoint centerPoint moveFun
   where
-    moveFun p1 p2 pic =  let v = p2 .-. p1 in pic `picMoveBy` v
+    moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
 
 
 
@@ -265,7 +254,7 @@ centerOver = megaCombL centerPoint centerPoint moveFun picOver
 -- of @a@.
 -- 
 nextToH :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
-nextToH = megaCombR rightBound leftBound moveFun picOver 
+nextToH = megaCombR rightBound leftBound moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
 
@@ -276,7 +265,7 @@ nextToH = megaCombR rightBound leftBound moveFun picOver
 -- Vertical composition - move @b@, placing it below @a@.
 --
 nextToV :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
-nextToV = megaCombR bottomBound topBound moveFun picOver 
+nextToV = megaCombR bottomBound topBound moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
 
@@ -339,7 +328,7 @@ vcat (d:ds) = foldl' nextToV d ds
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
 hspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
-hspace n = megaCombR rightBound leftBound moveFun picOver
+hspace n = megaCombR rightBound leftBound moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
 
@@ -353,7 +342,7 @@ hspace n = megaCombR rightBound leftBound moveFun picOver
 -- vertical gap of @n@ separating the pictures.
 --
 vspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
-vspace n = megaCombR bottomBound topBound moveFun picOver 
+vspace n = megaCombR bottomBound topBound moveFun
   where 
     moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
 
@@ -397,9 +386,9 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- 
 alignH :: (Fractional u, Ord u) 
        =>  HAlign -> Drawing u -> Drawing u -> Drawing u
-alignH HTop     = megaCombR topright    topleft     alignMove  picOver
-alignH HCenter  = megaCombR rightmid    leftmid     alignMove  picOver
-alignH HBottom  = megaCombR bottomright bottomleft  alignMove  picOver
+alignH HTop     = megaCombR topright    topleft     alignMove
+alignH HCenter  = megaCombR rightmid    leftmid     alignMove
+alignH HBottom  = megaCombR bottomright bottomleft  alignMove
 
 
 -- | > alignV align a b
@@ -409,9 +398,9 @@ alignH HBottom  = megaCombR bottomright bottomleft  alignMove  picOver
 -- 
 alignV :: (Fractional u, Ord u) 
        => VAlign -> Drawing u -> Drawing u -> Drawing u
-alignV VLeft    = megaCombR bottomleft  topleft   alignMove  picOver
-alignV VCenter  = megaCombR bottommid   topmid    alignMove  picOver
-alignV VRight   = megaCombR bottomright topright  alignMove  picOver
+alignV VLeft    = megaCombR bottomleft  topleft   alignMove
+alignV VCenter  = megaCombR bottommid   topmid    alignMove
+alignV VRight   = megaCombR bottomright topright  alignMove
 
 
 
@@ -428,9 +417,9 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- 
 alignHSep :: (Fractional u, Ord u) 
           => HAlign -> u -> Drawing u -> Drawing u -> Drawing u
-alignHSep HTop    dx = megaCombR topright topleft (alignMove2 (hvec dx)) picOver
-alignHSep HCenter dx = megaCombR rightmid leftmid (alignMove2 (hvec dx)) picOver
-alignHSep HBottom dx = megaCombR bottomright bottomleft (alignMove2 (hvec dx)) picOver
+alignHSep HTop    dx = megaCombR topright topleft (alignMove2 (hvec dx))
+alignHSep HCenter dx = megaCombR rightmid leftmid (alignMove2 (hvec dx))
+alignHSep HBottom dx = megaCombR bottomright bottomleft (alignMove2 (hvec dx))
 
 
 -- | > alignVSep align sep a b
@@ -440,9 +429,9 @@ alignHSep HBottom dx = megaCombR bottomright bottomleft (alignMove2 (hvec dx)) p
 -- 
 alignVSep :: (Fractional u, Ord u) 
           => VAlign -> u -> Drawing u -> Drawing u -> Drawing u
-alignVSep VLeft   dy = megaCombR bottomleft topleft (alignMove2 $ vvec (-dy)) picOver
-alignVSep VCenter dy = megaCombR bottommid  topmid  (alignMove2 $ vvec (-dy)) picOver
-alignVSep VRight  dy = megaCombR bottomright topright (alignMove2 $ vvec (-dy)) picOver
+alignVSep VLeft   dy = megaCombR bottomleft topleft (alignMove2 $ vvec (-dy)) 
+alignVSep VCenter dy = megaCombR bottommid  topmid  (alignMove2 $ vvec (-dy)) 
+alignVSep VRight  dy = megaCombR bottomright topright (alignMove2 $ vvec (-dy))
 
 
 -- | Variant of 'hcat' that aligns the pictures as well as

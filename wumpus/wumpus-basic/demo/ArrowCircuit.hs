@@ -8,7 +8,6 @@
 
 module ArrowCircuit where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 

@@ -99,6 +99,7 @@ module Wumpus.Basic.Graphic.ContextFunction
 
   ) where
 
+-- import Wumpus.Basic.Graphic.Anchors
 import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
 
@@ -711,4 +712,8 @@ accumulate2 op f g = CF $ \ctx s t ->
 
 
 
-
+--------------------------------------------------------------------------------
+{-
+instance CenterAnchor a => CenterAnchor (CF a) where
+  center = postpro center
+-}

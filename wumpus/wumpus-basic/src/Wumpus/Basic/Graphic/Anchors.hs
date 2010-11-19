@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Anchors
+-- Module      :  Wumpus.Basic.Graphic.Anchors
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -12,13 +12,10 @@
 -- Portability :  GHC
 --
 -- Anchor points on shapes.
---
--- \*\* WARNING \*\* this module is experimental, it may change 
--- significantly in future revisions.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Anchors
+module Wumpus.Basic.Graphic.Anchors
   ( 
 
   -- * Anchors
@@ -48,12 +45,11 @@ import Data.AffineSpace                 -- package: vector-space
 class CenterAnchor t where
   center :: DUnit t ~ u => t -> Point2 u
 
--- Note - in TikZ cardinal anchors are not necessarily at the
+-- | Note - in TikZ cardinal anchors are not necessarily at the
 -- equivalent radial position, for instance reactangle north-east
 -- is the top-right corner whether or not this is incident at 
 -- 45deg.
 --
-
 class CardinalAnchor t where
   north :: DUnit t ~ u => t -> Point2 u
   south :: DUnit t ~ u => t -> Point2 u
@@ -136,3 +132,27 @@ radialConnectorPoints a b = (radialAnchor theta a, radialAnchor (theta+pi) b)
   where
     theta = direction $ pvec (center a) (center b)
     
+
+--------------------------------------------------------------------------------
+-- Instances 
+
+instance Fractional u => CenterAnchor (BoundingBox u) where
+  center (BBox (P2 xl ylo) (P2 xr yhi)) = P2 x y 
+     where
+       x = xl+0.5*(xr-xl)
+       y = ylo+0.5*(yhi-ylo)
+       
+
+instance Fractional u => CardinalAnchor (BoundingBox u) where
+  north (BBox (P2 xl _  ) (P2 xr yhi)) = P2 (xl+0.5*(xr-xl)) yhi
+  south (BBox (P2 xl ylo) (P2 xr _  )) = P2 (xl+0.5*(xr-xl)) ylo
+  east  (BBox (P2 _  ylo) (P2 xr yhi)) = P2 xr (ylo+0.5*(yhi-ylo))
+  west  (BBox (P2 xl ylo) (P2 _  yhi)) = P2 xl (ylo+0.5*(yhi-ylo))
+
+
+instance Fractional u => CardinalAnchor2 (BoundingBox u) where
+  northeast (BBox _ ur)                 = ur
+  southeast (BBox (P2 _ ylo) (P2 xr _)) = P2 xr ylo
+  southwest (BBox ll _)                 = ll
+  northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi 
+

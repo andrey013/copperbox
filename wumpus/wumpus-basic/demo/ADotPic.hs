@@ -2,8 +2,6 @@
 
 module ADotPic where
 
-
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Graphic
 

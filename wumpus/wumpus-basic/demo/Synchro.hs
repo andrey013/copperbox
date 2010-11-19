@@ -8,7 +8,6 @@
 
 module Synchro where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Paths

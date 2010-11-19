@@ -3,7 +3,6 @@
 
 module Shapes where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 import Wumpus.Basic.Shapes

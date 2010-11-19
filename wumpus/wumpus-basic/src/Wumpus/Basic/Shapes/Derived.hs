@@ -42,7 +42,7 @@ module Wumpus.Basic.Shapes.Derived
 
   ) where
 
-import Wumpus.Basic.Anchors
+import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
 import Wumpus.Basic.Paths.RoundCorners
 import Wumpus.Basic.Shapes.Base

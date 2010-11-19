@@ -139,7 +139,6 @@ library
 
   
   exposed-modules:
-    Wumpus.Basic.Anchors,
     Wumpus.Basic.Arrows,
     Wumpus.Basic.Arrows.Connectors,
     Wumpus.Basic.Arrows.Tips,
@@ -155,6 +154,7 @@ library
     Wumpus.Basic.FontLoader.Base,
     Wumpus.Basic.FontLoader.GsFontMap,
     Wumpus.Basic.Graphic,
+    Wumpus.Basic.Graphic.Anchors,
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.ContextFunction,
     Wumpus.Basic.Graphic.Drawing,

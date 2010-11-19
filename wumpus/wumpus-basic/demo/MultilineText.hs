@@ -2,7 +2,6 @@
 
 module MultilineText where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Shapes

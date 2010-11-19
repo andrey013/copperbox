@@ -36,7 +36,6 @@ module Wumpus.Basic.Shapes.Coordinate
 
   ) where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Shapes.Base
 

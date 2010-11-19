@@ -38,7 +38,6 @@ module Wumpus.Basic.Shapes.Plaintext
 
   ) where
 
-import Wumpus.Basic.Anchors
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Shapes.Base
 import Wumpus.Basic.Shapes.Derived

@@ -29,6 +29,11 @@ module Wumpus.Basic.Graphic.GraphicTypes
   -- * Advance vector
   , AdvanceVec
 
+  -- * Drawing info
+  , DrawingInfo
+  , LocDrawingInfo
+  , LocThetaDrawingInfo
+
   -- * Graphic  
   , Graphic
   , LocGraphic
@@ -55,6 +60,12 @@ module Wumpus.Basic.Graphic.GraphicTypes
   -- * /Advance vector/ graphic
   , AdvGraphic
   , DAdvGraphic
+
+  -- * Bounded graphic / loc graphic
+  , BoundedGraphic
+  , DBoundedGraphic
+  , BoundedLocGraphic
+  , DBoundedLocGraphic
 
   -- * Extract from an Advance vector
   , advanceH
@@ -103,10 +114,40 @@ type PointDisplace u = Point2 u -> Point2 u
 type AdvanceVec u = Vec2 u
 
 
+
+
+
+
+--------------------------------------------------------------------------------
+-- DrawingInfo
+
+-- | A query on the DrawingContext.
+--
+-- Alias for 'CF'.
+-- 
+type DrawingInfo a      = CF a
+
+
+-- | A query on the DrawingContext respective to the supplied
+--  point.
+--
+-- Alias for 'LocCF'.
+-- 
+type LocDrawingInfo u a   = LocCF u a
+
+
+-- | A query on the DrawingContext respective to the supplied
+--  point and angle.
+--
+-- Alias for 'LocCF'.
+-- 
+type LocThetaDrawingInfo u a   = LocThetaCF u a
+
+
 --------------------------------------------------------------------------------
 -- Graphic
 
--- Simple drawing - produce a primitive, access the DrawingContext
+-- | Simple drawing - produce a primitive, access the DrawingContext
 -- if required.
 --
 type Graphic u      = CF (PrimGraphic u)
@@ -187,6 +228,30 @@ type AdvGraphic u      = LocImage u (Point2 u)
 
 type DAdvGraphic       = AdvGraphic Double
 
+
+type instance DUnit (AdvGraphic u) = u
+
+
+--------------------------------------------------------------------------------
+
+-- | Graphic with a bounding box.
+-- 
+type BoundedGraphic u      = Image u (BoundingBox u)
+
+type DBoundedGraphic       = BoundedGraphic Double
+
+
+type instance DUnit (BoundedGraphic u) = u
+
+
+-- | LocGraphic with a bounding box.
+--
+type BoundedLocGraphic u      = LocImage u (BoundingBox u)
+
+type DBoundedLocGraphic       = BoundedLocGraphic Double
+
+
+type instance DUnit (BoundedLocGraphic u) = u
 
 --------------------------------------------------------------------------------
 -- Graphic instances

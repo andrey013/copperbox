@@ -47,11 +47,11 @@ pic2 = picAnno pic "red `under` green `under` blue"
 
 
 pic3 :: DDrawing 
-pic3 = picAnno pic "red `centerOver` green `centerOver` blue"
+pic3 = picAnno pic "red `centric` green `centric` blue"
   where
     pic :: DDrawing
     pic = drawBlueBounds $ 
-            rect_red `centerOver` rect_green `centerOver` rect_blue
+            rect_red `centric` rect_green `centric` rect_blue
 
 -- Note - nextToH only moves pictures in the horizontal.
 --
