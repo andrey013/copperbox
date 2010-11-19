@@ -156,6 +156,7 @@ library
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Anchors,
     Wumpus.Basic.Graphic.Base,
+    Wumpus.Basic.Graphic.BoundaryAnchors,
     Wumpus.Basic.Graphic.ContextFunction,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,

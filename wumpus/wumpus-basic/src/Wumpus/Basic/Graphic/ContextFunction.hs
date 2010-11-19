@@ -402,7 +402,7 @@ dblstatic :: CF ans -> CF (r1 -> r2 -> ans)
 dblstatic df = CF $ \ctx _ _ -> getCF df ctx
 
 
-
+infixl 1 `bind`, `bind1`, `bind2`
 
 
 -- | Supply the output from the first function to the second 

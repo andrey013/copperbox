@@ -71,39 +71,6 @@ empty_drawing :: (Real u, Floating u, FromPtSize u) => Drawing u
 empty_drawing = drawTracing $ return ()
 
 
--- Operations on bounds
-
--- | The center of a picture.
-centerPoint :: Fractional u => Picture u -> Point2 u
-centerPoint = fn . boundary
-  where  
-    fn (BBox (P2 x0 y0) (P2 x1 y1)) = P2 (x0 + ((x1-x0)*0.5)) 
-                                         (y0 + ((y1-y0)*0.5))
-
-
-
-rightBound :: Picture u -> u
-rightBound = fn . ur_corner . boundary
-  where
-    fn (P2 x _) = x
-
-
-leftBound :: Picture u -> u
-leftBound = fn . ll_corner . boundary
-  where
-    fn (P2 x _) = x
-
-bottomBound :: Picture u -> u
-bottomBound = fn . ll_corner . boundary
-  where
-    fn (P2 _ y) = y
-
-topBound :: Picture u -> u
-topBound = fn . ur_corner . boundary
-  where
-    fn (P2 _ y) = y
-
-
 
 --------------------------------------------------------------------------------
 -- Composition operators
@@ -165,67 +132,6 @@ move v = modifyDrawing (\p -> p `picMoveBy` v)
 
 
 
-
-
-
-
--- | Extract the top-left corner.
---
-topleft       :: Picture u -> Point2 u
-topleft       = fn . boundary
-  where
-    fn (BBox (P2 x0 _) (P2 _ y1)) = P2 x0 y1
-
--- | Extract the top-right corner.
---
-topright      :: Picture u -> Point2 u
-topright      = ur_corner . boundary
-
--- | Extract the bottom-left corner.
---
-bottomleft    :: Picture u -> Point2 u
-bottomleft    = ll_corner . boundary
-
--- | Extract the bottom-right corner.
---
-bottomright   :: Picture u -> Point2 u
-bottomright   = fn . boundary
-  where
-    fn (BBox (P2 _ y0) (P2 x1 _)) = P2 x1 y0
-
-
---------------------------------------------------------------------------------
--- Internal helpers
-
-leftmid       :: Fractional u => Picture u -> Point2 u
-leftmid       = fn . boundary
-   where
-     fn (BBox (P2 llx lly) (P2 _ ury)) = P2 llx (midpt lly ury)
-
-
-
-rightmid      :: Fractional u => Picture u -> Point2 u
-rightmid      = fn . boundary
-  where
-    fn (BBox (P2 _ lly) (P2 urx ury)) = P2 urx (midpt lly ury)
-
-
-topmid        :: Fractional u => Picture u -> Point2 u
-topmid        = fn . boundary
-  where
-    fn (BBox (P2 llx _) (P2 urx ury)) = P2 (midpt llx urx) ury
-
-
-bottommid     :: Fractional u => Picture u -> Point2 u
-bottommid     = fn . boundary
-  where
-    fn (BBox (P2 llx lly) (P2 urx _)) = P2 (midpt llx urx) lly
-
-
-midpt :: Fractional a => a -> a -> a
-midpt a b = a + 0.5*(b-a)
-
-
 --------------------------------------------------------------------------------
 -- Composition
 
@@ -242,7 +148,7 @@ infixr 6 `nextToH`, `centric`
 --
 --
 centric :: (Fractional u, Ord u) => Drawing u -> Drawing u -> Drawing u
-centric = megaCombR centerPoint centerPoint moveFun
+centric = megaCombR boundaryCenter boundaryCenter moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
 
@@ -254,7 +160,7 @@ centric = megaCombR centerPoint centerPoint moveFun
 -- of @a@.
 -- 
 nextToH :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
-nextToH = megaCombR rightBound leftBound moveFun
+nextToH = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
 
@@ -265,7 +171,7 @@ nextToH = megaCombR rightBound leftBound moveFun
 -- Vertical composition - move @b@, placing it below @a@.
 --
 nextToV :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
-nextToV = megaCombR bottomBound topBound moveFun
+nextToV = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
 
@@ -328,7 +234,7 @@ vcat (d:ds) = foldl' nextToV d ds
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
 hspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
-hspace n = megaCombR rightBound leftBound moveFun
+hspace n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
 
@@ -342,7 +248,7 @@ hspace n = megaCombR rightBound leftBound moveFun
 -- vertical gap of @n@ separating the pictures.
 --
 vspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
-vspace n = megaCombR bottomBound topBound moveFun
+vspace n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
 
@@ -386,9 +292,9 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- 
 alignH :: (Fractional u, Ord u) 
        =>  HAlign -> Drawing u -> Drawing u -> Drawing u
-alignH HTop     = megaCombR topright    topleft     alignMove
-alignH HCenter  = megaCombR rightmid    leftmid     alignMove
-alignH HBottom  = megaCombR bottomright bottomleft  alignMove
+alignH HTop     = megaCombR boundaryNE    boundaryNW     alignMove
+alignH HCenter  = megaCombR boundaryE    boundaryW     alignMove
+alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 
 
 -- | > alignV align a b
@@ -398,9 +304,9 @@ alignH HBottom  = megaCombR bottomright bottomleft  alignMove
 -- 
 alignV :: (Fractional u, Ord u) 
        => VAlign -> Drawing u -> Drawing u -> Drawing u
-alignV VLeft    = megaCombR bottomleft  topleft   alignMove
-alignV VCenter  = megaCombR bottommid   topmid    alignMove
-alignV VRight   = megaCombR bottomright topright  alignMove
+alignV VLeft    = megaCombR boundarySW  boundaryNW   alignMove
+alignV VCenter  = megaCombR boundaryS   boundaryN    alignMove
+alignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 
 
@@ -417,9 +323,9 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- 
 alignHSep :: (Fractional u, Ord u) 
           => HAlign -> u -> Drawing u -> Drawing u -> Drawing u
-alignHSep HTop    dx = megaCombR topright topleft (alignMove2 (hvec dx))
-alignHSep HCenter dx = megaCombR rightmid leftmid (alignMove2 (hvec dx))
-alignHSep HBottom dx = megaCombR bottomright bottomleft (alignMove2 (hvec dx))
+alignHSep HTop    dx = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
+alignHSep HCenter dx = megaCombR boundaryE  boundaryW  (alignMove2 (hvec dx))
+alignHSep HBottom dx = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
 
 
 -- | > alignVSep align sep a b
@@ -429,9 +335,9 @@ alignHSep HBottom dx = megaCombR bottomright bottomleft (alignMove2 (hvec dx))
 -- 
 alignVSep :: (Fractional u, Ord u) 
           => VAlign -> u -> Drawing u -> Drawing u -> Drawing u
-alignVSep VLeft   dy = megaCombR bottomleft topleft (alignMove2 $ vvec (-dy)) 
-alignVSep VCenter dy = megaCombR bottommid  topmid  (alignMove2 $ vvec (-dy)) 
-alignVSep VRight  dy = megaCombR bottomright topright (alignMove2 $ vvec (-dy))
+alignVSep VLeft   dy = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 
+alignVSep VCenter dy = megaCombR boundaryS  boundaryN  (alignMove2 $ vvec (-dy)) 
+alignVSep VRight  dy = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
 
 
 -- | Variant of 'hcat' that aligns the pictures as well as

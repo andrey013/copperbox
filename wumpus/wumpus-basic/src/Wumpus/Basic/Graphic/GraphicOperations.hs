@@ -75,6 +75,9 @@ module Wumpus.Basic.Graphic.GraphicOperations
   , borderedDisk
   
 
+  , illustrateBoundedGraphic
+  , illustrateBoundedLocGraphic
+
   ) where
 
 import Wumpus.Basic.Graphic.Base
@@ -84,6 +87,7 @@ import Wumpus.Basic.Graphic.GraphicTypes
 import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Colour
 import Wumpus.Core.Text.GlyphIndices
 
 import Data.AffineSpace                         -- package: vector-space
@@ -151,9 +155,8 @@ rtextline ss =
                                   (\pt ang -> rtextlabel rgb attr ss pt ang)
 
 
--- Needs descender depth? ...
 
-singleLine :: (Ord u, FromPtSize u) => String -> LocImage u (BoundingBox u)
+singleLine :: (Ord u, FromPtSize u) => String -> BoundedLocGraphic u
 singleLine ss = 
     let cs = escapeString ss in 
     textVector cs     >>= \av    -> 
@@ -164,11 +167,12 @@ singleLine ss =
 
 -- | Measured text box for left-to-right text.
 -- 
--- Supplied point is baseline left.
+-- Supplied point is baseline left. 
+-- @ymin@ is expected to be negative.
 -- 
 measuredTextBBox :: (Num u, Ord u) => u -> (u,u) -> Point2 u -> BoundingBox u
 measuredTextBBox w (ymin,ymax) (P2 x y) = 
-    boundingBox (P2 x (y-ymin)) (P2 (x+w) (y+ymax))
+    boundingBox (P2 x (y+ymin)) (P2 (x+w) (y+ymax))
 
 textVector :: FromPtSize  u => EscapedText -> CF (AdvanceVec u)
 textVector ss = let cs = getEscapedText ss in 
@@ -409,3 +413,28 @@ filledDisk radius = filledEllipse radius radius
 borderedDisk :: Num u => u -> LocGraphic u
 borderedDisk radius = borderedEllipse radius radius
 
+--------------------------------------------------------------------------------
+-- 
+
+illustrateBoundedGraphic :: Fractional u => BoundedGraphic u -> BoundedGraphic u
+illustrateBoundedGraphic mf = mf >>= \(bb,g1) -> 
+                      bbrectangle bb >>= \g2 -> 
+                      return (bb, g2 `oplus` g1)  
+
+
+illustrateBoundedLocGraphic :: Fractional u 
+                            => BoundedLocGraphic u -> BoundedLocGraphic u
+illustrateBoundedLocGraphic mf = mf `bind1` \(bb,g1) -> 
+                                 bbrectangle bb `bind` \g2 -> 
+                                 wrap1 (bb, g2 `oplus` g1)
+
+
+
+bbrectangle :: Fractional u => BoundingBox u -> Graphic u
+bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury)) = 
+    localize drawing_props $ rect1 `oplus` cross
+  where
+    drawing_props = strokeColour blue . capRound . dashPattern (Dash 0 [(1,2)])
+    rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
+    cross         = straightLineBetween p1 p2 
+                      `oplus` straightLineBetween (P2 llx ury) (P2 urx lly)
