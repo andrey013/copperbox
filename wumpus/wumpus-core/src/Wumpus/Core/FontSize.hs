@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -33,25 +34,24 @@ module Wumpus.Core.FontSize
   -- * Type synonyms
     FontSize
   , CharCount
+  , PtScale
+  , scalePt
 
-  -- * Courier metrics at 48 point
-  , courier48_width
-  , courier48_height
-  , courier48_numeral_height
-  , courier48_xheight
-  , courier48_descender_depth
-  , courier48_ascender_height
-  , courier48_spacer_width
-
+  -- * Scaling values derived from Courier
+  , mono_width
+  , mono_cap_height
+  , mono_x_height
+  , mono_descender
+  , mono_ascender
+  , mono_left_margin
+  , mono_right_margin
 
   -- * Metrics calculation
-  , widthAt48pt
   , charWidth
-  , spacerWidth
   , textWidth
-  , textHeight
-  , numeralHeight
+  , capHeight
   , xcharHeight
+  , ascenderHeight
   , descenderDepth
   , textBounds
   , textBoundsEsc
@@ -64,154 +64,163 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 
-import Data.AffineSpace                 -- package: vector-space
-
 
 
 type CharCount = Int
 type FontSize = Int
 
--- NOTE - I\'ve largely tried to follow the terminoly from 
+
+-- | Wrapped Double representing 1\/1000 of the scale factor
+-- (Point size) of a font. AFM files encode all measurements 
+-- as these units. 
+-- 
+newtype PtScale = PtScale { getPtScale :: Double } 
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+
+instance Show PtScale where
+  showsPrec p d = showsPrec p (getPtScale d)
+
+scalePt :: PtScale -> PtSize -> PtSize 
+scalePt sc sz = sz * realToFrac sc
+
+
+-- NOTE - I\'ve largely tried to follow the terminoloy from 
 -- Edward Tufte\'s /Visual Explantions/, page 99.
 --
 
 
--- | The width of a letter in Courier at 48 pt.
+-- | The ratio of width to point size of a letter in Courier.
 --
--- The value is not entirely accurate but it is satisfactory.
+-- > mono_width = 0.6 
 --
--- > width = 26.0 
---
-courier48_width :: PtSize
-courier48_width = 26.0
+mono_width :: PtScale
+mono_width = 0.6
 
--- | The point size of a character in Courier at 48 pt.
+-- | The ratio of cap height to point size of a letter in Courier.
 --
--- \*\* Naturally the height is 48.0 \*\*.
---
-courier48_height :: PtSize 
-courier48_height = 48.0
+-- > mono_cap_height = 0.563
+-- 
+mono_cap_height :: PtScale 
+mono_cap_height = 0.563
 
 
 
--- | The height of a numeral without accents, ascenders or 
--- descenders in Courier at 48 pt.
---
--- Note - the height of a numeral in Courier is slightly 
--- larger than a upper-case letter.
---
--- > numeral_height = 30.0 
---
-courier48_numeral_height :: PtSize 
-courier48_numeral_height = 30.0
 
--- | The height of the body of a lower-case letter 
---  (typically the letter  \'x\') in Courier at 48 pt. 
+-- | The ratio of x height to point size of a letter in Courier. 
 --
 -- This is also known as the \"body height\".
 --
--- > xheight = 20.0 
+-- > mono_x_height = 0.417
 -- 
-courier48_xheight :: PtSize
-courier48_xheight = 20.0
+mono_x_height :: PtScale
+mono_x_height = 0.417
 
 
--- | The depth of a descender in Courier at 48 pt.
+-- | The ratio of descender depth to point size of a letter in 
+-- Courier.
 -- 
--- > descender_depth = 9.0
+-- > mono_descender = -0.186
 -- 
-courier48_descender_depth :: PtSize
-courier48_descender_depth = 9.0
+mono_descender :: PtScale
+mono_descender = (-0.186)
 
--- | The depth of an ascender in Courier at 48 pt.
+
+-- | The ratio of ascender to point size of a letter in Courier.
 -- 
--- > ascender_height = 10.0
+-- > mono_ascender = 0.604
 -- 
--- Note - for Courier point size is not the sum of
--- descender, ascender and xheight and lower-case letters with
--- ascenders are slightly taller than upper-case letters:
---
--- > descender_depth + xheight + ascender_height /= point_size
---
--- > xheight + ascender_height /= cap_height
---
--- > xheight + ascender_height == numeral_height
---
-courier48_ascender_height :: PtSize 
-courier48_ascender_height = 10.0
+mono_ascender :: PtScale
+mono_ascender = 0.604
 
 
--- | The spacing between letters printed directly with 
--- PostScript\'s show command for Courier at 48 pt.
---
--- The value is not entirely accurate but it is satisfactory
--- for bounding box calculations.
---
--- > spacer_width = 3.0
---
-courier48_spacer_width :: PtSize
-courier48_spacer_width = 3.0
+-- | The distance from baseline to max height as a ratio to point 
+-- size for Courier.
+-- 
+-- > mono_max_height = 0.820
+-- 
+mono_max_height :: PtScale 
+mono_max_height = 0.820
 
 
--- | Width of the supplied string when printed at 48pt (i.e. n 
--- chars + (n-1) spacers).
---
--- Use 'charCount' to calculate the @CharCount@.
---
-widthAt48pt :: CharCount -> PtSize
-widthAt48pt n = (courier48_width * len) + (courier48_spacer_width * len_sub)
-  where
-    len      = fromIntegral n
-    len_sub  = len - 1.0
+-- | The distance from baseline to max depth as a ratio to point 
+-- size for Courier.
+-- 
+-- > max_depth = -0.273
+-- 
+mono_max_depth :: PtScale 
+mono_max_depth = (-0.273)
+
+
+-- | The left margin for the bounding box of printed text as a 
+-- ratio to point size for Courier.
+-- 
+-- > mono_left_margin = -0.46
+-- 
+mono_left_margin :: PtScale 
+mono_left_margin = (-0.46)
+
+
+-- | The right margin for the bounding box of printed text as a 
+-- ratio to point size for Courier.
+-- 
+-- > mono_right_margin = 50
+-- 
+mono_right_margin :: PtScale 
+mono_right_margin = 50
+
 
 -- | Approximate the width of a monospace character using 
 -- metrics derived from the Courier font.
 --
 charWidth :: FontSize -> PtSize
-charWidth sz = (fromIntegral sz)/48 * courier48_width
+charWidth = scalePt mono_width . fromIntegral
 
 
--- | Approximate the width of a spacer between monospace 
--- characters using metrics derived from the Courier font.
---
-spacerWidth :: FontSize -> PtSize
-spacerWidth sz = (fromIntegral sz)/48 * courier48_spacer_width
 
 
 
 -- | Text width at @sz@ point size of the string @s@. All
--- characters are counted literally - special chars may cause
--- problems (this a current deficiency of Wumpus).
+-- characters are counted literally - it is expected that 
+-- @CharCount@ has been calculated with the @charCount@ function.
+--
+-- Note - this does not account for left and right margins around
+-- the printed text.
 --
 textWidth :: FontSize -> CharCount -> PtSize
 textWidth _  n | n <= 0 = 0
-textWidth sz n          = (fromIntegral sz)/48 * widthAt48pt n
+textWidth sz n          = fromIntegral n * charWidth sz
 
 
--- | Text height is just identity/double-coercion of the Point size.
--- i.e. @18 == 18.0@. The /size/ of a font is the maximum height:
+-- | Height of capitals e.g. \'A\' using metrics derived 
+-- the Courier monospaced font.
 --
-textHeight :: FontSize -> PtSize
-textHeight = fromIntegral
+capHeight :: FontSize -> PtSize
+capHeight = fromIntegral
 
--- | Approximate the height of a numeral using metrics derived 
--- from the Courier monospaced font.
---
-numeralHeight :: FontSize -> PtSize
-numeralHeight sz = textHeight sz * (courier48_numeral_height / courier48_height)
 
--- | Approximate the height of the lower-case char \'x\' using 
--- metrics derived from the Courier monospaced font.
+-- | Height of the lower-case char \'x\' using metrics derived 
+-- the Courier monospaced font.
 --
 xcharHeight :: FontSize -> PtSize
-xcharHeight sz = textHeight sz * (courier48_xheight / courier48_height)
+xcharHeight = scalePt mono_x_height . fromIntegral
 
 
--- | Approximate the descender depth for font size @sz@ using
--- metrics derived from the Courier monospaced font.
+
+-- | Ascender height for font size @sz@ using metrics from the 
+-- Courier monospaced font.
+-- 
+ascenderHeight :: FontSize -> PtSize
+ascenderHeight = scalePt mono_ascender . fromIntegral 
+
+
+
+-- | Descender depth for font size @sz@ using metrics from the 
+-- Courier monospaced font.
 -- 
 descenderDepth :: FontSize -> PtSize
-descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
+descenderDepth = scalePt mono_descender . fromIntegral 
+
 
 -- | 'textBounds' : @ font_size * baseline_left * text -> BBox@
 --
@@ -220,12 +229,10 @@ descenderDepth sz = (fromIntegral sz) / 48 * courier48_descender_depth
 -- 
 -- The supplied point represents the baseline left corner of the 
 -- a regular upper-case letter (that is without descenders).
--- The bounding box will always be /dropped/ to accommodate 
--- ascenders - no interpretation of the string takes place to 
--- see if it actually contains ascenders or descenders.
+-- The bounding box adds a margin around all sides of the text.
 --  
 -- The metrics used are derived from Courier - a monospaced font.
--- For variable width fonts the calculated bounding box will 
+-- For proportional fonts the calculated bounding box will 
 -- usually be too long.
 --
 textBounds :: (Num u, Ord u, FromPtSize u) 
@@ -236,7 +243,7 @@ textBounds sz pt ss = textBoundsBody sz pt (charCount ss)
 -- | 'textBoundsEnc' : @ font_size * baseline_left * escaped_text -> BBox@
 -- 
 --  Version of textBounds for EscapedText.
--- 
+--
 textBoundsEsc :: (Num u, Ord u, FromPtSize u) 
            => FontSize -> Point2 u -> EscapedText -> BoundingBox u
 textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc) 
@@ -244,13 +251,16 @@ textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc)
 
 textBoundsBody :: (Num u, Ord u, FromPtSize u) 
                => FontSize -> Point2 u -> Int -> BoundingBox u
-textBoundsBody sz baseline_left len = boundingBox bl tr 
+textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
-    h           = fromPtSize $ textHeight sz
+    pt_sz       = fromIntegral sz
     w           = fromPtSize $ textWidth  sz len
-    dd          = fromPtSize $ descenderDepth sz
-    bl          = baseline_left .-^ V2 0 dd 
-    tr          = bl .+^ V2 w h
+    left_m      = fromPtSize $ scalePt mono_left_margin pt_sz
+    right_m     = fromPtSize $ scalePt mono_left_margin pt_sz
+    max_depth   = fromPtSize $ scalePt mono_max_depth  pt_sz
+    max_height  = fromPtSize $ scalePt mono_max_height pt_sz
+    ll          = P2 (x + left_m)      (y + max_depth)
+    ur          = P2 (x + w + right_m) (y + max_height)
 
 
 

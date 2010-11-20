@@ -52,6 +52,13 @@ description:
   @writeSVG@ respectively. These three functions no longer take a 
   @TextEncoder@ argument as TextEncoders no longer exist.
   .
+  The Font Size API has also changed substantially. It now 
+  exports a more consistent set of metrics (consistent with what 
+  is present in font files - the previous version was derived 
+  from hand measurements). It also adds a margin to bounding box
+  calculations, again this is consistent with how font files 
+  actually work.
+  .
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -105,6 +112,9 @@ description:
   .
   * Fixed bug where ellipse rotation and scaling calculated the 
     wrong bounding box.
+  . 
+  * Fixed bug with @illustrateControlPoints@ where the original
+    primitive was not being drawn. 
   .
   .
 build-type:         Simple
