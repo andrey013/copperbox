@@ -39,7 +39,7 @@ module Wumpus.Core.Picture
     frame
   , multi
   , fontDeltaContext
-  , path
+  , primPath
   , lineTo
   , curveTo
   , vertexPath
@@ -114,8 +114,9 @@ import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
 import Wumpus.Core.Utils.JoinList
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
-
+import Data.List ( mapAccumL )
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -187,16 +188,24 @@ fontDeltaContext fa p = PContext (FontCtx fa) p
 
 -- | Create a Path from a start point and a list of PathSegments.
 --
-path :: Point2 u -> [PrimPathSegment u] -> PrimPath u
-path = PrimPath 
+primPath :: Num u => Point2 u -> [AbsPathSegment u] -> PrimPath u
+primPath pt xs = PrimPath pt $ step pt xs
+  where
+    step p (AbsLineTo p1:rest)        = RelLineTo (p1 .-. p) : step p1 rest
+    step p (AbsCurveTo p1 p2 p3:rest) = 
+        RelCurveTo (p1 .-. p) (p2 .-. p1) (p3 .-. p2) : step p3 rest
 
+    step _ []                         = []
+
+
+         
 -- | 'lineTo' : @ end_point -> path_segment @
 -- 
 -- Create a straight-line PathSegment, the start point is 
 -- implicitly the previous point in a path.
 --
-lineTo :: Point2 u -> PrimPathSegment u
-lineTo = PLineTo
+lineTo :: Point2 u -> AbsPathSegment u
+lineTo = AbsLineTo
 
 -- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
 --        path_segment @
@@ -205,16 +214,18 @@ lineTo = PLineTo
 -- implicitly the previous point in a path.
 --
 --
-curveTo :: Point2 u -> Point2 u -> Point2 u -> PrimPathSegment u
-curveTo = PCurveTo
+curveTo :: Point2 u -> Point2 u -> Point2 u -> AbsPathSegment u
+curveTo = AbsCurveTo
 
 
 -- | Convert the list of vertices to a path of straight line 
 -- segments.
 --
-vertexPath :: [Point2 u] -> PrimPath u
+vertexPath :: Num u => [Point2 u] -> PrimPath u
 vertexPath []     = error "Picture.vertexPath - empty point list"
-vertexPath (x:xs) = PrimPath x (map PLineTo xs)
+vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
+  where
+    step a b = let v = b .-. a in (b, RelLineTo v)
 
 
 
@@ -223,13 +234,15 @@ vertexPath (x:xs) = PrimPath x (map PLineTo xs)
 -- segment thereafter takes 3 points. /Spare/ points at the end 
 -- are discarded. 
 --
-curvedPath :: [Point2 u] -> PrimPath u
+curvedPath :: Num u => [Point2 u] -> PrimPath u
 curvedPath []     = error "Picture.curvedPath - empty point list"
-curvedPath (x:xs) = PrimPath x (step xs) 
+curvedPath (x:xs) = PrimPath x $ step x xs
   where
-    step (a:b:c:ys) = PCurveTo a b c : step ys 
-    step _          = []
-
+    step p (a:b:c:ys) = let v1 = a .-. p 
+                            v2 = b .-. a
+                            v3 = c .-. a
+                        in RelCurveTo v1 v2 v3 : step c ys
+    step _ _          = []
 
 -- | Create a hyperlink for SVG output.
 --
@@ -777,13 +790,16 @@ illustrateControlPoints rgb elt = frame $ step elt
 pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> [Primitive u]
 pathCtrlLines rgb (PrimPath start ss) = step start ss
   where 
-    -- trail the current end point through the recursion...
-    step _ []                    = []
-    step _ (PLineTo e:xs)        = step e xs
-    step s (PCurveTo c1 c2 e:xs) = mkLine s c1 : mkLine c2 e : step e xs 
+    step s (RelLineTo v:xs)         = step (s .+^ v) xs
 
-    mkLine s e                   = let pp = (PrimPath s [lineTo e]) in 
-                                   ostroke rgb default_stroke_attr pp 
+    step s (RelCurveTo v1 v2 v3:xs) = let e   = s .+^ (v1 ^+^ v2 ^+^ v3)
+                                          v3r = vreverse v3
+                                      in mkLine s v1 : mkLine e v3r : step e xs
+
+    step _ []                       = []
+
+    mkLine s v                      = let pp = (PrimPath s [RelLineTo v]) 
+                                      in ostroke rgb default_stroke_attr pp 
 
 
 -- Generate lines illustrating the control points of an 
@@ -807,7 +823,8 @@ ellipseCtrlLines rgb pe = start all_points
     rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
     rest _ _             = []
 
-    mkLine s e  = ostroke rgb default_stroke_attr (PrimPath s [lineTo e]) 
+    mkLine s e  = let path = PrimPath s [RelLineTo (e .-. s)]
+                  in ostroke rgb default_stroke_attr path
 
 
 

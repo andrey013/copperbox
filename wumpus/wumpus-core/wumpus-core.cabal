@@ -40,6 +40,11 @@ description:
   .  
   UPDATING to 0.40.0
   .
+  @Core.Picture@ API change - the path construction function has 
+  changed from @path@ to @primPath@. The type of the path segments
+  has changed, the functions @lineTo@ and @curveTo@ now build
+  @AbsPathSegments@ and @primPath@ consumes @AbsPathSegments@.
+  .
   The Text API has changed substantially, however most user code
   should only need minor changes. The functions @writePS_latin1@, 
   @writeEPS_latin1@ and @writeSVG_latin1@ have been removed, code 
@@ -76,6 +81,17 @@ description:
     higher-level software to escape the text, do some calculations 
     then render it - going back to un-escaped text for the 
     rendering would be inefficient.
+  .
+  * Internal representation of paths changed. They are now 
+    start-point plus a list of /relative/ path segments rather 
+    than a list of absolute path segments. Using relative path 
+    segments make them cheaper to move, although BoundingBox and 
+    printing is more expensive - the thinking is that to make 
+    complex pictures paths will be moved possibly many times but
+    have bounding box calculated and be printed only once.
+  .
+  * Name change to @Core.Picture@ API - the path construction 
+    function @path@ has been renamed to @primPath@.
   .
   * Name change - in @Core.FontSize@ the function @textBoundsEnc@
     has been renamed to @textBoundsEsc@. Wumpus-Core now calls 

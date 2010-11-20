@@ -38,6 +38,7 @@ import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.JoinList hiding ( cons )
 import Wumpus.Core.Utils.FormatCombinators
 
+import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative hiding ( empty, some )
 import Control.Monad
@@ -45,6 +46,7 @@ import Control.Monad
 import Data.Char
 import qualified Data.Foldable          as F
 import qualified Data.IntMap            as IntMap
+import Data.List ( mapAccumL )
 import Data.Maybe 
 import Data.Time
 
@@ -320,16 +322,16 @@ primitive (PGroup ones)        = oneConcat primitive ones
 primPath :: PSUnit u
          => PathProps -> PrimPath u -> PsMonad Doc
 primPath (CFill rgb)     p = 
-    (\rgbd -> vcat [rgbd, makeStartPath p, ps_closepath, ps_fill]) 
+    (\rgbd -> vcat [rgbd, pathBody p, ps_closepath, ps_fill]) 
       <$> deltaDrawColour rgb  
 
 primPath (CStroke attrs rgb) p = 
-    (\rgbd attrd -> vcat [ rgbd, attrd, makeStartPath p
+    (\rgbd attrd -> vcat [ rgbd, attrd, pathBody p
                          , ps_closepath, ps_stroke ])
       <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
  
 primPath (OStroke attrs rgb) p = 
-    (\rgbd attrd -> vcat [rgbd, attrd, makeStartPath p, ps_stroke]) 
+    (\rgbd attrd -> vcat [rgbd, attrd, pathBody p, ps_stroke]) 
       <$> deltaDrawColour rgb <*> deltaStrokeAttrs attrs
 
 primPath (CFillStroke fc attrs sc) p = 
@@ -338,18 +340,20 @@ primPath (CFillStroke fc attrs sc) p =
 
 
 clipPath :: PSUnit u => PrimPath u -> PsMonad Doc
-clipPath p = pure $ vcat [makeStartPath p , ps_closepath, ps_clip]
+clipPath p = pure $ vcat [pathBody p , ps_closepath, ps_clip]
 
 
-makeStartPath :: PSUnit u => PrimPath u -> Doc
-makeStartPath (PrimPath start xs) = 
-    vcat $ ps_newpath : ps_moveto start : map makePathSegment xs
+pathBody :: PSUnit u => PrimPath u -> Doc
+pathBody (PrimPath start xs) = 
+    vcat $ ps_newpath : ps_moveto start : (snd $ mapAccumL step start xs)
+  where
+    step pt (RelLineTo v)         = let p1 = pt .+^ v in (p1, ps_lineto p1)
+    step pt (RelCurveTo v1 v2 v3) = let p1 = pt .+^ v1 
+                                        p2 = p1 .+^ v2
+                                        p3 = p2 .+^ v3
+                                    in (p3, ps_curveto p1 p2 p3)
 
 
-
-makePathSegment :: PSUnit u => PrimPathSegment u -> Doc
-makePathSegment (PLineTo p1)        = ps_lineto p1 
-makePathSegment (PCurveTo p1 p2 p3) = ps_curveto p1 p2 p3 
 
 
 -- | Drawing stroked ellipse has an unfortunate - but (probably) 

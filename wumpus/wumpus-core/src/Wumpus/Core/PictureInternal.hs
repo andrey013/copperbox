@@ -32,6 +32,8 @@ module Wumpus.Core.PictureInternal
   , DPrimPath
   , PrimPathSegment(..)
   , DPrimPathSegment
+  , AbsPathSegment(..)
+  , DAbsPathSegment
   , PrimLabel(..)
   , DPrimLabel
   , LabelBody(..)
@@ -205,13 +207,31 @@ data PrimPath u = PrimPath (Point2 u) [PrimPathSegment u]
 
 type DPrimPath = PrimPath Double
 
--- | PrimPathSegment - either a cubic Bezier curve or a line.
+-- | PrimPathSegment - either a relative cubic Bezier /curve-to/ 
+-- or a relative /line-to/.
 --
-data PrimPathSegment u = PCurveTo  (Point2 u) (Point2 u) (Point2 u)
-                       | PLineTo   (Point2 u)
+data PrimPathSegment u = RelCurveTo  (Vec2 u) (Vec2 u) (Vec2 u)
+                       | RelLineTo   (Vec2 u)
   deriving (Eq,Show)
 
 type DPrimPathSegment = PrimPathSegment Double
+
+-- Design note - if paths were represented as:
+--   start-point plus [relative-path-segment]
+-- They would be cheaper to move...
+--
+
+
+-- | AbsPathSegment - either a cubic Bezier curve or a line.
+-- 
+-- Note this data type is transitory - it is only used as a 
+-- convenience to build relative paths. 
+--
+data AbsPathSegment u = AbsCurveTo  (Point2 u) (Point2 u) (Point2 u)
+                      | AbsLineTo   (Point2 u)
+  deriving (Eq,Show)
+
+type DAbsPathSegment = AbsPathSegment Double
 
 
 
@@ -355,10 +375,10 @@ instance PSUnit u => Format (PrimPath u) where
         start = text "start_point " <> format pt
 
 instance PSUnit u => Format (PrimPathSegment u) where
-  format (PCurveTo p1 p2 p3)  =
-    text "curve_to    " <> format p1 <+> format p2 <+> format p3
+  format (RelCurveTo p1 p2 p3)  =
+    text "rel_curve_to " <> format p1 <+> format p2 <+> format p3
 
-  format (PLineTo pt)         = text "line_to     " <> format pt
+  format (RelLineTo pt)         = text "rel_line_to  " <> format pt
 
 instance PSUnit u => Format (PrimLabel u) where
   format (PrimLabel pt s ctm) = 
@@ -409,14 +429,22 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
 
 
 
-pathBoundary :: Ord u => PrimPath u -> BoundingBox u
-pathBoundary (PrimPath st xs) = step (st,st) xs
+pathBoundary :: (Num u, Ord u) => PrimPath u -> BoundingBox u
+pathBoundary (PrimPath st xs) = step st (st,st) xs
   where
-    step (lo,hi) []                       = BBox lo hi 
-    step (lo,hi) (PLineTo p1:rest)        = step (lo2 lo p1, hi2 hi p1) rest
-    step (lo,hi) (PCurveTo p1 p2 p3:rest) = let lo' = lo4 lo p1 p2 p3 
-                                                hi' = hi4 hi p1 p2 p3
-                                            in step (lo',hi') rest 
+    step _  (lo,hi) []                         = BBox lo hi 
+
+    step pt (lo,hi) (RelLineTo v1:rest)        = 
+        let p1 = pt .+^ v1
+        in step p1 (lo2 lo p1, hi2 hi p1) rest
+
+    step pt (lo,hi) (RelCurveTo v1 v2 v3:rest) = 
+        let p1  = pt .+^ v1
+            p2  = p1 .+^ v2
+            p3  = p2 .+^ v3
+            lo' = lo4 lo p1 p2 p3 
+            hi' = hi4 hi p1 p2 p3
+        in step p3 (lo',hi') rest 
 
     lo2 (P2 x1 y1) (P2 x2 y2) = P2 (min x1 x2) (min y1 y2)
 
@@ -588,28 +616,31 @@ instance Num u => Translate (Primitive u) where
 
 
 rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
-rotatePath ang = mapPath (rotate ang)
+rotatePath ang = mapPath (rotate ang) (rotate ang)
 
 
 rotateAboutPath :: (Real u, Floating u) 
                 => Radian -> Point2 u -> PrimPath u -> PrimPath u
-rotateAboutPath ang pt = mapPath (rotateAbout ang pt) 
+rotateAboutPath ang pt = mapPath (rotateAbout ang pt) (rotateAbout ang pt) 
 
 
 scalePath :: Num u => u -> u -> PrimPath u -> PrimPath u
-scalePath sx sy = mapPath (scale sx sy)
+scalePath sx sy = mapPath (scale sx sy) (scale sx sy)
 
-
+-- Note - translate only needs change the start point /because/ 
+-- the path represented as a relative path.
+-- 
 translatePath :: Num u => u -> u -> PrimPath u -> PrimPath u
-translatePath x y = mapPath (translate x y)
+translatePath x y (PrimPath st xs) = PrimPath (translate x y st) xs
 
 
-mapPath :: (Point2 u -> Point2 u) -> PrimPath u -> PrimPath u
-mapPath fn (PrimPath st xs) = PrimPath (fn st) (map (mapSeg fn) xs)
+mapPath :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) 
+        -> PrimPath u -> PrimPath u
+mapPath f g (PrimPath st xs) = PrimPath (f st) (map (mapSeg g) xs)
 
-mapSeg :: (Point2 u -> Point2 u) -> PrimPathSegment u -> PrimPathSegment u
-mapSeg fn (PLineTo p)         = PLineTo (fn p)
-mapSeg fn (PCurveTo p1 p2 p3) = PCurveTo (fn p1) (fn p2) (fn p3)
+mapSeg :: (Vec2 u -> Vec2 u) -> PrimPathSegment u -> PrimPathSegment u
+mapSeg fn (RelLineTo p)         = RelLineTo (fn p)
+mapSeg fn (RelCurveTo p1 p2 p3) = RelCurveTo (fn p1) (fn p2) (fn p3)
 
 --------------------------------------------------------------------------------
 -- Labels

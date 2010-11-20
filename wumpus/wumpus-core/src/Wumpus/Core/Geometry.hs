@@ -47,6 +47,7 @@ module Wumpus.Core.Geometry
   , vvec
   , avec
   , pvec
+  , vreverse
   , direction
   , vlength
   , vangle
@@ -390,6 +391,12 @@ avec theta d = V2 x y
 --
 pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
 pvec = flip (.-.)
+
+
+-- | Reverse a vector.
+--
+vreverse :: Num u => Vec2 u -> Vec2 u
+vreverse (V2 x y) = V2 (-x) (-y)
 
 -- | Direction of a vector - i.e. the counter-clockwise angle 
 -- from the x-axis.

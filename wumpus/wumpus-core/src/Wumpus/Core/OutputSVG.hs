@@ -49,8 +49,11 @@ import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
+import Data.AffineSpace                         -- package: vector-space
+
 import Control.Applicative hiding ( empty, some )
 import Data.Char
+import Data.List ( mapAccumL )
 import qualified Data.Map as Map
 import Data.Maybe
 
@@ -209,13 +212,28 @@ primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
 primPath props pp = (\(a,f) d -> elem_path a (f d)) 
                       <$> pathProps props <*> path pp
 
+--
+-- Paths are printed as absolute paths. Internally they are 
+-- relative paths, but client code specifies them as absolute 
+-- paths. So, here at least, the output matches the input.
+-- 
+-- Also, the SVG syntax for distinguishing between absolute and 
+-- relative paths is is horrible (upper case char versus its 
+-- corresponding lower case char). As Wumpus used absolute paths 
+-- internally up to version 0.40.0, the horrible syntax was not
+-- an encouragement to change when it moved to relative ones. 
+-- 
 
 path :: PSUnit u => PrimPath u -> SvgMonad Doc
 path (PrimPath start xs) = 
-    pure $ path_m start <+> hsep (map seg xs)
+    pure $ path_m start <+> hsep (snd $ mapAccumL step start xs)
   where
-    seg (PLineTo pt)        = path_l pt
-    seg (PCurveTo p1 p2 p3) = path_c p1 p2 p3
+    step pt (RelLineTo v)         = let p1 = pt .+^ v in (p1, path_l p1)
+    step pt (RelCurveTo v1 v2 v3) = let p1 = pt .+^ v1 
+                                        p2 = p1 .+^ v2
+                                        p3 = p2 .+^ v3
+                                    in (p3, path_c p1 p2 p3)
+
 
 -- Return - drawing props, plus a function to close the path (or not). 
 --
