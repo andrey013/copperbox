@@ -58,15 +58,14 @@ trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
 
 
 trivLabel :: Num u => PrimLabel u -> PrimLabel u
-trivLabel (PrimLabel pt txt ctm) = PrimLabel pt txt (trivPrimCTM ctm)
+trivLabel (PrimLabel txt ctm) = PrimLabel txt (trivPrimCTM ctm)
 
 trivEllipse :: Num u => PrimEllipse u -> PrimEllipse u
-trivEllipse (PrimEllipse ctr hw hh ctm) = 
-    PrimEllipse ctr hw hh (trivPrimCTM ctm)
+trivEllipse (PrimEllipse hw hh ctm) = PrimEllipse hw hh (trivPrimCTM ctm)
 
 -- Is the translation here just negating the angle with scaling
 -- left untouched?
 --
 trivPrimCTM :: Num u => PrimCTM u -> PrimCTM u
-trivPrimCTM (PrimCTM sx sy theta) = PrimCTM sx (-sy) theta
+trivPrimCTM (PrimCTM dx dy sx sy theta) = PrimCTM dx dy sx (-sy) theta
 

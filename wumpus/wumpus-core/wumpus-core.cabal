@@ -90,6 +90,11 @@ description:
     complex pictures paths will be moved possibly many times but
     have bounding box calculated and be printed only once.
   .
+  * Internal change to Primitives and the PrimCTM - ellipses and
+    labels no longer have a point (center or baseline left)
+    as an element in the datatype, the point is now represented 
+    in the PrimCTM.
+  .
   * Name change to @Core.Picture@ API - the path construction 
     function @path@ has been renamed to @primPath@.
   .

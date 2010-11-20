@@ -436,9 +436,9 @@ escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt pt 0
 --
 rescapedlabel :: Num u 
               => RGBi -> FontAttr -> EscapedText -> Point2 u -> Radian -> Primitive u
-rescapedlabel rgb attr txt pt theta = PLabel (LabelProps rgb attr) lbl 
+rescapedlabel rgb attr txt (P2 dx dy) theta = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel pt (StdLayout txt) (thetaCTM theta)
+    lbl = PrimLabel (StdLayout txt) (makeThetaCTM dx dy theta)
 
 
 -- | 'zescapedlabel' : @ escaped_text * baseline_left -> Primitive @
@@ -484,9 +484,9 @@ zescapedlabel = escapedlabel black wumpus_default_font
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> Primitive u
-hkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl 
+hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel pt (KernTextH xs) identityCTM
+    lbl = PrimLabel (KernTextH xs) (makeTranslCTM x y)
 
 
 
@@ -524,9 +524,9 @@ hkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl
 vkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
             -> Primitive u
-vkernlabel rgb attr xs pt = PLabel (LabelProps rgb attr) lbl 
+vkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel pt (KernTextV xs) identityCTM
+    lbl = PrimLabel (KernTextV xs) (makeTranslCTM x y)
 
 
 
@@ -650,7 +650,8 @@ rfillStrokeEllipse frgb sa srgb rx ry theta pt =
 
 
 mkPrimEllipse :: Num u => u -> u -> Radian -> Point2 u -> PrimEllipse u
-mkPrimEllipse rx ry theta pt = PrimEllipse pt rx ry (thetaCTM theta)
+mkPrimEllipse rx ry theta (P2 dx dy) = 
+    PrimEllipse rx ry (makeThetaCTM dx dy theta)
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -773,7 +774,7 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 --
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
                         => RGBi -> Primitive u -> Picture u
-illustrateControlPoints rgb elt = frame $ step elt
+illustrateControlPoints rgb elt = frame $ elt : step elt
   where
     step (PEllipse _ e) = ellipseCtrlLines rgb e
     step (PPath    _ p) = pathCtrlLines rgb p
@@ -836,10 +837,8 @@ ellipseCtrlLines rgb pe = start all_points
 --
 ellipseControlPoints :: (Floating u, Real u)
                      => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse (P2 x y) hw hh ctm) = 
-    map (disp . (new_mtrx *#)) circ
+ellipseControlPoints (PrimEllipse hw hh ctm) = map (new_mtrx *#) circ
   where
-    disp             = (.+^ V2 x y)
     (radius,(dx,dy)) = circleScalingProps hw hh
     new_mtrx         = matrixRepCTM $ scaleCTM dx dy ctm
     circ             = bezierCircle 1 radius (P2 0 0)

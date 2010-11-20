@@ -368,8 +368,8 @@ pathBody (PrimPath start xs) =
 --
 primEllipse :: (Real u, Floating u, PSUnit u) 
             => EllipseProps -> PrimEllipse u -> PsMonad Doc
-primEllipse props (PrimEllipse center hw hh ctm) =
-    bracketPrimCTM center (scaleCTM 1 (hh/hw) ctm) (drawF props)
+primEllipse props (PrimEllipse hw hh ctm) =
+    bracketPrimCTM (scaleCTM 1 (hh/hw) ctm) (drawF props)
   where
     drawF (EFill rgb)            pt = fillArcPath rgb hw pt
     drawF (EStroke sa rgb)       pt = strokeArcPath rgb sa hw pt
@@ -406,8 +406,7 @@ strokeArcPath rgb sa radius pt =
 --
 primLabel :: (Real u, Floating u, PSUnit u) 
           => LabelProps -> PrimLabel u -> PsMonad Doc
-primLabel (LabelProps rgb attrs) (PrimLabel basept body ctm) = 
-    bracketPrimCTM basept ctm mf
+primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
   where
     ev    = font_enc_vector $ font_face attrs    
     mf pt = (\rgbd fontd -> vcat [ rgbd, fontd, labelBody ev pt body ]) 
@@ -534,16 +533,15 @@ bracketMatrix mtrx ma
 
 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
-               => Point2 u -> PrimCTM u 
+               => PrimCTM u 
                -> (Point2 u -> PsMonad Doc) -> PsMonad Doc
-bracketPrimCTM pt@(P2 x y) ctm mf 
-    | ctm == identityCTM  = mf pt
-    | otherwise           = (\doc -> vcat [inn, doc, out]) <$> mf zeroPt'
-  where
-    zeroPt' :: Point2 u
-    zeroPt' = zeroPt
+bracketPrimCTM ctm0 mf= step $ unCTM ctm0 
+  where 
+    step (pt,ctm) 
+      | ctm == identityCTM  = mf pt
+      | otherwise           = let mtrx = matrixRepCTM ctm0  -- originalCTM
+                                  inn   = ps_concat $ mtrx
+                                  out   = ps_concat $ invert mtrx
+                              in (\doc -> vcat [inn, doc, out]) <$> mf zeroPt
 
-    mtrx  = translMatrixRepCTM x y ctm
-    inn   = ps_concat $ mtrx
-    out   = ps_concat $ invert mtrx
 

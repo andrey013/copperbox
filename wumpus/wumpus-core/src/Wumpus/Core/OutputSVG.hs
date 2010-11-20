@@ -264,11 +264,11 @@ pathProps props = fn props
 --
 primEllipse :: (Real u, Floating u, PSUnit u)
             => EllipseProps -> PrimEllipse u -> SvgMonad Doc
-primEllipse props (PrimEllipse pt hw hh ctm) 
+primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
-                    <$> bracketPrimCTM pt ctm mkCXCY <*> ellipseProps props
+                    <$> bracketPrimCTM ctm mkCXCY <*> ellipseProps props
     | otherwise = (\a b -> elem_ellipse (a <+> ellipse_radius <+> b))
-                    <$> bracketPrimCTM pt ctm mkCXCY <*> ellipseProps props
+                    <$> bracketPrimCTM ctm mkCXCY <*> ellipseProps props
   where
    mkCXCY (P2 x y) = pure $ attr_cx x <+> attr_cy y
    
@@ -298,9 +298,9 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 
 primLabel :: (Real u, Floating u, PSUnit u) 
       => LabelProps -> PrimLabel u -> SvgMonad Doc
-primLabel (LabelProps rgb attrs) (PrimLabel pt body ctm) = 
+primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
     (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
-      <$> deltaFontAttrs attrs <*> bracketPrimCTM pt ctm coordf
+      <$> deltaFontAttrs attrs <*> bracketPrimCTM ctm coordf
                                
   where
     coordf = \p0 -> pure $ labelBodyCoords body p0
@@ -475,15 +475,15 @@ bracketMatrix mtrx ma
     trafo = attr_transform $ val_matrix mtrx
 
 
+-- Note - the otherwise step uses the origina ctm (ctm0).
+-- 
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
-               => Point2 u -> PrimCTM u 
+               => PrimCTM u 
                -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
-bracketPrimCTM pt@(P2 x y) ctm pf 
-    | ctm == identityCTM  = pf pt
-    | otherwise           = (\xy -> xy <+> attr_transform mtrx) <$> pf zeroPt'
+bracketPrimCTM ctm0 pf = step $ unCTM ctm0
   where
-    zeroPt' :: Point2 u
-    zeroPt' = zeroPt
-
-    mtrx  = val_matrix $ translMatrixRepCTM x y ctm
-
+    step (pt, ctm) 
+        | ctm == identityCTM  = pf pt
+        | otherwise           = let mtrx = attr_transform $ 
+                                             val_matrix $ matrixRepCTM ctm0
+                                in (\xy -> xy <+> mtrx) <$> pf zeroPt

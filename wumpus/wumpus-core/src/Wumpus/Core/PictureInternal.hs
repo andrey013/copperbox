@@ -235,11 +235,12 @@ type DAbsPathSegment = AbsPathSegment Double
 
 
 
--- | Label - represented by /baseline/ left point and text.
+-- | Label - represented by baseline-left point and text.
+--
+-- Baseline-left is the dx * dy of the PrimCTM.
 --
 data PrimLabel u = PrimLabel 
-      { label_baseline_left :: Point2 u
-      , label_body          :: LabelBody u
+      { label_body          :: LabelBody u
       , label_ctm           :: PrimCTM u
       }
   deriving (Eq,Show)
@@ -274,11 +275,12 @@ type KerningChar u = (u,EscapedChar)
 
 type DKerningChar = KerningChar Double
 
--- Ellipse represented by center and half_width * half_height
+-- | Ellipse represented by center and half_width * half_height.
+--
+-- Center is the dx * dy of the PrimCTM.
 --
 data PrimEllipse u = PrimEllipse 
-      { ellipse_center        :: Point2 u
-      , ellipse_half_width    :: u
+      { ellipse_half_width    :: u
       , ellipse_half_height   :: u 
       , ellipse_ctm           :: PrimCTM u
       } 
@@ -381,10 +383,9 @@ instance PSUnit u => Format (PrimPathSegment u) where
   format (RelLineTo pt)         = text "rel_line_to  " <> format pt
 
 instance PSUnit u => Format (PrimLabel u) where
-  format (PrimLabel pt s ctm) = 
+  format (PrimLabel s ctm) = 
      vcat [ dquotes (format s)
-          ,     text "baseline_left=" <> format pt
-            <+> text "ctm="           <> format ctm
+          , text "ctm="           <> format ctm
           ]
 
 instance PSUnit u => Format (LabelBody u) where
@@ -394,10 +395,9 @@ instance PSUnit u => Format (LabelBody u) where
 
 
 instance PSUnit u => Format (PrimEllipse u) where
-  format (PrimEllipse ctr hw hh ctm) = text "center="   <> format ctr
-                                   <+> text "hw="       <> dtruncFmt hw
-                                   <+> text "hh="       <> dtruncFmt hh
-                                   <+> text "ctm="      <> format ctm
+  format (PrimEllipse hw hh ctm) =  text "hw="       <> dtruncFmt hw
+                                <+> text "hh="       <> dtruncFmt hh
+                                <+> text "ctm="      <> format ctm
   
 
 instance Format XLink where
@@ -460,10 +460,9 @@ pathBoundary (PrimPath st xs) = step st (st,st) xs
 
 labelBoundary :: (Floating u, Real u, FromPtSize u) 
               => FontAttr -> PrimLabel u -> BoundingBox u
-labelBoundary attr (PrimLabel (P2 x y) body ctm) = 
-    retraceBoundary  (disp . (m33 *#)) untraf_bbox
+labelBoundary attr (PrimLabel body ctm) = 
+    retraceBoundary (m33 *#) untraf_bbox
   where
-    disp        = (.+^ V2 x y)
     m33         = matrixRepCTM ctm
     untraf_bbox = labelBodyBoundary (font_size attr) body
 
@@ -516,14 +515,13 @@ vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
 -- then retraced.
 --
 ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
-ellipseBoundary (PrimEllipse (P2 x y) hw hh ctm) = 
-    traceBoundary $ map (disp . (m33 *#)) [sw,se,ne,nw]
+ellipseBoundary (PrimEllipse hw hh ctm) = 
+    traceBoundary $ map (m33 *#) [sw,se,ne,nw]
   where
     sw   = P2 (-hw) (-hh) 
     se   = P2   hw  (-hh) 
     ne   = P2   hw    hh 
     nw   = P2 (-hw)   hh 
-    disp = (.+^ V2 x y)
     m33  = matrixRepCTM ctm
 
 
@@ -650,28 +648,26 @@ mapSeg fn (RelCurveTo p1 p2 p3) = RelCurveTo (fn p1) (fn p2) (fn p3)
 --
 rotateLabel :: (Real u, Floating u) 
             => Radian -> PrimLabel u -> PrimLabel u
-rotateLabel ang (PrimLabel pt txt ctm) = 
-    PrimLabel (rotate ang pt) txt (rotateCTM ang ctm)
+rotateLabel ang (PrimLabel txt ctm) = PrimLabel txt (rotateCTM ang ctm)
 
 
 -- /rotateAbout/ the start-point, /rotate/ the the CTM.
 --
 rotateAboutLabel :: (Real u, Floating u) 
                  => Radian -> Point2 u -> PrimLabel u -> PrimLabel u
-rotateAboutLabel ang pt0 (PrimLabel pt txt ctm) = 
-    PrimLabel (rotateAbout ang pt0 pt) txt (rotateCTM ang ctm)
+rotateAboutLabel ang pt (PrimLabel txt ctm) = 
+    PrimLabel txt (rotateAboutCTM ang pt ctm)
 
 
 scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-scaleLabel sx sy (PrimLabel pt txt ctm) = 
-    PrimLabel (scale sx sy pt) txt (scaleCTM sx sy ctm)
+scaleLabel sx sy (PrimLabel txt ctm) = PrimLabel txt (scaleCTM sx sy ctm)
 
 
 -- Change the bottom-left corner.
 --
 translateLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-translateLabel dx dy (PrimLabel pt txt ctm) = 
-    PrimLabel (translate dx dy pt) txt ctm
+translateLabel dx dy (PrimLabel txt ctm) = 
+    PrimLabel txt (translateCTM dx dy ctm)
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -679,27 +675,27 @@ translateLabel dx dy (PrimLabel pt txt ctm) =
 
 rotateEllipse :: (Real u, Floating u) 
               => Radian -> PrimEllipse u -> PrimEllipse u
-rotateEllipse ang (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (rotate ang pt) hw hh (rotateCTM ang ctm)
+rotateEllipse ang (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (rotateCTM ang ctm)
     
 
 rotateAboutEllipse :: (Real u, Floating u) 
               => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
-rotateAboutEllipse ang pt0 (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (rotateAbout ang pt0 pt) hw hh (rotateCTM ang ctm)
+rotateAboutEllipse ang pt (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (rotateAboutCTM ang pt ctm)
 
 
 scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-scaleEllipse sx sy (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (scale sx sy pt) hw hh (scaleCTM sx sy ctm)
+scaleEllipse sx sy (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (scaleCTM sx sy ctm)
     
 
 
 -- Change the point
 --
 translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
-translateEllipse dx dy (PrimEllipse pt hw hh ctm) = 
-    PrimEllipse (translate dx dy pt) hw hh ctm
+translateEllipse dx dy (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (translateCTM dx dy ctm)
 
 
 

@@ -75,7 +75,8 @@ mkRedEllipse trafo rx ry pt = frame [ trafo $ fillEllipse red rx ry pt]
 
 crossbar :: (Real u, Floating u, FromPtSize u) 
          => u -> u -> Point2 u -> Picture u
-crossbar rx ry ctr = frame [ostroke black default_stroke_attr $ path west ps]
+crossbar rx ry ctr = 
+    frame [ostroke black default_stroke_attr $ primPath west ps]
   where
     ps    = [ lineTo east, lineTo ctr, lineTo north, lineTo south ]
     north = ctr .+^ vvec ry
@@ -92,4 +93,4 @@ xy_frame ss =
           ]
 
   where
-    mkline p1 p2 = ostroke black default_stroke_attr $ path p1 [lineTo p2]
+    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [lineTo p2]
