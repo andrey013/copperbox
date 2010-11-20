@@ -14,8 +14,8 @@ main = do
     createDirectoryIfMissing True "./out/"
     writeEPS "./out/scaled_square.eps"  pic1
     writeSVG "./out/scaled_square.svg"  pic1
-    writeEPS "./out/scaled_circle.eps"  pic2
-    writeSVG "./out/scaled_circle.svg"  pic2
+    writeEPS "./out/scaled_ellipse.eps"  pic2
+    writeSVG "./out/scaled_ellipse.svg"  pic2
     writeEPS "./out/scaled_label.eps"   pic3
     writeSVG "./out/scaled_label.svg"   pic3
 

@@ -516,17 +516,15 @@ vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
 -- then retraced.
 --
 ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
-ellipseBoundary (PrimEllipse pt hw0 hh0 (PrimCTM sx sy theta)) = 
-    traceBoundary $ applyIf (theta /= 0) (map (rotm *#)) [ll,lr,ur,ul]
+ellipseBoundary (PrimEllipse (P2 x y) hw hh ctm) = 
+    traceBoundary $ map (disp . (m33 *#)) [sw,se,ne,nw]
   where
-    hw   = hw0 * sx
-    hh   = hh0 * sy
-    ll   = pt .+^ V2 (-hw) (-hh) 
-    lr   = pt .+^ V2   hw  (-hh) 
-    ur   = pt .+^ V2   hw    hh 
-    ul   = pt .+^ V2 (-hw)   hh 
-    rotm = rotationMatrix theta
-
+    sw   = P2 (-hw) (-hh) 
+    se   = P2   hw  (-hh) 
+    ne   = P2   hw    hh 
+    nw   = P2 (-hw)   hh 
+    disp = (.+^ V2 x y)
+    m33  = matrixRepCTM ctm
 
 
 --------------------------------------------------------------------------------

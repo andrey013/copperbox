@@ -98,6 +98,9 @@ description:
     strings that have been parsed for escape characters 
     /Escaped Text/ rather than /Encoded Text/.
   .
+  * Fixed bug where ellipse rotation and scaling calculated the 
+    wrong bounding box.
+  .
   .
 build-type:         Simple
 stability:          unstable

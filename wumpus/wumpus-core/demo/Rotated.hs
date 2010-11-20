@@ -13,11 +13,10 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    putStrLn "Note - rot_label bounding box wrong. To investigate..."
     writeEPS "./out/rot_square.eps"  pic1
     writeSVG "./out/rot_square.svg"  pic1
-    writeEPS "./out/rot_circle.eps"  pic2
-    writeSVG "./out/rot_circle.svg"  pic2
+    writeEPS "./out/rot_ellipse.eps"  pic2
+    writeSVG "./out/rot_ellipse.svg"  pic2
     writeEPS "./out/rot_label.eps"   pic3
     writeSVG "./out/rot_label.svg"   pic3
 
