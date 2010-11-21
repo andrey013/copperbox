@@ -13,9 +13,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    putStrLn $ "PostScript Level 2 currently has problems..."
     writeEPS            "./out/kern_pic01.eps"          kern_pic
-    writeEPS_level1     "./out/kern_pic01_level1.eps"   kern_pic
     writeSVG            "./out/kern_pic01.svg"          kern_pic
 
 
@@ -35,13 +33,13 @@ pic3 :: DPicture
 pic3 = frame [ symbolLabelH uUpsilon (P2 0 0) ]
 
 mystere ::[DKerningChar]
-mystere = [ kernchar 0  'm'
-          , kernchar 15 'y'
-          , kernchar 10 's'
-          , kernchar 10 't'
-          , kernEscInt 6 232
-          , kernchar 10 'r'
-          , kernchar 6 'e'
+mystere = [ kernchar    0  'm'
+          , kernchar   15  'y'
+          , kernchar   10  's'
+          , kernchar   10  't'
+          , kernEscInt  6  232
+          , kernchar   10  'r'
+          , kernchar    6  'e'
           ]
 
 -- Note - to assert that this is working check both the 

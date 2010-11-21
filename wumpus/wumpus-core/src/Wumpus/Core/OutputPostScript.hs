@@ -13,20 +13,18 @@
 --
 -- Output PostScript - either PostScript (PS) files or 
 -- EPS (Encapusulated PostScript) files can be generated. 
+-- 
+-- The generated PostScript uses only features from Language 
+-- Level 1.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.OutputPostScript
   ( 
-  -- * Output PostScript using Level 2 features 
+  -- * Output PostScript
     writePS
   , writeEPS
-  
-  -- * Output PostScript using only Level 1 features (larger code)
-  , writePS_level1
-  , writeEPS_level1
-
-
+ 
   ) where
 
 import Wumpus.Core.BoundingBox
@@ -66,29 +64,27 @@ import Data.Time
 -- the diff is with the last drawn object.
 --
 
-type LangLevel = Int
-
 newtype PsMonad a = PsMonad { 
-            getPsMonad :: LangLevel -> GraphicsState -> (a,GraphicsState) }
+            getPsMonad :: GraphicsState -> (a,GraphicsState) }
 
 
 instance Functor PsMonad where
-  fmap f mf = PsMonad $ \r s -> let (a,s1) = getPsMonad mf r s in (f a,s1)
+  fmap f mf = PsMonad $ \s -> let (a,s1) = getPsMonad mf s in (f a,s1)
 
 instance Applicative PsMonad where
-  pure a    = PsMonad $ \_ s -> (a,s)
-  mf <*> ma = PsMonad $ \r s -> let (f,s1) = getPsMonad mf r s
-                                    (a,s2) = getPsMonad ma r s1
+  pure a    = PsMonad $ \s -> (a,s)
+  mf <*> ma = PsMonad $ \s -> let (f,s1) = getPsMonad mf s
+                                  (a,s2) = getPsMonad ma s1
                                 in (f a,s2)
 
 instance Monad PsMonad where
-  return a  = PsMonad $ \_ s  -> (a,s)
-  m >>= k   = PsMonad $ \r s -> let (a,s1) = getPsMonad m r s
-                                in (getPsMonad . k) a r s1
+  return a  = PsMonad $ \s -> (a,s)
+  m >>= k   = PsMonad $ \s -> let (a,s1) = getPsMonad m s
+                              in (getPsMonad . k) a s1
                               
 
-runPsMonad :: LangLevel -> PsMonad a -> a
-runPsMonad lang_level mf = fst $ getPsMonad mf lang_level zeroGS
+runPsMonad :: PsMonad a -> a
+runPsMonad mf = fst $ getPsMonad mf zeroGS
 
 
 
@@ -97,18 +93,16 @@ runPsMonad lang_level mf = fst $ getPsMonad mf lang_level zeroGS
 -- runLocalGS upd mf = 
 --     PsMonad $ \s -> let (a,_) = getPsMonad mf (getGSU upd s) in (a,s)
 
-langLevel :: PsMonad LangLevel
-langLevel = PsMonad $ \r s -> (r,s)
 
 
 getsGS :: (GraphicsState -> a) -> PsMonad a
-getsGS fn = PsMonad $ \_ s -> (fn s,s)
+getsGS fn = PsMonad $ \s -> (fn s,s)
 
 setsGS :: (GraphicsState -> GraphicsState) -> PsMonad ()
-setsGS fn = PsMonad $ \_ s -> ((),fn s)
+setsGS fn = PsMonad $ \s -> ((),fn s)
 
 resetGS :: PsMonad ()
-resetGS = PsMonad $ \_ _ -> ((),zeroGS)
+resetGS = PsMonad $ \_ -> ((),zeroGS)
 
 
 setsSA :: (StrokeAttr -> StrokeAttr) -> PsMonad ()
@@ -173,7 +167,7 @@ setDashPattern a    = setsSA (\s -> s { dash_pattern = a })
 writePS :: (Real u, Floating u, PSUnit u) 
         => FilePath -> [Picture u] -> IO ()
 writePS filepath pics = 
-    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw 2 ztim pics)
+    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim pics)
 
 -- | Output a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
@@ -182,36 +176,10 @@ writePS filepath pics =
 writeEPS :: (Real u, Floating u, PSUnit u)  
          => FilePath -> Picture u -> IO ()
 writeEPS filepath pic =
-    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw 2 ztim pic)
+    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim pic)
 
 
 
-
--- | Output a series of pictures to a Postscript file using only 
--- PostScript Language Level 1 operations. Each picture will be 
--- printed on a separate page. 
---
--- Note - this produces larger code than 'writePS' when using
--- @hkernlabel@ and @vkernlabel@, use this only if you need 
--- universal compatibility.  
---
-writePS_level1 :: (Real u, Floating u, PSUnit u) 
-        => FilePath -> [Picture u] -> IO ()
-writePS_level1 filepath pics = 
-    getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw 1 ztim pics)
-
--- | Output a picture to an EPS (Encapsulated PostScript) file
--- using only PostScript Language Level 1 operations. The .eps 
--- file can then be imported or embedded in another document.
---
--- Note - this produces larger code than 'writeEPS' when using
--- @hkernlabel@ and @vkernlabel@, use this only if you need 
--- universal compatibility.  
---
-writeEPS_level1 :: (Real u, Floating u, PSUnit u)  
-                => FilePath -> Picture u -> IO ()
-writeEPS_level1 filepath pic =
-    getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw 1 ztim pic)
 
 
 
@@ -226,10 +194,10 @@ writeEPS_level1 filepath pic =
 --
 
 psDraw :: (Real u, Floating u, PSUnit u) 
-       => Int -> ZonedTime -> [Picture u] -> Doc
-psDraw lang_level timestamp pics = 
-    let body = vcat $ runPsMonad lang_level $ zipWithM psDrawPage pages pics
-    in vcat [ psHeader lang_level (length pics) timestamp
+       => ZonedTime -> [Picture u] -> Doc
+psDraw timestamp pics = 
+    let body = vcat $ runPsMonad $ zipWithM psDrawPage pages pics
+    in vcat [ psHeader (length pics) timestamp
             , body
             , psFooter 
             ]
@@ -257,11 +225,11 @@ psDrawPage (lbl,ordinal) pic =
 -- will need translating.
 --
 epsDraw :: (Real u, Floating u, PSUnit u)
-        => Int -> ZonedTime -> Picture u -> Doc
-epsDraw lang_level timestamp pic =
+        => ZonedTime -> Picture u -> Doc
+epsDraw timestamp pic =
     let (bb,cmdtrans) = imageTranslation pic 
-        body          = runPsMonad lang_level (picture pic) 
-    in vcat [ epsHeader lang_level bb timestamp
+        body          = runPsMonad (picture pic) 
+    in vcat [ epsHeader bb timestamp
             , ps_gsave
             , cmdtrans
             , body
@@ -448,60 +416,40 @@ primLabel :: (Real u, Floating u, PSUnit u)
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
   where
     ev    = font_enc_vector $ font_face attrs    
-    mf pt = (\rgbd fontd lbody -> vcat [ rgbd, fontd, lbody ]) 
+    mf pt = (\rgbd fontd -> vcat [ rgbd, fontd, labelBody ev pt body ]) 
               <$> deltaDrawColour rgb <*> deltaFontAttrs attrs 
-                                      <*> labelBody ev pt body 
+
+
+-- Note - it would be nice to use @xshow@ and @yshow@ (PostScript
+-- Language Level 2) to generate more efficient code as per using 
+-- horizontal or vertical coordinate lists in the SVG output.
+-- 
+-- Unfortunately, because Wumpus has to use @ps_glyphshow@ for 
+-- any special charaters the code cannot use necessarily use 
+-- @xshow@ to generate a single string. If the string is 
+-- broken by a special char calculating the restart position is 
+-- complicated because PostScript implicitly moves the current 
+-- point as a string is drawn (using the advance vector for each 
+-- glyph in the font). 
+-- 
+-- I tried to use @xshow@ and @yshow@ in an experiment, but the 
+-- Haskell code was very complicated and the generated PostScript 
+-- was not much better in the presence of special chars. As 
+-- Wumpus makes no claims for suitability regarding type-setting 
+-- the current code seems good enough.
+--
     
+
 labelBody :: PSUnit u 
-          => EncodingVector -> Point2 u -> LabelBody u -> PsMonad Doc
-labelBody ev pt body = 
-    langLevel >>= \ i -> if i < 2 then return $ labelBody1 ev pt body
-                                  else return $ labelBody2 ev pt body
-
-labelBody1 :: PSUnit u 
-           => EncodingVector -> Point2 u -> LabelBody u -> Doc
-labelBody1 ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
-labelBody1 ev pt (KernTextH xs)  = manualKernTextH ev pt xs
-labelBody1 ev pt (KernTextV xs)  = manualKernTextV ev pt xs
-
-labelBody2 :: PSUnit u 
-           => EncodingVector -> Point2 u -> LabelBody u -> Doc
-labelBody2 ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
-labelBody2 ev pt (KernTextH xs)  = kernTextH ev pt xs
-labelBody2 ev pt (KernTextV xs)  = kernTextV ev pt xs
-
-
-
-kernTextH :: PSUnit u 
-          => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
-kernTextH = kernText ps_xshow (\u -> P2 u 0) 
-
-
-kernTextV :: PSUnit u 
-          => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
-kernTextV = kernText ps_yshow (\u -> P2 0 u) 
-
-
-kernText :: PSUnit u 
-         => (String -> [u] -> Doc) -> (u -> Point2 u) 
-         -> EncodingVector -> Point2 u -> [KerningChar u] -> Doc
-kernText psShow mkPoint ev pt cs = 
-    ps_moveto pt `vconcat` (cons $ foldr fn ([],[],empty) cs)
-  where
-    cons ([],_ ,doc) = doc
-    cons (ss,xs,doc) = psShow ss xs `vconcat` doc
-
-    fn (u, CharLiteral c) (ss,xs,doc) = (c:ss,u:xs,doc)
-    fn (u, ch)            acc         = 
-        let drest = cons acc
-            doc   = vcat [ ps_rmoveto $ mkPoint u, psChar ev ch, drest ]
-        in ([],[],doc)
-
+          => EncodingVector -> Point2 u -> LabelBody u -> Doc
+labelBody ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
+labelBody ev pt (KernTextH xs)  = kernTextH ev pt xs
+labelBody ev pt (KernTextV xs)  = kernTextV ev pt xs
 
 -- 
-manualKernTextH :: PSUnit u 
+kernTextH :: PSUnit u 
                 => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
-manualKernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
+kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dx,ch) = let doc1 = psChar ev ch
                                   pt   = P2 (x+dx) y 
@@ -509,9 +457,9 @@ manualKernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
 
 -- Note - vertical labels grow downwards...
 --
-manualKernTextV :: PSUnit u 
+kernTextV :: PSUnit u 
                 => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
-manualKernTextV ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
+kernTextV ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dy,ch) = let doc1 = psChar ev ch
                                   pt   = P2 x (y-dy) 
