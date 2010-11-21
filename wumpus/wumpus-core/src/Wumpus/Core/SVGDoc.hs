@@ -17,7 +17,7 @@
 module Wumpus.Core.SVGDoc
   (
     escapeSpecial
-
+  , svgAttr
   , xml_version
   , doctype
   , elem_svg

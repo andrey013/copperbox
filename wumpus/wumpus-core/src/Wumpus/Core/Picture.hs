@@ -253,7 +253,7 @@ xlinkhref = XLink
 -- | Create a hyperlinked Primitive.
 --
 xlink :: XLink -> Primitive u -> Primitive u
-xlink hypl p = PLink hypl p  
+xlink hypl p = PSVG (ALink hypl) p  
 
 
 -- | Group a list of Primitives.
@@ -473,13 +473,15 @@ zescapedlabel = escapedlabel black wumpus_default_font
 --
 -- The supplied point is the left baseline.
 --
--- \*\* CAUTION \*\* - @hkernlabel@ generates a coordinate list 
--- for X-positions rather than a single start point. This is 
--- perfectly valid SVG, but it is not universally supported by 
--- renderers. Chrome support is fine, but Firefox and Safari 
--- currently seem lacking. 
+-- \*\* CAUTION \*\* - for SVG, @hkernlabel@ generates a 
+-- coordinate list of X-positions rather than a single start 
+-- point. This is syntactically valid SVG, but it is not 
+-- universally supported by renderers. Chrome support is fine, 
+-- but Firefox and Safari currently seem lacking. 
 --
--- Also, currently the generated PostScript is inefficient.
+-- Also, note this feature does not have a directly compatible 
+-- PostScript analogue. While the same picture is generated in 
+-- both cases, the PostScript code is not particularly inefficient.
 --
 hkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
@@ -513,13 +515,15 @@ hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl
 --
 -- The supplied point is the left baseline of the top character.
 --
--- \*\* CAUTION \*\* - @vkernlabel@ generates a coordinate list 
--- for Y-positions rather than a single start point. This is 
--- perfectly valid SVG, but it is not universally supported by 
--- renderers. Chrome support is fine, but Firefox and Safari 
--- currently seem lacking. 
+-- \*\* CAUTION \*\* - for SVG, @hkernlabel@ generates a 
+-- coordinate list of Y-positions rather than a single start 
+-- point. This is syntactically valid SVG, but it is not 
+-- universally supported by renderers. Chrome support is fine, 
+-- but Firefox and Safari currently seem lacking. 
 --
--- Also, currently the generated PostScript is inefficient.
+-- Also, note this feature does not have a directly compatible 
+-- PostScript analogue. While the same picture is generated in 
+-- both cases, the PostScript code is not particularly inefficient.
 --
 vkernlabel :: Num u 
             => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 

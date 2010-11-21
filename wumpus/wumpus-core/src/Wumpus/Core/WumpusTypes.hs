@@ -13,6 +13,12 @@
 -- This module re-exports types and functions from 
 -- "Wumpus.Core.PictureInternal" but makes them opaque. 
 -- Contructors are provided by "Wumpus.Core.Picture".
+--
+-- Note - whilst the Picture types support the Eq class the 
+-- implementations are not efficient, e.g. In the case of 
+-- Primitive, one of the constructors has to unwind a functional 
+-- \Hughes list\. The Eq instance is considered a legacy 
+-- /feature/ (or burden) as the types have expanded.
 -- 
 --------------------------------------------------------------------------------
 

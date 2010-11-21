@@ -322,7 +322,7 @@ primitive (PPath props pp)     = primPath props pp
 primitive (PLabel props lbl)   = primLabel props lbl
 primitive (PEllipse props ell) = primEllipse props ell
 primitive (PContext _ chi)     = primitive chi
-primitive (PLink _ chi)        = primitive chi
+primitive (PSVG _ chi)         = primitive chi
 primitive (PGroup ones)        = oneConcat primitive ones
 
 

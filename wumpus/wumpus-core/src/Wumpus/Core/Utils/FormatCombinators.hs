@@ -106,6 +106,15 @@ runDoc = ($ "") . unDoc
 instance Show Doc where
   show = runDoc
 
+-- Eq is horrible but it is required for Primitive
+
+instance Eq Doc where
+  (==) (Doc1 f)     (Doc1 g)      = (f []) == (g [])    -- horribly expensive!
+  (==) (Join a b)   (Join x y)    = a == x && b == y
+  (==) Line         Line          = True
+  (==) (Indent i a) (Indent j x)  = i == j && a == x
+  (==) _            _             = False
+
 instance Monoid Doc where
   mempty = empty
   mappend = (<>)

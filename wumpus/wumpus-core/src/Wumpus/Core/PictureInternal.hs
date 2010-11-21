@@ -26,7 +26,9 @@ module Wumpus.Core.PictureInternal
 
   , Primitive(..)
   , DPrimitive
+  , SvgAnno(..)
   , XLink(..)
+  , SvgAttr(..)
 
   , PrimPath(..)
   , DPrimPath
@@ -165,19 +167,19 @@ type Locale u = (BoundingBox u, [AffineTrafo u])
 -- constraint is also obliged.
 --
 -- To represent XLink hyperlinks, Primitives can be annotated 
--- with some a hyperlink (similarly a a font change for better
--- SVG code generation) and grouped - a hyperlinked arrow would
--- want the tip and the arrow body both to be incorporated in the
--- link even though they are two drawings. 
+-- with some a hyperlink (likewise a /passive/ font change for 
+-- better SVG code generation) and grouped - a hyperlinked arrow 
+-- would want the tip and the arrow body both to be incorporated 
+-- in thelink even though they are two drawing primitives. 
 --
 -- This means that Primitives aren\'t strictly /primitive/ as 
 -- the actual implementation is a tree.
 -- 
-data Primitive u = PPath    PathProps     (PrimPath u)
-                 | PLabel   LabelProps    (PrimLabel u)
-                 | PEllipse EllipseProps  (PrimEllipse u)
-                 | PContext FontCtx       (Primitive u)
-                 | PLink    XLink         (Primitive u)
+data Primitive u = PPath    PathProps         (PrimPath u)
+                 | PLabel   LabelProps        (PrimLabel u)
+                 | PEllipse EllipseProps      (PrimEllipse u)
+                 | PContext FontCtx           (Primitive u)
+                 | PSVG     SvgAnno           (Primitive u)
                  | PGroup   (JoinList (Primitive u))
   deriving (Eq,Show)
 
@@ -194,11 +196,42 @@ type DPrimitive = Primitive Double
 newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
   deriving (Eq,Show)
 
+
+-- | SVG annotations - annotations can be: 
+-- 
+-- A hyperlink inside @<a ...> ... </a>@ .
+--
+-- A group - @<g ...> ... </g>@
+--
+-- A group inside a hyperlink.
+--
+data SvgAnno = ALink XLink
+             | GAnno [SvgAttr]
+             | SvgAG XLink [SvgAttr]
+   deriving (Eq,Show)
+
 -- | Primitives can be grouped with hyperlinks in SVG output.
+--
+-- Note - this is always printed as @xlink:href="..."@. Other
+-- types of xlink can be modelled with the unrestrained 
+-- SvgAnno type.
 --
 newtype XLink = XLink { getXLink :: String }
   deriving (Eq,Show)
 
+
+-- | Primitives can be labelled with arbitrary SVG properties 
+-- (e.g @onmouseover@) within a group element.
+--
+-- Note - annotations should be used only for non-graphical 
+-- properties. Graphical properties (fill_colour, font_size, etc.)
+-- should be set through the appropriate Wumpus functions.
+--
+data SvgAttr = SvgAttr 
+      { svg_attr_name   :: String
+      , svg_attr_value  :: String 
+      }
+  deriving (Eq,Show)
 
 -- | PrimPath - start point and a list of path segments.
 --
@@ -358,8 +391,8 @@ instance PSUnit u => Format (Primitive u) where
   format (PContext _ a)     = 
       vcat [ text "-- svg ctx change " , format a ]
 
-  format (PLink _ a)     = 
-      vcat [ text "-- svg link " , format a ]
+  format (PSVG _ a)       = 
+      vcat [ text "-- svg:", format  a ]
 
   format (PGroup ones)      = 
       vcat [ text "-- group ", fmtPrimlist ones  ]
@@ -401,7 +434,7 @@ instance PSUnit u => Format (PrimEllipse u) where
   
 
 instance Format XLink where
-  format (XLink ss) = text "xlink" <+> text ss
+  format (XLink ss) = text "xlink:href" <+> text ss
 
 
 --------------------------------------------------------------------------------
@@ -417,7 +450,7 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PLabel a l)     = labelBoundary (label_font a) l
   boundary (PEllipse _ e)   = ellipseBoundary e
   boundary (PContext _ a)   = boundary a
-  boundary (PLink _ a)      = boundary a
+  boundary (PSVG _ a)       = boundary a
   boundary (PGroup ones)    = outer $ viewl ones 
     where
       outer (OneL a)     = boundary a
@@ -576,7 +609,7 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
   rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
   rotate r (PContext a chi) = PContext a $ rotate r chi 
-  rotate r (PLink a chi)    = PLink a    $ rotate r chi 
+  rotate r (PSVG a chi)     = PSVG a     $ rotate r chi 
   rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
  
 
@@ -585,7 +618,7 @@ instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
   rotateAbout r pt (PContext a chi) = PContext a $ rotateAbout r pt chi
-  rotateAbout r pt (PLink a chi)    = PLink a    $ rotateAbout r pt chi
+  rotateAbout r pt (PSVG a chi)     = PSVG a     $ rotateAbout r pt chi
   rotateAbout r pt (PGroup xs)      = PGroup     $ fmap (rotateAbout r pt) xs
 
 
@@ -594,7 +627,7 @@ instance Num u => Scale (Primitive u) where
   scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
   scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
   scale sx sy (PContext a chi)  = PContext a $ scale sx sy chi
-  scale sx sy (PLink a chi)     = PLink a    $ scale sx sy chi
+  scale sx sy (PSVG a chi)      = PSVG a     $ scale sx sy chi
   scale sx sy (PGroup xs)       = PGroup     $ fmap (scale sx sy) xs
 
 
@@ -603,7 +636,7 @@ instance Num u => Translate (Primitive u) where
   translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
   translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
   translate dx dy (PContext a chi) = PContext a $ translate dx dy chi
-  translate dx dy (PLink a chi)    = PLink a    $ translate dx dy chi
+  translate dx dy (PSVG a chi)     = PSVG a     $ translate dx dy chi
   translate dx dy (PGroup xs)      = PGroup     $ fmap (translate dx dy) xs
 
 

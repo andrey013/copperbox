@@ -53,7 +53,7 @@ trivPrim (PPath a pp)     = PPath a pp
 trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
 trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
 trivPrim (PContext a chi) = PContext a (trivPrim chi)
-trivPrim (PLink a chi)    = PLink a (trivPrim chi)
+trivPrim (PSVG a chi)     = PSVG a (trivPrim chi)
 trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
 
 

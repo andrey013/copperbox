@@ -195,13 +195,28 @@ primitive (PPath props pp)      = primPath props pp
 primitive (PLabel props lbl)    = primLabel props lbl
 primitive (PEllipse props ell)  = primEllipse props ell
 primitive (PContext fa chi)     = bracketGS fa (primitive chi)
-primitive (PLink hypl chi)      = drawXLink hypl <$> primitive chi
+primitive (PSVG anno chi)       = svgAnnoPrim anno <$> primitive chi
 primitive (PGroup ones)         = oneConcat primitive ones
  
+
+svgAnnoPrim :: SvgAnno -> Doc -> Doc
+svgAnnoPrim (ALink hypl)    d = drawXLink hypl d
+svgAnnoPrim (GAnno xs)      d = drawGProps xs d
+svgAnnoPrim (SvgAG hypl xs) d = drawXLink hypl $ drawGProps xs d 
+
 
 drawXLink :: XLink -> Doc -> Doc
 drawXLink (XLink href) doc = elem_a_xlink href doc
 
+drawGProps :: [SvgAttr] -> Doc -> Doc
+drawGProps [] d = d 
+drawGProps xs d = elem_g attrs_doc d
+  where
+    attrs_doc = hsep $ map svgAttribute xs
+
+svgAttribute :: SvgAttr -> Doc
+svgAttribute (SvgAttr n v) = svgAttr n $ text v
+ 
 clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
 clipPath clip_id pp = 
     (\doc -> elem_clipPath (attr_id clip_id) (elem_path_no_attrs doc)) 
