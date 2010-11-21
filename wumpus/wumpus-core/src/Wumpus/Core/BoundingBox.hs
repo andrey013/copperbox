@@ -42,6 +42,7 @@ module Wumpus.Core.BoundingBox
   , retraceBoundary
 
   , boundaryCorners
+  , boundaryCornerList
   , withinBoundary
   , boundaryWidth
   , boundaryHeight
@@ -196,16 +197,36 @@ retraceBoundary f = traceBoundary . map f . fromCorners . boundaryCorners
     fromCorners (bl,br,tr,tl) = [bl,br,tr,tl]
 
 
--- | 'boundaryCorners' : @bbox -> (bottom_left, bottm_right,
+-- | 'boundaryCorners' : @bbox -> (bottom_left, bottom_right,
 --      top_right, top_left)@
 -- 
 -- Generate all the corners of a bounding box, counter-clock 
 -- wise from the bottom left, i.e. @(bl, br, tr, tl)@.
 --
 boundaryCorners :: BoundingBox u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-boundaryCorners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) where
+boundaryCorners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = (bl, br, tr, tl) 
+  where
     br = P2 x1 y0
     tl = P2 x0 y1
+
+
+-- | 'boundaryCornerList' : @bbox -> [bottom_left, bottom_right,
+--      top_right, top_left]@
+-- 
+-- Generate all the corners of a bounding box, counter-clock 
+-- wise from the bottom left, i.e. @[bl, br, tr, tl]@. 
+--
+-- This is a list version of 'boundaryCorners' which is sometimes 
+-- more convenient. For instance, to create a vertex path it is 
+-- more direct to use this list rather than build one from the 
+-- 4-tuple returned by 'boundaryCorners'.
+--
+boundaryCornerList :: BoundingBox u -> [Point2 u]
+boundaryCornerList (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl]
+  where
+    br = P2 x1 y0
+    tl = P2 x0 y1
+
 
 -- | Within test - is the supplied point within the bounding box?
 --

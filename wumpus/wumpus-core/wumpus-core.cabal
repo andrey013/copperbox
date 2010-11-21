@@ -117,6 +117,7 @@ description:
     primitive was not being drawn. 
   .
   .
+  .
 build-type:         Simple
 stability:          unstable
 cabal-version:      >= 1.2
@@ -134,6 +135,7 @@ extra-source-files:
   demo/LabelPic.hs,
   demo/Latin1Pic.hs,
   demo/MultiPic.hs,
+  demo/TextBBox.hs,
   demo/TransformEllipse.hs,
   demo/TransformPath.hs,
   demo/TransformTextlabel.hs,

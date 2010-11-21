@@ -35,7 +35,7 @@ module Wumpus.Core.FontSize
     FontSize
   , CharCount
   , PtScale
-  , scalePt
+  , ptSizeScale
 
   -- * Scaling values derived from Courier
   , mono_width
@@ -81,8 +81,8 @@ newtype PtScale = PtScale { getPtScale :: Double }
 instance Show PtScale where
   showsPrec p d = showsPrec p (getPtScale d)
 
-scalePt :: PtScale -> PtSize -> PtSize 
-scalePt sc sz = sz * realToFrac sc
+ptSizeScale :: PtScale -> PtSize -> PtSize 
+ptSizeScale sc sz = sz * realToFrac sc
 
 
 -- NOTE - I\'ve largely tried to follow the terminoloy from 
@@ -95,14 +95,14 @@ scalePt sc sz = sz * realToFrac sc
 -- > mono_width = 0.6 
 --
 mono_width :: PtScale
-mono_width = 0.6
+mono_width = 0.600
 
 -- | The ratio of cap height to point size of a letter in Courier.
 --
--- > mono_cap_height = 0.563
+-- > mono_cap_height = 0.562
 -- 
 mono_cap_height :: PtScale 
-mono_cap_height = 0.563
+mono_cap_height = 0.562
 
 
 
@@ -111,72 +111,70 @@ mono_cap_height = 0.563
 --
 -- This is also known as the \"body height\".
 --
--- > mono_x_height = 0.417
+-- > mono_x_height = 0.426
 -- 
 mono_x_height :: PtScale
-mono_x_height = 0.417
+mono_x_height = 0.426
 
 
 -- | The ratio of descender depth to point size of a letter in 
 -- Courier.
 -- 
--- > mono_descender = -0.186
+-- > mono_descender = -0.157
 -- 
 mono_descender :: PtScale
-mono_descender = (-0.186)
+mono_descender = (-0.157)
 
 
 -- | The ratio of ascender to point size of a letter in Courier.
 -- 
--- > mono_ascender = 0.604
+-- > mono_ascender = 0.629
 -- 
 mono_ascender :: PtScale
-mono_ascender = 0.604
+mono_ascender = 0.629
 
 
 -- | The distance from baseline to max height as a ratio to point 
 -- size for Courier.
 -- 
--- > mono_max_height = 0.820
+-- > mono_max_height = 0.805
 -- 
 mono_max_height :: PtScale 
-mono_max_height = 0.820
+mono_max_height = 0.805
 
 
 -- | The distance from baseline to max depth as a ratio to point 
 -- size for Courier.
 -- 
--- > max_depth = -0.273
+-- > max_depth = -0.250
 -- 
 mono_max_depth :: PtScale 
-mono_max_depth = (-0.273)
+mono_max_depth = (-0.250)
 
 
 -- | The left margin for the bounding box of printed text as a 
 -- ratio to point size for Courier.
 -- 
--- > mono_left_margin = -0.46
+-- > mono_left_margin = -0.046
 -- 
 mono_left_margin :: PtScale 
-mono_left_margin = (-0.46)
+mono_left_margin = (-0.046)
 
 
 -- | The right margin for the bounding box of printed text as a 
 -- ratio to point size for Courier.
 -- 
--- > mono_right_margin = 50
+-- > mono_right_margin = 0.050
 -- 
 mono_right_margin :: PtScale 
-mono_right_margin = 50
+mono_right_margin = 0.050
 
 
 -- | Approximate the width of a monospace character using 
 -- metrics derived from the Courier font.
 --
 charWidth :: FontSize -> PtSize
-charWidth = scalePt mono_width . fromIntegral
-
-
+charWidth = ptSizeScale mono_width . fromIntegral
 
 
 
@@ -203,7 +201,7 @@ capHeight = fromIntegral
 -- the Courier monospaced font.
 --
 xcharHeight :: FontSize -> PtSize
-xcharHeight = scalePt mono_x_height . fromIntegral
+xcharHeight = ptSizeScale mono_x_height . fromIntegral
 
 
 
@@ -211,7 +209,7 @@ xcharHeight = scalePt mono_x_height . fromIntegral
 -- Courier monospaced font.
 -- 
 ascenderHeight :: FontSize -> PtSize
-ascenderHeight = scalePt mono_ascender . fromIntegral 
+ascenderHeight = ptSizeScale mono_ascender . fromIntegral 
 
 
 
@@ -219,7 +217,7 @@ ascenderHeight = scalePt mono_ascender . fromIntegral
 -- Courier monospaced font.
 -- 
 descenderDepth :: FontSize -> PtSize
-descenderDepth = scalePt mono_descender . fromIntegral 
+descenderDepth = ptSizeScale mono_descender . fromIntegral 
 
 
 -- | 'textBounds' : @ font_size * baseline_left * text -> BBox@
@@ -255,10 +253,10 @@ textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
     pt_sz       = fromIntegral sz
     w           = fromPtSize $ textWidth  sz len
-    left_m      = fromPtSize $ scalePt mono_left_margin pt_sz
-    right_m     = fromPtSize $ scalePt mono_left_margin pt_sz
-    max_depth   = fromPtSize $ scalePt mono_max_depth  pt_sz
-    max_height  = fromPtSize $ scalePt mono_max_height pt_sz
+    left_m      = fromPtSize $ ptSizeScale mono_left_margin  pt_sz
+    right_m     = fromPtSize $ ptSizeScale mono_right_margin pt_sz
+    max_depth   = fromPtSize $ ptSizeScale mono_max_depth  pt_sz
+    max_height  = fromPtSize $ ptSizeScale mono_max_height pt_sz
     ll          = P2 (x + left_m)      (y + max_depth)
     ur          = P2 (x + w + right_m) (y + max_height)
 
