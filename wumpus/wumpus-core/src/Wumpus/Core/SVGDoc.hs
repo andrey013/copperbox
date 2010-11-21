@@ -21,6 +21,7 @@ module Wumpus.Core.SVGDoc
   , xml_version
   , doctype
   , elem_svg
+  , elem_svg_defs
   , elem_g
   , elem_g_no_attrs
 
@@ -134,7 +135,15 @@ doctype = angles (    text "!DOCTYPE svg PUBLIC"
 
 
 elem_svg :: Doc -> Doc 
-elem_svg body = svgElemB "svg" (svgns <+> svgvn <+> xlink) body
+elem_svg body = svgElemB "svg" svg_top_attrs body
+
+elem_svg_defs :: String -> Doc -> Doc 
+elem_svg_defs ss body = 
+    svgElemB "svg" svg_top_attrs (elem_defs ss `vconcat` body)
+
+
+svg_top_attrs :: Doc
+svg_top_attrs = svgns <+> svgvn <+> xlink
   where 
     svgns = svgAttr "xmlns"       (text "http://www.w3.org/2000/svg")
     svgvn = svgAttr "version"     (text "1.1")
@@ -149,6 +158,10 @@ elem_g attrs body = svgElemB "g" attrs body
 --
 elem_g_no_attrs :: Doc -> Doc
 elem_g_no_attrs body = svgElemB_no_attrs "g" body
+
+elem_defs :: String -> Doc
+elem_defs ss = svgElemB_no_attrs "defs" $ vcat $ map text $ lines ss
+
 
 -- | @ \<clipPath ...\> ... \</clipPath\> @ 
 --

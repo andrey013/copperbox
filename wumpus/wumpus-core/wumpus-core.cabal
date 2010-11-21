@@ -116,6 +116,11 @@ description:
   * Fixed bug with @illustrateControlPoints@ where the original
     primitive was not being drawn. 
   .
+  * Added initial support for arbitrary SVG attributes 
+    (e.g. onmouseover handlers) via @annotateGroup@ in 
+    @Core.Picture@. Arbitrary SVG \"defs\" can be written into 
+    the defs prologue by using @writeSVG_defs@ instead of 
+    @writeSVG@.
   .
   .
 build-type:         Simple
@@ -131,6 +136,7 @@ extra-source-files:
   demo/AffineTestBase.hs,
   demo/DeltaPic.hs,
   demo/FontMetrics.hs,
+  demo/Hyperlink.hs,
   demo/KernPic.hs,
   demo/LabelPic.hs,
   demo/Latin1Pic.hs,

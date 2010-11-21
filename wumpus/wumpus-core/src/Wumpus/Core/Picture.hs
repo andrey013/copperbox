@@ -46,6 +46,10 @@ module Wumpus.Core.Picture
   , curvedPath
   , xlinkhref
   , xlink
+  , svgattr
+  , annotateGroup
+  , annotateXLink
+
   , primGroup
   , primCat
 
@@ -254,6 +258,31 @@ xlinkhref = XLink
 --
 xlink :: XLink -> Primitive u -> Primitive u
 xlink hypl p = PSVG (ALink hypl) p  
+
+
+-- | Create an attribute for SVG output.
+--
+svgattr :: String -> String -> SvgAttr
+svgattr = SvgAttr
+
+
+-- | Add SVG attribute annotations to a Primitive.
+--
+-- The primitive will be printed in a @g@ (group) element 
+-- labelled with the annotations.
+--
+annotateGroup :: [SvgAttr] -> Primitive u -> Primitive u
+annotateGroup xs p = PSVG (GAnno xs) p  
+
+
+-- | Add SVG XLink and attribute annotations to a Primitive.
+--
+-- The primitive will be printed in a @g@ (group) element, itself
+-- inside an @a@ link.
+--
+annotateXLink :: XLink -> [SvgAttr] -> Primitive u -> Primitive u
+annotateXLink hypl xs p = PSVG (SvgAG hypl xs) p  
+
 
 
 -- | Group a list of Primitives.

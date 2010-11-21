@@ -32,6 +32,8 @@ module Wumpus.Core.OutputSVG
   -- * Output SVG
     writeSVG
 
+  , writeSVG_defs
+
 
   ) where
 
@@ -144,16 +146,27 @@ svgChar (CharEscName s)                 =
 writeSVG :: (Real u, Floating u, PSUnit u) 
          => FilePath -> Picture u -> IO ()
 writeSVG filepath pic = 
-    writeFile filepath $ show $ svgDraw pic 
+    writeFile filepath $ show $ svgDraw Nothing pic 
+
+-- | 'writeSVG_defs' : @ file_name -> defs -> picture -> IO () @
+--
+-- Output a picture to a SVG file the supplied /defs/ are
+-- written into the defs section of SVG file verbatim. 
+--
+writeSVG_defs :: (Real u, Floating u, PSUnit u) 
+              => FilePath -> String -> Picture u -> IO ()
+writeSVG_defs filepath ss pic = 
+    writeFile filepath $ show $ svgDraw (Just ss) pic 
 
 
 svgDraw :: (Real u, Floating u, PSUnit u) 
-        => Picture u -> Doc
-svgDraw original_pic = 
+        => Maybe String -> Picture u -> Doc
+svgDraw mb_defs original_pic = 
     let pic          = trivialTranslation original_pic
         (_,imgTrafo) = imageTranslation pic
         body         = runSvgMonad $ picture pic
-    in vcat [ xml_version, doctype, elem_svg $ imgTrafo body ]
+        mkSvg        = maybe elem_svg elem_svg_defs mb_defs
+    in vcat [ xml_version, doctype, mkSvg $ imgTrafo body ]
 
 
 
