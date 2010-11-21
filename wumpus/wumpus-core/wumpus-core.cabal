@@ -59,6 +59,13 @@ description:
   calculations, again this is consistent with how font files 
   actually work.
   .
+  Internally the PostScript code generated for @hkernlabel@ and 
+  @vkernlabel@ has been improved. This has been achieved using the
+  the PostScript operations @xshow@ and @yshow@. These are Level 2
+  operations, so by default Wumpus now generates Level 2 
+  PostScript which is less universal than Level 1. If Level 1 is 
+  required use the corresponding @writeEPS_level1@ or 
+  @writePS_level1 @ functions.
   .
   \[1\] Because the output is simple, straight-line PostScript 
   code, it is possible to use GraphicsMagick or a similar tool 
@@ -88,6 +95,10 @@ description:
     higher-level software to escape the text, do some calculations 
     then render it - going back to un-escaped text for the 
     rendering would be inefficient.
+  .
+  * Improved generated PostScript code for @hkernlabel@ and 
+    @vkernlabel@. Note this means that output now uses PostScript
+    Langauge Level 2 features.
   .
   * Internal representation of paths changed. They are now 
     start-point plus a list of /relative/ path segments rather 

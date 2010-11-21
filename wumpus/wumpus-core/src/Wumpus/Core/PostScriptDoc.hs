@@ -45,6 +45,7 @@ module Wumpus.Core.PostScriptDoc
 
   , ps_newpath
   , ps_moveto
+  , ps_rmoveto
   , ps_lineto
   , ps_arc
   , ps_curveto
@@ -59,6 +60,8 @@ module Wumpus.Core.PostScriptDoc
   , ps_scalefont
   , ps_setfont
   , ps_show
+  , ps_xshow
+  , ps_yshow
   , ps_glyphshow
 
   )  where
@@ -99,27 +102,37 @@ ps_special = "\\()<>[]{}/%"
 
 
 
-psHeader  :: Int -> ZonedTime -> Doc
-psHeader page_count tod = vcat $ 
-    [ text "%!PS-Adobe-3.0"
-    , text "%%Pages:"         <+> int page_count
-    , text "%%CreationDate:"  <+> parens (showsDoc $ psTimeStamp tod)                
-    , text "%%EndComments"                  
-    ]
+psHeader  :: Int -> Int -> ZonedTime -> Doc
+psHeader lang_level page_count tod = 
+    comment_prefix `vconcat` commentSuffix lang_level
+  where
+    comment_prefix = vcat $ 
+      [ text "%!PS-Adobe-3.0"
+      , text "%%Pages:"         <+> int page_count
+      , text "%%CreationDate:"  <+> parens (showsDoc $ psTimeStamp tod)                
+      ]
 
 
-epsHeader :: PSUnit u => BoundingBox u -> ZonedTime -> Doc
-epsHeader bb tod = vcat $ 
-    [ text "%!PS-Adobe-3.0 EPSF-3.0"
-    , text "%%BoundingBox:"   <+> upint llx <+> upint lly
-                              <+> upint urx <+> upint ury
-    , text "%%CreationDate:"  <+> parens (showsDoc $ psTimeStamp tod)                
-    , text "%%EndComments"                  
-    ]
+epsHeader :: PSUnit u => Int -> BoundingBox u -> ZonedTime -> Doc
+epsHeader lang_level bb tod = 
+    comment_prefix `vconcat` commentSuffix lang_level
   where
     upint             = text . roundup . toDouble
     (llx,lly,urx,ury) = destBoundingBox bb 
+    comment_prefix    = vcat $ 
+        [ text "%!PS-Adobe-3.0 EPSF-3.0"
+        , text "%%BoundingBox:"   <+> upint llx <+> upint lly
+                                  <+> upint urx <+> upint ury
+        , text "%%CreationDate:"  <+> parens (showsDoc $ psTimeStamp tod)                
+        ]
 
+
+commentSuffix :: Int -> Doc
+commentSuffix i 
+    | i < 2     = end_line
+    | otherwise = text "%%LanguageLevel:" <+> int i `vconcat` end_line
+  where
+    end_line = text "%%EndComments"
 
 
 psFooter :: Doc
@@ -255,6 +268,12 @@ ps_moveto :: PSUnit u => Point2 u -> Doc
 ps_moveto (P2 x y) = command "moveto" [dtruncFmt x, dtruncFmt y]
 
 
+-- | @ ... ... rmoveto @
+--
+ps_rmoveto :: PSUnit u => Point2 u -> Doc
+ps_rmoveto (P2 x y) = command "rmoveto" [dtruncFmt x, dtruncFmt y]
+
+
 -- | @ ... ... lineto @
 --
 ps_lineto :: PSUnit u => Point2 u -> Doc
@@ -347,6 +366,19 @@ ps_setfont = command "setfont" []
 --
 ps_show :: String -> Doc
 ps_show ss = command "show" [parens $ text ss]
+
+
+-- | @ (...) [...] xshow  @
+--
+ps_xshow :: PSUnit u => String -> [u] -> Doc
+ps_xshow ss xs = command "xshow" [parens $ text ss, formatArray dtruncFmt xs]
+
+
+-- | @ (...) [...] yshow  @
+--
+ps_yshow :: PSUnit u => String -> [u] -> Doc
+ps_yshow ss ys = command "yshow" [parens $ text ss, formatArray dtruncFmt ys]
+
 
 -- | @ (/...) show  @
 --

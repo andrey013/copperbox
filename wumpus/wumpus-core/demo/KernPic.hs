@@ -13,8 +13,10 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS "./out/kern_pic01.eps" kern_pic
-    writeSVG "./out/kern_pic01.svg" kern_pic
+    putStrLn $ "PostScript Level 2 currently has problems..."
+    writeEPS            "./out/kern_pic01.eps"          kern_pic
+    writeEPS_level1     "./out/kern_pic01_level1.eps"   kern_pic
+    writeSVG            "./out/kern_pic01.svg"          kern_pic
 
 
 kern_pic :: DPicture
