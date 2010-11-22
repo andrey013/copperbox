@@ -13,38 +13,50 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS            "./out/kern_pic01.eps"          kern_pic
-    writeSVG            "./out/kern_pic01.svg"          kern_pic
-
+    putStrLn $ unlines warn_msg
+    writeEPS "./out/kern_pic01.eps" kern_pic
+    writeSVG "./out/kern_pic01.svg" kern_pic
+  where
+    warn_msg = [ "Note - this demo uses the symbol font which is not"
+               , "recommended for SVG."
+               ]
 
 kern_pic :: DPicture
 kern_pic = pic1 `picOver` pic2 `picOver` pic3 
 
 pic1 :: DPicture
-pic1 = frame [ helveticaLabelH mystere   (P2 0 50)
-             , helveticaLabelH mystere   (P2 0 25)
+pic1 = frame [ helveticaLabelH universal   (P2 0 50)
+             , helveticaLabelH universal   (P2 0 25)
              ]
 
 pic2 :: DPicture
 pic2 = illustrateBoundsPrim blue_violet $ 
-          helveticaLabelV mystere   (P2 100 140)
+          helveticaLabelV universal (P2 200 180)
 
 pic3 :: DPicture
 pic3 = frame [ symbolLabelH uUpsilon (P2 0 0) ]
 
-mystere ::[DKerningChar]
-mystere = [ kernchar    0  'm'
-          , kernchar   15  'y'
-          , kernchar   10  's'
-          , kernchar   10  't'
-          , kernEscInt  6  232
-          , kernchar   10  'r'
-          , kernchar    6  'e'
-          ]
-
--- Note - to assert that this is working check both the 
--- PostScript and the SVG.
+-- Some attention is paid to kerning - note that the kern between 
+-- @i@ and @v@ is smaller than the norm.
 --
+universal ::[DKerningChar]
+universal = [ kernchar     0  'u'
+            , kernchar    15  'n'
+            , kernchar    15  'i'
+            , kernchar    10  'v'
+            , kernchar    15  'e'
+            , kernchar    15  'r'
+            , kernchar    13  's'
+            , kernchar    15  'a'
+            , kernchar    15  'l'
+            , kernEscName 10  "currency"
+            ]
+
+-- Note - this may not work in SVG, some renderers are intolerant 
+-- towards the Symbol font.
+--
+-- 0o241 is upper-case upsilon in the Symbol encoding vector.
+-- 
 uUpsilon :: [ DKerningChar ]
 uUpsilon = [ kernEscInt 6 0o241, kernchar 12 'a', kernchar 12 'b' ] 
 

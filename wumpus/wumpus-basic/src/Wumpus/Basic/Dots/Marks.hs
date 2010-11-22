@@ -193,7 +193,7 @@ markStar :: (Floating u, FromPtSize u) => LocGraphic u
 markStar = bind1 (static1 markHeight) $ \h -> 
     promote1 $ \pt -> let ps = polygonPoints 5 (0.5*h) pt in step $ map (fn pt) ps
   where
-    fn st p1    = openStroke $ path st [lineTo p1] 
+    fn st p1    = openStroke $ primPath st [lineTo p1] 
     step (x:xs) = oconcat x xs
     step _      = error "markStar - unreachable"
 

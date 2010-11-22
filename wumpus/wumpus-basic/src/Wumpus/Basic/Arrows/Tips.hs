@@ -343,7 +343,7 @@ perpTLG = bindLocThetaTip (dblstatic markHalfHeight) fn
 
 
 perpPath :: Floating u => u -> Point2 u -> Radian -> PrimPath u
-perpPath hh ctr theta = path p0 [lineTo p1]
+perpPath hh ctr theta = primPath p0 [lineTo p1]
   where
     p0 = displacePerpendicular   hh  theta ctr
     p1 = displacePerpendicular (-hh) theta ctr 

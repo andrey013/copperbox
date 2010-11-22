@@ -26,7 +26,6 @@ import Wumpus.Tree.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.Anchors                     -- package: wumpus-basic
 import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Graphic   
 
@@ -44,10 +43,10 @@ drawTree :: (a -> TreeNode)
          -> DrawingContext 
          -> CoordTree Double a 
          -> HPrim Double
-drawTree drawF ctx tree = execDrawing ctx $ drawTop drawF tree 
+drawTree drawF ctx tree = execTraceDrawing ctx $ drawTop drawF tree 
 
 
-drawTop :: (a -> TreeNode) -> CoordTree Double a -> Drawing Double ()
+drawTop :: (a -> TreeNode) -> CoordTree Double a -> TraceDrawing Double ()
 drawTop fn (Node (pt,a) ns) = do 
     ancr <- drawi $ fn a `at` pt
     mapM_ (draw1 fn ancr) ns
@@ -55,7 +54,7 @@ drawTop fn (Node (pt,a) ns) = do
 draw1 :: (a -> TreeNode) 
       -> DotAnchor Double 
       -> CoordTree Double a 
-      -> Drawing Double ()
+      -> TraceDrawing Double ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
     ancr <- drawi $ fn a `at` pt
     draw $ connector ancr_from ancr
@@ -89,12 +88,12 @@ drawFamilyTree :: (a -> TreeNode)
                -> DrawingContext 
                -> CoordTree Double a 
                -> HPrim Double
-drawFamilyTree drawF ctx tree = execDrawing ctx $ drawFamily drawF tree 
+drawFamilyTree drawF ctx tree = execTraceDrawing ctx $ drawFamily drawF tree 
 
 
 drawFamily :: (a -> TreeNode)  
            -> CoordTree Double a 
-           -> Drawing Double (DotAnchor Double)
+           -> TraceDrawing Double (DotAnchor Double)
 drawFamily fn (Node (pt,a) ns) = do
     ancr <- drawi $ fn a `at` pt
     xs   <- mapM (drawFamily fn) ns   
@@ -107,9 +106,9 @@ famconn pt_from [p1]       = famconn1 pt_from p1
 famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
    where
      hh         = halfHeight pt_from p1
-     downtick   = straightLine (vvec (-hh)) pt_from
+     downtick   = straightLine (vvec (-hh)) `at` pt_from
      horizontal = midline (vdisplace (-hh) pt_from) xs 
-     upticks    = map (straightLine (vvec hh)) xs
+     upticks    = map (straightLine (vvec hh) `at`) xs
 
 midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
 midline _        []           = error "midline - empty list" 

@@ -8,22 +8,24 @@ import Wumpus.Tree
 import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
 import Wumpus.Basic.Graphic
 
+import Wumpus.Core                              -- package: wumpus-core
+
 import Data.Tree hiding ( drawTree )
 import System.Directory
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    writeEPS_TreePicture "./out/tree01.eps"  pic1
-    writeSVG_TreePicture "./out/tree01.svg"  pic1
-    writeEPS_TreePicture "./out/tree02.eps"  pic2
-    writeSVG_TreePicture "./out/tree02.svg"  pic2
-    writeEPS_TreePicture "./out/tree03.eps"  pic3
-    writeSVG_TreePicture "./out/tree03.svg"  pic3
-    writeEPS_TreePicture "./out/tree04.eps"  pic4
-    writeSVG_TreePicture "./out/tree04.svg"  pic4
-    writeEPS_TreePicture "./out/tree05.eps"  pic5
-    writeSVG_TreePicture "./out/tree05.svg"  pic5
+    writeEPS "./out/tree01.eps"  pic1
+    writeSVG "./out/tree01.svg"  pic1
+    writeEPS "./out/tree02.eps"  pic2
+    writeSVG "./out/tree02.svg"  pic2
+    writeEPS "./out/tree03.eps"  pic3
+    writeSVG "./out/tree03.svg"  pic3
+    writeEPS "./out/tree04.eps"  pic4
+    writeSVG "./out/tree04.svg"  pic4
+    writeEPS "./out/tree05.eps"  pic5
+    writeSVG "./out/tree05.svg"  pic5
 
 
 pic1 :: TreePicture

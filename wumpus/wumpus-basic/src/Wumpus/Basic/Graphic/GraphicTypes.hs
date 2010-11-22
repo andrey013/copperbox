@@ -253,6 +253,8 @@ type DBoundedLocGraphic       = BoundedLocGraphic Double
 
 type instance DUnit (BoundedLocGraphic u) = u
 
+
+
 --------------------------------------------------------------------------------
 -- Graphic instances
 

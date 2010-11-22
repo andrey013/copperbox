@@ -217,12 +217,12 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: Path u -> PrimPath u
+toPrimPath :: Num u => Path u -> PrimPath u
 toPrimPath (Path _ _ segs _) = step1 $ viewl segs
   where
     step1 EmptyL                  = error "toPrimPath - (not) unreachable."
     step1 (e :< se)               = let (start,a) = seg1 e in 
-                                    path start $ a : step2 (viewl se)
+                                    primPath start $ a : step2 (viewl se)
 
     step2 EmptyL                  = []
     step2 (e :< se)               = seg2 e : step2 (viewl se)

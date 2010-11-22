@@ -36,7 +36,6 @@ import Wumpus.Basic.Graphic			-- package: wumpus-basic
 
 import Data.AffineSpace				-- package: vector-space
 
-import Control.Applicative
 
 --------------------------------------------------------------------------------
 
@@ -58,25 +57,28 @@ type DrawWordF = RGBi -> Double -> Double -> Int -> DLocGraphic
 -- | Just a filled rectangle.
 --
 greekF :: DrawWordF
-greekF rgb w h _ = localize (fillColour rgb) . (filledRectangle w h)
+greekF rgb w h _ = localize (fillColour rgb) (filledRectangle w h)
 
 
+
+-- This needs re-working....
 borderedF :: DrawWordF
-borderedF rgb w h i = oconcat <$> background <*> ticks
+borderedF rgb w h i = ticks background
   where
-    background  = localize (fillColour rgb) . (borderedRectangle w h)
+    background  = localize (fillColour rgb) (borderedRectangle w h)
     v1          = hvec $ w / fromIntegral i
-    ticks pt    = map (straightLine (vvec h)) 
-    	                  $ take (i-1) $ iterate (.+^ v1) (pt .+^ v1)
+    ticks g1      = promote1 (\pt -> oconcat (g1 `at` pt) $ 
+                                  map (straightLine (vvec h) `at`) 
+    	                            $ take (i-1) $ iterate (.+^ v1) (pt .+^ v1) )
 
  
 -- | A stroked line.
 --
 strokelineF :: DrawWordF
-strokelineF rgb w _ _ = localize (strokeColour rgb) . (straightLine (hvec w))
+strokelineF rgb w _ _ = localize (strokeColour rgb) (straightLine (hvec w))
 
 
-render :: RenderScalingCtx -> DrawWordF -> GreekText -> Drawing Double ()
+render :: RenderScalingCtx -> DrawWordF -> GreekText -> TraceDrawing Double ()
 render ctx wordDraw (hmax,xs) = 
     runScalingT ctx $ mstep hmax xs
   where
@@ -84,7 +86,7 @@ render ctx wordDraw (hmax,xs) =
     mstep _ _      = return ()
 
 renderLine :: DrawWordF -> Int -> [Tile] 
-	   -> RenderScalingT (Drawing Double) ()
+	   -> RenderScalingT (TraceDrawing Double) ()
 renderLine fn h ts = mstep 0 ts
   where
     mstep x (Word rgb n:xs) = draw1 fn rgb n (x,h) >> mstep (x+n) xs
@@ -92,7 +94,7 @@ renderLine fn h ts = mstep 0 ts
     mstep _ []              = return ()
 
 draw1 :: DrawWordF -> RGBi -> Int -> (Int,Int) 
-      -> RenderScalingT (Drawing Double) () 
+      -> RenderScalingT (TraceDrawing Double) () 
 draw1 fn rgb n (x,y)  = 
     scalePt x y >>= \pt -> scaleX n >>= \w -> unitY >>= \h ->  
     draw $ fn rgb w h n `at` pt

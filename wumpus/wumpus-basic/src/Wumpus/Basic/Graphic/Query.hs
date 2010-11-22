@@ -47,13 +47,12 @@ module Wumpus.Basic.Graphic.Query
 
   , monoFontPointSize
   , monoCharWidth
-  , monoSpacerWidth
   , monoTextWidth
   , monoTextLength
-  , monoTextHeight
-  , monoNumeralHeight
+  , monoCapHeight
   , monoLowerxHeight
   , monoDescenderDepth
+  , monoAscenderHeight
   , monoTextDimensions
   , monoMultiLineHeight
   , monoDefaultPadding
@@ -175,13 +174,10 @@ withFontSize fn = (fn . font_size) <$> asksDC font_props
 --
 
 monoFontPointSize :: (DrawingCtxM m, FromPtSize u) => m u
-monoFontPointSize = withFontSize (fromPtSize . textHeight)
+monoFontPointSize = withFontSize (fromPtSize . fromIntegral)
 
 monoCharWidth :: (DrawingCtxM m, FromPtSize u) => m u
 monoCharWidth = withFontSize (fromPtSize . charWidth)
-
-monoSpacerWidth :: (DrawingCtxM m, FromPtSize u) => m u
-monoSpacerWidth = withFontSize (fromPtSize . spacerWidth)
 
 
 monoTextWidth :: (DrawingCtxM m, FromPtSize u) => Int -> m u
@@ -192,11 +188,12 @@ monoTextLength :: (DrawingCtxM m, FromPtSize u) => String -> m u
 monoTextLength ss = monoTextWidth $ charCount ss
 
 
-monoTextHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoTextHeight = withFontSize (fromPtSize . textHeight)
+monoCapHeight :: (DrawingCtxM m, FromPtSize u) => m u
+monoCapHeight = withFontSize (fromPtSize . capHeight)
 
-monoNumeralHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoNumeralHeight = withFontSize (fromPtSize . numeralHeight)
+monoTotalCharHeight :: (DrawingCtxM m, FromPtSize u) => m u
+monoTotalCharHeight = withFontSize (fromPtSize . totalCharHeight)
+
 
 
 -- | Height of a lower case \'x\' in Courier.
@@ -208,6 +205,9 @@ monoLowerxHeight = withFontSize (fromPtSize . xcharHeight)
 
 monoDescenderDepth :: (DrawingCtxM m, FromPtSize u) => m u
 monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
+
+monoAscenderHeight :: (DrawingCtxM m, FromPtSize u) => m u
+monoAscenderHeight = withFontSize (fromPtSize . ascenderHeight)
 
 
 -- | Query the dimensions of the text using the current font size
@@ -233,7 +233,11 @@ monoMultiLineHeight :: (DrawingCtxM m, Fractional u, FromPtSize u)
 monoMultiLineHeight n | n < 0   = pure 0
 monoMultiLineHeight n           = 
     (\h lsf -> h + (fromIntegral $ n-1) * (h * realToFrac lsf))
-      <$> monoTextHeight <*> asksDC line_spacing_factor
+      <$> monoTotalCharHeight <*> asksDC line_spacing_factor
+ 
+    -- Note as height ccalculation has changed in Wumpus-Core this
+    -- may no longer be appropriate.
+
  
 
 -- | The default padding is half of the /char width/.

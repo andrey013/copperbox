@@ -51,6 +51,7 @@ module Wumpus.Core.FontSize
   , textWidth
   , capHeight
   , xcharHeight
+  , totalCharHeight
   , ascenderHeight
   , descenderDepth
   , textBounds
@@ -203,7 +204,13 @@ capHeight = fromIntegral
 xcharHeight :: FontSize -> PtSize
 xcharHeight = ptSizeScale mono_x_height . fromIntegral
 
-
+-- | The total height span of the glyph bounding box for the 
+-- Courier monospaced font.
+--
+totalCharHeight :: FontSize -> PtSize
+totalCharHeight sz = let sz' = fromIntegral sz in 
+    ptSizeScale mono_max_height sz' + negate (ptSizeScale mono_max_depth sz')
+  
 
 -- | Ascender height for font size @sz@ using metrics from the 
 -- Courier monospaced font.

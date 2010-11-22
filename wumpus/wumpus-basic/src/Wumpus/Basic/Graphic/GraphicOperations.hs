@@ -314,25 +314,25 @@ localPoint = moveLoc
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = 
-    promote1 openStroke `cxpost1` (raise $ \pt -> path pt [lineTo $ pt .+^ v])
+    promote1 openStroke `cxpost1` (raise $ \pt -> primPath pt [lineTo $ pt .+^ v])
 
           
 
 straightLineBetween :: Fractional u => Point2 u -> Point2 u -> Graphic u
-straightLineBetween p1 p2 = openStroke $ path p1 [lineTo p2]
+straightLineBetween p1 p2 = openStroke $ primPath p1 [lineTo p2]
 
 
 
 curveBetween :: Fractional u 
              => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curveBetween sp cp1 cp2 ep = openStroke $ path sp [curveTo cp1 cp2 ep]
+curveBetween sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 
 
 
 -- | Supplied point is /bottom-left/.
 --
 rectangle :: Num u => u -> u -> Point2 u -> PrimPath u
-rectangle w h bl = path bl [ lineTo br, lineTo tr, lineTo tl ]
+rectangle w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
   where
     br = bl .+^ hvec w
     tr = br .+^ vvec h

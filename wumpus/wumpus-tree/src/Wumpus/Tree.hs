@@ -24,9 +24,6 @@ module Wumpus.Tree
   , drawTreePicture
   , drawFamilyTreePicture
 
-  -- * Output to file
-  , writeEPS_TreePicture
-  , writeSVG_TreePicture
 
   -- * Drawing nodes
   , charNode
@@ -48,15 +45,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Tree hiding ( drawTree )
 
--- | Output a 'TreePicture', generating an EPS file.
---
-writeEPS_TreePicture :: FilePath -> TreePicture -> IO ()
-writeEPS_TreePicture = writeEPS_latin1
-
--- | Output a 'TreePicture', generating a SVG file.
---
-writeSVG_TreePicture :: FilePath -> TreePicture -> IO ()
-writeSVG_TreePicture = writeSVG_latin1
 
 
 -- | Customize the size of the printed tree.
@@ -151,7 +139,7 @@ textNode = dotText . uptoNewline
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 circleNode :: RGBi -> (a -> TreeNode)
-circleNode rgb = \_ pt -> localize (strokeColour rgb) (dotCircle pt)
+circleNode rgb = \_ -> localize (strokeColour rgb) dotCircle
 
 
 -- | Tree nodes with a filled circle.
@@ -159,7 +147,7 @@ circleNode rgb = \_ pt -> localize (strokeColour rgb) (dotCircle pt)
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 diskNode :: RGBi -> (a -> TreeNode)
-diskNode rgb = \_ pt -> localize (fillColour rgb) (dotDisk pt)
+diskNode rgb = \_ -> localize (fillColour rgb) dotDisk
 
 
 
