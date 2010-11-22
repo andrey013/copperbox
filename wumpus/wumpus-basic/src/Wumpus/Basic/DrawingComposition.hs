@@ -63,6 +63,80 @@ import Data.AffineSpace
 import Data.List ( foldl' )
 
 
+
+--------------------------------------------------------------------------------
+-- Extract anchors
+
+boundaryExtr :: (BoundingBox u -> a) -> Picture u -> a
+boundaryExtr f = f . boundary
+
+-- Operations on bounds
+
+-- | The center of a picture.
+--
+boundaryCenter :: Fractional u => Picture u -> Point2 u
+boundaryCenter = boundaryExtr center
+
+
+
+-- | Extract the mid point of the top edge.
+--
+boundaryN :: Fractional u => Picture u -> Point2 u
+boundaryN = boundaryExtr north
+
+-- | Extract the mid point of the bottom edge.
+--
+boundaryS :: Fractional u => Picture u -> Point2 u
+boundaryS = boundaryExtr south
+
+-- | Extract the mid point of the left edge.
+--
+boundaryE :: Fractional u => Picture u -> Point2 u
+boundaryE = boundaryExtr east
+
+-- | Extract the mid point of the right edge.
+--
+boundaryW :: Fractional u => Picture u -> Point2 u
+boundaryW = boundaryExtr west
+
+
+-- | Extract the top-left corner.
+--
+boundaryNW :: Fractional u => Picture u -> Point2 u
+boundaryNW = boundaryExtr northwest
+
+-- | Extract the top-right corner.
+--
+boundaryNE :: Picture u -> Point2 u
+boundaryNE = boundaryExtr ur_corner
+
+-- | Extract the bottom-left corner.
+--
+boundarySW :: Picture u -> Point2 u
+boundarySW = boundaryExtr ll_corner
+
+-- | Extract the bottom-right corner.
+--
+boundarySE :: Fractional u => Picture u -> Point2 u
+boundarySE = boundaryExtr southeast
+
+
+boundaryLeftEdge :: Picture u -> u
+boundaryLeftEdge = boundaryExtr (point_x . ll_corner)
+
+boundaryRightEdge :: Picture u -> u
+boundaryRightEdge = boundaryExtr (point_x . ur_corner)
+
+boundaryBottomEdge :: Picture u -> u
+boundaryBottomEdge = boundaryExtr (point_y . ll_corner)
+
+
+boundaryTopEdge :: Picture u -> u
+boundaryTopEdge = boundaryExtr (point_y . ur_corner)
+
+
+
+
   
 -- Note - do not export the empty drawing. It is easier to 
 -- pretend it doesn't exist.

@@ -452,7 +452,7 @@ curveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 curveTLG = bindLocThetaTip (dblstatic markHalfHeight) fn
   where
     fn hh = promote2 $ \pt theta -> 
-              situ2 tripointsByDist pt theta >>= \(tup,tlo) -> 
+              unLocTheta pt theta tripointsByDist >>= \(tup,tlo) -> 
               let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
                   (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo pt 
                   tpath   = curve tup u2 u1 pt `append` curve pt l1 l2 tlo
@@ -472,7 +472,7 @@ revcurveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 revcurveTLG = bindLocThetaTip (dblstatic markHalfHeight) fn 
   where
    fn hh = promote2 $ \pt theta ->
-             situ2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
+             unLocTheta pt theta revtripointsByDist >>= \(tup,p1,tlo) -> 
              let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
                  (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
                  tpath   = curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo

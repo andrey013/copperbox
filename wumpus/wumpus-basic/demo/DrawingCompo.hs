@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Picture where
+module DrawingCompo where
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.DrawingComposition
@@ -15,8 +15,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let out1 = runDrawingU pic_drawing_ctx pictures
-    writeEPS "./out/picture_lang.eps" out1
-    writeSVG "./out/picture_lang.svg" out1
+    writeEPS "./out/drawing_composition.eps" out1
+    writeSVG "./out/drawing_composition.svg" out1
 
 
 pic_drawing_ctx :: DrawingContext

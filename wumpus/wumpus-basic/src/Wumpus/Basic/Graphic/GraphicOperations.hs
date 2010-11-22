@@ -180,9 +180,9 @@ textVector ss = let cs = getEscapedText ss in
 
 
 charVector :: FromPtSize u => EscapedChar -> CF (AdvanceVec u)
-charVector (CharLiteral c) = avLookupTable `situ1` (ord c)
-charVector (CharEscInt i)  = avLookupTable `situ1` i
-charVector (CharEscName s) = avLookupTable `situ1` ix
+charVector (CharLiteral c) = unCF1 (ord c) avLookupTable
+charVector (CharEscInt i)  = unCF1 i       avLookupTable
+charVector (CharEscName s) = unCF1 ix      avLookupTable
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
@@ -314,8 +314,7 @@ localPoint = moveLoc
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = 
-    promote1 openStroke `cxpost1` (raise $ \pt -> primPath pt [lineTo $ pt .+^ v])
-
+    promote1 $ \pt -> openStroke $ primPath pt [lineTo $ pt .+^ v]
           
 
 straightLineBetween :: Fractional u => Point2 u -> Point2 u -> Graphic u
@@ -338,13 +337,14 @@ rectangle w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
     tr = br .+^ vvec h
     tl = bl .+^ vvec h 
 
--- > promote __ `cxpost1` (raise $ __) 
---
--- is a pattern captured by the cardinal' combinator.
+-- This is basically the cardinal-prime combinator with arguments 
+-- at specific types 
 -- 
+-- > cardinal'  :: (a -> r1 -> ans) -> (r2 -> a) -> (r1 -> r2 -> ans)
+--
 
 drawWith :: (PrimPath u -> Graphic u) -> (Point2 u -> PrimPath u) -> LocGraphic u 
-drawWith = cardinalprime
+drawWith mf g = promote1 $ \pt -> (mf $ g pt)
 
 -- | Supplied point is /bottom left/.
 --
@@ -424,10 +424,8 @@ illustrateBoundedGraphic mf = mf >>= \(bb,g1) ->
 
 illustrateBoundedLocGraphic :: Fractional u 
                             => BoundedLocGraphic u -> BoundedLocGraphic u
-illustrateBoundedLocGraphic mf = mf `bind1` \(bb,g1) -> 
-                                 bbrectangle bb `bind` \g2 -> 
-                                 wrap1 (bb, g2 `oplus` g1)
-
+illustrateBoundedLocGraphic mf = 
+    promote1 $ \pt -> illustrateBoundedGraphic (unLoc pt mf)
 
 
 bbrectangle :: Fractional u => BoundingBox u -> Graphic u

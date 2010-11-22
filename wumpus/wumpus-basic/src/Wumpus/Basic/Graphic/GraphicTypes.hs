@@ -333,7 +333,7 @@ runGraphic ctx df = runCF ctx df
 
 
 runLocGraphic :: DrawingContext -> Point2 u -> LocGraphic u -> PrimGraphic u
-runLocGraphic ctx pt df = runCF ctx (situ1 df pt)
+runLocGraphic ctx pt df = runCF ctx (unCF1 pt df)
 
 
 
@@ -341,7 +341,7 @@ runImage :: DrawingContext -> Image u a -> (a, PrimGraphic u)
 runImage ctx img = runCF ctx img
 
 runLocImage :: DrawingContext -> Point2 u -> LocImage u a -> (a, PrimGraphic u)
-runLocImage ctx pt img = runCF ctx (situ1 img pt)
+runLocImage ctx pt img = runCF ctx (unCF1 pt img)
 
 
 --------------------------------------------------------------------------------

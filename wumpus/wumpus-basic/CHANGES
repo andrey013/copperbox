@@ -1,5 +1,27 @@
 
 
+0.11.0 to 0.12.0:
+
+  * Changes Base types in  @Basic.Graphic@. The @Graphic@ and 
+    @Image@ types now produce (wrapped) @Primitives@, rather than 
+    Hughes lists of @Primitives@. This means they can now be 
+    transformed with the affine transformations. Removed the 
+    function @ati@, it is replaced by @at@.
+
+  * Added @Basic.Utils.Combinators@.
+
+  * Arrowheads and Connectors reworked - Arrowheads are now a 
+    functional type, Connectors use new Image combining 
+    operations from @Basic.Graphic.Base@.
+
+  * Path connectors re-worked and renamed. 
+
+  * Dot hierarchy changed - @Basic.Dots@ becomes 
+    @Basic.Dots.AnchorDots@; @Basic.Dots.Primitive@ becomes
+    @Basic.Dots.Marks@.
+
+  * @Basic.Shapes@ - internals reworked.
+
 0.10.0 to 0.11.0:
  
   * Reworked arrowheads and connectors - connectors are now 

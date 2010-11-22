@@ -43,6 +43,15 @@ module Wumpus.Basic.Graphic.ContextFunction
   , connStart
   , connEnd
 
+  -- * Reducers
+  , unLoc
+  , unTheta
+  , unLocTheta
+  , unConnector
+
+  , unCF1
+  , unCF2
+
   -- * Combinators
   , wrap
   , wrap1
@@ -71,10 +80,6 @@ module Wumpus.Basic.Graphic.ContextFunction
   , apply1
   , apply2
 
-
-  , cardinalprime
-
-
   -- * Pre-transformers
   , prepro1
   , prepro2
@@ -85,8 +90,6 @@ module Wumpus.Basic.Graphic.ContextFunction
   , postpro
   , postpro1
   , postpro2
-
-  , cxpost1
 
   -- * Post-combiners
   , postcomb
@@ -263,6 +266,34 @@ connStart       = CF $ \_ pt _ -> pt
 --
 connEnd         :: ConnectorCF u (Point2 u) 
 connEnd         = CF $ \_ _ pt -> pt
+
+
+--------------------------------------------------------------------------------
+-- /Reducers/
+
+-- | This is unCF1 at a specific type.
+--
+unLoc :: Point2 u -> LocCF u a -> CF a
+unLoc pt mf = CF $ \ctx -> getCF mf ctx pt
+
+unTheta :: Radian -> LocThetaCF u a -> LocCF u a
+unTheta theta mf = CF $ \ctx pt -> getCF mf ctx pt theta
+
+unLocTheta :: Point2 u -> Radian -> LocThetaCF u a -> CF a
+unLocTheta pt theta mf = CF $ \ctx -> getCF mf ctx pt theta
+
+unConnector :: Point2 u -> Point2 u -> ConnectorCF u a -> CF a
+unConnector p0 p1 mf = CF $ \ctx -> getCF mf ctx p0 p1
+
+
+unCF1 :: r1 -> CF (r1 -> a) -> CF a
+unCF1 a mf = CF $ \ctx -> getCF mf ctx a
+
+unCF2 :: r1 -> r2 ->  CF (r1 -> r2 -> a) -> CF a
+unCF2 a b mf = CF $ \ctx -> getCF mf ctx a b
+
+
+
 
 --------------------------------------------------------------------------------
 -- Combinators
@@ -494,29 +525,6 @@ apply2 :: CF (r1 -> r2 -> a -> ans) -> CF (r1 -> r2 -> a)
        -> CF (r1 -> r2 -> ans)
 apply2 df da = CF $ \ctx a b -> getCF df ctx a b (getCF da ctx a b)
 
--- These combinators haven\'t been looked at systemmatically vis arity...
-
-
-
-
-
--- cardinal'  :: (a -> r1 -> ans) -> (r2 -> a) -> r1 -> r2 -> ans
-
--- | Note - this combinator seems useful, but perhaps it is not 
--- /primitive/ and it may be removed or renamed. 
---
--- (a -> ctx -> ans) -> (r1 -> a) -> (ctx -> r1 -> ans)
---
--- This is a /Cardinal-prime/ combinator.
---
-cardinalprime :: (a -> CF ans) -> (r1 -> a) -> CF (r1 -> ans)
-cardinalprime f g = promote1 f `cxpost1` (raise g)
-
-
-
-
-
-
 
 --------------------------------------------------------------------------------
 -- Pre-transformers
@@ -619,15 +627,6 @@ postpro1 = postpro . fmap
 postpro2 :: (a -> ans) -> CF (r1 -> r2 -> a) -> CF (r1 -> r2 -> ans)
 postpro2 = postpro1 . fmap  
 
-
-
--- | Post-process the result of an one-static-argument Context
--- Function with a context transformer. 
---
--- > (ctx -> a -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> ans)
--- 
-cxpost1 :: CF (a -> ans) -> CF (r1 -> a) -> CF (r1 -> ans)
-cxpost1 f g = CF $ \ctx a -> getCF f ctx (getCF g ctx a)
 
 --------------------------------------------------------------------------------
 -- Post-combiners

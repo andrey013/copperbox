@@ -152,9 +152,9 @@ stringVector ss = let cs = getEscapedText ss in
 
 
 charVector :: FromPtSize u => EscapedChar -> CF (AdvanceVec u)
-charVector (CharLiteral c) = avLookupTable `situ1` (ord c)
-charVector (CharEscInt i)  = avLookupTable `situ1` i
-charVector (CharEscName s) = avLookupTable `situ1` ix
+charVector (CharLiteral c) = unCF1 (ord c) avLookupTable
+charVector (CharEscInt i)  = unCF1 i       avLookupTable
+charVector (CharEscName s) = unCF1 ix      avLookupTable
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 

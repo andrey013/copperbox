@@ -43,69 +43,6 @@ description:
   .
   * @Basic.Shapes.Plaintext@ re-worked.   
   .
-  0.11.0 to 0.12.0:
-  .
-  * Changes Base types in  @Basic.Graphic@. The @Graphic@ and 
-    @Image@ types now produce (wrapped) @Primitives@, rather than 
-    Hughes lists of @Primitives@. This means they can now be 
-    transformed with the affine transformations. Removed the 
-    function @ati@, it is replaced by @at@.
-  .
-  * Added @Basic.Utils.Combinators@.
-  .
-  * Arrowheads and Connectors reworked - Arrowheads are now a 
-    functional type, Connectors use new Image combining 
-    operations from @Basic.Graphic.Base@.
-  .
-  * Path connectors re-worked and renamed. 
-  .
-  * Dot hierarchy changed - @Basic.Dots@ becomes 
-    @Basic.Dots.AnchorDots@; @Basic.Dots.Primitive@ becomes
-    @Basic.Dots.Marks@.
-  .
-  * @Basic.Shapes@ - internals reworked.
-  .
-  0.10.0 to 0.11.0:
-  . 
-  * Reworked arrowheads and connectors - connectors are now 
-    configurable: there are functions to make connectors with 
-    a left arrowhead, right arrowhead, none or both.  
-  .
-  * Reworked shapes - internally shapes now create a @Path@ rather 
-    than a @Graphic@ this means the path can be manipulated (e.g. 
-    round cornered rectangles, diamonds... can be constructed).
-    @Coordinate@ is no longer a @Shape@ - it is now similar object 
-    but of a different type. Likewise, @FreeLabel@ has been 
-    replaced by @Plaintext@ which is not a @Shape@, but has some 
-    similar properties. Unfortunately, the Shape types are still 
-    difficult to work with and a larger reworking is still 
-    necessary.
-  .
-  * @Basic.Paths.Base@ - @Path@ type changed, @PathEmpty@ 
-    constructor removed so empty paths cannot be created. This 
-    allows a better API for taking points on a path. It also 
-    means @Path@ is no longer an instance of Monoid. Type changes 
-    to various functions (e.g. @tipR@, @tipL@) reflecting that as 
-    paths cannot now be empty, functions on them can generally be 
-    total. @toPrimPathU@ removed as converting to a PrimPath as 
-    now always /safe/. @tracePoints@ renamed @traceLinePoints@, 
-    @tracePointsCurve@ renamed @traceCurvePoints@, @midpoint@ 
-    renamed @midway@.
-  .
-  * @Basic.Graphic@ - the types @ConnDrawingR@, @ConnGraphic@ etc.
-    have had their names expanded to @ConnectorDrawingR@, 
-    @ConnectorGraphic@... 
-  .
-  * @Basic.SafeFont@ - font names changed to use underscore 
-    separators rather than camelCase. Wumpus generally uses 
-    underscored names for /constants/.
-  .
-  * Removed @conn@ from @Basic.Graphic.Drawing@. Connectors should 
-    be used instead.
-  .
-  * The class @DrawingCtxM@ now has @Applicative@ as a superclass. 
-  .
-  * @lineSpacing@ renamed @baselineSpacing@.
   .
   .
 build-type:         Simple
@@ -122,10 +59,10 @@ extra-source-files:
   demo/ColourDefns.hs,
   demo/Connectors.hs
   demo/DotPic.hs,
+  demo/DrawingCompo.hs,
   demo/FeatureModel.hs,
   demo/FontPic.hs,
   demo/PetriNet.hs,
-  demo/Picture.hs,
   demo/Symbols.hs
 
 library
@@ -134,7 +71,7 @@ library
                       containers      >= 0.3     && <= 0.4,
                       directory       >= 1.0     && <  2.0, 
                       filepath        >= 1.1     && <  2.0,
-                      vector-space    >= 0.6,
+                      vector-space    >= 0.6     && <  1.0,
                       wumpus-core     == 0.40.0
 
   
@@ -156,7 +93,6 @@ library
     Wumpus.Basic.Graphic,
     Wumpus.Basic.Graphic.Anchors,
     Wumpus.Basic.Graphic.Base,
-    Wumpus.Basic.Graphic.BoundaryAnchors,
     Wumpus.Basic.Graphic.ContextFunction,
     Wumpus.Basic.Graphic.Drawing,
     Wumpus.Basic.Graphic.DrawingContext,
@@ -182,8 +118,6 @@ library
     Wumpus.Basic.Shapes.Plaintext,
     Wumpus.Basic.Text.Advance,
     Wumpus.Basic.Text.LocBoundingBox,
-    Wumpus.Basic.Text.LRSymbol,
-    Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.FormatCombinators,
     Wumpus.Basic.Utils.Intersection,

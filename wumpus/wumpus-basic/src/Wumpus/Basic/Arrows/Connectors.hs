@@ -92,17 +92,6 @@ leftrightArrow cp la ra =
               }
 
 
--- 
--- > a <- drawi $ strokeConnector __ `startPt` p1 `endPt` p2
-
--- > infixr 1 `startPt`
--- > startPt :: Drawing (Point2 u -> b) -> Point2 u -> Drawing b
--- > startPt = situ1
-
--- > infixr 1 `endPt`
--- > endPt :: Drawing (Point2 u -> b) -> Point2 u -> Drawing b
--- > endPt = situ1
-
 
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
@@ -145,7 +134,7 @@ tipEval :: Num u
         => Maybe (Arrowhead u) -> Point2 u -> Radian
         -> CF (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
-tipEval (Just arw) pt theta = makeMark (situ2 (getArrowhead arw) pt theta)
+tipEval (Just arw) pt theta = makeMark $ unCF2 pt theta (getArrowhead arw)
 
 
 unmarked :: ArrowMark u

@@ -235,8 +235,8 @@ monoMultiLineHeight n           =
     (\h lsf -> h + (fromIntegral $ n-1) * (h * realToFrac lsf))
       <$> monoTotalCharHeight <*> asksDC line_spacing_factor
  
-    -- Note as height ccalculation has changed in Wumpus-Core this
-    -- may no longer be appropriate.
+    -- Note as the height calculation has changed in Wumpus-Core this
+    -- no longer quite works... 
 
  
 
