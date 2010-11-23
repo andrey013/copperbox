@@ -46,8 +46,9 @@ type CodePoint = Int
 --
 data GlyphMetricsTable cu = GlyphMetricsTable
        { glyph_bounding_box     :: BoundingBox cu 
-       , default_adv_vec        :: Vec2 cu
+       , glyph_default_adv_vec  :: Vec2 cu
        , glyph_adv_vecs         :: IntMap.IntMap (Vec2 cu)
+       , glyph_cap_height       :: cu
        }
 
 
@@ -60,6 +61,7 @@ data GlyphMetricsTable cu = GlyphMetricsTable
 data GlyphMetrics = GlyphMetrics 
       { get_bounding_box  :: forall u. FromPtSize u => PtSize -> BoundingBox u 
       , get_av_lookup     :: forall u. FromPtSize u => PtSize -> (CodePoint -> Vec2 u)
+      , get_cap_height    :: forall u. FromPtSize u => PtSize -> u
       }
 
 
@@ -72,6 +74,7 @@ monospace_metrics :: GlyphMetrics
 monospace_metrics = GlyphMetrics
       { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
       , get_av_lookup     = \sz _ -> hvec (upscale sz width_vec) 
+      , get_cap_height    = \sz -> upscale sz cap_height
       }
   where
     llx           = (-23)  / 1000
@@ -79,6 +82,7 @@ monospace_metrics = GlyphMetrics
     urx           = 715    / 1000
     ury           = 805    / 1000
     width_vec     = 600    / 1000
+    cap_height    = 562    / 1000
 
     upscale sz d  = fromPtSize $ sz * d
     lowerLeft sz  = P2 (upscale sz llx) (upscale sz lly) 
@@ -87,11 +91,13 @@ monospace_metrics = GlyphMetrics
 
 buildMetrics :: (cu -> PtSize) -> GlyphMetricsTable cu -> GlyphMetrics
 
-buildMetrics fn (GlyphMetricsTable (BBox ll ur) (V2 vx vy) vec_table) = 
+buildMetrics fn (GlyphMetricsTable (BBox ll ur) (V2 vx vy) 
+                                   vec_table    cap_height) = 
     GlyphMetrics
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
       , get_av_lookup     = \sz i -> 
             maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
+      , get_cap_height    = \sz -> upscale sz (fn cap_height)
       }
   where
     upscale sz d            = fromPtSize $ sz * d 

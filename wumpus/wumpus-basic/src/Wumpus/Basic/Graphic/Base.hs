@@ -88,12 +88,8 @@ superior a = (`oplus` a)
 
 
 
--- Note - this produces tall-skinny trees in Wumpus-core.
--- This does not impact on the generated PostScript but it is 
--- (probably) inefficient for traversals in Wumpus.
---
--- There is scope to modify the Primitive type in Wumpus-Core 
--- (make Group indepenent of XLink) so wider trees can be made.
+instance Ord u => OPlus (BoundingBox u) where
+  oplus = boundaryUnion
 
 instance OPlus (Primitive u) where
   a `oplus` b = primGroup [a,b]

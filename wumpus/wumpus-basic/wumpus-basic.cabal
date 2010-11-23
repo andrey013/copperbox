@@ -118,6 +118,7 @@ library
     Wumpus.Basic.Shapes.Plaintext,
     Wumpus.Basic.Text.Advance,
     Wumpus.Basic.Text.LocBoundingBox,
+    Wumpus.Basic.Text.LRText,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.FormatCombinators,
     Wumpus.Basic.Utils.Intersection,

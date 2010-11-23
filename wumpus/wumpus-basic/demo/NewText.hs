@@ -9,14 +9,13 @@ import Wumpus.Basic.FontLoader.AfmV2
 import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.Text.Advance
+import Wumpus.Basic.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
 
-import Wumpus.Basic.Graphic.BoundedOperations
 
 -- Edit this path!
 -- ***************
@@ -39,38 +38,28 @@ makeStdCtx :: BaseGlyphMetrics -> DrawingContext
 makeStdCtx = fontface helvetica . metricsContext 18
 
 
-type CatF u = AdvanceMulti u -> AdvanceMulti u -> AdvanceMulti u
-
-dummyText :: (Fractional u, Ord u, FromPtSize u) 
-          => CatF u -> CF (AdvanceMulti u)
-dummyText op = (((mk1 "One Two Three" `join` mk1 "Four")
-                  `join` mk1 "Five") `join` mk1 "Six") `join` mk1 "Seven"
+text_drawing :: Drawing Double
+text_drawing = drawTracing $ do 
+    drawi_ $ (fn left_text)   `at` zeroPt
+    drawi_ $ (fn center_text) `at` P2 250 0
+    drawi_ $ (fn right_text)  `at` P2 500 0
+    
   where
-    mk1 ss = postpro oneLineH $ singleLineLR ss 
-    join a b = postcomb op a b 
+    fn = illustrateBoundedLocGraphic
+
+left_text :: BoundedLocGraphic Double
+left_text = localize (strokeColour black) $ multiAlignLeft dummy_text
 
 
-text_drawing :: DDrawing
-text_drawing = drawTracing $ do
-          drawi_ $ right_text  `at` P2 0 200
-          drawi_ $ left_text   `at` P2 0 100
-          drawi_ $ center_text `at` P2 0   0
+right_text :: BoundedLocGraphic Double
+right_text = localize (strokeColour black) $ multiAlignRight dummy_text
+
+center_text :: BoundedLocGraphic Double
+center_text = localize (strokeColour black) $ multiAlignCenter dummy_text
 
 
-
-right_text :: (Fractional u, Ord u, FromPtSize u) 
-           => LocImage u (BoundingBox u)
-right_text = localize (strokeColour red) $ 
-               runAdvanceMulti =<< (dummyText $ alignRightH 16)
-
-left_text :: (Fractional u, Ord u, FromPtSize u) 
-          => LocImage u (BoundingBox u)
-left_text = localize (strokeColour green) $ 
-               runAdvanceMulti =<< (dummyText $ alignLeftH 16)
-
-center_text :: (Fractional u, Ord u, FromPtSize u) 
-            => LocImage u (BoundingBox u)
-center_text = localize (strokeColour blue) $ 
-               runAdvanceMulti =<< (dummyText $ alignCenterH 16)
-
-
+dummy_text :: String 
+dummy_text = unlines $ [ "The quick brown"
+                       , "fox jumps over"
+                       , "the lazy dog."
+                       ]

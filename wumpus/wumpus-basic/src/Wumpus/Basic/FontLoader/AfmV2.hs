@@ -32,7 +32,7 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
 
-import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core hiding ( capHeight )         -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
 
 import Control.Applicative
@@ -49,6 +49,7 @@ type GlobalInfo     = Map.Map AfmKey String
 data AfmV2File = AfmV2File 
       { afm_v2_encoding     :: Maybe String
       , afm_font_bbox       :: Maybe AfmBoundingBox
+      , afm_cap_height      :: Maybe AfmUnit
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
@@ -73,9 +74,10 @@ buildGlyphMetricsTable :: BoundingBox AfmUnit -> Vec2 AfmUnit -> AfmV2File
                        -> GlyphMetricsTable AfmUnit
 buildGlyphMetricsTable bbox default_vec afm = 
     GlyphMetricsTable 
-      { glyph_bounding_box = bbox
-      , default_adv_vec    = default_vec
-      , glyph_adv_vecs     = makeAdvVecs $ afm_glyph_metrics afm
+      { glyph_bounding_box      = bbox
+      , glyph_default_adv_vec   = default_vec
+      , glyph_adv_vecs          = makeAdvVecs $ afm_glyph_metrics afm
+      , glyph_cap_height        = fromMaybe 1000 $ afm_cap_height afm
       }  
 
 
@@ -96,7 +98,10 @@ parseAfmV2File filepath = runParserEither afmFile <$> readFile filepath
 
 afmFile :: CharParser AfmV2File
 afmFile = 
-    (\info xs -> AfmV2File (encodingScheme info) (fontBBox info) xs) 
+    (\info xs -> AfmV2File (encodingScheme info) 
+                           (fontBBox info) 
+                           (capHeight info)
+                           xs) 
       <$> (versionNumber    *> globalInfo) 
       <*> (startCharMetrics *> many charMetrics)
 
@@ -129,6 +134,9 @@ fontBBox            = runQuery "FontBBox" charBBox
 encodingScheme      :: GlobalInfo -> Maybe String
 encodingScheme      = textQuery "EncodingScheme"
 
+
+capHeight           :: GlobalInfo -> Maybe AfmUnit
+capHeight           = runQuery "CapHeight" number
 
 
 charMetrics :: CharParser AfmGlyphMetrics

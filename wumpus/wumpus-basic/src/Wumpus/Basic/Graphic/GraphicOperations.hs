@@ -30,7 +30,6 @@ module Wumpus.Basic.Graphic.GraphicOperations
   
   , textline
   , rtextline
-  , singleLine
   , centermonoTextline
   , escapedline
   , rescapedline
@@ -88,15 +87,9 @@ import Wumpus.Basic.Graphic.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour
-import Wumpus.Core.Text.GlyphIndices
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
-
-import Data.Char
-import Data.Foldable ( foldrM )
-import qualified Data.Map               as Map
-import Data.Maybe 
 
 
 
@@ -153,38 +146,6 @@ rtextline :: Num u => String -> LocThetaGraphic u
 rtextline ss = 
     withTextAttr $ \rgb attr -> thetaLocPrimGraphic 
                                   (\pt ang -> rtextlabel rgb attr ss pt ang)
-
-
-
-singleLine :: (Ord u, FromPtSize u) => String -> BoundedLocGraphic u
-singleLine ss = 
-    let cs = escapeString ss in 
-    textVector cs     >>= \av    -> 
-    glyphHeightRange  >>= \y_range ->
-    intoLocImage (raise1 $ measuredTextBBox (advanceH av) y_range)
-                 (escapedline cs)  
-
-
--- | Measured text box for left-to-right text.
--- 
--- Supplied point is baseline left. 
--- @ymin@ is expected to be negative.
--- 
-measuredTextBBox :: (Num u, Ord u) => u -> (u,u) -> Point2 u -> BoundingBox u
-measuredTextBBox w (ymin,ymax) (P2 x y) = 
-    boundingBox (P2 x (y+ymin)) (P2 (x+w) (y+ymax))
-
-textVector :: FromPtSize  u => EscapedText -> CF (AdvanceVec u)
-textVector ss = let cs = getEscapedText ss in 
-   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
-
-
-charVector :: FromPtSize u => EscapedChar -> CF (AdvanceVec u)
-charVector (CharLiteral c) = unCF1 (ord c) avLookupTable
-charVector (CharEscInt i)  = unCF1 i       avLookupTable
-charVector (CharEscName s) = unCF1 ix      avLookupTable
-  where
-    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
 
 

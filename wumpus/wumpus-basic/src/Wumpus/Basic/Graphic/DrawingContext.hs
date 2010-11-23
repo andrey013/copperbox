@@ -322,10 +322,3 @@ withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) =
                     Map.lookup ps_name (glyph_tables ctx) 
 
 
-{-
-maxGlyphHeight :: FromPtSize u => DrawingContext -> u
-maxGlyphHeight = withFontMetrics (\rec sz -> get_max_height rec sz)
-
-avLookupTable :: FromPtSize u => DrawingContext -> (Int -> Vec2 u)
-avLookupTable = withFontMetrics (\rec sz -> get_av_lookup rec sz)
--}

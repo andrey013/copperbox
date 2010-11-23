@@ -41,6 +41,9 @@ module Wumpus.Basic.Graphic.Query
   -- * Glyph metrics
   , glyphBoundingBox
   , glyphHeightRange
+  , glyphHeight
+  , glyphCapHeight
+
   , avLookupTable
 
   -- * Default monospace metrics
@@ -146,10 +149,11 @@ markHalfHeight = (0.5*) <$> markHeight
 
 --------------------------------------------------------------------------------
 
+glyphQuery :: DrawingCtxM m => (GlyphMetrics -> PtSize -> u) -> m u
+glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
 
 glyphBoundingBox :: (FromPtSize u, DrawingCtxM m) => m (BoundingBox u)
-glyphBoundingBox = 
-    (\ctx -> withFontMetrics (\rec sz -> get_bounding_box rec sz) ctx) <$> askDC
+glyphBoundingBox = glyphQuery get_bounding_box
 
 
 glyphHeightRange :: (FromPtSize u, DrawingCtxM m) => m (u,u)
@@ -158,9 +162,15 @@ glyphHeightRange = fn <$> glyphBoundingBox
     fn (BBox (P2 _ ymin) (P2 _ ymax)) = (ymin,ymax)
 
 
+glyphHeight :: (FromPtSize u, DrawingCtxM m) => m u
+glyphHeight = (\(ymax,ymin) -> ymax - ymin) <$> glyphHeightRange
+
+
+glyphCapHeight :: (FromPtSize u, DrawingCtxM m) => m u
+glyphCapHeight = glyphQuery get_cap_height
+
 avLookupTable :: (FromPtSize u, DrawingCtxM m) => m (Int -> Vec2 u)
-avLookupTable = 
-    (\ctx -> withFontMetrics (\rec sz -> get_av_lookup rec sz) ctx) <$> askDC
+avLookupTable = glyphQuery get_av_lookup
 
 
 --------------------------------------------------------------------------------
