@@ -22,6 +22,14 @@
 -- colours are needed, "Wumpus.Core.Colour" can be imported 
 -- directly.
 -- 
+-- Courier metrics (charWidth, textHeight, etc.) are hidden from 
+-- the module "Wumpus.Core.FontSize". As these metrics are 
+-- somewhat approximate, it is expected that if higher-level 
+-- software needs these functionality it should define its own
+-- implementations. However the functions may be convenient and if 
+-- they are needed, "Wumpus.Core.FontSize" can be imported 
+-- directly.
+--
 --------------------------------------------------------------------------------
 
 
@@ -46,9 +54,13 @@ module Wumpus.Core
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
-import Wumpus.Core.Colour hiding ( black, white, red, green, blue, yellow, 
-                                   cyan, magenta )
-import Wumpus.Core.FontSize
+import Wumpus.Core.Colour hiding 
+    ( black, white, red, green, blue, yellow, cyan, magenta )
+
+import Wumpus.Core.FontSize hiding 
+    ( charWidth, textWidth, capHeight, xcharHeight, totalCharHeight
+    , ascenderHeight, descenderDepth ) 
+
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.OutputPostScript

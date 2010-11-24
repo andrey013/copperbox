@@ -32,7 +32,7 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P
 
-import Wumpus.Core hiding ( capHeight )         -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
 
 import Control.Applicative

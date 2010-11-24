@@ -66,8 +66,9 @@ import Wumpus.Basic.Graphic.Base
 import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Basic.Graphic.GlyphMetrics
 
-import Wumpus.Core                      -- package: wumpus-core
-
+import Wumpus.Core                              -- package: wumpus-core
+import qualified Wumpus.Core.FontSize   as FS
+ 
 import Control.Applicative
 
 
@@ -136,7 +137,7 @@ baselineSpacing =
 -- height.
 -- 
 markHeight :: (DrawingCtxM m, FromPtSize u) => m u
-markHeight = (fromPtSize . xcharHeight . font_size) <$> asksDC font_props
+markHeight = (fromPtSize . FS.xcharHeight . font_size) <$> asksDC font_props
 
 
 markHalfHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
@@ -187,11 +188,11 @@ monoFontPointSize :: (DrawingCtxM m, FromPtSize u) => m u
 monoFontPointSize = withFontSize (fromPtSize . fromIntegral)
 
 monoCharWidth :: (DrawingCtxM m, FromPtSize u) => m u
-monoCharWidth = withFontSize (fromPtSize . charWidth)
+monoCharWidth = withFontSize (fromPtSize . FS.charWidth)
 
 
 monoTextWidth :: (DrawingCtxM m, FromPtSize u) => Int -> m u
-monoTextWidth n = withFontSize $ \sz -> fromPtSize $ textWidth sz n
+monoTextWidth n = withFontSize $ \sz -> fromPtSize $ FS.textWidth sz n
 
 
 monoTextLength :: (DrawingCtxM m, FromPtSize u) => String -> m u
@@ -199,10 +200,10 @@ monoTextLength ss = monoTextWidth $ charCount ss
 
 
 monoCapHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoCapHeight = withFontSize (fromPtSize . capHeight)
+monoCapHeight = withFontSize (fromPtSize . FS.capHeight)
 
 monoTotalCharHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoTotalCharHeight = withFontSize (fromPtSize . totalCharHeight)
+monoTotalCharHeight = withFontSize (fromPtSize . FS.totalCharHeight)
 
 
 
@@ -211,13 +212,13 @@ monoTotalCharHeight = withFontSize (fromPtSize . totalCharHeight)
 -- \'x\' has no ascenders or descenders. 
 -- 
 monoLowerxHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoLowerxHeight = withFontSize (fromPtSize . xcharHeight)
+monoLowerxHeight = withFontSize (fromPtSize . FS.xcharHeight)
 
 monoDescenderDepth :: (DrawingCtxM m, FromPtSize u) => m u
-monoDescenderDepth = withFontSize (fromPtSize . descenderDepth)
+monoDescenderDepth = withFontSize (fromPtSize . FS.descenderDepth)
 
 monoAscenderHeight :: (DrawingCtxM m, FromPtSize u) => m u
-monoAscenderHeight = withFontSize (fromPtSize . ascenderHeight)
+monoAscenderHeight = withFontSize (fromPtSize . FS.ascenderHeight)
 
 
 -- | Query the dimensions of the text using the current font size

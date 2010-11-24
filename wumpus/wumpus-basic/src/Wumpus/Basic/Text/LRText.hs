@@ -61,29 +61,34 @@ singleLRText (InterimText1 esc av) =
 
 multiAlignLeft      :: (Fractional u, Ord u, FromPtSize u) 
                     => String -> BoundedLocGraphic u
-multiAlignLeft      = multiAligned drawLeftAligned1
+multiAlignLeft      = 
+    multiAligned drawLeftAligned1 (\wv pt -> pt .-^ hvec (0.5 * advanceH wv))
 
 
 multiAlignCenter    :: (Fractional u, Ord u, FromPtSize u) 
                     => String -> BoundedLocGraphic u
-multiAlignCenter    = multiAligned drawCenterAligned1
+multiAlignCenter    = 
+    multiAligned drawCenterAligned1 (\_ pt -> pt)
 
 multiAlignRight     :: (Fractional u, Ord u, FromPtSize u) 
                     => String -> BoundedLocGraphic u
-multiAlignRight     = multiAligned drawRightAligned1
+multiAlignRight     = 
+    multiAligned drawRightAligned1 (\wv pt -> pt .+^ hvec (0.5 * advanceH wv))
 
 
 -- Note needs sorting so that empty ss is harmless.
 
 multiAligned :: (Fractional u, Ord u, FromPtSize u) 
              => (InterimText1 u -> Point2 u -> BoundedGraphic u)
+             -> (AdvanceVec u -> Point2 u -> Point2 u)
              -> String -> BoundedLocGraphic u
-multiAligned fn ss = 
-    linesToInterims ss >>= \(_,xs)      ->
+multiAligned drawF dispF ss = 
+    linesToInterims ss >>= \(wv,xs)      ->
     glyphCapHeight     >>= \cap_h       -> 
     baselineSpacing    >>= \baseline_sp ->   
-    promote1 $ \pt -> let pts = lineStartPoints cap_h baseline_sp (length xs) pt
-                      in merge fn xs pts
+    promote1 $ \p0 -> let p1  = dispF wv p0
+                          pts = lineStartPoints cap_h baseline_sp (length xs) p1
+                      in merge drawF xs pts
 
 -- This needs sorting out so as not to throw an error
 --

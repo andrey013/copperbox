@@ -11,13 +11,15 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Font size calculation for Label\'s and their bounding boxes.
+-- Approximate glyph size calculations for Label\'s and their 
+-- bounding boxes.
 -- 
--- Calculations are based on metrics derived from Courier at 
--- 48pt. As Courier is a monospaced font, applying these metrics
+-- Calculations are based on metrics derived from the Courier 
+-- font. As Courier is a monospaced font, applying these metrics
 -- to other font families will usually produce over-estimates
 -- (bounding boxes will be longer than the true visual length
--- of the text).
+-- of the text). Furthermore, even italic or bold Courier will 
+-- have different metrics.
 -- 
 -- This is a deficiency of Wumpus, and limits its text handling
 -- capabilities - for example, text cannot be reliably centered 
@@ -46,7 +48,7 @@ module Wumpus.Core.FontSize
   , mono_left_margin
   , mono_right_margin
 
-  -- * Metrics calculation
+  -- * Courier metrics
   , charWidth
   , textWidth
   , capHeight
@@ -54,6 +56,8 @@ module Wumpus.Core.FontSize
   , totalCharHeight
   , ascenderHeight
   , descenderDepth
+
+  -- * Size calculation
   , textBounds
   , textBoundsEsc
   , charCount

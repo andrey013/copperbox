@@ -56,6 +56,7 @@ module Wumpus.Basic.Dots.AnchorDots
 
 import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Text.LRText
 import Wumpus.Basic.Utils.Intersection
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -136,8 +137,14 @@ rectangleAnchor hw hh ctr =
     fn theta =  maybe ctr id $ findIntersect ctr theta 
                              $ rectangleLines ctr hw hh
 
+bboxRectAnchor  :: (Real u, Floating u) => BoundingBox u -> DotAnchor u
+bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
+   let hw = 0.5 * x2 - x1
+       hh = 0.5 * y2 - y1
+   in rectangleAnchor hw hh (bl .+^ vec hw hh)
+
 rectangleLDO :: (Real u, Floating u) 
-             => u -> u -> LocCF u (DotAnchor u)
+             => u -> u -> LocDrawingInfo u (DotAnchor u)
 rectangleLDO w h = promote1 $ \pt -> wrap $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
@@ -146,7 +153,7 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (\theta -> ctr .+^ (avec theta rad))
                                  (radialCardinal rad ctr)
 
-circleLDO :: (Floating u, FromPtSize u) => LocCF u (DotAnchor u)
+circleLDO :: (Floating u, FromPtSize u) => LocDrawingInfo u (DotAnchor u)
 circleLDO = bind1 (static1 markHeight) $ \diam -> 
     promote1 $ \pt -> wrap $ circleAnchor (diam * 0.5) pt
 
@@ -164,11 +171,24 @@ dotChar ch = bind1 (static1 $ monoTextDimensions [ch]) $  \(w,h) ->
     intoLocImage (rectangleLDO w h) (markChar ch)
 
 
+
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
 dotText ss = bind1 (static1 $ monoTextDimensions ss) $ \(w,h) -> 
     intoLocImage (rectangleLDO w h) (markText ss) 
 
+
+{-
+dotText :: (Floating u, Real u, FromPtSize u) 
+        => String -> DotLocImage u 
+dotText ss = locImageMapL bboxRectAnchor (centeredLine ss)
+
+
+
+locImageMapL :: (a -> b) -> LocImage u a -> LocImage u b
+locImageMapL f = postpro1 $ \(a,prim) -> (f a, prim)
+
+-}
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
 dotHLine = intoLocImage circleLDO markHLine

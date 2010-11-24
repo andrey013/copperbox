@@ -3,6 +3,7 @@
 module FontMetrics where
 
 import Wumpus.Core
+import Wumpus.Core.FontSize
 import Wumpus.Core.Text.StandardEncoding
 
 import Data.AffineSpace                 -- package: vector-space

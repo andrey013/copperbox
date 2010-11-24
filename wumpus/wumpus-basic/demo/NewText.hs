@@ -5,6 +5,7 @@ module NewText where
 
 
 import Wumpus.Basic.Colour.SVGColours
+import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.FontLoader.AfmV2
 import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
@@ -44,18 +45,29 @@ text_drawing = drawTracing $ do
     drawi_ $ (fn center_text) `at` P2 250 0
     drawi_ $ (fn right_text)  `at` P2 500 0
     
+    draw $ redPlus            `at` zeroPt
+    draw $ redPlus            `at` P2 250 0
+    draw $ redPlus            `at` P2 500 0
+        
   where
     fn = illustrateBoundedLocGraphic
 
+redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+redPlus = localize (strokeColour red) markPlus
+
+
 left_text :: BoundedLocGraphic Double
-left_text = localize (strokeColour black) $ multiAlignLeft dummy_text
+left_text = 
+    localize (strokeColour dark_slate_gray) $ multiAlignLeft dummy_text
 
 
 right_text :: BoundedLocGraphic Double
-right_text = localize (strokeColour black) $ multiAlignRight dummy_text
+right_text = 
+    localize (strokeColour dark_slate_gray) $ multiAlignRight dummy_text
 
 center_text :: BoundedLocGraphic Double
-center_text = localize (strokeColour black) $ multiAlignCenter dummy_text
+center_text = 
+    localize (strokeColour dark_slate_gray) $ multiAlignCenter dummy_text
 
 
 dummy_text :: String 
