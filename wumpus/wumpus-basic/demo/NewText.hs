@@ -7,7 +7,6 @@ module NewText where
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.Marks
 import Wumpus.Basic.FontLoader.AfmV2
-import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText

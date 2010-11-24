@@ -32,6 +32,10 @@ module Wumpus.Basic.FontLoader.Base
   , PSCharCode
   , PSEncodingScheme
   , AfmBoundingBox
+
+  , AfmKey
+  , GlobalInfo
+  , AfmFile(..)
   , AfmGlyphMetrics(..)
 
   -- * Font loading
@@ -43,15 +47,21 @@ module Wumpus.Basic.FontLoader.Base
   , BaseGlyphMetrics
   , loadBaseGlyphMetrics
 
+  , buildGlyphMetricsTable
+
   ) where
 
 import Wumpus.Basic.Graphic
 
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Text.GlyphIndices
 
 import Data.Foldable ( foldrM )
+import qualified Data.IntMap            as IntMap
 import qualified Data.Map as Map
+import Data.Maybe
+
 import System.Directory
 import System.FilePath
 
@@ -78,8 +88,10 @@ afmUnitScale :: AfmUnit -> PtSize
 afmUnitScale u = (realToFrac $ getAfmUnit u / 1000)
 
 
--- | Afm files index glyphs by /PostScript character code/.
--- This is not the same as Unicode, ASCII...
+--------------------------------------------------------------------------------
+
+-- | Afm files index glyphs by /PostScript character code/. This 
+-- is not the same as Unicode, ASCII...
 --
 -- It is expected to be determined by @EncodingScheme@ in the
 -- Global Font Information Section.
@@ -90,12 +102,31 @@ type PSEncodingScheme   = String
 
 type AfmBoundingBox     = BoundingBox AfmUnit
 
+type AfmKey         = String
+type GlobalInfo     = Map.Map AfmKey String
+
+
+
+-- | Wumpus needs a very small subset of AFM files, common to both
+-- version 2.0 and version 4.1.
+--
+data AfmFile = AfmFile 
+      { afm_encoding        :: Maybe String
+      , afm_font_bbox       :: Maybe AfmBoundingBox
+      , afm_cap_height      :: Maybe AfmUnit
+      , afm_glyph_metrics   :: [AfmGlyphMetrics]
+      }
+  deriving (Show) 
+
+
 data AfmGlyphMetrics = AfmGlyphMetrics
       { afm_char_code       :: !PSCharCode
       , afm_width_vector    :: !(Vec2 AfmUnit)
       , afm_char_name       :: !String
       }
   deriving (Eq,Show)
+
+
 
 -- Maybe the CharMetricsTable should be scaled to Wumpus units as 
 -- the last part of the parsing process...
@@ -154,4 +185,28 @@ reportBaseError :: FontName -> FontLoadErr -> IO ()
 reportBaseError font_name err = do 
     putStrLn $ "The font " ++ font_name ++ " failed to load, with the error:"
     putStrLn $ err
+
+
+
+
+buildGlyphMetricsTable :: BoundingBox AfmUnit 
+                       -> Vec2 AfmUnit 
+                       -> AfmUnit
+                       -> AfmFile 
+                       -> GlyphMetricsTable AfmUnit
+buildGlyphMetricsTable bbox dflt_vec dflt_cap_height afm = 
+    GlyphMetricsTable 
+      { glyph_bounding_box    = bbox
+      , glyph_default_adv_vec = dflt_vec
+      , glyph_adv_vecs        = makeAdvVecs $ afm_glyph_metrics afm
+      , glyph_cap_height      = fromMaybe dflt_cap_height $ afm_cap_height afm
+      }  
+
+
+makeAdvVecs :: [AfmGlyphMetrics] -> IntMap.IntMap (Vec2 AfmUnit)
+makeAdvVecs  = foldr fn IntMap.empty
+  where
+    fn (AfmGlyphMetrics _ v ss) table = case Map.lookup ss ps_glyph_indices of
+        Nothing -> table
+        Just i  -> IntMap.insert i v table
 

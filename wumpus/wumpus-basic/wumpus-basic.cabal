@@ -88,6 +88,7 @@ library
     Wumpus.Basic.Dots.Marks,
     Wumpus.Basic.DrawingComposition,
     Wumpus.Basic.FontLoader.AfmV2,
+    Wumpus.Basic.FontLoader.AfmV2Parser,
     Wumpus.Basic.FontLoader.Base,
     Wumpus.Basic.FontLoader.GsFontMap,
     Wumpus.Basic.Graphic,
