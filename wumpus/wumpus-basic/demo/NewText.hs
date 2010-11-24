@@ -44,6 +44,7 @@ text_drawing = drawTracing $ do
     drawi_ $ (fn left_text)   `at` zeroPt
     drawi_ $ (fn center_text) `at` P2 250 0
     drawi_ $ (fn right_text)  `at` P2 500 0
+    drawi_ $ (fn blank_text)  `at` P2 0   (-100)
     
     draw $ redPlus            `at` zeroPt
     draw $ redPlus            `at` P2 250 0
@@ -54,6 +55,11 @@ text_drawing = drawTracing $ do
 
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
+
+
+blank_text :: BoundedLocGraphic Double
+blank_text = 
+    localize (strokeColour dark_slate_gray) $ multiAlignCenter ""
 
 
 left_text :: BoundedLocGraphic Double

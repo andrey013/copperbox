@@ -83,24 +83,26 @@ multiAligned :: (Fractional u, Ord u, FromPtSize u)
              -> (AdvanceVec u -> Point2 u -> Point2 u)
              -> String -> BoundedLocGraphic u
 multiAligned drawF dispF ss = 
-    linesToInterims ss >>= \(wv,xs)      ->
-    glyphCapHeight     >>= \cap_h       -> 
-    baselineSpacing    >>= \baseline_sp ->   
+    linesToInterims ss >>= \(wv,xs)   ->
+    glyphCapHeight     >>= \cap_h     -> 
+    baselineSpacing    >>= \base_span ->   
     promote1 $ \p0 -> let p1  = dispF wv p0
-                          pts = lineStartPoints cap_h baseline_sp (length xs) p1
-                      in merge drawF xs pts
+                          axs = annotateStartPoints cap_h base_span p1 xs
+                      in mergeLines drawF p1 axs
 
 -- This needs sorting out so as not to throw an error
 --
-merge :: Ord u
-      => (InterimText1 u -> Point2 u -> BoundedGraphic u)
-      -> [InterimText1 u] -> [Point2 u] -> BoundedGraphic u 
-merge fn interms pts = step interms pts
+mergeLines :: (Num u, Ord u)
+           => (InterimText1 u -> Point2 u -> BoundedGraphic u)
+           -> Point2 u
+           -> [(InterimText1 u, Point2 u)] -> BoundedGraphic u 
+mergeLines fn fallback_pt = step
   where
-    step [x]    [y]    = fn x y
-    step (x:xs) (y:ys) = fn x y `oplus` step xs ys  
-    step _      _      = error $ show (length interms,length pts)
+    step [(x,pt)]    = fn x pt
+    step ((x,pt):ys) = fn x pt `oplus` step ys  
+    step _           = fn empty_fallback fallback_pt 
 
+    empty_fallback   = InterimText1 (escapeString "") (hvec 0)
 
 
 -- This isn't worth the complexity  to get to one traversal...
@@ -195,3 +197,26 @@ lineStartPoints cap_height baseline_spacing n (P2 x y)
     halfn           = fromIntegral $ n `div` 2
     odd_start_y     = y - center_to_bl + halfn * baseline_spacing
     even_start_y    = y - half_gap_height - cap_height + halfn * baseline_spacing
+
+
+annotateStartPoints :: Fractional u 
+                 => u -> u -> Point2 u -> [InterimText1 u] 
+                 -> [(InterimText1 u, Point2 u)]
+annotateStartPoints _          _             _        []     = []
+annotateStartPoints cap_height baseline_span (P2 x y) (z:rest) = 
+    let y0 = if odd list_len then odd_start_y else even_start_y
+        p0 = P2 x y0
+    in (z,p0) : step (moveDown1 p0) rest
+  where
+    list_len        = 1 + length rest
+    halfn           = fromIntegral $ list_len `div` 2
+    center_to_bl    = 0.5 * cap_height
+    half_gap_height = 0.5 * (baseline_span - cap_height)
+    odd_start_y     = y - center_to_bl + halfn * baseline_span
+    even_start_y    = y - half_gap_height - cap_height + halfn * baseline_span
+
+    moveDown1       = \pt -> pt .-^ vvec baseline_span
+
+    step _  []      = []
+    step pt (a:as)  = (a,pt) : step (moveDown1 pt) as
+
