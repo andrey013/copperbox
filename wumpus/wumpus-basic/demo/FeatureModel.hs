@@ -6,26 +6,40 @@
 module FeatureModel where
 
 import Wumpus.Basic.Arrows
+import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Shapes
+import Wumpus.Basic.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 
 
 import System.Directory
 
+-- Edit this path!
+-- ***************
+--
+font_directory :: FilePath
+font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU draw_ctx feature_model
+    base_metrics <- loadBaseGlyphMetrics loader ["Courier-Bold"]
+    let pic1 = runDrawingU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model.eps" pic1
     writeSVG "./out/feature_model.svg" pic1 
 
-draw_ctx :: DrawingContext
-draw_ctx = fontface courier_bold $ standardContext 18
+loader :: FontLoader AfmUnit
+loader = ghostScriptFontLoader font_directory
+
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = fontface courier_bold . metricsContext 18
+
 
 -- Note - I haven't worked out how to do @alternative@, @or@ and
 -- @repetitions@ yet.
@@ -65,7 +79,7 @@ makeBox :: (Real u, Floating u, FromPtSize u)
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ strokedShape $ rectangle w 20 $ pt
-    drawi_ $ drawText $ plaintext ss $ center a
+    drawi_ $ singleLineCC ss `at` center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 

@@ -9,10 +9,13 @@
 module ArrowCircuit where
 
 import Wumpus.Basic.Arrows
+import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Shapes
+import Wumpus.Basic.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -20,16 +23,29 @@ import Data.AffineSpace
 
 import System.Directory
 
+-- Edit this path!
+-- ***************
+--
+font_directory :: FilePath
+font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU times_ctx circuit_drawing
+    base_metrics <- loadBaseGlyphMetrics loader ["Times-Roman", "Times-Italic"]
+    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
     writeEPS "./out/arrow_circuit.eps" pic1
     writeSVG "./out/arrow_circuit.svg" pic1 
 
-times_ctx :: DrawingContext
-times_ctx = fontface times_roman $ standardContext 11
+
+loader :: FontLoader AfmUnit
+loader = ghostScriptFontLoader font_directory
+ 
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = fontface times_roman . metricsContext 11
+
+
 
 -- Note - quite a bit of this diagram was produced /by eye/, 
 -- rather than using anchors directly - e.g. the placing of the 
@@ -73,11 +89,11 @@ atext :: ( CenterAnchor t, DUnit t ~ u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
-   drawi_ $ drawText $ plaintext ss $ pt
+   drawi_ $ singleLineCC ss `at` pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (fontsize 14 . fontface times_italic) $ 
-    drawi_ $ drawText $ plaintext ss $ pt
+    drawi_ $ singleLineCC ss `at` pt

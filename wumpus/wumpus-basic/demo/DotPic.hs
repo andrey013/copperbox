@@ -6,7 +6,10 @@ module DotPic where
 import Wumpus.Basic.Chains
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.AnchorDots
+import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -15,13 +18,28 @@ import Data.AffineSpace                         -- package: vector-space
 import Control.Monad
 import System.Directory
 
+-- Edit this path!
+-- ***************
+--
+font_directory :: FilePath
+font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_ctx dot_drawing
+    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
+    let pic1 = runDrawingU (makeCtx base_metrics) dot_drawing 
     writeEPS "./out/dots01.eps" pic1
     writeSVG "./out/dots01.svg" pic1
+
+
+loader :: FontLoader AfmUnit
+loader = ghostScriptFontLoader font_directory
  
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = fillColour peru . fontface helvetica . metricsContext 24
+
 
 dot_drawing :: Drawing Double
 dot_drawing = drawTracing $ tableGraphic $ 
@@ -50,11 +68,6 @@ tableGraphic :: (Real u, Floating u, FromPtSize u)
 tableGraphic imgs = zipWithM_ makeDotDrawing imgs ps
   where
     ps = unchain (coordinateScalingContext 1 36) $ tableDown (length imgs) 1
-
-
- 
-std_ctx :: DrawingContext
-std_ctx = fillColour peru $ standardContext 24
 
 
 

@@ -25,18 +25,21 @@ font_directory :: FilePath
 font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 
 
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
-    let pic1 = runDrawingU (makeStdCtx base_metrics) text_drawing 
+    let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
     writeEPS "./out/new_text01.eps" pic1
     writeSVG "./out/new_text01.svg" pic1
-  where
-    loader = ghostScriptFontLoader font_directory
 
-makeStdCtx :: BaseGlyphMetrics -> DrawingContext
-makeStdCtx = fontface helvetica . metricsContext 18
+
+loader :: FontLoader AfmUnit
+loader = ghostScriptFontLoader font_directory
+
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = fontface helvetica . metricsContext 18
 
 
 text_drawing :: Drawing Double

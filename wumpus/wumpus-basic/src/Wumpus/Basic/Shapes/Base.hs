@@ -14,8 +14,8 @@
 --
 -- Common core for shapes
 -- 
--- \*\* WARNING \*\* - the types of Shapes and Plaintext are not
--- ideal and are pending revision.
+-- \*\* WARNING \*\* - the types of Shapes are not ideal and are 
+-- pending revision.
 --
 --------------------------------------------------------------------------------
 

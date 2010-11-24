@@ -19,11 +19,9 @@ module Wumpus.Basic.Shapes
     module Wumpus.Basic.Shapes.Base
   , module Wumpus.Basic.Shapes.Coordinate
   , module Wumpus.Basic.Shapes.Derived
-  , module Wumpus.Basic.Shapes.Plaintext
 
   ) where
 
 import Wumpus.Basic.Shapes.Base
 import Wumpus.Basic.Shapes.Coordinate
 import Wumpus.Basic.Shapes.Derived hiding ( mkRectangle )
-import Wumpus.Basic.Shapes.Plaintext
