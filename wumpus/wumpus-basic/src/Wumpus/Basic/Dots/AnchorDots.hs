@@ -167,28 +167,22 @@ type DDotLocImage = DotLocImage Double
 
 dotChar :: (Floating u, Real u, FromPtSize u) 
         => Char -> DotLocImage u
-dotChar ch = bind1 (static1 $ monoTextDimensions [ch]) $  \(w,h) -> 
-    intoLocImage (rectangleLDO w h) (markChar ch)
+dotChar ch = dotText [ch]
 
 
-
+-- | Note - dots now use font metrics...
+--
 dotText :: (Floating u, Real u, FromPtSize u) 
         => String -> DotLocImage u 
-dotText ss = bind1 (static1 $ monoTextDimensions ss) $ \(w,h) -> 
-    intoLocImage (rectangleLDO w h) (markText ss) 
+dotText ss = locImageMapL bboxRectAnchor (singleLineCC ss)
 
 
-{-
-dotText :: (Floating u, Real u, FromPtSize u) 
-        => String -> DotLocImage u 
-dotText ss = locImageMapL bboxRectAnchor (centeredLine ss)
-
-
-
+-- Is this generally useful? ...
+--
 locImageMapL :: (a -> b) -> LocImage u a -> LocImage u b
 locImageMapL f = postpro1 $ \(a,prim) -> (f a, prim)
 
--}
+
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
 dotHLine = intoLocImage circleLDO markHLine

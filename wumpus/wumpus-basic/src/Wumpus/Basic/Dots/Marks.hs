@@ -48,6 +48,7 @@ module Wumpus.Basic.Dots.Marks
 
 
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -89,7 +90,7 @@ markChar ch = markText [ch]
 
 
 markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-markText ss = centermonoTextline ss
+markText ss = postpro1 (\(_,b) -> b) $ singleLineCC ss
 
 
 

@@ -41,21 +41,34 @@ makeStdCtx = fontface helvetica . metricsContext 18
 
 text_drawing :: Drawing Double
 text_drawing = drawTracing $ do 
-    drawi_ $ (fn left_text)   `at` zeroPt
-    drawi_ $ (fn center_text) `at` P2 250 0
-    drawi_ $ (fn right_text)  `at` P2 500 0
-    drawi_ $ (fn blank_text)  `at` P2 0   (-100)
+    drawi_ $ (fn left_text)   `at` P2   0 100
+    drawi_ $ (fn center_text) `at` P2 250 100
+    drawi_ $ (fn right_text)  `at` P2 500 100
+    drawi_ $ (fn blank_text)  `at` P2   0   0
+    drawi_ $ (fn bl_oneline)  `at` P2 250   0
+    drawi_ $ (fn cc_oneline)  `at` P2 500   0
     
-    draw $ redPlus            `at` zeroPt
-    draw $ redPlus            `at` P2 250 0
-    draw $ redPlus            `at` P2 500 0
-        
+    draw $ redPlus            `at` P2   0 100
+    draw $ redPlus            `at` P2 250 100
+    draw $ redPlus            `at` P2 500 100
+    draw $ redPlus            `at` P2   0   0  
+    draw $ redPlus            `at` P2 250   0 
+    draw $ redPlus            `at` P2 500   0 
+       
   where
     fn = illustrateBoundedLocGraphic
 
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
 
+bl_oneline :: BoundedLocGraphic Double
+bl_oneline = 
+    localize (strokeColour dark_slate_gray) $ singleLineBL "Baseline-left..."
+
+
+cc_oneline :: BoundedLocGraphic Double
+cc_oneline = 
+    localize (strokeColour dark_slate_gray) $ singleLineCC "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
