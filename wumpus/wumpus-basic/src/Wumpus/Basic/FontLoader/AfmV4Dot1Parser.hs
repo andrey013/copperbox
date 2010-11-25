@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.FontLoader.AfmV2
+-- Module      :  Wumpus.Basic.FontLoader.AfmV4Dot1Parser
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,17 +10,17 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- AFM file parser for Version 2.0.
+-- AFM file parser for Version 4.1.
 --
--- Note - AFM Version 2.0 used by GhostScript and Version 3.0+
--- have numerous differences. 
--- 
+-- Adobe distributes font metrics for the /Core 14/ fonts as
+-- AFM Version 4.1 files.  
+--
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.FontLoader.AfmV2Parser
+module Wumpus.Basic.FontLoader.AfmV4Dot1Parser
   ( 
-
-     parseAfmV2File
+    
+    parseAfmV4Dot1File
   
   ) where
 
@@ -32,15 +32,12 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-import qualified Data.Map               as Map
+import qualified Data.Map as Map
 
 
+parseAfmV4Dot1File :: FilePath -> IO (Either ParseError AfmFile)
+parseAfmV4Dot1File filepath = runParserEither afmFile <$> readFile filepath
 
---------------------------------------------------------------------------------
--- parser
-
-parseAfmV2File :: FilePath -> IO (Either ParseError AfmFile)
-parseAfmV2File filepath = runParserEither afmFile <$> readFile filepath
 
 
 afmFile :: CharParser AfmFile
@@ -59,6 +56,7 @@ globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty)
                <$> manyTill (keyStringPair <* lexeme newline) (peek startCharMetrics)
 
 
+
 charMetrics :: CharParser AfmGlyphMetrics
 charMetrics = AfmGlyphMetrics <$>
         metric "C" (-1) cint
@@ -73,10 +71,4 @@ charMetrics = AfmGlyphMetrics <$>
 widthVector :: CharParser (Vec2 AfmUnit)
 widthVector =  (symbol "WX" *> ((\w -> vec w 0) <$> number) <* semi)
            <|> (symbol "W"  *> (vec <$> number <*> number)  <* semi)
-
-
---------------------------------------------------------------------------------
-
-
-
 

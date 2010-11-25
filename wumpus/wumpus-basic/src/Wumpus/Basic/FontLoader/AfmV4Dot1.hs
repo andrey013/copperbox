@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.FontLoader.AfmV2
+-- Module      :  Wumpus.Basic.FontLoader.AfmV4Dot1
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,26 +10,23 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- AFM file parser for Version 2.0.
---
--- Note - AFM Version 2.0 used by GhostScript and Version 3.0+
--- have numerous differences. 
+-- AFM file parser for Version 4.1.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.FontLoader.AfmV2
+module Wumpus.Basic.FontLoader.AfmV4Dot1
   ( 
 
     module Wumpus.Basic.FontLoader.Base
-  , module Wumpus.Basic.FontLoader.AfmV2Parser  
+  , module Wumpus.Basic.FontLoader.AfmV4Dot1Parser  
 
-  , ghostScriptFontLoader
+  , afmV4Dot1Loader
   
 
   
   ) where
 
-import Wumpus.Basic.FontLoader.AfmV2Parser
+import Wumpus.Basic.FontLoader.AfmV4Dot1Parser
 import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.FontLoader.GSFontMap
 import Wumpus.Basic.Graphic
@@ -41,12 +38,12 @@ import Data.Maybe
 
 
 
-ghostScriptFontLoader :: FilePath -> FontLoader AfmUnit
-ghostScriptFontLoader font_dir_path = FontLoader
+afmV4Dot1Loader :: FilePath -> FontLoader AfmUnit
+afmV4Dot1Loader font_dir_path = FontLoader
       { unit_scale_fun      = afmUnitScale
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
-      , font_parser         = parseAfmV2File
+      , font_parser         = parseAfmV4Dot1File
       , post_process        = buildGlyphMetricsTable bbox (V2 600 0) 1000
       }
   where
