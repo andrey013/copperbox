@@ -28,7 +28,7 @@ font_directory = "./font_metrics/adobe_core14"
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
+    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica", "Times-Roman"]
     let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
     writeEPS "./out/afm4dot1_01.eps" pic1
     writeSVG "./out/afm4dot1_01.svg" pic1
@@ -65,7 +65,8 @@ redPlus = localize (strokeColour red) markPlus
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
-    localize (strokeColour dark_slate_gray) $ singleLineBL "Baseline-left..."
+    localize (fontface times_roman . strokeColour dark_slate_gray) $ 
+             singleLineBL "Times-Roman"
 
 
 cc_oneline :: BoundedLocGraphic Double

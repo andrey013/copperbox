@@ -28,18 +28,17 @@ module Wumpus.Basic.FontLoader.AfmV4Dot1
 
 import Wumpus.Basic.FontLoader.AfmV4Dot1Parser
 import Wumpus.Basic.FontLoader.Base
-import Wumpus.Basic.FontLoader.GSFontMap
 import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Maybe
 
 
 
 
 afmV4Dot1Loader :: FilePath -> FontLoader AfmUnit
-afmV4Dot1Loader font_dir_path = FontLoader
+afmV4Dot1Loader font_dir_path = 
+    FontLoader 
       { unit_scale_fun      = afmUnitScale
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
@@ -48,7 +47,7 @@ afmV4Dot1Loader font_dir_path = FontLoader
       }
   where
     buildName :: FontName -> FilePath
-    buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
+    buildName font = font ++ ".afm"
 
     bbox           = BBox (P2 (-23) (-250)) (P2 715 805)
 

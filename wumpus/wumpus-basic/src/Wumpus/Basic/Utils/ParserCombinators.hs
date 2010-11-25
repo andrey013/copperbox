@@ -27,6 +27,7 @@ module Wumpus.Basic.Utils.ParserCombinators
   , runParserEither
   , apply
   , failure
+  , throwError
   , (<?>)
   , lookahead
   , peek
@@ -173,6 +174,10 @@ instance MonadPlus (Parser s) where
 -- Combinators
 
 
+throwError :: String -> Parser s a
+throwError err_msg = Parser $ \_ _ ss -> Fail err_msg ss
+
+
 infixr 0 <?>
 
 (<?>) :: Parser s a -> String -> Parser s a
@@ -180,7 +185,7 @@ p <?> err_msg = Parser $ \sk _ ss -> getParser p sk (fk ss) ss
   where
     fk ss = Fail err_msg ss
 
--- This one is from Chris Okasaki\'s \"Even Higher-Order 
+-- | This one is from Chris Okasaki\'s \"Even Higher-Order 
 -- Functions for Parsing\".
 --
 lookahead :: Parser s a -> (a -> Parser s b) -> Parser s b 
@@ -188,7 +193,7 @@ lookahead p mf  = Parser $ \sk fk ->
     getParser p (\a fk2 -> getParser (mf a) sk fk2) fk
 
 
--- Peek tries the supplied parse, but does not consume input 
+-- | Peek tries the supplied parse, but does not consume input 
 -- \*\* even when the parse succeeds \*\*.
 --
 peek :: Parser s a -> Parser s a
@@ -312,12 +317,12 @@ sepEndBy1 p sep = (p <* sep) <:> step
 manyTill :: Alternative f => f a -> f b -> f [a]
 manyTill p end = step <|> pure [] 
   where
-    step = p <:> ((end `apply` pure[]) <|> step)
+    step = p <:> ( ([] <$ end) <|> step)
 
 manyTill1 :: Alternative f => f a -> f b -> f [a]
 manyTill1 p end = p <:> step 
   where
-    step = (end `apply` pure []) <|> (p <:> step)
+    step = ([] <$ end) <|> (p <:> step)
     
 
 

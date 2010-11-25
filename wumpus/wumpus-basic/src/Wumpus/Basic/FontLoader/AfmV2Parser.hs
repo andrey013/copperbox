@@ -32,7 +32,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-import qualified Data.Map               as Map
 
 
 
@@ -40,27 +39,13 @@ import qualified Data.Map               as Map
 -- parser
 
 parseAfmV2File :: FilePath -> IO (Either ParseError AfmFile)
-parseAfmV2File filepath = runParserEither afmFile <$> readFile filepath
+parseAfmV2File filepath = runParserEither p <$> readFile filepath
+  where
+    p = afmFileParser charMetricsV2
 
 
-afmFile :: CharParser AfmFile
-afmFile = 
-    (\info xs -> AfmFile (getEncodingScheme info)
-                         (getFontBBox info)
-                         (getCapHeight info)
-                         xs ) 
-      <$> (versionNumber    *> globalInfo) 
-      <*> (startCharMetrics *> many charMetrics)
-
-
-
-globalInfo :: CharParser GlobalInfo
-globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty) 
-               <$> manyTill (keyStringPair <* lexeme newline) (peek startCharMetrics)
-
-
-charMetrics :: CharParser AfmGlyphMetrics
-charMetrics = AfmGlyphMetrics <$>
+charMetricsV2 :: CharParser AfmGlyphMetrics
+charMetricsV2 = AfmGlyphMetrics <$>
         metric "C" (-1) cint
     <*> widthVector
     <*> metric "N" "" name1

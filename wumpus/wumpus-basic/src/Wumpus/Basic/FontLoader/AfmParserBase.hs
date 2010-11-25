@@ -17,7 +17,8 @@
 module Wumpus.Basic.FontLoader.AfmParserBase
   ( 
 
-    runQuery
+    afmFileParser
+  , runQuery
   , textQuery
 
   , getFontBBox
@@ -61,6 +62,28 @@ import Data.Char
 import qualified Data.Map               as Map
 
 
+
+afmFileParser :: CharParser AfmGlyphMetrics -> CharParser AfmFile
+afmFileParser pgm = do 
+    info <- (versionNumber    *> globalInfo) 
+    cms  <- (startCharMetrics *> many pgm)
+    let mb_encoding = getEncodingScheme info
+    let mb_cap      = getCapHeight      info
+    let mb_bbox     = getFontBBox       info
+    case mb_bbox of
+      Nothing -> throwError "No FontBBox field in the AFM file."
+      Just bb -> return $ AfmFile 
+                            { afm_encoding        = mb_encoding
+                            , afm_font_bbox       = bb
+                            , afm_cap_height      = mb_cap
+                            , afm_glyph_metrics   = cms
+                            }
+
+globalInfo :: CharParser GlobalInfo
+globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty) 
+               <$> manyTill keyStringPair (peek startCharMetrics)
+
+
  
 runQuery :: String -> CharParser a -> GlobalInfo -> Maybe a
 runQuery field_name p table = 
@@ -76,7 +99,7 @@ textQuery = Map.lookup
 -- | Strictly speaking a fontBBox is measured in integer units.
 --
 getFontBBox            :: GlobalInfo -> Maybe AfmBoundingBox
-getFontBBox            = runQuery "FontBBox" charBBox
+getFontBBox            = runQuery "FontBBox" fontBBox
 
 getEncodingScheme      :: GlobalInfo -> Maybe String
 getEncodingScheme      = textQuery "EncodingScheme"
@@ -86,10 +109,13 @@ getCapHeight           = runQuery "CapHeight" number
 
 
 charBBox :: CharParser AfmBoundingBox
-charBBox = symbol "B" *> go <* semi
-  where
-    go = (\llx lly urx ury -> boundingBox (P2 llx lly) (P2 urx ury))
-           <$> number <*> number <*> number <*> number
+charBBox = symbol "B" *> fontBBox <* semi
+
+fontBBox :: CharParser AfmBoundingBox
+fontBBox = (\llx lly urx ury -> boundingBox (P2 llx lly) (P2 urx ury))
+              <$> number <*> number <*> number <*> number
+
+
 
 metric :: String -> a -> CharParser a -> CharParser a
 metric iden dfault p = option dfault go
@@ -99,16 +125,17 @@ metric iden dfault p = option dfault go
 
 
 keyStringPair :: CharParser (AfmKey,String)
-keyStringPair = (,) <$> keyName <*> uptoNewline
+keyStringPair = (,) <$> keyName <*> uptoNewline <* lexeme newline <?> "key-value line"
 
 versionNumber :: CharParser String
 versionNumber = 
     symbol "StartFontMetrics" *> many1 (digit <|> char '.') <* newlineOrEOF
+      <?> "StartFontMetrics"
 
 
 startCharMetrics :: CharParser Int
-startCharMetrics = 
-    symbol "StartCharMetrics" *> int <* newlineOrEOF
+startCharMetrics = symbol "StartCharMetrics" *> int <* newlineOrEOF
+                 -- BAD if this has an error string, manyTill does not work
 
 
 
@@ -123,6 +150,11 @@ keyName = lexeme (many1 $ satisfy isAlphaNum)
 newlineOrEOF :: CharParser ()
 newlineOrEOF = skipOne (lexeme newline) <|> eof
 
+
+uptoNewline :: CharParser String
+uptoNewline = many1 (noneOf ['\n'])
+
+
 name :: CharParser String
 name = lexeme $ many (noneOf ";\n")
 
@@ -135,9 +167,6 @@ semi :: CharParser Char
 semi = lexeme $ char ';'
 
 
--- | 
-uptoNewline :: CharParser String
-uptoNewline = many1 (noneOf ['\n'])
 
 
 number :: CharParser AfmUnit

@@ -110,13 +110,23 @@ type GlobalInfo     = Map.Map AfmKey String
 -- | Wumpus needs a very small subset of AFM files, common to both
 -- version 2.0 and version 4.1.
 --
+-- Note - Bounding Box is mandatory for AFM versions 3.0 and 4.1
+-- 
+-- Cap Height is optional in AFM versions 3.0 and 4.1. As Wumpus 
+-- uses cap height in calculations, glyph metrics must be build 
+-- with an arbitrary value if it is not present.
+--
+-- Encoding Scheme is optional in AFM files.
+--
 data AfmFile = AfmFile 
       { afm_encoding        :: Maybe String
-      , afm_font_bbox       :: Maybe AfmBoundingBox
+      , afm_font_bbox       :: AfmBoundingBox
       , afm_cap_height      :: Maybe AfmUnit
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
+
+-- Note BBox is a required field for version 4.1.
 
 
 data AfmGlyphMetrics = AfmGlyphMetrics

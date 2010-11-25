@@ -32,34 +32,17 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-import qualified Data.Map as Map
-
 
 parseAfmV4Dot1File :: FilePath -> IO (Either ParseError AfmFile)
-parseAfmV4Dot1File filepath = runParserEither afmFile <$> readFile filepath
+parseAfmV4Dot1File filepath = runParserEither p <$> readFile filepath
+  where
+    p = afmFileParser charMetricsV4Dot1
 
 
 
-afmFile :: CharParser AfmFile
-afmFile = 
-    (\info xs -> AfmFile (getEncodingScheme info)
-                         (getFontBBox info)
-                         (getCapHeight info)
-                         xs ) 
-      <$> (versionNumber    *> globalInfo) 
-      <*> (startCharMetrics *> many charMetrics)
-
-
-
-globalInfo :: CharParser GlobalInfo
-globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty) 
-               <$> manyTill (keyStringPair <* lexeme newline) (peek startCharMetrics)
-
-
-
-charMetrics :: CharParser AfmGlyphMetrics
-charMetrics = AfmGlyphMetrics <$>
-        metric "C" (-1) cint
+charMetricsV4Dot1 :: CharParser AfmGlyphMetrics
+charMetricsV4Dot1 = AfmGlyphMetrics <$>
+        characterCode
     <*> widthVector
     <*> metric "N" "" name1
     <*  charBBox
@@ -67,8 +50,18 @@ charMetrics = AfmGlyphMetrics <$>
     <*  newlineOrEOF
   where
     ligature_body = ((,) <$> name <*> name)
+
+
+-- Note - there are many variants for width vectors in in 4.1.
+-- Wumpus needs some thought about what to do for them, it also
+-- needs some facility to tell how successful the parse has been.
     
 widthVector :: CharParser (Vec2 AfmUnit)
 widthVector =  (symbol "WX" *> ((\w -> vec w 0) <$> number) <* semi)
            <|> (symbol "W"  *> (vec <$> number <*> number)  <* semi)
 
+
+-- V4.1 allows C int or CH \<hex\>
+--
+characterCode :: CharParser Int
+characterCode = metric "CH" (-1) hexInt <|> metric "C" (-1) cint  
