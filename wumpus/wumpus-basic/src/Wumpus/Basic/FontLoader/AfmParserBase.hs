@@ -125,7 +125,8 @@ metric iden dfault p = option dfault go
 
 
 keyStringPair :: CharParser (AfmKey,String)
-keyStringPair = (,) <$> keyName <*> uptoNewline <* lexeme newline <?> "key-value line"
+keyStringPair = (,) <$> keyName <*> uptoNewline <* newlineOrEOF 
+             <?> "key-value line"
 
 versionNumber :: CharParser String
 versionNumber = 
@@ -135,8 +136,7 @@ versionNumber =
 
 startCharMetrics :: CharParser Int
 startCharMetrics = symbol "StartCharMetrics" *> int <* newlineOrEOF
-                 -- BAD if this has an error string, manyTill does not work
-
+                <?> "StartCharMetrics failed"
 
 
 

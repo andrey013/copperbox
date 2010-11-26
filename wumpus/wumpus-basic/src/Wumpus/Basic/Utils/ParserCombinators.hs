@@ -121,8 +121,7 @@ yield a = Parser $ \sk fk ss -> sk a fk ss
 -- mplus of MonadPlus, (<|>) of Applicative.
 --
 alt :: Parser s a -> Parser s a -> Parser s a
-alt p q = Parser $ \sk fk ss -> 
-            getParser p (\r _ -> sk r fk) (getParser q sk fk ss) ss
+alt p1 p2 = Parser $ \sk fk ss -> getParser p1 sk (getParser p2 sk fk ss) ss
 
 infixl 5 `apply`
 
@@ -137,12 +136,12 @@ failure = Parser $ \_ fk _ -> fk
 -- eager-many / zero-or-more (many of Applicative)
 --
 eagerMany :: Parser s a -> Parser s [a]
-eagerMany p = (p >>= \ r -> eagerMany p `apply` \rs -> (r:rs)) <|> return [] 
+eagerMany p = (p >>= \r -> eagerMany p `apply` \rs -> (r:rs)) <|> return [] 
 
 -- eager-some / one-or-more (some of Applicative)
 --
 eagerSome :: Parser s a -> Parser s [a]
-eagerSome p = p >>= \ r -> eagerMany p `apply` \rs -> (r:rs)
+eagerSome p = p >>= \r -> eagerMany p `apply` \rs -> (r:rs)
 
 
 instance Functor (Parser s) where
@@ -181,9 +180,10 @@ throwError err_msg = Parser $ \_ _ ss -> Fail err_msg ss
 infixr 0 <?>
 
 (<?>) :: Parser s a -> String -> Parser s a
-p <?> err_msg = Parser $ \sk _ ss -> getParser p sk (fk ss) ss
+p <?> err_msg = Parser $ \sk fk ss -> getParser p sk (swapMsg fk) ss
   where
-    fk ss = Fail err_msg ss
+    swapMsg (Fail _ ss) = Fail err_msg ss
+    swapMsg okay        = okay
 
 -- | This one is from Chris Okasaki\'s \"Even Higher-Order 
 -- Functions for Parsing\".
@@ -317,13 +317,14 @@ sepEndBy1 p sep = (p <* sep) <:> step
 manyTill :: Alternative f => f a -> f b -> f [a]
 manyTill p end = step <|> pure [] 
   where
-    step = p <:> ( ([] <$ end) <|> step)
+    step  = p <:> (final <|> step)
+    final = [] <$ end 
 
 manyTill1 :: Alternative f => f a -> f b -> f [a]
 manyTill1 p end = p <:> step 
   where
-    step = ([] <$ end) <|> (p <:> step)
-    
+    step  = final <|> (p <:> step)
+    final = [] <$ end
 
 
 --------------------------------------------------------------------------------
