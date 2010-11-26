@@ -17,10 +17,11 @@ import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.DrawingComposition
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths
-import Wumpus.Basic.Text.LRSymbol
-import Wumpus.Basic.Text.LRText
+import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
@@ -73,8 +74,9 @@ cpic4 = clipDrawing (toPrimPath path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> TraceDrawing u () 
-iheartHaskell pt = 
-    draw $ (execLRText $ char 'I' >> heart >> mapM_ char "Haskell") `at` pt
+iheartHaskell pt = do
+    draw $ textline "I Haskell" `at` pt
+    draw $ localize (fontface symbol) $ textline "&heart;" `at` (pt .+^ hvec 7)
 
 
 path01 :: Floating u => Path u

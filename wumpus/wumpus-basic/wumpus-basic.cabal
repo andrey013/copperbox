@@ -62,6 +62,7 @@ extra-source-files:
   demo/DrawingCompo.hs,
   demo/FeatureModel.hs,
   demo/FontPic.hs,
+  demo/NewText.hs,
   demo/PetriNet.hs,
   demo/Symbols.hs
 

@@ -7,7 +7,6 @@ module FeatureModel where
 
 import Wumpus.Basic.Arrows
 import Wumpus.Basic.FontLoader.AfmV2
-import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 import Wumpus.Basic.SafeFonts

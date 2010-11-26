@@ -7,7 +7,6 @@ import Wumpus.Basic.Chains
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.FontLoader.AfmV2
-import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 

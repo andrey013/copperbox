@@ -44,18 +44,18 @@ makeCtx = fontface helvetica . metricsContext 18
 text_drawing :: Drawing Double
 text_drawing = drawTracing $ do 
     drawi_ $ (fn left_text)   `at` P2   0 100
-    drawi_ $ (fn center_text) `at` P2 250 100
-    drawi_ $ (fn right_text)  `at` P2 500 100
+    drawi_ $ (fn center_text) `at` P2 200 100
+    drawi_ $ (fn right_text)  `at` P2 400 100
     drawi_ $ (fn blank_text)  `at` P2   0   0
-    drawi_ $ (fn bl_oneline)  `at` P2 250   0
-    drawi_ $ (fn cc_oneline)  `at` P2 500   0
+    drawi_ $ (fn bl_oneline)  `at` P2 200   0
+    drawi_ $ (fn cc_oneline)  `at` P2 400   0
     
     draw $ redPlus            `at` P2   0 100
-    draw $ redPlus            `at` P2 250 100
-    draw $ redPlus            `at` P2 500 100
+    draw $ redPlus            `at` P2 200 100
+    draw $ redPlus            `at` P2 400 100
     draw $ redPlus            `at` P2   0   0  
-    draw $ redPlus            `at` P2 250   0 
-    draw $ redPlus            `at` P2 500   0 
+    draw $ redPlus            `at` P2 200   0 
+    draw $ redPlus            `at` P2 400   0 
        
   where
     fn = illustrateBoundedLocGraphic
