@@ -12,6 +12,9 @@ import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText
 
+import FontLoaderUtils
+
+
 import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
@@ -33,22 +36,27 @@ afm_font_directory = "./font_metrics/adobe_core14"
 
 main :: IO ()
 main = do 
+    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    makeGSPicture
-    makeAfmPicture
+    maybe gs_failk  makeGSPicture  $ mb_gs
+    maybe afm_failk makeAfmPicture $ mb_afm
+  where
+    gs_failk  = putStrLn "No GhostScript font path supplied..."
+    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
 
-makeGSPicture :: IO ()
-makeGSPicture = do
+
+makeGSPicture :: FilePath -> IO ()
+makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
-    gs_metrics <- loadGSMetrics gs_font_directory ["Helvetica"]
+    gs_metrics <- loadGSMetrics font_dir ["Helvetica"]
     let pic1 = runDrawingU (makeCtx gs_metrics) text_drawing 
     writeEPS "./out/new_text01.eps" pic1
     writeSVG "./out/new_text01.svg" pic1
 
-makeAfmPicture :: IO ()
-makeAfmPicture = do
+makeAfmPicture :: FilePath -> IO ()
+makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
-    afm_metrics <- loadAfmMetrics afm_font_directory ["Helvetica"]
+    afm_metrics <- loadAfmMetrics font_dir ["Helvetica"]
     let pic2 = runDrawingU (makeCtx afm_metrics) text_drawing 
     writeEPS "./out/new_text02.eps" pic2
     writeSVG "./out/new_text02.svg" pic2
