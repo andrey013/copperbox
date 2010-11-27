@@ -1,12 +1,13 @@
 {-# OPTIONS -Wall #-}
 
 
-module NewText where
+module LeftRightText where
 
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.Marks
-import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.GSLoader
+import Wumpus.Basic.FontLoader.AfmLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText
@@ -17,25 +18,43 @@ import System.Directory
 
 
 
--- Edit this path!
+-- Edit these paths!
 -- ***************
 --
-font_directory :: FilePath
-font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+gs_font_directory :: FilePath
+gs_font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 
+-- Edit these paths!
+-- ***************
+--
+afm_font_directory :: FilePath
+afm_font_directory = "./font_metrics/adobe_core14"
 
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
-    let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
+    makeGSPicture
+    makeAfmPicture
+
+makeGSPicture :: IO ()
+makeGSPicture = do
+    putStrLn "Using GhostScript metrics..."
+    gs_metrics <- loadGSMetrics gs_font_directory ["Helvetica"]
+    let pic1 = runDrawingU (makeCtx gs_metrics) text_drawing 
     writeEPS "./out/new_text01.eps" pic1
     writeSVG "./out/new_text01.svg" pic1
 
+makeAfmPicture :: IO ()
+makeAfmPicture = do
+    putStrLn "Using AFM 4.1 metrics..."
+    afm_metrics <- loadAfmMetrics afm_font_directory ["Helvetica"]
+    let pic2 = runDrawingU (makeCtx afm_metrics) text_drawing 
+    writeEPS "./out/new_text02.eps" pic2
+    writeSVG "./out/new_text02.svg" pic2
 
-loader :: FontLoader AfmUnit
-loader = ghostScriptFontLoader font_directory
+
+
 
 makeCtx :: BaseGlyphMetrics -> DrawingContext
 makeCtx = fontface helvetica . metricsContext 18

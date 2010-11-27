@@ -2,7 +2,7 @@
 
 module ColourCharts where
 
-import ColourDefns
+import ColourChartUtils
 
 import Wumpus.Basic.Chains
 import Wumpus.Basic.Graphic

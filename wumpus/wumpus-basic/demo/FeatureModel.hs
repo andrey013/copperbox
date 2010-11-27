@@ -6,7 +6,7 @@
 module FeatureModel where
 
 import Wumpus.Basic.Arrows
-import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 import Wumpus.Basic.SafeFonts
@@ -21,20 +21,18 @@ import System.Directory
 -- Edit this path!
 -- ***************
 --
-font_directory :: FilePath
-font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+gs_font_directory :: FilePath
+gs_font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Courier-Bold"]
+    base_metrics <- loadGSMetrics gs_font_directory ["Courier-Bold"]
     let pic1 = runDrawingU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model.eps" pic1
     writeSVG "./out/feature_model.svg" pic1 
 
-loader :: FontLoader AfmUnit
-loader = ghostScriptFontLoader font_directory
 
 makeCtx :: BaseGlyphMetrics -> DrawingContext
 makeCtx = fontface courier_bold . metricsContext 18

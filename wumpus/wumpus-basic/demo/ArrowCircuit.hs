@@ -9,7 +9,7 @@
 module ArrowCircuit where
 
 import Wumpus.Basic.Arrows
-import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
 import Wumpus.Basic.SafeFonts
@@ -32,14 +32,12 @@ font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Times-Roman", "Times-Italic"]
+    base_metrics <- loadGSMetrics font_directory ["Times-Roman", "Times-Italic"]
     let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
     writeEPS "./out/arrow_circuit.eps" pic1
     writeSVG "./out/arrow_circuit.svg" pic1 
 
 
-loader :: FontLoader AfmUnit
-loader = ghostScriptFontLoader font_directory
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext
 makeCtx = fontface times_roman . metricsContext 11

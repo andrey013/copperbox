@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ColourDefns
+-- Module      :  ColourChartUtils
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ColourDefns
+module ColourChartUtils
   ( 
   -- * Tables of all colours
     all_x11_colours

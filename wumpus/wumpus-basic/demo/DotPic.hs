@@ -6,7 +6,7 @@ module DotPic where
 import Wumpus.Basic.Chains
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.AnchorDots
-import Wumpus.Basic.FontLoader.AfmV2
+import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 
@@ -20,21 +20,18 @@ import System.Directory
 -- Edit this path!
 -- ***************
 --
-font_directory :: FilePath
-font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
+gs_font_directory :: FilePath
+gs_font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica"]
+    base_metrics <- loadGSMetrics gs_font_directory ["Helvetica"]
     let pic1 = runDrawingU (makeCtx base_metrics) dot_drawing 
     writeEPS "./out/dots01.eps" pic1
     writeSVG "./out/dots01.svg" pic1
 
-
-loader :: FontLoader AfmUnit
-loader = ghostScriptFontLoader font_directory
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext
 makeCtx = fillColour peru . fontface helvetica . metricsContext 24

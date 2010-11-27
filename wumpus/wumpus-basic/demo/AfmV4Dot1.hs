@@ -6,7 +6,7 @@ module AfmV4Dot1 where
 
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.Marks
-import Wumpus.Basic.FontLoader.AfmV4Dot1
+import Wumpus.Basic.FontLoader.AfmLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
 import Wumpus.Basic.Text.LRText
@@ -28,7 +28,7 @@ font_directory = "./font_metrics/adobe_core14"
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadBaseGlyphMetrics loader ["Helvetica", "Times-Roman"]
+    base_metrics <- loadAfmMetrics font_directory ["Helvetica", "Times-Roman"]
     let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
     writeEPS "./out/afm4dot1_01.eps" pic1
     writeSVG "./out/afm4dot1_01.svg" pic1

@@ -9,38 +9,38 @@ category:         Graphics
 synopsis:         Pure Haskell PostScript and SVG generation. 
 description:
   .
-  Wumpus is a low-level library for generating static 2D vector 
-  pictures, its salient feature is portability due to no FFI 
-  dependencies. It can generate PostScript (EPS) files and SVG 
+  Wumpus-Core is a low-level library for generating static 2D 
+  vector pictures, its salient feature is portability due to no 
+  FFI dependencies. It can generate PostScript (EPS) files and SVG 
   files. The generated PostScript code is plain and reasonably 
   efficient as the use of stack operations, i.e @gsave@ and 
   @grestore@, is minimized. 
   .
-  Although Wumpus only generates vector output, the generated 
+  Although Wumpus-Core only generates vector output, the generated 
   PostScript can be interpreted by GraphicsMagick or a similar 
   tool to convert EPS files into bitmap image files (e.g JPEGs).
   .
-  Wumpus makes pictures from /paths/ and text /labels/. Paths 
+  Wumpus-Core makes pictures from /paths/ and text /labels/. Paths 
   themselves are made from points. The usual affine 
   transformations (rotations, scaling, translations) can be
-  applied to Pictures. Unlike PostScript there is no 
-  notion of a current point, Wumpus builds pictures in a
-  coordinate-free style. 
+  applied to Pictures. Unlike PostScript there is no notion of a 
+  current point, Wumpus-Core builds pictures in a coordinate-free 
+  style. 
   .
   GENERAL DRAWBACKS...
   .
-  For actually drawing pictures, diagrams, etc. Wumpus is very 
-  low-level. There is a supplemantary package @wumpus-basic@ 
+  For actually building pictures, diagrams, etc. Wumpus-Core is 
+  very low-level. There is a supplementary package @Wumpus-Basic@ 
   available that helps create certain types of diagram, but it is
   experimental - functionality is added and dropped between 
   releases, it has no stable API.
   .
-  Some of the design decisions made for @wumpus-core@ are not 
-  sophisticated (e.g. how attributes like colour are handled, 
-  and how the bounding boxes of text labels are calculated), so 
-  Wumpus might be limited compared to other systems. However, 
-  the design permits a fairly simple implementation, which is a 
-  priority. 
+  Some of the design decisions made for Wumpus-Core are not 
+  sophisticated (e.g. how path and text attributes like colour are 
+  handled, and how the bounding boxes of text labels are 
+  calculated), so Wumpus might be limited compared to other 
+  systems. However, the design permits a fairly simple 
+  implementation, which is a priority. 
   .  
   UPDATING to 0.40.0
   .
@@ -60,7 +60,7 @@ description:
   exports a more consistent set of metrics (consistent with what 
   is present in font files - the previous version was derived 
   from hand measurements). It also adds a margin to bounding box
-  calculations, again this is consistent with how font files 
+  calculations, again this is more consistent with how font files 
   actually work.
   .
   The handling of escaped special characters is now more 
@@ -96,23 +96,25 @@ description:
     then render it - going back to un-escaped text for the 
     rendering would be inefficient.
   .
-  * Internal representation of paths changed. They are now 
-    start-point plus a list of /relative/ path segments rather 
-    than a list of absolute path segments. Using relative path 
-    segments make them cheaper to move, although BoundingBox and 
-    printing is more expensive - the thinking is that to make 
-    complex pictures paths will be moved possibly many times but
-    have bounding box calculated and be printed only once.
+  * The internal representation of paths has changed. They are now 
+    represented as start-point plus list of /relative/ path 
+    segments rather than start-point plus list of absolute path 
+    segments. Using relative path segments makes it cheaper to
+    move paths with @translate@, although calculating the bounding
+    box and rendering to PostScript is more expensive. The 
+    rationale for the change is that to make complex pictures, 
+    paths are potentially moved many times but the other 
+    operations are only performed once.
   .
   * Internal change to Primitives and the PrimCTM - ellipses and
     labels no longer have a point (center or baseline left)
     as an element in the datatype, the point is now represented 
-    in the PrimCTM.
+    within the PrimCTM.
   .
   * Name change to @Core.Picture@ API - the path construction 
     function @path@ has been renamed to @primPath@.
   .
-  * Name change - in @Core.FontSize@ the function @textBoundsEnc@
+  * Name change in @Core.FontSize@, the function @textBoundsEnc@
     has been renamed to @textBoundsEsc@. Wumpus-Core now calls 
     strings that have been parsed for escape characters 
     /Escaped Text/ rather than /Encoded Text/.
@@ -120,14 +122,14 @@ description:
   * Fixed bug where ellipse rotation and scaling calculated the 
     wrong bounding box.
   . 
-  * Fixed bug with @illustrateControlPoints@ where the original
-    primitive was not being drawn. 
+  * Fixed bug in @illustrateControlPoints@ where the control points
+    were drawn but the original primitive was lost. 
   .
-  * Added initial support for arbitrary SVG attributes 
-    (e.g. onmouseover handlers) via @annotateGroup@ in 
-    @Core.Picture@. Arbitrary SVG \"defs\" can be written into 
-    the defs prologue by using @writeSVG_defs@ instead of 
-    @writeSVG@.
+  * Added initial support for arbitrary SVG attributes (e.g. 
+    onmouseover handlers) via @annotateGroup@ in @Core.Picture@. 
+    Arbitrary SVG \"defs\" can be written into the defs prologue 
+    by using @writeSVG_defs@ instead of @writeSVG@. This 
+    functionality is mostly untested!
   .
   .
 build-type:         Simple

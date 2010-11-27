@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.FontLoader.AfmV4Dot1
+-- Module      :  Wumpus.Basic.FontLoader.GSLoader
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,44 +10,53 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- AFM file parser for Version 4.1.
+-- Font loader for GhostScript glyph metrics.
+--
+-- Use this loader if you have GhostScript installed and you want 
+-- to use the (AFM v2.0) metrics that are distributed with 
+-- GhostScript.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.FontLoader.AfmV4Dot1
+module Wumpus.Basic.FontLoader.GSLoader
   ( 
 
     module Wumpus.Basic.FontLoader.Base
-  , module Wumpus.Basic.FontLoader.AfmV4Dot1Parser  
+  , module Wumpus.Basic.FontLoader.AfmV2Parser  
 
-  , afmV4Dot1Loader
+  , loadGSMetrics
+  , gsFontLoader
   
 
   
   ) where
 
-import Wumpus.Basic.FontLoader.AfmV4Dot1Parser
+import Wumpus.Basic.FontLoader.AfmV2Parser
 import Wumpus.Basic.FontLoader.Base
+import Wumpus.Basic.FontLoader.GSFontMap
 import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Maybe
 
 
+loadGSMetrics :: FilePath -> [FontName] -> IO BaseGlyphMetrics
+loadGSMetrics font_dir_path ns = 
+    loadBaseGlyphMetrics (gsFontLoader font_dir_path) ns
+    
 
-
-afmV4Dot1Loader :: FilePath -> FontLoader AfmUnit
-afmV4Dot1Loader font_dir_path = 
-    FontLoader 
+gsFontLoader :: FilePath -> FontLoader AfmUnit
+gsFontLoader font_dir_path = FontLoader
       { unit_scale_fun      = afmUnitScale
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
-      , font_parser         = parseAfmV4Dot1File
+      , font_parser         = parseAfmV2File
       , post_process        = buildGlyphMetricsTable bbox (V2 600 0) 1000
       }
   where
     buildName :: FontName -> FilePath
-    buildName font = font ++ ".afm"
+    buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
 
     bbox           = BBox (P2 (-23) (-250)) (P2 715 805)
 
