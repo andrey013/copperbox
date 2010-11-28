@@ -54,9 +54,8 @@ import Data.Maybe
 -- This function returns Nothing if the picture is empty.
 -- 
 renderTeletype :: RenderScalingCtx -> DrawWordF -> Teletype a -> Maybe DPicture
-renderTeletype ctx fn mf = 
-    liftToPictureMb $ execDrawing (standardContext 14) 
-                    $ render ctx fn $ execTeletype mf
+renderTeletype sctx fn mf = 
+    runDrawing (standardContext 24) $ drawTracing $ render sctx fn $ execTeletype mf
 
 
 -- | Build a picture from a Teletype - /unsafe/ version.

@@ -17,8 +17,8 @@ main = do
     createDirectoryIfMissing True "./out/"
     micro1 <- filePic
     let pic1 = fromMaybe errK $ renderTeletype sctx borderedF (prefix micro1)
-    writeEPS_latin1 "./out/teletype01.eps" pic1
-    writeSVG_latin1 "./out/teletype01.svg" pic1
+    writeEPS "./out/teletype01.eps" pic1
+    writeSVG "./out/teletype01.svg" pic1
   where
     prefix mp = setRGB moccasin >> mp
     sctx      = makeRenderScaling (\x -> fromIntegral $ 6*x) 
