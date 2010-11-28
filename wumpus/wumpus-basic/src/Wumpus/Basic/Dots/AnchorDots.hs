@@ -139,8 +139,8 @@ rectangleAnchor hw hh ctr =
 
 bboxRectAnchor  :: (Real u, Floating u) => BoundingBox u -> DotAnchor u
 bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
-   let hw = 0.5 * x2 - x1
-       hh = 0.5 * y2 - y1
+   let hw = 0.5 * (x2 - x1)
+       hh = 0.5 * (y2 - y1)
    in rectangleAnchor hw hh (bl .+^ vec hw hh)
 
 rectangleLDO :: (Real u, Floating u) 

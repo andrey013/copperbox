@@ -22,7 +22,7 @@ module Wumpus.Tree.VersionNumber
 
 -- | Version number
 --
--- > (0,10,0)
+-- > (0,11,0)
 --
 wumpus_tree_version :: (Int,Int,Int)
-wumpus_tree_version = (0,10,0)
+wumpus_tree_version = (0,11,0)

@@ -1,53 +1,93 @@
 {-# OPTIONS -Wall #-}
 
+-- Note - @main@ is more convoluted than would normally be 
+-- expected as it supports both sources of glyph metrics - the 
+-- GhostScript distribution or the Core 14 metrics from Adobe.
+-- 
+-- \"Real\" applications would be expected to choose one source. 
+--
+-- I-am-not-a-lawyer, but it does look as though the Adobe font
+-- metrics are redistributable, the GhostScript metrics are 
+-- seemingly redistributable under the same terms as the larger
+-- GhostScript distribution.
+-- 
 
 module Demo01 where
 
 import Wumpus.Tree
 
 import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
+import Wumpus.Basic.FontLoader.AfmLoader
+import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
+import Wumpus.Basic.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
+
+import FontLoaderUtils
+
 
 import Data.Tree hiding ( drawTree )
 import System.Directory
 
+
 main :: IO ()
 main = do 
+    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
+    maybe gs_failk  makeGSPictures  $ mb_gs
+--    maybe afm_failk makeAfmPictures $ mb_afm
+  where
+    gs_failk  = putStrLn "No GhostScript font path supplied..."
+    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+
+makeGSPictures :: FilePath -> IO ()
+makeGSPictures font_dir = do 
+    putStrLn "Using GhostScript metrics..."
+    base_metrics <- loadGSMetrics font_dir ["Times-Roman"]
+    --
+    let pic1 = runDrawingU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/tree01.eps"  pic1
     writeSVG "./out/tree01.svg"  pic1
+    --
+    let pic2 = runDrawingU (makeCtx 24 base_metrics) tree_drawing2
     writeEPS "./out/tree02.eps"  pic2
     writeSVG "./out/tree02.svg"  pic2
+    --
+    let pic3 = runDrawingU (makeCtx 14 base_metrics) tree_drawing3
     writeEPS "./out/tree03.eps"  pic3
     writeSVG "./out/tree03.svg"  pic3
+    --
+    let pic4 = runDrawingU (makeCtx 24 base_metrics) tree_drawing4
     writeEPS "./out/tree04.eps"  pic4
     writeSVG "./out/tree04.svg"  pic4
+    --
+    let pic5 = runDrawingU (makeCtx 24 base_metrics) tree_drawing5
     writeEPS "./out/tree05.eps"  pic5
     writeSVG "./out/tree05.svg"  pic5
 
+makeCtx :: FontSize -> BaseGlyphMetrics -> DrawingContext
+makeCtx sz m = fontface times_roman $ metricsContext sz m
 
-pic1 :: TreePicture
-pic1 = drawTreePicture charNode (standardContext 18) (uniformScaling 30) tree1
 
-pic2 :: TreePicture
-pic2 = drawTreePicture (diskNode red) (standardContext 24) (uniformScaling 30) tree2
+
+tree_drawing1 :: DTreeDrawing
+tree_drawing1 = drawScaledTree charNode  (uniformScaling 30) tree1
+
+tree_drawing2 :: DTreeDrawing
+tree_drawing2 = drawScaledTree (diskNode red) (uniformScaling 30) tree2
 
 -- This should be drawn in the /family tree/ style...
-pic3 :: TreePicture
-pic3 = drawFamilyTreePicture charNode (standardContext 14) (uniformScaling 30) tree3
+-- 
+tree_drawing3 :: DTreeDrawing
+tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 30) tree3
 
-pic4 :: TreePicture
-pic4 = drawTreePicture (circleNode black) 
-                       (standardContext 24) 
-                       (scaleFactors 20 30) 
-                       tree4
-pic5 :: TreePicture
-pic5 = drawTreePicture (circleNode black) 
-                       (standardContext 24) 
-                       (scaleFactors 20 30) 
-                       tree5
+
+tree_drawing4 :: DTreeDrawing
+tree_drawing4 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree4
+
+tree_drawing5 :: DTreeDrawing
+tree_drawing5 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree5
 
 
 tree1 :: Tree Char

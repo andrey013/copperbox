@@ -6,9 +6,12 @@ module DotPic where
 import Wumpus.Basic.Chains
 import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Dots.AnchorDots
+import Wumpus.Basic.FontLoader.AfmLoader
 import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.SafeFonts
+
+import FontLoaderUtils
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -17,20 +20,36 @@ import Data.AffineSpace                         -- package: vector-space
 import Control.Monad
 import System.Directory
 
--- Edit this path!
--- ***************
---
-gs_font_directory :: FilePath
-gs_font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 
 
 main :: IO ()
 main = do 
+    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadGSMetrics gs_font_directory ["Helvetica"]
+    maybe gs_failk  makeGSPicture  $ mb_gs
+    maybe afm_failk makeAfmPicture $ mb_afm
+  where
+    gs_failk  = putStrLn "No GhostScript font path supplied..."
+    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+
+
+makeGSPicture :: FilePath -> IO ()
+makeGSPicture font_dir = do 
+    putStrLn "Using GhostScript metrics..."
+    base_metrics <- loadGSMetrics font_dir ["Helvetica"]
     let pic1 = runDrawingU (makeCtx base_metrics) dot_drawing 
     writeEPS "./out/dots01.eps" pic1
     writeSVG "./out/dots01.svg" pic1
+
+ 
+
+makeAfmPicture :: FilePath -> IO ()
+makeAfmPicture font_dir = do 
+    putStrLn "Using AFM 4.1 metrics..."
+    base_metrics <- loadAfmMetrics font_dir ["Helvetica"]
+    let pic1 = runDrawingU (makeCtx base_metrics) dot_drawing 
+    writeEPS "./out/dots02.eps" pic1
+    writeSVG "./out/dots02.svg" pic1
 
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext

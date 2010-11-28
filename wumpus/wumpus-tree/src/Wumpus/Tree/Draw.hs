@@ -39,29 +39,31 @@ import Data.Tree hiding ( drawTree )
 ---------------------------------------------------------------------------------
 -- Draw individual connector between parent and each child node.
 
-drawTree :: (a -> TreeNode) 
-         -> DrawingContext 
-         -> CoordTree Double a 
-         -> HPrim Double
-drawTree drawF ctx tree = execTraceDrawing ctx $ drawTop drawF tree 
+drawTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+         => (a -> TreeNode u) 
+         -> CoordTree u a 
+         -> Drawing u
+drawTree drawF tree = drawTracing $ drawTop drawF tree 
 
 
-drawTop :: (a -> TreeNode) -> CoordTree Double a -> TraceDrawing Double ()
+drawTop :: (Real u, Floating u, InnerSpace (Vec2 u)) 
+        => (a -> TreeNode u) -> CoordTree u a -> TraceDrawing u ()
 drawTop fn (Node (pt,a) ns) = do 
     ancr <- drawi $ fn a `at` pt
     mapM_ (draw1 fn ancr) ns
 
-draw1 :: (a -> TreeNode) 
-      -> DotAnchor Double 
-      -> CoordTree Double a 
-      -> TraceDrawing Double ()
+draw1 :: (Real u, Floating u, InnerSpace (Vec2 u))  
+      => (a -> TreeNode u) 
+      -> DotAnchor u 
+      -> CoordTree u a 
+      -> TraceDrawing u ()
 draw1 fn ancr_from (Node (pt,a) ns) = do
     ancr <- drawi $ fn a `at` pt
     draw $ connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
 
 
-connector :: (Floating u, Real u, InnerSpace (Vec2  u)) 
+connector :: (Real u, Floating u, InnerSpace (Vec2 u)) 
           => DotAnchor u -> DotAnchor u -> Graphic u
 connector a1 a2 = openStroke $ vertexPath [p1,p2]
   where  
@@ -72,7 +74,7 @@ connector a1 a2 = openStroke $ vertexPath [p1,p2]
 
 
 
-anchorAngles :: (Floating u, Real u, InnerSpace (Vec2  u)) 
+anchorAngles :: (Floating u, Real u, InnerSpace (Vec2 u)) 
              => Point2 u -> Point2 u -> (Radian,Radian)
 anchorAngles f t = (theta0, theta1)
   where
@@ -84,16 +86,17 @@ anchorAngles f t = (theta0, theta1)
 --------------------------------------------------------------------------------
 -- Draw in /family tree/ style
 
-drawFamilyTree :: (a -> TreeNode) 
-               -> DrawingContext 
-               -> CoordTree Double a 
-               -> HPrim Double
-drawFamilyTree drawF ctx tree = execTraceDrawing ctx $ drawFamily drawF tree 
+drawFamilyTree :: (Real u, Floating u, FromPtSize u) 
+               => (a -> TreeNode u) 
+               -> CoordTree u a 
+               -> Drawing u
+drawFamilyTree drawF tree = drawTracing $ drawFamily drawF tree 
 
 
-drawFamily :: (a -> TreeNode)  
-           -> CoordTree Double a 
-           -> TraceDrawing Double (DotAnchor Double)
+drawFamily :: (Fractional u, Ord u) 
+           => (a -> TreeNode u)  
+           -> CoordTree u a 
+           -> TraceDrawing u (DotAnchor u)
 drawFamily fn (Node (pt,a) ns) = do
     ancr <- drawi $ fn a `at` pt
     xs   <- mapM (drawFamily fn) ns   

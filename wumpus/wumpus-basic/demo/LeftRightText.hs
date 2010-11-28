@@ -1,5 +1,17 @@
 {-# OPTIONS -Wall #-}
 
+-- Note - @main@ is more convoluted than would normally be 
+-- expected as it supports both sources of glyph metrics - the 
+-- GhostScript distribution or the Core 14 metrics from Adobe.
+-- 
+-- \"Real\" applications would be expected to choose one source. 
+--
+-- I-am-not-a-lawyer, but it does look as though the Adobe font
+-- metrics are redistributable, the GhostScript metrics are 
+-- seemingly redistributable under the same terms as the larger
+-- GhostScript distribution.
+-- 
+
 
 module LeftRightText where
 
@@ -19,19 +31,6 @@ import Wumpus.Core                      -- package: wumpus-core
 
 import System.Directory
 
-
-
--- Edit these paths!
--- ***************
---
-gs_font_directory :: FilePath
-gs_font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
-
--- Edit these paths!
--- ***************
---
-afm_font_directory :: FilePath
-afm_font_directory = "./font_metrics/adobe_core14"
 
 
 main :: IO ()

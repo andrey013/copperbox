@@ -41,42 +41,44 @@ import Data.Tree
 
 -- | XPos is an absolute position
 --
-type XPos = Double      
+type XPos u = u     
 
-type XTree a = Tree (XPos,a)
+type XTree u a = Tree (XPos u, a)
 
 
 -- | Delta - difference in X-positions.
 --
-type Delta = Double
+type Delta u = u
 
-data Span = S !XPos !XPos
+data Span u = S !(XPos u) !(XPos u)
   deriving (Eq,Ord,Show)
 
 
 
-outsideMerge :: Span -> Span -> Span
+outsideMerge :: Span u -> Span u -> Span u
 outsideMerge (S p _) (S _ q) = S p q
 
-moveSpan :: Delta -> Span -> Span
+moveSpan :: Num u => Delta u -> Span u -> Span u
 moveSpan d (S p q) = S (p+d) (q+d)
 
 
-newtype Extent = Extent { span_list :: [Span] }
+newtype Extent u = Extent { span_list :: [Span u] }
   deriving (Eq,Show)
 
 
-extlink :: XPos -> Extent -> Extent
+extlink :: XPos u -> Extent u -> Extent u
 extlink a (Extent as) = Extent (S a a:as)
 
 -- note is this just for left ... ?
-midtop :: XPos -> Extent -> XPos 
+--
+midtop :: Fractional u => XPos u -> Extent u -> XPos u
 midtop r (Extent [])        = r
 midtop _ (Extent (S p q:_)) = p + (0.5*(q-p))
 
 
 -- merge \"moving right\"...
-mergeMR :: Delta -> Extent -> Extent -> Extent
+--
+mergeMR :: Num u => Delta u -> Extent u -> Extent u -> Extent u
 mergeMR dx (Extent xs) (Extent ys) = Extent $ step xs ys
   where
     step ps     []     = ps
@@ -85,7 +87,7 @@ mergeMR dx (Extent xs) (Extent ys) = Extent $ step xs ys
 
 -- dx is negative...
 --
-mergeML :: Delta -> Extent -> Extent -> Extent
+mergeML :: Num u => Delta u -> Extent u -> Extent u -> Extent u
 mergeML dx (Extent xs) (Extent ys) = Extent $ step xs ys
   where
     step ps     []     = map (moveSpan dx) ps
@@ -94,23 +96,24 @@ mergeML dx (Extent xs) (Extent ys) = Extent $ step xs ys
 
 
 
-extentZero :: Extent
+extentZero :: Extent u
 extentZero = Extent []
 
-extentOne :: XPos -> Extent
+extentOne :: XPos u -> Extent u
 extentOne x = Extent [S x x]
 
 
 -- 'moveTree' is now recursive...
 --
-moveTree :: Delta -> XTree a -> XTree a
+moveTree :: Num u => Delta u -> XTree u a -> XTree u a
 moveTree dx (Node (x,a) subtrees) = Node ((x+dx),a) subtrees'
   where
     subtrees' = map (moveTree dx) subtrees
 
 
 
-fit :: Extent -> Extent -> Double
+fit :: (Fractional u, Ord u) 
+    => Extent u -> Extent u -> u
 fit a b = step (span_list a) (span_list b) 0.0 
   where
     step (S _ p:ps) (S q _:qs) acc = step ps qs (max acc (p - q + 1.0))
@@ -120,7 +123,8 @@ fit a b = step (span_list a) (span_list b) 0.0
 -- Fitting the children of a node...
 
 
-fitleft :: [(XTree a,Extent)] -> ([XTree a], Extent)
+fitleft :: (Fractional u, Ord u) 
+        => [(XTree u a,Extent u)] -> ([XTree u a], Extent u)
 fitleft []           = ([],extentZero)
 fitleft ((l,ext):xs) = (l:ts,ext') -- left-most child unchanged
    where 
@@ -129,7 +133,8 @@ fitleft ((l,ext):xs) = (l:ts,ext') -- left-most child unchanged
      step aex (t,ex)  = let dx = fit aex ex 
                         in (mergeMR dx aex ex, moveTree dx t)
 
-fitright :: [(XTree a,Extent)] -> ([XTree a], Extent)
+fitright :: (Fractional u, Ord u) 
+         => [(XTree u a, Extent u)] -> ([XTree u a], Extent u)
 fitright = post . foldr fn Nothing
   where
     post                        = fromMaybe ([],extentZero)
@@ -145,37 +150,40 @@ fitright = post . foldr fn Nothing
 -- Note - this will tell how wide the tree is...
 -- though the last exten is not necessarily the widest.
 
-designl :: forall a. Tree a -> (XTree a, Extent)
+designl :: forall a u. (Fractional u, Ord u) 
+        => Tree a -> (XTree u a, Extent u)
 designl (Node a [])   = (Node (0.0,a)  [],    extentOne 0.0)
 designl (Node a kids) = (Node (xpos,a) kids', ext1)
   where
-    xs              :: [(XTree a,Extent)]
+    xs              :: [(XTree u a, Extent u)]
     xs              = map designl kids
 
-    kids'           :: [XTree a]
-    ext0, ext1      :: Extent
+    kids'           :: [XTree u a]
+    ext0, ext1      :: Extent u
     (kids',ext0)    = fitleft xs
 
     xpos            = midtop 0.0 ext0
     ext1            = xpos `extlink` ext0
 
 
-designr :: forall a. XPos -> Tree a -> (XTree a, Extent)
+designr :: forall u a. (Fractional u, Ord u) 
+        => XPos u -> Tree a -> (XTree u a, Extent u)
 designr r (Node a [])   = (Node (r,a)  [],    extentOne r)
 designr r (Node a kids) = (Node (xpos,a) kids', ext1)
   where
-    xs              :: [(XTree a,Extent)]
+    xs              :: [(XTree u a, Extent u)]
     xs              = map (designr r) kids
 
-    kids'           :: [XTree a]
-    ext0, ext1      :: Extent
+    kids'           :: [XTree u a]
+    ext0, ext1      :: Extent u
     (kids',ext0)    = fitright xs
 
     xpos            = midtop r ext0
     ext1            = xpos `extlink` ext0
 
 
-design :: ScalingContext Double Int u -> Tree a -> CoordTree u a
+design :: (Fractional u, Ord u)
+       => ScalingContext u Int u -> Tree a -> CoordTree u a
 design sctx t = runScaling sctx (label 0 t3)
   where
     (t1,ext)                    = designl t
@@ -197,13 +205,13 @@ design sctx t = runScaling sctx (label 0 t3)
 
 -- find height and width
 --
-stats :: Extent -> (Int,Span)
+stats :: (Num u, Ord u) => Extent u -> (Int, Span u)
 stats (Extent [])     = (0,S 0 0)
 stats (Extent (e:es)) = foldr fn (1,e) es
   where
     fn (S x0 x1) (h, S xmin xmax) = (h+1, S (min x0 xmin) (max x1 xmax))
 
-mean :: Double -> Double -> Double
+mean :: Fractional u => u -> u -> u
 mean x y = (x+y) / 2.0
 
 

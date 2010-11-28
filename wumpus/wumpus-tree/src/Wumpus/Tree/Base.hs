@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -17,7 +18,8 @@
 
 module Wumpus.Tree.Base
   (
-    TreePicture
+    TreeDrawing
+  , DTreeDrawing
   , CoordTree
   
   , TreeNode
@@ -27,19 +29,26 @@ module Wumpus.Tree.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Dots.AnchorDots             -- package: wumpus-basic
+import Wumpus.Basic.Graphic
 
 import Data.Tree
 
 -- | A rendered tree - alias for for @Picture Double@ in 
 -- Wumpus-Core.
 --
-type TreePicture = Picture Double
+type TreeDrawing u = Drawing u
+
+type DTreeDrawing = TreeDrawing Double
 
 
 -- | Tree annotated with positions.
 --
 type CoordTree u a = Tree (Point2 u, a)
 
+type instance DUnit (CoordTree u a) = u
 
-type TreeNode = DotLocImage Double
+
+type TreeNode u = DotLocImage u
+
+
 

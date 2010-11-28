@@ -9,6 +9,7 @@
 module ArrowCircuit where
 
 import Wumpus.Basic.Arrows
+import Wumpus.Basic.FontLoader.AfmLoader
 import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
 import Wumpus.Basic.Paths 
@@ -18,25 +19,39 @@ import Wumpus.Basic.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import FontLoaderUtils
+
+
 import Data.AffineSpace
 
 import System.Directory
 
--- Edit this path!
--- ***************
---
-font_directory :: FilePath
-font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
-
 
 main :: IO ()
 main = do 
+    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadGSMetrics font_directory ["Times-Roman", "Times-Italic"]
-    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
-    writeEPS "./out/arrow_circuit.eps" pic1
-    writeSVG "./out/arrow_circuit.svg" pic1 
+    maybe gs_failk  makeGSPicture  $ mb_gs
+    maybe afm_failk makeAfmPicture $ mb_afm
+  where
+    gs_failk  = putStrLn "No GhostScript font path supplied..."
+    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
 
+makeGSPicture :: FilePath -> IO ()
+makeGSPicture font_dir = do 
+    putStrLn "Using GhostScript metrics..."
+    base_metrics <- loadGSMetrics font_dir ["Times-Roman", "Times-Italic"]
+    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
+    writeEPS "./out/arrow_circuit01.eps" pic1
+    writeSVG "./out/arrow_circuit01.svg" pic1 
+
+makeAfmPicture :: FilePath -> IO ()
+makeAfmPicture font_dir = do 
+    putStrLn "Using AFM 4.1 metrics..."
+    base_metrics <- loadAfmMetrics font_dir ["Times-Roman", "Times-Italic"]
+    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
+    writeEPS "./out/arrow_circuit02.eps" pic1
+    writeSVG "./out/arrow_circuit02.svg" pic1 
 
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext

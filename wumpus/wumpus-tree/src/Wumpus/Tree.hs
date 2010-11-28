@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -15,14 +17,15 @@
 module Wumpus.Tree
   (
   -- * The type of rendered trees
-    TreePicture
+    TreeDrawing
+  , DTreeDrawing        -- re-export.
 
   , ScaleFactors
   , uniformScaling
   , scaleFactors
 
-  , drawTreePicture
-  , drawFamilyTreePicture
+  , drawScaledTree
+  , drawScaledFamilyTree
 
 
   -- * Drawing nodes
@@ -43,6 +46,8 @@ import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.VectorSpace                         -- package: vector-space
+
 import Data.Tree hiding ( drawTree )
 
 
@@ -58,18 +63,19 @@ import Data.Tree hiding ( drawTree )
 -- In the horizontal, 1 unit is the smallest possible distance 
 -- between child nodes.
 --
-type ScaleFactors = ScalingContext Double Int Double
+type ScaleFactors u = ScalingContext u Int u
 
+type instance DUnit (ScaleFactors u) = u
 
 
 
 -- | Build uniform x- and y-scaling factors, i.e. @ x == y @.
 --
-uniformScaling :: Double -> ScaleFactors
+uniformScaling :: Num u => u -> ScaleFactors u
 uniformScaling u = ScalingContext (\x -> u * x)
                                   (\y -> u * fromIntegral y) 
 
-scaleFactors :: Double -> Double -> ScaleFactors
+scaleFactors :: Num u => u -> u -> ScaleFactors u
 scaleFactors sx sy = ScalingContext (\x -> sx * x)
                                     (\y -> sy * fromIntegral y)	
 
@@ -90,24 +96,23 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
 -- @tree@ is the input tree to be rendered.
 --
 --
-drawTreePicture :: (a -> TreeNode) 
-                -> DrawingContext
-                -> ScaleFactors 
+drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+                => (a -> TreeNode u) 
+                -> ScaleFactors u
                 -> Tree a 
-                -> TreePicture
-drawTreePicture drawF dctx sfactors tree = 
-    liftToPictureU $ drawTree drawF dctx $ design sfactors tree
+                -> TreeDrawing u
+drawScaledTree drawF scale_f tree = drawTree drawF $ design scale_f tree
 
 
 
 
-drawFamilyTreePicture :: (a -> TreeNode) 
-                -> DrawingContext
-                -> ScaleFactors 
-                -> Tree a 
-                -> TreePicture
-drawFamilyTreePicture drawF dctx sfactors tree = 
-    liftToPictureU $ drawFamilyTree drawF dctx $ design sfactors tree
+drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+                     => (a -> TreeNode u) 
+                     -> ScaleFactors u
+                     -> Tree a 
+                     -> TreeDrawing u
+drawScaledFamilyTree drawF scale_f tree = 
+    drawFamilyTree drawF $ design scale_f tree
 
 --------------------------------------------------------------------------------
 -- Drawing functions
@@ -116,7 +121,8 @@ drawFamilyTreePicture drawF dctx sfactors tree =
 --
 --  Useful for rendering @ Data.Tree Char @.
 --
-charNode :: Char -> TreeNode
+charNode :: (Real u, Floating u, FromPtSize u) 
+         => Char -> TreeNode u
 charNode = dotChar
 
 
@@ -129,7 +135,8 @@ charNode = dotChar
 -- Also, only a single line of text is printed - any text after 
 -- the first newline character will be dropped.
 --
-textNode :: String -> TreeNode
+textNode :: (Real u, Floating u, FromPtSize u) 
+         => String -> TreeNode u
 textNode = dotText . uptoNewline
   where
     uptoNewline = takeWhile (/='\n')
@@ -138,7 +145,8 @@ textNode = dotText . uptoNewline
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-circleNode :: RGBi -> (a -> TreeNode)
+circleNode :: (Floating u, FromPtSize u) 
+           => RGBi -> (a -> TreeNode u)
 circleNode rgb = \_ -> localize (strokeColour rgb) dotCircle
 
 
@@ -146,7 +154,8 @@ circleNode rgb = \_ -> localize (strokeColour rgb) dotCircle
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-diskNode :: RGBi -> (a -> TreeNode)
+diskNode :: (Floating u, FromPtSize u) 
+         => RGBi -> (a -> TreeNode u)
 diskNode rgb = \_ -> localize (fillColour rgb) dotDisk
 
 

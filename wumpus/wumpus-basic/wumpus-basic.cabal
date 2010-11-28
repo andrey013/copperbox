@@ -24,11 +24,17 @@ description:
   very /SVG safe/ so it is marked as pending change). 
   .
   Note - many of the demos now use font metrics. Font metrics for
-  the \"Core 14\" PostScript fonts are distributed with 
-  GhostScript (AFM file version 2.0 for GhostScript 8.63) or 
-  available from Adode (AFM file version 4.1). To run the demos 
-  properly you will need these metrics.
+  the \"Core 14\" PostScript fonts are distributed as @*.afm@ 
+  files with GhostScript (AFM file version 2.0 for GhostScript 
+  8.63) or available from Adode (AFM file version 4.1). To run the 
+  demos properly you will need these metrics one of these sets of
+  metrics.
   .
+  Adobe Font techinal notes:
+  <https://www.adobe.com/devnet/font.html>
+  .
+  Core 14 AFM metrics:
+  <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
   .
   Changelog:
   .
