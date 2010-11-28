@@ -30,21 +30,25 @@ import FontLoaderUtils
 import Data.Tree hiding ( drawTree )
 import System.Directory
 
+-- Note - @main@ prioritizes GhostScript metrics...
+
 
 main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    maybe gs_failk  makeGSPictures  $ mb_gs
---    maybe afm_failk makeAfmPictures $ mb_afm
-  where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+    case (mb_gs, mb_afm) of       
+      (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
+                          ; loadGSMetrics  dir ["Times-Roman"] >>= makePictures 
+                          }
+      (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
+                          ; loadAfmMetrics dir ["Times-Roman"] >>= makePictures
+                          }
+      _             -> putStrLn default_font_loader_help
 
-makeGSPictures :: FilePath -> IO ()
-makeGSPictures font_dir = do 
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSMetrics font_dir ["Times-Roman"]
+
+makePictures :: BaseGlyphMetrics -> IO ()
+makePictures base_metrics = do 
     --
     let pic1 = runDrawingU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/tree01.eps"  pic1

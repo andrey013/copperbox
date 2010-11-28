@@ -23,18 +23,27 @@ description:
   @Basic.DrawingComposition@; @Basic.SafeFonts@ no longer seems 
   very /SVG safe/ so it is marked as pending change). 
   .
-  Note - many of the demos now use font metrics. Font metrics for
+  NOTE - many of the demos now use font metrics. Font metrics for
   the \"Core 14\" PostScript fonts are distributed as @*.afm@ 
-  files with GhostScript (AFM file version 2.0 for GhostScript 
-  8.63) or available from Adode (AFM file version 4.1). To run the 
-  demos properly you will need these metrics one of these sets of
-  metrics.
+  files with GhostScript in the @fonts@ directory. Wumpus expects
+  the GhostScript font metrics to be AFM version 2.0 files (this
+  matches GhostScript 8.63). Alternatively, metrics for the Core 
+  14 fonts are available from Adode (AFM version 4.1), see the 
+  links below. To run the demos properly you will need one of 
+  these sets of metrics.
   .
   Adobe Font techinal notes:
   <https://www.adobe.com/devnet/font.html>
   .
   Core 14 AFM metrics:
   <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
+  .
+  WARNING - the font metrics parsing in version 0.13.0 is 
+  essentially a proof-of-concept and is not very robust. 
+  Generally, if a font cannot be parsed, fallback metrics will be 
+  used. At the moment there no error logging, so there is little 
+  indication of whether Wumpus has used the correct metrics or the 
+  fallback for a requested font.
   .
   Changelog:
   .

@@ -67,8 +67,8 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
-  demo/DemoGS.hs,
-  demo/DemoAFM.hs
+  demo/Demo01.hs,
+  demo/FontLoaderUtils.hs
   
 library
   hs-source-dirs:     src
