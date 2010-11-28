@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.11.0
+version:          0.11.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -31,6 +31,11 @@ description:
   \*\* WARNING \*\* - the API is unstable and will change. 
   .
   Changelog:
+  .
+  0.11.0 to 0.11.1:
+  .
+  * Removed unused @InnerSpace@ constriant on functions in 
+    @Wumpus.Tree.Draw@.
   .
   0.10.0 to 0.11.0:
   .
@@ -72,7 +77,7 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
-                      containers        >= 0.3.0     && < 0.4.0,
+                      containers        >= 0.3.0     && < 0.6.0,
                       vector-space      >= 0.6,
                       wumpus-core       == 0.40.0,
                       wumpus-basic      == 0.13.0

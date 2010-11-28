@@ -29,7 +29,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Basic.Dots.AnchorDots
 import Wumpus.Basic.Graphic   
 
-import Data.VectorSpace                         -- package: vector-space
 
 import Control.Monad
 import Data.Tree hiding ( drawTree )
@@ -39,20 +38,20 @@ import Data.Tree hiding ( drawTree )
 ---------------------------------------------------------------------------------
 -- Draw individual connector between parent and each child node.
 
-drawTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+drawTree :: (Real u, Floating u, FromPtSize u) 
          => (a -> TreeNode u) 
          -> CoordTree u a 
          -> Drawing u
 drawTree drawF tree = drawTracing $ drawTop drawF tree 
 
 
-drawTop :: (Real u, Floating u, InnerSpace (Vec2 u)) 
+drawTop :: (Real u, Floating u) 
         => (a -> TreeNode u) -> CoordTree u a -> TraceDrawing u ()
 drawTop fn (Node (pt,a) ns) = do 
     ancr <- drawi $ fn a `at` pt
     mapM_ (draw1 fn ancr) ns
 
-draw1 :: (Real u, Floating u, InnerSpace (Vec2 u))  
+draw1 :: (Real u, Floating u)
       => (a -> TreeNode u) 
       -> DotAnchor u 
       -> CoordTree u a 
@@ -63,7 +62,7 @@ draw1 fn ancr_from (Node (pt,a) ns) = do
     mapM_ (draw1 fn ancr) ns   
 
 
-connector :: (Real u, Floating u, InnerSpace (Vec2 u)) 
+connector :: (Real u, Floating u) 
           => DotAnchor u -> DotAnchor u -> Graphic u
 connector a1 a2 = openStroke $ vertexPath [p1,p2]
   where  
@@ -74,7 +73,7 @@ connector a1 a2 = openStroke $ vertexPath [p1,p2]
 
 
 
-anchorAngles :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+anchorAngles :: (Floating u, Real u) 
              => Point2 u -> Point2 u -> (Radian,Radian)
 anchorAngles f t = (theta0, theta1)
   where
