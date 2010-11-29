@@ -34,6 +34,7 @@ module Wumpus.Basic.Graphic.DrawingContext
 
   -- * Modifiers 
   -- ** Line widths
+  , lineWidth
   , thick
   , ultrathick
   , thin
@@ -57,8 +58,9 @@ module Wumpus.Basic.Graphic.DrawingContext
   , doubledashes
 
   -- * Font properties
-  , fontsize
-  , fontface
+  , fontAttr
+  , fontSize
+  , fontFace
 
   -- * Font / mark drawing size
   , doublesize
@@ -173,8 +175,8 @@ ultra_thick_line    = 4.0
 thin_line           :: Double
 thin_line           = 0.5
 
-setLineWidth       :: Double -> DrawingContextF
-setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
+lineWidth       :: Double -> DrawingContextF
+lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
 -- | Set the line width to a /thick/.
 --
@@ -182,13 +184,13 @@ setLineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 -- line width is set to exactly @2.0@.
 --
 thick               :: DrawingContextF
-thick               = setLineWidth thick_line
+thick               = lineWidth thick_line
 
 ultrathick          :: DrawingContextF
-ultrathick          = setLineWidth ultra_thick_line
+ultrathick          = lineWidth ultra_thick_line
 
 thin                :: DrawingContextF
-thin                = setLineWidth thin_line
+thin                = lineWidth thin_line
 
 
 setLineCap          :: LineCap -> DrawingContextF
@@ -252,12 +254,15 @@ doubledashes (Dash i xs)  = Dash i (map fn xs)
 
 --------------------------------------------------------------------------------
 
+fontAttr            :: FontFace -> Int -> DrawingContextF
+fontAttr ff sz      = (\s -> s { font_props = FontAttr sz ff })
 
-fontface            :: FontFace -> DrawingContextF
-fontface ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
+fontFace            :: FontFace -> DrawingContextF
+fontFace ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
 
-fontsize            :: Int -> DrawingContextF
-fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
+fontSize            :: Int -> DrawingContextF
+fontSize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
+
 
 --------------------------------------------------------------------------------
 
@@ -265,7 +270,8 @@ fontsize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 -- size also controls the size of dots, arrowsheads etc.
 -- 
 doublesize          :: DrawingContextF
-doublesize          = (\s sz -> fontsize (sz*2) s) <*> (font_size . font_props)
+doublesize          = (\s sz -> fontSize (sz*2) s) 
+                        <*> (font_size . font_props)
 
 
 -- | Set the font size to half the current size, note the font
@@ -275,7 +281,7 @@ doublesize          = (\s sz -> fontsize (sz*2) s) <*> (font_size . font_props)
 -- 15pt type is 7pt.
 -- 
 halfsize            :: DrawingContextF
-halfsize            = (\s sz -> fontsize (sz `div` 2) s) 
+halfsize            = (\s sz -> fontSize (sz `div` 2) s) 
                         <*> (font_size . font_props)
 
 

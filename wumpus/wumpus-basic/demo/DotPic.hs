@@ -53,7 +53,7 @@ makeAfmPicture font_dir = do
 
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext
-makeCtx = fillColour peru . fontface helvetica . metricsContext 24
+makeCtx = fillColour peru . fontFace helvetica . metricsContext 24
 
 
 dot_drawing :: Drawing Double

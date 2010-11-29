@@ -21,7 +21,7 @@ import System.Directory
 -- ***************
 --
 font_directory :: FilePath
-font_directory = "./font_metrics/adobe_core14"
+font_directory = "D:/coding/haskell/GHC_workspace/wumpus/_font_metrics/adobe_core14"
 
 
 
@@ -38,7 +38,7 @@ loader :: FontLoader AfmUnit
 loader = afmV4Dot1Loader font_directory
 
 makeCtx :: BaseGlyphMetrics -> DrawingContext
-makeCtx = fontface helvetica . metricsContext 18
+makeCtx = fontFace helvetica . metricsContext 18
 
 
 text_drawing :: Drawing Double
@@ -65,7 +65,7 @@ redPlus = localize (strokeColour red) markPlus
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
-    localize (fontface times_roman . strokeColour dark_slate_gray) $ 
+    localize (fontFace times_roman . strokeColour dark_slate_gray) $ 
              singleLineBL "Times-Roman"
 
 

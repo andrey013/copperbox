@@ -25,7 +25,7 @@ main = do
 
 
 std_ctx :: DrawingContext
-std_ctx = fontface times_roman $ standardContext 12
+std_ctx = fontFace times_roman $ standardContext 12
 
 
 -- Because the font changes, we draw the all the symbols in one
@@ -35,7 +35,7 @@ std_ctx = fontface times_roman $ standardContext 12
 --
 symbols :: DDrawing
 symbols = drawTracing $ do
-    localize (fontface symbol) $ zipWithM_ sdraw all_letters ps
+    localize (fontFace symbol) $ zipWithM_ sdraw all_letters ps
     zipWithM_ ldraw all_letters ps
   where
     sdraw (s,_)     pt = draw $ textline s `at` pt

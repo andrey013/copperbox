@@ -49,7 +49,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/feature_model02.svg" pic1 
 
 makeCtx :: BaseGlyphMetrics -> DrawingContext
-makeCtx = fontface courier_bold . metricsContext 18
+makeCtx = fontFace courier_bold . metricsContext 18
 
 
 -- Note - I haven't worked out how to do @alternative@, @or@ and
@@ -105,7 +105,7 @@ widebox = makeBox 60
 connWith :: ( Real u, Floating u, FromPtSize u ) 
          => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
 connWith arrh b0 b1 = do
-   lw <- lineWidth
+   lw <- getLineWidth
    let p0 = south b0
    let p1 = northwards (realToFrac lw) b1
    drawi $ situ2 (strokeConnector (rightArrow connLine arrh)) p0 p1

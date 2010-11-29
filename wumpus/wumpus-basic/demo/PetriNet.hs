@@ -112,15 +112,15 @@ connectorD u p0 p1 =
 
 
 lblParensParens :: Num u => LocGraphic u
-lblParensParens = localize (fontface helvetica) $ textline "(),()"
+lblParensParens = localize (fontFace helvetica) $ textline "(),()"
 
 lblParensParensParens :: Num u => LocGraphic u
-lblParensParensParens = localize (fontface helvetica) $ textline "(),(),()"
+lblParensParensParens = localize (fontFace helvetica) $ textline "(),(),()"
 
 
 lblBold' :: Num u => String -> LocGraphic u
-lblBold' ss = localize (fontface helvetica_bold) $ textline ss
+lblBold' ss = localize (fontFace helvetica_bold) $ textline ss
 
 
 lblBold :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontface helvetica_bold) $ centermonoTextline ss
+lblBold ss = localize (fontFace helvetica_bold) $ centermonoTextline ss

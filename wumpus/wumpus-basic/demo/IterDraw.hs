@@ -20,7 +20,7 @@ main = do
     writeSVG "./out/iter_draw01.svg" pic1
 
 dctx :: DrawingContext
-dctx = fontface courier_bold $ standardContext 24
+dctx = fontFace courier_bold $ standardContext 24
 
 iter_drawing :: DDrawing
 iter_drawing = drawTracing $ do 

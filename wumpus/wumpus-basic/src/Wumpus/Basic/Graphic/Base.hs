@@ -27,8 +27,6 @@ module Wumpus.Basic.Graphic.Base
   -- A semigroup class.
     OPlus(..)
   , oconcat
-  , anterior    
-  , superior
 
   -- * Alignment.
   , HAlign(..)
@@ -79,11 +77,6 @@ oconcat t = step t
     step ac []     = ac
     step ac (x:xs) = step (ac `oplus` x) xs
 
-anterior :: OPlus t => t -> (t -> t)
-anterior a = (a `oplus`)
-
-superior :: OPlus t => t -> (t -> t)
-superior a = (`oplus` a)
 
 
 

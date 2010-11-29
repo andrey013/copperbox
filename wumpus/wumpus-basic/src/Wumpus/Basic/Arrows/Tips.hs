@@ -146,7 +146,7 @@ markHeightPlusLineWidth =
 
 markHeightLessLineWidth :: (Fractional u, FromPtSize u) => CF u
 markHeightLessLineWidth = 
-    (\h lw -> h - realToFrac lw) <$> markHeight <*> lineWidth
+    (\h lw -> h - realToFrac lw) <$> markHeight <*> getLineWidth
 
 
 -- noRetract ignores both the angle and the point.
@@ -462,7 +462,7 @@ curveTLG = bindLocThetaTip (dblstatic markHalfHeight) fn
 
 curveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
 curveTip = Arrowhead $ 
-    intoLocThetaImage (dblstatic $ fmap realToFrac lineWidth) curveTLG
+    intoLocThetaImage (dblstatic $ fmap realToFrac getLineWidth) curveTLG
 
 
 -- Note - points flipped to get the second trapezium to 

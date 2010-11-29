@@ -76,7 +76,7 @@ cpic4 = clipDrawing (toPrimPath path04) (background black)
 iheartHaskell :: Num u => FromPtSize u => Point2 u -> TraceDrawing u () 
 iheartHaskell pt = do
     draw $ textline "I Haskell" `at` pt
-    draw $ localize (fontface symbol) $ textline "&heart;" `at` (pt .+^ hvec 7)
+    draw $ localize (fontFace symbol) $ textline "&heart;" `at` (pt .+^ hvec 7)
 
 
 path01 :: Floating u => Path u

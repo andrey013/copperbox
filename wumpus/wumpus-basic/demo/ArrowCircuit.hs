@@ -55,7 +55,7 @@ makeAfmPicture font_dir = do
 
  
 makeCtx :: BaseGlyphMetrics -> DrawingContext
-makeCtx = fontface times_roman . metricsContext 11
+makeCtx = fontFace times_roman . metricsContext 11
 
 
 
@@ -107,5 +107,5 @@ atext ancr ss = let pt = center ancr in
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
-ptext pt ss = localize (fontsize 14 . fontface times_italic) $ 
+ptext pt ss = localize (fontAttr times_italic 14) $ 
     drawi_ $ singleLineCC ss `at` pt

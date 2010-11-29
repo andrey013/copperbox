@@ -142,7 +142,7 @@ unmarked = id
 
 
 makeMark :: Image u a -> CF (a, ArrowMark u)
-makeMark = postpro (\(a,prim) -> (a, superior prim))
+makeMark = postpro (\(a,prim) -> (a, (`oplus` prim)))
 
 
 
