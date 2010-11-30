@@ -60,10 +60,6 @@ module Wumpus.Basic.Graphic.ContextFunction
   , promote1
   , promote2
 
-  , raise
-  , raise1
-  , raise2
-
   , static1 
   , static2
   , dblstatic
@@ -303,9 +299,8 @@ unCF2 a b mf = CF $ \ctx -> getCF mf ctx a b
 --
 -- > ans -> (ctx -> ans)
 --
--- Without any other arguments, this is the same as the 'raise' 
--- combinator for raising into the Context functional. However, 
--- the /arity family/ of @wrap@ combinators is different.
+-- This is Applicative\'s @pure@. However, it extends to an 
+-- /arity family/ of @wrap@ combinators.
 --
 wrap :: a -> CF a
 wrap = pure
@@ -358,35 +353,6 @@ promote1 f = CF $ \ctx a -> getCF (f a) ctx
 --
 promote2 :: (r1 -> r2 -> CF ans) -> CF (r1 -> r2 -> ans)
 promote2 df = CF $ \ctx a b -> getCF (df a b) ctx
-
-
--- | Lift a value into a Context functional.
---
--- > ans -> (ctx -> ans)
---
--- Essentially this is the @kestrel@ combinator - @const@ in 
--- Haskell, though due to newtype wrapping it is @pure@ from the
--- Applicative class.
---
-raise :: a -> CF a
-raise = pure
-
-
--- | Lift a one argument function into a Context functional.
---
--- This is Applicative\'s 'pure' with a specialized type 
--- signature. 
---
-raise1 :: (r1 -> ans) -> CF (r1 -> ans) 
-raise1 = pure
-
--- | Lift a two argument function into a Context functional.
---
--- This is Applicative\'s 'pure' with a specialized type 
--- signature.
---
-raise2 :: (r1 -> r2 -> ans) -> CF (r1 -> r2 -> ans) 
-raise2 = pure
 
 
 -- | Extend the arity of a /Context functional/, the original 

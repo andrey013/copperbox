@@ -32,8 +32,8 @@ module Wumpus.Basic.Graphic.Query
 
   , getLineWidth
   , getFontAttr
---  , fontSize
---  , fontFace
+  , getFontSize
+  , getFontFace
   , markHeight
   , markHalfHeight
   , baselineSpacing
@@ -113,11 +113,11 @@ getLineWidth = line_width <$> asksDC stroke_props
 getFontAttr :: DrawingCtxM m => m FontAttr
 getFontAttr = asksDC font_props
 
--- fontSize :: DrawingCtxM m => m Int
--- fontSize = font_size <$> asksDC font_props
+getFontSize :: DrawingCtxM m => m Int
+getFontSize = font_size <$> asksDC font_props
 
--- fontFace :: DrawingCtxM m => m FontFace
--- fontFace = font_face <$> asksDC font_props
+getFontFace :: DrawingCtxM m => m FontFace
+getFontFace = font_face <$> asksDC font_props
 
 
 

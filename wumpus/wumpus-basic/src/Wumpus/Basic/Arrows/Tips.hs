@@ -173,36 +173,36 @@ noRetract = wrap2 0
 tripointsByAngle :: (Floating u, FromPtSize u)
                  => Radian ->  LocThetaCF u (Point2 u, Point2 u)
 tripointsByAngle triang = markHeight >>= \h -> 
-    raise2 $ \pt theta -> let (vup,vlo) = triVecsByAngle h (0.5*triang) theta
-                          in  (pt .+^ vup, pt .+^ vlo)
+    pure $ \pt theta -> let (vup,vlo) = triVecsByAngle h (0.5*triang) theta
+                        in  (pt .+^ vup, pt .+^ vlo)
     
 
 revtripointsByAngle :: (Floating u, FromPtSize u)
                     => Radian 
                     -> LocThetaCF u (Point2 u, Point2 u, Point2 u)
 revtripointsByAngle triang = markHeight >>= \h -> 
-    raise2 $ \pt theta -> let theta'    = circularModulo $ pi+theta 
-                              (vup,vlo) = triVecsByAngle h (0.5*triang) theta'
-                              back_tip  = pt .-^ avec theta h 
-                          in (back_tip .+^ vup, back_tip, back_tip .+^ vlo)
+    pure $ \pt theta -> let theta'    = circularModulo $ pi+theta 
+                            (vup,vlo) = triVecsByAngle h (0.5*triang) theta'
+                            back_tip  = pt .-^ avec theta h 
+                        in (back_tip .+^ vup, back_tip, back_tip .+^ vlo)
 
 
 
 tripointsByDist :: (Real u, Floating u, FromPtSize u)
                 => LocThetaCF u (Point2 u, Point2 u)
 tripointsByDist = markHeight >>= \h ->
-    raise2 $ \pt theta -> let (vup,vlo) = triVecsByDist h (0.5*h) theta
-                          in  (pt .+^ vup, pt .+^ vlo)
+    pure $ \pt theta -> let (vup,vlo) = triVecsByDist h (0.5*h) theta
+                        in  (pt .+^ vup, pt .+^ vlo)
   
 
 
 revtripointsByDist :: (Real u, Floating u, FromPtSize u)
                    => LocThetaCF u (Point2 u, Point2 u, Point2 u)
 revtripointsByDist = markHeight >>= \h -> 
-    raise2 $ \pt theta -> let theta'    = circularModulo $ pi+theta 
-                              (vup,vlo) = triVecsByDist h (0.5*h) theta'
-                              back_tip  = pt .-^ avec theta h 
-                          in  (back_tip .+^ vup, back_tip, back_tip .+^ vlo)
+    pure $ \pt theta -> let theta'    = circularModulo $ pi+theta 
+                            (vup,vlo) = triVecsByDist h (0.5*h) theta'
+                            back_tip  = pt .-^ avec theta h 
+                        in  (back_tip .+^ vup, back_tip, back_tip .+^ vlo)
 
 
 

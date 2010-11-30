@@ -91,7 +91,7 @@ import Wumpus.Core.Colour
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-
+import Control.Applicative
 
 drawGraphic :: (Real u, Floating u, FromPtSize u) 
             => DrawingContext -> Graphic u -> Picture u
@@ -191,7 +191,7 @@ textlineMulti xs = baselineSpacing >>= \dy ->
 
 
 tmStep :: Num u => u -> String -> LocImage u (Point2 u) 
-tmStep dy str = intoLocImage (raise $ \pt -> pt .+^ vvec dy) (textline str)
+tmStep dy str = intoLocImage (pure $ \pt -> pt .+^ vvec dy) (textline str)
 
 feedPt :: LocImage u (Point2 u) -> LocImage u (Point2 u) -> LocImage u (Point2 u) 
 feedPt = accumulate1 oplus

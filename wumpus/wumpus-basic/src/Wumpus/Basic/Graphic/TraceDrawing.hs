@@ -24,7 +24,10 @@ module Wumpus.Basic.Graphic.TraceDrawing
   (
 
     TraceDrawing
+  , DTraceDrawing
   , TraceDrawingT
+  , DTraceDrawingT
+
   , runTraceDrawing
   , execTraceDrawing
   , evalTraceDrawing
@@ -78,6 +81,10 @@ newtype TraceDrawing u a   = TraceDrawing {
 
 newtype TraceDrawingT u m a = TraceDrawingT { 
           getTraceDrawingT :: DrawingContext -> m (a, HPrim u) }
+
+
+type DTraceDrawing a    = TraceDrawing Double a
+type DTraceDrawingT m a = TraceDrawingT Double m a
 
 
 

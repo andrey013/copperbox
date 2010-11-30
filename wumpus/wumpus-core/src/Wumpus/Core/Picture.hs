@@ -43,6 +43,7 @@ module Wumpus.Core.Picture
   , lineTo
   , curveTo
   , vertexPath
+  , vectorPath
   , curvedPath
   , xlinkhref
   , xlink
@@ -222,14 +223,31 @@ curveTo :: Point2 u -> Point2 u -> Point2 u -> AbsPathSegment u
 curveTo = AbsCurveTo
 
 
--- | Convert the list of vertices to a path of straight line 
+-- | 'vertexPath' : @ [point] -> PrimPath @
+-- 
+-- Convert the list of vertices to a path of straight line 
 -- segments.
+--
+-- This function throws an error when supplied the empty list.
 --
 vertexPath :: Num u => [Point2 u] -> PrimPath u
 vertexPath []     = error "Picture.vertexPath - empty point list"
 vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
   where
     step a b = let v = b .-. a in (b, RelLineTo v)
+
+
+-- | 'vectorPath' : @ start_point -> [next_vector] -> PrimPath @
+-- 
+-- Build a \"relative\" path from the start point, appending 
+-- successive straight line segments formed from the list of 
+-- next_vectors.
+-- 
+-- This function throws an error when supplied the empty list.
+--
+vectorPath :: Num u => Point2 u -> [Vec2 u] -> PrimPath u
+vectorPath _  [] = error "Picture.vectorPath - empty point list"
+vectorPath pt xs = PrimPath pt $ map RelLineTo xs
 
 
 
