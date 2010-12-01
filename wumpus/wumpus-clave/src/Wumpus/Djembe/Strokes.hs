@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Clave.DjembeStrokes
+-- Module      :  Wumpus.Djembe.Strokes
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Clave.DjembeStrokes where
+module Wumpus.Djembe.Strokes where
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )     
@@ -26,126 +26,128 @@ import Data.AffineSpace                 -- package: vector-space
 import Data.List
 
 
+{-
 -- need a combinator to draw a stem and "feed" a 
 -- center coord to the argument...
 
-stemC :: DGraphicF -> DGraphicF
+stemC :: DLocGraphic -> DLocGraphic
 stemC gF = stem `cc` (gF . vdisp (-25))
 
-flamC :: DGraphicF -> DGraphicF -> DGraphicF
+flamC :: DLocGraphic -> DLocGraphic -> DLocGraphic
 flamC sF lF = flamStem `cc` (sF . disp (-5) (-18)) 
                        `cc` (lF . vdisp (-25))
 
 
 -- Top of the stem is the origin...
 
-muffledBass     :: DGraphicF
+muffledBass     :: DLocGraphic
 muffledBass     = stemC (slash bassP)
 
-muffledTone     :: DGraphicF
+muffledTone     :: DLocGraphic
 muffledTone     = stemC (slash toneP)
 
-muffledSlap     :: DGraphicF
+muffledSlap     :: DLocGraphic
 muffledSlap     = stemC (underscore slapP)
 
-bassFlam        :: DGraphicF
+bassFlam        :: DLocGraphic
 bassFlam        = flamC (smallLetter 'B') (letter 'B')
 
 
-slapFlam        :: DGraphicF
+slapFlam        :: DLocGraphic
 slapFlam        = flamC (smallLetter 'X') (letter 'X')
 
-toneFlam        :: DGraphicF
+toneFlam        :: DLocGraphic
 toneFlam        = flamC smallTone toneP
   where
     smallTone = disk black 2 . vdisp (-1)
 
 
 
-dot             :: DGraphicF
+dot             :: DLocGraphic
 dot             = stemC dotP
 
-bass            :: DGraphicF
+bass            :: DLocGraphic
 bass            = stemC bassP
 
-tone            :: DGraphicF
+tone            :: DLocGraphic
 tone            = stemC toneP
 
-slap            :: DGraphicF
+slap            :: DLocGraphic
 slap            = stemC slapP
 
-bassP           :: DGraphicF
+bassP           :: DLocGraphic
 bassP           = letter 'B'
 
-toneP           :: DGraphicF
+toneP           :: DLocGraphic
 toneP           = disk black 4 . vdisp (-1)
 
-slapP           :: DGraphicF
+slapP           :: DLocGraphic
 slapP           = letter 'X'
 
-dotP            :: DGraphicF
+dotP            :: DLocGraphic
 dotP            = disk black 1 . vdisp (-3)
 
 
 
-paren :: DGraphicF -> DGraphicF
+paren :: DLocGraphic -> DLocGraphic
 paren gF = lparen `cc` gF `cc` rparen
   where
     lparen = letter '(' . disp (-4) (-24)
     rparen = letter ')' . disp 8    (-24)
 
 
-slash :: DGraphicF -> DGraphicF
+slash :: DLocGraphic -> DLocGraphic
 slash gF = gF `cc` slash1
   where
     slash1 = straightLine black (V2 10 10) . disp (-5) (-6) 
 
 
-underscore :: DGraphicF -> DGraphicF
+underscore :: DLocGraphic -> DLocGraphic
 underscore gF = gF `cc` uscore
   where
     uscore = straightLine black (V2 10 0) . disp (-5) (-5) 
 
 
-dominant :: DGraphicF -> DGraphicF
+dominant :: DLocGraphic -> DLocGraphic
 dominant gF = gF `cc` closed_square
   where
     closed_square = filledRectangle black  4.5 4.5 . displaceHand
-
-otherhand :: DGraphicF -> DGraphicF
-otherhand = (`cc` open_square)
+-}
+otherhand :: DLocGraphic -> DLocGraphic
+otherhand = (`oplus` open_square)
   where
-    open_square = strokedRectangle props 4 4 . displaceHand
-    props       = (black, LineWidth 0.5)
+    open_square = localize props $ prepro1 displaceHand $ strokedRectangle 4 4
+    props       = strokeColour black . thin -- setLineWidth 0.5
 
-displaceHand :: Point2T Double
-displaceHand = vdisp (-3) . displaceStem . displaceCharHeight 
 
-accent :: DGraphicF -> DGraphicF
-accent = (`cc` gt)
+displaceHand :: PointDisplace Double
+displaceHand = vdisplace (-3) . displaceStem . displaceCharHeight 
+
+accent :: DLocGraphic -> DLocGraphic
+accent = (`oplus` gt)
   where  
-    gt = openPath line_props [ vec 10 3, vec (-10) 3] . disp (-5) 2
+    gt = prepro1 (displace (-5) 2) $ openPath [ vec 10 3, vec (-10) 3]
 
 
 -- 
 
-stem :: DGraphicF
-stem = straightLine line_props (vvec 20) . displaceStem
+stem :: DLocGraphic
+stem = prepro1 displaceStem $ straightLine (vvec 20)
 
-flamStem :: DGraphicF 
-flamStem = openPath line_props vec_path . displaceStem
+flamStem :: DLocGraphic 
+flamStem = prepro1 displaceStem $ openPath vec_path
   where
     vec_path = [vvec 20, vec (-5) (-5), vvec (-10)]
 
-line_props :: (RGBi, StrokeAttr)
-line_props = (black, LineWidth 1.0)
+-- line_props :: (RGBi, StrokeAttr)
+-- line_props = (black, LineWidth 1.0)
 
 
-displaceStem :: Point2T Double
-displaceStem = vdisp (-20)
+displaceStem :: PointDisplace Double
+displaceStem = vdisplace (-20)
 
-displaceCharHeight :: Point2T Double
-displaceCharHeight = vdisp (-10)
+displaceCharHeight :: PointDisplace Double
+displaceCharHeight = vdisplace (-10)
 
 
 -- Note - we cannot make a "rectangle transformer" that centers a 
@@ -167,14 +169,19 @@ displaceCharHeight = vdisp (-10)
 
 
 
-
 -- Where to have the  origin....
-letter :: Char -> DGraphicF
-letter ch = wrapG . textlabel (black,FontAttr 12 helvetica) [ch] . disp (-4) (-5)
+--
+letter :: Char -> DLocGraphic
+letter ch = localize (fontSize 12) $ 
+    prepro1 (displace (-4) (-5)) $ textline [ch]
+
+
 
 -- For flam...
-smallLetter :: Char -> DGraphicF
-smallLetter ch = wrapG . textlabel (black,FontAttr 9 helvetica) [ch] . disp (-3) (-5)
+--
+smallLetter :: Char -> DLocGraphic
+smallLetter ch = localize (fontSize 9) $ 
+   prepro1 (displace (-3) (-5)) (textline [ch])
 
 
 -- Candidates for Basic.Graphic
@@ -182,8 +189,9 @@ smallLetter ch = wrapG . textlabel (black,FontAttr 9 helvetica) [ch] . disp (-3)
 
 
 
-openPath :: (Stroke t, Num u) => t -> [Vec2 u] -> GraphicF u
-openPath t vs = \pt -> wrapG $ ostroke t $ path pt (snd $ mapAccumL fn pt vs)
+openPath :: Num u => [Vec2 u] -> LocGraphic u
+openPath vs = 
+    promote1 $ \pt -> openStroke $ primPath pt (snd $ mapAccumL fn pt vs)
   where
     fn p v = let p' = p .+^ v in (p', lineTo p')
 

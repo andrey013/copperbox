@@ -23,16 +23,15 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6,
-                      monadLib          >= 3.6,
-                      wumpus-core       >= 0.30.0,
-                      wumpus-basic      >= 0.5.0
+                      wumpus-core       >= 0.41.0,
+                      wumpus-basic      >= 0.14.0
 
   
   exposed-modules:
     Wumpus.Clave.ClaveMonad,
     Wumpus.Clave.Core,
-    Wumpus.Clave.DjembeStrokes,
-    Wumpus.Clave.Drawing
+    Wumpus.Clave.Drawing,
+    Wumpus.Djembe.Strokes
 
   other-modules:
 

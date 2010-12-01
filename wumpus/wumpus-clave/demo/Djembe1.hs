@@ -2,7 +2,7 @@
 
 module Djembe1 where
 
-import Wumpus.Clave.DjembeStrokes
+import Wumpus.Djembe.Strokes
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Basic.Colour.SVGColours   -- package: wumpus-basic
@@ -15,9 +15,10 @@ import Data.Maybe
 import System.Directory
 
 main :: IO ()
-main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/djembe01.eps" pic1
-    >> writeSVG_latin1 "./out/djembe01.svg" pic1 
+main = do 
+    createDirectoryIfMissing True "./out/"
+    writeEPS "./out/djembe01.eps" pic1
+    writeSVG "./out/djembe01.svg" pic1 
 
 
 pic1 :: Picture Double
