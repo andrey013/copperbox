@@ -16,6 +16,8 @@
 
 module Wumpus.Djembe.Graphic where
 
+import Wumpus.Djembe.Base
+
 import Wumpus.Core                              -- package: wumpus-core
 
 import Wumpus.Basic.FontLoader.Base
@@ -26,7 +28,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
-
+import Data.Ratio
 
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
@@ -55,6 +57,10 @@ period_center           = 273
 dot_center              :: AfmUnit
 dot_center              = 405
 
+flam_dot_center         :: AfmUnit
+flam_dot_center         = 950
+
+
 stem_length             :: AfmUnit
 stem_length             = 1454
 
@@ -79,6 +85,11 @@ displaceBaseline v = pure $ \pt -> pt .+^ v
 
 
 
+dispBasePt :: (Fractional u, FromPtSize u) 
+           => AfmUnit -> AfmUnit -> LocDrawingInfo u (Point2 u)
+dispBasePt ux uy = scaleValue ux >>= \x -> 
+                   scaleValue uy >>= \y -> (displaceBaseline $ vec x y) 
+
 
 vdispBasePt :: (Fractional u, FromPtSize u) 
             => AfmUnit -> LocDrawingInfo u (Point2 u)
@@ -86,15 +97,6 @@ vdispBasePt ua = scaleValue ua >>= (displaceBaseline . vvec)
 
 
 
-dotCenterline       :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-dotCenterline       = vdispBasePt dot_center
-
-
-
-periodCenterline    :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-periodCenterline    = vdispBasePt period_center
 
 stemStart           :: (Fractional u, FromPtSize u) 
                     => LocDrawingInfo u (Point2 u)
@@ -112,10 +114,14 @@ relativeTo mf upd = promote1 $ \pt ->
 
 
 dot :: (Fractional u, FromPtSize u) => LocGraphic u
-dot = dotNh `relativeTo` dotCenterline
+dot = dotNh `relativeTo` vdispBasePt dot_center
+
+
+flamDot :: (Fractional u, FromPtSize u) => LocGraphic u
+flamDot = dotFh `relativeTo` dispBasePt (-flam_xminor) flam_dot_center
 
 period :: (Fractional u, FromPtSize u) => LocGraphic u
-period = periodNh `relativeTo` periodCenterline
+period = periodNh `relativeTo` vdispBasePt period_center
 
 periodNh :: (Fractional u, FromPtSize u) => LocGraphic u
 periodNh = scaleByCapHeight (1/12) >>= filledDisk
@@ -123,11 +129,19 @@ periodNh = scaleByCapHeight (1/12) >>= filledDisk
 letter :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
 letter ch = textline [ch]
 
+smallLetter :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
+smallLetter ch = getFontSize >>= \sz -> 
+                 localize (fontSize $ (3 * sz) `div` 4) $ textline [ch]
+
 
 -- radius is 3/8 of cap height.
 --
 dotNh :: (Fractional u, FromPtSize u) => LocGraphic u
 dotNh = scaleByCapHeight (3/8) >>= filledDisk
+
+
+dotFh :: (Fractional u, FromPtSize u) => LocGraphic u
+dotFh = scaleByCapHeight (3/16) >>= filledDisk
 
 
 stemline :: (Fractional u, FromPtSize u) => LocGraphic u
@@ -147,6 +161,8 @@ flamstem = body `relativeTo` stemTop
   where  
     body = flamPath >>= openStrokePath
            
+
+
 
 
 
@@ -183,11 +199,11 @@ evenStems n
 
 multiDraw :: Num u => Int -> Vec2 u -> LocGraphic u -> LocGraphic u
 multiDraw i _  _  | i <= 0 = error "multiDraw - empty"
-multiDraw i v0 fn          = step (i-1) (v0 ^+^ v0) (shift v0)
+multiDraw i v0 fn          = step (i-1) (v0 ^+^ v0) (move v0)
   where
-    shift v       = prepro1 (vecdisplace v) fn
+    move v        = prepro1 (vecdisplace v) fn
     step 0 _ g    = g
-    step n v g    = step (n-1) (v ^+^ v0) (g `oplus` shift v) 
+    step n v g    = step (n-1) (v ^+^ v0) (g `oplus` move v) 
 
            -- more to do
 
@@ -200,3 +216,52 @@ upperRectPath w h = openStrokePath [ vvec h, hvec w, vvec (-h) ]
 
 openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
+
+
+--------------------------------------------------------------------------------
+-- 
+
+-- plets aren't joined...
+
+
+
+hspans :: Group a -> [(Int, Ratio Int)]
+hspans xs = step 0 0 xs 
+  where
+    step i0 w []            | w > 0     = [(i0,w)]
+                            | otherwise = []
+    step i0 w (I _ :zs)     = step i0 (incr1 w) zs
+    step i0 w (S _ :zs)     = step i0 (shift w) zs
+    step i0 w (Ha _ _:zs)   = step i0 (incr1 w) zs
+    step i0 w (Pl n d _:zs) = let (pw,len) = pletSpan n d 
+                                  i1       = nextIndex i0 w
+                                  i2       = i1 + len 
+                              in if w > 0 then (i0,w) : (i1,pw) : step i2 0 zs 
+                                          else (i1,pw) : step i2 0 zs 
+
+nextIndex :: Int -> Ratio Int -> Int
+nextIndex ix w = ix + ceiling w
+
+-- incr1 /cancels/ any extension due to a swing (shift).
+--
+incr1 :: Ratio Int -> Ratio Int
+incr1 r = 1 + (ceiling $ r) % 1
+
+-- swing extends the line width by 1 (for the beat) plus a third 
+-- for the swing shift.
+--
+shift :: Ratio Int -> Ratio Int
+shift r = (incr1 r) + 1%3
+
+
+
+{-
+    step n st (I a:zs) = step (n+uw) st zs
+    step n st (Pl pn _:zs) = (st,n) : []
+-}
+
+
+pletSpan :: Int -> Int -> (Ratio Int, Int)
+pletSpan n d = ((d * n-1) % n, d)
+
+
