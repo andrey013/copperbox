@@ -33,11 +33,21 @@ text_drawing :: DDrawing
 text_drawing = drawTracing $ do 
    draw $ textline "PTgd..B" `at` zeroPt
    draw $ localize (fillColour black) $ period      `at` P2 200 0
-   draw $ localize (fillColour black) $ flamstem    `at` P2 230 0
+   draw $ localize (fillColour black) $ swingStem   `at` P2 200 0
+   draw $ localize (fillColour black) $ flamStem    `at` P2 220 0
    draw $ localize (fillColour black) $ dot         `at` P2 230 0
    draw $ localize (fillColour black) $ flamDot     `at` P2 230 0
    draw $ localize (fillColour black) $ evenStems 5 `at` P2 230 0
    draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
+
+   draw $ barURects [group3, group3] `at` P2 0 300
+   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200
+
+ag_01 :: DAdvGraphic
+ag_01 = aconcat (advCh 'A') (map advCh "CDEF")
+
+advCh :: Num u => Char -> AdvGraphic u
+advCh ch = makeAdvGraphic (hdisplace 30) (textline [ch])
 
 -- How to get /many/ interpretations of a beat pattern?
 --
@@ -62,15 +72,12 @@ kenkeni = I ()
 -- Note - this really needs a /no-graphic/ element.
 
 
--- | To generate output we need a Graphical interpretation.
---
-newtype G u = G { unG :: LocGraphic u }
 
 
 class CSangban repr where
    sangban :: repr
 
-instance (Fractional u, FromPtSize u) => CSangban (G u) where
+instance CSangban G where
   sangban = G $ dot
 
 -- This formulation will lead to huge class contexts!
@@ -87,21 +94,17 @@ class CSlap repr where
    slap :: repr
    slapflam  :: repr
 
-instance (Fractional u, FromPtSize u) => CSlap (G u) where
+instance CSlap G where
   slap      = G $ letter 'P'
   slapflam  = G $ letter 'P' -- todo
 
-instance CStroke (G u) where
-  optional nh = G $ unG nh  
-  lead_in  nh = G $ unG nh
-  accent   nh = G $ unG nh
 
 group2a :: (CSangban repr, CSlap repr) => Group repr 
 group2a = [ I sangban, I sangban, I slap ]
 
 class (CStroke repr, CSangban repr, CSlap repr) => Composite repr
 
-instance (Fractional u, FromPtSize u) => Composite (G u)
+instance Composite G
 
 group2b :: Composite repr => Group repr 
 group2b = [ I $ accent sangban, I sangban, I slap, S sangban ]
@@ -112,7 +115,4 @@ group3 = [ I slapflam, I sangban, I slap, S sangban ]
 -- This is annoying... 
 -- group3 must be given an explicit type.
 demo2 :: [(Int,Ratio Int)]
-demo2 = hspans g3
-  where
-    g3 :: Group (G Double)
-    g3 = group3
+demo2 = groupSpans group3

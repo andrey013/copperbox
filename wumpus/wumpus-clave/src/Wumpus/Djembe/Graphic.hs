@@ -24,12 +24,16 @@ import Wumpus.Basic.FontLoader.Base
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
 -- import Wumpus.Basic.SafeFonts 
 
+
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
 import Data.Ratio
 
+
+empty_loc_graphic :: Num u => LocGraphic u
+empty_loc_graphic = textline ""
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
 scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
@@ -107,6 +111,14 @@ stemTop             :: (Fractional u, FromPtSize u)
 stemTop             = vdispBasePt (stem_start + stem_length)
 
 
+swingBottomLeft     :: (Fractional u, FromPtSize u) 
+                    => LocDrawingInfo u (Point2 u)
+swingBottomLeft     = 
+    scaleValue flam_xminor >>= \xminor -> 
+    postpro1 (.+^ vec (0.1*xminor) (negate $ 2 * xminor)) stemTop
+ 
+
+
 
 relativeTo :: LocGraphic u -> LocDrawingInfo u (Point2 u) -> LocGraphic u
 relativeTo mf upd = promote1 $ \pt -> 
@@ -147,46 +159,43 @@ dotFh = scaleByCapHeight (3/16) >>= filledDisk
 stemline :: (Fractional u, FromPtSize u) => LocGraphic u
 stemline = scaleValue stem_length >>= (straightLine . vvec)
 
--- flam step is drawn from top 
---
-
 flamPath :: FromPtSize u => DrawingInfo [Vec2 u]
-flamPath = (\minor h -> [vec (-minor) (-minor), vvec (-h) ])
-            <$> scaleValue flam_xminor <*> scaleValue flam_stem_length
+flamPath = (\h minor flam_h -> [ vvec h, vec (-minor) (-minor), vvec (-flam_h) ])
+            <$> scaleValue stem_length <*> scaleValue flam_xminor 
+                                       <*> scaleValue flam_stem_length
 
 
 
-flamstem :: (Fractional u, FromPtSize u) => LocGraphic u
-flamstem = body `relativeTo` stemTop
+flamStem :: (Fractional u, FromPtSize u) => LocGraphic u
+flamStem = body `relativeTo` stemStart
   where  
     body = flamPath >>= openStrokePath
            
 
+swingStem :: (Fractional u, FromPtSize u) => LocGraphic u
+swingStem = stalk `oplus` angle
+          
+  where  
+    stalk = stemline `relativeTo` stemStart
+    angle = (swingAnglePath >>= openStrokePath) `relativeTo` swingBottomLeft
 
+swingAnglePath :: (Fractional u, FromPtSize u) => DrawingInfo [Vec2 u]
+swingAnglePath = (\minor -> let w = 0.8*minor in [ vec w w, vec (-w) w ])
+                    <$> scaleValue flam_xminor 
 
-
+           
 
 
 -- Note - line thickness should vary according to size...
 --
-oneStem :: (Fractional u, FromPtSize u) => LocGraphic u
-oneStem = stemline `relativeTo` stemStart
-
--- Draws both flam and stem
---
-oneFlam ::  (Fractional u, FromPtSize u) => LocGraphic u
-oneFlam = body `relativeTo` stemStart
-  where
-    body = scaleValue stem_length  >>= \h  ->
-           flamPath                >>= \vs ->
-           openStrokePath (vvec h:vs)
-           
+singleStem :: (Fractional u, FromPtSize u) => LocGraphic u
+singleStem = stemline `relativeTo` stemStart
 
 
 evenStems :: (Fractional u, FromPtSize u) => Int -> LocGraphic u
 evenStems n 
     | n <= 0    = error "evenStems - stem count must be 1 or more."
-    | n == 1    = oneStem 
+    | n == 1    = singleStem 
     | n == 2    = outer `relativeTo` stemStart 
     | otherwise = (outer `oplus` inner_stems) `relativeTo` stemStart
   where
@@ -209,6 +218,14 @@ multiDraw i v0 fn          = step (i-1) (v0 ^+^ v0) (move v0)
 
 
 
+upperRectGraphic :: (Fractional u, FromPtSize u) => Ratio Int -> LocGraphic u
+upperRectGraphic rw 
+    | rw <= 0   = singleStem
+    | otherwise = scaleValue stem_length >>= \h ->
+                  scaleValue unit_width  >>= \uw ->
+                  upperRectPath (uw * realToFrac rw) h
+
+
 -- trace sw nw ne se - leave open at se.
 -- 
 upperRectPath :: Num u => u -> u -> LocGraphic u
@@ -221,26 +238,55 @@ openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
 --------------------------------------------------------------------------------
 -- 
 
--- plets aren't joined...
+-- | To generate output we need a Graphical interpretation.
+--
+newtype G = G { unG :: DLocGraphic }
+
+instance CStroke G where
+  optional nh = G $ unG nh  
+  lead_in  nh = G $ unG nh
+  accent   nh = G $ unG nh
 
 
 
-hspans :: Group a -> [(Int, Ratio Int)]
-hspans xs = step 0 0 xs 
+
+-- Note - plets are not joined to the rest of their group.
+
+barURects :: Bar G -> DLocGraphic
+barURects = extractLocGraphic . step . map groupURects
   where
-    step i0 w []            | w > 0     = [(i0,w)]
-                            | otherwise = []
-    step i0 w (I _ :zs)     = step i0 (incr1 w) zs
-    step i0 w (S _ :zs)     = step i0 (shift w) zs
-    step i0 w (Ha _ _:zs)   = step i0 (incr1 w) zs
-    step i0 w (Pl n d _:zs) = let (pw,len) = pletSpan n d 
-                                  i1       = nextIndex i0 w
-                                  i2       = i1 + len 
-                              in if w > 0 then (i0,w) : (i1,pw) : step i2 0 zs 
-                                          else (i1,pw) : step i2 0 zs 
+    step []     = makeAdvGraphic id empty_loc_graphic
+    step (x:xs) = aconcat x xs
 
-nextIndex :: Int -> Ratio Int -> Int
-nextIndex ix w = ix + ceiling w
+
+groupURects :: Group G -> DAdvGraphic 
+groupURects = step . map advURect . groupSpans
+  where  
+    step []     = makeAdvGraphic id empty_loc_graphic
+    step (x:xs) = aconcat x xs
+
+
+
+advURect :: (Int,Ratio Int) -> DAdvGraphic 
+advURect (swidth, drawing_width) = 
+    scaleValue unit_width          >>= \uw    ->
+    makeAdvGraphic (hdisplace $ uw * fromIntegral swidth) 
+                   (upperRectGraphic drawing_width)
+
+
+-- time_unit_width * real_drawing_width
+--
+groupSpans :: Group G -> [(Int, Ratio Int)]
+groupSpans xs = step 0 xs 
+  where
+    step w []            | w > 0     = [(ceiling w,w)]
+                         | otherwise = []
+    step w (I _ :zs)     = step (incr1 w) zs
+    step w (S _ :zs)     = step (shift w) zs
+    step w (Ha _ _:zs)   = step (incr1 w) zs
+    step w (Pl n d _:zs) = let pw    = pletSpan n d 
+                               consF = if w > 0 then ((ceiling w,w) :) else id
+                           in consF $ (ceiling pw,pw) : step 0 zs
 
 -- incr1 /cancels/ any extension due to a swing (shift).
 --
@@ -254,14 +300,22 @@ shift :: Ratio Int -> Ratio Int
 shift r = (incr1 r) + 1%3
 
 
-
-{-
-    step n st (I a:zs) = step (n+uw) st zs
-    step n st (Pl pn _:zs) = (st,n) : []
--}
+pletSpan :: Int -> Int -> Ratio Int
+pletSpan n d = (d * n-1) % n
 
 
-pletSpan :: Int -> Int -> (Ratio Int, Int)
-pletSpan n d = ((d * n-1) % n, d)
 
+--------------------------------------------------------------------------------
+-- These should be in Wumpus-Basic (possibly renamed)...
 
+infixr 6 `aplus`
+
+aplus :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
+aplus = accumulate1 oplus
+
+aconcat :: AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+aconcat a []     = a
+aconcat a (x:xs) = aconcat (a `aplus` x) xs 
+
+extractLocGraphic :: AdvGraphic u -> LocGraphic u
+extractLocGraphic = postpro1 snd

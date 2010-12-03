@@ -53,3 +53,5 @@ class CStroke repr where
    optional :: repr -> repr
    lead_in  :: repr -> repr
    accent   :: repr -> repr
+
+
