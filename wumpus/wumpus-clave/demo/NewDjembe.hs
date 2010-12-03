@@ -30,7 +30,7 @@ std_attr :: DrawingContext
 std_attr = joinBevel $ thick $ fontFace helvetica $ standardContext 48
 
 text_drawing :: DDrawing
-text_drawing = drawTracing $ do 
+text_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ textline "PTgd..B" `at` zeroPt
    draw $ localize (fillColour black) $ period      `at` P2 200 0
    draw $ localize (fillColour black) $ swingStem   `at` P2 200 0
@@ -40,8 +40,11 @@ text_drawing = drawTracing $ do
    draw $ localize (fillColour black) $ evenStems 5 `at` P2 230 0
    draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
 
-   draw $ barURects [group3, group3] `at` P2 0 300
-   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200
+   draw $ barBeamLines [group3, group3] `at` P2 0 300
+   draw $ barBeats     [group3, group3] `at` P2 0 300
+
+--   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200
+--   draw $ extractLocGraphic (drawBeat $ I sangban) `at` P2 350 200
 
 ag_01 :: DAdvGraphic
 ag_01 = aconcat (advCh 'A') (map advCh "CDEF")
@@ -110,7 +113,7 @@ group2b :: Composite repr => Group repr
 group2b = [ I $ accent sangban, I sangban, I slap, S sangban ]
 
 group3 :: Composite repr => Group repr 
-group3 = [ I slapflam, I sangban, I slap, S sangban ]
+group3 = [ I sangban, I sangban, I sangban, S sangban, Pl 3 2 [sangban, sangban, sangban] ]
 
 -- This is annoying... 
 -- group3 must be given an explicit type.

@@ -64,12 +64,17 @@ dot_center              = 405
 flam_dot_center         :: AfmUnit
 flam_dot_center         = 950
 
+stem_top                :: AfmUnit
+stem_top                = 2272
 
 stem_length             :: AfmUnit
-stem_length             = 1454
+stem_length             = stem_top - stem_start
 
 stem_start              :: AfmUnit
 stem_start              = 818
+
+half_line_pos           :: AfmUnit
+half_line_pos           = 2200
 
 flam_xminor             :: AfmUnit
 flam_xminor             = 328
@@ -108,7 +113,7 @@ stemStart           = vdispBasePt stem_start
 
 stemTop             :: (Fractional u, FromPtSize u) 
                     => LocDrawingInfo u (Point2 u)
-stemTop             = vdispBasePt (stem_start + stem_length)
+stemTop             = vdispBasePt stem_top
 
 
 swingBottomLeft     :: (Fractional u, FromPtSize u) 
@@ -117,29 +122,33 @@ swingBottomLeft     =
     scaleValue flam_xminor >>= \xminor -> 
     postpro1 (.+^ vec (0.1*xminor) (negate $ 2 * xminor)) stemTop
  
-
+halfLineLeft        :: (Fractional u, FromPtSize u) 
+                    => LocDrawingInfo u (Point2 u)
+halfLineLeft        = vdispBasePt half_line_pos
 
 
 relativeTo :: LocGraphic u -> LocDrawingInfo u (Point2 u) -> LocGraphic u
 relativeTo mf upd = promote1 $ \pt -> 
     situ1 upd pt >>= \p2 -> mf `at` p2 
 
+singleStemmed :: (Fractional u, FromPtSize u) => LocGraphic u -> LocGraphic u
+singleStemmed g = g `oplus` singleStem
 
 dot :: (Fractional u, FromPtSize u) => LocGraphic u
-dot = dotNh `relativeTo` vdispBasePt dot_center
+dot = singleStemmed $ dotNh `relativeTo` vdispBasePt dot_center
 
 
 flamDot :: (Fractional u, FromPtSize u) => LocGraphic u
 flamDot = dotFh `relativeTo` dispBasePt (-flam_xminor) flam_dot_center
 
 period :: (Fractional u, FromPtSize u) => LocGraphic u
-period = periodNh `relativeTo` vdispBasePt period_center
+period = singleStemmed $ periodNh `relativeTo` vdispBasePt period_center
 
 periodNh :: (Fractional u, FromPtSize u) => LocGraphic u
 periodNh = scaleByCapHeight (1/12) >>= filledDisk
 
 letter :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
-letter ch = textline [ch]
+letter ch = singleStemmed $ textline [ch]
 
 smallLetter :: (Fractional u, FromPtSize u) => Char -> LocGraphic u
 smallLetter ch = getFontSize >>= \sz -> 
@@ -173,8 +182,7 @@ flamStem = body `relativeTo` stemStart
            
 
 swingStem :: (Fractional u, FromPtSize u) => LocGraphic u
-swingStem = stalk `oplus` angle
-          
+swingStem = stalk `oplus` angle          
   where  
     stalk = stemline `relativeTo` stemStart
     angle = (swingAnglePath >>= openStrokePath) `relativeTo` swingBottomLeft
@@ -235,6 +243,15 @@ openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
 
 
+
+beamLine :: (Fractional u, FromPtSize u) => Ratio Int -> LocGraphic u
+beamLine rw 
+    | rw <= 0   = singleStem
+    | otherwise = scaleValue unit_width  >>= \uw ->
+                  straightLine (hvec $ uw * realToFrac rw) `relativeTo` stemTop
+
+
+
 --------------------------------------------------------------------------------
 -- 
 
@@ -248,36 +265,86 @@ instance CStroke G where
   accent   nh = G $ unG nh
 
 
-
-
--- Note - plets are not joined to the rest of their group.
-
-barURects :: Bar G -> DLocGraphic
-barURects = extractLocGraphic . step . map groupURects
-  where
-    step []     = makeAdvGraphic id empty_loc_graphic
-    step (x:xs) = aconcat x xs
-
-
-groupURects :: Group G -> DAdvGraphic 
-groupURects = step . map advURect . groupSpans
+barBeats :: Bar G -> DLocGraphic
+barBeats = extractLocGraphic . step . map groupBeats
   where  
     step []     = makeAdvGraphic id empty_loc_graphic
     step (x:xs) = aconcat x xs
 
 
+groupBeats :: Group G -> DAdvGraphic
+groupBeats = step . map drawBeat
+  where  
+    step []     = makeAdvGraphic id empty_loc_graphic
+    step (x:xs) = aconcat x xs
 
-advURect :: (Int,Ratio Int) -> DAdvGraphic 
-advURect (swidth, drawing_width) = 
+
+drawBeat :: Beat G -> DAdvGraphic
+drawBeat (I  a)      = advanceUnitDisp >>= \fn -> makeAdvGraphic fn (unG a)
+drawBeat (S  a)      = advanceUnitDisp >>= \fn -> 
+                       makeAdvGraphic fn (xminorMove (unG a) `oplus` swingStem)
+drawBeat (Ha a b)    = advanceUnitDisp >>= \fn -> 
+                       makeAdvGraphic fn (unG a `oplus` halfUnitMove (unG b))
+drawBeat (Pl n d xs) = advanceNDisp d >>= \fn -> 
+                       makeAdvGraphic fn (drawPlet n d xs) 
+
+
+drawPlet :: Int -> Int -> [G] -> DLocGraphic 
+drawPlet n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
+                  explode (hvec w) $ map unG xs  
+
+
+explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
+explode _ []     = empty_loc_graphic
+explode v (x:xs) = extractLocGraphic $ aconcat (fn x) $ map fn xs 
+  where
+    fn    = makeAdvGraphic (vecdisplace v)
+
+-- Note - plets are not joined to the rest of their group.
+
+barBeamLines :: Bar G -> DLocGraphic
+barBeamLines = extractLocGraphic . step . map groupBeamLines
+  where
+    step []     = makeAdvGraphic id empty_loc_graphic
+    step (x:xs) = aconcat x xs
+
+
+groupBeamLines :: Group G -> DAdvGraphic 
+groupBeamLines = step . map advBeamLine . groupSpans
+  where  
+    step []     = makeAdvGraphic id empty_loc_graphic
+    step (x:xs) = aconcat x xs
+
+advanceUnitDisp :: FromPtSize u => DrawingInfo (PointDisplace u)
+advanceUnitDisp = scaleValue unit_width >>= return . hdisplace
+
+
+advanceNDisp :: FromPtSize u => Int-> DrawingInfo (PointDisplace u)
+advanceNDisp i = 
+    let n = fromIntegral i in 
+    scaleValue unit_width >>= return . hdisplace . (*n)
+
+xminorMove :: FromPtSize u => LocGraphic u -> LocGraphic u
+xminorMove mg = scaleValue flam_xminor >>= \x -> prepro1 (hdisplace x) mg
+
+halfUnitMove :: (Fractional u, FromPtSize u) => LocGraphic u -> LocGraphic u
+halfUnitMove mg = scaleValue unit_width >>= \x -> prepro1 (hdisplace $ 0.5 * x) mg
+
+
+
+advBeamLine :: (Int,Ratio Int) -> DAdvGraphic 
+advBeamLine (swidth, drawing_width) = 
     scaleValue unit_width          >>= \uw    ->
     makeAdvGraphic (hdisplace $ uw * fromIntegral swidth) 
-                   (upperRectGraphic drawing_width)
+                   (beamLine drawing_width)
 
 
 -- time_unit_width * real_drawing_width
 --
+-- Note - the count is one less than the elements
+--
 groupSpans :: Group G -> [(Int, Ratio Int)]
-groupSpans xs = step 0 xs 
+groupSpans xs = step (-1) xs 
   where
     step w []            | w > 0     = [(ceiling w,w)]
                          | otherwise = []
@@ -286,7 +353,9 @@ groupSpans xs = step 0 xs
     step w (Ha _ _:zs)   = step (incr1 w) zs
     step w (Pl n d _:zs) = let pw    = pletSpan n d 
                                consF = if w > 0 then ((ceiling w,w) :) else id
-                           in consF $ (ceiling pw,pw) : step 0 zs
+                           in consF $ (ceiling pw,pw) : step (-1) zs
+
+    
 
 -- incr1 /cancels/ any extension due to a swing (shift).
 --
@@ -295,6 +364,8 @@ incr1 r = 1 + (ceiling $ r) % 1
 
 -- swing extends the line width by 1 (for the beat) plus a third 
 -- for the swing shift.
+--
+-- Problem - adding a third is wrong... it should be the xminor instead
 --
 shift :: Ratio Int -> Ratio Int
 shift r = (incr1 r) + 1%3
