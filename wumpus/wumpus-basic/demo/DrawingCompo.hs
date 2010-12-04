@@ -2,9 +2,9 @@
 
 module DrawingCompo where
 
-import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.DrawingComposition
 import Wumpus.Basic.Graphic
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.DrawingComposition
 
 import Wumpus.Core                              -- package: wumpus-core
 

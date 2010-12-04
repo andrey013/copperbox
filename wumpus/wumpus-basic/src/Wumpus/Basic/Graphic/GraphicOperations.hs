@@ -22,6 +22,7 @@ module Wumpus.Basic.Graphic.GraphicOperations
   (
     drawGraphic
 
+  , emptyLocGraphic
   , openStroke
   , closedStroke
   , filledPath
@@ -97,7 +98,9 @@ drawGraphic :: (Real u, Floating u, FromPtSize u)
             => DrawingContext -> Graphic u -> Picture u
 drawGraphic ctx gf = frame [getPrimGraphic $ runGraphic ctx gf]
 
-
+emptyLocGraphic :: Num u => LocGraphic u
+emptyLocGraphic = promote1 $ \pt -> 
+    withStrokeAttr $ \rgb attr -> primGraphic $ ostroke rgb attr (emptyPath pt)
 
 
 openStroke :: Num u => PrimPath u -> Graphic u

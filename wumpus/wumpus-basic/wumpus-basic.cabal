@@ -49,6 +49,8 @@ description:
   .
   0.13.0 to 0.14.0:
   .
+  * Re-organised module hierarchy.
+  .
   * Removed @raise@, @raise1@ and @raise2@ from ContextFunction - 
     all three were type restricted aliases of Applicative\'s 
     @pure@. @pure@ should now be used instead.
@@ -107,25 +109,8 @@ library
 
   
   exposed-modules:
-    Wumpus.Basic.Arrows,
-    Wumpus.Basic.Arrows.Connectors,
-    Wumpus.Basic.Arrows.Tips,
-    Wumpus.Basic.Chains,
-    Wumpus.Basic.Chains.Base,
-    Wumpus.Basic.Chains.Derived,
-    Wumpus.Basic.Colour.SVGColours,
-    Wumpus.Basic.Colour.X11Colours,
-    Wumpus.Basic.Dots.AnchorDots,
-    Wumpus.Basic.Dots.Marks,
-    Wumpus.Basic.DrawingComposition,
-    Wumpus.Basic.FontLoader.AfmLoader,
-    Wumpus.Basic.FontLoader.AfmParserBase,
-    Wumpus.Basic.FontLoader.AfmV2Parser,
-    Wumpus.Basic.FontLoader.AfmV4Dot1Parser,
-    Wumpus.Basic.FontLoader.Base,
-    Wumpus.Basic.FontLoader.GSFontMap,
-    Wumpus.Basic.FontLoader.GSLoader,
     Wumpus.Basic.Graphic,
+    Wumpus.Basic.Graphic.AdvanceGraphic,
     Wumpus.Basic.Graphic.Anchors,
     Wumpus.Basic.Graphic.Base,
     Wumpus.Basic.Graphic.ContextFunction,
@@ -137,26 +122,44 @@ library
     Wumpus.Basic.Graphic.Query,
     Wumpus.Basic.Graphic.ScalingContext,
     Wumpus.Basic.Graphic.TraceDrawing,
-    Wumpus.Basic.Monads.TurtleClass,
-    Wumpus.Basic.Monads.TurtleMonad,
-    Wumpus.Basic.Paths,
-    Wumpus.Basic.Paths.Base,
-    Wumpus.Basic.Paths.Connectors,
-    Wumpus.Basic.Paths.Construction,
-    Wumpus.Basic.Paths.ControlPoints,
-    Wumpus.Basic.Paths.RoundCorners,
-    Wumpus.Basic.SafeFonts,
-    Wumpus.Basic.Shapes,
-    Wumpus.Basic.Shapes.Base,
-    Wumpus.Basic.Shapes.Coordinate,
-    Wumpus.Basic.Shapes.Derived,
-    Wumpus.Basic.Text.LRText,
+    Wumpus.Basic.System.AfmLoader,
+    Wumpus.Basic.System.FontLoader.AfmParserBase,
+    Wumpus.Basic.System.FontLoader.AfmV2Parser,
+    Wumpus.Basic.System.FontLoader.AfmV4Dot1Parser,
+    Wumpus.Basic.System.FontLoader.Base,
+    Wumpus.Basic.System.FontLoader.GSFontMap,
+    Wumpus.Basic.System.GSLoader,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.FormatCombinators,
     Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.Utils.ParserCombinators,
     Wumpus.Basic.Utils.TokenParsers,
-    Wumpus.Basic.VersionNumber
+    Wumpus.Basic.VersionNumber,
+    Wumpus.Drawing.Arrows,
+    Wumpus.Drawing.Arrows.Connectors,
+    Wumpus.Drawing.Arrows.Tips,
+    Wumpus.Drawing.Chains,
+    Wumpus.Drawing.Chains.Base,
+    Wumpus.Drawing.Chains.Derived,
+    Wumpus.Drawing.Colour.SVGColours,
+    Wumpus.Drawing.Colour.X11Colours,
+    Wumpus.Drawing.Dots.AnchorDots,
+    Wumpus.Drawing.Dots.Marks,
+    Wumpus.Drawing.DrawingComposition,
+    Wumpus.Drawing.Paths,
+    Wumpus.Drawing.Paths.Base,
+    Wumpus.Drawing.Paths.Connectors,
+    Wumpus.Drawing.Paths.Construction,
+    Wumpus.Drawing.Paths.ControlPoints,
+    Wumpus.Drawing.Paths.RoundCorners,
+    Wumpus.Drawing.SafeFonts,
+    Wumpus.Drawing.Shapes,
+    Wumpus.Drawing.Shapes.Base,
+    Wumpus.Drawing.Shapes.Coordinate,
+    Wumpus.Drawing.Shapes.Derived,
+    Wumpus.Drawing.Text.LRText,
+    Wumpus.Drawing.Turtle.TurtleClass,
+    Wumpus.Drawing.Turtle.TurtleMonad
 
   other-modules:
 

@@ -22,8 +22,8 @@ module ColourChartUtils
 
   ) where
 
-import qualified Wumpus.Basic.Colour.SVGColours    as SVG
-import qualified Wumpus.Basic.Colour.X11Colours    as X11
+import qualified Wumpus.Drawing.Colour.SVGColours    as SVG
+import qualified Wumpus.Drawing.Colour.X11Colours    as X11
 
 import Wumpus.Core.Colour ( RGBi )
 

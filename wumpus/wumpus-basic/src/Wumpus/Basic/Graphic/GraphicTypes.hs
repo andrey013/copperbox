@@ -26,8 +26,6 @@ module Wumpus.Basic.Graphic.GraphicTypes
   -- * Function from Point to Point
     PointDisplace
 
-  -- * Advance vector
-  , AdvanceVec
 
   -- * Drawing info
   , DrawingInfo
@@ -57,9 +55,6 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , DLocThetaImage
   , DConnectorImage
 
-  -- * /Advance vector/ graphic
-  , AdvGraphic
-  , DAdvGraphic
 
   -- * Bounded graphic / loc graphic
   , BoundedGraphic
@@ -67,9 +62,6 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , BoundedLocGraphic
   , DBoundedLocGraphic
 
-  -- * Extract from an Advance vector
-  , advanceH
-  , advanceV
 
   -- * Run functions
   , runGraphic
@@ -95,7 +87,6 @@ module Wumpus.Basic.Graphic.GraphicTypes
   , intoLocImage
   , intoConnectorImage
   , intoLocThetaImage
-  , makeAdvGraphic
 
 
   ) where
@@ -107,14 +98,7 @@ import Wumpus.Basic.Graphic.DrawingContext
 import Wumpus.Core                      -- package: wumpus-core
 
 
-
 type PointDisplace u = Point2 u -> Point2 u
-
-
-type AdvanceVec u = Vec2 u
-
-
-
 
 
 
@@ -216,22 +200,6 @@ type DConnectorImage a  = ConnectorImage Double a
 
 type instance DUnit (Image u a) = u
 
-
---------------------------------------------------------------------------------
-
-
--- | /Advance vector/ graphic - this partially models the 
--- PostScript @show@ command which moves the /current point/ by the
--- width (advance) vector as each character is drawn.
---
-type AdvGraphic u      = LocImage u (Point2 u)
-
-type DAdvGraphic       = AdvGraphic Double
-
-
-type instance DUnit (AdvGraphic u) = u
-
-
 --------------------------------------------------------------------------------
 
 -- | Graphic with a bounding box.
@@ -301,26 +269,6 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
   translate dx dy = postpro (\(a,b) -> (translate dx dy a, translate dx dy b))
 
 
-
---------------------------------------------------------------------------------
-
--- | Extract the horizontal component of an advance vector.
---
--- For left-to-right latin text, the vertical component of an
--- advance vector is expected to be 0. Ingoring it seems 
--- permissible, e.g. when calculating bounding boxes for 
--- left-to-right text.
---
-advanceH :: Num u => AdvanceVec u -> u
-advanceH (V2 w _)  = w
-
--- | Extract the verticaltal component of an advance vector.
---
--- For left-to-right latin text, the vertical component of an
--- advance vector is expected to be 0.
---
-advanceV :: Num u => AdvanceVec u -> u
-advanceV (V2 _ h)  = h
 
 
 --------------------------------------------------------------------------------
@@ -427,13 +375,6 @@ intoLocThetaImage :: LocThetaCF u a
 intoLocThetaImage = postcomb2 (,)
 
 
--- | Construction is different to intoZZ functions hence the 
--- different name.
---
-makeAdvGraphic :: PointDisplace u
-               -> LocGraphic u 
-               -> AdvGraphic u
-makeAdvGraphic pf df = postcomb1 (,) (postpro1 pf locPoint) df
 
 
 

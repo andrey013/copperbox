@@ -2,9 +2,9 @@
 
 module Symbols where
 
-import Wumpus.Basic.Chains
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
+import Wumpus.Drawing.Chains
+import Wumpus.Drawing.SafeFonts
 
 
 import Wumpus.Core                              -- package: wumpus-core

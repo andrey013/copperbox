@@ -16,13 +16,13 @@
 module LeftRightText where
 
 
-import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Dots.Marks
-import Wumpus.Basic.FontLoader.GSLoader
-import Wumpus.Basic.FontLoader.AfmLoader
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.Text.LRText
+import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.AfmLoader
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.LRText
 
 import FontLoaderUtils
 

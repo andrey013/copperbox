@@ -3,9 +3,9 @@
 
 module Shapes where
 
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Shapes
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Shapes
 
 import Wumpus.Core                              -- package: wumpus-core
 

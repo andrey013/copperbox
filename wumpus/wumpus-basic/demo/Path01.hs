@@ -2,10 +2,10 @@
 
 module Path01 where
 
-import Wumpus.Basic.Arrows.Tips
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Paths
+import Wumpus.Drawing.Arrows.Tips
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Paths
 
 import Wumpus.Core                      -- package: wumpus-core
 

@@ -3,11 +3,11 @@
 module Arrowheads where
 
 
-import Wumpus.Basic.Arrows
-import Wumpus.Basic.Chains
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.Paths hiding ( length )
+import Wumpus.Drawing.Arrows
+import Wumpus.Drawing.Chains
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Paths hiding ( length )
 
 import Wumpus.Core                              -- package: wumpus-core
 

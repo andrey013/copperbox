@@ -4,12 +4,12 @@
 module AfmV4Dot1 where
 
 
-import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Dots.Marks
-import Wumpus.Basic.FontLoader.AfmLoader
+import Wumpus.Basic.System.AfmLoader
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
-import Wumpus.Basic.Text.LRText
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core
 

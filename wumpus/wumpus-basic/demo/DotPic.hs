@@ -3,13 +3,13 @@
 module DotPic where
 
 
-import Wumpus.Basic.Chains
-import Wumpus.Basic.Colour.SVGColours
-import Wumpus.Basic.Dots.AnchorDots
-import Wumpus.Basic.FontLoader.AfmLoader
-import Wumpus.Basic.FontLoader.GSLoader
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.GSLoader
+import Wumpus.Drawing.Chains
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.AnchorDots
+import Wumpus.Drawing.SafeFonts
 
 import FontLoaderUtils
 

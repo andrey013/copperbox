@@ -2,9 +2,9 @@
 
 module TextCentering where
 
-import Wumpus.Basic.Dots.AnchorDots
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
+import Wumpus.Drawing.Dots.AnchorDots
+import Wumpus.Drawing.Colour.SVGColours
 
 import Wumpus.Core                      -- package: wumpus-core
 

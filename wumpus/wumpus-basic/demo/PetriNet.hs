@@ -7,13 +7,13 @@
 
 module PetriNet where
 
-import Wumpus.Basic.Arrows
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic                     -- package: wumpus-basic
-import Wumpus.Basic.Paths
-import Wumpus.Basic.Shapes.Base
-import Wumpus.Basic.Shapes.Derived
-import Wumpus.Basic.SafeFonts
+import Wumpus.Drawing.Arrows
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Shapes.Base
+import Wumpus.Drawing.Shapes.Derived
+import Wumpus.Drawing.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 

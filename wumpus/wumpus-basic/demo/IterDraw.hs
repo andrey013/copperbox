@@ -3,9 +3,9 @@
 
 module IterDraw where
 
-import Wumpus.Basic.Colour.SVGColours
 import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.SafeFonts
 
 import Wumpus.Core                      -- package: wumpus-core
 
