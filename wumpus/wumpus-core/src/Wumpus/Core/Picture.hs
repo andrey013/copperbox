@@ -44,6 +44,7 @@ module Wumpus.Core.Picture
   , curveTo
   , vertexPath
   , vectorPath
+  , emptyPath
   , curvedPath
   , xlinkhref
   , xlink
@@ -248,6 +249,16 @@ vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
 vectorPath :: Num u => Point2 u -> [Vec2 u] -> PrimPath u
 vectorPath _  [] = error "Picture.vectorPath - empty point list"
 vectorPath pt xs = PrimPath pt $ map RelLineTo xs
+
+
+-- | 'emptyPath' : @ start_point -> PrimPath @
+-- 
+-- Build an empty path. The start point must be specified even
+-- though the path is not drawn - a start point is the minimum 
+-- information needed to calculate a bounding box. 
+--
+emptyPath :: Num u => Point2 u -> PrimPath u
+emptyPath pt  = PrimPath pt []
 
 
 

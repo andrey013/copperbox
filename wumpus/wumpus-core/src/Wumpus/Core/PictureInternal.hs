@@ -55,6 +55,8 @@ module Wumpus.Core.PictureInternal
   , repositionDeltas
 
   , zeroGS
+  , isEmptyPath
+  , isEmptyLabel
 
   ) where
 
@@ -318,9 +320,6 @@ data PrimEllipse u = PrimEllipse
       , ellipse_ctm           :: PrimCTM u
       } 
   deriving (Eq,Show)
-
-
-
 
 
 
@@ -794,4 +793,18 @@ zeroGS = GraphicsState { gs_draw_colour  = black
 
     no_encoding      = IntMap.empty 
 
+
+-- | Is the path empty - if so we might want to avoid printing it.
+--
+isEmptyPath :: PrimPath u -> Bool
+isEmptyPath (PrimPath _ xs) = null xs
+
+-- | Is the label empty - if so we might want to avoid printing it.
+--
+isEmptyLabel :: PrimLabel u -> Bool
+isEmptyLabel (PrimLabel txt _) = body txt
+   where
+     body (StdLayout esc) = null $ getEscapedText esc
+     body (KernTextH xs)  = null xs
+     body (KernTextV xs)  = null xs
 

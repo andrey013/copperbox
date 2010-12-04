@@ -185,7 +185,7 @@ picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 picture (Clip    (_,xs) cp pic) = 
     bracketTrafos xs $ do { lbl <- newClipLabel
-                          ; d1  <- clipPath lbl cp
+                          ; let d1 = clipPath lbl cp
                           ; d2  <- picture pic
                           ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
                           } 
@@ -204,11 +204,20 @@ oneConcat fn ones = outstep (viewl ones)
 
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
-primitive (PPath props pp)      = primPath props pp
-primitive (PLabel props lbl)    = primLabel props lbl
+primitive (PPath props pp)      
+    | isEmptyPath pp            = pure empty
+    | otherwise                 = primPath props pp
+
+primitive (PLabel props lbl)    
+    | isEmptyLabel lbl          = pure empty
+    | otherwise                 = primLabel props lbl
+
 primitive (PEllipse props ell)  = primEllipse props ell
+
 primitive (PContext fa chi)     = bracketGS fa (primitive chi)
+
 primitive (PSVG anno chi)       = svgAnnoPrim anno <$> primitive chi
+
 primitive (PGroup ones)         = oneConcat primitive ones
  
 
@@ -230,15 +239,13 @@ drawGProps xs d = elem_g attrs_doc d
 svgAttribute :: SvgAttr -> Doc
 svgAttribute (SvgAttr n v) = svgAttr n $ text v
  
-clipPath :: PSUnit u => String -> PrimPath u -> SvgMonad Doc
+clipPath :: PSUnit u => String -> PrimPath u -> Doc
 clipPath clip_id pp = 
-    (\doc -> elem_clipPath (attr_id clip_id) (elem_path_no_attrs doc)) 
-      <$> path pp
+    elem_clipPath (attr_id clip_id) (elem_path_no_attrs $ path pp) 
 
 
 primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
-primPath props pp = (\(a,f) d -> elem_path a (f d)) 
-                      <$> pathProps props <*> path pp
+primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 
 --
 -- Paths are printed as absolute paths. Internally they are 
@@ -252,9 +259,9 @@ primPath props pp = (\(a,f) d -> elem_path a (f d))
 -- an encouragement to change when it moved to relative ones. 
 -- 
 
-path :: PSUnit u => PrimPath u -> SvgMonad Doc
+path :: PSUnit u => PrimPath u -> Doc
 path (PrimPath start xs) = 
-    pure $ path_m start <+> hsep (snd $ mapAccumL step start xs)
+    path_m start <+> hsep (snd $ mapAccumL step start xs)
   where
     step pt (RelLineTo v)         = let p1 = pt .+^ v in (p1, path_l p1)
     step pt (RelCurveTo v1 v2 v3) = let p1 = pt .+^ v1 

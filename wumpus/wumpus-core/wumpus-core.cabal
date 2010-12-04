@@ -79,6 +79,12 @@ description:
   .
   * Upper bounds of Cabal build depends relaxed a bit.
   . 
+  * Added the function @emptyPath@ to @Core.Picture@. This creates 
+    a /null path/ with an empty list of path segments. Null paths 
+    still need a start point - this is minimum needed for bounding 
+    box calculation. Improved the PostScript and SVG output so 
+    there is no code generated for empty paths and textlabels.
+  .
   * Added @vectorPath@ to @Core.Picture@.
   .
   0.37.0 to 0.40.0: 
