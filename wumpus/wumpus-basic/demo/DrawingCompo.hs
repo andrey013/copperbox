@@ -4,7 +4,6 @@ module DrawingCompo where
 
 import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.DrawingComposition
 
 import Wumpus.Core                              -- package: wumpus-core
 

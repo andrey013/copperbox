@@ -6,7 +6,7 @@ import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours ( steel_blue )
 import Wumpus.Drawing.Colour.X11Colours ( indian_red1 )
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 

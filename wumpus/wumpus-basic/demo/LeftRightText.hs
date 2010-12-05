@@ -21,8 +21,8 @@ import Wumpus.Basic.System.GSLoader
 import Wumpus.Basic.System.AfmLoader
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.SafeFonts
 import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.SafeFonts
 
 import FontLoaderUtils
 

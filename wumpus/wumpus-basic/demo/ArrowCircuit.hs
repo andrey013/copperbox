@@ -13,9 +13,9 @@ import Wumpus.Basic.System.AfmLoader
 import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
-import Wumpus.Drawing.SafeFonts
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                      -- package: wumpus-core
 

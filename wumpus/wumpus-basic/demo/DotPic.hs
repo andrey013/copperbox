@@ -9,7 +9,7 @@ import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 import FontLoaderUtils
 

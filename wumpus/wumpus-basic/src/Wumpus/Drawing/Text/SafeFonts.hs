@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.SafeFonts
+-- Module      :  Wumpus.Drawing.Text.SafeFonts
 -- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
@@ -21,7 +21,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.SafeFonts
+module Wumpus.Drawing.Text.SafeFonts
   ( 
   -- * Times Roman
     times_roman

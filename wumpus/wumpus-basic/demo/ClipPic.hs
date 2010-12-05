@@ -15,9 +15,8 @@ module ClipPic where
 import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.DrawingComposition
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 

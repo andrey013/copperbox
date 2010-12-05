@@ -4,7 +4,7 @@ module Symbols where
 
 import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 
 import Wumpus.Core                              -- package: wumpus-core
