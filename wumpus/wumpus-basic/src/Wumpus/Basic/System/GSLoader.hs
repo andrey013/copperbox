@@ -31,10 +31,10 @@ module Wumpus.Basic.System.GSLoader
   
   ) where
 
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.AfmV2Parser
 import Wumpus.Basic.System.FontLoader.Base
 import Wumpus.Basic.System.FontLoader.GSFontMap
-import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 

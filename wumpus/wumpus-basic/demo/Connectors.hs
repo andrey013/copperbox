@@ -3,7 +3,7 @@
 module Connectors where
 
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours

@@ -22,8 +22,7 @@ module Wumpus.Drawing.Paths.RoundCorners
 
   ) where
 
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Utils.Intersection
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths.Base hiding ( length )
 

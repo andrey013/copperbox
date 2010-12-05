@@ -28,7 +28,7 @@ module Wumpus.Drawing.Arrows.Connectors
 
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Paths
 

@@ -42,8 +42,7 @@ module Wumpus.Drawing.Shapes.Derived
 
   ) where
 
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Utils.Intersection
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.RoundCorners
 import Wumpus.Drawing.Shapes.Base

@@ -4,8 +4,8 @@
 module AfmV4Dot1 where
 
 
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.Graphic
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.SafeFonts

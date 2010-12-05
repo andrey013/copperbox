@@ -41,7 +41,7 @@ module Wumpus.Drawing.Turtle.TurtleMonad
    
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Turtle.TurtleClass
 
 

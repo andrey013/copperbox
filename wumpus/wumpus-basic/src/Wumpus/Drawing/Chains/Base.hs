@@ -44,7 +44,7 @@ module Wumpus.Drawing.Chains.Base
 
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

@@ -36,7 +36,7 @@ module Wumpus.Drawing.Shapes.Coordinate
 
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Core                              -- package: wumpus-core

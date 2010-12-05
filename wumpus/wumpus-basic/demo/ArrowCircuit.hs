@@ -8,7 +8,7 @@
 
 module ArrowCircuit where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.AfmLoader
 import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Arrows

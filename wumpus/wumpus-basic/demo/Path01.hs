@@ -2,7 +2,7 @@
 
 module Path01 where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths

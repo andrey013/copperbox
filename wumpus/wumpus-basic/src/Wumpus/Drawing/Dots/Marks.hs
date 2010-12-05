@@ -47,7 +47,7 @@ module Wumpus.Drawing.Dots.Marks
   ) where
 
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Text.LRText
 
 import Wumpus.Core                      -- package: wumpus-core

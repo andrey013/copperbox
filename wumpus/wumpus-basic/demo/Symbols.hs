@@ -2,7 +2,7 @@
 
 module Symbols where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.SafeFonts
 

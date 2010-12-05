@@ -4,8 +4,8 @@ module Arrow01 where
 
 -- import Wumpus.Basic.Dots
 -- import Wumpus.Basic.Arrows
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.Paths 
+import Wumpus.Basic.Kernel
+import Wumpus.Drawing.Paths 
 
 import Wumpus.Core                      -- package: wumpus-core
 

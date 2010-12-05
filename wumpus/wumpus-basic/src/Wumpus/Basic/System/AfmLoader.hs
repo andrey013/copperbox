@@ -32,9 +32,9 @@ module Wumpus.Basic.System.AfmLoader
   
   ) where
 
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.AfmV4Dot1Parser
 import Wumpus.Basic.System.FontLoader.Base
-import Wumpus.Basic.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 

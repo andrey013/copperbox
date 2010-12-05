@@ -2,7 +2,7 @@
 
 module FontPic where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours ( steel_blue )
 import Wumpus.Drawing.Colour.X11Colours ( indian_red1 )

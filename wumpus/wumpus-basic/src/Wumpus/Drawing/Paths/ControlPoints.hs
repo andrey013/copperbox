@@ -33,7 +33,7 @@ module Wumpus.Drawing.Paths.ControlPoints
 
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

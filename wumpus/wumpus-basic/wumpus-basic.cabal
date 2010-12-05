@@ -47,17 +47,18 @@ description:
   .
   Changelog:
   .
-  0.13.0 to 0.14.0:
+  From 0.13.0 to 0.14.0:
   .
-  * Re-organised module hierarchy, Wumpus-BAsic is now divided 
-    into two layers - Basic (low level) and Drawing - 
-    /constructed/ graphic objects like arrows, dots, etc.
+  * Re-organised module hierarchy, Wumpus-Basic is now divided 
+    into two layers - Basic (Font loader, utils, kernel drawing) 
+    and Drawing - /constructed/ graphic objects like arrows, dots, 
+    etc.
   .
   * Removed @raise@, @raise1@ and @raise2@ from ContextFunction - 
     all three were type restricted aliases of Applicative\'s 
     @pure@. @pure@ should now be used instead.
   .
-  0.12.0 to 0.13.0:
+  From 0.12.0 to 0.13.0:
   .
   * Major changes to @Basic.Graphic@ modules. @DrawingR@ is 
     renamed @Drawing@ and is substantially re-worked. Graphic 
@@ -111,19 +112,29 @@ library
 
   
   exposed-modules:
-    Wumpus.Basic.Graphic,
-    Wumpus.Basic.Graphic.AdvanceGraphic,
-    Wumpus.Basic.Graphic.Anchors,
-    Wumpus.Basic.Graphic.Base,
-    Wumpus.Basic.Graphic.ContextFunction,
-    Wumpus.Basic.Graphic.Drawing,
-    Wumpus.Basic.Graphic.DrawingContext,
-    Wumpus.Basic.Graphic.GlyphMetrics
-    Wumpus.Basic.Graphic.GraphicOperations,
-    Wumpus.Basic.Graphic.GraphicTypes,
-    Wumpus.Basic.Graphic.Query,
-    Wumpus.Basic.Graphic.ScalingContext,
-    Wumpus.Basic.Graphic.TraceDrawing,
+    Wumpus.Basic.Kernel,
+    Wumpus.Basic.Kernel.Base.Anchors,
+    Wumpus.Basic.Kernel.Base.BaseDefs,
+    Wumpus.Basic.Kernel.Base.ContextFun,
+    Wumpus.Basic.Kernel.Base.DrawingContext,
+    Wumpus.Basic.Kernel.Base.GlyphMetrics,
+    Wumpus.Basic.Kernel.Base.QueryDC,
+    Wumpus.Basic.Kernel.Base.ScalingContext,
+    Wumpus.Basic.Kernel.Base.UpdateDC,
+    Wumpus.Basic.Kernel.Base.WrappedPrimitive,
+    Wumpus.Basic.Kernel.Geometry.Intersection,
+    Wumpus.Basic.Kernel.Geometry.Paths,
+    Wumpus.Basic.Kernel.Objects.AdvanceGraphic,
+    Wumpus.Basic.Kernel.Objects.Bounded,
+    Wumpus.Basic.Kernel.Objects.Connector,
+    Wumpus.Basic.Kernel.Objects.Drawing,
+    Wumpus.Basic.Kernel.Objects.DrawingInfo,
+    Wumpus.Basic.Kernel.Objects.Graphic,
+    Wumpus.Basic.Kernel.Objects.Image,
+    Wumpus.Basic.Kernel.Objects.LocGraphic,
+    Wumpus.Basic.Kernel.Objects.LocImage,
+    Wumpus.Basic.Kernel.Objects.LocTheta,
+    Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.AfmLoader,
     Wumpus.Basic.System.FontLoader.AfmParserBase,
     Wumpus.Basic.System.FontLoader.AfmV2Parser,
@@ -133,7 +144,6 @@ library
     Wumpus.Basic.System.GSLoader,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.FormatCombinators,
-    Wumpus.Basic.Utils.Intersection,
     Wumpus.Basic.Utils.ParserCombinators,
     Wumpus.Basic.Utils.TokenParsers,
     Wumpus.Basic.VersionNumber,

@@ -31,7 +31,7 @@ module Wumpus.Drawing.Text.LRText
   ) where
 
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
