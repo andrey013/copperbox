@@ -24,10 +24,11 @@ module Wumpus.Tree.Draw
 
 import Wumpus.Tree.Base
 
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Drawing.Dots.AnchorDots
+
 import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.Dots.AnchorDots
-import Wumpus.Basic.Graphic   
 
 
 import Control.Monad

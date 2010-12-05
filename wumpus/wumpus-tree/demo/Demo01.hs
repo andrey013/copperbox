@@ -16,11 +16,11 @@ module Demo01 where
 
 import Wumpus.Tree
 
-import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
-import Wumpus.Basic.FontLoader.AfmLoader
-import Wumpus.Basic.FontLoader.GSLoader
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.GSLoader
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -71,7 +71,7 @@ makePictures base_metrics = do
     writeSVG "./out/tree05.svg"  pic5
 
 makeCtx :: FontSize -> BaseGlyphMetrics -> DrawingContext
-makeCtx sz m = fontface times_roman $ metricsContext sz m
+makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
 

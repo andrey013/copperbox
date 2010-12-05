@@ -49,7 +49,9 @@ description:
   .
   0.13.0 to 0.14.0:
   .
-  * Re-organised module hierarchy.
+  * Re-organised module hierarchy, Wumpus-BAsic is now divided 
+    into two layers - Basic (low level) and Drawing - 
+    /constructed/ graphic objects like arrows, dots, etc.
   .
   * Removed @raise@, @raise1@ and @raise2@ from ContextFunction - 
     all three were type restricted aliases of Applicative\'s 

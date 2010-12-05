@@ -8,9 +8,10 @@ import Wumpus.Microprint.Datatypes
 import Wumpus.Microprint.Render
 import Wumpus.Microprint.Tokenizer
 
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Drawing.Colour.SVGColours
+
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
-import Wumpus.Basic.Graphic
 
 import System.Directory
 

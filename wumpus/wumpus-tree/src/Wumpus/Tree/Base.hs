@@ -26,10 +26,10 @@ module Wumpus.Tree.Base
 
   ) where
 
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Dots.AnchorDots             -- package: wumpus-basic
-import Wumpus.Basic.Graphic
 
 import Data.Tree
 

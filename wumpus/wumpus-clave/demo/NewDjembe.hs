@@ -5,10 +5,12 @@ module NewDjembe1 where
 import Wumpus.Djembe.Base
 import Wumpus.Djembe.Graphic
 
+
+import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.SafeFonts
+
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Basic.Colour.SVGColours   -- package: wumpus-basic
-import Wumpus.Basic.Graphic
-import Wumpus.Basic.SafeFonts
 
 import Data.AffineSpace                 -- package: vector-space
 import Data.VectorSpace
@@ -113,7 +115,7 @@ group2b :: Composite repr => Group repr
 group2b = [ I $ accent sangban, I sangban, I slap, S sangban ]
 
 group3 :: Composite repr => Group repr 
-group3 = [ I sangban, I sangban, I sangban, S sangban, Pl 3 2 [sangban, sangban, sangban] ]
+group3 = [ I sangban, I sangban, S sangban, I sangban ] -- , Pl 3 2 [sangban, sangban, sangban] ]
 
 -- This is annoying... 
 -- group3 must be given an explicit type.

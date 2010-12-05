@@ -6,8 +6,9 @@ module DemoTeletype where
 
 import Wumpus.Microprint
 
+import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-basic
+
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
 
 import Data.Maybe
 import System.Directory

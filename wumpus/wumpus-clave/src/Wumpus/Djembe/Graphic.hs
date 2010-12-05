@@ -18,11 +18,11 @@ module Wumpus.Djembe.Graphic where
 
 import Wumpus.Djembe.Base
 
+import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Base
+
 import Wumpus.Core                              -- package: wumpus-core
 
-import Wumpus.Basic.FontLoader.Base
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
--- import Wumpus.Basic.SafeFonts 
 
 
 import Data.AffineSpace                         -- package: vector-space
@@ -32,8 +32,8 @@ import Control.Applicative
 import Data.Ratio
 
 
-empty_loc_graphic :: Num u => LocGraphic u
-empty_loc_graphic = textline ""
+-- empty_loc_graphic :: Num u => LocGraphic u
+-- empty_loc_graphic = intoLocGraphic emptyPath 
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
 scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
@@ -268,14 +268,14 @@ instance CStroke G where
 barBeats :: Bar G -> DLocGraphic
 barBeats = extractLocGraphic . step . map groupBeats
   where  
-    step []     = makeAdvGraphic id empty_loc_graphic
+    step []     = makeAdvGraphic id emptyLocGraphic
     step (x:xs) = aconcat x xs
 
 
 groupBeats :: Group G -> DAdvGraphic
 groupBeats = step . map drawBeat
   where  
-    step []     = makeAdvGraphic id empty_loc_graphic
+    step []     = makeAdvGraphic id emptyLocGraphic
     step (x:xs) = aconcat x xs
 
 
@@ -286,16 +286,17 @@ drawBeat (S  a)      = advanceUnitDisp >>= \fn ->
 drawBeat (Ha a b)    = advanceUnitDisp >>= \fn -> 
                        makeAdvGraphic fn (unG a `oplus` halfUnitMove (unG b))
 drawBeat (Pl n d xs) = advanceNDisp d >>= \fn -> 
-                       makeAdvGraphic fn (drawPlet n d xs) 
+                       makeAdvGraphic fn (drawPlets n d xs) 
 
-
-drawPlet :: Int -> Int -> [G] -> DLocGraphic 
-drawPlet n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
-                  explode (hvec w) $ map unG xs  
-
+-- note plets missing second stroke...
+--
+drawPlets :: Int -> Int -> [G] -> DLocGraphic 
+drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
+                   explode (hvec w) $ map unG xs  
+ 
 
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
-explode _ []     = empty_loc_graphic
+explode _ []     = emptyLocGraphic
 explode v (x:xs) = extractLocGraphic $ aconcat (fn x) $ map fn xs 
   where
     fn    = makeAdvGraphic (vecdisplace v)
@@ -305,14 +306,14 @@ explode v (x:xs) = extractLocGraphic $ aconcat (fn x) $ map fn xs
 barBeamLines :: Bar G -> DLocGraphic
 barBeamLines = extractLocGraphic . step . map groupBeamLines
   where
-    step []     = makeAdvGraphic id empty_loc_graphic
+    step []     = makeAdvGraphic id emptyLocGraphic
     step (x:xs) = aconcat x xs
 
 
 groupBeamLines :: Group G -> DAdvGraphic 
 groupBeamLines = step . map advBeamLine . groupSpans
   where  
-    step []     = makeAdvGraphic id empty_loc_graphic
+    step []     = makeAdvGraphic id emptyLocGraphic
     step (x:xs) = aconcat x xs
 
 advanceUnitDisp :: FromPtSize u => DrawingInfo (PointDisplace u)
@@ -344,7 +345,7 @@ advBeamLine (swidth, drawing_width) =
 -- Note - the count is one less than the elements
 --
 groupSpans :: Group G -> [(Int, Ratio Int)]
-groupSpans xs = step (-1) xs 
+groupSpans xs = step 0 xs 
   where
     step w []            | w > 0     = [(ceiling w,w)]
                          | otherwise = []
@@ -353,14 +354,14 @@ groupSpans xs = step (-1) xs
     step w (Ha _ _:zs)   = step (incr1 w) zs
     step w (Pl n d _:zs) = let pw    = pletSpan n d 
                                consF = if w > 0 then ((ceiling w,w) :) else id
-                           in consF $ (ceiling pw,pw) : step (-1) zs
+                           in consF $ (ceiling pw,pw) : step 0 zs
 
     
 
 -- incr1 /cancels/ any extension due to a swing (shift).
 --
 incr1 :: Ratio Int -> Ratio Int
-incr1 r = 1 + (ceiling $ r) % 1
+incr1 r = (1 + floor r) % 1
 
 -- swing extends the line width by 1 (for the beat) plus a third 
 -- for the swing shift.
