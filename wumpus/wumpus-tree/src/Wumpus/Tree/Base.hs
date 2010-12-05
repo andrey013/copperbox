@@ -26,7 +26,7 @@ module Wumpus.Tree.Base
 
   ) where
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core

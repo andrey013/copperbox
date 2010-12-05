@@ -41,7 +41,7 @@ import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core

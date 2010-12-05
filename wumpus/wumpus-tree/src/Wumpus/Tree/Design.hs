@@ -31,7 +31,7 @@ module Wumpus.Tree.Design
 
 import Wumpus.Tree.Base
 
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Data.List 
 import Data.Maybe

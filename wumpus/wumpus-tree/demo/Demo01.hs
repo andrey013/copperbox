@@ -16,7 +16,7 @@ module Demo01 where
 
 import Wumpus.Tree
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.AfmLoader
 import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Colour.SVGColours

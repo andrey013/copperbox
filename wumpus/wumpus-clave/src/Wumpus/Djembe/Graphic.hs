@@ -18,7 +18,7 @@ module Wumpus.Djembe.Graphic where
 
 import Wumpus.Djembe.Base
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Base
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -32,8 +32,6 @@ import Control.Applicative
 import Data.Ratio
 
 
--- empty_loc_graphic :: Num u => LocGraphic u
--- empty_loc_graphic = intoLocGraphic emptyPath 
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
 scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
@@ -266,17 +264,11 @@ instance CStroke G where
 
 
 barBeats :: Bar G -> DLocGraphic
-barBeats = extractLocGraphic . step . map groupBeats
-  where  
-    step []     = makeAdvGraphic id emptyLocGraphic
-    step (x:xs) = aconcat x xs
+barBeats = extractLocGraphic . advconcat . map groupBeats
 
 
 groupBeats :: Group G -> DAdvGraphic
-groupBeats = step . map drawBeat
-  where  
-    step []     = makeAdvGraphic id emptyLocGraphic
-    step (x:xs) = aconcat x xs
+groupBeats = advconcat . map drawBeat
 
 
 drawBeat :: Beat G -> DAdvGraphic
@@ -296,25 +288,18 @@ drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w ->
  
 
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
-explode _ []     = emptyLocGraphic
-explode v (x:xs) = extractLocGraphic $ aconcat (fn x) $ map fn xs 
+explode v xs = extractLocGraphic $ advconcat $ map fn xs 
   where
     fn    = makeAdvGraphic (vecdisplace v)
 
 -- Note - plets are not joined to the rest of their group.
 
 barBeamLines :: Bar G -> DLocGraphic
-barBeamLines = extractLocGraphic . step . map groupBeamLines
-  where
-    step []     = makeAdvGraphic id emptyLocGraphic
-    step (x:xs) = aconcat x xs
+barBeamLines = extractLocGraphic . advconcat . map groupBeamLines
 
 
 groupBeamLines :: Group G -> DAdvGraphic 
-groupBeamLines = step . map advBeamLine . groupSpans
-  where  
-    step []     = makeAdvGraphic id emptyLocGraphic
-    step (x:xs) = aconcat x xs
+groupBeamLines = advconcat . map advBeamLine . groupSpans
 
 advanceUnitDisp :: FromPtSize u => DrawingInfo (PointDisplace u)
 advanceUnitDisp = scaleValue unit_width >>= return . hdisplace
@@ -376,18 +361,3 @@ pletSpan :: Int -> Int -> Ratio Int
 pletSpan n d = (d * n-1) % n
 
 
-
---------------------------------------------------------------------------------
--- These should be in Wumpus-Basic (possibly renamed)...
-
-infixr 6 `aplus`
-
-aplus :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-aplus = accumulate1 oplus
-
-aconcat :: AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
-aconcat a []     = a
-aconcat a (x:xs) = aconcat (a `aplus` x) xs 
-
-extractLocGraphic :: AdvGraphic u -> LocGraphic u
-extractLocGraphic = postpro1 snd

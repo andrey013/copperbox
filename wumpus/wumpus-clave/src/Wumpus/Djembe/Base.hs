@@ -28,7 +28,7 @@ module Wumpus.Djembe.Base
 
   ) where
 
-import Wumpus.Basic.Graphic
+import Wumpus.Basic.Kernel
 
 -- Where does flam sit in the data type?
 -- Is flam an @I@ or should it have a constructor?

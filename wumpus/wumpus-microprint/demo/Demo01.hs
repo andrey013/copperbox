@@ -8,7 +8,7 @@ import Wumpus.Microprint.Datatypes
 import Wumpus.Microprint.Render
 import Wumpus.Microprint.Tokenizer
 
-import Wumpus.Basic.Graphic                     -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Colour.SVGColours
 
 import Wumpus.Core                              -- package: wumpus-core

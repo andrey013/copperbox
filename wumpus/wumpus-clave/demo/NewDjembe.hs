@@ -6,13 +6,13 @@ import Wumpus.Djembe.Base
 import Wumpus.Djembe.Graphic
 
 
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.SafeFonts
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Maybe
@@ -49,7 +49,7 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
 --   draw $ extractLocGraphic (drawBeat $ I sangban) `at` P2 350 200
 
 ag_01 :: DAdvGraphic
-ag_01 = aconcat (advCh 'A') (map advCh "CDEF")
+ag_01 = advconcat (map advCh "ABCDEF")
 
 advCh :: Num u => Char -> AdvGraphic u
 advCh ch = makeAdvGraphic (hdisplace 30) (textline [ch])

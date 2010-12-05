@@ -43,7 +43,7 @@ import Wumpus.Microprint.Teletype
 import Wumpus.Microprint.Render
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Graphic			-- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Data.Maybe
 

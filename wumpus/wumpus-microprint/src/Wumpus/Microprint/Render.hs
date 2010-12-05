@@ -27,12 +27,11 @@ module Wumpus.Microprint.Render
 
   ) where
 
-import Wumpus.Basic.Graphic.ScalingContext
 
 import Wumpus.Microprint.Datatypes 
 
-import Wumpus.Core		     	        -- package: wumpus-core
-import Wumpus.Basic.Graphic			-- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Data.AffineSpace				-- package: vector-space
 
