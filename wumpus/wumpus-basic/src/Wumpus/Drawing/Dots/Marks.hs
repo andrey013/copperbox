@@ -12,6 +12,9 @@
 --
 -- Marks - dots without anchor handles.
 --
+-- The text and char marks need loaded glyph metrics for proper 
+-- centering. 
+--
 -- \*\* WARNING \*\* - names are expected to change - filled and
 -- background-filled marks need a naming convention.
 -- 
@@ -42,7 +45,7 @@ module Wumpus.Drawing.Dots.Marks
   , markOPlus
   , markOCross
   , markFOCross
-
+  , markTriangle
 
   ) where
 
@@ -56,7 +59,6 @@ import Data.AffineSpace                 -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
-import Data.List
 
 -- Marks should be the height of a lower-case letter...
 
@@ -67,21 +69,23 @@ import Data.List
 --
 
 
--- | 'polygonPoints' : @ num_points * radius * center -> [point] @ 
---
-polygonPoints :: Floating u => Int -> u -> Point2 u -> [Point2 u]
-polygonPoints n radius ctr = unfoldr phi (0,(pi*0.5))
-  where
-    theta = (pi*2) / fromIntegral n
-    
-    phi (i,ang) | i < n     = Just (ctr .+^ avec ang radius, (i+1,ang+theta))
-                | otherwise = Nothing
+liftQuery :: DrawingInfo a -> (a -> LocCF u b) -> LocCF u b
+liftQuery q mf = (static1 q) `bind1` mf  
 
+
+infixr 9 `renderPath`
+
+renderPath :: LocDrawingInfo u (PrimPath u) 
+           -> (PrimPath u -> Graphic u) 
+           -> LocGraphic u
+renderPath m k = m `bind1` (static1 . k)
 
 
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy = prepro1 (displace dx dy)
+
+
 
 markChar :: (Fractional u, Ord u, FromPtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]
@@ -103,15 +107,15 @@ axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markHLine = bind1 (static1 markHeight) $ \h -> axialLine (hvec h)
+markHLine = liftQuery markHeight $ \h -> axialLine (hvec h)
 
 
 markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markVLine = bind1 (static1 markHeight) $ \h -> axialLine (vvec h) 
+markVLine = liftQuery markHeight $ \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
-markX = bind1 (static1 markHeight) $ \h -> 
+markX = liftQuery markHeight $ \h -> 
     let w = 0.75 * h in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
 
 
@@ -121,22 +125,17 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = bind1 (static1 markHeight) $ \h ->  
+markCross = liftQuery markHeight $ \h ->  
     (axialLine $ avec ang h) `oplus` (axialLine $ avec (-ang) h)
   where
     ang = pi*0.25  
 
--- needs horizontal pinch...
+-- Note - height is extended slightly to look good...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
-            => LocCF u (PrimPath u)
-pathDiamond = bind1 (static1 markHeight) $ \h -> promote1 $ \pt ->
-    let hh    = 0.66 * h; hw = 0.5 * h 
-        s     = pt .+^ vvec (-hh)
-        e     = pt .+^ hvec hw
-        n     = pt .+^ vvec hh
-        w     = pt .+^ hvec (-hw)
-    in pure $ vertexPath [s,e,n,w]
+            => LocDrawingInfo u (PrimPath u)
+pathDiamond = liftQuery markHeight $ \h -> pure $ diamondPath (0.5*h) (0.66*h)
+
 
 
 -- closedStroke :: (a -> ctx -> prim) 
@@ -144,10 +143,10 @@ pathDiamond = bind1 (static1 markHeight) $ \h -> promote1 $ \pt ->
 -- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markDiamond = pathDiamond `bind1` (static1 . closedStroke)
+markDiamond = pathDiamond `renderPath` closedStroke
 
 markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markFDiamond = pathDiamond `bind1` (static1 . filledPath)
+markFDiamond = pathDiamond `renderPath` filledPath
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -158,58 +157,61 @@ markFDiamond = pathDiamond `bind1` (static1 . filledPath)
 --
 
 markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markBDiamond = pathDiamond `bind1` (static1 . borderedPath)
+markBDiamond = pathDiamond `renderPath` borderedPath
 
 
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
-markDisk = bind1 (static1 markHalfHeight) filledDisk 
+markDisk = liftQuery markHalfHeight filledDisk 
 
 
 
 markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
-markSquare = bind1 (static1 markHeight) $ \h -> 
+markSquare = liftQuery markHeight $ \h -> 
     let d = 0.5*(-h) in shiftOrigin d d $ strokedRectangle h h
     
 
 
 markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markCircle = bind1 (static1 markHalfHeight) strokedDisk 
+markCircle = liftQuery markHalfHeight strokedDisk 
 
 
 markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markBCircle = bind1 (static1 markHalfHeight) borderedDisk 
+markBCircle = liftQuery markHalfHeight borderedDisk 
 
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon = bind1 (static1 markHeight) $ \h ->
+markPentagon = liftQuery markHeight $ \h ->
     promote1 $ \pt -> closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
-markStar = bind1 (static1 markHeight) $ \h -> 
-    promote1 $ \pt -> let ps = polygonPoints 5 (0.5*h) pt in step $ map (fn pt) ps
+markStar = 
+    liftQuery markHeight $ \h -> starLines (0.5*h)
+
+starLines :: Floating u => u -> LocGraphic u
+starLines hh = 
+    promote1 $ \ctr -> step $ map (fn ctr) $ polygonPoints 5 hh ctr
   where
-    fn st p1    = openStroke $ primPath st [lineTo p1] 
+    fn p0 p1    = openStroke $ primPath p0 [lineTo p1]
     step (x:xs) = oconcat x xs
-    step _      = error "markStar - unreachable"
+    step _      = error "starLines - unreachable"
 
-
--- Note - relies on the functional instance of OPlus
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = bind1 (static1 markHeight) $ \h -> 
-    lineF1 h `oplus` lineF2 h `oplus` lineF3 h
-  where
-    ang       = (pi*2) / 6
-    lineF1 z  = axialLine (vvec z)
-    lineF2 z  = axialLine (avec ((pi*0.5) + ang)    z)
-    lineF3 z  = axialLine (avec ((pi*0.5) + ang + ang) z)
+markAsterisk = liftQuery markHeight asteriskLines
 
+asteriskLines :: Floating u => u -> LocGraphic u
+asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
+  where
+    ang     = (pi*2) / 6
+    lineF1  = axialLine (vvec h)
+    lineF2  = axialLine (avec ((pi*0.5) + ang)    h)
+    lineF3  = axialLine (avec ((pi*0.5) + ang + ang) h)
 
 
 markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
@@ -226,4 +228,11 @@ markFOCross = markCross `oplus` markBCircle
 
 -- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u
 -- bkCircle = disk (fillAttr attr) (0.5*markHeight attr) 
+
+
+
+markTriangle :: (Floating u, FromPtSize u) => LocGraphic u
+markTriangle = tripath `renderPath` closedStroke
+  where
+    tripath = liftQuery markHeight $ \h -> pure $ equilateralTrianglePath h
 

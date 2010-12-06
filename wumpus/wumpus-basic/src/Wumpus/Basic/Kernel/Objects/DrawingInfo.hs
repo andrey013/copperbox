@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -12,30 +10,21 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Refined instances of of the Drawing type modelling specific
--- graphic types.
+-- Aliases for ContextFun types.
 -- 
--- \*\* WARNING \*\* - some names are expected to change.
---
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Objects.DrawingInfo
   (
-
-
 
   -- * Drawing info
     DrawingInfo
   , LocDrawingInfo
   , LocThetaDrawingInfo
 
-
-
   ) where
 
 import Wumpus.Basic.Kernel.Base.ContextFun
-
-
 
 
 --------------------------------------------------------------------------------

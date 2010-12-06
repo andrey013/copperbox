@@ -20,7 +20,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.AfmLoader
 import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
