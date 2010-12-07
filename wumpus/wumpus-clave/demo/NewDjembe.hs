@@ -42,7 +42,7 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ localize (fillColour black) $ evenStems 5 `at` P2 230 0
    draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
 
-   draw $ barBeamLines2 [group3, group3] `at` P2 0 300
+   draw $ barBeamLines [group3, group3] `at` P2 0 300
    draw $ barBeats     [group3, group3] `at` P2 0 300
 
 --   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200
@@ -115,9 +115,4 @@ group2b :: Composite repr => Group repr
 group2b = [ I $ accent sangban, I sangban, I slap, S sangban ]
 
 group3 :: Composite repr => Group repr 
-group3 = [ I sangban, I sangban, S sangban, I sangban ] -- , Pl 3 2 [sangban, sangban, sangban] ]
-
--- This is annoying... 
--- group3 must be given an explicit type.
-demo2 :: [(Int,Ratio Int)]
-demo2 = groupSpans group3
+group3 = [ I sangban, I sangban, S sangban, I sangban ] 
