@@ -17,29 +17,30 @@
 module Wumpus.Clave.Drawing
   (
   
-  -- * Graphic
-    wrapG  
-
-  -- * Glyphs
-  , circleF
-  , barF
-  , gridF
-  , backgroundF
-
-  -- * Graphic primitives
-  , strokedCircle
-  , filledCircle
 
   ) where
 
 
-import Wumpus.Clave.Core
+
+import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
-import Wumpus.Basic.Graphic             -- package: wumpus-basic
+
+-- locs are center...
+
+circleNh :: FromPtSize u => LocGraphic u
+circleNh = markHeight >>= filledDisk
 
 
+-- can use marks...
+
+triNh    :: (Fractional u, FromPtSize u) => LocGraphic u
+triNh    = markHeight >>= \uw -> 
+           promote1 $ \ctr -> filledPath $ isoscelesTrianglePath uw uw ctr
+
+
+{-
 
 circleF :: BoxHeight -> RGBi -> DGraphicF
 circleF h rgb = disk rgb radius . disp (radius+dd) (radius+dd)
@@ -71,3 +72,4 @@ backgroundF n h rgb = wrapG . fill rgb . rectanglePath width height
     height    = fromPtSize $ textHeight h
     width     = height * fromIntegral n
 
+-}

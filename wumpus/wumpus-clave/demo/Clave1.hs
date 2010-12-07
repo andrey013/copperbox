@@ -2,21 +2,24 @@
 
 module Clave1 where
 
-import Wumpus.Clave.ClaveMonad
 import Wumpus.Clave.Drawing
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Drawing.Colour.SVGColours
+
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Basic.Colour.SVGColours           -- package: wumpus-basic
-import Wumpus.Basic.Graphic
 
 import Data.Maybe
 import System.Directory
 
 main :: IO ()
-main = createDirectoryIfMissing True "./out/"
-    >> writeEPS_latin1 "./out/clave01.eps" pic2
-    >> writeSVG_latin1 "./out/clave01.svg" pic2 
+main = do 
+    createDirectoryIfMissing True "./out/"
+    writeEPS "./out/clave01.eps" pic1
+    writeSVG "./out/clave01.svg" pic1 
 
+
+{-
 
 pic1 :: Picture Double
 pic1 = fromMaybe errK $ drawGraphic line1
@@ -38,10 +41,4 @@ pic2 = fromMaybe errK $ drawGraphic $
     cfg = ClaveConfig { box_height      = 24
                       , scalefun        = (24.0 *) . fromIntegral }
 
-
-----------
--- Notes - might want different background colours within the 
--- same grid...
---
--- Can achieve this with a filled square drawn at the back.
---
+-}

@@ -8,7 +8,7 @@ import Wumpus.Djembe.Graphic
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.SafeFonts
+import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -29,7 +29,7 @@ main = do
 
 
 std_attr :: DrawingContext
-std_attr = joinBevel $ thick $ fontFace helvetica $ standardContext 48
+std_attr = joinBevel $ fontFace helvetica $ standardContext 24
 
 text_drawing :: DDrawing
 text_drawing = drawTracing $ localize bothStrokeColour $ do 
@@ -42,7 +42,7 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ localize (fillColour black) $ evenStems 5 `at` P2 230 0
    draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
 
-   draw $ barBeamLines [group3, group3] `at` P2 0 300
+   draw $ barBeamLines2 [group3, group3] `at` P2 0 300
    draw $ barBeats     [group3, group3] `at` P2 0 300
 
 --   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200

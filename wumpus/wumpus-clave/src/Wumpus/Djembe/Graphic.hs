@@ -280,7 +280,7 @@ drawBeat (Ha a b)    = advanceUnitDisp >>= \fn ->
 drawBeat (Pl n d xs) = advanceNDisp d >>= \fn -> 
                        makeAdvGraphic fn (drawPlets n d xs) 
 
--- note plets missing second stroke...
+-- note plets missing top bracket...
 --
 drawPlets :: Int -> Int -> [G] -> DLocGraphic 
 drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
@@ -323,6 +323,89 @@ advBeamLine (swidth, drawing_width) =
     scaleValue unit_width          >>= \uw    ->
     makeAdvGraphic (hdisplace $ uw * fromIntegral swidth) 
                    (beamLine drawing_width)
+
+
+type SpanWidth = Either UnitSpan (Ratio Int)
+
+data UnitSpan = Whole Int | Shift Int
+  deriving (Eq,Show)
+
+zeroSpan :: UnitSpan
+zeroSpan = Whole 0
+
+incrSpan :: UnitSpan -> UnitSpan
+incrSpan (Whole n) = Whole (n+1)
+incrSpan (Shift n) = Whole (n+1)        -- back to whole
+
+shiftSpan :: UnitSpan -> UnitSpan
+shiftSpan (Whole n) = Shift (n+1)
+shiftSpan (Shift n) = Shift (n+1)       -- this should be unnecessary
+
+
+barBeamLines2 :: Bar G -> DLocGraphic
+barBeamLines2 = extractLocGraphic . advconcat . map groupBeamLines2
+ 
+groupBeamLines2 :: Group G -> DAdvGraphic
+groupBeamLines2 = step . groupSpans2 
+  where
+    step []               = unitAdvGraphic
+    step [x]              = line x
+    step (x:xs)           = line x `advplus` step xs
+    line (Left (Whole n)) = advBeamLine2 n
+    line (Left (Shift n)) = shiftBeamLine n
+    line (Right r)        = pletBeamLine r
+
+advBeamLine2 :: Int -> DAdvGraphic 
+advBeamLine2 i | i <= 1 = unitAdvGraphic
+advBeamLine2 i          = 
+    scaleValue unit_width >>= \uw    ->
+    makeAdvGraphic (hdisplace $ uw * (n+1)) (mkLine $ uw * n)
+  where
+    n          = fromIntegral (i-1)
+    mkLine len = straightLine (hvec len) `relativeTo` stemTop
+
+
+
+shiftBeamLine :: Int -> DAdvGraphic 
+shiftBeamLine i = 
+    scaleValue unit_width  >>= \uw    ->
+    scaleValue flam_xminor >>= \minor    ->
+    makeAdvGraphic (hdisplace $ uw * (n+1)) (mkLine $ minor + uw * n)
+  where
+    n          = fromIntegral (i-1)
+    mkLine len = straightLine (hvec len) `relativeTo` stemTop
+
+
+pletBeamLine :: Ratio Int -> DAdvGraphic 
+pletBeamLine i = 
+    scaleValue unit_width  >>= \uw    ->
+    makeAdvGraphic (hdisplace $ uw * upper) (mkLine $ uw * n)
+  where
+    upper      = fromIntegral $ floori i
+    n          = realToFrac (i-1)
+    mkLine len = straightLine (hvec len) `relativeTo` stemTop
+
+
+floori :: Ratio Int -> Int
+floori = floor
+
+unitAdvGraphic :: DAdvGraphic
+unitAdvGraphic = scaleValue unit_width >>= \uw ->
+                 makeAdvGraphic (vecdisplace $ hvec uw) emptyLocGraphic
+
+
+-- Note - counting behaviour needs clarifying...
+--
+groupSpans2 :: Group G -> [SpanWidth]
+groupSpans2 xs = step zeroSpan xs 
+  where
+    step w []            = [Left w]
+    step w (I _ :zs)     = step (incrSpan w)  zs
+    step w (S _ :zs)     = step (shiftSpan w) zs
+    step w (Ha _ _:zs)   = step (incrSpan w)  zs
+    step w (Pl n d _:zs) = let pw    = pletSpan n d 
+                           in Left w : Right pw : step zeroSpan zs
+
 
 
 -- time_unit_width * real_drawing_width
