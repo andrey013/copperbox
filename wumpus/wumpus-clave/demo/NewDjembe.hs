@@ -3,7 +3,8 @@
 module NewDjembe1 where
 
 import Wumpus.Djembe.Base
-import Wumpus.Djembe.Graphic
+import Wumpus.Djembe.DjembeGraphic
+import Wumpus.Djembe.GraphicPrimitives
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -34,10 +35,10 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ localize (fillColour black) $ flamStem    `at` P2 220 0
    draw $ localize (fillColour black) $ dot         `at` P2 230 0
    draw $ localize (fillColour black) $ flamDot     `at` P2 230 0
-   draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
-   
-   draw $ barLocGraphic abioueka_djembe_call `at` P2 0 300
-   draw $ barLocGraphic [group3, group3]     `at` P2 0 150
+   draw $ localize (fillColour black) $ smallLetter 722 'D' `at` P2 250 0
+  
+   draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 300
+   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 150
    
 
 
@@ -49,11 +50,12 @@ class CBoxNotation repr where
   tone_flam        :: repr
   
 instance CBoxNotation G where
-  period           = G $ fullstop
-  bass             = G $ letter 'B'
-  tone             = G $ dot
-  slap             = G $ letter 'X'
-  tone_flam        = G $ letter '?'
+  period           = G $ makeDjembeNote $ periodNotehead
+  bass             = G $ makeDjembeNote $ letterNotehead 667 'B'
+  tone             = G $ makeDjembeNote $ dotNotehead
+  slap             = G $ makeDjembeNote $ letterNotehead 667 'X'
+  tone_flam        = G $ makeDjembeNote $ letterNotehead 556 '?'
+
 
 abioueka_djembe_call :: CBoxNotation repr => Bar repr
 abioueka_djembe_call = 
@@ -64,43 +66,10 @@ abioueka_djembe_call =
     ]
     
 
-
-
---------------------------------------------------------------------------------
--- dummy
-
--- experiments combining /Tagless/ classes...
-
-class CSangban repr where
-   sangban :: repr
-
-instance CSangban G where
-  sangban = G $ dot
-
--- This formulation will lead to huge class contexts!
-
-demo1 :: CSangban repr => [repr]
-demo1 = [sangban, sangban ]   
-
-group1 :: CSangban repr => Group repr 
-group1 = [ I sangban, I sangban, I sangban ]
-
-
-class CSlap repr where
-   cslap :: repr
-
-instance CSlap G where
-   cslap = G $ fullstop
-
-group2a :: (CSangban repr, CSlap repr) => Group repr 
-group2a = [ I sangban, I sangban, I cslap ]
-
-class (CStroke repr, CSangban repr, CSlap repr) => Composite repr
-
-instance Composite G
-
-group2b :: Composite repr => Group repr 
-group2b = [ I $ accent sangban, I sangban, I cslap, S sangban ]
-
-group3 :: Composite repr => Group repr 
-group3 = [ I sangban, I sangban, S sangban, I sangban ] 
+abioueka_djembe_accompanyment1 :: CBoxNotation repr => Bar repr
+abioueka_djembe_accompanyment1 = 
+    [ [ I bass,         I period,       I bass   ]
+    , [ I period,       I slap,         I slap   ]
+    , [ I period,       I slap,         I period ]
+    , [ I tone,         I tone,         I period ] 
+    ]
