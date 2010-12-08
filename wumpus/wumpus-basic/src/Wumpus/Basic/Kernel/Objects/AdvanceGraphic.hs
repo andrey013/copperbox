@@ -39,13 +39,14 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Objects.DrawingInfo
 import Wumpus.Basic.Kernel.Objects.LocGraphic
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
+import Control.Applicative
 
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
@@ -70,10 +71,12 @@ type instance DUnit (AdvGraphic u) = u
 -- | Construction is different to intoZZ functions hence the 
 -- different name.
 --
-makeAdvGraphic :: PointDisplace u
+makeAdvGraphic :: DrawingInfo (PointDisplace u)
                -> LocGraphic u 
                -> AdvGraphic u
-makeAdvGraphic pf df = postcomb1 (,) (postpro1 pf locPoint) df
+makeAdvGraphic pf df = postcomb1 (,) (promote1 $ \pt -> pf `at` pt) df
+
+
 
 
 extractLocGraphic :: AdvGraphic u -> LocGraphic u
@@ -98,6 +101,6 @@ advplus = accumulate1 oplus
 
 
 advconcat :: Num u => [AdvGraphic u] -> AdvGraphic u
-advconcat []     = makeAdvGraphic id emptyLocGraphic
+advconcat []     = makeAdvGraphic (pure id) emptyLocGraphic
 advconcat [x]    = x
 advconcat (x:xs) = x `advplus` advconcat xs 

@@ -26,7 +26,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 import Control.Applicative
 import Data.Ratio
@@ -139,8 +138,8 @@ dot = singleStemmed $ dotNh `relativeTo` vdispBasePt dot_center
 flamDot :: (Fractional u, FromPtSize u) => LocGraphic u
 flamDot = dotFh `relativeTo` dispBasePt (-flam_xminor) flam_dot_center
 
-period :: (Fractional u, FromPtSize u) => LocGraphic u
-period = singleStemmed $ periodNh `relativeTo` vdispBasePt period_center
+fullstop :: (Fractional u, FromPtSize u) => LocGraphic u
+fullstop = singleStemmed $ periodNh `relativeTo` vdispBasePt period_center
 
 periodNh :: (Fractional u, FromPtSize u) => LocGraphic u
 periodNh = scaleByCapHeight (1/12) >>= filledDisk
@@ -189,8 +188,6 @@ swingAnglePath :: (Fractional u, FromPtSize u) => DrawingInfo [Vec2 u]
 swingAnglePath = (\minor -> let w = 0.8*minor in [ vec w w, vec (-w) w ])
                     <$> scaleValue flam_xminor 
 
-           
-
 
 -- Note - line thickness should vary according to size...
 --
@@ -198,60 +195,16 @@ singleStem :: (Fractional u, FromPtSize u) => LocGraphic u
 singleStem = stemline `relativeTo` stemStart
 
 
-evenStems :: (Fractional u, FromPtSize u) => Int -> LocGraphic u
-evenStems n 
-    | n <= 0    = error "evenStems - stem count must be 1 or more."
-    | n == 1    = singleStem 
-    | n == 2    = outer `relativeTo` stemStart 
-    | otherwise = (outer `oplus` inner_stems) `relativeTo` stemStart
-  where
-    outer       = scaleValue stem_length >>= \h ->
-                  scaleValue unit_width  >>= \w ->
-                  upperRectPath (w * (fromIntegral $ n-1)) h
-    inner_stems = scaleValue unit_width  >>= \w ->
-                  multiDraw (n-2) (hvec w) stemline
-
-
-multiDraw :: Num u => Int -> Vec2 u -> LocGraphic u -> LocGraphic u
-multiDraw i _  _  | i <= 0 = error "multiDraw - empty"
-multiDraw i v0 fn          = step (i-1) (v0 ^+^ v0) (move v0)
-  where
-    move v        = prepro1 (vecdisplace v) fn
-    step 0 _ g    = g
-    step n v g    = step (n-1) (v ^+^ v0) (g `oplus` move v) 
-
-           -- more to do
-
-
-
-upperRectGraphic :: (Fractional u, FromPtSize u) => Ratio Int -> LocGraphic u
-upperRectGraphic rw 
-    | rw <= 0   = singleStem
-    | otherwise = scaleValue stem_length >>= \h ->
-                  scaleValue unit_width  >>= \uw ->
-                  upperRectPath (uw * realToFrac rw) h
-
-
--- trace sw nw ne se - leave open at se.
--- 
-upperRectPath :: Num u => u -> u -> LocGraphic u
-upperRectPath w h = openStrokePath [ vvec h, hvec w, vvec (-h) ]
-
 openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
 
 
-
-beamLine :: (Fractional u, FromPtSize u) => Ratio Int -> LocGraphic u
-beamLine rw 
-    | rw <= 0   = singleStem
-    | otherwise = scaleValue unit_width  >>= \uw ->
-                  straightLine (hvec $ uw * realToFrac rw) `relativeTo` stemTop
-
-
-
 --------------------------------------------------------------------------------
 -- 
+
+
+barLocGraphic :: Bar G -> DLocGraphic
+barLocGraphic b = barBeats b `oplus` barBeamLines b
 
 -- | To generate output we need a Graphical interpretation.
 --
@@ -272,13 +225,18 @@ groupBeats = advconcat . map drawBeat
 
 
 drawBeat :: Beat G -> DAdvGraphic
-drawBeat (I  a)      = advanceUnitDisp >>= \fn -> makeAdvGraphic fn (unG a)
-drawBeat (S  a)      = advanceUnitDisp >>= \fn -> 
-                       makeAdvGraphic fn (xminorMove (unG a) `oplus` swingStem)
-drawBeat (Ha a b)    = advanceUnitDisp >>= \fn -> 
-                       makeAdvGraphic fn (unG a `oplus` halfUnitMove (unG b))
-drawBeat (Pl n d xs) = advanceNDisp d >>= \fn -> 
-                       makeAdvGraphic fn (drawPlets n d xs) 
+drawBeat (I  a)      = makeAdvGraphic advanceUnitDisp  (unG a)
+drawBeat (S  a)      = makeAdvGraphic advanceUnitDisp  (drawSwing a)
+drawBeat (Ha a b)    = makeAdvGraphic advanceUnitDisp  (drawHalved a b)
+drawBeat (Pl n d xs) = makeAdvGraphic (advanceNDisp d) (drawPlets n d xs) 
+
+drawSwing :: G -> DLocGraphic
+drawSwing a = xminorMove (unG a) `oplus` swingStem
+
+-- needs hline 
+drawHalved :: G -> G -> DLocGraphic
+drawHalved a b = unG a `oplus` halfUnitMove (unG b)
+
 
 -- note plets missing top bracket...
 --
@@ -290,7 +248,7 @@ drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w ->
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
 explode v xs = extractLocGraphic $ advconcat $ map fn xs 
   where
-    fn    = makeAdvGraphic (vecdisplace v)
+    fn    = makeAdvGraphic (pure $ vecdisplace v)
 
 
 advanceUnitDisp :: FromPtSize u => DrawingInfo (PointDisplace u)
@@ -331,44 +289,44 @@ groupBeamLines = step . groupSpans
     line (Right r)        = pletBeamLine r
 
 
+beamAdvGraphic :: (Double -> Double) -> (Double -> Double) -> DAdvGraphic 
+beamAdvGraphic f g = 
+    scaleValue unit_width >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
+  where
+    adv = \uw -> pure $ hdisplace $ f uw 
+    obj = \uw -> localize capSquare $ 
+                   straightLine (hvec $ g uw) `relativeTo` stemTop
+
+
 
 advBeamLine :: Int -> DAdvGraphic 
 advBeamLine i | i <= 1 = unitAdvGraphic         -- check this...
 advBeamLine i          = 
-    scaleValue unit_width >>= \uw    ->
-    makeAdvGraphic (hdisplace $ uw * (n+1)) (mkLine $ uw * n)
-  where
-    n          = fromIntegral i
-    mkLine len = straightLine (hvec len) `relativeTo` stemTop
-
+    let n = fromIntegral i in 
+    beamAdvGraphic (\uw -> uw * (n+1)) (\uw  -> uw * n)
 
 
 shiftBeamLine :: Int -> DAdvGraphic 
 shiftBeamLine i = 
-    scaleValue unit_width  >>= \uw    ->
     scaleValue flam_xminor >>= \minor    ->
-    makeAdvGraphic (hdisplace $ uw * (n+1)) (mkLine $ minor + uw * n)
+    beamAdvGraphic (\uw -> uw * (n+1)) (\uw -> minor + uw * n)
   where
     n          = fromIntegral i
-    mkLine len = straightLine (hvec len) `relativeTo` stemTop
 
 
 pletBeamLine :: Ratio Int -> DAdvGraphic 
 pletBeamLine i = 
-    scaleValue unit_width  >>= \uw    ->
-    makeAdvGraphic (hdisplace $ uw * upper) (mkLine $ uw * n)
+    beamAdvGraphic (\uw -> uw * upper) (\uw -> uw * n)
   where
     upper      = fromIntegral $ ceilingi i
     n          = realToFrac i
-    mkLine len = straightLine (hvec len) `relativeTo` stemTop
-
-
-ceilingi :: Ratio Int -> Int
-ceilingi = floor
+    
+    ceilingi   :: Ratio Int -> Int
+    ceilingi   = floor
 
 unitAdvGraphic :: DAdvGraphic
 unitAdvGraphic = scaleValue unit_width >>= \uw ->
-                 makeAdvGraphic (vecdisplace $ hvec uw) emptyLocGraphic
+                 makeAdvGraphic (pure $ vecdisplace $ hvec uw) emptyLocGraphic
 
 
 
@@ -403,7 +361,7 @@ groupSpans xs = outer xs
                             in cons w $ Right pw : outer zs
     
     cons (Whole n) | n <= 0 = id
-    cons w                  = (\ls -> Left w : ls)
+    cons w                  = \ls -> Left w : ls
 
 zeroSpan :: UnitSpan
 zeroSpan = Whole 0

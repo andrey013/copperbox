@@ -12,12 +12,7 @@ import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
-
-import Data.Maybe
 import System.Directory
-import Data.Ratio
 
 
 main :: IO ()
@@ -34,50 +29,47 @@ std_attr = joinBevel $ fontFace helvetica $ standardContext 24
 text_drawing :: DDrawing
 text_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ textline "PTgd..B" `at` zeroPt
-   draw $ localize (fillColour black) $ period      `at` P2 200 0
+   draw $ localize (fillColour black) $ fullstop    `at` P2 200 0
    draw $ localize (fillColour black) $ swingStem   `at` P2 200 0
    draw $ localize (fillColour black) $ flamStem    `at` P2 220 0
    draw $ localize (fillColour black) $ dot         `at` P2 230 0
    draw $ localize (fillColour black) $ flamDot     `at` P2 230 0
-   draw $ localize (fillColour black) $ evenStems 5 `at` P2 230 0
    draw $ localize (fillColour black) $ smallLetter 'D' `at` P2 250 0
+   
+   draw $ barLocGraphic abioueka_djembe_call `at` P2 0 300
+   draw $ barLocGraphic [group3, group3]     `at` P2 0 150
+   
 
-   draw $ barBeamLines [group3, group3] `at` P2 0 300
-   draw $ barBeats     [group3, group3] `at` P2 0 300
 
---   draw $ extractLocGraphic (ag_01 `aplus` advCh 'G') `at` P2 0 200
---   draw $ extractLocGraphic (drawBeat $ I sangban) `at` P2 350 200
+class CBoxNotation repr where
+  period           :: repr
+  bass             :: repr
+  tone             :: repr
+  slap             :: repr
+  tone_flam        :: repr
+  
+instance CBoxNotation G where
+  period           = G $ fullstop
+  bass             = G $ letter 'B'
+  tone             = G $ dot
+  slap             = G $ letter 'X'
+  tone_flam        = G $ letter '?'
 
-ag_01 :: DAdvGraphic
-ag_01 = advconcat (map advCh "ABCDEF")
-
-advCh :: Num u => Char -> AdvGraphic u
-advCh ch = makeAdvGraphic (hdisplace 30) (textline [ch])
-
--- How to get /many/ interpretations of a beat pattern?
---
--- ... given that the alphabet is not fixed e.g. need that add 
--- more drums like kenkeni.
--- 
-
--- Note - this is simple but not really valid - as kenkeni is 
--- fixed to the I constructor we cannot have it inside a plet.
---
-abioueka :: Bar ()
-abioueka = [ [nil, nil, nil], [nil, nil, nil]
-           , [nil, nil, nil], [kenkeni, kenkeni, nil]
-           ]
-
-nil :: Beat () 
-nil = I ()
-
-kenkeni :: Beat () 
-kenkeni = I ()
-
--- Note - this really needs a /no-graphic/ element.
+abioueka_djembe_call :: CBoxNotation repr => Bar repr
+abioueka_djembe_call = 
+    [ [ I tone_flam,    I tone,         I tone   ]
+    , [ I tone,         I tone,         I period ]
+    , [ I tone,         I tone,         I period ]
+    , [ I tone,         I period,       I period ] 
+    ]
+    
 
 
 
+--------------------------------------------------------------------------------
+-- dummy
+
+-- experiments combining /Tagless/ classes...
 
 class CSangban repr where
    sangban :: repr
@@ -94,25 +86,21 @@ group1 :: CSangban repr => Group repr
 group1 = [ I sangban, I sangban, I sangban ]
 
 
-
 class CSlap repr where
-   slap :: repr
-   slapflam  :: repr
+   cslap :: repr
 
 instance CSlap G where
-  slap      = G $ letter 'P'
-  slapflam  = G $ letter 'P' -- todo
-
+   cslap = G $ fullstop
 
 group2a :: (CSangban repr, CSlap repr) => Group repr 
-group2a = [ I sangban, I sangban, I slap ]
+group2a = [ I sangban, I sangban, I cslap ]
 
 class (CStroke repr, CSangban repr, CSlap repr) => Composite repr
 
 instance Composite G
 
 group2b :: Composite repr => Group repr 
-group2b = [ I $ accent sangban, I sangban, I slap, S sangban ]
+group2b = [ I $ accent sangban, I sangban, I cslap, S sangban ]
 
 group3 :: Composite repr => Group repr 
 group3 = [ I sangban, I sangban, S sangban, I sangban ] 

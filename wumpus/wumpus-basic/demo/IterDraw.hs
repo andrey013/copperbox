@@ -3,12 +3,13 @@
 
 module IterDraw where
 
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel hiding ( hspace )
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Control.Applicative
 import System.Directory
 
 
@@ -41,19 +42,19 @@ hspace :: Num u => PointDisplace u
 hspace = hdisplace 28
 
 redA :: Fractional u => AdvGraphic u
-redA = makeAdvGraphic hspace (background `oplus` textline "A")
+redA = makeAdvGraphic (pure hspace) (background `oplus` textline "A")
   where
     background = localize (fillColour tomato) 
                           (prepro1 bldisplace $ filledRectangle 24 24)
 
 greenB :: Fractional u => AdvGraphic u
-greenB = makeAdvGraphic hspace (background `oplus` textline "B")
+greenB = makeAdvGraphic (pure hspace) (background `oplus` textline "B")
   where
     background = localize (fillColour yellow_green) 
                           (prepro1 bldisplace $ filledRectangle 24 24)
 
 blueC :: Fractional u => AdvGraphic u
-blueC = makeAdvGraphic hspace (background `oplus` textline "C")
+blueC = makeAdvGraphic (pure hspace) (background `oplus` textline "C")
   where
     background = localize (fillColour light_sky_blue) 
                           (prepro1 bldisplace $ filledRectangle 24 24)
