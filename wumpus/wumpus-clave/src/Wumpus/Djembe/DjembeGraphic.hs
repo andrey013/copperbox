@@ -135,7 +135,7 @@ beamAdvGraphic f g =
   where
     adv = \uw -> pure $ hdisplace $ f uw 
     obj = \uw -> localize capSquare $ 
-                   straightLine (hvec $ g uw) `relativeTo` stemTop
+                   scaleVMove stem_top (straightLine $ hvec $ g uw) -- `relativeTo` stemTop
 
 
 

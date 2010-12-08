@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module NewDjembe1 where
+module NewDjembe where
 
 import Wumpus.Djembe.Base
 import Wumpus.Djembe.DjembeGraphic
@@ -30,12 +30,8 @@ std_attr = joinBevel $ fontFace helvetica $ standardContext 24
 text_drawing :: DDrawing
 text_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ textline "PTgd..B" `at` zeroPt
-   draw $ localize (fillColour black) $ fullstop    `at` P2 200 0
    draw $ localize (fillColour black) $ swingStem   `at` P2 200 0
    draw $ localize (fillColour black) $ flamStem    `at` P2 220 0
-   draw $ localize (fillColour black) $ dot         `at` P2 230 0
-   draw $ localize (fillColour black) $ flamDot     `at` P2 230 0
-   draw $ localize (fillColour black) $ smallLetter 722 'D' `at` P2 250 0
   
    draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 300
    draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 150
@@ -47,6 +43,7 @@ class CBoxNotation repr where
   bass             :: repr
   tone             :: repr
   slap             :: repr
+  bass_flam        :: repr
   tone_flam        :: repr
   
 instance CBoxNotation G where
@@ -54,7 +51,9 @@ instance CBoxNotation G where
   bass             = G $ makeDjembeNote $ letterNotehead 667 'B'
   tone             = G $ makeDjembeNote $ dotNotehead
   slap             = G $ makeDjembeNote $ letterNotehead 667 'X'
-  tone_flam        = G $ makeDjembeNote $ letterNotehead 556 '?'
+  bass_flam        = G $ makeFlamNote (letterNotehead 667 'B')
+                                      (letterFlamGlyph 667 'B')
+  tone_flam        = G $ makeFlamNote dotNotehead dotFlamGlyph
 
 
 abioueka_djembe_call :: CBoxNotation repr => Bar repr

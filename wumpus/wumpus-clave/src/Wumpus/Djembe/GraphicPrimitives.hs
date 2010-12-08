@@ -23,9 +23,6 @@ import Wumpus.Basic.System.FontLoader.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
-import Data.AffineSpace                         -- package: vector-space
-
 import Control.Applicative
 
 type NoteheadWidth u = u
@@ -52,10 +49,10 @@ line_height             :: AfmUnit
 line_height             = 2545
 
 period_center           :: AfmUnit
-period_center           = 273
+period_center           = 108
 
 dot_center              :: AfmUnit
-dot_center              = 405
+dot_center              = 306
 
 flam_dot_center         :: AfmUnit
 flam_dot_center         = 950
@@ -76,122 +73,32 @@ flam_xminor             :: AfmUnit
 flam_xminor             = 328
 
 flam_baseline           :: AfmUnit
-flam_baseline           = 600 -- ???
+flam_baseline           = 904
 
 flam_stem_length        :: AfmUnit
 flam_stem_length        = 636
 
+swing_angle_lower_left  :: AfmUnit
+swing_angle_lower_left  = 1600
+     
 
 
+--------------------------------------------------------------------------------
+-- Note heads are positioned...
 
 
-baseline :: LocDrawingInfo u (Point2 u)
-baseline = pure $ \pt -> pt
-
-displaceBaseline :: Num u => Vec2 u -> LocDrawingInfo u (Point2 u)
-displaceBaseline v = pure $ \pt -> pt .+^ v
-
-
-
-dispBasePt :: (Fractional u, FromPtSize u) 
-           => AfmUnit -> AfmUnit -> LocDrawingInfo u (Point2 u)
-dispBasePt ux uy = scaleValue ux >>= \x -> 
-                   scaleValue uy >>= \y -> (displaceBaseline $ vec x y) 
-
-
-vdispBasePt :: (Fractional u, FromPtSize u) 
-            => AfmUnit -> LocDrawingInfo u (Point2 u)
-vdispBasePt ua = scaleValue ua >>= (displaceBaseline . vvec) 
-
-
-hdispBasePt :: (Fractional u, FromPtSize u) 
-            => AfmUnit -> LocDrawingInfo u (Point2 u)
-hdispBasePt ua = scaleValue ua >>= (displaceBaseline . hvec) 
-
-
-stemStart           :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-stemStart           = vdispBasePt stem_start
-
-stemTop             :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-stemTop             = vdispBasePt stem_top
-
-
-swingBottomLeft     :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-swingBottomLeft     = 
-    scaleValue flam_xminor >>= \xminor -> 
-    postpro1 (.+^ vec (0.1*xminor) (negate $ 2 * xminor)) stemTop
- 
-halfLineLeft        :: (Fractional u, FromPtSize u) 
-                    => LocDrawingInfo u (Point2 u)
-halfLineLeft        = vdispBasePt half_line_pos
-
-
-relativeTo :: LocGraphic u -> LocDrawingInfo u (Point2 u) -> LocGraphic u
-relativeTo mf upd = promote1 $ \pt -> 
-    situ1 upd pt >>= \p2 -> mf `at` p2 
-
-singleStemmed :: (Fractional u, FromPtSize u) => LocGraphic u -> LocGraphic u
-singleStemmed g = g `oplus` singleStem
-
-
-
-
-dot :: (Fractional u, FromPtSize u) => LocGraphic u
-dot = singleStemmed $ dotNh `relativeTo` vdispBasePt dot_center
-
-
-flamDot :: (Fractional u, FromPtSize u) => LocGraphic u
-flamDot = dotFh `relativeTo` dispBasePt (-flam_xminor) flam_dot_center
-
-fullstop :: (Fractional u, FromPtSize u) => LocGraphic u
-fullstop = singleStemmed $ periodNh `relativeTo` vdispBasePt period_center
-
-periodNh :: (Fractional u, FromPtSize u) => LocGraphic u
-periodNh = scaleByCapHeight (1/12) >>= filledDisk
-
-letter :: (Fractional u, FromPtSize u) => AfmUnit -> Char -> LocGraphic u
-letter cw ch = 
-    singleStemmed $ textline [ch] `relativeTo` hdispBasePt (negate $ 0.5*cw)
-
-
-smallLetter :: (Fractional u, FromPtSize u) => AfmUnit -> Char -> LocGraphic u
-smallLetter cw ch = 
-    getFontSize >>= \sz -> 
-    localize (fontSize $ (3 * sz) `div` 4) $ 
-        textline [ch] `relativeTo` hdispBasePt (negate $ 0.5 * 0.75 * cw)
-
-
-
-
-
--- radius is 3/8 of cap height.
---
-dotNh :: (Fractional u, FromPtSize u) => LocGraphic u
-dotNh = scaleByCapHeight (3/8) >>= filledDisk
-
-
-
-
-
--- 
 dotNotehead :: (Fractional u, FromPtSize u) => LocImage u (NoteheadWidth u)
 dotNotehead = 
     scaleByCapHeight (3/8) >>= \radius -> 
     intoLocImage (pure $ pure $ radius * 2) 
-                 (scaledVMove dot_center $ filledDisk radius)
+                 (scaleVMove dot_center $ filledDisk radius)
 
 
 periodNotehead :: (Fractional u, FromPtSize u) => LocImage u (NoteheadWidth u)
 periodNotehead = 
     scaleByCapHeight (1/12) >>= \radius -> 
     intoLocImage (pure $ pure $ radius * 3) -- todo
-                 (scaledVMove period_center $ filledDisk radius)
-
--- This notehead is positioned...
---
+                 (scaleVMove period_center $ filledDisk radius)
 
 letterNotehead :: (Fractional u, FromPtSize u) 
                => AfmUnit -> Char -> LocImage u (NoteheadWidth u)
@@ -200,20 +107,60 @@ letterNotehead cw ch =
     intoLocImage (pure $ pure char_width) 
                  (hmove (negate $ 0.5*char_width) (textline [ch]))
 
--- 0.375 is  half of 3/4 size
+
+
 --
-flamLetter :: (Fractional u, FromPtSize u) => AfmUnit -> Char -> LocGraphic u
-flamLetter cw ch = 
+letterFlamGlyph :: (Fractional u, FromPtSize u) 
+                => AfmUnit -> Char -> LocGraphic u
+letterFlamGlyph cw ch = 
     getFontSize >>= \sz -> 
     localize (fontSize $ (3 * sz) `div` 4) $ 
-        let x = negate $ flam_xminor + (0.375 * cw)   
+        let x = negate $ flam_xminor + (0.675 * cw)
             y = flam_baseline
-        in scaledMove x y $ textline [ch]
+        in scaleMove x y $ textline [ch]
 
-
+dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
+dotFlamGlyph = 
+    scaleByCapHeight (3/16) >>= \radius -> 
+    scaleMove (negate $ flam_xminor) flam_dot_center $ filledDisk radius
 
 --------------------------------------------------------------------------------
+-- stems
 
+singleStem :: (Fractional u, FromPtSize u) => LocGraphic u
+singleStem =
+   scaleValue stem_length >>= \len -> 
+   scaleVMove stem_start (straightLine $ vvec len)
+
+
+flamStem :: (Fractional u, FromPtSize u) => LocGraphic u
+flamStem = 
+    scaleVecPath flam_path >>= \vs -> 
+    scaleVMove stem_start (openStrokePath vs)
+  where
+    flam_path  = [ vvec stem_length
+                 , vec  (negate flam_xminor) (negate flam_xminor)
+                 , vvec (negate flam_stem_length)
+                 ]
+
+
+swingStem :: (Fractional u, FromPtSize u) => LocGraphic u
+swingStem = singleStem `oplus` swingAngle
+    
+
+swingAngle :: (Fractional u, FromPtSize u) => LocGraphic u
+swingAngle = 
+    scaleVecPath angle_path >>= \vs -> 
+    scaleVMove swing_angle_lower_left (openStrokePath vs)
+  where
+    angle_path = let w = 0.9*flam_xminor in [ vec w w, vec (-w) w ]
+
+
+
+openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
+openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
+
+--------------------------------------------------------------------------------
 
 makeDjembeNote :: (Fractional u, FromPtSize u) 
                => LocImage u (NoteheadWidth u)
@@ -242,60 +189,26 @@ vmove :: Num u => u -> LocCF u a -> LocCF u a
 vmove y = prepro1 (hdisplace y)
 
 
-scaledMove :: FromPtSize u => AfmUnit -> AfmUnit -> LocCF u a -> LocCF u a
-scaledMove x y cf = 
+scaleMove :: FromPtSize u => AfmUnit -> AfmUnit -> LocCF u a -> LocCF u a
+scaleMove x y cf = 
     scaleValue x >>= \xu -> scaleValue y >>= \yu -> prepro1 (displace xu yu) cf
 
-scaledHMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
-scaledHMove x cf = scaleValue x >>= \xu -> prepro1 (hdisplace xu) cf
+scaleHMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
+scaleHMove x cf = scaleValue x >>= \xu -> prepro1 (hdisplace xu) cf
 
-scaledVMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
-scaledVMove y cf = scaleValue y >>= \yu -> prepro1 (vdisplace yu) cf
-
-
--- flam heads are just LocGraphics they cannot be 
--- parenthesized to make an optional.
-
-dotFh :: (Fractional u, FromPtSize u) => LocGraphic u
-dotFh = scaleByCapHeight (3/16) >>= filledDisk
+scaleVMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
+scaleVMove y cf = scaleValue y >>= \yu -> prepro1 (vdisplace yu) cf
 
 
+scaleVecPath :: FromPtSize u => [Vec2 AfmUnit] -> DrawingInfo [Vec2 u]
+scaleVecPath = mapM scaleVec2 
+  where
+    scaleVec2 (V2 x y) = V2 <$> scaleValue x <*> scaleValue y
 
 
-stemline :: (Fractional u, FromPtSize u) => LocGraphic u
-stemline = scaleValue stem_length >>= (straightLine . vvec)
-
-flamPath :: FromPtSize u => DrawingInfo [Vec2 u]
-flamPath = (\h minor flam_h -> [ vvec h, vec (-minor) (-minor), vvec (-flam_h) ])
-            <$> scaleValue stem_length <*> scaleValue flam_xminor 
-                                       <*> scaleValue flam_stem_length
+--------------------------------------------------------------------------------
 
 
 
-flamStem :: (Fractional u, FromPtSize u) => LocGraphic u
-flamStem = body `relativeTo` stemStart
-  where  
-    body = flamPath >>= openStrokePath
-           
-
-swingStem :: (Fractional u, FromPtSize u) => LocGraphic u
-swingStem = stalk `oplus` angle          
-  where  
-    stalk = stemline `relativeTo` stemStart
-    angle = (swingAnglePath >>= openStrokePath) `relativeTo` swingBottomLeft
-
-swingAnglePath :: (Fractional u, FromPtSize u) => DrawingInfo [Vec2 u]
-swingAnglePath = (\minor -> let w = 0.8*minor in [ vec w w, vec (-w) w ])
-                    <$> scaleValue flam_xminor 
-
-
--- Note - line thickness should vary according to size...
---
-singleStem :: (Fractional u, FromPtSize u) => LocGraphic u
-singleStem = stemline `relativeTo` stemStart
-
-
-openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
-openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
 
 
