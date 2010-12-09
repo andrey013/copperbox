@@ -91,6 +91,10 @@ updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 -- Note - some care might be needed if we ever define other unit 
 -- types...
 
+lineWidth       :: Double -> DrawingContextF
+lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
+
+
 -- std_line_width      :: Double
 -- std_line_width      = 1.0
 
@@ -103,8 +107,6 @@ ultra_thick_line    = 4.0
 thin_line           :: Double
 thin_line           = 0.5
 
-lineWidth       :: Double -> DrawingContextF
-lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
 -- | Set the line width to a /thick/.
 --
@@ -120,6 +122,8 @@ ultrathick          = lineWidth ultra_thick_line
 thin                :: DrawingContextF
 thin                = lineWidth thin_line
 
+
+--------------------------------------------------------------------------------
 
 setLineCap          :: LineCap -> DrawingContextF
 setLineCap d        = updateStrokeProps (\s -> s { line_cap = d })

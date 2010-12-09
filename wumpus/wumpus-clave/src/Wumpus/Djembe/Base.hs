@@ -30,8 +30,7 @@ module Wumpus.Djembe.Base
 
 import Wumpus.Basic.Kernel
 
--- Where does flam sit in the data type?
--- Is flam an @I@ or should it have a constructor?
+-- Flam is an @I@
 
 
 data Beat a = I  a            -- one beat, could be unplayed (aka. a rest)
@@ -50,8 +49,9 @@ type DjembeGroup u = Group u
 
 
 class CStroke repr where
-   optional :: repr -> repr
-   lead_in  :: repr -> repr
-   accent   :: repr -> repr
-
+   optional     :: repr -> repr
+   lead_in      :: repr -> repr
+   accent       :: repr -> repr
+   dominant     :: repr -> repr
+   other_hand   :: repr -> repr
 

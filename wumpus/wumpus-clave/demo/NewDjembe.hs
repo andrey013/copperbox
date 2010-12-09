@@ -34,26 +34,32 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ localize (fillColour black) $ flamStem    `at` P2 220 0
   
    draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 300
-   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 150
+   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 200
+   draw $ barLocGraphic optional_test                       `at` P2 0 100
    
 
 
 class CBoxNotation repr where
+  rest_note        :: repr
   period           :: repr
   bass             :: repr
   tone             :: repr
   slap             :: repr
+  muffled_slap     :: repr
   bass_flam        :: repr
   tone_flam        :: repr
   
 instance CBoxNotation G where
-  period           = G $ makeDjembeNote $ periodNotehead
-  bass             = G $ makeDjembeNote $ letterNotehead 667 'B'
-  tone             = G $ makeDjembeNote $ dotNotehead
-  slap             = G $ makeDjembeNote $ letterNotehead 667 'X'
-  bass_flam        = G $ makeFlamNote (letterNotehead 667 'B')
-                                      (letterFlamGlyph 667 'B')
-  tone_flam        = G $ makeFlamNote dotNotehead dotFlamGlyph
+  rest_note         = G $ makeRestNote
+  period            = G $ makeDjembeNote $ periodNotehead
+  bass              = G $ makeDjembeNote $ letterNotehead 667 'B'
+  tone              = G $ makeDjembeNote $ dotNotehead
+  slap              = G $ makeDjembeNote $ letterNotehead 667 'X'
+  muffled_slap      = G $ addBaselineStrike $ 
+                            makeDjembeNote $ letterNotehead 667 'X'
+  bass_flam         = G $ makeFlamNote (letterNotehead 667 'B')
+                                       (letterFlamGlyph 667 'B')
+  tone_flam         = G $ makeFlamNote dotNotehead dotFlamGlyph
 
 
 abioueka_djembe_call :: CBoxNotation repr => Bar repr
@@ -71,4 +77,15 @@ abioueka_djembe_accompanyment1 =
     , [ I period,       I slap,         I slap   ]
     , [ I period,       I slap,         I period ]
     , [ I tone,         I tone,         I period ] 
+    ]
+
+
+
+optional_test :: (CBoxNotation repr, CStroke repr) => Bar repr
+optional_test = 
+    [ [ I tone,         I rest_note,    I rest_note,    I muffled_slap   ]
+    , [ I tone,         I $ dominant $ rest_note
+      ,    I $ other_hand $ optional tone, I rest_note ]
+    , [ I $ lead_in tone,         I rest_note,    I rest_note,    I rest_note   ]
+    , [ I $ accent tone,         I $ accent rest_note,    I $ optional bass, I rest_note ]
     ]

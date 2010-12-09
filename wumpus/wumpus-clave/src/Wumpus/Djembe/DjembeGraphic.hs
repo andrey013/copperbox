@@ -20,6 +20,7 @@ import Wumpus.Djembe.Base
 import Wumpus.Djembe.GraphicPrimitives
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -44,17 +45,22 @@ barLocGraphic b = barBeats b `oplus` barBeamLines b
 
 
 
-newtype G = G { getG :: DLocImage (NoteheadWidth Double) }
+newtype G = G { getG :: DLocImage AfmUnit }
 
 unG :: G -> DLocGraphic
 unG = postpro1 snd . getG
 
-instance CStroke G where
-  -- to do...
-  optional nh = G $ getG nh  
-  lead_in  nh = G $ getG nh
-  accent   nh = G $ getG nh
+mapG :: (DLocImage AfmUnit -> DLocImage AfmUnit) -> G -> G
+mapG f a = G $ f $ getG a
 
+
+instance CStroke G where
+  optional      = mapG addParens
+  accent        = mapG (addAccent 584)
+  lead_in       = mapG addLeadin
+  dominant      = mapG addDominantHand
+  other_hand    = mapG addOtherHand 
+  
 
 barBeats :: Bar G -> DLocGraphic
 barBeats = extractLocGraphic . advconcat . map groupBeats
