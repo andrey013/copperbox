@@ -24,7 +24,8 @@ module Wumpus.Djembe.Base
   , DjembeBar
   , DjembeGroup
 
-  , CStroke(..)
+  , CStrokeBase(..)
+  , CStrokeAnno(..)
 
   ) where
 
@@ -48,7 +49,12 @@ type DjembeBar   u = Bar u
 type DjembeGroup u = Group u
 
 
-class CStroke repr where
+class CStrokeBase repr where
+  rest_note        :: repr
+  period           :: repr
+ 
+
+class CStrokeAnno repr where
    optional     :: repr -> repr
    lead_in      :: repr -> repr
    accent       :: repr -> repr

@@ -105,29 +105,75 @@ hand_baseline           = (-448)
 hand_base_length        :: AfmUnit
 hand_base_length        = 260
 
+char_upstroke           :: AfmUnit
+char_upstroke           = 760 -- ???
+
+char_downstroke         :: AfmUnit
+char_downstroke         = 260 -- ???
+
+
+dot_upstroke            :: AfmUnit
+dot_upstroke            = 760 -- ???
+
+dot_downstroke          :: AfmUnit
+dot_downstroke          = 260 -- ???
+
+
 --------------------------------------------------------------------------------
 -- Note heads are positioned...
 
+-- THese need generalizing so that ypos is parameteric.
+-- Then they can handle upstrokes downstokes and normal positioned note-heads
 
 dotNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
-dotNotehead = 
+dotNotehead = makeDotNotehead dot_center
+
+
+-- not an Image as upstrokes cannot be parenthesized.
+upstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
+upstrokeDot = postpro1 snd $ makeDotNotehead dot_upstroke
+
+downstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
+downstrokeDot = postpro1 snd $ makeDotNotehead dot_downstroke
+
+
+makeDotNotehead :: (Fractional u, FromPtSize u) 
+                => AfmUnit -> LocImage u AfmUnit
+makeDotNotehead ypos = 
     scaleValue dot_radius >>= \radius -> 
     intoLocImage (pure $ pure dot_notehead_width)
-                 (scaleVMove dot_center $ filledDisk radius)
+                 (scaleVMove ypos $ filledDisk radius)
 
 
+-- period notehead always drawn just above baseline
+-- 
 periodNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
 periodNotehead = 
     scaleValue period_radius >>= \radius -> 
     intoLocImage (pure $ pure dot_notehead_width)
                  (scaleVMove period_center $ filledDisk radius)
 
+
 letterNotehead :: (Fractional u, FromPtSize u) 
                => AfmUnit -> Char -> LocImage u AfmUnit
-letterNotehead cw ch = 
-    scaleValue cw >>= \char_width -> 
+letterNotehead = makeLetterNotehead 0
+
+
+upstrokeLetter :: (Fractional u, FromPtSize u) 
+               => AfmUnit -> Char -> LocGraphic u
+upstrokeLetter cw ch = postpro1 snd $ makeLetterNotehead char_upstroke cw ch
+
+
+downstrokeLetter :: (Fractional u, FromPtSize u) 
+                         => AfmUnit -> Char -> LocGraphic u
+downstrokeLetter cw ch = postpro1 snd $ makeLetterNotehead char_downstroke cw ch
+
+
+makeLetterNotehead :: (Fractional u, FromPtSize u) 
+                   => AfmUnit -> AfmUnit -> Char -> LocImage u AfmUnit
+makeLetterNotehead ypos cw ch = 
     intoLocImage (pure $ pure cw) 
-                 (hmove (negate $ 0.5*char_width) (textline [ch]))
+                 (scaleMove (negate $ 0.5*cw) ypos (textline [ch]))
 
 
 
@@ -189,22 +235,18 @@ filledRelativePath vs = promote1 $ \pt -> filledPath $ vectorPath pt vs
 
 --------------------------------------------------------------------------------
 
-makeDjembeNote :: (Fractional u, FromPtSize u) 
-               => LocImage u AfmUnit
-               -> LocImage u AfmUnit
-makeDjembeNote note_head = superimposeLocImage note_head singleStem 
+djembeNote :: (Fractional u, FromPtSize u) 
+           => LocImage u AfmUnit -> LocImage u AfmUnit
+djembeNote note_head = superimposeLocImage note_head singleStem 
 
 
-makeFlamNote :: (Fractional u, FromPtSize u) 
-             => LocImage u AfmUnit
-             -> LocGraphic u 
-             -> LocImage u AfmUnit
-makeFlamNote note_head flam_head = 
+flamNote :: (Fractional u, FromPtSize u) 
+         => LocImage u AfmUnit -> LocGraphic u -> LocImage u AfmUnit
+flamNote note_head flam_head = 
     superimposeLocImage note_head (flam_head `oplus` flamStem) 
 
-makeRestNote :: (Fractional u, FromPtSize u) 
-             => LocImage u AfmUnit
-makeRestNote = intoLocImage (pure $ pure dot_notehead_width) singleStem
+restNote :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
+restNote = intoLocImage (pure $ pure dot_notehead_width) singleStem
 
 
 --------------------------------------------------------------------------------
@@ -286,6 +328,20 @@ drawHStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
     loc_strike = scaleVecPath [hvec cw] >>= openStrokePath
 
 
+addAngledStrike :: (Fractional u, FromPtSize u)  
+                    => LocImage u AfmUnit -> LocImage u AfmUnit
+addAngledStrike img = 
+    img `bind1` \(w,a) -> 
+    drawAngStrikeLine w `bind1` \b -> wrap1 (w, a `oplus` b)
+
+
+drawAngStrikeLine :: FromPtSize u => AfmUnit -> LocGraphic u
+drawAngStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
+  where
+    loc_strike = scaleVecPath [vec cw cap_size] >>= openStrokePath
+
+
+
 --------------------------------------------------------------------------------
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
@@ -297,13 +353,6 @@ scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
 superimposeLocImage :: LocImage u a -> LocGraphic u -> LocImage u a
 superimposeLocImage img gfx = 
      img `bind1` \(a,b) -> gfx `bind1` \z -> wrap1 (a, b `oplus` z)
-
-
-hmove :: Num u => u -> LocCF u a -> LocCF u a
-hmove x = prepro1 (hdisplace x)
-
-vmove :: Num u => u -> LocCF u a -> LocCF u a
-vmove y = prepro1 (hdisplace y)
 
 
 scaleMove :: FromPtSize u => AfmUnit -> AfmUnit -> LocCF u a -> LocCF u a
