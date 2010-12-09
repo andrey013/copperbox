@@ -19,20 +19,22 @@ module Wumpus.Djembe.GraphicPrimitives where
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Drawing.Text.LRText
 
 import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Applicative
-
--- type NoteheadWidth u = u
-
+import Data.Ratio
 
 unit_width              :: AfmUnit
 unit_width              = 1380
 
 cap_size                :: AfmUnit 
 cap_size                = 718
+
+number_width            :: AfmUnit 
+number_width            = 556
 
 dot_radius              :: AfmUnit
 dot_radius              = 272
@@ -88,7 +90,7 @@ paren_baseline          :: AfmUnit
 paren_baseline          = 72
 
 accent_baseline         :: AfmUnit
-accent_baseline         = 2234
+accent_baseline         = 2284
 
 leadin_mark_width       :: AfmUnit
 leadin_mark_width       = 702
@@ -117,6 +119,11 @@ dot_upstroke            = 760 -- ???
 
 dot_downstroke          :: AfmUnit
 dot_downstroke          = 260 -- ???
+
+plet_bracket_baseline   :: AfmUnit
+plet_bracket_baseline   = 2356
+
+
 
 
 --------------------------------------------------------------------------------
@@ -261,8 +268,8 @@ addParens img =
 drawParens :: (Fractional u, FromPtSize u) => AfmUnit -> LocGraphic u
 drawParens w = open_paren `oplus` close_paren
   where
-    open_paren  = scaleMove (negate $ 1.0*w) paren_baseline (textline "(")
-    close_paren = scaleMove (0.4*w) paren_baseline (textline ")")
+    open_paren  = scaleMove (negate $ 1.0*w) paren_baseline (textline "&parenleft;")
+    close_paren = scaleMove (0.4*w) paren_baseline (textline "&parenright;")
 
 
 addAccent :: (Fractional u, FromPtSize u)  
@@ -340,7 +347,35 @@ drawAngStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
   where
     loc_strike = scaleVecPath [vec cw cap_size] >>= openStrokePath
 
+--------------------------------------------------------------------------------
+-- plets
 
+
+pletBracket :: (Fractional u, Ord u, FromPtSize u) 
+            => Int -> Ratio Int -> LocGraphic u
+pletBracket n wr = 
+    scaleVMove plet_bracket_baseline $ lbracket `oplus` num_text `oplus` rbracket
+  where
+    hh           = 0.5  * cap_size
+    th           = 0.4  * cap_size
+    hw           = 0.5  * unit_width * (realToFrac wr) 
+    textw        = 0.66 * numberWidth n
+    bracketw     = hw - textw
+    lbracket     = scaleVecPath [ vvec hh, hvec bracketw ] >>= openStrokePath
+    rbracket     = scaleHMove (2*hw) $ 
+                      scaleVecPath [ vvec hh, hvec (-bracketw) ] >>= openStrokePath
+    num_text     = scaleMove hw th $ centeredTwoThirdsText (show n) 
+
+
+numberWidth :: Int -> AfmUnit
+numberWidth i | i < 10    = number_width
+              | otherwise = number_width + numberWidth (i `div` 10)
+
+centeredTwoThirdsText :: (Fractional u, Ord u, FromPtSize u) 
+                      => String -> LocGraphic u
+centeredTwoThirdsText ss =
+    getFontSize >>= \sz -> 
+    localize (fontSize $ (2 * sz) `div` 3) $ postpro1 snd $ singleLineCC ss 
 
 --------------------------------------------------------------------------------
 
@@ -353,6 +388,12 @@ scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
 superimposeLocImage :: LocImage u a -> LocGraphic u -> LocImage u a
 superimposeLocImage img gfx = 
      img `bind1` \(a,b) -> gfx `bind1` \z -> wrap1 (a, b `oplus` z)
+
+
+superimposeAdvGraphic :: AdvGraphic u -> LocGraphic u -> AdvGraphic u
+superimposeAdvGraphic img gfx = 
+     img `bind1` \(a,b) -> gfx `bind1` \z -> wrap1 (a, b `oplus` z)
+
 
 
 scaleMove :: FromPtSize u => AfmUnit -> AfmUnit -> LocCF u a -> LocCF u a

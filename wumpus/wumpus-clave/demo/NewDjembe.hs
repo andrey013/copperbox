@@ -31,6 +31,7 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 300
    draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 200
    draw $ barLocGraphic optional_test                       `at` P2 0 100
+   draw $ barLocGraphic plet_test                           `at` P2 0   0
    
 
 
@@ -60,4 +61,12 @@ optional_test =
       ,    I $ other_hand $ optional tone, I rest_note ]
     , [ I $ lead_in tone,         I rest_note,    I rest_note,    I rest_note   ]
     , [ I $ accent tone,         I $ accent rest_note,    I $ optional bass, I rest_note ]
+    ]
+
+
+
+plet_test :: CBoxDjembe repr => Bar repr
+plet_test = 
+    [ [ Pl 3 2 [slap, slap, slap], I slap, I period ] 
+    , [ I slap, I period, I period, I period ] 
     ]

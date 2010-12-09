@@ -67,3 +67,11 @@ instance CBoxDjembe G where
                                    (letterFlamGlyph 667 'X')
 
 
+instance CBoxKenkeni G where
+  kenkeni_stroke            = G $ djembeNote $ dotNotehead
+  kenkeni_pressed_stroke    = G $ djembeNote $ addAngledStrike $ dotNotehead
+
+
+instance CBoxSangban G where
+  sangban_stroke            = G $ djembeNote $ dotNotehead
+  sangban_pressed_stroke    = G $ djembeNote $ addAngledStrike $ dotNotehead

@@ -125,7 +125,7 @@ halfUnitMove mg = scaleValue unit_width >>= \x -> prepro1 (hdisplace $ 0.5 * x) 
 
 
 
-type SpanWidth = Either UnitSpan (Ratio Int)
+type SpanWidth = Either UnitSpan (Int, Ratio Int)
 
 data UnitSpan = Whole Int | Shift Int
   deriving (Eq,Show)
@@ -142,24 +142,15 @@ groupBeamLines = step . groupSpans
     step (x:xs)           = line x `advplus` step xs
     line (Left (Whole n)) = advBeamLine n
     line (Left (Shift n)) = shiftBeamLine n
-    line (Right r)        = pletBeamLine r
+    line (Right z)        = pletBeamLine z
 
-
-beamAdvGraphic :: (Double -> Double) -> (Double -> Double) -> DAdvGraphic 
-beamAdvGraphic f g = 
-    scaleValue unit_width >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
-  where
-    adv = \uw -> pure $ hdisplace $ f uw 
-    obj = \uw -> localize capSquare $ 
-                   scaleVMove stem_top (straightLine $ hvec $ g uw) -- `relativeTo` stemTop
 
 
 
 advBeamLine :: Int -> DAdvGraphic 
-advBeamLine i | i <= 1 = unitAdvGraphic         -- check this...
-advBeamLine i          = 
-    let n = fromIntegral i in 
-    beamAdvGraphic (\uw -> uw * (n+1)) (\uw  -> uw * n)
+advBeamLine i | i <= 0 = unitAdvGraphic
+advBeamLine i          = let n = fromIntegral i in 
+                         beamAdvGraphic (\uw -> uw * (n+1)) (\uw  -> uw * n)
 
 
 shiftBeamLine :: Int -> DAdvGraphic 
@@ -170,15 +161,27 @@ shiftBeamLine i =
     n          = fromIntegral i
 
 
-pletBeamLine :: Ratio Int -> DAdvGraphic 
-pletBeamLine i = 
-    beamAdvGraphic (\uw -> uw * upper) (\uw -> uw * n)
+pletBeamLine :: (Int, Ratio Int) -> DAdvGraphic 
+pletBeamLine (nrator,rw) = superimposeAdvGraphic beam_adv beam_bracket
   where
-    upper      = fromIntegral $ ceilingi i
-    n          = realToFrac i
+    beam_bracket  = pletBracket nrator rw
+    beam_adv      = beamAdvGraphic (\uw -> uw * upper) (\uw -> uw * n)
+    upper         = fromIntegral $ ceilingi rw
+    n             = realToFrac rw
     
-    ceilingi   :: Ratio Int -> Int
-    ceilingi   = floor
+    ceilingi      :: Ratio Int -> Int
+    ceilingi      = ceiling
+
+
+
+beamAdvGraphic :: (Double -> Double) -> (Double -> Double) -> DAdvGraphic 
+beamAdvGraphic advF drawF = 
+    scaleValue unit_width >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
+  where
+    adv = \uw -> pure $ hdisplace $ advF uw 
+    obj = \uw -> localize capSquare $ 
+                   scaleVMove stem_top (straightLine $ hvec $ drawF uw)
+
 
 unitAdvGraphic :: DAdvGraphic
 unitAdvGraphic = scaleValue unit_width >>= \uw ->
@@ -207,14 +210,14 @@ groupSpans xs = outer xs
     outer (I _:zs)        = inner zeroSpan zs
     outer (S _:zs)        = inner (Shift 0) zs
     outer (Ha _ _:zs)     = inner zeroSpan zs
-    outer (Pl n d _:zs)   = let pw = pletSpan n d in Right pw : outer zs
+    outer (Pl n d _:zs)   = let pw = pletSpan n d in Right (n,pw) : outer zs
     
     inner w []            = cons w $ []
     inner w (I _:zs)      = inner (incrSpan w)  zs
     inner w (S _:zs)      = inner (shiftSpan w) zs
     inner w (Ha _ _:zs)   = inner (incrSpan w)  zs
     inner w (Pl n d _:zs) = let pw = pletSpan n d 
-                            in cons w $ Right pw : outer zs
+                            in cons w $ Right (n,pw) : outer zs
     
     cons (Whole n) | n <= 0 = id
     cons w                  = \ls -> Left w : ls
@@ -232,6 +235,6 @@ shiftSpan (Shift n) = Shift (n+1)       -- this should be unnecessary
 
 
 pletSpan :: Int -> Int -> Ratio Int
-pletSpan n d = (d * n-1) % n
+pletSpan n d = (d * (n-1)) % n
 
 
