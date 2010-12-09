@@ -91,7 +91,7 @@ drawSwing a = xminorMove (unG a) `oplus` swingStem
 
 -- needs hline 
 drawHalved :: G -> G -> DLocGraphic
-drawHalved a b = unG a `oplus` halfUnitMove (unG b)
+drawHalved a b = unG a `oplus` halfBeam `oplus` halfUnitMove (unG b)
 
 
 -- note plets missing top bracket...

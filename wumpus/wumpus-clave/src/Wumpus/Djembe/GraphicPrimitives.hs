@@ -123,6 +123,8 @@ dot_downstroke          = 260 -- ???
 plet_bracket_baseline   :: AfmUnit
 plet_bracket_baseline   = 2356
 
+half_beam_baseline      :: AfmUnit
+half_beam_baseline      = 2072
 
 
 
@@ -376,6 +378,16 @@ centeredTwoThirdsText :: (Fractional u, Ord u, FromPtSize u)
 centeredTwoThirdsText ss =
     getFontSize >>= \sz -> 
     localize (fontSize $ (2 * sz) `div` 3) $ postpro1 snd $ singleLineCC ss 
+
+--------------------------------------------------------------------------------
+-- half beam
+
+halfBeam :: FromPtSize u => LocGraphic u
+halfBeam = scaleVMove half_beam_baseline loc_beam 
+  where
+    half_width  = 0.5 * unit_width
+    loc_beam    = scaleVecPath [hvec half_width] >>= openStrokePath
+
 
 --------------------------------------------------------------------------------
 

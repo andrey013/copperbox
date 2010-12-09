@@ -28,11 +28,11 @@ std_attr = joinBevel $ fontFace helvetica $ standardContext 24
 
 text_drawing :: DDrawing
 text_drawing = drawTracing $ localize bothStrokeColour $ do 
-   draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 300
-   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 200
-   draw $ barLocGraphic optional_test                       `at` P2 0 100
-   draw $ barLocGraphic plet_test                           `at` P2 0   0
-   
+   draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 400
+   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 300
+   draw $ barLocGraphic optional_test                       `at` P2 0 200
+   draw $ barLocGraphic plet_test                           `at` P2 0 100
+   draw $ barLocGraphic sixteenths_test                     `at` P2 0   0   
 
 
 abioueka_djembe_call :: CBoxDjembe repr => Bar repr
@@ -69,4 +69,13 @@ plet_test :: CBoxDjembe repr => Bar repr
 plet_test = 
     [ [ Pl 3 2 [slap, slap, slap], I slap, I period ] 
     , [ I slap, I period, I period, I period ] 
+    ]
+
+
+sixteenths_test :: CBoxDjembe repr => Bar repr
+sixteenths_test = 
+    [ [ Ha slap slap,   I slap,         I slap ] 
+    , [ I slap,         I slap,         I rest_note ] 
+    , [ Ha tone tone,   I tone,         I tone ] 
+    , [ I tone,         I period,       I period ] 
     ]
