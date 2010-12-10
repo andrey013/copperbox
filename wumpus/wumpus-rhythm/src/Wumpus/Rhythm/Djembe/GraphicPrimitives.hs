@@ -203,6 +203,7 @@ makeLetterNotehead ypos cw ch =
 
 
 
+
 --
 letterFlamGlyph :: (Fractional u, FromPtSize u) 
                 => AfmUnit -> Char -> LocGraphic u

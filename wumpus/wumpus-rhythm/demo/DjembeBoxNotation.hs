@@ -24,16 +24,80 @@ main = do
 
 
 std_attr :: DrawingContext
-std_attr = joinBevel $ fontFace helvetica $ standardContext 24
+std_attr = joinBevel $ fontFace helvetica $ standardContext 14
 
 text_drawing :: DDrawing
 text_drawing = drawTracing $ localize bothStrokeColour $ do 
-   draw $ barLocGraphic abioueka_djembe_call                `at` P2 0 400
-   draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 300
-   draw $ barLocGraphic optional_test                       `at` P2 0 200
-   draw $ barLocGraphic plet_test                           `at` P2 0 100
-   draw $ repLocGraphic sixteenths_test                     `at` P2 0   0   
+   draw $ barLocGraphic sixteen_eighths                     `at` P2 0 600
+   draw $ barLocGraphic triplets_16_8                       `at` P2 0 540
+   draw $ barLocGraphic sixteenths_16_8                     `at` P2 0 480
+   draw $ barLocGraphic swing_16_8                          `at` P2 0 420
+   draw $ barLocGraphic twelve_eighths                      `at` P2 0 360
+   draw $ barLocGraphic sixteenths_12_8                     `at` P2 0 300
+   draw $ barLocGraphic swing_12_8                          `at` P2 0 240
 
+
+sixteen_eighths :: CBoxDjembe repr => Bar repr
+sixteen_eighths = 
+    [ [ I rest_note,    I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note,    I rest_note ]
+    ]
+
+triplets_16_8 :: CBoxDjembe repr => Bar repr
+triplets_16_8 = 
+    [ [ Pl 3 2 [slap, slap, slap],      I slap,         I period ] 
+    , [ I tone,         I tone,         I period,       I period ]
+    , [ Pl 3 2 [slap, slap, slap],      I slap,         I period ] 
+    , [ I tone,         I tone,         I period,       I period ]
+    ]     
+
+
+sixteenths_16_8 :: CBoxDjembe repr => Bar repr
+sixteenths_16_8 = 
+    [ [ I tone,         I tone,         I slap,         I tone   ]
+    , [ I tone,         I slap,         I tone,         I tone   ]
+    , [ I slap,         I period,       Ha slap slap,   I slap   ]
+    , [ I slap,         I slap,         I slap,         I period ]
+    ]
+
+swing_16_8 :: CBoxDjembe repr => Bar repr
+swing_16_8 = 
+    [ [ I slap,         I period,       I period,       I slap   ]
+    , [ I slap,         I period,       I tone,         S tone   ]
+    , [ I slap,         I period,       I period,       I slap   ]
+    , [ I slap,         I period,       I tone,         S tone   ]
+    ]
+
+-- Note - wumpus-rhythm is not proportional...
+--
+
+twelve_eighths :: CBoxDjembe repr => Bar repr
+twelve_eighths = 
+    [ [ I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note ]
+    , [ I rest_note,    I rest_note,    I rest_note ]
+    ]
+
+
+sixteenths_12_8 :: CBoxDjembe repr => Bar repr
+sixteenths_12_8 = 
+    [ [ Ha slap slap,   I slap,         I slap          ]
+    , [ I slap,         I slap,         I rest_note     ]
+    , [ Ha tone tone,   I tone,         I tone          ]
+    , [ I slap,         I period,       I period        ]
+    ]
+
+
+swing_12_8 :: CBoxDjembe repr => Bar repr
+swing_12_8 = 
+    [ [ I tone,         S slap,         I slap  ]
+    , [ S tone,         I tone,         S slap  ]
+    , [ I slap,         S tone,         I tone  ]
+    , [ S slap,         I slap,         S tone  ]
+    ]
 
 abioueka_djembe_call :: CBoxDjembe repr => Bar repr
 abioueka_djembe_call = 

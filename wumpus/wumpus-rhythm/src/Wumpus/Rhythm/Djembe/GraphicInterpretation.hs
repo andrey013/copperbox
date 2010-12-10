@@ -33,83 +33,78 @@ import Data.Ratio
 
 
 
-
+-- to do - GDjembe
 
 -- | To generate output we need a Graphical interpretation.
 --
--- newtype G = G { unG :: DLocGraphic }
 
--- type DNotehead = DLocImage NoteheadWidth
-
+newtype GDjembe = GDjembe { getGDjembe :: DLocImage AfmUnit }
 
 
-newtype G = G { getG :: DLocImage AfmUnit }
+unGDjembe :: GDjembe -> DLocGraphic
+unGDjembe = postpro1 snd . getGDjembe
+
+mapGDjembe :: (DLocImage AfmUnit -> DLocImage AfmUnit) -> GDjembe -> GDjembe
+mapGDjembe f a = GDjembe $ f $ getGDjembe a
 
 
-unG :: G -> DLocGraphic
-unG = postpro1 snd . getG
+instance CStrokeBase GDjembe where
+  rest_note     = GDjembe $ restNote
+  period        = GDjembe $ djembeNote $ periodNotehead
 
-mapG :: (DLocImage AfmUnit -> DLocImage AfmUnit) -> G -> G
-mapG f a = G $ f $ getG a
-
-
-instance CStrokeBase G where
-  rest_note     = G $ restNote
-  period        = G $ djembeNote $ periodNotehead
-
-instance CStrokeAnno G where
-  optional      = mapG addParens
-  accent        = mapG (addAccent 584)
-  lead_in       = mapG addLeadin
-  dominant      = mapG addDominantHand
-  other_hand    = mapG addOtherHand 
+instance CStrokeAnno GDjembe where
+  optional      = mapGDjembe addParens
+  accent        = mapGDjembe (addAccent 584)
+  lead_in       = mapGDjembe addLeadin
+  dominant      = mapGDjembe addDominantHand
+  other_hand    = mapGDjembe addOtherHand 
 
 
 
 --------------------------------------------------------------------------------  
 
-barLocGraphic :: Bar G -> DLocGraphic
+barLocGraphic :: Bar GDjembe -> DLocGraphic
 barLocGraphic bar = extrLocGraphic $ barline `advplus` body `advplus` barline
   where
     body = barAdvGraphic bar
 
-repLocGraphic :: Bar G -> DLocGraphic
+repLocGraphic :: Bar GDjembe -> DLocGraphic
 repLocGraphic bar = extrLocGraphic $ lrepeat `advplus` body `advplus` rrepeat
   where
     body = barAdvGraphic bar
 
 
-barAdvGraphic :: Bar G -> DAdvGraphic
+barAdvGraphic :: Bar GDjembe -> DAdvGraphic
 barAdvGraphic b = superimposeAdvGraphic (barBeats b) (barBeamLines b)
 
 
-barBeats :: Bar G -> DAdvGraphic
+barBeats :: Bar GDjembe -> DAdvGraphic
 barBeats = advconcat . map groupBeats
 
 
-groupBeats :: Group G -> DAdvGraphic
+groupBeats :: Group GDjembe -> DAdvGraphic
 groupBeats = advconcat . map drawBeat
 
 
-drawBeat :: Beat G -> DAdvGraphic
-drawBeat (I  a)      = makeAdvGraphic advanceUnitWidth  (unG a)
+drawBeat :: Beat GDjembe -> DAdvGraphic
+drawBeat (I  a)      = makeAdvGraphic advanceUnitWidth  (unGDjembe a)
 drawBeat (S  a)      = makeAdvGraphic advanceUnitWidth  (drawSwing a)
 drawBeat (Ha a b)    = makeAdvGraphic advanceUnitWidth  (drawHalved a b)
 drawBeat (Pl n d xs) = makeAdvGraphic (advanceNUnits d) (drawPlets n d xs) 
 
-drawSwing :: G -> DLocGraphic
-drawSwing a = xminorMove (unG a) `oplus` swingStem
+drawSwing :: GDjembe -> DLocGraphic
+drawSwing a = xminorMove (unGDjembe a) `oplus` swingStem
 
 -- needs hline 
-drawHalved :: G -> G -> DLocGraphic
-drawHalved a b = unG a `oplus` halfBeam `oplus` halfUnitMove (unG b)
+drawHalved :: GDjembe -> GDjembe -> DLocGraphic
+drawHalved a b = unGDjembe a `oplus` halfBeam `oplus` halfUnitMove (unGDjembe b)
 
 
 -- note plets missing top bracket...
 --
-drawPlets :: Int -> Int -> [G] -> DLocGraphic 
+drawPlets :: Int -> Int -> [GDjembe] -> DLocGraphic 
 drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
-                   explode (hvec w) $ map unG xs  
+                   explode (hvec w) $ map unGDjembe xs  
  
 
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
@@ -134,10 +129,10 @@ data UnitSpan = Whole Int | Shift Int
   deriving (Eq,Show)
 
 
-barBeamLines :: Bar G -> DLocGraphic
+barBeamLines :: Bar GDjembe -> DLocGraphic
 barBeamLines = extractLocGraphic . advconcat . map groupBeamLines
  
-groupBeamLines :: Group G -> DAdvGraphic
+groupBeamLines :: Group GDjembe -> DAdvGraphic
 groupBeamLines = step . groupSpans
   where
     step []               = unitAdvGraphic
@@ -206,7 +201,7 @@ unitAdvGraphic = scaleValue unit_width >>= \uw ->
 -- last beat is a shift. Shifts within a beam group simply 
 -- borrow from the next note.
 --
-groupSpans :: Group G -> [SpanWidth]
+groupSpans :: Group GDjembe -> [SpanWidth]
 groupSpans xs = outer xs 
   where
     outer []              = []     

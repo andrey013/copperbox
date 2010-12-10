@@ -19,7 +19,7 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   CHANGES,
-  demo/Clave1.hs
+  demo/DjembeBoxNotation.hs
   
 library
   hs-source-dirs:     src
