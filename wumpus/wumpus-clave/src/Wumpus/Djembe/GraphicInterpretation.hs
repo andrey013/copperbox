@@ -69,11 +69,22 @@ instance CStrokeAnno G where
 --------------------------------------------------------------------------------  
 
 barLocGraphic :: Bar G -> DLocGraphic
-barLocGraphic b = barBeats b `oplus` barBeamLines b
+barLocGraphic bar = extrLocGraphic $ barline `advplus` body `advplus` barline
+  where
+    body = barAdvGraphic bar
+
+repLocGraphic :: Bar G -> DLocGraphic
+repLocGraphic bar = extrLocGraphic $ lrepeat `advplus` body `advplus` rrepeat
+  where
+    body = barAdvGraphic bar
 
 
-barBeats :: Bar G -> DLocGraphic
-barBeats = extractLocGraphic . advconcat . map groupBeats
+barAdvGraphic :: Bar G -> DAdvGraphic
+barAdvGraphic b = superimposeAdvGraphic (barBeats b) (barBeamLines b)
+
+
+barBeats :: Bar G -> DAdvGraphic
+barBeats = advconcat . map groupBeats
 
 
 groupBeats :: Group G -> DAdvGraphic
@@ -81,10 +92,10 @@ groupBeats = advconcat . map drawBeat
 
 
 drawBeat :: Beat G -> DAdvGraphic
-drawBeat (I  a)      = makeAdvGraphic advanceUnitDisp  (unG a)
-drawBeat (S  a)      = makeAdvGraphic advanceUnitDisp  (drawSwing a)
-drawBeat (Ha a b)    = makeAdvGraphic advanceUnitDisp  (drawHalved a b)
-drawBeat (Pl n d xs) = makeAdvGraphic (advanceNDisp d) (drawPlets n d xs) 
+drawBeat (I  a)      = makeAdvGraphic advanceUnitWidth  (unG a)
+drawBeat (S  a)      = makeAdvGraphic advanceUnitWidth  (drawSwing a)
+drawBeat (Ha a b)    = makeAdvGraphic advanceUnitWidth  (drawHalved a b)
+drawBeat (Pl n d xs) = makeAdvGraphic (advanceNUnits d) (drawPlets n d xs) 
 
 drawSwing :: G -> DLocGraphic
 drawSwing a = xminorMove (unG a) `oplus` swingStem
@@ -107,14 +118,6 @@ explode v xs = extractLocGraphic $ advconcat $ map fn xs
     fn    = makeAdvGraphic (pure $ vecdisplace v)
 
 
-advanceUnitDisp :: FromPtSize u => DrawingInfo (PointDisplace u)
-advanceUnitDisp = scaleValue unit_width >>= return . hdisplace
-
-
-advanceNDisp :: FromPtSize u => Int-> DrawingInfo (PointDisplace u)
-advanceNDisp i = 
-    let n = fromIntegral i in 
-    scaleValue unit_width >>= return . hdisplace . (*n)
 
 xminorMove :: FromPtSize u => LocGraphic u -> LocGraphic u
 xminorMove mg = scaleValue flam_xminor >>= \x -> prepro1 (hdisplace x) mg

@@ -30,6 +30,12 @@ import Data.Ratio
 unit_width              :: AfmUnit
 unit_width              = 1380
 
+line_height             :: AfmUnit
+line_height             = 2545
+
+barline_top             :: AfmUnit
+barline_top             = 2710
+
 cap_size                :: AfmUnit 
 cap_size                = 718
 
@@ -50,8 +56,6 @@ flam_dot_radius         = 134
 dot_notehead_width      :: AfmUnit
 dot_notehead_width      = 540
 
-line_height             :: AfmUnit
-line_height             = 2545
 
 period_center           :: AfmUnit
 period_center           = 108
@@ -126,7 +130,20 @@ plet_bracket_baseline   = 2356
 half_beam_baseline      :: AfmUnit
 half_beam_baseline      = 2072
 
+repeat_h_spacing        :: AfmUnit
+repeat_h_spacing        = 148
 
+repeat_dot_spacing      :: AfmUnit
+repeat_dot_spacing      = 228
+
+repeat_dot_radius       :: AfmUnit
+repeat_dot_radius       = 126
+
+hi_repeat_dot_center    :: AfmUnit
+hi_repeat_dot_center    = 1554
+
+lo_repeat_dot_center    :: AfmUnit
+lo_repeat_dot_center    = 842
 
 --------------------------------------------------------------------------------
 -- Note heads are positioned...
@@ -390,6 +407,48 @@ halfBeam = scaleVMove half_beam_baseline loc_beam
 
 
 --------------------------------------------------------------------------------
+-- bar lines
+
+barline :: FromPtSize u => AdvGraphic u
+barline = makeAdvGraphic advanceUnitWidth loc_bar
+  where
+    loc_bar = scaleVecPath [vvec barline_top] >>= openStrokePath
+
+lrepeat :: FromPtSize u => AdvGraphic u
+lrepeat = makeAdvGraphic advanceUnitWidth body
+  where
+    body = scaleVMove period_center $ 
+             repeatSglStem `oplus` repeatDblStem (-repeat_h_spacing)
+                           `oplus` repeatDots      repeat_dot_spacing
+
+    
+
+rrepeat :: FromPtSize u => AdvGraphic u
+rrepeat = makeAdvGraphic advanceUnitWidth body
+  where
+    body = scaleVMove period_center $ 
+             repeatSglStem `oplus` repeatDblStem repeat_h_spacing
+                           `oplus` repeatDots  (-repeat_dot_spacing)
+
+
+repeatSglStem :: FromPtSize u => LocGraphic u
+repeatSglStem = scaleVecPath [vvec stem_top] >>= openStrokePath
+
+repeatDblStem :: FromPtSize u => AfmUnit -> LocGraphic u
+repeatDblStem dx = 
+   localize thick $ scaleHMove dx $ 
+                      scaleVecPath [vvec stem_top] >>= openStrokePath
+
+
+repeatDots :: FromPtSize u => AfmUnit -> LocGraphic u
+repeatDots dx = scaleHMove dx $ 
+    scaleValue repeat_dot_radius >>= \r -> 
+    mkDisk r hi_repeat_dot_center `oplus` mkDisk r lo_repeat_dot_center 
+  where
+    mkDisk r dy = scaleVMove dy $ filledDisk r
+
+
+--------------------------------------------------------------------------------
 
 scaleValue :: FromPtSize u => AfmUnit -> DrawingInfo u
 scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
@@ -433,3 +492,11 @@ scaleVec2 (V2 x y) = V2 <$> scaleValue x <*> scaleValue y
 
 
 
+advanceUnitWidth :: FromPtSize u => DrawingInfo (PointDisplace u)
+advanceUnitWidth = scaleValue unit_width >>= return . hdisplace
+
+
+advanceNUnits :: FromPtSize u => Int -> DrawingInfo (PointDisplace u)
+advanceNUnits i = 
+    let n = fromIntegral i in 
+    scaleValue unit_width >>= return . hdisplace . (*n)

@@ -32,7 +32,7 @@ text_drawing = drawTracing $ localize bothStrokeColour $ do
    draw $ barLocGraphic abioueka_djembe_accompanyment1      `at` P2 0 300
    draw $ barLocGraphic optional_test                       `at` P2 0 200
    draw $ barLocGraphic plet_test                           `at` P2 0 100
-   draw $ barLocGraphic sixteenths_test                     `at` P2 0   0   
+   draw $ repLocGraphic sixteenths_test                     `at` P2 0   0   
 
 
 abioueka_djembe_call :: CBoxDjembe repr => Bar repr
