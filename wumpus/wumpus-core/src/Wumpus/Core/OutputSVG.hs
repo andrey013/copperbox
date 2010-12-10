@@ -294,16 +294,15 @@ pathProps props = fn props
 
 
 
-
 -- Note - if hw==hh then draw the ellipse as a circle.
 --
 primEllipse :: (Real u, Floating u, PSUnit u)
             => EllipseProps -> PrimEllipse u -> SvgMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
-                    <$> bracketPrimCTM ctm mkCXCY <*> ellipseProps props
+                    <$> bracketEllipseCTM ctm mkCXCY <*> ellipseProps props
     | otherwise = (\a b -> elem_ellipse (a <+> ellipse_radius <+> b))
-                    <$> bracketPrimCTM ctm mkCXCY <*> ellipseProps props
+                    <$> bracketEllipseCTM ctm mkCXCY <*> ellipseProps props
   where
    mkCXCY (P2 x y) = pure $ attr_cx x <+> attr_cy y
    
@@ -335,7 +334,7 @@ primLabel :: (Real u, Floating u, PSUnit u)
       => LabelProps -> PrimLabel u -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
     (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
-      <$> deltaFontAttrs attrs <*> bracketPrimCTM ctm coordf
+      <$> deltaFontAttrs attrs <*> bracketTextCTM ctm coordf
                                
   where
     coordf = \p0 -> pure $ labelBodyCoords body p0
@@ -510,15 +509,44 @@ bracketMatrix mtrx ma
     trafo = attr_transform $ val_matrix mtrx
 
 
--- Note - the otherwise step uses the origina ctm (ctm0).
+-- Note - there are versions of the /same/ function for text and 
+-- ellipses.
 -- 
-bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
+-- For text we always want a matrix transformation in the 
+-- generated SVG - wumpus has flipped the page coordinates, so
+-- it must flip text accordingly.
+--
+-- For ellipses and circles we dont\'t have to bother with the
+-- rectifying flip transformation /if/ the ellipse or circle has 
+-- not been scaled or rotated.
+--
+bracketTextCTM :: forall u. (Real u, Floating u, PSUnit u)
                => PrimCTM u 
                -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
-bracketPrimCTM ctm0 pf = step $ unCTM ctm0
+bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
+  where
+    mtrx = attr_transform $ val_matrix $ matrixRepCTM ctm0
+
+
+-- Note - the otherwise step uses the original ctm (ctm0).
+-- 
+-- Note v0.41.0 otherwise step always fires because the matrix 
+-- has been transformed for SVG coordspace to [1,0,0,-1].
+--
+bracketEllipseCTM :: forall u. (Real u, Floating u, PSUnit u)
+                  => PrimCTM u 
+                  -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
+bracketEllipseCTM ctm0 pf = step $ unCTM ctm0
   where
     step (pt, ctm) 
-        | ctm == identityCTM  = pf pt
+        | ctm == flippedCTM   = pf pt
         | otherwise           = let mtrx = attr_transform $ 
                                              val_matrix $ matrixRepCTM ctm0
                                 in (\xy -> xy <+> mtrx) <$> pf zeroPt
+
+
+flippedCTM :: Num u => PrimCTM u
+flippedCTM = PrimCTM { ctm_transl_x = 0,  ctm_transl_y = 0
+                     , ctm_scale_x  = 1,  ctm_scale_y  = (-1)
+                     , ctm_rotation = 0 }
+

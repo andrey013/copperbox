@@ -1,5 +1,61 @@
 
 
+0.37.0 to 0.40.0: 
+
+  * Text handling substantially revised. SVG text output is now 
+    better aligned to Unicode. The encoding tables for PostScript
+    have been re-thought, the previous implementation had some 
+    serious design flaws that should now be rectified.
+
+  * The rules for escaping special characters has been clarified.
+    Previously the documentation suggested 
+    @ampersand-name-semicolon@ could be used to escape glyph names
+    however only @ampersand-hash-name-semicolon@ worked.
+    @ampersand-name-semicolon@ is now the correct way. The 
+    ampersand-hash prefix is for numeric literals - 
+    @ampersand-hash-num_literal-semicolon@.
+
+  * Versions of the textlabel functions have been added to 
+    @Core.Picture@ for escape-parsed text. It is useful for 
+    higher-level software to escape the text, do some calculations 
+    then render it - going back to un-escaped text for the 
+    rendering would be inefficient.
+
+  * The internal representation of paths has changed. They are now 
+    represented as start-point plus list of /relative/ path 
+    segments rather than start-point plus list of absolute path 
+    segments. Using relative path segments makes it cheaper to
+    move paths with @translate@, although calculating the bounding
+    box and rendering to PostScript is more expensive. The 
+    rationale for the change is that to make complex pictures, 
+    paths are potentially moved many times but the other 
+    operations are only performed once.
+
+  * Internal change to Primitives and the PrimCTM - ellipses and
+    labels no longer have a point (center or baseline left)
+    as an element in the datatype, the point is now represented 
+    within the PrimCTM.
+
+  * Name change to @Core.Picture@ API - the path construction 
+    function @path@ has been renamed to @primPath@.
+
+  * Name change in @Core.FontSize@, the function @textBoundsEnc@
+    has been renamed to @textBoundsEsc@. Wumpus-Core now calls 
+    strings that have been parsed for escape characters 
+    /Escaped Text/ rather than /Encoded Text/.
+
+  * Fixed bug where ellipse rotation and scaling calculated the 
+    wrong bounding box.
+ 
+  * Fixed bug in @illustrateControlPoints@ where the control points
+    were drawn but the original primitive was lost. 
+
+  * Added initial support for arbitrary SVG attributes (e.g. 
+    onmouseover handlers) via @annotateGroup@ in @Core.Picture@. 
+    Arbitrary SVG \"defs\" can be written into the defs prologue 
+    by using @writeSVG_defs@ instead of @writeSVG@. This 
+    functionality is mostly untested!
+
 0.36.0 to 0.37.0:
 
   * The bounding box constructors have been renamed - @bbox@ is 
