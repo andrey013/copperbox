@@ -256,7 +256,7 @@ findGlyphName i ev =
 
 
 psText :: EncodingVector -> EscapedText -> Doc
-psText ev enc_text = cons $ foldr fn ([],empty) $ getEscapedText enc_text
+psText ev enc_text = cons $ destrEscapedText (foldr fn ([],empty)) enc_text
   where
     cons ([],doc)               = doc
     cons (cs,doc)               = ps_show cs `vconcat` doc

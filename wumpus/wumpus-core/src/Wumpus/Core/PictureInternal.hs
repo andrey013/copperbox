@@ -804,7 +804,7 @@ isEmptyPath (PrimPath _ xs) = null xs
 isEmptyLabel :: PrimLabel u -> Bool
 isEmptyLabel (PrimLabel txt _) = body txt
    where
-     body (StdLayout esc) = null $ getEscapedText esc
+     body (StdLayout esc) = destrEscapedText null esc
      body (KernTextH xs)  = null xs
      body (KernTextV xs)  = null xs
 

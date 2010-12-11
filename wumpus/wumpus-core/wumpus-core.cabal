@@ -77,6 +77,13 @@ description:
   . 
   v0.40.0 to v0.41.0:
   .
+  * API change - @Core.Text.Base@ no longer exports the 
+    constructor and field label for @EscapedText@, it is now an 
+    opaque type. For a building @EscapedText@ either the existing 
+    /safe/constructor @escapeString@ or the new function 
+    @wrapEscChar@ should be used. For destructing @EscapedText@ 
+    there is a new function @destrEscapedText@.
+
   * Upper bounds of Cabal build depends relaxed a bit.
   . 
   * Added the function @emptyPath@ to @Core.Picture@. This creates 

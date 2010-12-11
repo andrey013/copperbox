@@ -352,7 +352,7 @@ labelBodyText (KernTextV xs)      = kerningText xs
 
 
 encodedText :: EscapedText -> Doc
-encodedText enctext = hcat $ map svgChar $ getEscapedText enctext
+encodedText enctext = hcat $ destrEscapedText (map svgChar) enctext
 
 kerningText :: [KerningChar u] -> Doc
 kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs

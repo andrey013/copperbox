@@ -67,11 +67,13 @@
 module Wumpus.Core.Text.Base
   ( 
 
-    EscapedText(..)    
+    EscapedText
   , EscapedChar(..)
   , EncodingVector
 
   , escapeString
+  , wrapEscChar
+  , destrEscapedText
   , textLength  
 
   ) where
@@ -90,6 +92,7 @@ import qualified Data.IntMap as IntMap
 -- 
 newtype EscapedText = EscapedText { getEscapedText :: [EscapedChar] }
   deriving (Eq,Show)
+
 
 
 -- | Internal character representation for Wumpus-Core.
@@ -150,11 +153,21 @@ instance Format EscapedChar where
 escapeString :: String -> EscapedText
 escapeString = EscapedText . lexer
 
+-- | Build an 'EscapedText' from a single 'EscChar'.
+--
+wrapEscChar :: EscapedChar -> EscapedText
+wrapEscChar ec = EscapedText [ec]
+
+-- | /Destructor/ for 'EscapedText'.
+--
+destrEscapedText :: ([EscapedChar] -> a) -> EscapedText -> a
+destrEscapedText f = f . getEscapedText
+
 
 -- | Get the character count of an 'EscapedText' string.
 --
 textLength :: EscapedText -> Int
-textLength = length . getEscapedText 
+textLength = destrEscapedText length
 
 --
 -- Design note.
