@@ -33,6 +33,8 @@ import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Base
 
+import Wumpus.Core                              -- package: wumpus-core
+
 class (CStrokeBase repr, CStrokeAnno repr) => CBoxDjembe repr where
   bass             :: repr
   muffled_bass     :: repr
@@ -68,19 +70,26 @@ class ( CStrokeBase repr, CStrokeAnno repr
 
 --------------------------------------------------------------------------------
 -- GDjembe instances
+
+letter :: Char -> DLocImage AfmUnit
+letter = letterNotehead . CharLiteral
+
+upstroke :: Char -> DLocGraphic
+upstroke = upstrokeLetter . CharLiteral
+
+letterFlam :: Char -> DLocGraphic 
+letterFlam = letterFlamGlyph . CharLiteral
   
 instance CBoxDjembe GDjembe where
-  bass          = GDjembe $ djembeNote $ letterNotehead 667 'B'
-  muffled_bass  = GDjembe $ djembeNote $ addAngledStrike $ letterNotehead 667 'B'
+  bass          = GDjembe $ djembeNote $ letter 'B'
+  muffled_bass  = GDjembe $ djembeNote $ addAngledStrike $ letter 'B'
   tone          = GDjembe $ djembeNote $ dotNotehead
   muffled_tone  = GDjembe $ djembeNote $ addAngledStrike $ dotNotehead
-  slap          = GDjembe $ djembeNote $ letterNotehead 667 'X'
-  muffled_slap  = GDjembe $ djembeNote $ addBaselineStrike $ letterNotehead 667 'X'
-  bass_flam     = GDjembe $ flamNote (letterNotehead 667 'B')
-                                     (letterFlamGlyph 667 'B')
+  slap          = GDjembe $ djembeNote $ letter 'X'
+  muffled_slap  = GDjembe $ djembeNote $ addBaselineStrike $ letter 'X'
+  bass_flam     = GDjembe $ flamNote (letter 'B') (letterFlam 'B')
   tone_flam     = GDjembe $ flamNote dotNotehead dotFlamGlyph
-  slap_flam     = GDjembe $ flamNote (letterNotehead 667 'X')
-                                     (letterFlamGlyph 667 'X')
+  slap_flam     = GDjembe $ flamNote (letter 'X') (letterFlam 'X')
 
 
 instance CBoxKenkeni GDjembe where
@@ -94,9 +103,9 @@ instance CBoxSangban GDjembe where
 
 
 instance CBoxDoundounba GDjembe where
-  doundounba_stroke         = GDjembe $ djembeNote $ letterNotehead 667 'B'
+  doundounba_stroke         = GDjembe $ djembeNote $ letter 'B'
   doundounba_pressed_stroke = GDjembe $ djembeNote $ addAngledStrike 
-                                                   $ letterNotehead 667 'B'
+                                                   $ letter 'B'
 
 
 
@@ -105,4 +114,4 @@ instance CBoxDundun GDjembe where
 
 
 ddsb :: DLocImage AfmUnit
-ddsb = superimposeLocImage (letterNotehead 667 'B') (upstrokeLetter 667 'X')
+ddsb = superimposeLocImage (letter 'B') (upstroke 'X')

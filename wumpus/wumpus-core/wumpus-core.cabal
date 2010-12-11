@@ -83,7 +83,7 @@ description:
     /safe/constructor @escapeString@ or the new function 
     @wrapEscChar@ should be used. For destructing @EscapedText@ 
     there is a new function @destrEscapedText@.
-
+  .
   * Upper bounds of Cabal build depends relaxed a bit.
   . 
   * Added the function @emptyPath@ to @Core.Picture@. This creates 

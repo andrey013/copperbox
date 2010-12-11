@@ -180,39 +180,40 @@ periodNotehead =
                  (scaleVMove period_center $ filledDisk radius)
 
 
-letterNotehead :: (Fractional u, FromPtSize u) 
-               => AfmUnit -> Char -> LocImage u AfmUnit
+letterNotehead :: (Real u, Fractional u, FromPtSize u) 
+               => EscapedChar -> LocImage u AfmUnit
 letterNotehead = makeLetterNotehead 0
 
 
-upstrokeLetter :: (Fractional u, FromPtSize u) 
-               => AfmUnit -> Char -> LocGraphic u
-upstrokeLetter cw ch = postpro1 snd $ makeLetterNotehead char_upstroke cw ch
+upstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
+               => EscapedChar -> LocGraphic u
+upstrokeLetter ch = postpro1 snd $ makeLetterNotehead char_upstroke ch
 
 
-downstrokeLetter :: (Fractional u, FromPtSize u) 
-                         => AfmUnit -> Char -> LocGraphic u
-downstrokeLetter cw ch = postpro1 snd $ makeLetterNotehead char_downstroke cw ch
+downstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
+                 => EscapedChar -> LocGraphic u
+downstrokeLetter ch = postpro1 snd $ makeLetterNotehead char_downstroke ch
 
 
-makeLetterNotehead :: (Fractional u, FromPtSize u) 
-                   => AfmUnit -> AfmUnit -> Char -> LocImage u AfmUnit
-makeLetterNotehead ypos cw ch = 
-    intoLocImage (pure $ pure cw) 
-                 (scaleMove (negate $ 0.5*cw) ypos (textline [ch]))
+makeLetterNotehead :: (Real u, Fractional u, FromPtSize u) 
+                   => AfmUnit -> EscapedChar -> LocImage u AfmUnit
+makeLetterNotehead ypos ch = 
+    bboxAfmWidth $ scaleVMove ypos $ escCharBC ch
 
 
+bboxAfmWidth :: Real u => BoundedLocGraphic u -> LocImage u AfmUnit
+bboxAfmWidth = postpro1 (\(a,b) -> (realToFrac $ boundaryWidth a, b))
 
 
 --
-letterFlamGlyph :: (Fractional u, FromPtSize u) 
-                => AfmUnit -> Char -> LocGraphic u
-letterFlamGlyph cw ch = 
+letterFlamGlyph :: (Fractional u, Ord u, FromPtSize u) 
+                => EscapedChar -> LocGraphic u
+letterFlamGlyph ch = 
     getFontSize >>= \sz -> 
     localize (fontSize $ (3 * sz) `div` 4) $ 
-        let x = negate $ flam_xminor + (0.675 * cw)
+        let x = negate $ flam_xminor
             y = flam_baseline
-        in scaleMove x y $ textline [ch]
+        in postpro1 snd $ scaleMove x y $ escCharBC ch
 
 dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
 dotFlamGlyph = 

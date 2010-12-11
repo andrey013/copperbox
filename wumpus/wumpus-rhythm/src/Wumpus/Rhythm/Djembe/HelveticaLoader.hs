@@ -27,7 +27,6 @@ import Wumpus.Basic.System.AfmLoader
 
 import Control.Applicative
 import Control.Monad
--- import System.Directory
 import System.Environment
 import System.IO.Error ( try )
 
