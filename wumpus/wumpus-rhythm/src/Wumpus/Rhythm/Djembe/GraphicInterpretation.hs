@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Djembe.Rhythm.GraphicInterpretation
+-- Module      :  Wumpus.Rhythm.Djembe.GraphicInterpretation
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --

@@ -47,7 +47,7 @@ description:
   .
   Changelog:
   .
-  From 0.13.0 to 0.14.0:
+  v0.13.0 to v0.14.0:
   .
   * Re-organised module hierarchy, Wumpus-Basic is now divided 
     into two layers - Basic (Font loader, utils, kernel drawing) 
@@ -58,7 +58,7 @@ description:
     all three were type restricted aliases of Applicative\'s 
     @pure@. @pure@ should now be used instead.
   .
-  From 0.12.0 to 0.13.0:
+  v0.12.0 to v0.13.0:
   .
   * Major changes to @Basic.Graphic@ modules. @DrawingR@ is 
     renamed @Drawing@ and is substantially re-worked. Graphic 

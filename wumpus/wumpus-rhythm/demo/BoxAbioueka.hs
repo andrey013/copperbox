@@ -5,7 +5,7 @@ module BoxAbioueka where
 import Wumpus.Rhythm.Djembe.Base
 import Wumpus.Rhythm.Djembe.BoxNotation
 import Wumpus.Rhythm.Djembe.GraphicInterpretation
-
+import Wumpus.Rhythm.Djembe.HelveticaLoader
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Text.SafeFonts
@@ -15,19 +15,24 @@ import Wumpus.Core                              -- package: wumpus-core
 import System.Directory
 
 
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_attr text_drawing 
-    writeEPS "./out/box_abioueka01.eps" pic1
-    writeSVG "./out/box_abioueka01.svg" pic1 
+    either fk sk =<< loadHelveticaMetrics
+  where
+    fk ss       = putStrLn ss
+    sk metrics  = let pic1 = runDrawingU (makeCtx metrics) djembe_drawing
+                  in do { writeEPS "./out/box_abioueka01.eps" pic1
+                        ; writeSVG "./out/box_abioueka01.svg" pic1 
+                        }
 
 
-std_attr :: DrawingContext
-std_attr = joinBevel $ fontFace helvetica $ standardContext 14
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = joinBevel . fontFace helvetica . metricsContext 14
 
-text_drawing :: DDrawing
-text_drawing = drawTracing $ localize bothStrokeColour $ do 
+djembe_drawing :: DDrawing
+djembe_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ barLocGraphic djembe1                 `at` P2 0 600
    draw $ barLocGraphic sangban1                `at` P2 0 540
 

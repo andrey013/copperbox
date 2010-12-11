@@ -5,7 +5,7 @@ module DjembeBoxNotation where
 import Wumpus.Rhythm.Djembe.Base
 import Wumpus.Rhythm.Djembe.BoxNotation
 import Wumpus.Rhythm.Djembe.GraphicInterpretation
-
+import Wumpus.Rhythm.Djembe.HelveticaLoader
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Text.SafeFonts
@@ -18,16 +18,23 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_attr text_drawing 
-    writeEPS "./out/djembe_box_notation01.eps" pic1
-    writeSVG "./out/djembe_box_notation01.svg" pic1 
+    either fk sk =<< loadHelveticaMetrics
+  where
+    fk ss       = putStrLn ss
+    sk metrics  = let pic1 = runDrawingU (makeCtx metrics) djembe_drawing
+                  in do { writeEPS "./out/djembe_box_notation01.eps" pic1
+                        ; writeSVG "./out/djembe_box_notation01.svg" pic1 
+                        }
 
 
-std_attr :: DrawingContext
-std_attr = joinBevel $ fontFace helvetica $ standardContext 14
 
-text_drawing :: DDrawing
-text_drawing = drawTracing $ localize bothStrokeColour $ do 
+
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = joinBevel . fontFace helvetica . metricsContext 14
+
+
+djembe_drawing :: DDrawing
+djembe_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ barLocGraphic sixteen_eighths                     `at` P2 0 600
    draw $ barLocGraphic triplets_16_8                       `at` P2 0 540
    draw $ barLocGraphic sixteenths_16_8                     `at` P2 0 480

@@ -12,6 +12,21 @@ description:
   Library for drawing rhythm notations. Currently only Djembe 
   notation is supported, though more notations may be added.
   .
+  Note - Djembe notation needs font metrics for the Helvetica 
+  font. Font metrics for the \"Core 14\" PostScript fonts are 
+  distributed as @*.afm@ files with GhostScript (AFM file version 
+  2.0 for GhostScript 8.63) or available from Adode (AFM file 
+  version 4.1). To run the demos you will need one of these sets 
+  of metrics.
+  .
+  Adobe Font techinal notes:
+  <https://www.adobe.com/devnet/font.html>
+  .
+  Core 14 AFM metrics:
+  <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
+  .
+  .
+
   .
 build-type:         Simple
 stability:          highly unstable
@@ -19,8 +34,9 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   CHANGES,
-  demo/DjembeBoxNotation.hs
-  
+  demo/DjembeBoxNotation.hs,
+  demo/BoxAbioueka.hs
+
 library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
@@ -34,6 +50,7 @@ library
     Wumpus.Rhythm.Djembe.BoxNotation,
     Wumpus.Rhythm.Djembe.GraphicInterpretation,
     Wumpus.Rhythm.Djembe.GraphicPrimitives,
+    Wumpus.Rhythm.Djembe.HelveticaLoader,
     Wumpus.Rhythm.VersionNumber
 
   other-modules:

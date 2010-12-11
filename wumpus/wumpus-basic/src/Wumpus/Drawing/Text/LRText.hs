@@ -21,6 +21,7 @@ module Wumpus.Drawing.Text.LRText
 
    
     singleLineBL
+  , singleLineBC
   , singleLineCC
 
   , multiAlignLeft
@@ -53,17 +54,30 @@ data InterimText1 u = InterimText1
       } 
   deriving (Eq,Show)
 
-
+-- | Implicit origin of the text is baseline-left.
+--
 singleLineBL :: (Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
 singleLineBL ss = interimText1 ss >>= singleLRText id 
 
+-- | Implicit origin of the text is center-center.
+--
 singleLineCC :: (Fractional u, Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
 singleLineCC ss = glyphCapHeight  >>= \cap_h   -> 
                   interimText1 ss >>= \interim -> 
                   let hw = 0.5 * advanceH (text1_advance interim)
                   in singleLRText (.-^ vec hw (0.5 * cap_h)) interim
+
+
+-- | Implicit origin of the text is baseline-center.
+--
+singleLineBC :: (Fractional u, Ord u, FromPtSize u) 
+             => String -> BoundedLocGraphic u
+singleLineBC ss = interimText1 ss >>= \interim -> 
+                  let hw = 0.5 * advanceH (text1_advance interim)
+                  in singleLRText (.-^ hvec hw) interim
+
 
 -- | Draw multi-line text, aligned to the left. 
 --
