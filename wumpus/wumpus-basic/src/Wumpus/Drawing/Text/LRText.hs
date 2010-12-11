@@ -23,6 +23,7 @@ module Wumpus.Drawing.Text.LRText
     singleLineBL
   , singleLineBC
   , singleLineCC
+  , escCharBC
 
   , multiAlignLeft
   , multiAlignCenter
@@ -77,6 +78,17 @@ singleLineBC :: (Fractional u, Ord u, FromPtSize u)
 singleLineBC ss = interimText1 ss >>= \interim -> 
                   let hw = 0.5 * advanceH (text1_advance interim)
                   in singleLRText (.-^ hvec hw) interim
+
+
+
+escCharBC :: (Fractional u, Ord u, FromPtSize u)  
+          => EscapedChar -> BoundedLocGraphic u
+escCharBC ch = let esc = wrapEscChar ch in 
+    textVector esc >>= \v ->
+    let hw = 0.5 * advanceH v
+    in singleLRText (.-^ hvec hw) (InterimText1 { text1_escaped = esc
+                                                , text1_advance = v })
+
 
 
 -- | Draw multi-line text, aligned to the left. 
@@ -213,7 +225,7 @@ interimText1 ss = let esc = escapeString ss in
 
 
 textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
-textVector esc = let cs = getEscapedText esc in 
+textVector esc = let cs = destrEscapedText id esc in 
    foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
 
 
