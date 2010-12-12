@@ -2,6 +2,8 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# LANGUAGE UndecidableInstances       #-}
+
 
 ------------------------------------------------------------------------------
 -- |
@@ -96,12 +98,8 @@ import Wumpus.Core.Geometry
 class Transform t where
   transform :: u ~ DUnit t => Matrix3'3 u -> t -> t
 
-
-
--- | Type class for rotation.
--- 
-class Rotate t where
-  rotate :: Radian -> t -> t
+instance Transform (UNil u) where
+  transform _ = id
 
 instance Num u => Transform (Point2 u) where
   transform ctm = (ctm *#)
@@ -109,12 +107,28 @@ instance Num u => Transform (Point2 u) where
 instance Num u => Transform (Vec2 u) where
   transform ctm = (ctm *#)
 
+--------------------------------------------------------------------------------
+
+-- | Type class for rotation.
+-- 
+class Rotate t where
+  rotate :: Radian -> t -> t
+
+instance Rotate (UNil u) where
+  rotate _ = id
+
+instance Rotate a => Rotate (Maybe a) where
+  rotate = fmap . rotate
+
+instance (Rotate a, Rotate b, u ~ DUnit a, u ~ DUnit b) => Rotate (a,b) where
+  rotate ang (a,b) = (rotate ang a, rotate ang b)
+
 
 instance (Floating u, Real u) => Rotate (Point2 u) where
-  rotate a = ((rotationMatrix a) *#)
+  rotate ang = ((rotationMatrix ang) *#)
 
 instance (Floating u, Real u) => Rotate (Vec2 u) where
-  rotate a = ((rotationMatrix a) *#)
+  rotate ang = ((rotationMatrix ang) *#)
 
 
 -- | Type class for rotation about a point.
@@ -123,12 +137,24 @@ class RotateAbout t where
   rotateAbout :: u ~ DUnit t =>  Radian -> Point2 u -> t -> t 
 
 
+instance RotateAbout (UNil u) where
+  rotateAbout _ _ = id
+
+instance RotateAbout a => RotateAbout (Maybe a) where
+  rotateAbout ang pt = fmap (rotateAbout ang pt)
+
+instance (RotateAbout a, RotateAbout b, u ~ DUnit a, u ~ DUnit b) => 
+    RotateAbout (a,b) where
+  rotateAbout ang pt (a,b) = (rotateAbout ang pt a, rotateAbout ang pt b)
+
+
+
 instance (Floating u, Real u) => RotateAbout (Point2 u) where
-  rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
+  rotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
 
 
 instance (Floating u, Real u) => RotateAbout (Vec2 u) where
-  rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
+  rotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
   
 --------------------------------------------------------------------------------
 -- Scale
@@ -137,6 +163,15 @@ instance (Floating u, Real u) => RotateAbout (Vec2 u) where
 --
 class Scale t where
   scale :: u ~ DUnit t => u -> u -> t -> t
+
+instance Scale (UNil u) where
+  scale _ _ = id
+
+instance Scale a => Scale (Maybe a) where
+  scale sx sy = fmap (scale sx sy)
+
+instance (Scale a, Scale b, u ~ DUnit a, u ~ DUnit b) => Scale (a,b) where
+  scale sx sy (a,b) = (scale sx sy a, scale sx sy b)
 
 instance Num u => Scale (Point2 u) where
   scale sx sy = ((scalingMatrix sx sy) *#) 
@@ -151,6 +186,18 @@ instance Num u => Scale (Vec2 u) where
 --
 class Translate t where
   translate :: u ~ DUnit t => u -> u -> t -> t
+
+
+instance Translate (UNil u) where
+  translate _ _ = id
+
+instance (Translate a, Translate b, u ~ DUnit a, u ~ DUnit b) => 
+    Translate (a,b) where
+  translate dx dy (a,b) = (translate dx dy a, translate dx dy b)
+
+
+instance Translate a => Translate (Maybe a) where
+  translate dx dy = fmap (translate dx dy)
 
 instance Num u => Translate (Point2 u) where
   translate dx dy (P2 x y) = P2 (x+dx) (y+dy)

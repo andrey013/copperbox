@@ -28,8 +28,10 @@ module Wumpus.Core.Geometry
 
   -- * Type family 
     DUnit
+  , GuardEq
   
   -- * Data types
+  , UNil
   , Vec2(..)
   , DVec2
   , Point2(..)
@@ -40,6 +42,9 @@ module Wumpus.Core.Geometry
   , Radian
 
   , MatrixMult(..)
+
+  -- * UNil operations
+  , uNil
 
   -- * Vector operations
   , vec
@@ -90,7 +95,7 @@ import Wumpus.Core.Utils.FormatCombinators
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-
+import Data.Monoid
 
 
 
@@ -106,9 +111,32 @@ import Data.VectorSpace
 type family DUnit a :: *
 
 
+-- Not exported - thanks to Max Bollingbroke.
+--
+type family   GuardEq a b :: *
+type instance GuardEq a a = a
 
+
+
+--------------------------------------------------------------------------------
 
 -- Datatypes 
+
+-- | Phantom @()@.
+-- 
+-- This newtype is Haskell\'s @()@ with unit of dimension @u@ as
+-- a phantom type.
+-- 
+-- This has no use in @wumpus-core@, but it has affine instances 
+-- which cannot be written for @()@. By supporting affine 
+-- instances it becomes useful to higher-level software 
+-- (@wumpus-basic@ employs it for the @Graphic@ type.) 
+-- 
+newtype UNil u = UNil ()
+  deriving (Bounded,Enum,Eq,Ord)
+
+
+
 
 -- | 2D Vector - both components are strict.
 --
@@ -186,10 +214,13 @@ newtype Radian = Radian { getRadian :: Double }
 --------------------------------------------------------------------------------
 -- Family instances
 
-type instance DUnit (Point2 u)    = u
-type instance DUnit (Vec2 u)      = u
-type instance DUnit (Matrix3'3 u) = u
+type instance DUnit (UNil u)        = u
+type instance DUnit (Point2 u)      = u
+type instance DUnit (Vec2 u)        = u
+type instance DUnit (Matrix3'3 u)   = u
 
+type instance DUnit (Maybe a)       = DUnit a
+type instance DUnit (a,b)           = GuardEq (DUnit a) (DUnit b)
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
@@ -208,6 +239,12 @@ lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) =
 --------------------------------------------------------------------------------
 -- instances
 
+
+instance Monoid (UNil u) where
+  mempty        = UNil ()
+  _ `mappend` _ = UNil ()
+
+
 -- Functor
 
 instance Functor Vec2 where
@@ -224,6 +261,9 @@ instance Functor Matrix3'3 where
 
 
 -- Show
+
+instance Show (UNil u) where
+  show _ = "UNil"
 
 instance Show u => Show (Matrix3'3 u) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
@@ -344,6 +384,14 @@ instance Num u => MatrixMult (Vec2 u) where
 instance Num u => MatrixMult (Point2 u) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
+
+--------------------------------------------------------------------------------
+-- UNil
+
+-- | Construct a UNil.
+--
+uNil :: UNil u
+uNil = UNil ()
 
 --------------------------------------------------------------------------------
 -- Vectors
