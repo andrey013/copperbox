@@ -447,10 +447,10 @@ clip cp p = Clip (pathBoundary cp, []) cp p
 --
 textlabel :: Num u 
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
-textlabel rgb attr txt pt = rtextlabel rgb attr txt pt 0
+textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
--- | 'rtextlabel' : @ rgb * font_attr * string * baseline_left * 
---      rotation -> Primitive @
+-- | 'rtextlabel' : @ rgb * font_attr * string * rotation * 
+--      baseline_left -> Primitive @
 --
 -- Create a text label rotated by the supplied angle about the 
 -- baseline-left. 
@@ -458,7 +458,7 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt pt 0
 -- The supplied point is the left baseline.
 --
 rtextlabel :: Num u 
-           => RGBi -> FontAttr -> String -> Point2 u -> Radian -> Primitive u
+           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> Primitive u
 rtextlabel rgb attr txt pt theta = 
     rescapedlabel rgb attr (escapeString txt) pt theta
 
@@ -473,7 +473,8 @@ ztextlabel = textlabel black wumpus_default_font
 
 
 
--- | 'escapedlabel' : @ rgb * font_attr * escaped_text * baseline_left -> Primitive @
+-- | 'escapedlabel' : @ rgb * font_attr * escaped_text * 
+--      baseline_left -> Primitive @
 --
 -- Version of 'textlabel' where the label text has already been 
 -- parsed for special characters.
@@ -482,10 +483,10 @@ ztextlabel = textlabel black wumpus_default_font
 --
 escapedlabel :: Num u 
              => RGBi -> FontAttr -> EscapedText -> Point2 u -> Primitive u
-escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt pt 0
+escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 
--- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * baseline_left * 
---      rotation -> Primitive @
+-- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * rotation * 
+--      baseline_left -> Primitive @
 --
 -- Version of 'rtextlabel' where the label text has already been 
 -- parsed for special characters.
@@ -493,8 +494,9 @@ escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt pt 0
 -- The supplied point is the left baseline.
 --
 rescapedlabel :: Num u 
-              => RGBi -> FontAttr -> EscapedText -> Point2 u -> Radian -> Primitive u
-rescapedlabel rgb attr txt (P2 dx dy) theta = PLabel (LabelProps rgb attr) lbl 
+              => RGBi -> FontAttr -> EscapedText -> Radian -> Point2 u 
+              -> Primitive u
+rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl 
   where
     lbl = PrimLabel (StdLayout txt) (makeThetaCTM dx dy theta)
 

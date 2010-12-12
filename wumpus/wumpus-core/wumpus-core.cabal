@@ -84,6 +84,12 @@ description:
     @wrapEscChar@ should be used. For destructing @EscapedText@ 
     there is a new function @destrEscapedText@.
   .
+  * API change - the argument order of the functions @rtextlabel@ 
+    and @rescapedlabel@ in @Core.Picture@ has changed. The order 
+    of angle of rotation and the baseline-left has been swapped so 
+    that angle of rotation is first. This matches the other 
+    rotated graphics in @Core.Picture@.
+  .
   * Upper bounds of Cabal build depends relaxed a bit.
   . 
   * Added the @UNil@ type to @Core.Geometry@ and added affine 
