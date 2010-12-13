@@ -157,8 +157,8 @@ markHeightLessLineWidth =
 noRetract :: Num u => LocThetaCF u u
 noRetract = wrap2 0 
 
-
-
+intoLocThetaImage :: LocThetaCF u a -> LocThetaCF u (z,b) -> LocThetaCF u (a,b)
+intoLocThetaImage = postcomb2 (\a (_,b) -> (a,b))
 
 --------------------------------------------------------------------------------
 

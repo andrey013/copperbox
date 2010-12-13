@@ -106,7 +106,9 @@ coordinate = Coordinate . CoordinateAnchor . makeShapeCTM
 
 coordinateDot :: (Real u, Floating u, FromPtSize u) 
               => Coordinate u -> Image u (CoordinateAnchor u)
-coordinateDot x = intoImage (return $ getCoordinate x) (drawDot x)
+coordinateDot x = postcomb fn  (return $ getCoordinate x) (drawDot x)
+  where
+    fn a (_,b) = (a,b)
 
 
 
@@ -114,7 +116,9 @@ coordinateDot x = intoImage (return $ getCoordinate x) (drawDot x)
 --
 coordinateX :: (Real u, Floating u, FromPtSize u) 
             => Coordinate u -> Image u (CoordinateAnchor u)
-coordinateX x = intoImage (return $ getCoordinate x) (drawX x)
+coordinateX x = postcomb fn (return $ getCoordinate x) (drawX x)
+  where
+    fn a (_,b) = (a,b)
 
 
 

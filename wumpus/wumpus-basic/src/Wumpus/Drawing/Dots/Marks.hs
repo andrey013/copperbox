@@ -80,7 +80,8 @@ renderPath :: LocDrawingInfo u (PrimPath u)
            -> LocGraphic u
 renderPath m k = m `bind1` (static1 . k)
 
-
+-- intoLocImage :: LocCF u a -> LocCF u (z,b) -> LocCF u (a,b)
+-- intoLocImage = postcomb1 (\a (_,b) -> (a,b))
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
 shiftOrigin dx dy = prepro1 (displace dx dy)
@@ -94,7 +95,7 @@ markChar ch = markText [ch]
 
 
 markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-markText ss = postpro1 (\(_,b) -> b) $ singleLineCC ss
+markText ss = postpro1 (\(_,b) -> (uNil,b)) $ singleLineCC ss
 
 
 

@@ -37,10 +37,8 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.UpdateDC
+import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Graphic
-import Wumpus.Basic.Kernel.Objects.LocGraphic
-import Wumpus.Basic.Kernel.Objects.Image
-import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( blue )
@@ -68,9 +66,10 @@ type DBoundedLocGraphic       = BoundedLocGraphic Double
 -- 
 
 illustrateBoundedGraphic :: Fractional u => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic mf = mf >>= \(bb,g1) -> 
-                      bbrectangle bb >>= \g2 -> 
-                      return (bb, g2 `oplus` g1)  
+illustrateBoundedGraphic mf = 
+    mf >>= \(bb,g1) -> 
+    bbrectangle bb >>= \(_,g2) -> 
+    return (bb, g2 `oplus` g1)  
 
 
 illustrateBoundedLocGraphic :: Fractional u 

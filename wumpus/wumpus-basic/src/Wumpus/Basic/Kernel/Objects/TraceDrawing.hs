@@ -58,10 +58,8 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Graphic
-import Wumpus.Basic.Kernel.Objects.Image
-import Wumpus.Basic.Kernel.Objects.LocGraphic
-import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -282,13 +280,13 @@ query df = askDC >>= \ctx -> return $ runCF ctx df
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
-draw gf = askDC >>= \ctx -> trace (collectH $ runGraphic ctx gf)
+draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 
 -- | Hyperlink version of 'draw'.
 --
 xdraw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
       => XLink -> Graphic u -> m ()
-xdraw xl gf = draw (xlinkGraphic xl gf)
+xdraw xl gf = draw (hyperlink xl gf)
 
 
 
@@ -300,7 +298,7 @@ xdraw xl gf = draw (xlinkGraphic xl gf)
 -- 
 drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
-            let (a,o) = runImage ctx img in trace (collectH o) >> return a
+            let (a,o) = runCF ctx img in trace (collectH o) >> return a
 
 -- | Forgetful 'drawi'.
 --
@@ -312,7 +310,7 @@ drawi_ img = drawi img >> return ()
 --
 xdrawi ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u) 
        => XLink -> Image u a -> m a
-xdrawi xl img = drawi (xlinkImage xl img)
+xdrawi xl img = drawi (hyperlink xl img)
 
 
 -- | Forgetful 'xdrawi'.
@@ -328,13 +326,13 @@ node :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u)
      => LocGraphic u -> m ()
 node gf = askDC    >>= \ctx -> 
           position >>= \pt  -> 
-          let f    = runCF ctx gf in trace (collectH $ f pt)
+          let f    = runCF ctx gf in trace (collectH $ snd $ f pt)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
      => LocImage u a -> m a
 nodei imgL = askDC    >>= \ctx -> 
              position >>= \pt  -> 
-             let (a,o) = runLocImage ctx pt imgL
+             let (a,o) = runCF ctx (unLoc pt imgL)
              in trace (collectH o) >> return a
 

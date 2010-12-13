@@ -98,9 +98,10 @@ makeShape pf mkf = \pt -> Shape { shape_ctm = makeShapeCTM pt
 
 shapeImage :: Num u => (PrimPath u -> Graphic u) -> Shape u t -> Image u (t u)
 shapeImage drawF (Shape { shape_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-   intoImage (pure $ runShapeR ctm objf) 
-             (drawF $ toPrimPath $ runShapeR ctm pf)
-
+    postcomb fn (pure $ runShapeR ctm objf) 
+                (drawF $ toPrimPath $ runShapeR ctm pf)
+  where
+    fn a (_,b) = (a,b)
 
 borderedShape :: Num u => Shape u t -> Image u (t u)
 borderedShape = shapeImage borderedPath

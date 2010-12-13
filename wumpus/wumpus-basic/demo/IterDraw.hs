@@ -28,7 +28,7 @@ iter_drawing = drawTracing $ do
     draw $ extr (redA `catv` greenB `catv` blueC) `at` zeroPt
 
 extr :: AdvGraphic u -> LocGraphic u
-extr = postpro1 snd
+extr = postpro1 $ \(_,b) -> (uNil, b)
  
 infixr 6 `catv`
 

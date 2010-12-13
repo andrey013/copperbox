@@ -194,6 +194,10 @@ polygonLDO mk =
 
 --------------------------------------------------------------------------------
 
+intoLocImage :: LocCF u a -> LocCF u (z,b) -> LocCF u (a,b)
+intoLocImage = postcomb1 (\a (_,b) -> (a,b))
+
+
 type DotLocImage u = LocImage u (DotAnchor u) 
 
 type DDotLocImage = DotLocImage Double 

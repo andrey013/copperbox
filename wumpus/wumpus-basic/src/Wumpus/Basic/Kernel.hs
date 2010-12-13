@@ -29,15 +29,11 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Geometry.Intersection
   , module Wumpus.Basic.Kernel.Geometry.Paths
   , module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+  , module Wumpus.Basic.Kernel.Objects.BaseObjects
   , module Wumpus.Basic.Kernel.Objects.Bounded
   , module Wumpus.Basic.Kernel.Objects.Connector
   , module Wumpus.Basic.Kernel.Objects.Drawing
-  , module Wumpus.Basic.Kernel.Objects.DrawingInfo
   , module Wumpus.Basic.Kernel.Objects.Graphic
-  , module Wumpus.Basic.Kernel.Objects.Image
-  , module Wumpus.Basic.Kernel.Objects.LocGraphic
-  , module Wumpus.Basic.Kernel.Objects.LocImage
-  , module Wumpus.Basic.Kernel.Objects.LocTheta
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
@@ -53,13 +49,9 @@ import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Geometry.Intersection
 import Wumpus.Basic.Kernel.Geometry.Paths
 import Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Drawing
-import Wumpus.Basic.Kernel.Objects.DrawingInfo
 import Wumpus.Basic.Kernel.Objects.Graphic
-import Wumpus.Basic.Kernel.Objects.Image
-import Wumpus.Basic.Kernel.Objects.LocGraphic
-import Wumpus.Basic.Kernel.Objects.LocImage
-import Wumpus.Basic.Kernel.Objects.LocTheta
 import Wumpus.Basic.Kernel.Objects.TraceDrawing

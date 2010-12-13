@@ -8,12 +8,17 @@
 module PetriNet where
 
 import Wumpus.Basic.Kernel
+import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.GSLoader
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 import Wumpus.Drawing.Shapes.Derived
 import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.LRText
+
+import FontLoaderUtils
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -22,13 +27,36 @@ import System.Directory
 
 
 
+
 main :: IO ()
 main = do 
+    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU (standardContext 14) petri_net
-    writeEPS "./out/petri_net.eps" pic1
-    writeSVG "./out/petri_net.svg" pic1
-    
+    maybe gs_failk  makeGSPicture  $ mb_gs
+    maybe afm_failk makeAfmPicture $ mb_afm
+  where
+    gs_failk  = putStrLn "No GhostScript font path supplied..."
+    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+
+makeGSPicture :: FilePath -> IO ()
+makeGSPicture font_dir = do 
+    putStrLn "Using GhostScript metrics..."
+    base_metrics <- loadGSMetrics font_dir ["Helvetica", "Helvetica-Bold"]
+    let pic1 = runDrawingU (makeCtx base_metrics) petri_net
+    writeEPS "./out/petri_net01.eps" pic1
+    writeSVG "./out/petri_net01.svg" pic1 
+
+makeAfmPicture :: FilePath -> IO ()
+makeAfmPicture font_dir = do 
+    putStrLn "Using AFM 4.1 metrics..."
+    base_metrics <- loadAfmMetrics font_dir ["Helvetica", "Helvetica-Bold"]
+    let pic1 = runDrawingU (makeCtx base_metrics) petri_net
+    writeEPS "./out/petri_net02.eps" pic1
+    writeSVG "./out/petri_net02.svg" pic1 
+
+
+makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx = fontFace helvetica . metricsContext 14
 
 
 petri_net :: DDrawing
@@ -123,4 +151,6 @@ lblBold' ss = localize (fontFace helvetica_bold) $ textline ss
 
 
 lblBold :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontFace helvetica_bold) $ centermonoTextline ss
+lblBold ss = localize (fontFace helvetica_bold) $ post $singleLineCC ss
+  where
+    post = postpro1 (\(_,b) -> (uNil, b))

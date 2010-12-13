@@ -39,9 +39,8 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Objects.DrawingInfo
-import Wumpus.Basic.Kernel.Objects.LocGraphic
-import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.BaseObjects
+import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -74,13 +73,15 @@ type instance DUnit (AdvGraphic u) = u
 makeAdvGraphic :: DrawingInfo (PointDisplace u)
                -> LocGraphic u 
                -> AdvGraphic u
-makeAdvGraphic pf df = postcomb1 (,) (promote1 $ \pt -> pf `at` pt) df
+makeAdvGraphic pf df = postcomb1 fn (promote1 $ \pt -> pf `at` pt) df
+  where
+    fn ans (_,prim) = (ans, prim)
 
 
 
 
 extractLocGraphic :: AdvGraphic u -> LocGraphic u
-extractLocGraphic = postpro1 snd
+extractLocGraphic = postpro1 $ \(_,prim) -> (uNil,prim)
 
 runAdvGraphic :: DrawingContext  -> Point2 u -> AdvGraphic u 
               -> (Point2 u, PrimGraphic u)

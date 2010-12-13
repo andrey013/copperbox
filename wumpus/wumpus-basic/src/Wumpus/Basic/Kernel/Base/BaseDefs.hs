@@ -74,7 +74,11 @@ oconcat t = step t
 
 
 
+instance OPlus () where
+  _ `oplus` _ = ()
 
+instance OPlus (UNil u) where
+  _ `oplus` _ = uNil
 
 instance Ord u => OPlus (BoundingBox u) where
   oplus = boundaryUnion

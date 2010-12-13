@@ -174,7 +174,7 @@ singleLRText dispF (InterimText1 esc av) =
                           ll  = pt .+^ vvec ymin
                           ur  = pt .+^ vec w ymax
                           bb  = boundingBox ll ur 
-                      in (escapedline esc `at` pt) >>= \prim ->
+                      in (escapedline esc `at` pt) >>= \(_,prim) ->
                          return (bb, prim)
 
 
