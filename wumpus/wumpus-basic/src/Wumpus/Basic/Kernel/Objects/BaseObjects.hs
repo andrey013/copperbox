@@ -29,6 +29,10 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
   , LocImage
   , LocThetaImage
 
+  , DImage
+  , DLocImage
+  , DLocThetaImage
+
   , hyperlink
 
   ) where
@@ -88,6 +92,9 @@ type LocThetaImage u a   = LocThetaCF u (a, PrimGraphic u)
 
 
 
+type DImage a            = Image Double a
+type DLocImage a         = LocImage Double a
+type DLocThetaImage a    = LocThetaImage Double a
 
 
 type instance DUnit (Image u a) = u -- GuardEq (DUnit a) (DUnit (PrimGraphic u))

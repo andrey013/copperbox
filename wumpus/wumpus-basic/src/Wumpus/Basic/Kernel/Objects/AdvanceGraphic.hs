@@ -56,12 +56,6 @@ type AdvGraphic u      = LocImage u (Point2 u)
 type DAdvGraphic       = AdvGraphic Double
 
 
-type instance DUnit (AdvGraphic u) = u
-
-
-
-
-
 
 --------------------------------------------------------------------------------
 
@@ -73,15 +67,17 @@ type instance DUnit (AdvGraphic u) = u
 makeAdvGraphic :: DrawingInfo (PointDisplace u)
                -> LocGraphic u 
                -> AdvGraphic u
-makeAdvGraphic pf df = postcomb1 fn (promote1 $ \pt -> pf `at` pt) df
+makeAdvGraphic dispf gf = postcomb1 fn (promote1 $ \pt -> dispf `at` pt) gf
   where
     fn ans (_,prim) = (ans, prim)
 
 
 
 
+-- This should probably go - the name is not exact enough...
+
 extractLocGraphic :: AdvGraphic u -> LocGraphic u
-extractLocGraphic = postpro1 $ \(_,prim) -> (uNil,prim)
+extractLocGraphic = postpro1 (replaceL uNil)
 
 runAdvGraphic :: DrawingContext  -> Point2 u -> AdvGraphic u 
               -> (Point2 u, PrimGraphic u)

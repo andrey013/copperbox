@@ -42,7 +42,7 @@ newtype GDjembe = GDjembe { getGDjembe :: DLocImage AfmUnit }
 
 
 unGDjembe :: GDjembe -> DLocGraphic
-unGDjembe = postpro1 snd . getGDjembe
+unGDjembe = postpro1 (replaceL uNil) . getGDjembe
 
 mapGDjembe :: (DLocImage AfmUnit -> DLocImage AfmUnit) -> GDjembe -> GDjembe
 mapGDjembe f a = GDjembe $ f $ getGDjembe a
@@ -64,12 +64,14 @@ instance CStrokeAnno GDjembe where
 --------------------------------------------------------------------------------  
 
 barLocGraphic :: Bar GDjembe -> DLocGraphic
-barLocGraphic bar = extrLocGraphic $ barline `advplus` body `advplus` barline
+barLocGraphic bar = 
+    postpro1 (replaceL uNil) $ barline `advplus` body `advplus` barline
   where
     body = barAdvGraphic bar
 
 repLocGraphic :: Bar GDjembe -> DLocGraphic
-repLocGraphic bar = extrLocGraphic $ lrepeat `advplus` body `advplus` rrepeat
+repLocGraphic bar = 
+    postpro1 (replaceL uNil) $ lrepeat `advplus` body `advplus` rrepeat
   where
     body = barAdvGraphic bar
 

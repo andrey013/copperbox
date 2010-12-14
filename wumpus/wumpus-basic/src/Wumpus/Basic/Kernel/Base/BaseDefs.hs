@@ -22,11 +22,16 @@
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
 
-  -- A semigroup class.
+  -- * A semigroup class
     OPlus(..)
   , oconcat
 
-  -- * Alignment.
+  -- * A bifunctor class
+  , Bimap(..)
+  , replaceL
+  , replaceR
+
+  -- * Alignment
   , HAlign(..)
   , VAlign(..)  
 
@@ -95,6 +100,36 @@ instance OPlus a => OPlus (r -> a) where
 
 -- The functional instance (r -> a) also covers (r1 -> r2 -> a),
 -- (r1 -> r2 -> r3 -> a) etc.
+
+--------------------------------------------------------------------------------
+
+class Bimap f where
+  bimap     :: (a -> p) -> (b -> q) -> f a b -> f p q
+  bimapL    :: (a -> p) -> f a b -> f p b
+  bimapR    :: (b -> q) -> f a b -> f a q
+
+
+
+instance Bimap (,) where
+  bimap f g (a,b) = (f a, g b)
+  bimapL f (a,b)  = (f a, b)
+  bimapR g (a,b)  = (a, g b)
+
+instance Bimap Either where
+  bimap f _ (Left a)  = Left (f a)
+  bimap _ g (Right b) = Right (g b)
+
+  bimapL f (Left a)  = Left (f a)
+  bimapL _ (Right b) = Right b
+
+  bimapR _ (Left a)  = Left a
+  bimapR g (Right b) = Right (g b)
+
+replaceL :: Bimap f => p -> f a b -> f p b
+replaceL = bimapL . const
+
+replaceR :: Bimap f => q -> f a b -> f a q
+replaceR = bimapR . const
 
 
 --------------------------------------------------------------------------------

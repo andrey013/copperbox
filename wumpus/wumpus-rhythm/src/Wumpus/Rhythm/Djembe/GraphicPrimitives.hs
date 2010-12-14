@@ -145,6 +145,8 @@ hi_repeat_dot_center    = 1554
 lo_repeat_dot_center    :: AfmUnit
 lo_repeat_dot_center    = 842
 
+
+
 --------------------------------------------------------------------------------
 -- Note heads are positioned...
 
@@ -157,18 +159,18 @@ dotNotehead = makeDotNotehead dot_center
 
 -- not an Image as upstrokes cannot be parenthesized.
 upstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
-upstrokeDot = postpro1 snd $ makeDotNotehead dot_upstroke
+upstrokeDot = postpro1 (replaceL uNil) $ makeDotNotehead dot_upstroke
 
 downstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
-downstrokeDot = postpro1 snd $ makeDotNotehead dot_downstroke
+downstrokeDot = postpro1 (replaceL uNil) $ makeDotNotehead dot_downstroke
+
 
 
 makeDotNotehead :: (Fractional u, FromPtSize u) 
                 => AfmUnit -> LocImage u AfmUnit
 makeDotNotehead ypos = 
     scaleValue dot_radius >>= \radius -> 
-    intoLocImage (pure $ pure dot_notehead_width)
-                 (scaleVMove ypos $ filledDisk radius)
+    postpro1 (replaceL dot_notehead_width) $ scaleVMove ypos $ filledDisk radius
 
 
 -- period notehead always drawn just above baseline
@@ -176,8 +178,8 @@ makeDotNotehead ypos =
 periodNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
 periodNotehead = 
     scaleValue period_radius >>= \radius -> 
-    intoLocImage (pure $ pure dot_notehead_width)
-                 (scaleVMove period_center $ filledDisk radius)
+    postpro1 (replaceL dot_notehead_width) $ 
+                scaleVMove period_center $ filledDisk radius
 
 
 letterNotehead :: (Real u, Fractional u, FromPtSize u) 
@@ -187,12 +189,14 @@ letterNotehead = makeLetterNotehead 0
 
 upstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
                => EscapedChar -> LocGraphic u
-upstrokeLetter ch = postpro1 snd $ makeLetterNotehead char_upstroke ch
+upstrokeLetter ch = 
+    postpro1 (replaceL uNil) $ makeLetterNotehead char_upstroke ch
 
 
 downstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
                  => EscapedChar -> LocGraphic u
-downstrokeLetter ch = postpro1 snd $ makeLetterNotehead char_downstroke ch
+downstrokeLetter ch = 
+    postpro1 (replaceL uNil) $ makeLetterNotehead char_downstroke ch
 
 
 makeLetterNotehead :: (Real u, Fractional u, FromPtSize u) 
@@ -202,7 +206,7 @@ makeLetterNotehead ypos ch =
 
 
 bboxAfmWidth :: Real u => BoundedLocGraphic u -> LocImage u AfmUnit
-bboxAfmWidth = postpro1 (\(a,b) -> (realToFrac $ boundaryWidth a, b))
+bboxAfmWidth = postpro1 (bimapL (realToFrac . boundaryWidth))
 
 
 --
@@ -213,7 +217,7 @@ letterFlamGlyph ch =
     localize (fontSize $ (3 * sz) `div` 4) $ 
         let x = negate $ flam_xminor
             y = flam_baseline
-        in postpro1 snd $ scaleMove x y $ escCharBC ch
+        in postpro1 (replaceL uNil) $ scaleMove x y $ escCharBC ch
 
 dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
 dotFlamGlyph = 
@@ -274,16 +278,20 @@ flamNote note_head flam_head =
     superimposeLocImage note_head (flam_head `oplus` flamStem) 
 
 restNote :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
-restNote = intoLocImage (pure $ pure dot_notehead_width) singleStem
+restNote = postpro1 (replaceL dot_notehead_width) singleStem
 
 
 --------------------------------------------------------------------------------
 -- parens for optional, accents...
 
+
+-- This pattern could be caputured as a combinator...
+--
+
 addParens :: (Fractional u, FromPtSize u)  
           => LocImage u AfmUnit -> LocImage u AfmUnit
 addParens img = 
-    img `bind1` \(w,a) -> drawParens w `bind1` \b -> wrap1 (w, a `oplus` b)
+    img `bind1` \(w,a) -> drawParens w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
 
 
 drawParens :: (Fractional u, FromPtSize u) => AfmUnit -> LocGraphic u
@@ -348,7 +356,7 @@ drawHand fn = scaleMove (negate $ 0.5*hand_base_length) hand_baseline loc_rect
 addBaselineStrike :: (Fractional u, FromPtSize u)  
                     => LocImage u AfmUnit -> LocImage u AfmUnit
 addBaselineStrike img = 
-    img `bind1` \(w,a) -> drawHStrikeLine w `bind1` \b -> wrap1 (w, a `oplus` b)
+    img `bind1` \(w,a) -> drawHStrikeLine w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
 
 drawHStrikeLine :: FromPtSize u => AfmUnit -> LocGraphic u
 drawHStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
@@ -360,7 +368,7 @@ addAngledStrike :: (Fractional u, FromPtSize u)
                     => LocImage u AfmUnit -> LocImage u AfmUnit
 addAngledStrike img = 
     img `bind1` \(w,a) -> 
-    drawAngStrikeLine w `bind1` \b -> wrap1 (w, a `oplus` b)
+    drawAngStrikeLine w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
 
 
 drawAngStrikeLine :: FromPtSize u => AfmUnit -> LocGraphic u
@@ -399,7 +407,8 @@ centeredTwoThirdsText :: (Fractional u, Ord u, FromPtSize u)
                       => String -> LocGraphic u
 centeredTwoThirdsText ss =
     getFontSize >>= \sz -> 
-    localize (fontSize $ (2 * sz) `div` 3) $ postpro1 snd $ singleLineCC ss 
+    localize (fontSize $ (2 * sz) `div` 3) $ 
+      postpro1 (replaceL uNil) $ singleLineCC ss 
 
 --------------------------------------------------------------------------------
 -- half beam
@@ -462,13 +471,12 @@ scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
 
 
 superimposeLocImage :: LocImage u a -> LocGraphic u -> LocImage u a
-superimposeLocImage img gfx = 
-     img `bind1` \(a,b) -> gfx `bind1` \z -> wrap1 (a, b `oplus` z)
+superimposeLocImage = postcomb1 (\(a,b) (_,c) -> (a,b `oplus` c))
 
 
 superimposeAdvGraphic :: AdvGraphic u -> LocGraphic u -> AdvGraphic u
-superimposeAdvGraphic img gfx = 
-     img `bind1` \(a,b) -> gfx `bind1` \z -> wrap1 (a, b `oplus` z)
+superimposeAdvGraphic = postcomb1 (\(a,b) (_,c) -> (a,b `oplus` c))
+ 
 
 
 
