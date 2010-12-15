@@ -34,6 +34,16 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   -- * Run functions
   , runCF
+  , runCF1 
+  , runCF2
+
+  -- * Lift functions
+  , lift0R1
+  , lift0R2
+  , lift1R2
+ 
+  , adaptR1
+  , adaptR2
 
   -- * Extractors
   , drawingCtx
@@ -90,10 +100,6 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , prepro2a
   , prepro2b
 
-  -- * Post-transformers
-  , postpro
-  , postpro1
-  , postpro2
 
   -- * Post-combiners
   , postcomb
@@ -264,21 +270,54 @@ instance DrawingCtxM (CF2 r1 r2) where
 --------------------------------------------------------------------------------
 -- Run functions
 
-
-
--- Code below is now old ...
-
-
-
-
-
-
-
-
--- | Run a /CF/ (context function) with the supplied /DrawingContext/.
+-- | Run a /CF/ (context function) with the supplied 
+-- /DrawingContext/.
 --
 runCF :: DrawingContext -> CF a -> a
 runCF ctx df = unCF df ctx
+
+
+-- | Run a /CF1/ (context function) with the supplied 
+-- /DrawingContext/ and static argument.
+--
+runCF1 :: DrawingContext -> r1 -> CF1 r1 a -> a
+runCF1 ctx r1 df = unCF1 df ctx r1
+
+
+-- | Run a /CF1/ (context function) with the supplied 
+-- /DrawingContext/ and two static arguments.
+--
+runCF2 :: DrawingContext -> r1 -> r2 -> CF2 r1 r2 a -> a
+runCF2 ctx r1 r2 df = unCF2 df ctx r1 r2
+
+
+
+--------------------------------------------------------------------------------
+-- lift functions
+
+lift0R1         :: CF a -> CF1 r1 a
+lift0R1 mf      = CF1 $ \ctx _ -> unCF mf ctx
+
+lift0R2         :: CF a -> CF2 r1 r2 a
+lift0R2 mf      = CF2 $ \ctx _ _ -> unCF mf ctx
+
+lift1R2         :: CF1 r1 a -> CF2 r1 r2 a
+lift1R2 mf      = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
+
+
+
+
+
+
+
+adaptR1 :: CF (r1 -> a) -> CF1 r1 a
+adaptR1 mf = CF1 $ \ctx r1 -> unCF mf ctx r1
+
+
+
+adaptR2 :: CF (r1 -> r2 -> a) -> CF2 r1 r2 a
+adaptR2 mf = CF2 $ \ctx r1 r2 -> unCF mf ctx r1 r2
+
 
 
 --------------------------------------------------------------------------------
@@ -394,6 +433,13 @@ infixr 1 `at`
 at :: LocCF u b -> Point2 u -> CF b
 at = flip unLoc
 
+
+
+-- Code below is now old ...
+
+
+
+
 -- localPoint :: (Point2 u -> Point2 u) -> LocCF u a -> LocCF u a
 -- localPoint = prepro1
 
@@ -403,10 +449,6 @@ at = flip unLoc
 comp1 :: CF (r1 -> a) -> CF (a -> b) -> CF (r1 -> b)
 comp1 mf mg = CF $ \ctx r1 -> unCF mg ctx $ unCF mf ctx r1
 
--- Is comp2 the two arity version?
-
-comp2 :: CF (r1 -> r2 -> a) -> CF (a -> b) -> CF (r1 -> r2 -> b)
-comp2 mf mg = CF $ \ctx r1 r2 -> unCF mg ctx $ unCF mf ctx r1 r2
 
 
 -- | Lift a pure value into a Context functional. The 
@@ -677,37 +719,6 @@ prepro2b f mf = CF $ \ctx a b -> unCF mf ctx a (f b)
 
 ------------------------------------------------------------------------------
 -- Post-transfomers
-
--- | Apply the post-transformer to the result of the Context
--- functional.
---
--- > (a -> ans) -> (ctx -> a) -> (ctx -> ans) 
---
-postpro :: (a -> ans) -> CF a -> CF ans
-postpro = fmap
-
--- | Apply the post-transformer to the result of the Context
--- functional. Version for one static argument.
---
--- Note - the DrawingContext is always present so it is never 
--- counted as a static argument.
---
--- > (a -> ans) -> (ctx -> r1 -> a) -> (ctx -> r1 -> ans) 
---
-postpro1 :: (a -> ans) -> CF (r1 -> a) -> CF (r1 -> ans)
-postpro1 = postpro . fmap  
-
--- | Apply the post-transformer to the result of the Context
--- functional. Version for two static arguments.
---
--- Note - the DrawingContext is always present so it is never 
--- counted as a static argument.
---
---
--- > (a -> ans) -> (ctx -> r1 -> r2 -> a) -> (ctx -> r1 -> r2 -> ans) 
---
-postpro2 :: (a -> ans) -> CF (r1 -> r2 -> a) -> CF (r1 -> r2 -> ans)
-postpro2 = postpro . fmap . fmap
 
 
 --------------------------------------------------------------------------------

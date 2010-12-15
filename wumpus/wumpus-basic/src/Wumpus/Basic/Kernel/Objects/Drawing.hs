@@ -133,7 +133,7 @@ clipDrawing cpath = modifyDrawing (clip cpath)
 
 
 modifyDrawing :: (Picture u -> Picture u) -> Drawing u -> Drawing u
-modifyDrawing pf = Drawing . postpro (fmap pf) . getDrawing
+modifyDrawing pf = Drawing . fmap (fmap pf) . getDrawing
 
 instance (Real u, Floating u) => Rotate (Drawing u) where 
   rotate ang = modifyDrawing (rotate ang)

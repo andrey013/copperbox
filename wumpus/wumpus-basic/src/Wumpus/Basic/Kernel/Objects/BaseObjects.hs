@@ -162,7 +162,7 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (LocImage u a) where
 
 hyperlink :: XLink -> Image u a -> Image u a
 hyperlink hypl = 
-    postpro (\(a,prim) -> (a, metamorphPrim (xlink hypl) prim))
+    fmap (\(a,prim) -> (a, metamorphPrim (xlink hypl) prim))
 
 
 
