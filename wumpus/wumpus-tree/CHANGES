@@ -1,4 +1,26 @@
 
+0.11.0 to 0.11.1:
+
+  * Removed unused @InnerSpace@ constriant on functions in 
+    @Wumpus.Tree.Draw@.
+
+0.10.0 to 0.11.0:
+
+  * Changed types of drawing functions so they can be run with 
+    glyph metrics (read from file in the IO monad). 
+
+  * Generalized the unit type of the /design/ functions to some 
+    numeric @u@ rather than Double.
+
+  * The demo has been duplicated - one version uses GhostScript 
+    glyph metrics and the other Adobe glyph metrics, as the 
+    metrics are in different formats and need different font 
+    loaders from Wumpus-Basic.
+  
+0.9.0 to 0.10.0:
+
+  * Internal changes to track updates to Wumpus-Basic.
+
 0.8.0 to 0.9.0:
 
   * Stopped re-exporting @DrawingContext@ from Wumpus-Basic in 

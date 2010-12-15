@@ -42,7 +42,7 @@ newtype GDjembe = GDjembe { getGDjembe :: DLocImage AfmUnit }
 
 
 unGDjembe :: GDjembe -> DLocGraphic
-unGDjembe = postpro1 (replaceL uNil) . getGDjembe
+unGDjembe = fmap (replaceL uNil) . getGDjembe
 
 mapGDjembe :: (DLocImage AfmUnit -> DLocImage AfmUnit) -> GDjembe -> GDjembe
 mapGDjembe f a = GDjembe $ f $ getGDjembe a
@@ -65,13 +65,13 @@ instance CStrokeAnno GDjembe where
 
 barLocGraphic :: Bar GDjembe -> DLocGraphic
 barLocGraphic bar = 
-    postpro1 (replaceL uNil) $ barline `advplus` body `advplus` barline
+    fmap (replaceL uNil) $ barline `advplus` body `advplus` barline
   where
     body = barAdvGraphic bar
 
 repLocGraphic :: Bar GDjembe -> DLocGraphic
 repLocGraphic bar = 
-    postpro1 (replaceL uNil) $ lrepeat `advplus` body `advplus` rrepeat
+    fmap (replaceL uNil) $ lrepeat `advplus` body `advplus` rrepeat
   where
     body = barAdvGraphic bar
 
@@ -105,8 +105,9 @@ drawHalved a b = unGDjembe a `oplus` halfBeam `oplus` halfUnitMove (unGDjembe b)
 -- note plets missing top bracket...
 --
 drawPlets :: Int -> Int -> [GDjembe] -> DLocGraphic 
-drawPlets n d xs = scaleValue (unit_width * realToFrac (d%n)) >>= \w -> 
-                   explode (hvec w) $ map unGDjembe xs  
+drawPlets n d xs = 
+    lift0R1 (scaleValue (unit_width * realToFrac (d%n))) >>= \w -> 
+    explode (hvec w) $ map unGDjembe xs  
  
 
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
@@ -117,10 +118,12 @@ explode v xs = extractLocGraphic $ advconcat $ map fn xs
 
 
 xminorMove :: FromPtSize u => LocGraphic u -> LocGraphic u
-xminorMove mg = scaleValue flam_xminor >>= \x -> prepro1 (hdisplace x) mg
+xminorMove mg = 
+    lift0R1 (scaleValue flam_xminor) >>= \x -> moveOrigin (hdisplace x) mg
 
 halfUnitMove :: (Fractional u, FromPtSize u) => LocGraphic u -> LocGraphic u
-halfUnitMove mg = scaleValue unit_width >>= \x -> prepro1 (hdisplace $ 0.5 * x) mg
+halfUnitMove mg = 
+    lift0R1 (scaleValue unit_width) >>= \x -> moveOrigin (hdisplace $ 0.5 * x) mg
 
 
 
@@ -155,7 +158,7 @@ advBeamLine i          = let n = fromIntegral i in
 
 shiftBeamLine :: Int -> DAdvGraphic 
 shiftBeamLine i = 
-    scaleValue flam_xminor >>= \minor    ->
+    lift0R1 (scaleValue flam_xminor) >>= \minor    ->
     beamAdvGraphic (\uw -> uw * (n+1)) (\uw -> minor + uw * n)
   where
     n          = fromIntegral i
@@ -176,7 +179,7 @@ pletBeamLine (nrator,rw) = superimposeAdvGraphic beam_adv beam_bracket
 
 beamAdvGraphic :: (Double -> Double) -> (Double -> Double) -> DAdvGraphic 
 beamAdvGraphic advF drawF = 
-    scaleValue unit_width >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
+    lift0R1 (scaleValue unit_width) >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
   where
     adv = \uw -> pure $ hdisplace $ advF uw 
     obj = \uw -> localize capSquare $ 
@@ -184,7 +187,7 @@ beamAdvGraphic advF drawF =
 
 
 unitAdvGraphic :: DAdvGraphic
-unitAdvGraphic = scaleValue unit_width >>= \uw ->
+unitAdvGraphic = lift0R1 (scaleValue unit_width) >>= \uw ->
                  makeAdvGraphic (pure $ vecdisplace $ hvec uw) emptyLocGraphic
 
 

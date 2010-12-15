@@ -159,26 +159,26 @@ dotNotehead = makeDotNotehead dot_center
 
 -- not an Image as upstrokes cannot be parenthesized.
 upstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
-upstrokeDot = postpro1 (replaceL uNil) $ makeDotNotehead dot_upstroke
+upstrokeDot = fmap (replaceL uNil) $ makeDotNotehead dot_upstroke
 
 downstrokeDot :: (Fractional u, FromPtSize u) => LocGraphic u
-downstrokeDot = postpro1 (replaceL uNil) $ makeDotNotehead dot_downstroke
+downstrokeDot = fmap (replaceL uNil) $ makeDotNotehead dot_downstroke
 
 
 
 makeDotNotehead :: (Fractional u, FromPtSize u) 
                 => AfmUnit -> LocImage u AfmUnit
 makeDotNotehead ypos = 
-    scaleValue dot_radius >>= \radius -> 
-    postpro1 (replaceL dot_notehead_width) $ scaleVMove ypos $ filledDisk radius
+    lift0R1 (scaleValue dot_radius) >>= \radius -> 
+    fmap (replaceL dot_notehead_width) $ scaleVMove ypos $ filledDisk radius
 
 
 -- period notehead always drawn just above baseline
 -- 
 periodNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
 periodNotehead = 
-    scaleValue period_radius >>= \radius -> 
-    postpro1 (replaceL dot_notehead_width) $ 
+    lift0R1 (scaleValue period_radius) >>= \radius -> 
+    fmap (replaceL dot_notehead_width) $ 
                 scaleVMove period_center $ filledDisk radius
 
 
@@ -190,13 +190,13 @@ letterNotehead = makeLetterNotehead 0
 upstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
                => EscapedChar -> LocGraphic u
 upstrokeLetter ch = 
-    postpro1 (replaceL uNil) $ makeLetterNotehead char_upstroke ch
+    fmap (replaceL uNil) $ makeLetterNotehead char_upstroke ch
 
 
 downstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
                  => EscapedChar -> LocGraphic u
 downstrokeLetter ch = 
-    postpro1 (replaceL uNil) $ makeLetterNotehead char_downstroke ch
+    fmap (replaceL uNil) $ makeLetterNotehead char_downstroke ch
 
 
 makeLetterNotehead :: (Real u, Fractional u, FromPtSize u) 
@@ -206,22 +206,22 @@ makeLetterNotehead ypos ch =
 
 
 bboxAfmWidth :: Real u => BoundedLocGraphic u -> LocImage u AfmUnit
-bboxAfmWidth = postpro1 (bimapL (realToFrac . boundaryWidth))
+bboxAfmWidth = fmap (bimapL (realToFrac . boundaryWidth))
 
 
 --
 letterFlamGlyph :: (Fractional u, Ord u, FromPtSize u) 
                 => EscapedChar -> LocGraphic u
 letterFlamGlyph ch = 
-    getFontSize >>= \sz -> 
+    lift0R1 getFontSize >>= \sz -> 
     localize (fontSize $ (3 * sz) `div` 4) $ 
         let x = negate $ flam_xminor
             y = flam_baseline
-        in postpro1 (replaceL uNil) $ scaleMove x y $ escCharBC ch
+        in fmap (replaceL uNil) $ scaleMove x y $ escCharBC ch
 
 dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
 dotFlamGlyph = 
-    scaleValue flam_dot_radius >>= \radius -> 
+    lift0R1 (scaleValue flam_dot_radius) >>= \radius -> 
     scaleMove (negate $ flam_xminor) flam_dot_center $ filledDisk radius
 
 --------------------------------------------------------------------------------
@@ -229,13 +229,13 @@ dotFlamGlyph =
 
 singleStem :: (Fractional u, FromPtSize u) => LocGraphic u
 singleStem =
-   scaleValue stem_length >>= \len -> 
+   lift0R1 (scaleValue stem_length) >>= \len -> 
    scaleVMove stem_start (straightLine $ vvec len)
 
 
 flamStem :: (Fractional u, FromPtSize u) => LocGraphic u
 flamStem = 
-    scaleVecPath flam_path >>= \vs -> 
+    lift0R1 (scaleVecPath flam_path) >>= \vs -> 
     scaleVMove stem_start (openStrokePath vs)
   where
     flam_path  = [ vvec stem_length
@@ -250,7 +250,7 @@ swingStem = singleStem `oplus` swingAngle
 
 swingAngle :: (Fractional u, FromPtSize u) => LocGraphic u
 swingAngle = 
-    scaleVecPath angle_path >>= \vs -> 
+    lift0R1 (scaleVecPath angle_path) >>= \vs -> 
     scaleVMove swing_angle_lower_left (openStrokePath vs)
   where
     angle_path = let w = 0.9*flam_xminor in [ vec w w, vec (-w) w ]
@@ -258,10 +258,10 @@ swingAngle =
 
 
 openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
-openStrokePath vs = promote1 $ \pt -> openStroke $ vectorPath pt vs
+openStrokePath vs = promoteR1 $ \pt -> openStroke $ vectorPath pt vs
 
 filledRelativePath :: Num u => [Vec2 u] -> LocGraphic u
-filledRelativePath vs = promote1 $ \pt -> filledPath $ vectorPath pt vs
+filledRelativePath vs = promoteR1 $ \pt -> filledPath $ vectorPath pt vs
 
 
 
@@ -278,7 +278,7 @@ flamNote note_head flam_head =
     superimposeLocImage note_head (flam_head `oplus` flamStem) 
 
 restNote :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
-restNote = postpro1 (replaceL dot_notehead_width) singleStem
+restNote = fmap (replaceL dot_notehead_width) singleStem
 
 
 --------------------------------------------------------------------------------
@@ -291,7 +291,7 @@ restNote = postpro1 (replaceL dot_notehead_width) singleStem
 addParens :: (Fractional u, FromPtSize u)  
           => LocImage u AfmUnit -> LocImage u AfmUnit
 addParens img = 
-    img `bind1` \(w,a) -> drawParens w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
+    img >>= \(w,a) -> drawParens w >>= \(_,b) -> return (w, a `oplus` b)
 
 
 drawParens :: (Fractional u, FromPtSize u) => AfmUnit -> LocGraphic u
@@ -322,8 +322,8 @@ drawLeadin = scaleVMove stem_top arr
 leadinArrowhead :: FromPtSize u => AfmUnit -> AfmUnit -> LocGraphic u
 leadinArrowhead w h = vertical_stalk `oplus` triangle_tip
   where
-    vertical_stalk = scaleVecPath [vvec h] >>= openStrokePath
-    triangle_tip   = scaleVecPath vpath >>= filledRelativePath
+    vertical_stalk = lift0R1 (scaleVecPath [vvec h]) >>= openStrokePath
+    triangle_tip   = lift0R1 (scaleVecPath vpath) >>= filledRelativePath
     vh             = 0.75 * h
     vhmid          = 0.4  * vh
     vhw            = 0.5  * w
@@ -347,7 +347,7 @@ addOtherHand note_head =
 drawHand :: FromPtSize u => (u -> u -> LocGraphic u) -> LocGraphic u
 drawHand fn = scaleMove (negate $ 0.5*hand_base_length) hand_baseline loc_rect
   where
-    loc_rect = scaleValue hand_base_length >>= \uw -> fn uw uw
+    loc_rect = lift0R1 (scaleValue hand_base_length) >>= \uw -> fn uw uw
 
 --------------------------------------------------------------------------------
 -- strike throughs
@@ -356,25 +356,24 @@ drawHand fn = scaleMove (negate $ 0.5*hand_base_length) hand_baseline loc_rect
 addBaselineStrike :: (Fractional u, FromPtSize u)  
                     => LocImage u AfmUnit -> LocImage u AfmUnit
 addBaselineStrike img = 
-    img `bind1` \(w,a) -> drawHStrikeLine w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
+    img >>= \(w,a) -> drawHStrikeLine w >>= \(_,b) -> return (w, a `oplus` b)
 
 drawHStrikeLine :: FromPtSize u => AfmUnit -> LocGraphic u
 drawHStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
   where
-    loc_strike = scaleVecPath [hvec cw] >>= openStrokePath
+    loc_strike = lift0R1 (scaleVecPath [hvec cw]) >>= openStrokePath
 
 
 addAngledStrike :: (Fractional u, FromPtSize u)  
                     => LocImage u AfmUnit -> LocImage u AfmUnit
 addAngledStrike img = 
-    img `bind1` \(w,a) -> 
-    drawAngStrikeLine w `bind1` \(_,b) -> wrap1 (w, a `oplus` b)
+    img >>= \(w,a) -> drawAngStrikeLine w >>= \(_,b) -> return (w, a `oplus` b)
 
 
 drawAngStrikeLine :: FromPtSize u => AfmUnit -> LocGraphic u
 drawAngStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
   where
-    loc_strike = scaleVecPath [vec cw cap_size] >>= openStrokePath
+    loc_strike = lift0R1 (scaleVecPath [vec cw cap_size]) >>= openStrokePath
 
 --------------------------------------------------------------------------------
 -- plets
@@ -390,9 +389,11 @@ pletBracket n wr =
     hw           = 0.5  * unit_width * (realToFrac wr) 
     textw        = 0.66 * numberWidth n
     bracketw     = hw - textw
-    lbracket     = scaleVecPath [ vvec hh, hvec bracketw ] >>= openStrokePath
+    lbracket     = lift0R1 (scaleVecPath [ vvec hh, hvec bracketw ]) 
+                      >>= openStrokePath
     rbracket     = scaleHMove (2*hw) $ 
-                      scaleVecPath [ vvec hh, hvec (-bracketw) ] >>= openStrokePath
+                      lift0R1 (scaleVecPath [ vvec hh, hvec (-bracketw) ]) 
+                              >>= openStrokePath
     num_text     = scaleMove hw th $ centeredTwoThirdsText (show n) 
 
 
@@ -406,9 +407,9 @@ numberWidth i | i < 10    = number_width
 centeredTwoThirdsText :: (Fractional u, Ord u, FromPtSize u) 
                       => String -> LocGraphic u
 centeredTwoThirdsText ss =
-    getFontSize >>= \sz -> 
+    lift0R1 getFontSize >>= \sz -> 
     localize (fontSize $ (2 * sz) `div` 3) $ 
-      postpro1 (replaceL uNil) $ singleLineCC ss 
+      fmap (replaceL uNil) $ singleLineCC ss 
 
 --------------------------------------------------------------------------------
 -- half beam
@@ -417,7 +418,7 @@ halfBeam :: FromPtSize u => LocGraphic u
 halfBeam = scaleVMove half_beam_baseline loc_beam 
   where
     half_width  = 0.5 * unit_width
-    loc_beam    = scaleVecPath [hvec half_width] >>= openStrokePath
+    loc_beam    = lift0R1 (scaleVecPath [hvec half_width]) >>= openStrokePath
 
 
 --------------------------------------------------------------------------------
@@ -426,7 +427,7 @@ halfBeam = scaleVMove half_beam_baseline loc_beam
 barline :: FromPtSize u => AdvGraphic u
 barline = makeAdvGraphic advanceUnitWidth loc_bar
   where
-    loc_bar = scaleVecPath [vvec barline_top] >>= openStrokePath
+    loc_bar = lift0R1 (scaleVecPath [vvec barline_top]) >>= openStrokePath
 
 lrepeat :: FromPtSize u => AdvGraphic u
 lrepeat = makeAdvGraphic advanceUnitWidth body
@@ -446,17 +447,17 @@ rrepeat = makeAdvGraphic advanceUnitWidth body
 
 
 repeatSglStem :: FromPtSize u => LocGraphic u
-repeatSglStem = scaleVecPath [vvec stem_top] >>= openStrokePath
+repeatSglStem = lift0R1 (scaleVecPath [vvec stem_top]) >>= openStrokePath
 
 repeatDblStem :: FromPtSize u => AfmUnit -> LocGraphic u
 repeatDblStem dx = 
    localize thick $ scaleHMove dx $ 
-                      scaleVecPath [vvec stem_top] >>= openStrokePath
+                      lift0R1 (scaleVecPath [vvec stem_top]) >>= openStrokePath
 
 
 repeatDots :: FromPtSize u => AfmUnit -> LocGraphic u
 repeatDots dx = scaleHMove dx $ 
-    scaleValue repeat_dot_radius >>= \r -> 
+    lift0R1 (scaleValue repeat_dot_radius) >>= \r -> 
     mkDisk r hi_repeat_dot_center `oplus` mkDisk r lo_repeat_dot_center 
   where
     mkDisk r dy = scaleVMove dy $ filledDisk r
@@ -471,24 +472,29 @@ scaleValue u1 = fmap (\sz -> afmValue u1 (fromIntegral sz)) getFontSize
 
 
 superimposeLocImage :: LocImage u a -> LocGraphic u -> LocImage u a
-superimposeLocImage = postcomb1 (\(a,b) (_,c) -> (a,b `oplus` c))
+superimposeLocImage = liftA2 (\(a,b) (_,c) -> (a,b `oplus` c))
 
 
 superimposeAdvGraphic :: AdvGraphic u -> LocGraphic u -> AdvGraphic u
-superimposeAdvGraphic = postcomb1 (\(a,b) (_,c) -> (a,b `oplus` c))
+superimposeAdvGraphic = liftA2 (\(a,b) (_,c) -> (a,b `oplus` c))
  
 
 
 
-scaleMove :: FromPtSize u => AfmUnit -> AfmUnit -> LocCF u a -> LocCF u a
+scaleMove :: FromPtSize u 
+          => AfmUnit -> AfmUnit -> LocImage u a -> LocImage u a
 scaleMove x y cf = 
-    scaleValue x >>= \xu -> scaleValue y >>= \yu -> prepro1 (displace xu yu) cf
+    lift0R1 (scaleValue x) >>= \xu -> 
+    lift0R1 (scaleValue y) >>= \yu -> 
+    moveOrigin (displace xu yu) cf
 
-scaleHMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
-scaleHMove x cf = scaleValue x >>= \xu -> prepro1 (hdisplace xu) cf
+scaleHMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
+scaleHMove x cf = 
+    lift0R1 (scaleValue x) >>= \xu -> moveOrigin (hdisplace xu) cf
 
-scaleVMove :: FromPtSize u => AfmUnit -> LocCF u a -> LocCF u a
-scaleVMove y cf = scaleValue y >>= \yu -> prepro1 (vdisplace yu) cf
+scaleVMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
+scaleVMove y cf = 
+    lift0R1 (scaleValue y) >>= \yu -> moveOrigin (vdisplace yu) cf
 
 
 scaleVecPath :: FromPtSize u => [Vec2 AfmUnit] -> DrawingInfo [Vec2 u]

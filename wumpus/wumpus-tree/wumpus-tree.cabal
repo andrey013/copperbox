@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.11.1
+version:          0.12.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -32,35 +32,10 @@ description:
   .
   Changelog:
   .
-  0.11.0 to 0.11.1:
+  v0.11.1 to v.0.12.0:
   .
-  * Removed unused @InnerSpace@ constriant on functions in 
-    @Wumpus.Tree.Draw@.
-  .
-  0.10.0 to 0.11.0:
-  .
-  * Changed types of drawing functions so they can be run with 
-    glyph metrics (read from file in the IO monad). 
-  .
-  * Generalized the unit type of the /design/ functions to some 
-    numeric @u@ rather than Double.
-  .
-  * The demo has been duplicated - one version uses GhostScript 
-    glyph metrics and the other Adobe glyph metrics, as the 
-    metrics are in different formats and need different font 
-    loaders from Wumpus-Basic.
-  .  
-  0.9.0 to 0.10.0:
-  .
-  * Internal changes to track updates to Wumpus-Basic.
-  .
-  0.8.0 to 0.9.0:
-  .
-  * Stopped re-exporting @DrawingContext@ from Wumpus-Basic in 
-    the module Wumpus.Tree. Clients must now import 
-    @Wumpus.Basic.Graphic@ to get the @DrawingContext@ type and 
-    the constructor @StandardContext@.
-  .
+  * ??
+  . 
   * Internal changes to track updates to Wumpus-Basic.
   . 
   .
@@ -77,7 +52,7 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
-                      containers        >= 0.3.0     && < 0.6.0,
+                      containers        >= 0.3.0     && <= 0.6.0,
                       vector-space      >= 0.6,
                       wumpus-core       == 0.40.0,
                       wumpus-basic      == 0.13.0

@@ -66,7 +66,7 @@ borderedF rgb w h i = ticks background
   where
     background  = localize (fillColour rgb) (borderedRectangle w h)
     v1          = hvec $ w / fromIntegral i
-    ticks g1      = promote1 (\pt -> oconcat (g1 `at` pt) $ 
+    ticks g1    = promoteR1 (\pt -> oconcat (g1 `at` pt) $ 
                                   map (straightLine (vvec h) `at`) 
     	                            $ take (i-1) $ iterate (.+^ v1) (pt .+^ v1) )
 

@@ -29,16 +29,14 @@ module Wumpus.Basic.Kernel.Objects.Connector
   , ConnectorImage
   , DConnectorImage
 
---  , intoConnectorImage
 
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
-import Wumpus.Core                              -- package: wumpus-core
+-- import Wumpus.Core                              -- package: wumpus-core
 
 
 --------------------------------------------------------------------------------
@@ -70,14 +68,6 @@ type ConnectorImage u a = ConnectorCF u (ImageAns u a)
 
 
 type DConnectorImage a  = ConnectorImage Double a
-
-
-
-
--- intoConnectorImage :: ConnectorCF u a 
---                    -> ConnectorGraphic u 
---                    -> ConnectorImage u a
--- intoConnectorImage = postcomb2 (,)
 
 
 
