@@ -146,19 +146,20 @@ locThetaGraphicBody fn = \pt theta -> (uNil, primGraphic $ fn theta pt)
 -- | This is the analogue to 'vectorPath' in @Wumpus-core@.
 --
 locPath :: Num u => [Vec2 u] -> LocDrawingInfo u (PrimPath u)
-locPath vs = promote1 $ \pt -> pure $ vectorPath pt vs
+locPath vs = CF1 $ \_ctx pt  -> vectorPath pt vs
 
 
 -- | This is the analogue to 'emptyPath' in @Wumpus-core@.
 --
 emptyLocPath :: Num u => LocDrawingInfo u (PrimPath u)
-emptyLocPath = promote1 $ \pt -> pure $ vectorPath pt []
+emptyLocPath = locPath []
 
 
 emptyLocGraphic :: Num u => LocGraphic u
-emptyLocGraphic = emptyLocPath `bind1` \path -> static1 (openStroke path)
+emptyLocGraphic = emptyLocPath >>= (staticLoc . openStroke)
 
-
+staticLoc :: CF a -> CF1 r1 a
+staticLoc mf = CF1 $ \ctx _r1 -> unCF mf ctx
 
 -- | This is the analogue to 'ostroke' in @Wumpus-core@.
 --
@@ -193,14 +194,21 @@ borderedPath pp =
 -- | This is the analogue to 'textlabel' in @Wumpus-core@.
 --
 textline :: Num u => String -> LocGraphic u
-textline ss =
+textline ss = adaptLoc $
     withTextAttr $ \rgb attr -> locGraphicBody (textlabel rgb attr ss)
+
+adaptLoc :: CF (Point2 u -> a) -> CF1 (Point2 u) a
+adaptLoc mf = CF1 $ \ctx pt -> unCF mf ctx pt
+
+adaptLocTheta :: CF (Point2 u -> Radian -> a) -> CF2 (Point2 u) Radian a
+adaptLocTheta mf = CF2 $ \ctx pt theta -> unCF mf ctx pt theta
+
 
 
 -- | This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
 rtextline :: Num u => String -> LocThetaGraphic u
-rtextline ss = 
+rtextline ss = adaptLocTheta $
     withTextAttr $ \rgb attr -> locThetaGraphicBody (rtextlabel rgb attr ss)
 
 
@@ -208,7 +216,7 @@ rtextline ss =
 -- | This is the analogue to 'escapedlabel' in @Wumpus-core@.
 --
 escapedline :: Num u => EscapedText -> LocGraphic u
-escapedline ss =
+escapedline ss = adaptLoc $
     withTextAttr $ \rgb attr -> locGraphicBody (escapedlabel rgb attr ss)
 
 
@@ -216,7 +224,7 @@ escapedline ss =
 -- | This is the analogue to 'rescapedlabel' in @Wumpus-core@.
 --
 rescapedline :: Num u => EscapedText -> LocThetaGraphic u
-rescapedline ss =
+rescapedline ss = adaptLocTheta $
     withTextAttr $ \rgb attr -> locThetaGraphicBody (rescapedlabel rgb attr ss)
 
 
@@ -225,14 +233,14 @@ rescapedline ss =
 -- | This is the analogue to 'hkernlabel' in @Wumpus-core@.
 --
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
-hkernline xs =
+hkernline xs = adaptLoc $
     withTextAttr $ \rgb attr -> locGraphicBody (hkernlabel rgb attr xs)
 
 
 -- | This is the analogue to 'vkernlabel' in @Wumpus-core@.
 --
 vkernline :: Num u => [KerningChar u] -> LocGraphic u
-vkernline xs =
+vkernline xs = adaptLoc $ 
     withTextAttr $ \rgb attr -> locGraphicBody (vkernlabel rgb attr xs)
 
 
@@ -247,7 +255,7 @@ vkernline xs =
 -- | This is the analogue to 'strokeEllipse' in @Wumpus-core@.
 --
 strokedEllipse :: Num u => u -> u -> LocGraphic u
-strokedEllipse hw hh =  
+strokedEllipse hw hh = adaptLoc $ 
     withStrokeAttr $ \rgb attr -> locGraphicBody (strokeEllipse rgb attr hw hh)
 
 
@@ -255,21 +263,21 @@ strokedEllipse hw hh =
 -- | This is the analogue to 'rstrokeEllispe' in @Wumpus-core@.
 --
 rstrokedEllipse :: Num u => u -> u -> LocThetaGraphic u
-rstrokedEllipse hw hh =  
+rstrokedEllipse hw hh = adaptLocTheta $
     withStrokeAttr $ \rgb attr -> locThetaGraphicBody (rstrokeEllipse rgb attr hw hh)
 
 
 -- | This is the analogue to 'fillEllispe' in @Wumpus-core@.
 --
 filledEllipse :: Num u => u -> u -> LocGraphic u
-filledEllipse hw hh =  
+filledEllipse hw hh = adaptLoc $ 
     withFillAttr $ \rgb -> locGraphicBody (fillEllipse rgb hw hh)
 
 
 -- | This is the analogue to 'rfillEllispe' in @Wumpus-core@.
 --
 rfilledEllipse :: Num u => u -> u -> LocThetaGraphic u
-rfilledEllipse hw hh =  
+rfilledEllipse hw hh = adaptLocTheta $ 
     withFillAttr $ \rgb -> locThetaGraphicBody (rfillEllipse rgb hw hh)
 
 
@@ -277,14 +285,14 @@ rfilledEllipse hw hh =
 -- | This is the analogue to 'fillStrokeEllispe' in @Wumpus-core@.
 --
 borderedEllipse :: Num u => u -> u -> LocGraphic u
-borderedEllipse hw hh = 
+borderedEllipse hw hh = adaptLoc $
     withBorderedAttr $ \frgb attr srgb -> 
       locGraphicBody (fillStrokeEllipse frgb attr srgb hw hh)
 
 -- | This is the analogue to 'rfillStrokeEllispe' in @Wumpus-core@.
 --
 rborderedEllipse :: Num u => u -> u -> LocThetaGraphic u
-rborderedEllipse hw hh = 
+rborderedEllipse hw hh = adaptLocTheta $ 
     withBorderedAttr $ \frgb attr srgb -> 
       locThetaGraphicBody (rfillStrokeEllipse frgb attr srgb hw hh)
 
@@ -297,8 +305,9 @@ rborderedEllipse hw hh =
 
 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
-straightLine v = 
-    promote1 $ \pt -> openStroke $ primPath pt [lineTo $ pt .+^ v]
+straightLine v = mf >>= (staticLoc . openStroke)
+  where
+    mf = CF1 $ \_ctx pt -> primPath pt [lineTo $ pt .+^ v]
 
           
 -- | Draw a straight line - start and end point are supplied 
@@ -322,7 +331,7 @@ curveBetween sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 --
 
 drawWith :: (Point2 u -> PrimPath u) -> (PrimPath u -> Graphic u) -> LocGraphic u 
-drawWith g mf = promote1 $ \pt -> (mf $ g pt)
+drawWith g mf = CF1 $ \ctx pt -> unCF (mf $ g pt) ctx
 
 
 

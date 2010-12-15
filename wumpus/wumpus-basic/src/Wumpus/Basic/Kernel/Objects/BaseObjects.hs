@@ -24,7 +24,12 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
   , LocDrawingInfo
   , LocThetaDrawingInfo
 
+
+  
   -- * Drawing objects
+  , ImageAns
+  , GraphicAns
+
   , Image
   , LocImage
   , LocThetaImage
@@ -73,22 +78,34 @@ type LocThetaDrawingInfo u a   = LocThetaCF u a
 --------------------------------------------------------------------------------
 -- Image
 
+
+-- | An Image always returns a pair of some polymorphic answer @a@
+-- and a PrimGraphic.
+--
+-- Note a PrimGraphic cannot be empty.
+-- 
+type ImageAns u a       = (a, PrimGraphic u)
+
+
+type GraphicAns u       = ImageAns u (UNil u)
+
+
 -- | Draw a PrimGraphic repsective to the 'DrawingContext' and 
 -- return some answer @a@.
 -- 
-type Image u a      = CF (a, PrimGraphic u)
+type Image u a      = CF (ImageAns u a)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and 
 -- the supplied point, return some answer @a@.
 -- 
-type LocImage u a   = LocCF u (a, PrimGraphic u)
+type LocImage u a   = LocCF u (ImageAns u a)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and
 -- the supplied point and angle.
 -- 
-type LocThetaImage u a   = LocThetaCF u (a, PrimGraphic u)
+type LocThetaImage u a   = LocThetaCF u (ImageAns u a)
 
 
 
@@ -108,30 +125,37 @@ type instance DUnit (LocThetaImage u a) = u
 
 instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
     Rotate (Image u a) where
-  rotate ang = postpro (rotate ang)
+  rotate ang = fmap (rotate ang)
 
 
 instance (Real u, Floating u, RotateAbout a, DUnit a ~ u) => 
     RotateAbout (Image u a) where
-  rotateAbout ang pt = postpro (rotateAbout ang pt)
+  rotateAbout ang pt = fmap (rotateAbout ang pt)
 
 
 instance (Num u, Scale a, DUnit a ~ u) => Scale (Image u a) where
-  scale sx sy = postpro (scale sx sy)
+  scale sx sy = fmap (scale sx sy)
 
 
 instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
-  translate dx dy = postpro (translate dx dy)
+  translate dx dy = fmap (translate dx dy)
 
 
 instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
     Rotate (LocImage u a) where
-  rotate ang = postpro1 (rotate ang)
+  rotate ang = fmap (rotate ang)
 
 instance (Real u, Floating u, RotateAbout a, DUnit a ~ u) => 
     RotateAbout (LocImage u a) where
-  rotateAbout ang pt = postpro1 (rotateAbout ang pt)
+  rotateAbout ang pt = fmap (rotateAbout ang pt)
 
+
+instance (Num u, Scale a, DUnit a ~ u) => Scale (LocImage u a) where
+  scale sx sy = fmap (scale sx sy)
+
+
+instance (Num u, Translate a, DUnit a ~ u) => Translate (LocImage u a) where
+  translate dx dy = fmap (translate dx dy)
 
 --------------------------------------------------------------------------------
 

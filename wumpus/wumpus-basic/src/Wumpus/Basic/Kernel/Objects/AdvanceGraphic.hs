@@ -67,9 +67,9 @@ type DAdvGraphic       = AdvGraphic Double
 makeAdvGraphic :: DrawingInfo (PointDisplace u)
                -> LocGraphic u 
                -> AdvGraphic u
-makeAdvGraphic dispf gf = postcomb1 fn (promote1 $ \pt -> dispf `at` pt) gf
-  where
-    fn ans (_,prim) = (ans, prim)
+makeAdvGraphic dispf gf = CF1 $ \ctx pt -> let a        = unCF dispf ctx pt
+                                               (_,prim) = unCF1 gf ctx pt
+                                           in (a,prim)
 
 
 
@@ -77,11 +77,11 @@ makeAdvGraphic dispf gf = postcomb1 fn (promote1 $ \pt -> dispf `at` pt) gf
 -- This should probably go - the name is not exact enough...
 
 extractLocGraphic :: AdvGraphic u -> LocGraphic u
-extractLocGraphic = postpro1 (replaceL uNil)
+extractLocGraphic = fmap (replaceL uNil)
 
 runAdvGraphic :: DrawingContext  -> Point2 u -> AdvGraphic u 
               -> (Point2 u, PrimGraphic u)
-runAdvGraphic ctx pt df = runCF ctx (unCF1 pt df)
+runAdvGraphic ctx pt df = unCF1 df ctx pt
 
 
 
@@ -94,7 +94,7 @@ runAdvGraphic ctx pt df = runCF ctx (unCF1 pt df)
 infixr 6 `advplus`
 
 advplus :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advplus = accumulate1 oplus
+advplus = accumulate1
 
 
 advconcat :: Num u => [AdvGraphic u] -> AdvGraphic u

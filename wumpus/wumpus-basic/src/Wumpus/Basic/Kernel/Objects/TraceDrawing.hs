@@ -326,7 +326,7 @@ node :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u)
      => LocGraphic u -> m ()
 node gf = askDC    >>= \ctx -> 
           position >>= \pt  -> 
-          let f    = runCF ctx gf in trace (collectH $ snd $ f pt)
+          let (_,prim) = unCF1 gf ctx pt in trace (collectH prim)
 
 
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
