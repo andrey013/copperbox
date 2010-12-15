@@ -41,6 +41,7 @@ import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Applicative
 import Control.Monad
 
 -- Note - a CoordinateAnchor should _NOT_ have affine instances.
@@ -106,7 +107,7 @@ coordinate = Coordinate . CoordinateAnchor . makeShapeCTM
 
 coordinateDot :: (Real u, Floating u, FromPtSize u) 
               => Coordinate u -> Image u (CoordinateAnchor u)
-coordinateDot x = postcomb fn  (return $ getCoordinate x) (drawDot x)
+coordinateDot x = liftA2 fn  (return $ getCoordinate x) (drawDot x)
   where
     fn a (_,b) = (a,b)
 
@@ -116,7 +117,7 @@ coordinateDot x = postcomb fn  (return $ getCoordinate x) (drawDot x)
 --
 coordinateX :: (Real u, Floating u, FromPtSize u) 
             => Coordinate u -> Image u (CoordinateAnchor u)
-coordinateX x = postcomb fn (return $ getCoordinate x) (drawX x)
+coordinateX x = liftA2 fn (return $ getCoordinate x) (drawX x)
   where
     fn a (_,b) = (a,b)
 

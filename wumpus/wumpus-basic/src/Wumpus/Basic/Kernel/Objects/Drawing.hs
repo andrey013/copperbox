@@ -83,6 +83,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AdditiveGroup                       -- package: vector-space
 import Data.AffineSpace
 
+import Control.Applicative
 import Data.List ( foldl' )
 
 
@@ -246,7 +247,7 @@ drawingConcat op a b = Drawing $ mbpostcomb op (getDrawing a) (getDrawing b)
 
 
 mbpostcomb :: (a -> a -> a) -> CF (Maybe a) -> CF (Maybe a) -> CF (Maybe a)
-mbpostcomb op = postcomb fn
+mbpostcomb op = liftA2 fn 
   where
     fn (Just a) (Just b) = Just $ a `op` b
     fn a        Nothing  = a

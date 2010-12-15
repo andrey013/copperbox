@@ -67,15 +67,13 @@ type DBoundedLocGraphic       = BoundedLocGraphic Double
 
 illustrateBoundedGraphic :: Fractional u => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedGraphic mf = 
-    CF $ \ctx -> let (bb,g1) = unCF mf ctx
-                     (_, g0) = unCF (bbrectangle bb) ctx
-                 in (bb, g0 `oplus` g1)  -- bb first
+    mf >>= \(bb,g1) -> bbrectangle bb >>= \(_,g0) -> return (bb, g0 `oplus` g1)
 
 
 illustrateBoundedLocGraphic :: Fractional u 
                             => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLocGraphic mf = 
-    CF1 $ \ctx pt -> unCF (illustrateBoundedGraphic $ mf `at` pt) ctx
+    promoteR1 $ \pt -> illustrateBoundedGraphic $ mf `at` pt
 
 
 bbrectangle :: Fractional u => BoundingBox u -> Graphic u

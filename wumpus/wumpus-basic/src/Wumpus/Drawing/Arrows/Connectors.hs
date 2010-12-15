@@ -93,7 +93,7 @@ leftrightArrow cp la ra =
 
 
 intoImage :: CF a -> CF (z,b) -> CF (a,b)
-intoImage = postcomb (\a (_,b) -> (a,b))
+intoImage = liftA2 (\a (_,b) -> (a,b))
 
 mapSnd :: (b -> c) -> (a,b) -> (a,c)
 mapSnd f (a,b) = (a,f b)
@@ -101,11 +101,11 @@ mapSnd f (a,b) = (a,f b)
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
 strokeConnector (Connector cpF opt_la opt_ra) =
-    promote2 $ \p0 p1 -> let pathc = cpF p0 p1 in 
+    promoteR2 $ \p0 p1 -> let pathc = cpF p0 p1 in 
        tipEval opt_la p0 (directionL pathc) >>= \(dl,gfL) -> 
        tipEval opt_ra p1 (directionR pathc) >>= \(dr,gfR) ->
        intoImage (pure pathc) 
-                 (postpro (mapSnd (gfR . gfL)) $ drawP $ shortenPath dl dr pathc) 
+                 (fmap (mapSnd (gfR . gfL)) $ drawP $ shortenPath dl dr pathc) 
   where
     drawP       = openStroke . toPrimPath   
 
@@ -140,7 +140,7 @@ tipEval :: Num u
         => Maybe (Arrowhead u) -> Point2 u -> Radian
         -> CF (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
-tipEval (Just arw) pt theta = makeMark $ unCF2 pt theta (getArrowhead arw)
+tipEval (Just arw) pt theta = makeMark $ down2R2 pt theta (getArrowhead arw)
 
 
 unmarked :: ArrowMark u
@@ -148,7 +148,7 @@ unmarked = id
 
 
 makeMark :: Image u a -> CF (a, ArrowMark u)
-makeMark = postpro (\(a,prim) -> (a, (`oplus` prim)))
+makeMark = fmap (\(a,prim) -> (a, (`oplus` prim)))
 
 
 

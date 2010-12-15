@@ -98,8 +98,8 @@ makeShape pf mkf = \pt -> Shape { shape_ctm = makeShapeCTM pt
 
 shapeImage :: Num u => (PrimPath u -> Graphic u) -> Shape u t -> Image u (t u)
 shapeImage drawF (Shape { shape_ctm = ctm, path_fun = pf, cons_fun = objf }) = 
-    postcomb fn (pure $ runShapeR ctm objf) 
-                (drawF $ toPrimPath $ runShapeR ctm pf)
+    liftA2 fn (pure $ runShapeR ctm objf) 
+              (drawF $ toPrimPath $ runShapeR ctm pf)
   where
     fn a (_,b) = (a,b)
 

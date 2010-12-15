@@ -146,7 +146,7 @@ locThetaGraphicBody fn = \pt theta -> (uNil, primGraphic $ fn theta pt)
 -- | This is the analogue to 'vectorPath' in @Wumpus-core@.
 --
 locPath :: Num u => [Vec2 u] -> LocDrawingInfo u (PrimPath u)
-locPath vs = CF1 $ \_ctx pt  -> vectorPath pt vs
+locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 
 
 -- | This is the analogue to 'emptyPath' in @Wumpus-core@.
@@ -300,7 +300,7 @@ rborderedEllipse hw hh = adaptR2 $
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = mf >>= (lift0R1 . openStroke)
   where
-    mf = CF1 $ \_ctx pt -> primPath pt [lineTo $ pt .+^ v]
+    mf = promoteR1 $ \pt -> pure $ primPath pt [lineTo $ pt .+^ v]
 
           
 -- | Draw a straight line - start and end point are supplied 
@@ -324,8 +324,7 @@ curveBetween sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 --
 
 drawWith :: (Point2 u -> PrimPath u) -> (PrimPath u -> Graphic u) -> LocGraphic u 
-drawWith g mf = CF1 $ \ctx pt -> unCF (mf $ g pt) ctx
-
+drawWith g mf = promoteR1 (\pt -> mf $ g pt)
 
 
 -- | Supplied point is /bottom left/.

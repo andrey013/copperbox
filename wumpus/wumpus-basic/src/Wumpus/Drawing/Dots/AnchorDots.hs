@@ -169,7 +169,7 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
 
 rectangleLDO :: (Real u, Floating u) 
              => u -> u -> LocDrawingInfo u (DotAnchor u)
-rectangleLDO w h = pure $ rectangleAnchor (w*0.5) (h*0.5)
+rectangleLDO w h = promoteR1 $ \pt -> pure $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -178,8 +178,8 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (radialCardinal rad ctr)
 
 circleLDO :: (Floating u, FromPtSize u) => LocDrawingInfo u (DotAnchor u)
-circleLDO = bind1 (static1 markHeight) $ \diam -> 
-    pure $ circleAnchor (diam * 0.5)
+circleLDO = (lift0R1 markHeight) >>= \diam -> 
+            promoteR1 $ \pt -> pure $ circleAnchor (diam * 0.5) pt
 
 
 -- This might be better taking a function: ctr -> poly_points
@@ -188,14 +188,14 @@ circleLDO = bind1 (static1 markHeight) $ \diam ->
 polygonLDO :: (Real u, Floating u, FromPtSize u) 
            => (u -> Point2 u -> [Point2 u]) -> LocDrawingInfo u (DotAnchor u)
 polygonLDO mk = 
-    bind1 (static1 markHeight) $ \h -> 
-    promote1 $ \ctr -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
+    (lift0R1 markHeight) >>= \h -> 
+    promoteR1 $ \ctr -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
 
 
 --------------------------------------------------------------------------------
 
 intoLocImage :: LocCF u a -> LocCF u (z,b) -> LocCF u (a,b)
-intoLocImage = postcomb1 (\a (_,b) -> (a,b))
+intoLocImage ma mf =  ma >>= \a -> mf >>= \(_,b) -> return (a,b)
 
 
 type DotLocImage u = LocImage u (DotAnchor u) 
@@ -217,7 +217,7 @@ dotText ss = locImageMapL bboxRectAnchor (singleLineCC ss)
 -- Is this generally useful? ...
 --
 locImageMapL :: (a -> b) -> LocImage u a -> LocImage u b
-locImageMapL f = postpro1 $ \(a,prim) -> (f a, prim)
+locImageMapL f = fmap $ \(a,prim) -> (f a, prim)
 
 
 
@@ -251,7 +251,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 
 dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
-dotSquare = bind1 (static1 markHeight) $ \ h ->
+dotSquare = (lift0R1 markHeight) >>= \ h ->
     intoLocImage (rectangleLDO h h) markSquare
 
 

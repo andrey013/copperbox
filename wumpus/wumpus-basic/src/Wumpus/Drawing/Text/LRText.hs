@@ -59,14 +59,14 @@ data InterimText1 u = InterimText1
 --
 singleLineBL :: (Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
-singleLineBL ss = interimText1 ss >>= singleLRText id 
+singleLineBL ss = lift0R1 (interimText1 ss) >>= singleLRText id 
 
 -- | Implicit origin of the text is center-center.
 --
 singleLineCC :: (Fractional u, Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
-singleLineCC ss = glyphCapHeight  >>= \cap_h   -> 
-                  interimText1 ss >>= \interim -> 
+singleLineCC ss = (lift0R1 glyphCapHeight)  >>= \cap_h   -> 
+                  (lift0R1 $ interimText1 ss) >>= \interim -> 
                   let hw = 0.5 * advanceH (text1_advance interim)
                   in singleLRText (.-^ vec hw (0.5 * cap_h)) interim
 
@@ -75,7 +75,7 @@ singleLineCC ss = glyphCapHeight  >>= \cap_h   ->
 --
 singleLineBC :: (Fractional u, Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
-singleLineBC ss = interimText1 ss >>= \interim -> 
+singleLineBC ss = lift0R1 (interimText1 ss) >>= \interim -> 
                   let hw = 0.5 * advanceH (text1_advance interim)
                   in singleLRText (.-^ hvec hw) interim
 
@@ -84,7 +84,7 @@ singleLineBC ss = interimText1 ss >>= \interim ->
 escCharBC :: (Fractional u, Ord u, FromPtSize u)  
           => EscapedChar -> BoundedLocGraphic u
 escCharBC ch = let esc = wrapEscChar ch in 
-    textVector esc >>= \v ->
+    lift0R1 (textVector esc) >>= \v ->
     let hw = 0.5 * advanceH v
     in singleLRText (.-^ hvec hw) (InterimText1 { text1_escaped = esc
                                                 , text1_advance = v })
@@ -140,12 +140,13 @@ multiAligned :: (Fractional u, Ord u, FromPtSize u)
              -> (AdvanceVec u -> Point2 u -> Point2 u)
              -> String -> BoundedLocGraphic u
 multiAligned drawF dispF ss = 
-    linesToInterims ss >>= \(wv,xs)   ->
-    glyphCapHeight     >>= \cap_h     -> 
-    baselineSpacing    >>= \base_span ->   
-    promote1 $ \p0 -> let p1  = dispF wv p0
-                          axs = annotateStartPoints cap_h base_span p1 xs
-                      in mergeLines drawF p1 axs
+    promoteR1 $ \p0 -> 
+      linesToInterims ss >>= \(wv,xs)   ->
+      glyphCapHeight     >>= \cap_h     -> 
+      baselineSpacing    >>= \base_span ->   
+      let p1  = dispF wv p0
+          axs = annotateStartPoints cap_h base_span p1 xs
+      in mergeLines drawF p1 axs
 
 -- This needs sorting out so as not to throw an error
 --
@@ -169,13 +170,13 @@ singleLRText :: (Ord u, FromPtSize u)
              -> BoundedLocGraphic u
 singleLRText dispF (InterimText1 esc av) =
     glyphHeightRange >>= \(ymin, ymax)  ->
-    promote1 $ \p0 -> let pt  = dispF p0
-                          w   = advanceH av
-                          ll  = pt .+^ vvec ymin
-                          ur  = pt .+^ vec w ymax
-                          bb  = boundingBox ll ur 
-                      in (escapedline esc `at` pt) >>= \(_,prim) ->
-                         return (bb, prim)
+    promoteR1  $ \p0 -> let pt  = dispF p0
+                            w   = advanceH av
+                            ll  = pt .+^ vvec ymin
+                            ur  = pt .+^ vec w ymax
+                            bb  = boundingBox ll ur 
+                        in (escapedline esc `at` pt) >>= \(_,prim) ->
+                           return (bb, prim)
 
 
 
@@ -218,7 +219,7 @@ avMaxWidth a@(V2 w1 _) b@(V2 w2 _) = if w2 > w1 then b else a
 
 interimText1 :: FromPtSize u => String -> DrawingInfo (InterimText1 u)
 interimText1 ss = let esc = escapeString ss in 
-    postpro (mk esc) $ textVector esc
+    fmap (mk esc) $ textVector esc
   where
     mk a b = InterimText1 { text1_escaped = a
                           , text1_advance = b }
@@ -228,11 +229,11 @@ textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
 textVector esc = let cs = destrEscapedText id esc in 
    foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
 
-
+-- Not so good...
 charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
-charVector (CharLiteral c) = unCF1 (ord c) avLookupTable
-charVector (CharEscInt i)  = unCF1 i       avLookupTable
-charVector (CharEscName s) = unCF1 ix      avLookupTable
+charVector (CharLiteral c) = down1R1 (ord c) (adaptR1 avLookupTable)
+charVector (CharEscInt i)  = down1R1 i       (adaptR1 avLookupTable)
+charVector (CharEscName s) = down1R1 ix      (adaptR1 avLookupTable)
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 

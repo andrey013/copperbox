@@ -70,7 +70,7 @@ import Control.Applicative
 
 
 liftQuery :: DrawingInfo a -> (a -> LocCF u b) -> LocCF u b
-liftQuery q mf = (static1 q) `bind1` mf  
+liftQuery q mf = (lift0R1 q) >>= mf  
 
 
 infixr 9 `renderPath`
@@ -78,13 +78,13 @@ infixr 9 `renderPath`
 renderPath :: LocDrawingInfo u (PrimPath u) 
            -> (PrimPath u -> Graphic u) 
            -> LocGraphic u
-renderPath m k = m `bind1` (static1 . k)
+renderPath m k = m >>= (lift0R1 . k)
 
 -- intoLocImage :: LocCF u a -> LocCF u (z,b) -> LocCF u (a,b)
 -- intoLocImage = postcomb1 (\a (_,b) -> (a,b))
 
 shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
-shiftOrigin dx dy = prepro1 (displace dx dy)
+shiftOrigin dx dy mf = promoteR1 $ \pt -> down1R1 (displace dx dy pt) mf
 
 
 
@@ -95,11 +95,12 @@ markChar ch = markText [ch]
 
 
 markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-markText ss = postpro1 (\(_,b) -> (uNil,b)) $ singleLineCC ss
+markText ss = fmap (replaceL uNil) $ singleLineCC ss
 
 
 
-
+localPoint :: (Point2 u -> Point2 u) -> CF1 (Point2 u) a -> CF1 (Point2 u) a
+localPoint f ma = promoteR1 $ \pt -> down1R1 (f pt) ma
 
 -- | Supplied point is the center.
 --
@@ -135,7 +136,8 @@ markCross = liftQuery markHeight $ \h ->
 
 pathDiamond :: (Fractional u, FromPtSize u) 
             => LocDrawingInfo u (PrimPath u)
-pathDiamond = liftQuery markHeight $ \h -> pure $ diamondPath (0.5*h) (0.66*h)
+pathDiamond = liftQuery markHeight $ 
+                \h -> promoteR1 $ \pt -> pure $ diamondPath (0.5*h) (0.66*h) pt
 
 
 
@@ -185,7 +187,7 @@ markBCircle = liftQuery markHalfHeight borderedDisk
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
 markPentagon = liftQuery markHeight $ \h ->
-    promote1 $ \pt -> closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
+    promoteR1 $ \pt -> closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
 
  
 
@@ -196,7 +198,7 @@ markStar =
 
 starLines :: Floating u => u -> LocGraphic u
 starLines hh = 
-    promote1 $ \ctr -> step $ map (fn ctr) $ polygonPoints 5 hh ctr
+    promoteR1 $ \ctr -> step $ map (fn ctr) $ polygonPoints 5 hh ctr
   where
     fn p0 p1    = openStroke $ primPath p0 [lineTo p1]
     step (x:xs) = oconcat x xs
@@ -235,5 +237,6 @@ markFOCross = markCross `oplus` markBCircle
 markTriangle :: (Floating u, FromPtSize u) => LocGraphic u
 markTriangle = tripath `renderPath` closedStroke
   where
-    tripath = liftQuery markHeight $ \h -> pure $ equilateralTrianglePath h
+    tripath = liftQuery markHeight $ 
+                \h -> promoteR1 $ \pt -> pure $ equilateralTrianglePath h pt
 
