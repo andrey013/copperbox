@@ -14,14 +14,16 @@
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Basic.GeneralMidiInstruments (
-    -- * General MIDI instruments
-    GMInst(..),
+module ZMidi.Basic.GeneralMidiInstruments
+  (
+  -- * General MIDI instruments
+    GMInst(..)
 
-    -- * General MIDI drums
-    GMDrum(..),
+  -- * General MIDI drums
+  , GMDrum(..)
 
-    drumPitch
+  , drumPitch
+
   ) where
 
 import Data.Word
