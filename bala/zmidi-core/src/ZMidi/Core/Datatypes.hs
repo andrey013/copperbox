@@ -64,6 +64,9 @@ import Data.Int
 import Data.Word
 import Numeric (showHex)
 
+
+-- | TagByte is an alias to 'Word8'.
+--
 type TagByte = Word8
 
 

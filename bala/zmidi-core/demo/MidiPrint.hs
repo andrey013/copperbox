@@ -4,8 +4,7 @@
 
 module Main where
 
-import ZMidi.Core.Pretty
-import ZMidi.Core.ReadFile
+import ZMidi.Core
 
 import System.Environment
 

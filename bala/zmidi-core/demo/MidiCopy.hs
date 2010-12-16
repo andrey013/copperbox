@@ -6,9 +6,7 @@
 
 module Main where
 
-import ZMidi.Core.ReadFile
-import ZMidi.Core.WriteFile
-
+import ZMidi.Core
 
 import System.Environment
 
@@ -31,7 +29,8 @@ process filename = do
     ans <- readMidi filename
     case ans of
       Left err -> print err
-      Right a  -> writeMidi (filename ++ ".001") a
-    putStrLn $ take 1000 $ show ans  -- not very good, need a pretty printer...
+      Right a  -> do { mapM_ putStrLn $ header $ mf_header a
+                     ; writeMidi (filename ++ ".001") a }
+    
 
  

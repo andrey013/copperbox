@@ -1,0 +1,9 @@
+
+0.1.0 to 0.2.0:
+
+  * Added a top-level /shim/ module to import all the exposed
+    modules. Added a version number module
+
+0.1.0:
+
+  * Initial release.
