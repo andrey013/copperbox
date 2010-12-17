@@ -11,16 +11,15 @@ import ZMidi.Core
 
 
 
-demo01 = writeMidi "demo01.mid" $ outputMCST $ wrap
-    [ [ PNote 532 default_props 60
-      , PNote 532 default_props 62 
+demo01 = writeMidiMCT "demo01.mid" $ 
+    [ [ PNote 0.25 default_props 60
+      , PNote 0.25 default_props 62 
       ]
-    , [ PNote 266 default_props 80
-      , PNote 266 default_props 83
+    , [ PNote 0.125 default_props 80
+      , PNote 0.125 default_props 83
       ]
     ]
 
-wrap a = [a]
 
 default_props = PrimProps
       { velocity_on     = 127
