@@ -9,15 +9,13 @@ category:         Music
 synopsis:         Utilities built on top of ZMidi-Core.
 description:
   .
-  Minimalist library to read and write MIDI files, with 
-  dependencies only on ByteString and Data.Binary.
+  
   .
   Changelog:
   . 
-  v0.1.0 to v0.2.0:
+  v0.1.0:
   .
-  * Added a top-level /shim/ module to import all the exposed
-    modules. Added a version number module
+  * Initial release.
   .
   .
 build-type:         Simple
@@ -31,14 +29,20 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base              < 5,
-                      zmidi-core        > 0.1.0   && < 0.3.0
+  build-depends:      base              <  5,
+                      time              >= 1.1.3  && <  1.6,
+                      zmidi-core        >  0.1.0  && < 0.3.0
   
   exposed-modules:
+    ZMidi.Basic.Construction,
+    ZMidi.Basic.Construction.Builder,
+    ZMidi.Basic.Construction.Datatypes,
+    ZMidi.Basic.Construction.OutputMidi,
     ZMidi.Basic.GeneralMidiInstruments,
     ZMidi.Basic.VersionNumber
 
   other-modules:
+    ZMidi.Basic.Construction.HList
       
   extensions:
     

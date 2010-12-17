@@ -4,25 +4,34 @@
 module Demo01 where
 
 import ZMidi.Basic.GeneralMidiInstruments
-import ZMidi.Basic.WriteMidi.Top
-import ZMidi.Basic.VersionNumber
+import ZMidi.Basic.Construction
+
+-- import ZMidi.Basic.VersionNumber
 
 import ZMidi.Core
 
 
+dummy = c_nat 4
+
+main :: IO ()
+main = demo01 >> demo02
+
 -- default tempo is 120 beats per minute
 
-demo01 = writeMidiMCT "demo01.mid" $ [ section1 ]
+demo01 :: IO ()
+demo01 = do
+    putStrLn "Writing demo01.mid..."
+    writeMidiMCT "demo01.mid" $ [ section1 ]
   where
     section1 = Section 120 [voice1, voice2]
-    instr    = fromIntegral $ fromEnum Honky_tonk
-    voice1   = SectionVoice instr [ PNote 0.25 default_props 60
-                                  , PNote 0.25 default_props 62 ]
-    voice2   = SectionVoice instr [ PNote 0.125 default_props 80
-                                  , PNote 0.125 default_props 83 ]
+    instr    = instrumentNumber Honky_tonk
+    voice1   = SectionVoice instr [ PNote 0.25 default_props $ c_nat 4
+                                  , PNote 0.25 default_props $ c_nat 4 ]
+    voice2   = SectionVoice instr [ PNote 0.125 default_props $ e_nat 4
+                                  , PNote 0.125 default_props $ g_nat 4 ]
    
 
-
+default_props :: PrimProps
 default_props = PrimProps
       { velocity_on     = 127
       , velocity_off    = 127

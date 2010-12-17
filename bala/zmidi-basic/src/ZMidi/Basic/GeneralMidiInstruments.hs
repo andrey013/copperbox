@@ -22,6 +22,7 @@ module ZMidi.Basic.GeneralMidiInstruments
   -- * General MIDI drums
   , GMDrum(..)
 
+  , instrumentNumber
   , drumPitch
 
   ) where
@@ -242,7 +243,15 @@ data GMDrum
     | Open_triangle
   deriving (Eq,Ord,Enum,Read,Show)
 
--- General Midi drums are in the range [35..81]
+-- | Extract the MIDI instrument number from a GMInst.
+--
+instrumentNumber :: GMInst -> Word8
+instrumentNumber = fromIntegral . fromEnum
+
+-- | Extract the General MIDI drum pitch from a GMDrum
+-- 
+-- GM drum notes are in the range [35..81].
+--
 drumPitch :: GMDrum -> Word8
 drumPitch = (+35) . fromIntegral . fromEnum
 
