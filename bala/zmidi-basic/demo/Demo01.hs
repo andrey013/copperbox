@@ -10,15 +10,17 @@ import ZMidi.Basic.VersionNumber
 import ZMidi.Core
 
 
+-- default tempo is 120 beats per minute
 
-demo01 = writeMidiMCT "demo01.mid" $ 
-    [ [ PNote 0.25 default_props 60
-      , PNote 0.25 default_props 62 
-      ]
-    , [ PNote 0.125 default_props 80
-      , PNote 0.125 default_props 83
-      ]
-    ]
+demo01 = writeMidiMCT "demo01.mid" $ [ section1 ]
+  where
+    section1 = Section 120 [voice1, voice2]
+    instr    = fromIntegral $ fromEnum Honky_tonk
+    voice1   = SectionVoice instr [ PNote 0.25 default_props 60
+                                  , PNote 0.25 default_props 62 ]
+    voice2   = SectionVoice instr [ PNote 0.125 default_props 80
+                                  , PNote 0.125 default_props 83 ]
+   
 
 
 default_props = PrimProps

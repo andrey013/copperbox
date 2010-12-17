@@ -35,6 +35,19 @@ import Data.Time
 import Data.Word
 
 
+type MultiChannelTrack = [Section]
+
+data Section = Section 
+      { section_tempo           :: Double
+      , section_data            :: [SectionVoice]
+      }
+  deriving (Eq,Ord,Show)
+
+data SectionVoice = SectionVoice 
+      { voice_instrument        :: Word8
+      , voice_notelist          :: [Primitive]
+      }
+  deriving (Eq,Ord,Show)
 
 
 -- | Primitive is either a note, chord or rest.
@@ -138,7 +151,6 @@ getEllapsedTime     = getsRS rs_ellapsed_time
 getChannelNumber    :: OutMonad Word8
 getChannelNumber    = getsRS rs_channel_number
 
-type MultiChannelTrack = [[Primitive]]
 
 
 -- Nice to have time stamp ....
@@ -171,12 +183,29 @@ genericText ss = (0, MetaEvent $ TextEvent GENERIC_TEXT ss)
 sequenceName :: String -> Message
 sequenceName ss = (0, MetaEvent $ TextEvent SEQUENCE_NAME ss)
 
-outputTrack :: [[Primitive]] -> Track
-outputTrack xss = Track $ runOutMonad $ channelBody xss
 
-channelBody :: [[Primitive]] -> OutMonad [Message]
-channelBody = 
-    fmap (deltaTransform . concatMessages) . mapM channelData . limit16
+setTempo :: Double -> Message
+setTempo bpm = (0, MetaEvent $ SetTempo mspqn) 
+  where
+    mspqn = floor $ microseconds_per_minute / bpm
+
+microseconds_per_minute :: Double
+microseconds_per_minute = 60000000
+
+
+programChange :: Word8 -> Word8 -> Message
+programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
+
+outputTrack :: [Section] -> Track
+outputTrack xss = Track $ unwind $ map (runOutMonad . buildSection) xss
+  where 
+    unwind hs = toListH $ foldr appendH id hs 
+
+buildSection  :: Section -> OutMonad (H Message)
+buildSection (Section tmpo xss) = fmap (consH (setTempo tmpo)) body 
+  where
+    chans = limit16 xss
+    body  = fmap (deltaTransform . concatMessages) $ mapM voiceData $ chans
 
 
 -- The MIDI file format only allows 16 channels per track.
@@ -207,11 +236,11 @@ mergeOrdered cmp = step
 --
 -- This transforms them to use delta time.
 --
-deltaTransform :: [Message] -> [Message]
+deltaTransform :: [Message] -> H Message
 deltaTransform = step 0
   where
-    step _    []              = [end_of_track]
-    step abst ((evt,body):xs) = (evt - abst,body) : step evt xs
+    step _    []              = wrapH end_of_track
+    step abst ((evt,body):xs) = (evt - abst,body) `consH` step evt xs
 
 
 
@@ -227,6 +256,17 @@ channelData xs = do
     incrChannelNumber 
     zeroEllapsedTime
     return $ toListH hs
+
+
+voiceData :: SectionVoice -> OutMonad [Message]
+voiceData (SectionVoice instr xs) = do 
+    ch <- getChannelNumber
+    let prog_msg = programChange instr ch
+    hs <- primitives xs 
+    incrChannelNumber 
+    zeroEllapsedTime
+    return $ prog_msg : toListH hs
+
 
 primitives :: [Primitive] -> OutMonad HChannelData
 primitives []     = return emptyH
