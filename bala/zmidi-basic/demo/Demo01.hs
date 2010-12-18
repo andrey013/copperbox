@@ -6,10 +6,12 @@ module Demo01 where
 import ZMidi.Basic.GeneralMidiInstruments
 import ZMidi.Basic.Construction
 
--- import ZMidi.Basic.VersionNumber
+import qualified ZMidi.Basic.Construction.JoinList as JL
 
 import ZMidi.Core
 
+
+-- import qualified Data.Traversable as T
 
 dummy = c_nat 4
 
@@ -21,29 +23,31 @@ main = demo01 >> demo02
 demo01 :: IO ()
 demo01 = do
     putStrLn "Writing demo01.mid..."
-    writeMidiMCT "demo01.mid" $ [ section1 ]
+    writeMidiMCT "demo01.mid" $ (JL.one (JL.one section1))
   where
-    section1 = Section 120 [voice1, voice2]
+    section1 = section 120 [voice1, voice2]
     instr    = instrumentNumber Honky_tonk
-    voice1   = SectionVoice instr [ PNote 0.25 default_props $ c_nat 4
-                                  , PNote 0.25 default_props $ c_nat 4 ]
-    voice2   = SectionVoice instr [ PNote 0.125 default_props $ e_nat 4
-                                  , PNote 0.125 default_props $ g_nat 4 ]
+    voice1   = instrument instr >> note dquarter (c_nat 4) 
+                                >> note dquarter (c_nat 4)
+    voice2   = instrument instr >> note deighth  (e_nat 4) 
+                                >> note deighth  (g_nat 4)
+
+-- Note - rather than zmidi-basic, this might be better called
+-- zmidi-construction
+
+
+-- how to append sections? - can now use mappend...
+
+section :: Double -> [Build a] -> Section
+section bpm voices = Section bpm $ JL.fromListF fn voices
+  where
+    fn = SectionVoice . execBuild build_env_zero
    
--- looks like Build needs writer as well?
--- and Primitive probably needs a MidiMsg constructor...
---
-temp01 = map (runBuild build_env_zero) $ 
-    [ note dquarter (c_nat 4), note dquarter (e_nat 4) ]
 
 
-default_props :: PrimProps
-default_props = PrimProps
-      { velocity_on     = 127
-      , velocity_off    = 64
-      , note_volume     = 127
-      }
-
+temp01 = runBuild build_env_zero $ 
+    note dquarter (c_nat 4) >> note dquarter (e_nat 4) >> rest dquarter
+    
 
 demo02 :: IO ()
 demo02 = do

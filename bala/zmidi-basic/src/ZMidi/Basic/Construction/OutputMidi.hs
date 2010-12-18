@@ -21,10 +21,12 @@ module ZMidi.Basic.Construction.OutputMidi
 
 import ZMidi.Basic.Construction.Datatypes
 import ZMidi.Basic.Construction.HList
+import qualified ZMidi.Basic.Construction.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
 import Control.Applicative
+import qualified Data.Foldable as F
 import Data.List
 import Data.Time
 import Data.Word
@@ -124,9 +126,13 @@ writeMidiMCT filename mct =
 
 
 outputMCT :: ZonedTime -> MultiChannelTrack -> MidiFile
-outputMCT ztim mct = MidiFile hdr $ [ infoTrack ztim, outputTrack mct ]
+outputMCT ztim mct = 
+    MidiFile hdr $ infoTrack ztim : JL.zipWithIntoList fn mct [1..]
   where
-    hdr = Header MF1 2 (TPB $ floor ticks_per_quarternote)
+    fn  = flip outputTrack
+    hdr = Header MF1 len tpb
+    len = fromIntegral $ 1 + JL.length mct
+    tpb = TPB $ floor ticks_per_quarternote
 
 
 infoTrack :: ZonedTime -> Track
@@ -154,25 +160,27 @@ microseconds_per_minute :: Double
 microseconds_per_minute = 60000000
 
 
-programChange :: Word8 -> Word8 -> Message
-programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
+-- programChange :: Word8 -> Word8 -> Message
+-- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
-outputTrack :: [Section] -> Track
-outputTrack xss = Track $ unwind $ map (runOutMonad . buildSection) xss
+outputTrack :: Int -> JL.JoinList Section -> Track
+outputTrack n xss = Track $ unwind $ fmap (runOutMonad . buildSection) xss
   where 
-    unwind hs = toListH $ foldr appendH emptyH hs 
+    unwind hs = toListH $ consH info $ F.foldr appendH emptyH hs 
+    info      = sequenceName $ "Track" ++ show n
+
 
 buildSection  :: Section -> OutMonad (H Message)
 buildSection (Section tmpo xss) = fmap (consH (setTempo tmpo)) body 
   where
     chans = limit16 xss
-    body  = fmap (deltaTransform . concatMessages) $ mapM voiceData $ chans
+    body  = fmap (deltaTransform . concatMessages) $ JL.toListM voiceData chans
 
 
 -- The MIDI file format only allows 16 channels per track.
 --
-limit16 :: [a] -> [a]
-limit16 = take 16
+limit16 :: JL.JoinList a -> JL.JoinList a
+limit16 = JL.take 16
 
 concatMessages :: [[Message]] -> [Message]
 concatMessages []     = []
@@ -213,13 +221,11 @@ type HChannelData = H Message
 
 
 voiceData :: SectionVoice -> OutMonad [Message]
-voiceData (SectionVoice instr xs) = do 
-    ch <- getChannelNumber
-    let prog_msg = programChange instr ch
+voiceData (SectionVoice xs) = do 
     hs <- primitives xs 
     incrChannelNumber 
     zeroEllapsedTime
-    return $ prog_msg : toListH hs
+    return $ toListH hs
 
 
 primitives :: [MidiPrim] -> OutMonad HChannelData

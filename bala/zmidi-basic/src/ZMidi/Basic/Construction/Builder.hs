@@ -54,11 +54,12 @@ module ZMidi.Basic.Construction.Builder
   , BuildT
   , BuildM(..)
   , runBuild
+  , execBuild
   , runBuildT
   , asksEnv
 
 
-
+  , instrument
   , note
   , chord
   , rest
@@ -68,8 +69,11 @@ module ZMidi.Basic.Construction.Builder
 
 
 import ZMidi.Basic.Construction.Datatypes
+import ZMidi.Basic.Construction.HList
 
 import Control.Applicative
+import Control.Monad
+import Data.Monoid
 import Data.Word
 
 
@@ -177,61 +181,81 @@ build_env_zero = BuildEnv
       }
 
 
-newtype Build a = Build { getBuild :: BuildEnv -> a }
+newtype Build a = Build { getBuild :: BuildEnv -> (a, H MidiPrim) }
 
 instance Functor Build where
-  fmap f ma = Build $ \r -> f $ getBuild ma r
+  fmap f ma = Build $ \r -> let (a,w) = getBuild ma r in (f a, w)
 
 
 instance Applicative Build where
-  pure a    = Build $ \_ -> a
-  mf <*> ma = Build $ \r -> let f = getBuild mf r
-                                a = getBuild ma r
-                            in f a
+  pure a    = Build $ \_ -> (a, mempty)
+  mf <*> ma = Build $ \r -> let (f,w1) = getBuild mf r
+                                (a,w2) = getBuild ma r
+                            in (f a, w1 `mappend` w2)
 
 
 instance Monad Build where
-  return a  = Build $ \_ -> a
-  m >>= k   = Build $ \r -> let a = getBuild m r in getBuild (k a) r
+  return a  = Build $ \_ -> (a,mempty)
+  m >>= k   = Build $ \r -> let (a,w1) = getBuild m r 
+                                (b,w2) = getBuild (k a) r
+                            in (b, w1 `mappend` w2)
                           
 
-newtype BuildT m a = BuildT { getBuildT :: BuildEnv -> m a }
+newtype BuildT m a = BuildT { getBuildT :: BuildEnv -> m (a, H MidiPrim) }
 
 
 instance Monad m => Functor (BuildT m) where
-  fmap f ma = BuildT $ \r -> getBuildT ma r >>= \a -> return (f a)
+  fmap f ma = BuildT $ \r -> getBuildT ma r >>= \(a,w) -> return (f a, w)
 
 
 instance Monad m => Applicative (BuildT m) where
-  pure a    = BuildT $ \_ -> return a
-  mf <*> ma = BuildT $ \r -> getBuildT mf r >>= \f -> 
-                             getBuildT ma r >>= \a -> return (f a)
+  pure a    = BuildT $ \_ -> return (a, mempty)
+  mf <*> ma = BuildT $ \r -> getBuildT mf r >>= \(f,w1) -> 
+                             getBuildT ma r >>= \(a,w2) -> 
+                             return (f a, w1 `appendH` w2)
                        
 
 
 instance Monad m => Monad (BuildT m) where
-  return a  = BuildT $ \_ -> return a
-  m >>= k   = BuildT $ \r -> getBuildT m r >>= \a -> getBuildT (k a) r
+  return a  = BuildT $ \_ -> return (a, mempty)
+  m >>= k   = BuildT $ \r -> getBuildT m r     >>= \(a,w1) -> 
+                             getBuildT (k a) r >>= \(b,w2) -> 
+                             return (b, w1 `mappend` w2)
 
 
-runBuild :: BuildEnv -> Build a -> a
-runBuild env ma = getBuild ma env
+runBuild :: BuildEnv -> Build a -> (a, [MidiPrim])
+runBuild env ma = post $ getBuild ma env
+  where
+    post (a,f) = (a, toListH f)
 
-runBuildT :: Monad m => BuildEnv -> BuildT m a -> m a
-runBuildT env ma = getBuildT ma env
+execBuild :: BuildEnv -> Build a -> [MidiPrim]
+execBuild env ma = post $ getBuild ma env
+  where
+    post (_,f) = toListH f
+
+
+runBuildT :: Monad m => BuildEnv -> BuildT m a -> m (a, [MidiPrim])
+runBuildT env ma = liftM post $ getBuildT ma env
+  where
+    post (a,f) = (a, toListH f)
 
 
 class (Applicative m, Monad m) => BuildM m where
   localize :: (BuildEnv -> BuildEnv) -> m a -> m a
   askEnv   :: m BuildEnv
+  tell     :: MidiPrim -> m ()
+
 
 instance BuildM Build where
   localize f ma = Build $ \r -> getBuild ma (f r)
-  askEnv        = Build $ \r -> r
+  askEnv        = Build $ \r -> (r, mempty)
+  tell a        = Build $ \_ -> ((), wrapH a)
 
 instance Monad m => BuildM (BuildT m) where
   localize f ma = BuildT $ \r -> getBuildT ma (f r)
-  askEnv        = BuildT $ \r -> return r
+  askEnv        = BuildT $ \r -> return (r, mempty)
+  tell a        = BuildT $ \_ -> return ((), wrapH a)
+
 
 
 asksEnv :: BuildM m => (BuildEnv -> a) -> m a
@@ -245,13 +269,17 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
                              })
               <$> askEnv
 
-note :: BuildM m => MidiDuration -> MidiPitch -> m MidiPrim
-note d p = (\props -> PNote d props p) <$> noteProps
 
-chord :: BuildM m => MidiDuration -> [MidiPitch] -> m MidiPrim
-chord d ps = (\props -> PChord d props ps) <$> noteProps
+instrument :: BuildM m => Word8 -> m ()
+instrument inst  = tell $ PMsg $ Left $ vinstrument inst
 
-rest :: BuildM m => MidiDuration -> m MidiPrim
-rest d = pure $ PRest d
+note :: BuildM m => MidiDuration -> MidiPitch -> m ()
+note d p = noteProps >>= \props -> tell (PNote d props p)
+
+chord :: BuildM m => MidiDuration -> [MidiPitch] -> m ()
+chord d ps = noteProps >>= \props -> tell (PChord d props ps)
+
+rest :: BuildM m => MidiDuration -> m ()
+rest d = tell $ PRest d
 
 

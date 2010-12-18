@@ -42,7 +42,8 @@ library
     ZMidi.Basic.VersionNumber
 
   other-modules:
-    ZMidi.Basic.Construction.HList
+    ZMidi.Basic.Construction.HList,
+    ZMidi.Basic.Construction.JoinList
       
   extensions:
     

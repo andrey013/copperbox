@@ -23,26 +23,31 @@ module ZMidi.Basic.Construction.Datatypes
   , VoiceMsg(..)
   , PrimProps(..)
 
+  , vinstrument
+
   ) where
 
+import ZMidi.Basic.Construction.JoinList
 
 import ZMidi.Core                               -- package: zmidi-core
 
 import Data.Word
 
 
-type MultiChannelTrack = [Section]
+-- Note MultiChannel track currently isn\'t multi (it should be to 
+-- support playing different rhythms against each other). 
+
+type MultiChannelTrack = JoinList ChannelTrack
+
+type ChannelTrack = JoinList Section
 
 data Section = Section 
       { section_tempo           :: Double
-      , section_data            :: [SectionVoice]
+      , section_data            :: JoinList SectionVoice
       }
   deriving (Show)
 
-data SectionVoice = SectionVoice 
-      { voice_instrument        :: Word8
-      , voice_notelist          :: [MidiPrim]
-      }
+newtype SectionVoice = SectionVoice { voice_notelist :: [MidiPrim] }
   deriving (Show)
 
 
@@ -78,3 +83,5 @@ data PrimProps = PrimProps
   deriving (Eq,Ord,Show)
 
 
+vinstrument :: Word8 -> VoiceMsg
+vinstrument inst = VoiceMsg $ \ch -> ProgramChange ch inst
