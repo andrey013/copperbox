@@ -16,8 +16,13 @@
 
 module ZMidi.Basic.Construction.Builder
   (
-  -- * Note constructors 
-    c_nat  
+
+  -- * Type aliases
+    MidiPitch
+  , MidiDuration
+
+  -- * Pitch constructors 
+  , c_nat  
   , c_sharp
   , d_flat
   , d_nat
@@ -34,8 +39,30 @@ module ZMidi.Basic.Construction.Builder
   , b_flat
   , b_nat
 
+  -- * Duration constructors
+  , dwhole
+  , dhalf
+  , dquarter
+  , deighth
+  , dsixteenth
+
+  -- * Build monad
+  , BuildEnv(..)
+  , build_env_zero
+
   , Build
   , BuildT
+  , BuildM(..)
+  , runBuild
+  , runBuildT
+  , asksEnv
+
+
+
+  , note
+  , chord
+  , rest
+  
 
   ) where
 
@@ -45,6 +72,12 @@ import ZMidi.Basic.Construction.Datatypes
 import Control.Applicative
 import Data.Word
 
+
+type MidiPitch    = Word8
+type MidiDuration = Double
+
+
+--------------------------------------------------------------------------------
 
 clampPch :: Int -> Word8
 clampPch i | i < 0     = 0
@@ -105,6 +138,24 @@ b_nat o     = clampPch $ 11 + 12 * (o + 1)
 
 
 
+dwhole      :: MidiDuration
+dwhole      = 1.0
+
+dhalf       :: MidiDuration
+dhalf       = 0.5
+
+dquarter    :: MidiDuration
+dquarter    = 0.25
+
+deighth     :: MidiDuration
+deighth     = 0.125
+
+dsixteenth  :: MidiDuration
+dsixteenth   = 0.0625
+
+
+
+
 --------------------------------------------------------------------------------
 
 
@@ -116,6 +167,14 @@ data BuildEnv = BuildEnv
       , note_volume_level       :: Word8
       }
   deriving (Eq,Ord,Show)
+
+
+build_env_zero :: BuildEnv
+build_env_zero = BuildEnv
+      { note_on_velocity     = 127
+      , note_off_velocity    = 64
+      , note_volume_level    = 127
+      }
 
 
 newtype Build a = Build { getBuild :: BuildEnv -> a }
@@ -153,3 +212,46 @@ instance Monad m => Applicative (BuildT m) where
 instance Monad m => Monad (BuildT m) where
   return a  = BuildT $ \_ -> return a
   m >>= k   = BuildT $ \r -> getBuildT m r >>= \a -> getBuildT (k a) r
+
+
+runBuild :: BuildEnv -> Build a -> a
+runBuild env ma = getBuild ma env
+
+runBuildT :: Monad m => BuildEnv -> BuildT m a -> m a
+runBuildT env ma = getBuildT ma env
+
+
+class (Applicative m, Monad m) => BuildM m where
+  localize :: (BuildEnv -> BuildEnv) -> m a -> m a
+  askEnv   :: m BuildEnv
+
+instance BuildM Build where
+  localize f ma = Build $ \r -> getBuild ma (f r)
+  askEnv        = Build $ \r -> r
+
+instance Monad m => BuildM (BuildT m) where
+  localize f ma = BuildT $ \r -> getBuildT ma (f r)
+  askEnv        = BuildT $ \r -> return r
+
+
+asksEnv :: BuildM m => (BuildEnv -> a) -> m a
+asksEnv extr = extr <$> askEnv
+
+
+noteProps :: BuildM m => m PrimProps
+noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
+                             , velocity_off   = note_off_velocity r
+                             , note_volume    = note_volume_level r
+                             })
+              <$> askEnv
+
+note :: BuildM m => MidiDuration -> MidiPitch -> m MidiPrim
+note d p = (\props -> PNote d props p) <$> noteProps
+
+chord :: BuildM m => MidiDuration -> [MidiPitch] -> m MidiPrim
+chord d ps = (\props -> PChord d props ps) <$> noteProps
+
+rest :: BuildM m => MidiDuration -> m MidiPrim
+rest d = pure $ PRest d
+
+

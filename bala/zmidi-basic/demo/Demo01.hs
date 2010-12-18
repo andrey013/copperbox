@@ -30,11 +30,17 @@ demo01 = do
     voice2   = SectionVoice instr [ PNote 0.125 default_props $ e_nat 4
                                   , PNote 0.125 default_props $ g_nat 4 ]
    
+-- looks like Build needs writer as well?
+-- and Primitive probably needs a MidiMsg constructor...
+--
+temp01 = map (runBuild build_env_zero) $ 
+    [ note dquarter (c_nat 4), note dquarter (e_nat 4) ]
+
 
 default_props :: PrimProps
 default_props = PrimProps
       { velocity_on     = 127
-      , velocity_off    = 127
+      , velocity_off    = 64
       , note_volume     = 127
       }
 

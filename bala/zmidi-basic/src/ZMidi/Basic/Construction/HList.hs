@@ -32,31 +32,37 @@ module ZMidi.Basic.Construction.HList
   ) where
 
 
-type H a = [a] -> [a]
+import Data.Monoid
+
+newtype H a = H { getH :: [a] -> [a] }
+
+instance Monoid (H a) where
+  mempty  = emptyH
+  mappend = appendH
 
 emptyH :: H a
-emptyH = id
+emptyH = H $ id
 
 wrapH :: a -> H a
-wrapH a = consH a id 
+wrapH a = consH a emptyH  
 
 consH :: a -> H a -> H a
-consH a f = (a:) . f
+consH a f = H $ (a:) . getH f
 
 snocH :: H a -> a -> H a
-snocH  f a = f . (a:)
+snocH  f a = H $ getH f . (a:)
 
 appendH :: H a -> H a -> H a
-appendH f g = f . g
+appendH f g = H $ getH f . getH g
 
 -- | Adding two things at once (note_on, note_off) is common in 
 -- MIDI so there is a special case for it.
 --
 twoH :: a -> a -> H a
-twoH a b = \ls -> a:b:ls
+twoH a b = H $ \ls -> a:b:ls
 
 toListH :: H a -> [a]
-toListH = ($ [])
+toListH = ($ []) . getH 
 
 fromListH :: [a] -> H a
-fromListH xs = (xs++)
+fromListH xs = H $ (xs++)

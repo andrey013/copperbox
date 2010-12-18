@@ -19,12 +19,14 @@ module ZMidi.Basic.Construction.Datatypes
     MultiChannelTrack
   , Section(..)
   , SectionVoice(..)
-  , Primitive(..)
+  , MidiPrim(..)
+  , VoiceMsg(..)
   , PrimProps(..)
 
   ) where
 
 
+import ZMidi.Core                               -- package: zmidi-core
 
 import Data.Word
 
@@ -35,13 +37,13 @@ data Section = Section
       { section_tempo           :: Double
       , section_data            :: [SectionVoice]
       }
-  deriving (Eq,Ord,Show)
+  deriving (Show)
 
 data SectionVoice = SectionVoice 
       { voice_instrument        :: Word8
-      , voice_notelist          :: [Primitive]
+      , voice_notelist          :: [MidiPrim]
       }
-  deriving (Eq,Ord,Show)
+  deriving (Show)
 
 
 -- | Primitive is either a note, chord or rest.
@@ -50,11 +52,21 @@ data SectionVoice = SectionVoice
 -- note. It is expected that client software with use some other 
 -- type but convert to Double as it builds the syntax.
 --
-data Primitive = PNote   Double PrimProps Word8
-               | PChord  Double PrimProps [Word8]
-               | PRest   Double
-   deriving (Eq,Ord,Show)
+data MidiPrim = PNote   Double PrimProps Word8
+              | PChord  Double PrimProps [Word8]
+              | PRest   Double
+              | PMsg    (Either VoiceMsg MetaEvent)
+   deriving (Show)
 
+-- | 'VoiceMsg' is a function from channel number to VoiceEvent.
+-- 
+-- Channel number is unknown when building the syntax, it is 
+-- filled in during rendering.
+--
+newtype VoiceMsg = VoiceMsg { getVoiceMsg :: Word8 -> VoiceEvent }
+
+instance Show VoiceMsg where
+  show _ = "VoiceMsg <function>"
 
 -- All notes in a chord have the same properties...
 --

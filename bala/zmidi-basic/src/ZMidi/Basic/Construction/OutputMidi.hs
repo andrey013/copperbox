@@ -160,7 +160,7 @@ programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 outputTrack :: [Section] -> Track
 outputTrack xss = Track $ unwind $ map (runOutMonad . buildSection) xss
   where 
-    unwind hs = toListH $ foldr appendH id hs 
+    unwind hs = toListH $ foldr appendH emptyH hs 
 
 buildSection  :: Section -> OutMonad (H Message)
 buildSection (Section tmpo xss) = fmap (consH (setTempo tmpo)) body 
@@ -222,38 +222,47 @@ voiceData (SectionVoice instr xs) = do
     return $ prog_msg : toListH hs
 
 
-primitives :: [Primitive] -> OutMonad HChannelData
+primitives :: [MidiPrim] -> OutMonad HChannelData
 primitives []     = return emptyH
 primitives (x:xs) = step x xs
   where
     step a []     = primitive a
     step a (b:bs) = liftA2 appendH (primitive a) (step b bs)
 
-primitive :: Primitive -> OutMonad HChannelData
+primitive :: MidiPrim -> OutMonad HChannelData
 primitive (PNote d props p)   = primNote (durationr d) props p
 primitive (PChord d props ps) = primChord (durationr d) props ps
 primitive (PRest d)           = incrEllapsedTime (durationr d) >> return emptyH
+primitive (PMsg msg)          = either voiceMsg metaEvent msg
+
 
 primNote :: Word32 -> PrimProps -> Word8 -> OutMonad HChannelData
 primNote d props p = do 
-   et <- getEllapsedTime
-   ch <- getChannelNumber
-   incrEllapsedTime d
-   let non = mkNoteOn  et     p ch (velocity_on props)
-   let nof = mkNoteOff (et+d) p ch (velocity_off props)
-   return (twoH non nof)
+    et <- getEllapsedTime
+    ch <- getChannelNumber
+    incrEllapsedTime d
+    let non = mkNoteOn  et     p ch (velocity_on props)
+    let nof = mkNoteOff (et+d) p ch (velocity_off props)
+    return (twoH non nof)
 
 
 primChord :: Word32 -> PrimProps -> [Word8] -> OutMonad HChannelData
 primChord d props ps  = do 
-   et <- getEllapsedTime
-   ch <- getChannelNumber
-   incrEllapsedTime d
-   let nons = map (\p -> mkNoteOn  et     p ch (velocity_on props))  ps
-   let nofs = map (\p -> mkNoteOff (et+d) p ch (velocity_off props)) ps
-   return (fromListH nons `appendH` fromListH nofs)
+    et <- getEllapsedTime
+    ch <- getChannelNumber
+    incrEllapsedTime d
+    let nons = map (\p -> mkNoteOn  et     p ch (velocity_on props))  ps
+    let nofs = map (\p -> mkNoteOff (et+d) p ch (velocity_off props)) ps
+    return (fromListH nons `appendH` fromListH nofs)
 
 
+voiceMsg :: VoiceMsg -> OutMonad HChannelData
+voiceMsg f = do 
+    ch <- getChannelNumber
+    return $ wrapH $ (0, VoiceEvent $ getVoiceMsg f ch)
+
+metaEvent :: MetaEvent -> OutMonad HChannelData
+metaEvent evt = return $ wrapH (0, MetaEvent evt) 
 
 mkNoteOn :: Word32 -> Word8 -> Word8 -> Word8 -> Message
 mkNoteOn dt pch ch vel = (dt, VoiceEvent $ NoteOn ch pch vel)
