@@ -16,7 +16,7 @@
 
 module ZMidi.Construction.OutputMidi
   (
-    writeMidiMCT
+    writeZMidiRep
   ) where
 
 import ZMidi.Construction.Datatypes
@@ -119,19 +119,19 @@ getChannelNumber    = getsRS rs_channel_number
 -- Nice to have time stamp ....
 
 
-writeMidiMCT :: FilePath -> MultiChannelTrack -> IO ()
-writeMidiMCT filename mct = 
-    getZonedTime >>= \ztim -> writeMidi filename (outputMCT ztim mct)
+writeZMidiRep :: FilePath -> ZMidiRep -> IO ()
+writeZMidiRep filename mct = 
+    getZonedTime >>= \ztim -> writeMidi filename (outputZMR ztim mct)
 
 
 
-outputMCT :: ZonedTime -> MultiChannelTrack -> MidiFile
-outputMCT ztim mct = 
-    MidiFile hdr $ infoTrack ztim : JL.zipWithIntoList fn mct [1..]
+outputZMR :: ZonedTime -> ZMidiRep -> MidiFile
+outputZMR ztim (ZMidiRep ts) = 
+    MidiFile hdr $ infoTrack ztim : JL.zipWithIntoList fn ts [1..]
   where
     fn  = flip outputTrack
     hdr = Header MF1 len tpb
-    len = fromIntegral $ 1 + JL.length mct
+    len = fromIntegral $ 1 + JL.length ts
     tpb = TPB $ floor ticks_per_quarternote
 
 
@@ -163,8 +163,9 @@ microseconds_per_minute = 60000000
 -- programChange :: Word8 -> Word8 -> Message
 -- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
-outputTrack :: Int -> JL.JoinList Section -> Track
-outputTrack n xss = Track $ unwind $ fmap (runOutMonad . buildSection) xss
+outputTrack :: Int -> ChannelTrack -> Track
+outputTrack n (ChannelTrack xss) = 
+    Track $ unwind $ fmap (runOutMonad . buildSection) xss
   where 
     unwind hs = toListH $ consH info $ F.foldr appendH emptyH hs 
     info      = sequenceName $ "Track" ++ show n

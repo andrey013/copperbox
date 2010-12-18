@@ -16,30 +16,48 @@
 
 module ZMidi.Construction.Datatypes
   ( 
-    MultiChannelTrack
+    ZMidiRep(..)
+  , ChannelTrack(..)
   , Section(..)
   , SectionVoice(..)
   , MidiPrim(..)
   , VoiceMsg(..)
   , PrimProps(..)
 
+  , singleTrack
   , vinstrument
 
   ) where
 
-import ZMidi.Construction.Utils.JoinList
+import ZMidi.Construction.GeneralMidiInstruments
+import ZMidi.Construction.Utils.JoinList ( JoinList )
+import qualified ZMidi.Construction.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
+import Data.Monoid
 import Data.Word
 
 
 -- Note MultiChannel track currently isn\'t multi (it should be to 
 -- support playing different rhythms against each other). 
 
-type MultiChannelTrack = JoinList ChannelTrack
+newtype ZMidiRep = ZMidiRep { getZMidiRep :: JoinList ChannelTrack }
+  deriving (Show)
 
-type ChannelTrack = JoinList Section
+instance Monoid ZMidiRep where
+  mempty        = ZMidiRep mempty
+  a `mappend` b = ZMidiRep $ getZMidiRep a `mappend` getZMidiRep b
+
+
+newtype ChannelTrack = ChannelTrack { getChannelTrack :: JoinList Section }
+  deriving (Show)
+
+
+instance Monoid ChannelTrack where
+  mempty        = ChannelTrack mempty
+  a `mappend` b = ChannelTrack $ getChannelTrack a `mappend` getChannelTrack b
+
 
 data Section = Section 
       { section_tempo           :: Double
@@ -70,8 +88,10 @@ data MidiPrim = PNote   Double PrimProps Word8
 --
 newtype VoiceMsg = VoiceMsg { getVoiceMsg :: Word8 -> VoiceEvent }
 
+
 instance Show VoiceMsg where
   show _ = "VoiceMsg <function>"
+
 
 -- All notes in a chord have the same properties...
 --
@@ -83,5 +103,9 @@ data PrimProps = PrimProps
   deriving (Eq,Ord,Show)
 
 
-vinstrument :: Word8 -> VoiceMsg
-vinstrument inst = VoiceMsg $ \ch -> ProgramChange ch inst
+
+singleTrack :: ChannelTrack -> ZMidiRep
+singleTrack = ZMidiRep . JL.one
+
+vinstrument :: GMInst -> VoiceMsg
+vinstrument inst = VoiceMsg $ \ch -> ProgramChange ch (instrumentNumber inst)

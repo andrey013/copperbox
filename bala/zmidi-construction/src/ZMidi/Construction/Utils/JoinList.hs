@@ -86,6 +86,10 @@ instance Show a => Show (JoinList a) where
   showsPrec _ xs = showString "fromList " . shows (toList xs) 
 
 
+instance Monoid (JoinList a) where
+  mempty        = Empty
+  mappend       = join
+
 instance Functor JoinList where
   fmap _ Empty      = Empty
   fmap f (One a)    = One (f a)
@@ -210,10 +214,12 @@ snoc xs a = Join xs (One a)
 
 infixr 5 `join`
 
--- | Because there is no empty join list, join is Join.
 --
 join :: JoinList a -> JoinList a -> JoinList a
-join = Join
+join Empty b     = b
+join a     Empty = a 
+join a     b     = Join a b
+
 
 --------------------------------------------------------------------------------
 -- Basic functions

@@ -63,13 +63,17 @@ module ZMidi.Construction.Builder
   , note
   , chord
   , rest
-  
+
+  , singleSection
+  , contiguousSections  
 
   ) where
 
 
 import ZMidi.Construction.Datatypes
+import ZMidi.Construction.GeneralMidiInstruments
 import ZMidi.Construction.Utils.HList
+import qualified ZMidi.Construction.Utils.JoinList as JL
 
 import Control.Applicative
 import Control.Monad
@@ -270,7 +274,7 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
               <$> askEnv
 
 
-instrument :: BuildM m => Word8 -> m ()
+instrument :: BuildM m => GMInst -> m ()
 instrument inst  = tell $ PMsg $ Left $ vinstrument inst
 
 note :: BuildM m => MidiDuration -> MidiPitch -> m ()
@@ -282,4 +286,21 @@ chord d ps = noteProps >>= \props -> tell (PChord d props ps)
 rest :: BuildM m => MidiDuration -> m ()
 rest d = tell $ PRest d
 
+
+
+
+
+singleSection :: Double -> [Build a] -> ChannelTrack
+singleSection bpm voices = 
+    ChannelTrack $ JL.one $ Section bpm $ JL.fromListF fn voices
+  where
+    fn = SectionVoice . execBuild build_env_zero
+   
+
+contiguousSections :: Double -> [[Build a]] -> ChannelTrack
+contiguousSections bpm sections = 
+    ChannelTrack $ JL.fromList $ map top sections
+  where
+    top = Section bpm . JL.fromListF fn
+    fn  = SectionVoice . execBuild build_env_zero
 
