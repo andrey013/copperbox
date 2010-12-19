@@ -1,0 +1,64 @@
+name:             zmidi-emit
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Music representation for generating MIDI.
+description:
+  .
+  A simple MIDI-like but slightly higher-level music syntax
+  representation, intended as a backend emitter for generating 
+  MIDI files.
+  .
+  MIDI essentially represents the control of a keyboard 
+  synthesizer, in contrast ZMidi-Emit represents music with notes, 
+  chords and rests. Like MIDI it allows multiple tracks, which in 
+  turn can contain multiple channels.
+  .
+  Changelog:
+  . 
+  v0.1.0:
+  .
+  * Initial release.
+  .
+  .
+build-type:         Simple
+stability:          unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  demo/Demo01.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      time              >= 1.1.3  && <  1.6,
+                      zmidi-core        >  0.1.0  && < 0.3.0
+  
+  exposed-modules:
+    ZMidi.Emit,
+    ZMidi.Emit.Builder,
+    ZMidi.Emit.Datatypes,
+    ZMidi.Emit.OutputMidi,
+    ZMidi.Emit.GeneralMidiInstruments,
+    ZMidi.Emit.VersionNumber
+
+  other-modules:
+    ZMidi.Emit.Utils.HList,
+    ZMidi.Emit.Utils.JoinList
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
