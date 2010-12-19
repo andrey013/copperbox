@@ -51,54 +51,53 @@ durationr r = floor $ (4 * ticks_per_quarternote) * r
 -- Note - the state tracks absolute time, conversion to delta time 
 -- is performed as a traversal afterwards
 
-data RenderState = RenderState
+data RState = RState
       { rs_volume               :: Word8
       , rs_ellapsed_time        :: Word32
-      , rs_channel_number       :: Word8        -- 0..15
       }
-  deriving (Eq,Show)
 
-zeroRS :: RenderState
-zeroRS = RenderState { rs_volume          = 127
-                     , rs_ellapsed_time   = 0
-                     , rs_channel_number  = 0
-                     }
+zeroRS :: RState
+zeroRS = RState { rs_volume          = 127
+                , rs_ellapsed_time   = 0
+                }
+
+data REnv = REnv 
+      { re_track_number         :: Int }
 
 
 newtype OutMonad a = OutMonad { 
-          getOutMonad :: RenderState -> (a,RenderState) }
+          getOutMonad :: REnv -> RState -> (a,RState) }
 
 
 instance Functor OutMonad where
-  fmap f mf = OutMonad $ \s -> let (a,s1) = getOutMonad mf s in (f a,s1)
+  fmap f mf = OutMonad $ \r s -> let (a,s1) = getOutMonad mf r s in (f a,s1)
 
 instance Applicative OutMonad where
-  pure a    = OutMonad $ \s -> (a,s)
-  mf <*> ma = OutMonad $ \s -> let (f,s1) = getOutMonad mf s
-                                   (a,s2) = getOutMonad ma s1
-                               in (f a,s2)
+  pure a    = OutMonad $ \_ s -> (a,s)
+  mf <*> ma = OutMonad $ \r s -> let (f,s1) = getOutMonad mf r s
+                                     (a,s2) = getOutMonad ma r s1
+                                 in (f a,s2)
 
 instance Monad OutMonad where
-  return a  = OutMonad $ \s -> (a,s)
-  m >>= k   = OutMonad $ \s -> let (a,s1) = getOutMonad m s
-                               in (getOutMonad . k) a s1
+  return a  = OutMonad $ \_ s -> (a,s)
+  m >>= k   = OutMonad $ \r s -> let (a,s1) = getOutMonad m r s
+                                 in (getOutMonad . k) a r s1
                               
 
-runOutMonad :: OutMonad a -> a
-runOutMonad mf = fst $ getOutMonad mf zeroRS
+runOutMonad :: Int -> OutMonad a -> a
+runOutMonad track_num mf = fst $ getOutMonad mf (REnv track_num) zeroRS
 
 
-getsRS :: (RenderState -> a) -> OutMonad a
-getsRS fn = OutMonad $ \s -> (fn s,s)
+getsRS :: (RState -> a) -> OutMonad a
+getsRS fn = OutMonad $ \_ s -> (fn s,s)
 
 
-setsRS :: (RenderState -> RenderState) -> OutMonad ()
-setsRS fn = OutMonad $ \s -> ((),fn s)
+setsRS :: (RState -> RState) -> OutMonad ()
+setsRS fn = OutMonad $ \_ s -> ((),fn s)
 
+asksRE :: (REnv -> a) -> OutMonad a
+asksRE fn = OutMonad $ \e s -> (fn e,s)
 
-incrChannelNumber :: OutMonad ()
-incrChannelNumber = 
-    setsRS (\s -> let i = rs_channel_number s in s { rs_channel_number = i+1})
 
 
 incrEllapsedTime :: Word32 -> OutMonad ()
@@ -111,9 +110,8 @@ zeroEllapsedTime    = setsRS (\s -> s { rs_ellapsed_time = 0 })
 getEllapsedTime     :: OutMonad Word32
 getEllapsedTime     = getsRS rs_ellapsed_time
 
-getChannelNumber    :: OutMonad Word8
-getChannelNumber    = getsRS rs_channel_number
-
+askChannelNumber    :: OutMonad Word8
+askChannelNumber    = fmap fromIntegral $ asksRE re_track_number
 
 
 -- Nice to have time stamp ....
@@ -164,13 +162,14 @@ microseconds_per_minute = 60000000
 -- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
 outputTrack :: Int -> ChannelTrack -> Track
-outputTrack n (ChannelTrack xss) = 
-    Track $ unwind $ fmap (runOutMonad . buildSection) xss
+outputTrack n (ChannelTrack i xss) = 
+    Track $ unwind $ fmap (runOutMonad i . buildSection) xss
   where 
     unwind hs = toListH $ consH info $ F.foldr appendH emptyH hs 
     info      = sequenceName $ "Track" ++ show n
 
-
+-- This has probelem at channel 10 - channel 10 is for MIDI drums.
+--
 buildSection  :: Section -> OutMonad (H Message)
 buildSection (Section tmpo xss) = fmap (consH (setTempo tmpo)) body 
   where
@@ -224,7 +223,6 @@ type HChannelData = H Message
 voiceData :: SectionVoice -> OutMonad [Message]
 voiceData (SectionVoice xs) = do 
     hs <- primitives xs 
-    incrChannelNumber 
     zeroEllapsedTime
     return $ toListH hs
 
@@ -246,7 +244,7 @@ primitive (PMsg msg)          = either voiceMsg metaEvent msg
 primNote :: Word32 -> PrimProps -> Word8 -> OutMonad HChannelData
 primNote d props p = do 
     et <- getEllapsedTime
-    ch <- getChannelNumber
+    ch <- askChannelNumber
     incrEllapsedTime d
     let non = mkNoteOn  et     p ch (velocity_on props)
     let nof = mkNoteOff (et+d) p ch (velocity_off props)
@@ -256,7 +254,7 @@ primNote d props p = do
 primChord :: Word32 -> PrimProps -> [Word8] -> OutMonad HChannelData
 primChord d props ps  = do 
     et <- getEllapsedTime
-    ch <- getChannelNumber
+    ch <- askChannelNumber
     incrEllapsedTime d
     let nons = map (\p -> mkNoteOn  et     p ch (velocity_on props))  ps
     let nofs = map (\p -> mkNoteOff (et+d) p ch (velocity_off props)) ps
@@ -264,9 +262,9 @@ primChord d props ps  = do
 
 
 voiceMsg :: VoiceMsg -> OutMonad HChannelData
-voiceMsg f = do 
-    ch <- getChannelNumber
-    return $ wrapH $ (0, VoiceEvent $ getVoiceMsg f ch)
+voiceMsg f = (\ch -> wrapH $ (0, VoiceEvent $ getVoiceMsg f ch)) 
+              <$> askChannelNumber
+
 
 metaEvent :: MetaEvent -> OutMonad HChannelData
 metaEvent evt = return $ wrapH (0, MetaEvent evt) 

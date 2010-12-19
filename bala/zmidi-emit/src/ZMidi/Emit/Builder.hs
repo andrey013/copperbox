@@ -11,6 +11,8 @@
 -- Portability :  GHC
 --
 -- Building /high level/ MIDI.
+-- 
+-- TODO - is it useful to support a monad and a transformer?
 --
 --------------------------------------------------------------------------------
 
@@ -63,6 +65,8 @@ module ZMidi.Emit.Builder
   , note
   , chord
   , rest
+  , drumNote
+  , drumChord
 
   , singleSection
   , contiguousSections  
@@ -293,19 +297,25 @@ rest :: BuildM m => MidiDuration -> m ()
 rest d = tell $ PRest d
 
 
+drumNote :: BuildM m => MidiDuration -> GMDrum -> m ()
+drumNote d p = note d (drumPitch p)
+
+
+drumChord :: BuildM m => MidiDuration -> [GMDrum] -> m ()
+drumChord d ps = chord d (map drumPitch ps)
 
 
 
-singleSection :: Double -> [Build a] -> ChannelTrack
-singleSection bpm voices = 
-    ChannelTrack $ JL.one $ Section bpm $ JL.fromListF fn voices
+singleSection :: Int -> Double -> [Build a] -> ChannelTrack
+singleSection cnum bpm voices = 
+    ChannelTrack cnum $ JL.one $ Section bpm $ JL.fromListF fn voices
   where
     fn = SectionVoice . execBuild build_env_zero
    
 
-contiguousSections :: Double -> [[Build a]] -> ChannelTrack
-contiguousSections bpm sections = 
-    ChannelTrack $ JL.fromList $ map top sections
+contiguousSections :: Int -> Double -> [[Build a]] -> ChannelTrack
+contiguousSections cnum bpm sections = 
+    ChannelTrack cnum $ JL.fromList $ map top sections
   where
     top = Section bpm . JL.fromListF fn
     fn  = SectionVoice . execBuild build_env_zero

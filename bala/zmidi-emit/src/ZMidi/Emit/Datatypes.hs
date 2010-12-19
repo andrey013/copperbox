@@ -12,6 +12,7 @@
 --
 -- Syntax for /high level/ MIDI.
 --
+--
 --------------------------------------------------------------------------------
 
 module ZMidi.Emit.Datatypes
@@ -53,13 +54,11 @@ instance Monoid ZMidiRep where
   a `mappend` b = ZMidiRep $ getZMidiRep a `mappend` getZMidiRep b
 
 
-newtype ChannelTrack = ChannelTrack { getChannelTrack :: JoinList Section }
+data ChannelTrack = ChannelTrack 
+       { channel_number         :: Int
+       , track_sections         :: JoinList Section 
+       }
   deriving (Show)
-
-
-instance Monoid ChannelTrack where
-  mempty        = ChannelTrack mempty
-  a `mappend` b = ChannelTrack $ getChannelTrack a `mappend` getChannelTrack b
 
 
 data Section = Section 
