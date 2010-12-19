@@ -54,6 +54,8 @@ library
     Wumpus.Rhythm.Djembe.GraphicInterpretation,
     Wumpus.Rhythm.Djembe.GraphicPrimitives,
     Wumpus.Rhythm.Djembe.HelveticaLoader,
+    Wumpus.Rhythm.Djembe.MidiInterpretation,
+    Wumpus.Rhythm.Djembe.MidiPrimitives,
     Wumpus.Rhythm.VersionNumber
 
   other-modules:
