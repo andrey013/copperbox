@@ -26,6 +26,7 @@ module Wumpus.Rhythm.Djembe.Base
 
   , CStrokeBase(..)
   , CStrokeAnno(..)
+  , CStrokeBell(..)
 
   ) where
 
@@ -49,6 +50,8 @@ type DjembeBar   u = Bar u
 type DjembeGroup u = Group u
 
 
+-- C _Stroke_ - why Stroke?? The name has lost its heritage
+
 class CStrokeBase repr where
   rest_note        :: repr
   period           :: repr
@@ -60,4 +63,8 @@ class CStrokeAnno repr where
    accent       :: repr -> repr
    dominant     :: repr -> repr
    other_hand   :: repr -> repr
+
+
+class CStrokeBell repr where
+   add_bell     :: repr -> repr
 

@@ -112,7 +112,7 @@ hand_base_length        :: AfmUnit
 hand_base_length        = 260
 
 char_upstroke           :: AfmUnit
-char_upstroke           = 760 -- ???
+char_upstroke           = 1380
 
 char_downstroke         :: AfmUnit
 char_downstroke         = 260 -- ???
@@ -348,6 +348,14 @@ drawHand :: FromPtSize u => (u -> u -> LocGraphic u) -> LocGraphic u
 drawHand fn = scaleMove (negate $ 0.5*hand_base_length) hand_baseline loc_rect
   where
     loc_rect = lift0R1 (scaleValue hand_base_length) >>= \uw -> fn uw uw
+
+
+addBell :: (Real u, Fractional u, FromPtSize u)  
+        => LocImage u AfmUnit -> LocImage u AfmUnit
+addBell img = 
+    img >>= \(w,a) -> upstrokeX >>= \(_,b) -> return (w, a `oplus` b)
+  where
+    upstrokeX = upstrokeLetter (CharLiteral 'X')
 
 --------------------------------------------------------------------------------
 -- strike throughs

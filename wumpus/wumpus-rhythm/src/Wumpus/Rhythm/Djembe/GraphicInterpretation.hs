@@ -60,6 +60,8 @@ instance CStrokeAnno GDjembe where
   other_hand    = mapGDjembe addOtherHand 
 
 
+instance CStrokeBell GDjembe where
+  add_bell      = mapGDjembe addBell
 
 --------------------------------------------------------------------------------  
 

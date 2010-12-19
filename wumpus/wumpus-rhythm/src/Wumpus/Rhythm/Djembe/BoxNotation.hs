@@ -47,16 +47,19 @@ class (CStrokeBase repr, CStrokeAnno repr) => CBoxDjembe repr where
   slap_flam        :: repr
 
 
-class (CStrokeBase repr, CStrokeAnno repr) => CBoxKenkeni repr where
+class (CStrokeBase repr, CStrokeAnno repr, CStrokeBell repr) => 
+    CBoxKenkeni repr where
   kenkeni_stroke            :: repr
   kenkeni_pressed_stroke    :: repr
 
 
-class (CStrokeBase repr, CStrokeAnno repr) => CBoxSangban repr where
+class (CStrokeBase repr, CStrokeAnno repr, CStrokeBell repr) => 
+    CBoxSangban repr where
   sangban_stroke            :: repr
   sangban_pressed_stroke    :: repr
 
-class (CStrokeBase repr, CStrokeAnno repr) => CBoxDoundounba repr where
+class (CStrokeBase repr, CStrokeAnno repr, CStrokeBell repr) => 
+    CBoxDoundounba repr where
   doundounba_stroke            :: repr
   doundounba_pressed_stroke    :: repr
 
