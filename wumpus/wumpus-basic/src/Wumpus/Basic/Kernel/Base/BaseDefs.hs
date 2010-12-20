@@ -42,12 +42,12 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
   -- * Moving points
   , PointDisplace
-  , vecdisplace
   , displace
-  , hdisplace
-  , vdisplace
-  , parallelvec
-  , perpendicularvec
+  , displaceVec
+  , displaceH
+  , displaceV
+
+  , ThetaPointDisplace
   , displaceParallel
   , displacePerpendicular
 
@@ -67,6 +67,10 @@ import Data.AffineSpace                         -- package: vector-space
 infixr 6 `oplus`
 
 -- | A Semigroup class.
+-- 
+-- The perhaps unusual name is the TeX name for the circled plus 
+-- glyph. It would be nice if there was a semigroup class in the
+-- Haskell Base libraries...  
 -- 
 class OPlus t where
   oplus :: t -> t -> t
@@ -103,6 +107,11 @@ instance OPlus a => OPlus (r -> a) where
 
 --------------------------------------------------------------------------------
 
+-- | A Bifunctor class.
+-- 
+-- Again, it would be nice if there was a Bifunctor class in the
+-- Haskell Base libraries...  
+-- 
 class Bimap f where
   bimap     :: (a -> p) -> (b -> q) -> f a b -> f p q
   bimapL    :: (a -> p) -> f a b -> f p b
@@ -137,16 +146,26 @@ replaceR = bimapR . const
 -- Alignment
 
 -- | Horizontal alignment - align to the top, center or bottom.
+--
 data HAlign = HTop | HCenter | HBottom
   deriving (Enum,Eq,Ord,Show)
 
 -- | Vertical alignment - align to the left, center or bottom.
+--
 data VAlign = VLeft | VCenter | VRight
   deriving (Enum,Eq,Ord,Show)
 
 
 --------------------------------------------------------------------------------
 
+-- | Advance vectors provide an idiom for drawing consecutive
+-- graphics. PostScript uses them to draw left-to-right text - 
+-- each character has an advance vector for the width and 
+-- as characters are drawn they successively displace the start
+-- point for the next character with their advance vector.
+--
+-- Type alias for Vec2.
+--
 type AdvanceVec u = Vec2 u
 
 
@@ -154,37 +173,72 @@ type AdvanceVec u = Vec2 u
 --
 -- For left-to-right latin text, the vertical component of an
 -- advance vector is expected to be 0. Ingoring it seems 
--- permissible, e.g. when calculating bounding boxes for 
--- left-to-right text.
+-- permissible when drawing text.
 --
-advanceH :: Num u => AdvanceVec u -> u
+advanceH :: AdvanceVec u -> u
 advanceH (V2 w _)  = w
 
--- | Extract the verticaltal component of an advance vector.
+-- | Extract the verticall component of an advance vector.
 --
--- For left-to-right latin text, the vertical component of an
--- advance vector is expected to be 0.
---
-advanceV :: Num u => AdvanceVec u -> u
+advanceV :: AdvanceVec u -> u
 advanceV (V2 _ h)  = h
 
 --------------------------------------------------------------------------------
 -- Displacing points
 
+-- | 'PointDisplace' is a type representing functions 
+-- @from Point to Point@.
+--
+-- It is especially useful for building composite graphics where 
+-- one part of the graphic is drawn from a different start point 
+-- to the other part.
+--
 type PointDisplace u = Point2 u -> Point2 u
 
-vecdisplace :: Num u => Vec2 u -> PointDisplace u
-vecdisplace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
-
+-- | 'displace' : @ x -> y -> PointDisplace @
+--
+-- Build a combinator to move @Points@ by the supplied @x@ and 
+-- @y@ distances.
+--
 displace :: Num u => u -> u -> PointDisplace u
 displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
-hdisplace :: Num u => u -> PointDisplace u
-hdisplace dx (P2 x y) = P2 (x+dx) y
 
-vdisplace :: Num u => u -> PointDisplace u
-vdisplace dy (P2 x y) = P2 x (y+dy)
+-- | 'displaceV' : @ (V2 x y) -> PointDisplace @
+-- 
+-- Version of 'displace' where the displacement is supplied as
+-- a vector rather than two parameters.
+-- 
+displaceVec :: Num u => Vec2 u -> PointDisplace u
+displaceVec (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
 
+
+-- | 'displaceH' : @ x -> PointDisplace @
+-- 
+-- Build a combinator to move @Points@ by horizontally the 
+-- supplied @x@ distance.
+--
+displaceH :: Num u => u -> PointDisplace u
+displaceH dx (P2 x y) = P2 (x+dx) y
+
+-- | 'displaceV' : @ y -> PointDisplace @
+-- 
+-- Build a combinator to move @Points@ vertically by the supplied 
+-- @y@ distance.
+--
+displaceV :: Num u => u -> PointDisplace u
+displaceV dy (P2 x y) = P2 x (y+dy)
+
+-- Half-baked at the moment...
+
+-- | 'ThetaPointDisplace' is a type representing functions 
+-- @from Radian * Point to Point@.
+--
+-- It is useful for building arrowheads which are constructed 
+-- with an implicit angle representing the direction of the line 
+-- at the arrow tip.
+--
+type ThetaPointDisplace u = Radian -> PointDisplace u
 
 parallelvec :: Floating u => u -> Radian -> Vec2 u
 parallelvec d r         = avec (circularModulo r) d
@@ -192,10 +246,10 @@ parallelvec d r         = avec (circularModulo r) d
 perpendicularvec :: Floating u => u -> Radian -> Vec2 u
 perpendicularvec d r    = avec (circularModulo $ (0.5*pi) + r) d
 
-displaceParallel :: Floating u => u -> Radian -> PointDisplace u
+displaceParallel :: Floating u => u -> ThetaPointDisplace u
 displaceParallel d r pt = pt .+^ parallelvec d r
 
-displacePerpendicular :: Floating u => u -> Radian -> PointDisplace u
+displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
 displacePerpendicular d r pt = pt .+^ perpendicularvec d r
 
 
@@ -209,6 +263,10 @@ type family MonUnit m :: *
 
 
 -- | A monad that supplies points, e.g. a turtle monad. 
+--
+-- \*\* WARNING \*\* - the idea behind this class is somewhat
+-- half-baked. It may be revised or even dropped in subsequent
+-- versions of Wumpus-Basic.
 --
 class Monad m => PointSupplyM (m :: * -> *) where
   position :: MonUnit m ~ u => m (Point2 u)

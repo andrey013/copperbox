@@ -98,9 +98,25 @@ import Data.Monoid
 newtype CF a            = CF  { unCF :: DrawingContext -> a }
 
 
-
+-- | Variation of 'CF' with one parametric /static argument/.
+--
+-- The static argument is commonly a point representing the start 
+-- point / origin of a drawing.
+-- 
+-- > CF1 :: DrawingContext -> r1 -> a 
+--
 newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
 
+
+-- | Variation of 'CF' with two parametric /static arguments/.
+--
+-- The first argument is commonly a point representing the start 
+-- point / origin of a drawing. The second argument might 
+-- typically be the angle of displacement (for drawing arrowheads) 
+-- or an end point (for drawing connectors between two points).
+-- 
+-- > CF2 :: DrawingContext -> r1 -> r2 -> a 
+--
 newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 
  

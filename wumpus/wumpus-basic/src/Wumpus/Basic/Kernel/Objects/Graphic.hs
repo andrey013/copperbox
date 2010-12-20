@@ -37,6 +37,8 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , DLocThetaGraphic
 
 
+  , moveOrigin
+
   , locPath
   , emptyLocPath
   , emptyLocGraphic
@@ -82,7 +84,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   ) where
 
 import Wumpus.Basic.Kernel.Base.ContextFun
--- import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Geometry.Paths
@@ -123,6 +125,10 @@ type LocThetaGraphic u       = LocThetaImage u (UNil u)
 type DLocThetaGraphic        = LocThetaGraphic Double
 
 
+
+
+moveOrigin :: PointDisplace u -> LocImage u a -> LocImage u a
+moveOrigin f ma = promoteR1 $ \pt -> ma `at` f pt
 
 --------------------------------------------------------------------------------
 
