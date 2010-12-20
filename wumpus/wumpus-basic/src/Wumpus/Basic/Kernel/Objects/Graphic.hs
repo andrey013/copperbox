@@ -100,33 +100,45 @@ import Control.Applicative
 -- Graphic
 
 -- | Simple drawing - produce a primitive, access the DrawingContext
--- if required.
+-- as required, e.g for fill colour, stroke colur, line width, etc.
 --
 type Graphic u          = Image u (UNil u)
 
+-- | Alias of 'Graphic' where the unit type is specialized to 
+-- Double. 
+--
 type DGraphic           = Graphic Double
 
 
 -- | /Originated/ drawing - produce a primitive respective to the 
--- supplied start-point, access the DrawingContext if required.
+-- supplied start-point, access the DrawingContext as required.
 --
 type LocGraphic u       = LocImage u (UNil u)
 
+-- | Alias of 'LocGraphic' where the unit type is specialized to 
+-- Double. 
+--
 type DLocGraphic        = LocGraphic Double
 
 
 
 
 -- | /Originated/ drawing - produce a primitive respective to the 
--- supplied start-point, access the DrawingContext if required.
+-- supplied start-point, access the DrawingContext as required.
 --
 type LocThetaGraphic u       = LocThetaImage u (UNil u)
 
+
+-- | Alias of 'LocThetaGraphic' where the unit type is specialized 
+-- to Double. 
+--
 type DLocThetaGraphic        = LocThetaGraphic Double
 
 
 
-
+-- | Move the origin of a LocImage with the supplied displacement
+-- function.
+--
 moveOrigin :: PointDisplace u -> LocImage u a -> LocImage u a
 moveOrigin f ma = promoteR1 $ \pt -> ma `at` f pt
 
@@ -137,60 +149,72 @@ moveOrigin f ma = promoteR1 $ \pt -> ma `at` f pt
 graphicBody :: Primitive u -> (UNil u, PrimGraphic u)
 graphicBody p = (uNil, primGraphic p)
 
-locGraphicBody :: (Point2 u -> Primitive u) 
-               -> (Point2 u -> (UNil u, PrimGraphic u))
-locGraphicBody fn = \pt -> (uNil, primGraphic $ fn pt)
-
-
-locThetaGraphicBody :: (Radian -> Point2 u -> Primitive u) 
-                    -> (Point2 u -> Radian -> (UNil u, PrimGraphic u))
-locThetaGraphicBody fn = \pt theta -> (uNil, primGraphic $ fn theta pt)
-
-
---------------------------------------------------------------------------------
 
 -- | This is the analogue to 'vectorPath' in @Wumpus-core@.
 --
-locPath :: Num u => [Vec2 u] -> LocDrawingInfo u (PrimPath u)
+locPath :: Num u => [Vec2 u] -> LocCF u (PrimPath u)
 locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 
 
 -- | This is the analogue to 'emptyPath' in @Wumpus-core@.
 --
-emptyLocPath :: Num u => LocDrawingInfo u (PrimPath u)
+emptyLocPath :: Num u => LocCF u (PrimPath u)
 emptyLocPath = locPath []
 
-
+-- | Build an empty LocGraphic - this is a path with a start
+-- point but no path segments. 
+-- 
+-- The 'emptyLocGraphic' It is treated as a /null primitive/ by 
+-- @Wumpus-Core@ and is not drawn, although it does generate a 
+-- minimum bounding box at the implicit start point.
+-- 
 emptyLocGraphic :: Num u => LocGraphic u
 emptyLocGraphic = emptyLocPath >>= (lift0R1 . openStroke)
 
 
--- | This is the analogue to 'ostroke' in @Wumpus-core@.
+-- | 'openStroke' : @ path -> Graphic @
+--
+-- This is the analogue to 'ostroke' in @Wumpus-core@, but the 
+-- drawing properties (colour, line width, etc.) are taken from 
+-- the implicit 'DrawingContext'.
 --
 openStroke :: Num u => PrimPath u -> Graphic u
 openStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicBody $ ostroke rgb attr pp
 
 
--- | This is the analogue to 'cstroke' in @Wumpus-core@.
+-- | 'closedStroke' : @ path -> Graphic @
+--
+-- This is the analogue to 'cstroke' in @Wumpus-core@, but the 
+-- drawing properties (colour, line width, etc.) are taken from 
+-- the implicit 'DrawingContext'.
 --
 closedStroke :: Num u => PrimPath u -> Graphic u
 closedStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicBody $ cstroke rgb attr pp
 
 
--- | This is the analogue to 'fill' in @Wumpus-core@.
+-- | 'filledPath' : @ path -> Graphic @
+-- 
+-- This is the analogue to 'fill' in @Wumpus-core@, but the 
+-- fill colour is taken from the implicit 'DrawingContext'.
+--
 --
 filledPath :: Num u => PrimPath u -> Graphic u
 filledPath pp = withFillAttr $ \rgb -> graphicBody $ fill rgb pp
                  
 
--- | This is the analogue to 'fillStroke' in @Wumpus-core@.
+-- | 'borderedPath' : @ path -> Graphic @
+--
+-- This is the analogue to 'fillStroke' in @Wumpus-core@, but the 
+-- drawing properties (fill colour, border colour, line width, 
+-- etc.) are taken from the implicit 'DrawingContext'.
+--
 --
 borderedPath :: Num u => PrimPath u -> Graphic u
 borderedPath pp =
     withBorderedAttr $ \frgb attr srgb -> 
-                           graphicBody $ fillStroke frgb attr srgb pp
+      graphicBody $ fillStroke frgb attr srgb pp
 
 
 
@@ -198,8 +222,9 @@ borderedPath pp =
 -- | This is the analogue to 'textlabel' in @Wumpus-core@.
 --
 textline :: Num u => String -> LocGraphic u
-textline ss = adaptR1 $
-    withTextAttr $ \rgb attr -> locGraphicBody (textlabel rgb attr ss)
+textline ss = 
+    promoteR1 $ \pt -> 
+      withTextAttr $ \rgb attr -> graphicBody (textlabel rgb attr ss pt)
 
 
 
@@ -207,24 +232,27 @@ textline ss = adaptR1 $
 -- | This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
 rtextline :: Num u => String -> LocThetaGraphic u
-rtextline ss = adaptR2 $
-    withTextAttr $ \rgb attr -> locThetaGraphicBody (rtextlabel rgb attr ss)
+rtextline ss = 
+    promoteR2 $ \pt theta -> 
+      withTextAttr $ \rgb attr -> graphicBody (rtextlabel rgb attr ss theta pt)
 
 
 
 -- | This is the analogue to 'escapedlabel' in @Wumpus-core@.
 --
 escapedline :: Num u => EscapedText -> LocGraphic u
-escapedline ss = adaptR1 $
-    withTextAttr $ \rgb attr -> locGraphicBody (escapedlabel rgb attr ss)
+escapedline ss = 
+    promoteR1 $ \pt -> 
+      withTextAttr $ \rgb attr -> graphicBody (escapedlabel rgb attr ss pt)
 
 
 
 -- | This is the analogue to 'rescapedlabel' in @Wumpus-core@.
 --
 rescapedline :: Num u => EscapedText -> LocThetaGraphic u
-rescapedline ss = adaptR2 $
-    withTextAttr $ \rgb attr -> locThetaGraphicBody (rescapedlabel rgb attr ss)
+rescapedline ss = 
+    promoteR2 $ \pt theta -> 
+      withTextAttr $ \rgb attr -> graphicBody (rescapedlabel rgb attr ss theta pt)
 
 
 
@@ -232,15 +260,17 @@ rescapedline ss = adaptR2 $
 -- | This is the analogue to 'hkernlabel' in @Wumpus-core@.
 --
 hkernline :: Num u => [KerningChar u] -> LocGraphic u
-hkernline xs = adaptR1 $
-    withTextAttr $ \rgb attr -> locGraphicBody (hkernlabel rgb attr xs)
+hkernline xs = 
+    promoteR1 $ \pt -> 
+      withTextAttr $ \rgb attr -> graphicBody (hkernlabel rgb attr xs pt)
 
 
 -- | This is the analogue to 'vkernlabel' in @Wumpus-core@.
 --
 vkernline :: Num u => [KerningChar u] -> LocGraphic u
-vkernline xs = adaptR1 $ 
-    withTextAttr $ \rgb attr -> locGraphicBody (vkernlabel rgb attr xs)
+vkernline xs = 
+    promoteR1 $ \pt -> 
+      withTextAttr $ \rgb attr -> graphicBody (vkernlabel rgb attr xs pt)
 
 
 
@@ -254,46 +284,53 @@ vkernline xs = adaptR1 $
 -- | This is the analogue to 'strokeEllipse' in @Wumpus-core@.
 --
 strokedEllipse :: Num u => u -> u -> LocGraphic u
-strokedEllipse hw hh = adaptR1 $ 
-    withStrokeAttr $ \rgb attr -> locGraphicBody (strokeEllipse rgb attr hw hh)
+strokedEllipse hw hh =
+    promoteR1 $ \pt -> 
+      withStrokeAttr $ \rgb attr -> graphicBody (strokeEllipse rgb attr hw hh pt)
 
 
 
 -- | This is the analogue to 'rstrokeEllispe' in @Wumpus-core@.
 --
 rstrokedEllipse :: Num u => u -> u -> LocThetaGraphic u
-rstrokedEllipse hw hh = adaptR2 $
-    withStrokeAttr $ \rgb attr -> locThetaGraphicBody (rstrokeEllipse rgb attr hw hh)
+rstrokedEllipse hw hh = 
+    promoteR2 $ \ pt theta -> 
+      withStrokeAttr $ \rgb attr -> 
+        graphicBody (rstrokeEllipse rgb attr hw hh theta pt)
 
 
 -- | This is the analogue to 'fillEllispe' in @Wumpus-core@.
 --
 filledEllipse :: Num u => u -> u -> LocGraphic u
-filledEllipse hw hh = adaptR1 $ 
-    withFillAttr $ \rgb -> locGraphicBody (fillEllipse rgb hw hh)
+filledEllipse hw hh = 
+    promoteR1 $ \pt ->  
+      withFillAttr $ \rgb -> graphicBody (fillEllipse rgb hw hh pt)
 
 
 -- | This is the analogue to 'rfillEllispe' in @Wumpus-core@.
 --
 rfilledEllipse :: Num u => u -> u -> LocThetaGraphic u
-rfilledEllipse hw hh = adaptR2 $ 
-    withFillAttr $ \rgb -> locThetaGraphicBody (rfillEllipse rgb hw hh)
+rfilledEllipse hw hh = 
+    promoteR2 $ \pt theta ->
+      withFillAttr $ \rgb -> graphicBody (rfillEllipse rgb hw hh theta pt)
 
 
 
 -- | This is the analogue to 'fillStrokeEllispe' in @Wumpus-core@.
 --
 borderedEllipse :: Num u => u -> u -> LocGraphic u
-borderedEllipse hw hh = adaptR1 $
-    withBorderedAttr $ \frgb attr srgb -> 
-      locGraphicBody (fillStrokeEllipse frgb attr srgb hw hh)
+borderedEllipse hw hh =
+    promoteR1 $ \pt -> 
+      withBorderedAttr $ \frgb attr srgb -> 
+        graphicBody (fillStrokeEllipse frgb attr srgb hw hh pt)
 
 -- | This is the analogue to 'rfillStrokeEllispe' in @Wumpus-core@.
 --
 rborderedEllipse :: Num u => u -> u -> LocThetaGraphic u
-rborderedEllipse hw hh = adaptR2 $ 
-    withBorderedAttr $ \frgb attr srgb -> 
-      locThetaGraphicBody (rfillStrokeEllipse frgb attr srgb hw hh)
+rborderedEllipse hw hh = 
+    promoteR2 $ \pt theta -> 
+      withBorderedAttr $ \frgb attr srgb -> 
+        graphicBody (rfillStrokeEllipse frgb attr srgb hw hh theta pt)
 
 
 
@@ -330,7 +367,7 @@ curveBetween sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 --
 
 drawWith :: (Point2 u -> PrimPath u) -> (PrimPath u -> Graphic u) -> LocGraphic u 
-drawWith g mf = promoteR1 (\pt -> mf $ g pt)
+drawWith g mf = promoteR1 $ \pt -> mf (g pt)
 
 
 -- | Supplied point is /bottom left/.
@@ -381,8 +418,8 @@ borderedCircle n r = (curvedPath . bezierCircle n r) `drawWith` borderedPath
 -- non-uniform scaling - the line width is scaled as well as 
 -- the shape.
 --
--- For stroked circles that can be scaled, consider making the 
--- circle from Bezier curves.
+-- For stroked circles that can be adequately scaled, use 
+-- 'strokedCircle' instead.
 --
 strokedDisk :: Num u => u -> LocGraphic u
 strokedDisk radius = strokedEllipse radius radius

@@ -67,7 +67,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   -- * Combinators
   , at
-  , accumulate1
+  , chain1
 
 
   ) where
@@ -86,7 +86,7 @@ import Data.Monoid
 --
 
 -- | Most drawing operations in Wumpus-Basic have an implicit 
--- /graphics state/ the @DrawingContext@, so the most primitive 
+-- /graphics state/ the 'DrawingContext', so the most primitive 
 -- building block is a function from the DrawingContext to some 
 -- polymorphic answer.
 -- 
@@ -121,16 +121,44 @@ newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 
  
 
+-- | Type specialized verison of 'CF1' where the /static argument/
+-- is the /start point/.
+-- 
+-- > LocCF :: DrawingContext -> Point2 u -> a 
+--
 type LocCF          u a = CF1 (Point2 u) a
 
+
+-- | Type specialized verison of 'CF2' where the /static arguments/
+-- are the /start point/ and the /angle of displacement/.
+-- 
+-- > LocThetaCF :: DrawingContext -> Point2 u -> Radian -> a 
+--
 type LocThetaCF     u a = CF2 (Point2 u) Radian a
 
+
+-- | Type specialized verison of 'CF2' where the /static arguments/
+-- are the /start point/ and the /end point/.
+-- 
+-- > ConnectorCF :: DrawingContext -> Point2 u -> Point2 u -> a 
+--
 type ConnectorCF    u a = CF2 (Point2 u) (Point2 u) a
 
 
-
+-- | Alias of 'LocCF' where the unit type is specialized to 
+-- @Double@.
+--
 type DLocCF a           = LocCF       Double a
+
+
+-- | Alias of 'LocThetaCF' where the unit type is specialized to 
+-- @Double@.
+--
 type DLocThetaCF a      = LocThetaCF  Double a
+
+-- | Alias of 'ConnectorCF' where the unit type is specialized to 
+-- @Double@.
+--
 type DConnectorCF a     = ConnectorCF Double a
 
 
@@ -272,39 +300,95 @@ runCF2 ctx r1 r2 df = unCF2 df ctx r1 r2
 --------------------------------------------------------------------------------
 -- lift functions
 
+
+-- | Lift a zero-arity context function 'CF' to an arity one 
+-- context function 'CF1'.
+-- 
 lift0R1             :: CF a -> CF1 r1 a
 lift0R1 mf          = CF1 $ \ctx _ -> unCF mf ctx
 
+-- | Lift a zero-arity context function 'CF' to an arity two 
+-- context function 'CF2'.
+-- 
 lift0R2             :: CF a -> CF2 r1 r2 a
 lift0R2 mf          = CF2 $ \ctx _ _ -> unCF mf ctx
 
+-- | Lift an arity one context function 'CF1' to an arity two
+-- context function 'CF2'.
+-- 
 lift1R2             :: CF1 r1 a -> CF2 r1 r2 a
 lift1R2 mf          = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
 
-
+-- | \*\* WARNING \*\* - pending removal.
+--
 adaptR1             :: CF (r1 -> a) -> CF1 r1 a
 adaptR1 mf          = CF1 $ \ctx r1 -> unCF mf ctx r1
 
+-- | \*\* WARNING \*\* - pending removal.
+--
 adaptR2             :: CF (r1 -> r2 -> a) -> CF2 r1 r2 a
 adaptR2 mf          = CF2 $ \ctx r1 r2 -> unCF mf ctx r1 r2
 
+
+
+-- | Promote a function @from one argument to a Context function@ 
+-- to an arity one @Context function@.
+--
+-- The type signature is as explanatory as a description:
+--
+-- > promoteR1 :: (r1 -> CF a) -> CF1 r1 a
+-- 
 promoteR1           :: (r1 -> CF a) -> CF1 r1 a
 promoteR1 mf        = CF1 $ \ctx r1 -> unCF (mf r1) ctx
 
+-- | Promote a function @from two arguments to a Context function@ 
+-- to an arity two @Context function@.
+--
+-- The type signature is as explanatory as a description:
+--
+-- > promoteR2 :: (r1 -> r2 -> CF a) -> CF2 r1 r2 a
+-- 
 promoteR2           :: (r1 -> r2 -> CF a) -> CF2 r1 r2 a
 promoteR2 mf        = CF2 $ \ctx r1 r2 -> unCF (mf r1 r2) ctx
 
--- | down 1 from R1
+
+
+-- | Downcast an arity-one Context function by one level, making 
+-- an arity-zero Context function. 
+-- 
+-- To make the down cast the supplied @CF1@ function is applied to 
+-- the parameter r1.
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > down1R1 :: r1 -> CF1 r1 a -> CF a
 --
 down1R1             :: r1 -> CF1 r1 a -> CF a
 down1R1 r1 mf       = CF $ \ctx -> unCF1 mf ctx r1
 
--- | down 2 from R2 
+
+-- | Downcast an arity-two Context function by two levels, making 
+-- an arity-zero Context function. 
+-- 
+-- To make the down cast the supplied @CF2@ function is applied to 
+-- the two parameters r1 and r2.
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > down2R2 :: r1 -> r2 -> CF2 r1 r2 a -> CF a
 -- 
 down2R2             :: r1 -> r2 -> CF2 r1 r2 a -> CF a
 down2R2 r1 r2 mf    = CF $ \ctx -> unCF2 mf ctx r1 r2
 
--- | down 1 from R2
+-- | Downcast an arity-two Context function by one level, making 
+-- an arity-one Context function. 
+-- 
+-- To make the down cast the supplied @CF2@ function is applied to 
+-- the parameter r1.
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > down1R2 :: r2 -> CF2 r1 r2 a -> CF1 r1 a
 --
 down1R2             :: r2 -> CF2 r1 r2 a -> CF1 r1 a
 down1R2 r2 mf       = CF1 $ \ctx r1 -> unCF2 mf ctx r1 r2
@@ -396,14 +480,29 @@ connEnd         = CF2 $ \_ _ pt -> pt
 
 
 infixr 1 `at`
-at :: LocCF u b -> Point2 u -> CF b
+
+
+
+-- | Downcast a 'LocCF' function by applying it to the supplied 
+-- point, making an arity-zero Context function. 
+-- 
+-- Remember a 'LocCF' function is a 'CF1' context function where
+-- the /static argument/ is specialized to a start point.
+--
+at :: LocCF u a -> Point2 u -> CF a
 at = flip down1R1
 
 
 
 
--- | Iteration combinator - the initial argument @s1@ is not 
--- shared bewteen the drawings.
+-- | /Chaining/ combinator - the /answer/ of the 
+-- first Context function is feed to the second Context function. 
+--
+-- This contrasts with the usual idiom in @Wumpus-Basic@ where 
+-- composite graphics are built by applying both functions to the 
+-- same initial /static argument/.
+--
+-- Desciption:
 --
 -- Evaluate the first Context Function with the drawing context 
 -- and the /initial state/ @st0@. The result of the evaluation is 
@@ -419,14 +518,13 @@ at = flip down1R1
 -- @ (ctx -> s1 -> (w,s1)) -> (ctx -> s1 -> (w,s1)) -> (ctx -> s1 -> (w,s1)) @
 --
 -- This models chaining start points together, which is the model
--- PostScript uses for text output when succesively calling the 
+-- PostScript uses for text output when successively calling the 
 -- @show@ operator.
 -- 
-accumulate1 :: OPlus w 
+chain1 :: OPlus w 
             => CF1 s1 (s1,w) -> CF1 s1 (s1,w) -> CF1 s1 (s1,w)
-accumulate1 f g = CF1 $ \ctx s -> 
-                         let (s1,a1) = unCF1 f ctx s
-                             (s2,a2) = unCF1 g ctx s1
-                         in (s2, a1 `oplus` a2)
+chain1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
+                                 (s2,a2) = unCF1 g ctx s1
+                             in (s2, a1 `oplus` a2)
 
 

@@ -93,11 +93,14 @@ runAdvGraphic ctx pt df = runCF1 ctx pt df
 
 infixr 6 `advplus`
 
+
+-- | \*\* WARNING \*\* - pending removal.
+--
 advplus :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advplus = accumulate1
+advplus = chain1
 
 
 advconcat :: Num u => [AdvGraphic u] -> AdvGraphic u
 advconcat []     = makeAdvGraphic (pure id) emptyLocGraphic
 advconcat [x]    = x
-advconcat (x:xs) = x `advplus` advconcat xs 
+advconcat (x:xs) = x `chain1` advconcat xs 

@@ -53,7 +53,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
 
 
-  -- * Drawing monads.
+  -- * Monadic drawing
   , MonUnit
 
   , PointSupplyM(..)
@@ -229,7 +229,6 @@ displaceH dx (P2 x y) = P2 (x+dx) y
 displaceV :: Num u => u -> PointDisplace u
 displaceV dy (P2 x y) = P2 x (y+dy)
 
--- Half-baked at the moment...
 
 -- | 'ThetaPointDisplace' is a type representing functions 
 -- @from Radian * Point to Point@.
@@ -240,17 +239,27 @@ displaceV dy (P2 x y) = P2 x (y+dy)
 --
 type ThetaPointDisplace u = Radian -> PointDisplace u
 
-parallelvec :: Floating u => u -> Radian -> Vec2 u
-parallelvec d r         = avec (circularModulo r) d
 
-perpendicularvec :: Floating u => u -> Radian -> Vec2 u
-perpendicularvec d r    = avec (circularModulo $ (0.5*pi) + r) d
 
+-- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
+-- 
+-- Build a combinator to move @Points@ in parallel to the 
+-- direction of the implicit angle by the supplied distance 
+-- @dist@. 
+--
 displaceParallel :: Floating u => u -> ThetaPointDisplace u
-displaceParallel d r pt = pt .+^ parallelvec d r
+displaceParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
 
+
+-- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
+-- 
+-- Build a combinator to move @Points@ perpendicular to the 
+-- direction of the implicit angle by the supplied distance 
+-- @dist@. 
+--
 displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
-displacePerpendicular d r pt = pt .+^ perpendicularvec d r
+displacePerpendicular d = 
+    \theta pt -> pt .+^ avec (circularModulo $ theta + (0.5*pi)) d
 
 
 --------------------------------------------------------------------------------
