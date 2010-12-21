@@ -103,6 +103,8 @@ description:
   .
   * Added @vectorPath@ to @Core.Picture@.
   .
+  * Added @boundaryCenter@ to @Core.BoundingBox@.
+  .
   * Improved generated SVG code generation for ellipses / circles.
   .
   v0.37.0 to v0.40.0: 

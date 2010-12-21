@@ -43,6 +43,7 @@ module Wumpus.Core.BoundingBox
 
   , boundaryCorners
   , boundaryCornerList
+  , boundaryCenter
   , withinBoundary
   , boundaryWidth
   , boundaryHeight
@@ -227,6 +228,16 @@ boundaryCornerList (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl]
     br = P2 x1 y0
     tl = P2 x0 y1
 
+
+-- | 'boundaryCenter' : @bbox -> Point@
+-- 
+-- Return the center of a bounding box.
+--
+boundaryCenter :: Fractional u => BoundingBox u -> Point2 u
+boundaryCenter (BBox (P2 x0 y0) (P2 x1 y1)) = P2 x y 
+  where
+    x = x0 + (0.5*(x1-x0))
+    y = y0 + (0.5*(y1-y0))
 
 -- | Within test - is the supplied point within the bounding box?
 --
