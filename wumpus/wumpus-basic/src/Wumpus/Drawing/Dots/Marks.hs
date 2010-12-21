@@ -69,22 +69,14 @@ import Control.Applicative
 --
 
 
-liftQuery :: DrawingInfo a -> (a -> LocCF u b) -> LocCF u b
-liftQuery q mf = (lift0R1 q) >>= mf  
 
 
-infixr 9 `renderPath`
+infixr 9 `renderPathWith`
 
-renderPath :: LocDrawingInfo u (PrimPath u) 
-           -> (PrimPath u -> Graphic u) 
-           -> LocGraphic u
-renderPath m k = m >>= (lift0R1 . k)
-
--- intoLocImage :: LocCF u a -> LocCF u (z,b) -> LocCF u (a,b)
--- intoLocImage = postcomb1 (\a (_,b) -> (a,b))
-
-shiftOrigin :: Num u => u -> u -> LocGraphic u -> LocGraphic u
-shiftOrigin dx dy mf = promoteR1 $ \pt -> down1R1 (displace dx dy pt) mf
+renderPathWith :: LocDrawingInfo u (PrimPath u) 
+               -> (PrimPath u -> Graphic u) 
+               -> LocGraphic u
+renderPathWith m k = m >>= (lift0R1 . k)
 
 
 
@@ -99,26 +91,26 @@ markText ss = fmap (replaceL uNil) $ singleLineCC ss
 
 
 
-localPoint :: (Point2 u -> Point2 u) -> CF1 (Point2 u) a -> CF1 (Point2 u) a
-localPoint f ma = promoteR1 $ \pt -> down1R1 (f pt) ma
 
 -- | Supplied point is the center.
 --
 axialLine :: Fractional u => Vec2 u -> LocGraphic u
-axialLine v = localPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
+axialLine v = moveStartPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markHLine = liftQuery markHeight $ \h -> axialLine (hvec h)
+markHLine = lift0R1 markHeight >>= \h -> axialLine (hvec h)
 
 
 markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
-markVLine = liftQuery markHeight $ \h -> axialLine (vvec h) 
+markVLine = lift0R1 markHeight >>= \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, FromPtSize u) => LocGraphic u
-markX = liftQuery markHeight $ \h -> 
-    let w = 0.75 * h in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
+markX = lift0R1 markHeight >>= mkX 
+  where
+    mkX h = let w = 0.75 * h
+              in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
 
 
 
@@ -127,17 +119,18 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
-markCross = liftQuery markHeight $ \h ->  
-    (axialLine $ avec ang h) `oplus` (axialLine $ avec (-ang) h)
+markCross = markHeight >>= mkCross
   where
-    ang = pi*0.25  
+    mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
+    ang       = pi*0.25  
 
 -- Note - height is extended slightly to look good...
 
 pathDiamond :: (Fractional u, FromPtSize u) 
             => LocDrawingInfo u (PrimPath u)
-pathDiamond = liftQuery markHeight $ 
-                \h -> promoteR1 $ \pt -> pure $ diamondPath (0.5*h) (0.66*h) pt
+pathDiamond = 
+    promoteR1 $ \pt -> 
+      markHeight >>= \h -> pure $ diamondPath (0.5*h) (0.66*h) pt
 
 
 
@@ -146,10 +139,10 @@ pathDiamond = liftQuery markHeight $
 -- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markDiamond = pathDiamond `renderPath` closedStroke
+markDiamond = pathDiamond `renderPathWith` closedStroke
 
 markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markFDiamond = pathDiamond `renderPath` filledPath
+markFDiamond = pathDiamond `renderPathWith` filledPath
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -160,41 +153,44 @@ markFDiamond = pathDiamond `renderPath` filledPath
 --
 
 markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
-markBDiamond = pathDiamond `renderPath` borderedPath
+markBDiamond = pathDiamond `renderPathWith` borderedPath
 
 
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
-markDisk = liftQuery markHalfHeight filledDisk 
+markDisk = lift0R1 markHalfHeight >>= filledDisk 
 
 
 
 markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
-markSquare = liftQuery markHeight $ \h -> 
-    let d = 0.5*(-h) in shiftOrigin d d $ strokedRectangle h h
+markSquare = 
+    lift0R1 markHeight >>= \h -> 
+    let d = 0.5*(-h) in moveStartPoint (displace d d) $ strokedRectangle h h
     
 
 
 markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markCircle = liftQuery markHalfHeight strokedDisk 
+markCircle = lift0R1 markHalfHeight >>= strokedDisk 
 
 
 markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
-markBCircle = liftQuery markHalfHeight borderedDisk 
+markBCircle = lift0R1 markHalfHeight >>= borderedDisk 
 
 
 
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
-markPentagon = liftQuery markHeight $ \h ->
-    promoteR1 $ \pt -> closedStroke $ vertexPath $ polygonPoints 5 (0.5*h) pt
+markPentagon = 
+    promoteR1 $ \pt -> 
+      markHeight >>= \h -> closedStroke $ vertexPath $ pentagonPath pt (0.5*h)
+  where
+    pentagonPath pt hh = polygonPoints 5 hh pt
 
  
 
 
 markStar :: (Floating u, FromPtSize u) => LocGraphic u 
-markStar = 
-    liftQuery markHeight $ \h -> starLines (0.5*h)
+markStar = lift0R1 markHeight >>= \h -> starLines (0.5*h)
 
 starLines :: Floating u => u -> LocGraphic u
 starLines hh = 
@@ -206,7 +202,7 @@ starLines hh =
 
 
 markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
-markAsterisk = liftQuery markHeight asteriskLines
+markAsterisk = lift0R1 markHeight >>= asteriskLines
 
 asteriskLines :: Floating u => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
@@ -235,8 +231,8 @@ markFOCross = markCross `oplus` markBCircle
 
 
 markTriangle :: (Floating u, FromPtSize u) => LocGraphic u
-markTriangle = tripath `renderPath` closedStroke
+markTriangle = tripath `renderPathWith` closedStroke
   where
-    tripath = liftQuery markHeight $ 
-                \h -> promoteR1 $ \pt -> pure $ equilateralTrianglePath h pt
+    tripath = promoteR1 $ \pt -> 
+                markHeight >>= \h -> pure $ equilateralTrianglePath h pt
 

@@ -333,6 +333,6 @@ nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u)
      => LocImage u a -> m a
 nodei imgL = askDC    >>= \ctx -> 
              position >>= \pt  -> 
-             let (a,o) = runCF ctx (down1R1 pt imgL)
+             let (a,o) = runCF ctx (apply1R1 imgL pt)
              in trace (collectH o) >> return a
 

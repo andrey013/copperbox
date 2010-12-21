@@ -93,7 +93,7 @@ connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
             , Real u, Floating u, FromPtSize u ) 
          => ConnectorPath u -> Point2 u -> Point2 u -> m ()
 connWith con p0 p1 = localize doublesize $ 
-    drawi_ $ down2R2 p0 p1 (strokeConnector (rightArrow con tri45))
+    drawi_ $ apply2R2 (strokeConnector (rightArrow con tri45)) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u

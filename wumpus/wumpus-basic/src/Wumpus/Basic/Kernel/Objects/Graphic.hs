@@ -36,8 +36,12 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , LocThetaGraphic
   , DLocThetaGraphic
 
+  -- * Functions
+  , intoImage
+  , intoLocImage
+  , intoLocThetaImage
 
-  , moveOrigin
+  , moveStartPoint
 
   , locPath
   , emptyLocPath
@@ -135,12 +139,32 @@ type LocThetaGraphic u       = LocThetaImage u (UNil u)
 type DLocThetaGraphic        = LocThetaGraphic Double
 
 
+--------------------------------------------------------------------------------
+-- Functions
 
--- | Move the origin of a LocImage with the supplied displacement
--- function.
+
+-- | Build an Image...
 --
-moveOrigin :: PointDisplace u -> LocImage u a -> LocImage u a
-moveOrigin f ma = promoteR1 $ \pt -> ma `at` f pt
+intoImage :: CF a -> Graphic u -> Image u a
+intoImage = liftA2 (\a (_,b) -> (a,b))
+
+
+-- | Build a LocImage...
+--
+intoLocImage :: LocCF u a -> LocGraphic u -> LocImage u a
+intoLocImage = liftA2 (\a (_,b) -> (a,b))
+
+-- | Build a LocThetaImage...
+--
+intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
+intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
+
+
+-- | Move the start-point of a LocImage with the supplied 
+-- displacement function.
+--
+moveStartPoint :: PointDisplace u -> LocImage u a -> LocImage u a
+moveStartPoint f ma = promoteR1 $ \pt -> ma `at` f pt
 
 --------------------------------------------------------------------------------
 
@@ -340,6 +364,9 @@ rborderedEllipse hw hh =
 --------------------------------------------------------------------------------
 
 
+-- | Draw a straight line formed from displacing the implicit 
+-- start point with the supplied vector.
+-- 
 straightLine :: Fractional u => Vec2 u -> LocGraphic u
 straightLine v = mf >>= (lift0R1 . openStroke)
   where

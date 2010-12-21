@@ -42,16 +42,13 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , lift0R2
   , lift1R2
  
-  , adaptR1
-  , adaptR2
-
   , promoteR1
   , promoteR2
 
 
-  , down1R1
-  , down2R2
-  , down1R2
+  , apply1R1
+  , apply2R2
+  , apply1R2
 
   -- * Extractors
   , drawingCtx
@@ -319,16 +316,6 @@ lift0R2 mf          = CF2 $ \ctx _ _ -> unCF mf ctx
 lift1R2             :: CF1 r1 a -> CF2 r1 r2 a
 lift1R2 mf          = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
 
--- | \*\* WARNING \*\* - pending removal.
---
-adaptR1             :: CF (r1 -> a) -> CF1 r1 a
-adaptR1 mf          = CF1 $ \ctx r1 -> unCF mf ctx r1
-
--- | \*\* WARNING \*\* - pending removal.
---
-adaptR2             :: CF (r1 -> r2 -> a) -> CF2 r1 r2 a
-adaptR2 mf          = CF2 $ \ctx r1 r2 -> unCF mf ctx r1 r2
-
 
 
 -- | Promote a function @from one argument to a Context function@ 
@@ -353,45 +340,39 @@ promoteR2 mf        = CF2 $ \ctx r1 r2 -> unCF (mf r1 r2) ctx
 
 
 
--- | Downcast an arity-one Context function by one level, making 
--- an arity-zero Context function. 
--- 
--- To make the down cast the supplied @CF1@ function is applied to 
--- the parameter r1.
+-- | Apply an arity-one Context function to a single argument, 
+-- downcasting it by one level, making an arity-zero Context 
+-- function. 
 -- 
 -- The type signature is as explanatory as a description:
 --
--- > down1R1 :: r1 -> CF1 r1 a -> CF a
+-- > apply1R1 :: CF1 r1 a -> r1 -> CF a
 --
-down1R1             :: r1 -> CF1 r1 a -> CF a
-down1R1 r1 mf       = CF $ \ctx -> unCF1 mf ctx r1
+apply1R1            :: CF1 r1 a -> r1 -> CF a
+apply1R1 mf r1      = CF $ \ctx -> unCF1 mf ctx r1
 
 
--- | Downcast an arity-two Context function by two levels, making 
--- an arity-zero Context function. 
--- 
--- To make the down cast the supplied @CF2@ function is applied to 
--- the two parameters r1 and r2.
+-- | Apply an arity-two Context function to two arguments, 
+-- downcasting it by two levels, making an arity-zero Context 
+-- function. 
 -- 
 -- The type signature is as explanatory as a description:
 --
--- > down2R2 :: r1 -> r2 -> CF2 r1 r2 a -> CF a
+-- > apply2R2 :: CF2 r1 r2 a -> r1 -> r2 -> CF a
 -- 
-down2R2             :: r1 -> r2 -> CF2 r1 r2 a -> CF a
-down2R2 r1 r2 mf    = CF $ \ctx -> unCF2 mf ctx r1 r2
+apply2R2            :: CF2 r1 r2 a -> r1 -> r2 -> CF a
+apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 
--- | Downcast an arity-two Context function by one level, making 
--- an arity-one Context function. 
--- 
--- To make the down cast the supplied @CF2@ function is applied to 
--- the parameter r1.
+-- | Apply an arity-two Context function to one argument, 
+-- downcasting it by one level, making an arity-one Context 
+-- function. 
 -- 
 -- The type signature is as explanatory as a description:
 --
--- > down1R2 :: r2 -> CF2 r1 r2 a -> CF1 r1 a
+-- > apply1R2 :: CF2 r1 r2 a -> r2 -> CF1 r1 a
 --
-down1R2             :: r2 -> CF2 r1 r2 a -> CF1 r1 a
-down1R2 r2 mf       = CF1 $ \ctx r1 -> unCF2 mf ctx r1 r2
+apply1R2            :: CF2 r1 r2 a -> r2 -> CF1 r1 a
+apply1R2 mf r2      = CF1 $ \ctx r1 -> unCF2 mf ctx r1 r2
 
 
 --------------------------------------------------------------------------------
@@ -490,7 +471,7 @@ infixr 1 `at`
 -- the /static argument/ is specialized to a start point.
 --
 at :: LocCF u a -> Point2 u -> CF a
-at = flip down1R1
+at = apply1R1
 
 
 

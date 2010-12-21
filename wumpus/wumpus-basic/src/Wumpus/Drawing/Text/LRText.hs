@@ -41,6 +41,7 @@ import Wumpus.Core.Text.GlyphIndices
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
+import Control.Applicative
 import Data.Char
 import Data.Foldable ( foldrM )
 import qualified Data.Map               as Map
@@ -231,9 +232,9 @@ textVector esc = let cs = destrEscapedText id esc in
 
 -- Not so good...
 charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
-charVector (CharLiteral c) = down1R1 (ord c) (adaptR1 avLookupTable)
-charVector (CharEscInt i)  = down1R1 i       (adaptR1 avLookupTable)
-charVector (CharEscName s) = down1R1 ix      (adaptR1 avLookupTable)
+charVector (CharLiteral c) = (\fn -> fn $ ord c) <$> avLookupTable
+charVector (CharEscInt i)  = (\fn -> fn i)       <$> avLookupTable
+charVector (CharEscName s) = (\fn -> fn ix)      <$> avLookupTable
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 

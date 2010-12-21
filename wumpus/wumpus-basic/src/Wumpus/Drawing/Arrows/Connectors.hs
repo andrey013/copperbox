@@ -92,11 +92,6 @@ leftrightArrow cp la ra =
               }
 
 
-intoImage :: CF a -> CF (z,b) -> CF (a,b)
-intoImage = liftA2 (\a (_,b) -> (a,b))
-
-mapSnd :: (b -> c) -> (a,b) -> (a,c)
-mapSnd f (a,b) = (a,f b)
 
 strokeConnector :: (Real u, Floating u) 
                 => Connector u -> ConnectorImage u (Path u)
@@ -105,7 +100,7 @@ strokeConnector (Connector cpF opt_la opt_ra) =
        tipEval opt_la p0 (directionL pathc) >>= \(dl,gfL) -> 
        tipEval opt_ra p1 (directionR pathc) >>= \(dr,gfR) ->
        intoImage (pure pathc) 
-                 (fmap (mapSnd (gfR . gfL)) $ drawP $ shortenPath dl dr pathc) 
+                 (fmap (bimapR (gfR . gfL)) $ drawP $ shortenPath dl dr pathc) 
   where
     drawP       = openStroke . toPrimPath   
 
@@ -140,7 +135,7 @@ tipEval :: Num u
         => Maybe (Arrowhead u) -> Point2 u -> Radian
         -> CF (u, ArrowMark u)
 tipEval Nothing    _  _     = return (0,unmarked)
-tipEval (Just arw) pt theta = makeMark $ down2R2 pt theta (getArrowhead arw)
+tipEval (Just arw) pt theta = makeMark $ apply2R2 (getArrowhead arw) pt theta
 
 
 unmarked :: ArrowMark u
