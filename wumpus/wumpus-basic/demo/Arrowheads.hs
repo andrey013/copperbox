@@ -75,7 +75,7 @@ makeArrowDrawing :: (Real u, Floating u, FromPtSize u)
                  => (Arrowhead u, Arrowhead u) -> Point2 u 
                  -> TraceDrawing u ()
 makeArrowDrawing (arrl,arrr) p0 = 
-    drawi_ $ situ2 (strokeConnector (leftrightArrow connLine arrl arrr)) p0 p1
+    drawi_ $ apply2R2 (strokeConnector (leftrightArrow connLine arrl arrr)) p0 p1
   where
     p1 = p0 .+^ hvec 100
   

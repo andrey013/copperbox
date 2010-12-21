@@ -269,6 +269,14 @@ instance DrawingCtxM (CF2 r1 r2) where
   localize upd df = CF2 $ \ctx r1 r2 -> unCF2 df (upd ctx) r1 r2
 
 
+-- Note - there is nothing determining a DUnit for the CF types, 
+-- so it seems appropriate not to define affine instances.
+--
+-- However affine instances can be made for the Image type in 
+-- Objects.BaseObjects.
+--
+
+
 --------------------------------------------------------------------------------
 -- Run functions
 

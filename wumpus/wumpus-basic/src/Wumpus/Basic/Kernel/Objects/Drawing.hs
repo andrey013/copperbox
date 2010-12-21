@@ -163,8 +163,8 @@ boundaryExtr f = f . boundary
 
 -- | The center of a picture.
 --
-boundaryCenter :: Fractional u => Picture u -> Point2 u
-boundaryCenter = boundaryExtr center
+boundaryCtr :: Fractional u => Picture u -> Point2 u
+boundaryCtr = boundaryExtr center
 
 
 
@@ -327,7 +327,7 @@ infixr 6 `nextToH`, `centric`
 --
 --
 centric :: (Fractional u, Ord u) => Drawing u -> Drawing u -> Drawing u
-centric = megaCombR boundaryCenter boundaryCenter moveFun
+centric = megaCombR boundaryCtr boundaryCtr moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
 

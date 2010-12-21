@@ -26,7 +26,10 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   , DBoundedGraphic
   , BoundedLocGraphic
   , DBoundedLocGraphic
+  , BoundedLocThetaGraphic
+  , DBoundedLocThetaGraphic
 
+  , centerOrthoBBox
   , illustrateBoundedGraphic
   , illustrateBoundedLocGraphic
 
@@ -61,6 +64,36 @@ type BoundedLocGraphic u      = LocImage u (BoundingBox u)
 type DBoundedLocGraphic       = BoundedLocGraphic Double
 
 
+-- | LocThetaGraphic with a bounding box.
+--
+-- Note the size of bounding box for the \"same\" shape will vary 
+-- according to the rotation. A bounding box is always 
+-- orthonormal (?) to the x- and y-axes.
+--
+type BoundedLocThetaGraphic u   = LocThetaImage u (BoundingBox u)
+
+type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
+
+
+
+
+-- | 'openStroke' : @ theta * bbox -> BBox @
+-- 
+-- Rotate a bounding box by @theta@ about its center. Take the 
+-- new bounding box.
+--
+-- Remember that bounding boxes are always orthonormal rectangles,
+-- so the dimensions as well as the positions may change under 
+-- rotation. 
+--
+centerOrthoBBox :: (Real u, Floating u) 
+                => Radian -> BoundingBox u -> BoundingBox u
+centerOrthoBBox theta bb = 
+    traceBoundary $ map (rotateAbout theta ctr) ps
+  where
+    ps  = boundaryCornerList bb
+    ctr = boundaryCenter bb
+
 
 --------------------------------------------------------------------------------
 -- 
@@ -84,3 +117,4 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury)) =
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
     cross         = straightLineBetween p1 p2 
                       `oplus` straightLineBetween (P2 llx ury) (P2 urx lly)
+

@@ -120,8 +120,20 @@ type instance DUnit (LocImage u a) = u --  GuardEq (DUnit a) (DUnit (PrimGraphic
 
 type instance DUnit (LocThetaImage u a) = u
 
+
+
 --------------------------------------------------------------------------------
 -- Affine instances
+
+-- Note - it seems better to have these instances for Image (even 
+-- though Image is a type synonym) rather than more general 
+-- instances on a CF.
+--
+-- There is nothing determining a DUnit for the CF types.
+--
+-- The downside is these instances are effectively orphan 
+-- instances.
+--
 
 instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
     Rotate (Image u a) where
@@ -140,6 +152,14 @@ instance (Num u, Scale a, DUnit a ~ u) => Scale (Image u a) where
 instance (Num u, Translate a, DUnit a ~ u) => Translate (Image u a) where
   translate dx dy = fmap (translate dx dy)
 
+
+-- \*\* WARNING \*\* - I am not sure having affine instances for 
+-- LocImage makes sense...
+--
+-- Particularly, what is a rotateAbout on a function from Point to 
+-- Graphic? Is it just a post-transformation, or should the start 
+-- point be transformed as well.
+--
 
 instance (Real u, Floating u, Rotate a, DUnit a ~ u) => 
     Rotate (LocImage u a) where

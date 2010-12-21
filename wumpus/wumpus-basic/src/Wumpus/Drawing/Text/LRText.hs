@@ -48,13 +48,86 @@ import qualified Data.Map               as Map
 import Data.Maybe 
 
 
+-- Note - BoundedLocThetaGraphic is probably an adequate type
+-- even though the same text will have a different bounding box
+-- if it is rotated (the sides of the BBox are always parallel to 
+-- the x and y axes even if the text is not parrale to the 
+-- x-axis). 
+-- 
+-- I cannot think of any compelling graphics that need a more 
+-- accurate type. The execption is text cannot have exact anchors 
+-- however this is a moot /if/ text is considered as a labelling 
+-- of an existing rectangle (which may or may not have been 
+-- rotated).
+--
+
+
+-- Code below is out-of-date. Text should be a 
+-- BoundedLocThetaGraphic not a BoundedLocGraphic.
+
+
+
 -- One line of multiline text
 --
 data InterimText1 u = InterimText1
       { text1_escaped   :: EscapedText
-      , text1_advance   :: (AdvanceVec u)
+      , text1_advance   :: AdvanceVec u
       } 
   deriving (Eq,Show)
+
+
+-- Draw one line of left-aligned text, knowing the max_width of
+-- all the lines of text.
+--
+-- All left-aligned text is moved left by half the max_width.
+--
+-- Impilict point is baseline-center.
+--
+drawLeftAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+drawLeftAligned max_width (InterimText1 esc _) = 
+    promoteR2 $ \baseline_ctr theta -> 
+       let mv = displaceParallel (negate $ 0.5* max_width) theta
+       in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
+       
+
+
+-- Draw one line of center-aligned text. Center aligned text is 
+-- oblivious to the max_width of all the lines of text.
+--
+-- Each line of center-aligned text is moved left by half its 
+-- advance vector.
+--
+-- Impilict point is baseline-center.
+--
+drawCenterAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+drawCenterAligned _ (InterimText1 esc av) = 
+    promoteR2 $ \baseline_ctr theta -> 
+       let mv = displaceParallel (negate $ 0.5 * advanceH av) theta
+       in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
+       
+
+-- Draw one line of right-aligned text, knowing the max_width of
+-- all the lines of text.
+--
+-- Each right-aligned text line is moved by the width component 
+-- of the advance vector minus half the max width.
+--
+-- Impilict point is baseline-center.
+--
+drawRightAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+drawRightAligned max_width (InterimText1 esc av) = 
+    promoteR2 $ \baseline_ctr theta -> 
+       let mv = displaceParallel (advanceH av - (0.5 * max_width)) theta
+       in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
+
+
+
+
+
+
+
+
+
 
 -- | Implicit origin of the text is baseline-left.
 --
@@ -66,8 +139,8 @@ singleLineBL ss = lift0R1 (interimText1 ss) >>= singleLRText id
 --
 singleLineCC :: (Fractional u, Ord u, FromPtSize u) 
              => String -> BoundedLocGraphic u
-singleLineCC ss = (lift0R1 glyphCapHeight)  >>= \cap_h   -> 
-                  (lift0R1 $ interimText1 ss) >>= \interim -> 
+singleLineCC ss = lift0R1 glyphCapHeight  >>= \cap_h   -> 
+                  lift0R1 (interimText1 ss) >>= \interim -> 
                   let hw = 0.5 * advanceH (text1_advance interim)
                   in singleLRText (.-^ vec hw (0.5 * cap_h)) interim
 
@@ -149,8 +222,6 @@ multiAligned drawF dispF ss =
           axs = annotateStartPoints cap_h base_span p1 xs
       in mergeLines drawF p1 axs
 
--- This needs sorting out so as not to throw an error
---
 mergeLines :: (Num u, Ord u)
            => (InterimText1 u -> Point2 u -> BoundedGraphic u)
            -> Point2 u
@@ -167,19 +238,24 @@ mergeLines fn fallback_pt = step
 
 
 singleLRText :: (Ord u, FromPtSize u) 
-             => (Point2 u -> Point2 u) -> InterimText1 u 
-             -> BoundedLocGraphic u
+             => PointDisplace u -> InterimText1 u -> BoundedLocGraphic u
 singleLRText dispF (InterimText1 esc av) =
-    glyphHeightRange >>= \(ymin, ymax)  ->
-    promoteR1  $ \p0 -> let pt  = dispF p0
-                            w   = advanceH av
-                            ll  = pt .+^ vvec ymin
-                            ur  = pt .+^ vec w ymax
-                            bb  = boundingBox ll ur 
-                        in (escapedline esc `at` pt) >>= \(_,prim) ->
-                           return (bb, prim)
+    promoteR1 $ \p0 -> let pt = dispF p0 in 
+      apply1R1 (realTextBounds av) pt >>= \bb ->
+        fmap (replaceL bb) $ escapedline esc `at` pt
 
 
+-- Note - ymin is (usually) negative...
+--
+realTextBounds :: (Ord u, FromPtSize u) 
+               => AdvanceVec u -> LocDrawingInfo u (BoundingBox u)
+realTextBounds av = 
+    promoteR1 $ \pt -> 
+      glyphHeightRange >>= \(ymin, ymax)  ->
+        let w   = advanceH av
+            ll  = pt .+^ vvec ymin
+            ur  = pt .+^ vec w ymax
+        in pure $ boundingBox ll ur
 
 -- Point is baseline-left
 --
@@ -230,7 +306,7 @@ textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
 textVector esc = let cs = destrEscapedText id esc in 
    foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
 
--- Not so good...
+
 charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
 charVector (CharLiteral c) = (\fn -> fn $ ord c) <$> avLookupTable
 charVector (CharEscInt i)  = (\fn -> fn i)       <$> avLookupTable
@@ -243,6 +319,8 @@ charVector (CharEscName s) = (\fn -> fn ix)      <$> avLookupTable
 -- baseline_span is the vertical distance from one baseline to
 -- the next it is not /gap_height/.
 --
+
+-- Yikes!
 
 annotateStartPoints :: Fractional u 
                  => u -> u -> Point2 u -> [InterimText1 u] 
