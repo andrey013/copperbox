@@ -216,8 +216,8 @@ lineTo = AbsLineTo
 -- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
 --        path_segment @
 -- 
--- Create a curved PathSegment, the start point is 
--- implicitly the previous point in a path.
+-- Create a curved PathSegment, the start point is implicitly the 
+-- previous point in a path.
 --
 --
 curveTo :: Point2 u -> Point2 u -> Point2 u -> AbsPathSegment u
@@ -244,10 +244,10 @@ vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
 -- successive straight line segments formed from the list of 
 -- next_vectors.
 -- 
--- This function throws an error when supplied the empty list.
+-- This function can be supplied with an empty list - this 
+-- simulates a null graphic.
 --
 vectorPath :: Num u => Point2 u -> [Vec2 u] -> PrimPath u
-vectorPath _  [] = error "Picture.vectorPath - empty point list"
 vectorPath pt xs = PrimPath pt $ map RelLineTo xs
 
 
