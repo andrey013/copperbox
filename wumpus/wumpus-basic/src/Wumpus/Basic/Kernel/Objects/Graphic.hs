@@ -42,6 +42,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , intoLocThetaImage
 
   , moveStartPoint
+  , moveStartPointTheta
 
   , locPath
   , emptyLocPath
@@ -163,8 +164,15 @@ intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
 -- | Move the start-point of a LocImage with the supplied 
 -- displacement function.
 --
-moveStartPoint :: PointDisplace u -> LocImage u a -> LocImage u a
-moveStartPoint f ma = promoteR1 $ \pt -> ma `at` f pt
+moveStartPoint :: PointDisplace u -> LocCF u a -> LocCF u a
+moveStartPoint f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
+
+
+-- | Move the start-point of a LocImage with the supplied 
+-- displacement function.
+--
+moveStartPointTheta :: PointDisplace u -> LocThetaCF u a -> LocThetaCF u a
+moveStartPointTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
 
 --------------------------------------------------------------------------------
 

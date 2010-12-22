@@ -19,8 +19,11 @@
 module Wumpus.Drawing.Text.LRText
   ( 
 
-   
-    singleLineBL
+    baselineCenterLine
+  , baselineLeftLine
+  , baselineRightLine
+
+  , singleLineBL
   , singleLineBC
   , singleLineCC
   , escCharBC
@@ -62,10 +65,6 @@ import Data.Maybe
 --
 
 
--- Code below is out-of-date. Text should be a 
--- BoundedLocThetaGraphic not a BoundedLocGraphic.
-
-
 
 -- One line of multiline text
 --
@@ -76,55 +75,197 @@ data InterimText1 u = InterimText1
   deriving (Eq,Show)
 
 
--- Draw one line of left-aligned text, knowing the max_width of
--- all the lines of text.
+-- | max_width * interim_text -> LocThetaGraphic
+--
+type LocThetaDrawText1 u = u -> InterimText1 u -> LocThetaGraphic u
+
+
+
+-- | Draw one line of left-aligned text, knowing the max_width 
+-- of all the lines of text.
 --
 -- All left-aligned text is moved left by half the max_width.
 --
--- Impilict point is baseline-center.
---
-drawLeftAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+-- Note - implicit point is baseline-center, this is perhaps 
+-- unintituitive given the functions name but it is an 
+-- advantage for drawing multi-line text.
+-- 
+drawLeftAligned :: Floating u => LocThetaDrawText1 u
 drawLeftAligned max_width (InterimText1 esc _) = 
     promoteR2 $ \baseline_ctr theta -> 
-       let mv = displaceParallel (negate $ 0.5* max_width) theta
+       let mv = displaceParallel ((-0.5) * max_width) theta
        in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
        
 
 
--- Draw one line of center-aligned text. Center aligned text is 
+-- | Draw one line of center-aligned text. Center aligned text is 
 -- oblivious to the max_width of all the lines of text.
 --
 -- Each line of center-aligned text is moved left by half its 
 -- advance vector.
 --
--- Impilict point is baseline-center.
+-- Implicit point is baseline-center.
 --
-drawCenterAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+drawCenterAligned :: Floating u => LocThetaDrawText1 u
 drawCenterAligned _ (InterimText1 esc av) = 
     promoteR2 $ \baseline_ctr theta -> 
        let mv = displaceParallel (negate $ 0.5 * advanceH av) theta
        in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
        
 
--- Draw one line of right-aligned text, knowing the max_width of
--- all the lines of text.
+-- | Draw one line of right-aligned text, knowing the max_width 
+-- of all the lines of text.
 --
 -- Each right-aligned text line is moved by the width component 
 -- of the advance vector minus half the max width.
 --
--- Impilict point is baseline-center.
---
-drawRightAligned :: Floating u => u -> InterimText1 u -> LocThetaGraphic u
+-- Note - implicit point is baseline-center, this is perhaps 
+-- unintituitive given the functions name but it is an 
+-- advantage for drawing multi-line text.
+-- 
+drawRightAligned :: Floating u => LocThetaDrawText1 u
 drawRightAligned max_width (InterimText1 esc av) = 
     promoteR2 $ \baseline_ctr theta -> 
-       let mv = displaceParallel (advanceH av - (0.5 * max_width)) theta
-       in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
+      let mv = displaceParallel (negate $ advanceH av - (0.5 * max_width)) theta
+      in apply2R2 (rescapedline esc) (mv baseline_ctr) theta
 
 
 
 
+-- Impilict point is baseline-center.
+--
+onelineBBox :: (Real u, Floating u, FromPtSize u) 
+            => InterimText1 u -> LocThetaDrawingInfo u (BoundingBox u)
+onelineBBox (InterimText1 _ av) = 
+    promoteR2 $ \baseline_ctr theta -> 
+      glyphHeightRange >>= \(ymin, ymax) ->
+        let hw = 0.5 * advanceH av 
+            bl = baseline_ctr .+^ vec (-hw) ymin
+            tr = baseline_ctr .+^ vec hw    ymax
+        in pure $ centerOrthoBBox theta (BBox bl tr)
 
 
+
+type LocThetaDispQuery u = 
+        InterimText1 u -> LocThetaDrawingInfo u (PointDisplace u)
+
+
+-- This should have max_width as a param...
+--
+makeMoveableLine :: (Real u, Floating u, FromPtSize u) 
+                 => LocThetaDispQuery u -> LocThetaDrawText1 u 
+                 -> InterimText1 u -> BoundedLocThetaGraphic u
+makeMoveableLine dispQuery drawF ans@(InterimText1 _ av) = 
+    dispQuery ans >>= \fn  -> 
+      intoLocThetaImage (moveStartPointTheta fn $ onelineBBox ans)
+                        (moveStartPointTheta fn $ drawF (advanceH av) ans)
+
+
+-- Impilict point is baseline-center.
+--
+baselineCenterLine :: (Real u, Floating u, FromPtSize u) 
+                   => String -> BoundedLocThetaGraphic u
+baselineCenterLine ss = lift0R2 (interimText1 ss) >>= baselineCenterBody 
+ 
+baselineCenterBody :: (Real u, Floating u, FromPtSize u) 
+                   => InterimText1 u -> BoundedLocThetaGraphic u
+baselineCenterBody = makeMoveableLine centerToCenter drawCenterAligned
+
+
+-- Impilict point is baseline-left.
+--
+baselineLeftLine :: (Real u, Floating u, FromPtSize u) 
+                 => String -> BoundedLocThetaGraphic u
+baselineLeftLine ss = lift0R2 (interimText1 ss) >>= baselineLeftBody 
+
+baselineLeftBody :: (Real u, Floating u, FromPtSize u) 
+                 => InterimText1 u -> BoundedLocThetaGraphic u
+baselineLeftBody = makeMoveableLine leftToCenter drawLeftAligned
+
+
+-- Impilict point is baseline-right.
+--
+baselineRightLine :: (Real u, Floating u, FromPtSize u) 
+                  => String -> BoundedLocThetaGraphic u
+baselineRightLine ss = lift0R2 (interimText1 ss) >>= baselineRightBody
+
+
+baselineRightBody :: (Real u, Floating u, FromPtSize u) 
+                  => InterimText1 u -> BoundedLocThetaGraphic u
+baselineRightBody = makeMoveableLine rightToCenter drawRightAligned
+
+
+
+-- These three should probaly account for max_width...
+--
+centerToCenter :: LocThetaDispQuery u
+centerToCenter = const $ pure id
+
+leftToCenter :: Floating u => LocThetaDispQuery u
+leftToCenter (InterimText1 _ av) =
+    promoteR2 $ \_ theta -> 
+      pure $ displaceParallel (0.5 * advanceH av) theta
+
+rightToCenter :: Floating u 
+              => InterimText1 u -> LocThetaDrawingInfo u (PointDisplace u)
+rightToCenter (InterimText1 _ av) =
+    promoteR2 $ \_ theta -> 
+      pure $ displaceParallel ((-0.5) * advanceH av) theta
+
+
+{-
+multilineTEXT :: Floating u 
+              => (String -> BoundedLocThetaGraphic u) -> String
+              -> BoundedLocThetaGraphic u
+multilineTEXT mf [] = lift1R2 emptyBoundedLocGraphic
+multilineTEXT mf ss = 
+    lift0R2 (linesToInterims ss) >>= \(max_av, itexts) -> 
+      centralPoints (length itexts) >>= \pts -> undefined
+-}      
+
+zipMultis :: (Ord u, FromPtSize u)
+          => u
+          -> (u -> InterimText1 u -> BoundedLocThetaGraphic u) 
+          -> [InterimText1 u] -> [Point2 u]
+          -> BoundedLocThetaGraphic u
+zipMultis _     _  []     _       = lift1R2 $ emptyBoundedLocGraphic
+zipMultis _     _  _      []      = lift1R2 $ emptyBoundedLocGraphic
+zipMultis max_w mf (a:as) (b:bs) = step a b as bs
+  where
+    mkGraphic itext pt        = promoteR2 $ \_ theta -> 
+                                  apply2R2 (mf max_w itext) pt theta
+    step r s (r2:rs) (s2:ss)  = liftA2 oplus (mkGraphic r s) (step r2 s2 rs ss)
+    step r s _       _        = mkGraphic r s
+
+
+
+
+-- | @ana@ is an /anacrusis/ factor - if there are even points
+-- half the baseline_spacing is added to get the top point
+--
+centralPoints :: Floating u => Int -> LocThetaDrawingInfo u [Point2 u]
+centralPoints n | n < 2     = promoteR2 $ \ctr _  -> return [ctr]
+                | even n    = body (n `div` 2) (0.5*)
+                | otherwise = body (n `div` 2) (0 *) 
+  where
+    body halfn ana  = promoteR2 $ \ctr theta -> 
+                        baselineSpacing >>= \h ->
+                          let y0  = (h * fromIntegral halfn) + ana h
+                              top = displacePerpendicular y0 theta ctr
+                          in pure $ trailPoints n h theta top
+        
+
+
+trailPoints :: Floating u => Int -> u -> Radian -> Point2 u -> [Point2 u]
+trailPoints n height theta top = take n $ iterate fn top
+  where
+    fn pt = displacePerpendicular (-height) theta pt
+
+
+
+--------------------------------------------------------------------------------
+-- Code below is out-of-date. Text should be a 
+-- BoundedLocThetaGraphic not a BoundedLocGraphic.
 
 
 
@@ -195,6 +336,9 @@ multiAlignRight     :: (Fractional u, Ord u, FromPtSize u)
                     => String -> BoundedLocGraphic u
 multiAlignRight     = 
     multiAligned drawRightAligned1 (\wv pt -> pt .+^ hvec (0.5 * advanceH wv))
+
+
+
 
 
 -- Build multi-line aligned text. 

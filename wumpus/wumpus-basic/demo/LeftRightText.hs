@@ -69,25 +69,71 @@ makeCtx = fontFace helvetica . metricsContext 18
 
 text_drawing :: Drawing Double
 text_drawing = drawTracing $ do 
-    drawi_ $ (fn left_text)   `at` P2   0 100
-    drawi_ $ (fn center_text) `at` P2 200 100
-    drawi_ $ (fn right_text)  `at` P2 400 100
-    drawi_ $ (fn blank_text)  `at` P2   0   0
-    drawi_ $ (fn bl_oneline)  `at` P2 200   0
-    drawi_ $ (fn cc_oneline)  `at` P2 400   0
-    
-    draw $ redPlus            `at` P2   0 100
-    draw $ redPlus            `at` P2 200 100
-    draw $ redPlus            `at` P2 400 100
+    drawi_ $ (fn left_text)   `at` P2   0 300
+    drawi_ $ (fn center_text) `at` P2 200 300
+    drawi_ $ (fn right_text)  `at` P2 400 300
+    drawi_ $ (fn blank_text)  `at` P2   0 200
+    drawi_ $ (fn bl_oneline)  `at` P2 200 200
+    drawi_ $ (fn cc_oneline)  `at` P2 400 200
+    drawi_ $ (fn $ newblr)    `at` P2   0 100
+    drawi_ $ (fn $ newblc)    `at` P2 200 100
+    drawi_ $ (fn $ newbll)    `at` P2 400 100
+    drawi_ $ (fn $ rnewblr)   `at` P2   0   0
+    drawi_ $ (fn $ rnewblc)   `at` P2 200   0
+    drawi_ $ (fn $ rnewbll)   `at` P2 400   0
+      
+ 
+    draw $ redPlus            `at` P2   0 300
+    draw $ redPlus            `at` P2 200 300
+    draw $ redPlus            `at` P2 400 300
+    draw $ redPlus            `at` P2   0 200  
+    draw $ redPlus            `at` P2 200 200 
+    draw $ redPlus            `at` P2 400 200 
+    draw $ redPlus            `at` P2   0 100  
+    draw $ redPlus            `at` P2 200 100 
+    draw $ redPlus            `at` P2 400 100  
     draw $ redPlus            `at` P2   0   0  
     draw $ redPlus            `at` P2 200   0 
     draw $ redPlus            `at` P2 400   0 
-       
+      
   where
     fn = illustrateBoundedLocGraphic
-
+   
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
+
+
+newblc :: BoundedLocGraphic Double
+newblc = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineCenterLine "new baseline center" `rot` 0
+
+newbll :: BoundedLocGraphic Double
+newbll = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineLeftLine "new baseline left" `rot` 0
+
+newblr :: BoundedLocGraphic Double
+newblr = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineRightLine "new baseline right" `rot` 0
+
+
+rnewblc :: BoundedLocGraphic Double
+rnewblc = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineCenterLine "baseline center" `rot` (0.25*pi)
+
+rnewbll :: BoundedLocGraphic Double
+rnewbll = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineLeftLine "baseline left" `rot` (0.25*pi)
+
+rnewblr :: BoundedLocGraphic Double
+rnewblr = 
+    localize (strokeColour dark_slate_gray) $ 
+        baselineRightLine "baseline right" `rot` (0.25 * pi)
+
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 

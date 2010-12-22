@@ -64,6 +64,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   -- * Combinators
   , at
+  , rot
   , chain1
 
 
@@ -471,7 +472,6 @@ connEnd         = CF2 $ \_ _ pt -> pt
 infixr 1 `at`
 
 
-
 -- | Downcast a 'LocCF' function by applying it to the supplied 
 -- point, making an arity-zero Context function. 
 -- 
@@ -482,6 +482,16 @@ at :: LocCF u a -> Point2 u -> CF a
 at = apply1R1
 
 
+infixr 1 `rot`
+
+
+-- | Downcast a 'LocThetaCF' function by applying it to the 
+-- supplied angle, making an arity-one Context function (a 
+-- 'LocCF'). 
+-- 
+
+rot :: LocThetaCF u a -> Radian -> LocCF u a
+rot = apply1R2
 
 
 -- | /Chaining/ combinator - the /answer/ of the 

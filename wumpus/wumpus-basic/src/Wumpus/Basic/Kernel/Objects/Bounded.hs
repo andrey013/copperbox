@@ -29,10 +29,12 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   , BoundedLocThetaGraphic
   , DBoundedLocThetaGraphic
 
+  , emptyBoundedLocGraphic
+
   , centerOrthoBBox
   , illustrateBoundedGraphic
   , illustrateBoundedLocGraphic
-
+  , illustrateBoundedLocThetaGraphic
 
   ) where
 
@@ -45,6 +47,8 @@ import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( blue )
+
+import Control.Applicative
 
 --------------------------------------------------------------------------------
 
@@ -95,8 +99,15 @@ centerOrthoBBox theta bb =
     ctr = boundaryCenter bb
 
 
+emptyBoundedLocGraphic :: Num u => BoundedLocGraphic u
+emptyBoundedLocGraphic = intoLocImage fn  emptyLocGraphic
+  where
+    fn = promoteR1 $ \pt -> pure (BBox pt pt)
+
 --------------------------------------------------------------------------------
 -- 
+
+-- This is a common pattern so needs a name...
 
 illustrateBoundedGraphic :: Fractional u => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedGraphic mf = 
@@ -106,7 +117,14 @@ illustrateBoundedGraphic mf =
 illustrateBoundedLocGraphic :: Fractional u 
                             => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLocGraphic mf = 
-    promoteR1 $ \pt -> illustrateBoundedGraphic $ mf `at` pt
+    promoteR1 $ \pt -> illustrateBoundedGraphic $ apply1R1 mf pt
+
+
+illustrateBoundedLocThetaGraphic :: Fractional u 
+    => BoundedLocThetaGraphic u -> BoundedLocThetaGraphic u
+illustrateBoundedLocThetaGraphic mf = 
+    promoteR2 $ \pt theta-> illustrateBoundedGraphic $ apply2R2 mf pt theta
+
 
 
 bbrectangle :: Fractional u => BoundingBox u -> Graphic u
