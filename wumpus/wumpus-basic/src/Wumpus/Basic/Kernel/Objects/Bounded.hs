@@ -128,8 +128,10 @@ illustrateBoundedLocThetaGraphic mf =
 
 
 bbrectangle :: Fractional u => BoundingBox u -> Graphic u
-bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury)) = 
-    localize drawing_props $ rect1 `oplus` cross
+bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
+    | llx == urx && lly == ury = emptyLocGraphic `at` p1
+    | otherwise                = 
+        localize drawing_props $ rect1 `oplus` cross
   where
     drawing_props = strokeColour blue . capRound . dashPattern (Dash 0 [(1,2)])
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1

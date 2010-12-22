@@ -80,14 +80,14 @@ renderPathWith m k = m >>= (lift0R1 . k)
 
 
 
-markChar :: (Fractional u, Ord u, FromPtSize u) => Char -> LocGraphic u
+markChar :: (Real u, Floating u, FromPtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]
 
 
 
 
-markText :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-markText ss = fmap (replaceL uNil) $ singleLineCC ss
+markText :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
+markText ss = fmap (replaceL uNil) $ ctrCenterLine ss
 
 
 

@@ -16,7 +16,7 @@ main = do
 
 
 pic_empty :: DPicture
-pic_empty = frame [ ostroke red default_stroke_attr null_path
+pic_empty = frame [ ostroke red  default_stroke_attr null_path
                   , ostroke blue default_stroke_attr (vectorPath (P2 0 100) [])
                   , ztextlabel "" zeroPt 
                   ]

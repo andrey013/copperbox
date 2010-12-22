@@ -106,61 +106,61 @@ redPlus = localize (strokeColour red) markPlus
 newblc :: BoundedLocGraphic Double
 newblc = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineCenterLine "new baseline center" `rot` 0
+        baseCenterLine "new baseline center" `rot` 0
 
 newbll :: BoundedLocGraphic Double
 newbll = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineLeftLine "new baseline left" `rot` 0
+        baseLeftLine "new baseline left" `rot` 0
 
 newblr :: BoundedLocGraphic Double
 newblr = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineRightLine "new baseline right" `rot` 0
+        baseRightLine "new baseline right" `rot` 0
 
 
 rnewblc :: BoundedLocGraphic Double
 rnewblc = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineCenterLine "baseline center" `rot` (0.25*pi)
+        baseCenterLine "baseline center" `rot` (0.25*pi)
 
 rnewbll :: BoundedLocGraphic Double
 rnewbll = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineLeftLine "baseline left" `rot` (0.25*pi)
+        baseLeftLine "baseline left" `rot` (0.25*pi)
 
 rnewblr :: BoundedLocGraphic Double
 rnewblr = 
     localize (strokeColour dark_slate_gray) $ 
-        baselineRightLine "baseline right" `rot` (0.25 * pi)
+        baseRightLine "baseline right" `rot` (0.25 * pi)
 
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
-    localize (strokeColour dark_slate_gray) $ singleLineBL "Baseline-left..."
+    localize (strokeColour dark_slate_gray) $ baseLeftLine "Baseline-left..." `rot` 0
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (strokeColour dark_slate_gray) $ singleLineCC "Center-center..."
+    localize (strokeColour dark_slate_gray) $ ctrCenterLine "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignCenter ""
+    localize (strokeColour dark_slate_gray) $ multiAlignCenter "" `rot` 0
 
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (strokeColour dark_slate_gray) $ multiALeft dummy_text `rot` 0
+    localize (strokeColour dark_slate_gray) $ multiAlignLeft dummy_text `rot` 0
 
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (strokeColour dark_slate_gray) $ multiARight dummy_text `rot` 0
+    localize (strokeColour dark_slate_gray) $ multiAlignRight dummy_text `rot` 0
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (strokeColour dark_slate_gray) $ multiACenter dummy_text `rot` 0
+    localize (strokeColour dark_slate_gray) $ multiAlignCenter dummy_text `rot` 0
 
 
 dummy_text :: String 
