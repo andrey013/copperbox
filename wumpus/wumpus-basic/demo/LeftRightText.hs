@@ -151,16 +151,16 @@ blank_text =
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignLeft dummy_text
+    localize (strokeColour dark_slate_gray) $ multiALeft dummy_text `rot` 0
 
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignRight dummy_text
+    localize (strokeColour dark_slate_gray) $ multiARight dummy_text `rot` 0
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignCenter dummy_text
+    localize (strokeColour dark_slate_gray) $ multiACenter dummy_text `rot` 0
 
 
 dummy_text :: String 
