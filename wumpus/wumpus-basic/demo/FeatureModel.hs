@@ -6,8 +6,8 @@
 module FeatureModel where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
@@ -90,7 +90,7 @@ makeBox :: (Real u, Floating u, FromPtSize u)
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ strokedShape $ rectangle w 20 $ pt
-    drawi_ $ singleLineCC ss `at` center a
+    drawi_ $ ctrCenterLine ss `at` center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 
@@ -108,7 +108,7 @@ connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
    let p1 = northwards (realToFrac lw) b1
-   drawi $ situ2 (strokeConnector (rightArrow connLine arrh)) p0 p1
+   drawi $ apply2R2 (strokeConnector (rightArrow connLine arrh)) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

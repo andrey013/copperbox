@@ -17,8 +17,8 @@ module LeftRightText where
 
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.GSLoader
-import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
@@ -37,6 +37,7 @@ main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
+    putStrLn "Note - center-center text is not currently accurate..."
     maybe gs_failk  makeGSPicture  $ mb_gs
     maybe afm_failk makeAfmPicture $ mb_afm
   where

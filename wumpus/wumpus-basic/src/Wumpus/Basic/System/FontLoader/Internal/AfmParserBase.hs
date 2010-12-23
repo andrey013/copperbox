@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.AfmParserBase
+-- Module      :  Wumpus.Basic.System.FontLoader.Internal.AfmParserBase
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.AfmParserBase
+module Wumpus.Basic.System.FontLoader.Internal.AfmParserBase
   ( 
 
     afmFileParser
@@ -50,7 +50,7 @@ module Wumpus.Basic.System.FontLoader.AfmParserBase
 
   ) where
 
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.Base
 
 import Wumpus.Basic.Utils.ParserCombinators
 import qualified Wumpus.Basic.Utils.TokenParsers as P

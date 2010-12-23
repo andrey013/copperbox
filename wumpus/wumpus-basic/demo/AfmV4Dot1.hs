@@ -5,7 +5,7 @@ module AfmV4Dot1 where
 
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
@@ -66,12 +66,12 @@ redPlus = localize (strokeColour red) markPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (fontFace times_roman . strokeColour dark_slate_gray) $ 
-             singleLineBL "Times-Roman"
+             baseLeftLine "Times-Roman"
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (strokeColour dark_slate_gray) $ singleLineCC "Center-center..."
+    localize (strokeColour dark_slate_gray) $ ctrCenterLine "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 

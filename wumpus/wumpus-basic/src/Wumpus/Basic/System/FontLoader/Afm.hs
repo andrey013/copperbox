@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.AfmLoader
+-- Module      :  Wumpus.Basic.System.FontLoader.Afm
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,11 +19,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.AfmLoader
+module Wumpus.Basic.System.FontLoader.Afm
   ( 
 
-    module Wumpus.Basic.System.FontLoader.Base
-  , module Wumpus.Basic.System.FontLoader.AfmV4Dot1Parser  
+    module Wumpus.Basic.System.FontLoader.Internal.Base
+  , module Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser  
 
   , loadAfmMetrics
   , afmV4Dot1Loader
@@ -33,8 +33,8 @@ module Wumpus.Basic.System.AfmLoader
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.AfmV4Dot1Parser
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser
+import Wumpus.Basic.System.FontLoader.Internal.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 

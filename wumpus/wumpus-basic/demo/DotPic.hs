@@ -4,8 +4,8 @@ module DotPic where
 
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots

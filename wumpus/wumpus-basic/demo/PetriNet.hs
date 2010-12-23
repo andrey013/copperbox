@@ -8,8 +8,8 @@
 module PetriNet where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
@@ -123,20 +123,20 @@ connector' :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
          , Real u, Floating u, FromPtSize u ) 
       => Point2 u -> Point2 u -> m ()
 connector' p0 p1 = 
-    drawi_ $ situ2 (strokeConnector (rightArrow connLine tri45)) p0 p1
+    drawi_ $ apply2R2 (strokeConnector (rightArrow connLine tri45)) p0 p1
 
 
 connectorC :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
 connectorC v p0 p1 = 
-    drawi_ $ situ2 (strokeConnector (rightArrow (connRightVHV v) tri45)) p0 p1
+    drawi_ $ apply2R2 (strokeConnector (rightArrow (connRightVHV v) tri45)) p0 p1
 
 connectorD :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
 connectorD u p0 p1 = 
-    drawi_ $ situ2 (strokeConnector (rightArrow (connIsosceles u) tri45)) p0 p1
+    drawi_ $ apply2R2 (strokeConnector (rightArrow (connIsosceles u) tri45)) p0 p1
 
 
 lblParensParens :: Num u => LocGraphic u
@@ -150,7 +150,7 @@ lblBold' :: Num u => String -> LocGraphic u
 lblBold' ss = localize (fontFace helvetica_bold) $ textline ss
 
 
-lblBold :: (Fractional u, Ord u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontFace helvetica_bold) $ post $singleLineCC ss
+lblBold :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
+lblBold ss = localize (fontFace helvetica_bold) $ post $ ctrCenterLine ss
   where
-    post = postpro1 (\(_,b) -> (uNil, b))
+    post = fmap (replaceL uNil)

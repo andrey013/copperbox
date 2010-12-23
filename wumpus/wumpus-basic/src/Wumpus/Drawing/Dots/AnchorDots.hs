@@ -211,7 +211,7 @@ dotChar ch = dotText [ch]
 -- | Note - dotText now uses font metrics...
 --
 dotText :: (Floating u, Real u, FromPtSize u) => String -> DotLocImage u 
-dotText ss = fmap (bimapL bboxRectAnchor) (singleLineCC ss)
+dotText ss = fmap (bimapL bboxRectAnchor) (ctrCenterLine ss)
 
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u

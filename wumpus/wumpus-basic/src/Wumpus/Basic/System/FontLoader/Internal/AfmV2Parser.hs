@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.AfmV2Parser
+-- Module      :  Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,15 +17,15 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.AfmV2Parser
+module Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser
   ( 
 
      parseAfmV2File
   
   ) where
 
-import Wumpus.Basic.System.FontLoader.AfmParserBase
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.AfmParserBase
+import Wumpus.Basic.System.FontLoader.Internal.Base
 import Wumpus.Basic.Utils.ParserCombinators
 
 import Wumpus.Core                              -- package: wumpus-core

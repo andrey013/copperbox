@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.AfmV2
+-- Module      :  Wumpus.Basic.System.FontLoader.Internal.AfmV2
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.Base
+module Wumpus.Basic.System.FontLoader.Internal.Base
   (
 
   -- * Afm Unit

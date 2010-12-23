@@ -9,8 +9,8 @@
 module ArrowCircuit where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
@@ -101,11 +101,11 @@ atext :: ( CenterAnchor t, DUnit t ~ u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
-   drawi_ $ singleLineCC ss `at` pt
+   drawi_ $ ctrCenterLine ss `at` pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (fontAttr times_italic 14) $ 
-    drawi_ $ singleLineCC ss `at` pt
+    drawi_ $ ctrCenterLine ss `at` pt

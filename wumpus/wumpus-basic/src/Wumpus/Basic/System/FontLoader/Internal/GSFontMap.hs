@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.GSFontMap
+-- Module      :  Wumpus.Basic.System.FontLoader.Internal.GSFontMap
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -22,7 +22,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.GSFontMap
+module Wumpus.Basic.System.FontLoader.Internal.GSFontMap
   (
    
     ghostscript_version  

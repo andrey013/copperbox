@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.GSLoader
+-- Module      :  Wumpus.Basic.System.FontLoader.GhostScript
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -18,11 +18,11 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.GSLoader
+module Wumpus.Basic.System.FontLoader.GhostScript
   ( 
 
-    module Wumpus.Basic.System.FontLoader.Base
-  , module Wumpus.Basic.System.FontLoader.AfmV2Parser  
+    module Wumpus.Basic.System.FontLoader.Internal.Base
+  , module Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser  
 
   , loadGSMetrics
   , gsFontLoader
@@ -32,9 +32,9 @@ module Wumpus.Basic.System.GSLoader
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.AfmV2Parser
-import Wumpus.Basic.System.FontLoader.Base
-import Wumpus.Basic.System.FontLoader.GSFontMap
+import Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser
+import Wumpus.Basic.System.FontLoader.Internal.Base
+import Wumpus.Basic.System.FontLoader.Internal.GSFontMap
 
 import Wumpus.Core                              -- package: wumpus-core
 
