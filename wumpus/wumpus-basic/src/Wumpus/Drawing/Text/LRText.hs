@@ -51,7 +51,6 @@ import Data.VectorSpace
 
 import Control.Applicative
 import Data.Char
-import Data.Foldable ( foldrM )
 import qualified Data.Map               as Map
 import Data.Maybe 
 
@@ -361,13 +360,18 @@ onelineText ss =
 
 
 textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
-textVector esc = let cs = destrEscapedText id esc in 
-   foldrM (\c v -> charVector c >>= \cv -> return  (v ^+^ cv)) (vec 0 0) cs
+textVector esc = 
+    cwLookupTable >>= \table -> 
+       let cs = destrEscapedText id esc 
+       in pure $ foldr (\c v -> v ^+^ (charWidth table c)) (vec 0 0) cs
+     
+   
 
 
-charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
-charVector (CharLiteral c) = (\fn -> fn $ ord c) <$> avLookupTable
-charVector (CharEscInt i)  = (\fn -> fn i)       <$> avLookupTable
-charVector (CharEscName s) = (\fn -> fn ix)      <$> avLookupTable
+charWidth :: FromPtSize u 
+          => CharWidthTable u -> EscapedChar -> AdvanceVec u
+charWidth fn (CharLiteral c) = fn $ ord c
+charWidth fn (CharEscInt i)  = fn i
+charWidth fn (CharEscName s) = fn ix
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices

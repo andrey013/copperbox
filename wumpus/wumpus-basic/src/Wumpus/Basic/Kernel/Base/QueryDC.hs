@@ -44,7 +44,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , glyphHeight
   , glyphCapHeight
 
-  , avLookupTable
+  , cwLookupTable
 
   -- * Default monospace metrics
 
@@ -149,7 +149,7 @@ markHalfHeight = (0.5*) <$> markHeight
 
 --------------------------------------------------------------------------------
 
-glyphQuery :: DrawingCtxM m => (GlyphMetrics -> PtSize -> u) -> m u
+glyphQuery :: DrawingCtxM m => (MetricsOps -> PtSize -> u) -> m u
 glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
 
 glyphBoundingBox :: (FromPtSize u, DrawingCtxM m) => m (BoundingBox u)
@@ -169,8 +169,8 @@ glyphHeight = (\(ymax,ymin) -> ymax - ymin) <$> glyphHeightRange
 glyphCapHeight :: (FromPtSize u, DrawingCtxM m) => m u
 glyphCapHeight = glyphQuery get_cap_height
 
-avLookupTable :: (FromPtSize u, DrawingCtxM m) => m (Int -> Vec2 u)
-avLookupTable = glyphQuery get_av_lookup
+cwLookupTable :: (FromPtSize u, DrawingCtxM m) => m (CharWidthTable u)
+cwLookupTable = glyphQuery get_cw_table
 
 
 --------------------------------------------------------------------------------

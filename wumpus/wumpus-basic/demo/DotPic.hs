@@ -52,7 +52,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/dots01_afm.svg" pic1
 
  
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fillColour peru . fontFace helvetica . metricsContext 24
 
 

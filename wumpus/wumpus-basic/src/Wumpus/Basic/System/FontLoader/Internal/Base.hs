@@ -44,8 +44,7 @@ module Wumpus.Basic.System.FontLoader.Internal.Base
   , FontLoader(..)
   , loadFont
 
-  , BaseGlyphMetrics
-  , loadBaseGlyphMetrics
+  , loadGlyphMetrics
 
   , buildGlyphMetricsTable
 
@@ -145,14 +144,14 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 -- 
 
 type FontLoadErr        = String
-type FontLoadResult cu  = Either FontLoadErr (GlyphMetricsTable cu)
+type FontLoadResult cu  = Either FontLoadErr (MetricsFileProps cu)
 
 data FontLoader cu = forall interim. FontLoader 
       { unit_scale_fun      :: cu -> PtSize
       , path_to_font_dir    :: FilePath
       , file_name_locator   :: FontName -> FilePath
       , font_parser         :: FilePath -> IO (Either String interim)
-      , post_process        :: interim -> GlyphMetricsTable cu
+      , post_process        :: interim  -> MetricsFileProps cu
       }
 
 
@@ -180,8 +179,8 @@ parseStep (FontLoader _ _ _ parser post) valid_path =
 
 
 
-loadBaseGlyphMetrics :: FontLoader u -> [FontName] -> IO BaseGlyphMetrics
-loadBaseGlyphMetrics loader xs = foldrM fn Map.empty xs
+loadGlyphMetrics :: FontLoader u -> [FontName] -> IO GlyphMetrics
+loadGlyphMetrics loader xs = foldrM fn Map.empty xs
   where
     fn font_name acc = loadFont loader font_name >>= \ans -> 
                        case ans of
@@ -189,7 +188,7 @@ loadBaseGlyphMetrics loader xs = foldrM fn Map.empty xs
                          Right table -> return $ 
                              Map.insert font_name (tableToGM table) acc
 
-    tableToGM = buildMetrics (unit_scale_fun loader)  
+    tableToGM = buildMetricsOps (unit_scale_fun loader)  
     
 reportBaseError :: FontName -> FontLoadErr -> IO ()
 reportBaseError font_name err = do 
@@ -203,9 +202,9 @@ buildGlyphMetricsTable :: BoundingBox AfmUnit
                        -> Vec2 AfmUnit 
                        -> AfmUnit
                        -> AfmFile 
-                       -> GlyphMetricsTable AfmUnit
+                       -> MetricsFileProps AfmUnit
 buildGlyphMetricsTable bbox dflt_vec dflt_cap_height afm = 
-    GlyphMetricsTable 
+    MetricsFileProps 
       { glyph_bounding_box    = bbox
       , glyph_default_adv_vec = dflt_vec
       , glyph_adv_vecs        = makeAdvVecs $ afm_glyph_metrics afm

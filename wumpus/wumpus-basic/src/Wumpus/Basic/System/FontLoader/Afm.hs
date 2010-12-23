@@ -40,9 +40,9 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
-loadAfmMetrics :: FilePath -> [FontName] -> IO BaseGlyphMetrics
+loadAfmMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
 loadAfmMetrics font_dir_path ns = 
-    loadBaseGlyphMetrics (afmV4Dot1Loader font_dir_path) ns
+    loadGlyphMetrics (afmV4Dot1Loader font_dir_path) ns
 
 
 afmV4Dot1Loader :: FilePath -> FontLoader AfmUnit

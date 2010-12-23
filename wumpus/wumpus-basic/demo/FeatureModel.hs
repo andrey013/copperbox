@@ -48,7 +48,7 @@ makeAfmPicture font_dir = do
     writeEPS "./out/feature_model02.eps" pic1
     writeSVG "./out/feature_model02.svg" pic1 
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace courier_bold . metricsContext 18
 
 

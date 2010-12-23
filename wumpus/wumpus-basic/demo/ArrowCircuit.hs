@@ -54,7 +54,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/arrow_circuit02.svg" pic1 
 
  
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace times_roman . metricsContext 11
 
 

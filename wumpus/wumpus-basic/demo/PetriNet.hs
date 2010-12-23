@@ -55,7 +55,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/petri_net02.svg" pic1 
 
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 14
 
 

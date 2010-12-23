@@ -41,9 +41,9 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.Maybe
 
 
-loadGSMetrics :: FilePath -> [FontName] -> IO BaseGlyphMetrics
+loadGSMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
 loadGSMetrics font_dir_path ns = 
-    loadBaseGlyphMetrics (gsFontLoader font_dir_path) ns
+    loadGlyphMetrics (gsFontLoader font_dir_path) ns
     
 
 gsFontLoader :: FilePath -> FontLoader AfmUnit

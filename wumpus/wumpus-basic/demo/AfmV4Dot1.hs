@@ -37,7 +37,7 @@ main = do
 loader :: FontLoader AfmUnit
 loader = afmV4Dot1Loader font_directory
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18
 
 

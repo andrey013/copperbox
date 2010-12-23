@@ -64,7 +64,7 @@ makeAfmPicture font_dir = do
 
 
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18
 
 

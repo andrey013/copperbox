@@ -56,8 +56,8 @@ import Data.Maybe
 
 
 data DrawingContext = DrawingContext
-      { glyph_tables          :: BaseGlyphMetrics
-      , fallback_metrics      :: GlyphMetrics      
+      { glyph_tables          :: GlyphMetrics
+      , fallback_metrics      :: MetricsOps
       , stroke_props          :: StrokeAttr
       , font_props            :: FontAttr
       , stroke_colour         :: RGBi      -- also text colour...
@@ -82,7 +82,7 @@ standardContext sz =
                    }
 
 
-metricsContext :: FontSize -> BaseGlyphMetrics -> DrawingContext
+metricsContext :: FontSize -> GlyphMetrics -> DrawingContext
 metricsContext sz bgm = 
     DrawingContext { glyph_tables         = bgm
                    , fallback_metrics     = monospace_metrics
@@ -139,7 +139,7 @@ asksDC f = askDC >>= (return . f)
 
 
 
-withFontMetrics :: (GlyphMetrics -> PtSize -> u) -> DrawingContext -> u
+withFontMetrics :: (MetricsOps -> PtSize -> u) -> DrawingContext -> u
 withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) = 
       fn metric_set point_sz
   where 

@@ -20,10 +20,11 @@ module Wumpus.Basic.Kernel.Base.GlyphMetrics
 
     FontName
   , CodePoint
-  , GlyphMetricsTable(..)
-  , GlyphMetrics(..)
-  , buildMetrics
-  , BaseGlyphMetrics
+  , CharWidthTable
+  , MetricsFileProps(..)
+  , MetricsOps(..)
+  , buildMetricsOps
+  , GlyphMetrics
   , monospace_metrics
 
   
@@ -40,11 +41,23 @@ type FontName = String
 --
 type CodePoint = Int
 
-
--- | NOTE - GlyphMetrics table is parametric on @cu@ - 
--- /Character unit/ and not on the usual @u@.
+-- | A lookup from code point to /width vector/.
 --
-data GlyphMetricsTable cu = GlyphMetricsTable
+-- Note - in PostScript terminology a width vector is not obliged
+-- to be left-to-right (writing direction 0). It could be 
+-- top-to-bottom (writing direction 1).
+--
+type CharWidthTable u = CodePoint -> Vec2 u
+
+
+-- | The metrics read from file by a font loader. This 
+-- 
+-- NOTE - MetricsFileProps is parametric on @cu@ - 
+-- /Character unit/ and not on the usual @u@. A typical character 
+-- is 'AfmUnit', the unit measurement for AFM files (1000th of a 
+-- point).
+--
+data MetricsFileProps cu = MetricsFileProps
        { glyph_bounding_box     :: BoundingBox cu 
        , glyph_default_adv_vec  :: Vec2 cu
        , glyph_adv_vecs         :: IntMap.IntMap (Vec2 cu)
@@ -52,28 +65,24 @@ data GlyphMetricsTable cu = GlyphMetricsTable
        }
 
 
--- unit_scale_fun     :: PtSize -> cu -> u
+-- | Operations on the metrics set of a font.
 --
-
--- afmValue  :: FromPtSize u => AfmUnit -> PtSize -> u
---
-
-data GlyphMetrics = GlyphMetrics 
+data MetricsOps = MetricsOps
       { get_bounding_box  :: forall u. FromPtSize u => PtSize -> BoundingBox u 
-      , get_av_lookup     :: forall u. FromPtSize u => PtSize -> (CodePoint -> Vec2 u)
+      , get_cw_table      :: forall u. FromPtSize u => PtSize -> CharWidthTable u
       , get_cap_height    :: forall u. FromPtSize u => PtSize -> u
       }
 
 
-type BaseGlyphMetrics = Map.Map FontName GlyphMetrics
+type GlyphMetrics = Map.Map FontName MetricsOps
 
 -- | This ignores the Char code lookup and just returns the 
 -- default advance vector.
 --
-monospace_metrics :: GlyphMetrics
-monospace_metrics = GlyphMetrics
+monospace_metrics :: MetricsOps
+monospace_metrics = MetricsOps
       { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
-      , get_av_lookup     = \sz _ -> hvec (upscale sz width_vec) 
+      , get_cw_table      = \sz _ -> hvec (upscale sz width_vec) 
       , get_cap_height    = \sz -> upscale sz cap_height
       }
   where
@@ -89,13 +98,12 @@ monospace_metrics = GlyphMetrics
     upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
 
 
-buildMetrics :: (cu -> PtSize) -> GlyphMetricsTable cu -> GlyphMetrics
-
-buildMetrics fn (GlyphMetricsTable (BBox ll ur) (V2 vx vy) 
-                                   vec_table    cap_height) = 
-    GlyphMetrics
+buildMetricsOps :: (cu -> PtSize) -> MetricsFileProps cu -> MetricsOps
+buildMetricsOps fn (MetricsFileProps (BBox ll ur) (V2 vx vy) 
+                                     vec_table    cap_height) = 
+    MetricsOps
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
-      , get_av_lookup     = \sz i -> 
+      , get_cw_table      = \sz i -> 
             maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
       , get_cap_height    = \sz -> upscale sz (fn cap_height)
       }
