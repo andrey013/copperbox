@@ -41,12 +41,12 @@ module Wumpus.Basic.System.FontLoader.Internal.Base
   -- * Font loading
   , FontLoadErr
   , FontLoadResult
-  , FontLoader(..)
+  , FontLoaderAlg(..)
   , loadFont
 
   , loadGlyphMetrics
 
-  , buildGlyphMetricsTable
+  , buildFontProps
 
   ) where
 
@@ -144,24 +144,24 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 -- 
 
 type FontLoadErr        = String
-type FontLoadResult cu  = Either FontLoadErr (MetricsFileProps cu)
+type FontLoadResult cu  = Either FontLoadErr (FontProps cu)
 
-data FontLoader cu = forall interim. FontLoader 
+data FontLoaderAlg cu = forall interim. FontLoaderAlg 
       { unit_scale_fun      :: cu -> PtSize
       , path_to_font_dir    :: FilePath
       , file_name_locator   :: FontName -> FilePath
       , font_parser         :: FilePath -> IO (Either String interim)
-      , post_process        :: interim  -> MetricsFileProps cu
+      , post_process        :: interim  -> FontProps cu
       }
 
 
-loadFont :: FontLoader cu -> FontName -> IO (FontLoadResult cu)
+loadFont :: FontLoaderAlg cu -> FontName -> IO (FontLoadResult cu)
 loadFont loader font_name = 
     locateStep loader font_name >>= \ans -> case ans of
       Nothing        -> return $ Left $ "Cannot find font " ++ font_name
       Just full_path -> parseStep loader full_path
 
-locateStep :: FontLoader cu -> FontName -> IO (Maybe FilePath)
+locateStep :: FontLoaderAlg cu -> FontName -> IO (Maybe FilePath)
 locateStep loader font_name = 
     doesFileExist full_path >>= \check -> 
     if check then return $ Just full_path
@@ -171,22 +171,22 @@ locateStep loader font_name =
                              </> file_name_locator loader font_name
 
 
-parseStep :: FontLoader cu -> FilePath -> IO (FontLoadResult cu)
-parseStep (FontLoader _ _ _ parser post) valid_path = 
+parseStep :: FontLoaderAlg cu -> FilePath -> IO (FontLoadResult cu)
+parseStep (FontLoaderAlg _ _ _ parser post) valid_path = 
     fmap (either Left (Right . post)) $ parser valid_path
 
 --------------------------------------------------------------------------------
 
 
 
-loadGlyphMetrics :: FontLoader u -> [FontName] -> IO GlyphMetrics
-loadGlyphMetrics loader xs = foldrM fn Map.empty xs
+loadGlyphMetrics :: FontLoaderAlg u -> [FontName] -> IO GlyphMetrics
+loadGlyphMetrics loader xs = foldrM fn emptyGlyphMetrics xs
   where
     fn font_name acc = loadFont loader font_name >>= \ans -> 
                        case ans of
                          Left err -> reportBaseError font_name err >> return acc
                          Right table -> return $ 
-                             Map.insert font_name (tableToGM table) acc
+                             insertFont font_name (tableToGM table) acc
 
     tableToGM = buildMetricsOps (unit_scale_fun loader)  
     
@@ -198,17 +198,17 @@ reportBaseError font_name err = do
 
 
 
-buildGlyphMetricsTable :: BoundingBox AfmUnit 
-                       -> Vec2 AfmUnit 
-                       -> AfmUnit
-                       -> AfmFile 
-                       -> MetricsFileProps AfmUnit
-buildGlyphMetricsTable bbox dflt_vec dflt_cap_height afm = 
-    MetricsFileProps 
-      { glyph_bounding_box    = bbox
-      , glyph_default_adv_vec = dflt_vec
-      , glyph_adv_vecs        = makeAdvVecs $ afm_glyph_metrics afm
-      , glyph_cap_height      = fromMaybe dflt_cap_height $ afm_cap_height afm
+buildFontProps :: BoundingBox AfmUnit 
+               -> Vec2 AfmUnit 
+               -> AfmUnit
+               -> AfmFile 
+               -> FontProps AfmUnit
+buildFontProps bbox dflt_vec dflt_cap_height afm = 
+    FontProps 
+      { fp_bounding_box    = bbox
+      , fp_default_adv_vec = dflt_vec
+      , fp_adv_vecs        = makeAdvVecs $ afm_glyph_metrics afm
+      , fp_cap_height      = fromMaybe dflt_cap_height $ afm_cap_height afm
       }  
 
 

@@ -39,20 +39,24 @@ import Wumpus.Basic.System.FontLoader.Internal.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 
+-- The file names of the Afm fonts match there PostScript names,
+-- the only difference is the addition of a @.afm@ extension.
+--
+
 
 loadAfmMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
 loadAfmMetrics font_dir_path ns = 
     loadGlyphMetrics (afmV4Dot1Loader font_dir_path) ns
 
 
-afmV4Dot1Loader :: FilePath -> FontLoader AfmUnit
+afmV4Dot1Loader :: FilePath -> FontLoaderAlg AfmUnit
 afmV4Dot1Loader font_dir_path = 
-    FontLoader 
+    FontLoaderAlg
       { unit_scale_fun      = afmUnitScale
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
       , font_parser         = parseAfmV4Dot1File
-      , post_process        = buildGlyphMetricsTable bbox (V2 600 0) 1000
+      , post_process        = buildFontProps bbox (V2 600 0) 1000
       }
   where
     buildName :: FontName -> FilePath

@@ -51,7 +51,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.StandardEncoding
 
 import Control.Applicative
-import qualified Data.Map as Map
 import Data.Maybe
 
 
@@ -72,7 +71,7 @@ type DrawingContextF = DrawingContext -> DrawingContext
 
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
-    DrawingContext { glyph_tables         = Map.empty
+    DrawingContext { glyph_tables         = emptyGlyphMetrics
                    , fallback_metrics     = monospace_metrics
                    , stroke_props         = default_stroke_attr
                    , font_props           = FontAttr sz wumpus_courier
@@ -81,7 +80,9 @@ standardContext sz =
                    , line_spacing_factor  = 1.2  
                    }
 
-
+-- out-of-date - should be adding loaded fonts, not replacing the 
+-- GlyphMetrics Map wholesale.
+--
 metricsContext :: FontSize -> GlyphMetrics -> DrawingContext
 metricsContext sz bgm = 
     DrawingContext { glyph_tables         = bgm
@@ -146,6 +147,6 @@ withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) =
     ps_name     = ps_font_name $ font_face font_stats
     point_sz    = fromIntegral $ font_size font_stats 
     metric_set  = fromMaybe (fallback_metrics ctx) $ 
-                    Map.lookup ps_name (glyph_tables ctx) 
+                    lookupFont ps_name (glyph_tables ctx) 
 
 

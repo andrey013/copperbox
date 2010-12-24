@@ -21,10 +21,15 @@ module Wumpus.Basic.Kernel.Base.GlyphMetrics
     FontName
   , CodePoint
   , CharWidthTable
-  , MetricsFileProps(..)
+  , FontProps(..)
   , MetricsOps(..)
   , buildMetricsOps
+
   , GlyphMetrics
+  , emptyGlyphMetrics
+  , lookupFont
+  , insertFont
+
   , monospace_metrics
 
   
@@ -50,18 +55,17 @@ type CodePoint = Int
 type CharWidthTable u = CodePoint -> Vec2 u
 
 
--- | The metrics read from file by a font loader. This 
+-- | The metrics read from a font file by a font loader. 
 -- 
--- NOTE - MetricsFileProps is parametric on @cu@ - 
--- /Character unit/ and not on the usual @u@. A typical character 
--- is 'AfmUnit', the unit measurement for AFM files (1000th of a 
--- point).
+-- NOTE - FontProps is parametric on @cu@ - /Character unit/ and 
+-- not on the usual @u@. A typical character is 'AfmUnit', the 
+-- unit of measurement for AFM files (1000th of a point).
 --
-data MetricsFileProps cu = MetricsFileProps
-       { glyph_bounding_box     :: BoundingBox cu 
-       , glyph_default_adv_vec  :: Vec2 cu
-       , glyph_adv_vecs         :: IntMap.IntMap (Vec2 cu)
-       , glyph_cap_height       :: cu
+data FontProps cu = FontProps
+       { fp_bounding_box        :: BoundingBox cu 
+       , fp_default_adv_vec     :: Vec2 cu
+       , fp_adv_vecs            :: IntMap.IntMap (Vec2 cu)
+       , fp_cap_height          :: cu
        }
 
 
@@ -73,8 +77,23 @@ data MetricsOps = MetricsOps
       , get_cap_height    :: forall u. FromPtSize u => PtSize -> u
       }
 
+-- Name for (FontName, MetricOps)... ?
 
-type GlyphMetrics = Map.Map FontName MetricsOps
+data FontCalcs = FontCalcs FontName MetricsOps
+
+
+
+newtype GlyphMetrics = GlyphMetrics { 
+          getGlyphMetrics :: Map.Map FontName MetricsOps }
+
+emptyGlyphMetrics :: GlyphMetrics
+emptyGlyphMetrics = GlyphMetrics $ Map.empty
+
+lookupFont :: FontName -> GlyphMetrics -> Maybe MetricsOps
+lookupFont name = Map.lookup name . getGlyphMetrics
+
+insertFont :: FontName -> MetricsOps -> GlyphMetrics -> GlyphMetrics
+insertFont name ops = GlyphMetrics . Map.insert name ops . getGlyphMetrics
 
 -- | This ignores the Char code lookup and just returns the 
 -- default advance vector.
@@ -98,9 +117,9 @@ monospace_metrics = MetricsOps
     upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
 
 
-buildMetricsOps :: (cu -> PtSize) -> MetricsFileProps cu -> MetricsOps
-buildMetricsOps fn (MetricsFileProps (BBox ll ur) (V2 vx vy) 
-                                     vec_table    cap_height) = 
+buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
+buildMetricsOps fn (FontProps (BBox ll ur) (V2 vx vy) 
+                              vec_table    cap_height) = 
     MetricsOps
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
       , get_cw_table      = \sz i -> 

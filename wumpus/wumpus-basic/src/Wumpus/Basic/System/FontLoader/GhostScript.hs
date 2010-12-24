@@ -41,18 +41,28 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.Maybe
 
 
+
+
+newtype GSFontLoader = GSLoader { getGSFontLoader :: FontLoaderAlg AfmUnit }
+
+
+
+-- loadFont :: GSLoader -> FontName -> IO (Either FontLoadErr FontCalcs)
+
+
 loadGSMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
 loadGSMetrics font_dir_path ns = 
-    loadGlyphMetrics (gsFontLoader font_dir_path) ns
+    loadGlyphMetrics (getGSFontLoader $ gsFontLoader font_dir_path) ns
     
 
-gsFontLoader :: FilePath -> FontLoader AfmUnit
-gsFontLoader font_dir_path = FontLoader
+gsFontLoader :: FilePath -> GSFontLoader
+gsFontLoader font_dir_path = 
+    GSLoader $ FontLoaderAlg
       { unit_scale_fun      = afmUnitScale
       , path_to_font_dir    = font_dir_path
       , file_name_locator   = buildName
       , font_parser         = parseAfmV2File
-      , post_process        = buildGlyphMetricsTable bbox (V2 600 0) 1000
+      , post_process        = buildFontProps bbox (V2 600 0) 1000
       }
   where
     buildName :: FontName -> FilePath
