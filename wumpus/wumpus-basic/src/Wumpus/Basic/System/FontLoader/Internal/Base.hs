@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ExistentialQuantification  #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,9 +20,18 @@
 
 module Wumpus.Basic.System.FontLoader.Internal.Base
   (
+    FontLoadErr
+  , FontLoadIO
+  , runFontLoadIO
+  , evalFontLoadIO
+  , loadError
+  , logLoadMsg
+  , promoteIO
+  , promoteEither
+  , runParserFLIO
 
   -- * Afm Unit
-    AfmUnit
+  , AfmUnit
   , afmValue
   , afmUnitScale
   
@@ -38,16 +46,13 @@ module Wumpus.Basic.System.FontLoader.Internal.Base
   , AfmFile(..)
   , AfmGlyphMetrics(..)
 
+  , MonospaceDefaults(..)
+
   -- * Font loading
-  , FontLoadErr
-  , FontLoadResult
-  , FontLoaderAlg(..)
-  , loadFont
 
-  , loadGlyphMetrics
-
-  , buildFontProps
-
+  , buildAfmFontProps
+  , checkFontPath
+  
   ) where
 
 import Wumpus.Basic.Kernel
@@ -55,14 +60,80 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.GlyphIndices
+import Wumpus.Basic.Utils.HList
+import Wumpus.Basic.Utils.ParserCombinators
 
-import Data.Foldable ( foldrM )
+
+import Control.Monad
 import qualified Data.IntMap            as IntMap
 import qualified Data.Map as Map
-import Data.Maybe
-
+import Data.Monoid
 import System.Directory
 import System.FilePath
+
+
+
+--------------------------------------------------------------------------------
+-- FontLoadIO monad - IO plus Error
+
+
+
+type FontLoadErr        = String
+
+newtype FontLoadLog     = FontLoadLog { getFontLoadLog :: H String }
+
+instance Monoid FontLoadLog where
+  mempty        = FontLoadLog $ emptyH
+  a `mappend` b = FontLoadLog $ getFontLoadLog a `appendH` getFontLoadLog b
+
+
+
+newtype FontLoadIO a = FontLoadIO { 
+          getFontLoadIO :: IO (Either FontLoadErr a, FontLoadLog ) }
+
+instance Functor FontLoadIO where
+  fmap f ma = FontLoadIO $ getFontLoadIO ma >>= \(a,w) -> return (fmap f a, w)
+ 
+instance Monad FontLoadIO where
+  return a = FontLoadIO $ return (Right a, mempty)
+  m >>= k  = FontLoadIO $ getFontLoadIO m >>= fn 
+              where
+                fn (Left err, w) = return (Left err, w)
+                fn (Right a, w1) = getFontLoadIO (k a) >>= \(b,w2) -> 
+                                   return (b, w1 `mappend` w2)
+
+runFontLoadIO :: FontLoadIO a -> IO (Either FontLoadErr a,[String])
+runFontLoadIO ma = liftM post $ getFontLoadIO ma 
+  where
+    post (ans,w) = (ans, toListH $ getFontLoadLog w)
+
+
+evalFontLoadIO :: FontLoadIO a -> IO (Either FontLoadErr a)
+evalFontLoadIO ma = liftM post $ getFontLoadIO ma
+  where
+    post (ans,_) = ans
+
+
+loadError :: FontLoadErr -> FontLoadIO a
+loadError msg = FontLoadIO $ return $ (Left msg, mempty)
+
+logLoadMsg :: String -> FontLoadIO ()
+logLoadMsg msg = FontLoadIO $ return $ (Right (), FontLoadLog $ wrapH msg ) 
+
+
+-- | aka liftIO
+promoteIO :: IO a -> FontLoadIO a
+promoteIO ma = FontLoadIO $ ma >>= \a -> return (Right a, mempty)
+
+promoteEither :: Either FontLoadErr a -> FontLoadIO a
+promoteEither = either loadError return 
+
+runParserFLIO :: FilePath -> Parser Char a -> FontLoadIO a
+runParserFLIO filepath p = 
+   promoteIO (readFile filepath) >>= promoteEither . runParserEither p
+
+
+
 
 
 
@@ -119,7 +190,7 @@ type GlobalInfo     = Map.Map AfmKey String
 --
 data AfmFile = AfmFile 
       { afm_encoding        :: Maybe String
-      , afm_font_bbox       :: AfmBoundingBox
+      , afm_letter_bbox     :: Maybe AfmBoundingBox
       , afm_cap_height      :: Maybe AfmUnit
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
@@ -136,86 +207,69 @@ data AfmGlyphMetrics = AfmGlyphMetrics
   deriving (Eq,Show)
 
 
-
--- Maybe the CharMetricsTable should be scaled to Wumpus units as 
--- the last part of the parsing process...
---
--- No it shouldn\'t - this would disallow drawings in centimeters
+-- | Monospace defaults are used if the font loader fails to 
+-- extract the necessary fields.
 -- 
-
-type FontLoadErr        = String
-type FontLoadResult cu  = Either FontLoadErr (FontProps cu)
-
-data FontLoaderAlg cu = forall interim. FontLoaderAlg 
-      { unit_scale_fun      :: cu -> PtSize
-      , path_to_font_dir    :: FilePath
-      , file_name_locator   :: FontName -> FilePath
-      , font_parser         :: FilePath -> IO (Either String interim)
-      , post_process        :: interim  -> FontProps cu
+-- The values are taken from the font correpsonding to Courier 
+-- in the distributed font files.
+--
+data MonospaceDefaults cu = MonospaceDefaults 
+      { default_letter_bbox  :: BoundingBox cu
+      , default_cap_height   :: cu
+      , default_char_width   :: Vec2 cu
       }
+  deriving (Eq,Show)
 
 
-loadFont :: FontLoaderAlg cu -> FontName -> IO (FontLoadResult cu)
-loadFont loader font_name = 
-    locateStep loader font_name >>= \ans -> case ans of
-      Nothing        -> return $ Left $ "Cannot find font " ++ font_name
-      Just full_path -> parseStep loader full_path
 
-locateStep :: FontLoaderAlg cu -> FontName -> IO (Maybe FilePath)
-locateStep loader font_name = 
-    doesFileExist full_path >>= \check -> 
-    if check then return $ Just full_path
-             else return $ Nothing
+
+-- | Afm files do not have a default advance vec so use the 
+-- monospace default.
+-- 
+-- Afm files hopefully have @CapHeight@ and @FontBBox@ properties
+-- in the header. Use the monospace default only if they are 
+-- missing.
+-- 
+buildAfmFontProps :: MonospaceDefaults AfmUnit 
+                  -> AfmFile 
+                  -> FontLoadIO (FontProps AfmUnit)
+buildAfmFontProps defaults afm = do 
+    cap_height <- extractCapHeight defaults afm
+    bbox       <- extractFontBBox  defaults afm 
+    return $ FontProps 
+               { fp_bounding_box    = bbox
+               , fp_default_adv_vec = default_char_width defaults
+               , fp_adv_vecs        = char_widths
+               , fp_cap_height      = cap_height
+               }  
   where
-    full_path = normalise $ path_to_font_dir loader 
-                             </> file_name_locator loader font_name
-
-
-parseStep :: FontLoaderAlg cu -> FilePath -> IO (FontLoadResult cu)
-parseStep (FontLoaderAlg _ _ _ parser post) valid_path = 
-    fmap (either Left (Right . post)) $ parser valid_path
-
---------------------------------------------------------------------------------
-
-
-
-loadGlyphMetrics :: FontLoaderAlg u -> [FontName] -> IO GlyphMetrics
-loadGlyphMetrics loader xs = foldrM fn emptyGlyphMetrics xs
-  where
-    fn font_name acc = loadFont loader font_name >>= \ans -> 
-                       case ans of
-                         Left err -> reportBaseError font_name err >> return acc
-                         Right table -> return $ 
-                             insertFont font_name (tableToGM table) acc
-
-    tableToGM = buildMetricsOps (unit_scale_fun loader)  
-    
-reportBaseError :: FontName -> FontLoadErr -> IO ()
-reportBaseError font_name err = do 
-    putStrLn $ "The font " ++ font_name ++ " failed to load, with the error:"
-    putStrLn $ err
-
-
-
-
-buildFontProps :: BoundingBox AfmUnit 
-               -> Vec2 AfmUnit 
-               -> AfmUnit
-               -> AfmFile 
-               -> FontProps AfmUnit
-buildFontProps bbox dflt_vec dflt_cap_height afm = 
-    FontProps 
-      { fp_bounding_box    = bbox
-      , fp_default_adv_vec = dflt_vec
-      , fp_adv_vecs        = makeAdvVecs $ afm_glyph_metrics afm
-      , fp_cap_height      = fromMaybe dflt_cap_height $ afm_cap_height afm
-      }  
-
-
-makeAdvVecs :: [AfmGlyphMetrics] -> IntMap.IntMap (Vec2 AfmUnit)
-makeAdvVecs  = foldr fn IntMap.empty
-  where
+    char_widths = foldr fn IntMap.empty $ afm_glyph_metrics afm
+ 
     fn (AfmGlyphMetrics _ v ss) table = case Map.lookup ss ps_glyph_indices of
-        Nothing -> table
-        Just i  -> IntMap.insert i v table
+                                          Nothing -> table
+                                          Just i  -> IntMap.insert i v table
 
+
+extractCapHeight :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
+extractCapHeight defaults afm = maybe errk return $ afm_cap_height afm
+  where
+    errk = logLoadMsg "WARNING - Could not extract CapHeight" >> 
+           return (default_cap_height defaults)
+
+
+extractFontBBox :: MonospaceDefaults AfmUnit -> AfmFile 
+                -> FontLoadIO (BoundingBox AfmUnit)
+extractFontBBox defaults afm = maybe errk return $ afm_letter_bbox afm
+  where
+    errk = logLoadMsg "WARNING - Could not extract CapHeight" >> 
+           return (default_letter_bbox defaults)
+
+
+
+checkFontPath :: FilePath -> FilePath -> FontLoadIO FilePath
+checkFontPath path_root font_file_name = 
+    let full_path = normalise (path_root </> font_file_name)
+    in do { check <- promoteIO (doesFileExist full_path)
+          ; if check then return full_path
+                     else loadError $ "Could not resolve path: " ++ full_path
+          }

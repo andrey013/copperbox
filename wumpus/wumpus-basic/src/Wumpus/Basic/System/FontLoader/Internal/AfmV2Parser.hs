@@ -20,7 +20,8 @@
 module Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser
   ( 
 
-     parseAfmV2File
+    parseAfmV2File
+  , afmV2Parser
   
   ) where
 
@@ -38,10 +39,13 @@ import Control.Applicative
 --------------------------------------------------------------------------------
 -- parser
 
-parseAfmV2File :: FilePath -> IO (Either ParseError AfmFile)
+parseAfmV2File :: FilePath -> IO (Either FontLoadErr AfmFile)
 parseAfmV2File filepath = runParserEither p <$> readFile filepath
   where
     p = afmFileParser charMetricsV2
+
+afmV2Parser :: CharParser AfmFile
+afmV2Parser = afmFileParser charMetricsV2
 
 
 charMetricsV2 :: CharParser AfmGlyphMetrics

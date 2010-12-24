@@ -26,7 +26,6 @@ module Wumpus.Basic.System.FontLoader.Afm
   , module Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser  
 
   , loadAfmMetrics
-  , afmV4Dot1Loader
   
 
   
@@ -38,30 +37,39 @@ import Wumpus.Basic.System.FontLoader.Internal.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Either
 
 -- The file names of the Afm fonts match there PostScript names,
 -- the only difference is the addition of a @.afm@ extension.
 --
 
+-- TODO need loaders that write log to StdOut...
 
 loadAfmMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
-loadAfmMetrics font_dir_path ns = 
-    loadGlyphMetrics (afmV4Dot1Loader font_dir_path) ns
-
-
-afmV4Dot1Loader :: FilePath -> FontLoaderAlg AfmUnit
-afmV4Dot1Loader font_dir_path = 
-    FontLoaderAlg
-      { unit_scale_fun      = afmUnitScale
-      , path_to_font_dir    = font_dir_path
-      , file_name_locator   = buildName
-      , font_parser         = parseAfmV4Dot1File
-      , post_process        = buildFontProps bbox (V2 600 0) 1000
-      }
+loadAfmMetrics font_dir_path ns = do
+    calcs <- fmap rights $ mapM mstep ns
+    return $ foldr insertFont emptyGlyphMetrics calcs
   where
-    buildName :: FontName -> FilePath
-    buildName font = font ++ ".afm"
-
-    bbox           = BBox (P2 (-23) (-250)) (P2 715 805)
+    mstep = evalFontLoadIO . afmLoadFontCalcs font_dir_path
 
 
+
+afmLoadFontCalcs :: FilePath -> FontName -> FontLoadIO FontCalcs
+afmLoadFontCalcs font_dir_path name = do
+    path        <- checkFontPath font_dir_path (name ++ ".afm")
+    ans         <- runParserFLIO path afmV4Dot1Parser
+    props       <- buildAfmFontProps  afm_mono_defaults_4_1 ans
+    return $ FontCalcs name (buildMetricsOps afmUnitScale props)
+
+
+
+-- | These are values extracted from Courier in the core 14 fonts.
+--
+afm_mono_defaults_4_1 :: MonospaceDefaults AfmUnit
+afm_mono_defaults_4_1 = 
+    MonospaceDefaults { default_letter_bbox  = bbox
+                      , default_cap_height   = 562
+                      , default_char_width   = V2 600 0
+                      }
+  where
+    bbox = BBox (P2 (-23) (-250)) (P2 715 805)

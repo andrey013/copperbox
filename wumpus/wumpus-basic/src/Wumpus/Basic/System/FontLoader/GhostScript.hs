@@ -25,7 +25,6 @@ module Wumpus.Basic.System.FontLoader.GhostScript
   , module Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser  
 
   , loadGSMetrics
-  , gsFontLoader
   
 
   
@@ -38,36 +37,49 @@ import Wumpus.Basic.System.FontLoader.Internal.GSFontMap
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Maybe
+import Data.Either
 
 
 
 
-newtype GSFontLoader = GSLoader { getGSFontLoader :: FontLoaderAlg AfmUnit }
 
-
-
--- loadFont :: GSLoader -> FontName -> IO (Either FontLoadErr FontCalcs)
+-- TODO need loaders that write log to StdOut...
 
 
 loadGSMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
-loadGSMetrics font_dir_path ns = 
-    loadGlyphMetrics (getGSFontLoader $ gsFontLoader font_dir_path) ns
-    
-
-gsFontLoader :: FilePath -> GSFontLoader
-gsFontLoader font_dir_path = 
-    GSLoader $ FontLoaderAlg
-      { unit_scale_fun      = afmUnitScale
-      , path_to_font_dir    = font_dir_path
-      , file_name_locator   = buildName
-      , font_parser         = parseAfmV2File
-      , post_process        = buildFontProps bbox (V2 600 0) 1000
-      }
+loadGSMetrics font_dir_path ns = do 
+    calcs <- fmap rights $ mapM mstep ns
+    return $ foldr insertFont emptyGlyphMetrics calcs
   where
-    buildName :: FontName -> FilePath
-    buildName font = fromMaybe font $ gsMetricsFile core14_alias_table font
-
-    bbox           = BBox (P2 (-23) (-250)) (P2 715 805)
+    mstep font_name = evalFontLoadIO $ 
+        gsLoadFontCalcs font_dir_path ghostscript_fontmap_8_54 font_name
 
 
+
+gsLoadFontCalcs :: FilePath -> GSFontMap -> FontName -> FontLoadIO FontCalcs
+gsLoadFontCalcs font_dir_path fm name = do
+    font_file   <- resolveFontFile fm name 
+    path        <- checkFontPath font_dir_path font_file
+    ans         <- runParserFLIO path afmV2Parser
+    props       <- buildAfmFontProps  ghostscript_mono_defaults_8_54 ans
+    return $ FontCalcs name (buildMetricsOps afmUnitScale props)
+
+
+resolveFontFile :: GSFontMap -> FontName -> FontLoadIO FilePath
+resolveFontFile fm name = maybe errk return $ gsMetricsFile fm name
+  where
+    errk = loadError $ "Could note resolve GhostScript alias for " ++ name
+
+
+-- | These are values extracted from the file @n022003l.afm@
+-- which is the font @NimbusMonL-Regu@, GhostScript\'s eqivalent 
+-- font for the core 14 font Courier.
+--
+ghostscript_mono_defaults_8_54 :: MonospaceDefaults AfmUnit
+ghostscript_mono_defaults_8_54 = 
+    MonospaceDefaults { default_letter_bbox  = bbox
+                      , default_cap_height   = 563
+                      , default_char_width   = V2 600 0
+                      }
+  where
+    bbox = BBox (P2 (-46) (-273)) (P2 650 820)

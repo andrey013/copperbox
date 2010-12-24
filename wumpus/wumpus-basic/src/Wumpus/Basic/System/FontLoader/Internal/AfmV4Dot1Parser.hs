@@ -21,7 +21,7 @@ module Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser
   ( 
     
     parseAfmV4Dot1File
-  
+  , afmV4Dot1Parser  
   ) where
 
 import Wumpus.Basic.System.FontLoader.Internal.AfmParserBase
@@ -34,10 +34,12 @@ import Control.Applicative
 
 
 parseAfmV4Dot1File :: FilePath -> IO (Either ParseError AfmFile)
-parseAfmV4Dot1File filepath = runParserEither p <$> readFile filepath
-  where
-    p = afmFileParser charMetricsV4Dot1
+parseAfmV4Dot1File filepath = 
+    runParserEither afmV4Dot1Parser <$> readFile filepath
 
+
+afmV4Dot1Parser :: CharParser AfmFile
+afmV4Dot1Parser = afmFileParser charMetricsV4Dot1
 
 
 charMetricsV4Dot1 :: CharParser AfmGlyphMetrics

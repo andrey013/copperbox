@@ -63,6 +63,7 @@ import Data.Char
 import qualified Data.Map               as Map
 
 
+-- BAD - throws error on no BBox!
 
 afmFileParser :: CharParser AfmGlyphMetrics -> CharParser AfmFile
 afmFileParser pgm = do 
@@ -71,14 +72,12 @@ afmFileParser pgm = do
     let mb_encoding = getEncodingScheme info
     let mb_cap      = getCapHeight      info
     let mb_bbox     = getFontBBox       info
-    case mb_bbox of
-      Nothing -> throwError "No FontBBox field in the AFM file."
-      Just bb -> return $ AfmFile 
-                            { afm_encoding        = mb_encoding
-                            , afm_font_bbox       = bb
-                            , afm_cap_height      = mb_cap
-                            , afm_glyph_metrics   = cms
-                            }
+    return $ AfmFile 
+              { afm_encoding        = getEncodingScheme info
+              , afm_letter_bbox     = getFontBBox       info
+              , afm_cap_height      = getCapHeight      info
+              , afm_glyph_metrics   = cms
+              }
 
 globalInfo :: CharParser GlobalInfo
 globalInfo = (foldr (\(k,v) a -> Map.insert k v a) Map.empty) 

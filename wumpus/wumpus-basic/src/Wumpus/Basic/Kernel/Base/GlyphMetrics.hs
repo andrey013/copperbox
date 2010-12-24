@@ -24,6 +24,7 @@ module Wumpus.Basic.Kernel.Base.GlyphMetrics
   , FontProps(..)
   , MetricsOps(..)
   , buildMetricsOps
+  , FontCalcs(..)
 
   , GlyphMetrics
   , emptyGlyphMetrics
@@ -92,8 +93,9 @@ emptyGlyphMetrics = GlyphMetrics $ Map.empty
 lookupFont :: FontName -> GlyphMetrics -> Maybe MetricsOps
 lookupFont name = Map.lookup name . getGlyphMetrics
 
-insertFont :: FontName -> MetricsOps -> GlyphMetrics -> GlyphMetrics
-insertFont name ops = GlyphMetrics . Map.insert name ops . getGlyphMetrics
+insertFont :: FontCalcs -> GlyphMetrics -> GlyphMetrics
+insertFont (FontCalcs name ops) = 
+    GlyphMetrics . Map.insert name ops . getGlyphMetrics
 
 -- | This ignores the Char code lookup and just returns the 
 -- default advance vector.
