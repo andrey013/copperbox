@@ -28,6 +28,7 @@ module Wumpus.Drawing.Text.LRText
   , rbaseRightLine
 
   , ctrCenterLine
+  , baseCenterEscChar
 
   , multiAlignLeft
   , multiAlignCenter
@@ -163,11 +164,11 @@ makeMoveableLine drawF max_width oline =
 onelineAlg :: (Real u, Floating u, FromPtSize u) 
            => DisplaceFun u 
            -> LocThetaDrawOneline u 
-           -> String 
+           -> EscapedText
            -> BoundedLocThetaGraphic u
-onelineAlg ptMoveF drawF ss = 
+onelineAlg ptMoveF drawF esc = 
    promoteR2 $ \pt theta -> 
-     onelineText ss >>= \ans@(OnelineText _ av) ->
+     onelineEscText esc >>= \ans@(OnelineText _ av) ->
        let max_width = advanceH av
            move      = ptMoveF max_width ans theta 
        in apply2R2 (makeMoveableLine drawF max_width ans) (move pt) theta
@@ -210,23 +211,36 @@ baseRightLine ss = rbaseRightLine ss `rot` 0
 
 rbaseLeftLine :: (Real u, Floating u, FromPtSize u) 
               => String -> BoundedLocThetaGraphic u
-rbaseLeftLine = onelineAlg leftToCenter drawLeftAligned
+rbaseLeftLine ss = 
+    onelineAlg leftToCenter drawLeftAligned (escapeString ss)
 
 
 rbaseCenterLine :: (Real u, Floating u, FromPtSize u) 
                 => String -> BoundedLocThetaGraphic u
-rbaseCenterLine = onelineAlg centerToCenter drawCenterAligned
+rbaseCenterLine ss = 
+    onelineAlg centerToCenter drawCenterAligned (escapeString ss)
 
 
 rbaseRightLine :: (Real u, Floating u, FromPtSize u) 
               => String -> BoundedLocThetaGraphic u
-rbaseRightLine = onelineAlg rightToCenter drawRightAligned
+rbaseRightLine ss = 
+    onelineAlg rightToCenter drawRightAligned (escapeString ss)
 
 
 
 ctrCenterLine :: (Real u, Floating u, FromPtSize u) 
               => String -> BoundedLocGraphic u
 ctrCenterLine ss = baseCenterLine ss
+
+
+baseCenterEscChar :: (Real u, Floating u, FromPtSize u) 
+                  => EscapedChar -> BoundedLocGraphic u
+baseCenterEscChar esc = body `rot` 0
+  where
+    body = onelineAlg centerToCenter drawCenterAligned (wrapEscChar esc)
+
+
+
 
 
 
@@ -346,7 +360,7 @@ trailPoints n height theta top = take n $ iterate fn top
 
 linesToInterims :: (FromPtSize u, Ord u) 
                 => String -> DrawingInfo (AdvanceVec u, [OnelineText u])
-linesToInterims = fmap post . mapM onelineText . lines
+linesToInterims = fmap post . mapM (onelineEscText . escapeString) . lines
   where
     post xs                    = let vmax = foldr fn (hvec 0) xs in (vmax,xs)
     fn (OnelineText _ av) vmax = avMaxWidth av vmax
@@ -354,9 +368,9 @@ linesToInterims = fmap post . mapM onelineText . lines
 avMaxWidth :: Ord u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
 avMaxWidth a@(V2 w1 _) b@(V2 w2 _) = if w2 > w1 then b else a
 
-onelineText :: FromPtSize u => String -> DrawingInfo (OnelineText u)
-onelineText ss = 
-    let esc = escapeString ss in fmap (OnelineText esc) $ textVector esc
+onelineEscText :: FromPtSize u => EscapedText -> DrawingInfo (OnelineText u)
+onelineEscText esc = fmap (OnelineText esc) $ textVector esc
+
 
 
 textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)

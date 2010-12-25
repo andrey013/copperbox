@@ -21,8 +21,8 @@ module Wumpus.Rhythm.Djembe.HelveticaLoader
   ) where
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.GSLoader
-import Wumpus.Basic.System.AfmLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 
 
 import Control.Applicative
@@ -37,7 +37,7 @@ wumpus_afm_font_dir :: String
 wumpus_afm_font_dir = "WUMPUS_AFM_FONT_DIR"
 
 
-loadHelveticaMetrics :: IO (Either String BaseGlyphMetrics)
+loadHelveticaMetrics :: IO (Either String GlyphMetrics)
 loadHelveticaMetrics = 
    loadAfm_helvetica >>= maybe fk1 (return . Right)
  where
@@ -63,12 +63,12 @@ help_message = unlines $
 
 
 
-loadGS_helvetica :: IO (Maybe BaseGlyphMetrics)
+loadGS_helvetica :: IO (Maybe GlyphMetrics)
 loadGS_helvetica = 
     envLookup wumpus_gs_font_dir >>=
     maybe (return Nothing) (\dir -> Just <$> loadGSMetrics dir ["Helvetica"])
 
-loadAfm_helvetica :: IO (Maybe BaseGlyphMetrics)
+loadAfm_helvetica :: IO (Maybe GlyphMetrics)
 loadAfm_helvetica = 
     envLookup wumpus_afm_font_dir >>=
     maybe (return Nothing) (\dir -> Just <$> loadAfmMetrics dir ["Helvetica"])

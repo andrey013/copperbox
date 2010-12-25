@@ -69,9 +69,6 @@ afmFileParser :: CharParser AfmGlyphMetrics -> CharParser AfmFile
 afmFileParser pgm = do 
     info <- (versionNumber    *> globalInfo) 
     cms  <- (startCharMetrics *> many pgm)
-    let mb_encoding = getEncodingScheme info
-    let mb_cap      = getCapHeight      info
-    let mb_bbox     = getFontBBox       info
     return $ AfmFile 
               { afm_encoding        = getEncodingScheme info
               , afm_letter_bbox     = getFontBBox       info

@@ -18,7 +18,7 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives where
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.Base
 import Wumpus.Drawing.Text.LRText
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -182,27 +182,27 @@ periodNotehead =
                 scaleVMove period_center $ filledDisk radius
 
 
-letterNotehead :: (Real u, Fractional u, FromPtSize u) 
+letterNotehead :: (Real u, Floating u, FromPtSize u) 
                => EscapedChar -> LocImage u AfmUnit
 letterNotehead = makeLetterNotehead 0
 
 
-upstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
+upstrokeLetter :: (Real u, Floating u, FromPtSize u) 
                => EscapedChar -> LocGraphic u
 upstrokeLetter ch = 
     fmap (replaceL uNil) $ makeLetterNotehead char_upstroke ch
 
 
-downstrokeLetter :: (Real u, Fractional u, FromPtSize u) 
+downstrokeLetter :: (Real u, Floating u, FromPtSize u) 
                  => EscapedChar -> LocGraphic u
 downstrokeLetter ch = 
     fmap (replaceL uNil) $ makeLetterNotehead char_downstroke ch
 
 
-makeLetterNotehead :: (Real u, Fractional u, FromPtSize u) 
+makeLetterNotehead :: (Real u, Floating u, FromPtSize u) 
                    => AfmUnit -> EscapedChar -> LocImage u AfmUnit
 makeLetterNotehead ypos ch = 
-    bboxAfmWidth $ scaleVMove ypos $ escCharBC ch
+    bboxAfmWidth $ scaleVMove ypos $ baseCenterEscChar ch
 
 
 bboxAfmWidth :: Real u => BoundedLocGraphic u -> LocImage u AfmUnit
@@ -210,14 +210,14 @@ bboxAfmWidth = fmap (bimapL (realToFrac . boundaryWidth))
 
 
 --
-letterFlamGlyph :: (Fractional u, Ord u, FromPtSize u) 
+letterFlamGlyph :: (Real u, Floating u, FromPtSize u) 
                 => EscapedChar -> LocGraphic u
 letterFlamGlyph ch = 
     lift0R1 getFontSize >>= \sz -> 
     localize (fontSize $ (3 * sz) `div` 4) $ 
         let x = negate $ flam_xminor
             y = flam_baseline
-        in fmap (replaceL uNil) $ scaleMove x y $ escCharBC ch
+        in fmap (replaceL uNil) $ scaleMove x y $ baseCenterEscChar ch
 
 dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
 dotFlamGlyph = 
@@ -350,7 +350,7 @@ drawHand fn = scaleMove (negate $ 0.5*hand_base_length) hand_baseline loc_rect
     loc_rect = lift0R1 (scaleValue hand_base_length) >>= \uw -> fn uw uw
 
 
-addBell :: (Real u, Fractional u, FromPtSize u)  
+addBell :: (Real u, Floating u, FromPtSize u)  
         => LocImage u AfmUnit -> LocImage u AfmUnit
 addBell img = 
     img >>= \(w,a) -> upstrokeX >>= \(_,b) -> return (w, a `oplus` b)
@@ -387,7 +387,7 @@ drawAngStrikeLine cw = scaleMove (negate $ 0.5*cw) baseline_strike loc_strike
 -- plets
 
 
-pletBracket :: (Fractional u, Ord u, FromPtSize u) 
+pletBracket :: (Real u, Floating u, FromPtSize u) 
             => Int -> Ratio Int -> LocGraphic u
 pletBracket n wr = 
     scaleVMove plet_bracket_baseline $ lbracket `oplus` num_text `oplus` rbracket
@@ -412,12 +412,12 @@ numberWidth i | i < 10    = number_width
 -- ERROR - currently this uses singleLineCC, but the examples
 -- aren\'t loading font metrics...
 
-centeredTwoThirdsText :: (Fractional u, Ord u, FromPtSize u) 
+centeredTwoThirdsText :: (Real u, Floating u, FromPtSize u) 
                       => String -> LocGraphic u
 centeredTwoThirdsText ss =
     lift0R1 getFontSize >>= \sz -> 
     localize (fontSize $ (2 * sz) `div` 3) $ 
-      fmap (replaceL uNil) $ singleLineCC ss 
+      fmap (replaceL uNil) $ ctrCenterLine ss 
 
 --------------------------------------------------------------------------------
 -- half beam
@@ -494,15 +494,15 @@ scaleMove :: FromPtSize u
 scaleMove x y cf = 
     lift0R1 (scaleValue x) >>= \xu -> 
     lift0R1 (scaleValue y) >>= \yu -> 
-    moveOrigin (displace xu yu) cf
+    moveStartPoint (displace xu yu) cf
 
 scaleHMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
 scaleHMove x cf = 
-    lift0R1 (scaleValue x) >>= \xu -> moveOrigin (hdisplace xu) cf
+    lift0R1 (scaleValue x) >>= \xu -> moveStartPoint (displaceH xu) cf
 
 scaleVMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
 scaleVMove y cf = 
-    lift0R1 (scaleValue y) >>= \yu -> moveOrigin (vdisplace yu) cf
+    lift0R1 (scaleValue y) >>= \yu -> moveStartPoint (displaceV yu) cf
 
 
 scaleVecPath :: FromPtSize u => [Vec2 AfmUnit] -> DrawingInfo [Vec2 u]
@@ -520,10 +520,10 @@ scaleVec2 (V2 x y) = V2 <$> scaleValue x <*> scaleValue y
 
 
 advanceUnitWidth :: FromPtSize u => DrawingInfo (PointDisplace u)
-advanceUnitWidth = scaleValue unit_width >>= return . hdisplace
+advanceUnitWidth = scaleValue unit_width >>= return . displaceH
 
 
 advanceNUnits :: FromPtSize u => Int -> DrawingInfo (PointDisplace u)
 advanceNUnits i = 
     let n = fromIntegral i in 
-    scaleValue unit_width >>= return . hdisplace . (*n)
+    scaleValue unit_width >>= return . displaceH . (*n)

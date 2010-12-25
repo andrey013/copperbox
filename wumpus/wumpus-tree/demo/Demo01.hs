@@ -17,8 +17,8 @@ module Demo01 where
 import Wumpus.Tree
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.AfmLoader
-import Wumpus.Basic.System.GSLoader
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -47,7 +47,7 @@ main = do
       _             -> putStrLn default_font_loader_help
 
 
-makePictures :: BaseGlyphMetrics -> IO ()
+makePictures :: GlyphMetrics -> IO ()
 makePictures base_metrics = do 
     --
     let pic1 = runDrawingU (makeCtx 18 base_metrics) tree_drawing1
@@ -70,7 +70,7 @@ makePictures base_metrics = do
     writeEPS "./out/tree05.eps"  pic5
     writeSVG "./out/tree05.svg"  pic5
 
-makeCtx :: FontSize -> BaseGlyphMetrics -> DrawingContext
+makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 

@@ -33,7 +33,7 @@ main = do
     
     midi_tracks = [djembe1, sangban1, kenkeni1]
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = joinBevel . fontFace helvetica . metricsContext 14
 
 djembe_drawing :: DDrawing

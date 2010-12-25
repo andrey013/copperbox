@@ -110,7 +110,7 @@ famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
    where
      hh         = halfHeight pt_from p1
      downtick   = straightLine (vvec (-hh)) `at` pt_from
-     horizontal = midline (vdisplace (-hh) pt_from) xs 
+     horizontal = midline (displaceV (-hh) pt_from) xs 
      upticks    = map (straightLine (vvec hh) `at`) xs
 
 midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
@@ -132,5 +132,5 @@ famconn1 a@(P2 xa _) b@(P2 xb _)
     | otherwise = openStroke $ vertexPath [a,m1,m2,b] 
   where
     hh = halfHeight a b
-    m1 = vecdisplace (vvec (-hh)) a  
-    m2 = vecdisplace (hvec $ xb - xa) m1
+    m1 = displaceV (-hh)     a  
+    m2 = displaceH (xb - xa) m1

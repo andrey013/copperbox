@@ -29,7 +29,7 @@ main = do
 
 
 
-makeCtx :: BaseGlyphMetrics -> DrawingContext
+makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = joinBevel . fontFace helvetica . metricsContext 14
 
 

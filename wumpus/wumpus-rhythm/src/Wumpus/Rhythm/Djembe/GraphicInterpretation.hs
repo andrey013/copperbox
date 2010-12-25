@@ -20,7 +20,7 @@ import Wumpus.Rhythm.Djembe.Base
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -115,17 +115,19 @@ drawPlets n d xs =
 explode :: Num u => Vec2 u -> [LocGraphic u] -> LocGraphic u
 explode v xs = extractLocGraphic $ advconcat $ map fn xs 
   where
-    fn    = makeAdvGraphic (pure $ vecdisplace v)
+    fn    = makeAdvGraphic (pure $ displaceVec v)
 
 
 
 xminorMove :: FromPtSize u => LocGraphic u -> LocGraphic u
 xminorMove mg = 
-    lift0R1 (scaleValue flam_xminor) >>= \x -> moveOrigin (hdisplace x) mg
+    lift0R1 (scaleValue flam_xminor) >>= \x -> 
+      moveStartPoint (displaceH x) mg
 
 halfUnitMove :: (Fractional u, FromPtSize u) => LocGraphic u -> LocGraphic u
 halfUnitMove mg = 
-    lift0R1 (scaleValue unit_width) >>= \x -> moveOrigin (hdisplace $ 0.5 * x) mg
+    lift0R1 (scaleValue unit_width) >>= \x -> 
+      moveStartPoint (displaceH $ 0.5 * x) mg
 
 
 
@@ -183,14 +185,14 @@ beamAdvGraphic :: (Double -> Double) -> (Double -> Double) -> DAdvGraphic
 beamAdvGraphic advF drawF = 
     lift0R1 (scaleValue unit_width) >>= \uw -> makeAdvGraphic (adv uw) (obj uw)
   where
-    adv = \uw -> pure $ hdisplace $ advF uw 
+    adv = \uw -> pure $ displaceH $ advF uw 
     obj = \uw -> localize capSquare $ 
                    scaleVMove stem_top (straightLine $ hvec $ drawF uw)
 
 
 unitAdvGraphic :: DAdvGraphic
 unitAdvGraphic = lift0R1 (scaleValue unit_width) >>= \uw ->
-                 makeAdvGraphic (pure $ vecdisplace $ hvec uw) emptyLocGraphic
+                 makeAdvGraphic (pure $ displaceH uw) emptyLocGraphic
 
 
 

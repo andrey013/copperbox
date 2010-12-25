@@ -33,7 +33,7 @@ import Wumpus.Rhythm.Djembe.MidiInterpretation
 import Wumpus.Rhythm.Djembe.MidiPrimitives 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Base
+import Wumpus.Basic.System.FontLoader.Internal.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
