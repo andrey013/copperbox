@@ -58,9 +58,12 @@ type CharWidthTable u = CodePoint -> Vec2 u
 
 -- | The metrics read from a font file by a font loader. 
 -- 
--- NOTE - FontProps is parametric on @cu@ - /Character unit/ and 
--- not on the usual @u@. A typical character is 'AfmUnit', the 
--- unit of measurement for AFM files (1000th of a point).
+-- NOTE - FontProps is parametric on @cu@ - /Character Unit/ and 
+-- not on the usual @u@. A typical character unit is 'AfmUnit', 
+-- the unit of measurement for AFM files (1000th of a point).
+--
+-- The is the initial representation used by Wumpus-Basic as an
+-- syntax tree when loading font files. 
 --
 data FontProps cu = FontProps
        { fp_bounding_box        :: BoundingBox cu 
@@ -71,6 +74,9 @@ data FontProps cu = FontProps
 
 
 -- | Operations on the metrics set of a font.
+--
+-- The is the internal representation used by Wumpus-Basic after
+-- parsing the font file.
 --
 data MetricsOps = MetricsOps
       { get_bounding_box  :: forall u. FromPtSize u => PtSize -> BoundingBox u 
@@ -83,7 +89,8 @@ data MetricsOps = MetricsOps
 data FontCalcs = FontCalcs FontName MetricsOps
 
 
-
+-- | A map between a font name and MetricsOps.
+--
 newtype GlyphMetrics = GlyphMetrics { 
           getGlyphMetrics :: Map.Map FontName MetricsOps }
 
@@ -102,10 +109,10 @@ insertFont (FontCalcs name ops) =
 --
 monospace_metrics :: MetricsOps
 monospace_metrics = MetricsOps
-      { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
-      , get_cw_table      = \sz _ -> hvec (upscale sz width_vec) 
-      , get_cap_height    = \sz -> upscale sz cap_height
-      }
+    { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
+    , get_cw_table      = \sz _ -> hvec (upscale sz width_vec) 
+    , get_cap_height    = \sz -> upscale sz cap_height
+    }
   where
     llx           = (-23)  / 1000
     lly           = (-250) / 1000
@@ -119,6 +126,9 @@ monospace_metrics = MetricsOps
     upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
 
 
+-- | Build a MetricsOps function table, from a character unit
+-- scaling function and FontProps read from a file.
+--
 buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
 buildMetricsOps fn (FontProps (BBox ll ur) (V2 vx vy) 
                               vec_table    cap_height) = 

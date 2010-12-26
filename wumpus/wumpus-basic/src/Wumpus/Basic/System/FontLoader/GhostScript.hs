@@ -21,19 +21,15 @@
 module Wumpus.Basic.System.FontLoader.GhostScript
   ( 
 
-    module Wumpus.Basic.System.FontLoader.Internal.Base
-  , module Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser  
-
-  , loadGSMetrics
-  
-
+    loadGSMetrics
   
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Internal.AfmV2Parser
-import Wumpus.Basic.System.FontLoader.Internal.Base
-import Wumpus.Basic.System.FontLoader.Internal.GSFontMap
+import Wumpus.Basic.System.FontLoader.Base.AfmV2Parser
+import Wumpus.Basic.System.FontLoader.Base.Datatypes
+import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
+import Wumpus.Basic.System.FontLoader.Base.GSFontMap
 
 import Wumpus.Core                              -- package: wumpus-core
 

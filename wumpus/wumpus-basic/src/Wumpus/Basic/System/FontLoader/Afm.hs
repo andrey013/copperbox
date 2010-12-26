@@ -21,19 +21,15 @@
 
 module Wumpus.Basic.System.FontLoader.Afm
   ( 
-
-    module Wumpus.Basic.System.FontLoader.Internal.Base
-  , module Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser  
-
-  , loadAfmMetrics
-  
-
+    loadAfmMetrics
   
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Internal.AfmV4Dot1Parser
-import Wumpus.Basic.System.FontLoader.Internal.Base
+import Wumpus.Basic.System.FontLoader.Base.AfmV4Dot1Parser
+import Wumpus.Basic.System.FontLoader.Base.Datatypes
+import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
+
 
 import Wumpus.Core                              -- package: wumpus-core
 
