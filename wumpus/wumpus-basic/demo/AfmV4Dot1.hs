@@ -34,8 +34,6 @@ main = do
     writeSVG "./out/afm4dot1_01.svg" pic1
 
 
-loader :: FontLoader AfmUnit
-loader = afmV4Dot1Loader font_directory
 
 makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18

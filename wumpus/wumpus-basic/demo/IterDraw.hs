@@ -25,37 +25,34 @@ dctx = fontFace courier_bold $ standardContext 24
 
 iter_drawing :: DDrawing
 iter_drawing = drawTracing $ do 
-    draw $ extr (redA `catv` greenB `catv` blueC) `at` zeroPt
+    draw $ extr (redA `chain1` greenB `chain1` blueC) `at` zeroPt
 
 extr :: AdvGraphic u -> LocGraphic u
-extr = postpro1 $ \(_,b) -> (uNil, b)
+extr = fmap $ \(_,b) -> (uNil, b)
  
-infixr 6 `catv`
 
-catv :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-catv = accumulate1 oplus
 
 bldisplace :: Num u => PointDisplace u
 bldisplace = displace (-4) (-4)
 
 hspace :: Num u => PointDisplace u
-hspace = hdisplace 28
+hspace = displaceH 28
 
 redA :: Fractional u => AdvGraphic u
 redA = makeAdvGraphic (pure hspace) (background `oplus` textline "A")
   where
     background = localize (fillColour tomato) 
-                          (prepro1 bldisplace $ filledRectangle 24 24)
+                          (moveStartPoint bldisplace $ filledRectangle 24 24)
 
 greenB :: Fractional u => AdvGraphic u
 greenB = makeAdvGraphic (pure hspace) (background `oplus` textline "B")
   where
     background = localize (fillColour yellow_green) 
-                          (prepro1 bldisplace $ filledRectangle 24 24)
+                          (moveStartPoint bldisplace $ filledRectangle 24 24)
 
 blueC :: Fractional u => AdvGraphic u
 blueC = makeAdvGraphic (pure hspace) (background `oplus` textline "C")
   where
     background = localize (fillColour light_sky_blue) 
-                          (prepro1 bldisplace $ filledRectangle 24 24)
+                          (moveStartPoint bldisplace $ filledRectangle 24 24)
 

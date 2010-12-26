@@ -67,7 +67,7 @@ std_ctx = fillColour peru $ standardContext 18
 makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
                  => ConnectorPath u -> Point2 u -> TraceDrawing u ()
 makeConnDrawing conn p0 = 
-    drawi_ $ situ2 (strokeConnector (dblArrow conn curveTip)) p0 p1
+    drawi_ $ connect (strokeConnector (dblArrow conn curveTip)) p0 p1
   where
     p1 = p0 .+^ vec 100 40
   

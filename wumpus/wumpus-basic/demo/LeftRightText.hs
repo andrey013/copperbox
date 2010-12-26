@@ -37,7 +37,6 @@ main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    putStrLn "Note - center-center text is not currently accurate..."
     maybe gs_failk  makeGSPicture  $ mb_gs
     maybe afm_failk makeAfmPicture $ mb_afm
   where

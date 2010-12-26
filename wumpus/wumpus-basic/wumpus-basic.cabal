@@ -15,13 +15,16 @@ description:
   and more experimental (unfortunately the only thing consistent 
   about the API is that it consistently changes...). 
   .
-  Version 0.13.0 significantly differs form the previous release 
-  as font metrics support has been added and the core graphic 
-  types have been redesigned. With these re-workings some modules 
-  that were previously fairly stable have changed substantially or 
-  are likely to change soon (@Basic.PictureLanguage@ has become 
-  @Basic.DrawingComposition@; @Basic.SafeFonts@ no longer seems 
-  very /SVG safe/ so it is marked as pending change). 
+  Version 0.14.0 breaks up Wumpus-Basic into two /layers/ - 
+  @Wumpus.Basic@ for core data types, general utilities and 
+  /System/ utilities (currently only font loading); the other 
+  layer, @Wumpus.Drawing@, is for for specific drawing 
+  \"objects\" - arrowheads, dots, and the like. The APIs of the 
+  @Drawing@ modules have not been given much attention as the 
+  underlying graphic types have changed, they are due for 
+  substantial revision. This includes modules that were previously
+  considered fairly stable such as the @Basic.SafeFonts@ module 
+  which no longer seems very /SVG safe/. 
   .
   NOTE - many of the demos now use font metrics. Font metrics for
   the \"Core 14\" PostScript fonts are distributed as @*.afm@ 
@@ -38,12 +41,13 @@ description:
   Core 14 AFM metrics:
   <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
   .
-  WARNING - the font metrics parsing in version 0.13.0 is 
-  essentially a proof-of-concept and is not very robust. 
-  Generally, if a font cannot be parsed, fallback metrics will be 
-  used. At the moment there no error logging, so there is little 
-  indication of whether Wumpus has used the correct metrics or the 
-  fallback for a requested font.
+  WARNING - whilst font metrics parsing has been improved in 
+  version 0.14.0, the font loading API has not yet been revised 
+  to allow access to error and warning messages, thus there is no 
+  indication of the the success or otherwise of loading a font. 
+  If a font cannot be found or parsed, monospace fallback metrics 
+  will be used, so the only way to gauge success or failure is to 
+  look at the output.
   .
   Changelog:
   .
@@ -64,8 +68,9 @@ description:
     combinators are now more readily useful.
   .
   * Work on the font loader code to improve its robustness, and 
-    improved error signalling on load failure. 
-    ????????????? CURRENTLY WORKING ON THIS...  ???????????????
+    improved error signalling on load failure. The code can now 
+    log warnings but the API has not been revised to allow access
+    to them.
   .
   v0.12.0 to v0.13.0:
   .

@@ -65,6 +65,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   -- * Combinators
   , at
   , rot
+  , connect
   , chain1
 
 
@@ -493,6 +494,17 @@ infixr 1 `rot`
 rot :: LocThetaCF u a -> Radian -> LocCF u a
 rot = apply1R2
 
+
+-- | Downcast a 'ConnectorCF' function by applying it to the 
+-- start and end point, making an arity-zero Context function 
+-- (a 'CF'). 
+-- 
+connect :: ConnectorCF u a -> Point2 u -> Point2 u -> CF a
+connect = apply2R2
+
+
+
+infixr 6 `chain1`
 
 -- | /Chaining/ combinator - the /answer/ of the 
 -- first Context function is feed to the second Context function. 

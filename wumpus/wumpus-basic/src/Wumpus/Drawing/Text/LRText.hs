@@ -14,6 +14,9 @@
 -- Left-to-right measured text. The text uses glyph metrics so it 
 -- can be positioned accurately.
 -- 
+-- \*\* WARNING \*\* - the API for this module has not been 
+-- decided. The function names are expected to change.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Text.LRText
@@ -227,10 +230,15 @@ rbaseRightLine ss =
     onelineAlg rightToCenter drawRightAligned (escapeString ss)
 
 
-
+-- Note - assumes the ymin of the font is 0 or less.
+--
 ctrCenterLine :: (Real u, Floating u, FromPtSize u) 
               => String -> BoundedLocGraphic u
-ctrCenterLine ss = baseCenterLine ss
+ctrCenterLine ss =
+    glyphHeightRange >>= \(ymin, ymax) -> 
+      let hh = 0.5 * ymax - ymin in 
+        moveStartPoint (displaceV $ negate $ hh - abs ymin) $ baseCenterLine ss
+
 
 
 baseCenterEscChar :: (Real u, Floating u, FromPtSize u) 
