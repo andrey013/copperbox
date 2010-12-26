@@ -33,29 +33,40 @@ import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Either
+import Control.Monad
+import Data.Monoid
 
 -- The file names of the Afm fonts match there PostScript names,
 -- the only difference is the addition of a @.afm@ extension.
 --
 
--- TODO need loaders that write log to StdOut...
-
-loadAfmMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
-loadAfmMetrics font_dir_path ns = do
-    calcs <- fmap rights $ mapM mstep ns
-    return $ foldr insertFont emptyGlyphMetrics calcs
+-- | 'loadAfmMetrics' : 
+-- @ path_to_afm_fonts -> [font_name] -> IO (metrics, messages) @ 
+-- 
+-- Load the supplied list of fonts. 
+-- 
+-- Note - if a font fails to load a message is written to the 
+-- log and monospaced /fallback metrics/ are used.
+--
+loadAfmMetrics :: FilePath -> [FontName] -> IO (GlyphMetrics, [String])
+loadAfmMetrics font_dir_path ns = 
+    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
   where
-    mstep = evalFontLoadIO . afmLoadFontCalcs font_dir_path
+    mkFun = afmLoadFontCalcs font_dir_path  
+ 
+    post (Left err,ss) = (mempty, ss ++ [err])      -- unreachable...
+    post (Right xs,ss) = (foldr insertFont mempty xs, ss)
 
 
 
-afmLoadFontCalcs :: FilePath -> FontName -> FontLoadIO FontCalcs
+
+afmLoadFontCalcs :: FilePath -> FontName -> FontLoadIO FontMetricsOps
 afmLoadFontCalcs font_dir_path name = do
+    logLoadMsg  $ "Loading " ++ name
     path        <- checkFontPath font_dir_path (name ++ ".afm")
     ans         <- runParserFLIO path afmV4Dot1Parser
     props       <- buildAfmFontProps  afm_mono_defaults_4_1 ans
-    return $ FontCalcs name (buildMetricsOps afmUnitScale props)
+    return $ FontMetricsOps name (buildMetricsOps afmUnitScale props)
 
 
 

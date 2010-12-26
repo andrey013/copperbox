@@ -28,6 +28,8 @@ module Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
   , promoteEither
   , runParserFLIO
 
+  , sequenceAll
+
   -- * Font loading
 
   , buildAfmFontProps
@@ -35,7 +37,6 @@ module Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
   
   ) where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.Base.Datatypes
 import Wumpus.Basic.Utils.HList
 import Wumpus.Basic.Utils.ParserCombinators
@@ -62,6 +63,7 @@ import System.FilePath
 type FontLoadErr        = String
 
 newtype FontLoadLog     = FontLoadLog { getFontLoadLog :: H String }
+
 
 instance Monoid FontLoadLog where
   mempty        = FontLoadLog $ emptyH
@@ -96,10 +98,14 @@ evalFontLoadIO ma = liftM post $ getFontLoadIO ma
 
 
 loadError :: FontLoadErr -> FontLoadIO a
-loadError msg = FontLoadIO $ return $ (Left msg, mempty)
+loadError msg = FontLoadIO $ return (Left msg, mempty)
 
 logLoadMsg :: String -> FontLoadIO ()
-logLoadMsg msg = FontLoadIO $ return $ (Right (), FontLoadLog $ wrapH msg ) 
+logLoadMsg msg = FontLoadIO $ return (Right (), message1 msg ) 
+
+
+message1 :: String -> FontLoadLog 
+message1 = FontLoadLog . wrapH
 
 
 -- | aka liftIO
@@ -114,9 +120,37 @@ runParserFLIO filepath p =
    promoteIO (readFile filepath) >>= promoteEither . runParserEither p
 
 
+-- | The standard monadic @sequence@ would finish on first fail
+-- for the FontLoadIO monad. As we want to be able to sequence
+-- the loading of a list of fonts, this is not really the 
+-- behaviour we want for Wumpus. Instead we prefer to use fallback 
+-- metrics and produce an inaccurate drawing on a font load error
+-- rather than fail and produce no drawing.
+--
+sequenceAll :: [FontLoadIO a] -> FontLoadIO [a]
+sequenceAll = FontLoadIO . step
+   where
+    step []     = return (Right [], mempty)
+    step (m:ms) = liftM2 cons (getFontLoadIO m) (step ms) 
+
+cons :: (Either FontLoadErr a, FontLoadLog)
+     -> (Either FontLoadErr [a], FontLoadLog)
+     -> (Either FontLoadErr [a], FontLoadLog)
+cons (Right a, w1)  (Right as, w2) = 
+    (Right $ a:as,  w1 `mappend` w2)
+
+cons (Right a, w1)  (Left e2, w2) = 
+    (Right [a], w1 `mappend` w2 `mappend` message1 e2)
+
+cons (Left e1, w1)  (Right as, w2) = 
+    (Right as, w1 `mappend` message1 e1 `mappend` w2)
+
+cons (Left e1, w1)  (Left e2,  w2) = 
+    (Right [], w1 `mappend` message1 e1 `mappend` w2 `mappend` message1 e2)
 
 
 
+--------------------------------------------------------------------------------
 
 
 -- | Afm files do not have a default advance vec so use the 

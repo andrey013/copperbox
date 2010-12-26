@@ -40,7 +40,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do 
     putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSMetrics font_dir ["Times-Roman", "Times-Italic"]
+    (base_metrics, msgs) <- loadGSMetrics font_dir ["Times-Roman", "Times-Italic"]
+    mapM_ putStrLn msgs
     let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
     writeEPS "./out/arrow_circuit01.eps" pic1
     writeSVG "./out/arrow_circuit01.svg" pic1 
@@ -48,7 +49,8 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do 
     putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmMetrics font_dir ["Times-Roman", "Times-Italic"]
+    (base_metrics, msgs) <- loadAfmMetrics font_dir ["Times-Roman", "Times-Italic"]
+    mapM_ putStrLn msgs
     let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
     writeEPS "./out/arrow_circuit02.eps" pic1
     writeSVG "./out/arrow_circuit02.svg" pic1 

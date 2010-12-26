@@ -28,7 +28,8 @@ font_directory = "D:/coding/haskell/GHC_workspace/wumpus/_font_metrics/adobe_cor
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadAfmMetrics font_directory ["Helvetica", "Times-Roman"]
+    (base_metrics, msgs) <- loadAfmMetrics font_directory ["Helvetica", "Times-Roman"]
+    mapM_ putStrLn msgs
     let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
     writeEPS "./out/afm4dot1_01.eps" pic1
     writeSVG "./out/afm4dot1_01.svg" pic1

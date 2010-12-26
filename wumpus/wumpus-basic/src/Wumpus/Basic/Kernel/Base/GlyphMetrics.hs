@@ -21,10 +21,8 @@ module Wumpus.Basic.Kernel.Base.GlyphMetrics
     FontName
   , CodePoint
   , CharWidthTable
-  , FontProps(..)
   , MetricsOps(..)
-  , buildMetricsOps
-  , FontCalcs(..)
+  , FontMetricsOps(..)
 
   , GlyphMetrics
   , emptyGlyphMetrics
@@ -38,8 +36,10 @@ module Wumpus.Basic.Kernel.Base.GlyphMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import qualified Data.IntMap   as IntMap
 import qualified Data.Map      as Map
+import Data.Monoid
+
+
 
 type FontName = String
 
@@ -56,22 +56,6 @@ type CodePoint = Int
 type CharWidthTable u = CodePoint -> Vec2 u
 
 
--- | The metrics read from a font file by a font loader. 
--- 
--- NOTE - FontProps is parametric on @cu@ - /Character Unit/ and 
--- not on the usual @u@. A typical character unit is 'AfmUnit', 
--- the unit of measurement for AFM files (1000th of a point).
---
--- The is the initial representation used by Wumpus-Basic as an
--- syntax tree when loading font files. 
---
-data FontProps cu = FontProps
-       { fp_bounding_box        :: BoundingBox cu 
-       , fp_default_adv_vec     :: Vec2 cu
-       , fp_adv_vecs            :: IntMap.IntMap (Vec2 cu)
-       , fp_cap_height          :: cu
-       }
-
 
 -- | Operations on the metrics set of a font.
 --
@@ -84,9 +68,9 @@ data MetricsOps = MetricsOps
       , get_cap_height    :: forall u. FromPtSize u => PtSize -> u
       }
 
--- Name for (FontName, MetricOps)... ?
-
-data FontCalcs = FontCalcs FontName MetricsOps
+-- | 'MetricsOps' tfor a particular named font.
+-- 
+data FontMetricsOps = FontMetricsOps FontName MetricsOps
 
 
 -- | A map between a font name and MetricsOps.
@@ -94,14 +78,19 @@ data FontCalcs = FontCalcs FontName MetricsOps
 newtype GlyphMetrics = GlyphMetrics { 
           getGlyphMetrics :: Map.Map FontName MetricsOps }
 
+instance Monoid GlyphMetrics where
+  mempty        = emptyGlyphMetrics
+  a `mappend` b = GlyphMetrics $ getGlyphMetrics a `mappend` getGlyphMetrics b
+
+
 emptyGlyphMetrics :: GlyphMetrics
 emptyGlyphMetrics = GlyphMetrics $ Map.empty
 
 lookupFont :: FontName -> GlyphMetrics -> Maybe MetricsOps
 lookupFont name = Map.lookup name . getGlyphMetrics
 
-insertFont :: FontCalcs -> GlyphMetrics -> GlyphMetrics
-insertFont (FontCalcs name ops) = 
+insertFont :: FontMetricsOps -> GlyphMetrics -> GlyphMetrics
+insertFont (FontMetricsOps name ops) = 
     GlyphMetrics . Map.insert name ops . getGlyphMetrics
 
 -- | This ignores the Char code lookup and just returns the 
@@ -124,26 +113,5 @@ monospace_metrics = MetricsOps
     upscale sz d  = fromPtSize $ sz * d
     lowerLeft sz  = P2 (upscale sz llx) (upscale sz lly) 
     upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
-
-
--- | Build a MetricsOps function table, from a character unit
--- scaling function and FontProps read from a file.
---
-buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
-buildMetricsOps fn (FontProps (BBox ll ur) (V2 vx vy) 
-                              vec_table    cap_height) = 
-    MetricsOps
-      { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
-      , get_cw_table      = \sz i -> 
-            maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
-      , get_cap_height    = \sz -> upscale sz (fn cap_height)
-      }
-  where
-    upscale sz d            = fromPtSize $ sz * d 
- 
-    defaultAV sz            = V2 (upscale sz $ fn vx) (upscale sz $ fn vy) 
-    scalePt  sz (P2 cx cy)  = P2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
-    scaleVec sz (V2 cx cy)  = V2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
-
 
 

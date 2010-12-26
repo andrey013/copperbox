@@ -36,13 +36,17 @@ module Wumpus.Basic.System.FontLoader.Base.Datatypes
 
   , MonospaceDefaults(..)
 
+  , FontProps(..)
+  , buildMetricsOps
   
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.GlyphMetrics
+
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import qualified Data.IntMap   as IntMap
 import qualified Data.Map as Map
 
 
@@ -105,8 +109,10 @@ data AfmFile = AfmFile
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
-
--- Note BBox is a required field for version 4.1.
+  
+-- Note - for AfmFile BBox is a required field for version 4.1, 
+-- but it appears to be optional for version 2.0.
+--
 
 
 data AfmGlyphMetrics = AfmGlyphMetrics
@@ -129,4 +135,44 @@ data MonospaceDefaults cu = MonospaceDefaults
       , default_char_width   :: Vec2 cu
       }
   deriving (Eq,Show)
+
+
+
+-- | The metrics read from a font file by a font loader. 
+-- 
+-- NOTE - FontProps is parametric on @cu@ - /Character Unit/ and 
+-- not on the usual @u@. A typical character unit is 'AfmUnit', 
+-- the unit of measurement for AFM files (1000th of a point).
+--
+-- The is the initial representation used by Wumpus-Basic as an
+-- syntax tree when loading font files. 
+--
+data FontProps cu = FontProps
+       { fp_bounding_box        :: BoundingBox cu 
+       , fp_default_adv_vec     :: Vec2 cu
+       , fp_adv_vecs            :: IntMap.IntMap (Vec2 cu)
+       , fp_cap_height          :: cu
+       }
+
+
+-- | Build a MetricsOps function table, from a character unit
+-- scaling function and FontProps read from a file.
+--
+buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
+buildMetricsOps fn (FontProps (BBox ll ur) (V2 vx vy) 
+                              vec_table    cap_height) = 
+    MetricsOps
+      { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
+      , get_cw_table      = \sz i -> 
+            maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
+      , get_cap_height    = \sz -> upscale sz (fn cap_height)
+      }
+  where
+    upscale sz d            = fromPtSize $ sz * d 
+ 
+    defaultAV sz            = V2 (upscale sz $ fn vx) (upscale sz $ fn vy) 
+    scalePt  sz (P2 cx cy)  = P2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
+    scaleVec sz (V2 cx cy)  = V2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
+
+
 

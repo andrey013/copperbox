@@ -47,7 +47,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
-    gs_metrics <- loadGSMetrics font_dir ["Helvetica"]
+    (gs_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
+    mapM_ putStrLn msgs
     let pic1 = runDrawingU (makeCtx gs_metrics) text_drawing 
     writeEPS "./out/lr_text01.eps" pic1
     writeSVG "./out/lr_text01.svg" pic1
@@ -55,7 +56,8 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
-    afm_metrics <- loadAfmMetrics font_dir ["Helvetica"]
+    (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
+    mapM_ putStrLn msgs
     let pic2 = runDrawingU (makeCtx afm_metrics) text_drawing 
     writeEPS "./out/lr_text02.eps" pic2
     writeSVG "./out/lr_text02.svg" pic2

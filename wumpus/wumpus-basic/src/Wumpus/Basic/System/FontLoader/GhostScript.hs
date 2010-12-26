@@ -33,32 +33,37 @@ import Wumpus.Basic.System.FontLoader.Base.GSFontMap
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Either
+import Control.Monad
+import Data.Monoid
 
 
-
-
-
--- TODO need loaders that write log to StdOut...
-
-
-loadGSMetrics :: FilePath -> [FontName] -> IO GlyphMetrics
-loadGSMetrics font_dir_path ns = do 
-    calcs <- fmap rights $ mapM mstep ns
-    return $ foldr insertFont emptyGlyphMetrics calcs
+-- | 'loadGSMetrics' : 
+-- @ path_to_gs_fonts -> [font_name] -> IO (metrics, messages) @ 
+-- 
+-- Load the supplied list of fonts. 
+-- 
+-- Note - if a font fails to load a message is written to the 
+-- log and monospaced /fallback metrics/ are used.
+--
+loadGSMetrics :: FilePath -> [FontName] -> IO (GlyphMetrics, [String])
+loadGSMetrics font_dir_path ns = 
+    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
   where
-    mstep font_name = evalFontLoadIO $ 
-        gsLoadFontCalcs font_dir_path ghostscript_fontmap_8_54 font_name
+    mkFun = gsLoadFontCalcs font_dir_path ghostscript_fontmap_8_54 
+    
+    post (Left err,ss) = (mempty, ss ++ [err]) -- unreachable...
+    post (Right xs,ss) = (foldr insertFont mempty xs, ss)
 
 
-
-gsLoadFontCalcs :: FilePath -> GSFontMap -> FontName -> FontLoadIO FontCalcs
+gsLoadFontCalcs :: FilePath -> GSFontMap -> FontName 
+                -> FontLoadIO FontMetricsOps
 gsLoadFontCalcs font_dir_path fm name = do
+    logLoadMsg  $ "Loading " ++ name
     font_file   <- resolveFontFile fm name 
     path        <- checkFontPath font_dir_path font_file
     ans         <- runParserFLIO path afmV2Parser
     props       <- buildAfmFontProps  ghostscript_mono_defaults_8_54 ans
-    return $ FontCalcs name (buildMetricsOps afmUnitScale props)
+    return $ FontMetricsOps name (buildMetricsOps afmUnitScale props)
 
 
 resolveFontFile :: GSFontMap -> FontName -> FontLoadIO FilePath
