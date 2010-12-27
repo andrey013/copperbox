@@ -833,15 +833,10 @@ boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
 -- This has no effect on TextLabels. Nor does it draw Beziers of 
 -- a hyperlinked object.
 -- 
--- Pseudo control points are generated for ellipses, although 
--- strictly speaking ellipses do not use Bezier curves - they 
--- are implemented with PostScript\'s @arc@ command.  
---
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
                         => RGBi -> Primitive u -> Picture u
 illustrateControlPoints rgb elt = frame $ fn elt
   where
-    fn (PEllipse _ e) = ellipseCtrlLines rgb e $ [elt]
     fn (PPath    _ p) = pathCtrlLines rgb p $ [elt]
     fn a              = [a]
 
@@ -868,64 +863,4 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
 
     mkLine s v                      = let pp = (PrimPath s [RelLineTo v]) 
                                       in ostroke rgb default_stroke_attr pp 
-
-
--- Generate lines illustrating the control points of an 
--- ellipse:
--- 
--- Two lines for each quadrant: 
--- start-point to control-point1; control-point2 to end-point
---
-ellipseCtrlLines :: (Real u, Floating u) 
-                 => RGBi -> PrimEllipse u -> H (Primitive u)
-ellipseCtrlLines rgb pe = start all_points
-  where 
-    -- list in order: 
-    -- [s,cp1,cp2,e, cp1,cp2,e, cp1,cp2,e, cp1,cp2,e]
-
-    all_points           = ellipseControlPoints pe
-
-    start (s:c1:c2:e:xs) = mkLine s c1 `consH` mkLine c2 e `consH` rest e xs
-    start _              = emptyH
-
-    rest s (c1:c2:e:xs)  = mkLine s c1 `consH` mkLine c2 e `consH` rest e xs
-    rest _ _             = emptyH
-
-    mkLine s e  = let path = PrimPath s [RelLineTo (e .-. s)]
-                  in ostroke rgb default_stroke_attr path
-
-
-
--- | Get the control points as a list
--- 
--- There are no duplicates in the list except for the final 
--- /wrap-around/. We take 4 points initially (start,cp1,cp2,end)
--- then (cp1,cp2,end) for the other three quadrants.
---
-ellipseControlPoints :: (Floating u, Real u)
-                     => PrimEllipse u -> [Point2 u]
-ellipseControlPoints (PrimEllipse hw hh ctm) = map (new_mtrx *#) circ
-  where
-    (radius,(dx,dy)) = circleScalingProps hw hh
-    new_mtrx         = matrixRepCTM $ scaleCTM dx dy ctm
-    circ             = bezierCircle 1 radius (P2 0 0)
-
-    -- subdivide the bezierCircle with 1 to get two
-    -- control points per quadrant.    
-
-    -- WARNING - this seems to be missing translations...
-
---
--- I don't know how to calculate bezier arcs (and thus control
--- points) for an ellipse but I know how to do it for a circle...
---
--- So a make a circle with the largest of half-width and 
--- half-height then apply a scale to the points
--- 
-circleScalingProps  :: (Fractional u, Ord u) => u -> u -> (u,(u,u))
-circleScalingProps hw hh  = (radius, (dx,dy))
-  where
-    radius     = max hw hh
-    (dx,dy)    = if radius == hw then (1, rescale (0,hw) (0,1) hh)
-                                 else (rescale (0,hh) (0,1) hw, 1)
 

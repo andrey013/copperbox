@@ -78,7 +78,10 @@ description:
   v0.40.0 to v0.41.0:
   .
   * Changed PostScript output to use pre-defined procedures for 
-    circles and ellipses.
+    circles and ellipses. This should be a significant 
+    optimization for drawings that have many circles or ellipses.
+    For drawings that do not use circles or ellipses, it adds 
+    circa. 75 lines of code which is tolerable.
   .
   * API change - @Core.Text.Base@ no longer exports the 
     constructor and field label for @EscapedText@, it is now an 

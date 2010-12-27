@@ -40,7 +40,8 @@ pic2 = txt `picOver` ch `picOver` xy_frame "rotate 30deg"
      txt  = mkBlackTextlabel (rotate ang) pt
      ch   = rotate ang $ zcrosshair pt
      pt   = P2 70 10
-     ang  = 0.25*pi
+     ang  = d2r (30::Double)
+
 
 pic3 :: Picture Double
 pic3 = txt `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
@@ -49,7 +50,7 @@ pic3 = txt `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
      ch   = rotateAbout ang pto $ zcrosshair pt
      pt   = P2 70 10
      pto  = P2 60 0
-     ang  = 0.25*pi
+     ang  = d2r (30::Double)
 
 
 pic4 :: Picture Double
