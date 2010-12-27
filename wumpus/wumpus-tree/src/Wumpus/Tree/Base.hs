@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -45,7 +44,6 @@ type DTreeDrawing = TreeDrawing Double
 --
 type CoordTree u a = Tree (Point2 u, a)
 
-type instance DUnit (CoordTree u a) = u
 
 
 type TreeNode u = DotLocImage u

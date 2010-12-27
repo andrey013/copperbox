@@ -24,8 +24,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Basic.System.FontLoader.GhostScript
 
-
-import Control.Applicative
 import Control.Monad
 import System.Environment
 import System.IO.Error ( try )
@@ -65,13 +63,21 @@ help_message = unlines $
 
 loadGS_helvetica :: IO (Maybe GlyphMetrics)
 loadGS_helvetica = 
-    envLookup wumpus_gs_font_dir >>=
-    maybe (return Nothing) (\dir -> Just <$> loadGSMetrics dir ["Helvetica"])
+    envLookup wumpus_gs_font_dir >>= maybe (return Nothing) sk
+  where
+    sk dir = do { (metrics,msgs)  <- loadGSMetrics dir ["Helvetica"]
+                ; mapM_ putStrLn msgs
+                ; return $ Just metrics
+                }
 
 loadAfm_helvetica :: IO (Maybe GlyphMetrics)
 loadAfm_helvetica = 
-    envLookup wumpus_afm_font_dir >>=
-    maybe (return Nothing) (\dir -> Just <$> loadAfmMetrics dir ["Helvetica"])
+    envLookup wumpus_afm_font_dir >>= maybe (return Nothing) sk 
+  where
+    sk dir = do { (metrics,msgs) <- loadAfmMetrics dir ["Helvetica"]
+                ; mapM_ putStrLn msgs
+                ; return $ Just metrics
+                }
 
 
 envLookup :: String -> IO (Maybe String)

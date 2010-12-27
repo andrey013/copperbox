@@ -38,7 +38,7 @@ import Data.Monoid
 
 
 -- | 'loadGSMetrics' : 
--- @ path_to_gs_fonts -> [font_name] -> IO (metrics, messages) @ 
+-- @ path_to_gs_fonts * [font_name] -> IO (metrics, messages) @ 
 -- 
 -- Load the supplied list of fonts. 
 -- 

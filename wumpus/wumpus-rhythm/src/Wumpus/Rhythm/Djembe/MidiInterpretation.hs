@@ -21,10 +21,7 @@ import Wumpus.Rhythm.Djembe.MidiPrimitives
 
 import ZMidi.Emit                               -- package: zmidi-emit
 
-
-import Control.Applicative
 import Data.Monoid
-import Data.Ratio
 
 
 

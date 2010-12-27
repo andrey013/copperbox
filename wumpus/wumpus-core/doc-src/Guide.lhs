@@ -23,7 +23,7 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
-This guide was last updated for \wumpuscore version 0.40.0.
+This guide was last updated for \wumpuscore version 0.41.0.
 
 \wumpuscore is a Haskell library for generating 2D vector 
 pictures. It was written with portability as a priority, so it has 
@@ -32,9 +32,9 @@ SVG (Scalable Vector Graphics) is supported.
 
 \wumpuscore is rather primitive, the basic drawing objects are 
 paths and text labels. A second library \texttt{wumpus-basic}
-contains code for higher level drawing but it experimental and the 
-APIs are a long way from stable (it should probably be considered 
-a \emph{technology preview}).
+contains code for higher level drawing but it is experimental and 
+the APIs are a long way from stable (it should probably be 
+considered a \emph{technology preview}).
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
 PostScript's notion of an (implicit) current point and the 
@@ -51,22 +51,23 @@ movements \texttt{lineto}, \texttt{moveto} etc., instead
 \begin{description}
 \item[\texttt{Wumpus.Core.}]
 Top-level \emph{shim} module to import all the exposed modules. 
-Some internal data types are also exported as opaque - the 
-implementation is hidden, but the type name is exposed so it can 
-be used in the type signatures of \emph{userland} functions. 
+Some internal data types are also exported as opaque signatures - 
+the implementation is hidden, but the type name is exposed so it 
+can be used in the type signatures of \emph{userland} functions. 
 Typically, where these data types need to be \emph{instantiated}
 smart constructors are provided.
 
 \item[\texttt{Wumpus.Core.AffineTrans.}]
 The standard affine transformations (scaling, rotation, 
-translation) implemented as type classes, with a of derived 
+translation) implemented as type classes, with a set of derived 
 operations - reflections about the X or Y axes, rotations through
 common angles. 
 
 \item[\texttt{Wumpus.Core.BoundingBox.}]
-Data type representing bounding boxes and operations on them. 
-Bounding boxes are important for Pictures as they support the 
-definition of \emph{picture composition} operators.
+A data type representing a bounding box and operations on it. 
+Bounding boxes are necessary for EPS output, they also support the 
+definition of \emph{picture composition} operators, e.g. aligning 
+composite pictures horizontally, vertically, etc.
 
 \item[\texttt{Wumpus.Core.Colour.}]
 A single colour type \texttt{RGBi} is supported. This type defines 
@@ -74,35 +75,37 @@ colour as a triple of integers (Word8) - black is (0, 0, 0); white
 is (255, 255, 255). Some named colours are defined, although they 
 are hidden by the top level shim module to avoid name clashes with
 libraries providing more extensive lists of colours. 
-\texttt{Wumpus.Core.Colour} can be imported directly if the named 
-colours are required.
+\texttt{Wumpus.Core.Colour} can be imported directly if a simple 
+list of named colours is required.
 
 \item[\texttt{Wumpus.Core.FontSize.}]
-Various calculations for font size metrics. \wumpuscore has 
-limited handling of font / character size as it cannot interpret
-the metrics within font files (doing so would be a huge task).
-Instead this module provides some metrics based on the Courier
-mono-spaced font that can be used for rudimentary size
-calculations on text labels.
+Various calculations for font size metrics. \wumpuscore has only
+approximate handling of font / character size as it does not 
+interpret the metrics within font files (doing so is a 
+substantially task attempted by \texttt{Wumpus.Basic} but 
+currently only for the simple and out-dated \texttt{AFM} font 
+format). Instead, \wumpuscore makes do with operations based on 
+measurements derived from the Courier mono-spaced font. Generally 
+using metrics from a mono-spaced font over-estimates for 
+proportional fonts, though in practice this is tolerable.
 
 \item[\texttt{Wumpus.Core.Geometry.}]
 The usual types an operations from affine geometry - points, 
 vectors and 3x3 matrices, also the \texttt{DUnit} type family.
 Essentially this type family is a trick used heavily within 
 \wumpuscore to avoid annotating class declarations with 
-constraints on the unit - class constraints like 
-\texttt{Fractional u} can then be shifted to the instance 
-declaration rather than the class declaration.
+constraints on the unit of measurement (usually \texttt{Double}
+representing the Point unit of publishing). With the 
+\texttt{DUnit} trick, type constraints like 
+\texttt{Fractional u} can be shifted to instance declarations 
+rather than burden class declarations.
 
-\item[\texttt{Wumpus.Core.GraphicsState.}]
+\item[\texttt{Wumpus.Core.GraphicProps.}]
 Data types modelling the attributes of PostScript's graphics 
 state (stroke style, dash pattern, etc.). Note that 
-\wumpuscore annotates all primitives - paths, text labels - with 
-their rendering style, the \texttt{GraphicsState} here is an 
-internal detail used to generate more efficient PostScript and 
-SVG. The \emph{smaller} types in this module such as 
-\texttt{StrokeAttr} are the only ones relevant for the public 
-API.
+\wumpuscore labels all primitives - paths, text labels - with 
+their rendering style, unlike PostScript there is no 
+\emph{inheritance} of a Graphics State in \wumpuscore.
 
 \item[\texttt{Wumpus.Core.OutputPostScript.}]
 Functions to write PostScript or encapsulated PostScript files.
@@ -113,15 +116,15 @@ Functions to write SVG files.
 \item[\texttt{Wumpus.Core.Picture.}]
 Operations to build \emph{pictures} - paths and labels within
 an affine frame. Generally the functions here are convenience 
-constructors for types from the hidden module 
-\texttt{Wumpus.Core.PictureInternal}. The types from 
-\texttt{PictureInternal} are exported as opaque signatures by 
+constructors for data types from the hidden module 
+\texttt{Wumpus.Core.PictureInternal}. The data types from 
+\texttt{PictureInternal} are exported with opaque signatures by 
 \texttt{Wumpus.Core.WumpusTypes}.
 
 \item[\texttt{Wumpus.Core.PtSize.}]
-Text size calculations in \texttt{Core.FontSize} use points 
-(i.e. 1/72 of an inch). The \texttt{PtSize} module is a numeric 
-type to represent them.
+Text size calculations in \texttt{Core.FontSize} use 
+\emph{printer's points} (i.e. 1/72 of an inch). The 
+\texttt{PtSize} module is a numeric type to represent them.
 
 \item[\texttt{Wumpus.Core.Text.Base.}]
 Types for handling escaped \emph{special} charcters within input 
@@ -130,19 +133,22 @@ although glyph names should \emph{always} correspond to PostScript
 names and never XML / SVG ones, e.g. for \texttt{\&} use 
 \texttt{\#ampersand;} not \texttt{\#amp;}. 
 
-Also note, unless you are generating only SVG output, glyph 
+Also note, unless only SVG output is being generated, glyph 
 names should be used rather than char codes. For PostScript the 
 resolution of char codes is dependent on the encoding of the font 
-used to render it. As core fonts do not use the common Latin1 
-encoding, using using numeric char codes in the input text may 
-produce unexpected results.
+used to render it. As the core PostScript fonts use their own 
+encoding rather than the common Latin1 encoding, using using 
+numeric char codes (intending to be Latin1) can produce unexpected 
+results.
 
-Unfortunately fonts are often missing characters you might want, 
-and a PostScript renderer cannot do anything about it (SVG appears 
-to support glyph subsitution from other fonts). \wumpuscore is 
-oblivious to the contents of fonts so it cannot issue a warning 
-if a glyph is not present when it generates a document.
-
+Unfortunately, even core fonts are often missing glyphs that 
+familiarity with Unicode and Web publishing might expect them 
+support. Generally, a PostScript renderer cannot do anything about 
+missing glyphs - it might print a space or an open, tall rectangle. 
+As \wumpuscore is oblivious to the contents of fonts, it cannot 
+issue a warning if a glyph is not present when it generates a 
+document, so PostScript output must be proof-read if extended 
+glyphs are used.
 
 \item[\texttt{Wumpus.Core.Text.GlyphIndices.}]
 An map of PostScript glyph names to Unicode code points. 
@@ -211,8 +217,8 @@ have a \emph{scaling} value of 1).
 
 \wumpuscore uses the same picture frame as PostScript where 
 the origin at the bottom left, see Figure 1. This contrasts to SVG 
-where the origin at the top-left. When \wumpuscore generates SVG, 
-the whole picture is generated within a matrix transformation 
+where the origin is at the top-left. When \wumpuscore generates 
+SVG, the whole picture is generated within a matrix transformation 
 [ 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 ] that changes the picture to use 
 PostScript coordinates. This has the side-effect that text is 
 otherwise drawn upside down, so \wumpuscore adds a rectifying 

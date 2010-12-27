@@ -41,7 +41,7 @@ import Data.Monoid
 --
 
 -- | 'loadAfmMetrics' : 
--- @ path_to_afm_fonts -> [font_name] -> IO (metrics, messages) @ 
+-- @ path_to_afm_fonts * [font_name] -> IO (metrics, messages) @ 
 -- 
 -- Load the supplied list of fonts. 
 -- 

@@ -39,10 +39,14 @@ main = do
     createDirectoryIfMissing True "./out/"
     case (mb_gs, mb_afm) of       
       (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
-                          ; loadGSMetrics  dir ["Times-Roman"] >>= makePictures 
+                          ; (metrics,msgs) <- loadGSMetrics  dir ["Times-Roman"]
+                          ; mapM_ putStrLn msgs
+                          ; makePictures metrics
                           }
       (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
-                          ; loadAfmMetrics dir ["Times-Roman"] >>= makePictures
+                          ; (metrics,msgs) <- loadAfmMetrics dir ["Times-Roman"]
+                          ; mapM_ putStrLn msgs
+                          ; makePictures metrics
                           }
       _             -> putStrLn default_font_loader_help
 
@@ -84,7 +88,7 @@ tree_drawing2 = drawScaledTree (diskNode red) (uniformScaling 30) tree2
 -- This should be drawn in the /family tree/ style...
 -- 
 tree_drawing3 :: DTreeDrawing
-tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 30) tree3
+tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 25) tree3
 
 
 tree_drawing4 :: DTreeDrawing

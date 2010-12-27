@@ -41,13 +41,11 @@ description:
   Core 14 AFM metrics:
   <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
   .
-  WARNING - whilst font metrics parsing has been improved in 
-  version 0.14.0, the font loading API has not yet been revised 
-  to allow access to error and warning messages, thus there is no 
-  indication of the the success or otherwise of loading a font. 
-  If a font cannot be found or parsed, monospace fallback metrics 
-  will be used, so the only way to gauge success or failure is to 
-  look at the output.
+  Also note that Wumpus uses fallback metrics (derived from the
+  monospaced Courier font) when font loading fails, rather than
+  throwing a terminal error. Applications should ideally check
+  the font loading log to ensure that fonts have loaded correctly
+  (the demos print this log to standard out).
   .
   Changelog:
   .
@@ -68,9 +66,9 @@ description:
     combinators are now more readily useful.
   .
   * Work on the font loader code to improve its robustness, and 
-    improved error signalling on load failure. The code can now 
-    log warnings but the API has not been revised to allow access
-    to them.
+    improved error signalling on load failure. Loading glyph 
+    metrics now returns both the metrics (possibly fallback 
+    metrics if parsing failed) and a log.
   .
   v0.12.0 to v0.13.0:
   .

@@ -20,7 +20,7 @@ import Wumpus.Rhythm.Djembe.Base
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Internal.Base
+import Wumpus.Basic.System.FontLoader.Base.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 
