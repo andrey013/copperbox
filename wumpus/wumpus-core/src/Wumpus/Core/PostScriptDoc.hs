@@ -62,6 +62,14 @@ module Wumpus.Core.PostScriptDoc
   , ps_show
   , ps_glyphshow
 
+  , ps_wumpus_FELL
+  , ps_wumpus_SELL
+  , ps_wumpus_FCIRC
+  , ps_wumpus_SCIRC
+  , ps_wumpus_FL
+
+  , ps_wumpus_prolog
+
   )  where
 
 import Wumpus.Core.BoundingBox
@@ -361,3 +369,134 @@ ps_show ss = command "show" [parens $ text ss]
 ps_glyphshow :: String -> Doc
 ps_glyphshow ss = command "glyphshow" [text $ '/':ss]
 
+
+--------------------------------------------------------------------------------
+
+
+-- | @ X Y RX RY FELL  @
+--
+-- Custom Wumpus proc for filled ellipse.
+--
+ps_wumpus_FELL :: PSUnit u => Point2 u -> u -> u -> Doc
+ps_wumpus_FELL (P2 x y) rx ry = 
+    command "FELL" $ map dtruncFmt [x, y, rx, ry]
+
+
+
+-- | @ X Y RX RY SELL  @
+--
+-- Custom Wumpus proc for stroked ellipse.
+--
+ps_wumpus_SELL :: PSUnit u => Point2 u -> u -> u -> Doc
+ps_wumpus_SELL (P2 x y) rx ry = 
+    command "SELL" $ map dtruncFmt [x, y, rx, ry]
+
+
+
+-- | @ X Y R FCIRC  @
+--
+-- Custom Wumpus proc for filled circle.
+--
+ps_wumpus_FCIRC :: PSUnit u => Point2 u -> u -> Doc
+ps_wumpus_FCIRC (P2 x y) r = command "FCIRC" $ map dtruncFmt [x, y, r]
+
+-- | @ X Y R SCIRC  @
+--
+-- Custom Wumpus proc for stroked circle.
+--
+ps_wumpus_SCIRC :: PSUnit u => Point2 u -> u -> Doc
+ps_wumpus_SCIRC (P2 x y) r = command "SCIRC" $ map dtruncFmt [x, y, r]
+
+-- | @ SZ NAME FL  @
+--
+-- Custom Wumpus proc for findfont, fontsize, setfont.
+--
+ps_wumpus_FL :: Int -> String -> Doc
+ps_wumpus_FL sz name = command "FL" $ [int sz, text $ '/':name]
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+ps_wumpus_prolog :: Doc
+ps_wumpus_prolog = vcat $ map text $
+    [ "/RY 0 def"
+    , "/RX 0 def"
+    , "/Y 0 def"
+    , "/X 0 def"
+    , "/R 0 def"
+    , ""
+    , "% Filled ellipse"
+    , "/FELL     % X Y RX RY FELL"
+    , "{"
+    , "  /RY exch def"
+    , "  /RX exch def"
+    , "  /Y  exch def"
+    , "  /X  exch def"
+    , "  X Y translate"
+    , "  1 RY RX div scale"
+    , "  newpath"
+    , "  0 0 RX 0.0 360.0 arc"
+    , "  closepath"
+    , "  fill"
+    , "  1 RX RY div scale"
+    , "  X neg Y neg translate"
+    , "} bind def"
+    , ""
+    , ""
+    , "% Stroked ellipse"
+    , "/SELL     % X Y RX RY SELL"
+    , "{"
+    , "  /RY exch def"
+    , "  /RX exch def"
+    , "  /Y  exch def"
+    , "  /X  exch def"
+    , "  X Y translate"
+    , "  1 RY RX div scale"
+    , "  newpath"
+    , "  0 0 RX 0.0 360.0 arc"
+    , "  closepath"
+    , "  stroke"
+    , "  1 RX RY div scale"
+    , "  X neg Y neg translate"
+    , "} bind def"
+    , ""
+    , ""
+    , "% Stroked circle"
+    , "/SCIRC     % X Y R SCIRC"
+    , "{"
+    , "  /R exch def"
+    , "  /Y  exch def"
+    , "  /X  exch def"
+    , "  newpath"
+    , "  X Y R 0.0 360.0 arc"
+    , "  closepath"
+    , "  stroke"
+    , "} bind def"
+    , ""
+    , ""
+    , "% Filled circle"
+    , "/FCIRC     % X Y R FCIRC"
+    , "{"
+    , "  /R exch def"
+    , "  /Y  exch def"
+    , "  /X  exch def"
+    , "  newpath"
+    , "  X Y R 0.0 360.0 arc"
+    , "  closepath"
+    , "  fill"
+    , "} bind def"
+    , ""
+    , ""
+    , "% Font load"
+    , "/FL   % SZ NAME FL"
+    , "{"
+    , "  findfont exch"
+    , "  scalefont"
+    , "  setfont"
+    , "} bind def"
+    , ""
+    ]

@@ -198,6 +198,7 @@ psDraw :: (Real u, Floating u, PSUnit u)
 psDraw timestamp pics = 
     let body = vcat $ runPsMonad $ zipWithM psDrawPage pages pics
     in vcat [ psHeader (length pics) timestamp
+            , ps_wumpus_prolog
             , body
             , psFooter 
             ]
@@ -230,6 +231,7 @@ epsDraw timestamp pic =
     let (bb,cmdtrans) = imageTranslation pic 
         body          = runPsMonad (picture pic) 
     in vcat [ epsHeader bb timestamp
+            , ps_wumpus_prolog
             , ps_gsave
             , cmdtrans
             , body
@@ -384,36 +386,51 @@ pathBody (PrimPath start xs) =
 --
 primEllipse :: (Real u, Floating u, PSUnit u) 
             => EllipseProps -> PrimEllipse u -> PsMonad Doc
-primEllipse props (PrimEllipse hw hh ctm) =
-    bracketPrimCTM (scaleCTM 1 (hh/hw) ctm) (drawF props)
+primEllipse props (PrimEllipse hw hh ctm) 
+    | hw == hh  = bracketPrimCTM ctm (drawC props)
+    | otherwise = bracketPrimCTM ctm (drawE props)
   where
-    drawF (EFill rgb)            pt = fillArcPath rgb hw pt
-    drawF (EStroke sa rgb)       pt = strokeArcPath rgb sa hw pt
-    drawF (EFillStroke fc sa sc) pt = 
-        vconcat <$> fillArcPath fc hw pt <*>  strokeArcPath sc sa hw pt
+    drawC (EFill rgb)            pt = fillCircle rgb hw pt
+    drawC (EStroke sa rgb)       pt = strokeCircle rgb sa hw pt
+    drawC (EFillStroke fc sa sc) pt = 
+        vconcat <$> fillCircle fc hw pt <*>  strokeCircle sc sa hw pt
+
+    drawE (EFill rgb)            pt = fillEllipse rgb hw hh pt
+    drawE (EStroke sa rgb)       pt = strokeEllipse rgb sa hw hh pt
+    drawE (EFillStroke fc sa sc) pt = 
+        vconcat <$> fillEllipse fc hw hh pt <*>  strokeEllipse sc sa hw hh pt
                        
 
 
 -- This will need to become monadic to handle /colour delta/.
 --
-fillArcPath :: PSUnit u => RGBi -> u -> Point2 u -> PsMonad Doc
-fillArcPath rgb radius pt = 
-    (\rgbd -> vcat [ rgbd
-                   , ps_newpath
-                   , ps_arc pt radius 0 360
-                   , ps_closepath
-                   , ps_fill ])
+fillEllipse :: PSUnit u => RGBi -> u -> u -> Point2 u -> PsMonad Doc
+fillEllipse rgb rx ry pt = 
+    (\rgbd -> rgbd `vconcat` ps_wumpus_FELL pt rx ry)
       <$> deltaDrawColour rgb
 
-strokeArcPath :: PSUnit u 
-              => RGBi -> StrokeAttr -> u -> Point2 u -> PsMonad Doc
-strokeArcPath rgb sa radius pt =
+strokeEllipse :: PSUnit u 
+              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> PsMonad Doc
+strokeEllipse rgb sa rx ry pt =
     (\rgbd attrd -> vcat [ rgbd
                          , attrd
-                         , ps_newpath
-                         , ps_arc pt radius 0 360
-                         , ps_closepath
-                         , ps_stroke ])
+                         , ps_wumpus_SELL pt rx ry ])
+      <$> deltaDrawColour rgb <*> deltaStrokeAttrs sa
+
+
+-- This will need to become monadic to handle /colour delta/.
+--
+fillCircle :: PSUnit u => RGBi -> u -> Point2 u -> PsMonad Doc
+fillCircle rgb r pt = 
+    (\rgbd -> rgbd `vconcat` ps_wumpus_FCIRC pt r)
+      <$> deltaDrawColour rgb
+
+strokeCircle :: PSUnit u 
+              => RGBi -> StrokeAttr -> u -> Point2 u -> PsMonad Doc
+strokeCircle rgb sa r pt =
+    (\rgbd attrd -> vcat [ rgbd
+                         , attrd
+                         , ps_wumpus_SCIRC pt r ])
       <$> deltaDrawColour rgb <*> deltaStrokeAttrs sa
 
 
@@ -463,6 +480,7 @@ kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
     fn (P2 x y,acc) (dx,ch) = let doc1 = psChar ev ch
                                   pt   = P2 (x+dx) y 
                               in (pt, vcat [acc, ps_moveto pt, doc1])
+
 
 -- Note - vertical labels grow downwards...
 --
@@ -544,8 +562,7 @@ deltaFontAttrs fa  = getFontAttr >>= \inh ->
                else setFontAttr fa >> return (makeFontAttrs fa)
 
 makeFontAttrs :: FontAttr -> Doc
-makeFontAttrs (FontAttr sz face) = 
-    vcat [ ps_findfont (ps_font_name face), ps_scalefont sz, ps_setfont ]
+makeFontAttrs (FontAttr sz face) = ps_wumpus_FL sz (ps_font_name face)
 
 
 --------------------------------------------------------------------------------
@@ -568,11 +585,11 @@ bracketMatrix mtrx ma
 bracketPrimCTM :: forall u. (Real u, Floating u, PSUnit u)
                => PrimCTM u 
                -> (Point2 u -> PsMonad Doc) -> PsMonad Doc
-bracketPrimCTM ctm0 mf= step $ unCTM ctm0 
+bracketPrimCTM ctm0 mf = step $ unCTM ctm0 
   where 
     step (pt,ctm) 
       | ctm == identityCTM  = mf pt
-      | otherwise           = let mtrx = matrixRepCTM ctm0  -- originalCTM
+      | otherwise           = let mtrx  = matrixRepCTM ctm0  -- originalCTM
                                   inn   = ps_concat $ mtrx
                                   out   = ps_concat $ invert mtrx
                               in (\doc -> vcat [inn, doc, out]) <$> mf zeroPt

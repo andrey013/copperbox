@@ -124,6 +124,9 @@ translateCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
 translateCTM x1 y1 (PrimCTM dx dy sx sy ang) = 
     PrimCTM (x1+dx) (y1+dy) sx sy ang
 
+
+
+
 -- Note - the matrix is not used entirely conventionally.
 --
 -- It is expected that the point is extracted from the matrix, so
@@ -151,7 +154,8 @@ rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) =
 -- of a point) and the CTM is crucial as matrix multiplication is 
 -- not commutative.
 --
--- This function encapsulates the correct order.
+-- This function encapsulates the correct order (or does it? - 
+-- some of the demos are not working properly...).
 --
 matrixRepCTM :: (Real u, Floating u) => PrimCTM u -> Matrix3'3 u
 matrixRepCTM (PrimCTM dx dy sx sy ang) = 

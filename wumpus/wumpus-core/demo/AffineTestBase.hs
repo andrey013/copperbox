@@ -70,7 +70,7 @@ buildPictureATA mk picF primF =
     picture2 = illustrateBounds light_blue $ picF $ frame [mk blue]
 
     picture3 :: DPicture
-    picture3 = illustrateBoundsPrim light_blue $ prim
+    picture3 = illustrateBoundsPrim light_blue prim
       where
         prim :: DPrimitive
         prim = primF $ mk red
@@ -120,6 +120,7 @@ rgbEllipse rgb = fillEllipse rgb 60 30 zeroPt
 
 rgbPath :: RGBi -> DPrimitive
 rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
+
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...
 

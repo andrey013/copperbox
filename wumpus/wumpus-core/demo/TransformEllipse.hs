@@ -25,7 +25,8 @@ main = do
     writeEPS "./out/transform_ellipse05.eps" pic5
     writeSVG "./out/transform_ellipse05.svg" pic5
 
-
+gray :: RGBi
+gray = RGBi 127 127 127
 
 pic1 :: Picture Double
 pic1 = cb `picOver` ell `picOver` xy_frame "no transform"
@@ -71,7 +72,8 @@ pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
 mkRedEllipse :: (Real u, Floating u, FromPtSize u) 
              => (Primitive u -> Primitive u) 
              -> u -> u -> Point2 u -> Picture u
-mkRedEllipse trafo rx ry pt = frame [ trafo $ fillEllipse red rx ry pt] 
+mkRedEllipse trafo rx ry pt = 
+    illustrateControlPoints gray $ trafo $ fillEllipse red rx ry pt
 
 crossbar :: (Real u, Floating u, FromPtSize u) 
          => u -> u -> Point2 u -> Picture u

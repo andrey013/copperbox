@@ -117,6 +117,7 @@ import Wumpus.Core.Text.Base
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
+import Wumpus.Core.Utils.HList
 import Wumpus.Core.Utils.JoinList
 
 import Data.AffineSpace                         -- package: vector-space
@@ -792,7 +793,7 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 --
 illustrateBounds :: (Real u, Floating u, FromPtSize u) 
                  => RGBi -> Picture u -> Picture u
-illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p) 
+illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p $ []) 
 
 
 -- | 'illustrateBoundsPrim' : @ bbox_rgb * primitive -> Picture @
@@ -804,7 +805,7 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p)
 -- 
 illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
                      => RGBi -> Primitive u -> Picture u
-illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
+illustrateBoundsPrim rgb p = frame $ boundsPrims rgb p $ [p]
 
 
 
@@ -812,8 +813,8 @@ illustrateBoundsPrim rgb p = frame (p : boundsPrims rgb p)
 -- joining the corners.
 --
 boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
-            => RGBi -> t -> [Primitive u]
-boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
+            => RGBi -> t -> H (Primitive u)
+boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
     bbox_rect     = cstroke rgb line_attr $ vertexPath [bl,br,tr,tl]
@@ -838,11 +839,12 @@ boundsPrims rgb a = [ bbox_rect, bl_to_tr, br_to_tl ]
 --
 illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
                         => RGBi -> Primitive u -> Picture u
-illustrateControlPoints rgb elt = frame $ elt : step elt
+illustrateControlPoints rgb elt = frame $ fn elt
   where
-    step (PEllipse _ e) = ellipseCtrlLines rgb e
-    step (PPath    _ p) = pathCtrlLines rgb p
-    step a              = [a]
+    fn (PEllipse _ e) = ellipseCtrlLines rgb e $ [elt]
+    fn (PPath    _ p) = pathCtrlLines rgb p $ [elt]
+    fn a              = [a]
+
 
 -- Genrate lines illustrating the control points of curves on 
 -- a Path.
@@ -852,16 +854,17 @@ illustrateControlPoints rgb elt = frame $ elt : step elt
 --
 -- Nothing is generated for a straight line.
 --
-pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> [Primitive u]
+pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> H (Primitive u)
 pathCtrlLines rgb (PrimPath start ss) = step start ss
   where 
     step s (RelLineTo v:xs)         = step (s .+^ v) xs
 
     step s (RelCurveTo v1 v2 v3:xs) = let e   = s .+^ (v1 ^+^ v2 ^+^ v3)
                                           v3r = vreverse v3
-                                      in mkLine s v1 : mkLine e v3r : step e xs
+                                      in mkLine s v1 `consH` mkLine e v3r 
+                                                     `consH` step e xs
 
-    step _ []                       = []
+    step _ []                       = emptyH
 
     mkLine s v                      = let pp = (PrimPath s [RelLineTo v]) 
                                       in ostroke rgb default_stroke_attr pp 
@@ -874,7 +877,7 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
 -- start-point to control-point1; control-point2 to end-point
 --
 ellipseCtrlLines :: (Real u, Floating u) 
-                 => RGBi -> PrimEllipse u -> [Primitive u]
+                 => RGBi -> PrimEllipse u -> H (Primitive u)
 ellipseCtrlLines rgb pe = start all_points
   where 
     -- list in order: 
@@ -882,11 +885,11 @@ ellipseCtrlLines rgb pe = start all_points
 
     all_points           = ellipseControlPoints pe
 
-    start (s:c1:c2:e:xs) = mkLine s c1 : mkLine c2 e : rest e xs
-    start _              = []
+    start (s:c1:c2:e:xs) = mkLine s c1 `consH` mkLine c2 e `consH` rest e xs
+    start _              = emptyH
 
-    rest s (c1:c2:e:xs)  = mkLine s c1 : mkLine c2 e : rest e xs
-    rest _ _             = []
+    rest s (c1:c2:e:xs)  = mkLine s c1 `consH` mkLine c2 e `consH` rest e xs
+    rest _ _             = emptyH
 
     mkLine s e  = let path = PrimPath s [RelLineTo (e .-. s)]
                   in ostroke rgb default_stroke_attr path
@@ -910,6 +913,7 @@ ellipseControlPoints (PrimEllipse hw hh ctm) = map (new_mtrx *#) circ
     -- subdivide the bezierCircle with 1 to get two
     -- control points per quadrant.    
 
+    -- WARNING - this seems to be missing translations...
 
 --
 -- I don't know how to calculate bezier arcs (and thus control

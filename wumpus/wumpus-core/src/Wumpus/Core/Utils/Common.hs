@@ -40,14 +40,6 @@ module Wumpus.Core.Utils.Common
   -- * PostScript time stamp
   , psTimeStamp
 
-  -- * Hughes list
-  , H
-  , emptyH
-  , wrapH
-  , consH
-  , snocH  
-  , appendH
-  , toListH
 
   ) where
 
@@ -162,31 +154,5 @@ pad2 i | i < 10    = ('0':) . shows i
 
 floori :: RealFrac a => a -> Int
 floori = floor
-
-
-
---------------------------------------------------------------------------------
--- Hughes list
-
-type H a = [a] -> [a]
-
-emptyH :: H a
-emptyH = id
-
-
-wrapH :: a -> H a
-wrapH a = consH a id 
-
-consH :: a -> H a -> H a
-consH a f = (a:) . f
-
-snocH :: H a -> a -> H a
-snocH hl a = hl . (a:)
-
-appendH :: H a -> H a -> H a
-appendH f g = f . g
-
-toListH :: H a -> [a]
-toListH = ($ [])
 
 

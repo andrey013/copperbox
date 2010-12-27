@@ -77,6 +77,9 @@ description:
   . 
   v0.40.0 to v0.41.0:
   .
+  * Changed PostScript output to use pre-defined procedures for 
+    circles and ellipses.
+  .
   * API change - @Core.Text.Base@ no longer exports the 
     constructor and field label for @EscapedText@, it is now an 
     opaque type. For a building @EscapedText@ either the existing 
@@ -229,6 +232,7 @@ library
     Wumpus.Core.SVGDoc,
     Wumpus.Core.TrafoInternal,
     Wumpus.Core.Utils.Common,
+    Wumpus.Core.Utils.HList,
     Wumpus.Core.Utils.JoinList,
     Wumpus.Core.Utils.FormatCombinators
     
