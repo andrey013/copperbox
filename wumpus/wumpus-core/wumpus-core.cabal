@@ -42,7 +42,13 @@ description:
   systems. However, the design permits a fairly simple 
   implementation, which is a priority. 
   .  
-  UPDATING to 0.40.0
+  .
+  UPDATING from 0.37.0 or earlier to 0.41.0.
+  .
+  There were substantial changes in verion 0.40.0 - hence the 
+  version number jump from 0.37.0. Version 0.41.0 introduces 
+  mostly cosmetic changes, but for upgrading from 0.37.0 or
+  earlier the change-notes that follow are still relevant.
   .
   @Core.Picture@ API change - the path construction function has 
   changed from @path@ to @primPath@. The type of the path segments
@@ -81,7 +87,8 @@ description:
     circles and ellipses. This should be a significant 
     optimization for drawings that have many circles or ellipses.
     For drawings that do not use circles or ellipses, it adds 
-    circa. 75 lines of code which is tolerable.
+    circa. 75 lines to the generated PostScript which is 
+    tolerable.
   .
   * API change - @Core.Text.Base@ no longer exports the 
     constructor and field label for @EscapedText@, it is now an 
@@ -99,7 +106,9 @@ description:
   * Upper bounds of Cabal build depends relaxed a bit.
   . 
   * Added the @UNil@ type to @Core.Geometry@ and added affine 
-    instances for the UNil type, plus Maybe and Pair.
+    instances for the UNil type, plus Maybe and Pair. @UNil@ is
+    useful for higher-level drawing (it is used extensively in
+    Wumpus-Basic).
   .
   * Added the function @emptyPath@ to @Core.Picture@. This creates 
     a /null path/ with an empty list of path segments. Null paths 
