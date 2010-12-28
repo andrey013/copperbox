@@ -28,6 +28,7 @@ module ZMidi.Emit.Utils.HList
 
   , toListH
   , fromListH
+  , concatH 
 
   ) where
 
@@ -66,3 +67,7 @@ toListH = ($ []) . getH
 
 fromListH :: [a] -> H a
 fromListH xs = H $ (xs++)
+
+concatH :: [H a] -> H a
+concatH = foldr appendH emptyH
+

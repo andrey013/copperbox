@@ -69,7 +69,7 @@ module ZMidi.Emit.Builder
   , drumChord
 
   , singleSection
-  , contiguousSections  
+  , overlayVoices
 
   ) where
 
@@ -306,16 +306,19 @@ drumChord d ps = chord d (map drumPitch ps)
 
 
 
-singleSection :: Int -> Double -> [Build a] -> ChannelTrack
-singleSection cnum bpm voices = 
-    ChannelTrack cnum $ JL.one $ Section bpm $ JL.fromListF fn voices
+singleSection :: Double -> [Build a] -> ChannelStream
+singleSection bpm phrases = 
+    ChannelStream $ JL.one $ Section bpm $ JL.fromListF fn phrases
   where
     fn = SectionVoice . execBuild build_env_zero
    
 
-contiguousSections :: Int -> Double -> [[Build a]] -> ChannelTrack
-contiguousSections cnum bpm sections = 
-    ChannelTrack cnum $ JL.fromList $ map top sections
+-- note sure this is doing what I expect ...
+-- (Plus I need more care with naming schemes).
+--
+overlayVoices :: Double -> [[Build a]] -> ChannelStream
+overlayVoices bpm voices = 
+    ChannelStream $ JL.fromList $ map top voices
   where
     top = Section bpm . JL.fromListF fn
     fn  = SectionVoice . execBuild build_env_zero

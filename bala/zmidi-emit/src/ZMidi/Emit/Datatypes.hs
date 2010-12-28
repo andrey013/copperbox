@@ -18,7 +18,8 @@
 module ZMidi.Emit.Datatypes
   ( 
     ZMidiRep(..)
-  , ChannelTrack(..)
+  , AudioTrack(..)
+  , ChannelStream(..)
   , Section(..)
   , SectionVoice(..)
   , MidiPrim(..)
@@ -27,8 +28,8 @@ module ZMidi.Emit.Datatypes
 
   , primVoiceMessage
   , primMetaEvent
+  , singleChannel
   , singleTrack
-
   , vinstrument
 
   ) where
@@ -39,25 +40,20 @@ import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
+import Data.IntMap ( IntMap )
+import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Word
 
 
--- Note MultiChannel track currently isn\'t multi (it should be to 
--- support playing different rhythms against each other). 
 
-newtype ZMidiRep = ZMidiRep { getZMidiRep :: JoinList ChannelTrack }
+newtype ZMidiRep = ZMidiRep { getZMidiRep :: JoinList AudioTrack }
   deriving (Show)
 
-instance Monoid ZMidiRep where
-  mempty        = ZMidiRep mempty
-  a `mappend` b = ZMidiRep $ getZMidiRep a `mappend` getZMidiRep b
+newtype AudioTrack = AudioTrack { getAudioTrack :: IntMap ChannelStream }
+  deriving (Show)
 
-
-data ChannelTrack = ChannelTrack 
-       { channel_number         :: Int
-       , track_sections         :: JoinList Section 
-       }
+newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
   deriving (Show)
 
 
@@ -66,6 +62,7 @@ data Section = Section
       , section_data            :: JoinList SectionVoice
       }
   deriving (Show)
+
 
 newtype SectionVoice = SectionVoice { voice_notelist :: [MidiPrim] }
   deriving (Show)
@@ -104,14 +101,37 @@ data PrimProps = PrimProps
       }
   deriving (Eq,Ord,Show)
 
+
+--------------------------------------------------------------------------------
+-- instances
+
+-- Monoid
+
+instance Monoid ZMidiRep where
+  mempty        = ZMidiRep mempty
+  a `mappend` b = ZMidiRep $ getZMidiRep a `mappend` getZMidiRep b
+
+
+instance Monoid AudioTrack where
+  mempty        = AudioTrack mempty
+  a `mappend` b = AudioTrack $ getAudioTrack a `mappend` getAudioTrack b
+
+
+
+--------------------------------------------------------------------------------
+
 primVoiceMessage :: (Word8 -> VoiceEvent) -> MidiPrim
 primVoiceMessage f = PMsg $ Left $ VoiceMsg f
 
 primMetaEvent :: MetaEvent -> MidiPrim
 primMetaEvent = PMsg . Right
 
-singleTrack :: ChannelTrack -> ZMidiRep
-singleTrack = ZMidiRep . JL.one
+singleChannel :: Int -> ChannelStream -> AudioTrack
+singleChannel n chan_body = AudioTrack $ IM.insert n chan_body IM.empty 
+
+singleTrack :: AudioTrack -> ZMidiRep
+singleTrack trk = ZMidiRep $ JL.one trk 
+
 
 vinstrument :: GMInst -> MidiPrim
 vinstrument inst = 

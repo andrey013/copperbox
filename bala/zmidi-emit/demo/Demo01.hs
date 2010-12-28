@@ -16,12 +16,12 @@ main = demo01 >> demo02
 demo01 :: IO ()
 demo01 = do
     putStrLn "Writing demo01.mid..."
-    writeZMidiRep "demo01.mid" $ singleTrack section1
+    writeZMidiRep "demo01.mid" $ singleTrack $ singleChannel 0 section1
   where
-    section1 = singleSection 0 120 [voice1, voice2]
-    voice1   = instrument Honky_tonk >> note dquarter (c_nat 4) 
+    section1 = singleSection 120 [phrase1, phrase2]
+    phrase1  = instrument Honky_tonk >> note dquarter (c_nat 4) 
                                      >> note dquarter (c_nat 4)
-    voice2   = instrument Honky_tonk >> note deighth  (e_nat 4) 
+    phrase2  = instrument Honky_tonk >> note deighth  (e_nat 4) 
                                      >> note deighth  (g_nat 4)
 
 

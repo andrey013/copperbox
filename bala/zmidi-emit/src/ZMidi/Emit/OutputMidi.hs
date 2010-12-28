@@ -26,8 +26,9 @@ import qualified ZMidi.Emit.Utils.JoinList as JL
 import ZMidi.Core                               -- package: zmidi-core
 
 import Control.Applicative
-import qualified Data.Foldable as F
+import Control.Monad
 import Data.List
+import qualified Data.IntMap as IM
 import Data.Time
 import Data.Word
 
@@ -61,8 +62,7 @@ zeroRS = RState { rs_volume          = 127
                 , rs_ellapsed_time   = 0
                 }
 
-data REnv = REnv 
-      { re_track_number         :: Int }
+newtype REnv = REnv { re_chan_number         :: Int }
 
 
 newtype OutMonad a = OutMonad { 
@@ -104,14 +104,12 @@ incrEllapsedTime :: Word32 -> OutMonad ()
 incrEllapsedTime n = 
     setsRS (\s -> let i = rs_ellapsed_time s in s { rs_ellapsed_time = i+n})
 
-zeroEllapsedTime    :: OutMonad ()
-zeroEllapsedTime    = setsRS (\s -> s { rs_ellapsed_time = 0 })
 
 getEllapsedTime     :: OutMonad Word32
 getEllapsedTime     = getsRS rs_ellapsed_time
 
 askChannelNumber    :: OutMonad Word8
-askChannelNumber    = fmap fromIntegral $ asksRE re_track_number
+askChannelNumber    = fmap fromIntegral $ asksRE re_chan_number
 
 
 -- Nice to have time stamp ....
@@ -127,7 +125,7 @@ outputZMR :: ZonedTime -> ZMidiRep -> MidiFile
 outputZMR ztim (ZMidiRep ts) = 
     MidiFile hdr $ infoTrack ztim : JL.zipWithIntoList fn ts [1..]
   where
-    fn  = flip outputTrack
+    fn  = flip outputAudioTrack
     hdr = Header MF1 len tpb
     len = fromIntegral $ 1 + JL.length ts
     tpb = TPB $ floor ticks_per_quarternote
@@ -149,10 +147,6 @@ sequenceName :: String -> Message
 sequenceName ss = (0, MetaEvent $ TextEvent SEQUENCE_NAME ss)
 
 
-setTempo :: Double -> Message
-setTempo bpm = (0, MetaEvent $ SetTempo mspqn) 
-  where
-    mspqn = floor $ microseconds_per_minute / bpm
 
 microseconds_per_minute :: Double
 microseconds_per_minute = 60000000
@@ -161,26 +155,39 @@ microseconds_per_minute = 60000000
 -- programChange :: Word8 -> Word8 -> Message
 -- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
-outputTrack :: Int -> ChannelTrack -> Track
-outputTrack n (ChannelTrack i xss) = 
-    Track $ unwind $ fmap (runOutMonad i . buildSection) xss
+outputAudioTrack :: Int -> AudioTrack -> Track
+outputAudioTrack track_num (AudioTrack im) = 
+    Track $ info : collapseChannels (IM.toAscList im)
   where 
-    unwind hs = toListH $ consH info $ F.foldr appendH emptyH hs 
-    info      = sequenceName $ "Track" ++ show n
+    info = sequenceName $ "Track" ++ show track_num
+
+
+collapseChannels :: [(Int,ChannelStream)] -> [Message]
+collapseChannels xs = deltaTransform $ concatMessages all_chans
+  where
+    all_chans = map (uncurry outputChannelStream) xs
+
+outputChannelStream :: Int -> ChannelStream -> [Message]
+outputChannelStream ch strm = 
+    post $ runOutMonad ch $ JL.toListM outputSection $ getSections strm
+  where
+    post = toListH . concatH
 
 -- This has probelem at channel 10 - channel 10 is for MIDI drums.
 --
-buildSection  :: Section -> OutMonad (H Message)
-buildSection (Section tmpo xss) = fmap (consH (setTempo tmpo)) body 
-  where
-    chans = limit16 xss
-    body  = fmap (deltaTransform . concatMessages) $ JL.toListM voiceData chans
+outputSection  :: Section -> OutMonad (H Message)
+outputSection (Section tmpo jl) = do
+    front <- setTempo tmpo
+    rest  <- JL.toListM voiceData jl
+    return $ front `consH` concatH rest
 
 
--- The MIDI file format only allows 16 channels per track.
---
-limit16 :: JL.JoinList a -> JL.JoinList a
-limit16 = JL.take 16
+
+
+
+--  where
+--    chans = limit16 xss
+--    body  = fmap (deltaTransform . concatMessages) $ JL.toListM voiceData chans
 
 concatMessages :: [[Message]] -> [Message]
 concatMessages []     = []
@@ -205,11 +212,11 @@ mergeOrdered cmp = step
 --
 -- This transforms them to use delta time.
 --
-deltaTransform :: [Message] -> H Message
+deltaTransform :: [Message] -> [Message]
 deltaTransform = step 0
   where
-    step _    []              = wrapH end_of_track
-    step abst ((evt,body):xs) = (evt - abst,body) `consH` step evt xs
+    step _    []              = [end_of_track]
+    step abst ((evt,body):xs) = (evt - abst,body) : step evt xs
 
 
 
@@ -220,11 +227,8 @@ end_of_track = (0, MetaEvent $ EndOfTrack)
 type HChannelData = H Message
 
 
-voiceData :: SectionVoice -> OutMonad [Message]
-voiceData (SectionVoice xs) = do 
-    hs <- primitives xs 
-    zeroEllapsedTime
-    return $ toListH hs
+voiceData :: SectionVoice -> OutMonad (H Message)
+voiceData (SectionVoice xs) = primitives xs 
 
 
 primitives :: [MidiPrim] -> OutMonad HChannelData
@@ -262,12 +266,17 @@ primChord d props ps  = do
 
 
 voiceMsg :: VoiceMsg -> OutMonad HChannelData
-voiceMsg f = (\ch -> wrapH $ (0, VoiceEvent $ getVoiceMsg f ch)) 
-              <$> askChannelNumber
+voiceMsg f = do
+    et <- getEllapsedTime
+    ch <- askChannelNumber
+    return $ wrapH $ (et, VoiceEvent $ getVoiceMsg f ch)
+             
 
 
 metaEvent :: MetaEvent -> OutMonad HChannelData
-metaEvent evt = return $ wrapH (0, MetaEvent evt) 
+metaEvent evt = do
+    et <- getEllapsedTime
+    return $ wrapH (et, MetaEvent evt) 
 
 mkNoteOn :: Word32 -> Word8 -> Word8 -> Word8 -> Message
 mkNoteOn dt pch ch vel = (dt, VoiceEvent $ NoteOn ch pch vel)
@@ -275,6 +284,13 @@ mkNoteOn dt pch ch vel = (dt, VoiceEvent $ NoteOn ch pch vel)
 mkNoteOff :: Word32 -> Word8 -> Word8 -> Word8 -> Message
 mkNoteOff dt pch ch vel = (dt, VoiceEvent $ NoteOff ch pch vel)
 
+
+setTempo :: Double -> OutMonad Message
+setTempo bpm = do 
+    et <- getEllapsedTime
+    return (et, MetaEvent $ SetTempo mspqn) 
+  where
+    mspqn = floor $ microseconds_per_minute / bpm
 
 
 --------------------------------------------------------------------------------
