@@ -122,13 +122,14 @@ writeZMidiRep filename mct =
 
 
 outputZMR :: ZonedTime -> ZMidiRep -> MidiFile
-outputZMR ztim (ZMidiRep ts) = 
-    MidiFile hdr $ infoTrack ztim : JL.zipWithIntoList fn ts [1..]
+outputZMR ztim (ZMidiRep mb_info ts) = 
+    MidiFile hdr $ track_zero : JL.zipWithIntoList fn ts [1..]
   where
-    fn  = flip outputAudioTrack
-    hdr = MidiHeader MF1 len tpb
-    len = fromIntegral $ 1 + JL.length ts
-    tpb = TPB $ floor ticks_per_quarternote
+    fn          = flip outputAudioTrack
+    track_zero  = maybe (infoTrack ztim) id mb_info
+    hdr         = MidiHeader MF1 len tpb
+    len         = fromIntegral $ 1 + JL.length ts
+    tpb         = TPB $ floor ticks_per_quarternote
 
 
 infoTrack :: ZonedTime -> MidiTrack
@@ -155,8 +156,8 @@ microseconds_per_minute = 60000000
 -- programChange :: Word8 -> Word8 -> MidiMessage
 -- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
-outputAudioTrack :: Int -> AudioTrack -> MidiTrack
-outputAudioTrack track_num (AudioTrack im) = 
+outputAudioTrack :: Int -> Track -> MidiTrack
+outputAudioTrack track_num (Track im) = 
     MidiTrack $ info : collapseChannels (IM.toAscList im)
   where 
     info = sequenceName $ "Track" ++ show track_num
@@ -165,7 +166,7 @@ outputAudioTrack track_num (AudioTrack im) =
 collapseChannels :: [(Int,ChannelStream)] -> [MidiMessage]
 collapseChannels xs = deltaTransform $ concatMessages all_chans
   where
-    all_chans = map (uncurry outputChannelStream) xs
+    all_chans = map (uncurry outputChannelStream) $ limit16 xs
 
 outputChannelStream :: Int -> ChannelStream -> [MidiMessage]
 outputChannelStream ch strm = 
@@ -177,6 +178,10 @@ outputChannelStream ch strm =
 
 type HChannelData = H MidiMessage
 
+-- | Midi can only support upto 16 tracks, indexed [0..15].
+--
+limit16 :: [(Int,ChannelStream)] -> [(Int,ChannelStream)]
+limit16 = takeWhile (\(n,_) -> n < 16)
 
 outputSection  :: Section -> OutMonad HChannelData
 outputSection (Section tmpo jl) = do
@@ -226,14 +231,14 @@ voiceData :: SectionVoice -> OutMonad HChannelData
 voiceData (SectionVoice xs) = primitives xs 
 
 
-primitives :: [MidiPrim] -> OutMonad HChannelData
+primitives :: [Primitive] -> OutMonad HChannelData
 primitives []     = return emptyH
 primitives (x:xs) = step x xs
   where
     step a []     = primitive a
     step a (b:bs) = liftA2 appendH (primitive a) (step b bs)
 
-primitive :: MidiPrim -> OutMonad HChannelData
+primitive :: Primitive -> OutMonad HChannelData
 primitive (PNote d props p)   = primNote (durationr d) props p
 primitive (PChord d props ps) = primChord (durationr d) props ps
 primitive (PRest d)           = incrEllapsedTime (durationr d) >> return emptyH

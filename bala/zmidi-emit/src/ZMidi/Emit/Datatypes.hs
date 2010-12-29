@@ -18,11 +18,11 @@
 module ZMidi.Emit.Datatypes
   ( 
     ZMidiRep(..)
-  , AudioTrack(..)
+  , Track(..)
   , ChannelStream(..)
   , Section(..)
   , SectionVoice(..)
-  , MidiPrim(..)
+  , Primitive(..)
   , VoiceMsg(..)
   , PrimProps(..)
 
@@ -32,6 +32,9 @@ module ZMidi.Emit.Datatypes
   , singleTrack
   , vinstrument
 
+  , zmidiRep
+  , addTrack
+  , track
   ) where
 
 import ZMidi.Emit.GeneralMidiInstruments
@@ -46,25 +49,64 @@ import Data.Monoid
 import Data.Word
 
 
+-- Note - /destructors/ should destruct to standard datatypes, not
+-- JoinLists...
+--
 
-newtype ZMidiRep = ZMidiRep { getZMidiRep :: JoinList AudioTrack }
-  deriving (Show)
-
-newtype AudioTrack = AudioTrack { getAudioTrack :: IntMap ChannelStream }
-  deriving (Show)
-
-newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
-  deriving (Show)
-
-
-data Section = Section 
-      { section_tempo           :: Double
-      , section_data            :: JoinList SectionVoice
+data ZMidiRep = ZMidiRep 
+      { zm_track_zero   :: Maybe MidiTrack
+      , zm_data_tracks  :: JoinList Track 
       }
   deriving (Show)
 
 
-newtype SectionVoice = SectionVoice { voice_notelist :: [MidiPrim] }
+-- | A Track supports upto 16 channels of simultaneous /voices/.
+--
+-- Channels must be indexed in the range @[0..15]@, indexes 
+-- outside this range will be dropped when the track is rendered.
+-- 
+-- Tracks support superimposition as @mappend@, note that 
+-- mappend is left biased - if both tracks have a stream on 
+-- channel 1, mappend will take the stream from the left track 
+-- and discard the stream from the right track. This behaviours
+-- follows the behaviour of @Data.IntMap@, internally 'Track'
+-- is represented by and @IntMap@.
+--
+-- 
+-- Note - channel 9 is reserved for MIDI percussion.
+--
+newtype Track = Track { getTrack :: IntMap ChannelStream }
+  deriving (Show)
+
+
+-- | ChannelStream supports concatenation through @mappend@.
+-- Concantenation is sequential - the notes from the second 
+-- ChannelStream are concatenated after the notes in the first 
+-- stream to for the amalgamated stream.
+--
+newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
+  deriving (Show)
+
+
+-- | Section allows overlayed voices - so this organisation makes
+-- it possible to have /resource contention/ (simultaneous 
+-- requests for same note on same channel).
+--
+-- But having overlays makes efficient use of a channel if we 
+-- assume there wont be resource contention (e.g. for bass plus
+-- treble).
+--
+data Section = Section 
+      { section_tempo           :: Double
+      , section_overlays        :: JoinList SectionVoice
+      }
+  deriving (Show)
+
+
+-- | A section voice allows chords, but otherwise it is 
+-- monophonic.
+--
+newtype SectionVoice = SectionVoice { voice_notelist :: [Primitive] }
   deriving (Show)
 
 
@@ -74,10 +116,10 @@ newtype SectionVoice = SectionVoice { voice_notelist :: [MidiPrim] }
 -- note. It is expected that client software with use some other 
 -- type but convert to Double as it builds the syntax.
 --
-data MidiPrim = PNote   Double PrimProps Word8
-              | PChord  Double PrimProps [Word8]
-              | PRest   Double
-              | PMsg    (Either VoiceMsg MidiMetaEvent)
+data Primitive = PNote   Double PrimProps Word8
+               | PChord  Double PrimProps [Word8]
+               | PRest   Double
+               | PMsg    (Either VoiceMsg MidiMetaEvent)
    deriving (Show)
 
 -- | 'VoiceMsg' is a function from channel number to VoiceEvent.
@@ -107,32 +149,50 @@ data PrimProps = PrimProps
 
 -- Monoid
 
-instance Monoid ZMidiRep where
-  mempty        = ZMidiRep mempty
-  a `mappend` b = ZMidiRep $ getZMidiRep a `mappend` getZMidiRep b
 
 
-instance Monoid AudioTrack where
-  mempty        = AudioTrack mempty
-  a `mappend` b = AudioTrack $ getAudioTrack a `mappend` getAudioTrack b
+-- This follows the Monoid of IntMap which is left biased.
+--
+instance Monoid Track where
+  mempty        = Track mempty
+  a `mappend` b = Track $ getTrack a `mappend` getTrack b
 
 
 
 --------------------------------------------------------------------------------
 
-primVoiceMessage :: (Word8 -> MidiVoiceEvent) -> MidiPrim
+primVoiceMessage :: (Word8 -> MidiVoiceEvent) -> Primitive
 primVoiceMessage f = PMsg $ Left $ VoiceMsg f
 
-primMetaEvent :: MidiMetaEvent -> MidiPrim
+primMetaEvent :: MidiMetaEvent -> Primitive
 primMetaEvent = PMsg . Right
 
-singleChannel :: Int -> ChannelStream -> AudioTrack
-singleChannel n chan_body = AudioTrack $ IM.insert n chan_body IM.empty 
-
-singleTrack :: AudioTrack -> ZMidiRep
-singleTrack trk = ZMidiRep $ JL.one trk 
+singleChannel :: Int -> ChannelStream -> Track
+singleChannel n chan_body = Track $ IM.insert n chan_body IM.empty 
 
 
-vinstrument :: GMInst -> MidiPrim
+singleTrack :: Track -> ZMidiRep
+singleTrack trk = ZMidiRep Nothing $ JL.one trk 
+
+
+vinstrument :: GMInst -> Primitive
 vinstrument inst = 
     primVoiceMessage $ \ch -> ProgramChange ch (instrumentNumber inst)
+
+--------------------------------------------------------------------------------
+-- new constructors
+
+zmidiRep :: ZMidiRep
+zmidiRep = ZMidiRep Nothing mempty
+
+
+infixr 5 `addTrack`
+
+addTrack :: ZMidiRep -> Track -> ZMidiRep
+addTrack rep trk = rep { zm_data_tracks = jl `JL.snoc` trk}
+  where 
+    jl = zm_data_tracks rep  
+
+
+track :: Int -> ChannelStream -> Track
+track ch_num ch_body = Track $ IM.insert ch_num ch_body IM.empty 

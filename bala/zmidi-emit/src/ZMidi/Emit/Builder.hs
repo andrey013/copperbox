@@ -191,7 +191,7 @@ build_env_zero = BuildEnv
       }
 
 
-newtype Build a = Build { getBuild :: BuildEnv -> (a, H MidiPrim) }
+newtype Build a = Build { getBuild :: BuildEnv -> (a, H Primitive) }
 
 instance Functor Build where
   fmap f ma = Build $ \r -> let (a,w) = getBuild ma r in (f a, w)
@@ -211,7 +211,7 @@ instance Monad Build where
                             in (b, w1 `mappend` w2)
                           
 
-newtype BuildT m a = BuildT { getBuildT :: BuildEnv -> m (a, H MidiPrim) }
+newtype BuildT m a = BuildT { getBuildT :: BuildEnv -> m (a, H Primitive) }
 
 
 instance Monad m => Functor (BuildT m) where
@@ -233,18 +233,18 @@ instance Monad m => Monad (BuildT m) where
                              return (b, w1 `mappend` w2)
 
 
-runBuild :: BuildEnv -> Build a -> (a, [MidiPrim])
+runBuild :: BuildEnv -> Build a -> (a, [Primitive])
 runBuild env ma = post $ getBuild ma env
   where
     post (a,f) = (a, toListH f)
 
-execBuild :: BuildEnv -> Build a -> [MidiPrim]
+execBuild :: BuildEnv -> Build a -> [Primitive]
 execBuild env ma = post $ getBuild ma env
   where
     post (_,f) = toListH f
 
 
-runBuildT :: Monad m => BuildEnv -> BuildT m a -> m (a, [MidiPrim])
+runBuildT :: Monad m => BuildEnv -> BuildT m a -> m (a, [Primitive])
 runBuildT env ma = liftM post $ getBuildT ma env
   where
     post (a,f) = (a, toListH f)
@@ -253,7 +253,7 @@ runBuildT env ma = liftM post $ getBuildT ma env
 class (Applicative m, Monad m) => BuildM m where
   localize :: (BuildEnv -> BuildEnv) -> m a -> m a
   askEnv   :: m BuildEnv
-  tell     :: MidiPrim -> m ()
+  tell     :: Primitive -> m ()
 
 
 instance BuildM Build where
@@ -305,6 +305,8 @@ drumChord :: BuildM m => MidiDuration -> [GMDrum] -> m ()
 drumChord d ps = chord d (map drumPitch ps)
 
 
+-- These two are arguably at the wrong type - shouldn\'t be
+-- (Build a)...
 
 singleSection :: Double -> [Build a] -> ChannelStream
 singleSection bpm phrases = 

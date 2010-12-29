@@ -29,7 +29,7 @@ process filename = do
     ans <- readMidi filename
     case ans of
       Left err -> print err
-      Right a  -> do { mapM_ putStrLn $ header $ mf_header a
+      Right a  -> do { mapM_ putStrLn $ printMidiHeader $ mf_header a
                      ; writeMidi (filename ++ ".001") a }
     
 

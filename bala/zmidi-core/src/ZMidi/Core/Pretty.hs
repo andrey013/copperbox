@@ -20,8 +20,8 @@ module ZMidi.Core.Pretty
 
     printMidi
 
-  , header
-  , track
+  , printMidiHeader
+  , printMidiTrack
 
   ) where
 
@@ -40,10 +40,10 @@ import Data.Word
 printMidi :: MidiFile -> IO ()
 printMidi (MidiFile hdr tracks) = do
     column_break
-    mapM_ putStrLn (header hdr)  
+    mapM_ putStrLn (printMidiHeader hdr)  
     mapM_ (\t -> column_break >> putTrack t) tracks
   where
-    putTrack       = (mapM_ putStrLn) . track
+    putTrack       = (mapM_ putStrLn) . printMidiTrack
     column_break   = putStrLn $ replicate 60 '-'
 
 
@@ -52,8 +52,8 @@ printMidi (MidiFile hdr tracks) = do
 -- Results are returned as a list of String to avoid extraneous
 -- concatenation.
 -- 
-header :: MidiHeader -> [String]
-header (MidiHeader fmt tcount td) = 
+printMidiHeader :: MidiHeader -> [String]
+printMidiHeader (MidiHeader fmt tcount td) = 
    map output [ppFormat fmt, ppNumTracks tcount, ppTimeDivision td]  
 
 -- | Print a track.
@@ -61,8 +61,8 @@ header (MidiHeader fmt tcount td) =
 -- Results are returned as a list of String to avoid extraneous
 -- concatenation.
 --
-track  :: MidiTrack -> [String]
-track = snd . mapAccumL fn 0 . getTrackMessages 
+printMidiTrack :: MidiTrack -> [String]
+printMidiTrack = snd . mapAccumL fn 0 . getTrackMessages 
   where
     fn acc b     = msnd output $ message acc b
     msnd f (a,b) = (a,f b)

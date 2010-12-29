@@ -22,6 +22,9 @@ description:
   higher-level representation, is then free to use the more 
   generic names Track, Message, etc.
   .
+  * Renamed the pretty print functions @track@ to @printMidiTrack@ 
+    and @header@ to @printMidiTrack@
+  .
   * Moved internal dataypes (SplitByte, Varlen) into a private 
     module.
   . 
