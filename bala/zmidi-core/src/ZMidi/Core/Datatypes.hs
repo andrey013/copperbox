@@ -28,41 +28,27 @@ module ZMidi.Core.Datatypes
   (
   -- * MidiFile representation.
     MidiFile(..)
-  , Header(..)  
-  , Track(..)
-  , Format(..)
+  , MidiHeader(..)  
+  , MidiTrack(..)
+  , MidiFormat(..)
   , DeltaTime
-  , Message
-  , Event(..)
-  , DataEvent(..)
-  , VoiceEvent(..)
-  , SysExEvent(..)
-  , SysCommonEvent(..)
-  , SysRealTimeEvent(..)
-  , MetaEvent(..)
-  , TimeDivision(..)
-  , TextType(..)
-  , ScaleType(..)
+  , MidiMessage
+  , MidiEvent(..)
 
-  -- * Interim types.
-  -- ** SplitByte
-  , SplitByte(..)
-  , splitByte
-  , joinByte
-    
-  -- ** Varlen
-  , Varlen(..)
-  , fromVarlen
-  , toVarlen
-
-  , hexStr
+  , MidiDataEvent(..)
+  , MidiVoiceEvent(..)
+  , MidiSysExEvent(..)
+  , MidiSysCommonEvent(..)
+  , MidiSysRealTimeEvent(..)
+  , MidiMetaEvent(..)
+  , MidiTimeDivision(..)
+  , MidiTextType(..)
+  , MidiScaleType(..)
     
   ) where
 
-import Data.Bits
 import Data.Int
 import Data.Word
-import Numeric (showHex)
 
 
 -- | TagByte is an alias to 'Word8'.
@@ -73,8 +59,8 @@ type TagByte = Word8
 -- | 'MidiFile' : @ header * tracks @
 --
 data MidiFile = MidiFile 
-      { mf_header         :: Header
-      , mf_tracks         :: [Track]
+      { mf_header         :: MidiHeader
+      , mf_tracks         :: [MidiTrack]
       }
   deriving (Eq,Show)
 
@@ -85,11 +71,11 @@ data MidiFile = MidiFile
 -- The header is the start of a MIDI file, it is indicated by the 
 -- 4 character marker @MThd@.   
 --
-data Header = Header { 
-      hdr_format        :: Format,
-      num_tracks        :: Word16,
-      time_division     :: TimeDivision
-    }
+data MidiHeader = MidiHeader 
+      { hdr_format        :: MidiFormat
+      , num_tracks        :: Word16
+      , time_division     :: MidiTimeDivision
+      }
   deriving (Eq,Show)
 
 -- | 'Track' : @ [message] @
@@ -97,13 +83,13 @@ data Header = Header {
 -- In MIDI files, the start of a track is indicated by the 4 
 -- character marker @MTrk@.  
 --
-newtype Track = Track { getMessages :: [Message] }
+newtype MidiTrack = MidiTrack { getTrackMessages :: [MidiMessage] }
   deriving (Eq,Show)
 
 -- | The file format - in a MIDI file this is a big-endian 
 -- word16 with 0,1 or 2 being the only valid values. 
 --
-data Format 
+data MidiFormat 
     -- | Format 0 file - single multi-channel track.
     = MF0 
     -- | Format 1 file - 1 or more tracks, played simultaneously.
@@ -114,7 +100,7 @@ data Format
 
 -- | Default unit of time in the MIDI file.
 --
-data TimeDivision 
+data MidiTimeDivision 
     -- | Frames-per-second.
     --
     = FPS Word16
@@ -127,7 +113,7 @@ data TimeDivision
                                              
 -- | Enumeration of the text meta event types.
 --
-data TextType 
+data MidiTextType 
     = GENERIC_TEXT 
     | COPYRIGHT_NOTICE 
     | SEQUENCE_NAME 
@@ -151,7 +137,7 @@ type DeltaTime = Word32
 -- Sequential messages with delta time 0 are played 
 -- simultaneously.  
 --
-type Message = (DeltaTime, Event)
+type MidiMessage = (DeltaTime, MidiEvent)
 
 
 -- Note, the Ord instance for pairs is very useful for rendering.
@@ -165,38 +151,38 @@ type Message = (DeltaTime, Event)
 -- | Recognised event types - some types ('DataEvent' and 
 -- 'SysEx') are not interpreted.
 --
-data Event 
+data MidiEvent 
     -- | Data event - just initial tag byte, 
     -- uninterpreted
     --
-    = DataEvent         DataEvent
+    = DataEvent         MidiDataEvent
 
     -- | Voice event (e.g @note-on@, @note-off@) are relayed to specific
     -- channels.
     --
-    | VoiceEvent        VoiceEvent
+    | VoiceEvent        MidiVoiceEvent
 
 
     -- | SysEx - system exclusive event. Usually synthesizer 
     -- specific, not interpreted.
     --
-    | SysExEvent        SysExEvent
+    | SysExEvent        MidiSysExEvent
 
 
     -- | SysCommon - system common event.
     --
-    | SysCommonEvent    SysCommonEvent
+    | SysCommonEvent    MidiSysCommonEvent
 
 
     -- | SysRealTime - system realtime event.
     --
-    | SysRealTimeEvent  SysRealTimeEvent
+    | SysRealTimeEvent  MidiSysRealTimeEvent
 
 
     -- | Meta event - interpreted (e.g. @end-of-track@, 
     -- @set-tempo@).
     --
-    | MetaEvent         MetaEvent
+    | MetaEvent         MidiMetaEvent
 
 
   deriving (Eq,Show,Ord)
@@ -206,7 +192,7 @@ data Event
 -- Data events have no payload - they are represented only by the
 -- tag byte.  
 --
-data DataEvent = Data1 TagByte
+newtype MidiDataEvent = MidiDataEvent { getTagByte :: TagByte }
   deriving (Eq,Ord,Show)
 
 -- | Voice events control the output of the synthesizer.
@@ -221,7 +207,7 @@ data DataEvent = Data1 TagByte
 -- delta-time. Changing the order of the constructors helps to 
 -- sort for this.
 --
-data VoiceEvent 
+data MidiVoiceEvent 
     -- | @ channel * controller_number * value @ 
     -- 
     -- Controller change, e.g. by a footswitch.
@@ -269,7 +255,7 @@ data VoiceEvent
 
 -- | \SysEx\ - system exclusive event. 
 --
-data SysExEvent
+data MidiSysExEvent
     -- | @ length * data @ 
     -- 
     -- An uninterpreted sys-ex event.
@@ -286,10 +272,13 @@ data SysExEvent
 -- computer (as opposed to MIDI generated by a synthesizer or 
 -- sequencer).
 --
-data SysCommonEvent
+data MidiSysCommonEvent
     -- | Time code quarter frame.
+    -- 
+    -- Note the payload is really a byte split into two 4-bit 
+    -- values, however here it is uninterpreted.
     --
-    = QuarterFrame      SplitByte
+    = QuarterFrame      Word8
     
     -- | Song position pointer.
     --
@@ -323,7 +312,7 @@ data SysCommonEvent
 -- computer (as opposed to MIDI generated by a synthesizer or 
 -- sequencer).
 --
-data SysRealTimeEvent
+data MidiSysRealTimeEvent
     -- | Timing signal.
     --      
     = TimingClock
@@ -367,14 +356,14 @@ data SysRealTimeEvent
 -- only appear in track 1. Certain events (e.g. end-of-track) 
 -- can appear in any track where necessary. 
 --
-data MetaEvent
+data MidiMetaEvent
 
     -- | @ text_type * contents @ 
     -- 
     -- Free text field (e.g. copyright statement). The contents 
     -- can notionally be any length.
     --
-    = TextEvent           TextType String
+    = TextEvent           MidiTextType String
 
     -- | @ value @ 
     -- 
@@ -424,7 +413,7 @@ data MetaEvent
     --
     -- @scale_type@ indicates major or minor.  
     --
-    | KeySignature        Int8 ScaleType
+    | KeySignature        Int8 MidiScaleType
     
     -- | @ length * data@ 
     -- 
@@ -436,85 +425,7 @@ data MetaEvent
 
 -- | Scale type - @major@ or @minor@.  
 --
-data ScaleType = MAJOR | MINOR
+data MidiScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Ord,Show)
 
 
-
---------------------------------------------------------------------------------
-
--- | SplitByte - divide a byte into the upper four and lower 
--- 4 bits.
--- 
-data SplitByte = SB { upper4 :: Word8, lower4 :: Word8 }
-  deriving (Eq,Ord,Show)
-
-splitByte :: Word8 -> SplitByte
-splitByte i = SB ((i .&. 0xF0) `shiftR` 4) (i .&. 0x0F)
-
-joinByte :: SplitByte -> Word8
-joinByte (SB a b) = (a `shiftL` 4) + (b .&. 0x0F)
-
-
---------------------------------------------------------------------------------
--- helper for varlen
---------------------------------------------------------------------------------
-
--- | Space efficient representation of length fields.
--- 
--- This data type is not used directly in the syntax tree where
--- it would be cumbersome. But it is used as an intermediate type
--- in the parser and emitter.
---
-data Varlen = V1 !Word8
-            | V2 !Word8 !Word8
-            | V3 !Word8 !Word8 !Word8
-            | V4 !Word8 !Word8 !Word8 !Word8
-  deriving (Eq,Ord,Show)
-
-
-up :: Word8 -> Word32
-up = fromIntegral . (0x7f .&.)
-
-down :: Word32 -> Word8
-down = (0x80 .|.) . fromIntegral
-
-downl :: Word32 -> Word8
-downl = (0x7f .&.) . fromIntegral
- 
-
-fromVarlen :: Varlen -> Word32
-fromVarlen (V1 a)       = up a
-fromVarlen (V2 a b)     = (left7 $ up a)  + up b
-fromVarlen (V3 a b c)   = (left14 $ up a) + (left7  $ up b) + up c
-fromVarlen (V4 a b c d) = (left21 $ up a) + (left14 $ up b) 
-                        + (left7  $ up c) + up d
-
-left7     :: Word32 -> Word32
-left7     = (`shiftL` 7)
-
-left14    :: Word32 -> Word32
-left14    = (`shiftL` 14)
-
-left21    :: Word32 -> Word32
-left21    = (`shiftL` 21)
-
-right7    :: Word32 -> Word32
-right7    = (`shiftR` 7)
-
-right14   :: Word32 -> Word32
-right14   = (`shiftR` 14)
-
-right21   :: Word32 -> Word32
-right21   = (`shiftR` 21)
-
-toVarlen :: Word32 -> Varlen
-toVarlen i 
-    | i < 0x80           = V1 (downl i)
-    | i < 0x4000         = V2 (down $ right7 i)  (downl i)
-    | i < 0x200000       = V3 (down $ right14 i) (down $ right7  i) (downl i)
-    | otherwise          = V4 (down $ right21 i) (down $ right14 i)
-                              (down $ right7  i) (downl i)
-
-hexStr :: (Integral a) => a -> String
-hexStr i = (showString "0x" . showHex i) "" 

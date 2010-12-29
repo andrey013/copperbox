@@ -27,6 +27,7 @@ module ZMidi.Core.ReadFile
   ) where
 
 import ZMidi.Core.Datatypes
+import ZMidi.Core.Internal.ExtraTypes
 import ZMidi.Core.Internal.ParserMonad
 
 
@@ -52,35 +53,35 @@ midiFile = {- printHexAll >> -} do
     trks  <- count i track
     return $ MidiFile hdr trks   
   where
-    trackCount :: Header -> Int 
-    trackCount (Header _ n _) = fromIntegral n
+    trackCount :: MidiHeader -> Int 
+    trackCount (MidiHeader _ n _) = fromIntegral n
 
-header :: ParserM Header  
-header = Header <$> (assertString "MThd" *> assertWord32 (6::Int) *> format)
-                <*> word16be
-                <*> timeDivision
+header :: ParserM MidiHeader  
+header = MidiHeader <$> (assertString "MThd" *> assertWord32 (6::Int) *> format)
+                    <*> word16be
+                    <*> timeDivision
 
 
 
-track :: ParserM Track
-track = liftM Track (trackHeader >>= messages)
+track :: ParserM MidiTrack
+track = liftM MidiTrack (trackHeader >>= messages)
 
 trackHeader :: ParserM Word32
 trackHeader = assertString "MTrk" >> word32be
 
 
 
-messages :: Word32 -> ParserM [Message]
+messages :: Word32 -> ParserM [MidiMessage]
 messages i = boundRepeat (fromIntegral i) message
 
 
-message :: ParserM Message
+message :: ParserM MidiMessage
 message = (,) <$>  deltaTime <*> event
 
 deltaTime :: ParserM Word32
 deltaTime = "delta time" <??> getVarlen
 
-event :: ParserM Event
+event :: ParserM MidiEvent
 event = word8 >>= step
   where
     -- 00..7f  -- /data/
@@ -91,12 +92,12 @@ event = word8 >>= step
            | 0x80 <= n      = VoiceEvent       <$> voiceEvent (splitByte n)
            | otherwise      = DataEvent        <$> dataEvent n
 
-dataEvent :: Word8 -> ParserM DataEvent
-dataEvent tag = pure $ Data1 tag
+dataEvent :: Word8 -> ParserM MidiDataEvent
+dataEvent tag = pure $ MidiDataEvent tag
 
 
    
-voiceEvent :: SplitByte -> ParserM VoiceEvent
+voiceEvent :: SplitByte -> ParserM MidiVoiceEvent
 voiceEvent (SB 0x8 ch)  = 
     "note-off"          <??> (NoteOff ch)        <$> word8 <*> word8
 
@@ -121,9 +122,10 @@ voiceEvent (SB 0xE ch)  =
 voiceEvent (SB z   _ )  = reportError $ "voiceEvent " ++ hexStr z 
 
 
-sysCommonEvent :: Word8 -> ParserM SysCommonEvent
+
+sysCommonEvent :: Word8 -> ParserM MidiSysCommonEvent
 sysCommonEvent 0xF1     = 
-    "quarter frame"     <??> QuarterFrame . splitByte      <$> word8
+    "quarter frame"     <??> QuarterFrame                  <$> word8
 
 sysCommonEvent 0xF2     = 
     "song pos. pointer" <??> SongPosPointer                <$> word8 <*> word8
@@ -142,7 +144,7 @@ sysCommonEvent 0xF7     = pure EOX
 sysCommonEvent tag      = pure $ Common_undefined tag
 
 
-sysRealTimeEvent :: Word8 -> ParserM SysRealTimeEvent
+sysRealTimeEvent :: Word8 -> ParserM MidiSysRealTimeEvent
 sysRealTimeEvent 0xF8 = pure TimingClock
 sysRealTimeEvent 0xF9 = pure $ RT_undefined 0xF9
 sysRealTimeEvent 0xFA = pure StartSequence
@@ -154,12 +156,12 @@ sysRealTimeEvent 0xFF = pure SystemReset
 sysRealTimeEvent tag  = pure $ RT_undefined tag
 
 
-sysExEvent :: ParserM SysExEvent
+sysExEvent :: ParserM MidiSysExEvent
 sysExEvent = "sys-ex" <??> (uncurry SysEx) <$> getVarlenBytes
                       
 
 
-metaEvent :: Word8 -> ParserM MetaEvent
+metaEvent :: Word8 -> ParserM MidiMetaEvent
 metaEvent 0x00          = 
     "sequence number"   <??> SequenceNumber <$> (assertWord8 2 *> word16be)
 
@@ -202,7 +204,7 @@ metaEvent z    = reportError $ "unreconized meta-event " ++ hexStr z
 
 
                           
-format :: ParserM Format
+format :: ParserM MidiFormat
 format = word16be >>= fn 
   where 
     fn 0 = return MF0
@@ -211,13 +213,13 @@ format = word16be >>= fn
     fn z = reportError $ 
               "getFormat - unrecognized file format " ++ hexStr z
         
-timeDivision :: ParserM TimeDivision
+timeDivision :: ParserM MidiTimeDivision
 timeDivision = division <$> word16be
   where division i | i `testBit` 15 = FPS (i `clearBit` 15)
                    | otherwise      = TPB i
 
 
-scale :: ParserM ScaleType
+scale :: ParserM MidiScaleType
 scale = word8 >>= fn 
   where
     fn 0 = return MAJOR
@@ -225,7 +227,7 @@ scale = word8 >>= fn
     fn z = reportError $ "scale expecting 0 or 1, got " ++ hexStr z
     
     
-textEvent :: TextType -> ParserM MetaEvent
+textEvent :: MidiTextType -> ParserM MidiMetaEvent
 textEvent ty = (TextEvent ty . snd) <$> getVarlenText
 
 --------------------------------------------------------------------------------

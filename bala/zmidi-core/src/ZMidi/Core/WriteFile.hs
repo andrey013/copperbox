@@ -22,7 +22,7 @@ module ZMidi.Core.WriteFile
   ) where
 
 import ZMidi.Core.Datatypes
-
+import ZMidi.Core.Internal.ExtraTypes
 
 import Data.Binary.Put                  -- package: binary
 
@@ -46,35 +46,35 @@ putMidiFile :: MidiFile -> PutM ()
 putMidiFile (MidiFile hdr trks) = 
     putHeader hdr *> mapM_ putTrack trks
   
-putHeader :: Header -> PutM ()
-putHeader (Header fmt n td) =
+putHeader :: MidiHeader -> PutM ()
+putHeader (MidiHeader fmt n td) =
     putString "MThd"  *>  putWord32be 6 *> 
     putFormat fmt     *>  putWord16be n *>  putTimeDivision td
 
 
-putTrack :: Track -> PutM ()
-putTrack (Track ms) = 
+putTrack :: MidiTrack -> PutM ()
+putTrack (MidiTrack ms) = 
     putString "MTrk" *> (putWord32be $ fromIntegral $ L.length bs)
                      *> putLazyByteString bs
   where 
     bs = runPut (mapM_ putMessage ms) 
 
 
-putFormat :: Format -> PutM ()
+putFormat :: MidiFormat -> PutM ()
 putFormat MF0 = putWord16be 0
 putFormat MF1 = putWord16be 1
 putFormat MF2 = putWord16be 2
 
-putTimeDivision :: TimeDivision -> PutM ()
+putTimeDivision :: MidiTimeDivision -> PutM ()
 putTimeDivision (FPS n) = putWord16be (n `setBit`   15)
 putTimeDivision (TPB n) = putWord16be (n `clearBit` 15)
 
 
 
-putMessage :: Message -> PutM () 
+putMessage :: MidiMessage -> PutM () 
 putMessage (dt,evt) = putVarlen dt *> putEvent evt
 
-putEvent :: Event -> PutM ()
+putEvent :: MidiEvent -> PutM ()
 putEvent (DataEvent e)        = putDataEvent  e
 putEvent (VoiceEvent e)       = putVoiceEvent e
 putEvent (SysExEvent e)       = putSysExEvent e
@@ -83,10 +83,10 @@ putEvent (SysRealTimeEvent e) = putSysRealTimeEvent e
 putEvent (MetaEvent e)        = putMetaEvent  e
   
 
-putDataEvent :: DataEvent -> PutM ()
-putDataEvent (Data1 tag) = putWord8 tag
+putDataEvent :: MidiDataEvent -> PutM ()
+putDataEvent (MidiDataEvent tag) = putWord8 tag
     
-putVoiceEvent :: VoiceEvent -> PutM ()
+putVoiceEvent :: MidiVoiceEvent -> PutM ()
 putVoiceEvent (NoteOff c n v)         = 
     putWord8 (0x8 `u4l4` c) *> putWord8 n *> putWord8 v 
 
@@ -108,13 +108,15 @@ putVoiceEvent (ChanAftertouch c v)    =
 putVoiceEvent (PitchBend c v)         = 
     putWord8 (0xE `u4l4` c) *> putWord16be v
 
-putSysExEvent :: SysExEvent -> PutM ()
+
+putSysExEvent :: MidiSysExEvent -> PutM ()
 putSysExEvent (SysEx n ws) = 
     putWord8 0xF0 *> putVarlen n *> mapM_ putWord8 ws
 
-putSysCommonEvent :: SysCommonEvent -> PutM ()
+
+putSysCommonEvent :: MidiSysCommonEvent -> PutM ()
 putSysCommonEvent (QuarterFrame sb)        = 
-    putWord8 0xF1 *> putSplitByte sb
+    putWord8 0xF1 *> putWord8 sb
 
 putSysCommonEvent (SongPosPointer lsb msb) = 
     putWord8 0xF2 *> putWord8 lsb *> putWord8 msb
@@ -131,7 +133,8 @@ putSysCommonEvent TuneRequest              =
 putSysCommonEvent EOX                      = 
     putWord8 0xF7
 
-putSysRealTimeEvent :: SysRealTimeEvent -> PutM ()
+
+putSysRealTimeEvent :: MidiSysRealTimeEvent -> PutM ()
 putSysRealTimeEvent TimingClock            = putWord8 0xF8
 putSysRealTimeEvent (RT_undefined tag)     = putWord8 tag
 putSysRealTimeEvent StartSequence          = putWord8 0xFA
@@ -140,7 +143,8 @@ putSysRealTimeEvent StopSequence           = putWord8 0xFC
 putSysRealTimeEvent ActiveSensing          = putWord8 0xFE
 putSysRealTimeEvent SystemReset            = putWord8 0xFF
 
-putMetaEvent :: MetaEvent -> PutM ()
+
+putMetaEvent :: MidiMetaEvent -> PutM ()
 putMetaEvent (TextEvent ty ss)                = 
     putWord8 0xFF *> putWord8 (texttype ty) 
                   *> putVarlen   (fromIntegral $ length ss) 
@@ -189,8 +193,6 @@ putMetaEvent (SSME i ws)                      =
 prefixLen :: Word8 -> PutM () -> PutM ()
 prefixLen n out = putWord8 n *> out 
 
-putSplitByte :: SplitByte -> PutM ()
-putSplitByte a = putWord8 (joinByte a)
 
 infixr 5 `u4l4`
 
@@ -205,7 +207,7 @@ wrapint i | i < 0     = fromIntegral $ i' + 256
     i' :: Int
     i' = fromIntegral i  
     
-wscale :: ScaleType -> Word8
+wscale :: MidiScaleType -> Word8
 wscale MAJOR = 0x00
 wscale MINOR = 0x01
 
@@ -239,7 +241,7 @@ putString s = putLazyByteString (L.pack $ fmap (fromIntegral . ord) s)
 
 
 
-texttype :: TextType -> Word8
+texttype :: MidiTextType -> Word8
 texttype GENERIC_TEXT         = 0x01
 texttype COPYRIGHT_NOTICE     = 0x02
 texttype SEQUENCE_NAME        = 0x03

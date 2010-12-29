@@ -1,5 +1,5 @@
 name:             zmidi-core
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -8,10 +8,22 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Music
 synopsis:         Read and write MIDI files.
 description:
+  .
   Minimalist library to read and write MIDI files, with 
   dependencies only on ByteString and Data.Binary.
   .
   Changelog:
+  .
+  v0.2.0 to v0.3.0:
+  .
+  * Revised naming of the MIDI data types. All data types now have 
+  the prefix Midi (previously only MidiFile followed this scheme).
+  The rationale for this is client software, that might want a 
+  higher-level representation, is then free to use the more 
+  generic names Track, Message, etc.
+  .
+  * Moved internal dataypes (SplitByte, Varlen) into a private 
+    module.
   . 
   v0.1.0 to v0.2.0:
   .
@@ -44,6 +56,7 @@ library
     ZMidi.Core.WriteFile
 
   other-modules:
+    ZMidi.Core.Internal.ExtraTypes,
     ZMidi.Core.Internal.ParserMonad,
     ZMidi.Core.Internal.SimpleFormat
       
