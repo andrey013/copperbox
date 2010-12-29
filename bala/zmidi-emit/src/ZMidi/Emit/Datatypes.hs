@@ -77,7 +77,7 @@ newtype SectionVoice = SectionVoice { voice_notelist :: [MidiPrim] }
 data MidiPrim = PNote   Double PrimProps Word8
               | PChord  Double PrimProps [Word8]
               | PRest   Double
-              | PMsg    (Either VoiceMsg MetaEvent)
+              | PMsg    (Either VoiceMsg MidiMetaEvent)
    deriving (Show)
 
 -- | 'VoiceMsg' is a function from channel number to VoiceEvent.
@@ -85,7 +85,7 @@ data MidiPrim = PNote   Double PrimProps Word8
 -- Channel number is unknown when building the syntax, it is 
 -- filled in during rendering.
 --
-newtype VoiceMsg = VoiceMsg { getVoiceMsg :: Word8 -> VoiceEvent }
+newtype VoiceMsg = VoiceMsg { getVoiceMsg :: Word8 -> MidiVoiceEvent }
 
 
 instance Show VoiceMsg where
@@ -120,10 +120,10 @@ instance Monoid AudioTrack where
 
 --------------------------------------------------------------------------------
 
-primVoiceMessage :: (Word8 -> VoiceEvent) -> MidiPrim
+primVoiceMessage :: (Word8 -> MidiVoiceEvent) -> MidiPrim
 primVoiceMessage f = PMsg $ Left $ VoiceMsg f
 
-primMetaEvent :: MetaEvent -> MidiPrim
+primMetaEvent :: MidiMetaEvent -> MidiPrim
 primMetaEvent = PMsg . Right
 
 singleChannel :: Int -> ChannelStream -> AudioTrack
