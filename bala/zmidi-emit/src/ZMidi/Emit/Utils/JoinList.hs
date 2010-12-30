@@ -38,23 +38,28 @@ module ZMidi.Emit.Utils.JoinList
 
   -- * Construction
   , one
+  , two
   , cons
   , snoc
   , join
 
   -- * Basic functions  
   , head
-  , take
+  , takeL
   , length
 
+  , takeWhileL
   , accumMapL
   , isEmpty
   , isOne
   , isMany
 
+
   -- * Views
   , viewl
   , viewr
+  , unViewL
+  , unViewR
   
   ) where
 
@@ -67,7 +72,7 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Traversable ( Traversable(..) )
 
-import Prelude hiding ( head, take, length )
+import Prelude hiding ( head, take, length, mapM )
 
 data JoinList a = Empty 
                 | One a 
@@ -109,6 +114,12 @@ instance Traversable JoinList where
   traverse _ Empty      = pure Empty
   traverse f (One a)    = One <$> f a
   traverse f (Join t u) = Join <$> traverse f t <*> traverse f u
+
+  mapM mf               = step . viewl
+    where
+      step EmptyL    = return Empty
+      step (x :< xs) = liftM2 cons (mf x) (step $ viewl xs)
+
 
 -- Views
 
@@ -199,6 +210,14 @@ one :: a -> JoinList a
 one = One
 
 
+-- | Creating a two element list is usefulfor MIDI when NoteOn and
+-- NoteOff are twinned.
+--
+two :: a -> a -> JoinList a
+two a b = Join (One a) (One b)
+
+infixr 5 `cons`
+
 -- | Cons an element to the front of the join list.
 --
 cons :: a -> JoinList a -> JoinList a
@@ -240,14 +259,24 @@ head (One a)    = a
 head (Join t _) = head t
 
 
-take :: Int -> JoinList a -> JoinList a
-take i xs | i < 1     = Empty
-          | otherwise = case viewl xs of
-                          a :< rest -> cons a $ take (i-1) rest
-                          EmptyL    -> Empty     
+takeL :: Int -> JoinList a -> JoinList a
+takeL i xs | i < 1     = Empty
+           | otherwise = case viewl xs of
+                           a :< rest -> cons a $ takeL (i-1) rest
+                           EmptyL    -> Empty     
 
 length :: JoinList a -> Int
 length = joinfoldr (\_ n -> n+1) 0 
+
+
+
+takeWhileL :: (a -> Bool) -> JoinList a -> JoinList a
+takeWhileL test = step . viewl
+  where
+    step EmptyL                 = Empty
+    step (x :< xs)  | test x    = x `cons` step (viewl xs)
+                    | otherwise = Empty  
+
 
 accumMapL :: (x -> st -> (y,st)) -> JoinList x -> st -> (JoinList y,st)
 accumMapL f xs st0 = go xs st0 
@@ -320,3 +349,10 @@ viewr (Join t u) = step t u
     step l (Join t' u') = step (Join l t') u'
 
 
+unViewL :: ViewL a -> JoinList a
+unViewL EmptyL    = Empty
+unViewL (x :< xs) = cons x xs
+
+unViewR :: ViewR a -> JoinList a
+unViewR EmptyR    = Empty
+unViewR (xs :> x) = snoc xs x

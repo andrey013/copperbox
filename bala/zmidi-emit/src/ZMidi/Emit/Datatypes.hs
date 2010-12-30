@@ -21,6 +21,7 @@ module ZMidi.Emit.Datatypes
   , Track(..)
   , ChannelStream(..)
   , Section(..)
+  , Overlays
   , SectionVoice(..)
   , Primitive(..)
   , VoiceMsg(..)
@@ -98,9 +99,12 @@ newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
 --
 data Section = Section 
       { section_tempo           :: Double
-      , section_overlays        :: JoinList SectionVoice
+      , section_overlays        :: Overlays
       }
   deriving (Show)
+
+
+type Overlays = JoinList SectionVoice
 
 
 -- | A section voice allows chords, but otherwise it is 
@@ -157,6 +161,10 @@ instance Monoid Track where
   mempty        = Track mempty
   a `mappend` b = Track $ getTrack a `mappend` getTrack b
 
+instance Monoid ChannelStream where
+  mempty        = ChannelStream mempty
+  a `mappend` b = ChannelStream $ getSections a `mappend` getSections b
+
 
 
 --------------------------------------------------------------------------------
@@ -181,6 +189,7 @@ vinstrument inst =
 
 --------------------------------------------------------------------------------
 -- new constructors
+
 
 zmidiRep :: ZMidiRep
 zmidiRep = ZMidiRep Nothing mempty

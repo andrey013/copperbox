@@ -20,7 +20,7 @@ module ZMidi.Emit.OutputMidi
   ) where
 
 import ZMidi.Emit.Datatypes
-import ZMidi.Emit.Utils.HList
+import ZMidi.Emit.Utils.JoinList ( JoinList, ViewL(..), viewl, cons )
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
@@ -29,7 +29,9 @@ import Control.Applicative
 import Control.Monad
 import Data.List
 import qualified Data.IntMap as IM
+import Data.Monoid
 import Data.Time
+import qualified Data.Foldable as F
 import Data.Word
 
 
@@ -108,6 +110,12 @@ incrEllapsedTime n =
 getEllapsedTime     :: OutMonad Word32
 getEllapsedTime     = getsRS rs_ellapsed_time
 
+-- Note - this is needed for overlays which all must begin at the 
+-- same time.
+--
+setEllapsedTime  :: Word32 -> OutMonad ()
+setEllapsedTime t = setsRS (\s -> s { rs_ellapsed_time = t })
+
 askChannelNumber    :: OutMonad Word8
 askChannelNumber    = fmap fromIntegral $ asksRE re_chan_number
 
@@ -157,138 +165,154 @@ microseconds_per_minute = 60000000
 -- programChange inst ch = (0, VoiceEvent $ ProgramChange ch inst)
 
 outputAudioTrack :: Int -> Track -> MidiTrack
-outputAudioTrack track_num (Track im) = 
-    MidiTrack $ info : collapseChannels (IM.toAscList im)
+outputAudioTrack track_num (Track im) = MidiTrack $ info : body
   where 
     info = sequenceName $ "Track" ++ show track_num
+    body = collapseChannels $ map (uncurry outputChannelStream) 
+                            $ limit16 $ IM.toAscList im
 
-
-collapseChannels :: [(Int,ChannelStream)] -> [MidiMessage]
-collapseChannels xs = deltaTransform $ concatMessages all_chans
-  where
-    all_chans = map (uncurry outputChannelStream) $ limit16 xs
-
-outputChannelStream :: Int -> ChannelStream -> [MidiMessage]
-outputChannelStream ch strm = 
-    post $ runOutMonad ch $ JL.toListM outputSection $ getSections strm
-  where
-    post = toListH . concatH
-
-
-
-type HChannelData = H MidiMessage
 
 -- | Midi can only support upto 16 tracks, indexed [0..15].
 --
 limit16 :: [(Int,ChannelStream)] -> [(Int,ChannelStream)]
 limit16 = takeWhile (\(n,_) -> n < 16)
 
-outputSection  :: Section -> OutMonad HChannelData
-outputSection (Section tmpo jl) = do
-    front <- setTempo tmpo
-    rest  <- JL.toListM voiceData jl
-    return $ front `consH` concatH rest
+
+type TrackData = JoinList MidiMessage
+
+collapseChannels :: [TrackData] -> [MidiMessage]
+collapseChannels = deltaTransform . concatMessages
 
 
 
-concatMessages :: [[MidiMessage]] -> [MidiMessage]
-concatMessages []     = []
+
+
+outputChannelStream :: Int -> ChannelStream -> TrackData
+outputChannelStream ch strm = 
+    runOutMonad ch $ F.foldlM mf mempty $ getSections strm
+  where
+    mf :: TrackData -> Section -> OutMonad TrackData
+    mf ac e = (\a -> ac `mappend` a) <$> outputSection e
+
+
+
+outputSection  :: Section -> OutMonad TrackData
+outputSection (Section tmpo ovs) =
+    JL.cons <$> setTempo tmpo <*> outputOverlays ovs
+    
+-- Bracket longest elapsed time...
+
+outputOverlays :: Overlays -> OutMonad TrackData
+outputOverlays xs = do
+    common_start <- getEllapsedTime
+    (track_data,max_end) <- F.foldlM (mf common_start) (mempty,0) xs
+    setEllapsedTime max_end
+    return track_data
+  where
+    cat                  = mergeOrdered compare
+
+    mf t (ac,max_end) sv = do { setEllapsedTime t
+                              ; body <- sectionVoice sv
+                              ; et   <- getEllapsedTime
+                              ; return (ac `cat` body, max max_end et)
+                              }
+   
+
+
+concatMessages :: [TrackData] -> TrackData
+concatMessages []     = mempty
 concatMessages [x]    = x
 concatMessages (x:xs) = foldl' (mergeOrdered cmp) x xs
   where
     cmp (d1,_) (d2,_) = d1 `compare` d2
 
 
-mergeOrdered :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
-mergeOrdered cmp = step
+mergeOrdered :: (a -> a -> Ordering) -> JoinList a -> JoinList a -> JoinList a
+mergeOrdered cmp a b = step (viewl a) (viewl b)
   where
-    step []     ys      = ys
-    step xs     []      = xs
-    step (x:xs) (y:ys)  = case cmp x y of
-                            LT -> x : step xs (y:ys)
-                            EQ -> x : y : step xs ys
-                            GT -> y : step (x:xs) ys
+    step EmptyL    vl         = JL.unViewL vl
+    step vl        EmptyL     = JL.unViewL vl
+    step (x :< xs) (y :< ys)  = 
+        case cmp x y of
+          LT -> x `cons`          step (viewl xs)    (viewl $ y `cons` ys)
+          EQ -> x `cons` y `cons` step (viewl xs)            (viewl ys)
+          GT -> y `cons`          step (viewl $ x `cons` xs) (viewl ys)
+
 
 -- Upto the onset time merge, messages are labelled with absolute 
 -- time rather than delta time.
 --
 -- This transforms them to use delta time.
 --
-deltaTransform :: [MidiMessage] -> [MidiMessage]
-deltaTransform = step 0
+deltaTransform :: JL.JoinList MidiMessage -> [MidiMessage]
+deltaTransform = step 0 . viewl
   where
-    step _    []              = [end_of_track]
-    step abst ((evt,body):xs) = (evt - abst,body) : step evt xs
-
-
+    step _    EmptyL             = [end_of_track]
+    step abst ((evt,body) :< xs) = (evt - abst,body) : step evt (viewl xs)
 
 end_of_track :: MidiMessage
 end_of_track = (0, MetaEvent $ EndOfTrack)
 
 
 
-voiceData :: SectionVoice -> OutMonad HChannelData
-voiceData (SectionVoice xs) = primitives xs 
+sectionVoice :: SectionVoice -> OutMonad TrackData
+sectionVoice (SectionVoice xs) = primitives xs 
 
 
-primitives :: [Primitive] -> OutMonad HChannelData
-primitives []     = return emptyH
+primitives :: [Primitive] -> OutMonad TrackData
+primitives []     = return mempty
 primitives (x:xs) = step x xs
   where
     step a []     = primitive a
-    step a (b:bs) = liftA2 appendH (primitive a) (step b bs)
+    step a (b:bs) = liftA2 mappend (primitive a) (step b bs)
 
-primitive :: Primitive -> OutMonad HChannelData
+
+primitive :: Primitive -> OutMonad TrackData
 primitive (PNote d props p)   = primNote (durationr d) props p
 primitive (PChord d props ps) = primChord (durationr d) props ps
-primitive (PRest d)           = incrEllapsedTime (durationr d) >> return emptyH
-primitive (PMsg msg)          = either voiceMsg metaEvent msg
+primitive (PRest d)           = incrEllapsedTime (durationr d) >> return mempty
+primitive (PMsg msg)          = fmap JL.one $ either voiceMsg metaEvent msg
 
 
-primNote :: Word32 -> PrimProps -> Word8 -> OutMonad HChannelData
-primNote d props p = do 
-    et <- getEllapsedTime
-    ch <- askChannelNumber
-    incrEllapsedTime d
-    let non = mkNoteOn  et     p ch (velocity_on props)
-    let nof = mkNoteOff (et+d) p ch (velocity_off props)
-    return (twoH non nof)
+primNote :: Word32 -> PrimProps -> Word8 -> OutMonad TrackData
+primNote d props p = 
+    (\non nof -> JL.two non nof) 
+       <$> noteOn  p (velocity_on props)
+       <*> (incrEllapsedTime d *> noteOff p (velocity_off props))
 
 
-primChord :: Word32 -> PrimProps -> [Word8] -> OutMonad HChannelData
-primChord d props ps  = do 
-    et <- getEllapsedTime
-    ch <- askChannelNumber
-    incrEllapsedTime d
-    let nons = map (\p -> mkNoteOn  et     p ch (velocity_on props))  ps
-    let nofs = map (\p -> mkNoteOff (et+d) p ch (velocity_off props)) ps
-    return (fromListH nons `appendH` fromListH nofs)
 
 
-voiceMsg :: VoiceMsg -> OutMonad HChannelData
-voiceMsg f = do
-    et <- getEllapsedTime
-    ch <- askChannelNumber
-    return $ wrapH $ (et, VoiceEvent $ getVoiceMsg f ch)
+primChord :: Word32 -> PrimProps -> [Word8] -> OutMonad TrackData
+primChord d props ps  = 
+    (\nons nofs -> JL.fromList nons `mappend` JL.fromList nofs)
+      <$> mapM (\p -> noteOn p (velocity_on props)) ps
+      <*> (incrEllapsedTime d *> 
+            mapM (\p -> noteOff p (velocity_on props)) ps)
+
+
+
+voiceMsg :: VoiceMsg -> OutMonad MidiMessage
+voiceMsg f = (\et ch -> (et, VoiceEvent $ getVoiceMsg f ch)) 
+                <$> getEllapsedTime <*> askChannelNumber
              
 
+metaEvent :: MidiMetaEvent -> OutMonad MidiMessage
+metaEvent evt = (\et -> (et, MetaEvent evt)) <$> getEllapsedTime
 
-metaEvent :: MidiMetaEvent -> OutMonad HChannelData
-metaEvent evt = do
-    et <- getEllapsedTime
-    return $ wrapH (et, MetaEvent evt) 
 
-mkNoteOn :: Word32 -> Word8 -> Word8 -> Word8 -> MidiMessage
-mkNoteOn dt pch ch vel = (dt, VoiceEvent $ NoteOn ch pch vel)
+noteOn :: Word8 -> Word8 -> OutMonad MidiMessage
+noteOn pch vel = (\et ch -> (et, VoiceEvent $ NoteOn ch pch vel)) 
+                    <$> getEllapsedTime <*> askChannelNumber
 
-mkNoteOff :: Word32 -> Word8 -> Word8 -> Word8 -> MidiMessage
-mkNoteOff dt pch ch vel = (dt, VoiceEvent $ NoteOff ch pch vel)
+
+noteOff :: Word8 -> Word8 -> OutMonad MidiMessage
+noteOff pch vel = (\et ch -> (et, VoiceEvent $ NoteOff ch pch vel))
+                    <$> getEllapsedTime <*> askChannelNumber
 
 
 setTempo :: Double -> OutMonad MidiMessage
-setTempo bpm = do 
-    et <- getEllapsedTime
-    return (et, MetaEvent $ SetTempo mspqn) 
+setTempo bpm = (\et -> (et, MetaEvent $ SetTempo mspqn)) <$> getEllapsedTime
   where
     mspqn = floor $ microseconds_per_minute / bpm
 

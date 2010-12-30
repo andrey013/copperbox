@@ -53,11 +53,12 @@ module ZMidi.Emit.Builder
   , build_env_zero
 
   , Build
-  , BuildT
-  , BuildM(..)
   , runBuild
   , execBuild
-  , runBuildT
+ 
+  , localize 
+  , report
+  , askEnv
   , asksEnv
 
 
@@ -70,6 +71,9 @@ module ZMidi.Emit.Builder
 
   , singleSection
   , overlayVoices
+
+  , section
+  , overlays
 
   ) where
 
@@ -211,28 +215,6 @@ instance Monad Build where
                             in (b, w1 `mappend` w2)
                           
 
-newtype BuildT m a = BuildT { getBuildT :: BuildEnv -> m (a, H Primitive) }
-
-
-instance Monad m => Functor (BuildT m) where
-  fmap f ma = BuildT $ \r -> getBuildT ma r >>= \(a,w) -> return (f a, w)
-
-
-instance Monad m => Applicative (BuildT m) where
-  pure a    = BuildT $ \_ -> return (a, mempty)
-  mf <*> ma = BuildT $ \r -> getBuildT mf r >>= \(f,w1) -> 
-                             getBuildT ma r >>= \(a,w2) -> 
-                             return (f a, w1 `appendH` w2)
-                       
-
-
-instance Monad m => Monad (BuildT m) where
-  return a  = BuildT $ \_ -> return (a, mempty)
-  m >>= k   = BuildT $ \r -> getBuildT m r     >>= \(a,w1) -> 
-                             getBuildT (k a) r >>= \(b,w2) -> 
-                             return (b, w1 `mappend` w2)
-
-
 runBuild :: BuildEnv -> Build a -> (a, [Primitive])
 runBuild env ma = post $ getBuild ma env
   where
@@ -244,35 +226,25 @@ execBuild env ma = post $ getBuild ma env
     post (_,f) = toListH f
 
 
-runBuildT :: Monad m => BuildEnv -> BuildT m a -> m (a, [Primitive])
-runBuildT env ma = liftM post $ getBuildT ma env
-  where
-    post (a,f) = (a, toListH f)
 
 
-class (Applicative m, Monad m) => BuildM m where
-  localize :: (BuildEnv -> BuildEnv) -> m a -> m a
-  askEnv   :: m BuildEnv
-  tell     :: Primitive -> m ()
+localize :: (BuildEnv -> BuildEnv) -> Build a -> Build a
+localize f ma = Build $ \r -> getBuild ma (f r)
 
 
-instance BuildM Build where
-  localize f ma = Build $ \r -> getBuild ma (f r)
-  askEnv        = Build $ \r -> (r, mempty)
-  tell a        = Build $ \_ -> ((), wrapH a)
-
-instance Monad m => BuildM (BuildT m) where
-  localize f ma = BuildT $ \r -> getBuildT ma (f r)
-  askEnv        = BuildT $ \r -> return (r, mempty)
-  tell a        = BuildT $ \_ -> return ((), wrapH a)
+askEnv   :: Build BuildEnv
+askEnv   = Build $ \r -> (r, mempty)
 
 
+report   :: Primitive -> Build ()
+report a = Build $ \_ -> ((), wrapH a)
 
-asksEnv :: BuildM m => (BuildEnv -> a) -> m a
+
+asksEnv :: (BuildEnv -> a) -> Build a
 asksEnv extr = extr <$> askEnv
 
 
-noteProps :: BuildM m => m PrimProps
+noteProps :: Build PrimProps
 noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
                              , velocity_off   = note_off_velocity r
                              , note_volume    = note_volume_level r
@@ -280,28 +252,28 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
               <$> askEnv
 
 
-instrument :: BuildM m => GMInst -> m ()
-instrument inst  = tell prog >> tell name
+instrument :: GMInst -> Build ()
+instrument inst  = report prog >> report name
   where
     prog = vinstrument inst
     name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
 
 
-note :: BuildM m => MidiDuration -> MidiPitch -> m ()
-note d p = noteProps >>= \props -> tell (PNote d props p)
+note :: MidiDuration -> MidiPitch -> Build ()
+note d p = noteProps >>= \props -> report (PNote d props p)
 
-chord :: BuildM m => MidiDuration -> [MidiPitch] -> m ()
-chord d ps = noteProps >>= \props -> tell (PChord d props ps)
+chord :: MidiDuration -> [MidiPitch] -> Build ()
+chord d ps = noteProps >>= \props -> report (PChord d props ps)
 
-rest :: BuildM m => MidiDuration -> m ()
-rest d = tell $ PRest d
+rest :: MidiDuration -> Build ()
+rest d = report $ PRest d
 
 
-drumNote :: BuildM m => MidiDuration -> GMDrum -> m ()
+drumNote :: MidiDuration -> GMDrum -> Build ()
 drumNote d p = note d (drumPitch p)
 
 
-drumChord :: BuildM m => MidiDuration -> [GMDrum] -> m ()
+drumChord :: MidiDuration -> [GMDrum] -> Build ()
 drumChord d ps = chord d (map drumPitch ps)
 
 
@@ -324,4 +296,17 @@ overlayVoices bpm voices =
   where
     top = Section bpm . JL.fromListF fn
     fn  = SectionVoice . execBuild build_env_zero
+
+voice :: Build a -> SectionVoice
+voice = SectionVoice . execBuild build_env_zero
+
+
+
+section :: Double -> Build a -> ChannelStream
+section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
+
+
+overlays :: Double -> [Build a] -> ChannelStream
+overlays bpm xs = 
+    ChannelStream $ JL.one $ Section bpm $ JL.fromListF voice xs
 
