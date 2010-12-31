@@ -18,10 +18,24 @@ module ZMidi.Emit
   ( 
 
     module ZMidi.Emit.Builder
-  , module ZMidi.Emit.Datatypes
   , module ZMidi.Emit.GeneralMidiInstruments
   , module ZMidi.Emit.OutputMidi
   , module ZMidi.Emit.VersionNumber
+
+  -- * Data types
+  , HiMidi
+  , Track
+  , ChannelStream
+  , Section
+  , Overlays
+  , SectionVoice
+  , Primitive
+  , VoiceMsg
+  , PrimProps
+
+  , hiMidi
+  , addTrack
+  , track
  
   ) where
 

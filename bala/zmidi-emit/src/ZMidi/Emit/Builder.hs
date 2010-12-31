@@ -10,9 +10,10 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Building /high level/ MIDI.
--- 
--- TODO - is it useful to support a monad and a transformer?
+-- Monadic building for /high level/ MIDI.
+--
+-- A reader monad is used to supply implicit parameters to the
+-- build functions that would otherwise require many arguments. 
 --
 --------------------------------------------------------------------------------
 
@@ -24,6 +25,7 @@ module ZMidi.Emit.Builder
   , MidiDuration
 
   -- * Pitch constructors 
+  , PitchCons
   , c_nat  
   , c_sharp
   , d_flat
@@ -90,8 +92,33 @@ import Control.Monad
 import Data.Monoid
 import Data.Word
 
-
+-- | 'MidiPitch' is a Word8, corresponding directly to the MIDI
+-- representation, only values in the range @[0..127]@ are 
+-- allowed. 
+--
+-- Middle c is 60. Each increment is a semitone step. With careful
+-- use of the pitch-bend control signal MIDI can simulate 
+-- microtonal intervals though this is not attempted by 
+-- @ZMidi.Emit@.
+--
 type MidiPitch    = Word8
+
+-- | 'MidiDuration' is a Double, directly corresponding to the 
+-- dureation value: 
+--
+-- @1.0@ represents a whole note. 
+-- 
+-- @0.5@ represents a half note.
+--
+-- @0.25@ represents a half note. Etc.
+--
+-- Using Double allows some cleverness for representing special
+-- durations, e.g. grace notes can be some small duration 
+-- subtracted from the note next to the grace.
+--
+-- Internally @ZMidi.Emit@ translates the Double value into and
+-- integer number of ticks.
+--
 type MidiDuration = Double
 
 
@@ -102,56 +129,63 @@ clampPch i | i < 0     = 0
            | i > 127   = 127
            | otherwise = fromIntegral i
 
+-- | A Pitch constructor takes and Octave and builds a MidiPitch.
+--
+-- Octave is an integer value - middle C is octave 4.
+--
+-- An octave spans from C to B.
+-- 
+type PitchCons = Int -> MidiPitch
 
-c_nat       :: Int -> Word8
+c_nat       :: PitchCons
 c_nat o     = clampPch $     12 * (o + 1)
 
-c_sharp     :: Int -> Word8
+c_sharp     :: PitchCons
 c_sharp o   = clampPch $ 1 + 12 * (o + 1)
 
-d_flat      :: Int -> Word8
+d_flat      :: PitchCons
 d_flat      = c_sharp
 
-d_nat       :: Int -> Word8
+d_nat       :: PitchCons
 d_nat o     = clampPch $ 2 + 12 * (o + 1)
 
-d_sharp     :: Int -> Word8
+d_sharp     :: PitchCons
 d_sharp o   = clampPch $ 3 + 12 * (o + 1)
 
-e_flat      :: Int -> Word8
+e_flat      :: PitchCons
 e_flat      = d_sharp
 
-e_nat       :: Int -> Word8
+e_nat       :: PitchCons
 e_nat o     = clampPch $ 4 + 12 * (o + 1)
 
-f_nat       :: Int -> Word8
+f_nat       :: PitchCons
 f_nat o     = clampPch $ 5 + 12 * (o + 1)
 
-f_sharp     :: Int -> Word8
+f_sharp     :: PitchCons
 f_sharp o   = clampPch $ 6 + 12 * (o + 1)
 
-g_flat      :: Int -> Word8
+g_flat      :: PitchCons
 g_flat      = f_sharp
 
-g_nat       :: Int -> Word8
+g_nat       :: PitchCons
 g_nat o     = clampPch $ 7 + 12 * (o + 1)
 
-g_sharp     :: Int -> Word8
+g_sharp     :: PitchCons
 g_sharp o   = clampPch $ 8 + 12 * (o + 1)
 
-a_flat      :: Int -> Word8
+a_flat      :: PitchCons
 a_flat     = a_sharp
 
-a_nat       :: Int -> Word8
+a_nat       :: PitchCons
 a_nat o     = clampPch $ 9 + 12 * (o + 1)
 
-a_sharp     :: Int -> Word8
+a_sharp     :: PitchCons
 a_sharp o   = clampPch $ 10 + 12 * (o + 1)
 
-b_flat      :: Int -> Word8
+b_flat      :: PitchCons
 b_flat      = a_sharp
 
-b_nat       :: Int -> Word8
+b_nat       :: PitchCons
 b_nat o     = clampPch $ 11 + 12 * (o + 1)
 
 
@@ -255,8 +289,10 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
 instrument :: GMInst -> Build ()
 instrument inst  = report prog >> report name
   where
-    prog = vinstrument inst
+    prog = primVoiceMessage $ \ch -> ProgramChange ch (instrumentNumber inst)
     name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
+
+    
 
 
 note :: MidiDuration -> MidiPitch -> Build ()

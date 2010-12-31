@@ -16,7 +16,7 @@
 
 module ZMidi.Emit.OutputMidi
   (
-    writeZMidiRep
+    writeHiMidi
   ) where
 
 import ZMidi.Emit.Datatypes
@@ -120,17 +120,16 @@ askChannelNumber    :: OutMonad Word8
 askChannelNumber    = fmap fromIntegral $ asksRE re_chan_number
 
 
--- Nice to have time stamp ....
-
-
-writeZMidiRep :: FilePath -> ZMidiRep -> IO ()
-writeZMidiRep filename mct = 
+-- | Nice to have time stamp ...
+--
+writeHiMidi :: FilePath -> HiMidi -> IO ()
+writeHiMidi filename mct = 
     getZonedTime >>= \ztim -> writeMidi filename (outputZMR ztim mct)
 
 
 
-outputZMR :: ZonedTime -> ZMidiRep -> MidiFile
-outputZMR ztim (ZMidiRep mb_info ts) = 
+outputZMR :: ZonedTime -> HiMidi -> MidiFile
+outputZMR ztim (HiMidi mb_info ts) = 
     MidiFile hdr $ track_zero : JL.zipWithIntoList fn ts [1..]
   where
     fn          = flip outputAudioTrack
@@ -186,7 +185,9 @@ collapseChannels = deltaTransform . concatMessages
 
 
 
-
+-- | The sections in a ChannelStream are rendered sequentially
+-- one after the other.
+--
 outputChannelStream :: Int -> ChannelStream -> TrackData
 outputChannelStream ch strm = 
     runOutMonad ch $ F.foldlM mf mempty $ getSections strm
@@ -200,8 +201,16 @@ outputSection  :: Section -> OutMonad TrackData
 outputSection (Section tmpo ovs) =
     JL.cons <$> setTempo tmpo <*> outputOverlays ovs
     
--- Bracket longest elapsed time...
 
+
+
+-- | Overlays all start at the same time - as the are rendered 
+-- one-by-one the start time needs resetting each pass.
+--
+-- The maximum end-time of the individual tracks is retained.
+-- This becomes the actual end-time after all the overlays have 
+-- been rendered.
+--
 outputOverlays :: Overlays -> OutMonad TrackData
 outputOverlays xs = do
     common_start <- getEllapsedTime
@@ -209,13 +218,12 @@ outputOverlays xs = do
     setEllapsedTime max_end
     return track_data
   where
-    cat                  = mergeOrdered compare
-
-    mf t (ac,max_end) sv = do { setEllapsedTime t
-                              ; body <- sectionVoice sv
-                              ; et   <- getEllapsedTime
-                              ; return (ac `cat` body, max max_end et)
-                              }
+    cat                   = mergeOrdered compare
+    mf ct (ac,max_end) sv = do { setEllapsedTime ct
+                               ; body <- sectionVoice sv
+                               ; et   <- getEllapsedTime
+                               ; return (ac `cat` body, max max_end et)
+                               }
    
 
 
@@ -239,20 +247,21 @@ mergeOrdered cmp a b = step (viewl a) (viewl b)
           GT -> y `cons`          step (viewl $ x `cons` xs) (viewl ys)
 
 
--- Upto the onset time merge, messages are labelled with absolute 
--- time rather than delta time.
+-- | Upto this point, messages are labelled with absolute time 
+-- rather than delta time.
 --
--- This transforms them to use delta time.
+-- This transforms the messages to use delta time and appends an 
+-- end-of-track message to the tail of the list.
 --
-deltaTransform :: JL.JoinList MidiMessage -> [MidiMessage]
+deltaTransform :: JoinList MidiMessage -> [MidiMessage]
 deltaTransform = step 0 . viewl
   where
     step _    EmptyL             = [end_of_track]
     step abst ((evt,body) :< xs) = (evt - abst,body) : step evt (viewl xs)
 
+
 end_of_track :: MidiMessage
 end_of_track = (0, MetaEvent $ EndOfTrack)
-
 
 
 sectionVoice :: SectionVoice -> OutMonad TrackData

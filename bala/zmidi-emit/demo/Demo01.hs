@@ -17,8 +17,8 @@ main = demo01 >> demo02
 demo01 :: IO ()
 demo01 = do
     putStrLn "Writing demo01.mid..."
-    writeZMidiRep "demo01.mid" $ 
-      zmidiRep `addTrack` track 0 sections
+    writeHiMidi "demo01.mid" $ 
+      hiMidi `addTrack` track 0 sections
   where
     sections = section 120 phrase1 `mappend` section 120 phrase2
     phrase1  = instrument Honky_tonk >> note dquarter (c_nat 4) 

@@ -17,7 +17,7 @@
 
 module ZMidi.Emit.Datatypes
   ( 
-    ZMidiRep(..)
+    HiMidi(..)
   , Track(..)
   , ChannelStream(..)
   , Section(..)
@@ -29,16 +29,13 @@ module ZMidi.Emit.Datatypes
 
   , primVoiceMessage
   , primMetaEvent
-  , singleChannel
-  , singleTrack
-  , vinstrument
 
-  , zmidiRep
+  , hiMidi
   , addTrack
   , track
+
   ) where
 
-import ZMidi.Emit.GeneralMidiInstruments
 import ZMidi.Emit.Utils.JoinList ( JoinList )
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
@@ -50,13 +47,21 @@ import Data.Monoid
 import Data.Word
 
 
--- Note - /destructors/ should destruct to standard datatypes, not
--- JoinLists...
+-- | High-level representation of Format 1 MIDI files.
 --
-
-data ZMidiRep = ZMidiRep 
-      { zm_track_zero   :: Maybe MidiTrack
-      , zm_data_tracks  :: JoinList Track 
+-- Notes, chords and rests represented directly (unlike MIDI 
+-- which represents notes and chords as synthesizer key-press and 
+-- key-release events).
+--
+-- As per Format 1 MIDI, the HiMidi representation allows 
+-- simultaneous overlaid tracks. Within a track sections (possibly
+-- with changing tempos or different instruments) can be 
+-- sequentially concatenated.
+--
+--
+data HiMidi = HiMidi
+      { hm_track_zero   :: Maybe MidiTrack
+      , hm_data_tracks  :: JoinList Track 
       }
   deriving (Show)
 
@@ -78,6 +83,14 @@ data ZMidiRep = ZMidiRep
 --
 newtype Track = Track { getTrack :: IntMap ChannelStream }
   deriving (Show)
+
+
+-- | Channel number is really a @Word4@ so the value should be in 
+-- the range [0..15].
+--
+-- Channel 9 is special - this is the channel for MIDI percussion.
+--
+type ChannelNumber = Word8
 
 
 -- | ChannelStream supports concatenation through @mappend@.
@@ -116,8 +129,12 @@ newtype SectionVoice = SectionVoice { voice_notelist :: [Primitive] }
 
 -- | Primitive is either a note, chord or rest.
 --
+-- Pitch is a Word8 - the MIDI pitch number. It is expected that
+-- client software will use some other type and call the pitch
+-- constructors in @ZMidi.Emit.Builder@ to build the syntax.
+--
 -- Duration is a Double - 0.25 is a quarter note, 1 is a whole 
--- note. It is expected that client software with use some other 
+-- note. It is expected that client software will use some other 
 -- type but convert to Double as it builds the syntax.
 --
 data Primitive = PNote   Double PrimProps Word8
@@ -126,12 +143,14 @@ data Primitive = PNote   Double PrimProps Word8
                | PMsg    (Either VoiceMsg MidiMetaEvent)
    deriving (Show)
 
+
+
 -- | 'VoiceMsg' is a function from channel number to VoiceEvent.
 -- 
 -- Channel number is unknown when building the syntax, it is 
 -- filled in during rendering.
 --
-newtype VoiceMsg = VoiceMsg { getVoiceMsg :: Word8 -> MidiVoiceEvent }
+newtype VoiceMsg = VoiceMsg { getVoiceMsg :: ChannelNumber -> MidiVoiceEvent }
 
 
 instance Show VoiceMsg where
@@ -169,38 +188,27 @@ instance Monoid ChannelStream where
 
 --------------------------------------------------------------------------------
 
-primVoiceMessage :: (Word8 -> MidiVoiceEvent) -> Primitive
+primVoiceMessage :: (ChannelNumber -> MidiVoiceEvent) -> Primitive
 primVoiceMessage f = PMsg $ Left $ VoiceMsg f
 
 primMetaEvent :: MidiMetaEvent -> Primitive
 primMetaEvent = PMsg . Right
 
-singleChannel :: Int -> ChannelStream -> Track
-singleChannel n chan_body = Track $ IM.insert n chan_body IM.empty 
-
-
-singleTrack :: Track -> ZMidiRep
-singleTrack trk = ZMidiRep Nothing $ JL.one trk 
-
-
-vinstrument :: GMInst -> Primitive
-vinstrument inst = 
-    primVoiceMessage $ \ch -> ProgramChange ch (instrumentNumber inst)
 
 --------------------------------------------------------------------------------
 -- new constructors
 
 
-zmidiRep :: ZMidiRep
-zmidiRep = ZMidiRep Nothing mempty
+hiMidi :: HiMidi
+hiMidi = HiMidi Nothing mempty
 
 
 infixr 5 `addTrack`
 
-addTrack :: ZMidiRep -> Track -> ZMidiRep
-addTrack rep trk = rep { zm_data_tracks = jl `JL.snoc` trk}
+addTrack :: HiMidi -> Track -> HiMidi
+addTrack rep trk = rep { hm_data_tracks = jl `JL.snoc` trk}
   where 
-    jl = zm_data_tracks rep  
+    jl = hm_data_tracks rep  
 
 
 track :: Int -> ChannelStream -> Track
