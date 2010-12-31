@@ -51,6 +51,7 @@ library
 
   other-modules:
     ZMidi.Emit.Utils.HList,
+    ZMidi.Emit.Utils.InstrumentName,
     ZMidi.Emit.Utils.JoinList
       
   extensions:

@@ -53,6 +53,7 @@ module ZMidi.Emit.Builder
 import ZMidi.Emit.Datatypes
 import ZMidi.Emit.Constructors
 import ZMidi.Emit.Utils.HList
+import ZMidi.Emit.Utils.InstrumentName
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
@@ -143,10 +144,10 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
 
 
 instrument :: GMInst -> Build ()
-instrument inst  = report prog {- >> report name -}
+instrument inst  = report prog >> report name
   where
     prog = primVoiceMessage $ \ch -> ProgramChange ch inst
---    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
+    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
 
     
 
@@ -194,4 +195,6 @@ section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
 overlays :: Double -> [Build a] -> ChannelStream
 overlays bpm xs = 
     ChannelStream $ JL.one $ Section bpm $ JL.fromListF voice xs
+
+
 

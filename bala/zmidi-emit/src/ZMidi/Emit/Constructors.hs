@@ -408,7 +408,8 @@ dsixteenth   = 0.0625
 --
 type GMInst = Word8
 
-    -- | Piano
+-- | Piano
+
 acoustic_grand_piano    :: GMInst
 acoustic_grand_piano    = 0
 
