@@ -10,48 +10,20 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Monadic building for /high level/ MIDI.
---
--- A reader monad is used to supply implicit parameters to the
--- build functions that would otherwise require many arguments. 
+-- Monadic building for /high level/ MIDI, with a reader writer monad. 
+-- 
+-- The reader monad makes some of the parameters implicit to the
+-- build functions, which would otherwise require many arguments.
+-- The writer monad accumulates notes efficiently. 
 --
 --------------------------------------------------------------------------------
 
 module ZMidi.Emit.Builder
   (
 
-  -- * Type aliases
-    MidiPitch
-  , MidiDuration
-
-  -- * Pitch constructors 
-  , PitchCons
-  , c_nat  
-  , c_sharp
-  , d_flat
-  , d_nat
-  , d_sharp
-  , e_flat
-  , e_nat
-  , f_nat
-  , f_sharp  
-  , g_flat
-  , g_nat
-  , g_sharp
-  , a_flat
-  , a_nat
-  , b_flat
-  , b_nat
-
-  -- * Duration constructors
-  , dwhole
-  , dhalf
-  , dquarter
-  , deighth
-  , dsixteenth
 
   -- * Build monad
-  , BuildEnv(..)
+    BuildEnv(..)
   , build_env_zero
 
   , Build
@@ -68,8 +40,6 @@ module ZMidi.Emit.Builder
   , note
   , chord
   , rest
-  , drumNote
-  , drumChord
 
   , singleSection
   , overlayVoices
@@ -81,7 +51,7 @@ module ZMidi.Emit.Builder
 
 
 import ZMidi.Emit.Datatypes
-import ZMidi.Emit.GeneralMidiInstruments
+import ZMidi.Emit.Constructors
 import ZMidi.Emit.Utils.HList
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
@@ -91,120 +61,6 @@ import Control.Applicative
 import Control.Monad
 import Data.Monoid
 import Data.Word
-
--- | 'MidiPitch' is a Word8, corresponding directly to the MIDI
--- representation, only values in the range @[0..127]@ are 
--- allowed. 
---
--- Middle c is 60. Each increment is a semitone step. With careful
--- use of the pitch-bend control signal MIDI can simulate 
--- microtonal intervals though this is not attempted by 
--- @ZMidi.Emit@.
---
-type MidiPitch    = Word8
-
--- | 'MidiDuration' is a Double, directly corresponding to the 
--- dureation value: 
---
--- @1.0@ represents a whole note. 
--- 
--- @0.5@ represents a half note.
---
--- @0.25@ represents a half note. Etc.
---
--- Using Double allows some cleverness for representing special
--- durations, e.g. grace notes can be some small duration 
--- subtracted from the note next to the grace.
---
--- Internally @ZMidi.Emit@ translates the Double value into and
--- integer number of ticks.
---
-type MidiDuration = Double
-
-
---------------------------------------------------------------------------------
-
-clampPch :: Int -> Word8
-clampPch i | i < 0     = 0
-           | i > 127   = 127
-           | otherwise = fromIntegral i
-
--- | A Pitch constructor takes and Octave and builds a MidiPitch.
---
--- Octave is an integer value - middle C is octave 4.
---
--- An octave spans from C to B.
--- 
-type PitchCons = Int -> MidiPitch
-
-c_nat       :: PitchCons
-c_nat o     = clampPch $     12 * (o + 1)
-
-c_sharp     :: PitchCons
-c_sharp o   = clampPch $ 1 + 12 * (o + 1)
-
-d_flat      :: PitchCons
-d_flat      = c_sharp
-
-d_nat       :: PitchCons
-d_nat o     = clampPch $ 2 + 12 * (o + 1)
-
-d_sharp     :: PitchCons
-d_sharp o   = clampPch $ 3 + 12 * (o + 1)
-
-e_flat      :: PitchCons
-e_flat      = d_sharp
-
-e_nat       :: PitchCons
-e_nat o     = clampPch $ 4 + 12 * (o + 1)
-
-f_nat       :: PitchCons
-f_nat o     = clampPch $ 5 + 12 * (o + 1)
-
-f_sharp     :: PitchCons
-f_sharp o   = clampPch $ 6 + 12 * (o + 1)
-
-g_flat      :: PitchCons
-g_flat      = f_sharp
-
-g_nat       :: PitchCons
-g_nat o     = clampPch $ 7 + 12 * (o + 1)
-
-g_sharp     :: PitchCons
-g_sharp o   = clampPch $ 8 + 12 * (o + 1)
-
-a_flat      :: PitchCons
-a_flat     = a_sharp
-
-a_nat       :: PitchCons
-a_nat o     = clampPch $ 9 + 12 * (o + 1)
-
-a_sharp     :: PitchCons
-a_sharp o   = clampPch $ 10 + 12 * (o + 1)
-
-b_flat      :: PitchCons
-b_flat      = a_sharp
-
-b_nat       :: PitchCons
-b_nat o     = clampPch $ 11 + 12 * (o + 1)
-
-
-
-dwhole      :: MidiDuration
-dwhole      = 1.0
-
-dhalf       :: MidiDuration
-dhalf       = 0.5
-
-dquarter    :: MidiDuration
-dquarter    = 0.25
-
-deighth     :: MidiDuration
-deighth     = 0.125
-
-dsixteenth  :: MidiDuration
-dsixteenth   = 0.0625
-
 
 
 
@@ -287,10 +143,10 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
 
 
 instrument :: GMInst -> Build ()
-instrument inst  = report prog >> report name
+instrument inst  = report prog {- >> report name -}
   where
-    prog = primVoiceMessage $ \ch -> ProgramChange ch (instrumentNumber inst)
-    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
+    prog = primVoiceMessage $ \ch -> ProgramChange ch inst
+--    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
 
     
 
@@ -304,13 +160,6 @@ chord d ps = noteProps >>= \props -> report (PChord d props ps)
 rest :: MidiDuration -> Build ()
 rest d = report $ PRest d
 
-
-drumNote :: MidiDuration -> GMDrum -> Build ()
-drumNote d p = note d (drumPitch p)
-
-
-drumChord :: MidiDuration -> [GMDrum] -> Build ()
-drumChord d ps = chord d (map drumPitch ps)
 
 
 -- These two are arguably at the wrong type - shouldn\'t be

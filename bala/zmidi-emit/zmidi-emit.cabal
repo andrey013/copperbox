@@ -44,9 +44,9 @@ library
   exposed-modules:
     ZMidi.Emit,
     ZMidi.Emit.Builder,
+    ZMidi.Emit.Constructors,
     ZMidi.Emit.Datatypes,
     ZMidi.Emit.OutputMidi,
-    ZMidi.Emit.GeneralMidiInstruments,
     ZMidi.Emit.VersionNumber
 
   other-modules:

@@ -18,7 +18,7 @@ module ZMidi.Emit
   ( 
 
     module ZMidi.Emit.Builder
-  , module ZMidi.Emit.GeneralMidiInstruments
+  , module ZMidi.Emit.Constructors
   , module ZMidi.Emit.OutputMidi
   , module ZMidi.Emit.VersionNumber
 
@@ -40,7 +40,7 @@ module ZMidi.Emit
   ) where
 
 import ZMidi.Emit.Builder
+import ZMidi.Emit.Constructors
 import ZMidi.Emit.Datatypes
-import ZMidi.Emit.GeneralMidiInstruments
 import ZMidi.Emit.OutputMidi
 import ZMidi.Emit.VersionNumber

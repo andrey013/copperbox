@@ -21,9 +21,9 @@ demo01 = do
       hiMidi `addTrack` track 0 sections
   where
     sections = section 120 phrase1 `mappend` section 120 phrase2
-    phrase1  = instrument Honky_tonk >> note dquarter (c_nat 4) 
+    phrase1  = instrument honky_tonk >> note dquarter (c_nat 4) 
                                      >> note dquarter (c_nat 4)
-    phrase2  = instrument Honky_tonk >> note deighth  (e_nat 4) 
+    phrase2  = instrument honky_tonk >> note deighth  (e_nat 4) 
                                      >> note deighth  (g_nat 4)
 
 
