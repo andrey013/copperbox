@@ -36,7 +36,11 @@ library
     
 
   ghc-options:
-  
+     -fglasgow-exts
+     -O2
+     -fenable-rewrite-rules
+     -funbox-strict-fields  
+ 
   includes: 
   
 
