@@ -1,0 +1,44 @@
+name:             head-strict-stream
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Data
+synopsis:         Stream data type - strict on head element.
+description:
+  .
+  A head strict stream datatype and the usual List-like 
+  functionals operating on it.
+  .
+  Implemented in the non-recursive /Stream Fusion/ style.
+  .
+build-type:         Simple
+stability:          unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  demo/Demo01.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base<5
+
+  
+  exposed-modules:
+    Data.HeadStrictStream
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
