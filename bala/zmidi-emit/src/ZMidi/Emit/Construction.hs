@@ -32,6 +32,23 @@ module ZMidi.Emit.Construction
   , lyrics
   , genericText
 
+
+  -- ** Monadically build note lists  
+  , NoteList            -- re-export
+
+  , section
+  , overlays
+
+  , instrument
+  , note
+  , chord
+  , rest
+
+  , EnvTransformer
+  , localize            -- re-export
+  , noteOnVelo  
+  , noteOffVelo  
+
   -- * Pitch constructors 
   , PitchCons
 
@@ -274,6 +291,8 @@ module ZMidi.Emit.Construction
   ) where
 
 import ZMidi.Emit.Datatypes
+import ZMidi.Emit.Builder
+import ZMidi.Emit.Utils.InstrumentName
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
@@ -341,11 +360,19 @@ track ch_num ch_body = Track $ IM.insert ch_num ch_body IM.empty
 --------------------------------------------------------------------------------
 -- Text events 
 
+
+-- | An opaque type representing information that can be added
+-- to an /info track/ in the MIDI output. 
+-- 
 newtype MetaInfo = MetaInfo { getMetaInfo :: MidiMetaEvent }
 
 infixl 6 `meta`
 
 -- | Add 'MetaInfo' (e.g. copyright notice) to the HiMidi object.
+-- 
+-- As per 'addTrack' the argument order here follows the 
+-- /snoc list/ convention rather than the usual Haskell 
+-- convention.
 -- 
 meta :: HiMidi -> MetaInfo -> HiMidi
 meta rep meta_info = rep { hm_info_track = info }
@@ -368,6 +395,83 @@ lyrics msg = MetaInfo $ TextEvent LYRICS msg
 -- 
 genericText :: String -> MetaInfo
 genericText msg = MetaInfo $ TextEvent GENERIC_TEXT msg
+
+
+
+--------------------------------------------------------------------------------
+-- Monadic building
+
+
+-- | Add an instrument change to the note list.
+--
+instrument :: GMInst -> NoteList ()
+instrument inst  = report prog >> report name
+  where
+    prog = primVoiceMessage $ \ch -> ProgramChange ch inst
+    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)    
+
+
+-- | Add a note to the note list.
+--
+note :: MidiDuration -> MidiPitch -> NoteList ()
+note d p = noteProps >>= \props -> report (PNote d props p)
+
+
+-- | Add a chord to the note list.
+--
+-- Note - all the pitches should be different. @ZMidi-Emit@ 
+-- transmits all chord notes to MIDI as note-on, note-off pairs, 
+-- so duplicated notes will cause contention for the (virtual) 
+-- keyboard key.
+-- 
+chord :: MidiDuration -> [MidiPitch] -> NoteList ()
+chord d ps = noteProps >>= \props -> report (PChord d props ps)
+
+-- | Add a rest to the note list.
+--
+rest :: MidiDuration -> NoteList ()
+rest d = report $ PRest d
+
+
+
+-- | Build a 'SectionVoice' from a 'NoteList'.
+--
+voice :: NoteList a -> SectionVoice
+voice = SectionVoice . execNoteList build_env_zero
+
+
+
+-- | 'section' : @ bpm * note_list -> ChannelStream @
+--
+-- Build a 'ChannelStream' from a 'NoteList' played at the 
+-- supplied tempo (bpm).
+--
+section :: Double -> NoteList a -> ChannelStream
+section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
+
+
+-- | 'overlays' : @ bpm * [note_list] -> ChannelStream @
+--
+-- Build a 'ChannelStream' by simultaneously overlaying the 
+-- NoteLists. All the overlayed NoteLists are played at the 
+-- supplied tempo (bpm).
+--
+overlays :: Double -> [NoteList a] -> ChannelStream
+overlays bpm xs = 
+    ChannelStream $ JL.one $ Section bpm $ JL.fromListF voice xs
+
+
+-- | Set the note-on velocity in the NoteList environment.
+--
+noteOnVelo      :: Word8 -> EnvTransformer
+noteOnVelo v    = \s -> s { note_on_velocity = v}
+
+
+-- | Set the note-off velocity in the NoteList environment.
+--
+noteOffVelo      :: Word8 -> EnvTransformer
+noteOffVelo v    = \s -> s { note_off_velocity = v}
+
 
 
 --------------------------------------------------------------------------------
@@ -475,9 +579,9 @@ dsixteenth   = 0.0625
 
 
 --------------------------------------------------------------------------------
+-- GM insts
 
-
--- | Piano
+-- Piano
 
 acoustic_grand_piano    :: GMInst
 acoustic_grand_piano    = 0
@@ -504,7 +608,7 @@ clavicord               :: GMInst
 clavicord               = 7
 
 
--- | Chromatic persussion
+-- Chromatic persussion
 
 celesta                 :: GMInst
 celesta                 = 8
@@ -531,7 +635,7 @@ dulcimer                :: GMInst
 dulcimer                = 15
 
 
--- | Organ
+-- Organ
 
 drawbar_organ           :: GMInst
 drawbar_organ           = 16
@@ -557,7 +661,9 @@ harmonica               = 22
 tango_accordian         :: GMInst
 tango_accordian         = 23
 
--- | Guitar
+
+-- Guitar
+
 nylon_acoustic_guitar   :: GMInst
 nylon_acoustic_guitar   = 24
 
@@ -583,7 +689,8 @@ guitar_harmonics        :: GMInst
 guitar_harmonics        = 31
 
 
--- | Bass
+-- Bass
+
 acoustic_bass           :: GMInst
 acoustic_bass           = 32
 
@@ -608,7 +715,9 @@ synth_bass_1            = 38
 synth_bass_2            :: GMInst
 synth_bass_2            = 39
 
--- | Strings
+
+-- Strings
+
 violin                  :: GMInst
 violin                  = 40
 
@@ -634,7 +743,8 @@ timpani                 :: GMInst
 timpani                 = 47
 
 
--- | Ensemble
+--  Ensemble
+
 string_ensemble_1       :: GMInst
 string_ensemble_1       = 48
 
@@ -660,7 +770,8 @@ orchestra_hit           :: GMInst
 orchestra_hit           = 55
 
 
--- | Brass
+-- Brass
+
 trumpet                 :: GMInst
 trumpet                 = 56
 
@@ -686,7 +797,8 @@ synth_brass_2           :: GMInst
 synth_brass_2           = 63
 
 
--- |  Reed
+-- Reed
+
 soprano_sax             :: GMInst
 soprano_sax             = 64
 
@@ -711,7 +823,8 @@ bassoon                 = 70
 clarinet                :: GMInst
 clarinet                = 71
 
--- | Pipe
+-- Pipe
+
 piccolo                 :: GMInst
 piccolo                 = 72
 
@@ -736,7 +849,9 @@ whistle                 = 78
 ocarina                 :: GMInst
 ocarina                 = 79
 
--- | Synth lead
+
+-- Synth lead
+
 square_lead             :: GMInst
 square_lead             = 80
 
@@ -761,7 +876,9 @@ fifths_lead             = 86
 bass_lead               :: GMInst
 bass_lead               = 87
 
--- | Synth pad
+
+-- Synth pad
+
 new_age_pad             :: GMInst
 new_age_pad             = 88
 
@@ -786,7 +903,9 @@ halo_pad                = 94
 sweep_pad               :: GMInst
 sweep_pad               = 95
 
--- | Synth effects
+
+-- Synth effects
+
 rain                    :: GMInst
 rain                    = 96
 
@@ -811,7 +930,9 @@ echoes                  = 102
 sci_fi                  :: GMInst
 sci_fi                  = 103
 
--- | World
+
+-- World
+
 sitar                   :: GMInst
 sitar                   = 104
 
@@ -836,7 +957,9 @@ fiddle                  = 110
 shanai                  :: GMInst
 shanai                  = 111
 
--- | Percussive
+
+-- Percussive
+
 tingle_bell             :: GMInst
 tingle_bell             = 112
 
@@ -862,7 +985,8 @@ reverse_cymbal          :: GMInst
 reverse_cymbal          = 119
 
 
--- | Sound effects
+-- Sound effects
+
 guitar_fret_noise       :: GMInst
 guitar_fret_noise       = 120
 
@@ -889,7 +1013,7 @@ gunshot                 = 127
 
 
 -------------------------------------------------------------------------------
-
+-- GM drums
 
 acoustic_bass_drum      :: GMDrum
 acoustic_bass_drum      = 35

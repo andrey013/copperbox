@@ -43,11 +43,11 @@ library
   
   exposed-modules:
     ZMidi.Emit,
-    ZMidi.Emit.Builder,
     ZMidi.Emit.Construction,
     ZMidi.Emit.VersionNumber
 
   other-modules:
+    ZMidi.Emit.Builder,
     ZMidi.Emit.Datatypes,
     ZMidi.Emit.OutputMidi,
     ZMidi.Emit.Utils.HList,

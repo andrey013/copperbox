@@ -11,14 +11,18 @@
 -- Portability :  GHC
 --
 -- Top level /shim/ for the Emit modules.
+-- 
+-- Projects should only import this module. 
+-- 
+-- Note - all the syntax datatypes are opaque. Syntax is built 
+-- with functions in the @ZMidi.Emit.Construction@ module.
 --
 --------------------------------------------------------------------------------
 
 module ZMidi.Emit
   ( 
 
-    module ZMidi.Emit.Builder
-  , module ZMidi.Emit.Construction
+    module ZMidi.Emit.Construction
   , module ZMidi.Emit.VersionNumber
 
 
@@ -33,19 +37,17 @@ module ZMidi.Emit
   , Track
   , ChannelStream
   , Section
-  , Overlays
   , SectionVoice
   , Primitive
   , VoiceMsg
   , PrimProps
 
   -- * Output
-  , writeHiMidi  -- export from Emit.OutputMidi
+  , writeHiMidi  -- re-export from Emit.OutputMidi
 
  
   ) where
 
-import ZMidi.Emit.Builder
 import ZMidi.Emit.Construction
 import ZMidi.Emit.Datatypes
 import ZMidi.Emit.OutputMidi
