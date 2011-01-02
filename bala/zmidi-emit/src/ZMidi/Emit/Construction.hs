@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.Emit.Constructors
+-- Module      :  ZMidi.Emit.Construction
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -10,17 +10,27 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Constructors for pitches, durations, General MIDI instruments,
--- General MIDI Drums.
+-- Construction for \"syntax\", pitches, durations, General MIDI 
+-- instruments and General MIDI Drums.
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Emit.Constructors
+module ZMidi.Emit.Construction
   (
 
-  -- * Type aliases
-    MidiPitch
-  , MidiDuration
+
+  -- * \"Syntax\" construction
+    hiMidi
+  , addTrack
+  , addT
+  , track
+
+  -- ** Meta info
+  , MetaInfo            -- opaque
+  , meta
+  , copyrightNotice
+  , lyrics
+  , genericText
 
   -- * Pitch constructors 
   , PitchCons
@@ -50,7 +60,6 @@ module ZMidi.Emit.Constructors
   , dsixteenth
 
   -- * General MIDI instruments
-  , GMInst
 
   , acoustic_grand_piano
   , bright_acoustic_piano
@@ -214,7 +223,6 @@ module ZMidi.Emit.Constructors
 
 
   -- * General MIDI drums
-  , GMDrum
   , acoustic_bass_drum
   , bass_drum_1
   , side_stick
@@ -265,37 +273,101 @@ module ZMidi.Emit.Constructors
 
   ) where
 
+import ZMidi.Emit.Datatypes
+import qualified ZMidi.Emit.Utils.JoinList as JL
+
+import ZMidi.Core                               -- package: zmidi-core
+
+import qualified Data.IntMap as IM
+import Data.Monoid
 import Data.Word
 
 
--- | 'MidiPitch' is a Word8, corresponding directly to the MIDI
--- representation, only values in the range @[0..127]@ are
--- allowed.
---
--- Middle c is 60. Each increment is a semitone step. With careful
--- use of the pitch-bend control signal MIDI can simulate
--- microtonal intervals though this is not attempted by
--- @ZMidi.Emit@.
---
-type MidiPitch    = Word8
 
--- | 'MidiDuration' is a Double, directly corresponding to the
--- dureation value:
+--------------------------------------------------------------------------------
+-- new constructors
+
+-- | Build an initial HiMidi object. 
+-- 
+-- HiMidi is built in a /snoc list/ style, to add tracks use 
+-- 'addTrack':
 --
--- @1.0@ represents a whole note.
+-- > demo_hi_midi :: HiMidi 
+-- > demo_hi_midi = hiMidi `addTrack` percussion_track `addTrack` piano_track
+-- >   where
+-- >     percussion_track = ...
+-- >     piano_track      = ...
+-- >
 --
--- @0.5@ represents a half note.
+hiMidi :: HiMidi
+hiMidi = HiMidi mempty mempty
+
+
+infixl 5 `addTrack`, `addT`
+
+-- | 'addTrack' : @ hi_midi_object * track -> HiMidi @ 
 --
--- @0.25@ represents a half note. Etc.
+-- Add a track to a HiMidi object. 
+-- 
+-- Note - that the argument order does not follow the usual 
+-- Haskell convention (cf. @insert@ on Data.Map for example). This 
+-- is because the internal representation allows efficient adding 
+-- to the right tip as per a /snoc list/.
+-- 
+addTrack :: HiMidi -> Track -> HiMidi
+addTrack rep trk = rep { hm_data_tracks = jl `JL.snoc` trk}
+  where 
+    jl = hm_data_tracks rep  
+
+
+-- | 'addT' a synonym for 'addTrack'.
 --
--- Using Double allows some cleverness for representing special
--- durations, e.g. grace notes can be some small duration
--- subtracted from the note next to the grace.
+-- This might be preferred to 'addTrack' as it is four letters
+-- long like 'meta' and so may vertically align better. 
+-- 
+addT :: HiMidi -> Track -> HiMidi
+addT = addTrack
+
+
+-- | 'track' : @ chan_num * channel_stream -> Track @
+-- 
+-- Create a 'Track' from a 'ChannelStream', assigning it
+-- to the channel @chan_num@.
 --
--- Internally @ZMidi.Emit@ translates the Double value into and
--- integer number of ticks.
---
-type MidiDuration = Double
+track :: Int -> ChannelStream -> Track
+track ch_num ch_body = Track $ IM.insert ch_num ch_body IM.empty 
+
+
+--------------------------------------------------------------------------------
+-- Text events 
+
+newtype MetaInfo = MetaInfo { getMetaInfo :: MidiMetaEvent }
+
+infixl 6 `meta`
+
+-- | Add 'MetaInfo' (e.g. copyright notice) to the HiMidi object.
+-- 
+meta :: HiMidi -> MetaInfo -> HiMidi
+meta rep meta_info = rep { hm_info_track = info }
+  where
+    info = hm_info_track rep `JL.snoc` getMetaInfo meta_info
+
+
+
+-- | Copyright notice meta information.
+-- 
+copyrightNotice :: String -> MetaInfo
+copyrightNotice msg = MetaInfo $ TextEvent COPYRIGHT_NOTICE msg
+
+-- | Lyrics meta information.
+-- 
+lyrics :: String -> MetaInfo
+lyrics msg = MetaInfo $ TextEvent LYRICS msg
+
+-- | Generic text meta information.
+-- 
+genericText :: String -> MetaInfo
+genericText msg = MetaInfo $ TextEvent GENERIC_TEXT msg
 
 
 --------------------------------------------------------------------------------
@@ -404,9 +476,6 @@ dsixteenth   = 0.0625
 
 --------------------------------------------------------------------------------
 
--- | Enumeration of the General MIDI instruments.
---
-type GMInst = Word8
 
 -- | Piano
 
@@ -821,9 +890,6 @@ gunshot                 = 127
 
 -------------------------------------------------------------------------------
 
--- | Enumeration of the General MIDI drum types.
---
-type GMDrum = Word8
 
 acoustic_bass_drum      :: GMDrum
 acoustic_bass_drum      = 35

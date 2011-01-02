@@ -50,9 +50,7 @@ module ZMidi.Emit.Utils.JoinList
 
   , takeWhileL
   , accumMapL
-  , isEmpty
-  , isOne
-  , isMany
+  , null
 
 
   -- * Views
@@ -72,7 +70,7 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Traversable ( Traversable(..) )
 
-import Prelude hiding ( head, take, length, mapM )
+import Prelude hiding ( head, take, length, mapM, null )
 
 data JoinList a = Empty 
                 | One a 
@@ -188,20 +186,9 @@ zipWithIntoList f jl xs0 = step (viewl jl) xs0
 --------------------------------------------------------------------------------
 
 
-isEmpty :: JoinList a -> Bool
-isEmpty Empty       = True
-isEmpty _           = False
-
-
-isOne :: JoinList a -> Bool
-isOne (One _)       = True
-isOne _             = False
-
-isMany :: JoinList a -> Bool
-isMany (Join _ _)   = True
-isMany _            = False
-
-
+null :: JoinList a -> Bool
+null Empty       = True
+null _           = False
 
 
 -- | Create a singleton join list.

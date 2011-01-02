@@ -41,8 +41,6 @@ module ZMidi.Emit.Builder
   , chord
   , rest
 
-  , singleSection
-  , overlayVoices
 
   , section
   , overlays
@@ -51,7 +49,6 @@ module ZMidi.Emit.Builder
 
 
 import ZMidi.Emit.Datatypes
-import ZMidi.Emit.Constructors
 import ZMidi.Emit.Utils.HList
 import ZMidi.Emit.Utils.InstrumentName
 import qualified ZMidi.Emit.Utils.JoinList as JL
@@ -143,13 +140,16 @@ noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
               <$> askEnv
 
 
+
+--------------------------------------------------------------------------------
+-- 
+
+
 instrument :: GMInst -> Build ()
 instrument inst  = report prog >> report name
   where
     prog = primVoiceMessage $ \ch -> ProgramChange ch inst
-    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)
-
-    
+    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)    
 
 
 note :: MidiDuration -> MidiPitch -> Build ()
@@ -162,26 +162,6 @@ rest :: MidiDuration -> Build ()
 rest d = report $ PRest d
 
 
-
--- These two are arguably at the wrong type - shouldn\'t be
--- (Build a)...
-
-singleSection :: Double -> [Build a] -> ChannelStream
-singleSection bpm phrases = 
-    ChannelStream $ JL.one $ Section bpm $ JL.fromListF fn phrases
-  where
-    fn = SectionVoice . execBuild build_env_zero
-   
-
--- note sure this is doing what I expect ...
--- (Plus I need more care with naming schemes).
---
-overlayVoices :: Double -> [[Build a]] -> ChannelStream
-overlayVoices bpm voices = 
-    ChannelStream $ JL.fromList $ map top voices
-  where
-    top = Section bpm . JL.fromListF fn
-    fn  = SectionVoice . execBuild build_env_zero
 
 voice :: Build a -> SectionVoice
 voice = SectionVoice . execBuild build_env_zero

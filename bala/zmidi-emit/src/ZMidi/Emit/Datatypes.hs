@@ -17,7 +17,15 @@
 
 module ZMidi.Emit.Datatypes
   ( 
-    HiMidi(..)
+
+  -- * Type synonyms
+    MidiPitch
+  , MidiDuration
+  , GMInst
+  , GMDrum
+
+  -- * Higher level syntax
+  ,  HiMidi(..)
   , Track(..)
   , ChannelStream(..)
   , Section(..)
@@ -30,22 +38,64 @@ module ZMidi.Emit.Datatypes
   , primVoiceMessage
   , primMetaEvent
 
-  , hiMidi
-  , addTrack
-  , track
 
   ) where
 
 import ZMidi.Emit.Utils.JoinList ( JoinList )
-import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
 import Data.IntMap ( IntMap )
-import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Word
 
+
+
+
+-- | 'MidiPitch' is a Word8, corresponding directly to the MIDI
+-- representation, only values in the range @[0..127]@ are
+-- allowed.
+--
+-- Middle c is 60. Each increment is a semitone step. With careful
+-- use of the pitch-bend control signal MIDI can simulate
+-- microtonal intervals though this is not attempted by
+-- @ZMidi.Emit@.
+--
+type MidiPitch    = Word8
+
+-- | 'MidiDuration' is a Double, directly corresponding to the
+-- dureation value:
+--
+-- @1.0@ represents a whole note.
+--
+-- @0.5@ represents a half note.
+--
+-- @0.25@ represents a half note. Etc.
+--
+-- Using Double allows some cleverness for representing special
+-- durations, e.g. grace notes can be some small duration
+-- subtracted from the note next to the grace.
+--
+-- Internally @ZMidi.Emit@ translates the Double value into and
+-- integer number of ticks.
+--
+type MidiDuration = Double
+
+-- | Enumeration of the General MIDI instruments.
+--
+type GMInst = Word8
+
+
+
+-- | Enumeration of the General MIDI drum types.
+--
+type GMDrum = Word8
+
+
+
+
+--------------------------------------------------------------------------------
+-- High level syntax
 
 -- | High-level representation of Format 1 MIDI files.
 --
@@ -58,9 +108,14 @@ import Data.Word
 -- with changing tempos or different instruments) can be 
 -- sequentially concatenated.
 --
+-- HiMidi also contains an info track. Some text events (e.g. 
+-- copyright notice, lyrics) can be added to the info track, by 
+-- default if the info track is empty @ZMidi-Emit@ will write a
+-- timestamp in the output file.
+--  
 --
 data HiMidi = HiMidi
-      { hm_track_zero   :: Maybe MidiTrack
+      { hm_info_track   :: JoinList MidiMetaEvent
       , hm_data_tracks  :: JoinList Track 
       }
   deriving (Show)
@@ -195,21 +250,3 @@ primMetaEvent :: MidiMetaEvent -> Primitive
 primMetaEvent = PMsg . Right
 
 
---------------------------------------------------------------------------------
--- new constructors
-
-
-hiMidi :: HiMidi
-hiMidi = HiMidi Nothing mempty
-
-
-infixr 5 `addTrack`
-
-addTrack :: HiMidi -> Track -> HiMidi
-addTrack rep trk = rep { hm_data_tracks = jl `JL.snoc` trk}
-  where 
-    jl = hm_data_tracks rep  
-
-
-track :: Int -> ChannelStream -> Track
-track ch_num ch_body = Track $ IM.insert ch_num ch_body IM.empty 

@@ -18,9 +18,15 @@ module ZMidi.Emit
   ( 
 
     module ZMidi.Emit.Builder
-  , module ZMidi.Emit.Constructors
-  , module ZMidi.Emit.OutputMidi
+  , module ZMidi.Emit.Construction
   , module ZMidi.Emit.VersionNumber
+
+
+  -- * Type synonyms
+  , MidiPitch
+  , MidiDuration
+  , GMInst
+  , GMDrum
 
   -- * Data types
   , HiMidi
@@ -33,14 +39,14 @@ module ZMidi.Emit
   , VoiceMsg
   , PrimProps
 
-  , hiMidi
-  , addTrack
-  , track
+  -- * Output
+  , writeHiMidi  -- export from Emit.OutputMidi
+
  
   ) where
 
 import ZMidi.Emit.Builder
-import ZMidi.Emit.Constructors
+import ZMidi.Emit.Construction
 import ZMidi.Emit.Datatypes
 import ZMidi.Emit.OutputMidi
 import ZMidi.Emit.VersionNumber

@@ -15,8 +15,8 @@ description:
   .
   MIDI essentially represents the control of a keyboard 
   synthesizer, in contrast ZMidi-Emit represents music with notes, 
-  chords and rests. Like MIDI it allows multiple tracks, which in 
-  turn can contain multiple channels.
+  chords and rests. Like MIDI, ZMidi-Emit allows multiple tracks, 
+  which in turn can contain multiple channels.
   .
   Changelog:
   . 
@@ -44,12 +44,12 @@ library
   exposed-modules:
     ZMidi.Emit,
     ZMidi.Emit.Builder,
-    ZMidi.Emit.Constructors,
-    ZMidi.Emit.Datatypes,
-    ZMidi.Emit.OutputMidi,
+    ZMidi.Emit.Construction,
     ZMidi.Emit.VersionNumber
 
   other-modules:
+    ZMidi.Emit.Datatypes,
+    ZMidi.Emit.OutputMidi,
     ZMidi.Emit.Utils.HList,
     ZMidi.Emit.Utils.InstrumentName,
     ZMidi.Emit.Utils.JoinList
