@@ -22,28 +22,28 @@ import ZMidi.Emit                               -- package: zmidi-emit
 
 
 
-beat :: (MidiDuration -> Build ()) -> Build ()
+beat :: (MidiDuration -> NoteList ()) -> NoteList ()
 beat mf = mf dquarter
 
-shiftBeat :: (MidiDuration -> Build ()) -> Build ()
+shiftBeat :: (MidiDuration -> NoteList ()) -> NoteList ()
 shiftBeat mf = rest (0.25 * dquarter) >> mf (0.75 * dquarter)
 
 
-halfBeats :: (MidiDuration -> Build ()) -> (MidiDuration -> Build ()) -> Build () 
+halfBeats :: (MidiDuration -> NoteList ()) -> (MidiDuration -> NoteList ()) -> NoteList () 
 halfBeats mf mg = mf deighth >> mg deighth
 
-pletBeats :: Int -> Int -> [MidiDuration -> Build ()] -> Build ()
+pletBeats :: Int -> Int -> [MidiDuration -> NoteList ()] -> NoteList ()
 pletBeats n d ps = mapM_ ($ unit_dur) ps
   where
     unit_dur = (dquarter * fromIntegral d) / (fromIntegral n)
 
 
-drumPrim :: GMDrum -> MidiDuration -> Build ()
-drumPrim gmd = \dur -> note dur (drumPitch gmd) 
+drumPrim :: GMDrum -> MidiDuration -> NoteList ()
+drumPrim gmd = \dur -> note gmd dur
 
-flamPrim :: GMDrum -> GMDrum ->  MidiDuration -> Build ()
+flamPrim :: GMDrum -> GMDrum ->  MidiDuration -> NoteList ()
 flamPrim d1 d2 =
-    \dur -> note (0.25*dur) (drumPitch d1) >> note (0.75*dur) (drumPitch d2)
+    \dur -> note d1 (0.25*dur) >> note d2 (0.75*dur)
 
 
 

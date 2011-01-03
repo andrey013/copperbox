@@ -21,6 +21,7 @@ import Wumpus.Rhythm.Djembe.MidiPrimitives
 
 import ZMidi.Emit                               -- package: zmidi-emit
 
+import Data.List
 import Data.Monoid
 
 
@@ -28,12 +29,12 @@ import Data.Monoid
 -- | To generate output we need a Midi interpretation.
 --
 
-newtype MidiDjembe = MidiDjembe { getMidiDjembe :: MidiDuration -> Build () }
+newtype MidiDjembe = MidiDjembe { getMidiDjembe :: MidiDuration -> NoteList () }
 
 
 instance CStrokeBase MidiDjembe where
   rest_note     = MidiDjembe $ rest
-  period        = MidiDjembe $ drumPrim Low_bongo       -- this should be low vol
+  period        = MidiDjembe $ drumPrim low_bongo       -- this should be low vol
 
 
 instance CStrokeAnno MidiDjembe where
@@ -50,25 +51,34 @@ instance CStrokeBell MidiDjembe where
 
 --------------------------------------------------------------------------------  
 
-barChannelTracks :: [Bar MidiDjembe] -> ZMidiRep
-barChannelTracks = mconcat . map barChannelTrack
+barChannelTracks :: [Bar MidiDjembe] -> HiMidi
+barChannelTracks = foldl' fn hiMidi 
+  where
+    fn ac e = ac `addT` makePercTrack e
 
 
 
-barChannelTrack :: Bar MidiDjembe -> ZMidiRep
-barChannelTrack bar = singleTrack $ singleSection 9 120 $ [ barBeats bar ]
+barChannelTrack :: Bar MidiDjembe -> HiMidi
+barChannelTrack bar = hiMidi `addT` makePercTrack bar
 
-barBeats :: Bar MidiDjembe -> Build ()
+makePercTrack :: Bar MidiDjembe -> Track
+makePercTrack bar = track 9 chan_strm
+  where
+    chan_strm = section 120 $ barBeats bar
+
+
+
+barBeats :: Bar MidiDjembe -> NoteList ()
 barBeats = mapM_ groupBeats
 
 
-groupBeats :: Group MidiDjembe -> Build ()
+groupBeats :: Group MidiDjembe -> NoteList ()
 groupBeats = mapM_ makeBeat
 
 
 -- Duration is always qn
 
-makeBeat :: Beat MidiDjembe -> Build ()
+makeBeat :: Beat MidiDjembe -> NoteList ()
 makeBeat (I  a)      = beat $ getMidiDjembe a
 makeBeat (S  a)      = shiftBeat $ getMidiDjembe a
 makeBeat (Ha a b)    = halfBeats (getMidiDjembe a) (getMidiDjembe b)

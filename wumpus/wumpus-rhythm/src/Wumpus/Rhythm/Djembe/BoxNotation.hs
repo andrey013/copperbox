@@ -129,22 +129,22 @@ ddsb = superimposeLocImage (letter 'B') (upstroke 'X')
 
 
 instance CBoxDjembe MidiDjembe where
-  bass          = MidiDjembe $ drumPrim Bass_drum_1
-  muffled_bass  = MidiDjembe $ drumPrim Bass_drum_1
-  tone          = MidiDjembe $ drumPrim Low_tom
-  muffled_tone  = MidiDjembe $ drumPrim Low_tom
-  slap          = MidiDjembe $ drumPrim High_tom
-  muffled_slap  = MidiDjembe $ drumPrim High_tom
-  bass_flam     = MidiDjembe $ flamPrim Bass_drum_1 Bass_drum_1
-  tone_flam     = MidiDjembe $ flamPrim Low_tom   Low_tom
-  slap_flam     = MidiDjembe $ flamPrim High_tom  High_tom
+  bass          = MidiDjembe $ drumPrim bass_drum_1
+  muffled_bass  = MidiDjembe $ drumPrim bass_drum_1
+  tone          = MidiDjembe $ drumPrim low_tom
+  muffled_tone  = MidiDjembe $ drumPrim low_tom
+  slap          = MidiDjembe $ drumPrim high_tom
+  muffled_slap  = MidiDjembe $ drumPrim high_tom
+  bass_flam     = MidiDjembe $ flamPrim bass_drum_1 bass_drum_1
+  tone_flam     = MidiDjembe $ flamPrim low_tom   low_tom
+  slap_flam     = MidiDjembe $ flamPrim high_tom  high_tom
 
 
 instance CBoxSangban MidiDjembe where
-  sangban_stroke            = MidiDjembe $ drumPrim Low_floor_tom
-  sangban_pressed_stroke    = MidiDjembe $ drumPrim High_floor_tom
+  sangban_stroke            = MidiDjembe $ drumPrim low_floor_tom
+  sangban_pressed_stroke    = MidiDjembe $ drumPrim high_floor_tom
 
 
 instance CBoxKenkeni MidiDjembe where
-  kenkeni_stroke            = MidiDjembe $ drumPrim Low_timbale
-  kenkeni_pressed_stroke    = MidiDjembe $ drumPrim High_timbale
+  kenkeni_stroke            = MidiDjembe $ drumPrim low_timbale
+  kenkeni_pressed_stroke    = MidiDjembe $ drumPrim high_timbale

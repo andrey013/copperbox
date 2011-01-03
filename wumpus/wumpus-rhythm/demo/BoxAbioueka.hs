@@ -23,7 +23,7 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     either fk sk =<< loadHelveticaMetrics
-    writeZMidiRep "./out/simple01.mid" $ barChannelTracks midi_tracks
+    writeHiMidi "./out/simple01.mid" $ barChannelTracks midi_tracks
   where
     fk ss       = putStrLn ss
     sk metrics  = let pic1 = runDrawingU (makeCtx metrics) djembe_drawing
