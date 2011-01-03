@@ -1,4 +1,44 @@
 
+0.40.0 to 0.41.0:
+
+  * Changed PostScript output to use pre-defined procedures for 
+    circles and ellipses. This should be a significant 
+    optimization for drawings that have many circles or ellipses.
+    For drawings that do not use circles or ellipses, it adds 
+    circa. 75 lines to the generated PostScript which is 
+    tolerable.
+
+  * API change - @Core.Text.Base@ no longer exports the 
+    constructor and field label for @EscapedText@, it is now an 
+    opaque type. For a building @EscapedText@ either the existing 
+    /safe/constructor @escapeString@ or the new function 
+    @wrapEscChar@ should be used. For destructing @EscapedText@ 
+    there is a new function @destrEscapedText@.
+
+  * API change - the argument order of the functions @rtextlabel@ 
+    and @rescapedlabel@ in @Core.Picture@ has changed. The order 
+    of angle of rotation and the baseline-left has been swapped so 
+    that angle of rotation is first. This matches the other 
+    rotated graphics in @Core.Picture@.
+
+  * Upper bounds of Cabal build depends relaxed a bit.
+ 
+  * Added the @UNil@ type to @Core.Geometry@ and added affine 
+    instances for the UNil type, plus Maybe and Pair. @UNil@ is
+    useful for higher-level drawing (it is used extensively in
+    Wumpus-Basic).
+
+  * Added the function @emptyPath@ to @Core.Picture@. This creates 
+    a /null path/ with an empty list of path segments. Null paths 
+    still need a start point - this is minimum needed for bounding 
+    box calculation. Improved the PostScript and SVG output so 
+    there is no code generated for empty paths and textlabels.
+
+  * Added @vectorPath@ to @Core.Picture@.
+
+  * Added @boundaryCenter@ to @Core.BoundingBox@.
+
+  * Improved generated SVG code generation for ellipses / circles.
 
 0.37.0 to 0.40.0: 
 

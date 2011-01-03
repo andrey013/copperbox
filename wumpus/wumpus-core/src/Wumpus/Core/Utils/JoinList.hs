@@ -91,9 +91,11 @@ instance Foldable JoinList where
   foldr                = joinfoldr
   foldl                = joinfoldl
 
+
 instance Traversable JoinList where
   traverse f (One a)    = One <$> f a
   traverse f (Join t u) = Join <$> traverse f t <*> traverse f u
+
 
 -- Views
 
@@ -207,7 +209,7 @@ joinfoldr :: (a -> b -> b) -> b -> JoinList a -> b
 joinfoldr f = go
   where
     go e (One a)    = f a e
-    go e (Join t u) = go (go e t) u
+    go e (Join t u) = go (go e u) t
 
 
 -- | Left-associative fold of a JoinList.
@@ -216,7 +218,7 @@ joinfoldl :: (b -> a -> b) -> b -> JoinList a -> b
 joinfoldl f = go 
   where
     go e (One a)    = f e a
-    go e (Join t u) = go (go e u) t
+    go e (Join t u) = go (go e t) u
 
 --------------------------------------------------------------------------------
 -- Views
