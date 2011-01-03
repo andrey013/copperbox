@@ -20,11 +20,11 @@ demo01 = do
     writeHiMidi "demo01.mid" $ hiMidi `addTrack` track 0 sections
   where
     sections = section 120 phrase1 `mappend` section 120 phrase2
-    phrase1  = instrument honky_tonk >> note dquarter (c_nat 4) 
-                                     >> note dquarter (c_nat 4)
+    phrase1  = instrument honky_tonk >> note (c_nat 4) dquarter 
+                                     >> note (c_nat 4) dquarter 
     phrase2  = instrument honky_tonk >> 
-                 localize (noteOnVelo 64) (    note deighth  (e_nat 4) 
-                                            >> note deighth  (g_nat 4) )
+                 localize (noteOnVelo 64) (    note (e_nat 4) deighth
+                                            >> note (g_nat 4) deighth )
 
 
     

@@ -25,8 +25,8 @@ demo01 = do
   where
     perc_track  = overlays 120 [claves1, cabasa1]
     
-    claves1     = note dquarter claves >> note dquarter claves
-    cabasa1     = note deighth  cabasa >> note deighth  cabasa
+    claves1     = note claves dquarter >> note claves dquarter
+    cabasa1     = note cabasa deighth  >> note cabasa deighth
 
 
     

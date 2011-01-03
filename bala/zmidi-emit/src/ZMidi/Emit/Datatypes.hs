@@ -217,7 +217,6 @@ instance Show VoiceMsg where
 data PrimProps = PrimProps
       { velocity_on     :: Word8
       , velocity_off    :: Word8
-      , note_volume     :: Word8
       }
   deriving (Eq,Ord,Show)
 

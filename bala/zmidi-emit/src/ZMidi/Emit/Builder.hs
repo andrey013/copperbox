@@ -55,11 +55,17 @@ import Data.Word
 
 
 
-
+-- | Common params for every note on that it would be tedious to
+-- include with every constructor.
+--
+-- It would be nice to have volume settable on individual notes, 
+-- but in MIDI volume is a message t the synthesizer to change the 
+-- volume level (techinically it is two messages one for the volume 
+-- MSB and one for the LSB).
+--
 data BuildEnv = BuildEnv
       { note_on_velocity        :: Word8
       , note_off_velocity       :: Word8
-      , note_volume_level       :: Word8
       }
   deriving (Eq,Ord,Show)
 
@@ -78,7 +84,6 @@ build_env_zero :: BuildEnv
 build_env_zero = BuildEnv
       { note_on_velocity     = 127
       , note_off_velocity    = 64
-      , note_volume_level    = 127
       }
 
 -- | Note lists are built within the 'NoteList' monad.
@@ -141,7 +146,6 @@ asksEnv extr = extr <$> askEnv
 noteProps :: NoteList PrimProps
 noteProps = (\r -> PrimProps { velocity_on    = note_on_velocity r
                              , velocity_off   = note_off_velocity r
-                             , note_volume    = note_volume_level r
                              })
               <$> askEnv
 

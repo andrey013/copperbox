@@ -31,8 +31,9 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   CHANGES,
-  demo/Demo01.hs
-
+  demo/Demo01.hs,
+  demo/Perc.hs,
+  demo/VolumeChange.hs
 
 library
   hs-source-dirs:     src

@@ -40,6 +40,7 @@ module ZMidi.Emit.Construction
   , overlays
 
   , instrument
+  , volume
   , note
   , chord
   , rest
@@ -297,6 +298,7 @@ import qualified ZMidi.Emit.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
+import Data.Bits
 import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Word
@@ -402,39 +404,9 @@ genericText msg = MetaInfo $ TextEvent GENERIC_TEXT msg
 -- Monadic building
 
 
--- | Add an instrument change to the note list.
---
-instrument :: GMInst -> NoteList ()
-instrument inst  = report prog >> report name
-  where
-    prog = primVoiceMessage $ \ch -> ProgramChange ch inst
-    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)    
-
-
--- | Add a note to the note list.
---
-note :: MidiDuration -> MidiPitch -> NoteList ()
-note d p = noteProps >>= \props -> report (PNote d props p)
-
-
--- | Add a chord to the note list.
---
--- Note - all the pitches should be different. @ZMidi-Emit@ 
--- transmits all chord notes to MIDI as note-on, note-off pairs, 
--- so duplicated notes will cause contention for the (virtual) 
--- keyboard key.
--- 
-chord :: MidiDuration -> [MidiPitch] -> NoteList ()
-chord d ps = noteProps >>= \props -> report (PChord d props ps)
-
--- | Add a rest to the note list.
---
-rest :: MidiDuration -> NoteList ()
-rest d = report $ PRest d
-
-
-
 -- | Build a 'SectionVoice' from a 'NoteList'.
+--
+-- Effectively this is a @run@ function for the 'NoteList' monad.
 --
 voice :: NoteList a -> SectionVoice
 voice = SectionVoice . execNoteList build_env_zero
@@ -446,6 +418,8 @@ voice = SectionVoice . execNoteList build_env_zero
 -- Build a 'ChannelStream' from a 'NoteList' played at the 
 -- supplied tempo (bpm).
 --
+-- Effectively this is a @run@ function for the 'NoteList' monad.
+--
 section :: Double -> NoteList a -> ChannelStream
 section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
 
@@ -456,9 +430,65 @@ section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
 -- NoteLists. All the overlayed NoteLists are played at the 
 -- supplied tempo (bpm).
 --
+-- Effectively this is a @run@ function for the 'NoteList' monad.
+--
 overlays :: Double -> [NoteList a] -> ChannelStream
 overlays bpm xs = 
     ChannelStream $ JL.one $ Section bpm $ JL.fromListF voice xs
+
+
+
+
+
+-- | Add an instrument change to the note list - all subsequent
+-- notes on this channel will be played with this instrument.
+--
+instrument :: GMInst -> NoteList ()
+instrument inst  = report prog >> report name
+  where
+    prog = primVoiceMessage $ \ch -> ProgramChange ch inst
+    name = primMetaEvent $ TextEvent INSTRUMENT_NAME (instrumentName inst)    
+
+
+-- | Change the channel volume level - all subsequent
+-- notes on this channel will be played at this volume.
+--
+-- Note - volume level is a 14-bit value rather than a 16-bit 
+-- (Word16) value, thus the max value is 16383.
+--
+volume :: Word16 -> NoteList ()
+volume vol  = report ctrl7 >> report ctrl38
+  where
+    lsb     = fromIntegral $ vol .&. 0x7F
+    msb     = fromIntegral $ (vol `shiftR` 7) .&. 0x7F
+    ctrl7   = primVoiceMessage $ \ch -> Controller ch 7  msb
+    ctrl38  = primVoiceMessage $ \ch -> Controller ch 38 lsb
+
+
+
+-- | Add a note to the note list.
+--
+note :: MidiPitch -> MidiDuration -> NoteList ()
+note p d = noteProps >>= \props -> report (PNote d props p)
+
+
+-- | Add a chord to the note list.
+--
+-- Note - all the pitches should be different. @ZMidi-Emit@ 
+-- transmits all chord notes to MIDI as note-on, note-off pairs, 
+-- so duplicated notes will cause contention for the (virtual) 
+-- keyboard key.
+-- 
+chord :: [MidiPitch] -> MidiDuration -> NoteList ()
+chord ps d = noteProps >>= \props -> report (PChord d props ps)
+
+-- | Add a rest to the note list.
+--
+rest :: MidiDuration -> NoteList ()
+rest d = report $ PRest d
+
+
+
 
 
 -- | Set the note-on velocity in the NoteList environment.
