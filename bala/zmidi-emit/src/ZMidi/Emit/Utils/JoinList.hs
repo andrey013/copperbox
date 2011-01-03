@@ -284,7 +284,7 @@ joinfoldr f = go
   where
     go e Empty      = e
     go e (One a)    = f a e
-    go e (Join t u) = go (go e t) u
+    go e (Join t u) = go (go e u) t
 
 
 -- | Left-associative fold of a JoinList.
@@ -294,7 +294,7 @@ joinfoldl f = go
   where
     go e Empty      = e
     go e (One a)    = f e a
-    go e (Join t u) = go (go e u) t
+    go e (Join t u) = go (go e t) u
 
 --------------------------------------------------------------------------------
 -- Views

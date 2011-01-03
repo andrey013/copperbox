@@ -33,7 +33,9 @@ extra-source-files:
   CHANGES,
   demo/Demo01.hs,
   demo/Perc.hs,
-  demo/VolumeChange.hs
+  demo/Scale.hs
+  demo/VolumeChange.hs,
+  demo/WasnRhythms.hs
 
 library
   hs-source-dirs:     src
