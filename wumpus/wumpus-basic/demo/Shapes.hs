@@ -16,12 +16,12 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU (standardContext 14) shapes
+    let pic1 = runCtxPictureU (standardContext 14) shapes
     writeEPS "./out/shapes01.eps" pic1
     writeSVG "./out/shapes01.svg" pic1
     
 
-shapes :: DDrawing
+shapes :: DCtxPicture
 shapes = drawTracing $ do
          _ <- drawi $ borderedShape $ translate 220 10 
                                     $ rotate30

@@ -42,7 +42,7 @@ makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
     (base_metrics, msgs) <- loadGSMetrics font_dir ["Times-Roman", "Times-Italic"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
+    let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit01.eps" pic1
     writeSVG "./out/arrow_circuit01.svg" pic1 
 
@@ -51,7 +51,7 @@ makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
     (base_metrics, msgs) <- loadAfmMetrics font_dir ["Times-Roman", "Times-Italic"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) circuit_drawing
+    let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit02.eps" pic1
     writeSVG "./out/arrow_circuit02.svg" pic1 
 
@@ -68,8 +68,8 @@ makeCtx = fontFace times_roman . metricsContext 11
 
 -- Note `at` currently does not work for Shapes.
          
-circuit_drawing :: Drawing Double 
-circuit_drawing = drawTracing $ do
+circuit_pic :: CtxPicture Double 
+circuit_pic = drawTracing $ do
     a1 <- drawi $ strokedShape $ rrectangle 12 66 30 $ P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ strokedShape $ circle 16 $ P2 120 60

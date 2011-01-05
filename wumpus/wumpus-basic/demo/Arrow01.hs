@@ -17,19 +17,19 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU (standardContext 48) arrow_drawing
+    let pic1 = runCtxPictureU (standardContext 48) arrow_pic
     writeEPS "./out/_temp_arrow01.eps" pic1
     writeSVG "./out/_temp_arrow01.svg" pic1 
 
          
-arrow_drawing :: Drawing Double 
-arrow_drawing = drawTracing $
+arrow_pic :: CtxPicture Double 
+arrow_pic = drawTracing $
     localize ultrathick $ do
       draw $ openStroke $ toPrimPath large_curve2
       localize (joinRound . capRound) $ do 
         draw $ openStroke $ toPrimPath $ curveyArr 24 (P2 0 50)
 
-drawing02 :: Drawing Double 
+drawing02 :: CtxPicture Double 
 drawing02 = drawTracing $
     localize ultrathick $ do
       draw $ openStroke $ toPrimPath large_curve

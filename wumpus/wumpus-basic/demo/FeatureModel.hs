@@ -37,7 +37,7 @@ makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
     (base_metrics, msgs) <- loadGSMetrics font_dir ["Courier-Bold"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) feature_model 
+    let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model01.eps" pic1
     writeSVG "./out/feature_model01.svg" pic1 
 
@@ -46,7 +46,7 @@ makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
     (base_metrics, msgs) <- loadAfmMetrics font_dir ["Courier-Bold"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) feature_model 
+    let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model02.eps" pic1
     writeSVG "./out/feature_model02.svg" pic1 
 
@@ -58,7 +58,7 @@ makeCtx = fontFace courier_bold . metricsContext 18
 -- @repetitions@ yet.
 --
          
-feature_model :: Drawing Double 
+feature_model :: CtxPicture Double 
 feature_model = drawTracing $ do
     lea <- widebox "e" $ P2 150 160    
     lra <- widebox "r" $ P2  60  80

@@ -17,12 +17,12 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU (standardContext 18) path_drawing
+    let pic1 = runCtxPictureU (standardContext 18) path_pic
     writeEPS "./out/path01.eps" pic1
     writeSVG "./out/path01.svg" pic1 
 
-path_drawing :: DDrawing
-path_drawing = drawTracing $ do
+path_pic :: DCtxPicture
+path_pic = drawTracing $ do
     draw circle1
     draw curve1
     draw curve2

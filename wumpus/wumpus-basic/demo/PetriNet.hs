@@ -43,7 +43,7 @@ makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
     (base_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica", "Helvetica-Bold"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) petri_net
+    let pic1 = runCtxPictureU (makeCtx base_metrics) petri_net
     writeEPS "./out/petri_net01.eps" pic1
     writeSVG "./out/petri_net01.svg" pic1 
 
@@ -52,7 +52,7 @@ makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
     (base_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica", "Helvetica-Bold"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) petri_net
+    let pic1 = runCtxPictureU (makeCtx base_metrics) petri_net
     writeEPS "./out/petri_net02.eps" pic1
     writeSVG "./out/petri_net02.svg" pic1 
 
@@ -61,7 +61,7 @@ makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 14
 
 
-petri_net :: DDrawing
+petri_net :: DCtxPicture
 petri_net = drawTracing $ do
     pw     <- place 0 140
     tu1    <- transition 70 140

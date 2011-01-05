@@ -1,4 +1,43 @@
+0.13.0 to 0.14.0:
 
+  * Re-organised module hierarchy, Wumpus-Basic is now divided 
+    into two layers - Basic (Font loader, utils, kernel drawing) 
+    and Drawing - /constructed/ graphic objects like arrows, dots, 
+    etc.
+
+  * Re-designed the /ContextFunction/ function types. Context
+    functions with different numbers of /static arguments/ are 
+    now separate newtypes. This has allowed a major cull of the 
+    combinators operating on context functions (@prepro@, 
+    @postpro@, @situ@, etc.) and now only a handful of special
+    combinators are needed. As the newtypes are instances of 
+    Monad and Applicative the usual Applicative and Monad 
+    combinators are now more readily useful.
+
+  * Work on the font loader code to improve its robustness, and 
+    improved error signalling on load failure. Loading glyph 
+    metrics now returns both the metrics (possibly fallback 
+    metrics if parsing failed) and a log.
+
+0.12.0 to 0.13.0:
+
+  * Major changes to @Basic.Graphic@ modules. @DrawingR@ is 
+    renamed @Drawing@ and is substantially re-worked. Graphic 
+    /functional/ types are now encapulated in the Drawing 
+    constructor @Drawing (ctx -> pt -> prim)@ rather than 
+    partially outside it @pt -> Drawing (ctx -> prim)@. 
+    @Drawing@ monad renamed @TraceDrawing@ and @DrawingT@ 
+    transformer renamed @TraceDrawingT@.
+
+  * Rudimentary font loading added, only AFM files are supported.
+
+  * @Basic.Shapes.Coordinate@ re-worked. The Coordinate type is 
+    now more like the Shapes types (excepting the intentional 
+    difference in drawing style).
+
+  * @Basic.Shapes.Plaintext@ removed.
+
+  * @Basic.Text.LRText@ completely redesigned.
 
 0.11.0 to 0.12.0:
 

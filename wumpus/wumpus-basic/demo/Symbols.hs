@@ -19,7 +19,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_ctx symbols
+    let pic1 = runCtxPictureU std_ctx symbols
     writeEPS "./out/symbols.eps" pic1
     writeSVG "./out/symbols.svg" pic1
 
@@ -33,7 +33,7 @@ std_ctx = fontFace times_roman $ standardContext 12
 -- generate better PostScript as there are less changes to the 
 -- /graphics state/.
 --
-symbols :: DDrawing
+symbols :: DCtxPicture
 symbols = drawTracing $ do
     localize (fontFace symbol) $ zipWithM_ sdraw all_letters ps
     zipWithM_ ldraw all_letters ps

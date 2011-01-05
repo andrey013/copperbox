@@ -11,7 +11,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_attr drawing01
+    let pic1 = runCtxPictureU std_attr drawing01
     writeEPS "./out/font_delta01.eps" pic1
     writeSVG "./out/font_delta01.svg" pic1
 
@@ -20,7 +20,7 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-drawing01 :: DDrawing
+drawing01 :: DCtxPicture
 drawing01 = drawTracing $ mf 
 
 

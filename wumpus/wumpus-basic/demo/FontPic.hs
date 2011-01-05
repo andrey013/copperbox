@@ -18,19 +18,19 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     --
-    let courier_pic = runDrawingU std_ctx courier_drawing
+    let courier_pic = runCtxPictureU std_ctx courier_cxpic
     writeEPS "./out/font_courier.eps"   courier_pic
     writeSVG "./out/font_courier.svg"   courier_pic
     --
-    let times_pic = runDrawingU std_ctx times_drawing
+    let times_pic = runCtxPictureU std_ctx times_cxpic
     writeEPS "./out/font_times.eps"     times_pic
     writeSVG "./out/font_times.svg"     times_pic
     --
-    let helvetica_pic = runDrawingU std_ctx helvetica_drawing
+    let helvetica_pic = runCtxPictureU std_ctx helvetica_cxpic
     writeEPS "./out/font_helvetica.eps" helvetica_pic
     writeSVG "./out/font_helvetica.svg" helvetica_pic
     --
-    let symbol_pic = runDrawingU std_ctx symbol_drawing
+    let symbol_pic = runCtxPictureU std_ctx symbol_cxpic
     writeEPS "./out/font_symbol.eps"    symbol_pic
     writeSVG "./out/font_symbol.svg"    symbol_pic
 
@@ -69,7 +69,7 @@ std_ctx :: DrawingContext
 std_ctx = standardContext 10
 
 
-fontDrawing :: [(RGBi,FontFace)] -> DDrawing
+fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
 fontDrawing xs = drawTracing $  
     zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
   where
@@ -80,16 +80,16 @@ fontDrawing xs = drawTracing $
 --------------------------------------------------------------------------------
 -- Times
 
-times_drawing :: Drawing Double
-times_drawing = 
+times_cxpic :: CtxPicture Double
+times_cxpic = 
     fontDrawing [ (steel_blue,  times_roman)
                 , (indian_red1, times_italic)
                 , (steel_blue,  times_bold)
                 , (indian_red1, times_bold_italic)
                 ] 
 
-helvetica_drawing :: Drawing Double
-helvetica_drawing = 
+helvetica_cxpic :: CtxPicture Double
+helvetica_cxpic = 
     fontDrawing [ (steel_blue,  helvetica)
                 , (indian_red1, helvetica_oblique)
                 , (steel_blue,  helvetica_bold)
@@ -100,8 +100,8 @@ helvetica_drawing =
 
 --------------------------------------------------------------------------------
 
-courier_drawing :: Drawing Double
-courier_drawing = 
+courier_cxpic :: CtxPicture Double
+courier_cxpic = 
     fontDrawing [ (steel_blue,  courier)
                 , (indian_red1, courier_oblique)
                 , (steel_blue,  courier_bold)
@@ -112,6 +112,6 @@ courier_drawing =
 --------------------------------------------------------------------------------
 
     
-symbol_drawing :: Drawing Double
-symbol_drawing = 
+symbol_cxpic :: CtxPicture Double
+symbol_cxpic = 
     fontDrawing [ (steel_blue, symbol) ]

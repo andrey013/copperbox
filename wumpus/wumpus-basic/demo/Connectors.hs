@@ -19,14 +19,14 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_ctx conn_drawing
+    let pic1 = runCtxPictureU std_ctx conn_pic
     writeEPS "./out/connectors01.eps" pic1
     writeSVG "./out/connectors01.svg" pic1
 
 
 
-conn_drawing :: Drawing Double
-conn_drawing = drawTracing $ tableGraphic $ conntable
+conn_pic :: CtxPicture Double
+conn_pic = drawTracing $ tableGraphic $ conntable
 
 conntable :: [ConnectorPath Double]
 conntable = 

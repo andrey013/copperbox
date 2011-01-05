@@ -49,7 +49,7 @@ makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx gs_metrics) text_drawing 
+    let pic1 = runCtxPictureU (makeCtx gs_metrics) text_pic
     writeEPS "./out/lr_text01.eps" pic1
     writeSVG "./out/lr_text01.svg" pic1
 
@@ -58,7 +58,7 @@ makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
-    let pic2 = runDrawingU (makeCtx afm_metrics) text_drawing 
+    let pic2 = runCtxPictureU (makeCtx afm_metrics) text_pic
     writeEPS "./out/lr_text02.eps" pic2
     writeSVG "./out/lr_text02.svg" pic2
 
@@ -69,8 +69,8 @@ makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18
 
 
-text_drawing :: Drawing Double
-text_drawing = drawTracing $ do 
+text_pic :: CtxPicture Double
+text_pic = drawTracing $ do 
     drawi_ $ (fn left_text)       `at` P2   0 400
     drawi_ $ (fn center_text)     `at` P2 200 400
     drawi_ $ (fn right_text)      `at` P2 400 400

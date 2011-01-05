@@ -16,14 +16,14 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU dctx iter_drawing
+    let pic1 = runCtxPictureU dctx iter_drawing
     writeEPS "./out/iter_draw01.eps" pic1
     writeSVG "./out/iter_draw01.svg" pic1
 
 dctx :: DrawingContext
 dctx = fontFace courier_bold $ standardContext 24
 
-iter_drawing :: DDrawing
+iter_drawing :: DCtxPicture
 iter_drawing = drawTracing $ do 
     draw $ extr (redA `chain1` greenB `chain1` blueC) `at` zeroPt
 

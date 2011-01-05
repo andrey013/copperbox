@@ -30,18 +30,17 @@ main = do
     createDirectoryIfMissing True "./out/"
     (base_metrics, msgs) <- loadAfmMetrics font_directory ["Helvetica", "Times-Roman"]
     mapM_ putStrLn msgs
-    let pic1 = runDrawingU (makeCtx base_metrics) text_drawing 
+    let pic1 = runCtxPictureU (makeCtx base_metrics) text_pic
     writeEPS "./out/afm4dot1_01.eps" pic1
     writeSVG "./out/afm4dot1_01.svg" pic1
-
 
 
 makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18
 
 
-text_drawing :: Drawing Double
-text_drawing = drawTracing $ do 
+text_pic :: CtxPicture Double
+text_pic = drawTracing $ do 
     drawi_ $ (fn left_text)   `at` P2   0 100
     drawi_ $ (fn center_text) `at` P2 250 100
     drawi_ $ (fn right_text)  `at` P2 500 100
