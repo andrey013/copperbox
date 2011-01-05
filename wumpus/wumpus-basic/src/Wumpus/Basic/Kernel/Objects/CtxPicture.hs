@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.Drawing
+-- Module      :  Wumpus.Basic.Kernel.Objects.CtxPicture
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -11,11 +11,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- A Drawing object. 
+-- A Picture-with-implicit-context object. 
 -- 
 -- This is the corresponding type to Picture in the Wumpus-Core.
 -- 
--- Drawing is a function from the DrawingContext to a Picture.
+-- CtxPicture is a function from the DrawingContext to a Picture.
 -- Internally the result is actually a (Maybe Picture) and not a 
 -- Picture, this is a trick to promote the extraction from 
 -- possibly empty drawings (created by TraceDrawing) to the 
@@ -25,17 +25,17 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.Drawing
+module Wumpus.Basic.Kernel.Objects.CtxPicture
   (
 
-    Drawing
-  , DDrawing
-  , runDrawing
-  , runDrawingU
+    CtxPicture
+  , DCtxPicture
+  , runCtxPicture
+  , runCtxPictureU
   , drawTracing
 
-  , clipDrawing
-  , modifyDrawing
+  , clipCtxPicture
+  , mapCtxPicture
 
   -- * Composition
   , over 
@@ -88,39 +88,39 @@ import Data.List ( foldl' )
 
 
 
-newtype Drawing u = Drawing { getDrawing :: CF (Maybe (Picture u)) }
+newtype CtxPicture u = CtxPicture { getCtxPicture :: CF (Maybe (Picture u)) }
 
-type DDrawing = Drawing Double
-
-
-type instance DUnit (Drawing u) = u
+type DCtxPicture = CtxPicture Double
 
 
+type instance DUnit (CtxPicture u) = u
 
 
-runDrawing :: DrawingContext -> Drawing u -> Maybe (Picture u)
-runDrawing ctx drw = runCF ctx (getDrawing drw)  
 
 
-runDrawingU :: DrawingContext -> Drawing u -> Picture u
-runDrawingU ctx df = maybe fk id $ runDrawing ctx df
+runCtxPicture :: DrawingContext -> CtxPicture u -> Maybe (Picture u)
+runCtxPicture ctx drw = runCF ctx (getCtxPicture drw)  
+
+
+runCtxPictureU :: DrawingContext -> CtxPicture u -> Picture u
+runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
   where
-    fk = error "runDrawingU - empty Drawing."   
+    fk = error "runCtxPictureU - empty CtxPicture."   
 
 
 
 drawTracing :: (Real u, Floating u, FromPtSize u) 
-            => TraceDrawing u a -> Drawing u
-drawTracing mf = Drawing $ 
+            => TraceDrawing u a -> CtxPicture u
+drawTracing mf = CtxPicture $ 
     drawingCtx >>= \ctx -> return (liftToPictureMb (execTraceDrawing ctx mf) )
 
 
 -- Note - cannot get an answer from a TraceDrawing with this 
--- Drawing type. There is nowhere to put the answer in the type.
+-- CtxPicture type. There is nowhere to put the answer in the type.
 --
 -- If the type was extended:
 --
--- > newtype Drawing u a = Drawing { getDrawing :: CF (a, Maybe (Picture u))) }
+-- > newtype CtxPicture u a = CtxPicture { getCtxPicture :: CF (a, Maybe (Picture u))) }
 --
 -- It would make things difficult for the drawing composition 
 -- operators. @a@ could be monoidial but are there any types of 
@@ -129,24 +129,24 @@ drawTracing mf = Drawing $
 --
 --------------------------------------------------------------------------------
 
-clipDrawing :: (Num u, Ord u) => (PrimPath u) -> Drawing u -> Drawing u
-clipDrawing cpath = modifyDrawing (clip cpath)
+clipCtxPicture :: (Num u, Ord u) => (PrimPath u) -> CtxPicture u -> CtxPicture u
+clipCtxPicture cpath = mapCtxPicture (clip cpath)
 
 
-modifyDrawing :: (Picture u -> Picture u) -> Drawing u -> Drawing u
-modifyDrawing pf = Drawing . fmap (fmap pf) . getDrawing
+mapCtxPicture :: (Picture u -> Picture u) -> CtxPicture u -> CtxPicture u
+mapCtxPicture pf = CtxPicture . fmap (fmap pf) . getCtxPicture
 
-instance (Real u, Floating u) => Rotate (Drawing u) where 
-  rotate ang = modifyDrawing (rotate ang)
+instance (Real u, Floating u) => Rotate (CtxPicture u) where 
+  rotate ang = mapCtxPicture (rotate ang)
 
-instance (Real u, Floating u) => RotateAbout (Drawing u) where
-  rotateAbout r pt = modifyDrawing (rotateAbout r pt)
+instance (Real u, Floating u) => RotateAbout (CtxPicture u) where
+  rotateAbout r pt = mapCtxPicture (rotateAbout r pt)
 
-instance (Num u, Ord u) => Scale (Drawing u) where
-  scale sx sy = modifyDrawing (scale sx sy)
+instance (Num u, Ord u) => Scale (CtxPicture u) where
+  scale sx sy = mapCtxPicture (scale sx sy)
 
-instance (Num u, Ord u) => Translate (Drawing u) where
-  translate dx dy = modifyDrawing (translate dx dy)
+instance (Num u, Ord u) => Translate (CtxPicture u) where
+  translate dx dy = mapCtxPicture (translate dx dy)
 
 
 
@@ -230,7 +230,7 @@ boundaryTopEdge = boundaryExtr (point_y . ur_corner)
 -- Note - do not export the empty drawing. It is easier to 
 -- pretend it doesn't exist.
 -- 
-empty_drawing :: (Real u, Floating u, FromPtSize u) => Drawing u
+empty_drawing :: (Real u, Floating u, FromPtSize u) => CtxPicture u
 empty_drawing = drawTracing $ return ()
 
 
@@ -241,8 +241,8 @@ empty_drawing = drawTracing $ return ()
 
 
 drawingConcat :: (Picture u -> Picture u -> Picture u) 
-              -> Drawing u -> Drawing u -> Drawing u
-drawingConcat op a b = Drawing $ mbpostcomb op (getDrawing a) (getDrawing b)
+              -> CtxPicture u -> CtxPicture u -> CtxPicture u
+drawingConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
 
 
 
@@ -257,7 +257,7 @@ mbpostcomb op = liftA2 fn
 -- Note - the megaCombR operator is in some way an
 -- /anti-combinator/. It seems easier to think about composing 
 -- drawings if we do work on the result Pictures directly rather 
--- than build combinators to manipulate Drawings.
+-- than build combinators to manipulate CtxPictures.
 --
 -- The idea of combining pre- and post- operating combinators
 -- makes me worry about circular programs even though I know 
@@ -271,8 +271,8 @@ mbpostcomb op = liftA2 fn
 megaCombR :: (Num u, Ord u)
           => (Picture u -> a) -> (Picture u -> a) 
           -> (a -> a -> Picture u -> Picture u) 
-          -> Drawing u -> Drawing u
-          -> Drawing u
+          -> CtxPicture u -> CtxPicture u
+          -> CtxPicture u
 megaCombR qL qR trafoR = drawingConcat fn
   where
     fn pic1 pic2 = let a    = qL pic1
@@ -288,7 +288,7 @@ megaCombR qL qR trafoR = drawingConcat fn
 -- Place \'drawing\' a over b. The idea of @over@ here is in 
 -- terms z-ordering, nither picture a or b are actually moved.
 --
-over    :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
+over    :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
 over    = drawingConcat picOver
 
 
@@ -298,15 +298,15 @@ over    = drawingConcat picOver
 -- Similarly @under@ draws the first drawing behind 
 -- the second but move neither.
 --
-under :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
+under :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
 under = flip over
 
 
 
 -- | Move in both the horizontal and vertical.
 --
-move :: (Num u, Ord u) => Vec2 u -> Drawing u -> Drawing u
-move v = modifyDrawing (\p -> p `picMoveBy` v)
+move :: (Num u, Ord u) => Vec2 u -> CtxPicture u -> CtxPicture u
+move v = mapCtxPicture (\p -> p `picMoveBy` v)
 
 
 
@@ -326,7 +326,7 @@ infixr 6 `nextToH`, `centric`
 -- > a `centeric` b 
 --
 --
-centric :: (Fractional u, Ord u) => Drawing u -> Drawing u -> Drawing u
+centric :: (Fractional u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
 centric = megaCombR boundaryCtr boundaryCtr moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
@@ -338,7 +338,7 @@ centric = megaCombR boundaryCtr boundaryCtr moveFun
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@.
 -- 
-nextToH :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
+nextToH :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
 nextToH = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
@@ -349,7 +349,7 @@ nextToH = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 --
 -- Vertical composition - move @b@, placing it below @a@.
 --
-nextToV :: (Num u, Ord u) => Drawing u -> Drawing u -> Drawing u
+nextToV :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
 nextToV = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
@@ -359,15 +359,15 @@ nextToV = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 --
 -- `atPoint` was previous the `at` operator.
 -- 
-atPoint :: (Num u, Ord u) => Drawing u -> Point2 u  -> Drawing u
+atPoint :: (Num u, Ord u) => CtxPicture u -> Point2 u  -> CtxPicture u
 p `atPoint` (P2 x y) = move (V2 x y) p
 
 
 
 -- | Center the picture at the supplied point.
 --
-centeredAt :: (Fractional u, Ord u) => Drawing u -> Point2 u -> Drawing u
-centeredAt d (P2 x y) = modifyDrawing fn d
+centeredAt :: (Fractional u, Ord u) => CtxPicture u -> Point2 u -> CtxPicture u
+centeredAt d (P2 x y) = mapCtxPicture fn d
   where
     fn p = let bb = boundary p
                dx = x - (boundaryWidth  bb * 0.5)
@@ -379,7 +379,7 @@ centeredAt d (P2 x y) = modifyDrawing fn d
 --
 -- No pictures are moved. 
 --
-zconcat :: (Real u, Floating u, FromPtSize u) => [Drawing u] -> Drawing u
+zconcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 zconcat []     = empty_drawing
 zconcat (d:ds) = foldl' over d ds
 
@@ -388,14 +388,14 @@ zconcat (d:ds) = foldl' over d ds
 
 -- | Concatenate the list pictures @xs@ horizontally.
 -- 
-hcat :: (Real u, Floating u, FromPtSize u) => [Drawing u] -> Drawing u
+hcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 hcat []     = empty_drawing
 hcat (d:ds) = foldl' nextToH d ds
 
 
 -- | Concatenate the list of pictures @xs@ vertically.
 --
-vcat :: (Real u, Floating u, FromPtSize u) => [Drawing u] -> Drawing u
+vcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 vcat []     = empty_drawing
 vcat (d:ds) = foldl' nextToV d ds
 
@@ -412,7 +412,7 @@ vcat (d:ds) = foldl' nextToV d ds
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-hspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
+hspace :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 hspace n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
@@ -426,7 +426,7 @@ hspace n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-vspace :: (Num u, Ord u) => u -> Drawing u -> Drawing u -> Drawing u
+vspace :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 vspace n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
@@ -439,7 +439,7 @@ vspace n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-hsep :: (Real u, Floating u, FromPtSize u) => u -> [Drawing u] -> Drawing u
+hsep :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
 hsep _ []     = empty_drawing
 hsep n (d:ds) = foldl' (hspace n) d ds
 
@@ -451,7 +451,7 @@ hsep n (d:ds) = foldl' (hspace n) d ds
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-vsep :: (Real u, Floating u, FromPtSize u) => u -> [Drawing u] -> Drawing u
+vsep :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
 vsep _ []     = empty_drawing
 vsep n (d:ds) = foldl' (vspace n) d ds
 
@@ -470,7 +470,7 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- of @a@ and align it with the top, center or bottom of @a@.
 -- 
 alignH :: (Fractional u, Ord u) 
-       =>  HAlign -> Drawing u -> Drawing u -> Drawing u
+       =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
 alignH HTop     = megaCombR boundaryNE    boundaryNW     alignMove
 alignH HCenter  = megaCombR boundaryE    boundaryW     alignMove
 alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
@@ -482,7 +482,7 @@ alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 -- and align it with the left, center or right of @a@.
 -- 
 alignV :: (Fractional u, Ord u) 
-       => VAlign -> Drawing u -> Drawing u -> Drawing u
+       => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
 alignV VLeft    = megaCombR boundarySW  boundaryNW   alignMove
 alignV VCenter  = megaCombR boundaryS   boundaryN    alignMove
 alignV VRight   = megaCombR boundarySE boundaryNE  alignMove
@@ -501,7 +501,7 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
 alignHSep :: (Fractional u, Ord u) 
-          => HAlign -> u -> Drawing u -> Drawing u -> Drawing u
+          => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 alignHSep HTop    dx = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
 alignHSep HCenter dx = megaCombR boundaryE  boundaryW  (alignMove2 (hvec dx))
 alignHSep HBottom dx = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
@@ -513,7 +513,7 @@ alignHSep HBottom dx = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
 alignVSep :: (Fractional u, Ord u) 
-          => VAlign -> u -> Drawing u -> Drawing u -> Drawing u
+          => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 alignVSep VLeft   dy = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 
 alignVSep VCenter dy = megaCombR boundaryS  boundaryN  (alignMove2 $ vvec (-dy)) 
 alignVSep VRight  dy = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
@@ -523,7 +523,7 @@ alignVSep VRight  dy = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
 -- concatenating them.
 --
 hcatA :: (Real u, Floating u, FromPtSize u) 
-      => HAlign -> [Drawing u] -> Drawing u
+      => HAlign -> [CtxPicture u] -> CtxPicture u
 hcatA _  []     = empty_drawing
 hcatA ha (d:ds) = foldl' (alignH ha) d ds
 
@@ -533,7 +533,7 @@ hcatA ha (d:ds) = foldl' (alignH ha) d ds
 -- concatenating them.
 --
 vcatA :: (Real u, Floating u, FromPtSize u) 
-      => VAlign -> [Drawing u] -> Drawing u
+      => VAlign -> [CtxPicture u] -> CtxPicture u
 vcatA _  []     = empty_drawing
 vcatA va (d:ds) = foldl' (alignV va) d ds
 
@@ -542,7 +542,7 @@ vcatA va (d:ds) = foldl' (alignV va) d ds
 -- concatenating and spacing them.
 --
 hsepA :: (Real u, Floating u, FromPtSize u) 
-      => HAlign -> u -> [Drawing u] -> Drawing u
+      => HAlign -> u -> [CtxPicture u] -> CtxPicture u
 hsepA _  _ []     = empty_drawing
 hsepA ha n (d:ds) = foldl' op d ds
   where 
@@ -553,7 +553,7 @@ hsepA ha n (d:ds) = foldl' op d ds
 -- concatenating and spacing them.
 --
 vsepA :: (Real u, Floating u, FromPtSize u) 
-      => VAlign -> u -> [Drawing u] -> Drawing u
+      => VAlign -> u -> [CtxPicture u] -> CtxPicture u
 vsepA _  _ []     = empty_drawing
 vsepA va n (d:ds) = foldl' op d ds
   where 

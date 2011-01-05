@@ -49,6 +49,16 @@ description:
   .
   Changelog:
   .
+  v0.14.0 to v0.15.0:
+  .
+  * Renamed the @Drawing@ object to @CtxPicture@. Although 
+    @CtxPicture@ is a less pleasant name, it should be less 
+    confusing. A @CtxPicture@ is the essentially the @Picture@ 
+    type from Wumpus-Core with an implicit context - 
+    @ContextPicture@ is simply too long and @CtxPicture@ is 
+    almost jibberish but the previous unrelated name @Drawing@ 
+    was not helpful.
+  .
   v0.13.0 to v0.14.0:
   .
   * Re-organised module hierarchy, Wumpus-Basic is now divided 
@@ -105,12 +115,12 @@ extra-source-files:
   demo/ColourChartUtils.hs,
   demo/Connectors.hs
   demo/DotPic.hs,
-  demo/DrawingCompo.hs,
   demo/FeatureModel.hs,
   demo/FontLoaderUtils.hs,
   demo/FontPic.hs,
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
+  demo/PictureCompo.hs,
   demo/Symbols.hs
 
 library
@@ -140,7 +150,7 @@ library
     Wumpus.Basic.Kernel.Objects.BaseObjects,
     Wumpus.Basic.Kernel.Objects.Bounded,
     Wumpus.Basic.Kernel.Objects.Connector,
-    Wumpus.Basic.Kernel.Objects.Drawing,
+    Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Graphic,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.FontLoader.Afm,
