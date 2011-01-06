@@ -19,11 +19,11 @@ module Wumpus.Tree.TreeBuildMonad
     NodeId
   , ZNodeId
   
-  , TreeDrawing
+  , TreeBuild
   , TreeSpec
   , ZTreeSpec
 
-  , runTreeDrawing
+  , runTreeBuild
 
   , nodeId
   , label
@@ -81,21 +81,21 @@ zeroSt = St { uid_counter = 0, node_refs = mempty }
 
 
 
-newtype TreeDrawing u a = TreeDrawing { getTreeDrawing :: St u -> (a, St u) }
+newtype TreeBuild u a = TreeBuild { getTreeBuild :: St u -> (a, St u) }
 
-instance Functor (TreeDrawing u) where
-  fmap f ma = TreeDrawing $ \s -> let (a,s1) = getTreeDrawing ma s in (f a, s1)
+instance Functor (TreeBuild u) where
+  fmap f ma = TreeBuild $ \s -> let (a,s1) = getTreeBuild ma s in (f a, s1)
 
-instance Applicative (TreeDrawing u) where
-  pure a    = TreeDrawing $ \s -> (a,s)
-  mf <*> ma = TreeDrawing $ \s -> let (f,s1) = getTreeDrawing mf s
-                                      (a,s2) = getTreeDrawing ma s1
-                                  in (f a,s2)
+instance Applicative (TreeBuild u) where
+  pure a    = TreeBuild $ \s -> (a,s)
+  mf <*> ma = TreeBuild $ \s -> let (f,s1) = getTreeBuild mf s
+                                    (a,s2) = getTreeBuild ma s1
+                                in (f a,s2)
 
-instance Monad (TreeDrawing u) where
-  return a  = TreeDrawing $ \s -> (a,s)
-  ma >>= k  = TreeDrawing $ \s -> let (a,s1) = getTreeDrawing ma s 
-                                  in getTreeDrawing (k a) s1 
+instance Monad (TreeBuild u) where
+  return a  = TreeBuild $ \s -> (a,s)
+  ma >>= k  = TreeBuild $ \s -> let (a,s1) = getTreeBuild ma s 
+                                in getTreeBuild (k a) s1 
 
 
 
@@ -103,21 +103,21 @@ instance Monad (TreeDrawing u) where
 type TreeSpec a = Tree (NodeId a)
 type ZTreeSpec  = TreeSpec ()
 
--- | This is the @run@ function for the TreeDrawing monad.
+-- | This is the @run@ function for the TreeBuild monad.
 --
 -- Note the monadic /command/ is type specialized to 
--- @(TreeSpec a)@, this is because evaluation in the TreeDrawing
+-- @(TreeSpec a)@, this is because evaluation in the TreeBuild
 -- monad is only significant for producing a @Tree (TreeNode u)@.
 --
 
-runTreeDrawing :: (Real u, Floating u, FromPtSize u)
-               => (a -> TreeNode u) -> TreeDrawing u (TreeSpec a) -> Tree (TreeNode u)
-runTreeDrawing regDrawF ma = 
-    let (a,s) = getTreeDrawing ma zeroSt in postRun regDrawF (a, node_refs s)
+runTreeBuild :: (Real u, Floating u, FromPtSize u)
+               => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> Tree (TreeNode u)
+runTreeBuild regDrawF ma = 
+    let (a,s) = getTreeBuild ma zeroSt in postRun regDrawF (a, node_refs s)
 
 
 -- As the constructor to build NodeIds is not exposed a 
--- TreeDrawing should not be able to refer to uninstantiated
+-- TreeBuild should not be able to refer to uninstantiated
 -- nodes, however while the failure continuation should be 
 -- unreachable we still need it in the code to make the 
 -- IntMap.lookup total.
@@ -133,8 +133,8 @@ postRun regDrawF (tree1,table) = fmap changeNode tree1
  
 
 
-nodeId :: TreeNode u -> TreeDrawing u (NodeId a)
-nodeId drawF = TreeDrawing $ \(St uid nodes) -> 
+nodeId :: TreeNode u -> TreeBuild u (NodeId a)
+nodeId drawF = TreeBuild $ \(St uid nodes) -> 
                  let nodes' = IntMap.insert uid drawF nodes
                  in (NodeId uid, St (uid+1) nodes')
 

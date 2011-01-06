@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 
 module DemoMonad where
@@ -5,7 +6,6 @@ module DemoMonad where
 import FontLoaderUtils
 
 import Wumpus.Tree
-import Wumpus.Tree.Base
 import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -17,8 +17,6 @@ import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Control.Monad
-import Data.Tree
 
 import System.Directory
 
@@ -27,7 +25,7 @@ import System.Directory
 
 
 
-tree1 :: TreeDrawing u (TreeSpec Char)
+tree1 :: TreeBuild u (TreeSpec Char)
 tree1 = return $ 
     branch (label 'A') [branch (label 'B') bs, branch (label 'F') gs]
   where
@@ -37,27 +35,26 @@ tree1 = return $
                              , leaf $ label 'J' ] ]
 
 
-tree_drawing1 :: DTreePicture
-tree_drawing1 = drawScaledTree2 (uniformScaling 30) $ 
-                  runTreeDrawing charNode tree1
+tree_drawing1 :: DCtxPicture
+tree_drawing1 = drawTracing $ 
+    drawScaledTree2 (uniformScaling 30) $ runTreeBuild charNode tree1
 
 
 
-tree2 :: (Real u, Floating u, FromPtSize u) => TreeDrawing u ZTreeSpec
+tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u ZTreeSpec
 tree2 = do
-    special <- nodeId $ dotText "root"   
+    special <- nodeId $ dotText "a"   
+    rightmost <- nodeId $ dotText "z"
+    let bs = [zleaf, zleaf, zleaf]
+    let gs = [zleaf, zleaf, leaf $ rightmost ]
     return $ 
       branch special [zbranch bs, zleaf, zbranch gs]
-  where
-    bs = [zleaf, zleaf, zleaf]
-    gs = [zleaf, zleaf, zleaf]
 
 
 
-tree_drawing2 :: DTreePicture
-tree_drawing2 = drawScaledTree2 (uniformScaling 60) $ 
-                  runTreeDrawing (diskNode red) 
-                                 tree2 
+tree_drawing2 :: DCtxPicture
+tree_drawing2 = drawTracing $ 
+    drawScaledTree2 (uniformScaling 60) $ runTreeBuild (diskNode red) tree2 
 
 
 main :: IO ()

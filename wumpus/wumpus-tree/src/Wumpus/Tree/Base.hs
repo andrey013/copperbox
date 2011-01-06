@@ -17,8 +17,11 @@
 
 module Wumpus.Tree.Base
   (
-    TreePicture
-  , DTreePicture
+
+    TreeDrawing
+  , DTreeDrawing
+  , TreePicture         -- OLD
+  , DTreePicture        -- OLD
   , CoordTree
   
   , TreeNode
@@ -34,11 +37,25 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Tree
 
+
 -- | A rendered tree - alias for for @Picture Double@ in 
 -- Wumpus-Core.
 --
+type TreeDrawing u      = TraceDrawing u ()
+
+type DTreeDrawing       = TreePicture Double
+
+
+
+-- | A rendered tree - alias for for @Picture Double@ in 
+-- Wumpus-Core.
+--
+-- OLD-HAT.
+--
 type TreePicture u = CtxPicture u
 
+-- OLD-HAT.
+--
 type DTreePicture = TreePicture Double
 
 

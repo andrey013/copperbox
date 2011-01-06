@@ -81,6 +81,15 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
                                     (\y -> sy * fromIntegral y)	
 
 
+
+-- 
+drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+                => ScaleFactors u -> Tree (TreeNode u) -> TreeDrawing u
+drawScaledTree2 scale_f tree = drawTree2 $ design scale_f tree
+
+
+
+
 -- | 'drawTreePicture' : @ draw_fun * attr * scale_factors * tree -> TreePicture @
 --
 -- The rendering function.
@@ -104,12 +113,6 @@ drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                 -> TreePicture u
 drawScaledTree drawF scale_f tree = drawTree drawF $ design scale_f tree
 
-
-drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                => ScaleFactors u
-                -> Tree (TreeNode u) 
-                -> TreePicture u
-drawScaledTree2 scale_f tree = drawTree2 $ design scale_f tree
 
 
 
