@@ -17,14 +17,15 @@
 module Wumpus.Tree
   (
   -- * The type of rendered trees
-    TreeDrawing
-  , DTreeDrawing        -- re-export.
+    TreePicture
+  , DTreePicture        -- re-export.
 
   , ScaleFactors
   , uniformScaling
   , scaleFactors
 
   , drawScaledTree
+  , drawScaledTree2
   , drawScaledFamilyTree
 
 
@@ -100,9 +101,15 @@ drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                 => (a -> TreeNode u) 
                 -> ScaleFactors u
                 -> Tree a 
-                -> TreeDrawing u
+                -> TreePicture u
 drawScaledTree drawF scale_f tree = drawTree drawF $ design scale_f tree
 
+
+drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+                => ScaleFactors u
+                -> Tree (TreeNode u) 
+                -> TreePicture u
+drawScaledTree2 scale_f tree = drawTree2 $ design scale_f tree
 
 
 
@@ -110,7 +117,7 @@ drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                      => (a -> TreeNode u) 
                      -> ScaleFactors u
                      -> Tree a 
-                     -> TreeDrawing u
+                     -> TreePicture u
 drawScaledFamilyTree drawF scale_f tree = 
     drawFamilyTree drawF $ design scale_f tree
 

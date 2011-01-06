@@ -54,23 +54,23 @@ main = do
 makePictures :: GlyphMetrics -> IO ()
 makePictures base_metrics = do 
     --
-    let pic1 = runDrawingU (makeCtx 18 base_metrics) tree_drawing1
+    let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/tree01.eps"  pic1
     writeSVG "./out/tree01.svg"  pic1
     --
-    let pic2 = runDrawingU (makeCtx 24 base_metrics) tree_drawing2
+    let pic2 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing2
     writeEPS "./out/tree02.eps"  pic2
     writeSVG "./out/tree02.svg"  pic2
     --
-    let pic3 = runDrawingU (makeCtx 14 base_metrics) tree_drawing3
+    let pic3 = runCtxPictureU (makeCtx 14 base_metrics) tree_drawing3
     writeEPS "./out/tree03.eps"  pic3
     writeSVG "./out/tree03.svg"  pic3
     --
-    let pic4 = runDrawingU (makeCtx 24 base_metrics) tree_drawing4
+    let pic4 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing4
     writeEPS "./out/tree04.eps"  pic4
     writeSVG "./out/tree04.svg"  pic4
     --
-    let pic5 = runDrawingU (makeCtx 24 base_metrics) tree_drawing5
+    let pic5 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing5
     writeEPS "./out/tree05.eps"  pic5
     writeSVG "./out/tree05.svg"  pic5
 
@@ -79,36 +79,41 @@ makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
 
-tree_drawing1 :: DTreeDrawing
+tree_drawing1 :: DTreePicture
 tree_drawing1 = drawScaledTree charNode  (uniformScaling 30) tree1
 
-tree_drawing2 :: DTreeDrawing
+-- tree_drawing1' :: DCtxPicture
+-- tree_drawing1' = ...
+
+
+
+tree_drawing2 :: DTreePicture
 tree_drawing2 = drawScaledTree (diskNode red) (uniformScaling 30) tree2
 
 -- This should be drawn in the /family tree/ style...
 -- 
-tree_drawing3 :: DTreeDrawing
+tree_drawing3 :: DTreePicture
 tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 25) tree3
 
 
-tree_drawing4 :: DTreeDrawing
+tree_drawing4 :: DTreePicture
 tree_drawing4 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree4
 
-tree_drawing5 :: DTreeDrawing
+tree_drawing5 :: DTreePicture
 tree_drawing5 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree5
 
 
 tree1 :: Tree Char
 tree1 = Node 'A' [Node 'B' bs, Node 'F' fs]
   where
-   bs = [Node 'C' [], Node 'D' [], Node 'E' []]
-   fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
+    bs = [Node 'C' [], Node 'D' [], Node 'E' []]
+    fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
 tree2 :: Tree Char
 tree2 = Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
   where
-   bs = [Node 'C' [], Node 'D' [], Node 'E' []]
-   gs = [Node 'H' [], Node 'I' [], Node 'J' []]
+    bs = [Node 'C' [], Node 'D' [], Node 'E' []]
+    gs = [Node 'H' [], Node 'I' [], Node 'J' []]
 
 -- This is the tree from Andrew Kennedy's 
 -- /Functional Pearl Drawing Trees/

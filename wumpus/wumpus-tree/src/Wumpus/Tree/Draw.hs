@@ -18,6 +18,7 @@
 module Wumpus.Tree.Draw 
   (
     drawTree
+  , drawTree2
   , drawFamilyTree
 
   ) where
@@ -42,8 +43,15 @@ import Data.Tree hiding ( drawTree )
 drawTree :: (Real u, Floating u, FromPtSize u) 
          => (a -> TreeNode u) 
          -> CoordTree u a 
-         -> Drawing u
+         -> CtxPicture u
 drawTree drawF tree = drawTracing $ drawTop drawF tree 
+
+drawTree2 :: (Real u, Floating u, FromPtSize u) 
+         => CoordTree u (TreeNode u)
+         -> CtxPicture u
+drawTree2 tree = drawTracing $ drawTop' tree 
+
+
 
 
 drawTop :: (Real u, Floating u) 
@@ -51,6 +59,15 @@ drawTop :: (Real u, Floating u)
 drawTop fn (Node (pt,a) ns) = do 
     ancr <- drawi $ fn a `at` pt
     mapM_ (draw1 fn ancr) ns
+
+
+drawTop' :: (Real u, Floating u) 
+         => CoordTree u (TreeNode u) -> TraceDrawing u ()
+drawTop' (Node (pt,fn) ns) = do 
+    ancr <- drawi $ fn `at` pt
+    mapM_ (draw1' ancr) ns
+
+
 
 draw1 :: (Real u, Floating u)
       => (a -> TreeNode u) 
@@ -61,6 +78,17 @@ draw1 fn ancr_from (Node (pt,a) ns) = do
     ancr <- drawi $ fn a `at` pt
     draw $ connector ancr_from ancr
     mapM_ (draw1 fn ancr) ns   
+
+
+
+draw1' :: (Real u, Floating u)
+      => DotAnchor u 
+      -> CoordTree u (TreeNode u) 
+      -> TraceDrawing u ()
+draw1' ancr_from (Node (pt,fn) ns) = do
+    ancr <- drawi $ fn `at` pt
+    draw $ connector ancr_from ancr
+    mapM_ (draw1' ancr) ns   
 
 
 connector :: (Real u, Floating u) 
@@ -89,7 +117,7 @@ anchorAngles f t = (theta0, theta1)
 drawFamilyTree :: (Real u, Floating u, FromPtSize u) 
                => (a -> TreeNode u) 
                -> CoordTree u a 
-               -> Drawing u
+               -> CtxPicture u
 drawFamilyTree drawF tree = drawTracing $ drawFamily drawF tree 
 
 

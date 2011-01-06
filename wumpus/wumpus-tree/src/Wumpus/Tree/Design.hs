@@ -39,6 +39,7 @@ import Data.Tree
 
 
 
+
 -- | XPos is an absolute position
 --
 type XPos u = u     
@@ -50,30 +51,35 @@ type XTree u a = Tree (XPos u, a)
 --
 type Delta u = u
 
-data Span u = S !(XPos u) !(XPos u)
+-- A horizontal span.
+--
+data HSpan u = HSpan !u !u
   deriving (Eq,Ord,Show)
 
 
 
-outsideMerge :: Span u -> Span u -> Span u
-outsideMerge (S p _) (S _ q) = S p q
-
-moveSpan :: Num u => Delta u -> Span u -> Span u
-moveSpan d (S p q) = S (p+d) (q+d)
+outsideMerge :: HSpan u -> HSpan u -> HSpan u
+outsideMerge (HSpan p _) (HSpan _ q) = HSpan p q
 
 
-newtype Extent u = Extent { span_list :: [Span u] }
+
+
+moveSpan :: Num u => Delta u -> HSpan u -> HSpan u
+moveSpan d (HSpan p q) = HSpan (p+d) (q+d)
+
+
+newtype Extent u = Extent { span_list :: [HSpan u] }
   deriving (Eq,Show)
 
 
-extlink :: XPos u -> Extent u -> Extent u
-extlink a (Extent as) = Extent (S a a:as)
+extlink :: u -> Extent u -> Extent u
+extlink a (Extent as) = Extent $ (HSpan a a) :as 
 
 -- note is this just for left ... ?
 --
-midtop :: Fractional u => XPos u -> Extent u -> XPos u
+midtop :: Fractional u => u -> Extent u -> XPos u
 midtop r (Extent [])        = r
-midtop _ (Extent (S p q:_)) = p + (0.5*(q-p))
+midtop _ (Extent (HSpan p q:_)) = p + (0.5*(q-p))
 
 
 -- merge \"moving right\"...
@@ -100,7 +106,7 @@ extentZero :: Extent u
 extentZero = Extent []
 
 extentOne :: XPos u -> Extent u
-extentOne x = Extent [S x x]
+extentOne x = Extent [HSpan x x]
 
 
 -- 'moveTree' is now recursive...
@@ -114,10 +120,10 @@ moveTree dx (Node (x,a) subtrees) = Node ((x+dx),a) subtrees'
 
 fit :: (Fractional u, Ord u) 
     => Extent u -> Extent u -> u
-fit a b = step (span_list a) (span_list b) 0.0 
+fit a b = go (span_list a) (span_list b) 0.0 
   where
-    step (S _ p:ps) (S q _:qs) acc = step ps qs (max acc (p - q + 1.0))
-    step _          _          acc = acc  
+    go (HSpan _ p:ps) (HSpan q _:qs) acc = go ps qs (max acc (p - q + 1.0))
+    go _          _                  acc = acc  
 
 
 -- Fitting the children of a node...
@@ -187,14 +193,14 @@ design :: (Fractional u, Ord u)
 design sctx t = runScaling sctx (label 0 t3)
   where
     (t1,ext)                    = designl t
-    (h,S xmin xmax)             = stats ext
+    (height,HSpan xmin xmax)    = stats ext
     width                       = xmax - xmin
     (t2,_)                      = designr width t
     
     -- reconcile the left and right drawings...
     t3                          = treeZipWith zfn t1 t2
     
-    mkPt x lvl                  = scalePt x (h - lvl)
+    mkPt x lvl                  = scalePt x (height - lvl)
     label lvl (Node (x,a) kids) = do pt <- mkPt x lvl
                                      kids' <- mapM (label (lvl+1)) kids
                                      return $ Node (pt,a) kids'
@@ -205,14 +211,18 @@ design sctx t = runScaling sctx (label 0 t3)
 
 -- find height and width
 --
-stats :: (Num u, Ord u) => Extent u -> (Int, Span u)
-stats (Extent [])     = (0,S 0 0)
+stats :: (Num u, Ord u) => Extent u -> (Int, HSpan u)
+stats (Extent [])     = (0,HSpan 0 0)
 stats (Extent (e:es)) = foldr fn (1,e) es
   where
-    fn (S x0 x1) (h, S xmin xmax) = (h+1, S (min x0 xmin) (max x1 xmax))
+    fn s1 (h, acc_span) = (h+1, minmaxMerge s1 acc_span)
 
 mean :: Fractional u => u -> u -> u
 mean x y = (x+y) / 2.0
+
+
+minmaxMerge :: Ord u => HSpan u -> HSpan u -> HSpan u
+minmaxMerge (HSpan p q) (HSpan p' q') = HSpan (min p p') (max q q')
 
 
 treeZipWith :: (a -> b -> c) -> Tree a -> Tree b -> Tree c

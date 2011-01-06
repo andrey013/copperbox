@@ -17,11 +17,13 @@
 
 module Wumpus.Tree.Base
   (
-    TreeDrawing
-  , DTreeDrawing
+    TreePicture
+  , DTreePicture
   , CoordTree
   
   , TreeNode
+
+  , Design(..)
 
   ) where
 
@@ -35,9 +37,9 @@ import Data.Tree
 -- | A rendered tree - alias for for @Picture Double@ in 
 -- Wumpus-Core.
 --
-type TreeDrawing u = Drawing u
+type TreePicture u = CtxPicture u
 
-type DTreeDrawing = TreeDrawing Double
+type DTreePicture = TreePicture Double
 
 
 -- | Tree annotated with positions.
@@ -48,5 +50,10 @@ type CoordTree u a = Tree (Point2 u, a)
 
 type TreeNode u = DotLocImage u
 
+
+data Design u a = Design 
+      { tree_design     :: CoordTree u a
+      , tree_bbox       :: BoundingBox u
+      }
 
 
