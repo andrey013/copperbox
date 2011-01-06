@@ -65,6 +65,7 @@ library
     Wumpus.Tree.Base,
     Wumpus.Tree.Design,
     Wumpus.Tree.Draw,
+    Wumpus.Tree.TreeBuildMonad,
     Wumpus.Tree.VersionNumber
 
   other-modules:
