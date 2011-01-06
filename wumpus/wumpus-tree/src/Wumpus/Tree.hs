@@ -41,6 +41,7 @@ module Wumpus.Tree
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
+import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
@@ -84,8 +85,8 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
 
 -- 
 drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                => ScaleFactors u -> Tree (TreeNode u) -> TreeDrawing u
-drawScaledTree2 scale_f tree = drawTree2 $ design scale_f tree
+                => ScaleFactors u -> TreeBuildAns u -> TreeDrawing u
+drawScaledTree2 scale_f (tree,annos) = drawTree2 annos $ design scale_f tree
 
 
 

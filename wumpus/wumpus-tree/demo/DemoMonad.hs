@@ -41,14 +41,16 @@ tree_drawing1 = drawTracing $
 
 
 
-tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u ZTreeSpec
+tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u (ZTreeSpec u)
 tree2 = do
-    special <- nodeId $ dotText "a"   
+    special   <- nodeId $ dotText "a"   
     rightmost <- nodeId $ dotText "z"
+    annotate rightmost (\ancr -> textline "....anno" `at` southeast ancr )
     let bs = [zleaf, zleaf, zleaf]
     let gs = [zleaf, zleaf, leaf $ rightmost ]
     return $ 
       branch special [zbranch bs, zleaf, zbranch gs]
+
 
 
 

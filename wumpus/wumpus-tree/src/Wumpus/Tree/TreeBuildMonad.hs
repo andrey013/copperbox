@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,15 +19,21 @@ module Wumpus.Tree.TreeBuildMonad
   (
     NodeId
   , ZNodeId
+  , NodeAnno
+  , NodeAnnoRefs
   
   , TreeBuild
   , TreeSpec
   , ZTreeSpec
 
+  , TreeNodeAns
+  , TreeBuildAns
   , runTreeBuild
 
   , nodeId
   , label
+  , annotate
+
   , branch
   , zbranch
   , leaf
@@ -36,7 +43,7 @@ module Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Tree.Base
 
--- import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -66,19 +73,24 @@ data NodeId a = NodeId Int
 -- payload so can only be drawn as some common graphic e.g. a 
 -- filled or stroked disk.
 --
-type ZNodeId = NodeId ()
+type ZNodeId u = NodeId (UNil u)
 
 type NodeDrawRefs u = IntMap.IntMap (TreeNode u)
+
+type NodeAnno u     = DotAnchor u -> Graphic u
+
+type NodeAnnoRefs u = IntMap.IntMap (NodeAnno u)
 
 data St u = St
       { uid_counter     :: Int
       , node_refs       :: NodeDrawRefs u
+      , anno_refs       :: NodeAnnoRefs u
       }
 
+type instance DUnit (St u) = u
+
 zeroSt :: St u
-zeroSt = St { uid_counter = 0, node_refs = mempty }
-
-
+zeroSt = St { uid_counter = 0, node_refs = mempty, anno_refs = mempty }
 
 
 newtype TreeBuild u a = TreeBuild { getTreeBuild :: St u -> (a, St u) }
@@ -100,8 +112,15 @@ instance Monad (TreeBuild u) where
 
 
 
-type TreeSpec a = Tree (NodeId a)
-type ZTreeSpec  = TreeSpec ()
+type instance MonUnit (TreeBuild u) = u
+
+
+type TreeSpec a   = Tree (NodeId a)
+type ZTreeSpec u  = TreeSpec (UNil u)
+
+
+type TreeNodeAns  u = (TreeNode u, Maybe Int)
+type TreeBuildAns u = (Tree (TreeNodeAns u), NodeAnnoRefs u)
 
 -- | This is the @run@ function for the TreeBuild monad.
 --
@@ -111,9 +130,11 @@ type ZTreeSpec  = TreeSpec ()
 --
 
 runTreeBuild :: (Real u, Floating u, FromPtSize u)
-               => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> Tree (TreeNode u)
+               => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> TreeBuildAns u
 runTreeBuild regDrawF ma = 
-    let (a,s) = getTreeBuild ma zeroSt in postRun regDrawF (a, node_refs s)
+    let (a,s) = getTreeBuild ma zeroSt
+        t1    = postRun regDrawF (a, node_refs s)
+    in (t1, anno_refs s)
 
 
 -- As the constructor to build NodeIds is not exposed a 
@@ -123,23 +144,41 @@ runTreeBuild regDrawF ma =
 -- IntMap.lookup total.
 --
 postRun :: (Real u, Floating u, FromPtSize u)
-        => (a -> TreeNode u) -> (TreeSpec a,NodeDrawRefs u) -> Tree (TreeNode u)
+        => (a -> TreeNode u) -> (TreeSpec a,NodeDrawRefs u) 
+        -> Tree (TreeNode u, Maybe Int)
 postRun regDrawF (tree1,table) = fmap changeNode tree1
   where
-    changeNode (RegularNode a)  = regDrawF a
-    changeNode (NodeId ix)      = maybe fk id $ IntMap.lookup ix table 
+    changeNode (RegularNode a)  = (regDrawF a, Nothing)
+    changeNode (NodeId ix)      = maybe fk (sk ix) $ IntMap.lookup ix table 
     
-    fk                          = dotText "Error missing node"
+    sk ix                       = \a -> (a, Just ix)
+    fk                          = (dotText "Error missing node", Nothing)
  
 
 
 nodeId :: TreeNode u -> TreeBuild u (NodeId a)
-nodeId drawF = TreeBuild $ \(St uid nodes) -> 
-                 let nodes' = IntMap.insert uid drawF nodes
-                 in (NodeId uid, St (uid+1) nodes')
+nodeId drawF = 
+    TreeBuild $ \(St ix nodes annos) -> 
+      let nodes' = IntMap.insert ix drawF nodes
+      in (NodeId ix, St (ix+1) nodes' annos)
 
+-- | Note - this is not /in/ the TreeBuild monad.
+--
 label :: a -> NodeId a 
 label a = RegularNode a
+
+
+-- | Annotate a /node/ with a 'NodeAnno'.
+-- 
+-- Note - /regular/ nodes cannot be annotated, a node must be 
+-- bound to a variable first with 'nodeId'.
+--
+annotate :: u ~ DUnit a => NodeId a -> NodeAnno u -> TreeBuild u ()
+annotate (RegularNode _) _     = return ()
+annotate (NodeId nid)    annoF = 
+    TreeBuild $ \(St ix nodes annos) -> 
+      let annos' = IntMap.insert nid annoF annos
+      in ((), St ix nodes annos')
 
 
 
@@ -149,16 +188,17 @@ branch uid kids = Node uid kids
 
 -- | Default /branch/ - has children.
 --
-zbranch :: [ZTreeSpec] -> ZTreeSpec
-zbranch kids = Node (RegularNode ()) kids 
+zbranch :: [ZTreeSpec u] -> ZTreeSpec u
+zbranch kids = Node (RegularNode uNil) kids 
 
 leaf :: NodeId a -> TreeSpec a
 leaf uid = Node uid []
 
 -- | Default /leaf/ - tree node with no children.
 --
-zleaf :: ZTreeSpec
-zleaf = Node (RegularNode ()) []
+zleaf :: ZTreeSpec u
+zleaf = Node (RegularNode uNil) []
+
 
             
 

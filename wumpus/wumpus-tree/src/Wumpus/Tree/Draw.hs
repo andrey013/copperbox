@@ -24,6 +24,7 @@ module Wumpus.Tree.Draw
   ) where
 
 import Wumpus.Tree.Base
+import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
@@ -33,32 +34,40 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Monad
+import qualified Data.IntMap as IntMap
 import Data.Tree hiding ( drawTree )
 
 
 
 
 drawTree2 :: (Real u, Floating u, FromPtSize u) 
-         => CoordTree u (TreeNode u) -> TreeDrawing u
-drawTree2 tree = drawTop' tree 
+          => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
+drawTree2 annos tree = drawTop' annos tree 
 
 
 drawTop' :: (Real u, Floating u) 
-         => CoordTree u (TreeNode u) -> TraceDrawing u ()
-drawTop' (Node (pt,fn) ns) = do 
+         => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TraceDrawing u ()
+drawTop' annos (Node (pt,(fn, mb_ix)) ns) = do 
     ancr <- drawi $ fn `at` pt
-    mapM_ (draw1' ancr) ns
+    drawAnno annos ancr mb_ix
+    mapM_ (draw1' annos ancr) ns
 
 
 draw1' :: (Real u, Floating u)
-      => DotAnchor u 
-      -> CoordTree u (TreeNode u) 
+      => NodeAnnoRefs u -> DotAnchor u -> CoordTree u (TreeNodeAns u) 
       -> TraceDrawing u ()
-draw1' ancr_from (Node (pt,fn) ns) = do
+draw1' annos ancr_from (Node (pt,(fn, mb_ix)) ns) = do
     ancr <- drawi $ fn `at` pt
     draw $ connector ancr_from ancr
-    mapM_ (draw1' ancr) ns   
+    drawAnno annos ancr mb_ix
+    mapM_ (draw1' annos ancr) ns   
 
+
+drawAnno :: NodeAnnoRefs u -> DotAnchor u -> Maybe Int -> TraceDrawing u ()
+drawAnno _    _    Nothing   = return ()
+drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
+  where
+    sk fn = draw $ fn ancr
 
 
 ---------------------------------------------------------------------------------
