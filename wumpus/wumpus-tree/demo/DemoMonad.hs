@@ -37,7 +37,7 @@ tree1 = return $
 
 tree_drawing1 :: DCtxPicture
 tree_drawing1 = drawTracing $ 
-    drawScaledTree2 (uniformScaling 30) $ runTreeBuild charNode tree1
+    drawScaledTree2 (uniformScaling 30) zeroPt $ runTreeBuild charNode tree1
 
 
 
@@ -49,15 +49,20 @@ tree2 = do
     let bs = [zleaf, zleaf, zleaf]
     let gs = [zleaf, zleaf, leaf $ rightmost ]
     return $ 
-      branch special [zbranch bs, zleaf, zbranch gs]
+        branch special [zbranch bs, zleaf, zbranch gs]
 
 
 
 
 tree_drawing2 :: DCtxPicture
-tree_drawing2 = drawTracing $ 
-    drawScaledTree2 (uniformScaling 60) $ runTreeBuild (diskNode red) tree2 
-
+tree_drawing2 = drawTracing $ do
+    draw $ textline "Tree 2" `at` zeroPt
+    draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
+    draw $ filledDisk 2      `at` tree_ogin
+    draw $ filledDisk 2      `at` displaceH   40  tree_ogin
+    drawScaledTree2 (uniformScaling 60) tree_ogin $ runTreeBuild (diskNode red) tree2 
+  where
+    tree_ogin = P2 240 0
 
 main :: IO ()
 main = do

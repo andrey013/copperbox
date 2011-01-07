@@ -85,8 +85,10 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
 
 -- 
 drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                => ScaleFactors u -> TreeBuildAns u -> TreeDrawing u
-drawScaledTree2 scale_f (tree,annos) = drawTree2 annos $ design scale_f tree
+                => ScaleFactors u -> Point2 u -> TreeBuildAns u 
+                -> TreeDrawing u
+drawScaledTree2 scale_f ogin (tree,annos) = 
+    drawTree2 annos $ reposition ogin $ design scale_f tree
 
 
 

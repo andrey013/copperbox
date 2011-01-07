@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
@@ -26,12 +27,16 @@
 module Wumpus.Tree.Design
   (
     design
+  , reposition
+  
   )
   where
 
 import Wumpus.Tree.Base
 
 import Wumpus.Basic.Kernel              -- package: wumpus-basic
+
+import Wumpus.Core                      -- package: wumpus-core
 
 import Data.List 
 import Data.Maybe
@@ -188,24 +193,45 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
     ext1            = xpos `extlink` ext0
 
 
+-- | Design a tree, properly balancing the child nodes. 
+--
+-- As the design has no y-positions (but by recursion they can be 
+-- counted) and x-positions are respective to the unit distance 
+-- 1.0 separating nodes it is rescaled as a post-processing step
+-- into drawable coordinates. 
+--
 design :: (Fractional u, Ord u)
        => ScalingContext u Int u -> Tree a -> CoordTree u a
-design sctx t = runScaling sctx (label 0 t3)
+design sctx t = runScaling sctx (scaleDesign 0 t3)
   where
     (t1,ext)                    = designl t
-    (height,HSpan xmin xmax)    = stats ext
+    (_, HSpan xmin xmax)        = stats ext
     width                       = xmax - xmin
     (t2,_)                      = designr width t
     
     -- reconcile the left and right drawings...
     t3                          = treeZipWith zfn t1 t2
-    
-    mkPt x lvl                  = scalePt x (height - lvl)
-    label lvl (Node (x,a) kids) = do pt <- mkPt x lvl
-                                     kids' <- mapM (label (lvl+1)) kids
-                                     return $ Node (pt,a) kids'
-
     zfn (x0,a) (x1,_)           = (mean x0 x1,a)
+
+
+-- Scale the tree. Originally the tree has no y-positions (but by 
+-- recursion they can be counted) and x-positions are respective 
+-- to the unit width 1.0.
+--
+scaleDesign :: Num uy 
+            => uy -> Tree (XPos ux, a) -> Scaling ux uy u (CoordTree u a)
+scaleDesign lvl (Node (xpos,a) kids) = do 
+    pt    <- scalePt xpos lvl
+    kids' <- mapM (scaleDesign (lvl-1)) kids
+    return $ Node (pt,a) kids'
+    
+
+reposition :: Num u => Point2 u -> CoordTree u a -> CoordTree u a
+reposition (P2 ox oy) (Node (P2 x0 y0, val) kids) = 
+    Node (P2 ox oy, val) $ map (mv (ox-x0) (oy-y0)) kids
+  where
+    mv dx dy (Node (P2 x y, a) ks) = let ks' = map (mv dx dy) ks 
+                                     in Node (P2 (x+dx) (y+dy), a) ks'
 
 
 
