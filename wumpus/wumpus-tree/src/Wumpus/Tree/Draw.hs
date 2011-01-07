@@ -18,7 +18,6 @@
 module Wumpus.Tree.Draw 
   (
     drawTree
-  , drawTree2
   , drawFamilyTree
 
   ) where
@@ -40,27 +39,27 @@ import Data.Tree hiding ( drawTree )
 
 
 
-drawTree2 :: (Real u, Floating u, FromPtSize u) 
+drawTree :: (Real u, Floating u, FromPtSize u) 
           => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
-drawTree2 annos tree = drawTop' annos tree 
+drawTree annos tree = drawTop annos tree 
 
 
-drawTop' :: (Real u, Floating u) 
+drawTop :: (Real u, Floating u) 
          => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TraceDrawing u ()
-drawTop' annos (Node (pt,(fn, mb_ix)) ns) = do 
+drawTop annos (Node (pt,(fn, mb_ix)) ns) = do 
     ancr <- drawi $ fn `at` pt
     drawAnno annos ancr mb_ix
-    mapM_ (draw1' annos ancr) ns
+    mapM_ (draw1 annos ancr) ns
 
 
-draw1' :: (Real u, Floating u)
+draw1 :: (Real u, Floating u)
       => NodeAnnoRefs u -> DotAnchor u -> CoordTree u (TreeNodeAns u) 
       -> TraceDrawing u ()
-draw1' annos ancr_from (Node (pt,(fn, mb_ix)) ns) = do
+draw1 annos ancr_from (Node (pt,(fn, mb_ix)) ns) = do
     ancr <- drawi $ fn `at` pt
     draw $ connector ancr_from ancr
     drawAnno annos ancr mb_ix
-    mapM_ (draw1' annos ancr) ns   
+    mapM_ (draw1 annos ancr) ns   
 
 
 drawAnno :: NodeAnnoRefs u -> DotAnchor u -> Maybe Int -> TraceDrawing u ()
@@ -68,41 +67,6 @@ drawAnno _    _    Nothing   = return ()
 drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
   where
     sk fn = draw $ fn ancr
-
-
----------------------------------------------------------------------------------
--- Draw individual connector between parent and each child node.
-
-drawTree :: (Real u, Floating u, FromPtSize u) 
-         => (a -> TreeNode u) 
-         -> CoordTree u a 
-         -> CtxPicture u
-drawTree drawF tree = drawTracing $ drawTop drawF tree 
-
-
-
-
-
-drawTop :: (Real u, Floating u) 
-        => (a -> TreeNode u) -> CoordTree u a -> TraceDrawing u ()
-drawTop fn (Node (pt,a) ns) = do 
-    ancr <- drawi $ fn a `at` pt
-    mapM_ (draw1 fn ancr) ns
-
-
-
-
-draw1 :: (Real u, Floating u)
-      => (a -> TreeNode u) 
-      -> DotAnchor u 
-      -> CoordTree u a 
-      -> TraceDrawing u ()
-draw1 fn ancr_from (Node (pt,a) ns) = do
-    ancr <- drawi $ fn a `at` pt
-    draw $ connector ancr_from ancr
-    mapM_ (draw1 fn ancr) ns   
-
-
 
 
 
@@ -125,6 +89,8 @@ anchorAngles f t = (theta0, theta1)
     theta0  = direction conn_v
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
     
+
+
 
 --------------------------------------------------------------------------------
 -- Draw in /family tree/ style

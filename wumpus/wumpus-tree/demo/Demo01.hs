@@ -15,6 +15,7 @@
 module Demo01 where
 
 import Wumpus.Tree
+import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
@@ -55,24 +56,13 @@ makePictures :: GlyphMetrics -> IO ()
 makePictures base_metrics = do 
     --
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
-    writeEPS "./out/tree01.eps"  pic1
-    writeSVG "./out/tree01.svg"  pic1
-    --
-    let pic2 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing2
-    writeEPS "./out/tree02.eps"  pic2
-    writeSVG "./out/tree02.svg"  pic2
+    writeEPS "./out/regular_tree01.eps"  pic1
+    writeSVG "./out/regular_tree01.svg"  pic1
     --
     let pic3 = runCtxPictureU (makeCtx 14 base_metrics) tree_drawing3
     writeEPS "./out/tree03.eps"  pic3
     writeSVG "./out/tree03.svg"  pic3
     --
-    let pic4 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing4
-    writeEPS "./out/tree04.eps"  pic4
-    writeSVG "./out/tree04.svg"  pic4
-    --
-    let pic5 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing5
-    writeEPS "./out/tree05.eps"  pic5
-    writeSVG "./out/tree05.svg"  pic5
 
 makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
@@ -80,15 +70,24 @@ makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
 tree_drawing1 :: DTreePicture
-tree_drawing1 = drawScaledTree charNode  (uniformScaling 30) tree1
+tree_drawing1 = drawTracing $ do
+    --
+    draw $ textline "Tree 1:"        `at` (P2 0  430)
+    drawScaledTree (uniformScaling 30)    (P2 80 430) $ 
+       runTreeBuild charNode tree1
+    --
+    draw $ textline "Tree 2:"       `at` (P2 0  310) 
+    drawScaledTree (uniformScaling 30)   (P2 80 310) $ 
+        runTreeBuild (diskNode red) tree2
+    --
+    draw $ textline "Tree 4:"       `at` (P2 0  200)
+    drawScaledTree (scaleFactors 20 30)  (P2 80 200) $ 
+        runTreeBuild (circleNode black) tree4
+    --
+    draw $ textline "Tree 5:"        `at` zeroPt
+    drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
+        runTreeBuild (circleNode black)  tree5
 
--- tree_drawing1' :: DCtxPicture
--- tree_drawing1' = ...
-
-
-
-tree_drawing2 :: DTreePicture
-tree_drawing2 = drawScaledTree (diskNode red) (uniformScaling 30) tree2
 
 -- This should be drawn in the /family tree/ style...
 -- 
@@ -96,21 +95,19 @@ tree_drawing3 :: DTreePicture
 tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 25) tree3
 
 
-tree_drawing4 :: DTreePicture
-tree_drawing4 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree4
 
-tree_drawing5 :: DTreePicture
-tree_drawing5 = drawScaledTree (circleNode black) (scaleFactors 20 30) tree5
-
-
-tree1 :: Tree Char
-tree1 = Node 'A' [Node 'B' bs, Node 'F' fs]
+tree1 :: TreeBuild u (TreeSpec Char)
+tree1 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' fs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
-tree2 :: Tree Char
-tree2 = Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
+
+
+
+
+tree2 :: TreeBuild u (TreeSpec Char)
+tree2 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     gs = [Node 'H' [], Node 'I' [], Node 'J' []]
@@ -126,45 +123,45 @@ tree3 = Node 'A' [a1, a2, a3]
     a1 = Node 'B' [b1, b2]
     a2 = Node 'S' [b3,b4]
     a3 = Node 'o' [b5]
-    b1 = Node 'C' [leaf 'D', c1]
-    b2 = Node 'P' [leaf 'Q', leaf 'R']
-    b3 = Node 'T' [leaf 'U', leaf 'V', c2]
-    b4 = Node 'e' [c3, leaf 'h', c4]
-    b5 = Node 'p' [c5, c6, leaf '2']
+    b1 = Node 'C' [tleaf 'D', c1]
+    b2 = Node 'P' [tleaf 'Q', tleaf 'R']
+    b3 = Node 'T' [tleaf 'U', tleaf 'V', c2]
+    b4 = Node 'e' [c3, tleaf 'h', c4]
+    b5 = Node 'p' [c5, c6, tleaf '2']
     c1 = Node 'E' [d1]
     c2 = Node 'W' [d2, d3]
-    c3 = Node 'f' [leaf 'g']
+    c3 = Node 'f' [tleaf 'g']
     c4 = Node 'i' [d4]
-    c5 = Node 'q' [leaf 'r', leaf 's', leaf 't', leaf 'u']
-    c6 = Node 'v' [leaf 'w', d5, leaf '0', leaf '1']
-    d1 = Node 'F' [leaf 'G', e1, leaf 'M', e2]
-    d2 = Node 'X' [leaf 'Y']
-    d3 = Node 'Z' [leaf 'a', leaf 'b', leaf 'c', leaf 'd']
-    d4 = Node 'j' [leaf 'k', leaf 'l', leaf 'm', leaf 'n']
-    d5 = Node 'x' [leaf 'y', leaf 'z'] 
-    e1 = Node 'H' [leaf 'I', leaf 'J', leaf 'K', leaf 'L']
-    e2 = Node 'N' [leaf 'O']
+    c5 = Node 'q' [tleaf 'r', tleaf 's', tleaf 't', tleaf 'u']
+    c6 = Node 'v' [tleaf 'w', d5, tleaf '0', tleaf '1']
+    d1 = Node 'F' [tleaf 'G', e1, tleaf 'M', e2]
+    d2 = Node 'X' [tleaf 'Y']
+    d3 = Node 'Z' [tleaf 'a', tleaf 'b', tleaf 'c', tleaf 'd']
+    d4 = Node 'j' [tleaf 'k', tleaf 'l', tleaf 'm', tleaf 'n']
+    d5 = Node 'x' [tleaf 'y', tleaf 'z'] 
+    e1 = Node 'H' [tleaf 'I', tleaf 'J', tleaf 'K', tleaf 'L']
+    e2 = Node 'N' [tleaf 'O']
 
-leaf :: a -> Tree a
-leaf a = Node a []
+tleaf :: a -> Tree a
+tleaf a = Node a []
 
 
 -- This is the tree (a) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
 -- 
-tree4 :: Tree Int
-tree4 = Node 1 [a1, a2]
+tree4 :: TreeBuild u (TreeSpec Int)
+tree4 = regularBuild $ Node 1 [a1, a2]
   where
     a1 = Node  2 [b1]
     a2 = Node  3 [b2, b3]
     b1 = Node  4 [c1]
     b2 = Node  5 [c2]
-    b3 = Node  6 [leaf 9, c3]
+    b3 = Node  6 [tleaf 9, c3]
     c1 = Node  7 [d1]
-    c2 = Node  8 [leaf 12]
+    c2 = Node  8 [tleaf 12]
     c3 = Node 10 [d2] 
-    d1 = Node 11 [leaf 14]
-    d2 = Node 13 [leaf 15]
+    d1 = Node 11 [tleaf 14]
+    d2 = Node 13 [tleaf 15]
 
 -- This is the tree (b) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
@@ -173,13 +170,14 @@ tree4 = Node 1 [a1, a2]
 -- spaces the leaves, it looks like the trees in that paper are 
 -- evenly spaced at the interior nodes too.
 -- 
-tree5 :: Tree Int
-tree5 = Node 1 [a1, leaf 3, leaf 4, leaf 5, a2, leaf 7, leaf 8, leaf 9, a3]
+tree5 :: TreeBuild u (TreeSpec Int)
+tree5 = regularBuild $
+    Node 1 [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
   where
-    a1 = Node  2 [leaf 11, leaf 12, leaf 13, leaf 14, leaf 15, leaf 16
-                 , leaf 17, leaf 18, leaf 19, leaf 20, b1]
-    a2 = Node  6 [leaf 22]
-    a3 = Node 10 [b2]
-    b1 = Node 21 [leaf 24, leaf 25, leaf 26, leaf 27, leaf 28, leaf 29
-                 ,leaf 30, leaf 31, leaf 32, leaf 33, leaf 34]
-    b2 = Node 23 [leaf 35]
+    a1 = Node  2 [ tleaf 11, tleaf 12, tleaf 13, tleaf 14, tleaf 15, tleaf 16
+                 , tleaf 17, tleaf 18, tleaf 19, tleaf 20, b1]
+    a2 = Node  6 [ tleaf 22 ]
+    a3 = Node 10 [ b2 ]
+    b1 = Node 21 [ tleaf 24, tleaf 25, tleaf 26, tleaf 27, tleaf 28, tleaf 29
+                 , tleaf 30, tleaf 31, tleaf 32, tleaf 33, tleaf 34]
+    b2 = Node 23 [ tleaf 35 ]

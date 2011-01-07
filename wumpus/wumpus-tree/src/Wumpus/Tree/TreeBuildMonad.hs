@@ -30,6 +30,8 @@ module Wumpus.Tree.TreeBuildMonad
   , TreeBuildAns
   , runTreeBuild
 
+  , regularBuild
+
   , nodeId
   , label
   , annotate
@@ -154,6 +156,16 @@ postRun regDrawF (tree1,table) = fmap changeNode tree1
     sk ix                       = \a -> (a, Just ix)
     fk                          = (dotText "Error missing node", Nothing)
  
+
+
+-- | Turn an ordinary @Data.Tree@ into a /regular/ 'TreeSpec'.
+--
+-- All nodes become /regular/ nodes, no nodes are /bound/. Thus
+-- nodes cannot be annotated etc.
+--  
+regularBuild :: Tree a -> TreeBuild u (TreeSpec a)
+regularBuild (Node a kids) =  
+    Node (RegularNode a) <$> mapM regularBuild kids
 
 
 nodeId :: TreeNode u -> TreeBuild u (NodeId a)

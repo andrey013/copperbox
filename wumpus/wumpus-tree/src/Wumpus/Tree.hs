@@ -24,11 +24,10 @@ module Wumpus.Tree
   , uniformScaling
   , scaleFactors
 
-  , drawScaledTree2
+  , drawScaledTree
   , TreeDirection(..)
   , drawScaledTreeD
 
-  , drawScaledTree
   , drawScaledFamilyTree
 
 
@@ -87,11 +86,11 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
 
 
 -- 
-drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                => ScaleFactors u -> Point2 u -> TreeBuildAns u 
-                -> TreeDrawing u
-drawScaledTree2 scale_f ogin (tree,annos) = 
-    drawTree2 annos $ design ogin scale_f tree
+drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+               => ScaleFactors u -> Point2 u -> TreeBuildAns u 
+               -> TreeDrawing u
+drawScaledTree scale_f ogin (tree,annos) = 
+    drawTree annos $ design ogin scale_f tree
 
 data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
   deriving (Eq,Ord,Show)
@@ -101,7 +100,7 @@ drawScaledTreeD :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                 -> TreeDirection -> TreeBuildAns u 
                 -> TreeDrawing u
 drawScaledTreeD scale_f ogin tdir (tree,annos) = 
-    drawTree2 annos $ rotTree tdir $ design ogin scale_f tree
+    drawTree annos $ rotTree tdir $ design ogin scale_f tree
 
 
 
@@ -130,14 +129,6 @@ rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 -- @tree@ is the input tree to be rendered.
 --
 --
-drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                => (a -> TreeNode u) 
-                -> ScaleFactors u
-                -> Tree a 
-                -> TreePicture u
-drawScaledTree drawF scale_f tree = 
-    drawTree drawF $ design zeroPt scale_f tree
-
 
 
 
