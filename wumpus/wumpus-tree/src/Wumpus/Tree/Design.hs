@@ -27,8 +27,7 @@
 module Wumpus.Tree.Design
   (
     design
-  , reposition
-  
+  , rotateAboutRoot
   )
   where
 
@@ -193,7 +192,8 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
     ext1            = xpos `extlink` ext0
 
 
--- | Design a tree, properly balancing the child nodes. 
+-- | Design a tree, properly balancing the child nodes oriented 
+-- at root. 
 --
 -- As the design has no y-positions (but by recursion they can be 
 -- counted) and x-positions are respective to the unit distance 
@@ -201,8 +201,8 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
 -- into drawable coordinates. 
 --
 design :: (Fractional u, Ord u)
-       => ScalingContext u Int u -> Tree a -> CoordTree u a
-design sctx t = runScaling sctx (scaleDesign 0 t3)
+       => Point2 u -> ScalingContext u Int u -> Tree a -> CoordTree u a
+design ro sctx t = rootOrientate ro $ runScaling sctx (scaleDesign 0 t3)
   where
     (t1,ext)                    = designl t
     (_, HSpan xmin xmax)        = stats ext
@@ -226,14 +226,22 @@ scaleDesign lvl (Node (xpos,a) kids) = do
     return $ Node (pt,a) kids'
     
 
-reposition :: Num u => Point2 u -> CoordTree u a -> CoordTree u a
-reposition (P2 ox oy) (Node (P2 x0 y0, val) kids) = 
+rootOrientate :: Num u => Point2 u -> CoordTree u a -> CoordTree u a
+rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) = 
     Node (P2 ox oy, val) $ map (mv (ox-x0) (oy-y0)) kids
   where
     mv dx dy (Node (P2 x y, a) ks) = let ks' = map (mv dx dy) ks 
                                      in Node (P2 (x+dx) (y+dy), a) ks'
 
 
+rotateAboutRoot :: (Real u, Floating u) 
+                => Radian -> CoordTree u a -> CoordTree u a
+rotateAboutRoot ang (Node (ogin,val) kids) =  
+    Node (ogin, val) $ map step kids
+  where
+    step (Node (p0, a) ks) = Node (rotA p0, a) $ map step ks
+
+    rotA                   = rotateAbout ang ogin
 
 -- find height and width
 --

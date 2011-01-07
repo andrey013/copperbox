@@ -24,8 +24,11 @@ module Wumpus.Tree
   , uniformScaling
   , scaleFactors
 
-  , drawScaledTree
   , drawScaledTree2
+  , TreeDirection(..)
+  , drawScaledTreeD
+
+  , drawScaledTree
   , drawScaledFamilyTree
 
 
@@ -88,9 +91,27 @@ drawScaledTree2 :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                 => ScaleFactors u -> Point2 u -> TreeBuildAns u 
                 -> TreeDrawing u
 drawScaledTree2 scale_f ogin (tree,annos) = 
-    drawTree2 annos $ reposition ogin $ design scale_f tree
+    drawTree2 annos $ design ogin scale_f tree
+
+data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
+  deriving (Eq,Ord,Show)
+
+drawScaledTreeD :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+                => ScaleFactors u -> Point2 u 
+                -> TreeDirection -> TreeBuildAns u 
+                -> TreeDrawing u
+drawScaledTreeD scale_f ogin tdir (tree,annos) = 
+    drawTree2 annos $ rotTree tdir $ design ogin scale_f tree
 
 
+
+
+rotTree :: (Real u, Floating u) 
+        => TreeDirection -> CoordTree u a -> CoordTree u a
+rotTree TREE_UP     = rotateAboutRoot pi
+rotTree TREE_DOWN   = id
+rotTree TREE_LEFT   = rotateAboutRoot (1.5*pi)
+rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 
 
 -- | 'drawTreePicture' : @ draw_fun * attr * scale_factors * tree -> TreePicture @
@@ -114,7 +135,8 @@ drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                 -> ScaleFactors u
                 -> Tree a 
                 -> TreePicture u
-drawScaledTree drawF scale_f tree = drawTree drawF $ design scale_f tree
+drawScaledTree drawF scale_f tree = 
+    drawTree drawF $ design zeroPt scale_f tree
 
 
 
@@ -125,7 +147,7 @@ drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
                      -> Tree a 
                      -> TreePicture u
 drawScaledFamilyTree drawF scale_f tree = 
-    drawFamilyTree drawF $ design scale_f tree
+    drawFamilyTree drawF $ design zeroPt scale_f tree
 
 --------------------------------------------------------------------------------
 -- Drawing functions

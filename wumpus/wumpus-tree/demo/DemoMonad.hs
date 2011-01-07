@@ -60,7 +60,8 @@ tree_drawing2 = drawTracing $ do
     draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
     draw $ filledDisk 2      `at` tree_ogin
     draw $ filledDisk 2      `at` displaceH   40  tree_ogin
-    drawScaledTree2 (uniformScaling 60) tree_ogin $ runTreeBuild (diskNode red) tree2 
+    drawScaledTreeD (uniformScaling 60) tree_ogin TREE_RIGHT 
+         $ runTreeBuild (diskNode red) tree2 
   where
     tree_ogin = P2 240 0
 
