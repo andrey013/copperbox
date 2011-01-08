@@ -13,13 +13,8 @@ description:
   is the most unstable code from @Wumpus-Basic@. Ideally 
   @Wumpus-Basic@ and @Wumpus-Drawing@ would be packaged together
   as there is little value to using @Wumpus-Basic@ without 
-  @Wumpus-Drawing@, however @Wumpus-Drawing@ is ...
-
-
-  OLD ... was releasedto Hackage prematurely and while its capabilities have improved
-  with subsequent updates it is arguably becoming even less stable 
-  and more experimental (unfortunately the only thing consistent 
-  about the API is that it consistently changes...). 
+  @Wumpus-Drawing@, however the code @Wumpus-Drawing@ is at best
+  /proof-of-concept/ grade.
   .
   .
   NOTE - many of the demos use font metrics. Font metrics for

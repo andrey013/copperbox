@@ -90,12 +90,6 @@ tree_drawing1 = drawTracing $ do
     drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
         runTreeBuild (circleNode black)  tree5
 
-{-
--- This should be drawn in the /family tree/ style...
--- 
-tree_drawing3 :: DTreePicture
-tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 25) tree3
--}
 
 
 tree1 :: TreeBuild u (TreeSpec Char)
@@ -105,14 +99,12 @@ tree1 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' fs]
     fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
 
-
-
-
 tree2 :: TreeBuild u (TreeSpec Char)
 tree2 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     gs = [Node 'H' [], Node 'I' [], Node 'J' []]
+
 
 -- This is the tree from Andrew Kennedy's 
 -- /Functional Pearl Drawing Trees/

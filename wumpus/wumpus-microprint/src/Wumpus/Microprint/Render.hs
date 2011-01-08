@@ -16,10 +16,8 @@
 
 module Wumpus.Microprint.Render
   (
-    RenderScalingCtx
-  , makeRenderScaling
-  , DrawWordF  
-  , greekF
+
+    greekF
   , strokelineF
   , borderedF
 
@@ -38,19 +36,8 @@ import Data.AffineSpace				-- package: vector-space
 
 --------------------------------------------------------------------------------
 
-type RenderScalingCtx = ScalingContext Int Int Double
-type RenderScalingT m a = ScalingT Int Int Double m a
-
-makeRenderScaling :: (Int -> Double) -> (Int -> Double) -> ScalingContext Int Int Double
-makeRenderScaling fx fy = 
-    ScalingContext { scale_in_x = fx, scale_in_y = fy }
 
 
--- | 'DrawWordF' :
---
--- > colour * scaled_width * scaled_height -> char_count -> DLocGraphic
---
-type DrawWordF = RGBi -> Double -> Double -> Int -> DLocGraphic
 
 
 -- | Just a filled rectangle.

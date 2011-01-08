@@ -19,8 +19,10 @@ module Wumpus.Microprint.Teletype
   (
 
     Teletype
-  , runTeletype
-  , execTeletype
+--  , runTeletype
+--  , execTeletype
+
+  , renderTeletype
 
   , Tile(..)
   , Height
@@ -32,11 +34,13 @@ module Wumpus.Microprint.Teletype
   ) where
 
 import Wumpus.Microprint.Datatypes
+import Wumpus.Microprint.Render
 
-import Wumpus.Core				-- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
-import Wumpus.Basic.Utils.HList			-- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
 
 import Control.Applicative
 import Control.Monad
@@ -89,6 +93,16 @@ finalizeTrace (a,b) = toListH $ a `snocH` (toListH b)
 
 execTeletype :: Teletype a -> GreekText
 execTeletype = snd . runTeletype
+
+
+
+-- | Build a picture from a Teletype drawing.
+--
+-- This function returns Nothing if the picture is empty.
+-- 
+renderTeletype :: RenderScalingCtx -> DrawWordF -> Teletype a 
+               -> TraceDrawing Double ()
+renderTeletype sctx fn mf = render sctx fn $ execTeletype mf
 
 
 snocTip :: H Tile -> RGBi -> TileTip -> H Tile

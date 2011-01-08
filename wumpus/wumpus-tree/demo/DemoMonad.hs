@@ -37,7 +37,7 @@ tree1 = return $
 
 tree_drawing1 :: DCtxPicture
 tree_drawing1 = drawTracing $ 
-    drawScaledTree2 (uniformScaling 30) zeroPt $ runTreeBuild charNode tree1
+    drawScaledTree (uniformScaling 30) zeroPt $ runTreeBuild charNode tree1
 
 
 

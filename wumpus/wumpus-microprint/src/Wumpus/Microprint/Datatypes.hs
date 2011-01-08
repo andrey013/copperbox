@@ -18,15 +18,36 @@ module Wumpus.Microprint.Datatypes
   (
 
   -- * Datatypes  
- 
-    Tile(..)
+    DrawWordF
+  , RenderScalingCtx
+  , RenderScalingT
+  , makeRenderScalingCtx
+
+  , Tile(..)
   , Height
   , GreekText
 
   ) where
 
-import Wumpus.Core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
+import Wumpus.Core                              -- package: wumpus-core
+
+
+-- | 'DrawWordF' :
+--
+-- > colour * scaled_width * scaled_height -> char_count -> DLocGraphic
+--
+type DrawWordF = RGBi -> Double -> Double -> Int -> DLocGraphic
+
+
+
+type RenderScalingCtx   = ScalingContext Int Int Double
+type RenderScalingT m a = ScalingT Int Int Double m a
+
+makeRenderScalingCtx :: (Int -> Double) -> (Int -> Double) -> RenderScalingCtx
+makeRenderScalingCtx fx fy = 
+    ScalingContext { scale_in_x = fx, scale_in_y = fy }
 
 
 

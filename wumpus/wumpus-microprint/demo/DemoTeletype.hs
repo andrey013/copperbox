@@ -4,30 +4,40 @@
 
 module DemoTeletype where
 
-import Wumpus.Microprint
 
-import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-basic
+import Wumpus.Microprint.Datatypes
+import Wumpus.Microprint.Render
+import Wumpus.Microprint.Teletype
+
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-drawing
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.Maybe
 import System.Directory
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     micro1 <- filePic
-    let pic1 = fromMaybe errK $ renderTeletype sctx borderedF (prefix micro1)
+    let pic1 = runCtxPictureU std_ctx $ ttDrawing micro1  
     writeEPS "./out/teletype01.eps" pic1
     writeSVG "./out/teletype01.svg" pic1
+
+
+ttDrawing :: Teletype a -> CtxPicture Double
+ttDrawing ma = drawTracing $ do
+    renderTeletype sctx borderedF (prefix ma)
   where
     prefix mp = setRGB moccasin >> mp
-    sctx      = makeRenderScaling (\x -> fromIntegral $ 6*x) 
-                                  (\y -> fromIntegral $ 8*y)
+    sctx      = makeRenderScalingCtx (\x -> fromIntegral $ 6*x) 
+                                     (\y -> fromIntegral $ 8*y)
 
 
-errK :: a
-errK = error "no picture"
+std_ctx :: DrawingContext
+std_ctx = standardContext 18
+
 
 filePic :: IO (Teletype ())
 filePic = do

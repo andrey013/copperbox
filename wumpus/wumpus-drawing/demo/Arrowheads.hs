@@ -19,11 +19,11 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runDrawingU std_ctx arrow_drawing
+    let pic1 = runCtxPictureU std_ctx arrow_drawing
     writeEPS "./out/arrowheads01.eps" pic1
     writeSVG "./out/arrowheads01.svg" pic1
 
-arrow_drawing :: Drawing Double
+arrow_drawing :: CtxPicture Double
 arrow_drawing = drawTracing $ tableGraphic arrtable
 
 arrtable :: [(Arrowhead Double, Arrowhead Double)]

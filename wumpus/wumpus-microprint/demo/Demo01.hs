@@ -34,14 +34,14 @@ makePicture :: GreekText -> DPicture
 makePicture gtext = liftToPictureU $ execTraceDrawing (standardContext 14) $ 
     render sctx strokelineF gtext
   where
-    sctx = makeRenderScaling (\x -> fromIntegral $ 2*x) 
-                             (\y -> fromIntegral $ 3*y)
+    sctx = makeRenderScalingCtx (\x -> fromIntegral $ 2*x) 
+                                (\y -> fromIntegral $ 3*y)
 
 makeBordered :: GreekText -> DPicture
 makeBordered gtext = liftToPictureU $ execTraceDrawing (standardContext 14) $ 
     render sctx borderedF gtext
   where
-    sctx = makeRenderScaling (\x -> fromIntegral $ 6*x) 
-                             (\y -> fromIntegral $ 8*y)
+    sctx = makeRenderScalingCtx (\x -> fromIntegral $ 6*x) 
+                                (\y -> fromIntegral $ 8*y)
  
 
