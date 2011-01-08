@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -41,26 +42,25 @@ import Data.Tree hiding ( drawTree )
 
 drawTree :: (Real u, Floating u, FromPtSize u) 
           => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
-drawTree annos tree = drawTop annos tree 
+drawTree annos tree = drawStep annos radialConns tree >> return ()
 
 
-drawTop :: (Real u, Floating u) 
-         => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TraceDrawing u ()
-drawTop annos (Node (pt,(fn, mb_ix)) ns) = do 
+
+drawFamilyTree :: (Real u, Floating u, FromPtSize u) 
+          => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
+drawFamilyTree annos tree = drawStep annos familyConn tree >> return ()
+
+
+drawStep :: (Real u, Floating u) 
+         => NodeAnnoRefs u 
+         -> (DotAnchor u -> [DotAnchor u] -> Graphic u)
+         -> CoordTree u (TreeNodeAns u) -> TraceDrawing u (DotAnchor u)
+drawStep annos connF (Node (pt,(fn, mb_ix)) ns) = do 
     ancr <- drawi $ fn `at` pt
+    xs   <- mapM (drawStep annos connF) ns   
+    when (not $ null xs) $ draw $ connF ancr xs
     drawAnno annos ancr mb_ix
-    mapM_ (draw1 annos ancr) ns
-
-
-draw1 :: (Real u, Floating u)
-      => NodeAnnoRefs u -> DotAnchor u -> CoordTree u (TreeNodeAns u) 
-      -> TraceDrawing u ()
-draw1 annos ancr_from (Node (pt,(fn, mb_ix)) ns) = do
-    ancr <- drawi $ fn `at` pt
-    draw $ connector ancr_from ancr
-    drawAnno annos ancr mb_ix
-    mapM_ (draw1 annos ancr) ns   
-
+    return ancr
 
 drawAnno :: NodeAnnoRefs u -> DotAnchor u -> Maybe Int -> TraceDrawing u ()
 drawAnno _    _    Nothing   = return ()
@@ -70,8 +70,17 @@ drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
 
 
 
-connector :: (Real u, Floating u) 
-          => DotAnchor u -> DotAnchor u -> Graphic u
+radialConns :: ( Real u, Floating u
+               , CenterAnchor a, RadialAnchor a, u ~ DUnit a ) 
+            => a -> [a] -> Graphic u
+radialConns a []            = emptyLocGraphic `at` center a
+radialConns a (x:xs)        = oconcat (connector a x) (map (connector a) xs)
+
+
+
+connector :: ( Real u, Floating u
+             , CenterAnchor a, RadialAnchor a, u ~ DUnit a )  
+          => a -> a -> Graphic u
 connector a1 a2 = openStroke $ vertexPath [p1,p2]
   where  
     (ang0,ang1)    = anchorAngles (center a1) (center a2)
@@ -81,7 +90,7 @@ connector a1 a2 = openStroke $ vertexPath [p1,p2]
 
 
 
-anchorAngles :: (Floating u, Real u) 
+anchorAngles :: (Real u, Floating u) 
              => Point2 u -> Point2 u -> (Radian,Radian)
 anchorAngles f t = (theta0, theta1)
   where
@@ -92,25 +101,16 @@ anchorAngles f t = (theta0, theta1)
 
 
 
+
+
 --------------------------------------------------------------------------------
--- Draw in /family tree/ style
+-- 
 
-drawFamilyTree :: (Real u, Floating u, FromPtSize u) 
-               => (a -> TreeNode u) 
-               -> CoordTree u a 
-               -> CtxPicture u
-drawFamilyTree drawF tree = drawTracing $ drawFamily drawF tree 
-
-
-drawFamily :: (Fractional u, Ord u) 
-           => (a -> TreeNode u)  
-           -> CoordTree u a 
-           -> TraceDrawing u (DotAnchor u)
-drawFamily fn (Node (pt,a) ns) = do
-    ancr <- drawi $ fn a `at` pt
-    xs   <- mapM (drawFamily fn) ns   
-    when (not $ null xs) $ draw $ famconn (south ancr) (map north xs)
-    return ancr
+familyConn :: ( Real u, Fractional u
+              , CenterAnchor a, CardinalAnchor a, u ~ DUnit a ) 
+           => a -> [a] -> Graphic u
+familyConn a []            = emptyLocGraphic `at` center a
+familyConn a xs            = famconn (south a) (map north xs)
 
 famconn :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
 famconn _       []         = error "famconn - empty list"

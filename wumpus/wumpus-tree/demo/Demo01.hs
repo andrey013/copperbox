@@ -54,15 +54,11 @@ main = do
 
 makePictures :: GlyphMetrics -> IO ()
 makePictures base_metrics = do 
-    --
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/regular_tree01.eps"  pic1
     writeSVG "./out/regular_tree01.svg"  pic1
-    --
-    let pic3 = runCtxPictureU (makeCtx 14 base_metrics) tree_drawing3
-    writeEPS "./out/tree03.eps"  pic3
-    writeSVG "./out/tree03.svg"  pic3
-    --
+
+
 
 makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
@@ -72,13 +68,19 @@ makeCtx sz m = fontFace times_roman $ metricsContext sz m
 tree_drawing1 :: DTreePicture
 tree_drawing1 = drawTracing $ do
     --
-    draw $ textline "Tree 1:"        `at` (P2 0  430)
-    drawScaledTree (uniformScaling 30)    (P2 80 430) $ 
+    draw $ textline "Tree 1:"        `at` (P2 0  530)
+    drawScaledTree (uniformScaling 30)    (P2 80 530) $ 
        runTreeBuild charNode tree1
     --
-    draw $ textline "Tree 2:"       `at` (P2 0  310) 
-    drawScaledTree (uniformScaling 30)   (P2 80 310) $ 
+    draw $ textline "Tree 2:"       `at` (P2 160 530) 
+    drawScaledTree (uniformScaling 30)   (P2 240 530) $ 
         runTreeBuild (diskNode red) tree2
+
+    draw $ textline "Tree 3:"       `at` (P2 0  410) 
+    localize (fontSize 12) $ 
+        drawScaledFamilyTree (uniformScaling 25) (P2 280 410) $ 
+          runTreeBuild charNode tree3
+
     --
     draw $ textline "Tree 4:"       `at` (P2 0  200)
     drawScaledTree (scaleFactors 20 30)  (P2 80 200) $ 
@@ -88,12 +90,12 @@ tree_drawing1 = drawTracing $ do
     drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
         runTreeBuild (circleNode black)  tree5
 
-
+{-
 -- This should be drawn in the /family tree/ style...
 -- 
 tree_drawing3 :: DTreePicture
 tree_drawing3 = drawScaledFamilyTree charNode (uniformScaling 25) tree3
-
+-}
 
 
 tree1 :: TreeBuild u (TreeSpec Char)
@@ -115,10 +117,8 @@ tree2 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
 -- This is the tree from Andrew Kennedy's 
 -- /Functional Pearl Drawing Trees/
 --
--- Currently Wumpus-tree cannot render in the /family tree/ style.
---
-tree3 :: Tree Char
-tree3 = Node 'A' [a1, a2, a3]
+tree3 :: TreeBuild u (TreeSpec Char)
+tree3 = regularBuild $ Node 'A' [a1, a2, a3]
   where
     a1 = Node 'B' [b1, b2]
     a2 = Node 'S' [b3,b4]

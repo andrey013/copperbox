@@ -52,7 +52,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.VectorSpace                         -- package: vector-space
 
-import Data.Tree hiding ( drawTree )
 
 
 
@@ -131,14 +130,11 @@ rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 --
 
 
-
 drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
-                     => (a -> TreeNode u) 
-                     -> ScaleFactors u
-                     -> Tree a 
-                     -> TreePicture u
-drawScaledFamilyTree drawF scale_f tree = 
-    drawFamilyTree drawF $ design zeroPt scale_f tree
+               => ScaleFactors u -> Point2 u -> TreeBuildAns u 
+               -> TreeDrawing u
+drawScaledFamilyTree scale_f ogin (tree,annos) = 
+    drawFamilyTree annos $ design ogin scale_f tree
 
 --------------------------------------------------------------------------------
 -- Drawing functions
