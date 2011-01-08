@@ -1,5 +1,10 @@
 {-# OPTIONS -Wall #-}
 
+-- Note - this demo is not really exemplary - it is only here
+-- to check the compilation of Wumpus-Basic. There are more 
+-- impressive demos in the @Wumpus-Drawing@ package.
+-- 
+
 module FontDeltaPic where
 
 import Wumpus.Basic.Kernel
@@ -39,6 +44,5 @@ mf = do
     line5 = textline "font-size attributes."
 
 
--- TODO - this should use a chain...
 
 
