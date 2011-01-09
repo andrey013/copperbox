@@ -17,10 +17,8 @@
 module Wumpus.Tree
   (
   -- * The type of rendered trees
-    TreePicture
-  , DTreePicture        -- re-export.
 
-  , ScaleFactors
+    ScaleFactors
   , uniformScaling
   , scaleFactors
 
@@ -92,6 +90,8 @@ drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u))
 drawScaledTree scale_f ogin (tree,annos) = 
     drawTree annos $ design ogin scale_f tree
 
+
+
 data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
   deriving (Eq,Ord,Show)
 
@@ -113,22 +113,6 @@ rotTree TREE_LEFT   = rotateAboutRoot (1.5*pi)
 rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 
 
--- | 'drawTreePicture' : @ draw_fun * attr * scale_factors * tree -> TreePicture @
---
--- The rendering function.
--- 
--- @draw_fun@ renders the individual nodes. Usually 'charNode', 
--- 'circleNode'
---
--- @attr@ is the font size (translates to node size), stroke 
--- colour, fill colour.
---
--- @scale_factors@ scales the distances between parent and child 
--- (y-scale) and sibling nodes (x-scale).
---
--- @tree@ is the input tree to be rendered.
---
---
 
 
 drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 

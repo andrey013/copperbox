@@ -54,7 +54,7 @@ main = do
 
 makePictures :: GlyphMetrics -> IO ()
 makePictures base_metrics = do 
-    let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
+    let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_pic1
     writeEPS "./out/regular_tree01.eps"  pic1
     writeSVG "./out/regular_tree01.svg"  pic1
 
@@ -65,8 +65,8 @@ makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
 
-tree_drawing1 :: DTreePicture
-tree_drawing1 = drawTracing $ do
+tree_pic1 :: DCtxPicture
+tree_pic1 = drawTracing $ do
     --
     draw $ textline "Tree 1:"        `at` (P2 0  530)
     drawScaledTree (uniformScaling 30)    (P2 80 530) $ 

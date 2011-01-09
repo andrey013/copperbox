@@ -31,9 +31,10 @@ no dependencies on foreign C libraries. Output to PostScript and
 SVG (Scalable Vector Graphics) is supported. 
 
 \wumpuscore is rather primitive, the basic drawing objects are 
-paths and text labels. A second library \texttt{wumpus-basic}
-contains code for higher level drawing but it is experimental and 
-the APIs are a long way from stable (it should probably be 
+paths and text labels. A two additional libraries 
+\texttt{wumpus-basic} and \texttt{wumpus-drawing} contain code for 
+higher level drawing but they are experimental and the APIs they 
+present are a long way from stable (they should probably be 
 considered a \emph{technology preview}).
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
@@ -327,11 +328,13 @@ Font handling is quite primitive in \wumpuscore. The bounding box
 of text label is only estimated - based on the length of the 
 label's string rather than the metrics of the individual letters 
 encoded in the font. Accessing the glyph metrics in a font 
-requires a font loader - work has been done on this for 
-\texttt{wumpus-basic} but this is considered a special requirement
-and adds a lot of code. As \wumpuscore is considered to be a 
-fairly minimal system for generating pictures it can live without
-font metrics.
+requires a font loader - \texttt{wumpus-basic} has a font loader 
+for the simple AFM font format but this is considered a special 
+requirement and adds a lot of code\footnote{Also, although it is 
+still useful, the AFM format is out-of-date, supporting the more 
+universal TrueType / OpenType formats would be a great deal of 
+work.}. As \wumpuscore is considered to be a fairly minimal system 
+for generating pictures it can live without font metrics.
 
 In PostScript, mis-named fonts can cause somewhat inscrutable 
 printing anomalies depending on the implementation. At worst, 

@@ -11,7 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Common types, ...
+-- Build a tree within a monad - the monad allows anchor references.
 --
 --------------------------------------------------------------------------------
 
