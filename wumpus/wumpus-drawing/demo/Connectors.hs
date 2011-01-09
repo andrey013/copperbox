@@ -55,7 +55,7 @@ tableGraphic :: (Real u, Floating u, FromPtSize u)
              => [ConnectorPath u] -> TraceDrawing u ()
 tableGraphic conns = zipWithM_ makeConnDrawing conns ps
   where
-    ps = unchain (coordinateScalingContext 120 52) $ tableDown 10 6
+    ps = unchain (coordinateScaling 120 52) $ tableDown 10 6
 
 
  

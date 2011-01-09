@@ -57,7 +57,7 @@ background :: RGBi -> DCtxPicture
 background rgb = drawTracing $ 
     localize (strokeColour rgb) $ mapM_ iheartHaskell ps
    where
-     ps = unchain (coordinateScalingContext 86 16) $ tableDown 18 8
+     ps = unchain (coordinateScaling 86 16) $ tableDown 18 8
 
 cpic1 :: DCtxPicture 
 cpic1 = clipCtxPicture (toPrimPath path01) (background black)

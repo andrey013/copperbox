@@ -20,7 +20,6 @@ module Wumpus.Microprint.Datatypes
   -- * Datatypes  
     DrawWordF
   , RenderScalingCtx
-  , RenderScalingT
   , makeRenderScalingCtx
 
   , Tile(..)
@@ -43,7 +42,6 @@ type DrawWordF = RGBi -> Double -> Double -> Int -> DLocGraphic
 
 
 type RenderScalingCtx   = ScalingContext Int Int Double
-type RenderScalingT m a = ScalingT Int Int Double m a
 
 makeRenderScalingCtx :: (Int -> Double) -> (Int -> Double) -> RenderScalingCtx
 makeRenderScalingCtx fx fy = 

@@ -45,7 +45,7 @@ tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = 
     zipWithM_ (\(name,rgb) pt -> colourSample name rgb pt) xs ps
   where
-    ps = unchain (coordinateScalingContext 152 11) $ tableDown row_count 10 
+    ps = unchain (coordinateScaling 152 11) $ tableDown row_count 10 
 
 
 colourSample :: String -> RGBi -> DPoint2 -> TraceDrawing Double ()

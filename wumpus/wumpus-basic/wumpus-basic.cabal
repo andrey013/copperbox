@@ -45,6 +45,10 @@ description:
     almost jibberish but the previous unrelated name @Drawing@ 
     was not helpful.
   .
+  * @Kernel.Base.ScalingContext@ has been simplified. 
+    ScalingContexts are no longer manipulated via a custom Reader
+    monad or transformer as the type signatures were too unwieldy.
+  .
   .
 build-type:         Simple
 stability:          highly unstable

@@ -62,7 +62,7 @@ tableGraphic :: (Real u, Floating u, FromPtSize u)
              => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
 tableGraphic tips = zipWithM_ makeArrowDrawing tips ps
   where
-    ps = unchain (coordinateScalingContext 120 24) $ tableDown 20 4
+    ps = unchain (coordinateScaling 120 24) $ tableDown 20 4
 
 
  

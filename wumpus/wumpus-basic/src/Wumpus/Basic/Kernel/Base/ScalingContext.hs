@@ -20,176 +20,85 @@
 module Wumpus.Basic.Kernel.Base.ScalingContext
   (
 
-    ScalingM(..)
-  , ScalingContext(..)
+    ScalingContext(..)
 
-  , Scaling
-  , runScaling
-  , ScalingT
-  , runScalingT
-
-  , regularScalingContext
-  , coordinateScalingContext
+  , scaleX
+  , scaleY
+  , scalePt
+  , scaleVec
 
   , unitX
   , unitY
 
+  , uniformScaling
+  , coordinateScaling
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
 import Wumpus.Core				-- package: wumpus-core
 
-import Control.Applicative
 
 
-
--- | Scaling...
+-- | ScalingContext is a dictionary of two functions for scaling 
+-- in X and Y.
 --
-class Monad m => ScalingM m where
-  type XDim m :: *
-  type YDim m :: *
-  scaleX :: (u ~ MonUnit m, ux ~ XDim m) => ux -> m u
-  scaleY :: (u ~ MonUnit m, uy ~ YDim m) => uy -> m u
-  scalePt  :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
-           => ux -> uy -> m (Point2 u)
-  scaleVec :: (u ~ MonUnit m, ux ~ XDim m, uy ~ YDim m) 
-           => ux -> uy -> m (Vec2 u)
-
-
-
 data ScalingContext ux uy u = ScalingContext
       { scale_in_x  :: ux -> u
       , scale_in_y  :: uy -> u
       }
 
 
+scaleX              :: ScalingContext ux uy u -> ux -> u
+scaleX ctx ux       = (scale_in_x ctx) ux
 
--- Chains (for example) want a plain monad rather than a transformer.
---
-newtype Scaling ux uy u a = Scaling {
-          getScaling :: ScalingContext ux uy u -> a }
-
-
-type instance MonUnit (Scaling ux uy u) = u
+scaleY              :: ScalingContext ux uy u -> uy -> u
+scaleY ctx uy       = (scale_in_y ctx) uy
 
 
+scalePt             :: ScalingContext ux uy u -> ux -> uy -> Point2 u
+scalePt ctx ux uy   = P2 (scale_in_x ctx ux) (scale_in_y ctx uy)
 
-instance Functor (Scaling ux uy u) where
-  fmap f ma = Scaling $ \ctx -> let a = getScaling ma ctx in f a
+scaleVec            :: ScalingContext ux uy u -> ux -> uy -> Vec2 u
+scaleVec ctx ux uy  = V2 (scale_in_x ctx ux) (scale_in_y ctx uy)
 
-instance Applicative (Scaling ux uy u) where
-  pure a    = Scaling $ \_   -> a
-  mf <*> ma = Scaling $ \ctx -> let f = getScaling mf ctx
-                                    a = getScaling ma ctx
-             			in (f a)
 
-instance Monad (Scaling ux uy u) where
-  return a = Scaling $ \_   -> a
-  m >>= k  = Scaling $ \ctx -> let a = getScaling m ctx
-    	     	               in (getScaling . k) a ctx
+unitX               :: Num ux => ScalingContext ux uy u -> u
+unitX ctx           = scaleX ctx 1
+ 
+unitY               :: Num uy => ScalingContext ux uy u -> u
+unitY ctx           = scaleY ctx 1
 
 
 
-instance ScalingM (Scaling ux uy u) where
-  type XDim (Scaling ux uy u) = ux 
-  type YDim (Scaling ux uy u) = uy
-  scaleX ux       = Scaling $ \ctx -> (scale_in_x ctx) ux
-  scaleY uy       = Scaling $ \ctx -> (scale_in_y ctx) uy
-  scalePt ux uy   = Scaling $ \ctx -> P2 (scale_in_x ctx ux) (scale_in_y ctx uy)
-  scaleVec ux uy  = Scaling $ \ctx -> V2 (scale_in_x ctx ux) (scale_in_y ctx uy)
-
-runScaling :: ScalingContext ux uy u -> Scaling ux uy u a -> a
-runScaling ctx sf = (getScaling sf) ctx    
-
-
-
-
---------------------------------------------------------------------------------
--- Transformer
-
--- Turtle (for example) wants a transformer so it can use TraceM
--- and DrawingCtxM
---
-newtype ScalingT ux uy u m a = ScalingT { 
-          getScalingT :: ScalingContext ux uy u -> m a }
-
-type instance MonUnit (ScalingT ux uy u m) = u
-
-
-instance Monad m => Functor (ScalingT ux uy u m) where
-  fmap f ma = ScalingT $ \ctx -> getScalingT ma ctx >>= \a -> return (f a)
-
-instance Monad m => Applicative (ScalingT ux uy u m) where
-  pure a    = ScalingT $ \_   -> return a
-  mf <*> ma = ScalingT $ \ctx -> getScalingT mf ctx >>= \f -> 
-                                 getScalingT ma ctx >>= \a ->
-             			 return (f a)
-
-instance Monad m => Monad (ScalingT ux uy u m) where
-  return a = ScalingT $ \_   -> return a
-  m >>= k  = ScalingT $ \ctx -> getScalingT m ctx >>= \a -> 
-    	     	      	     	(getScalingT . k) a ctx
-
-
-instance Monad m => ScalingM (ScalingT ux uy u m) where
-  type XDim (ScalingT ux uy u m) = ux 
-  type YDim (ScalingT ux uy u m) = uy
-  scaleX ux       = ScalingT $ \ctx -> return $ (scale_in_x ctx) ux
-  scaleY uy       = ScalingT $ \ctx -> return $ (scale_in_y ctx) uy
-  scalePt ux uy   = ScalingT $ \ctx -> 
-                      return $ P2 (scale_in_x ctx ux) (scale_in_y ctx uy)
-  scaleVec ux uy  = ScalingT $ \ctx -> 
-                      return $ V2 (scale_in_x ctx ux) (scale_in_y ctx uy)
-
-
-
--- Cross instances - needed to run SalingT /locally/ in Drawing.
-
-instance DrawingCtxM m => DrawingCtxM (ScalingT ux uy u m) where
-  askDC           = ScalingT $ \_    -> askDC >>= \dctx -> return dctx
-  localize upd mf = ScalingT $ \sctx -> localize upd (getScalingT mf sctx)
-
-
-instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (ScalingT ux uy u m) where
-  trace a  = ScalingT $ \_ -> trace a 
-
-
-
-
-runScalingT :: ScalingContext ux uy u -> ScalingT ux uy u m a -> m a
-runScalingT ctx sf = (getScalingT sf) ctx    
 
 --------------------------------------------------------------------------------
 -- constructors for scaling context
 
-regularScalingContext :: Num u => u -> ScalingContext u u u
-regularScalingContext u = ScalingContext
+
+-- | Build a ScalingContext where both X and Y are scaled by the 
+-- same uniform step.
+--
+-- The dimensions (types) of the ScalingContext are unified - the 
+-- output type and the input types are all the same.
+--
+uniformScaling :: Num u => u -> ScalingContext u u u
+uniformScaling u = ScalingContext
       { scale_in_x  = (\x -> u*x)
       , scale_in_y  = (\y -> u*y)
       }
 
-coordinateScalingContext :: Num u => u -> u -> ScalingContext Int Int u
-coordinateScalingContext sx sy = ScalingContext
+
+
+-- | Build a ScalingContext for scaling Int coordinates.
+--
+-- The scaling factors in X and Y can be different sizes.
+---
+coordinateScaling :: Num u => u -> u -> ScalingContext Int Int u
+coordinateScaling sx sy = ScalingContext
       { scale_in_x  = (\x -> sx * fromIntegral x)
       , scale_in_y  = (\y -> sy * fromIntegral y)
       }
 
 
 
---------------------------------------------------------------------------------
--- operations
-
-
-
-
-unitX :: (ScalingM m, Num ux, ux ~ XDim m, u ~ MonUnit m) => m u
-unitX = scaleX 1
- 
-unitY :: (ScalingM m, Num uy, uy ~ YDim m, u ~ MonUnit m) => m u
-unitY = scaleY 1
-
- 

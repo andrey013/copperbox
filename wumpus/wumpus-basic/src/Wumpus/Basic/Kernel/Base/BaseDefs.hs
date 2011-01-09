@@ -52,7 +52,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , displacePerpendicular
 
 
-
   -- * Monadic drawing
   , MonUnit
 
@@ -260,6 +259,9 @@ displaceParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
 displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
 displacePerpendicular d = 
     \theta pt -> pt .+^ avec (circularModulo $ theta + (0.5*pi)) d
+
+
+
 
 
 --------------------------------------------------------------------------------

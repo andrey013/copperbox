@@ -19,7 +19,7 @@ module Wumpus.Tree
   -- * The type of rendered trees
 
     ScaleFactors
-  , uniformScaling
+  , uniformSF
   , scaleFactors
 
   , drawScaledTree
@@ -72,9 +72,10 @@ type instance DUnit (ScaleFactors u) = u
 
 -- | Build uniform x- and y-scaling factors, i.e. @ x == y @.
 --
-uniformScaling :: Num u => u -> ScaleFactors u
-uniformScaling u = ScalingContext (\x -> u * x)
-                                  (\y -> u * fromIntegral y) 
+uniformSF :: Num u => u -> ScaleFactors u
+uniformSF u = ScalingContext (\x -> u * x)
+                             (\y -> u * fromIntegral y) 
+
 
 scaleFactors :: Num u => u -> u -> ScaleFactors u
 scaleFactors sx sy = ScalingContext (\x -> sx * x)

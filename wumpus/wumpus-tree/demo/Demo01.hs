@@ -69,16 +69,16 @@ tree_pic1 :: DCtxPicture
 tree_pic1 = drawTracing $ do
     --
     draw $ textline "Tree 1:"        `at` (P2 0  530)
-    drawScaledTree (uniformScaling 30)    (P2 80 530) $ 
+    drawScaledTree (uniformSF 30)         (P2 80 530) $ 
        runTreeBuild charNode tree1
     --
     draw $ textline "Tree 2:"       `at` (P2 160 530) 
-    drawScaledTree (uniformScaling 30)   (P2 240 530) $ 
+    drawScaledTree (uniformSF 30)        (P2 240 530) $ 
         runTreeBuild (diskNode red) tree2
 
     draw $ textline "Tree 3:"       `at` (P2 0  410) 
     localize (fontSize 12) $ 
-        drawScaledFamilyTree (uniformScaling 25) (P2 280 410) $ 
+        drawScaledFamilyTree (uniformSF 25) (P2 280 410) $ 
           runTreeBuild charNode tree3
 
     --

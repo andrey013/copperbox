@@ -65,23 +65,24 @@ strokelineF rgb w _ _ = localize (strokeColour rgb) (straightLine (hvec w))
 
 
 render :: RenderScalingCtx -> DrawWordF -> GreekText -> TraceDrawing Double ()
-render ctx wordDraw (hmax,xs) = 
-    runScalingT ctx $ mstep hmax xs
+render ctx wordDraw (hmax,xs) = mstep hmax xs
   where
-    mstep h (s:ss) = renderLine wordDraw h s >> mstep (h-1) ss 
+    mstep h (s:ss) = renderLine ctx wordDraw h s >> mstep (h-1) ss 
     mstep _ _      = return ()
 
-renderLine :: DrawWordF -> Int -> [Tile] 
-	   -> RenderScalingT (TraceDrawing Double) ()
-renderLine fn h ts = mstep 0 ts
+renderLine :: RenderScalingCtx -> DrawWordF -> Int -> [Tile] 
+	   -> TraceDrawing Double ()
+renderLine ctx fn h ts = mstep 0 ts
   where
-    mstep x (Word rgb n:xs) = draw1 fn rgb n (x,h) >> mstep (x+n) xs
+    mstep x (Word rgb n:xs) = draw1 ctx fn rgb n (x,h) >> mstep (x+n) xs
     mstep x (Space n:xs)    = mstep (x+n) xs  
     mstep _ []              = return ()
 
-draw1 :: DrawWordF -> RGBi -> Int -> (Int,Int) 
-      -> RenderScalingT (TraceDrawing Double) () 
-draw1 fn rgb n (x,y)  = 
-    scalePt x y >>= \pt -> scaleX n >>= \w -> unitY >>= \h ->  
-    draw $ fn rgb w h n `at` pt
+draw1 :: RenderScalingCtx -> DrawWordF -> RGBi -> Int -> (Int,Int) 
+      -> TraceDrawing Double ()
+draw1 ctx fn rgb n (x,y)  = 
+    let pt = scalePt ctx x y 
+        w  = scaleX ctx n 
+        h  = unitY ctx
+    in draw $ fn rgb w h n `at` pt
 

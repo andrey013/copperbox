@@ -40,7 +40,7 @@ symbols = drawTracing $ do
   where
     sdraw (s,_)     pt = draw $ textline s `at` pt
     ldraw (_,name)  pt = draw $ textline name `at` pt .+^ hvec 16
-    ps              = unchain (coordinateScalingContext 100 20) $ tableDown 30 6
+    ps              = unchain (coordinateScaling 100 20) $ tableDown 30 6
 
 all_letters :: [(String, String)]
 all_letters = 

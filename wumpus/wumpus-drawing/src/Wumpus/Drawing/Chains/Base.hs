@@ -52,7 +52,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- Chain uses the Scaling monad, but it is not itself a monad.
 
 
-newtype Chain ux uy u = Chain { getChain :: Scaling ux uy u [Point2 u] }
+newtype Chain ux uy u = Chain { getChain :: ScalingContext ux uy u -> [Point2 u] }
 
 
 type LocChain ux uy u = Point2 u -> Chain ux uy u
@@ -67,7 +67,7 @@ chainFrom alg start = Chain (scaledBivariateVec alg start)
 
 
 unchain :: ScalingContext ux uy u -> Chain ux uy u -> [Point2 u]
-unchain ctx ch = runScaling ctx $ getChain ch
+unchain ctx ch = getChain ch ctx
  
 
 -- | Chains are built as unfolds - AnaAlg avoids the pair 
@@ -98,15 +98,14 @@ bivariate st0 step_alg = BivariateAlg { st_zero = st0
                                       , gen_step = step_alg }
 
 
-scaledBivariatePt :: BivariateAlg ux uy -> Scaling ux uy u [Point2 u]
-scaledBivariatePt (BivariateAlg { st_zero = st0, gen_step = step}) = 
+scaledBivariatePt :: BivariateAlg ux uy -> ScalingContext ux uy u -> [Point2 u]
+scaledBivariatePt (BivariateAlg { st_zero = st0, gen_step = step}) ctx = 
     go (step st0)   
   where
-    go Done              = return []
-    go (Step (x,y) next) = scalePt x y    >>= \pt   ->
-                           go (step next) >>= \rest ->  
-                           return  (pt:rest)
-
+    go Done              = []
+    go (Step (x,y) next) = scalePt ctx x y : go (step next)
+                           
+                           
 -- Note - cannot encode this with (.+^) from Data.AffineSpace.
 -- The u (u ~ MonUnit m) extracted from the Scaling Context is 
 -- not compatible with the u that forms Points (u ~ Diff (Point2 u)).
@@ -114,14 +113,15 @@ scaledBivariatePt (BivariateAlg { st_zero = st0, gen_step = step}) =
 scaledBivariateVec :: Num u 
                    => BivariateAlg ux uy 
                    -> Point2 u 
-                   -> Scaling ux uy u [Point2 u]
-scaledBivariateVec (BivariateAlg { st_zero = st0, gen_step = step}) (P2 x0 y0) = 
+                   -> ScalingContext ux uy u -> [Point2 u]
+scaledBivariateVec (BivariateAlg { st_zero = st0, gen_step = step}) 
+                   (P2 x0 y0) ctx = 
     go (step st0)   
   where
-    go Done              = return []
-    go (Step (x,y) next) = scaleVec x y   >>= \(V2 dx dy)   ->
-                           go (step next) >>= \rest ->  
-                           return (P2 (x0+dx) (y0+dy):rest)
+    go Done              = []
+    go (Step (x,y) next) = let V2 dx dy = scaleVec ctx x y
+                           in P2 (x0+dx) (y0+dy) : go (step next)
+                         
 
 
 data SequenceAlg a = forall st. SequenceAlg

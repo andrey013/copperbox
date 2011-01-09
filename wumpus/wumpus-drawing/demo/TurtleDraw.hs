@@ -23,7 +23,7 @@ main = do
 turtle_pic :: DCtxPicture
 turtle_pic = drawTracing $ do 
     draw $ filledRectangle 40 10 `at` zeroPt
-    runTurtleT (0,0) (coordinateScalingContext 14 14) $ 
+    runTurtleT (0,0) (coordinateScaling 14 14) $ 
       moveUp >> moveUp >> moveUp >> node (textline "up3") >>  
       moveRight >> moveRight >> node (textline "right2")
       

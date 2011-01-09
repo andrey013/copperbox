@@ -37,7 +37,7 @@ tree1 = return $
 
 tree_drawing1 :: DCtxPicture
 tree_drawing1 = drawTracing $ 
-    drawScaledTree (uniformScaling 30) zeroPt $ runTreeBuild charNode tree1
+    drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
 
 
 
@@ -60,7 +60,7 @@ tree_drawing2 = drawTracing $ do
     draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
     draw $ filledDisk 2      `at` tree_ogin
     draw $ filledDisk 2      `at` displaceH   40  tree_ogin
-    drawScaledTreeD (uniformScaling 60) tree_ogin TREE_RIGHT 
+    drawScaledTreeD (uniformSF 60) tree_ogin TREE_RIGHT 
          $ runTreeBuild (diskNode red) tree2 
   where
     tree_ogin = P2 240 0

@@ -202,7 +202,7 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
 --
 design :: (Fractional u, Ord u)
        => Point2 u -> ScalingContext u Int u -> Tree a -> CoordTree u a
-design ro sctx t = rootOrientate ro $ runScaling sctx (scaleDesign 0 t3)
+design ro sctx t = rootOrientate ro $ scaleDesign sctx 0 t3
   where
     (t1,ext)                    = designl t
     (_, HSpan xmin xmax)        = stats ext
@@ -219,11 +219,12 @@ design ro sctx t = rootOrientate ro $ runScaling sctx (scaleDesign 0 t3)
 -- to the unit width 1.0.
 --
 scaleDesign :: Num uy 
-            => uy -> Tree (XPos ux, a) -> Scaling ux uy u (CoordTree u a)
-scaleDesign lvl (Node (xpos,a) kids) = do 
-    pt    <- scalePt xpos lvl
-    kids' <- mapM (scaleDesign (lvl-1)) kids
-    return $ Node (pt,a) kids'
+            => ScalingContext ux uy u -> uy -> Tree (XPos ux, a) -> CoordTree u a
+scaleDesign ctx lvl (Node (xpos,a) kids) = Node (pt,a) kids'
+  where
+    pt    = scalePt ctx xpos lvl
+    kids' = map (scaleDesign ctx (lvl-1)) kids
+     
     
 
 rootOrientate :: Num u => Point2 u -> CoordTree u a -> CoordTree u a

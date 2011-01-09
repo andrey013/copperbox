@@ -61,7 +61,7 @@ pointChain = verticals positions
 
 fontGraphic :: RGBi -> FontFace -> DPoint2 -> TraceDrawing Double ()
 fontGraphic rgb ff pt = 
-    let ps = unchain (coordinateScalingContext 1 1) $ pointChain pt in 
+    let ps = unchain (coordinateScaling 1 1) $ pointChain pt in 
       zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
 
 
@@ -73,7 +73,7 @@ fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
 fontDrawing xs = drawTracing $  
     zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
   where
-    ps = unchain (coordinateScalingContext 1 180) $ tableDown 4 1
+    ps = unchain (coordinateScaling 1 180) $ tableDown 4 1
 
 
 

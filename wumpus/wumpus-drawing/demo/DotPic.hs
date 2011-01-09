@@ -85,7 +85,7 @@ tableGraphic :: (Real u, Floating u, FromPtSize u)
              => [DotLocImage u] -> TraceDrawing u ()
 tableGraphic imgs = zipWithM_ makeDotDrawing imgs ps
   where
-    ps = unchain (coordinateScalingContext 1 36) $ tableDown (length imgs) 1
+    ps = unchain (coordinateScaling 1 36) $ tableDown (length imgs) 1
 
 
 
