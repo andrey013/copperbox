@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Chains.Derived
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -19,10 +19,7 @@
 module Wumpus.Drawing.Chains.Derived
   (
     
-    univariateX
-  , univariateY
-
-  , tableDown
+    tableDown
   , tableRight
 
   , horizontal
@@ -31,99 +28,99 @@ module Wumpus.Drawing.Chains.Derived
   , horizontals
   , verticals
 
-  , rescale
-
   ) where
 
 import Wumpus.Drawing.Chains.Base
 
-
-
-
-univariateX :: (Fractional uy, Num ux, Num u) 
-            => [ux] -> LocChain ux uy u
-univariateX zs = chainFrom $ bivariate (0,zs) gstep
-  where
-    gstep (_,[])     = Done 
-    gstep (n,x:xs)   = Step (x,n) (n+i,xs)
-    len              = length zs
-    i                = rescale 0 1 0 (fromIntegral $ len-1) 1
-
-
-univariateY :: (Fractional ux, Num uy, Num u) 
-            => [uy] -> LocChain ux uy u
-univariateY zs = chainFrom $ bivariate (0,zs) gstep
-  where
-    gstep (_,[])     = Done 
-    gstep (n,y:ys)   = Step (n,y) (n+i,ys)
-    len              = length zs
-    i                = rescale 0 1 0 (fromIntegral $ len-1) 1
-
-
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 --------------------------------------------------------------------------------
 -- Tables
 
-
-tableDown :: Int -> Int -> Chain Int Int u
-tableDown rows cols = 
-    chain $ bounded (rows*cols) (iteration (downstep rows) (0,rows-1))
+-- Note - for the minor runtime cost, pairing the row_width and 
+-- row_height should make the API more /memorable/...
 
 
-
-downstep :: Int -> (Int,Int) -> (Int,Int)
-downstep row_count (x,y) | y == 0 = (x+1,row_count-1)
-downstep _         (x,y)          = (x,y-1)
-
-
-
-tableRight :: Num u => Int -> Int -> Chain Int Int u
-tableRight rows cols = 
-    chain $ bounded (rows*cols) (iteration (rightstep cols) (0,rows-1))
-
-
-rightstep :: Int -> (Int,Int) -> (Int,Int)
-rightstep col_count (x,y) | x == (col_count-1) = (0,y-1)
-rightstep _         (x,y)                      = (x+1,y)
-
-
-horizontal :: Int -> Chain Int Int u
-horizontal count = chain $ bivariate 0 alg
+-- | 'tableDown' : @ num_rows * (row_width, row_height) -> LocChain @
+--
+-- The table grows down and right, the implicit initial point is 
+-- @top-left@.
+--
+tableDown :: Num u => Int -> (u,u) -> LocChain u
+tableDown n (rw,rh) pt = map fn ints
   where
-    alg st | st == count = Done
-    alg st               = Step (st,0) (st+1)
+    ints = iterate (+1) 0
+    fn i = let (x,y) = i `divMod` n 
+           in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
 
 
-vertical :: Int -> Chain Int Int u
-vertical count = chain $ bivariate 0 alg
+-- | 'tableRight' : @ num_cols * row_width * row_height -> LocChain @
+--
+-- The table grows right and down, the implicit initial point is 
+-- @top-left@.
+--
+-- This chain is infinite.
+--
+tableRight :: Num u => Int -> (u,u) -> LocChain u
+tableRight n (rw,rh) pt = map fn ints
   where
-    alg st | st == count = Done
-    alg st               = Step (0,st) (st+1)
+    ints = iterate (+1) 0
+    fn i = let (y,x) = i `divMod` n 
+           in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
 
 
 
-horizontals :: (Num ua, Num u) => [ua] -> LocChain ua ua u
-horizontals xs0 = chainFrom $ bivariate xs0 alg
-  where
-    alg []     = Done
-    alg (x:xs) = Step (x,0) xs
 
 
-verticals :: (Num ua, Num u)  => [ua] -> LocChain ua ua u
-verticals ys0 = chainFrom $ bivariate ys0 alg
-  where
-    alg []     = Done
-    alg (y:ys) = Step (0,y) ys
+-- | 'horizontal' : @ horizontal_dist -> LocChain @
+--
+-- The chain grows right by the supplied increment.
+--
+-- This chain is infinite.
+--
+-- \*\* WARNING \*\* - name due to be changed. Current name is 
+-- too general for this function. 
+--
+horizontal :: Num u => u -> LocChain u
+horizontal dx = iterate (displaceH dx)
 
 
---------------------------------------------------------------------------------
--- general helpers
+-- | 'vertical' : @ vertical_dist -> LocChain @
+--
+-- The chain grows up by the supplied increment.
+--
+-- This chain is infinite.
+--
+-- \*\* WARNING \*\* - name due to be changed. Current name is 
+-- too general for this function. 
+--
+vertical :: Num u => u -> LocChain u
+vertical dy = iterate (displaceV dy) 
 
-rescale :: Fractional a => a -> a -> a -> a -> a -> a
-rescale outmin outmax innmin innmax a = 
-    outmin + innpos * (outrange / innrange)  
-  where
-    outrange = outmax - outmin
-    innrange = innmax - innmin
-    innpos   = a - innmin 
+
+-- | 'horizontals' : @ [horizontal_dist] -> LocChain @
+--
+-- This is a @scanl@ successive displacing the start point.
+--
+-- This chain is finite (for finite input list).
+--
+-- \*\* WARNING \*\* - name due to be changed. Current name is 
+-- too general for this function. 
+--
+horizontals :: Num u => [u] -> LocChain u
+horizontals xs = \pt -> scanl (flip displaceH) pt xs 
+
+
+-- | 'verticals' : @ [vertical_dist] -> LocChain @
+--
+-- This is a @scanl@ successive displacing the start point.
+--
+-- This chain is finite (for finite input list).
+--
+-- \*\* WARNING \*\* - name due to be changed. Current name is 
+-- too general for this function. 
+--
+verticals :: Num u => [u] -> LocChain u
+verticals ys = \pt -> scanl (flip displaceV) pt ys
+
 

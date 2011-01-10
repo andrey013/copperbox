@@ -9,9 +9,6 @@ import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-
-import Control.Monad
 import Prelude hiding ( pi, product )
 
 import System.Directory
@@ -35,12 +32,13 @@ std_ctx = fontFace times_roman $ standardContext 12
 --
 symbols :: DCtxPicture
 symbols = drawTracing $ do
-    localize (fontFace symbol) $ zipWithM_ sdraw all_letters ps
-    zipWithM_ ldraw all_letters ps
+    localize (fontFace symbol) $ zipchainWith sdraw all_letters ps
+    zipchainWith ldraw all_letters ps
   where
-    sdraw (s,_)     pt = draw $ textline s `at` pt
-    ldraw (_,name)  pt = draw $ textline name `at` pt .+^ hvec 16
-    ps              = unchain (coordinateScaling 100 20) $ tableDown 30 6
+    ps              = tableDown 30 (100,20) (P2 0 (30*20))
+    sdraw (s,_)     = textline s
+    ldraw (_,name)  = moveStartPoint (displaceH 16) (textline name)
+
 
 all_letters :: [(String, String)]
 all_letters = 

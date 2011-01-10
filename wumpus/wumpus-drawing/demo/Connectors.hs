@@ -11,9 +11,6 @@ import Wumpus.Drawing.Paths hiding ( length )
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-
-import Control.Monad
 import System.Directory
 
 main :: IO ()
@@ -53,9 +50,9 @@ conntable =
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [ConnectorPath u] -> TraceDrawing u ()
-tableGraphic conns = zipWithM_ makeConnDrawing conns ps
+tableGraphic conns = zipchainWith makeConnDrawing conns ps
   where
-    ps = unchain (coordinateScaling 120 52) $ tableDown 10 6
+    ps = tableDown 10 (120,52) (displaceV 520 zeroPt)
 
 
  
@@ -65,10 +62,11 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
-                 => ConnectorPath u -> Point2 u -> TraceDrawing u ()
-makeConnDrawing conn p0 = 
-    drawi_ $ connect (strokeConnector (dblArrow conn curveTip)) p0 p1
+                 => ConnectorPath u -> LocGraphic u
+makeConnDrawing conn = 
+    promoteR1 $ \p0 -> fmap (replaceL uNil) $ 
+        connect (strokeConnector (dblArrow conn curveTip)) p0 (mkP1 p0)
   where
-    p1 = p0 .+^ vec 100 40
+    mkP1 = displace 100 40
   
 

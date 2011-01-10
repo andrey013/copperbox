@@ -1,11 +1,9 @@
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Chains.Base
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -14,148 +12,106 @@
 --
 -- Generate points in an iterated chain.
 --
--- WARNING - very unstable.
+-- \*\* WARNING \*\* - unstable. Names are not so good, also 
+-- Wumpus-Basic has a @chain1@ operator...
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Chains.Base
   (
 
-
     Chain
   , LocChain
-  , chain
-  , chainFrom
   , unchain
+  , zipchain
+  , zipchainWith
+
+  , unchainTD
+  , zipchainTD
+  , zipchainWithTD
 
 
-  , AnaAlg(..)
-  , IterAlg(..)
-
-  , BivariateAlg
-  , bivariate
-  
-  , SequenceAlg
-  , iteration
-
-  , bounded
-  , pairOnXs
-  , pairOnYs
 
   ) where
 
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
 
--- Chain uses the Scaling monad, but it is not itself a monad.
 
-
-newtype Chain ux uy u = Chain { getChain :: ScalingContext ux uy u -> [Point2 u] }
-
-
-type LocChain ux uy u = Point2 u -> Chain ux uy u
-
-
-
-chain :: BivariateAlg ux uy -> Chain ux uy u
-chain alg = Chain (scaledBivariatePt alg)
-
-chainFrom :: Num u => BivariateAlg ux uy -> LocChain ux uy u
-chainFrom alg start = Chain (scaledBivariateVec alg start)
-
-
-unchain :: ScalingContext ux uy u -> Chain ux uy u -> [Point2 u]
-unchain ctx ch = getChain ch ctx
- 
-
--- | Chains are built as unfolds - AnaAlg avoids the pair 
--- constructor in the usual definition of unfoldr and makes the
--- state strict.
---
--- It is expected that all Chains built on unfolds will terminate. 
---
-data AnaAlg st a = Done | Step a !st
-
-
--- | IterAlg is a variant of AnaAlg that builds infinite 
--- sequences (iterations).
+-- | A 'Chain' is a list of points. The list is often expected to 
+-- be inifinte, but if it was a Stream  it would loose the ability
+-- to use list comprehensions.
 -- 
--- When lifted to a Chain an iteration is bounded by a count so
--- it will terminate.
+type Chain u = [Point2 u]
+
+
+-- | A LocChain is a function from a starting point to a 'Chain'.
+-- 
+type LocChain u = Point2 u -> Chain u
+
+
+-- | Note - commonly a 'Chain' may be infinite, so it is only 
+-- unrolled a finite number of times.
 --
-data IterAlg st a = IterStep a !st 
-
-
-data BivariateAlg ux uy = forall st. BivariateAlg
-      { st_zero     :: st
-      , gen_step    :: st -> AnaAlg st (ux,uy)
-      }
-
-bivariate :: st -> (st -> AnaAlg st (ux,uy)) -> BivariateAlg ux uy
-bivariate st0 step_alg = BivariateAlg { st_zero = st0
-                                      , gen_step = step_alg }
-
-
-scaledBivariatePt :: BivariateAlg ux uy -> ScalingContext ux uy u -> [Point2 u]
-scaledBivariatePt (BivariateAlg { st_zero = st0, gen_step = step}) ctx = 
-    go (step st0)   
+unchain :: Int -> LocGraphic u -> Chain u -> TraceDrawing u ()
+unchain i op chn = go i chn
   where
-    go Done              = []
-    go (Step (x,y) next) = scalePt ctx x y : go (step next)
-                           
-                           
--- Note - cannot encode this with (.+^) from Data.AffineSpace.
--- The u (u ~ MonUnit m) extracted from the Scaling Context is 
--- not compatible with the u that forms Points (u ~ Diff (Point2 u)).
+    go n _      | n <= 0 = return ()
+    go _ []              = return () 
+    go n (x:xs)          = draw (op `at` x) >> go (n-1) xs
 
-scaledBivariateVec :: Num u 
-                   => BivariateAlg ux uy 
-                   -> Point2 u 
-                   -> ScalingContext ux uy u -> [Point2 u]
-scaledBivariateVec (BivariateAlg { st_zero = st0, gen_step = step}) 
-                   (P2 x0 y0) ctx = 
-    go (step st0)   
+
+
+
+
+
+zipchain :: [LocGraphic u] -> Chain u -> TraceDrawing u ()
+zipchain (g:gs) (p:ps)   = draw (g `at` p) >> zipchain gs ps
+zipchain _      _        = return ()
+
+
+zipchainWith :: (a -> LocGraphic u) -> [a] -> Chain u -> TraceDrawing u ()
+zipchainWith op xs chn = go xs chn 
   where
-    go Done              = []
-    go (Step (x,y) next) = let V2 dx dy = scaleVec ctx x y
-                           in P2 (x0+dx) (y0+dy) : go (step next)
-                         
+    go (a:as) (p:ps)   = draw (op a `at` p) >> go as ps
+    go _      _        = return ()
 
 
-data SequenceAlg a = forall st. SequenceAlg
-      { initial_st  :: st
-      , iter_step   :: st -> IterAlg st a
-      }
 
-iteration :: (a -> a) -> a -> SequenceAlg a
-iteration fn s0 = SequenceAlg { initial_st = s0, iter_step = step }
+-- | Variant of 'unchain' where the drawing argument is a 
+-- @TraceDrawing@ not a @LocGraphic@. 
+--
+unchainTD :: Int -> (Point2 u -> TraceDrawing u ()) -> Chain u -> TraceDrawing u ()
+unchainTD i op chn = go i chn
   where
-    step s = IterStep s (fn s)
+    go n _      | n <= 0 = return ()
+    go _ []              = return () 
+    go n (x:xs)          = (op x) >> go (n-1) xs
 
 
-bounded :: Int -> SequenceAlg (ux,uy) -> BivariateAlg ux uy
-bounded n (SequenceAlg a0 fn) =
-    BivariateAlg { st_zero     = (0,a0)
-                 , gen_step    = gstep  }
+zipchainTD :: [Point2 u -> TraceDrawing u ()] -> Chain u -> TraceDrawing u ()
+zipchainTD (g:gs) (p:ps)   = g p >> zipchainTD gs ps
+zipchainTD _      _        = return ()
+
+
+
+zipchainWithTD :: (a -> Point2 u -> TraceDrawing u ()) -> [a] -> Chain u -> TraceDrawing u ()
+zipchainWithTD op xs chn = go xs chn 
   where
-    gstep (i,s) | i < n = let (IterStep ans next) = fn s in Step ans (i+1,next)
-    gstep _             = Done
+    go (a:as) (p:ps)   = op a p >> go as ps
+    go _      _        = return ()
 
 
 
-
-pairOnXs :: (ux -> uy) -> SequenceAlg ux -> SequenceAlg (ux,uy)
-pairOnXs fn (SequenceAlg { initial_st = s0, iter_step = step }) = 
-    SequenceAlg s0 step2
-  where
-    step2 s = let (IterStep a s') = step s in IterStep (a, fn a) s'
-
-
-pairOnYs :: (r -> l) -> SequenceAlg r -> SequenceAlg (l,r) 
-pairOnYs fn (SequenceAlg { initial_st = s0, iter_step = step }) = 
-    SequenceAlg  s0 step2
-  where
-    step2 s = let (IterStep a s') = step s in IterStep (fn a, a) s'
+-- Notes - something like TikZ\'s chains could possibly be 
+-- achieved with a Reader monad (@local@ initially seems better 
+-- for \"state change\" than @set@ as local models a stack). 
+--
+-- It\'s almost tempting to put point-supply directly in the
+-- Trace monad so that TikZ style chaining is transparent.
+-- (The argument against is: how compatible this would be with
+-- the Turtle monad for example?).
+--
 

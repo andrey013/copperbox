@@ -17,7 +17,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Control.Monad
 import System.Directory
 
 
@@ -39,8 +38,8 @@ makeGSPicture font_dir = do
     (base_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
-    writeEPS "./out/dots01_gs.eps" pic1
-    writeSVG "./out/dots01_gs.svg" pic1
+    writeEPS "./out/dot_pic01_gs.eps" pic1
+    writeSVG "./out/dot_pic01_gs.svg" pic1
 
  
 
@@ -50,8 +49,8 @@ makeAfmPicture font_dir = do
     (base_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
-    writeEPS "./out/dots01_afm.eps" pic1
-    writeSVG "./out/dots01_afm.svg" pic1
+    writeEPS "./out/dot_pic01_afm.eps" pic1
+    writeSVG "./out/dot_pic01_afm.svg" pic1
 
  
 makeCtx :: GlyphMetrics -> DrawingContext
@@ -83,24 +82,31 @@ dot_pic = drawTracing $ tableGraphic $
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [DotLocImage u] -> TraceDrawing u ()
-tableGraphic imgs = zipWithM_ makeDotDrawing imgs ps
+tableGraphic imgs = zipchainWith makeDotDrawing imgs ps
   where
-    ps = unchain (coordinateScaling 1 36) $ tableDown (length imgs) 1
+    row_count   = length imgs
+    ps          = tableDown row_count (1,36) pt
+    pt          = displaceV (fromIntegral $ 36 * row_count) zeroPt 
 
 
+
+-- This is a bit convoluted - maybe there should be chain-run 
+-- functions for TraceDrawings as well as LocGraphics?
 
 makeDotDrawing :: (Real u, Floating u, FromPtSize u) 
-               => DotLocImage u -> Point2 u -> TraceDrawing u ()
-makeDotDrawing dotF pt = do 
-    dashline
-    mapM_ (\v -> drawi $ dotF `at` pt .+^ v) displacements
+               => DotLocImage u -> LocGraphic u
+makeDotDrawing dotF = 
+    promoteR1 $ \pt -> 
+        let all_points = map (pt .+^) displacements
+        in oconcat (dashline all_points)
+                   (map (\p1 -> ignoreL $ dotF `at` p1) all_points)
   where
-    all_pts  = map (pt .+^) displacements
-    dashline = localize attrUpd (draw $ openStroke $ vertexPath all_pts)
+    dashline = \ps -> localize attrUpd (openStroke $ vertexPath ps)
 
     attrUpd  :: DrawingContext -> DrawingContext
     attrUpd  =  dashPattern (evenDashes 1) . strokeColour cadet_blue
 
+    ignoreL  = fmap (replaceL uNil) 
 
 displacements :: Num u => [Vec2 u]
 displacements = [V2 0 0, V2 64 20, V2 128 0, V2 192 20]

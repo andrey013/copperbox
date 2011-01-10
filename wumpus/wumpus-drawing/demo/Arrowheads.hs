@@ -13,7 +13,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Control.Monad
 import System.Directory
 
 main :: IO ()
@@ -60,9 +59,9 @@ arrtable =
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
-tableGraphic tips = zipWithM_ makeArrowDrawing tips ps
+tableGraphic tips = zipchainWith makeArrowDrawing tips ps
   where
-    ps = unchain (coordinateScaling 120 24) $ tableDown 20 4
+    ps = tableDown 20 (120,24) (P2 0 480)
 
 
  
@@ -72,11 +71,12 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 makeArrowDrawing :: (Real u, Floating u, FromPtSize u) 
-                 => (Arrowhead u, Arrowhead u) -> Point2 u 
-                 -> TraceDrawing u ()
-makeArrowDrawing (arrl,arrr) p0 = 
-    drawi_ $ apply2R2 (strokeConnector (leftrightArrow connLine arrl arrr)) p0 p1
+                 => (Arrowhead u, Arrowhead u) -> LocGraphic u
+makeArrowDrawing (arrl,arrr) = 
+    promoteR1 $ \p0 -> forget $
+      connect (strokeConnector (leftrightArrow connLine arrl arrr)) p0 (mkP1 p0)
   where
-    p1 = p0 .+^ hvec 100
-  
+    mkP1    = (.+^ hvec 100)
+    -- forget needs a better name, then adding to Wumpus-Basic.
+    forget  = fmap (replaceL uNil)  
 

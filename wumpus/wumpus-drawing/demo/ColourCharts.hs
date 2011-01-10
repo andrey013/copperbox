@@ -9,7 +9,6 @@ import Wumpus.Drawing.Chains
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Control.Monad
 import System.Directory
 
 
@@ -43,14 +42,16 @@ makeDrawing row_count xs = drawTracing $ tableGraphic row_count xs
 
 tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = 
-    zipWithM_ (\(name,rgb) pt -> colourSample name rgb pt) xs ps
+    zipchainWith (\(name,rgb) -> colourSample name rgb) xs ps
   where
-    ps = unchain (coordinateScaling 152 11) $ tableDown row_count 10 
+    ps = tableDown row_count (152,11) pt
+    pt = displaceV (fromIntegral $ 11 * row_count) zeroPt 
 
 
-colourSample :: String -> RGBi -> DPoint2 -> TraceDrawing Double ()
-colourSample name rgb pt = localize (fillColour rgb) $ do 
-    draw $ borderedRectangle 15 10 `at` pt
-    draw $ textline name `at` displace 20 2 pt 
+colourSample :: String -> RGBi -> LocGraphic Double
+colourSample name rgb = localize (fillColour rgb) $ 
+    promoteR1 $ \pt ->  
+      oplus (borderedRectangle 15 10 `at` pt)
+            (textline name `at` displace 20 2 pt)
         
 

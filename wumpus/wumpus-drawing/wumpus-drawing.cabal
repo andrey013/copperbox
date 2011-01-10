@@ -46,6 +46,10 @@ description:
     the (very prototypical - read sub-alpha, unstable...) modules 
     in the @Drawing@ hierarchy a separate package.
   .
+  * Simplified Chains - chains are now regular lists (though often
+    infinite). Drawings are made with chains using new zip-like
+    functions.
+  .
   .
 build-type:         Simple
 stability:          highly unstable
@@ -67,7 +71,8 @@ extra-source-files:
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
   demo/PictureCompo.hs,
-  demo/Symbols.hs
+  demo/Symbols.hs,
+  demo/TableChains
 
 library
   hs-source-dirs:     src

@@ -10,7 +10,6 @@ import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Control.Monad
 
 import System.Directory
 
@@ -56,13 +55,13 @@ positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
 
-pointChain :: LocChain Int Int Double
-pointChain = verticals positions
+pointChain :: LocChain Double
+pointChain = verticals $ map (fromIntegral . (+2)) point_sizes
 
 fontGraphic :: RGBi -> FontFace -> DPoint2 -> TraceDrawing Double ()
 fontGraphic rgb ff pt = 
-    let ps = unchain (coordinateScaling 1 1) $ pointChain pt in 
-      zipWithM_ (\p1 sz -> draw $ makeLabel rgb ff sz `at` p1) ps point_sizes
+    let ps = pointChain pt in 
+      zipchainWith (\sz -> makeLabel rgb ff sz) point_sizes ps
 
 
 std_ctx :: DrawingContext
@@ -71,9 +70,9 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
 fontDrawing xs = drawTracing $  
-    zipWithM (\(rgb,ff) pt -> fontGraphic rgb ff pt) xs ps
+    zipchainWithTD (\(rgb,ff) -> fontGraphic rgb ff) xs ps
   where
-    ps = unchain (coordinateScaling 1 180) $ tableDown 4 1
+    ps = tableDown 4 (1,180) (P2 0 (4*180))
 
 
 

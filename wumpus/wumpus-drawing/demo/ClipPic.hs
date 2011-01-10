@@ -55,9 +55,8 @@ pic1 = drawTracing $
 
 background :: RGBi -> DCtxPicture
 background rgb = drawTracing $ 
-    localize (strokeColour rgb) $ mapM_ iheartHaskell ps
-   where
-     ps = unchain (coordinateScaling 86 16) $ tableDown 18 8
+    localize (strokeColour rgb) $ 
+        unchain 112 iheartHaskell $ tableDown 18 (86,16) (P2 0 288)
 
 cpic1 :: DCtxPicture 
 cpic1 = clipCtxPicture (toPrimPath path01) (background black)
@@ -72,10 +71,12 @@ cpic4 :: DCtxPicture
 cpic4 = clipCtxPicture (toPrimPath path04) (background black)
 
 
-iheartHaskell :: Num u => FromPtSize u => Point2 u -> TraceDrawing u () 
-iheartHaskell pt = do
-    draw $ textline "I Haskell" `at` pt
-    draw $ localize (fontFace symbol) $ textline "&heart;" `at` (pt .+^ hvec 7)
+iheartHaskell :: Num u => FromPtSize u => LocGraphic u
+iheartHaskell = promoteR1 $ \pt -> 
+    let body  = textline "I Haskell" `at` pt
+        heart = localize (fontFace symbol) $ 
+                  textline "&heart;" `at` (pt .+^ hvec 7)
+    in body `oplus` heart
 
 
 path01 :: Floating u => Path u
