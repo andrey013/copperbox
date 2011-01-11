@@ -92,7 +92,6 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Geometry.Paths
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -404,6 +403,15 @@ curveBetween sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 drawWith :: (Point2 u -> PrimPath u) -> (PrimPath u -> Graphic u) -> LocGraphic u 
 drawWith g mf = promoteR1 $ \pt -> mf (g pt)
 
+
+-- | Supplied point is /bottom-left/.
+--
+rectanglePath :: Num u => u -> u -> Point2 u -> PrimPath u
+rectanglePath w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
+  where
+    br = bl .+^ hvec w
+    tr = br .+^ vvec h
+    tl = bl .+^ vvec h
 
 -- | Supplied point is /bottom left/.
 --

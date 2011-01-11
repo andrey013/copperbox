@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Shapes.Derived
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -42,10 +42,12 @@ module Wumpus.Drawing.Shapes.Derived
 
   ) where
 
-import Wumpus.Basic.Kernel
+import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.RoundCorners
 import Wumpus.Drawing.Shapes.Base
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

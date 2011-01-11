@@ -80,8 +80,6 @@ library
     Wumpus.Basic.Kernel.Base.ScalingContext,
     Wumpus.Basic.Kernel.Base.UpdateDC,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
-    Wumpus.Basic.Kernel.Geometry.Intersection,
-    Wumpus.Basic.Kernel.Geometry.Paths,
     Wumpus.Basic.Kernel.Objects.AdvanceGraphic,
     Wumpus.Basic.Kernel.Objects.BaseObjects,
     Wumpus.Basic.Kernel.Objects.Bounded,

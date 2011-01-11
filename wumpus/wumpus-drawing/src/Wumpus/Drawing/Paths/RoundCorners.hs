@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Paths.RoundCorners
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -22,10 +22,11 @@ module Wumpus.Drawing.Paths.RoundCorners
 
   ) where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Paths.Base hiding ( length )
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

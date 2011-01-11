@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Dots.Marks
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -50,12 +50,14 @@ module Wumpus.Drawing.Dots.Marks
   ) where
 
 
-import Wumpus.Basic.Kernel
+import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Text.LRText
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
-import Data.AffineSpace                 -- package: vector-space
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
@@ -130,7 +132,8 @@ pathDiamond :: (Fractional u, FromPtSize u)
             => LocDrawingInfo u (PrimPath u)
 pathDiamond = 
     promoteR1 $ \pt -> 
-      markHeight >>= \h -> pure $ diamondPath (0.5*h) (0.66*h) pt
+      markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
+                           in return $ coordinatePrimPath pt cp
 
 
 
@@ -182,9 +185,9 @@ markBCircle = lift0R1 markHalfHeight >>= borderedDisk
 markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
 markPentagon = 
     promoteR1 $ \pt -> 
-      markHeight >>= \h -> closedStroke $ vertexPath $ pentagonPath pt (0.5*h)
+      markHeight >>= \h -> closedStroke $ pentagonPath pt (0.5*h)
   where
-    pentagonPath pt hh = polygonPoints 5 hh pt
+    pentagonPath pt hh = coordinatePrimPath pt $ polygonCoordPath 5 hh
 
  
 
@@ -194,7 +197,8 @@ markStar = lift0R1 markHeight >>= \h -> starLines (0.5*h)
 
 starLines :: Floating u => u -> LocGraphic u
 starLines hh = 
-    promoteR1 $ \ctr -> step $ map (fn ctr) $ polygonPoints 5 hh ctr
+    promoteR1 $ \ctr -> let cp = polygonCoordPath 5 hh
+                        in step $ map (fn ctr) $ cp ctr
   where
     fn p0 p1    = openStroke $ primPath p0 [lineTo p1]
     step (x:xs) = oconcat x xs
@@ -234,5 +238,6 @@ markTriangle :: (Floating u, FromPtSize u) => LocGraphic u
 markTriangle = tripath `renderPathWith` closedStroke
   where
     tripath = promoteR1 $ \pt -> 
-                markHeight >>= \h -> pure $ equilateralTrianglePath h pt
+                markHeight >>= \h -> let cp = equilateralTriangleCoordPath h 
+                                     in pure $ coordinatePrimPath pt cp
 

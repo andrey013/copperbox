@@ -26,8 +26,6 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.ScalingContext
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
-  , module Wumpus.Basic.Kernel.Geometry.Intersection
-  , module Wumpus.Basic.Kernel.Geometry.Paths
   , module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , module Wumpus.Basic.Kernel.Objects.BaseObjects
   , module Wumpus.Basic.Kernel.Objects.Bounded
@@ -46,8 +44,6 @@ import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.ScalingContext
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Geometry.Intersection
-import Wumpus.Basic.Kernel.Geometry.Paths
 import Wumpus.Basic.Kernel.Objects.AdvanceGraphic
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Bounded

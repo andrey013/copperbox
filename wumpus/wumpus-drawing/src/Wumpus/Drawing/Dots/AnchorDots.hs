@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Dots.AnchorDots
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -56,9 +56,13 @@ module Wumpus.Drawing.Dots.AnchorDots
 
   ) where
 
-import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Text.LRText
+
+import Wumpus.Drawing.Geometry.Intersection
+import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Text.LRText
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

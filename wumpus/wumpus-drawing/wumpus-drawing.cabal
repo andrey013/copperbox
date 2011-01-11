@@ -96,6 +96,8 @@ library
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.Marks,
+    Wumpus.Drawing.Geometry.Intersection,
+    Wumpus.Drawing.Geometry.Paths,
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,
     Wumpus.Drawing.Paths.Connectors,
