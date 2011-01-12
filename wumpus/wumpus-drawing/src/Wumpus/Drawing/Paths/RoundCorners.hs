@@ -48,7 +48,7 @@ cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
 
 
 -- | 'roundEvery' throws a runtime error if the input list has
--- less than 3 eleemnts.
+-- less than 3 elements.
 --
 roundEvery :: (Real u, Floating u) 
            => u -> [Point2 u] -> Path u 

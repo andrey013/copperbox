@@ -1,0 +1,134 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Drawing.Shapes.Ellipse
+-- Copyright   :  (c) Stephen Tetley 2010-2011
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+-- Ellipse shape.
+-- 
+--------------------------------------------------------------------------------
+
+module Wumpus.Drawing.Shapes.Ellipse
+  ( 
+
+
+  -- * Ellipse
+    Ellipse
+  , DEllipse
+  , ellipse
+
+
+  ) where
+
+import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Shapes.Base
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space 
+
+import Control.Applicative
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Ellipse
+
+
+data Ellipse u = Ellipse
+      { ell_ctm     :: ShapeCTM u 
+      , ell_rx      :: !u
+      , ell_ry      :: !u
+      }
+
+type DEllipse = Ellipse Double
+
+type instance DUnit (Ellipse u) = u
+
+
+
+mapEllipseCTM :: (ShapeCTM u -> ShapeCTM u) -> Ellipse u -> Ellipse u
+mapEllipseCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
+
+instance Num u => Scale (Ellipse u) where
+  scale sx sy = mapEllipseCTM (scale sx sy)
+
+
+instance Rotate (Ellipse u) where
+  rotate ang = mapEllipseCTM (rotate ang)
+                  
+
+instance (Real u, Floating u) => RotateAbout (Ellipse u) where
+  rotateAbout ang pt = mapEllipseCTM (rotateAbout ang pt)
+
+
+instance Num u => Translate (Ellipse u) where
+  translate dx dy = mapEllipseCTM (translate dx dy)
+
+
+runEllipse :: (u -> u -> ShapeCTM u  -> a) -> Ellipse u -> a
+runEllipse fn (Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }) = 
+    fn rx ry ctm
+
+
+-- | x_radius is the unit length.
+--
+scaleEll :: (Scale t, Fractional u, u ~ DUnit t) => u -> u -> t -> t
+scaleEll rx ry = scale 1 (ry/rx) 
+
+
+instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
+  center = runEllipse $ \_ _ -> ctmCenter
+
+
+instance (Real u, Floating u) => RadialAnchor (Ellipse u) where
+  radialAnchor theta = runEllipse $ \rx ry -> 
+    projectPoint $ scaleEll rx ry $ zeroPt .+^ avec theta rx
+
+
+instance (Real u, Floating u) => CardinalAnchor (Ellipse u) where
+  north = radialAnchor (0.5*pi)
+  south = radialAnchor (1.5*pi)
+  east  = radialAnchor  0
+  west  = radialAnchor  pi
+
+
+instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
+
+
+
+
+-- | 'ellipse'  : @ x_radii * y_radii -> shape @
+--
+ellipse :: (Floating u, Ord u) => u -> u -> LocShape u (Ellipse u)
+ellipse rx ry = 
+    intoLocShape (mkEllipse rx ry) (mkEllipsePath rx ry)
+
+
+mkEllipse :: Num u => u -> u -> LocCF u (Ellipse u)
+mkEllipse rx ry = promoteR1 $ \ctr -> 
+    pure $ Ellipse { ell_ctm = makeShapeCTM ctr, ell_rx = rx, ell_ry = ry }
+
+-- This is wrong...
+--
+mkEllipsePath :: (Floating u, Ord u) => u -> u -> LocCF u (Path u)
+mkEllipsePath rx ry = promoteR1 $ \(P2 x y) -> 
+    pure $ traceCurvePoints $ map (translate x y . scaleEll rx ry) 
+                            $ bezierCircle 2 rx zeroPt
+

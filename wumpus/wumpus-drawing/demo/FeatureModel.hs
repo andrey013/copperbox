@@ -26,6 +26,7 @@ main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
+    putStrLn "Note - text centering does not seem to be working well at present..."
     maybe gs_failk  makeGSPicture  $ mb_gs
     maybe afm_failk makeAfmPicture $ mb_afm
   where
@@ -88,11 +89,14 @@ feature_model = drawTracing $ do
 type Box u = Rectangle u
 
 
+-- Note - ctrCenterLine does not seem to be working well...
+
 makeBox :: (Real u, Floating u, FromPtSize u) 
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
-    a <- drawi $ strokedShape $ rectangle w 20 $ pt
+    a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
     drawi_ $ ctrCenterLine ss `at` center a
+    -- draw  $ filledDisk 2 `at` center a
     return a
 
 box :: (Real u, Floating u, FromPtSize u) 

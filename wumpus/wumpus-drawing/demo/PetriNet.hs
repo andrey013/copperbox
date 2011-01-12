@@ -13,8 +13,7 @@ import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Shapes.Base
-import Wumpus.Drawing.Shapes.Derived
+import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.SafeFonts
 import Wumpus.Drawing.Text.LRText
 
@@ -111,12 +110,12 @@ greenFill = localize (fillColour lime_green)
 
 place :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
       => u -> u -> m (Circle u)
-place x y = greenFill $ drawi $ borderedShape $ circle 14 $ P2 x y
+place x y = greenFill $ drawi $ (borderedShape $ circle 14) `at` P2 x y
 
 transition :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
            => u -> u -> m (Rectangle u)
 transition x y = 
-    greenFill $ drawi $ borderedShape $ rectangle 32 22 $ P2 x y
+    greenFill $ drawi $ (borderedShape $ rectangle 32 22) `at` P2 x y
 
 
 

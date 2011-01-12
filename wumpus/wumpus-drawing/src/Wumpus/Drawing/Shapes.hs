@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Shapes
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -17,11 +17,15 @@
 module Wumpus.Drawing.Shapes
   ( 
     module Wumpus.Drawing.Shapes.Base
-  , module Wumpus.Drawing.Shapes.Coordinate
-  , module Wumpus.Drawing.Shapes.Derived
+  , module Wumpus.Drawing.Shapes.Circle
+  , module Wumpus.Drawing.Shapes.Diamond
+  , module Wumpus.Drawing.Shapes.Ellipse
+  , module Wumpus.Drawing.Shapes.Rectangle
 
   ) where
 
 import Wumpus.Drawing.Shapes.Base
-import Wumpus.Drawing.Shapes.Coordinate
-import Wumpus.Drawing.Shapes.Derived hiding ( mkRectangle )
+import Wumpus.Drawing.Shapes.Circle
+import Wumpus.Drawing.Shapes.Diamond
+import Wumpus.Drawing.Shapes.Ellipse
+import Wumpus.Drawing.Shapes.Rectangle
