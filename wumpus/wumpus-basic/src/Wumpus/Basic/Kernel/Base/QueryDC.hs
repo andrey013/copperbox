@@ -30,6 +30,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , borderedAttr
   , withBorderedAttr
 
+  , roundCornerSize
   , getLineWidth
   , getFontAttr
   , getFontSize
@@ -103,6 +104,14 @@ withBorderedAttr fn =
     fn <$> asksDC fill_colour <*> asksDC stroke_props 
                               <*> asksDC stroke_colour
 
+
+
+-- | Vertical distance between baselines of consecutive text 
+-- lines.
+--
+roundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
+roundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
+                    <$> asksDC round_corner_factor
 
 
 

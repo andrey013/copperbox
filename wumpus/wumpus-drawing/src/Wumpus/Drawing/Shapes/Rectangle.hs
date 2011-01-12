@@ -111,7 +111,8 @@ rectangleIntersect hw hh theta =
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
-rectangle :: (Real u, Floating u) => u -> u -> LocShape u (Rectangle u)
+rectangle :: (Real u, Floating u, FromPtSize u) 
+          => u -> u -> LocShape u (Rectangle u)
 rectangle w h = 
     intoLocShape (mkRectangle (0.5*w) (0.5*h))
                  (mkRectPath  (0.5*w) (0.5*h))
@@ -125,10 +126,11 @@ mkRectangle hw hh = promoteR1 $ \ctr ->
                      }
 
 
-mkRectPath :: Floating u => u -> u -> LocCF u (Path u)
+mkRectPath :: (Real u, Floating u, FromPtSize u) 
+           => u -> u -> LocCF u (Path u)
 mkRectPath hw hh = promoteR1 $ \ctr -> 
     let btm_left = displace (-hw) (-hh) ctr
-    in pure $ traceLinePoints $ rectangleCoordPath (2*hw) (2*hh) btm_left
+    in roundCornerShapePath $ rectangleCoordPath (2*hw) (2*hh) btm_left
     
 
 

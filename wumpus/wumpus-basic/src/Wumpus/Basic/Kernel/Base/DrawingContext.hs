@@ -13,10 +13,10 @@
 --
 -- Drawing attributes
 --
--- \*\* WARNING \*\* - this module needs systematic naming 
--- schemes both for update functions (primaryColour, ...) and 
--- for synthesized selectors (e.g. lowerxHeight). The current 
--- names will change.
+-- \*\* WARNING \*\* - The drawing context modules need systematic 
+-- naming schemes both for update functions (primaryColour, ...) 
+-- and for synthesized selectors (e.g. lowerxHeight). The current 
+-- names in @QueryDC@ and @UpdateDC@ are expected to change.
 --
 -- 
 --------------------------------------------------------------------------------
@@ -53,7 +53,25 @@ import Wumpus.Core.Text.StandardEncoding
 import Control.Applicative
 import Data.Maybe
 
-
+-- | 'DrawingContext' - the \"graphics state\" of Wumpus-Basic. 
+-- DrawingContext is operated on within a Reader monad rather than 
+-- a State monad so \"updates\" are delineated within a @local@ 
+-- operation (called @localize@ in Wumpus), rather than permanent
+-- until overridden as per @set@ of a State monad.
+-- 
+-- Note - @round_corner_factor@ is only accounted for by some 
+-- graphic objects (certain Path objects and Shapes in 
+-- Wumpus-Drawing for instance). There many be many objects that 
+-- ignore it and are drawn only with angular corners.
+-- 
+-- Also note - in contrast to most other drawing objects in 
+-- Wumpus, none of the measurement values are parameteric - 
+-- usually notated with the type variable @u@ in Wumpus. This is 
+-- so Wumpus can (potentially) support different units e.g. 
+-- centimeters rather than just Doubles (represening printers 
+-- points), though adding support for other units has a very low 
+-- priority.
+-- 
 data DrawingContext = DrawingContext
       { glyph_tables          :: GlyphMetrics
       , fallback_metrics      :: MetricsOps
@@ -62,6 +80,7 @@ data DrawingContext = DrawingContext
       , stroke_colour         :: RGBi      -- also text colour...
       , fill_colour           :: RGBi      
       , line_spacing_factor   :: Double
+      , round_corner_factor   :: Double 
       }
 
 -- TODO - hand craft a Show instance 
@@ -78,6 +97,7 @@ standardContext sz =
                    , stroke_colour        = wumpus_black
                    , fill_colour          = wumpus_light_gray
                    , line_spacing_factor  = 1.2  
+                   , round_corner_factor  = 0
                    }
 
 -- out-of-date - should be adding loaded fonts, not replacing the 
@@ -85,16 +105,7 @@ standardContext sz =
 --
 metricsContext :: FontSize -> GlyphMetrics -> DrawingContext
 metricsContext sz bgm = 
-    DrawingContext { glyph_tables         = bgm
-                   , fallback_metrics     = monospace_metrics
-                   , stroke_props         = default_stroke_attr
-                   , font_props           = FontAttr sz wumpus_courier
-                   , stroke_colour        = wumpus_black
-                   , fill_colour          = wumpus_light_gray
-                   , line_spacing_factor  = 1.2  
-                   }
-
-
+    let env = standardContext sz in env { glyph_tables = bgm }
 
 
 wumpus_black            :: RGBi

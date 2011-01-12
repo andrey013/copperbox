@@ -36,8 +36,8 @@ module Wumpus.Basic.Utils.JoinList
   , zipWithIntoList
 
   -- * Construction
+  , empty
   , one
-  , two
   , cons
   , snoc
   , join
@@ -190,17 +190,21 @@ null Empty       = True
 null _           = False
 
 
+
+
+-- | Create an empty join list.
+--
+empty :: JoinList a
+empty = Empty
+
+
+
 -- | Create a singleton join list.
 --
 one :: a -> JoinList a
 one = One
 
 
--- | Creating a two element list is usefulfor MIDI when NoteOn and
--- NoteOff are twinned.
---
-two :: a -> a -> JoinList a
-two a b = Join (One a) (One b)
 
 infixr 5 `cons`
 

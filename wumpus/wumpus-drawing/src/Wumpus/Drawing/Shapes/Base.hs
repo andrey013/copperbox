@@ -26,13 +26,16 @@ module Wumpus.Drawing.Shapes.Base
   , strokedShape
   , filledShape
   , borderedShape
-  , rounded
+
+  , roundCornerShapePath
 
   , ShapeCTM
   , makeShapeCTM
   , ctmCenter
   , ctmAngle
   , projectPoint
+
+ 
 
   ) where
 
@@ -71,12 +74,13 @@ borderedShape mf =
      (mf `at` pt) >>= \(a,spath) -> 
      intoImage (pure a) (borderedPath $ toPrimPath spath)
 
-
-roundCorners :: u -> Path u -> Path u
-roundCorners _ a = a
-
-rounded :: u -> LocShape u a -> LocShape u a
-rounded u = fmap (bimapR $ roundCorners u)
+-- | Draw the shape path with round corners.
+-- 
+roundCornerShapePath :: (Real u, Floating u, FromPtSize u) 
+                     => [Point2 u] -> CF (Path u)
+roundCornerShapePath xs = roundCornerSize >>= \sz -> 
+    if sz == 0 then return (traceLinePoints xs) 
+               else return (roundTrail  sz xs)
 
 
 

@@ -24,8 +24,11 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   ( 
 
   -- * Modifiers 
+  
+    roundCornerFactor
+
   -- ** Line widths
-    lineWidth
+  , lineWidth
   , thick
   , ultrathick
   , thin
@@ -83,6 +86,13 @@ updateStrokeProps fn = (\s i -> s { stroke_props = fn i }) <*> stroke_props
 
 updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
 updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
+
+
+
+--------------------------------------------------------------------------------
+
+roundCornerFactor   :: Double -> DrawingContextF
+roundCornerFactor d = (\s -> s { round_corner_factor = d })
 
 
 --------------------------------------------------------------------------------
