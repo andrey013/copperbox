@@ -97,6 +97,7 @@ library
     Wumpus.Basic.System.FontLoader.Base.GSFontMap,
     Wumpus.Basic.Utils.HList,
     Wumpus.Basic.Utils.FormatCombinators,
+    Wumpus.Basic.Utils.JoinList,
     Wumpus.Basic.Utils.ParserCombinators,
     Wumpus.Basic.Utils.TokenParsers,
     Wumpus.Basic.VersionNumber
