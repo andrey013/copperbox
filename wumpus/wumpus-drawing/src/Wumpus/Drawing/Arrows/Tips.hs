@@ -158,6 +158,21 @@ noRetract :: Num u => LocThetaCF u u
 noRetract = promoteR2 $ \_ _ -> pure 0 
 
 
+-- | Arrow tips are drawn with a sloid line even if the connector
+-- line is dashed (tips also override round corners)
+
+solidArrTip :: DrawingCtxM m => m a -> m a
+solidArrTip mf = localize (dashPattern Solid . roundCornerFactor 0) mf
+
+
+solidOpenStroke :: Num  u => PrimPath u -> Graphic  u
+solidOpenStroke = solidArrTip . openStroke
+
+solidClosedStroke :: Num  u => PrimPath u -> Graphic  u
+solidClosedStroke = solidArrTip . closedStroke
+
+solidStrokedDisk :: Num  u => u -> LocGraphic  u
+solidStrokedDisk = solidArrTip . strokedDisk
 
 --------------------------------------------------------------------------------
 
@@ -241,15 +256,15 @@ tri45 = Arrowhead $
 
 otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri90 = Arrowhead $
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/2) closedStroke)
+    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/2) solidClosedStroke)
 
 otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri60 = Arrowhead $   
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/3) closedStroke)
+    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/3) solidClosedStroke)
 
 otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 otri45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/4) closedStroke)
+    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/4) solidClosedStroke)
 
 
 -- width = xchar_height
@@ -284,17 +299,17 @@ revtri45 = Arrowhead $
 orevtri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 orevtri90 = Arrowhead $ 
     intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/2) closedStroke)
+                      (revtriTLG (pi/2) solidClosedStroke)
 
 orevtri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 orevtri60 = Arrowhead $ 
     intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/3) closedStroke)
+                      (revtriTLG (pi/3) solidClosedStroke)
 
 orevtri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 orevtri45 = Arrowhead $ 
     intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/4) closedStroke)
+                      (revtriTLG (pi/4) solidClosedStroke)
 
 
 
@@ -302,7 +317,7 @@ barbTLG :: (Floating u, Real u, FromPtSize u) => Radian -> LocThetaGraphic u
 barbTLG ang =  
     promoteR2 $ \pt theta -> 
       apply2R2 (tripointsByAngle ang) pt theta >>= \(u,v) -> 
-        openStroke $ vertexPath [u,pt,v]
+        solidOpenStroke $ vertexPath [u,pt,v]
 
 
 
@@ -322,7 +337,7 @@ revbarbTLG :: (Floating u, Real u, FromPtSize u) => Radian -> LocThetaGraphic u
 revbarbTLG ang = 
     promoteR2 $ \pt theta -> 
       apply2R2 (revtripointsByAngle ang) pt theta >>= \(u,pt',v) -> 
-        openStroke $ vertexPath [u,pt',v]
+        solidOpenStroke $ vertexPath [u,pt',v]
 
 revbarb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
 revbarb90 = Arrowhead $ 
@@ -341,7 +356,7 @@ revbarb45 = Arrowhead $
 perpTLG :: (Floating u, FromPtSize u) => LocThetaGraphic u
 perpTLG = 
     tipBody $ \pt theta h -> 
-      let hh = 0.5*h in openStroke $ rperpPath hh pt theta
+      let hh = 0.5*h in solidOpenStroke $ rperpPath hh pt theta
 
 
 rperpPath :: Floating u => u -> Point2 u -> Radian -> PrimPath u
@@ -360,7 +375,7 @@ perp = Arrowhead $ intoLocThetaImage noRetract perpTLG
 bracketTLG :: (Floating u, FromPtSize u) => LocThetaGraphic u
 bracketTLG = 
     tipBody $ \pt theta h -> 
-      let hh = 0.5*h in openStroke $ rbracketPath hh pt theta
+      let hh = 0.5*h in solidOpenStroke $ rbracketPath hh pt theta
 
 
 rbracketPath :: Floating u => u -> Point2 u -> Radian -> PrimPath u
@@ -395,7 +410,7 @@ diskTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (diskTLG drawF)
 odiskTip :: (Floating u, FromPtSize u) => Arrowhead u
 odiskTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (diskTLG drawF)
   where
-    drawF r pt = strokedDisk r `at` pt
+    drawF r pt = solidStrokedDisk r `at` pt
 
 
 squareTLG :: (Floating u, FromPtSize u) 
@@ -421,7 +436,7 @@ squareTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (squareTLG drawF)
 
 osquareTip :: (Floating u, FromPtSize u) => Arrowhead u
 osquareTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (squareTLG closedStroke)
+    intoLocThetaImage (lift0R2 markHeight) (squareTLG solidClosedStroke)
 
 
 diamondTLG :: (Floating u, FromPtSize u) 
@@ -450,7 +465,8 @@ diamondTip = Arrowhead $
 
 odiamondTip :: (Floating u, FromPtSize u) => Arrowhead u
 odiamondTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 $ fmap (2*) markHeight) (diamondTLG closedStroke)
+    intoLocThetaImage (lift0R2 $ fmap (2*) markHeight) 
+                      (diamondTLG solidClosedStroke)
 
 
 
@@ -462,7 +478,7 @@ curveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 curveTLG = 
     tipBody $ \pt theta h -> 
       cxCurvePath pt theta (0.5*h) >>= \path ->
-        localize (joinRound . capRound) (openStroke path)
+        localize (joinRound . capRound) (solidOpenStroke path)
 
 
 cxCurvePath :: (Real u, Floating u, FromPtSize u) 
@@ -488,7 +504,7 @@ revcurveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 revcurveTLG = 
     tipBody $ \pt theta h ->
       cxRevcurvePath pt theta (0.5*h) >>= \path ->
-        localize (joinRound . capRound) (openStroke path)
+        localize (joinRound . capRound) (solidOpenStroke path)
 
 cxRevcurvePath :: (Real u, Floating u, FromPtSize u) 
                => Point2 u -> Radian -> u -> DrawingInfo (PrimPath u)

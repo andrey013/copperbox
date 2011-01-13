@@ -596,9 +596,7 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 -- | Two parts - line and corner curve...
 --
 -- Note - the starting point is moved, this function is for 
--- closed, rounded paths and the subsequent parts of an interior
--- path (the first part starts with a straight line from the start 
--- point)
+-- closed, rounded paths.
 --
 lineCurveTrail :: (Real u, Floating u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> Path u
@@ -626,9 +624,11 @@ roundInterior :: (Real u, Floating u)
 roundInterior _ []             = error "roundEveryInterior - empty list."
 roundInterior _ [a]            = pathZero a
 roundInterior _ [a,b]          = line a b
-roundInterior u (start:b:c:xs) = step (lineCurveInter1 u start b c) (b:c:xs)
+roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
+                                 in step path1 (p1:c:xs)
   where
-    step acc (m:n:o:ps)     = step (acc `append` lineCurveTrail u m n o) (n:o:ps)
+    step acc (m:n:o:ps)     = let (seg2,p1) = lineCurveInter1 u m n o
+                              in step (acc `append` seg2) (p1:o:ps)
     step acc [n,o]          = acc `append` line n o
     step acc _              = acc
 
@@ -640,8 +640,9 @@ roundInterior u (start:b:c:xs) = step (lineCurveInter1 u start b c) (b:c:xs)
 -- the first step of an interior (non-closed) rounded path
 --
 lineCurveInter1 :: (Real u, Floating u) 
-                => u -> Point2 u -> Point2 u -> Point2 u -> Path u
-lineCurveInter1 u a b c = line a p2 `append` cornerCurve p2 b p3
+                => u -> Point2 u -> Point2 u -> Point2 u -> (Path u, Point2 u)
+lineCurveInter1 u a b c = 
+    (line a p2 `append` cornerCurve p2 b p3, p3)
   where
     p2 = b .+^ (avec (direction $ pvec b a) u)
     p3 = b .+^ (avec (direction $ pvec b c) u)

@@ -125,7 +125,8 @@ midpoint p1 p2 = let v = 0.5 *^ pvec p1 p2 in p1 .+^ v
 --
 -- Note - args might change to tull_width and full_height...
 --
-diamond :: Floating u => u -> u -> LocShape u (Diamond u)
+diamond :: (Real u, Floating u, FromPtSize u) 
+        => u -> u -> LocShape u (Diamond u)
 diamond hw hh = intoLocShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 
@@ -134,9 +135,10 @@ mkDiamond hw hh = promoteR1 $ \ctr ->
     pure $ Diamond { dia_ctm = makeShapeCTM ctr, dia_hw = hw, dia_hh = hh }
 
 
-mkDiamondPath :: Floating u => u -> u -> LocCF u (Path u)
+mkDiamondPath :: (Real u, Floating u, FromPtSize u) 
+              => u -> u -> LocCF u (Path u)
 mkDiamondPath hw hh = promoteR1 $ \ctr -> 
-    pure $ traceLinePoints $ diamondCoordPath hw hh ctr
+    roundCornerShapePath $ diamondCoordPath hw hh ctr
 
 
 diamondPoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
