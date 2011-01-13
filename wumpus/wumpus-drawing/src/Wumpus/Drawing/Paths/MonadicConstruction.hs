@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.Construction
+-- Module      :  Wumpus.Drawing.Paths.MonadicConstruction
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.Construction
+module Wumpus.Drawing.Paths.MonadicConstruction
   ( 
 
     PathM

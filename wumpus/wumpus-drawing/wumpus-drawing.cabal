@@ -50,6 +50,9 @@ description:
     infinite). Drawings are made with chains using new zip-like
     functions.
   .
+  * Re-worked Arrow and Arrow Tip types.
+  .
+  * Re-worked ConnectorPaths.
   .
 build-type:         Simple
 stability:          highly unstable
@@ -101,9 +104,8 @@ library
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,
     Wumpus.Drawing.Paths.Connectors,
-    Wumpus.Drawing.Paths.Construction,
+    Wumpus.Drawing.Paths.MonadicConstruction,
     Wumpus.Drawing.Paths.ControlPoints,
-    Wumpus.Drawing.Paths.RoundCorners,
     Wumpus.Drawing.Shapes,
     Wumpus.Drawing.Shapes.Base,
     Wumpus.Drawing.Shapes.Circle,
