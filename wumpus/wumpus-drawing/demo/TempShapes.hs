@@ -40,13 +40,13 @@ makeCtx = fontFace courier . metricsContext 14
 
 shapes_pic :: DCtxPicture
 shapes_pic = drawTracing $ do
-    drawi_ $ borderedShape $ rectangle 60  30 $ zeroPt
+    drawi_ $ (borderedShape $ rectangle 60 30) `at` zeroPt
     drawi_ $ ctrCenterLine "Rect1" `at` zeroPt
-    a0 <- drawi $ borderedShape $ rrectangle 10 60 30 $ P2 80 0
-    drawi_ $ borderedShape $ circle 40 $ P2 160 0
-    drawi_ $ filledShape   $ rdiamond 5 10 20 $ P2 220 0
-    a1 <- drawi $ strokedShape  $ ellipse 20 10 $ P2 0 80
-    drawi_ $ coordinateDot $ coordinate (center a1)
+    a0 <- drawi $ (borderedShape $ rectangle 60 30) `at` P2 80 0
+    drawi_ $ (borderedShape $ circle 40) `at` P2 160 0
+    drawi_ $ (filledShape   $ diamond 10 20) `at` P2 220 0
+    a1 <- drawi $ (strokedShape  $ ellipse 20 10) `at` P2 0 80
+--    drawi_ $ coordinateDot $ coordinate (center a1)
     connectRA (north a0) (southeast a1)
 
 
@@ -54,4 +54,4 @@ connectRA :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
              , Real u, Floating u, FromPtSize u ) 
           => Point2 u -> Point2 u -> m ()
 connectRA p0 p1 = 
-    drawi_ $ apply2R2 (strokeConnector (rightArrow connLine barb45)) p0 p1
+    drawi_ $ apply2R2 (rightArrow barb45 connLine) p0 p1

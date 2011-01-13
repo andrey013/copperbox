@@ -112,7 +112,8 @@ place :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m)
       => u -> u -> m (Circle u)
 place x y = greenFill $ drawi $ (borderedShape $ circle 14) `at` P2 x y
 
-transition :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
+transition :: ( Real u, Floating u, FromPtSize u
+              , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
            => u -> u -> m (Rectangle u)
 transition x y = 
     greenFill $ drawi $ (borderedShape $ rectangle 32 22) `at` P2 x y
@@ -124,20 +125,20 @@ connector' :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
          , Real u, Floating u, FromPtSize u ) 
       => Point2 u -> Point2 u -> m ()
 connector' p0 p1 = 
-    drawi_ $ apply2R2 (strokeConnector (rightArrow connLine tri45)) p0 p1
+    drawi_ $ apply2R2 (rightArrow tri45 connLine) p0 p1
 
 
 connectorC :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
 connectorC v p0 p1 = 
-    drawi_ $ apply2R2 (strokeConnector (rightArrow (connRightVHV v) tri45)) p0 p1
+    drawi_ $ apply2R2 (rightArrow tri45 (connRightVHV v)) p0 p1
 
 connectorD :: ( Real u, Floating u, FromPtSize u
              , DrawingCtxM m, TraceM m, u ~ MonUnit m )
            => u -> Point2 u -> Point2 u -> m ()
 connectorD u p0 p1 = 
-    drawi_ $ apply2R2 (strokeConnector (rightArrow (connIsosceles u) tri45)) p0 p1
+    drawi_ $ apply2R2 (rightArrow tri45 (connIsosceles u)) p0 p1
 
 
 lblParensParens :: Num u => LocGraphic u

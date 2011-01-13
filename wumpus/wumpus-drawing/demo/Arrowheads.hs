@@ -75,7 +75,7 @@ makeArrowDrawing :: (Real u, Floating u, FromPtSize u)
                  => (Arrowhead u, Arrowhead u) -> LocGraphic u
 makeArrowDrawing (arrl,arrr) = 
     promoteR1 $ \p0 -> forget $
-      connect (strokeConnector (leftrightArrow connLine arrl arrr)) p0 (mkP1 p0)
+      connect (leftRightArrow arrl arrr connLine) p0 (mkP1 p0)
   where
     mkP1    = (.+^ hvec 100)
     -- forget needs a better name, then adding to Wumpus-Basic.

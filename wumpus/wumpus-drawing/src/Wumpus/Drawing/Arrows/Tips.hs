@@ -71,16 +71,31 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 
 
--- | Encode an arrowhead as an image where the /answer/ is the
--- retract distance.
+-- | Encode an arrowhead as a Graphic and a retract distance - 
+-- lines should be shortened for certain drawings (e.g. open
+-- triangles).
 --
 -- The retract distance is context sensitive - usually just on
 -- the markHeight (or halfMarkHeight) so it has to be calculated
 -- w.r.t. the DrawingCtx.
 --
-newtype Arrowhead u = Arrowhead { getArrowhead :: LocThetaImage u u }
+data Arrowhead u = Arrowhead 
+      { arrowhead_retract_dist  :: DrawingInfo u
+      , arrowhead_draw          :: LocThetaGraphic u 
+      }
 
 
+-- Design note - this used to be a newtype wrapper over a 
+-- LocThetaImage that returned retract distance. But, considering 
+-- the dataflow / evaluation, in some respects Arrowhead is not an 
+-- ideal LocThetaImage as we want the retract distance to work out 
+-- how to draw the image.
+--
+-- Images do not inherently encode objects that should be drawn 
+-- and evaluated at the same time (and lazy eval permits this) but 
+-- it seems to helpful to think that Images should be evaluated as 
+-- they are drawn.
+--
 
 
 -- | Tiplen is length of the tip \*along the line it follows\*. 
@@ -154,8 +169,8 @@ markHeightLessLineWidth =
 -- Its common for the rectraction not to care about the angle or 
 -- the point and only care about the DrawingCtx.
 --
-noRetract :: Num u => LocThetaCF u u
-noRetract = promoteR2 $ \_ _ -> pure 0 
+noRetract :: Num u => DrawingInfo u
+noRetract = pure 0 
 
 
 -- | Arrow tips are drawn with a sloid line even if the connector
@@ -241,30 +256,24 @@ triTLG triang drawF =
 
 
 tri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri90 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/2) filledPath)
+tri90 = Arrowhead markHeight (triTLG (pi/2) filledPath)
 
 
 tri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri60 = Arrowhead $
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/3) filledPath)
+tri60 = Arrowhead markHeight (triTLG (pi/3) filledPath)
 
 
 tri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-tri45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/4) filledPath)
+tri45 = Arrowhead markHeight (triTLG (pi/4) filledPath)
 
 otri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri90 = Arrowhead $
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/2) solidClosedStroke)
+otri90 = Arrowhead markHeight (triTLG (pi/2) solidClosedStroke)
 
 otri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri60 = Arrowhead $   
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/3) solidClosedStroke)
+otri60 = Arrowhead markHeight (triTLG (pi/3) solidClosedStroke)
 
 otri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-otri45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (triTLG (pi/4) solidClosedStroke)
+otri45 = Arrowhead markHeight (triTLG (pi/4) solidClosedStroke)
 
 
 -- width = xchar_height
@@ -281,34 +290,28 @@ revtriTLG triang drawF =
 
 
 revtri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revtri90 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/2) filledPath)
+revtri90 = Arrowhead markHeightLessLineWidth
+                     (revtriTLG (pi/2) filledPath)
 
 revtri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revtri60 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/3) filledPath)
+revtri60 = Arrowhead markHeightLessLineWidth
+                     (revtriTLG (pi/3) filledPath)
 
 revtri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revtri45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
-                      (revtriTLG (pi/4) filledPath)
+revtri45 = Arrowhead markHeightLessLineWidth
+                     (revtriTLG (pi/4) filledPath)
 
 
 orevtri90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-orevtri90 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
+orevtri90 = Arrowhead markHeightLessLineWidth
                       (revtriTLG (pi/2) solidClosedStroke)
 
 orevtri60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-orevtri60 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
+orevtri60 = Arrowhead markHeightLessLineWidth
                       (revtriTLG (pi/3) solidClosedStroke)
 
 orevtri45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-orevtri45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeightLessLineWidth) 
+orevtri45 = Arrowhead markHeightLessLineWidth
                       (revtriTLG (pi/4) solidClosedStroke)
 
 
@@ -322,14 +325,14 @@ barbTLG ang =
 
 
 barb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb90 = Arrowhead $ intoLocThetaImage noRetract (barbTLG (pi/2))
+barb90 = Arrowhead noRetract (barbTLG (pi/2))
 
 barb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb60 = Arrowhead $ intoLocThetaImage noRetract (barbTLG (pi/3))
+barb60 = Arrowhead noRetract (barbTLG (pi/3))
 
 
 barb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-barb45 = Arrowhead $ intoLocThetaImage noRetract (barbTLG (pi/4))
+barb45 = Arrowhead noRetract (barbTLG (pi/4))
 
 
 
@@ -340,17 +343,14 @@ revbarbTLG ang =
         solidOpenStroke $ vertexPath [u,pt',v]
 
 revbarb90 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revbarb90 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (revbarbTLG (pi/2))
+revbarb90 = Arrowhead markHeight (revbarbTLG (pi/2))
 
 
 revbarb60 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revbarb60 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (revbarbTLG (pi/3))
+revbarb60 = Arrowhead markHeight (revbarbTLG (pi/3))
 
 revbarb45 :: (Floating u, Real u, FromPtSize u) => Arrowhead u
-revbarb45 = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (revbarbTLG (pi/4))
+revbarb45 = Arrowhead markHeight (revbarbTLG (pi/4))
 
 
 perpTLG :: (Floating u, FromPtSize u) => LocThetaGraphic u
@@ -368,7 +368,7 @@ rperpPath hh ctr theta = primPath p0 [lineTo p1]
 
 
 perp :: (Floating u, FromPtSize u) => Arrowhead u
-perp = Arrowhead $ intoLocThetaImage noRetract perpTLG
+perp = Arrowhead noRetract perpTLG
 
 
 
@@ -390,7 +390,7 @@ rbracketPath hh pt theta = vertexPath [p0,p1,p2,p3]
 
 
 bracket :: (Floating u, FromPtSize u) => Arrowhead u
-bracket = Arrowhead $ intoLocThetaImage noRetract bracketTLG
+bracket = Arrowhead noRetract bracketTLG
 
 
 diskTLG :: (Floating u, FromPtSize u) 
@@ -402,13 +402,13 @@ diskTLG drawF =
 
 
 diskTip :: (Floating u, FromPtSize u) => Arrowhead u
-diskTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (diskTLG drawF)
+diskTip = Arrowhead markHeight (diskTLG drawF)
   where
     drawF r pt = localize bothStrokeColour $ filledDisk r `at` pt
 
 
 odiskTip :: (Floating u, FromPtSize u) => Arrowhead u
-odiskTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (diskTLG drawF)
+odiskTip = Arrowhead markHeight (diskTLG drawF)
   where
     drawF r pt = solidStrokedDisk r `at` pt
 
@@ -429,14 +429,13 @@ rsquarePath pt theta hh = vertexPath [p0,p1,p2,p3]
     
 
 squareTip :: (Floating u, FromPtSize u) => Arrowhead u
-squareTip = Arrowhead $ intoLocThetaImage (lift0R2 markHeight) (squareTLG drawF)
+squareTip = Arrowhead markHeight (squareTLG drawF)
   where
     drawF = localize bothStrokeColour . filledPath
 
 
 osquareTip :: (Floating u, FromPtSize u) => Arrowhead u
-osquareTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) (squareTLG solidClosedStroke)
+osquareTip = Arrowhead markHeight (squareTLG solidClosedStroke)
 
 
 diamondTLG :: (Floating u, FromPtSize u) 
@@ -456,17 +455,14 @@ rdiamondPath pt theta hh = vertexPath [pt,p1,p2,p3]
 
 
 diamondTip :: (Floating u, FromPtSize u) => Arrowhead u
-diamondTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 $ fmap (2*) markHeightLessLineWidth) 
-                      (diamondTLG drawF)
+diamondTip = Arrowhead (fmap (2*) markHeightLessLineWidth) 
+                       (diamondTLG drawF)
   where
     drawF = localize bothStrokeColour . filledPath
 
 
 odiamondTip :: (Floating u, FromPtSize u) => Arrowhead u
-odiamondTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 $ fmap (2*) markHeight) 
-                      (diamondTLG solidClosedStroke)
+odiamondTip = Arrowhead (fmap (2*) markHeight) (diamondTLG solidClosedStroke)
 
 
 
@@ -493,8 +489,7 @@ cxCurvePath pt theta hh =
 
 
 curveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
-curveTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 $ fmap realToFrac getLineWidth) curveTLG
+curveTip = Arrowhead (fmap realToFrac getLineWidth) curveTLG
 
 
 -- Note - points flipped to get the second trapezium to 
@@ -512,10 +507,9 @@ cxRevcurvePath pt theta hh =
     apply2R2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
       let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
           (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
-      in pure$ toPrimPath $ curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
+      in pure $ toPrimPath $ curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
 
 
 revcurveTip :: (Real u, Floating u, FromPtSize u) => Arrowhead u
-revcurveTip = Arrowhead $ 
-    intoLocThetaImage (lift0R2 markHeight) revcurveTLG
+revcurveTip = Arrowhead markHeight revcurveTLG
 

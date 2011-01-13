@@ -114,7 +114,7 @@ connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
    let p1 = northwards (realToFrac lw) b1
-   drawi $ apply2R2 (strokeConnector (rightArrow connLine arrh)) p0 p1
+   drawi $ apply2R2 (rightArrow arrh connLine) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

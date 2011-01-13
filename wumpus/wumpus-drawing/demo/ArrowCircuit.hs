@@ -95,7 +95,7 @@ connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
             , Real u, Floating u, FromPtSize u ) 
          => ConnectorPath u -> Point2 u -> Point2 u -> m ()
 connWith con p0 p1 = localize doublesize $ 
-    drawi_ $ apply2R2 (strokeConnector (rightArrow con tri45)) p0 p1
+    drawi_ $ apply2R2 (rightArrow tri45 con) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u
@@ -113,5 +113,6 @@ ptext pt ss = localize (fontAttr times_italic 14) $
     drawi_ $ ctrCenterLine ss `at` pt
 
 
-rrectangle :: (Real u, Floating u) => u -> u -> u -> LocShape u (Rectangle u)
-rrectangle r w h = rounded r (rectangle w h)
+rrectangle :: (Real u, Floating u, FromPtSize u) 
+           => u -> u -> u -> LocShape u (Rectangle u)
+rrectangle r w h = localize (roundCornerFactor $ realToFrac r) (rectangle w h)

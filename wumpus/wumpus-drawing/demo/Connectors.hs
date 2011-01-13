@@ -65,7 +65,7 @@ makeConnDrawing :: (Real u, Floating u, FromPtSize u)
                  => ConnectorPath u -> LocGraphic u
 makeConnDrawing conn = 
     promoteR1 $ \p0 -> fmap (replaceL uNil) $ 
-        connect (strokeConnector (dblArrow conn curveTip)) p0 (mkP1 p0)
+        connect (uniformArrow curveTip conn) p0 (mkP1 p0)
   where
     mkP1 = displace 100 40
   

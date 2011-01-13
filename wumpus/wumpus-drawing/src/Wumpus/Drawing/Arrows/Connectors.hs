@@ -17,14 +17,11 @@
 module Wumpus.Drawing.Arrows.Connectors
   ( 
 
-    Connector
-  , connector
+    ArrowConnector
   , leftArrow
   , rightArrow
-  , dblArrow
-  , leftrightArrow
-  , strokeConnector
-
+  , leftRightArrow
+  , uniformArrow
 
   ) where
 
@@ -34,75 +31,24 @@ import Wumpus.Drawing.Paths
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Control.Applicative
 
 -- An arrowhead always know how to draw itself (filled triangle, 
 -- stroked barb, etc.)
 --
--- A Path might will typically be drawn with openStroke,
+-- A Path is currently always drawn with openStroke,
 -- eventually there might be scope for drawing 
 -- e.g. parallel lines  ====
 --
 
--- A ConnectorPath gets wrapped with how it is drawn into
--- another type.
 
 
-data Connector u = Connector 
-      { connector_path  :: ConnectorPath u
-      , opt_left_arrow  :: Maybe (Arrowhead u)
-      , opt_right_arrow :: Maybe (Arrowhead u)
-      }
+type ArrowConnector u = ConnectorImage u (Path u)
 
 
--- | connector with no arrow heads.
+-- One for Wumpus-Basic.ContextFun
 --
-connector :: ConnectorPath u -> Connector u
-connector cp = 
-    Connector { connector_path  = cp
-              , opt_left_arrow  = Nothing
-              , opt_right_arrow = Nothing
-              }
-
-leftArrow :: ConnectorPath u -> Arrowhead u -> Connector u
-leftArrow cp la =
-    Connector { connector_path  = cp
-              , opt_left_arrow  = Just la
-              , opt_right_arrow = Nothing
-              }
-
-
-rightArrow :: ConnectorPath u -> Arrowhead u -> Connector u
-rightArrow cp ra = 
-    Connector { connector_path  = cp
-              , opt_left_arrow  = Nothing
-              , opt_right_arrow = Just ra
-              }
-
--- | Same tip both ends.
---
-dblArrow :: ConnectorPath u -> Arrowhead u -> Connector u
-dblArrow cp arw = leftrightArrow cp arw arw
-
-leftrightArrow :: ConnectorPath u -> Arrowhead u -> Arrowhead u -> Connector u
-leftrightArrow cp la ra =
-    Connector { connector_path  = cp
-              , opt_left_arrow  = Just la
-              , opt_right_arrow = Just ra
-              }
-
-
-
-strokeConnector :: (Real u, Floating u) 
-                => Connector u -> ConnectorImage u (Path u)
-strokeConnector (Connector cpF opt_la opt_ra) =
-    promoteR2 $ \p0 p1 -> let pathc = cpF p0 p1 in 
-       tipEval opt_la p0 (directionL pathc) >>= \(dl,gfL) -> 
-       tipEval opt_ra p1 (directionR pathc) >>= \(dr,gfR) ->
-       intoImage (pure pathc) 
-                 (fmap (bimapR (gfR . gfL)) $ drawP $ shortenPath dl dr pathc) 
-  where
-    drawP       = openStroke . toPrimPath   
+atRot :: LocThetaCF u a -> Point2 u -> Radian -> CF a
+atRot = apply2R2
 
 
 -- for Paths.Base ?
@@ -110,40 +56,53 @@ strokeConnector (Connector cpF opt_la opt_ra) =
 shortenPath :: (Real u , Floating u) => u  -> u -> Path u -> Path u
 shortenPath l r = shortenL l .  shortenR r 
 
-type ArrowMark u = PrimGraphic u -> PrimGraphic u
+
+leftArrow :: (Real u, Floating u) 
+           => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+leftArrow arrh conn = promoteR2 $ \p0 p1 -> 
+    connect conn p0 p1           >>= \cpath -> 
+    arrowhead_retract_dist arrh  >>= \dl -> 
+    let path1   = shortenL dl cpath
+        ang     = directionL path1
+        g1      = openStroke $ toPrimPath path1
+        g2      = atRot (arrowhead_draw arrh) p0 ang
+    in  fmap (replaceL cpath) $ g1 `oplus` g2       
+
+-- Note - returns original path
+                 
+
+rightArrow :: (Real u, Floating u) 
+           => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+rightArrow arrh conn = promoteR2 $ \p0 p1 -> 
+    connect conn p0 p1           >>= \cpath -> 
+    arrowhead_retract_dist arrh  >>= \dr -> 
+    let path1   = shortenR dr cpath
+        ang     = directionR path1
+        g1      = openStroke $ toPrimPath path1
+        g2      = atRot (arrowhead_draw arrh) p1 ang
+    in  fmap (replaceL cpath) $ g1 `oplus` g2
 
 
--- 'tipEval' is a bit of an oddity. It has to evaluate the 
--- Arrowhead / Image in the DrawingCtx to get the retract 
--- distance. But doing so evaluates the tips to PrimGraphics, thus 
--- it has to wrap the tips back up as Graphics with @pure@ so they 
--- can be concatenated to the drawn path as GraphicTrafos.
+
+leftRightArrow :: (Real u, Floating u) 
+               => Arrowhead u -> Arrowhead u -> ConnectorPath u 
+               -> ArrowConnector u
+leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 -> 
+    connect conn p0 p1           >>= \cpath -> 
+    arrowhead_retract_dist arrL  >>= \dL -> 
+    arrowhead_retract_dist arrR  >>= \dR -> 
+    let path1   = shortenPath dL dR cpath
+        angL    = directionL path1
+        angR    = directionR path1
+        g1      = openStroke $ toPrimPath path1
+        gL      = atRot (arrowhead_draw arrL) p0 angL
+        gR      = atRot (arrowhead_draw arrR) p1 angR
+    in  fmap (replaceL cpath) $ g1 `oplus` gL `oplus` gR
+
+
+-- | Same tip both ends.
 --
--- The Arrowhead type could be changed, so rather than returning 
--- an Image (retract_distance, PrimGraphic) it returns 
--- (retract_distance, GraphicTrafo) but that would burden all 
--- arrowheads with some extra complexity.
--- 
--- In short - the code here works but it isn\'t exemplary, and it 
--- doesn\'t show whether or not GraphicTrafo is a valuable type or
--- if it is implemented correctly (as GraphicTrafo could having
--- different implementations according to how it regards the 
--- DrawingCtx).
---
-
-tipEval :: Num u 
-        => Maybe (Arrowhead u) -> Point2 u -> Radian
-        -> CF (u, ArrowMark u)
-tipEval Nothing    _  _     = return (0,unmarked)
-tipEval (Just arw) pt theta = makeMark $ apply2R2 (getArrowhead arw) pt theta
-
-
-unmarked :: ArrowMark u
-unmarked = id
-
-
-makeMark :: Image u a -> CF (a, ArrowMark u)
-makeMark = fmap (\(a,prim) -> (a, (`oplus` prim)))
-
-
+uniformArrow :: (Real u, Floating u) 
+             => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+uniformArrow arrh cp = leftRightArrow arrh arrh cp
 
