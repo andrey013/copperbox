@@ -96,7 +96,7 @@ class RadialAnchor t where
 
 extendPtDist :: (Real u, Floating u) => u -> Point2 u -> Point2 u -> Point2 u
 extendPtDist d p1 p2 = let v   = pvec p1 p2
-                           ang = direction v
+                           ang = vdirection v
                            len = vlength v
                        in p1 .+^ avec ang (len+d)
 
@@ -210,7 +210,7 @@ radialConnectorPoints :: ( Real u, Floating u
                       => t1 -> t2 -> (Point2 u, Point2 u) 
 radialConnectorPoints a b = (radialAnchor theta a, radialAnchor (theta+pi) b)
   where
-    theta = direction $ pvec (center a) (center b)
+    theta = vdirection $ pvec (center a) (center b)
     
 
 --------------------------------------------------------------------------------

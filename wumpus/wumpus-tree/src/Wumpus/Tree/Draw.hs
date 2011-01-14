@@ -95,7 +95,7 @@ anchorAngles :: (Real u, Floating u)
 anchorAngles f t = (theta0, theta1)
   where
     conn_v  = pvec f t
-    theta0  = direction conn_v
+    theta0  = vdirection conn_v
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
     
 

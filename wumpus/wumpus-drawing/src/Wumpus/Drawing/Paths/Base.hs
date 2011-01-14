@@ -382,7 +382,7 @@ shortenLineL :: (Real u, Floating u)
 shortenLineL n p0 p1 = p0 .+^ v
   where
     v0 = p1 .-. p0
-    v  = avec (direction v0) n
+    v  = avec (vdirection v0) n
 
 
 
@@ -429,7 +429,7 @@ shortenLineR :: (Real u, Floating u)
 shortenLineR n p0 p1 = p1 .+^ v
   where
     v0 = p0 .-. p1
-    v  = avec (direction v0) n
+    v  = avec (vdirection v0) n
 
 
 
@@ -603,9 +603,9 @@ lineCurveTrail :: (Real u, Floating u)
                => u -> Point2 u -> Point2 u -> Point2 u -> Path u
 lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
   where
-    p1 = a .+^ (avec (direction $ pvec a b) u)
-    p2 = b .+^ (avec (direction $ pvec b a) u)
-    p3 = b .+^ (avec (direction $ pvec b c) u)
+    p1 = a .+^ (avec (vdirection $ pvec a b) u)
+    p2 = b .+^ (avec (vdirection $ pvec b a) u)
+    p3 = b .+^ (avec (vdirection $ pvec b c) u)
 
 
 -- | 'roundInterior' : @ rounding_distance * [point] -> Path @
@@ -645,6 +645,6 @@ lineCurveInter1 :: (Real u, Floating u)
 lineCurveInter1 u a b c = 
     (line a p2 `append` cornerCurve p2 b p3, p3)
   where
-    p2 = b .+^ (avec (direction $ pvec b a) u)
-    p3 = b .+^ (avec (direction $ pvec b c) u)
+    p2 = b .+^ (avec (vdirection $ pvec b a) u)
+    p3 = b .+^ (avec (vdirection $ pvec b c) u)
  

@@ -9,13 +9,11 @@ category:         Graphics
 synopsis:         High-level drawing objects built on Wumpus-Basic.
 description:
   .
-  \*\* WARNING \*\* - this package is sub-alpha, in a nutshell it 
-  is the most unstable code from @Wumpus-Basic@. Ideally 
-  @Wumpus-Basic@ and @Wumpus-Drawing@ would be packaged together
-  as there is little value to using @Wumpus-Basic@ without 
-  @Wumpus-Drawing@, however the code @Wumpus-Drawing@ is at best
-  /proof-of-concept/ grade.
-  .
+  \*\* WARNING \*\* - this package is sub-alpha. Although many of 
+  the drawing objects have been improved since the code was split 
+  from Wumpus-Basic, the code is still prototypical. Essentially
+  this package is a /technology preview/ and not a re-usable 
+  library.
   .
   NOTE - many of the demos use font metrics. Font metrics for
   the \"Core 14\" PostScript fonts are distributed as @*.afm@ 
@@ -50,6 +48,8 @@ description:
     infinite). Drawings are made with chains using new zip-like
     functions.
   .
+  * Re-worked Shapes.
+  .
   * Re-worked Arrow and Arrow Tip types.
   .
   * Re-worked ConnectorPaths.
@@ -75,7 +75,7 @@ extra-source-files:
   demo/PetriNet.hs,
   demo/PictureCompo.hs,
   demo/Symbols.hs,
-  demo/TableChains
+  demo/TableChains.hs
 
 library
   hs-source-dirs:     src
@@ -84,7 +84,7 @@ library
                       directory       >= 1.0     && <  2.0, 
                       filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6     && <  1.0,
-                      wumpus-core     == 0.41.0,
+                      wumpus-core     >= 0.42.0  && <  0.43.0,
                       wumpus-basic    == 0.15.0
 
   

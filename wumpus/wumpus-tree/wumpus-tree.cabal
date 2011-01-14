@@ -38,8 +38,8 @@ description:
     monad. The bind operation of the monad allows /anchors/ to be 
     extracted from tree nodes so they can be annotated with 
     supplementary graphics. At the moment this is rather limited 
-    as Wumpus-Basic and Wumpus-Drawing do not much support for 
-    anchors other than the basic type classes.
+    as Wumpus-Basic and Wumpus-Drawing do not offer much support 
+    for anchors other than the basic type classes.
   .
   * Changed the type of the rendering functions so they produce a 
     TreeDrawing. This type is more suitable for building composite
@@ -79,7 +79,7 @@ library
   build-depends:      base              <  5, 
                       containers        >= 0.3.0     && <= 0.6.0,
                       vector-space      >= 0.6       && <  1.0,
-                      wumpus-core       == 0.41.0,
+                      wumpus-core       >= 0.42.0    && <  0.43.0,
                       wumpus-basic      == 0.15.0,
                       wumpus-drawing    == 0.1.0
 

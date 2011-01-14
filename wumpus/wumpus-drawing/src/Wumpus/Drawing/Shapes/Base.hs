@@ -78,7 +78,7 @@ borderedShape mf =
 -- 
 roundCornerShapePath :: (Real u, Floating u, FromPtSize u) 
                      => [Point2 u] -> CF (Path u)
-roundCornerShapePath xs = roundCornerSize >>= \sz -> 
+roundCornerShapePath xs = getRoundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
 

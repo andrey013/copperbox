@@ -16,6 +16,9 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
+    putStrLn $ "Note - the SVG optimization that should be used here"
+    putStrLn $ "has bit-rotted and is not currently in use.."
+    --
     let pic1 = runCtxPictureU std_attr drawing01
     writeEPS "./out/font_delta01.eps" pic1
     writeSVG "./out/font_delta01.svg" pic1

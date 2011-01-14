@@ -56,7 +56,7 @@ midpointIsosceles u p1@(P2 x1 y1) p2@(P2 x2 y2) =
     mid_pt .+^ avec perp_ang u
   where
     mid_pt    = P2 (x1 + 0.5*(x2-x1)) (y1 + 0.5*(y2-y1))
-    perp_ang  = (pi*0.5) + direction (pvec p1 p2) 
+    perp_ang  = (pi*0.5) + vdirection (pvec p1 p2) 
 
 
 
@@ -73,7 +73,7 @@ dblpointIsosceles u p1@(P2 x1 y1) p2@(P2 x2 y2) =
   where
     mid1      = P2 (x1 + 0.33*(x2-x1)) (y1 + 0.33*(y2-y1))
     mid2      = P2 (x1 + 0.66*(x2-x1)) (y1 + 0.66*(y2-y1))
-    perp_ang  = (pi*0.5) + direction (pvec p1 p2) 
+    perp_ang  = (pi*0.5) + vdirection (pvec p1 p2) 
 
 
 --------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ rectangleFromBasePoints :: (Real u, Floating u)
 rectangleFromBasePoints u p1 p2 = (cp1, cp2)
   where
     base_vec  = pvec p1 p2
-    theta     = direction base_vec
+    theta     = vdirection base_vec
     cp1       = displacePerpendicular u theta p1
     cp2       = displacePerpendicular u theta p2
 
@@ -156,7 +156,7 @@ trapezoidFromBasePoints u ratio_to_base p1 p2 = (cp1, cp2)
   where
     base_vec  = pvec p1 p2
     base_len  = vlength base_vec
-    theta     = direction base_vec
+    theta     = vdirection base_vec
     half_ulen = 0.5 * ratio_to_base * base_len
     base_mid  = displaceParallel (0.5 * base_len) theta p1
     ubase_mid = displacePerpendicular u theta base_mid
@@ -182,7 +182,7 @@ squareFromCornerPoints p1 p2 = (cp1, cp2)
   where
     base_vec  = pvec p1 p2
     half_len  = 0.5 * (vlength base_vec)
-    theta     = direction base_vec
+    theta     = vdirection base_vec
     base_mid  = displaceParallel half_len theta p1
     cp1       = displacePerpendicular   half_len  theta base_mid
     cp2       = displacePerpendicular (-half_len) theta base_mid
