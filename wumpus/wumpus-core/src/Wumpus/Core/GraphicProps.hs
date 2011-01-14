@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.GraphicProps
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -205,7 +205,9 @@ default_stroke_attr = StrokeAttr { line_width      = 1
 
 
 
--- | Constructor for the default font, which is @Courier@ (aliased 
+-- | 'defaultFont' :@ font_size -> FontAttr @
+-- 
+-- Constructor for the default font, which is @Courier@ (aliased 
 -- to @Courier New@ for SVG) at the supplied size.
 --
 -- Note - the font uses the Standard encoding - this is common to 

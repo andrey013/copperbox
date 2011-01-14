@@ -37,7 +37,9 @@ module Wumpus.Core.PtSize
 -- | Wrapped Double representing /Point size/ for font metrics 
 -- etc.
 -- 
-newtype PtSize = PtSize { ptSize :: Double } 
+newtype PtSize = PtSize 
+          { ptSize :: Double  -- ^ Extract Point Size as a Double 
+          } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
 instance Show PtSize where

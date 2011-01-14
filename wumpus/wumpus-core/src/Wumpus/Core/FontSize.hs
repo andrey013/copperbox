@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.FontSize
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -86,6 +86,11 @@ newtype PtScale = PtScale { getPtScale :: Double }
 instance Show PtScale where
   showsPrec p d = showsPrec p (getPtScale d)
 
+
+-- | 'ptSizeScale' : @ scale_factor -> pt_size -> PTSize @
+--
+-- Scale the point size by the scale factor.
+--
 ptSizeScale :: PtScale -> PtSize -> PtSize 
 ptSizeScale sc sz = sz * realToFrac sc
 
@@ -183,12 +188,13 @@ charWidth = ptSizeScale mono_width . fromIntegral
 
 
 
--- | Text width at @sz@ point size of the string @s@. All
--- characters are counted literally - it is expected that 
--- @CharCount@ has been calculated with the @charCount@ function.
+-- | 'textWidth' : @ font_size * char_count -> PtSize @
 --
--- Note - this does not account for left and right margins around
--- the printed text.
+-- Text width at the supplied font_size. It is expected that the
+-- @char_ount@ has been calculated with the @charCount@ function.
+--
+-- NOTE - this does not account for any left and right margins 
+-- around the printed text.
 --
 textWidth :: FontSize -> CharCount -> PtSize
 textWidth _  n | n <= 0 = 0
@@ -231,7 +237,7 @@ descenderDepth :: FontSize -> PtSize
 descenderDepth = ptSizeScale mono_descender . fromIntegral 
 
 
--- | 'textBounds' : @ font_size * baseline_left * text -> BBox@
+-- | 'textBounds' : @ font_size * baseline_left * text -> BBox @
 --
 -- Find the bounding box for the character count at the 
 -- supplied font-size.
@@ -249,9 +255,9 @@ textBounds :: (Num u, Ord u, FromPtSize u)
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
 
--- | 'textBoundsEnc' : @ font_size * baseline_left * escaped_text -> BBox@
+-- | 'textBoundsEsc' : @ font_size * baseline_left * escaped_text -> BBox @
 -- 
---  Version of textBounds for EscapedText.
+--  Version of textBounds for already escaped text.
 --
 textBoundsEsc :: (Num u, Ord u, FromPtSize u) 
            => FontSize -> Point2 u -> EscapedText -> BoundingBox u
@@ -274,10 +280,13 @@ textBoundsBody sz (P2 x y) len = boundingBox ll ur
 
 
 
--- | Count the charcters in the supplied string.
+-- | 'charCount' : @ string -> CharCount @
 --
--- Note escapes count as one character - for instance the length 
--- of this string:
+-- Count the characters in the supplied string, escaping the 
+-- string as necessary.
+--
+-- Escapes count as one character - for instance, the length of 
+-- this string:
 --
 -- > abcd&#egrave;f
 --
@@ -296,4 +305,5 @@ charCount = outstep 0
 
 -- Note - the last case of instep indicates a malformed string, 
 -- but there is nothing that can be done. Promoting to Maybe or 
--- Either would complicated the interface.
+-- Either would complicated the interface and doesn\'t seem worth
+-- it. 

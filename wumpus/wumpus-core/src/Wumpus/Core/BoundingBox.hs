@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.BoundingBox
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -13,8 +13,9 @@
 --
 -- Bounding box with no notion of \'empty\'.
 --
--- Empty pictures cannot be created with Wumpus. This greatly 
--- simplifies the implementation of pictures and bounding boxes.
+-- Empty pictures cannot be created with Wumpus. This 
+-- significantly simplifies the implementation of pictures and 
+-- bounding boxes.
 --
 -- Note - some of the functions exposed by this module are 
 -- expected to be pertinent only to Wumpus-Core itself.
@@ -33,7 +34,6 @@ module Wumpus.Core.BoundingBox
   
   -- * Constructors
   , boundingBox
-  , oboundingBox
   
   -- * Operations
   , destBoundingBox
@@ -58,11 +58,12 @@ import Wumpus.Core.Utils.Common ( PSUnit(..) )
 import Wumpus.Core.Utils.FormatCombinators
 
 
--- | Bounding box of a picture, represented by the lower left and
--- upper right corners.
+-- | Bounding box of a picture, path, etc. represented by the 
+-- lower-left and upper-right corners.
 -- 
--- We cannot construct empty pictures - so bounding boxes are 
--- spared the obligation to be /empty/. 
+-- Wumpus cannot construct empty pictures - so bounding boxes are 
+-- spared the obligation to be /empty/. This greatly helps keep 
+-- the implementation relatively simple.
 -- 
 -- BoundingBox operates as a semigroup where @boundaryUnion@ is the
 -- addition.
@@ -142,20 +143,7 @@ boundingBox ll@(P2 x0 y0) ur@(P2 x1 y1)
     | otherwise            = error "Wumpus.Core.boundingBox - malformed."
 
 
--- | 'oboundingBbox' : @width * height -> BoundingBox@
---
--- Create a BoundingBox with bottom left corner at the origin,
--- and dimensions @w@ and @h@.
---
--- 'oboundingBox' throws an error if either the suppplied width 
--- or height is negative.
--- 
-oboundingBox :: (Num u, Ord u) => u -> u -> BoundingBox u
-oboundingBox w h 
-    | h >= 0 && w >= 0 = BBox zeroPt (P2 w h)
-    | otherwise        = error "Wumpus.Core.oboundingBox - malformed."
-
--- | 'destBoundingBox' : @ bbox -> (lower_left_x, lower_lefy_y, 
+-- | 'destBoundingBox' : @ bbox -> (lower_left_x, lower_left_y, 
 --      upper_right_x, upper_right_y)@
 --
 -- Destructor for BoundingBox, assembles a four-tuple of the x 
@@ -173,23 +161,28 @@ destBoundingBox (BBox (P2 llx lly) (P2 urx ury)) = (llx, lly, urx, ury)
 boundaryUnion :: Ord u => BoundingBox u -> BoundingBox u -> BoundingBox u
 BBox ll ur `boundaryUnion` BBox ll' ur' = BBox (minPt ll ll') (maxPt ur ur')
 
--- | Trace a list of points, retuning the BoundingBox that 
--- includes them.
+
+-- | 'traceBoundary' : @ points -> BoundingBox @
 --
--- 'trace' throws a run-time error when supplied with the empty 
--- list.
+-- Trace a list of points, retuning the BoundingBox of their
+-- boundary.
+--
+-- \*\* WARNING \*\* - 'trace' throws a run-time error when 
+-- supplied with the empty list.
 --
 traceBoundary :: (Num u, Ord u) => [Point2 u] -> BoundingBox u
 traceBoundary (p:ps) = 
     uncurry BBox $ foldr (\z (a,b) -> (minPt z a, maxPt z b) ) (p,p) ps
 traceBoundary []     = error $ "BoundingBox.trace called in empty list"
 
+
 -- | Perform the supplied transformation on the four corners of 
 -- the bounding box. Trace the new corners to calculate the 
 -- resulting bounding box.
 -- 
--- This helper function can be used to re-calculate a bounding 
--- box after a rotation for example.
+-- NOTE - this helper function is used within Wumpus-Core to 
+-- re-calculate a bounding box after a rotation for example. It is 
+-- probably useful only to Wumpus-Core.
 --
 retraceBoundary :: (Num u, Ord u) 
         => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
@@ -239,17 +232,26 @@ boundaryCenter (BBox (P2 x0 y0) (P2 x1 y1)) = P2 x y
     x = x0 + (0.5*(x1-x0))
     y = y0 + (0.5*(y1-y0))
 
--- | Within test - is the supplied point within the bounding box?
+
+-- | 'withinBoundary' : @ point * bbox -> Bool @
+-- 
+-- Within test - is the supplied point within the bounding box?
 --
 withinBoundary :: Ord u => Point2 u -> BoundingBox u -> Bool
 withinBoundary p (BBox ll ur) = (minPt p ll) == ll && (maxPt p ur) == ur
 
--- | Extract the width of a bounding box.
+
+-- | 'boundaryWidth' : @ bbox -> Width @
+--
+-- Extract the width of a bounding box.
 --
 boundaryWidth :: Num u => BoundingBox u -> u
 boundaryWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
--- | Extract the height of a bounding box.
+
+-- | 'boundaryHeight' : @ bbox -> Height @
+--
+-- Extract the height of a bounding box.
 --
 boundaryHeight :: Num u => BoundingBox u -> u
 boundaryHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin

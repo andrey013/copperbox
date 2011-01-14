@@ -30,26 +30,37 @@ description:
   GENERAL DRAWBACKS...
   .
   For actually building pictures, diagrams, etc. Wumpus-Core is 
-  very low-level. There is a supplementary package @Wumpus-Basic@ 
-  available that helps create certain types of diagram, but it is
-  experimental - functionality is added and dropped between 
-  releases, it has no stable API.
+  very low-level. There are two supplementary packages 
+  @Wumpus-Basic@ and @Wumpus-Drawing@ also on Hackage that aim to 
+  be a higher-level basis for creating certain types of diagram, 
+  but they are experimental - functionality is added and dropped 
+  between releases and curently the API is too unstable to write 
+  code upon (they should be considered a technology preview rather
+  than re-usable libraries).
   .
-  Some of the design decisions made for Wumpus-Core are not 
-  sophisticated (e.g. how path and text attributes like colour are 
+  Also, some of the design decisions made for Wumpus-Core are not 
+  sophisticated - e.g. how path and text attributes like colour are 
   handled, and how the bounding boxes of text labels are 
-  calculated), so Wumpus might be limited compared to other 
-  systems. However, the design permits a fairly simple 
-  implementation, which is a priority. 
+  calculated. Compared to other systems, Wumpus might be rather 
+  limited, however, the design permits a fairly simple 
+  implementation.
   .  
   .
   Changelog:
   . 
   v0.41.0 to v0.42.0:
   .
+  * Removed the function @oboundingBox@ from @Core.BoundingBox@.
+    It was unused in Wumpus-Core and had unwise error handling 
+    baked-in.
+  .
+  * Renamed @direction@ in @Wumpus.Core.Geometry@, it is now 
+    @vdirection@.
+  .
   * Fixed internal Foldable instances for JoinList. The left and
     right folds worked in the wrong direction.
-  . 
+  .
+  * Some improvements to the Haddock documentation. 
   .
   .
 build-type:         Simple

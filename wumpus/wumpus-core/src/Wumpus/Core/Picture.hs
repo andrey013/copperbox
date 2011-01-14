@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Picture
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -136,7 +136,8 @@ import Data.List ( mapAccumL )
 -- that the front of the list is drawn /at the back/ in the 
 -- Z-Order.
 --
--- This function throws an error when supplied the empty list.
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list.
 --
 frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
@@ -150,7 +151,8 @@ frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones
 
 -- | Place multiple pictures within the standard affine frame.
 --
--- This function throws an error when supplied the empty list.
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list.
 --
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi []      = error "Wumpus.Core.Picture.multi - empty list"
@@ -193,7 +195,9 @@ fontDeltaContext :: FontAttr -> Primitive u -> Primitive u
 fontDeltaContext fa p = PContext (FontCtx fa) p
 
 
--- | Create a Path from a start point and a list of PathSegments.
+-- | 'primPath' : @ start_point * [path_segment] -> PrimPath @
+--
+-- Create a Path from a start point and a list of PathSegments.
 --
 primPath :: Num u => Point2 u -> [AbsPathSegment u] -> PrimPath u
 primPath pt xs = PrimPath pt $ step pt xs
@@ -230,7 +234,8 @@ curveTo = AbsCurveTo
 -- Convert the list of vertices to a path of straight line 
 -- segments.
 --
--- This function throws an error when supplied the empty list.
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list.
 --
 vertexPath :: Num u => [Point2 u] -> PrimPath u
 vertexPath []     = error "Picture.vertexPath - empty point list"
@@ -263,11 +268,16 @@ emptyPath pt  = PrimPath pt []
 
 
 
--- | Convert a list of vertices to a path of curve segments.
+-- | 'curvedPath' : @ points -> PrimPath @
+-- 
+-- Convert a list of vertices to a path of curve segments.
 -- The first point in the list makes the start point, each curve 
 -- segment thereafter takes 3 points. /Spare/ points at the end 
 -- are discarded. 
 --
+-- \*\* WARNING - this function throws an error when supplied the 
+-- empty list.
+-- 
 curvedPath :: Num u => [Point2 u] -> PrimPath u
 curvedPath []     = error "Picture.curvedPath - empty point list"
 curvedPath (x:xs) = PrimPath x $ step x xs
@@ -291,6 +301,19 @@ xlink hypl p = PSVG (ALink hypl) p
 
 
 -- | Create an attribute for SVG output.
+--
+-- Attributes are expected to be /non-graphical/ e.g. @onclick@ 
+-- events or similar. Wumpus does not check the syntax and simply
+-- emits the Strings as-is in the output. 
+--
+-- Graphical properties should not be encoded, they may conflict 
+-- with output that Wumpus produces.
+--
+-- \*\* WARNING \*\* - currently this functionality is 
+-- undercooked. Because SVG has more /extra-graphical/ facilities
+-- than PostScript (hyperlinks, mouseovers, etc.) it seems 
+-- important to have an escape hatch to them, yet so far the 
+-- escape hatch has not been needed.
 --
 svgattr :: String -> String -> SvgAttr
 svgattr = SvgAttr
@@ -317,8 +340,8 @@ annotateXLink hypl xs p = PSVG (SvgAG hypl xs) p
 
 -- | Group a list of Primitives.
 --
--- This function throws a runtime error when supplied with an
--- empty list.
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list.
 --
 primGroup :: [Primitive u] -> Primitive u
 primGroup []     = error "Picture.primGroup - empty prims list"

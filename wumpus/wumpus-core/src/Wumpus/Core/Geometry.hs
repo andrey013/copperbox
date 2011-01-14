@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Geometry
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -53,14 +53,14 @@ module Wumpus.Core.Geometry
   , avec
   , pvec
   , vreverse
-  , direction
+  , vdirection
   , vlength
   , vangle
 
   -- * Point operations
   , zeroPt
-  , maxPt
   , minPt
+  , maxPt
   , lineDirection
 
   -- * Matrix contruction
@@ -127,10 +127,10 @@ type instance GuardEq a a = a
 -- This newtype is Haskell\'s @()@ with unit of dimension @u@ as
 -- a phantom type.
 -- 
--- This has no use in @wumpus-core@, but it has affine instances 
--- which cannot be written for @()@. By supporting affine 
--- instances it becomes useful to higher-level software 
--- (@wumpus-basic@ employs it for the @Graphic@ type.) 
+-- This type has no direct use in Wumpus-Core, but it is useful 
+-- for higher-level software a - it has instances of the affine 
+-- classes which cannot be written for @()@ (Wumpus-Basic 
+-- uses it for the @Graphic@ type.) 
 -- 
 newtype UNil u = UNil ()
   deriving (Bounded,Enum,Eq,Ord)
@@ -397,11 +397,13 @@ uNil = UNil ()
 -- Vectors
 
 
--- | 'vec' - a synonym for the constructor 'V2' with a Num 
--- constraint on the arguments.
+-- | 'vec' : @ x_component * y_component -> Vec2 @
 --
--- Essentially superfluous, but it can be slightly more 
--- typographically pleasant when used in lists of vectors:
+-- A synonym for the constructor 'V2' with a Num constraint on 
+-- the arguments.
+--
+-- Essentially this function is superfluous, but it is slightly 
+-- more pleasant typographically when used in lists of vectors:
 --
 -- > [ vec 2 2, vvec 4, hvec 4, vec 2 2 ]
 --
@@ -413,18 +415,24 @@ vec :: Num u => u -> u -> Vec2 u
 vec = V2
 
 
--- | Construct a vector with horizontal displacement.
+-- | 'hvec' : @ x_component -> Vec2 @
+--
+-- Construct a vector with horizontal displacement.
 --
 hvec :: Num u => u -> Vec2 u
 hvec d = V2 d 0
 
--- | Construct a vector with vertical displacement.
+-- | 'vvec' @ y_component -> Vec2 @ 
+--
+-- Construct a vector with vertical displacement.
 --
 vvec :: Num u => u -> Vec2 u
 vvec d = V2 0 d
 
 
--- | Construct a vector from an angle and magnitude.
+-- | 'avec' : @ angle * distance -> Vec2 @
+--
+-- Construct a vector from an angle and magnitude.
 --
 avec :: Floating u => Radian -> u -> Vec2 u
 avec theta d = V2 x y 
@@ -433,7 +441,10 @@ avec theta d = V2 x y
     x   = d * cos ang
     y   = d * sin ang
 
--- | The vector between two points
+
+-- | 'pvec' : @ point_from * point_to -> Vec2 @
+--
+-- The vector between two points
 --
 -- > pvec = flip (.-.)
 --
@@ -441,23 +452,34 @@ pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
 pvec = flip (.-.)
 
 
--- | Reverse a vector.
+-- | 'vreverse' : @ vec -> Vec2 @
+--
+-- Reverse a vector.
 --
 vreverse :: Num u => Vec2 u -> Vec2 u
 vreverse (V2 x y) = V2 (-x) (-y)
 
--- | Direction of a vector - i.e. the counter-clockwise angle 
+
+-- | 'vdirection' : @ vec -> Radian @
+-- 
+-- Direction of a vector - i.e. the counter-clockwise angle 
 -- from the x-axis.
 --
-direction :: (Floating u, Real u) => Vec2 u -> Radian
-direction (V2 x y) = lineDirection (P2 0 0) (P2 x y)
+vdirection :: (Floating u, Real u) => Vec2 u -> Radian
+vdirection (V2 x y) = lineDirection (P2 0 0) (P2 x y)
 
--- | Length of a vector.
+
+-- | 'vlength' : @ vec -> Length @
+--
+-- Length of a vector.
 --
 vlength :: Floating u => Vec2 u -> u
 vlength (V2 x y) = sqrt $ x*x + y*y
 
--- | Extract the angle between two vectors.
+
+-- | 'vangle' : @ vec1 * vec2 -> Radian @
+--
+-- Extract the angle between two vectors.
 --
 vangle :: (Floating u, Real u, InnerSpace (Vec2 u)) 
        => Vec2 u -> Vec2 u -> Radian
@@ -473,13 +495,15 @@ zeroPt :: Num u => Point2 u
 zeroPt = P2 0 0
 
 
--- | /Component-wise/ min on points.  
--- Standard 'min' and 'max' via Ord are defined lexographically
--- on pairs, e.g.:
+-- | 'minPt' : @ point1 * point2 -> Point2 @
+--
+-- Synthetic, /component-wise/ min on points. Standard 'min' and 
+-- 'max' via Ord are defined lexographically on pairs, e.g.:
 -- 
 -- > min (1,2) (2,1) = (1,2)
 -- 
--- For Points we want the component-wise min and max, e.g:
+-- For Points we want the component-wise min and max, that 
+-- potentially synthesizes a new point, e.g:
 --
 -- > minPt (P2 1 2) (Pt 2 1) = Pt 1 1 
 -- > maxPt (P2 1 2) (Pt 2 1) = Pt 2 2
@@ -487,14 +511,20 @@ zeroPt = P2 0 0
 minPt :: Ord u => Point2 u -> Point2 u -> Point2 u
 minPt (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
 
--- | /Component-wise/ max on points.  
+
+-- | 'maxPt' : @ point1 * point2 -> Point @
+--
+-- Synthetic, /component-wise/ max on points.  
 --
 -- > maxPt (P2 1 2) (Pt 2 1) = Pt 2 2
 -- 
 maxPt :: Ord u => Point2 u -> Point2 u -> Point2 u
 maxPt (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 
--- | Calculate the counter-clockwise angle between two points 
+
+-- | 'lineDirection' : @ start_point * end_point -> Radian @
+--
+-- Calculate the counter-clockwise angle between two points 
 -- and the x-axis.
 --
 lineDirection :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
@@ -533,7 +563,9 @@ identityMatrix = M3'3 1 0 0
 
 -- Common transformation matrices (for 2d homogeneous coordinates)
 
--- | Construct a scaling matrix:
+-- | 'scalingMatrix' : @ x_scale_factor * y_scale_factor -> Matrix @
+--
+-- Construct a scaling matrix:
 --
 -- > (M3'3 sx 0  0
 -- >       0  sy 0
@@ -546,7 +578,9 @@ scalingMatrix sx sy = M3'3  sx 0  0
 
 
 
--- | Construct a translation matrix:
+-- | 'translationMatrix' : @ x_displacement * y_displacement -> Matrix @
+--
+-- Construct a translation matrix:
 --
 -- > (M3'3 1  0  x
 -- >       0  1  y
@@ -559,7 +593,9 @@ translationMatrix x y = M3'3 1 0 x
 
 
 
--- | Construct a rotation matrix:
+-- | 'rotationMatrix' : @ ang -> Matrix @
+--
+-- Construct a rotation matrix:
 --
 -- > (M3'3 cos(a)  -sin(a)  0
 -- >       sin(a)   cos(a)  0
@@ -578,7 +614,9 @@ rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0
 -- A reflection about the y-axis is a scale of (-1) 1
 
 
--- | Construct a matrix for rotation about some /point/.
+-- | 'originatedRotationMatrix' : @ ang * point -> Matrix @
+-- 
+-- Construct a matrix for rotation about some /point/.
 --
 -- This is the product of three matrices: T R T^-1
 -- 
@@ -733,10 +771,12 @@ bezierArc r ang1 ang2 pt = (p0,p1,p2,p3)
     p3    = pt .+^ avec ang2 r
 
 
--- | 'bezierCircle' : @ n * radius * center -> [Point] @ 
+-- | 'bezierCircle' : @ subdivisions * radius * center -> [Point] @ 
 -- 
--- Make a circle from Bezier curves - @n@ is the number of 
--- subdivsions per quadrant.
+-- Make a circle from Bezier curves - the number of subdivsions 
+-- controls the accuracy or the curve, more subdivisions produce
+-- better curves, but less subdivisions are better for rendering
+-- (producing more efficient PostScript).
 --
 bezierCircle :: (Fractional u, Floating u) 
              => Int -> u -> Point2 u -> [Point2 u]
