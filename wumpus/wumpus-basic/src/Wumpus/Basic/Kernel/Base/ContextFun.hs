@@ -65,6 +65,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   -- * Combinators
   , at
   , rot
+  , atRot
   , connect
   , chain1
 
@@ -328,8 +329,8 @@ lift1R2 mf          = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
 
 
 
--- | Promote a function @from one argument to a Context function@ 
--- to an arity one @Context function@.
+-- | Promote a function @from one argument to a Context Function@ 
+-- to an arity one @Context Function@.
 --
 -- The type signature is as explanatory as a description:
 --
@@ -338,8 +339,8 @@ lift1R2 mf          = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
 promoteR1           :: (r1 -> CF a) -> CF1 r1 a
 promoteR1 mf        = CF1 $ \ctx r1 -> unCF (mf r1) ctx
 
--- | Promote a function @from two arguments to a Context function@ 
--- to an arity two @Context function@.
+-- | Promote a function @from two arguments to a Context Function@ 
+-- to an arity two @Context Function@.
 --
 -- The type signature is as explanatory as a description:
 --
@@ -350,7 +351,7 @@ promoteR2 mf        = CF2 $ \ctx r1 r2 -> unCF (mf r1 r2) ctx
 
 
 
--- | Apply an arity-one Context function to a single argument, 
+-- | Apply an arity-one Context Function to a single argument, 
 -- downcasting it by one level, making an arity-zero Context 
 -- function. 
 -- 
@@ -362,7 +363,7 @@ apply1R1            :: CF1 r1 a -> r1 -> CF a
 apply1R1 mf r1      = CF $ \ctx -> unCF1 mf ctx r1
 
 
--- | Apply an arity-two Context function to two arguments, 
+-- | Apply an arity-two Context Function to two arguments, 
 -- downcasting it by two levels, making an arity-zero Context 
 -- function. 
 -- 
@@ -373,7 +374,7 @@ apply1R1 mf r1      = CF $ \ctx -> unCF1 mf ctx r1
 apply2R2            :: CF2 r1 r2 a -> r1 -> r2 -> CF a
 apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 
--- | Apply an arity-two Context function to one argument, 
+-- | Apply an arity-two Context Function to one argument, 
 -- downcasting it by one level, making an arity-one Context 
 -- function. 
 -- 
@@ -474,7 +475,7 @@ infixr 1 `at`
 
 
 -- | Downcast a 'LocCF' function by applying it to the supplied 
--- point, making an arity-zero Context function. 
+-- point, making an arity-zero Context Function. 
 -- 
 -- Remember a 'LocCF' function is a 'CF1' context function where
 -- the /static argument/ is specialized to a start point.
@@ -487,7 +488,7 @@ infixr 1 `rot`
 
 
 -- | Downcast a 'LocThetaCF' function by applying it to the 
--- supplied angle, making an arity-one Context function (a 
+-- supplied angle, making an arity-one Context Function (a 
 -- 'LocCF'). 
 -- 
 
@@ -495,8 +496,16 @@ rot :: LocThetaCF u a -> Radian -> LocCF u a
 rot = apply1R2
 
 
+-- | Downcast a 'LocThetaCF' function by applying it to the 
+-- supplied point and angle, making an arity-zero Context 
+-- Function (a 'CF'). 
+--
+atRot :: LocThetaCF u a -> Point2 u -> Radian -> CF a
+atRot = apply2R2
+
+
 -- | Downcast a 'ConnectorCF' function by applying it to the 
--- start and end point, making an arity-zero Context function 
+-- start and end point, making an arity-zero Context Function 
 -- (a 'CF'). 
 -- 
 connect :: ConnectorCF u a -> Point2 u -> Point2 u -> CF a
@@ -507,7 +516,7 @@ connect = apply2R2
 infixr 6 `chain1`
 
 -- | /Chaining/ combinator - the /answer/ of the 
--- first Context function is feed to the second Context function. 
+-- first Context Function is feed to the second Context Function. 
 --
 -- This contrasts with the usual idiom in @Wumpus-Basic@ where 
 -- composite graphics are built by applying both functions to the 

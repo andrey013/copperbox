@@ -40,7 +40,7 @@ module Wumpus.Drawing.Paths.Base
   , tipL
   , tipR
 
-  , shortenBoth
+  , shortenPath
   , shortenL
   , shortenR
   , directionL
@@ -332,12 +332,13 @@ tipR :: Path u -> Point2 u
 tipR (Path _ _ _ ep) = ep
 
 
--- | Shorten both ends...
+
+
+-- | 'sortenPath' : @ left_dist * right_dist * path -> Path @
 --
--- u should be less-than half the path length
---
-shortenBoth :: (Real u, Floating u) => u -> Path u -> Path u
-shortenBoth u p = shortenL u $ shortenR u p
+shortenPath :: (Real u , Floating u) => u  -> u -> Path u -> Path u
+shortenPath l r = shortenL l .  shortenR r 
+
 
 --------------------------------------------------------------------------------
 -- shorten from the left...

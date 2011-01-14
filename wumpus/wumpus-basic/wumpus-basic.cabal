@@ -49,6 +49,8 @@ description:
     ScalingContexts are no longer manipulated via a custom Reader
     monad or transformer as the type signatures were too unwieldy.
   .
+  * Added @TextMargin@ to the @DrawingContext@ - Wumpus-Drawing 
+    can now calculate more appealing bounding boxes for text.
   .
 build-type:         Simple
 stability:          highly unstable

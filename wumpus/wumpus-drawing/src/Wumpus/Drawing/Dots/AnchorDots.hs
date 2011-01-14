@@ -200,9 +200,6 @@ polygonLDO mk =
 
 --------------------------------------------------------------------------------
 
--- Is this more generally useful?
---
-
 
 type DotLocImage u = LocImage u (DotAnchor u) 
 
@@ -212,8 +209,13 @@ dotChar :: (Floating u, Real u, FromPtSize u) => Char -> DotLocImage u
 dotChar ch = dotText [ch]
 
 
--- | Note - dotText now uses font metrics...
+-- Note - dotText now uses font metrics, the generated BBox is 
+-- fine for dots (if they are all the same text) but not good for 
+-- tree nodes (for example). Wumpus-Tree should really be using a
+-- different graphic object for labelled trees.
 --
+
+
 dotText :: (Floating u, Real u, FromPtSize u) => String -> DotLocImage u 
 dotText ss = fmap (bimapL bboxRectAnchor) (ctrCenterLine ss)
 

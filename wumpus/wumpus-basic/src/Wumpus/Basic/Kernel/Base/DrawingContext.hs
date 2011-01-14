@@ -28,6 +28,8 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
     DrawingContext(..)
   , DrawingContextF
 
+  , TextMargin(..)
+
   , standardContext
   , metricsContext
 
@@ -81,11 +83,27 @@ data DrawingContext = DrawingContext
       , fill_colour           :: RGBi      
       , line_spacing_factor   :: Double
       , round_corner_factor   :: Double 
+      , text_margin           :: TextMargin
       }
 
--- TODO - hand craft a Show instance 
+-- TODO - what parts of the Drawing Context should be strict? 
 
+
+-- | Type synonym for DrawingContext update functions.
+--
 type DrawingContextF = DrawingContext -> DrawingContext
+
+-- | The unit of Margin is always Double representing Points, e.g.
+-- 1.0 is 1 Point. Margins are not scaled relative to the current
+-- font size.
+-- 
+-- The default value is 2 point.
+--
+data TextMargin = TextMargin
+       { text_margin_x          :: !Double
+       , text_margin_y          :: !Double
+       }
+
 
 
 standardContext :: FontSize -> DrawingContext
@@ -98,7 +116,11 @@ standardContext sz =
                    , fill_colour          = wumpus_light_gray
                    , line_spacing_factor  = 1.2  
                    , round_corner_factor  = 0
+                   , text_margin          = standardTextMargin
                    }
+
+standardTextMargin :: TextMargin
+standardTextMargin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
 
 -- out-of-date - should be adding loaded fonts, not replacing the 
 -- GlyphMetrics Map wholesale.

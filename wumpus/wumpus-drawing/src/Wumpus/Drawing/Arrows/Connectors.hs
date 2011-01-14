@@ -29,7 +29,6 @@ import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Paths
 
-import Wumpus.Core                      -- package: wumpus-core
 
 
 -- An arrowhead always know how to draw itself (filled triangle, 
@@ -41,22 +40,15 @@ import Wumpus.Core                      -- package: wumpus-core
 --
 
 
-
+-- | A connector with arrow tips. The connector is an /Image/,
+-- drawing it returns the path - positions can be taken on the 
+-- path (e.g. @midpoint@) for further decoration.
+--
 type ArrowConnector u = ConnectorImage u (Path u)
 
 
--- One for Wumpus-Basic.ContextFun
+-- | Connector with an arrow tip at the start point \/ left.
 --
-atRot :: LocThetaCF u a -> Point2 u -> Radian -> CF a
-atRot = apply2R2
-
-
--- for Paths.Base ?
---
-shortenPath :: (Real u , Floating u) => u  -> u -> Path u -> Path u
-shortenPath l r = shortenL l .  shortenR r 
-
-
 leftArrow :: (Real u, Floating u) 
            => Arrowhead u -> ConnectorPath u -> ArrowConnector u
 leftArrow arrh conn = promoteR2 $ \p0 p1 -> 
@@ -71,6 +63,8 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
 -- Note - returns original path
                  
 
+-- | Connector with an arrow tip at the end point \/ right.
+--
 rightArrow :: (Real u, Floating u) 
            => Arrowhead u -> ConnectorPath u -> ArrowConnector u
 rightArrow arrh conn = promoteR2 $ \p0 p1 -> 
@@ -84,6 +78,8 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
 
 
 
+-- | Connector with two arrow tips, possibly different.
+--
 leftRightArrow :: (Real u, Floating u) 
                => Arrowhead u -> Arrowhead u -> ConnectorPath u 
                -> ArrowConnector u
@@ -100,7 +96,7 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
     in  fmap (replaceL cpath) $ g1 `oplus` gL `oplus` gR
 
 
--- | Same tip both ends.
+-- | Connector with the same arrow tip at both ends.
 --
 uniformArrow :: (Real u, Floating u) 
              => Arrowhead u -> ConnectorPath u -> ArrowConnector u

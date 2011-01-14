@@ -26,6 +26,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   -- * Modifiers 
   
     roundCornerFactor
+  , textMargin
 
   -- ** Line widths
   , lineWidth
@@ -93,6 +94,11 @@ updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 
 roundCornerFactor   :: Double -> DrawingContextF
 roundCornerFactor d = (\s -> s { round_corner_factor = d })
+
+-- | 'textMargin' : @ xsep * ysep -> DrawingContextF @
+--
+textMargin   :: Double -> Double -> DrawingContextF
+textMargin xsep ysep = (\s -> s { text_margin = TextMargin xsep ysep })
 
 
 --------------------------------------------------------------------------------

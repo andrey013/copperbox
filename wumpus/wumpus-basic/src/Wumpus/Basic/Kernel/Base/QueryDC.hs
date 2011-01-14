@@ -30,7 +30,9 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , borderedAttr
   , withBorderedAttr
 
-  , roundCornerSize
+  , getRoundCornerSize
+  , getTextMargin
+
   , getLineWidth
   , getFontAttr
   , getFontSize
@@ -109,9 +111,20 @@ withBorderedAttr fn =
 -- | Vertical distance between baselines of consecutive text 
 -- lines.
 --
-roundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
-roundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
+getRoundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
+getRoundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
                     <$> asksDC round_corner_factor
+
+
+
+-- | Vertical distance between baselines of consecutive text 
+-- lines.
+--
+getTextMargin :: (DrawingCtxM m, Fractional u, FromPtSize u) => m (u,u)
+getTextMargin = (\(TextMargin xsep ysep) -> (fn xsep, fn ysep))
+                    <$> asksDC text_margin
+  where
+    fn d = (realToFrac d) * fromPtSize 1
 
 
 

@@ -14,8 +14,11 @@
 -- Left-to-right measured text. The text uses glyph metrics so it 
 -- can be positioned accurately.
 -- 
--- \*\* WARNING \*\* - the API for this module has not been 
--- decided. The function names are expected to change.
+-- \*\* WARNING \*\* - the API for this module needs work. The 
+-- current API is not satisfactory for drawing according to a 
+-- start position (there are other reasonable start positions than 
+-- the ones currently supported - adding them would explode the 
+-- number of definitions).
 -- 
 --------------------------------------------------------------------------------
 
@@ -147,10 +150,17 @@ onelineBBox :: (Real u, Floating u, FromPtSize u)
 onelineBBox (OnelineText _ av) = 
     promoteR2 $ \baseline_ctr theta -> 
       glyphHeightRange >>= \(ymin, ymax) ->
-        let hw = 0.5 * advanceH av 
-            bl = baseline_ctr .+^ vec (-hw) ymin
-            tr = baseline_ctr .+^ vec hw    ymax
-        in pure $ centerOrthoBBox theta (BBox bl tr)
+      getTextMargin    >>= \(xsep, ysep) -> 
+        let hw        = 0.5 * advanceH av 
+            btm_left  = baseline_ctr .+^ vec (-hw) ymin
+            top_right = baseline_ctr .+^ vec hw    ymax
+            bbox      = expandBB xsep ysep (BBox btm_left top_right)
+        in pure $ centerOrthoBBox theta bbox
+  where
+    expandBB xsep ysep (BBox (P2 x0 y0) (P2 x1 y1)) = 
+        BBox (P2 (x0-xsep) (y0-ysep)) (P2 (x1+xsep) (y1+ysep))
+    
+
 
 
 
