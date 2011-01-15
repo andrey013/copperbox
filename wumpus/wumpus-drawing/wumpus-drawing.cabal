@@ -87,7 +87,7 @@ library
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.42.0  && <  0.43.0,
-                      wumpus-basic    == 0.15.0
+                      wumpus-basic    == 0.16.0
 
   
   exposed-modules:
@@ -103,6 +103,7 @@ library
     Wumpus.Drawing.Dots.Marks,
     Wumpus.Drawing.Geometry.Intersection,
     Wumpus.Drawing.Geometry.Paths,
+    Wumpus.Drawing.Grids,
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,
     Wumpus.Drawing.Paths.Connectors,

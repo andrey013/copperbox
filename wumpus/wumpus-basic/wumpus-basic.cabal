@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.15.0
+version:          0.16.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -29,6 +29,10 @@ description:
   .
   .
   Changelog:
+  .
+  v0.15.0 to v0.16.0:
+  .
+  * ??
   .
   v0.14.0 to v0.15.0:
   . 

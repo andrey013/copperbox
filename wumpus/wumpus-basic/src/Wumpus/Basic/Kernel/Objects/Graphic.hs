@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.Graphic
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -37,6 +37,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , DLocThetaGraphic
 
   -- * Functions
+  , safeconcat
   , intoImage
   , intoLocImage
   , intoLocThetaImage
@@ -141,6 +142,24 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 
 --------------------------------------------------------------------------------
 -- Functions
+
+
+-- | 'safeconcat' : @ alternative * [graphic] -> Graphic
+-- 
+-- 'safeconcat' produces a composite 'Graphic' from a list of 
+-- @Graphic@\'s. If the list is empty the alternative @Graphic@ is 
+-- used.
+--
+-- This contrasts to 'oconcat' - when used for @Graphic@\'s, 
+-- @oconcat@ has the same type signature as @safeconcat@ but 
+-- @oconcat@ considers its arguments to be an already destructured 
+-- list:
+-- 
+-- > oconcat (head::Graphic) (rest::[Graphic])
+-- 
+safeconcat :: Graphic u -> [Graphic u] -> Graphic u    
+safeconcat _   (x:xs) = oconcat x xs
+safeconcat alt []     = alt
 
 
 -- | Build an Image...

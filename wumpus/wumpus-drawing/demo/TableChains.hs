@@ -6,6 +6,7 @@ module TableChains where
 import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Grids
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -25,7 +26,8 @@ main = do
 table_drawing :: CtxPicture Double
 table_drawing = drawTracing $ do 
     tableGraphic
-    draw $ connect (grid 10) (P2 (-20) (-20)) (P2 150 80)
+    draw $ connect (interiorGrid 10) (P2 (-20) (-20)) (P2 150 80)
+    draw $ grid (3,2) 20 `at` (P2 300 60)
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => TraceDrawing u ()
@@ -47,27 +49,5 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 
-grid :: RealFrac u => u -> ConnectorGraphic u
-grid incr = promoteR2 $ \p0 p1 ->
-    let xs          = innerHorizontals incr p0 p1
-        ys          = innerVerticals   incr p0 p1
-        (V2 vx vy)  = pvec p0 p1
-        no_line     = openStroke $ emptyPath p0
-        vlines      = map (\pt -> straightLine (vvec vy) `at` pt) xs
-        hlines      = map (\pt -> straightLine (hvec vx) `at` pt) ys
-    in safeconcat no_line hlines `oplus` safeconcat no_line vlines
 
 
--- | 'safeconcat' : @ alternative * [graphic] -> Graphic
--- 
--- 'safeconcat' produces a composite Graphic from a list of 
--- Graphic. If the list is empty the alternative Graphic is used.
--- This contrasts to 'oconcat' - when used for Graphic @oconcat@ 
--- has the same type signature as @safeconcat@ but @oconcat@ 
--- considers its arguments to be an already destructured list:
--- 
--- > oconcat (head::Graphic) (rest::[Graphic])
--- 
-safeconcat :: Graphic u -> [Graphic u] -> Graphic u    
-safeconcat _   (x:xs) = oconcat x xs
-safeconcat alt []     = alt
