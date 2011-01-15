@@ -32,6 +32,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Connector
   , module Wumpus.Basic.Kernel.Objects.CtxPicture
   , module Wumpus.Basic.Kernel.Objects.Graphic
+  , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
@@ -50,4 +51,5 @@ import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.CtxPicture
 import Wumpus.Basic.Kernel.Objects.Graphic
+import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.TraceDrawing

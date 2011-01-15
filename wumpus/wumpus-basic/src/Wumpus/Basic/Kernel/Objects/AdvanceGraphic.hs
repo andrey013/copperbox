@@ -30,7 +30,6 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , runAdvGraphic
 
   -- * Composition
-  , advplus
   , advconcat
 
   ) where
@@ -91,15 +90,11 @@ runAdvGraphic ctx pt df = runCF1 ctx pt df
 -- Note there are opportunities for extra composition operators
 -- like the /picture language/...
 
-infixr 6 `advplus`
 
 
--- | \*\* WARNING \*\* - pending removal.
+
+-- | Concatenate AdvGraphics by chaining them with 'chain1'.
 --
-advplus :: AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advplus = chain1
-
-
 advconcat :: Num u => [AdvGraphic u] -> AdvGraphic u
 advconcat []     = makeAdvGraphic (pure id) emptyLocGraphic
 advconcat [x]    = x

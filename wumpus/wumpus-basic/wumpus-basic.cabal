@@ -32,7 +32,9 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  * ??
+  * Added PosGraphic object - this is a rectangle object that can 
+    be drawn from any of its corners (not just center or 
+    baseline-left). 
   .
   v0.14.0 to v0.15.0:
   . 
@@ -63,7 +65,8 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
-  demo/FontDeltaPic.hs
+  demo/FontDeltaPic.hs,
+  demo/SimplePosImage.hs
 
 library
   hs-source-dirs:     src
@@ -92,6 +95,7 @@ library
     Wumpus.Basic.Kernel.Objects.Connector,
     Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Graphic,
+    Wumpus.Basic.Kernel.Objects.PosImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.FontLoader.Afm,
     Wumpus.Basic.System.FontLoader.GhostScript,
