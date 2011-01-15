@@ -28,11 +28,18 @@ module Wumpus.Drawing.Chains.Derived
   , horizontals
   , verticals
 
+  , innerHorizontals
+  , innerVerticals
+
   ) where
 
 import Wumpus.Drawing.Chains.Base
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
+
+
+import Data.List 
 
 --------------------------------------------------------------------------------
 -- Tables
@@ -123,4 +130,35 @@ horizontals xs = \pt -> scanl (flip displaceH) pt xs
 verticals :: Num u => [u] -> LocChain u
 verticals ys = \pt -> scanl (flip displaceV) pt ys
 
+
+{-# INLINE [0] ceilingi #-}
+ceilingi :: RealFrac a => a -> Int
+ceilingi = ceiling
+
+
+-- | Note - horizontals are projected from the start point. The 
+-- horizontal component of the second point is ignored.
+-- 
+-- This chain is finite for well formed input.
+--
+innerHorizontals :: RealFrac u => u -> ConnectorChain u
+innerHorizontals n (P2 x0 y0) (P2 x1 _) = 
+    let z = ceilingi $ x0 / n in unfoldr phi (n * fromIntegral z)
+  where
+    phi x | x < x1    = Just (P2 x y0, x+n)
+          | otherwise = Nothing
+
+      
+
+-- | Note - verticals are projected from the start point. The 
+-- vertical component of the second point is ignored.
+-- 
+-- This chain is finite for well formed input.
+--
+innerVerticals :: RealFrac u => u -> ConnectorChain u
+innerVerticals n (P2 x0 y0) (P2 _ y1) = 
+    let z = ceilingi $ y0 / n in unfoldr phi (n * fromIntegral z)
+  where
+    phi y | y < y1    = Just (P2 x0 y, y+n)
+          | otherwise = Nothing
 

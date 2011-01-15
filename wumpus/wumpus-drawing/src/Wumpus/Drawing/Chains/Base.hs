@@ -22,6 +22,7 @@ module Wumpus.Drawing.Chains.Base
 
     Chain
   , LocChain
+  , ConnectorChain
   , unchain
   , zipchain
   , zipchainWith
@@ -50,6 +51,14 @@ type Chain u = [Point2 u]
 -- | A LocChain is a function from a starting point to a 'Chain'.
 -- 
 type LocChain u = Point2 u -> Chain u
+
+
+-- | A ConnectorChain is a function from a start- and end-point 
+-- to a 'Chain'.
+-- 
+type ConnectorChain u = Point2 u -> Point2 u -> Chain u
+
+
 
 
 -- | Note - commonly a 'Chain' may be infinite, so it is only 

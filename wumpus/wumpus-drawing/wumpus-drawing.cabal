@@ -1,5 +1,5 @@
 name:             wumpus-drawing
-version:          0.1.0
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -37,6 +37,10 @@ description:
   (the demos print this log to standard out).
   .
   Changelog:
+  .
+  v0.1.0 to 0.2.0:
+  .
+  * ??
   .
   v0.1.0:
   .
@@ -81,8 +85,6 @@ library
   hs-source-dirs:     src
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.6,
-                      directory       >= 1.0     && <  2.0, 
-                      filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.42.0  && <  0.43.0,
                       wumpus-basic    == 0.15.0

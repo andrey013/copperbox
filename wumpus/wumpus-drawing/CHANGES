@@ -1,4 +1,16 @@
 
 0.1.0:
 
-  * Initial split from Wumpus-Basic.
+  * Initial release - this is a split from @Wumpus-Basic@ making 
+    the (very prototypical - read sub-alpha, unstable...) modules 
+    in the @Drawing@ hierarchy a separate package.
+
+  * Simplified Chains - chains are now regular lists (though often
+    infinite). Drawings are made with chains using new zip-like
+    functions.
+
+  * Re-worked Shapes.
+
+  * Re-worked Arrow and Arrow Tip types.
+
+  * Re-worked ConnectorPaths.
