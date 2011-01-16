@@ -144,7 +144,7 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 -- Functions
 
 
--- | 'safeconcat' : @ alternative * [graphic] -> Graphic
+-- | 'safeconcat' : @ alternative * [graphic] -> Graphic@
 -- 
 -- 'safeconcat' produces a composite 'Graphic' from a list of 
 -- @Graphic@\'s. If the list is empty the alternative @Graphic@ is 

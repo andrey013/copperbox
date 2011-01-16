@@ -46,6 +46,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , glyphHeightRange
   , glyphHeight
   , glyphCapHeight
+  , glyphDescender
 
   , cwLookupTable
 
@@ -190,6 +191,9 @@ glyphHeight = (\(ymax,ymin) -> ymax - ymin) <$> glyphHeightRange
 
 glyphCapHeight :: (FromPtSize u, DrawingCtxM m) => m u
 glyphCapHeight = glyphQuery get_cap_height
+
+glyphDescender :: (FromPtSize u, DrawingCtxM m) => m u
+glyphDescender = glyphQuery get_descender
 
 cwLookupTable :: (FromPtSize u, DrawingCtxM m) => m (CharWidthTable u)
 cwLookupTable = glyphQuery get_cw_table

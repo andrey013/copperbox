@@ -71,6 +71,7 @@ afmFileParser pgm = do
               { afm_encoding        = getEncodingScheme info
               , afm_letter_bbox     = getFontBBox       info
               , afm_cap_height      = getCapHeight      info
+              , afm_descender       = getDescender      info
               , afm_glyph_metrics   = cms
               }
 
@@ -101,6 +102,9 @@ getEncodingScheme      = textQuery "EncodingScheme"
 
 getCapHeight           :: GlobalInfo -> Maybe AfmUnit
 getCapHeight           = runQuery "CapHeight" number
+
+getDescender           :: GlobalInfo -> Maybe AfmUnit
+getDescender           = runQuery "Descender" number
 
 
 charBBox :: CharParser AfmBoundingBox

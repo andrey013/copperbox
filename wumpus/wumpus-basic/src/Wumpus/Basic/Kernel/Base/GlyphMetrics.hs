@@ -66,9 +66,10 @@ data MetricsOps = MetricsOps
       { get_bounding_box  :: forall u. FromPtSize u => PtSize -> BoundingBox u 
       , get_cw_table      :: forall u. FromPtSize u => PtSize -> CharWidthTable u
       , get_cap_height    :: forall u. FromPtSize u => PtSize -> u
+      , get_descender     :: forall u. FromPtSize u => PtSize -> u
       }
 
--- | 'MetricsOps' tfor a particular named font.
+-- | 'MetricsOps' for a particular named font.
 -- 
 data FontMetricsOps = FontMetricsOps FontName MetricsOps
 
@@ -101,17 +102,19 @@ monospace_metrics = MetricsOps
     { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
     , get_cw_table      = \sz _ -> hvec (upscale sz width_vec) 
     , get_cap_height    = \sz -> upscale sz cap_height
+    , get_descender     = \sz -> upscale sz descender
     }
   where
-    llx           = (-23)  / 1000
-    lly           = (-250) / 1000
-    urx           = 715    / 1000
-    ury           = 805    / 1000
-    width_vec     = 600    / 1000
-    cap_height    = 562    / 1000
+    llx             = (-23)  / 1000
+    lly             = (-250) / 1000
+    urx             = 715    / 1000
+    ury             = 805    / 1000
+    width_vec       = 600    / 1000
+    cap_height      = 562    / 1000
+    descender       = (-157) / 1000
 
-    upscale sz d  = fromPtSize $ sz * d
-    lowerLeft sz  = P2 (upscale sz llx) (upscale sz lly) 
-    upperRight sz = P2 (upscale sz urx) (upscale sz ury) 
+    upscale sz d    = fromPtSize $ sz * d
+    lowerLeft sz    = P2 (upscale sz llx) (upscale sz lly) 
+    upperRight sz   = P2 (upscale sz urx) (upscale sz ury) 
 
 

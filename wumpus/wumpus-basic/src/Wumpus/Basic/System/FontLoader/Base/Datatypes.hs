@@ -46,8 +46,8 @@ import Wumpus.Basic.Kernel.Base.GlyphMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import qualified Data.IntMap   as IntMap
-import qualified Data.Map as Map
+import qualified Data.IntMap   as IM
+import qualified Data.Map      as M
 
 
 
@@ -87,7 +87,7 @@ type PSEncodingScheme   = String
 type AfmBoundingBox     = BoundingBox AfmUnit
 
 type AfmKey         = String
-type GlobalInfo     = Map.Map AfmKey String
+type GlobalInfo     = M.Map AfmKey String
 
 
 
@@ -106,6 +106,7 @@ data AfmFile = AfmFile
       { afm_encoding        :: Maybe String
       , afm_letter_bbox     :: Maybe AfmBoundingBox
       , afm_cap_height      :: Maybe AfmUnit
+      , afm_descender       :: Maybe AfmUnit
       , afm_glyph_metrics   :: [AfmGlyphMetrics]
       }
   deriving (Show) 
@@ -132,6 +133,7 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 data MonospaceDefaults cu = MonospaceDefaults 
       { default_letter_bbox  :: BoundingBox cu
       , default_cap_height   :: cu
+      , default_descender    :: cu
       , default_char_width   :: Vec2 cu
       }
   deriving (Eq,Show)
@@ -150,8 +152,9 @@ data MonospaceDefaults cu = MonospaceDefaults
 data FontProps cu = FontProps
        { fp_bounding_box        :: BoundingBox cu 
        , fp_default_adv_vec     :: Vec2 cu
-       , fp_adv_vecs            :: IntMap.IntMap (Vec2 cu)
+       , fp_adv_vecs            :: IM.IntMap (Vec2 cu)
        , fp_cap_height          :: cu
+       , fp_descender           :: cu
        }
 
 
@@ -159,13 +162,14 @@ data FontProps cu = FontProps
 -- scaling function and FontProps read from a file.
 --
 buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
-buildMetricsOps fn (FontProps (BBox ll ur) (V2 vx vy) 
-                              vec_table    cap_height) = 
+buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
+                                   , fp_default_adv_vec = V2 vx vy }) = 
     MetricsOps
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
       , get_cw_table      = \sz i -> 
-            maybe (defaultAV sz) (scaleVec sz) $ IntMap.lookup i vec_table 
-      , get_cap_height    = \sz -> upscale sz (fn cap_height)
+            maybe (defaultAV sz) (scaleVec sz) $ IM.lookup i (fp_adv_vecs font)
+      , get_cap_height    = \sz -> upscale sz (fn $ fp_cap_height font)
+      , get_descender     = \sz -> upscale sz (fn $ fp_descender font)
       }
   where
     upscale sz d            = fromPtSize $ sz * d 

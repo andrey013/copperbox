@@ -80,6 +80,7 @@ ghostscript_mono_defaults_8_54 :: MonospaceDefaults AfmUnit
 ghostscript_mono_defaults_8_54 = 
     MonospaceDefaults { default_letter_bbox  = bbox
                       , default_cap_height   = 563
+                      , default_descender    = (-186)
                       , default_char_width   = V2 600 0
                       }
   where

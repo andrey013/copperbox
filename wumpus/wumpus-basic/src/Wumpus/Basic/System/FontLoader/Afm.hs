@@ -76,6 +76,7 @@ afm_mono_defaults_4_1 :: MonospaceDefaults AfmUnit
 afm_mono_defaults_4_1 = 
     MonospaceDefaults { default_letter_bbox  = bbox
                       , default_cap_height   = 562
+                      , default_descender    = (-157)
                       , default_char_width   = V2 600 0
                       }
   where

@@ -36,6 +36,8 @@ description:
     be drawn from any of its corners (not just center or 
     baseline-left). 
   .
+  * Added the property @descender@ to the font metrics.
+  .
   v0.14.0 to v0.15.0:
   . 
   * Split previous @Wumpus-Basic@ package into two packages:

@@ -164,13 +164,15 @@ buildAfmFontProps :: MonospaceDefaults AfmUnit
                   -> AfmFile 
                   -> FontLoadIO (FontProps AfmUnit)
 buildAfmFontProps defaults afm = do 
-    cap_height <- extractCapHeight defaults afm
-    bbox       <- extractFontBBox  defaults afm 
+    cap_height  <- extractCapHeight defaults afm
+    desc_depth  <- extractDescender defaults afm
+    bbox        <- extractFontBBox  defaults afm 
     return $ FontProps 
                { fp_bounding_box    = bbox
                , fp_default_adv_vec = default_char_width defaults
                , fp_adv_vecs        = char_widths
                , fp_cap_height      = cap_height
+               , fp_descender       = desc_depth
                }  
   where
     char_widths = foldr fn IntMap.empty $ afm_glyph_metrics afm
@@ -185,6 +187,14 @@ extractCapHeight defaults afm = maybe errk return $ afm_cap_height afm
   where
     errk = logLoadMsg "WARNING - Could not extract CapHeight" >> 
            return (default_cap_height defaults)
+
+
+
+extractDescender :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
+extractDescender defaults afm = maybe errk return $ afm_descender afm
+  where
+    errk = logLoadMsg "WARNING - Could not extract Descender" >> 
+           return (default_descender defaults)
 
 
 extractFontBBox :: MonospaceDefaults AfmUnit -> AfmFile 
