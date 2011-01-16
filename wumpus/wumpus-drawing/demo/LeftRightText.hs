@@ -15,6 +15,7 @@
 
 module LeftRightText where
 
+import FontLoaderUtils
 
 import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.Afm
@@ -23,8 +24,6 @@ import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
-
-import FontLoaderUtils
 
 
 import Wumpus.Core                      -- package: wumpus-core

@@ -78,6 +78,7 @@ extra-source-files:
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
   demo/PictureCompo.hs,
+  demo/SingleLine.hs,
   demo/Symbols.hs,
   demo/TableChains.hs
 

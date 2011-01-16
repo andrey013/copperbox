@@ -62,7 +62,7 @@ import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Kernel hiding ( RectPosition(..) )  -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

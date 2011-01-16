@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Text.LRText
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -25,7 +25,9 @@
 module Wumpus.Drawing.Text.LRText
   ( 
 
-    baseCenterLine
+    singleLine
+
+  , baseCenterLine
   , baseLeftLine
   , baseRightLine
 
@@ -76,10 +78,97 @@ import Data.Maybe
 --
 
 
+makeSingleLine :: (Fractional u, FromPtSize u) 
+               => String -> DrawingInfo (PosGraphic u)
+makeSingleLine ss = let esc = escapeString ss in
+   onelineEscText esc >>= \otext -> makeOneline leftOPos otext
+
+singleLine :: (Floating u, FromPtSize u) 
+           => String -> RectPosition -> LocThetaGraphic u
+singleLine ss rpos = promoteR2 $ \pt theta -> 
+    makeSingleLine ss >>= \graphic ->
+    atRot (setPosition rpos graphic) pt theta
+
 
 -- One line of multiline text
 --
-data OnelineText u = OnelineText EscapedText (AdvanceVec u)
+data OnelineText u = OnelineText 
+        { text_content        :: EscapedText
+        , oneline_width       :: AdvanceVec u
+        }
+
+
+onelineLeft :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineLeft otext = promoteR2 $ \pt theta -> 
+    makeOneline leftOPos otext >>= \grafic ->
+    atRot (setPosition SW grafic) pt theta
+ 
+
+onelineCenter :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineCenter otext = promoteR2 $ \pt theta -> 
+    makeOneline centerOPos otext >>= \grafic ->
+    atRot (setPosition SS grafic) pt theta
+
+
+onelineRight :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineRight otext = promoteR2 $ \pt theta -> 
+    makeOneline rightOPos otext >>= \grafic ->
+    atRot (setPosition SE grafic) pt theta
+
+
+type OPosF u = u -> (u,u) -> (u,u) -> ObjectPos u 
+
+
+
+leftOPos :: Num u => OPosF u 
+leftOPos width (ch,dd) (mx,my) = 
+    ObjectPos { op_x_minor = mx
+              , op_x_major = width + mx 
+              , op_y_minor = (negate dd) + my  
+              , op_y_major = ch + my
+              }
+
+-- Note - dd usually (should be...) negative but ObjectPos minors 
+-- should be positive. 
+
+centerOPos :: Fractional u => OPosF u 
+centerOPos width (ch,dd) (mx,my) = 
+    ObjectPos { op_x_minor = xmiddle
+              , op_x_major = xmiddle
+              , op_y_minor = (negate dd) + my  
+              , op_y_major = ch + my
+              }
+  where
+    xmiddle = 0.5 * (mx + width + mx)
+
+
+rightOPos :: Num u => OPosF u 
+rightOPos width (ch,dd) (mx,my) = 
+    ObjectPos { op_x_minor = width + mx
+              , op_x_major = mx 
+              , op_y_minor = (negate dd) + my
+              , op_y_major = ch + my
+              }
+
+
+
+-- | Is this an acceptable type? - it is building a PosGraphic
+-- (itself context sensitive) within the DrawingContext.
+--
+makeOneline :: (Fractional u, FromPtSize u) 
+             => OPosF u -> OnelineText u -> DrawingInfo (PosGraphic u)
+makeOneline mkOPos otext = 
+    glyphCapHeight   >>= \ch ->
+    glyphDescender   >>= \dd ->                 -- note - usually negative
+    getTextMargin    >>= \(mx, my) -> 
+    let width = advanceH $ oneline_width otext 
+        opos  = mkOPos  width (ch,dd) (mx,my)
+    in return $ makePosImage opos (rescapedline $ text_content otext)
+
+
 
 
 -- | max_width * oneline_text -> LocThetaGraphic
