@@ -26,6 +26,9 @@ module Wumpus.Drawing.Text.LRText
   ( 
 
     singleLine
+  , escSingleLine
+
+  , multiLineRight
 
   , baseCenterLine
   , baseLeftLine
@@ -59,7 +62,9 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
+import Control.Monad
 import Data.Char
+import Data.List ( unfoldr )
 import qualified Data.Map               as Map
 import Data.Maybe 
 
@@ -79,15 +84,23 @@ import Data.Maybe
 
 
 makeSingleLine :: (Fractional u, FromPtSize u) 
-               => String -> DrawingInfo (PosGraphic u)
-makeSingleLine ss = let esc = escapeString ss in
-   onelineEscText esc >>= \otext -> makeOneline leftOPos otext
+               => EscapedText -> DrawingInfo (PosGraphic u)
+makeSingleLine esc = 
+    onelineEscText esc >>= \otext -> makeOneline leftOPos otext
 
 singleLine :: (Floating u, FromPtSize u) 
-           => String -> RectPosition -> LocThetaGraphic u
-singleLine ss rpos = promoteR2 $ \pt theta -> 
-    makeSingleLine ss >>= \graphic ->
+           => RectPosition -> String -> LocThetaGraphic u
+singleLine rpos ss = promoteR2 $ \pt theta -> 
+    makeSingleLine (escapeString ss) >>= \graphic ->
     atRot (setPosition rpos graphic) pt theta
+
+
+escSingleLine :: (Floating u, FromPtSize u) 
+              => RectPosition -> EscapedText -> LocThetaGraphic u
+escSingleLine rpos esc = promoteR2 $ \pt theta -> 
+    makeSingleLine esc >>= \graphic ->
+    atRot (setPosition rpos graphic) pt theta
+
 
 
 -- One line of multiline text
@@ -96,27 +109,6 @@ data OnelineText u = OnelineText
         { text_content        :: EscapedText
         , oneline_width       :: AdvanceVec u
         }
-
-
-onelineLeft :: (Floating u, FromPtSize u) 
-             => OnelineText u -> LocThetaGraphic u
-onelineLeft otext = promoteR2 $ \pt theta -> 
-    makeOneline leftOPos otext >>= \grafic ->
-    atRot (setPosition SW grafic) pt theta
- 
-
-onelineCenter :: (Floating u, FromPtSize u) 
-             => OnelineText u -> LocThetaGraphic u
-onelineCenter otext = promoteR2 $ \pt theta -> 
-    makeOneline centerOPos otext >>= \grafic ->
-    atRot (setPosition SS grafic) pt theta
-
-
-onelineRight :: (Floating u, FromPtSize u) 
-             => OnelineText u -> LocThetaGraphic u
-onelineRight otext = promoteR2 $ \pt theta -> 
-    makeOneline rightOPos otext >>= \grafic ->
-    atRot (setPosition SE grafic) pt theta
 
 
 type OPosF u = u -> (u,u) -> (u,u) -> ObjectPos u 
@@ -168,6 +160,123 @@ makeOneline mkOPos otext =
         opos  = mkOPos  width (ch,dd) (mx,my)
     in return $ makePosImage opos (rescapedline $ text_content otext)
 
+
+
+
+-- | For multiline text - left aligned, draw from NW. Do not draw 
+-- from the baseline - drawing from the top is easier...
+--
+onelineLeft :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineLeft otext = promoteR2 $ \pt theta -> 
+    makeOneline leftOPos otext >>= \grafic ->
+    atRot (setPosition NW grafic) pt theta
+ 
+
+-- | For multiline text - center aligned, draw from NN. Do not 
+-- draw from the baseline - drawing from the top is easier...
+--
+onelineCenter :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineCenter otext = promoteR2 $ \pt theta -> 
+    makeOneline centerOPos otext >>= \grafic ->
+    atRot (setPosition NN grafic) pt theta
+
+-- | For multiline text - right aligned, draw from NE. Do not draw 
+-- from the baseline - drawing from the top is easier...
+--
+onelineRight :: (Floating u, FromPtSize u) 
+             => OnelineText u -> LocThetaGraphic u
+onelineRight otext = promoteR2 $ \pt theta -> 
+    makeOneline rightOPos otext >>= \grafic ->
+    atRot (setPosition NE grafic) pt theta
+
+
+
+
+multiLineRight :: (Ord u, Floating u, FromPtSize u) 
+           => RectPosition -> String -> LocThetaGraphic u
+multiLineRight rpos ss = promoteR2 $ \pt theta -> 
+    makeMultiRight ss >>= \graphic ->
+    atRot (setPosition rpos graphic) pt theta
+
+
+
+makeMultiRight :: (Ord u, Floating u, FromPtSize u) 
+               => String -> DrawingInfo (PosGraphic u)
+makeMultiRight str = 
+    linesToInterims str >>= \(av_max,ss) -> 
+    let width = advanceH av_max
+    in neMultiPos width (length ss) >>= \opos   ->
+       return $ makePosImage opos (multiLocTheta NE ss)       
+
+
+nwMultiPos :: (Fractional u, FromPtSize u) 
+           => u -> Int -> DrawingInfo (ObjectPos u)
+nwMultiPos width line_count = 
+    multilineTextHeight line_count >>= \height   ->
+    getTextMargin                  >>= \(mx, my) -> 
+    return $ ObjectPos { op_x_minor = mx
+                       , op_x_major = width + mx 
+                       , op_y_minor = my  
+                       , op_y_major = height + my
+                       }
+
+
+nnMultiPos :: (Fractional u, FromPtSize u) 
+           => u -> Int -> DrawingInfo (ObjectPos u)
+nnMultiPos width line_count = 
+    multilineTextHeight line_count >>= \height   ->
+    getTextMargin                  >>= \(mx, my) -> 
+    let center = 0.5 * (mx + width + mx) 
+    in return $ ObjectPos { op_x_minor = center
+                          , op_x_major = center
+                          , op_y_minor = my  
+                          , op_y_major = height + my
+                          }
+
+
+
+neMultiPos :: (Fractional u, FromPtSize u) 
+           => u -> Int -> DrawingInfo (ObjectPos u)
+neMultiPos width line_count = 
+    multilineTextHeight line_count >>= \height   ->
+    getTextMargin                  >>= \(mx, my) -> 
+    return $ ObjectPos { op_x_minor = mx + width
+                       , op_x_major = mx 
+                       , op_y_minor = my  
+                       , op_y_major = height + my
+                       }
+
+
+
+
+multiLocTheta :: (Floating u, FromPtSize u)
+              => RectPosition -> [OnelineText u] -> LocThetaGraphic u
+multiLocTheta _    [] = emptyLocThetaGraphic
+multiLocTheta rpos xs = promoteR2 $ \pt theta -> 
+    trailPointsDown theta pt >>= \ps ->
+    let gs = zipWith (mf theta) xs ps 
+    in safeconcat (emptyLocGraphic `at` pt) gs
+  where
+    mf theta ln pt =  atRot (escSingleLine rpos (text_content ln)) pt theta
+
+
+
+-- for Wumpus-Basic
+emptyLocThetaGraphic :: Num u => LocThetaGraphic u
+emptyLocThetaGraphic = lift1R2 emptyLocGraphic
+
+
+
+multilineTextHeight :: (Fractional u, FromPtSize u) => Int -> DrawingInfo u
+multilineTextHeight n | n >  1    = liftM2 (+) oneHeight (spacings $ n-1)
+                      | n == 1    = oneHeight
+                      | otherwise = return 0
+  where
+    oneHeight  = liftM2 (+) glyphCapHeight glyphDescender 
+    spacings i = baselineSpacing >>= \h -> return (h * fromIntegral i)
+    
 
 
 
@@ -453,12 +562,33 @@ centralPoints n | n < 2     = promoteR2 $ \ctr _  -> return [ctr]
                           in pure $ trailPoints n h theta top
         
 
-
+-- | 'trailPoints' : @ count * y_dist * theta * point -> [Point] @
+--
+-- Build a chain of points downwards from the top.
+--
 trailPoints :: Floating u => Int -> u -> Radian -> Point2 u -> [Point2 u]
 trailPoints n height theta top = take n $ iterate fn top
   where
     fn pt = displacePerpendicular (-height) theta pt
 
+
+type MultilineMove u = Point2 u -> Radian -> Point2 u
+
+
+-- | 'trailMoves' : @ y_dist * theta * point -> [Point] @
+--
+-- Build a chain of points downwards from the top.
+--
+-- Builds an infinite list...
+--
+trailPointsDown :: Floating u 
+                => Radian -> Point2 u -> DrawingInfo [Point2 u]
+trailPointsDown theta top = 
+    baselineSpacing >>= \h -> pure $ iterate (fn h) top 
+  where
+    fn h pt = displacePerpendicular (-h) theta pt
+
+           
 
 
 --------------------------------------------------------------------------------

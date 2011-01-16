@@ -77,4 +77,4 @@ mf = do
 testDraw :: (Floating u, FromPtSize u) => RectPosition -> LocGraphic u
 testDraw rpos = filledDisk 2 `oplus` ans
   where
-    ans = singleLine "Qwerty" rpos `rot`  (pi * 0.25)
+    ans = singleLine rpos "Qwerty" `rot`  (pi * 0.25)

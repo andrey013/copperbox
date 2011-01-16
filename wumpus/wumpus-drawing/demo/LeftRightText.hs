@@ -85,7 +85,8 @@ text_pic = drawTracing $ do
     drawi_ $ (fn rleft_text)      `at` P2   0 (-75)
     drawi_ $ (fn rcenter_text)    `at` P2 200 (-75)
     drawi_ $ (fn rright_text)     `at` P2 400 (-75)
-      
+
+    draw $ atRot (multiLineRight NN "one\ntwo\nthree") (P2 600 0) 0
  
     draw $ redPlus            `at` P2   0 400
     draw $ redPlus            `at` P2 200 400
