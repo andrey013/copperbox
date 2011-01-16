@@ -144,20 +144,20 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 -- Functions
 
 
--- | 'safeconcat' : @ alternative * [graphic] -> Graphic@
+-- | 'safeconcat' : @ alternative * [image] -> Image@
 -- 
--- 'safeconcat' produces a composite 'Graphic' from a list of 
--- @Graphic@\'s. If the list is empty the alternative @Graphic@ is 
+-- 'safeconcat' produces a composite 'Image' from a list of 
+-- @Image@\'s. If the list is empty the alternative @Image@ is 
 -- used.
 --
--- This contrasts to 'oconcat' - when used for @Graphic@\'s, 
+-- This contrasts to 'oconcat' - when used for @Image@\'s, 
 -- @oconcat@ has the same type signature as @safeconcat@ but 
 -- @oconcat@ considers its arguments to be an already destructured 
 -- list:
 -- 
--- > oconcat (head::Graphic) (rest::[Graphic])
+-- > oconcat (head::Image) (rest::[Image])
 -- 
-safeconcat :: Graphic u -> [Graphic u] -> Graphic u    
+safeconcat :: OPlus a => Image u a -> [Image u a] -> Image u a
 safeconcat _   (x:xs) = oconcat x xs
 safeconcat alt []     = alt
 

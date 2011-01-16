@@ -192,6 +192,8 @@ glyphHeight = (\(ymax,ymin) -> ymax - ymin) <$> glyphHeightRange
 glyphCapHeight :: (FromPtSize u, DrawingCtxM m) => m u
 glyphCapHeight = glyphQuery get_cap_height
 
+-- | Note - descender is expected to be negative.
+--
 glyphDescender :: (FromPtSize u, DrawingCtxM m) => m u
 glyphDescender = glyphQuery get_descender
 

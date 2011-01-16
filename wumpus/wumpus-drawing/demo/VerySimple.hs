@@ -29,13 +29,17 @@ drawing1 = drawTracing $ trace1
 
 trace1 :: TraceDrawing Double ()
 trace1 = do
-   draw $ ( rotate (0.5*pi) $ textline "hello world") `at` zeroPt
-   draw $ bbrectangle bbox1
-   draw $ bbrectangle $ centerOrthoBBox (0.25 * pi) bbox1 
+    draw $ ( rotate (0.5*pi) $ textline "hello world") `at` zeroPt
+    draw $ rect1
+    draw $ rotateAbout (0.25*pi) (P2 140 20) $ rect1
+    draw $ bbrectangle bbox1
+    draw $ bbrectangle $ centerOrthoBBox (0.25 * pi) bbox1 
   where
-    bbox1 = BBox (P2 100 0) (P2 180 30)
-
+    bbox1 = BBox (P2 100 10) (P2 180 30)
+    rect1 = strokedRectangle 80 20 `at` P2 100 10
+    
    
+
 
 
 -- TODO expose this from Wumpus-Basic

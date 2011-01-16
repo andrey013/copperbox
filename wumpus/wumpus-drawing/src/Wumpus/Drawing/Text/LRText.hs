@@ -61,12 +61,19 @@ import Data.Maybe
 -- the x and y axes even if the text is not parrale to the 
 -- x-axis). 
 -- 
--- I cannot think of any compelling graphics that need a more 
--- accurate type. The execption is text cannot have exact anchors 
--- however this is a moot /if/ text is considered as a labelling 
--- of an existing rectangle (which may or may not have been 
--- rotated).
+-- I\'m not convinced of any compelling graphics that need a more 
+-- accurate type - @text@ can be considered as a labelling of an 
+-- existing Shape, rather than a shape-like thing itself.
 --
+
+
+-- One line of multiline text
+--
+data OnelineText u = OnelineText 
+        { text_content        :: EscapedText
+        , oneline_width       :: AdvanceVec u
+        }
+
 
 
 makeSingleLine :: (Real u, Floating u, FromPtSize u) 
@@ -92,13 +99,6 @@ escSingleLine rpos esc = promoteR2 $ \pt theta ->
     atRot (setPosition rpos graphic) pt theta
 
 
-
--- One line of multiline text
---
-data OnelineText u = OnelineText 
-        { text_content        :: EscapedText
-        , oneline_width       :: AdvanceVec u
-        }
 
 
 type OPosF u = u -> (u,u) -> (u,u) -> ObjectPos u 
@@ -142,12 +142,19 @@ makeOneline oposF otext =
 onelineBBox :: (Real u, Floating u) 
              => u -> (u,u) -> (u,u) -> LocThetaCF u (BoundingBox u)
 onelineBBox adv_width (ch,dd) (mx,my) = 
-    promoteR2 $ \(P2 x y) theta -> 
+    promoteR2 $ \p0@(P2 x y) theta -> 
       let ll   = P2 (x - mx)             (y - (my + (negate dd)))
           ur   = P2 (x + adv_width + mx) (y + ch + my) 
           bbox = boundingBox ll ur
-      in return $ centerOrthoBBox theta bbox 
+      in return $ rotBBox p0 theta bbox 
 
+
+rotBBox :: (Real u, Floating u) 
+        => Point2 u -> Radian -> BoundingBox u -> BoundingBox u
+rotBBox pt theta bb = 
+    traceBoundary $ map (rotateAbout theta pt) ps
+  where
+    ps  = boundaryCornerList bb
 
 --------------------------------------------------------------------------------
 
@@ -231,21 +238,13 @@ multiLocTheta _    [] = emptyLocThetaGraphic
 multiLocTheta rpos xs = promoteR2 $ \pt theta -> 
     trailPointsDown theta pt >>= \ps ->
     let gs = zipWith (mf theta) xs ps 
-    in safeconcat' (emptyBoundedLocGraphic `at` pt) gs
+    in safeconcat (emptyBoundedLocGraphic `at` pt) gs
   where
     mf theta ln pt = atRot (escSingleLine rpos (text_content ln)) pt theta
 
 
 
-
--- Wumpus-Basic needs changing...
---
-safeconcat' :: OPlus a => Image u a -> [Image u a] -> Image u a    
-safeconcat' _   (x:xs) = oconcat x xs
-safeconcat' alt []     = alt
-
-
--- for Wumpus-Basic
+-- for Wumpus-Basic?
 emptyLocThetaGraphic :: Num u => BoundedLocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 

@@ -36,6 +36,8 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   , illustrateBoundedLocGraphic
   , illustrateBoundedLocThetaGraphic
 
+  , bbrectangle
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -81,7 +83,7 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 
 
 
--- | 'openStroke' : @ theta * bbox -> BBox @
+-- | 'centerOrthoBBox' : @ theta * bbox -> BBox @
 -- 
 -- Rotate a bounding box by @theta@ about its center. Take the 
 -- new bounding box.
