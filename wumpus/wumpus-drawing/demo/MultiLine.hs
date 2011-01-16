@@ -106,20 +106,20 @@ testDrawL :: (Real u, Floating u, Ord u, FromPtSize u)
           => RectPosition -> LocGraphic u
 testDrawL rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
-    ans = multiLineLeft rpos "Is\nthis\nokay&question;" `rot` 0 
+    ans = multiAlignLeft rpos "Is\nthis\nokay&question;" `rot` 0 
 
 testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawC rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
-    ans = multiLineCenter rpos "Is\nthis\nokay&question;" `rot` 0 
+    ans = multiAlignCenter rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
 testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawR rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
-    ans = multiLineRight rpos "Is\nthis\nokay&question;" `rot` 0 
+    ans = multiAlignRight rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
 
