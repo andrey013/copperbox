@@ -14,6 +14,11 @@
 -- Left-to-right measured text. The text uses glyph metrics so it 
 -- can be positioned accurately.
 -- 
+-- Note multi-line text does not have an intuitive notion of 
+-- baseline. It should be positioned with @CENTER@ or the compass
+-- @RectPosition@s.
+-- 
+-- 
 -- \*\* WARNING \*\* - the API for this module needs work. The 
 -- current API is not satisfactory for drawing according to a 
 -- start position (there are other reasonable start positions than 
@@ -28,6 +33,8 @@ module Wumpus.Drawing.Text.LRText
     singleLine
   , escSingleLine
 
+  , multiLineLeft
+  , multiLineCenter
   , multiLineRight
 
   , baseCenterLine
@@ -64,7 +71,6 @@ import Data.VectorSpace
 import Control.Applicative
 import Control.Monad
 import Data.Char
-import Data.List ( unfoldr )
 import qualified Data.Map               as Map
 import Data.Maybe 
 
@@ -87,6 +93,9 @@ makeSingleLine :: (Fractional u, FromPtSize u)
                => EscapedText -> DrawingInfo (PosGraphic u)
 makeSingleLine esc = 
     onelineEscText esc >>= \otext -> makeOneline leftOPos otext
+
+-- Single line text can always be made with @leftOPos@ as there
+-- is no notion of justification for single lines.
 
 singleLine :: (Floating u, FromPtSize u) 
            => RectPosition -> String -> LocThetaGraphic u
@@ -126,6 +135,9 @@ leftOPos width (ch,dd) (mx,my) =
 -- Note - dd usually (should be...) negative but ObjectPos minors 
 -- should be positive. 
 
+{-
+
+
 centerOPos :: Fractional u => OPosF u 
 centerOPos width (ch,dd) (mx,my) = 
     ObjectPos { op_x_minor = xmiddle
@@ -145,11 +157,8 @@ rightOPos width (ch,dd) (mx,my) =
               , op_y_major = ch + my
               }
 
+-}
 
-
--- | Is this an acceptable type? - it is building a PosGraphic
--- (itself context sensitive) within the DrawingContext.
---
 makeOneline :: (Fractional u, FromPtSize u) 
              => OPosF u -> OnelineText u -> DrawingInfo (PosGraphic u)
 makeOneline mkOPos otext = 
@@ -161,7 +170,7 @@ makeOneline mkOPos otext =
     in return $ makePosImage opos (rescapedline $ text_content otext)
 
 
-
+{-
 
 -- | For multiline text - left aligned, draw from NW. Do not draw 
 -- from the baseline - drawing from the top is easier...
@@ -191,61 +200,78 @@ onelineRight otext = promoteR2 $ \pt theta ->
     makeOneline rightOPos otext >>= \grafic ->
     atRot (setPosition NE grafic) pt theta
 
+-}
 
+
+multiLineLeft :: (Ord u, Floating u, FromPtSize u) 
+              => RectPosition -> String -> LocThetaGraphic u
+multiLineLeft rpos ss = promoteR2 $ \pt theta -> 
+    makeMultiPosGraphic NW nwMultiPos ss >>= \graphic ->
+    atRot (setPosition rpos graphic) pt theta
+
+multiLineCenter :: (Ord u, Floating u, FromPtSize u) 
+                => RectPosition -> String -> LocThetaGraphic u
+multiLineCenter rpos ss = promoteR2 $ \pt theta -> 
+    makeMultiPosGraphic NN nnMultiPos ss >>= \graphic ->
+    atRot (setPosition rpos graphic) pt theta
 
 
 multiLineRight :: (Ord u, Floating u, FromPtSize u) 
-           => RectPosition -> String -> LocThetaGraphic u
+               => RectPosition -> String -> LocThetaGraphic u
 multiLineRight rpos ss = promoteR2 $ \pt theta -> 
-    makeMultiRight ss >>= \graphic ->
+    makeMultiPosGraphic NE neMultiPos ss >>= \graphic ->
     atRot (setPosition rpos graphic) pt theta
 
 
 
-makeMultiRight :: (Ord u, Floating u, FromPtSize u) 
-               => String -> DrawingInfo (PosGraphic u)
-makeMultiRight str = 
+
+type MultiPosBuilder u = u -> Int -> DrawingInfo (ObjectPos u)
+
+
+makeMultiPosGraphic :: (Ord u, Floating u, FromPtSize u) 
+                        => RectPosition -> MultiPosBuilder u -> String 
+                        -> DrawingInfo (PosGraphic u)
+makeMultiPosGraphic rpos buildF str = 
     linesToInterims str >>= \(av_max,ss) -> 
     let width = advanceH av_max
-    in neMultiPos width (length ss) >>= \opos   ->
-       return $ makePosImage opos (multiLocTheta NE ss)       
+    in buildF width (length ss) >>= \opos   ->
+       return $ makePosImage opos (multiLocTheta rpos ss)
 
 
-nwMultiPos :: (Fractional u, FromPtSize u) 
-           => u -> Int -> DrawingInfo (ObjectPos u)
+
+
+nwMultiPos :: (Fractional u, FromPtSize u) => MultiPosBuilder u 
 nwMultiPos width line_count = 
     multilineTextHeight line_count >>= \height   ->
     getTextMargin                  >>= \(mx, my) -> 
     return $ ObjectPos { op_x_minor = mx
                        , op_x_major = width + mx 
-                       , op_y_minor = my  
-                       , op_y_major = height + my
+                       , op_y_minor = height + my  
+                       , op_y_major = my
                        }
 
 
-nnMultiPos :: (Fractional u, FromPtSize u) 
-           => u -> Int -> DrawingInfo (ObjectPos u)
+nnMultiPos :: (Fractional u, FromPtSize u) => MultiPosBuilder u
 nnMultiPos width line_count = 
     multilineTextHeight line_count >>= \height   ->
     getTextMargin                  >>= \(mx, my) -> 
-    let center = 0.5 * (mx + width + mx) 
-    in return $ ObjectPos { op_x_minor = center
-                          , op_x_major = center
-                          , op_y_minor = my  
-                          , op_y_major = height + my
+    let center_x = 0.5 * (mx + width + mx) 
+    in return $ ObjectPos { op_x_minor = center_x
+                          , op_x_major = center_x
+                          , op_y_minor = height + my  
+                          , op_y_major = my
                           }
 
 
 
-neMultiPos :: (Fractional u, FromPtSize u) 
-           => u -> Int -> DrawingInfo (ObjectPos u)
+neMultiPos :: (Fractional u, FromPtSize u) => MultiPosBuilder u
 neMultiPos width line_count = 
     multilineTextHeight line_count >>= \height   ->
     getTextMargin                  >>= \(mx, my) -> 
     return $ ObjectPos { op_x_minor = mx + width
                        , op_x_major = mx 
-                       , op_y_minor = my  
-                       , op_y_major = height + my
+                       , op_y_minor = height + my
+                       , op_y_major = my
                        }
 
 
@@ -268,13 +294,14 @@ emptyLocThetaGraphic :: Num u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
+-- Not right...
 
 multilineTextHeight :: (Fractional u, FromPtSize u) => Int -> DrawingInfo u
 multilineTextHeight n | n >  1    = liftM2 (+) oneHeight (spacings $ n-1)
                       | n == 1    = oneHeight
                       | otherwise = return 0
   where
-    oneHeight  = liftM2 (+) glyphCapHeight glyphDescender 
+    oneHeight  = liftM2 (\h d -> h-d) glyphCapHeight glyphDescender
     spacings i = baselineSpacing >>= \h -> return (h * fromIntegral i)
     
 
@@ -571,8 +598,6 @@ trailPoints n height theta top = take n $ iterate fn top
   where
     fn pt = displacePerpendicular (-height) theta pt
 
-
-type MultilineMove u = Point2 u -> Radian -> Point2 u
 
 
 -- | 'trailMoves' : @ y_dist * theta * point -> [Point] @
