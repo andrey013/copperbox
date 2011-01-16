@@ -58,7 +58,7 @@ drawing01 :: DCtxPicture
 drawing01 = drawTracing $ localize (fillColour red) $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Real u, Floating u, FromPtSize u) => TraceDrawing u ()
 mf = do
     draw $ testDraw NN `at` (P2   0 200)
     draw $ testDraw SS `at` (P2  75 200)
@@ -74,7 +74,19 @@ mf = do
     draw $ testDraw BL_RIGHT  `at` (P2 225 0)
     
 
-testDraw :: (Floating u, FromPtSize u) => RectPosition -> LocGraphic u
-testDraw rpos = filledDisk 2 `oplus` ans
+testDraw :: (Real u, Floating u, FromPtSize u) => RectPosition -> LocGraphic u
+testDraw rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
     ans = singleLine rpos "Qwerty" `rot`  (pi * 0.25)
+
+
+-- Foe Wumpus-Basic?
+
+ignoreAns :: Image u a -> Graphic u
+ignoreAns = fmap (replaceL uNil)
+
+ignoreLocAns :: LocImage u a -> LocGraphic u
+ignoreLocAns = fmap (replaceL uNil)
+
+ignoreLocThetaAns :: LocThetaImage u a -> LocThetaGraphic u
+ignoreLocThetaAns = fmap (replaceL uNil)

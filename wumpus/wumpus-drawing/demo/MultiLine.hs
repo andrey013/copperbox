@@ -60,7 +60,7 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
+mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
 mf = do
     draw $ testDrawL NN `at` (P2   0 520)
     draw $ testDrawL SS `at` (P2  75 520)
@@ -102,24 +102,35 @@ mf = do
     draw $ testDrawR BL_RIGHT  `at` (P2 225 0)
     
 
-testDrawL :: (Floating u, Ord u, FromPtSize u) 
+testDrawL :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawL rpos = filledDisk 2 `oplus` ans
+testDrawL rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
     ans = multiLineLeft rpos "Is\nthis\nokay&question;" `rot` 0 
 
-testDrawC :: (Floating u, Ord u, FromPtSize u) 
+testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawC rpos = filledDisk 2 `oplus` ans
+testDrawC rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
     ans = multiLineCenter rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
-testDrawR :: (Floating u, Ord u, FromPtSize u) 
+testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawR rpos = filledDisk 2 `oplus` ans
+testDrawR rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
   where
     ans = multiLineRight rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
 
+-- Foe Wumpus-Basic?
+
+ignoreAns :: Image u a -> Graphic u
+ignoreAns = fmap (replaceL uNil)
+
+ignoreLocAns :: LocImage u a -> LocGraphic u
+ignoreLocAns = fmap (replaceL uNil)
+
+
+ignoreLocThetaAns :: LocThetaImage u a -> LocThetaGraphic u
+ignoreLocThetaAns = fmap (replaceL uNil)

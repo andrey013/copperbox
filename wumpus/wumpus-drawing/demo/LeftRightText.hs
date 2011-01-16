@@ -86,7 +86,7 @@ text_pic = drawTracing $ do
     drawi_ $ (fn rcenter_text)    `at` P2 200 (-75)
     drawi_ $ (fn rright_text)     `at` P2 400 (-75)
 
-    draw $ atRot (multiLineRight NN "one\ntwo\nthree") (P2 600 0) 0
+    drawi_ $ atRot (multiLineRight NN "one\ntwo\nthree") (P2 600 0) 0
  
     draw $ redPlus            `at` P2   0 400
     draw $ redPlus            `at` P2 200 400
@@ -110,33 +110,43 @@ text_pic = drawTracing $ do
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
 
-
+-- single line
+--
 newblc :: BoundedLocGraphic Double
 newblc = 
     localize (strokeColour dark_slate_gray) $ 
         baseCenterLine "new baseline center"
 
+-- single line
+--
 newbll :: BoundedLocGraphic Double
 newbll = 
     localize (strokeColour dark_slate_gray) $ 
         baseLeftLine "new baseline left"
 
+-- single line
+--
 newblr :: BoundedLocGraphic Double
 newblr = 
     localize (strokeColour dark_slate_gray) $ 
         baseRightLine "new baseline right"
 
-
+-- single line
+--
 rnewblc :: BoundedLocGraphic Double
 rnewblc = 
     localize (strokeColour dark_slate_gray) $ 
         rbaseCenterLine "baseline center" `rot` (0.25*pi)
 
+-- single line
+--
 rnewbll :: BoundedLocGraphic Double
 rnewbll = 
     localize (strokeColour dark_slate_gray) $ 
         rbaseLeftLine "baseline left" `rot` (0.25*pi)
 
+-- single line
+--
 rnewblr :: BoundedLocGraphic Double
 rnewblr = 
     localize (strokeColour dark_slate_gray) $ 
