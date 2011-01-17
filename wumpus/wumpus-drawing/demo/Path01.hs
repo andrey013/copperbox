@@ -47,7 +47,7 @@ curve2 =  localize (strokeColour red) (openStroke $ toPrimPath path_one)
 
 curve3 :: Graphic Double
 curve3 = localize (strokeColour blue) 
-                  (openStroke $ toPrimPath $ shortenBoth 10 path1)
+                  (openStroke $ toPrimPath $ shortenPath 10 10 path1)
 
 
 path1 :: Path Double

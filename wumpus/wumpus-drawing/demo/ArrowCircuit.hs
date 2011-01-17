@@ -103,14 +103,14 @@ atext :: ( CenterAnchor t, DUnit t ~ u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
-   drawi_ $ ctrCenterLine ss `at` pt
+   drawi_ $ textAlignCenter ss `at` pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ MonUnit m )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (fontAttr times_italic 14) $ 
-    drawi_ $ ctrCenterLine ss `at` pt
+    drawi_ $ textAlignCenter ss `at` pt
 
 
 rrectangle :: (Real u, Floating u, FromPtSize u) 

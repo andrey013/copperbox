@@ -153,6 +153,6 @@ lblBold' ss = localize (fontFace helvetica_bold) $ textline ss
 
 
 lblBold :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontFace helvetica_bold) $ post $ ctrCenterLine ss
-  where
-    post = fmap (replaceL uNil)
+lblBold ss = localize (fontFace helvetica_bold) $ 
+                ignoreAns $ textAlignCenter ss
+

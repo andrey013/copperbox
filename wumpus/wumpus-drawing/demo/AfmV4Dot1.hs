@@ -64,30 +64,30 @@ redPlus = localize (strokeColour red) markPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (fontFace times_roman . strokeColour dark_slate_gray) $ 
-             baseLeftLine "Times-Roman"
+             singleLine BL_LEFT "Times-Roman" `rot` 0
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (strokeColour dark_slate_gray) $ ctrCenterLine "Center-center..."
+    localize (strokeColour dark_slate_gray) $ textAlignCenter "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignCenter ""
+    localize (strokeColour dark_slate_gray) $ textAlignCenter ""
 
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignLeft dummy_text
+    localize (strokeColour dark_slate_gray) $ textAlignLeft dummy_text
 
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignRight dummy_text
+    localize (strokeColour dark_slate_gray) $ textAlignRight dummy_text
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (strokeColour dark_slate_gray) $ multiAlignCenter dummy_text
+    localize (strokeColour dark_slate_gray) $ textAlignCenter dummy_text
 
 
 dummy_text :: String 
