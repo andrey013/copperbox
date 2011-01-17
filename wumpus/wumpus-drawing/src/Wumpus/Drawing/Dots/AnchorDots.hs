@@ -217,7 +217,9 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, FromPtSize u) => String -> DotLocImage u 
-dotText ss = fmap (bimapL bboxRectAnchor) (ctrCenterLine ss)
+dotText ss = fmap (bimapL bboxRectAnchor) (textAlignCenter ss)
+
+-- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 
 
 dotHLine :: (Floating u, FromPtSize u) => DotLocImage u

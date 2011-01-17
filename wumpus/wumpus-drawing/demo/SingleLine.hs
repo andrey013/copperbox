@@ -75,18 +75,9 @@ mf = do
     
 
 testDraw :: (Real u, Floating u, FromPtSize u) => RectPosition -> LocGraphic u
-testDraw rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
+testDraw rpos = filledDisk 2 `oplus` (ignoreAns ans)
   where
     ans = singleLine rpos "Qwerty" `rot`  (pi * 0.25)
 
 
--- Foe Wumpus-Basic?
 
-ignoreAns :: Image u a -> Graphic u
-ignoreAns = fmap (replaceL uNil)
-
-ignoreLocAns :: LocImage u a -> LocGraphic u
-ignoreLocAns = fmap (replaceL uNil)
-
-ignoreLocThetaAns :: LocThetaImage u a -> LocThetaGraphic u
-ignoreLocThetaAns = fmap (replaceL uNil)

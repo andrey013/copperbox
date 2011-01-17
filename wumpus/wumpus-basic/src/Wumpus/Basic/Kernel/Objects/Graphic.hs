@@ -38,6 +38,8 @@ module Wumpus.Basic.Kernel.Objects.Graphic
 
   -- * Functions
   , safeconcat
+  , ignoreAns
+
   , intoImage
   , intoLocImage
   , intoLocThetaImage
@@ -160,6 +162,15 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 safeconcat :: OPlus a => Image u a -> [Image u a] -> Image u a
 safeconcat _   (x:xs) = oconcat x xs
 safeconcat alt []     = alt
+
+
+-- | Ignore the answer produced by an 'Image', a 'LocImage' etc.
+--
+-- Use this function to turn an 'Image' into a 'Graphic', a 
+-- 'LocImage into a 'LocGraphic'.
+--
+ignoreAns :: Functor f => f (a,b) -> f (UNil u, b)
+ignoreAns = fmap (replaceL uNil)
 
 
 -- | Build an Image...

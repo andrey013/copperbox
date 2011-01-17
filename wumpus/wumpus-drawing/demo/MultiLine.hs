@@ -104,33 +104,22 @@ mf = do
 
 testDrawL :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawL rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
+testDrawL rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    ans = multiAlignLeft rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = multiAlignLeft rpos "Is\nthis\nokay&question;" `rot` 0 
 
 testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawC rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
+testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    ans = multiAlignCenter rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = multiAlignCenter rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
 testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
-testDrawR rpos = filledDisk 2 `oplus` (ignoreLocAns ans)
+testDrawR rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    ans = multiAlignRight rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = multiAlignRight rpos "Is\nthis\nokay&question;" `rot` 0 
 
 
 
--- Foe Wumpus-Basic?
-
-ignoreAns :: Image u a -> Graphic u
-ignoreAns = fmap (replaceL uNil)
-
-ignoreLocAns :: LocImage u a -> LocGraphic u
-ignoreLocAns = fmap (replaceL uNil)
-
-
-ignoreLocThetaAns :: LocThetaImage u a -> LocThetaGraphic u
-ignoreLocThetaAns = fmap (replaceL uNil)

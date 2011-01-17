@@ -37,6 +37,9 @@ module Wumpus.Drawing.Text.LRText
   , multiAlignCenter
   , multiAlignRight
 
+  , textAlignCenter
+  , textAlignLeft
+  , textAlignRight
 
   ) where
 
@@ -159,23 +162,48 @@ rotBBox pt theta bb =
 --------------------------------------------------------------------------------
 
 multiAlignLeft :: (Real u, Floating u, Ord u, FromPtSize u) 
-              => RectPosition -> String -> BoundedLocThetaGraphic u
+               => RectPosition -> String -> BoundedLocThetaGraphic u
 multiAlignLeft rpos ss = promoteR2 $ \pt theta -> 
     makeMultiPosGraphic NW nwMultiPos ss >>= \graphic ->
     atRot (setPosition rpos graphic) pt theta
 
 multiAlignCenter :: (Real u, Floating u, Ord u, FromPtSize u) 
-                => RectPosition -> String -> BoundedLocThetaGraphic u
+                 => RectPosition -> String -> BoundedLocThetaGraphic u
 multiAlignCenter rpos ss = promoteR2 $ \pt theta -> 
     makeMultiPosGraphic NN nnMultiPos ss >>= \graphic ->
     atRot (setPosition rpos graphic) pt theta
 
 
 multiAlignRight :: (Real u, Floating u, Ord u, FromPtSize u) 
-               => RectPosition -> String -> BoundedLocThetaGraphic u
+                => RectPosition -> String -> BoundedLocThetaGraphic u
 multiAlignRight rpos ss = promoteR2 $ \pt theta -> 
     makeMultiPosGraphic NE neMultiPos ss >>= \graphic ->
     atRot (setPosition rpos graphic) pt theta
+
+
+-- | Simpler version of 'multiAlignLeft' - always positioned at
+-- center, always horizontal (not rotated).
+--
+textAlignLeft :: (Real u, Floating u, Ord u, FromPtSize u) 
+                => String -> BoundedLocGraphic u
+textAlignLeft ss = multiAlignLeft CENTER ss `rot` 0
+
+
+-- | Simpler version of 'multiAlignCenter' - always positioned at
+-- center, always horizontal (not rotated).
+--
+textAlignCenter :: (Real u, Floating u, Ord u, FromPtSize u) 
+                => String -> BoundedLocGraphic u
+textAlignCenter ss = multiAlignCenter CENTER ss `rot` 0
+
+
+
+-- | Simpler version of 'multiAlignLeft' - always positioned at
+-- center, always horizontal (not rotated).
+--
+textAlignRight :: (Real u, Floating u, Ord u, FromPtSize u) 
+                => String -> BoundedLocGraphic u
+textAlignRight ss = multiAlignRight CENTER ss `rot` 0
 
 
 
