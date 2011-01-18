@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.42.0
+version:          0.43.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -47,6 +47,11 @@ description:
   .  
   .
   Changelog:
+  .
+  v0.42.0 to v0.43.0:
+  .
+  * Changed internals of the @EscapedText@ type so it supports 
+    efficient concatenation, and now has a Monoid instance.
   . 
   v0.41.0 to v0.42.0:
   .

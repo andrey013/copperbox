@@ -32,9 +32,16 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  * Added PosGraphic object - this is a rectangle object that can 
+  * Added @PosIamge@ object - this is a rectangle object that can 
     be drawn from any of its corners (not just center or 
     baseline-left). 
+  .
+  * Added @Displacement@ module. This defines the @PointDisplace@
+    type and provides a library of @PointDisplace@ functions.
+    Note - some of the new functions have taken names previously 
+    used for anchor projection functions (@northwards@, 
+    @southwards@, etc.), anchor projections are now build with the 
+    function @projectAnchor@.
   .
   * Added the property @descender@ to the font metrics.
   .

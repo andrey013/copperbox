@@ -79,10 +79,11 @@ module Wumpus.Core.Text.Base
   ) where
 
 import Wumpus.Core.Utils.FormatCombinators
+import Wumpus.Core.Utils.HList
 
 import Data.Char
 import qualified Data.IntMap as IntMap
-
+import Data.Monoid
 
 -- | Internal string representation for Wumpus-Core.
 -- 
@@ -90,8 +91,8 @@ import qualified Data.IntMap as IntMap
 -- may be either a regular character, an integer representing a 
 -- Unicode code-point or a PostScript glyph name.
 -- 
-newtype EscapedText = EscapedText { getEscapedText :: [EscapedChar] }
-  deriving (Eq,Show)
+newtype EscapedText = EscapedText { getEscapedText :: H EscapedChar }
+
 
 
 
@@ -115,8 +116,18 @@ type EncodingVector = IntMap.IntMap String
 
 --------------------------------------------------------------------------------
 
+escapedTextList :: EscapedText -> [EscapedChar]
+escapedTextList = toListH . getEscapedText
+
+instance Eq EscapedText where
+  (==) a b = escapedTextList a == escapedTextList b
+
+instance Show EscapedText where
+  show = show . escapedTextList
+  
+
 instance Format EscapedText where
-  format = hcat . map format . getEscapedText
+  format = hcat . map format . escapedTextList
 
 
 instance Format EscapedChar where
@@ -124,6 +135,10 @@ instance Format EscapedChar where
   format (CharEscInt i)  = text "&#" <> int i <> semicolon
   format (CharEscName s) = text "&" <> text s <> semicolon
 
+
+instance Monoid EscapedText where
+  mempty        = EscapedText emptyH
+  a `mappend` b = EscapedText $ getEscapedText a `appendH` getEscapedText b
 
 --------------------------------------------------------------------------------
 
@@ -156,12 +171,12 @@ escapeString = EscapedText . lexer
 -- | Build an 'EscapedText' from a single 'EscChar'.
 --
 wrapEscChar :: EscapedChar -> EscapedText
-wrapEscChar ec = EscapedText [ec]
+wrapEscChar ec = EscapedText $ wrapH ec
 
 -- | /Destructor/ for 'EscapedText'.
 --
 destrEscapedText :: ([EscapedChar] -> a) -> EscapedText -> a
-destrEscapedText f = f . getEscapedText
+destrEscapedText f = f . escapedTextList
 
 
 -- | Get the character count of an 'EscapedText' string.
@@ -178,15 +193,15 @@ textLength = destrEscapedText length
 --
 
  
-lexer :: String -> [EscapedChar]
-lexer []            = []
+lexer :: String -> H EscapedChar
+lexer []            = emptyH
 lexer ('&':'#':cs)  = escNumStart cs
 lexer ('&':cs)      = escName cs
-lexer (c:cs)        = CharLiteral c : lexer cs
+lexer (c:cs)        = CharLiteral c `consH` lexer cs
 
 -- Input is malformed if this reaches the @rest@ case.
 -- 
-escNumStart :: String -> [EscapedChar]
+escNumStart :: String -> H EscapedChar
 escNumStart ('0':'o':cs)           = escOct cs
 escNumStart ('0':'O':cs)           = escOct cs
 escNumStart ('0':'x':cs)           = escHex cs
@@ -194,32 +209,32 @@ escNumStart ('0':'X':cs)           = escHex cs
 escNumStart (c:cs) | isDigit c     = escDec (digitToInt c) cs
 escNumStart rest                   = chompToSemi rest      
 
-escName :: String -> [EscapedChar]
-escName (c:cs)                     = let (ss,rest) = span isAlphaNum cs 
-                                     in specialEscape (c:ss) : chompToSemi rest
-escName []                         = [] 
+escName :: String -> H EscapedChar
+escName (c:cs) = let (ss,rest) = span isAlphaNum cs 
+                 in specialEscape (c:ss) `consH` chompToSemi rest
+escName []     = emptyH
 
 
 -- | One digit consumed already...
 --
-escDec :: Int -> String -> [EscapedChar]
+escDec :: Int -> String -> H EscapedChar
 escDec n (c:cs) | isDigit c = escDec (n*10 + digitToInt c) cs
-escDec n cs     | n > 0     = CharEscInt n : chompToSemi cs
+escDec n cs     | n > 0     = CharEscInt n `consH` chompToSemi cs
                 | otherwise = chompToSemi cs
 
-escHex :: String -> [EscapedChar]
+escHex :: String -> H EscapedChar
 escHex = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*16 + digitToInt c) cs
-    step n cs     | n > 0        = CharEscInt n : chompToSemi cs
+    step n cs     | n > 0        = CharEscInt n `consH` chompToSemi cs
                   | otherwise    = chompToSemi cs 
 
 
-escOct :: String -> [EscapedChar]
+escOct :: String -> H EscapedChar
 escOct = step 0
   where
     step n (c:cs) | isHexDigit c = step (n*8 + digitToInt c) cs
-    step n cs     | n > 0        = CharEscInt n : chompToSemi cs
+    step n cs     | n > 0        = CharEscInt n `consH` chompToSemi cs
                   | otherwise    = chompToSemi cs 
 
 
@@ -227,10 +242,10 @@ escOct = step 0
 -- The last two conditions both indicate ill-formed input, but it
 -- is /best/ if the lexer does not throw errors.
 -- 
-chompToSemi :: String -> [EscapedChar]
+chompToSemi :: String -> H EscapedChar
 chompToSemi (';':cs) = lexer cs
 chompToSemi (_:cs)   = chompToSemi cs           
-chompToSemi []       = []
+chompToSemi []       = emptyH
 
 
 -- | Special processing for @amp@ because it is so common.
