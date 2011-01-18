@@ -62,7 +62,7 @@ import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 
-import Wumpus.Basic.Kernel hiding ( RectPosition(..) )  -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -83,8 +83,6 @@ data DotAnchor u = forall s.
                               , radial_anchor   :: Radian   -> Point2 u
                               , cardinal_anchor :: Cardinal -> Point2 u }
 
-data Cardinal = NN | NE | EE | SE | SS | SW | WW | NW
-  deriving (Eq,Show) 
 
 type instance DUnit (DotAnchor u) = u
 
@@ -95,53 +93,53 @@ instance RadialAnchor (DotAnchor u) where
    radialAnchor theta (DotAnchor _ ra _) = ra theta
 
 instance CardinalAnchor (DotAnchor u) where
-   north (DotAnchor _ _ c1) = c1 NN
-   south (DotAnchor _ _ c1) = c1 SS
-   east  (DotAnchor _ _ c1) = c1 EE
-   west  (DotAnchor _ _ c1) = c1 WW
+   north (DotAnchor _ _ c1) = c1 NORTH
+   south (DotAnchor _ _ c1) = c1 SOUTH
+   east  (DotAnchor _ _ c1) = c1 EAST
+   west  (DotAnchor _ _ c1) = c1 WEST
 
 
 
 instance CardinalAnchor2 (DotAnchor u) where
-   northeast (DotAnchor _ _ c1) = c1 NE
-   southeast (DotAnchor _ _ c1) = c1 SE
-   southwest (DotAnchor _ _ c1) = c1 SW
-   northwest (DotAnchor _ _ c1) = c1 NW
+   northeast (DotAnchor _ _ c1) = c1 NORTH_EAST
+   southeast (DotAnchor _ _ c1) = c1 SOUTH_EAST
+   southwest (DotAnchor _ _ c1) = c1 SOUTH_WEST
+   northwest (DotAnchor _ _ c1) = c1 NORTH_WEST
 
 
 radialCardinal :: Floating u => u -> Point2 u -> Cardinal -> Point2 u
-radialCardinal rad ctr NN = ctr .+^ (avec (pi/2)     rad) 
-radialCardinal rad ctr NE = ctr .+^ (avec (pi/4)     rad) 
-radialCardinal rad ctr EE = ctr .+^ (avec  0         rad) 
-radialCardinal rad ctr SE = ctr .+^ (avec (7/4 * pi) rad) 
-radialCardinal rad ctr SS = ctr .+^ (avec (6/4 * pi) rad) 
-radialCardinal rad ctr SW = ctr .+^ (avec (5/4 * pi) rad) 
-radialCardinal rad ctr WW = ctr .+^ (avec  pi        rad) 
-radialCardinal rad ctr NW = ctr .+^ (avec (3/4 * pi) rad) 
+radialCardinal rad ctr NORTH        = ctr .+^ (avec (pi/2)     rad) 
+radialCardinal rad ctr NORTH_EAST   = ctr .+^ (avec (pi/4)     rad) 
+radialCardinal rad ctr EAST         = ctr .+^ (avec  0         rad) 
+radialCardinal rad ctr SOUTH_EAST   = ctr .+^ (avec (7/4 * pi) rad) 
+radialCardinal rad ctr SOUTH        = ctr .+^ (avec (6/4 * pi) rad) 
+radialCardinal rad ctr SOUTH_WEST   = ctr .+^ (avec (5/4 * pi) rad) 
+radialCardinal rad ctr WEST         = ctr .+^ (avec  pi        rad) 
+radialCardinal rad ctr NORTH_WEST   = ctr .+^ (avec (3/4 * pi) rad) 
 
 
 -- Rectangle cardinal points are at \"middles and corners\".
 --
 
 rectCardinal :: Floating u => u ->  u -> Point2 u -> Cardinal -> Point2 u
-rectCardinal _  hh ctr NN = ctr .+^ (vvec hh) 
-rectCardinal hw hh ctr NE = ctr .+^ (vec  hw     hh) 
-rectCardinal hw _  ctr EE = ctr .+^ (hvec hw) 
-rectCardinal hw hh ctr SE = ctr .+^ (vec  hw    (-hh)) 
-rectCardinal _  hh ctr SS = ctr .+^ (vvec (-hh)) 
-rectCardinal hw hh ctr SW = ctr .+^ (vec  (-hw) (-hh) )
-rectCardinal hw _  ctr WW = ctr .+^ (hvec (-hw)) 
-rectCardinal hw hh ctr NW = ctr .+^ (vec  (-hw)  hh) 
+rectCardinal _  hh ctr NORTH        = ctr .+^ (vvec hh) 
+rectCardinal hw hh ctr NORTH_EAST   = ctr .+^ (vec  hw     hh) 
+rectCardinal hw _  ctr EAST         = ctr .+^ (hvec hw) 
+rectCardinal hw hh ctr SOUTH_EAST   = ctr .+^ (vec  hw    (-hh)) 
+rectCardinal _  hh ctr SOUTH        = ctr .+^ (vvec (-hh)) 
+rectCardinal hw hh ctr SOUTH_WEST   = ctr .+^ (vec  (-hw) (-hh) )
+rectCardinal hw _  ctr WEST         = ctr .+^ (hvec (-hw)) 
+rectCardinal hw hh ctr NORTH_WEST   = ctr .+^ (vec  (-hw)  hh) 
 
 polyCardinal :: Floating u => (Radian -> Point2 u) -> Cardinal -> Point2 u
-polyCardinal f NN = f (0.5  * pi)
-polyCardinal f NE = f (0.25 * pi) 
-polyCardinal f EE = f 0 
-polyCardinal f SE = f (1.75 * pi) 
-polyCardinal f SS = f (1.5  * pi) 
-polyCardinal f SW = f (1.25 * pi)
-polyCardinal f WW = f pi 
-polyCardinal f NW = f (0.75 * pi) 
+polyCardinal f NORTH                = f (0.5  * pi)
+polyCardinal f NORTH_EAST           = f (0.25 * pi) 
+polyCardinal f EAST                 = f 0 
+polyCardinal f SOUTH_EAST           = f (1.75 * pi) 
+polyCardinal f SOUTH                = f (1.5  * pi) 
+polyCardinal f SOUTH_WEST           = f (1.25 * pi)
+polyCardinal f WEST                 = f pi 
+polyCardinal f NORTH_WEST           = f (0.75 * pi) 
 
 
 

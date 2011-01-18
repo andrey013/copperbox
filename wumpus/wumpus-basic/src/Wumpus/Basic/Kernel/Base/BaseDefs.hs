@@ -35,6 +35,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , HAlign(..)
   , VAlign(..)  
 
+  -- * Cardinal (compass) positions
+  , Cardinal(..)
+
   -- * Advance vector
   , AdvanceVec
   , advanceH
@@ -142,6 +145,15 @@ data HAlign = HTop | HCenter | HBottom
 data VAlign = VLeft | VCenter | VRight
   deriving (Enum,Eq,Ord,Show)
 
+--------------------------------------------------------------------------------
+
+-- Compass positions
+
+-- | An enumeratied type representing the compass positions.
+--
+data Cardinal = NORTH | NORTH_EAST | EAST | SOUTH_EAST 
+              | SOUTH | SOUTH_WEST | WEST | NORTH_WEST
+   deriving (Enum,Eq,Ord,Show) 
 
 --------------------------------------------------------------------------------
 

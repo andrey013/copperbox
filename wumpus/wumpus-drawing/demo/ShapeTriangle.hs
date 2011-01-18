@@ -14,7 +14,7 @@ import Wumpus.Drawing.Shapes.Triangle
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Basic.Kernel hiding ( northwards, southwards, eastwards, westwards )
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Basic.System.FontLoader.GhostScript
 
@@ -64,43 +64,61 @@ shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
               (strokedShape $ isoscelesTriangle 300 200) `at` (P2 200 150)    
-    draw $ labelPoint northwards "center"   `at` center a1
-    draw $ labelPoint northwards "north"    `at` north a1
-    draw $ labelPoint southwards "south"    `at` south a1
-    draw $ labelPoint eastwards  "east"     `at` east a1
-    draw $ labelPoint westwards  "west"     `at` west a1
+    draw $ label NORTH        "(center)"      `at` center a1
+    draw $ label NORTH        "(north)"       `at` north a1
+    draw $ label SOUTH        "(south)"       `at` south a1
+    draw $ label EAST         "(east)"        `at` east a1
+    draw $ label WEST         "(west)"        `at` west a1
+    draw $ label NORTH_EAST   "(northeast)"   `at` northeast a1
+    draw $ label NORTH_WEST   "(northwest)"   `at` northwest a1
+    draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
+    draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
     return ()    
 
 
 shapeSty :: DrawingContextF
-shapeSty = strokeColour light_slate_gray . ultrathick
+shapeSty = strokeColour light_steel_blue . ultrathick
 
 labelPoint :: (Real u, Floating u, FromPtSize u) 
-           => ParaPointDisplace u -> String -> LocGraphic u
+           => (u -> PointDisplace u) -> String -> LocGraphic u
 labelPoint fn ss = markX `oplus` msg
   where
     msg = ignoreAns $ moveStartPoint (fn 16) $ textAlignCenter ss
 
-    -- note this move does not work well in the horizontal...
 
+labelWest :: (Real u, Floating u, FromPtSize u) 
+           => String -> LocGraphic u
+labelWest ss = markX `oplus` msg
+  where
+    msg = ignoreAns $ moveStartPoint (westwards 10) $ 
+              multiAlignCenter EE ss `rot` 0
 
--- For Wumpus-Basic...
+labelEast :: (Real u, Floating u, FromPtSize u) 
+           => String -> LocGraphic u
+labelEast ss = markX `oplus` msg
+  where
+    msg = ignoreAns $ moveStartPoint (eastwards 10) $ 
+              multiAlignCenter WW ss `rot` 0
 
-type ParaPointDisplace u = u -> PointDisplace u
+              
 
-northwards :: Num u => u -> PointDisplace u
-northwards d = displaceV d
+label :: (Real u, Floating u, FromPtSize u) 
+           => Cardinal -> String -> LocGraphic u
+label cpos ss = markX `oplus` msg
+  where
+    (rpos,fn)     = go cpos
+    msg           = ignoreAns $ moveStartPoint (fn 10) $ 
+                       multiAlignCenter rpos ss `rot` 0
 
-
-southwards :: Num u => u -> PointDisplace u
-southwards d = displaceV (negate d)
-
-eastwards :: Num u => u -> PointDisplace u
-eastwards d = displaceH d
-
-westwards :: Num u => u -> PointDisplace u
-westwards d = displaceH (negate d)
-
+    go NORTH      = (SS, northwards)
+    go NORTH_EAST = (SW, northeastwards)
+    go EAST       = (WW, eastwards) 
+    go SOUTH_EAST = (NW, southeastwards)
+    go SOUTH      = (NN, southwards)
+    go SOUTH_WEST = (NE, southwestwards)
+    go WEST       = (EE, westwards)
+    go NORTH_WEST = (SE, northwestwards)
+  
 
 -- Note - it would be nice to have an API like PPrint for 
 -- constructing escaped text. 

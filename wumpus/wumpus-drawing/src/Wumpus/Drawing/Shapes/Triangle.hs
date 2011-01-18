@@ -26,7 +26,7 @@ module Wumpus.Drawing.Shapes.Triangle
 
   ) where
 
--- import Wumpus.Drawing.Geometry.Intersection
+import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
@@ -35,8 +35,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space 
-import Data.VectorSpace
 
 import Control.Applicative
 
@@ -125,15 +123,15 @@ findWest :: Fractional u => u -> u -> Radian -> Point2 u
 findWest hbw hm ang = let (P2 xdist 0) = findEast hbw hm ang in P2 (-xdist) 0 
 
 
-{-
-instance (Real u, Floating u, Fractional u) => CardinalAnchor2 (IsoscelesTriangle u) where
-  northeast x = midpoint (north x) (east x)
-  southeast x = midpoint (south x) (east x)
-  southwest x = midpoint (south x) (west x)
-  northwest x = midpoint (north x) (west x)
--}
 
-{-
+instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
+  northeast = triangleIntersect (0.25*pi)
+  southeast = triangleIntersect (1.75*pi)
+  southwest = triangleIntersect (1.25*pi)
+  northwest = triangleIntersect (0.75*pi)
+
+
+
 instance (Real u, Floating u) => RadialAnchor (IsoscelesTriangle u) where
    radialAnchor = triangleIntersect
 
@@ -142,17 +140,13 @@ triangleIntersect :: (Real u, Floating u)
                   => Radian -> IsoscelesTriangle u -> Point2 u
 triangleIntersect theta (IsoscelesTriangle { tri_ctm        = ctm
                                            , tri_base_width = bw
-                                           , tri_height     = h }) = 
-    let ps  = trianglePoints bw h ctm 
-        ctr = ctmCenter ctm
-    in maybe ctr id $ findIntersect ctr theta $ polygonLines ps
+                                           , tri_syn_props  = syn }) = 
+    maybe ctr id $ findIntersect ctr theta $ polygonLines ps
+  where 
+    ps  = trianglePoints bw (tri_hminor syn) (tri_hmajor syn) ctm 
+    ctr = ctmCenter ctm
     
-
-
-midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-midpoint p1 p2 = let v = 0.5 *^ pvec p1 p2 in p1 .+^ v
-
--}
+    
 
 -- | 'isoscelesTriangle'  : @ base_width * height -> Triangle @
 --
@@ -213,4 +207,14 @@ trianglePath bw hminor hmajor (P2 x y) = [br, apex , bl]
     br        = P2 (x + half_base ) (y - hminor)
     apex      = P2 x (y + hmajor)
     bl        = P2 (x - half_base ) (y - hminor)
+
+
+trianglePoints :: (Real u, Floating u) 
+               => u -> u -> u -> ShapeCTM u -> [Point2 u]
+trianglePoints bw hminor hmajor ctm = map (projectPoint `flip` ctm) [ br, apex, bl ]
+  where
+    half_base = 0.5 * bw
+    br        = P2 half_base    (-hminor)
+    apex      = P2 0 hmajor
+    bl        = P2 (-half_base) (-hminor)
 
