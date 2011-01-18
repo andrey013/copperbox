@@ -29,14 +29,7 @@ module Wumpus.Basic.Kernel.Base.Anchors
   , RadialAnchor(..)
 
   -- * Extended anchor points
-  , northwards
-  , southwards
-  , eastwards
-  , westwards
-  , northeastwards
-  , southeastwards
-  , southwestwards
-  , northwestwards
+  , projectAnchor
 
   , radialConnectorPoints
 
@@ -94,106 +87,35 @@ class RadialAnchor t where
 
 
 
-extendPtDist :: (Real u, Floating u) => u -> Point2 u -> Point2 u -> Point2 u
-extendPtDist d p1 p2 = let v   = pvec p1 p2
-                           ang = vdirection v
-                           len = vlength v
-                       in p1 .+^ avec ang (len+d)
-
-
--- | 'northwards' : @ dist * object -> Point @
+-- | 'projectAnchor' : @ extract_func * dist * object -> Point @
 -- 
--- Project the anchor along a line from the center that goes 
--- through the north anchor. 
---
--- If the distance is zero the answer with be the north anchor.
---
--- If the distance is negative the answer within the object before 
--- the north anchor.
---
--- If the distance is positive the anchor outside the object.
---
-northwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor t
-              , u ~ DUnit t ) 
-           => u -> t -> Point2 u
-northwards u a = extendPtDist u (center a) (north a)
-
-
--- | 'southwards' : @ dist * object -> Point @
+-- Derive a anchor by projecting a line from the center of an 
+-- object through the intermediate anchor (produced by the 
+-- extraction function). The final answer point is located along
+-- the projected line at the supplied distance @dist@.
 -- 
--- Variant of the function 'northwards', but projecting the line 
--- southwards from the center of the object.
+-- E.g. take the north of a rectangle and project it 10 units 
+-- further on:
+--  
+-- > projectAnchor north 10 my_rect
 --
-southwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor t
-              , u ~ DUnit t ) 
-           => u -> t -> Point2 u
-southwards u a = extendPtDist u (center a) (south a)
-
-
--- | 'eastwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- eastwards from the center of the object.
+-- If the distance is zero the answer with be whatever point the 
+-- the extraction function produces.
 --
-eastwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor t
-             , u ~ DUnit t ) 
-          => u -> t -> Point2 u
-eastwards u a = extendPtDist u (center a) (east a)
-
-
--- | 'westwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- westwards from the center of the object.
+-- If the distance is negative the answer will be along the 
+-- projection line, between the center and the intermediate anchor.
 --
-westwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor t
-             , u ~ DUnit t ) 
-          => u -> t -> Point2 u
-westwards u a = extendPtDist u (center a) (west a)
-
-
--- | 'northeastwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- northeastwards from the center of the object.
+-- If the distance is positive the anchor will be extend outwards 
+-- from the intermediate anchor.
 --
-northeastwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor2 t
-                  , u ~ DUnit t ) 
-               => u -> t -> Point2 u
-northeastwards u a = extendPtDist u (center a) (northeast a)
-
-
--- | 'southeastwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- southeastwards from the center of the object.
---
-southeastwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor2 t
-                  , u ~ DUnit t ) 
-               => u -> t -> Point2 u
-southeastwards u a = extendPtDist u (center a) (southeast a)
-
-
--- | 'southwestwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- southwestwards from the center of the object.
---
-southwestwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor2 t
-                  , u ~ DUnit t ) 
-               => u -> t -> Point2 u
-southwestwards u a = extendPtDist u (center a) (southwest a)
-
-
--- | 'northwestwards' : @ dist * object -> Point @
--- 
--- Variant of the function 'northwards', but projecting the line 
--- northwestwards from the center of the object.
---
-northwestwards :: ( Real u, Floating u, CenterAnchor t, CardinalAnchor2 t
-                  , u ~ DUnit t ) 
-               => u -> t -> Point2 u
-northwestwards u a = extendPtDist u (center a) (northwest a)
+projectAnchor :: (Real u, Floating u, u ~ DUnit t, CenterAnchor t) 
+              => (t -> Point2 u) -> u -> t -> Point2 u
+projectAnchor f d a = p1 .+^ (avec ang d)
+  where
+    p1  = f a
+    v   = pvec (center a) p1
+    ang = vdirection v
+     
 
 
 --------------------------------------------------------------------------------

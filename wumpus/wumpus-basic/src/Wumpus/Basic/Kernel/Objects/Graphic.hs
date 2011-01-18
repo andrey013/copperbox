@@ -39,13 +39,11 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   -- * Functions
   , safeconcat
   , ignoreAns
-
+  , replaceAns
   , intoImage
   , intoLocImage
   , intoLocThetaImage
 
-  , moveStartPoint
-  , moveStartPointTheta
 
   , locPath
   , emptyLocPath
@@ -173,6 +171,13 @@ ignoreAns :: Functor f => f (a,b) -> f (UNil u, b)
 ignoreAns = fmap (replaceL uNil)
 
 
+-- | Replace the answer produced by an 'Image', a 'LocImage' etc.
+--
+replaceAns :: Functor f => z -> f (a,b) -> f (z, b)
+replaceAns = fmap . replaceL
+
+
+
 -- | Build an Image...
 --
 intoImage :: CF a -> Graphic u -> Image u a
@@ -190,18 +195,6 @@ intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
 intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
 
 
--- | Move the start-point of a LocImage with the supplied 
--- displacement function.
---
-moveStartPoint :: PointDisplace u -> LocCF u a -> LocCF u a
-moveStartPoint f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
-
-
--- | Move the start-point of a LocImage with the supplied 
--- displacement function.
---
-moveStartPointTheta :: PointDisplace u -> LocThetaCF u a -> LocThetaCF u a
-moveStartPointTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
 
 --------------------------------------------------------------------------------
 

@@ -40,17 +40,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , advanceH
   , advanceV
 
-  -- * Moving points
-  , PointDisplace
-  , displace
-  , displaceVec
-  , displaceH
-  , displaceV
-
-  , ThetaPointDisplace
-  , displaceParallel
-  , displacePerpendicular
-
 
   -- * Monadic drawing
   , MonUnit
@@ -61,7 +50,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 infixr 6 `oplus`
 
@@ -181,85 +169,6 @@ advanceH (V2 w _)  = w
 --
 advanceV :: AdvanceVec u -> u
 advanceV (V2 _ h)  = h
-
---------------------------------------------------------------------------------
--- Displacing points
-
--- | 'PointDisplace' is a type representing functions 
--- @from Point to Point@.
---
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
---
-type PointDisplace u = Point2 u -> Point2 u
-
--- | 'displace' : @ x -> y -> PointDisplace @
---
--- Build a combinator to move @Points@ by the supplied @x@ and 
--- @y@ distances.
---
-displace :: Num u => u -> u -> PointDisplace u
-displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
-
-
--- | 'displaceV' : @ (V2 x y) -> PointDisplace @
--- 
--- Version of 'displace' where the displacement is supplied as
--- a vector rather than two parameters.
--- 
-displaceVec :: Num u => Vec2 u -> PointDisplace u
-displaceVec (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
-
-
--- | 'displaceH' : @ x -> PointDisplace @
--- 
--- Build a combinator to move @Points@ by horizontally the 
--- supplied @x@ distance.
---
-displaceH :: Num u => u -> PointDisplace u
-displaceH dx (P2 x y) = P2 (x+dx) y
-
--- | 'displaceV' : @ y -> PointDisplace @
--- 
--- Build a combinator to move @Points@ vertically by the supplied 
--- @y@ distance.
---
-displaceV :: Num u => u -> PointDisplace u
-displaceV dy (P2 x y) = P2 x (y+dy)
-
-
--- | 'ThetaPointDisplace' is a type representing functions 
--- @from Radian * Point to Point@.
---
--- It is useful for building arrowheads which are constructed 
--- with an implicit angle representing the direction of the line 
--- at the arrow tip.
---
-type ThetaPointDisplace u = Radian -> PointDisplace u
-
-
-
--- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
--- 
--- Build a combinator to move @Points@ in parallel to the 
--- direction of the implicit angle by the supplied distance 
--- @dist@. 
---
-displaceParallel :: Floating u => u -> ThetaPointDisplace u
-displaceParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
-
-
--- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
--- 
--- Build a combinator to move @Points@ perpendicular to the 
--- direction of the implicit angle by the supplied distance 
--- @dist@. 
---
-displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
-displacePerpendicular d = 
-    \theta pt -> pt .+^ avec (circularModulo $ theta + (0.5*pi)) d
-
 
 
 
