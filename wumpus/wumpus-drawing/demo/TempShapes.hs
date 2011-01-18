@@ -9,6 +9,7 @@ import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
+import Wumpus.Drawing.Shapes.Triangle
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -41,13 +42,16 @@ makeCtx = fontFace courier . metricsContext 14
 shapes_pic :: DCtxPicture
 shapes_pic = drawTracing $ do
     drawi_ $ (borderedShape $ rectangle 60 30) `at` zeroPt
-    drawi_ $ ctrCenterLine "Rect1" `at` zeroPt
+    drawi_ $ textAlignCenter "Rect1" `at` zeroPt
     a0 <- drawi $ (borderedShape $ rectangle 60 30) `at` P2 80 0
     drawi_ $ (borderedShape $ circle 40) `at` P2 160 0
     drawi_ $ (filledShape   $ diamond 10 20) `at` P2 220 0
     a1 <- drawi $ (strokedShape  $ ellipse 20 10) `at` P2 0 80
 --    drawi_ $ coordinateDot $ coordinate (center a1)
     connectRA (north a0) (southeast a1)
+    a2  <- drawi $ (strokedShape $ isoscelesTriangle 40 20) `at` P2 100 80
+    
+    return ()    
 
 
 connectRA :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m

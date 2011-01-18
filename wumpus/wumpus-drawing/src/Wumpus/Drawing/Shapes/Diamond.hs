@@ -12,7 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Simple shapes - rectangle, circle diamond, ellipse.
+-- Diamond (rhombus).
 -- 
 --------------------------------------------------------------------------------
 
@@ -79,8 +79,8 @@ instance Num u => Translate (Diamond u) where
 
 
 runDiamond :: (u -> u -> ShapeCTM u  -> a) -> Diamond u -> a
-runDiamond fm (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
-   fm hw hh ctm
+runDiamond fn (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
+   fn hw hh ctm
 
 
 instance (Real u, Floating u) => CenterAnchor (Diamond u) where

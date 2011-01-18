@@ -41,16 +41,3 @@ trace1 = do
    
 
 
-
--- TODO expose this from Wumpus-Basic
-bbrectangle :: Fractional u => BoundingBox u -> Graphic u
-bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
-    | llx == urx && lly == ury = emptyLocGraphic `at` p1
-    | otherwise                = 
-        localize drawing_props $ rect1 `oplus` cross
-  where
-    drawing_props = capRound . dashPattern (Dash 0 [(1,2)])
-    rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
-    cross         = straightLineBetween p1 p2 
-                      `oplus` straightLineBetween (P2 llx ury) (P2 urx lly)
-
