@@ -53,6 +53,14 @@ data Parallelogram u = Parallelogram
       , pll_base_width  :: !u
       , pll_height      :: !u
       , pll_base_l_ang  :: Radian
+      , pll_syn_props   :: SyntheticProps u
+      }
+
+
+-- | rect_width is the width of the (greater) enclosing rectangle.
+data SyntheticProps u = SyntheticProps
+      { pll_base_minor  :: u
+      , pll_base_major  :: u
       }
 
 
@@ -88,51 +96,54 @@ instance Num u => Translate (Parallelogram u) where
 -- Anchors
 
 
+-- 'runParallelogram' : @ half_base_width * half_height *ctm -> Ans @
+-- 
+runParallelogram :: Fractional u 
+                 => (u -> u -> ShapeCTM u  -> a) 
+                 -> Parallelogram u -> a
+runParallelogram fn (Parallelogram { pll_ctm        = ctm
+                                   , pll_base_width = bw
+                                   , pll_height     = h   }) =  
+    fn (0.5 * bw) (0.5 * h) ctm
+
+
 
 instance (Real u, Floating u) => CenterAnchor (Parallelogram u) where
   center = ctmCenter . pll_ctm
 
 
-{-
-runDiamond :: (u -> u -> ShapeCTM u  -> a) -> Diamond u -> a
-runDiamond fn (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
-   fn hw hh ctm
+
 
 instance (Real u, Floating u) => CardinalAnchor (Parallelogram u) where
-  north = tzRadialAnchor (0.5*pi)
-  south = \tz -> let hh = 0.5 * tz_height tz
-                 in projectPoint (P2 0 (-hh)) (tz_ctm tz)
-  east  = tzRadialAnchor 0
-  west  = tzRadialAnchor pi
-
-
+  north = runParallelogram $ \_  hh -> projectPoint $ P2 0 hh
+  south = runParallelogram $ \_  hh -> projectPoint $ P2 0 (-hh)
+  east  = runParallelogram $ \hw _  -> projectPoint $ P2 hw 0
+  west  = runParallelogram $ \hw _  -> projectPoint $ P2 (-hw) 0
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (Parallelogram u) where
-  northeast = tzRadialAnchor (0.25*pi)
-  southeast = tzRadialAnchor (1.75*pi)
-  southwest = tzRadialAnchor (1.25*pi)
-  northwest = tzRadialAnchor (0.75*pi)
+  northeast = pllRadialAnchor (0.25*pi)
+  southeast = pllRadialAnchor (1.75*pi)
+  southwest = pllRadialAnchor (1.25*pi)
+  northwest = pllRadialAnchor (0.75*pi)
 
 
 
 instance (Real u, Floating u) => RadialAnchor (Parallelogram u) where
-   radialAnchor = tzRadialAnchor
+   radialAnchor = pllRadialAnchor
 
 
-tzRadialAnchor :: (Real u, Floating u) 
+pllRadialAnchor :: (Real u, Floating u) 
                   => Radian -> Parallelogram u -> Point2 u
-tzRadialAnchor theta (Parallelogram { tz_ctm        = ctm
-                                , tz_base_width = bw
-                                , tz_height     = h
-                                , tz_base_l_ang = lang
-                                , tz_base_r_ang = rang }) =
+pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
+                                     , pll_height    = h
+                                     , pll_syn_props = syn }) =
     maybe ctr id $ findIntersect ctr theta $ polygonLines ps
   where 
-    ps  = tzPoints bw h lang rang ctm 
+    ps  = pllPoints (pll_base_minor syn) (pll_base_major syn) h ctm
     ctr = ctmCenter ctm
     
--}    
+    
 
 --------------------------------------------------------------------------------
 -- Constructors
@@ -144,7 +155,10 @@ tzRadialAnchor theta (Parallelogram { tz_ctm        = ctm
 parallelogram :: (Real u, Floating u, FromPtSize u) 
                   => u -> u -> Radian -> LocShape u (Parallelogram u)
 parallelogram bw h lang =
-    intoLocShape (mkParallelogram bw h lang) (mkParallelogramPath bw h lang)
+    let props = synthesizeProps bw h lang 
+    in intoLocShape (mkParallelogram bw h lang props) 
+                    (mkParallelogramPath (pll_base_minor props) 
+                                         (pll_base_major props) h)
 
 
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
@@ -161,59 +175,63 @@ zparallelogram bw h = parallelogram bw h ang
 
 
 mkParallelogram :: (Real u, Fractional u) 
-            => u -> u -> Radian -> LocCF u (Parallelogram u)
-mkParallelogram bw h lang = promoteR1 $ \ctr -> 
+                => u -> u -> Radian -> SyntheticProps u 
+                -> LocCF u (Parallelogram u)
+mkParallelogram bw h lang props = promoteR1 $ \ctr -> 
     pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr
                          , pll_base_width   = bw
                          , pll_height       = h
                          , pll_base_l_ang   = lang
+                         , pll_syn_props    = props
                          }
 
+-- Note - expects ang value 0 < ang < 180, though does not check...
+-- 
+synthesizeProps :: Fractional u => u -> u -> Radian -> SyntheticProps u
+synthesizeProps bw h lang 
+    | lang == 0.5*pi = let hw = 0.5 * bw in SyntheticProps hw hw
+    | lang >  0.5*pi = less_ninety
+    | otherwise      = grtr_ninety
+  where
+    less_ninety = let extw            = h / (fromRadian $ tan lang)
+                      half_rect_width = 0.5 * (bw + extw)
+                  in SyntheticProps half_rect_width (half_rect_width - extw)
+
+    grtr_ninety = let extw            = h / (fromRadian $ tan (pi-lang))
+                      half_rect_width = 0.5 * (bw + extw)
+                  in SyntheticProps (half_rect_width - extw) half_rect_width
+
+                       
+
+
+
 mkParallelogramPath :: (Real u, Floating u, FromPtSize u) 
-                    => u -> u -> Radian -> LocCF u (Path u)
-mkParallelogramPath bw h lang = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ pllPath bw h lang ctr
+                    => u -> u -> u -> LocCF u (Path u)
+mkParallelogramPath bw_minor bw_major h = promoteR1 $ \ctr -> 
+    roundCornerShapePath $ pllPath bw_minor bw_major h ctr
 
 
 pllPath :: (Real u, Floating u) 
-       => u -> u -> Radian -> LocCoordPath u
-pllPath _ h lang pt = [ bl, br, tr, tl ]
+       => u -> u -> u -> LocCoordPath u
+pllPath bw_minor bw_major h (P2 x y) = [ bl, br, tr, tl ]
   where
-    tr_vec    = urVec h lang
-    tl_vec    = ulVec h lang
-    bl        = displaceVec (vreverse tr_vec) pt
-    br        = displaceVec (vreverse tl_vec) pt
-    tr        = displaceVec tr_vec pt
-    tl        = displaceVec tl_vec pt
+    hh = 0.5 * h
+    bl = P2 (x - bw_minor) (y - hh)
+    br = P2 (x + bw_major) (y - hh)
+    tl = P2 (x - bw_major) (y + hh)     -- topleft subtracts major
+    tr = P2 (x + bw_minor) (y + hh)     -- topright adds minor
 
 
 pllPoints :: (Real u, Floating u) 
-               => u -> u -> Radian -> ShapeCTM u -> [Point2 u]
-pllPoints _ h lang ctm = map (projectPoint `flip` ctm) [ bl, br, tr, tl ]
+               => u -> u -> u -> ShapeCTM u -> [Point2 u]
+pllPoints bw_minor bw_major h ctm = map (projectPoint `flip` ctm) [ bl, br, tr, tl ]
   where
-    tr_vec    = urVec h lang
-    tl_vec    = ulVec h lang
-    bl        = displaceVec (vreverse tr_vec) zeroPt
-    br        = displaceVec (vreverse tl_vec) zeroPt
-    tr        = displaceVec tr_vec zeroPt
-    tl        = displaceVec tl_vec zeroPt
+    hh = 0.5 * h     
+    bl = P2 (-bw_minor) (-hh) 
+    br = P2   bw_major  (-hh)
+    tl = P2 (-bw_major) hh
+    tr = P2   bw_minor  hh
 
 
 
-
-
-urVec :: Floating u => u -> Radian -> Vec2 u
-urVec h lang = avec half_ang dist
-  where
-    hh          = 0.5 * h
-    half_ang    = 0.5 * lang
-    dist        = hh / (fromRadian $ sin half_ang)
-
-ulVec :: Floating u => u -> Radian -> Vec2 u
-ulVec h lang = avec (theta + 0.5*pi) dist
-  where
-    hh          = 0.5 * h
-    rang        = pi - lang
-    theta       = (0.5*pi) - (0.5*rang)    
-    dist        = hh / (fromRadian $ cos theta)
 

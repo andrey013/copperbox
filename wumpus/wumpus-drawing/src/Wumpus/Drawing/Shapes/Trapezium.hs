@@ -149,18 +149,6 @@ ztrapezium bw h = trapezium bw h ang ang
   where
     ang = d2r (60::Double)
 
-{-
--- Note - we can draw a trapezium with this code - **but** it has 
--- a very bad notion of center...
-
-parallelogram :: (Real u, Floating u, FromPtSize u) 
-              => u -> u -> Radian -> LocShape u (Trapezium u)
-parallelogram bw h lang = trapezium bw h lang (pi - lang) 
-
-zparallelogram :: (Real u, Floating u, FromPtSize u) 
-              => u -> u -> LocShape u (Trapezium u)
-zparallelogram bw h = trapezium bw h ((1/3) * pi) ((2/3) * pi)
--}
 
 --------------------------------------------------------------------------------
 

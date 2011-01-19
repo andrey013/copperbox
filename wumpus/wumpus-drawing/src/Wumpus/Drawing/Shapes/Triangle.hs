@@ -92,7 +92,7 @@ instance Num u => Translate (IsoscelesTriangle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
--- runtriangle' : @ half_base_width * hminor * hmajor * base_ang *ctm -> Ans @
+-- 'runtriangle' : @ half_base_width * hminor * hmajor * base_ang *ctm -> Ans @
 -- 
 runTriangle :: Fractional u 
             => (u -> u -> u -> Radian -> ShapeCTM u  -> a) 

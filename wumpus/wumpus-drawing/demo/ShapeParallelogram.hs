@@ -10,7 +10,6 @@ import FontLoaderUtils
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Shapes.Parallelogram
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -63,9 +62,8 @@ makeCtx = fontFace courier . metricsContext 16
 shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-              (strokedShape $ zparallelogram 300 150) `at` (P2 200 150)
+              (strokedShape $ zparallelogram 200 180) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1
-{-
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
     draw $ label EAST         "(east)"        `at` east a1
@@ -75,7 +73,6 @@ shape_pic = drawTracing $ do
     draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
     draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
     draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
--}
     return ()    
   where
     deg10 = d2r (10::Double)

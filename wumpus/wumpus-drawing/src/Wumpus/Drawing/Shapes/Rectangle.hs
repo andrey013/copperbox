@@ -85,7 +85,7 @@ runRectangle fn (Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }) =
    fn hw hh ctm
 
 instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
-  center = runRectangle (\ _ _ -> ctmCenter)
+  center = ctmCenter . rect_ctm
 
 instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
   north = runRectangle $ \_  hh -> projectPoint $ P2 0 hh
