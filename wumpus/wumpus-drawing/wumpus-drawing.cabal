@@ -79,6 +79,8 @@ extra-source-files:
   demo/PetriNet.hs,
   demo/PictureCompo.hs,
   demo/SingleLine.hs,
+  demo/ShapeTrapezium.hs,
+  demo/ShapeTriangle.hs,
   demo/Symbols.hs,
   demo/TableChains.hs
 
@@ -116,6 +118,8 @@ library
     Wumpus.Drawing.Shapes.Diamond,
     Wumpus.Drawing.Shapes.Ellipse,
     Wumpus.Drawing.Shapes.Rectangle,
+    Wumpus.Drawing.Shapes.Trapezium,
+    Wumpus.Drawing.Shapes.Triangle,
     Wumpus.Drawing.Text.LRText,
     Wumpus.Drawing.Text.SafeFonts,
     Wumpus.Drawing.Turtle.TurtleClass,

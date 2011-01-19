@@ -11,6 +11,9 @@
 -- Portability :  GHC
 --
 -- Shim import module for Paths.
+--
+-- Note MonadicConstruction is not exported, this module is 
+-- somewhat out-of-date and needs a re-think.
 -- 
 --------------------------------------------------------------------------------
 
@@ -20,12 +23,10 @@ module Wumpus.Drawing.Paths
     module Wumpus.Drawing.Paths.Base
   , module Wumpus.Drawing.Paths.Connectors
   , module Wumpus.Drawing.Paths.ControlPoints
-  , module Wumpus.Drawing.Paths.MonadicConstruction
 
   ) where
 
 import Wumpus.Drawing.Paths.Base
 import Wumpus.Drawing.Paths.Connectors
 import Wumpus.Drawing.Paths.ControlPoints
-import Wumpus.Drawing.Paths.MonadicConstruction
 

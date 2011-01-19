@@ -2,7 +2,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module ShapeTriangle where
+module ShapeTrapezium where
 
 
 import FontLoaderUtils
@@ -40,8 +40,8 @@ makeGSPicture font_dir = do
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
-    writeEPS "./out/shapes/triangle01.eps" pic1
-    writeSVG "./out/shapes/triangle01.svg" pic1
+    writeEPS "./out/shapes/trapezium01.eps" pic1
+    writeSVG "./out/shapes/trapezium01.svg" pic1
 
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
@@ -49,8 +49,8 @@ makeAfmPicture font_dir = do
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic2 = runCtxPictureU (makeCtx afm_metrics) shape_pic
-    writeEPS "./out/shapes/triangle02.eps" pic2
-    writeSVG "./out/shapes/triangle02.svg" pic2
+    writeEPS "./out/shapes/trapezium02.eps" pic2
+    writeSVG "./out/shapes/trapezium02.svg" pic2
 
 
 
@@ -62,7 +62,7 @@ makeCtx = fontFace courier . metricsContext 16
 shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-              (strokedShape $ isoscelesTriangle 300 200) `at` (P2 200 150)    
+              (strokedShape $ ztrapezium 300 150) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -76,6 +76,10 @@ shape_pic = drawTracing $ do
     return ()    
   where
     deg10 = d2r (10::Double)
+    
+    d120  = d2r (120::Double)
+
+
 
 shapeSty :: DrawingContextF
 shapeSty = strokeColour light_steel_blue . ultrathick

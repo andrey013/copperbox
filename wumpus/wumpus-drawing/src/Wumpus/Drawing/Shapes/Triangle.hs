@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Shapes.Triangle
--- Copyright   :  (c) Stephen Tetley 2010-2011
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -44,7 +44,8 @@ import Control.Applicative
 --------------------------------------------------------------------------------
 -- Diamond
 
-
+-- | An isosceles triangle, oriented /upwards/.
+--
 data IsoscelesTriangle u = IsoscelesTriangle 
       { tri_ctm         :: ShapeCTM u
       , tri_height      :: !u
@@ -125,20 +126,20 @@ findWest hbw hm ang = let (P2 xdist 0) = findEast hbw hm ang in P2 (-xdist) 0
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
-  northeast = triangleIntersect (0.25*pi)
-  southeast = triangleIntersect (1.75*pi)
-  southwest = triangleIntersect (1.25*pi)
-  northwest = triangleIntersect (0.75*pi)
+  northeast = triRadialAnchor (0.25*pi)
+  southeast = triRadialAnchor (1.75*pi)
+  southwest = triRadialAnchor (1.25*pi)
+  northwest = triRadialAnchor (0.75*pi)
 
 
 
 instance (Real u, Floating u) => RadialAnchor (IsoscelesTriangle u) where
-   radialAnchor = triangleIntersect
+   radialAnchor = triRadialAnchor
 
 
-triangleIntersect :: (Real u, Floating u) 
-                  => Radian -> IsoscelesTriangle u -> Point2 u
-triangleIntersect theta (IsoscelesTriangle { tri_ctm        = ctm
+triRadialAnchor :: (Real u, Floating u) 
+                => Radian -> IsoscelesTriangle u -> Point2 u
+triRadialAnchor theta (IsoscelesTriangle { tri_ctm        = ctm
                                            , tri_base_width = bw
                                            , tri_syn_props  = syn }) = 
     maybe ctr id $ findIntersect ctr theta $ polygonLines ps

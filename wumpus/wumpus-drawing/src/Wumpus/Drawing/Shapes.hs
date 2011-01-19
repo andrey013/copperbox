@@ -21,7 +21,8 @@ module Wumpus.Drawing.Shapes
   , module Wumpus.Drawing.Shapes.Diamond
   , module Wumpus.Drawing.Shapes.Ellipse
   , module Wumpus.Drawing.Shapes.Rectangle
-
+  , module Wumpus.Drawing.Shapes.Trapezium
+  , module Wumpus.Drawing.Shapes.Triangle
   ) where
 
 import Wumpus.Drawing.Shapes.Base
@@ -29,3 +30,7 @@ import Wumpus.Drawing.Shapes.Circle
 import Wumpus.Drawing.Shapes.Diamond
 import Wumpus.Drawing.Shapes.Ellipse
 import Wumpus.Drawing.Shapes.Rectangle
+import Wumpus.Drawing.Shapes.Trapezium
+import Wumpus.Drawing.Shapes.Triangle
+
+
