@@ -64,9 +64,33 @@ type DTrapezium = Trapezium Double
 type instance DUnit (Trapezium u) = u
 
 
+--------------------------------------------------------------------------------
+-- Affine trans
+
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Trapezium u -> Trapezium u
+mapCTM f = (\s i -> s { tz_ctm = f i }) <*> tz_ctm
+
+instance Num u => Scale (Trapezium u) where
+  scale sx sy = mapCTM (scale sx sy)
+
+
+instance Rotate (Trapezium u) where
+  rotate ang = mapCTM (rotate ang)
+                  
+
+instance (Real u, Floating u) => RotateAbout (Trapezium u) where
+  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
+
+
+instance Num u => Translate (Trapezium u) where
+  translate dx dy = mapCTM (translate dx dy)
+
+
+--------------------------------------------------------------------------------
+-- Anchors
+
 instance (Real u, Floating u) => CenterAnchor (Trapezium u) where
   center = ctmCenter . tz_ctm
-
 
 
 instance (Real u, Floating u) => CardinalAnchor (Trapezium u) where
@@ -75,8 +99,6 @@ instance (Real u, Floating u) => CardinalAnchor (Trapezium u) where
                  in projectPoint (P2 0 (-hh)) (tz_ctm tz)
   east  = tzRadialAnchor 0
   west  = tzRadialAnchor pi
-
-
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (Trapezium u) where
@@ -104,8 +126,8 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
     ctr = ctmCenter ctm
     
     
-
-
+--------------------------------------------------------------------------------
+-- Constructors
 
 
 -- | 'trapezium'  : @ base_width * height * bottom_left_ang * 

@@ -52,27 +52,30 @@ type DCircle = Circle Double
 type instance DUnit (Circle u) = u
 
 
+--------------------------------------------------------------------------------
+-- Affine trans
 
-
-mapCircleCTM :: (ShapeCTM u -> ShapeCTM u) -> Circle u -> Circle u
-mapCircleCTM f = (\s i -> s { circ_ctm = f i }) <*> circ_ctm
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Circle u -> Circle u
+mapCTM f = (\s i -> s { circ_ctm = f i }) <*> circ_ctm
 
 instance Num u => Scale (Circle u) where
-  scale sx sy = mapCircleCTM (scale sx sy)
+  scale sx sy = mapCTM (scale sx sy)
 
 
 instance Rotate (Circle u) where
-  rotate ang = mapCircleCTM (rotate ang)
+  rotate ang = mapCTM (rotate ang)
                   
 
 instance (Real u, Floating u) => RotateAbout (Circle u) where
-  rotateAbout ang pt = mapCircleCTM (rotateAbout ang pt)
+  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
 instance Num u => Translate (Circle u) where
-  translate dx dy = mapCircleCTM (translate dx dy)
+  translate dx dy = mapCTM (translate dx dy)
 
 
+--------------------------------------------------------------------------------
+-- Anchors
 
 runCircle :: (u -> ShapeCTM u -> a) -> Circle u -> a
 runCircle fn (Circle { circ_ctm = ctm, circ_radius = radius }) = 
@@ -98,12 +101,13 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Circle u) where
-  radialAnchor theta = runCircle $ \r -> projectPoint $ zeroPt .+^ avec theta r
+  radialAnchor ang = runCircle $ \r -> projectPoint $ zeroPt .+^ avec ang r
 
 
 
 
-
+--------------------------------------------------------------------------------
+-- Constructors
 
 -- | 'circle'  : @ radius -> shape @
 --

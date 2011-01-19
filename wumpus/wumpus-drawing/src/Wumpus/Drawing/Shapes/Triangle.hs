@@ -66,6 +66,9 @@ type DIsoscelesTriangle = IsoscelesTriangle Double
 type instance DUnit (IsoscelesTriangle u) = u
 
 
+--------------------------------------------------------------------------------
+-- Affine trans
+
 mapTriangleCTM :: (ShapeCTM u -> ShapeCTM u) 
                -> IsoscelesTriangle u -> IsoscelesTriangle u
 mapTriangleCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
@@ -85,6 +88,9 @@ instance (Real u, Floating u) => RotateAbout (IsoscelesTriangle u) where
 instance Num u => Translate (IsoscelesTriangle u) where
   translate dx dy = mapTriangleCTM (translate dx dy)
 
+
+--------------------------------------------------------------------------------
+-- Anchors
 
 -- runtriangle' : @ half_base_width * hminor * hmajor * base_ang *ctm -> Ans @
 -- 

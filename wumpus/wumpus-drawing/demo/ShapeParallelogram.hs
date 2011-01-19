@@ -2,7 +2,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module ShapeTrapezium where
+module ShapeParallelogram where
 
 
 import FontLoaderUtils
@@ -10,6 +10,7 @@ import FontLoaderUtils
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Shapes
+import Wumpus.Drawing.Shapes.Parallelogram
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -40,8 +41,8 @@ makeGSPicture font_dir = do
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
-    writeEPS "./out/shapes/trapezium01.eps" pic1
-    writeSVG "./out/shapes/trapezium01.svg" pic1
+    writeEPS "./out/shapes/parallelogram01.eps" pic1
+    writeSVG "./out/shapes/parallelogram01.svg" pic1
 
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
@@ -49,8 +50,8 @@ makeAfmPicture font_dir = do
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic2 = runCtxPictureU (makeCtx afm_metrics) shape_pic
-    writeEPS "./out/shapes/trapezium02.eps" pic2
-    writeSVG "./out/shapes/trapezium02.svg" pic2
+    writeEPS "./out/shapes/parallelogram02.eps" pic2
+    writeSVG "./out/shapes/parallelogram02.svg" pic2
 
 
 
@@ -62,8 +63,9 @@ makeCtx = fontFace courier . metricsContext 16
 shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-              (strokedShape $ ztrapezium 300 150) `at` (P2 200 150)
+              (strokedShape $ zparallelogram 300 150) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1
+{-
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
     draw $ label EAST         "(east)"        `at` east a1
@@ -73,6 +75,7 @@ shape_pic = drawTracing $ do
     draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
     draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
     draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
+-}
     return ()    
   where
     deg10 = d2r (10::Double)

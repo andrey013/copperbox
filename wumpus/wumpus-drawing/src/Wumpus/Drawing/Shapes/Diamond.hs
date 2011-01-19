@@ -58,25 +58,31 @@ type DDiamond = Diamond Double
 type instance DUnit (Diamond u) = u
 
 
-mapDiamondCTM :: (ShapeCTM u -> ShapeCTM u) -> Diamond u -> Diamond u
-mapDiamondCTM f = (\s i -> s { dia_ctm = f i }) <*> dia_ctm
+--------------------------------------------------------------------------------
+-- Affine trans
+
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Diamond u -> Diamond u
+mapCTM f = (\s i -> s { dia_ctm = f i }) <*> dia_ctm
 
 instance Num u => Scale (Diamond u) where
-  scale sx sy = mapDiamondCTM (scale sx sy)
+  scale sx sy = mapCTM (scale sx sy)
 
 
 instance Rotate (Diamond u) where
-  rotate ang = mapDiamondCTM (rotate ang)
+  rotate ang = mapCTM (rotate ang)
                   
 
 instance (Real u, Floating u) => RotateAbout (Diamond u) where
-  rotateAbout ang pt = mapDiamondCTM (rotateAbout ang pt)
+  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
 instance Num u => Translate (Diamond u) where
-  translate dx dy = mapDiamondCTM (translate dx dy)
+  translate dx dy = mapCTM (translate dx dy)
 
 
+
+--------------------------------------------------------------------------------
+-- Anchors
 
 runDiamond :: (u -> u -> ShapeCTM u  -> a) -> Diamond u -> a
 runDiamond fn (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
@@ -120,6 +126,8 @@ midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
 midpoint p1 p2 = let v = 0.5 *^ pvec p1 p2 in p1 .+^ v
 
 
+--------------------------------------------------------------------------------
+-- Constructors
 
 -- | 'diamond'  : @ half_width * half_height -> shape @
 --

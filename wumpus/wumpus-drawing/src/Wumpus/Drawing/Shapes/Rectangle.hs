@@ -55,25 +55,29 @@ type DRectangle = Rectangle Double
 type instance DUnit (Rectangle u) = u
 
 
-mapRectangleCTM :: (ShapeCTM u -> ShapeCTM u) -> Rectangle u -> Rectangle u
-mapRectangleCTM f = (\s i -> s { rect_ctm = f i }) <*> rect_ctm
+--------------------------------------------------------------------------------
+-- Affine trans
+
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Rectangle u -> Rectangle u
+mapCTM f = (\s i -> s { rect_ctm = f i }) <*> rect_ctm
 
 instance Num u => Scale (Rectangle u) where
-  scale sx sy = mapRectangleCTM (scale sx sy)
+  scale sx sy = mapCTM (scale sx sy)
 
 
 instance Rotate (Rectangle u) where
-  rotate ang = mapRectangleCTM (rotate ang)
+  rotate ang = mapCTM (rotate ang)
                   
 
 instance (Real u, Floating u) => RotateAbout (Rectangle u) where
-  rotateAbout ang pt = mapRectangleCTM (rotateAbout ang pt)
+  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
 instance Num u => Translate (Rectangle u) where
-  translate dx dy = mapRectangleCTM (translate dx dy)
+  translate dx dy = mapCTM (translate dx dy)
 
-
+--------------------------------------------------------------------------------
+-- Anchors
 
 
 runRectangle :: (u -> u -> ShapeCTM u -> a) -> Rectangle u -> a
@@ -108,6 +112,8 @@ rectangleIntersect hw hh theta =
     maybe zeroPt id $ findIntersect zeroPt theta $ rectangleLines zeroPt hw hh 
 
 
+--------------------------------------------------------------------------------
+-- Constructors
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
