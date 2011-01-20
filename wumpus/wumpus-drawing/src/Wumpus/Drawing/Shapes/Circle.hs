@@ -45,7 +45,6 @@ data Circle u = Circle
       { circ_ctm    :: ShapeCTM u
       , circ_radius :: !u 
       }
-  deriving (Eq,Show)
   
 type DCircle = Circle Double
 
@@ -83,7 +82,7 @@ runCircle fn (Circle { circ_ctm = ctm, circ_radius = radius }) =
 
 
 instance (Real u, Floating u) => CenterAnchor (Circle u) where
-  center = runCircle (\_ -> ctmCenter)
+  center = ctmCenter . circ_ctm
 
 
 instance (Real u, Floating u) => CardinalAnchor (Circle u) where
