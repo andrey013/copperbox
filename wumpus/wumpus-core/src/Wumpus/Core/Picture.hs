@@ -284,7 +284,7 @@ curvedPath (x:xs) = PrimPath x $ step x xs
   where
     step p (a:b:c:ys) = let v1 = a .-. p 
                             v2 = b .-. a
-                            v3 = c .-. a
+                            v3 = c .-. b
                         in RelCurveTo v1 v2 v3 : step c ys
     step _ _          = []
 

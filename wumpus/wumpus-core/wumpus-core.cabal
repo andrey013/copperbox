@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.43.0
+version:          0.42.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -48,7 +48,11 @@ description:
   .
   Changelog:
   .
-  v0.42.0 to v0.43.0:
+  v0.42.0 to v0.42.1:
+  .
+  * Fixed bug in the @curvedPath@ function in @Core.Picture@
+    where the wrong relative point was being calculated for the 
+    second control point.
   .
   * Changed internals of the @EscapedText@ type so it supports 
     efficient concatenation, and now has a Monoid instance.
