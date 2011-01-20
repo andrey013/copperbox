@@ -188,17 +188,10 @@ synthesizeProps bw h =
                    }
   where
     half_base   = 0.5 * bw 
+    hminor      = h / 3
+    hmajor      = 2 * hminor 
     base_ang    = atan $ toRadian (h / half_base)
     apex_ang    = 2 * ((pi/4) - base_ang)
-    hminor      = half_base * (fromRadian $ tan (base_ang / 2))
-    hmajor      = h - hminor
-
-    -- base_ang - use trigonometry
-    -- apex_ang - consider a half right triangle, sum all angles 
-    --            is 180, subtract 90 for the right angle, so 
-    --            the equation for half the angle is (90deg - base).
-    --            Final step is to double the half angle.
-    
 
 
 mkTrianglePath :: (Real u, Floating u, FromPtSize u) 

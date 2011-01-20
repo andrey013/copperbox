@@ -120,6 +120,7 @@ library
     Wumpus.Drawing.Shapes.Parallelogram,
     Wumpus.Drawing.Shapes.Rectangle,
     Wumpus.Drawing.Shapes.Trapezium,
+    Wumpus.Drawing.Shapes.Semicircle,
     Wumpus.Drawing.Shapes.Triangle,
     Wumpus.Drawing.Text.LRText,
     Wumpus.Drawing.Text.SafeFonts,

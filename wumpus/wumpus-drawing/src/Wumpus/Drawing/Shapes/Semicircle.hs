@@ -12,11 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Simple shapes - rectangle, circle diamond, ellipse.
---
--- Note - the center calculation is arbitrary. I have picked a 
--- value \"that looks good\" for the ratio. Finding and 
--- implementing a more geometrically correct method is a TODO.
+-- Semicircle - note some Anchor instances are TODO. 
 -- 
 --------------------------------------------------------------------------------
 
@@ -89,35 +85,33 @@ instance Num u => Translate (Semicircle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-{-
-runSemicircle :: (u -> ShapeCTM u -> a) -> Semicircle u -> a
-runSemicircle fn (Semicircle { sc_ctm = ctm, sc_radius = radius }) = 
-    fn radius ctm
--}
+
+runSemicircle :: (u -> u -> u -> ShapeCTM u -> a) -> Semicircle u -> a
+runSemicircle fn (Semicircle { sc_ctm       = ctm
+                             , sc_radius    = radius
+                             , sc_syn_props = syn    }) = 
+    fn radius (sc_ctr_minor syn) (sc_ctr_major syn) ctm
+
 
 instance (Real u, Floating u) => CenterAnchor (Semicircle u) where
   center = ctmCenter . sc_ctm
 
-{-
+
 
 instance (Real u, Floating u) => CardinalAnchor (Semicircle u) where
-  north = runSemicircle $ \r -> projectPoint $ P2 0    r
-  south = runSemicircle $ \r -> projectPoint $ P2 0  (-r)
-  east  = runSemicircle $ \r -> projectPoint $ P2 r    0
-  west  = runSemicircle $ \r -> projectPoint $ P2 (-r) 0
+  north = runSemicircle $ \_ _    cmaj -> projectPoint $ P2 0  cmaj
+  south = runSemicircle $ \_ cmin _    -> projectPoint $ P2 0  (-cmin)
+  east  = runSemicircle $ \r cmin _    -> let x = pyth r cmin 
+                                          in projectPoint $ P2 x    0
+  west  = runSemicircle $ \r cmin _    -> let x = pyth r cmin 
+                                          in projectPoint $ P2 (-x) 0
 
+pyth :: Floating u => u -> u -> u
+pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
+  where
+    pow2 = (^ (2::Int))
 
-instance (Real u, Floating u) => CardinalAnchor2 (Semicircle u) where
-  northeast = radialAnchor (0.25*pi)
-  southeast = radialAnchor (1.75*pi)
-  southwest = radialAnchor (1.25*pi)
-  northwest = radialAnchor (0.75*pi)
-
-
-instance (Real u, Floating u) => RadialAnchor (Semicircle u) where
-  radialAnchor ang = runSemicircle $ \r -> projectPoint $ zeroPt .+^ avec ang r
--}
-
+-- TODO - Radial and Cardinal2 instances
 
 
 --------------------------------------------------------------------------------
@@ -132,13 +126,13 @@ semicircle radius =
                     (mkSemicirclePath radius (sc_ctr_minor props))
           
 
-synthesizeProps :: Fractional u => u -> SyntheticProps u
+synthesizeProps :: Floating u => u -> SyntheticProps u
 synthesizeProps radius = 
     SyntheticProps { sc_ctr_minor  = cminor
                    , sc_ctr_major  = cmajor
                    }
   where
-    cminor = radius * 0.4
+    cminor = (4 * radius) / (3 * pi)
     cmajor = radius - cminor
 
 
