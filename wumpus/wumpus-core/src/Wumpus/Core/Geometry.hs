@@ -85,6 +85,7 @@ module Wumpus.Core.Geometry
   -- * Bezier curves
   , bezierCircle
   , bezierEllipse
+  , rbezierEllipse
 
   , bezierArc
   , subdivisionCircle
@@ -815,6 +816,45 @@ bezierEllipse rx ry (P2 x y) =
     p09 = P2 x (y - ry) 
     c10 = p09 .+^ hvec lrx
     c11 = p00 .+^ vvec (-lry)
+
+-- | 'rbezierEllipse' : @ x_radius * y_radius * center * angle -> [Point] @ 
+-- 
+-- Make an rotated ellipse from four Bezier curves. 
+-- 
+-- Although this function produces an approximation of a ellipse, 
+-- the approximation seems fine in practice.
+--
+rbezierEllipse :: (Real u, Floating u) 
+              => u -> u -> Radian -> Point2 u -> [Point2 u]
+rbezierEllipse rx ry theta pt@(P2 x y) = 
+    [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
+  where
+    lrx   = rx * kappa
+    lry   = ry * kappa
+    rotM  = originatedRotationMatrix theta pt
+
+    --    hvec becomes para
+    para  = \d -> avec theta d
+    --    vvec becomes perp
+    perp  = \d -> avec (circularModulo $ theta + pi*0.5) d
+    mkPt  = \p1 -> rotM *# p1
+
+
+    p00 = mkPt $ P2 (x + rx) y
+    c01 = p00 .+^ perp lry
+    c02 = p03 .+^ para lrx
+
+    p03 = mkPt $ P2 x (y + ry) 
+    c04 = p03 .+^ para (-lrx)
+    c05 = p06 .+^ perp lry
+
+    p06 = mkPt $ P2 (x - rx) y
+    c07 = p06 .+^ perp (-lry)
+    c08 = p09 .+^ para (-lrx)
+
+    p09 = mkPt $ P2 x (y - ry) 
+    c10 = p09 .+^ para lrx
+    c11 = p00 .+^ perp (-lry)
 
 
 -- | 'bezierArc' : @ radius * ang1 * ang2 * center -> 
