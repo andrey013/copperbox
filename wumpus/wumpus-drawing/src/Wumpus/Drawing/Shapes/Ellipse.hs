@@ -57,7 +57,8 @@ type DEllipse = Ellipse Double
 
 type instance DUnit (Ellipse u) = u
 
-
+--------------------------------------------------------------------------------
+-- Affine trans
 
 mapEllipseCTM :: (ShapeCTM u -> ShapeCTM u) -> Ellipse u -> Ellipse u
 mapEllipseCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
@@ -77,6 +78,9 @@ instance (Real u, Floating u) => RotateAbout (Ellipse u) where
 instance Num u => Translate (Ellipse u) where
   translate dx dy = mapEllipseCTM (translate dx dy)
 
+
+--------------------------------------------------------------------------------
+-- Anchors
 
 runEllipse :: (u -> u -> ShapeCTM u  -> a) -> Ellipse u -> a
 runEllipse fn (Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }) = 
@@ -112,7 +116,8 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
   northwest = radialAnchor (0.75*pi)
 
 
-
+--------------------------------------------------------------------------------
+-- Constructors
 
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
@@ -125,10 +130,8 @@ mkEllipse :: Num u => u -> u -> LocCF u (Ellipse u)
 mkEllipse rx ry = promoteR1 $ \ctr -> 
     pure $ Ellipse { ell_ctm = makeShapeCTM ctr, ell_rx = rx, ell_ry = ry }
 
--- This is wrong...
---
+
 mkEllipsePath :: (Floating u, Ord u) => u -> u -> LocCF u (Path u)
-mkEllipsePath rx ry = promoteR1 $ \(P2 x y) -> 
-    pure $ traceCurvePoints $ map (translate x y . scaleEll rx ry) 
-                            $ bezierCircle 2 rx zeroPt
+mkEllipsePath rx ry = promoteR1 $ \pt -> 
+    pure $ traceCurvePoints $ bezierEllipse rx ry pt
 

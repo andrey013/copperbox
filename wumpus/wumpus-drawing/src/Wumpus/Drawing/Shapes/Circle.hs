@@ -123,7 +123,7 @@ mkCircle radius = promoteR1 $ \ctr ->
 
 mkCirclePath :: (Floating u, Ord u) => u -> LocCF u (Path u)
 mkCirclePath radius = promoteR1 $ \ctr -> 
-    pure $ traceCurvePoints $ bezierCircle 2 radius ctr 
+    pure $ traceCurvePoints $ bezierCircle radius ctr 
 
 
 

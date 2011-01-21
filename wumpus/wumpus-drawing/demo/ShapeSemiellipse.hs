@@ -2,7 +2,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module ShapeSemicircle where
+module ShapeSemiellipse where
 
 
 import FontLoaderUtils
@@ -10,6 +10,7 @@ import FontLoaderUtils
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Shapes
+import Wumpus.Drawing.Shapes.Semiellipse
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -40,8 +41,8 @@ makeGSPicture font_dir = do
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
-    writeEPS "./out/shapes/semicircle01.eps" pic1
-    writeSVG "./out/shapes/semicircle01.svg" pic1
+    writeEPS "./out/shapes/semiellipse01.eps" pic1
+    writeSVG "./out/shapes/semiellipse01.svg" pic1
 
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
@@ -49,8 +50,8 @@ makeAfmPicture font_dir = do
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
     let pic2 = runCtxPictureU (makeCtx afm_metrics) shape_pic
-    writeEPS "./out/shapes/semicircle02.eps" pic2
-    writeSVG "./out/shapes/semicircle02.svg" pic2
+    writeEPS "./out/shapes/semiellipse02.eps" pic2
+    writeSVG "./out/shapes/semiellipse02.svg" pic2
 
 
 
@@ -61,15 +62,16 @@ makeCtx = fontFace courier . metricsContext 16
 shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-              (strokedShape $ semicircle 200) `at` (P2 200 150)
+              (strokedShape $ semiellipse 150 300) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1
-
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
+{-
     draw $ label EAST         "(east)"        `at` east a1
     draw $ label WEST         "(west)"        `at` west a1
+-}
     return ()
-    
+
 -- 
 -- No Radial or Cardinal2 instances yet...
 --
@@ -78,6 +80,7 @@ shape_pic = drawTracing $ do
 --    draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
 --    draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
 --    draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
+
 
 
 shapeSty :: DrawingContextF
