@@ -839,22 +839,21 @@ rbezierEllipse rx ry theta pt@(P2 x y) =
     perp  = \d -> avec (circularModulo $ theta + pi*0.5) d
     mkPt  = \p1 -> rotM *# p1
 
+    p00   = mkPt $ P2 (x + rx) y
+    c01   = p00 .+^ perp lry
+    c02   = p03 .+^ para lrx
 
-    p00 = mkPt $ P2 (x + rx) y
-    c01 = p00 .+^ perp lry
-    c02 = p03 .+^ para lrx
+    p03   = mkPt $ P2 x (y + ry) 
+    c04   = p03 .+^ para (-lrx)
+    c05   = p06 .+^ perp lry
 
-    p03 = mkPt $ P2 x (y + ry) 
-    c04 = p03 .+^ para (-lrx)
-    c05 = p06 .+^ perp lry
+    p06   = mkPt $ P2 (x - rx) y
+    c07   = p06 .+^ perp (-lry)
+    c08   = p09 .+^ para (-lrx)
 
-    p06 = mkPt $ P2 (x - rx) y
-    c07 = p06 .+^ perp (-lry)
-    c08 = p09 .+^ para (-lrx)
-
-    p09 = mkPt $ P2 x (y - ry) 
-    c10 = p09 .+^ para lrx
-    c11 = p00 .+^ perp (-lry)
+    p09   = mkPt $ P2 x (y - ry) 
+    c10   = p09 .+^ para lrx
+    c11   = p00 .+^ perp (-lry)
 
 
 -- | 'bezierArc' : @ radius * ang1 * ang2 * center -> 

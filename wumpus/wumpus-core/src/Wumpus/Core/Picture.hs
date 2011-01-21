@@ -473,7 +473,7 @@ textlabel :: Num u
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
 textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
--- | 'rtextlabel' : @ rgb * font_attr * string * rotation * 
+-- | 'rtextlabel' : @ rgb * font_attr * string * theta * 
 --      baseline_left -> Primitive @
 --
 -- Create a text label rotated by the supplied angle about the 
@@ -509,7 +509,7 @@ escapedlabel :: Num u
              => RGBi -> FontAttr -> EscapedText -> Point2 u -> Primitive u
 escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 
--- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * rotation * 
+-- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * theta * 
 --      baseline_left -> Primitive @
 --
 -- Version of 'rtextlabel' where the label text has already been 
@@ -658,9 +658,10 @@ kernEscName u s = (u, CharEscName s)
 -- (e.g. scatter plots) it seems sensible to employ this 
 -- optimization.
 --
--- A deficiency of Wumpus\'s ellipse is that (non-uniformly)
--- scaling a stroked ellipse also (non-uniformly) scales the pen 
--- it is drawn with. Where the ellipse is wider, the pen stroke 
+-- A deficiency of using PostScript\'s @arc@ command to draw
+-- ellipses is that (non-uniformly) scaling a stroked ellipse 
+-- also (non-uniformly) scales the pen it is drawn with. Where 
+-- the ellipse is wider, the pen stroke 
 -- will be wider too. 
 --
 -- Avoid non-uniform scaling stroked ellipses!
@@ -670,10 +671,11 @@ strokeEllipse :: Num u
 strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 
--- | 'rstrokeEllipse' : @ rgb * stroke_attr * rx * ry * rotation * 
+-- | 'rstrokeEllipse' : @ rgb * stroke_attr * rx * ry * theta * 
 --      center -> Primtive @
 -- 
--- Create a stroked ellipse rotated about the center by /theta/.
+-- Create a stroked primitive ellipse rotated about the center by 
+-- /theta/.
 --
 rstrokeEllipse :: Num u 
                => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
@@ -685,17 +687,18 @@ rstrokeEllipse rgb sa rx ry theta pt =
 
 -- | 'fillEllipse' : @ rgb * stroke_attr * rx * ry * center -> Primtive @
 --
--- Create a filled ellipse.
+-- Create a filled primitive ellipse.
 --
 fillEllipse :: Num u 
              => RGBi -> u -> u -> Point2 u -> Primitive u
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
--- | 'rfillEllipse' : @ colour * stroke_attr * rx * ry * 
---      rotation * center -> Primtive @
+-- | 'rfillEllipse' : @ colour * stroke_attr * rx * ry * theta * center 
+--        -> Primitive @
 --
--- Create a filled ellipse rotated about the center by /theta/.
+-- Create a filled primitive ellipse rotated about the center by 
+-- /theta/.
 --
 rfillEllipse :: Num u 
              => RGBi -> u -> u -> Radian -> Point2 u -> Primitive u
@@ -714,7 +717,7 @@ zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 -- | 'fillStrokeEllipse' : @ fill_rgb * stroke_attr * stroke_rgb * rx * ry *
 --      center -> Primtive @
 --
--- Create a bordered (i.e. filled and stroked) ellipse.
+-- Create a bordered (i.e. filled and stroked) primitive ellipse.
 --
 fillStrokeEllipse :: Num u 
                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 

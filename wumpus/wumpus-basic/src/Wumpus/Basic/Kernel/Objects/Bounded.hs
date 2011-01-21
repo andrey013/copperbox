@@ -49,7 +49,6 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Core.Colour ( blue )
 
 import Control.Applicative
 
@@ -129,15 +128,15 @@ illustrateBoundedLocThetaGraphic mf =
     promoteR2 $ \pt theta-> illustrateBoundedGraphic $ apply2R2 mf pt theta
 
 
-
+-- 
 bbrectangle :: Fractional u => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphic `at` p1
     | otherwise                = 
         localize drawing_props $ rect1 `oplus` cross
   where
-    drawing_props = strokeColour blue . capRound . dashPattern (Dash 0 [(1,2)])
+    drawing_props = capRound . dashPattern (Dash 0 [(1,2)])
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
-    cross         = straightLineBetween p1 p2 
-                      `oplus` straightLineBetween (P2 llx ury) (P2 urx lly)
+    cross         = straightLineGraphic p1 p2 
+                      `oplus` straightLineGraphic (P2 llx ury) (P2 urx lly)
 

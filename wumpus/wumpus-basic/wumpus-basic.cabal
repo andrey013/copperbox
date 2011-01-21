@@ -30,6 +30,7 @@ description:
   .
   Changelog:
   .
+  .
   v0.15.0 to v0.16.0:
   .
   * Added @PosIamge@ object - this is a rectangle object that can 
@@ -44,6 +45,10 @@ description:
     function @projectAnchor@.
   .
   * Added the property @descender@ to the font metrics.
+  .
+  * Split drawing primitives from type in @Objects.Graphic@, 
+    drawing primitives are now in the module 
+    @Objects.DrawingPrimitives@.
   .
   v0.14.0 to v0.15.0:
   . 
