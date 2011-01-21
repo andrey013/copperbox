@@ -40,6 +40,7 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Displacement
+import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core

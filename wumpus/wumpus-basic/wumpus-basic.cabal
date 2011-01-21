@@ -104,6 +104,7 @@ library
     Wumpus.Basic.Kernel.Objects.Connector,
     Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Displacement,
+    Wumpus.Basic.Kernel.Objects.DrawingPrimitives,
     Wumpus.Basic.Kernel.Objects.Graphic,
     Wumpus.Basic.Kernel.Objects.PosImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,

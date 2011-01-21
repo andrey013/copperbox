@@ -653,10 +653,10 @@ kernEscName u s = (u, CharEscName s)
 --
 -- Note - within Wumpus, ellipses are considered an unfortunate
 -- but useful /optimization/. Drawing good cicles with Beziers 
--- needs at least eight curves, but drawing them with 
--- PostScript\'s @arc@ command needs a single operation. For 
--- drawings with many dots (e.g. scatter plots) it seems sensible
--- to employ this optimization.
+-- needs four curves, but drawing them with PostScript\'s @arc@ 
+-- command uses a single operation. For drawings with many dots 
+-- (e.g. scatter plots) it seems sensible to employ this 
+-- optimization.
 --
 -- A deficiency of Wumpus\'s ellipse is that (non-uniformly)
 -- scaling a stroked ellipse also (non-uniformly) scales the pen 
