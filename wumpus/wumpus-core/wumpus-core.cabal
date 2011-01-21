@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.42.1
+version:          0.43.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -48,29 +48,17 @@ description:
   .
   Changelog:
   .
-  v0.42.0 to v0.42.1:
+  v0.42.1 to v0.43.0:
   .
-  * Fixed bug in the @curvedPath@ function in @Core.Picture@
-    where the wrong relative point was being calculated for the 
-    second control point.
-  .
-  * Changed internals of the @EscapedText@ type so it supports 
-    efficient concatenation, and now has a Monoid instance.
+  * API change - the function @bezierCircle@ in @Core.Geometry@
+    has changed. It now implements a better method of drawing 
+    circles with Bezier curves and no longer needs the 
+    subvision factor. The old circle drawing function has been 
+    retained as @subdivisionCircle@ as it is useful for 
+    corroborating @bezierCircle@, but the general use of 
+    @subdivisionCircle@ should be avoided.
   . 
-  v0.41.0 to v0.42.0:
-  .
-  * Removed the function @oboundingBox@ from @Core.BoundingBox@.
-    It was unused in Wumpus-Core and had unwise error handling 
-    baked-in.
-  .
-  * Renamed @direction@ in @Wumpus.Core.Geometry@, it is now 
-    @vdirection@.
-  .
-  * Fixed internal Foldable instances for JoinList. The left and
-    right folds worked in the wrong direction.
-  .
-  * Some improvements to the Haddock documentation. 
-  .
+  * Added a function @bezierEllipse@ to @Core.Geometry@.
   .
 build-type:         Simple
 stability:          unstable

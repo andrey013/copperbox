@@ -83,8 +83,11 @@ module Wumpus.Core.Geometry
   , circularModulo
 
   -- * Bezier curves
-  , bezierArc
   , bezierCircle
+  , bezierEllipse
+
+  , bezierArc
+  , subdivisionCircle
 
   ) where
 
@@ -749,6 +752,71 @@ circularModulo r = d2r $ dec + (fromIntegral $ i `mod` 360)
 --------------------------------------------------------------------------------
 -- Bezier curves
 
+
+
+kappa :: Floating u => u
+kappa = 4 * ((sqrt 2 - 1) / 3)
+
+
+-- | 'bezierCircle' : @ radius * center -> [Point] @ 
+-- 
+-- Make a circle from four Bezier curves. Although this function 
+-- produces an approximation of a circle, the approximation seems
+-- fine in practice.
+--
+bezierCircle :: (Fractional u, Floating u) 
+              => u -> Point2 u -> [Point2 u]
+bezierCircle radius (P2 x y) = 
+    [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
+  where
+    rl  = radius * kappa
+    p00 = P2 (x + radius) y
+    c01 = p00 .+^ vvec rl
+    c02 = p03 .+^ hvec rl
+
+    p03 = P2 x (y + radius) 
+    c04 = p03 .+^ hvec (-rl)
+    c05 = p06 .+^ vvec rl
+
+    p06 = P2 (x - radius) y
+    c07 = p06 .+^ vvec (-rl)
+    c08 = p09 .+^ hvec (-rl)
+
+    p09 = P2 x (y - radius) 
+    c10 = p09 .+^ hvec rl
+    c11 = p00 .+^ vvec (-rl)
+
+
+-- | 'bezierEllipse' : @ x_radius * y_radius * center -> [Point] @ 
+-- 
+-- Make an ellipse from four Bezier curves. Although this function 
+-- produces an approximation of a ellipse, the approximation seems
+-- fine in practice.
+--
+bezierEllipse :: (Fractional u, Floating u) 
+              => u -> u -> Point2 u -> [Point2 u]
+bezierEllipse rx ry (P2 x y) = 
+    [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
+  where
+    lrx = rx * kappa
+    lry = ry * kappa
+    p00 = P2 (x + rx) y
+    c01 = p00 .+^ vvec lry
+    c02 = p03 .+^ hvec lrx
+
+    p03 = P2 x (y + ry) 
+    c04 = p03 .+^ hvec (-lrx)
+    c05 = p06 .+^ vvec lry
+
+    p06 = P2 (x - rx) y
+    c07 = p06 .+^ vvec (-lry)
+    c08 = p09 .+^ hvec (-lrx)
+
+    p09 = P2 x (y - ry) 
+    c10 = p09 .+^ hvec lrx
+    c11 = p00 .+^ vvec (-lry)
+
+
 -- | 'bezierArc' : @ radius * ang1 * ang2 * center -> 
 --       (start_point, control_point1, control_point2, end_point) @
 -- 
@@ -764,23 +832,29 @@ bezierArc :: Floating u
 bezierArc r ang1 ang2 pt = (p0,p1,p2,p3)
   where
     theta = ang2 - ang1
-    e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
+    e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2 * cos (theta/2))) 
     p0    = pt .+^ avec ang1 r
     p1    = p0 .+^ avec (ang1 + pi/2) e
     p2    = p3 .+^ avec (ang2 - pi/2) e
     p3    = pt .+^ avec ang2 r
 
 
--- | 'bezierCircle' : @ subdivisions * radius * center -> [Point] @ 
+-- | 'subvisionCircle' : @ subdivisions * radius * center -> [Point] @ 
 -- 
 -- Make a circle from Bezier curves - the number of subdivsions 
 -- controls the accuracy or the curve, more subdivisions produce
 -- better curves, but less subdivisions are better for rendering
 -- (producing more efficient PostScript).
 --
-bezierCircle :: (Fractional u, Floating u) 
-             => Int -> u -> Point2 u -> [Point2 u]
-bezierCircle n radius pt = start $ subdivisions (n*4) (2*pi)
+-- Before revision 0.43.0, this was the only method in Wumpus to 
+-- draw Bezier circles in Wumpus. However the kappa method seems
+-- to draw equally good circles and is more efficient both in the
+-- Haskell implementation and the generated PostScript code. This
+-- function is retained for completeness and testing.
+--
+subdivisionCircle :: (Fractional u, Floating u) 
+                  => Int -> u -> Point2 u -> [Point2 u]
+subdivisionCircle n radius pt = start $ subdivisions (n*4) (2*pi)
   where
     start (a:b:xs) = s : cp1 : cp2 : e : rest (b:xs)
       where (s,cp1,cp2,e) = bezierArc radius a b pt

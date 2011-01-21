@@ -1,4 +1,27 @@
 
+0.42.0 to 0.42.1:
+
+  * Fixed bug in the @curvedPath@ function in @Core.Picture@
+    where the wrong relative point was being calculated for the 
+    second control point.
+
+  * Changed internals of the @EscapedText@ type so it supports 
+    efficient concatenation, and now has a Monoid instance.
+ 
+0.41.0 to 0.42.0:
+
+  * Removed the function @oboundingBox@ from @Core.BoundingBox@.
+    It was unused in Wumpus-Core and had unwise error handling 
+    baked-in.
+
+  * Renamed @direction@ in @Wumpus.Core.Geometry@, it is now 
+    @vdirection@.
+
+  * Fixed internal Foldable instances for JoinList. The left and
+    right folds worked in the wrong direction.
+
+  * Some improvements to the Haddock documentation. 
+
 0.40.0 to 0.41.0:
 
   * Changed PostScript output to use pre-defined procedures for 
