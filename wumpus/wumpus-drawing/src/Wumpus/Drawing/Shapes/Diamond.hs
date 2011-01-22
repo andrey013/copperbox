@@ -26,7 +26,7 @@ module Wumpus.Drawing.Shapes.Diamond
 
   ) where
 
-import Wumpus.Drawing.Geometry.Intersection
+import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
@@ -107,19 +107,9 @@ instance (Real u, Floating u, Fractional u) => CardinalAnchor2 (Diamond u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Diamond u) where
-   radialAnchor = diamondIntersect
+    radialAnchor ang = runDiamond $ \hw hh -> 
+      projectPoint $ displaceVec (diamondRadialVector hw hh ang) zeroPt
 
-
--- Utils.Intersection needs improving...
-
-
-diamondIntersect :: (Real u, Floating u) 
-                 => Radian -> Diamond u -> Point2 u
-diamondIntersect theta (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
-    let ps  = diamondPoints hw hh ctm 
-        ctr = ctmCenter ctm
-    in maybe ctr id $ findIntersect ctr theta $ polygonLines ps
-    
 
 
 midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
@@ -148,6 +138,7 @@ mkDiamondPath :: (Real u, Floating u, FromPtSize u)
 mkDiamondPath hw hh = promoteR1 $ \ctr -> 
     roundCornerShapePath $ diamondCoordPath hw hh ctr
 
+{-
 
 diamondPoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
 diamondPoints hw hh ctm = map (projectPoint `flip` ctm) [ s, e, n, w ]
@@ -156,5 +147,5 @@ diamondPoints hw hh ctm = map (projectPoint `flip` ctm) [ s, e, n, w ]
     e = P2   hw    0
     n = P2   0    hh
     w = P2 (-hw)   0 
-
+-}
 

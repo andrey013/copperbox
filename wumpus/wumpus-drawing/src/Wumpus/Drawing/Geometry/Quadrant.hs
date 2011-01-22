@@ -23,8 +23,8 @@ module Wumpus.Drawing.Geometry.Quadrant
   , quadrant
   , quadModulo
 
-  , rectCardinalVector
-
+  , rectRadialVector
+  , diamondRadialVector
   ) 
   where
 
@@ -53,9 +53,23 @@ quadModulo r = d2r $ dec + (fromIntegral $ i `mod` 90)
     (i,dec) = properFraction $ r2d r
 
 
+--------------------------------------------------------------------------------
 
-rectCardinalVector :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u
-rectCardinalVector hw hh ang = fn $ circularModulo ang
+negateX :: Num u => Vec2 u -> Vec2 u
+negateX (V2 x y) = V2 (-x) y
+
+negateY :: Num u => Vec2 u -> Vec2 u
+negateY (V2 x y) = V2 x (-y)
+
+negateXY :: Num u => Vec2 u -> Vec2 u
+negateXY (V2 x y) = V2 (-x) (-y)
+
+
+-- | Perform the calculation only in QI, use symmetry to translate
+-- the result to the other quadrants.
+--
+rectRadialVector :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u
+rectRadialVector hw hh ang = fn $ circularModulo ang
   where
     theta               = toRadian $ atan (hh/hw)
     fn a | a < 0.5*pi   = qi a
@@ -67,12 +81,21 @@ rectCardinalVector hw hh ang = fn $ circularModulo ang
          | otherwise    = let x = hh / fromRadian (tan a) in V2 x hh
 
 
-negateX :: Num u => Vec2 u -> Vec2 u
-negateX (V2 x y) = V2 (-x) y
+diamondRadialVector :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u
+diamondRadialVector hw hh ang = fn $ circularModulo ang
+  where
+    fn a | a < 0.5*pi   = diamondQI hw hh a
+         | a < pi       = negateX  $ diamondQI hw hh (pi - a)
+         | a < 1.5*pi   = negateXY $ diamondQI hw hh (a - pi) 
+         | otherwise    = negateY  $ diamondQI hw hh (2*pi - a)
 
-negateY :: Num u => Vec2 u -> Vec2 u
-negateY (V2 x y) = V2 x (-y)
 
-negateXY :: Num u => Vec2 u -> Vec2 u
-negateXY (V2 x y) = V2 (-x) (-y)
+-- | Find the base angle, then use the law of sines.
+--
+diamondQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u
+diamondQI hw hh ang = avec ang dist
+  where
+    base_ang = atan (hh / hw)
+    apex     = pi - (base_ang + fromRadian ang)
+    dist     = sin base_ang * (hw / sin apex)
 
