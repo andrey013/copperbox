@@ -25,8 +25,8 @@ module Wumpus.Drawing.Shapes.Rectangle
 
   ) where
 
-import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Geometry.Paths
+import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -102,14 +102,8 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
 
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
   radialAnchor theta = runRectangle $ \hw hh -> 
-    projectPoint $ rectangleIntersect hw hh theta
+    projectPoint $ displaceVec (rectCardinalVector hw hh theta) zeroPt
 
--- Note - the answer needs projecting with the CTM...
---
-rectangleIntersect :: (Real u, Floating u) 
-                   => u -> u -> Radian -> Point2 u
-rectangleIntersect hw hh theta = 
-    maybe zeroPt id $ findIntersect zeroPt theta $ rectangleLines zeroPt hw hh 
 
 
 --------------------------------------------------------------------------------

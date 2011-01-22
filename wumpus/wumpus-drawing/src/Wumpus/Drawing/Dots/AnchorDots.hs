@@ -59,6 +59,7 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Geometry.Paths
+import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 
@@ -149,8 +150,7 @@ rectangleAnchor hw hh ctr =
               , radial_anchor   = fn  
               , cardinal_anchor = rectCardinal hw hh ctr }
   where
-    fn theta =  maybe ctr id $ findIntersect ctr theta 
-                             $ rectangleLines ctr hw hh
+    fn theta =  displaceVec (rectCardinalVector hw hh theta) ctr
 
 
 polygonAnchor :: (Real u, Floating u) => [Point2 u] -> Point2 u -> DotAnchor u

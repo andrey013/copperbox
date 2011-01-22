@@ -66,7 +66,7 @@ shape_list =
     [ ( "circle",         shapePic $ circle 150)
     , ( "diamond",        shapePic $ diamond 150 100)
     , ( "ellipse",        shapePic $ ellipse 150 100)
-    , ( "parallelogram",  shapePic $ zparallelogram 150 100)
+    , ( "parallelogram",  shapePic $ zparallelogram 250 200)
     , ( "rectangle",      shapePic $ rectangle 300 200)
     , ( "semicircle",     shapePic_cnsew $ semicircle 150) 
     , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
@@ -96,9 +96,13 @@ shapePic sh = drawTracing $ do
     draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
     draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
     draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
+    draw $ label WEST         "(190 deg)"     `at` radialAnchor deg190 a1
+    draw $ label NORTH        "(250 deg)"     `at` radialAnchor deg250 a1
     return ()    
   where
-    deg10 = d2r (10::Double)
+    deg10   = d2r (10::Double)
+    deg190  = d2r (190::Double)
+    deg250  = d2r (250::Double)
 
 
 
