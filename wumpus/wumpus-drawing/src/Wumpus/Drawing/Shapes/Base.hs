@@ -22,6 +22,8 @@ module Wumpus.Drawing.Shapes.Base
 
 
     LocShape
+  , DLocShape
+
   , intoLocShape
   , strokedShape
   , filledShape
@@ -49,6 +51,8 @@ import Control.Applicative
 
 
 type LocShape u a = LocCF u (a, Path u)
+
+type DLocShape a = LocShape Double a
 
 
 intoLocShape :: LocCF u a -> LocCF u (Path u) -> LocCF u (a,Path u)

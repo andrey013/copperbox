@@ -79,8 +79,7 @@ extra-source-files:
   demo/PetriNet.hs,
   demo/PictureCompo.hs,
   demo/SingleLine.hs,
-  demo/ShapeTrapezium.hs,
-  demo/ShapeTriangle.hs,
+  demo/SampleShapes.hs,
   demo/Symbols.hs,
   demo/TableChains.hs
 

@@ -2,7 +2,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module ShapeTriangle where
+module SampleShapes where
 
 
 import FontLoaderUtils
@@ -27,42 +27,65 @@ main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/shapes/"
-    maybe gs_failk  makeGSPicture  $ mb_gs
-    maybe afm_failk makeAfmPicture $ mb_afm
+    maybe gs_failk  (makeGSPicture shape_list)  $ mb_gs
+    maybe afm_failk (makeAfmPicture shape_list) $ mb_afm
   where
     gs_failk  = putStrLn "No GhostScript font path supplied..."
     afm_failk = putStrLn "No AFM v4.1 font path supplied..."
 
 
-makeGSPicture :: FilePath -> IO ()
-makeGSPicture font_dir = do
+makeGSPicture :: [(String, DCtxPicture)] -> FilePath -> IO ()
+makeGSPicture shapes font_dir = do
     putStrLn "Using GhostScript metrics..."
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
-    let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
-    writeEPS "./out/shapes/triangle01.eps" pic1
-    writeSVG "./out/shapes/triangle01.svg" pic1
+    mapM_ (out1 gs_metrics) shapes 
+  where
+    out1 gs_metrics (name, shape_pic) = do 
+       let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
+       writeEPS ("./out/shapes/" ++ name ++ "01.eps") pic1
+       writeSVG ("./out/shapes/" ++ name ++ "01.svg") pic1
 
-makeAfmPicture :: FilePath -> IO ()
-makeAfmPicture font_dir = do
+
+makeAfmPicture :: [(String, DCtxPicture)] -> FilePath -> IO ()
+makeAfmPicture shapes font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Courier"]
     mapM_ putStrLn msgs
-    let pic2 = runCtxPictureU (makeCtx afm_metrics) shape_pic
-    writeEPS "./out/shapes/triangle02.eps" pic2
-    writeSVG "./out/shapes/triangle02.svg" pic2
+    mapM_ (out1 afm_metrics) shapes 
+  where
+    out1 afm_metrics (name, shape_pic) = do 
+        let pic1 = runCtxPictureU (makeCtx afm_metrics) shape_pic
+        writeEPS ("./out/shapes/" ++ name ++ "02.eps") pic1
+        writeSVG ("./out/shapes/" ++ name ++ "02.svg") pic1
 
 
 
+shape_list :: [(String, DCtxPicture)]
+shape_list = 
+    [ ( "circle",         shapePic $ circle 150)
+    , ( "diamond",        shapePic $ diamond 150 100)
+    , ( "ellipse",        shapePic $ ellipse 150 100)
+    , ( "parallelogram",  shapePic $ zparallelogram 150 100)
+    , ( "rectangle",      shapePic $ rectangle 300 200)
+    , ( "semicircle",     shapePic_cnsew $ semicircle 150) 
+    , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
+    , ( "trapezium",      shapePic $ ztrapezium 300 150)
+    , ( "triangle",       shapePic $ isoscelesTriangle 300 200)
+    ]
 
 makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace courier . metricsContext 16
 
 
-shape_pic :: DCtxPicture
-shape_pic = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ 
-              (strokedShape $ isoscelesTriangle 300 200) `at` (P2 200 150)    
+
+
+shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
+            , RadialAnchor a
+            , DUnit a ~ Double) 
+             => DLocShape a -> DCtxPicture
+shapePic sh = drawTracing $ do
+    a1  <- localize shapeSty $ drawi $ (strokedShape $ sh) `at` (P2 200 150)    
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -76,6 +99,38 @@ shape_pic = drawTracing $ do
     return ()    
   where
     deg10 = d2r (10::Double)
+
+
+
+-- Just center and Cardinal1 anchors - this is for semicircle
+-- which doesn\'t have a set of anchors properly defined.
+--
+shapePic_cnsew :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
+               => DLocShape a -> DCtxPicture
+shapePic_cnsew sh = drawTracing $ do
+    a1  <- localize shapeSty $ drawi $ (strokedShape sh) `at` (P2 200 150)
+    draw $ label NORTH        "(center)"      `at` center a1
+    draw $ label NORTH        "(north)"       `at` north a1
+    draw $ label SOUTH        "(south)"       `at` south a1
+    draw $ label EAST         "(east)"        `at` east a1
+    draw $ label WEST         "(west)"        `at` west a1
+    return ()
+
+
+-- Just center, north and south anchors - this is for semiellipse
+-- which doesn\'t have a set of anchors properly defined.
+--
+shapePic_cns :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
+             => DLocShape a -> DCtxPicture
+shapePic_cns sh = drawTracing $ do
+    a1  <- localize shapeSty $ drawi $ (strokedShape sh) `at` (P2 200 150)
+    draw $ label NORTH        "(center)"      `at` center a1
+    draw $ label NORTH        "(north)"       `at` north a1
+    draw $ label SOUTH        "(south)"       `at` south a1
+    return ()
+
+
+
 
 shapeSty :: DrawingContextF
 shapeSty = strokeColour light_steel_blue . ultrathick

@@ -23,6 +23,7 @@ module Wumpus.Drawing.Shapes
   , module Wumpus.Drawing.Shapes.Parallelogram
   , module Wumpus.Drawing.Shapes.Rectangle
   , module Wumpus.Drawing.Shapes.Semicircle
+  , module Wumpus.Drawing.Shapes.Semiellipse
   , module Wumpus.Drawing.Shapes.Trapezium
   , module Wumpus.Drawing.Shapes.Triangle
   ) where
@@ -34,6 +35,7 @@ import Wumpus.Drawing.Shapes.Ellipse
 import Wumpus.Drawing.Shapes.Parallelogram
 import Wumpus.Drawing.Shapes.Rectangle
 import Wumpus.Drawing.Shapes.Semicircle
+import Wumpus.Drawing.Shapes.Semiellipse
 import Wumpus.Drawing.Shapes.Trapezium
 import Wumpus.Drawing.Shapes.Triangle
 
