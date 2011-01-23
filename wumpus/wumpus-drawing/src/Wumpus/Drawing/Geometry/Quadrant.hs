@@ -133,6 +133,17 @@ diamondRadialVector hw hh ang = fn $ circularModulo ang
          | otherwise    = negateY  $ triangleQI hw hh (2*pi - a)
 
 
+-- | 'triangleRadialVector' : @ half_base_width * height_minor * 
+--        height_minor * ang -> Vec @
+--
+-- Find where a radial line extended from (0,0) with the elevation
+-- @ang@ intersects with an enclosing triangle. The triangle has 
+-- the centroid at (0,0), so solutions in quadrants I and II are 
+-- intersections with a simple line. Intersections in quadrants
+-- III and IV can intersect either the respective side or the 
+-- base.
+-- 
+--
 triangleRadialVector :: (Real u, Floating u) => u -> u -> u -> Radian -> Vec2 u
 triangleRadialVector hbw hminor hmajor ang = fn $ circularModulo ang
   where
@@ -190,16 +201,15 @@ triangleQI w h ang = avec ang dist
 --
 -- > ang must be in the range 0 < ang <= 90.
 -- >
--- > width and height must be positive.
+-- > top_width and height must be positive.
 --
 rightTrapezoidQI :: (Real u, Floating u) 
                  => u -> u -> Radian -> Radian -> Vec2 u
-rightTrapezoidQI w h top_rang ang = 
-    if w0 <= w then dv
-               else avec ang minor_dist
+rightTrapezoidQI tw h top_rang ang = 
+    if w0 <= tw then dv else avec ang minor_dist
   where
     -- dist is hypotenuse of a right triangle1
-    dist         = w / (fromRadian $ sin ang)
+    dist         = h / (fromRadian $ sin ang)
     
     -- potentially this vector is *too long*.
     dv@(V2 w0 _) = avec ang dist
@@ -210,8 +220,7 @@ rightTrapezoidQI w h top_rang ang =
     
     lr_ang       = pi - top_rang
 
-    base_width   = rightTrapeziumBaseWidth w h top_rang
-
+    base_width   = rightTrapeziumBaseWidth tw h top_rang
 
 
 -- Legend:
@@ -260,10 +269,13 @@ rightTrapezoidQI w h top_rang ang =
 -- > Calculate A_C given side A_B, angle C/A\B and angle A/B\C.
 --
 triangleLeftSide :: Fractional u => u -> Radian -> Radian -> u
-triangleLeftSide base_width lang rang = 
-    (fromRadian $ sin rang) * (base_width / fromRadian apex)
+triangleLeftSide base_width lang rang =
+    (fromRadian $ sin rang) / factor 
+--    error $ show (r2d lang, r2d apex, r2d rang)
   where
-    apex = pi - (lang + rang)
+    apex   = pi - (lang + rang)
+    factor = (fromRadian $ sin apex) / base_width
+
 
 -- | 'rightTrapeziumBaseWidth' : @ top_width * height * top_right_ang -> Length @
 -- 
@@ -292,4 +304,4 @@ rightTrapeziumBaseWidth tw h tr_ang
   where
     half_pi  = 0.5*pi
     shorten  = h / fromRadian (tan tr_ang)
-    extend   = h / fromRadian (tan $ tr_ang - half_pi)
+    extend   = let lr_ang = pi - tr_ang in h / fromRadian (tan lr_ang)
