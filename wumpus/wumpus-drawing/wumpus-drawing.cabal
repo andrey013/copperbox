@@ -119,6 +119,7 @@ library
     Wumpus.Drawing.Shapes.Circle,
     Wumpus.Drawing.Shapes.Diamond,
     Wumpus.Drawing.Shapes.Ellipse,
+    Wumpus.Drawing.Shapes.InvTriangle,
     Wumpus.Drawing.Shapes.Parallelogram,
     Wumpus.Drawing.Shapes.Rectangle,
     Wumpus.Drawing.Shapes.Trapezium,

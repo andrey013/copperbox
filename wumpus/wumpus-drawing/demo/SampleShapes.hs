@@ -71,7 +71,8 @@ shape_list =
     , ( "semicircle",     shapePic_cnsew $ semicircle 150) 
     , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
     , ( "trapezium",      shapePic $ ztrapezium 300 150)
-    , ( "triangle",       shapePic $ isoscelesTriangle 300 200)
+    , ( "triangle",       shapePic $ triangle 300 200)
+    , ( "invtriangle",    shapePic $ invtriangle 300 200)
     ]
 
 makeCtx :: GlyphMetrics -> DrawingContext

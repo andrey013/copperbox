@@ -97,7 +97,7 @@ rectRadialVector hw hh ang = fn $ circularModulo ang
          | otherwise    = negateY  $ rectangleQI hw hh (2*pi - a)
 
 
--- | 'rectangleQI' : @ width * height * ang -> Vec2 @
+-- | 'rectangleQI' : @ width * height * ang -> Vec @
 --
 -- Find where a line from (0,0) in direction @ang@ intersects the 
 -- top or right side of a rectangle in QI (left side is the 
@@ -157,7 +157,7 @@ triangleRadialVector hbw hminor hmajor ang = fn $ circularModulo ang
     major_width         = hmajor / (fromRadian $ tan base_rang)
 
 
--- | 'triangleQI' : @ width * height * ang -> Vec2 @
+-- | 'triangleQI' : @ width * height * ang -> Vec @
 --
 -- Find where a line from (0,0) with elevation @ang@ intersects 
 -- the hypotenuse a right triangle in QI (the legs of the triangle 
@@ -176,7 +176,7 @@ triangleQI w h ang = avec ang dist
 
 
 
--- | 'rightTrapezoidQI' : @ top_width * height * top_right_ang -> Vec2 @
+-- | 'rightTrapezoidQI' : @ top_width * height * top_right_ang -> Vec @
 --
 -- Find where a line from (0,0) with elevation @ang@ intersects 
 -- the either the lines A_B or B_D in a right trapezoid in QI. 

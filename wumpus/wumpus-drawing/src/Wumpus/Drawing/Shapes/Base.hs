@@ -33,6 +33,7 @@ module Wumpus.Drawing.Shapes.Base
 
   , ShapeCTM
   , makeShapeCTM
+  , makeAngShapeCTM
   , ctmCenter
   , ctmAngle
   , projectPoint
@@ -112,6 +113,12 @@ makeShapeCTM pt = ShapeCTM { ctm_center   = pt
                            , ctm_scale_y  = 1
                            , ctm_rotation = 0 }
 
+
+makeAngShapeCTM :: Num u => Radian -> Point2 u -> ShapeCTM u
+makeAngShapeCTM ang pt = ShapeCTM { ctm_center   = pt
+                                  , ctm_scale_x  = 1
+                                  , ctm_scale_y  = 1
+                                  , ctm_rotation = ang }
 
 
 

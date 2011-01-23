@@ -19,10 +19,10 @@
 module Wumpus.Drawing.Shapes.Triangle
   ( 
 
-    IsoscelesTriangle
-  , DIsoscelesTriangle
-  , isoscelesTriangle
-
+    Triangle
+  , DTriangle
+  , triangle
+  , rtriangle
 
   ) where
 
@@ -42,11 +42,11 @@ import Control.Applicative
 
 
 --------------------------------------------------------------------------------
--- Diamond
+-- Triangle
 
 -- | An isosceles triangle, oriented /upwards/.
 --
-data IsoscelesTriangle u = IsoscelesTriangle 
+data Triangle u = Triangle 
       { tri_ctm         :: ShapeCTM u
       , tri_height      :: !u
       , tri_base_width  :: !u
@@ -61,31 +61,31 @@ data SyntheticProps u = SyntheticProps
       }
 
 
-type DIsoscelesTriangle = IsoscelesTriangle Double
+type DTriangle = Triangle Double
 
-type instance DUnit (IsoscelesTriangle u) = u
+type instance DUnit (Triangle u) = u
 
 
 --------------------------------------------------------------------------------
 -- Affine trans
 
 mapTriangleCTM :: (ShapeCTM u -> ShapeCTM u) 
-               -> IsoscelesTriangle u -> IsoscelesTriangle u
+               -> Triangle u -> Triangle u
 mapTriangleCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
 
-instance Num u => Scale (IsoscelesTriangle u) where
+instance Num u => Scale (Triangle u) where
   scale sx sy = mapTriangleCTM (scale sx sy)
 
 
-instance Rotate (IsoscelesTriangle u) where
+instance Rotate (Triangle u) where
   rotate ang = mapTriangleCTM (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (IsoscelesTriangle u) where
+instance (Real u, Floating u) => RotateAbout (Triangle u) where
   rotateAbout ang pt = mapTriangleCTM (rotateAbout ang pt)
 
 
-instance Num u => Translate (IsoscelesTriangle u) where
+instance Num u => Translate (Triangle u) where
   translate dx dy = mapTriangleCTM (translate dx dy)
 
 
@@ -96,15 +96,15 @@ instance Num u => Translate (IsoscelesTriangle u) where
 -- 
 runTriangle :: Fractional u 
             => (u -> u -> u -> Radian -> ShapeCTM u  -> a) 
-            -> IsoscelesTriangle u -> a
-runTriangle fn (IsoscelesTriangle { tri_ctm        = ctm
-                                  , tri_base_width = bw
-                                  , tri_syn_props = syn  }) =  
+            -> Triangle u -> a
+runTriangle fn (Triangle { tri_ctm        = ctm
+                         , tri_base_width = bw
+                         , tri_syn_props  = syn }) =  
     fn (0.5*bw) (tri_hminor syn) (tri_hmajor syn) (tri_base_ang syn) ctm
 
 
 
-instance (Real u, Floating u) => CenterAnchor (IsoscelesTriangle u) where
+instance (Real u, Floating u) => CenterAnchor (Triangle u) where
   center = ctmCenter . tri_ctm
 
 
@@ -113,7 +113,7 @@ instance (Real u, Floating u) => CenterAnchor (IsoscelesTriangle u) where
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u) => CardinalAnchor (IsoscelesTriangle u) where
+instance (Real u, Floating u) => CardinalAnchor (Triangle u) where
   north = runTriangle $ \_   _    hmaj _    -> projectPoint $ P2 0 hmaj
   south = runTriangle $ \_   hmin _    _    -> projectPoint $ P2 0 (-hmin)
   east  = runTriangle $ \hbw hmin _    ang  -> projectPoint (findEast hbw hmin ang)
@@ -131,7 +131,7 @@ findWest hbw hm ang = let (P2 xdist 0) = findEast hbw hm ang in P2 (-xdist) 0
 
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
+instance (Real u, Floating u) => CardinalAnchor2 (Triangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -139,35 +139,56 @@ instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
 
 
 
-instance (Real u, Floating u) => RadialAnchor (IsoscelesTriangle u) where
+instance (Real u, Floating u) => RadialAnchor (Triangle u) where
   radialAnchor theta = runTriangle $ \hbw hmin hmaj _ ctm -> 
     let v = triangleRadialVector hbw hmin hmaj theta
     in projectPoint (displaceVec v zeroPt) ctm
        
     
+--------------------------------------------------------------------------------
+-- Constructor
 
--- | 'isoscelesTriangle'  : @ base_width * height -> Triangle @
+-- | 'triangle'  : @ base_width * height -> Triangle @
 --
 --
-isoscelesTriangle :: (Real u, Floating u, FromPtSize u) 
-                  => u -> u -> LocShape u (IsoscelesTriangle u)
-isoscelesTriangle bw h = 
+triangle :: (Real u, Floating u, FromPtSize u) 
+         => u -> u -> LocShape u (Triangle u)
+triangle bw h = rtriangle bw h 0
+
+
+-- | 'rtriangle'  : @ base_width * height * ang -> Triangle @
+--
+rtriangle :: (Real u, Floating u, FromPtSize u) 
+          => u -> u -> Radian -> LocShape u (Triangle u)
+rtriangle bw h ang = 
    let props  = synthesizeProps bw h
        hminor = tri_hminor props
        hmajor = tri_hmajor props
-   in intoLocShape (mkTriangle bw h props) (mkTrianglePath bw hminor hmajor)
+   in intoLocShape (mkTriangle bw h ang props) 
+                   (mkTrianglePath bw hminor hmajor ang)
+
+{-
+-- | 'rtriangle'  : @ base_width * height * ang -> Triangle @
+--
+--
+rtriangle :: (Real u, Floating u, FromPtSize u) 
+          => u -> u -> Radian -> LocShape u (Triangle u)
+rtriangle bw h ang = rotate ang $ triangle bw h
+
+-- This wont work - LocShapes cannot be rotated by design. The 
+-- examples so rotate the (Ans,PrimGraphic) pair.
 
 
-
+-}
 
 mkTriangle :: (Real u, Fractional u) 
-           => u -> u -> SyntheticProps u -> LocCF u (IsoscelesTriangle u)
-mkTriangle bw h props = promoteR1 $ \ctrd -> 
-    pure $ IsoscelesTriangle { tri_ctm        = makeShapeCTM ctrd
-                             , tri_base_width = bw
-                             , tri_height     = h 
-                             , tri_syn_props  = props
-                             }
+           => u -> u -> Radian -> SyntheticProps u -> LocCF u (Triangle u)
+mkTriangle bw h ang props = promoteR1 $ \ctrd -> 
+    pure $ Triangle { tri_ctm        = makeAngShapeCTM ang ctrd
+                    , tri_base_width = bw
+                    , tri_height     = h 
+                    , tri_syn_props  = props
+                    }
 
 
 synthesizeProps :: (Real u, Fractional u) => u -> u -> SyntheticProps u
@@ -185,14 +206,17 @@ synthesizeProps bw h =
     apex_ang    = 2 * ((pi/4) - base_ang)
 
 
+
 mkTrianglePath :: (Real u, Floating u, FromPtSize u) 
-               => u -> u -> u -> LocCF u (Path u)
-mkTrianglePath bw hminor hmajor = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ trianglePath bw hminor hmajor ctr
+               => u -> u -> u -> Radian -> LocCF u (Path u)
+mkTrianglePath bw hminor hmajor ang = promoteR1 $ \ctr -> 
+    roundCornerShapePath $ trianglePath bw hminor hmajor ang ctr
 
 
-trianglePath :: (Real u, Floating u) => u -> u -> u -> LocCoordPath u
-trianglePath bw hminor hmajor (P2 x y) = [br, apex , bl]
+trianglePath :: (Real u, Floating u) 
+             => u -> u -> u -> Radian -> LocCoordPath u
+trianglePath bw hminor hmajor ang ctr@(P2 x y) = 
+    map (rotateAbout ang ctr) [br, apex , bl]
   where
     half_base = 0.5 * bw
     br        = P2 (x + half_base ) (y - hminor)
