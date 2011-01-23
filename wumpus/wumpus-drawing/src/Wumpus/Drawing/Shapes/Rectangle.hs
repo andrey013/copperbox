@@ -101,8 +101,8 @@ instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
-  radialAnchor theta = runRectangle $ \hw hh -> 
-    projectPoint $ displaceVec (rectRadialVector hw hh theta) zeroPt
+  radialAnchor theta = runRectangle $ \hw hh ctm -> 
+    projectPoint (displaceVec (rectRadialVector hw hh theta) zeroPt) ctm
 
 
 

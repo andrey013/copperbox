@@ -40,7 +40,9 @@ description:
   .
   v0.1.0 to 0.2.0:
   .
-  * ??
+  * Added new Shapes.
+  .
+  * Added Geometry.Quadrant module.
   .
   v0.1.0:
   .

@@ -27,6 +27,7 @@ module Wumpus.Drawing.Shapes.Triangle
   ) where
 
 import Wumpus.Drawing.Geometry.Intersection
+import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
@@ -92,7 +93,7 @@ instance Num u => Translate (IsoscelesTriangle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
--- 'runtriangle' : @ half_base_width * hminor * hmajor * base_ang *ctm -> Ans @
+-- 'runtriangle' : @ half_base_width * hminor * hmajor * base_ang * ctm -> Ans @
 -- 
 runTriangle :: Fractional u 
             => (u -> u -> u -> Radian -> ShapeCTM u  -> a) 
@@ -140,7 +141,10 @@ instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (IsoscelesTriangle u) where
-   radialAnchor = triRadialAnchor
+  radialAnchor theta = runTriangle $ \hbw hmin hmaj _ ctm -> 
+    let v = triangleRadialVector hbw hmin hmaj theta
+    in projectPoint (displaceVec v zeroPt) ctm
+       
 
 
 triRadialAnchor :: (Real u, Floating u) 
