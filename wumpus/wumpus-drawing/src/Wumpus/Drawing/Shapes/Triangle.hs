@@ -26,7 +26,6 @@ module Wumpus.Drawing.Shapes.Triangle
 
   ) where
 
-import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
@@ -133,10 +132,10 @@ findWest hbw hm ang = let (P2 xdist 0) = findEast hbw hm ang in P2 (-xdist) 0
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (IsoscelesTriangle u) where
-  northeast = triRadialAnchor (0.25*pi)
-  southeast = triRadialAnchor (1.75*pi)
-  southwest = triRadialAnchor (1.25*pi)
-  northwest = triRadialAnchor (0.75*pi)
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
 
@@ -145,18 +144,6 @@ instance (Real u, Floating u) => RadialAnchor (IsoscelesTriangle u) where
     let v = triangleRadialVector hbw hmin hmaj theta
     in projectPoint (displaceVec v zeroPt) ctm
        
-
-
-triRadialAnchor :: (Real u, Floating u) 
-                => Radian -> IsoscelesTriangle u -> Point2 u
-triRadialAnchor theta (IsoscelesTriangle { tri_ctm        = ctm
-                                           , tri_base_width = bw
-                                           , tri_syn_props  = syn }) = 
-    maybe ctr id $ findIntersect ctr theta $ polygonLines ps
-  where 
-    ps  = trianglePoints bw (tri_hminor syn) (tri_hmajor syn) ctm 
-    ctr = ctmCenter ctm
-    
     
 
 -- | 'isoscelesTriangle'  : @ base_width * height -> Triangle @
@@ -213,6 +200,8 @@ trianglePath bw hminor hmajor (P2 x y) = [br, apex , bl]
     bl        = P2 (x - half_base ) (y - hminor)
 
 
+{-
+
 trianglePoints :: (Real u, Floating u) 
                => u -> u -> u -> ShapeCTM u -> [Point2 u]
 trianglePoints bw hminor hmajor ctm = map (projectPoint `flip` ctm) [ br, apex, bl ]
@@ -221,4 +210,4 @@ trianglePoints bw hminor hmajor ctm = map (projectPoint `flip` ctm) [ br, apex, 
     br        = P2 half_base    (-hminor)
     apex      = P2 0 hmajor
     bl        = P2 (-half_base) (-hminor)
-
+-}

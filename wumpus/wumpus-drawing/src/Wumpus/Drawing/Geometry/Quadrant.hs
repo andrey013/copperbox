@@ -153,8 +153,8 @@ triangleRadialVector hbw hminor hmajor ang = fn $ circularModulo ang
          | otherwise    = negateY  $ rightTrapezoidQI hbw hminor base_rang (2*pi - a)
 
     height              = hmajor + hminor
-    base_rang           = toRadian $ atan (hbw / height)
-    major_width         = hmajor * (fromRadian $ tan base_rang)
+    base_rang           = toRadian $ atan (height / hbw)
+    major_width         = hmajor / (fromRadian $ tan base_rang)
 
 
 -- | 'triangleQI' : @ width * height * ang -> Vec2 @
@@ -271,7 +271,6 @@ rightTrapezoidQI tw h top_rang ang =
 triangleLeftSide :: Fractional u => u -> Radian -> Radian -> u
 triangleLeftSide base_width lang rang =
     (fromRadian $ sin rang) / factor 
---    error $ show (r2d lang, r2d apex, r2d rang)
   where
     apex   = pi - (lang + rang)
     factor = (fromRadian $ sin apex) / base_width
