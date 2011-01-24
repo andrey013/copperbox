@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Shapes.Base2
+-- Module      :  Wumpus.Drawing.Shapes.Base
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -35,6 +35,7 @@ module Wumpus.Drawing.Shapes.Base
   , roundCornerShapePath
 
   , updateAngle
+  , setDecoration
 
   , ShapeCTM
   , makeShapeCTM
@@ -69,7 +70,10 @@ import Control.Applicative
 -- on the shape border so \"node and link\" diagrams can be made 
 -- easily.
 --
-newtype Shape u a = Shape { getShape :: LocThetaCF u (a, Path u) }
+data Shape u a = Shape 
+      { shape_loc_fun     :: LocThetaCF u (a, Path u) 
+      , shape_decoration  :: LocThetaGraphic u
+      }
 
 --
 -- Design note - are shapes really LocThetaCF? - YES
@@ -85,51 +89,72 @@ type DShape a = Shape Double a
 
 type instance DUnit (Shape u a) = u
 
-makeShape :: LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
-makeShape f g = Shape $ liftA2 (,) f g
 
 instance Functor (Shape u) where
-  fmap f = Shape . fmap (bimapL f) . getShape
+  fmap f = (\s i -> s { shape_loc_fun = fmap (bimapL f) i }) 
+             <*> shape_loc_fun
 
 
+
+makeShape :: Num u => LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
+makeShape f g = Shape { shape_loc_fun    = liftA2 (,) f g
+                      , shape_decoration = emptyLocThetaGraphic
+                      }
+
+-- for Wumpus-Basic...
+emptyLocThetaGraphic :: Num u => LocThetaGraphic u
+emptyLocThetaGraphic = lift1R2 emptyLocGraphic 
 
 
 
 strokedShape :: Num u => Shape u a -> LocImage u a
-strokedShape mf = promoteR1 $ \pt -> 
-   atRot (getShape mf) pt 0 >>= \(a,spath) -> 
-   intoImage (pure a) (closedStroke $ toPrimPath spath)
+strokedShape = shapeToLoc closedStroke
 
 
 filledShape :: Num u => Shape u a -> LocImage u a
-filledShape mf = promoteR1 $ \pt -> 
-    atRot (getShape mf) pt 0 >>= \(a,spath) -> 
-    intoImage (pure a) (filledPath $ toPrimPath spath)
+filledShape = shapeToLoc filledPath
 
 
 borderedShape :: Num u => Shape u a -> LocImage u a
-borderedShape mf = promoteR1 $ \pt -> 
-    atRot (getShape mf) pt 0 >>= \(a,spath) -> 
-    intoImage (pure a) (borderedPath $ toPrimPath spath)
+borderedShape = shapeToLoc borderedPath
+
+
+shapeToLoc :: Num u 
+           => (PrimPath u -> Graphic u) -> Shape u a -> LocImage u a
+shapeToLoc pathF sh = promoteR1 $ \pt -> 
+    atRot (shape_loc_fun sh) pt 0 >>= \(a,spath) -> 
+    let g1 = pathF $ toPrimPath spath 
+        g2 = atRot (shape_decoration sh) pt 0 
+    in intoImage (pure a) (g1 `oplus` g2)
+
+{-
+-- for Wumpus-Basic?
+--
+decorate :: Image u a -> Graphic u -> Image u a
+decorate mf mg = 
+   mf >>= \(a,g1) -> mg >>= \(_,g2) -> return (a,g1 `oplus` g2)
+-}
 
 
 rstrokedShape :: Num u => Shape u a -> LocThetaImage u a
-rstrokedShape mf = promoteR2 $ \pt theta -> 
-   atRot (getShape mf) pt theta >>= \(a,spath) -> 
-   intoImage (pure a) (closedStroke $ toPrimPath spath)
+rstrokedShape = shapeToLocTheta closedStroke
 
 
 rfilledShape :: Num u => Shape u a -> LocThetaImage u a
-rfilledShape mf = promoteR2 $ \pt theta -> 
-    atRot (getShape mf) pt theta >>= \(a,spath) -> 
-    intoImage (pure a) (filledPath $ toPrimPath spath)
+rfilledShape = shapeToLocTheta filledPath
 
 
 rborderedShape :: Num u => Shape u a -> LocThetaImage u a
-rborderedShape mf = promoteR2 $ \pt theta -> 
-    atRot (getShape mf) pt theta >>= \(a,spath) -> 
-    intoImage (pure a) (borderedPath $ toPrimPath spath)
+rborderedShape = shapeToLocTheta borderedPath
 
+
+shapeToLocTheta :: Num u 
+                => (PrimPath u -> Graphic u) -> Shape u a -> LocThetaImage u a
+shapeToLocTheta pathF sh = promoteR2 $ \pt theta -> 
+    atRot (shape_loc_fun sh) pt theta >>= \(a,spath) -> 
+    let g1 = pathF $ toPrimPath spath 
+        g2 = atRot (shape_decoration sh) pt theta
+    in intoImage (pure a) (g1 `oplus` g2)
 
 
 
@@ -142,7 +167,12 @@ roundCornerShapePath xs = getRoundCornerSize >>= \sz ->
                else return (roundTrail  sz xs)
 
 updateAngle :: (Radian -> Radian) -> Shape u a -> Shape u a
-updateAngle f = Shape . moveTheta (circularModulo . f) . getShape
+updateAngle f = (\s i -> s { shape_loc_fun = moveTheta (circularModulo . f) i})
+                 <*> shape_loc_fun
+
+setDecoration :: LocThetaGraphic u -> Shape u a -> Shape u a
+setDecoration gf = (\s -> s { shape_decoration = gf })
+
 
 -- | Move the start-point of a LocImage with the supplied 
 -- displacement function.

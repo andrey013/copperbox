@@ -46,7 +46,7 @@ import Control.Applicative
 
 
 --------------------------------------------------------------------------------
--- Diamond
+-- Trapezium
 
 -- | A trapezium.
 --
