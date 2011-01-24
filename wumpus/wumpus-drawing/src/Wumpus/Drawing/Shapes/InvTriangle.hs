@@ -117,5 +117,8 @@ instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
 --
 invtriangle :: (Real u, Floating u, FromPtSize u)
             => u -> u -> Shape u (InvTriangle u)
-invtriangle bw h = fmap InvTriangle $ rtriangle bw h pi
+invtriangle bw h = fmap InvTriangle $ updateAngle (+ pi) $ triangle bw h
+    
+
+
 

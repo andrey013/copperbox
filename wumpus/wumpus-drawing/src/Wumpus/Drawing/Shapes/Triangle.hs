@@ -22,7 +22,6 @@ module Wumpus.Drawing.Shapes.Triangle
     Triangle
   , DTriangle
   , triangle
-  , rtriangle
 
   ) where
 
@@ -153,26 +152,20 @@ instance (Real u, Floating u) => RadialAnchor (Triangle u) where
 --
 triangle :: (Real u, Floating u, FromPtSize u) 
          => u -> u -> Shape u (Triangle u)
-triangle bw h = rtriangle bw h 0
+triangle bw h =
+    let props  = synthesizeProps bw h
+        hminor = tri_hminor props
+        hmajor = tri_hmajor props
+    in makeShape (mkTriangle bw h props) (mkTrianglePath bw hminor hmajor)
 
 
--- | 'rtriangle'  : @ base_width * height * ang -> Shape @
---
-rtriangle :: (Real u, Floating u, FromPtSize u) 
-          => u -> u -> Radian -> Shape u (Triangle u)
-rtriangle bw h ang = 
-   let props  = synthesizeProps bw h
-       hminor = tri_hminor props
-       hmajor = tri_hmajor props
-   in makeShape (mkTriangle bw h ang props) 
-                (mkTrianglePath bw hminor hmajor ang)
 
 
 
 mkTriangle :: (Real u, Fractional u) 
-           => u -> u -> Radian -> SyntheticProps u -> LocCF u (Triangle u)
-mkTriangle bw h ang props = promoteR1 $ \ctrd -> 
-    pure $ Triangle { tri_ctm        = makeAngShapeCTM ang ctrd
+           => u -> u -> SyntheticProps u -> LocThetaCF u (Triangle u)
+mkTriangle bw h props = promoteR2 $ \ctrd theta -> 
+    pure $ Triangle { tri_ctm        = makeShapeCTM ctrd theta
                     , tri_base_width = bw
                     , tri_height     = h 
                     , tri_syn_props  = props
@@ -196,30 +189,18 @@ synthesizeProps bw h =
 
 
 mkTrianglePath :: (Real u, Floating u, FromPtSize u) 
-               => u -> u -> u -> Radian -> LocCF u (Path u)
-mkTrianglePath bw hminor hmajor ang = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ trianglePath bw hminor hmajor ang ctr
+               => u -> u -> u -> LocThetaCF u (Path u)
+mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
+    roundCornerShapePath $ map (rotateAbout theta ctr) 
+                         $ trianglePath bw hminor hmajor ctr
 
 
 trianglePath :: (Real u, Floating u) 
-             => u -> u -> u -> Radian -> LocCoordPath u
-trianglePath bw hminor hmajor ang ctr@(P2 x y) = 
-    map (rotateAbout ang ctr) [br, apex , bl]
+             => u -> u -> u -> LocCoordPath u
+trianglePath bw hminor hmajor (P2 x y) = [br, apex, bl]
   where
     half_base = 0.5 * bw
     br        = P2 (x + half_base ) (y - hminor)
     apex      = P2 x (y + hmajor)
     bl        = P2 (x - half_base ) (y - hminor)
 
-
-{-
-
-trianglePoints :: (Real u, Floating u) 
-               => u -> u -> u -> ShapeCTM u -> [Point2 u]
-trianglePoints bw hminor hmajor ctm = map (projectPoint `flip` ctm) [ br, apex, bl ]
-  where
-    half_base = 0.5 * bw
-    br        = P2 half_base    (-hminor)
-    apex      = P2 0 hmajor
-    bl        = P2 (-half_base) (-hminor)
--}

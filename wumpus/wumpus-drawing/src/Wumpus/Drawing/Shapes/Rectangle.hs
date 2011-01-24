@@ -118,19 +118,20 @@ rectangle w h =
               (mkRectPath  (0.5*w) (0.5*h))
 
 
-mkRectangle :: Num u => u -> u -> LocCF u (Rectangle u)
-mkRectangle hw hh = promoteR1 $ \ctr -> 
-    pure $ Rectangle { rect_ctm    = makeShapeCTM ctr
+mkRectangle :: Num u => u -> u -> LocThetaCF u (Rectangle u)
+mkRectangle hw hh = promoteR2 $ \ctr theta -> 
+    pure $ Rectangle { rect_ctm    = makeShapeCTM ctr theta
                      , rect_hw     = hw
                      , rect_hh     = hh
                      }
 
 
 mkRectPath :: (Real u, Floating u, FromPtSize u) 
-           => u -> u -> LocCF u (Path u)
-mkRectPath hw hh = promoteR1 $ \ctr -> 
+           => u -> u -> LocThetaCF u (Path u)
+mkRectPath hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr
-    in roundCornerShapePath $ rectangleCoordPath (2*hw) (2*hh) btm_left
+    in roundCornerShapePath $ map (rotateAbout theta ctr)
+                            $ rectangleCoordPath (2*hw) (2*hh) btm_left
     
 
 

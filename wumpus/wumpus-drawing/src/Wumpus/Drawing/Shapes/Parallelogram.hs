@@ -176,9 +176,9 @@ zparallelogram bw h = parallelogram bw h ang
 
 mkParallelogram :: (Real u, Fractional u) 
                 => u -> u -> Radian -> SyntheticProps u 
-                -> LocCF u (Parallelogram u)
-mkParallelogram bw h lang props = promoteR1 $ \ctr -> 
-    pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr
+                -> LocThetaCF u (Parallelogram u)
+mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
+    pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
                          , pll_base_width   = bw
                          , pll_height       = h
                          , pll_base_l_ang   = lang
@@ -206,9 +206,10 @@ synthesizeProps bw h lang
 
 
 mkParallelogramPath :: (Real u, Floating u, FromPtSize u) 
-                    => u -> u -> u -> LocCF u (Path u)
-mkParallelogramPath bw_minor bw_major h = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ pllPath bw_minor bw_major h ctr
+                    => u -> u -> u -> LocThetaCF u (Path u)
+mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
+    roundCornerShapePath $ map (rotateAbout theta ctr) 
+                         $ pllPath bw_minor bw_major h ctr
 
 
 pllPath :: (Real u, Floating u) 

@@ -158,19 +158,21 @@ synthesizeProps ry =
 
 
 mkSemiellipse :: Num u 
-              => u -> u -> SyntheticProps u -> LocCF u (Semiellipse u)
-mkSemiellipse rx ry props = promoteR1 $ \ctr -> 
-    pure $ Semiellipse { se_ctm = makeShapeCTM ctr
+              => u -> u -> SyntheticProps u -> LocThetaCF u (Semiellipse u)
+mkSemiellipse rx ry props = promoteR2 $ \ctr theta -> 
+    pure $ Semiellipse { se_ctm = makeShapeCTM ctr theta
                        , se_rx = rx
                        , se_ry = ry
                        , se_syn_props = props 
                        }
 
 
-mkSemiellipsePath :: (Floating u, Ord u) 
-                  => u -> u -> u -> LocCF u (Path u)
-mkSemiellipsePath rx ry cminor = promoteR1 $ \(P2 x y) ->
-    pure $ traceCurvePoints $ bezierSemiEllipse rx ry (P2 x (y - cminor))
+mkSemiellipsePath :: (Real u, Floating u, Ord u) 
+                  => u -> u -> u -> LocThetaCF u (Path u)
+mkSemiellipsePath rx ry cminor = promoteR2 $ \(P2 x y) theta ->
+    let ctr = P2 x (y - cminor)
+    in pure $ traceCurvePoints $ map (rotateAbout theta ctr)
+                               $ bezierSemiEllipse rx ry ctr
 
 
 

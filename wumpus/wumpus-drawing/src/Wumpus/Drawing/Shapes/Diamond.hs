@@ -128,24 +128,16 @@ diamond :: (Real u, Floating u, FromPtSize u)
 diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 
-mkDiamond :: Num u => u -> u -> LocCF u (Diamond u)
-mkDiamond hw hh = promoteR1 $ \ctr -> 
-    pure $ Diamond { dia_ctm = makeShapeCTM ctr, dia_hw = hw, dia_hh = hh }
+mkDiamond :: Num u => u -> u -> LocThetaCF u (Diamond u)
+mkDiamond hw hh = promoteR2 $ \ctr theta -> 
+    pure $ Diamond { dia_ctm = makeShapeCTM ctr theta
+                   , dia_hw  = hw
+                   , dia_hh = hh 
+                   }
 
 
 mkDiamondPath :: (Real u, Floating u, FromPtSize u) 
-              => u -> u -> LocCF u (Path u)
-mkDiamondPath hw hh = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ diamondCoordPath hw hh ctr
-
-{-
-
-diamondPoints :: (Real u, Floating u) => u -> u -> ShapeCTM u -> [Point2 u]
-diamondPoints hw hh ctm = map (projectPoint `flip` ctm) [ s, e, n, w ]
-  where
-    s = P2   0  (-hh)
-    e = P2   hw    0
-    n = P2   0    hh
-    w = P2 (-hw)   0 
--}
-
+              => u -> u -> LocThetaCF u (Path u)
+mkDiamondPath hw hh = promoteR2 $ \ctr theta -> 
+    roundCornerShapePath $ map (rotateAbout theta ctr) 
+                         $ diamondCoordPath hw hh ctr

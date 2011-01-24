@@ -154,9 +154,9 @@ ztrapezium bw h = trapezium bw h ang ang
 
 
 mkTrapezium :: (Real u, Fractional u) 
-            => u -> u -> Radian -> Radian -> LocCF u (Trapezium u)
-mkTrapezium bw h lang rang = promoteR1 $ \ctr -> 
-    pure $ Trapezium { tz_ctm           = makeShapeCTM ctr
+            => u -> u -> Radian -> Radian -> LocThetaCF u (Trapezium u)
+mkTrapezium bw h lang rang = promoteR2 $ \ctr theta -> 
+    pure $ Trapezium { tz_ctm           = makeShapeCTM ctr theta
                      , tz_base_width    = bw
                      , tz_height        = h
                      , tz_base_l_ang    = lang
@@ -165,9 +165,10 @@ mkTrapezium bw h lang rang = promoteR1 $ \ctr ->
 
 
 mkTrapeziumPath :: (Real u, Floating u, FromPtSize u) 
-                => u -> u -> Radian -> Radian -> LocCF u (Path u)
-mkTrapeziumPath bw h lang rang = promoteR1 $ \ctr -> 
-    roundCornerShapePath $ tzPath bw h lang rang ctr
+                => u -> u -> Radian -> Radian -> LocThetaCF u (Path u)
+mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
+    roundCornerShapePath $ map (rotateAbout theta ctr) 
+                         $ tzPath bw h lang rang ctr
 
 
 tzPath :: (Real u, Floating u) 

@@ -28,12 +28,16 @@ module Wumpus.Drawing.Shapes.Base
   , strokedShape
   , filledShape
   , borderedShape
+  , rstrokedShape
+  , rfilledShape
+  , rborderedShape
 
   , roundCornerShapePath
 
+  , updateAngle
+
   , ShapeCTM
   , makeShapeCTM
-  , makeAngShapeCTM
   , ctmCenter
   , ctmAngle
   , projectPoint
@@ -51,8 +55,8 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
--- | Shape is a newtype wrapper over a /Loc/ function - 
--- /a function from Point to Answer/. 
+-- | Shape is a newtype wrapper over a /LocTheta/ function - 
+-- /a function from Point and Angle to Answer/. 
 --
 -- The answer is a pair of some polymorphic type @a@ and a path.
 -- When the Shape is drawn, the rendering function 
@@ -65,13 +69,23 @@ import Control.Applicative
 -- on the shape border so \"node and link\" diagrams can be made 
 -- easily.
 --
-newtype Shape u a = Shape { getShape :: LocCF u (a, Path u) }
+newtype Shape u a = Shape { getShape :: LocThetaCF u (a, Path u) }
+
+--
+-- Design note - are shapes really LocThetaCF? - YES
+--
+-- This would remove the need for r__ versions and it means
+-- decorations (i.e. text labels) would be simpler.
+-- 
+-- There could be r__ versions of the filledShape, etc. as there
+-- are only three so far so that would make 6 in total.
+--
 
 type DShape a = Shape Double a
 
 type instance DUnit (Shape u a) = u
 
-makeShape :: LocCF u a -> LocCF u (Path u) -> Shape u a
+makeShape :: LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
 makeShape f g = Shape $ liftA2 (,) f g
 
 instance Functor (Shape u) where
@@ -80,22 +94,44 @@ instance Functor (Shape u) where
 
 
 
+
 strokedShape :: Num u => Shape u a -> LocImage u a
 strokedShape mf = promoteR1 $ \pt -> 
-   (getShape mf `at` pt) >>= \(a,spath) -> 
+   atRot (getShape mf) pt 0 >>= \(a,spath) -> 
    intoImage (pure a) (closedStroke $ toPrimPath spath)
 
 
 filledShape :: Num u => Shape u a -> LocImage u a
 filledShape mf = promoteR1 $ \pt -> 
-    (getShape mf `at` pt) >>= \(a,spath) -> 
+    atRot (getShape mf) pt 0 >>= \(a,spath) -> 
     intoImage (pure a) (filledPath $ toPrimPath spath)
 
 
 borderedShape :: Num u => Shape u a -> LocImage u a
 borderedShape mf = promoteR1 $ \pt -> 
-    (getShape mf `at` pt) >>= \(a,spath) -> 
+    atRot (getShape mf) pt 0 >>= \(a,spath) -> 
     intoImage (pure a) (borderedPath $ toPrimPath spath)
+
+
+rstrokedShape :: Num u => Shape u a -> LocThetaImage u a
+rstrokedShape mf = promoteR2 $ \pt theta -> 
+   atRot (getShape mf) pt theta >>= \(a,spath) -> 
+   intoImage (pure a) (closedStroke $ toPrimPath spath)
+
+
+rfilledShape :: Num u => Shape u a -> LocThetaImage u a
+rfilledShape mf = promoteR2 $ \pt theta -> 
+    atRot (getShape mf) pt theta >>= \(a,spath) -> 
+    intoImage (pure a) (filledPath $ toPrimPath spath)
+
+
+rborderedShape :: Num u => Shape u a -> LocThetaImage u a
+rborderedShape mf = promoteR2 $ \pt theta -> 
+    atRot (getShape mf) pt theta >>= \(a,spath) -> 
+    intoImage (pure a) (borderedPath $ toPrimPath spath)
+
+
+
 
 -- | Draw the shape path with round corners.
 -- 
@@ -104,6 +140,15 @@ roundCornerShapePath :: (Real u, Floating u, FromPtSize u)
 roundCornerShapePath xs = getRoundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
+
+updateAngle :: (Radian -> Radian) -> Shape u a -> Shape u a
+updateAngle f = Shape . moveTheta (circularModulo . f) . getShape
+
+-- | Move the start-point of a LocImage with the supplied 
+-- displacement function.
+--
+moveTheta :: (Radian -> Radian) -> LocThetaCF u a -> LocThetaCF u a
+moveTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
 
 
 
@@ -125,19 +170,11 @@ data ShapeCTM u = ShapeCTM
 
 type instance DUnit (ShapeCTM u) = u
 
-makeShapeCTM :: Num u => Point2 u -> ShapeCTM u
-makeShapeCTM pt = ShapeCTM { ctm_center   = pt
-                           , ctm_scale_x  = 1
-                           , ctm_scale_y  = 1
-                           , ctm_rotation = 0 }
-
-
-makeAngShapeCTM :: Num u => Radian -> Point2 u -> ShapeCTM u
-makeAngShapeCTM ang pt = ShapeCTM { ctm_center   = pt
-                                  , ctm_scale_x  = 1
-                                  , ctm_scale_y  = 1
-                                  , ctm_rotation = ang }
-
+makeShapeCTM :: Num u => Point2 u -> Radian -> ShapeCTM u
+makeShapeCTM pt ang = ShapeCTM { ctm_center   = pt
+                               , ctm_scale_x  = 1
+                               , ctm_scale_y  = 1
+                               , ctm_rotation = ang }
 
 
 instance Num u => Scale (ShapeCTM u) where

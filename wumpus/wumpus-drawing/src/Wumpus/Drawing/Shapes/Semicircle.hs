@@ -134,23 +134,25 @@ synthesizeProps radius =
     cmajor = radius - cminor
 
 
-mkSemicircle :: Num u => u -> SyntheticProps u -> LocCF u (Semicircle u)
-mkSemicircle radius props = promoteR1 $ \ctr -> 
-    pure $ Semicircle { sc_ctm = makeShapeCTM ctr
+mkSemicircle :: Num u => u -> SyntheticProps u -> LocThetaCF u (Semicircle u)
+mkSemicircle radius props = promoteR2 $ \ctr theta -> 
+    pure $ Semicircle { sc_ctm = makeShapeCTM ctr theta
                       , sc_radius = radius
                       , sc_syn_props = props 
                       }
 
 
 
-mkSemicirclePath :: (Floating u, Ord u) => u -> u -> LocCF u (Path u)
-mkSemicirclePath radius cminor = promoteR1 $ \(P2 x y) ->
+mkSemicirclePath :: (Real u, Floating u, Ord u) 
+                 => u -> u -> LocThetaCF u (Path u)
+mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
     let ctr                 = P2 x (y - cminor)
         (p0, p1,  p2,  p3)  = bezierArc radius 0         (0.25*pi) ctr 
         (_,  p4,  p5,  p6)  = bezierArc radius (0.25*pi) (0.50*pi) ctr 
         (_,  p7,  p8,  p9)  = bezierArc radius (0.50*pi) (0.75*pi) ctr 
         (_,  p10, p11, p12) = bezierArc radius (0.75*pi) pi        ctr 
-    in pure $ traceCurvePoints $ [p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12]
+    in pure $ traceCurvePoints $ map (rotateAbout theta ctr)
+                               $ [p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12]
 
 
 

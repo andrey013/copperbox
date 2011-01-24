@@ -115,14 +115,15 @@ circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
           
 
 
-mkCircle :: Num u => u -> LocCF u (Circle u)
-mkCircle radius = promoteR1 $ \ctr -> 
-    pure $ Circle { circ_ctm = makeShapeCTM ctr, circ_radius = radius }
+mkCircle :: Num u => u -> LocThetaCF u (Circle u)
+mkCircle radius = promoteR2 $ \ctr theta -> 
+    pure $ Circle { circ_ctm = makeShapeCTM ctr theta, circ_radius = radius }
 
 
-
-mkCirclePath :: (Floating u, Ord u) => u -> LocCF u (Path u)
-mkCirclePath radius = promoteR1 $ \ctr -> 
+-- Rotation (theta) can be ignored.
+--
+mkCirclePath :: (Floating u, Ord u) => u -> LocThetaCF u (Path u)
+mkCirclePath radius = promoteR2 $ \ctr _ -> 
     pure $ traceCurvePoints $ bezierCircle radius ctr 
 
 
