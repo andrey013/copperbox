@@ -21,10 +21,10 @@ module Wumpus.Drawing.Shapes.Base
   ( 
 
 
-    LocShape
-  , DLocShape
+    Shape
+  , DShape
 
-  , intoLocShape
+  , makeShape
   , strokedShape
   , filledShape
   , borderedShape
@@ -42,42 +42,60 @@ module Wumpus.Drawing.Shapes.Base
 
   ) where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Paths
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Applicative
 
 
-type LocShape u a = LocCF u (a, Path u)
+-- | Shape is a newtype wrapper over a /Loc/ function - 
+-- /a function from Point to Answer/. 
+--
+-- The answer is a pair of some polymorphic type @a@ and a path.
+-- When the Shape is drawn, the rendering function 
+-- (@strokedShape@, etc.) uses the path for drawing and returns 
+-- the polymorphic answer @a@. 
+--
+-- The @a@ will represent some concrete shape object (Rectangle, 
+-- Triangle etc.). Crucial for shape objects is that they support
+-- Anchors - this allows connectors to address specific locations
+-- on the shape border so \"node and link\" diagrams can be made 
+-- easily.
+--
+newtype Shape u a = Shape { getShape :: LocCF u (a, Path u) }
 
-type DLocShape a = LocShape Double a
+type DShape a = Shape Double a
+
+type instance DUnit (Shape u a) = u
+
+makeShape :: LocCF u a -> LocCF u (Path u) -> Shape u a
+makeShape f g = Shape $ liftA2 (,) f g
+
+instance Functor (Shape u) where
+  fmap f = Shape . fmap (bimapL f) . getShape
 
 
-intoLocShape :: LocCF u a -> LocCF u (Path u) -> LocCF u (a,Path u)
-intoLocShape = liftA2 (,)
-
-strokedShape :: Num u => LocShape u a -> LocImage u a
-strokedShape mf = 
-   promoteR1 $ \pt -> 
-     (mf `at` pt) >>= \(a,spath) -> 
-     intoImage (pure a) (closedStroke $ toPrimPath spath)
 
 
-filledShape :: Num u => LocShape u a -> LocImage u a
-filledShape mf = 
-   promoteR1 $ \pt -> 
-     (mf `at` pt) >>= \(a,spath) -> 
-     intoImage (pure a) (filledPath $ toPrimPath spath)
+strokedShape :: Num u => Shape u a -> LocImage u a
+strokedShape mf = promoteR1 $ \pt -> 
+   (getShape mf `at` pt) >>= \(a,spath) -> 
+   intoImage (pure a) (closedStroke $ toPrimPath spath)
 
 
-borderedShape :: Num u => LocShape u a -> LocImage u a
-borderedShape mf = 
-   promoteR1 $ \pt -> 
-     (mf `at` pt) >>= \(a,spath) -> 
-     intoImage (pure a) (borderedPath $ toPrimPath spath)
+filledShape :: Num u => Shape u a -> LocImage u a
+filledShape mf = promoteR1 $ \pt -> 
+    (getShape mf `at` pt) >>= \(a,spath) -> 
+    intoImage (pure a) (filledPath $ toPrimPath spath)
+
+
+borderedShape :: Num u => Shape u a -> LocImage u a
+borderedShape mf = promoteR1 $ \pt -> 
+    (getShape mf `at` pt) >>= \(a,spath) -> 
+    intoImage (pure a) (borderedPath $ toPrimPath spath)
 
 -- | Draw the shape path with round corners.
 -- 

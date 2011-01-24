@@ -113,15 +113,15 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
--- | 'semicircle'  : @ radius -> shape @
+-- | 'semicircle'  : @ radius -> Shape @
 --
-semicircle :: (Real u, Floating u) => u -> LocShape u (Semicircle u)
+semicircle :: (Real u, Floating u) => u -> Shape u (Semicircle u)
 semicircle radius = 
     let props = synthesizeProps radius
-    in intoLocShape (mkSemicircle radius props) 
-                    (mkSemicirclePath radius (sc_ctr_minor props))
+    in makeShape (mkSemicircle radius props) 
+                 (mkSemicirclePath radius (sc_ctr_minor props))
           
 
 synthesizeProps :: Floating u => u -> SyntheticProps u

@@ -107,15 +107,15 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
 rectangle :: (Real u, Floating u, FromPtSize u) 
-          => u -> u -> LocShape u (Rectangle u)
+          => u -> u -> Shape u (Rectangle u)
 rectangle w h = 
-    intoLocShape (mkRectangle (0.5*w) (0.5*h))
-                 (mkRectPath  (0.5*w) (0.5*h))
+    makeShape (mkRectangle (0.5*w) (0.5*h))
+              (mkRectPath  (0.5*w) (0.5*h))
 
 
 mkRectangle :: Num u => u -> u -> LocCF u (Rectangle u)

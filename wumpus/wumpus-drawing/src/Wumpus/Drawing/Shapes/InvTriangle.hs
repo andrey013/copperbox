@@ -26,9 +26,6 @@ module Wumpus.Drawing.Shapes.InvTriangle
 
   ) where
 
-import Wumpus.Drawing.Geometry.Quadrant
-import Wumpus.Drawing.Geometry.Paths
-import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 import Wumpus.Drawing.Shapes.Triangle
 
@@ -37,7 +34,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Control.Applicative
 
 
 
@@ -114,16 +110,12 @@ instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
       ang = circularModulo $ theta + pi
 
 --------------------------------------------------------------------------------
--- Constructor 
+-- Construction
 
 -- | 'invtriangle'  : @ top_base_width * height -> Triangle @
 --
 --
 invtriangle :: (Real u, Floating u, FromPtSize u)
-            => u -> u -> LocShape u (InvTriangle u)
-invtriangle bw h = mapAns InvTriangle $ rtriangle bw h pi
-    
-
-mapAns :: Functor f => (a -> z) -> f (a,b) -> f (z,b)
-mapAns f = fmap (\(a,b) -> (f a ,b))
+            => u -> u -> Shape u (InvTriangle u)
+invtriangle bw h = fmap InvTriangle $ rtriangle bw h pi
 

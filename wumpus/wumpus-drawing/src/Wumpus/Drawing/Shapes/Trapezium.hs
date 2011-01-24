@@ -127,24 +127,24 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
     
     
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 
 -- | 'trapezium'  : @ base_width * height * bottom_left_ang * 
---     bottom_right_ang -> Trapezium @
+--     bottom_right_ang -> Shape @
 --
 --
 trapezium :: (Real u, Floating u, FromPtSize u) 
-                  => u -> u -> Radian -> Radian -> LocShape u (Trapezium u)
+          => u -> u -> Radian -> Radian -> Shape u (Trapezium u)
 trapezium bw h lang rang = 
-    intoLocShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
+    makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
 
 
 -- | 'ztrapezium'  : @ base_width * height -> Trapezium @
 --
 --
 ztrapezium :: (Real u, Floating u, FromPtSize u) 
-           => u -> u -> LocShape u (Trapezium u)
+           => u -> u -> Shape u (Trapezium u)
 ztrapezium bw h = trapezium bw h ang ang
   where
     ang = d2r (60::Double)

@@ -117,15 +117,15 @@ midpoint p1 p2 = let v = 0.5 *^ pvec p1 p2 in p1 .+^ v
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 -- | 'diamond'  : @ half_width * half_height -> shape @
 --
 -- Note - args might change to tull_width and full_height...
 --
 diamond :: (Real u, Floating u, FromPtSize u) 
-        => u -> u -> LocShape u (Diamond u)
-diamond hw hh = intoLocShape (mkDiamond hw hh) (mkDiamondPath hw hh)
+        => u -> u -> Shape u (Diamond u)
+diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 
 mkDiamond :: Num u => u -> u -> LocCF u (Diamond u)

@@ -133,17 +133,17 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 
--- | 'semiellipse'  : @ radius -> shape @
+-- | 'semiellipse'  : @ x_radius * y_radius -> Shape @
 --
 semiellipse :: (Real u, Floating u) 
-            => u -> u -> LocShape u (Semiellipse u)
+            => u -> u -> Shape u (Semiellipse u)
 semiellipse rx ry = 
     let props = synthesizeProps ry
-    in intoLocShape (mkSemiellipse rx ry props) 
-                    (mkSemiellipsePath rx ry (se_ry_minor props))
+    in makeShape (mkSemiellipse rx ry props) 
+                 (mkSemiellipsePath rx ry (se_ry_minor props))
           
 
 

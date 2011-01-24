@@ -84,7 +84,7 @@ makeCtx = fontFace courier . metricsContext 16
 shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
             , RadialAnchor a
             , DUnit a ~ Double) 
-             => DLocShape a -> DCtxPicture
+         => DShape a -> DCtxPicture
 shapePic sh = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ (strokedShape $ sh) `at` (P2 200 150)    
     draw $ label NORTH        "(center)"      `at` center a1
@@ -111,7 +111,7 @@ shapePic sh = drawTracing $ do
 -- which doesn\'t have a set of anchors properly defined.
 --
 shapePic_cnsew :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
-               => DLocShape a -> DCtxPicture
+               => DShape a -> DCtxPicture
 shapePic_cnsew sh = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ (strokedShape sh) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1
@@ -126,7 +126,7 @@ shapePic_cnsew sh = drawTracing $ do
 -- which doesn\'t have a set of anchors properly defined.
 --
 shapePic_cns :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
-             => DLocShape a -> DCtxPicture
+             => DShape a -> DCtxPicture
 shapePic_cns sh = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ (strokedShape sh) `at` (P2 200 150)
     draw $ label NORTH        "(center)"      `at` center a1

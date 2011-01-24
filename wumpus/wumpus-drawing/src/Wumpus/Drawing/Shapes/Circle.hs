@@ -106,12 +106,12 @@ instance (Real u, Floating u) => RadialAnchor (Circle u) where
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 -- | 'circle'  : @ radius -> shape @
 --
-circle :: (Real u, Floating u) => u -> LocShape u (Circle u)
-circle radius = intoLocShape (mkCircle radius) (mkCirclePath radius)
+circle :: (Real u, Floating u) => u -> Shape u (Circle u)
+circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
           
 
 

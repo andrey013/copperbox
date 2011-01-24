@@ -146,26 +146,26 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
     
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 
 -- | 'parallelogram'  : @ width * height * bottom_left_ang -> Parallelogram @
 --
 --
 parallelogram :: (Real u, Floating u, FromPtSize u) 
-                  => u -> u -> Radian -> LocShape u (Parallelogram u)
+              => u -> u -> Radian -> Shape u (Parallelogram u)
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
-    in intoLocShape (mkParallelogram bw h lang props) 
-                    (mkParallelogramPath (pll_base_minor props) 
-                                         (pll_base_major props) h)
+    in makeShape (mkParallelogram bw h lang props) 
+                 (mkParallelogramPath (pll_base_minor props) 
+                                      (pll_base_major props) h)
 
 
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
 --
 --
 zparallelogram :: (Real u, Floating u, FromPtSize u) 
-              => u -> u -> LocShape u (Parallelogram u)
+              => u -> u -> Shape u (Parallelogram u)
 zparallelogram bw h = parallelogram bw h ang
   where
     ang = d2r (60::Double)

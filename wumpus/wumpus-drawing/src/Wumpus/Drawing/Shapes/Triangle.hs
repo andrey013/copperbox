@@ -146,40 +146,28 @@ instance (Real u, Floating u) => RadialAnchor (Triangle u) where
        
     
 --------------------------------------------------------------------------------
--- Constructor
+-- Construction
 
--- | 'triangle'  : @ base_width * height -> Triangle @
+-- | 'triangle'  : @ base_width * height -> Shape @
 --
 --
 triangle :: (Real u, Floating u, FromPtSize u) 
-         => u -> u -> LocShape u (Triangle u)
+         => u -> u -> Shape u (Triangle u)
 triangle bw h = rtriangle bw h 0
 
 
--- | 'rtriangle'  : @ base_width * height * ang -> Triangle @
+-- | 'rtriangle'  : @ base_width * height * ang -> Shape @
 --
 rtriangle :: (Real u, Floating u, FromPtSize u) 
-          => u -> u -> Radian -> LocShape u (Triangle u)
+          => u -> u -> Radian -> Shape u (Triangle u)
 rtriangle bw h ang = 
    let props  = synthesizeProps bw h
        hminor = tri_hminor props
        hmajor = tri_hmajor props
-   in intoLocShape (mkTriangle bw h ang props) 
-                   (mkTrianglePath bw hminor hmajor ang)
-
-{-
--- | 'rtriangle'  : @ base_width * height * ang -> Triangle @
---
---
-rtriangle :: (Real u, Floating u, FromPtSize u) 
-          => u -> u -> Radian -> LocShape u (Triangle u)
-rtriangle bw h ang = rotate ang $ triangle bw h
-
--- This wont work - LocShapes cannot be rotated by design. The 
--- examples so rotate the (Ans,PrimGraphic) pair.
+   in makeShape (mkTriangle bw h ang props) 
+                (mkTrianglePath bw hminor hmajor ang)
 
 
--}
 
 mkTriangle :: (Real u, Fractional u) 
            => u -> u -> Radian -> SyntheticProps u -> LocCF u (Triangle u)

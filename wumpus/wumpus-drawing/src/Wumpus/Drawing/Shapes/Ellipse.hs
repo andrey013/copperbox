@@ -117,13 +117,12 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
 
 
 --------------------------------------------------------------------------------
--- Constructors
+-- Construction
 
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
-ellipse :: (Floating u, Ord u) => u -> u -> LocShape u (Ellipse u)
-ellipse rx ry = 
-    intoLocShape (mkEllipse rx ry) (mkEllipsePath rx ry)
+ellipse :: (Floating u, Ord u) => u -> u -> Shape u (Ellipse u)
+ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
 
 mkEllipse :: Num u => u -> u -> LocCF u (Ellipse u)
