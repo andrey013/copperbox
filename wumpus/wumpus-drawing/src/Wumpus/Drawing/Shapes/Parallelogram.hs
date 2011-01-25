@@ -121,7 +121,8 @@ instance (Real u, Floating u) => CardinalAnchor (Parallelogram u) where
   west  = runParallelogram $ \hw _  -> projectPoint $ P2 (-hw) 0
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (Parallelogram u) where
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor2 (Parallelogram u) where
   northeast = pllRadialAnchor (0.25*pi)
   southeast = pllRadialAnchor (1.75*pi)
   southwest = pllRadialAnchor (1.25*pi)
@@ -129,16 +130,19 @@ instance (Real u, Floating u) => CardinalAnchor2 (Parallelogram u) where
 
 
 
-instance (Real u, Floating u) => RadialAnchor (Parallelogram u) where
+instance (Real u, Floating u, FromPtSize u) => 
+     RadialAnchor (Parallelogram u) where
    radialAnchor = pllRadialAnchor
 
 
-pllRadialAnchor :: (Real u, Floating u) 
+-- TODO - update this to a quadrant function...
+--
+pllRadialAnchor :: (Real u, Floating u, FromPtSize u) 
                   => Radian -> Parallelogram u -> Point2 u
 pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
                                      , pll_height    = h
                                      , pll_syn_props = syn }) =
-    maybe ctr id $ findIntersect ctr theta $ polygonLines ps
+    maybe ctr id $ findIntersect ctr theta $ polygonLineSegments ps
   where 
     ps  = pllPoints (pll_base_minor syn) (pll_base_major syn) h ctm
     ctr = ctmCenter ctm

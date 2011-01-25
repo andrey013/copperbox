@@ -3,35 +3,32 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Geometry.Intersection
--- Copyright   :  (c) Stephen Tetley 2010-2011
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Intersection of line to line and line to plane
+-- Intersection of line to line and line to plane.
 -- 
--- \*\* - WARNING \*\* - half baked. 
+-- \*\* - WARNING \*\* - this uses quite a high tolerance for 
+-- floating equality. 
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Geometry.Intersection
   ( 
 
-    lineIntersection
-  , linesegIntersection
+    LineSegment
+  , interLineLine
+  , interLinesegLineseg
+  , interLinesegLine
 
-  -- * OLD...
-  , LineSegment(..)
-  , PointSlope
-  , pointSlope
-  , toLineEquation
   , findIntersect
-  , intersection
+  , rectangleLineSegments
+  , polygonLineSegments
 
-  , rectangleLines
-  , polygonLines
 
   ) 
   where
@@ -43,7 +40,9 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 
--- | 'lineIntersection' : @ line1 * line2 -> Maybe Point @
+type LineSegment u = (Point2 u, Point2 u)
+
+-- | 'interLineLine' : @ line1 * line2 -> Maybe Point @
 -- 
 -- Find the intersection of two lines, if there is one. 
 --
@@ -53,10 +52,10 @@ import Data.AffineSpace                         -- package: vector-space
 -- An answer of @Nothing@ may indicate wither the lines coincide
 -- or the are parallel.
 --
-lineIntersection :: Fractional u 
-                 => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
-                 -> Maybe (Point2 u)
-lineIntersection (p1,p2) (q1,q2) = 
+interLineLine :: Fractional u 
+              => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
+              -> Maybe (Point2 u)
+interLineLine (p1,p2) (q1,q2) = 
     if det_co == 0 then Nothing 
                    else Just $ P2 (det_xm / det_co) (det_ym / det_co)
   where
@@ -75,128 +74,114 @@ lineIntersection (p1,p2) (q1,q2) =
 
 
 
--- | 'lineIntersection' : @ line1 * line2 -> Maybe Point @
+-- | 'interLinesegLineseg' : @ line_segment1 * line_segment2 -> Maybe Point @
 -- 
--- Find the intersection of two lines, if there is one. 
+-- Find the intersection of two line segments, if there is one. 
 --
--- Lines are infinite they are represented by points on them, 
--- they are not line segments.
+-- An answer of @Nothing@ indicates that the line segments 
+-- coincide, or that there is no intersection.
 --
--- An answer of @Nothing@ may indicate wither the lines coincide
--- or the are parallel.
---
-linesegIntersection :: (Fractional u, Ord u)
-                    => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
-                    -> Maybe (Point2 u)
-linesegIntersection l1 l2 = lineIntersection l1 l2 >>= segcheck
+interLinesegLineseg :: (Fractional u, Ord u, FromPtSize u)
+                    => LineSegment u -> LineSegment u -> Maybe (Point2 u)
+interLinesegLineseg l1 l2 = interLineLine l1 l2 >>= segcheck
   where
-    segcheck pt = if within pt l1 && within pt l2 then Just pt else Nothing
-   
-    within (P2 x y) ((P2 x0 y0), (P2 x1 y1)) =  between x (ordpair x0 x1)
-                                             && between y (ordpair y0 y1)
+    segcheck = mbCheck (\pt -> withinPoints pt l1 && withinPoints pt l2)
+ 
 
+-- | 'interLinesegLine' : @ line_segment * line -> Maybe Point @
+-- 
+-- Find the intersection of a line and a line segment, if there 
+-- is one. 
+--
+-- An answer of @Nothing@ indicates that the the line and line
+-- segment coincide, or that there is no intersection.
+--
+interLinesegLine :: (Fractional u, Ord u, FromPtSize u)
+                 => LineSegment u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
+interLinesegLine seg line = interLineLine seg line >>= segcheck
+  where
+    segcheck = mbCheck (\pt -> withinPoints pt seg)
+
+
+mbCheck :: (a -> Bool) -> a -> Maybe a
+mbCheck test a = if test a then Just a else Nothing
+
+-- | Check the point is \"within\" the span of the line.
+--
+-- Note - this function is to be used \*after\* an intersection
+-- has been found. Hence it is not export.
+--
+withinPoints :: (Ord u, FromPtSize u) => Point2 u -> (Point2 u, Point2 u) -> Bool
+withinPoints (P2 x y) (P2 x0 y0, P2 x1 y1) =  
+    between x (ordpair x0 x1) && between y (ordpair y0 y1)
+  where
     ordpair a b     = (min a b, max a b)
-    between a (s,t) = s <= a && a <= t  
+    between a (s,t) = (s `tGT` a) && (a `tGT` t)
 
+    tGT a b         = a < b || abs (a-b) < tolerance
 
-
-
-
-
--- WARNING - This module is not very good (neither particularly 
--- robust, nor efficient).
--- 
--- I really need to find an algorithm that does this properly.
+-- | Note - its important to use tolerance for the @withPoints@ 
+-- function.
 --
-
-data LineSegment u = LS (Point2 u) (Point2 u)
-  deriving (Eq,Ord,Show)
-
-
-data PointSlope u = PointSlope 
-      { _point_slope_point :: Point2 u
-      , _point_slope_slope :: u
-      }
-  deriving (Eq,Show)
-
-pointSlope :: Fractional u => Point2 u -> Radian -> PointSlope u 
-pointSlope pt theta = PointSlope pt (fromRadian $ tan theta)
+tolerance :: FromPtSize u => u
+tolerance = fromPtSize 0.01
 
 
-
-toLineEquation :: Num u => PointSlope u -> LineEquation u
-toLineEquation (PointSlope (P2 x0 y0) m) = LineEquation m (-1) ((-m) * x0 + y0)
-
-
-
-
-data IntersectionResult u = Intersects u u | Contained | NoIntersect
-  deriving (Eq,Show)
-
-
--- Note the uses a /plane/ so is susceptible to picking the 
--- wrong quadrant...
+-- | 'findIntersect' :: @ radial_origin * theta * [line_segment] -> Maybe Point @
 --
-findIntersect :: (Floating u, Real u, Ord u)
-               => Point2 u -> Radian -> [LineSegment u] -> Maybe (Point2 u)
-findIntersect ctr ang0 = step 
+-- Find the first intersection of a line through @radial_origin@ 
+-- at angle @theta@ and the supplied line segments, if there 
+-- is one. 
+--
+findIntersect :: (Floating u, Real u, Ord u, FromPtSize u)
+               => Point2 u -> Radian -> [LineSegment u] 
+               -> Maybe (Point2 u)
+findIntersect radial_ogin ang = step 
   where
-    theta       = circularModulo ang0
-    eqn         = toLineEquation $ pointSlope ctr theta
+    plane       = makePlane radial_ogin ang
     step []     = Nothing
-    step (x:xs) = case intersection x eqn of 
-                     Just pt | quadrantCheck theta ctr pt -> Just pt
+    step (x:xs) = case interLinesegLine x plane of 
+                     Just pt | quadrantCheck ang radial_ogin pt -> Just pt
                      _       -> step xs
 
+-- | Make a line \/ plane .
+--
+makePlane :: Floating u => Point2 u -> Radian -> (Point2 u, Point2 u)
+makePlane radial_ogin ang = (radial_ogin, radial_ogin .+^ avec ang 100)
 
+-- | The tolerance on Radian equality should be acceptable...
+--
 quadrantCheck :: (Real u, Floating u) 
               => Radian -> Point2 u -> Point2 u -> Bool
 quadrantCheck theta ctr pt = theta == lineAngle ctr pt
 
-intersection :: (Real u, Fractional u, Ord u) 
-             => LineSegment u -> LineEquation u -> Maybe (Point2 u)
-intersection ls@(LS p q) eqn = case intersect1 ls eqn of
-    Intersects fp fq -> let t = fp / (fp-fq) in Just $ affineComb t p q
-    Contained        -> Just p
-    NoIntersect      -> Nothing
 
 
-
-intersect1 :: (Num u, Ord u) 
-           => LineSegment u -> LineEquation u -> IntersectionResult u
-intersect1 (LS p q) eqn = 
-     if inters fp fq then Intersects fp fq
-                     else if contained fp fq then Contained else NoIntersect
+-- | 'rectangleLineSegments' : @ half_width * half_height -> [LineSegment] @
+--
+-- Compute the line segments of a rectangle.
+--
+rectangleLineSegments :: Num u => u -> u -> Point2 u -> [LineSegment u]
+rectangleLineSegments hw hh ctr = [(br,tr), (tr,tl), (tl,bl), (bl,br)]
   where
-    inters a b    = (a < 0 && b >= 0) || (a > 0 && b <= 0)
-    contained a b = a == 0 && b == 0
-    fp            = lineF p eqn
-    fq            = lineF q eqn
- 
-lineF :: Num u => Point2 u -> LineEquation u -> u
-lineF (P2 x y) (LineEquation a b c) = a*x + b*y + c
-
--- affineComb :: Num u => Point2 u -> Point2 u -> u -> Point2 u
--- affineComb p q t = p .+^ t *^ (q .-. p)
+    br = ctr .+^ vec hw    (-hh)
+    tr = ctr .+^ vec hw    hh
+    tl = ctr .+^ vec (-hw) hh
+    bl = ctr .+^ vec (-hw) (-hh)
 
 
-
-
-rectangleLines :: Num u => Point2 u -> u -> u -> [LineSegment u]
-rectangleLines ctr hw hh = [LS br tr, LS tr tl, LS tl bl, LS bl br]
+-- | 'polygonleLineSegments' : @ [point] -> [LineSegment] @
+--
+-- Compute the line segments of a polygon fome a list of 
+-- its vertices.
+--
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list. 
+-- 
+polygonLineSegments :: [Point2 u] -> [LineSegment u]
+polygonLineSegments []     = error "polygonLineSegments - emptyList"
+polygonLineSegments (x:xs) = step x xs 
   where
-    br = ctr .+^ (vec hw    (-hh))
-    tr = ctr .+^ (vec hw    hh)
-    tl = ctr .+^ (vec (-hw) hh)
-    bl = ctr .+^ (vec (-hw) (-hh))
-
-
-polygonLines :: [Point2 u] -> [LineSegment u]
-polygonLines []     = error "polygonLines - emptyList"
-polygonLines (x:xs) = step x xs 
-  where
-    step a []        = [LS a x]
-    step a (b:bs)    = LS a b : step b bs
-
-
+    step a []        = [(a,x)]
+    step a (b:bs)    = (a,b) : step b bs
 

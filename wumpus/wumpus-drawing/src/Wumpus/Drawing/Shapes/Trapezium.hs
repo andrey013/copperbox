@@ -93,7 +93,8 @@ instance (Real u, Floating u) => CenterAnchor (Trapezium u) where
   center = ctmCenter . tz_ctm
 
 
-instance (Real u, Floating u) => CardinalAnchor (Trapezium u) where
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor (Trapezium u) where
   north = tzRadialAnchor (0.5*pi)
   south = \tz -> let hh = 0.5 * tz_height tz
                  in projectPoint (P2 0 (-hh)) (tz_ctm tz)
@@ -101,7 +102,8 @@ instance (Real u, Floating u) => CardinalAnchor (Trapezium u) where
   west  = tzRadialAnchor pi
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (Trapezium u) where
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor2 (Trapezium u) where
   northeast = tzRadialAnchor (0.25*pi)
   southeast = tzRadialAnchor (1.75*pi)
   southwest = tzRadialAnchor (1.25*pi)
@@ -109,18 +111,20 @@ instance (Real u, Floating u) => CardinalAnchor2 (Trapezium u) where
 
 
 
-instance (Real u, Floating u) => RadialAnchor (Trapezium u) where
-   radialAnchor = tzRadialAnchor
+instance (Real u, Floating u, FromPtSize u) => 
+    RadialAnchor (Trapezium u) where
+  radialAnchor = tzRadialAnchor
 
-
-tzRadialAnchor :: (Real u, Floating u) 
-                  => Radian -> Trapezium u -> Point2 u
+-- TODO - update this to a quadrant function...
+--
+tzRadialAnchor :: (Real u, Floating u, FromPtSize u) 
+               => Radian -> Trapezium u -> Point2 u
 tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_base_width = bw
                                 , tz_height     = h
                                 , tz_base_l_ang = lang
                                 , tz_base_r_ang = rang }) =
-    maybe ctr id $ findIntersect ctr theta $ polygonLines ps
+    maybe ctr id $ findIntersect ctr theta $ polygonLineSegments ps
   where 
     ps  = tzPoints bw h lang rang ctm 
     ctr = ctmCenter ctm
