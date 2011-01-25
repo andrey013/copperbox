@@ -99,10 +99,11 @@ instance (Real u, Floating u) => CenterAnchor (Semicircle u) where
 instance (Real u, Floating u) => CardinalAnchor (Semicircle u) where
   north = runSemicircle $ \_ _    cmaj -> projectPoint $ P2 0  cmaj
   south = runSemicircle $ \_ cmin _    -> projectPoint $ P2 0  (-cmin)
-  east  = runSemicircle $ \r cmin _    -> let x = pyth r cmin 
-                                          in projectPoint $ P2 x    0
-  west  = runSemicircle $ \r cmin _    -> let x = pyth r cmin 
-                                          in projectPoint $ P2 (-x) 0
+  east  = runSemicircle $ \r cmin _    -> 
+            let x = pyth r cmin in projectPoint $ P2 x    0
+
+  west  = runSemicircle $ \r cmin _    -> 
+            let x = pyth r cmin in projectPoint $ P2 (-x) 0
 
 pyth :: Floating u => u -> u -> u
 pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
@@ -117,7 +118,8 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 -- | 'semicircle'  : @ radius -> Shape @
 --
-semicircle :: (Real u, Floating u) => u -> Shape u (Semicircle u)
+semicircle :: (Real u, Floating u, FromPtSize u) 
+           => u -> Shape u (Semicircle u)
 semicircle radius = 
     let props = synthesizeProps radius
     in makeShape (mkSemicircle radius props) 
@@ -143,7 +145,7 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 
 
 
-mkSemicirclePath :: (Real u, Floating u, Ord u) 
+mkSemicirclePath :: (Real u, Floating u, FromPtSize u) 
                  => u -> u -> LocThetaCF u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
     let ctr                 = P2 x (y - cminor)

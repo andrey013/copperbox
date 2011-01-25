@@ -184,7 +184,8 @@ connLightningBolt u = promoteR2 $ \ p0 p1 ->
 --
 -- @u@ is the altitude of the triangle.
 --
-connIsoscelesCurve :: (Real u, Floating u) => u -> ConnectorPath u 
+connIsoscelesCurve :: (Real u, Floating u, FromPtSize u) 
+                   => u -> ConnectorPath u 
 connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
     let control_pt  = midpointIsosceles u p0 p1
     in pure $ traceCurvePoints [p0, control_pt, control_pt, p1]
@@ -196,7 +197,8 @@ connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
 -- The two Bezier control points take the /top/ corners. The
 -- curve tends to be very deep.
 -- 
-connSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connSquareCurve :: (Real u, Floating u, FromPtSize u) 
+                => ConnectorPath u 
 connSquareCurve = promoteR2 $ \ p0 p1 ->
     let (cp0,cp1) = squareFromBasePoints p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
@@ -210,7 +212,8 @@ connSquareCurve = promoteR2 $ \ p0 p1 ->
 -- 
 -- (Underneath is modulo the direction, of course).
 -- 
-connUSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connUSquareCurve :: (Real u, Floating u, FromPtSize u) 
+                 => ConnectorPath u 
 connUSquareCurve = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = usquareFromBasePoints p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
@@ -220,7 +223,8 @@ connUSquareCurve = promoteR2 $ \ p0 p1 ->
 --
 -- Form a curve inside a trapeziod.
 -- 
-connTrapezoidCurve :: (Real u, Floating u) => u -> u -> ConnectorPath u 
+connTrapezoidCurve :: (Real u, Floating u, FromPtSize u) 
+                   => u -> u -> ConnectorPath u 
 connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = trapezoidFromBasePoints u ratio_to_base p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
@@ -229,7 +233,8 @@ connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 ->
 -- | Make a curve within a square, following the corner points as
 -- a Z.
 --
-connZSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connZSquareCurve :: (Real u, Floating u, FromPtSize u) 
+                 => ConnectorPath u 
 connZSquareCurve = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = squareFromCornerPoints p0 p1
     in pure $ traceCurvePoints [p0,cp0,cp1,p1]
@@ -240,7 +245,8 @@ connZSquareCurve = promoteR2 $ \p0 p1 ->
 -- The order of tracing flips the control points, so this is an
 -- /underneath/ version of 'connZSquareCurve'.
 -- 
-connUZSquareCurve :: (Real u, Floating u) => ConnectorPath u 
+connUZSquareCurve :: (Real u, Floating u, FromPtSize u) 
+                  => ConnectorPath u 
 connUZSquareCurve = promoteR2 $ \ p0 p1 ->  
    let (cp0,cp1)  = squareFromCornerPoints p0 p1 
    in pure $ traceCurvePoints [p0,cp1,cp0,p1]

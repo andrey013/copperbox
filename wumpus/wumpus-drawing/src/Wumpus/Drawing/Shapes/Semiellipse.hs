@@ -138,7 +138,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 -- | 'semiellipse'  : @ x_radius * y_radius -> Shape @
 --
-semiellipse :: (Real u, Floating u) 
+semiellipse :: (Real u, Floating u, FromPtSize u) 
             => u -> u -> Shape u (Semiellipse u)
 semiellipse rx ry = 
     let props = synthesizeProps ry
@@ -167,7 +167,7 @@ mkSemiellipse rx ry props = promoteR2 $ \ctr theta ->
                        }
 
 
-mkSemiellipsePath :: (Real u, Floating u, Ord u) 
+mkSemiellipsePath :: (Real u, Floating u, FromPtSize u) 
                   => u -> u -> u -> LocThetaCF u (Path u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \(P2 x y) theta ->
     let ctr = P2 x (y - cminor)

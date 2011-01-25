@@ -70,7 +70,7 @@ makeCtx = fontFace times_roman . metricsContext 11
          
 circuit_pic :: CtxPicture Double 
 circuit_pic = drawTracing $ do
-    a1 <- drawi $ (strokedShape $ rrectangle 12 66 30) `at` P2 0 72
+    a1 <- drawi $ rrectangle 12 66 30 `at` P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ (strokedShape $ circle 16) `at` P2 120 60
     atext a2 "IF"
@@ -113,6 +113,9 @@ ptext pt ss = localize (fontAttr times_italic 14) $
     drawi_ $ textAlignCenter ss `at` pt
 
 
+-- Note - return type is a LocImage not a shape...
+--
 rrectangle :: (Real u, Floating u, FromPtSize u) 
-           => u -> u -> u -> LocShape u (Rectangle u)
-rrectangle r w h = localize (roundCornerFactor $ realToFrac r) (rectangle w h)
+           => u -> u -> u -> LocImage u (Rectangle u)
+rrectangle r w h = 
+    localize (roundCornerFactor $ realToFrac r) $ strokedShape (rectangle w h)

@@ -121,7 +121,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
 
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
-ellipse :: (Real u, Floating u, Ord u) 
+ellipse :: (Real u, Floating u, FromPtSize u, Ord u) 
         => u -> u -> Shape u (Ellipse u)
 ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
@@ -134,7 +134,7 @@ mkEllipse rx ry = promoteR2 $ \ctr theta ->
                    }
 
 
-mkEllipsePath :: (Real u, Floating u, Ord u) 
+mkEllipsePath :: (Real u, Floating u, FromPtSize u, Ord u) 
               => u -> u -> LocThetaCF u (Path u)
 mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
     pure $ traceCurvePoints $ map (rotateAbout theta pt) 

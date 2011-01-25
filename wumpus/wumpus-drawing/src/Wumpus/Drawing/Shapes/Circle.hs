@@ -108,21 +108,25 @@ instance (Real u, Floating u) => RadialAnchor (Circle u) where
 --------------------------------------------------------------------------------
 -- Construction
 
--- | 'circle'  : @ radius -> shape @
+-- | 'circle'  : @ radius -> Shape @
 --
-circle :: (Real u, Floating u) => u -> Shape u (Circle u)
+circle :: (Real u, Floating u, FromPtSize u) 
+       => u -> Shape u (Circle u)
 circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
           
 
 
 mkCircle :: Num u => u -> LocThetaCF u (Circle u)
 mkCircle radius = promoteR2 $ \ctr theta -> 
-    pure $ Circle { circ_ctm = makeShapeCTM ctr theta, circ_radius = radius }
+    pure $ Circle { circ_ctm    = makeShapeCTM ctr theta
+                  , circ_radius = radius 
+                  }
 
 
 -- Rotation (theta) can be ignored.
 --
-mkCirclePath :: (Floating u, Ord u) => u -> LocThetaCF u (Path u)
+mkCirclePath :: (Floating u, Ord u, FromPtSize u) 
+             => u -> LocThetaCF u (Path u)
 mkCirclePath radius = promoteR2 $ \ctr _ -> 
     pure $ traceCurvePoints $ bezierCircle radius ctr 
 

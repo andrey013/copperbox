@@ -90,10 +90,23 @@ type DShape a = Shape Double a
 type instance DUnit (Shape u a) = u
 
 
+--------------------------------------------------------------------------------
+
 instance Functor (Shape u) where
   fmap f = (\s i -> s { shape_loc_fun = fmap (bimapL f) i }) 
              <*> shape_loc_fun
 
+
+-- Note - there are no instances of Applicative, Monad, 
+-- DrawingCtxM... so Shapes cannot have localized drawing props.
+--
+-- @localize@ must be performed in the context of @strokeShape@, 
+-- @fillShape@ etc.
+--
+
+
+
+--------------------------------------------------------------------------------
 
 
 makeShape :: Num u => LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
@@ -127,13 +140,6 @@ shapeToLoc pathF sh = promoteR1 $ \pt ->
         g2 = atRot (shape_decoration sh) pt 0 
     in intoImage (pure a) (g1 `oplus` g2)
 
-{-
--- for Wumpus-Basic?
---
-decorate :: Image u a -> Graphic u -> Image u a
-decorate mf mg = 
-   mf >>= \(a,g1) -> mg >>= \(_,g2) -> return (a,g1 `oplus` g2)
--}
 
 
 rstrokedShape :: Num u => Shape u a -> LocThetaImage u a
@@ -166,6 +172,7 @@ roundCornerShapePath xs = getRoundCornerSize >>= \sz ->
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
 
+
 updateAngle :: (Radian -> Radian) -> Shape u a -> Shape u a
 updateAngle f = (\s i -> s { shape_loc_fun = moveTheta (circularModulo . f) i})
                  <*> shape_loc_fun
@@ -174,7 +181,10 @@ setDecoration :: LocThetaGraphic u -> Shape u a -> Shape u a
 setDecoration gf = (\s -> s { shape_decoration = gf })
 
 
--- | Move the start-point of a LocImage with the supplied 
+
+
+-- For Wumpus-Basic...
+-- | Move the /rotation/ of a LocThetaImage with the supplied 
 -- displacement function.
 --
 moveTheta :: (Radian -> Radian) -> LocThetaCF u a -> LocThetaCF u a

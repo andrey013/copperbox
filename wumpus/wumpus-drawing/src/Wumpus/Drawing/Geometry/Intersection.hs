@@ -18,26 +18,89 @@
 
 module Wumpus.Drawing.Geometry.Intersection
   ( 
-    LineSegment(..)
+
+    lineIntersection
+  , linesegIntersection
+
+  -- * OLD...
+  , LineSegment(..)
   , PointSlope
   , pointSlope
-  , LineEqn
-  , lineEqn
-  , toLineEqn
+  , toLineEquation
   , findIntersect
   , intersection
 
   , rectangleLines
   , polygonLines
-  , langle
 
   ) 
   where
 
+import Wumpus.Drawing.Geometry.Base
+
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
+
+
+-- | 'lineIntersection' : @ line1 * line2 -> Maybe Point @
+-- 
+-- Find the intersection of two lines, if there is one. 
+--
+-- Lines are infinite they are represented by points on them, 
+-- they are not line segments.
+--
+-- An answer of @Nothing@ may indicate wither the lines coincide
+-- or the are parallel.
+--
+lineIntersection :: Fractional u 
+                 => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
+                 -> Maybe (Point2 u)
+lineIntersection (p1,p2) (q1,q2) = 
+    if det_co == 0 then Nothing 
+                   else Just $ P2 (det_xm / det_co) (det_ym / det_co)
+  where
+    -- Ax + By + C = 0
+    LineEquation a1 b1 c1 = lineEquation p1 p2
+    LineEquation a2 b2 c2 = lineEquation q1 q2
+
+    coeffM                = M2'2 a1 b1  a2 b2
+    det_co                = det2'2 coeffM
+
+    xM                    = M2'2  (negate c1) b1  (negate c2) b2
+    det_xm                = det2'2 xM
+
+    yM                    = M2'2  a1 (negate c1) a2 (negate c2)
+    det_ym                = det2'2 yM
+
+
+
+-- | 'lineIntersection' : @ line1 * line2 -> Maybe Point @
+-- 
+-- Find the intersection of two lines, if there is one. 
+--
+-- Lines are infinite they are represented by points on them, 
+-- they are not line segments.
+--
+-- An answer of @Nothing@ may indicate wither the lines coincide
+-- or the are parallel.
+--
+linesegIntersection :: (Fractional u, Ord u)
+                    => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
+                    -> Maybe (Point2 u)
+linesegIntersection l1 l2 = lineIntersection l1 l2 >>= segcheck
+  where
+    segcheck pt = if within pt l1 && within pt l2 then Just pt else Nothing
+   
+    within (P2 x y) ((P2 x0 y0), (P2 x1 y1)) =  between x (ordpair x0 x1)
+                                             && between y (ordpair y0 y1)
+
+    ordpair a b     = (min a b, max a b)
+    between a (s,t) = s <= a && a <= t  
+
+
+
+
 
 
 -- WARNING - This module is not very good (neither particularly 
@@ -60,24 +123,9 @@ pointSlope :: Fractional u => Point2 u -> Radian -> PointSlope u
 pointSlope pt theta = PointSlope pt (fromRadian $ tan theta)
 
 
--- | Line in equational form, i.e. @Ax + By + C = 0@.
-data LineEqn u = LineEqn 
-      { _line_eqn_A :: !u
-      , _line_eqn_B :: !u
-      , _line_eqn_C :: !u 
-      }
-  deriving (Eq,Show)
 
-lineEqn :: Num u => Point2 u -> Point2 u -> LineEqn u
-lineEqn (P2 x1 y1) (P2 x2 y2) = LineEqn a b c 
-  where
-    a = y1 - y2
-    b = x2 - x1
-    c = (x1*y2) - (x2*y1)
-
-
-toLineEqn :: Num u => PointSlope u -> LineEqn u
-toLineEqn (PointSlope (P2 x0 y0) m) = LineEqn m (-1) ((-m) * x0 + y0)
+toLineEquation :: Num u => PointSlope u -> LineEquation u
+toLineEquation (PointSlope (P2 x0 y0) m) = LineEquation m (-1) ((-m) * x0 + y0)
 
 
 
@@ -94,7 +142,7 @@ findIntersect :: (Floating u, Real u, Ord u)
 findIntersect ctr ang0 = step 
   where
     theta       = circularModulo ang0
-    eqn         = toLineEqn $ pointSlope ctr theta
+    eqn         = toLineEquation $ pointSlope ctr theta
     step []     = Nothing
     step (x:xs) = case intersection x eqn of 
                      Just pt | quadrantCheck theta ctr pt -> Just pt
@@ -103,19 +151,19 @@ findIntersect ctr ang0 = step
 
 quadrantCheck :: (Real u, Floating u) 
               => Radian -> Point2 u -> Point2 u -> Bool
-quadrantCheck theta ctr pt = theta == langle ctr pt
+quadrantCheck theta ctr pt = theta == lineAngle ctr pt
 
-intersection :: (Fractional u, Ord u) 
-             => LineSegment u -> LineEqn u -> Maybe (Point2 u)
+intersection :: (Real u, Fractional u, Ord u) 
+             => LineSegment u -> LineEquation u -> Maybe (Point2 u)
 intersection ls@(LS p q) eqn = case intersect1 ls eqn of
-    Intersects fp fq -> let t = fp / (fp-fq) in Just $ affineComb p q t 
+    Intersects fp fq -> let t = fp / (fp-fq) in Just $ affineComb t p q
     Contained        -> Just p
     NoIntersect      -> Nothing
 
 
 
 intersect1 :: (Num u, Ord u) 
-           => LineSegment u -> LineEqn u -> IntersectionResult u
+           => LineSegment u -> LineEquation u -> IntersectionResult u
 intersect1 (LS p q) eqn = 
      if inters fp fq then Intersects fp fq
                      else if contained fp fq then Contained else NoIntersect
@@ -125,11 +173,11 @@ intersect1 (LS p q) eqn =
     fp            = lineF p eqn
     fq            = lineF q eqn
  
-lineF :: Num u => Point2 u -> LineEqn u -> u
-lineF (P2 x y) (LineEqn a b c) = a*x + b*y + c
+lineF :: Num u => Point2 u -> LineEquation u -> u
+lineF (P2 x y) (LineEquation a b c) = a*x + b*y + c
 
-affineComb :: Num u => Point2 u -> Point2 u -> u -> Point2 u
-affineComb p q t = p .+^ t *^ (q .-. p)
+-- affineComb :: Num u => Point2 u -> Point2 u -> u -> Point2 u
+-- affineComb p q t = p .+^ t *^ (q .-. p)
 
 
 
@@ -152,22 +200,3 @@ polygonLines (x:xs) = step x xs
 
 
 
--- | Calculate the counter-clockwise angle between two points 
--- and the x-axis.
---
-langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
-langle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
-  where
-    -- north-east quadrant 
-    step x y | pve x && pve y = toRadian $ atan (y/x)          
-    
-    -- north-west quadrant
-    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
-
-    -- south-east quadrant
-    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
-
-    -- otherwise... south-west quadrant
-    step x y                  = pi     + (toRadian $ atan (y/x))
-
-    pve a                     = signum a >= 0

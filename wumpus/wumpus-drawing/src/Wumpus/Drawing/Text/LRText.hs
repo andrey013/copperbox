@@ -19,11 +19,7 @@
 -- @RectPosition@s.
 -- 
 -- 
--- \*\* WARNING \*\* - the API for this module needs work. The 
--- current API is not satisfactory for drawing according to a 
--- start position (there are other reasonable start positions than 
--- the ones currently supported - adding them would explode the 
--- number of definitions).
+-- \*\* WARNING \*\* - the API for this module needs some polish.
 -- 
 --------------------------------------------------------------------------------
 

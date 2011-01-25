@@ -69,7 +69,8 @@ module Wumpus.Drawing.Paths.Base
   ) where
 
 
-import Wumpus.Drawing.Geometry.Intersection ( langle )
+import Wumpus.Drawing.Geometry.Base
+import Wumpus.Drawing.Geometry.StrictCurve
 
 -- package: wumpus-basic
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
@@ -79,7 +80,6 @@ import qualified Wumpus.Basic.Utils.JoinList as JL
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
-import Data.VectorSpace
 
 import Data.List ( foldl' ) 
 
@@ -175,9 +175,9 @@ line p0 p1 = let v = vlength $ pvec p0 p1
              in Path v p0 (JL.one $ LineSeg v p0 p1) p1
    
 
-curve :: (Floating u, Ord u)
+curve :: (Floating u, Ord u, FromPtSize u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Path u 
-curve p0 p1 p2 p3 = let v = curveLength p0 p1 p2 p3
+curve p0 p1 p2 p3 = let v = bezierLength p0 p1 p2 p3
                     in Path v p0 (JL.one $ CurveSeg v p0 p1 p2 p3) p3
 
 -- | A draw a /straight line/ of length 0 at the supplied point. 
@@ -209,7 +209,8 @@ traceLinePoints (a:b:xs) = step (line a b) b xs
 -- 'traceCurvePoints' throws a runtime error if the supplied list
 -- is has less than 4 elements (start, control1, control2, end). 
 --
-traceCurvePoints :: (Floating u, Ord u) => [Point2 u] -> Path u
+traceCurvePoints :: (Floating u, Ord u, FromPtSize u) 
+                 => [Point2 u] -> Path u
 traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
   where
     step acc p0 (x:y:z:zs) = step (acc `append` curve p0 x y z) z zs
@@ -218,7 +219,7 @@ traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
 traceCurvePoints _            = error "tracePointsCurve - less than 4 elems."
 
 
-curveByAngles :: (Floating u, Ord u) 
+curveByAngles :: (Floating u, Ord u, FromPtSize u) 
               => Point2 u -> Radian -> Radian -> Point2 u -> Path u
 curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
   where
@@ -252,74 +253,6 @@ toPrimPath (Path _ start segs _) = step1 $ viewl segs
 
 
 
---------------------------------------------------------------------------------
--- Curve length
-
-data StrictCurve u = Curve !(Point2 u) !(Point2 u) !(Point2 u) !(Point2 u)
-
-curveLength :: (Floating u, Ord u)      
-            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> u
-curveLength p0 p1 p2 p3 = gravesenLength 0.1 $ Curve p0 p1 p2 p3
-
-
--- | Jens Gravesen\'s bezier arc-length approximation. 
---
--- Note this implementation is parametrized on error tolerance.
---
-gravesenLength :: (Floating u, Ord u) => u -> StrictCurve u -> u
-gravesenLength err_tol crv = step crv where
-  step c = let l1 = ctrlPolyLength c
-               l0 = cordLength c
-           in if   l1-l0 > err_tol
-              then let (a,b) = subdivide c in step a + step b
-              else 0.5*l0 + 0.5*l1
-
-
-ctrlPolyLength :: Floating u => StrictCurve u -> u
-ctrlPolyLength (Curve p0 p1 p2 p3) = len p0 p1 + len p1 p2 + len p2 p3
-  where
-    len pa pb = vlength $ pvec pa pb
-
-cordLength :: Floating u => StrictCurve u -> u
-cordLength (Curve p0 _ _ p3) = vlength $ pvec p0 p3
-
-
--- | mid-point between two points
---
-pointMidpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-pointMidpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
-
-
--- | Curve subdivision via de Casteljau\'s algorithm.
---
-subdivide :: Fractional u 
-          => StrictCurve u -> (StrictCurve u, StrictCurve u)
-subdivide (Curve p0 p1 p2 p3) =
-    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
-  where
-    p01   = pointMidpoint p0    p1
-    p12   = pointMidpoint p1    p2
-    p23   = pointMidpoint p2    p3
-    p012  = pointMidpoint p01   p12
-    p123  = pointMidpoint p12   p23
-    p0123 = pointMidpoint p012  p123
-
--- | subdivide with an affine weight along the line...
---
-subdividet :: Real u
-           => u -> StrictCurve u -> (StrictCurve u, StrictCurve u)
-subdividet t (Curve p0 p1 p2 p3) = 
-    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
-  where
-    p01   = affineCombination t p0    p1
-    p12   = affineCombination t p1    p2
-    p23   = affineCombination t p2    p3
-    p012  = affineCombination t p01   p12
-    p123  = affineCombination t p12   p23
-    p0123 = affineCombination t p012  p123
-
-affineCombination :: Real u => u -> Point2 u -> Point2 u -> Point2 u
-affineCombination a p1 p2 = p1 .+^ a *^ (p2 .-. p1)
 
 --------------------------------------------------------------------------------
 -- tips 
@@ -555,14 +488,14 @@ pathViewR (Path u _ segs ep) = go (viewr segs)
 -- longer than half of /d/ (d - being the distance between the 
 -- /truncated/ points and the corner).
 --
-cornerCurve :: (Real u, Floating u) 
+cornerCurve :: (Real u, Floating u, FromPtSize u) 
             => Point2 u -> Point2 u -> Point2 u -> Path u
 cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
   where
     len1 = 0.6 *  (vlength $ pvec p1 p2)
     len2 = 0.6 *  (vlength $ pvec p3 p2)
-    cp1  = p1 .+^ (avec (langle p1 p2) len1)
-    cp2  = p3 .+^ (avec (langle p3 p2) len2)
+    cp1  = p1 .+^ (avec (lineAngle p1 p2) len1)
+    cp2  = p3 .+^ (avec (lineAngle p3 p2) len2)
 
 
 -- | 'roundTrail' : @ rounding_distance * [point] -> Path @
@@ -580,7 +513,7 @@ cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
 -- If the list has one element /the null path/ is built, if the 
 -- list has two elements a straight line is built.
 --
-roundTrail :: (Real u, Floating u) 
+roundTrail :: (Real u, Floating u, FromPtSize u) 
            => u -> [Point2 u] -> Path u 
 roundTrail _ []             = error "roundTrail - empty list."
 roundTrail _ [a]            = pathZero a
@@ -599,7 +532,7 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 -- Note - the starting point is moved, this function is for 
 -- closed, rounded paths.
 --
-lineCurveTrail :: (Real u, Floating u) 
+lineCurveTrail :: (Real u, Floating u, FromPtSize u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> Path u
 lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
   where
@@ -620,8 +553,8 @@ lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
 -- empty. If the list has one element /the null path/ is built, 
 -- if the list has two elements a straight line is built.
 --
-roundInterior :: (Real u, Floating u) 
-           => u -> [Point2 u] -> Path u 
+roundInterior :: (Real u, Floating u, FromPtSize u) 
+              => u -> [Point2 u] -> Path u 
 roundInterior _ []             = error "roundEveryInterior - empty list."
 roundInterior _ [a]            = pathZero a
 roundInterior _ [a,b]          = line a b
@@ -640,7 +573,7 @@ roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
 -- Note - draws a straight line from the starting point - this is 
 -- the first step of an interior (non-closed) rounded path
 --
-lineCurveInter1 :: (Real u, Floating u) 
+lineCurveInter1 :: (Real u, Floating u, FromPtSize u) 
                 => u -> Point2 u -> Point2 u -> Point2 u -> (Path u, Point2 u)
 lineCurveInter1 u a b c = 
     (line a p2 `append` cornerCurve p2 b p3, p3)
