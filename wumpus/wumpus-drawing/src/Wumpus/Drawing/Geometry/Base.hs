@@ -28,6 +28,9 @@ module Wumpus.Drawing.Geometry.Base
   -- * Line in equational form 
   , LineEquation(..)
   , lineEquation
+  , pointViaX
+  , pointViaY
+  , pointLineDistance
 
   -- * Functions
   , affineComb
@@ -124,6 +127,11 @@ data LineEquation u = LineEquation
 
 type instance DUnit (LineEquation u) = u
 
+-- | 'lineEquation' : @ point1 * point2 -> LineEquation @
+-- 
+-- Construct a line in equational form bisecting the supplied 
+-- points.
+--
 lineEquation :: Num u => Point2 u -> Point2 u -> LineEquation u
 lineEquation (P2 x1 y1) (P2 x2 y2) = LineEquation a b c 
   where
@@ -131,9 +139,48 @@ lineEquation (P2 x1 y1) (P2 x2 y2) = LineEquation a b c
     b = x2 - x1
     c = (x1*y2) - (x2*y1)
 
+-- | 'pointViaX' : @ x * line_equation -> Point @
+--
+-- Calculate the point on the line for the supplied @x@ value.
+-- 
+pointViaX :: Fractional u => u -> LineEquation u -> Point2 u
+pointViaX x (LineEquation a b c) = P2 x y
+  where
+    y = ((a*x) + c) / (-b)
+
+
+-- | 'pointViaY' : @ y * line_equation -> Point @
+--
+-- Calculate the point on the line for the supplied @y@ value.
+-- 
+pointViaY :: Fractional u => u -> LineEquation u -> Point2 u
+pointViaY y (LineEquation a b c) = P2 x y
+  where
+    x = ((b*y) + c) / (-a)
+
+
+-- | 'pointLineDistance' : @ point -> line -> Distance @
+--
+-- Find the distance from a point to a line in equational form
+-- using this formula:
+-- 
+-- > P(u,v) 
+-- > L: Ax + By + C = 0
+-- >
+-- > (A*u) + (B*v) + C 
+-- > -----------------
+-- > sqrt $ (A^2) +(B^2)
+--
+pointLineDistance :: Floating u => Point2 u -> LineEquation u -> u
+pointLineDistance (P2 u v) (LineEquation a b c) = 
+    ((a*u) + (b*v) + c) / base
+  where
+    base = sqrt $ (a^2) + (b^2)
 
 --------------------------------------------------------------------------------
 --
+
+
 -- | Affine combination...
 --
 affineComb :: Real u => u -> Point2 u -> Point2 u -> Point2 u

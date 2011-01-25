@@ -153,13 +153,15 @@ rectangleAnchor hw hh ctr =
     fn theta =  displaceVec (rectRadialVector hw hh theta) ctr
 
 
-polygonAnchor :: (Real u, Floating u) => [Point2 u] -> Point2 u -> DotAnchor u
+polygonAnchor :: (Real u, Floating u, FromPtSize u) 
+              => [Point2 u] -> Point2 u -> DotAnchor u
 polygonAnchor ps ctr = 
     DotAnchor { center_anchor   = ctr
               , radial_anchor   = fn  
               , cardinal_anchor = polyCardinal fn }
   where
-    fn theta =  maybe ctr id $ findIntersect ctr theta $ polygonLines ps
+    fn theta =  maybe ctr id $ findIntersect ctr theta 
+                             $ polygonLineSegments ps
 
 
 

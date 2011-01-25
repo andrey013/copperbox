@@ -13,7 +13,7 @@
 -- Intersection of line to line and line to plane.
 -- 
 -- \*\* - WARNING \*\* - this uses quite a high tolerance for 
--- floating equality. 
+-- floating point equality. 
 --
 --------------------------------------------------------------------------------
 
