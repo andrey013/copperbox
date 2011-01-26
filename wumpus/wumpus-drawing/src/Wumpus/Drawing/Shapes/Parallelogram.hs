@@ -96,29 +96,24 @@ instance Num u => Translate (Parallelogram u) where
 -- Anchors
 
 
--- 'runParallelogram' : @ half_base_width * half_height *ctm -> Ans @
--- 
-runParallelogram :: Fractional u 
-                 => (u -> u -> ShapeCTM u  -> a) 
-                 -> Parallelogram u -> a
-runParallelogram fn (Parallelogram { pll_ctm        = ctm
+runDisplaceCenter :: (Real u, Floating u)
+                 => (u -> u -> Vec2 u) -> Parallelogram u -> Point2 u
+runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
                                    , pll_base_width = bw
                                    , pll_height     = h   }) =  
-    fn (0.5 * bw) (0.5 * h) ctm
+    displaceCenter (fn (0.5 * bw) (0.5 * h)) ctm
 
 
 
 instance (Real u, Floating u) => CenterAnchor (Parallelogram u) where
-  center = ctmCenter . pll_ctm
-
-
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 
 instance (Real u, Floating u) => CardinalAnchor (Parallelogram u) where
-  north = runParallelogram $ \_  hh -> projectPoint $ P2 0 hh
-  south = runParallelogram $ \_  hh -> projectPoint $ P2 0 (-hh)
-  east  = runParallelogram $ \hw _  -> projectPoint $ P2 hw 0
-  west  = runParallelogram $ \hw _  -> projectPoint $ P2 (-hw) 0
+  north = runDisplaceCenter $ \_  hh -> V2 0 hh
+  south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
+  east  = runDisplaceCenter $ \hw _  -> V2 hw 0
+  west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 
 instance (Real u, Floating u, FromPtSize u) => 
@@ -138,15 +133,16 @@ instance (Real u, Floating u, FromPtSize u) =>
 -- TODO - update this to a quadrant function...
 --
 pllRadialAnchor :: (Real u, Floating u, FromPtSize u) 
-                  => Radian -> Parallelogram u -> Point2 u
+                => Radian -> Parallelogram u -> Point2 u
 pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
                                      , pll_height    = h
                                      , pll_syn_props = syn }) =
-    maybe ctr id $ findIntersect ctr theta $ polygonLineSegments ps
+    post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps  = pllPoints (pll_base_minor syn) (pll_base_major syn) h ctm
-    ctr = ctmCenter ctm
-    
+    ps   = pllPoints (pll_base_minor syn) (pll_base_major syn) h
+    post = \ans -> case ans of 
+                    Nothing       -> displaceCenter (V2 0 0) ctm
+                    Just (P2 x y) -> displaceCenter (V2 x y) ctm
     
 
 --------------------------------------------------------------------------------
@@ -228,8 +224,8 @@ pllPath bw_minor bw_major h (P2 x y) = [ bl, br, tr, tl ]
 
 
 pllPoints :: (Real u, Floating u) 
-               => u -> u -> u -> ShapeCTM u -> [Point2 u]
-pllPoints bw_minor bw_major h ctm = map (projectPoint `flip` ctm) [ bl, br, tr, tl ]
+          => u -> u -> u -> [Point2 u]
+pllPoints bw_minor bw_major h = [ bl, br, tr, tl ]
   where
     hh = 0.5 * h     
     bl = P2 (-bw_minor) (-hh) 

@@ -89,44 +89,28 @@ instance Num u => Translate (Semiellipse u) where
 
 
 
-runSemiellipse :: (u -> u -> u -> u -> ShapeCTM u -> a) -> Semiellipse u -> a
-runSemiellipse fn (Semiellipse { se_ctm       = ctm
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> u -> u -> u -> Vec2 u) -> Semiellipse u -> Point2 u
+runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
                                , se_rx        = rx
                                , se_ry        = ry
                                , se_syn_props = syn    }) = 
-    fn rx ry (se_ry_minor syn) (se_ry_major syn) ctm
+    displaceCenter (fn rx ry (se_ry_minor syn) (se_ry_major syn)) ctm
 
 
 
 
 instance (Real u, Floating u) => CenterAnchor (Semiellipse u) where
-  center = ctmCenter . se_ctm
+  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 
 instance (Real u, Floating u) => CardinalAnchor (Semiellipse u) where
-  north = northAnchor
-  south = southAnchor
+  north = runDisplaceCenter $ \_ _ _ rymajor -> V2 0 rymajor
+  south = runDisplaceCenter $ \_ _ ryminor _ -> V2 0 (-ryminor)
   east _ = error $ "semiellipse - no east anchor."
   west _ = error $ "semiellipse - no west anchor."
 
-
-northAnchor :: (Real u, Floating u) => Semiellipse u -> Point2 u
-northAnchor = runSemiellipse $ \_ _ _ rymajor ->
-    projectPoint $ P2 0 rymajor
-
-
-southAnchor :: (Real u, Floating u) => Semiellipse u -> Point2 u
-southAnchor = runSemiellipse $ \_ _ ryminor _ ->
-    projectPoint $ P2 0 (-ryminor)
-
-
-{-
-pyth :: Floating u => u -> u -> u
-pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
-  where
-    pow2 = (^ (2::Int))
--}
 
 
 -- TODO - Radial and Cardinal2 instances

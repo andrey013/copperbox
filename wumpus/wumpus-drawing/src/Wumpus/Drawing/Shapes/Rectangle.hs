@@ -80,29 +80,34 @@ instance Num u => Translate (Rectangle u) where
 -- Anchors
 
 
-runRectangle :: (u -> u -> ShapeCTM u -> a) -> Rectangle u -> a
-runRectangle fn (Rectangle { rect_ctm = ctm, rect_hw = hw, rect_hh = hh }) = 
-   fn hw hh ctm
+
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
+runDisplaceCenter fn (Rectangle { rect_ctm = ctm
+                                , rect_hw  = hw
+                                , rect_hh  = hh }) = 
+   displaceCenter (fn hw hh) ctm
+
 
 instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
-  center = ctmCenter . rect_ctm
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
-  north = runRectangle $ \_  hh -> projectPoint $ P2 0 hh
-  south = runRectangle $ \_  hh -> projectPoint $ P2 0 (-hh)
-  east  = runRectangle $ \hw _  -> projectPoint $ P2 hw 0
-  west  = runRectangle $ \hw _  -> projectPoint $ P2 (-hw) 0
+  north = runDisplaceCenter $ \_  hh -> V2 0 hh
+  south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
+  east  = runDisplaceCenter $ \hw _  -> V2 hw 0
+  west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
-  northeast = runRectangle $ \hw hh -> projectPoint $ P2 hw hh
-  southeast = runRectangle $ \hw hh -> projectPoint $ P2 hw (-hh)
-  southwest = runRectangle $ \hw hh -> projectPoint $ P2 (-hw) (-hh)
-  northwest = runRectangle $ \hw hh -> projectPoint $ P2 (-hw) hh
+  northeast = runDisplaceCenter $ \hw hh -> V2 hw hh
+  southeast = runDisplaceCenter $ \hw hh -> V2 hw (-hh)
+  southwest = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
+  northwest = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
 
 
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
-  radialAnchor theta = runRectangle $ \hw hh ctm -> 
-    projectPoint (displaceVec (rectRadialVector hw hh theta) zeroPt) ctm
+  radialAnchor theta = runDisplaceCenter $ \hw hh -> 
+                          rectRadialVector hw hh theta
 
 
 

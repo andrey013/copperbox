@@ -84,19 +84,22 @@ instance Num u => Translate (Diamond u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-runDiamond :: (u -> u -> ShapeCTM u  -> a) -> Diamond u -> a
-runDiamond fn (Diamond { dia_ctm = ctm, dia_hw = hw, dia_hh = hh }) = 
-   fn hw hh ctm
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> u -> Vec2 u) -> Diamond u -> Point2 u
+runDisplaceCenter fn (Diamond { dia_ctm = ctm
+                       , dia_hw = hw
+                       , dia_hh = hh }) = 
+   displaceCenter (fn hw hh) ctm
 
 
 instance (Real u, Floating u) => CenterAnchor (Diamond u) where
-  center = runDiamond (\_ _ -> ctmCenter)
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
-  north = runDiamond $ \_  hh -> projectPoint $ P2 0 hh
-  south = runDiamond $ \_  hh -> projectPoint $ P2 0 (-hh)
-  east  = runDiamond $ \hw _  -> projectPoint $ P2 hw 0
-  west  = runDiamond $ \hw _  -> projectPoint $ P2 (-hw) 0
+  north = runDisplaceCenter $ \_  hh -> V2 0 hh
+  south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
+  east  = runDisplaceCenter $ \hw _  -> V2 hw 0
+  west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u, Fractional u) => CardinalAnchor2 (Diamond u) where
   northeast x = midpoint (north x) (east x)
@@ -107,8 +110,8 @@ instance (Real u, Floating u, Fractional u) => CardinalAnchor2 (Diamond u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Diamond u) where
-    radialAnchor ang = runDiamond $ \hw hh -> 
-      projectPoint $ displaceVec (diamondRadialVector hw hh ang) zeroPt
+    radialAnchor ang = runDisplaceCenter $ \hw hh -> 
+                         diamondRadialVector hw hh ang
 
 
 

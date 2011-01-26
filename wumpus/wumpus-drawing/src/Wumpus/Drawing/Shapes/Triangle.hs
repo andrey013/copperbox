@@ -91,20 +91,21 @@ instance Num u => Translate (Triangle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
--- 'runtriangle' : @ half_base_width * hminor * hmajor * base_ang * ctm -> Ans @
--- 
-runTriangle :: Fractional u 
-            => (u -> u -> u -> Radian -> ShapeCTM u  -> a) 
-            -> Triangle u -> a
-runTriangle fn (Triangle { tri_ctm        = ctm
-                         , tri_base_width = bw
-                         , tri_syn_props  = syn }) =  
-    fn (0.5*bw) (tri_hminor syn) (tri_hmajor syn) (tri_base_ang syn) ctm
+runDisplaceCenter :: (Real u, Floating u)
+                  => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Point2 u
+runDisplaceCenter fn (Triangle { tri_ctm        = ctm
+                               , tri_base_width = bw
+                               , tri_syn_props  = syn }) =  
+    displaceCenter (fn (0.5*bw) hminor hmajor base_ang) ctm
+  where
+    hminor   = tri_hminor syn        
+    hmajor   = tri_hmajor syn
+    base_ang = tri_base_ang syn
 
 
 
 instance (Real u, Floating u) => CenterAnchor (Triangle u) where
-  center = ctmCenter . tri_ctm
+  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 
@@ -113,20 +114,20 @@ instance (Real u, Floating u) => CenterAnchor (Triangle u) where
 --
 
 instance (Real u, Floating u) => CardinalAnchor (Triangle u) where
-  north = runTriangle $ \_   _    hmaj _    -> projectPoint $ P2 0 hmaj
-  south = runTriangle $ \_   hmin _    _    -> projectPoint $ P2 0 (-hmin)
-  east  = runTriangle $ \hbw hmin _    ang  -> projectPoint (findEast hbw hmin ang)
-  west  = runTriangle $ \hbw hmin _    ang  -> projectPoint (findWest hbw hmin ang)
+  north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
+  south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
+  east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
+  west  = runDisplaceCenter $ \hbw hmin _    ang  -> findWest hbw hmin ang
 
 
-findEast :: Fractional u => u -> u -> Radian -> Point2 u
-findEast half_base_width hminor base_ang = P2 xdist 0
+findEast :: Fractional u => u -> u -> Radian -> Vec2 u
+findEast half_base_width hminor base_ang = V2 xdist 0
   where
     b1    = hminor / (fromRadian $ tan base_ang)
     xdist = half_base_width - b1
 
-findWest :: Fractional u => u -> u -> Radian -> Point2 u
-findWest hbw hm ang = let (P2 xdist 0) = findEast hbw hm ang in P2 (-xdist) 0 
+findWest :: Fractional u => u -> u -> Radian -> Vec2 u
+findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0 
 
 
 
@@ -139,9 +140,8 @@ instance (Real u, Floating u) => CardinalAnchor2 (Triangle u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Triangle u) where
-  radialAnchor theta = runTriangle $ \hbw hmin hmaj _ ctm -> 
-    let v = triangleRadialVector hbw hmin hmaj theta
-    in projectPoint (displaceVec v zeroPt) ctm
+  radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
+                         triangleRadialVector hbw hmin hmaj theta
        
     
 --------------------------------------------------------------------------------

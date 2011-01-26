@@ -32,7 +32,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space 
 
 import Control.Applicative
 
@@ -76,20 +75,23 @@ instance Num u => Translate (Circle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-runCircle :: (u -> ShapeCTM u -> a) -> Circle u -> a
-runCircle fn (Circle { circ_ctm = ctm, circ_radius = radius }) = 
-    fn radius ctm
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> Vec2 u) -> Circle u -> Point2 u
+runDisplaceCenter fn (Circle { circ_ctm    = ctm
+                             , circ_radius = radius }) = 
+    displaceCenter (fn radius) ctm
+
 
 
 instance (Real u, Floating u) => CenterAnchor (Circle u) where
-  center = ctmCenter . circ_ctm
+  center = runDisplaceCenter $ \_ -> V2 0 0 
 
 
 instance (Real u, Floating u) => CardinalAnchor (Circle u) where
-  north = runCircle $ \r -> projectPoint $ P2 0    r
-  south = runCircle $ \r -> projectPoint $ P2 0  (-r)
-  east  = runCircle $ \r -> projectPoint $ P2 r    0
-  west  = runCircle $ \r -> projectPoint $ P2 (-r) 0
+  north = runDisplaceCenter $ \r -> V2 0    r
+  south = runDisplaceCenter $ \r -> V2 0  (-r)
+  east  = runDisplaceCenter $ \r -> V2 r    0
+  west  = runDisplaceCenter $ \r -> V2 (-r) 0
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
@@ -100,7 +102,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
 
 
 instance (Real u, Floating u) => RadialAnchor (Circle u) where
-  radialAnchor ang = runCircle $ \r -> projectPoint $ zeroPt .+^ avec ang r
+  radialAnchor ang = runDisplaceCenter $ \r -> avec ang r
 
 
 

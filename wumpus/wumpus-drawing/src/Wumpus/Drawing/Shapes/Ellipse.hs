@@ -35,7 +35,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space 
 
 import Control.Applicative
 
@@ -82,9 +81,12 @@ instance Num u => Translate (Ellipse u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-runEllipse :: (u -> u -> ShapeCTM u  -> a) -> Ellipse u -> a
-runEllipse fn (Ellipse { ell_ctm = ctm, ell_rx = rx, ell_ry = ry }) = 
-    fn rx ry ctm
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> u -> Vec2 u) -> Ellipse u -> Point2 u
+runDisplaceCenter fn (Ellipse { ell_ctm = ctm
+                       , ell_rx  = rx
+                       , ell_ry  = ry }) = 
+    displaceCenter (fn rx ry) ctm
 
 
 -- | x_radius is the unit length.
@@ -94,12 +96,12 @@ scaleEll rx ry = scale 1 (ry/rx)
 
 
 instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
-  center = runEllipse $ \_ _ -> ctmCenter
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 
 instance (Real u, Floating u) => RadialAnchor (Ellipse u) where
-  radialAnchor theta = runEllipse $ \rx ry -> 
-    projectPoint $ scaleEll rx ry $ zeroPt .+^ avec theta rx
+  radialAnchor theta = runDisplaceCenter $ \rx ry -> 
+                         scaleEll rx ry $ avec theta rx
 
 
 instance (Real u, Floating u) => CardinalAnchor (Ellipse u) where

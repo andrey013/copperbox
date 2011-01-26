@@ -89,15 +89,24 @@ instance Num u => Translate (Trapezium u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
+runDisplaceCenter :: (Real u, Floating u)
+                  => (u -> u -> Radian -> Radian -> Vec2 u) 
+                  -> Trapezium u -> Point2 u
+runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
+                                , tz_base_width   = bw
+                                , tz_height       = h
+                                , tz_base_l_ang   = lang
+                                , tz_base_r_ang   = rang }) =
+    displaceCenter (fn (0.5 * bw) (0.5 * h) lang rang) ctm
+
 instance (Real u, Floating u) => CenterAnchor (Trapezium u) where
-  center = ctmCenter . tz_ctm
+  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 instance (Real u, Floating u, FromPtSize u) => 
     CardinalAnchor (Trapezium u) where
-  north = tzRadialAnchor (0.5*pi)
-  south = \tz -> let hh = 0.5 * tz_height tz
-                 in projectPoint (P2 0 (-hh)) (tz_ctm tz)
+  north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
+  south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
   east  = tzRadialAnchor 0
   west  = tzRadialAnchor pi
 
@@ -124,10 +133,12 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_height     = h
                                 , tz_base_l_ang = lang
                                 , tz_base_r_ang = rang }) =
-    maybe ctr id $ findIntersect ctr theta $ polygonLineSegments ps
+    post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps  = tzPoints bw h lang rang ctm 
-    ctr = ctmCenter ctm
+    ps   = tzPoints bw h lang rang
+    post = \ans -> case ans of 
+                    Nothing       -> displaceCenter (V2 0 0) ctm
+                    Just (P2 x y) -> displaceCenter (V2 x y) ctm
     
     
 --------------------------------------------------------------------------------
@@ -188,8 +199,8 @@ tzPath bw h lang rang (P2 x y) = [ bl, br, tr, tl ]
 
 
 tzPoints :: (Real u, Floating u) 
-               => u -> u -> Radian -> Radian -> ShapeCTM u -> [Point2 u]
-tzPoints bw h lang rang ctm = map (projectPoint `flip` ctm) [ bl, br, tr, tl ]
+               => u -> u -> Radian -> Radian -> [Point2 u]
+tzPoints bw h lang rang = [ bl, br, tr, tl ]
   where
     half_base = 0.5 * bw
     hh        = 0.5 * h

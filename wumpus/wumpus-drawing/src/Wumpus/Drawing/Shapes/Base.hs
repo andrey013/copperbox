@@ -41,8 +41,7 @@ module Wumpus.Drawing.Shapes.Base
   , makeShapeCTM
   , ctmCenter
   , ctmAngle
-  , projectPoint
-
+  , displaceCenter
  
 
   ) where
@@ -52,6 +51,8 @@ import Wumpus.Drawing.Paths
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
+
+import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
@@ -247,11 +248,13 @@ ctmAngle :: ShapeCTM u -> Radian
 ctmAngle = ctm_rotation
 
 
-
-projectPoint :: (Real u, Floating u) => Point2 u -> ShapeCTM u  -> Point2 u
-projectPoint (P2 x y) (ShapeCTM { ctm_center   = (P2 dx dy)
-                                , ctm_scale_x  = sx
-                                , ctm_scale_y  = sy
-                                , ctm_rotation = theta     }) =
-    translate dx dy $ rotate theta $ P2 (sx*x) (sy*y)
-
+displaceCenter :: (Real u, Floating u) => Vec2 u -> ShapeCTM u  -> Point2 u
+displaceCenter v0 (ShapeCTM { ctm_center   = ctr0
+                            , ctm_scale_x  = sx
+                            , ctm_scale_y  = sy
+                            , ctm_rotation = theta     }) = ctr .+^ v
+  where
+    ctr = rotate theta $ scale sx sy ctr0
+    v   = rotateAbout theta ctr $ scale sx sy v0
+     
+    

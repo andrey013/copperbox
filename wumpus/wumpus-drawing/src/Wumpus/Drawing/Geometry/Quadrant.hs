@@ -109,7 +109,7 @@ rectRadialVector hw hh ang = fn $ circularModulo ang
 --
 rectangleQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u    
 rectangleQI w h ang
-    | ang < theta  = let y = w * fromRadian (tan ang) in V2 h y
+    | ang < theta  = let y = w * fromRadian (tan ang) in V2 w y
     | otherwise    = let x = h / fromRadian (tan ang) in V2 x h
   where
     theta               = toRadian $ atan (h/w)

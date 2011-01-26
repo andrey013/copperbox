@@ -33,6 +33,9 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.AffineSpace                         -- package: vector-space
+
+
 import Control.Applicative
 
 
@@ -85,27 +88,29 @@ instance Num u => Translate (Semicircle u) where
 -- Anchors
 
 
-runSemicircle :: (u -> u -> u -> ShapeCTM u -> a) -> Semicircle u -> a
-runSemicircle fn (Semicircle { sc_ctm       = ctm
-                             , sc_radius    = radius
-                             , sc_syn_props = syn    }) = 
-    fn radius (sc_ctr_minor syn) (sc_ctr_major syn) ctm
+runDisplaceCenter :: (Real u, Floating u) 
+                  => (u -> u -> u -> Vec2 u) -> Semicircle u -> Point2 u
+runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
+                                 , sc_radius    = radius
+                                 , sc_syn_props = syn    }) = 
+    displaceCenter (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
 instance (Real u, Floating u) => CenterAnchor (Semicircle u) where
-  center = ctmCenter . sc_ctm
+  center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
 
 
 instance (Real u, Floating u) => CardinalAnchor (Semicircle u) where
-  north = runSemicircle $ \_ _    cmaj -> projectPoint $ P2 0  cmaj
-  south = runSemicircle $ \_ cmin _    -> projectPoint $ P2 0  (-cmin)
-  east  = runSemicircle $ \r cmin _    -> 
-            let x = pyth r cmin in projectPoint $ P2 x    0
+  north = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
+  south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
+  east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
+  west  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 (-x) 0
 
-  west  = runSemicircle $ \r cmin _    -> 
-            let x = pyth r cmin in projectPoint $ P2 (-x) 0
-
+-- | Use Pythagoras formula for working out the /east/ and /west/
+-- distances. A right-triangle is formed below the centroid, 
+-- radius is the hypotenuese, hminor is the other side.
+--
 pyth :: Floating u => u -> u -> u
 pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
   where
@@ -113,6 +118,42 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 -- TODO - Radial and Cardinal2 instances
 
+
+{-
+scRadialAnchor :: (Real u, Floating u, FromPtSize u) 
+               => Radian -> Semicircle u -> Point2 u
+scRadialAnchor theta (Semicircle { tz_ctm        = ctm
+-}
+
+
+-- | 'constructionPoints' : @ radius * hminor -> 
+--     (base_ctr, base_right, apex, base_left)
+--
+-- Assumes centroid is (0,0).
+--
+constructionPoints :: Num u 
+                   => u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
+constructionPoints radius hminor = (bctr, br, apex, bl)
+  where
+    bctr  = P2 0 (-hminor)
+    br    = bctr .+^ hvec radius
+    apex  = bctr .+^ vvec radius
+    bl    = bctr .-^ hvec radius
+
+
+
+
+-- | 'baselineRange' : @ radius * hminor -> (left_base_ang, right_base_ang) @
+--
+-- Find the angle range where a ray from the centroid will cross
+-- the baseline rather than cut the curve.
+--
+baselineRange :: (Real u, Floating u) => u -> u -> (Radian, Radian)
+baselineRange radius hminor = (lang, rang)
+  where
+    ang   = toRadian $ atan (radius / hminor)
+    lang  = (1.5*pi) - ang
+    rang  = (1.5*pi) + ang
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -150,9 +191,6 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 mkSemicirclePath :: (Real u, Floating u, FromPtSize u) 
                  => u -> u -> LocThetaCF u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
-    let ctr            = P2 x (y - cminor)
-        apex           = circularModulo $ theta + half_pi        
-        (p0,p1,p2,p3)  = bezierMinorWedge half_pi radius theta ctr 
-        (_, p4,p5,p6)  = bezierMinorWedge half_pi radius apex ctr 
-    in pure $ traceCurvePoints [p0,p1,p2,p3,p4,p5,p6]
+    let ctr            = P2 x (y - cminor) 
+    in pure $ traceCurvePoints $ bezierWedge pi radius theta ctr 
 

@@ -42,8 +42,9 @@ module Wumpus.Drawing.Geometry.Base
   , midpoint
   , lineAngle
 
-  -- * Bezier wedge
-  , bezierMinorWedge
+  -- * Bezier arcs
+  , bezierWedge         -- needs new name
+  , bezierMinorWedge    -- needs new name
 
   ) 
   where
@@ -251,12 +252,48 @@ lineAngle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
 
 
 --------------------------------------------------------------------------------
--- Bezier wedge
+-- Bezier arc
+
+
 
 kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
 
 type CubicBezier u = (Point2 u, Point2 u, Point2 u, Point2 u)
+
+
+-- | 'bezierWedge' : @ apex_angle * radius * rotation * center -> [Point] @
+--
+-- > ang should be in the range 0 < ang < 360deg.
+--
+-- TODO - this would be better called @bezierArc@ but Wumpus-Core
+-- already has a function of that name. Need to think a new 
+-- name...
+--
+bezierWedge ::  Floating u 
+            => Radian -> u -> Radian -> Point2 u -> [Point2 u]
+bezierWedge ang radius theta pt = go (circularModulo ang)
+  where
+   go a | a <= half_pi = wedge1 a
+        | a <= pi      = wedge2 (a/2)
+        | a <= 1.5*pi  = wedge3 (a/3)
+        | otherwise    = wedge4 (a/4)
+    
+   wedge1 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
+              in [p0,p1,p2,p3]
+   wedge2 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
+                  (_, p4,p5,p6) = bezierMinorWedge a radius (theta+a) pt
+              in [p0,p1,p2,p3, p4,p5,p6] 
+   wedge3 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
+                  (_, p4,p5,p6) = bezierMinorWedge a radius (theta+a) pt
+                  (_, p7,p8,p9) = bezierMinorWedge a radius (theta+a+a) pt
+              in [p0,p1,p2,p3, p4,p5,p6, p7, p8, p9] 
+   wedge4 a = let (p0,p1,p2,p3)    = bezierMinorWedge a radius theta pt
+                  (_, p4,p5,p6)    = bezierMinorWedge a radius (theta+a) pt
+                  (_, p7,p8,p9)    = bezierMinorWedge a radius (theta+a+a) pt
+                  (_, p10,p11,p12) = bezierMinorWedge a radius (theta+a+a+a) pt
+              in [p0,p1,p2,p3, p4,p5,p6, p7,p8,p9, p10,p11, p12] 
+
 
 -- | 'bezierMinorWedge' : @ apex_angle * radius * rotation * center -> CubicBezier @
 --

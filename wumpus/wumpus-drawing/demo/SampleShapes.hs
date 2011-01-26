@@ -68,7 +68,7 @@ shape_list =
     , ( "diamond",        shapePic $ diamond 150 100)
     , ( "ellipse",        shapePic $ ellipse 150 100)
     , ( "parallelogram",  shapePic $ zparallelogram 250 200)
-    , ( "rectangle",      shapePic $ rectangle 300 200)
+    , ( "rectangle",      shapePic $ rectangle 300 175)
     , ( "semicircle",     shapePic_cnsew $ semicircle 150) 
     , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
     , ( "trapezium",      shapePic $ ztrapezium 300 150)
@@ -84,10 +84,12 @@ makeCtx = fontFace courier . metricsContext 16
 
 shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
             , RadialAnchor a
+            , Scale a, Rotate a
             , DUnit a ~ Double) 
          => DShape a -> String -> DCtxPicture
 shapePic sh name = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ shape `at` (P2 200 150)    
+    a1  <- localize shapeSty $ drawi $ 
+              uniformScale 2 $ rotate30 $ shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -98,6 +100,7 @@ shapePic sh name = drawTracing $ do
     draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
     draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
     draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
+    draw $ label NORTH_WEST   "(110 deg)"     `at` radialAnchor deg110 a1
     draw $ label WEST         "(190 deg)"     `at` radialAnchor deg190 a1
     draw $ label NORTH        "(250 deg)"     `at` radialAnchor deg250 a1
     return ()    
@@ -106,6 +109,7 @@ shapePic sh name = drawTracing $ do
     textF   = ignoreAns (multiAlignCenter CENTER name)
 
     deg10   = d2r (10::Double)
+    deg110  = d2r (110::Double)
     deg190  = d2r (190::Double)
     deg250  = d2r (250::Double)
 
@@ -114,10 +118,13 @@ shapePic sh name = drawTracing $ do
 -- Just center and Cardinal1 anchors - this is for semicircle
 -- which doesn\'t have a set of anchors properly defined.
 --
-shapePic_cnsew :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
+shapePic_cnsew :: ( CenterAnchor a, CardinalAnchor a
+                  , Scale a, Rotate a
+                  , DUnit a ~ Double) 
                => DShape a -> String -> DCtxPicture
 shapePic_cnsew sh name = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ shape `at` (P2 200 150)
+    a1  <- localize shapeSty $ drawi $ 
+            uniformScale 2 $ rotate30 $ shape `at` P2 100 0
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -132,10 +139,13 @@ shapePic_cnsew sh name = drawTracing $ do
 -- Just center, north and south anchors - this is for semiellipse
 -- which doesn\'t have a set of anchors properly defined.
 --
-shapePic_cns :: (CenterAnchor a, CardinalAnchor a, DUnit a ~ Double) 
+shapePic_cns :: ( CenterAnchor a, CardinalAnchor a
+                , Scale a, Rotate a
+                , DUnit a ~ Double) 
              => DShape a -> String -> DCtxPicture
 shapePic_cns sh name = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ shape `at` (P2 200 150)
+    a1  <- localize shapeSty $ drawi $ 
+             uniformScale 2 $ rotate30 $ shape `at` P2 100 0
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
