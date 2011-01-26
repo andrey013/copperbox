@@ -18,8 +18,12 @@
 module Wumpus.Drawing.Geometry.Base
   ( 
 
+  -- * constants
+    half_pi
+  , two_pi
+
   -- * 2x2 Matrix
-    Matrix2'2(..)
+  , Matrix2'2(..)
   , DMatrix2'2
   , identity2'2
   , det2'2
@@ -32,12 +36,19 @@ module Wumpus.Drawing.Geometry.Base
   , pointViaY
   , pointLineDistance
 
+
   -- * Functions
   , affineComb
   , midpoint
   , lineAngle
+
+  -- * Bezier wedge
+  , bezierMinorWedge
+
   ) 
   where
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -45,6 +56,17 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
+
+
+half_pi :: Floating u => u
+half_pi = 0.5*pi
+
+two_pi  :: Floating u => u
+two_pi  = 2*pi
+
+
+--------------------------------------------------------------------------------
+-- 2x2 matrix
 
 
 -- | 2x2 matrix, considered to be in row-major form.
@@ -171,11 +193,16 @@ pointViaY y (LineEquation a b c) = P2 x y
 -- > -----------------
 -- > sqrt $ (A^2) +(B^2)
 --
+-- A positive distance indicates the point is above the line, 
+-- negative indicates below.
+--
 pointLineDistance :: Floating u => Point2 u -> LineEquation u -> u
 pointLineDistance (P2 u v) (LineEquation a b c) = 
     ((a*u) + (b*v) + c) / base
   where
-    base = sqrt $ (a^2) + (b^2)
+    base = sqrt $ (a^two) + (b^two)
+    two  :: Integer
+    two  = 2
 
 --------------------------------------------------------------------------------
 --
@@ -223,3 +250,27 @@ lineAngle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
 
 
 
+--------------------------------------------------------------------------------
+-- Bezier wedge
+
+kappa :: Floating u => u
+kappa = 4 * ((sqrt 2 - 1) / 3)
+
+type CubicBezier u = (Point2 u, Point2 u, Point2 u, Point2 u)
+
+-- | 'bezierMinorWedge' : @ apex_angle * radius * rotation * center -> CubicBezier @
+--
+-- > ang should be in the range 0 < ang <= 90deg.
+--
+bezierMinorWedge :: Floating u 
+                 => Radian -> u -> Radian -> Point2 u -> CubicBezier u
+bezierMinorWedge ang radius theta pt = (p0, c1, c2, p3)
+  where
+    kfactor = fromRadian $ ang / (0.5*pi)
+    rl      = kfactor * radius * kappa
+    totang  = circularModulo $ ang + theta
+
+    p0      = displaceParallel radius theta pt
+    c1      = displacePerpendicular rl theta p0
+    c2      = displacePerpendicular (-rl) totang p3
+    p3      = displaceParallel radius totang pt

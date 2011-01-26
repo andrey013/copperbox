@@ -20,13 +20,15 @@ module Wumpus.Drawing.Geometry.StrictCurve
   , bezierLength  
   , subdivide
   , subdividet
+
+  , interCurveLine
+
   ) 
   where
 
 import Wumpus.Drawing.Geometry.Base
 
 import Wumpus.Core                              -- package: wumpus-core
-
 
 
 -- | A Strict cubic Bezier curve.
@@ -111,3 +113,47 @@ subdividet t (Curve p0 p1 p2 p3) =
 
 
 
+--------------------------------------------------------------------------------
+-- intersection 
+
+interCurveLine :: (Floating u , Ord u, FromPtSize u)
+               => StrictCurve u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
+interCurveLine c0 (p,q) = step c0
+  where
+    eqline  = lineEquation p q
+    step c  = case cut c eqline of
+                Left pt     -> Just pt      -- cut at start or end
+                Right False -> Nothing
+                Right True  -> let (a,b) = subdivide c
+                               in case step a of
+                                   Just pt -> Just pt
+                                   Nothing -> step b
+ 
+-- | Is the curve cut by the line? 
+--
+-- The curve might cut at the start or end points - which is good
+-- as it saves performing a subdivision. But make the return type
+-- a bit involved.
+--
+cut :: (Floating u , Ord u, FromPtSize u)
+    => StrictCurve u -> LineEquation u -> Either (Point2 u) Bool
+cut (Curve p0 p1 p2 p3) line = 
+    if d0 `tEQ` 0 then Left p0 else
+    if d3 `tEQ` 0 then Left p3 else
+    let ds = [d0,d1,d2,d3] in Right $ not $ all pve ds || all nve ds
+  where
+    tEQ = \a b -> abs (a-b) < tolerance
+    pve = (> tolerance)
+    nve = (< (negate tolerance))
+    d0  = pointLineDistance p0 line 
+    d1  = pointLineDistance p1 line 
+    d2  = pointLineDistance p2 line 
+    d3  = pointLineDistance p3 line 
+
+
+
+-- | Note - its important to be tolerant!
+--
+tolerance :: FromPtSize u => u
+tolerance = fromPtSize 0.01
+    

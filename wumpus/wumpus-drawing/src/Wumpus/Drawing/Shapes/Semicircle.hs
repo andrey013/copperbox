@@ -25,6 +25,7 @@ module Wumpus.Drawing.Shapes.Semicircle
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -145,16 +146,13 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 
 
 
+
 mkSemicirclePath :: (Real u, Floating u, FromPtSize u) 
                  => u -> u -> LocThetaCF u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
-    let ctr                 = P2 x (y - cminor)
-        (p0, p1,  p2,  p3)  = bezierArc radius 0         (0.25*pi) ctr 
-        (_,  p4,  p5,  p6)  = bezierArc radius (0.25*pi) (0.50*pi) ctr 
-        (_,  p7,  p8,  p9)  = bezierArc radius (0.50*pi) (0.75*pi) ctr 
-        (_,  p10, p11, p12) = bezierArc radius (0.75*pi) pi        ctr 
-    in pure $ traceCurvePoints $ map (rotateAbout theta ctr)
-                               $ [p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12]
-
-
+    let ctr            = P2 x (y - cminor)
+        apex           = circularModulo $ theta + half_pi        
+        (p0,p1,p2,p3)  = bezierMinorWedge half_pi radius theta ctr 
+        (_, p4,p5,p6)  = bezierMinorWedge half_pi radius apex ctr 
+    in pure $ traceCurvePoints [p0,p1,p2,p3,p4,p5,p6]
 
