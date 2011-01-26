@@ -79,7 +79,8 @@ shape_list =
 makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = fontFace courier . metricsContext 16
 
-
+rotate05 :: Rotate a => a -> a
+rotate05 = rotate (d2r (5::Double))
 
 
 shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
@@ -89,7 +90,7 @@ shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
          => DShape a -> String -> DCtxPicture
 shapePic sh name = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-              uniformScale 2 $ rotate30 $ shape `at` (P2 100 0)
+              uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -124,7 +125,7 @@ shapePic_cnsew :: ( CenterAnchor a, CardinalAnchor a
                => DShape a -> String -> DCtxPicture
 shapePic_cnsew sh name = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-            uniformScale 2 $ rotate30 $ shape `at` P2 100 0
+            uniformScale 2 $ rotate05 $ shape `at` P2 100 0
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -145,7 +146,7 @@ shapePic_cns :: ( CenterAnchor a, CardinalAnchor a
              => DShape a -> String -> DCtxPicture
 shapePic_cns sh name = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
-             uniformScale 2 $ rotate30 $ shape `at` P2 100 0
+             uniformScale 2 $ rotate05 $ shape `at` P2 100 0
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1

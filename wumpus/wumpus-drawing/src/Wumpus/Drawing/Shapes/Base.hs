@@ -34,7 +34,7 @@ module Wumpus.Drawing.Shapes.Base
 
   , roundCornerShapePath
 
-  , updateAngle
+  , updatePathAngle
   , setDecoration
 
   , ShapeCTM
@@ -57,34 +57,28 @@ import Data.AffineSpace                         -- package: vector-space
 import Control.Applicative
 
 
--- | Shape is a newtype wrapper over a /LocTheta/ function - 
--- /a function from Point and Angle to Answer/. 
+-- | Shape is a record of three /LocTheta/ functions - 
+-- functions /from Point and Angle to answer/. 
 --
--- The answer is a pair of some polymorphic type @a@ and a path.
--- When the Shape is drawn, the rendering function 
--- (@strokedShape@, etc.) uses the path for drawing and returns 
--- the polymorphic answer @a@. 
+-- The @shape_path_fun@ returns a path. When the Shape is drawn, 
+-- the rendering function (@strokedShape@, etc.) uses the path for 
+-- drawing and returns the polymorphic answer @a@ of the 
+-- @shape_ans_fun@. Lastly the @shape_decoration@ function can 
+-- instantiated to add decoration (e.g. text) to the Shape as it 
+-- is rendered.
 --
--- The @a@ will represent some concrete shape object (Rectangle, 
--- Triangle etc.). Crucial for shape objects is that they support
--- Anchors - this allows connectors to address specific locations
--- on the shape border so \"node and link\" diagrams can be made 
--- easily.
+-- The @a@ of the @shape_ans_fun@ represents some concrete shape 
+-- object (e.g. a Rectangle, Triangle etc.). Crucial for shape 
+-- objects is that they support Anchors - this allows connectors 
+-- to address specific locations on the Shape border so 
+-- \"node and link\" diagrams can be made easily.
 --
 data Shape u a = Shape 
-      { shape_loc_fun     :: LocThetaCF u (a, Path u) 
+      { shape_ans_fun     :: LocThetaCF u a
+      , shape_path_fun    :: LocThetaCF u (Path u) 
       , shape_decoration  :: LocThetaGraphic u
       }
 
---
--- Design note - are shapes really LocThetaCF? - YES
---
--- This would remove the need for r__ versions and it means
--- decorations (i.e. text labels) would be simpler.
--- 
--- There could be r__ versions of the filledShape, etc. as there
--- are only three so far so that would make 6 in total.
---
 
 type DShape a = Shape Double a
 
@@ -94,8 +88,8 @@ type instance DUnit (Shape u a) = u
 --------------------------------------------------------------------------------
 
 instance Functor (Shape u) where
-  fmap f = (\s i -> s { shape_loc_fun = fmap (bimapL f) i }) 
-             <*> shape_loc_fun
+  fmap f = (\s i -> s { shape_ans_fun = fmap f i }) 
+             <*> shape_ans_fun
 
 
 -- Note - there are no instances of Applicative, Monad, 
@@ -111,7 +105,8 @@ instance Functor (Shape u) where
 
 
 makeShape :: Num u => LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
-makeShape f g = Shape { shape_loc_fun    = liftA2 (,) f g
+makeShape f g = Shape { shape_ans_fun    = f
+                      , shape_path_fun   = g
                       , shape_decoration = emptyLocThetaGraphic
                       }
 
@@ -136,7 +131,8 @@ borderedShape = shapeToLoc borderedPath
 shapeToLoc :: Num u 
            => (PrimPath u -> Graphic u) -> Shape u a -> LocImage u a
 shapeToLoc pathF sh = promoteR1 $ \pt -> 
-    atRot (shape_loc_fun sh) pt 0 >>= \(a,spath) -> 
+    atRot (shape_ans_fun sh)  pt 0 >>= \a -> 
+    atRot (shape_path_fun sh) pt 0 >>= \spath -> 
     let g1 = pathF $ toPrimPath spath 
         g2 = atRot (shape_decoration sh) pt 0 
     in intoImage (pure a) (g1 `oplus` g2)
@@ -158,7 +154,8 @@ rborderedShape = shapeToLocTheta borderedPath
 shapeToLocTheta :: Num u 
                 => (PrimPath u -> Graphic u) -> Shape u a -> LocThetaImage u a
 shapeToLocTheta pathF sh = promoteR2 $ \pt theta -> 
-    atRot (shape_loc_fun sh) pt theta >>= \(a,spath) -> 
+    atRot (shape_ans_fun sh)  pt theta >>= \a -> 
+    atRot (shape_path_fun sh) pt theta >>= \spath -> 
     let g1 = pathF $ toPrimPath spath 
         g2 = atRot (shape_decoration sh) pt theta
     in intoImage (pure a) (g1 `oplus` g2)
@@ -173,10 +170,19 @@ roundCornerShapePath xs = getRoundCornerSize >>= \sz ->
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
 
-
-updateAngle :: (Radian -> Radian) -> Shape u a -> Shape u a
-updateAngle f = (\s i -> s { shape_loc_fun = moveTheta (circularModulo . f) i})
-                 <*> shape_loc_fun
+-- | The path angle can be modified. This allows /inverse/ 
+-- versions of shapes (e.g. InvTriangle) to be made by
+-- wrapping a base Shape but rotating the path prior to drawing 
+-- it.
+-- 
+-- Only the Path needs rotating, the decoration takes the original 
+-- angle. The anchors are typically implemented by rotating the 
+-- correspoding anchor of the wrapped Shape about its center.
+-- 
+updatePathAngle :: (Radian -> Radian) -> Shape u a -> Shape u a
+updatePathAngle f = 
+    (\s i -> s { shape_path_fun = moveTheta (circularModulo . f) i})
+      <*> shape_path_fun
 
 setDecoration :: LocThetaGraphic u -> Shape u a -> Shape u a
 setDecoration gf = (\s -> s { shape_decoration = gf })
@@ -252,7 +258,7 @@ displaceCenter :: (Real u, Floating u) => Vec2 u -> ShapeCTM u  -> Point2 u
 displaceCenter v0 (ShapeCTM { ctm_center   = ctr0
                             , ctm_scale_x  = sx
                             , ctm_scale_y  = sy
-                            , ctm_rotation = theta     }) = ctr .+^ v
+                            , ctm_rotation = theta }) = ctr .+^ v
   where
     ctr = rotate theta $ scale sx sy ctr0
     v   = rotateAbout theta ctr $ scale sx sy v0

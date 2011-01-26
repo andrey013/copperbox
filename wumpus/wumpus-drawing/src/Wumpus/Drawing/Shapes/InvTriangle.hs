@@ -76,12 +76,15 @@ instance Num u => Translate (InvTriangle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-appTriangle :: (Triangle u -> a) -> InvTriangle u -> a
-appTriangle f = f . getInvTriangle
+-- I think anchors should be rotated about the center by pi...
+
+runRotateAnchor :: (Real u, Floating u) 
+                => (Triangle u -> Point2 u) -> InvTriangle u -> Point2 u
+runRotateAnchor f (InvTriangle a) = rotateAbout pi (center a) (f a)
 
 
 instance (Real u, Floating u) => CenterAnchor (InvTriangle u) where
-  center = appTriangle center 
+  center = center . getInvTriangle
 
 
 
@@ -90,24 +93,22 @@ instance (Real u, Floating u) => CenterAnchor (InvTriangle u) where
 --
 
 instance (Real u, Floating u) => CardinalAnchor (InvTriangle u) where
-  north = appTriangle south
-  south = appTriangle north 
-  east  = appTriangle west 
-  west  = appTriangle east
+  north = runRotateAnchor south
+  south = runRotateAnchor north
+  east  = runRotateAnchor west
+  west  = runRotateAnchor east
 
 
 instance (Real u, Floating u) => CardinalAnchor2 (InvTriangle u) where
-  northeast = appTriangle southwest
-  southeast = appTriangle northwest
-  southwest = appTriangle northeast
-  northwest = appTriangle southeast
+  northeast = runRotateAnchor southwest
+  southeast = runRotateAnchor northwest
+  southwest = runRotateAnchor northeast
+  northwest = runRotateAnchor southeast
 
 
 
 instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
-  radialAnchor theta = appTriangle (radialAnchor ang) 
-    where
-      ang = circularModulo $ theta + pi
+  radialAnchor theta = runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -117,7 +118,7 @@ instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
 --
 invtriangle :: (Real u, Floating u, FromPtSize u)
             => u -> u -> Shape u (InvTriangle u)
-invtriangle bw h = fmap InvTriangle $ updateAngle (+ pi) $ triangle bw h
+invtriangle bw h = fmap InvTriangle $ updatePathAngle (+ pi) $ triangle bw h
     
 
 
