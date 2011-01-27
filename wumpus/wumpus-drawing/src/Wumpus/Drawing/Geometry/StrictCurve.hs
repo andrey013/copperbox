@@ -143,8 +143,8 @@ cut (Curve p0 p1 p2 p3) line =
     let ds = [d0,d1,d2,d3] in Right $ not $ all pve ds || all nve ds
   where
     tEQ = \a b -> abs (a-b) < tolerance
-    pve = (> tolerance)
-    nve = (< (negate tolerance))
+    pve = \a -> a > tolerance
+    nve = \a -> a < (negate tolerance)
     d0  = pointLineDistance p0 line 
     d1  = pointLineDistance p1 line 
     d2  = pointLineDistance p2 line 
@@ -155,5 +155,5 @@ cut (Curve p0 p1 p2 p3) line =
 -- | Note - its important to be tolerant!
 --
 tolerance :: FromPtSize u => u
-tolerance = fromPtSize 0.01
+tolerance = fromPtSize 0.001
     

@@ -69,7 +69,7 @@ shape_list =
     , ( "ellipse",        shapePic $ ellipse 150 100)
     , ( "parallelogram",  shapePic $ zparallelogram 250 200)
     , ( "rectangle",      shapePic $ rectangle 300 175)
-    , ( "semicircle",     shapePic_cnsew $ semicircle 150) 
+    , ( "semicircle",     shapePic $ semicircle 150) 
     , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
     , ( "trapezium",      shapePic $ ztrapezium 300 150)
     , ( "triangle",       shapePic $ triangle 300 200)

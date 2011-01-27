@@ -26,6 +26,7 @@ module Wumpus.Drawing.Geometry.Intersection
   , interLinesegLine
 
   , findIntersect
+  , makePlane
   , rectangleLineSegments
   , polygonLineSegments
 
@@ -144,10 +145,6 @@ findIntersect radial_ogin ang = step
                      Just pt | quadrantCheck ang radial_ogin pt -> Just pt
                      _       -> step xs
 
--- | Make a line \/ plane .
---
-makePlane :: Floating u => Point2 u -> Radian -> (Point2 u, Point2 u)
-makePlane radial_ogin ang = (radial_ogin, radial_ogin .+^ avec ang 100)
 
 -- | The tolerance on Radian equality should be acceptable...
 --
@@ -156,6 +153,16 @@ quadrantCheck :: (Real u, Floating u)
 quadrantCheck theta ctr pt = theta == lineAngle ctr pt
 
 
+
+
+
+-- | 'makePlane' : @ point * ang -> Line @
+--
+-- Make an infinite line \/ plane passing through the supplied 
+-- with elevation @ang@.
+--
+makePlane :: Floating u => Point2 u -> Radian -> (Point2 u, Point2 u)
+makePlane radial_ogin ang = (radial_ogin, radial_ogin .+^ avec ang 100)
 
 -- | 'rectangleLineSegments' : @ half_width * half_height -> [LineSegment] @
 --

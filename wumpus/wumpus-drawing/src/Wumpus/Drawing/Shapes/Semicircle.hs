@@ -26,6 +26,8 @@ module Wumpus.Drawing.Shapes.Semicircle
   ) where
 
 import Wumpus.Drawing.Geometry.Base
+import Wumpus.Drawing.Geometry.Intersection
+import Wumpus.Drawing.Geometry.StrictCurve
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -116,18 +118,45 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
   where
     pow2 = (^ (2::Int))
 
--- TODO - Radial and Cardinal2 instances
+
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor2 (Semicircle u) where
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
-{-
-scRadialAnchor :: (Real u, Floating u, FromPtSize u) 
-               => Radian -> Semicircle u -> Point2 u
-scRadialAnchor theta (Semicircle { tz_ctm        = ctm
--}
+
+
+instance (Real u, Floating u, FromPtSize u) => RadialAnchor (Semicircle u) where
+  radialAnchor theta = runDisplaceCenter (scRadialVec theta)
+
+
+scRadialVec :: (Real u, Floating u, Ord u, FromPtSize u)
+            => Radian -> u -> u -> u -> Vec2 u
+scRadialVec theta radius hminor _ = go theta
+  where
+    (lang,rang)                     = baselineRange radius hminor
+    (bctr, br, _, bl)               = constructionPoints radius hminor
+    plane                           = makePlane zeroPt theta
+    left_curve                      = mkStrictCurve radius half_pi bctr
+    right_curve                     = mkStrictCurve radius 0 bctr
+    post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
+    go a | lang <= a && a <= rang   = post $ interLinesegLine (bl,br) plane 
+         | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
+         | otherwise                = post $ interCurveLine right_curve plane
+
+
+mkStrictCurve :: Floating u => u -> Radian -> Point2 u -> StrictCurve u
+mkStrictCurve radius theta ctr = Curve p0 p1 p2 p3
+  where
+    (p0,p1,p2,p3) = bezierMinorWedge half_pi radius theta ctr
+
 
 
 -- | 'constructionPoints' : @ radius * hminor -> 
---     (base_ctr, base_right, apex, base_left)
+--     (base_ctr, base_right, apex, base_left) @
 --
 -- Assumes centroid is (0,0).
 --

@@ -114,6 +114,7 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
 --------------------------------------------------------------------------------
 -- Construction
 
+
 -- | 'rectangle'  : @ width * height -> shape @
 --
 rectangle :: (Real u, Floating u, FromPtSize u) 
