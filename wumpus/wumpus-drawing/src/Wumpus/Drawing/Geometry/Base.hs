@@ -31,20 +31,35 @@ module Wumpus.Drawing.Geometry.Base
   
   -- * Line in equational form 
   , LineEquation(..)
+  , DLineEquation
   , lineEquation
   , pointViaX
   , pointViaY
   , pointLineDistance
 
+  -- * Line segment
+  , LineSegment(..)
+  , DLineSegment
+  
+  , rectangleLineSegments
+  , polygonLineSegments
 
   -- * Functions
   , affineComb
   , midpoint
   , lineAngle
 
-  -- * Bezier arcs
-  , bezierWedge         -- needs new name
-  , bezierMinorWedge    -- needs new name
+  -- * Cubic Bezier curves
+  
+  , BezierCurve(..)
+  , DBezierCurve
+
+  , bezierLength
+  , subdivide
+  , subdividet
+  
+  , bezierArcPoints
+  , bezierMinorArc
 
   ) 
   where
@@ -148,6 +163,8 @@ data LineEquation u = LineEquation
       }
   deriving (Eq,Show)
 
+type DLineEquation = LineEquation Double
+
 type instance DUnit (LineEquation u) = u
 
 -- | 'lineEquation' : @ point1 * point2 -> LineEquation @
@@ -206,6 +223,46 @@ pointLineDistance (P2 u v) (LineEquation a b c) =
     two  = 2
 
 --------------------------------------------------------------------------------
+
+data LineSegment u = LineSegment (Point2 u) (Point2 u)
+  deriving (Eq,Ord,Show)
+
+type DLineSegment = LineSegment Double
+
+type instance DUnit (LineSegment u) = u
+
+
+
+-- | 'rectangleLineSegments' : @ half_width * half_height -> [LineSegment] @
+--
+-- Compute the line segments of a rectangle.
+--
+rectangleLineSegments :: Num u => u -> u -> Point2 u -> [LineSegment u]
+rectangleLineSegments hw hh ctr = 
+    [ LineSegment br tr, LineSegment tr tl, LineSegment tl bl
+    , LineSegment bl br 
+    ]
+  where
+    br = ctr .+^ vec hw    (-hh)
+    tr = ctr .+^ vec hw    hh
+    tl = ctr .+^ vec (-hw) hh
+    bl = ctr .+^ vec (-hw) (-hh)
+
+
+-- | 'polygonLineSegments' : @ [point] -> [LineSegment] @
+--
+-- Build the line segments of a polygon fome a list of 
+-- its vertices.
+--
+polygonLineSegments :: [Point2 u] -> [LineSegment u]
+polygonLineSegments []     = []
+polygonLineSegments (x:xs) = step x xs 
+  where
+    step a []        = [LineSegment a x]
+    step a (b:bs)    = (LineSegment a b) : step b bs
+
+
+--------------------------------------------------------------------------------
 --
 
 
@@ -252,56 +309,150 @@ lineAngle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
 
 
 --------------------------------------------------------------------------------
--- Bezier arc
+-- Bezier curves
+
+
+-- | A Strict cubic Bezier curve.
+--
+data BezierCurve u = BezierCurve !(Point2 u) !(Point2 u) !(Point2 u) !(Point2 u)
+  deriving (Eq,Ord,Show)
+
+type DBezierCurve = BezierCurve Double
+
+type instance DUnit (BezierCurve u) = u
+
+
+
+-- | 'bezierLength' : @ start_point * control_1 * control_2 * 
+--        end_point -> Length @ 
+--
+-- Find the length of a Bezier curve. The result is an 
+-- approximation, with the /tolerance/ is 0.1 of a point. This
+-- seems good enough for drawing (potentially the tolerance could 
+-- be larger still). 
+--
+-- The result is found through repeated subdivision so the 
+-- calculation is potentially costly.
+--
+bezierLength :: (Floating u, Ord u, FromPtSize u)      
+             => BezierCurve u -> u
+bezierLength = gravesenLength (fromPtSize 0.1)
+
+
+
+-- | Jens Gravesen\'s bezier arc-length approximation. 
+--
+-- Note this implementation is parametrized on error tolerance.
+--
+gravesenLength :: (Floating u, Ord u) => u -> BezierCurve u -> u
+gravesenLength err_tol crv = step crv 
+  where
+    step c = let l1 = ctrlPolyLength c
+                 l0 = cordLength c
+             in if   l1-l0 > err_tol
+                then let (a,b) = subdivide c in step a + step b
+                else 0.5*l0 + 0.5*l1
+
+-- | Length of the tree lines spanning the control points.
+--
+ctrlPolyLength :: Floating u => BezierCurve u -> u
+ctrlPolyLength (BezierCurve p0 p1 p2 p3) = len p0 p1 + len p1 p2 + len p2 p3
+  where
+    len pa pb = vlength $ pvec pa pb
+
+
+-- | Length of the cord - start point to end point.
+--
+cordLength :: Floating u => BezierCurve u -> u
+cordLength (BezierCurve p0 _ _ p3) = vlength $ pvec p0 p3
+
+
+
+
+-- | Curve subdivision via de Casteljau\'s algorithm.
+--
+subdivide :: Fractional u 
+          => BezierCurve u -> (BezierCurve u, BezierCurve u)
+subdivide (BezierCurve p0 p1 p2 p3) =
+    (BezierCurve p0 p01 p012 p0123, BezierCurve p0123 p123 p23 p3)
+  where
+    p01   = midpoint p0    p1
+    p12   = midpoint p1    p2
+    p23   = midpoint p2    p3
+    p012  = midpoint p01   p12
+    p123  = midpoint p12   p23
+    p0123 = midpoint p012  p123
+
+-- | subdivide with an affine weight along the line...
+--
+subdividet :: Real u
+           => u -> BezierCurve u -> (BezierCurve u, BezierCurve u)
+subdividet t (BezierCurve p0 p1 p2 p3) = 
+    (BezierCurve p0 p01 p012 p0123, BezierCurve p0123 p123 p23 p3)
+  where
+    p01   = affineComb t p0    p1
+    p12   = affineComb t p1    p2
+    p23   = affineComb t p2    p3
+    p012  = affineComb t p01   p12
+    p123  = affineComb t p12   p23
+    p0123 = affineComb t p012  p123
+
 
 
 
 kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
 
-type CubicBezier u = (Point2 u, Point2 u, Point2 u, Point2 u)
 
 
--- | 'bezierWedge' : @ apex_angle * radius * rotation * center -> [Point] @
+-- | 'bezierArcPoints' : @ apex_angle * radius * rotation * center -> [Point] @
 --
 -- > ang should be in the range 0 < ang < 360deg.
 --
--- TODO - this would be better called @bezierArc@ but Wumpus-Core
--- already has a function of that name. Need to think a new 
--- name...
+-- > if   0 < ang <=  90 returns 4 points
+-- > if  90 < ang <= 180 returns 7 points
+-- > if 180 < ang <= 270 returns 10 points
+-- > if 270 < ang <  360 returns 13 points
 --
-bezierWedge ::  Floating u 
-            => Radian -> u -> Radian -> Point2 u -> [Point2 u]
-bezierWedge ang radius theta pt = go (circularModulo ang)
+bezierArcPoints ::  Floating u 
+                => Radian -> u -> Radian -> Point2 u -> [Point2 u]
+bezierArcPoints ang radius theta pt = go (circularModulo ang)
   where
-   go a | a <= half_pi = wedge1 a
-        | a <= pi      = wedge2 (a/2)
-        | a <= 1.5*pi  = wedge3 (a/3)
-        | otherwise    = wedge4 (a/4)
+    go a | a <= half_pi = wedge1 a
+         | a <= pi      = wedge2 (a/2)
+         | a <= 1.5*pi  = wedge3 (a/3)
+         | otherwise    = wedge4 (a/4)
     
-   wedge1 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
-              in [p0,p1,p2,p3]
-   wedge2 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
-                  (_, p4,p5,p6) = bezierMinorWedge a radius (theta+a) pt
-              in [p0,p1,p2,p3, p4,p5,p6] 
-   wedge3 a = let (p0,p1,p2,p3) = bezierMinorWedge a radius theta pt
-                  (_, p4,p5,p6) = bezierMinorWedge a radius (theta+a) pt
-                  (_, p7,p8,p9) = bezierMinorWedge a radius (theta+a+a) pt
-              in [p0,p1,p2,p3, p4,p5,p6, p7, p8, p9] 
-   wedge4 a = let (p0,p1,p2,p3)    = bezierMinorWedge a radius theta pt
-                  (_, p4,p5,p6)    = bezierMinorWedge a radius (theta+a) pt
-                  (_, p7,p8,p9)    = bezierMinorWedge a radius (theta+a+a) pt
-                  (_, p10,p11,p12) = bezierMinorWedge a radius (theta+a+a+a) pt
-              in [p0,p1,p2,p3, p4,p5,p6, p7,p8,p9, p10,p11, p12] 
+    wedge1 a = 
+      let (BezierCurve p0 p1 p2 p3) = bezierMinorArc a radius theta pt
+      in [p0,p1,p2,p3]
+
+    wedge2 a = 
+      let (BezierCurve  p0 p1 p2 p3) = bezierMinorArc a radius theta pt
+          (BezierCurve _   p4 p5 p6) = bezierMinorArc a radius (theta+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6 ] 
+
+    wedge3 a = 
+      let (BezierCurve p0 p1 p2 p3) = bezierMinorArc a radius theta pt
+          (BezierCurve _  p4 p5 p6) = bezierMinorArc a radius (theta+a) pt
+          (BezierCurve _  p7 p8 p9) = bezierMinorArc a radius (theta+a+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6, p7, p8, p9 ] 
+  
+    wedge4 a = 
+      let (BezierCurve p0 p1 p2 p3)    = bezierMinorArc a radius theta pt
+          (BezierCurve _  p4 p5 p6)    = bezierMinorArc a radius (theta+a) pt
+          (BezierCurve _  p7 p8 p9)    = bezierMinorArc a radius (theta+a+a) pt
+          (BezierCurve _  p10 p11 p12) = bezierMinorArc a radius (theta+a+a+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6, p7,p8,p9, p10,p11, p12 ] 
 
 
--- | 'bezierMinorWedge' : @ apex_angle * radius * rotation * center -> CubicBezier @
+-- | 'bezierMinorArc' : @ apex_angle * radius * rotation * center -> BezierCurve @
 --
 -- > ang should be in the range 0 < ang <= 90deg.
 --
-bezierMinorWedge :: Floating u 
-                 => Radian -> u -> Radian -> Point2 u -> CubicBezier u
-bezierMinorWedge ang radius theta pt = (p0, c1, c2, p3)
+bezierMinorArc :: Floating u 
+                 => Radian -> u -> Radian -> Point2 u -> BezierCurve u
+bezierMinorArc ang radius theta pt = BezierCurve p0 c1 c2 p3
   where
     kfactor = fromRadian $ ang / (0.5*pi)
     rl      = kfactor * radius * kappa

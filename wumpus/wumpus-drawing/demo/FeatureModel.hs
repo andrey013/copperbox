@@ -26,7 +26,6 @@ main :: IO ()
 main = do 
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
     createDirectoryIfMissing True "./out/"
-    putStrLn "Note - text centering does not seem to be working well at present..."
     maybe gs_failk  makeGSPicture  $ mb_gs
     maybe afm_failk makeAfmPicture $ mb_afm
   where
@@ -113,7 +112,7 @@ connWith :: ( Real u, Floating u, FromPtSize u )
 connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
-   let p1 = northwards (realToFrac lw) b1
+   let p1 = projectAnchor north (realToFrac lw) b1
    drawi $ apply2R2 (rightArrow arrh connLine) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`

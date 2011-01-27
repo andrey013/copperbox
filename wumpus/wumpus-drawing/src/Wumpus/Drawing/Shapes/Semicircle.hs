@@ -27,7 +27,6 @@ module Wumpus.Drawing.Shapes.Semicircle
 
 import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Geometry.Intersection
-import Wumpus.Drawing.Geometry.StrictCurve
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -140,18 +139,19 @@ scRadialVec theta radius hminor _ = go theta
     (lang,rang)                     = baselineRange radius hminor
     (bctr, br, _, bl)               = constructionPoints radius hminor
     plane                           = makePlane zeroPt theta
+    base_line                       = LineSegment bl br
     left_curve                      = mkStrictCurve radius half_pi bctr
     right_curve                     = mkStrictCurve radius 0 bctr
     post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
-    go a | lang <= a && a <= rang   = post $ interLinesegLine (bl,br) plane 
+    go a | lang <= a && a <= rang   = post $ interLinesegLine base_line plane 
          | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
          | otherwise                = post $ interCurveLine right_curve plane
 
 
-mkStrictCurve :: Floating u => u -> Radian -> Point2 u -> StrictCurve u
-mkStrictCurve radius theta ctr = Curve p0 p1 p2 p3
+mkStrictCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
+mkStrictCurve radius theta ctr = BezierCurve p0 p1 p2 p3
   where
-    (p0,p1,p2,p3) = bezierMinorWedge half_pi radius theta ctr
+    (BezierCurve p0 p1 p2 p3) = bezierMinorArc half_pi radius theta ctr
 
 
 
@@ -221,5 +221,5 @@ mkSemicirclePath :: (Real u, Floating u, FromPtSize u)
                  => u -> u -> LocThetaCF u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
     let ctr            = P2 x (y - cminor) 
-    in pure $ traceCurvePoints $ bezierWedge pi radius theta ctr 
+    in pure $ traceCurvePoints $ bezierArcPoints pi radius theta ctr 
 

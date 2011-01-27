@@ -24,6 +24,7 @@ module Wumpus.Drawing.Geometry.Intersection
   , interLineLine
   , interLinesegLineseg
   , interLinesegLine
+  , interCurveLine
 
   , findIntersect
   , makePlane
@@ -41,7 +42,9 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 
-type LineSegment u = (Point2 u, Point2 u)
+
+-- Potentially lines hould be a new datatype.
+
 
 -- | 'interLineLine' : @ line1 * line2 -> Maybe Point @
 -- 
@@ -84,9 +87,10 @@ interLineLine (p1,p2) (q1,q2) =
 --
 interLinesegLineseg :: (Fractional u, Ord u, FromPtSize u)
                     => LineSegment u -> LineSegment u -> Maybe (Point2 u)
-interLinesegLineseg l1 l2 = interLineLine l1 l2 >>= segcheck
+interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) = 
+    interLineLine (p,q) (s,t) >>= segcheck
   where
-    segcheck = mbCheck (\pt -> withinPoints pt l1 && withinPoints pt l2)
+    segcheck = mbCheck (\pt -> withinPoints pt a && withinPoints pt b)
  
 
 -- | 'interLinesegLine' : @ line_segment * line -> Maybe Point @
@@ -99,9 +103,10 @@ interLinesegLineseg l1 l2 = interLineLine l1 l2 >>= segcheck
 --
 interLinesegLine :: (Fractional u, Ord u, FromPtSize u)
                  => LineSegment u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
-interLinesegLine seg line = interLineLine seg line >>= segcheck
+interLinesegLine a@(LineSegment p q) line = 
+    interLineLine (p,q) line >>= segcheck
   where
-    segcheck = mbCheck (\pt -> withinPoints pt seg)
+    segcheck = mbCheck (\pt -> withinPoints pt a)
 
 
 mbCheck :: (a -> Bool) -> a -> Maybe a
@@ -112,8 +117,8 @@ mbCheck test a = if test a then Just a else Nothing
 -- Note - this function is to be used \*after\* an intersection
 -- has been found. Hence it is not export.
 --
-withinPoints :: (Ord u, FromPtSize u) => Point2 u -> (Point2 u, Point2 u) -> Bool
-withinPoints (P2 x y) (P2 x0 y0, P2 x1 y1) =  
+withinPoints :: (Ord u, FromPtSize u) => Point2 u -> LineSegment u -> Bool
+withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =  
     between x (ordpair x0 x1) && between y (ordpair y0 y1)
   where
     ordpair a b     = (min a b, max a b)
@@ -126,6 +131,57 @@ withinPoints (P2 x y) (P2 x0 y0, P2 x1 y1) =
 --
 tolerance :: FromPtSize u => u
 tolerance = fromPtSize 0.01
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- intersection of line and Bezier curve
+
+interCurveLine :: (Floating u , Ord u, FromPtSize u)
+               => BezierCurve u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
+interCurveLine c0 (p,q) = step c0
+  where
+    eqline  = lineEquation p q
+    step c  = case cut c eqline of
+                Left pt     -> Just pt      -- cut at start or end
+                Right False -> Nothing
+                Right True  -> let (a,b) = subdivide c
+                               in case step a of
+                                   Just pt -> Just pt
+                                   Nothing -> step b
+ 
+-- | Is the curve cut by the line? 
+--
+-- The curve might cut at the start or end points - which is good
+-- as it saves performing a subdivision. But make the return type
+-- a bit involved.
+--
+cut :: (Floating u , Ord u, FromPtSize u)
+    => BezierCurve u -> LineEquation u -> Either (Point2 u) Bool
+cut (BezierCurve p0 p1 p2 p3) line = 
+    if d0 `tEQ` 0 then Left p0 else
+    if d3 `tEQ` 0 then Left p3 else
+    let ds = [d0,d1,d2,d3] in Right $ not $ all pve ds || all nve ds
+  where
+    tEQ = \a b -> abs (a-b) < tolerance
+    pve = \a -> a > tolerance
+    nve = \a -> a < (negate tolerance)
+    d0  = pointLineDistance p0 line 
+    d1  = pointLineDistance p1 line 
+    d2  = pointLineDistance p2 line 
+    d3  = pointLineDistance p3 line 
+
+
+
+    
+
+
+--------------------------------------------------------------------------------
+-- Intersection of shape boundaries...
+
 
 
 -- | 'findIntersect' :: @ radial_origin * theta * [line_segment] -> Maybe Point @
@@ -164,31 +220,4 @@ quadrantCheck theta ctr pt = theta == lineAngle ctr pt
 makePlane :: Floating u => Point2 u -> Radian -> (Point2 u, Point2 u)
 makePlane radial_ogin ang = (radial_ogin, radial_ogin .+^ avec ang 100)
 
--- | 'rectangleLineSegments' : @ half_width * half_height -> [LineSegment] @
---
--- Compute the line segments of a rectangle.
---
-rectangleLineSegments :: Num u => u -> u -> Point2 u -> [LineSegment u]
-rectangleLineSegments hw hh ctr = [(br,tr), (tr,tl), (tl,bl), (bl,br)]
-  where
-    br = ctr .+^ vec hw    (-hh)
-    tr = ctr .+^ vec hw    hh
-    tl = ctr .+^ vec (-hw) hh
-    bl = ctr .+^ vec (-hw) (-hh)
-
-
--- | 'polygonleLineSegments' : @ [point] -> [LineSegment] @
---
--- Compute the line segments of a polygon fome a list of 
--- its vertices.
---
--- \*\* WARNING \*\* - this function throws a runtime error when 
--- supplied the empty list. 
--- 
-polygonLineSegments :: [Point2 u] -> [LineSegment u]
-polygonLineSegments []     = error "polygonLineSegments - emptyList"
-polygonLineSegments (x:xs) = step x xs 
-  where
-    step a []        = [(a,x)]
-    step a (b:bs)    = (a,b) : step b bs
 

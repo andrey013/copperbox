@@ -109,7 +109,6 @@ library
     Wumpus.Drawing.Geometry.Intersection,
     Wumpus.Drawing.Geometry.Paths,
     Wumpus.Drawing.Geometry.Quadrant,
-    Wumpus.Drawing.Geometry.StrictCurve,
     Wumpus.Drawing.Grids,
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,

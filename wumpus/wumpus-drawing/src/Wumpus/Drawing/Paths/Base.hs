@@ -70,7 +70,6 @@ module Wumpus.Drawing.Paths.Base
 
 
 import Wumpus.Drawing.Geometry.Base
-import Wumpus.Drawing.Geometry.StrictCurve
 
 -- package: wumpus-basic
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
@@ -177,7 +176,7 @@ line p0 p1 = let v = vlength $ pvec p0 p1
 
 curve :: (Floating u, Ord u, FromPtSize u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Path u 
-curve p0 p1 p2 p3 = let v = bezierLength p0 p1 p2 p3
+curve p0 p1 p2 p3 = let v = bezierLength (BezierCurve p0 p1 p2 p3)
                     in Path v p0 (JL.one $ CurveSeg v p0 p1 p2 p3) p3
 
 -- | A draw a /straight line/ of length 0 at the supplied point. 
@@ -305,9 +304,11 @@ shortenSegL :: (Real u, Floating u) => u -> PathSeg u -> PathSeg u
 shortenSegL n (LineSeg  u p0 p1)        = 
     LineSeg  (u-n) (shortenLineL n p0 p1) p1
 
-shortenSegL n (CurveSeg u p0 p1 p2 p3)  = 
-    let (Curve p0' p1' p2' p3') = snd $ subdividet (n/u) (Curve p0 p1 p2 p3)
-    in CurveSeg (u-n) p0' p1' p2' p3'
+shortenSegL n (CurveSeg u p0 p1 p2 p3)  = CurveSeg (u-n) q0 q1 q2 q3
+  where
+    (BezierCurve q0 q1 q2 q3) = snd $ subdividet (n/u) 
+                                                 (BezierCurve p0 p1 p2 p3)
+     
 
 
 shortenLineL :: (Real u, Floating u) 
@@ -352,9 +353,11 @@ shortenSegR :: (Real u, Floating u) => u -> PathSeg u -> PathSeg u
 shortenSegR n (LineSeg  u p0 p1)        = 
     LineSeg  (u-n) p0 (shortenLineR n p0 p1) 
 
-shortenSegR n (CurveSeg u p0 p1 p2 p3)  = 
-    let (Curve p0' p1' p2' p3') = fst $ subdividet ((u-n)/u) (Curve p0 p1 p2 p3)
-    in CurveSeg (u-n) p0' p1' p2' p3'
+shortenSegR n (CurveSeg u p0 p1 p2 p3)  = CurveSeg (u-n) q0 q1 q2 q3
+  where
+    (BezierCurve q0 q1 q2 q3) = fst $ subdividet ((u-n)/u) 
+                                                 (BezierCurve p0 p1 p2 p3)
+     
 
 
 shortenLineR :: (Real u, Floating u) 
