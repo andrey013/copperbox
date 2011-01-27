@@ -574,7 +574,7 @@ strokedDisk r = strokedEllipseDisk r r
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 filledDisk :: Num u => u -> LocGraphic u
-filledDisk r = strokedEllipseDisk r r
+filledDisk r = filledEllipseDisk r r
 
 
 -- | 'borderedDisk' : @ radius -> LocGraphic @

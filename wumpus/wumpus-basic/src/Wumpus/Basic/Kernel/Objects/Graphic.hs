@@ -40,11 +40,13 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , safeconcat
   , ignoreAns
   , replaceAns
+  , mapAns
+
   , intoImage
   , intoLocImage
   , intoLocThetaImage
 
-
+  , decorate
 
   ) where
 
@@ -133,6 +135,12 @@ replaceAns :: Functor f => z -> f (a,b) -> f (z, b)
 replaceAns = fmap . replaceL
 
 
+-- | Apply the supplied function to the answer produced by an 
+-- 'Image', a 'LocImage' etc.
+--
+mapAns :: Functor f => (a -> z) -> f (a,b) -> f (z,b)
+mapAns f = fmap (\(a,b) -> (f a ,b))
+
 
 -- | Build an Image...
 --
@@ -149,4 +157,13 @@ intoLocImage = liftA2 (\a (_,b) -> (a,b))
 --
 intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
 intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
+
+
+
+
+-- | Decorate an image by superimposing a graphic.
+--
+decorate :: Image u a -> Graphic u -> Image u a
+decorate mf mg = 
+   mf >>= \(a,g1) -> mg >>= \(_,g2) -> return (a, g1 `oplus` g2)
 

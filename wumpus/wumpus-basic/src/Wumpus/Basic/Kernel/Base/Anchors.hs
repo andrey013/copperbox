@@ -16,7 +16,7 @@
 -- Anchors are addressable positions, an examplary use is taking
 -- anchors on node shapes to get the start and end points for 
 -- connectors in a network (graph) diagram.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Base.Anchors

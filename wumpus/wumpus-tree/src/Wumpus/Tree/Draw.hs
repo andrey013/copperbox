@@ -125,7 +125,7 @@ famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
 midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
 midline _        []           = error "midline - empty list" 
 midline (P2 _ y) (P2 x0 _:zs) = 
-    let (a,b) = foldr fn (x0,x0) zs in straightLineBetween (P2 a y) (P2 b y)
+    let (a,b) = foldr fn (x0,x0) zs in straightLineGraphic (P2 a y) (P2 b y)
   where   
     fn (P2 x _) (lo,hi) | x < lo    = (x,hi)
                         | x > hi    = (lo,x)
@@ -137,7 +137,7 @@ halfHeight (P2 _ ya) (P2 _ yb) = 0.5 * (abs $ ya - yb)
 -- special case - should always be a vertical, but...
 famconn1 :: Fractional u => Point2 u -> Point2 u -> Graphic u
 famconn1 a@(P2 xa _) b@(P2 xb _) 
-    | xa == xb  = straightLineBetween a b
+    | xa == xb  = straightLineGraphic a b
     | otherwise = openStroke $ vertexPath [a,m1,m2,b] 
   where
     hh = halfHeight a b

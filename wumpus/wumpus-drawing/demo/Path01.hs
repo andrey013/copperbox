@@ -6,6 +6,7 @@ import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.MonadicConstruction
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -55,7 +56,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localize (fillColour gold) (filledCircle 2 60 `at` zeroPt)
+circle1 = localize (fillColour gold) (filledCircle 60 `at` zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)

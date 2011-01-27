@@ -108,7 +108,8 @@ petri_net = drawTracing $ do
 greenFill :: DrawingCtxM m => m a -> m a
 greenFill = localize (fillColour lime_green)
 
-place :: (Real u, Floating u, DrawingCtxM m, TraceM m, u ~ MonUnit m) 
+place :: ( Real u, Floating u, FromPtSize u
+         , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
       => u -> u -> m (Circle u)
 place x y = greenFill $ drawi $ (borderedShape $ circle 14) `at` P2 x y
 

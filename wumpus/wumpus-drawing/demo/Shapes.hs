@@ -37,14 +37,15 @@ shapes = drawTracing $ do
     -- Note - the rotate is rotating both the primGraphic and the 
     -- answer. A LocShape cannot be rotated directly.
     --
-    drawi_ $ (rotateAbout (0.5*pi) tri_ctr  $ borderedShape $ triangle 20 30) `at` tri_ctr
+    drawi_ $ (rotateAbout (0.5*pi) tri_ctr  $ borderedShape $ triangle 20 30) 
+              `at` tri_ctr
     redX $ tri_ctr
-    drawi_ $ (borderedShape $ rtriangle 20 30 (1.5*pi)) `at` displaceVec (hvec 25) tri_ctr
+    drawi_ $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
     redX $ tri_ctr
 
 
-    drawi_ $ (rotateAbout deg45 tri2_ctr $ borderedShape $ rtriangle 20 30 deg45) 
-               `at` displaceVec (hvec 25) tri2_ctr
+    drawi_ $ (rotateAbout deg45 tri2_ctr $ borderedShape $ triangle 20 30) 
+               `at` displaceVec (hvec 25) tri2_ctr 
 
     return ()
   where
