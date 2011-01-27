@@ -210,8 +210,8 @@ mkSemiellipse rx ry props = promoteR2 $ \ctr theta ->
 
 mkSemiellipsePath :: (Real u, Floating u, FromPtSize u) 
                   => u -> u -> u -> LocThetaCF u (Path u)
-mkSemiellipsePath rx ry cminor = promoteR2 $ \(P2 x y) theta ->
-    let ctr = P2 x (y - cminor)
+mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
+    let ctr = displacePerpendicular (-cminor) theta pt
     in pure $ traceCurvePoints $ map (rotateAbout theta ctr)
                                $ bezierSemiellipsePoints rx ry ctr
 

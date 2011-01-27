@@ -118,73 +118,11 @@ shapePic sh name = drawTracing $ do
 
 
 
--- Just center and Cardinal1 anchors - this is for semicircle
--- which doesn\'t have a set of anchors properly defined.
---
-shapePic_cnsew :: ( CenterAnchor a, CardinalAnchor a
-                  , Scale a, Rotate a
-                  , DUnit a ~ Double) 
-               => DShape a -> String -> DCtxPicture
-shapePic_cnsew sh name = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ 
-            uniformScale 2 $ rotate05 $ shape `at` P2 100 0
-    draw $ label NORTH        "(center)"      `at` center a1
-    draw $ label NORTH        "(north)"       `at` north a1
-    draw $ label SOUTH        "(south)"       `at` south a1
-    draw $ label EAST         "(east)"        `at` east a1
-    draw $ label WEST         "(west)"        `at` west a1
-    return ()
-  where
-    shape   = strokedShape $ setDecoration textF sh
-    textF   = ignoreAns (multiAlignCenter CENTER name)
-
-
--- Just center, north and south anchors - this is for semiellipse
--- which doesn\'t have a set of anchors properly defined.
---
-shapePic_cns :: ( CenterAnchor a, CardinalAnchor a
-                , Scale a, Rotate a
-                , DUnit a ~ Double) 
-             => DShape a -> String -> DCtxPicture
-shapePic_cns sh name = drawTracing $ do
-    a1  <- localize shapeSty $ drawi $ 
-             uniformScale 2 $ rotate05 $ shape `at` P2 100 0
-    draw $ label NORTH        "(center)"      `at` center a1
-    draw $ label NORTH        "(north)"       `at` north a1
-    draw $ label SOUTH        "(south)"       `at` south a1
-    return ()
-  where
-    shape   = strokedShape $ setDecoration textF sh
-    textF   = ignoreAns (multiAlignCenter CENTER name)
-
 
 
 
 shapeSty :: DrawingContextF
 shapeSty = strokeColour light_steel_blue . ultrathick
-
-labelPoint :: (Real u, Floating u, FromPtSize u) 
-           => (u -> PointDisplace u) -> String -> LocGraphic u
-labelPoint fn ss = markX `oplus` msg
-  where
-    msg = ignoreAns $ moveStartPoint (fn 16) $ textAlignCenter ss
-
-
-labelWest :: (Real u, Floating u, FromPtSize u) 
-           => String -> LocGraphic u
-labelWest ss = markX `oplus` msg
-  where
-    msg = ignoreAns $ moveStartPoint (westwards 10) $ 
-              multiAlignCenter EE ss `rot` 0
-
-labelEast :: (Real u, Floating u, FromPtSize u) 
-           => String -> LocGraphic u
-labelEast ss = markX `oplus` msg
-  where
-    msg = ignoreAns $ moveStartPoint (eastwards 10) $ 
-              multiAlignCenter WW ss `rot` 0
-
-              
 
 label :: (Real u, Floating u, FromPtSize u) 
            => Cardinal -> String -> LocGraphic u
@@ -204,5 +142,3 @@ label cpos ss = markX `oplus` msg
     go NORTH_WEST = (SE, northwestwards)
   
 
--- Note - it would be nice to have an API like PPrint for 
--- constructing escaped text. 

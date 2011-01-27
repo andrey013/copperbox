@@ -216,10 +216,12 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 
 
 
-
+-- TODO - need to check other shapes to see if the are deriving 
+-- the center properly...
+--
 mkSemicirclePath :: (Real u, Floating u, FromPtSize u) 
                  => u -> u -> LocThetaCF u (Path u)
-mkSemicirclePath radius cminor = promoteR2 $ \(P2 x y) theta ->
-    let ctr            = P2 x (y - cminor) 
+mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
+    let ctr = displacePerpendicular (-cminor) theta pt
     in pure $ traceCurvePoints $ bezierArcPoints pi radius theta ctr 
 
