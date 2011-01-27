@@ -12,8 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Semiellipse - note some Anchor instances are TODO. 
--- Simple shapes - rectangle, circle diamond, ellipse.
+-- Semiellipse.
 -- 
 --------------------------------------------------------------------------------
 
@@ -26,6 +25,8 @@ module Wumpus.Drawing.Shapes.Semiellipse
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
+import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -40,7 +41,7 @@ import Control.Applicative
 
 
 --------------------------------------------------------------------------------
--- Semi-ellipse
+-- Datatype
 
 data Semiellipse u = Semiellipse 
       { se_ctm          :: ShapeCTM u
@@ -105,15 +106,71 @@ instance (Real u, Floating u) => CenterAnchor (Semiellipse u) where
 
 
 
-instance (Real u, Floating u) => CardinalAnchor (Semiellipse u) where
-  north = runDisplaceCenter $ \_ _ _ rymajor -> V2 0 rymajor
-  south = runDisplaceCenter $ \_ _ ryminor _ -> V2 0 (-ryminor)
-  east _ = error $ "semiellipse - no east anchor."
-  west _ = error $ "semiellipse - no west anchor."
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor (Semiellipse u) where
+  north = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
+  south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
+  east  = radialAnchor 0
+  west  = radialAnchor pi
+
+instance (Real u, Floating u, FromPtSize u) => 
+    CardinalAnchor2 (Semiellipse u) where
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
 
--- TODO - Radial and Cardinal2 instances
+instance (Real u, Floating u, FromPtSize u) => RadialAnchor (Semiellipse u) where
+  radialAnchor theta = runDisplaceCenter (seRadialVec theta)
+
+
+seRadialVec :: (Real u, Floating u, Ord u, FromPtSize u)
+            => Radian -> u -> u -> u -> u -> Vec2 u
+seRadialVec theta rx ry hminor _ = go theta
+  where
+    (lang,rang)                     = baselineRange rx hminor
+    (bctr, br, _, bl)               = constructionPoints rx ry hminor
+    plane                           = makePlane zeroPt theta
+    base_line                       = LineSegment bl br
+    (right_curve,left_curve)        = bezierSemiellipse rx ry bctr
+    post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
+    go a | lang <= a && a <= rang   = post $ interLinesegLine base_line plane 
+         | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
+         | otherwise                = post $ interCurveLine right_curve plane
+
+
+
+-- | 'constructionPoints' : @ rx * ry * hminor -> 
+--     (base_ctr, base_right, apex, base_left) @
+--
+-- Assumes centroid is (0,0).
+--
+constructionPoints :: Num u 
+                   => u -> u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
+constructionPoints rx ry hminor = (bctr, br, apex, bl)
+  where
+    bctr  = P2 0 (-hminor)
+    br    = bctr .+^ hvec rx
+    apex  = bctr .+^ vvec ry
+    bl    = bctr .+^ hvec (-rx)
+
+
+
+
+-- | 'baselineRange' : @ radius * hminor -> (left_base_ang, right_base_ang) @
+--
+-- Find the angle range where a ray from the centroid will cross
+-- the baseline rather than cut the curve.
+--
+baselineRange :: (Real u, Floating u) => u -> u -> (Radian, Radian)
+baselineRange rx hminor = (lang, rang)
+  where
+    ang   = toRadian $ atan (rx / hminor)
+    lang  = (1.5*pi) - ang
+    rang  = (1.5*pi) + ang
+
 
 
 --------------------------------------------------------------------------------
@@ -156,18 +213,28 @@ mkSemiellipsePath :: (Real u, Floating u, FromPtSize u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \(P2 x y) theta ->
     let ctr = P2 x (y - cminor)
     in pure $ traceCurvePoints $ map (rotateAbout theta ctr)
-                               $ bezierSemiEllipse rx ry ctr
+                               $ bezierSemiellipsePoints rx ry ctr
 
+
+bezierSemiellipsePoints :: Floating u
+                        => u -> u -> Point2 u -> [Point2 u]
+bezierSemiellipsePoints rx ry pt = [ p0, c1,c2,p3, c4,c5,p6 ]
+  where 
+    (BezierCurve p0 c1 c2 p3, BezierCurve _ c4 c5 p6) = bezierSemiellipse rx ry pt
 
 
 -- For Geometry?
 
+-- | Generate the bezier arcs for quadrants I and II. 
+--
+-- Drawing is expected to proceed CCW.
+-- 
 -- Note - Point is the (full) ellipse center.
 --
-bezierSemiEllipse :: (Fractional u, Floating u) 
-              => u -> u -> Point2 u -> [Point2 u]
-bezierSemiEllipse rx ry (P2 x y) = 
-    [ p00,c01,c02, p03,c04,c05, p06 ]
+bezierSemiellipse :: Floating u
+                  => u -> u -> Point2 u -> (BezierCurve u, BezierCurve u)
+bezierSemiellipse rx ry (P2 x y) = 
+    (BezierCurve p00 c01 c02 p03, BezierCurve p03 c04 c05 p06)
   where
     lrx = rx * kappa
     lry = ry * kappa

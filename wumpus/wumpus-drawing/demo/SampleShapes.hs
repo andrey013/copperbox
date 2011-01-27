@@ -64,16 +64,18 @@ type ShapeList = [(String, (String -> DCtxPicture))]
 
 shape_list :: ShapeList
 shape_list = 
-    [ ( "circle",         shapePic $ circle 150)
-    , ( "diamond",        shapePic $ diamond 150 100)
-    , ( "ellipse",        shapePic $ ellipse 150 100)
-    , ( "parallelogram",  shapePic $ zparallelogram 250 200)
-    , ( "rectangle",      shapePic $ rectangle 300 175)
-    , ( "semicircle",     shapePic $ semicircle 150) 
-    , ( "semiellipse",    shapePic_cns $ semiellipse 100 150) 
-    , ( "trapezium",      shapePic $ ztrapezium 300 150)
-    , ( "triangle",       shapePic $ triangle 300 200)
-    , ( "invtriangle",    shapePic $ invtriangle 300 200)
+    [ ( "circle",             shapePic $ circle 150)
+    , ( "diamond",            shapePic $ diamond 150 100)
+    , ( "ellipse",            shapePic $ ellipse 150 100)
+    , ( "invsemicircle",      shapePic $ invsemicircle 150)
+    , ( "invsemiellipse",     shapePic $ invsemiellipse 100 150)
+    , ( "invtriangle",        shapePic $ invtriangle 300 150)
+    , ( "parallelogram",      shapePic $ zparallelogram 250 200)
+    , ( "rectangle",          shapePic $ rectangle 300 175)
+    , ( "semicircle",         shapePic $ semicircle 150) 
+    , ( "semiellipse",        shapePic $ semiellipse 100 150) 
+    , ( "trapezium",          shapePic $ ztrapezium 300 150)
+    , ( "triangle",           shapePic $ triangle 300 150)
     ]
 
 makeCtx :: GlyphMetrics -> DrawingContext

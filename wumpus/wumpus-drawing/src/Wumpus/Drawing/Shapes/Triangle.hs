@@ -40,8 +40,7 @@ import Control.Applicative
 
 
 
---------------------------------------------------------------------------------
--- Triangle
+-- Datatype
 
 -- | An isosceles triangle, oriented /upwards/.
 --

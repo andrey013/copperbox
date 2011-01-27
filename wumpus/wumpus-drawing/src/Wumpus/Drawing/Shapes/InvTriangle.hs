@@ -38,8 +38,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
---------------------------------------------------------------------------------
--- InvTriangle
+-- Datatype
 
 newtype InvTriangle u = InvTriangle { getInvTriangle :: Triangle u }
 

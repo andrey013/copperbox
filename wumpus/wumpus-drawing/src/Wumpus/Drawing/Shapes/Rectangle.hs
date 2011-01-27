@@ -39,8 +39,7 @@ import Control.Applicative
 
 
 
---------------------------------------------------------------------------------
--- Rectangle
+-- Data type
 
 data Rectangle u = Rectangle 
       { rect_ctm    :: ShapeCTM u

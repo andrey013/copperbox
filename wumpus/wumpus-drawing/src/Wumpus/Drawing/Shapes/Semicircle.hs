@@ -12,7 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Semicircle - note some Anchor instances are TODO. 
+-- Semicircle. 
 -- 
 --------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ import Control.Applicative
 
 
 --------------------------------------------------------------------------------
--- Circle
+-- Datatype
 
 data Semicircle u = Semicircle 
       { sc_ctm          :: ShapeCTM u
@@ -140,16 +140,16 @@ scRadialVec theta radius hminor _ = go theta
     (bctr, br, _, bl)               = constructionPoints radius hminor
     plane                           = makePlane zeroPt theta
     base_line                       = LineSegment bl br
-    left_curve                      = mkStrictCurve radius half_pi bctr
-    right_curve                     = mkStrictCurve radius 0 bctr
+    left_curve                      = mkCurve radius half_pi bctr
+    right_curve                     = mkCurve radius 0 bctr
     post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
     go a | lang <= a && a <= rang   = post $ interLinesegLine base_line plane 
          | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
          | otherwise                = post $ interCurveLine right_curve plane
 
 
-mkStrictCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
-mkStrictCurve radius theta ctr = BezierCurve p0 p1 p2 p3
+mkCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
+mkCurve radius theta ctr = BezierCurve p0 p1 p2 p3
   where
     (BezierCurve p0 p1 p2 p3) = bezierMinorArc half_pi radius theta ctr
 

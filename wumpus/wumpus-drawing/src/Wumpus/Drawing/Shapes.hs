@@ -20,6 +20,8 @@ module Wumpus.Drawing.Shapes
   , module Wumpus.Drawing.Shapes.Circle
   , module Wumpus.Drawing.Shapes.Diamond
   , module Wumpus.Drawing.Shapes.Ellipse
+  , module Wumpus.Drawing.Shapes.InvSemicircle
+  , module Wumpus.Drawing.Shapes.InvSemiellipse
   , module Wumpus.Drawing.Shapes.InvTriangle
   , module Wumpus.Drawing.Shapes.Parallelogram
   , module Wumpus.Drawing.Shapes.Rectangle
@@ -33,6 +35,8 @@ import Wumpus.Drawing.Shapes.Base
 import Wumpus.Drawing.Shapes.Circle
 import Wumpus.Drawing.Shapes.Diamond
 import Wumpus.Drawing.Shapes.Ellipse
+import Wumpus.Drawing.Shapes.InvSemicircle
+import Wumpus.Drawing.Shapes.InvSemiellipse
 import Wumpus.Drawing.Shapes.InvTriangle
 import Wumpus.Drawing.Shapes.Parallelogram
 import Wumpus.Drawing.Shapes.Rectangle
