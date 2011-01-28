@@ -1,0 +1,62 @@
+name:             wumpus-block
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Drawing block with Wumpus.
+description:
+  .
+  Library for drawing block diagrams.
+  .
+  Note - block diagrams need font metrics. Font metrics for the 
+  \"Core 14\" PostScript fonts are distributed as @*.afm@ files 
+  with GhostScript (AFM file version 2.0 for GhostScript 8.63) or 
+  available from Adode (AFM file version 4.1). To run the demos 
+  you will need one of these sets of metrics.
+  .
+  Adobe Font techinal notes:
+  <https://www.adobe.com/devnet/font.html>
+  .
+  Core 14 AFM metrics:
+  <https://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/Core14_AFMs.tar>
+  .
+  .
+
+  .
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  demo/Oscil1.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5, 
+                      vector-space      >= 0.6     && < 1.0,
+                      wumpus-core       >= 0.43.0  && <  0.44.0
+                      wumpus-basic      == 0.16.0,
+                      wumpus-drawing    == 0.2.0
+
+
+  
+  exposed-modules:
+    Wumpus.Block.Base,
+    Wumpus.Block.VersionNumber
+
+  other-modules:
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
