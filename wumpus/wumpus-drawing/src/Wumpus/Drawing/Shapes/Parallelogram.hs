@@ -28,6 +28,7 @@ module Wumpus.Drawing.Shapes.Parallelogram
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
@@ -57,7 +58,12 @@ data Parallelogram u = Parallelogram
       }
 
 
--- | rect_width is the width of the (greater) enclosing rectangle.
+-- | Note (center) is a line dropped from the center of the
+-- paralleogram.
+-- 
+-- > base_minor is the (center) to left corner.
+-- > base_major is the (center) to right corner.
+--
 data SyntheticProps u = SyntheticProps
       { pll_base_minor  :: u
       , pll_base_major  :: u
@@ -95,25 +101,50 @@ instance Num u => Translate (Parallelogram u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-
+-- | 'runDisplaceCenter' : @ ( half_base_width
+--                           * half_height 
+--                           * base_minor
+--                           * base_major -> Vec ) * parallelogram -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u)
-                 => (u -> u -> Vec2 u) -> Parallelogram u -> Point2 u
+                  => (u -> u -> u -> u -> Vec2 u) -> Parallelogram u -> Point2 u
 runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
-                                   , pll_base_width = bw
-                                   , pll_height     = h   }) =  
-    displaceCenter (fn (0.5 * bw) (0.5 * h)) ctm
+                                    , pll_base_width = bw
+                                    , pll_height     = h  
+                                    , pll_syn_props  = syn }) = 
+    displaceCenter (fn (0.5 * bw) (0.5 * h) 
+                       (pll_base_minor syn) (pll_base_major syn)) ctm
 
 
 
 instance (Real u, Floating u) => CenterAnchor (Parallelogram u) where
-  center = runDisplaceCenter $ \_ _ -> V2 0 0
+  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
+
+-- top anchors swap the base minor and major...
+--
+instance (Real u, Floating u) => TopCornerAnchor (Parallelogram u) where
+  topLeftCorner  = runDisplaceCenter $ \_ hh _ bmaj -> V2 (-bmaj) hh
+  topRightCorner = runDisplaceCenter $ \_ hh bmin _ -> V2 bmin    hh
+
+instance (Real u, Floating u) => BottomCornerAnchor (Parallelogram u) where
+  bottomLeftCorner  = runDisplaceCenter $ \_ hh bmin _ -> V2 (-bmin) (-hh)
+  bottomRightCorner = runDisplaceCenter $ \_ hh _ bmaj -> V2 bmaj    (-hh)
+
+instance (Real u, Floating u) => SideMidpointAnchor (Parallelogram u) where
+  sideMidpoint n a = step (n `mod` 4) 
+    where
+      step 1 = midpoint (topRightCorner a)    (topLeftCorner a)
+      step 2 = midpoint (topLeftCorner a)     (bottomLeftCorner a)
+      step 3 = midpoint (bottomLeftCorner a)  (bottomRightCorner a)
+      step _ = midpoint (bottomRightCorner a) (topRightCorner a)
+
 
 
 instance (Real u, Floating u) => CardinalAnchor (Parallelogram u) where
-  north = runDisplaceCenter $ \_  hh -> V2 0 hh
-  south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
-  east  = runDisplaceCenter $ \hw _  -> V2 hw 0
-  west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
+  north = runDisplaceCenter $ \_  hh _ _ -> V2 0 hh
+  south = runDisplaceCenter $ \_  hh _ _ -> V2 0 (-hh)
+  east  = runDisplaceCenter $ \hw _  _ _ -> V2 hw 0
+  west  = runDisplaceCenter $ \hw _  _ _ -> V2 (-hw) 0
 
 
 instance (Real u, Floating u, FromPtSize u) => 

@@ -26,6 +26,7 @@ module Wumpus.Drawing.Shapes.Diamond
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
@@ -35,8 +36,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space 
-import Data.VectorSpace
 
 import Control.Applicative
 
@@ -84,19 +83,34 @@ instance Num u => Translate (Diamond u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
+-- | 'runDisplaceCenter' : @ ( half_width 
+--                           * half_height -> Vec ) * diamond -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> Vec2 u) -> Diamond u -> Point2 u
 runDisplaceCenter fn (Diamond { dia_ctm = ctm
-                       , dia_hw = hw
-                       , dia_hh = hh }) = 
+                              , dia_hw = hw
+                              , dia_hh = hh }) = 
    displaceCenter (fn hw hh) ctm
 
 
 instance (Real u, Floating u) => CenterAnchor (Diamond u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
+instance (Real u, Floating u) => ApexAnchor (Diamond u) where
+  apex = runDisplaceCenter $ \_  hh -> V2 0 hh
+
+instance (Real u, Floating u) => SideMidpointAnchor (Diamond u) where
+  sideMidpoint n a = step (n `mod` 4) 
+    where
+      step 1 = midpoint (north a) (west a)
+      step 2 = midpoint (west a)  (south a)
+      step 3 = midpoint (south a) (east a)
+      step _ = midpoint (east a)  (north a)
+
+
 instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
-  north = runDisplaceCenter $ \_  hh -> V2 0 hh
+  north = apex
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
@@ -114,9 +128,6 @@ instance (Real u, Floating u) => RadialAnchor (Diamond u) where
                          diamondRadialVector hw hh ang
 
 
-
-midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-midpoint p1 p2 = let v = 0.5 *^ pvec p1 p2 in p1 .+^ v
 
 
 --------------------------------------------------------------------------------

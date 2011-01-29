@@ -36,7 +36,7 @@ module Wumpus.Basic.Kernel.Base.Anchors
   , RadialAnchor(..)
   , TopCornerAnchor(..)
   , BottomCornerAnchor(..)
-  , SideCenterAnchor(..)
+  , SideMidpointAnchor(..)
 
 
   -- * Extended anchor points
@@ -136,14 +136,14 @@ class BottomCornerAnchor t where
 -- 
 -- Sides are addressable by index. Following TikZ, side 1 is 
 -- expected to be the top of the shape. If the shape has an apex 
--- instead side 1 is expected to be the first side left of the 
--- apex.
+-- instead of a side then side 1 is expected to be the first side 
+-- left of the apex.
 -- 
 -- Implementations are also expected to modulo the side number, 
 -- rather than throw an out-of-bounds error.
 --
-class SideCenterAnchor t where
-  sideCenter :: DUnit t ~ u => Int -> t -> Point2 u
+class SideMidpointAnchor t where
+  sideMidpoint :: DUnit t ~ u => Int -> t -> Point2 u
 
 
 

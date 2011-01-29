@@ -81,6 +81,13 @@ runRotateAnchor f (InvSemicircle a) = rotateAbout pi (center a) (f a)
 instance (Real u, Floating u) => CenterAnchor (InvSemicircle u) where
   center = center . getInvSemicircle
 
+instance (Real u, Floating u) => ApexAnchor (InvSemicircle u) where
+  apex = runRotateAnchor apex
+
+instance (Real u, Floating u) => TopCornerAnchor (InvSemicircle u) where
+  topLeftCorner  = runRotateAnchor bottomRightCorner
+  topRightCorner = runRotateAnchor bottomLeftCorner
+
 instance (Real u, Floating u) => CardinalAnchor (InvSemicircle u) where
   north = runRotateAnchor south
   south = runRotateAnchor north

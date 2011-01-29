@@ -26,6 +26,7 @@ module Wumpus.Drawing.Shapes.InvTriangle
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Shapes.Base
 import Wumpus.Drawing.Shapes.Triangle
 
@@ -96,6 +97,18 @@ instance (Real u, Floating u) => ApexAnchor (InvTriangle u) where
 instance (Real u, Floating u) => TopCornerAnchor (InvTriangle u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
+
+
+-- Use established points on the InvTrangle - don\'t delegate to 
+-- the base Triangle.
+--
+instance (Real u, Floating u) => SideMidpointAnchor (InvTriangle u) where
+  sideMidpoint n a = step (n `mod` 3) 
+    where
+      step 1 = midpoint (topRightCorner a) (topLeftCorner a)
+      step 2 = midpoint (topLeftCorner a)  (apex a)
+      step _ = midpoint (apex a)           (topRightCorner a)
+
 
 
 -- east and west should be parallel to the centroid.

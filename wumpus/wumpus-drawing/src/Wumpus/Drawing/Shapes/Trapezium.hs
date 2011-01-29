@@ -40,6 +40,8 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
+import Data.VectorSpace                         -- package: vector-space
+
 import Control.Applicative
 
 
@@ -89,6 +91,11 @@ instance Num u => Translate (Trapezium u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
+-- | 'runDisplaceCenter' : @ ( half_base_width 
+--                           * half_height
+--                           * left_base_ang 
+--                           * right_base_ang -> Vec ) * trapzium -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> Radian -> Radian -> Vec2 u) 
                   -> Trapezium u -> Point2 u
@@ -101,6 +108,34 @@ runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
 
 instance (Real u, Floating u) => CenterAnchor (Trapezium u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
+
+
+
+instance (Real u, Floating u) => BottomCornerAnchor (Trapezium u) where
+  bottomLeftCorner  = runDisplaceCenter $ \hbw hh _ _  -> V2 (-hbw) (-hh)
+  bottomRightCorner = runDisplaceCenter $ \hbw hh _ _  -> V2  hbw   (-hh)
+
+
+instance (Real u, Floating u) => TopCornerAnchor (Trapezium u) where
+  topLeftCorner  = runDisplaceCenter $ \hbw hh lang _  -> 
+                     let vbase = V2 (-hbw) (-hh)
+                         vup   = leftSideVec (2*hh) lang 
+                     in vbase ^+^ vup
+  topRightCorner = runDisplaceCenter $ \hbw hh _ rang  ->
+                     let vbase = V2  hbw   (-hh)
+                         vup   = rightSideVec (2*hh) rang
+                     in vbase ^+^ vup
+
+
+instance (Real u, Floating u, FromPtSize u) => 
+    SideMidpointAnchor (Trapezium u) where
+  sideMidpoint n a = step (n `mod` 4) 
+    where
+      step 1 = north a
+      step 2 = west a
+      step 3 = south a
+      step _ = east a
+
 
 
 instance (Real u, Floating u, FromPtSize u) => 
@@ -217,30 +252,30 @@ tzPoints bw h lang rang = [ bl, br, tr, tl ]
 -- Note - expects ang value 0 < ang < 180, though does not check...
 -- 
 leftSideVec :: Floating u => u -> Radian -> Vec2 u
-leftSideVec h ang | ang <  0.5*pi = less_ninety
-                  | ang == 0.5*pi = vvec h
-                  | otherwise     = grtr_ninety
+leftSideVec h lang | lang <  0.5*pi = less_ninety
+                   | lang == 0.5*pi = vvec h
+                   | otherwise      = grtr_ninety
   where
-    less_ninety = let dist = h / (fromRadian $ sin ang) in avec ang dist
-    grtr_ninety = let theta = ang - (0.5*pi) 
+    less_ninety = let dist = h / (fromRadian $ sin lang) in avec lang dist
+    grtr_ninety = let theta = lang - (0.5*pi) 
                       dist  = h / (fromRadian $ cos theta) 
-                  in avec ang dist
+                  in avec lang dist
 
 
 
 
--- | Calculate the vector that produces the upper-left point given
--- the lower-left point.
+-- | Calculate the vector that produces the upper-right point given
+-- the lower-right point.
 --
 -- Note - expects ang value 0 < ang < 180, though does not check...
 -- 
 rightSideVec :: Floating u => u -> Radian -> Vec2 u
-rightSideVec h ang | ang <  0.5*pi = less_ninety
-                   | ang == 0.5*pi = vvec h
-                   | otherwise     = grtr_ninety
+rightSideVec h rang | rang <  0.5*pi = less_ninety
+                    | rang == 0.5*pi = vvec h
+                    | otherwise      = grtr_ninety
   where
-    less_ninety = let dist = h / (fromRadian $ sin ang) in avec (pi-ang) dist
-    grtr_ninety = let theta = ang - (0.5*pi) 
+    less_ninety = let dist  = h / (fromRadian $ sin rang) in avec (pi - rang) dist
+    grtr_ninety = let theta = rang - (0.5*pi) 
                       dist  = h / (fromRadian $ cos theta) 
-                  in avec (pi-ang) dist
+                  in avec (pi - rang) dist
 

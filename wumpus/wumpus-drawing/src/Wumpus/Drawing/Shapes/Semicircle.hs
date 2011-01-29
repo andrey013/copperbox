@@ -90,7 +90,7 @@ instance Num u => Translate (Semicircle u) where
 
 -- | 'runDisplaceCenter' : @ ( radius
 --                           * height_minor 
---                           * height_major -> Vec ) * semiellipse -> Point @
+--                           * height_major -> Vec ) * semicircle -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> Vec2 u) -> Semicircle u -> Point2 u

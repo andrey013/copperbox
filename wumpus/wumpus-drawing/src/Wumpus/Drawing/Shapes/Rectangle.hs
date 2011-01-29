@@ -13,6 +13,9 @@
 -- Portability :  GHC
 --
 -- Rectangle shape.
+--
+-- Note - CardinalAnchor2 (northeast etc.) point to their radial 
+-- positions (this is a change since earlier versions).
 -- 
 --------------------------------------------------------------------------------
 
@@ -80,6 +83,9 @@ instance Num u => Translate (Rectangle u) where
 
 
 
+-- | 'runDisplaceCenter' : @ ( half_width
+--                           * half_height -> Vec ) * rectangle -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
 runDisplaceCenter fn (Rectangle { rect_ctm = ctm
@@ -91,6 +97,23 @@ runDisplaceCenter fn (Rectangle { rect_ctm = ctm
 instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
+instance (Real u, Floating u) => TopCornerAnchor (Rectangle u) where
+  topLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
+  topRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  hh
+
+instance (Real u, Floating u) => BottomCornerAnchor (Rectangle u) where
+  bottomLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
+  bottomRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  (-hh)
+
+instance (Real u, Floating u) => SideMidpointAnchor (Rectangle u) where
+  sideMidpoint n a = step (n `mod` 4) 
+    where
+      step 1 = north a
+      step 2 = west a
+      step 3 = south a
+      step _ = east a
+
+
 instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
   north = runDisplaceCenter $ \_  hh -> V2 0 hh
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
@@ -98,10 +121,10 @@ instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
-  northeast = runDisplaceCenter $ \hw hh -> V2 hw hh
-  southeast = runDisplaceCenter $ \hw hh -> V2 hw (-hh)
-  southwest = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
-  northwest = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
 instance (Real u, Floating u) => RadialAnchor (Rectangle u) where

@@ -82,6 +82,14 @@ instance (Real u, Floating u) => CenterAnchor (InvSemiellipse u) where
   center = center . getInvSemiellipse
 
 instance (Real u, Floating u, FromPtSize u) => 
+    ApexAnchor (InvSemiellipse u) where
+  apex = runRotateAnchor apex
+
+instance (Real u, Floating u) => TopCornerAnchor (InvSemiellipse u) where
+  topLeftCorner  = runRotateAnchor bottomRightCorner
+  topRightCorner = runRotateAnchor bottomLeftCorner
+
+instance (Real u, Floating u, FromPtSize u) => 
     CardinalAnchor (InvSemiellipse u) where
   north = runRotateAnchor south
   south = runRotateAnchor north

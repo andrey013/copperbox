@@ -44,11 +44,6 @@ module Wumpus.Drawing.Geometry.Base
   , rectangleLineSegments
   , polygonLineSegments
 
-  -- * Functions
-  , affineComb
-  , midpoint
-  , lineAngle
-
   -- * Cubic Bezier curves
   
   , BezierCurve(..)
@@ -60,6 +55,12 @@ module Wumpus.Drawing.Geometry.Base
   
   , bezierArcPoints
   , bezierMinorArc
+
+  -- * Functions
+  , affineComb
+  , midpoint
+  , lineAngle
+
 
   ) 
   where
@@ -262,50 +263,6 @@ polygonLineSegments (x:xs) = step x xs
     step a (b:bs)    = (LineSegment a b) : step b bs
 
 
---------------------------------------------------------------------------------
---
-
-
--- | Affine combination...
---
-affineComb :: Real u => u -> Point2 u -> Point2 u -> Point2 u
-affineComb t p1 p2 = p1 .+^ t *^ (p2 .-. p1)
-
-
--- | 'midpoint' : @ start_point * end_point -> Midpoint @
--- 
--- Mid-point on the line formed between the two supplied points.
---
-midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
-
-
-
--- | 'lineAngle' : @ start_point * end_point -> Angle @
---
--- Calculate the counter-clockwise angle between the line formed 
--- by the two points and the horizontal plane.
---
-lineAngle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
-lineAngle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
-  where
-    -- north-east quadrant 
-    step x y | pve x && pve y = toRadian $ atan (y/x)          
-    
-    -- north-west quadrant
-    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
-
-    -- south-east quadrant
-    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
-
-    -- otherwise... south-west quadrant
-    step x y                  = pi     + (toRadian $ atan (y/x))
-
-    pve a                     = signum a >= 0
-
--- Ideally this would be in Geometry.Quadrant.
--- And surely there is a simpler formulation...
-
 
 
 --------------------------------------------------------------------------------
@@ -462,3 +419,50 @@ bezierMinorArc ang radius theta pt = BezierCurve p0 c1 c2 p3
     c1      = displacePerpendicular rl theta p0
     c2      = displacePerpendicular (-rl) totang p3
     p3      = displaceParallel radius totang pt
+
+
+--------------------------------------------------------------------------------
+--
+
+
+-- | Affine combination...
+--
+affineComb :: Real u => u -> Point2 u -> Point2 u -> Point2 u
+affineComb t p1 p2 = p1 .+^ t *^ (p2 .-. p1)
+
+
+-- | 'midpoint' : @ start_point * end_point -> Midpoint @
+-- 
+-- Mid-point on the line formed between the two supplied points.
+--
+midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
+midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
+
+
+
+-- | 'lineAngle' : @ start_point * end_point -> Angle @
+--
+-- Calculate the counter-clockwise angle between the line formed 
+-- by the two points and the horizontal plane.
+--
+lineAngle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
+lineAngle (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
+  where
+    -- north-east quadrant 
+    step x y | pve x && pve y = toRadian $ atan (y/x)          
+    
+    -- north-west quadrant
+    step x y | pve y          = pi     - (toRadian $ atan (y / abs x))
+
+    -- south-east quadrant
+    step x y | pve x          = (2*pi) - (toRadian $ atan (abs y / x)) 
+
+    -- otherwise... south-west quadrant
+    step x y                  = pi     + (toRadian $ atan (y/x))
+
+    pve a                     = signum a >= 0
+
+-- Ideally this would be in Geometry.Quadrant.
+-- And surely there is a simpler formulation...
+
+

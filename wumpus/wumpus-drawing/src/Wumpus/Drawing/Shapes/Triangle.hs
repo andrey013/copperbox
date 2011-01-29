@@ -25,6 +25,7 @@ module Wumpus.Drawing.Shapes.Triangle
 
   ) where
 
+import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
@@ -129,6 +130,14 @@ instance (Real u, Floating u) => CardinalAnchor (Triangle u) where
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
   east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
   west  = runDisplaceCenter $ \hbw hmin _    ang  -> findWest hbw hmin ang
+
+
+instance (Real u, Floating u) => SideMidpointAnchor (Triangle u) where
+  sideMidpoint n a = step (n `mod` 3) 
+    where
+      step 1 = midpoint (apex a) (bottomLeftCorner a)
+      step 2 = midpoint (bottomLeftCorner a) (bottomRightCorner a)
+      step _ = midpoint (bottomRightCorner a) (apex a)
 
 
 findEast :: Fractional u => u -> u -> Radian -> Vec2 u

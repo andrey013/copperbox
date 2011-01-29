@@ -65,22 +65,35 @@ type ShapeList = [(String, (String -> DCtxPicture))]
 
 shape_list :: ShapeList
 shape_list = 
-    [ ( "circle",             shapePic voidExtra $ circle 150)
-    , ( "diamond",            shapePic voidExtra $ diamond 150 100)
-    , ( "ellipse",            shapePic voidExtra $ ellipse 150 100)
-    , ( "invsemicircle",      shapePic voidExtra $ invsemicircle 150)
-    , ( "invsemiellipse",     shapePic voidExtra $ invsemiellipse 100 150)
+    [ ( "circle"
+      , shapePic voidExtra $ circle 150)
+    , ( "diamond"
+      ,  shapePic (apexAnchor >=> midPoints 4) $ diamond 150 100)
+    , ( "ellipse"
+      , shapePic voidExtra $ ellipse 150 100)
+    , ( "invsemicircle"
+      , shapePic (apexAnchor >=> topCorners) $ invsemicircle 150)
+    , ( "invsemiellipse"
+      , shapePic (apexAnchor >=> topCorners) $ invsemiellipse 100 150)
     , ( "invtriangle"
-      , shapePic (apexAnchor >=> topCorners) $ invtriangle 300 150)
-    , ( "parallelogram",      shapePic voidExtra $ zparallelogram 250 200)
-    , ( "rectangle",          shapePic voidExtra $ rectangle 300 175)
+      , shapePic (apexAnchor >=> topCorners >=> midPoints 3) $ 
+          invtriangle 300 150)
+    , ( "parallelogram"
+      , shapePic (topCorners >=> bottomCorners >=> midPoints 4) $ 
+          zparallelogram 250 200)
+    , ( "rectangle"
+      , shapePic (topCorners >=> bottomCorners >=> midPoints 4) $ 
+          rectangle 300 175)
     , ( "semicircle"
-      , shapePic (apexAnchor >=> baseCorners) $ semicircle 150) 
+      , shapePic (apexAnchor >=> bottomCorners) $ semicircle 150) 
     , ( "semiellipse"
-      , shapePic (apexAnchor >=> baseCorners) $ semiellipse 100 150) 
-    , ( "trapezium",          shapePic voidExtra $ ztrapezium 300 150)
+      , shapePic (apexAnchor >=> bottomCorners) $ semiellipse 100 150) 
+    , ( "trapezium"
+      ,  shapePic (bottomCorners >=> topCorners >=> midPoints 4) $ 
+          ztrapezium 300 150)
     , ( "triangle"
-      , shapePic (apexAnchor >=> baseCorners) $ triangle 300 150 )
+      , shapePic (apexAnchor >=> bottomCorners >=> midPoints 3) $ 
+          triangle 300 150 )
     ]
 
 makeCtx :: GlyphMetrics -> DrawingContext
@@ -102,11 +115,11 @@ apexAnchor a = do
     draw $ label EAST   "(apex)"    `at` apex  a
     return a
 
-baseCorners :: ( Real u, Floating u, FromPtSize u
+bottomCorners :: ( Real u, Floating u, FromPtSize u
                , BottomCornerAnchor a
                , u ~ DUnit a )
             => a -> TraceDrawing u a
-baseCorners a = do
+bottomCorners a = do
     draw $ label SOUTH_WEST   "(bottom left)"    `at` bottomLeftCorner  a
     draw $ label SOUTH_EAST   "(bottom right)"   `at` bottomRightCorner a
     return a
@@ -120,6 +133,15 @@ topCorners a = do
     draw $ label NORTH_EAST   "(top right)"   `at` topRightCorner a
     return a
 
+
+midPoints :: ( Real u, Floating u, FromPtSize u
+             , SideMidpointAnchor a
+             , u ~ DUnit a )
+          => Int -> a -> TraceDrawing u a
+midPoints n a = mapM_ mf [1..n] >> return a
+  where
+    mf i = let msg = "(side midpt " ++ show i ++ ")"
+           in draw $ label EAST  msg    `at` sideMidpoint i  a
 
 
 
