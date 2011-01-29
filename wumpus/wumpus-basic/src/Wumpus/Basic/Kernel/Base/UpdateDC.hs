@@ -58,6 +58,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , fontFace
 
   -- * Font / mark drawing size
+  , scalesize
   , doublesize
   , halfsize
 
@@ -79,6 +80,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
+import Data.Ratio
 
 --------------------------------------------------------------------------------
 
@@ -214,12 +216,16 @@ fontSize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 
 --------------------------------------------------------------------------------
 
+scalesize           :: Ratio Int -> DrawingContextF
+scalesize r         = let (n,d) = (numerator r, denominator r)
+                      in (\s sz -> fontSize (n * sz `div` d) s) 
+                           <*> (font_size . font_props)
+
 -- | Set the font size to double the current size, note the font
 -- size also controls the size of dots, arrowsheads etc.
 -- 
 doublesize          :: DrawingContextF
-doublesize          = (\s sz -> fontSize (sz*2) s) 
-                        <*> (font_size . font_props)
+doublesize          = scalesize 2 
 
 
 -- | Set the font size to half the current size, note the font
@@ -229,8 +235,7 @@ doublesize          = (\s sz -> fontSize (sz*2) s)
 -- 15pt type is 7pt.
 -- 
 halfsize            :: DrawingContextF
-halfsize            = (\s sz -> fontSize (sz `div` 2) s) 
-                        <*> (font_size . font_props)
+halfsize            = scalesize (1%2)
 
 
 --------------------------------------------------------------------------------

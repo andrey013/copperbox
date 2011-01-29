@@ -16,6 +16,12 @@
 -- Anchors are addressable positions, an examplary use is taking
 -- anchors on node shapes to get the start and end points for 
 -- connectors in a network (graph) diagram.
+-- 
+-- \*\* WARNING \*\* - The API here needs some thought as to a
+-- good balance of the type classes - in a nutshell \"are corners 
+-- better than cardinals\". Originally I tried to follow how I 
+-- understand the TikZ anchors to work, but this is perhaps not 
+-- ideal for dividing into type-classes.
 --
 --------------------------------------------------------------------------------
 
@@ -24,9 +30,14 @@ module Wumpus.Basic.Kernel.Base.Anchors
 
   -- * Anchors
     CenterAnchor(..)
+  , ApexAnchor(..)
   , CardinalAnchor(..)
   , CardinalAnchor2(..)
   , RadialAnchor(..)
+  , TopCornerAnchor(..)
+  , BottomCornerAnchor(..)
+  , SideCenterAnchor(..)
+
 
   -- * Extended anchor points
   , projectAnchor
@@ -45,6 +56,13 @@ import Data.AffineSpace                 -- package: vector-space
 class CenterAnchor t where
   center :: DUnit t ~ u => t -> Point2 u
 
+
+-- | Apex of an object.
+--
+class ApexAnchor t where
+  apex :: DUnit t ~ u => t -> Point2 u
+
+
 -- | Cardinal (compass) positions on an object. 
 -- 
 -- Note - in TikZ cardinal anchors are not necessarily at the
@@ -60,13 +78,23 @@ class CardinalAnchor t where
   east  :: DUnit t ~ u => t -> Point2 u
   west  :: DUnit t ~ u => t -> Point2 u
 
+--
+-- Note - a design change is probably in order where the cardinals 
+-- should /always/ represent their true cardinal position.
+--
+-- If this change is made, it is worthwhile having cardinals as
+-- classes (rather than making them derived operations on 
+-- RadialAnchor) as classes allow for more efficient 
+-- implementations usually by trigonometry.
+-- 
+
 
 -- | Secondary group of cardinal (compass) positions on an object. 
 -- 
 -- It seems possible that for some objects defining the primary
 -- compass points (north, south,...) will be straight-forward 
 -- whereas defining the secondary compass points may be 
--- problemmatic, hence the compass points are split into two 
+-- problematic, hence the compass points are split into two 
 -- classes.
 --
 class CardinalAnchor2 t where
@@ -85,7 +113,41 @@ class RadialAnchor t where
   radialAnchor :: DUnit t ~ u => Radian -> t -> Point2 u
 
 
+-- | Anchors at the top left and right corners of a shape.
+--
+-- For some shapes (Rectangle) the TikZ convention appears to be
+-- have cardinals as the corner anchors, but this doesn\'t seem
+-- to be uniform. Wumpus will need to reconsider anchors at some 
+-- point...
+--
+class TopCornerAnchor t where
+  topLeftCorner  :: DUnit t ~ u => t -> Point2 u
+  topRightCorner :: DUnit t ~ u => t -> Point2 u
 
+
+-- | Anchors at the bottom left and right corners of a shape.
+--
+class BottomCornerAnchor t where
+  bottomLeftCorner  :: DUnit t ~ u => t -> Point2 u
+  bottomRightCorner :: DUnit t ~ u => t -> Point2 u
+
+
+-- | Anchors in the center of a side.
+-- 
+-- Sides are addressable by index. Following TikZ, side 1 is 
+-- expected to be the top of the shape. If the shape has an apex 
+-- instead side 1 is expected to be the first side left of the 
+-- apex.
+-- 
+-- Implementations are also expected to modulo the side number, 
+-- rather than throw an out-of-bounds error.
+--
+class SideCenterAnchor t where
+  sideCenter :: DUnit t ~ u => Int -> t -> Point2 u
+
+
+
+--------------------------------------------------------------------------------
 
 -- | 'projectAnchor' : @ extract_func * dist * object -> Point @
 -- 

@@ -18,14 +18,16 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   (
 
 
-  -- * Moving points
+  -- * Moving points and angles
     PointDisplace
+  , ThetaDisplace
   , ThetaPointDisplace
 
 
-  , moveStartPoint
-  , moveStartPointTheta
-
+  , moveStart
+  , moveStartTheta
+  , moveStartThetaPoint
+  , moveStartThetaAngle
 
   , displace
   , displaceVec
@@ -80,6 +82,16 @@ import Data.AffineSpace                         -- package: vector-space
 type PointDisplace u = Point2 u -> Point2 u
 
 
+-- | 'ThetaDisplace' is a type representing functions 
+-- @from Radian to Radian@.
+--
+-- It is especially useful for building composite graphics where 
+-- one part of the graphic is drawn from a different start point 
+-- to the other part.
+--
+type ThetaDisplace = Radian -> Radian
+
+
 -- | 'ThetaPointDisplace' is a type representing functions 
 -- @from Radian * Point to Point@.
 --
@@ -91,18 +103,35 @@ type ThetaPointDisplace u = Radian -> PointDisplace u
 
 
 
--- | Move the start-point of a LocImage with the supplied 
+-- | Move the start-point of a 'LocCF' with the supplied 
 -- displacement function.
 --
-moveStartPoint :: PointDisplace u -> LocCF u a -> LocCF u a
-moveStartPoint f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
+moveStart :: PointDisplace u -> LocCF u a -> LocCF u a
+moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
 
 
--- | Move the start-point of a LocImage with the supplied 
+
+-- | Move the start-point of a 'LocThetaCF' with the supplied 
 -- displacement function.
 --
-moveStartPointTheta :: PointDisplace u -> LocThetaCF u a -> LocThetaCF u a
-moveStartPointTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
+moveStartTheta :: ThetaPointDisplace u -> LocThetaCF u a -> LocThetaCF u a
+moveStartTheta f ma = promoteR2 $ \pt theta -> let p2 = f theta pt 
+                                               in apply2R2 ma p2 theta
+
+
+-- | Move the start-point of a 'LocThetaCF' with the supplied 
+-- displacement function.
+--
+moveStartThetaPoint :: PointDisplace u -> LocThetaCF u a -> LocThetaCF u a
+moveStartThetaPoint f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
+
+
+-- | Change the inclination of a 'LocThetaCF' with the supplied 
+-- displacement function.
+--
+moveStartThetaAngle :: ThetaDisplace -> LocThetaCF u a -> LocThetaCF u a
+moveStartThetaAngle f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
+
 
 
 --------------------------------------------------------------------------------

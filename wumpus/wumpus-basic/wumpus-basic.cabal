@@ -33,7 +33,9 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  * Added @PosIamge@ object - this is a rectangle object that can 
+  * Work on Anchors.
+  .
+  * Added @PosImage@ object - this is a rectangle object that can 
     be drawn from any of its corners (not just center or 
     baseline-left). 
   .
