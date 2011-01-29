@@ -89,13 +89,17 @@ instance Num u => Translate (Semiellipse u) where
 -- Anchors
 
 
-
+-- | 'runDisplaceCenter' : @ ( rx
+--                           * ry 
+--                           * ry_minor 
+--                           * ry_major -> Vec ) * semiellipse -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> u -> Vec2 u) -> Semiellipse u -> Point2 u
 runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
-                               , se_rx        = rx
-                               , se_ry        = ry
-                               , se_syn_props = syn    }) = 
+                                  , se_rx        = rx
+                                  , se_ry        = ry
+                                  , se_syn_props = syn    }) = 
     displaceCenter (fn rx ry (se_ry_minor syn) (se_ry_major syn)) ctm
 
 
@@ -104,11 +108,18 @@ runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
 instance (Real u, Floating u) => CenterAnchor (Semiellipse u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
+instance (Real u, Floating u, FromPtSize u) => 
+    ApexAnchor (Semiellipse u) where
+  apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
+
+instance (Real u, Floating u) => BottomCornerAnchor (Semiellipse u) where
+  bottomLeftCorner  = runDisplaceCenter $ \rx _ ry_minor _  -> V2 (-rx) (-ry_minor)
+  bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
 
 
 instance (Real u, Floating u, FromPtSize u) => 
     CardinalAnchor (Semiellipse u) where
-  north = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
+  north = apex
   south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
   east  = radialAnchor 0
   west  = radialAnchor pi
@@ -149,11 +160,11 @@ seRadialVec theta rx ry hminor _ = go theta
 --
 constructionPoints :: Num u 
                    => u -> u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-constructionPoints rx ry hminor = (bctr, br, apex, bl)
+constructionPoints rx ry hminor = (bctr, br, apx, bl)
   where
     bctr  = P2 0 (-hminor)
     br    = bctr .+^ hvec rx
-    apex  = bctr .+^ vvec ry
+    apx   = bctr .+^ vvec ry
     bl    = bctr .+^ hvec (-rx)
 
 

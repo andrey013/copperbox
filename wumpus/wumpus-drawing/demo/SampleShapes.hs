@@ -20,6 +20,7 @@ import Wumpus.Basic.System.FontLoader.GhostScript
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Monad
 import System.Directory
 
 
@@ -64,18 +65,22 @@ type ShapeList = [(String, (String -> DCtxPicture))]
 
 shape_list :: ShapeList
 shape_list = 
-    [ ( "circle",             shapePic $ circle 150)
-    , ( "diamond",            shapePic $ diamond 150 100)
-    , ( "ellipse",            shapePic $ ellipse 150 100)
-    , ( "invsemicircle",      shapePic $ invsemicircle 150)
-    , ( "invsemiellipse",     shapePic $ invsemiellipse 100 150)
-    , ( "invtriangle",        shapePic $ invtriangle 300 150)
-    , ( "parallelogram",      shapePic $ zparallelogram 250 200)
-    , ( "rectangle",          shapePic $ rectangle 300 175)
-    , ( "semicircle",         shapePic $ semicircle 150) 
-    , ( "semiellipse",        shapePic $ semiellipse 100 150) 
-    , ( "trapezium",          shapePic $ ztrapezium 300 150)
-    , ( "triangle",           shapePic $ triangle 300 150)
+    [ ( "circle",             shapePic voidExtra $ circle 150)
+    , ( "diamond",            shapePic voidExtra $ diamond 150 100)
+    , ( "ellipse",            shapePic voidExtra $ ellipse 150 100)
+    , ( "invsemicircle",      shapePic voidExtra $ invsemicircle 150)
+    , ( "invsemiellipse",     shapePic voidExtra $ invsemiellipse 100 150)
+    , ( "invtriangle"
+      , shapePic (apexAnchor >=> topCorners) $ invtriangle 300 150)
+    , ( "parallelogram",      shapePic voidExtra $ zparallelogram 250 200)
+    , ( "rectangle",          shapePic voidExtra $ rectangle 300 175)
+    , ( "semicircle"
+      , shapePic (apexAnchor >=> baseCorners) $ semicircle 150) 
+    , ( "semiellipse"
+      , shapePic (apexAnchor >=> baseCorners) $ semiellipse 100 150) 
+    , ( "trapezium",          shapePic voidExtra $ ztrapezium 300 150)
+    , ( "triangle"
+      , shapePic (apexAnchor >=> baseCorners) $ triangle 300 150 )
     ]
 
 makeCtx :: GlyphMetrics -> DrawingContext
@@ -84,13 +89,47 @@ makeCtx = fontFace courier . metricsContext 16
 rotate05 :: Rotate a => a -> a
 rotate05 = rotate (d2r (5::Double))
 
+-- Extra elaboration...
+
+voidExtra :: a -> TraceDrawing u ()
+voidExtra _ = return ()
+
+apexAnchor :: ( Real u, Floating u, FromPtSize u
+            , ApexAnchor a
+            , u ~ DUnit a )
+            => a -> TraceDrawing u a
+apexAnchor a = do
+    draw $ label EAST   "(apex)"    `at` apex  a
+    return a
+
+baseCorners :: ( Real u, Floating u, FromPtSize u
+               , BottomCornerAnchor a
+               , u ~ DUnit a )
+            => a -> TraceDrawing u a
+baseCorners a = do
+    draw $ label SOUTH_WEST   "(bottom left)"    `at` bottomLeftCorner  a
+    draw $ label SOUTH_EAST   "(bottom right)"   `at` bottomRightCorner a
+    return a
+
+topCorners :: ( Real u, Floating u, FromPtSize u
+              , TopCornerAnchor a
+              , u ~ DUnit a )
+           => a -> TraceDrawing u a
+topCorners a = do
+    draw $ label NORTH_WEST   "(top left)"    `at` topLeftCorner  a
+    draw $ label NORTH_EAST   "(top right)"   `at` topRightCorner a
+    return a
+
+
+
+
 
 shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
             , RadialAnchor a
             , Scale a, Rotate a
             , DUnit a ~ Double) 
-         => DShape a -> String -> DCtxPicture
-shapePic sh name = drawTracing $ do
+         => (a -> DTraceDrawing b) -> DShape a -> String -> DCtxPicture
+shapePic mf sh name = drawTracing $ do
     a1  <- localize shapeSty $ drawi $ 
               uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
@@ -106,6 +145,7 @@ shapePic sh name = drawTracing $ do
     draw $ label NORTH_WEST   "(110 deg)"     `at` radialAnchor deg110 a1
     draw $ label WEST         "(190 deg)"     `at` radialAnchor deg190 a1
     draw $ label NORTH        "(250 deg)"     `at` radialAnchor deg250 a1
+    _ <- mf a1
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
@@ -129,7 +169,7 @@ label :: (Real u, Floating u, FromPtSize u)
 label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
-    msg           = ignoreAns $ moveStartPoint (fn 10) $ 
+    msg           = ignoreAns $ moveStart (fn 10) $ 
                        multiAlignCenter rpos ss `rot` 0
 
     go NORTH      = (SS, northwards)

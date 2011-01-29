@@ -90,6 +90,11 @@ instance Num u => Translate (Triangle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
+-- | 'runDisplaceCenter' : @ ( half_base_width 
+--                           * height_minor 
+--                           * height_major 
+--                           * base_ang -> Vec ) * traingle -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Point2 u
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
@@ -107,6 +112,13 @@ instance (Real u, Floating u) => CenterAnchor (Triangle u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
+instance (Real u, Floating u) => ApexAnchor (Triangle u) where
+  apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
+
+
+instance (Real u, Floating u) => BottomCornerAnchor (Triangle u) where
+  bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
+  bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
 
 
 -- east and west should be parallel to the centroid.
@@ -196,10 +208,10 @@ mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta ->
 
 trianglePath :: (Real u, Floating u) 
              => u -> u -> u -> LocCoordPath u
-trianglePath bw hminor hmajor (P2 x y) = [br, apex, bl]
+trianglePath bw hminor hmajor (P2 x y) = [br, apx, bl]
   where
     half_base = 0.5 * bw
     br        = P2 (x + half_base ) (y - hminor)
-    apex      = P2 x (y + hmajor)
+    apx       = P2 x (y + hmajor)
     bl        = P2 (x - half_base ) (y - hminor)
 

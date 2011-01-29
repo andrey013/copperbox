@@ -97,7 +97,7 @@ markText ss = fmap (replaceL uNil) $ multiAlignCenter CENTER ss `rot` 0
 -- | Supplied point is the center.
 --
 axialLine :: Fractional u => Vec2 u -> LocGraphic u
-axialLine v = moveStartPoint (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
+axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
 markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
@@ -169,7 +169,7 @@ markDisk = lift0R1 markHalfHeight >>= filledDisk
 markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
 markSquare = 
     lift0R1 markHeight >>= \h -> 
-    let d = 0.5*(-h) in moveStartPoint (displace d d) $ strokedRectangle h h
+    let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
     
 
 

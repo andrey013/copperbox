@@ -86,6 +86,16 @@ instance (Real u, Floating u) => CenterAnchor (InvTriangle u) where
   center = center . getInvTriangle
 
 
+-- apex is same on InvTriangle as regular triangle
+
+instance (Real u, Floating u) => ApexAnchor (InvTriangle u) where
+  apex = runRotateAnchor apex
+
+-- Top corners are bottom corners of the wrapped triangle.
+--
+instance (Real u, Floating u) => TopCornerAnchor (InvTriangle u) where
+  topLeftCorner  = runRotateAnchor bottomRightCorner
+  topRightCorner = runRotateAnchor bottomLeftCorner
 
 
 -- east and west should be parallel to the centroid.

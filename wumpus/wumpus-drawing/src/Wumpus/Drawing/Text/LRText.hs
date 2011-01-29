@@ -20,6 +20,9 @@
 -- 
 -- 
 -- \*\* WARNING \*\* - the API for this module needs some polish.
+--
+-- Also - there is currently a bug where @singleLine@ and one line
+-- @multiAlignCenter@ are not drawn at the same vertical position.
 -- 
 --------------------------------------------------------------------------------
 

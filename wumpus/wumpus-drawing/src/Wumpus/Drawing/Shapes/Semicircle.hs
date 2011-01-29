@@ -88,7 +88,10 @@ instance Num u => Translate (Semicircle u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
-
+-- | 'runDisplaceCenter' : @ ( radius
+--                           * height_minor 
+--                           * height_major -> Vec ) * semiellipse -> Point @
+--
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> Vec2 u) -> Semicircle u -> Point2 u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
@@ -100,10 +103,15 @@ runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
 instance (Real u, Floating u) => CenterAnchor (Semicircle u) where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
+instance (Real u, Floating u) => ApexAnchor (Semicircle u) where
+  apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
+instance (Real u, Floating u) => BottomCornerAnchor (Semicircle u) where
+  bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
+  bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
 instance (Real u, Floating u) => CardinalAnchor (Semicircle u) where
-  north = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
+  north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
   east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
   west  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 (-x) 0
@@ -162,11 +170,11 @@ mkCurve radius theta ctr = BezierCurve p0 p1 p2 p3
 --
 constructionPoints :: Num u 
                    => u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-constructionPoints radius hminor = (bctr, br, apex, bl)
+constructionPoints radius hminor = (bctr, br, apx, bl)
   where
     bctr  = P2 0 (-hminor)
     br    = bctr .+^ hvec radius
-    apex  = bctr .+^ vvec radius
+    apx   = bctr .+^ vvec radius
     bl    = bctr .-^ hvec radius
 
 
