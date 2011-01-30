@@ -9,10 +9,7 @@ import Wumpus.Block.Base
 import Wumpus.Block.Csound
 
 import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Colour.SVGColours hiding ( linen )
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel
@@ -39,7 +36,7 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
-    (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
+    (gs_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
     writeEPS "./out/oscil1_gs.eps" pic1
@@ -61,79 +58,57 @@ makeCtx = fontFace helvetica . metricsContext 18
 
 shape_pic :: DCtxPicture
 shape_pic = drawTracing $ do
-    a1  <- drawi $ oscil `at` P2 300 150
+    a1  <- drawi $ oscil "f1" `at` P2 300 150
     a2  <- drawi $ terminal `at` P2 300 90
-    connector (outport a1) (inport1 a2)
+    connector (outport1 a1) (inport1 a2)
+    draw $ labelOutport1 a1 "(a1)"
 
     b1  <- drawi $ linen `at` P2 200 150
-    b2  <- drawi $ oscil `at` P2 220 74 
+    b2  <- drawi $ zoscil `at` P2 220 74 
     b3  <- drawi $ terminal `at` P2 220 14
-    connector (south b1) (northwest $ getOscil b2)
-    connector (outport b2) (inport1 b3)
+    connector (outport1 b1) (inport2a b2)
+    connector (outport1 b2) (inport1 b3)
 
     c1  <- drawi $ expon      `at` P2 100 200
     c2  <- drawi $ adder      `at` P2 100 146
     c3  <- drawi $ buzz       `at` P2  92  92
     c4  <- drawi $ multiplier `at` P2  16  48
 
-    connector (south c1) (north c2)
+    connector (outport1 c1) (north c2)
     connector (south c2) (radialAnchor (d2r (68::Double)) $ getBuzz c3)
 
     return ()
 
-{-
--- Fontsize 18 is good for labels eg \"OSCIL\".
--- Parameters, inputs and outputs should be smaller.
---
-shapeSty :: DrawingContextF
-shapeSty = strokeColour black . thick . fontSize 18 . fontFace helvetica
 
--- Maybe - Csound specific objects should be newtypes over shapes 
--- that have @input@ and @output@ ports rather than anchors?
-
-terminal :: (Real u, Floating u, FromPtSize u) 
-         => LocImage u (Circle u)
-terminal = localize shapeSty $ strokedShape $ circle 6
-
-
-linen :: (Real u, Floating u, FromPtSize u) 
-      => LocImage u (Trapezium u)
-linen = localize shapeSty $ strokedShape $ body 
-  where
-    body  = setDecoration textF $ trapezium 88 40 ang ang
-    textF = ignoreAns (multiAlignCenter CENTER "LINEN")    
-    ang   = d2r (72::Double)
-
--- expon same as linen...
-expon :: (Real u, Floating u, FromPtSize u) 
-      => LocImage u (Trapezium u)
-expon = localize shapeSty $ strokedShape $ body 
-  where
-    body  = setDecoration textF $ trapezium 88 40 ang ang
-    textF = ignoreAns (multiAlignCenter CENTER "EXPON")
-    ang   = d2r (72::Double)
-
-buzz :: (Real u, Floating u, FromPtSize u) 
-     => LocImage u (Rectangle u)
-buzz = localize shapeSty $ strokedShape $ body 
-  where
-    body  = setDecoration textF $ rectangle 88 40
-    textF = ignoreAns (multiAlignCenter CENTER "BUZZ")
-
--- needs \"+\" for body
-adder :: (Real u, Floating u, FromPtSize u) 
-      => LocImage u (Circle u)
-adder = localize shapeSty $ strokedShape $ circle 10
-
--- needs \"x\" for body
-multiplier :: (Real u, Floating u, FromPtSize u) 
-           => LocImage u (Circle u)
-multiplier = localize shapeSty $ strokedShape $ circle 10
-
--}
 
 connector :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
              , Real u, Floating u, FromPtSize u ) 
           => Point2 u -> Point2 u -> m ()
-connector p0 p1 = 
-    drawi_ $ apply2R2 (rightArrow tri45 connLine) p0 p1
+connector p0@(P2 x0 _) p1@(P2 x1 _) 
+   | tolEq 1.0 x0 x1 = drawi_ $ apply2R2 (rightArrow tri45 connLine) p0 p1
+   | otherwise       = drawi_ $ apply2R2 (rightArrow tri45 connMidH) p0 p1
+
+tolEq :: (Ord u, FromPtSize u) => u -> u -> u -> Bool
+tolEq tol a b = abs (a - b) < (tol * fromPtSize 1) 
+
+
+-- This is a good one for Wumpus-Drawing, however current 
+-- connector code needs a re-think.
+--
+
+-- | Right-angled connector - go vertical go horizontal go vertical.
+--
+connMidH :: (Real u, Floating u, FromPtSize u) 
+         => ConnectorPath u
+connMidH = promoteR2 $ \ sp@(P2 x0 y0) ep@(P2 x1 y1) -> 
+    let ymid = y0 + (0.5 * (y1 - y0))
+    in roundCornerPath [sp, P2 x0 ymid, P2 x1 ymid, ep]
+
+
+-- | Build the path with interior round corners.
+-- 
+roundCornerPath :: (Real u, Floating u, FromPtSize u) 
+                => [Point2 u] -> CF (Path u)
+roundCornerPath xs = getRoundCornerSize >>= \sz -> 
+    if sz == 0 then return (traceLinePoints xs) 
+               else return (roundInterior  sz xs)

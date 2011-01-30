@@ -19,9 +19,10 @@ module Wumpus.Block.Base
   ( 
 
   -- * Block anchors
-    Outport(..)
+    Outport1(..)
   , Inport1(..)
   , Inport2(..)
+
   ) where
 
 import Wumpus.Basic.Kernel              -- package: wumpus-basic
@@ -30,8 +31,8 @@ import Wumpus.Core                      -- package: wumpus-core
 
 -- | \"Outport\" of an object - usually @south@.
 --
-class Outport t where
-  outport :: DUnit t ~ u => t -> Point2 u
+class Outport1 t where
+  outport1 :: DUnit t ~ u => t -> Point2 u
 
 
 
