@@ -28,27 +28,33 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 
 mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
 mf = do
-    draw $ testDraw NN `at` (P2   0 200)
-    draw $ testDraw SS `at` (P2  75 200)
-    draw $ testDraw EE `at` (P2 150 200)
-    draw $ testDraw WW `at` (P2 225 200)
-    draw $ testDraw NE `at` (P2   0 100)
-    draw $ testDraw SE `at` (P2  75 100)
-    draw $ testDraw SW `at` (P2 150 100)
-    draw $ testDraw NW `at` (P2 225 100)
-    draw $ testDraw CENTER    `at` (P2   0 0)
-    draw $ testDraw BL_LEFT   `at` (P2  75 0)
-    draw $ testDraw BL_CENTER `at` (P2 150 0)
-    draw $ testDraw BL_RIGHT  `at` (P2 225 0)
+    draw $ testDrawMinor NN     `at` (P2   0 300)
+    draw $ testDrawMinor SS     `at` (P2  75 300)
+    draw $ testDrawMinor EE     `at` (P2 150 300)
+    draw $ testDrawMinor WW     `at` (P2 225 300)
+    draw $ testDrawMinor NE     `at` (P2   0 225)
+    draw $ testDrawMinor SE     `at` (P2  75 225)
+    draw $ testDrawMinor SW     `at` (P2 150 225)
+    draw $ testDrawMinor NW     `at` (P2 225 225)
+    draw $ testDrawMinor CENTER `at` (P2   0 150)
+    draw $ testDrawBl    CENTER `at` (P2 225 150)
+    draw $ testDrawBl    NN     `at` (P2   0 75)
+    draw $ testDrawBl    SS     `at` (P2  75 75)
+    draw $ testDrawBl    EE     `at` (P2 150 75)
+    draw $ testDrawBl    WW     `at` (P2 225 75)
+    draw $ testDrawBl    NE     `at` (P2   0 0)
+    draw $ testDrawBl    SE     `at` (P2  75 0)
+    draw $ testDrawBl    SW     `at` (P2 150 0)
+    draw $ testDrawBl    NW     `at` (P2 225 0)
     
 
-testDraw :: Floating u => RectPosition -> LocGraphic u
-testDraw rpos = filledDisk 2 `oplus` ans
+testDrawBl :: Floating u => RectPosition -> LocGraphic u
+testDrawBl rpos = filledDisk 2 `oplus` ignoreAns ans
   where
-    ans = setPosition rpos anglePosG `rot` (pi * 0.25)
+    ans = setPosition rpos rectBl
 
-anglePosG :: Floating u => PosGraphic u 
-anglePosG = makePosImage opos (angRect w h)
+rectBl :: Floating u => PosGraphic u 
+rectBl = makePosGraphic opos (mkRectBl w h)
   where
     w    = 40 
     h    = 20
@@ -59,10 +65,38 @@ anglePosG = makePosImage opos (angRect w h)
  
 
 -- start-point - bottom left
-angRect :: Floating u => u -> u -> LocThetaGraphic u
-angRect w h = promoteR2 $ \bl theta -> 
-    let br = displaceParallel w theta bl
-        tr = displacePerpendicular h theta br
-        tl = displacePerpendicular h theta bl
+mkRectBl :: Floating u => u -> u -> LocGraphic u
+mkRectBl w h = promoteR1 $ \bl -> 
+    let br = displaceH w bl
+        tr = displaceV h br
+        tl = displaceV h bl
+    in closedStroke $ vertexPath [bl, br, tr, tl]
+
+
+
+testDrawMinor :: Floating u => RectPosition -> LocGraphic u
+testDrawMinor rpos = filledDisk 2 `oplus` ignoreAns ans
+  where
+    ans = setPosition rpos rectMinor
+
+rectMinor :: Floating u => PosGraphic u 
+rectMinor = makePosGraphic opos (mkRectMinor m w h)
+  where
+    m    = 10
+    w    = 40 
+    h    = 20
+    opos = ObjectPos { op_x_minor = m
+                     , op_x_major = (w-m)
+                     , op_y_minor = m
+                     , op_y_major = (h-m) }
+ 
+
+-- start-point - +10 +10
+mkRectMinor :: Floating u => u -> u -> u -> LocGraphic u
+mkRectMinor m w h = promoteR1 $ \pt -> 
+    let bl = displaceVec (vec (-m) (-m)) pt
+        br = displaceH w bl
+        tr = displaceV h br
+        tl = displaceV h bl
     in closedStroke $ vertexPath [bl, br, tr, tl]
 

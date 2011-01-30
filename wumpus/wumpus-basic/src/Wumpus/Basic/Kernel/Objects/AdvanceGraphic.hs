@@ -15,6 +15,9 @@
 -- Extended Graphic object - an AdvanceGraphic is a Graphic 
 -- twinned with and AdvanceV vector.
 --
+-- \*\* WARNING \*\* - this module a candidate for removal. 
+-- Potentially it can be replaced with PosImage.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
