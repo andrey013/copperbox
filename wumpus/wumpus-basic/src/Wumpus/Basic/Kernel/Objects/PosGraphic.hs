@@ -37,12 +37,21 @@ module Wumpus.Basic.Kernel.Objects.PosGraphic
   , PosGraphic
   , DPosGraphic 
 
+  , emptyPosGraphic
   , makePosGraphic
 
   , startPosition
 
   , hplus
   , vplus
+
+  , hspace
+  , vspace
+
+  , hcat
+  , vcat
+  , hsep
+  , vsep
 
   ) where
 
@@ -54,6 +63,9 @@ import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
+
+
+import Data.List ( foldl' )
 
 
 -- | Datatype enumerating positions within a rectangle that can be
@@ -165,6 +177,11 @@ concatPosGraphic pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
 
 --------------------------------------------------------------------------------
 
+emptyPosGraphic :: Num u => PosGraphic u
+emptyPosGraphic = makePosGraphic emptyObjectPos emptyLocGraphic
+
+emptyObjectPos :: Num u => ObjectPos u
+emptyObjectPos = ObjectPos 0 0 0 0
 
 -- | Create a 'PosGraphic'.
 --
@@ -247,13 +264,13 @@ halfDists (ObjectPos xmin xmaj ymin ymaj) =
 -- 
 -- > both widths, max height.
 --
-hcatObjectPos :: (Fractional u, Ord u) 
-              => ObjectPos u -> ObjectPos u -> ObjectPos u
-hcatObjectPos op0 op1 = ObjectPos hw hw hh hh
+hsepObjectPos :: (Fractional u, Ord u) 
+              => u -> ObjectPos u -> ObjectPos u -> ObjectPos u
+hsepObjectPos dx op0 op1 = ObjectPos hw hw hh hh
   where
     (hw0,hh0) = halfDists op0
     (hw1,hh1) = halfDists op1
-    hw        = hw0 + hw1
+    hw        = hw0 + (0.5*dx) + hw1
     hh        = max hh0 hh1
 
 
@@ -265,10 +282,16 @@ hcatObjectPos op0 op1 = ObjectPos hw hw hh hh
 --
 hplus :: (Floating u, Ord u) 
       => PosGraphic u -> PosGraphic u -> PosGraphic u
-hplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+hplus = hspace 0
+
+-- | 'hspace' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
+--
+hspace :: (Floating u, Ord u) 
+       => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+hspace dx pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
     PosGraphic opos img
   where
-    opos = opos0 `hcatObjectPos` opos1
+    opos = hsepObjectPos dx opos0 opos1
 
     -- Find the distances from the combined center 
     -- to the /old/ centers...
@@ -277,6 +300,7 @@ hplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
     cc0  = op_x_minor opos - hw0
     hw1  = 0.5 * (op_x_minor opos1 + op_x_major opos1)
     cc1  = op_x_minor opos - hw1
+
     img  = promoteR1 $ \ctr -> 
               let mv0  = moveStart (displaceH $ negate cc0)
                   mv1  = moveStart (displaceH $ cc1)
@@ -293,14 +317,14 @@ hplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
 -- 
 -- > max widths, both heights.
 --
-vcatObjectPos :: (Fractional u, Ord u) 
-              => ObjectPos u -> ObjectPos u -> ObjectPos u
-vcatObjectPos op0 op1 = ObjectPos hw hw hh hh
+vsepObjectPos :: (Fractional u, Ord u) 
+              => u -> ObjectPos u -> ObjectPos u -> ObjectPos u
+vsepObjectPos dy op0 op1 = ObjectPos hw hw hh hh
   where
     (hw0,hh0) = halfDists op0
     (hw1,hh1) = halfDists op1
     hw        = max hw0 hw1
-    hh        = hh0 + hh1
+    hh        = hh0 + (0.5*dy) + hh1
 
 
 -- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
@@ -310,10 +334,16 @@ vcatObjectPos op0 op1 = ObjectPos hw hw hh hh
 --
 vplus :: (Floating u, Ord u) 
       => PosGraphic u -> PosGraphic u -> PosGraphic u
-vplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+vplus = vspace 0
+
+-- | 'vspace'
+--
+vspace :: (Floating u, Ord u) 
+       => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+vspace dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
     PosGraphic opos img
   where
-    opos = opos0 `vcatObjectPos` opos1
+    opos = vsepObjectPos dy opos0 opos1
 
     -- Find the distances from the combined center 
     -- to the /old/ centers...
@@ -322,6 +352,7 @@ vplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
     cc0  = op_y_minor opos - hh0
     hh1  = 0.5 * (op_y_minor opos1 + op_y_major opos1)
     cc1  = op_y_minor opos - hh1
+
     img  = promoteR1 $ \ctr -> 
               let mv0  = moveStart (displaceV $ cc0)
                   mv1  = moveStart (displaceV $ negate cc1)
@@ -329,4 +360,28 @@ vplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
                   ans = makeBorderRect opos ctr
               in replaceAns ans $ gf `at` ctr
 
+-- | 'hcat' :
+--
+hcat :: (Floating u, Ord u) => [PosGraphic u] -> PosGraphic u
+hcat []     = emptyPosGraphic
+hcat (a:as) = foldl' hplus a as
 
+
+
+-- | 'vcat' :
+--
+vcat :: (Floating u, Ord u) => [PosGraphic u] -> PosGraphic u
+vcat []     = emptyPosGraphic
+vcat (a:as) = foldl' vplus a as
+
+-- | 'hsep' :
+--
+hsep :: (Floating u, Ord u) => u -> [PosGraphic u] -> PosGraphic u
+hsep _  []     = emptyPosGraphic
+hsep dx (a:as) = foldl' (hspace dx) a as
+
+-- | 'vsep' :
+--
+vsep :: (Floating u, Ord u) => u -> [PosGraphic u] -> PosGraphic u
+vsep _  []     = emptyPosGraphic
+vsep dy (a:as) = foldl' (vspace dy) a as

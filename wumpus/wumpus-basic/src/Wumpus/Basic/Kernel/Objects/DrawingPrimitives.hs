@@ -25,7 +25,6 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   -- * Paths
     locPath
   , emptyLocPath
-  , emptyLocGraphic
 
   , openStroke
   , closedStroke
@@ -122,18 +121,6 @@ emptyLocPath :: Num u => LocCF u (PrimPath u)
 emptyLocPath = locPath []
 
 
--- | 'emptyLocGraphic' : @ LocGraphic @
---
--- Build an empty LocGraphic (i.e. a function 
--- /from Point to Graphic/). This is a path with a start point 
--- but no path segments. 
--- 
--- The 'emptyLocGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, although it does generate a 
--- minimum bounding box at the implicit start point.
--- 
-emptyLocGraphic :: Num u => LocGraphic u
-emptyLocGraphic = emptyLocPath >>= (lift0R1 . openStroke)
 
 
 --

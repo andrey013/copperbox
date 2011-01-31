@@ -50,14 +50,14 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
 
   , zconcat
 
-  , hcat 
-  , vcat
+  , hcatPic 
+  , vcatPic
 
 
-  , hspace
-  , vspace
-  , hsep
-  , vsep
+  , hspacePic
+  , vspacePic
+  , hsepPic
+  , vsepPic
  
   -- * Compose with alignment
   , alignH
@@ -86,6 +86,8 @@ import Data.AffineSpace
 import Control.Applicative
 import Data.List ( foldl' )
 
+
+-- Note - PosGraphic should take priority for the good names.
 
 
 newtype CtxPicture u = CtxPicture { getCtxPicture :: CF (Maybe (Picture u)) }
@@ -388,16 +390,16 @@ zconcat (d:ds) = foldl' over d ds
 
 -- | Concatenate the list pictures @xs@ horizontally.
 -- 
-hcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
-hcat []     = empty_drawing
-hcat (d:ds) = foldl' nextToH d ds
+hcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
+hcatPic []     = empty_drawing
+hcatPic (d:ds) = foldl' nextToH d ds
 
 
 -- | Concatenate the list of pictures @xs@ vertically.
 --
-vcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
-vcat []     = empty_drawing
-vcat (d:ds) = foldl' nextToV d ds
+vcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
+vcatPic []     = empty_drawing
+vcatPic (d:ds) = foldl' nextToV d ds
 
 
 
@@ -412,8 +414,8 @@ vcat (d:ds) = foldl' nextToV d ds
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-hspace :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-hspace n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
+hspacePic :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+hspacePic n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
 
@@ -426,34 +428,34 @@ hspace n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-vspace :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-vspace n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
+vspacePic :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+vspacePic n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
 
 
 
--- | > hsep n xs
+-- | > hsepPic n xs
 --
 -- Concatenate the list of pictures @xs@ horizontally with 
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-hsep :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
-hsep _ []     = empty_drawing
-hsep n (d:ds) = foldl' (hspace n) d ds
+hsepPic :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
+hsepPic _ []     = empty_drawing
+hsepPic n (d:ds) = foldl' (hspacePic n) d ds
 
 
 
--- | > vsep n xs
+-- | > vsepPic n xs
 --
 -- Concatenate the list of pictures @xs@ vertically with 
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-vsep :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
-vsep _ []     = empty_drawing
-vsep n (d:ds) = foldl' (vspace n) d ds
+vsepPic :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
+vsepPic _ []     = empty_drawing
+vsepPic n (d:ds) = foldl' (vspacePic n) d ds
 
 
 --------------------------------------------------------------------------------
@@ -471,8 +473,8 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- 
 alignH :: (Fractional u, Ord u) 
        =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignH HTop     = megaCombR boundaryNE    boundaryNW     alignMove
-alignH HCenter  = megaCombR boundaryE    boundaryW     alignMove
+alignH HTop     = megaCombR boundaryNE boundaryNW  alignMove
+alignH HCenter  = megaCombR boundaryE  boundaryW   alignMove
 alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 
 
@@ -483,8 +485,8 @@ alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 -- 
 alignV :: (Fractional u, Ord u) 
        => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignV VLeft    = megaCombR boundarySW  boundaryNW   alignMove
-alignV VCenter  = megaCombR boundaryS   boundaryN    alignMove
+alignV VLeft    = megaCombR boundarySW boundaryNW alignMove
+alignV VCenter  = megaCombR boundaryS  boundaryN  alignMove
 alignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 

@@ -46,12 +46,15 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , intoLocImage
   , intoLocThetaImage
 
+  , emptyLocGraphic
+
   , decorate
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -157,6 +160,22 @@ intoLocImage = liftA2 (\a (_,b) -> (a,b))
 --
 intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
 intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
+
+
+
+-- | 'emptyLocGraphic' : @ LocGraphic @
+--
+-- Build an empty LocGraphic (i.e. a function 
+-- /from Point to Graphic/). This is a path with a start point 
+-- but no path segments. 
+-- 
+-- The 'emptyLocGraphic' is treated as a /null primitive/ by 
+-- @Wumpus-Core@ and is not drawn, although it does generate a 
+-- minimum bounding box at the implicit start point.
+-- 
+emptyLocGraphic :: Num u => LocGraphic u
+emptyLocGraphic = promoteR1 $ \pt -> 
+                    return $ (uNil, primGraphic $ zostroke $ emptyPath pt)
 
 
 

@@ -32,11 +32,17 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  * Work on Anchors.
+  * Re-worked the @CtxPicture@ API. The \"good\" names are now 
+    taken by @PosGraphic@. @CtxPicture@ has inherited more
+    cumbersome names as it is expected to be used a lot less 
+    than @PosGraphic@. 
+  .
+  * Added extra Anchor classes.
   .
   * Added @PosGraphic@ object - this is a rectangle-bordered 
     object that can be drawn from any of its rectangle corners 
-    or its center. 
+    or its center. @PosGraphic@ will probably supersede 
+    @AdvanceGraphic@ and @BoundedGraphic@.
   .
   * Added @Displacement@ module. This defines the @PointDisplace@
     type and provides a library of @PointDisplace@ functions.
