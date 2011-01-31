@@ -1,7 +1,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module SimplePosImage where
+module ConcatPosImage where
 
 import Wumpus.Basic.Kernel
 
@@ -14,8 +14,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let pic1 = runCtxPictureU std_attr drawing01
-    writeEPS "./out/simple_pos_image01.eps" pic1
-    writeSVG "./out/simple_pos_image01.svg" pic1
+    writeEPS "./out/concat_pos_image01.eps" pic1
+    writeSVG "./out/concat_pos_image01.svg" pic1
 
 
 std_attr :: DrawingContext
@@ -26,38 +26,29 @@ drawing01 :: DCtxPicture
 drawing01 = drawTracing $ localize (fillColour red) $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
 mf = do
-    draw $ testDrawMinor NN     `at` (P2   0 300)
-    draw $ testDrawMinor SS     `at` (P2  75 300)
-    draw $ testDrawMinor EE     `at` (P2 150 300)
-    draw $ testDrawMinor WW     `at` (P2 225 300)
-    draw $ testDrawMinor NE     `at` (P2   0 225)
-    draw $ testDrawMinor SE     `at` (P2  75 225)
-    draw $ testDrawMinor SW     `at` (P2 150 225)
-    draw $ testDrawMinor NW     `at` (P2 225 225)
-    draw $ testDrawMinor CENTER `at` (P2   0 150)
-    draw $ testDrawBl    CENTER `at` (P2 225 150)
-    draw $ testDrawBl    NN     `at` (P2   0 75)
-    draw $ testDrawBl    SS     `at` (P2  75 75)
-    draw $ testDrawBl    EE     `at` (P2 150 75)
-    draw $ testDrawBl    WW     `at` (P2 225 75)
-    draw $ testDrawBl    NE     `at` (P2   0 0)
-    draw $ testDrawBl    SE     `at` (P2  75 0)
-    draw $ testDrawBl    SW     `at` (P2 150 0)
-    draw $ testDrawBl    NW     `at` (P2 225 0)
+    draw $ testDrawC NN     `at` (P2   0 300)
+    draw $ testDrawC SS     `at` (P2  75 300)
+    draw $ testDrawC EE     `at` (P2 150 300)
+    draw $ testDrawC WW     `at` (P2 225 300)
+    draw $ testDrawC NE     `at` (P2   0 225)
+    draw $ testDrawC SE     `at` (P2  75 225)
+    draw $ testDrawC SW     `at` (P2 150 225)
+    draw $ testDrawC NW     `at` (P2 225 225)
+    draw $ testDrawC CENTER `at` (P2   0 150)
     
 
-testDrawBl :: Floating u => RectPosition -> LocGraphic u
-testDrawBl rpos = filledDisk 2 `oplus` ignoreAns ans
+testDrawC :: (Floating u, Ord u) => RectPosition -> LocGraphic u
+testDrawC rpos = filledDisk 2 `oplus` ignoreAns ans
   where
-    ans = startPosition rpos rectBl
+    ans = startPosition rpos (rectBl `oplus` rectMinor)
 
 rectBl :: Floating u => PosGraphic u 
 rectBl = makePosGraphic opos (mkRectBl w h)
   where
-    w    = 40 
-    h    = 20
+    w    = 15 
+    h    = 40
     opos = ObjectPos { op_x_minor = 0
                      , op_x_major = w
                      , op_y_minor = 0
@@ -74,10 +65,6 @@ mkRectBl w h = promoteR1 $ \bl ->
 
 
 
-testDrawMinor :: Floating u => RectPosition -> LocGraphic u
-testDrawMinor rpos = filledDisk 2 `oplus` ignoreAns ans
-  where
-    ans = startPosition rpos rectMinor
 
 rectMinor :: Floating u => PosGraphic u 
 rectMinor = makePosGraphic opos (mkRectMinor m w h)

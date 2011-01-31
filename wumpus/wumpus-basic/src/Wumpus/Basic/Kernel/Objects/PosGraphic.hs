@@ -39,11 +39,12 @@ module Wumpus.Basic.Kernel.Objects.PosGraphic
 
   , makePosGraphic
 
-  , setPosition
+  , startPosition
 
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Displacement
@@ -115,6 +116,55 @@ type instance DUnit (PosGraphic u)  = u
 -- on top of each other /retangularly/).
 
 
+--------------------------------------------------------------------------------
+
+instance (Num u, Ord u) => OPlus (BorderRect u) where
+  BorderRect (P2 x0 y0) w0 h0 `oplus` BorderRect (P2 x1 y1) w1 h1 = 
+     let bl     = P2 (min x0 x1) (min y0 y1)
+         tr     = maxPt (P2 (x0+w0) (y0+h0)) (P2 (x1+w1) (y1+h1))
+         V2 w h = pvec bl tr
+     in BorderRect bl w h
+
+instance (Fractional u, Ord u) => OPlus (ObjectPos u) where
+  oplus = concatObjectPos
+
+
+-- | Concatenation here essentially turns both ObjectPos objects
+-- into /center-form/ then finds the maximum rectangle.
+--
+concatObjectPos :: (Fractional u, Ord u) 
+                => ObjectPos u -> ObjectPos u -> ObjectPos u
+concatObjectPos op0 op1 = ObjectPos hw hw hh hh
+  where
+    (hw0,hh0) = halfDists op0
+    (hw1,hh1) = halfDists op1
+    hw        = max hw0 hw1
+    hh        = max hh0 hh1
+    halfDists = \(ObjectPos xmin xmaj ymin ymaj) ->
+                  (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
+
+instance (Floating u, Ord u) => OPlus (PosGraphic u) where
+  oplus = concatPosGraphic                           
+
+
+-- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
+-- putting them in /center-form/. Draw both graphics at the 
+-- center, return a 'BorderRect' in /center-form.
+--
+concatPosGraphic :: (Floating u, Ord u) 
+                 => PosGraphic u -> PosGraphic u -> PosGraphic u
+concatPosGraphic pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = opos0 `oplus` opos1
+    img  = promoteR1 $ \ctr -> let body = atCenter pg0 `oplus` atCenter pg1
+                                   ans  = makeBorderRect opos ctr
+                               in replaceAns ans $ body `at` ctr
+ 
+
+--------------------------------------------------------------------------------
+
+
 -- | Create a 'PosGraphic'.
 --
 makePosGraphic :: Num u => ObjectPos u -> LocGraphic u -> PosGraphic u
@@ -133,23 +183,25 @@ makeBorderRect (ObjectPos xmin xmaj ymin ymaj) (P2 x y) =
                , border_height     = ymin + ymaj
                }
 
-  
+atCenter :: Floating u => PosGraphic u -> LocGraphic u 
+atCenter gf = ignoreAns $ startPosition CENTER gf
 
 
--- | 'setPosition' : @ start_pos * pos_graphic -> LocImage @
+-- | 'startPosition' : @ start_pos * pos_graphic -> LocImage @
 --
 -- /Downcast/ a 'PosGraphic' to a 'LocImage' by supplying it 
--- with a 'RectPosition'.
+-- with a 'RectPosition' (start position).
 --  
-setPosition :: Floating u 
-            => RectPosition -> PosGraphic u -> LocImage u (BorderRect u)
-setPosition rp (PosGraphic opos mf) = 
-    moveStart (displaceVec $ displacement opos rp) mf
+startPosition :: Floating u 
+              => RectPosition -> PosGraphic u -> LocImage u (BorderRect u)
+startPosition rp (PosGraphic opos mf) = 
+    moveStart (displaceVec $ startVector rp opos) mf
 
 
-
-displacement :: Fractional u => ObjectPos u -> RectPosition -> Vec2 u
-displacement (ObjectPos xminor xmajor yminor ymajor) pos = go pos
+-- | The vector from some Rectangle position to the start point.
+--
+startVector :: Fractional u => RectPosition -> ObjectPos u -> Vec2 u
+startVector pos (ObjectPos xminor xmajor yminor ymajor) = go pos
   where
     w         = xminor + xmajor
     h         = yminor + ymajor
