@@ -53,6 +53,18 @@ module Wumpus.Basic.Kernel.Objects.PosGraphic
   , hsep
   , vsep
 
+  , halign
+  , valign
+
+  , halignSpace
+  , valignSpace
+
+  , hcatA
+  , vcatA
+
+  , hsepA
+  , vsepA
+
   ) where
 
 
@@ -205,6 +217,7 @@ atCenter :: Floating u => PosGraphic u -> LocGraphic u
 atCenter gf = ignoreAns $ startPosition CENTER gf
 
 
+
 -- | 'startPosition' : @ start_pos * pos_graphic -> LocImage @
 --
 -- /Downcast/ a 'PosGraphic' to a 'LocImage' by supplying it 
@@ -301,11 +314,12 @@ hspace dx pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
     hw1  = 0.5 * (op_x_minor opos1 + op_x_major opos1)
     cc1  = op_x_minor opos - hw1
 
+    mv0  = moveStart (displaceH $ negate cc0)
+    mv1  = moveStart (displaceH $ cc1)
+    gf  = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
+
     img  = promoteR1 $ \ctr -> 
-              let mv0  = moveStart (displaceH $ negate cc0)
-                  mv1  = moveStart (displaceH $ cc1)
-                  gf  = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
-                  ans = makeBorderRect opos ctr
+              let ans = makeBorderRect opos ctr
               in replaceAns ans $ gf `at` ctr
 
 
@@ -353,11 +367,12 @@ vspace dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
     hh1  = 0.5 * (op_y_minor opos1 + op_y_major opos1)
     cc1  = op_y_minor opos - hh1
 
+    mv0  = moveStart (displaceV $ cc0)
+    mv1  = moveStart (displaceV $ negate cc1)
+    gf   = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
+
     img  = promoteR1 $ \ctr -> 
-              let mv0  = moveStart (displaceV $ cc0)
-                  mv1  = moveStart (displaceV $ negate cc1)
-                  gf  = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
-                  ans = makeBorderRect opos ctr
+              let ans = makeBorderRect opos ctr
               in replaceAns ans $ gf `at` ctr
 
 -- | 'hcat' :
@@ -385,3 +400,160 @@ hsep dx (a:as) = foldl' (hspace dx) a as
 vsep :: (Floating u, Ord u) => u -> [PosGraphic u] -> PosGraphic u
 vsep _  []     = emptyPosGraphic
 vsep dy (a:as) = foldl' (vspace dy) a as
+
+
+--------------------------------------------------------------------------------
+
+-- ObjectPos - the calculation for a pair of aligned ObjectPos is
+-- the same as for a pair of centered ones.
+-- 
+-- So we can just use @hsepObjectPos@ and @vsepObjectPos@.
+--
+
+-- Helpers
+
+atNorthEast :: Floating u => PosGraphic u -> LocGraphic u 
+atNorthEast gf = ignoreAns $ startPosition NE gf
+
+atNorthWest :: Floating u => PosGraphic u -> LocGraphic u 
+atNorthWest gf = ignoreAns $ startPosition NW gf
+
+atSouthEast :: Floating u => PosGraphic u -> LocGraphic u 
+atSouthEast gf = ignoreAns $ startPosition SE gf
+
+atSouthWest :: Floating u => PosGraphic u -> LocGraphic u 
+atSouthWest gf = ignoreAns $ startPosition SW gf
+
+
+
+-- | 'halignTop' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
+--
+halignTop :: (Floating u, Ord u) 
+       => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+halignTop dx pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = hsepObjectPos dx opos0 opos1
+    v0   = V2 (negate $ op_x_minor opos) (op_y_major opos)
+    v1   = V2 (op_x_major opos)          (op_y_major opos)
+    mv0  = moveStart (displaceVec v0)
+    mv1  = moveStart (displaceVec v1) 
+    gf   = mv0 (atNorthWest pg0) `oplus` mv1 (atNorthEast pg1)
+
+    img  = promoteR1 $ \ctr -> 
+              let ans  = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
+-- | 'halignBottom' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
+--
+halignBottom :: (Floating u, Ord u) 
+             => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+halignBottom dx pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = hsepObjectPos dx opos0 opos1
+
+    v0   = V2 (negate $ op_x_minor opos) (negate $ op_y_minor opos)
+    v1   = V2 (op_x_major opos)          (negate $ op_y_minor opos)
+    mv0  = moveStart (displaceVec v0)
+    mv1  = moveStart (displaceVec v1) 
+
+    gf   = mv0 (atSouthWest pg0) `oplus` mv1 (atSouthEast pg1)
+    img  = promoteR1 $ \ctr -> 
+              let ans  = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
+halign :: (Floating u, Ord u) 
+       => HAlign -> PosGraphic u -> PosGraphic u -> PosGraphic u
+halign align = halignSpace align 0
+
+
+halignSpace :: (Floating u, Ord u) 
+            => HAlign -> u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+halignSpace HTop    = halignTop
+halignSpace HCenter = hspace
+halignSpace HBottom = halignBottom
+
+
+--------------------------------------------------------------------------------
+
+
+-- | 'valignLeft' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
+-- 
+-- Draw from corners at northwest and southwest
+--
+valignLeft :: (Floating u, Ord u) 
+       => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+valignLeft dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = vsepObjectPos dy opos0 opos1
+
+    v0   = V2 (negate $ op_x_minor opos) (op_y_major opos)
+    v1   = V2 (negate $ op_x_minor opos) (negate $ op_y_minor opos)
+    mv0  = moveStart (displaceVec v0)
+    mv1  = moveStart (displaceVec v1) 
+
+    gf   = mv0 (atNorthWest pg0) `oplus` mv1 (atSouthWest pg1)
+    img  = promoteR1 $ \ctr -> 
+              let ans  = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
+-- | 'valignRight' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
+-- 
+-- Draw from corners at northeast and southeast
+--
+valignRight :: (Floating u, Ord u) 
+       => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+valignRight dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = vsepObjectPos dy opos0 opos1
+
+    v0   = V2 (op_x_major opos) (op_y_major opos)
+    v1   = V2 (op_x_major opos) (negate $ op_y_minor opos)
+    mv0  = moveStart (displaceVec v0)
+    mv1  = moveStart (displaceVec v1) 
+
+    gf   = mv0 (atNorthEast pg0) `oplus` mv1 (atSouthEast pg1)
+    img  = promoteR1 $ \ctr -> 
+              let ans  = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
+valign :: (Floating u, Ord u) 
+       => VAlign -> PosGraphic u -> PosGraphic u -> PosGraphic u
+valign align = valignSpace align 0
+
+
+valignSpace :: (Floating u, Ord u) 
+            => VAlign -> u -> PosGraphic u -> PosGraphic u -> PosGraphic u
+valignSpace VLeft   = valignLeft
+valignSpace VCenter = vspace
+valignSpace VRight  = valignRight
+
+
+
+hcatA :: (Floating u, Ord u) 
+      => HAlign -> [PosGraphic u] -> PosGraphic u
+hcatA _  []    = emptyPosGraphic
+hcatA a (z:zs) = foldl' (halign a) z zs
+
+vcatA :: (Floating u, Ord u) 
+      => VAlign -> [PosGraphic u] -> PosGraphic u
+vcatA _  []    = emptyPosGraphic
+vcatA a (z:zs) = foldl' (valign a) z zs
+
+
+hsepA :: (Floating u, Ord u) 
+      => HAlign -> u -> [PosGraphic u] -> PosGraphic u
+hsepA _ _  []     = emptyPosGraphic
+hsepA a dx (z:zs) = foldl' (halignSpace a dx) z zs
+
+vsepA :: (Floating u, Ord u) 
+      => VAlign -> u -> [PosGraphic u] -> PosGraphic u
+vsepA _ _  []     = emptyPosGraphic
+vsepA a dy (z:zs) = foldl' (valignSpace a dy) z zs

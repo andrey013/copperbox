@@ -64,10 +64,10 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   , alignV
   , alignHSep
   , alignVSep
-  , hcatA
-  , vcatA
-  , hsepA
-  , vsepA
+  , hcatAPic
+  , vcatAPic
+  , hsepAPic
+  , vsepAPic
 
 
   ) where
@@ -524,29 +524,29 @@ alignVSep VRight  dy = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
 -- | Variant of 'hcat' that aligns the pictures as well as
 -- concatenating them.
 --
-hcatA :: (Real u, Floating u, FromPtSize u) 
+hcatAPic :: (Real u, Floating u, FromPtSize u) 
       => HAlign -> [CtxPicture u] -> CtxPicture u
-hcatA _  []     = empty_drawing
-hcatA ha (d:ds) = foldl' (alignH ha) d ds
+hcatAPic _  []     = empty_drawing
+hcatAPic ha (d:ds) = foldl' (alignH ha) d ds
 
 
 
 -- | Variant of 'vcat' that aligns the pictures as well as
 -- concatenating them.
 --
-vcatA :: (Real u, Floating u, FromPtSize u) 
+vcatAPic :: (Real u, Floating u, FromPtSize u) 
       => VAlign -> [CtxPicture u] -> CtxPicture u
-vcatA _  []     = empty_drawing
-vcatA va (d:ds) = foldl' (alignV va) d ds
+vcatAPic _  []     = empty_drawing
+vcatAPic va (d:ds) = foldl' (alignV va) d ds
 
 
 -- | Variant of @hsep@ that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-hsepA :: (Real u, Floating u, FromPtSize u) 
+hsepAPic :: (Real u, Floating u, FromPtSize u) 
       => HAlign -> u -> [CtxPicture u] -> CtxPicture u
-hsepA _  _ []     = empty_drawing
-hsepA ha n (d:ds) = foldl' op d ds
+hsepAPic _  _ []     = empty_drawing
+hsepAPic ha n (d:ds) = foldl' op d ds
   where 
     a `op` b = alignHSep ha n a b 
 
@@ -554,10 +554,10 @@ hsepA ha n (d:ds) = foldl' op d ds
 -- | Variant of @vsep@ that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-vsepA :: (Real u, Floating u, FromPtSize u) 
+vsepAPic :: (Real u, Floating u, FromPtSize u) 
       => VAlign -> u -> [CtxPicture u] -> CtxPicture u
-vsepA _  _ []     = empty_drawing
-vsepA va n (d:ds) = foldl' op d ds
+vsepAPic _  _ []     = empty_drawing
+vsepAPic va n (d:ds) = foldl' op d ds
   where 
     a `op` b = alignVSep va n a b 
 

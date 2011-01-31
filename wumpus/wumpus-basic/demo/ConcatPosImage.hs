@@ -14,13 +14,13 @@ import System.Directory
 
 main :: IO ()
 main = do 
-    createDirectoryIfMissing True "./out/"
+    createDirectoryIfMissing True "./out/pos_graphic/"
     mapM_ mf all_concats
   where
     mf (name, pair) = do
       let pic1 = runCtxPictureU std_attr (drawPic pair)
-      writeEPS ("./out/pg_" ++ name ++ "01.eps") pic1
-      writeSVG ("./out/pg_" ++ name ++ "01.svg") pic1
+      writeEPS ("./out/pos_graphic/pg_" ++ name ++ "01.eps") pic1
+      writeSVG ("./out/pos_graphic/pg_" ++ name ++ "01.svg") pic1
 
 
 all_concats :: [ (String, (DPosGraphic, DPosGraphic)) ]
@@ -33,6 +33,31 @@ all_concats =
                     , vcat [mini_rect, tall_rect, long_rect] ))
     , ("sep",       ( hsep 5 [mini_rect, tall_rect, long_rect]
                     , vsep 5 [mini_rect, tall_rect, long_rect] ))
+
+    , ("halign",    ( halign HTop    tall_rect long_rect
+                    , halign HBottom tall_rect long_rect ))
+
+    , ("valign",    ( valign VLeft  tall_rect long_rect
+                    , valign VRight tall_rect long_rect ))
+
+    , ("halign_space",    ( halignSpace HTop 5  tall_rect long_rect
+                          , halignSpace HBottom 5 tall_rect long_rect ))
+
+    , ("valign_space",    ( valignSpace VLeft 5  tall_rect long_rect
+                          , valignSpace VRight 5 tall_rect long_rect ))
+
+    , ("hcata",     ( hcatA HTop    [mini_rect, tall_rect, long_rect]
+                    , hcatA HBottom [mini_rect, tall_rect, long_rect] ))
+
+    , ("vcata",     ( vcatA VLeft   [mini_rect, tall_rect, long_rect]
+                    , vcatA VRight  [mini_rect, tall_rect, long_rect] ))
+
+    , ("hsepa",     ( hsepA HTop    5 [mini_rect, tall_rect, long_rect]
+                    , hsepA HBottom 5 [mini_rect, tall_rect, long_rect] ))
+
+    , ("vsepa",     ( vsepA VLeft  5 [mini_rect, tall_rect, long_rect]
+                    , vsepA VRight 5 [mini_rect, tall_rect, long_rect] ))
+
     ]
 
 
