@@ -41,6 +41,9 @@ module Wumpus.Basic.Kernel.Objects.PosGraphic
 
   , startPosition
 
+  , hplus
+  , vplus
+
   ) where
 
 
@@ -140,8 +143,6 @@ concatObjectPos op0 op1 = ObjectPos hw hw hh hh
     (hw1,hh1) = halfDists op1
     hw        = max hw0 hw1
     hh        = max hh0 hh1
-    halfDists = \(ObjectPos xmin xmaj ymin ymaj) ->
-                  (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
 
 instance (Floating u, Ord u) => OPlus (PosGraphic u) where
   oplus = concatPosGraphic                           
@@ -220,3 +221,112 @@ startVector pos (ObjectPos xminor xmajor yminor ymajor) = go pos
     go SE     = V2 (-xmajor)          yminor
     go SW     = V2 xminor           yminor
     go NW     = V2 xminor           (-ymajor)
+
+
+--------------------------------------------------------------------------------
+-- Concatenation
+
+-- | Find the half-width and half-height of an ObjectPos.
+-- 
+-- Essentially this is /center-form/ of an ObjectPos, but 
+-- in /center-form/ there is duplication: 
+--
+-- > xminor == xmajor
+-- > yminor == ymajor
+-- 
+-- So instead, the result type is just a pair.
+--
+halfDists :: Fractional u => ObjectPos u -> (u,u)
+halfDists (ObjectPos xmin xmaj ymin ymaj) = 
+    (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
+
+
+
+-- | Concatenation here essentially turns both ObjectPos objects
+-- into /center-form/ then finds the rectangle: 
+-- 
+-- > both widths, max height.
+--
+hcatObjectPos :: (Fractional u, Ord u) 
+              => ObjectPos u -> ObjectPos u -> ObjectPos u
+hcatObjectPos op0 op1 = ObjectPos hw hw hh hh
+  where
+    (hw0,hh0) = halfDists op0
+    (hw1,hh1) = halfDists op1
+    hw        = hw0 + hw1
+    hh        = max hh0 hh1
+
+
+
+-- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
+-- putting them in /center-form/. Displace the respective 
+-- start-points by the distance from the new center to the old 
+-- center, and draw with the center at the displaced start-point.
+--
+hplus :: (Floating u, Ord u) 
+      => PosGraphic u -> PosGraphic u -> PosGraphic u
+hplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = opos0 `hcatObjectPos` opos1
+
+    -- Find the distances from the combined center 
+    -- to the /old/ centers...
+    --
+    hw0  = 0.5 * (op_x_minor opos0 + op_x_major opos0)
+    cc0  = op_x_minor opos - hw0
+    hw1  = 0.5 * (op_x_minor opos1 + op_x_major opos1)
+    cc1  = op_x_minor opos - hw1
+    img  = promoteR1 $ \ctr -> 
+              let mv0  = moveStart (displaceH $ negate cc0)
+                  mv1  = moveStart (displaceH $ cc1)
+                  gf  = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
+                  ans = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
+
+
+
+-- | Concatenation here essentially turns both ObjectPos objects
+-- into /center-form/ then finds the rectangle: 
+-- 
+-- > max widths, both heights.
+--
+vcatObjectPos :: (Fractional u, Ord u) 
+              => ObjectPos u -> ObjectPos u -> ObjectPos u
+vcatObjectPos op0 op1 = ObjectPos hw hw hh hh
+  where
+    (hw0,hh0) = halfDists op0
+    (hw1,hh1) = halfDists op1
+    hw        = max hw0 hw1
+    hh        = hh0 + hh1
+
+
+-- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
+-- putting them in /center-form/. Displace the respective 
+-- start-points by the distance from the new center to the old 
+-- center, and draw with the center at the displaced start-point.
+--
+vplus :: (Floating u, Ord u) 
+      => PosGraphic u -> PosGraphic u -> PosGraphic u
+vplus pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) = 
+    PosGraphic opos img
+  where
+    opos = opos0 `vcatObjectPos` opos1
+
+    -- Find the distances from the combined center 
+    -- to the /old/ centers...
+    --
+    hh0  = 0.5 * (op_y_minor opos0 + op_y_major opos0)
+    cc0  = op_y_minor opos - hh0
+    hh1  = 0.5 * (op_y_minor opos1 + op_y_major opos1)
+    cc1  = op_y_minor opos - hh1
+    img  = promoteR1 $ \ctr -> 
+              let mv0  = moveStart (displaceV $ cc0)
+                  mv1  = moveStart (displaceV $ negate cc1)
+                  gf  = mv0 (atCenter pg0) `oplus` mv1 (atCenter pg1)
+                  ans = makeBorderRect opos ctr
+              in replaceAns ans $ gf `at` ctr
+
+
