@@ -38,12 +38,11 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   , mapCtxPicture
 
   -- * Composition
-  , over 
-  , under
+  , beneath
 
   , centric
-  , nextToH
-  , nextToV
+  , oright
+  , odown
   
   , atPoint 
   , centeredAt
@@ -89,9 +88,23 @@ import Data.List ( foldl' )
 
 -- Note - PosGraphic should take priority for the good names.
 
-
+-- | A /Contextual Picture/.
+-- 
+-- This type corresponds to the 'Picture' type in Wumpus-Core, but
+-- it is embedded with a 'DrawingContext' (for font properties, 
+-- fill colour etc.).
+--
+-- > a `oplus` b
+--
+-- The 'OPlus' instance for 'CtxPicture' draws picture a in front 
+-- of picture b in the z-order, neither picture is moved. 
+-- (Usually the picture composition operators in this module move
+-- the second picture aligning it somehow with the first).
+--
 newtype CtxPicture u = CtxPicture { getCtxPicture :: CF (Maybe (Picture u)) }
 
+-- | Version of CtxPicture specialized to Double for the unit type.
+--
 type DCtxPicture = CtxPicture Double
 
 
@@ -99,22 +112,40 @@ type instance DUnit (CtxPicture u) = u
 
 
 
-
+-- | 'runCtxPicture' : @ drawing_ctx * ctx_picture -> Maybe Picture @
+--
+-- Run a 'CtxPicture' with the supplied 'DrawingContext' 
+-- producing a 'Picture'.
+--
+-- The resulting Picture may be empty. Wumpus-Core cannot 
+-- generate empty pictures as they have no bounding box, so the 
+-- result is wrapped within a Maybe. This delegates reponsibility 
+-- for handling empty pictures to client code.
+--
 runCtxPicture :: DrawingContext -> CtxPicture u -> Maybe (Picture u)
 runCtxPicture ctx drw = runCF ctx (getCtxPicture drw)  
 
-
+-- | 'runCtxPictureU' : @ drawing_ctx * ctx_picture -> Picture @
+--
+-- /Unsafe/ version of 'runCtxPicture'.
+--
+-- This function throws a runtime error when supplied with an
+-- empty CtxPicture.
+--
 runCtxPictureU :: DrawingContext -> CtxPicture u -> Picture u
 runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
   where
     fk = error "runCtxPictureU - empty CtxPicture."   
 
 
-
+-- | 'drawTracing' : @ trace_drawing  -> CtxPicture @
+--
+-- Transform a 'TraceDrawing' into a 'CtxPicture'.
+--
 drawTracing :: (Real u, Floating u, FromPtSize u) 
             => TraceDrawing u a -> CtxPicture u
 drawTracing mf = CtxPicture $ 
-    drawingCtx >>= \ctx -> return (liftToPictureMb (execTraceDrawing ctx mf) )
+    drawingCtx >>= \ctx -> return (liftToPictureMb $ execTraceDrawing ctx mf)
 
 
 -- Note - cannot get an answer from a TraceDrawing with this 
@@ -129,14 +160,33 @@ drawTracing mf = CtxPicture $
 -- a where this would be useful (rather than just making things 
 -- more complicated)? 
 --
---------------------------------------------------------------------------------
 
-clipCtxPicture :: (Num u, Ord u) => (PrimPath u) -> CtxPicture u -> CtxPicture u
+-- | 'clipCtxPicture' : @ path * ctx_picture -> CtxPicture @
+--
+-- Clip a picture with a path.
+-- 
+clipCtxPicture :: (Num u, Ord u) => PrimPath u -> CtxPicture u -> CtxPicture u
 clipCtxPicture cpath = mapCtxPicture (clip cpath)
 
+-- Note - it seems preferable to clip a smaller type in the 
+-- hierarchy than CtxPicture. But which one Graphic, TraceDrawing? 
+-- ...
+--
 
+
+-- | 'mapCtxPicture' : @ trafo * ctx_picture -> CtxPicture @
+--
+-- Apply a picture transformation function to the 'Picture'
+-- warpped in a 'CtxPicture'.
+--
 mapCtxPicture :: (Picture u -> Picture u) -> CtxPicture u -> CtxPicture u
 mapCtxPicture pf = CtxPicture . fmap (fmap pf) . getCtxPicture
+
+
+--------------------------------------------------------------------------------
+
+
+
 
 instance (Real u, Floating u) => Rotate (CtxPicture u) where 
   rotate ang = mapCtxPicture (rotate ang)
@@ -242,9 +292,9 @@ empty_drawing = drawTracing $ return ()
 -- Composition operators
 
 
-drawingConcat :: (Picture u -> Picture u -> Picture u) 
-              -> CtxPicture u -> CtxPicture u -> CtxPicture u
-drawingConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
+picConcat :: (Picture u -> Picture u -> Picture u) 
+          -> CtxPicture u -> CtxPicture u -> CtxPicture u
+picConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
 
 
 
@@ -275,33 +325,31 @@ megaCombR :: (Num u, Ord u)
           -> (a -> a -> Picture u -> Picture u) 
           -> CtxPicture u -> CtxPicture u
           -> CtxPicture u
-megaCombR qL qR trafoR = drawingConcat fn
+megaCombR qL qR trafoR = picConcat fn
   where
     fn pic1 pic2 = let a    = qL pic1
                        b    = qR pic2
                        p2   = trafoR a b pic2
                    in pic1 `picOver` p2
 
-
-
-
--- | > a `over` b
+-- | > a `oplus` b
 -- 
 -- Place \'drawing\' a over b. The idea of @over@ here is in 
 -- terms z-ordering, nither picture a or b are actually moved.
 --
-over    :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-over    = drawingConcat picOver
+instance (Num u, Ord u) => OPlus (CtxPicture u) where
+  oplus = picConcat picOver
 
 
-
--- | > a `under` b
+-- | 'beneath' : @ ctx_picture1 * ctx_picture2 -> CtxPicture @
+-- 
+-- > a `beneath` b
 --
--- Similarly @under@ draws the first drawing behind 
--- the second but move neither.
+-- Similarly @beneath@ draws the first picture behind the second 
+-- picture in the z-order, neither picture is moved.
 --
-under :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-under = flip over
+beneath :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+beneath = flip oplus
 
 
 
@@ -316,8 +364,8 @@ move v = mapCtxPicture (\p -> p `picMoveBy` v)
 --------------------------------------------------------------------------------
 -- Composition
 
-infixr 5 `nextToV`
-infixr 6 `nextToH`, `centric`
+infixr 5 `odown`
+infixr 6 `oright`, `centric`
 
 
 
@@ -333,26 +381,30 @@ centric = megaCombR boundaryCtr boundaryCtr moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
 
+--
+-- Are combinator names less ambiguous if they name direction
+-- rather than position?
+--
 
-
--- | > a `nextToH` b
+-- | > a `oright` b
 -- 
--- Horizontal composition - move @b@, placing it to the right 
--- of @a@.
+-- Horizontal composition - position picture @b@ to the right of 
+-- picture @a@.
 -- 
-nextToH :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-nextToH = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
+oright :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+oright = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
 
 
 
--- | > a `nextToV` b
+-- | > a `odown` b
 --
--- Vertical composition - move @b@, placing it below @a@.
+-- Vertical composition - position picture @b@ /down/ from picture
+-- @a@.
 --
-nextToV :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-nextToV = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
+odown :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+odown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
 
@@ -383,7 +435,7 @@ centeredAt d (P2 x y) = mapCtxPicture fn d
 --
 zconcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 zconcat []     = empty_drawing
-zconcat (d:ds) = foldl' over d ds
+zconcat (d:ds) = foldl' oplus d ds
 
 
 
@@ -392,14 +444,14 @@ zconcat (d:ds) = foldl' over d ds
 -- 
 hcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 hcatPic []     = empty_drawing
-hcatPic (d:ds) = foldl' nextToH d ds
+hcatPic (d:ds) = foldl' oright d ds
 
 
 -- | Concatenate the list of pictures @xs@ vertically.
 --
 vcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
 vcatPic []     = empty_drawing
-vcatPic (d:ds) = foldl' nextToV d ds
+vcatPic (d:ds) = foldl' odown d ds
 
 
 

@@ -1,9 +1,8 @@
 {-# OPTIONS -Wall #-}
 
-module PictureCompo where
+module PictureCompose where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Colour.SVGColours
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -23,54 +22,60 @@ pic_drawing_ctx = standardContext 14
 
 
 pictures :: DCtxPicture
+pictures = vsepPic 12 [ pic1, pic2, pic4, pic5 ] 
+
+{-
 pictures = vsep 12 [ pic1,  pic2,  pic3,  pic4
                    , pic5,  pic6,  pic7,  pic8
                    , pic9,  pic10, pic11, pic12 ]
-
+-}
 
 drawBlueBounds :: (Real u, Floating u, FromPtSize u) 
                => CtxPicture u -> CtxPicture u
 drawBlueBounds = mapCtxPicture (illustrateBounds blue)
 
 pic1 :: DCtxPicture
-pic1 = picAnno pic "red `over` green `over` blue"
+pic1 = picAnno pic "red `oplus` green `oplus` blue"
   where
     pic :: DCtxPicture
-    pic = drawBlueBounds $ rect_red `over` rect_green `over` rect_blue
+    pic = drawBlueBounds $ rect_red `oplus` rect_green `oplus` rect_blue
+
+
 
 pic2 :: DCtxPicture
-pic2 = picAnno pic "red `under` green `under` blue"
+pic2 = picAnno pic "red `beneath` green `beneath` blue"
   where
     pic :: DCtxPicture
-    pic = drawBlueBounds $ rect_red `under` rect_green `under` rect_blue
+    pic = drawBlueBounds $ rect_red `beneath` rect_green `beneath` rect_blue
 
-
+{-
 pic3 :: DCtxPicture 
 pic3 = picAnno pic "red `centric` green `centric` blue"
   where
     pic :: DCtxPicture
     pic = drawBlueBounds $ 
             rect_red `centric` rect_green `centric` rect_blue
+-}
 
--- Note - nextToH only moves pictures in the horizontal.
+-- Note - @oright@ only moves pictures in the horizontal.
 --
 pic4 :: DCtxPicture 
-pic4 = picAnno pic "red `nextToH` green `nextToH` blue"
+pic4 = picAnno pic "red `oright` green `oright` blue"
   where
     pic :: DCtxPicture
     pic = drawBlueBounds $ 
-            rect_red `nextToH` rect_green `nextToH` rect_blue
+            rect_red `oright` rect_green `oright` rect_blue
 
--- Note - nextToV only moves pictures in the vertical.
+-- Note - @odown@ only moves pictures in the vertical.
 --
 pic5 :: DCtxPicture 
-pic5 = picAnno pic "red `nextToV` green `nextToV` blue"
+pic5 = picAnno pic "red `odown` green `odown` blue"
   where
     pic :: DCtxPicture
     pic = drawBlueBounds $ 
-            rect_red `nextToV` rect_green `nextToV` rect_blue
+            rect_red `odown` rect_green `odown` rect_blue
 
-
+{-
 pic6 :: DCtxPicture
 pic6 = picAnno pic "zconcat [red, green, blue]"
   where
@@ -123,7 +128,7 @@ pic12 = picAnno pic "vcatA VCenter [red, green, blue]"
     pic = drawBlueBounds $ 
             vcatA VCenter [rect_red, rect_green, rect_blue]
 
-
+-}
 --------------------------------------------------------------------------------
 
 
@@ -149,3 +154,19 @@ rect_blue = drawTracing $
     localize (fillColour powder_blue)
              (draw $ borderedRectangle 20 30 `at` (P2 10 0))
 
+
+
+-- Copied from Wumpus-Drawing (we don\'t a circular dependency).
+--
+
+blue                    :: RGBi
+blue                    = RGBi 0x00 0x00 0xff
+
+indian_red              :: RGBi
+indian_red              = RGBi 0xcd 0x5c 0x5c
+
+olive_drab              :: RGBi
+olive_drab              = RGBi 0x6b 0x8e 0x23
+
+powder_blue             :: RGBi
+powder_blue             = RGBi 0xb0 0xe0 0xe6

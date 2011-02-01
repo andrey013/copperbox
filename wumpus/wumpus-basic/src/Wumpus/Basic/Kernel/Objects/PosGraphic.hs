@@ -19,10 +19,6 @@
 -- a @PosGraphic@ can be drawn at its center or locations on its 
 -- outer rectangle.
 --
--- PosGraphic is anticipated to be most applicable to text 
--- objects where positioning at /baseline-left/ is not always
--- satifactory.
---
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Objects.PosGraphic
@@ -127,7 +123,7 @@ data PosGraphic u = PosGraphic
       , pos_image       :: LocImage u (BorderRect u)
       }
        
--- | Version of PosGraphic specialed to Double for the unit type.
+-- | Version of PosGraphic specialized to Double for the unit type.
 --
 type DPosGraphic = PosGraphic Double
 
@@ -189,13 +185,20 @@ concatPosGraphic pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
 
 --------------------------------------------------------------------------------
 
+
+-- | Create an empty 'PosGraphic'.
+--
 emptyPosGraphic :: Num u => PosGraphic u
 emptyPosGraphic = makePosGraphic emptyObjectPos emptyLocGraphic
 
 emptyObjectPos :: Num u => ObjectPos u
 emptyObjectPos = ObjectPos 0 0 0 0
 
--- | Create a 'PosGraphic'.
+-- | 'makPosObject' : @ object_pos * loc_graphic -> PosGraphic @ 
+--
+-- Create a 'PosGraphic' from an 'ObjectPos' describing how it
+-- is orientated within a border rectangle and a 'LocGraphic' that 
+-- draws it.
 --
 makePosGraphic :: Num u => ObjectPos u -> LocGraphic u -> PosGraphic u
 makePosGraphic opos gf = 
@@ -256,6 +259,13 @@ startVector pos (ObjectPos xminor xmajor yminor ymajor) = go pos
 --------------------------------------------------------------------------------
 -- Concatenation
 
+-- Naming convention:
+--
+-- > \"space\" for binary concatenation
+-- > \"sep\"   for list concatenation
+--
+
+
 -- | Find the half-width and half-height of an ObjectPos.
 -- 
 -- Essentially this is /center-form/ of an ObjectPos, but 
@@ -287,11 +297,18 @@ hsepObjectPos dx op0 op1 = ObjectPos hw hw hh hh
     hh        = max hh0 hh1
 
 
-
--- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
+-- @hplus@ notes...
+--
+-- Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
 -- putting them in /center-form/. Displace the respective 
 -- start-points by the distance from the new center to the old 
 -- center, and draw with the center at the displaced start-point.
+--
+
+-- | 'hplus' : @ pos_graphic1 * pos_graphic2 -> PosGraphic @
+--
+-- Horizontally concatenate the two supplied 'PosGraphic' objects.
+-- The objects are center-aligned.
 --
 hplus :: (Floating u, Ord u) 
       => PosGraphic u -> PosGraphic u -> PosGraphic u
@@ -341,16 +358,17 @@ vsepObjectPos dy op0 op1 = ObjectPos hw hw hh hh
     hh        = hh0 + (0.5*dy) + hh1
 
 
--- | Concatenate the 'ObjectPos' parts of the 'PosGraphic' args by 
--- putting them in /center-form/. Displace the respective 
--- start-points by the distance from the new center to the old 
--- center, and draw with the center at the displaced start-point.
+
+-- | 'vplus' : @ pos_graphic1 * pos_graphic2 -> PosGraphic @
+--
+-- Vertically concatenate the two supplied 'PosGraphic' objects.
+-- The objects are center-aligned.
 --
 vplus :: (Floating u, Ord u) 
       => PosGraphic u -> PosGraphic u -> PosGraphic u
 vplus = vspace 0
 
--- | 'vspace'
+-- | 'vspace' : @ space * pos_graphic1 * pos_graphic2 -> PosGraphic @
 --
 vspace :: (Floating u, Ord u) 
        => u -> PosGraphic u -> PosGraphic u -> PosGraphic u
@@ -375,7 +393,8 @@ vspace dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
               let ans = makeBorderRect opos ctr
               in replaceAns ans $ gf `at` ctr
 
--- | 'hcat' :
+
+-- | 'hcat' : @ [pos_graphic] -> PosGraphic @
 --
 hcat :: (Floating u, Ord u) => [PosGraphic u] -> PosGraphic u
 hcat []     = emptyPosGraphic
@@ -383,19 +402,19 @@ hcat (a:as) = foldl' hplus a as
 
 
 
--- | 'vcat' :
+-- | 'vcat' : @ [pos_graphic] -> PosGraphic @
 --
 vcat :: (Floating u, Ord u) => [PosGraphic u] -> PosGraphic u
 vcat []     = emptyPosGraphic
 vcat (a:as) = foldl' vplus a as
 
--- | 'hsep' :
+-- | 'hsep' : @ space *  [pos_graphic] -> PosGraphic @
 --
 hsep :: (Floating u, Ord u) => u -> [PosGraphic u] -> PosGraphic u
 hsep _  []     = emptyPosGraphic
 hsep dx (a:as) = foldl' (hspace dx) a as
 
--- | 'vsep' :
+-- | 'vsep' : @ space * [pos_graphic] -> PosGraphic @
 --
 vsep :: (Floating u, Ord u) => u -> [PosGraphic u] -> PosGraphic u
 vsep _  []     = emptyPosGraphic
@@ -464,12 +483,24 @@ halignBottom dx pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
               let ans  = makeBorderRect opos ctr
               in replaceAns ans $ gf `at` ctr
 
-
+-- | 'halign' : @ horizontal_alignment * pos_graphic1 * pos_graphic2 
+--        -> PosGraphic @
+--
+-- Concatenate two 'PosGraphic' objects horizontally, aligning at 
+-- either the top edge, center or bottom edge.
+--
 halign :: (Floating u, Ord u) 
        => HAlign -> PosGraphic u -> PosGraphic u -> PosGraphic u
 halign align = halignSpace align 0
 
 
+-- | 'halignSpace' : @ horizontal_alignment * space * pos_graphic1 
+--        * pos_graphic2 -> PosGraphic @
+--
+-- Concatenate two 'PosGraphic' objects horizontally, aligning at 
+-- either the top edge, center or bottom edge and spacing by the 
+-- supplied value.
+--
 halignSpace :: (Floating u, Ord u) 
             => HAlign -> u -> PosGraphic u -> PosGraphic u -> PosGraphic u
 halignSpace HTop    = halignTop
@@ -524,11 +555,24 @@ valignRight dy pg0@(PosGraphic opos0 _) pg1@(PosGraphic opos1 _) =
               in replaceAns ans $ gf `at` ctr
 
 
+-- | 'valign' : @ vertical_alignment * pos_graphic1 * pos_graphic2 
+--        -> PosGraphic @
+--
+-- Concatenate two 'PosGraphic' objects vertically, aligning at 
+-- either the left edge, center or right edge.
+--
 valign :: (Floating u, Ord u) 
        => VAlign -> PosGraphic u -> PosGraphic u -> PosGraphic u
 valign align = valignSpace align 0
 
 
+-- | 'valignSpace' : @ vertical_alignment * space * pos_graphic1 
+--        * pos_graphic2 -> PosGraphic @
+--
+-- Concatenate two 'PosGraphic' objects vertically, aligning at 
+-- either the left edge, center or right edge and spacing by the 
+-- supplied value.
+--
 valignSpace :: (Floating u, Ord u) 
             => VAlign -> u -> PosGraphic u -> PosGraphic u -> PosGraphic u
 valignSpace VLeft   = valignLeft
@@ -536,24 +580,43 @@ valignSpace VCenter = vspace
 valignSpace VRight  = valignRight
 
 
-
+-- | 'hsepA' : @ vertical_alignment * [pos_graphic] -> PosGraphic @
+--
 hcatA :: (Floating u, Ord u) 
       => HAlign -> [PosGraphic u] -> PosGraphic u
 hcatA _  []    = emptyPosGraphic
 hcatA a (z:zs) = foldl' (halign a) z zs
 
+-- | 'vcatA' : @ vertical_alignment * [pos_graphic] -> PosGraphic @
+--
 vcatA :: (Floating u, Ord u) 
       => VAlign -> [PosGraphic u] -> PosGraphic u
 vcatA _  []    = emptyPosGraphic
 vcatA a (z:zs) = foldl' (valign a) z zs
 
 
+-- | 'hsepA' : @ horizontal_alignment * space * [pos_graphic] -> PosGraphic @
+--
 hsepA :: (Floating u, Ord u) 
       => HAlign -> u -> [PosGraphic u] -> PosGraphic u
 hsepA _ _  []     = emptyPosGraphic
 hsepA a dx (z:zs) = foldl' (halignSpace a dx) z zs
 
+
+-- | 'vsepA' : @ vertical_alignment * space * [pos_graphic] -> PosGraphic @
+--
 vsepA :: (Floating u, Ord u) 
       => VAlign -> u -> [PosGraphic u] -> PosGraphic u
 vsepA _ _  []     = emptyPosGraphic
 vsepA a dy (z:zs) = foldl' (valignSpace a dy) z zs
+
+
+-- Apropos pretty-print combinators, PosGraphic obviously can 
+-- support:
+--
+-- > hpunctuate, vpunctuate
+-- > henclose, venclose
+-- > hencloseSep, vencloseSep
+--
+-- BorderRects should support expanding the border as per TikZ.
+--
