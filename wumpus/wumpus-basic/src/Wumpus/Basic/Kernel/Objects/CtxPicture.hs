@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.CtxPicture
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -15,13 +15,19 @@
 -- 
 -- This is the corresponding type to Picture in the Wumpus-Core.
 -- 
--- CtxPicture is a function from the DrawingContext to a Picture.
--- Internally the result is actually a (Maybe Picture) and not a 
--- Picture, this is a trick to promote the extraction from 
--- possibly empty drawings (created by TraceDrawing) to the 
--- top-level of the type hierarchy where client code can deal 
--- with empty drawings explicitly (empty Pictures cannot be 
--- rendered by Wumpus-Core).
+-- Note - many of the composition functions are in 
+-- /destructor form/. As Wumpus cannot make a Picture from an 
+-- empty list of Pictures, /destructor form/ decomposes the 
+-- list into the @head@ and @rest@ as arguments in the function 
+-- signature, rather than take a possibly empty list and have to 
+-- throw an error.
+-- 
+-- Also this module is considered somewhat second-class in 
+-- relation to @PosGraphic@ hence the function names are rather
+-- cumbersome. It is expected that a particular drawing will use
+-- at most one or two of the functions here, and mostly compose 
+-- the graphics with the @Image@, @Graphic@, @PosGraphic@ and 
+-- @Connector@ types.
 -- 
 --------------------------------------------------------------------------------
 
@@ -38,35 +44,33 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   , mapCtxPicture
 
   -- * Composition
-  , beneath
+  , cxpBeneath
 
-  , centric
-  , oright
-  , odown
+  , cxpUniteCenter
+  , cxpRight
+  , cxpDown
   
-  , atPoint 
-  , centeredAt
-
-  , zconcat
-
-  , hcatPic 
-  , vcatPic
+  , cxpCenteredAt
 
 
-  , hspacePic
-  , vspacePic
-  , hsepPic
-  , vsepPic
+  , cxpRow 
+  , cxpColumn
+
+
+  , cxpRightSep
+  , cxpDownSep
+  , cxpRowSep
+  , cxpColumnSep
  
   -- * Compose with alignment
-  , alignH
-  , alignV
-  , alignHSep
-  , alignVSep
-  , hcatAPic
-  , vcatAPic
-  , hsepAPic
-  , vsepAPic
+  , cxpAlignH
+  , cxpAlignV
+  , cxpAlignSepH
+  , cxpAlignSepV
+  , cxpAlignRow
+  , cxpAlignColumn
+  , cxpAlignRowSep
+  , cxpAlignColumnSep
 
 
   ) where
@@ -92,14 +96,23 @@ import Data.List ( foldl' )
 -- 
 -- This type corresponds to the 'Picture' type in Wumpus-Core, but
 -- it is embedded with a 'DrawingContext' (for font properties, 
--- fill colour etc.).
+-- fill colour etc.). So it is a function 
+-- /from DrawingContext to Picture/.
+--
+-- Internally the result is actually a (Maybe Picture) and not a 
+-- Picture, this is a trick to promote the extraction from 
+-- possibly empty drawings (created by TraceDrawing) to the 
+-- top-level of the type hierarchy where client code can deal 
+-- with empty drawings explicitly (empty Pictures cannot be 
+-- rendered by Wumpus-Core).
 --
 -- > a `oplus` b
 --
--- The 'OPlus' instance for 'CtxPicture' draws picture a in front 
--- of picture b in the z-order, neither picture is moved. 
--- (Usually the picture composition operators in this module move
--- the second picture aligning it somehow with the first).
+-- The 'OPlus' (semigroup) instance for 'CtxPicture' draws picture 
+-- a in front of picture b in the z-order, neither picture is 
+-- moved. (Usually the picture composition operators in this 
+-- module move the second picture aligning it somehow with the 
+-- first).
 --
 newtype CtxPicture u = CtxPicture { getCtxPicture :: CF (Maybe (Picture u)) }
 
@@ -278,23 +291,24 @@ boundaryTopEdge = boundaryExtr (point_y . ur_corner)
 
 
 
-  
--- Note - do not export the empty drawing. It is easier to 
--- pretend it doesn't exist.
--- 
-empty_drawing :: (Real u, Floating u, FromPtSize u) => CtxPicture u
-empty_drawing = drawTracing $ return ()
-
-
 
 
 --------------------------------------------------------------------------------
 -- Composition operators
 
+-- Naming convention - Wumpus-Core already prefixes operations
+-- on Pictures with pic. As the picture operators here work on a
+-- different type, they merit a different naming scheme.
+--
+-- Unfortunately the @cxp_@ prefix is rather ugly...
+--
+-- Directional names seem better than positional ones (less 
+-- ambiguous as when used as binary operators).
+--
 
-picConcat :: (Picture u -> Picture u -> Picture u) 
+cxpConcat :: (Picture u -> Picture u -> Picture u) 
           -> CtxPicture u -> CtxPicture u -> CtxPicture u
-picConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
+cxpConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
 
 
 
@@ -325,7 +339,7 @@ megaCombR :: (Num u, Ord u)
           -> (a -> a -> Picture u -> Picture u) 
           -> CtxPicture u -> CtxPicture u
           -> CtxPicture u
-megaCombR qL qR trafoR = picConcat fn
+megaCombR qL qR trafoR = cxpConcat fn
   where
     fn pic1 pic2 = let a    = qL pic1
                        b    = qR pic2
@@ -338,34 +352,26 @@ megaCombR qL qR trafoR = picConcat fn
 -- terms z-ordering, nither picture a or b are actually moved.
 --
 instance (Num u, Ord u) => OPlus (CtxPicture u) where
-  oplus = picConcat picOver
+  oplus = cxpConcat picOver
 
 
--- | 'beneath' : @ ctx_picture1 * ctx_picture2 -> CtxPicture @
+-- | 'cxpBeneath' : @ ctx_picture1 * ctx_picture2 -> CtxPicture @
 -- 
--- > a `beneath` b
+-- > a `cxpBeneath` b
 --
 -- Similarly @beneath@ draws the first picture behind the second 
 -- picture in the z-order, neither picture is moved.
 --
-beneath :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-beneath = flip oplus
-
-
-
--- | Move in both the horizontal and vertical.
---
-move :: (Num u, Ord u) => Vec2 u -> CtxPicture u -> CtxPicture u
-move v = mapCtxPicture (\p -> p `picMoveBy` v)
-
+cxpBeneath :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpBeneath = flip oplus
 
 
 
 --------------------------------------------------------------------------------
 -- Composition
 
-infixr 5 `odown`
-infixr 6 `oright`, `centric`
+infixr 5 `cxpDown`
+infixr 6 `cxpRight`, `cxpUniteCenter`
 
 
 
@@ -373,11 +379,12 @@ infixr 6 `oright`, `centric`
 -- | Draw @a@, move @b@ so its center is at the same center as 
 -- @a@, @b@ is drawn over underneath in the zorder.
 --
--- > a `centeric` b 
+-- > a `cxpUniteCenter` b 
 --
---
-centric :: (Fractional u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-centric = megaCombR boundaryCtr boundaryCtr moveFun
+
+cxpUniteCenter :: (Fractional u, Ord u) 
+               => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpUniteCenter = megaCombR boundaryCtr boundaryCtr moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
 
@@ -386,42 +393,33 @@ centric = megaCombR boundaryCtr boundaryCtr moveFun
 -- rather than position?
 --
 
--- | > a `oright` b
+-- | > a `cxpRight` b
 -- 
 -- Horizontal composition - position picture @b@ to the right of 
 -- picture @a@.
 -- 
-oright :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-oright = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
+cxpRight :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpRight = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
 
 
 
--- | > a `odown` b
+-- | > a `cxpDown` b
 --
 -- Vertical composition - position picture @b@ /down/ from picture
 -- @a@.
 --
-odown :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
-odown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
+cxpDown :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
 
 
--- | Place the picture at the supplied point.
---
--- `atPoint` was previous the `at` operator.
--- 
-atPoint :: (Num u, Ord u) => CtxPicture u -> Point2 u  -> CtxPicture u
-p `atPoint` (P2 x y) = move (V2 x y) p
-
-
-
 -- | Center the picture at the supplied point.
 --
-centeredAt :: (Fractional u, Ord u) => CtxPicture u -> Point2 u -> CtxPicture u
-centeredAt d (P2 x y) = mapCtxPicture fn d
+cxpCenteredAt :: (Fractional u, Ord u) => CtxPicture u -> Point2 u -> CtxPicture u
+cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
   where
     fn p = let bb = boundary p
                dx = x - (boundaryWidth  bb * 0.5)
@@ -429,29 +427,31 @@ centeredAt d (P2 x y) = mapCtxPicture fn d
            in p `picMoveBy` vec dx dy
 
 
--- | Concatenate the list of drawings. 
---
--- No pictures are moved. 
---
-zconcat :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
-zconcat []     = empty_drawing
-zconcat (d:ds) = foldl' oplus d ds
 
-
-
-
--- | Concatenate the list pictures @xs@ horizontally.
+-- | 'cxpRow' : @ ctx_picture1 * [ctx_picture] -> CtxPicture @
 -- 
-hcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
-hcatPic []     = empty_drawing
-hcatPic (d:ds) = foldl' oright d ds
+-- Make a row of pictures concatenating them horizontally.
+-- 
+-- Note - this function is in /destructor form/. As Wumpus cannot
+-- make a Picture from an empty list of Pictures, 
+-- /destructor form/ decomposes the list into the @head@ and the 
+-- @rest@ in the function signature, rather than take a possibly
+-- empty list and have to throw an error.
+-- 
+cxpRow :: (Real u, Floating u, FromPtSize u) 
+       => CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpRow = foldl' cxpRight
 
 
--- | Concatenate the list of pictures @xs@ vertically.
+-- | 'cxpColumn' : @ ctx_picture1 * [ctx_picture] -> CtxPicture @
+-- 
+-- Make a column of pictures concatenating them vertically.
+-- 
+-- Note - this function is in /destructor form/.
 --
-vcatPic :: (Real u, Floating u, FromPtSize u) => [CtxPicture u] -> CtxPicture u
-vcatPic []     = empty_drawing
-vcatPic (d:ds) = foldl' odown d ds
+cxpColumn :: (Real u, Floating u, FromPtSize u) 
+          => CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpColumn = foldl' cxpDown
 
 
 
@@ -461,13 +461,13 @@ vcatPic (d:ds) = foldl' odown d ds
 
 
 
--- | > hspace n a b
+-- | > cxpRightSep n a b
 --
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-hspacePic :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-hspacePic n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
+cxpRightSep :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
 
@@ -475,27 +475,28 @@ hspacePic n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 
 
 
--- | > vspace n a b
+-- | > cxpDownSep n a b
 --
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-vspacePic :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-vspacePic n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
+cxpDownSep :: (Num u, Ord u) 
+           => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
 
 
 
--- | > hsepPic n xs
+-- | > picRowSep n x xs
 --
 -- Concatenate the list of pictures @xs@ horizontally with 
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-hsepPic :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
-hsepPic _ []     = empty_drawing
-hsepPic n (d:ds) = foldl' (hspacePic n) d ds
+cxpRowSep :: (Real u, Floating u, FromPtSize u) 
+          => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpRowSep n = foldl' (cxpRightSep n)
 
 
 
@@ -505,9 +506,9 @@ hsepPic n (d:ds) = foldl' (hspacePic n) d ds
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-vsepPic :: (Real u, Floating u, FromPtSize u) => u -> [CtxPicture u] -> CtxPicture u
-vsepPic _ []     = empty_drawing
-vsepPic n (d:ds) = foldl' (vspacePic n) d ds
+cxpColumnSep :: (Real u, Floating u, FromPtSize u) 
+             => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpColumnSep n = foldl' (cxpDownSep n)
 
 
 --------------------------------------------------------------------------------
@@ -517,29 +518,32 @@ alignMove :: (Num u, Ord u) => Point2 u -> Point2 u -> Picture u -> Picture u
 alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 
 
+-- Note - these don\'t conform to the naming convention, but using 
+-- /Right/ in the names would be confusing with alignment.
 
--- | > alignH align a b
+
+-- | > cxpAlignH align a b
 -- 
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ and align it with the top, center or bottom of @a@.
 -- 
-alignH :: (Fractional u, Ord u) 
-       =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignH HTop     = megaCombR boundaryNE boundaryNW  alignMove
-alignH HCenter  = megaCombR boundaryE  boundaryW   alignMove
-alignH HBottom  = megaCombR boundarySE boundarySW  alignMove
+cxpAlignH :: (Fractional u, Ord u) 
+          =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignH HTop     = megaCombR boundaryNE boundaryNW  alignMove
+cxpAlignH HCenter  = megaCombR boundaryE  boundaryW   alignMove
+cxpAlignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 
 
--- | > alignV align a b
+-- | > cxpAlignV align a b
 -- 
 -- Vertical composition - move @b@, placing it below @a@ 
 -- and align it with the left, center or right of @a@.
 -- 
-alignV :: (Fractional u, Ord u) 
+cxpAlignV :: (Fractional u, Ord u) 
        => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignV VLeft    = megaCombR boundarySW boundaryNW alignMove
-alignV VCenter  = megaCombR boundaryS  boundaryN  alignMove
-alignV VRight   = megaCombR boundarySE boundaryNE  alignMove
+cxpAlignV VLeft    = megaCombR boundarySW boundaryNW alignMove
+cxpAlignV VCenter  = megaCombR boundaryS  boundaryN  alignMove
+cxpAlignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 
 
@@ -549,69 +553,67 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 
 
 
--- | > alignHSep align sep a b
+-- | > cxpAlignSepH align sep a b
 -- 
--- Spacing version of alignH - move @b@ to the right of @a@ 
+-- Spacing version of 'cxpAlignH' - move @b@ to the right of @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-alignHSep :: (Fractional u, Ord u) 
-          => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignHSep HTop    dx = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
-alignHSep HCenter dx = megaCombR boundaryE  boundaryW  (alignMove2 (hvec dx))
-alignHSep HBottom dx = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
+cxpAlignSepH :: (Fractional u, Ord u) 
+               => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignSepH align dx = go align
+  where
+    go HTop    = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
+    go HCenter = megaCombR boundaryE  boundaryW  (alignMove2 (hvec dx))
+    go HBottom = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
 
 
--- | > alignVSep align sep a b
+-- | > cxpAlignSepV align sep a b
 -- 
 -- Spacing version of alignV - move @b@ below @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-alignVSep :: (Fractional u, Ord u) 
-          => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-alignVSep VLeft   dy = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 
-alignVSep VCenter dy = megaCombR boundaryS  boundaryN  (alignMove2 $ vvec (-dy)) 
-alignVSep VRight  dy = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
+cxpAlignSepV :: (Fractional u, Ord u) 
+               => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignSepV align dy = go align
+  where
+    go VLeft   = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 
+    go VCenter = megaCombR boundaryS  boundaryN  (alignMove2 $ vvec (-dy)) 
+    go VRight  = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
 
 
--- | Variant of 'hcat' that aligns the pictures as well as
+-- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating them.
 --
-hcatAPic :: (Real u, Floating u, FromPtSize u) 
-      => HAlign -> [CtxPicture u] -> CtxPicture u
-hcatAPic _  []     = empty_drawing
-hcatAPic ha (d:ds) = foldl' (alignH ha) d ds
+cxpAlignRow :: (Real u, Floating u, FromPtSize u) 
+            => HAlign -> CtxPicture u-> [CtxPicture u] -> CtxPicture u
+cxpAlignRow ha = foldl' (cxpAlignH ha)
 
 
 
--- | Variant of 'vcat' that aligns the pictures as well as
+-- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating them.
 --
-vcatAPic :: (Real u, Floating u, FromPtSize u) 
-      => VAlign -> [CtxPicture u] -> CtxPicture u
-vcatAPic _  []     = empty_drawing
-vcatAPic va (d:ds) = foldl' (alignV va) d ds
+cxpAlignColumn :: (Real u, Floating u, FromPtSize u) 
+               => VAlign -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpAlignColumn va = foldl' (cxpAlignV va)
 
 
--- | Variant of @hsep@ that aligns the pictures as well as
+-- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-hsepAPic :: (Real u, Floating u, FromPtSize u) 
-      => HAlign -> u -> [CtxPicture u] -> CtxPicture u
-hsepAPic _  _ []     = empty_drawing
-hsepAPic ha n (d:ds) = foldl' op d ds
-  where 
-    a `op` b = alignHSep ha n a b 
+cxpAlignRowSep :: (Real u, Floating u, FromPtSize u) 
+                 => HAlign -> u -> CtxPicture u -> [CtxPicture u] 
+                 -> CtxPicture u
+cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
 
 
--- | Variant of @vsep@ that aligns the pictures as well as
+-- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-vsepAPic :: (Real u, Floating u, FromPtSize u) 
-      => VAlign -> u -> [CtxPicture u] -> CtxPicture u
-vsepAPic _  _ []     = empty_drawing
-vsepAPic va n (d:ds) = foldl' op d ds
-  where 
-    a `op` b = alignVSep va n a b 
+cxpAlignColumnSep :: (Real u, Floating u, FromPtSize u) 
+                    => VAlign -> u -> CtxPicture u -> [CtxPicture u] 
+                    -> CtxPicture u
+cxpAlignColumnSep va n = foldl' (cxpAlignSepV va n) 
 
 
 
