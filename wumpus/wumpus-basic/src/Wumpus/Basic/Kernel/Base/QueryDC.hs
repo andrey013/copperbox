@@ -43,11 +43,9 @@ module Wumpus.Basic.Kernel.Base.QueryDC
 
   -- * Glyph metrics
   , glyphBoundingBox
-  , glyphHeightRange
-  , glyphHeight
   , glyphCapHeight
   , glyphDescender
-
+  , glyphVerticalSpan
   , cwLookupTable
 
   -- * Default monospace metrics
@@ -175,18 +173,15 @@ markHalfHeight = (0.5*) <$> markHeight
 glyphQuery :: DrawingCtxM m => (MetricsOps -> PtSize -> u) -> m u
 glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
 
+-- | Get the font bounding box - this is the maximum boundary of 
+-- the glyphs in the font. The span of the height is expected to 
+-- be bigger than the cap_height plus descender depth.
+--
 glyphBoundingBox :: (FromPtSize u, DrawingCtxM m) => m (BoundingBox u)
 glyphBoundingBox = glyphQuery get_bounding_box
 
 
-glyphHeightRange :: (FromPtSize u, DrawingCtxM m) => m (u,u)
-glyphHeightRange = fn <$> glyphBoundingBox
-  where
-    fn (BBox (P2 _ ymin) (P2 _ ymax)) = (ymin,ymax)
 
-
-glyphHeight :: (FromPtSize u, DrawingCtxM m) => m u
-glyphHeight = (\(ymax,ymin) -> ymax - ymin) <$> glyphHeightRange
 
 
 glyphCapHeight :: (FromPtSize u, DrawingCtxM m) => m u
@@ -196,6 +191,13 @@ glyphCapHeight = glyphQuery get_cap_height
 --
 glyphDescender :: (FromPtSize u, DrawingCtxM m) => m u
 glyphDescender = glyphQuery get_descender
+
+-- | This is the distance from cap_height to descender.
+--
+glyphVerticalSpan :: (FromPtSize u, DrawingCtxM m) => m u
+glyphVerticalSpan = 
+    (\ch dd -> ch - dd) <$> glyphCapHeight <*> glyphDescender
+
 
 cwLookupTable :: (FromPtSize u, DrawingCtxM m) => m (CharWidthTable u)
 cwLookupTable = glyphQuery get_cw_table

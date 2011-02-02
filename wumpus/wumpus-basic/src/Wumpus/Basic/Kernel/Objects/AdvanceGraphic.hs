@@ -13,10 +13,7 @@
 -- Portability :  GHC 
 --
 -- Extended Graphic object - an AdvanceGraphic is a Graphic 
--- twinned with and AdvanceV vector.
---
--- \*\* WARNING \*\* - this module a candidate for removal. 
--- Potentially it can be replaced with PosImage.
+-- twinned with and advance vector.
 --
 --------------------------------------------------------------------------------
 

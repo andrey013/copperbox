@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -34,7 +34,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Displacement
   , module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , module Wumpus.Basic.Kernel.Objects.Graphic
-  , module Wumpus.Basic.Kernel.Objects.PosGraphic
+  , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
@@ -55,5 +55,5 @@ import Wumpus.Basic.Kernel.Objects.CtxPicture
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
-import Wumpus.Basic.Kernel.Objects.PosGraphic
+import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.TraceDrawing

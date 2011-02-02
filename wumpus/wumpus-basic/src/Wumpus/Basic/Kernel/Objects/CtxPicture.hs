@@ -22,12 +22,8 @@
 -- signature, rather than take a possibly empty list and have to 
 -- throw an error.
 -- 
--- Also this module is considered somewhat second-class in 
--- relation to @PosGraphic@ hence the function names are rather
--- cumbersome. It is expected that a particular drawing will use
--- at most one or two of the functions here, and mostly compose 
--- the graphics with the @Image@, @Graphic@, @PosGraphic@ and 
--- @Connector@ types.
+-- TODO - PosImage no longer supports composition operators, so 
+-- better names are up for grabs...
 -- 
 --------------------------------------------------------------------------------
 

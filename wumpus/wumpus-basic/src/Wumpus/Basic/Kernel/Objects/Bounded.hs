@@ -15,9 +15,6 @@
 -- Bounded meaning they are actually Images that return the 
 -- bounding box of the Graphic.
 --
--- \*\* WARNING \*\* - this module a candidate for removal.
--- Potentially it can be replaced with PosImage.
---
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Objects.Bounded

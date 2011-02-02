@@ -32,17 +32,13 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  * Re-worked the @CtxPicture@ API. The \"good\" names are now 
-    taken by @PosGraphic@. @CtxPicture@ has inherited more
-    cumbersome names as it is expected to be used a lot less 
-    than @PosGraphic@. 
+  * Re-worked the @CtxPicture@ API, although the current naming 
+    scheme is not satisfactory.....................................
   .
   * Added extra Anchor classes.
   .
-  * Added @PosGraphic@ object - this is a rectangle-bordered 
-    object that can be drawn from any of its rectangle corners 
-    or its center. @PosGraphic@ will probably supersede 
-    @AdvanceGraphic@ and @BoundedGraphic@.
+  * Added @PosImage@ object - this is a rectangle-framed object 
+    that can be drawn from any of its corners or its center. 
   .
   * Added @Displacement@ module. This defines the @PointDisplace@
     type and provides a library of @PointDisplace@ functions.
@@ -87,7 +83,6 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/FontDeltaPic.hs,
-  demo/ConcatPosImage.hs,
   demo/SimplePosImage.hs
 
 library
@@ -119,7 +114,7 @@ library
     Wumpus.Basic.Kernel.Objects.Displacement,
     Wumpus.Basic.Kernel.Objects.DrawingPrimitives,
     Wumpus.Basic.Kernel.Objects.Graphic,
-    Wumpus.Basic.Kernel.Objects.PosGraphic,
+    Wumpus.Basic.Kernel.Objects.PosImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.FontLoader.Afm,
     Wumpus.Basic.System.FontLoader.GhostScript,

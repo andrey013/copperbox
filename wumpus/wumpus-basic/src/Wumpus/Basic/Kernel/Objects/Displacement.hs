@@ -44,9 +44,10 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , southeastwards
   , southwestwards
 
+
   , displaceParallel
   , displacePerpendicular
-
+  , displaceOrtho
 
   , thetaNorthwards
   , thetaSouthwards 
@@ -219,7 +220,7 @@ displaceParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
 -- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
 -- 
 -- Build a combinator to move @Points@ perpendicular to the 
--- direction of the implicit angle by the supplied distance 
+-- inclnation of the implicit angle by the supplied distance 
 -- @dist@. 
 --
 displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
@@ -227,6 +228,17 @@ displacePerpendicular d =
     \theta pt -> pt .+^ avec (circularModulo $ theta + (0.5*pi)) d
 
 
+
+-- | 'displaceOrtho' : @ vec -> ThetaPointDisplace @
+-- 
+-- This is a combination of @displaceParallel@ and 
+-- @displacePerpendicular@, with the x component of the vector
+-- displaced in parallel and the y component displaced
+-- perpendicular. 
+-- 
+displaceOrtho :: Floating u => Vec2 u -> ThetaPointDisplace u
+displaceOrtho (V2 x y) = \theta -> 
+    displaceParallel x theta . displacePerpendicular y theta
 
 
 thetaNorthwards :: Floating u => u -> ThetaPointDisplace u
