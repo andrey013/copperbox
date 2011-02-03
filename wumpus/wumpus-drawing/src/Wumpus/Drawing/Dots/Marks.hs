@@ -89,7 +89,7 @@ markChar ch = markText [ch]
 
 
 markText :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
-markText ss = fmap (replaceL uNil) $ multiAlignCenter CENTER ss `rot` 0
+markText ss = fmap (replaceL uNil) $ textAlignCenter ss
 
 
 

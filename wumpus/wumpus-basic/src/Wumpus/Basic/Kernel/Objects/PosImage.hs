@@ -170,10 +170,17 @@ infixr 1 `rectpos`
 -- with a 'RectPosition' (start position).
 --  
 rectpos :: Floating u 
-              => PosImage u a -> RectPosition -> LocImage u a
+        => PosImage u a -> RectPosition -> LocImage u a
 rectpos = apply1R2
  
-
+-- | 'rectpos' : @ pos_image * start_point * rect_pos -> LocImage @
+--
+-- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
+-- with a start point and a 'RectPosition' (start position).
+--  
+atRect ::  Floating u 
+        => PosImage u a -> Point2 u -> RectPosition -> Image u a
+atRect = apply2R2
 
 -- | The vector from some Rectangle position to the start point.
 --

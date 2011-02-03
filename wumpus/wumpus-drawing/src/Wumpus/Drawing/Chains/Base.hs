@@ -14,7 +14,7 @@
 --
 -- \*\* WARNING \*\* - unstable. Names are not so good, also 
 -- Wumpus-Basic has a @chain1@ operator...
---
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Chains.Base
@@ -38,6 +38,16 @@ module Wumpus.Drawing.Chains.Base
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
+
+
+-- CAUTION - chains are all pure rather than CF / LocCF types.
+-- 
+-- Maybe this does not matter, however experience with PosGraphic 
+-- shows that mis-judging whether a type is pure or monadic 
+-- (depending on the DrawingContext) can have very unfortunate 
+-- consequences for the utility of the type.
+--
+
 
 
 
@@ -70,7 +80,6 @@ unchain i op chn = go i chn
     go n _      | n <= 0 = return ()
     go _ []              = return () 
     go n (x:xs)          = draw (op `at` x) >> go (n-1) xs
-
 
 
 
