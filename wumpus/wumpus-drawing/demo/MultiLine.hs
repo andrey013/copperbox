@@ -71,9 +71,6 @@ mf = do
     draw $ testDrawL SW `at` (P2 150 460)
     draw $ testDrawL NW `at` (P2 225 460)
     draw $ testDrawL CENTER    `at` (P2   0 400)
-    draw $ testDrawL BL_LEFT   `at` (P2  75 400)
-    draw $ testDrawL BL_CENTER `at` (P2 150 400)
-    draw $ testDrawL BL_RIGHT  `at` (P2 225 400)
     --
     draw $ testDrawC NN `at` (P2   0 320)
     draw $ testDrawC SS `at` (P2  75 320)
@@ -84,9 +81,6 @@ mf = do
     draw $ testDrawC SW `at` (P2 150 260)
     draw $ testDrawC NW `at` (P2 225 260)
     draw $ testDrawC CENTER    `at` (P2   0 200)
-    draw $ testDrawC BL_LEFT   `at` (P2  75 200)
-    draw $ testDrawC BL_CENTER `at` (P2 150 200)
-    draw $ testDrawC BL_RIGHT  `at` (P2 225 200)
     --
     draw $ testDrawR NN `at` (P2   0 120)
     draw $ testDrawR SS `at` (P2  75 120)
@@ -97,29 +91,30 @@ mf = do
     draw $ testDrawR SW `at` (P2 150 60)
     draw $ testDrawR NW `at` (P2 225 60)
     draw $ testDrawR CENTER    `at` (P2   0 0)
-    draw $ testDrawR BL_LEFT   `at` (P2  75 0)
-    draw $ testDrawR BL_CENTER `at` (P2 150 0)
-    draw $ testDrawR BL_RIGHT  `at` (P2 225 0)
     
 
 testDrawL :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawL rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    txt = multiAlignLeft rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = illustrateBoundedLocGraphic $ 
+            multiAlignLeft 0 sample_text `startPos` rpos
 
 testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    txt = multiAlignCenter rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = illustrateBoundedLocGraphic $ 
+            multiAlignCenter 0 sample_text `startPos` rpos
 
 
 testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawR rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
-    txt = multiAlignRight rpos "Is\nthis\nokay&question;" `rot` 0 
+    txt = illustrateBoundedLocGraphic $ 
+            multiAlignRight 0 sample_text `startPos` rpos
 
-
+sample_text :: String
+sample_text = "Is\nthis\nokay&question;"
 

@@ -36,7 +36,9 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , DPosGraphic
 
   , makePosImage
-  , rectpos
+
+  , startPos
+  , atStartPos
 
   ) where
 
@@ -162,25 +164,25 @@ makePosImage opos gf = promoteR2 $ \start rpos ->
 
 
 
-infixr 1 `rectpos`
+infixr 1 `startPos`
 
--- | 'rectpos' : @ pos_image * rect_pos -> LocImage @
+-- | 'startPos' : @ pos_image * rect_pos -> LocImage @
 --
--- /Downcast/ a 'PosGraphic' to a 'LocImage' by supplying it 
+-- /Downcast/ a 'PosImage' to a 'LocImage' by supplying it 
 -- with a 'RectPosition' (start position).
 --  
-rectpos :: Floating u 
-        => PosImage u a -> RectPosition -> LocImage u a
-rectpos = apply1R2
+startPos :: Floating u 
+         => PosImage u a -> RectPosition -> LocImage u a
+startPos = apply1R2
  
--- | 'rectpos' : @ pos_image * start_point * rect_pos -> LocImage @
+-- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
 --
 -- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
--- with a start point and a 'RectPosition' (start position).
+-- with an initial point and a 'RectPosition' (start position).
 --  
-atRect ::  Floating u 
-        => PosImage u a -> Point2 u -> RectPosition -> Image u a
-atRect = apply2R2
+atStartPos ::  Floating u 
+           => PosImage u a -> Point2 u -> RectPosition -> Image u a
+atStartPos = apply2R2
 
 -- | The vector from some Rectangle position to the start point.
 --

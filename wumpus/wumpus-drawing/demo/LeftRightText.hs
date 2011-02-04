@@ -49,8 +49,8 @@ makeGSPicture font_dir = do
     (gs_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
     let pic1 = runCtxPictureU (makeCtx gs_metrics) text_pic
-    writeEPS "./out/theta_text01.eps" pic1
-    writeSVG "./out/theta_text01.svg" pic1
+    writeEPS "./out/lr_text01.eps" pic1
+    writeSVG "./out/lr_text01.svg" pic1
 
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
@@ -58,8 +58,8 @@ makeAfmPicture font_dir = do
     (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
     mapM_ putStrLn msgs
     let pic2 = runCtxPictureU (makeCtx afm_metrics) text_pic
-    writeEPS "./out/theta_text02.eps" pic2
-    writeSVG "./out/theta_text02.svg" pic2
+    writeEPS "./out/lr_text02.eps" pic2
+    writeSVG "./out/lr_text02.svg" pic2
 
 
 
@@ -74,16 +74,16 @@ text_pic = drawTracing $ do
     drawi_ $ (fn center_text)     `at` P2 150 400
     drawi_ $ (fn right_text)      `at` P2 300 400
     drawi_ $ (fn blank_text)      `at` P2   0 300
---    drawi_ $ (fn bl_oneline)      `at` P2 150 300   -}
+    drawi_ $ (fn ne_oneline)      `at` P2 150 300 
     drawi_ $ (fn cc_oneline)      `at` P2 300 300
 
 
---    drawi_ $ (fn newblr)          `at` P2   0 200
---    drawi_ $ (fn newblc)          `at` P2 150 200
---    drawi_ $ (fn newbll)          `at` P2 300 200
---    drawi_ $ (fn rnewblr)         `at` P2   0 100
---    drawi_ $ (fn rnewblc)         `at` P2 150 100
---    drawi_ $ (fn rnewbll)         `at` P2 300 100
+    drawi_ $ (fn sw_oneline)      `at` P2   0 200
+    drawi_ $ (fn ss_oneline)      `at` P2 150 200
+    drawi_ $ (fn se_oneline)      `at` P2 300 200
+    drawi_ $ (fn swr_multi)       `at` P2   0 100
+    drawi_ $ (fn ssr_multi)       `at` P2 150 100
+    drawi_ $ (fn ner_multi)       `at` P2 300 100
     drawi_ $ (fn rleft_text)      `at` P2   0 (-75)
     drawi_ $ (fn rcenter_text)    `at` P2 150 (-75)
     drawi_ $ (fn rright_text)     `at` P2 300 (-75)
@@ -110,74 +110,74 @@ text_pic = drawTracing $ do
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
 
-{-
-
--- single line
---
-newblc :: BoundedLocGraphic Double
-newblc = singleLine BL_CENTER "new baseline center" `rot` 0
 
 
 -- single line
 --
-newbll :: BoundedLocGraphic Double
-newbll = singleLine BL_LEFT "new baseline left" `rot` 0
-
--- single line
---
-newblr :: BoundedLocGraphic Double
-newblr = singleLine BL_RIGHT "new baseline right" `rot` 0
-
--- single line
---
-rnewblc :: BoundedLocGraphic Double
-rnewblc = singleLine BL_CENTER "baseline center" `rot` (0.25*pi)
+ne_oneline :: BoundedLocGraphic Double
+ne_oneline = singleLine "north east" `startPos` NE
 
 
 -- single line
 --
-rnewbll :: BoundedLocGraphic Double
-rnewbll = singleLine BL_LEFT "baseline left" `rot` (0.25*pi)
+se_oneline :: BoundedLocGraphic Double
+se_oneline = singleLine "south east" `startPos` SE
 
 -- single line
 --
-rnewblr :: BoundedLocGraphic Double
-rnewblr = singleLine BL_RIGHT "baseline right" `rot` (0.25 * pi)
+ss_oneline :: BoundedLocGraphic Double
+ss_oneline = singleLine "south" `startPos` SS
+
+-- single line
+--
+sw_oneline :: BoundedLocGraphic Double
+sw_oneline = singleLine "south west" `startPos` SW
 
 
-bl_oneline :: BoundedLocGraphic Double
-bl_oneline = singleLine BL_LEFT "Baseline-left..." `rot` 0
+-- multi line
+--
+ssr_multi :: BoundedLocGraphic Double
+ssr_multi = multiAlignCenter (0.25*pi) "south rot45" `startPos` SS
 
--}
+-- multi line
+--
+swr_multi :: BoundedLocGraphic Double
+swr_multi = multiAlignCenter (0.25*pi) "south west rot45" `startPos` SW
+
+-- multi line
+--
+ner_multi :: BoundedLocGraphic Double
+ner_multi = multiAlignCenter (0.25*pi) "north east rot45" `startPos` NE
+
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = rsingleLine 0 "Center-center..."  `rectpos` CENTER
+cc_oneline = rsingleLine 0 "Center-center..."  `startPos` CENTER
 
 
 blank_text :: BoundedLocGraphic Double
-blank_text = multiAlignCenter 0 "" `rectpos` CENTER
+blank_text = multiAlignCenter 0 "" `startPos` CENTER
 
 
 left_text :: BoundedLocGraphic Double
-left_text = multiAlignLeft 0 dummy_text `rectpos` CENTER
+left_text = multiAlignLeft 0 dummy_text `startPos` CENTER
 
 
 right_text :: BoundedLocGraphic Double
-right_text = multiAlignRight 0 dummy_text `rectpos` CENTER
+right_text = multiAlignRight 0 dummy_text `startPos` CENTER
 
 center_text :: BoundedLocGraphic Double
-center_text = multiAlignCenter 0 dummy_text `rectpos` CENTER
+center_text = multiAlignCenter 0 dummy_text `startPos` CENTER
 
 
 rleft_text :: BoundedLocGraphic Double
-rleft_text = multiAlignLeft (0.25*pi)  dummy_text `rectpos` CENTER
+rleft_text = multiAlignLeft (0.25*pi)  dummy_text `startPos` CENTER
 
 
 rright_text :: BoundedLocGraphic Double
-rright_text = multiAlignRight (0.25*pi) dummy_text `rectpos` CENTER
+rright_text = multiAlignRight (0.25*pi) dummy_text `startPos` CENTER
 
 rcenter_text :: BoundedLocGraphic Double
-rcenter_text = multiAlignCenter (0.25*pi) dummy_text `rectpos` CENTER
+rcenter_text = multiAlignCenter (0.25*pi) dummy_text `startPos` CENTER
 
 
 dummy_text :: String 

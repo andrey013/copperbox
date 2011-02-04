@@ -22,8 +22,8 @@
 
 module Wumpus.Drawing.Text.LRText
   ( 
-    atRect      -- TEMP
-  , singleLine
+
+    singleLine
   , escSingleLine
   , rsingleLine
   , rescSingleLine
@@ -53,19 +53,12 @@ import Data.Char
 import qualified Data.Map               as Map
 import Data.Maybe 
 
-
-
--- For Wumpus-basic...
-displaceThetaVec :: Floating u => Vec2 u -> ThetaPointDisplace u
-displaceThetaVec (V2 x y) = \theta -> 
-    displaceParallel x theta . displacePerpendicular y theta
-
-
-atRect ::  Floating u 
-        => PosImage u a -> Point2 u -> RectPosition -> Image u a
-atRect = apply2R2
-
--- @baselineSpacing@ might be better called @baselineSpan@ ...
+--
+-- Note - margins are not added to the text. This seems to be the 
+-- right thing to do in the case of rotated text, where the ortho
+-- projection of the rectangle already can add spacing between 
+-- the RectPos and the actual text.
+--
 
 
 -------------------
@@ -122,15 +115,15 @@ multiAlignRight theta ss =
 
 textAlignLeft :: (Real u, Floating u, FromPtSize u) 
               => String -> LocImage u (BoundingBox u)
-textAlignLeft ss = multiAlignLeft 0 ss `rectpos` CENTER
+textAlignLeft ss = multiAlignLeft 0 ss `startPos` CENTER
 
 textAlignCenter :: (Real u, Floating u, FromPtSize u) 
                => String -> LocImage u (BoundingBox u)
-textAlignCenter ss = multiAlignCenter 0 ss `rectpos` CENTER 
+textAlignCenter ss = multiAlignCenter 0 ss `startPos` CENTER 
 
 textAlignRight :: (Real u, Floating u, FromPtSize u) 
                => String -> LocImage u (BoundingBox u)
-textAlignRight ss = multiAlignRight 0 ss `rectpos` CENTER 
+textAlignRight ss = multiAlignRight 0 ss `startPos` CENTER 
 
 
 
@@ -153,7 +146,7 @@ drawMultiline drawF theta xs  = promoteR2 $ \start rpos ->
     let gs    = map (drawF theta max_adv) ones
         gf    = zipchainM emptyLine gs pts
         posG  = makePosImage opos gf
-    in  atRect posG start rpos     
+    in  atStartPos posG start rpos     
   where
     line_count = length xs
 
@@ -182,17 +175,21 @@ onelineDraw drawF theta esc = promoteR2 $ \start rpos ->
     let max_adv = oneline_adv otext 
         gf      = drawF theta max_adv otext
         posG    = makePosImage opos gf
-    in  atRect posG start rpos 
+    in  atStartPos posG start rpos 
 
 
-
+-- | Height of multiline text is cap_height to descender for the 
+-- first line, then baseline-to-baseline span for the remaining
+-- lines.
+--
 multilineObjectPos :: (Real u, Floating u, FromPtSize u) 
                    => Int -> Radian -> AdvanceVec u -> DrawingInfo (ObjectPos u)
-multilineObjectPos n theta max_adv =
+multilineObjectPos line_count theta max_adv =
     glyphVerticalSpan >>= \h1 ->
     baselineSpacing   >>= \bspan ->
-    let hw = 0.5 * (advanceH max_adv)
-        hh = 0.5 * h1 + (bspan * fromIntegral (n - 1))
+    let hw    = 0.5 * (advanceH max_adv)
+        spans = bspan * fromIntegral (line_count - 1)
+        hh    = 0.5 * (h1 + spans)
     in return $ orthoObjectPos theta $ ObjectPos hw hw hh hh 
 
 
@@ -246,7 +243,7 @@ onelineALeft theta max_adv otext = promoteR1 $ \ctr ->
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ max_adv
-    move down = \ang -> thetaSouthwards down ang . displaceThetaVec vec1 ang
+    move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
 -- | Draw center-aligned text. Effictively this is:
@@ -264,7 +261,7 @@ onelineACenter theta max_adv otext = promoteR1 $ \ctr ->
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ oneline_adv otext
-    move down = \ang -> thetaSouthwards down ang . displaceThetaVec vec1 ang
+    move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
 -- | Draw right-aligned text. Effictively this is:
@@ -284,7 +281,7 @@ onelineARight theta max_adv otext = promoteR1 $ \ctr ->
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = (0.5 *^ max_adv) ^-^ oneline_adv otext
-    move down = \ang -> thetaSouthwards down ang . displaceThetaVec vec1 ang
+    move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
 
