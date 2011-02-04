@@ -49,7 +49,7 @@ mf = do
     
 
 testDrawBl :: Floating u => RectPosition -> LocGraphic u
-testDrawBl rpos = filledDisk 2 `oplus` (rectBl `rectpos` rpos)
+testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
 rectBl :: Floating u => PosGraphic u 
 rectBl = makePosImage opos (mkRectBl w h)
@@ -73,7 +73,7 @@ mkRectBl w h = promoteR1 $ \bl ->
 
 
 testDrawMinor :: Floating u => RectPosition -> LocGraphic u
-testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `rectpos` rpos)
+testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
 rectMinor :: Floating u => PosGraphic u 
 rectMinor = makePosImage opos (mkRectMinor m w h)
