@@ -38,8 +38,6 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
   , DLocImage
   , DLocThetaImage
 
-  , hyperlink
-
   ) where
 
 import Wumpus.Basic.Kernel.Base.ContextFun
@@ -180,9 +178,6 @@ instance (Num u, Translate a, DUnit a ~ u) => Translate (LocImage u a) where
 --------------------------------------------------------------------------------
 
 
-hyperlink :: XLink -> Image u a -> Image u a
-hyperlink hypl = 
-    fmap (\(a,prim) -> (a, metamorphPrim (xlink hypl) prim))
 
 
 

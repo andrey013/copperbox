@@ -53,7 +53,7 @@ import Data.VectorSpace
 
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
--- width (advance) vector as each character is drawn.
+-- advance (width) vector as each character is drawn.
 --
 type AdvGraphic u      = LocImage u (Vec2 u)
 

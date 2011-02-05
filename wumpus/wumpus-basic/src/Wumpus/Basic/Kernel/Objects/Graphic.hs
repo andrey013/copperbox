@@ -49,6 +49,10 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , emptyLocGraphic
 
   , decorate
+  , sdecorate
+  , adecorate
+  
+  , hyperlink
 
   ) where
 
@@ -180,9 +184,71 @@ emptyLocGraphic = promoteR1 $ \pt ->
 
 
 
--- | Decorate an image by superimposing a graphic.
+-- | Decorate an Image by superimposing a Graphic.
 --
-decorate :: Image u a -> Graphic u -> Image u a
-decorate mf mg = 
-   mf >>= \(a,g1) -> mg >>= \(_,g2) -> return (a, g1 `oplus` g2)
+-- Note - this function has a very general type signature and
+-- supports various graphic types:
+--
+-- > decorate :: Image u a -> Graphic u -> Image u a
+-- > decorate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > decorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+--
+decorate :: Monad m 
+         => m (ImageAns u a) -> m (ImageAns u zz) -> m (ImageAns u a) 
+decorate img gf = 
+    img >>= \(a,g1) -> gf >>= \(_,g2) -> return (a, g1 `oplus` g2)
+
+
+
+-- | /Anterior decorate/ - decorate an Image by superimposing it 
+-- on a Graphic.
+--
+-- Note - here the Graphic has access to the result produced by the 
+-- the Image unlike 'decorate'.
+--
+-- Again, this function has a very general type signature and
+-- supports various graphic types:
+--
+-- > adecorate :: Image u a -> Graphic u -> Image u a
+-- > adecorate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > adecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+--
+adecorate :: Monad m 
+          => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
+adecorate img f = 
+    img >>= \(a,g1) -> f a >>= \(_,g0) -> return (a, g0 `oplus` g1)
+
+
+-- | /Superior decorate/ - decorate an image by superimposing a 
+-- graphic on top of it.
+--
+-- Note, here the Graphic has access to the result produced by the 
+-- the Image unlike 'decorate'.
+--
+-- Again, this function has a very general type signature and
+-- supports various graphic types:
+--
+-- > sdecorate :: Image u a -> Graphic u -> Image u a
+-- > sdecorate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > sdecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+--
+sdecorate :: Monad m 
+          => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
+sdecorate img f = 
+    img >>= \(a,g1) -> f a >>= \(_,g2) -> return (a, g1 `oplus` g2)
+
+
+-- | Hyperlink a graphic object.
+-- 
+-- This function has a very general type signature and supports 
+-- various graphic types:
+--
+-- > hyperlink :: XLink -> Graphic u -> Graphic u
+-- > hyperlink :: XLink -> Image u a -> Image u a
+-- > hyperlink :: XLink -> LocImage u a -> LocImage u a
+-- > hyperlink :: XLink -> LocThetaImage u a -> LocThetaImage u a
+--
+hyperlink :: Functor m => XLink -> m (ImageAns u a) -> m (ImageAns u a)
+hyperlink hypl = 
+    fmap (\(a,prim) -> (a, metamorphPrim (xlink hypl) prim))
 

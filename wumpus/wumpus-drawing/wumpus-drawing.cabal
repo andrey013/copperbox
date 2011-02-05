@@ -129,6 +129,8 @@ library
     Wumpus.Drawing.Shapes.Semicircle,
     Wumpus.Drawing.Shapes.Semiellipse,
     Wumpus.Drawing.Shapes.Triangle,
+    Wumpus.Drawing.Text.Base,
+    Wumpus.Drawing.Text.CatText,
     Wumpus.Drawing.Text.LRText,
     Wumpus.Drawing.Text.SafeFonts,
     Wumpus.Drawing.Turtle.TurtleClass,

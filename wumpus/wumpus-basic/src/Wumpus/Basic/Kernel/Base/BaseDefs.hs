@@ -53,6 +53,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.VectorSpace                         -- package: vector-space
 
 infixr 6 `oplus`
 
@@ -86,7 +87,14 @@ instance OPlus (Primitive u) where
   a `oplus` b = primGroup [a,b]
 
 instance (OPlus a, OPlus b) => OPlus (a,b) where
-  (a,b) `oplus` (a',b') = (a `oplus` a', b `oplus` b')
+  (a,b) `oplus` (m,n) = (a `oplus` m, b `oplus` n)
+
+instance (OPlus a, OPlus b, OPlus c) => OPlus (a,b,c) where
+  (a,b,c) `oplus` (m,n,o) = (a `oplus` m, b `oplus` n, c `oplus` o)
+
+instance (OPlus a, OPlus b, OPlus c, OPlus d) => OPlus (a,b,c,d) where
+  (a,b,c,d) `oplus` (m,n,o,p) = (oplus a m, oplus b n, oplus c o, oplus d p)
+
 
 
 instance OPlus a => OPlus (r -> a) where
@@ -94,6 +102,10 @@ instance OPlus a => OPlus (r -> a) where
 
 -- The functional instance (r -> a) also covers (r1 -> r2 -> a),
 -- (r1 -> r2 -> r3 -> a) etc.
+
+instance Num u => OPlus (Vec2 u) where 
+  oplus = (^+^)
+
 
 --------------------------------------------------------------------------------
 

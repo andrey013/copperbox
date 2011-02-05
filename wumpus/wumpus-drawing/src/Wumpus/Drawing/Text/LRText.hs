@@ -39,19 +39,15 @@ module Wumpus.Drawing.Text.LRText
   ) where
 
 import Wumpus.Drawing.Chains
+import Wumpus.Drawing.Text.Base
 
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Core.Text.GlyphIndices
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Control.Applicative
-import Data.Char
-import qualified Data.Map               as Map
-import Data.Maybe 
 
 --
 -- Note - margins are not added to the text. This seems to be the 
@@ -298,6 +294,8 @@ orthoBB (V2 w _) = promoteR2 $ \ctr theta ->
     in return bb2
 
 
+{-
+
 -- | Calculate the distance from the center of a one-line textbox 
 -- to the baseline. Note the height of a textbox is @vspan@ which 
 -- is cap_height + descender
@@ -334,7 +332,7 @@ centerSpinePoints n theta
 --
 centerCount :: Fractional u => Int -> u
 centerCount i = (fromIntegral i) / 2 - 0.5
-
+-}
 
 --------------------------------------------------------------------------------
 
@@ -360,22 +358,4 @@ avMaxWidth a@(V2 w1 _) b@(V2 w2 _) = if w2 > w1 then b else a
 onelineEscText :: FromPtSize u => EscapedText -> DrawingInfo (OnelineText u)
 onelineEscText esc = fmap (OnelineText esc) $ textVector esc
 
-
-
-textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
-textVector esc = 
-    cwLookupTable >>= \table -> 
-       let cs = destrEscapedText id esc 
-       in pure $ foldr (\c v -> v ^+^ (charWidth table c)) (vec 0 0) cs
-     
-   
-
-
-charWidth :: FromPtSize u 
-          => CharWidthTable u -> EscapedChar -> AdvanceVec u
-charWidth fn (CharLiteral c) = fn $ ord c
-charWidth fn (CharEscInt i)  = fn i
-charWidth fn (CharEscName s) = fn ix
-  where
-    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 

@@ -83,6 +83,7 @@ extra-source-files:
   CHANGES,
   LICENSE,
   demo/FontDeltaPic.hs,
+  demo/SimpleAdvGraphic.hs,
   demo/SimplePosImage.hs
 
 library
