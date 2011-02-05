@@ -20,6 +20,9 @@ module Wumpus.Drawing.Text.CatText
    
     CatText
   , leftAlign
+  , centerAlign
+  , rightAlign
+
   , string
   , blank
 
@@ -53,16 +56,43 @@ type CatPrim u = CF (u, AdvGraphic u)
 newtype CatText u = CatText { cat_text :: JoinList (CatPrim u) }
 
 
+-- | 'HMove' : @ half_max_width * line_width -> Horizontal_Displacement @
+--
+type HMove u = u -> u -> u
+
+leftAMove :: Num u => HMove u
+leftAMove half_max _ = negate half_max
+ 
+centerAMove :: Fractional u => HMove u
+centerAMove _ elt_w = negate $ 0.5 * elt_w
+
+rightAMove :: Num u => HMove u
+rightAMove half_max elt_w = half_max - elt_w
+
+
+
 leftAlign :: (Real u, FromPtSize u, Floating u) 
           => [CatText u] -> PosImage u (BoundingBox u)
-leftAlign xs = promoteR2 $ \start rpos -> 
+leftAlign = drawMulti leftAMove
+
+centerAlign :: (Real u, FromPtSize u, Floating u) 
+          => [CatText u] -> PosImage u (BoundingBox u)
+centerAlign = drawMulti centerAMove
+
+rightAlign :: (Real u, FromPtSize u, Floating u) 
+          => [CatText u] -> PosImage u (BoundingBox u)
+rightAlign = drawMulti rightAMove
+
+
+
+drawMulti :: (Real u, FromPtSize u, Floating u) 
+          => HMove u -> [CatText u] -> PosImage u (BoundingBox u)
+drawMulti moveF xs = promoteR2 $ \start rpos -> 
     centerSpinePoints line_count 0      >>= \pts -> 
-    evalAllLines xs                     >>= \(max_w,ys) -> 
+    evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
-    multilineObjectPos line_count max_w >>= \opos ->
-    let hw    = 0.5 * max_w
-        dF    = moveStart (displaceVec $ vec (-hw) (-down))
-        gs    = map (\(_,mf) -> ignoreAns $ dF mf) ys
+    multilineObjectPos line_count (fst all_lines) >>= \opos ->
+    let gs    = positionHLines moveF down all_lines 
         gf    = zipchainM emptyLocGraphic gs pts
         posG  = makePosImage opos gf
         bbox  = objectPosBounds start rpos opos
@@ -70,8 +100,18 @@ leftAlign xs = promoteR2 $ \start rpos ->
   where
     line_count    = length xs
 
+positionHLines :: Fractional u 
+               => HMove u -> u -> (u,[(u, AdvGraphic u)]) -> [LocGraphic u]
+positionHLines mkH down (max_w,xs) = map fn xs
+  where
+    half_max       = 0.5 * max_w
+    moveF w1       = let v = vec (mkH half_max w1) (-down) 
+                     in moveStart $ displaceVec v 
+    fn (elt_w, gf) = ignoreAns $ moveF elt_w $ gf
 
-evalAllLines :: (Num u, Ord u) => [CatText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
+
+evalAllLines :: (Num u, Ord u) 
+             => [CatText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
 evalAllLines = fmap post . mapM evalLine
   where
     post xs = let mx = foldr (\(a,_) x -> max a x) 0 xs in (mx,xs)

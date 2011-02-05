@@ -63,14 +63,24 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 
 mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
 mf = do
-    drawi_ $ (fn $ text1 `startPos` NE) `at` zeroPt
+    drawi_ $ (fn $ leftAlign body `startPos` NE) `at` zeroPt
     draw   $ redPlus `at` zeroPt
+
+    drawi_ $ (fn $ centerAlign body `startPos` NE) `at` P2 100 0
+    draw   $ redPlus `at` P2 100 0
+
+    drawi_ $ (fn $ rightAlign body `startPos` NE) `at` P2 200 0
+    draw   $ redPlus `at` P2 200 0
   where
-    text1 = leftAlign [ string "Initial work"
-                      , string "on multiline" 
-                      , string "text."] 
     fn    = illustrateBoundedLocGraphic
 
 
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
+
+
+body :: FromPtSize u => [CatText u]
+body = [ string "Initial work"
+       , string "on multiline" 
+       , string "text."
+       ] 
