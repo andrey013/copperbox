@@ -25,6 +25,9 @@ module Wumpus.Drawing.Text.CatText
 
   , string
   , blank
+  , (<>)
+  
+  , fontColour
 
   ) where
 
@@ -53,7 +56,8 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 type CatPrim u = CF (u, AdvGraphic u)
 
-newtype CatText u = CatText { cat_text :: JoinList (CatPrim u) }
+newtype CatText u = CatText { getCatText :: JoinList (CatPrim u) }
+
 
 
 -- | 'HMove' : @ half_max_width * line_width -> Horizontal_Displacement @
@@ -76,11 +80,11 @@ leftAlign :: (Real u, FromPtSize u, Floating u)
 leftAlign = drawMulti leftAMove
 
 centerAlign :: (Real u, FromPtSize u, Floating u) 
-          => [CatText u] -> PosImage u (BoundingBox u)
+            => [CatText u] -> PosImage u (BoundingBox u)
 centerAlign = drawMulti centerAMove
 
 rightAlign :: (Real u, FromPtSize u, Floating u) 
-          => [CatText u] -> PosImage u (BoundingBox u)
+           => [CatText u] -> PosImage u (BoundingBox u)
 rightAlign = drawMulti rightAMove
 
 
@@ -121,14 +125,21 @@ evalAllLines = fmap post . mapM evalLine
 
 
 evalLine :: Num u => CatText u -> DrawingInfo (u, AdvGraphic u)
-evalLine ct = case viewl $ cat_text ct of
+evalLine ct = case viewl $ getCatText ct of
     EmptyL -> return (0,  replaceAns (hvec 0) $ emptyLocGraphic)
     af :< rest -> af >>= \a -> go a (viewl rest)
   where
     go acc     EmptyL     = return acc
-    go (dx,af) (mf :< ms) = mf >>= \(u,gf) -> 
-                            go (dx+u, af `oplus` gf) (viewl ms)
+    go (dx,af) (mf :< ms) = let moveF = moveStart (displaceH dx)
+                            in mf >>= \(u,gf) -> 
+                               go (dx+u, af `oplus` moveF gf) (viewl ms)
 
+
+
+
+-- Design issue - this should be in Chains, but it doesn\'t quite 
+-- fit with the current code.
+--
 
 -- | Note this is not a zip if it has an alt... 
 --
@@ -152,6 +163,16 @@ string :: FromPtSize u => String -> CatText u
 string = catOne . stringPrim
 
 
+infixr 6 <>
+
+(<>) :: CatText u -> CatText u -> CatText u
+a <> b = CatText $ JL.join (getCatText a) (getCatText b) 
+
+
+
+-- catlocal :: DrawingContextF -> CatText u -> CatText u
+-- catlocal upd = fmap 
+
 -- Note - @fill@ combinators cf. @wl-pprint@ (but left and right) 
 -- will be very useful.
 --
@@ -168,3 +189,16 @@ stringPrim = escapedPrim . escapeString
 escapedPrim :: FromPtSize u => EscapedText -> CatPrim u
 escapedPrim esc = textVector esc >>= \v -> 
                   return (vector_x v, replaceAns v $ escapedline esc)
+
+
+catMap :: (AdvGraphic u -> AdvGraphic u) -> CatText u -> CatText u
+catMap f = CatText . fmap (fmap (\(u,ag) -> (u, f $ ag))) . getCatText
+
+catlocal :: DrawingContextF -> CatText u -> CatText u
+catlocal fn = catMap (localize fn)
+
+
+fontColour :: RGBi -> CatText u -> CatText u
+fontColour rgb = catlocal (strokeColour rgb)
+
+

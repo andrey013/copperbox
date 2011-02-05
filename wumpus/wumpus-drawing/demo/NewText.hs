@@ -51,7 +51,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: GlyphMetrics -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 9
+makeCtx = fontFace helvetica . metricsContext 18
 
 
 
@@ -63,14 +63,14 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 
 mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
 mf = do
-    drawi_ $ (fn $ leftAlign body `startPos` NE) `at` zeroPt
+    drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
 
-    drawi_ $ (fn $ centerAlign body `startPos` NE) `at` P2 100 0
-    draw   $ redPlus `at` P2 100 0
+    drawi_ $ (fn $ centerAlign body `startPos` SS) `at` P2 150 0
+    draw   $ redPlus `at` P2 150 0
 
-    drawi_ $ (fn $ rightAlign body `startPos` NE) `at` P2 200 0
-    draw   $ redPlus `at` P2 200 0
+    drawi_ $ (fn $ rightAlign body `startPos` SS) `at` P2 300 0
+    draw   $ redPlus `at` P2 300 0
   where
     fn    = illustrateBoundedLocGraphic
 
@@ -80,7 +80,7 @@ redPlus = localize (strokeColour red) markPlus
 
 
 body :: FromPtSize u => [CatText u]
-body = [ string "Initial work"
-       , string "on multiline" 
+body = [ string "Further work"
+       , string "on " <> (fontColour blue $ string "multiline")
        , string "text."
        ] 
