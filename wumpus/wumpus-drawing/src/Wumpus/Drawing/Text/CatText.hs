@@ -21,6 +21,7 @@ module Wumpus.Drawing.Text.CatText
     CatText
   , leftAlign
   , string
+  , blank
 
   ) where
 
@@ -33,7 +34,6 @@ import qualified Wumpus.Basic.Utils.JoinList as JL
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
 
 -- Need to know line width (horizontal) and line count (vertical) 
 -- to render...
@@ -54,18 +54,31 @@ newtype CatText u = CatText { cat_text :: JoinList (CatPrim u) }
 
 
 leftAlign :: (Real u, FromPtSize u, Floating u) 
-          => [CatText u] -> LocGraphic u 
-leftAlign xs = promoteR1 $ \pt -> 
-    (centerSpinePoints line_count 0) >>= \pts -> 
-    (mapM evalLine xs)               >>= \ys -> 
-    centerToBaseline               >>= \down -> 
-    let hw = 0.5 * findMaxWidth ys
-        dF = moveStart (displaceVec $ vec (-hw) (-down))
-        gs = map (\(_,gf) -> ignoreAns $ dF gf) ys
-    in (zipchainM emptyLocGraphic gs pts) `at` pt
+          => [CatText u] -> PosImage u (BoundingBox u)
+leftAlign xs = promoteR2 $ \start rpos -> 
+    centerSpinePoints line_count 0      >>= \pts -> 
+    evalAllLines xs                     >>= \(max_w,ys) -> 
+    centerToBaseline                    >>= \down -> 
+    multilineObjectPos line_count max_w >>= \opos ->
+    let hw    = 0.5 * max_w
+        dF    = moveStart (displaceVec $ vec (-hw) (-down))
+        gs    = map (\(_,mf) -> ignoreAns $ dF mf) ys
+        gf    = zipchainM emptyLocGraphic gs pts
+        posG  = makePosImage opos gf
+        bbox  = objectPosBounds start rpos opos
+    in replaceAns bbox $ atStartPos posG start rpos     
   where
     line_count    = length xs
-    findMaxWidth  = foldr (\(a,_) x -> max a x) 0
+
+
+evalAllLines :: (Num u, Ord u) => [CatText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
+evalAllLines = fmap post . mapM evalLine
+  where
+    post xs = let mx = foldr (\(a,_) x -> max a x) 0 xs in (mx,xs)
+            
+
+
+
 
 evalLine :: Num u => CatText u -> DrawingInfo (u, AdvGraphic u)
 evalLine ct = case viewl $ cat_text ct of

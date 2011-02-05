@@ -6,6 +6,7 @@ module NewText where
 import FontLoaderUtils
 
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.CatText
 import Wumpus.Drawing.Text.SafeFonts
 
@@ -62,6 +63,14 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 
 mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
 mf = do
-    drawi_ $ text1 `at` zeroPt
+    drawi_ $ (fn $ text1 `startPos` NE) `at` zeroPt
+    draw   $ redPlus `at` zeroPt
   where
-    text1 = leftAlign [ string "Initial work", string "on multiline" , string "text."]
+    text1 = leftAlign [ string "Initial work"
+                      , string "on multiline" 
+                      , string "text."] 
+    fn    = illustrateBoundedLocGraphic
+
+
+redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+redPlus = localize (strokeColour red) markPlus

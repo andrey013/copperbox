@@ -17,14 +17,15 @@ module LeftRightText where
 
 import FontLoaderUtils
 
-import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
+
+import Wumpus.Basic.Kernel              -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 
 import Wumpus.Core                      -- package: wumpus-core
 

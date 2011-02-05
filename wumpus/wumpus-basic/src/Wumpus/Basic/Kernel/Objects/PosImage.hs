@@ -40,6 +40,8 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , startPos
   , atStartPos
 
+  , objectPosBounds
+
   ) where
 
 
@@ -50,7 +52,7 @@ import Wumpus.Basic.Kernel.Objects.Displacement
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.AffineSpace                         -- package: vector-space
 
 -- | Datatype enumerating positions within a rectangle that can be
 -- derived for a 'PosGraphic'.  
@@ -206,4 +208,30 @@ startVector rpos (ObjectPos xminor xmajor yminor ymajor) = go rpos
     go SE     = V2 (-xmajor)          yminor
     go SW     = V2 xminor           yminor
     go NW     = V2 xminor           (-ymajor)
+
+
+
+-- | Calculate the bounding box formed by locating the 'ObjectPos'
+-- at the supplied point.
+-- 
+objectPosBounds :: Fractional u 
+                => Point2 u -> RectPosition -> ObjectPos u -> BoundingBox u
+objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
+  where
+    w         = xmin + xmaj
+    h         = ymin + ymaj
+    hw        = 0.5 * w
+    hh        = 0.5 * h
+    bbox      = \bl -> BBox bl (bl .+^ vec w h)
+
+    go CENTER = bbox $ P2 (x-hw) (y-hh)
+    go NN     = bbox $ P2 (x-hw) (y-h)
+    go SS     = bbox $ P2 (x-hw)  y
+    go EE     = bbox $ P2 (x-w)  (y-hh)
+    go WW     = bbox $ P2  x     (y-hh)
+    go NE     = bbox $ P2 (x-w)  (y-h)
+    go SE     = bbox $ P2 (x-w)   y
+    go SW     = bbox $ P2 x       y
+    go NW     = bbox $ P2 x      (y-h)
+
 

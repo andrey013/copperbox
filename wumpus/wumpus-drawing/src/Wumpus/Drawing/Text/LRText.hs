@@ -137,8 +137,8 @@ drawMultiline _     _     []  = lift1R2 emptyLine
 drawMultiline drawF theta [x] = onelineDraw drawF theta x
 drawMultiline drawF theta xs  = promoteR2 $ \start rpos ->
     linesToInterims xs >>= \(max_adv, ones) -> 
-    multilineObjectPos line_count theta max_adv >>= \opos -> 
-    centerSpinePoints  line_count theta >>= \pts -> 
+    rotObjectPos theta line_count (advanceH max_adv) >>= \opos -> 
+    centerSpinePoints line_count theta  >>= \pts -> 
     let gs    = map (drawF theta max_adv) ones
         gf    = zipchainM emptyLine gs pts
         posG  = makePosImage opos gf
@@ -174,19 +174,13 @@ onelineDraw drawF theta esc = promoteR2 $ \start rpos ->
     in  atStartPos posG start rpos 
 
 
--- | Height of multiline text is cap_height to descender for the 
--- first line, then baseline-to-baseline span for the remaining
--- lines.
+-- | LR text needs the objectPos under rotation.
 --
-multilineObjectPos :: (Real u, Floating u, FromPtSize u) 
-                   => Int -> Radian -> AdvanceVec u -> DrawingInfo (ObjectPos u)
-multilineObjectPos line_count theta max_adv =
-    glyphVerticalSpan >>= \h1 ->
-    baselineSpacing   >>= \bspan ->
-    let hw    = 0.5 * (advanceH max_adv)
-        spans = bspan * fromIntegral (line_count - 1)
-        hh    = 0.5 * (h1 + spans)
-    in return $ orthoObjectPos theta $ ObjectPos hw hw hh hh 
+rotObjectPos :: (Real u, Floating u, FromPtSize u) 
+             => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
+rotObjectPos theta line_count max_w =
+    fmap (orthoObjectPos theta) $ multilineObjectPos line_count max_w 
+
 
 
 
@@ -294,45 +288,6 @@ orthoBB (V2 w _) = promoteR2 $ \ctr theta ->
     in return bb2
 
 
-{-
-
--- | Calculate the distance from the center of a one-line textbox 
--- to the baseline. Note the height of a textbox is @vspan@ which 
--- is cap_height + descender
---
-centerToBaseline :: (Fractional u, FromPtSize u) => DrawingInfo u
-centerToBaseline = 
-    (\ch vspan -> ch - 0.5 * vspan) <$> glyphCapHeight <*> glyphVerticalSpan
-
--- | All drawing is done on a spine that plots points from the 
--- first line of text. The spine is calculated from its center and
--- has to account for the inclination.
---
-centerSpinePoints :: Floating u 
-                  => Int -> Radian -> DrawingInfo (LocChain u)
-centerSpinePoints n theta
-    | n <= 1    = return (\pt -> [pt])
-    | otherwise = baselineSpacing >>= \h1 -> 
-                  let dist_top = h1 * centerCount n
-                      mktop    = \ctr -> thetaNorthwards dist_top theta ctr    
-                  in return (\ctr -> take n $ iterate (thetaSouthwards h1 theta) 
-                                                      (mktop ctr))
-
-
-
-
--- | Count the steps from the center to an end:
---
--- >
--- > 1 = 0     .
--- > 2 = 0.5   .__.
--- > 3 = 1     .__.__.
--- > 4 = 1.5   .__.__.__.
--- >
---
-centerCount :: Fractional u => Int -> u
-centerCount i = (fromIntegral i) / 2 - 0.5
--}
 
 --------------------------------------------------------------------------------
 

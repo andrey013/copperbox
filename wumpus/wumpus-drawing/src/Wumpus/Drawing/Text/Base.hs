@@ -22,6 +22,9 @@ module Wumpus.Drawing.Text.Base
   , textVector
   , charVector
 
+  , multilineHeight
+  , multilineObjectPos
+
   , centerToBaseline
   , centerSpinePoints
 
@@ -74,7 +77,40 @@ charWidth fn (CharEscName s) = fn ix
 
 
 --------------------------------------------------------------------------------
--- start points for multiline text
+-- Measurement and start points for multiline text
+
+
+-- | Height of multiline text is cap_height to descender for the 
+-- first line, then baseline-to-baseline span for the remaining
+-- lines.
+--
+multilineHeight :: (Real u, Floating u, FromPtSize u) 
+                   => Int -> DrawingInfo u
+multilineHeight line_count 
+    | line_count < 1  = return 0
+    | line_count == 1 = glyphVerticalSpan
+    | otherwise       = fn <$> glyphVerticalSpan <*> baselineSpacing
+  where
+    fn h1 bspan = let rest_spans = bspan * fromIntegral (line_count - 1)
+                  in h1 + rest_spans
+
+
+
+-- | Height of multiline text is cap_height to descender for the 
+-- first line, then baseline-to-baseline span for the remaining
+-- lines.
+-- 
+-- The answer is in centerform, i.e.:
+--
+-- > ObjectPos  half_width  half_width  half_height  half_height 
+--
+multilineObjectPos :: (Real u, Floating u, FromPtSize u) 
+                   => Int -> u -> DrawingInfo (ObjectPos u)
+multilineObjectPos line_count w =
+    fmap (0.5*) (multilineHeight line_count) >>= \hh ->
+    let hw    = 0.5 * w
+    in return $ ObjectPos hw hw hh hh 
+
 
 -- | Calculate the distance from the center of a one-line textbox 
 -- to the baseline. Note the height of a textbox is @vspan@ which 
