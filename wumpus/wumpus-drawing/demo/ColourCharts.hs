@@ -42,11 +42,12 @@ makeDrawing row_count xs = drawTracing $ tableGraphic row_count xs
 
 tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = 
-    zipchainWith (\(name,rgb) -> colourSample name rgb) xs ps
+    draw $ unchainZip emptyLocGraphic gs chn `at` pt
   where
-    ps = tableDown row_count (152,11) pt
-    pt = displaceV (fromIntegral $ 11 * row_count) zeroPt 
-
+    chn  = tableDown row_count (152,11)
+    pt   = displaceV (fromIntegral $ 11 * row_count) zeroPt 
+    gs   = map (uncurry colourSample) xs
+   
 
 colourSample :: String -> RGBi -> LocGraphic Double
 colourSample name rgb = localize (fillColour rgb) $ 

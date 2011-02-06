@@ -137,27 +137,13 @@ drawMultiline drawF theta [x] = onelineDraw drawF theta x
 drawMultiline drawF theta xs  = promoteR2 $ \start rpos ->
     linesToInterims xs >>= \(max_adv, ones) -> 
     rotObjectPos theta line_count (advanceH max_adv) >>= \opos -> 
-    centerSpinePoints line_count theta  >>= \pts -> 
-    let gs    = map (drawF theta max_adv) ones
-        gf    = zipchainM emptyBoundedLocGraphic gs pts
+    let chn   = centerSpinePoints line_count theta
+        gs    = map (drawF theta max_adv) ones
+        gf    = unchainZip emptyBoundedLocGraphic gs chn
         posG  = makePosImage opos gf
     in  atStartPos posG start rpos     
   where
     line_count = length xs
-
-
-
--- | Note this is not a zip if it has an alt... 
---
-zipchainM :: OPlus a 
-          => LocImage u a -> [LocImage u a] -> LocChain u -> LocImage u a
-zipchainM alt []          _  = promoteR1 $ \pt -> alt `at` pt 
-zipchainM alt (img1:imgs) fn = promoteR1 $ \pt -> case fn pt of
-    []      -> alt `at` pt
-    (p1:ps) -> go (img1 `at` p1) imgs ps
-  where
-    go acc (g:gs) (p:ps)   = let ans = (g `at` p) in go (acc `oplus` ans) gs ps
-    go acc _      _        = acc
 
 
 

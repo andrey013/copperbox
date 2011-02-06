@@ -95,12 +95,12 @@ rightAlign = drawMulti rightAMove
 drawMulti :: (Real u, FromPtSize u, Floating u) 
           => HMove u -> [CatText u] -> PosImage u (BoundingBox u)
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
-    centerSpinePoints line_count 0      >>= \pts -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
     borderedTextObjectPos line_count (fst all_lines) >>= \opos ->
-    let gs    = positionHLines moveF down all_lines 
-        gf    = zipchainM emptyLocGraphic gs pts
+    let chn   = centerSpinePoints line_count 0 
+        gs    = positionHLines moveF down all_lines 
+        gf    = unchainZip emptyLocGraphic gs chn
         posG  = makePosImage opos gf
         bbox  = objectPosBounds start rpos opos
     in replaceAns bbox $ atStartPos posG start rpos     
@@ -140,22 +140,6 @@ evalLine ct = case viewl $ getCatText ct of
 
 
 
--- Design issue - this should be in Chains, but it doesn\'t quite 
--- fit with the current code.
---
-
--- | Note this is not a zip if it has an alt... 
---
-zipchainM :: OPlus a 
-          => LocImage u a -> [LocImage u a] -> LocChain u -> LocImage u a
-zipchainM alt []          _  = promoteR1 $ \pt -> alt `at` pt 
-zipchainM alt (img1:imgs) fn = promoteR1 $ \pt -> case fn pt of
-    []      -> alt `at` pt
-    (p1:ps) -> go (img1 `at` p1) imgs ps
-  where
-    go acc (g:gs) (p:ps)   = let ans = (g `at` p) in go (acc `oplus` ans) gs ps
-    go acc _      _        = acc
-
 
 -- | Build a blank CatText with no output and a 0 width vector.
 --
@@ -179,15 +163,18 @@ string = catOne . stringPrim
 
 infixr 6 <>, <+>
 
+-- | Concatenate two CatTexts separated with no spacing.
+--
 (<>) :: CatText u -> CatText u -> CatText u
 a <> b = CatText $ JL.join (getCatText a) (getCatText b) 
 
+
+-- | Concatenate two CatTexts separated with a space.
+--
 (<+>) :: FromPtSize u => CatText u -> CatText u -> CatText u
 a <+> b = a <> space <> b 
 
 
--- catlocal :: DrawingContextF -> CatText u -> CatText u
--- catlocal upd = fmap 
 
 -- Note - @fill@ combinators cf. @wl-pprint@ (but left and right) 
 -- will be very useful.

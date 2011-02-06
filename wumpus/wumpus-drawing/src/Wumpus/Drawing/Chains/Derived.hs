@@ -22,11 +22,11 @@ module Wumpus.Drawing.Chains.Derived
     tableDown
   , tableRight
 
-  , horizontal
-  , vertical
+  , horizontalPoints
+  , verticalPoints
 
-  , horizontals
-  , verticals
+  , horizontalSteps
+  , verticalSteps
 
   , innerHorizontals
   , innerVerticals
@@ -54,11 +54,11 @@ import Data.List
 -- @top-left@.
 --
 tableDown :: Num u => Int -> (u,u) -> LocChain u
-tableDown n (rw,rh) pt = map fn ints
+tableDown n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
   where
-    ints = iterate (+1) 0
-    fn i = let (x,y) = i `divMod` n 
-           in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
+    ints    = iterate (+1) 0
+    fn pt i = let (x,y) = i `divMod` n 
+              in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
 
 
 -- | 'tableRight' : @ num_cols * row_width * row_height -> LocChain @
@@ -69,43 +69,47 @@ tableDown n (rw,rh) pt = map fn ints
 -- This chain is infinite.
 --
 tableRight :: Num u => Int -> (u,u) -> LocChain u
-tableRight n (rw,rh) pt = map fn ints
+tableRight n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
   where
-    ints = iterate (+1) 0
-    fn i = let (y,x) = i `divMod` n 
-           in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
+    ints     = iterate (+1) 0
+    fn pt i = let (y,x) = i `divMod` n 
+              in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
 
 
 
 
 
--- | 'horizontal' : @ horizontal_dist -> LocChain @
+-- | 'horizontalPoints' : @ horizontal_dist -> LocChain @
 --
 -- The chain grows right by the supplied increment.
 --
 -- This chain is infinite.
 --
--- \*\* WARNING \*\* - name due to be changed. Current name is 
--- too general for this function. 
---
-horizontal :: Num u => u -> LocChain u
-horizontal dx = iterate (displaceH dx)
+horizontalPoints :: Num u => u -> LocChain u
+horizontalPoints dx = promoteR1 $ \pt -> return $ iterate (displaceH dx) pt
 
 
--- | 'vertical' : @ vertical_dist -> LocChain @
+-- | 'verticalPoints' : @ vertical_dist -> LocChain @
 --
 -- The chain grows up by the supplied increment.
 --
 -- This chain is infinite.
 --
--- \*\* WARNING \*\* - name due to be changed. Current name is 
--- too general for this function. 
+verticalPoints :: Num u => u -> LocChain u
+verticalPoints dy = promoteR1 $ \pt -> return $ iterate (displaceV dy) pt
+
+
+-- | 'horizontalSteps' : @ [horizontal_dist] -> LocChain @
 --
-vertical :: Num u => u -> LocChain u
-vertical dy = iterate (displaceV dy) 
+-- This is a @scanl@ successive displacing the start point.
+--
+-- This chain is finite (for finite input list).
+--
+horizontalSteps :: Num u => [u] -> LocChain u
+horizontalSteps xs = promoteR1 $ \pt -> return $ scanl (flip displaceH) pt xs 
 
 
--- | 'horizontals' : @ [horizontal_dist] -> LocChain @
+-- | 'verticalSteps' : @ [vertical_dist] -> LocChain @
 --
 -- This is a @scanl@ successive displacing the start point.
 --
@@ -114,21 +118,8 @@ vertical dy = iterate (displaceV dy)
 -- \*\* WARNING \*\* - name due to be changed. Current name is 
 -- too general for this function. 
 --
-horizontals :: Num u => [u] -> LocChain u
-horizontals xs = \pt -> scanl (flip displaceH) pt xs 
-
-
--- | 'verticals' : @ [vertical_dist] -> LocChain @
---
--- This is a @scanl@ successive displacing the start point.
---
--- This chain is finite (for finite input list).
---
--- \*\* WARNING \*\* - name due to be changed. Current name is 
--- too general for this function. 
---
-verticals :: Num u => [u] -> LocChain u
-verticals ys = \pt -> scanl (flip displaceV) pt ys
+verticalSteps :: Num u => [u] -> LocChain u
+verticalSteps ys = promoteR1 $ \pt -> return $ scanl (flip displaceV) pt ys
 
 
 {-# INLINE [0] ceilingi #-}
@@ -142,11 +133,12 @@ ceilingi = ceiling
 -- This chain is finite for well formed input.
 --
 innerHorizontals :: RealFrac u => u -> ConnectorChain u
-innerHorizontals n (P2 x0 y0) (P2 x1 _) = 
-    let z = ceilingi $ x0 / n in unfoldr phi (n * fromIntegral z)
+innerHorizontals n = promoteR2 $ \a b -> return $ body a b
   where
-    phi x | x < x1    = Just (P2 x y0, x+n)
-          | otherwise = Nothing
+    body (P2 x0 y0) (P2 x1 _) = unfoldr phi (n * fromIntegral z) 
+      where z                 = ceilingi $ x0 / n
+            phi x | x < x1    = Just (P2 x y0, x+n)
+                  | otherwise = Nothing
 
       
 
@@ -156,9 +148,10 @@ innerHorizontals n (P2 x0 y0) (P2 x1 _) =
 -- This chain is finite for well formed input.
 --
 innerVerticals :: RealFrac u => u -> ConnectorChain u
-innerVerticals n (P2 x0 y0) (P2 _ y1) = 
-    let z = ceilingi $ y0 / n in unfoldr phi (n * fromIntegral z)
+innerVerticals n = promoteR2 $ \a b -> return $ body a b
   where
-    phi y | y < y1    = Just (P2 x0 y, y+n)
-          | otherwise = Nothing
+    body (P2 x0 y0) (P2 _ y1) = unfoldr phi (n * fromIntegral z)
+      where z                 = ceilingi $ y0 / n
+            phi y | y < y1    = Just (P2 x0 y, y+n)
+                  | otherwise = Nothing
 

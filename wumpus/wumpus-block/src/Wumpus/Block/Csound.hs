@@ -48,7 +48,6 @@ import Wumpus.Block.Base
 
 -- package: wumpus-drawing
 import Wumpus.Drawing.Colour.SVGColours hiding ( linen )
-import Wumpus.Drawing.Geometry.Base
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
@@ -92,7 +91,8 @@ scaleFactor = (\a -> 0.2855 * (fromPtSize 1) * (fromIntegral a))
 
 singleMajorText :: (Real u, Floating u, FromPtSize u) 
                 => String -> Shape u a -> Shape u a
-singleMajorText name = setDecoration (ignoreAns $ singleLine CENTER name)
+singleMajorText name =
+    setDecoration (lift1R2 $ ignoreAns $ singleLine name `startPos` CENTER)
 
 
 
@@ -109,14 +109,15 @@ labelOutport1 :: ( Outport1 a
               => a -> String -> Graphic u
 labelOutport1 a msg = 
     localize minorFontSize $
-       ignoreAns $ (thetaHorizontal $ singleLine NE msg) `at` outport1 a
+       ignoreAns $ (singleLine msg `startPos` NE) `at` outport1 a
 
+{-
 -- Ideally, with a better name this would be valuable in 
 -- Wumpus-basic...
 --
 thetaHorizontal :: LocThetaCF u a -> LocCF u a
 thetaHorizontal a = a `rot` 0  
-
+-}
 
 
 minorFontSize :: DrawingContextF
@@ -209,9 +210,9 @@ oscilText :: (Real u, Floating u, FromPtSize u)
 oscilText name = scaleFactor >>= \sc -> 
                  major sc `oplus` minor sc
   where
-    major = \sc -> ignoreAns $ disp 1 sc (singleLine CENTER "OSCIL" `rot` 0)
-    minor = \sc -> localize minorFontSize $ 
-                     ignoreAns $ disp (-2) sc (singleLine CENTER name `rot` 0)
+    major = \sc -> ignoreAns $ disp 1 sc (singleLine "OSCIL" `startPos` CENTER)
+    minor = \sc -> localize minorFontSize $
+                     ignoreAns $ disp (-2) sc (singleLine name `startPos` CENTER)
 
 
     disp d = \sc -> moveStart (displaceV $ d*sc)
@@ -299,7 +300,7 @@ buzz = scaleFactor >>= \sf ->
        mapAns Buzz $ localize shapeSty $ strokedShape $ body sf
   where
     body  = \sf -> setDecoration textF $ rectangle (20*sf) (7*sf)
-    textF = ignoreAns (multiAlignCenter CENTER "BUZZ")
+    textF = lift1R2 $ ignoreAns (multiAlignCenter 0 "BUZZ" `startPos` CENTER)
 
 
 instance (Real u, Floating u, FromPtSize u) => Outport1 (Buzz u) where

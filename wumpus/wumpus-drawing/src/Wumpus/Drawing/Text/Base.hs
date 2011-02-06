@@ -143,16 +143,14 @@ centerToBaseline =
 -- has to account for the inclination.
 --
 centerSpinePoints :: Floating u 
-                  => Int -> Radian -> DrawingInfo (LocChain u)
+                  => Int -> Radian -> LocChain u
 centerSpinePoints n theta
-    | n <= 1    = return (\pt -> [pt])
-    | otherwise = baselineSpacing >>= \h1 -> 
-                  let dist_top = h1 * centerCount n
-                      mktop    = \ctr -> thetaNorthwards dist_top theta ctr    
-                  in return (\ctr -> take n $ iterate (thetaSouthwards h1 theta) 
-                                                      (mktop ctr))
-
-
+    | n <= 1    = promoteR1 $ \ctr -> return [ctr]
+    | otherwise = promoteR1 $ \ctr -> 
+                    baselineSpacing >>= \h1 -> 
+                    let dist_top = h1 * centerCount n
+                        top      = thetaNorthwards dist_top theta ctr    
+                    in return (take n $ iterate (thetaSouthwards h1 theta) top)
 
 
 -- | Count the steps from the center to an end:

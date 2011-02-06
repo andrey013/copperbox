@@ -31,19 +31,22 @@ noLine = openStroke . emptyPath
 
 
 grid :: Fractional u => (Int,Int) -> u -> LocGraphic u
+grid = error "grid - needs a rethink"
+
+{-
 grid (nx,ny) incr    
     | nx < 1 || ny < 1 = emptyLocGraphic
     | otherwise        = promoteR1 $ \p0 -> 
         let rw      = incr * fromIntegral nx
             rh      = incr * fromIntegral ny
-            xs      = take (nx-1) $ horizontal incr $ displaceH incr p0
-            ys      = take (ny-1) $ vertical   incr $ displaceV incr p0
+            xs      = take (nx-1) $ horizontalPoints incr `at` displaceH incr p0
+            ys      = take (ny-1) $ verticalPoints   incr `at` displaceV incr p0
             vlines  = map (\pt -> straightLine (vvec rh) `at` pt) xs
             hlines  = map (\pt -> straightLine (hvec rw) `at` pt) ys
         in safeconcat (noLine p0) hlines `oplus` safeconcat (noLine p0) vlines
                                          `oplus` (strokedRectangle rw rh `at` p0)
 
-
+-}
 
 -- | 'interiorGrid' : @ increment -> ConnectorGraphic @
 --
@@ -56,6 +59,8 @@ grid (nx,ny) incr
 -- point @(15,0)@ lines are drawn from @(20,0), (30,0)@ etc.
 --
 interiorGrid :: RealFrac u => u -> ConnectorGraphic u
+interiorGrid = error "interiorGrid - needs a rethink"
+{-
 interiorGrid incr = promoteR2 $ \p0 p1 ->
     let xs          = innerHorizontals incr p0 p1
         ys          = innerVerticals   incr p0 p1
@@ -63,4 +68,4 @@ interiorGrid incr = promoteR2 $ \p0 p1 ->
         vlines      = map (\pt -> straightLine (vvec vy) `at` pt) xs
         hlines      = map (\pt -> straightLine (hvec vx) `at` pt) ys
     in safeconcat (noLine p0) hlines `oplus` safeconcat (noLine p0) vlines
-
+-}
