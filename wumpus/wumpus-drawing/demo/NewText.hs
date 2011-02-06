@@ -81,6 +81,6 @@ redPlus = localize (strokeColour red) markPlus
 
 body :: FromPtSize u => [CatText u]
 body = [ string "Further work"
-       , string "on " <> (fontColour blue $ string "multiline")
+       , string "on" <+> (fontColour blue $ string "multiline")
        , string "text."
        ] 

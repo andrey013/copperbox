@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.QueryDC
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -11,6 +11,10 @@
 -- Portability :  GHC
 --
 -- Querying the Drawing Context.
+--
+-- \*\* WARNING \*\* - parts of this module especially the 
+-- mono-space glyph metrics need a re-think and will change or be 
+-- dropped.
 --
 --------------------------------------------------------------------------------
 
@@ -107,8 +111,7 @@ withBorderedAttr fn =
 
 
 
--- | Vertical distance between baselines of consecutive text 
--- lines.
+-- | Size of the round corner factor.
 --
 getRoundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
 getRoundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
@@ -116,9 +119,11 @@ getRoundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
 
 
 
--- | Vertical distance between baselines of consecutive text 
--- lines.
+-- | Get the (x,y) margin around text.
 --
+-- Note - not all text operations in Wumpus are drawn with text 
+-- margin. 
+-- 
 getTextMargin :: (DrawingCtxM m, Fractional u, FromPtSize u) => m (u,u)
 getTextMargin = (\(TextMargin xsep ysep) -> (fn xsep, fn ysep))
                     <$> asksDC text_margin
@@ -279,11 +284,14 @@ monoMultiLineHeight n           =
     -- no longer quite works... 
 
  
+{-# DEPRECATED monoDefaultPadding "Needs a rethink" #-}
 
 -- | The default padding is half of the /char width/.
 --
 monoDefaultPadding :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
 monoDefaultPadding = (0.5*) <$> monoCharWidth
+
+
 
 -- | Vector from baseline left to center
 --

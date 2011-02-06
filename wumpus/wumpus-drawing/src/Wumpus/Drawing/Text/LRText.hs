@@ -15,6 +15,9 @@
 -- Caveat - rendering at any degree other than the horizontal may
 -- not look good in PostScript or SVG.
 -- 
+-- Note - LRText does not use the 'text_margin' setting from the 
+-- 'DrawingContext'.
+--
 -- \*\* WARNING \*\* - the API for this module needs some polish.
 --
 -- 
@@ -123,24 +126,20 @@ textAlignRight ss = multiAlignRight 0 ss `startPos` CENTER
 
 
 
-emptyLine :: Num u => LocImage u (BoundingBox u)
-emptyLine = promoteR1 $ \start -> 
-               replaceAns (BBox start start) $ emptyLocGraphic `at` start
-
 
 -- Note - inclination is not part of the ContextFunction...
 
 drawMultiline :: (Real u, Floating u, FromPtSize u) 
               => OnelineDrawF u -> Radian -> [EscapedText] 
               -> PosImage u (BoundingBox u)
-drawMultiline _     _     []  = lift1R2 emptyLine 
+drawMultiline _     _     []  = lift1R2 emptyBoundedLocGraphic
 drawMultiline drawF theta [x] = onelineDraw drawF theta x
 drawMultiline drawF theta xs  = promoteR2 $ \start rpos ->
     linesToInterims xs >>= \(max_adv, ones) -> 
     rotObjectPos theta line_count (advanceH max_adv) >>= \opos -> 
     centerSpinePoints line_count theta  >>= \pts -> 
     let gs    = map (drawF theta max_adv) ones
-        gf    = zipchainM emptyLine gs pts
+        gf    = zipchainM emptyBoundedLocGraphic gs pts
         posG  = makePosImage opos gf
     in  atStartPos posG start rpos     
   where
@@ -167,7 +166,7 @@ onelineDraw :: (Real u, Floating u, FromPtSize u)
             => OnelineDrawF u -> Radian -> EscapedText -> PosImage u (BoundingBox u)
 onelineDraw drawF theta esc = promoteR2 $ \start rpos ->
     onelineEscText esc        >>= \otext -> 
-    singlelineObjectPos theta (oneline_adv otext) >>= \opos  -> 
+    rotObjectPos theta 1 (advanceH $ oneline_adv otext) >>= \opos  -> 
     let max_adv = oneline_adv otext 
         gf      = drawF theta max_adv otext
         posG    = makePosImage opos gf
@@ -179,26 +178,17 @@ onelineDraw drawF theta esc = promoteR2 $ \start rpos ->
 rotObjectPos :: (Real u, Floating u, FromPtSize u) 
              => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
 rotObjectPos theta line_count max_w =
-    fmap (orthoObjectPos theta) $ multilineObjectPos line_count max_w 
+    fmap (orthoObjectPos theta) $ textObjectPos line_count max_w 
 
 
 
-
-
--- | Center-center ObjectPos of OnelineText drawn with no 
--- inclination.
--- 
---
-singlelineObjectPos :: (Real u, Floating u, FromPtSize u) 
-                    => Radian -> AdvanceVec u -> DrawingInfo (ObjectPos u)
-singlelineObjectPos theta max_adv = 
-    fmap (0.5*) glyphVerticalSpan >>= \hh ->
-    let hw = 0.5 * (advanceH max_adv)
-    in return $ orthoObjectPos theta $ ObjectPos hw hw hh hh 
     
 
--- Note - this returns the answer in center form, regardless
+-- | Note - this returns the answer in center form, regardless
 -- of whether the input was in center form.
+-- 
+-- So it is probably not a general enough function for the 
+-- PosImage library.
 --
 orthoObjectPos :: (Real u, Floating u) 
                => Radian -> ObjectPos u -> ObjectPos u

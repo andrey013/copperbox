@@ -23,10 +23,12 @@ module Wumpus.Drawing.Text.CatText
   , centerAlign
   , rightAlign
 
-  , string
   , blank
+  , space
+  , string
   , (<>)
-  
+  , (<+>) 
+
   , fontColour
 
   ) where
@@ -40,6 +42,7 @@ import qualified Wumpus.Basic.Utils.JoinList as JL
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Char ( ord )
 
 -- Need to know line width (horizontal) and line count (vertical) 
 -- to render...
@@ -95,7 +98,7 @@ drawMulti moveF xs = promoteR2 $ \start rpos ->
     centerSpinePoints line_count 0      >>= \pts -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
-    multilineObjectPos line_count (fst all_lines) >>= \opos ->
+    borderedTextObjectPos line_count (fst all_lines) >>= \opos ->
     let gs    = positionHLines moveF down all_lines 
         gf    = zipchainM emptyLocGraphic gs pts
         posG  = makePosImage opos gf
@@ -154,20 +157,33 @@ zipchainM alt (img1:imgs) fn = promoteR1 $ \pt -> case fn pt of
     go acc _      _        = acc
 
 
-
+-- | Build a blank CatText with no output and a 0 width vector.
+--
 blank :: Num u => CatText u
 blank = catOne $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
 
+-- | Note - a space character is not draw in the output, instead 
+-- 'space' advances the width vector by the width of a space in 
+-- the current font.
+--
+space :: FromPtSize u => CatText u
+space = catOne $ 
+   charVector (CharEscInt $ ord ' ') >>= \v -> 
+   return (advanceH v, replaceAns v $ emptyLocGraphic)
 
+-- | Build a CatText from a string.
+--
 string :: FromPtSize u => String -> CatText u
 string = catOne . stringPrim
 
 
-infixr 6 <>
+infixr 6 <>, <+>
 
 (<>) :: CatText u -> CatText u -> CatText u
 a <> b = CatText $ JL.join (getCatText a) (getCatText b) 
 
+(<+>) :: FromPtSize u => CatText u -> CatText u -> CatText u
+a <+> b = a <> space <> b 
 
 
 -- catlocal :: DrawingContextF -> CatText u -> CatText u
