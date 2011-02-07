@@ -47,6 +47,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , intoLocThetaImage
 
   , emptyLocGraphic
+  , emptyLocThetaGraphic 
 
   , decorate
   , sdecorate
@@ -149,18 +150,31 @@ mapAns :: Functor f => (a -> z) -> f (a,b) -> f (z,b)
 mapAns f = fmap (\(a,b) -> (f a ,b))
 
 
--- | Build an Image...
+-- | 'intoImage' : @ context_function * graphic -> Image @
+--
+-- Build an 'Image' from a context function ('CF') that generates 
+-- the answer and a 'Graphic' that draws the 'Image'.
 --
 intoImage :: CF a -> Graphic u -> Image u a
 intoImage = liftA2 (\a (_,b) -> (a,b))
 
 
--- | Build a LocImage...
+-- | 'intoLocImage' : @ loc_context_function * loc_graphic -> LocImage @
+--
+-- /Loc/ version of 'intoImage'. 
+-- 
+-- The 'LocImage' is built as a function from an implicit start 
+-- point to the answer.
 --
 intoLocImage :: LocCF u a -> LocGraphic u -> LocImage u a
 intoLocImage = liftA2 (\a (_,b) -> (a,b))
 
--- | Build a LocThetaImage...
+-- | 'intoLocThetaImage' : @ loc_theta_cf * loc_theta_graphic -> LocThetaImage @
+--
+-- /LocTheta/ version of 'intoImage'. 
+-- 
+-- The 'LocThetaImage' is built as a function from an implicit 
+-- start point and angle of inclination to the answer.
 --
 intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
 intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
@@ -169,7 +183,7 @@ intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
 
 -- | 'emptyLocGraphic' : @ LocGraphic @
 --
--- Build an empty LocGraphic (i.e. a function 
+-- Build an empty 'LocGraphic' (i.e. a function 
 -- /from Point to Graphic/). This is a path with a start point 
 -- but no path segments. 
 -- 
@@ -180,6 +194,20 @@ intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
 emptyLocGraphic :: Num u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
                     return $ (uNil, primGraphic $ zostroke $ emptyPath pt)
+
+
+
+-- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @
+--
+-- Build an empty 'LocThetaGraphic' (i.e. a function 
+-- /from Point and Inclination to Graphic/). 
+-- 
+-- The 'emptyLocThetaGraphic' is treated as a /null primitive/ by 
+-- @Wumpus-Core@ and is not drawn, although it does generate a 
+-- minimum bounding box at the implicit start point.
+-- 
+emptyLocThetaGraphic :: Num u => LocThetaGraphic u
+emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
 

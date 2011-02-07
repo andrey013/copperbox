@@ -65,21 +65,31 @@ type DAdvGraphic       = AdvGraphic Double
 
 
 
+
+-- | 'intoAdvGraphic' : @ loc_context_function * graphic -> Image @
 --
-intoAdvGraphic :: LocDrawingInfo u (Vec2 u)
+-- Build an 'AdvGraphic' from a context function ('CF') that 
+-- generates the answer displacement vector and a 'LocGraphic' 
+-- that draws the 'AdvGraphic'.
+--
+intoAdvGraphic :: LocCF u (Vec2 u)
                -> LocGraphic u 
                -> AdvGraphic u
 intoAdvGraphic = intoLocImage
 
 
+-- | 'emptyAdvGraphic' : @ AdvGraphic @
+--
+-- Build an empty 'AdvGraphic'.
+-- 
+-- The 'emptyAdvGraphic' is treated as a /null primitive/ by 
+-- @Wumpus-Core@ and is not drawn, the answer vetor generated is
+-- the empty vector @(V2 0 0)@.
+-- 
 emptyAdvGraphic :: Num u => AdvGraphic u
 emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 
 
--- This can be achieved with ignoreAns ...
-
--- extractLocGraphic :: AdvGraphic u -> LocGraphic u
--- extractLocGraphic = fmap (replaceL uNil)
 
 -- runAdvGraphic :: DrawingContext  -> Point2 u -> AdvGraphic u 
 --               -> (Point2 u, PrimGraphic u)

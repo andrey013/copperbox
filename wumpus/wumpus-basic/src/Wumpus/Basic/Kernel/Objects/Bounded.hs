@@ -30,6 +30,7 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   , DBoundedLocThetaGraphic
 
   , emptyBoundedLocGraphic
+  , emptyBoundedLocThetaGraphic
 
   , centerOrthoBBox
   , illustrateBoundedGraphic
@@ -101,10 +102,35 @@ centerOrthoBBox theta bb =
     ctr = boundaryCenter bb
 
 
+
+
+-- | 'emptyBoundedLocGraphic' : @ BoundedLocGraphic @
+--
+-- Build an empty 'BoundedLocGraphic'.
+-- 
+-- The 'emptyBoundedLocGraphic' is treated as a /null primitive/ 
+-- by @Wumpus-Core@ and is not drawn, although it does generate
+-- the minimum bounding box with both the bottom-left and 
+-- upper-right corners at the implicit start point.
+--
 emptyBoundedLocGraphic :: Num u => BoundedLocGraphic u
-emptyBoundedLocGraphic = intoLocImage fn  emptyLocGraphic
+emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
     fn = promoteR1 $ \pt -> pure (BBox pt pt)
+
+
+-- | 'emptyBoundedLocThetaGraphic' : @ BoundedLocThetaGraphic @
+--
+-- Build an empty 'BoundedLocThetaGraphic'.
+-- 
+-- The 'emptyBoundedLocThetaGraphic' is treated as a /null primitive/ 
+-- by @Wumpus-Core@ and is not drawn, although it does generate
+-- the minimum bounding box with both the bottom-left and 
+-- upper-right corners at the implicit start point (the implicit 
+-- inclination can be ignored).
+--
+emptyBoundedLocThetaGraphic :: Num u => BoundedLocThetaGraphic u
+emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 --------------------------------------------------------------------------------
 -- 
