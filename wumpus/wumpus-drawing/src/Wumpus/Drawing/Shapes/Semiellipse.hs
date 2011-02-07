@@ -25,12 +25,12 @@ module Wumpus.Drawing.Shapes.Semiellipse
 
   ) where
 
-import Wumpus.Drawing.Geometry.Base
-import Wumpus.Drawing.Geometry.Intersection
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Intersection
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

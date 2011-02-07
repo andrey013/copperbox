@@ -28,13 +28,13 @@ module Wumpus.Drawing.Shapes.Parallelogram
 
   ) where
 
-import Wumpus.Drawing.Geometry.Base
-import Wumpus.Drawing.Geometry.Intersection
-import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Intersection
+import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

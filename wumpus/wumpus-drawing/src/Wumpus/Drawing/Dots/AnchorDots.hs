@@ -57,13 +57,13 @@ module Wumpus.Drawing.Dots.AnchorDots
   ) where
 
 
-import Wumpus.Drawing.Geometry.Intersection
-import Wumpus.Drawing.Geometry.Paths
-import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Intersection       -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Geometry.Quadrant
+import Wumpus.Basic.Kernel               
 
 import Wumpus.Core                              -- package: wumpus-core
 

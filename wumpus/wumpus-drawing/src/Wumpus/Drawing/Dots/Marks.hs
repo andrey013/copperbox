@@ -50,10 +50,10 @@ module Wumpus.Drawing.Dots.Marks
   ) where
 
 
-import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Text.LRText
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Paths              -- package: wumpus-basic
+import Wumpus.Basic.Kernel        
 
 import Wumpus.Core                              -- package: wumpus-core
 

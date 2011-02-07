@@ -25,13 +25,13 @@ module Wumpus.Drawing.Shapes.Triangle
 
   ) where
 
-import Wumpus.Drawing.Geometry.Base
-import Wumpus.Drawing.Geometry.Quadrant
-import Wumpus.Drawing.Geometry.Paths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Quadrant
+import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

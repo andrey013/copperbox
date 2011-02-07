@@ -42,7 +42,11 @@ description:
   .
   * Added new Shapes.
   .
-  * Added Geometry.Quadrant module.
+  * Move Geometry modules to Wumpus-Basic.
+  .
+  * Re-implemented Chains.
+  .
+  * Re-implemented LR-Text. Added CatText.
   .
   v0.1.0:
   .
@@ -105,10 +109,6 @@ library
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.Marks,
-    Wumpus.Drawing.Geometry.Base,
-    Wumpus.Drawing.Geometry.Intersection,
-    Wumpus.Drawing.Geometry.Paths,
-    Wumpus.Drawing.Geometry.Quadrant,
     Wumpus.Drawing.Grids,
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,

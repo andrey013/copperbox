@@ -69,9 +69,8 @@ module Wumpus.Drawing.Paths.Base
   ) where
 
 
-import Wumpus.Drawing.Geometry.Base
 
--- package: wumpus-basic
+import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
                                    , ViewR(..), viewr, cons, snoc, join )
 import qualified Wumpus.Basic.Utils.JoinList as JL

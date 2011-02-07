@@ -37,22 +37,11 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
--- CAUTION - chains are all pure rather than CF / LocCF types.
+
+-- | A 'PointChain' is a list of points. 
 -- 
--- Maybe this does not matter, however experience with PosGraphic 
--- shows that mis-judging whether a type is pure or monadic 
--- (depending on the DrawingContext) can have very unfortunate 
--- consequences for the utility of the type.
---
--- UPDATE - changed to DrawingInfo [Point2 u]
-
-
-
-
--- | A 'PointChain' is a list of points. The list is often expected to 
--- be inifinte, but if it was a Stream  it would loose the ability
--- to use list comprehensions.
--- 
+-- The list is typically inifinte so some attention must be given 
+-- to choosing a chain drawing function and using it appropriately.
 -- 
 type PointChain u = [Point2 u]
 
