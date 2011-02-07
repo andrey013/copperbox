@@ -36,8 +36,10 @@ grid (nx,ny) incr
             rh      = incr * fromIntegral ny
             xchn    = horizontalPoints incr
             ychn    = verticalPoints incr
-            vlines  = unchain nx (straightLine (vvec rh)) xchn
-            hlines  = unchain ny (straightLine (hvec rw)) ychn
+            vline1  = straightLine (vvec rh)
+            hline1  = straightLine (hvec rw)
+            vlines  = unchain nx emptyLocGraphic vline1 xchn
+            hlines  = unchain ny emptyLocGraphic hline1  ychn
         in (hlines `oplus` vlines `oplus` strokedRectangle rw rh) `at` sw
 
 
@@ -54,10 +56,12 @@ grid (nx,ny) incr
 --
 interiorGrid :: RealFrac u => u -> ConnectorGraphic u
 interiorGrid incr = promoteR2 $ \sw ne ->
-    let xcc        = innerHorizontals incr
-        ycc        = innerVerticals   incr
+    let xcc         = innerHorizontals incr
+        ycc         = innerVerticals   incr
         (V2 vx vy)  = pvec sw ne
-        vlines      = unconnectorChain (straightLine (vvec vy)) xcc
-        hlines      = unconnectorChain (straightLine (hvec vx)) ycc
+        hline1      = straightLine (hvec vx)
+        vline1      = straightLine (vvec vy)
+        vlines      = unconnectorChain emptyConnectorGraphic vline1 xcc
+        hlines      = unconnectorChain emptyConnectorGraphic hline1 ycc
     in connect (hlines `oplus` vlines) sw ne
 

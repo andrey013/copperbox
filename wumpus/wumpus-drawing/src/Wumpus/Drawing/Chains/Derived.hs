@@ -54,7 +54,7 @@ import Data.List
 -- @top-left@.
 --
 tableDown :: Num u => Int -> (u,u) -> LocChain u
-tableDown n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
+tableDown n (rw,rh) = liftChainF $ \pt -> map (fn pt) ints
   where
     ints    = iterate (+1) 0
     fn pt i = let (x,y) = i `divMod` n 
@@ -69,13 +69,11 @@ tableDown n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
 -- This chain is infinite.
 --
 tableRight :: Num u => Int -> (u,u) -> LocChain u
-tableRight n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
+tableRight n (rw,rh) = liftChainF $ \pt -> map (fn pt) ints
   where
-    ints     = iterate (+1) 0
+    ints    = iterate (+1) 0
     fn pt i = let (y,x) = i `divMod` n 
               in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
-
-
 
 
 
@@ -86,7 +84,7 @@ tableRight n (rw,rh) = promoteR1 $ \pt -> return $ map (fn pt) ints
 -- This chain is infinite.
 --
 horizontalPoints :: Num u => u -> LocChain u
-horizontalPoints dx = promoteR1 $ \pt -> return $ iterate (displaceH dx) pt
+horizontalPoints dx = liftChainF $ iterate (displaceH dx)
 
 
 -- | 'verticalPoints' : @ vertical_dist -> LocChain @
@@ -96,7 +94,7 @@ horizontalPoints dx = promoteR1 $ \pt -> return $ iterate (displaceH dx) pt
 -- This chain is infinite.
 --
 verticalPoints :: Num u => u -> LocChain u
-verticalPoints dy = promoteR1 $ \pt -> return $ iterate (displaceV dy) pt
+verticalPoints dy = liftChainF $ iterate (displaceV dy)
 
 
 -- | 'horizontalSteps' : @ [horizontal_dist] -> LocChain @
@@ -106,7 +104,7 @@ verticalPoints dy = promoteR1 $ \pt -> return $ iterate (displaceV dy) pt
 -- This chain is finite (for finite input list).
 --
 horizontalSteps :: Num u => [u] -> LocChain u
-horizontalSteps xs = promoteR1 $ \pt -> return $ scanl (flip displaceH) pt xs 
+horizontalSteps xs = liftChainF $ \pt -> scanl (flip displaceH) pt xs 
 
 
 -- | 'verticalSteps' : @ [vertical_dist] -> LocChain @
@@ -119,7 +117,7 @@ horizontalSteps xs = promoteR1 $ \pt -> return $ scanl (flip displaceH) pt xs
 -- too general for this function. 
 --
 verticalSteps :: Num u => [u] -> LocChain u
-verticalSteps ys = promoteR1 $ \pt -> return $ scanl (flip displaceV) pt ys
+verticalSteps ys = liftChainF $ \pt -> scanl (flip displaceV) pt ys
 
 
 {-# INLINE [0] ceilingi #-}

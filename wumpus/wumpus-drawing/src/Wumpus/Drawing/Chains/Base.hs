@@ -1,10 +1,9 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.Chains.Base
--- Copyright   :  (c) Stephen Tetley 2010-2011
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -13,9 +12,6 @@
 --
 -- Generate points in an iterated chain.
 --
--- \*\* WARNING \*\* - unstable. Names are not so good, also 
--- Wumpus-Basic has a @chain1@ operator...
--- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Chains.Base
@@ -24,11 +20,15 @@ module Wumpus.Drawing.Chains.Base
     PointChain
   , LocChain
   , ConnectorChain
+
+  -- * Unrolling chains
   , unchain
   , unchainU
   , unchainZip
   , unconnectorChain
 
+  -- * Building chains
+  , liftChainF
 
   ) where
 
@@ -71,46 +71,72 @@ type LocChain u = LocDrawingInfo u (PointChain u)
 -- 
 type ConnectorChain u = ConnectorCF u (PointChain u)
 
---
--- TODO - unchain types should be generalized to LocCF if 
--- possible.
---
--- Also an intoLocChain function would probably be useful...
---
 
 
 
--- | Note - commonly a 'Chain' may be infinite, so it is only 
--- unrolled a finite number of times.
+-- | 'unchain' : @ unroll_count * alt_fun * draw_fun * chain -> LocCF @
+-- 
+-- Unroll the chain, applying the @draw_fun@ to each point 
+-- producing a LocCF (usually a 'LocGraphic'). If the chain does 
+-- not produce any points the @alt_fun@ is applied to the start 
+-- point.
 --
-unchain :: Num u => Int -> LocGraphic u -> LocChain u -> LocGraphic u
-unchain i _  _   | i <= 0 = emptyLocGraphic
-unchain i gf chn          = promoteR1 $ \p0 -> 
+-- Note - commonly a 'Chain' may be infinite, so it is only 
+-- unrolled a finite number of times - the @unrool_count@.
+--
+-- This function has a very general type signature commonly it 
+-- will be used at these types:
+--
+-- > unchain :: (Num u, OPlus a) => 
+-- >     Int -> LocImage u a -> LocImage u a -> LocChain u -> LocImage u a
+-- >
+-- > unchain :: Num u => 
+-- >     Int -> LocGraphic u -> LocGraphic u -> LocChain u -> LocGraphic u
+--
+unchain :: (Num u, OPlus a) 
+        => Int 
+        -> LocCF u (ImageAns u a) 
+        -> LocCF u (ImageAns u a) 
+        -> LocChain u 
+        -> LocCF u (ImageAns u a)
+unchain i alt _  _   | i <= 0 = alt
+unchain i alt gf chn          = promoteR1 $ \p0 -> 
     (chn `at` p0) >>= \pts -> case pts of 
-      []     -> gf `at` p0         -- This is a cheat.
+      []     -> alt `at` p0
       [x]    -> gf `at` x
       (x:xs) -> go x (take (i-1) xs)
   where
     go x []     = gf `at` x
     go x (y:ys) = (gf `at` x) `oplus` go y ys
 
--- Note - if the chain produces no points the LocGraphic is drawn 
--- at p0. This is a cheat, but otherwise this function would have 
--- to throw a runtime error.
---
 
 
 
--- | /Unsafe/ version of chain - this function assumes the chain
+-- | 'unchain' : @ alt_fun * draw_fun * chain -> LocCF @
+-- 
+-- /Unsafe/ version of 'unchain' - this function assumes the chain
 -- is finite which is not usually the case.
+--
+-- This function has a very general type signature commonly it 
+-- will be used at these type:
+--
+-- > unchainU :: (Num u, OPlus a) => 
+-- >     LocImage u a -> LocImage u a -> LocChain u -> LocImage u a
+-- >
+-- > unchainU :: Num u => 
+-- >     LocGraphic u -> LocGraphic u -> LocChain u -> LocGraphic u
 --
 -- \*\* WARNING \*\* - if the chain is infinite this function will 
 -- not terminate.
 --
-unchainU :: Num u => LocGraphic u -> LocChain u -> LocGraphic u
-unchainU gf chn = promoteR1 $ \p0 -> 
+unchainU :: (Num u, OPlus a)
+         => LocCF u (ImageAns u a) 
+         -> LocCF u (ImageAns u a) 
+         -> LocChain u 
+         -> LocCF u (ImageAns u a)
+unchainU alt gf chn = promoteR1 $ \p0 -> 
     (chn `at` p0) >>= \pts -> case pts of 
-      []     -> gf `at` p0         -- This is a cheat.
+      []     -> alt `at` p0         -- This is a cheat.
       [x]    -> gf `at` x
       (x:xs) -> go x xs
   where
@@ -118,12 +144,31 @@ unchainU gf chn = promoteR1 $ \p0 ->
     go x (y:ys) = (gf `at` x) `oplus` go y ys
 
 
--- | Note - this function uses an alternative 'LocCF' if the list 
--- or the chain are empty.
+-- | 'unchainZip' : @ alt_fun * [draw_fun] * chain -> LocCF @
+-- 
+-- Unroll the chain, zipping the list of @draw_funs@ to the list
+-- of points producing a LocCF (usually a 'LocGraphic'). If the 
+-- chain does not produce any points the @alt_fun@ is applied to 
+-- the start point.
 --
-unchainZip :: (Num u, OPlus a, u ~ DUnit a) 
+-- This function has a very general type signature commonly it 
+-- will be used at these types:
+--
+-- > unchainZip :: (Num u, OPlus a) => 
+-- >     LocImage u a -> [LocImage u a] -> LocChain u -> LocImage u a
+-- >
+-- > unchainZip :: Num u => 
+-- >     LocGraphic u -> [LocGraphic u] -> LocChain u -> LocGraphic u
+--
+-- \*\* WARNING \*\* - the list of drawing functions should be 
+-- finite. If both the list of drawing functions and the chain are 
+-- infinite this function will not terminate.
+-- 
+unchainZip :: (Num u, OPlus a) 
            => LocCF u (ImageAns u a) 
-           -> [LocCF u (ImageAns u a)] -> LocChain u -> LocCF u (ImageAns u a)
+           -> [LocCF u (ImageAns u a)] 
+           -> LocChain u 
+           -> LocCF u (ImageAns u a)
 unchainZip alt []     _   = promoteR1 $ \p0 -> alt `at` p0
 unchainZip alt  (g:gs) chn = promoteR1 $ \p0 -> 
     (chn `at` p0) >>= \pts -> case pts of 
@@ -136,10 +181,33 @@ unchainZip alt  (g:gs) chn = promoteR1 $ \p0 ->
     go acc (f:fs) (p:ps) = go (acc `oplus` (f `at` p)) fs ps
 
 
-unconnectorChain :: Num u => LocGraphic u -> ConnectorChain u -> ConnectorGraphic u
-unconnectorChain gf cchn = promoteR2 $ \p0 p1 -> 
+
+-- | 'unconnectorChain' : @ alt_fun * draw_fun * conn_chain -> ConnectorCF @
+--
+-- Unroll the chain produced between the implicit start and end 
+-- points. Apply the @draw_fun@ to each point producing a 
+-- ConnectorCF (usually a 'ConnectorGraphic'). If the chain does 
+-- not produce any points, the @alt_fun@ is applied to the start 
+-- and end points.
+--
+-- This function has a very general type signature commonly it 
+-- will be used at these types:
+--
+-- > unconnectorChain :: (Num u, OPlus a) => 
+-- >     ConnectorImage u a -> LocImage u a -> ConnectorChain u -> ConnectorImage u a
+-- >
+-- > unconnectorChain :: Num u => 
+-- >     ConnectorGraphic u -> LocGraphic u -> ConnectorChain u -> ConnectorGraphic u
+--
+--
+unconnectorChain :: (Num u, OPlus a) 
+                 => ConnectorCF u (ImageAns u a) 
+                 -> LocCF u (ImageAns u a) 
+                 -> ConnectorChain u 
+                 -> ConnectorCF u (ImageAns u a)
+unconnectorChain alt gf cchn = promoteR2 $ \p0 p1 -> 
     (connect cchn p0 p1) >>= \pts -> case pts of
-      []     -> connect emptyConnectorGraphic p0 p1
+      []     -> connect alt p0 p1
       [x]    -> gf `at` x
       (x:xs) -> go (gf `at` x) xs
   where
@@ -147,11 +215,14 @@ unconnectorChain gf cchn = promoteR2 $ \p0 p1 ->
     go acc (p:ps) = go (acc `oplus` (gf `at` p)) ps
 
 
--- For Wumpus-Basic...
 
-emptyConnectorGraphic :: Num u => ConnectorGraphic u 
-emptyConnectorGraphic = promoteR2 $ \start end -> 
-    let a = emptyLocGraphic `at` start
-        b = emptyLocGraphic `at` end
-    in a `oplus` b
+
+--------------------------------------------------------------------------------
+
+-- | 'liftChainF' : @ (point -> [point]) -> LocChain @
+--
+-- Lift a pure chain generating function inot a 'LocChain'.
+--
+liftChainF :: (Point2 u -> PointChain u) -> LocChain u
+liftChainF fn = promoteR1 $ \pt -> return $ fn pt
 

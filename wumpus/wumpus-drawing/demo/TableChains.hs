@@ -4,7 +4,6 @@ module TableChains where
 
 
 import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Grids
 

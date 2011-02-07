@@ -110,9 +110,6 @@ makeShape f g = Shape { shape_ans_fun    = f
                       , shape_decoration = emptyLocThetaGraphic
                       }
 
--- for Wumpus-Basic...
-emptyLocThetaGraphic :: Num u => LocThetaGraphic u
-emptyLocThetaGraphic = lift1R2 emptyLocGraphic 
 
 
 
