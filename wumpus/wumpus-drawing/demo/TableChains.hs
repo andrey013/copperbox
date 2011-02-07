@@ -12,10 +12,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
-dummy1, dummy2 :: [Point2 Double]
-dummy1 = innerHorizontals 20.0 (P2 (-30) 0) (P2 50 0)
-dummy2 = innerHorizontals 20.0 (P2  10 0) (P2 50 0)
-
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
@@ -23,12 +19,16 @@ main = do
     writeEPS "./out/table_chains01.eps" pic1
     writeSVG "./out/table_chains01.svg" pic1
 
+std_ctx :: DrawingContext
+std_ctx = fillColour peru $ standardContext 18
+
 table_drawing :: CtxPicture Double
 table_drawing = drawTracing $ do 
-    tableGraphic
+--    tableGraphic
     draw $ connect (interiorGrid 10) (P2 (-20) (-20)) (P2 150 80)
     draw $ grid (3,2) 20 `at` (P2 300 60)
 
+{-
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => TraceDrawing u ()
 tableGraphic = do 
@@ -42,10 +42,8 @@ tableGraphic = do
 
     dstart  = P2 0   200   -- note grows down...
     rstart  = P2 240 200   -- ditto
-
+-}
  
-std_ctx :: DrawingContext
-std_ctx = fillColour peru $ standardContext 18
 
 
 

@@ -27,16 +27,8 @@ module Wumpus.Drawing.Chains.Base
   , unchain
   , unchainU
   , unchainZip
+  , unconnectorChain
 
-
-{-
-  , zipchain
-  , zipchainWith
-
-  , unchainTD
-  , zipchainTD
-  , zipchainWithTD
--}
 
   ) where
 
@@ -79,8 +71,12 @@ type LocChain u = LocDrawingInfo u (PointChain u)
 -- 
 type ConnectorChain u = ConnectorCF u (PointChain u)
 
-
-
+--
+-- TODO - unchain types should be generalized to LocCF if 
+-- possible.
+--
+-- Also an intoLocChain function would probably be useful...
+--
 
 
 
@@ -140,57 +136,22 @@ unchainZip alt  (g:gs) chn = promoteR1 $ \p0 ->
     go acc (f:fs) (p:ps) = go (acc `oplus` (f `at` p)) fs ps
 
 
-
-
-
-{-
-
-zipchain :: [LocGraphic u] -> Chain u -> TraceDrawing u ()
-zipchain (g:gs) (p:ps)   = draw (g `at` p) >> zipchain gs ps
-zipchain _      _        = return ()
-
-
-zipchainWith :: (a -> LocGraphic u) -> [a] -> Chain u -> TraceDrawing u ()
-zipchainWith op xs chn = go xs chn 
+unconnectorChain :: Num u => LocGraphic u -> ConnectorChain u -> ConnectorGraphic u
+unconnectorChain gf cchn = promoteR2 $ \p0 p1 -> 
+    (connect cchn p0 p1) >>= \pts -> case pts of
+      []     -> connect emptyConnectorGraphic p0 p1
+      [x]    -> gf `at` x
+      (x:xs) -> go (gf `at` x) xs
   where
-    go (a:as) (p:ps)   = draw (op a `at` p) >> go as ps
-    go _      _        = return ()
+    go acc []     = acc
+    go acc (p:ps) = go (acc `oplus` (gf `at` p)) ps
 
 
+-- For Wumpus-Basic...
 
--- | Variant of 'unchain' where the drawing argument is a 
--- @TraceDrawing@ not a @LocGraphic@. 
---
-unchainTD :: Int -> (Point2 u -> TraceDrawing u ()) -> Chain u -> TraceDrawing u ()
-unchainTD i op chn = go i chn
-  where
-    go n _      | n <= 0 = return ()
-    go _ []              = return () 
-    go n (x:xs)          = (op x) >> go (n-1) xs
+emptyConnectorGraphic :: Num u => ConnectorGraphic u 
+emptyConnectorGraphic = promoteR2 $ \start end -> 
+    let a = emptyLocGraphic `at` start
+        b = emptyLocGraphic `at` end
+    in a `oplus` b
 
-
-zipchainTD :: [Point2 u -> TraceDrawing u ()] -> Chain u -> TraceDrawing u ()
-zipchainTD (g:gs) (p:ps)   = g p >> zipchainTD gs ps
-zipchainTD _      _        = return ()
-
-
-
-zipchainWithTD :: (a -> Point2 u -> TraceDrawing u ()) -> [a] -> Chain u -> TraceDrawing u ()
-zipchainWithTD op xs chn = go xs chn 
-  where
-    go (a:as) (p:ps)   = op a p >> go as ps
-    go _      _        = return ()
-
-
-
--- Notes - something like TikZ\'s chains could possibly be 
--- achieved with a Reader monad (@local@ initially seems better 
--- for \"state change\" than @set@ as local models a stack). 
---
--- It\'s almost tempting to put point-supply directly in the
--- Trace monad so that TikZ style chaining is transparent.
--- (The argument against is: how compatible this would be with
--- the Turtle monad for example?).
---
-
--}
