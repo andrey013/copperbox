@@ -32,8 +32,11 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
+  * Moved the Geometry modules from Wumpus-Drawing into 
+    Wumpus-Basic.
+  .
   * Re-worked the @CtxPicture@ API, although the current naming 
-    scheme is not satisfactory.....................................
+    scheme is not satisfactory.
   .
   * Added extra Anchor classes.
   .
@@ -97,6 +100,10 @@ library
 
   
   exposed-modules:
+    Wumpus.Basic.Geometry.Base,
+    Wumpus.Basic.Geometry.Intersection,
+    Wumpus.Basic.Geometry.Paths,
+    Wumpus.Basic.Geometry.Quadrant,
     Wumpus.Basic.Kernel,
     Wumpus.Basic.Kernel.Base.Anchors,
     Wumpus.Basic.Kernel.Base.BaseDefs,
