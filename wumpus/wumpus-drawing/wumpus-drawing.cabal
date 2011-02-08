@@ -24,7 +24,7 @@ description:
   links below. To run the demos properly you will need one of 
   these sets of metrics.
   .
-  Adobe Font techinal notes:
+  Adobe Font technical notes:
   <https://www.adobe.com/devnet/font.html>
   .
   Core 14 AFM metrics:
@@ -99,7 +99,7 @@ library
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.43.0  && <  0.44.0,
-                      wumpus-basic    == 0.16.0
+                      wumpus-basic    == 0.17.0
 
   
   exposed-modules:
@@ -137,6 +137,7 @@ library
     Wumpus.Drawing.Shapes.Triangle,
     Wumpus.Drawing.Text.Base,
     Wumpus.Drawing.Text.CatText,
+    Wumpus.Drawing.Text.Label,
     Wumpus.Drawing.Text.LRText,
     Wumpus.Drawing.Text.SafeFonts,
     Wumpus.Drawing.VersionNumber
