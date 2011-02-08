@@ -81,6 +81,7 @@ data DrawingContext = DrawingContext
       , font_props            :: FontAttr
       , stroke_colour         :: RGBi      -- also text colour...
       , fill_colour           :: RGBi      
+      , text_colour           :: RGBi
       , line_spacing_factor   :: Double
       , round_corner_factor   :: Double 
       , text_margin           :: TextMargin
@@ -114,6 +115,7 @@ standardContext sz =
                    , font_props           = FontAttr sz wumpus_courier
                    , stroke_colour        = wumpus_black
                    , fill_colour          = wumpus_light_gray
+                   , text_colour          = wumpus_black
                    , line_spacing_factor  = 1.2  
                    , round_corner_factor  = 0
                    , text_margin          = standardTextMargin

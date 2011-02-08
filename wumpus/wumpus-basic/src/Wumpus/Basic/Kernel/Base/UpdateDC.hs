@@ -56,6 +56,8 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , fontAttr
   , fontSize
   , fontFace
+  , textColour
+
 
   -- * Font / mark drawing size
   , scalesize
@@ -213,6 +215,9 @@ fontFace ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
 fontSize            :: Int -> DrawingContextF
 fontSize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 
+
+textColour          :: RGBi -> DrawingContextF
+textColour rgb      = (\s -> s { text_colour = rgb})
 
 --------------------------------------------------------------------------------
 

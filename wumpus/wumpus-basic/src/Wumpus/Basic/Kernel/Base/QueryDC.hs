@@ -41,6 +41,8 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , getFontAttr
   , getFontSize
   , getFontFace
+  , getTextColour
+
   , markHeight
   , markHalfHeight
   , baselineSpacing
@@ -78,13 +80,13 @@ import Control.Applicative
 
 
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
-textAttr = (,) <$> asksDC stroke_colour <*> asksDC font_props
+textAttr = (,) <$> asksDC text_colour <*> asksDC font_props
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
 withTextAttr :: DrawingCtxM m => (RGBi -> FontAttr -> a) -> m a
-withTextAttr fn = fn <$> asksDC stroke_colour <*> asksDC font_props
+withTextAttr fn = fn <$> asksDC text_colour <*> asksDC font_props
 
 
 strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
@@ -144,6 +146,8 @@ getFontSize = font_size <$> asksDC font_props
 getFontFace :: DrawingCtxM m => m FontFace
 getFontFace = font_face <$> asksDC font_props
 
+getTextColour :: DrawingCtxM m => m RGBi
+getTextColour = asksDC text_colour
 
 
 

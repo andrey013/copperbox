@@ -19,7 +19,8 @@ module Wumpus.Basic.Geometry.Base
   ( 
 
   -- * constants
-    half_pi
+    quarter_pi
+  , half_pi
   , two_pi
 
   -- * 2x2 Matrix
@@ -74,12 +75,14 @@ import Data.VectorSpace
 
 
 
+quarter_pi      :: Floating u => u
+quarter_pi      = 0.25 * pi
 
-half_pi :: Floating u => u
-half_pi = 0.5*pi
+half_pi         :: Floating u => u
+half_pi         = 0.5 * pi
 
-two_pi  :: Floating u => u
-two_pi  = 2*pi
+two_pi          :: Floating u => u
+two_pi          = 2.0 * pi
 
 
 --------------------------------------------------------------------------------

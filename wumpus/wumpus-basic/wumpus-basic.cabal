@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.16.0
+version:          0.17.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -29,6 +29,12 @@ description:
   .
   .
   Changelog:
+  . 
+  v0.16.0 to v0.17.0:
+  .
+  * Made text colour a distinct property in the DrawingContext. 
+    Text is now drawn with the text colour rather than the stroke 
+    colour.
   .
   v0.15.0 to v0.16.0:
   .

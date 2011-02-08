@@ -1,5 +1,5 @@
 name:             wumpus-drawing
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -38,7 +38,12 @@ description:
   .
   Changelog:
   .
-  v0.1.0 to 0.2.0:
+  v0.2.0 to v0.3.0:
+  .
+  * Moved Turtle and Grids into the @Wumpus.Drawing.Extras@
+    name-space. Modules here are considered sketches.
+  .
+  v0.1.0 to v0.2.0:
   .
   * Added new Shapes.
   .
@@ -108,7 +113,9 @@ library
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.Marks,
-    Wumpus.Drawing.Grids,
+    Wumpus.Drawing.Extras.Grids,
+    Wumpus.Drawing.Extras.Turtle.TurtleClass,
+    Wumpus.Drawing.Extras.Turtle.TurtleMonad,
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Base,
     Wumpus.Drawing.Paths.Connectors,
@@ -132,8 +139,6 @@ library
     Wumpus.Drawing.Text.CatText,
     Wumpus.Drawing.Text.LRText,
     Wumpus.Drawing.Text.SafeFonts,
-    Wumpus.Drawing.Turtle.TurtleClass,
-    Wumpus.Drawing.Turtle.TurtleMonad,
     Wumpus.Drawing.VersionNumber
 
   other-modules:
