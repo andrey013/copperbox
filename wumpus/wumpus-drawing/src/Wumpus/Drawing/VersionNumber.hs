@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Drawing.VersionNumber
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -23,7 +23,7 @@ module Wumpus.Drawing.VersionNumber
 
 -- | Version number
 --
--- > (0,2,0)
+-- > (0,3,0)
 --
 wumpus_drawing_version :: (Int,Int,Int)
-wumpus_drawing_version = (0,2,0)
+wumpus_drawing_version = (0,3,0)

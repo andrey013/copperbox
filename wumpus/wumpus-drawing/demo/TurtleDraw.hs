@@ -3,7 +3,7 @@
 
 module TurtleDraw where
 
-import Wumpus.Drawing.Turtle.TurtleMonad
+import Wumpus.Drawing.Extras.Turtle.TurtleMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core

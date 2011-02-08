@@ -7,7 +7,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Turtle.TurtleMonad
+-- Module      :  Wumpus.Drawing.Extras.Turtle.TurtleMonad
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -29,10 +29,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Turtle.TurtleMonad
+module Wumpus.Drawing.Extras.Turtle.TurtleMonad
   (
     -- * Re-exports
-    module Wumpus.Drawing.Turtle.TurtleClass
+    module Wumpus.Drawing.Extras.Turtle.TurtleClass
 
   -- * Turtle transformer
   , TurtleT
@@ -42,7 +42,7 @@ module Wumpus.Drawing.Turtle.TurtleMonad
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Turtle.TurtleClass
+import Wumpus.Drawing.Extras.Turtle.TurtleClass
 
 
 

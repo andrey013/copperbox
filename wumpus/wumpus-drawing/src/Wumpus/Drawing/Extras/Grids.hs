@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Grids
+-- Module      :  Wumpus.Drawing.Extras.Grids
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Grids
+module Wumpus.Drawing.Extras.Grids
   ( 
     grid
   , interiorGrid

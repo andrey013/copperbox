@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Turtle.TurtleClass
+-- Module      :  Wumpus.Drawing.Extras.Turtle.TurtleClass
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -25,7 +25,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Turtle.TurtleClass
+module Wumpus.Drawing.Extras.Turtle.TurtleClass
   (
 
     Coord
