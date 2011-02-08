@@ -185,6 +185,9 @@ label a = RegularNode a
 -- Note - /regular/ nodes cannot be annotated, a node must be 
 -- bound to a variable first with 'nodeId'.
 --
+-- Also this function is not so useful now Wumpus-Basic has
+-- the @decorate@, @sdecorate@, and @adecorate@ functions.
+-- 
 annotate :: u ~ DUnit a => NodeId a -> NodeAnno u -> TreeBuild u ()
 annotate (RegularNode _) _     = return ()
 annotate (NodeId nid)    annoF = 

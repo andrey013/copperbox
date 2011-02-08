@@ -83,7 +83,6 @@ extra-source-files:
   demo/FontPic.hs,
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
-  demo/PictureCompo.hs,
   demo/SingleLine.hs,
   demo/SampleShapes.hs,
   demo/Symbols.hs,

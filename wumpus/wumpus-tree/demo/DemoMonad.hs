@@ -21,50 +21,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import System.Directory
 
 
-
-
-
-
-tree1 :: TreeBuild u (TreeSpec Char)
-tree1 = return $ 
-    branch (label 'A') [branch (label 'B') bs, branch (label 'F') gs]
-  where
-    bs = [leaf $ label 'C', leaf $ label 'D', leaf $ label 'E']
-    gs = [branch (label 'G') [ leaf $ label 'H'
-                             , leaf $ label 'I'
-                             , leaf $ label 'J' ] ]
-
-
-tree_drawing1 :: DCtxPicture
-tree_drawing1 = drawTracing $ 
-    drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
-
-
-
-tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u (ZTreeSpec u)
-tree2 = do
-    special   <- nodeId $ dotText "a"   
-    rightmost <- nodeId $ dotText "z"
-    annotate rightmost (\ancr -> textline "....anno" `at` southeast ancr )
-    let bs = [zleaf, zleaf, zleaf]
-    let gs = [zleaf, zleaf, leaf $ rightmost ]
-    return $ 
-        branch special [zbranch bs, zleaf, zbranch gs]
-
-
-
-
-tree_drawing2 :: DCtxPicture
-tree_drawing2 = drawTracing $ do
-    draw $ textline "Tree 2" `at` zeroPt
-    draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
-    draw $ filledDisk 2      `at` tree_ogin
-    draw $ filledDisk 2      `at` displaceH   40  tree_ogin
-    drawScaledTreeD (uniformSF 60) tree_ogin TREE_RIGHT 
-         $ runTreeBuild (diskNode red) tree2 
-  where
-    tree_ogin = P2 240 0
-
 main :: IO ()
 main = do
     (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
@@ -98,4 +54,53 @@ makePictures base_metrics = do
 
 makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
+
+
+-- Note - @label@ in TreeMonad is a waste of a valuable name...
+
+tree1 :: TreeBuild u (TreeSpec Char)
+tree1 = return $ 
+    branch (label 'A') [branch (label 'B') bs, branch (label 'F') gs]
+  where
+    bs = [leaf $ label 'C', leaf $ label 'D', leaf $ label 'E']
+    gs = [branch (label 'G') [ leaf $ label 'H'
+                             , leaf $ label 'I'
+                             , leaf $ label 'J' ] ]
+
+
+tree_drawing1 :: DCtxPicture
+tree_drawing1 = drawTracing $ 
+    drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
+
+-- Don\'t necessarily need @annotate@ from TreeMonad ...
+--
+nodedeco :: Num u 
+         => DotLocImage u -> (DotAnchor u -> Point2 u) -> DotLocImage u
+nodedeco img fn = sdecorate img deco
+  where
+    deco a = promoteR1 $ \_ -> let pt = fn a in textline "deco" `at` pt
+
+tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u (ZTreeSpec u)
+tree2 = do
+    special   <- nodeId $ nodedeco (dotText "a") south
+    rightmost <- nodeId $ dotText "z"
+    annotate rightmost (\ancr -> textline "....anno" `at` southeast ancr )
+    let bs = [zleaf, zleaf, zleaf]
+    let gs = [zleaf, zleaf, leaf $ rightmost ]
+    return $ 
+        branch special [zbranch bs, zleaf, zbranch gs]
+
+
+
+
+tree_drawing2 :: DCtxPicture
+tree_drawing2 = drawTracing $ do
+    draw $ textline "Tree 2" `at` zeroPt
+    draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
+    draw $ filledDisk 2      `at` tree_ogin
+    draw $ filledDisk 2      `at` displaceH   40  tree_ogin
+    drawScaledTreeD (uniformSF 60) tree_ogin TREE_RIGHT 
+         $ runTreeBuild (diskNode red) tree2 
+  where
+    tree_ogin = P2 240 0
 

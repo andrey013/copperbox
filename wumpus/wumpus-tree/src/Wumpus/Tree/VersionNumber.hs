@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Tree.VersionNumber
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -22,7 +22,7 @@ module Wumpus.Tree.VersionNumber
 
 -- | Version number
 --
--- > (0,13,0)
+-- > (0,14,0)
 --
 wumpus_tree_version :: (Int,Int,Int)
-wumpus_tree_version = (0,13,0)
+wumpus_tree_version = (0,14,0)
