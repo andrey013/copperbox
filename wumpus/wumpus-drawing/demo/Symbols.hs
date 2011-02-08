@@ -2,11 +2,10 @@
 
 module Symbols where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Text.SafeFonts
 
-
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 import Prelude hiding ( pi, product )
@@ -32,12 +31,14 @@ std_ctx = fontFace times_roman $ standardContext 12
 --
 symbols :: DCtxPicture
 symbols = drawTracing $ do
-    localize (fontFace symbol) $ zipchainWith sdraw all_letters ps
-    zipchainWith ldraw all_letters ps
+    draw $ localize (fontFace symbol) $ 
+            unchainZipWith emptyLocGraphic sdraw all_letters chn `at` start
+    draw $ unchainZipWith emptyLocGraphic ldraw all_letters chn `at` start
   where
-    ps              = tableDown 30 (100,20) (P2 0 (30*20))
+    chn             = tableDown 30 (100,20) 
+    start           = P2 0 (30*20)
     sdraw (s,_)     = textline s
-    ldraw (_,name)  = moveStartPoint (displaceH 16) (textline name)
+    ldraw (_,name)  = moveStart (displaceH 16) (textline name)
 
 
 all_letters :: [(String, String)]

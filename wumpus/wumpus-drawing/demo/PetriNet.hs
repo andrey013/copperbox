@@ -7,9 +7,6 @@
 
 module PetriNet where
 
-import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
@@ -18,6 +15,10 @@ import Wumpus.Drawing.Text.SafeFonts
 import Wumpus.Drawing.Text.LRText
 
 import FontLoaderUtils
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 
 import Wumpus.Core                              -- package: wumpus-core
 

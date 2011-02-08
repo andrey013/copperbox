@@ -9,11 +9,11 @@ import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Basic.Kernel              -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Basic.System.FontLoader.GhostScript
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
@@ -69,15 +69,12 @@ mf = do
     draw $ testDraw SW `at` (P2 150 100)
     draw $ testDraw NW `at` (P2 225 100)
     draw $ testDraw CENTER    `at` (P2   0 0)
-    draw $ testDraw BL_LEFT   `at` (P2  75 0)
-    draw $ testDraw BL_CENTER `at` (P2 150 0)
-    draw $ testDraw BL_RIGHT  `at` (P2 225 0)
     
 
 testDraw :: (Real u, Floating u, FromPtSize u) => RectPosition -> LocGraphic u
 testDraw rpos = filledDisk 2 `oplus` (ignoreAns ans)
   where
-    ans = singleLine rpos "Qwerty" `rot`  (pi * 0.25)
+    ans = singleLine "Qwerty" `startPos` rpos
 
 
 

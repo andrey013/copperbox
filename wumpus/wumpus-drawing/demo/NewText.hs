@@ -10,11 +10,11 @@ import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.CatText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Basic.Kernel              -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Basic.System.FontLoader.GhostScript
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 

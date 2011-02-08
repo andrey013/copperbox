@@ -2,13 +2,12 @@
 
 module Path01 where
 
-import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.MonadicConstruction
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
 

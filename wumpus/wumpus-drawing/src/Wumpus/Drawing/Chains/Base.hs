@@ -25,6 +25,7 @@ module Wumpus.Drawing.Chains.Base
   , unchain
   , unchainU
   , unchainZip
+  , unchainZipWith
   , unconnectorChain
 
   -- * Building chains
@@ -92,7 +93,7 @@ unchain i alt _  _   | i <= 0 = alt
 unchain i alt gf chn          = promoteR1 $ \p0 -> 
     (chn `at` p0) >>= \pts -> case pts of 
       []     -> alt `at` p0
-      [x]    -> gf `at` x
+      [x]    -> gf  `at` x
       (x:xs) -> go x (take (i-1) xs)
   where
     go x []     = gf `at` x
@@ -125,8 +126,8 @@ unchainU :: (Num u, OPlus a)
          -> LocCF u (ImageAns u a)
 unchainU alt gf chn = promoteR1 $ \p0 -> 
     (chn `at` p0) >>= \pts -> case pts of 
-      []     -> alt `at` p0         -- This is a cheat.
-      [x]    -> gf `at` x
+      []     -> alt `at` p0
+      [x]    -> gf  `at` x
       (x:xs) -> go x xs
   where
     go x []     = gf `at` x
@@ -168,6 +169,47 @@ unchainZip alt  (g:gs) chn = promoteR1 $ \p0 ->
     go acc _      []     = acc
     go acc []     _      = acc
     go acc (f:fs) (p:ps) = go (acc `oplus` (f `at` p)) fs ps
+
+
+
+-- | 'unchainZipWith' : @ alt_fun * (a -> draw_fun) * [a] * chain -> LocCF @
+-- 
+-- Version of 'unchainZip' where the list is some data rather 
+-- than a drawing function and the @(a -> draw_fun)@ builder is 
+-- applied to each element as part of the unrolling.
+-- 
+-- Approximately this function is a @zipWith@ to the @zip@ of 
+-- @unchainZip@.
+--
+-- This function has a very general type signature commonly it 
+-- will be used at these type:
+--
+-- > unchainZipWith :: (Num u, OPlus a) => 
+-- >     LocImage u a -> (s -> LocImage u a) -> [s] -> LocChain u -> LocImage u a
+-- >
+-- > unchainZipWith :: Num u => 
+-- >     LocGraphic u -> (s -> LocGraphic u) -> [s] -> LocChain u -> LocGraphic u
+--
+-- \*\* WARNING \*\* - if the chain and list are infinite this 
+-- function will not terminate.
+--
+unchainZipWith :: (Num u, OPlus a)
+                => LocCF u (ImageAns u a) 
+                -> (s -> LocCF u (ImageAns u a))
+                -> [s]
+                -> LocChain u 
+                -> LocCF u (ImageAns u a)
+unchainZipWith alt _    []     _   = promoteR1 $ \p0 -> alt `at` p0
+unchainZipWith alt mkGF (s:ss) chn = promoteR1 $ \p0 -> 
+    (chn `at` p0) >>= \pts -> case pts of 
+      []     -> alt `at` p0
+      [x]    -> mkGF s `at` x
+      (x:xs) -> go (mkGF s `at` x) ss xs
+  where
+    go acc _      []     = acc
+    go acc []     _      = acc
+    go acc (t:ts) (p:ps) = go (acc `oplus` (mkGF t `at` p)) ts ps
+
 
 
 

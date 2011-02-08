@@ -4,14 +4,15 @@
 module AfmV4Dot1 where
 
 
-import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Afm
+
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
@@ -64,7 +65,7 @@ redPlus = localize (strokeColour red) markPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (fontFace times_roman . strokeColour dark_slate_gray) $ 
-             singleLine BL_LEFT "Times-Roman" `rot` 0
+             singleLine "Times-Roman" `startPos` SE
 
 
 cc_oneline :: BoundedLocGraphic Double

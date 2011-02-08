@@ -2,12 +2,11 @@
 
 module Arrow01 where
 
--- import Wumpus.Basic.Dots
--- import Wumpus.Basic.Arrows
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Paths 
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+
+import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
 

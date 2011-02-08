@@ -3,10 +3,10 @@
 module TableChains where
 
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Grids
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory

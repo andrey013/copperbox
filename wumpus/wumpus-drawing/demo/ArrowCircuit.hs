@@ -8,16 +8,17 @@
 
 module ArrowCircuit where
 
-import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
+
+import Wumpus.Core                              -- package: wumpus-core
 
 import FontLoaderUtils
 

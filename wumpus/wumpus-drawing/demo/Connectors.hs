@@ -3,11 +3,12 @@
 module Connectors where
 
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths hiding ( length )
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -50,10 +51,11 @@ conntable =
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [ConnectorPath u] -> TraceDrawing u ()
-tableGraphic conns = zipchainWith makeConnDrawing conns ps
+tableGraphic conns = 
+    draw $ unchainZipWith emptyLocGraphic makeConnDrawing conns chn `at` start
   where
-    ps = tableDown 10 (120,52) (displaceV 520 zeroPt)
-
+    chn   = tableDown 10 (120,52) 
+    start = P2 0 520 
 
  
 std_ctx :: DrawingContext

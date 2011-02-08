@@ -4,8 +4,9 @@ module ColourCharts where
 
 import ColourChartUtils
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

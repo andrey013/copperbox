@@ -12,12 +12,13 @@
 
 module ClipPic where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.MonadicConstruction
 import Wumpus.Drawing.Text.SafeFonts
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -39,25 +40,24 @@ pic_drawing_ctx = standardContext 14
 
 
 big_pic :: DCtxPicture
-big_pic = pic1 `nextToV` zconcat [cpic1, cpic2, cpic3, cpic4]
+big_pic = pic1 `cxpDown` oconcat cpic1 [cpic2, cpic3, cpic4]
 
 fillPath :: Num u => Path u -> Graphic u
 fillPath = filledPath . toPrimPath
 
 pic1 :: DCtxPicture
-pic1 = drawTracing $
-         localize (fillColour medium_slate_blue) $ do
-            draw $ fillPath path01
-            localize (fillColour powder_blue) $ 
-                     draw $ fillPath path02
-            draw $ fillPath path03
-            draw $ fillPath path04
+pic1 = drawTracing $ localize (fillColour medium_slate_blue) $ do
+    draw $ fillPath path01
+    draw $ localize (fillColour powder_blue) $ fillPath path02
+    draw $ fillPath path03
+    draw $ fillPath path04
 
 
 background :: RGBi -> DCtxPicture
 background rgb = drawTracing $ 
-    localize (strokeColour rgb) $ 
-        unchain 112 iheartHaskell $ tableDown 18 (86,16) (P2 0 288)
+    draw $ localize (strokeColour rgb) $ ihh `at` P2 0 288
+  where
+    ihh = unchain 112 emptyLocGraphic iheartHaskell $ tableDown 18 (86,16)
 
 cpic1 :: DCtxPicture 
 cpic1 = clipCtxPicture (toPrimPath path01) (background black)

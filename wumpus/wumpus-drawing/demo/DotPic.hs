@@ -3,15 +3,17 @@
 module DotPic where
 
 
-import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Drawing.Text.SafeFonts
 
 import FontLoaderUtils
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.GhostScript
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -82,10 +84,11 @@ dot_pic = drawTracing $ tableGraphic $
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [DotLocImage u] -> TraceDrawing u ()
-tableGraphic imgs = zipchainWith makeDotDrawing imgs ps
+tableGraphic imgs = 
+    draw $ unchainZipWith emptyLocGraphic makeDotDrawing imgs chn `at` pt
   where
     row_count   = length imgs
-    ps          = tableDown row_count (1,36) pt
+    chn         = tableDown row_count (1,36)
     pt          = displaceV (fromIntegral $ 36 * row_count) zeroPt 
 
 

@@ -3,11 +3,10 @@
 
 module TurtleDraw where
 
-import Wumpus.Basic.Kernel
-import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Turtle.TurtleMonad
 
-import Wumpus.Core                      -- package: wumpus-core
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 

@@ -2,11 +2,12 @@
 
 module FontPic where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours ( steel_blue )
 import Wumpus.Drawing.Colour.X11Colours ( indian_red1 )
 import Wumpus.Drawing.Text.SafeFonts
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -56,12 +57,14 @@ positions = [0, 12, 27, 49, 78, 122]
 
 
 pointChain :: LocChain Double
-pointChain = verticals $ map (fromIntegral . (+2)) point_sizes
+pointChain = verticalSteps $ map (fromIntegral . (+2)) point_sizes
 
-fontGraphic :: RGBi -> FontFace -> DPoint2 -> TraceDrawing Double ()
-fontGraphic rgb ff pt = 
-    let ps = pointChain pt in 
-      zipchainWith (\sz -> makeLabel rgb ff sz) point_sizes ps
+
+fontGraphic :: RGBi -> FontFace -> DLocGraphic 
+fontGraphic rgb ff = 
+    unchainZipWith emptyLocGraphic mkGF point_sizes pointChain 
+  where
+    mkGF sz = makeLabel rgb ff sz
 
 
 std_ctx :: DrawingContext
@@ -70,9 +73,10 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
 fontDrawing xs = drawTracing $  
-    zipchainWithTD (\(rgb,ff) -> fontGraphic rgb ff) xs ps
+    draw $ unchainZipWith emptyLocGraphic (uncurry fontGraphic) xs chn `at` start
   where
-    ps = tableDown 4 (1,180) (P2 0 (4*180))
+    chn   = tableDown 4 (1,180)
+    start = P2 0 (4*180)
 
 
 

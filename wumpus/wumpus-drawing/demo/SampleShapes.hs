@@ -13,7 +13,7 @@ import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.LRText
 import Wumpus.Drawing.Text.SafeFonts
 
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
 import Wumpus.Basic.System.FontLoader.GhostScript
 
@@ -171,7 +171,7 @@ shapePic mf sh name = drawTracing $ do
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
-    textF   = ignoreAns (multiAlignCenter CENTER name)
+    textF   = lift1R2 $ ignoreAns (multiAlignCenter 0 name `startPos` CENTER)
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -192,7 +192,7 @@ label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       multiAlignCenter rpos ss `rot` 0
+                       multiAlignCenter 0 ss `startPos` rpos
 
     go NORTH      = (SS, northwards)
     go NORTH_EAST = (SW, northeastwards)

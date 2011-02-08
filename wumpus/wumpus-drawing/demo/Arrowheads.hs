@@ -3,11 +3,12 @@
 module Arrowheads where
 
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths hiding ( length )
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -60,10 +61,11 @@ arrtable =
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
-tableGraphic tips = zipchainWith makeArrowDrawing tips ps
+tableGraphic tips = 
+    draw $ unchainZipWith emptyLocGraphic makeArrowDrawing tips chn `at` start
   where
-    ps = tableDown 20 (120,24) (P2 0 480)
-
+    chn   = tableDown 20 (120,24)
+    start = P2 0 480
 
  
 std_ctx :: DrawingContext
