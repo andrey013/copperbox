@@ -41,10 +41,19 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
  
 
   , query
+
   , draw
-  , xdraw
   , drawi
   , drawi_
+  , drawl
+  , drawli
+  , drawli_
+  , drawc
+  , drawci
+  , drawci_
+
+
+  , xdraw
   , xdrawi
   , xdrawi_
 
@@ -59,6 +68,7 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
+import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -282,12 +292,6 @@ query df = askDC >>= \ctx -> return $ runCF ctx df
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
 draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 
--- | Hyperlink version of 'draw'.
---
-xdraw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
-      => XLink -> Graphic u -> m ()
-xdraw xl gf = draw (hyperlink xl gf)
-
 
 
 -- | Draw an Image taking the drawing style from the 
@@ -300,13 +304,103 @@ drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
             let (a,o) = runCF ctx img in trace (collectH o) >> return a
 
+
 -- | Forgetful 'drawi'.
 --
 drawi_ ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u) => Image u a -> m ()
 drawi_ img = drawi img >> return ()
 
 
+-- | Draw a LocGraphic at the supplied Point taking the drawing 
+-- style from the /drawing context/. 
+--
+-- This operation is analogeous to @tell@ in a Writer monad.
+-- 
+drawl :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+      => Point2 u -> LocGraphic u -> m ()
+drawl pt gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx $ gf `at` pt)
+
+
+
+-- | Draw a LocImage at the supplied Point taking the drawing 
+-- style from the /drawing context/. 
+--
+-- The graphic representation of the Image is drawn in the Trace 
+-- monad, and the result is returned.
+-- 
+drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+       => Point2 u -> LocImage u a -> m a
+drawli pt img = drawi (img `at` pt)
+
+-- | Forgetful 'drawli'.
+--
+drawli_ :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+        => Point2 u -> LocImage u a -> m ()
+drawli_ pt img = drawli pt img >> return ()
+
+
+-- Design note - having @drawlti@ for LocThetaImage does not seem 
+-- compelling (at the moment). The thinking is that LocTheta
+-- objects should be downcast to Loc objects before drawing. 
+--
+-- Connectors however are be different. 
+-- 
+-- (PosImages are still to consider).
+--
+
+
+
+-- | Draw a ConnectorGraphic with the supplied Points taking the 
+-- drawing style from the /drawing context/. 
+--
+drawc :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
+       => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
+drawc p0 p1 gf = draw (connect gf p0 p1)
+
+-- | Draw a ConnectorImage with the supplied Points taking the 
+-- drawing style from the /drawing context/. 
+--
+-- The graphic representation of the Image is drawn in the Trace 
+-- monad, and the result is returned.
+-- 
+drawci :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
+       => Point2 u -> Point2 u -> ConnectorImage u a -> m a
+drawci p0 p1 img = drawi (connect img p0 p1)
+
+
+-- | Forgetful 'drawci'.
+--
+drawci_ :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
+       => Point2 u -> Point2 u -> ConnectorImage u a -> m ()
+drawci_ p0 p1 img = drawi (connect img p0 p1) >> return ()
+
+
+
+-- Note - hyperlinking should probably use 'hyperlink' to annotate
+-- Objects before drawing them. Having hyperlink versions of the 
+-- trace drawing functions seems like a mistake and leads to API 
+-- clutter.
+
+
+-- | Hyperlink version of 'draw'.
+--
+-- Note - hyperlinking should probably use 'hyperlink' to annotate
+-- Objects before drawing them. Having hyperlink versions of the 
+-- trace drawing functions seems like a mistake and leads to API 
+-- clutter, so this function is considered obsolete.
+--
+xdraw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+      => XLink -> Graphic u -> m ()
+xdraw xl gf = draw (hyperlink xl gf)
+
+
+
 -- | Hyperlink version of 'drawi'.
+--
+-- Note - hyperlinking should probably use 'hyperlink' to annotate
+-- Objects before drawing them. Having hyperlink versions of the 
+-- trace drawing functions seems like a mistake and leads to API 
+-- clutter, so this function is considered obsolete.
 --
 xdrawi ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u) 
        => XLink -> Image u a -> m a
@@ -315,6 +409,11 @@ xdrawi xl img = drawi (hyperlink xl img)
 
 -- | Forgetful 'xdrawi'.
 --
+-- Note - hyperlinking should probably use 'hyperlink' to annotate
+-- Objects before drawing them. Having hyperlink versions of the 
+-- drawing functions seems like a mistake and leads to API 
+-- clutter, so this function is considered obsolete.
+--
 xdrawi_ ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u)
         => XLink -> Image u a -> m ()
 xdrawi_ xl img = xdrawi xl img >> return ()
@@ -322,6 +421,10 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 
+-- | Note - this function is potentially obsolete, and maybe be
+-- removed. In practice 'PointSupply' has not seemed a 
+-- particularly valuable idiom. 
+--
 node :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
      => LocGraphic u -> m ()
 node gf = askDC    >>= \ctx -> 
@@ -329,8 +432,12 @@ node gf = askDC    >>= \ctx ->
           let (_,prim) = runCF1 ctx pt gf in trace (collectH prim)
 
 
+-- | Note - this function is potentially obsolete, and maybe be
+-- removed. In practice 'PointSupply' has not seemed a 
+-- particularly valuable idiom. 
+--
 nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
-     => LocImage u a -> m a
+      => LocImage u a -> m a
 nodei imgL = askDC    >>= \ctx -> 
              position >>= \pt  -> 
              let (a,o) = runCF ctx (apply1R1 imgL pt)

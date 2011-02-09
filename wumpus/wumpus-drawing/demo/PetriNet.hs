@@ -63,37 +63,37 @@ makeCtx = fontFace helvetica . metricsContext 14
 
 petri_net :: DCtxPicture
 petri_net = drawTracing $ do
-    pw     <- place 0 140
-    tu1    <- transition 70 140
-    rtw    <- place 140 140
-    tu2    <- transition 210 140
-    w      <- place 280 140
-    tu3    <- transition 350 140
-    res    <- place 280 70
-    pr     <- place 0 0
-    tl1    <- transition 70 0
-    rtr    <- place 140 0
-    tl2    <- transition 210 0
-    r      <- place 280 0
-    tl3    <- transition 350 0
-    connector' (east pw)  (west tu1)              
-    connector' (east tu1) (west rtw)
-    connector' (east rtw) (west tu2)
-    connector' (east tu2) (west w)
-    connector' (east w)   (west tu3)
-    connectorC 32 (north tu3) (north pw)
-    connector' (east pr)  (west tl1)              
-    connector' (east tl1) (west rtr)
-    connector' (east rtr) (west tl2)
-    connector' (east tl2) (west r)
-    connector' (east r)   (west tl3)
-    connectorC (-32) (south tl3) (south pr)
-    connector' (southwest res) (northeast tl2)
-    connector' (northwest tl3) (southeast res)
-    connectorD 6    (southwest tu3) (northeast res)
-    connectorD (-6) (southwest tu3) (northeast res) 
-    connectorD 6    (northwest res) (southeast tu2)
-    connectorD (-6) (northwest res) (southeast tu2) 
+    pw     <- drawli (P2 0 140)   $ place
+    tu1    <- drawli (P2 70 140)  $ transition
+    rtw    <- drawli (P2 140 140) $ place
+    tu2    <- drawli (P2 210 140) $ transition
+    w      <- drawli (P2 280 140) $ place
+    tu3    <- drawli (P2 350 140) $ transition
+    res    <- drawli (P2 280 70)  $ place
+    pr     <- drawli (P2 0 0)     $ place
+    tl1    <- drawli (P2 70 0)    $ transition
+    rtr    <- drawli (P2 140 0)   $ place
+    tl2    <- drawli (P2 210 0)   $ transition
+    r      <- drawli (P2 280 0)   $ place
+    tl3    <- drawli (P2 350 0)   $ transition
+    drawc (east pw)  (west tu1)   $ straightconn
+    drawc (east tu1) (west rtw)   $ straightconn
+    drawc (east rtw) (west tu2)   $ straightconn
+    drawc (east tu2) (west w)     $ straightconn
+    drawc (east w)   (west tu3)   $ straightconn
+    drawc (north tu3) (north pw)  $ connectorC 32 
+    drawc (east pr)  (west tl1)   $ straightconn
+    drawc (east tl1) (west rtr)   $ straightconn
+    drawc (east rtr) (west tl2)   $ straightconn
+    drawc (east tl2) (west r)     $ straightconn
+    drawc (east r)   (west tl3)   $ straightconn
+    drawc (south tl3) (south pr)  $ connectorC (-32)
+    drawc (southwest res) (northeast tl2) $ straightconn
+    drawc (northwest tl3) (southeast res) $ straightconn
+    drawc (southwest tu3) (northeast res) $ connectorD 6
+    drawc (southwest tu3) (northeast res) $ connectorD (-6)
+    drawc (northwest res) (southeast tu2) $ connectorD 6
+    drawc (northwest res) (southeast tu2) $ connectorD (-6)
     draw $ lblParensParens `at` (P2 (-36) 150)
     draw $ lblParensParens `at` (P2 300 60)
     draw $ lblParensParensParens `at` (P2 (-52) (-14))
@@ -109,38 +109,31 @@ petri_net = drawTracing $ do
 greenFill :: DrawingCtxM m => m a -> m a
 greenFill = localize (fillColour lime_green)
 
-place :: ( Real u, Floating u, FromPtSize u
-         , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
-      => u -> u -> m (Circle u)
-place x y = greenFill $ drawi $ (borderedShape $ circle 14) `at` P2 x y
 
-transition :: ( Real u, Floating u, FromPtSize u
-              , DrawingCtxM m, TraceM m, u ~ MonUnit m ) 
-           => u -> u -> m (Rectangle u)
-transition x y = 
-    greenFill $ drawi $ (borderedShape $ rectangle 32 22) `at` P2 x y
+place :: ( Real u, Floating u, FromPtSize u) 
+      => LocImage u (Circle u)
+place = greenFill $ borderedShape $ circle 14
 
+
+transition :: ( Real u, Floating u, FromPtSize u) 
+           => LocImage u (Rectangle u)
+transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 
-connector' :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
-         , Real u, Floating u, FromPtSize u ) 
-      => Point2 u -> Point2 u -> m ()
-connector' p0 p1 = 
-    drawi_ $ apply2R2 (rightArrow tri45 connLine) p0 p1
+
+straightconn :: (Real u, Floating u, FromPtSize u) 
+             => ConnectorGraphic u
+straightconn = ignoreAns $ rightArrow tri45 connLine
 
 
-connectorC :: ( Real u, Floating u, FromPtSize u
-             , DrawingCtxM m, TraceM m, u ~ MonUnit m )
-           => u -> Point2 u -> Point2 u -> m ()
-connectorC v p0 p1 = 
-    drawi_ $ apply2R2 (rightArrow tri45 (connRightVHV v)) p0 p1
+connectorC :: ( Real u, Floating u, FromPtSize u)
+           => u -> ConnectorGraphic u
+connectorC v = ignoreAns $ rightArrow tri45 (connRightVHV v)
 
-connectorD :: ( Real u, Floating u, FromPtSize u
-             , DrawingCtxM m, TraceM m, u ~ MonUnit m )
-           => u -> Point2 u -> Point2 u -> m ()
-connectorD u p0 p1 = 
-    drawi_ $ apply2R2 (rightArrow tri45 (connIsosceles u)) p0 p1
+connectorD :: ( Real u, Floating u, FromPtSize u)
+           => u -> ConnectorGraphic u
+connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
 lblParensParens :: Num u => LocGraphic u

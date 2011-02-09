@@ -65,12 +65,10 @@ class ApexAnchor t where
 
 -- | Cardinal (compass) positions on an object. 
 -- 
--- Note - in TikZ cardinal anchors are not necessarily at the
--- equivalent radial position, for instance reactangle north-east
--- is the top-right corner whether or not this is incident at 
--- 45deg.
---
--- Wumpus generally follows the TikZ convention.
+-- Cardinal anchors should be at their equivalent radial position.
+-- However, some shapes may not be able to easily define radial 
+-- positions or may be able to provide more efficient definitions 
+-- for the cardinal anchors. Hence the redundancy seems justified. 
 --
 class CardinalAnchor t where
   north :: DUnit t ~ u => t -> Point2 u
