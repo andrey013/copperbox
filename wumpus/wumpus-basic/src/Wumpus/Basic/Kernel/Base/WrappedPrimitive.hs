@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -106,7 +107,7 @@ singleH = HPrim . wrapH
 -- TraceM works much like a writer monad.
 --
 class TraceM (m :: * -> *) where
-  trace  :: MonUnit m ~ u => HPrim u -> m ()
+  trace  :: u ~ DUnit (m ()) => HPrim u -> m ()
 
 
 

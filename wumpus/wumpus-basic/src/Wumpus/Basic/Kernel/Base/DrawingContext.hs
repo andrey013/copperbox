@@ -85,6 +85,7 @@ data DrawingContext = DrawingContext
       , line_spacing_factor   :: Double
       , round_corner_factor   :: Double 
       , text_margin           :: TextMargin
+      , snap_grid_factors     :: (Double,Double)
       }
 
 -- TODO - what parts of the Drawing Context should be strict? 
@@ -119,6 +120,7 @@ standardContext sz =
                    , line_spacing_factor  = 1.2  
                    , round_corner_factor  = 0
                    , text_margin          = standardTextMargin
+                   , snap_grid_factors    = (50.0,50.0)
                    }
 
 standardTextMargin :: TextMargin

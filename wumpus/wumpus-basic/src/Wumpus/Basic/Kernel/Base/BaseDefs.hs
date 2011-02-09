@@ -43,12 +43,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , advanceH
   , advanceV
 
-
-  -- * Monadic drawing
-  , MonUnit
-
-  , PointSupplyM(..)
-
   ) where
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -195,22 +189,3 @@ advanceV :: AdvanceVec u -> u
 advanceV (V2 _ h)  = h
 
 
-
-
---------------------------------------------------------------------------------
--- Monadic drawing
-
--- | DUnit is always for fully saturated type constructors, so 
--- (seemingly) an equivalent type family is needed for monads.
-
-type family MonUnit m :: * 
-
-
--- | A monad that supplies points, e.g. a turtle monad. 
---
--- \*\* WARNING \*\* - the idea behind this class is somewhat
--- half-baked. It may be revised or even dropped in subsequent
--- versions of Wumpus-Basic.
---
-class Monad m => PointSupplyM (m :: * -> *) where
-  position :: MonUnit m ~ u => m (Point2 u)

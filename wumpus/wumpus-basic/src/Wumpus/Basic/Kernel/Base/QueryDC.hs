@@ -34,6 +34,8 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , borderedAttr
   , withBorderedAttr
 
+  , position
+
   , getRoundCornerSize
   , getTextMargin
 
@@ -112,6 +114,16 @@ withBorderedAttr fn =
                               <*> asksDC stroke_colour
 
 
+
+-- | Get the Point corresponding the grid coordinates scaled by
+-- the snap-grid scaling factors.
+--
+position :: (Fractional u, DrawingCtxM m) 
+         => (Int,Int) -> m (Point2 u)
+position (x,y) = fn <$> asksDC snap_grid_factors
+  where
+    fn (scx,scy) = P2 ((realToFrac scx) * fromIntegral x)
+                      ((realToFrac scy) * fromIntegral y)
 
 -- | Size of the round corner factor.
 --

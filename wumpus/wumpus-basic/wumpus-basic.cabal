@@ -32,6 +32,12 @@ description:
   . 
   v0.16.0 to v0.17.0:
   .
+  * Remove MonUnit type family. This was a hack that has been 
+    worked round.
+  .
+  * Superceded the PointSupplyM class by adding snapping grid 
+    scaling to the DrawingContext.
+  .
   * Made text colour a distinct property in the DrawingContext. 
     Text is now drawn with the text colour rather than the stroke 
     colour.

@@ -42,6 +42,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
   , query
 
+
   , draw
   , drawi
   , drawi_
@@ -63,9 +64,9 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Connector
@@ -100,8 +101,8 @@ type DTraceDrawingT m a = TraceDrawingT Double m a
 
 
 
-type instance MonUnit (TraceDrawing u) = u
-type instance MonUnit (TraceDrawingT u m) = u
+type instance DUnit (TraceDrawing u a)    = u
+type instance DUnit (TraceDrawingT u m a) = u
 
 
 
@@ -284,12 +285,14 @@ query :: DrawingCtxM m => CF a -> m a
 query df = askDC >>= \ctx -> return $ runCF ctx df
 
 
+
 -- | Draw a Graphic taking the drawing style from the 
 -- /drawing context/. 
 --
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
-draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Graphic u -> m ()
+draw :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+     => Graphic u -> m ()
 draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 
 
@@ -300,14 +303,16 @@ draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) => Image u a -> m a
+drawi :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+      => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
             let (a,o) = runCF ctx img in trace (collectH o) >> return a
 
 
 -- | Forgetful 'drawi'.
 --
-drawi_ ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u) => Image u a -> m ()
+drawi_ :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+       => Image u a -> m ()
 drawi_ img = drawi img >> return ()
 
 
@@ -316,7 +321,7 @@ drawi_ img = drawi img >> return ()
 --
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
-drawl :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+drawl :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
       => Point2 u -> LocGraphic u -> m ()
 drawl pt gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx $ gf `at` pt)
 
@@ -328,13 +333,13 @@ drawl pt gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx $ gf `at` pt)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+drawli :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
        => Point2 u -> LocImage u a -> m a
 drawli pt img = drawi (img `at` pt)
 
 -- | Forgetful 'drawli'.
 --
-drawli_ :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+drawli_ :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
         => Point2 u -> LocImage u a -> m ()
 drawli_ pt img = drawli pt img >> return ()
 
@@ -353,8 +358,8 @@ drawli_ pt img = drawli pt img >> return ()
 -- | Draw a ConnectorGraphic with the supplied Points taking the 
 -- drawing style from the /drawing context/. 
 --
-drawc :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
-       => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
+drawc :: (TraceM  m, DrawingCtxM  m, u ~ DUnit (m ())) 
+      => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
 drawc p0 p1 gf = draw (connect gf p0 p1)
 
 -- | Draw a ConnectorImage with the supplied Points taking the 
@@ -363,15 +368,15 @@ drawc p0 p1 gf = draw (connect gf p0 p1)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawci :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
+drawci :: (TraceM  m, DrawingCtxM  m, u ~ DUnit (m ())) 
        => Point2 u -> Point2 u -> ConnectorImage u a -> m a
 drawci p0 p1 img = drawi (connect img p0 p1)
 
 
 -- | Forgetful 'drawci'.
 --
-drawci_ :: (TraceM  m, DrawingCtxM  m, u ~ MonUnit  m) 
-       => Point2 u -> Point2 u -> ConnectorImage u a -> m ()
+drawci_ :: (TraceM  m, DrawingCtxM  m, u ~ DUnit (m ())) 
+        => Point2 u -> Point2 u -> ConnectorImage u a -> m ()
 drawci_ p0 p1 img = drawi (connect img p0 p1) >> return ()
 
 
@@ -389,7 +394,7 @@ drawci_ p0 p1 img = drawi (connect img p0 p1) >> return ()
 -- trace drawing functions seems like a mistake and leads to API 
 -- clutter, so this function is considered obsolete.
 --
-xdraw :: (TraceM m, DrawingCtxM m, u ~ MonUnit m) 
+xdraw :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
       => XLink -> Graphic u -> m ()
 xdraw xl gf = draw (hyperlink xl gf)
 
@@ -402,7 +407,7 @@ xdraw xl gf = draw (hyperlink xl gf)
 -- trace drawing functions seems like a mistake and leads to API 
 -- clutter, so this function is considered obsolete.
 --
-xdrawi ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u) 
+xdrawi ::  (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
        => XLink -> Image u a -> m a
 xdrawi xl img = drawi (hyperlink xl img)
 
@@ -414,7 +419,7 @@ xdrawi xl img = drawi (hyperlink xl img)
 -- drawing functions seems like a mistake and leads to API 
 -- clutter, so this function is considered obsolete.
 --
-xdrawi_ ::  (TraceM m, DrawingCtxM m, MonUnit m ~ u)
+xdrawi_ ::  (TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
         => XLink -> Image u a -> m ()
 xdrawi_ xl img = xdrawi xl img >> return ()
 
@@ -425,21 +430,21 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 -- removed. In practice 'PointSupply' has not seemed a 
 -- particularly valuable idiom. 
 --
-node :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
-     => LocGraphic u -> m ()
-node gf = askDC    >>= \ctx -> 
-          position >>= \pt  -> 
-          let (_,prim) = runCF1 ctx pt gf in trace (collectH prim)
+node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+     => (Int,Int) -> LocGraphic u -> m ()
+node coord gf = askDC          >>= \ctx -> 
+                position coord >>= \pt  -> 
+                let (_,prim) = runCF1 ctx pt gf in trace (collectH prim)
 
 
 -- | Note - this function is potentially obsolete, and maybe be
 -- removed. In practice 'PointSupply' has not seemed a 
 -- particularly valuable idiom. 
 --
-nodei :: (TraceM m, DrawingCtxM m, PointSupplyM m, MonUnit m ~ u) 
-      => LocImage u a -> m a
-nodei imgL = askDC    >>= \ctx -> 
-             position >>= \pt  -> 
-             let (a,o) = runCF ctx (apply1R1 imgL pt)
-             in trace (collectH o) >> return a
+nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
+      => (Int,Int) -> LocImage u a -> m a
+nodei coord imgL = askDC    >>= \ctx -> 
+                   position coord >>= \pt  -> 
+                   let (a,o) = runCF ctx (apply1R1 imgL pt)
+                   in trace (collectH o) >> return a
 
