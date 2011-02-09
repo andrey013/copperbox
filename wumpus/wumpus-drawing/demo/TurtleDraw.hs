@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 module TurtleDraw where
@@ -23,10 +23,13 @@ turtle_pic :: DCtxPicture
 turtle_pic = drawTracing $ do 
     draw $ filledRectangle 40 10 `at` zeroPt
     runTurtleT (0,0) (coordinateScaling 14 14) $ 
-      moveUp >> moveUp >> moveUp >> node (textline "up3") >>  
-      moveRight >> moveRight >> node (textline "right2")
+      moveUp >> moveUp >> moveUp >> tnode (textline "up3") >>  
+      moveRight >> moveRight >> tnode (textline "right2")
       
-  
+tnode :: ( Fractional u, DrawingCtxM m, TraceM m, TurtleM m
+         , u ~ DUnit (m ()))
+      => LocGraphic u -> m ()
+tnode gf = getLoc >>= \coord -> position coord >>= \pt -> drawl pt gf
         
 connect' :: Num u => Point2 u -> Point2 u -> Graphic u
 connect' a b = openStroke $ vertexPath [a,b]  

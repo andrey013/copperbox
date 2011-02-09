@@ -41,10 +41,11 @@ module Wumpus.Drawing.Extras.Turtle.TurtleMonad
    
   ) where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Extras.Turtle.TurtleClass
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
@@ -72,7 +73,7 @@ newtype TurtleT u m a = TurtleT {
                      -> TurtleState 
                      -> m (a, TurtleState) }
 
-type instance MonUnit (TurtleT u m) = u
+type instance DUnit (TurtleT u m a) = u
     
 
 
@@ -130,10 +131,8 @@ instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
 
 -- This needs undecidable instances...
 
-instance (Monad m, TraceM m, u ~ MonUnit m) => TraceM (TurtleT u m) where
+instance (Monad m, TraceM m, u ~ DUnit (m ())) => TraceM (TurtleT u m) where
   trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
 
 
-instance (Monad m, u ~ MonUnit m, Num u) => PointSupplyM (TurtleT u m) where
-  position = TurtleT $ \r s@(TurtleState _ (x,y)) -> return (scalePt r x y,s)
 
