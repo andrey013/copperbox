@@ -52,12 +52,6 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
---
--- Note - margins are not added to the text. This seems to be the 
--- right thing to do in the case of rotated text, where the ortho
--- projection of the rectangle already can add spacing between 
--- the RectPos and the actual text.
---
 
 
 -------------------
@@ -128,6 +122,7 @@ textAlignRight ss = multiAlignRight 0 ss `startPos` CENTER
 
 
 -- Note - inclination is not part of the ContextFunction...
+-- Maybe it should be but then we need an CF3 (arity 3)
 
 drawMultiline :: (Real u, Floating u, FromPtSize u) 
               => OnelineDrawF u -> Radian -> [EscapedText] 
@@ -136,7 +131,7 @@ drawMultiline _     _     []  = lift1R2 emptyBoundedLocGraphic
 drawMultiline drawF theta [x] = onelineDraw drawF theta x
 drawMultiline drawF theta xs  = promoteR2 $ \start rpos ->
     linesToInterims xs >>= \(max_adv, ones) -> 
-    rotObjectPos theta line_count (advanceH max_adv) >>= \opos -> 
+    borderedRotTextPos theta line_count (advanceH max_adv) >>= \opos -> 
     let chn   = centerSpinePoints line_count theta
         gs    = map (drawF theta max_adv) ones
         gf    = unchainZip emptyBoundedLocGraphic gs chn
@@ -152,41 +147,11 @@ onelineDraw :: (Real u, Floating u, FromPtSize u)
             => OnelineDrawF u -> Radian -> EscapedText -> PosImage u (BoundingBox u)
 onelineDraw drawF theta esc = promoteR2 $ \start rpos ->
     onelineEscText esc        >>= \otext -> 
-    rotObjectPos theta 1 (advanceH $ oneline_adv otext) >>= \opos  -> 
+    borderedRotTextPos theta 1 (advanceH $ oneline_adv otext) >>= \opos  -> 
     let max_adv = oneline_adv otext 
         gf      = drawF theta max_adv otext
         posG    = makePosImage opos gf
     in  atStartPos posG start rpos 
-
-
--- | LR text needs the objectPos under rotation.
---
-rotObjectPos :: (Real u, Floating u, FromPtSize u) 
-             => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
-rotObjectPos theta line_count max_w =
-    fmap (orthoObjectPos theta) $ textObjectPos line_count max_w 
-
-
-
-    
-
--- | Note - this returns the answer in center form, regardless
--- of whether the input was in center form.
--- 
--- So it is probably not a general enough function for the 
--- PosImage library.
---
-orthoObjectPos :: (Real u, Floating u) 
-               => Radian -> ObjectPos u -> ObjectPos u
-orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
-    ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
-  where
-    input_hw  = 0.5 * (xmin + xmaj)
-    input_hh  = 0.5 * (ymin + ymaj)
-    bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
-    bbox1     = retraceBoundary (rotateAbout theta zeroPt) bbox0
-    bbox_hw   = 0.5 * (boundaryWidth bbox1)
-    bbox_hh   = 0.5 * (boundaryHeight bbox1)
 
 
 

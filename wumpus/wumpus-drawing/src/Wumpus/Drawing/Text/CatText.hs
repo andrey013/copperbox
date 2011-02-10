@@ -97,7 +97,7 @@ drawMulti :: (Real u, FromPtSize u, Floating u)
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
-    borderedTextObjectPos line_count (fst all_lines) >>= \opos ->
+    borderedTextPos line_count (fst all_lines) >>= \opos ->
     let chn   = centerSpinePoints line_count 0 
         gs    = positionHLines moveF down all_lines 
         gf    = unchainZip emptyLocGraphic gs chn
@@ -202,6 +202,6 @@ catlocal fn = catMap (localize fn)
 
 
 fontColour :: RGBi -> CatText u -> CatText u
-fontColour rgb = catlocal (strokeColour rgb)
+fontColour rgb = catlocal (textColour rgb)
 
 

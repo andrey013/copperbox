@@ -23,18 +23,14 @@ module Wumpus.Drawing.Text.Label
     locImageLabel
   , label_center_of
   , label_left_of
+  , label_right_of
+  , label_above
+  , label_below
 
   , connectorPathLabel
   , label_midway_of
   , label_atstart_of
   , label_atend_of
-    
-  -- * Probably obsolete...
-  , Label(..)
-  , labelAbove
-  , labelBelow
-  , labelLeft
-  , labelRight
 
   ) where
 
@@ -63,7 +59,22 @@ label_center_of = locImageLabel center CENTER
 
 label_left_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
               => PosImage u no -> LocImage u a -> LocImage u a
-label_left_of = locImageLabel west WW
+label_left_of = locImageLabel west EE
+
+label_right_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+               => PosImage u no -> LocImage u a -> LocImage u a
+label_right_of = locImageLabel east WW
+
+
+label_above :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+              => PosImage u no -> LocImage u a -> LocImage u a
+label_above = locImageLabel north SS
+
+
+label_below :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+              => PosImage u no -> LocImage u a -> LocImage u a
+label_below = locImageLabel south NN
+
 
 
 
@@ -116,66 +127,4 @@ label_atend_of = connectorPathLabel atend_
 -- will different labelling functions.
 -- 
   
-
-class Label m where
-  label :: (Floating u, u ~ DUnit a)
-        => (a -> Point2 u) -> RectPosition 
-        -> PosImage u z -> m (ImageAns u a) -> m (ImageAns u a)
-
--- | This is the instance for CF.
--- (Graphic, Image)
---
-instance Label CF where
-  label fn rpos lbl obj = sdecorate obj (\a -> atStartPos lbl (fn a) rpos)
-
-
-
--- | This is the instance for LocCF.
--- (LocGraphic, LocImage)
---
-instance Label (CF1 (Point2 u)) where
-  label fn rpos lbl obj = promoteR1 $ \pt -> 
-      sdecorate (obj `at` pt)  (\a -> atStartPos lbl (fn a) rpos)
-
-{-
--- Note - this is just an experiment...
-instance Label (LocCF u) where
-  label fn rpos lbl obj = promoteR1 $ \pt -> 
-      sdecorate (obj `at` pt)  (\a -> atStartPos lbl (fn a) rpos)
--}
-
--- | This is the instance for LocThetaCF.
---
-instance Label (CF2 (Point2 u) Radian) where
-  label fn rpos lbl obj = promoteR2 $ \pt theta -> 
-      sdecorate (atRot obj pt theta)  (\a -> atStartPos lbl (fn a) rpos)
-
-
-
--- NOTE - the instance for PosImage does not work, so the Label
--- class obviously isn\'t totally correct...
-{-
-instance Label (CF2 (Point2 u) RectPosition) where
-  label fn rpos lbl obj = promoteR2 $ \pt dpos -> 
-      sdecorate (atStartPos obj pt dpos)  (\a -> atStartPos lbl (fn a) rpos)
--}
-
-labelAbove :: (CardinalAnchor a, Floating u, Label m, u ~ DUnit a)
-           => PosImage u z -> m (ImageAns u a) -> m (ImageAns u a)
-labelAbove = label north SS
-
-
-labelBelow :: (CardinalAnchor a, Floating u, Label m, u ~ DUnit a)
-           => PosImage u z -> m (ImageAns u a) -> m (ImageAns u a)
-labelBelow = label south NN
-
-
-labelLeft  :: (CardinalAnchor a, Floating u, Label m, u ~ DUnit a)
-           => PosImage u z -> m (ImageAns u a) -> m (ImageAns u a)
-labelLeft  = label west EE
-
-
-labelRight :: (CardinalAnchor a, Floating u, Label m, u ~ DUnit a)
-           => PosImage u z -> m (ImageAns u a) -> m (ImageAns u a)
-labelRight = label east WW
 

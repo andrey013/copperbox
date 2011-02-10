@@ -93,7 +93,9 @@ state ss =
 
 stopstate :: ( Real u, Floating u, FromPtSize u) 
           => String -> LocImage u (Circle u)
-stopstate ss = label_center_of lbl $ dblStrokedShape $ circle 20
+stopstate ss = 
+    localize (fontFace times_italic) $ 
+        label_center_of lbl $ dblStrokedShape $ circle 20
   where
     lbl = singleLine ss 
   

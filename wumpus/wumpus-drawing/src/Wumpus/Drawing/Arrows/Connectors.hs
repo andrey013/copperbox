@@ -17,7 +17,9 @@
 module Wumpus.Drawing.Arrows.Connectors
   ( 
 
-    ArrowConnector
+    PathConnector
+  , DPathConnector
+
   , leftArrow
   , rightArrow
   , leftRightArrow
@@ -40,17 +42,21 @@ import Wumpus.Drawing.Paths
 --
 
 
--- | A connector with arrow tips. The connector is an /Image/,
--- drawing it returns the path - positions can be taken on the 
--- path (e.g. @midpoint@) for further decoration.
+-- | A connector with optional arrow tips. The connector is an 
+-- /Image/, drawing it returns the path - positions can be taken 
+-- on the path (e.g. @midpoint@) for further decoration.
 --
-type ArrowConnector u = ConnectorImage u (Path u)
+type PathConnector u = ConnectorImage u (Path u)
+type DPathConnector = PathConnector Double
+
+-- Design note - the above definitions should be in a different 
+-- file. 
 
 
 -- | Connector with an arrow tip at the start point \/ left.
 --
 leftArrow :: (Real u, Floating u) 
-           => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+           => Arrowhead u -> PathCF u -> PathConnector u
 leftArrow arrh conn = promoteR2 $ \p0 p1 -> 
     connect conn p0 p1           >>= \cpath -> 
     arrowhead_retract_dist arrh  >>= \dl -> 
@@ -66,7 +72,7 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
 -- | Connector with an arrow tip at the end point \/ right.
 --
 rightArrow :: (Real u, Floating u) 
-           => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+           => Arrowhead u -> PathCF u -> PathConnector u
 rightArrow arrh conn = promoteR2 $ \p0 p1 -> 
     connect conn p0 p1           >>= \cpath -> 
     arrowhead_retract_dist arrh  >>= \dr -> 
@@ -81,8 +87,8 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
 -- | Connector with two arrow tips, possibly different.
 --
 leftRightArrow :: (Real u, Floating u) 
-               => Arrowhead u -> Arrowhead u -> ConnectorPath u 
-               -> ArrowConnector u
+               => Arrowhead u -> Arrowhead u -> PathCF u 
+               -> PathConnector u
 leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 -> 
     connect conn p0 p1           >>= \cpath -> 
     arrowhead_retract_dist arrL  >>= \dL -> 
@@ -99,6 +105,6 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
 -- | Connector with the same arrow tip at both ends.
 --
 uniformArrow :: (Real u, Floating u) 
-             => Arrowhead u -> ConnectorPath u -> ArrowConnector u
+             => Arrowhead u -> PathCF u -> PathConnector u
 uniformArrow arrh cp = leftRightArrow arrh arrh cp
 

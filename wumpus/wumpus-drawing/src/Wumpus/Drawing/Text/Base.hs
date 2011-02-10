@@ -23,8 +23,8 @@ module Wumpus.Drawing.Text.Base
   , charVector
 
   , multilineHeight
-  , textObjectPos
-  , borderedTextObjectPos
+  , borderedTextPos
+  , borderedRotTextPos
 
   , centerToBaseline
   , centerSpinePoints
@@ -97,36 +97,51 @@ multilineHeight line_count
 
 
 
--- | Height of multiline text is cap_height to descender for the 
--- first line, then baseline-to-baseline span for the remaining
--- lines.
--- 
--- The answer is in centerform, i.e.:
---
--- > ObjectPos  half_width  half_width  half_height  half_height 
---
-textObjectPos :: (Real u, Floating u, FromPtSize u) 
-                   => Int -> u -> DrawingInfo (ObjectPos u)
-textObjectPos line_count w =
-    fmap (0.5*) (multilineHeight line_count) >>= \hh ->
-    let hw    = 0.5 * w
-    in return $ ObjectPos hw hw hh hh 
-
-
 -- | Variant of 'textObjectPos' where the calculation includes
 -- margins around all four sides of the enclosing rectangle.
 --
 -- Margin sizes are taken from the 'text_margin' field in the 
 -- 'DrawingContext'.
 --
-borderedTextObjectPos :: (Real u, Floating u, FromPtSize u) 
+borderedTextPos :: (Real u, Floating u, FromPtSize u) 
                       => Int -> u -> DrawingInfo (ObjectPos u)
-borderedTextObjectPos line_count w =
+borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
     getTextMargin >>= \(xsep,ysep) -> 
     let hw    = (2 * xsep) + (0.5 * w)
         hh    = (2 * ysep) + (0.5 * h)
     in return $ ObjectPos hw hw hh hh 
+
+
+
+
+
+-- | LR text needs the objectPos under rotation.
+--
+borderedRotTextPos :: (Real u, Floating u, FromPtSize u) 
+             => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
+borderedRotTextPos theta line_count max_w =
+    fmap (orthoObjectPos theta) $ borderedTextPos line_count max_w 
+
+
+-- | Note - this returns the answer in center form, regardless
+-- of whether the input was in center form.
+-- 
+-- So it is probably not a general enough function for the 
+-- PosImage library.
+--
+orthoObjectPos :: (Real u, Floating u) 
+               => Radian -> ObjectPos u -> ObjectPos u
+orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
+  where
+    input_hw  = 0.5 * (xmin + xmaj)
+    input_hh  = 0.5 * (ymin + ymaj)
+    bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
+    bbox1     = retraceBoundary (rotateAbout theta zeroPt) bbox0
+    bbox_hw   = 0.5 * (boundaryWidth bbox1)
+    bbox_hh   = 0.5 * (boundaryHeight bbox1)
+
 
 
 

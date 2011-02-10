@@ -62,7 +62,7 @@ drawing01 = drawTracing $ localize (fillColour red) $ mf
 -- Note - Baseline positions not meaningful for multiline text
 
 mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
-mf = do
+mf = localize (textMargin 6.0 6.0)  $ do
     drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
 
