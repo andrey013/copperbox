@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , withBorderedAttr
 
   , position
+  , snapmove
 
   , getRoundCornerSize
   , getTextMargin
@@ -124,6 +125,19 @@ position (x,y) = fn <$> asksDC snap_grid_factors
   where
     fn (scx,scy) = P2 ((realToFrac scx) * fromIntegral x)
                       ((realToFrac scy) * fromIntegral y)
+
+
+
+-- | Scale a vector coordinate by the snap-grid scaling factors.
+--
+snapmove :: (Fractional u, DrawingCtxM m) 
+       => (Int,Int) -> m (Vec2 u)
+snapmove (x,y) = fn <$> asksDC snap_grid_factors
+  where
+    fn (scx,scy) = V2 ((realToFrac scx) * fromIntegral x)
+                      ((realToFrac scy) * fromIntegral y)
+
+
 
 -- | Size of the round corner factor.
 --

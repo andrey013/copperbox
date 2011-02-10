@@ -60,10 +60,20 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
   , node
   , nodei
+  , nodei_
+
+  , cxdraw
+  , cxdrawi
+  , cxdrawi_
+ 
+  , drawrc
+  , drawrci
+  , drawrci_ 
 
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
@@ -426,9 +436,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 
--- | Note - this function is potentially obsolete, and maybe be
--- removed. In practice 'PointSupply' has not seemed a 
--- particularly valuable idiom. 
+-- | Draw with grid coordinate...
 --
 node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
      => (Int,Int) -> LocGraphic u -> m ()
@@ -437,10 +445,8 @@ node coord gf = askDC          >>= \ctx ->
                 let (_,prim) = runCF1 ctx pt gf in trace (collectH prim)
 
 
--- | Note - this function is potentially obsolete, and maybe be
--- removed. In practice 'PointSupply' has not seemed a 
--- particularly valuable idiom. 
---
+-- | Draw with grid coordinate...
+-- 
 nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
       => (Int,Int) -> LocImage u a -> m a
 nodei coord imgL = askDC    >>= \ctx -> 
@@ -448,3 +454,60 @@ nodei coord imgL = askDC    >>= \ctx ->
                    let (a,o) = runCF ctx (apply1R1 imgL pt)
                    in trace (collectH o) >> return a
 
+
+
+ 
+-- | Draw with grid coordinate...
+--
+nodei_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
+       => (Int,Int) -> LocImage u a -> m ()
+nodei_ coord imgL = nodei coord imgL >> return ()
+
+
+
+cxdraw :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+         => DrawingInfo (Point2 u) -> LocGraphic u -> m ()
+cxdraw pf gf = 
+    askDC  >>= \ctx -> let pt    = runCF  ctx pf
+                           (_,o) = runCF1 ctx pt gf 
+                       in trace (collectH o)
+
+cxdrawi :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+       => DrawingInfo (Point2 u) -> LocImage u a -> m a
+cxdrawi pf gf =  
+    askDC  >>= \ctx -> let pt    = runCF  ctx pf
+                           (a,o) = runCF1 ctx pt gf 
+                       in trace (collectH o) >> return a
+
+cxdrawi_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+        => DrawingInfo (Point2 u) -> LocImage u a -> m ()
+cxdrawi_ pf gf = cxdrawi pf gf >> return ()
+
+
+
+drawrc :: ( Real u, Floating u, FromPtSize u
+          , CenterAnchor t1, RadialAnchor  t1
+          , CenterAnchor t2, RadialAnchor  t2
+          , DrawingCtxM m,   TraceM m
+          , u ~ DUnit t1,  DUnit t1 ~ DUnit t2, u ~ DUnit (m ()) ) 
+       => t1 -> t2 -> ConnectorGraphic  u -> m ()
+drawrc a b gf = let (p0,p1) = radialConnectorPoints a b 
+                in draw (connect gf p0 p1)
+
+
+drawrci :: ( Real u, Floating u, FromPtSize u
+           , CenterAnchor t1, RadialAnchor  t1
+           , CenterAnchor t2, RadialAnchor  t2
+           , DrawingCtxM m,   TraceM m
+           , u ~ DUnit t1,  DUnit t1 ~ DUnit t2, u ~ DUnit (m ()) ) 
+        => t1 -> t2 -> ConnectorImage u a -> m a
+drawrci a b gf = let (p0,p1) = radialConnectorPoints a b 
+                 in drawci p0 p1 gf
+
+drawrci_ :: ( Real u, Floating u, FromPtSize u
+            , CenterAnchor t1, RadialAnchor  t1
+            , CenterAnchor t2, RadialAnchor  t2
+            , DrawingCtxM m,   TraceM m
+            , u ~ DUnit t1,  DUnit t1 ~ DUnit t2, u ~ DUnit (m ()) ) 
+         => t1 -> t2 -> ConnectorImage u a -> m ()
+drawrci_ a b gf = drawrci a b gf >> return ()

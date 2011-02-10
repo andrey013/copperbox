@@ -26,6 +26,7 @@ module Wumpus.Drawing.Shapes.Base
 
   , makeShape
   , strokedShape
+  , dblStrokedShape
   , filledShape
   , borderedShape
   , rstrokedShape
@@ -50,7 +51,7 @@ import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
-
+import Wumpus.Core.Colour ( white )
 
 import Data.AffineSpace                         -- package: vector-space
 
@@ -115,6 +116,24 @@ makeShape f g = Shape { shape_ans_fun    = f
 
 strokedShape :: Num u => Shape u a -> LocImage u a
 strokedShape = shapeToLoc closedStroke
+
+
+-- | Note - this is simplistic double stroking - draw a background 
+-- line with triple thickness and draw a white line on top.
+--
+-- I think this is what TikZ does, but it works better for TikZ 
+-- where the extra thickness seems to be accounted for by the 
+-- anchors. For Wumpus, arrows cut into the outside black line.
+--
+-- Probably Wumpus should calculate two paths instead.
+--
+dblStrokedShape :: Num u => Shape u a -> LocImage u a
+dblStrokedShape sh = decorate back fore 
+  where
+    img  = shapeToLoc closedStroke sh
+    back = getLineWidth >>= \lw -> localize (lineWidth $ lw * 3.0) img
+    fore = ignoreAns $ localize (strokeColour white) img
+
 
 
 filledShape :: Num u => Shape u a -> LocImage u a

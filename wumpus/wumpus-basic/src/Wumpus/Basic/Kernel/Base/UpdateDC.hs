@@ -27,6 +27,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   
     roundCornerFactor
   , textMargin
+  , snapGrid
 
   -- ** Line widths
   , lineWidth
@@ -99,10 +100,16 @@ updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 roundCornerFactor   :: Double -> DrawingContextF
 roundCornerFactor d = (\s -> s { round_corner_factor = d })
 
--- | 'textMargin' : @ xsep * ysep -> DrawingContextF @
+-- | 'textMargin' : @ x_sep * y_sep -> DrawingContextF @
 --
 textMargin   :: Double -> Double -> DrawingContextF
 textMargin xsep ysep = (\s -> s { text_margin = TextMargin xsep ysep })
+
+
+-- | 'snapGrid' : @ x_unit * y_unit -> DrawingContextF @
+--
+snapGrid   :: Double -> Double -> DrawingContextF
+snapGrid xu yu = (\s -> s { snap_grid_factors = (xu,yu) })
 
 
 --------------------------------------------------------------------------------

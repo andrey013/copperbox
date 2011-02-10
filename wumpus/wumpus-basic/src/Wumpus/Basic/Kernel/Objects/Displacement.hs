@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -59,10 +60,21 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , thetaSoutheastwards
   , thetaSouthwestwards
 
+  , centerRelative
+  , left_of
+  , right_of
+  , above_left_of
+  , above_right_of
+  , below_left_of
+  , below_right_of
+
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -274,4 +286,43 @@ thetaSoutheastwards d =
 thetaSouthwestwards :: Floating u => u -> ThetaPointDisplace u
 thetaSouthwestwards d = 
     \theta pt -> pt .+^ avec (circularModulo $ theta + (1.25*pi)) d
+
+
+
+--------------------------------------------------------------------------------
+
+
+centerRelative :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+               => (Int,Int) -> a -> DrawingInfo (Point2 u)
+centerRelative coord a =
+    let pt = center a in snapmove coord >>= \v -> return (pt .+^ v)
+
+
+right_of        :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+right_of        = centerRelative (1,0)
+
+left_of         :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+left_of         = centerRelative ((-1),0)
+
+above_right_of  :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+above_right_of  = centerRelative (1,1)
+
+below_right_of  :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+below_right_of  = centerRelative (1, (-1))
+
+above_left_of   :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+above_left_of   = centerRelative ((-1),1)
+
+below_left_of   :: (CenterAnchor a, Fractional u, u ~ DUnit a) 
+                => a -> DrawingInfo (Point2 u)
+below_left_of   = centerRelative ((-1),(-1))
+ 
+
+
+
 

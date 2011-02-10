@@ -241,6 +241,10 @@ decorate img gf =
 -- > adecorate :: LocImage u a -> LocGraphic u -> LocImage u a
 -- > adecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
 --
+-- \*\*WARNING\*\* - this needs a re-think, the function should 
+-- have the same type signature as 'decorate'. Whether this one 
+-- changes or 'decorate' changes is to be decided.
+--
 adecorate :: Monad m 
           => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
 adecorate img f = 
@@ -259,6 +263,10 @@ adecorate img f =
 -- > sdecorate :: Image u a -> Graphic u -> Image u a
 -- > sdecorate :: LocImage u a -> LocGraphic u -> LocImage u a
 -- > sdecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+--
+-- \*\*WARNING\*\* - this needs a re-think, the function should 
+-- have the same type signature as 'decorate'. Whether this one 
+-- changes or 'decorate' changes is to be decided.
 --
 sdecorate :: Monad m 
           => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
