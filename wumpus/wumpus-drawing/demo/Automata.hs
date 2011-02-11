@@ -58,7 +58,9 @@ automata_fonts :: [FontName]
 automata_fonts = map ps_font_name [ times_roman, times_italic ]
 
 makeCtx :: GlyphMetrics -> DrawingContext
-makeCtx = snapGrid 60.0 60.0 . fontFace times_roman . metricsContext 14
+makeCtx = 
+    snapGrid (60.0::Double) (60.0::Double) 
+        . fontFace times_roman . metricsContext 14
 
 
 automata :: DCtxPicture

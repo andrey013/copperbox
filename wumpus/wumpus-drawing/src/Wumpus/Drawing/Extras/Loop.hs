@@ -33,7 +33,9 @@ import Data.AffineSpace                         -- package: vector-space
 -- This could go in the Path namespace?
 
 
-
+-- | Note this has problems vis adding tips as the actual start
+-- and end points are synthesized.
+--
 loop :: (Real u, Floating u, FromPtSize u) => PathCF u
 loop = promoteR2 $ \ctr radpt -> 
    let incline = lineDirection ctr radpt
@@ -47,7 +49,6 @@ loop = promoteR2 $ \ctr radpt ->
 loopPoints :: (Real u, Floating u) => u -> Point2 u -> Radian -> [Point2 u]
 loopPoints circ_radius circ_ctr incline = 
     [ startl, cp1, cp2, kitel, cp3, cp4, top, cp5, cp6, kiter, cp7, cp8, startr ]
-
   where
     hw          = 1.25  * circ_radius
     height      = 3.8   * circ_radius

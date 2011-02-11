@@ -36,9 +36,9 @@ import Wumpus.Drawing.Paths
 -- An arrowhead always know how to draw itself (filled triangle, 
 -- stroked barb, etc.)
 --
--- A Path is currently always drawn with openStroke,
--- eventually there might be scope for drawing 
--- e.g. parallel lines  ====
+-- A Path is currently always drawn with openStroke, eventually 
+-- there might be scope for drawing e.g. parallel lines  ==== or 
+-- decorations.
 --
 
 
@@ -62,8 +62,9 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
     arrowhead_retract_dist arrh  >>= \dl -> 
     let path1   = shortenL dl cpath
         ang     = directionL path1
+        start   = tipL cpath
         g1      = openStroke $ toPrimPath path1
-        g2      = atRot (arrowhead_draw arrh) p0 ang
+        g2      = atRot (arrowhead_draw arrh) start ang
     in  fmap (replaceL cpath) $ g1 `oplus` g2       
 
 -- Note - returns original path
@@ -78,8 +79,9 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
     arrowhead_retract_dist arrh  >>= \dr -> 
     let path1   = shortenR dr cpath
         ang     = directionR path1
+        end     = tipR cpath
         g1      = openStroke $ toPrimPath path1
-        g2      = atRot (arrowhead_draw arrh) p1 ang
+        g2      = atRot (arrowhead_draw arrh) end ang
     in  fmap (replaceL cpath) $ g1 `oplus` g2
 
 
@@ -96,9 +98,11 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
     let path1   = shortenPath dL dR cpath
         angL    = directionL path1
         angR    = directionR path1
+        start   = tipL cpath
+        end     = tipR cpath
         g1      = openStroke $ toPrimPath path1
-        gL      = atRot (arrowhead_draw arrL) p0 angL
-        gR      = atRot (arrowhead_draw arrR) p1 angR
+        gL      = atRot (arrowhead_draw arrL) start angL
+        gR      = atRot (arrowhead_draw arrR) end   angR
     in  fmap (replaceL cpath) $ g1 `oplus` gL `oplus` gR
 
 
