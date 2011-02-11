@@ -48,6 +48,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
 
 
 import Wumpus.Basic.Kernel.Base.GlyphMetrics
+import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.StandardEncoding
@@ -82,10 +83,10 @@ data DrawingContext = DrawingContext
       , stroke_colour         :: RGBi      -- also text colour...
       , fill_colour           :: RGBi      
       , text_colour           :: RGBi
-      , line_spacing_factor   :: Double
-      , round_corner_factor   :: Double 
+      , line_spacing_factor   :: Pt
+      , round_corner_factor   :: Pt 
       , text_margin           :: TextMargin
-      , snap_grid_factors     :: (Double,Double)
+      , snap_grid_factors     :: (Pt,Pt)
       }
 
 -- TODO - what parts of the Drawing Context should be strict? 
@@ -102,8 +103,8 @@ type DrawingContextF = DrawingContext -> DrawingContext
 -- The default value is 2 point.
 --
 data TextMargin = TextMargin
-       { text_margin_x          :: !Double
-       , text_margin_y          :: !Double
+       { text_margin_x          :: !Pt
+       , text_margin_y          :: !Pt
        }
 
 

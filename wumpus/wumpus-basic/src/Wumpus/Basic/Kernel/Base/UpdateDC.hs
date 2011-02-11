@@ -78,6 +78,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
 
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -97,19 +98,21 @@ updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 
 --------------------------------------------------------------------------------
 
-roundCornerFactor   :: Double -> DrawingContextF
-roundCornerFactor d = (\s -> s { round_corner_factor = d })
+roundCornerFactor   :: ToPtSize u => u -> DrawingContextF
+roundCornerFactor d = \s -> s { round_corner_factor = toPtSize d }
 
 -- | 'textMargin' : @ x_sep * y_sep -> DrawingContextF @
 --
-textMargin   :: Double -> Double -> DrawingContextF
-textMargin xsep ysep = (\s -> s { text_margin = TextMargin xsep ysep })
+textMargin   :: ToPtSize u => u -> u -> DrawingContextF
+textMargin xsep ysep = \s -> 
+    s { text_margin = TextMargin (toPtSize xsep) (toPtSize ysep) }
 
 
 -- | 'snapGrid' : @ x_unit * y_unit -> DrawingContextF @
 --
-snapGrid   :: Double -> Double -> DrawingContextF
-snapGrid xu yu = (\s -> s { snap_grid_factors = (xu,yu) })
+snapGrid   :: ToPtSize u => u -> u -> DrawingContextF
+snapGrid xu yu = \s -> 
+    s { snap_grid_factors = (toPtSize xu, toPtSize yu) }
 
 
 --------------------------------------------------------------------------------

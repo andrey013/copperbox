@@ -87,7 +87,8 @@ class CardinalAnchor t where
 -- 
 
 
--- | Secondary group of cardinal (compass) positions on an object. 
+-- | Secondary group of cardinal (compass) positions on an object
+-- for the diagonal positions. 
 -- 
 -- It seems possible that for some objects defining the primary
 -- compass points (north, south,...) will be straight-forward 

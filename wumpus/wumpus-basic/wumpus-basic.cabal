@@ -42,6 +42,8 @@ description:
     Text is now drawn with the text colour rather than the stroke 
     colour.
   .
+  * Added Centimeter and Pica units.
+  .
   v0.15.0 to v0.16.0:
   .
   * Moved the Geometry modules from Wumpus-Drawing into 
@@ -124,6 +126,7 @@ library
     Wumpus.Basic.Kernel.Base.GlyphMetrics,
     Wumpus.Basic.Kernel.Base.QueryDC,
     Wumpus.Basic.Kernel.Base.ScalingContext,
+    Wumpus.Basic.Kernel.Base.Units,
     Wumpus.Basic.Kernel.Base.UpdateDC,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
     Wumpus.Basic.Kernel.Objects.AdvanceGraphic,

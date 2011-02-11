@@ -24,6 +24,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.GlyphMetrics
   , module Wumpus.Basic.Kernel.Base.QueryDC
   , module Wumpus.Basic.Kernel.Base.ScalingContext
+  , module Wumpus.Basic.Kernel.Base.Units
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   , module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
@@ -45,6 +46,7 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.GlyphMetrics
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.ScalingContext
+import Wumpus.Basic.Kernel.Base.Units
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.AdvanceGraphic
