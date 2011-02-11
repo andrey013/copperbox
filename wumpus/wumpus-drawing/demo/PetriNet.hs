@@ -11,8 +11,8 @@ import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
+import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
-import Wumpus.Drawing.Text.LRText
 
 import FontLoaderUtils
 

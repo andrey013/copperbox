@@ -10,7 +10,7 @@ import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Shapes.Triangle
-import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -49,12 +49,12 @@ shapes_pic = drawTracing $ do
     a1 <- drawi $ (strokedShape  $ ellipse 20 10) `at` P2 0 80
 --    drawi_ $ coordinateDot $ coordinate (center a1)
     connectRA (north a0) (southeast a1)
-    a2  <- drawi $ (strokedShape $ isoscelesTriangle 40 20) `at` P2 100 80
+    a2  <- drawi $ (strokedShape $ triangle 40 20) `at` P2 100 80
     
     return ()    
 
 
-connectRA :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
+connectRA :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
              , Real u, Floating u, FromPtSize u ) 
           => Point2 u -> Point2 u -> m ()
 connectRA p0 p1 = 

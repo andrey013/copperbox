@@ -25,7 +25,7 @@ table_drawing :: CtxPicture Double
 table_drawing = drawTracing $ do 
 --    tableGraphic
     draw $ connect (interiorGrid 10) (P2 (-20) (-20)) (P2 150 80)
-    draw $ grid (3,2) 20 `at` (P2 300 60)
+    drawi_ $ grid (3,2) cornflower_blue  `at` (P2 300 60)
 
 {-
 tableGraphic :: (Real u, Floating u, FromPtSize u) 

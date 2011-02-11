@@ -115,6 +115,7 @@ library
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.Marks,
     Wumpus.Drawing.Extras.Grids,
+    Wumpus.Drawing.Extras.Loop,
     Wumpus.Drawing.Extras.Turtle.TurtleClass,
     Wumpus.Drawing.Extras.Turtle.TurtleMonad,
     Wumpus.Drawing.Paths,

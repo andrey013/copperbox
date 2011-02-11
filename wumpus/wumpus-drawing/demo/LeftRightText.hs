@@ -19,7 +19,7 @@ import FontLoaderUtils
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 

@@ -26,7 +26,7 @@ main = do
 conn_pic :: CtxPicture Double
 conn_pic = drawTracing $ tableGraphic $ conntable
 
-conntable :: [ConnectorPath Double]
+conntable :: [PathCF Double]
 conntable = 
     [ connLine
     , connRightVH
@@ -50,7 +50,7 @@ conntable =
     ]
 
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
-             => [ConnectorPath u] -> TraceDrawing u ()
+             => [PathCF u] -> TraceDrawing u ()
 tableGraphic conns = 
     draw $ unchainZipWith emptyLocGraphic makeConnDrawing conns chn `at` start
   where
@@ -64,7 +64,7 @@ std_ctx = fillColour peru $ standardContext 18
 
 
 makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
-                 => ConnectorPath u -> LocGraphic u
+                 => PathCF u -> LocGraphic u
 makeConnDrawing conn = 
     promoteR1 $ \p0 -> fmap (replaceL uNil) $ 
         connect (uniformArrow curveTip conn) p0 (mkP1 p0)

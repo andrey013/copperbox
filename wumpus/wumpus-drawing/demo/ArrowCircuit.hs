@@ -5,13 +5,15 @@
 -- Acknowledgment - the Arrow diagram is taken from Ross 
 -- Paterson\'s slides /Arrows and Computation/.
 
+-- NOTE - this example now rather out-of-date. Wumpus-Drawing has 
+-- some new features to make node/connector drawing a bit easier.
 
 module ArrowCircuit where
 
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -92,23 +94,23 @@ circuit_pic = drawTracing $ do
 
 
 
-connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
+connWith :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
             , Real u, Floating u, FromPtSize u ) 
-         => ConnectorPath u -> Point2 u -> Point2 u -> m ()
+         => PathCF u -> Point2 u -> Point2 u -> m ()
 connWith con p0 p1 = localize doublesize $ 
     drawi_ $ apply2R2 (rightArrow tri45 con) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u
          , Real u, Floating u, FromPtSize u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit m )
+         , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
    drawi_ $ textAlignCenter ss `at` pt
 
 
 ptext :: ( Real u, Floating u, FromPtSize u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit m )
+         , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (fontAttr times_italic 14) $ 
     drawi_ $ textAlignCenter ss `at` pt
