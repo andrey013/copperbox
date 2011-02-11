@@ -50,7 +50,7 @@ module Wumpus.Drawing.Dots.Marks
   ) where
 
 
-import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.RotTextLR
 
 import Wumpus.Basic.Geometry.Paths              -- package: wumpus-basic
 import Wumpus.Basic.Kernel        

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.LRText
+-- Module      :  Wumpus.Drawing.Text.RotTextLR
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,19 +14,18 @@
 -- Left-to-right measured text that supports radial inclination.
 -- Caveat - rendering at any degree other than the horizontal may
 -- not look good in PostScript or SVG.
--- 
--- Note - LRText does not use the 'text_margin' setting from the 
--- 'DrawingContext'.
 --
 -- \*\* WARNING \*\* - the API for this module needs some polish.
 --
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.LRText
+module Wumpus.Drawing.Text.RotTextLR
   ( 
 
-    singleLine
+    RotTextLR
+
+  , singleLine
   , escSingleLine
   , rsingleLine
   , rescSingleLine
@@ -52,6 +51,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
+type RotTextLR u = PosImage u (BoundingBox u)
 
 
 -------------------

@@ -7,7 +7,7 @@ import FontLoaderUtils
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Text.CatText
+import Wumpus.Drawing.Text.DocTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -79,7 +79,7 @@ redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
 
 
-body :: FromPtSize u => [CatText u]
+body :: FromPtSize u => [DocTextLR u]
 body = [ string "Further work"
        , string "on" <+> (fontColour blue $ string "multiline")
        , string "text."

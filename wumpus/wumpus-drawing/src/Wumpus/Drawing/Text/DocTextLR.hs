@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.Text
+-- Module      :  Wumpus.Drawing.Text.DocTextLR
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -11,14 +11,17 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Left-to-right text.
+-- Flexible text type, composable with @pretty-print@ style 
+-- operators.
+-- 
+-- Left-to-right only.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.CatText
+module Wumpus.Drawing.Text.DocTextLR
   ( 
    
-    CatText
+    DocTextLR
   , leftAlign
   , centerAlign
   , rightAlign
@@ -57,9 +60,9 @@ import Data.Char ( ord )
 -- A CatPrim returns a drawing function (AdvGraphic) to be used
 -- drawing final rendering.
 --
-type CatPrim u = CF (u, AdvGraphic u)
+type DocPrim u = CF (u, AdvGraphic u)
 
-newtype CatText u = CatText { getCatText :: JoinList (CatPrim u) }
+newtype DocTextLR u = DocTextLR { getDocTextLR :: JoinList (DocPrim u) }
 
 
 
@@ -79,21 +82,21 @@ rightAMove half_max elt_w = half_max - elt_w
 
 
 leftAlign :: (Real u, FromPtSize u, Floating u) 
-          => [CatText u] -> PosImage u (BoundingBox u)
+          => [DocTextLR u] -> PosImage u (BoundingBox u)
 leftAlign = drawMulti leftAMove
 
 centerAlign :: (Real u, FromPtSize u, Floating u) 
-            => [CatText u] -> PosImage u (BoundingBox u)
+            => [DocTextLR u] -> PosImage u (BoundingBox u)
 centerAlign = drawMulti centerAMove
 
 rightAlign :: (Real u, FromPtSize u, Floating u) 
-           => [CatText u] -> PosImage u (BoundingBox u)
+           => [DocTextLR u] -> PosImage u (BoundingBox u)
 rightAlign = drawMulti rightAMove
 
 
 
 drawMulti :: (Real u, FromPtSize u, Floating u) 
-          => HMove u -> [CatText u] -> PosImage u (BoundingBox u)
+          => HMove u -> [DocTextLR u] -> PosImage u (BoundingBox u)
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
@@ -118,7 +121,7 @@ positionHLines mkH down (max_w,xs) = map fn xs
 
 
 evalAllLines :: (Num u, Ord u) 
-             => [CatText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
+             => [DocTextLR u] -> DrawingInfo (u, [(u, AdvGraphic u)])
 evalAllLines = fmap post . mapM evalLine
   where
     post xs = let mx = foldr (\(a,_) x -> max a x) 0 xs in (mx,xs)
@@ -127,8 +130,8 @@ evalAllLines = fmap post . mapM evalLine
 
 
 
-evalLine :: Num u => CatText u -> DrawingInfo (u, AdvGraphic u)
-evalLine ct = case viewl $ getCatText ct of
+evalLine :: Num u => DocTextLR u -> DrawingInfo (u, AdvGraphic u)
+evalLine ct = case viewl $ getDocTextLR ct of
     EmptyL -> return (0,  replaceAns (hvec 0) $ emptyLocGraphic)
     af :< rest -> af >>= \a -> go a (viewl rest)
   where
@@ -141,37 +144,37 @@ evalLine ct = case viewl $ getCatText ct of
 
 
 
--- | Build a blank CatText with no output and a 0 width vector.
+-- | Build a blank DocTextLR with no output and a 0 width vector.
 --
-blank :: Num u => CatText u
-blank = catOne $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
+blank :: Num u => DocTextLR u
+blank = doc1 $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
 
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
-space :: FromPtSize u => CatText u
-space = catOne $ 
+space :: FromPtSize u => DocTextLR u
+space = doc1 $ 
    charVector (CharEscInt $ ord ' ') >>= \v -> 
    return (advanceH v, replaceAns v $ emptyLocGraphic)
 
--- | Build a CatText from a string.
+-- | Build a DocTextLR from a string.
 --
-string :: FromPtSize u => String -> CatText u
-string = catOne . stringPrim
+string :: FromPtSize u => String -> DocTextLR u
+string = doc1 . stringPrim
 
 
 infixr 6 <>, <+>
 
--- | Concatenate two CatTexts separated with no spacing.
+-- | Concatenate two DocTextLRs separated with no spacing.
 --
-(<>) :: CatText u -> CatText u -> CatText u
-a <> b = CatText $ JL.join (getCatText a) (getCatText b) 
+(<>) :: DocTextLR u -> DocTextLR u -> DocTextLR u
+a <> b = DocTextLR $ JL.join (getDocTextLR a) (getDocTextLR b) 
 
 
--- | Concatenate two CatTexts separated with a space.
+-- | Concatenate two DocTextLRs separated with a space.
 --
-(<+>) :: FromPtSize u => CatText u -> CatText u -> CatText u
+(<+>) :: FromPtSize u => DocTextLR u -> DocTextLR u -> DocTextLR u
 a <+> b = a <> space <> b 
 
 
@@ -182,26 +185,26 @@ a <+> b = a <> space <> b
 -- Also PosImages can be inlined in text...
 --
 
-catOne :: CatPrim u -> CatText u
-catOne = CatText . JL.one 
+doc1 :: DocPrim u -> DocTextLR u
+doc1 = DocTextLR . JL.one 
 
 
-stringPrim :: FromPtSize u => String -> CatPrim u
+stringPrim :: FromPtSize u => String -> DocPrim u
 stringPrim = escapedPrim . escapeString
 
-escapedPrim :: FromPtSize u => EscapedText -> CatPrim u
+escapedPrim :: FromPtSize u => EscapedText -> DocPrim u
 escapedPrim esc = textVector esc >>= \v -> 
                   return (vector_x v, replaceAns v $ escapedline esc)
 
 
-catMap :: (AdvGraphic u -> AdvGraphic u) -> CatText u -> CatText u
-catMap f = CatText . fmap (fmap (\(u,ag) -> (u, f $ ag))) . getCatText
+docMap :: (AdvGraphic u -> AdvGraphic u) -> DocTextLR u -> DocTextLR u
+docMap f = DocTextLR . fmap (fmap (\(u,ag) -> (u, f $ ag))) . getDocTextLR
 
-catlocal :: DrawingContextF -> CatText u -> CatText u
-catlocal fn = catMap (localize fn)
+doclocal :: DrawingContextF -> DocTextLR u -> DocTextLR u
+doclocal fn = docMap (localize fn)
 
 
-fontColour :: RGBi -> CatText u -> CatText u
-fontColour rgb = catlocal (textColour rgb)
+fontColour :: RGBi -> DocTextLR u -> DocTextLR u
+fontColour rgb = doclocal (textColour rgb)
 
 
