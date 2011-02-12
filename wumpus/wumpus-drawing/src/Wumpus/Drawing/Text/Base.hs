@@ -69,7 +69,7 @@ charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
 -- the @cwLookupTable@ for every char.
 --
 charWidth :: FromPtSize u 
-          => CharWidthTable u -> EscapedChar -> AdvanceVec u
+          => CharWidthLookup u -> EscapedChar -> AdvanceVec u
 charWidth fn (CharLiteral c) = fn $ ord c
 charWidth fn (CharEscInt i)  = fn i
 charWidth fn (CharEscName s) = fn ix

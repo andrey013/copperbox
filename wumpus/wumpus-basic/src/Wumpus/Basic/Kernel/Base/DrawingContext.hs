@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.DrawingContext
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -159,10 +159,10 @@ standardContext sz =
 -- objects provided by @Wumpus-Drawing@ (DocText and RotText).
 -- 
 metricsContext :: FontSize -> FontLoadResult -> DrawingContext
-metricsContext sz flZ = 
+metricsContext sz res = 
     let env = standardContext sz 
-    in env { font_metrics_table = loaded_glyph_metrics flZ
-           , font_load_log      = loader_errors flZ
+    in env { font_metrics_table = loaded_font_table res
+           , font_load_log      = loader_errors res
            }
 
 

@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.UpdateDC
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -24,8 +24,9 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   ( 
 
   -- * Modifiers 
-  
-    roundCornerFactor
+    addFontTables
+      
+  , roundCornerFactor
   , textMargin
   , snapGrid
 
@@ -78,12 +79,14 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
 
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
+import Data.Monoid
 import Data.Ratio
 
 --------------------------------------------------------------------------------
@@ -94,6 +97,20 @@ updateStrokeProps fn = (\s i -> s { stroke_props = fn i }) <*> stroke_props
 updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
 updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 
+
+
+-- | 'addFontTables' : @ font_load_result -> DrawinContextUpdate @
+--
+-- Add the font metrics from the FontLoadResult, if a font with 
+-- the same name alreay exists in the 'DrawingContext' it will be 
+-- replaced. Error and warning messages in the @font_load_result@ 
+-- will be appended to the 'font_load_log'.
+--
+addFontTables :: FontLoadResult -> DrawingContextF
+addFontTables (FontLoadResult table msgs) = 
+    (\s i j -> s { font_metrics_table = i `mappend` table
+                 , font_load_log      = j `mappend` msgs }) 
+      <*> font_metrics_table <*> font_load_log
 
 
 --------------------------------------------------------------------------------

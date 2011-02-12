@@ -43,8 +43,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do 
     putStrLn "Using GhostScript metrics..."
-    (base_metrics, msgs) <- loadGSMetrics font_dir ["Times-Roman", "Times-Italic"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadGSFontMetrics font_dir ["Times-Roman", "Times-Italic"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit01.eps" pic1
     writeSVG "./out/arrow_circuit01.svg" pic1 
@@ -52,14 +52,15 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do 
     putStrLn "Using AFM 4.1 metrics..."
-    (base_metrics, msgs) <- loadAfmMetrics font_dir ["Times-Roman", "Times-Italic"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadAfmFontMetrics font_dir ["Times-Roman", "Times-Italic"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit02.eps" pic1
     writeSVG "./out/arrow_circuit02.svg" pic1 
 
+
  
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fontFace times_roman . metricsContext 11
 
 
@@ -118,7 +119,7 @@ ptext pt ss = localize (fontAttr times_italic 14) $
 
 -- Note - return type is a LocImage not a shape...
 --
-rrectangle :: (Real u, Floating u, FromPtSize u) 
+rrectangle :: (Real u, Floating u, FromPtSize u, ToPtSize u) 
            => u -> u -> u -> LocImage u (Rectangle u)
 rrectangle r w h = 
-    localize (roundCornerFactor $ realToFrac r) $ strokedShape (rectangle w h)
+    localize (roundCornerFactor $ toPtSize r) $ strokedShape (rectangle w h)

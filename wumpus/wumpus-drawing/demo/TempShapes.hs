@@ -28,14 +28,14 @@ font_directory = "C:/cygwin/usr/share/ghostscript/fonts"
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    (base_metrics,msgs) <- loadGSMetrics font_directory ["Courier"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadGSFontMetrics font_directory ["Courier"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) shapes_pic
     writeEPS "./out/_temp_shapes01.eps" pic1
     writeSVG "./out/_temp_shapes01.svg" pic1
     
 
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fontFace courier . metricsContext 14
 
 

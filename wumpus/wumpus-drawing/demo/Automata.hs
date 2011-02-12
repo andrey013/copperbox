@@ -39,8 +39,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do 
     putStrLn "Using GhostScript metrics..."
-    (base_metrics, msgs) <- loadGSMetrics font_dir automata_fonts 
-    mapM_ putStrLn msgs
+    base_metrics <- loadGSFontMetrics font_dir automata_fonts 
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata01.eps" pic1
     writeSVG "./out/automata01.svg" pic1 
@@ -48,8 +48,8 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do 
     putStrLn "Using AFM 4.1 metrics..."
-    (base_metrics, msgs) <- loadAfmMetrics font_dir automata_fonts
-    mapM_ putStrLn msgs
+    base_metrics <- loadAfmFontMetrics font_dir automata_fonts
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata02.eps" pic1
     writeSVG "./out/automata02.svg" pic1 
@@ -57,7 +57,7 @@ makeAfmPicture font_dir = do
 automata_fonts :: [FontName]
 automata_fonts = map ps_font_name [ times_roman, times_italic ]
 
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = 
     snapGrid (60.0::Double) (60.0::Double) 
         . fontFace times_roman . metricsContext 14

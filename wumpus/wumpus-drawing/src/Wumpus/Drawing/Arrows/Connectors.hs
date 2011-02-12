@@ -53,6 +53,8 @@ type DPathConnector = PathConnector Double
 -- file. 
 
 
+
+
 -- | Connector with an arrow tip at the start point \/ left.
 --
 leftArrow :: (Real u, Floating u) 
@@ -67,7 +69,8 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
         g2      = atRot (arrowhead_draw arrh) start ang
     in  fmap (replaceL cpath) $ g1 `oplus` g2       
 
--- Note - returns original path
+-- Note - returns original path and adds tips to the @cpath@ 
+-- which might have moved p0 and p1.
                  
 
 -- | Connector with an arrow tip at the end point \/ right.

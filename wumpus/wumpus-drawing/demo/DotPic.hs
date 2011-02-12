@@ -37,8 +37,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do 
     putStrLn "Using GhostScript metrics..."
-    (base_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadGSFontMetrics font_dir ["Helvetica"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
     writeEPS "./out/dot_pic01_gs.eps" pic1
     writeSVG "./out/dot_pic01_gs.svg" pic1
@@ -48,14 +48,14 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do 
     putStrLn "Using AFM 4.1 metrics..."
-    (base_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadAfmFontMetrics font_dir ["Helvetica"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
     writeEPS "./out/dot_pic01_afm.eps" pic1
     writeSVG "./out/dot_pic01_afm.svg" pic1
 
  
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fillColour peru . fontFace helvetica . metricsContext 24
 
 

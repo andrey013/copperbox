@@ -38,12 +38,13 @@ main = do
 makeGSPicture :: ShapeList -> FilePath -> IO ()
 makeGSPicture shapes font_dir = do
     putStrLn "Using GhostScript metrics..."
-    (gs_metrics, msgs) <- loadGSMetrics font_dir ["Courier"]
-    mapM_ putStrLn msgs
-    mapM_ (out1 gs_metrics) shapes 
+    base_metrics <- loadGSFontMetrics font_dir ["Courier"]
+    printLoadErrors base_metrics
+    let ctx = makeCtx base_metrics
+    mapM_ (out1 ctx) shapes 
   where
-    out1 gs_metrics (name, shape_pic) = do 
-       let pic1 = runCtxPictureU (makeCtx gs_metrics) $ shape_pic name
+    out1 ctx (name, shape_pic) = do 
+       let pic1 = runCtxPictureU ctx $ shape_pic name
        writeEPS ("./out/shapes/" ++ name ++ "01.eps") pic1
        writeSVG ("./out/shapes/" ++ name ++ "01.svg") pic1
 
@@ -51,12 +52,13 @@ makeGSPicture shapes font_dir = do
 makeAfmPicture :: ShapeList -> FilePath -> IO ()
 makeAfmPicture shapes font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
-    (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Courier"]
-    mapM_ putStrLn msgs
-    mapM_ (out1 afm_metrics) shapes 
+    base_metrics <- loadAfmFontMetrics font_dir ["Courier"]
+    printLoadErrors base_metrics
+    let ctx = makeCtx base_metrics
+    mapM_ (out1 ctx) shapes 
   where
-    out1 afm_metrics (name, shape_pic) = do 
-        let pic1 = runCtxPictureU (makeCtx afm_metrics) $ shape_pic name
+    out1 ctx (name, shape_pic) = do 
+        let pic1 = runCtxPictureU ctx $ shape_pic name
         writeEPS ("./out/shapes/" ++ name ++ "02.eps") pic1
         writeSVG ("./out/shapes/" ++ name ++ "02.svg") pic1
 
@@ -96,7 +98,7 @@ shape_list =
           triangle 300 150 )
     ]
 
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fontFace courier . metricsContext 16
 
 rotate05 :: Rotate a => a -> a

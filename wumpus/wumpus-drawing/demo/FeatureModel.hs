@@ -36,8 +36,8 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do 
     putStrLn "Using GhostScript metrics..."
-    (base_metrics, msgs) <- loadGSMetrics font_dir ["Courier-Bold"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadGSFontMetrics font_dir ["Courier-Bold"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model01.eps" pic1
     writeSVG "./out/feature_model01.svg" pic1 
@@ -45,13 +45,13 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do 
     putStrLn "Using AFM 4.1 metrics..."
-    (base_metrics, msgs) <- loadAfmMetrics font_dir ["Courier-Bold"]
-    mapM_ putStrLn msgs
+    base_metrics <- loadAfmFontMetrics font_dir ["Courier-Bold"]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model02.eps" pic1
     writeSVG "./out/feature_model02.svg" pic1 
 
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fontFace courier_bold . metricsContext 18
 
 

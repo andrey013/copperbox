@@ -34,6 +34,7 @@ module Wumpus.Basic.Kernel.Base.FontMetrics
   , fontLoadMsg
 
   , FontLoadResult(..)
+  , printLoadErrors
 
   , monospace_metrics
 
@@ -125,9 +126,15 @@ fontLoadMsg = FontLoadLog . wrapH
 
 -- Need a synonym for @FontLoading@...
 data FontLoadResult = FontLoadResult
-      { loaded_glyph_metrics :: FontTable
+      { loaded_font_table    :: FontTable
       , loader_errors        :: FontLoadLog
       }
+
+
+-- | Print the loader errors from the 'FontLoadResult' to std-out.
+--
+printLoadErrors :: FontLoadResult -> IO ()
+printLoadErrors = mapM_ putStrLn . toListH . getFontLoadLog . loader_errors
 
 --------------------------------------------------------------------------------
 
