@@ -21,8 +21,10 @@
 module Wumpus.Basic.System.FontLoader.GhostScript
   ( 
 
-    loadGSMetrics
-  
+    loadGSFontMetrics
+
+  , loadGSFont1 
+   
   ) where
 
 import Wumpus.Basic.Kernel
@@ -37,33 +39,57 @@ import Control.Monad
 import Data.Monoid
 
 
--- | 'loadGSMetrics' : 
--- @ path_to_gs_fonts * [font_name] -> IO (metrics, messages) @ 
+-- | 'loadGSFontMetrics' : 
+-- @ path_to_gs_fonts * [font_name] -> IO FontLoadResult @ 
 -- 
 -- Load the supplied list of fonts. 
 -- 
 -- Note - if a font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadGSMetrics :: FilePath -> [FontName] -> IO (GlyphMetrics, [String])
-loadGSMetrics font_dir_path ns = 
+loadGSFontMetrics :: FilePath -> [FontName] -> IO FontLoadResult
+loadGSFontMetrics font_dir_path ns = 
     liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
   where
-    mkFun = gsLoadFontCalcs font_dir_path ghostscript_fontmap_8_54 
-    
-    post (Left err,ss) = (mempty, ss ++ [err]) -- unreachable...
-    post (Right xs,ss) = (foldr insertFont mempty xs, ss)
+    mkFun = gsLoadFontMetrics font_dir_path ghostscript_fontmap_8_54 
+
+    post (Left err,msgs) = let errs = fontLoadMsg err `mappend` msgs
+                           in FontLoadResult mempty errs 
+    post (Right xs,msgs) = let body = foldr fn mempty xs
+                           in FontLoadResult body msgs
+
+    fn (name,metrics) table = insertFont name metrics table
 
 
-gsLoadFontCalcs :: FilePath -> GSFontMap -> FontName 
-                -> FontLoadIO FontMetricsOps
-gsLoadFontCalcs font_dir_path fm name = do
-    logLoadMsg  $ "Loading " ++ name
+-- | 'loadGSFont1' : 
+-- @ path_to_gs_fonts * font_name -> IO FontLoadResult @ 
+-- 
+-- Load a single GhostScript font. 
+-- 
+-- Note - if the font fails to load a message is written to the 
+-- log and monospaced /fallback metrics/ are used.
+--
+loadGSFont1 :: FilePath -> FontName -> IO FontLoadResult
+loadGSFont1 font_dir_path name = 
+   liftM post $ runFontLoadIO $ 
+      gsLoadFontMetrics font_dir_path ghostscript_fontmap_8_54 name
+  where
+    post (Left err,msgs)    = let errs = fontLoadMsg err `mappend` msgs
+                              in FontLoadResult mempty errs 
+    post (Right (a,b),msgs) = let body = insertFont a b mempty
+                              in FontLoadResult body msgs
+
+
+
+gsLoadFontMetrics :: FilePath -> GSFontMap -> FontName 
+                  -> FontLoadIO (FontName,FontMetrics)
+gsLoadFontMetrics font_dir_path fm name = do
+    tellLoadMsg  $ "Loading " ++ name
     font_file   <- resolveFontFile fm name 
     path        <- checkFontPath font_dir_path font_file
     ans         <- runParserFLIO path afmV2Parser
     props       <- buildAfmFontProps  ghostscript_mono_defaults_8_54 ans
-    return $ FontMetricsOps name (buildMetricsOps afmUnitScale props)
+    return (name, buildMetricsOps afmUnitScale props)
 
 
 resolveFontFile :: GSFontMap -> FontName -> FontLoadIO FilePath

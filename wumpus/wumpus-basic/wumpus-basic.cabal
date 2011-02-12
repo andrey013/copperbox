@@ -35,6 +35,9 @@ description:
   * Remove MonUnit type family. This was a hack that has been 
     worked round.
   .
+  * Re-worked the font metrics and font loader modules. The new
+    names should be more systematic.
+  .
   * Superceded the PointSupplyM class by adding snapping grid 
     scaling to the DrawingContext.
   .
@@ -43,6 +46,9 @@ description:
     colour.
   .
   * Added Centimeter and Pica units.
+  . 
+  * Added FontLoadLog to the DrawingContext - this allows access 
+    to the errors recorded during font loading.
   .
   v0.15.0 to v0.16.0:
   .
@@ -123,7 +129,7 @@ library
     Wumpus.Basic.Kernel.Base.BaseDefs,
     Wumpus.Basic.Kernel.Base.ContextFun,
     Wumpus.Basic.Kernel.Base.DrawingContext,
-    Wumpus.Basic.Kernel.Base.GlyphMetrics,
+    Wumpus.Basic.Kernel.Base.FontMetrics,
     Wumpus.Basic.Kernel.Base.QueryDC,
     Wumpus.Basic.Kernel.Base.ScalingContext,
     Wumpus.Basic.Kernel.Base.Units,

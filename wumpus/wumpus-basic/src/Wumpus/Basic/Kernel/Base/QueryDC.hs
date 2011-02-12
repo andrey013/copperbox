@@ -74,7 +74,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   ) where
 
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.GlyphMetrics
+import Wumpus.Basic.Kernel.Base.FontMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
 import qualified Wumpus.Core.FontSize   as FS
@@ -205,7 +205,7 @@ markHalfHeight = (0.5*) <$> markHeight
 
 --------------------------------------------------------------------------------
 
-glyphQuery :: DrawingCtxM m => (MetricsOps -> PtSize -> u) -> m u
+glyphQuery :: DrawingCtxM m => (FontMetrics -> PtSize -> u) -> m u
 glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
 
 -- | Get the font bounding box - this is the maximum boundary of 
@@ -234,7 +234,7 @@ glyphVerticalSpan =
     (\ch dd -> ch - dd) <$> glyphCapHeight <*> glyphDescender
 
 
-cwLookupTable :: (FromPtSize u, DrawingCtxM m) => m (CharWidthTable u)
+cwLookupTable :: (FromPtSize u, DrawingCtxM m) => m (CharWidthLookup u)
 cwLookupTable = glyphQuery get_cw_table
 
 

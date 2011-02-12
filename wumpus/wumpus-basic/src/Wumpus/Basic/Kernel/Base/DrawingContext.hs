@@ -24,16 +24,16 @@
 module Wumpus.Basic.Kernel.Base.DrawingContext
   ( 
 
-  -- * Drawing context
+  -- * Drawing context types
     DrawingContext(..)
-  , DrawingContextF
 
+  , DrawingContextF
   , TextMargin(..)
 
+  -- * Construction
   , standardContext
   , metricsContext
 
-  , default_drawing_context
 
   -- * DrawingCtxM (reader) monad
   , DrawingCtxM(..)
@@ -47,7 +47,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.GlyphMetrics
+import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -55,6 +55,7 @@ import Wumpus.Core.Text.StandardEncoding
 
 import Control.Applicative
 import Data.Maybe
+import Data.Monoid
 
 -- | 'DrawingContext' - the \"graphics state\" of Wumpus-Basic. 
 -- DrawingContext is operated on within a Reader monad rather than 
@@ -76,8 +77,9 @@ import Data.Maybe
 -- priority.
 -- 
 data DrawingContext = DrawingContext
-      { glyph_tables          :: GlyphMetrics
-      , fallback_metrics      :: MetricsOps
+      { font_metrics_table    :: FontTable
+      , font_load_log         :: FontLoadLog
+      , fallback_metrics      :: FontMetrics
       , stroke_props          :: StrokeAttr
       , font_props            :: FontAttr
       , stroke_colour         :: RGBi      -- also text colour...
@@ -108,10 +110,28 @@ data TextMargin = TextMargin
        }
 
 
-
+-- | 'standardContext' : @ font_size -> DrawingContext @  
+--
+-- Create a 'DrawingContext'.
+-- 
+-- Note - @font_size@ is used for sizing more than just text 
+-- labels. Arrowheads, plot marks and other elements have their
+-- metrics derived from the font size.
+-- 
+-- No real font metrics are present in the 'DrawingContext' 
+-- created by 'standardContext'. Static, hard-coded fallback 
+-- metrics derived from the @Courier@ font are available but
+-- these metrics might not accurately correspond to the 
+-- @Courier@ available to the the final renderer (GhostScript,
+-- an SVG viewer, etc.).
+-- 
+-- Use this constructor for drawings that make primitive use of
+-- text.
+-- 
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
-    DrawingContext { glyph_tables         = emptyGlyphMetrics
+    DrawingContext { font_metrics_table   = emptyFontTable
+                   , font_load_log        = mempty
                    , fallback_metrics     = monospace_metrics
                    , stroke_props         = default_stroke_attr
                    , font_props           = FontAttr sz wumpus_courier
@@ -120,19 +140,36 @@ standardContext sz =
                    , text_colour          = wumpus_black
                    , line_spacing_factor  = 1.2  
                    , round_corner_factor  = 0
-                   , text_margin          = standardTextMargin
-                   , snap_grid_factors    = (50.0,50.0)
+                   , text_margin          = default_text_margin
+                   , snap_grid_factors    = (50.0, 50.0)
                    }
 
-standardTextMargin :: TextMargin
-standardTextMargin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
 
--- out-of-date - should be adding loaded fonts, not replacing the 
--- GlyphMetrics Map wholesale.
+
+-- | 'metricsContext' : @ font_size * font_metrics -> DrawingContext @  
 --
-metricsContext :: FontSize -> GlyphMetrics -> DrawingContext
-metricsContext sz bgm = 
-    let env = standardContext sz in env { glyph_tables = bgm }
+-- Create a 'DrawingContext' with font metrics loaded from the 
+-- file system.
+-- 
+-- Note - @font_size@ is used for sizing more than just text 
+-- labels. Arrowheads, plot marks and other elements have their
+-- metrics derived from the font size.
+-- 
+-- Use this constructor for drawings that make use of the text 
+-- objects provided by @Wumpus-Drawing@ (DocText and RotText).
+-- 
+metricsContext :: FontSize -> FontLoadResult -> DrawingContext
+metricsContext sz flZ = 
+    let env = standardContext sz 
+    in env { font_metrics_table = loaded_glyph_metrics flZ
+           , font_load_log      = loader_errors flZ
+           }
+
+
+-- Helpers - not exported
+
+default_text_margin :: TextMargin
+default_text_margin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
 
 
 wumpus_black            :: RGBi
@@ -147,13 +184,6 @@ wumpus_light_gray       = RGBi 200 200 200
 wumpus_courier :: FontFace
 wumpus_courier = 
     FontFace "Courier" "Courier New" SVG_REGULAR standard_encoding
-
-
-
-default_drawing_context :: DrawingContext
-default_drawing_context = 
-    standardContext (font_size wumpus_default_font)
-
 
 
 --------------------------------------------------------------------------------
@@ -178,13 +208,13 @@ asksDC f = askDC >>= (return . f)
 
 
 
-withFontMetrics :: (MetricsOps -> PtSize -> u) -> DrawingContext -> u
+withFontMetrics :: (FontMetrics -> PtSize -> u) -> DrawingContext -> u
 withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) = 
       fn metric_set point_sz
   where 
     ps_name     = ps_font_name $ font_face font_stats
     point_sz    = fromIntegral $ font_size font_stats 
     metric_set  = fromMaybe (fallback_metrics ctx) $ 
-                    lookupFont ps_name (glyph_tables ctx) 
+                    lookupFont ps_name (font_metrics_table ctx)
 
 

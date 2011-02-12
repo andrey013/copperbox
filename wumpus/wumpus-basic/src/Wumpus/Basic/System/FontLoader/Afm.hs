@@ -21,8 +21,11 @@
 
 module Wumpus.Basic.System.FontLoader.Afm
   ( 
-    loadAfmMetrics
-  
+
+    loadAfmFontMetrics
+
+  , loadAfmFont1  
+
   ) where
 
 import Wumpus.Basic.Kernel
@@ -40,33 +43,57 @@ import Data.Monoid
 -- the only difference is the addition of a @.afm@ extension.
 --
 
--- | 'loadAfmMetrics' : 
--- @ path_to_afm_fonts * [font_name] -> IO (metrics, messages) @ 
+-- | 'loadAfmFontMetrics' : 
+-- @ path_to_afm_fonts * [font_name] -> IO FontLoadResult @ 
 -- 
 -- Load the supplied list of fonts. 
 -- 
 -- Note - if a font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadAfmMetrics :: FilePath -> [FontName] -> IO (GlyphMetrics, [String])
-loadAfmMetrics font_dir_path ns = 
+loadAfmFontMetrics :: FilePath -> [FontName] -> IO FontLoadResult
+loadAfmFontMetrics font_dir_path ns = 
     liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
   where
-    mkFun = afmLoadFontCalcs font_dir_path  
+    mkFun                = afmLoadFontMetrics font_dir_path  
  
-    post (Left err,ss) = (mempty, ss ++ [err])      -- unreachable...
-    post (Right xs,ss) = (foldr insertFont mempty xs, ss)
+    post (Left err,msgs) = let errs = fontLoadMsg err `mappend` msgs
+                           in FontLoadResult mempty errs
+    post (Right xs,msgs) = let body = foldr fn mempty xs
+                           in FontLoadResult body msgs
+    
+    fn (name,metrics) table = insertFont name metrics table
 
 
+-- TODO - need a one font version...
 
 
-afmLoadFontCalcs :: FilePath -> FontName -> FontLoadIO FontMetricsOps
-afmLoadFontCalcs font_dir_path name = do
-    logLoadMsg  $ "Loading " ++ name
+-- | 'loadAfmFont1' : 
+-- @ path_to_afm_fonts * font_name -> IO FontLoadResult @ 
+-- 
+-- Load a single AFM font. 
+-- 
+-- Note - if the font fails to load a message is written to the 
+-- log and monospaced /fallback metrics/ are used.
+--
+loadAfmFont1 :: FilePath -> FontName -> IO FontLoadResult
+loadAfmFont1 font_dir_path name =
+    liftM post $ runFontLoadIO $ afmLoadFontMetrics font_dir_path name
+  where
+    post (Left err,msgs)    = let errs = fontLoadMsg err `mappend` msgs
+                              in FontLoadResult mempty errs
+    post (Right (a,b),msgs) = let body = insertFont a b mempty
+                              in FontLoadResult body msgs
+    
+
+
+afmLoadFontMetrics :: FilePath -> FontName -> FontLoadIO (FontName,FontMetrics)
+afmLoadFontMetrics font_dir_path name = do
+    tellLoadMsg  $ "Loading " ++ name
     path        <- checkFontPath font_dir_path (name ++ ".afm")
     ans         <- runParserFLIO path afmV4Dot1Parser
     props       <- buildAfmFontProps  afm_mono_defaults_4_1 ans
-    return $ FontMetricsOps name (buildMetricsOps afmUnitScale props)
+    return (name, buildMetricsOps afmUnitScale props)
 
 
 

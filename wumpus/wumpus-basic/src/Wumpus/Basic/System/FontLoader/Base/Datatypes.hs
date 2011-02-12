@@ -42,7 +42,7 @@ module Wumpus.Basic.System.FontLoader.Base.Datatypes
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.GlyphMetrics
+import Wumpus.Basic.Kernel.Base.FontMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -161,10 +161,10 @@ data FontProps cu = FontProps
 -- | Build a MetricsOps function table, from a character unit
 -- scaling function and FontProps read from a file.
 --
-buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> MetricsOps
+buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> FontMetrics
 buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
                                    , fp_default_adv_vec = V2 vx vy }) = 
-    MetricsOps
+    FontMetrics
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
       , get_cw_table      = \sz i -> 
             maybe (defaultAV sz) (scaleVec sz) $ IM.lookup i (fp_adv_vecs font)

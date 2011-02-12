@@ -53,6 +53,11 @@ class Num u => ToPtSize u where
 instance ToPtSize Double where
   toPtSize = realToFrac
 
+instance ToPtSize PtSize where
+  toPtSize = id
+
+
+
 -- | Wrapped Double /Centimeter/ unit type.
 -- 
 newtype Centimeter = Centimeter { getCentimeter :: Double } 

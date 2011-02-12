@@ -18,12 +18,11 @@
 
 module Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
   (
-    FontLoadErr
-  , FontLoadIO
+    FontLoadIO
   , runFontLoadIO
   , evalFontLoadIO
   , loadError
-  , logLoadMsg
+  , tellLoadMsg
   , promoteIO
   , promoteEither
   , runParserFLIO
@@ -37,8 +36,8 @@ module Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
   
   ) where
 
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.Base.Datatypes
-import Wumpus.Basic.Utils.HList
 import Wumpus.Basic.Utils.ParserCombinators
 
 
@@ -60,19 +59,8 @@ import System.FilePath
 
 
 
-type FontLoadErr        = String
-
-newtype FontLoadLog     = FontLoadLog { getFontLoadLog :: H String }
-
-
-instance Monoid FontLoadLog where
-  mempty        = FontLoadLog $ emptyH
-  a `mappend` b = FontLoadLog $ getFontLoadLog a `appendH` getFontLoadLog b
-
-
-
 newtype FontLoadIO a = FontLoadIO { 
-          getFontLoadIO :: IO (Either FontLoadErr a, FontLoadLog ) }
+          getFontLoadIO :: IO (Either FontLoadMsg a, FontLoadLog ) }
 
 instance Functor FontLoadIO where
   fmap f ma = FontLoadIO $ getFontLoadIO ma >>= \(a,w) -> return (fmap f a, w)
@@ -85,34 +73,32 @@ instance Monad FontLoadIO where
                 fn (Right a, w1) = getFontLoadIO (k a) >>= \(b,w2) -> 
                                    return (b, w1 `mappend` w2)
 
-runFontLoadIO :: FontLoadIO a -> IO (Either FontLoadErr a,[String])
-runFontLoadIO ma = liftM post $ getFontLoadIO ma 
-  where
-    post (ans,w) = (ans, toListH $ getFontLoadLog w)
+runFontLoadIO :: FontLoadIO a -> IO (Either FontLoadMsg a, FontLoadLog)
+runFontLoadIO ma = getFontLoadIO ma 
 
 
-evalFontLoadIO :: FontLoadIO a -> IO (Either FontLoadErr a)
+evalFontLoadIO :: FontLoadIO a -> IO (Either FontLoadMsg a)
 evalFontLoadIO ma = liftM post $ getFontLoadIO ma
   where
     post (ans,_) = ans
 
 
-loadError :: FontLoadErr -> FontLoadIO a
+loadError :: FontLoadMsg -> FontLoadIO a
 loadError msg = FontLoadIO $ return (Left msg, mempty)
 
-logLoadMsg :: String -> FontLoadIO ()
-logLoadMsg msg = FontLoadIO $ return (Right (), message1 msg ) 
+tellLoadMsg :: String -> FontLoadIO ()
+tellLoadMsg msg = FontLoadIO $ return (Right (), fontLoadMsg msg ) 
 
 
-message1 :: String -> FontLoadLog 
-message1 = FontLoadLog . wrapH
 
-
--- | aka liftIO
+-- | Promote an @IO@ action into the the @FontLoadIO@ monad.
+--
+-- This function is equivalent to @liftIO@.
+--
 promoteIO :: IO a -> FontLoadIO a
 promoteIO ma = FontLoadIO $ ma >>= \a -> return (Right a, mempty)
 
-promoteEither :: Either FontLoadErr a -> FontLoadIO a
+promoteEither :: Either FontLoadMsg a -> FontLoadIO a
 promoteEither = either loadError return 
 
 runParserFLIO :: FilePath -> Parser Char a -> FontLoadIO a
@@ -133,20 +119,20 @@ sequenceAll = FontLoadIO . step
     step []     = return (Right [], mempty)
     step (m:ms) = liftM2 cons (getFontLoadIO m) (step ms) 
 
-cons :: (Either FontLoadErr a, FontLoadLog)
-     -> (Either FontLoadErr [a], FontLoadLog)
-     -> (Either FontLoadErr [a], FontLoadLog)
+cons :: (Either FontLoadMsg a, FontLoadLog)
+     -> (Either FontLoadMsg [a], FontLoadLog)
+     -> (Either FontLoadMsg [a], FontLoadLog)
 cons (Right a, w1)  (Right as, w2) = 
     (Right $ a:as,  w1 `mappend` w2)
 
 cons (Right a, w1)  (Left e2, w2) = 
-    (Right [a], w1 `mappend` w2 `mappend` message1 e2)
+    (Right [a], w1 `mappend` w2 `mappend` fontLoadMsg e2)
 
 cons (Left e1, w1)  (Right as, w2) = 
-    (Right as, w1 `mappend` message1 e1 `mappend` w2)
+    (Right as, w1 `mappend` fontLoadMsg e1 `mappend` w2)
 
 cons (Left e1, w1)  (Left e2,  w2) = 
-    (Right [], w1 `mappend` message1 e1 `mappend` w2 `mappend` message1 e2)
+    (Right [], w1 `mappend` fontLoadMsg e1 `mappend` w2 `mappend` fontLoadMsg e2)
 
 
 
@@ -185,7 +171,7 @@ buildAfmFontProps defaults afm = do
 extractCapHeight :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
 extractCapHeight defaults afm = maybe errk return $ afm_cap_height afm
   where
-    errk = logLoadMsg "WARNING - Could not extract CapHeight" >> 
+    errk = tellLoadMsg "WARNING - Could not extract CapHeight" >> 
            return (default_cap_height defaults)
 
 
@@ -193,7 +179,7 @@ extractCapHeight defaults afm = maybe errk return $ afm_cap_height afm
 extractDescender :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
 extractDescender defaults afm = maybe errk return $ afm_descender afm
   where
-    errk = logLoadMsg "WARNING - Could not extract Descender" >> 
+    errk = tellLoadMsg "WARNING - Could not extract Descender" >> 
            return (default_descender defaults)
 
 
@@ -201,7 +187,7 @@ extractFontBBox :: MonospaceDefaults AfmUnit -> AfmFile
                 -> FontLoadIO (BoundingBox AfmUnit)
 extractFontBBox defaults afm = maybe errk return $ afm_letter_bbox afm
   where
-    errk = logLoadMsg "WARNING - Could not extract CapHeight" >> 
+    errk = tellLoadMsg "WARNING - Could not extract CapHeight" >> 
            return (default_letter_bbox defaults)
 
 

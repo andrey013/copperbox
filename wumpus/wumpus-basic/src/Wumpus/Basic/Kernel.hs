@@ -21,7 +21,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.BaseDefs
   , module Wumpus.Basic.Kernel.Base.ContextFun
   , module Wumpus.Basic.Kernel.Base.DrawingContext
-  , module Wumpus.Basic.Kernel.Base.GlyphMetrics
+  , module Wumpus.Basic.Kernel.Base.FontMetrics
   , module Wumpus.Basic.Kernel.Base.QueryDC
   , module Wumpus.Basic.Kernel.Base.ScalingContext
   , module Wumpus.Basic.Kernel.Base.Units
@@ -43,7 +43,7 @@ import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.GlyphMetrics
+import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.ScalingContext
 import Wumpus.Basic.Kernel.Base.Units
