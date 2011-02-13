@@ -50,8 +50,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , emptyLocThetaGraphic 
 
   , decorate
-  , sdecorate
-  , adecorate
+  , annotate
   
   , hyperlink
 
@@ -212,7 +211,9 @@ emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
 
--- | Decorate an Image by superimposing a Graphic.
+-- | 'decorate' : @ image * graphic -> Image @
+-- 
+-- Decorate an Image by super-imposing a Graphic.
 --
 -- Note - this function has a very general type signature and
 -- supports various graphic types:
@@ -227,51 +228,25 @@ decorate img gf =
     img >>= \(a,g1) -> gf >>= \(_,g2) -> return (a, g1 `oplus` g2)
 
 
-
--- | /Anterior decorate/ - decorate an Image by superimposing it 
--- on a Graphic.
---
--- Note - here the Graphic has access to the result produced by the 
--- the Image unlike 'decorate'.
---
--- Again, this function has a very general type signature and
--- supports various graphic types:
---
--- > adecorate :: Image u a -> Graphic u -> Image u a
--- > adecorate :: LocImage u a -> LocGraphic u -> LocImage u a
--- > adecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
---
--- \*\*WARNING\*\* - this needs a re-think, the function should 
--- have the same type signature as 'decorate'. Whether this one 
--- changes or 'decorate' changes is to be decided.
---
-adecorate :: Monad m 
-          => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
-adecorate img f = 
-    img >>= \(a,g1) -> f a >>= \(_,g0) -> return (a, g0 `oplus` g1)
-
-
--- | /Superior decorate/ - decorate an image by superimposing a 
--- graphic on top of it.
---
--- Note, here the Graphic has access to the result produced by the 
--- the Image unlike 'decorate'.
+-- | 'annotate' : @ image * (result -> graphic) -> Image @
+-- 
+-- | Annotate an image by super-imposing a graphic on top of it - 
+-- the annotation function has access to the /result/ of the Image
+-- before it is super-imposed.
 --
 -- Again, this function has a very general type signature and
 -- supports various graphic types:
 --
--- > sdecorate :: Image u a -> Graphic u -> Image u a
--- > sdecorate :: LocImage u a -> LocGraphic u -> LocImage u a
--- > sdecorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+-- > annotate :: Image u a -> (a -> Graphic u) -> Image u a
+-- > annotate :: LocImage u a -> (a -> LocGraphic u) -> LocImage u a
+-- > annotate :: LocThetaImage u a -> (a -> LocThetaGraphic u) -> LocTheteImage u a
 --
--- \*\*WARNING\*\* - this needs a re-think, the function should 
--- have the same type signature as 'decorate'. Whether this one 
--- changes or 'decorate' changes is to be decided.
---
-sdecorate :: Monad m 
-          => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
-sdecorate img f = 
+annotate :: Monad m 
+         => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
+annotate img f = 
     img >>= \(a,g1) -> f a >>= \(_,g2) -> return (a, g1 `oplus` g2)
+
+
 
 
 -- | Hyperlink a graphic object.

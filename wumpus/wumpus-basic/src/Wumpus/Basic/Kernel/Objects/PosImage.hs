@@ -35,7 +35,14 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , PosGraphic
   , DPosGraphic
 
+  , PosThetaImage
+  , DPosThetaImage
+
+  , PosThetaGraphic
+  , DPosThetaGraphic
+
   , makePosImage
+  , makePosThetaImage
 
   , startPos
   , atStartPos
@@ -111,6 +118,35 @@ type DPosGraphic = PosGraphic Double
 
 
 
+-- | A positionable Image that supports drawing at some angle of 
+-- inclination.
+-- 
+-- Note - the rectangle frame is expected to represent an 
+-- orthogonal frame bounding the maximum hull of the Image, the 
+-- frame is not intended to be inclined itself.
+--
+type PosThetaImage u a = CF3  (Point2 u) RectPosition Radian (ImageAns u a)
+    
+-- | Version of PosThetaImage specialized to Double for the unit type.
+--
+type DPosThetaImage a = PosThetaImage Double a
+
+
+
+-- | A positionable Graphic that supports drawing at some angle of
+-- inclination.
+--
+-- Note - the rectangle frame is expected to represent an 
+-- orthogonal frame bounding the maximum hull of the Image, the 
+-- frame is not intended to be inclined itself.
+--
+type PosThetaGraphic u = PosThetaImage u (UNil u) 
+    
+-- | Version of PosThetaGraphic specialized to Double for the unit type.
+--
+type DPosThetaGraphic = PosThetaGraphic Double
+
+
 
 
 
@@ -163,6 +199,20 @@ makePosImage :: Fractional u
              => ObjectPos u -> LocImage u a -> PosImage u a
 makePosImage opos gf = promoteR2 $ \start rpos -> 
     let v1 = startVector rpos opos in gf `at` displaceVec v1 start
+
+
+
+-- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
+--
+-- Create a 'PosThetaImage' from an 'ObjectPos' describing how it
+-- is orientated within a border rectangle and a 'LocThetaImage' 
+-- that draws it at some angle of inclination.
+--
+makePosThetaImage :: Fractional u 
+             => ObjectPos u -> LocThetaImage u a -> PosThetaImage u a
+makePosThetaImage opos gf = promoteR3 $ \start rpos theta -> 
+    let v1 = startVector rpos opos 
+    in atRot gf (displaceVec v1 start) theta
 
 
 

@@ -63,6 +63,8 @@ description:
   * Added @PosImage@ object - this is a rectangle-framed object 
     that can be drawn from any of its corners or its center. 
   .
+  * Added @CF3@, an arity three /ContextFunction/.
+  .
   * Added @Displacement@ module. This defines the @PointDisplace@
     type and provides a library of @PointDisplace@ functions.
     Note - some of the new functions have taken names previously 

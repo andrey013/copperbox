@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.ContextFun
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -22,6 +22,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
     CF     
   , CF1
   , CF2
+  , CF3
 
   , LocCF
   , LocThetaCF
@@ -36,19 +37,27 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , runCF
   , runCF1 
   , runCF2
+  , runCF3
 
   -- * Lift functions
   , lift0R1
   , lift0R2
+  , lift0R3
   , lift1R2
- 
+  , lift1R3
+  , lift2R3
+
   , promoteR1
   , promoteR2
-
+  , promoteR3
 
   , apply1R1
   , apply2R2
+  , apply3R3
+
   , apply1R2
+  , apply1R3
+  , apply2R3  
 
   -- * Extractors
   , drawingCtx
@@ -67,7 +76,8 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , rot
   , atRot
   , connect
-  , chain1
+
+  , branch1
 
 
   ) where
@@ -112,7 +122,7 @@ newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
 --
 -- The first argument is commonly a point representing the start 
 -- point / origin of a drawing. The second argument might 
--- typically be the angle of displacement (for drawing arrowheads) 
+-- typically be the angle of inclination (for drawing arrowheads) 
 -- or an end point (for drawing connectors between two points).
 -- 
 -- > CF2 :: DrawingContext -> r1 -> r2 -> a 
@@ -120,6 +130,17 @@ newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
 newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 
  
+-- | Variation of 'CF' with three parametric /static arguments/.
+--
+-- By arity three, context functions are rather esoteric, the only 
+-- use so far for CF3 is @RotText@ which has a start point, angle
+-- of inclination and a 'RectPosition' indicating whereabouts on 
+-- a framing rectangle the startpoint refers.
+-- 
+-- > CF3 :: DrawingContext -> r1 -> r2 -> r3 -> a 
+--
+newtype CF3 r1 r2 r3 a = CF3 { unCF3 :: DrawingContext -> r1 -> r2 -> r3 -> a }
+
 
 -- | Type specialized verison of 'CF1' where the /static argument/
 -- is the /start point/.
@@ -179,6 +200,11 @@ instance OPlus a => OPlus (CF2 r1 r2 a)  where
                           unCF2 fa ctx r1 r2 `oplus` unCF2 fb ctx r1 r2
 
 
+instance OPlus a => OPlus (CF3 r1 r2 r3 a)  where
+  fa `oplus` fb = CF3 $ \ctx r1 r2 r3 -> 
+                          unCF3 fa ctx r1 r2 r3 `oplus` unCF3 fb ctx r1 r2 r3
+
+
 -- Monoid
  
 -- Nothing is stopping monoid instances, though in practice there
@@ -195,8 +221,14 @@ instance Monoid a => Monoid (CF1 r1 a) where
 instance Monoid a => Monoid (CF2 r1 r2 a) where 
   mempty          = CF2 $ \_   _  _  -> mempty
   fa `mappend` fb = CF2 $ \ctx r1 r2 -> 
-                            unCF2 fa ctx r1 r2 `mappend` unCF2 fb ctx r1 r2
+                      unCF2 fa ctx r1 r2 `mappend` unCF2 fb ctx r1 r2
 
+
+
+instance Monoid a => Monoid (CF3 r1 r2 r3 a) where 
+  mempty          = CF3 $ \_   _  _  -> mempty
+  fa `mappend` fb = CF3 $ \ctx r1 r2 r3 -> 
+                      unCF3 fa ctx r1 r2 r3 `mappend` unCF3 fb ctx r1 r2 r3
 
 
 -- Functor
@@ -204,12 +236,14 @@ instance Monoid a => Monoid (CF2 r1 r2 a) where
 instance Functor CF where
   fmap f ma = CF $ \ctx -> f $ unCF ma ctx 
 
-
 instance Functor (CF1 r1) where
   fmap f ma = CF1 $ \ctx r1 -> f $ unCF1 ma ctx r1 
 
 instance Functor (CF2 r1 r2) where
   fmap f ma = CF2 $ \ctx r1 r2 -> f $ unCF2 ma ctx r1 r2
+
+instance Functor (CF3 r1 r2 r3) where
+  fmap f ma = CF3 $ \ctx r1 r2 r3 -> f $ unCF3 ma ctx r1 r2 r3
 
 
 
@@ -236,6 +270,13 @@ instance Applicative (CF2 r1 r2) where
                                   in f a
 
 
+instance Applicative (CF3 r1 r2 r3) where
+  pure a    = CF3 $ \_   _  _  _  -> a
+  mf <*> ma = CF3 $ \ctx r1 r2 r3 -> let f = unCF3 mf ctx r1 r2 r3
+                                         a = unCF3 ma ctx r1 r2 r3
+                                     in f a
+
+
 
 
 -- Monad 
@@ -251,8 +292,12 @@ instance Monad (CF1 r1) where
 instance Monad (CF2 r1 r2) where
   return a  = CF2 $ \_   _  _  -> a
   ma >>= k  = CF2 $ \ctx r1 r2 -> 
-                      let a = unCF2 ma ctx r1 r2 in (unCF2 . k) a ctx r1 r2
+                let a = unCF2 ma ctx r1 r2 in (unCF2 . k) a ctx r1 r2
 
+instance Monad (CF3 r1 r2 r3) where
+  return a  = CF3 $ \_   _  _  _  -> a
+  ma >>= k  = CF3 $ \ctx r1 r2 r3 -> 
+                let a = unCF3 ma ctx r1 r2 r3 in (unCF3 . k) a ctx r1 r2 r3
 
 
 -- DrawingCtxM 
@@ -297,13 +342,18 @@ runCF1 :: DrawingContext -> r1 -> CF1 r1 a -> a
 runCF1 ctx r1 df = unCF1 df ctx r1
 
 
--- | Run a /CF1/ (context function) with the supplied 
+-- | Run a /CF2/ (context function) with the supplied 
 -- /DrawingContext/ and two static arguments.
 --
 runCF2 :: DrawingContext -> r1 -> r2 -> CF2 r1 r2 a -> a
 runCF2 ctx r1 r2 df = unCF2 df ctx r1 r2
 
 
+-- | Run a /CF3/ (context function) with the supplied 
+-- /DrawingContext/ and three static arguments.
+--
+runCF3 :: DrawingContext -> r1 -> r2 -> r3 -> CF3 r1 r2 r3 a -> a
+runCF3 ctx r1 r2 r3 df = unCF3 df ctx r1 r2 r3
 
 --------------------------------------------------------------------------------
 -- lift functions
@@ -321,12 +371,34 @@ lift0R1 mf          = CF1 $ \ctx _ -> unCF mf ctx
 lift0R2             :: CF a -> CF2 r1 r2 a
 lift0R2 mf          = CF2 $ \ctx _ _ -> unCF mf ctx
 
+
+-- | Lift a zero-arity context function 'CF' to an arity three
+-- context function 'CF3'.
+-- 
+lift0R3             :: CF a -> CF3 r1 r2 r3 a
+lift0R3 mf          = CF3 $ \ctx _ _ _ -> unCF mf ctx
+
+
 -- | Lift an arity one context function 'CF1' to an arity two
 -- context function 'CF2'.
 -- 
 lift1R2             :: CF1 r1 a -> CF2 r1 r2 a
 lift1R2 mf          = CF2 $ \ctx r1 _ -> unCF1 mf ctx r1
 
+
+
+-- | Lift an arity one context function 'CF1' to an arity two
+-- context function 'CF3'.
+-- 
+lift1R3             :: CF1 r1 a -> CF3 r1 r2 r3 a
+lift1R3 mf          = CF3 $ \ctx r1 _ _ -> unCF1 mf ctx r1
+
+
+-- | Lift an arity two context function 'CF2' to an arity two
+-- context function 'CF3'.
+-- 
+lift2R3             :: CF2 r1 r2 a -> CF3 r1 r2 r3 a
+lift2R3 mf          = CF3 $ \ctx r1 r2 _ -> unCF2 mf ctx r1 r2
 
 
 -- | Promote a function @from one argument to a Context Function@ 
@@ -349,6 +421,17 @@ promoteR1 mf        = CF1 $ \ctx r1 -> unCF (mf r1) ctx
 promoteR2           :: (r1 -> r2 -> CF a) -> CF2 r1 r2 a
 promoteR2 mf        = CF2 $ \ctx r1 r2 -> unCF (mf r1 r2) ctx
 
+
+
+-- | Promote a function @from three arguments to a Context Function@ 
+-- to an arity three @Context Function@.
+--
+-- The type signature is as explanatory as a description:
+--
+-- > promoteR3 :: (r1 -> r2 -> r3 -> CF a) -> CF3 r1 r2 r3 a
+-- 
+promoteR3           :: (r1 -> r2 -> r3 -> CF a) -> CF3 r1 r2 r3 a
+promoteR3 mf        = CF3 $ \ctx r1 r2 r3 -> unCF (mf r1 r2 r3 ) ctx
 
 
 -- | Apply an arity-one Context Function to a single argument, 
@@ -374,6 +457,21 @@ apply1R1 mf r1      = CF $ \ctx -> unCF1 mf ctx r1
 apply2R2            :: CF2 r1 r2 a -> r1 -> r2 -> CF a
 apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 
+
+-- | Apply an arity-three Context Function to three arguments, 
+-- downcasting it by three levels, making an arity-zero Context 
+-- function. 
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > apply3R3 :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 CF a
+-- 
+apply3R3            :: CF2 r1 r2 a -> r1 -> r2 -> CF a
+apply3R3 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
+
+
+
+
 -- | Apply an arity-two Context Function to one argument, 
 -- downcasting it by one level, making an arity-one Context 
 -- function. 
@@ -384,6 +482,31 @@ apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 --
 apply1R2            :: CF2 r1 r2 a -> r2 -> CF1 r1 a
 apply1R2 mf r2      = CF1 $ \ctx r1 -> unCF2 mf ctx r1 r2
+
+
+
+-- | Apply an arity-three Context Function to one argument, 
+-- downcasting it by one level, making an arity-two Context 
+-- function. 
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > apply1R3 :: CF3 r1 r2 r3 a -> r3 -> CF2 r1 r2 a
+--
+apply1R3            :: CF3 r1 r2 r3 a -> r3 -> CF2 r1 r2 a
+apply1R3 mf r3      = CF2 $ \ctx r1 r2 -> unCF3 mf ctx r1 r2 r3
+
+
+-- | Apply an arity-three Context Function to two arguments, 
+-- downcasting it by two levels, making an arity-one Context 
+-- function. 
+-- 
+-- The type signature is as explanatory as a description:
+--
+-- > apply2R3 :: CF3 r1 r2 a -> r2 -> r3 -> CF1 r1 a
+--
+apply2R3            :: CF3 r1 r2 r3 a -> r2 -> r3 -> CF1 r1 a
+apply2R3 mf r2 r3   = CF1 $ \ctx r1 -> unCF3 mf ctx r1 r2 r3
 
 
 --------------------------------------------------------------------------------
@@ -513,9 +636,9 @@ connect = apply2R2
 
 
 
-infixr 6 `chain1`
+infixr 6 `branch1`
 
--- | /Chaining/ combinator - the /answer/ of the 
+-- | /Branching/ combinator - the /answer/ of the 
 -- first Context Function is feed to the second Context Function. 
 --
 -- This contrasts with the usual idiom in @Wumpus-Basic@ where 
@@ -537,14 +660,14 @@ infixr 6 `chain1`
 --
 -- @ (ctx -> s1 -> (w,s1)) -> (ctx -> s1 -> (w,s1)) -> (ctx -> s1 -> (w,s1)) @
 --
--- This models chaining start points together, which is the model
--- PostScript uses for text output when successively calling the 
--- @show@ operator.
--- 
-chain1 :: OPlus w 
-            => CF1 s1 (s1,w) -> CF1 s1 (s1,w) -> CF1 s1 (s1,w)
-chain1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
-                                 (s2,a2) = unCF1 g ctx s1
-                             in (s2, a1 `oplus` a2)
+-- \*\* WARNING \*\* - this idiom has not found a real use in 
+-- practice. It doesn\'t properly model text in PostScript (which
+-- was the intention), hence it might be removed in future.
+--
+branch1 :: OPlus w 
+        => CF1 s1 (s1,w) -> CF1 s1 (s1,w) -> CF1 s1 (s1,w)
+branch1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
+                                  (s2,a2) = unCF1 g ctx s1
+                              in (s2, a1 `oplus` a2)
 
 
