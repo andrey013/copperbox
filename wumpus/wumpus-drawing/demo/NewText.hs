@@ -66,11 +66,11 @@ mf = localize (textMargin (6.0::Pt) (6.0::Pt))  $ do
     drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
 
-    drawi_ $ (fn $ centerAlign body `startPos` SS) `at` P2 150 0
-    draw   $ redPlus `at` P2 150 0
+    drawi_ $ (fn $ centerAlign body `startPos` SS) `at` P2 0 150
+    draw   $ redPlus `at` P2 0 150
 
-    drawi_ $ (fn $ rightAlign body `startPos` SS) `at` P2 300 0
-    draw   $ redPlus `at` P2 300 0
+    drawi_ $ (fn $ rightAlign body `startPos` SS) `at` P2 0 300
+    draw   $ redPlus `at` P2 0 300
   where
     fn    = illustrateBoundedLocGraphic
 
@@ -79,8 +79,10 @@ redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
 redPlus = localize (strokeColour red) markPlus
 
 
-body :: FromPtSize u => [DocTextLR u]
+body :: (Ord u, FromPtSize u) => [DocText u]
 body = [ string "Further work"
-       , string "on" <+> (fontColour blue $ string "multiline")
-       , string "text."
+       , (textSize 36 $ string "on")
+           <+> (fontColour blue $ string "multiline")
+           <+> string "text"
+       , (rfill 50 $ string "and") <> string "other things."
        ] 

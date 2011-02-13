@@ -21,7 +21,8 @@
 module Wumpus.Drawing.Text.DocTextLR
   ( 
    
-    DocTextLR
+    DocText
+
   , leftAlign
   , centerAlign
   , rightAlign
@@ -34,7 +35,10 @@ module Wumpus.Drawing.Text.DocTextLR
   , (<>)
   , (<+>) 
 
+  , rfill
+
   , fontColour
+  , textSize
 
   ) where
 
@@ -42,12 +46,11 @@ import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Text.Base
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl )
-import qualified Wumpus.Basic.Utils.JoinList as JL
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Char ( ord )
+import Data.Foldable ( foldrM )
 
 -- Need to know line width (horizontal) and line count (vertical) 
 -- to render...
@@ -62,9 +65,11 @@ import Data.Char ( ord )
 -- A CatPrim returns a drawing function (AdvGraphic) to be used
 -- drawing final rendering.
 --
-type DocPrim u = CF (u, AdvGraphic u)
+-- type DocPrim u = CF (u, AdvGraphic u)
 
-newtype DocTextLR u = DocTextLR { getDocTextLR :: JoinList (DocPrim u) }
+newtype DocText u = DocText { getDocText :: CF (u, AdvGraphic u) }
+
+
 
 
 
@@ -84,21 +89,21 @@ rightAMove half_max elt_w = half_max - elt_w
 
 
 leftAlign :: (Real u, FromPtSize u, Floating u) 
-          => [DocTextLR u] -> PosImage u (BoundingBox u)
+          => [DocText u] -> PosImage u (BoundingBox u)
 leftAlign = drawMulti leftAMove
 
 centerAlign :: (Real u, FromPtSize u, Floating u) 
-            => [DocTextLR u] -> PosImage u (BoundingBox u)
+            => [DocText u] -> PosImage u (BoundingBox u)
 centerAlign = drawMulti centerAMove
 
 rightAlign :: (Real u, FromPtSize u, Floating u) 
-           => [DocTextLR u] -> PosImage u (BoundingBox u)
+           => [DocText u] -> PosImage u (BoundingBox u)
 rightAlign = drawMulti rightAMove
 
 
 
 drawMulti :: (Real u, FromPtSize u, Floating u) 
-          => HMove u -> [DocTextLR u] -> PosImage u (BoundingBox u)
+          => HMove u -> [DocText u] -> PosImage u (BoundingBox u)
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
@@ -123,76 +128,85 @@ positionHLines mkH down (max_w,xs) = map fn xs
 
 
 evalAllLines :: (Num u, Ord u) 
-             => [DocTextLR u] -> DrawingInfo (u, [(u, AdvGraphic u)])
-evalAllLines = fmap post . mapM evalLine
+             => [DocText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
+evalAllLines = foldrM fn (0,[]) 
   where
-    post xs = let mx = foldr (\(a,_) x -> max a x) 0 xs in (mx,xs)
-            
+    fn dt (maxw,xs) = getDocText dt >>= \ans@(dx,_) -> 
+                      return (max dx maxw, ans:xs)
 
 
-
-
-evalLine :: Num u => DocTextLR u -> DrawingInfo (u, AdvGraphic u)
-evalLine ct = case viewl $ getDocTextLR ct of
-    EmptyL -> return (0,  replaceAns (hvec 0) $ emptyLocGraphic)
-    af :< rest -> af >>= \a -> go a (viewl rest)
-  where
-    go acc     EmptyL     = return acc
-    go (dx,af) (mf :< ms) = let moveF = moveStart (displaceH dx)
-                            in mf >>= \(u,gf) -> 
-                               go (dx+u, af `oplus` moveF gf) (viewl ms)
-
-
-
-
-
--- | Build a blank DocTextLR with no output and a 0 width vector.
+-- | Build a blank DocText with no output and a 0 width vector.
 --
-blank :: Num u => DocTextLR u
-blank = doc1 $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
+blank :: Num u => DocText u
+blank = DocText $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
+
+
+
+
+escaped :: FromPtSize u => EscapedText -> DocText u
+escaped esc = DocText $ body 
+   where
+     body = textVector esc >>= \v -> 
+            return (vector_x v, replaceAns v $ escapedline esc)
+
+
+-- | Build a DocText from a string.
+-- 
+-- Note the string should not contain newlines or tabs.
+--
+string :: FromPtSize u => String -> DocText u
+string = escaped . escapeString
 
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
-space :: FromPtSize u => DocTextLR u
-space = doc1 $ 
+space :: FromPtSize u => DocText u
+space = DocText $ 
    charVector (CharEscInt $ ord ' ') >>= \v -> 
    return (advanceH v, replaceAns v $ emptyLocGraphic)
 
--- | Build a DocTextLR from a string.
---
-string :: FromPtSize u => String -> DocTextLR u
-string = doc1 . stringPrim
 
 
-int :: FromPtSize u => Int -> DocTextLR u
-int i = doc1 $ body 
-  where
-    body = charVector (CharLiteral '0') >>= \v1 -> 
-           uniformSpacePrim (advanceH v1) (map CharLiteral $ show i)
 
-integer :: FromPtSize u => Integer -> DocTextLR u
-integer i = doc1 $ body 
-  where
-    body = charVector (CharLiteral '0') >>= \v1 -> 
-           uniformSpacePrim (advanceH v1) (map CharLiteral $ show i)
+
+int :: FromPtSize u => Int -> DocText u
+int i = DocText $ 
+    charVector (CharLiteral '0') >>= \v1 -> 
+    uniformSpace (advanceH v1) (map CharLiteral $ show i)
+
+integer :: FromPtSize u => Integer -> DocText u
+integer i = DocText $ 
+    charVector (CharLiteral '0') >>= \v1 -> 
+    uniformSpace (advanceH v1) (map CharLiteral $ show i)
 
 
 
 infixr 6 <>, <+>
 
--- | Concatenate two DocTextLRs separated with no spacing.
+
+-- | Concatenate two DocTexts separated with no spacing.
 --
-(<>) :: DocTextLR u -> DocTextLR u -> DocTextLR u
-a <> b = DocTextLR $ JL.join (getDocTextLR a) (getDocTextLR b) 
+(<>) :: Num u => DocText u -> DocText u -> DocText u
+a <> b = DocText body 
+  where 
+    body = getDocText a >>= \(dx0,gf0) -> 
+           getDocText b >>= \(dx1,gf1) -> 
+           return (dx0 + dx1, gf0 `oplus` moveStart (displaceH dx0) gf1)  
 
 
--- | Concatenate two DocTextLRs separated with a space.
+-- | Concatenate two DocTexts separated with a space.
 --
-(<+>) :: FromPtSize u => DocTextLR u -> DocTextLR u -> DocTextLR u
+(<+>) :: FromPtSize u => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
+-- | Right fill
+rfill :: Ord u => u -> DocText u -> DocText u
+rfill w dt = DocText $ getDocText dt >>= \(u,gf) -> return (max w u, gf)
+
+
+-- A contextual version might be useful...
+-- cxrfill :: Ord u => DrawingInfo u -> DocText u -> DocText u
 
 
 -- Note - @fill@ combinators cf. @wl-pprint@ (but left and right) 
@@ -201,42 +215,41 @@ a <+> b = a <> space <> b
 -- Also PosImages can be inlined in text...
 --
 
-doc1 :: DocPrim u -> DocTextLR u
-doc1 = DocTextLR . JL.one 
+fontColour :: RGBi -> DocText u -> DocText u
+fontColour rgb = doclocal (textColour rgb)
 
+
+-- Note with the formulation @ CF (u,AdvGraphic u) @ changing
+-- text size will not work.
+--
+
+textSize :: Int -> DocText u -> DocText u
+textSize sz = doclocal (fontSize sz)
 
 
 --------------------------------------------------------------------------------
 -- Helpers
 
-stringPrim :: FromPtSize u => String -> DocPrim u
-stringPrim = escapedPrim . escapeString
 
-escapedPrim :: FromPtSize u => EscapedText -> DocPrim u
-escapedPrim esc = textVector esc >>= \v -> 
-                  return (vector_x v, replaceAns v $ escapedline esc)
-
-
-uniformSpacePrim :: FromPtSize u => u -> [EscapedChar] -> DocPrim u
-uniformSpacePrim dx = hkernPrim . step1
-  where 
-    step1 (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
-    step1 []     = []
-
-hkernPrim :: FromPtSize u => [KerningChar u] -> DocPrim u
+hkernPrim :: FromPtSize u => [KerningChar u] -> CF (u,AdvGraphic u)
 hkernPrim ks = hkernVector ks >>= \v -> 
                return (vector_x v, replaceAns v $ hkernline ks)
 
 
+uniformSpace :: FromPtSize u => u -> [EscapedChar] -> CF (u,AdvGraphic u)
+uniformSpace dx = hkernPrim . step1
+  where 
+    step1 (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
+    step1 []     = []
 
-docMap :: (AdvGraphic u -> AdvGraphic u) -> DocTextLR u -> DocTextLR u
-docMap f = DocTextLR . fmap (fmap (\(u,ag) -> (u, f $ ag))) . getDocTextLR
 
-doclocal :: DrawingContextF -> DocTextLR u -> DocTextLR u
-doclocal fn = docMap (localize fn)
+-- | Note - the changes to the DrawingContext have to be 
+-- propagated both to the function that generates the answer and 
+-- to the AdvGraphic of result.
+--
+doclocal :: DrawingContextF -> DocText u -> DocText u
+doclocal fn dt = DocText $ 
+    localize fn $ getDocText dt >>= \(u,gf) -> return (u, localize fn gf)
 
-
-fontColour :: RGBi -> DocTextLR u -> DocTextLR u
-fontColour rgb = doclocal (textColour rgb)
 
 

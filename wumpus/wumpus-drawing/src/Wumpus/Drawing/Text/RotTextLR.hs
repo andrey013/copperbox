@@ -23,7 +23,7 @@
 module Wumpus.Drawing.Text.RotTextLR
   ( 
 
-    RotTextLR
+    RotText
 
   , rotTextStart
 
@@ -53,7 +53,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
-type RotTextLR u = PosThetaImage u (BoundingBox u)
+type RotText u = PosThetaImage u (BoundingBox u)
 
 
 -------------------
