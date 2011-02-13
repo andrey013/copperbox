@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.14.0
+version:          0.15.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -21,7 +21,7 @@ description:
   available from Adode (AFM file version 4.1). To run the demos 
   properly you will need one of these sets of metrics.
   .
-  Adobe Font techinal notes:
+  Adobe Font technical notes:
   <https://www.adobe.com/devnet/font.html>
   .
   Core 14 AFM metrics:
@@ -31,6 +31,8 @@ description:
   \*\* WARNING \*\* - the API is unstable and will change.
   .
   Changelog:
+  .
+  v0.14.0 to v0.15.0
   .
   v0.13.0 to v0.14.0:
   .
@@ -85,8 +87,8 @@ library
                       containers        >= 0.3.0     && <= 0.6.0,
                       vector-space      >= 0.6       && <  1.0,
                       wumpus-core       >= 0.43.0    && <  0.44.0,
-                      wumpus-basic      == 0.16.0,
-                      wumpus-drawing    == 0.2.0
+                      wumpus-basic      == 0.17.0,
+                      wumpus-drawing    == 0.3.0
 
   
   exposed-modules:

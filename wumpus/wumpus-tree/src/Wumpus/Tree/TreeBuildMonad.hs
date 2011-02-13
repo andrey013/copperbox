@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Tree.TreeBuildMonad
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -34,7 +34,6 @@ module Wumpus.Tree.TreeBuildMonad
 
   , nodeId
   , label
-  , annotate
 
   , branch
   , zbranch
@@ -112,11 +111,6 @@ instance Monad (TreeBuild u) where
                                 in getTreeBuild (k a) s1 
 
 
-
-
-type instance MonUnit (TreeBuild u) = u
-
-
 type TreeSpec a   = Tree (NodeId a)
 type ZTreeSpec u  = TreeSpec (UNil u)
 
@@ -132,7 +126,7 @@ type TreeBuildAns u = (Tree (TreeNodeAns u), NodeAnnoRefs u)
 --
 
 runTreeBuild :: (Real u, Floating u, FromPtSize u)
-               => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> TreeBuildAns u
+             => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> TreeBuildAns u
 runTreeBuild regDrawF ma = 
     let (a,s) = getTreeBuild ma zeroSt
         t1    = postRun regDrawF (a, node_refs s)
@@ -180,6 +174,7 @@ label :: a -> NodeId a
 label a = RegularNode a
 
 
+{-
 -- | Annotate a /node/ with a 'NodeAnno'.
 -- 
 -- Note - /regular/ nodes cannot be annotated, a node must be 
@@ -194,7 +189,7 @@ annotate (NodeId nid)    annoF =
     TreeBuild $ \(St ix nodes annos) -> 
       let annos' = IntMap.insert nid annoF annos
       in ((), St ix nodes annos')
-
+-}
 
 
 branch :: NodeId a -> [TreeSpec a] -> TreeSpec a

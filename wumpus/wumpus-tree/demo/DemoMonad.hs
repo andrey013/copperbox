@@ -27,13 +27,13 @@ main = do
     createDirectoryIfMissing True "./out/"
     case (mb_gs, mb_afm) of       
       (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
-                          ; (metrics,msgs) <- loadGSMetrics  dir ["Times-Roman"]
-                          ; mapM_ putStrLn msgs
+                          ; metrics <- loadGSFontMetrics  dir ["Times-Roman"]
+                          ; printLoadErrors metrics
                           ; makePictures metrics
                           }
       (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
-                          ; (metrics,msgs) <- loadAfmMetrics dir ["Times-Roman"]
-                          ; mapM_ putStrLn msgs
+                          ; metrics <- loadAfmFontMetrics dir ["Times-Roman"]
+                          ; printLoadErrors metrics
                           ; makePictures metrics
                           }
       _             -> putStrLn default_font_loader_help
@@ -41,7 +41,7 @@ main = do
 
 
 
-makePictures :: GlyphMetrics -> IO ()
+makePictures :: FontLoadResult -> IO ()
 makePictures base_metrics = do 
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/mon_tree01.eps"  pic1
@@ -52,7 +52,7 @@ makePictures base_metrics = do
     writeSVG "./out/mon_tree02.svg"  pic2
 
 
-makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
+makeCtx :: FontSize -> FontLoadResult -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
@@ -74,17 +74,16 @@ tree_drawing1 = drawTracing $
 
 -- Don\'t necessarily need @annotate@ from TreeMonad ...
 --
-nodedeco :: Num u 
+nodeanno :: Num u 
          => DotLocImage u -> (DotAnchor u -> Point2 u) -> DotLocImage u
-nodedeco img fn = sdecorate img deco
+nodeanno img fn = annotate img deco
   where
     deco a = promoteR1 $ \_ -> let pt = fn a in textline "deco" `at` pt
 
 tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u (ZTreeSpec u)
 tree2 = do
-    special   <- nodeId $ nodedeco (dotText "a") south
+    special   <- nodeId $ nodeanno (dotText "a") south
     rightmost <- nodeId $ dotText "z"
-    annotate rightmost (\ancr -> textline "....anno" `at` southeast ancr )
     let bs = [zleaf, zleaf, zleaf]
     let gs = [zleaf, zleaf, leaf $ rightmost ]
     return $ 

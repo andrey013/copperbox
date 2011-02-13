@@ -36,9 +36,9 @@ main = do
 makeGSPicture :: FilePath -> IO ()
 makeGSPicture font_dir = do
     putStrLn "Using GhostScript metrics..."
-    (gs_metrics, msgs) <- loadGSMetrics font_dir ["Helvetica"]
-    mapM_ putStrLn msgs
-    let pic1 = runCtxPictureU (makeCtx gs_metrics) shape_pic
+    metrics <- loadGSFontMetrics font_dir ["Helvetica"]
+    printLoadErrors metrics
+    let pic1 = runCtxPictureU (makeCtx metrics) shape_pic
     writeEPS "./out/oscil1_gs.eps" pic1
     writeSVG "./out/oscil1_gs.svg" pic1
 
@@ -46,13 +46,13 @@ makeGSPicture font_dir = do
 makeAfmPicture :: FilePath -> IO ()
 makeAfmPicture font_dir = do
     putStrLn "Using AFM 4.1 metrics..."
-    (afm_metrics, msgs) <- loadAfmMetrics font_dir ["Helvetica"]
-    mapM_ putStrLn msgs
-    let pic2 = runCtxPictureU (makeCtx afm_metrics) shape_pic
+    metrics <- loadAfmFontMetrics font_dir ["Helvetica"]
+    printLoadErrors metrics
+    let pic2 = runCtxPictureU (makeCtx metrics) shape_pic
     writeEPS "./out/oscil1_afm.eps" pic2
     writeSVG "./out/oscil1_afm.svg" pic2
 
-makeCtx :: GlyphMetrics -> DrawingContext
+makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fontFace helvetica . metricsContext 18
 
 
@@ -81,7 +81,7 @@ shape_pic = drawTracing $ do
 
 
 
-connector :: ( TraceM m, DrawingCtxM m, u ~ MonUnit m
+connector :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
              , Real u, Floating u, FromPtSize u ) 
           => Point2 u -> Point2 u -> m ()
 connector p0@(P2 x0 _) p1@(P2 x1 _) 
@@ -99,7 +99,7 @@ tolEq tol a b = abs (a - b) < (tol * fromPtSize 1)
 -- | Right-angled connector - go vertical go horizontal go vertical.
 --
 connMidH :: (Real u, Floating u, FromPtSize u) 
-         => ConnectorPath u
+         => PathCF u
 connMidH = promoteR2 $ \ sp@(P2 x0 y0) ep@(P2 x1 y1) -> 
     let ymid = y0 + (0.5 * (y1 - y0))
     in roundCornerPath [sp, P2 x0 ymid, P2 x1 ymid, ep]

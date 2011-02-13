@@ -36,6 +36,7 @@ module Wumpus.Drawing.Text.DocTextLR
   , (<+>) 
 
   , rfill
+  , lfill
 
   , fontColour
   , textSize
@@ -201,8 +202,17 @@ a <> b = DocText body
 a <+> b = a <> space <> b 
 
 -- | Right fill
+--
 rfill :: Ord u => u -> DocText u -> DocText u
 rfill w dt = DocText $ getDocText dt >>= \(u,gf) -> return (max w u, gf)
+
+
+-- | Left fill
+--
+lfill :: (Num u, Ord u) => u -> DocText u -> DocText u
+lfill w dt = DocText $ getDocText dt >>= \(u,gf) -> 
+  if u < w then return (w, moveStart (displaceH $ w - u) gf) 
+           else return (u,gf)
 
 
 -- A contextual version might be useful...

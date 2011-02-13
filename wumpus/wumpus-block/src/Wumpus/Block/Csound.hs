@@ -49,7 +49,7 @@ import Wumpus.Block.Base
 -- package: wumpus-drawing
 import Wumpus.Drawing.Colour.SVGColours hiding ( linen )
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.LRText
+import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -300,7 +300,7 @@ buzz = scaleFactor >>= \sf ->
        mapAns Buzz $ localize shapeSty $ strokedShape $ body sf
   where
     body  = \sf -> setDecoration textF $ rectangle (20*sf) (7*sf)
-    textF = lift1R2 $ ignoreAns (multiAlignCenter 0 "BUZZ" `startPos` CENTER)
+    textF = lift1R2 $ ignoreAns (apply2R3 (multiAlignCenter "BUZZ") CENTER 0)
 
 
 instance (Real u, Floating u, FromPtSize u) => Outport1 (Buzz u) where

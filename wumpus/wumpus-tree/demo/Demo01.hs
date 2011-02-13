@@ -40,19 +40,19 @@ main = do
     createDirectoryIfMissing True "./out/"
     case (mb_gs, mb_afm) of       
       (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
-                          ; (metrics,msgs) <- loadGSMetrics  dir ["Times-Roman"]
-                          ; mapM_ putStrLn msgs
+                          ; metrics <- loadGSFontMetrics  dir ["Times-Roman"]
+                          ; printLoadErrors metrics
                           ; makePictures metrics
                           }
       (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
-                          ; (metrics,msgs) <- loadAfmMetrics dir ["Times-Roman"]
-                          ; mapM_ putStrLn msgs
+                          ; metrics <- loadAfmFontMetrics dir ["Times-Roman"]
+                          ; printLoadErrors metrics
                           ; makePictures metrics
                           }
       _             -> putStrLn default_font_loader_help
 
 
-makePictures :: GlyphMetrics -> IO ()
+makePictures :: FontLoadResult -> IO ()
 makePictures base_metrics = do 
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_pic1
     writeEPS "./out/regular_tree01.eps"  pic1
@@ -60,7 +60,7 @@ makePictures base_metrics = do
 
 
 
-makeCtx :: FontSize -> GlyphMetrics -> DrawingContext
+makeCtx :: FontSize -> FontLoadResult -> DrawingContext
 makeCtx sz m = fontFace times_roman $ metricsContext sz m
 
 
