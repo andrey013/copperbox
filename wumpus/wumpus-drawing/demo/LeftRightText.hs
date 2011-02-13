@@ -138,47 +138,47 @@ sw_oneline = singleLine "south west" `startPos` SW
 -- multi line
 --
 ssr_multi :: BoundedLocGraphic Double
-ssr_multi = multiAlignCenter (0.25*pi) "south rot45" `startPos` SS
+ssr_multi = rotTextStart (multiAlignCenter "south rot45") SS (0.25*pi) 
 
 -- multi line
 --
 swr_multi :: BoundedLocGraphic Double
-swr_multi = multiAlignCenter (0.25*pi) "south west rot45" `startPos` SW
+swr_multi = rotTextStart (multiAlignCenter "south west rot45") SW (0.25*pi)
 
 -- multi line
 --
 ner_multi :: BoundedLocGraphic Double
-ner_multi = multiAlignCenter (0.25*pi) "north east rot45" `startPos` NE
+ner_multi = rotTextStart (multiAlignCenter "north east rot45") NE (0.25*pi)
 
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = rsingleLine 0 "Center-center..."  `startPos` CENTER
+cc_oneline = rotTextStart (rsingleLine "Center-center...") CENTER 0
 
 
 blank_text :: BoundedLocGraphic Double
-blank_text = multiAlignCenter 0 "" `startPos` CENTER
+blank_text = rotTextStart (multiAlignCenter "") CENTER 0 
 
 
 left_text :: BoundedLocGraphic Double
-left_text = multiAlignLeft 0 dummy_text `startPos` CENTER
+left_text = rotTextStart (multiAlignLeft dummy_text) CENTER 0
 
 
 right_text :: BoundedLocGraphic Double
-right_text = multiAlignRight 0 dummy_text `startPos` CENTER
+right_text = rotTextStart (multiAlignRight dummy_text) CENTER 0
 
 center_text :: BoundedLocGraphic Double
-center_text = multiAlignCenter 0 dummy_text `startPos` CENTER
+center_text = rotTextStart (multiAlignCenter dummy_text) CENTER 0
 
 
 rleft_text :: BoundedLocGraphic Double
-rleft_text = multiAlignLeft (0.25*pi)  dummy_text `startPos` CENTER
+rleft_text = rotTextStart (multiAlignLeft dummy_text) CENTER (0.25*pi)
 
 
 rright_text :: BoundedLocGraphic Double
-rright_text = multiAlignRight (0.25*pi) dummy_text `startPos` CENTER
+rright_text = rotTextStart (multiAlignRight dummy_text) CENTER (0.25*pi)
 
 rcenter_text :: BoundedLocGraphic Double
-rcenter_text = multiAlignCenter (0.25*pi) dummy_text `startPos` CENTER
+rcenter_text = rotTextStart (multiAlignCenter dummy_text) CENTER (0.25*pi)
 
 
 dummy_text :: String 

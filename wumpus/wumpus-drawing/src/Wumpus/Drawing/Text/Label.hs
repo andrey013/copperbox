@@ -49,7 +49,7 @@ locImageLabel :: Floating u
          => (a -> Point2 u) -> RectPosition 
          -> PosImage u z -> LocImage u a -> LocImage u a
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    sdecorate (obj `at` pt)  (\a -> atStartPos lbl (fn a) rpos)
+    annotate (obj `at` pt)  (\a -> atStartPos lbl (fn a) rpos)
 
 
 label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
@@ -83,7 +83,7 @@ connectorPathLabel :: Floating u
                    -> PosImage u z 
                    -> ConnectorImage u (Path u) -> ConnectorImage u (Path u)
 connectorPathLabel fn rpos lbl obj = promoteR2 $ \p0 p1 -> 
-    sdecorate (connect obj p0 p1)  (\a -> atStartPos lbl (fn a) rpos)
+    annotate (connect obj p0 p1)  (\a -> atStartPos lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 

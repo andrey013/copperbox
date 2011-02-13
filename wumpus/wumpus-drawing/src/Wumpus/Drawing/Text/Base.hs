@@ -107,9 +107,9 @@ borderedTextPos :: (Real u, Floating u, FromPtSize u)
                       => Int -> u -> DrawingInfo (ObjectPos u)
 borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
-    getTextMargin >>= \(xsep,ysep) -> 
-    let hw    = (2 * xsep) + (0.5 * w)
-        hh    = (2 * ysep) + (0.5 * h)
+    getTextMargin              >>= \(xsep,ysep) -> 
+    let hw    = xsep + (0.5 * w)
+        hh    = ysep + (0.5 * h)
     in return $ ObjectPos hw hw hh hh 
 
 
@@ -139,7 +139,7 @@ orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
     input_hh  = 0.5 * (ymin + ymaj)
     bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
     bbox1     = retraceBoundary (rotateAbout theta zeroPt) bbox0
-    bbox_hw   = 0.5 * (boundaryWidth bbox1)
+    bbox_hw   = 0.5 * (boundaryWidth  bbox1)
     bbox_hh   = 0.5 * (boundaryHeight bbox1)
 
 
