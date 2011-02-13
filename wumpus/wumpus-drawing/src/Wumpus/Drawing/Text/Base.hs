@@ -21,6 +21,7 @@ module Wumpus.Drawing.Text.Base
     advtext
   , textVector
   , charVector
+  , hkernVector
 
   , multilineHeight
   , borderedTextPos
@@ -64,7 +65,22 @@ textVector esc =
 charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
 charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
    
+-- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
+-- 
+-- 'hkernvector' takes whatever length is paired with the 
+-- EscapedChar for the init of the the list, for the last element 
+-- it takes the charVector.
+--
+hkernVector :: FromPtSize u => [KerningChar u] -> DrawingInfo (AdvanceVec u)
+hkernVector = go 0
+  where
+    go w []             = return (V2 w 0)
+    go w [(_, ch)]      = fmap (addWidth w) (charVector ch)
+    go w ((dx,_ ):xs)   = go (w+dx) xs
+    
+    addWidth w (V2 x y) = V2 (w+x) y
 
+ 
 -- | This is outside the Drawing context as we don\'t want to get
 -- the @cwLookupTable@ for every char.
 --

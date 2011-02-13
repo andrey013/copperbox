@@ -29,6 +29,8 @@ module Wumpus.Drawing.Text.DocTextLR
   , blank
   , space
   , string
+  , int
+  , integer
   , (<>)
   , (<+>) 
 
@@ -164,6 +166,20 @@ string :: FromPtSize u => String -> DocTextLR u
 string = doc1 . stringPrim
 
 
+int :: FromPtSize u => Int -> DocTextLR u
+int i = doc1 $ body 
+  where
+    body = charVector (CharLiteral '0') >>= \v1 -> 
+           uniformSpacePrim (advanceH v1) (map CharLiteral $ show i)
+
+integer :: FromPtSize u => Integer -> DocTextLR u
+integer i = doc1 $ body 
+  where
+    body = charVector (CharLiteral '0') >>= \v1 -> 
+           uniformSpacePrim (advanceH v1) (map CharLiteral $ show i)
+
+
+
 infixr 6 <>, <+>
 
 -- | Concatenate two DocTextLRs separated with no spacing.
@@ -189,12 +205,28 @@ doc1 :: DocPrim u -> DocTextLR u
 doc1 = DocTextLR . JL.one 
 
 
+
+--------------------------------------------------------------------------------
+-- Helpers
+
 stringPrim :: FromPtSize u => String -> DocPrim u
 stringPrim = escapedPrim . escapeString
 
 escapedPrim :: FromPtSize u => EscapedText -> DocPrim u
 escapedPrim esc = textVector esc >>= \v -> 
                   return (vector_x v, replaceAns v $ escapedline esc)
+
+
+uniformSpacePrim :: FromPtSize u => u -> [EscapedChar] -> DocPrim u
+uniformSpacePrim dx = hkernPrim . step1
+  where 
+    step1 (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
+    step1 []     = []
+
+hkernPrim :: FromPtSize u => [KerningChar u] -> DocPrim u
+hkernPrim ks = hkernVector ks >>= \v -> 
+               return (vector_x v, replaceAns v $ hkernline ks)
+
 
 
 docMap :: (AdvGraphic u -> AdvGraphic u) -> DocTextLR u -> DocTextLR u
