@@ -109,7 +109,25 @@ data FontAttr = FontAttr
       }
   deriving (Eq,Ord,Show)
 
--- | 'FontFace' : @ postscript_name * svg_font_family * svg_font_style @
+-- | 'FontFace' : @ postscript_name * svg_font_family * svg_font_style 
+--                * encoding_vector  @
+--
+-- For the writing fonts in the Core 14 set the definitions are:
+--
+-- > "Times-Roman"       "Times New Roman" SVG_REGULAR     standard_encoding
+-- > "Times-Italic"      "Times New Roman" SVG_ITALIC      standard_encoding
+-- > "Times-Bold"        "Times New Roman" SVG_BOLD        standard_encoding
+-- > "Times-BoldItalic"  "Times New Roman" SVG_BOLD_ITALIC standard_encoding
+-- > 
+-- > "Helvetica"              "Helvetica" SVG_REGULAR      standard_encoding
+-- > "Helvetica-Oblique"      "Helvetica" SVG_OBLIQUE      standard_encoding
+-- > "Helvetica-Bold"         "Helvetica" SVG_BOLD         standard_encoding
+-- > "Helvetica-Bold-Oblique" "Helvetica" SVG_BOLD_OBLIQUE standard_encoding
+-- >
+-- > "Courier"              "Courier New"    SVG_REGULAR      standard_encoding
+-- > "Courier-Oblique"      "Courier New"    SVG_OBLIQUE      standard_encoding
+-- > "Courier-Bold"         "Courier New"    SVG_BOLD         standard_encoding
+-- > "Courier-Bold-Oblique" "Courier New"    SVG_BOLD_OBLIQUE standard_encoding
 --
 data FontFace = FontFace
       { ps_font_name            :: String

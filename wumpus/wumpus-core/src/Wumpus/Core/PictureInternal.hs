@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.PictureInternal
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>

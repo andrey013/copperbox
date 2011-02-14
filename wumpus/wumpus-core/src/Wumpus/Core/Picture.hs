@@ -685,7 +685,7 @@ rstrokeEllipse rgb sa rx ry theta pt =
 
 
 
--- | 'fillEllipse' : @ rgb * stroke_attr * rx * ry * center -> Primtive @
+-- | 'fillEllipse' : @ rgb * rx * ry * center -> Primtive @
 --
 -- Create a filled primitive ellipse.
 --
@@ -694,8 +694,7 @@ fillEllipse :: Num u
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
--- | 'rfillEllipse' : @ colour * stroke_attr * rx * ry * theta * center 
---        -> Primitive @
+-- | 'rfillEllipse' : @ rgb * rx * ry * theta * center -> Primitive @
 --
 -- Create a filled primitive ellipse rotated about the center by 
 -- /theta/.

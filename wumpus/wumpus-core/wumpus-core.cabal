@@ -84,6 +84,7 @@ extra-source-files:
   demo/AffineTest02.hs,
   demo/AffineTest03.hs,
   demo/AffineTestBase.hs,
+  demo/ClipPic.hs,
   demo/DeltaPic.hs,
   demo/EllipsePic.hs,
   demo/FontMetrics.hs,
