@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.PtSize
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -17,6 +17,9 @@
 -- Other unit types (e.g. centimeter) should define an 
 -- appropriate instance of FromPtSize.
 -- 
+-- Note - implicitly Wumpus-Core treats @Double@ as representing
+-- PostScript point size / unit.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.PtSize
@@ -24,6 +27,7 @@ module Wumpus.Core.PtSize
   
   -- * Point size type
     PtSize
+  , Pt
   
   -- * Extract (unscaled) PtSize as a Double 
   , ptSize
@@ -33,6 +37,8 @@ module Wumpus.Core.PtSize
 
   ) where
 
+
+import Wumpus.Core.Utils.Common
 
 -- | Wrapped Double representing /Point size/ for font metrics 
 -- etc.
@@ -46,6 +52,15 @@ instance Show PtSize where
   showsPrec p d = showsPrec p (ptSize d)
 
 
+-- | Alias for PtSize.
+-- 
+-- The original name 'PtSize' is perhaps rather cumbersome, though
+-- it does dis-ambiguate from geometrics Points. An alias is
+-- convenient.
+--
+type Pt = PtSize
+
+
 -- | Convert the value of PtSize scaling accordingly.
 --
 -- Note - the Double instance perfoms no scaling, this
@@ -56,6 +71,10 @@ class Num u => FromPtSize u where
 
 instance FromPtSize Double where
   fromPtSize = ptSize
+
+
+instance PSUnit PtSize where
+  toDouble = ptSize
 
 
 

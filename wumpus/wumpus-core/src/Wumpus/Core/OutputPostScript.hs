@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.PostScript
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -33,6 +33,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
+import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphNames
 import Wumpus.Core.TrafoInternal
@@ -124,16 +125,16 @@ setFontAttr (FontAttr sz ff) =
     setsGS (\s -> s { gs_font_size=sz, gs_font_face=ff })
 
   
-getLineWidth        :: PsMonad Double
+getLineWidth        :: PsMonad Pt
 getLineWidth        = getsGS (line_width . gs_stroke_attr)
 
-setLineWidth        :: Double -> PsMonad ()
+setLineWidth        :: Pt -> PsMonad ()
 setLineWidth a      = setsSA (\s -> s { line_width = a } )
 
-getMiterLimit       :: PsMonad Double
+getMiterLimit       :: PsMonad Pt
 getMiterLimit       = getsGS (miter_limit . gs_stroke_attr)
 
-setMiterLimit       :: Double -> PsMonad ()
+setMiterLimit       :: Pt -> PsMonad ()
 setMiterLimit a     = setsSA (\s -> s { miter_limit = a } )
 
 

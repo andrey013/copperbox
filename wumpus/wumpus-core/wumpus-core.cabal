@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.43.0
+version:          0.44.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -47,6 +47,14 @@ description:
   .  
   .
   Changelog:
+  .
+  v0.43.0 to v0.44.0:
+  .
+  * API change - the @StrokeAttr@ dataype now represents 
+    line_width and miter_limit with the @Pt@ type rather than a 
+    Double. These sizes represent the same measurement (Double 
+    implicitly means PostScript point to Wumpus), but using @Pt@
+    is more exact.
   .
   v0.42.1 to v0.43.0:
   .

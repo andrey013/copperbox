@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.OutputSVG
--- Copyright   :  (c) Stephen Tetley 2009-2010
+-- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -43,6 +43,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.PtSize
 import Wumpus.Core.SVGDoc
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Text.Base
@@ -113,10 +114,10 @@ askFontAttr :: SvgMonad FontAttr
 askFontAttr = asksGraphicsState $ \r -> 
                 FontAttr (gs_font_size r) (gs_font_face r)
 
-askLineWidth    :: SvgMonad Double
+askLineWidth    :: SvgMonad Pt
 askLineWidth    = asksGraphicsState (line_width . gs_stroke_attr)
 
-askMiterLimit   :: SvgMonad Double
+askMiterLimit   :: SvgMonad Pt
 askMiterLimit   = asksGraphicsState (miter_limit . gs_stroke_attr)
 
 askLineCap      :: SvgMonad LineCap
