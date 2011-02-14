@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -40,8 +39,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , mbPictureU
  
 
-  , query
-
+  , runQuery
 
   , draw
   , drawi
@@ -190,13 +188,13 @@ instance Monad m => TraceM (TraceDrawingT u m) where
 -- DrawingCtxM
 
 instance DrawingCtxM (TraceDrawing u) where
-  askDC           = TraceDrawing $ \ctx -> (ctx, mempty)
+  queryCtx        = TraceDrawing $ \ctx -> (ctx, mempty)
   localize upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
 
 
 
 instance Monad m => DrawingCtxM (TraceDrawingT u m) where
-  askDC           = TraceDrawingT $ \ctx -> return (ctx,mempty)
+  queryCtx        = TraceDrawingT $ \ctx -> return (ctx,mempty)
   localize upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
 
 
@@ -291,8 +289,8 @@ mbPictureU (Just a) = a
 
 --------------------------------------------------------------------------------
 
-query :: DrawingCtxM m => CF a -> m a
-query df = askDC >>= \ctx -> return $ runCF ctx df
+runQuery :: DrawingCtxM m => CF a -> m a
+runQuery df = queryCtx >>= \ctx -> return $ runCF ctx df
 
 
 
@@ -303,7 +301,7 @@ query df = askDC >>= \ctx -> return $ runCF ctx df
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
      => Graphic u -> m ()
-draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
+draw gf = queryCtx >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 
 
 
@@ -315,7 +313,7 @@ draw gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx gf)
 -- 
 drawi :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
       => Image u a -> m a
-drawi img = askDC >>= \ctx -> 
+drawi img = queryCtx >>= \ctx -> 
             let (a,o) = runCF ctx img in trace (collectH o) >> return a
 
 
@@ -333,7 +331,7 @@ drawi_ img = drawi img >> return ()
 -- 
 drawl :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
       => Point2 u -> LocGraphic u -> m ()
-drawl pt gf = askDC >>= \ctx -> trace (collectH $ snd $ runCF ctx $ gf `at` pt)
+drawl pt gf = queryCtx >>= \ctx -> trace (collectH $ snd $ runCF ctx $ gf `at` pt)
 
 
 
@@ -440,7 +438,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 --
 node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
      => (Int,Int) -> LocGraphic u -> m ()
-node coord gf = askDC          >>= \ctx -> 
+node coord gf = queryCtx          >>= \ctx -> 
                 position coord >>= \pt  -> 
                 let (_,prim) = runCF1 ctx pt gf in trace (collectH prim)
 
@@ -449,7 +447,7 @@ node coord gf = askDC          >>= \ctx ->
 -- 
 nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
       => (Int,Int) -> LocImage u a -> m a
-nodei coord imgL = askDC    >>= \ctx -> 
+nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
                    let (a,o) = runCF ctx (apply1R1 imgL pt)
                    in trace (collectH o) >> return a
@@ -468,16 +466,16 @@ nodei_ coord imgL = nodei coord imgL >> return ()
 cxdraw :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
          => DrawingInfo (Point2 u) -> LocGraphic u -> m ()
 cxdraw pf gf = 
-    askDC  >>= \ctx -> let pt    = runCF  ctx pf
-                           (_,o) = runCF1 ctx pt gf 
-                       in trace (collectH o)
+    queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
+                              (_,o) = runCF1 ctx pt gf 
+                          in trace (collectH o)
 
 cxdrawi :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
        => DrawingInfo (Point2 u) -> LocImage u a -> m a
 cxdrawi pf gf =  
-    askDC  >>= \ctx -> let pt    = runCF  ctx pf
-                           (a,o) = runCF1 ctx pt gf 
-                       in trace (collectH o) >> return a
+    queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
+                              (a,o) = runCF1 ctx pt gf 
+                          in trace (collectH o) >> return a
 
 cxdrawi_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
         => DrawingInfo (Point2 u) -> LocImage u a -> m ()

@@ -144,18 +144,18 @@ picAnno pic msg = cxpAlignSepH HCenter 30 pic lbl
 
 rect_red :: DCtxPicture
 rect_red = drawTracing $ 
-    localize (fillColour indian_red)
+    localize (fill_colour indian_red)
              (draw $ borderedRectangle 30 10 `at` (P2 0 10))
                  
 rect_green :: DCtxPicture
 rect_green = drawTracing $ 
-    localize (fillColour olive_drab)
+    localize (fill_colour olive_drab)
              (draw $ borderedRectangle 15 15 `at` (P2 10 10))
 
 
 rect_blue :: DCtxPicture
 rect_blue = drawTracing $ 
-    localize (fillColour powder_blue)
+    localize (fill_colour powder_blue)
              (draw $ borderedRectangle 20 30 `at` (P2 10 0))
 
 

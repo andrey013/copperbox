@@ -34,10 +34,12 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
   , standardContext
   , metricsContext
 
+  , reset_drawing_properties
+  , reset_drawing_metrics
 
   -- * DrawingCtxM (reader) monad
   , DrawingCtxM(..)
-  , asksDC
+  , query
 
 
   -- * Glyph metrics
@@ -48,7 +50,6 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
 
 
 import Wumpus.Basic.Kernel.Base.FontMetrics
-import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Text.StandardEncoding
@@ -77,18 +78,18 @@ import Data.Monoid
 -- priority.
 -- 
 data DrawingContext = DrawingContext
-      { font_metrics_table    :: FontTable
-      , font_load_log         :: FontLoadLog
-      , fallback_metrics      :: FontMetrics
-      , stroke_props          :: StrokeAttr
-      , font_props            :: FontAttr
-      , stroke_colour         :: RGBi      -- also text colour...
-      , fill_colour           :: RGBi      
-      , text_colour           :: RGBi
-      , line_spacing_factor   :: Pt
-      , round_corner_factor   :: Pt 
-      , text_margin           :: TextMargin
-      , snap_grid_factors     :: (Pt,Pt)
+      { dc_font_metrics_table   :: FontTable
+      , dc_font_load_log        :: FontLoadLog
+      , dc_fallback_metrics     :: FontMetrics
+      , dc_font_props           :: FontAttr
+      , dc_snap_grid_factors    :: (Pt,Pt)
+      , dc_stroke_props         :: StrokeAttr
+      , dc_stroke_colour        :: RGBi      -- also text colour...
+      , dc_fill_colour          :: RGBi      
+      , dc_text_colour          :: RGBi
+      , dc_line_spacing_factor  :: Pt
+      , dc_round_corner_factor  :: Pt 
+      , dc_text_margin          :: TextMargin
       }
 
 -- TODO - what parts of the Drawing Context should be strict? 
@@ -130,20 +131,19 @@ data TextMargin = TextMargin
 -- 
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
-    DrawingContext { font_metrics_table   = emptyFontTable
-                   , font_load_log        = mempty
-                   , fallback_metrics     = monospace_metrics
-                   , stroke_props         = default_stroke_attr
-                   , font_props           = FontAttr sz wumpus_courier
-                   , stroke_colour        = wumpus_black
-                   , fill_colour          = wumpus_light_gray
-                   , text_colour          = wumpus_black
-                   , line_spacing_factor  = 1.2  
-                   , round_corner_factor  = 0
-                   , text_margin          = default_text_margin
-                   , snap_grid_factors    = (50.0, 50.0)
+    DrawingContext { dc_font_metrics_table   = emptyFontTable
+                   , dc_font_load_log        = mempty
+                   , dc_fallback_metrics     = monospace_metrics
+                   , dc_stroke_props         = default_stroke_attr
+                   , dc_font_props           = FontAttr sz wumpus_courier
+                   , dc_snap_grid_factors    = (50.0, 50.0)
+                   , dc_stroke_colour        = wumpus_black
+                   , dc_fill_colour          = wumpus_light_gray
+                   , dc_text_colour          = wumpus_black
+                   , dc_line_spacing_factor  = default_line_spacing  
+                   , dc_round_corner_factor  = default_no_round_corners
+                   , dc_text_margin          = default_text_margin
                    }
-
 
 
 -- | 'metricsContext' : @ font_size * font_metrics -> DrawingContext @  
@@ -161,9 +161,62 @@ standardContext sz =
 metricsContext :: FontSize -> FontLoadResult -> DrawingContext
 metricsContext sz res = 
     let env = standardContext sz 
-    in env { font_metrics_table = loaded_font_table res
-           , font_load_log      = loader_errors res
+    in env { dc_font_metrics_table = loaded_font_table res
+           , dc_font_load_log      = loader_errors res
            }
+
+
+
+-- | 'reset_drawing_properties' : @ DrawingContextF @  
+--
+-- Reset the drawing properties in the 'DrawingContext' to their 
+-- initial values. This changes the following fields:
+--
+-- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
+-- > stroke_colour:       black
+-- > fill_colour:         light_gray
+-- > text_colour:         black
+-- > line_spacing_factor: 1.2
+-- > round_corner_factor: 0
+-- > text_margin:         (2.0, 2.0) 
+--
+reset_drawing_properties :: DrawingContextF 
+reset_drawing_properties dcxt = 
+    dcxt { dc_stroke_props          = default_stroke_attr
+         , dc_stroke_colour         = wumpus_black
+         , dc_fill_colour           = wumpus_light_gray
+         , dc_text_colour           = wumpus_black
+         , dc_line_spacing_factor   = default_line_spacing
+         , dc_round_corner_factor   = default_no_round_corners
+         , dc_text_margin           = default_text_margin
+         }
+
+-- Ideally @reset_drawing_properties@ would be in the UpdateDC 
+-- module, but that would mean exporting @default_line_spacing@ 
+-- etc.
+--
+
+
+
+-- | 'reset_drawing_metrics' : @ DrawingContextF @  
+--
+-- Reset the drawing metrics in the 'DrawingContext' to their 
+-- initial values. This is a more limited version of
+-- 'reset_drawing_properties' and changes the following fields:
+--
+-- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
+-- > line_spacing_factor: 1.2
+-- > round_corner_factor: 0
+-- > text_margin:         (2.0, 2.0) 
+--
+reset_drawing_metrics :: DrawingContextF 
+reset_drawing_metrics dcxt = 
+    dcxt { dc_stroke_props          = default_stroke_attr
+         , dc_line_spacing_factor   = default_line_spacing
+         , dc_round_corner_factor   = default_no_round_corners
+         , dc_text_margin           = default_text_margin
+         }
+
 
 
 -- Helpers - not exported
@@ -171,6 +224,11 @@ metricsContext sz res =
 default_text_margin :: TextMargin
 default_text_margin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
 
+default_line_spacing :: Pt
+default_line_spacing = 1.2
+
+default_no_round_corners :: Pt
+default_no_round_corners = 0
 
 wumpus_black            :: RGBi
 wumpus_black            = RGBi 0 0 0 
@@ -188,16 +246,32 @@ wumpus_courier =
 
 --------------------------------------------------------------------------------
 
-
-class (Applicative m, Monad m) => DrawingCtxM (m :: * -> *) where
-  askDC    :: m DrawingContext
-  localize :: (DrawingContext -> DrawingContext) -> m a -> m a
-
-
--- | Project a value out of a context.
+-- | 'DrawingCtxM' is equivalent to the to the @MonadReader@ 
+-- class, but the environment type is fixed to 'DrawingContext'.
 --
-asksDC :: DrawingCtxM m => (DrawingContext -> a) -> m a
-asksDC f = askDC >>= (return . f)
+-- To avoid name clashes with @mtl@ this scheme is used:
+--
+-- > queryCtx  = ask
+-- > localize  = local
+--
+-- Note, because the derived operation 'query' (aka @asks@) is
+-- expected to be used more often than queryCtx (aka @ask@) it 
+-- gets the more convenient name.
+--
+class (Applicative m, Monad m) => DrawingCtxM (m :: * -> *) where
+  queryCtx  :: m DrawingContext
+  localize  :: (DrawingContext -> DrawingContext) -> m a -> m a
+
+
+-- | Project a value out of the DrawingContext.
+--
+-- This is the analogue to @asks@ in @mtl@.
+--
+-- > withQuery = asks
+-- 
+query :: DrawingCtxM m => (DrawingContext -> a) -> m a
+query f = queryCtx >>= (return . f)
+
 
 
 
@@ -209,12 +283,12 @@ asksDC f = askDC >>= (return . f)
 
 
 withFontMetrics :: (FontMetrics -> PtSize -> u) -> DrawingContext -> u
-withFontMetrics fn ctx@(DrawingContext { font_props = font_stats }) = 
+withFontMetrics fn ctx@(DrawingContext { dc_font_props = font_stats }) = 
       fn metric_set point_sz
   where 
     ps_name     = ps_font_name $ font_face font_stats
     point_sz    = fromIntegral $ font_size font_stats 
-    metric_set  = fromMaybe (fallback_metrics ctx) $ 
-                    lookupFont ps_name (font_metrics_table ctx)
+    metric_set  = fromMaybe (dc_fallback_metrics ctx) $ 
+                    lookupFont ps_name (dc_font_metrics_table ctx)
 
 

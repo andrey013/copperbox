@@ -10,8 +10,13 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Customize drawing attributes
+-- Customize drawing attributes. The functions here are 
+-- @DrawingContext@ modifiers to be run within a the scope of a 
+-- @localize@ block (cf. @local@ of the Reader monad).
 --
+-- By convention, underscore-separated names are used for 
+-- DrawingContext modifiers that take no extra arguments.  
+-- 
 -- \*\* WARNING \*\* - this module needs systematic naming 
 -- schemes both for update functions (primaryColour, ...) and 
 -- for synthesized selectors (e.g. lowerxHeight). The current 
@@ -25,6 +30,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   -- * Modifiers 
     addFontTables
+
       
   , roundCornerFactor
   , textMargin
@@ -32,22 +38,27 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   -- ** Line widths
   , lineWidth
-  , thick
-  , ultrathick
-  , thin
+  , line_default
+  , line_thin
+  , line_thick
+  , line_ultra_thick
 
   -- ** Line caps
-  , capButt
-  , capRound
-  , capSquare
+  , cap_default
+  , cap_butt
+  , cap_round
+  , cap_square
 
   -- ** Line joins
-  , joinMiter
-  , joinRound
-  , joinBevel
+  , join_default
+  , join_miter
+  , join_round
+  , join_bevel
 
   -- ** Dash Pattern
   , dashPattern
+  , solid_line
+
   , unit_dash_pattern
   , phase
   , dphase
@@ -58,7 +69,6 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , fontAttr
   , fontSize
   , fontFace
-  , textColour
 
 
   -- * Font / mark drawing size
@@ -67,11 +77,10 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , halfsize
 
   -- * Colour
-  , swapColours
-  , bothStrokeColour
-  , bothFillColour
-  , strokeColour
-  , fillColour 
+  , swap_colours
+  , stroke_colour
+  , fill_colour 
+  , text_colour
 
 
   
@@ -91,12 +100,6 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 
-updateStrokeProps :: (StrokeAttr -> StrokeAttr) -> DrawingContextF
-updateStrokeProps fn = (\s i -> s { stroke_props = fn i }) <*> stroke_props
-
-updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
-updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
-
 
 
 -- | 'addFontTables' : @ font_load_result -> DrawinContextUpdate @
@@ -108,28 +111,42 @@ updateFontProps fn = (\s i -> s { font_props = fn i }) <*> font_props
 --
 addFontTables :: FontLoadResult -> DrawingContextF
 addFontTables (FontLoadResult table msgs) = 
-    (\s i j -> s { font_metrics_table = i `mappend` table
-                 , font_load_log      = j `mappend` msgs }) 
-      <*> font_metrics_table <*> font_load_log
+    (\s i j -> s { dc_font_metrics_table = i `mappend` table
+                 , dc_font_load_log      = j `mappend` msgs }) 
+      <*> dc_font_metrics_table <*> dc_font_load_log
+
+
+--------------------------------------------------------------------------------
+-- helpers 
+
+updateStrokeProps :: (StrokeAttr -> StrokeAttr) -> DrawingContextF
+updateStrokeProps fn = 
+    (\s i -> s { dc_stroke_props = fn i }) <*> dc_stroke_props
+
+updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
+updateFontProps fn = 
+    (\s i -> s { dc_font_props = fn i }) <*> dc_font_props
 
 
 --------------------------------------------------------------------------------
 
 roundCornerFactor   :: ToPtSize u => u -> DrawingContextF
-roundCornerFactor d = \s -> s { round_corner_factor = toPtSize d }
+roundCornerFactor d = \s -> s { dc_round_corner_factor = toPtSize d }
 
 -- | 'textMargin' : @ x_sep * y_sep -> DrawingContextF @
 --
 textMargin   :: ToPtSize u => u -> u -> DrawingContextF
 textMargin xsep ysep = \s -> 
-    s { text_margin = TextMargin (toPtSize xsep) (toPtSize ysep) }
+    s { dc_text_margin = TextMargin (toPtSize xsep) (toPtSize ysep) }
 
 
 -- | 'snapGrid' : @ x_unit * y_unit -> DrawingContextF @
+-- 
+-- Modify the 'snap_grid_factors'.
 --
 snapGrid   :: ToPtSize u => u -> u -> DrawingContextF
 snapGrid xu yu = \s -> 
-    s { snap_grid_factors = (toPtSize xu, toPtSize yu) }
+    s { dc_snap_grid_factors = (toPtSize xu, toPtSize yu) }
 
 
 --------------------------------------------------------------------------------
@@ -138,72 +155,140 @@ snapGrid xu yu = \s ->
 -- Note - some care might be needed if we ever define other unit 
 -- types...
 
-lineWidth       :: Double -> DrawingContextF
+-- | Set the line_width.
+--
+-- Initially the line width is 1.0.
+--
+lineWidth       :: Pt -> DrawingContextF
 lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
 
-
--- std_line_width      :: Double
--- std_line_width      = 1.0
-
-thick_line          :: Double
-thick_line          = 2.0
-
-ultra_thick_line    :: Double
-ultra_thick_line    = 4.0
-
-thin_line           :: Double
-thin_line           = 0.5
-
-
--- | Set the line width to a /thick/.
+-- | Set the line_width to @default@ - 1.0.
 --
--- Note this context update is /oblivious/ - operationally the 
--- line width is set to exactly @2.0@.
+line_default        :: DrawingContextF
+line_default        = lineWidth 1.0
+
+
+-- | Set the line_width to @thin@ - 0.5.
 --
-thick               :: DrawingContextF
-thick               = lineWidth thick_line
+line_thin           :: DrawingContextF
+line_thin           = lineWidth 0.5
 
-ultrathick          :: DrawingContextF
-ultrathick          = lineWidth ultra_thick_line
 
-thin                :: DrawingContextF
-thin                = lineWidth thin_line
+-- | Set the line_width to @thick@ - 2.0.
+--
+line_thick          :: DrawingContextF
+line_thick          = lineWidth 2.0
+
+-- | Set the line_width to @ultra_thick@ - 4.0.
+--
+line_ultra_thick    :: DrawingContextF
+line_ultra_thick    = lineWidth 4.0
+
+
+--
+-- All options share the prefix so the enumeration is obvious...
+--
 
 
 --------------------------------------------------------------------------------
+-- Line props
 
 setLineCap          :: LineCap -> DrawingContextF
 setLineCap d        = updateStrokeProps (\s -> s { line_cap = d })
-
-
-capButt             :: DrawingContextF
-capButt             = setLineCap CapButt
-
-capRound            :: DrawingContextF
-capRound            = setLineCap CapRound
-
-capSquare           :: DrawingContextF
-capSquare           = setLineCap CapSquare
-
 
 setLineJoin         :: LineJoin -> DrawingContextF
 setLineJoin d       = updateStrokeProps (\s -> s { line_join = d })
 
 
-joinMiter           :: DrawingContextF
-joinMiter           = setLineJoin JoinMiter
+-- | Set the line_cap to the default which is @butt@.
+--
+-- This is a synonym for 'cap_butt'.
+--
+cap_default         :: DrawingContextF
+cap_default         = cap_butt
 
-joinRound           :: DrawingContextF
-joinRound           = setLineJoin JoinRound
+-- | Set the line_cap to @butt@.
+--
+-- Butt squares of the stroke at the end point.
+--
+-- This is the default.
+--
+cap_butt            :: DrawingContextF
+cap_butt            = setLineCap CapButt
 
-joinBevel           :: DrawingContextF
-joinBevel           = setLineJoin JoinBevel
+-- | Set the line_cap to @round@.
+--
+-- This rounds the end of the stroke and the visually the 
+-- rounding slightly extends the length of the line.
+--
+cap_round           :: DrawingContextF
+cap_round           = setLineCap CapRound
+
+
+-- | Set the line_cap to @square@.
+--
+-- This squares off the end of the stroke, visually extending 
+-- the stroke by half the line width.
+--
+cap_square          :: DrawingContextF
+cap_square          = setLineCap CapSquare
+
+
+
+-- | Set the line_join to the default which is @miter@.
+--
+-- This is a synonym for 'join_miter'.
+--
+join_default        :: DrawingContextF
+join_default        = join_miter
+
+
+-- | Set the line_join to @miter@.
+--
+-- This extends the joining line segments to form a sharp miter.
+--
+-- This is the default.
+--
+join_miter          :: DrawingContextF
+join_miter          = setLineJoin JoinMiter
+
+
+-- | Set the line_join to @round@.
+--
+-- This rounds off the corner of the joined line segments.
+--
+join_round          :: DrawingContextF
+join_round          = setLineJoin JoinRound
+
+
+-- | Set the line_join to @round@.
+--
+-- This bevels off the corner of the joined line segments with a 
+-- notch.
+--
+join_bevel          :: DrawingContextF
+join_bevel          = setLineJoin JoinBevel
 
 
 --------------------------------------------------------------------------------
 
+ 
+-- | Set the dash pattern.
+--
+-- Initially the dash pattern is 'Solid'.
+--
 dashPattern         :: DashPattern -> DrawingContextF
 dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })        
+
+
+-- | Set the dash_pattern to @solid@ - i.e. no dash pattern.
+--
+-- This is the default.
+--
+solid_line          :: DrawingContextF 
+solid_line          = dashPattern Solid
+
+-- Note - these are pendening revision...
 
 unit_dash_pattern   :: DashPattern
 unit_dash_pattern   = Dash 0 [(1,1)]
@@ -234,7 +319,7 @@ doubledashes (Dash i xs)  = Dash i (map fn xs)
 --------------------------------------------------------------------------------
 
 fontAttr            :: FontFace -> Int -> DrawingContextF
-fontAttr ff sz      = (\s -> s { font_props = FontAttr sz ff })
+fontAttr ff sz      = (\s -> s { dc_font_props = FontAttr sz ff })
 
 fontFace            :: FontFace -> DrawingContextF
 fontFace ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
@@ -243,15 +328,13 @@ fontSize            :: Int -> DrawingContextF
 fontSize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
 
 
-textColour          :: RGBi -> DrawingContextF
-textColour rgb      = (\s -> s { text_colour = rgb})
 
 --------------------------------------------------------------------------------
 
 scalesize           :: Ratio Int -> DrawingContextF
 scalesize r         = let (n,d) = (numerator r, denominator r)
                       in (\s sz -> fontSize (n * sz `div` d) s) 
-                           <*> (font_size . font_props)
+                           <*> (font_size . dc_font_props)
 
 -- | Set the font size to double the current size, note the font
 -- size also controls the size of dots, arrowsheads etc.
@@ -270,28 +353,38 @@ halfsize            :: DrawingContextF
 halfsize            = scalesize (1%2)
 
 
+-- Something like...
+--
+-- > mark_half_size
+-- > mark_double_size
+
+
 --------------------------------------------------------------------------------
 
-swapColours :: DrawingContextF
-swapColours = 
-    (\s a b -> s { stroke_colour = b, fill_colour = a })
-        <*> stroke_colour <*> fill_colour
+swap_colours :: DrawingContextF
+swap_colours = 
+    (\s a b -> s { dc_stroke_colour = b, dc_fill_colour = a })
+        <*> dc_stroke_colour <*> dc_fill_colour
 
+{-
 bothStrokeColour :: DrawingContextF
-bothStrokeColour = (\s a -> s { fill_colour = a }) <*> stroke_colour
+bothStrokeColour = (\s a -> s { dc_fill_colour = a }) <*> dc_stroke_colour
 
 bothFillColour :: DrawingContextF
-bothFillColour = (\s a -> s { stroke_colour = a }) <*> fill_colour
+bothFillColour = (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
+-}
+
+
+stroke_colour :: RGBi -> DrawingContextF
+stroke_colour rgb = \s -> s { dc_stroke_colour = rgb } 
+
+
+fill_colour :: RGBi -> DrawingContextF
+fill_colour rgb = \s -> s { dc_fill_colour = rgb } 
 
 
 
-strokeColour :: RGBi -> DrawingContextF
-strokeColour rgb = \s -> s { stroke_colour = rgb } 
-
-
-fillColour :: RGBi -> DrawingContextF
-fillColour rgb = \s -> s { fill_colour = rgb } 
-
-
+text_colour          :: RGBi -> DrawingContextF
+text_colour rgb      = (\s -> s { dc_text_colour = rgb})
 
 

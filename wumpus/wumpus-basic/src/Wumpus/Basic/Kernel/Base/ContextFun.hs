@@ -61,7 +61,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   -- * Extractors
   , drawingCtx
-  , queryCtx
+  , projectCtx
   , locCtx
   , locPoint
   , locThetaCtx
@@ -303,17 +303,17 @@ instance Monad (CF3 r1 r2 r3) where
 -- DrawingCtxM 
 
 instance DrawingCtxM CF where
-  askDC           = CF $ \ctx -> ctx
+  queryCtx        = CF $ \ctx -> ctx
   localize upd df = CF $ \ctx -> unCF df (upd ctx)
   
 
 instance DrawingCtxM (CF1 r1) where
-  askDC           = CF1 $ \ctx _  -> ctx
+  queryCtx        = CF1 $ \ctx _  -> ctx
   localize upd df = CF1 $ \ctx r1 -> unCF1 df (upd ctx) r1
 
 
 instance DrawingCtxM (CF2 r1 r2) where
-  askDC           = CF2 $ \ctx _  _  -> ctx
+  queryCtx        = CF2 $ \ctx _  _  -> ctx
   localize upd df = CF2 $ \ctx r1 r2 -> unCF2 df (upd ctx) r1 r2
 
 
@@ -523,8 +523,8 @@ drawingCtx      = CF $ \ctx -> ctx
 --
 -- > (ctx -> a) -> (ctx -> a)
 --
-queryCtx        :: (DrawingContext -> a) -> CF a
-queryCtx f      = CF $ \ctx -> f ctx
+projectCtx      :: (DrawingContext -> a) -> CF a
+projectCtx f    = CF $ \ctx -> f ctx
 
 
 -- | Extract the drawing context from a LocCF.

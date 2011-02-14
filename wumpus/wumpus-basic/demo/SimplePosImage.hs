@@ -23,7 +23,7 @@ std_attr = standardContext 24
 
 
 drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fillColour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 mf :: (Floating u, FromPtSize u) => TraceDrawing u ()

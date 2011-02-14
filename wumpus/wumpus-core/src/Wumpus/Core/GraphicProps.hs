@@ -212,6 +212,12 @@ instance Format EllipseProps where
 -- Defaults
 
 -- | Default stroke attributes.
+-- 
+-- > line_width      = 1
+-- > miter_limit     = 1
+-- > line_cap        = CapButt
+-- > line_join       = JoinMiter
+-- > dash_pattern    = Solid
 --
 default_stroke_attr :: StrokeAttr
 default_stroke_attr = StrokeAttr { line_width      = 1

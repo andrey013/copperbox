@@ -161,7 +161,7 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | otherwise                = 
         localize drawing_props $ rect1 `oplus` cross
   where
-    drawing_props = capRound . dashPattern (Dash 0 [(1,2)])
+    drawing_props = cap_round . dashPattern (Dash 0 [(1,2)])
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
     cross         = straightLineGraphic p1 p2 
                       `oplus` straightLineGraphic (P2 llx ury) (P2 urx lly)

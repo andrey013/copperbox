@@ -83,36 +83,36 @@ import Control.Applicative
 
 
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
-textAttr = (,) <$> asksDC text_colour <*> asksDC font_props
+textAttr = (,) <$> query dc_text_colour <*> query dc_font_props
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
 withTextAttr :: DrawingCtxM m => (RGBi -> FontAttr -> a) -> m a
-withTextAttr fn = fn <$> asksDC text_colour <*> asksDC font_props
+withTextAttr fn = fn <$> query dc_text_colour <*> query dc_font_props
 
 
 strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
-strokeAttr = (,) <$> asksDC stroke_colour <*> asksDC stroke_props
+strokeAttr = (,) <$> query dc_stroke_colour <*> query dc_stroke_props
 
 withStrokeAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> a) -> m a
-withStrokeAttr fn = fn <$> asksDC stroke_colour <*> asksDC stroke_props
+withStrokeAttr fn = fn <$> query dc_stroke_colour <*> query dc_stroke_props
 
 
 fillAttr :: DrawingCtxM m => m RGBi
-fillAttr = asksDC fill_colour
+fillAttr = query dc_fill_colour
 
 withFillAttr :: DrawingCtxM m => (RGBi -> a) -> m a
-withFillAttr fn = fn <$> asksDC fill_colour
+withFillAttr fn = fn <$> query dc_fill_colour
 
 borderedAttr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
-borderedAttr = (,,) <$> asksDC fill_colour <*> asksDC stroke_props 
-                                           <*> asksDC stroke_colour
+borderedAttr = (,,) <$> query dc_fill_colour <*> query dc_stroke_props 
+                                             <*> query dc_stroke_colour
 
 withBorderedAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> RGBi -> a) -> m a
 withBorderedAttr fn = 
-    fn <$> asksDC fill_colour <*> asksDC stroke_props 
-                              <*> asksDC stroke_colour
+    fn <$> query dc_fill_colour <*> query dc_stroke_props 
+                                <*> query dc_stroke_colour
 
 
 
@@ -121,7 +121,7 @@ withBorderedAttr fn =
 --
 position :: (Fractional u, DrawingCtxM m) 
          => (Int,Int) -> m (Point2 u)
-position (x,y) = fn <$> asksDC snap_grid_factors
+position (x,y) = fn <$> query dc_snap_grid_factors
   where
     fn (scx,scy) = P2 ((realToFrac scx) * fromIntegral x)
                       ((realToFrac scy) * fromIntegral y)
@@ -132,7 +132,7 @@ position (x,y) = fn <$> asksDC snap_grid_factors
 --
 snapmove :: (Fractional u, DrawingCtxM m) 
        => (Int,Int) -> m (Vec2 u)
-snapmove (x,y) = fn <$> asksDC snap_grid_factors
+snapmove (x,y) = fn <$> query dc_snap_grid_factors
   where
     fn (scx,scy) = V2 ((realToFrac scx) * fromIntegral x)
                       ((realToFrac scy) * fromIntegral y)
@@ -143,7 +143,7 @@ snapmove (x,y) = fn <$> asksDC snap_grid_factors
 --
 getRoundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
 getRoundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
-                    <$> asksDC round_corner_factor
+                        <$> query dc_round_corner_factor
 
 
 
@@ -154,26 +154,26 @@ getRoundCornerSize = (\factor -> (realToFrac factor) * fromPtSize 1)
 -- 
 getTextMargin :: (DrawingCtxM m, Fractional u, FromPtSize u) => m (u,u)
 getTextMargin = (\(TextMargin xsep ysep) -> (fn xsep, fn ysep))
-                    <$> asksDC text_margin
+                    <$> query dc_text_margin
   where
     fn d = (realToFrac d) * fromPtSize 1
 
 
 
-getLineWidth :: DrawingCtxM m => m Double
-getLineWidth = line_width <$> asksDC stroke_props
+getLineWidth :: DrawingCtxM m => m Pt
+getLineWidth = line_width <$> query dc_stroke_props
 
 getFontAttr :: DrawingCtxM m => m FontAttr
-getFontAttr = asksDC font_props
+getFontAttr = query dc_font_props
 
 getFontSize :: DrawingCtxM m => m Int
-getFontSize = font_size <$> asksDC font_props
+getFontSize = font_size <$> query dc_font_props
 
 getFontFace :: DrawingCtxM m => m FontFace
-getFontFace = font_face <$> asksDC font_props
+getFontFace = font_face <$> query dc_font_props
 
 getTextColour :: DrawingCtxM m => m RGBi
-getTextColour = asksDC text_colour
+getTextColour = query dc_text_colour
 
 
 
@@ -183,7 +183,8 @@ getTextColour = asksDC text_colour
 baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
 baselineSpacing = 
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
-      <$> asksDC (font_size . font_props) <*> asksDC line_spacing_factor
+      <$> (fmap font_size $ query dc_font_props) 
+      <*> query dc_line_spacing_factor
 
 -- | The /mark/ height is the height of a lowercase letter in the 
 -- current font.
@@ -192,7 +193,7 @@ baselineSpacing =
 -- height.
 -- 
 markHeight :: (DrawingCtxM m, FromPtSize u) => m u
-markHeight = (fromPtSize . FS.xcharHeight . font_size) <$> asksDC font_props
+markHeight = (fromPtSize . FS.xcharHeight . font_size) <$> query dc_font_props
 
 
 markHalfHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
@@ -206,7 +207,7 @@ markHalfHeight = (0.5*) <$> markHeight
 --------------------------------------------------------------------------------
 
 glyphQuery :: DrawingCtxM m => (FontMetrics -> PtSize -> u) -> m u
-glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
+glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> queryCtx
 
 -- | Get the font bounding box - this is the maximum boundary of 
 -- the glyphs in the font. The span of the height is expected to 
@@ -241,7 +242,7 @@ cwLookupTable = glyphQuery get_cw_table
 --------------------------------------------------------------------------------
 
 withFontSize :: DrawingCtxM m => (FontSize -> u) -> m u
-withFontSize fn = (fn . font_size) <$> asksDC font_props
+withFontSize fn = (fn . font_size) <$> query dc_font_props
 
 
 -- NOTE - textHeight in Wumpus-Core should be renamed as it is
@@ -295,7 +296,7 @@ monoTextDimensions :: (DrawingCtxM m, Num u, Ord u, FromPtSize u)
                    => String -> m (u,u)
 monoTextDimensions ss = 
     (\sz -> post $ textBounds sz zeroPt ss) 
-      <$> asksDC (font_size . font_props)
+      <$> (fmap font_size $ query dc_font_props)
   where
     post bb = (boundaryWidth bb, boundaryHeight bb)
 
@@ -308,7 +309,7 @@ monoMultiLineHeight :: (DrawingCtxM m, Fractional u, FromPtSize u)
 monoMultiLineHeight n | n < 0   = pure 0
 monoMultiLineHeight n           = 
     (\h lsf -> h + (fromIntegral $ n-1) * (h * realToFrac lsf))
-      <$> monoTotalCharHeight <*> asksDC line_spacing_factor
+      <$> monoTotalCharHeight <*> query dc_line_spacing_factor
  
     -- Note as the height calculation has changed in Wumpus-Core this
     -- no longer quite works... 

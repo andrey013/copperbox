@@ -36,7 +36,6 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   , runCtxPictureU
   , drawTracing
 
-  , clipCtxPicture
   , mapCtxPicture
 
   -- * Composition
@@ -170,17 +169,6 @@ drawTracing mf = CtxPicture $
 -- more complicated)? 
 --
 
--- | 'clipCtxPicture' : @ path * ctx_picture -> CtxPicture @
---
--- Clip a picture with a path.
--- 
-clipCtxPicture :: (Num u, Ord u) => PrimPath u -> CtxPicture u -> CtxPicture u
-clipCtxPicture cpath = mapCtxPicture (clip cpath)
-
--- Note - it seems preferable to clip a smaller type in the 
--- hierarchy than CtxPicture. But which one Graphic, TraceDrawing? 
--- ...
---
 
 
 -- | 'mapCtxPicture' : @ trafo * ctx_picture -> CtxPicture @

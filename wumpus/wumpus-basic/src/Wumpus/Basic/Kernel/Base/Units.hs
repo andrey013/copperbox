@@ -17,11 +17,9 @@
 
 module Wumpus.Basic.Kernel.Base.Units
   ( 
-  -- * Alias for PtSize
-    Pt
 
   -- * Type class ToPtSize
-  , ToPtSize(..)
+    ToPtSize(..)
 
   -- * Centimeter type
   , Centimeter   
@@ -36,11 +34,6 @@ module Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 
--- | To dis-ambiguate from geometric points, Wumpus-Core gives the 
--- Point (unit) type a rather cumbersome name. Wumpus-Basic adds a
--- useful alias.
---
-type Pt = PtSize
 
 -- | Note the Double instance performs no scaling. As per 
 -- PostScript where the default unit-size is Point, Wumpus 

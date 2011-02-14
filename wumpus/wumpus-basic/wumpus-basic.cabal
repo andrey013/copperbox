@@ -32,6 +32,9 @@ description:
   . 
   v0.16.0 to v0.17.0:
   .
+  * Substantial round of renaming for the @DrawingContext@ types
+    an query and update functions.
+  .
   * Remove MonUnit type family. This was a hack that has been 
     worked round.
   .
@@ -118,7 +121,7 @@ library
                       directory       >= 1.0     && <  2.0, 
                       filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6     && <  1.0,
-                      wumpus-core     >= 0.43.0  && <  0.44.0
+                      wumpus-core     >= 0.44.0  && <  0.45.0
 
   
   exposed-modules:
