@@ -46,7 +46,6 @@ trivialTranslation pic = scale 1 (-1) (trivPic pic)
 trivPic :: Num u => Picture u -> Picture u
 trivPic (Leaf lc ones)      = Leaf lc $ fmap trivPrim ones
 trivPic (Picture lc ones)   = Picture lc $ fmap trivPic ones
-trivPic (Clip lc pp pic)    = Clip lc pp $ trivPic pic
 
 trivPrim :: Num u => Primitive u -> Primitive u
 trivPrim (PPath a pp)     = PPath a pp
@@ -55,6 +54,7 @@ trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
 trivPrim (PContext a chi) = PContext a (trivPrim chi)
 trivPrim (PSVG a chi)     = PSVG a (trivPrim chi)
 trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
+trivPrim (PClip pp chi)   = PClip pp (trivPrim chi)
 
 
 trivLabel :: Num u => PrimLabel u -> PrimLabel u

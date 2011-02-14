@@ -184,14 +184,6 @@ imageTranslation pic = case repositionDeltas pic of
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
-picture (Clip    (_,xs) cp pic) = 
-    bracketTrafos xs $ do { lbl <- newClipLabel
-                          ; let d1 = clipPath lbl cp
-                          ; d2  <- picture pic
-                          ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
-                          } 
-
-
 
 
 oneConcat :: (a -> SvgMonad Doc) -> JoinList a -> SvgMonad Doc
@@ -220,6 +212,15 @@ primitive (PContext fa chi)     = bracketGS fa (primitive chi)
 primitive (PSVG anno chi)       = svgAnnoPrim anno <$> primitive chi
 
 primitive (PGroup ones)         = oneConcat primitive ones
+
+primitive (PClip cp chi)        =  do 
+    { lbl <- newClipLabel
+    ; let d1 = clipPath lbl cp
+    ; d2  <- primitive chi
+    ; return (vconcat d1 (elem_g (attr_clip_path lbl) d2))
+    } 
+
+
  
 
 svgAnnoPrim :: SvgAnno -> Doc -> Doc

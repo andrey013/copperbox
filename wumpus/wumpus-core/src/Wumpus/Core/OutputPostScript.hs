@@ -289,20 +289,9 @@ missingComment i =
 
 --------------------------------------------------------------------------------
 
--- Note - PostScript ignotes any FontCtx changes via the @Group@
--- constructor.
---
--- Also - because Clip uses gsave grestore it has to resetGS on
--- ending, otherwise the next picture will be diffing against
--- a modified state (in Wumpus land) that contradicts the PostScript 
--- state. 
---
 picture :: (Real u, Floating u, PSUnit u) => Picture u -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
-picture (Clip    (_,xs) cp pic) = bracketTrafos xs $
-    (\d1 d2 -> vcat [ps_gsave,d1,d2,ps_grestore])
-      <$> clipPath cp <*> picture pic <* resetGS
 
 
 
@@ -318,6 +307,14 @@ oneConcat fn ones = outstep (viewl ones)
 
 -- No action is taken for hyperlinks or font context changes in 
 -- PostScript.
+--
+-- PostScript ignores any FontCtx changes via the @Group@ 
+-- constructor.
+--
+-- Also - because Clip uses gsave grestore it has to resetGS on
+-- ending, otherwise the next picture will be diffing against a 
+-- modified state (in Wumpus land) that contradicts the PostScript 
+-- state. 
 --
 
 primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> PsMonad Doc
@@ -336,6 +333,10 @@ primitive (PContext _ chi)     = primitive chi
 primitive (PSVG _ chi)         = primitive chi
 
 primitive (PGroup ones)        = oneConcat primitive ones
+
+primitive (PClip cp chi) = 
+    (\d1 d2 -> vcat [ps_gsave,d1,d2,ps_grestore])
+      <$> clipPath cp <*> primitive chi <* resetGS
 
 
 primPath :: PSUnit u

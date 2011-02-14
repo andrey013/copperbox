@@ -50,6 +50,11 @@ description:
   .
   v0.43.0 to v0.44.0:
   .
+  * API and representation change - clipping paths are represented
+    as @Primitive@ constructor rather than a @Picture@ constructor.
+    This should make them more useful. The type of the function 
+    @clip@ in @Core.Picture@ has likewise changed.
+  .
   * API change - the @StrokeAttr@ dataype now represents 
     line_width and miter_limit with the @Pt@ type rather than a 
     Double. These sizes represent the same measurement (Double 

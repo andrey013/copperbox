@@ -449,12 +449,12 @@ fillStroke frgb sa srgb p = PPath (CFillStroke frgb sa srgb) p
 --------------------------------------------------------------------------------
 -- Clipping 
 
--- | 'clip' : @ path * picture -> Picture @
+-- | 'clip' : @ path * primitive -> Primitive @
 -- 
--- Clip a picture with respect to the supplied path.
+-- Clip a primitive with respect to the supplied path.
 --
-clip :: (Num u, Ord u) => PrimPath u -> Picture u -> Picture u
-clip cp p = Clip (pathBoundary cp, []) cp p
+clip :: (Num u, Ord u) => PrimPath u -> Primitive u -> Primitive u
+clip cp p = PClip cp p
 
 --------------------------------------------------------------------------------
 -- Labels to primitive

@@ -80,44 +80,27 @@ import qualified Data.Foldable                  as F
 import qualified Data.IntMap                    as IntMap
 
 
--- | Picture is a leaf attributed tree - where attributes are 
--- colour, line-width etc. It is parametric on the unit type 
--- of points (typically Double).
+-- | Picture is a rose tree. Leaves themselves are attributed
+-- with colour, line-width etc. Picture is parametric on the unit 
+-- type of points. The unit is typically @Double@ which 
+-- corresponds to PostScripts /Point/ unit. For dogmatic reasons
+-- Wumpus also has a newtype wrapper of Double to make a specific 
+-- 'PtSize' type, but it is usually more convenient to just use 
+-- @Double@.
 -- 
--- Wumpus\'s leaf attributed tree, is not directly matched to 
--- PostScript\'s picture representation, which might be 
--- considered a node attributed tree (if you consider graphics
--- state changes less imperatively - setting attributes rather 
--- than global state change).
+-- By attributing leaves with their drawing properties, Wumpus\'s 
+-- picture representaion is not directly matched to PostScript.
+-- PostScript has a global graphics state (that allows local 
+-- modifaction) from where drawing properties are inherited.
+-- Wumpus has no attribute inheritance.
 --
--- Considered as a node-attributed tree PostScript precolates 
--- graphics state updates downwards in the tree (vis-a-vis 
--- inherited attributes in an attibute grammar), where a 
--- graphics state change deeper in the tree overrides a higher 
--- one.
--- 
--- Wumpus on the other hand, simply labels each leaf with its
--- drawing attributes - there is no attribute inheritance.
--- When it draws the PostScript picture it does some 
--- optimization to avoid generating excessive graphics state 
--- changes in the PostScript code.
---
--- Omitting some details, Picture is a simple non-empty 
--- leaf-labelled rose tree via:
+-- Omitting some details of the list representation, Picture is a 
+-- simple non-empty rose tree via:
 -- 
 -- > tree = Leaf [primitive] | Picture [tree]
 --
--- The additional constructors are convenience:
---
--- @Clip@ nests a picture (tree) inside a clipping path.
---
--- The @Group@ constructor allows local shared graphics state 
--- updates for the SVG renderer - in some instances this can 
--- improve the code size of the generated SVG.
---
 data Picture u = Leaf     (Locale u)              (JoinList (Primitive u))
                | Picture  (Locale u)              (JoinList (Picture u))
-               | Clip     (Locale u) (PrimPath u) (Picture u)
   deriving (Show)
 
 type DPicture = Picture Double
@@ -168,6 +151,9 @@ type Locale u = (BoundingBox u, [AffineTrafo u])
 -- Though typically for affine transformations a Fractional 
 -- constraint is also obliged.
 --
+-- Clipping is represented by a pair of the clipping path and
+-- the primitive embedded within the path.
+--
 -- To represent XLink hyperlinks, Primitives can be annotated 
 -- with some a hyperlink (likewise a /passive/ font change for 
 -- better SVG code generation) and grouped - a hyperlinked arrow 
@@ -183,6 +169,7 @@ data Primitive u = PPath    PathProps         (PrimPath u)
                  | PContext FontCtx           (Primitive u)
                  | PSVG     SvgAnno           (Primitive u)
                  | PGroup   (JoinList (Primitive u))
+                 | PClip   (PrimPath u)       (Primitive u)
   deriving (Eq,Show)
 
 
@@ -361,11 +348,6 @@ instance (Num u, PSUnit u) => Format (Picture u) where
                                               , fmtLocale m
                                               , fmtPics pics ]
  
-  format (Clip m path pic)  = indent 2 $ vcat [ text "** Clip-path **"
-                                              , fmtLocale m
-                                              , format path
-                                              , format pic  ]
-
 
 fmtPics :: PSUnit u => JoinList (Picture u) -> Doc
 fmtPics ones = snd $ F.foldl' fn (0,empty) ones
@@ -395,6 +377,10 @@ instance PSUnit u => Format (Primitive u) where
 
   format (PGroup ones)      = 
       vcat [ text "-- group ", fmtPrimlist ones  ]
+
+  format (PClip path pic)  = 
+      vcat [ text "-- clip-path ", format path, format pic  ]
+
 
 
 fmtPrimlist :: PSUnit u => JoinList (Primitive u) -> Doc
@@ -441,7 +427,6 @@ instance Format XLink where
 instance Boundary (Picture u) where
   boundary (Leaf    (bb,_) _)   = bb
   boundary (Picture (bb,_) _)   = bb
-  boundary (Clip    (bb,_) _ _) = bb
 
 
 instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
@@ -450,6 +435,7 @@ instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
   boundary (PEllipse _ e)   = ellipseBoundary e
   boundary (PContext _ a)   = boundary a
   boundary (PSVG _ a)       = boundary a
+  boundary (PClip p _)      = pathBoundary p
   boundary (PGroup ones)    = outer $ viewl ones 
     where
       outer (OneL a)     = boundary a
@@ -591,7 +577,6 @@ instance (Num u, Ord u) => Translate (Picture u) where
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (Leaf lc ones)     = Leaf (f lc) ones
 mapLocale f (Picture lc ones)  = Picture (f lc) ones
-mapLocale f (Clip lc pp pic)   = Clip (f lc) pp pic
 
 
 --------------------------------------------------------------------------------
@@ -610,7 +595,7 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PContext a chi) = PContext a $ rotate r chi 
   rotate r (PSVG a chi)     = PSVG a     $ rotate r chi 
   rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
- 
+  rotate r (PClip p chi)    = PClip (rotatePath r p) (rotate r chi)
 
 instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
@@ -619,6 +604,8 @@ instance (Real u, Floating u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PContext a chi) = PContext a $ rotateAbout r pt chi
   rotateAbout r pt (PSVG a chi)     = PSVG a     $ rotateAbout r pt chi
   rotateAbout r pt (PGroup xs)      = PGroup     $ fmap (rotateAbout r pt) xs
+  rotateAbout r pt (PClip p chi)    = 
+      PClip (rotateAboutPath r pt p) (rotateAbout r pt chi)
 
 
 instance Num u => Scale (Primitive u) where
@@ -628,6 +615,7 @@ instance Num u => Scale (Primitive u) where
   scale sx sy (PContext a chi)  = PContext a $ scale sx sy chi
   scale sx sy (PSVG a chi)      = PSVG a     $ scale sx sy chi
   scale sx sy (PGroup xs)       = PGroup     $ fmap (scale sx sy) xs
+  scale sx sy (PClip p chi)     = PClip (scalePath sx sy p) (scale sx sy chi)
 
 
 instance Num u => Translate (Primitive u) where
@@ -637,6 +625,8 @@ instance Num u => Translate (Primitive u) where
   translate dx dy (PContext a chi) = PContext a $ translate dx dy chi
   translate dx dy (PSVG a chi)     = PSVG a     $ translate dx dy chi
   translate dx dy (PGroup xs)      = PGroup     $ fmap (translate dx dy) xs
+  translate dx dy (PClip p chi)    = 
+      PClip (translatePath dx dy p) (translate dx dy chi)
 
 
 --------------------------------------------------------------------------------
