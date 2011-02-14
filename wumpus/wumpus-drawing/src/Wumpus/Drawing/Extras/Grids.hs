@@ -35,8 +35,7 @@ import Control.Applicative
 snapGridFactors :: (Fractional u, FromPtSize u, DrawingCtxM m) 
                 =>  m (u,u)
 snapGridFactors = 
-    bimap conv conv <$> asksDC snap_grid_factors
-
+    bimap conv conv <$> query dc_snap_grid_factors
   where
     conv x = (realToFrac x) * fromPtSize 1
 
@@ -54,7 +53,7 @@ grid :: (Fractional u, FromPtSize u)
      => (Int,Int) -> RGBi -> LocGraphic u
 grid (nx,ny) rgb    
     | nx < 1 || ny < 1 = emptyLocGraphic
-    | otherwise        = localize (strokeColour rgb) $ promoteR1 $ \sw -> 
+    | otherwise        = localize (stroke_colour rgb) $ promoteR1 $ \sw -> 
         snapGridFactors >>= \(x_incr,y_incr) ->
         let rectw  = x_incr * fromIntegral nx
             recth  = y_incr * fromIntegral ny

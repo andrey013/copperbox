@@ -71,6 +71,7 @@ import Data.AffineSpace                 -- package: vector-space
 import Control.Applicative
 
 
+
 -- | Encode an arrowhead as a Graphic and a retract distance - 
 -- lines should be shortened for certain drawings (e.g. open
 -- triangles).
@@ -249,7 +250,7 @@ triTLG :: (Floating u, Real u, FromPtSize u)
        => Radian -> (PrimPath u -> Graphic u) -> LocThetaGraphic u
 triTLG triang drawF = 
     promoteR2 $ \pt theta ->
-      localize bothStrokeColour $ 
+      localize fill_use_stroke_colour $ 
          apply2R2 (tripointsByAngle triang) pt theta >>= \(u,v) -> 
            drawF $ vertexPath [pt,u,v]
 
@@ -283,7 +284,7 @@ revtriTLG :: (Floating u, Real u, FromPtSize u)
           => Radian -> (PrimPath u -> Graphic u) -> LocThetaGraphic u
 revtriTLG triang drawF = 
     promoteR2 $ \pt theta -> 
-      localize bothStrokeColour $ 
+      localize fill_use_stroke_colour $ 
         apply2R2 (revtripointsByAngle triang) pt theta >>= \(u,pt',v) -> 
            drawF $ vertexPath [u,pt',v]
 
@@ -404,7 +405,7 @@ diskTLG drawF =
 diskTip :: (Floating u, FromPtSize u) => Arrowhead u
 diskTip = Arrowhead markHeight (diskTLG drawF)
   where
-    drawF r pt = localize bothStrokeColour $ filledDisk r `at` pt
+    drawF r pt = localize fill_use_stroke_colour $ filledDisk r `at` pt
 
 
 odiskTip :: (Floating u, FromPtSize u) => Arrowhead u
@@ -431,7 +432,7 @@ rsquarePath pt theta hh = vertexPath [p0,p1,p2,p3]
 squareTip :: (Floating u, FromPtSize u) => Arrowhead u
 squareTip = Arrowhead markHeight (squareTLG drawF)
   where
-    drawF = localize bothStrokeColour . filledPath
+    drawF = localize fill_use_stroke_colour . filledPath
 
 
 osquareTip :: (Floating u, FromPtSize u) => Arrowhead u
@@ -458,7 +459,7 @@ diamondTip :: (Floating u, FromPtSize u) => Arrowhead u
 diamondTip = Arrowhead (fmap (2*) markHeightLessLineWidth) 
                        (diamondTLG drawF)
   where
-    drawF = localize bothStrokeColour . filledPath
+    drawF = localize fill_use_stroke_colour . filledPath
 
 
 odiamondTip :: (Floating u, FromPtSize u) => Arrowhead u
@@ -474,7 +475,7 @@ curveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 curveTLG = 
     tipBody $ \pt theta h -> 
       cxCurvePath pt theta (0.5*h) >>= \path ->
-        localize (joinRound . capRound) (solidOpenStroke path)
+        localize (join_round . cap_round) (solidOpenStroke path)
 
 
 cxCurvePath :: (Real u, Floating u, FromPtSize u) 
@@ -499,7 +500,7 @@ revcurveTLG :: (Real u, Floating u, FromPtSize u) => LocThetaGraphic u
 revcurveTLG = 
     tipBody $ \pt theta h ->
       cxRevcurvePath pt theta (0.5*h) >>= \path ->
-        localize (joinRound . capRound) (solidOpenStroke path)
+        localize (join_round . cap_round) (solidOpenStroke path)
 
 cxRevcurvePath :: (Real u, Floating u, FromPtSize u) 
                => Point2 u -> Radian -> u -> DrawingInfo (PrimPath u)

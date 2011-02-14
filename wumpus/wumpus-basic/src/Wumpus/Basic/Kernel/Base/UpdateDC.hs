@@ -77,12 +77,13 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , halfsize
 
   -- * Colour
-  , swap_colours
   , stroke_colour
   , fill_colour 
   , text_colour
 
-
+  , swap_colours
+  , fill_use_stroke_colour
+  , stroke_use_fill_colour
   
   ) where
 
@@ -361,30 +362,33 @@ halfsize            = scalesize (1%2)
 
 --------------------------------------------------------------------------------
 
-swap_colours :: DrawingContextF
-swap_colours = 
-    (\s a b -> s { dc_stroke_colour = b, dc_fill_colour = a })
-        <*> dc_stroke_colour <*> dc_fill_colour
-
-{-
-bothStrokeColour :: DrawingContextF
-bothStrokeColour = (\s a -> s { dc_fill_colour = a }) <*> dc_stroke_colour
-
-bothFillColour :: DrawingContextF
-bothFillColour = (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
--}
-
 
 stroke_colour :: RGBi -> DrawingContextF
 stroke_colour rgb = \s -> s { dc_stroke_colour = rgb } 
-
 
 fill_colour :: RGBi -> DrawingContextF
 fill_colour rgb = \s -> s { dc_fill_colour = rgb } 
 
 
-
 text_colour          :: RGBi -> DrawingContextF
 text_colour rgb      = (\s -> s { dc_text_colour = rgb})
+
+
+swap_colours :: DrawingContextF
+swap_colours = 
+    (\s a b -> s { dc_stroke_colour = b, dc_fill_colour = a })
+        <*> dc_stroke_colour <*> dc_fill_colour
+
+
+fill_use_stroke_colour :: DrawingContextF
+fill_use_stroke_colour = 
+    (\s a -> s { dc_fill_colour = a }) <*> dc_stroke_colour
+
+stroke_use_fill_colour :: DrawingContextF
+stroke_use_fill_colour = (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
+
+
+
+
 
 

@@ -56,21 +56,18 @@ import Data.Foldable ( foldrM )
 -- Need to know line width (horizontal) and line count (vertical) 
 -- to render...
 --
--- Can obviously access line count if we avoid avoid operators 
--- for vertical composition operator and delegate it to rendering
+-- Can obviously access line count if we avoid operators for 
+-- vertical composition operator and delegating to the rendering
 -- instead:
 --
 -- > rightAlign :: [CatText u] -> PosImage u (BoundingBox u)
 --
 
--- A CatPrim returns a drawing function (AdvGraphic) to be used
--- drawing final rendering.
---
--- type DocPrim u = CF (u, AdvGraphic u)
 
 newtype DocText u = DocText { getDocText :: CF (u, AdvGraphic u) }
 
-
+-- Note being able to background fill would be very useful, 
+-- especially background fill with white.
 
 
 
@@ -226,7 +223,7 @@ lfill w dt = DocText $ getDocText dt >>= \(u,gf) ->
 --
 
 fontColour :: RGBi -> DocText u -> DocText u
-fontColour rgb = doclocal (textColour rgb)
+fontColour rgb = doclocal (text_colour rgb)
 
 
 -- Note with the formulation @ CF (u,AdvGraphic u) @ changing

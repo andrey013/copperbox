@@ -125,7 +125,7 @@ runTurtleT ogin cfg mf = getTurtleT mf cfg st0 >>= \(a,_) -> return a
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  askDC           = TurtleT $ \_ s -> askDC >>= \ ctx -> return (ctx,s)
+  queryCtx        = TurtleT $ \_ s -> queryCtx >>= \ ctx -> return (ctx,s)
   localize upd mf = TurtleT $ \r s -> localize upd (getTurtleT mf r s)
 
 
