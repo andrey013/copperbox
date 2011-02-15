@@ -50,12 +50,12 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 12
+makeCtx = set_font helvetica . metricsContext 12
 
 
 
 drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fillColour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 mf :: (Real u, Floating u, FromPtSize u) => TraceDrawing u ()

@@ -36,7 +36,7 @@ main = do
     
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace courier . metricsContext 14
+makeCtx = set_font courier . metricsContext 14
 
 
 shapes_pic :: DCtxPicture

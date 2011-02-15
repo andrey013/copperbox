@@ -59,8 +59,7 @@ automata_fonts = map ps_font_name [ times_roman, times_italic ]
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = 
-    snapGrid (60.0::Double) (60.0::Double) 
-        . fontFace times_roman . metricsContext 14
+    snap_grid_factors 60.0 60.0 . set_font times_roman . metricsContext 14
 
 
 automata :: DCtxPicture
@@ -70,7 +69,7 @@ automata = drawTracing $ do
     q2     <- cxdrawi  (below_right_of q0)      $ state "q2"
     q3     <- cxdrawi  (below_right_of q1)      $ stopstate "q3"
 
-    s0     <- query (left_of q0)
+    s0     <- runQuery (left_of q0)
     
     drawrci_ q0 q1 $ label_midway_of SE (singleLine "0") $ straightconn
     drawci_  (center q1) (north q1) $ label_midway_of SS (singleLine "0") arrloop
@@ -87,14 +86,14 @@ automata = drawTracing $ do
 state :: ( Real u, Floating u, FromPtSize u) 
       => String -> LocImage u (Circle u)
 state ss = 
-    localize (fontFace times_italic) $ 
+    localize (set_font times_italic) $ 
         label_center_of (singleLine ss) $ strokedShape $ circle 20
 
 
 stopstate :: ( Real u, Floating u, FromPtSize u) 
           => String -> LocImage u (Circle u)
 stopstate ss = 
-    localize (fontFace times_italic) $ 
+    localize (set_font times_italic) $ 
         label_center_of lbl $ dblStrokedShape $ circle 20
   where
     lbl = singleLine ss 

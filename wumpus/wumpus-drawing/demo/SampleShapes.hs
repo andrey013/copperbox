@@ -99,7 +99,7 @@ shape_list =
     ]
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace courier . metricsContext 16
+makeCtx = set_font courier . metricsContext 16
 
 rotate05 :: Rotate a => a -> a
 rotate05 = rotate (d2r (5::Double))
@@ -173,7 +173,7 @@ shapePic mf sh name = drawTracing $ do
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
-    textF   = lift1R2 $ ignoreAns (multiAlignCenter 0 name `startPos` CENTER)
+    textF   = lift1R2 $ ignoreAns (apply2R3 (multiAlignCenter name) CENTER 0)
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -186,7 +186,7 @@ shapePic mf sh name = drawTracing $ do
 
 
 shapeSty :: DrawingContextF
-shapeSty = strokeColour light_steel_blue . ultrathick
+shapeSty = stroke_colour light_steel_blue . line_ultra_thick
 
 label :: (Real u, Floating u, FromPtSize u) 
            => Cardinal -> String -> LocGraphic u
@@ -194,7 +194,7 @@ label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       multiAlignCenter 0 ss `startPos` rpos
+                       apply2R3 (multiAlignCenter ss) rpos 0
 
     go NORTH      = (SS, northwards)
     go NORTH_EAST = (SW, northeastwards)

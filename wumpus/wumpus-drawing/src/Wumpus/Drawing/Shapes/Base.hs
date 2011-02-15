@@ -131,7 +131,7 @@ dblStrokedShape :: Num u => Shape u a -> LocImage u a
 dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc closedStroke sh
-    back = getLineWidth >>= \lw -> localize (lineWidth $ lw * 3.0) img
+    back = getLineWidth >>= \lw -> localize (set_line_width $ lw * 3.0) img
     fore = ignoreAns $ localize (stroke_colour white) img
 
 

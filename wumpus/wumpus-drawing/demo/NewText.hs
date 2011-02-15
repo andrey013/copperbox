@@ -51,18 +51,18 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 18
+makeCtx = set_font helvetica . metricsContext 18
 
 
 
 drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fillColour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text
 
 mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
-mf = localize (textMargin (6.0::Pt) (6.0::Pt))  $ do
+mf = localize (text_margin 6.0 6.0)  $ do
     drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
 
@@ -76,7 +76,7 @@ mf = localize (textMargin (6.0::Pt) (6.0::Pt))  $ do
 
 
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-redPlus = localize (strokeColour red) markPlus
+redPlus = localize (stroke_colour red) markPlus
 
 
 body :: (Ord u, FromPtSize u) => [DocText u]

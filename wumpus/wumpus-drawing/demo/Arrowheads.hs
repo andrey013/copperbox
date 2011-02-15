@@ -24,8 +24,8 @@ main = do
     writeSVG "./out/arrowheads01.svg" pic1
 
 arrow_drawing :: CtxPicture Double
-arrow_drawing = drawTracing $ localize (dashPattern unit_dash_pattern) 
-                            $ tableGraphic arrtable
+arrow_drawing = 
+    drawTracing $ localize dotted_line $ tableGraphic arrtable
 
 arrtable :: [(Arrowhead Double, Arrowhead Double)]
 arrtable = 
@@ -69,7 +69,7 @@ tableGraphic tips =
 
  
 std_ctx :: DrawingContext
-std_ctx = fillColour peru $ standardContext 18
+std_ctx = fill_colour peru $ standardContext 18
 
 
 

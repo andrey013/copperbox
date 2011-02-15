@@ -50,12 +50,12 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace times_roman . metricsContext 24
+makeCtx = set_font times_roman . metricsContext 24
 
 
 
 drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fillColour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text

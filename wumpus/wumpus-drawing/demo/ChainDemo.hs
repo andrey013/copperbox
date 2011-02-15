@@ -24,7 +24,7 @@ main = do
 
 
 std_attr :: DrawingContext
-std_attr = fillColour rosy_brown $ standardContext 12
+std_attr = fill_colour rosy_brown $ standardContext 12
 
 
 

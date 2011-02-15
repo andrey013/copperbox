@@ -52,7 +52,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/feature_model02.svg" pic1 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace courier_bold . metricsContext 18
+makeCtx = set_font courier_bold . metricsContext 18
 
 
 -- Note - I haven't worked out how to do @alternative@, @or@ and

@@ -59,7 +59,7 @@ tableGraphic conns =
 
  
 std_ctx :: DrawingContext
-std_ctx = fillColour peru $ standardContext 18
+std_ctx = fill_colour peru $ standardContext 18
 
 
 

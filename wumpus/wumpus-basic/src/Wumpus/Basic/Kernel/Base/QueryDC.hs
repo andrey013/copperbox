@@ -128,7 +128,7 @@ snapmove (x,y) = fn <$> query dc_snap_grid_factors
 
 -- | Size of the round corner factor.
 --
-getRoundCornerSize :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
+getRoundCornerSize :: (Fractional u, FromPtSize u, DrawingCtxM m) => m u
 getRoundCornerSize = dpoint <$> query dc_round_corner_factor
 
 
@@ -137,7 +137,7 @@ getRoundCornerSize = dpoint <$> query dc_round_corner_factor
 -- Note - not all text operations in Wumpus are drawn with text 
 -- margin. 
 -- 
-getTextMargin :: (DrawingCtxM m, Fractional u, FromPtSize u) => m (u,u)
+getTextMargin :: (Fractional u, FromPtSize u, DrawingCtxM m) => m (u,u)
 getTextMargin = 
     (\(TextMargin xsep ysep) -> (fromPtSize xsep, fromPtSize ysep))
       <$> query dc_text_margin
@@ -167,7 +167,7 @@ getTextColour = query dc_text_colour
 -- | Vertical distance between baselines of consecutive text 
 -- lines.
 --
-baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
+baselineSpacing :: (Fractional u, DrawingCtxM m) => m u
 baselineSpacing = 
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
       <$> query dc_font_size  <*> query dc_line_spacing_factor
@@ -178,11 +178,11 @@ baselineSpacing =
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: (DrawingCtxM m, FromPtSize u) => m u
+markHeight :: (FromPtSize u, DrawingCtxM m) => m u
 markHeight = (fromPtSize . FS.xcharHeight) <$> query dc_font_size
 
 
-markHalfHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
+markHalfHeight :: (Fractional u, FromPtSize u, DrawingCtxM m) => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 

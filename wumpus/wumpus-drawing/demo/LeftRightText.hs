@@ -66,7 +66,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 14
+makeCtx = set_font helvetica . metricsContext 14
 
 
 text_pic :: CtxPicture Double
@@ -109,7 +109,7 @@ text_pic = drawTracing $ do
     fn = illustrateBoundedLocGraphic
    
 redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
-redPlus = localize (strokeColour red) markPlus
+redPlus = localize (stroke_colour red) markPlus
 
 
 

@@ -61,7 +61,7 @@ makeAfmPicture font_dir = do
 
  
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace times_roman . metricsContext 11
+makeCtx = set_font times_roman . metricsContext 11
 
 
 
@@ -98,7 +98,7 @@ circuit_pic = drawTracing $ do
 connWith :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
             , Real u, Floating u, FromPtSize u ) 
          => PathCF u -> Point2 u -> Point2 u -> m ()
-connWith con p0 p1 = localize doublesize $ 
+connWith con p0 p1 = localize double_point_size $ 
     drawi_ $ apply2R2 (rightArrow tri45 con) p0 p1
 
 
@@ -113,13 +113,13 @@ atext ancr ss = let pt = center ancr in
 ptext :: ( Real u, Floating u, FromPtSize u
          , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => Point2 u -> String -> m ()
-ptext pt ss = localize (fontAttr times_italic 14) $ 
+ptext pt ss = localize (font_attr times_italic 14) $ 
     drawi_ $ textAlignCenter ss `at` pt
 
 
 -- Note - return type is a LocImage not a shape...
 --
 rrectangle :: (Real u, Floating u, FromPtSize u, ToPtSize u) 
-           => u -> u -> u -> LocImage u (Rectangle u)
+           => Double -> u -> u -> LocImage u (Rectangle u)
 rrectangle r w h = 
-    localize (roundCornerFactor $ toPtSize r) $ strokedShape (rectangle w h)
+    localize (round_corner_factor r) $ strokedShape (rectangle w h)

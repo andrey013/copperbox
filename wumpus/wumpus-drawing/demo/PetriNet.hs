@@ -58,7 +58,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 14
+makeCtx = set_font helvetica . metricsContext 14
 
 
 petri_net :: DCtxPicture
@@ -107,7 +107,7 @@ petri_net = drawTracing $ do
     return ()
 
 greenFill :: DrawingCtxM m => m a -> m a
-greenFill = localize (fillColour lime_green)
+greenFill = localize (fill_colour lime_green)
 
 
 place :: ( Real u, Floating u, FromPtSize u) 
@@ -137,17 +137,17 @@ connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
 lblParensParens :: Num u => LocGraphic u
-lblParensParens = localize (fontFace helvetica) $ textline "(),()"
+lblParensParens = localize (set_font helvetica) $ textline "(),()"
 
 lblParensParensParens :: Num u => LocGraphic u
-lblParensParensParens = localize (fontFace helvetica) $ textline "(),(),()"
+lblParensParensParens = localize (set_font helvetica) $ textline "(),(),()"
 
 
 lblBold' :: Num u => String -> LocGraphic u
-lblBold' ss = localize (fontFace helvetica_bold) $ textline ss
+lblBold' ss = localize (set_font helvetica_bold) $ textline ss
 
 
 lblBold :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
-lblBold ss = localize (fontFace helvetica_bold) $ 
+lblBold ss = localize (set_font helvetica_bold) $ 
                 ignoreAns $ textAlignCenter ss
 

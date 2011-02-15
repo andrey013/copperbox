@@ -178,7 +178,7 @@ noRetract = pure 0
 -- line is dashed (tips also override round corners)
 
 solidArrTip :: DrawingCtxM m => m a -> m a
-solidArrTip mf = localize (dashPattern Solid . roundCornerFactor (0::Pica)) mf
+solidArrTip mf = localize reset_drawing_metrics mf
 
 
 solidOpenStroke :: Num  u => PrimPath u -> Graphic  u

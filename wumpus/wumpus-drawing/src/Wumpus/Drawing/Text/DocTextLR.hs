@@ -231,7 +231,7 @@ fontColour rgb = doclocal (text_colour rgb)
 --
 
 textSize :: Int -> DocText u -> DocText u
-textSize sz = doclocal (fontSize sz)
+textSize sz = doclocal (point_size sz)
 
 
 --------------------------------------------------------------------------------

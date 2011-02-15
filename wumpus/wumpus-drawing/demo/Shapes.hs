@@ -28,7 +28,7 @@ shapes = drawTracing $ do
              (borderedShape $ rectangle 90 30) `at` zeroPt -- "Rectangle"
     drawi_ $ (borderedShape $ circle 10) `at` P2 100 0  -- "C0"
    
-    localize (strokeColour red) $ draw $ markDisk `at` (P2 220 10)
+    localize (stroke_colour red) $ draw $ markDisk `at` (P2 220 10)
     a <- drawi $ (borderedShape $ diamond 10 10) `at` (P2 40 0) -- "d1"
     redX $ radialAnchor (0.5*pi) a
     drawi_ $ (borderedShape $ rectangle 20 100) `at` (P2 400 50) -- "R2"
@@ -55,7 +55,7 @@ shapes = drawTracing $ do
 
 
 redX :: (Real u, Floating u, FromPtSize u) => Point2 u -> TraceDrawing u ()
-redX pt = localize (strokeColour red) $ draw $ markX `at` pt
+redX pt = localize (stroke_colour red) $ draw $ markX `at` pt
    
 
     -- NOTE - should coordinates even have a center anchor?

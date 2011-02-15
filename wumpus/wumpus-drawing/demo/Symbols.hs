@@ -21,7 +21,7 @@ main = do
 
 
 std_ctx :: DrawingContext
-std_ctx = fontFace times_roman $ standardContext 12
+std_ctx = set_font times_roman $ standardContext 12
 
 
 -- Because the font changes, we draw the all the symbols in one
@@ -31,7 +31,7 @@ std_ctx = fontFace times_roman $ standardContext 12
 --
 symbols :: DCtxPicture
 symbols = drawTracing $ do
-    draw $ localize (fontFace symbol) $ 
+    draw $ localize (set_font symbol) $ 
             unchainZipWith emptyLocGraphic sdraw all_letters chn `at` start
     draw $ unchainZipWith emptyLocGraphic ldraw all_letters chn `at` start
   where

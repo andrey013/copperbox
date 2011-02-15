@@ -55,7 +55,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 16
+makeCtx = set_font helvetica . metricsContext 16
 
 
 
@@ -76,7 +76,7 @@ circle_drawing = do
     f4 = label_right_of (singleLine "label-right")
 
 strokeFill :: RGBi -> RGBi -> DrawingContextF
-strokeFill s f = strokeColour s . fillColour f
+strokeFill s f = stroke_colour s . fill_colour f
 
 
 -- Note - maybe LRText should use margins afterall...

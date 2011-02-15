@@ -26,6 +26,8 @@ import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
+-- NOT CURRENTLY WORKING - NEEDS A RETHINK...
+
 
 main :: IO ()
 main = do 
@@ -46,30 +48,30 @@ fillPath :: Num u => Path u -> Graphic u
 fillPath = filledPath . toPrimPath
 
 pic1 :: DCtxPicture
-pic1 = drawTracing $ localize (fillColour medium_slate_blue) $ do
+pic1 = drawTracing $ localize (fill_colour medium_slate_blue) $ do
     draw $ fillPath path01
-    draw $ localize (fillColour powder_blue) $ fillPath path02
+    draw $ localize (fill_colour powder_blue) $ fillPath path02
     draw $ fillPath path03
     draw $ fillPath path04
 
 
-background :: RGBi -> DCtxPicture
-background rgb = drawTracing $ 
-    draw $ localize (strokeColour rgb) $ ihh `at` P2 0 288
+background :: RGBi -> DPrimitive
+background rgb = 
+    localize (stroke_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = unchain 112 emptyLocGraphic iheartHaskell $ tableDown 18 (86,16)
 
-cpic1 :: DCtxPicture 
-cpic1 = clipCtxPicture (toPrimPath path01) (background black)
+cpic1 :: DPrimitive
+cpic1 = clip (toPrimPath path01) (background black)
   
-cpic2 :: DCtxPicture
-cpic2 = clipCtxPicture (toPrimPath path02) (background medium_violet_red)
+cpic2 :: DPrimitive
+cpic2 = clip (toPrimPath path02) (background medium_violet_red)
 
-cpic3 :: DCtxPicture 
-cpic3 = clipCtxPicture (toPrimPath path03) (background black)
+cpic3 :: DPrimtive 
+cpic3 = clip (toPrimPath path03) (background black)
 
-cpic4 :: DCtxPicture 
-cpic4 = clipCtxPicture (toPrimPath path04) (background black)
+cpic4 :: DPrimtive 
+cpic4 = clip (toPrimPath path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => LocGraphic u

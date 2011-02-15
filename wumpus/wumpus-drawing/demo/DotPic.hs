@@ -56,7 +56,7 @@ makeAfmPicture font_dir = do
 
  
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fillColour peru . fontFace helvetica . metricsContext 24
+makeCtx = fill_colour peru . set_font helvetica . metricsContext 24
 
 
 dot_pic :: CtxPicture Double
@@ -107,7 +107,7 @@ makeDotDrawing dotF =
     dashline = \ps -> localize attrUpd (openStroke $ vertexPath ps)
 
     attrUpd  :: DrawingContext -> DrawingContext
-    attrUpd  =  dashPattern (evenDashes 1) . strokeColour cadet_blue
+    attrUpd  = packed_dotted . stroke_colour cadet_blue
 
     ignoreL  = fmap (replaceL uNil) 
 

@@ -22,7 +22,7 @@ main = do
     writeSVG "./out/iter_draw01.svg" pic1
 
 dctx :: DrawingContext
-dctx = fontFace courier_bold $ standardContext 24
+dctx = set_font courier_bold $ standardContext 24
 
 iter_drawing :: DCtxPicture
 iter_drawing = drawTracing $ do 
@@ -37,18 +37,18 @@ hspace = hvec 28
 redA :: Fractional u => AdvGraphic u
 redA = intoAdvGraphic (pure hspace) (background `oplus` textline "A")
   where
-    background = localize (fillColour tomato) 
+    background = localize (fill_colour tomato) 
                           (moveStart bldisplace $ filledRectangle 24 24)
 
 greenB :: Fractional u => AdvGraphic u
 greenB = intoAdvGraphic (pure hspace) (background `oplus` textline "B")
   where
-    background = localize (fillColour yellow_green) 
+    background = localize (fill_colour yellow_green) 
                           (moveStart bldisplace $ filledRectangle 24 24)
 
 blueC :: Fractional u => AdvGraphic u
 blueC = intoAdvGraphic (pure hspace) (background `oplus` textline "C")
   where
-    background = localize (fillColour light_sky_blue) 
+    background = localize (fill_colour light_sky_blue) 
                           (moveStart bldisplace $ filledRectangle 24 24)
 

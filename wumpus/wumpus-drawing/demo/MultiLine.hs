@@ -50,12 +50,12 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 9
+makeCtx = set_font helvetica . metricsContext 9
 
 
 
 drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fillColour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text
@@ -98,14 +98,14 @@ testDrawL :: (Real u, Floating u, Ord u, FromPtSize u)
 testDrawL rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignLeft 0 sample_text `startPos` rpos
+            apply2R3 (multiAlignLeft sample_text) rpos 0
 
 testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
           => RectPosition -> LocGraphic u
 testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignCenter 0 sample_text `startPos` rpos
+            apply2R3 (multiAlignCenter sample_text)  rpos 0
 
 
 testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
@@ -113,7 +113,7 @@ testDrawR :: (Real u, Floating u, Ord u, FromPtSize u)
 testDrawR rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignRight 0 sample_text `startPos` rpos
+            apply2R3 (multiAlignRight sample_text) rpos 0
 
 sample_text :: String
 sample_text = "Is\nthis\nokay&question;"
