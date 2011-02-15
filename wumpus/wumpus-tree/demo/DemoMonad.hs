@@ -53,7 +53,7 @@ makePictures base_metrics = do
 
 
 makeCtx :: FontSize -> FontLoadResult -> DrawingContext
-makeCtx sz m = fontFace times_roman $ metricsContext sz m
+makeCtx sz m = set_font times_roman $ metricsContext sz m
 
 
 -- Note - @label@ in TreeMonad is a waste of a valuable name...

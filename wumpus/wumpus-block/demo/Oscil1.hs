@@ -53,7 +53,7 @@ makeAfmPicture font_dir = do
     writeSVG "./out/oscil1_afm.svg" pic2
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace helvetica . metricsContext 18
+makeCtx = set_font helvetica . metricsContext 18
 
 
 shape_pic :: DCtxPicture

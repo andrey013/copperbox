@@ -58,7 +58,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Applicative
-
+import Data.Ratio
 
 
 
@@ -78,7 +78,7 @@ stripTheta mf = promoteR2 $ \pt _ -> mf `at` pt
 -- Parameters, inputs and outputs should be smaller.
 --
 shapeSty :: DrawingContextF
-shapeSty = strokeColour black . thick . fontSize 18 . fontFace helvetica
+shapeSty = stroke_colour black . line_thick . point_size 18 . set_font helvetica
 
 
 
@@ -121,8 +121,7 @@ thetaHorizontal a = a `rot` 0
 
 
 minorFontSize :: DrawingContextF
-minorFontSize = (\s sz -> fontSize (4 * sz `div` 5) s) 
-                  <*> (font_size . font_props)
+minorFontSize = scalePointSize (4%5)
 
 
 -- Inports should be evenly spaced along the top line (measured 

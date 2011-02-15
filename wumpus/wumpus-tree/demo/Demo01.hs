@@ -61,7 +61,7 @@ makePictures base_metrics = do
 
 
 makeCtx :: FontSize -> FontLoadResult -> DrawingContext
-makeCtx sz m = fontFace times_roman $ metricsContext sz m
+makeCtx sz m = set_font times_roman $ metricsContext sz m
 
 
 
@@ -77,7 +77,7 @@ tree_pic1 = drawTracing $ do
         runTreeBuild (diskNode red) tree2
 
     draw $ textline "Tree 3:"       `at` (P2 0  410) 
-    localize (fontSize 12) $ 
+    localize (point_size 12) $ 
         drawScaledFamilyTree (uniformSF 25) (P2 280 410) $ 
           runTreeBuild charNode tree3
 

@@ -155,7 +155,7 @@ textNode = dotText . uptoNewline
 --
 circleNode :: (Floating u, FromPtSize u) 
            => RGBi -> (a -> TreeNode u)
-circleNode rgb = \_ -> localize (strokeColour rgb) dotCircle
+circleNode rgb = \_ -> localize (stroke_colour rgb) dotCircle
 
 
 -- | Tree nodes with a filled circle.
@@ -164,7 +164,7 @@ circleNode rgb = \_ -> localize (strokeColour rgb) dotCircle
 --
 diskNode :: (Floating u, FromPtSize u) 
          => RGBi -> (a -> TreeNode u)
-diskNode rgb = \_ -> localize (fillColour rgb) dotDisk
+diskNode rgb = \_ -> localize (fill_colour rgb) dotDisk
 
 
 

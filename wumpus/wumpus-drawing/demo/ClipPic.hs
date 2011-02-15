@@ -26,58 +26,61 @@ import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
--- NOT CURRENTLY WORKING - NEEDS A RETHINK...
-
 
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic = runCtxPictureU pic_drawing_ctx big_pic
-    writeEPS "./out/clip_pic.eps" pic
-    writeSVG "./out/clip_pic.svg" pic
+    let pic1 = runCtxPictureU std_ctx $ top_pic `cxpDown` clip_pic
+    writeEPS "./out/clip_pic.eps" pic1
+    writeSVG "./out/clip_pic.svg" pic1
 
 
-pic_drawing_ctx :: DrawingContext
-pic_drawing_ctx = standardContext 14
+std_ctx :: DrawingContext
+std_ctx = standardContext 14
 
 
-big_pic :: DCtxPicture
-big_pic = pic1 `cxpDown` oconcat cpic1 [cpic2, cpic3, cpic4]
+top_pic :: DCtxPicture
+top_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
+    draw $ filledPath $ toPrimPath path01
+    draw $ localize (fill_colour powder_blue) $ filledPath $ toPrimPath path02
+    draw $ filledPath $ toPrimPath path03
+    draw $ filledPath $ toPrimPath path04
 
-fillPath :: Num u => Path u -> Graphic u
-fillPath = filledPath . toPrimPath
-
-pic1 :: DCtxPicture
-pic1 = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    draw $ fillPath path01
-    draw $ localize (fill_colour powder_blue) $ fillPath path02
-    draw $ fillPath path03
-    draw $ fillPath path04
+clip_pic :: DCtxPicture
+clip_pic = drawTracing $ do
+    mapM_ draw $ [ clip1, clip2, clip3, clip4 ]
 
 
-background :: RGBi -> DPrimitive
+background :: RGBi -> DGraphic
 background rgb = 
-    localize (stroke_colour rgb) $ ihh `at` P2 0 288
+    localize (text_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = unchain 112 emptyLocGraphic iheartHaskell $ tableDown 18 (86,16)
 
-cpic1 :: DPrimitive
-cpic1 = clip (toPrimPath path01) (background black)
+-- Wumpus-Basic needs a clip function, but is this the most 
+-- satisfactory definition?
+--
+clipGraphic :: (Num u, Ord u) => PrimPath u -> Graphic u -> Graphic u 
+clipGraphic cp = fmap (bimapR (metamorphPrim (clip cp)))
+
+
+clip1 :: DGraphic
+clip1 = clipGraphic (toPrimPath path01) (background black)
   
-cpic2 :: DPrimitive
-cpic2 = clip (toPrimPath path02) (background medium_violet_red)
+clip2 :: DGraphic
+clip2 = clipGraphic (toPrimPath path02) (background medium_violet_red)
 
-cpic3 :: DPrimtive 
-cpic3 = clip (toPrimPath path03) (background black)
+clip3 :: DGraphic 
+clip3 = clipGraphic (toPrimPath path03) (background black)
 
-cpic4 :: DPrimtive 
-cpic4 = clip (toPrimPath path04) (background black)
+clip4 :: DGraphic 
+clip4 = clipGraphic (toPrimPath path04) (background black)
 
 
 iheartHaskell :: Num u => FromPtSize u => LocGraphic u
 iheartHaskell = promoteR1 $ \pt -> 
     let body  = textline "I Haskell" `at` pt
-        heart = localize (fontFace symbol) $ 
+        heart = localize (set_font symbol) $ 
                   textline "&heart;" `at` (pt .+^ hvec 7)
     in body `oplus` heart
 
