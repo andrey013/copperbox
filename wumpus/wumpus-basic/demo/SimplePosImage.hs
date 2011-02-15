@@ -10,16 +10,18 @@ import Wumpus.Core.Colour ( red )
 
 import System.Directory
 
+
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runCtxPictureU std_attr drawing01
+    let pic1 = runCtxPictureU std_ctx drawing01
     writeEPS "./out/simple_pos_image01.eps" pic1
     writeSVG "./out/simple_pos_image01.svg" pic1
 
 
-std_attr :: DrawingContext
-std_attr = standardContext 24
+std_ctx :: DrawingContext
+std_ctx = standardContext 24
 
 
 drawing01 :: DCtxPicture

@@ -26,11 +26,10 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   -- * Modifiers       
     round_corner_factor
-  , text_margin
   , snap_grid_factors
 
   -- ** Line widths
-  , lineWidth
+  , set_line_width
 
   , line_default
   , line_thin
@@ -50,7 +49,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , join_bevel
 
   -- ** Dash Pattern
-  , dashPattern
+  , set_dash_pattern
 
   , solid_line
   , dotted_line
@@ -72,6 +71,14 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   , double_point_size
   , half_point_size
+
+  , text_margin
+  , text_margin_none
+  , text_margin_default
+  , text_margin_loose
+
+  , relative_text_margin
+  , relatively_loose_margin
 
   -- * Colour
   , stroke_colour
@@ -109,11 +116,6 @@ updateStrokeProps fn =
 round_corner_factor   :: Double -> DrawingContextF
 round_corner_factor d = \s -> s { dc_round_corner_factor = d }
 
--- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @
---
-text_margin   :: ToPtSize u => u -> u -> DrawingContextF
-text_margin xsep ysep = \s -> 
-    s { dc_text_margin = TextMargin (toPtSize xsep) (toPtSize ysep) }
 
 
 -- | 'snap_grid_factors' : @ x_unit * y_unit -> DrawingContextF @
@@ -130,7 +132,7 @@ snap_grid_factors xu yu = \s -> s { dc_snap_grid_factors = (xu, yu) }
 -- line widths
 
 
--- | lineWidth : @ width_in_points -> DrawingContextF @
+-- | set_line_width : @ width_in_points -> DrawingContextF @
 --
 -- Set the line_width to the supplied point size.
 --
@@ -141,31 +143,31 @@ snap_grid_factors xu yu = \s -> s { dc_snap_grid_factors = (xu, yu) }
 --
 -- > line_default, line_thin, line_thick, line_ultra_thick
 --
-lineWidth       :: Pt -> DrawingContextF
-lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
+set_line_width      :: Pt -> DrawingContextF
+set_line_width d    = updateStrokeProps (\s -> s { line_width = d })
 
 
 -- | Set the line_width to @default@ - 1.0.
 --
 line_default        :: DrawingContextF
-line_default        = lineWidth 1.0
+line_default        = set_line_width 1.0
 
 
 -- | Set the line_width to @thin@ - 0.5.
 --
 line_thin           :: DrawingContextF
-line_thin           = lineWidth 0.5
+line_thin           = set_line_width 0.5
 
 
 -- | Set the line_width to @thick@ - 2.0.
 --
 line_thick          :: DrawingContextF
-line_thick          = lineWidth 2.0
+line_thick          = set_line_width 2.0
 
 -- | Set the line_width to @ultra_thick@ - 4.0.
 --
 line_ultra_thick    :: DrawingContextF
-line_ultra_thick    = lineWidth 4.0
+line_ultra_thick    = set_line_width 4.0
 
 
 --
@@ -260,8 +262,8 @@ join_bevel          = setLineJoin JoinBevel
 --
 -- Initially the dash pattern is 'Solid'.
 --
-dashPattern         :: DashPattern -> DrawingContextF
-dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })        
+set_dash_pattern    :: DashPattern -> DrawingContextF
+set_dash_pattern d  = updateStrokeProps (\s -> s { dash_pattern = d })        
 
 
 -- | Set the dash_pattern to @solid@ - i.e. no dash pattern.
@@ -269,7 +271,7 @@ dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })
 -- This is the default.
 --
 solid_line          :: DrawingContextF 
-solid_line          = dashPattern Solid
+solid_line          = set_dash_pattern Solid
 
 -- | Set the dash pattern to draw a dotted line.
 -- 
@@ -279,7 +281,7 @@ solid_line          = dashPattern Solid
 -- The spacing between dots is 2 times the dot width.
 --
 dotted_line         :: DrawingContextF 
-dotted_line         = dashPattern $ Dash 0 [(1,2)]
+dotted_line         = set_dash_pattern $ Dash 0 [(1,2)]
 
 -- | Set the dash pattern to draw a tightly packed dotted line.
 -- 
@@ -289,7 +291,7 @@ dotted_line         = dashPattern $ Dash 0 [(1,2)]
 -- The spacing between dots is equal to the dot width.
 --
 packed_dotted       :: DrawingContextF 
-packed_dotted       = dashPattern $ Dash 0 [(1,1)]
+packed_dotted       = set_dash_pattern $ Dash 0 [(1,1)]
 
 
 -- | Set the dash pattern to draw a loosely dotted line.
@@ -300,7 +302,7 @@ packed_dotted       = dashPattern $ Dash 0 [(1,1)]
 -- The spacing between dots is 4 times the dot width.
 --
 loose_dotted        :: DrawingContextF 
-loose_dotted       = dashPattern $ Dash 0 [(1,4)]
+loose_dotted        = set_dash_pattern $ Dash 0 [(1,4)]
 
 
 
@@ -310,7 +312,7 @@ loose_dotted       = dashPattern $ Dash 0 [(1,4)]
 -- times the line width.
 --
 dashed_line        :: DrawingContextF
-dashed_line      = dashPattern $ Dash 0 [(3,2)]
+dashed_line        = set_dash_pattern $ Dash 0 [(3,2)]
 
 
 -- | Set the dash pattern to draw a tightly packed, dashed line.
@@ -319,7 +321,7 @@ dashed_line      = dashPattern $ Dash 0 [(3,2)]
 -- equal to the line width.
 --
 packed_dashed      :: DrawingContextF
-packed_dashed      = dashPattern $ Dash 0 [(3,1)]
+packed_dashed      = set_dash_pattern $ Dash 0 [(3,1)]
 
 
 -- | Set the dash pattern to draw a loosely dashed line.
@@ -328,7 +330,7 @@ packed_dashed      = dashPattern $ Dash 0 [(3,1)]
 -- times the line width.
 --
 loose_dashed      :: DrawingContextF
-loose_dashed      = dashPattern $ Dash 0 [(3,4)]
+loose_dashed      = set_dash_pattern $ Dash 0 [(3,4)]
 
 
 
@@ -339,10 +341,17 @@ loose_dashed      = dashPattern $ Dash 0 [(3,4)]
 font_attr            :: FontFace -> Int -> DrawingContextF
 font_attr ff sz      = \s -> s { dc_font_size = sz, dc_font_face = ff }
 
+-- | Set the font face.
+--
 set_font             :: FontFace -> DrawingContextF
 set_font ff          = \s -> s { dc_font_face = ff }
 
 
+-- | Set the point size.
+--
+-- This controls the drawing size of both 
+-- text labels and marks (e.g. dots and arrowheads).
+--
 point_size           :: Int -> DrawingContextF
 point_size sz        = \s -> s { dc_font_size = sz }
 
@@ -375,7 +384,53 @@ half_point_size     :: DrawingContextF
 half_point_size     = scalePointSize (1%2)
 
 
+-- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @
+--
+text_margin   :: Pt -> Pt -> DrawingContextF
+text_margin xsep ysep = \s -> 
+    s { dc_text_margin = TextMargin xsep ysep }
 
+
+-- | Set the text margin to (0,0).
+-- 
+-- This produces a tight box around the text vertically measured 
+-- to the cap-height and descender. Therefore some characters may 
+-- extend outside the margin (e.g. accented capitals like 
+-- A-grave).
+--
+text_margin_none    :: DrawingContextF
+text_margin_none    = text_margin 0 0 
+
+
+-- | Set the text margin to (2.0,2.0).
+-- 
+text_margin_default :: DrawingContextF
+text_margin_default = text_margin 2.0 2.0
+
+-- | Set the text margin to (8.0,8.0).
+-- 
+text_margin_loose   :: DrawingContextF
+text_margin_loose = text_margin 8.0 8.0
+
+ 
+-- | 'relative_text_margin' : @ scale_factor -> DrawingContextF @
+--
+-- Set the text_margin relative to the current point size, scaling 
+-- the margin by the supplied factor both horizontally and 
+-- vertically.
+-- 
+relative_text_margin   :: Double -> DrawingContextF
+relative_text_margin sc = 
+   (\s i -> let sep = toPtSize $ sc * fromIntegral i
+            in s { dc_text_margin = TextMargin sep sep })
+     <*> dc_font_size
+
+
+-- | Scale the text_margin to the be the current point size, this
+-- produces a relative loose margin.
+-- 
+relatively_loose_margin :: DrawingContextF
+relatively_loose_margin = relative_text_margin 1
 
 --------------------------------------------------------------------------------
 

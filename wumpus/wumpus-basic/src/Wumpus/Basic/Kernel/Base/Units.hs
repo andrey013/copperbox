@@ -21,6 +21,9 @@ module Wumpus.Basic.Kernel.Base.Units
   -- * Type class ToPtSize
     ToPtSize(..)
 
+  -- * Convert a Double
+  , dpoint
+
   -- * Centimeter type
   , Centimeter   
   , cm
@@ -49,7 +52,18 @@ instance ToPtSize Double where
 instance ToPtSize PtSize where
   toPtSize = id
 
+--------------------------------------------------------------------------------
 
+-- | By convention Wumpus uses the standard Haskell @Double@ as
+-- point size.
+-- 
+-- This function casts a Double to another unit (e.g. @pica@) that
+-- supports @FromPtSize@.
+--
+dpoint :: FromPtSize u => Double -> u
+dpoint = fromPtSize . toPtSize
+
+--------------------------------------------------------------------------------
 
 -- | Wrapped Double /Centimeter/ unit type.
 -- 
@@ -85,10 +99,10 @@ instance Show Pica where
 
 
 instance FromPtSize Pica where
-  fromPtSize = Pica . ((/) 12.0) . ptSize
+  fromPtSize = Pica . (\x -> x / 12.0) . ptSize
 
 instance ToPtSize Pica where
   toPtSize = pica
                             
 pica :: Fractional u => Pica -> u 
-pica = realToFrac . (12 *) . getPica
+pica = realToFrac . (* 12.0) . getPica

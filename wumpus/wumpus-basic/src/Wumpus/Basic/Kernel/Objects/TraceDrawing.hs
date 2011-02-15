@@ -436,7 +436,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 -- | Draw with grid coordinate...
 --
-node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+node :: (Fractional u, FromPtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
      => (Int,Int) -> LocGraphic u -> m ()
 node coord gf = queryCtx          >>= \ctx -> 
                 position coord >>= \pt  -> 
@@ -445,7 +445,7 @@ node coord gf = queryCtx          >>= \ctx ->
 
 -- | Draw with grid coordinate...
 -- 
-nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
+nodei :: ( Fractional u, FromPtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => (Int,Int) -> LocImage u a -> m a
 nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
@@ -457,7 +457,7 @@ nodei coord imgL = queryCtx    >>= \ctx ->
  
 -- | Draw with grid coordinate...
 --
-nodei_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()))
+nodei_ :: (Fractional u, TraceM m, FromPtSize u, DrawingCtxM m, u ~ DUnit (m ()))
        => (Int,Int) -> LocImage u a -> m ()
 nodei_ coord imgL = nodei coord imgL >> return ()
 
