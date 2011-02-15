@@ -33,6 +33,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
   -- * Construction
   , standardContext
   , metricsContext
+  , addFontTables
 
   , reset_drawing_properties
   , reset_drawing_metrics
@@ -81,14 +82,15 @@ data DrawingContext = DrawingContext
       { dc_font_metrics_table   :: FontTable
       , dc_font_load_log        :: FontLoadLog
       , dc_fallback_metrics     :: FontMetrics
-      , dc_font_props           :: FontAttr
-      , dc_snap_grid_factors    :: (Pt,Pt)
+      , dc_font_face            :: FontFace
+      , dc_font_size            :: !Int
+      , dc_snap_grid_factors    :: (Double,Double)
       , dc_stroke_props         :: StrokeAttr
       , dc_stroke_colour        :: RGBi      -- also text colour...
       , dc_fill_colour          :: RGBi      
       , dc_text_colour          :: RGBi
-      , dc_line_spacing_factor  :: Pt
-      , dc_round_corner_factor  :: Pt 
+      , dc_line_spacing_factor  :: Double
+      , dc_round_corner_factor  :: Double
       , dc_text_margin          :: TextMargin
       }
 
@@ -129,13 +131,27 @@ data TextMargin = TextMargin
 -- Use this constructor for drawings that make primitive use of
 -- text.
 -- 
+-- > font_metrics_table:  empty
+-- > font_load_log:       empty
+-- > fallback_metrics:    monospace_metrics
+-- > font_face:           Courier
+-- > font_size:           @supplied_font_size@
+-- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
+-- > stroke_colour:       black
+-- > fill_colour:         light_gray
+-- > text_colour:         black
+-- > line_spacing_factor: 1.2
+-- > round_corner_factor: 0
+-- > text_margin:         (2.0 pt, 2.0 pt) 
+--
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
     DrawingContext { dc_font_metrics_table   = emptyFontTable
                    , dc_font_load_log        = mempty
                    , dc_fallback_metrics     = monospace_metrics
+                   , dc_font_face            = wumpus_courier
+                   , dc_font_size            = sz
                    , dc_stroke_props         = default_stroke_attr
-                   , dc_font_props           = FontAttr sz wumpus_courier
                    , dc_snap_grid_factors    = (50.0, 50.0)
                    , dc_stroke_colour        = wumpus_black
                    , dc_fill_colour          = wumpus_light_gray
@@ -167,10 +183,25 @@ metricsContext sz res =
 
 
 
+-- | 'addFontTables' : @ font_load_result -> DrawinContextUpdate @
+--
+-- Add the font metrics from the FontLoadResult, if a font with 
+-- the same name alreay exists in the 'DrawingContext' it will be 
+-- replaced. Error and warning messages in the @font_load_result@ 
+-- will be appended to the 'font_load_log'.
+--
+addFontTables :: FontLoadResult -> DrawingContextF
+addFontTables (FontLoadResult table msgs) = 
+    (\s i j -> s { dc_font_metrics_table = i `mappend` table
+                 , dc_font_load_log      = j `mappend` msgs }) 
+      <*> dc_font_metrics_table <*> dc_font_load_log
+
+
+
 -- | 'reset_drawing_properties' : @ DrawingContextF @  
 --
 -- Reset the drawing properties in the 'DrawingContext' to their 
--- initial values. This changes the following fields:
+-- default values. This changes the following fields:
 --
 -- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
 -- > stroke_colour:       black
@@ -201,7 +232,7 @@ reset_drawing_properties dcxt =
 -- | 'reset_drawing_metrics' : @ DrawingContextF @  
 --
 -- Reset the drawing metrics in the 'DrawingContext' to their 
--- initial values. This is a more limited version of
+-- default values. This is a more limited version of
 -- 'reset_drawing_properties' and changes the following fields:
 --
 -- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
@@ -224,10 +255,10 @@ reset_drawing_metrics dcxt =
 default_text_margin :: TextMargin
 default_text_margin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
 
-default_line_spacing :: Pt
+default_line_spacing :: Double
 default_line_spacing = 1.2
 
-default_no_round_corners :: Pt
+default_no_round_corners :: Double
 default_no_round_corners = 0
 
 wumpus_black            :: RGBi
@@ -283,11 +314,12 @@ query f = queryCtx >>= (return . f)
 
 
 withFontMetrics :: (FontMetrics -> PtSize -> u) -> DrawingContext -> u
-withFontMetrics fn ctx@(DrawingContext { dc_font_props = font_stats }) = 
+withFontMetrics fn ctx@(DrawingContext { dc_font_face = fface
+                                       , dc_font_size = fsize }) = 
       fn metric_set point_sz
   where 
-    ps_name     = ps_font_name $ font_face font_stats
-    point_sz    = fromIntegral $ font_size font_stats 
+    ps_name     = ps_font_name fface
+    point_sz    = fromIntegral fsize 
     metric_set  = fromMaybe (dc_fallback_metrics ctx) $ 
                     lookupFont ps_name (dc_font_metrics_table ctx)
 

@@ -83,13 +83,13 @@ import Control.Applicative
 
 
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
-textAttr = (,) <$> query dc_text_colour <*> query dc_font_props
+textAttr = (,) <$> query dc_text_colour <*> getFontAttr
 
 -- | Because @textAttr@ is so commonly used here is a functional
 -- version that avoids tupling.
 --
 withTextAttr :: DrawingCtxM m => (RGBi -> FontAttr -> a) -> m a
-withTextAttr fn = fn <$> query dc_text_colour <*> query dc_font_props
+withTextAttr fn = fn <$> query dc_text_colour <*> getFontAttr
 
 
 strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
@@ -164,13 +164,16 @@ getLineWidth :: DrawingCtxM m => m Pt
 getLineWidth = line_width <$> query dc_stroke_props
 
 getFontAttr :: DrawingCtxM m => m FontAttr
-getFontAttr = query dc_font_props
+getFontAttr = FontAttr <$> query dc_font_size <*> query dc_font_face
 
+
+-- These are not especially convenient now the drawing context 
+-- has changed...
 getFontSize :: DrawingCtxM m => m Int
-getFontSize = font_size <$> query dc_font_props
+getFontSize = query dc_font_size
 
 getFontFace :: DrawingCtxM m => m FontFace
-getFontFace = font_face <$> query dc_font_props
+getFontFace = query dc_font_face
 
 getTextColour :: DrawingCtxM m => m RGBi
 getTextColour = query dc_text_colour
@@ -183,17 +186,16 @@ getTextColour = query dc_text_colour
 baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
 baselineSpacing = 
     (\sz factor -> realToFrac $ factor * fromIntegral sz)
-      <$> (fmap font_size $ query dc_font_props) 
-      <*> query dc_line_spacing_factor
+      <$> query dc_font_size  <*> query dc_line_spacing_factor
 
 -- | The /mark/ height is the height of a lowercase letter in the 
--- current font.
+-- Courier font at the current point size.
 --
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
 markHeight :: (DrawingCtxM m, FromPtSize u) => m u
-markHeight = (fromPtSize . FS.xcharHeight . font_size) <$> query dc_font_props
+markHeight = (fromPtSize . FS.xcharHeight) <$> query dc_font_size
 
 
 markHalfHeight :: (DrawingCtxM m, Fractional u, FromPtSize u) => m u
@@ -242,7 +244,7 @@ cwLookupTable = glyphQuery get_cw_table
 --------------------------------------------------------------------------------
 
 withFontSize :: DrawingCtxM m => (FontSize -> u) -> m u
-withFontSize fn = (fn . font_size) <$> query dc_font_props
+withFontSize fn = fn <$> query dc_font_size
 
 
 -- NOTE - textHeight in Wumpus-Core should be renamed as it is
@@ -296,7 +298,7 @@ monoTextDimensions :: (DrawingCtxM m, Num u, Ord u, FromPtSize u)
                    => String -> m (u,u)
 monoTextDimensions ss = 
     (\sz -> post $ textBounds sz zeroPt ss) 
-      <$> (fmap font_size $ query dc_font_props)
+      <$> query dc_font_size
   where
     post bb = (boundaryWidth bb, boundaryHeight bb)
 

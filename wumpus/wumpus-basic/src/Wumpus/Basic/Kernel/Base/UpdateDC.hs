@@ -15,29 +15,23 @@
 -- @localize@ block (cf. @local@ of the Reader monad).
 --
 -- By convention, underscore-separated names are used for 
--- DrawingContext modifiers that take no extra arguments.  
--- 
--- \*\* WARNING \*\* - this module needs systematic naming 
--- schemes both for update functions (primaryColour, ...) and 
--- for synthesized selectors (e.g. lowerxHeight). The current 
--- names will change.
---
+-- DrawingContext modifiers in this module. This is because the 
+-- modifiers defined here are expected to be used as static 
+-- \"properties\" resembling constants in drawings.
 -- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Base.UpdateDC
   ( 
 
-  -- * Modifiers 
-    addFontTables
-
-      
-  , roundCornerFactor
-  , textMargin
-  , snapGrid
+  -- * Modifiers       
+    round_corner_factor
+  , text_margin
+  , snap_grid_factors
 
   -- ** Line widths
   , lineWidth
+
   , line_default
   , line_thin
   , line_thick
@@ -57,24 +51,27 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   -- ** Dash Pattern
   , dashPattern
+
   , solid_line
-
-  , unit_dash_pattern
-  , phase
-  , dphase
-  , doublegaps
-  , doubledashes
-
+  , dotted_line
+  , packed_dotted
+  , loose_dotted
+  
+  , dashed_line
+  , packed_dashed
+  , loose_dashed
+  
   -- * Font properties
-  , fontAttr
-  , fontSize
-  , fontFace
+  , font_attr
+  , set_font
+  , point_size
 
 
   -- * Font / mark drawing size
-  , scalesize
-  , doublesize
-  , halfsize
+  , scalePointSize
+
+  , double_point_size
+  , half_point_size
 
   -- * Colour
   , stroke_colour
@@ -89,32 +86,14 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
 
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-import Data.Monoid
 import Data.Ratio
 
---------------------------------------------------------------------------------
-
-
-
--- | 'addFontTables' : @ font_load_result -> DrawinContextUpdate @
---
--- Add the font metrics from the FontLoadResult, if a font with 
--- the same name alreay exists in the 'DrawingContext' it will be 
--- replaced. Error and warning messages in the @font_load_result@ 
--- will be appended to the 'font_load_log'.
---
-addFontTables :: FontLoadResult -> DrawingContextF
-addFontTables (FontLoadResult table msgs) = 
-    (\s i j -> s { dc_font_metrics_table = i `mappend` table
-                 , dc_font_load_log      = j `mappend` msgs }) 
-      <*> dc_font_metrics_table <*> dc_font_load_log
 
 
 --------------------------------------------------------------------------------
@@ -124,44 +103,47 @@ updateStrokeProps :: (StrokeAttr -> StrokeAttr) -> DrawingContextF
 updateStrokeProps fn = 
     (\s i -> s { dc_stroke_props = fn i }) <*> dc_stroke_props
 
-updateFontProps :: (FontAttr -> FontAttr) -> DrawingContextF
-updateFontProps fn = 
-    (\s i -> s { dc_font_props = fn i }) <*> dc_font_props
-
 
 --------------------------------------------------------------------------------
 
-roundCornerFactor   :: ToPtSize u => u -> DrawingContextF
-roundCornerFactor d = \s -> s { dc_round_corner_factor = toPtSize d }
+round_corner_factor   :: Double -> DrawingContextF
+round_corner_factor d = \s -> s { dc_round_corner_factor = d }
 
--- | 'textMargin' : @ x_sep * y_sep -> DrawingContextF @
+-- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @
 --
-textMargin   :: ToPtSize u => u -> u -> DrawingContextF
-textMargin xsep ysep = \s -> 
+text_margin   :: ToPtSize u => u -> u -> DrawingContextF
+text_margin xsep ysep = \s -> 
     s { dc_text_margin = TextMargin (toPtSize xsep) (toPtSize ysep) }
 
 
--- | 'snapGrid' : @ x_unit * y_unit -> DrawingContextF @
+-- | 'snap_grid_factors' : @ x_unit * y_unit -> DrawingContextF @
 -- 
--- Modify the 'snap_grid_factors'.
+-- Set the @snap grid factors@ - a snap grid is an alternative 
+-- coordinate space, it can be convenient for drawing 
+-- \"box and arrow\" diagrams.
 --
-snapGrid   :: ToPtSize u => u -> u -> DrawingContextF
-snapGrid xu yu = \s -> 
-    s { dc_snap_grid_factors = (toPtSize xu, toPtSize yu) }
+snap_grid_factors   :: Double -> Double -> DrawingContextF
+snap_grid_factors xu yu = \s -> s { dc_snap_grid_factors = (xu, yu) }
 
 
 --------------------------------------------------------------------------------
 -- line widths
 
--- Note - some care might be needed if we ever define other unit 
--- types...
 
--- | Set the line_width.
+-- | lineWidth : @ width_in_points -> DrawingContextF @
+--
+-- Set the line_width to the supplied point size.
 --
 -- Initially the line width is 1.0.
 --
+-- /Constant/ variations of the function maybe be more 
+-- convenient:
+--
+-- > line_default, line_thin, line_thick, line_ultra_thick
+--
 lineWidth       :: Pt -> DrawingContextF
 lineWidth d      = updateStrokeProps (\s -> s { line_width = d })
+
 
 -- | Set the line_width to @default@ - 1.0.
 --
@@ -289,101 +271,148 @@ dashPattern d       = updateStrokeProps (\s -> s { dash_pattern = d })
 solid_line          :: DrawingContextF 
 solid_line          = dashPattern Solid
 
--- Note - these are pendening revision...
-
-unit_dash_pattern   :: DashPattern
-unit_dash_pattern   = Dash 0 [(1,1)]
-
--- oblivious
-phase               :: Int -> DashPattern -> DashPattern
-phase _ Solid       = Solid
-phase i (Dash _ xs) = Dash i xs
-
--- non-oblivious
-dphase               :: Int -> DashPattern -> DashPattern
-dphase _ Solid       = Solid
-dphase d (Dash i xs) = Dash (i+d) xs
-
-doublegaps              :: DashPattern -> DashPattern
-doublegaps Solid        = Solid
-doublegaps (Dash i xs)  = Dash i (map fn xs)
-  where
-    fn (a,b) = (a,2*b)
-
-doubledashes              :: DashPattern -> DashPattern
-doubledashes Solid        = Solid
-doubledashes (Dash i xs)  = Dash i (map fn xs)
-  where
-    fn (a,b) = (a*2,b)
-
-
---------------------------------------------------------------------------------
-
-fontAttr            :: FontFace -> Int -> DrawingContextF
-fontAttr ff sz      = (\s -> s { dc_font_props = FontAttr sz ff })
-
-fontFace            :: FontFace -> DrawingContextF
-fontFace ff         = updateFontProps (\(FontAttr sz _) -> FontAttr sz ff)
-
-fontSize            :: Int -> DrawingContextF
-fontSize sz         = updateFontProps (\(FontAttr _ ff) -> FontAttr sz ff)
-
-
-
---------------------------------------------------------------------------------
-
-scalesize           :: Ratio Int -> DrawingContextF
-scalesize r         = let (n,d) = (numerator r, denominator r)
-                      in (\s sz -> fontSize (n * sz `div` d) s) 
-                           <*> (font_size . dc_font_props)
-
--- | Set the font size to double the current size, note the font
--- size also controls the size of dots, arrowsheads etc.
+-- | Set the dash pattern to draw a dotted line.
 -- 
-doublesize          :: DrawingContextF
-doublesize          = scalesize 2 
-
-
--- | Set the font size to half the current size, note the font
--- size also controls the size of dots, arrowsheads etc.
+-- A dot is actually a square - side length is equal to the line 
+-- width.
 -- 
--- As fontsize is an integer this is not exact - half size of
--- 15pt type is 7pt.
--- 
-halfsize            :: DrawingContextF
-halfsize            = scalesize (1%2)
-
-
--- Something like...
+-- The spacing between dots is 2 times the dot width.
 --
--- > mark_half_size
--- > mark_double_size
+dotted_line         :: DrawingContextF 
+dotted_line         = dashPattern $ Dash 0 [(1,2)]
+
+-- | Set the dash pattern to draw a tightly packed dotted line.
+-- 
+-- A dot is actually a square - side length is equal to the line 
+-- width.
+-- 
+-- The spacing between dots is equal to the dot width.
+--
+packed_dotted       :: DrawingContextF 
+packed_dotted       = dashPattern $ Dash 0 [(1,1)]
+
+
+-- | Set the dash pattern to draw a loosely dotted line.
+-- 
+-- A dot is actually a square - side length is equal to the line 
+-- width.
+-- 
+-- The spacing between dots is 4 times the dot width.
+--
+loose_dotted        :: DrawingContextF 
+loose_dotted       = dashPattern $ Dash 0 [(1,4)]
+
+
+
+-- | Set the dash pattern to draw a dashed line.
+-- 
+-- The dash length is 3 times the line width, the spacing is 2
+-- times the line width.
+--
+dashed_line        :: DrawingContextF
+dashed_line      = dashPattern $ Dash 0 [(3,2)]
+
+
+-- | Set the dash pattern to draw a tightly packed, dashed line.
+-- 
+-- The dash length is 3 times the line width, the spacing is 
+-- equal to the line width.
+--
+packed_dashed      :: DrawingContextF
+packed_dashed      = dashPattern $ Dash 0 [(3,1)]
+
+
+-- | Set the dash pattern to draw a loosely dashed line.
+-- 
+-- The dash length is 3 times the line width, the spacing is 4
+-- times the line width.
+--
+loose_dashed      :: DrawingContextF
+loose_dashed      = dashPattern $ Dash 0 [(3,4)]
+
 
 
 --------------------------------------------------------------------------------
 
+-- | Set the font attributes, point size and font face.
+--
+font_attr            :: FontFace -> Int -> DrawingContextF
+font_attr ff sz      = \s -> s { dc_font_size = sz, dc_font_face = ff }
 
+set_font             :: FontFace -> DrawingContextF
+set_font ff          = \s -> s { dc_font_face = ff }
+
+
+point_size           :: Int -> DrawingContextF
+point_size sz        = \s -> s { dc_font_size = sz }
+
+
+-- | Scale the current point size by the supplied ratio.
+-- 
+-- Note - as fonts can only be drawn at integral sizes this 
+-- operation is not exact - for instance scaling 15pt by (1%2) 
+-- results in 7pt.
+-- 
+scalePointSize    :: Ratio Int -> DrawingContextF
+scalePointSize r  = let (n,d) = (numerator r, denominator r)
+                      in (\s sz -> point_size (n * sz `div` d) s) 
+                           <*> dc_font_size
+
+-- | Set the point size (font and mark size) to double the current 
+-- size.
+--
+double_point_size   :: DrawingContextF
+double_point_size   = scalePointSize 2 
+
+
+-- | Set the point size to half the current size, note the point
+-- size also controls the size of dots, arrowsheads etc.
+-- 
+-- Note - as fonts can only be drawn at integral sizes this 
+-- operation is not exact - half size of 15pt type is 7pt.
+-- 
+half_point_size     :: DrawingContextF
+half_point_size     = scalePointSize (1%2)
+
+
+
+
+--------------------------------------------------------------------------------
+
+-- | Set the stroke colour.
+--
 stroke_colour :: RGBi -> DrawingContextF
 stroke_colour rgb = \s -> s { dc_stroke_colour = rgb } 
 
+
+-- | Set the fill colour.
+--
 fill_colour :: RGBi -> DrawingContextF
 fill_colour rgb = \s -> s { dc_fill_colour = rgb } 
 
 
+-- | Set the text colour.
+--
 text_colour          :: RGBi -> DrawingContextF
 text_colour rgb      = (\s -> s { dc_text_colour = rgb})
 
-
+-- | Swap the stroke colour and fill colours.
+--
 swap_colours :: DrawingContextF
 swap_colours = 
     (\s a b -> s { dc_stroke_colour = b, dc_fill_colour = a })
         <*> dc_stroke_colour <*> dc_fill_colour
 
 
+-- | Set the fill colour to use the current stroke colour.
+--
 fill_use_stroke_colour :: DrawingContextF
 fill_use_stroke_colour = 
     (\s a -> s { dc_fill_colour = a }) <*> dc_stroke_colour
 
+
+-- | Set the stroke colour to use the current fill colour.
+--
 stroke_use_fill_colour :: DrawingContextF
 stroke_use_fill_colour = (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
 
