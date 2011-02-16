@@ -2,17 +2,18 @@
 
 module ChainDemo where
 
-import Wumpus.Drawing.Chains.Base
+import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.AnchorDots
-
+import Wumpus.Drawing.Extras.Grids
 
 import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Data.AffineSpace                 -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
+import Control.Applicative
 import System.Directory
 
 main :: IO ()
@@ -29,19 +30,64 @@ std_attr = fill_colour rosy_brown $ standardContext 12
 
 
 chain_pic :: DCtxPicture
-chain_pic = drawTracing mf 
+chain_pic = drawTracing $ do 
+    drawli_ zeroPt $ snapGridX >>= \w -> 
+                    chainDisplace (displaceH w) [dot1, dot1, dot1]
+
+    drawli_ (P2 100 0) $ chainRadial 60 (pi*0.25) (d2r (30::Double) )
+                                        [dot2, dot1, dot2, dot1, dot2]
+
+
+    drawli_ (P2 0 200) $ apChainIterateH 60 dot 
+                                       [bisque, gray, khaki, khaki, bisque, gray]
+
+    drawl zeroPt $ grid (5,4) blue
+
+                                    
+{-
+-- SOLVED.
+    
+-- How onerous is the @empty__@ argument? 
+-- Obviously @empty__@ names are already long...
+
+locGraphicDistrib :: Num u 
+                  => PointDisplace u -> [LocGraphic u] -> LocGraphic u
+locGraphicDistrib fn = distribute fn
+-}
+ 
+
+dot1 :: Num u => LocGraphic u 
+dot1 = dot red
+
+dot2 :: Num u => LocGraphic u 
+dot2 = dot thistle
+
+dot :: Num u => RGBi -> LocGraphic u 
+dot rgb = localize (fill_colour rgb) $ filledDisk 6
+
+
+snapGridX :: FromPtSize u => DrawingCtxM m => m u
+snapGridX = (dpoint . fst) <$> query dc_snap_grid_factors
 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
-mf = mapM_ (\pt -> drawi $ dotDisk `at` pt) column_01
+
+apChainIterateH :: Num u
+                 => u -> (a -> LocGraphic u) -> [a] -> LocImage u (Point2 u)
+apChainIterateH dx = apChainIterate (^+^ hvec dx)  (\s pt -> pt .+^ s) (V2 0 0)
 
 
--- Note - infinite lists are sometimes /bad/ - okay to zip along 
--- but bad to map on.
--- 
--- A distinction would be good.
+
+
+
+{-
+-- Can write an analogy to distribute but cannot re-implement it
+-- with genIterate.
 --
-column_01 :: Num u => [Point2 u]
-column_01 = take 10 $ iterate (.+^ vvec (-16)) (P2 0 600)
+distribute' :: Num u
+           => Vec2 u -> [LocGraphic u] -> LocImage u (Point2 u)
+distribute' v = genIterate (^+^ v)  (\s pt -> pt .+^ s) (V2 0 0)
+
+
+-}
 

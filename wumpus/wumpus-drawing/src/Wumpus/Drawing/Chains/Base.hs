@@ -17,19 +17,11 @@
 module Wumpus.Drawing.Chains.Base
   (
 
-    PointChain
-  , LocChain
-  , ConnectorChain
+    chainDisplace
+  , chainIterate
+  , apChainDisplace
+  , apChainIterate
 
-  -- * Unrolling chains
-  , unchain
-  , unchainU
-  , unchainZip
-  , unchainZipWith
-  , unconnectorChain
-
-  -- * Building chains
-  , liftChainF
 
   ) where
 
@@ -39,221 +31,90 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
--- | A 'PointChain' is a list of points. 
--- 
--- The list is typically inifinte so some attention must be given 
--- to choosing a chain drawing function and using it appropriately.
--- 
-type PointChain u = [Point2 u]
 
-
--- | A LocChain is a function from a starting point to a 
--- 'PointChain'.
+-- | 'chainDisplace' : @ disp_fun * [loc_fun] -> LocImage (end_point) @
 --
--- The list is often expected to be inifinte, but if it was a 
--- Stream it would loose the ability to use list comprehensions.
+-- Distribute the list of @loc_fun@ whilst the start point is 
+-- iterated with the displacement function.
 -- 
-type LocChain u = LocDrawingInfo u (PointChain u)
-
-
--- | A ConnectorChain is a function from a start- and end-point 
--- to a 'Chain'.
--- 
-type ConnectorChain u = ConnectorCF u (PointChain u)
-
-
-
-
--- | 'unchain' : @ unroll_count * alt_fun * draw_fun * chain -> LocCF @
--- 
--- Unroll the chain, applying the @draw_fun@ to each point 
--- producing a LocCF (usually a 'LocGraphic'). If the chain does 
--- not produce any points the @alt_fun@ is applied to the start 
--- point.
+-- 'distribute' will typically be used for a LocImage or a 
+-- LocGraphic.
 --
--- Note - commonly a 'Chain' may be infinite, so it is only 
--- unrolled a finite number of times - the @unrool_count@.
+-- This models applying a finite list of LocFuns to an infinite
+-- supply of points.
 --
--- This function has a very general type signature commonly it 
--- will be used at these types:
---
--- > unchain :: (Num u, OPlus a) => 
--- >     Int -> LocImage u a -> LocImage u a -> LocChain u -> LocImage u a
--- >
--- > unchain :: Num u => 
--- >     Int -> LocGraphic u -> LocGraphic u -> LocChain u -> LocGraphic u
---
-unchain :: (Num u, OPlus a) 
-        => Int 
-        -> LocCF u (ImageAns u a) 
-        -> LocCF u (ImageAns u a) 
-        -> LocChain u 
-        -> LocCF u (ImageAns u a)
-unchain i alt _  _   | i <= 0 = alt
-unchain i alt gf chn          = promoteR1 $ \p0 -> 
-    (chn `at` p0) >>= \pts -> case pts of 
-      []     -> alt `at` p0
-      [x]    -> gf  `at` x
-      (x:xs) -> go x (take (i-1) xs)
+chainDisplace :: Num u 
+              => PointDisplace u -> [LocImage u zz] -> LocImage u (Point2 u)
+chainDisplace _    []     = promoteR1 $ \start -> 
+    replaceAns start $ emptyLocGraphic `at` start
+
+chainDisplace next (f:fs) = promoteR1 $ \start -> 
+    go (next start) (start, ignoreAns $ f `at` start) fs
   where
-    go x []     = gf `at` x
-    go x (y:ys) = (gf `at` x) `oplus` go y ys
+    go _  (pt,acc) []    = replaceAns pt $ acc
+    go pt (_,acc) (g:gs) = let g1 = ignoreAns $ g `at` pt
+                           in go (next pt) (pt, acc `oplus` g1) gs
 
 
 
+-- radial seems easier if we iterate the thing we displace the 
+-- start point with, rather than iterate the start point itself...
 
--- | 'unchain' : @ alt_fun * draw_fun * chain -> LocCF @
--- 
--- /Unsafe/ version of 'unchain' - this function assumes the chain
--- is finite which is not usually the case.
+
+-- | Iteration version of 'chainDisplace' ...
 --
--- This function has a very general type signature commonly it 
--- will be used at these type:
---
--- > unchainU :: (Num u, OPlus a) => 
--- >     LocImage u a -> LocImage u a -> LocChain u -> LocImage u a
--- >
--- > unchainU :: Num u => 
--- >     LocGraphic u -> LocGraphic u -> LocChain u -> LocGraphic u
---
--- \*\* WARNING \*\* - if the chain is infinite this function will 
--- not terminate.
---
-unchainU :: (Num u, OPlus a)
-         => LocCF u (ImageAns u a) 
-         -> LocCF u (ImageAns u a) 
-         -> LocChain u 
-         -> LocCF u (ImageAns u a)
-unchainU alt gf chn = promoteR1 $ \p0 -> 
-    (chn `at` p0) >>= \pts -> case pts of 
-      []     -> alt `at` p0
-      [x]    -> gf  `at` x
-      (x:xs) -> go x xs
+chainIterate :: Num u 
+           => (s -> s) -> (s -> PointDisplace u) -> s 
+           -> [LocImage u zz] -> LocImage u (Point2 u)
+chainIterate _    _   _  []     = promoteR1 $ \start -> 
+    replaceAns start $ emptyLocGraphic `at` start
+
+chainIterate next gen s  (f:fs) = promoteR1 $ \start -> 
+    let fn = gen `flip` start
+        p0 = fn s
+    in go fn (next s) (p0, ignoreAns $ f `at` p0) fs
   where
-    go x []     = gf `at` x
-    go x (y:ys) = (gf `at` x) `oplus` go y ys
+    go _    _  (pt,acc) []     = replaceAns pt $ acc
+    go mkpt st (_, acc) (g:gs) = let p1 = mkpt st 
+                                     g1 = ignoreAns $ g `at` p1
+                                 in go mkpt (next st) (p1, acc `oplus` g1) gs
 
 
--- | 'unchainZip' : @ alt_fun * [draw_fun] * chain -> LocCF @
--- 
--- Unroll the chain, zipping the list of @draw_funs@ to the list
--- of points producing a LocCF (usually a 'LocGraphic'). If the 
--- chain does not produce any points the @alt_fun@ is applied to 
--- the start point.
+
+-- | Variant of 'chainDisplace' where a LocGraphic building 
+-- function is applied to a list of values...
 --
--- This function has a very general type signature commonly it 
--- will be used at these types:
---
--- > unchainZip :: (Num u, OPlus a) => 
--- >     LocImage u a -> [LocImage u a] -> LocChain u -> LocImage u a
--- >
--- > unchainZip :: Num u => 
--- >     LocGraphic u -> [LocGraphic u] -> LocChain u -> LocGraphic u
---
--- \*\* WARNING \*\* - the list of drawing functions should be 
--- finite. If both the list of drawing functions and the chain are 
--- infinite this function will not terminate.
--- 
-unchainZip :: (Num u, OPlus a) 
-           => LocCF u (ImageAns u a) 
-           -> [LocCF u (ImageAns u a)] 
-           -> LocChain u 
-           -> LocCF u (ImageAns u a)
-unchainZip alt []     _   = promoteR1 $ \p0 -> alt `at` p0
-unchainZip alt  (g:gs) chn = promoteR1 $ \p0 -> 
-    (chn `at` p0) >>= \pts -> case pts of 
-      []     -> alt `at` p0
-      [x]    -> g `at` x
-      (x:xs) -> go (g `at` x) gs xs
+apChainDisplace :: Num u 
+             => PointDisplace u -> (a -> LocImage u zz) -> [a] 
+             -> LocImage u (Point2 u)
+apChainDisplace _    _  []     = promoteR1 $ \start -> 
+    replaceAns start $ emptyLocGraphic `at` start
+
+apChainDisplace next gf (x:xs) = promoteR1 $ \start -> 
+    go (next start) (start, ignoreAns $ gf x `at` start) xs
   where
-    go acc _      []     = acc
-    go acc []     _      = acc
-    go acc (f:fs) (p:ps) = go (acc `oplus` (f `at` p)) fs ps
+    go _  (pt,acc) []     = replaceAns pt $ acc
+    go pt (_, acc) (y:ys) = let g1 = ignoreAns $ gf y `at` pt
+                            in go (next pt) (pt, acc `oplus` g1) ys
+    
 
 
+-- | Variant of 'chainIterate' where a LocGraphic building 
+-- function is applied to a list of values...
+--
+apChainIterate :: Num u 
+           => (s -> s) -> (s -> PointDisplace u) -> s 
+           -> (a -> LocImage u zz) -> [a] -> LocImage u (Point2 u)
+apChainIterate _    _   _ _  []     = promoteR1 $ \start -> 
+    replaceAns start $ emptyLocGraphic `at` start
 
--- | 'unchainZipWith' : @ alt_fun * (a -> draw_fun) * [a] * chain -> LocCF @
--- 
--- Version of 'unchainZip' where the list is some data rather 
--- than a drawing function and the @(a -> draw_fun)@ builder is 
--- applied to each element as part of the unrolling.
--- 
--- Approximately this function is a @zipWith@ to the @zip@ of 
--- @unchainZip@.
---
--- This function has a very general type signature commonly it 
--- will be used at these type:
---
--- > unchainZipWith :: (Num u, OPlus a) => 
--- >     LocImage u a -> (s -> LocImage u a) -> [s] -> LocChain u -> LocImage u a
--- >
--- > unchainZipWith :: Num u => 
--- >     LocGraphic u -> (s -> LocGraphic u) -> [s] -> LocChain u -> LocGraphic u
---
--- \*\* WARNING \*\* - if the chain and list are infinite this 
--- function will not terminate.
---
-unchainZipWith :: (Num u, OPlus a)
-                => LocCF u (ImageAns u a) 
-                -> (s -> LocCF u (ImageAns u a))
-                -> [s]
-                -> LocChain u 
-                -> LocCF u (ImageAns u a)
-unchainZipWith alt _    []     _   = promoteR1 $ \p0 -> alt `at` p0
-unchainZipWith alt mkGF (s:ss) chn = promoteR1 $ \p0 -> 
-    (chn `at` p0) >>= \pts -> case pts of 
-      []     -> alt `at` p0
-      [x]    -> mkGF s `at` x
-      (x:xs) -> go (mkGF s `at` x) ss xs
+apChainIterate next gen s gf (x:xs) = promoteR1 $ \start -> 
+    let fn = gen `flip` start
+        p0 = fn s
+    in go fn (next s) (p0, ignoreAns $ gf x `at` p0) xs 
   where
-    go acc _      []     = acc
-    go acc []     _      = acc
-    go acc (t:ts) (p:ps) = go (acc `oplus` (mkGF t `at` p)) ts ps
-
-
-
-
--- | 'unconnectorChain' : @ alt_fun * draw_fun * conn_chain -> ConnectorCF @
---
--- Unroll the chain produced between the implicit start and end 
--- points. Apply the @draw_fun@ to each point producing a 
--- ConnectorCF (usually a 'ConnectorGraphic'). If the chain does 
--- not produce any points, the @alt_fun@ is applied to the start 
--- and end points.
---
--- This function has a very general type signature commonly it 
--- will be used at these types:
---
--- > unconnectorChain :: (Num u, OPlus a) => 
--- >     ConnectorImage u a -> LocImage u a -> ConnectorChain u -> ConnectorImage u a
--- >
--- > unconnectorChain :: Num u => 
--- >     ConnectorGraphic u -> LocGraphic u -> ConnectorChain u -> ConnectorGraphic u
---
---
-unconnectorChain :: (Num u, OPlus a) 
-                 => ConnectorCF u (ImageAns u a) 
-                 -> LocCF u (ImageAns u a) 
-                 -> ConnectorChain u 
-                 -> ConnectorCF u (ImageAns u a)
-unconnectorChain alt gf cchn = promoteR2 $ \p0 p1 -> 
-    (connect cchn p0 p1) >>= \pts -> case pts of
-      []     -> connect alt p0 p1
-      [x]    -> gf `at` x
-      (x:xs) -> go (gf `at` x) xs
-  where
-    go acc []     = acc
-    go acc (p:ps) = go (acc `oplus` (gf `at` p)) ps
-
-
-
-
---------------------------------------------------------------------------------
-
--- | 'liftChainF' : @ (point -> [point]) -> LocChain @
---
--- Lift a pure chain generating function inot a 'LocChain'.
---
-liftChainF :: (Point2 u -> PointChain u) -> LocChain u
-liftChainF fn = promoteR1 $ \pt -> return $ fn pt
+    go _  _  (pt,acc) []     = replaceAns pt $ acc
+    go fn st (_, acc) (y:ys) = let p1 = fn st
+                                   g1 = ignoreAns $ gf y `at` p1
+                               in go fn (next st) (p1, acc `oplus` g1) ys
 

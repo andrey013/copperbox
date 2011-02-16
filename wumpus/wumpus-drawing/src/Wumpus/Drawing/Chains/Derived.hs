@@ -18,18 +18,21 @@
 
 module Wumpus.Drawing.Chains.Derived
   (
-    
+
+   
     tableDown
   , tableRight
 
-  , horizontalPoints
-  , verticalPoints
+  , chainH
+  , chainV
+  , chainRadial
+  , chainStepsH
+  , chainStepsV
 
-  , horizontalSteps
-  , verticalSteps
 
   , innerHorizontals
   , innerVerticals
+
 
   ) where
 
@@ -39,8 +42,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Data.List 
-
 --------------------------------------------------------------------------------
 -- Tables
 
@@ -48,17 +49,17 @@ import Data.List
 -- row_height should make the API more /memorable/...
 
 
+
 -- | 'tableDown' : @ num_rows * (row_width, row_height) -> LocChain @
 --
 -- The table grows down and right, the implicit initial point is 
 -- @top-left@.
 --
-tableDown :: Num u => Int -> (u,u) -> LocChain u
-tableDown n (rw,rh) = liftChainF $ \pt -> map (fn pt) ints
+tableDown :: Num u => Int -> (u,u) -> [LocImage u zz] -> LocImage u (Point2 u)
+tableDown n (rw,rh) = chainIterate succ gen 0
   where
-    ints    = iterate (+1) 0
-    fn pt i = let (x,y) = i `divMod` n 
-              in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
+    gen i   = let (x,y) = i `divMod` n 
+              in displace (rw * fromIntegral x) (rh * fromIntegral (-y))
 
 
 -- | 'tableRight' : @ num_cols * row_width * row_height -> LocChain @
@@ -66,58 +67,66 @@ tableDown n (rw,rh) = liftChainF $ \pt -> map (fn pt) ints
 -- The table grows right and down, the implicit initial point is 
 -- @top-left@.
 --
--- This chain is infinite.
---
-tableRight :: Num u => Int -> (u,u) -> LocChain u
-tableRight n (rw,rh) = liftChainF $ \pt -> map (fn pt) ints
+tableRight :: Num u => Int -> (u,u) -> [LocImage u zz] -> LocImage u (Point2 u)
+tableRight n (rw,rh) = chainIterate succ gen 0
   where
-    ints    = iterate (+1) 0
-    fn pt i = let (y,x) = i `divMod` n 
-              in displace (rw * fromIntegral x) (rh * fromIntegral (-y)) pt
+    gen i   = let (y,x) = i `divMod` n 
+              in displace (rw * fromIntegral x) (rh * fromIntegral (-y))
 
 
 
--- | 'horizontalPoints' : @ horizontal_dist -> LocChain @
+-- | 'chainH' : @ horizontal_dist -> LocChain @
 --
 -- The chain grows right by the supplied increment.
 --
--- This chain is infinite.
---
-horizontalPoints :: Num u => u -> LocChain u
-horizontalPoints dx = liftChainF $ iterate (displaceH dx)
+chainH :: Num u => u -> [LocImage u zz] -> LocImage u (Point2 u)
+chainH dx = chainDisplace (displaceH dx)
+
 
 
 -- | 'verticalPoints' : @ vertical_dist -> LocChain @
 --
 -- The chain grows up by the supplied increment.
 --
--- This chain is infinite.
+chainV :: Num u => u -> [LocImage u zz] -> LocImage u (Point2 u)
+chainV dy = chainDisplace (displaceV dy)
+
+
+
+-- | 'chainRadial' : 
+-- @ radius * start_ang * rot_ang * [loc_fun] -> LocImage (end_point) @
 --
-verticalPoints :: Num u => u -> LocChain u
-verticalPoints dy = liftChainF $ iterate (displaceV dy)
+-- Distribute the list of @loc_fun@ whilst the start point is 
+-- iterated with radially the supplied angle.
+--
+chainRadial :: (Floating u)
+                 => u -> Radian -> Radian -> [LocImage u zz] 
+                 -> LocImage u (Point2 u)
+chainRadial radius start_ang rot_ang = 
+    chainIterate (+ rot_ang) (\a -> displaceVec (avec a radius)) start_ang
 
 
--- | 'horizontalSteps' : @ [horizontal_dist] -> LocChain @
+
+
+-- | 'chainStepsH' : @ [horizontal_dist] -> LocChain @
 --
 -- This is a @scanl@ successive displacing the start point.
 --
--- This chain is finite (for finite input list).
---
-horizontalSteps :: Num u => [u] -> LocChain u
-horizontalSteps xs = liftChainF $ \pt -> scanl (flip displaceH) pt xs 
+chainStepsH :: Num u => [u] -> LocImage u zz -> LocImage u (Point2 u) 
+chainStepsH xs gf = apChainDisplace id fn (scanl (+) 0 xs)
+  where
+    fn dx = moveStart (displaceH dx) gf 
 
 
--- | 'verticalSteps' : @ [vertical_dist] -> LocChain @
+
+-- | 'chainStepsV' : @ [vertical_dist] -> LocChain @
 --
 -- This is a @scanl@ successive displacing the start point.
 --
--- This chain is finite (for finite input list).
---
--- \*\* WARNING \*\* - name due to be changed. Current name is 
--- too general for this function. 
---
-verticalSteps :: Num u => [u] -> LocChain u
-verticalSteps ys = liftChainF $ \pt -> scanl (flip displaceV) pt ys
+chainStepsV :: Num u => [u] -> LocImage u zz -> LocImage u (Point2 u) 
+chainStepsV xs gf = apChainDisplace id fn (scanl (+) 0 xs)
+  where
+    fn dx = moveStart (displaceV dx) gf 
 
 
 {-# INLINE [0] ceilingi #-}
@@ -130,14 +139,13 @@ ceilingi = ceiling
 -- 
 -- This chain is finite for well formed input.
 --
-innerHorizontals :: RealFrac u => u -> ConnectorChain u
-innerHorizontals n = promoteR2 $ \a b -> return $ body a b
-  where
-    body (P2 x0 y0) (P2 x1 _) = unfoldr phi (n * fromIntegral z) 
-      where z                 = ceilingi $ x0 / n
-            phi x | x < x1    = Just (P2 x y0, x+n)
-                  | otherwise = Nothing
-
+innerHorizontals :: RealFrac u 
+                 => u -> LocImage u zz -> ConnectorGraphic u
+innerHorizontals w gf = promoteR2 $ \(P2 x0 y0) (P2 x1 _) -> 
+    let xc = fromIntegral $ ceilingi $ x0 / w
+        n  = floor $  (x1 - x0) / w 
+        xs = take n $ repeat w
+    in ignoreAns $ chainStepsH xs gf `at` (P2 xc y0) 
       
 
 -- | Note - verticals are projected from the start point. The 
@@ -145,11 +153,10 @@ innerHorizontals n = promoteR2 $ \a b -> return $ body a b
 -- 
 -- This chain is finite for well formed input.
 --
-innerVerticals :: RealFrac u => u -> ConnectorChain u
-innerVerticals n = promoteR2 $ \a b -> return $ body a b
-  where
-    body (P2 x0 y0) (P2 _ y1) = unfoldr phi (n * fromIntegral z)
-      where z                 = ceilingi $ y0 / n
-            phi y | y < y1    = Just (P2 x0 y, y+n)
-                  | otherwise = Nothing
-
+innerVerticals :: RealFrac u => u -> LocImage u zz -> ConnectorGraphic u
+innerVerticals h gf = promoteR2 $ \(P2 x0 y0) (P2 _ y1) -> 
+    let yc = fromIntegral $ ceilingi $ y0 / h
+        n  = floor $  (y1 - y0) / h
+        xs = take n $ repeat h
+    in ignoreAns $ chainStepsV xs gf `at` (P2 x0 yc) 
+      
