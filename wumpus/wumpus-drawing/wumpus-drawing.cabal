@@ -89,6 +89,7 @@ extra-source-files:
   demo/FontPic.hs,
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
+  demo/SingleChar.hs,
   demo/SingleLine.hs,
   demo/SampleShapes.hs,
   demo/Symbols.hs,
@@ -140,6 +141,7 @@ library
     Wumpus.Drawing.Text.Base,
     Wumpus.Drawing.Text.DocTextLR,
     Wumpus.Drawing.Text.Label,
+    Wumpus.Drawing.Text.PosChar,
     Wumpus.Drawing.Text.RotTextLR,
     Wumpus.Drawing.Text.SafeFonts,
     Wumpus.Drawing.VersionNumber
