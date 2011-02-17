@@ -17,7 +17,6 @@
 module Wumpus.Drawing.Extras.Grids
   ( 
     grid
-  , interiorGrid
 
   ) where
 
@@ -26,7 +25,6 @@ import Wumpus.Drawing.Chains
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
@@ -55,13 +53,12 @@ grid :: (Fractional u, RealFrac u, FromPtSize u)
      => (Int,Int) -> RGBi -> LocGraphic u
 grid (nx,ny) rgb    
     | nx < 1 || ny < 1 = emptyLocGraphic
-    | otherwise        = localize (stroke_colour rgb) $ promoteR1 $ \sw -> 
+    | otherwise        = localize (stroke_colour rgb) $ 
         snapGridFactors >>= \(x_incr, y_incr) ->
         let rectw  = x_incr * fromIntegral nx
             recth  = y_incr * fromIntegral ny
-            ne     = sw .+^ V2 rectw recth
-            grid1  = connect (interiorGrid x_incr y_incr) sw ne
-        in grid1 `oplus` (strokedRectangle rectw recth `at` sw)
+            grid1  = interiorGrid x_incr nx y_incr ny rectw recth
+        in grid1 `oplus` strokedRectangle rectw recth
 
 
 
@@ -75,17 +72,13 @@ grid (nx,ny) rgb
 -- increment, for instance with an increment of 10 but a start 
 -- point @(15,0)@ lines are drawn from @(20,0), (30,0)@ etc.
 --
-interiorGrid :: RealFrac u => u -> u -> ConnectorGraphic u
-interiorGrid x_incr y_incr = promoteR2 $ \sw ne ->
-    let (V2 vx vy)  = pvec sw ne
-        hline1      = straightLine (hvec vx)
-        vline1      = straightLine (vvec vy)
-        vlines      = connect (innerHorizontals x_incr vline1) sw ne
-        hlines      = connect (innerVerticals   y_incr hline1) sw ne
-    in hlines `oplus` vlines
+interiorGrid :: RealFrac u => u -> Int -> u -> Int -> u -> u -> LocGraphic u
+interiorGrid x_step nx y_step ny w h = hlines `oplus` vlines
+  where
+    hline1 = straightLine (hvec w)
+    vline1 = straightLine (vvec h)
+    vlines = ignoreAns $ moveStart (displaceH x_step) $
+               chainH x_step (replicate (nx-1) vline1) 
+    hlines = ignoreAns $ moveStart (displaceV y_step) $ 
+               chainV y_step (replicate (ny-1) hline1) 
 
--- Design note - at the moment it seems fine that @interiorGrid@ 
--- does not use the snapping grid factors.
--- 
--- However this might be reconsidered.
--- 

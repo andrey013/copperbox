@@ -29,11 +29,6 @@ module Wumpus.Drawing.Chains.Derived
   , chainStepsH
   , chainStepsV
 
-
-  , innerHorizontals
-  , innerVerticals
-
-
   ) where
 
 import Wumpus.Drawing.Chains.Base
@@ -112,10 +107,9 @@ chainRadial radius start_ang rot_ang =
 --
 -- This is a @scanl@ successive displacing the start point.
 --
-chainStepsH :: Num u => [u] -> LocImage u zz -> LocImage u (Point2 u) 
-chainStepsH xs gf = apChainDisplace id fn (scanl (+) 0 xs)
-  where
-    fn dx = moveStart (displaceH dx) gf 
+chainStepsH :: Num u => [u] -> [LocImage u zz] -> LocImage u (Point2 u) 
+chainStepsH xs gs = interChainDisplace (map displaceH xs) gs
+
 
 
 
@@ -123,40 +117,8 @@ chainStepsH xs gf = apChainDisplace id fn (scanl (+) 0 xs)
 --
 -- This is a @scanl@ successive displacing the start point.
 --
-chainStepsV :: Num u => [u] -> LocImage u zz -> LocImage u (Point2 u) 
-chainStepsV xs gf = apChainDisplace id fn (scanl (+) 0 xs)
-  where
-    fn dx = moveStart (displaceV dx) gf 
+chainStepsV :: Num u => [u] -> [LocImage u zz] -> LocImage u (Point2 u) 
+chainStepsV xs gs = interChainDisplace (map displaceV xs) gs
+ 
 
 
-{-# INLINE [0] ceilingi #-}
-ceilingi :: RealFrac a => a -> Int
-ceilingi = ceiling
-
-
--- | Note - horizontals are projected from the start point. The 
--- horizontal component of the second point is ignored.
--- 
--- This chain is finite for well formed input.
---
-innerHorizontals :: RealFrac u 
-                 => u -> LocImage u zz -> ConnectorGraphic u
-innerHorizontals w gf = promoteR2 $ \(P2 x0 y0) (P2 x1 _) -> 
-    let xc = fromIntegral $ ceilingi $ x0 / w
-        n  = floor $  (x1 - x0) / w 
-        xs = take n $ repeat w
-    in ignoreAns $ chainStepsH xs gf `at` (P2 xc y0) 
-      
-
--- | Note - verticals are projected from the start point. The 
--- vertical component of the second point is ignored.
--- 
--- This chain is finite for well formed input.
---
-innerVerticals :: RealFrac u => u -> LocImage u zz -> ConnectorGraphic u
-innerVerticals h gf = promoteR2 $ \(P2 x0 y0) (P2 _ y1) -> 
-    let yc = fromIntegral $ ceilingi $ y0 / h
-        n  = floor $  (y1 - y0) / h
-        xs = take n $ repeat h
-    in ignoreAns $ chainStepsV xs gf `at` (P2 x0 yc) 
-      

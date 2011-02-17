@@ -22,6 +22,7 @@ module Wumpus.Drawing.Chains.Base
   , apChainDisplace
   , apChainIterate
 
+  , interChainDisplace
 
   ) where
 
@@ -118,3 +119,25 @@ apChainIterate next gen s gf (x:xs) = promoteR1 $ \start ->
                                    g1 = ignoreAns $ gf y `at` p1
                                in go fn (next st) (p1, acc `oplus` g1) ys
 
+
+
+
+
+-- | Variant of 'chainDisplace' where a LocGraphic building 
+-- function is applied to a list of values...
+--
+interChainDisplace :: Num u 
+             => [PointDisplace u] -> [LocImage u zz] -> LocImage u (Point2 u)
+interChainDisplace _   [] = promoteR1 $ \start -> 
+    replaceAns start $ emptyLocGraphic `at` start
+
+interChainDisplace mvs (z:zs) = promoteR1 $ \start ->  
+    step1 start (ignoreAns $ z `at` start) mvs zs
+  where
+    step1 pt acc []      _      = replaceAns pt acc
+    step1 pt acc (mv:ms) gs     = step2 (mv pt) acc ms gs
+
+    step2 pt acc _       []     = replaceAns pt acc 
+    step2 pt acc ms      (g:gs) = let g1 = ignoreAns $ g `at` pt
+                                  in step1 pt (acc `oplus` g1) ms gs
+ 
