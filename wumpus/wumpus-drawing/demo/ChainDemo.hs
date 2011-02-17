@@ -16,6 +16,9 @@ import Data.VectorSpace
 import Control.Applicative
 import System.Directory
 
+
+-- WARNING - interoirGRid seems to be drawing exteriors as well...
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"

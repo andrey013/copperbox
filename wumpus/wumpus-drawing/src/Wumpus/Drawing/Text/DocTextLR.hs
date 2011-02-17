@@ -106,14 +106,17 @@ drawMulti moveF xs = promoteR2 $ \start rpos ->
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
     borderedTextPos line_count (fst all_lines) >>= \opos ->
-    let chn   = centerSpinePoints line_count 0 
-        gs    = positionHLines moveF down all_lines 
-        gf    = unchainZip emptyLocGraphic gs chn
+    centerSpineDisps line_count 0 >>= \(disp_top, disp_next) ->
+    let gs    = positionHLines moveF down all_lines 
+        gf    = moveStart disp_top $ chainDisplace disp_next gs
         posG  = makePosImage opos gf
         bbox  = objectPosBounds start rpos opos
     in replaceAns bbox $ atStartPos posG start rpos     
   where
     line_count    = length xs
+
+    -- chain is many graphics 
+
 
 positionHLines :: Fractional u 
                => HMove u -> u -> (u,[(u, AdvGraphic u)]) -> [LocGraphic u]

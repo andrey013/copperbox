@@ -66,7 +66,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = set_font helvetica . metricsContext 14
+makeCtx = set_font helvetica . metricsContext 15
 
 
 text_pic :: CtxPicture Double

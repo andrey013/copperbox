@@ -131,8 +131,6 @@ textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
 
 
--- Note - inclination is not part of the ContextFunction...
--- Maybe it should be but then we need an CF3 (arity 3)
 
 drawMultiline :: (Real u, Floating u, FromPtSize u) 
               => OnelineDrawF u -> [EscapedText] 
@@ -142,15 +140,17 @@ drawMultiline drawF [x] = onelineDraw drawF x
 drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
     linesToInterims xs >>= \(max_adv, ones) -> 
     borderedRotTextPos theta line_count (advanceH max_adv) >>= \opos -> 
-    let chn   = centerSpinePoints line_count theta
-        gs    = map (\a -> apply1R2 (drawF max_adv a) theta) ones
-        gf    = unchainZip emptyBoundedLocGraphic gs chn
-        posG  = makePosImage opos gf
+    centerSpineDisps line_count theta >>= \(disp_top, disp_next) ->
+    let gs         = map (\a -> apply1R2 (drawF max_adv a) theta) ones
+        gf         = moveStart disp_top $ chainDisplace disp_next gs
+        bbf        = orthoBB max_adv line_count `rot` theta
+        img        = intoLocImage bbf (ignoreAns gf)
+        posG       = makePosImage opos img
     in  atStartPos posG start rpos     
   where
     line_count = length xs
 
-
+-- chain is no longer building a bounding box...
 
 
 onelineDraw :: (Real u, Floating u, FromPtSize u) 
@@ -175,7 +175,7 @@ onelineALeft :: (Real u, Floating u, FromPtSize u)
              => OnelineDrawF u 
 onelineALeft max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB max_adv) ctr theta >>= \bbox -> 
+    atRot (orthoBB1 max_adv) ctr theta >>= \bbox -> 
     let pt = move down theta ctr 
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
@@ -193,7 +193,7 @@ onelineACenter :: (Real u, Floating u, FromPtSize u)
                => OnelineDrawF u
 onelineACenter max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB max_adv) ctr theta >>= \bbox ->  
+    atRot (orthoBB1 max_adv) ctr theta >>= \bbox ->  
     let pt = move down theta ctr 
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
@@ -213,7 +213,7 @@ onelineARight :: (Real u, Floating u, FromPtSize u)
               => OnelineDrawF u
 onelineARight max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB max_adv) ctr theta >>= \bbox -> 
+    atRot (orthoBB1 max_adv) ctr theta >>= \bbox -> 
     let pt = move down theta ctr 
     in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
   where
@@ -225,9 +225,9 @@ onelineARight max_adv otext = promoteR2 $ \ctr theta ->
 -- Note - for multiline text, the bounding box (of one line) is 
 -- always the same size regardless of the alignment of the textlines.
 --
-orthoBB :: (Real u, Floating u, FromPtSize u) 
-        => AdvanceVec u -> LocThetaDrawingInfo u (BoundingBox u)
-orthoBB (V2 w _) = promoteR2 $ \ctr theta -> 
+orthoBB1 :: (Real u, Floating u, FromPtSize u) 
+         => AdvanceVec u -> LocThetaDrawingInfo u (BoundingBox u)
+orthoBB1 (V2 w _) = promoteR2 $ \ctr theta -> 
     glyphVerticalSpan >>= \h ->
     getTextMargin     >>= \(xsep,ysep) -> 
     let hw  = 0.5 * w
@@ -237,6 +237,36 @@ orthoBB (V2 w _) = promoteR2 $ \ctr theta ->
         bb1 = boundingBox bl (bl .+^ mv)
         bb2 = retraceBoundary (rotateAbout theta ctr) bb1
     in return bb2
+
+
+-- Note - for multiline text, the bounding box (of one line) is 
+-- always the same size regardless of the alignment of the textlines.
+--
+
+-- | Its easy to find top-left and top-right, then bottom-left is 
+-- the vector from top-right to center added to the center. 
+-- Likewise bottom-right is the vector from top-left-to center 
+-- added to the center. Visually this construction forms a bow of 
+-- two triangles meeting at the (rectangle) center.
+
+orthoBB :: (Real u, Floating u, FromPtSize u) 
+        => AdvanceVec u -> Int -> LocThetaDrawingInfo u (BoundingBox u)
+orthoBB (V2 w _) line_count = promoteR2 $ \ctr theta ->
+    fmap (0.5*) glyphVerticalSpan     >>= \hh1 ->
+    getTextMargin                     >>= \(xsep,ysep) -> 
+    centerSpineDisps line_count theta >>= \(disp_top,_) ->
+    let top_ctr = disp_top ctr
+        hw      = 0.5 * w
+        tr      = displaceOrtho (V2 (hw+xsep) (hh1+ysep)) theta top_ctr
+        tl      = displaceOrtho (V2 (negate $ hw+xsep) (hh1+ysep)) theta top_ctr
+        bl      = ctr .+^ pvec tr ctr 
+        br      = ctr .+^ pvec tl ctr
+    in return $ traceBoundary [tr,tl,bl,br]
+
+
+
+-- Note - displaceOrtho would be more convenient if it wasn\'t a 
+-- vector.
 
 
 
