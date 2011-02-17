@@ -52,7 +52,7 @@ conntable =
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [PathCF u] -> TraceDrawing u ()
 tableGraphic conns = 
-    draw $ unchainZipWith emptyLocGraphic makeConnDrawing conns chn `at` start
+    drawi_ $ chn (map makeConnDrawing conns) `at` start
   where
     chn   = tableDown 10 (120,52) 
     start = P2 0 520 

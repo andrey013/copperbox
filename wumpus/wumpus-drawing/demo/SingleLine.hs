@@ -74,7 +74,7 @@ mf = do
 testDraw :: (Real u, Floating u, FromPtSize u) => RectPosition -> LocGraphic u
 testDraw rpos = filledDisk 2 `oplus` (ignoreAns ans)
   where
-    ans = singleLine "Qwerty" `startPos` rpos
+    ans = textbox "Qwerty" `startPos` rpos
 
 
 

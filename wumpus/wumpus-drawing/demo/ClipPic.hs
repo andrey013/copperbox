@@ -53,9 +53,9 @@ clip_pic = drawTracing $ do
 
 background :: RGBi -> DGraphic
 background rgb = 
-    localize (text_colour rgb) $ ihh `at` P2 0 288
+    ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = unchain 112 emptyLocGraphic iheartHaskell $ tableDown 18 (86,16)
+    ihh = tableDown 18 (86,16) (replicate 112 iheartHaskell)
 
 -- Wumpus-Basic needs a clip function, but is this the most 
 -- satisfactory definition?

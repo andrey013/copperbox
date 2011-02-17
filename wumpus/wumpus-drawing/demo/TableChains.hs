@@ -24,7 +24,7 @@ std_ctx = fill_colour peru $ standardContext 18
 table_drawing :: CtxPicture Double
 table_drawing = drawTracing $ do 
 --    tableGraphic
-    draw $ connect (interiorGrid 10) (P2 (-20) (-20)) (P2 150 80)
+--    draw $ connect (interiorGrid 10) (P2 (-20) (-20)) (P2 150 80)
     drawi_ $ grid (3,2) cornflower_blue  `at` (P2 300 60)
 
 {-

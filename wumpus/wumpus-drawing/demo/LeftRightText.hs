@@ -116,23 +116,23 @@ redPlus = localize (stroke_colour red) markPlus
 -- single line
 --
 ne_oneline :: BoundedLocGraphic Double
-ne_oneline = singleLine "north east" `startPos` NE
+ne_oneline = textbox "north east" `startPos` NE
 
 
 -- single line
 --
 se_oneline :: BoundedLocGraphic Double
-se_oneline = singleLine "south east" `startPos` SE
+se_oneline = textbox "south east" `startPos` SE
 
 -- single line
 --
 ss_oneline :: BoundedLocGraphic Double
-ss_oneline = singleLine "south" `startPos` SS
+ss_oneline = textbox "south" `startPos` SS
 
 -- single line
 --
 sw_oneline :: BoundedLocGraphic Double
-sw_oneline = singleLine "south west" `startPos` SW
+sw_oneline = textbox "south west" `startPos` SW
 
 
 -- multi line
@@ -152,7 +152,7 @@ ner_multi = rotTextStart (multiAlignCenter "north east rot45") NE (0.25*pi)
 
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = rotTextStart (rsingleLine "Center-center...") CENTER 0
+cc_oneline = rotTextStart (rtextbox "Center-center...") CENTER 0
 
 
 blank_text :: BoundedLocGraphic Double

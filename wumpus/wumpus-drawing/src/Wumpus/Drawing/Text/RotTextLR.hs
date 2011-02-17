@@ -24,13 +24,10 @@ module Wumpus.Drawing.Text.RotTextLR
   ( 
 
     RotText
-
   , rotTextStart
 
-  , singleLine
-  , escSingleLine
-  , rsingleLine
-  , rescSingleLine
+  , textbox
+  , rtextbox
 
   , multiAlignLeft
   , multiAlignCenter
@@ -65,12 +62,10 @@ data OnelineText u = OnelineText
         , oneline_adv         :: AdvanceVec u
         }
 
--- Design note - using a LocThetaImage could be used instead, but
--- as the angle of inclination is interior to the final type the 
--- it is used explicitly.
---
-type OnelineDrawF u = 
-    AdvanceVec u -> OnelineText u -> LocThetaImage u (BoundingBox u)
+
+
+type OnelineGraphicF u = AdvanceVec u -> OnelineText u -> LocThetaGraphic u
+
 
 
 
@@ -78,24 +73,14 @@ rotTextStart :: PosThetaImage u a -> RectPosition -> Radian -> LocImage u a
 rotTextStart = apply2R3
 
 
-singleLine :: (Real u, Floating u, FromPtSize u) 
-           => String -> PosImage u (BoundingBox u)
-singleLine ss = apply1R3 (onelineDraw onelineACenter (escapeString ss)) 0
+textbox :: (Real u, Floating u, FromPtSize u) 
+        => String -> PosImage u (BoundingBox u)
+textbox ss = apply1R3 (multiAlignCenter ss) 0
 
 
-escSingleLine :: (Real u, Floating u, FromPtSize u) 
-              => EscapedText -> PosImage u (BoundingBox u)
-escSingleLine esc = apply1R3 (onelineDraw onelineACenter esc) 0
-
-
-rsingleLine :: (Real u, Floating u, FromPtSize u) 
-            => String -> PosThetaImage u (BoundingBox u)
-rsingleLine ss = onelineDraw onelineACenter (escapeString ss)
-
-
-rescSingleLine :: (Real u, Floating u, FromPtSize u) 
-               => EscapedText -> PosThetaImage u (BoundingBox u)
-rescSingleLine = onelineDraw onelineACenter
+rtextbox :: (Real u, Floating u, FromPtSize u) 
+         => String -> PosThetaImage u (BoundingBox u)
+rtextbox ss = multiAlignCenter ss
 
 
 -- multi line text allows rotation 
@@ -133,10 +118,9 @@ textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
 
 drawMultiline :: (Real u, Floating u, FromPtSize u) 
-              => OnelineDrawF u -> [EscapedText] 
+              => OnelineGraphicF u -> [EscapedText] 
               -> PosThetaImage u (BoundingBox u)
 drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
-drawMultiline drawF [x] = onelineDraw drawF x
 drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
     linesToInterims xs >>= \(max_adv, ones) -> 
     borderedRotTextPos theta line_count (advanceH max_adv) >>= \opos -> 
@@ -153,16 +137,6 @@ drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
 -- chain is no longer building a bounding box...
 
 
-onelineDraw :: (Real u, Floating u, FromPtSize u) 
-            => OnelineDrawF u -> EscapedText -> PosThetaImage u (BoundingBox u)
-onelineDraw drawF esc = promoteR3 $ \start rpos theta ->
-    onelineEscText esc        >>= \otext -> 
-    borderedRotTextPos theta 1 (advanceH $ oneline_adv otext) >>= \opos  -> 
-    let max_adv = oneline_adv otext 
-        gf      = apply1R2 (drawF max_adv otext) theta
-        posG    = makePosImage opos gf
-    in atStartPos posG start rpos 
-
 
 
 -- | Draw left-aligned text. Effictively this is:
@@ -172,12 +146,11 @@ onelineDraw drawF esc = promoteR3 $ \start rpos theta ->
 -- > Down to the baseline from the center.
 --
 onelineALeft :: (Real u, Floating u, FromPtSize u)  
-             => OnelineDrawF u 
+             => OnelineGraphicF u 
 onelineALeft max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB1 max_adv) ctr theta >>= \bbox -> 
     let pt = move down theta ctr 
-    in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ max_adv
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -189,13 +162,14 @@ onelineALeft max_adv otext = promoteR2 $ \ctr theta ->
 -- >
 -- > Down to the baseline from the center.
 --
+-- The max_adv is ignored.
+--
 onelineACenter :: (Real u, Floating u, FromPtSize u)  
-               => OnelineDrawF u
-onelineACenter max_adv otext = promoteR2 $ \ctr theta -> 
+               => OnelineGraphicF u
+onelineACenter _ otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB1 max_adv) ctr theta >>= \bbox ->  
     let pt = move down theta ctr 
-    in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -210,33 +184,17 @@ onelineACenter max_adv otext = promoteR2 $ \ctr theta ->
 -- > Down to the baseline from the center.
 --
 onelineARight :: (Real u, Floating u, FromPtSize u)  
-              => OnelineDrawF u
+              => OnelineGraphicF u
 onelineARight max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
-    atRot (orthoBB1 max_adv) ctr theta >>= \bbox -> 
     let pt = move down theta ctr 
-    in replaceAns bbox $ atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = (0.5 *^ max_adv) ^-^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
 
--- Note - for multiline text, the bounding box (of one line) is 
--- always the same size regardless of the alignment of the textlines.
---
-orthoBB1 :: (Real u, Floating u, FromPtSize u) 
-         => AdvanceVec u -> LocThetaDrawingInfo u (BoundingBox u)
-orthoBB1 (V2 w _) = promoteR2 $ \ctr theta -> 
-    glyphVerticalSpan >>= \h ->
-    getTextMargin     >>= \(xsep,ysep) -> 
-    let hw  = 0.5 * w
-        hh  = 0.5 * h
-        bl  = ctr .-^ V2 (hw + xsep) (hh + ysep)
-        mv  = V2 (w + xsep + xsep) (h + ysep + ysep)
-        bb1 = boundingBox bl (bl .+^ mv)
-        bb2 = retraceBoundary (rotateAbout theta ctr) bb1
-    in return bb2
 
 
 -- Note - for multiline text, the bounding box (of one line) is 

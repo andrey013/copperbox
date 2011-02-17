@@ -65,7 +65,7 @@ redPlus = localize (stroke_colour red) markPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (set_font times_roman . stroke_colour dark_slate_gray) $ 
-             singleLine "Times-Roman" `startPos` SE
+             textbox "Times-Roman" `startPos` SE
 
 
 cc_oneline :: BoundedLocGraphic Double

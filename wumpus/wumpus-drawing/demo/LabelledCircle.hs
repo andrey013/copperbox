@@ -70,10 +70,10 @@ circle_drawing = do
     draw $ filledDisk 3 `at` southeast a
     return ()
   where
-    f1 = label_above (singleLine "label-above")
-    f2 = label_below (singleLine "label-below")
-    f3 = label_left_of  (singleLine "label-left")
-    f4 = label_right_of (singleLine "label-right")
+    f1 = label_above (textbox "label-above")
+    f2 = label_below (textbox "label-below")
+    f3 = label_left_of  (textbox "label-left")
+    f4 = label_right_of (textbox "label-right")
 
 strokeFill :: RGBi -> RGBi -> DrawingContextF
 strokeFill s f = stroke_colour s . fill_colour f

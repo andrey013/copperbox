@@ -55,14 +55,15 @@ point_sizes = [10, 12, 18, 24, 36, 48]
 positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
+-- ERROR - need to reconsider the chainStepsV type...
 
-pointChain :: LocChain Double
-pointChain = verticalSteps $ map (fromIntegral . (+2)) point_sizes
+-- pointChain :: LocChain Double
+pointChain = chainStepsV $ map (fromIntegral . (+2)) point_sizes
 
 
 fontGraphic :: RGBi -> FontFace -> DLocGraphic 
 fontGraphic rgb ff = 
-    unchainZipWith emptyLocGraphic mkGF point_sizes pointChain 
+    ignoreAns $ pointChain (map mkGF point_sizes) 
   where
     mkGF sz = makeLabel rgb ff sz
 
@@ -73,7 +74,7 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
 fontDrawing xs = drawTracing $  
-    draw $ unchainZipWith emptyLocGraphic (uncurry fontGraphic) xs chn `at` start
+    drawi_ $ chn (map (uncurry fontGraphic) xs) `at` start
   where
     chn   = tableDown 4 (1,180)
     start = P2 0 (4*180)

@@ -31,9 +31,9 @@ std_ctx = set_font times_roman $ standardContext 12
 --
 symbols :: DCtxPicture
 symbols = drawTracing $ do
-    draw $ localize (set_font symbol) $ 
-            unchainZipWith emptyLocGraphic sdraw all_letters chn `at` start
-    draw $ unchainZipWith emptyLocGraphic ldraw all_letters chn `at` start
+    drawi_ $ localize (set_font symbol) $ 
+               chn (map sdraw all_letters) `at` start
+    drawi_ $ chn (map ldraw all_letters) `at` start
   where
     chn             = tableDown 30 (100,20) 
     start           = P2 0 (30*20)

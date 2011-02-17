@@ -62,7 +62,7 @@ arrtable =
 tableGraphic :: (Real u, Floating u, FromPtSize u) 
              => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
 tableGraphic tips = 
-    draw $ unchainZipWith emptyLocGraphic makeArrowDrawing tips chn `at` start
+    drawi_ $ chn (map makeArrowDrawing tips) `at` start
   where
     chn   = tableDown 20 (120,24)
     start = P2 0 480
