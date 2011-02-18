@@ -26,7 +26,7 @@ main = do
     writeHiMidi "./out/simple01.mid" $ barChannelTracks midi_tracks
   where
     fk ss       = putStrLn ss
-    sk metrics  = let pic1 = runDrawingU (makeCtx metrics) djembe_drawing
+    sk metrics  = let pic1 = runCtxPictureU (makeCtx metrics) djembe_drawing
                   in do { writeEPS "./out/box_abioueka01.eps" pic1
                         ; writeSVG "./out/box_abioueka01.svg" pic1 
                         }
@@ -36,7 +36,7 @@ main = do
 makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = joinBevel . fontFace helvetica . metricsContext 14
 
-djembe_drawing :: DDrawing
+djembe_drawing :: DCtxPicture
 djembe_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ barLocGraphic djembe1                 `at` P2 0 600
    draw $ barLocGraphic sangban1                `at` P2 0 540

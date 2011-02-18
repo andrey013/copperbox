@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Rhythm.Djembe.GraphicInterpretation
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -35,7 +35,7 @@ wumpus_afm_font_dir :: String
 wumpus_afm_font_dir = "WUMPUS_AFM_FONT_DIR"
 
 
-loadHelveticaMetrics :: IO (Either String GlyphMetrics)
+loadHelveticaMetrics :: IO (Either String FontLoadResult)
 loadHelveticaMetrics = 
    loadAfm_helvetica >>= maybe fk1 (return . Right)
  where
@@ -61,21 +61,21 @@ help_message = unlines $
 
 
 
-loadGS_helvetica :: IO (Maybe GlyphMetrics)
+loadGS_helvetica :: IO (Maybe FontLoadResult)
 loadGS_helvetica = 
     envLookup wumpus_gs_font_dir >>= maybe (return Nothing) sk
   where
-    sk dir = do { (metrics,msgs)  <- loadGSMetrics dir ["Helvetica"]
-                ; mapM_ putStrLn msgs
+    sk dir = do { metrics  <- loadGSFontMetrics dir ["Helvetica"]
+                ; printLoadErrors metrics
                 ; return $ Just metrics
                 }
 
-loadAfm_helvetica :: IO (Maybe GlyphMetrics)
+loadAfm_helvetica :: IO (Maybe FontLoadResult)
 loadAfm_helvetica = 
     envLookup wumpus_afm_font_dir >>= maybe (return Nothing) sk 
   where
-    sk dir = do { (metrics,msgs) <- loadAfmMetrics dir ["Helvetica"]
-                ; mapM_ putStrLn msgs
+    sk dir = do { metrics <- loadAfmFontMetrics dir ["Helvetica"]
+                ; printLoadErrors metrics
                 ; return $ Just metrics
                 }
 

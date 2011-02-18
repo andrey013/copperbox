@@ -17,9 +17,12 @@
 module Wumpus.Rhythm.Djembe.GraphicPrimitives where
 
 
+import Wumpus.Drawing.Text.PosChar              -- package: wumpus-drawing
+import Wumpus.Drawing.Text.RotTextLR
+
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Base.Datatypes
-import Wumpus.Drawing.Text.LRText
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -27,6 +30,80 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 import Data.Ratio
 
+-- Maybe this is better than the one currently in Wumpus-Basic?
+--
+scale_point_size :: Double -> DrawingContextF
+scale_point_size sc = 
+    (\s sz -> s { dc_font_size = floor $ sc * fromIntegral sz}) 
+      <*> dc_font_size
+
+-- For clarity Wumpus-Basic needs flipped versions of the 
+-- @startPos@, @atRot@, etc. operators. However they need some
+-- system for naming that I haven\'t yet worked out.
+--
+startPosR :: Floating u 
+          => RectPosition -> PosImage u a -> LocImage u a
+startPosR = flip apply1R2
+
+
+--------------------------------------------------------------------------------
+
+
+
+udisk_radius            :: FromPtSize u => DrawingInfo u
+udisk_radius            = scaleValue 272
+
+
+-- | Note - the width is the same width as capital O in Helvetica.
+-- Choosing this particular dimension is perhaps arbitrary.
+--
+udisk_width_vector      :: FromPtSize u => DrawingInfo (AdvanceVec u)
+udisk_width_vector      = (\w -> V2 w 0) <$> scaleValue 778
+
+
+udisk_ycenter           :: FromPtSize u => DrawingInfo u
+udisk_ycenter           = scaleValue 306
+
+
+uperiod_radius          :: FromPtSize u => DrawingInfo u
+uperiod_radius          = scaleValue 60
+
+
+-- | Note - the width is the same width as capital T in Helvetica.
+-- Choosing this particular dimension is perhaps arbitrary.
+--
+uperiod_width_vector    :: FromPtSize u => DrawingInfo (AdvanceVec u)
+uperiod_width_vector    = (\w -> V2 w 0) <$> scaleValue 611
+
+uperiod_ycenter         :: FromPtSize u => DrawingInfo u
+uperiod_ycenter         = scaleValue 108
+
+
+uhand_baseline          :: FromPtSize u => DrawingInfo u
+uhand_baseline          = scaleValue (-448)
+
+uhand_side_length       :: FromPtSize u => DrawingInfo u
+uhand_side_length       = scaleValue 260
+
+-- | Parens do not look good printed on the notehead baseline
+--
+uparen_baseline         :: FromPtSize u => DrawingInfo u
+uparen_baseline         = scaleValue 72
+
+ustrike_baseline        :: FromPtSize u => DrawingInfo u
+ustrike_baseline        = scaleValue (-92)
+
+ustem_top               :: FromPtSize u => DrawingInfo u
+ustem_top               = scaleValue 2272
+
+ustem_start             :: FromPtSize u => DrawingInfo u
+ustem_start             = scaleValue 818
+
+ustem_length            :: FromPtSize u => DrawingInfo u
+ustem_length            = (-) <$> ustem_top <*> ustem_start
+
+
+------------------------------------------
 unit_width              :: AfmUnit
 unit_width              = 1380
 
@@ -44,6 +121,7 @@ number_width            = 556
 
 dot_radius              :: AfmUnit
 dot_radius              = 272
+
 
 period_radius           :: AfmUnit
 period_radius           = 60
@@ -150,10 +228,126 @@ lo_repeat_dot_center    = 842
 --------------------------------------------------------------------------------
 -- Note heads are positioned...
 
--- THese need generalizing so that ypos is parameteric.
+baselineCharGlyph :: (Floating u, FromPtSize u) 
+                  => EscapedChar -> LocImage u (AdvanceVec u)
+baselineCharGlyph ch = 
+    glyphDescender >>= \dy -> 
+    mapAns fn $ moveStart (displaceV dy) $ startPosR SS $ posEscChar ch
+  where
+    fn bb = V2 (boundaryWidth bb) 0
+
+
+type Notehead u = LocImage u (AdvanceVec u)
+
+
+vmove :: Num u => DrawingInfo u -> LocCF u a -> LocCF u a
+vmove mf gf = lift0R1 mf >>= \dy -> moveStart (displaceV dy) gf
+
+
+
+
+disk :: FromPtSize u => Notehead u
+disk = 
+    lift0R1 udisk_radius        >>= \rd -> 
+    lift0R1 udisk_width_vector  >>= \ans -> 
+    replaceAns ans $ vmove udisk_ycenter $ filledDisk rd
+
+
+char :: (Floating u, FromPtSize u) => Char -> Notehead u
+char = baselineCharGlyph . CharLiteral
+
+
+period :: FromPtSize u => Notehead u
+period = 
+    lift0R1 uperiod_radius        >>= \rd -> 
+    lift0R1 uperiod_width_vector  >>= \ans -> 
+    replaceAns ans $ vmove uperiod_ycenter $ filledDisk rd
+
+
+
+decoHand :: FromPtSize u => Notehead u -> LocGraphic u -> Notehead u
+decoHand nh gf = decorate nh (vmove uhand_baseline gf)
+
+otherhand :: (Floating u, FromPtSize u) => LocGraphic u
+otherhand = 
+    lift0R1 uhand_side_length     >>= \w -> 
+    startPosR SS $ strokedPosRect w w
+
+domhand :: (Floating u, FromPtSize u) => LocGraphic u
+domhand = 
+    lift0R1 uhand_side_length     >>= \w -> 
+    startPosR SS $ filledPosRect w w
+
+
+withWidth :: Num u 
+          => (u -> u) -> (u -> LocImage u a) -> (AdvanceVec u -> LocImage u a) 
+withWidth fn gf = \(V2 w _) -> moveStart (displaceH $ fn w) (gf w)
+
+parens :: (Floating u, FromPtSize u) => Notehead u -> Notehead u
+parens nh = nh `annotate` oparen `annotate` cparen
+  where
+    oparen  = withWidth (\w -> negate $ 0.66*w)  
+                        (const $ vmove uparen_baseline $ parenl)
+
+    cparen  = withWidth (\w -> 0.66*w) (const $ vmove uparen_baseline $ parenr)
+
+    parenl  = baselineCharGlyph $ CharEscName "parenleft"
+    parenr  = baselineCharGlyph $ CharEscName "parenright"
+
+
+
+
+underscore :: (Fractional u, FromPtSize u) => Notehead u -> Notehead u
+underscore = (`annotate` underline)
+  where
+    underline = withWidth (\w -> negate $0.5*w) 
+                          (\w -> udown $ straightLine (hvec w))
+    udown     = vmove ustrike_baseline
+
+
+anglestrike :: (Floating u, FromPtSize u) => Notehead u -> Notehead u
+anglestrike = (`annotate` astrike)
+  where
+    astrike = withWidth (\w -> negate $ 0.625*w) 
+                        (\w -> let dist = (1.25*w) / fromRadian (cos ang)
+                               in udown $ straightLine (avec ang dist))
+
+    ang     = 0.25*pi
+    udown   = vmove ustrike_baseline
+
+
+singlestem :: (Fractional u, FromPtSize u) => Notehead u -> Notehead u
+singlestem = (`decorate` sstem)
+  where
+    sstem   = lift0R1 ustem_length >>= \len -> 
+              vmove ustem_start $ straightLine $ vvec len
+
+
+-- PosRects for hands...
+
+strokedPosRect :: Fractional u => u -> u -> PosGraphic u 
+strokedPosRect w h = 
+    makePosImage (oposRectSW w h) (strokedRectangle w h)
+
+
+filledPosRect :: Fractional u => u -> u -> PosGraphic u 
+filledPosRect w h = 
+    makePosImage (oposRectSW w h) (filledRectangle w h)
+
+oposRectSW :: Num u => u -> u -> ObjectPos u 
+oposRectSW w h  = ObjectPos { op_x_minor = 0
+                            , op_x_major = w
+                            , op_y_minor = 0
+                            , op_y_major = h }
+ 
+
+--------------------------------------------------------------------------------
+-- OLD...
+
+-- These need generalizing so that ypos is parameteric.
 -- Then they can handle upstrokes downstokes and normal positioned note-heads
 
-dotNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
+dotNotehead :: (Fractional u, FromPtSize u) => LocGraphic u
 dotNotehead = makeDotNotehead dot_center
 
 
@@ -167,23 +361,22 @@ downstrokeDot = fmap (replaceL uNil) $ makeDotNotehead dot_downstroke
 
 
 makeDotNotehead :: (Fractional u, FromPtSize u) 
-                => AfmUnit -> LocImage u AfmUnit
+                => AfmUnit -> LocGraphic u
 makeDotNotehead ypos = 
     lift0R1 (scaleValue dot_radius) >>= \radius -> 
-    fmap (replaceL dot_notehead_width) $ scaleVMove ypos $ filledDisk radius
+    scaleVMove ypos $ filledDisk radius
 
 
 -- period notehead always drawn just above baseline
 -- 
-periodNotehead :: (Fractional u, FromPtSize u) => LocImage u AfmUnit
+periodNotehead :: (Fractional u, FromPtSize u) => LocGraphic u
 periodNotehead = 
     lift0R1 (scaleValue period_radius) >>= \radius -> 
-    fmap (replaceL dot_notehead_width) $ 
-                scaleVMove period_center $ filledDisk radius
+    scaleVMove period_center $ filledDisk radius
 
 
 letterNotehead :: (Real u, Floating u, FromPtSize u) 
-               => EscapedChar -> LocImage u AfmUnit
+               => EscapedChar -> Notehead u
 letterNotehead = makeLetterNotehead 0
 
 
@@ -200,9 +393,9 @@ downstrokeLetter ch =
 
 
 makeLetterNotehead :: (Real u, Floating u, FromPtSize u) 
-                   => AfmUnit -> EscapedChar -> LocImage u AfmUnit
+                   => AfmUnit -> EscapedChar -> Notehead u
 makeLetterNotehead ypos ch = 
-    bboxAfmWidth $ scaleVMove ypos $ baseCenterEscChar ch
+    scaleVMove ypos $ baselineCharGlyph ch
 
 
 bboxAfmWidth :: Real u => BoundedLocGraphic u -> LocImage u AfmUnit
@@ -214,10 +407,10 @@ letterFlamGlyph :: (Real u, Floating u, FromPtSize u)
                 => EscapedChar -> LocGraphic u
 letterFlamGlyph ch = 
     lift0R1 getFontSize >>= \sz -> 
-    localize (fontSize $ (3 * sz) `div` 4) $ 
+    localize (scale_point_size 0.75) $ 
         let x = negate $ flam_xminor
             y = flam_baseline
-        in fmap (replaceL uNil) $ scaleMove x y $ baseCenterEscChar ch
+        in ignoreAns $ scaleMove x y $ baselineCharGlyph ch
 
 dotFlamGlyph :: (Fractional u, FromPtSize u) => LocGraphic u
 dotFlamGlyph = 
@@ -415,9 +608,8 @@ numberWidth i | i < 10    = number_width
 centeredTwoThirdsText :: (Real u, Floating u, FromPtSize u) 
                       => String -> LocGraphic u
 centeredTwoThirdsText ss =
-    lift0R1 getFontSize >>= \sz -> 
-    localize (fontSize $ (2 * sz) `div` 3) $ 
-      fmap (replaceL uNil) $ ctrCenterLine ss 
+    localize (scale_point_size (2/3)) $ 
+      ignoreAns $ startPosR CENTER $ textbox ss 
 
 --------------------------------------------------------------------------------
 -- half beam
@@ -432,24 +624,18 @@ halfBeam = scaleVMove half_beam_baseline loc_beam
 --------------------------------------------------------------------------------
 -- bar lines
 
-barline :: FromPtSize u => AdvGraphic u
-barline = makeAdvGraphic advanceUnitWidth loc_bar
-  where
-    loc_bar = lift0R1 (scaleVecPath [vvec barline_top]) >>= openStrokePath
+barline :: FromPtSize u => LocGraphic u
+barline = lift0R1 (scaleVecPath [vvec barline_top]) >>= openStrokePath
 
-lrepeat :: FromPtSize u => AdvGraphic u
-lrepeat = makeAdvGraphic advanceUnitWidth body
-  where
-    body = scaleVMove period_center $ 
+lrepeat :: FromPtSize u => LocGraphic u
+lrepeat = scaleVMove period_center $ 
              repeatSglStem `oplus` repeatDblStem (-repeat_h_spacing)
                            `oplus` repeatDots      repeat_dot_spacing
 
     
 
-rrepeat :: FromPtSize u => AdvGraphic u
-rrepeat = makeAdvGraphic advanceUnitWidth body
-  where
-    body = scaleVMove period_center $ 
+rrepeat :: FromPtSize u => LocGraphic u
+rrepeat = scaleVMove period_center $ 
              repeatSglStem `oplus` repeatDblStem repeat_h_spacing
                            `oplus` repeatDots  (-repeat_dot_spacing)
 
@@ -459,7 +645,7 @@ repeatSglStem = lift0R1 (scaleVecPath [vvec stem_top]) >>= openStrokePath
 
 repeatDblStem :: FromPtSize u => AfmUnit -> LocGraphic u
 repeatDblStem dx = 
-   localize thick $ scaleHMove dx $ 
+   localize line_thick $ scaleHMove dx $ 
                       lift0R1 (scaleVecPath [vvec stem_top]) >>= openStrokePath
 
 
@@ -494,15 +680,15 @@ scaleMove :: FromPtSize u
 scaleMove x y cf = 
     lift0R1 (scaleValue x) >>= \xu -> 
     lift0R1 (scaleValue y) >>= \yu -> 
-    moveStartPoint (displace xu yu) cf
+    moveStart (displace xu yu) cf
 
 scaleHMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
 scaleHMove x cf = 
-    lift0R1 (scaleValue x) >>= \xu -> moveStartPoint (displaceH xu) cf
+    lift0R1 (scaleValue x) >>= \xu -> moveStart (displaceH xu) cf
 
 scaleVMove :: FromPtSize u => AfmUnit -> LocImage u a -> LocImage u a
 scaleVMove y cf = 
-    lift0R1 (scaleValue y) >>= \yu -> moveStartPoint (displaceV yu) cf
+    lift0R1 (scaleValue y) >>= \yu -> moveStart (displaceV yu) cf
 
 
 scaleVecPath :: FromPtSize u => [Vec2 AfmUnit] -> DrawingInfo [Vec2 u]

@@ -21,7 +21,7 @@ main = do
     either fk sk =<< loadHelveticaMetrics
   where
     fk ss       = putStrLn ss
-    sk metrics  = let pic1 = runDrawingU (makeCtx metrics) djembe_drawing
+    sk metrics  = let pic1 = runCtxPictureU (makeCtx metrics) djembe_drawing
                   in do { writeEPS "./out/djembe_box_notation01.eps" pic1
                         ; writeSVG "./out/djembe_box_notation01.svg" pic1 
                         }
@@ -33,7 +33,7 @@ makeCtx :: GlyphMetrics -> DrawingContext
 makeCtx = joinBevel . fontFace helvetica . metricsContext 14
 
 
-djembe_drawing :: DDrawing
+djembe_drawing :: DCtxPicture
 djembe_drawing = drawTracing $ localize bothStrokeColour $ do 
    draw $ barLocGraphic sixteen_eighths                     `at` P2 0 600
    draw $ barLocGraphic triplets_16_8                       `at` P2 0 540
