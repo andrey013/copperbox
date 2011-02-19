@@ -25,6 +25,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * A semigroup class
     OPlus(..)
   , oconcat
+  , altconcat
 
   -- * A bifunctor class
   , Bimap(..)
@@ -60,12 +61,40 @@ infixr 6 `oplus`
 class OPlus t where
   oplus :: t -> t -> t
 
+-- | 'oconcat' : @ list_head * [rest] -> Ans @
+-- 
+-- Semigroup version of @mconcat@ from the module @Data.Monoid@.
+--
+-- As a semigroup cannot build a zero value, /concat/ cannot 
+-- handle the empty list. So to make 'oconcat' a safe function
+-- the input list is already destructured by one cons cell.
+-- 
+-- Effectively this means that client code must handle the 
+-- empty list case, before calling 'oconcat'.
+-- 
 oconcat :: OPlus t => t -> [t] -> t
 oconcat t = step t
   where
     step ac []     = ac
     step ac (x:xs) = step (ac `oplus` x) xs
 
+
+
+-- | 'altconcat' : @ alternative * [list] -> Ans@
+-- 
+-- 'altconcat' uses 'oplus' to create a summary value from a list
+-- of values. 
+--
+-- When supplied the empty list 'altconcat' returns the supplied 
+-- /alternative/ value. If the list is inhabited, the alternative
+-- value is discarded.
+--
+-- This contrasts to 'oconcat' where the single value represents 
+-- the head of an already destructured list.
+-- 
+altconcat :: OPlus a => a -> [a] -> a
+altconcat _   (x:xs) = oconcat x xs
+altconcat alt []     = alt
 
 
 instance OPlus () where

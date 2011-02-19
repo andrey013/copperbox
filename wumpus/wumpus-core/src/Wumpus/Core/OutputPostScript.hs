@@ -37,7 +37,6 @@ import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphNames
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.JoinList hiding ( cons )
 import Wumpus.Core.Utils.FormatCombinators
 

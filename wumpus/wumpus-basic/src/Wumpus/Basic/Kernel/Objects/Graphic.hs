@@ -37,7 +37,6 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , DLocThetaGraphic
 
   -- * Functions
-  , safeconcat
   , ignoreAns
   , replaceAns
   , mapAns
@@ -108,23 +107,6 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 --------------------------------------------------------------------------------
 -- Functions
 
-
--- | 'safeconcat' : @ alternative * [image] -> Image@
--- 
--- 'safeconcat' produces a composite 'Image' from a list of 
--- @Image@\'s. If the list is empty the alternative @Image@ is 
--- used.
---
--- This contrasts to 'oconcat' - when used for @Image@\'s, 
--- @oconcat@ has the same type signature as @safeconcat@ but 
--- @oconcat@ considers its arguments to be an already destructured 
--- list:
--- 
--- > oconcat (head::Image) (rest::[Image])
--- 
-safeconcat :: OPlus a => Image u a -> [Image u a] -> Image u a
-safeconcat _   (x:xs) = oconcat x xs
-safeconcat alt []     = alt
 
 
 -- | Ignore the answer produced by an 'Image', a 'LocImage' etc.

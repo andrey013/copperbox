@@ -150,7 +150,7 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 --
 -- Transform a 'TraceDrawing' into a 'CtxPicture'.
 --
-drawTracing :: (Real u, Floating u, FromPtSize u) 
+drawTracing :: (Real u, Floating u, PtSize u) 
             => TraceDrawing u a -> CtxPicture u
 drawTracing mf = CtxPicture $ 
     drawingCtx >>= \ctx -> return (liftToPictureMb $ execTraceDrawing ctx mf)
@@ -422,7 +422,7 @@ cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
 -- @rest@ in the function signature, rather than take a possibly
 -- empty list and have to throw an error.
 -- 
-cxpRow :: (Real u, Floating u, FromPtSize u) 
+cxpRow :: (Real u, Floating u, PtSize u) 
        => CtxPicture u -> [CtxPicture u] -> CtxPicture u
 cxpRow = foldl' cxpRight
 
@@ -433,7 +433,7 @@ cxpRow = foldl' cxpRight
 -- 
 -- Note - this function is in /destructor form/.
 --
-cxpColumn :: (Real u, Floating u, FromPtSize u) 
+cxpColumn :: (Real u, Floating u, PtSize u) 
           => CtxPicture u -> [CtxPicture u] -> CtxPicture u
 cxpColumn = foldl' cxpDown
 
@@ -478,7 +478,7 @@ cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpRowSep :: (Real u, Floating u, FromPtSize u) 
+cxpRowSep :: (Real u, Floating u, PtSize u) 
           => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
 cxpRowSep n = foldl' (cxpRightSep n)
 
@@ -490,7 +490,7 @@ cxpRowSep n = foldl' (cxpRightSep n)
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpColumnSep :: (Real u, Floating u, FromPtSize u) 
+cxpColumnSep :: (Real u, Floating u, PtSize u) 
              => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
 cxpColumnSep n = foldl' (cxpDownSep n)
 
@@ -568,7 +568,7 @@ cxpAlignSepV align dy = go align
 -- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating them.
 --
-cxpAlignRow :: (Real u, Floating u, FromPtSize u) 
+cxpAlignRow :: (Real u, Floating u, PtSize u) 
             => HAlign -> CtxPicture u-> [CtxPicture u] -> CtxPicture u
 cxpAlignRow ha = foldl' (cxpAlignH ha)
 
@@ -577,7 +577,7 @@ cxpAlignRow ha = foldl' (cxpAlignH ha)
 -- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating them.
 --
-cxpAlignColumn :: (Real u, Floating u, FromPtSize u) 
+cxpAlignColumn :: (Real u, Floating u, PtSize u) 
                => VAlign -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
 cxpAlignColumn va = foldl' (cxpAlignV va)
 
@@ -585,7 +585,7 @@ cxpAlignColumn va = foldl' (cxpAlignV va)
 -- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-cxpAlignRowSep :: (Real u, Floating u, FromPtSize u) 
+cxpAlignRowSep :: (Real u, Floating u, PtSize u) 
                  => HAlign -> u -> CtxPicture u -> [CtxPicture u] 
                  -> CtxPicture u
 cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
@@ -594,7 +594,7 @@ cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
 -- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-cxpAlignColumnSep :: (Real u, Floating u, FromPtSize u) 
+cxpAlignColumnSep :: (Real u, Floating u, PtSize u) 
                     => VAlign -> u -> CtxPicture u -> [CtxPicture u] 
                     -> CtxPicture u
 cxpAlignColumnSep va n = foldl' (cxpAlignSepV va n) 

@@ -108,8 +108,8 @@ type DrawingContextF = DrawingContext -> DrawingContext
 -- The default value is 2 point.
 --
 data TextMargin = TextMargin
-       { text_margin_x          :: !Pt
-       , text_margin_y          :: !Pt
+       { text_margin_x          :: !PsPoint
+       , text_margin_y          :: !PsPoint
        }
 
 
@@ -313,7 +313,7 @@ query f = queryCtx >>= (return . f)
 
 
 
-withFontMetrics :: (FontMetrics -> PtSize -> u) -> DrawingContext -> u
+withFontMetrics :: (FontMetrics -> PsPoint -> u) -> DrawingContext -> u
 withFontMetrics fn ctx@(DrawingContext { dc_font_face = fface
                                        , dc_font_size = fsize }) = 
       fn metric_set point_sz

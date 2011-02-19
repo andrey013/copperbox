@@ -121,7 +121,7 @@ library
                       directory       >= 1.0     && <  2.0, 
                       filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6     && <  1.0,
-                      wumpus-core     >= 0.44.0  && <  0.45.0
+                      wumpus-core     >= 0.45.0  && <  0.46.0
 
   
   exposed-modules:

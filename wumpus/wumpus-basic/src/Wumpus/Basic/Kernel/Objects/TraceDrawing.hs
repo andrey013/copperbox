@@ -250,7 +250,7 @@ evalTraceDrawingT ctx ma = liftM fst $ runTraceDrawingT ctx ma
 --
 -- If the HPrim is empty, a run-time error is thrown.
 -- 
-liftToPictureU :: (Real u, Floating u, FromPtSize u) => HPrim u -> Picture u
+liftToPictureU :: (Real u, Floating u, PtSize u) => HPrim u -> Picture u
 liftToPictureU hf = 
     let prims = hprimToList hf in if null prims then errK else frame prims
   where
@@ -260,7 +260,7 @@ liftToPictureU hf =
 --
 -- If the HPrim is empty, then @Nothing@ is returned.
 -- 
-liftToPictureMb :: (Real u, Floating u, FromPtSize u) 
+liftToPictureMb :: (Real u, Floating u, PtSize u) 
                 => HPrim u -> Maybe (Picture u)
 liftToPictureMb hf = let prims = hprimToList hf in 
     if null prims then Nothing else Just (frame prims)
@@ -278,7 +278,7 @@ liftToPictureMb hf = let prims = hprimToList hf in
 --
 -- If the supplied value is @Nothing@ a run-time error is thrown.
 -- 
-mbPictureU :: (Real u, Floating u, FromPtSize u) 
+mbPictureU :: (Real u, Floating u, PtSize u) 
            => Maybe (Picture u) -> Picture u
 mbPictureU Nothing  = error "mbPictureU - empty picture."
 mbPictureU (Just a) = a
@@ -436,7 +436,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 -- | Draw with grid coordinate...
 --
-node :: (Fractional u, FromPtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
+node :: (Fractional u, PtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
      => (Int,Int) -> LocGraphic u -> m ()
 node coord gf = queryCtx          >>= \ctx -> 
                 position coord >>= \pt  -> 
@@ -445,7 +445,7 @@ node coord gf = queryCtx          >>= \ctx ->
 
 -- | Draw with grid coordinate...
 -- 
-nodei :: ( Fractional u, FromPtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
+nodei :: ( Fractional u, PtSize u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => (Int,Int) -> LocImage u a -> m a
 nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
@@ -457,14 +457,14 @@ nodei coord imgL = queryCtx    >>= \ctx ->
  
 -- | Draw with grid coordinate...
 --
-nodei_ :: (Fractional u, TraceM m, FromPtSize u, DrawingCtxM m, u ~ DUnit (m ()))
+nodei_ :: (Fractional u, TraceM m, PtSize u, DrawingCtxM m, u ~ DUnit (m ()))
        => (Int,Int) -> LocImage u a -> m ()
 nodei_ coord imgL = nodei coord imgL >> return ()
 
 
 
 cxdraw :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ())) 
-         => DrawingInfo (Point2 u) -> LocGraphic u -> m ()
+       => DrawingInfo (Point2 u) -> LocGraphic u -> m ()
 cxdraw pf gf = 
     queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
                               (_,o) = runCF1 ctx pt gf 
@@ -483,7 +483,7 @@ cxdrawi_ pf gf = cxdrawi pf gf >> return ()
 
 
 
-drawrc :: ( Real u, Floating u, FromPtSize u
+drawrc :: ( Real u, Floating u, PtSize u
           , CenterAnchor t1, RadialAnchor  t1
           , CenterAnchor t2, RadialAnchor  t2
           , DrawingCtxM m,   TraceM m
@@ -493,7 +493,7 @@ drawrc a b gf = let (p0,p1) = radialConnectorPoints a b
                 in draw (connect gf p0 p1)
 
 
-drawrci :: ( Real u, Floating u, FromPtSize u
+drawrci :: ( Real u, Floating u, PtSize u
            , CenterAnchor t1, RadialAnchor  t1
            , CenterAnchor t2, RadialAnchor  t2
            , DrawingCtxM m,   TraceM m
@@ -502,7 +502,7 @@ drawrci :: ( Real u, Floating u, FromPtSize u
 drawrci a b gf = let (p0,p1) = radialConnectorPoints a b 
                  in drawci p0 p1 gf
 
-drawrci_ :: ( Real u, Floating u, FromPtSize u
+drawrci_ :: ( Real u, Floating u, PtSize u
             , CenterAnchor t1, RadialAnchor  t1
             , CenterAnchor t2, RadialAnchor  t2
             , DrawingCtxM m,   TraceM m

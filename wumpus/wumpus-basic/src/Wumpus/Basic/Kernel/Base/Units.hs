@@ -18,11 +18,9 @@
 module Wumpus.Basic.Kernel.Base.Units
   ( 
 
-  -- * Type class ToPtSize
-    ToPtSize(..)
 
   -- * Convert a Double
-  , dpoint
+    dpoint
 
   -- * Centimeter type
   , Centimeter   
@@ -38,6 +36,7 @@ module Wumpus.Basic.Kernel.Base.Units
 import Wumpus.Core                              -- package: wumpus-core
 
 
+{-
 -- | Note the Double instance performs no scaling. As per 
 -- PostScript where the default unit-size is Point, Wumpus 
 -- considers Haskell Doubles to be synonymous with Point.
@@ -51,6 +50,7 @@ instance ToPtSize Double where
 
 instance ToPtSize PtSize where
   toPtSize = id
+-}
 
 --------------------------------------------------------------------------------
 
@@ -58,10 +58,10 @@ instance ToPtSize PtSize where
 -- point size.
 -- 
 -- This function casts a Double to another unit (e.g. @pica@) that
--- supports @FromPtSize@.
+-- supports @PtSize@.
 --
-dpoint :: FromPtSize u => Double -> u
-dpoint = fromPtSize . toPtSize
+dpoint :: PtSize u => Double -> u
+dpoint = fromPsPoint . toPsPoint
 
 --------------------------------------------------------------------------------
 
@@ -74,11 +74,9 @@ instance Show Centimeter where
   showsPrec p d = showsPrec p (getCentimeter d)
 
 
-instance FromPtSize Centimeter where
-  fromPtSize = Centimeter . (0.03514598 *) . ptSize
-
-instance ToPtSize Centimeter where
-  toPtSize = cm
+instance PtSize Centimeter where
+  fromPsPoint = Centimeter . (0.03514598 *) . ptSize
+  toPsPoint   = cm
                             
 cm :: Fractional u => Centimeter -> u 
 cm = realToFrac . (28.45275619 *) . getCentimeter
@@ -98,11 +96,12 @@ instance Show Pica where
   showsPrec p d = showsPrec p (getPica d)
 
 
-instance FromPtSize Pica where
-  fromPtSize = Pica . (\x -> x / 12.0) . ptSize
+instance PtSize Pica where
+  fromPsPoint = Pica . (\x -> x / 12.0) . ptSize
+  toPsPoint   = pica
 
-instance ToPtSize Pica where
-  toPtSize = pica
+instance Format Pica where
+  format = format . toPsPoint
                             
 pica :: Fractional u => Pica -> u 
 pica = realToFrac . (* 12.0) . getPica

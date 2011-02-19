@@ -42,7 +42,7 @@ module Wumpus.Core.PtSize
   ) where
 
 import Wumpus.Core.Utils.Common
-import qualified Wumpus.Core.Utils.FormatCombinators as Fmt
+import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Ratio
 
@@ -57,6 +57,9 @@ newtype PsPoint = PsPoint
 instance Show PsPoint where
   showsPrec p d = showsPrec p (psPoint d)
 
+instance Format PsPoint where
+  format = psptFmt
+
 -- | Extract a point size as a @Double@.
 --
 ptSize :: PsPoint -> Double
@@ -64,31 +67,6 @@ ptSize = psPoint
 
 
 
-
-{-
--- | Conversion to to PostScript point units for printing.
---
--- Instances must define at least @toDouble@.
---
-class Num a => PSUnit a where
-  toDouble :: a -> Double
-  dtrunc   :: a -> String
-  
-  dtrunc = truncateDouble . toDouble
-
-instance PSUnit Double where
-  toDouble = id
-  dtrunc   = truncateDouble
-
-instance PSUnit Float where
-  toDouble = realToFrac
-
-instance PSUnit (Ratio Integer) where
-  toDouble = realToFrac
-
-instance PSUnit (Ratio Int) where
-  toDouble = realToFrac
--}
 
 
 -- | Convert units to and from PsPoint scaling accordingly.
@@ -145,5 +123,5 @@ pspt = truncateDouble . psPoint . toPsPoint
 
 -- | Version of 'pspt' for Wumpus-Core\'s internal pretty printer.
 --
-psptFmt :: PtSize u => u -> Fmt.Doc
+psptFmt :: PtSize u => u -> Doc
 psptFmt = dtruncFmt . psPoint . toPsPoint
