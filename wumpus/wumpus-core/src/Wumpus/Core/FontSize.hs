@@ -91,7 +91,7 @@ instance Show PtScale where
 --
 -- Scale the point size by the scale factor.
 --
-ptSizeScale :: PtScale -> PtSize -> PtSize 
+ptSizeScale :: PtScale -> PsPoint -> PsPoint 
 ptSizeScale sc sz = sz * realToFrac sc
 
 
@@ -183,7 +183,7 @@ mono_right_margin = 0.050
 -- | Approximate the width of a monospace character using 
 -- metrics derived from the Courier font.
 --
-charWidth :: FontSize -> PtSize
+charWidth :: FontSize -> PsPoint
 charWidth = ptSizeScale mono_width . fromIntegral
 
 
@@ -196,7 +196,7 @@ charWidth = ptSizeScale mono_width . fromIntegral
 -- NOTE - this does not account for any left and right margins 
 -- around the printed text.
 --
-textWidth :: FontSize -> CharCount -> PtSize
+textWidth :: FontSize -> CharCount -> PsPoint
 textWidth _  n | n <= 0 = 0
 textWidth sz n          = fromIntegral n * charWidth sz
 
@@ -204,20 +204,20 @@ textWidth sz n          = fromIntegral n * charWidth sz
 -- | Height of capitals e.g. \'A\' using metrics derived 
 -- the Courier monospaced font.
 --
-capHeight :: FontSize -> PtSize
+capHeight :: FontSize -> PsPoint
 capHeight = fromIntegral
 
 
 -- | Height of the lower-case char \'x\' using metrics derived 
 -- the Courier monospaced font.
 --
-xcharHeight :: FontSize -> PtSize
+xcharHeight :: FontSize -> PsPoint
 xcharHeight = ptSizeScale mono_x_height . fromIntegral
 
 -- | The total height span of the glyph bounding box for the 
 -- Courier monospaced font.
 --
-totalCharHeight :: FontSize -> PtSize
+totalCharHeight :: FontSize -> PsPoint
 totalCharHeight sz = let sz' = fromIntegral sz in 
     ptSizeScale mono_max_height sz' + negate (ptSizeScale mono_max_depth sz')
   
@@ -225,7 +225,7 @@ totalCharHeight sz = let sz' = fromIntegral sz in
 -- | Ascender height for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
-ascenderHeight :: FontSize -> PtSize
+ascenderHeight :: FontSize -> PsPoint
 ascenderHeight = ptSizeScale mono_ascender . fromIntegral 
 
 
@@ -233,7 +233,7 @@ ascenderHeight = ptSizeScale mono_ascender . fromIntegral
 -- | Descender depth for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
-descenderDepth :: FontSize -> PtSize
+descenderDepth :: FontSize -> PsPoint
 descenderDepth = ptSizeScale mono_descender . fromIntegral 
 
 
@@ -250,7 +250,7 @@ descenderDepth = ptSizeScale mono_descender . fromIntegral
 -- For proportional fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: (Num u, Ord u, FromPtSize u) 
+textBounds :: (Num u, Ord u, PtSize u) 
            => FontSize -> Point2 u -> String -> BoundingBox u
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
@@ -259,21 +259,21 @@ textBounds sz pt ss = textBoundsBody sz pt (charCount ss)
 -- 
 --  Version of textBounds for already escaped text.
 --
-textBoundsEsc :: (Num u, Ord u, FromPtSize u) 
+textBoundsEsc :: (Num u, Ord u, PtSize u) 
            => FontSize -> Point2 u -> EscapedText -> BoundingBox u
 textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc) 
 
 
-textBoundsBody :: (Num u, Ord u, FromPtSize u) 
+textBoundsBody :: (Num u, Ord u, PtSize u) 
                => FontSize -> Point2 u -> Int -> BoundingBox u
 textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
     pt_sz       = fromIntegral sz
-    w           = fromPtSize $ textWidth  sz len
-    left_m      = fromPtSize $ ptSizeScale mono_left_margin  pt_sz
-    right_m     = fromPtSize $ ptSizeScale mono_right_margin pt_sz
-    max_depth   = fromPtSize $ ptSizeScale mono_max_depth  pt_sz
-    max_height  = fromPtSize $ ptSizeScale mono_max_height pt_sz
+    w           = fromPsPoint $ textWidth  sz len
+    left_m      = fromPsPoint $ ptSizeScale mono_left_margin  pt_sz
+    right_m     = fromPsPoint $ ptSizeScale mono_right_margin pt_sz
+    max_depth   = fromPsPoint $ ptSizeScale mono_max_depth  pt_sz
+    max_height  = fromPsPoint $ ptSizeScale mono_max_height pt_sz
     ll          = P2 (x + left_m)      (y + max_depth)
     ur          = P2 (x + w + right_m) (y + max_height)
 

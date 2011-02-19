@@ -93,7 +93,6 @@ module Wumpus.Core.Geometry
   ) where
 
 
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
 import Data.AffineSpace                         -- package: vector-space
@@ -308,18 +307,18 @@ instance Ord Radian where
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-instance PSUnit u => Format (Vec2 u) where
-  format (V2 a b) = parens (text "Vec" <+> dtruncFmt a <+> dtruncFmt b)
+instance Format u => Format (Vec2 u) where
+  format (V2 a b) = parens (text "Vec" <+> format a <+> format b)
 
-instance PSUnit u => Format (Point2 u) where
-  format (P2 a b) = parens (dtruncFmt a <> comma <+> dtruncFmt b)
+instance Format u => Format (Point2 u) where
+  format (P2 a b) = parens (format a <> comma <+> format b)
 
-instance PSUnit u => Format (Matrix3'3 u) where
+instance Format u => Format (Matrix3'3 u) where
   format (M3'3 a b c  d e f  g h i) = 
       vcat [matline a b c, matline d e f, matline g h i]
     where
       matline x y z = char '|' 
-         <+> (hcat $ map (fill 12 . dtruncFmt) [x,y,z]) 
+         <+> (hcat $ map (fill 12 . format) [x,y,z]) 
          <+> char '|'   
 
 

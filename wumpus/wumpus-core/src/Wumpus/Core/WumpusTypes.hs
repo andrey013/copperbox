@@ -48,12 +48,31 @@ module Wumpus.Core.WumpusTypes
   , KerningChar
   , DKerningChar
 
-  -- * Printable unit for PostScript
-  , PSUnit(..)
+  , Format(..)
+  , stringformat
 
   ) where
 
 
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Utils.Common ( PSUnit(..) )
+import Wumpus.Core.Utils.FormatCombinators ( Format(..), text, Doc )
 
+
+
+
+-- | 'stringformat' : String -> Doc
+--
+-- The format combinators are not exported by Wumpus-Core, 
+-- however for debugging unit types might need to be made 
+-- instances of the 'Format' class.
+-- 
+-- To define Format instances render the unit type to a String
+-- then use 'stringformat', e.g:
+--
+-- >
+-- > instance Format Pica where
+-- >   format a = stringformat (show a)
+-- >
+--
+stringformat :: String -> Doc
+stringformat = text

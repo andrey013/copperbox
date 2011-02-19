@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.44.0
+version:          0.45.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -48,7 +48,12 @@ description:
   .
   Changelog:
   .
-  v0.43.0 to v0.44.0:
+  v0.43.0 to v0.45.0:
+  .
+  * Major change hence the version number jump - re-worked unit 
+    type classes. The classes @PSUnit@ and @FromPtSize@ are 
+    replaced by the class @PtSize@. The name @PtSize@ was 
+    previously used for a type name - this type is now @PsPoint@.
   .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.
@@ -56,10 +61,10 @@ description:
     @clip@ in @Core.Picture@ has likewise changed.
   .
   * API change - the @StrokeAttr@ dataype now represents 
-    line_width and miter_limit with the @Pt@ type rather than a 
-    Double. These sizes represent the same measurement (Double 
-    implicitly means PostScript point to Wumpus), but using @Pt@
-    is more exact.
+    line_width and miter_limit with the @PsPoint@ type rather than 
+    a Double. These sizes represent the same measurement (Double 
+    implicitly means PostScript point to Wumpus), but using 
+    @PsPoint@ is more exact.
   .
   v0.42.1 to v0.43.0:
   .

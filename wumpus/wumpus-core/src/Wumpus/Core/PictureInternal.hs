@@ -69,7 +69,6 @@ import Wumpus.Core.GraphicProps
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
@@ -339,7 +338,7 @@ type instance DUnit (PrimPath u)    = u
 -- instances
 
 
-instance (Num u, PSUnit u) => Format (Picture u) where
+instance Format u => Format (Picture u) where
   format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
                                               , fmtLocale m 
                                               , fmtPrimlist prims ]
@@ -349,17 +348,17 @@ instance (Num u, PSUnit u) => Format (Picture u) where
                                               , fmtPics pics ]
  
 
-fmtPics :: PSUnit u => JoinList (Picture u) -> Doc
+fmtPics :: Format u => JoinList (Picture u) -> Doc
 fmtPics ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
 
 
-fmtLocale :: (Num u, PSUnit u) => Locale u -> Doc
+fmtLocale :: Format u => Locale u -> Doc
 fmtLocale (bb,_) = format bb
 
 
-instance PSUnit u => Format (Primitive u) where
+instance Format u => Format (Primitive u) where
   format (PPath props p)    = 
       indent 2 $ vcat [ text "path:" <+> format props, format p ]
 
@@ -383,38 +382,38 @@ instance PSUnit u => Format (Primitive u) where
 
 
 
-fmtPrimlist :: PSUnit u => JoinList (Primitive u) -> Doc
+fmtPrimlist :: Format u => JoinList (Primitive u) -> Doc
 fmtPrimlist ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- leaf" <+> int n, format e, line])
 
 
-instance PSUnit u => Format (PrimPath u) where
+instance Format u => Format (PrimPath u) where
    format (PrimPath pt ps) = vcat (start : map format ps)
       where
         start = text "start_point " <> format pt
 
-instance PSUnit u => Format (PrimPathSegment u) where
+instance Format u => Format (PrimPathSegment u) where
   format (RelCurveTo p1 p2 p3)  =
     text "rel_curve_to " <> format p1 <+> format p2 <+> format p3
 
   format (RelLineTo pt)         = text "rel_line_to  " <> format pt
 
-instance PSUnit u => Format (PrimLabel u) where
+instance Format u => Format (PrimLabel u) where
   format (PrimLabel s ctm) = 
      vcat [ dquotes (format s)
           , text "ctm="           <> format ctm
           ]
 
-instance PSUnit u => Format (LabelBody u) where
+instance Format u => Format (LabelBody u) where
   format (StdLayout enctext) = format enctext
   format (KernTextH xs)      = text "(KernH)" <+> hcat (map (format .snd) xs)
   format (KernTextV xs)      = text "(KernV)" <+> hcat (map (format .snd) xs)
 
 
-instance PSUnit u => Format (PrimEllipse u) where
-  format (PrimEllipse hw hh ctm) =  text "hw="       <> dtruncFmt hw
-                                <+> text "hh="       <> dtruncFmt hh
+instance Format u => Format (PrimEllipse u) where
+  format (PrimEllipse hw hh ctm) =  text "hw="       <> format hw
+                                <+> text "hh="       <> format hh
                                 <+> text "ctm="      <> format ctm
   
 
@@ -429,7 +428,7 @@ instance Boundary (Picture u) where
   boundary (Picture (bb,_) _)   = bb
 
 
-instance (Real u, Floating u, FromPtSize u) => Boundary (Primitive u) where
+instance (Real u, Floating u, PtSize u) => Boundary (Primitive u) where
   boundary (PPath _ p)      = pathBoundary p
   boundary (PLabel a l)     = labelBoundary (label_font a) l
   boundary (PEllipse _ e)   = ellipseBoundary e
@@ -476,7 +475,7 @@ pathBoundary (PrimPath st xs) = step st (st,st) xs
  
 
 
-labelBoundary :: (Floating u, Real u, FromPtSize u) 
+labelBoundary :: (Floating u, Real u, PtSize u) 
               => FontAttr -> PrimLabel u -> BoundingBox u
 labelBoundary attr (PrimLabel body ctm) = 
     retraceBoundary (m33 *#) untraf_bbox
@@ -484,14 +483,14 @@ labelBoundary attr (PrimLabel body ctm) =
     m33         = matrixRepCTM ctm
     untraf_bbox = labelBodyBoundary (font_size attr) body
 
-labelBodyBoundary :: (Num u, Ord u, FromPtSize u) 
+labelBodyBoundary :: (Num u, Ord u, PtSize u) 
                   => FontSize -> LabelBody u -> BoundingBox u
 labelBodyBoundary sz (StdLayout etxt) = stdLayoutBB sz etxt
 labelBodyBoundary sz (KernTextH xs)   = hKerningBB sz xs
 labelBodyBoundary sz (KernTextV xs)   = vKerningBB sz xs
 
 
-stdLayoutBB :: (Num u, Ord u, FromPtSize u) 
+stdLayoutBB :: (Num u, Ord u, PtSize u) 
             => FontSize -> EscapedText -> BoundingBox u
 stdLayoutBB sz etxt = textBoundsEsc sz zeroPt etxt
 
@@ -504,7 +503,7 @@ stdLayoutBB sz etxt = textBoundsEsc sz zeroPt etxt
 -- then expands the right edge with the sum of the (rightwards)
 -- displacements.
 -- 
-hKerningBB :: (Num u, Ord u, FromPtSize u) 
+hKerningBB :: (Num u, Ord u, PtSize u) 
            => FontSize -> [(u,EscapedChar)] -> BoundingBox u
 hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
   where
@@ -521,7 +520,7 @@ hKerningBB sz xs = rightGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
 -- 
 -- Also note, that the Label /grows/ downwards...
 --
-vKerningBB :: (Num u, Ord u, FromPtSize u) 
+vKerningBB :: (Ord u, PtSize u) 
            => FontSize -> [(u,EscapedChar)] -> BoundingBox u
 vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
   where
@@ -741,24 +740,27 @@ deconsMatrix (M3'3 e0x e1x ox
 
 
 
--- If a picture has coordinates smaller than (P2 4 4) then it 
--- needs repositioning before it is drawn to PostScript or SVG.
+-- If a picture has coordinates smaller than (P2 4 4) especially
+-- negative ones then it needs repositioning before it is drawn 
+-- to PostScript or SVG.
 -- 
 -- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
 -- user defined.
 --
-repositionDeltas :: (Num u, Ord u) 
+repositionDeltas :: (PtSize u, Ord u) 
                  => Picture u -> (BoundingBox u, Maybe (Vec2 u))
 repositionDeltas = step . boundary 
   where
     step bb@(BBox (P2 llx lly) (P2 urx ury))
-        | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
-        | otherwise           = (bb, Nothing)
+        | llx < unit4 || lly < unit4  = (BBox ll ur, Just $ V2 x y)
+        | otherwise                   = (bb, Nothing)
       where 
-        x  = 4 - llx
-        y  = 4 - lly
+        x  = unit4 - llx
+        y  = unit4 - lly
         ll = P2 (llx+x) (lly+y)
         ur = P2 (urx+x) (ury+y) 
+
+    unit4 = fromPsPoint 4
 
 
 --------------------------------------------------------------------------------
@@ -766,7 +768,7 @@ repositionDeltas = step . boundary
 -- | The initial graphics state.
 --
 -- PostScript has no default font so we always want the first 
--- /delta/ operation not to find a match and cause a @findfint@
+-- /delta/ operation not to find a match and cause a @findfont@
 -- command to be generated (PostScript @findfont@ commands are 
 -- only written in the output on /deltas/ to reduce the 
 -- output size).

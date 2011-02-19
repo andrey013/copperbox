@@ -115,7 +115,6 @@ import Wumpus.Core.PictureInternal
 import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
 import Wumpus.Core.Utils.HList
 import Wumpus.Core.Utils.JoinList
@@ -139,7 +138,7 @@ import Data.List ( mapAccumL )
 -- \*\* WARNING \*\* - this function throws a runtime error when 
 -- supplied the empty list.
 --
-frame :: (Real u, Floating u, FromPtSize u) => [Primitive u] -> Picture u
+frame :: (Real u, Floating u, PtSize u) => [Primitive u] -> Picture u
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
 frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
@@ -807,7 +806,7 @@ a `picBeside` b = a `picOver` (b `picMoveBy` v)
 
 -- | Print the syntax tree of a Picture to the console.
 --
-printPicture :: (Num u, PSUnit u) => Picture u -> IO ()
+printPicture :: (Num u, Format u) => Picture u -> IO ()
 printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 
 
@@ -816,7 +815,7 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 -- Draw the picture on top of an image of its bounding box.
 -- The bounding box image will be drawn in the supplied colour.
 --
-illustrateBounds :: (Real u, Floating u, FromPtSize u) 
+illustrateBounds :: (Real u, Floating u, PtSize u) 
                  => RGBi -> Picture u -> Picture u
 illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p $ []) 
 
@@ -828,7 +827,7 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p $ [])
 --
 -- The result will be lifted from Primitive to Picture.
 -- 
-illustrateBoundsPrim :: (Real u, Floating u, FromPtSize u) 
+illustrateBoundsPrim :: (Real u, Floating u, PtSize u) 
                      => RGBi -> Primitive u -> Picture u
 illustrateBoundsPrim rgb p = frame $ boundsPrims rgb p $ [p]
 
@@ -858,7 +857,7 @@ boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
 -- This has no effect on TextLabels. Nor does it draw Beziers of 
 -- a hyperlinked object.
 -- 
-illustrateControlPoints :: (Real u, Floating u, FromPtSize u)
+illustrateControlPoints :: (Real u, Floating u, PtSize u)
                         => RGBi -> Primitive u -> Picture u
 illustrateControlPoints rgb elt = frame $ fn elt
   where

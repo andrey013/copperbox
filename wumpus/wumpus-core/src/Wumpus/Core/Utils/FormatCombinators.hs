@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Utils.FormatCombinators
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -120,7 +120,19 @@ instance Monoid Doc where
   mappend = (<>)
 
 
+--------------------------------------------------------------------------------
+
 class Format a where format :: a -> Doc
+
+instance Format Int where
+  format = int
+
+instance Format Integer where
+  format = integer
+
+instance Format Double where
+  format = double
+
 
 --------------------------------------------------------------------------------
         

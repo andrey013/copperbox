@@ -29,7 +29,6 @@ module Wumpus.Core.Utils.Common
   , rescale
 
   -- * Truncate / print a double
-  , PSUnit(..)
   , dtruncFmt
 
   , truncateDouble
@@ -47,7 +46,6 @@ module Wumpus.Core.Utils.Common
 import qualified Wumpus.Core.Utils.FormatCombinators as Fmt
 
 
-import Data.Ratio
 import Data.Time
 
 data Opt a = None | Some !a 
@@ -76,27 +74,9 @@ rescale (amin,amax) (bmin,bmax) a =
 --------------------------------------------------------------------------------
 -- PS Unit
 
-class Num a => PSUnit a where
-  toDouble :: a -> Double
-  dtrunc   :: a -> String
-  
-  dtrunc = truncateDouble . toDouble
-
-instance PSUnit Double where
-  toDouble = id
-  dtrunc   = truncateDouble
-
-instance PSUnit Float where
-  toDouble = realToFrac
-
-instance PSUnit (Ratio Integer) where
-  toDouble = realToFrac
-
-instance PSUnit (Ratio Int) where
-  toDouble = realToFrac
-
-dtruncFmt :: PSUnit a => a -> Fmt.Doc
-dtruncFmt = Fmt.text . dtrunc
+-- 
+dtruncFmt :: Double -> Fmt.Doc
+dtruncFmt = Fmt.text . truncateDouble
 
 
 -- | Truncate the printed decimal representation of a Double.

@@ -48,7 +48,6 @@ import Wumpus.Core.SVGDoc
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphIndices
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
@@ -110,14 +109,14 @@ askGraphicsState = SvgMonad $ \r s -> (r,s)
 asksGraphicsState :: (GraphicsState -> a) -> SvgMonad a
 asksGraphicsState fn = fmap fn askGraphicsState
 
-askFontAttr :: SvgMonad FontAttr
-askFontAttr = asksGraphicsState $ \r -> 
-                FontAttr (gs_font_size r) (gs_font_face r)
+askFontAttr     :: SvgMonad FontAttr
+askFontAttr     = asksGraphicsState $ \r -> 
+                    FontAttr (gs_font_size r) (gs_font_face r)
 
-askLineWidth    :: SvgMonad Pt
+askLineWidth    :: SvgMonad PsPoint
 askLineWidth    = asksGraphicsState (line_width . gs_stroke_attr)
 
-askMiterLimit   :: SvgMonad Pt
+askMiterLimit   :: SvgMonad PsPoint
 askMiterLimit   = asksGraphicsState (miter_limit . gs_stroke_attr)
 
 askLineCap      :: SvgMonad LineCap
@@ -144,7 +143,7 @@ svgChar (CharEscName s)                 =
 
 -- | Output a picture to a SVG file. 
 --
-writeSVG :: (Real u, Floating u, PSUnit u) 
+writeSVG :: (Real u, Floating u, PtSize u) 
          => FilePath -> Picture u -> IO ()
 writeSVG filepath pic = 
     writeFile filepath $ show $ svgDraw Nothing pic 
@@ -154,13 +153,13 @@ writeSVG filepath pic =
 -- Output a picture to a SVG file the supplied /defs/ are
 -- written into the defs section of SVG file verbatim. 
 --
-writeSVG_defs :: (Real u, Floating u, PSUnit u) 
+writeSVG_defs :: (Real u, Floating u, PtSize u) 
               => FilePath -> String -> Picture u -> IO ()
 writeSVG_defs filepath ss pic = 
     writeFile filepath $ show $ svgDraw (Just ss) pic 
 
 
-svgDraw :: (Real u, Floating u, PSUnit u) 
+svgDraw :: (Real u, Floating u, PtSize u) 
         => Maybe String -> Picture u -> Doc
 svgDraw mb_defs original_pic = 
     let pic          = trivialTranslation original_pic
@@ -171,7 +170,7 @@ svgDraw mb_defs original_pic =
 
 
 
-imageTranslation :: (Ord u, PSUnit u) 
+imageTranslation :: (Ord u, PtSize u) 
                  => Picture u -> (BoundingBox u, Doc -> Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, id)
@@ -181,7 +180,7 @@ imageTranslation pic = case repositionDeltas pic of
 --------------------------------------------------------------------------------
 
 
-picture :: (Real u, Floating u, PSUnit u) => Picture u -> SvgMonad Doc
+picture :: (Real u, Floating u, PtSize u) => Picture u -> SvgMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 
@@ -196,7 +195,7 @@ oneConcat fn ones = outstep (viewl ones)
     instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
-primitive :: (Real u, Floating u, PSUnit u) => Primitive u -> SvgMonad Doc
+primitive :: (Real u, Floating u, PtSize u) => Primitive u -> SvgMonad Doc
 primitive (PPath props pp)      
     | isEmptyPath pp            = pure empty
     | otherwise                 = primPath props pp
@@ -241,12 +240,12 @@ drawGProps xs d = elem_g attrs_doc d
 svgAttribute :: SvgAttr -> Doc
 svgAttribute (SvgAttr n v) = svgAttr n $ text v
  
-clipPath :: PSUnit u => String -> PrimPath u -> Doc
+clipPath :: PtSize u => String -> PrimPath u -> Doc
 clipPath clip_id pp = 
     elem_clipPath (attr_id clip_id) (elem_path_no_attrs $ path pp) 
 
 
-primPath :: PSUnit u => PathProps -> PrimPath u -> SvgMonad Doc
+primPath :: PtSize u => PathProps -> PrimPath u -> SvgMonad Doc
 primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 
 --
@@ -261,7 +260,7 @@ primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 -- an encouragement to change when it moved to relative ones. 
 -- 
 
-path :: PSUnit u => PrimPath u -> Doc
+path :: PtSize u => PrimPath u -> Doc
 path (PrimPath start xs) = 
     path_m start <+> hsep (snd $ mapAccumL step start xs)
   where
@@ -298,7 +297,7 @@ pathProps props = fn props
 
 -- Note - if hw==hh then draw the ellipse as a circle.
 --
-primEllipse :: (Real u, Floating u, PSUnit u)
+primEllipse :: (Real u, Floating u, PtSize u)
             => EllipseProps -> PrimEllipse u -> SvgMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
@@ -332,7 +331,7 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 -- 
 --
 
-primLabel :: (Real u, Floating u, PSUnit u) 
+primLabel :: (Real u, Floating u, PtSize u) 
       => LabelProps -> PrimLabel u -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
     (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
@@ -342,7 +341,7 @@ primLabel (LabelProps rgb attrs) (PrimLabel body ctm) =
     coordf = \p0 -> pure $ labelBodyCoords body p0
     dtext  = labelBodyText body
 
-labelBodyCoords :: PSUnit u => LabelBody u -> Point2 u -> Doc
+labelBodyCoords :: PtSize u => LabelBody u -> Point2 u -> Doc
 labelBodyCoords (StdLayout _)  pt = makeXY pt
 labelBodyCoords (KernTextH xs) pt = makeXsY pt xs        
 labelBodyCoords (KernTextV xs) pt = makeXYs pt xs
@@ -364,7 +363,7 @@ kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
 makeTspan :: RGBi -> Doc -> Doc
 makeTspan rgb body = elem_tspan (attr_fill rgb) body
 
-makeXY :: PSUnit u => Point2 u -> Doc
+makeXY :: PtSize u => Point2 u -> Doc
 makeXY (P2 x y) = attr_x x <+> attr_y y
 
 -- This is for horizontal kerning text, the output is of the 
@@ -372,7 +371,7 @@ makeXY (P2 x y) = attr_x x <+> attr_y y
 -- 
 -- > x="0 10 25 35" y="0"
 --
-makeXsY :: PSUnit u => Point2 u -> [KerningChar u] -> Doc
+makeXsY :: PtSize u => Point2 u -> [KerningChar u] -> Doc
 makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
   where 
     step ax ((d,_):ds) = let a = ax+d in a : step a ds 
@@ -387,7 +386,7 @@ makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
 -- Note - this is different to the horizontal version as the 
 -- x-coord needs to be /realigned/ at each step.
 --
-makeXYs :: PSUnit u => Point2 u -> [KerningChar u] -> Doc
+makeXYs :: PtSize u => Point2 u -> [KerningChar u] -> Doc
 makeXYs (P2 x y) ks = attr_xs xcoords <+> attr_ys (step y ks)
   where 
     xcoords            = replicate (length ks) x
@@ -498,11 +497,11 @@ bracketGS (FontCtx new_font) mf =
 --------------------------------------------------------------------------------
 -- Bracket matrix and PrimCTM trafos
 
-bracketTrafos :: (Real u, Floating u, PSUnit u) 
+bracketTrafos :: (Real u, Floating u, PtSize u) 
               => [AffineTrafo u] -> SvgMonad Doc -> SvgMonad Doc
 bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
-bracketMatrix :: (Fractional u, PSUnit u) 
+bracketMatrix :: (Fractional u, PtSize u) 
               => Matrix3'3 u -> SvgMonad Doc -> SvgMonad Doc
 bracketMatrix mtrx ma 
     | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$>  ma
@@ -522,7 +521,7 @@ bracketMatrix mtrx ma
 -- rectifying flip transformation /if/ the ellipse or circle has 
 -- not been scaled or rotated.
 --
-bracketTextCTM :: forall u. (Real u, Floating u, PSUnit u)
+bracketTextCTM :: forall u. (Real u, Floating u, PtSize u)
                => PrimCTM u 
                -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
 bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
@@ -535,7 +534,7 @@ bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
 -- Note v0.41.0 otherwise step always fires because the matrix 
 -- has been transformed for SVG coordspace to [1,0,0,-1].
 --
-bracketEllipseCTM :: forall u. (Real u, Floating u, PSUnit u)
+bracketEllipseCTM :: forall u. (Real u, Floating u, PtSize u)
                   => PrimCTM u 
                   -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
 bracketEllipseCTM ctm0 pf = step $ unCTM ctm0

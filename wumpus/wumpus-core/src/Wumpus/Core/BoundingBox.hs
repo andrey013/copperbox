@@ -54,7 +54,7 @@ module Wumpus.Core.BoundingBox
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Utils.Common ( PSUnit(..) )
+-- import Wumpus.Core.Utils.Common ( PSUnit(..) )
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -84,7 +84,7 @@ type DBoundingBox = BoundingBox Double
 
 
 
-instance PSUnit u => Format (BoundingBox u) where
+instance Format u => Format (BoundingBox u) where
   format (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> format p0 
                                             <+> text "ur=" <> format p1) 
 

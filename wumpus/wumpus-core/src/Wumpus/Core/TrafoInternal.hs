@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.TrafoInternal
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -50,7 +50,6 @@ module Wumpus.Core.TrafoInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -87,14 +86,13 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
 
 
 
-instance PSUnit u => Format (PrimCTM u) where
+instance Format u => Format (PrimCTM u) where
   format (PrimCTM dx dy sx sy ang) = 
-      parens (text "CTM" <+> text "dx =" <> dtruncFmt dx
-                         <+> text "dy =" <> dtruncFmt dy
-                         <+> text "sx =" <> dtruncFmt sx 
-                         <+> text "sy =" <> dtruncFmt sy 
+      parens (text "CTM" <+> text "dx =" <> format dx
+                         <+> text "dy =" <> format dy
+                         <+> text "sx =" <> format sx 
+                         <+> text "sy =" <> format sy 
                          <+> text "ang=" <> format ang  )
-
 
 
 
