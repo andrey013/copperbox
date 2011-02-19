@@ -80,7 +80,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.PtSize
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -414,6 +414,15 @@ val_matrix :: PtSize u => Matrix3'3 u -> Doc
 val_matrix mtrx = text "matrix" <> tupled (map psptFmt [a,b,c,d,e,f])
   where
     (a,b,c,d,e,f) = deconsMatrix mtrx
+
+    -- Note - Matrix is problematic for units. 
+    -- e.g. for pica (12 ps points) we don\'t want to scale the 
+    -- identity matrix by 12:
+    --
+    -- > fmap (12*) [1,0,0,0,0,1]
+    -- > [12,0,0,0,0,12] 
+    --
+
 
 -- | @ translate(..., ..., ..., ..., ..., ...) @
 --

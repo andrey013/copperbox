@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.PtSize
+-- Module      :  Wumpus.Core.Units
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -24,17 +24,30 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.PtSize
+module Wumpus.Core.Units
   ( 
   
-  -- * Point size type
+  -- * PostScript point size type
     PsPoint
   
   -- * Extract (unscaled) PtSize as a Double 
   , ptSize
 
+
+
+  -- * Centimeter type
+  , Centimeter   
+  , cm
+
+  -- * Pica type
+  , Pica
+  , pica
+
   -- * Conversion class
   , PtSize(..)
+
+  -- * Convert a Double
+  , dpoint
 
   , pspt
   , psptFmt
@@ -66,7 +79,55 @@ ptSize :: PsPoint -> Double
 ptSize = psPoint
 
 
+--------------------------------------------------------------------------------
 
+-- | Wrapped Double /Centimeter/ unit type.
+-- 
+newtype Centimeter = Centimeter { getCentimeter :: Double } 
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+instance Show Centimeter where
+  showsPrec p d = showsPrec p (getCentimeter d)
+
+
+instance PtSize Centimeter where
+  fromPsPoint = Centimeter . (0.03514598 *) . ptSize
+  toPsPoint   = cm
+
+
+instance Format Centimeter where
+  format c = dtruncFmt (getCentimeter c) <> text "cm"
+
+                            
+cm :: Fractional u => Centimeter -> u 
+cm = realToFrac . (28.45275619 *) . getCentimeter
+
+
+--------------------------------------------------------------------------------
+-- Pica
+
+-- | Wrapped Double /Pica/ unit type.
+-- 
+-- Pica is 12 Points.
+--
+newtype Pica = Pica { getPica :: Double } 
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+instance Show Pica where
+  showsPrec p d = showsPrec p (getPica d)
+
+
+instance PtSize Pica where
+  fromPsPoint = Pica . (\x -> x / 12.0) . ptSize
+  toPsPoint   = pica
+
+instance Format Pica where
+  format p = dtruncFmt (getPica p) <> text "pica"
+                            
+pica :: Fractional u => Pica -> u 
+pica = realToFrac . (* 12.0) . getPica
+
+--------------------------------------------------------------------------------
 
 
 -- | Convert units to and from PsPoint scaling accordingly.
@@ -113,6 +174,19 @@ instance PtSize (Ratio Int) where
 instance PtSize PsPoint where
   fromPsPoint = id
   toPsPoint   = id
+
+
+
+
+-- | By convention Wumpus uses the standard Haskell @Double@ as
+-- point size.
+-- 
+-- This function casts a Double to another unit (e.g. @pica@) that
+-- supports @PtSize@.
+--
+dpoint :: PtSize u => Double -> u
+dpoint = fromPsPoint . toPsPoint
+
 
 
 -- | Format a value as truncated double representing PostScript 

@@ -50,6 +50,7 @@ module Wumpus.Core.TrafoInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -100,9 +101,12 @@ instance Format u => Format (PrimCTM u) where
 -- Manipulating the PrimCTM
 
 identityCTM :: Num u => PrimCTM u
-identityCTM = PrimCTM { ctm_transl_x = 0, ctm_transl_y = 0
-                      , ctm_scale_x = 1,  ctm_scale_y = 1
-                      , ctm_rotation = 0 }
+identityCTM = PrimCTM { ctm_transl_x = 0
+                      , ctm_transl_y = 0
+                      , ctm_scale_x  = 1
+                      , ctm_scale_y  = 1
+                      , ctm_rotation = 0   }
+
 
 makeThetaCTM :: Num u => u -> u -> Radian -> PrimCTM u
 makeThetaCTM dx dy ang = PrimCTM { ctm_transl_x = dx, ctm_transl_y = dy

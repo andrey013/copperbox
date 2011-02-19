@@ -33,10 +33,10 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
-import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphNames
 import Wumpus.Core.TrafoInternal
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.JoinList hiding ( cons )
 import Wumpus.Core.Utils.FormatCombinators
 

@@ -66,8 +66,8 @@ module Wumpus.Core.FontSize
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
-import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
+import Wumpus.Core.Units
 
 
 

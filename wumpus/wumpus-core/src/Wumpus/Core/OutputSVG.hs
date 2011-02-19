@@ -43,11 +43,11 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.PtSize
 import Wumpus.Core.SVGDoc
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphIndices
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
@@ -504,8 +504,8 @@ bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma
 bracketMatrix :: (Fractional u, PtSize u) 
               => Matrix3'3 u -> SvgMonad Doc -> SvgMonad Doc
 bracketMatrix mtrx ma 
-    | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$>  ma
-    | otherwise              = (\doc -> elem_g trafo doc) <$> ma
+    | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$> ma
+    | otherwise              = (\doc -> elem_g trafo doc)    <$> ma
   where
     trafo = attr_transform $ val_matrix mtrx
 

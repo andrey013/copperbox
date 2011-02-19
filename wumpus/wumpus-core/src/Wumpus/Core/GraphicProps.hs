@@ -51,9 +51,9 @@ module Wumpus.Core.GraphicProps
   ) where
 
 import Wumpus.Core.Colour
-import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.StandardEncoding
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 

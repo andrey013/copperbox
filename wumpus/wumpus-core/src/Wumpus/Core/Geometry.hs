@@ -604,7 +604,8 @@ translationMatrix x y = M3'3 1 0 x
 -- >       sin(a)   cos(a)  0
 -- >       0        0       1 )
 --
-rotationMatrix :: (Floating u, Real u) => Radian -> Matrix3'3 u
+rotationMatrix :: (Floating u, Real u) 
+               => Radian -> Matrix3'3 u
 rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0 
                         (sin ang) (cos ang)          0  
                         0         0                  1
@@ -636,7 +637,8 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
 
     mTinv = M3'3 1 0 (-x)  
                  0 1 (-y)  
-                 0 0   1
+                 0 0 1
+  
 
 
 
@@ -824,7 +826,7 @@ bezierEllipse rx ry (P2 x y) =
 -- the approximation seems fine in practice.
 --
 rbezierEllipse :: (Real u, Floating u) 
-              => u -> u -> Radian -> Point2 u -> [Point2 u]
+               => u -> u -> Radian -> Point2 u -> [Point2 u]
 rbezierEllipse rx ry theta pt@(P2 x y) = 
     [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
   where

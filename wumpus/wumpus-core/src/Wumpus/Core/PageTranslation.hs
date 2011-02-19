@@ -41,7 +41,8 @@ import Wumpus.Core.TrafoInternal
 --
 
 trivialTranslation :: (Num u, Ord u) => Picture u -> Picture u
-trivialTranslation pic = scale 1 (-1) (trivPic pic)
+trivialTranslation pic = 
+   scale 1 (negate 1) (trivPic pic)
 
 trivPic :: Num u => Picture u -> Picture u
 trivPic (Leaf lc ones)      = Leaf lc $ fmap trivPrim ones

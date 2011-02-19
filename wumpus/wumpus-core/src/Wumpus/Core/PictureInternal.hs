@@ -66,9 +66,9 @@ import Wumpus.Core.Colour
 import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
-import Wumpus.Core.PtSize
 import Wumpus.Core.Text.Base
 import Wumpus.Core.TrafoInternal
+import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 

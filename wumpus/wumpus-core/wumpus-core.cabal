@@ -48,12 +48,14 @@ description:
   .
   Changelog:
   .
-  v0.43.0 to v0.45.0:
+  v0.43.0 to v0.50.0:
   .
   * Major change hence the version number jump - re-worked unit 
-    type classes. The classes @PSUnit@ and @FromPtSize@ are 
-    replaced by the class @PtSize@. The name @PtSize@ was 
-    previously used for a type name - this type is now @PsPoint@.
+    type classes. They are now in the module @Core.Unit@, which 
+    replaces the module @Core.PtSize@. The classes @PSUnit@ and 
+    @FromPtSize@ are replaced by the class @PtSize@. The name 
+    @PtSize@ was previously used for a type name - this type is 
+    now @PsPoint@.
   .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.
@@ -128,13 +130,13 @@ library
     Wumpus.Core.OutputPostScript,
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
-    Wumpus.Core.PtSize,
     Wumpus.Core.Text.Base,
     Wumpus.Core.Text.GlyphIndices,
     Wumpus.Core.Text.GlyphNames,
     Wumpus.Core.Text.Latin1Encoding,
     Wumpus.Core.Text.StandardEncoding,
     Wumpus.Core.Text.Symbol,
+    Wumpus.Core.Units,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 
