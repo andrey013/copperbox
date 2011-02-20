@@ -6,7 +6,7 @@
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable 
 -- Portability :  GHC
 --
@@ -29,7 +29,6 @@ module Wumpus.Core.TrafoInternal
     PrimCTM(..)
 
   , AffineTrafo(..) 
-  , DAffineTrafo
 
   -- * CTM operations
   , identityCTM
@@ -82,18 +81,16 @@ data PrimCTM = PrimCTM
 -- | For Pictures - Affine transformations are represented as 
 -- /syntax/ so they can be manipulated easily.
 --
-data AffineTrafo u = Matrix (Matrix3'3 u)
-                   | Rotate Radian
-                   | RotAbout Radian (Point2 u)
-                   | Scale u u
-                   | Translate u u
+data AffineTrafo = Matrix (Matrix3'3 Double)
+                 | Rotate Radian
+                 | RotAbout Radian (Point2 Double)
+                 | Scale Double Double
+                 | Translate Double Double
   deriving (Eq,Show)                 
 
 
--- | Type specialized version AffineTrafo where the unit type is 
--- specialized to Double representing PostScript points.
--- 
-type DAffineTrafo = AffineTrafo Double
+--------------------------------------------------------------------------------
+-- instances
 
 instance Format PrimCTM where
   format (PrimCTM dx dy sx sy ang) = 
@@ -194,10 +191,10 @@ unCTM (PrimCTM dx dy sx sy ang) = (P2 dx dy, PrimCTM 0 0 sx sy ang)
 
 
 
-concatTrafos :: (Floating u, Real u) => [AffineTrafo u] -> Matrix3'3 u
+concatTrafos :: [AffineTrafo] -> Matrix3'3 Double
 concatTrafos = foldr (\e ac -> matrixRepr e * ac) identityMatrix
 
-matrixRepr :: (Floating u, Real u) => AffineTrafo u -> Matrix3'3 u
+matrixRepr :: AffineTrafo -> Matrix3'3 Double
 matrixRepr (Matrix mtrx)        = mtrx
 matrixRepr (Rotate theta)       = rotationMatrix theta
 matrixRepr (RotAbout theta pt)  = originatedRotationMatrix theta pt

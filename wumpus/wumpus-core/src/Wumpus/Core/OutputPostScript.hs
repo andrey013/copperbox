@@ -7,8 +7,8 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- Output PostScript - either PostScript (PS) files or 
@@ -565,7 +565,7 @@ makeFontAttrs (FontAttr sz face) = ps_wumpus_FL sz (ps_font_name face)
 --------------------------------------------------------------------------------
 -- Bracket matrix and PrimCTM trafos
 
-bracketTrafos :: [DAffineTrafo] -> PsMonad Doc -> PsMonad Doc
+bracketTrafos :: [AffineTrafo] -> PsMonad Doc -> PsMonad Doc
 bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
 bracketMatrix :: Matrix3'3 Double -> PsMonad Doc -> PsMonad Doc

@@ -7,8 +7,8 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- Output SVG. 
@@ -495,7 +495,7 @@ bracketGS (FontCtx new_font) mf =
 --------------------------------------------------------------------------------
 -- Bracket matrix and PrimCTM trafos
 
-bracketTrafos :: [DAffineTrafo] -> SvgMonad Doc -> SvgMonad Doc
+bracketTrafos :: [AffineTrafo] -> SvgMonad Doc -> SvgMonad Doc
 bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
 bracketMatrix :: Matrix3'3 Double -> SvgMonad Doc -> SvgMonad Doc

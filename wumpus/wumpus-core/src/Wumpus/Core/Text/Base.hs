@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.Text.Base
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -101,6 +101,9 @@ newtype EscapedText = EscapedText { getEscapedText :: H EscapedChar }
 -- An 'EscapedChar' may be either a regular character, an integer
 -- representing a Unicode code-point or a PostScript glyph
 -- name.
+-- 
+-- PostScript glyph names are generally made up only of chars
+-- @[a-zA-Z]@.
 -- 
 data EscapedChar = CharLiteral Char
                  | CharEscInt  Int

@@ -7,8 +7,8 @@
 -- Copyright   :  (c) Stephen Tetley 2009-2011
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- Internal representation of Pictures.
@@ -125,7 +125,7 @@ type DPicture = Picture Double
 -- transformation, the corners of bounding boxes are transformed
 -- pointwise when the picture is scaled, rotated etc.
 --
-type Locale u = (BoundingBox u, [DAffineTrafo])
+type Locale u = (BoundingBox u, [AffineTrafo])
 
 type DLocale = Locale Double
 

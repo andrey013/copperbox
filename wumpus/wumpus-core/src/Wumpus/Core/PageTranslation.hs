@@ -6,8 +6,8 @@
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- Core page translation for SVG.
