@@ -46,8 +46,9 @@ module Wumpus.Core.Units
   -- * Conversion class
   , PtSize(..)
 
-  -- * Convert a Double
+  -- * Convert to and from a Double.
   , dpoint
+  , psDouble
 
   , pspt
   , psptFmt
@@ -187,6 +188,11 @@ instance PtSize PsPoint where
 dpoint :: PtSize u => Double -> u
 dpoint = fromPsPoint . toPsPoint
 
+-- | Convert some PtSize unit to a Double avoiding the newtype 
+-- wrapper of PsPoint.
+--
+psDouble :: PtSize u => u -> Double
+psDouble = psPoint . toPsPoint
 
 
 -- | Format a value as truncated double representing PostScript 

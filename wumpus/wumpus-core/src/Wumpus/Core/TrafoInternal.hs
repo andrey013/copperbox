@@ -27,7 +27,10 @@ module Wumpus.Core.TrafoInternal
 
   -- * Types
     PrimCTM(..)
+  , DPrimCTM
+
   , AffineTrafo(..) 
+  , DAffineTrafo
 
   -- * CTM operations
   , identityCTM
@@ -50,7 +53,6 @@ module Wumpus.Core.TrafoInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -63,13 +65,18 @@ import Wumpus.Core.Utils.FormatCombinators
 -- Note - line thickness of a stroked path will not be scaled.
 --
 data PrimCTM u = PrimCTM 
-      { ctm_transl_x    :: !u
-      , ctm_transl_y    :: !u
+      { ctm_trans_x     :: !u
+      , ctm_trans_y     :: !u
       , ctm_scale_x     :: !u
       , ctm_scale_y     :: !u
       , ctm_rotation    :: !Radian 
       }
   deriving (Eq,Show)
+
+-- | Type specialized version of PrimCTM where the unit type is 
+-- specialized to Double representing PostScript points.
+-- 
+type DPrimCTM = PrimCTM Double
 
 
 
@@ -85,7 +92,10 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
   deriving (Eq,Show)                 
 
 
-
+-- | Type specialized version AffineTrafo where the unit type is 
+-- specialized to Double representing PostScript points.
+-- 
+type DAffineTrafo = AffineTrafo Double
 
 instance Format u => Format (PrimCTM u) where
   format (PrimCTM dx dy sx sy ang) = 
@@ -101,22 +111,26 @@ instance Format u => Format (PrimCTM u) where
 -- Manipulating the PrimCTM
 
 identityCTM :: Num u => PrimCTM u
-identityCTM = PrimCTM { ctm_transl_x = 0
-                      , ctm_transl_y = 0
+identityCTM = PrimCTM { ctm_trans_x = 0
+                      , ctm_trans_y = 0
                       , ctm_scale_x  = 1
                       , ctm_scale_y  = 1
                       , ctm_rotation = 0   }
 
 
 makeThetaCTM :: Num u => u -> u -> Radian -> PrimCTM u
-makeThetaCTM dx dy ang = PrimCTM { ctm_transl_x = dx, ctm_transl_y = dy
-                                 , ctm_scale_x = 1, ctm_scale_y = 1
+makeThetaCTM dx dy ang = PrimCTM { ctm_trans_x = dx
+                                 , ctm_trans_y = dy
+                                 , ctm_scale_x = 1
+                                 , ctm_scale_y = 1
                                  , ctm_rotation = ang }
 
 
 makeTranslCTM :: Num u => u -> u -> PrimCTM u
-makeTranslCTM dx dy = PrimCTM { ctm_transl_x = dx, ctm_transl_y = dy
-                              , ctm_scale_x = 1, ctm_scale_y = 1
+makeTranslCTM dx dy = PrimCTM { ctm_trans_x = dx
+                              , ctm_trans_y = dy
+                              , ctm_scale_x = 1
+                              , ctm_scale_y = 1
                               , ctm_rotation = 0 }
 
 
@@ -140,6 +154,7 @@ scaleCTM x1 y1 (PrimCTM dx dy sx sy ang) =
     let P2 x y = scale x1 y1 (P2 dx dy) 
     in PrimCTM x y (x1*sx) (y1*sy) ang
 
+
 rotateCTM :: (Real u, Floating u) => Radian -> PrimCTM u -> PrimCTM u
 rotateCTM theta (PrimCTM dx dy sx sy ang) = 
     let P2 x y = rotate theta (P2 dx dy) 
@@ -159,7 +174,7 @@ rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) =
 -- This function encapsulates the correct order (or does it? - 
 -- some of the demos are not working properly...).
 --
-matrixRepCTM :: (Real u, Floating u) => PrimCTM u -> Matrix3'3 u
+matrixRepCTM :: DPrimCTM -> Matrix3'3 Double
 matrixRepCTM (PrimCTM dx dy sx sy ang) = 
     translationMatrix dx dy * rotationMatrix (circularModulo ang) 
                             * scalingMatrix sx sy

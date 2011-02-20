@@ -468,7 +468,7 @@ clip cp p = PClip cp p
 --
 -- The supplied point is the left baseline.
 --
-textlabel :: Num u 
+textlabel :: PtSize u 
           => RGBi -> FontAttr -> String -> Point2 u -> Primitive u
 textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
@@ -480,7 +480,7 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 --
 -- The supplied point is the left baseline.
 --
-rtextlabel :: Num u 
+rtextlabel :: PtSize u 
            => RGBi -> FontAttr -> String -> Radian -> Point2 u -> Primitive u
 rtextlabel rgb attr txt pt theta = 
     rescapedlabel rgb attr (escapeString txt) pt theta
@@ -491,7 +491,7 @@ rtextlabel rgb attr txt pt theta =
 -- Create a label where the font is @Courier@, text size is 14pt
 -- and colour is black.
 --
-ztextlabel :: Num u => String -> Point2 u -> Primitive u
+ztextlabel :: PtSize u => String -> Point2 u -> Primitive u
 ztextlabel = textlabel black wumpus_default_font
 
 
@@ -504,7 +504,7 @@ ztextlabel = textlabel black wumpus_default_font
 --
 -- The supplied point is the left baseline.
 --
-escapedlabel :: Num u 
+escapedlabel :: PtSize u 
              => RGBi -> FontAttr -> EscapedText -> Point2 u -> Primitive u
 escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 
@@ -516,12 +516,13 @@ escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 --
 -- The supplied point is the left baseline.
 --
-rescapedlabel :: Num u 
+rescapedlabel :: PtSize u 
               => RGBi -> FontAttr -> EscapedText -> Radian -> Point2 u 
               -> Primitive u
 rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (StdLayout txt) (makeThetaCTM dx dy theta)
+    lbl = PrimLabel (StdLayout txt) 
+                    (makeThetaCTM (psDouble dx) (psDouble dy) theta)
 
 
 -- | 'zescapedlabel' : @ escaped_text * baseline_left -> Primitive @
@@ -529,7 +530,7 @@ rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl
 -- Version of 'ztextlabel' where the label text has already been 
 -- encoded.
 --
-zescapedlabel :: Num u => EscapedText -> Point2 u -> Primitive u
+zescapedlabel :: PtSize u => EscapedText -> Point2 u -> Primitive u
 zescapedlabel = escapedlabel black wumpus_default_font
 
 
@@ -566,12 +567,12 @@ zescapedlabel = escapedlabel black wumpus_default_font
 -- PostScript analogue. While the same picture is generated in 
 -- both cases, the PostScript code is not particularly inefficient.
 --
-hkernlabel :: Num u 
-            => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
-            -> Primitive u
+hkernlabel :: PtSize u 
+           => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
+           -> Primitive u
 hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextH xs) (makeTranslCTM x y)
+    lbl = PrimLabel (KernTextH xs) (makeTranslCTM (psDouble x) (psDouble y))
 
 
 
@@ -608,12 +609,12 @@ hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl
 -- PostScript analogue. While the same picture is generated in 
 -- both cases, the PostScript code is not particularly inefficient.
 --
-vkernlabel :: Num u 
-            => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
-            -> Primitive u
+vkernlabel :: PtSize u 
+           => RGBi -> FontAttr -> [KerningChar u] -> Point2 u 
+           -> Primitive u
 vkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextV xs) (makeTranslCTM x y)
+    lbl = PrimLabel (KernTextV xs) (makeTranslCTM (psDouble x) (psDouble y))
 
 
 
@@ -665,8 +666,8 @@ kernEscName u s = (u, CharEscName s)
 --
 -- Avoid non-uniform scaling stroked ellipses!
 --
-strokeEllipse :: Num u 
-             => RGBi -> StrokeAttr -> u -> u -> Point2 u -> Primitive u
+strokeEllipse :: PtSize u 
+              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> Primitive u
 strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 
@@ -676,7 +677,7 @@ strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 -- Create a stroked primitive ellipse rotated about the center by 
 -- /theta/.
 --
-rstrokeEllipse :: Num u 
+rstrokeEllipse :: PtSize u 
                => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
                -> Primitive u
 rstrokeEllipse rgb sa rx ry theta pt = 
@@ -688,8 +689,8 @@ rstrokeEllipse rgb sa rx ry theta pt =
 --
 -- Create a filled primitive ellipse.
 --
-fillEllipse :: Num u 
-             => RGBi -> u -> u -> Point2 u -> Primitive u
+fillEllipse :: PtSize u 
+            => RGBi -> u -> u -> Point2 u -> Primitive u
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
@@ -698,7 +699,7 @@ fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
 -- Create a filled primitive ellipse rotated about the center by 
 -- /theta/.
 --
-rfillEllipse :: Num u 
+rfillEllipse :: PtSize u 
              => RGBi -> u -> u -> Radian -> Point2 u -> Primitive u
 rfillEllipse rgb rx ry theta pt = 
     PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
@@ -708,7 +709,7 @@ rfillEllipse rgb rx ry theta pt =
 --
 -- Create a black, filled ellipse. 
 --
-zellipse :: Num u => u -> u -> Point2 u -> Primitive u
+zellipse :: PtSize u => u -> u -> Point2 u -> Primitive u
 zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
@@ -717,7 +718,7 @@ zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 --
 -- Create a bordered (i.e. filled and stroked) primitive ellipse.
 --
-fillStrokeEllipse :: Num u 
+fillStrokeEllipse :: PtSize u 
                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
                   -> Primitive u
 fillStrokeEllipse frgb sa srgb rx ry pt = 
@@ -731,16 +732,16 @@ fillStrokeEllipse frgb sa srgb rx ry pt =
 -- Create a bordered (i.e. filled and stroked) ellipse rotated 
 -- about the center by /theta/.
 --
-rfillStrokeEllipse :: Num u 
+rfillStrokeEllipse :: PtSize u 
                    => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
                    -> Primitive u
 rfillStrokeEllipse frgb sa srgb rx ry theta pt = 
     PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse rx ry theta pt)
 
 
-mkPrimEllipse :: Num u => u -> u -> Radian -> Point2 u -> PrimEllipse u
+mkPrimEllipse :: PtSize u => u -> u -> Radian -> Point2 u -> PrimEllipse u
 mkPrimEllipse rx ry theta (P2 dx dy) = 
-    PrimEllipse rx ry (makeThetaCTM dx dy theta)
+    PrimEllipse rx ry (makeThetaCTM (psDouble dx) (psDouble dy) theta)
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -786,7 +787,7 @@ a `picOver` b = Picture (bb,[]) (join (one b) (one a))
 -- 
 --  Move a picture by the supplied vector. 
 --
-picMoveBy :: (Num u, Ord u) => Picture u -> Vec2 u -> Picture u
+picMoveBy :: (PtSize u, Ord u) => Picture u -> Vec2 u -> Picture u
 p `picMoveBy` (V2 dx dy) = translate dx dy p 
 
 -- | 'picBeside' : @ picture * picture -> Picture @
@@ -794,7 +795,7 @@ p `picMoveBy` (V2 dx dy) = translate dx dy p
 -- Move the second picture to sit at the right side of the
 -- first picture
 --
-picBeside :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+picBeside :: (PtSize u, Ord u) => Picture u -> Picture u -> Picture u
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
     (P2 x1 _) = ur_corner $ boundary a

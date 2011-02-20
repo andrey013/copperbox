@@ -162,7 +162,7 @@ writeSVG_defs filepath ss pic =
 svgDraw :: (Real u, Floating u, PtSize u) 
         => Maybe String -> Picture u -> Doc
 svgDraw mb_defs original_pic = 
-    let pic          = trivialTranslation original_pic
+    let pic          = svgPageTranslation original_pic
         (_,imgTrafo) = imageTranslation pic
         body         = runSvgMonad $ picture pic
         mkSvg        = maybe elem_svg elem_svg_defs mb_defs
@@ -170,8 +170,7 @@ svgDraw mb_defs original_pic =
 
 
 
-imageTranslation :: (Ord u, PtSize u) 
-                 => Picture u -> (BoundingBox u, Doc -> Doc)
+imageTranslation :: DPicture -> (DBoundingBox, Doc -> Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, id)
   (bb, Just v)  -> let attr = attr_transform (val_translate v) 
@@ -179,8 +178,9 @@ imageTranslation pic = case repositionDeltas pic of
 
 --------------------------------------------------------------------------------
 
+-- Note - might be simpler to only print a @Picture Double@
 
-picture :: (Real u, Floating u, PtSize u) => Picture u -> SvgMonad Doc
+picture :: DPicture -> SvgMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 
@@ -195,7 +195,7 @@ oneConcat fn ones = outstep (viewl ones)
     instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
-primitive :: (Real u, Floating u, PtSize u) => Primitive u -> SvgMonad Doc
+primitive :: DPrimitive -> SvgMonad Doc
 primitive (PPath props pp)      
     | isEmptyPath pp            = pure empty
     | otherwise                 = primPath props pp
@@ -240,12 +240,12 @@ drawGProps xs d = elem_g attrs_doc d
 svgAttribute :: SvgAttr -> Doc
 svgAttribute (SvgAttr n v) = svgAttr n $ text v
  
-clipPath :: PtSize u => String -> PrimPath u -> Doc
+clipPath :: String -> DPrimPath -> Doc
 clipPath clip_id pp = 
     elem_clipPath (attr_id clip_id) (elem_path_no_attrs $ path pp) 
 
 
-primPath :: PtSize u => PathProps -> PrimPath u -> SvgMonad Doc
+primPath :: PathProps -> DPrimPath -> SvgMonad Doc
 primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 
 --
@@ -260,7 +260,7 @@ primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 -- an encouragement to change when it moved to relative ones. 
 -- 
 
-path :: PtSize u => PrimPath u -> Doc
+path :: DPrimPath -> Doc
 path (PrimPath start xs) = 
     path_m start <+> hsep (snd $ mapAccumL step start xs)
   where
@@ -297,18 +297,17 @@ pathProps props = fn props
 
 -- Note - if hw==hh then draw the ellipse as a circle.
 --
-primEllipse :: (Real u, Floating u, PtSize u)
-            => EllipseProps -> PrimEllipse u -> SvgMonad Doc
+primEllipse :: EllipseProps -> DPrimEllipse -> SvgMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
                     <$> bracketEllipseCTM ctm mkCXCY <*> ellipseProps props
     | otherwise = (\a b -> elem_ellipse (a <+> ellipse_radius <+> b))
                     <$> bracketEllipseCTM ctm mkCXCY <*> ellipseProps props
   where
-   mkCXCY (P2 x y) = pure $ attr_cx x <+> attr_cy y
+    mkCXCY (P2 x y) = pure $ attr_cx x <+> attr_cy y
    
-   circle_radius   = attr_r hw
-   ellipse_radius  = attr_rx hw <+> attr_ry hh
+    circle_radius   = attr_r hw
+    ellipse_radius  = attr_rx hw <+> attr_ry hh
 
  
 
@@ -331,8 +330,7 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 -- 
 --
 
-primLabel :: (Real u, Floating u, PtSize u) 
-      => LabelProps -> PrimLabel u -> SvgMonad Doc
+primLabel :: LabelProps -> DPrimLabel -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
     (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
       <$> deltaFontAttrs attrs <*> bracketTextCTM ctm coordf
@@ -341,12 +339,12 @@ primLabel (LabelProps rgb attrs) (PrimLabel body ctm) =
     coordf = \p0 -> pure $ labelBodyCoords body p0
     dtext  = labelBodyText body
 
-labelBodyCoords :: PtSize u => LabelBody u -> Point2 u -> Doc
+labelBodyCoords :: DLabelBody -> DPoint2 -> Doc
 labelBodyCoords (StdLayout _)  pt = makeXY pt
 labelBodyCoords (KernTextH xs) pt = makeXsY pt xs        
 labelBodyCoords (KernTextV xs) pt = makeXYs pt xs
 
-labelBodyText :: LabelBody u -> Doc
+labelBodyText :: DLabelBody -> Doc
 labelBodyText (StdLayout enctext) = encodedText enctext
 labelBodyText (KernTextH xs)      = kerningText xs
 labelBodyText (KernTextV xs)      = kerningText xs
@@ -355,7 +353,7 @@ labelBodyText (KernTextV xs)      = kerningText xs
 encodedText :: EscapedText -> Doc
 encodedText enctext = hcat $ destrEscapedText (map svgChar) enctext
 
-kerningText :: [KerningChar u] -> Doc
+kerningText :: [DKerningChar] -> Doc
 kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
 
 
@@ -363,7 +361,7 @@ kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
 makeTspan :: RGBi -> Doc -> Doc
 makeTspan rgb body = elem_tspan (attr_fill rgb) body
 
-makeXY :: PtSize u => Point2 u -> Doc
+makeXY :: DPoint2 -> Doc
 makeXY (P2 x y) = attr_x x <+> attr_y y
 
 -- This is for horizontal kerning text, the output is of the 
@@ -371,7 +369,7 @@ makeXY (P2 x y) = attr_x x <+> attr_y y
 -- 
 -- > x="0 10 25 35" y="0"
 --
-makeXsY :: PtSize u => Point2 u -> [KerningChar u] -> Doc
+makeXsY :: DPoint2 -> [DKerningChar] -> Doc
 makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
   where 
     step ax ((d,_):ds) = let a = ax+d in a : step a ds 
@@ -386,7 +384,7 @@ makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
 -- Note - this is different to the horizontal version as the 
 -- x-coord needs to be /realigned/ at each step.
 --
-makeXYs :: PtSize u => Point2 u -> [KerningChar u] -> Doc
+makeXYs :: DPoint2 -> [DKerningChar] -> Doc
 makeXYs (P2 x y) ks = attr_xs xcoords <+> attr_ys (step y ks)
   where 
     xcoords            = replicate (length ks) x
@@ -497,12 +495,10 @@ bracketGS (FontCtx new_font) mf =
 --------------------------------------------------------------------------------
 -- Bracket matrix and PrimCTM trafos
 
-bracketTrafos :: (Real u, Floating u, PtSize u) 
-              => [AffineTrafo u] -> SvgMonad Doc -> SvgMonad Doc
+bracketTrafos :: [DAffineTrafo] -> SvgMonad Doc -> SvgMonad Doc
 bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
-bracketMatrix :: (Fractional u, PtSize u) 
-              => Matrix3'3 u -> SvgMonad Doc -> SvgMonad Doc
+bracketMatrix :: Matrix3'3 Double -> SvgMonad Doc -> SvgMonad Doc
 bracketMatrix mtrx ma 
     | mtrx == identityMatrix = (\doc -> elem_g_no_attrs doc) <$> ma
     | otherwise              = (\doc -> elem_g trafo doc)    <$> ma
@@ -521,12 +517,11 @@ bracketMatrix mtrx ma
 -- rectifying flip transformation /if/ the ellipse or circle has 
 -- not been scaled or rotated.
 --
-bracketTextCTM :: forall u. (Real u, Floating u, PtSize u)
-               => PrimCTM u 
-               -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
+bracketTextCTM :: DPrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
 bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
   where
     mtrx = attr_transform $ val_matrix $ matrixRepCTM ctm0
+
 
 
 -- Note - the otherwise step uses the original ctm (ctm0).
@@ -534,20 +529,21 @@ bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
 -- Note v0.41.0 otherwise step always fires because the matrix 
 -- has been transformed for SVG coordspace to [1,0,0,-1].
 --
-bracketEllipseCTM :: forall u. (Real u, Floating u, PtSize u)
-                  => PrimCTM u 
-                  -> (Point2 u -> SvgMonad Doc) -> SvgMonad Doc
+bracketEllipseCTM :: DPrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
 bracketEllipseCTM ctm0 pf = step $ unCTM ctm0
   where
-    step (pt, ctm) 
-        | ctm == flippedCTM   = pf pt
+    step (P2 x y, ctm) 
+        | ctm == flippedCTM   = pf $ P2 (dpoint x) (dpoint y)
         | otherwise           = let mtrx = attr_transform $ 
                                              val_matrix $ matrixRepCTM ctm0
                                 in (\xy -> xy <+> mtrx) <$> pf zeroPt
 
 
-flippedCTM :: Num u => PrimCTM u
-flippedCTM = PrimCTM { ctm_transl_x = 0,  ctm_transl_y = 0
-                     , ctm_scale_x  = 1,  ctm_scale_y  = (-1)
-                     , ctm_rotation = 0 }
+flippedCTM :: DPrimCTM
+flippedCTM = PrimCTM { ctm_trans_x = 0
+                     , ctm_trans_y = 0
+                     , ctm_scale_x = 1
+                     , ctm_scale_y = (-1)
+                     , ctm_rotation = 0 
+                     }
 

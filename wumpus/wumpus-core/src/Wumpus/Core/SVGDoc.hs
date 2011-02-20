@@ -80,7 +80,8 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Units
+import Wumpus.Core.Units ( PsPoint, psptFmt )
+import Wumpus.Core.Utils.Common ( dtruncFmt )
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -217,7 +218,7 @@ attr_id = svgAttr "id" . text
 
 -- | @ x=\"...\" @
 --
-attr_x :: PtSize u => u -> Doc
+attr_x :: Double -> Doc
 attr_x = svgAttr "x" . psptFmt
 
 
@@ -225,49 +226,49 @@ attr_x = svgAttr "x" . psptFmt
 --
 -- /List/ version of attr_x
 -- 
-attr_xs :: PtSize u => [u] -> Doc
-attr_xs = svgAttr "x" . hsep . map psptFmt
+attr_xs :: [Double] -> Doc
+attr_xs = svgAttr "x" . hsep . map dtruncFmt
 
 
 -- | @ y=\"...\" @
 --
-attr_y :: PtSize u => u -> Doc
-attr_y = svgAttr "y" . psptFmt
+attr_y :: Double -> Doc
+attr_y = svgAttr "y" . dtruncFmt
 
 
 -- | @ y=\"... ... ...\" @
 --
 -- /List/ version of attr_y
 -- 
-attr_ys :: PtSize u => [u] -> Doc
-attr_ys = svgAttr "y" . hsep . map psptFmt
+attr_ys :: [Double] -> Doc
+attr_ys = svgAttr "y" . hsep . map dtruncFmt
 
 
 -- | @ r=\"...\" @
 --
-attr_r :: PtSize u => u -> Doc
-attr_r = svgAttr "r" . psptFmt
+attr_r :: Double -> Doc
+attr_r = svgAttr "r" . dtruncFmt
 
 
 -- | @ rx=\"...\" @
 --
-attr_rx :: PtSize u => u -> Doc
-attr_rx = svgAttr "rx" . psptFmt
+attr_rx :: Double -> Doc
+attr_rx = svgAttr "rx" . dtruncFmt
 
 -- | @ ry=\"...\" @
 --
-attr_ry :: PtSize u => u -> Doc
-attr_ry = svgAttr "ry" . psptFmt
+attr_ry :: Double -> Doc
+attr_ry = svgAttr "ry" . dtruncFmt
 
 -- | @ cx=\"...\" @
 --
-attr_cx :: PtSize u => u -> Doc
-attr_cx = svgAttr "cx" . psptFmt
+attr_cx :: Double -> Doc
+attr_cx = svgAttr "cx" . dtruncFmt
 
 -- | @ cy=\"...\" @
 --
-attr_cy :: PtSize u => u -> Doc
-attr_cy = svgAttr "cy" . psptFmt
+attr_cy :: Double -> Doc
+attr_cy = svgAttr "cy" . dtruncFmt
 
 
 
@@ -280,25 +281,25 @@ attr_cy = svgAttr "cy" . psptFmt
 --
 -- c.f. PostScript's @moveto@.
 --
-path_m :: PtSize u => Point2 u -> Doc
-path_m (P2 x y) = char 'M' <+> psptFmt x <+> psptFmt y
+path_m :: DPoint2 -> Doc
+path_m (P2 x y) = char 'M' <+> dtruncFmt x <+> dtruncFmt y
 
 -- | @ L ... ... @
 --
 -- c.f. PostScript's @lineto@.
 --
-path_l :: PtSize u => Point2 u -> Doc
-path_l (P2 x y) = char 'L' <+> psptFmt x <+> psptFmt y
+path_l :: DPoint2 -> Doc
+path_l (P2 x y) = char 'L' <+> dtruncFmt x <+> dtruncFmt y
 
 -- | @ C ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
 --
-path_c :: PtSize u => Point2 u -> Point2 u -> Point2 u -> Doc
+path_c :: DPoint2 -> DPoint2 -> DPoint2 -> Doc
 path_c (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) =
-    char 'C' <+> psptFmt x1 <+> psptFmt y1
-             <+> psptFmt x2 <+> psptFmt y2
-             <+> psptFmt x3 <+> psptFmt y3
+    char 'C' <+> dtruncFmt x1 <+> dtruncFmt y1
+             <+> dtruncFmt x2 <+> dtruncFmt y2
+             <+> dtruncFmt x3 <+> dtruncFmt y3
 
 
 val_rgb :: RGBi -> Doc
@@ -349,13 +350,13 @@ attr_stroke_none = svgAttr "stroke" (text "none")
 
 -- | @ stroke-width=\"...\" @
 --
-attr_stroke_width :: PtSize u => u -> Doc
+attr_stroke_width :: PsPoint -> Doc
 attr_stroke_width = svgAttr "stroke-width" . psptFmt
 
 
 -- | @ stroke-miterlimit=\"...\" @
 --
-attr_stroke_miterlimit :: PtSize u => u -> Doc
+attr_stroke_miterlimit :: PsPoint -> Doc
 attr_stroke_miterlimit = svgAttr "stroke-miterlimit" . psptFmt
 
 -- | @ stroke-linejoin=\"...\" @
@@ -410,8 +411,8 @@ attr_transform = svgAttr "transform"
 
 -- | @ matrix(..., ..., ..., ..., ..., ...) @
 --
-val_matrix :: PtSize u => Matrix3'3 u -> Doc
-val_matrix mtrx = text "matrix" <> tupled (map psptFmt [a,b,c,d,e,f])
+val_matrix :: Matrix3'3 Double -> Doc
+val_matrix mtrx = text "matrix" <> tupled (map dtruncFmt [a,b,c,d,e,f])
   where
     (a,b,c,d,e,f) = deconsMatrix mtrx
 
@@ -426,5 +427,5 @@ val_matrix mtrx = text "matrix" <> tupled (map psptFmt [a,b,c,d,e,f])
 
 -- | @ translate(..., ..., ..., ..., ..., ...) @
 --
-val_translate :: PtSize u => Vec2 u -> Doc
-val_translate (V2 x y) = text "translate" <> tupled [psptFmt x, psptFmt y]
+val_translate :: DVec2 -> Doc
+val_translate (V2 x y) = text "translate" <> tupled [dtruncFmt x, dtruncFmt y]

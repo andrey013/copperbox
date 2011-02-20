@@ -22,6 +22,7 @@ module Wumpus.Core.PictureInternal
     Picture(..)
   , DPicture
   , Locale
+  , DLocale
   , FontCtx(..)
 
   , Primitive(..)
@@ -43,6 +44,7 @@ module Wumpus.Core.PictureInternal
   , KerningChar
   , DKerningChar  
   , PrimEllipse(..)
+  , DPrimEllipse
 
   , GraphicsState(..)
 
@@ -123,8 +125,9 @@ type DPicture = Picture Double
 -- transformation, the corners of bounding boxes are transformed
 -- pointwise when the picture is scaled, rotated etc.
 --
-type Locale u = (BoundingBox u, [AffineTrafo u])
+type Locale u = (BoundingBox u, [DAffineTrafo])
 
+type DLocale = Locale Double
 
 
 -- | Wumpus\'s drawings are built from two fundamental 
@@ -260,11 +263,25 @@ type DAbsPathSegment = AbsPathSegment Double
 --
 -- Baseline-left is the dx * dy of the PrimCTM.
 --
+--
 data PrimLabel u = PrimLabel 
       { label_body          :: LabelBody u
-      , label_ctm           :: PrimCTM u
+      , label_ctm           :: DPrimCTM
       }
   deriving (Eq,Show)
+
+--
+-- Design note - the CTM unit type is fixed to Double (PS point) 
+-- rather than parametric on unit.
+--
+-- This is so it is transmitted \"obviously\" to PostScript and 
+-- SVG rather than being scaled according to the unit type.
+--
+-- E.g. converting a Pica to a PostScript point is (12*) but we 
+-- don\'t want to convert the identity matrix as it will become
+-- a scaling matrix: @[12,0,0,12,0,0]@.
+-- 
+
 
 type DPrimLabel = PrimLabel Double
 
@@ -303,11 +320,19 @@ type DKerningChar = KerningChar Double
 data PrimEllipse u = PrimEllipse 
       { ellipse_half_width    :: u
       , ellipse_half_height   :: u 
-      , ellipse_ctm           :: PrimCTM u
+      , ellipse_ctm           :: DPrimCTM
       } 
   deriving (Eq,Show)
 
+type DPrimEllipse = PrimEllipse Double
 
+--
+-- Design note - the CTM unit type is fixed to Double (PS point) 
+-- rather than parametric on unit.
+--
+-- For the rationale see the PrimLabel design note.
+-- 
+ 
 
 --------------------------------------------------------------------------------
 -- Graphics state datatypes
@@ -337,6 +362,61 @@ type instance DUnit (PrimPath u)    = u
 --------------------------------------------------------------------------------
 -- instances
 
+-- Perhaps the only useful functor operation is unit change.
+
+
+
+instance Functor Picture where
+  fmap f (Leaf loca ones)    = Leaf (fmapLocale f loca) (fmap (fmap f) ones)
+  fmap f (Picture loca ones) = Picture (fmapLocale f loca) (fmap (fmap f) ones)
+
+
+fmapLocale :: (u -> u1) -> Locale u -> Locale u1
+fmapLocale f (bb, dtrafos) = (fmap f bb, dtrafos)
+
+instance Functor Primitive where
+  fmap f (PPath a p)       = PPath a (fmap f p)
+  fmap f (PLabel a l)      = PLabel a (fmap f l)
+  fmap f (PEllipse a e)    = PEllipse a (fmap f e)
+  fmap f (PContext fcxt p) = PContext fcxt (fmap f p)
+  fmap f (PSVG a p)        = PSVG a (fmap f p)
+  fmap f (PGroup ones)     = PGroup (fmap (fmap f) ones)
+  fmap f (PClip pp p)      = PClip (fmap f pp) (fmap f p) 
+  
+
+
+
+instance Functor PrimPath where 
+   fmap f (PrimPath p0 ps) = PrimPath (fmap f p0) (map (fmap f) ps)
+
+
+instance Functor PrimPathSegment where
+  fmap f (RelCurveTo v1 v2 v3) = RelCurveTo (fmap f v1) (fmap f v2) (fmap f v3)
+  fmap f (RelLineTo v1)        = RelLineTo (fmap f v1)
+
+
+
+instance Functor AbsPathSegment where
+  fmap f (AbsCurveTo p1 p2 p3) = AbsCurveTo (fmap f p1) (fmap f p2) (fmap f p3)
+  fmap f (AbsLineTo p1)        = AbsLineTo  (fmap f p1)
+
+
+
+instance Functor PrimLabel where
+  fmap f (PrimLabel body dctm) = PrimLabel (fmap f body) dctm
+
+
+instance Functor LabelBody where
+  fmap _ (StdLayout esc) = StdLayout esc
+  fmap f (KernTextH xs)  = KernTextH $ map (\(u,a) -> (f u, a)) xs
+  fmap f (KernTextV xs)  = KernTextV $ map (\(u,a) -> (f u, a)) xs
+
+
+
+instance Functor PrimEllipse where
+  fmap f (PrimEllipse hw hh dctm) = PrimEllipse (f hw) (f hh) dctm 
+
+-- format
 
 instance Format u => Format (Picture u) where
   format (Leaf m prims)     = indent 2 $ vcat [ text "** Leaf-pic **"
@@ -480,7 +560,7 @@ labelBoundary :: (Floating u, Real u, PtSize u)
 labelBoundary attr (PrimLabel body ctm) = 
     retraceBoundary (m33 *#) untraf_bbox
   where
-    m33         = matrixRepCTM ctm
+    m33         = fmap dpoint $ matrixRepCTM ctm
     untraf_bbox = labelBodyBoundary (font_size attr) body
 
 labelBodyBoundary :: (Num u, Ord u, PtSize u) 
@@ -531,7 +611,8 @@ vKerningBB sz xs = downGrow (sumDiffs xs) $ textBounds sz zeroPt "A"
 -- | Ellipse bbox is the bounding rectangle, rotated as necessary 
 -- then retraced.
 --
-ellipseBoundary :: (Real u, Floating u) => PrimEllipse u -> BoundingBox u
+ellipseBoundary :: (Real u, Floating u, PtSize u) 
+                => PrimEllipse u -> BoundingBox u
 ellipseBoundary (PrimEllipse hw hh ctm) = 
     traceBoundary $ map (m33 *#) [sw,se,ne,nw]
   where
@@ -539,7 +620,7 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
     se   = P2   hw  (-hh) 
     ne   = P2   hw    hh 
     nw   = P2 (-hw)   hh 
-    m33  = matrixRepCTM ctm
+    m33  = fmap dpoint $ matrixRepCTM ctm
 
 
 --------------------------------------------------------------------------------
@@ -551,26 +632,32 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
 -- update (frame change).
 --
 
-instance (Num u, Ord u) => Transform (Picture u) where
+instance (PtSize u, Ord u) => Transform (Picture u) where
   transform mtrx = 
-    mapLocale $ \(bb,xs) -> (transform mtrx bb, Matrix mtrx:xs)
+    mapLocale $ \(bb,xs) -> let cmd = Matrix $ fmap psDouble mtrx
+                            in (transform mtrx bb, cmd : xs)
 
 instance (Real u, Floating u) => Rotate (Picture u) where
   rotate theta = 
     mapLocale $ \(bb,xs) -> (rotate theta bb, Rotate theta:xs)
 
 
-instance (Real u, Floating u) => RotateAbout (Picture u) where
-  rotateAbout theta pt = 
-    mapLocale $ \(bb,xs) -> (rotateAbout theta pt bb, RotAbout theta pt:xs)
+instance (Real u, Floating u, PtSize u) => RotateAbout (Picture u) where
+  rotateAbout theta pt@(P2 x y) = 
+    mapLocale $ \(bb,xs) -> let dpt = P2 (psDouble x) (psDouble y)
+                                cmd = RotAbout theta dpt
+                            in (rotateAbout theta pt bb, cmd : xs)
 
-instance (Num u, Ord u) => Scale (Picture u) where
+instance (PtSize u, Ord u) => Scale (Picture u) where
   scale sx sy = 
-    mapLocale $ \(bb,xs) -> (scale sx sy bb, Scale sx sy : xs)
+    mapLocale $ \(bb,xs) -> let cmd = Scale (psDouble sx) (psDouble sy)
+                            in (scale sx sy bb, cmd : xs)
 
-instance (Num u, Ord u) => Translate (Picture u) where
+instance (PtSize u, Ord u) => Translate (Picture u) where
   translate dx dy = 
-    mapLocale $ \(bb,xs) -> (translate dx dy bb, Translate dx dy:xs)
+    mapLocale $ \(bb,xs) -> let cmd = Translate (psDouble dx) (psDouble dy)
+                            in ( translate dx dy bb, cmd : xs)
+                     
 
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
@@ -596,7 +683,7 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
   rotate r (PClip p chi)    = PClip (rotatePath r p) (rotate r chi)
 
-instance (Real u, Floating u) => RotateAbout (Primitive u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (Primitive u) where
   rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
@@ -607,7 +694,7 @@ instance (Real u, Floating u) => RotateAbout (Primitive u) where
       PClip (rotateAboutPath r pt p) (rotateAbout r pt chi)
 
 
-instance Num u => Scale (Primitive u) where
+instance PtSize u => Scale (Primitive u) where
   scale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
   scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
   scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
@@ -617,7 +704,7 @@ instance Num u => Scale (Primitive u) where
   scale sx sy (PClip p chi)     = PClip (scalePath sx sy p) (scale sx sy chi)
 
 
-instance Num u => Translate (Primitive u) where
+instance PtSize u => Translate (Primitive u) where
   translate dx dy (PPath a path)   = PPath a    $ translatePath dx dy path
   translate dx dy (PLabel a lbl)   = PLabel a   $ translateLabel dx dy lbl
   translate dx dy (PEllipse a ell) = PEllipse a $ translateEllipse dx dy ell
@@ -631,6 +718,8 @@ instance Num u => Translate (Primitive u) where
 --------------------------------------------------------------------------------
 -- Paths
 
+-- Affine transformations on paths are applied to their control
+-- points. 
 
 rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang = mapPath (rotate ang) (rotate ang)
@@ -674,21 +763,22 @@ rotateLabel ang (PrimLabel txt ctm) = PrimLabel txt (rotateCTM ang ctm)
 
 -- /rotateAbout/ the start-point, /rotate/ the the CTM.
 --
-rotateAboutLabel :: (Real u, Floating u) 
+rotateAboutLabel :: (Real u, Floating u, PtSize u) 
                  => Radian -> Point2 u -> PrimLabel u -> PrimLabel u
-rotateAboutLabel ang pt (PrimLabel txt ctm) = 
-    PrimLabel txt (rotateAboutCTM ang pt ctm)
+rotateAboutLabel ang (P2 x y) (PrimLabel txt ctm) = 
+    PrimLabel txt (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
 
 
-scaleLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
-scaleLabel sx sy (PrimLabel txt ctm) = PrimLabel txt (scaleCTM sx sy ctm)
+scaleLabel :: PtSize u => u -> u -> PrimLabel u -> PrimLabel u
+scaleLabel sx sy (PrimLabel txt ctm) = 
+    PrimLabel txt (scaleCTM (psDouble sx) (psDouble sy) ctm)
 
 
 -- Change the bottom-left corner.
 --
-translateLabel :: Num u => u -> u -> PrimLabel u -> PrimLabel u
+translateLabel :: PtSize u => u -> u -> PrimLabel u -> PrimLabel u
 translateLabel dx dy (PrimLabel txt ctm) = 
-    PrimLabel txt (translateCTM dx dy ctm)
+    PrimLabel txt (translateCTM (psDouble dx) (psDouble dy) ctm)
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -700,23 +790,23 @@ rotateEllipse ang (PrimEllipse hw hh ctm) =
     PrimEllipse hw hh (rotateCTM ang ctm)
     
 
-rotateAboutEllipse :: (Real u, Floating u) 
+rotateAboutEllipse :: (Real u, Floating u, PtSize u) 
               => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
-rotateAboutEllipse ang pt (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (rotateAboutCTM ang pt ctm)
+rotateAboutEllipse ang (P2 x y) (PrimEllipse hw hh ctm) = 
+    PrimEllipse hw hh (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
 
 
-scaleEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+scaleEllipse :: PtSize u => u -> u -> PrimEllipse u -> PrimEllipse u
 scaleEllipse sx sy (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (scaleCTM sx sy ctm)
+    PrimEllipse hw hh (scaleCTM (psDouble sx) (psDouble sy) ctm)
     
 
 
 -- Change the point
 --
-translateEllipse :: Num u => u -> u -> PrimEllipse u -> PrimEllipse u
+translateEllipse :: PtSize u => u -> u -> PrimEllipse u -> PrimEllipse u
 translateEllipse dx dy (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (translateCTM dx dy ctm)
+    PrimEllipse hw hh (translateCTM (psDouble dx) (psDouble dy) ctm)
 
 
 
@@ -760,7 +850,7 @@ repositionDeltas = step . boundary
         ll = P2 (llx+x) (lly+y)
         ur = P2 (urx+x) (ury+y) 
 
-    unit4 = fromPsPoint 4
+    unit4 = dpoint 4
 
 
 --------------------------------------------------------------------------------

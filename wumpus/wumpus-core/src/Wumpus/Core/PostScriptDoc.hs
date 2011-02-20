@@ -118,7 +118,7 @@ psHeader page_count tod = vcat $
     ]
 
 
-epsHeader :: PtSize u => BoundingBox u -> ZonedTime -> Doc
+epsHeader :: DBoundingBox -> ZonedTime -> Doc
 epsHeader bb tod = vcat $ 
     [ text "%!PS-Adobe-3.0 EPSF-3.0"
     , text "%%BoundingBox:"   <+> upint llx <+> upint lly
@@ -185,7 +185,7 @@ ps_grestore = command "grestore" []
 
 -- | @ ... setlinewidth @
 --
-ps_setlinewidth :: PtSize u => u -> Doc
+ps_setlinewidth :: PsPoint -> Doc
 ps_setlinewidth u = command "setlinewidth" [psptFmt u]
 
 -- | @ ... setlinecap @
@@ -200,7 +200,7 @@ ps_setlinejoin a = command "setlinejoin" [int $ fromEnum a]
 
 -- | @ ... setmiterlimit @
 --
-ps_setmiterlimit :: PtSize u => u -> Doc
+ps_setmiterlimit :: PsPoint -> Doc
 ps_setmiterlimit u = command "setmiterlimit" [psptFmt u]
 
 -- | @ [... ...] ... setdash @
@@ -227,8 +227,8 @@ ps_setrgbcolor (RGBi r g b) = command "setrgbcolor" [fn r, fn g, fn b]
 
 -- | @ ... ... translate @
 --
-ps_translate :: PtSize u => (Vec2 u) -> Doc
-ps_translate (V2 dx dy) = command "translate" [psptFmt dx, psptFmt dy]
+ps_translate :: DVec2 -> Doc
+ps_translate (V2 dx dy) = command "translate" [dtruncFmt dx, dtruncFmt dy]
 
 
 -- Note - Do not use @setmatrix@ for changing the CTM use 
@@ -239,11 +239,11 @@ ps_translate (V2 dx dy) = command "translate" [psptFmt dx, psptFmt dy]
 
 -- | @ [... ... ... ... ... ...] concat @
 --
-ps_concat :: PtSize u => Matrix3'3 u -> Doc
+ps_concat :: Matrix3'3 Double -> Doc
 ps_concat mtrx = doc <+> text  "concat"
   where 
     (a,b,c,d,e,f) = deconsMatrix mtrx
-    doc           = formatArray psptFmt [a,b,c,d,e,f]
+    doc           = formatArray dtruncFmt [a,b,c,d,e,f]
 
 --------------------------------------------------------------------------------
 -- Path construction operators
@@ -262,31 +262,31 @@ ps_newpath = command "newpath" []
 
 -- | @ ... ... moveto @
 --
-ps_moveto :: PtSize u => Point2 u -> Doc
-ps_moveto (P2 x y) = command "moveto" [psptFmt x, psptFmt y]
+ps_moveto :: DPoint2 -> Doc
+ps_moveto (P2 x y) = command "moveto" [dtruncFmt x, dtruncFmt y]
 
 
 -- | @ ... ... rmoveto @
 --
-ps_rmoveto :: PtSize u => Point2 u -> Doc
-ps_rmoveto (P2 x y) = command "rmoveto" [psptFmt x, psptFmt y]
+ps_rmoveto :: DPoint2 -> Doc
+ps_rmoveto (P2 x y) = command "rmoveto" [dtruncFmt x, dtruncFmt y]
 
 
 -- | @ ... ... lineto @
 --
-ps_lineto :: PtSize u => Point2 u -> Doc
-ps_lineto (P2 x y) = command "lineto" [psptFmt x, psptFmt y]
+ps_lineto :: DPoint2 -> Doc
+ps_lineto (P2 x y) = command "lineto" [dtruncFmt x, dtruncFmt y]
 
 
 -- | @ ... ... ... ... ... arc @
 --
-ps_arc :: PtSize u => Point2 u -> u -> Radian -> Radian -> Doc
+ps_arc :: DPoint2 -> Double -> Radian -> Radian -> Doc
 ps_arc (P2 x y) radius ang1 ang2 = 
-    command "arc" $ [ psptFmt x
-                    , psptFmt y
-                    , psptFmt radius
-                    , psptFmt $ fromR ang1
-                    , psptFmt $ fromR ang2
+    command "arc" $ [ dtruncFmt x
+                    , dtruncFmt y
+                    , dtruncFmt radius
+                    , dtruncFmt $ fromR ang1
+                    , dtruncFmt $ fromR ang2
                     ]
   where
     fromR :: Radian -> Double
@@ -294,9 +294,9 @@ ps_arc (P2 x y) radius ang1 ang2 =
 
 -- | @ ... ... ... ... ... ... curveto @
 --
-ps_curveto :: PtSize u => Point2 u -> Point2 u -> Point2 u -> Doc
+ps_curveto :: DPoint2 -> DPoint2 -> DPoint2 -> Doc
 ps_curveto (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) =
-    command "curveto" $ map psptFmt [x1,y1, x2,y2, x3,y3]
+    command "curveto" $ map dtruncFmt [x1,y1, x2,y2, x3,y3]
 
 -- | @ closepath @
 --
@@ -379,9 +379,9 @@ ps_glyphshow ss = command "glyphshow" [text $ '/':ss]
 --
 -- Custom Wumpus proc for filled ellipse.
 --
-ps_wumpus_FELL :: PtSize u => Point2 u -> u -> u -> Doc
+ps_wumpus_FELL :: DPoint2 -> Double -> Double -> Doc
 ps_wumpus_FELL (P2 x y) rx ry = 
-    command "FELL" $ map psptFmt [x, y, rx, ry]
+    command "FELL" $ map dtruncFmt [x, y, rx, ry]
 
 
 
@@ -389,9 +389,9 @@ ps_wumpus_FELL (P2 x y) rx ry =
 --
 -- Custom Wumpus proc for stroked ellipse.
 --
-ps_wumpus_SELL :: PtSize u => Point2 u -> u -> u -> Doc
+ps_wumpus_SELL :: DPoint2 -> Double -> Double -> Doc
 ps_wumpus_SELL (P2 x y) rx ry = 
-    command "SELL" $ map psptFmt [x, y, rx, ry]
+    command "SELL" $ map dtruncFmt [x, y, rx, ry]
 
 
 
@@ -399,15 +399,15 @@ ps_wumpus_SELL (P2 x y) rx ry =
 --
 -- Custom Wumpus proc for filled circle.
 --
-ps_wumpus_FCIRC :: PtSize u => Point2 u -> u -> Doc
-ps_wumpus_FCIRC (P2 x y) r = command "FCIRC" $ map psptFmt [x, y, r]
+ps_wumpus_FCIRC :: DPoint2 -> Double -> Doc
+ps_wumpus_FCIRC (P2 x y) r = command "FCIRC" $ map dtruncFmt [x, y, r]
 
 -- | @ X Y R SCIRC  @
 --
 -- Custom Wumpus proc for stroked circle.
 --
-ps_wumpus_SCIRC :: PtSize u => Point2 u -> u -> Doc
-ps_wumpus_SCIRC (P2 x y) r = command "SCIRC" $ map psptFmt [x, y, r]
+ps_wumpus_SCIRC :: DPoint2 -> Double -> Doc
+ps_wumpus_SCIRC (P2 x y) r = command "SCIRC" $ map dtruncFmt [x, y, r]
 
 -- | @ SZ NAME FL  @
 --

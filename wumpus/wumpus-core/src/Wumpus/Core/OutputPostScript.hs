@@ -31,6 +31,7 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
+import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.Text.Base
@@ -210,8 +211,7 @@ psDraw timestamp pics =
 --
 psDrawPage :: (Real u, Floating u, PtSize u)
            => (String,Int) -> Picture u -> PsMonad Doc
-psDrawPage (lbl,ordinal) pic = 
-    let (_,cmdtrans) = imageTranslation pic in 
+psDrawPage (lbl,ordinal) pic0 = 
     (\doc -> vcat [ dsc_Page lbl ordinal
                   , ps_gsave
                   , cmdtrans
@@ -220,27 +220,31 @@ psDrawPage (lbl,ordinal) pic =
                   , ps_showpage
                   ]) 
       <$> picture pic
-
+  where
+    pic          = psUnitTranslation pic0 
+    (_,cmdtrans) = imageTranslation pic 
 
 -- | Note the bounding box may /below the origin/ - if it is, it
 -- will need translating.
 --
 epsDraw :: (Real u, Floating u, PtSize u)
         => ZonedTime -> Picture u -> Doc
-epsDraw timestamp pic =
-    let (bb,cmdtrans) = imageTranslation pic 
-        body          = runPsMonad (picture pic) 
-    in vcat [ epsHeader bb timestamp
-            , ps_wumpus_prolog
-            , ps_gsave
-            , cmdtrans
-            , body
-            , ps_grestore
-            , epsFooter
-            ]
+epsDraw timestamp pic0 =
+    vcat [ epsHeader bb timestamp
+         , ps_wumpus_prolog
+         , ps_gsave
+         , cmdtrans
+         , body
+         , ps_grestore
+         , epsFooter
+         ]
+  where
+    pic           = psUnitTranslation pic0
+    (bb,cmdtrans) = imageTranslation pic 
+    body          = runPsMonad (picture pic) 
 
 
-imageTranslation :: (Ord u, PtSize u) => Picture u -> (BoundingBox u, Doc)
+imageTranslation :: DPicture -> (DBoundingBox, Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, empty)
   (bb, Just v)  -> (bb, ps_translate v)
@@ -288,7 +292,7 @@ missingComment i =
 
 --------------------------------------------------------------------------------
 
-picture :: (Real u, Floating u, PtSize u) => Picture u -> PsMonad Doc
+picture :: DPicture -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 
@@ -316,7 +320,7 @@ oneConcat fn ones = outstep (viewl ones)
 -- state. 
 --
 
-primitive :: (Real u, Floating u, PtSize u) => Primitive u -> PsMonad Doc
+primitive :: DPrimitive -> PsMonad Doc
 primitive (PPath props pp)     
     | isEmptyPath pp           = pure empty 
     | otherwise                = primPath props pp
@@ -338,8 +342,7 @@ primitive (PClip cp chi) =
       <$> clipPath cp <*> primitive chi <* resetGS
 
 
-primPath :: PtSize u
-         => PathProps -> PrimPath u -> PsMonad Doc
+primPath :: PathProps -> DPrimPath -> PsMonad Doc
 primPath (CFill rgb)     p = 
     (\rgbd -> vcat [rgbd, pathBody p, ps_closepath, ps_fill]) 
       <$> deltaDrawColour rgb  
@@ -358,11 +361,11 @@ primPath (CFillStroke fc attrs sc) p =
       <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
 
 
-clipPath :: PtSize u => PrimPath u -> PsMonad Doc
+clipPath :: DPrimPath -> PsMonad Doc
 clipPath p = pure $ vcat [pathBody p , ps_closepath, ps_clip]
 
 
-pathBody :: PtSize u => PrimPath u -> Doc
+pathBody :: DPrimPath -> Doc
 pathBody (PrimPath start xs) = 
     vcat $ ps_newpath : ps_moveto start : (snd $ mapAccumL step start xs)
   where
@@ -385,8 +388,7 @@ pathBody (PrimPath start xs) =
 -- For good stroked ellipses, Bezier curves constructed from 
 -- PrimPaths should be used.
 --
-primEllipse :: (Real u, Floating u, PtSize u) 
-            => EllipseProps -> PrimEllipse u -> PsMonad Doc
+primEllipse :: EllipseProps -> DPrimEllipse -> PsMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = bracketPrimCTM ctm (drawC props)
     | otherwise = bracketPrimCTM ctm (drawE props)
@@ -405,13 +407,12 @@ primEllipse props (PrimEllipse hw hh ctm)
 
 -- This will need to become monadic to handle /colour delta/.
 --
-fillEllipse :: PtSize u => RGBi -> u -> u -> Point2 u -> PsMonad Doc
+fillEllipse :: RGBi -> Double -> Double -> DPoint2 -> PsMonad Doc
 fillEllipse rgb rx ry pt = 
     (\rgbd -> rgbd `vconcat` ps_wumpus_FELL pt rx ry)
       <$> deltaDrawColour rgb
 
-strokeEllipse :: PtSize u 
-              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> PsMonad Doc
+strokeEllipse :: RGBi -> StrokeAttr -> Double -> Double -> DPoint2 -> PsMonad Doc
 strokeEllipse rgb sa rx ry pt =
     (\rgbd attrd -> vcat [ rgbd
                          , attrd
@@ -421,13 +422,12 @@ strokeEllipse rgb sa rx ry pt =
 
 -- This will need to become monadic to handle /colour delta/.
 --
-fillCircle :: PtSize u => RGBi -> u -> Point2 u -> PsMonad Doc
+fillCircle :: RGBi -> Double -> DPoint2 -> PsMonad Doc
 fillCircle rgb r pt = 
     (\rgbd -> rgbd `vconcat` ps_wumpus_FCIRC pt r)
       <$> deltaDrawColour rgb
 
-strokeCircle :: PtSize u 
-              => RGBi -> StrokeAttr -> u -> Point2 u -> PsMonad Doc
+strokeCircle :: RGBi -> StrokeAttr -> Double -> DPoint2 -> PsMonad Doc
 strokeCircle rgb sa r pt =
     (\rgbd attrd -> vcat [ rgbd
                          , attrd
@@ -438,8 +438,7 @@ strokeCircle rgb sa r pt =
 -- Note - for the otherwise case, the x-and-y coordinates are 
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
-primLabel :: (Real u, Floating u, PtSize u) 
-          => LabelProps -> PrimLabel u -> PsMonad Doc
+primLabel :: LabelProps -> DPrimLabel -> PsMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
   where
     ev    = font_enc_vector $ font_face attrs    
@@ -467,15 +466,13 @@ primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
 --
     
 
-labelBody :: PtSize u 
-          => EncodingVector -> Point2 u -> LabelBody u -> Doc
+labelBody :: EncodingVector -> DPoint2 -> DLabelBody -> Doc
 labelBody ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
 labelBody ev pt (KernTextH xs)  = kernTextH ev pt xs
 labelBody ev pt (KernTextV xs)  = kernTextV ev pt xs
 
 -- 
-kernTextH :: PtSize u 
-                => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
+kernTextH :: EncodingVector -> DPoint2 -> [DKerningChar] -> Doc
 kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dx,ch) = let doc1 = psChar ev ch
@@ -485,8 +482,7 @@ kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
 
 -- Note - vertical labels grow downwards...
 --
-kernTextV :: PtSize u 
-                => EncodingVector -> Point2 u -> [KerningChar u] -> Doc
+kernTextV :: EncodingVector -> DPoint2 -> [DKerningChar] -> Doc
 kernTextV ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dy,ch) = let doc1 = psChar ev ch
@@ -569,12 +565,10 @@ makeFontAttrs (FontAttr sz face) = ps_wumpus_FL sz (ps_font_name face)
 --------------------------------------------------------------------------------
 -- Bracket matrix and PrimCTM trafos
 
-bracketTrafos :: (Real u, Floating u, PtSize u) 
-              => [AffineTrafo u] -> PsMonad Doc -> PsMonad Doc
+bracketTrafos :: [DAffineTrafo] -> PsMonad Doc -> PsMonad Doc
 bracketTrafos xs ma = bracketMatrix (concatTrafos xs) ma 
 
-bracketMatrix :: (Fractional u, PtSize u) 
-              => Matrix3'3 u -> PsMonad Doc -> PsMonad Doc
+bracketMatrix :: Matrix3'3 Double -> PsMonad Doc -> PsMonad Doc
 bracketMatrix mtrx ma 
     | mtrx == identityMatrix = ma
     | otherwise              = (\doc -> vcat [inn, doc, out]) <$> ma
@@ -583,16 +577,15 @@ bracketMatrix mtrx ma
     out   = ps_concat $ invert mtrx
 
 
-bracketPrimCTM :: forall u. (Real u, Floating u, PtSize u)
-               => PrimCTM u 
-               -> (Point2 u -> PsMonad Doc) -> PsMonad Doc
+bracketPrimCTM :: DPrimCTM -> (DPoint2 -> PsMonad Doc) -> PsMonad Doc
 bracketPrimCTM ctm0 mf = step $ unCTM ctm0 
   where 
-    step (pt,ctm) 
-      | ctm == identityCTM  = mf pt
+    step (P2 x y,ctm) 
+      | ctm == identityCTM  = mf $ P2 (dpoint x) (dpoint y)
       | otherwise           = let mtrx  = matrixRepCTM ctm0  -- originalCTM
                                   inn   = ps_concat $ mtrx
                                   out   = ps_concat $ invert mtrx
                               in (\doc -> vcat [inn, doc, out]) <$> mf zeroPt
+
 
 

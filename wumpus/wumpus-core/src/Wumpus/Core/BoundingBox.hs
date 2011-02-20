@@ -81,7 +81,8 @@ type DBoundingBox = BoundingBox Double
 --------------------------------------------------------------------------------
 -- instances
 
-
+instance Functor BoundingBox where
+  fmap f (BBox p0 p1) = BBox (fmap f p0) (fmap f p1)
 
 instance Format u => Format (BoundingBox u) where
   format (BBox p0 p1) = parens (text "BBox" <+> text "ll=" <> format p0 
