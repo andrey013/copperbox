@@ -46,7 +46,7 @@ pic2 = txt `picOver` ch `picOver` xy_frame "rotate 30deg"
 pic3 :: Picture Double
 pic3 = txt `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
-     txt  = mkBlackTextlabel (rotateAbout ang pto) pt
+     txt  = mkBlackTextlabel (rotateAbout ang (pto::DPoint2)) pt
      ch   = rotateAbout ang pto $ zcrosshair pt
      pt   = P2 70 10
      pto  = P2 60 0
@@ -68,16 +68,16 @@ pic5 = txt `picOver` ch `picOver` xy_frame "translate -70 -10"
      pt   = P2 70 10
 
 
-mkBlackTextlabel :: (Real u, Floating u, FromPtSize u) 
+mkBlackTextlabel :: (Real u, Floating u, PtSize u) 
                  => (Primitive u -> Primitive u) 
                  -> Point2 u -> Picture u
 mkBlackTextlabel trafo bl = 
     frame [ trafo $ textlabel black wumpus_default_font "rhubarb" bl ] 
 
-zcrosshair :: (Real u, Floating u, FromPtSize u) => Point2 u -> Picture u
+zcrosshair :: (Real u, Floating u, PtSize u) => Point2 u -> Picture u
 zcrosshair = crosshair 56 12 
 
-crosshair :: (Real u, Floating u, FromPtSize u) 
+crosshair :: (Real u, Floating u, PtSize u) 
           => u -> u -> Point2 u -> Picture u
 crosshair w h bl = 
     frame [ostroke burlywood default_stroke_attr $ primPath bl ps]
@@ -90,7 +90,7 @@ crosshair w h bl =
 burlywood :: RGBi
 burlywood = RGBi 222 184 135
 
-xy_frame :: (Real u, Floating u, FromPtSize u) => String -> Picture u
+xy_frame :: (Real u, Floating u, PtSize u) => String -> Picture u
 xy_frame ss = 
     frame [ mkline (P2 (-4) 0) (P2 150 0)
           , mkline (P2 0 (-4)) (P2 0 150) 

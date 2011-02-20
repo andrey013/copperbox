@@ -107,7 +107,7 @@ demo07 = do
 
 
 
-drawBounds :: (Floating u, Real u, FromPtSize u) => Picture u -> Picture u
+drawBounds :: (Floating u, Real u, PtSize u) => Picture u -> Picture u
 drawBounds p        = p `picOver` (frame [zcstroke ph])
   where
     ph            = vertexPath $ [bl,br,tr,tl]

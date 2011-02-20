@@ -45,7 +45,7 @@ words_pic   = frame $
 boundedCourier :: String -> DPoint2 -> DPrimitive
 boundedCourier = boundedText courier
 
-boundedText :: (Num u, Ord u, FromPtSize u) 
+boundedText :: (Ord u, PtSize u) 
             => FontAttr -> String -> Point2 u -> Primitive u
 boundedText fa@(FontAttr sz _) ss pt = primCat bbox text
   where

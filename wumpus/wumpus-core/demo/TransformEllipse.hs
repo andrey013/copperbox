@@ -47,7 +47,7 @@ pic2 = cb `picOver` ell `picOver` xy_frame "rotate 30deg"
 pic3 :: Picture Double
 pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
-     ell  = mkRedEllipse (rotateAbout ang pto) 20 10 pt
+     ell  = mkRedEllipse (rotateAbout ang (pto::DPoint2)) 20 10 pt
      cb   = rotateAbout ang pto $ crossbar 20 10 pt
      pt   = P2 70 10
      pto  = P2 60 0
@@ -69,13 +69,13 @@ pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
      pt   = P2 70 10
 
 
-mkRedEllipse :: (Real u, Floating u, FromPtSize u) 
+mkRedEllipse :: (Real u, Floating u, PtSize u) 
              => (Primitive u -> Primitive u) 
              -> u -> u -> Point2 u -> Picture u
 mkRedEllipse trafo rx ry pt = 
     illustrateControlPoints gray $ trafo $ fillEllipse red rx ry pt
 
-crossbar :: (Real u, Floating u, FromPtSize u) 
+crossbar :: (Real u, Floating u, PtSize u) 
          => u -> u -> Point2 u -> Picture u
 crossbar rx ry ctr = 
     frame [ostroke black default_stroke_attr $ primPath west ps]
@@ -87,7 +87,7 @@ crossbar rx ry ctr =
     west  = ctr .-^ hvec rx
 
 
-xy_frame :: (Real u, Floating u, FromPtSize u) => String -> Picture u
+xy_frame :: (Real u, Floating u, PtSize u) => String -> Picture u
 xy_frame ss = 
     frame [ mkline (P2 (-4) 0) (P2 150 0)
           , mkline (P2 0 (-4)) (P2 0 150) 
