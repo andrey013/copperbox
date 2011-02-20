@@ -788,7 +788,7 @@ a `picOver` b = Picture (bb,[]) (join (one b) (one a))
 --  Move a picture by the supplied vector. 
 --
 picMoveBy :: (PtSize u, Ord u) => Picture u -> Vec2 u -> Picture u
-p `picMoveBy` (V2 dx dy) = translate dx dy p 
+p `picMoveBy` v1 = translateBy v1 p 
 
 -- | 'picBeside' : @ picture * picture -> Picture @
 --

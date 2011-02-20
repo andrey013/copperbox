@@ -637,7 +637,7 @@ instance (PtSize u, Ord u) => Transform (Picture u) where
     mapLocale $ \(bb,xs) -> let cmd = Matrix $ fmap psDouble mtrx
                             in (transform mtrx bb, cmd : xs)
 
-instance (Real u, Floating u) => Rotate (Picture u) where
+instance (PtSize u, Ord u) => Rotate (Picture u) where
   rotate theta = 
     mapLocale $ \(bb,xs) -> (rotate theta bb, Rotate theta:xs)
 
@@ -683,7 +683,7 @@ instance (Real u, Floating u) => Rotate (Primitive u) where
   rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
   rotate r (PClip p chi)    = PClip (rotatePath r p) (rotate r chi)
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (Primitive u) where
+instance PtSize u => RotateAbout (Primitive u) where
   rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
   rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
   rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
@@ -725,18 +725,18 @@ rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang = mapPath (rotate ang) (rotate ang)
 
 
-rotateAboutPath :: (Real u, Floating u) 
-                => Radian -> Point2 u -> PrimPath u -> PrimPath u
+rotateAboutPath :: (PtSize u1, PtSize u) 
+                => Radian -> Point2 u1 -> PrimPath u -> PrimPath u
 rotateAboutPath ang pt = mapPath (rotateAbout ang pt) (rotateAbout ang pt) 
 
 
-scalePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+scalePath :: PtSize u => Double -> Double -> PrimPath u -> PrimPath u
 scalePath sx sy = mapPath (scale sx sy) (scale sx sy)
 
 -- Note - translate only needs change the start point /because/ 
 -- the path represented as a relative path.
 -- 
-translatePath :: Num u => u -> u -> PrimPath u -> PrimPath u
+translatePath :: PtSize u => Double -> Double -> PrimPath u -> PrimPath u
 translatePath x y (PrimPath st xs) = PrimPath (translate x y st) xs
 
 
@@ -763,20 +763,20 @@ rotateLabel ang (PrimLabel txt ctm) = PrimLabel txt (rotateCTM ang ctm)
 
 -- /rotateAbout/ the start-point, /rotate/ the the CTM.
 --
-rotateAboutLabel :: (Real u, Floating u, PtSize u) 
-                 => Radian -> Point2 u -> PrimLabel u -> PrimLabel u
+rotateAboutLabel :: (PtSize u1, PtSize u) 
+                 => Radian -> Point2 u1 -> PrimLabel u -> PrimLabel u
 rotateAboutLabel ang (P2 x y) (PrimLabel txt ctm) = 
     PrimLabel txt (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
 
 
-scaleLabel :: PtSize u => u -> u -> PrimLabel u -> PrimLabel u
+scaleLabel :: PtSize u => Double -> Double -> PrimLabel u -> PrimLabel u
 scaleLabel sx sy (PrimLabel txt ctm) = 
     PrimLabel txt (scaleCTM (psDouble sx) (psDouble sy) ctm)
 
 
 -- Change the bottom-left corner.
 --
-translateLabel :: PtSize u => u -> u -> PrimLabel u -> PrimLabel u
+translateLabel :: PtSize u => Double -> Double -> PrimLabel u -> PrimLabel u
 translateLabel dx dy (PrimLabel txt ctm) = 
     PrimLabel txt (translateCTM (psDouble dx) (psDouble dy) ctm)
 
@@ -790,13 +790,13 @@ rotateEllipse ang (PrimEllipse hw hh ctm) =
     PrimEllipse hw hh (rotateCTM ang ctm)
     
 
-rotateAboutEllipse :: (Real u, Floating u, PtSize u) 
-              => Radian -> Point2 u -> PrimEllipse u -> PrimEllipse u
+rotateAboutEllipse :: (PtSize u1, PtSize u)
+              => Radian -> Point2 u1 -> PrimEllipse u -> PrimEllipse u
 rotateAboutEllipse ang (P2 x y) (PrimEllipse hw hh ctm) = 
     PrimEllipse hw hh (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
 
 
-scaleEllipse :: PtSize u => u -> u -> PrimEllipse u -> PrimEllipse u
+scaleEllipse :: PtSize u => Double -> Double -> PrimEllipse u -> PrimEllipse u
 scaleEllipse sx sy (PrimEllipse hw hh ctm) = 
     PrimEllipse hw hh (scaleCTM (psDouble sx) (psDouble sy) ctm)
     
@@ -804,7 +804,7 @@ scaleEllipse sx sy (PrimEllipse hw hh ctm) =
 
 -- Change the point
 --
-translateEllipse :: PtSize u => u -> u -> PrimEllipse u -> PrimEllipse u
+translateEllipse :: PtSize u => Double -> Double -> PrimEllipse u -> PrimEllipse u
 translateEllipse dx dy (PrimEllipse hw hh ctm) = 
     PrimEllipse hw hh (translateCTM (psDouble dx) (psDouble dy) ctm)
 

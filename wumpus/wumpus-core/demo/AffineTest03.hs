@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,10 +15,10 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
                [ circle_cpa, ellipse_cpa, path_cpa ]
 
 
-translate_20x40 :: (Translate t, Fractional u, u ~ DUnit t) => t -> t
+translate_20x40 :: Translate t => t -> t
 translate_20x40 = translate 20.0 40.0
 
-translate_20x40P :: Fractional u => Primitive u -> Primitive u
+translate_20x40P :: PtSize u => Primitive u -> Primitive u
 translate_20x40P = translate 20.0 40.0
 
 -- Primitive - Text
