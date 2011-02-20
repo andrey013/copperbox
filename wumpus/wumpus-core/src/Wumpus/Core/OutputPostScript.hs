@@ -577,7 +577,7 @@ bracketMatrix mtrx ma
     out   = ps_concat $ invert mtrx
 
 
-bracketPrimCTM :: DPrimCTM -> (DPoint2 -> PsMonad Doc) -> PsMonad Doc
+bracketPrimCTM :: PrimCTM -> (DPoint2 -> PsMonad Doc) -> PsMonad Doc
 bracketPrimCTM ctm0 mf = step $ unCTM ctm0 
   where 
     step (P2 x y,ctm) 

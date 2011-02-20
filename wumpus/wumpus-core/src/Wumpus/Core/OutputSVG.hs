@@ -517,7 +517,7 @@ bracketMatrix mtrx ma
 -- rectifying flip transformation /if/ the ellipse or circle has 
 -- not been scaled or rotated.
 --
-bracketTextCTM :: DPrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
+bracketTextCTM :: PrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
 bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
   where
     mtrx = attr_transform $ val_matrix $ matrixRepCTM ctm0
@@ -529,7 +529,7 @@ bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
 -- Note v0.41.0 otherwise step always fires because the matrix 
 -- has been transformed for SVG coordspace to [1,0,0,-1].
 --
-bracketEllipseCTM :: DPrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
+bracketEllipseCTM :: PrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
 bracketEllipseCTM ctm0 pf = step $ unCTM ctm0
   where
     step (P2 x y, ctm) 
@@ -539,7 +539,7 @@ bracketEllipseCTM ctm0 pf = step $ unCTM ctm0
                                 in (\xy -> xy <+> mtrx) <$> pf zeroPt
 
 
-flippedCTM :: DPrimCTM
+flippedCTM :: PrimCTM
 flippedCTM = PrimCTM { ctm_trans_x = 0
                      , ctm_trans_y = 0
                      , ctm_scale_x = 1

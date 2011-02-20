@@ -84,10 +84,8 @@ trivKerningChar :: PtSize u => KerningChar u -> DKerningChar
 trivKerningChar (u,esc) = (psDouble u, esc)
 
 
--- Is the translation here just negating the angle with scaling
--- left untouched?
+-- Negate the y scaling to flip the image.
 --
-trivPrimCTM :: PtSize u => PrimCTM u -> DPrimCTM
-trivPrimCTM (PrimCTM dx dy sx sy theta) = 
-    PrimCTM (psDouble dx) (psDouble dy) (psDouble sx) (negate $ psDouble sy) theta
+trivPrimCTM :: PrimCTM -> PrimCTM
+trivPrimCTM (PrimCTM dx dy sx sy theta) = PrimCTM dx dy sx (negate sy) theta
 

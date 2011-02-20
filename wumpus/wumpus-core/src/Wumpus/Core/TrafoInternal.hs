@@ -27,7 +27,6 @@ module Wumpus.Core.TrafoInternal
 
   -- * Types
     PrimCTM(..)
-  , DPrimCTM
 
   , AffineTrafo(..) 
   , DAffineTrafo
@@ -53,8 +52,11 @@ module Wumpus.Core.TrafoInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
+import Wumpus.Core.Units
+import Wumpus.Core.Utils.Common ( dtruncFmt )
 import Wumpus.Core.Utils.FormatCombinators
 
+-- Note - PrimCTM can be specialized to Double.
 
 -- Primitives support affine transformations.
 --
@@ -64,19 +66,15 @@ import Wumpus.Core.Utils.FormatCombinators
 -- 
 -- Note - line thickness of a stroked path will not be scaled.
 --
-data PrimCTM u = PrimCTM 
-      { ctm_trans_x     :: !u
-      , ctm_trans_y     :: !u
-      , ctm_scale_x     :: !u
-      , ctm_scale_y     :: !u
+data PrimCTM = PrimCTM 
+      { ctm_trans_x     :: !Double
+      , ctm_trans_y     :: !Double
+      , ctm_scale_x     :: !Double
+      , ctm_scale_y     :: !Double
       , ctm_rotation    :: !Radian 
       }
   deriving (Eq,Show)
 
--- | Type specialized version of PrimCTM where the unit type is 
--- specialized to Double representing PostScript points.
--- 
-type DPrimCTM = PrimCTM Double
 
 
 
@@ -97,12 +95,12 @@ data AffineTrafo u = Matrix (Matrix3'3 u)
 -- 
 type DAffineTrafo = AffineTrafo Double
 
-instance Format u => Format (PrimCTM u) where
+instance Format PrimCTM where
   format (PrimCTM dx dy sx sy ang) = 
-      parens (text "CTM" <+> text "dx =" <> format dx
-                         <+> text "dy =" <> format dy
-                         <+> text "sx =" <> format sx 
-                         <+> text "sy =" <> format sy 
+      parens (text "CTM" <+> text "dx =" <> dtruncFmt dx
+                         <+> text "dy =" <> dtruncFmt dy
+                         <+> text "sx =" <> dtruncFmt sx 
+                         <+> text "sy =" <> dtruncFmt sy 
                          <+> text "ang=" <> format ang  )
 
 
@@ -110,7 +108,7 @@ instance Format u => Format (PrimCTM u) where
 --------------------------------------------------------------------------------
 -- Manipulating the PrimCTM
 
-identityCTM :: Num u => PrimCTM u
+identityCTM :: PrimCTM
 identityCTM = PrimCTM { ctm_trans_x = 0
                       , ctm_trans_y = 0
                       , ctm_scale_x  = 1
@@ -118,7 +116,7 @@ identityCTM = PrimCTM { ctm_trans_x = 0
                       , ctm_rotation = 0   }
 
 
-makeThetaCTM :: Num u => u -> u -> Radian -> PrimCTM u
+makeThetaCTM :: Double -> Double -> Radian -> PrimCTM
 makeThetaCTM dx dy ang = PrimCTM { ctm_trans_x = dx
                                  , ctm_trans_y = dy
                                  , ctm_scale_x = 1
@@ -126,7 +124,7 @@ makeThetaCTM dx dy ang = PrimCTM { ctm_trans_x = dx
                                  , ctm_rotation = ang }
 
 
-makeTranslCTM :: Num u => u -> u -> PrimCTM u
+makeTranslCTM :: Double -> Double -> PrimCTM
 makeTranslCTM dx dy = PrimCTM { ctm_trans_x = dx
                               , ctm_trans_y = dy
                               , ctm_scale_x = 1
@@ -136,7 +134,7 @@ makeTranslCTM dx dy = PrimCTM { ctm_trans_x = dx
 
 
 
-translateCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
+translateCTM :: Double -> Double -> PrimCTM -> PrimCTM
 translateCTM x1 y1 (PrimCTM dx dy sx sy ang) = 
     PrimCTM (x1+dx) (y1+dy) sx sy ang
 
@@ -149,21 +147,22 @@ translateCTM x1 y1 (PrimCTM dx dy sx sy ang) =
 -- scales and rotations operate on the point coordinates as well
 -- as the scale and rotation components. 
 
-scaleCTM :: Num u => u -> u -> PrimCTM u -> PrimCTM u
+scaleCTM :: Double -> Double -> PrimCTM -> PrimCTM
 scaleCTM x1 y1 (PrimCTM dx dy sx sy ang) = 
     let P2 x y = scale x1 y1 (P2 dx dy) 
     in PrimCTM x y (x1*sx) (y1*sy) ang
 
 
-rotateCTM :: (Real u, Floating u) => Radian -> PrimCTM u -> PrimCTM u
+rotateCTM :: Radian -> PrimCTM -> PrimCTM
 rotateCTM theta (PrimCTM dx dy sx sy ang) = 
     let P2 x y = rotate theta (P2 dx dy) 
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
-rotateAboutCTM :: (Real u, Floating u) 
-               => Radian -> Point2 u -> PrimCTM u -> PrimCTM u
+rotateAboutCTM :: PtSize u
+               => Radian -> Point2 u -> PrimCTM -> PrimCTM
 rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = rotateAbout theta pt (P2 dx dy)
+    let ptd    = fmap psDouble pt 
+        P2 x y = rotateAbout theta ptd (P2 dx dy)
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
 
@@ -174,7 +173,7 @@ rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) =
 -- This function encapsulates the correct order (or does it? - 
 -- some of the demos are not working properly...).
 --
-matrixRepCTM :: DPrimCTM -> Matrix3'3 Double
+matrixRepCTM :: PrimCTM -> Matrix3'3 Double
 matrixRepCTM (PrimCTM dx dy sx sy ang) = 
     translationMatrix dx dy * rotationMatrix (circularModulo ang) 
                             * scalingMatrix sx sy
@@ -186,7 +185,7 @@ matrixRepCTM (PrimCTM dx dy sx sy ang) =
 -- If the residual CTM is the identity CTM, the SVG or PostScript
 -- output can be optimized.
 -- 
-unCTM :: Num u => PrimCTM  u -> (Point2 u, PrimCTM u)
+unCTM :: PrimCTM -> (DPoint2, PrimCTM)
 unCTM (PrimCTM dx dy sx sy ang) = (P2 dx dy, PrimCTM 0 0 sx sy ang)
 
 

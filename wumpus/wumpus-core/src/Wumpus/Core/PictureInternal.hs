@@ -266,7 +266,7 @@ type DAbsPathSegment = AbsPathSegment Double
 --
 data PrimLabel u = PrimLabel 
       { label_body          :: LabelBody u
-      , label_ctm           :: DPrimCTM
+      , label_ctm           :: PrimCTM
       }
   deriving (Eq,Show)
 
@@ -320,7 +320,7 @@ type DKerningChar = KerningChar Double
 data PrimEllipse u = PrimEllipse 
       { ellipse_half_width    :: u
       , ellipse_half_height   :: u 
-      , ellipse_ctm           :: DPrimCTM
+      , ellipse_ctm           :: PrimCTM
       } 
   deriving (Eq,Show)
 
