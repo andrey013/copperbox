@@ -65,10 +65,10 @@ instance Show AfmUnit where
 -- | Compute the size of a measurement in Afm units scaled by the
 -- point size of the font.
 --
-afmValue :: FromPtSize u => AfmUnit -> PtSize -> u
-afmValue u pt = fromPtSize $ (realToFrac $ getAfmUnit u) * (pt / 1000)
+afmValue :: PtSize u => AfmUnit -> PsPoint -> u
+afmValue u pt = fromPsPoint $ (realToFrac $ getAfmUnit u) * (pt / 1000)
 
-afmUnitScale :: AfmUnit -> PtSize 
+afmUnitScale :: AfmUnit -> PsPoint
 afmUnitScale u = (realToFrac $ getAfmUnit u / 1000)
 
 
@@ -161,7 +161,7 @@ data FontProps cu = FontProps
 -- | Build a MetricsOps function table, from a character unit
 -- scaling function and FontProps read from a file.
 --
-buildMetricsOps :: (cu -> PtSize) -> FontProps cu -> FontMetrics
+buildMetricsOps :: (cu -> PsPoint) -> FontProps cu -> FontMetrics
 buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
                                    , fp_default_adv_vec = V2 vx vy }) = 
     FontMetrics
@@ -172,7 +172,7 @@ buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
       , get_descender     = \sz -> upscale sz (fn $ fp_descender font)
       }
   where
-    upscale sz d            = fromPtSize $ sz * d 
+    upscale sz d            = fromPsPoint $ sz * d 
  
     defaultAV sz            = V2 (upscale sz $ fn vx) (upscale sz $ fn vy) 
     scalePt  sz (P2 cx cy)  = P2 (upscale sz $ fn cx) (upscale sz $ fn cy) 

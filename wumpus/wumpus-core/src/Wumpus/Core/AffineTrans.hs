@@ -143,7 +143,10 @@ class RotateAbout t where
 -- longer relates units of the origin point with the rotated 
 -- object.
 -- 
-
+-- However in pratice this is not so convenient, and the changes 
+-- may be rolled back.
+--
+ 
 instance RotateAbout (UNil u) where
   rotateAbout _ _ = id
 

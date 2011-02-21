@@ -122,19 +122,19 @@ instance OPlus (PrimGraphic u) where
 
 -- Affine transformations
 
-instance (Real u, Floating u) => Rotate (PrimGraphic u) where
+instance (Real u, Floating u, PtSize u) => Rotate (PrimGraphic u) where
   rotate ang = PrimGraphic . rotate ang . getPrimGraphic
 
 
-instance (Real u, Floating u) => RotateAbout (PrimGraphic u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (PrimGraphic u) where
   rotateAbout ang pt = PrimGraphic . rotateAbout ang pt . getPrimGraphic
 
 
-instance Num u => Scale (PrimGraphic u) where
+instance PtSize u => Scale (PrimGraphic u) where
   scale sx sy = PrimGraphic . scale sx sy . getPrimGraphic
 
 
-instance Num u => Translate (PrimGraphic u) where
+instance PtSize u => Translate (PrimGraphic u) where
   translate dx dy = PrimGraphic . translate dx dy . getPrimGraphic
 
 --------------------------------------------------------------------------------

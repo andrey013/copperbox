@@ -62,7 +62,6 @@ module Wumpus.Basic.Kernel.Base.QueryDC
 
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontMetrics
-import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core
 import qualified Wumpus.Core.FontSize   as FS

@@ -294,9 +294,9 @@ type instance DUnit (BezierCurve u) = u
 -- The result is found through repeated subdivision so the 
 -- calculation is potentially costly.
 --
-bezierLength :: (Floating u, Ord u, FromPtSize u)      
+bezierLength :: (Floating u, Ord u, PtSize u)      
              => BezierCurve u -> u
-bezierLength = gravesenLength (fromPtSize 0.1)
+bezierLength = gravesenLength (fromPsPoint 0.1)
 
 
 

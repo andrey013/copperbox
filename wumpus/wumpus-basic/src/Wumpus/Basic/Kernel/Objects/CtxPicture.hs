@@ -185,16 +185,16 @@ mapCtxPicture pf = CtxPicture . fmap (fmap pf) . getCtxPicture
 
 
 
-instance (Real u, Floating u) => Rotate (CtxPicture u) where 
+instance (Real u, Floating u, PtSize u) => Rotate (CtxPicture u) where 
   rotate ang = mapCtxPicture (rotate ang)
 
-instance (Real u, Floating u) => RotateAbout (CtxPicture u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (CtxPicture u) where
   rotateAbout r pt = mapCtxPicture (rotateAbout r pt)
 
-instance (Num u, Ord u) => Scale (CtxPicture u) where
+instance (Num u, Ord u, PtSize u) => Scale (CtxPicture u) where
   scale sx sy = mapCtxPicture (scale sx sy)
 
-instance (Num u, Ord u) => Translate (CtxPicture u) where
+instance (Num u, Ord u, PtSize u) => Translate (CtxPicture u) where
   translate dx dy = mapCtxPicture (translate dx dy)
 
 
@@ -366,7 +366,7 @@ infixr 6 `cxpRight`, `cxpUniteCenter`
 -- > a `cxpUniteCenter` b 
 --
 
-cxpUniteCenter :: (Fractional u, Ord u) 
+cxpUniteCenter :: (Fractional u, Ord u, PtSize u) 
                => CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpUniteCenter = megaCombR boundaryCtr boundaryCtr moveFun
   where
@@ -382,7 +382,8 @@ cxpUniteCenter = megaCombR boundaryCtr boundaryCtr moveFun
 -- Horizontal composition - position picture @b@ to the right of 
 -- picture @a@.
 -- 
-cxpRight :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpRight :: (Num u, Ord u, PtSize u) 
+         => CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpRight = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
@@ -394,7 +395,8 @@ cxpRight = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - position picture @b@ /down/ from picture
 -- @a@.
 --
-cxpDown :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpDown :: (Num u, Ord u, PtSize u) 
+        => CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
@@ -402,7 +404,8 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 
 -- | Center the picture at the supplied point.
 --
-cxpCenteredAt :: (Fractional u, Ord u) => CtxPicture u -> Point2 u -> CtxPicture u
+cxpCenteredAt :: (Fractional u, Ord u, PtSize u) 
+              => CtxPicture u -> Point2 u -> CtxPicture u
 cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
   where
     fn p = let bb = boundary p
@@ -450,7 +453,8 @@ cxpColumn = foldl' cxpDown
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-cxpRightSep :: (Num u, Ord u) => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpRightSep :: (Num u, Ord u, PtSize u) 
+            => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
     moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
@@ -464,7 +468,7 @@ cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-cxpDownSep :: (Num u, Ord u) 
+cxpDownSep :: (Num u, Ord u, PtSize u) 
            => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
@@ -498,7 +502,8 @@ cxpColumnSep n = foldl' (cxpDownSep n)
 --------------------------------------------------------------------------------
 -- Aligning pictures
 
-alignMove :: (Num u, Ord u) => Point2 u -> Point2 u -> Picture u -> Picture u
+alignMove :: (Num u, Ord u, PtSize u) 
+          => Point2 u -> Point2 u -> Picture u -> Picture u
 alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 
 
@@ -511,7 +516,7 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ and align it with the top, center or bottom of @a@.
 -- 
-cxpAlignH :: (Fractional u, Ord u) 
+cxpAlignH :: (Fractional u, Ord u, PtSize u) 
           =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpAlignH HTop     = megaCombR boundaryNE boundaryNW  alignMove
 cxpAlignH HCenter  = megaCombR boundaryE  boundaryW   alignMove
@@ -523,15 +528,15 @@ cxpAlignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 -- Vertical composition - move @b@, placing it below @a@ 
 -- and align it with the left, center or right of @a@.
 -- 
-cxpAlignV :: (Fractional u, Ord u) 
-       => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignV :: (Fractional u, Ord u, PtSize u) 
+          => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpAlignV VLeft    = megaCombR boundarySW boundaryNW alignMove
 cxpAlignV VCenter  = megaCombR boundaryS  boundaryN  alignMove
 cxpAlignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 
 
-alignMove2 :: (Num u, Ord u) 
+alignMove2 :: (Num u, Ord u, PtSize u) 
            => Vec2 u ->  Point2 u -> Point2 u -> Picture u -> Picture u
 alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 
@@ -542,8 +547,8 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- Spacing version of 'cxpAlignH' - move @b@ to the right of @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-cxpAlignSepH :: (Fractional u, Ord u) 
-               => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignSepH :: (Fractional u, Ord u, PtSize u) 
+             => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpAlignSepH align dx = go align
   where
     go HTop    = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
@@ -556,8 +561,8 @@ cxpAlignSepH align dx = go align
 -- Spacing version of alignV - move @b@ below @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-cxpAlignSepV :: (Fractional u, Ord u) 
-               => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignSepV :: (Fractional u, Ord u, PtSize u) 
+             => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
 cxpAlignSepV align dy = go align
   where
     go VLeft   = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 

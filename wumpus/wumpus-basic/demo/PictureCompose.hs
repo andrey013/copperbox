@@ -27,7 +27,7 @@ pictures = cxpColumnSep 12 pic1 [ pic2, pic3, pic4, pic5
                                 , pic10, pic11, pic12
                                 ] 
 
-drawBlueBounds :: (Real u, Floating u, FromPtSize u) 
+drawBlueBounds :: (Real u, Floating u, PtSize u) 
                => CtxPicture u -> CtxPicture u
 drawBlueBounds = mapCtxPicture (illustrateBounds blue)
 

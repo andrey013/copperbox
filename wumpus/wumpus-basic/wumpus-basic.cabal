@@ -121,7 +121,7 @@ library
                       directory       >= 1.0     && <  2.0, 
                       filepath        >= 1.1     && <  2.0,
                       vector-space    >= 0.6     && <  1.0,
-                      wumpus-core     >= 0.45.0  && <  0.46.0
+                      wumpus-core     >= 0.50.0  && <  0.51.0
 
   
   exposed-modules:
@@ -137,7 +137,6 @@ library
     Wumpus.Basic.Kernel.Base.FontMetrics,
     Wumpus.Basic.Kernel.Base.QueryDC,
     Wumpus.Basic.Kernel.Base.ScalingContext,
-    Wumpus.Basic.Kernel.Base.Units,
     Wumpus.Basic.Kernel.Base.UpdateDC,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
     Wumpus.Basic.Kernel.Objects.AdvanceGraphic,

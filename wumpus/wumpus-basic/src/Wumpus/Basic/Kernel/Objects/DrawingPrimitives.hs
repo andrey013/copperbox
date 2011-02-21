@@ -187,7 +187,7 @@ borderedPath pp =
 -- text properties (font family, font size, colour) are taken from
 -- the implicit 'DrawingContext'.
 --
-textline :: Num u => String -> LocGraphic u
+textline :: PtSize u => String -> LocGraphic u
 textline ss = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (textlabel rgb attr ss pt)
@@ -208,7 +208,7 @@ textline ss =
 -- 
 -- This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
-rtextline :: Num u => String -> LocThetaGraphic u
+rtextline :: PtSize u => String -> LocThetaGraphic u
 rtextline ss = 
     promoteR2 $ \pt theta -> 
       withTextAttr $ \rgb attr -> graphicAns (rtextlabel rgb attr ss theta pt)
@@ -226,7 +226,7 @@ rtextline ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-escapedline :: Num u => EscapedText -> LocGraphic u
+escapedline :: PtSize u => EscapedText -> LocGraphic u
 escapedline ss = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (escapedlabel rgb attr ss pt)
@@ -248,7 +248,7 @@ escapedline ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-rescapedline :: Num u => EscapedText -> LocThetaGraphic u
+rescapedline :: PtSize u => EscapedText -> LocThetaGraphic u
 rescapedline ss = 
     promoteR2 $ \pt theta -> 
       withTextAttr $ \rgb attr -> graphicAns (rescapedlabel rgb attr ss theta pt)
@@ -267,7 +267,7 @@ rescapedline ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-hkernline :: Num u => [KerningChar u] -> LocGraphic u
+hkernline :: PtSize u => [KerningChar u] -> LocGraphic u
 hkernline xs = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (hkernlabel rgb attr xs pt)
@@ -284,7 +284,7 @@ hkernline xs =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-vkernline :: Num u => [KerningChar u] -> LocGraphic u
+vkernline :: PtSize u => [KerningChar u] -> LocGraphic u
 vkernline xs = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (vkernlabel rgb attr xs pt)
@@ -544,7 +544,7 @@ borderedRectangle w h = promoteR1 (borderedPath . rectanglePath w h)
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedDisk :: Num u => u -> LocGraphic u
+strokedDisk :: PtSize u => u -> LocGraphic u
 strokedDisk r = strokedEllipseDisk r r
 
 
@@ -560,7 +560,7 @@ strokedDisk r = strokedEllipseDisk r r
 --
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledDisk :: Num u => u -> LocGraphic u
+filledDisk :: PtSize u => u -> LocGraphic u
 filledDisk r = filledEllipseDisk r r
 
 
@@ -581,7 +581,7 @@ filledDisk r = filledEllipseDisk r r
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedDisk :: Num u => u -> LocGraphic u
+borderedDisk :: PtSize u => u -> LocGraphic u
 borderedDisk r = borderedEllipseDisk r r
 
 
@@ -602,7 +602,7 @@ borderedDisk r = borderedEllipseDisk r r
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipseDisk :: Num u => u -> u -> LocGraphic u
+strokedEllipseDisk :: PtSize u => u -> u -> LocGraphic u
 strokedEllipseDisk rx ry =
     promoteR1 $ \ pt -> 
       withStrokeAttr $ \rgb attr -> 
@@ -621,7 +621,7 @@ strokedEllipseDisk rx ry =
 --
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledEllipseDisk :: Num u => u -> u -> LocGraphic u
+filledEllipseDisk :: PtSize u => u -> u -> LocGraphic u
 filledEllipseDisk rx ry = 
     promoteR1 $ \pt ->  
       withFillAttr $ \rgb -> graphicAns (fillEllipse rgb rx ry pt)
@@ -644,7 +644,7 @@ filledEllipseDisk rx ry =
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedEllipseDisk :: Num u => u -> u -> LocGraphic u
+borderedEllipseDisk :: PtSize u => u -> u -> LocGraphic u
 borderedEllipseDisk rx ry = 
     promoteR1 $ \pt -> 
       withBorderedAttr $ \frgb attr srgb -> 
