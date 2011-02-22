@@ -46,7 +46,7 @@ pic2 = pth `picOver` ch `picOver` xy_frame "rotate 30deg"
 pic3 :: Picture Double
 pic3 = pth `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
-     pth  = mkBlackPath (rotateAbout ang (pto::DPoint2)) pt
+     pth  = mkBlackPath (rotateAbout ang pto) pt
      ch   = rotateAbout ang pto $ zcrosshair pt
      pt   = P2 70 10
      pto  = P2 60 0

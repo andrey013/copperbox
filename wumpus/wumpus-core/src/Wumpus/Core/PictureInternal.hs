@@ -725,8 +725,8 @@ rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang = mapPath (rotate ang) (rotate ang)
 
 
-rotateAboutPath :: (PtSize u1, PtSize u) 
-                => Radian -> Point2 u1 -> PrimPath u -> PrimPath u
+rotateAboutPath :: PtSize u
+                => Radian -> Point2 u -> PrimPath u -> PrimPath u
 rotateAboutPath ang pt = mapPath (rotateAbout ang pt) (rotateAbout ang pt) 
 
 

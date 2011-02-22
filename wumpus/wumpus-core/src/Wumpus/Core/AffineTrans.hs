@@ -1,4 +1,6 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -136,16 +138,12 @@ instance (Floating u, Real u) => Rotate (Vec2 u) where
 
 -- | Type class for rotation about a point.
 --
-class RotateAbout t where
-  rotateAbout :: PtSize u => Radian -> Point2 u -> t -> t 
-
--- Design note - Change at version 0.50.0, rotateAbout point no 
--- longer relates units of the origin point with the rotated 
--- object.
--- 
--- However in pratice this is not so convenient, and the changes 
--- may be rolled back.
+-- Note this class has a type relation between the unit type of 
+-- the object and the point-of-rotation.
 --
+class RotateAbout t where
+  rotateAbout :: (u ~ DUnit t) => Radian -> Point2 u -> t -> t 
+
  
 instance RotateAbout (UNil u) where
   rotateAbout _ _ = id
@@ -153,7 +151,7 @@ instance RotateAbout (UNil u) where
 instance RotateAbout a => RotateAbout (Maybe a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 
-instance (RotateAbout a, RotateAbout b) => 
+instance (RotateAbout a, RotateAbout b, u ~ DUnit a, u ~ DUnit b) => 
     RotateAbout (a,b) where
   rotateAbout ang pt (a,b) = (rotateAbout ang pt a, rotateAbout ang pt b)
 
@@ -230,7 +228,7 @@ rotate30 = rotate (pi/6)
 
 -- | Rotate by 30 degrees about the supplied point.
 --
-rotate30About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t 
+rotate30About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate30About = rotateAbout (pi/6)
 
 -- | Rotate by 45 degrees about the origin. 
@@ -240,7 +238,7 @@ rotate45 = rotate (pi/4)
 
 -- | Rotate by 45 degrees about the supplied point.
 --
-rotate45About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t 
+rotate45About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate45About = rotateAbout (pi/4)
 
 -- | Rotate by 60 degrees about the origin. 
@@ -250,7 +248,7 @@ rotate60 = rotate (2*pi/3)
 
 -- | Rotate by 60 degrees about the supplied point.
 --
-rotate60About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t 
+rotate60About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate60About = rotateAbout (2*pi/3)
 
 -- | Rotate by 90 degrees about the origin. 
@@ -260,7 +258,7 @@ rotate90 = rotate (pi/2)
 
 -- | Rotate by 90 degrees about the supplied point.
 --
-rotate90About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t 
+rotate90About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate90About = rotateAbout (pi/2)
 
 -- | Rotate by 120 degrees about the origin. 
@@ -270,7 +268,7 @@ rotate120 = rotate (4*pi/3)
 
 -- | Rotate by 120 degrees about the supplied point.
 --
-rotate120About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t 
+rotate120About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate120About = rotateAbout (4*pi/3)
 
 
