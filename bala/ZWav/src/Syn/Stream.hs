@@ -36,9 +36,13 @@ module Syn.Stream
   , cycle
   , take
 
+  , (>*<)
+  , (>/<)
+
   ) where 
 
 import Prelude ( Show(..), showString, Eq(..), Ord(..), Num(..), 
+                 Fractional(..),
                  foldr, Int, (<=), (-), (.) )
 
 --------------------------------------------------------------------------------
@@ -61,8 +65,13 @@ map :: (a -> b) -> Stream a -> Stream b
 map f (a :< s) = f a :< map f s 
 
 zip :: (a -> b -> c) -> Stream a -> Stream b -> Stream c
-zip f sx sy = step sx sy where
-  step (a :< sa) (b :< sb) = f a b :< step sa sb  
+zip f sx sy = step sx sy 
+  where
+    step (a :< sa) (b :< sb) = f a b :< step sa sb  
+
+
+
+
 
 instance Num a => Num (Stream a) where
   (+)           = zip (+)
@@ -110,3 +119,13 @@ take n (a :< sa)           = a : take (n-1) sa
 
 instance Show a => Show (Stream a) where
   showsPrec n s = showsPrec n (take 8 s) . showString " ..." 
+
+
+(>*<) :: Num a => Stream a -> Stream a -> Stream a
+(>*<) (b0 :< bq) a@(a0 :< aq) = b0 * a0 :< aq + bq >*< a
+
+
+(>/<) :: Fractional a => Stream a -> Stream a -> Stream a
+(>/<) (b0 :< bq) a@(a0 :< aq) = w0 :< (bq - w0 *> aq) >/< a
+  where
+    w0 = b0 / a0

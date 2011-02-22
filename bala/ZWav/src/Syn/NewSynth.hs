@@ -3,8 +3,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Syn.StreamDouble
--- Copyright   :  (c) Stephen Tetley 2010
+-- Module      :  Syn.NewSynth
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module Syn.StreamDouble
+module Syn.NewSynth
   ( 
   -- 
     (*>)
@@ -27,7 +27,7 @@ module Syn.StreamDouble
   , oscil
   , delay
 
-  , dcremove
+--  , dcremove
   , allpass
 
   , karstr
@@ -35,20 +35,14 @@ module Syn.StreamDouble
   ) where 
 
 
-import Data.HeadStrictStream                    -- package: head-strict-stream
+import Syn.Stream
 
 import Prelude hiding ( repeat, map, zip, take )
 import Data.Bits
 -- import qualified Data.List as L
 
 
-
---------------------------------------------------------------------------------
-
-
-(*>) :: Num a => a -> Stream a -> Stream a
-(*>) x s = map (x*) s
-
+(<|) = (:<)
 
 --------------------------------------------------------------------------------
 
@@ -101,10 +95,12 @@ delay i s = go i
     go n | n < 1 = s 
     go n         = 0 <| go (n -1)
 
+{-
 dcremove :: Double -> Stream Double -> Stream Double
 dcremove a xs@(viewl -> (_ :< xq)) = y
   where
     y  = a *> delay1 y + ((1.0+a) / 2.0) *> (xq - xs)
+-}
 
 allpass :: Int -> Double -> Stream Double -> Stream Double
 allpass m b x = b *> z + v

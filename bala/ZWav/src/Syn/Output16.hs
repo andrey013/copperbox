@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,14 +19,13 @@
 module Syn.Output16
   ( 
   -- 
-    clamp
-  , toInt
-  , makeWav
+    makeWav_OneChan
 
   ) where 
 
-import Syn.Stream
 import ZWav.Datatypes
+
+import Data.HeadStrictStream                    -- package: head-strict-stream
 
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy   as LBS
@@ -41,24 +41,33 @@ imin = fromIntegral (minBound :: Int16)
 -- bits_per_sample_ :: Word16 
 -- bits_per_sample_ = 16
 
-clamp :: Ord a => a -> a -> a -> a
-clamp mi ma a = min ma (max mi a)
 
 
+-- Data.Binary.Put can only put Data.Word and not Data.Int,
+-- need to convert 
+--
 toInt :: Double -> Word16
-toInt = step . clamp (-1) 1 where
-  step d | d >= 0    = floor   (d*imax)
-         | otherwise = negate $ ceiling (d*imin)
+toInt = step . clamp (-1) 1 
+  where
+    step :: Double -> Word16
+    step d | d >= 0    = floor   (d*imax)
+           | otherwise = negate $ ceiling (d*imin)
+
+    clamp :: Double -> Double -> Double -> Double
+    clamp mi ma a = min ma (max mi a)
+
+
          
 
-makeWav :: Int -> Int -> Stream Double -> WavFile
-makeWav stream_sz nc s  = WavFile total_sz fmt dat
+makeWav_OneChan :: Int -> Stream Double -> WavFile
+makeWav_OneChan stream_len strm  = WavFile total_sz fmt dat
   where
-    fmt       = makeFormat nc
-    sz        = fromIntegral $ 
-                  (stream_sz * nc * 16 {- bits_per_s -} ) `div` 8
-    total_sz  = 36 + sz
-    dat       = DataSubchunk sz (getStreamData stream_sz s)
+    fmt        = makeFormat 1
+    sz         = fromIntegral $ 
+                   (stream_len * 1 * bits_per_s) `div` 8
+    total_sz   = 36 + sz
+    bits_per_s = 16
+    dat        = DataSubchunk sz (getStreamData stream_len strm)
 
 makeFormat :: Int -> WavFormat 
 makeFormat nc = WavFormat 
@@ -77,5 +86,5 @@ makeFormat nc = WavFormat
 getStreamData :: Int -> Stream Double -> LBS.ByteString
 getStreamData sz s = runPut $ fn sz s
   where
-    fn i _         | i <= 0 = return ()
-    fn n (a :< sa)          = let i = toInt a in putWord16le i >> fn (n-1) sa
+    fn i _                  | i <= 0 = return ()
+    fn n (viewl -> a :< sa) = let i = toInt a in putWord16le i >> fn (n-1) sa
