@@ -48,10 +48,11 @@ description:
     Text is now drawn with the text colour rather than the stroke 
     colour.
   .
-  * Added Centimeter and Pica units.
-  . 
   * Added FontLoadLog to the DrawingContext - this allows access 
     to the errors recorded during font loading.
+  .
+  * Changed internal representation of WrappedPrimtive so it can
+    have a unit-change transformation.
   .
   v0.15.0 to v0.16.0:
   .

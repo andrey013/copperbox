@@ -250,6 +250,9 @@ instance Monoid (UNil u) where
 
 -- Functor
 
+instance Functor UNil where
+  fmap _ _ = UNil ()
+
 instance Functor Vec2 where
   fmap f (V2 a b) = V2 (f a) (f b)
 

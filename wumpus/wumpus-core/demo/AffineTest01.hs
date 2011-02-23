@@ -17,10 +17,10 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
                [ circle_cpa, ellipse_cpa, path_cpa ]
 
 
-rot30 :: (Rotate t, Fractional u, u ~ DUnit t) => t -> t
+rot30 :: Rotate t => t -> t
 rot30 = rotate30
 
-rot30P :: (Real u, Floating u) => Primitive u -> Primitive u
+rot30P :: (Real u, Floating u, PtSize u) => Primitive u -> Primitive u
 rot30P = rotate30
 
 -- Primitive - Text

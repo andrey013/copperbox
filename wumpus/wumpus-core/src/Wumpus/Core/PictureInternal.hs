@@ -674,7 +674,7 @@ mapLocale f (Picture lc ones)  = Picture (f lc) ones
 -- (ShapeCTM is not a real matrix).
 -- 
 
-instance (Real u, Floating u) => Rotate (Primitive u) where
+instance (Real u, Floating u, PtSize u) => Rotate (Primitive u) where
   rotate r (PPath a path)   = PPath a    $ rotatePath r path
   rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
   rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
@@ -721,7 +721,7 @@ instance PtSize u => Translate (Primitive u) where
 -- Affine transformations on paths are applied to their control
 -- points. 
 
-rotatePath :: (Real u, Floating u) => Radian -> PrimPath u -> PrimPath u
+rotatePath :: (Real u, Floating u, PtSize u) => Radian -> PrimPath u -> PrimPath u
 rotatePath ang = mapPath (rotate ang) (rotate ang)
 
 

@@ -88,6 +88,23 @@ module Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Units
 
+
+
+--
+-- Design note - the formulation of the affine classes is not 
+-- really ideal. I would prefer them to say something about the 
+-- unit type, but forcing them into Functor form makes them 
+-- antagonistic to the types in Wumpus-Basic. 
+-- 
+-- Up to version 0.50.0, the DUnit type family enforced a relation
+-- between the object and the units of transformation, however the
+-- relation it enforced was incorrect: in the case of scaling the 
+-- scaling magnitude was enforced to the same unit type (point, 
+-- centimeter) as the object, but this was wrong - scaling should 
+-- be a scaling factor (Double is always adequate).
+-- 
+
+
 -- helpers 
 
 inout :: (Functor f, PtSize u) => (f Double -> f Double) -> f u -> f u
@@ -102,7 +119,14 @@ inout f = fmap dpoint . f . fmap psDouble
 class Transform t where
   transform :: DMatrix3'3 -> t -> t
 
-instance Transform (UNil u) where
+instance Transform a => Transform (Maybe a) where
+  transform = fmap . transform
+
+instance (Transform a, Transform b) => Transform (a,b)  where
+  transform mtrx (a,b) = (transform mtrx a, transform mtrx b)
+
+
+instance PtSize u => Transform (UNil u) where
   transform _ = id
 
 instance PtSize u => Transform (Point2 u) where
@@ -119,20 +143,21 @@ instance PtSize u => Transform (Vec2 u) where
 class Rotate t where
   rotate :: Radian -> t -> t
 
-instance Rotate (UNil u) where
-  rotate _ = id
+instance PtSize u => Rotate (UNil u) where
+  rotate _ _ = uNil
 
-instance Rotate a => Rotate (Maybe a) where
+
+instance Rotate u => Rotate (Maybe u) where
   rotate = fmap . rotate
 
-instance (Rotate a, Rotate b) => Rotate (a,b) where
+instance (Rotate a, Rotate b) => Rotate (a,b)  where
   rotate ang (a,b) = (rotate ang a, rotate ang b)
 
 
-instance (Floating u, Real u) => Rotate (Point2 u) where
+instance (Floating u, Real u, PtSize u) => Rotate (Point2 u) where
   rotate ang = ((rotationMatrix ang) *#)
 
-instance (Floating u, Real u) => Rotate (Vec2 u) where
+instance (Floating u, Real u, PtSize u) => Rotate (Vec2 u) where
   rotate ang = ((rotationMatrix ang) *#)
 
 
@@ -142,10 +167,10 @@ instance (Floating u, Real u) => Rotate (Vec2 u) where
 -- the object and the point-of-rotation.
 --
 class RotateAbout t where
-  rotateAbout :: (u ~ DUnit t) => Radian -> Point2 u -> t -> t 
+  rotateAbout :: u ~ DUnit t => Radian -> Point2 u -> t -> t
 
  
-instance RotateAbout (UNil u) where
+instance PtSize u => RotateAbout (UNil u) where
   rotateAbout _ _ = id
 
 instance RotateAbout a => RotateAbout (Maybe a) where
@@ -174,8 +199,8 @@ instance PtSize u => RotateAbout (Vec2 u) where
 class Scale t where
   scale :: Double -> Double -> t -> t
 
-instance Scale (UNil u) where
-  scale _ _ = id
+instance PtSize u => Scale (UNil u) where
+  scale _ _ _ = uNil
 
 instance Scale a => Scale (Maybe a) where
   scale sx sy = fmap (scale sx sy)
@@ -198,8 +223,8 @@ class Translate t where
   translate :: Double -> Double -> t -> t
 
 
-instance Translate (UNil u) where
-  translate _ _ = id
+instance PtSize u => Translate (UNil u) where
+  translate _ _ _ = uNil
 
 instance (Translate a, Translate b) => 
     Translate (a,b) where
@@ -223,52 +248,52 @@ instance PtSize u => Translate (Vec2 u) where
 
 -- | Rotate by 30 degrees about the origin. 
 --
-rotate30 :: Rotate t => t -> t 
+rotate30 :: Rotate t => t -> t
 rotate30 = rotate (pi/6) 
 
 -- | Rotate by 30 degrees about the supplied point.
 --
-rotate30About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate30About :: (RotateAbout t, u ~ DUnit t) => Point2 u -> t -> t
 rotate30About = rotateAbout (pi/6)
 
 -- | Rotate by 45 degrees about the origin. 
 --
-rotate45 :: Rotate t => t -> t 
+rotate45 :: Rotate t => t -> t
 rotate45 = rotate (pi/4) 
 
 -- | Rotate by 45 degrees about the supplied point.
 --
-rotate45About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate45About :: (RotateAbout t, u ~ DUnit t) => Point2 u -> t -> t
 rotate45About = rotateAbout (pi/4)
 
 -- | Rotate by 60 degrees about the origin. 
 --
-rotate60 :: Rotate t => t -> t 
+rotate60 :: Rotate t => t -> t
 rotate60 = rotate (2*pi/3) 
 
 -- | Rotate by 60 degrees about the supplied point.
 --
-rotate60About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate60About :: (RotateAbout t, u ~ DUnit t) => Point2 u -> t -> t
 rotate60About = rotateAbout (2*pi/3)
 
 -- | Rotate by 90 degrees about the origin. 
 --
-rotate90 :: Rotate t => t -> t 
+rotate90 :: Rotate t => t -> t
 rotate90 = rotate (pi/2) 
 
 -- | Rotate by 90 degrees about the supplied point.
 --
-rotate90About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate90About :: (RotateAbout t, u ~ DUnit t) => Point2 u -> t -> t
 rotate90About = rotateAbout (pi/2)
 
 -- | Rotate by 120 degrees about the origin. 
 --
-rotate120 :: Rotate t => t -> t 
+rotate120 :: Rotate t => t -> t
 rotate120 = rotate (4*pi/3) 
 
 -- | Rotate by 120 degrees about the supplied point.
 --
-rotate120About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate120About :: (RotateAbout t, u ~ DUnit t) => Point2 u -> t -> t
 rotate120About = rotateAbout (4*pi/3)
 
 
@@ -278,7 +303,7 @@ rotate120About = rotateAbout (4*pi/3)
 
 -- | Scale both x and y dimensions by the same amount.
 --
-uniformScale :: Scale t => Double -> t -> t 
+uniformScale :: Scale t => Double -> t -> t
 uniformScale a = scale a a 
 
 -- | Reflect in the X-plane about the origin.
@@ -296,7 +321,7 @@ reflectY = scale 1 (-1)
 
 -- | Translate by the x and y components of a vector.
 --
-translateBy :: (Translate t, PtSize u) => Vec2 u -> t -> t 
+translateBy :: (Translate t, PtSize u) => Vec2 u -> t -> t
 translateBy (V2 x y) = translate (psDouble x) (psDouble y)
 
 
