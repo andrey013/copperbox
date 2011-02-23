@@ -62,40 +62,42 @@ instance Rotate (InvSemicircle u) where
   rotate ang = mapSemicircle (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (InvSemicircle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (InvSemicircle u) where
   rotateAbout ang pt = mapSemicircle (rotateAbout ang pt)
 
 
-instance Num u => Translate (InvSemicircle u) where
+instance PtSize u => Translate (InvSemicircle u) where
   translate dx dy = mapSemicircle (translate dx dy)
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
-runRotateAnchor :: (Real u, Floating u) 
+runRotateAnchor :: (Real u, Floating u, PtSize u) 
                 => (Semicircle u -> Point2 u) -> InvSemicircle u -> Point2 u
 runRotateAnchor f (InvSemicircle a) = rotateAbout pi (center a) (f a)
 
 
-instance (Real u, Floating u) => CenterAnchor (InvSemicircle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (InvSemicircle u) where
   center = center . getInvSemicircle
 
-instance (Real u, Floating u) => ApexAnchor (InvSemicircle u) where
+instance (Real u, Floating u, PtSize u) => ApexAnchor (InvSemicircle u) where
   apex = runRotateAnchor apex
 
-instance (Real u, Floating u) => TopCornerAnchor (InvSemicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    TopCornerAnchor (InvSemicircle u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
-instance (Real u, Floating u) => CardinalAnchor (InvSemicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (InvSemicircle u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     CardinalAnchor2 (InvSemicircle u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -104,7 +106,7 @@ instance (Real u, Floating u, FromPtSize u) =>
 
 
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     RadialAnchor (InvSemicircle u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
@@ -115,7 +117,7 @@ instance (Real u, Floating u, FromPtSize u) =>
 
 -- | 'invsemicircle'  : @ radius -> Shape @
 --
-invsemicircle :: (Real u, Floating u, FromPtSize u) 
+invsemicircle :: (Real u, Floating u, PtSize u) 
            => u -> Shape u (InvSemicircle u)
 invsemicircle radius = 
     fmap InvSemicircle $ updatePathAngle (+ pi) $ semicircle radius

@@ -91,7 +91,7 @@ type Box u = Rectangle u
 
 -- Note - ctrCenterLine does not seem to be working well...
 
-makeBox :: (Real u, Floating u, FromPtSize u) 
+makeBox :: (Real u, Floating u, PtSize u) 
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
@@ -99,16 +99,16 @@ makeBox w ss pt = do
     -- draw  $ filledDisk 2 `at` center a
     return a
 
-box :: (Real u, Floating u, FromPtSize u) 
+box :: (Real u, Floating u, PtSize u) 
     => String -> Point2 u -> TraceDrawing u (Box u)
 box = makeBox 40
 
-widebox :: (Real u, Floating u, FromPtSize u) 
+widebox :: (Real u, Floating u, PtSize u) 
         => String -> Point2 u -> TraceDrawing u (Box u)
 widebox = makeBox 60
 
 
-connWith :: ( Real u, Floating u, FromPtSize u ) 
+connWith :: ( Real u, Floating u, PtSize u ) 
          => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
@@ -118,19 +118,19 @@ connWith arrh b0 b1 = do
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 
-cmandatory :: ( Real u, Floating u, FromPtSize u ) 
+cmandatory :: ( Real u, Floating u, PtSize u ) 
            => Box u -> Box u -> TraceDrawing u (Path u)
 cmandatory = connWith diskTip
 
-coptional :: ( Real u, Floating u, FromPtSize u ) 
+coptional :: ( Real u, Floating u, PtSize u ) 
           => Box u -> Box u -> TraceDrawing u (Path u)
 coptional = connWith odiskTip
 
 
-cmandatory_ :: ( Real u, Floating u, FromPtSize u ) 
+cmandatory_ :: ( Real u, Floating u, PtSize u ) 
             => Box u -> Box u -> TraceDrawing u ()
 cmandatory_ p0 p1 = connWith diskTip p0 p1 >> return ()
 
-coptional_ :: ( Real u, Floating u, FromPtSize u ) 
+coptional_ :: ( Real u, Floating u, PtSize u ) 
            => Box u -> Box u -> TraceDrawing u ()
 coptional_ p0 p1 = connWith odiskTip p0 p1 >> return ()

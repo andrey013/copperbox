@@ -71,11 +71,11 @@ instance Rotate (Rectangle u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (Rectangle u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance Num u => Translate (Rectangle u) where
+instance PtSize u => Translate (Rectangle u) where
   translate dx dy = mapCTM (translate dx dy)
 
 --------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ instance Num u => Translate (Rectangle u) where
 -- | 'runDisplaceCenter' : @ ( half_width
 --                           * half_height -> Vec ) * rectangle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u) 
+runDisplaceCenter :: (Real u, Floating u, PtSize u) 
                   => (u -> u -> Vec2 u) -> Rectangle u -> Point2 u
 runDisplaceCenter fn (Rectangle { rect_ctm = ctm
                                 , rect_hw  = hw
@@ -94,18 +94,20 @@ runDisplaceCenter fn (Rectangle { rect_ctm = ctm
    displaceCenter (fn hw hh) ctm
 
 
-instance (Real u, Floating u) => CenterAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Rectangle u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance (Real u, Floating u) => TopCornerAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => TopCornerAnchor (Rectangle u) where
   topLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
   topRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  hh
 
-instance (Real u, Floating u) => BottomCornerAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    BottomCornerAnchor (Rectangle u) where
   bottomLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  (-hh)
 
-instance (Real u, Floating u) => SideMidpointAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    SideMidpointAnchor (Rectangle u) where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -114,20 +116,21 @@ instance (Real u, Floating u) => SideMidpointAnchor (Rectangle u) where
       step _ = east a
 
 
-instance (Real u, Floating u) => CardinalAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Rectangle u) where
   north = runDisplaceCenter $ \_  hh -> V2 0 hh
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
-instance (Real u, Floating u) => CardinalAnchor2 (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor2 (Rectangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Rectangle u) where
   radialAnchor theta = runDisplaceCenter $ \hw hh -> 
                           rectRadialVector hw hh theta
 
@@ -139,7 +142,7 @@ instance (Real u, Floating u) => RadialAnchor (Rectangle u) where
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
-rectangle :: (Real u, Floating u, FromPtSize u) 
+rectangle :: (Real u, Floating u, PtSize u) 
           => u -> u -> Shape u (Rectangle u)
 rectangle w h = 
     makeShape (mkRectangle (0.5*w) (0.5*h))
@@ -154,7 +157,7 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
                      }
 
 
-mkRectPath :: (Real u, Floating u, FromPtSize u) 
+mkRectPath :: (Real u, Floating u, PtSize u) 
            => u -> u -> LocThetaCF u (Path u)
 mkRectPath hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr

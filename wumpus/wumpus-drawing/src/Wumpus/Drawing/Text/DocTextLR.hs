@@ -86,21 +86,21 @@ rightAMove half_max elt_w = half_max - elt_w
 
 
 
-leftAlign :: (Real u, FromPtSize u, Floating u) 
+leftAlign :: (Real u, PtSize u, Floating u) 
           => [DocText u] -> PosImage u (BoundingBox u)
 leftAlign = drawMulti leftAMove
 
-centerAlign :: (Real u, FromPtSize u, Floating u) 
+centerAlign :: (Real u, PtSize u, Floating u) 
             => [DocText u] -> PosImage u (BoundingBox u)
 centerAlign = drawMulti centerAMove
 
-rightAlign :: (Real u, FromPtSize u, Floating u) 
+rightAlign :: (Real u, PtSize u, Floating u) 
            => [DocText u] -> PosImage u (BoundingBox u)
 rightAlign = drawMulti rightAMove
 
 
 
-drawMulti :: (Real u, FromPtSize u, Floating u) 
+drawMulti :: (Real u, PtSize u, Floating u) 
           => HMove u -> [DocText u] -> PosImage u (BoundingBox u)
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
     evalAllLines xs                     >>= \all_lines -> 
@@ -144,7 +144,7 @@ blank = DocText $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
 
 
 
-escaped :: FromPtSize u => EscapedText -> DocText u
+escaped :: PtSize u => EscapedText -> DocText u
 escaped esc = DocText $ body 
    where
      body = textVector esc >>= \v -> 
@@ -155,14 +155,14 @@ escaped esc = DocText $ body
 -- 
 -- Note the string should not contain newlines or tabs.
 --
-string :: FromPtSize u => String -> DocText u
+string :: PtSize u => String -> DocText u
 string = escaped . escapeString
 
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
-space :: FromPtSize u => DocText u
+space :: PtSize u => DocText u
 space = DocText $ 
    charVector (CharEscInt $ ord ' ') >>= \v -> 
    return (advanceH v, replaceAns v $ emptyLocGraphic)
@@ -171,12 +171,12 @@ space = DocText $
 
 
 
-int :: FromPtSize u => Int -> DocText u
+int :: PtSize u => Int -> DocText u
 int i = DocText $ 
     charVector (CharLiteral '0') >>= \v1 -> 
     uniformSpace (advanceH v1) (map CharLiteral $ show i)
 
-integer :: FromPtSize u => Integer -> DocText u
+integer :: PtSize u => Integer -> DocText u
 integer i = DocText $ 
     charVector (CharLiteral '0') >>= \v1 -> 
     uniformSpace (advanceH v1) (map CharLiteral $ show i)
@@ -198,7 +198,7 @@ a <> b = DocText body
 
 -- | Concatenate two DocTexts separated with a space.
 --
-(<+>) :: FromPtSize u => DocText u -> DocText u -> DocText u
+(<+>) :: PtSize u => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
 -- | Right fill
@@ -241,12 +241,12 @@ textSize sz = doclocal (point_size sz)
 -- Helpers
 
 
-hkernPrim :: FromPtSize u => [KerningChar u] -> CF (u,AdvGraphic u)
+hkernPrim :: PtSize u => [KerningChar u] -> CF (u,AdvGraphic u)
 hkernPrim ks = hkernVector ks >>= \v -> 
                return (vector_x v, replaceAns v $ hkernline ks)
 
 
-uniformSpace :: FromPtSize u => u -> [EscapedChar] -> CF (u,AdvGraphic u)
+uniformSpace :: PtSize u => u -> [EscapedChar] -> CF (u,AdvGraphic u)
 uniformSpace dx = hkernPrim . step1
   where 
     step1 (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs

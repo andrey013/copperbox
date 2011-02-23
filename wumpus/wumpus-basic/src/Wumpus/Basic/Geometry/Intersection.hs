@@ -191,8 +191,8 @@ cut (BezierCurve p0 p1 p2 p3) line =
 -- is one. 
 --
 findIntersect :: (Floating u, Real u, Ord u, PtSize u)
-               => Point2 u -> Radian -> [LineSegment u] 
-               -> Maybe (Point2 u)
+              => Point2 u -> Radian -> [LineSegment u] 
+              -> Maybe (Point2 u)
 findIntersect radial_ogin ang = step 
   where
     plane       = makePlane radial_ogin ang

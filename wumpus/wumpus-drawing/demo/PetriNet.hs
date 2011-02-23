@@ -110,44 +110,44 @@ greenFill :: DrawingCtxM m => m a -> m a
 greenFill = localize (fill_colour lime_green)
 
 
-place :: ( Real u, Floating u, FromPtSize u) 
+place :: ( Real u, Floating u, PtSize u) 
       => LocImage u (Circle u)
 place = greenFill $ borderedShape $ circle 14
 
 
-transition :: ( Real u, Floating u, FromPtSize u) 
+transition :: ( Real u, Floating u, PtSize u) 
            => LocImage u (Rectangle u)
 transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 
 
-straightconn :: (Real u, Floating u, FromPtSize u) 
+straightconn :: (Real u, Floating u, PtSize u) 
              => ConnectorGraphic u
 straightconn = ignoreAns $ rightArrow tri45 connLine
 
 
-connectorC :: ( Real u, Floating u, FromPtSize u)
+connectorC :: ( Real u, Floating u, PtSize u)
            => u -> ConnectorGraphic u
 connectorC v = ignoreAns $ rightArrow tri45 (connRightVHV v)
 
-connectorD :: ( Real u, Floating u, FromPtSize u)
+connectorD :: ( Real u, Floating u, PtSize u)
            => u -> ConnectorGraphic u
 connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
-lblParensParens :: Num u => LocGraphic u
+lblParensParens :: PtSize u => LocGraphic u
 lblParensParens = localize (set_font helvetica) $ textline "(),()"
 
-lblParensParensParens :: Num u => LocGraphic u
+lblParensParensParens :: PtSize u => LocGraphic u
 lblParensParensParens = localize (set_font helvetica) $ textline "(),(),()"
 
 
-lblBold' :: Num u => String -> LocGraphic u
+lblBold' :: PtSize u => String -> LocGraphic u
 lblBold' ss = localize (set_font helvetica_bold) $ textline ss
 
 
-lblBold :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
+lblBold :: (Real u, Floating u, PtSize u) => String -> LocGraphic u
 lblBold ss = localize (set_font helvetica_bold) $ 
                 ignoreAns $ textAlignCenter ss
 

@@ -59,7 +59,7 @@ arrtable =
     , (revcurveTip, revcurveTip)
     ]
 
-tableGraphic :: (Real u, Floating u, FromPtSize u) 
+tableGraphic :: (Real u, Floating u, PtSize u) 
              => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
 tableGraphic tips = 
     drawi_ $ chn (map makeArrowDrawing tips) `at` start
@@ -73,7 +73,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeArrowDrawing :: (Real u, Floating u, FromPtSize u) 
+makeArrowDrawing :: (Real u, Floating u, PtSize u) 
                  => (Arrowhead u, Arrowhead u) -> LocGraphic u
 makeArrowDrawing (arrl,arrr) = 
     promoteR1 $ \p0 -> forget $

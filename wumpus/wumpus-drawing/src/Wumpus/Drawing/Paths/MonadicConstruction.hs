@@ -127,7 +127,7 @@ vline len = snocline (vvec len)
 
 
 
-bezierto :: (Floating u, Ord u, FromPtSize u) 
+bezierto :: (Floating u, Ord u, PtSize u) 
          => Point2 u -> Point2 u -> Point2 u -> PathM u ()
 bezierto c1 c2 ep = PathM $ \(St p0 ac) -> 
     ((), St ep (ac `snocH` curve p0 c1 c2 ep))
@@ -139,7 +139,7 @@ bezierto c1 c2 ep = PathM $ \(St p0 ac) ->
 --
 
 
-curveto :: (Floating u, Ord u, FromPtSize u) 
+curveto :: (Floating u, Ord u, PtSize u) 
         => Radian -> Radian -> Point2 u -> PathM u ()
 curveto cin cout end = PathM $ \(St p0 ac) -> 
     let seg  = curveByAngles p0 cin cout end 

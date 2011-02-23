@@ -27,7 +27,7 @@ dot_pic :: DCtxPicture
 dot_pic = drawTracing mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Floating u, PtSize u) => TraceDrawing u ()
 mf = do 
     a <- drawi $ dotCircle `at` zeroPt
     b <- drawi $ dotCircle `at` (P2 60 60)

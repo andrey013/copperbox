@@ -82,7 +82,7 @@ dot_pic = drawTracing $ tableGraphic $
     ]
 
 
-tableGraphic :: (Real u, Floating u, FromPtSize u) 
+tableGraphic :: (Real u, Floating u, PtSize u) 
              => [DotLocImage u] -> TraceDrawing u ()
 tableGraphic imgs = 
     drawi_ $ chn (map makeDotDrawing imgs) `at` pt
@@ -96,7 +96,7 @@ tableGraphic imgs =
 -- This is a bit convoluted - maybe there should be chain-run 
 -- functions for TraceDrawings as well as LocGraphics?
 
-makeDotDrawing :: (Real u, Floating u, FromPtSize u) 
+makeDotDrawing :: (Real u, Floating u, PtSize u) 
                => DotLocImage u -> LocGraphic u
 makeDotDrawing dotF = 
     promoteR1 $ \pt -> 

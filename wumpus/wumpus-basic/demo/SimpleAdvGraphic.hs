@@ -25,7 +25,7 @@ drawing01 :: DCtxPicture
 drawing01 = drawTracing $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Floating u, PtSize u) => TraceDrawing u ()
 mf = do
     drawi_ $ advspace (hvec 10) [text01, text02, text01] `at` P2 0 120
     drawi_ $ advconcat [text01, text02, text01] `at` P2 0 80
@@ -36,15 +36,15 @@ mf = do
 -- Normally, text calculate the advance vector from the font 
 -- metrics...
 --
-text01 :: Num u => AdvGraphic u 
+text01 :: PtSize u => AdvGraphic u 
 text01 = replaceAns (hvec 84) $ textline "text01"
     
 
-text02 :: Num u => AdvGraphic u 
+text02 :: PtSize u => AdvGraphic u 
 text02 = replaceAns (hvec 210) $ textline "text number two"
 
 
-miniDisk :: Num u => AdvGraphic u
+miniDisk :: PtSize u => AdvGraphic u
 miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
 
 

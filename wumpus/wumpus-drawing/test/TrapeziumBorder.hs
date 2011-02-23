@@ -5,10 +5,10 @@ module TrapeziumBorder where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Geometry.Quadrant
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Text.SafeFonts
 
+import Wumpus.Basic.Geometry.Quadrant
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -26,7 +26,7 @@ main = do
 
 
 dctx :: DrawingContext
-dctx = fontFace courier_bold $ standardContext 24
+dctx = set_font courier_bold $ standardContext 24
 
 drawing1 :: CtxPicture Double
 drawing1 = drawTracing $ trace1
@@ -44,7 +44,7 @@ trace1 = do
     intersectionPlot (d2r ( 5::Double)) thistle
     intersectionCross 0
 
-axisPlot :: (Real u, Floating u, FromPtSize u) 
+axisPlot :: (Real u, Floating u, PtSize u) 
          => (u,u) -> (u,u) -> TraceDrawing u ()
 axisPlot (x0,x1) (y0,y1) = do
     drawi_ $ connect (rightArrow tri45 connLine) (P2 x0 0) (P2 x1 0)
@@ -66,7 +66,7 @@ top_rang = atan (trapezium_height / side)
     side = trapezium_top_width - trapezium_bw
 
 trapeziumPlot :: Num u => TraceDrawing u ()
-trapeziumPlot = localize (thick . strokeColour red) $ 
+trapeziumPlot = localize (line_thick . stroke_colour red) $ 
     draw $ closedStroke $ vertexPath [ ll, lr, ur, ul ]
   where
     ll = zeroPt 
@@ -75,9 +75,9 @@ trapeziumPlot = localize (thick . strokeColour red) $
     ur = displaceVec (hvec trapezium_top_width) ul
 
 
-intersectionPlot :: (Real u, Floating u, FromPtSize u) 
+intersectionPlot :: (Real u, Floating u, PtSize u) 
                  => Radian -> RGBi -> TraceDrawing u ()
-intersectionPlot ang rgb = localize (strokeColour rgb) $ do 
+intersectionPlot ang rgb = localize (stroke_colour rgb) $ do 
     drawi_ $ connect (rightArrow tri45 connLine) p0 p1
     drawi_ $ markCross `at` p3
   where
@@ -86,7 +86,7 @@ intersectionPlot ang rgb = localize (strokeColour rgb) $ do
     v1 = rightTrapezoidQI trapezium_top_width trapezium_height top_rang ang
     p3 = displaceVec v1 zeroPt 
 
-intersectionCross :: (Real u, Floating u, FromPtSize u) 
+intersectionCross :: (Real u, Floating u, PtSize u) 
                  => Radian -> TraceDrawing u ()
 intersectionCross ang =  
     drawi_ $ markCross `at` displaceVec v1 zeroPt 

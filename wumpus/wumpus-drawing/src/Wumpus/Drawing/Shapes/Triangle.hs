@@ -80,11 +80,11 @@ instance Rotate (Triangle u) where
   rotate ang = mapTriangleCTM (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (Triangle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (Triangle u) where
   rotateAbout ang pt = mapTriangleCTM (rotateAbout ang pt)
 
 
-instance Num u => Translate (Triangle u) where
+instance PtSize u => Translate (Triangle u) where
   translate dx dy = mapTriangleCTM (translate dx dy)
 
 
@@ -96,7 +96,7 @@ instance Num u => Translate (Triangle u) where
 --                           * height_major 
 --                           * base_ang -> Vec ) * traingle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u)
+runDisplaceCenter :: (Real u, Floating u, PtSize u)
                   => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Point2 u
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
                                , tri_base_width = bw
@@ -109,15 +109,16 @@ runDisplaceCenter fn (Triangle { tri_ctm        = ctm
 
 
 
-instance (Real u, Floating u) => CenterAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Triangle u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
-instance (Real u, Floating u) => ApexAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => ApexAnchor (Triangle u) where
   apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
 
 
-instance (Real u, Floating u) => BottomCornerAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    BottomCornerAnchor (Triangle u) where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
   bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
 
@@ -125,14 +126,15 @@ instance (Real u, Floating u) => BottomCornerAnchor (Triangle u) where
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u) => CardinalAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Triangle u) where
   north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
   east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
   west  = runDisplaceCenter $ \hbw hmin _    ang  -> findWest hbw hmin ang
 
 
-instance (Real u, Floating u) => SideMidpointAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    SideMidpointAnchor (Triangle u) where
   sideMidpoint n a = step (n `mod` 3) 
     where
       step 1 = midpoint (apex a) (bottomLeftCorner a)
@@ -151,7 +153,7 @@ findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0
 
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (Triangle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Triangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -159,7 +161,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (Triangle u) where
 
 
 
-instance (Real u, Floating u) => RadialAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Triangle u) where
   radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
                          triangleRadialVector hbw hmin hmaj theta
        
@@ -170,7 +172,7 @@ instance (Real u, Floating u) => RadialAnchor (Triangle u) where
 -- | 'triangle'  : @ base_width * height -> Shape @
 --
 --
-triangle :: (Real u, Floating u, FromPtSize u) 
+triangle :: (Real u, Floating u, PtSize u) 
          => u -> u -> Shape u (Triangle u)
 triangle bw h =
     let props  = synthesizeProps bw h
@@ -208,7 +210,7 @@ synthesizeProps bw h =
 
 
 
-mkTrianglePath :: (Real u, Floating u, FromPtSize u) 
+mkTrianglePath :: (Real u, Floating u, PtSize u) 
                => u -> u -> u -> LocThetaCF u (Path u)
 mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
     roundCornerShapePath $ map (rotateAbout theta ctr) 

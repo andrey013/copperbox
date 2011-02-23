@@ -61,7 +61,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
+mf :: (Real u, Floating u, Ord u, PtSize u) => TraceDrawing u ()
 mf = localize (text_margin 6.0 6.0)  $ do
     drawi_ $ (fn $ posChar 'S' `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
@@ -85,6 +85,6 @@ mf = localize (text_margin 6.0 6.0)  $ do
     fn    = illustrateBoundedLocGraphic
 
 
-redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+redPlus :: (Fractional u, PtSize u) => LocGraphic u
 redPlus = localize (stroke_colour red) markPlus
 

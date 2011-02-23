@@ -73,43 +73,43 @@ rotTextStart :: PosThetaImage u a -> RectPosition -> Radian -> LocImage u a
 rotTextStart = apply2R3
 
 
-textbox :: (Real u, Floating u, FromPtSize u) 
+textbox :: (Real u, Floating u, PtSize u) 
         => String -> PosImage u (BoundingBox u)
 textbox ss = apply1R3 (multiAlignCenter ss) 0
 
 
-rtextbox :: (Real u, Floating u, FromPtSize u) 
+rtextbox :: (Real u, Floating u, PtSize u) 
          => String -> PosThetaImage u (BoundingBox u)
 rtextbox ss = multiAlignCenter ss
 
 
 -- multi line text allows rotation 
 
-multiAlignLeft :: (Real u, Floating u, FromPtSize u) 
+multiAlignLeft :: (Real u, Floating u, PtSize u) 
                => String -> PosThetaImage u (BoundingBox u)
 multiAlignLeft ss = 
    drawMultiline onelineALeft (map escapeString $ lines ss)
 
-multiAlignCenter :: (Real u, Floating u, FromPtSize u) 
+multiAlignCenter :: (Real u, Floating u, PtSize u) 
                => String -> PosThetaImage u (BoundingBox u)
 multiAlignCenter ss = 
    drawMultiline onelineACenter (map escapeString $ lines ss)
 
-multiAlignRight :: (Real u, Floating u, FromPtSize u) 
+multiAlignRight :: (Real u, Floating u, PtSize u) 
                => String -> PosThetaImage u (BoundingBox u)
 multiAlignRight ss = 
    drawMultiline onelineARight (map escapeString $ lines ss)
 
 
-textAlignLeft :: (Real u, Floating u, FromPtSize u) 
+textAlignLeft :: (Real u, Floating u, PtSize u) 
               => String -> LocImage u (BoundingBox u)
 textAlignLeft ss = apply2R3 (multiAlignLeft ss) CENTER 0
 
-textAlignCenter :: (Real u, Floating u, FromPtSize u) 
+textAlignCenter :: (Real u, Floating u, PtSize u) 
                => String -> LocImage u (BoundingBox u)
 textAlignCenter ss = apply2R3 (multiAlignCenter ss) CENTER 0 
 
-textAlignRight :: (Real u, Floating u, FromPtSize u) 
+textAlignRight :: (Real u, Floating u, PtSize u) 
                => String -> LocImage u (BoundingBox u)
 textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
@@ -117,7 +117,7 @@ textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
 
 
-drawMultiline :: (Real u, Floating u, FromPtSize u) 
+drawMultiline :: (Real u, Floating u, PtSize u) 
               => OnelineGraphicF u -> [EscapedText] 
               -> PosThetaImage u (BoundingBox u)
 drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
@@ -145,7 +145,7 @@ drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
 -- >
 -- > Down to the baseline from the center.
 --
-onelineALeft :: (Real u, Floating u, FromPtSize u)  
+onelineALeft :: (Real u, Floating u, PtSize u)  
              => OnelineGraphicF u 
 onelineALeft max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
@@ -164,7 +164,7 @@ onelineALeft max_adv otext = promoteR2 $ \ctr theta ->
 --
 -- The max_adv is ignored.
 --
-onelineACenter :: (Real u, Floating u, FromPtSize u)  
+onelineACenter :: (Real u, Floating u, PtSize u)  
                => OnelineGraphicF u
 onelineACenter _ otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
@@ -183,7 +183,7 @@ onelineACenter _ otext = promoteR2 $ \ctr theta ->
 -- >
 -- > Down to the baseline from the center.
 --
-onelineARight :: (Real u, Floating u, FromPtSize u)  
+onelineARight :: (Real u, Floating u, PtSize u)  
               => OnelineGraphicF u
 onelineARight max_adv otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
@@ -207,7 +207,7 @@ onelineARight max_adv otext = promoteR2 $ \ctr theta ->
 -- added to the center. Visually this construction forms a bow of 
 -- two triangles meeting at the (rectangle) center.
 
-orthoBB :: (Real u, Floating u, FromPtSize u) 
+orthoBB :: (Real u, Floating u, PtSize u) 
         => AdvanceVec u -> Int -> LocThetaDrawingInfo u (BoundingBox u)
 orthoBB (V2 w _) line_count = promoteR2 $ \ctr theta ->
     fmap (0.5*) glyphVerticalSpan     >>= \hh1 ->
@@ -236,7 +236,7 @@ orthoBB (V2 w _) line_count = promoteR2 $ \ctr theta ->
 -- 'OnelineText' and return the result list twinned with the 
 -- largest 'AdvanceVec'.
 --
-linesToInterims :: (FromPtSize u, Ord u) 
+linesToInterims :: (PtSize u, Ord u) 
                 => [EscapedText] -> DrawingInfo (AdvanceVec u, [OnelineText u])
 linesToInterims = fmap post . mapM onelineEscText
   where
@@ -249,7 +249,7 @@ linesToInterims = fmap post . mapM onelineEscText
 avMaxWidth :: Ord u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
 avMaxWidth a@(V2 w1 _) b@(V2 w2 _) = if w2 > w1 then b else a
 
-onelineEscText :: FromPtSize u => EscapedText -> DrawingInfo (OnelineText u)
+onelineEscText :: PtSize u => EscapedText -> DrawingInfo (OnelineText u)
 onelineEscText esc = fmap (OnelineText esc) $ textVector esc
 
 

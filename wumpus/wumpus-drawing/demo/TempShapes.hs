@@ -55,7 +55,7 @@ shapes_pic = drawTracing $ do
 
 
 connectRA :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
-             , Real u, Floating u, FromPtSize u ) 
+             , Real u, Floating u, PtSize u) 
           => Point2 u -> Point2 u -> m ()
 connectRA p0 p1 = 
     drawi_ $ apply2R2 (rightArrow barb45 connLine) p0 p1

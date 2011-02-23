@@ -56,7 +56,7 @@ type instance DUnit (Circle u) = u
 mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Circle u -> Circle u
 mapCTM f = (\s i -> s { circ_ctm = f i }) <*> circ_ctm
 
-instance Num u => Scale (Circle u) where
+instance PtSize u => Scale (Circle u) where
   scale sx sy = mapCTM (scale sx sy)
 
 
@@ -64,18 +64,18 @@ instance Rotate (Circle u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (Circle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (Circle u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance Num u => Translate (Circle u) where
+instance PtSize u => Translate (Circle u) where
   translate dx dy = mapCTM (translate dx dy)
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
-runDisplaceCenter :: (Real u, Floating u) 
+runDisplaceCenter :: (Real u, Floating u, PtSize u) 
                   => (u -> Vec2 u) -> Circle u -> Point2 u
 runDisplaceCenter fn (Circle { circ_ctm    = ctm
                              , circ_radius = radius }) = 
@@ -83,25 +83,25 @@ runDisplaceCenter fn (Circle { circ_ctm    = ctm
 
 
 
-instance (Real u, Floating u) => CenterAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Circle u) where
   center = runDisplaceCenter $ \_ -> V2 0 0 
 
 
-instance (Real u, Floating u) => CardinalAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Circle u) where
   north = runDisplaceCenter $ \r -> V2 0    r
   south = runDisplaceCenter $ \r -> V2 0  (-r)
   east  = runDisplaceCenter $ \r -> V2 r    0
   west  = runDisplaceCenter $ \r -> V2 (-r) 0
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Circle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u) => RadialAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Circle u) where
   radialAnchor ang = runDisplaceCenter $ \r -> avec ang r
 
 
@@ -112,7 +112,7 @@ instance (Real u, Floating u) => RadialAnchor (Circle u) where
 
 -- | 'circle'  : @ radius -> Shape @
 --
-circle :: (Real u, Floating u, FromPtSize u) 
+circle :: (Real u, Floating u, PtSize u) 
        => u -> Shape u (Circle u)
 circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
           
@@ -127,7 +127,7 @@ mkCircle radius = promoteR2 $ \ctr theta ->
 
 -- Rotation (theta) can be ignored.
 --
-mkCirclePath :: (Floating u, Ord u, FromPtSize u) 
+mkCirclePath :: (Floating u, Ord u, PtSize u) 
              => u -> LocThetaCF u (Path u)
 mkCirclePath radius = promoteR2 $ \ctr _ -> 
     pure $ traceCurvePoints $ bezierCircle radius ctr 

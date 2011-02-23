@@ -82,13 +82,13 @@ renderPathWith m k = m >>= (lift0R1 . k)
 
 
 
-markChar :: (Real u, Floating u, FromPtSize u) => Char -> LocGraphic u
+markChar :: (Real u, Floating u, PtSize u) => Char -> LocGraphic u
 markChar ch = markText [ch]
 
 
 
 
-markText :: (Real u, Floating u, FromPtSize u) => String -> LocGraphic u
+markText :: (Real u, Floating u, PtSize u) => String -> LocGraphic u
 markText ss = fmap (replaceL uNil) $ textAlignCenter ss
 
 
@@ -100,15 +100,15 @@ axialLine :: Fractional u => Vec2 u -> LocGraphic u
 axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
-markHLine :: (Fractional u, FromPtSize u) => LocGraphic u 
+markHLine :: (Fractional u, PtSize u) => LocGraphic u 
 markHLine = lift0R1 markHeight >>= \h -> axialLine (hvec h)
 
 
-markVLine :: (Fractional u, FromPtSize u) => LocGraphic u 
+markVLine :: (Fractional u, PtSize u) => LocGraphic u 
 markVLine = lift0R1 markHeight >>= \h -> axialLine (vvec h) 
 
 
-markX :: (Fractional u, FromPtSize u) => LocGraphic u
+markX :: (Fractional u, PtSize u) => LocGraphic u
 markX = lift0R1 markHeight >>= mkX 
   where
     mkX h = let w = 0.75 * h
@@ -116,11 +116,11 @@ markX = lift0R1 markHeight >>= mkX
 
 
 
-markPlus :: (Fractional u, FromPtSize u) =>  LocGraphic u
+markPlus :: (Fractional u, PtSize u) =>  LocGraphic u
 markPlus = markVLine `oplus` markHLine
 
 
-markCross :: (Floating u, FromPtSize u) =>  LocGraphic u
+markCross :: (Floating u, PtSize u) =>  LocGraphic u
 markCross = markHeight >>= mkCross
   where
     mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
@@ -128,7 +128,7 @@ markCross = markHeight >>= mkCross
 
 -- Note - height is extended slightly to look good...
 
-pathDiamond :: (Fractional u, FromPtSize u) 
+pathDiamond :: (Fractional u, PtSize u) 
             => LocDrawingInfo u (PrimPath u)
 pathDiamond = 
     promoteR1 $ \pt -> 
@@ -141,10 +141,10 @@ pathDiamond =
 -- pathDiamond  :: (ctx -> pt -> a)
 -- ans          :: (ctx -> pt -> prim)
 
-markDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markDiamond :: (Fractional u, PtSize u) => LocGraphic u
 markDiamond = pathDiamond `renderPathWith` closedStroke
 
-markFDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markFDiamond :: (Fractional u, PtSize u) => LocGraphic u
 markFDiamond = pathDiamond `renderPathWith` filledPath
 
 
@@ -155,34 +155,34 @@ markFDiamond = pathDiamond `renderPathWith` filledPath
 -- A named combinator might be better.
 --
 
-markBDiamond :: (Fractional u, FromPtSize u) => LocGraphic u
+markBDiamond :: (Fractional u, PtSize u) => LocGraphic u
 markBDiamond = pathDiamond `renderPathWith` borderedPath
 
 
 -- | Note disk is filled.
 --
-markDisk :: (Fractional u, FromPtSize u) => LocGraphic u
+markDisk :: (Fractional u, PtSize u) => LocGraphic u
 markDisk = lift0R1 markHalfHeight >>= filledDisk 
 
 
 
-markSquare :: (Fractional u, FromPtSize u) => LocGraphic u
+markSquare :: (Fractional u, PtSize u) => LocGraphic u
 markSquare = 
     lift0R1 markHeight >>= \h -> 
     let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
     
 
 
-markCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+markCircle :: (Fractional u, PtSize u) => LocGraphic u
 markCircle = lift0R1 markHalfHeight >>= strokedDisk 
 
 
-markBCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+markBCircle :: (Fractional u, PtSize u) => LocGraphic u
 markBCircle = lift0R1 markHalfHeight >>= borderedDisk 
 
 
 
-markPentagon :: (Floating u, FromPtSize u) => LocGraphic u
+markPentagon :: (Floating u, PtSize u) => LocGraphic u
 markPentagon = 
     promoteR1 $ \pt -> 
       markHeight >>= \h -> closedStroke $ pentagonPath pt (0.5*h)
@@ -192,7 +192,7 @@ markPentagon =
  
 
 
-markStar :: (Floating u, FromPtSize u) => LocGraphic u 
+markStar :: (Floating u, PtSize u) => LocGraphic u 
 markStar = lift0R1 markHeight >>= \h -> starLines (0.5*h)
 
 starLines :: Floating u => u -> LocGraphic u
@@ -205,7 +205,7 @@ starLines hh =
     step _      = error "starLines - unreachable"
 
 
-markAsterisk :: (Floating u, FromPtSize u) => LocGraphic u
+markAsterisk :: (Floating u, PtSize u) => LocGraphic u
 markAsterisk = lift0R1 markHeight >>= asteriskLines
 
 asteriskLines :: Floating u => u -> LocGraphic u
@@ -217,24 +217,24 @@ asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
     lineF3  = axialLine (avec ((pi*0.5) + ang + ang) h)
 
 
-markOPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+markOPlus :: (Fractional u, PtSize u) => LocGraphic u
 markOPlus = markCircle `oplus` markPlus
 
 
-markOCross :: (Floating u, FromPtSize u) => LocGraphic u
+markOCross :: (Floating u, PtSize u) => LocGraphic u
 markOCross = markCircle `oplus` markCross
 
 
-markFOCross :: (Floating u, FromPtSize u) => LocGraphic u
+markFOCross :: (Floating u, PtSize u) => LocGraphic u
 markFOCross = markCross `oplus` markBCircle 
 
 
--- bkCircle :: (Fractional u, FromPtSize u) => LocGraphic u
+-- bkCircle :: (Fractional u, PtSize u) => LocGraphic u
 -- bkCircle = disk (fillAttr attr) (0.5*markHeight attr) 
 
 
 
-markTriangle :: (Floating u, FromPtSize u) => LocGraphic u
+markTriangle :: (Floating u, PtSize u) => LocGraphic u
 markTriangle = tripath `renderPathWith` closedStroke
   where
     tripath = promoteR1 $ \pt -> 

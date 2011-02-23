@@ -32,7 +32,7 @@ drawing01 :: DCtxPicture
 drawing01 = drawTracing $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Floating u, PtSize u) => TraceDrawing u ()
 mf = do 
     draw $ line1 `at` (P2 0 100)
     draw $ line2 `at` (P2 0  75)

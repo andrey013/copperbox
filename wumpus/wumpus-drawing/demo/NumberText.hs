@@ -60,7 +60,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
+mf :: (Real u, Floating u, Ord u, PtSize u) => TraceDrawing u ()
 mf = do
     drawli_ zeroPt $ rectStart CENTER $ 
                        leftAlign [ string "0.12112"

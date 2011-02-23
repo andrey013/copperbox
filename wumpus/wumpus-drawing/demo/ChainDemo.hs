@@ -59,17 +59,17 @@ locGraphicDistrib fn = distribute fn
 -}
  
 
-dot1 :: Num u => LocGraphic u 
+dot1 :: PtSize u => LocGraphic u 
 dot1 = dot red
 
-dot2 :: Num u => LocGraphic u 
+dot2 :: PtSize u => LocGraphic u 
 dot2 = dot thistle
 
-dot :: Num u => RGBi -> LocGraphic u 
+dot :: PtSize u => RGBi -> LocGraphic u 
 dot rgb = localize (fill_colour rgb) $ filledDisk 6
 
 
-snapGridX :: FromPtSize u => DrawingCtxM m => m u
+snapGridX :: PtSize u => DrawingCtxM m => m u
 snapGridX = (dpoint . fst) <$> query dc_snap_grid_factors
 
 

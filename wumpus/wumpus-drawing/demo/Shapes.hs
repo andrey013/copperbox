@@ -54,7 +54,7 @@ shapes = drawTracing $ do
     tri2_ctr    = P2 100 150 
 
 
-redX :: (Real u, Floating u, FromPtSize u) => Point2 u -> TraceDrawing u ()
+redX :: (Real u, Floating u, PtSize u) => Point2 u -> TraceDrawing u ()
 redX pt = localize (stroke_colour red) $ draw $ markX `at` pt
    
 

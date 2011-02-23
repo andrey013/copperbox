@@ -60,7 +60,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Real u, Floating u, Ord u, FromPtSize u) => TraceDrawing u ()
+mf :: (Real u, Floating u, Ord u, PtSize u) => TraceDrawing u ()
 mf = do
     draw $ testDrawL NN `at` (P2   0 520)
     draw $ testDrawL SS `at` (P2  75 520)
@@ -93,14 +93,14 @@ mf = do
     draw $ testDrawR CENTER    `at` (P2   0 0)
     
 
-testDrawL :: (Real u, Floating u, Ord u, FromPtSize u) 
+testDrawL :: (Real u, Floating u, Ord u, PtSize u) 
           => RectPosition -> LocGraphic u
 testDrawL rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
             apply2R3 (multiAlignLeft sample_text) rpos 0
 
-testDrawC :: (Real u, Floating u, Ord u, FromPtSize u) 
+testDrawC :: (Real u, Floating u, Ord u, PtSize u) 
           => RectPosition -> LocGraphic u
 testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
@@ -108,7 +108,7 @@ testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
             apply2R3 (multiAlignCenter sample_text)  rpos 0
 
 
-testDrawR :: (Real u, Floating u, Ord u, FromPtSize u) 
+testDrawR :: (Real u, Floating u, Ord u, PtSize u) 
           => RectPosition -> LocGraphic u
 testDrawR rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where

@@ -59,7 +59,7 @@ text_pic = drawTracing $ do
   where
     fn = illustrateBoundedLocGraphic
 
-redPlus :: (Fractional u, FromPtSize u) => LocGraphic u
+redPlus :: (Fractional u, PtSize u) => LocGraphic u
 redPlus = localize (stroke_colour red) markPlus
 
 bl_oneline :: BoundedLocGraphic Double

@@ -153,7 +153,7 @@ rectangleAnchor hw hh ctr =
     fn theta =  displaceVec (rectRadialVector hw hh theta) ctr
 
 
-polygonAnchor :: (Real u, Floating u, FromPtSize u) 
+polygonAnchor :: (Real u, Floating u, PtSize u) 
               => [Point2 u] -> Point2 u -> DotAnchor u
 polygonAnchor ps ctr = 
     DotAnchor { center_anchor   = ctr
@@ -182,7 +182,7 @@ circleAnchor rad ctr = DotAnchor ctr
                                  (\theta -> ctr .+^ (avec theta rad))
                                  (radialCardinal rad ctr)
 
-circleLDO :: (Floating u, FromPtSize u) => LocDrawingInfo u (DotAnchor u)
+circleLDO :: (Floating u, PtSize u) => LocDrawingInfo u (DotAnchor u)
 circleLDO = 
     promoteR1 $ \pt -> 
       markHeight >>= \diam -> pure $ circleAnchor (diam * 0.5) pt
@@ -191,7 +191,7 @@ circleLDO =
 -- This might be better taking a function: ctr -> poly_points
 -- ...
 --
-polygonLDO :: (Real u, Floating u, FromPtSize u) 
+polygonLDO :: (Real u, Floating u, PtSize u) 
            => (u -> Point2 u -> [Point2 u]) -> LocDrawingInfo u (DotAnchor u)
 polygonLDO mk = 
     promoteR1 $ \ctr -> 
@@ -205,7 +205,7 @@ type DotLocImage u = LocImage u (DotAnchor u)
 
 type DDotLocImage = DotLocImage Double 
 
-dotChar :: (Floating u, Real u, FromPtSize u) => Char -> DotLocImage u
+dotChar :: (Floating u, Real u, PtSize u) => Char -> DotLocImage u
 dotChar ch = dotText [ch]
 
 
@@ -216,73 +216,73 @@ dotChar ch = dotText [ch]
 --
 
 
-dotText :: (Floating u, Real u, FromPtSize u) => String -> DotLocImage u 
+dotText :: (Floating u, Real u, PtSize u) => String -> DotLocImage u 
 dotText ss = fmap (bimapL bboxRectAnchor) (textAlignCenter ss)
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 
 
-dotHLine :: (Floating u, FromPtSize u) => DotLocImage u
+dotHLine :: (Floating u, PtSize u) => DotLocImage u
 dotHLine = intoLocImage circleLDO markHLine
 
 
-dotVLine :: (Floating u, FromPtSize u) => DotLocImage u
+dotVLine :: (Floating u, PtSize u) => DotLocImage u
 dotVLine = intoLocImage circleLDO markVLine
 
 
-dotX :: (Floating u, FromPtSize u) => DotLocImage u
+dotX :: (Floating u, PtSize u) => DotLocImage u
 dotX = intoLocImage circleLDO markX
 
-dotPlus :: (Floating u, FromPtSize u) => DotLocImage u
+dotPlus :: (Floating u, PtSize u) => DotLocImage u
 dotPlus = intoLocImage circleLDO markPlus
 
-dotCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotCross :: (Floating u, PtSize u) => DotLocImage u
 dotCross = intoLocImage circleLDO markCross
 
-dotDiamond :: (Floating u, FromPtSize u) => DotLocImage u
+dotDiamond :: (Floating u, PtSize u) => DotLocImage u
 dotDiamond = intoLocImage circleLDO markDiamond
 
-dotFDiamond :: (Floating u, FromPtSize u) => DotLocImage u
+dotFDiamond :: (Floating u, PtSize u) => DotLocImage u
 dotFDiamond = intoLocImage circleLDO markFDiamond
 
 
 
-dotDisk :: (Floating u, FromPtSize u) => DotLocImage u
+dotDisk :: (Floating u, PtSize u) => DotLocImage u
 dotDisk = intoLocImage circleLDO markDisk
 
 
-dotSquare :: (Floating u, Real u, FromPtSize u) => DotLocImage u
+dotSquare :: (Floating u, Real u, PtSize u) => DotLocImage u
 dotSquare = 
     lift0R1 markHeight >>= \h -> intoLocImage (rectangleLDO h h) markSquare
 
 
 
 
-dotCircle :: (Floating u, FromPtSize u) => DotLocImage u
+dotCircle :: (Floating u, PtSize u) => DotLocImage u
 dotCircle = intoLocImage circleLDO markCircle
 
 
-dotPentagon :: (Floating u, FromPtSize u) => DotLocImage u
+dotPentagon :: (Floating u, PtSize u) => DotLocImage u
 dotPentagon = intoLocImage circleLDO markPentagon
 
-dotStar :: (Floating u, FromPtSize u) => DotLocImage u
+dotStar :: (Floating u, PtSize u) => DotLocImage u
 dotStar = intoLocImage circleLDO markStar
 
 
-dotAsterisk :: (Floating u, FromPtSize u) => DotLocImage u
+dotAsterisk :: (Floating u, PtSize u) => DotLocImage u
 dotAsterisk = intoLocImage circleLDO markAsterisk
 
-dotOPlus :: (Floating u, FromPtSize u) => DotLocImage u
+dotOPlus :: (Floating u, PtSize u) => DotLocImage u
 dotOPlus = intoLocImage circleLDO markOPlus
 
-dotOCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotOCross :: (Floating u, PtSize u) => DotLocImage u
 dotOCross = intoLocImage circleLDO markOCross
 
-dotFOCross :: (Floating u, FromPtSize u) => DotLocImage u
+dotFOCross :: (Floating u, PtSize u) => DotLocImage u
 dotFOCross = intoLocImage circleLDO markFOCross
 
 
-dotTriangle :: (Real u, Floating u, FromPtSize u) => DotLocImage u
+dotTriangle :: (Real u, Floating u, PtSize u) => DotLocImage u
 dotTriangle = intoLocImage (polygonLDO fn) markTriangle
   where 
     fn h ctr = let (bl,br,top) = equilateralTrianglePoints h ctr in [bl,br,top]

@@ -100,7 +100,7 @@ library
   build-depends:      base            <  5, 
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
-                      wumpus-core     >= 0.44.0  && <  0.45.0,
+                      wumpus-core     >= 0.50.0  && <  0.51.0,
                       wumpus-basic    == 0.17.0
 
   

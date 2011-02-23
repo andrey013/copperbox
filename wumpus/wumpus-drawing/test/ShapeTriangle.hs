@@ -56,7 +56,7 @@ makeAfmPicture font_dir = do
 
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fontFace courier . metricsContext 16
+makeCtx = set_font courier . metricsContext 16
 
 
 shape_pic :: DCtxPicture
@@ -81,38 +81,38 @@ radialP :: (RadialAnchor a, DUnit a ~ u) => Double -> a -> Point2 u
 radialP deg a = radialAnchor (d2r deg) a
 
 shapeSty :: DrawingContextF
-shapeSty = strokeColour light_steel_blue . ultrathick
+shapeSty = stroke_colour light_steel_blue . line_ultra_thick
 
-labelPoint :: (Real u, Floating u, FromPtSize u) 
+labelPoint :: (Real u, Floating u, PtSize u) 
            => (u -> PointDisplace u) -> String -> LocGraphic u
 labelPoint fn ss = markX `oplus` msg
   where
     msg = ignoreAns $ moveStart (fn 16) $ textAlignCenter ss
 
 
-labelWest :: (Real u, Floating u, FromPtSize u) 
+labelWest :: (Real u, Floating u, PtSize u) 
            => String -> LocGraphic u
 labelWest ss = markX `oplus` msg
   where
     msg = ignoreAns $ moveStart (westwards 10) $ 
-              multiAlignCenter 0 ss `startPos` EE
+              apply2R3 (multiAlignCenter ss) EE 0
 
-labelEast :: (Real u, Floating u, FromPtSize u) 
+labelEast :: (Real u, Floating u, PtSize u) 
            => String -> LocGraphic u
 labelEast ss = markX `oplus` msg
   where
     msg = ignoreAns $ moveStart (eastwards 10) $ 
-              multiAlignCenter 0 ss `startPos` WW
+              apply2R3 (multiAlignCenter ss) WW 0
 
               
 
-label :: (Real u, Floating u, FromPtSize u) 
+label :: (Real u, Floating u, PtSize u) 
            => Cardinal -> String -> LocGraphic u
 label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       multiAlignCenter 0 ss `startPos` rpos
+                       apply2R3 (multiAlignCenter ss) rpos 0
 
     go NORTH      = (SS, northwards)
     go NORTH_EAST = (SW, northeastwards)

@@ -79,7 +79,7 @@ sconnect mf p0 p1 =
 
 -- | Build the path with interior round corners.
 -- 
-roundCornerPath :: (Real u, Floating u, FromPtSize u) 
+roundCornerPath :: (Real u, Floating u, PtSize u) 
                 => [Point2 u] -> CF (Path u)
 roundCornerPath xs = getRoundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
@@ -98,7 +98,7 @@ connLine = promoteR2 $ \p0 p1 -> pure $ line p0 p1
 
 -- | Right-angled connector - go vertical, then go horizontal.
 --
-connRightVH :: (Real u, Floating u, FromPtSize u) => PathCF u
+connRightVH :: (Real u, Floating u, PtSize u) => PathCF u
 connRightVH = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
     let mid = P2 x0 y1 in roundCornerPath [p0, mid, p1]
 
@@ -106,7 +106,7 @@ connRightVH = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 
 -- | Right-angled connector - go horizontal, then go vertical.
 --
-connRightHV :: (Real u, Floating u, FromPtSize u) 
+connRightHV :: (Real u, Floating u, PtSize u) 
             => PathCF u
 connRightHV = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 x1 _) -> 
     let mid = P2 x1 y0 in roundCornerPath [p0, mid, p1]
@@ -115,7 +115,7 @@ connRightHV = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
 -- distance, go horizontal, go vertical again for the 
 -- remaining distance.
 -- 
-connRightVHV :: (Real u, Floating u, FromPtSize u) 
+connRightVHV :: (Real u, Floating u, PtSize u) 
              => u -> PathCF u
 connRightVHV v = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 x1 _) ->
     let a0 = p0 .+^ vvec v
@@ -127,7 +127,7 @@ connRightVHV v = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 x1 _) ->
 -- distance, go verical, go horizontal again for the 
 -- remaining distance.
 -- 
-connRightHVH :: (Real u, Floating u, FromPtSize u) 
+connRightHVH :: (Real u, Floating u, PtSize u) 
              => u -> PathCF u
 connRightHVH h = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 _ y1) -> 
     let a0 = p0 .+^ hvec h
@@ -139,7 +139,7 @@ connRightHVH h = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 _ y1) ->
 -- 
 -- @u@ is the altitude of the triangle.
 --
-connIsosceles :: (Real u, Floating u, FromPtSize u) 
+connIsosceles :: (Real u, Floating u, PtSize u) 
               => u -> PathCF u 
 connIsosceles dy = promoteR2 $ \ p0 p1 -> 
     let mid_pt  = midpointIsosceles dy p0 p1
@@ -153,7 +153,7 @@ connIsosceles dy = promoteR2 $ \ p0 p1 ->
 -- 
 -- @u@ is the altitude of the triangle.
 --
-connIsosceles2 :: (Real u, Floating u, FromPtSize u)
+connIsosceles2 :: (Real u, Floating u, PtSize u)
                => u -> PathCF u 
 connIsosceles2 u = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = dblpointIsosceles u p0 p1
@@ -166,7 +166,7 @@ connIsosceles2 u = promoteR2 $ \ p0 p1 ->
 -- 
 -- @u@ is the half length of the of the axis.
 --
-connLightningBolt :: (Real u, Floating u, FromPtSize u) 
+connLightningBolt :: (Real u, Floating u, PtSize u) 
                   => u -> PathCF u 
 connLightningBolt u = promoteR2 $ \ p0 p1 -> 
     let cp0 = midpointIsosceles   u  p0 p1
@@ -185,7 +185,7 @@ connLightningBolt u = promoteR2 $ \ p0 p1 ->
 --
 -- @u@ is the altitude of the triangle.
 --
-connIsoscelesCurve :: (Real u, Floating u, FromPtSize u) 
+connIsoscelesCurve :: (Real u, Floating u, PtSize u) 
                    => u -> PathCF u 
 connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
     let control_pt  = midpointIsosceles u p0 p1
@@ -198,7 +198,7 @@ connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
 -- The two Bezier control points take the /top/ corners. The
 -- curve tends to be very deep.
 -- 
-connSquareCurve :: (Real u, Floating u, FromPtSize u) 
+connSquareCurve :: (Real u, Floating u, PtSize u) 
                 => PathCF u 
 connSquareCurve = promoteR2 $ \ p0 p1 ->
     let (cp0,cp1) = squareFromBasePoints p0 p1
@@ -213,7 +213,7 @@ connSquareCurve = promoteR2 $ \ p0 p1 ->
 -- 
 -- (Underneath is modulo the direction, of course).
 -- 
-connUSquareCurve :: (Real u, Floating u, FromPtSize u) 
+connUSquareCurve :: (Real u, Floating u, PtSize u) 
                  => PathCF u 
 connUSquareCurve = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = usquareFromBasePoints p0 p1
@@ -224,7 +224,7 @@ connUSquareCurve = promoteR2 $ \ p0 p1 ->
 --
 -- Form a curve inside a trapeziod.
 -- 
-connTrapezoidCurve :: (Real u, Floating u, FromPtSize u) 
+connTrapezoidCurve :: (Real u, Floating u, PtSize u) 
                    => u -> u -> PathCF u 
 connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = trapezoidFromBasePoints u ratio_to_base p0 p1
@@ -234,7 +234,7 @@ connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 ->
 -- | Make a curve within a square, following the corner points as
 -- a Z.
 --
-connZSquareCurve :: (Real u, Floating u, FromPtSize u) 
+connZSquareCurve :: (Real u, Floating u, PtSize u) 
                  => PathCF u 
 connZSquareCurve = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = squareFromCornerPoints p0 p1
@@ -246,7 +246,7 @@ connZSquareCurve = promoteR2 $ \p0 p1 ->
 -- The order of tracing flips the control points, so this is an
 -- /underneath/ version of 'connZSquareCurve'.
 -- 
-connUZSquareCurve :: (Real u, Floating u, FromPtSize u) 
+connUZSquareCurve :: (Real u, Floating u, PtSize u) 
                   => PathCF u 
 connUZSquareCurve = promoteR2 $ \ p0 p1 ->  
    let (cp0,cp1)  = squareFromCornerPoints p0 p1 

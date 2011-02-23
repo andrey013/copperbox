@@ -77,11 +77,11 @@ instance Rotate (Semicircle u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (Semicircle u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance Num u => Translate (Semicircle u) where
+instance PtSize u => Translate (Semicircle u) where
   translate dx dy = mapCTM (translate dx dy)
 
 
@@ -92,7 +92,7 @@ instance Num u => Translate (Semicircle u) where
 --                           * height_minor 
 --                           * height_major -> Vec ) * semicircle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u) 
+runDisplaceCenter :: (Real u, Floating u, PtSize u) 
                   => (u -> u -> u -> Vec2 u) -> Semicircle u -> Point2 u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
                                  , sc_radius    = radius
@@ -100,17 +100,18 @@ runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
     displaceCenter (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
-instance (Real u, Floating u) => CenterAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Semicircle u) where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
-instance (Real u, Floating u) => ApexAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => ApexAnchor (Semicircle u) where
   apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
-instance (Real u, Floating u) => BottomCornerAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    BottomCornerAnchor (Semicircle u) where
   bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
   bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
-instance (Real u, Floating u) => CardinalAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Semicircle u) where
   north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
   east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
@@ -126,7 +127,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
     pow2 = (^ (2::Int))
 
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     CardinalAnchor2 (Semicircle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -136,11 +137,11 @@ instance (Real u, Floating u, FromPtSize u) =>
 
 
 
-instance (Real u, Floating u, FromPtSize u) => RadialAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Semicircle u) where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
 
-scRadialVec :: (Real u, Floating u, Ord u, FromPtSize u)
+scRadialVec :: (Real u, Floating u, Ord u, PtSize u)
             => Radian -> u -> u -> u -> Vec2 u
 scRadialVec theta radius hminor _ = go theta
   where
@@ -197,7 +198,7 @@ baselineRange radius hminor = (lang, rang)
 
 -- | 'semicircle'  : @ radius -> Shape @
 --
-semicircle :: (Real u, Floating u, FromPtSize u) 
+semicircle :: (Real u, Floating u, PtSize u) 
            => u -> Shape u (Semicircle u)
 semicircle radius = 
     let props = synthesizeProps radius
@@ -227,7 +228,7 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 -- TODO - need to check other shapes to see if the are deriving 
 -- the center properly...
 --
-mkSemicirclePath :: (Real u, Floating u, FromPtSize u) 
+mkSemicirclePath :: (Real u, Floating u, PtSize u) 
                  => u -> u -> LocThetaCF u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt

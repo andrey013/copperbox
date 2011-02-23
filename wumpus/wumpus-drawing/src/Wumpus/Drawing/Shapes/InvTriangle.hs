@@ -65,36 +65,36 @@ instance Rotate (InvTriangle u) where
   rotate ang = mapTriangle (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (InvTriangle u) where
   rotateAbout ang pt = mapTriangle (rotateAbout ang pt)
 
 
-instance Num u => Translate (InvTriangle u) where
+instance PtSize u => Translate (InvTriangle u) where
   translate dx dy = mapTriangle (translate dx dy)
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
--- I think anchors should be rotated about the center by pi...
+-- Anchors should be rotated about the center by pi...
 
-runRotateAnchor :: (Real u, Floating u) 
+runRotateAnchor :: (Real u, Floating u, PtSize u) 
                 => (Triangle u -> Point2 u) -> InvTriangle u -> Point2 u
 runRotateAnchor f (InvTriangle a) = rotateAbout pi (center a) (f a)
 
 
-instance (Real u, Floating u) => CenterAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (InvTriangle u) where
   center = center . getInvTriangle
 
 
 -- apex is same on InvTriangle as regular triangle
 
-instance (Real u, Floating u) => ApexAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => ApexAnchor (InvTriangle u) where
   apex = runRotateAnchor apex
 
 -- Top corners are bottom corners of the wrapped triangle.
 --
-instance (Real u, Floating u) => TopCornerAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => TopCornerAnchor (InvTriangle u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
@@ -102,7 +102,7 @@ instance (Real u, Floating u) => TopCornerAnchor (InvTriangle u) where
 -- Use established points on the InvTrangle - don\'t delegate to 
 -- the base Triangle.
 --
-instance (Real u, Floating u) => SideMidpointAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (InvTriangle u) where
   sideMidpoint n a = step (n `mod` 3) 
     where
       step 1 = midpoint (topRightCorner a) (topLeftCorner a)
@@ -114,14 +114,16 @@ instance (Real u, Floating u) => SideMidpointAnchor (InvTriangle u) where
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u) => CardinalAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (InvTriangle u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u) => CardinalAnchor2 (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor2 (InvTriangle u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
   southwest = runRotateAnchor northeast
@@ -129,7 +131,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (InvTriangle u) where
 
 
 
-instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (InvTriangle u) where
   radialAnchor theta = runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 
 --------------------------------------------------------------------------------
@@ -138,7 +140,7 @@ instance (Real u, Floating u) => RadialAnchor (InvTriangle u) where
 -- | 'invtriangle'  : @ top_base_width * height -> Triangle @
 --
 --
-invtriangle :: (Real u, Floating u, FromPtSize u)
+invtriangle :: (Real u, Floating u, PtSize u)
             => u -> u -> Shape u (InvTriangle u)
 invtriangle bw h = fmap InvTriangle $ updatePathAngle (+ pi) $ triangle bw h
     

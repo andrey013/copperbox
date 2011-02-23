@@ -133,21 +133,21 @@ type instance DUnit (LocThetaImage u a) = u
 -- instances.
 --
 
-instance (Real u, Floating u, Rotate a, PtSize u) => 
+instance (Real u, Floating u, PtSize u, Rotate a) => 
     Rotate (Image u a) where
   rotate ang = fmap (rotate ang)
 
 
-instance (Real u, Floating u, RotateAbout a, PtSize u) => 
+instance (Real u, Floating u, PtSize u, RotateAbout a, u ~ DUnit a) => 
     RotateAbout (Image u a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 
 
-instance (Num u, Scale a, PtSize u) => Scale (Image u a) where
+instance (Num u, PtSize u, Scale a) => Scale (Image u a) where
   scale sx sy = fmap (scale sx sy)
 
 
-instance (Num u, Translate a, PtSize u) => Translate (Image u a) where
+instance (Num u, PtSize u, Translate a) => Translate (Image u a) where
   translate dx dy = fmap (translate dx dy)
 
 
@@ -159,11 +159,11 @@ instance (Num u, Translate a, PtSize u) => Translate (Image u a) where
 -- point be transformed as well.
 --
 
-instance (Real u, Floating u, Rotate a, PtSize u) => 
+instance (Real u, Floating u, PtSize u, Rotate a) => 
     Rotate (LocImage u a) where
   rotate ang = fmap (rotate ang)
 
-instance (Real u, Floating u, RotateAbout a, PtSize u) => 
+instance (Real u, Floating u, PtSize u, RotateAbout a, u ~ DUnit a) => 
     RotateAbout (LocImage u a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 

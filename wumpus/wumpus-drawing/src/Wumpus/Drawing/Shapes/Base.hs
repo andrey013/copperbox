@@ -180,7 +180,7 @@ shapeToLocTheta pathF sh = promoteR2 $ \pt theta ->
 
 -- | Draw the shape path with round corners.
 -- 
-roundCornerShapePath :: (Real u, Floating u, FromPtSize u) 
+roundCornerShapePath :: (Real u, Floating u, PtSize u) 
                      => [Point2 u] -> CF (Path u)
 roundCornerShapePath xs = getRoundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
@@ -224,8 +224,8 @@ moveTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
 
 data ShapeCTM u = ShapeCTM 
       { ctm_center              :: Point2 u
-      , ctm_scale_x             :: !u
-      , ctm_scale_y             :: !u
+      , ctm_scale_x             :: !Double
+      , ctm_scale_y             :: !Double
       , ctm_rotation            :: Radian
       }
   deriving (Eq,Ord,Show)
@@ -249,16 +249,17 @@ instance Rotate (ShapeCTM u) where
   rotate ang = (\s i -> s { ctm_rotation = circularModulo $ i+ang })
                   <*> ctm_rotation
 
-instance (Real u, Floating u) => RotateAbout (ShapeCTM u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (ShapeCTM u) where
   rotateAbout ang pt = 
     (\s ctr i -> s { ctm_rotation = circularModulo $ i+ang
                    , ctm_center   = rotateAbout ang pt ctr })
       <*> ctm_center <*> ctm_rotation
 
 
-instance Num u => Translate (ShapeCTM u) where
-  translate dx dy = (\s (P2 x y) -> s { ctm_center = P2 (x+dx) (y+dy) })
-                      <*> ctm_center
+instance PtSize u => Translate (ShapeCTM u) where
+  translate dx dy = 
+    (\s (P2 x y) -> s { ctm_center = P2 (x + dpoint dx) (y + dpoint dy) })
+      <*> ctm_center
 
 
 
@@ -270,7 +271,8 @@ ctmAngle :: ShapeCTM u -> Radian
 ctmAngle = ctm_rotation
 
 
-displaceCenter :: (Real u, Floating u) => Vec2 u -> ShapeCTM u  -> Point2 u
+displaceCenter :: (Real u, Floating u, PtSize u) 
+               => Vec2 u -> ShapeCTM u  -> Point2 u
 displaceCenter v0 (ShapeCTM { ctm_center   = ctr0
                             , ctm_scale_x  = sx
                             , ctm_scale_y  = sy

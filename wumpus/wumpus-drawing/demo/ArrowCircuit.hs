@@ -96,21 +96,21 @@ circuit_pic = drawTracing $ do
 
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
-            , Real u, Floating u, FromPtSize u ) 
+            , Real u, Floating u, PtSize u ) 
          => PathCF u -> Point2 u -> Point2 u -> m ()
 connWith con p0 p1 = localize double_point_size $ 
     drawi_ $ apply2R2 (rightArrow tri45 con) p0 p1
 
 
 atext :: ( CenterAnchor t, DUnit t ~ u
-         , Real u, Floating u, FromPtSize u
+         , Real u, Floating u, PtSize u
          , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => t -> String -> m ()
 atext ancr ss = let pt = center ancr in
    drawi_ $ textAlignCenter ss `at` pt
 
 
-ptext :: ( Real u, Floating u, FromPtSize u
+ptext :: ( Real u, Floating u, PtSize u
          , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
@@ -119,7 +119,7 @@ ptext pt ss = localize (font_attr times_italic 14) $
 
 -- Note - return type is a LocImage not a shape...
 --
-rrectangle :: (Real u, Floating u, FromPtSize u, ToPtSize u) 
+rrectangle :: (Real u, Floating u, PtSize u) 
            => Double -> u -> u -> LocImage u (Rectangle u)
 rrectangle r w h = 
     localize (round_corner_factor r) $ strokedShape (rectangle w h)

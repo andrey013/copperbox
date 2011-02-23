@@ -32,12 +32,12 @@ import Control.Applicative
 -- | Get the Point corresponding the grid coordinates scaled by
 -- the snap-grid scaling factors.
 --
-snapGridFactors :: (Fractional u, FromPtSize u, DrawingCtxM m) 
+snapGridFactors :: (Fractional u, PtSize u, DrawingCtxM m) 
                 =>  m (u,u)
 snapGridFactors = 
     bimap conv conv <$> query dc_snap_grid_factors
   where
-    conv x = (realToFrac x) * fromPtSize 1
+    conv x = (realToFrac x) * fromPsPoint 1
 
 
 -- Design note - grid will generally be used as a background so
@@ -49,7 +49,7 @@ snapGridFactors =
 -- | Note - the grid is originated at whatever implicit start
 -- point is used. It is not snapped to /nice round/ numbers.
 -- 
-grid :: (Fractional u, RealFrac u, FromPtSize u) 
+grid :: (Fractional u, RealFrac u, PtSize u) 
      => (Int,Int) -> RGBi -> LocGraphic u
 grid (nx,ny) rgb    
     | nx < 1 || ny < 1 = emptyLocGraphic

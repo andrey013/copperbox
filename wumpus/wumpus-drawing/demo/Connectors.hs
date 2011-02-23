@@ -49,7 +49,7 @@ conntable =
     , connUZSquareCurve   
     ]
 
-tableGraphic :: (Real u, Floating u, FromPtSize u) 
+tableGraphic :: (Real u, Floating u, PtSize u) 
              => [PathCF u] -> TraceDrawing u ()
 tableGraphic conns = 
     drawi_ $ chn (map makeConnDrawing conns) `at` start
@@ -63,7 +63,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (Real u, Floating u, FromPtSize u) 
+makeConnDrawing :: (Real u, Floating u, PtSize u) 
                  => PathCF u -> LocGraphic u
 makeConnDrawing conn = 
     promoteR1 $ \p0 -> fmap (replaceL uNil) $ 

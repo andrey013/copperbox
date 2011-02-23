@@ -62,34 +62,35 @@ instance Rotate (InvSemiellipse u) where
   rotate ang = mapSemiellipse (rotate ang)
                   
 
-instance (Real u, Floating u) => RotateAbout (InvSemiellipse u) where
+instance (Real u, Floating u, PtSize u) => RotateAbout (InvSemiellipse u) where
   rotateAbout ang pt = mapSemiellipse (rotateAbout ang pt)
 
 
-instance Num u => Translate (InvSemiellipse u) where
+instance PtSize u => Translate (InvSemiellipse u) where
   translate dx dy = mapSemiellipse (translate dx dy)
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
-runRotateAnchor :: (Real u, Floating u) 
+runRotateAnchor :: (Real u, Floating u, PtSize u) 
                 => (Semiellipse u -> Point2 u) -> InvSemiellipse u -> Point2 u
 runRotateAnchor f (InvSemiellipse a) = rotateAbout pi (center a) (f a)
 
 
-instance (Real u, Floating u) => CenterAnchor (InvSemiellipse u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (InvSemiellipse u) where
   center = center . getInvSemiellipse
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     ApexAnchor (InvSemiellipse u) where
   apex = runRotateAnchor apex
 
-instance (Real u, Floating u) => TopCornerAnchor (InvSemiellipse u) where
+instance (Real u, Floating u, PtSize u) => 
+    TopCornerAnchor (InvSemiellipse u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     CardinalAnchor (InvSemiellipse u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
@@ -97,7 +98,7 @@ instance (Real u, Floating u, FromPtSize u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     CardinalAnchor2 (InvSemiellipse u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -106,7 +107,7 @@ instance (Real u, Floating u, FromPtSize u) =>
 
 
 
-instance (Real u, Floating u, FromPtSize u) => 
+instance (Real u, Floating u, PtSize u) => 
     RadialAnchor (InvSemiellipse u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
@@ -117,7 +118,7 @@ instance (Real u, Floating u, FromPtSize u) =>
 
 -- | 'invsemiellipse'  : @ rx * ry -> Shape @
 --
-invsemiellipse :: (Real u, Floating u, FromPtSize u) 
+invsemiellipse :: (Real u, Floating u, PtSize u) 
            => u -> u -> Shape u (InvSemiellipse u)
 invsemiellipse rx ry = 
     fmap InvSemiellipse $ updatePathAngle (+ pi) $ semiellipse rx ry

@@ -77,7 +77,7 @@ clip4 :: DGraphic
 clip4 = clipGraphic (toPrimPath path04) (background black)
 
 
-iheartHaskell :: Num u => FromPtSize u => LocGraphic u
+iheartHaskell :: Num u => PtSize u => LocGraphic u
 iheartHaskell = promoteR1 $ \pt -> 
     let body  = textline "I Haskell" `at` pt
         heart = localize (set_font symbol) $ 

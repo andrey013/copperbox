@@ -28,7 +28,7 @@ drawing01 :: DCtxPicture
 drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
-mf :: (Floating u, FromPtSize u) => TraceDrawing u ()
+mf :: (Floating u, PtSize u) => TraceDrawing u ()
 mf = do
     draw $ testDrawMinor NN     `at` (P2   0 300)
     draw $ testDrawMinor SS     `at` (P2  75 300)
@@ -50,7 +50,7 @@ mf = do
     draw $ testDrawBl    NW     `at` (P2 225 0)
     
 
-testDrawBl :: Floating u => RectPosition -> LocGraphic u
+testDrawBl :: (Floating u, PtSize u) => RectPosition -> LocGraphic u
 testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
 rectBl :: Floating u => PosGraphic u 
@@ -74,7 +74,7 @@ mkRectBl w h = promoteR1 $ \bl ->
 
 
 
-testDrawMinor :: Floating u => RectPosition -> LocGraphic u
+testDrawMinor :: (Floating u, PtSize u) => RectPosition -> LocGraphic u
 testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
 rectMinor :: Floating u => PosGraphic u 

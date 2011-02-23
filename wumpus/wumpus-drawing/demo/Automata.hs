@@ -83,14 +83,14 @@ automata = drawTracing $ do
 
 
 
-state :: ( Real u, Floating u, FromPtSize u) 
+state :: ( Real u, Floating u, PtSize u) 
       => String -> LocImage u (Circle u)
 state ss = 
     localize (set_font times_italic) $ 
         label_center_of (textbox ss) $ strokedShape $ circle 20
 
 
-stopstate :: ( Real u, Floating u, FromPtSize u) 
+stopstate :: ( Real u, Floating u, PtSize u) 
           => String -> LocImage u (Circle u)
 stopstate ss = 
     localize (set_font times_italic) $ 
@@ -100,14 +100,14 @@ stopstate ss =
   
 
 
-straightconn :: (Real u, Floating u, FromPtSize u) 
+straightconn :: (Real u, Floating u, PtSize u) 
              => ConnectorImage u (Path u)
 straightconn = rightArrow tri45 connLine
 
 -- Note - there is a problem with @rightArrow@ as @loop@
 -- manufactures the start and end points...
 --
-arrloop :: (Real u, Floating u, FromPtSize u) 
+arrloop :: (Real u, Floating u, PtSize u) 
              => ConnectorImage u (Path u)
 arrloop = rightArrow barb45 loop
 

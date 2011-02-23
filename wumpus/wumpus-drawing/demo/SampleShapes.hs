@@ -109,7 +109,7 @@ rotate05 = rotate (d2r (5::Double))
 voidExtra :: a -> TraceDrawing u ()
 voidExtra _ = return ()
 
-apexAnchor :: ( Real u, Floating u, FromPtSize u
+apexAnchor :: ( Real u, Floating u, PtSize u
             , ApexAnchor a
             , u ~ DUnit a )
             => a -> TraceDrawing u a
@@ -117,7 +117,7 @@ apexAnchor a = do
     draw $ label EAST   "(apex)"    `at` apex  a
     return a
 
-bottomCorners :: ( Real u, Floating u, FromPtSize u
+bottomCorners :: ( Real u, Floating u, PtSize u
                , BottomCornerAnchor a
                , u ~ DUnit a )
             => a -> TraceDrawing u a
@@ -126,7 +126,7 @@ bottomCorners a = do
     draw $ label SOUTH_EAST   "(bottom right)"   `at` bottomRightCorner a
     return a
 
-topCorners :: ( Real u, Floating u, FromPtSize u
+topCorners :: ( Real u, Floating u, PtSize u
               , TopCornerAnchor a
               , u ~ DUnit a )
            => a -> TraceDrawing u a
@@ -136,7 +136,7 @@ topCorners a = do
     return a
 
 
-midPoints :: ( Real u, Floating u, FromPtSize u
+midPoints :: ( Real u, Floating u, PtSize u
              , SideMidpointAnchor a
              , u ~ DUnit a )
           => Int -> a -> TraceDrawing u a
@@ -188,7 +188,7 @@ shapePic mf sh name = drawTracing $ do
 shapeSty :: DrawingContextF
 shapeSty = stroke_colour light_steel_blue . line_ultra_thick
 
-label :: (Real u, Floating u, FromPtSize u) 
+label :: (Real u, Floating u, PtSize u) 
            => Cardinal -> String -> LocGraphic u
 label cpos ss = markX `oplus` msg
   where

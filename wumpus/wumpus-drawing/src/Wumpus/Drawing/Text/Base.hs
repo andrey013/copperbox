@@ -48,20 +48,20 @@ import Data.Maybe
 
 -- | Single line text, returning its advance vector.
 --
-advtext :: FromPtSize u => EscapedText -> AdvGraphic u
+advtext :: PtSize u => EscapedText -> AdvGraphic u
 advtext esc = lift0R1 (textVector esc) >>= \v -> replaceAns v $ escapedline esc
 
 
 -- kernchar versions to do...
 
 
-textVector :: FromPtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
+textVector :: PtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
 textVector esc = 
     cwLookupTable >>= \table -> 
        let cs = destrEscapedText id esc 
        in return $ foldr (\c v -> v ^+^ (charWidth table c)) (vec 0 0) cs
      
-charVector :: FromPtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
+charVector :: PtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
 charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
    
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
@@ -70,7 +70,7 @@ charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
 -- EscapedChar for the init of the the list, for the last element 
 -- it takes the charVector.
 --
-hkernVector :: FromPtSize u => [KerningChar u] -> DrawingInfo (AdvanceVec u)
+hkernVector :: PtSize u => [KerningChar u] -> DrawingInfo (AdvanceVec u)
 hkernVector = go 0
   where
     go w []             = return (V2 w 0)
@@ -83,7 +83,7 @@ hkernVector = go 0
 -- | This is outside the Drawing context as we don\'t want to get
 -- the @cwLookupTable@ for every char.
 --
-charWidth :: FromPtSize u 
+charWidth :: PtSize u 
           => CharWidthLookup u -> EscapedChar -> AdvanceVec u
 charWidth fn (CharLiteral c) = fn $ ord c
 charWidth fn (CharEscInt i)  = fn i
@@ -100,7 +100,7 @@ charWidth fn (CharEscName s) = fn ix
 -- first line, then baseline-to-baseline span for the remaining
 -- lines.
 --
-multilineHeight :: (Real u, Floating u, FromPtSize u) 
+multilineHeight :: (Real u, Floating u, PtSize u) 
                    => Int -> DrawingInfo u
 multilineHeight line_count 
     | line_count < 1  = return 0
@@ -118,7 +118,7 @@ multilineHeight line_count
 -- Margin sizes are taken from the 'text_margin' field in the 
 -- 'DrawingContext'.
 --
-borderedTextPos :: (Real u, Floating u, FromPtSize u) 
+borderedTextPos :: (Real u, Floating u, PtSize u) 
                       => Int -> u -> DrawingInfo (ObjectPos u)
 borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
@@ -133,7 +133,7 @@ borderedTextPos line_count w =
 
 -- | LR text needs the objectPos under rotation.
 --
-borderedRotTextPos :: (Real u, Floating u, FromPtSize u) 
+borderedRotTextPos :: (Real u, Floating u, PtSize u) 
              => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
 borderedRotTextPos theta line_count max_w =
     fmap (orthoObjectPos theta) $ borderedTextPos line_count max_w 
@@ -145,7 +145,7 @@ borderedRotTextPos theta line_count max_w =
 -- So it is probably not a general enough function for the 
 -- PosImage library.
 --
-orthoObjectPos :: (Real u, Floating u) 
+orthoObjectPos :: (Real u, Floating u, PtSize u) 
                => Radian -> ObjectPos u -> ObjectPos u
 orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
     ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
@@ -164,7 +164,7 @@ orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
 -- to the baseline. Note the height of a textbox is @vspan@ which 
 -- is cap_height + descender
 --
-centerToBaseline :: (Fractional u, FromPtSize u) => DrawingInfo u
+centerToBaseline :: (Fractional u, PtSize u) => DrawingInfo u
 centerToBaseline = 
     (\ch vspan -> ch - 0.5 * vspan) <$> glyphCapHeight <*> glyphVerticalSpan
 
