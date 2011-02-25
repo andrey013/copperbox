@@ -36,6 +36,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Graphic
   , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
+  , module Wumpus.Basic.Kernel.Objects.UnitConvert
   ) where
 
 import Wumpus.Basic.Kernel.Base.Anchors
@@ -57,3 +58,4 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.TraceDrawing
+import Wumpus.Basic.Kernel.Objects.UnitConvert

@@ -39,7 +39,7 @@ module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Utils.HList
+import Wumpus.Basic.Utils.JoinList
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -60,6 +60,9 @@ import Data.Monoid
 newtype PrimGraphic u = PrimGraphic { getPrimGraphic :: Primitive u }
   deriving (Eq,Show)
 
+
+instance Functor PrimGraphic where
+  fmap f = PrimGraphic . fmap f . getPrimGraphic
 
 type instance DUnit (PrimGraphic u) = u
 
@@ -82,22 +85,29 @@ type instance DUnit (PrimGraphic u) = u
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
-newtype HPrim u = HPrim { getHPrim :: H (Primitive u) }
+newtype HPrim u = HPrim { getHPrim :: JoinList (Primitive u) }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
 -- shown, fmapped etc.
 
 instance Monoid (HPrim u) where
-  mempty          = HPrim emptyH
-  ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
+  mempty          = HPrim mempty
+  ha `mappend` hb = HPrim $ getHPrim ha `mappend` getHPrim hb
+
+
+instance Functor HPrim where
+  fmap f = HPrim . fmap (fmap f) . getHPrim
+
+
+type instance DUnit (HPrim u) = u
 
 
 hprimToList :: HPrim u -> [Primitive u]
-hprimToList = toListH . getHPrim
+hprimToList = toList . getHPrim
 
 
 singleH :: Primitive u -> HPrim u
-singleH = HPrim . wrapH 
+singleH = HPrim . one 
 
 
 --------------------------------------------------------------------------------

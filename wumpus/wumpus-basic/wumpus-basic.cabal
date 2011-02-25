@@ -150,6 +150,7 @@ library
     Wumpus.Basic.Kernel.Objects.Graphic,
     Wumpus.Basic.Kernel.Objects.PosImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
+    Wumpus.Basic.Kernel.Objects.UnitConvert,
     Wumpus.Basic.System.FontLoader.Afm,
     Wumpus.Basic.System.FontLoader.GhostScript,
     Wumpus.Basic.System.FontLoader.Base.AfmParserBase,

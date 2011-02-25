@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -186,6 +187,13 @@ type DConnectorCF a     = ConnectorCF Double a
 
 --------------------------------------------------------------------------------
 -- CF instances
+
+
+type instance DUnit (LocCF u a) = u
+
+type instance DUnit (LocThetaCF u a) = u
+
+type instance DUnit (ConnectorCF u a) = u
 
 -- OPlus
 
@@ -466,8 +474,8 @@ apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 --
 -- > apply3R3 :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 CF a
 -- 
-apply3R3            :: CF2 r1 r2 a -> r1 -> r2 -> CF a
-apply3R3 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
+apply3R3              :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 -> CF a
+apply3R3 mf r1 r2 r3  = CF $ \ctx -> unCF3 mf ctx r1 r2 r3
 
 
 

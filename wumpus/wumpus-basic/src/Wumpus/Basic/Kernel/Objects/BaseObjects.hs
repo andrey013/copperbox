@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.BaseObjects
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -84,26 +84,25 @@ type LocThetaDrawingInfo u a   = LocThetaCF u a
 -- 
 type ImageAns u a       = (a, PrimGraphic u)
 
-
 type GraphicAns u       = ImageAns u (UNil u)
 
 
 -- | Draw a PrimGraphic repsective to the 'DrawingContext' and 
 -- return some answer @a@.
 -- 
-type Image u a      = CF (ImageAns u a)
+type Image u a          = CF (ImageAns u a)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and 
 -- the supplied point, return some answer @a@.
 -- 
-type LocImage u a   = LocCF u (ImageAns u a)
+type LocImage u a       = LocCF u (ImageAns u a)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and
 -- the supplied point and angle.
 -- 
-type LocThetaImage u a   = LocThetaCF u (ImageAns u a)
+type LocThetaImage u a  = LocThetaCF u (ImageAns u a)
 
 
 
@@ -112,11 +111,7 @@ type DLocImage a         = LocImage Double a
 type DLocThetaImage a    = LocThetaImage Double a
 
 
-type instance DUnit (Image u a) = u -- GuardEq (DUnit a) (DUnit (PrimGraphic u))
-
-type instance DUnit (LocImage u a) = u --  GuardEq (DUnit a) (DUnit (PrimGraphic u))
-
-type instance DUnit (LocThetaImage u a) = u
+type instance DUnit (Image u a) = u
 
 
 
