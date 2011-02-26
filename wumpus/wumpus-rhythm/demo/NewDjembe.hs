@@ -32,9 +32,12 @@ makeCtx = join_bevel . set_font helvetica . metricsContext 14
 
 djembe_drawing :: DCtxPicture
 djembe_drawing = drawTracing $ localize fill_use_stroke_colour $ do 
-   drawli_ zeroPt       $ disk
-   drawli_ (P2 20 0)    $ parens $ char 'P'
-   drawli_ (P2 40 0)    $ decoHand period domhand
-   drawli_ (P2 60 0)    $ decoHand (char 'T') otherhand
-   drawli_ (P2 80 0)    $ underscore $ singlestem $ (char 'P')
-   drawli_ (P2 100 0)   $ singlestem $ anglestrike (char 'g')
+    drawli_ zeroPt       $ scaleFromAfm_f disk_note
+--   drawli_ (P2 20 0)    $ parens $ char 'P'
+--   drawli_ (P2 40 0)    $ decoHand period domhand
+--   drawli_ (P2 60 0)    $ decoHand (char 'T') otherhand
+--   drawli_ (P2 80 0)    $ underscore $ singlestem $ (char 'P')
+--   drawli_ (P2 100 0)   $ singlestem $ anglestrike (char 'g')
+--   drawli_ (P2 120 0)   $ singlestem $ lostrokeDisk
+--   drawli_ (P2 140 0)   $ singlestem $ histrokeChar 'X'
+    return ()
