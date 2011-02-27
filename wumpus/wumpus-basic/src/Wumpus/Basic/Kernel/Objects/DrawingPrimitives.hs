@@ -105,7 +105,7 @@ graphicAns p = (uNil, primGraphic p)
 -- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
 -- result is produced /within/ the 'DrawingContext'.
 --
-locPath :: Num u => [Vec2 u] -> LocCF u (PrimPath u)
+locPath :: PtSize u => [Vec2 u] -> LocCF u (PrimPath u)
 locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 
 
@@ -117,7 +117,7 @@ locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 -- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
 -- result is produced /within/ the 'DrawingContext'.
 --
-emptyLocPath :: Num u => LocCF u (PrimPath u)
+emptyLocPath :: PtSize u => LocCF u (PrimPath u)
 emptyLocPath = locPath []
 
 
@@ -307,10 +307,11 @@ vkernline xs =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-straightLine :: Fractional u => Vec2 u -> LocGraphic u
+straightLine :: (Fractional u, PtSize u) 
+             => Vec2 u -> LocGraphic u
 straightLine v = mf >>= (lift0R1 . openStroke)
   where
-    mf = promoteR1 $ \pt -> pure $ primPath pt [lineTo $ pt .+^ v]
+    mf = promoteR1 $ \pt -> pure $ vectorPath pt [v]
 
           
 -- | 'straightLineGraphic' : @ start_point * end_point -> LocGraphic @ 
@@ -321,7 +322,8 @@ straightLine v = mf >>= (lift0R1 . openStroke)
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-straightLineGraphic :: Fractional u => Point2 u -> Point2 u -> Graphic u
+straightLineGraphic :: (Fractional u, PtSize u) 
+                    => Point2 u -> Point2 u -> Graphic u
 straightLineGraphic p1 p2 = openStroke $ primPath p1 [lineTo p2]
 
 
@@ -335,7 +337,7 @@ straightLineGraphic p1 p2 = openStroke $ primPath p1 [lineTo p2]
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-curveGraphic :: Fractional u 
+curveGraphic :: (Fractional u, PtSize u)
              => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
 curveGraphic sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 
@@ -351,7 +353,7 @@ curveGraphic sp cp1 cp2 ep = openStroke $ primPath sp [curveTo cp1 cp2 ep]
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedCircle :: Floating u => u -> LocGraphic u
+strokedCircle :: (Floating u, PtSize u) => u -> LocGraphic u
 strokedCircle r = promoteR1 (closedStroke . curvedPath . bezierCircle r)
 
 
@@ -363,7 +365,7 @@ strokedCircle r = promoteR1 (closedStroke . curvedPath . bezierCircle r)
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledCircle :: Floating u => u -> LocGraphic u
+filledCircle :: (Floating u, PtSize u) => u -> LocGraphic u
 filledCircle r =  promoteR1 (filledPath . curvedPath . bezierCircle r)
 
 
@@ -376,7 +378,7 @@ filledCircle r =  promoteR1 (filledPath . curvedPath . bezierCircle r)
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedCircle :: Floating u => u -> LocGraphic u
+borderedCircle :: (Floating u, PtSize u) => u -> LocGraphic u
 borderedCircle r = promoteR1 (borderedPath . curvedPath . bezierCircle r)
 
 
@@ -393,7 +395,7 @@ borderedCircle r = promoteR1 (borderedPath . curvedPath . bezierCircle r)
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipse :: Floating u => u -> u -> LocGraphic u
+strokedEllipse :: (Floating u, PtSize u) => u -> u -> LocGraphic u
 strokedEllipse rx ry =
     promoteR1 (closedStroke . curvedPath . bezierEllipse rx ry)
 
@@ -408,7 +410,8 @@ strokedEllipse rx ry =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-rstrokedEllipse :: (Real u, Floating u) => u -> u -> LocThetaGraphic u
+rstrokedEllipse :: (Real u, Floating u, PtSize u) 
+                => u -> u -> LocThetaGraphic u
 rstrokedEllipse hw hh = 
     promoteR2 $ \ pt theta -> 
       closedStroke $ curvedPath $ rbezierEllipse hw hh theta pt 
@@ -421,7 +424,7 @@ rstrokedEllipse hw hh =
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledEllipse :: Floating u => u -> u -> LocGraphic u
+filledEllipse :: (Floating u, PtSize u) => u -> u -> LocGraphic u
 filledEllipse hw hh = 
     promoteR1 (filledPath . curvedPath . bezierEllipse hw hh)
 
@@ -434,7 +437,8 @@ filledEllipse hw hh =
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-rfilledEllipse :: (Real u, Floating u) => u -> u -> LocThetaGraphic u
+rfilledEllipse :: (Real u, Floating u, PtSize u) 
+               => u -> u -> LocThetaGraphic u
 rfilledEllipse hw hh = 
     promoteR2 $ \ pt theta -> 
       filledPath $ curvedPath $ rbezierEllipse hw hh theta pt 
@@ -449,7 +453,7 @@ rfilledEllipse hw hh =
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedEllipse :: Floating u => u -> u -> LocGraphic u
+borderedEllipse :: (Floating u, PtSize u) => u -> u -> LocGraphic u
 borderedEllipse hw hh =
     promoteR1 (borderedPath . curvedPath . bezierEllipse hw hh)
 
@@ -464,7 +468,8 @@ borderedEllipse hw hh =
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-rborderedEllipse :: (Real u, Floating u) => u -> u -> LocThetaGraphic u
+rborderedEllipse :: (Real u, Floating u, PtSize u) 
+                 => u -> u -> LocThetaGraphic u
 rborderedEllipse hw hh = 
     promoteR2 $ \ pt theta -> 
       borderedPath $ curvedPath $ rbezierEllipse hw hh theta pt 
@@ -481,7 +486,7 @@ rborderedEllipse hw hh =
 
 -- | Supplied point is /bottom-left/.
 --
-rectanglePath :: Num u => u -> u -> Point2 u -> PrimPath u
+rectanglePath :: PtSize u => u -> u -> Point2 u -> PrimPath u
 rectanglePath w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
   where
     br = bl .+^ hvec w
@@ -497,7 +502,7 @@ rectanglePath w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedRectangle :: Fractional u => u -> u -> LocGraphic u
+strokedRectangle :: PtSize u => u -> u -> LocGraphic u
 strokedRectangle w h = promoteR1 (closedStroke . rectanglePath w h)
 
 
@@ -508,7 +513,7 @@ strokedRectangle w h = promoteR1 (closedStroke . rectanglePath w h)
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledRectangle :: Fractional u => u -> u -> LocGraphic u
+filledRectangle :: PtSize u => u -> u -> LocGraphic u
 filledRectangle w h = promoteR1 (filledPath . rectanglePath w h)
 
 
@@ -520,7 +525,7 @@ filledRectangle w h = promoteR1 (filledPath . rectanglePath w h)
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedRectangle :: Fractional u => u -> u -> LocGraphic u
+borderedRectangle :: PtSize u => u -> u -> LocGraphic u
 borderedRectangle w h = promoteR1 (borderedPath . rectanglePath w h)
 
 

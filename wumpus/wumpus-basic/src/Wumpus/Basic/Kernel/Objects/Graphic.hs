@@ -172,7 +172,7 @@ intoLocThetaImage = liftA2 (\a (_,b) -> (a,b))
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocGraphic :: Num u => LocGraphic u
+emptyLocGraphic :: PtSize u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
                     return $ (uNil, primGraphic $ zostroke $ emptyPath pt)
 
@@ -187,7 +187,7 @@ emptyLocGraphic = promoteR1 $ \pt ->
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocThetaGraphic :: Num u => LocThetaGraphic u
+emptyLocThetaGraphic :: PtSize u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 

@@ -84,6 +84,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , stroke_colour
   , fill_colour 
   , text_colour
+  , single_colour
 
   , swap_colours
   , fill_use_stroke_colour
@@ -449,6 +450,15 @@ fill_colour rgb = \s -> s { dc_fill_colour = rgb }
 --
 text_colour          :: RGBi -> DrawingContextF
 text_colour rgb      = (\s -> s { dc_text_colour = rgb})
+
+
+
+-- | Set the stroke, fill and text colours to a single colour.
+--
+single_colour :: RGBi -> DrawingContextF
+single_colour rgb = stroke_colour rgb . fill_colour rgb . text_colour rgb
+
+
 
 -- | Swap the stroke colour and fill colours.
 --

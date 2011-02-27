@@ -44,7 +44,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- This models applying a finite list of LocFuns to an infinite
 -- supply of points.
 --
-chainDisplace :: Num u 
+chainDisplace :: PtSize u 
               => PointDisplace u -> [LocImage u zz] -> LocImage u (Point2 u)
 chainDisplace _    []     = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
@@ -64,7 +64,7 @@ chainDisplace next (f:fs) = promoteR1 $ \start ->
 
 -- | Iteration version of 'chainDisplace' ...
 --
-chainIterate :: Num u 
+chainIterate :: PtSize u 
            => (s -> s) -> (s -> PointDisplace u) -> s 
            -> [LocImage u zz] -> LocImage u (Point2 u)
 chainIterate _    _   _  []     = promoteR1 $ \start -> 
@@ -85,7 +85,7 @@ chainIterate next gen s  (f:fs) = promoteR1 $ \start ->
 -- | Variant of 'chainDisplace' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-apChainDisplace :: Num u 
+apChainDisplace :: PtSize u 
              => PointDisplace u -> (a -> LocImage u zz) -> [a] 
              -> LocImage u (Point2 u)
 apChainDisplace _    _  []     = promoteR1 $ \start -> 
@@ -103,7 +103,7 @@ apChainDisplace next gf (x:xs) = promoteR1 $ \start ->
 -- | Variant of 'chainIterate' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-apChainIterate :: Num u 
+apChainIterate :: PtSize u 
            => (s -> s) -> (s -> PointDisplace u) -> s 
            -> (a -> LocImage u zz) -> [a] -> LocImage u (Point2 u)
 apChainIterate _    _   _ _  []     = promoteR1 $ \start -> 
@@ -126,7 +126,7 @@ apChainIterate next gen s gf (x:xs) = promoteR1 $ \start ->
 -- | Variant of 'chainDisplace' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-interChainDisplace :: Num u 
+interChainDisplace :: PtSize u 
              => [PointDisplace u] -> [LocImage u zz] -> LocImage u (Point2 u)
 interChainDisplace _   [] = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start

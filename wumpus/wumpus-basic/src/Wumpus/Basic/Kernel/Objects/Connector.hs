@@ -39,7 +39,7 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Graphic
 
--- import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
@@ -103,7 +103,7 @@ intoConnectorImage = liftA2 (\a (_,b) -> (a,b))
 -- bounding box around the rectangular hull of the start and end 
 -- points.
 -- 
-emptyConnectorGraphic :: Num u => ConnectorGraphic u 
+emptyConnectorGraphic :: PtSize u => ConnectorGraphic u 
 emptyConnectorGraphic = promoteR2 $ \start end -> 
     let a = emptyLocGraphic `at` start
         b = emptyLocGraphic `at` end
