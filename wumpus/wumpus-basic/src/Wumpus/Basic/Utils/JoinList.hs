@@ -135,7 +135,7 @@ instance Functor ViewR where
 -- | Convert a join list to a regular list.
 --
 toList :: JoinList a -> [a]
-toList = joinfoldl (flip (:)) []
+toList = joinfoldr (:) []
 
 
 

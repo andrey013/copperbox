@@ -32,7 +32,7 @@ module Wumpus.Core.Utils.JoinList
   -- * Conversion between join lists and regular lists
   , fromList
   , toList
-  , toListF
+  , toListF_rl
 
   -- * Construction
   , one
@@ -110,7 +110,7 @@ instance Functor ViewL where
 -- | Convert a join list to a regular list.
 --
 toList :: JoinList a -> [a]
-toList = joinfoldl (flip (:)) []
+toList = joinfoldr (:) []
 
 -- | Build a join list from a regular list.
 --
@@ -125,10 +125,10 @@ fromList [x]    = One x
 fromList (x:xs) = Join (One x) (fromList xs)
 
 
--- Note -- this works from Right to left...
+-- Note -- this works from Right to Left...
 --
-toListF :: (a -> b) -> JoinList a -> [b]
-toListF f = step []
+toListF_rl :: (a -> b) -> JoinList a -> [b]
+toListF_rl f = step []
   where
     step acc (One x)     = f x : acc
     step acc (Join t u)  = let acc' = step acc u in step acc' t
@@ -153,6 +153,8 @@ isMany _            = False
 one :: a -> JoinList a
 one = One
 
+
+infixr 5 `cons`
 
 -- | Cons an element to the front of the join list.
 --

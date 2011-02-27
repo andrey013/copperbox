@@ -261,8 +261,9 @@ primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 -- 
 
 path :: DPrimPath -> Doc
-path (PrimPath start xs) = 
-    path_m start <+> hsep (snd $ mapAccumL step start xs)
+path ppath = 
+    let (start,xs) = extractRelPath ppath
+    in path_m start <+> hsep (snd $ mapAccumL step start xs)
   where
     step pt (RelLineTo v)         = let p1 = pt .+^ v in (p1, path_l p1)
     step pt (RelCurveTo v1 v2 v3) = let p1 = pt .+^ v1 

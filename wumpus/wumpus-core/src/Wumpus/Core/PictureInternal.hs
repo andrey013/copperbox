@@ -55,6 +55,8 @@ module Wumpus.Core.PictureInternal
   , concatTrafos
   , deconsMatrix
   , repositionDeltas
+  , extractRelPath
+  , extractAbsPath
 
   , zeroGS
   , isEmptyPath
@@ -224,9 +226,11 @@ data SvgAttr = SvgAttr
       }
   deriving (Eq,Show)
 
--- | PrimPath - start point and a list of path segments.
+-- | PrimPath - a list of path segments and a CTM.
+-- 
+-- Start point is the dx - dy of the CTM.
 --
-data PrimPath u = PrimPath (Point2 u) [PrimPathSegment u]
+data PrimPath u = PrimPath [PrimPathSegment u] PrimCTM
   deriving (Eq,Show)
 
 type DPrimPath = PrimPath Double
@@ -387,7 +391,7 @@ instance Functor Primitive where
 
 
 instance Functor PrimPath where 
-   fmap f (PrimPath p0 ps) = PrimPath (fmap f p0) (map (fmap f) ps)
+  fmap f (PrimPath ps dctm) = PrimPath (map (fmap f) ps) dctm
 
 
 instance Functor PrimPathSegment where
@@ -469,9 +473,8 @@ fmtPrimlist ones = snd $ F.foldl' fn (0,empty) ones
 
 
 instance Format u => Format (PrimPath u) where
-   format (PrimPath pt ps) = vcat (start : map format ps)
-      where
-        start = text "start_point " <> format pt
+   format (PrimPath vs ctm) = vcat [ hcat $ map format vs
+                                   , text "ctm=" <> format ctm ]
 
 instance Format u => Format (PrimPathSegment u) where
   format (RelCurveTo p1 p2 p3)  =
@@ -526,9 +529,12 @@ instance (Real u, Floating u, PtSize u) => Boundary (Primitive u) where
 
 
 
-pathBoundary :: (Num u, Ord u) => PrimPath u -> BoundingBox u
-pathBoundary (PrimPath st xs) = step st (st,st) xs
+pathBoundary :: (PtSize u, Ord u) => PrimPath u -> BoundingBox u
+pathBoundary (PrimPath vs ctm) = 
+    retraceBoundary (m33 *#) $ step zeroPt (zeroPt,zeroPt) vs
   where
+    m33         = fmap dpoint $ matrixRepCTM ctm
+
     step _  (lo,hi) []                         = BBox lo hi 
 
     step pt (lo,hi) (RelLineTo v1:rest)        = 
@@ -722,31 +728,27 @@ instance PtSize u => Translate (Primitive u) where
 -- points. 
 
 rotatePath :: (Real u, Floating u, PtSize u) => Radian -> PrimPath u -> PrimPath u
-rotatePath ang = mapPath (rotate ang) (rotate ang)
+rotatePath ang (PrimPath vs ctm) = PrimPath vs (rotateCTM ang ctm)
 
 
 rotateAboutPath :: PtSize u
                 => Radian -> Point2 u -> PrimPath u -> PrimPath u
-rotateAboutPath ang pt = mapPath (rotateAbout ang pt) (rotateAbout ang pt) 
+rotateAboutPath ang (P2 x y) (PrimPath vs ctm) = 
+    PrimPath vs (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
 
 
 scalePath :: PtSize u => Double -> Double -> PrimPath u -> PrimPath u
-scalePath sx sy = mapPath (scale sx sy) (scale sx sy)
+scalePath sx sy (PrimPath vs ctm) = 
+    PrimPath vs (scaleCTM (psDouble sx) (psDouble sy) ctm)
+
 
 -- Note - translate only needs change the start point /because/ 
 -- the path represented as a relative path.
 -- 
 translatePath :: PtSize u => Double -> Double -> PrimPath u -> PrimPath u
-translatePath x y (PrimPath st xs) = PrimPath (translate x y st) xs
+translatePath dx dy (PrimPath vs ctm) = 
+    PrimPath vs (translateCTM (psDouble dx) (psDouble dy) ctm)
 
-
-mapPath :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) 
-        -> PrimPath u -> PrimPath u
-mapPath f g (PrimPath st xs) = PrimPath (f st) (map (mapSeg g) xs)
-
-mapSeg :: (Vec2 u -> Vec2 u) -> PrimPathSegment u -> PrimPathSegment u
-mapSeg fn (RelLineTo p)         = RelLineTo (fn p)
-mapSeg fn (RelCurveTo p1 p2 p3) = RelCurveTo (fn p1) (fn p2) (fn p3)
 
 --------------------------------------------------------------------------------
 -- Labels
@@ -853,6 +855,36 @@ repositionDeltas = step . boundary
     unit4 = dpoint 4
 
 
+extractRelPath :: PtSize u => PrimPath u -> (Point2 u, [PrimPathSegment u])
+extractRelPath (PrimPath ss ctm) = (start, usegs)
+  where 
+    (dstart,dctm) = unCTM ctm
+    start         = fmap dpoint dstart
+    mtrafo        = transform (matrixRepCTM dctm)
+    usegs         = map fn ss
+    
+    fn (RelCurveTo v1 v2 v3) = RelCurveTo (mtrafo v1) (mtrafo v2) (mtrafo v3)
+    fn (RelLineTo v1)        = RelLineTo  (mtrafo v1)
+
+extractAbsPath :: PtSize u => PrimPath u -> (Point2 u, [AbsPathSegment u])
+extractAbsPath = post . extractRelPath 
+  where
+    post (st,[]) = (st, [])
+    post (st,ps) = (st, go st ps)
+
+    go _  []                         = []
+
+    go p0 (RelCurveTo v1 v2 v3 : vs) = let p1 = p0 .+^ v1
+                                           p2 = p1 .+^ v2
+                                           p3 = p2 .+^ v3
+                                       in  AbsCurveTo p1 p2 p3 : go p3 vs
+    
+    go p0 (RelLineTo v1 : vs)        = let p1 = p0 .+^ v1
+                                       in AbsLineTo p1 : go p1 vs
+                                       
+
+
+
 --------------------------------------------------------------------------------
 
 -- | The initial graphics state.
@@ -879,7 +911,7 @@ zeroGS = GraphicsState { gs_draw_colour  = black
 -- | Is the path empty - if so we might want to avoid printing it.
 --
 isEmptyPath :: PrimPath u -> Bool
-isEmptyPath (PrimPath _ xs) = null xs
+isEmptyPath (PrimPath xs _) = null xs
 
 -- | Is the label empty - if so we might want to avoid printing it.
 --

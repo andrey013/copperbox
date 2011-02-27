@@ -366,8 +366,9 @@ clipPath p = pure $ vcat [pathBody p , ps_closepath, ps_clip]
 
 
 pathBody :: DPrimPath -> Doc
-pathBody (PrimPath start xs) = 
-    vcat $ ps_newpath : ps_moveto start : (snd $ mapAccumL step start xs)
+pathBody ppath =
+    let (start,xs) = extractRelPath ppath 
+    in vcat $ ps_newpath : ps_moveto start : (snd $ mapAccumL step start xs)
   where
     step pt (RelLineTo v)         = let p1 = pt .+^ v in (p1, ps_lineto p1)
     step pt (RelCurveTo v1 v2 v3) = let p1 = pt .+^ v1 

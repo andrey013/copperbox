@@ -22,6 +22,7 @@ module Wumpus.Basic.Kernel.Objects.UnitConvert
   (
     ConvertAlg(..)
   , unit_conv
+  , func_conv
   , adaptConv
 
   , converti
@@ -56,6 +57,14 @@ data ConvertAlg ans_in unit_in ans_out unit_out =
 unit_conv :: (PtSize u1, PtSize u) => ConvertAlg a u1 a u
 unit_conv = 
     ConvertAlg (fromPsPoint . toPsPoint) (fromPsPoint . toPsPoint) id
+
+-- | /Functorial/ version of 'unit_conv'.
+--
+func_conv :: (Functor t, PtSize u1, PtSize u) => ConvertAlg (t u1) u1 (t u) u
+func_conv = 
+    ConvertAlg (fromPsPoint . toPsPoint) (fromPsPoint . toPsPoint)
+                                         (fmap (fromPsPoint . toPsPoint)) 
+               
 
 adaptConv :: (u -> u) -> (b -> b) -> ConvertAlg a u1 b u -> ConvertAlg a u1 b u
 adaptConv uf bf (ConvertAlg f1 f2 f3) = ConvertAlg f1 (uf . f2) (bf . f3)

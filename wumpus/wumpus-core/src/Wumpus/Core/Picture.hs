@@ -198,8 +198,8 @@ fontDeltaContext fa p = PContext (FontCtx fa) p
 --
 -- Create a Path from a start point and a list of PathSegments.
 --
-primPath :: Num u => Point2 u -> [AbsPathSegment u] -> PrimPath u
-primPath pt xs = PrimPath pt $ step pt xs
+primPath :: PtSize u => Point2 u -> [AbsPathSegment u] -> PrimPath u
+primPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
   where
     step p (AbsLineTo p1:rest)        = RelLineTo (p1 .-. p) : step p1 rest
     step p (AbsCurveTo p1 p2 p3:rest) = 
@@ -236,9 +236,10 @@ curveTo = AbsCurveTo
 -- \*\* WARNING \*\* - this function throws a runtime error when 
 -- supplied the empty list.
 --
-vertexPath :: Num u => [Point2 u] -> PrimPath u
+vertexPath :: PtSize u => [Point2 u] -> PrimPath u
 vertexPath []     = error "Picture.vertexPath - empty point list"
-vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
+vertexPath (x:xs) = 
+    PrimPath (snd $ mapAccumL step x xs) (startPointCTM x)
   where
     step a b = let v = b .-. a in (b, RelLineTo v)
 
@@ -252,8 +253,8 @@ vertexPath (x:xs) = PrimPath x $ snd $ mapAccumL step x xs
 -- This function can be supplied with an empty list - this 
 -- simulates a null graphic.
 --
-vectorPath :: Num u => Point2 u -> [Vec2 u] -> PrimPath u
-vectorPath pt xs = PrimPath pt $ map RelLineTo xs
+vectorPath :: PtSize u => Point2 u -> [Vec2 u] -> PrimPath u
+vectorPath pt xs = PrimPath (map RelLineTo xs) (startPointCTM pt)
 
 
 -- | 'emptyPath' : @ start_point -> PrimPath @
@@ -262,8 +263,8 @@ vectorPath pt xs = PrimPath pt $ map RelLineTo xs
 -- though the path is not drawn - a start point is the minimum 
 -- information needed to calculate a bounding box. 
 --
-emptyPath :: Num u => Point2 u -> PrimPath u
-emptyPath pt  = PrimPath pt []
+emptyPath :: PtSize u => Point2 u -> PrimPath u
+emptyPath pt  = PrimPath [] (startPointCTM pt)
 
 
 
@@ -277,9 +278,9 @@ emptyPath pt  = PrimPath pt []
 -- \*\* WARNING - this function throws an error when supplied the 
 -- empty list.
 -- 
-curvedPath :: Num u => [Point2 u] -> PrimPath u
+curvedPath :: PtSize u => [Point2 u] -> PrimPath u
 curvedPath []     = error "Picture.curvedPath - empty point list"
-curvedPath (x:xs) = PrimPath x $ step x xs
+curvedPath (x:xs) = PrimPath (step x xs) (startPointCTM x)
   where
     step p (a:b:c:ys) = let v1 = a .-. p 
                             v2 = b .-. a
@@ -837,7 +838,7 @@ illustrateBoundsPrim rgb p = frame $ boundsPrims rgb p $ [p]
 -- | Draw a the rectangle of a bounding box, plus cross lines
 -- joining the corners.
 --
-boundsPrims :: (Num u, Ord u, Boundary t, u ~ DUnit t) 
+boundsPrims :: (PtSize u, Ord u, Boundary t, u ~ DUnit t) 
             => RGBi -> t -> H (Primitive u)
 boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
   where
@@ -866,7 +867,7 @@ illustrateControlPoints rgb elt = frame $ fn elt
     fn a              = [a]
 
 
--- Genrate lines illustrating the control points of curves on 
+-- | Generate lines illustrating the control points of curves on 
 -- a Path.
 --
 -- Two lines are generated for a Bezier curve:
@@ -874,8 +875,9 @@ illustrateControlPoints rgb elt = frame $ fn elt
 --
 -- Nothing is generated for a straight line.
 --
-pathCtrlLines :: (Num u, Ord u) => RGBi -> PrimPath u -> H (Primitive u)
-pathCtrlLines rgb (PrimPath start ss) = step start ss
+pathCtrlLines :: (PtSize u, Ord u) => RGBi -> PrimPath u -> H (Primitive u)
+pathCtrlLines rgb ppath = 
+    let (start,ss) = extractRelPath ppath in step start ss
   where 
     step s (RelLineTo v:xs)         = step (s .+^ v) xs
 
@@ -886,6 +888,7 @@ pathCtrlLines rgb (PrimPath start ss) = step start ss
 
     step _ []                       = emptyH
 
-    mkLine s v                      = let pp = (PrimPath s [RelLineTo v]) 
+    mkLine s v                      = let pp = (primPath s [lineTo $ s .+^ v]) 
                                       in ostroke rgb default_stroke_attr pp 
+
 

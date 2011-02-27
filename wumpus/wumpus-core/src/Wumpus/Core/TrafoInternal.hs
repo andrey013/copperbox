@@ -34,6 +34,7 @@ module Wumpus.Core.TrafoInternal
   , identityCTM
   , makeThetaCTM
   , makeTranslCTM
+  , startPointCTM
 
   , translateCTM
   , scaleCTM
@@ -106,27 +107,35 @@ instance Format PrimCTM where
 -- Manipulating the PrimCTM
 
 identityCTM :: PrimCTM
-identityCTM = PrimCTM { ctm_trans_x = 0
-                      , ctm_trans_y = 0
+identityCTM = PrimCTM { ctm_trans_x  = 0
+                      , ctm_trans_y  = 0
                       , ctm_scale_x  = 1
                       , ctm_scale_y  = 1
                       , ctm_rotation = 0   }
 
 
 makeThetaCTM :: Double -> Double -> Radian -> PrimCTM
-makeThetaCTM dx dy ang = PrimCTM { ctm_trans_x = dx
-                                 , ctm_trans_y = dy
-                                 , ctm_scale_x = 1
-                                 , ctm_scale_y = 1
+makeThetaCTM dx dy ang = PrimCTM { ctm_trans_x  = dx
+                                 , ctm_trans_y  = dy
+                                 , ctm_scale_x  = 1
+                                 , ctm_scale_y  = 1
                                  , ctm_rotation = ang }
 
 
 makeTranslCTM :: Double -> Double -> PrimCTM
-makeTranslCTM dx dy = PrimCTM { ctm_trans_x = dx
-                              , ctm_trans_y = dy
-                              , ctm_scale_x = 1
-                              , ctm_scale_y = 1
+makeTranslCTM dx dy = PrimCTM { ctm_trans_x  = dx
+                              , ctm_trans_y  = dy
+                              , ctm_scale_x  = 1
+                              , ctm_scale_y  = 1
                               , ctm_rotation = 0 }
+
+
+startPointCTM :: PtSize u => Point2 u -> PrimCTM
+startPointCTM (P2 x y) = PrimCTM { ctm_trans_x  = psDouble x
+                                 , ctm_trans_y  = psDouble y
+                                 , ctm_scale_x  = 1
+                                 , ctm_scale_y  = 1
+                                 , ctm_rotation = 0 }
 
 
 
