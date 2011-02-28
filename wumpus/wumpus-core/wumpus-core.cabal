@@ -55,7 +55,9 @@ description:
     replaces the module @Core.PtSize@. The classes @PSUnit@ and 
     @FromPtSize@ are replaced by the class @PtSize@. The name 
     @PtSize@ was previously used for a type name - this type is 
-    now @PsPoint@.
+    now @PsPoint@. NOTE - the class constraint @PtSize@ now 
+    appears on more function signatures than previously, clients
+    will have to update accordingly.
   .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.

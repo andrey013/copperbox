@@ -27,11 +27,12 @@ module Wumpus.Drawing.Arrows.Connectors
 
   ) where
 
-import Wumpus.Basic.Kernel
 import Wumpus.Drawing.Arrows.Tips
 import Wumpus.Drawing.Paths
 
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
+import Wumpus.Core                              -- package: wumpus-core
 
 -- An arrowhead always know how to draw itself (filled triangle, 
 -- stroked barb, etc.)
@@ -57,7 +58,7 @@ type DPathConnector = PathConnector Double
 
 -- | Connector with an arrow tip at the start point \/ left.
 --
-leftArrow :: (Real u, Floating u) 
+leftArrow :: (Real u, Floating u, PtSize u) 
            => Arrowhead u -> PathCF u -> PathConnector u
 leftArrow arrh conn = promoteR2 $ \p0 p1 -> 
     connect conn p0 p1           >>= \cpath -> 
@@ -75,7 +76,7 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
 
 -- | Connector with an arrow tip at the end point \/ right.
 --
-rightArrow :: (Real u, Floating u) 
+rightArrow :: (Real u, Floating u, PtSize u) 
            => Arrowhead u -> PathCF u -> PathConnector u
 rightArrow arrh conn = promoteR2 $ \p0 p1 -> 
     connect conn p0 p1           >>= \cpath -> 
@@ -91,7 +92,7 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
 
 -- | Connector with two arrow tips, possibly different.
 --
-leftRightArrow :: (Real u, Floating u) 
+leftRightArrow :: (Real u, Floating u, PtSize u) 
                => Arrowhead u -> Arrowhead u -> PathCF u 
                -> PathConnector u
 leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 -> 
@@ -111,7 +112,7 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
 
 -- | Connector with the same arrow tip at both ends.
 --
-uniformArrow :: (Real u, Floating u) 
+uniformArrow :: (Real u, Floating u, PtSize u) 
              => Arrowhead u -> PathCF u -> PathConnector u
 uniformArrow arrh cp = leftRightArrow arrh arrh cp
 

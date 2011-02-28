@@ -105,7 +105,7 @@ instance Functor (Shape u) where
 --------------------------------------------------------------------------------
 
 
-makeShape :: Num u => LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
+makeShape :: PtSize u => LocThetaCF u a -> LocThetaCF u (Path u) -> Shape u a
 makeShape f g = Shape { shape_ans_fun    = f
                       , shape_path_fun   = g
                       , shape_decoration = emptyLocThetaGraphic
@@ -114,7 +114,7 @@ makeShape f g = Shape { shape_ans_fun    = f
 
 
 
-strokedShape :: Num u => Shape u a -> LocImage u a
+strokedShape :: PtSize u => Shape u a -> LocImage u a
 strokedShape = shapeToLoc closedStroke
 
 
@@ -127,7 +127,7 @@ strokedShape = shapeToLoc closedStroke
 --
 -- Probably Wumpus should calculate two paths instead.
 --
-dblStrokedShape :: Num u => Shape u a -> LocImage u a
+dblStrokedShape :: PtSize u => Shape u a -> LocImage u a
 dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc closedStroke sh
@@ -136,15 +136,15 @@ dblStrokedShape sh = decorate back fore
 
 
 
-filledShape :: Num u => Shape u a -> LocImage u a
+filledShape :: PtSize u => Shape u a -> LocImage u a
 filledShape = shapeToLoc filledPath
 
 
-borderedShape :: Num u => Shape u a -> LocImage u a
+borderedShape :: PtSize u => Shape u a -> LocImage u a
 borderedShape = shapeToLoc borderedPath
 
 
-shapeToLoc :: Num u 
+shapeToLoc :: PtSize u 
            => (PrimPath u -> Graphic u) -> Shape u a -> LocImage u a
 shapeToLoc pathF sh = promoteR1 $ \pt -> 
     atRot (shape_ans_fun sh)  pt 0 >>= \a -> 
@@ -155,19 +155,19 @@ shapeToLoc pathF sh = promoteR1 $ \pt ->
 
 
 
-rstrokedShape :: Num u => Shape u a -> LocThetaImage u a
+rstrokedShape :: PtSize u => Shape u a -> LocThetaImage u a
 rstrokedShape = shapeToLocTheta closedStroke
 
 
-rfilledShape :: Num u => Shape u a -> LocThetaImage u a
+rfilledShape :: PtSize u => Shape u a -> LocThetaImage u a
 rfilledShape = shapeToLocTheta filledPath
 
 
-rborderedShape :: Num u => Shape u a -> LocThetaImage u a
+rborderedShape :: PtSize u => Shape u a -> LocThetaImage u a
 rborderedShape = shapeToLocTheta borderedPath
 
 
-shapeToLocTheta :: Num u 
+shapeToLocTheta :: PtSize u 
                 => (PrimPath u -> Graphic u) -> Shape u a -> LocThetaImage u a
 shapeToLocTheta pathF sh = promoteR2 $ \pt theta -> 
     atRot (shape_ans_fun sh)  pt theta >>= \a -> 

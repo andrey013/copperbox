@@ -96,7 +96,7 @@ markText ss = fmap (replaceL uNil) $ textAlignCenter ss
 
 -- | Supplied point is the center.
 --
-axialLine :: Fractional u => Vec2 u -> LocGraphic u
+axialLine :: (Fractional u, PtSize u) => Vec2 u -> LocGraphic u
 axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
 
 
@@ -195,7 +195,7 @@ markPentagon =
 markStar :: (Floating u, PtSize u) => LocGraphic u 
 markStar = lift0R1 markHeight >>= \h -> starLines (0.5*h)
 
-starLines :: Floating u => u -> LocGraphic u
+starLines :: (Floating u, PtSize u) => u -> LocGraphic u
 starLines hh = 
     promoteR1 $ \ctr -> let cp = polygonCoordPath 5 hh
                         in step $ map (fn ctr) $ cp ctr
@@ -208,7 +208,7 @@ starLines hh =
 markAsterisk :: (Floating u, PtSize u) => LocGraphic u
 markAsterisk = lift0R1 markHeight >>= asteriskLines
 
-asteriskLines :: Floating u => u -> LocGraphic u
+asteriskLines :: (Floating u, PtSize u) => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
   where
     ang     = (pi*2) / 6

@@ -360,7 +360,8 @@ perpTLG =
       let hh = 0.5*h in solidOpenStroke $ rperpPath hh pt theta
 
 
-rperpPath :: Floating u => u -> Point2 u -> Radian -> PrimPath u
+rperpPath :: (Floating u, PtSize u) 
+          => u -> Point2 u -> Radian -> PrimPath u
 rperpPath hh ctr theta = primPath p0 [lineTo p1]
   where
     p0 = displacePerpendicular   hh  theta ctr
@@ -379,7 +380,8 @@ bracketTLG =
       let hh = 0.5*h in solidOpenStroke $ rbracketPath hh pt theta
 
 
-rbracketPath :: Floating u => u -> Point2 u -> Radian -> PrimPath u
+rbracketPath :: (Floating u, PtSize u) 
+             => u -> Point2 u -> Radian -> PrimPath u
 rbracketPath hh pt theta = vertexPath [p0,p1,p2,p3]
   where
     p1 = displacePerpendicular   hh  theta pt
@@ -415,12 +417,13 @@ odiskTip = Arrowhead markHeight (diskTLG drawF)
 
 
 squareTLG :: (Floating u, PtSize u) 
-        => (PrimPath u -> Graphic u) -> LocThetaGraphic u
+          => (PrimPath u -> Graphic u) -> LocThetaGraphic u
 squareTLG drawF = 
     tipBody $ \pt theta h -> drawF $ rsquarePath pt theta (0.5*h)
 
 
-rsquarePath :: Floating u => Point2 u -> Radian -> u -> PrimPath u
+rsquarePath :: (Floating u, PtSize u) 
+            => Point2 u -> Radian -> u -> PrimPath u
 rsquarePath pt theta hh = vertexPath [p0,p1,p2,p3]
   where
     p0 = displacePerpendicular     hh  theta pt
@@ -445,7 +448,8 @@ diamondTLG drawF =
     tipBody $ \pt theta h -> drawF $ rdiamondPath pt theta (0.5*h)
  
 
-rdiamondPath :: Floating u => Point2 u -> Radian -> u -> PrimPath u
+rdiamondPath :: (Floating u, PtSize u) 
+             => Point2 u -> Radian -> u -> PrimPath u
 rdiamondPath pt theta hh = vertexPath [pt,p1,p2,p3]
   where
     ctr = displaceParallel       (-2*hh) theta pt

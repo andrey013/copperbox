@@ -72,7 +72,8 @@ grid (nx,ny) rgb
 -- increment, for instance with an increment of 10 but a start 
 -- point @(15,0)@ lines are drawn from @(20,0), (30,0)@ etc.
 --
-interiorGrid :: RealFrac u => u -> Int -> u -> Int -> u -> u -> LocGraphic u
+interiorGrid :: (RealFrac u, PtSize u) 
+             => u -> Int -> u -> Int -> u -> u -> LocGraphic u
 interiorGrid x_step nx y_step ny w h = hlines `oplus` vlines
   where
     hline1 = straightLine (hvec w)

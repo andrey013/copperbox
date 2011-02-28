@@ -138,7 +138,7 @@ evalAllLines = foldrM fn (0,[])
 
 -- | Build a blank DocText with no output and a 0 width vector.
 --
-blank :: Num u => DocText u
+blank :: PtSize u => DocText u
 blank = DocText $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
 
 

@@ -51,7 +51,7 @@ type LocCoordPath u = Point2 u -> [Point2 u]
 -- The Path data type will also need a similar function...
 --
  
-coordinatePrimPath :: Num u => Point2 u -> LocCoordPath u -> PrimPath u
+coordinatePrimPath :: PtSize u => Point2 u -> LocCoordPath u -> PrimPath u
 coordinatePrimPath pt fn = go (fn pt)
   where
     go ps@(_:_) = vertexPath ps

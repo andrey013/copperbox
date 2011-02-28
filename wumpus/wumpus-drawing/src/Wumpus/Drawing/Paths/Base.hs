@@ -247,7 +247,7 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: Num u => Path u -> PrimPath u
+toPrimPath :: PtSize u => Path u -> PrimPath u
 toPrimPath (Path _ start segs _) = step1 $ viewl segs
   where
     step1 EmptyL                  = emptyPath start

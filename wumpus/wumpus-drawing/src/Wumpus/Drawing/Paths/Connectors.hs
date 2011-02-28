@@ -70,7 +70,7 @@ type DPathCF = PathCF Double
 -- Maybe this should be PathCF u -> ConnectorImage u (Path u) instead?
 -- This would be closer to the new shapes...
 --
-sconnect :: Num u 
+sconnect :: PtSize u 
          => PathCF u -> Point2 u -> Point2 u -> Image u (Path u)
 sconnect mf p0 p1 = 
     connect mf p0 p1 >>= \cpath -> 
