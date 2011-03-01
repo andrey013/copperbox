@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 module LabelPic where
@@ -55,13 +54,13 @@ demo04 = do
 
 
 
-bigA, bigB, bigT :: Picture Double
+bigA, bigB, bigT :: Picture
 bigA = bigLetter black 'A'
 bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
-bigLetter :: RGBi -> Char -> Picture Double
-bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] zeroPt]
+bigLetter :: RGBi -> Char -> Picture
+bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] dzeroPt]
   where
     attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
                                   SVG_REGULAR standard_encoding)
@@ -86,7 +85,7 @@ demo06 = do
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
+    pC = drawBounds $ picMoveBy `flip` (dvec 0 10) $ bigLetter peru 'C'
 
 
 demo07 :: IO ()
@@ -98,7 +97,7 @@ demo07 = do
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
+    pC = drawBounds $ picMoveBy `flip` (dvec 0 10) $ bigLetter peru 'C'
 
 
 
@@ -107,7 +106,7 @@ demo07 = do
 
 
 
-drawBounds :: (Floating u, Real u, PtSize u) => Picture u -> Picture u
+drawBounds :: Picture -> Picture
 drawBounds p        = p `picOver` (frame [zcstroke ph])
   where
     ph            = vertexPath $ [bl,br,tr,tl]
@@ -115,7 +114,7 @@ drawBounds p        = p `picOver` (frame [zcstroke ph])
 
 
 -- | The center of a picture.
-center :: (Boundary a, Fractional u, DUnit a ~ u) => a -> Point2 u
+center :: (Boundary t u, Fractional u) => t -> Point2 u
 center a = P2 hcenter vcenter 
   where  
     BBox (P2 x0 y0) (P2 x1 y1) = boundary a
@@ -135,10 +134,10 @@ black = RGBi 0 0 0
 
 
 
-lbl1 :: Picture Double
+lbl1 :: Picture
 lbl1 = line1 `picBeside` line2 where
-  line1 = frame [textlabel peru attrs "Hello" zeroPt]
-  line2 = frame [textlabel peru attrs "World" zeroPt]
+  line1 = frame [textlabel peru attrs "Hello" dzeroPt]
+  line2 = frame [textlabel peru attrs "World" dzeroPt]
   attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
                                 SVG_REGULAR standard_encoding)
 

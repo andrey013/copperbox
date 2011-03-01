@@ -29,16 +29,16 @@ zorder_msg = unlines $
     , ""
     ]
 
-combined_pic :: DPicture
+combined_pic :: Picture
 combined_pic = multi [pic1,pic2]
 
-pic1 :: DPicture
+pic1 :: Picture
 pic1 = frame $ prim_list zeroPt
 
-pic2 :: DPicture 
+pic2 :: Picture 
 pic2 = multi $ map (\a -> frame [a]) $ prim_list (P2 200 0)
 
-prim_list :: DPoint2 -> [DPrimitive]
+prim_list :: DPoint2 -> [Primitive]
 prim_list = sequence [ fillEllipse red   20 20
                      , \p -> fillEllipse green 20 20 (p .+^ hvec 20)
                      , \p -> fillEllipse blue  20 20 (p .+^ hvec 40)

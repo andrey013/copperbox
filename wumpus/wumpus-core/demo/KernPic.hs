@@ -21,35 +21,36 @@ main = do
                , "recommended for SVG."
                ]
 
-kern_pic :: DPicture
+kern_pic :: Picture
 kern_pic = pic1 `picOver` pic2 `picOver` pic3 
 
-pic1 :: DPicture
+pic1 :: Picture
 pic1 = frame [ helveticaLabelH universal   (P2 0 50)
              , helveticaLabelH universal   (P2 0 25)
              ]
 
-pic2 :: DPicture
+pic2 :: Picture
 pic2 = illustrateBoundsPrim blue_violet $ 
           helveticaLabelV universal (P2 200 180)
 
-pic3 :: DPicture
+pic3 :: Picture
 pic3 = frame [ symbolLabelH uUpsilon (P2 0 0) ]
+
 
 -- Some attention is paid to kerning - note that the kern between 
 -- @i@ and @v@ is smaller than the norm.
 --
-universal ::[DKerningChar]
-universal = [ kernchar     0  'u'
-            , kernchar    15  'n'
-            , kernchar    15  'i'
-            , kernchar    10  'v'
-            , kernchar    15  'e'
-            , kernchar    15  'r'
-            , kernchar    13  's'
-            , kernchar    15  'a'
-            , kernchar    15  'l'
-            , kernEscName 10  "currency"
+universal ::[KerningChar]
+universal = [ dkernchar     0  'u'
+            , dkernchar    15  'n'
+            , dkernchar    15  'i'
+            , dkernchar    10  'v'
+            , dkernchar    15  'e'
+            , dkernchar    15  'r'
+            , dkernchar    13  's'
+            , dkernchar    15  'a'
+            , dkernchar    15  'l'
+            , dkernEscName 10  "currency"
             ]
 
 -- Note - this may not work in SVG, some renderers are intolerant 
@@ -57,16 +58,16 @@ universal = [ kernchar     0  'u'
 --
 -- 0o241 is upper-case upsilon in the Symbol encoding vector.
 -- 
-uUpsilon :: [ DKerningChar ]
-uUpsilon = [ kernEscInt 6 0o241, kernchar 12 'a', kernchar 12 'b' ] 
+uUpsilon :: [KerningChar]
+uUpsilon = [ dkernEscInt 6 0o241, dkernchar 12 'a', dkernchar 12 'b' ] 
 
-helveticaLabelH :: [KerningChar Double] -> DPoint2 -> DPrimitive
+helveticaLabelH :: [KerningChar] -> DPoint2 -> Primitive
 helveticaLabelH xs pt = hkernlabel black helvetica18 xs pt
 
-helveticaLabelV :: [KerningChar Double] -> DPoint2 -> DPrimitive
+helveticaLabelV :: [KerningChar] -> DPoint2 -> Primitive
 helveticaLabelV xs pt = vkernlabel black helvetica18 xs pt
 
-symbolLabelH :: [KerningChar Double] -> DPoint2 -> DPrimitive
+symbolLabelH :: [KerningChar] -> DPoint2 -> Primitive
 symbolLabelH xs pt = hkernlabel black symbol18 xs pt
 
 

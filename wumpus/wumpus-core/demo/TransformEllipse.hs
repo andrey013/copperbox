@@ -28,7 +28,7 @@ main = do
 gray :: RGBi
 gray = RGBi 127 127 127
 
-pic1 :: Picture Double
+pic1 :: Picture
 pic1 = cb `picOver` ell `picOver` xy_frame "no transform"
   where
      ell  = mkRedEllipse id 20 10 pt
@@ -36,7 +36,7 @@ pic1 = cb `picOver` ell `picOver` xy_frame "no transform"
      pt   = P2 70 10
 
 
-pic2 :: Picture Double
+pic2 :: Picture
 pic2 = cb `picOver` ell `picOver` xy_frame "rotate 30deg"
   where
      ell  = mkRedEllipse (rotate ang) 20 10 pt
@@ -44,24 +44,24 @@ pic2 = cb `picOver` ell `picOver` xy_frame "rotate 30deg"
      pt   = P2 70 10
      ang  = d2r (30::Double)
 
-pic3 :: Picture Double
+pic3 :: Picture
 pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
      ell  = mkRedEllipse (rotateAbout ang pto) 20 10 pt
      cb   = rotateAbout ang pto $ crossbar 20 10 pt
-     pt   = P2 70 10
-     pto  = P2 60 0
+     pt   = dP2 70 10
+     pto  = dP2 60 0
      ang  = d2r (30::Double)
 
 
-pic4 :: Picture Double
+pic4 :: Picture
 pic4 = cb `picOver` ell `picOver` xy_frame "scale 1 2"
   where
      ell  = mkRedEllipse (scale 1 2) 20 10 pt
      cb   = scale 1 2 $ crossbar 20 10 pt
      pt   = P2 70 10
 
-pic5 :: Picture Double
+pic5 :: Picture
 pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
   where
      ell  = mkRedEllipse (translate (-70) (-10)) 20 10 pt
@@ -69,14 +69,12 @@ pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
      pt   = P2 70 10
 
 
-mkRedEllipse :: (Real u, Floating u, PtSize u) 
-             => (Primitive u -> Primitive u) 
-             -> u -> u -> Point2 u -> Picture u
+mkRedEllipse ::(Primitive -> Primitive) 
+             -> Double -> Double -> DPoint2 -> Picture
 mkRedEllipse trafo rx ry pt = 
     illustrateControlPoints gray $ trafo $ fillEllipse red rx ry pt
 
-crossbar :: (Real u, Floating u, PtSize u) 
-         => u -> u -> Point2 u -> Picture u
+crossbar :: Double -> Double -> DPoint2 -> Picture
 crossbar rx ry ctr = 
     frame [ostroke black default_stroke_attr $ primPath west ps]
   where
@@ -87,11 +85,11 @@ crossbar rx ry ctr =
     west  = ctr .-^ hvec rx
 
 
-xy_frame :: (Real u, Floating u, PtSize u) => String -> Picture u
+xy_frame :: String -> Picture
 xy_frame ss = 
-    frame [ mkline (P2 (-4) 0) (P2 150 0)
-          , mkline (P2 0 (-4)) (P2 0 150) 
-          , textlabel black wumpus_default_font ss (P2 0 (-20))
+    frame [ mkline (dP2 (-4) 0) (dP2 150 0)
+          , mkline (dP2 0 (-4)) (dP2 0 150) 
+          , textlabel black wumpus_default_font ss (dP2 0 (-20))
           ]
 
   where

@@ -19,7 +19,7 @@ scale_onehalf_x_two :: Scale t => t -> t
 scale_onehalf_x_two = scale 1.5 2.0
 
 
-scale_onehalf_x_twoP :: PtSize u => Primitive u -> Primitive u
+scale_onehalf_x_twoP :: Primitive -> Primitive
 scale_onehalf_x_twoP = scale 1.5 2.0
 
 -- Primitive - Text

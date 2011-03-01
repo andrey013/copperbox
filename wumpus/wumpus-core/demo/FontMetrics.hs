@@ -32,10 +32,10 @@ courier_attr :: FontAttr
 courier_attr = FontAttr 48 (FontFace "Courier" "Courier New" 
                                      SVG_REGULAR standard_encoding)
 
-metrics_pic :: DPicture
+metrics_pic :: Picture
 metrics_pic = char_pic `picOver` lines_pic
 
-lines_pic   :: DPicture
+lines_pic   :: Picture
 lines_pic   = frame $ 
     [ ascender_line, cap_line, xheight_line, baseline, descender_line ]
   where
@@ -47,20 +47,20 @@ lines_pic   = frame $
 
 
 
-char_pic :: Picture Double
+char_pic :: Picture
 char_pic = frame $ zipWith ($) chars (iterate (.+^ hvec 32) zeroPt)
   where
     chars = map letter "ABXabdgjxy12"
 
 
 
-letter :: Char -> DPoint2 -> DPrimitive
+letter :: Char -> DPoint2 -> Primitive
 letter ch pt = textlabel black courier_attr [ch] pt
 
 
-haxis :: RGBi -> PsPoint -> DPrimitive
+haxis :: RGBi -> PsPoint -> Primitive
 haxis rgb ypos = 
     ostroke rgb dash_attr $ vertexPath [ pt, pt .+^ hvec 440 ]
   where
     dash_attr = default_stroke_attr { dash_pattern = Dash 0 [(2,2)] }
-    pt        = P2 0 (fromPsPoint ypos)
+    pt        = dP2 0 (fromPsPoint ypos)

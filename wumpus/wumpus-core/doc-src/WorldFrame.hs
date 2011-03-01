@@ -9,7 +9,7 @@ import Wumpus.Core.Text.StandardEncoding
 main :: IO ()
 main = writeEPS "WorldFrame.eps" world_frame
 
-world_frame :: DPicture
+world_frame :: Picture
 world_frame = uniformScale 0.75 $ 
     frame [ ogin, btm_right, top_left, top_right
           , x_axis, y_axis, line1
@@ -26,13 +26,15 @@ world_frame = uniformScale 0.75 $
 
 
 
-makeLabelPrim :: String -> DPoint2 -> DPrimitive
+makeLabelPrim :: String -> DPoint2 -> Primitive
 makeLabelPrim = textlabel black attrs 
   where
     attrs     = FontAttr 10 (FontFace "Helvetica" "Helvetica" 
                                       SVG_REGULAR standard_encoding)
 
-makeLinePrim :: PsPoint -> DPoint2 -> DPoint2 -> DPrimitive
+makeLinePrim :: PsPoint -> DPoint2 -> DPoint2 -> Primitive
 makeLinePrim lw a b = ostroke black attrs $ primPath a [lineTo b]
   where
     attrs = default_stroke_attr {line_width=lw}
+
+

@@ -15,7 +15,9 @@ main = do
     writeSVG "./out/svg_link01.svg"  link_pic
 
 
-link_pic :: DPicture
-link_pic = frame [ xlink xref $ ztextlabel "www.haskell.org" zeroPt ]
+link_pic :: Picture
+link_pic = frame [ xlink xref $ ztextlabel "www.haskell.org" dzeroPt ]
   where    
      xref = xlinkhref "http://www.haskell.org"
+
+

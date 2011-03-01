@@ -43,7 +43,7 @@ main = do
 --
 -- Note - 0xE8 corresponds to Lslash in the standard encoding. 
 -- 
-pic1 :: DPicture
+pic1 :: Picture
 pic1 = frame [ helveticaLabel "myst&#232;re"      (P2 0 60)
              , helveticaLabel "myst&egrave;re"    (P2 0 40) -- no HASH!
              , helveticaLabel "myst&#0o350;re"    (P2 0 20)
@@ -53,7 +53,7 @@ pic1 = frame [ helveticaLabel "myst&#232;re"      (P2 0 60)
 
 
 
-helveticaLabel :: String -> DPoint2 -> DPrimitive
+helveticaLabel :: String -> DPoint2 -> Primitive
 helveticaLabel ss pt = textlabel black helvetica18 ss pt
 
 helvetica18 :: FontAttr

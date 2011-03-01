@@ -22,21 +22,21 @@ main = do
 
 -- These are out-of-date for version 0.36.0
 
-pic1 :: DPicture
+pic1 :: Picture
 pic1 = illustrateBounds grey $ frame $ 
     [ uniformScale 0.5 $ square blue 50 (P2 100 100)
     , square red 50 (P2 100 100)
     ]
 
 
-pic2 :: DPicture
+pic2 :: Picture
 pic2 = illustrateBounds grey $ frame $ 
     [ uniformScale 0.5 $ ellipseHH blue 25 (P2 100 100)
     , ellipseHH red 25 (P2 100 100)
     ]
 
 
-pic3 :: DPicture
+pic3 :: Picture
 pic3 = illustrateBounds grey $ frame $
     [ uniformScale 0.5 $ label blue (P2 100 100)
     , label red (P2 100 100)
@@ -44,14 +44,14 @@ pic3 = illustrateBounds grey $ frame $
 
 
 
-square :: (Num u, Ord u) => RGBi -> u -> Point2 u -> Primitive u
+square :: RGBi -> Double -> DPoint2 -> Primitive
 square rgb sidelen bl = fill rgb $ vertexPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 
-ellipseHH :: (Fractional u, PtSize u) => RGBi -> u -> Point2 u -> Primitive u
+ellipseHH :: RGBi -> Double -> DPoint2 -> Primitive
 ellipseHH rgb radius ctr = fillEllipse rgb radius (0.5*radius) ctr
  
-label :: PtSize u => RGBi -> Point2 u -> Primitive u
+label :: RGBi -> DPoint2 -> Primitive
 label rgb bl = textlabel rgb wumpus_default_font "Wumpus" bl
 
 
