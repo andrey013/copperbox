@@ -143,8 +143,7 @@ svgChar (CharEscName s)                 =
 
 -- | Output a picture to a SVG file. 
 --
-writeSVG :: (Real u, Floating u, PtSize u) 
-         => FilePath -> Picture u -> IO ()
+writeSVG :: FilePath -> Picture -> IO ()
 writeSVG filepath pic = 
     writeFile filepath $ show $ svgDraw Nothing pic 
 
@@ -153,14 +152,12 @@ writeSVG filepath pic =
 -- Output a picture to a SVG file the supplied /defs/ are
 -- written into the defs section of SVG file verbatim. 
 --
-writeSVG_defs :: (Real u, Floating u, PtSize u) 
-              => FilePath -> String -> Picture u -> IO ()
+writeSVG_defs :: FilePath -> String -> Picture -> IO ()
 writeSVG_defs filepath ss pic = 
     writeFile filepath $ show $ svgDraw (Just ss) pic 
 
 
-svgDraw :: (Real u, Floating u, PtSize u) 
-        => Maybe String -> Picture u -> Doc
+svgDraw :: Maybe String -> Picture -> Doc
 svgDraw mb_defs original_pic = 
     let pic          = svgPageTranslation original_pic
         (_,imgTrafo) = imageTranslation pic
@@ -170,7 +167,7 @@ svgDraw mb_defs original_pic =
 
 
 
-imageTranslation :: DPicture -> (DBoundingBox, Doc -> Doc)
+imageTranslation :: Picture -> (DBoundingBox, Doc -> Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, id)
   (bb, Just v)  -> let attr = attr_transform (val_translate v) 
@@ -180,7 +177,7 @@ imageTranslation pic = case repositionDeltas pic of
 
 -- Note - might be simpler to only print a @Picture Double@
 
-picture :: DPicture -> SvgMonad Doc
+picture :: Picture -> SvgMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 
@@ -195,7 +192,7 @@ oneConcat fn ones = outstep (viewl ones)
     instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
 
-primitive :: DPrimitive -> SvgMonad Doc
+primitive :: Primitive -> SvgMonad Doc
 primitive (PPath props pp)      
     | isEmptyPath pp            = pure empty
     | otherwise                 = primPath props pp
@@ -240,12 +237,12 @@ drawGProps xs d = elem_g attrs_doc d
 svgAttribute :: SvgAttr -> Doc
 svgAttribute (SvgAttr n v) = svgAttr n $ text v
  
-clipPath :: String -> DPrimPath -> Doc
+clipPath :: String -> PrimPath -> Doc
 clipPath clip_id pp = 
     elem_clipPath (attr_id clip_id) (elem_path_no_attrs $ path pp) 
 
 
-primPath :: PathProps -> DPrimPath -> SvgMonad Doc
+primPath :: PathProps -> PrimPath -> SvgMonad Doc
 primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 
 --
@@ -260,7 +257,7 @@ primPath props pp = (\(a,f) -> elem_path a (f $ path pp)) <$> pathProps props
 -- an encouragement to change when it moved to relative ones. 
 -- 
 
-path :: DPrimPath -> Doc
+path :: PrimPath -> Doc
 path ppath = 
     let (start,xs) = extractRelPath ppath
     in path_m start <+> hsep (snd $ mapAccumL step start xs)
@@ -298,7 +295,7 @@ pathProps props = fn props
 
 -- Note - if hw==hh then draw the ellipse as a circle.
 --
-primEllipse :: EllipseProps -> DPrimEllipse -> SvgMonad Doc
+primEllipse :: EllipseProps -> PrimEllipse -> SvgMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = (\a b -> elem_circle (a <+> circle_radius <+> b))
                     <$> bracketEllipseCTM ctm mkCXCY <*> ellipseProps props
@@ -324,14 +321,14 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 
 
 
--- Note - Rendering coloured text seemed convoluted 
--- (mandating the tspan element). 
+-- Note - SVG rendering coloured text seemed convoluted 
+-- mandating the tspan element in the output. 
 --
 -- TO CHECK - is this really the case?
 -- 
 --
 
-primLabel :: LabelProps -> DPrimLabel -> SvgMonad Doc
+primLabel :: LabelProps -> PrimLabel -> SvgMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
     (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
       <$> deltaFontAttrs attrs <*> bracketTextCTM ctm coordf
@@ -340,12 +337,12 @@ primLabel (LabelProps rgb attrs) (PrimLabel body ctm) =
     coordf = \p0 -> pure $ labelBodyCoords body p0
     dtext  = labelBodyText body
 
-labelBodyCoords :: DLabelBody -> DPoint2 -> Doc
+labelBodyCoords :: LabelBody -> DPoint2 -> Doc
 labelBodyCoords (StdLayout _)  pt = makeXY pt
 labelBodyCoords (KernTextH xs) pt = makeXsY pt xs        
 labelBodyCoords (KernTextV xs) pt = makeXYs pt xs
 
-labelBodyText :: DLabelBody -> Doc
+labelBodyText :: LabelBody -> Doc
 labelBodyText (StdLayout enctext) = encodedText enctext
 labelBodyText (KernTextH xs)      = kerningText xs
 labelBodyText (KernTextV xs)      = kerningText xs
@@ -354,7 +351,7 @@ labelBodyText (KernTextV xs)      = kerningText xs
 encodedText :: EscapedText -> Doc
 encodedText enctext = hcat $ destrEscapedText (map svgChar) enctext
 
-kerningText :: [DKerningChar] -> Doc
+kerningText :: [KerningChar] -> Doc
 kerningText xs = hcat $ map (\(_,c) -> svgChar c) xs
 
 
@@ -370,7 +367,7 @@ makeXY (P2 x y) = attr_x x <+> attr_y y
 -- 
 -- > x="0 10 25 35" y="0"
 --
-makeXsY :: DPoint2 -> [DKerningChar] -> Doc
+makeXsY :: DPoint2 -> [KerningChar] -> Doc
 makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
   where 
     step ax ((d,_):ds) = let a = ax+d in a : step a ds 
@@ -385,7 +382,7 @@ makeXsY (P2 x y) ks = attr_xs (step x ks) <+> attr_y y
 -- Note - this is different to the horizontal version as the 
 -- x-coord needs to be /realigned/ at each step.
 --
-makeXYs :: DPoint2 -> [DKerningChar] -> Doc
+makeXYs :: DPoint2 -> [KerningChar] -> Doc
 makeXYs (P2 x y) ks = attr_xs xcoords <+> attr_ys (step y ks)
   where 
     xcoords            = replicate (length ks) x

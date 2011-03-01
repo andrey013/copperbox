@@ -22,8 +22,7 @@
 
 module Wumpus.Core.PageTranslation
   ( 
-    psUnitTranslation
-  , svgPageTranslation
+    svgPageTranslation
 
   ) where
 
@@ -40,47 +39,50 @@ import Wumpus.Core.Units
 -- worry about scaling the BoundingBox
 --
 
-psUnitTranslation :: (PtSize u, Ord u) => Picture u -> DPicture
-psUnitTranslation = fmap psDouble
 
 
 
-svgPageTranslation :: (PtSize u, Ord u) => Picture u -> DPicture
-svgPageTranslation pic = 
-   scale 1 (-1) (trivPic pic)
+svgPageTranslation :: Picture -> Picture
+svgPageTranslation pic = scale 1 (-1) (trivPic pic)
 
-trivPic :: PtSize u => Picture u -> DPicture 
+
+
+trivPic :: Picture -> Picture
 trivPic (Leaf lc ones)      = Leaf (trivLocale lc) (fmap trivPrim ones)
 trivPic (Picture lc ones)   = Picture (trivLocale lc) (fmap trivPic ones)
 
-trivLocale :: PtSize u => Locale u -> DLocale 
+trivLocale :: Locale -> Locale
 trivLocale (bb, dtrafos) = (fmap psDouble bb, dtrafos)
 
 
-trivPrim :: PtSize u => Primitive u -> DPrimitive
-trivPrim (PPath a pp)     = PPath a (fmap psDouble pp)
+-- | Path is unchanged because it is drawn directly in the output
+-- and thus doesn\'t need a rectifying transformation.
+--
+trivPrim :: Primitive -> Primitive
+trivPrim (PPath a pp)     = PPath a pp
 trivPrim (PLabel a lbl)   = PLabel a (trivLabel lbl)
 trivPrim (PEllipse a ell) = PEllipse a (trivEllipse ell)
 trivPrim (PContext a chi) = PContext a (trivPrim chi)
 trivPrim (PSVG a chi)     = PSVG a (trivPrim chi)
 trivPrim (PGroup ones)    = PGroup $ fmap trivPrim ones
-trivPrim (PClip pp chi)   = PClip (fmap psDouble pp) (trivPrim chi)
+trivPrim (PClip pp chi)   = PClip pp (trivPrim chi)
 
 
-trivLabel :: PtSize u => PrimLabel u -> DPrimLabel
+
+trivLabel :: PrimLabel -> PrimLabel
 trivLabel (PrimLabel txt ctm) = 
     PrimLabel (trivLabelBody txt) (trivPrimCTM ctm)
 
-trivEllipse :: PtSize u => PrimEllipse u -> DPrimEllipse
+trivEllipse :: PrimEllipse -> PrimEllipse
 trivEllipse (PrimEllipse hw hh ctm) = 
     PrimEllipse (psDouble hw) (psDouble hh) (trivPrimCTM ctm)
 
-trivLabelBody :: PtSize u => LabelBody u -> DLabelBody
+trivLabelBody :: LabelBody -> LabelBody
 trivLabelBody (StdLayout esc) = StdLayout esc
 trivLabelBody (KernTextH xs)  = KernTextH $ map trivKerningChar xs
 trivLabelBody (KernTextV xs)  = KernTextV $ map trivKerningChar xs
 
-trivKerningChar :: PtSize u => KerningChar u -> DKerningChar
+trivKerningChar :: KerningChar -> KerningChar
 trivKerningChar (u,esc) = (psDouble u, esc)
 
 

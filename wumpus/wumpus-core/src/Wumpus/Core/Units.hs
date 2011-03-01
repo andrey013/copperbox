@@ -142,7 +142,7 @@ pica = realToFrac . (* 12.0) . getPica
 -- @floor@ for the conversion @fromPsPoint@. Hence they are not 
 -- numerically accurate. They are provided for convenience only.
 -- 
-class Num u => PtSize u where
+class (Num u, Ord u) => PtSize u where
   fromPsPoint :: PsPoint -> u
   toPsPoint  :: u -> PsPoint
 

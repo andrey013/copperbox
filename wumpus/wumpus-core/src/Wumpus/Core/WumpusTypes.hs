@@ -34,19 +34,13 @@ module Wumpus.Core.WumpusTypes
 
   -- * Picture types
     Picture
-  , DPicture
   , FontCtx
   , Primitive
-  , DPrimitive
   , XLink
   , PrimPath
-  , DPrimPath
   , PrimPathSegment
-  , DPrimPathSegment
   , PrimLabel
-  , DPrimLabel
   , KerningChar
-  , DKerningChar
 
   , Format(..)
   , stringformat

@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ instance Format u => Format (BoundingBox u) where
 --------------------------------------------------------------------------------
 -- 
 
-type instance DUnit (BoundingBox u) = u
+-- type instance DUnit (BoundingBox u) = u
 
 
 pointTransform :: (PtSize u , Ord u)
@@ -113,19 +114,19 @@ pointTrans2 fn bb =
 
 
 
-instance (PtSize u, Ord u) => Transform (BoundingBox u) where
+instance PtSize u => Transform (BoundingBox u) where
   transform mtrx = pointTransform  (mtrx *#)
 
-instance (PtSize u, Ord u) => Rotate (BoundingBox u) where
+instance PtSize u => Rotate (BoundingBox u) where
   rotate theta = pointTransform (rotate theta)
 
-instance (PtSize u, Ord u) => RotateAbout (BoundingBox u) where
+instance PtSize u => RotateAbout (BoundingBox u) where
   rotateAbout theta pt = pointTrans2 (rotateAbout theta pt)
 
-instance (PtSize u, Ord u) => Scale (BoundingBox u) where
+instance PtSize u => Scale (BoundingBox u) where
   scale sx sy = pointTransform (scale sx sy)
 
-instance (PtSize u, Ord u) => Translate (BoundingBox u) where
+instance PtSize u => Translate (BoundingBox u) where
   translate dx dy = pointTransform (translate dx dy)
 
 
@@ -135,8 +136,8 @@ instance (PtSize u, Ord u) => Translate (BoundingBox u) where
 -- | Type class extracting the bounding box of an object - 
 -- Picture, Path etc.
 --
-class Boundary t where
-  boundary :: u ~ DUnit t => t -> BoundingBox u 
+class Boundary t u | t -> u where
+  boundary :: t -> BoundingBox u 
 
 
 --------------------------------------------------------------------------------

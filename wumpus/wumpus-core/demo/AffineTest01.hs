@@ -20,7 +20,7 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
 rot30 :: Rotate t => t -> t
 rot30 = rotate30
 
-rot30P :: (Real u, Floating u, PtSize u) => Primitive u -> Primitive u
+rot30P :: Primitive -> Primitive
 rot30P = rotate30
 
 -- Primitive - Text

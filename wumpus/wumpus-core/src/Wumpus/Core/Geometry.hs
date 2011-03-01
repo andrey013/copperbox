@@ -26,12 +26,9 @@
 module Wumpus.Core.Geometry
   ( 
 
-  -- * Type family 
-    DUnit
-  , GuardEq
   
   -- * Data types
-  , UNil
+    UNil
   , Vec2(..)
   , DVec2
   , Point2(..)
@@ -94,30 +91,13 @@ module Wumpus.Core.Geometry
 
 
 import Wumpus.Core.Utils.FormatCombinators
+import Wumpus.Core.Units
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Data.Monoid
 
-
-
---------------------------------------------------------------------------------
-
--- | Some unit of dimension usually double.
---
--- This very useful for reducing the kind of type classes to *.
--- 
--- Doing this then allows constraints on the Unit type on the 
--- instances rather than in the class declaration.
--- 
-type family DUnit a :: *
-
-
--- Not exported - thanks to Max Bollingbroke.
---
-type family   GuardEq a b :: *
-type instance GuardEq a a = a
 
 
 
@@ -134,6 +114,8 @@ type instance GuardEq a a = a
 -- for higher-level software a - it has instances of the affine 
 -- classes which cannot be written for @()@ (Wumpus-Basic 
 -- uses it for the @Graphic@ type.) 
+--
+-- \*\* WARNING \*\* - this type is likely to disappear.
 -- 
 newtype UNil u = UNil ()
   deriving (Bounded,Enum,Eq,Ord)
@@ -215,6 +197,8 @@ newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
 --------------------------------------------------------------------------------
+{-
+
 -- Family instances
 
 type instance DUnit (UNil u)        = u
@@ -224,6 +208,7 @@ type instance DUnit (Matrix3'3 u)   = u
 
 type instance DUnit (Maybe a)       = DUnit a
 type instance DUnit (a,b)           = GuardEq (DUnit a) (DUnit b)
+-}
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
@@ -380,15 +365,29 @@ infixr 7 *#
 -- represented as homogeneous coordinates. 
 --
 class MatrixMult t where 
-  (*#) :: DUnit t ~ u => Matrix3'3 u -> t -> t
+  (*#) :: Matrix3'3 Double -> t -> t
 
 
-instance Num u => MatrixMult (Vec2 u) where       
-  (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
+instance PtSize u => MatrixMult (Vec2 u) where       
+  (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a'*m+b'*n+c'*0) (d'*m+e'*n+f'*0)
+    where
+      a' = dpoint a
+      b' = dpoint b
+      c' = dpoint c
+      d' = dpoint d
+      e' = dpoint e
+      f' = dpoint f
 
 
-instance Num u => MatrixMult (Point2 u) where
-  (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
+instance PtSize u => MatrixMult (Point2 u) where
+  (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a'*m+b'*n+c'*1) (d'*m+e'*n+f'*1)
+    where
+      a' = dpoint a
+      b' = dpoint b
+      c' = dpoint c
+      d' = dpoint d
+      e' = dpoint e
+      f' = dpoint f
 
 
 --------------------------------------------------------------------------------
@@ -828,14 +827,14 @@ bezierEllipse rx ry (P2 x y) =
 -- Although this function produces an approximation of a ellipse, 
 -- the approximation seems fine in practice.
 --
-rbezierEllipse :: (Real u, Floating u) 
+rbezierEllipse :: (Real u, Floating u, PtSize u) 
                => u -> u -> Radian -> Point2 u -> [Point2 u]
 rbezierEllipse rx ry theta pt@(P2 x y) = 
     [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
   where
     lrx   = rx * kappa
     lry   = ry * kappa
-    rotM  = originatedRotationMatrix theta pt
+    rotM  = fmap psDouble $ originatedRotationMatrix theta pt
 
     --    hvec becomes para
     para  = \d -> avec theta d

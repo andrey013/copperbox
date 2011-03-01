@@ -31,7 +31,6 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
-import Wumpus.Core.PageTranslation
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.Text.Base
@@ -165,8 +164,7 @@ setDashPattern a    = setsSA (\s -> s { dash_pattern = a })
 -- | Output a series of pictures to a Postscript file. Each 
 -- picture will be printed on a separate page. 
 --
-writePS :: (Real u, Floating u, PtSize u) 
-        => FilePath -> [Picture u] -> IO ()
+writePS :: FilePath -> [Picture] -> IO ()
 writePS filepath pics = 
     getZonedTime >>= \ztim -> writeFile filepath (show $ psDraw ztim pics)
 
@@ -174,8 +172,7 @@ writePS filepath pics =
 -- The .eps file can then be imported or embedded in another 
 -- document.
 --
-writeEPS :: (Real u, Floating u, PtSize u)  
-         => FilePath -> Picture u -> IO ()
+writeEPS :: FilePath -> Picture -> IO ()
 writeEPS filepath pic =
     getZonedTime >>= \ztim -> writeFile filepath (show $ epsDraw ztim pic)
 
@@ -194,8 +191,7 @@ writeEPS filepath pic =
 -- will need translating.
 --
 
-psDraw :: (Real u, Floating u, PtSize u) 
-       => ZonedTime -> [Picture u] -> Doc
+psDraw :: ZonedTime -> [Picture] -> Doc
 psDraw timestamp pics = 
     let body = vcat $ runPsMonad $ zipWithM psDrawPage pages pics
     in vcat [ psHeader (length pics) timestamp
@@ -209,9 +205,8 @@ psDraw timestamp pics =
 -- | Note the bounding box may /below the origin/ - if it is, it
 -- will need translating.
 --
-psDrawPage :: (Real u, Floating u, PtSize u)
-           => (String,Int) -> Picture u -> PsMonad Doc
-psDrawPage (lbl,ordinal) pic0 = 
+psDrawPage :: (String,Int) -> Picture -> PsMonad Doc
+psDrawPage (lbl,ordinal) pic = 
     (\doc -> vcat [ dsc_Page lbl ordinal
                   , ps_gsave
                   , cmdtrans
@@ -221,15 +216,13 @@ psDrawPage (lbl,ordinal) pic0 =
                   ]) 
       <$> picture pic
   where
-    pic          = psUnitTranslation pic0 
     (_,cmdtrans) = imageTranslation pic 
 
 -- | Note the bounding box may /below the origin/ - if it is, it
 -- will need translating.
 --
-epsDraw :: (Real u, Floating u, PtSize u)
-        => ZonedTime -> Picture u -> Doc
-epsDraw timestamp pic0 =
+epsDraw :: ZonedTime -> Picture -> Doc
+epsDraw timestamp pic =
     vcat [ epsHeader bb timestamp
          , ps_wumpus_prolog
          , ps_gsave
@@ -239,12 +232,11 @@ epsDraw timestamp pic0 =
          , epsFooter
          ]
   where
-    pic           = psUnitTranslation pic0
     (bb,cmdtrans) = imageTranslation pic 
     body          = runPsMonad (picture pic) 
 
 
-imageTranslation :: DPicture -> (DBoundingBox, Doc)
+imageTranslation :: Picture -> (DBoundingBox, Doc)
 imageTranslation pic = case repositionDeltas pic of
   (bb, Nothing) -> (bb, empty)
   (bb, Just v)  -> (bb, ps_translate v)
@@ -292,7 +284,7 @@ missingComment i =
 
 --------------------------------------------------------------------------------
 
-picture :: DPicture -> PsMonad Doc
+picture :: Picture -> PsMonad Doc
 picture (Leaf    (_,xs) ones)   = bracketTrafos xs $ oneConcat primitive ones
 picture (Picture (_,xs) ones)   = bracketTrafos xs $ oneConcat picture ones
 
@@ -320,7 +312,7 @@ oneConcat fn ones = outstep (viewl ones)
 -- state. 
 --
 
-primitive :: DPrimitive -> PsMonad Doc
+primitive :: Primitive -> PsMonad Doc
 primitive (PPath props pp)     
     | isEmptyPath pp           = pure empty 
     | otherwise                = primPath props pp
@@ -342,7 +334,7 @@ primitive (PClip cp chi) =
       <$> clipPath cp <*> primitive chi <* resetGS
 
 
-primPath :: PathProps -> DPrimPath -> PsMonad Doc
+primPath :: PathProps -> PrimPath -> PsMonad Doc
 primPath (CFill rgb)     p = 
     (\rgbd -> vcat [rgbd, pathBody p, ps_closepath, ps_fill]) 
       <$> deltaDrawColour rgb  
@@ -361,11 +353,11 @@ primPath (CFillStroke fc attrs sc) p =
       <$> primPath (CFill fc) p <*> primPath (CStroke attrs sc) p
 
 
-clipPath :: DPrimPath -> PsMonad Doc
+clipPath :: PrimPath -> PsMonad Doc
 clipPath p = pure $ vcat [pathBody p , ps_closepath, ps_clip]
 
 
-pathBody :: DPrimPath -> Doc
+pathBody :: PrimPath -> Doc
 pathBody ppath =
     let (start,xs) = extractRelPath ppath 
     in vcat $ ps_newpath : ps_moveto start : (snd $ mapAccumL step start xs)
@@ -389,7 +381,7 @@ pathBody ppath =
 -- For good stroked ellipses, Bezier curves constructed from 
 -- PrimPaths should be used.
 --
-primEllipse :: EllipseProps -> DPrimEllipse -> PsMonad Doc
+primEllipse :: EllipseProps -> PrimEllipse -> PsMonad Doc
 primEllipse props (PrimEllipse hw hh ctm) 
     | hw == hh  = bracketPrimCTM ctm (drawC props)
     | otherwise = bracketPrimCTM ctm (drawE props)
@@ -439,7 +431,7 @@ strokeCircle rgb sa r pt =
 -- Note - for the otherwise case, the x-and-y coordinates are 
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
-primLabel :: LabelProps -> DPrimLabel -> PsMonad Doc
+primLabel :: LabelProps -> PrimLabel -> PsMonad Doc
 primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
   where
     ev    = font_enc_vector $ font_face attrs    
@@ -467,13 +459,13 @@ primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
 --
     
 
-labelBody :: EncodingVector -> DPoint2 -> DLabelBody -> Doc
+labelBody :: EncodingVector -> DPoint2 -> LabelBody -> Doc
 labelBody ev pt (StdLayout txt) = ps_moveto pt `vconcat` psText ev txt
 labelBody ev pt (KernTextH xs)  = kernTextH ev pt xs
 labelBody ev pt (KernTextV xs)  = kernTextV ev pt xs
 
 -- 
-kernTextH :: EncodingVector -> DPoint2 -> [DKerningChar] -> Doc
+kernTextH :: EncodingVector -> DPoint2 -> [KerningChar] -> Doc
 kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dx,ch) = let doc1 = psChar ev ch
@@ -483,7 +475,7 @@ kernTextH ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
 
 -- Note - vertical labels grow downwards...
 --
-kernTextV :: EncodingVector -> DPoint2 -> [DKerningChar] -> Doc
+kernTextV :: EncodingVector -> DPoint2 -> [KerningChar] -> Doc
 kernTextV ev pt0 xs = snd $ F.foldl' fn (pt0,empty) xs
   where
     fn (P2 x y,acc) (dy,ch) = let doc1 = psChar ev ch

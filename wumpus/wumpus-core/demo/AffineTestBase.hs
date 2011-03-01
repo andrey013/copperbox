@@ -39,9 +39,9 @@ data AffineTrafoAlg = AffineTrafoAlg
       { ata_console_msg         :: String
       , ata_eps_file            :: FilePath
       , ata_svg_file            :: FilePath
-      , ata_prim_constructor    :: RGBi -> DPrimitive
-      , ata_pic_transformer     :: DPicture -> DPicture
-      , ata_prim_transformer    :: DPrimitive -> DPrimitive
+      , ata_prim_constructor    :: RGBi -> Primitive
+      , ata_pic_transformer     :: Picture -> Picture
+      , ata_prim_transformer    :: Primitive -> Primitive
       }
 
 runATA :: AffineTrafoAlg -> IO ()
@@ -56,23 +56,23 @@ runATA ata = do
                           (ata_prim_transformer ata)
 
 
-buildPictureATA :: (RGBi -> DPrimitive) 
-         -> (DPicture -> DPicture) 
-         -> (DPrimitive -> DPrimitive) 
-         -> DPicture
+buildPictureATA :: (RGBi -> Primitive) 
+         -> (Picture -> Picture) 
+         -> (Primitive -> Primitive) 
+         -> Picture
 buildPictureATA mk picF primF = 
     picture1 `picBeside` picture2 `picBeside` picture3
   where
-    picture1 :: DPicture
+    picture1 :: Picture
     picture1 = illustrateBounds light_blue $ frame [mk black]
   
-    picture2 :: DPicture
+    picture2 :: Picture
     picture2 = illustrateBounds light_blue $ picF $ frame [mk blue]
 
-    picture3 :: DPicture
+    picture3 :: Picture
     picture3 = illustrateBoundsPrim light_blue prim
       where
-        prim :: DPrimitive
+        prim :: Primitive
         prim = primF $ mk red
 
 
@@ -85,8 +85,8 @@ data ControlPointAlg = ControlPointAlg
       { cpa_console_msg         :: String
       , cpa_eps_file            :: FilePath
       , cpa_svg_file            :: FilePath
-      , cpa_prim_constructor    :: RGBi -> DPrimitive
-      , cpa_prim_transformer    :: DPrimitive -> DPrimitive
+      , cpa_prim_constructor    :: RGBi -> Primitive
+      , cpa_prim_transformer    :: Primitive -> Primitive
       }
 
 runCPA :: ControlPointAlg -> IO ()
@@ -98,41 +98,42 @@ runCPA cpa = do
   where
     pic = cpPicture (cpa_prim_constructor cpa) (cpa_prim_transformer cpa)
 
-cpPicture :: (RGBi -> DPrimitive) -> (DPrimitive -> DPrimitive) -> DPicture
+cpPicture :: (RGBi -> Primitive) -> (Primitive -> Primitive) -> Picture
 cpPicture constr trafo = 
     illustrateBounds light_blue $ illustrateControlPoints black 
                                 $ transformed_prim
   where
-   transformed_prim :: DPrimitive
+   transformed_prim :: Primitive
    transformed_prim = trafo $ constr red
 
 
 --------------------------------------------------------------------------------
 
-rgbLabel :: RGBi -> DPrimitive
-rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" zeroPt
+rgbLabel :: RGBi -> Primitive
+rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" (zeroPt::DPoint2)
 
-rgbCircle :: RGBi -> DPrimitive
-rgbCircle rgb = fillEllipse rgb 60 60 zeroPt
+rgbCircle :: RGBi -> Primitive
+rgbCircle rgb = fillEllipse rgb 60 60 (zeroPt::DPoint2)
 
-rgbEllipse :: RGBi -> DPrimitive
-rgbEllipse rgb = fillEllipse rgb 60 30 zeroPt
+rgbEllipse :: RGBi -> Primitive
+rgbEllipse rgb = fillEllipse rgb 60 30 (zeroPt::DPoint2)
 
-rgbPath :: RGBi -> DPrimitive
+rgbPath :: RGBi -> Primitive
 rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
 
 --------------------------------------------------------------------------------
 -- Demo - draw a dog kennel...
 
 
-dog_kennel :: DPrimPath
-dog_kennel = primPath zeroPt [ lineTo  (P2 0 60) 
-                             , lineTo  (P2 40 100)
-                             , lineTo  (P2 80 60)
-                             , lineTo  (P2 80 0)
-                             , lineTo  (P2 60 0)  
-                             , lineTo  (P2 60 30)
-                             , curveTo (P2 60 50) (P2 50 60) (P2 40 60)
-                             , curveTo (P2 30 60) (P2 20 50) (P2 20 30)
-                             , lineTo  (P2 20 0)
-                             ]
+dog_kennel :: PrimPath
+dog_kennel = primPath (zeroPt::DPoint2) 
+                      [ lineTo  (P2 0 60) 
+                      , lineTo  (P2 40 100)
+                      , lineTo  (P2 80 60)
+                      , lineTo  (P2 80 0)
+                      , lineTo  (P2 60 0)  
+                      , lineTo  (P2 60 30)
+                      , curveTo (P2 60 50) (P2 50 60) (P2 40 60)
+                      , curveTo (P2 30 60) (P2 20 50) (P2 20 30)
+                      , lineTo  (P2 20 0)
+                      ]
