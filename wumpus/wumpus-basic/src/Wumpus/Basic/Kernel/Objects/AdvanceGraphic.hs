@@ -109,23 +109,28 @@ emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 infixr 6 `advcat`
 infixr 5 `advsep`
 
+comb :: Monad m 
+     => (a -> b -> c) -> m (ImageAns u a) -> (a -> m (ImageAns u b)) -> m (ImageAns u c)
+comb h mf mg = mf >>= \a1 -> mg (answer a1) >>= \a2 -> 
+   return $ imageAns (h (answer a1) (answer a2)) 
+                     (imageOutput a1 `oplus` imageOutput a2)
+
 -- | Concatenate the two AdvGraphics.
 --
 advcat :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
 advcat af ag = promoteR1 $ \start -> 
-                 (af `at` start)        >>= \(v1,prim1) -> 
-                 (ag `at` start .+^ v1) >>= \(v2,prim2) -> 
-                 return (v1 ^+^ v2, prim1 `oplus` prim2)
-
+                 comb (^+^)
+                      (af `at` start)
+                      (\v1 -> ag `at` start .+^ v1)
 
 -- | Concatenate the two AdvGraphics spacing them by the supplied 
 -- vector.
 --
 advsep :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
 advsep sv af ag = promoteR1 $ \start -> 
-                 (af `at` start)        >>= \(v1,prim1) -> 
-                 (ag `at` start .+^ sv ^+^ v1) >>= \(v2,prim2) -> 
-                 return (v1 ^+^ sv ^+^  v2, prim1 `oplus` prim2)
+                    comb (\v1 v2 -> v1 ^+^ sv ^+^  v2)
+                         (af `at` start)
+                         (\v1 -> ag `at` start .+^ sv ^+^ v1)
 
 
 -- | Concatenate the list of AdvGraphic with 'advcat'.

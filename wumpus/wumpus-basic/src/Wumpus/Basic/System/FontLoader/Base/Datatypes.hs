@@ -61,9 +61,12 @@ newtype AfmUnit = AfmUnit { getAfmUnit :: Double }
 instance Show AfmUnit where
   showsPrec p d = showsPrec p (getAfmUnit d)
 
-instance PtSize AfmUnit where
-  fromPsPoint a = AfmUnit $ realToFrac $ a * 1000
-  toPsPoint a   = realToFrac $ a / 1000
+
+-- Note - AfmUnit is considered a /contextual size/. It is a 
+-- scaling factor of a Point Size rather than a concrete unit.
+--
+-- Hence there is no instance of PtSize.
+-- 
 
 -- | Compute the size of a measurement in Afm units scaled by the
 -- point size of the font.

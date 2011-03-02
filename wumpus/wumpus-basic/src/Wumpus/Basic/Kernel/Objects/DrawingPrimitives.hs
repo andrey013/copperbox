@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -77,7 +75,7 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -90,8 +88,8 @@ import Control.Applicative
 
 -- Helper
 --
-graphicAns :: Primitive u -> (UNil u, PrimGraphic u)
-graphicAns p = (uNil, primGraphic p)
+graphicAns :: Primitive  -> GraphicAns u 
+graphicAns p = imageAns () p
 
 
 --------------------------------------------------------------------------------
@@ -105,7 +103,7 @@ graphicAns p = (uNil, primGraphic p)
 -- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
 -- result is produced /within/ the 'DrawingContext'.
 --
-locPath :: PtSize u => [Vec2 u] -> LocCF u (PrimPath u)
+locPath :: PtSize u => [Vec2 u] -> LocCF u PrimPath
 locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 
 
@@ -117,7 +115,7 @@ locPath vs = promoteR1 $ \pt  -> pure $ vectorPath pt vs
 -- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
 -- result is produced /within/ the 'DrawingContext'.
 --
-emptyLocPath :: PtSize u => LocCF u (PrimPath u)
+emptyLocPath :: PtSize u => LocCF u PrimPath
 emptyLocPath = locPath []
 
 
@@ -133,7 +131,7 @@ emptyLocPath = locPath []
 -- drawing properties (colour, line width, etc.) are taken from 
 -- the implicit 'DrawingContext'.
 --
-openStroke :: Num u => PrimPath u -> Graphic u
+openStroke :: Num u => PrimPath -> Graphic u
 openStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicAns $ ostroke rgb attr pp
 
@@ -144,7 +142,7 @@ openStroke pp =
 -- drawing properties (colour, line width, etc.) are taken from 
 -- the implicit 'DrawingContext'.
 --
-closedStroke :: Num u => PrimPath u -> Graphic u
+closedStroke :: Num u => PrimPath -> Graphic u
 closedStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicAns $ cstroke rgb attr pp
 
@@ -155,7 +153,7 @@ closedStroke pp =
 -- fill colour is taken from the implicit 'DrawingContext'.
 --
 --
-filledPath :: Num u => PrimPath u -> Graphic u
+filledPath :: Num u => PrimPath -> Graphic u
 filledPath pp = withFillAttr $ \rgb -> graphicAns $ fill rgb pp
                  
 
@@ -166,7 +164,7 @@ filledPath pp = withFillAttr $ \rgb -> graphicAns $ fill rgb pp
 -- etc.) are taken from the implicit 'DrawingContext'.
 --
 --
-borderedPath :: Num u => PrimPath u -> Graphic u
+borderedPath :: Num u => PrimPath -> Graphic u
 borderedPath pp =
     withBorderedAttr $ \frgb attr srgb -> 
       graphicAns $ fillStroke frgb attr srgb pp
@@ -267,7 +265,7 @@ rescapedline ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-hkernline :: PtSize u => [KerningChar u] -> LocGraphic u
+hkernline :: PtSize u => [KerningChar] -> LocGraphic u
 hkernline xs = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (hkernlabel rgb attr xs pt)
@@ -284,7 +282,7 @@ hkernline xs =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-vkernline :: PtSize u => [KerningChar u] -> LocGraphic u
+vkernline :: PtSize u => [KerningChar] -> LocGraphic u
 vkernline xs = 
     promoteR1 $ \pt -> 
       withTextAttr $ \rgb attr -> graphicAns (vkernlabel rgb attr xs pt)
@@ -486,7 +484,7 @@ rborderedEllipse hw hh =
 
 -- | Supplied point is /bottom-left/.
 --
-rectanglePath :: PtSize u => u -> u -> Point2 u -> PrimPath u
+rectanglePath :: PtSize u => u -> u -> Point2 u -> PrimPath
 rectanglePath w h bl = primPath bl [ lineTo br, lineTo tr, lineTo tl ]
   where
     br = bl .+^ hvec w

@@ -1,10 +1,9 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.Displacement
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -294,34 +293,34 @@ thetaSouthwestwards d =
 --------------------------------------------------------------------------------
 
 
-centerRelative :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-               => (Int,Int) -> a -> DrawingInfo (Point2 u)
+centerRelative :: (CenterAnchor t u, Fractional u, PtSize u) 
+               => (Int,Int) -> t -> DrawingInfo (Point2 u)
 centerRelative coord a =
     let pt = center a in snapmove coord >>= \v -> return (pt .+^ v)
 
 
-right_of        :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+right_of        :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 right_of        = centerRelative (1,0)
 
-left_of         :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+left_of         :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 left_of         = centerRelative ((-1),0)
 
-above_right_of  :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+above_right_of  :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 above_right_of  = centerRelative (1,1)
 
-below_right_of  :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+below_right_of  :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 below_right_of  = centerRelative (1, (-1))
 
-above_left_of   :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+above_left_of   :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 above_left_of   = centerRelative ((-1),1)
 
-below_left_of   :: (CenterAnchor a, Fractional u, PtSize u, u ~ DUnit a) 
-                => a -> DrawingInfo (Point2 u)
+below_left_of   :: (CenterAnchor t u, Fractional u, PtSize u) 
+                => t -> DrawingInfo (Point2 u)
 below_left_of   = centerRelative ((-1),(-1))
  
 

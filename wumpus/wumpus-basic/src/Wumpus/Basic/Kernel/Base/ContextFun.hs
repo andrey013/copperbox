@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -140,7 +139,7 @@ newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 -- 
 -- > CF3 :: DrawingContext -> r1 -> r2 -> r3 -> a 
 --
-newtype CF3 r1 r2 r3 a = CF3 { unCF3 :: DrawingContext -> r1 -> r2 -> r3 -> a }
+newtype CF3 r1 r2 r3 a  = CF3 { unCF3 :: DrawingContext -> r1 -> r2 -> r3 -> a }
 
 
 -- | Type specialized verison of 'CF1' where the /static argument/
@@ -148,7 +147,7 @@ newtype CF3 r1 r2 r3 a = CF3 { unCF3 :: DrawingContext -> r1 -> r2 -> r3 -> a }
 -- 
 -- > LocCF :: DrawingContext -> Point2 u -> a 
 --
-type LocCF          u a = CF1 (Point2 u) a
+type LocCF u a          = CF1 (Point2 u) a
 
 
 -- | Type specialized verison of 'CF2' where the /static arguments/
@@ -156,7 +155,7 @@ type LocCF          u a = CF1 (Point2 u) a
 -- 
 -- > LocThetaCF :: DrawingContext -> Point2 u -> Radian -> a 
 --
-type LocThetaCF     u a = CF2 (Point2 u) Radian a
+type LocThetaCF u a     = CF2 (Point2 u) Radian a
 
 
 -- | Type specialized verison of 'CF2' where the /static arguments/
@@ -164,7 +163,7 @@ type LocThetaCF     u a = CF2 (Point2 u) Radian a
 -- 
 -- > ConnectorCF :: DrawingContext -> Point2 u -> Point2 u -> a 
 --
-type ConnectorCF    u a = CF2 (Point2 u) (Point2 u) a
+type ConnectorCF u a    = CF2 (Point2 u) (Point2 u) a
 
 
 -- | Alias of 'LocCF' where the unit type is specialized to 
@@ -188,12 +187,6 @@ type DConnectorCF a     = ConnectorCF Double a
 --------------------------------------------------------------------------------
 -- CF instances
 
-
-type instance DUnit (LocCF u a) = u
-
-type instance DUnit (LocThetaCF u a) = u
-
-type instance DUnit (ConnectorCF u a) = u
 
 -- OPlus
 
@@ -472,7 +465,7 @@ apply2R2 mf r1 r2   = CF $ \ctx -> unCF2 mf ctx r1 r2
 -- 
 -- The type signature is as explanatory as a description:
 --
--- > apply3R3 :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 CF a
+-- > apply3R3 :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 -> CF a
 -- 
 apply3R3              :: CF3 r1 r2 r3 a -> r1 -> r2 -> r3 -> CF a
 apply3R3 mf r1 r2 r3  = CF $ \ctx -> unCF3 mf ctx r1 r2 r3

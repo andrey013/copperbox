@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -102,8 +101,6 @@ data Matrix2'2 u = M2'2 !u !u   !u !u
 type DMatrix2'2 = Matrix2'2 Double
 
 
-type instance DUnit (Matrix2'2 u)   = u
-
 
 instance Functor Matrix2'2 where
   fmap f (M2'2 a b  c d) = M2'2 (f a) (f b)  (f c) (f d)
@@ -169,7 +166,6 @@ data LineEquation u = LineEquation
 
 type DLineEquation = LineEquation Double
 
-type instance DUnit (LineEquation u) = u
 
 -- | 'lineEquation' : @ point1 * point2 -> LineEquation @
 -- 
@@ -233,7 +229,6 @@ data LineSegment u = LineSegment (Point2 u) (Point2 u)
 
 type DLineSegment = LineSegment Double
 
-type instance DUnit (LineSegment u) = u
 
 
 
@@ -279,7 +274,6 @@ data BezierCurve u = BezierCurve !(Point2 u) !(Point2 u) !(Point2 u) !(Point2 u)
 
 type DBezierCurve = BezierCurve Double
 
-type instance DUnit (BezierCurve u) = u
 
 
 

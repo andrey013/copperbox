@@ -1,7 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -106,7 +102,7 @@ instance OPlus (UNil u) where
 instance Ord u => OPlus (BoundingBox u) where
   oplus = boundaryUnion
 
-instance OPlus (Primitive u) where
+instance OPlus Primitive where
   a `oplus` b = primGroup [a,b]
 
 instance (OPlus a, OPlus b) => OPlus (a,b) where

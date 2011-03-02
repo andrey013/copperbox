@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
@@ -91,7 +90,7 @@ type DConnectorImage a  = ConnectorImage Double a
 --
 intoConnectorImage :: ConnectorCF u a -> ConnectorGraphic u 
                    -> ConnectorImage u a
-intoConnectorImage = liftA2 (\a (_,b) -> (a,b))
+intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 
 -- | 'emptyConnectorGraphic' : @ ConnectorGraphic @

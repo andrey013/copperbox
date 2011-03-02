@@ -20,6 +20,8 @@
 
 module Wumpus.Basic.Kernel.Objects.UnitConvert
   (
+
+{-
     ConvertAlg(..)
   , unit_conv
   , func_conv
@@ -30,8 +32,12 @@ module Wumpus.Basic.Kernel.Objects.UnitConvert
   , convertlti
   , convertconn
   , convertpti
+-}
 
   ) where
+
+
+{-
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
@@ -100,7 +106,7 @@ convertpti (ConvertAlg f1 f2 f3) img = promoteR3 $ \p0 rpos ang ->
     fmap (bimap f3 (fmap f2)) $ apply3R3 img (fmap f1 p0) rpos ang
 
 
-
+-}
 
 
 {-

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -31,10 +31,10 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   (
 
     CtxPicture
-  , DCtxPicture
   , runCtxPicture
   , runCtxPictureU
   , drawTracing
+
 
   , mapCtxPicture
 
@@ -72,7 +72,6 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
 
 import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Objects.TraceDrawing
 
@@ -81,7 +80,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AdditiveGroup                       -- package: vector-space
 import Data.AffineSpace
 
-import Control.Applicative
 import Data.List ( foldl' )
 
 
@@ -109,14 +107,11 @@ import Data.List ( foldl' )
 -- module move the second picture aligning it somehow with the 
 -- first).
 --
-newtype CtxPicture u = CtxPicture { getCtxPicture :: CF (Maybe (Picture u)) }
-
--- | Version of CtxPicture specialized to Double for the unit type.
---
-type DCtxPicture = CtxPicture Double
+newtype CtxPicture = CtxPicture { 
+          getCtxPicture :: DrawingContext -> (Maybe Picture) }
 
 
-type instance DUnit (CtxPicture u) = u
+
 
 
 
@@ -130,8 +125,8 @@ type instance DUnit (CtxPicture u) = u
 -- result is wrapped within a Maybe. This delegates reponsibility 
 -- for handling empty pictures to client code.
 --
-runCtxPicture :: DrawingContext -> CtxPicture u -> Maybe (Picture u)
-runCtxPicture ctx drw = runCF ctx (getCtxPicture drw)  
+runCtxPicture :: DrawingContext -> CtxPicture -> Maybe Picture
+runCtxPicture ctx drw = getCtxPicture drw ctx
 
 -- | 'runCtxPictureU' : @ drawing_ctx * ctx_picture -> Picture @
 --
@@ -140,7 +135,7 @@ runCtxPicture ctx drw = runCF ctx (getCtxPicture drw)
 -- This function throws a runtime error when supplied with an
 -- empty CtxPicture.
 --
-runCtxPictureU :: DrawingContext -> CtxPicture u -> Picture u
+runCtxPictureU :: DrawingContext -> CtxPicture -> Picture
 runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
   where
     fk = error "runCtxPictureU - empty CtxPicture."   
@@ -151,9 +146,10 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 -- Transform a 'TraceDrawing' into a 'CtxPicture'.
 --
 drawTracing :: (Real u, Floating u, PtSize u) 
-            => TraceDrawing u a -> CtxPicture u
-drawTracing mf = CtxPicture $ 
-    drawingCtx >>= \ctx -> return (liftToPictureMb $ execTraceDrawing ctx mf)
+            => TraceDrawing u a -> CtxPicture
+drawTracing mf = CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
+
+
 
 
 -- Note - cannot get an answer from a TraceDrawing with this 
@@ -161,7 +157,7 @@ drawTracing mf = CtxPicture $
 --
 -- If the type was extended:
 --
--- > newtype CtxPicture u a = CtxPicture { getCtxPicture :: CF (a, Maybe (Picture u))) }
+-- > newtype CtxPicture a = CtxPicture { getCtxPicture :: CF (a, Maybe (Picture u))) }
 --
 -- It would make things difficult for the drawing composition 
 -- operators. @a@ could be monoidial but are there any types of 
@@ -176,8 +172,9 @@ drawTracing mf = CtxPicture $
 -- Apply a picture transformation function to the 'Picture'
 -- warpped in a 'CtxPicture'.
 --
-mapCtxPicture :: (Picture u -> Picture u) -> CtxPicture u -> CtxPicture u
-mapCtxPicture pf = CtxPicture . fmap (fmap pf) . getCtxPicture
+mapCtxPicture :: (Picture -> Picture) -> CtxPicture -> CtxPicture
+mapCtxPicture pf pic1 = CtxPicture $ \ctx -> fmap pf $ getCtxPicture pic1 ctx
+
 
 
 --------------------------------------------------------------------------------
@@ -185,16 +182,16 @@ mapCtxPicture pf = CtxPicture . fmap (fmap pf) . getCtxPicture
 
 
 
-instance (Real u, Floating u, PtSize u) => Rotate (CtxPicture u) where 
+instance Rotate CtxPicture where 
   rotate ang = mapCtxPicture (rotate ang)
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (CtxPicture u) where
+instance RotateAbout CtxPicture where
   rotateAbout r pt = mapCtxPicture (rotateAbout r pt)
 
-instance (Num u, Ord u, PtSize u) => Scale (CtxPicture u) where
+instance Scale CtxPicture where
   scale sx sy = mapCtxPicture (scale sx sy)
 
-instance (Num u, Ord u, PtSize u) => Translate (CtxPicture u) where
+instance Translate CtxPicture where
   translate dx dy = mapCtxPicture (translate dx dy)
 
 
@@ -205,71 +202,71 @@ instance (Num u, Ord u, PtSize u) => Translate (CtxPicture u) where
 --------------------------------------------------------------------------------
 -- Extract anchors
 
-boundaryExtr :: (BoundingBox u -> a) -> Picture u -> a
-boundaryExtr f = f . boundary
+boundaryExtr :: PtSize u => (BoundingBox u -> a) -> Picture -> a
+boundaryExtr f = f . fmap dpoint . boundary
 
 -- Operations on bounds
 
 -- | The center of a picture.
 --
-boundaryCtr :: Fractional u => Picture u -> Point2 u
+boundaryCtr :: Picture -> DPoint2 
 boundaryCtr = boundaryExtr center
 
 
 
 -- | Extract the mid point of the top edge.
 --
-boundaryN :: Fractional u => Picture u -> Point2 u
+boundaryN :: Picture -> DPoint2
 boundaryN = boundaryExtr north
 
 -- | Extract the mid point of the bottom edge.
 --
-boundaryS :: Fractional u => Picture u -> Point2 u
+boundaryS :: Picture -> DPoint2
 boundaryS = boundaryExtr south
 
 -- | Extract the mid point of the left edge.
 --
-boundaryE :: Fractional u => Picture u -> Point2 u
+boundaryE :: Picture -> DPoint2
 boundaryE = boundaryExtr east
 
 -- | Extract the mid point of the right edge.
 --
-boundaryW :: Fractional u => Picture u -> Point2 u
+boundaryW :: Picture -> DPoint2
 boundaryW = boundaryExtr west
 
 
 -- | Extract the top-left corner.
 --
-boundaryNW :: Fractional u => Picture u -> Point2 u
+boundaryNW :: Picture -> DPoint2
 boundaryNW = boundaryExtr northwest
 
 -- | Extract the top-right corner.
 --
-boundaryNE :: Picture u -> Point2 u
+boundaryNE :: Picture -> DPoint2
 boundaryNE = boundaryExtr ur_corner
 
 -- | Extract the bottom-left corner.
 --
-boundarySW :: Picture u -> Point2 u
+boundarySW :: Picture -> DPoint2
 boundarySW = boundaryExtr ll_corner
 
 -- | Extract the bottom-right corner.
 --
-boundarySE :: Fractional u => Picture u -> Point2 u
+boundarySE :: Picture -> DPoint2
 boundarySE = boundaryExtr southeast
 
 
-boundaryLeftEdge :: Picture u -> u
+boundaryLeftEdge :: Picture -> Double
 boundaryLeftEdge = boundaryExtr (point_x . ll_corner)
 
-boundaryRightEdge :: Picture u -> u
+boundaryRightEdge :: Picture -> Double
 boundaryRightEdge = boundaryExtr (point_x . ur_corner)
 
-boundaryBottomEdge :: Picture u -> u
+boundaryBottomEdge :: Picture -> Double
 boundaryBottomEdge = boundaryExtr (point_y . ll_corner)
 
 
-boundaryTopEdge :: Picture u -> u
+boundaryTopEdge :: Picture -> Double
 boundaryTopEdge = boundaryExtr (point_y . ur_corner)
 
 
@@ -290,14 +287,16 @@ boundaryTopEdge = boundaryExtr (point_y . ur_corner)
 -- ambiguous as when used as binary operators).
 --
 
-cxpConcat :: (Picture u -> Picture u -> Picture u) 
-          -> CtxPicture u -> CtxPicture u -> CtxPicture u
-cxpConcat op a b = CtxPicture $ mbpostcomb op (getCtxPicture a) (getCtxPicture b)
+cxpConcat :: (Picture -> Picture -> Picture) 
+          -> CtxPicture -> CtxPicture -> CtxPicture
+cxpConcat op a b = mbpostcomb op a b
 
 
 
-mbpostcomb :: (a -> a -> a) -> CF (Maybe a) -> CF (Maybe a) -> CF (Maybe a)
-mbpostcomb op = liftA2 fn 
+mbpostcomb :: (Picture -> Picture -> Picture) 
+           -> CtxPicture -> CtxPicture -> CtxPicture
+mbpostcomb op mf mg = 
+    CtxPicture $ \ctx -> fn (getCtxPicture mf ctx) (getCtxPicture mg ctx)
   where
     fn (Just a) (Just b) = Just $ a `op` b
     fn a        Nothing  = a
@@ -318,11 +317,10 @@ mbpostcomb op = liftA2 fn
 -- Picture /mega-combiner/ - moves only the second argument aka the 
 -- right picture.
 --
-megaCombR :: (Num u, Ord u)
-          => (Picture u -> a) -> (Picture u -> a) 
-          -> (a -> a -> Picture u -> Picture u) 
-          -> CtxPicture u -> CtxPicture u
-          -> CtxPicture u
+megaCombR :: (Picture -> a) -> (Picture -> a) 
+          -> (a -> a -> Picture -> Picture) 
+          -> CtxPicture -> CtxPicture
+          -> CtxPicture
 megaCombR qL qR trafoR = cxpConcat fn
   where
     fn pic1 pic2 = let a    = qL pic1
@@ -335,7 +333,7 @@ megaCombR qL qR trafoR = cxpConcat fn
 -- Place \'drawing\' a over b. The idea of @over@ here is in 
 -- terms z-ordering, nither picture a or b are actually moved.
 --
-instance (Num u, Ord u) => OPlus (CtxPicture u) where
+instance OPlus CtxPicture where
   oplus = cxpConcat picOver
 
 
@@ -346,7 +344,7 @@ instance (Num u, Ord u) => OPlus (CtxPicture u) where
 -- Similarly @beneath@ draws the first picture behind the second 
 -- picture in the z-order, neither picture is moved.
 --
-cxpBeneath :: (Num u, Ord u) => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpBeneath :: CtxPicture -> CtxPicture -> CtxPicture
 cxpBeneath = flip oplus
 
 
@@ -366,8 +364,7 @@ infixr 6 `cxpRight`, `cxpUniteCenter`
 -- > a `cxpUniteCenter` b 
 --
 
-cxpUniteCenter :: (Fractional u, Ord u, PtSize u) 
-               => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpUniteCenter :: CtxPicture -> CtxPicture -> CtxPicture
 cxpUniteCenter = megaCombR boundaryCtr boundaryCtr moveFun
   where
     moveFun p1 p2 pic =  let v = p1 .-. p2 in pic `picMoveBy` v
@@ -382,8 +379,7 @@ cxpUniteCenter = megaCombR boundaryCtr boundaryCtr moveFun
 -- Horizontal composition - position picture @b@ to the right of 
 -- picture @a@.
 -- 
-cxpRight :: (Num u, Ord u, PtSize u) 
-         => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpRight :: CtxPicture -> CtxPicture -> CtxPicture
 cxpRight = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where 
     moveFun a b pic = pic `picMoveBy` hvec (a - b)
@@ -395,8 +391,7 @@ cxpRight = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - position picture @b@ /down/ from picture
 -- @a@.
 --
-cxpDown :: (Num u, Ord u, PtSize u) 
-        => CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpDown :: CtxPicture -> CtxPicture -> CtxPicture
 cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
     moveFun a b drw = drw `picMoveBy` vvec (a - b)
@@ -404,14 +399,14 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 
 -- | Center the picture at the supplied point.
 --
-cxpCenteredAt :: (Fractional u, Ord u, PtSize u) 
-              => CtxPicture u -> Point2 u -> CtxPicture u
+cxpCenteredAt :: (Fractional u, PtSize u) 
+              => CtxPicture -> Point2 u -> CtxPicture
 cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
   where
-    fn p = let bb = boundary p
+    fn p = let bb = fmap dpoint $ boundary p
                dx = x - (boundaryWidth  bb * 0.5)
                dy = y - (boundaryHeight bb * 0.5)
-           in p `picMoveBy` vec dx dy
+           in p `picMoveBy` vec (psDouble dx) (psDouble dy)
 
 
 
@@ -425,8 +420,7 @@ cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
 -- @rest@ in the function signature, rather than take a possibly
 -- empty list and have to throw an error.
 -- 
-cxpRow :: (Real u, Floating u, PtSize u) 
-       => CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpRow :: CtxPicture -> [CtxPicture] -> CtxPicture
 cxpRow = foldl' cxpRight
 
 
@@ -436,8 +430,7 @@ cxpRow = foldl' cxpRight
 -- 
 -- Note - this function is in /destructor form/.
 --
-cxpColumn :: (Real u, Floating u, PtSize u) 
-          => CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpColumn :: CtxPicture -> [CtxPicture] -> CtxPicture
 cxpColumn = foldl' cxpDown
 
 
@@ -454,10 +447,10 @@ cxpColumn = foldl' cxpDown
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
 cxpRightSep :: (Num u, Ord u, PtSize u) 
-            => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+            => u -> CtxPicture -> CtxPicture -> CtxPicture
 cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
-    moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
+    moveFun a b pic = pic `picMoveBy` hvec ((psDouble n) + a - b)
 
     
 
@@ -469,10 +462,10 @@ cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- vertical gap of @n@ separating the pictures.
 --
 cxpDownSep :: (Num u, Ord u, PtSize u) 
-           => u -> CtxPicture u -> CtxPicture u -> CtxPicture u
+           => u -> CtxPicture -> CtxPicture -> CtxPicture
 cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
-    moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
+    moveFun a b pic = pic `picMoveBy`  vvec (a - b - (psDouble n))
 
 
 
@@ -483,7 +476,7 @@ cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 -- spaces of @n@ units.
 --
 cxpRowSep :: (Real u, Floating u, PtSize u) 
-          => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+          => u -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpRowSep n = foldl' (cxpRightSep n)
 
 
@@ -495,15 +488,14 @@ cxpRowSep n = foldl' (cxpRightSep n)
 -- spaces of @n@ units.
 --
 cxpColumnSep :: (Real u, Floating u, PtSize u) 
-             => u -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+             => u -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpColumnSep n = foldl' (cxpDownSep n)
 
 
 --------------------------------------------------------------------------------
 -- Aligning pictures
 
-alignMove :: (Num u, Ord u, PtSize u) 
-          => Point2 u -> Point2 u -> Picture u -> Picture u
+alignMove :: PtSize u => Point2 u -> Point2 u -> Picture -> Picture
 alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 
 
@@ -516,8 +508,7 @@ alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ and align it with the top, center or bottom of @a@.
 -- 
-cxpAlignH :: (Fractional u, Ord u, PtSize u) 
-          =>  HAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignH :: HAlign -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignH HTop     = megaCombR boundaryNE boundaryNW  alignMove
 cxpAlignH HCenter  = megaCombR boundaryE  boundaryW   alignMove
 cxpAlignH HBottom  = megaCombR boundarySE boundarySW  alignMove
@@ -528,8 +519,7 @@ cxpAlignH HBottom  = megaCombR boundarySE boundarySW  alignMove
 -- Vertical composition - move @b@, placing it below @a@ 
 -- and align it with the left, center or right of @a@.
 -- 
-cxpAlignV :: (Fractional u, Ord u, PtSize u) 
-          => VAlign -> CtxPicture u -> CtxPicture u -> CtxPicture u
+cxpAlignV :: VAlign -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignV VLeft    = megaCombR boundarySW boundaryNW alignMove
 cxpAlignV VCenter  = megaCombR boundaryS  boundaryN  alignMove
 cxpAlignV VRight   = megaCombR boundarySE boundaryNE  alignMove
@@ -537,7 +527,7 @@ cxpAlignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 
 alignMove2 :: (Num u, Ord u, PtSize u) 
-           => Vec2 u ->  Point2 u -> Point2 u -> Picture u -> Picture u
+           => Vec2 u ->  Point2 u -> Point2 u -> Picture -> Picture
 alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 
 
@@ -548,12 +538,13 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
 cxpAlignSepH :: (Fractional u, Ord u, PtSize u) 
-             => HAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-cxpAlignSepH align dx = go align
+             => HAlign -> u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpAlignSepH align dx = go align mv
   where
-    go HTop    = megaCombR boundaryNE boundaryNW (alignMove2 (hvec dx))
-    go HCenter = megaCombR boundaryE  boundaryW  (alignMove2 (hvec dx))
-    go HBottom = megaCombR boundarySE boundarySW (alignMove2 (hvec dx))
+    mv         = alignMove2 $ hvec $ psDouble dx
+    go HTop    = megaCombR boundaryNE boundaryNW
+    go HCenter = megaCombR boundaryE  boundaryW 
+    go HBottom = megaCombR boundarySE boundarySW
 
 
 -- | > cxpAlignSepV align sep a b
@@ -562,19 +553,18 @@ cxpAlignSepH align dx = go align
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
 cxpAlignSepV :: (Fractional u, Ord u, PtSize u) 
-             => VAlign -> u -> CtxPicture u -> CtxPicture u -> CtxPicture u
-cxpAlignSepV align dy = go align
+             => VAlign -> u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpAlignSepV align dy = go align mv
   where
-    go VLeft   = megaCombR boundarySW boundaryNW (alignMove2 $ vvec (-dy)) 
-    go VCenter = megaCombR boundaryS  boundaryN  (alignMove2 $ vvec (-dy)) 
-    go VRight  = megaCombR boundarySE boundaryNE (alignMove2 $ vvec (-dy))
-
+    mv         = alignMove2 $ vvec $ psDouble (-dy)
+    go VLeft   = megaCombR boundarySW boundaryNW
+    go VCenter = megaCombR boundaryS  boundaryN  
+    go VRight  = megaCombR boundarySE boundaryNE 
 
 -- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating them.
 --
-cxpAlignRow :: (Real u, Floating u, PtSize u) 
-            => HAlign -> CtxPicture u-> [CtxPicture u] -> CtxPicture u
+cxpAlignRow :: HAlign -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpAlignRow ha = foldl' (cxpAlignH ha)
 
 
@@ -582,8 +572,7 @@ cxpAlignRow ha = foldl' (cxpAlignH ha)
 -- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating them.
 --
-cxpAlignColumn :: (Real u, Floating u, PtSize u) 
-               => VAlign -> CtxPicture u -> [CtxPicture u] -> CtxPicture u
+cxpAlignColumn :: VAlign -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpAlignColumn va = foldl' (cxpAlignV va)
 
 
@@ -591,8 +580,7 @@ cxpAlignColumn va = foldl' (cxpAlignV va)
 -- concatenating and spacing them.
 --
 cxpAlignRowSep :: (Real u, Floating u, PtSize u) 
-                 => HAlign -> u -> CtxPicture u -> [CtxPicture u] 
-                 -> CtxPicture u
+               => HAlign -> u -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
 
 
@@ -600,8 +588,8 @@ cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
 -- concatenating and spacing them.
 --
 cxpAlignColumnSep :: (Real u, Floating u, PtSize u) 
-                    => VAlign -> u -> CtxPicture u -> [CtxPicture u] 
-                    -> CtxPicture u
+                    => VAlign -> u -> CtxPicture -> [CtxPicture] 
+                    -> CtxPicture
 cxpAlignColumnSep va n = foldl' (cxpAlignSepV va n) 
 
 

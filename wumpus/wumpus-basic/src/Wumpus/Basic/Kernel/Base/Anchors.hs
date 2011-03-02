@@ -1,4 +1,6 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -53,14 +55,14 @@ import Data.AffineSpace                 -- package: vector-space
 
 -- | Center of an object.
 --
-class CenterAnchor t where
-  center :: DUnit t ~ u => t -> Point2 u
+class CenterAnchor t u | t -> u where
+  center :: t -> Point2 u
 
 
 -- | Apex of an object.
 --
-class ApexAnchor t where
-  apex :: DUnit t ~ u => t -> Point2 u
+class ApexAnchor t u | t -> u where
+  apex :: t -> Point2 u
 
 
 -- | Cardinal (compass) positions on an object. 
@@ -70,11 +72,11 @@ class ApexAnchor t where
 -- positions or may be able to provide more efficient definitions 
 -- for the cardinal anchors. Hence the redundancy seems justified. 
 --
-class CardinalAnchor t where
-  north :: DUnit t ~ u => t -> Point2 u
-  south :: DUnit t ~ u => t -> Point2 u
-  east  :: DUnit t ~ u => t -> Point2 u
-  west  :: DUnit t ~ u => t -> Point2 u
+class CardinalAnchor t u | t -> u  where
+  north :: t -> Point2 u
+  south :: t -> Point2 u
+  east  :: t -> Point2 u
+  west  :: t -> Point2 u
 
 --
 -- Note - a design change is probably in order where the cardinals 
@@ -96,11 +98,11 @@ class CardinalAnchor t where
 -- problematic, hence the compass points are split into two 
 -- classes.
 --
-class CardinalAnchor2 t where
-  northeast :: DUnit t ~ u => t -> Point2 u
-  southeast :: DUnit t ~ u => t -> Point2 u
-  southwest :: DUnit t ~ u => t -> Point2 u
-  northwest :: DUnit t ~ u => t -> Point2 u
+class CardinalAnchor2 t u | t -> u where
+  northeast :: t -> Point2 u
+  southeast :: t -> Point2 u
+  southwest :: t -> Point2 u
+  northwest :: t -> Point2 u
 
 
 -- | Anchor on a border that can be addressed by an angle.
@@ -108,8 +110,8 @@ class CardinalAnchor2 t where
 -- The angle is counter-clockwise from the right-horizontal, i.e.
 -- 0 is /east/.
 --
-class RadialAnchor t where
-  radialAnchor :: DUnit t ~ u => Radian -> t -> Point2 u
+class RadialAnchor t u | t -> u  where
+  radialAnchor :: Radian -> t -> Point2 u
 
 
 -- | Anchors at the top left and right corners of a shape.
@@ -119,16 +121,16 @@ class RadialAnchor t where
 -- to be uniform. Wumpus will need to reconsider anchors at some 
 -- point...
 --
-class TopCornerAnchor t where
-  topLeftCorner  :: DUnit t ~ u => t -> Point2 u
-  topRightCorner :: DUnit t ~ u => t -> Point2 u
+class TopCornerAnchor t u | t -> u where
+  topLeftCorner  :: t -> Point2 u
+  topRightCorner :: t -> Point2 u
 
 
 -- | Anchors at the bottom left and right corners of a shape.
 --
-class BottomCornerAnchor t where
-  bottomLeftCorner  :: DUnit t ~ u => t -> Point2 u
-  bottomRightCorner :: DUnit t ~ u => t -> Point2 u
+class BottomCornerAnchor t u | t -> u where
+  bottomLeftCorner  :: t -> Point2 u
+  bottomRightCorner :: t -> Point2 u
 
 
 -- | Anchors in the center of a side.
@@ -141,8 +143,8 @@ class BottomCornerAnchor t where
 -- Implementations are also expected to modulo the side number, 
 -- rather than throw an out-of-bounds error.
 --
-class SideMidpointAnchor t where
-  sideMidpoint :: DUnit t ~ u => Int -> t -> Point2 u
+class SideMidpointAnchor t u | t -> u where
+  sideMidpoint :: Int -> t -> Point2 u
 
 
 
@@ -169,7 +171,7 @@ class SideMidpointAnchor t where
 -- If the distance is positive the anchor will be extend outwards 
 -- from the intermediate anchor.
 --
-projectAnchor :: (Real u, Floating u, u ~ DUnit t, CenterAnchor t) 
+projectAnchor :: (Real u, Floating u, CenterAnchor t u) 
               => (t -> Point2 u) -> u -> t -> Point2 u
 projectAnchor f d a = p1 .+^ (avec ang d)
   where
@@ -187,9 +189,8 @@ projectAnchor f d a = p1 .+^ (avec ang d)
 -- the line joining their centers.
 --
 radialConnectorPoints :: ( Real u, Floating u
-                         , CenterAnchor t1, RadialAnchor t1
-                         , CenterAnchor t2, RadialAnchor t2
-                         , u ~ DUnit t1, DUnit t1 ~ DUnit t2 ) 
+                         , CenterAnchor t1 u, RadialAnchor t1 u
+                         , CenterAnchor t2 u, RadialAnchor t2 u) 
                       => t1 -> t2 -> (Point2 u, Point2 u) 
 radialConnectorPoints a b = (radialAnchor theta a, radialAnchor (theta+pi) b)
   where
@@ -199,21 +200,21 @@ radialConnectorPoints a b = (radialAnchor theta a, radialAnchor (theta+pi) b)
 --------------------------------------------------------------------------------
 -- Instances 
 
-instance Fractional u => CenterAnchor (BoundingBox u) where
+instance Fractional u => CenterAnchor (BoundingBox u) u where
   center (BBox (P2 xl ylo) (P2 xr yhi)) = P2 x y 
      where
        x = xl+0.5*(xr-xl)
        y = ylo+0.5*(yhi-ylo)
        
 
-instance Fractional u => CardinalAnchor (BoundingBox u) where
+instance Fractional u => CardinalAnchor (BoundingBox u) u where
   north (BBox (P2 xl _  ) (P2 xr yhi)) = P2 (xl+0.5*(xr-xl)) yhi
   south (BBox (P2 xl ylo) (P2 xr _  )) = P2 (xl+0.5*(xr-xl)) ylo
   east  (BBox (P2 _  ylo) (P2 xr yhi)) = P2 xr (ylo+0.5*(yhi-ylo))
   west  (BBox (P2 xl ylo) (P2 _  yhi)) = P2 xl (ylo+0.5*(yhi-ylo))
 
 
-instance Fractional u => CardinalAnchor2 (BoundingBox u) where
+instance Fractional u => CardinalAnchor2 (BoundingBox u) u where
   northeast (BBox _ ur)                 = ur
   southeast (BBox (P2 _ ylo) (P2 xr _)) = P2 xr ylo
   southwest (BBox ll _)                 = ll

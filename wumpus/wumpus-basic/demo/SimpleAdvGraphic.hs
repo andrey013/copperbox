@@ -21,11 +21,12 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-drawing01 :: DCtxPicture
-drawing01 = drawTracing $ mf 
+drawing01 :: CtxPicture
+drawing01 = drawTracing $ (mf  :: TraceDrawing Double ())
 
 
-mf :: (Floating u, PtSize u) => TraceDrawing u ()
+-- TraceDrawing can be fully unit polymorphic
+mf :: PtSize u => TraceDrawing u ()
 mf = do
     drawi_ $ advspace (hvec 10) [text01, text02, text01] `at` P2 0 120
     drawi_ $ advconcat [text01, text02, text01] `at` P2 0 80

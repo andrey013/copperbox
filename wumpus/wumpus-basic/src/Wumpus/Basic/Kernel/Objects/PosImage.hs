@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -94,13 +93,12 @@ data ObjectPos u = ObjectPos
 
 
 
-type instance DUnit (ObjectPos u)   = u
 
 
 
 -- | A positionable Image.
 --
-type PosImage u a = CF2  (Point2 u) RectPosition (ImageAns u a)
+type PosImage u a = CF2 (Point2 u) RectPosition (ImageAns u a)
     
 -- | Version of PosImage specialized to Double for the unit type.
 --
@@ -110,7 +108,7 @@ type DPosImage a = PosImage Double a
 
 -- | A positionable Graphic.
 --
-type PosGraphic u = PosImage u (UNil u) 
+type PosGraphic u = PosImage u () 
     
 -- | Version of PosGraphic specialized to Double for the unit type.
 --
@@ -125,7 +123,7 @@ type DPosGraphic = PosGraphic Double
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-type PosThetaImage u a = CF3  (Point2 u) RectPosition Radian (ImageAns u a)
+type PosThetaImage u a = CF3 (Point2 u) RectPosition Radian (ImageAns u a)
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --

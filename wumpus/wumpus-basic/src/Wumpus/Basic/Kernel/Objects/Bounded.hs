@@ -139,8 +139,7 @@ emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 illustrateBoundedGraphic :: (Fractional u, PtSize u) 
                          => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic mf = 
-    mf >>= \(bb,g1) -> bbrectangle bb >>= \(_,g0) -> return (bb, g0 `oplus` g1)
+illustrateBoundedGraphic mf = annotate mf bbrectangle
 
 
 illustrateBoundedLocGraphic :: (Fractional u, PtSize u) 
