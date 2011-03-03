@@ -34,6 +34,11 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , displaceH
   , displaceV
 
+  , move_up
+  , move_down
+  , move_left
+  , move_right
+
   , northwards
   , southwards 
   , eastwards
@@ -182,6 +187,24 @@ displaceH dx (P2 x y) = P2 (x+dx) y
 --
 displaceV :: Num u => u -> PointDisplace u
 displaceV dy (P2 x y) = P2 x (y+dy)
+
+
+
+
+-- Possibly for Displacement @move_down@ seems a more attrctive 
+-- name than @southwards@.
+--
+move_up :: Num u => u -> PointDisplace u
+move_up = displaceV
+
+move_down :: Num u => u -> PointDisplace u
+move_down = displaceV . negate
+
+move_left :: Num u => u -> PointDisplace u
+move_left = displaceH . negate
+
+move_right :: Num u => u -> PointDisplace u
+move_right = displaceH
 
 
 

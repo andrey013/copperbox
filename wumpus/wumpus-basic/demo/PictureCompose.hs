@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# OPTIONS -Wall #-}
 
 module PictureCompose where
@@ -22,10 +24,10 @@ pic_drawing_ctx = standardContext 14
 
 
 pictures :: CtxPicture
-pictures = cxpColumnSep 12 pic1 [ pic2, pic3, pic4, pic5
-                                , pic6, pic7, pic8, pic9 
-                                , pic10, pic11, pic12
-                                ] 
+pictures = cxpColumnSep (12::Double) pic1 [ pic2, pic3, pic4, pic5
+                                          , pic6, pic7, pic8, pic9 
+                                          , pic10, pic11, pic12
+                                          ] 
 
 drawBlueBounds :: CtxPicture -> CtxPicture
 drawBlueBounds = mapCtxPicture (illustrateBounds blue)
@@ -106,14 +108,14 @@ pic9 = picAnno pic "cxpRowSep 10 red [green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpRowSep 10 rect_red [rect_green, rect_blue]
+            cxpRowSep (10::Double) rect_red [rect_green, rect_blue]
 
 pic10 :: CtxPicture
 pic10 = picAnno pic "cxpColumnSep 10 red [green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpColumnSep 10 rect_red [rect_green, rect_blue]
+            cxpColumnSep (10::Double) rect_red [rect_green, rect_blue]
 
 
 pic11 :: CtxPicture
@@ -135,25 +137,26 @@ pic12 = picAnno pic "cxpAlignColumn VRight red [green, blue]"
 --------------------------------------------------------------------------------
 
 
+
 picAnno :: CtxPicture -> String -> CtxPicture
-picAnno pic msg = cxpAlignSepH HCenter 30 pic lbl
+picAnno pic msg = cxpAlignSepH HCenter (30::Double) pic lbl
   where
-    lbl = drawTracing $ draw $ textline msg `at` zeroPt
+    lbl = drawTracing UDouble $ draw $ textline msg `at` zeroPt
 
 
 rect_red :: CtxPicture
-rect_red = drawTracing $ 
+rect_red = drawTracing UDouble $ 
     localize (fill_colour indian_red)
              (draw $ borderedRectangle 30 10 `at` (P2 0 10))
                  
 rect_green :: CtxPicture
-rect_green = drawTracing $ 
+rect_green = drawTracing UDouble $ 
     localize (fill_colour olive_drab)
              (draw $ borderedRectangle 15 15 `at` (P2 10 10))
 
 
 rect_blue :: CtxPicture
-rect_blue = drawTracing $ 
+rect_blue = drawTracing UDouble $ 
     localize (fill_colour powder_blue)
              (draw $ borderedRectangle 20 30 `at` (P2 10 0))
 

@@ -145,9 +145,10 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 --
 -- Transform a 'TraceDrawing' into a 'CtxPicture'.
 --
-drawTracing :: (Real u, Floating u, PtSize u) 
-            => TraceDrawing u a -> CtxPicture
-drawTracing mf = CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
+drawTracing :: (Real u, Floating u, PtSize u, Unit utyp u) 
+            => utyp -> TraceDrawing u a -> CtxPicture
+drawTracing _ mf = 
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
 
 
 
@@ -401,7 +402,7 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 --
 cxpCenteredAt :: (Fractional u, PtSize u) 
               => CtxPicture -> Point2 u -> CtxPicture
-cxpCenteredAt d (P2 x y) = mapCtxPicture fn d
+cxpCenteredAt pic (P2 x y) = mapCtxPicture fn pic
   where
     fn p = let bb = fmap dpoint $ boundary p
                dx = x - (boundaryWidth  bb * 0.5)

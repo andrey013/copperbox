@@ -14,23 +14,26 @@ main = do
     writeSVG "./out/clip_path01.svg" pic1
 
 
+
+
+
 pic1 :: Picture
 pic1 = frame [ body ]
   where
     body = clip dog_house $ primGroup [ red_circle, green_circle, blue_circle ]
 
 red_circle :: Primitive 
-red_circle = fillEllipse red 60 60      (dP2 (-20) 0)
+red_circle = fillEllipse red 60 60      (cast1 UDouble $ P2 (-20) 0)
 
 green_circle :: Primitive 
-green_circle = fillEllipse green 60 60  (dP2 30 80)
+green_circle = fillEllipse green 60 60  (cast1 UDouble $ P2 30 80)
 
 blue_circle :: Primitive 
-blue_circle = fillEllipse blue 60 60    (dP2 80 0)
+blue_circle = fillEllipse blue 60 60    (cast1 UDouble $ P2 80 0)
 
 
 dog_house :: PrimPath
-dog_house = primPath dzeroPt $ 
+dog_house = primPath (cast1 UDouble  zeroPt) $ 
     [ lineTo  (P2 0 60) 
     , lineTo  (P2 40 100)
     , lineTo  (P2 80 60)

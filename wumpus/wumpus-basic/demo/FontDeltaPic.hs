@@ -28,8 +28,8 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-drawing01 :: DCtxPicture
-drawing01 = drawTracing $ mf 
+drawing01 :: CtxPicture
+drawing01 = drawTracing UDouble $ mf 
 
 
 mf :: (Floating u, PtSize u) => TraceDrawing u ()

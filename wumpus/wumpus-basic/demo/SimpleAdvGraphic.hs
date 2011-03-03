@@ -22,7 +22,8 @@ std_attr = standardContext 24
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing $ (mf  :: TraceDrawing Double ())
+drawing01 = drawTracing UDouble $ mf 
+
 
 
 -- TraceDrawing can be fully unit polymorphic

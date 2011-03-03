@@ -110,7 +110,7 @@ cpPicture constr trafo =
 --------------------------------------------------------------------------------
 
 rgbLabel :: RGBi -> Primitive
-rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" dzeroPt
+rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" (cast1 UDouble zeroPt)
 
 rgbCircle :: RGBi -> Primitive
 rgbCircle rgb = fillEllipse rgb 60 60 dzeroPt

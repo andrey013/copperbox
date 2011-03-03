@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -26,10 +28,19 @@
 
 module Wumpus.Core.Units
   ( 
-  
+
+
+  -- * Unit
+    Unit
+  , UDouble(..)
+
+  , ucast0
+  , ucast1
+
   -- * PostScript point size type
-    PsPoint
-  
+  , PsPoint
+  , UPsPoint(..)
+
   -- * Extract (unscaled) PtSize as a Double 
   , ptSize
 
@@ -37,10 +48,12 @@ module Wumpus.Core.Units
 
   -- * Centimeter type
   , Centimeter   
+  , UCentimeter(..)
   , cm
 
   -- * Pica type
   , Pica
+  , UPica(..)
   , pica
 
   -- * Conversion class
@@ -60,6 +73,26 @@ import Wumpus.Core.Utils.FormatCombinators
 
 import Data.Ratio
 
+
+-- | 
+class Unit c a | c -> a
+
+
+-- | 
+data UDouble = UDouble
+
+instance Unit UDouble Double
+
+
+
+ucast0 :: Unit utyp u => utyp -> u -> u
+ucast0 _ = id
+
+ucast1 :: Unit utyp u => utyp -> t u -> t u
+ucast1 _ = id
+
+
+
 -- | Wrapped Double representing /Point size/ for font metrics 
 -- etc.
 -- 
@@ -67,6 +100,11 @@ newtype PsPoint = PsPoint
           { psPoint :: Double  -- ^ Extract Point Size as a Double 
           } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+data UPsPoint = UPsPoint
+
+instance Unit UPsPoint PsPoint
+
 
 instance Show PsPoint where
   showsPrec p d = showsPrec p (psPoint d)
@@ -86,6 +124,10 @@ ptSize = psPoint
 -- 
 newtype Centimeter = Centimeter { getCentimeter :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+data UCentimeter = UCentimeter
+
+instance Unit UCentimeter Centimeter
 
 instance Show Centimeter where
   showsPrec p d = showsPrec p (getCentimeter d)
@@ -113,6 +155,11 @@ cm = realToFrac . (28.45275619 *) . getCentimeter
 --
 newtype Pica = Pica { getPica :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+
+data UPica = UPica
+
+instance Unit UPica Pica
 
 instance Show Pica where
   showsPrec p d = showsPrec p (getPica d)
