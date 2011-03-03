@@ -39,6 +39,7 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
   , answer
   , imageOutput
 
+  , cxConverti
 
   , bimapImageAns
 
@@ -46,6 +47,7 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.CtxUnits
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -129,6 +131,18 @@ bimapImageAns :: (t a -> t1 b) -> (Primitive -> Primitive)
               -> ImageAns t a -> ImageAns t1 b
 bimapImageAns f g = ImageAns . bimap f g . getImageAns
 
+
+convertImageAns :: (Functor t, CxSize u, PtSize u1) 
+                => FontSize -> ImageAns t u -> ImageAns t u1
+convertImageAns sz = ImageAns . bimapL (fmap (dpoint . cfSize sz)) . getImageAns
+
+
+cxConverti :: (Functor t, Functor f, CxSize u, PtSize u1) 
+           => FontSize -> f (ImageAns t u) -> f (ImageAns t u1)
+cxConverti sz = fmap (convertImageAns sz) 
+
+--------------------------------------------------------------------------------
+-- OPlus instance
 
 instance OPlus (t u) => OPlus (ImageAns t u) where
   ImageAns (a,p1) `oplus` ImageAns (b,p2) = 

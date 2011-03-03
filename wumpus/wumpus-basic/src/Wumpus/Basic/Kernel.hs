@@ -20,6 +20,7 @@ module Wumpus.Basic.Kernel
     module Wumpus.Basic.Kernel.Base.Anchors
   , module Wumpus.Basic.Kernel.Base.BaseDefs
   , module Wumpus.Basic.Kernel.Base.ContextFun
+  , module Wumpus.Basic.Kernel.Base.CtxUnits
   , module Wumpus.Basic.Kernel.Base.DrawingContext
   , module Wumpus.Basic.Kernel.Base.FontMetrics
   , module Wumpus.Basic.Kernel.Base.QueryDC
@@ -36,12 +37,13 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Graphic
   , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
---  , module Wumpus.Basic.Kernel.Objects.UnitConvert
+  , module Wumpus.Basic.Kernel.Objects.UnitConvert
   ) where
 
 import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.QueryDC
@@ -58,4 +60,4 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.TraceDrawing
--- import Wumpus.Basic.Kernel.Objects.UnitConvert
+import Wumpus.Basic.Kernel.Objects.UnitConvert

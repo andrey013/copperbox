@@ -29,8 +29,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceR
 
 
-  -- * /Contextual/ unit size
-  , CxSize(..)
 
   -- * Alignment
   , HAlign(..)
@@ -172,16 +170,7 @@ replaceL = bimapL . const
 replaceR :: Bimap f => q -> f a b -> f a q
 replaceR = bimapR . const
 
---------------------------------------------------------------------------------
 
-class CxSize u where
-  cxsize :: PtSize u1 => FontSize -> u -> u1
-
-instance CxSize Double where
-  cxsize _ = (fromPsPoint . toPsPoint)  
-
-instance CxSize Centimeter where
-  cxsize _ = (fromPsPoint . toPsPoint)  
 
 --------------------------------------------------------------------------------
 

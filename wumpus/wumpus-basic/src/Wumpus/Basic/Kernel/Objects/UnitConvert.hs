@@ -31,8 +31,9 @@ module Wumpus.Basic.Kernel.Objects.UnitConvert
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.CtxUnits
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.PosImage
@@ -40,44 +41,38 @@ import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Core                              -- package: wumpus-core
 
 
--- Design note - it looks like /contextual/ units (em, en, ...) 
--- will need to clone the Displacement and DrawingPrimtives 
--- modules and potentially all drawing objects...
---
--- A practical alternative might be to make all units contextual
--- but Centimeter, PostScript Point etc. ignore the the current
--- font size.
---
+ptCnv :: (CxSize u, PtSize u1) => FontSize -> Point2 u1 -> Point2 u
+ptCnv sz = fmap (csSize sz . psDouble)
 
 
-ptCnv :: (PtSize u0, PtSize u) => Point2 u0 -> Point2 u    
-ptCnv = fmap (fromPsPoint . toPsPoint)
+converti :: (Functor t, CxSize u, PtSize u1) 
+         => Image t u -> Image t u1
+converti img = getFontSize >>= \sz -> cxConverti sz img
 
 
-converti :: (t u1 -> t u) -> Image t u1 -> Image t u
-converti fa img = 
-    img >>= \a -> return $ imageAns (fa $ answer a) (imageOutput a)
-
-convertli :: (PtSize u0, PtSize u) 
-          => (t u0 -> t u) -> LocImage t u0 -> LocImage t u
-convertli fa img = 
-    promoteR1 $ \pt -> converti fa (img `at` ptCnv pt)
 
 
-convertlti :: (PtSize u0, PtSize u) 
-           => (t u0 -> t u) -> LocThetaImage t u0 -> LocThetaImage t u
-convertlti fa img = 
-    promoteR2 $ \pt ang -> converti fa $ atRot img (ptCnv pt) ang
+convertli :: (Functor t, CxSize u, PtSize u1) 
+          => LocImage t u -> LocImage t u1
+convertli img = promoteR1 $ \pt -> 
+    getFontSize >>= \sz -> cxConverti sz (img `at` ptCnv sz pt)
 
 
-convertconn :: (PtSize u0, PtSize u) 
-            => (t u0 -> t u) -> ConnectorImage t u0 -> ConnectorImage t u
-convertconn fa img = 
-    promoteR2 $ \p1 p2 -> converti fa $ connect img (ptCnv p1) (ptCnv p2)
+convertlti :: (Functor t, CxSize u, PtSize u1) 
+           => LocThetaImage t u -> LocThetaImage t u1
+convertlti img = promoteR2 $ \pt ang -> 
+    getFontSize >>= \sz -> cxConverti sz $ atRot img (ptCnv sz pt) ang
 
 
-convertpti :: (PtSize u0, PtSize u) 
-           => (t u0 -> t u) -> PosThetaImage t u0 -> PosThetaImage t u
-convertpti fa img = promoteR3 $ \pt rpos ang -> 
-                    converti fa $ apply3R3 img (ptCnv pt) rpos ang
+convertconn :: (Functor t, CxSize u, PtSize u1) 
+            => ConnectorImage t u -> ConnectorImage t u1
+convertconn img = promoteR2 $ \p1 p2 -> 
+    getFontSize >>= \sz -> cxConverti sz $ connect img (ptCnv sz p1) (ptCnv sz p2)
+
+
+convertpti :: (Functor t, CxSize u, PtSize u1) 
+           => PosThetaImage t u -> PosThetaImage t u1
+convertpti img = promoteR3 $ \pt rpos ang -> 
+    getFontSize >>= \sz -> cxConverti sz $ apply3R3 img (ptCnv sz pt) rpos ang
+
 

@@ -134,6 +134,7 @@ library
     Wumpus.Basic.Kernel.Base.Anchors,
     Wumpus.Basic.Kernel.Base.BaseDefs,
     Wumpus.Basic.Kernel.Base.ContextFun,
+    Wumpus.Basic.Kernel.Base.CtxUnits,
     Wumpus.Basic.Kernel.Base.DrawingContext,
     Wumpus.Basic.Kernel.Base.FontMetrics,
     Wumpus.Basic.Kernel.Base.QueryDC,

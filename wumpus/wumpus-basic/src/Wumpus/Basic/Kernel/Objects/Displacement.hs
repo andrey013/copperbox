@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -76,7 +77,9 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
@@ -126,19 +129,21 @@ type ThetaPointDisplace u = Radian -> PointDisplace u
 moveStart :: PointDisplace u -> LocCF u a -> LocCF u a
 moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
 
-{-
+
 
 -- Need to be able to convert an ImageAns via a typeclass...
 
 -- | Move the start-point of a 'LocCF' with the supplied 
 -- displacement function.
 --
-moveStart' :: CxSize u0 => PointDisplace u0 -> LocCF u0 a -> LocCF u a
+moveStart' :: forall u0 u t. (CxSize u0, PtSize u, Functor t) 
+           => PointDisplace u0 -> LocImage t u0 -> LocImage t u
 moveStart' f ma = promoteR1 $ \pt -> getFontSize >>= \sz ->
-    let v0 = pvec zeroPt (f zeroPt)
-        vu = fmap (cxsize sz) v0 
-    in apply1R1 (convertli ma) (pt .+^ vu)
--}
+    let v0::Vec2 u0   = pvec zeroPt (f zeroPt)
+        v1::Vec2 u    = fmap (dpoint . cfSize sz) v0
+        p0::Point2 u0 = fmap (csSize sz . psDouble) $ pt .+^ v1
+    in cxConverti sz $ ma `at` p0 
+
 
 
 -- | Move the start-point of a 'LocThetaCF' with the supplied 
