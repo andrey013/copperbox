@@ -1,6 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -73,7 +71,6 @@ newtype TurtleT u m a = TurtleT {
                      -> TurtleState 
                      -> m (a, TurtleState) }
 
-type instance DUnit (TurtleT u m a) = u
     
 
 
@@ -131,7 +128,7 @@ instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
 
 -- This needs undecidable instances...
 
-instance (Monad m, TraceM m, u ~ DUnit (m ())) => TraceM (TurtleT u m) where
+instance (Monad m, TraceM m u) => TraceM (TurtleT u m) u where
   trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
 
 

@@ -70,12 +70,12 @@ charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
 -- EscapedChar for the init of the the list, for the last element 
 -- it takes the charVector.
 --
-hkernVector :: PtSize u => [KerningChar u] -> DrawingInfo (AdvanceVec u)
+hkernVector :: PtSize u => [KerningChar] -> DrawingInfo (AdvanceVec u)
 hkernVector = go 0
   where
     go w []             = return (V2 w 0)
     go w [(_, ch)]      = fmap (addWidth w) (charVector ch)
-    go w ((dx,_ ):xs)   = go (w+dx) xs
+    go w ((dx,_ ):xs)   = go (w + dpoint dx) xs
     
     addWidth w (V2 x y) = V2 (w+x) y
 
@@ -153,7 +153,7 @@ orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
     input_hw  = 0.5 * (xmin + xmaj)
     input_hh  = 0.5 * (ymin + ymaj)
     bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
-    bbox1     = retraceBoundary (rotateAbout theta zeroPt) bbox0
+    bbox1     = retraceBoundary (rotateAbout theta dzeroPt) bbox0
     bbox_hw   = 0.5 * (boundaryWidth  bbox1)
     bbox_hh   = 0.5 * (boundaryHeight bbox1)
 

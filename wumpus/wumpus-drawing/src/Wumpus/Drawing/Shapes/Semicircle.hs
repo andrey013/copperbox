@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -60,8 +60,6 @@ data SyntheticProps u = SyntheticProps
   
 type DSemicircle = Semicircle Double
 
-type instance DUnit (Semicircle u) = u
-
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -100,18 +98,21 @@ runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
     displaceCenter (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (Semicircle u) u where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
-instance (Real u, Floating u, PtSize u) => ApexAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    ApexAnchor (Semicircle u) u where
   apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Semicircle u) where
+    BottomCornerAnchor (Semicircle u) u where
   bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
   bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (Semicircle u) u where
   north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
   east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
@@ -128,7 +129,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Semicircle u) where
+    CardinalAnchor2 (Semicircle u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -137,9 +138,11 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Semicircle u) where
+instance (Real u, Floating u, PtSize u) => 
+    RadialAnchor (Semicircle u) u where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
+-- helpers
 
 scRadialVec :: (Real u, Floating u, Ord u, PtSize u)
             => Radian -> u -> u -> u -> Vec2 u
@@ -199,7 +202,7 @@ baselineRange radius hminor = (lang, rang)
 -- | 'semicircle'  : @ radius -> Shape @
 --
 semicircle :: (Real u, Floating u, PtSize u) 
-           => u -> Shape u (Semicircle u)
+           => u -> Shape Semicircle u
 semicircle radius = 
     let props = synthesizeProps radius
     in makeShape (mkSemicircle radius props) 

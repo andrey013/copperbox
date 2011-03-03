@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -43,7 +43,6 @@ newtype InvSemiellipse u = InvSemiellipse { getInvSemiellipse :: Semiellipse u }
   
 type DInvSemiellipse = InvSemiellipse Double
 
-type instance DUnit (InvSemiellipse u) = u
 
 
 --------------------------------------------------------------------------------
@@ -78,20 +77,21 @@ runRotateAnchor :: (Real u, Floating u, PtSize u)
 runRotateAnchor f (InvSemiellipse a) = rotateAbout pi (center a) (f a)
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (InvSemiellipse u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (InvSemiellipse u) u where
   center = center . getInvSemiellipse
 
 instance (Real u, Floating u, PtSize u) => 
-    ApexAnchor (InvSemiellipse u) where
+    ApexAnchor (InvSemiellipse u) u where
   apex = runRotateAnchor apex
 
 instance (Real u, Floating u, PtSize u) => 
-    TopCornerAnchor (InvSemiellipse u) where
+    TopCornerAnchor (InvSemiellipse u) u where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (InvSemiellipse u) where
+    CardinalAnchor (InvSemiellipse u) u where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
@@ -99,7 +99,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (InvSemiellipse u) where
+    CardinalAnchor2 (InvSemiellipse u) u where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
   southwest = runRotateAnchor northeast
@@ -108,7 +108,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    RadialAnchor (InvSemiellipse u) where
+    RadialAnchor (InvSemiellipse u) u where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 
@@ -119,6 +119,6 @@ instance (Real u, Floating u, PtSize u) =>
 -- | 'invsemiellipse'  : @ rx * ry -> Shape @
 --
 invsemiellipse :: (Real u, Floating u, PtSize u) 
-           => u -> u -> Shape u (InvSemiellipse u)
+           => u -> u -> Shape InvSemiellipse u
 invsemiellipse rx ry = 
-    fmap InvSemiellipse $ updatePathAngle (+ pi) $ semiellipse rx ry
+    shapeMap InvSemiellipse $ updatePathAngle (+ pi) $ semiellipse rx ry

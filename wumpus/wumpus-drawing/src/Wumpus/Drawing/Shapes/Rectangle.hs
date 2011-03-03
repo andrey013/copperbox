@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -54,8 +54,6 @@ data Rectangle u = Rectangle
 type DRectangle = Rectangle Double
 
 
-type instance DUnit (Rectangle u) = u
-
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -94,20 +92,22 @@ runDisplaceCenter fn (Rectangle { rect_ctm = ctm
    displaceCenter (fn hw hh) ctm
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (Rectangle u) u where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance (Real u, Floating u, PtSize u) => TopCornerAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    TopCornerAnchor (Rectangle u) u where
   topLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
   topRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  hh
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Rectangle u) where
+    BottomCornerAnchor (Rectangle u) u where
   bottomLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  (-hh)
 
 instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Rectangle u) where
+    SideMidpointAnchor (Rectangle u) u where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -116,21 +116,23 @@ instance (Real u, Floating u, PtSize u) =>
       step _ = east a
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (Rectangle u) u where
   north = runDisplaceCenter $ \_  hh -> V2 0 hh
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Rectangle u) where
+    CardinalAnchor2 (Rectangle u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Rectangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    RadialAnchor (Rectangle u) u where
   radialAnchor theta = runDisplaceCenter $ \hw hh -> 
                           rectRadialVector hw hh theta
 
@@ -143,7 +145,7 @@ instance (Real u, Floating u, PtSize u) => RadialAnchor (Rectangle u) where
 -- | 'rectangle'  : @ width * height -> shape @
 --
 rectangle :: (Real u, Floating u, PtSize u) 
-          => u -> u -> Shape u (Rectangle u)
+          => u -> u -> Shape Rectangle u
 rectangle w h = 
     makeShape (mkRectangle (0.5*w) (0.5*h))
               (mkRectPath  (0.5*w) (0.5*h))

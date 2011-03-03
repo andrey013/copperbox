@@ -71,7 +71,7 @@ type DPathCF = PathCF Double
 -- This would be closer to the new shapes...
 --
 sconnect :: PtSize u 
-         => PathCF u -> Point2 u -> Point2 u -> Image u (Path u)
+         => PathCF u -> Point2 u -> Point2 u -> Image Path u
 sconnect mf p0 p1 = 
     connect mf p0 p1 >>= \cpath -> 
     intoImage (pure cpath) (openStroke $ toPrimPath cpath)  

@@ -31,7 +31,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
-type PosChar u = PosImage u (BoundingBox u)
+type PosChar u = PosImage BoundingBox u
 
 posChar :: (Fractional u, PtSize u) => Char -> PosChar u
 posChar = posEscChar . CharLiteral
@@ -44,7 +44,7 @@ posEscChar esc =
    makePosImage opos (charImg wv esc)
 
 charImg :: PtSize u 
-        => AdvanceVec u -> EscapedChar -> LocImage u (BoundingBox u)
+        => AdvanceVec u -> EscapedChar -> LocImage BoundingBox u
 charImg wv esc = 
     makeBBox wv >>= \bbox -> 
     replaceAns bbox $ escText1 esc

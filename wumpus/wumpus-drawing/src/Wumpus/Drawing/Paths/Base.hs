@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -121,8 +120,6 @@ data PathSeg u = LineSeg  { _line_length  :: u
   deriving (Eq,Show)
 
 
-type instance DUnit (Path u)    = u
-type instance DUnit (PathSeg u) = u
 
 
 --------------------------------------------------------------------------------
@@ -247,7 +244,7 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: PtSize u => Path u -> PrimPath u
+toPrimPath :: PtSize u => Path u -> PrimPath
 toPrimPath (Path _ start segs _) = step1 $ viewl segs
   where
     step1 EmptyL                  = emptyPath start
@@ -465,10 +462,6 @@ data PathSegment u = Line1  (Point2 u) (Point2 u)
   deriving (Eq,Show) 
 
 type DPathSegment = PathSegment Double
-
-type instance DUnit (PathViewL u)   = u
-type instance DUnit (PathViewR u)   = u
-type instance DUnit (PathSegment u) = u
 
 
 --------------------------------------------------------------------------------

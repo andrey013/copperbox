@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -60,8 +60,6 @@ data SyntheticProps u = SyntheticProps
   
 type DSemiellipse = Semiellipse Double
 
-type instance DUnit (Semiellipse u) = u
-
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -105,28 +103,29 @@ runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Semiellipse u) where
+instance (Real u, Floating u, PtSize u) => 
+   CenterAnchor (Semiellipse u) u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 instance (Real u, Floating u, PtSize u) => 
-    ApexAnchor (Semiellipse u) where
+    ApexAnchor (Semiellipse u) u where
   apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Semiellipse u) where
+    BottomCornerAnchor (Semiellipse u) u where
   bottomLeftCorner  = runDisplaceCenter $ \rx _ ry_minor _  -> V2 (-rx) (-ry_minor)
   bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Semiellipse u) where
+    CardinalAnchor (Semiellipse u) u where
   north = apex
   south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
   east  = radialAnchor 0
   west  = radialAnchor pi
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Semiellipse u) where
+    CardinalAnchor2 (Semiellipse u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -134,7 +133,8 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Semiellipse u) where
+instance (Real u, Floating u, PtSize u) => 
+    RadialAnchor (Semiellipse u) u where
   radialAnchor theta = runDisplaceCenter (seRadialVec theta)
 
 
@@ -192,7 +192,7 @@ baselineRange rx hminor = (lang, rang)
 -- | 'semiellipse'  : @ x_radius * y_radius -> Shape @
 --
 semiellipse :: (Real u, Floating u, PtSize u) 
-            => u -> u -> Shape u (Semiellipse u)
+            => u -> u -> Shape Semiellipse u
 semiellipse rx ry = 
     let props = synthesizeProps ry
     in makeShape (mkSemiellipse rx ry props) 

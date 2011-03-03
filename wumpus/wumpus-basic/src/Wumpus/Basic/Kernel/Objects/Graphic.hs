@@ -203,7 +203,7 @@ emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 -- > decorate :: LocThetaImage t u -> LocThetaGraphic u -> LocTheteImage t u
 --
 decorate :: Monad m 
-         => m (ImageAns t u) -> m (ImageAns t u0) -> m (ImageAns t u) 
+         => m (ImageAns t u) -> m (ImageAns t0 u0) -> m (ImageAns t u) 
 decorate img gf = 
     img >>= \a1 -> gf >>= \a2 -> 
     return $ imageAns (answer a1) (imageOutput a1 `oplus` imageOutput a2)

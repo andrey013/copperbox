@@ -50,7 +50,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
-type RotText u = PosThetaImage u (BoundingBox u)
+type RotText u = PosThetaImage BoundingBox u
 
 
 -------------------
@@ -74,43 +74,43 @@ rotTextStart = apply2R3
 
 
 textbox :: (Real u, Floating u, PtSize u) 
-        => String -> PosImage u (BoundingBox u)
+        => String -> PosImage BoundingBox u
 textbox ss = apply1R3 (multiAlignCenter ss) 0
 
 
 rtextbox :: (Real u, Floating u, PtSize u) 
-         => String -> PosThetaImage u (BoundingBox u)
+         => String -> PosThetaImage BoundingBox u
 rtextbox ss = multiAlignCenter ss
 
 
 -- multi line text allows rotation 
 
 multiAlignLeft :: (Real u, Floating u, PtSize u) 
-               => String -> PosThetaImage u (BoundingBox u)
+               => String -> PosThetaImage BoundingBox u
 multiAlignLeft ss = 
    drawMultiline onelineALeft (map escapeString $ lines ss)
 
 multiAlignCenter :: (Real u, Floating u, PtSize u) 
-               => String -> PosThetaImage u (BoundingBox u)
+               => String -> PosThetaImage BoundingBox u
 multiAlignCenter ss = 
    drawMultiline onelineACenter (map escapeString $ lines ss)
 
 multiAlignRight :: (Real u, Floating u, PtSize u) 
-               => String -> PosThetaImage u (BoundingBox u)
+               => String -> RotText u
 multiAlignRight ss = 
    drawMultiline onelineARight (map escapeString $ lines ss)
 
 
 textAlignLeft :: (Real u, Floating u, PtSize u) 
-              => String -> LocImage u (BoundingBox u)
+              => String -> LocImage BoundingBox u
 textAlignLeft ss = apply2R3 (multiAlignLeft ss) CENTER 0
 
 textAlignCenter :: (Real u, Floating u, PtSize u) 
-               => String -> LocImage u (BoundingBox u)
+               => String -> LocImage BoundingBox u
 textAlignCenter ss = apply2R3 (multiAlignCenter ss) CENTER 0 
 
 textAlignRight :: (Real u, Floating u, PtSize u) 
-               => String -> LocImage u (BoundingBox u)
+               => String -> LocImage BoundingBox u
 textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
 
@@ -119,7 +119,7 @@ textAlignRight ss = apply2R3 (multiAlignRight ss) CENTER 0
 
 drawMultiline :: (Real u, Floating u, PtSize u) 
               => OnelineGraphicF u -> [EscapedText] 
-              -> PosThetaImage u (BoundingBox u)
+              -> PosThetaImage BoundingBox u
 drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
 drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
     linesToInterims xs >>= \(max_adv, ones) -> 

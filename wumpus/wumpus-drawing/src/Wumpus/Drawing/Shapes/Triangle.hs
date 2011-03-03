@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -62,7 +62,6 @@ data SyntheticProps u = SyntheticProps
 
 type DTriangle = Triangle Double
 
-type instance DUnit (Triangle u) = u
 
 
 --------------------------------------------------------------------------------
@@ -109,16 +108,18 @@ runDisplaceCenter fn (Triangle { tri_ctm        = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (Triangle u) u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
-instance (Real u, Floating u, PtSize u) => ApexAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    ApexAnchor (Triangle u) u where
   apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
 
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Triangle u) where
+    BottomCornerAnchor (Triangle u) u where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
   bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
 
@@ -126,7 +127,8 @@ instance (Real u, Floating u, PtSize u) =>
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (Triangle u) u where
   north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
   east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
@@ -134,7 +136,7 @@ instance (Real u, Floating u, PtSize u) => CardinalAnchor (Triangle u) where
 
 
 instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Triangle u) where
+    SideMidpointAnchor (Triangle u) u where
   sideMidpoint n a = step (n `mod` 3) 
     where
       step 1 = midpoint (apex a) (bottomLeftCorner a)
@@ -153,7 +155,8 @@ findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0
 
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor2 (Triangle u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -161,7 +164,8 @@ instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Triangle u) where
 
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Triangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    RadialAnchor (Triangle u) u where
   radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
                          triangleRadialVector hbw hmin hmaj theta
        
@@ -173,7 +177,7 @@ instance (Real u, Floating u, PtSize u) => RadialAnchor (Triangle u) where
 --
 --
 triangle :: (Real u, Floating u, PtSize u) 
-         => u -> u -> Shape u (Triangle u)
+         => u -> u -> Shape Triangle u
 triangle bw h =
     let props  = synthesizeProps bw h
         hminor = tri_hminor props

@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -43,11 +43,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 newtype InvTriangle u = InvTriangle { getInvTriangle :: Triangle u }
 
-
-
 type DInvTriangle = InvTriangle Double
-
-type instance DUnit (InvTriangle u) = u
 
 
 --------------------------------------------------------------------------------
@@ -83,18 +79,21 @@ runRotateAnchor :: (Real u, Floating u, PtSize u)
 runRotateAnchor f (InvTriangle a) = rotateAbout pi (center a) (f a)
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (InvTriangle u) u where
   center = center . getInvTriangle
 
 
 -- apex is same on InvTriangle as regular triangle
 
-instance (Real u, Floating u, PtSize u) => ApexAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    ApexAnchor (InvTriangle u) u where
   apex = runRotateAnchor apex
 
 -- Top corners are bottom corners of the wrapped triangle.
 --
-instance (Real u, Floating u, PtSize u) => TopCornerAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    TopCornerAnchor (InvTriangle u) u where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
@@ -102,7 +101,8 @@ instance (Real u, Floating u, PtSize u) => TopCornerAnchor (InvTriangle u) where
 -- Use established points on the InvTrangle - don\'t delegate to 
 -- the base Triangle.
 --
-instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    SideMidpointAnchor (InvTriangle u) u where
   sideMidpoint n a = step (n `mod` 3) 
     where
       step 1 = midpoint (topRightCorner a) (topLeftCorner a)
@@ -115,7 +115,7 @@ instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (InvTriangle u) wh
 --
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (InvTriangle u) where
+    CardinalAnchor (InvTriangle u) u where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
@@ -123,7 +123,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (InvTriangle u) where
+    CardinalAnchor2 (InvTriangle u) u where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
   southwest = runRotateAnchor northeast
@@ -131,7 +131,8 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (InvTriangle u) where
+instance (Real u, Floating u, PtSize u) => 
+    RadialAnchor (InvTriangle u) u where
   radialAnchor theta = runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 
 --------------------------------------------------------------------------------
@@ -141,8 +142,9 @@ instance (Real u, Floating u, PtSize u) => RadialAnchor (InvTriangle u) where
 --
 --
 invtriangle :: (Real u, Floating u, PtSize u)
-            => u -> u -> Shape u (InvTriangle u)
-invtriangle bw h = fmap InvTriangle $ updatePathAngle (+ pi) $ triangle bw h
+            => u -> u -> Shape InvTriangle u
+invtriangle bw h = 
+    shapeMap InvTriangle $ updatePathAngle (+ pi) $ triangle bw h
     
 
 

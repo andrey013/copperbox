@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -54,7 +54,6 @@ data Diamond u = Diamond
 
 type DDiamond = Diamond Double
 
-type instance DUnit (Diamond u) = u
 
 
 --------------------------------------------------------------------------------
@@ -94,13 +93,13 @@ runDisplaceCenter fn (Diamond { dia_ctm = ctm
    displaceCenter (fn hw hh) ctm
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Diamond u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Diamond u) u where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance (Real u, Floating u, PtSize u) => ApexAnchor (Diamond u) where
+instance (Real u, Floating u, PtSize u) => ApexAnchor (Diamond u) u where
   apex = runDisplaceCenter $ \_  hh -> V2 0 hh
 
-instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (Diamond u) where
+instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (Diamond u) u where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = midpoint (north a) (west a)
@@ -109,14 +108,14 @@ instance (Real u, Floating u, PtSize u) => SideMidpointAnchor (Diamond u) where
       step _ = midpoint (east a)  (north a)
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Diamond u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Diamond u) u where
   north = apex
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Diamond u) where
+    CardinalAnchor2 (Diamond u) u where
   northeast x = midpoint (north x) (east x)
   southeast x = midpoint (south x) (east x)
   southwest x = midpoint (south x) (west x)
@@ -124,7 +123,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Diamond u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Diamond u) u where
     radialAnchor ang = runDisplaceCenter $ \hw hh -> 
                          diamondRadialVector hw hh ang
 
@@ -139,7 +138,7 @@ instance (Real u, Floating u, PtSize u) => RadialAnchor (Diamond u) where
 -- Note - args might change to tull_width and full_height...
 --
 diamond :: (Real u, Floating u, PtSize u) 
-        => u -> u -> Shape u (Diamond u)
+        => u -> u -> Shape Diamond u
 diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 

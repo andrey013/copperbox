@@ -47,8 +47,8 @@ import Wumpus.Core                              -- package: wumpus-core
 -- /Image/, drawing it returns the path - positions can be taken 
 -- on the path (e.g. @midpoint@) for further decoration.
 --
-type PathConnector u = ConnectorImage u (Path u)
-type DPathConnector = PathConnector Double
+type PathConnector u    = ConnectorImage Path u
+type DPathConnector     = PathConnector Double
 
 -- Design note - the above definitions should be in a different 
 -- file. 
@@ -68,7 +68,7 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
         start   = tipL cpath
         g1      = openStroke $ toPrimPath path1
         g2      = atRot (arrowhead_draw arrh) start ang
-    in  fmap (replaceL cpath) $ g1 `oplus` g2       
+    in  replaceAns cpath $ g1 `oplus` g2       
 
 -- Note - returns original path and adds tips to the @cpath@ 
 -- which might have moved p0 and p1.
@@ -86,7 +86,7 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
         end     = tipR cpath
         g1      = openStroke $ toPrimPath path1
         g2      = atRot (arrowhead_draw arrh) end ang
-    in  fmap (replaceL cpath) $ g1 `oplus` g2
+    in  replaceAns cpath $ g1 `oplus` g2
 
 
 
@@ -107,7 +107,7 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
         g1      = openStroke $ toPrimPath path1
         gL      = atRot (arrowhead_draw arrL) start angL
         gR      = atRot (arrowhead_draw arrR) end   angR
-    in  fmap (replaceL cpath) $ g1 `oplus` gL `oplus` gR
+    in  replaceAns cpath $ g1 `oplus` gL `oplus` gR
 
 
 -- | Connector with the same arrow tip at both ends.

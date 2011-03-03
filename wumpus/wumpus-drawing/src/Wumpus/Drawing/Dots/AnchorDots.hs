@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -85,15 +85,14 @@ data DotAnchor u = forall s.
                               , cardinal_anchor :: Cardinal -> Point2 u }
 
 
-type instance DUnit (DotAnchor u) = u
 
-instance CenterAnchor (DotAnchor u) where
+instance CenterAnchor (DotAnchor u) u where
   center (DotAnchor ca _ _) = ca
 
-instance RadialAnchor (DotAnchor u) where
+instance RadialAnchor (DotAnchor u) u where
    radialAnchor theta (DotAnchor _ ra _) = ra theta
 
-instance CardinalAnchor (DotAnchor u) where
+instance CardinalAnchor (DotAnchor u) u where
    north (DotAnchor _ _ c1) = c1 NORTH
    south (DotAnchor _ _ c1) = c1 SOUTH
    east  (DotAnchor _ _ c1) = c1 EAST
@@ -101,7 +100,7 @@ instance CardinalAnchor (DotAnchor u) where
 
 
 
-instance CardinalAnchor2 (DotAnchor u) where
+instance CardinalAnchor2 (DotAnchor u) u where
    northeast (DotAnchor _ _ c1) = c1 NORTH_EAST
    southeast (DotAnchor _ _ c1) = c1 SOUTH_EAST
    southwest (DotAnchor _ _ c1) = c1 SOUTH_WEST
@@ -201,7 +200,7 @@ polygonLDO mk =
 --------------------------------------------------------------------------------
 
 
-type DotLocImage u = LocImage u (DotAnchor u) 
+type DotLocImage u = LocImage DotAnchor u
 
 type DDotLocImage = DotLocImage Double 
 
@@ -217,7 +216,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, PtSize u) => String -> DotLocImage u 
-dotText ss = fmap (bimapL bboxRectAnchor) (textAlignCenter ss)
+dotText ss = fmap (bimapImageAns bboxRectAnchor id) (textAlignCenter ss)
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 

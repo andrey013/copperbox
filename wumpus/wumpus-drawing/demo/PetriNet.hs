@@ -61,8 +61,8 @@ makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font helvetica . metricsContext 14
 
 
-petri_net :: DCtxPicture
-petri_net = drawTracing $ do
+petri_net :: CtxPicture
+petri_net = drawTracing UDouble $ do
     pw     <- drawli (P2 0 140)   $ place
     tu1    <- drawli (P2 70 140)  $ transition
     rtw    <- drawli (P2 140 140) $ place
@@ -111,12 +111,12 @@ greenFill = localize (fill_colour lime_green)
 
 
 place :: ( Real u, Floating u, PtSize u) 
-      => LocImage u (Circle u)
+      => LocImage Circle u
 place = greenFill $ borderedShape $ circle 14
 
 
 transition :: ( Real u, Floating u, PtSize u) 
-           => LocImage u (Rectangle u)
+           => LocImage Rectangle u
 transition = greenFill $ borderedShape $ rectangle 32 22
 
 

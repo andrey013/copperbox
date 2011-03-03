@@ -181,10 +181,10 @@ solidArrTip :: DrawingCtxM m => m a -> m a
 solidArrTip mf = localize reset_drawing_metrics mf
 
 
-solidOpenStroke :: Num  u => PrimPath u -> Graphic  u
+solidOpenStroke :: Num  u => PrimPath -> Graphic  u
 solidOpenStroke = solidArrTip . openStroke
 
-solidClosedStroke :: Num  u => PrimPath u -> Graphic  u
+solidClosedStroke :: Num  u => PrimPath -> Graphic  u
 solidClosedStroke = solidArrTip . closedStroke
 
 solidStrokedDisk :: PtSize u => u -> LocGraphic  u
@@ -247,7 +247,7 @@ revtripointsByDist =
 -- filled with stroke colour!
 
 triTLG :: (Floating u, Real u, PtSize u)
-       => Radian -> (PrimPath u -> Graphic u) -> LocThetaGraphic u
+       => Radian -> (PrimPath -> Graphic u) -> LocThetaGraphic u
 triTLG triang drawF = 
     promoteR2 $ \pt theta ->
       localize fill_use_stroke_colour $ 
@@ -281,7 +281,7 @@ otri45 = Arrowhead markHeight (triTLG (pi/4) solidClosedStroke)
 -- filled with stroke colour!
 
 revtriTLG :: (Floating u, Real u, PtSize u)
-          => Radian -> (PrimPath u -> Graphic u) -> LocThetaGraphic u
+          => Radian -> (PrimPath -> Graphic u) -> LocThetaGraphic u
 revtriTLG triang drawF = 
     promoteR2 $ \pt theta -> 
       localize fill_use_stroke_colour $ 
@@ -361,7 +361,7 @@ perpTLG =
 
 
 rperpPath :: (Floating u, PtSize u) 
-          => u -> Point2 u -> Radian -> PrimPath u
+          => u -> Point2 u -> Radian -> PrimPath
 rperpPath hh ctr theta = primPath p0 [lineTo p1]
   where
     p0 = displacePerpendicular   hh  theta ctr
@@ -381,7 +381,7 @@ bracketTLG =
 
 
 rbracketPath :: (Floating u, PtSize u) 
-             => u -> Point2 u -> Radian -> PrimPath u
+             => u -> Point2 u -> Radian -> PrimPath
 rbracketPath hh pt theta = vertexPath [p0,p1,p2,p3]
   where
     p1 = displacePerpendicular   hh  theta pt
@@ -417,13 +417,13 @@ odiskTip = Arrowhead markHeight (diskTLG drawF)
 
 
 squareTLG :: (Floating u, PtSize u) 
-          => (PrimPath u -> Graphic u) -> LocThetaGraphic u
+          => (PrimPath -> Graphic u) -> LocThetaGraphic u
 squareTLG drawF = 
     tipBody $ \pt theta h -> drawF $ rsquarePath pt theta (0.5*h)
 
 
 rsquarePath :: (Floating u, PtSize u) 
-            => Point2 u -> Radian -> u -> PrimPath u
+            => Point2 u -> Radian -> u -> PrimPath
 rsquarePath pt theta hh = vertexPath [p0,p1,p2,p3]
   where
     p0 = displacePerpendicular     hh  theta pt
@@ -443,13 +443,13 @@ osquareTip = Arrowhead markHeight (squareTLG solidClosedStroke)
 
 
 diamondTLG :: (Floating u, PtSize u) 
-           => (PrimPath u -> Graphic u) -> LocThetaGraphic u
+           => (PrimPath -> Graphic u) -> LocThetaGraphic u
 diamondTLG drawF = 
     tipBody $ \pt theta h -> drawF $ rdiamondPath pt theta (0.5*h)
  
 
 rdiamondPath :: (Floating u, PtSize u) 
-             => Point2 u -> Radian -> u -> PrimPath u
+             => Point2 u -> Radian -> u -> PrimPath
 rdiamondPath pt theta hh = vertexPath [pt,p1,p2,p3]
   where
     ctr = displaceParallel       (-2*hh) theta pt
@@ -483,7 +483,7 @@ curveTLG =
 
 
 cxCurvePath :: (Real u, Floating u, PtSize u) 
-            => Point2 u -> Radian -> u -> DrawingInfo (PrimPath u)
+            => Point2 u -> Radian -> u -> DrawingInfo PrimPath
 cxCurvePath pt theta hh =
      apply2R2 tripointsByDist pt theta >>= \(tup,tlo) -> 
           let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
@@ -507,7 +507,7 @@ revcurveTLG =
         localize (join_round . cap_round) (solidOpenStroke path)
 
 cxRevcurvePath :: (Real u, Floating u, PtSize u) 
-               => Point2 u -> Radian -> u -> DrawingInfo (PrimPath u)
+               => Point2 u -> Radian -> u -> DrawingInfo PrimPath
 cxRevcurvePath pt theta hh = 
     apply2R2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
       let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup

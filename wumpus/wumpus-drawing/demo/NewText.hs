@@ -55,13 +55,13 @@ makeCtx = set_font helvetica . metricsContext 18
 
 
 
-drawing01 :: DCtxPicture
-drawing01 = drawTracing $ localize (fill_colour red) $ mf 
+drawing01 :: CtxPicture
+drawing01 = drawTracing UDouble $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Real u, Floating u, Ord u, PtSize u) => TraceDrawing u ()
+mf :: TraceDrawing Double ()
 mf = localize (text_margin 6.0 6.0)  $ do
     drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt

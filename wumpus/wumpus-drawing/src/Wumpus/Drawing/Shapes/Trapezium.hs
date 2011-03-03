@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -63,8 +63,6 @@ data Trapezium u = Trapezium
 
 type DTrapezium = Trapezium Double
 
-type instance DUnit (Trapezium u) = u
-
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -106,19 +104,20 @@ runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
                                 , tz_base_r_ang   = rang }) =
     displaceCenter (fn (0.5 * bw) (0.5 * h) lang rang) ctm
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Trapezium u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (Trapezium u) u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Trapezium u) where
+    BottomCornerAnchor (Trapezium u) u where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hh _ _  -> V2 (-hbw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hbw hh _ _  -> V2  hbw   (-hh)
 
 
 instance (Real u, Floating u, PtSize u) => 
-    TopCornerAnchor (Trapezium u) where
+    TopCornerAnchor (Trapezium u) u where
   topLeftCorner  = runDisplaceCenter $ \hbw hh lang _  -> 
                      let vbase = V2 (-hbw) (-hh)
                          vup   = leftSideVec (2*hh) lang 
@@ -130,7 +129,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Trapezium u) where
+    SideMidpointAnchor (Trapezium u) u where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -141,7 +140,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Trapezium u) where
+    CardinalAnchor (Trapezium u) u where
   north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
   east  = tzRadialAnchor 0
@@ -149,7 +148,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Trapezium u) where
+    CardinalAnchor2 (Trapezium u) u where
   northeast = tzRadialAnchor (0.25*pi)
   southeast = tzRadialAnchor (1.75*pi)
   southwest = tzRadialAnchor (1.25*pi)
@@ -158,7 +157,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-    RadialAnchor (Trapezium u) where
+    RadialAnchor (Trapezium u) u where
   radialAnchor = tzRadialAnchor
 
 -- TODO - update this to a quadrant function...
@@ -187,7 +186,7 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
 --
 --
 trapezium :: (Real u, Floating u, PtSize u) 
-          => u -> u -> Radian -> Radian -> Shape u (Trapezium u)
+          => u -> u -> Radian -> Radian -> Shape Trapezium u
 trapezium bw h lang rang = 
     makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
 
@@ -196,7 +195,7 @@ trapezium bw h lang rang =
 --
 --
 ztrapezium :: (Real u, Floating u, PtSize u) 
-           => u -> u -> Shape u (Trapezium u)
+           => u -> u -> Shape Trapezium u
 ztrapezium bw h = trapezium bw h ang ang
   where
     ang = d2r (60::Double)

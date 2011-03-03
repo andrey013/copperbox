@@ -60,7 +60,7 @@ import Data.Foldable ( foldrM )
 -- vertical composition operator and delegating to the rendering
 -- instead:
 --
--- > rightAlign :: [CatText u] -> PosImage u (BoundingBox u)
+-- > rightAlign :: [CatText u] -> PosImage BoundingBox u
 --
 
 
@@ -86,22 +86,22 @@ rightAMove half_max elt_w = half_max - elt_w
 
 
 
-leftAlign :: (Real u, PtSize u, Floating u) 
-          => [DocText u] -> PosImage u (BoundingBox u)
+leftAlign :: (Real u, Floating u, PtSize u) 
+          => [DocText u] -> PosImage BoundingBox u
 leftAlign = drawMulti leftAMove
 
-centerAlign :: (Real u, PtSize u, Floating u) 
-            => [DocText u] -> PosImage u (BoundingBox u)
+centerAlign :: (Real u, Floating u, PtSize u) 
+            => [DocText u] -> PosImage BoundingBox u
 centerAlign = drawMulti centerAMove
 
-rightAlign :: (Real u, PtSize u, Floating u) 
-           => [DocText u] -> PosImage u (BoundingBox u)
+rightAlign :: (Real u, Floating u, PtSize u) 
+           => [DocText u] -> PosImage BoundingBox u
 rightAlign = drawMulti rightAMove
 
 
 
-drawMulti :: (Real u, PtSize u, Floating u) 
-          => HMove u -> [DocText u] -> PosImage u (BoundingBox u)
+drawMulti :: (Real u, Floating u, PtSize u) 
+          => HMove u -> [DocText u] -> PosImage BoundingBox u
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
     evalAllLines xs                     >>= \all_lines -> 
     centerToBaseline                    >>= \down -> 
@@ -241,15 +241,16 @@ textSize sz = doclocal (point_size sz)
 -- Helpers
 
 
-hkernPrim :: PtSize u => [KerningChar u] -> CF (u,AdvGraphic u)
-hkernPrim ks = hkernVector ks >>= \v -> 
-               return (vector_x v, replaceAns v $ hkernline ks)
+hkernPrim :: PtSize u => [KerningChar] -> CF (u,AdvGraphic u)
+hkernPrim ks = hkernVector ks >>= \v ->
+               let v1 = fmap dpoint v
+               in return (vector_x v1, replaceAns v1 $ hkernline ks)
 
 
 uniformSpace :: PtSize u => u -> [EscapedChar] -> CF (u,AdvGraphic u)
 uniformSpace dx = hkernPrim . step1
   where 
-    step1 (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
+    step1 (c:cs) = (0,c) : map (\ch -> (psDouble dx,ch)) cs
     step1 []     = []
 
 

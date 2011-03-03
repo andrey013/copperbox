@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -72,8 +72,6 @@ data SyntheticProps u = SyntheticProps
 
 type DParallelogram = Parallelogram Double
 
-type instance DUnit (Parallelogram u) = u
-
 
 
 
@@ -117,23 +115,24 @@ runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Parallelogram u) where
+instance (Real u, Floating u, PtSize u) => 
+    CenterAnchor (Parallelogram u) u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 -- top anchors swap the base minor and major...
 --
 instance (Real u, Floating u, PtSize u) => 
-    TopCornerAnchor (Parallelogram u) where
+    TopCornerAnchor (Parallelogram u) u where
   topLeftCorner  = runDisplaceCenter $ \_ hh _ bmaj -> V2 (-bmaj) hh
   topRightCorner = runDisplaceCenter $ \_ hh bmin _ -> V2 bmin    hh
 
 instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Parallelogram u) where
+    BottomCornerAnchor (Parallelogram u) u where
   bottomLeftCorner  = runDisplaceCenter $ \_ hh bmin _ -> V2 (-bmin) (-hh)
   bottomRightCorner = runDisplaceCenter $ \_ hh _ bmaj -> V2 bmaj    (-hh)
 
 instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Parallelogram u) where
+    SideMidpointAnchor (Parallelogram u) u where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = midpoint (topRightCorner a)    (topLeftCorner a)
@@ -143,7 +142,8 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Parallelogram u) where
+instance (Real u, Floating u, PtSize u) => 
+    CardinalAnchor (Parallelogram u) u where
   north = runDisplaceCenter $ \_  hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_  hh _ _ -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  _ _ -> V2 hw 0
@@ -151,7 +151,7 @@ instance (Real u, Floating u, PtSize u) => CardinalAnchor (Parallelogram u) wher
 
 
 instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Parallelogram u) where
+    CardinalAnchor2 (Parallelogram u) u where
   northeast = pllRadialAnchor (0.25*pi)
   southeast = pllRadialAnchor (1.75*pi)
   southwest = pllRadialAnchor (1.25*pi)
@@ -160,7 +160,7 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 instance (Real u, Floating u, PtSize u) => 
-     RadialAnchor (Parallelogram u) where
+     RadialAnchor (Parallelogram u) u where
    radialAnchor = pllRadialAnchor
 
 
@@ -187,7 +187,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
 --
 --
 parallelogram :: (Real u, Floating u, PtSize u) 
-              => u -> u -> Radian -> Shape u (Parallelogram u)
+              => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
     in makeShape (mkParallelogram bw h lang props) 
@@ -199,7 +199,7 @@ parallelogram bw h lang =
 --
 --
 zparallelogram :: (Real u, Floating u, PtSize u) 
-              => u -> u -> Shape u (Parallelogram u)
+              => u -> u -> Shape Parallelogram u
 zparallelogram bw h = parallelogram bw h ang
   where
     ang = d2r (60::Double)

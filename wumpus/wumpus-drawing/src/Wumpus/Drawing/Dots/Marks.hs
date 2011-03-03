@@ -75,8 +75,8 @@ import Control.Applicative
 
 infixr 9 `renderPathWith`
 
-renderPathWith :: LocDrawingInfo u (PrimPath u) 
-               -> (PrimPath u -> Graphic u) 
+renderPathWith :: LocDrawingInfo u PrimPath 
+               -> (PrimPath -> Graphic u) 
                -> LocGraphic u
 renderPathWith m k = m >>= (lift0R1 . k)
 
@@ -89,7 +89,7 @@ markChar ch = markText [ch]
 
 
 markText :: (Real u, Floating u, PtSize u) => String -> LocGraphic u
-markText ss = fmap (replaceL uNil) $ textAlignCenter ss
+markText ss = ignoreAns $ textAlignCenter ss
 
 
 
@@ -129,7 +129,7 @@ markCross = markHeight >>= mkCross
 -- Note - height is extended slightly to look good...
 
 pathDiamond :: (Fractional u, PtSize u) 
-            => LocDrawingInfo u (PrimPath u)
+            => LocDrawingInfo u PrimPath
 pathDiamond = 
     promoteR1 $ \pt -> 
       markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 

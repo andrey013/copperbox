@@ -23,11 +23,11 @@ std_attr :: DrawingContext
 std_attr = standardContext 24
 
 
-dot_pic :: DCtxPicture
-dot_pic = drawTracing mf 
+dot_pic :: CtxPicture
+dot_pic = drawTracing UDouble mf 
 
 
-mf :: (Floating u, PtSize u) => TraceDrawing u ()
+mf :: TraceDrawing Double ()
 mf = do 
     a <- drawi $ dotCircle `at` zeroPt
     b <- drawi $ dotCircle `at` (P2 60 60)

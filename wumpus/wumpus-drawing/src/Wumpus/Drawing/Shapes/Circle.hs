@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -47,7 +47,6 @@ data Circle u = Circle
   
 type DCircle = Circle Double
 
-type instance DUnit (Circle u) = u
 
 
 --------------------------------------------------------------------------------
@@ -83,25 +82,25 @@ runDisplaceCenter fn (Circle { circ_ctm    = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Circle u) u where
   center = runDisplaceCenter $ \_ -> V2 0 0 
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Circle u) u where
   north = runDisplaceCenter $ \r -> V2 0    r
   south = runDisplaceCenter $ \r -> V2 0  (-r)
   east  = runDisplaceCenter $ \r -> V2 r    0
   west  = runDisplaceCenter $ \r -> V2 (-r) 0
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Circle u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Circle u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Circle u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Circle u) u where
   radialAnchor ang = runDisplaceCenter $ \r -> avec ang r
 
 
@@ -113,7 +112,7 @@ instance (Real u, Floating u, PtSize u) => RadialAnchor (Circle u) where
 -- | 'circle'  : @ radius -> Shape @
 --
 circle :: (Real u, Floating u, PtSize u) 
-       => u -> Shape u (Circle u)
+       => u -> Shape Circle u
 circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
           
 

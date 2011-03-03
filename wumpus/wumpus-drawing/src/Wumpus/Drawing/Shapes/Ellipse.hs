@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -54,7 +54,6 @@ data Ellipse u = Ellipse
 
 type DEllipse = Ellipse Double
 
-type instance DUnit (Ellipse u) = u
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -95,23 +94,23 @@ scaleEll :: (Scale t, Fractional u, PtSize u) => u -> u -> t -> t
 scaleEll rx ry = scale 1 (psDouble $ ry/rx) 
 
 
-instance (Real u, Floating u, PtSize u) => CenterAnchor (Ellipse u) where
+instance (Real u, Floating u, PtSize u) => CenterAnchor (Ellipse u) u where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 
-instance (Real u, Floating u, PtSize u) => RadialAnchor (Ellipse u) where
+instance (Real u, Floating u, PtSize u) => RadialAnchor (Ellipse u) u where
   radialAnchor theta = runDisplaceCenter $ \rx ry -> 
                          scaleEll rx ry $ avec theta rx
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor (Ellipse u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor (Ellipse u) u where
   north = radialAnchor (0.5*pi)
   south = radialAnchor (1.5*pi)
   east  = radialAnchor  0
   west  = radialAnchor  pi
 
 
-instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Ellipse u) where
+instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Ellipse u) u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -124,7 +123,7 @@ instance (Real u, Floating u, PtSize u) => CardinalAnchor2 (Ellipse u) where
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
 ellipse :: (Real u, Floating u, PtSize u, Ord u) 
-        => u -> u -> Shape u (Ellipse u)
+        => u -> u -> Shape Ellipse u
 ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
 
