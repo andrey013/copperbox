@@ -341,7 +341,7 @@ draw gf = queryCtx >>= \ctx ->
 -- monad, and the result is returned.
 -- 
 drawi :: (TraceM m u, DrawingCtxM m) 
-      => Image u a -> m a
+      => Image t u -> m (t u)
 drawi img = queryCtx >>= \ctx -> 
             let (a,o) = getImageAns $ runCF ctx img 
             in trace (singleH o) >> return a
@@ -350,7 +350,7 @@ drawi img = queryCtx >>= \ctx ->
 -- | Forgetful 'drawi'.
 --
 drawi_ :: (TraceM m u, DrawingCtxM m) 
-       => Image u a -> m ()
+       => Image t u -> m ()
 drawi_ img = drawi img >> return ()
 
 
@@ -373,13 +373,13 @@ drawl pt gf = queryCtx >>= \ctx ->
 -- monad, and the result is returned.
 -- 
 drawli :: (TraceM m u, DrawingCtxM m) 
-       => Point2 u -> LocImage u a -> m a
+       => Point2 u -> LocImage t u -> m (t u)
 drawli pt img = drawi (img `at` pt)
 
 -- | Forgetful 'drawli'.
 --
 drawli_ :: (TraceM m u, DrawingCtxM m) 
-        => Point2 u -> LocImage u a -> m ()
+        => Point2 u -> LocImage t u -> m ()
 drawli_ pt img = drawli pt img >> return ()
 
 
@@ -408,14 +408,14 @@ drawc p0 p1 gf = draw (connect gf p0 p1)
 -- monad, and the result is returned.
 -- 
 drawci :: (TraceM m u, DrawingCtxM m) 
-       => Point2 u -> Point2 u -> ConnectorImage u a -> m a
+       => Point2 u -> Point2 u -> ConnectorImage t u -> m (t u)
 drawci p0 p1 img = drawi (connect img p0 p1)
 
 
 -- | Forgetful 'drawci'.
 --
 drawci_ :: (TraceM m u, DrawingCtxM m) 
-        => Point2 u -> Point2 u -> ConnectorImage u a -> m ()
+        => Point2 u -> Point2 u -> ConnectorImage t u -> m ()
 drawci_ p0 p1 img = drawi (connect img p0 p1) >> return ()
 
 
@@ -447,7 +447,7 @@ xdraw xl gf = draw (hyperlink xl gf)
 -- clutter, so this function is considered obsolete.
 --
 xdrawi ::  (TraceM m u, DrawingCtxM m) 
-       => XLink -> Image u a -> m a
+       => XLink -> Image t u -> m (t u)
 xdrawi xl img = drawi (hyperlink xl img)
 
 
@@ -459,7 +459,7 @@ xdrawi xl img = drawi (hyperlink xl img)
 -- clutter, so this function is considered obsolete.
 --
 xdrawi_ ::  (TraceM m u, DrawingCtxM m)
-        => XLink -> Image u a -> m ()
+        => XLink -> Image t u -> m ()
 xdrawi_ xl img = xdrawi xl img >> return ()
 
 
@@ -478,7 +478,7 @@ node coord gf = queryCtx       >>= \ctx ->
 -- | Draw with grid coordinate...
 -- 
 nodei :: ( Fractional u, PtSize u, TraceM m u, DrawingCtxM m)
-      => (Int,Int) -> LocImage u a -> m a
+      => (Int,Int) -> LocImage t u -> m (t u)
 nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
                    let (a,o) = getImageAns $ runCF ctx (apply1R1 imgL pt)
@@ -490,7 +490,7 @@ nodei coord imgL = queryCtx    >>= \ctx ->
 -- | Draw with grid coordinate...
 --
 nodei_ :: (Fractional u, TraceM m u, PtSize u, DrawingCtxM m)
-       => (Int,Int) -> LocImage u a -> m ()
+       => (Int,Int) -> LocImage t u -> m ()
 nodei_ coord imgL = nodei coord imgL >> return ()
 
 
@@ -503,14 +503,14 @@ cxdraw pf gf =
                           in trace (singleH o)
 
 cxdrawi :: (Fractional u, TraceM m u, DrawingCtxM m) 
-       => DrawingInfo (Point2 u) -> LocImage u a -> m a
+       => DrawingInfo (Point2 u) -> LocImage t u -> m (t u)
 cxdrawi pf gf =  
     queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
                               (a,o) = getImageAns $ runCF1 ctx pt gf 
                           in trace (singleH o) >> return a
 
 cxdrawi_ :: (Fractional u, TraceM m u, DrawingCtxM m) 
-        => DrawingInfo (Point2 u) -> LocImage u a -> m ()
+        => DrawingInfo (Point2 u) -> LocImage t u -> m ()
 cxdrawi_ pf gf = cxdrawi pf gf >> return ()
 
 
@@ -520,7 +520,7 @@ drawrc :: ( Real u, Floating u, PtSize u
           , CenterAnchor t2 u, RadialAnchor  t2 u
           , DrawingCtxM m,   TraceM m u
           ) 
-       => t1 -> t2 -> ConnectorGraphic  u -> m ()
+       => t1 -> t2 -> ConnectorGraphic u -> m ()
 drawrc a b gf = let (p0,p1) = radialConnectorPoints a b 
                 in draw (connect gf p0 p1)
 
@@ -530,7 +530,7 @@ drawrci :: ( Real u, Floating u, PtSize u
            , CenterAnchor t2 u, RadialAnchor  t2 u
            , DrawingCtxM m,   TraceM m u
            ) 
-        => t1 -> t2 -> ConnectorImage u a -> m a
+        => t1 -> t2 -> ConnectorImage t u -> m (t u)
 drawrci a b gf = let (p0,p1) = radialConnectorPoints a b 
                  in drawci p0 p1 gf
 
@@ -539,5 +539,5 @@ drawrci_ :: ( Real u, Floating u, PtSize u
             , CenterAnchor t2 u, RadialAnchor  t2 u
             , DrawingCtxM m,   TraceM m u
             ) 
-         => t1 -> t2 -> ConnectorImage u a -> m ()
+         => t1 -> t2 -> ConnectorImage t u -> m ()
 drawrci_ a b gf = drawrci a b gf >> return ()

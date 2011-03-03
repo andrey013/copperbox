@@ -54,29 +54,30 @@ ptCnv :: (PtSize u0, PtSize u) => Point2 u0 -> Point2 u
 ptCnv = fmap (fromPsPoint . toPsPoint)
 
 
-converti :: (a -> b) -> Image u1 a -> Image u b
+converti :: (t u1 -> t u) -> Image t u1 -> Image t u
 converti fa img = 
     img >>= \a -> return $ imageAns (fa $ answer a) (imageOutput a)
 
-convertli :: (PtSize u0, PtSize u) => (a -> b) -> LocImage u0 a -> LocImage u b
+convertli :: (PtSize u0, PtSize u) 
+          => (t u0 -> t u) -> LocImage t u0 -> LocImage t u
 convertli fa img = 
     promoteR1 $ \pt -> converti fa (img `at` ptCnv pt)
 
 
 convertlti :: (PtSize u0, PtSize u) 
-           => (a -> b) -> LocThetaImage u0 a -> LocThetaImage u b
+           => (t u0 -> t u) -> LocThetaImage t u0 -> LocThetaImage t u
 convertlti fa img = 
     promoteR2 $ \pt ang -> converti fa $ atRot img (ptCnv pt) ang
 
 
 convertconn :: (PtSize u0, PtSize u) 
-            => (a -> b) -> ConnectorImage u0 a -> ConnectorImage u b
+            => (t u0 -> t u) -> ConnectorImage t u0 -> ConnectorImage t u
 convertconn fa img = 
     promoteR2 $ \p1 p2 -> converti fa $ connect img (ptCnv p1) (ptCnv p2)
 
 
 convertpti :: (PtSize u0, PtSize u) 
-           => (a -> b) -> PosThetaImage u0 a -> PosThetaImage u b
+           => (t u0 -> t u) -> PosThetaImage t u0 -> PosThetaImage t u
 convertpti fa img = promoteR3 $ \pt rpos ang -> 
                     converti fa $ apply3R3 img (ptCnv pt) rpos ang
 

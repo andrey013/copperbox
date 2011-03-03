@@ -55,7 +55,7 @@ import Data.VectorSpace
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
 --
-type AdvGraphic u      = LocImage u (Vec2 u)
+type AdvGraphic u      = LocImage Vec2 u
 
 type DAdvGraphic       = AdvGraphic Double
 
@@ -110,7 +110,10 @@ infixr 6 `advcat`
 infixr 5 `advsep`
 
 comb :: Monad m 
-     => (a -> b -> c) -> m (ImageAns u a) -> (a -> m (ImageAns u b)) -> m (ImageAns u c)
+     => (t u -> t u -> t u) 
+     -> m (ImageAns t u) 
+     -> (t u -> m (ImageAns t u)) 
+     -> m (ImageAns t u)
 comb h mf mg = mf >>= \a1 -> mg (answer a1) >>= \a2 -> 
    return $ imageAns (h (answer a1) (answer a2)) 
                      (imageOutput a1 `oplus` imageOutput a2)

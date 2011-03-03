@@ -89,7 +89,7 @@ import Control.Applicative
 -- Helper
 --
 graphicAns :: Primitive  -> GraphicAns u 
-graphicAns p = imageAns () p
+graphicAns p = imageAns (Const ()) p
 
 
 --------------------------------------------------------------------------------

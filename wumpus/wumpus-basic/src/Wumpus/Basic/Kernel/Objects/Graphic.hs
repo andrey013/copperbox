@@ -69,7 +69,7 @@ import Control.Applicative
 -- | Simple drawing - produce a primitive, access the DrawingContext
 -- as required, e.g for fill colour, stroke colur, line width, etc.
 --
-type Graphic u          = Image u ()
+type Graphic u          = Image (Const ()) u
 
 -- | Alias of 'Graphic' where the unit type is specialized to 
 -- Double. 
@@ -80,7 +80,7 @@ type DGraphic           = Graphic Double
 -- | /Originated/ drawing - produce a primitive respective to the 
 -- supplied start-point, access the DrawingContext as required.
 --
-type LocGraphic u       = LocImage u ()
+type LocGraphic u       = LocImage (Const ()) u
 
 -- | Alias of 'LocGraphic' where the unit type is specialized to 
 -- Double. 
@@ -93,7 +93,7 @@ type DLocGraphic        = LocGraphic Double
 -- | /Originated/ drawing - produce a primitive respective to the 
 -- supplied start-point, access the DrawingContext as required.
 --
-type LocThetaGraphic u       = LocThetaImage u ()
+type LocThetaGraphic u       = LocThetaImage (Const ()) u
 
 
 -- | Alias of 'LocThetaGraphic' where the unit type is specialized 
@@ -112,20 +112,20 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 -- Use this function to turn an 'Image' into a 'Graphic', a 
 -- 'LocImage into a 'LocGraphic'.
 --
-ignoreAns :: Functor f => f (ImageAns u a) -> f (ImageAns u ())
-ignoreAns = fmap (bimapImageAns (const ()) id)
+ignoreAns :: Functor f => f (ImageAns t u) -> f (ImageAns (Const ()) u)
+ignoreAns = fmap (bimapImageAns (const (Const ())) id)
 
 
 -- | Replace the answer produced by an 'Image', a 'LocImage' etc.
 --
-replaceAns :: Functor f => b -> f (ImageAns u a) -> f (ImageAns u b)
+replaceAns :: Functor f => (t1 u1) -> f (ImageAns t u) -> f (ImageAns t1 u1)
 replaceAns a = fmap (bimapImageAns (const a) id)
 
 
 -- | Apply the supplied function to the answer produced by an 
 -- 'Image', a 'LocImage' etc.
 --
-mapAns :: Functor f => (a -> b) -> f (ImageAns u a) -> f (ImageAns u b)
+mapAns :: Functor f => (t u -> t1 u1) -> f (ImageAns t u) -> f (ImageAns t1 u1)
 mapAns f = fmap (bimapImageAns f id)
 
 
@@ -134,7 +134,7 @@ mapAns f = fmap (bimapImageAns f id)
 -- Build an 'Image' from a context function ('CF') that generates 
 -- the answer and a 'Graphic' that draws the 'Image'.
 --
-intoImage :: CF a -> Graphic u -> Image u a
+intoImage :: CF (t u) -> Graphic u -> Image t u
 intoImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 
@@ -145,7 +145,7 @@ intoImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- The 'LocImage' is built as a function from an implicit start 
 -- point to the answer.
 --
-intoLocImage :: LocCF u a -> LocGraphic u -> LocImage u a
+intoLocImage :: LocCF u (t u) -> LocGraphic u -> LocImage t u
 intoLocImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 -- | 'intoLocThetaImage' : @ loc_theta_cf * loc_theta_graphic -> LocThetaImage @
@@ -155,7 +155,7 @@ intoLocImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- The 'LocThetaImage' is built as a function from an implicit 
 -- start point and angle of inclination to the answer.
 --
-intoLocThetaImage :: LocThetaCF u a -> LocThetaGraphic u -> LocThetaImage u a
+intoLocThetaImage :: LocThetaCF u (t u) -> LocThetaGraphic u -> LocThetaImage t u
 intoLocThetaImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 
@@ -172,7 +172,7 @@ intoLocThetaImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- 
 emptyLocGraphic :: PtSize u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                    return $ imageAns () (zostroke $ emptyPath pt)
+                    return $ imageAns (Const ()) (zostroke $ emptyPath pt)
 
 
 
@@ -198,12 +198,12 @@ emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 -- Note - this function has a very general type signature and
 -- supports various graphic types:
 --
--- > decorate :: Image u a -> Graphic u -> Image u a
--- > decorate :: LocImage u a -> LocGraphic u -> LocImage u a
--- > decorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+-- > decorate :: Image t u -> Graphic u -> Image t u
+-- > decorate :: LocImage t u -> LocGraphic u -> LocImage t u
+-- > decorate :: LocThetaImage t u -> LocThetaGraphic u -> LocTheteImage t u
 --
 decorate :: Monad m 
-         => m (ImageAns u a) -> m (ImageAns u zz) -> m (ImageAns u a) 
+         => m (ImageAns t u) -> m (ImageAns t u0) -> m (ImageAns t u) 
 decorate img gf = 
     img >>= \a1 -> gf >>= \a2 -> 
     return $ imageAns (answer a1) (imageOutput a1 `oplus` imageOutput a2)
@@ -218,12 +218,12 @@ decorate img gf =
 -- Again, this function has a very general type signature and
 -- supports various graphic types:
 --
--- > annotate :: Image u a -> (a -> Graphic u) -> Image u a
--- > annotate :: LocImage u a -> (a -> LocGraphic u) -> LocImage u a
--- > annotate :: LocThetaImage u a -> (a -> LocThetaGraphic u) -> LocTheteImage u a
+-- > annotate :: Image t u -> ((t u) -> Graphic u) -> Image t u
+-- > annotate :: LocImage t u -> ((t u) -> LocGraphic u) -> LocImage t u
+-- > annotate :: LocThetaImage t u -> ((t u) -> LocThetaGraphic u) -> LocTheteImage t u
 --
 annotate :: Monad m 
-         => m (ImageAns u a) -> (a -> m (ImageAns u zz)) -> m (ImageAns u a)
+         => m (ImageAns t u) -> ((t u) -> m (ImageAns t0 u0)) -> m (ImageAns t u)
 annotate img f = 
     img >>= \a1 -> f (answer a1) >>= \a2 -> 
     return $ imageAns (answer a1) (imageOutput a1 `oplus` imageOutput a2)
@@ -241,6 +241,6 @@ annotate img f =
 -- > hyperlink :: XLink -> LocImage u a -> LocImage u a
 -- > hyperlink :: XLink -> LocThetaImage u a -> LocThetaImage u a
 --
-hyperlink :: Functor m => XLink -> m (ImageAns u a) -> m (ImageAns u a)
+hyperlink :: Functor m => XLink -> m (ImageAns t u) -> m (ImageAns t u)
 hyperlink hypl = fmap (bimapImageAns id (xlink hypl))
 

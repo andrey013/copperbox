@@ -28,6 +28,10 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceL
   , replaceR
 
+
+  -- * /Contextual/ unit size
+  , CxSize(..)
+
   -- * Alignment
   , HAlign(..)
   , VAlign(..)  
@@ -45,6 +49,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.VectorSpace                         -- package: vector-space
+
+import Control.Applicative
+
 
 infixr 6 `oplus`
 
@@ -95,6 +102,10 @@ altconcat alt []     = alt
 
 instance OPlus () where
   _ `oplus` _ = ()
+
+
+instance OPlus a => OPlus (Const a b) where
+  Const a0 `oplus` Const a1 = Const $ a0 `oplus` a1 
 
 instance OPlus (UNil u) where
   _ `oplus` _ = uNil
@@ -161,6 +172,16 @@ replaceL = bimapL . const
 replaceR :: Bimap f => q -> f a b -> f a q
 replaceR = bimapR . const
 
+--------------------------------------------------------------------------------
+
+class CxSize u where
+  cxsize :: PtSize u1 => FontSize -> u -> u1
+
+instance CxSize Double where
+  cxsize _ = (fromPsPoint . toPsPoint)  
+
+instance CxSize Centimeter where
+  cxsize _ = (fromPsPoint . toPsPoint)  
 
 --------------------------------------------------------------------------------
 

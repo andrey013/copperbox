@@ -71,13 +71,13 @@ type DConnectorGraphic          = ConnectorGraphic Double
 -- @atstart@ etc. or the end directions and tangents can be taken 
 -- on it.
 --
-type ConnectorImage u a = ConnectorCF u (ImageAns u a)
+type ConnectorImage t u = ConnectorCF u (ImageAns t u) 
 
 
 -- | Alias of 'ConnectorImage' where the unit type is 
 -- specialized to Double. 
 --
-type DConnectorImage a  = ConnectorImage Double a
+type DConnectorImage t  = ConnectorImage t Double
 
 
 
@@ -88,8 +88,8 @@ type DConnectorImage a  = ConnectorImage Double a
 -- The 'ConnectorImage' is built as a function from an implicit 
 -- start and end points to the answer.
 --
-intoConnectorImage :: ConnectorCF u a -> ConnectorGraphic u 
-                   -> ConnectorImage u a
+intoConnectorImage :: ConnectorCF u (t u) -> ConnectorGraphic u 
+                   -> ConnectorImage t u
 intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 

@@ -60,6 +60,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
+import Control.Applicative
+
 -- | Datatype enumerating positions within a rectangle that can be
 -- derived for a 'PosGraphic'.  
 --
@@ -98,17 +100,17 @@ data ObjectPos u = ObjectPos
 
 -- | A positionable Image.
 --
-type PosImage u a = CF2 (Point2 u) RectPosition (ImageAns u a)
+type PosImage t u = CF2 (Point2 u) RectPosition (ImageAns t u)
     
 -- | Version of PosImage specialized to Double for the unit type.
 --
-type DPosImage a = PosImage Double a
+type DPosImage t = PosImage t Double
 
 
 
 -- | A positionable Graphic.
 --
-type PosGraphic u = PosImage u () 
+type PosGraphic u = PosImage (Const ()) u 
     
 -- | Version of PosGraphic specialized to Double for the unit type.
 --
@@ -123,11 +125,11 @@ type DPosGraphic = PosGraphic Double
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-type PosThetaImage u a = CF3 (Point2 u) RectPosition Radian (ImageAns u a)
+type PosThetaImage t u = CF3 (Point2 u) RectPosition Radian (ImageAns t u)
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --
-type DPosThetaImage a = PosThetaImage Double a
+type DPosThetaImage t = PosThetaImage t Double
 
 
 
@@ -138,7 +140,7 @@ type DPosThetaImage a = PosThetaImage Double a
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-type PosThetaGraphic u = PosThetaImage u (UNil u) 
+type PosThetaGraphic u = PosThetaImage (Const ()) u
     
 -- | Version of PosThetaGraphic specialized to Double for the unit type.
 --
@@ -194,7 +196,7 @@ halfDists (ObjectPos xmin xmaj ymin ymaj) =
 -- draws it.
 --
 makePosImage :: Fractional u 
-             => ObjectPos u -> LocImage u a -> PosImage u a
+             => ObjectPos u -> LocImage t u -> PosImage t u
 makePosImage opos gf = promoteR2 $ \start rpos -> 
     let v1 = startVector rpos opos in gf `at` displaceVec v1 start
 
@@ -207,7 +209,7 @@ makePosImage opos gf = promoteR2 $ \start rpos ->
 -- that draws it at some angle of inclination.
 --
 makePosThetaImage :: Fractional u 
-             => ObjectPos u -> LocThetaImage u a -> PosThetaImage u a
+             => ObjectPos u -> LocThetaImage t u -> PosThetaImage t u
 makePosThetaImage opos gf = promoteR3 $ \start rpos theta -> 
     let v1 = startVector rpos opos 
     in atRot gf (displaceVec v1 start) theta
@@ -222,7 +224,7 @@ infixr 1 `startPos`
 -- with a 'RectPosition' (start position).
 --  
 startPos :: Floating u 
-         => PosImage u a -> RectPosition -> LocImage u a
+         => PosImage t u -> RectPosition -> LocImage t u
 startPos = apply1R2
  
 -- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
@@ -231,7 +233,7 @@ startPos = apply1R2
 -- with an initial point and a 'RectPosition' (start position).
 --  
 atStartPos ::  Floating u 
-           => PosImage u a -> Point2 u -> RectPosition -> Image u a
+           => PosImage t u -> Point2 u -> RectPosition -> Image t u
 atStartPos = apply2R2
 
 -- | The vector from some Rectangle position to the start point.

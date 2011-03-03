@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -48,6 +49,8 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Applicative
+
 --------------------------------------------------------------------------------
 -- DrawingInfo
 
@@ -85,67 +88,65 @@ type LocThetaDrawingInfo u a    = LocThetaCF u a
 --
 -- Note a PrimGraphic cannot be empty.
 -- 
-newtype ImageAns u a            = ImageAns { getImageAns :: (a, Primitive) }
+newtype ImageAns t u            = ImageAns { getImageAns :: (t u, Primitive) }
 
-type GraphicAns u                = ImageAns u ()
+type GraphicAns u               = ImageAns (Const ()) u
 
 
 -- | Draw a PrimGraphic repsective to the 'DrawingContext' and 
 -- return some answer @a@.
 -- 
-type Image u a                  = CF (ImageAns u a)
+type Image t u                  = CF (ImageAns t u)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and 
 -- the supplied point, return some answer @a@.
 -- 
-type LocImage u a               = LocCF u (ImageAns u a)
+type LocImage t u               = LocCF u (ImageAns t u)
 
 
 -- | Draw a PrimGraphic respective to the 'DrawingContext' and
 -- the supplied point and angle.
 -- 
-type LocThetaImage u a          = LocThetaCF u (ImageAns u a)
+type LocThetaImage t u          = LocThetaCF u (ImageAns t u)
 
 
-imageAns :: a -> Primitive -> ImageAns u a
+imageAns :: t u -> Primitive -> ImageAns t u
 imageAns a b = ImageAns (a,b)
 
 
-answer :: ImageAns u a -> a
+answer :: ImageAns t u -> t u
 answer = fst . getImageAns
 
-imageOutput :: ImageAns u a -> Primitive
+imageOutput :: ImageAns t u -> Primitive
 imageOutput = snd . getImageAns
 
 
 
 -- helper u is a phantom for ImageAns so it is not a Bifunctor
 
-bimapImageAns :: (a -> b) -> (Primitive -> Primitive) 
-              -> ImageAns u a -> ImageAns u b
+bimapImageAns :: (t a -> t1 b) -> (Primitive -> Primitive) 
+              -> ImageAns t a -> ImageAns t1 b
 bimapImageAns f g = ImageAns . bimap f g . getImageAns
 
 
-instance OPlus a => OPlus (ImageAns u a) where
+instance OPlus (t u) => OPlus (ImageAns t u) where
   ImageAns (a,p1) `oplus` ImageAns (b,p2) = 
       ImageAns (a `oplus` b, p1 `oplus` p2)
 
 --------------------------------------------------------------------------------
 -- Affine instances
 
-instance (Real u, Floating u, PtSize u, Rotate a) => 
-    Rotate (ImageAns u a) where
+instance Rotate (t u) => Rotate (ImageAns t u) where
   rotate ang = bimapImageAns (rotate ang) (rotate ang)
 
-instance (Real u, Floating u, PtSize u, RotateAbout a) => 
-    RotateAbout (ImageAns u a) where
+instance RotateAbout (t u) => RotateAbout (ImageAns t u) where
   rotateAbout ang pt = bimapImageAns (rotateAbout ang pt) (rotateAbout ang pt)
 
-instance (Num u, PtSize u, Scale a) => Scale (ImageAns u a) where
+instance Scale (t u) => Scale (ImageAns t u) where
   scale sx sy = bimapImageAns (scale sx sy) (scale sx sy)
 
-instance (Num u, PtSize u, Translate a) => Translate (ImageAns u a) where
+instance Translate (t u) => Translate (ImageAns t u) where
   translate dx dy = bimapImageAns (translate dx dy) (translate dx dy)
 
 
@@ -159,21 +160,19 @@ instance (Num u, PtSize u, Translate a) => Translate (ImageAns u a) where
 -- instances.
 --
 
-instance (Real u, Floating u, PtSize u, Rotate a) => 
-    Rotate (Image u a) where
+instance Rotate (t u) => Rotate (Image t u) where
   rotate ang = fmap (rotate ang)
 
 
-instance (Real u, Floating u, PtSize u, RotateAbout a) => 
-    RotateAbout (Image u a) where
+instance RotateAbout (t u) => RotateAbout (Image t u) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 
 
-instance (Num u, PtSize u, Scale a) => Scale (Image u a) where
+instance Scale (t u) => Scale (Image t u) where
   scale sx sy = fmap (scale sx sy)
 
 
-instance (Num u, PtSize u, Translate a) => Translate (Image u a) where
+instance Translate (t u) => Translate (Image t u) where
   translate dx dy = fmap (translate dx dy)
 
 
@@ -185,20 +184,18 @@ instance (Num u, PtSize u, Translate a) => Translate (Image u a) where
 -- point be transformed as well.
 --
 
-instance (Real u, Floating u, PtSize u, Rotate a) => 
-    Rotate (LocImage u a) where
+instance Rotate (t u) => Rotate (LocImage t u) where
   rotate ang = fmap (rotate ang)
 
-instance (Real u, Floating u, PtSize u, RotateAbout a) => 
-    RotateAbout (LocImage u a) where
+instance RotateAbout (t u) => RotateAbout (LocImage t u) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 
 
-instance (Num u, Scale a, PtSize u) => Scale (LocImage u a) where
+instance Scale (t u) => Scale (LocImage t u) where
   scale sx sy = fmap (scale sx sy)
 
 
-instance (Num u, Translate a, PtSize u) => Translate (LocImage u a) where
+instance Translate (t u) => Translate (LocImage t u) where
   translate dx dy = fmap (translate dx dy)
 
 --------------------------------------------------------------------------------

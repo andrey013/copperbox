@@ -126,6 +126,19 @@ type ThetaPointDisplace u = Radian -> PointDisplace u
 moveStart :: PointDisplace u -> LocCF u a -> LocCF u a
 moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
 
+{-
+
+-- Need to be able to convert an ImageAns via a typeclass...
+
+-- | Move the start-point of a 'LocCF' with the supplied 
+-- displacement function.
+--
+moveStart' :: CxSize u0 => PointDisplace u0 -> LocCF u0 a -> LocCF u a
+moveStart' f ma = promoteR1 $ \pt -> getFontSize >>= \sz ->
+    let v0 = pvec zeroPt (f zeroPt)
+        vu = fmap (cxsize sz) v0 
+    in apply1R1 (convertli ma) (pt .+^ vu)
+-}
 
 
 -- | Move the start-point of a 'LocThetaCF' with the supplied 
