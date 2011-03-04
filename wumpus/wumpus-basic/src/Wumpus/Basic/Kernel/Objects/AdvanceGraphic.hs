@@ -1,11 +1,9 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.AdvanceGraphic
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -86,7 +84,7 @@ intoAdvGraphic = intoLocImage
 -- @Wumpus-Core@ and is not drawn, the answer vetor generated is
 -- the empty vector @(V2 0 0)@.
 -- 
-emptyAdvGraphic :: PtSize u => AdvGraphic u
+emptyAdvGraphic :: CxSize u => AdvGraphic u
 emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 
 
@@ -138,7 +136,7 @@ advsep sv af ag = promoteR1 $ \start ->
 
 -- | Concatenate the list of AdvGraphic with 'advcat'.
 --
-advconcat :: PtSize u => [AdvGraphic u] -> AdvGraphic u
+advconcat :: CxSize u => [AdvGraphic u] -> AdvGraphic u
 advconcat []     = emptyAdvGraphic
 advconcat (x:xs) = step x xs
   where
@@ -148,7 +146,7 @@ advconcat (x:xs) = step x xs
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advspace :: PtSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
+advspace :: CxSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
 advspace _  []     = emptyAdvGraphic
 advspace sv (x:xs) = step x xs
   where
@@ -158,7 +156,7 @@ advspace sv (x:xs) = step x xs
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advpunctuate :: PtSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+advpunctuate :: CxSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
 advpunctuate _  []     = emptyAdvGraphic
 advpunctuate sep (x:xs) = step x xs
   where

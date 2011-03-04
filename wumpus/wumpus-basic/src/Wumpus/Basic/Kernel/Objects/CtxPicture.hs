@@ -496,7 +496,7 @@ cxpColumnSep n = foldl' (cxpDownSep n)
 --------------------------------------------------------------------------------
 -- Aligning pictures
 
-alignMove :: PtSize u => Point2 u -> Point2 u -> Picture -> Picture
+alignMove :: DPoint2 -> DPoint2 -> Picture -> Picture
 alignMove p1 p2 pic = pic `picMoveBy` (p1 .-. p2)
 
 
@@ -527,8 +527,7 @@ cxpAlignV VRight   = megaCombR boundarySE boundaryNE  alignMove
 
 
 
-alignMove2 :: (Num u, Ord u, PtSize u) 
-           => Vec2 u ->  Point2 u -> Point2 u -> Picture -> Picture
+alignMove2 :: DVec2 -> DPoint2 -> DPoint2 -> Picture -> Picture
 alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 
 
@@ -538,8 +537,7 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 -- Spacing version of 'cxpAlignH' - move @b@ to the right of @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-cxpAlignSepH :: (Fractional u, Ord u, PtSize u) 
-             => HAlign -> u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpAlignSepH :: HAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSepH align dx = go align mv
   where
     mv         = alignMove2 $ hvec $ psDouble dx
@@ -553,8 +551,7 @@ cxpAlignSepH align dx = go align mv
 -- Spacing version of alignV - move @b@ below @a@ 
 -- separated by @sep@ units, align @b@ according to @align@.
 -- 
-cxpAlignSepV :: (Fractional u, Ord u, PtSize u) 
-             => VAlign -> u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpAlignSepV :: VAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSepV align dy = go align mv
   where
     mv         = alignMove2 $ vvec $ psDouble (-dy)
@@ -580,17 +577,14 @@ cxpAlignColumn va = foldl' (cxpAlignV va)
 -- | Variant of 'cxpRow' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-cxpAlignRowSep :: (Real u, Floating u, PtSize u) 
-               => HAlign -> u -> CtxPicture -> [CtxPicture] -> CtxPicture
+cxpAlignRowSep :: HAlign -> Double -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpAlignRowSep ha n = foldl' (cxpAlignSepH ha n)
 
 
 -- | Variant of 'cxpColumn' that aligns the pictures as well as
 -- concatenating and spacing them.
 --
-cxpAlignColumnSep :: (Real u, Floating u, PtSize u) 
-                    => VAlign -> u -> CtxPicture -> [CtxPicture] 
-                    -> CtxPicture
+cxpAlignColumnSep :: VAlign -> Double -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpAlignColumnSep va n = foldl' (cxpAlignSepV va n) 
 
 

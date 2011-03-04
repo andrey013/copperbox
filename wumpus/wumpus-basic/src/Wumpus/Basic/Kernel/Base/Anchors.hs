@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.Anchors
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>

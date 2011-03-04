@@ -31,8 +31,8 @@ module Wumpus.Basic.Kernel.Objects.UnitConvert
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Connector

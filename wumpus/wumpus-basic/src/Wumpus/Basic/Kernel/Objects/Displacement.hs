@@ -26,6 +26,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
   , moveStart
+  , moveStart'
   , moveStartTheta
   , moveStartThetaPoint
   , moveStartThetaAngle

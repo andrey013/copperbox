@@ -56,6 +56,7 @@ module Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -113,7 +114,7 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 -- 'LocImage into a 'LocGraphic'.
 --
 ignoreAns :: Functor f => f (ImageAns t u) -> f (ImageAns (Const ()) u)
-ignoreAns = fmap (bimapImageAns (const (Const ())) id)
+ignoreAns = fmap (bimapImageAns (const noAns) id)
 
 
 -- | Replace the answer produced by an 'Image', a 'LocImage' etc.
@@ -170,9 +171,10 @@ intoLocThetaImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocGraphic :: PtSize u => LocGraphic u
+emptyLocGraphic :: CxSize u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                    return $ imageAns (Const ()) (zostroke $ emptyPath pt)
+                    ctxSizeF pt >>= \pt1 -> 
+                    return $ imageAns noAns (zostroke $ emptyPath pt1)
 
 
 
@@ -185,7 +187,7 @@ emptyLocGraphic = promoteR1 $ \pt ->
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocThetaGraphic :: PtSize u => LocThetaGraphic u
+emptyLocThetaGraphic :: CxSize u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 

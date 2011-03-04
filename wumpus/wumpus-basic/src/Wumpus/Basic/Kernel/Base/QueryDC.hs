@@ -21,8 +21,9 @@
 module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
-    
-    textAttr
+    ctxSize 
+  , ctxSizeF
+  , textAttr
   , withTextAttr
 
   , strokeAttr
@@ -60,6 +61,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
 
   ) where
 
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontMetrics
 
@@ -67,6 +69,15 @@ import Wumpus.Core                              -- package: wumpus-core
 import qualified Wumpus.Core.FontSize   as FS
  
 import Control.Applicative
+
+
+
+ctxSize :: (DrawingCtxM m, CxSize u) => u -> m Double
+ctxSize u = (\sz -> cfSize sz u) <$> query dc_font_size
+
+ctxSizeF :: (Functor t, DrawingCtxM m, CxSize u) => t u -> m (t Double)
+ctxSizeF obj = (\sz -> fmap (cfSize sz) obj) <$> query dc_font_size
+
 
 
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)

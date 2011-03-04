@@ -34,6 +34,8 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
   , LocImage
   , LocThetaImage
 
+  , noAns
+
   , imageAns
   , getImageAns
   , answer
@@ -47,7 +49,6 @@ module Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.CtxUnits
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -112,6 +113,9 @@ type LocImage t u               = LocCF u (ImageAns t u)
 -- 
 type LocThetaImage t u          = LocThetaCF u (ImageAns t u)
 
+
+noAns :: Const () u
+noAns = Const ()
 
 imageAns :: t u -> Primitive -> ImageAns t u
 imageAns a b = ImageAns (a,b)

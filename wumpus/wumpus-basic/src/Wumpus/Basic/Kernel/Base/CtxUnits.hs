@@ -18,31 +18,17 @@
 module Wumpus.Basic.Kernel.Base.CtxUnits
   (
 
-  -- * /Contextual/ unit size
-    CxSize(..)
 
-  , Em
+    Em
   , En
 
   ) where
 
 
-import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Basic.Kernel.Base.BaseDefs
+
 
 --------------------------------------------------------------------------------
-
-class Num u => CxSize u where
-  cfSize :: FontSize -> u -> Double
-  csSize :: FontSize -> Double -> u
-
-instance CxSize Double where
-  cfSize _ = id  
-  csSize _ = id
-
-
-instance CxSize Centimeter where
-  cfSize _ = psDouble  
-  csSize _ = dpoint
 
 
 

@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Objects.Connector
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -102,7 +102,7 @@ intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- bounding box around the rectangular hull of the start and end 
 -- points.
 -- 
-emptyConnectorGraphic :: PtSize u => ConnectorGraphic u 
+emptyConnectorGraphic :: CxSize u => ConnectorGraphic u 
 emptyConnectorGraphic = promoteR2 $ \start end -> 
     let a = emptyLocGraphic `at` start
         b = emptyLocGraphic `at` end

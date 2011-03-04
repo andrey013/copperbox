@@ -113,7 +113,7 @@ centerOrthoBBox theta bb =
 -- the minimum bounding box with both the bottom-left and 
 -- upper-right corners at the implicit start point.
 --
-emptyBoundedLocGraphic :: PtSize u => BoundedLocGraphic u
+emptyBoundedLocGraphic :: CxSize u => BoundedLocGraphic u
 emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
     fn = promoteR1 $ \pt -> pure (BBox pt pt)
@@ -129,7 +129,7 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
 -- upper-right corners at the implicit start point (the implicit 
 -- inclination can be ignored).
 --
-emptyBoundedLocThetaGraphic :: PtSize u => BoundedLocThetaGraphic u
+emptyBoundedLocThetaGraphic :: CxSize u => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 --------------------------------------------------------------------------------
@@ -137,25 +137,25 @@ emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 -- This is a common pattern so needs a name...
 
-illustrateBoundedGraphic :: (Fractional u, PtSize u) 
+illustrateBoundedGraphic :: (Fractional u, CxSize u) 
                          => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedGraphic mf = annotate mf bbrectangle
 
 
-illustrateBoundedLocGraphic :: (Fractional u, PtSize u) 
+illustrateBoundedLocGraphic :: (Fractional u, CxSize u) 
                             => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLocGraphic mf = 
     promoteR1 $ \pt -> illustrateBoundedGraphic $ apply1R1 mf pt
 
 
-illustrateBoundedLocThetaGraphic :: (Fractional u, PtSize u)
+illustrateBoundedLocThetaGraphic :: (Fractional u, CxSize u)
     => BoundedLocThetaGraphic u -> BoundedLocThetaGraphic u
 illustrateBoundedLocThetaGraphic mf = 
     promoteR2 $ \pt theta-> illustrateBoundedGraphic $ apply2R2 mf pt theta
 
 
 -- 
-bbrectangle :: (Fractional u, PtSize u) => BoundingBox u -> Graphic u
+bbrectangle :: (Fractional u, CxSize u) => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphic `at` p1
     | otherwise                = 

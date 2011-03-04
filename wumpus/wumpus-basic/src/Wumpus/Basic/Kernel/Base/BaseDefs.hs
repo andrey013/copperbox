@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernal.Base.BaseDefs
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -28,6 +28,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceL
   , replaceR
 
+  -- * /Contextual/ unit size
+  , CxSize(..)
 
 
   -- * Alignment
@@ -105,8 +107,6 @@ instance OPlus () where
 instance OPlus a => OPlus (Const a b) where
   Const a0 `oplus` Const a1 = Const $ a0 `oplus` a1 
 
-instance OPlus (UNil u) where
-  _ `oplus` _ = uNil
 
 instance Ord u => OPlus (BoundingBox u) where
   oplus = boundaryUnion
@@ -169,6 +169,23 @@ replaceL = bimapL . const
 
 replaceR :: Bimap f => q -> f a b -> f a q
 replaceR = bimapR . const
+
+
+--------------------------------------------------------------------------------
+-- Contextual size
+
+class Num u => CxSize u where
+  cfSize :: FontSize -> u -> Double
+  csSize :: FontSize -> Double -> u
+
+instance CxSize Double where
+  cfSize _ = id  
+  csSize _ = id
+
+
+instance CxSize Centimeter where
+  cfSize _ = psDouble  
+  csSize _ = dpoint
 
 
 

@@ -126,7 +126,6 @@ library
     Wumpus.Core.AffineTrans,
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
-    Wumpus.Core.DSpecial,
     Wumpus.Core.FontSize,
     Wumpus.Core.Geometry,
     Wumpus.Core.GraphicProps,

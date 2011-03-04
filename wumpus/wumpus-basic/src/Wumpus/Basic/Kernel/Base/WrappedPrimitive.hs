@@ -3,14 +3,14 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Basic.Kernel.Base.WrappedPrimitive
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Two /warpped/ versions of the Primitive type from Wumpus-Core.
+-- Listified version of the Primitive type from Wumpus-Core.
 --
 --------------------------------------------------------------------------------
 
