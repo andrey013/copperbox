@@ -26,7 +26,6 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
   , moveStart
-  , moveStart'
   , moveStartTheta
   , moveStartThetaPoint
   , moveStartThetaAngle
@@ -78,9 +77,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
@@ -132,6 +129,9 @@ moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
 
 
 
+{-
+-- UPDATE - This might not be necessary...
+
 -- Need to be able to convert an ImageAns via a typeclass...
 
 -- | Move the start-point of a 'LocCF' with the supplied 
@@ -144,7 +144,7 @@ moveStart' f ma = promoteR1 $ \pt -> getFontSize >>= \sz ->
         v1::Vec2 u    = fmap (dpoint . cfSize sz) v0
         p0::Point2 u0 = fmap (csSize sz . psDouble) $ pt .+^ v1
     in cxConverti sz $ ma `at` p0 
-
+-}
 
 
 -- | Move the start-point of a 'LocThetaCF' with the supplied 

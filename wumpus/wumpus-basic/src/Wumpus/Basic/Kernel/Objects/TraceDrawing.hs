@@ -43,8 +43,6 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , liftToPictureMb
   , mbPictureU
  
---  , convertTraceDrawing
---  , convertTraceDrawingT
 
   , runQuery
 
@@ -79,7 +77,6 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
@@ -87,7 +84,6 @@ import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Graphic
-import Wumpus.Basic.Kernel.Objects.UnitConvert
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -299,21 +295,6 @@ mbPictureU (Just a) = a
 -- type or initial drawing context.
 
 
-
-{-
--- Conversion is up in the air...
-convertTraceDrawing :: ConvertAlg a u1 b u 
-                    -> TraceDrawing u1 a -> TraceDrawing u b
-convertTraceDrawing (ConvertAlg _ f2 f3) mf = TraceDrawing $ \ctx -> 
-    bimap f3 (fmap f2) $ getTraceDrawing mf ctx
-
-
-convertTraceDrawingT :: Monad m 
-                     => ConvertAlg a u1 b u
-                     -> TraceDrawingT u1 m a -> TraceDrawingT u m b
-convertTraceDrawingT (ConvertAlg _ f2 f3) mf = TraceDrawingT $ \ctx -> 
-    liftM (bimap f3 (fmap f2)) $ getTraceDrawingT mf ctx
--}
 
 --------------------------------------------------------------------------------
 

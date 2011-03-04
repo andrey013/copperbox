@@ -31,6 +31,8 @@ module Wumpus.Basic.Geometry.Paths
   ) 
   where
 
+import Wumpus.Basic.Kernel
+
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
@@ -51,11 +53,13 @@ type LocCoordPath u = Point2 u -> [Point2 u]
 -- The Path data type will also need a similar function...
 --
  
-coordinatePrimPath :: PtSize u => Point2 u -> LocCoordPath u -> PrimPath
-coordinatePrimPath pt fn = go (fn pt)
+coordinatePrimPath :: CxSize u 
+                   => Point2 u -> LocCoordPath u -> DrawingInfo PrimPath
+coordinatePrimPath pt fn = 
+    ctxSizeF pt >>= \pt1 -> go pt1 (fn pt)
   where
-    go ps@(_:_) = vertexPath ps
-    go []       = emptyPath pt        -- fallback
+    go p0 []       = return $ emptyPath p0        -- fallback
+    go _  ps       = mapM ctxSizeF  ps >>= return . vertexPath
 
 
 -- NOTE - These functions need changing to generate LocCoordPaths...

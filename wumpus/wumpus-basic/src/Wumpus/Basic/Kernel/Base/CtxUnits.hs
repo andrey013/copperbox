@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
@@ -20,13 +21,16 @@ module Wumpus.Basic.Kernel.Base.CtxUnits
 
 
     Em
+  , UEm(..)
   , En
+  , UEn(..)
 
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 
+import Wumpus.Core                              -- package: wumpus-core
 
 --------------------------------------------------------------------------------
 
@@ -43,9 +47,11 @@ instance Show Em where
 
 instance CxSize Em where
   cfSize sz a = fromIntegral sz * realToFrac a
-  csSize sz d = fromIntegral sz * realToFrac d
+  csSize sz d = realToFrac d / fromIntegral sz
 
+data UEm = UEm
 
+instance Unit UEm Em
 
 
 -- | Wrapped Double representing an En.
@@ -57,15 +63,12 @@ instance Show En where
   showsPrec p d = showsPrec p (getEn d)
 
 
-
 instance CxSize En where
   cfSize sz a = (realToFrac  a) * 0.5 * fromIntegral sz
   csSize sz d = 2 * (realToFrac d) / (fromIntegral sz)
 
-{-
--- 1 en at 1pt == 0.5
-instance PtSize En where
-  fromPsPoint a = En $ realToFrac $ a * 2
-  toPsPoint a   = realToFrac $ a / 2
 
--}
+data UEn = UEn
+
+instance Unit UEn En
+

@@ -111,6 +111,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/AltUnits.hs,
   demo/FontDeltaPic.hs,
   demo/SimpleAdvGraphic.hs,
   demo/SimplePosImage.hs

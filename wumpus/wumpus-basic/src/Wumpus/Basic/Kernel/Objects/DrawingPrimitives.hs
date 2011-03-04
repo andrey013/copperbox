@@ -135,7 +135,7 @@ emptyLocPath = locPath []
 -- drawing properties (colour, line width, etc.) are taken from 
 -- the implicit 'DrawingContext'.
 --
-openStroke :: Num u => PrimPath -> Graphic u
+openStroke :: PrimPath -> Graphic u
 openStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicAns $ ostroke rgb attr pp
 
@@ -146,7 +146,7 @@ openStroke pp =
 -- drawing properties (colour, line width, etc.) are taken from 
 -- the implicit 'DrawingContext'.
 --
-closedStroke :: Num u => PrimPath -> Graphic u
+closedStroke :: PrimPath -> Graphic u
 closedStroke pp = 
     withStrokeAttr $ \rgb attr -> graphicAns $ cstroke rgb attr pp
 
@@ -157,7 +157,7 @@ closedStroke pp =
 -- fill colour is taken from the implicit 'DrawingContext'.
 --
 --
-filledPath :: Num u => PrimPath -> Graphic u
+filledPath :: PrimPath -> Graphic u
 filledPath pp = withFillAttr $ \rgb -> graphicAns $ fill rgb pp
                  
 
@@ -168,7 +168,7 @@ filledPath pp = withFillAttr $ \rgb -> graphicAns $ fill rgb pp
 -- etc.) are taken from the implicit 'DrawingContext'.
 --
 --
-borderedPath :: Num u => PrimPath -> Graphic u
+borderedPath :: PrimPath -> Graphic u
 borderedPath pp =
     withBorderedAttr $ \frgb attr srgb -> 
       graphicAns $ fillStroke frgb attr srgb pp
