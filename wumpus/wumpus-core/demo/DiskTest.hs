@@ -20,8 +20,8 @@ main = do
 
 pic1 :: Picture
 pic1 = frame  
-          [ ztextlabel "Disk"  (dP2 0 0)
-          , zellipse 5 5 (dP2 50 5)
-          , ztextlabel "should not have a matrix trafo in the SVG." (dP2 68 0)
+          [ ztextlabel "Disk"  (P2 0 0)
+          , zellipse 5 5       (P2 50 5)
+          , ztextlabel "should not have a matrix trafo in the SVG." (P2 68 0)
           ]
 

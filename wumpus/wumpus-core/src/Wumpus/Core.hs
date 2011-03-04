@@ -38,7 +38,6 @@ module Wumpus.Core
     module Wumpus.Core.AffineTrans 
   , module Wumpus.Core.BoundingBox
   , module Wumpus.Core.Colour
-  , module Wumpus.Core.DSpecial
   , module Wumpus.Core.FontSize
   , module Wumpus.Core.Geometry
   , module Wumpus.Core.GraphicProps
@@ -57,8 +56,6 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour hiding 
     ( black, white, red, green, blue, yellow, cyan, magenta )
-
-import Wumpus.Core.DSpecial
 
 import Wumpus.Core.FontSize hiding 
     ( charWidth, textWidth, capHeight, xcharHeight, totalCharHeight

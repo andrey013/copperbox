@@ -41,16 +41,16 @@ pic3 = frame [ symbolLabelH uUpsilon (P2 0 0) ]
 -- @i@ and @v@ is smaller than the norm.
 --
 universal ::[KerningChar]
-universal = [ dkernchar     0  'u'
-            , dkernchar    15  'n'
-            , dkernchar    15  'i'
-            , dkernchar    10  'v'
-            , dkernchar    15  'e'
-            , dkernchar    15  'r'
-            , dkernchar    13  's'
-            , dkernchar    15  'a'
-            , dkernchar    15  'l'
-            , dkernEscName 10  "currency"
+universal = [ kernchar     0  'u'
+            , kernchar    15  'n'
+            , kernchar    15  'i'
+            , kernchar    10  'v'
+            , kernchar    15  'e'
+            , kernchar    15  'r'
+            , kernchar    13  's'
+            , kernchar    15  'a'
+            , kernchar    15  'l'
+            , kernEscName 10  "currency"
             ]
 
 -- Note - this may not work in SVG, some renderers are intolerant 
@@ -59,7 +59,7 @@ universal = [ dkernchar     0  'u'
 -- 0o241 is upper-case upsilon in the Symbol encoding vector.
 -- 
 uUpsilon :: [KerningChar]
-uUpsilon = [ dkernEscInt 6 0o241, dkernchar 12 'a', dkernchar 12 'b' ] 
+uUpsilon = [ kernEscInt 6 0o241, kernchar 12 'a', kernchar 12 'b' ] 
 
 helveticaLabelH :: [KerningChar] -> DPoint2 -> Primitive
 helveticaLabelH xs pt = hkernlabel black helvetica18 xs pt

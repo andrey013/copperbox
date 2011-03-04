@@ -49,8 +49,8 @@ pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
      ell  = mkRedEllipse (rotateAbout ang pto) 20 10 pt
      cb   = rotateAbout ang pto $ crossbar 20 10 pt
-     pt   = dP2 70 10
-     pto  = dP2 60 0
+     pt   = P2 70 10
+     pto  = P2 60 0 `asTypeOf` dpt
      ang  = d2r (30::Double)
 
 
@@ -87,10 +87,13 @@ crossbar rx ry ctr =
 
 xy_frame :: String -> Picture
 xy_frame ss = 
-    frame [ mkline (dP2 (-4) 0) (dP2 150 0)
-          , mkline (dP2 0 (-4)) (dP2 0 150) 
-          , textlabel black wumpus_default_font ss (dP2 0 (-20))
+    frame [ mkline (P2 (-4) 0) (P2 150 0)
+          , mkline (P2 0 (-4)) (P2 0 150) 
+          , textlabel black wumpus_default_font ss (P2 0 (-20))
           ]
 
   where
     mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [lineTo p2]
+
+dpt :: DPoint2
+dpt = zeroPt

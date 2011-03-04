@@ -28,8 +28,7 @@ module Wumpus.Core.Geometry
 
   
   -- * Data types
-    UNil
-  , Vec2(..)
+    Vec2(..)
   , DVec2
   , Point2(..)
   , DPoint2
@@ -40,8 +39,6 @@ module Wumpus.Core.Geometry
 
   , MatrixMult(..)
 
-  -- * UNil operations
-  , uNil
 
   -- * Vector operations
   , vec
@@ -96,7 +93,6 @@ import Wumpus.Core.Units
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Data.Monoid
 
 
 
@@ -104,23 +100,6 @@ import Data.Monoid
 --------------------------------------------------------------------------------
 
 -- Datatypes 
-
--- | Phantom @()@.
--- 
--- This newtype is Haskell\'s @()@ with unit of dimension @u@ as
--- a phantom type.
--- 
--- This type has no direct use in Wumpus-Core, but it is useful 
--- for higher-level software a - it has instances of the affine 
--- classes which cannot be written for @()@ (Wumpus-Basic 
--- uses it for the @Graphic@ type.) 
---
--- \*\* WARNING \*\* - this type is likely to disappear.
--- 
-newtype UNil u = UNil ()
-  deriving (Bounded,Enum,Eq,Ord)
-
-
 
 
 -- | 2D Vector - both components are strict.
@@ -228,15 +207,7 @@ lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) =
 -- instances
 
 
-instance Monoid (UNil u) where
-  mempty        = UNil ()
-  _ `mappend` _ = UNil ()
-
-
 -- Functor
-
-instance Functor UNil where
-  fmap _ _ = UNil ()
 
 instance Functor Vec2 where
   fmap f (V2 a b) = V2 (f a) (f b)
@@ -252,9 +223,6 @@ instance Functor Matrix3'3 where
 
 
 -- Show
-
-instance Show (UNil u) where
-  show _ = "UNil"
 
 instance Show u => Show (Matrix3'3 u) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
@@ -389,14 +357,6 @@ instance PtSize u => MatrixMult (Point2 u) where
       e' = dpoint e
       f' = dpoint f
 
-
---------------------------------------------------------------------------------
--- UNil
-
--- | Construct a UNil.
---
-uNil :: UNil u
-uNil = UNil ()
 
 --------------------------------------------------------------------------------
 -- Vectors

@@ -1,5 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -114,7 +113,7 @@ import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.Text.Base
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Units
+-- import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators hiding ( fill )
 import Wumpus.Core.Utils.HList
 import Wumpus.Core.Utils.JoinList
@@ -198,9 +197,8 @@ fontDeltaContext fa p = PContext (FontCtx fa) p
 --
 -- Create a Path from a start point and a list of PathSegments.
 --
-primPath :: PtSize u => Point2 u -> [AbsPathSegment u] -> PrimPath
-primPath pt xs = 
-    PrimPath (step (ptConv pt) (map ptConvAPS xs)) (startPointCTM pt)
+primPath :: DPoint2 -> [AbsPathSegment] -> PrimPath
+primPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
   where
     step p (AbsLineTo p1:rest)        = RelLineTo (p1 .-. p) : step p1 rest
     step p (AbsCurveTo p1 p2 p3:rest) = 
@@ -210,20 +208,13 @@ primPath pt xs =
 
 
 
-ptConv :: PtSize u => Point2 u -> DPoint2 
-ptConv (P2 x y) = P2 (psDouble x) (psDouble y)
-
-ptConvAPS :: PtSize u => AbsPathSegment u -> AbsPathSegment Double
-ptConvAPS (AbsCurveTo p1 p2 p3) = AbsCurveTo (ptConv p1) (ptConv p2) (ptConv p3)
-ptConvAPS (AbsLineTo  p1)       = AbsLineTo (ptConv p1)
-
          
 -- | 'lineTo' : @ end_point -> path_segment @
 -- 
 -- Create a straight-line PathSegment, the start point is 
 -- implicitly the previous point in a path.
 --
-lineTo :: PtSize u => Point2 u -> AbsPathSegment u
+lineTo :: DPoint2 -> AbsPathSegment 
 lineTo = AbsLineTo
 
 -- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
@@ -233,7 +224,7 @@ lineTo = AbsLineTo
 -- previous point in a path.
 --
 --
-curveTo :: Point2 u -> Point2 u -> Point2 u -> AbsPathSegment u
+curveTo :: DPoint2 -> DPoint2 -> DPoint2 -> AbsPathSegment
 curveTo = AbsCurveTo
 
     
@@ -247,12 +238,12 @@ curveTo = AbsCurveTo
 -- \*\* WARNING \*\* - this function throws a runtime error when 
 -- supplied the empty list.
 --
-vertexPath :: PtSize u => [Point2 u] -> PrimPath
+vertexPath :: [DPoint2] -> PrimPath
 vertexPath []     = error "Picture.vertexPath - empty point list"
 vertexPath (x:xs) = 
     PrimPath (snd $ mapAccumL step x xs) (startPointCTM x)
   where
-    step a b = let v = b .-. a in (b, RelLineTo $ fmap psDouble v)
+    step a b = let v = b .-. a in (b, RelLineTo v)
 
 
 -- | 'vectorPath' : @ start_point -> [next_vector] -> PrimPath @
@@ -264,9 +255,8 @@ vertexPath (x:xs) =
 -- This function can be supplied with an empty list - this 
 -- simulates a null graphic.
 --
-vectorPath :: PtSize u => Point2 u -> [Vec2 u] -> PrimPath
-vectorPath pt xs = 
-    PrimPath (map (RelLineTo . fmap psDouble) xs) (startPointCTM pt)
+vectorPath :: DPoint2 -> [DVec2] -> PrimPath
+vectorPath pt xs = PrimPath (map RelLineTo xs) (startPointCTM pt)
 
 
 -- | 'emptyPath' : @ start_point -> PrimPath @
@@ -275,7 +265,7 @@ vectorPath pt xs =
 -- though the path is not drawn - a start point is the minimum 
 -- information needed to calculate a bounding box. 
 --
-emptyPath :: PtSize u => Point2 u -> PrimPath
+emptyPath :: DPoint2 -> PrimPath
 emptyPath pt  = PrimPath [] (startPointCTM pt)
 
 
@@ -290,13 +280,13 @@ emptyPath pt  = PrimPath [] (startPointCTM pt)
 -- \*\* WARNING - this function throws an error when supplied the 
 -- empty list.
 -- 
-curvedPath :: PtSize u => [Point2 u] -> PrimPath
+curvedPath :: [DPoint2] -> PrimPath
 curvedPath []     = error "Picture.curvedPath - empty point list"
 curvedPath (x:xs) = PrimPath (step x xs) (startPointCTM x)
   where
-    step p (a:b:c:ys) = let v1 = fmap psDouble $ a .-. p 
-                            v2 = fmap psDouble $ b .-. a
-                            v3 = fmap psDouble $ c .-. b
+    step p (a:b:c:ys) = let v1 = a .-. p 
+                            v2 = b .-. a
+                            v3 = c .-. b
                         in RelCurveTo v1 v2 v3 : step c ys
     step _ _          = []
 
@@ -478,8 +468,7 @@ clip cp p = PClip cp p
 --
 -- The supplied point is the left baseline.
 --
-textlabel :: PtSize u 
-          => RGBi -> FontAttr -> String -> Point2 u -> Primitive
+textlabel :: RGBi -> FontAttr -> String -> DPoint2 -> Primitive
 textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 
 -- | 'rtextlabel' : @ rgb * font_attr * string * theta * 
@@ -490,8 +479,7 @@ textlabel rgb attr txt pt = rtextlabel rgb attr txt 0 pt
 --
 -- The supplied point is the left baseline.
 --
-rtextlabel :: PtSize u 
-           => RGBi -> FontAttr -> String -> Radian -> Point2 u -> Primitive
+rtextlabel :: RGBi -> FontAttr -> String -> Radian -> DPoint2 -> Primitive
 rtextlabel rgb attr txt pt theta = 
     rescapedlabel rgb attr (escapeString txt) pt theta
 
@@ -501,7 +489,7 @@ rtextlabel rgb attr txt pt theta =
 -- Create a label where the font is @Courier@, text size is 14pt
 -- and colour is black.
 --
-ztextlabel :: PtSize u => String -> Point2 u -> Primitive
+ztextlabel :: String -> DPoint2 -> Primitive
 ztextlabel = textlabel black wumpus_default_font
 
 
@@ -514,8 +502,7 @@ ztextlabel = textlabel black wumpus_default_font
 --
 -- The supplied point is the left baseline.
 --
-escapedlabel :: PtSize u 
-             => RGBi -> FontAttr -> EscapedText -> Point2 u -> Primitive
+escapedlabel :: RGBi -> FontAttr -> EscapedText -> DPoint2 -> Primitive
 escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 
 -- | 'rescapedlabel' : @ rgb * font_attr * escaped_text * theta * 
@@ -526,13 +513,11 @@ escapedlabel rgb attr txt pt = rescapedlabel rgb attr txt 0 pt
 --
 -- The supplied point is the left baseline.
 --
-rescapedlabel :: PtSize u 
-              => RGBi -> FontAttr -> EscapedText -> Radian -> Point2 u 
+rescapedlabel :: RGBi -> FontAttr -> EscapedText -> Radian -> DPoint2
               -> Primitive
 rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (StdLayout txt) 
-                    (makeThetaCTM (psDouble dx) (psDouble dy) theta)
+    lbl = PrimLabel (StdLayout txt) (makeThetaCTM dx dy theta)
 
 
 -- | 'zescapedlabel' : @ escaped_text * baseline_left -> Primitive @
@@ -540,7 +525,7 @@ rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl
 -- Version of 'ztextlabel' where the label text has already been 
 -- encoded.
 --
-zescapedlabel :: PtSize u => EscapedText -> Point2 u -> Primitive
+zescapedlabel :: EscapedText -> DPoint2 -> Primitive
 zescapedlabel = escapedlabel black wumpus_default_font
 
 
@@ -577,12 +562,10 @@ zescapedlabel = escapedlabel black wumpus_default_font
 -- PostScript analogue. While the same picture is generated in 
 -- both cases, the PostScript code is not particularly inefficient.
 --
-hkernlabel :: PtSize u 
-           => RGBi -> FontAttr -> [KerningChar] -> Point2 u 
-           -> Primitive
+hkernlabel :: RGBi -> FontAttr -> [KerningChar] -> DPoint2 -> Primitive
 hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextH xs) (makeTranslCTM (psDouble x) (psDouble y))
+    lbl = PrimLabel (KernTextH xs) (makeTranslCTM x y)
 
 
 
@@ -619,12 +602,10 @@ hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl
 -- PostScript analogue. While the same picture is generated in 
 -- both cases, the PostScript code is not particularly inefficient.
 --
-vkernlabel :: PtSize u 
-           => RGBi -> FontAttr -> [KerningChar] -> Point2 u 
-           -> Primitive
+vkernlabel :: RGBi -> FontAttr -> [KerningChar] -> DPoint2 -> Primitive
 vkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextV xs) (makeTranslCTM (psDouble x) (psDouble y))
+    lbl = PrimLabel (KernTextV xs) (makeTranslCTM x y)
 
 
 
@@ -633,8 +614,8 @@ vkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl
 -- Construct a regular (i.e. non-special) Char along with its 
 -- displacement from the left-baseline of the previous Char.
 --
-kernchar :: PtSize u => u -> Char -> KerningChar
-kernchar u c = (psDouble u, CharLiteral c)
+kernchar :: Double -> Char -> KerningChar
+kernchar u c = (u, CharLiteral c)
 
 
 -- | 'kernEscInt' : @ displacement * char_code -> KerningChar @
@@ -642,8 +623,8 @@ kernchar u c = (psDouble u, CharLiteral c)
 -- Construct a Char by its character code along with its 
 -- displacement from the left-baseline of the previous Char.
 --
-kernEscInt :: PtSize u => u -> Int -> KerningChar
-kernEscInt u i = (psDouble u, CharEscInt i)
+kernEscInt :: Double -> Int -> KerningChar
+kernEscInt u i = (u, CharEscInt i)
 
 
 -- | 'kernEscName' : @ displacement * char_name -> KerningChar @
@@ -651,8 +632,8 @@ kernEscInt u i = (psDouble u, CharEscInt i)
 -- Construct a Char by its character name along with its 
 -- displacement from the left-baseline of the previous Char.
 --
-kernEscName :: PtSize u => u -> String -> KerningChar
-kernEscName u s = (psDouble u, CharEscName s)
+kernEscName :: Double -> String -> KerningChar
+kernEscName u s = (u, CharEscName s)
 
 --------------------------------------------------------------------------------
 
@@ -676,8 +657,7 @@ kernEscName u s = (psDouble u, CharEscName s)
 --
 -- Avoid non-uniform scaling stroked ellipses!
 --
-strokeEllipse :: PtSize u 
-              => RGBi -> StrokeAttr -> u -> u -> Point2 u -> Primitive
+strokeEllipse :: RGBi -> StrokeAttr -> Double -> Double -> DPoint2 -> Primitive
 strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 
 
@@ -687,8 +667,7 @@ strokeEllipse rgb sa hw hh pt = rstrokeEllipse rgb sa hw hh 0 pt
 -- Create a stroked primitive ellipse rotated about the center by 
 -- /theta/.
 --
-rstrokeEllipse :: PtSize u 
-               => RGBi -> StrokeAttr -> u -> u -> Radian -> Point2 u
+rstrokeEllipse :: RGBi -> StrokeAttr -> Double -> Double -> Radian -> DPoint2
                -> Primitive
 rstrokeEllipse rgb sa rx ry theta pt = 
     PEllipse (EStroke sa rgb) (mkPrimEllipse rx ry theta pt)
@@ -699,8 +678,7 @@ rstrokeEllipse rgb sa rx ry theta pt =
 --
 -- Create a filled primitive ellipse.
 --
-fillEllipse :: PtSize u 
-            => RGBi -> u -> u -> Point2 u -> Primitive
+fillEllipse :: RGBi -> Double -> Double -> DPoint2 -> Primitive
 fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
  
 
@@ -709,8 +687,7 @@ fillEllipse rgb rx ry pt = rfillEllipse rgb rx ry 0 pt
 -- Create a filled primitive ellipse rotated about the center by 
 -- /theta/.
 --
-rfillEllipse :: PtSize u 
-             => RGBi -> u -> u -> Radian -> Point2 u -> Primitive
+rfillEllipse :: RGBi -> Double -> Double -> Radian -> DPoint2 -> Primitive
 rfillEllipse rgb rx ry theta pt = 
     PEllipse (EFill rgb) (mkPrimEllipse rx ry theta pt)
 
@@ -719,7 +696,7 @@ rfillEllipse rgb rx ry theta pt =
 --
 -- Create a black, filled ellipse. 
 --
-zellipse :: PtSize u => u -> u -> Point2 u -> Primitive
+zellipse :: Double -> Double -> DPoint2 -> Primitive
 zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 
 
@@ -728,8 +705,8 @@ zellipse hw hh pt = rfillEllipse black hw hh 0 pt
 --
 -- Create a bordered (i.e. filled and stroked) primitive ellipse.
 --
-fillStrokeEllipse :: PtSize u 
-                  => RGBi -> StrokeAttr -> RGBi -> u -> u -> Point2 u 
+fillStrokeEllipse :: RGBi -> StrokeAttr -> RGBi 
+                  -> Double -> Double -> DPoint2
                   -> Primitive
 fillStrokeEllipse frgb sa srgb rx ry pt = 
     rfillStrokeEllipse frgb sa srgb rx ry 0 pt
@@ -742,17 +719,16 @@ fillStrokeEllipse frgb sa srgb rx ry pt =
 -- Create a bordered (i.e. filled and stroked) ellipse rotated 
 -- about the center by /theta/.
 --
-rfillStrokeEllipse :: PtSize u 
-                   => RGBi -> StrokeAttr -> RGBi -> u -> u -> Radian -> Point2 u
+rfillStrokeEllipse :: RGBi -> StrokeAttr -> RGBi 
+                   -> Double -> Double -> Radian -> DPoint2
                    -> Primitive
 rfillStrokeEllipse frgb sa srgb rx ry theta pt = 
     PEllipse (EFillStroke frgb sa srgb) (mkPrimEllipse rx ry theta pt)
 
 
-mkPrimEllipse :: PtSize u => u -> u -> Radian -> Point2 u -> PrimEllipse
+mkPrimEllipse :: Double -> Double -> Radian -> DPoint2 -> PrimEllipse
 mkPrimEllipse rx ry theta (P2 dx dy) = 
-    PrimEllipse (psDouble rx) (psDouble ry) 
-                (makeThetaCTM (psDouble dx) (psDouble dy) theta)
+    PrimEllipse rx ry (makeThetaCTM dx dy theta)
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -765,7 +741,7 @@ mkPrimEllipse rx ry theta (P2 dx dy) =
 -- both vertical directions by @y@. @x@ and @y@ must be positive
 -- This function cannot be used to shrink a boundary.
 --
-extendBoundary :: PtSize u => u -> u -> Picture -> Picture
+extendBoundary :: Double -> Double -> Picture -> Picture
 extendBoundary x y = 
     mapLocale (\(bb,xs) -> (extBB (posve x) (posve y) bb, xs)) 
   where
@@ -774,7 +750,7 @@ extendBoundary x y =
         pt2 = P2 (x1+x') (y1+y')
     
     posve n | n < 0     = 0
-            | otherwise = psDouble n 
+            | otherwise = n 
 
 --------------------------------------------------------------------------------
 -- Minimal support for Picture composition
@@ -799,7 +775,7 @@ a `picOver` b = Picture (bb,[]) (join (one b) (one a))
 -- 
 --  Move a picture by the supplied vector. 
 --
-picMoveBy :: PtSize u => Picture -> Vec2 u -> Picture
+picMoveBy :: Picture -> DVec2 -> Picture
 p `picMoveBy` v1 = translateBy v1 p 
 
 -- | 'picBeside' : @ picture * picture -> Picture @
@@ -847,7 +823,7 @@ illustrateBoundsPrim rgb p = frame $ boundsPrims rgb p $ [p]
 -- | Draw a the rectangle of a bounding box, plus cross lines
 -- joining the corners.
 --
-boundsPrims :: (Boundary t u, PtSize u) => RGBi -> t -> H Primitive
+boundsPrims :: Boundary t Double => RGBi -> t -> H Primitive
 boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a

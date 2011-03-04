@@ -232,8 +232,8 @@ data PrimPathSegment = RelCurveTo  DVec2 DVec2 DVec2
 -- convenience to build relative paths. Hence the unit type is 
 -- parametric.
 --
-data AbsPathSegment u = AbsCurveTo  (Point2 u) (Point2 u) (Point2 u)
-                      | AbsLineTo   (Point2 u)
+data AbsPathSegment = AbsCurveTo  DPoint2 DPoint2 DPoint2
+                    | AbsLineTo   DPoint2 
   deriving (Eq,Show)
 
 
@@ -755,24 +755,6 @@ extractRelPath (PrimPath ss ctm) = (start, usegs)
     fn (RelCurveTo v1 v2 v3) = RelCurveTo (mtrafo v1) (mtrafo v2) (mtrafo v3)
     fn (RelLineTo v1)        = RelLineTo  (mtrafo v1)
 
-{-
-extractAbsPath :: PrimPath -> (Point2, [AbsPathSegment])
-extractAbsPath = post . extractRelPath 
-  where
-    post (st,[]) = (st, [])
-    post (st,ps) = (st, go st ps)
-
-    go _  []                         = []
-
-    go p0 (RelCurveTo v1 v2 v3 : vs) = let p1 = p0 .+^ v1
-                                           p2 = p1 .+^ v2
-                                           p3 = p2 .+^ v3
-                                       in  AbsCurveTo p1 p2 p3 : go p3 vs
-    
-    go p0 (RelLineTo v1 : vs)        = let p1 = p0 .+^ v1
-                                       in AbsLineTo p1 : go p1 vs
-                                       
--}
 
 
 --------------------------------------------------------------------------------

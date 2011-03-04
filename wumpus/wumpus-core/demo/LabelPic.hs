@@ -60,7 +60,7 @@ bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
 bigLetter :: RGBi -> Char -> Picture
-bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] dzeroPt]
+bigLetter rgb ch = uniformScale 5 $ frame [textlabel rgb attrs [ch] zeroPt]
   where
     attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
                                   SVG_REGULAR standard_encoding)
@@ -85,7 +85,7 @@ demo06 = do
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ picMoveBy `flip` (dvec 0 10) $ bigLetter peru 'C'
+    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
 demo07 :: IO ()
@@ -97,7 +97,7 @@ demo07 = do
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
-    pC = drawBounds $ picMoveBy `flip` (dvec 0 10) $ bigLetter peru 'C'
+    pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
 
@@ -114,7 +114,7 @@ drawBounds p        = p `picOver` (frame [zcstroke ph])
 
 
 -- | The center of a picture.
-center :: (Boundary t u, Fractional u) => t -> Point2 u
+center :: Picture -> DPoint2
 center a = P2 hcenter vcenter 
   where  
     BBox (P2 x0 y0) (P2 x1 y1) = boundary a
@@ -136,8 +136,8 @@ black = RGBi 0 0 0
 
 lbl1 :: Picture
 lbl1 = line1 `picBeside` line2 where
-  line1 = frame [textlabel peru attrs "Hello" dzeroPt]
-  line2 = frame [textlabel peru attrs "World" dzeroPt]
+  line1 = frame [textlabel peru attrs "Hello" zeroPt]
+  line2 = frame [textlabel peru attrs "World" zeroPt]
   attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
                                 SVG_REGULAR standard_encoding)
 

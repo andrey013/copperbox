@@ -19,14 +19,14 @@ main = do
 
 pic1 :: Picture
 pic1 = uniformScale 2 $ frame $ 
-    [ fillEllipse blue 10 10 dzeroPt
-    , fillEllipse red 10 10 (dP2 40 40)
-    , ztextlabel "Wumpus!" (dP2 40 20)
-    , square red 5 (dP2 50 10)  
+    [ fillEllipse blue 10 10  zeroPt
+    , fillEllipse red 10 10   (P2 40 40)
+    , ztextlabel "Wumpus!"    (P2 40 20)
+    , square red 5            (P2 50 10)  
     ]
 
 
-square :: PtSize u => RGBi -> u -> Point2 u -> Primitive
+square :: RGBi -> Double -> DPoint2 -> Primitive
 square rgb sidelen bl = fill rgb $ vertexPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 

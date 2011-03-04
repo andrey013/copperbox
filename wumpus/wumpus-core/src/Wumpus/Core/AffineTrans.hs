@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -126,9 +123,6 @@ instance (Transform a, Transform b) => Transform (a,b)  where
   transform mtrx (a,b) = (transform mtrx a, transform mtrx b)
 
 
-instance PtSize u => Transform (UNil u) where
-  transform _ = id
-
 instance PtSize u => Transform (Point2 u) where
   transform ctm = inout (ctm *#)
 
@@ -142,9 +136,6 @@ instance PtSize u => Transform (Vec2 u) where
 -- 
 class Rotate t where
   rotate :: Radian -> t -> t
-
-instance PtSize u => Rotate (UNil u) where
-  rotate _ _ = uNil
 
 
 instance Rotate u => Rotate (Maybe u) where
@@ -171,9 +162,6 @@ instance (Floating u, Real u, PtSize u) => Rotate (Vec2 u) where
 class RotateAbout t where
   rotateAbout :: PtSize u  => Radian -> Point2 u -> t -> t
 
- 
-instance RotateAbout (UNil u) where
-  rotateAbout _ _ = id
 
 instance RotateAbout a => RotateAbout (Maybe a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
@@ -181,8 +169,6 @@ instance RotateAbout a => RotateAbout (Maybe a) where
 instance (RotateAbout a, RotateAbout b) => 
     RotateAbout (a,b) where
   rotateAbout ang pt (a,b) = (rotateAbout ang pt a, rotateAbout ang pt b)
-
-
 
 instance PtSize u => RotateAbout (Point2 u) where
   rotateAbout ang pt = let pt' = fmap psDouble pt 
@@ -200,9 +186,6 @@ instance PtSize u => RotateAbout (Vec2 u) where
 --
 class Scale t where
   scale :: Double -> Double -> t -> t
-
-instance PtSize u => Scale (UNil u) where
-  scale _ _ _ = uNil
 
 instance Scale a => Scale (Maybe a) where
   scale sx sy = fmap (scale sx sy)
@@ -224,17 +207,12 @@ instance PtSize u => Scale (Vec2 u) where
 class Translate t where
   translate :: Double -> Double -> t -> t
 
-
-instance PtSize u => Translate (UNil u) where
-  translate _ _ _ = uNil
+instance Translate a => Translate (Maybe a) where
+  translate dx dy = fmap (translate dx dy)
 
 instance (Translate a, Translate b) => 
     Translate (a,b) where
   translate dx dy (a,b) = (translate dx dy a, translate dx dy b)
-
-
-instance Translate a => Translate (Maybe a) where
-  translate dx dy = fmap (translate dx dy)
 
 instance PtSize u => Translate (Point2 u) where
   translate dx dy (P2 x y) = P2 (x + dpoint dx) (y + dpoint dy)

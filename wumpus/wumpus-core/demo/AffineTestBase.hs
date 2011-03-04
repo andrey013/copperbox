@@ -110,13 +110,13 @@ cpPicture constr trafo =
 --------------------------------------------------------------------------------
 
 rgbLabel :: RGBi -> Primitive
-rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" (cast1 UDouble zeroPt)
+rgbLabel rgb = textlabel rgb wumpus_default_font "Wumpus!" zeroPt
 
 rgbCircle :: RGBi -> Primitive
-rgbCircle rgb = fillEllipse rgb 60 60 dzeroPt
+rgbCircle rgb = fillEllipse rgb 60 60 zeroPt
 
 rgbEllipse :: RGBi -> Primitive
-rgbEllipse rgb = fillEllipse rgb 60 30 dzeroPt
+rgbEllipse rgb = fillEllipse rgb 60 30 zeroPt
 
 rgbPath :: RGBi -> Primitive
 rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
@@ -126,7 +126,7 @@ rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
 
 
 dog_kennel :: PrimPath
-dog_kennel = primPath dzeroPt
+dog_kennel = primPath zeroPt
                       [ lineTo  (P2 0 60) 
                       , lineTo  (P2 40 100)
                       , lineTo  (P2 80 60)
