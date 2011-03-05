@@ -58,9 +58,9 @@ letter :: Char -> DPoint2 -> Primitive
 letter ch pt = textlabel black courier_attr [ch] pt
 
 
-haxis :: RGBi -> PsPoint -> Primitive
+haxis :: RGBi -> Double -> Primitive
 haxis rgb ypos = 
     ostroke rgb dash_attr $ vertexPath [ pt, pt .+^ hvec 440 ]
   where
     dash_attr = default_stroke_attr { dash_pattern = Dash 0 [(2,2)] }
-    pt        = P2 0 (fromPsPoint ypos)
+    pt        = P2 0 ypos

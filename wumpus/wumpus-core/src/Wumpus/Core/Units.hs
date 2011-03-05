@@ -63,7 +63,8 @@ import Wumpus.Core.Utils.FormatCombinators
 import Data.Ratio
 
 
--- | 
+-- | Type relation between a unit and its representation.
+--
 class Unit c a | c -> a
 
 

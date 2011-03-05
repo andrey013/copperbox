@@ -37,7 +37,8 @@ module Wumpus.Core.FontSize
     FontSize
   , CharCount
   , AfmUnit
-  , ptSizeScale
+  , afmUnit
+  , afmValue
 
   -- * Scaling values derived from Courier
   , mono_width
@@ -79,20 +80,33 @@ type FontSize = Int
 -- (Point size) of a font. AFM files encode all measurements 
 -- as these units. 
 -- 
-newtype AfmUnit = AfmUnit { getPtScale :: Double } 
+newtype AfmUnit = AfmUnit { getAfmUnit :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
 
 instance Show AfmUnit where
-  showsPrec p d = showsPrec p (getPtScale d)
+  showsPrec p d = showsPrec p (getAfmUnit d)
 
 
--- | 'ptSizeScale' : @ scale_factor -> pt_size -> PTSize @
+-- | Internal no verloaded version of 'afmValue'.
 --
--- Scale the point size by the scale factor.
+afmValueD :: AfmUnit -> FontSize -> Double
+afmValueD u sz = realToFrac u * (fromIntegral sz) / 1000
+
+
+-- | Compute the size of a measurement in PostScript points 
+-- scaling the Afm unit size by the point size of the font.
 --
-ptSizeScale :: AfmUnit -> Double -> Double
-ptSizeScale sc sz = sz * realToFrac sc
+afmValue :: PsDouble u => FontSize -> AfmUnit -> u
+afmValue sz u = fromPsDouble $ afmValueD u sz
+
+
+-- | Compute the size of a measurement in Afm units scaled by the
+-- point size of the font.
+--
+afmUnit :: FontSize -> Double -> AfmUnit
+afmUnit sz u = 1000.0 * (realToFrac u) / (fromIntegral sz) 
+
 
 
 -- NOTE - I\'ve largely tried to follow the terminoloy from 
@@ -102,17 +116,17 @@ ptSizeScale sc sz = sz * realToFrac sc
 
 -- | The ratio of width to point size of a letter in Courier.
 --
--- > mono_width = 0.6 
+-- > mono_width = 600
 --
 mono_width :: AfmUnit
-mono_width = 0.600
+mono_width = 600
 
 -- | The ratio of cap height to point size of a letter in Courier.
 --
--- > mono_cap_height = 0.562
+-- > mono_cap_height = 562
 -- 
 mono_cap_height :: AfmUnit 
-mono_cap_height = 0.562
+mono_cap_height = 562
 
 
 
@@ -121,70 +135,70 @@ mono_cap_height = 0.562
 --
 -- This is also known as the \"body height\".
 --
--- > mono_x_height = 0.426
+-- > mono_x_height = 426
 -- 
 mono_x_height :: AfmUnit
-mono_x_height = 0.426
+mono_x_height = 426
 
 
 -- | The ratio of descender depth to point size of a letter in 
 -- Courier.
 -- 
--- > mono_descender = -0.157
+-- > mono_descender = -157
 -- 
 mono_descender :: AfmUnit
-mono_descender = (-0.157)
+mono_descender = (-157)
 
 
 -- | The ratio of ascender to point size of a letter in Courier.
 -- 
--- > mono_ascender = 0.629
+-- > mono_ascender = 629
 -- 
 mono_ascender :: AfmUnit
-mono_ascender = 0.629
+mono_ascender = 629
 
 
 -- | The distance from baseline to max height as a ratio to point 
 -- size for Courier.
 -- 
--- > mono_max_height = 0.805
+-- > mono_max_height = 805
 -- 
 mono_max_height :: AfmUnit 
-mono_max_height = 0.805
+mono_max_height = 805
 
 
 -- | The distance from baseline to max depth as a ratio to point 
 -- size for Courier.
 -- 
--- > max_depth = -0.250
+-- > max_depth = -250
 -- 
 mono_max_depth :: AfmUnit 
-mono_max_depth = (-0.250)
+mono_max_depth = (-250)
 
 
 -- | The left margin for the bounding box of printed text as a 
 -- ratio to point size for Courier.
 -- 
--- > mono_left_margin = -0.046
+-- > mono_left_margin = -46
 -- 
 mono_left_margin :: AfmUnit 
-mono_left_margin = (-0.046)
+mono_left_margin = (-46)
 
 
 -- | The right margin for the bounding box of printed text as a 
 -- ratio to point size for Courier.
 -- 
--- > mono_right_margin = 0.050
+-- > mono_right_margin = 50
 -- 
 mono_right_margin :: AfmUnit 
-mono_right_margin = 0.050
+mono_right_margin = 50
 
 
 -- | Approximate the width of a monospace character using 
 -- metrics derived from the Courier font.
 --
 charWidth :: FontSize -> Double
-charWidth = ptSizeScale mono_width . fromIntegral
+charWidth = afmValueD mono_width
 
 
 
@@ -212,21 +226,21 @@ capHeight = fromIntegral
 -- the Courier monospaced font.
 --
 xcharHeight :: FontSize -> Double
-xcharHeight = ptSizeScale mono_x_height . fromIntegral
+xcharHeight = afmValueD mono_x_height
 
 -- | The total height span of the glyph bounding box for the 
 -- Courier monospaced font.
 --
 totalCharHeight :: FontSize -> Double
-totalCharHeight sz = let sz' = fromIntegral sz in 
-    ptSizeScale mono_max_height sz' + negate (ptSizeScale mono_max_depth sz')
+totalCharHeight sz =  
+    afmValueD mono_max_height sz + negate (afmValueD mono_max_depth sz)
   
 
 -- | Ascender height for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
 ascenderHeight :: FontSize -> Double
-ascenderHeight = ptSizeScale mono_ascender . fromIntegral 
+ascenderHeight = afmValueD mono_ascender
 
 
 
@@ -234,7 +248,7 @@ ascenderHeight = ptSizeScale mono_ascender . fromIntegral
 -- Courier monospaced font.
 -- 
 descenderDepth :: FontSize -> Double
-descenderDepth = ptSizeScale mono_descender . fromIntegral 
+descenderDepth = afmValueD mono_descender
 
 
 -- | 'textBounds' : @ font_size * baseline_left * text -> BBox @
@@ -268,12 +282,11 @@ textBoundsBody :: (Num u, Ord u, PsDouble u)
                => FontSize -> Point2 u -> Int -> BoundingBox u
 textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
-    pt_sz       = fromIntegral sz
     w           = fromPsDouble $ textWidth  sz len
-    left_m      = fromPsDouble $ ptSizeScale mono_left_margin  pt_sz
-    right_m     = fromPsDouble $ ptSizeScale mono_right_margin pt_sz
-    max_depth   = fromPsDouble $ ptSizeScale mono_max_depth  pt_sz
-    max_height  = fromPsDouble $ ptSizeScale mono_max_height pt_sz
+    left_m      = fromPsDouble $ afmValueD mono_left_margin  sz
+    right_m     = fromPsDouble $ afmValueD mono_right_margin sz
+    max_depth   = fromPsDouble $ afmValueD mono_max_depth    sz
+    max_height  = fromPsDouble $ afmValueD mono_max_height   sz
     ll          = P2 (x + left_m)      (y + max_depth)
     ur          = P2 (x + w + right_m) (y + max_height)
 

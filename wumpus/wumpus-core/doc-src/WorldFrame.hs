@@ -32,7 +32,7 @@ makeLabelPrim = textlabel black attrs
     attrs     = FontAttr 10 (FontFace "Helvetica" "Helvetica" 
                                       SVG_REGULAR standard_encoding)
 
-makeLinePrim :: PsPoint -> DPoint2 -> DPoint2 -> Primitive
+makeLinePrim :: Double -> DPoint2 -> DPoint2 -> Primitive
 makeLinePrim lw a b = ostroke black attrs $ primPath a [lineTo b]
   where
     attrs = default_stroke_attr {line_width=lw}

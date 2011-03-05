@@ -59,6 +59,8 @@ description:
     appears on more function signatures than previously, clients
     will have to update accordingly.
   .
+  * API change - PtSize data type replaced by AfmUnit.
+  .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.
     This should make them more useful. The type of the function 
