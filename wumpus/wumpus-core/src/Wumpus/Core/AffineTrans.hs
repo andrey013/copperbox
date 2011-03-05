@@ -104,8 +104,8 @@ import Wumpus.Core.Units
 
 -- helpers 
 
-inout :: (Functor f, PtSize u) => (f Double -> f Double) -> f u -> f u
-inout f = fmap dpoint . f . fmap psDouble
+inout :: (Functor f, PsDouble u) => (f Double -> f Double) -> f u -> f u
+inout f = fmap fromPsDouble . f . fmap toPsDouble
 
 
 --------------------------------------------------------------------------------
@@ -123,10 +123,10 @@ instance (Transform a, Transform b) => Transform (a,b)  where
   transform mtrx (a,b) = (transform mtrx a, transform mtrx b)
 
 
-instance PtSize u => Transform (Point2 u) where
+instance PsDouble u => Transform (Point2 u) where
   transform ctm = inout (ctm *#)
 
-instance PtSize u => Transform (Vec2 u) where
+instance PsDouble u => Transform (Vec2 u) where
   transform ctm = inout (ctm *#)
 
 
@@ -145,10 +145,10 @@ instance (Rotate a, Rotate b) => Rotate (a,b)  where
   rotate ang (a,b) = (rotate ang a, rotate ang b)
 
 
-instance (Floating u, Real u, PtSize u) => Rotate (Point2 u) where
+instance (Floating u, Real u, PsDouble u) => Rotate (Point2 u) where
   rotate ang = ((rotationMatrix ang) *#)
 
-instance (Floating u, Real u, PtSize u) => Rotate (Vec2 u) where
+instance (Floating u, Real u, PsDouble u) => Rotate (Vec2 u) where
   rotate ang = ((rotationMatrix ang) *#)
 
 --
@@ -160,7 +160,7 @@ instance (Floating u, Real u, PtSize u) => Rotate (Vec2 u) where
 -- the object and the point-of-rotation.
 --
 class RotateAbout t where
-  rotateAbout :: PtSize u  => Radian -> Point2 u -> t -> t
+  rotateAbout :: PsDouble u  => Radian -> Point2 u -> t -> t
 
 
 instance RotateAbout a => RotateAbout (Maybe a) where
@@ -170,13 +170,13 @@ instance (RotateAbout a, RotateAbout b) =>
     RotateAbout (a,b) where
   rotateAbout ang pt (a,b) = (rotateAbout ang pt a, rotateAbout ang pt b)
 
-instance PtSize u => RotateAbout (Point2 u) where
-  rotateAbout ang pt = let pt' = fmap psDouble pt 
+instance PsDouble u => RotateAbout (Point2 u) where
+  rotateAbout ang pt = let pt' = fmap toPsDouble pt 
                        in inout ((originatedRotationMatrix ang pt') *#) 
 
 
-instance PtSize u => RotateAbout (Vec2 u) where
-  rotateAbout ang pt = let pt' = fmap psDouble pt 
+instance PsDouble u => RotateAbout (Vec2 u) where
+  rotateAbout ang pt = let pt' = fmap toPsDouble pt 
                        in inout ((originatedRotationMatrix ang pt') *#) 
   
 --------------------------------------------------------------------------------
@@ -193,10 +193,10 @@ instance Scale a => Scale (Maybe a) where
 instance (Scale a, Scale b) => Scale (a,b) where
   scale sx sy (a,b) = (scale sx sy a, scale sx sy b)
 
-instance PtSize u => Scale (Point2 u) where
+instance PsDouble u => Scale (Point2 u) where
   scale sx sy = inout ((scalingMatrix sx sy) *#)
 
-instance PtSize u => Scale (Vec2 u) where
+instance PsDouble u => Scale (Vec2 u) where
   scale sx sy = inout ((scalingMatrix sx sy) *#)
 
 --------------------------------------------------------------------------------
@@ -214,11 +214,11 @@ instance (Translate a, Translate b) =>
     Translate (a,b) where
   translate dx dy (a,b) = (translate dx dy a, translate dx dy b)
 
-instance PtSize u => Translate (Point2 u) where
-  translate dx dy (P2 x y) = P2 (x + dpoint dx) (y + dpoint dy)
+instance PsDouble u => Translate (Point2 u) where
+  translate dx dy (P2 x y) = P2 (x + fromPsDouble dx) (y + fromPsDouble dy)
 
-instance PtSize u => Translate (Vec2 u) where
-  translate dx dy (V2 x y) = V2 (x + dpoint dx) (y + dpoint dy)
+instance PsDouble u => Translate (Vec2 u) where
+  translate dx dy (V2 x y) = V2 (x + fromPsDouble dx) (y + fromPsDouble dy)
 
 
 -------------------------------------------------------------------------------- 
@@ -233,7 +233,7 @@ rotate30 = rotate (pi/6)
 
 -- | Rotate by 30 degrees about the supplied point.
 --
-rotate30About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t
+rotate30About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
 rotate30About = rotateAbout (pi/6)
 
 -- | Rotate by 45 degrees about the origin. 
@@ -243,7 +243,7 @@ rotate45 = rotate (pi/4)
 
 -- | Rotate by 45 degrees about the supplied point.
 --
-rotate45About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t
+rotate45About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
 rotate45About = rotateAbout (pi/4)
 
 -- | Rotate by 60 degrees about the origin. 
@@ -253,7 +253,7 @@ rotate60 = rotate (2*pi/3)
 
 -- | Rotate by 60 degrees about the supplied point.
 --
-rotate60About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t
+rotate60About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
 rotate60About = rotateAbout (2*pi/3)
 
 -- | Rotate by 90 degrees about the origin. 
@@ -263,7 +263,7 @@ rotate90 = rotate (pi/2)
 
 -- | Rotate by 90 degrees about the supplied point.
 --
-rotate90About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t
+rotate90About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
 rotate90About = rotateAbout (pi/2)
 
 -- | Rotate by 120 degrees about the origin. 
@@ -273,7 +273,7 @@ rotate120 = rotate (4*pi/3)
 
 -- | Rotate by 120 degrees about the supplied point.
 --
-rotate120About :: (RotateAbout t, PtSize u) => Point2 u -> t -> t
+rotate120About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
 rotate120About = rotateAbout (4*pi/3)
 
 
@@ -301,8 +301,8 @@ reflectY = scale 1 (-1)
 
 -- | Translate by the x and y components of a vector.
 --
-translateBy :: (Translate t, PtSize u) => Vec2 u -> t -> t
-translateBy (V2 x y) = translate (psDouble x) (psDouble y)
+translateBy :: (Translate t, PsDouble u) => Vec2 u -> t -> t
+translateBy (V2 x y) = translate (toPsDouble x) (toPsDouble y)
 
 
 --------------------------------------------------------------------------------
@@ -310,16 +310,16 @@ translateBy (V2 x y) = translate (psDouble x) (psDouble y)
 
 -- | Reflect in the X plane that intersects the supplied point. 
 --
-reflectXPlane :: (PtSize u, Scale t, Translate t) 
+reflectXPlane :: (PsDouble u, Scale t, Translate t) 
               => Point2 u -> t -> t
-reflectXPlane pt = go (fmap psDouble pt)
+reflectXPlane pt = go (fmap toPsDouble pt)
   where
     go (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
 
 -- | Reflect in the Y plane that intersects the supplied point.
 --
-reflectYPlane :: (PtSize u, Scale t, Translate t) 
+reflectYPlane :: (PsDouble u, Scale t, Translate t) 
               => Point2 u -> t -> t
-reflectYPlane pt = go (fmap psDouble pt) 
+reflectYPlane pt = go (fmap toPsDouble pt) 
   where
     go (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)

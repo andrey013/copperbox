@@ -53,7 +53,6 @@ module Wumpus.Core.GraphicProps
 import Wumpus.Core.Colour
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.StandardEncoding
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -61,8 +60,8 @@ import Wumpus.Core.Utils.FormatCombinators
 -- | Stroke attributes for drawing paths.
 --
 data StrokeAttr = StrokeAttr
-      { line_width      :: PsPoint
-      , miter_limit     :: PsPoint
+      { line_width      :: Double
+      , miter_limit     :: Double
       , line_cap        :: LineCap
       , line_join       :: LineJoin
       , dash_pattern    :: DashPattern

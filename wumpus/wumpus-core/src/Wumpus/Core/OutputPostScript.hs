@@ -36,7 +36,6 @@ import Wumpus.Core.PostScriptDoc
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphNames
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.JoinList hiding ( cons )
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -124,16 +123,16 @@ setFontAttr (FontAttr sz ff) =
     setsGS (\s -> s { gs_font_size=sz, gs_font_face=ff })
 
   
-getLineWidth        :: PsMonad PsPoint
+getLineWidth        :: PsMonad Double
 getLineWidth        = getsGS (line_width . gs_stroke_attr)
 
-setLineWidth        :: PsPoint -> PsMonad ()
+setLineWidth        :: Double -> PsMonad ()
 setLineWidth a      = setsSA (\s -> s { line_width = a } )
 
-getMiterLimit       :: PsMonad PsPoint
+getMiterLimit       :: PsMonad Double
 getMiterLimit       = getsGS (miter_limit . gs_stroke_attr)
 
-setMiterLimit       :: PsPoint -> PsMonad ()
+setMiterLimit       :: Double -> PsMonad ()
 setMiterLimit a     = setsSA (\s -> s { miter_limit = a } )
 
 
@@ -573,8 +572,8 @@ bracketMatrix mtrx ma
 bracketPrimCTM :: PrimCTM -> (DPoint2 -> PsMonad Doc) -> PsMonad Doc
 bracketPrimCTM ctm0 mf = step $ unCTM ctm0 
   where 
-    step (P2 x y,ctm) 
-      | ctm == identityCTM  = mf $ P2 (dpoint x) (dpoint y)
+    step (p0,ctm) 
+      | ctm == identityCTM  = mf p0
       | otherwise           = let mtrx  = matrixRepCTM ctm0  -- originalCTM
                                   inn   = ps_concat $ mtrx
                                   out   = ps_concat $ invert mtrx

@@ -336,26 +336,26 @@ class MatrixMult t where
   (*#) :: Matrix3'3 Double -> t -> t
 
 
-instance PtSize u => MatrixMult (Vec2 u) where       
+instance PsDouble u => MatrixMult (Vec2 u) where       
   (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a'*m+b'*n+c'*0) (d'*m+e'*n+f'*0)
     where
-      a' = dpoint a
-      b' = dpoint b
-      c' = dpoint c
-      d' = dpoint d
-      e' = dpoint e
-      f' = dpoint f
+      a' = fromPsDouble a
+      b' = fromPsDouble b
+      c' = fromPsDouble c
+      d' = fromPsDouble d
+      e' = fromPsDouble e
+      f' = fromPsDouble f
 
 
-instance PtSize u => MatrixMult (Point2 u) where
+instance PsDouble u => MatrixMult (Point2 u) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a'*m+b'*n+c'*1) (d'*m+e'*n+f'*1)
     where
-      a' = dpoint a
-      b' = dpoint b
-      c' = dpoint c
-      d' = dpoint d
-      e' = dpoint e
-      f' = dpoint f
+      a' = fromPsDouble a
+      b' = fromPsDouble b
+      c' = fromPsDouble c
+      d' = fromPsDouble d
+      e' = fromPsDouble e
+      f' = fromPsDouble f
 
 
 --------------------------------------------------------------------------------
@@ -787,14 +787,14 @@ bezierEllipse rx ry (P2 x y) =
 -- Although this function produces an approximation of a ellipse, 
 -- the approximation seems fine in practice.
 --
-rbezierEllipse :: (Real u, Floating u, PtSize u) 
+rbezierEllipse :: (Real u, Floating u, PsDouble u) 
                => u -> u -> Radian -> Point2 u -> [Point2 u]
 rbezierEllipse rx ry theta pt@(P2 x y) = 
     [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
   where
     lrx   = rx * kappa
     lry   = ry * kappa
-    rotM  = fmap psDouble $ originatedRotationMatrix theta pt
+    rotM  = fmap toPsDouble $ originatedRotationMatrix theta pt
 
     --    hvec becomes para
     para  = \d -> avec theta d

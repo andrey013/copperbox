@@ -80,7 +80,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Units ( PsPoint, psptFmt )
+import Wumpus.Core.Units ( psptFmt )
 import Wumpus.Core.Utils.Common ( dtruncFmt )
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -350,13 +350,13 @@ attr_stroke_none = svgAttr "stroke" (text "none")
 
 -- | @ stroke-width=\"...\" @
 --
-attr_stroke_width :: PsPoint -> Doc
+attr_stroke_width :: Double -> Doc
 attr_stroke_width = svgAttr "stroke-width" . psptFmt
 
 
 -- | @ stroke-miterlimit=\"...\" @
 --
-attr_stroke_miterlimit :: PsPoint -> Doc
+attr_stroke_miterlimit :: Double -> Doc
 attr_stroke_miterlimit = svgAttr "stroke-miterlimit" . psptFmt
 
 -- | @ stroke-linejoin=\"...\" @

@@ -36,7 +36,7 @@ module Wumpus.Core.FontSize
   -- * Type synonyms
     FontSize
   , CharCount
-  , PtScale
+  , AfmUnit
   , ptSizeScale
 
   -- * Scaling values derived from Courier
@@ -79,11 +79,11 @@ type FontSize = Int
 -- (Point size) of a font. AFM files encode all measurements 
 -- as these units. 
 -- 
-newtype PtScale = PtScale { getPtScale :: Double } 
+newtype AfmUnit = AfmUnit { getPtScale :: Double } 
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
 
-instance Show PtScale where
+instance Show AfmUnit where
   showsPrec p d = showsPrec p (getPtScale d)
 
 
@@ -91,7 +91,7 @@ instance Show PtScale where
 --
 -- Scale the point size by the scale factor.
 --
-ptSizeScale :: PtScale -> PsPoint -> PsPoint 
+ptSizeScale :: AfmUnit -> Double -> Double
 ptSizeScale sc sz = sz * realToFrac sc
 
 
@@ -104,14 +104,14 @@ ptSizeScale sc sz = sz * realToFrac sc
 --
 -- > mono_width = 0.6 
 --
-mono_width :: PtScale
+mono_width :: AfmUnit
 mono_width = 0.600
 
 -- | The ratio of cap height to point size of a letter in Courier.
 --
 -- > mono_cap_height = 0.562
 -- 
-mono_cap_height :: PtScale 
+mono_cap_height :: AfmUnit 
 mono_cap_height = 0.562
 
 
@@ -123,7 +123,7 @@ mono_cap_height = 0.562
 --
 -- > mono_x_height = 0.426
 -- 
-mono_x_height :: PtScale
+mono_x_height :: AfmUnit
 mono_x_height = 0.426
 
 
@@ -132,7 +132,7 @@ mono_x_height = 0.426
 -- 
 -- > mono_descender = -0.157
 -- 
-mono_descender :: PtScale
+mono_descender :: AfmUnit
 mono_descender = (-0.157)
 
 
@@ -140,7 +140,7 @@ mono_descender = (-0.157)
 -- 
 -- > mono_ascender = 0.629
 -- 
-mono_ascender :: PtScale
+mono_ascender :: AfmUnit
 mono_ascender = 0.629
 
 
@@ -149,7 +149,7 @@ mono_ascender = 0.629
 -- 
 -- > mono_max_height = 0.805
 -- 
-mono_max_height :: PtScale 
+mono_max_height :: AfmUnit 
 mono_max_height = 0.805
 
 
@@ -158,7 +158,7 @@ mono_max_height = 0.805
 -- 
 -- > max_depth = -0.250
 -- 
-mono_max_depth :: PtScale 
+mono_max_depth :: AfmUnit 
 mono_max_depth = (-0.250)
 
 
@@ -167,7 +167,7 @@ mono_max_depth = (-0.250)
 -- 
 -- > mono_left_margin = -0.046
 -- 
-mono_left_margin :: PtScale 
+mono_left_margin :: AfmUnit 
 mono_left_margin = (-0.046)
 
 
@@ -176,14 +176,14 @@ mono_left_margin = (-0.046)
 -- 
 -- > mono_right_margin = 0.050
 -- 
-mono_right_margin :: PtScale 
+mono_right_margin :: AfmUnit 
 mono_right_margin = 0.050
 
 
 -- | Approximate the width of a monospace character using 
 -- metrics derived from the Courier font.
 --
-charWidth :: FontSize -> PsPoint
+charWidth :: FontSize -> Double
 charWidth = ptSizeScale mono_width . fromIntegral
 
 
@@ -196,7 +196,7 @@ charWidth = ptSizeScale mono_width . fromIntegral
 -- NOTE - this does not account for any left and right margins 
 -- around the printed text.
 --
-textWidth :: FontSize -> CharCount -> PsPoint
+textWidth :: FontSize -> CharCount -> Double
 textWidth _  n | n <= 0 = 0
 textWidth sz n          = fromIntegral n * charWidth sz
 
@@ -204,20 +204,20 @@ textWidth sz n          = fromIntegral n * charWidth sz
 -- | Height of capitals e.g. \'A\' using metrics derived 
 -- the Courier monospaced font.
 --
-capHeight :: FontSize -> PsPoint
+capHeight :: FontSize -> Double
 capHeight = fromIntegral
 
 
 -- | Height of the lower-case char \'x\' using metrics derived 
 -- the Courier monospaced font.
 --
-xcharHeight :: FontSize -> PsPoint
+xcharHeight :: FontSize -> Double
 xcharHeight = ptSizeScale mono_x_height . fromIntegral
 
 -- | The total height span of the glyph bounding box for the 
 -- Courier monospaced font.
 --
-totalCharHeight :: FontSize -> PsPoint
+totalCharHeight :: FontSize -> Double
 totalCharHeight sz = let sz' = fromIntegral sz in 
     ptSizeScale mono_max_height sz' + negate (ptSizeScale mono_max_depth sz')
   
@@ -225,7 +225,7 @@ totalCharHeight sz = let sz' = fromIntegral sz in
 -- | Ascender height for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
-ascenderHeight :: FontSize -> PsPoint
+ascenderHeight :: FontSize -> Double
 ascenderHeight = ptSizeScale mono_ascender . fromIntegral 
 
 
@@ -233,7 +233,7 @@ ascenderHeight = ptSizeScale mono_ascender . fromIntegral
 -- | Descender depth for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
-descenderDepth :: FontSize -> PsPoint
+descenderDepth :: FontSize -> Double
 descenderDepth = ptSizeScale mono_descender . fromIntegral 
 
 
@@ -250,7 +250,7 @@ descenderDepth = ptSizeScale mono_descender . fromIntegral
 -- For proportional fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: (Num u, Ord u, PtSize u) 
+textBounds :: (Num u, Ord u, PsDouble u) 
            => FontSize -> Point2 u -> String -> BoundingBox u
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
@@ -259,21 +259,21 @@ textBounds sz pt ss = textBoundsBody sz pt (charCount ss)
 -- 
 --  Version of textBounds for already escaped text.
 --
-textBoundsEsc :: (Num u, Ord u, PtSize u) 
+textBoundsEsc :: (Num u, Ord u, PsDouble u) 
            => FontSize -> Point2 u -> EscapedText -> BoundingBox u
 textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc) 
 
 
-textBoundsBody :: (Num u, Ord u, PtSize u) 
+textBoundsBody :: (Num u, Ord u, PsDouble u) 
                => FontSize -> Point2 u -> Int -> BoundingBox u
 textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
     pt_sz       = fromIntegral sz
-    w           = fromPsPoint $ textWidth  sz len
-    left_m      = fromPsPoint $ ptSizeScale mono_left_margin  pt_sz
-    right_m     = fromPsPoint $ ptSizeScale mono_right_margin pt_sz
-    max_depth   = fromPsPoint $ ptSizeScale mono_max_depth  pt_sz
-    max_height  = fromPsPoint $ ptSizeScale mono_max_height pt_sz
+    w           = fromPsDouble $ textWidth  sz len
+    left_m      = fromPsDouble $ ptSizeScale mono_left_margin  pt_sz
+    right_m     = fromPsDouble $ ptSizeScale mono_right_margin pt_sz
+    max_depth   = fromPsDouble $ ptSizeScale mono_max_depth  pt_sz
+    max_height  = fromPsDouble $ ptSizeScale mono_max_height pt_sz
     ll          = P2 (x + left_m)      (y + max_depth)
     ur          = P2 (x + w + right_m) (y + max_height)
 

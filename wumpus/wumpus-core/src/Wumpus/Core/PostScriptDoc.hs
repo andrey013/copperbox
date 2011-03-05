@@ -127,7 +127,7 @@ epsHeader bb tod = vcat $
     , text "%%EndComments"
     ]
   where
-    upint             = text . roundup . realToFrac . toPsPoint
+    upint             = text . roundup
     (llx,lly,urx,ury) = destBoundingBox bb 
 
 
@@ -185,7 +185,7 @@ ps_grestore = command "grestore" []
 
 -- | @ ... setlinewidth @
 --
-ps_setlinewidth :: PsPoint -> Doc
+ps_setlinewidth :: Double -> Doc
 ps_setlinewidth u = command "setlinewidth" [psptFmt u]
 
 -- | @ ... setlinecap @
@@ -200,7 +200,7 @@ ps_setlinejoin a = command "setlinejoin" [int $ fromEnum a]
 
 -- | @ ... setmiterlimit @
 --
-ps_setmiterlimit :: PsPoint -> Doc
+ps_setmiterlimit :: Double -> Doc
 ps_setmiterlimit u = command "setmiterlimit" [psptFmt u]
 
 -- | @ [... ...] ... setdash @

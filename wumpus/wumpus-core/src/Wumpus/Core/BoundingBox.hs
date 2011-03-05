@@ -97,10 +97,11 @@ instance Format u => Format (BoundingBox u) where
 -- type instance DUnit (BoundingBox u) = u
 
 
-pointTransform :: (PtSize u , Ord u)
+pointTransform :: (PsDouble u , Ord u)
                => (DPoint2 -> DPoint2) -> BoundingBox u -> BoundingBox u
 pointTransform fn bb = 
-    traceBoundary $ map (fmap dpoint . fn . fmap psDouble) $ [bl,br,tr,tl]
+    traceBoundary $ map (fmap fromPsDouble . fn . fmap toPsDouble) 
+                  $ [bl,br,tr,tl]
   where 
     (bl,br,tr,tl) = boundaryCorners bb
 
@@ -114,19 +115,19 @@ pointTrans2 fn bb =
 
 
 
-instance PtSize u => Transform (BoundingBox u) where
+instance PsDouble u => Transform (BoundingBox u) where
   transform mtrx = pointTransform  (mtrx *#)
 
-instance PtSize u => Rotate (BoundingBox u) where
+instance PsDouble u => Rotate (BoundingBox u) where
   rotate theta = pointTransform (rotate theta)
 
-instance PtSize u => RotateAbout (BoundingBox u) where
+instance PsDouble u => RotateAbout (BoundingBox u) where
   rotateAbout theta pt = pointTrans2 (rotateAbout theta pt)
 
-instance PtSize u => Scale (BoundingBox u) where
+instance PsDouble u => Scale (BoundingBox u) where
   scale sx sy = pointTransform (scale sx sy)
 
-instance PtSize u => Translate (BoundingBox u) where
+instance PsDouble u => Translate (BoundingBox u) where
   translate dx dy = pointTransform (translate dx dy)
 
 

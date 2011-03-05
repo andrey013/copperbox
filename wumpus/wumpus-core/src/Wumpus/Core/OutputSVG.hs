@@ -47,7 +47,6 @@ import Wumpus.Core.SVGDoc
 import Wumpus.Core.TrafoInternal
 import Wumpus.Core.Text.Base
 import Wumpus.Core.Text.GlyphIndices
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 import Wumpus.Core.Utils.JoinList
 
@@ -113,10 +112,10 @@ askFontAttr     :: SvgMonad FontAttr
 askFontAttr     = asksGraphicsState $ \r -> 
                     FontAttr (gs_font_size r) (gs_font_face r)
 
-askLineWidth    :: SvgMonad PsPoint
+askLineWidth    :: SvgMonad Double
 askLineWidth    = asksGraphicsState (line_width . gs_stroke_attr)
 
-askMiterLimit   :: SvgMonad PsPoint
+askMiterLimit   :: SvgMonad Double
 askMiterLimit   = asksGraphicsState (miter_limit . gs_stroke_attr)
 
 askLineCap      :: SvgMonad LineCap
@@ -530,8 +529,8 @@ bracketTextCTM ctm0 pf = (\xy -> xy <+> mtrx) <$> pf zeroPt
 bracketEllipseCTM :: PrimCTM -> (DPoint2 -> SvgMonad Doc) -> SvgMonad Doc
 bracketEllipseCTM ctm0 pf = step $ unCTM ctm0
   where
-    step (P2 x y, ctm) 
-        | ctm == flippedCTM   = pf $ P2 (dpoint x) (dpoint y)
+    step (p0, ctm) 
+        | ctm == flippedCTM   = pf p0
         | otherwise           = let mtrx = attr_transform $ 
                                              val_matrix $ matrixRepCTM ctm0
                                 in (\xy -> xy <+> mtrx) <$> pf zeroPt

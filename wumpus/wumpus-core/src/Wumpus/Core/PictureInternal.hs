@@ -402,12 +402,12 @@ instance Format XLink where
 --------------------------------------------------------------------------------
 
 instance Boundary Picture Double where
-  boundary (Leaf    (bb,_) _)   = fmap dpoint bb
-  boundary (Picture (bb,_) _)   = fmap dpoint bb
+  boundary (Leaf    (bb,_) _)   = bb
+  boundary (Picture (bb,_) _)   = bb
 
 
 instance Boundary Primitive Double where
-  boundary = fmap dpoint . bbPrim
+  boundary = bbPrim
 
 
 bbPrim :: Primitive -> BoundingBox Double
@@ -432,7 +432,7 @@ pathBoundary :: PrimPath -> BoundingBox Double
 pathBoundary (PrimPath vs ctm) = 
     retraceBoundary (m33 *#) $ step zeroPt (zeroPt,zeroPt) vs
   where
-    m33         = fmap dpoint $ matrixRepCTM ctm
+    m33         = matrixRepCTM ctm
 
     step _  (lo,hi) []                         = BBox lo hi 
 
@@ -464,7 +464,7 @@ labelBoundary :: FontAttr -> PrimLabel -> BoundingBox Double
 labelBoundary attr (PrimLabel body ctm) = 
     retraceBoundary (m33 *#) untraf_bbox
   where
-    m33         = fmap dpoint $ matrixRepCTM ctm
+    m33         = matrixRepCTM ctm
     untraf_bbox = labelBodyBoundary (font_size attr) body
 
 labelBodyBoundary :: FontSize -> LabelBody -> BoundingBox Double
@@ -519,7 +519,7 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
     se   = P2   hw  (-hh) 
     ne   = P2   hw    hh 
     nw   = P2 (-hw)   hh 
-    m33  = fmap dpoint $ matrixRepCTM ctm
+    m33  = matrixRepCTM ctm
 
 
 --------------------------------------------------------------------------------
@@ -533,7 +533,7 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
 
 instance Transform Picture where
   transform mtrx = 
-    mapLocale $ \(bb,xs) -> let cmd = Matrix $ fmap psDouble mtrx
+    mapLocale $ \(bb,xs) -> let cmd = Matrix mtrx
                             in (transform mtrx bb, cmd : xs)
 
 instance Rotate Picture where
@@ -542,19 +542,19 @@ instance Rotate Picture where
 
 
 instance RotateAbout Picture where
-  rotateAbout theta pt@(P2 x y) = 
-    mapLocale $ \(bb,xs) -> let dpt = P2 (psDouble x) (psDouble y)
+  rotateAbout theta pt = 
+    mapLocale $ \(bb,xs) -> let dpt = fmap toPsDouble pt
                                 cmd = RotAbout theta dpt
                             in (rotateAbout theta pt bb, cmd : xs)
 
 instance Scale Picture where
   scale sx sy = 
-    mapLocale $ \(bb,xs) -> let cmd = Scale (psDouble sx) (psDouble sy)
+    mapLocale $ \(bb,xs) -> let cmd = Scale sx sy
                             in (scale sx sy bb, cmd : xs)
 
 instance Translate Picture where
   translate dx dy = 
-    mapLocale $ \(bb,xs) -> let cmd = Translate (psDouble dx) (psDouble dy)
+    mapLocale $ \(bb,xs) -> let cmd = Translate dx dy
                             in ( translate dx dy bb, cmd : xs)
                      
 
@@ -583,14 +583,16 @@ instance Rotate Primitive where
   rotate r (PClip p chi)    = PClip (rotatePath r p) (rotate r chi)
 
 instance RotateAbout Primitive where
-  rotateAbout r pt (PPath a path)   = PPath a    $ rotateAboutPath r pt path
-  rotateAbout r pt (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r pt lbl
-  rotateAbout r pt (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r pt ell
-  rotateAbout r pt (PContext a chi) = PContext a $ rotateAbout r pt chi
-  rotateAbout r pt (PSVG a chi)     = PSVG a     $ rotateAbout r pt chi
-  rotateAbout r pt (PGroup xs)      = PGroup     $ fmap (rotateAbout r pt) xs
-  rotateAbout r pt (PClip p chi)    = 
-      PClip (rotateAboutPath r pt p) (rotateAbout r pt chi)
+  rotateAbout r pt obj = let pt1 = fmap toPsDouble pt in fn pt1 obj
+    where
+      fn p0 (PPath a path)   = PPath a    $ rotateAboutPath r p0 path
+      fn p0 (PLabel a lbl)   = PLabel a   $ rotateAboutLabel r p0 lbl
+      fn p0 (PEllipse a ell) = PEllipse a $ rotateAboutEllipse r p0 ell
+      fn p0 (PContext a chi) = PContext a $ rotateAbout r p0 chi
+      fn p0 (PSVG a chi)     = PSVG a     $ rotateAbout r p0 chi
+      fn p0 (PGroup xs)      = PGroup     $ fmap (rotateAbout r p0) xs
+      fn p0 (PClip p chi)    = PClip (rotateAboutPath r p0 p) 
+                                     (rotateAbout     r p0 chi)
 
 
 instance Scale Primitive where
@@ -624,15 +626,13 @@ rotatePath :: Radian -> PrimPath -> PrimPath
 rotatePath ang (PrimPath vs ctm) = PrimPath vs (rotateCTM ang ctm)
 
 
-rotateAboutPath :: PtSize u
-                => Radian -> Point2 u -> PrimPath -> PrimPath
+rotateAboutPath :: Radian -> DPoint2 -> PrimPath -> PrimPath
 rotateAboutPath ang (P2 x y) (PrimPath vs ctm) = 
-    PrimPath vs (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
+    PrimPath vs (rotateAboutCTM ang (P2 x y) ctm)
 
 
 scalePath :: Double -> Double -> PrimPath -> PrimPath
-scalePath sx sy (PrimPath vs ctm) = 
-    PrimPath vs (scaleCTM (psDouble sx) (psDouble sy) ctm)
+scalePath sx sy (PrimPath vs ctm) = PrimPath vs (scaleCTM sx sy ctm)
 
 
 -- Note - translate only needs change the start point /because/ 
@@ -640,7 +640,7 @@ scalePath sx sy (PrimPath vs ctm) =
 -- 
 translatePath :: Double -> Double -> PrimPath -> PrimPath
 translatePath dx dy (PrimPath vs ctm) = 
-    PrimPath vs (translateCTM (psDouble dx) (psDouble dy) ctm)
+    PrimPath vs (translateCTM dx dy ctm)
 
 
 --------------------------------------------------------------------------------
@@ -657,21 +657,21 @@ rotateLabel ang (PrimLabel txt ctm) = PrimLabel txt (rotateCTM ang ctm)
 
 -- /rotateAbout/ the start-point, /rotate/ the the CTM.
 --
-rotateAboutLabel :: PtSize u => Radian -> Point2 u -> PrimLabel -> PrimLabel
+rotateAboutLabel :: Radian -> DPoint2 -> PrimLabel -> PrimLabel
 rotateAboutLabel ang (P2 x y) (PrimLabel txt ctm) = 
-    PrimLabel txt (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
+    PrimLabel txt (rotateAboutCTM ang (P2 x y) ctm)
 
 
 scaleLabel :: Double -> Double -> PrimLabel -> PrimLabel
 scaleLabel sx sy (PrimLabel txt ctm) = 
-    PrimLabel txt (scaleCTM (psDouble sx) (psDouble sy) ctm)
+    PrimLabel txt (scaleCTM sx sy ctm)
 
 
 -- Change the bottom-left corner.
 --
 translateLabel :: Double -> Double -> PrimLabel -> PrimLabel
 translateLabel dx dy (PrimLabel txt ctm) = 
-    PrimLabel txt (translateCTM (psDouble dx) (psDouble dy) ctm)
+    PrimLabel txt (translateCTM dx dy ctm)
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -682,15 +682,14 @@ rotateEllipse ang (PrimEllipse hw hh ctm) =
     PrimEllipse hw hh (rotateCTM ang ctm)
     
 
-rotateAboutEllipse :: PtSize u
-                   => Radian -> Point2 u -> PrimEllipse -> PrimEllipse
+rotateAboutEllipse :: Radian -> DPoint2 -> PrimEllipse -> PrimEllipse
 rotateAboutEllipse ang (P2 x y) (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (rotateAboutCTM ang (P2 (psDouble x) (psDouble y)) ctm)
+    PrimEllipse hw hh (rotateAboutCTM ang (P2 x y) ctm)
 
 
 scaleEllipse :: Double -> Double -> PrimEllipse -> PrimEllipse
 scaleEllipse sx sy (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (scaleCTM (psDouble sx) (psDouble sy) ctm)
+    PrimEllipse hw hh (scaleCTM sx sy ctm)
     
 
 
@@ -698,7 +697,7 @@ scaleEllipse sx sy (PrimEllipse hw hh ctm) =
 --
 translateEllipse :: Double -> Double -> PrimEllipse -> PrimEllipse
 translateEllipse dx dy (PrimEllipse hw hh ctm) = 
-    PrimEllipse hw hh (translateCTM (psDouble dx) (psDouble dy) ctm)
+    PrimEllipse hw hh (translateCTM dx dy ctm)
 
 
 
@@ -733,22 +732,19 @@ repositionDeltas :: Picture -> (BoundingBox Double, Maybe DVec2)
 repositionDeltas = step . boundary 
   where
     step bb@(BBox (P2 llx lly) (P2 urx ury))
-        | llx < unit4 || lly < unit4  = (BBox ll ur, Just $ V2 x y)
-        | otherwise                   = (bb, Nothing)
+        | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
+        | otherwise           = (bb, Nothing)
       where 
-        x  = unit4 - llx
-        y  = unit4 - lly
+        x  = 4 - llx
+        y  = 4 - lly
         ll = P2 (llx+x) (lly+y)
         ur = P2 (urx+x) (ury+y) 
-
-    unit4 = dpoint 4
 
 
 extractRelPath :: PrimPath -> (DPoint2, [PrimPathSegment])
 extractRelPath (PrimPath ss ctm) = (start, usegs)
   where 
-    (dstart,dctm) = unCTM ctm
-    start         = fmap dpoint dstart
+    (start,dctm)  = unCTM ctm
     mtrafo        = transform (matrixRepCTM dctm)
     usegs         = map fn ss
     

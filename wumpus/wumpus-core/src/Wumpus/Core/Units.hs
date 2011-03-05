@@ -37,14 +37,6 @@ module Wumpus.Core.Units
   , ucast0
   , ucast1
 
-  -- * PostScript point size type
-  , PsPoint
-  , UPsPoint(..)
-
-  -- * Extract (unscaled) PtSize as a Double 
-  , ptSize
-
-
 
   -- * Centimeter type
   , Centimeter   
@@ -57,11 +49,8 @@ module Wumpus.Core.Units
   , pica
 
   -- * Conversion class
-  , PtSize(..)
+  , PsDouble(..)
 
-  -- * Convert to and from a Double.
-  , dpoint
-  , psDouble
 
   , pspt
   , psptFmt
@@ -93,30 +82,6 @@ ucast1 _ = id
 
 
 
--- | Wrapped Double representing /Point size/ for font metrics 
--- etc.
--- 
-newtype PsPoint = PsPoint 
-          { psPoint :: Double  -- ^ Extract Point Size as a Double 
-          } 
-  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
-
-data UPsPoint = UPsPoint
-
-instance Unit UPsPoint PsPoint
-
-
-instance Show PsPoint where
-  showsPrec p d = showsPrec p (psPoint d)
-
-instance Format PsPoint where
-  format = psptFmt
-
--- | Extract a point size as a @Double@.
---
-ptSize :: PsPoint -> Double
-ptSize = psPoint
-
 
 --------------------------------------------------------------------------------
 
@@ -131,12 +96,6 @@ instance Unit UCentimeter Centimeter
 
 instance Show Centimeter where
   showsPrec p d = showsPrec p (getCentimeter d)
-
-
-instance PtSize Centimeter where
-  fromPsPoint = Centimeter . (0.03514598 *) . ptSize
-  toPsPoint   = cm
-
 
 instance Format Centimeter where
   format c = dtruncFmt (getCentimeter c) <> text "cm"
@@ -164,11 +123,6 @@ instance Unit UPica Pica
 instance Show Pica where
   showsPrec p d = showsPrec p (getPica d)
 
-
-instance PtSize Pica where
-  fromPsPoint = Pica . (\x -> x / 12.0) . ptSize
-  toPsPoint   = pica
-
 instance Format Pica where
   format p = dtruncFmt (getPica p) <> text "pica"
                             
@@ -189,66 +143,52 @@ pica = realToFrac . (* 12.0) . getPica
 -- @floor@ for the conversion @fromPsPoint@. Hence they are not 
 -- numerically accurate. They are provided for convenience only.
 -- 
-class (Num u, Ord u) => PtSize u where
-  fromPsPoint :: PsPoint -> u
-  toPsPoint  :: u -> PsPoint
+class (Num u, Ord u) => PsDouble u where
+  fromPsDouble :: Double -> u
+  toPsDouble   :: u -> Double
 
-instance PtSize Double where
-  fromPsPoint = psPoint
-  toPsPoint   = PsPoint
+instance PsDouble Double where
+  fromPsDouble = id
+  toPsDouble   = id
   
-instance PtSize Float where
-  fromPsPoint = realToFrac . psPoint
-  toPsPoint   = PsPoint . realToFrac
+instance PsDouble Float where
+  fromPsDouble = realToFrac
+  toPsDouble   = realToFrac
 
 
-instance PtSize Int where
-  fromPsPoint = floor . psPoint
-  toPsPoint   = PsPoint . fromIntegral
+instance PsDouble Int where
+  fromPsDouble = floor
+  toPsDouble   = fromIntegral
 
-instance PtSize Integer where
-  fromPsPoint = floor . psPoint
-  toPsPoint   = PsPoint . fromIntegral
+instance PsDouble Integer where
+  fromPsDouble = floor
+  toPsDouble   = fromIntegral
 
-instance PtSize (Ratio Integer) where
-  fromPsPoint = realToFrac
-  toPsPoint   = realToFrac
+instance PsDouble (Ratio Integer) where
+  fromPsDouble = realToFrac
+  toPsDouble   = realToFrac
 
-instance PtSize (Ratio Int) where
-  fromPsPoint = realToFrac
-  toPsPoint   = realToFrac
-
-
-instance PtSize PsPoint where
-  fromPsPoint = id
-  toPsPoint   = id
+instance PsDouble (Ratio Int) where
+  fromPsDouble = realToFrac
+  toPsDouble   = realToFrac
 
 
+instance PsDouble Centimeter where
+  fromPsDouble = Centimeter . (0.03514598 *)
+  toPsDouble   = cm
 
-
--- | By convention Wumpus uses the standard Haskell @Double@ as
--- point size.
--- 
--- This function casts a Double to another unit (e.g. @pica@) that
--- supports @PtSize@.
---
-dpoint :: PtSize u => Double -> u
-dpoint = fromPsPoint . toPsPoint
-
--- | Convert some PtSize unit to a Double avoiding the newtype 
--- wrapper of PsPoint.
---
-psDouble :: PtSize u => u -> Double
-psDouble = psPoint . toPsPoint
+instance PsDouble Pica where
+  fromPsDouble = Pica . (\x -> x / 12.0)
+  toPsDouble   = pica
 
 
 -- | Format a value as truncated double representing PostScript 
 -- points.
 --
-pspt :: PtSize u => u -> String
-pspt = truncateDouble . psPoint . toPsPoint
+pspt :: PsDouble u => u -> String
+pspt = truncateDouble . toPsDouble
 
 -- | Version of 'pspt' for Wumpus-Core\'s internal pretty printer.
 --
-psptFmt :: PtSize u => u -> Doc
-psptFmt = dtruncFmt . psPoint . toPsPoint
+psptFmt :: PsDouble u => u -> Doc
+psptFmt = dtruncFmt . toPsDouble

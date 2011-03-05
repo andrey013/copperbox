@@ -39,6 +39,7 @@ module Wumpus.Core.WumpusTypes
   , XLink
   , PrimPath
   , PrimPathSegment
+  , AbsPathSegment
   , PrimLabel
   , KerningChar
 

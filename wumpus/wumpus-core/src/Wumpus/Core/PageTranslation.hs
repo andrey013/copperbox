@@ -29,7 +29,6 @@ module Wumpus.Core.PageTranslation
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.TrafoInternal
-import Wumpus.Core.Units
 
 --------------------------------------------------------------------------------
 -- trivial translation
@@ -48,11 +47,8 @@ svgPageTranslation pic = scale 1 (-1) (trivPic pic)
 
 
 trivPic :: Picture -> Picture
-trivPic (Leaf lc ones)      = Leaf (trivLocale lc) (fmap trivPrim ones)
-trivPic (Picture lc ones)   = Picture (trivLocale lc) (fmap trivPic ones)
-
-trivLocale :: Locale -> Locale
-trivLocale (bb, dtrafos) = (fmap psDouble bb, dtrafos)
+trivPic (Leaf lc ones)      = Leaf lc (fmap trivPrim ones)
+trivPic (Picture lc ones)   = Picture lc (fmap trivPic ones)
 
 
 -- | Path is unchanged because it is drawn directly in the output
@@ -71,20 +67,10 @@ trivPrim (PClip pp chi)   = PClip pp (trivPrim chi)
 
 trivLabel :: PrimLabel -> PrimLabel
 trivLabel (PrimLabel txt ctm) = 
-    PrimLabel (trivLabelBody txt) (trivPrimCTM ctm)
+    PrimLabel txt (trivPrimCTM ctm)
 
 trivEllipse :: PrimEllipse -> PrimEllipse
-trivEllipse (PrimEllipse hw hh ctm) = 
-    PrimEllipse (psDouble hw) (psDouble hh) (trivPrimCTM ctm)
-
-trivLabelBody :: LabelBody -> LabelBody
-trivLabelBody (StdLayout esc) = StdLayout esc
-trivLabelBody (KernTextH xs)  = KernTextH $ map trivKerningChar xs
-trivLabelBody (KernTextV xs)  = KernTextV $ map trivKerningChar xs
-
-trivKerningChar :: KerningChar -> KerningChar
-trivKerningChar (u,esc) = (psDouble u, esc)
-
+trivEllipse (PrimEllipse hw hh ctm) = PrimEllipse hw hh (trivPrimCTM ctm)
 
 -- Negate the y scaling to flip the image.
 --

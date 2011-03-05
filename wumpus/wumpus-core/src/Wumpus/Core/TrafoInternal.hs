@@ -52,7 +52,6 @@ module Wumpus.Core.TrafoInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.Common ( dtruncFmt )
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -130,9 +129,9 @@ makeTranslCTM dx dy = PrimCTM { ctm_trans_x  = dx
                               , ctm_rotation = 0 }
 
 
-startPointCTM :: PtSize u => Point2 u -> PrimCTM
-startPointCTM (P2 x y) = PrimCTM { ctm_trans_x  = psDouble x
-                                 , ctm_trans_y  = psDouble y
+startPointCTM :: DPoint2 -> PrimCTM
+startPointCTM (P2 x y) = PrimCTM { ctm_trans_x  = x
+                                 , ctm_trans_y  = y
                                  , ctm_scale_x  = 1
                                  , ctm_scale_y  = 1
                                  , ctm_rotation = 0 }
@@ -164,11 +163,9 @@ rotateCTM theta (PrimCTM dx dy sx sy ang) =
     let P2 x y = rotate theta (P2 dx dy) 
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
-rotateAboutCTM :: PtSize u
-               => Radian -> Point2 u -> PrimCTM -> PrimCTM
+rotateAboutCTM :: Radian -> DPoint2 -> PrimCTM -> PrimCTM
 rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) = 
-    let ptd    = fmap psDouble pt 
-        P2 x y = rotateAbout theta ptd (P2 dx dy)
+    let P2 x y = rotateAbout theta pt (P2 dx dy)
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
 
