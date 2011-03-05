@@ -82,10 +82,10 @@ type CharWidthLookup u = CodePoint -> Vec2 u
 -- current point size, the actual fields are all functions.
 --
 data FontMetrics = FontMetrics
-    { get_bounding_box :: forall u. PtSize u => PsPoint -> BoundingBox u 
-    , get_cw_table     :: forall u. PtSize u => PsPoint -> CharWidthLookup u
-    , get_cap_height   :: forall u. PtSize u => PsPoint -> u
-    , get_descender    :: forall u. PtSize u => PsPoint -> u
+    { get_bounding_box :: FontSize -> BoundingBox Double
+    , get_cw_table     :: FontSize -> CharWidthLookup Double
+    , get_cap_height   :: FontSize -> Double
+    , get_descender    :: FontSize -> Double
     }
 
 
@@ -173,7 +173,7 @@ monospace_metrics = FontMetrics
     cap_height      = 562    / 1000
     descender       = (-157) / 1000
 
-    upscale sz d    = fromPsPoint $ sz * d
+    upscale sz d    = fromPsDouble $ d * fromIntegral sz
     lowerLeft sz    = P2 (upscale sz llx) (upscale sz lly) 
     upperRight sz   = P2 (upscale sz urx) (upscale sz ury) 
 

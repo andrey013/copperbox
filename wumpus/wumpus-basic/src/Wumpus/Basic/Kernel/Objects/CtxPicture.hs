@@ -202,8 +202,8 @@ instance Translate CtxPicture where
 --------------------------------------------------------------------------------
 -- Extract anchors
 
-boundaryExtr :: PtSize u => (BoundingBox u -> a) -> Picture -> a
-boundaryExtr f = f . fmap dpoint . boundary
+boundaryExtr :: PsDouble u => (BoundingBox u -> a) -> Picture -> a
+boundaryExtr f = f . fmap fromPsDouble . boundary
 
 -- Operations on bounds
 
@@ -399,14 +399,14 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 
 -- | Center the picture at the supplied point.
 --
-cxpCenteredAt :: (Fractional u, PtSize u) 
+cxpCenteredAt :: (Fractional u, PsDouble u) 
               => CtxPicture -> Point2 u -> CtxPicture
 cxpCenteredAt pic (P2 x y) = mapCtxPicture fn pic
   where
-    fn p = let bb = fmap dpoint $ boundary p
+    fn p = let bb = fmap fromPsDouble $ boundary p
                dx = x - (boundaryWidth  bb * 0.5)
                dy = y - (boundaryHeight bb * 0.5)
-           in p `picMoveBy` vec (psDouble dx) (psDouble dy)
+           in p `picMoveBy` vec (toPsDouble dx) (toPsDouble dy)
 
 
 
@@ -446,11 +446,11 @@ cxpColumn = foldl' cxpDown
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-cxpRightSep :: (Num u, Ord u, PtSize u) 
+cxpRightSep :: (Num u, Ord u, PsDouble u) 
             => u -> CtxPicture -> CtxPicture -> CtxPicture
 cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
-    moveFun a b pic = pic `picMoveBy` hvec ((psDouble n) + a - b)
+    moveFun a b pic = pic `picMoveBy` hvec ((toPsDouble n) + a - b)
 
     
 
@@ -461,11 +461,11 @@ cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-cxpDownSep :: (Num u, Ord u, PtSize u) 
+cxpDownSep :: (Num u, Ord u, PsDouble u) 
            => u -> CtxPicture -> CtxPicture -> CtxPicture
 cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
-    moveFun a b pic = pic `picMoveBy`  vvec (a - b - (psDouble n))
+    moveFun a b pic = pic `picMoveBy`  vvec (a - b - (toPsDouble n))
 
 
 
@@ -475,7 +475,7 @@ cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpRowSep :: (Real u, Floating u, PtSize u) 
+cxpRowSep :: (Real u, Floating u, PsDouble u) 
           => u -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpRowSep n = foldl' (cxpRightSep n)
 
@@ -487,7 +487,7 @@ cxpRowSep n = foldl' (cxpRightSep n)
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpColumnSep :: (Real u, Floating u, PtSize u) 
+cxpColumnSep :: (Real u, Floating u, PsDouble u) 
              => u -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpColumnSep n = foldl' (cxpDownSep n)
 
@@ -539,7 +539,7 @@ alignMove2 v p1 p2 pic = pic `picMoveBy` (v ^+^ (p1 .-. p2))
 cxpAlignSepH :: HAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSepH align dx = go align mv
   where
-    mv         = alignMove2 $ hvec $ psDouble dx
+    mv         = alignMove2 $ hvec dx
     go HTop    = megaCombR boundaryNE boundaryNW
     go HCenter = megaCombR boundaryE  boundaryW 
     go HBottom = megaCombR boundarySE boundarySW
@@ -553,7 +553,7 @@ cxpAlignSepH align dx = go align mv
 cxpAlignSepV :: VAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSepV align dy = go align mv
   where
-    mv         = alignMove2 $ vvec $ psDouble (-dy)
+    mv         = alignMove2 $ vvec (-dy)
     go VLeft   = megaCombR boundarySW boundaryNW
     go VCenter = megaCombR boundaryS  boundaryN  
     go VRight  = megaCombR boundarySE boundaryNE 

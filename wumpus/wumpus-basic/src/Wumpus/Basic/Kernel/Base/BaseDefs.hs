@@ -184,8 +184,8 @@ instance CxSize Double where
 
 
 instance CxSize Centimeter where
-  cfSize _ = psDouble  
-  csSize _ = dpoint
+  cfSize _ = toPsDouble
+  csSize _ = fromPsDouble
 
 
 

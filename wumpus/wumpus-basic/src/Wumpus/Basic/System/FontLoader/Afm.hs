@@ -93,7 +93,7 @@ afmLoadFontMetrics font_dir_path name = do
     path        <- checkFontPath font_dir_path (name ++ ".afm")
     ans         <- runParserFLIO path afmV4Dot1Parser
     props       <- buildAfmFontProps  afm_mono_defaults_4_1 ans
-    return (name, buildMetricsOps afmUnitScale props)
+    return (name, buildMetricsOps afmValue props)
 
 
 

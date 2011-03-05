@@ -335,33 +335,33 @@ thetaSouthwestwards d =
 --------------------------------------------------------------------------------
 
 
-centerRelative :: (CenterAnchor t u, Fractional u, PtSize u) 
+centerRelative :: (CenterAnchor t u, Fractional u, PsDouble u) 
                => (Int,Int) -> t -> DrawingInfo (Point2 u)
 centerRelative coord a =
     let pt = center a in snapmove coord >>= \v -> return (pt .+^ v)
 
 
-right_of        :: (CenterAnchor t u, Fractional u, PtSize u) 
+right_of        :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 right_of        = centerRelative (1,0)
 
-left_of         :: (CenterAnchor t u, Fractional u, PtSize u) 
+left_of         :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 left_of         = centerRelative ((-1),0)
 
-above_right_of  :: (CenterAnchor t u, Fractional u, PtSize u) 
+above_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 above_right_of  = centerRelative (1,1)
 
-below_right_of  :: (CenterAnchor t u, Fractional u, PtSize u) 
+below_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 below_right_of  = centerRelative (1, (-1))
 
-above_left_of   :: (CenterAnchor t u, Fractional u, PtSize u) 
+above_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 above_left_of   = centerRelative ((-1),1)
 
-below_left_of   :: (CenterAnchor t u, Fractional u, PtSize u) 
+below_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
                 => t -> DrawingInfo (Point2 u)
 below_left_of   = centerRelative ((-1),(-1))
  

@@ -17,15 +17,10 @@
 
 module Wumpus.Basic.System.FontLoader.Base.Datatypes
   (
-
-  -- * Afm Unit
-    AfmUnit
-  , afmValue
-  , afmUnitScale
   
   -- * Glyph metrics
 
-  , PSCharCode
+    PSCharCode
   , PSEncodingScheme
   , AfmBoundingBox
 
@@ -51,31 +46,9 @@ import qualified Data.Map      as M
 
 
 
--- | Wrapped Double representing 1\/1000 of the scale factor
--- (Point size) of a font. AFM files encode all measurements 
--- as these units. 
--- 
-newtype AfmUnit = AfmUnit { getAfmUnit :: Double } 
-  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
-
-instance Show AfmUnit where
-  showsPrec p d = showsPrec p (getAfmUnit d)
 
 
--- Note - AfmUnit is considered a /contextual size/. It is a 
--- scaling factor of a Point Size rather than a concrete unit.
---
--- Hence there is no instance of PtSize.
--- 
 
--- | Compute the size of a measurement in Afm units scaled by the
--- point size of the font.
---
-afmValue :: PtSize u => AfmUnit -> PsPoint -> u
-afmValue u pt = fromPsPoint $ (realToFrac $ getAfmUnit u) * (pt / 1000)
-
-afmUnitScale :: AfmUnit -> PsPoint
-afmUnitScale u = (realToFrac $ getAfmUnit u / 1000)
 
 
 --------------------------------------------------------------------------------
@@ -167,22 +140,22 @@ data FontProps cu = FontProps
 -- | Build a MetricsOps function table, from a character unit
 -- scaling function and FontProps read from a file.
 --
-buildMetricsOps :: (cu -> PsPoint) -> FontProps cu -> FontMetrics
+buildMetricsOps :: (FontSize -> cu -> Double) -> FontProps cu -> FontMetrics
 buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
                                    , fp_default_adv_vec = V2 vx vy }) = 
     FontMetrics
       { get_bounding_box  = \sz -> BBox (scalePt sz ll) (scalePt sz ur)
       , get_cw_table      = \sz i -> 
             maybe (defaultAV sz) (scaleVec sz) $ IM.lookup i (fp_adv_vecs font)
-      , get_cap_height    = \sz -> upscale sz (fn $ fp_cap_height font)
-      , get_descender     = \sz -> upscale sz (fn $ fp_descender font)
+      , get_cap_height    = \sz -> fn sz (fp_cap_height font)
+      , get_descender     = \sz -> fn sz (fp_descender font)
       }
   where
-    upscale sz d            = fromPsPoint $ sz * d 
+    upscale sz d            = fromPsDouble $ sz * d 
  
-    defaultAV sz            = V2 (upscale sz $ fn vx) (upscale sz $ fn vy) 
-    scalePt  sz (P2 cx cy)  = P2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
-    scaleVec sz (V2 cx cy)  = V2 (upscale sz $ fn cx) (upscale sz $ fn cy) 
+    defaultAV sz            = V2 (fn sz vx) (fn sz vy) 
+    scalePt  sz (P2 cx cy)  = P2 (fn sz cx) (fn sz cy) 
+    scaleVec sz (V2 cx cy)  = V2 (fn sz cx) (fn sz cy) 
 
 
 

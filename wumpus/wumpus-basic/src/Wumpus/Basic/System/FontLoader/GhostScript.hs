@@ -89,7 +89,7 @@ gsLoadFontMetrics font_dir_path fm name = do
     path        <- checkFontPath font_dir_path font_file
     ans         <- runParserFLIO path afmV2Parser
     props       <- buildAfmFontProps  ghostscript_mono_defaults_8_54 ans
-    return (name, buildMetricsOps afmUnitScale props)
+    return (name, buildMetricsOps afmValue props)
 
 
 resolveFontFile :: GSFontMap -> FontName -> FontLoadIO FilePath

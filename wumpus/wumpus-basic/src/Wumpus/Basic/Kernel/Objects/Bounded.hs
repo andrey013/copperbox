@@ -93,7 +93,7 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 -- so the dimensions as well as the positions may change under 
 -- rotation. 
 --
-centerOrthoBBox :: (Real u, Floating u, PtSize u) 
+centerOrthoBBox :: (Real u, Floating u, PsDouble u) 
                 => Radian -> BoundingBox u -> BoundingBox u
 centerOrthoBBox theta bb = 
     traceBoundary $ map (rotateAbout theta ctr) ps

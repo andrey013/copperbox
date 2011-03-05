@@ -32,7 +32,7 @@ drawing01 :: CtxPicture
 drawing01 = drawTracing UDouble $ mf 
 
 
-mf :: (Floating u, PtSize u) => TraceDrawing u ()
+mf :: TraceDrawing Double ()
 mf = do 
     draw $ line1 `at` (P2 0 100)
     draw $ line2 `at` (P2 0  75)

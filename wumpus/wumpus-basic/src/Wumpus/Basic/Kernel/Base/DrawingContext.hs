@@ -108,10 +108,11 @@ type DrawingContextF = DrawingContext -> DrawingContext
 -- The default value is 2 point.
 --
 data TextMargin = TextMargin
-       { text_margin_x          :: !PsPoint
-       , text_margin_y          :: !PsPoint
+       { text_margin_x          :: !Double
+       , text_margin_y          :: !Double
        }
 
+       -- TODO - this would be preferably as Em or En...
 
 -- | 'standardContext' : @ font_size -> DrawingContext @  
 --
@@ -313,13 +314,12 @@ query f = queryCtx >>= (return . f)
 
 
 
-withFontMetrics :: (FontMetrics -> PsPoint -> u) -> DrawingContext -> u
+withFontMetrics :: (FontMetrics -> FontSize -> u) -> DrawingContext -> u
 withFontMetrics fn ctx@(DrawingContext { dc_font_face = fface
-                                       , dc_font_size = fsize }) = 
-      fn metric_set point_sz
+                                       , dc_font_size = ftsize }) = 
+      fn metric_set ftsize
   where 
     ps_name     = ps_font_name fface
-    point_sz    = fromIntegral fsize 
     metric_set  = fromMaybe (dc_fallback_metrics ctx) $ 
                     lookupFont ps_name (dc_font_metrics_table ctx)
 

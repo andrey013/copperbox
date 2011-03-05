@@ -143,7 +143,7 @@ snap_grid_factors xu yu = \s -> s { dc_snap_grid_factors = (xu, yu) }
 --
 -- > line_default, line_thin, line_thick, line_ultra_thick
 --
-set_line_width      :: PsPoint -> DrawingContextF
+set_line_width      :: Double -> DrawingContextF
 set_line_width d    = updateStrokeProps (\s -> s { line_width = d })
 
 
@@ -386,7 +386,9 @@ half_point_size     = scalePointSize (1%2)
 
 -- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @
 --
-text_margin   :: PsPoint -> PsPoint -> DrawingContextF
+-- NOTE - ideally this would use Em or En rather thn Double...
+--
+text_margin   :: Double -> Double -> DrawingContextF
 text_margin xsep ysep = \s -> 
     s { dc_text_margin = TextMargin xsep ysep }
 
@@ -421,7 +423,7 @@ text_margin_loose = text_margin 8.0 8.0
 -- 
 relative_text_margin   :: Double -> DrawingContextF
 relative_text_margin sc = 
-   (\s i -> let sep = toPsPoint $ sc * fromIntegral i
+   (\s i -> let sep = sc * fromIntegral i
             in s { dc_text_margin = TextMargin sep sep })
      <*> dc_font_size
 

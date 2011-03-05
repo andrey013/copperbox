@@ -85,7 +85,7 @@ interLineLine (p1,p2) (q1,q2) =
 -- An answer of @Nothing@ indicates that the line segments 
 -- coincide, or that there is no intersection.
 --
-interLinesegLineseg :: (Fractional u, Ord u, PtSize u)
+interLinesegLineseg :: (Fractional u, Ord u, PsDouble u)
                     => LineSegment u -> LineSegment u -> Maybe (Point2 u)
 interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) = 
     interLineLine (p,q) (s,t) >>= segcheck
@@ -101,7 +101,7 @@ interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) =
 -- An answer of @Nothing@ indicates that the the line and line
 -- segment coincide, or that there is no intersection.
 --
-interLinesegLine :: (Fractional u, Ord u, PtSize u)
+interLinesegLine :: (Fractional u, Ord u, PsDouble u)
                  => LineSegment u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
 interLinesegLine a@(LineSegment p q) line = 
     interLineLine (p,q) line >>= segcheck
@@ -117,7 +117,7 @@ mbCheck test a = if test a then Just a else Nothing
 -- Note - this function is to be used \*after\* an intersection
 -- has been found. Hence it is not export.
 --
-withinPoints :: (Ord u, PtSize u) => Point2 u -> LineSegment u -> Bool
+withinPoints :: (Ord u, PsDouble u) => Point2 u -> LineSegment u -> Bool
 withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =  
     between x (ordpair x0 x1) && between y (ordpair y0 y1)
   where
@@ -129,8 +129,8 @@ withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =
 -- | Note - its important to use tolerance for the @withPoints@ 
 -- function.
 --
-tolerance :: PtSize u => u
-tolerance = fromPsPoint 0.01
+tolerance :: PsDouble u => u
+tolerance = fromPsDouble 0.01
 
 
 
@@ -140,7 +140,7 @@ tolerance = fromPsPoint 0.01
 --------------------------------------------------------------------------------
 -- intersection of line and Bezier curve
 
-interCurveLine :: (Floating u , Ord u, PtSize u)
+interCurveLine :: (Floating u , Ord u, PsDouble u)
                => BezierCurve u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
 interCurveLine c0 (p,q) = step c0
   where
@@ -159,7 +159,7 @@ interCurveLine c0 (p,q) = step c0
 -- as it saves performing a subdivision. But make the return type
 -- a bit involved.
 --
-cut :: (Floating u , Ord u, PtSize u)
+cut :: (Floating u , Ord u, PsDouble u)
     => BezierCurve u -> LineEquation u -> Either (Point2 u) Bool
 cut (BezierCurve p0 p1 p2 p3) line = 
     if d0 `tEQ` 0 then Left p0 else
@@ -190,7 +190,7 @@ cut (BezierCurve p0 p1 p2 p3) line =
 -- at angle @theta@ and the supplied line segments, if there 
 -- is one. 
 --
-findIntersect :: (Floating u, Real u, Ord u, PtSize u)
+findIntersect :: (Floating u, Real u, Ord u, PsDouble u)
               => Point2 u -> Radian -> [LineSegment u] 
               -> Maybe (Point2 u)
 findIntersect radial_ogin ang = step 

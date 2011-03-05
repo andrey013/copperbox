@@ -136,12 +136,13 @@ bimapImageAns :: (t a -> t1 b) -> (Primitive -> Primitive)
 bimapImageAns f g = ImageAns . bimap f g . getImageAns
 
 
-convertImageAns :: (Functor t, CxSize u, PtSize u1) 
+convertImageAns :: (Functor t, CxSize u, PsDouble u1) 
                 => FontSize -> ImageAns t u -> ImageAns t u1
-convertImageAns sz = ImageAns . bimapL (fmap (dpoint . cfSize sz)) . getImageAns
+convertImageAns sz = 
+    ImageAns . bimapL (fmap (fromPsDouble . cfSize sz)) . getImageAns
 
 
-cxConverti :: (Functor t, Functor f, CxSize u, PtSize u1) 
+cxConverti :: (Functor t, Functor f, CxSize u, PsDouble u1) 
            => FontSize -> f (ImageAns t u) -> f (ImageAns t u1)
 cxConverti sz = fmap (convertImageAns sz) 
 

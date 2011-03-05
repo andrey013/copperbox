@@ -288,9 +288,9 @@ type DBezierCurve = BezierCurve Double
 -- The result is found through repeated subdivision so the 
 -- calculation is potentially costly.
 --
-bezierLength :: (Floating u, Ord u, PtSize u)      
+bezierLength :: (Floating u, Ord u, PsDouble u)      
              => BezierCurve u -> u
-bezierLength = gravesenLength (fromPsPoint 0.1)
+bezierLength = gravesenLength (fromPsDouble 0.1)
 
 
 

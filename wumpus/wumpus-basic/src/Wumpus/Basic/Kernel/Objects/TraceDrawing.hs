@@ -448,7 +448,7 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 -- | Draw with grid coordinate...
 --
-node :: (Fractional u, PtSize u, TraceM m u, DrawingCtxM m) 
+node :: (Fractional u, PsDouble u, TraceM m u, DrawingCtxM m) 
      => (Int,Int) -> LocGraphic u -> m ()
 node coord gf = queryCtx       >>= \ctx -> 
                 position coord >>= \pt  -> 
@@ -458,7 +458,7 @@ node coord gf = queryCtx       >>= \ctx ->
 
 -- | Draw with grid coordinate...
 -- 
-nodei :: ( Fractional u, PtSize u, TraceM m u, DrawingCtxM m)
+nodei :: ( Fractional u, PsDouble u, TraceM m u, DrawingCtxM m)
       => (Int,Int) -> LocImage t u -> m (t u)
 nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
@@ -470,7 +470,7 @@ nodei coord imgL = queryCtx    >>= \ctx ->
  
 -- | Draw with grid coordinate...
 --
-nodei_ :: (Fractional u, TraceM m u, PtSize u, DrawingCtxM m)
+nodei_ :: (Fractional u, TraceM m u, PsDouble u, DrawingCtxM m)
        => (Int,Int) -> LocImage t u -> m ()
 nodei_ coord imgL = nodei coord imgL >> return ()
 
@@ -496,7 +496,7 @@ cxdrawi_ pf gf = cxdrawi pf gf >> return ()
 
 
 
-drawrc :: ( Real u, Floating u, PtSize u
+drawrc :: ( Real u, Floating u, PsDouble u
           , CenterAnchor t1 u, RadialAnchor  t1 u
           , CenterAnchor t2 u, RadialAnchor  t2 u
           , DrawingCtxM m,   TraceM m u
@@ -506,7 +506,7 @@ drawrc a b gf = let (p0,p1) = radialConnectorPoints a b
                 in draw (connect gf p0 p1)
 
 
-drawrci :: ( Real u, Floating u, PtSize u
+drawrci :: ( Real u, Floating u, PsDouble u
            , CenterAnchor t1 u, RadialAnchor  t1 u
            , CenterAnchor t2 u, RadialAnchor  t2 u
            , DrawingCtxM m,   TraceM m u
@@ -515,7 +515,7 @@ drawrci :: ( Real u, Floating u, PtSize u
 drawrci a b gf = let (p0,p1) = radialConnectorPoints a b 
                  in drawci p0 p1 gf
 
-drawrci_ :: ( Real u, Floating u, PtSize u
+drawrci_ :: ( Real u, Floating u, PsDouble u
             , CenterAnchor t1 u, RadialAnchor  t1 u
             , CenterAnchor t2 u, RadialAnchor  t2 u
             , DrawingCtxM m,   TraceM m u
