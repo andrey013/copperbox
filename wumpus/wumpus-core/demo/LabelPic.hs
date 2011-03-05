@@ -109,7 +109,7 @@ demo07 = do
 drawBounds :: Picture -> Picture
 drawBounds p        = p `picOver` (frame [zcstroke ph])
   where
-    ph            = vertexPath $ [bl,br,tr,tl]
+    ph            = vertexPrimPath $ [bl,br,tr,tl]
     (bl,br,tr,tl) = boundaryCorners $ boundary p
 
 

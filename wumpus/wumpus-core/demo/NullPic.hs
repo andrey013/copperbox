@@ -16,12 +16,13 @@ main = do
 
 
 pic_empty :: Picture
-pic_empty = frame [ ostroke red  default_stroke_attr null_path
-                  , ostroke blue default_stroke_attr (vectorPath (P2 0 100) [])
-                  , ztextlabel "" zeroPt 
-                  ]
+pic_empty = 
+    frame [ ostroke red  default_stroke_attr null_path
+          , ostroke blue default_stroke_attr (vectorPrimPath (P2 0 100) [])
+          , ztextlabel "" zeroPt 
+          ]
   where
-   null_path = emptyPath $ P2 100 100
+   null_path = emptyPrimPath $ P2 100 100
 
 
 

@@ -50,7 +50,7 @@ pic3 = illustrateBounds grey $ frame $
 
 
 square :: RGBi -> Double -> DPoint2 -> Primitive
-square rgb sidelen bl = fill rgb $ vertexPath $
+square rgb sidelen bl = fill rgb $ vertexPrimPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 
 

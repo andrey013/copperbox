@@ -27,7 +27,7 @@ pic1 = uniformScale 2 $ frame $
 
 
 square :: RGBi -> Double -> DPoint2 -> Primitive
-square rgb sidelen bl = fill rgb $ vertexPath $
+square rgb sidelen bl = fill rgb $ vertexPrimPath $
     [bl, bl .+^ hvec sidelen, bl .+^ V2 sidelen sidelen, bl .+^ vvec sidelen]
 
 -- The PostScript generated from this is pretty good.

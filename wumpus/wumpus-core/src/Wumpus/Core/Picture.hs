@@ -39,14 +39,14 @@ module Wumpus.Core.Picture
   , multi
   , fontDeltaContext
   , primPath
-  , lineTo
-  , curveTo
-  , vertexPath
-  , vectorPath
-  , emptyPath
-  , curvedPath
+  , absLineTo
+  , absCurveTo
+  , vertexPrimPath
+  , vectorPrimPath
+  , emptyPrimPath
+  , curvedPrimPath
   , xlinkhref
-  , xlink
+  , xlinkPrim
   , svgattr
   , annotateGroup
   , annotateXLink
@@ -209,13 +209,13 @@ primPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
 
 
          
--- | 'lineTo' : @ end_point -> path_segment @
+-- | 'absLineTo' : @ end_point -> path_segment @
 -- 
 -- Create a straight-line PathSegment, the start point is 
 -- implicitly the previous point in a path.
 --
-lineTo :: DPoint2 -> AbsPathSegment 
-lineTo = AbsLineTo
+absLineTo :: DPoint2 -> AbsPathSegment 
+absLineTo = AbsLineTo
 
 -- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
 --        path_segment @
@@ -224,13 +224,13 @@ lineTo = AbsLineTo
 -- previous point in a path.
 --
 --
-curveTo :: DPoint2 -> DPoint2 -> DPoint2 -> AbsPathSegment
-curveTo = AbsCurveTo
+absCurveTo :: DPoint2 -> DPoint2 -> DPoint2 -> AbsPathSegment
+absCurveTo = AbsCurveTo
 
     
 
 
--- | 'vertexPath' : @ [point] -> PrimPath @
+-- | 'vertexPrimPath' : @ [point] -> PrimPath @
 -- 
 -- Convert the list of vertices to a path of straight line 
 -- segments.
@@ -238,15 +238,15 @@ curveTo = AbsCurveTo
 -- \*\* WARNING \*\* - this function throws a runtime error when 
 -- supplied the empty list.
 --
-vertexPath :: [DPoint2] -> PrimPath
-vertexPath []     = error "Picture.vertexPath - empty point list"
-vertexPath (x:xs) = 
+vertexPrimPath :: [DPoint2] -> PrimPath
+vertexPrimPath []     = error "Picture.vertexPath - empty point list"
+vertexPrimPath (x:xs) = 
     PrimPath (snd $ mapAccumL step x xs) (startPointCTM x)
   where
     step a b = let v = b .-. a in (b, RelLineTo v)
 
 
--- | 'vectorPath' : @ start_point -> [next_vector] -> PrimPath @
+-- | 'vectorPrimPath' : @ start_point -> [next_vector] -> PrimPath @
 -- 
 -- Build a \"relative\" path from the start point, appending 
 -- successive straight line segments formed from the list of 
@@ -255,22 +255,22 @@ vertexPath (x:xs) =
 -- This function can be supplied with an empty list - this 
 -- simulates a null graphic.
 --
-vectorPath :: DPoint2 -> [DVec2] -> PrimPath
-vectorPath pt xs = PrimPath (map RelLineTo xs) (startPointCTM pt)
+vectorPrimPath :: DPoint2 -> [DVec2] -> PrimPath
+vectorPrimPath pt xs = PrimPath (map RelLineTo xs) (startPointCTM pt)
 
 
--- | 'emptyPath' : @ start_point -> PrimPath @
+-- | 'emptyPrimPath' : @ start_point -> PrimPath @
 -- 
 -- Build an empty path. The start point must be specified even
 -- though the path is not drawn - a start point is the minimum 
 -- information needed to calculate a bounding box. 
 --
-emptyPath :: DPoint2 -> PrimPath
-emptyPath pt  = PrimPath [] (startPointCTM pt)
+emptyPrimPath :: DPoint2 -> PrimPath
+emptyPrimPath pt = PrimPath [] (startPointCTM pt)
 
 
 
--- | 'curvedPath' : @ points -> PrimPath @
+-- | 'curvedPrimPath' : @ points -> PrimPath @
 -- 
 -- Convert a list of vertices to a path of curve segments.
 -- The first point in the list makes the start point, each curve 
@@ -280,9 +280,9 @@ emptyPath pt  = PrimPath [] (startPointCTM pt)
 -- \*\* WARNING - this function throws an error when supplied the 
 -- empty list.
 -- 
-curvedPath :: [DPoint2] -> PrimPath
-curvedPath []     = error "Picture.curvedPath - empty point list"
-curvedPath (x:xs) = PrimPath (step x xs) (startPointCTM x)
+curvedPrimPath :: [DPoint2] -> PrimPath
+curvedPrimPath []     = error "Picture.curvedPath - empty point list"
+curvedPrimPath (x:xs) = PrimPath (step x xs) (startPointCTM x)
   where
     step p (a:b:c:ys) = let v1 = a .-. p 
                             v2 = b .-. a
@@ -298,8 +298,8 @@ xlinkhref = XLink
 
 -- | Create a hyperlinked Primitive.
 --
-xlink :: XLink -> Primitive -> Primitive
-xlink hypl p = PSVG (ALink hypl) p  
+xlinkPrim :: XLink -> Primitive -> Primitive
+xlinkPrim hypl p = PSVG (ALink hypl) p  
 
 
 -- | Create an attribute for SVG output.
@@ -827,9 +827,9 @@ boundsPrims :: Boundary t Double => RGBi -> t -> H Primitive
 boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
   where
     (bl,br,tr,tl) = boundaryCorners $ boundary a
-    bbox_rect     = cstroke rgb line_attr $ vertexPath [bl,br,tr,tl]
-    bl_to_tr      = ostroke rgb line_attr $ vertexPath [bl,tr]
-    br_to_tl      = ostroke rgb line_attr $ vertexPath [br,tl]
+    bbox_rect     = cstroke rgb line_attr $ vertexPrimPath [bl,br,tr,tl]
+    bl_to_tr      = ostroke rgb line_attr $ vertexPrimPath [bl,tr]
+    br_to_tl      = ostroke rgb line_attr $ vertexPrimPath [br,tl]
 
     line_attr     = default_stroke_attr { line_cap     = CapRound
                                         , dash_pattern = Dash 0 [(1,2)] }
@@ -871,7 +871,7 @@ pathCtrlLines rgb ppath =
 
     step _ []                       = emptyH
 
-    mkLine s v                      = let pp = (primPath s [lineTo $ s .+^ v]) 
+    mkLine s v                      = let pp = (primPath s [absLineTo $ s .+^ v]) 
                                       in ostroke rgb default_stroke_attr pp 
 
 

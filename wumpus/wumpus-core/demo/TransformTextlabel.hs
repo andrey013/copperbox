@@ -79,7 +79,7 @@ crosshair :: Double -> Double -> DPoint2 -> Picture
 crosshair w h bl = 
     frame [ostroke burlywood default_stroke_attr $ primPath bl ps]
   where
-    ps    = [ lineTo tr, lineTo br, lineTo tl, lineTo bl ]
+    ps    = [ absLineTo tr, absLineTo br, absLineTo tl, absLineTo bl ]
     tl    = bl .+^ vvec h
     tr    = bl .+^ vec  w h
     br    = bl .+^ hvec w
@@ -95,7 +95,7 @@ xy_frame ss =
           ]
 
   where
-    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [lineTo p2]
+    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [absLineTo p2]
 
 dpt :: DPoint2
 dpt = zeroPt

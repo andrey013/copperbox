@@ -59,6 +59,14 @@ description:
     appears on more function signatures than previously, clients
     will have to update accordingly.
   .
+  * Picture API change. Various function names changed - 
+    @lineTo@ becomes @absLineTo@ and @curveTo@ becomes 
+    @absCurveTo@. The path builders are qualified with /Prim/, 
+    @vertexPath@ becomes @vertexPrimPath@, @vectorPath@ becomes 
+    @vectorPrimPath@, @emptyPath@ becomes @emptyPrimPath@ and 
+    @curvedPath@ becomes @curvedPrimPath@. @xlink@ becomes 
+    @xlinkPrim@.
+  .  
   * API change - PtSize data type replaced by AfmUnit.
   .
   * API and representation change - clipping paths are represented

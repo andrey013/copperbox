@@ -48,9 +48,9 @@ boundedCourier = boundedText courier
 boundedText :: FontAttr -> String -> DPoint2 -> Primitive
 boundedText fa@(FontAttr sz _) ss pt = primCat bbox text
   where
-    esc_text  = escapeString ss  
-    bbox_path = vertexPath $ boundaryCornerList $ textBoundsEsc sz pt esc_text
-    bbox      = cstroke peru default_stroke_attr bbox_path
-    text      = escapedlabel black fa esc_text pt
+    esc_txt = escapeString ss  
+    bb_path = vertexPrimPath $ boundaryCornerList $ textBoundsEsc sz pt esc_txt
+    bbox    = cstroke peru default_stroke_attr bb_path
+    text    = escapedlabel black fa esc_txt pt
 
 

@@ -78,7 +78,7 @@ crossbar :: Double -> Double -> DPoint2 -> Picture
 crossbar rx ry ctr = 
     frame [ostroke black default_stroke_attr $ primPath west ps]
   where
-    ps    = [ lineTo east, lineTo ctr, lineTo north, lineTo south ]
+    ps    = [ absLineTo east, absLineTo ctr, absLineTo north, absLineTo south ]
     north = ctr .+^ vvec ry
     south = ctr .-^ vvec ry 
     east  = ctr .+^ hvec rx
@@ -93,7 +93,7 @@ xy_frame ss =
           ]
 
   where
-    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [lineTo p2]
+    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [absLineTo p2]
 
 dpt :: DPoint2
 dpt = zeroPt

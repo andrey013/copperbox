@@ -16,7 +16,7 @@ main = do
 
 
 link_pic :: Picture
-link_pic = frame [ xlink xref $ ztextlabel "www.haskell.org" zeroPt ]
+link_pic = frame [ xlinkPrim xref $ ztextlabel "www.haskell.org" zeroPt ]
   where    
      xref = xlinkhref "http://www.haskell.org"
 
