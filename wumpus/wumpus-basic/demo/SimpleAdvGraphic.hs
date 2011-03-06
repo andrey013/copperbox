@@ -42,15 +42,15 @@ mf = do
 -- Normally, text calculate the advance vector from the font 
 -- metrics...
 --
-text01 :: CxSize u => AdvGraphic u 
+text01 :: CtxSize u => AdvGraphic u 
 text01 = replaceAns (hvec 84) $ textline "text01"
     
 
-text02 :: CxSize u => AdvGraphic u 
+text02 :: CtxSize u => AdvGraphic u 
 text02 = replaceAns (hvec 210) $ textline "text number two"
 
 
-miniDisk :: CxSize u => AdvGraphic u
+miniDisk :: CtxSize u => AdvGraphic u
 miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
 
 

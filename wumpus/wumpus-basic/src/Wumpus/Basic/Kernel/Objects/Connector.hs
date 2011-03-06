@@ -101,7 +101,7 @@ intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- bounding box around the rectangular hull of the start and end 
 -- points.
 -- 
-emptyConnectorGraphic :: CxSize u => ConnectorGraphic u 
+emptyConnectorGraphic :: CtxSize u => ConnectorGraphic u 
 emptyConnectorGraphic = promoteR2 $ \start end -> 
     let a = emptyLocGraphic `at` start
         b = emptyLocGraphic `at` end

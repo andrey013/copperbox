@@ -21,8 +21,13 @@
 module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
-    ctxSize 
-  , ctxSizeF
+    dsize 
+  , dsizeF
+  , usize
+  , usizeF
+  , castsize
+  , castsizeF
+
   , textAttr
   , withTextAttr
 
@@ -69,15 +74,27 @@ import Wumpus.Core                              -- package: wumpus-core
 import qualified Wumpus.Core.FontSize   as FS
  
 import Control.Applicative
+import Control.Monad
 
 
+dsize :: (DrawingCtxM m, CtxSize u) => u -> m Double
+dsize u = (\sz -> cfSize sz u) <$> query dc_font_size
 
-ctxSize :: (DrawingCtxM m, CxSize u) => u -> m Double
-ctxSize u = (\sz -> cfSize sz u) <$> query dc_font_size
+dsizeF :: (Functor t, DrawingCtxM m, CtxSize u) => t u -> m (t Double)
+dsizeF obj = (\sz -> fmap (cfSize sz) obj) <$> query dc_font_size
 
-ctxSizeF :: (Functor t, DrawingCtxM m, CxSize u) => t u -> m (t Double)
-ctxSizeF obj = (\sz -> fmap (cfSize sz) obj) <$> query dc_font_size
+usize :: (DrawingCtxM m, CtxSize u) => Double -> m u
+usize u = (\sz -> csSize sz u) <$> query dc_font_size
 
+usizeF :: (Functor t, DrawingCtxM m, CtxSize u) => t Double -> m (t u)
+usizeF obj = (\sz -> fmap (csSize sz) obj) <$> query dc_font_size
+
+castsize :: (DrawingCtxM m, CtxSize u, CtxSize u1) => u -> m u1
+castsize = dsize >=> usize
+
+castsizeF :: (Functor f, DrawingCtxM m, CtxSize u, CtxSize u1) 
+          => f u -> m (f u1)
+castsizeF = dsizeF >=> usizeF
 
 
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
@@ -117,29 +134,27 @@ withBorderedAttr fn =
 -- | Get the Point corresponding the grid coordinates scaled by
 -- the snap-grid scaling factors.
 --
-position :: (Fractional u, PsDouble u, DrawingCtxM m) 
+position :: (Fractional u, CtxSize u, DrawingCtxM m) 
          => (Int,Int) -> m (Point2 u)
-position (x,y) = fn <$> query dc_snap_grid_factors
+position (x,y) = query dc_snap_grid_factors >>= post
   where
-    fn (scx,scy) = P2 (fromPsDouble $ scx * fromIntegral x)
-                      (fromPsDouble $ scy * fromIntegral y)
+    post (scx,scy) = usizeF $ P2 (scx * fromIntegral x) (scy * fromIntegral y)
 
 
 -- | Scale a vector coordinate by the snap-grid scaling factors.
 --
-snapmove :: (Fractional u, PsDouble u, DrawingCtxM m) 
+snapmove :: (Fractional u, CtxSize u, DrawingCtxM m) 
        => (Int,Int) -> m (Vec2 u)
-snapmove (x,y) = fn <$> query dc_snap_grid_factors
+snapmove (x,y) = query dc_snap_grid_factors >>= post
   where
-    fn (scx,scy) = V2 (fromPsDouble $ scx * fromIntegral x)
-                      (fromPsDouble $ scy * fromIntegral y)
+    post (scx,scy) = usizeF $ V2 (scx * fromIntegral x) (scy * fromIntegral y)
 
 
 
 -- | Size of the round corner factor.
 --
-getRoundCornerSize :: (Fractional u, PsDouble u, DrawingCtxM m) => m u
-getRoundCornerSize = fromPsDouble <$> query dc_round_corner_factor
+getRoundCornerSize :: (Fractional u, CtxSize u , DrawingCtxM m) => m u
+getRoundCornerSize = query dc_round_corner_factor >>= usize
 
 
 -- | Get the (x,y) margin around text.
@@ -147,11 +162,12 @@ getRoundCornerSize = fromPsDouble <$> query dc_round_corner_factor
 -- Note - not all text operations in Wumpus are drawn with text 
 -- margin. 
 -- 
-getTextMargin :: (Fractional u, PsDouble u, DrawingCtxM m) => m (u,u)
-getTextMargin = 
-    (\(TextMargin xsep ysep) -> (fromPsDouble xsep, fromPsDouble ysep))
-      <$> query dc_text_margin
+getTextMargin :: (Fractional u, CtxSize u, DrawingCtxM m) => m (u,u)
+getTextMargin = query dc_text_margin >>= post
+  where
+    post (TextMargin xsep ysep) = (,) <$> castsize xsep <*> castsize ysep
 
+    -- cannot use castsizeF on a pair
 
 
 getLineWidth :: DrawingCtxM m => m Double
@@ -188,11 +204,11 @@ baselineSpacing =
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: (PsDouble u, DrawingCtxM m) => m u
-markHeight = (fromPsDouble . FS.xcharHeight) <$> query dc_font_size
+markHeight :: (CtxSize u, DrawingCtxM m) => m u
+markHeight = query (FS.xcharHeight . dc_font_size) >>= usize
 
 
-markHalfHeight :: (Fractional u, PsDouble u, DrawingCtxM m) => m u
+markHalfHeight :: (Fractional u, CtxSize u, DrawingCtxM m) => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 
@@ -211,32 +227,33 @@ glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> queryCtx
 -- the glyphs in the font. The span of the height is expected to 
 -- be bigger than the cap_height plus descender depth.
 --
-glyphBoundingBox :: (PsDouble u, DrawingCtxM m) => m (BoundingBox u)
-glyphBoundingBox = fmap post $ glyphQuery get_bounding_box
-  where
-    post (BBox ll ur) = BBox (fmap fromPsDouble ll) (fmap fromPsDouble ur)
+glyphBoundingBox :: (CtxSize u, DrawingCtxM m) => m (BoundingBox u)
+glyphBoundingBox = glyphQuery get_bounding_box >>= usizeF
 
 
 
 
 
-glyphCapHeight :: (PsDouble u, DrawingCtxM m) => m u
-glyphCapHeight = fmap fromPsDouble $ glyphQuery get_cap_height
+glyphCapHeight :: (CtxSize u, DrawingCtxM m) => m u
+glyphCapHeight = glyphQuery get_cap_height >>= usize
 
 -- | Note - descender is expected to be negative.
 --
-glyphDescender :: (PsDouble u, DrawingCtxM m) => m u
-glyphDescender = fmap fromPsDouble $ glyphQuery get_descender
+glyphDescender :: (CtxSize u, DrawingCtxM m) => m u
+glyphDescender = glyphQuery get_descender >>= usize
 
 -- | This is the distance from cap_height to descender.
 --
-glyphVerticalSpan :: (PsDouble u, DrawingCtxM m) => m u
+glyphVerticalSpan :: (CtxSize u, DrawingCtxM m) => m u
 glyphVerticalSpan = 
     (\ch dd -> ch - dd) <$> glyphCapHeight <*> glyphDescender
 
 
-cwLookupTable :: (PsDouble u, DrawingCtxM m) => m (CharWidthLookup u)
-cwLookupTable = fmap adapt $ glyphQuery get_cw_table
-   where 
-     adapt table = \codepoint -> fmap fromPsDouble $ table codepoint
+-- | Note the CharWidthLookup is not parameteric on units.
+--
+-- /CharWidth/ is always Double representing PostScript points.
+-- Client code must convert this value accordingly.
+--
+cwLookupTable :: DrawingCtxM m => m CharWidthLookup
+cwLookupTable = glyphQuery get_cw_table
 

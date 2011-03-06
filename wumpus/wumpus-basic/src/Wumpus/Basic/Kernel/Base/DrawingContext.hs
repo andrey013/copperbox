@@ -50,6 +50,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.FontMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -101,15 +102,14 @@ data DrawingContext = DrawingContext
 --
 type DrawingContextF = DrawingContext -> DrawingContext
 
--- | The unit of Margin is always Double representing Points, e.g.
--- 1.0 is 1 Point. Margins are not scaled relative to the current
--- font size.
+-- | The text margin is measured in 'Em' so it is relative to the
+-- current font size.
 -- 
--- The default value is 2 point.
+-- The default value is 2.
 --
 data TextMargin = TextMargin
-       { text_margin_x          :: !Double
-       , text_margin_y          :: !Double
+       { text_margin_x          :: !Em
+       , text_margin_y          :: !Em
        }
 
        -- TODO - this would be preferably as Em or En...

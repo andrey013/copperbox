@@ -23,6 +23,7 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   -- * Paths
     locPath
   , emptyLocPath
+  , vertexPath
 
   , openStroke
   , closedStroke
@@ -104,11 +105,11 @@ graphicAns p = imageAns (Const ()) p
 -- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
 -- result is produced /within/ the 'DrawingContext'.
 --
-locPath :: CxSize u => [Vec2 u] -> LocCF u PrimPath
+locPath :: CtxSize u => [Vec2 u] -> LocCF u PrimPath
 locPath vs = promoteR1 $ \pt  ->
-              mapM ctxSizeF vs >>= \vs1 ->
-              ctxSizeF pt      >>= \pt1 -> 
-              return $ vectorPath pt1 vs1
+              mapM dsizeF vs >>= \vs1 ->
+              dsizeF pt      >>= \pt1 -> 
+              return $ vectorPrimPath pt1 vs1
 
 
 -- | 'emptyLocPath' : @ (Point ~> PrimPath) @
@@ -119,10 +120,21 @@ locPath vs = promoteR1 $ \pt  ->
 -- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
 -- result is produced /within/ the 'DrawingContext'.
 --
-emptyLocPath :: CxSize u => LocCF u PrimPath
+emptyLocPath :: CtxSize u => LocCF u PrimPath
 emptyLocPath = locPath []
 
 
+
+-- | 'vertexLine' : @ (Point ~> PrimPath) @
+--
+-- Create a path made of straight line segments joining the 
+-- supplied points.
+--
+-- This is the analogue to 'vertexPath' in @Wumpus-Core@, but it
+-- is polymorphic on unit.
+--
+vertexPath :: CtxSize u => [Point2 u] -> DrawingInfo PrimPath
+vertexPath xs = vertexPrimPath <$> mapM dsizeF xs
 
 
 --
@@ -189,10 +201,10 @@ borderedPath pp =
 -- text properties (font family, font size, colour) are taken from
 -- the implicit 'DrawingContext'.
 --
-textline :: CxSize u => String -> LocGraphic u
+textline :: CtxSize u => String -> LocGraphic u
 textline ss = 
     promoteR1 $ \pt -> 
-      ctxSizeF pt >>= \pt1 -> 
+      dsizeF pt >>= \pt1 -> 
       withTextAttr $ \rgb attr -> graphicAns (textlabel rgb attr ss pt1)
 
 
@@ -211,9 +223,9 @@ textline ss =
 -- 
 -- This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
-rtextline :: CxSize u => String -> LocThetaGraphic u
+rtextline :: CtxSize u => String -> LocThetaGraphic u
 rtextline ss = promoteR2 $ \pt theta -> 
-    ctxSizeF pt >>= \pt1 -> 
+    dsizeF pt >>= \pt1 -> 
     withTextAttr $ \rgb attr -> graphicAns (rtextlabel rgb attr ss theta pt1)
 
 
@@ -229,9 +241,9 @@ rtextline ss = promoteR2 $ \pt theta ->
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-escapedline :: CxSize u => EscapedText -> LocGraphic u
+escapedline :: CtxSize u => EscapedText -> LocGraphic u
 escapedline ss = promoteR1 $ \pt -> 
-    ctxSizeF pt >>= \pt1 -> 
+    dsizeF pt >>= \pt1 -> 
     withTextAttr $ \rgb attr -> graphicAns (escapedlabel rgb attr ss pt1)
 
 
@@ -251,9 +263,9 @@ escapedline ss = promoteR1 $ \pt ->
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-rescapedline :: CxSize u => EscapedText -> LocThetaGraphic u
+rescapedline :: CtxSize u => EscapedText -> LocThetaGraphic u
 rescapedline ss = promoteR2 $ \pt theta -> 
-    ctxSizeF pt >>= \pt1 -> 
+    dsizeF pt >>= \pt1 -> 
     withTextAttr $ \rgb attr -> 
           graphicAns (rescapedlabel rgb attr ss theta pt1)
 
@@ -271,9 +283,9 @@ rescapedline ss = promoteR2 $ \pt theta ->
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-hkernline :: CxSize u => [KerningChar] -> LocGraphic u
+hkernline :: CtxSize u => [KerningChar] -> LocGraphic u
 hkernline xs = promoteR1 $ \pt -> 
-    ctxSizeF pt >>= \pt1 -> 
+    dsizeF pt >>= \pt1 -> 
     withTextAttr $ \rgb attr -> graphicAns (hkernlabel rgb attr xs pt1)
 
 
@@ -288,10 +300,10 @@ hkernline xs = promoteR1 $ \pt ->
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-vkernline :: CxSize u => [KerningChar] -> LocGraphic u
+vkernline :: CtxSize u => [KerningChar] -> LocGraphic u
 vkernline xs = 
     promoteR1 $ \pt -> 
-      ctxSizeF pt >>= \pt1 -> 
+      dsizeF pt >>= \pt1 -> 
       withTextAttr $ \rgb attr -> graphicAns (vkernlabel rgb attr xs pt1)
 
 -- Design Note - [KerningChar] is the wrong type here, we need one 
@@ -314,12 +326,12 @@ vkernline xs =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-straightLine :: (Fractional u, CxSize u) 
+straightLine :: (Fractional u, CtxSize u) 
              => Vec2 u -> LocGraphic u
 straightLine v = promoteR1 $ \pt ->
-    ctxSizeF v  >>= \v1 ->
-    ctxSizeF pt >>= \pt1 ->
-    openStroke $ vectorPath pt1 [v1]
+    dsizeF v  >>= \v1 ->
+    dsizeF pt >>= \pt1 ->
+    openStroke $ vectorPrimPath pt1 [v1]
 
           
 -- | 'straightLineGraphic' : @ start_point * end_point -> LocGraphic @ 
@@ -330,12 +342,12 @@ straightLine v = promoteR1 $ \pt ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-straightLineGraphic :: (Fractional u, CxSize u) 
+straightLineGraphic :: (Fractional u, CtxSize u) 
                     => Point2 u -> Point2 u -> Graphic u
 straightLineGraphic p1 p2 = 
-    ctxSizeF p1  >>= \pt1 ->
-    ctxSizeF p2 >>= \pt2 ->
-    openStroke $ primPath pt1 [lineTo pt2]
+    dsizeF p1 >>= \pt1 ->
+    dsizeF p2 >>= \pt2 ->
+    openStroke $ primPath pt1 [absLineTo pt2]
 
 
 
@@ -348,14 +360,14 @@ straightLineGraphic p1 p2 =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-curveGraphic :: (Fractional u, CxSize u)
+curveGraphic :: (Fractional u, CtxSize u)
              => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
 curveGraphic p0 p1 p2 p3 = 
-    ctxSizeF p0 >>= \pt0 ->
-    ctxSizeF p1 >>= \pt1 ->
-    ctxSizeF p2 >>= \pt2 ->
-    ctxSizeF p3 >>= \pt3 ->    
-    openStroke $ primPath pt0 [curveTo pt1 pt2 pt3]
+    dsizeF p0 >>= \pt0 ->
+    dsizeF p1 >>= \pt1 ->
+    dsizeF p2 >>= \pt2 ->
+    dsizeF p3 >>= \pt3 ->    
+    openStroke $ primPath pt0 [absCurveTo pt1 pt2 pt3]
 
 
 --------------------------------------------------------------------------------
@@ -369,11 +381,11 @@ curveGraphic p0 p1 p2 p3 =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedCircle :: (Floating u, CxSize u) => u -> LocGraphic u
+strokedCircle :: (Floating u, CtxSize u) => u -> LocGraphic u
 strokedCircle r = promoteR1 $ \pt -> 
-    ctxSize r   >>= \r1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    closedStroke $ curvedPath $ bezierCircle r1 pt1
+    dsize r   >>= \r1 ->
+    dsizeF pt >>= \pt1 -> 
+    closedStroke $ curvedPrimPath $ bezierCircle r1 pt1
 
 
 
@@ -384,11 +396,11 @@ strokedCircle r = promoteR1 $ \pt ->
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledCircle :: (Floating u, CxSize u) => u -> LocGraphic u
+filledCircle :: (Floating u, CtxSize u) => u -> LocGraphic u
 filledCircle r =  promoteR1 $ \pt -> 
-    ctxSize r   >>= \r1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    filledPath $ curvedPath $ bezierCircle r1 pt1
+    dsize r   >>= \r1 ->
+    dsizeF pt >>= \pt1 -> 
+    filledPath $ curvedPrimPath $ bezierCircle r1 pt1
 
 
 
@@ -400,11 +412,11 @@ filledCircle r =  promoteR1 $ \pt ->
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedCircle :: (Floating u, CxSize u) => u -> LocGraphic u
+borderedCircle :: (Floating u, CtxSize u) => u -> LocGraphic u
 borderedCircle r = promoteR1 $ \pt -> 
-    ctxSize r   >>= \r1 ->
-    ctxSizeF pt >>= \pt1 ->    
-    borderedPath $ curvedPath $ bezierCircle r1 pt1
+    dsize r   >>= \r1 ->
+    dsizeF pt >>= \pt1 ->    
+    borderedPath $ curvedPrimPath $ bezierCircle r1 pt1
 
 
 --------------------------------------------------------------------------------
@@ -420,12 +432,12 @@ borderedCircle r = promoteR1 $ \pt ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipse :: (Floating u, CxSize u) => u -> u -> LocGraphic u
+strokedEllipse :: (Floating u, CtxSize u) => u -> u -> LocGraphic u
 strokedEllipse rx ry = promoteR1 $ \pt -> 
-    ctxSize rx  >>= \rx1 ->
-    ctxSize ry  >>= \ry1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    closedStroke $ curvedPath $ bezierEllipse rx1 ry1 pt1
+    dsize rx  >>= \rx1 ->
+    dsize ry  >>= \ry1 ->
+    dsizeF pt >>= \pt1 -> 
+    closedStroke $ curvedPrimPath $ bezierEllipse rx1 ry1 pt1
 
 
 
@@ -438,13 +450,13 @@ strokedEllipse rx ry = promoteR1 $ \pt ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-rstrokedEllipse :: (Real u, Floating u, CxSize u) 
+rstrokedEllipse :: (Real u, Floating u, CtxSize u) 
                 => u -> u -> LocThetaGraphic u
 rstrokedEllipse rx ry = promoteR2 $ \ pt theta -> 
-    ctxSize rx  >>= \rx1 ->
-    ctxSize ry  >>= \ry1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    closedStroke $ curvedPath $ rbezierEllipse rx1 ry1 theta pt1
+    dsize rx  >>= \rx1 ->
+    dsize ry  >>= \ry1 ->
+    dsizeF pt >>= \pt1 -> 
+    closedStroke $ curvedPrimPath $ rbezierEllipse rx1 ry1 theta pt1
 
 
 -- | 'filledEllipse' : @ x_radius * y_radius -> LocGraphic @
@@ -454,12 +466,12 @@ rstrokedEllipse rx ry = promoteR2 $ \ pt theta ->
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledEllipse :: (Floating u, CxSize u) => u -> u -> LocGraphic u
+filledEllipse :: (Floating u, CtxSize u) => u -> u -> LocGraphic u
 filledEllipse rx ry = promoteR1 $ \pt -> 
-    ctxSize rx  >>= \rx1 ->
-    ctxSize ry  >>= \ry1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    filledPath $ curvedPath $ bezierEllipse rx1 ry1 pt1
+    dsize rx  >>= \rx1 ->
+    dsize ry  >>= \ry1 ->
+    dsizeF pt >>= \pt1 -> 
+    filledPath $ curvedPrimPath $ bezierEllipse rx1 ry1 pt1
 
 
 -- | 'rfilledEllipse' : @ x_radius * y_radius -> LocGraphic @
@@ -470,13 +482,13 @@ filledEllipse rx ry = promoteR1 $ \pt ->
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-rfilledEllipse :: (Real u, Floating u, CxSize u) 
+rfilledEllipse :: (Real u, Floating u, CtxSize u) 
                => u -> u -> LocThetaGraphic u
 rfilledEllipse rx ry = promoteR2 $ \ pt theta -> 
-    ctxSize rx  >>= \rx1 ->
-    ctxSize ry  >>= \ry1 ->
-    ctxSizeF pt >>= \pt1 -> 
-    filledPath $ curvedPath $ rbezierEllipse rx1 ry1 theta pt1
+    dsize rx  >>= \rx1 ->
+    dsize ry  >>= \ry1 ->
+    dsizeF pt >>= \pt1 -> 
+    filledPath $ curvedPrimPath $ rbezierEllipse rx1 ry1 theta pt1
 
 
 
@@ -488,12 +500,12 @@ rfilledEllipse rx ry = promoteR2 $ \ pt theta ->
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedEllipse :: (Floating u, CxSize u) => u -> u -> LocGraphic u
+borderedEllipse :: (Floating u, CtxSize u) => u -> u -> LocGraphic u
 borderedEllipse rx ry = promoteR1 $ \pt -> 
-    ctxSize rx  >>= \rx1 ->
-    ctxSize ry  >>= \ry1 ->
-    ctxSizeF pt >>= \pt1 ->     
-    borderedPath $ curvedPath $ bezierEllipse rx1 ry1 pt1
+    dsize rx  >>= \rx1 ->
+    dsize ry  >>= \ry1 ->
+    dsizeF pt >>= \pt1 ->     
+    borderedPath $ curvedPrimPath $ bezierEllipse rx1 ry1 pt1
 
 
 
@@ -506,13 +518,13 @@ borderedEllipse rx ry = promoteR1 $ \pt ->
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-rborderedEllipse :: (Real u, Floating u, CxSize u) 
+rborderedEllipse :: (Real u, Floating u, CtxSize u) 
                  => u -> u -> LocThetaGraphic u
 rborderedEllipse hw hh = promoteR2 $ \ pt theta -> 
-    ctxSizeF pt >>= \pt1 -> 
-    ctxSize  hw >>= \hw1 ->
-    ctxSize  hh >>= \hh1 ->
-    borderedPath $ curvedPath $ rbezierEllipse hw1 hh1 theta pt1
+    dsizeF pt >>= \pt1 -> 
+    dsize  hw >>= \hw1 ->
+    dsize  hh >>= \hh1 ->
+    borderedPath $ curvedPrimPath $ rbezierEllipse hw1 hh1 theta pt1
 
 
 
@@ -526,15 +538,15 @@ rborderedEllipse hw hh = promoteR2 $ \ pt theta ->
 
 -- | Supplied point is /bottom-left/.
 --
-rectanglePath :: CxSize u => u -> u -> Point2 u -> DrawingInfo PrimPath
+rectanglePath :: CtxSize u => u -> u -> Point2 u -> DrawingInfo PrimPath
 rectanglePath w h bl = 
-     ctxSize w >>= \w1 ->
-     ctxSize h >>= \h1 -> 
-     ctxSizeF bl >>= \bl1 -> 
+     dsize w >>= \w1 ->
+     dsize h >>= \h1 -> 
+     dsizeF bl >>= \bl1 -> 
      let br1 = bl1 .+^ hvec w1
          tr1 = br1 .+^ vvec h1
          tl1 = bl1 .+^ vvec h1 
-     in return $ primPath bl1 [ lineTo br1, lineTo tr1, lineTo tl1 ]
+     in return $ primPath bl1 [ absLineTo br1, absLineTo tr1, absLineTo tl1 ]
 
     
 
@@ -547,7 +559,7 @@ rectanglePath w h bl =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedRectangle :: CxSize u => u -> u -> LocGraphic u
+strokedRectangle :: CtxSize u => u -> u -> LocGraphic u
 strokedRectangle w h = promoteR1 $ \pt -> 
     rectanglePath w h pt >>= closedStroke
 
@@ -559,7 +571,7 @@ strokedRectangle w h = promoteR1 $ \pt ->
 -- 
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledRectangle :: CxSize u => u -> u -> LocGraphic u
+filledRectangle :: CtxSize u => u -> u -> LocGraphic u
 filledRectangle w h = promoteR1 $ \pt -> 
     rectanglePath w h pt >>= filledPath
 
@@ -572,7 +584,7 @@ filledRectangle w h = promoteR1 $ \pt ->
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedRectangle :: CxSize u => u -> u -> LocGraphic u
+borderedRectangle :: CtxSize u => u -> u -> LocGraphic u
 borderedRectangle w h = promoteR1 $ \pt -> 
     rectanglePath w h pt >>= borderedPath 
 
@@ -597,7 +609,7 @@ borderedRectangle w h = promoteR1 $ \pt ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedDisk :: CxSize u => u -> LocGraphic u
+strokedDisk :: CtxSize u => u -> LocGraphic u
 strokedDisk r = strokedEllipseDisk r r
 
 
@@ -613,7 +625,7 @@ strokedDisk r = strokedEllipseDisk r r
 --
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledDisk :: CxSize u => u -> LocGraphic u
+filledDisk :: CtxSize u => u -> LocGraphic u
 filledDisk r = filledEllipseDisk r r
 
 
@@ -634,7 +646,7 @@ filledDisk r = filledEllipseDisk r r
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedDisk :: CxSize u => u -> LocGraphic u
+borderedDisk :: CtxSize u => u -> LocGraphic u
 borderedDisk r = borderedEllipseDisk r r
 
 
@@ -655,12 +667,12 @@ borderedDisk r = borderedEllipseDisk r r
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipseDisk :: CxSize u => u -> u -> LocGraphic u
+strokedEllipseDisk :: CtxSize u => u -> u -> LocGraphic u
 strokedEllipseDisk rx ry =
     promoteR1 $ \ pt -> 
-      ctxSizeF pt >>= \pt1 -> 
-      ctxSize  rx >>= \rx1 ->
-      ctxSize  ry >>= \ry1 ->
+      dsizeF pt >>= \pt1 -> 
+      dsize  rx >>= \rx1 ->
+      dsize  ry >>= \ry1 ->
       withStrokeAttr $ \rgb attr -> 
         graphicAns (strokeEllipse rgb attr rx1 ry1 pt1)
 
@@ -677,12 +689,12 @@ strokedEllipseDisk rx ry =
 --
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
-filledEllipseDisk :: CxSize u => u -> u -> LocGraphic u
+filledEllipseDisk :: CtxSize u => u -> u -> LocGraphic u
 filledEllipseDisk rx ry = 
     promoteR1 $ \pt ->  
-      ctxSizeF pt >>= \pt1 -> 
-      ctxSize  rx >>= \rx1 ->
-      ctxSize  ry >>= \ry1 ->
+      dsizeF pt >>= \pt1 -> 
+      dsize  rx >>= \rx1 ->
+      dsize  ry >>= \ry1 ->
       withFillAttr $ \rgb -> graphicAns (fillEllipse rgb rx1 ry1 pt1)
 
 
@@ -703,11 +715,11 @@ filledEllipseDisk rx ry =
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-borderedEllipseDisk :: CxSize u => u -> u -> LocGraphic u
+borderedEllipseDisk :: CtxSize u => u -> u -> LocGraphic u
 borderedEllipseDisk rx ry = 
     promoteR1 $ \pt -> 
-      ctxSizeF pt >>= \pt1 -> 
-      ctxSize  rx >>= \rx1 ->
-      ctxSize  ry >>= \ry1 ->
+      dsizeF pt >>= \pt1 -> 
+      dsize  rx >>= \rx1 ->
+      dsize  ry >>= \ry1 ->
       withBorderedAttr $ \frgb attr srgb -> 
         graphicAns (fillStrokeEllipse frgb attr srgb rx1 ry1 pt1)

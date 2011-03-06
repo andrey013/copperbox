@@ -45,7 +45,7 @@ newtype Em = Em { getEm :: Double }
 instance Show Em where
   showsPrec p d = showsPrec p (getEm d)
 
-instance CxSize Em where
+instance CtxSize Em where
   cfSize sz a = fromIntegral sz * realToFrac a
   csSize sz d = realToFrac d / fromIntegral sz
 
@@ -63,7 +63,7 @@ instance Show En where
   showsPrec p d = showsPrec p (getEn d)
 
 
-instance CxSize En where
+instance CtxSize En where
   cfSize sz a = (realToFrac  a) * 0.5 * fromIntegral sz
   csSize sz d = 2 * (realToFrac d) / (fromIntegral sz)
 

@@ -28,7 +28,7 @@ drawing01 :: CtxPicture
 drawing01 = drawTracing UDouble $ localize (fill_colour red) $ mf 
 
 
-mf :: (Floating u, PtSize u) => TraceDrawing u ()
+mf :: TraceDrawing Double ()
 mf = do
     draw $ testDrawMinor NN     `at` (P2   0 300)
     draw $ testDrawMinor SS     `at` (P2  75 300)
@@ -50,10 +50,10 @@ mf = do
     draw $ testDrawBl    NW     `at` (P2 225 0)
     
 
-testDrawBl :: (Floating u, PtSize u) => RectPosition -> LocGraphic u
+testDrawBl :: (Floating u, CxSize u) => RectPosition -> LocGraphic u
 testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
-rectBl :: (Floating u, PtSize u) => PosGraphic u 
+rectBl :: (Floating u, CxSize u) => PosGraphic u 
 rectBl = makePosImage opos (mkRectBl w h)
   where
     w    = 40 
@@ -65,19 +65,19 @@ rectBl = makePosImage opos (mkRectBl w h)
  
 
 -- start-point - bottom left
-mkRectBl :: (Floating u, PtSize u) => u -> u -> LocGraphic u
+mkRectBl :: (Floating u, CxSize u) => u -> u -> LocGraphic u
 mkRectBl w h = promoteR1 $ \bl -> 
     let br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in closedStroke $ vertexPath [bl, br, tr, tl]
+    in vertexPath [bl, br, tr, tl] >>= closedStroke
 
 
 
-testDrawMinor :: (Floating u, PtSize u) => RectPosition -> LocGraphic u
+testDrawMinor :: (Floating u, CxSize u) => RectPosition -> LocGraphic u
 testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
-rectMinor :: (Floating u, PtSize u) => PosGraphic u 
+rectMinor :: (Floating u, CxSize u) => PosGraphic u 
 rectMinor = makePosImage opos (mkRectMinor m w h)
   where
     m    = 10
@@ -90,11 +90,11 @@ rectMinor = makePosImage opos (mkRectMinor m w h)
  
 
 -- start-point - +10 +10
-mkRectMinor :: (Floating u, PtSize u) => u -> u -> u -> LocGraphic u
+mkRectMinor :: (Floating u, CxSize u) => u -> u -> u -> LocGraphic u
 mkRectMinor m w h = promoteR1 $ \pt -> 
     let bl = displaceVec (vec (-m) (-m)) pt
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in closedStroke $ vertexPath [bl, br, tr, tl]
+    in vertexPath [bl, br, tr, tl] >>= closedStroke
 

@@ -77,6 +77,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
@@ -335,33 +336,33 @@ thetaSouthwestwards d =
 --------------------------------------------------------------------------------
 
 
-centerRelative :: (CenterAnchor t u, Fractional u, PsDouble u) 
+centerRelative :: (CenterAnchor t u, Fractional u, CtxSize u) 
                => (Int,Int) -> t -> DrawingInfo (Point2 u)
 centerRelative coord a =
     let pt = center a in snapmove coord >>= \v -> return (pt .+^ v)
 
 
-right_of        :: (CenterAnchor t u, Fractional u, PsDouble u) 
+right_of        :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 right_of        = centerRelative (1,0)
 
-left_of         :: (CenterAnchor t u, Fractional u, PsDouble u) 
+left_of         :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 left_of         = centerRelative ((-1),0)
 
-above_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
+above_right_of  :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 above_right_of  = centerRelative (1,1)
 
-below_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
+below_right_of  :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 below_right_of  = centerRelative (1, (-1))
 
-above_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
+above_left_of   :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 above_left_of   = centerRelative ((-1),1)
 
-below_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
+below_left_of   :: (CenterAnchor t u, Fractional u, CtxSize u) 
                 => t -> DrawingInfo (Point2 u)
 below_left_of   = centerRelative ((-1),(-1))
  

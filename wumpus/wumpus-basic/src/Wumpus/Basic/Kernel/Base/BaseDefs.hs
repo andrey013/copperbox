@@ -29,7 +29,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceR
 
   -- * /Contextual/ unit size
-  , CxSize(..)
+  , CtxSize(..)
 
 
   -- * Alignment
@@ -51,6 +51,10 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
+
+
+
+
 
 
 infixr 6 `oplus`
@@ -174,16 +178,16 @@ replaceR = bimapR . const
 --------------------------------------------------------------------------------
 -- Contextual size
 
-class Num u => CxSize u where
+class Num u => CtxSize u where
   cfSize :: FontSize -> u -> Double
   csSize :: FontSize -> Double -> u
 
-instance CxSize Double where
+instance CtxSize Double where
   cfSize _ = id  
   csSize _ = id
 
 
-instance CxSize Centimeter where
+instance CtxSize Centimeter where
   cfSize _ = toPsDouble
   csSize _ = fromPsDouble
 

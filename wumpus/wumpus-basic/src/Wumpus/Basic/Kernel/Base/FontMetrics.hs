@@ -61,11 +61,14 @@ type CodePoint = Int
 
 -- | A lookup function from code point to /width vector/.
 --
+-- The unit is always stored as a Double representing PostScript
+-- points.
+--
 -- Note - in PostScript terminology a width vector is not obliged
 -- to be left-to-right (writing direction 0). It could be 
 -- top-to-bottom (writing direction 1).
 --
-type CharWidthLookup u = CodePoint -> Vec2 u
+type CharWidthLookup = CodePoint -> Vec2 Double
 
 
 
@@ -83,7 +86,7 @@ type CharWidthLookup u = CodePoint -> Vec2 u
 --
 data FontMetrics = FontMetrics
     { get_bounding_box :: FontSize -> BoundingBox Double
-    , get_cw_table     :: FontSize -> CharWidthLookup Double
+    , get_cw_table     :: FontSize -> CharWidthLookup
     , get_cap_height   :: FontSize -> Double
     , get_descender    :: FontSize -> Double
     }
@@ -173,7 +176,7 @@ monospace_metrics = FontMetrics
     cap_height      = 562    / 1000
     descender       = (-157) / 1000
 
-    upscale sz d    = fromPsDouble $ d * fromIntegral sz
+    upscale sz d    = d * fromIntegral sz
     lowerLeft sz    = P2 (upscale sz llx) (upscale sz lly) 
     upperRight sz   = P2 (upscale sz urx) (upscale sz ury) 
 

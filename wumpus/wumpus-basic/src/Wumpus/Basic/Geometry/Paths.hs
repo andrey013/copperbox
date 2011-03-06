@@ -53,16 +53,20 @@ type LocCoordPath u = Point2 u -> [Point2 u]
 -- The Path data type will also need a similar function...
 --
  
-coordinatePrimPath :: CxSize u 
+
+-- | WARNING - this is (probably) the wrong type. 
+-- 
+-- Wumpus-Basic should not be propagating PrimPath.
+--
+coordinatePrimPath :: CtxSize u 
                    => Point2 u -> LocCoordPath u -> DrawingInfo PrimPath
 coordinatePrimPath pt fn = 
-    ctxSizeF pt >>= \pt1 -> go pt1 (fn pt)
+    dsizeF pt >>= \pt1 -> go pt1 (fn pt)
   where
-    go p0 []       = return $ emptyPath p0        -- fallback
-    go _  ps       = mapM ctxSizeF  ps >>= return . vertexPath
+    go p0 []       = return $ emptyPrimPath p0        -- fallback
+    go _  ps       = mapM dsizeF  ps >>= return . vertexPrimPath
 
 
--- NOTE - These functions need changing to generate LocCoordPaths...
 
 -- | Supplied point is /bottom-left/, subsequenct points are 
 -- counter-clockise so [ bl, br, tr, tl ] .

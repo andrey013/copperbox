@@ -44,6 +44,7 @@ module Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
@@ -93,13 +94,15 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 -- so the dimensions as well as the positions may change under 
 -- rotation. 
 --
-centerOrthoBBox :: (Real u, Floating u, PsDouble u) 
-                => Radian -> BoundingBox u -> BoundingBox u
+centerOrthoBBox :: (Real u, Floating u, CtxSize u, DrawingCtxM m) 
+                => Radian -> BoundingBox u -> m (BoundingBox u)
 centerOrthoBBox theta bb = 
-    traceBoundary $ map (rotateAbout theta ctr) ps
-  where
-    ps  = boundaryCornerList bb
-    ctr = boundaryCenter bb
+    dsizeF bb >>= \bb1 -> 
+    let ps  = boundaryCornerList bb1
+        ctr = boundaryCenter bb1
+        bb2 = traceBoundary $ map (rotateAbout theta ctr) ps
+    in usizeF bb2
+
 
 
 
@@ -113,7 +116,7 @@ centerOrthoBBox theta bb =
 -- the minimum bounding box with both the bottom-left and 
 -- upper-right corners at the implicit start point.
 --
-emptyBoundedLocGraphic :: CxSize u => BoundedLocGraphic u
+emptyBoundedLocGraphic :: CtxSize u => BoundedLocGraphic u
 emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
     fn = promoteR1 $ \pt -> pure (BBox pt pt)
@@ -129,7 +132,7 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
 -- upper-right corners at the implicit start point (the implicit 
 -- inclination can be ignored).
 --
-emptyBoundedLocThetaGraphic :: CxSize u => BoundedLocThetaGraphic u
+emptyBoundedLocThetaGraphic :: CtxSize u => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 --------------------------------------------------------------------------------
@@ -137,25 +140,25 @@ emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 
 -- This is a common pattern so needs a name...
 
-illustrateBoundedGraphic :: (Fractional u, CxSize u) 
+illustrateBoundedGraphic :: (Fractional u, CtxSize u) 
                          => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedGraphic mf = annotate mf bbrectangle
 
 
-illustrateBoundedLocGraphic :: (Fractional u, CxSize u) 
+illustrateBoundedLocGraphic :: (Fractional u, CtxSize u) 
                             => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLocGraphic mf = 
     promoteR1 $ \pt -> illustrateBoundedGraphic $ apply1R1 mf pt
 
 
-illustrateBoundedLocThetaGraphic :: (Fractional u, CxSize u)
+illustrateBoundedLocThetaGraphic :: (Fractional u, CtxSize u)
     => BoundedLocThetaGraphic u -> BoundedLocThetaGraphic u
 illustrateBoundedLocThetaGraphic mf = 
     promoteR2 $ \pt theta-> illustrateBoundedGraphic $ apply2R2 mf pt theta
 
 
 -- 
-bbrectangle :: (Fractional u, CxSize u) => BoundingBox u -> Graphic u
+bbrectangle :: (Fractional u, CtxSize u) => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphic `at` p1
     | otherwise                = 

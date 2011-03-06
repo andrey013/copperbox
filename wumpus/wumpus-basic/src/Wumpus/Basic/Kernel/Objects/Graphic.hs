@@ -171,10 +171,10 @@ intoLocThetaImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocGraphic :: CxSize u => LocGraphic u
+emptyLocGraphic :: CtxSize u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                    ctxSizeF pt >>= \pt1 -> 
-                    return $ imageAns noAns (zostroke $ emptyPath pt1)
+                    dsizeF pt >>= \pt1 -> 
+                    return $ imageAns noAns (zostroke $ emptyPrimPath pt1)
 
 
 
@@ -187,7 +187,7 @@ emptyLocGraphic = promoteR1 $ \pt ->
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocThetaGraphic :: CxSize u => LocThetaGraphic u
+emptyLocThetaGraphic :: CtxSize u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
@@ -244,5 +244,5 @@ annotate img f =
 -- > hyperlink :: XLink -> LocThetaImage u a -> LocThetaImage u a
 --
 hyperlink :: Functor m => XLink -> m (ImageAns t u) -> m (ImageAns t u)
-hyperlink hypl = fmap (bimapImageAns id (xlink hypl))
+hyperlink hypl = fmap (bimapImageAns id (xlinkPrim hypl))
 

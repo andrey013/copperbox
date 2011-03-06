@@ -84,7 +84,7 @@ intoAdvGraphic = intoLocImage
 -- @Wumpus-Core@ and is not drawn, the answer vetor generated is
 -- the empty vector @(V2 0 0)@.
 -- 
-emptyAdvGraphic :: CxSize u => AdvGraphic u
+emptyAdvGraphic :: CtxSize u => AdvGraphic u
 emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 
 
@@ -136,7 +136,7 @@ advsep sv af ag = promoteR1 $ \start ->
 
 -- | Concatenate the list of AdvGraphic with 'advcat'.
 --
-advconcat :: CxSize u => [AdvGraphic u] -> AdvGraphic u
+advconcat :: CtxSize u => [AdvGraphic u] -> AdvGraphic u
 advconcat []     = emptyAdvGraphic
 advconcat (x:xs) = step x xs
   where
@@ -146,7 +146,7 @@ advconcat (x:xs) = step x xs
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advspace :: CxSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
+advspace :: CtxSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
 advspace _  []     = emptyAdvGraphic
 advspace sv (x:xs) = step x xs
   where
@@ -156,7 +156,7 @@ advspace sv (x:xs) = step x xs
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advpunctuate :: CxSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+advpunctuate :: CtxSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
 advpunctuate _  []     = emptyAdvGraphic
 advpunctuate sep (x:xs) = step x xs
   where

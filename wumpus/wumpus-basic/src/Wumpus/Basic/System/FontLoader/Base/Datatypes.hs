@@ -151,8 +151,6 @@ buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
       , get_descender     = \sz -> fn sz (fp_descender font)
       }
   where
-    upscale sz d            = fromPsDouble $ sz * d 
- 
     defaultAV sz            = V2 (fn sz vx) (fn sz vy) 
     scalePt  sz (P2 cx cy)  = P2 (fn sz cx) (fn sz cy) 
     scaleVec sz (V2 cx cy)  = V2 (fn sz cx) (fn sz cy) 

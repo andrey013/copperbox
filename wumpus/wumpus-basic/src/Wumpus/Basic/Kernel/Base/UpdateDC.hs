@@ -77,8 +77,6 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , text_margin_default
   , text_margin_loose
 
-  , relative_text_margin
-  , relatively_loose_margin
 
   -- * Colour
   , stroke_colour
@@ -93,6 +91,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.DrawingContext
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -388,7 +387,7 @@ half_point_size     = scalePointSize (1%2)
 --
 -- NOTE - ideally this would use Em or En rather thn Double...
 --
-text_margin   :: Double -> Double -> DrawingContextF
+text_margin   :: Em -> Em -> DrawingContextF
 text_margin xsep ysep = \s -> 
     s { dc_text_margin = TextMargin xsep ysep }
 
@@ -414,25 +413,6 @@ text_margin_default = text_margin 2.0 2.0
 text_margin_loose   :: DrawingContextF
 text_margin_loose = text_margin 8.0 8.0
 
- 
--- | 'relative_text_margin' : @ scale_factor -> DrawingContextF @
---
--- Set the text_margin relative to the current point size, scaling 
--- the margin by the supplied factor both horizontally and 
--- vertically.
--- 
-relative_text_margin   :: Double -> DrawingContextF
-relative_text_margin sc = 
-   (\s i -> let sep = sc * fromIntegral i
-            in s { dc_text_margin = TextMargin sep sep })
-     <*> dc_font_size
-
-
--- | Scale the text_margin to the be the current point size, this
--- produces a relative loose margin.
--- 
-relatively_loose_margin :: DrawingContextF
-relatively_loose_margin = relative_text_margin 1
 
 --------------------------------------------------------------------------------
 
