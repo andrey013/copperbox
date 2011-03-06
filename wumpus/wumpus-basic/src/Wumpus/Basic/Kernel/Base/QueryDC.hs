@@ -43,8 +43,10 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , position
   , snapmove
 
-  , getRoundCornerSize
-  , getTextMargin
+  , roundCornerSizeAU
+  , roundCornerSizeRU
+  , textMarginAU
+  , textMarginRU
 
   , getLineWidth
   , getFontAttr
@@ -52,15 +54,22 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , getFontFace
   , getTextColour
 
-  , markHeight
-  , markHalfHeight
+  , markHeightAU
+  , markHeightRU
+  , markHalfHeightAU
+  , markHalfHeightRU
   , baselineSpacing
 
   -- * Glyph metrics
-  , glyphBoundingBox
-  , glyphCapHeight
-  , glyphDescender
-  , glyphVerticalSpan
+  , glyphBoundingBoxAU
+  , glyphBoundingBoxRU
+  , capHeightAU
+  , capHeightRU
+  , descenderAU
+  , descenderRU
+  , verticalSpanAU
+  , verticalSpanRU
+
   , cwLookupTable
 
 
@@ -134,27 +143,42 @@ withBorderedAttr fn =
 -- | Get the Point corresponding the grid coordinates scaled by
 -- the snap-grid scaling factors.
 --
-position :: (Fractional u, CtxSize u, DrawingCtxM m) 
+-- Absolute units.
+-- 
+position :: (Fractional u, PsDouble u, DrawingCtxM m) 
          => (Int,Int) -> m (Point2 u)
-position (x,y) = query dc_snap_grid_factors >>= post
+position (x,y) = post <$> query dc_snap_grid_factors
   where
-    post (scx,scy) = usizeF $ P2 (scx * fromIntegral x) (scy * fromIntegral y)
+    post (scx,scy) = P2 (fromPsDouble $ scx * fromIntegral x) 
+                        (fromPsDouble $ scy * fromIntegral y)
 
 
 -- | Scale a vector coordinate by the snap-grid scaling factors.
 --
-snapmove :: (Fractional u, CtxSize u, DrawingCtxM m) 
-       => (Int,Int) -> m (Vec2 u)
-snapmove (x,y) = query dc_snap_grid_factors >>= post
+-- Absolute units.
+--
+snapmove :: (Fractional u, PsDouble u, DrawingCtxM m) 
+         => (Int,Int) -> m (Vec2 u)
+snapmove (x,y) = post <$> query dc_snap_grid_factors
   where
-    post (scx,scy) = usizeF $ V2 (scx * fromIntegral x) (scy * fromIntegral y)
+    post (scx,scy) = V2 (fromPsDouble $ scx * fromIntegral x) 
+                        (fromPsDouble $ scy * fromIntegral y)
 
 
 
 -- | Size of the round corner factor.
 --
-getRoundCornerSize :: (Fractional u, CtxSize u , DrawingCtxM m) => m u
-getRoundCornerSize = query dc_round_corner_factor >>= usize
+-- Relative units.
+--
+roundCornerSizeAU :: (Fractional u, PsDouble u , DrawingCtxM m) => m u
+roundCornerSizeAU = fromPsDouble <$> query dc_round_corner_factor
+
+-- | Size of the round corner factor.
+--
+-- Relative units.
+--
+roundCornerSizeRU :: (Fractional u, CtxSize u , DrawingCtxM m) => m u
+roundCornerSizeRU = query dc_round_corner_factor >>= usize
 
 
 -- | Get the (x,y) margin around text.
@@ -162,8 +186,22 @@ getRoundCornerSize = query dc_round_corner_factor >>= usize
 -- Note - not all text operations in Wumpus are drawn with text 
 -- margin. 
 -- 
-getTextMargin :: (Fractional u, CtxSize u, DrawingCtxM m) => m (u,u)
-getTextMargin = query dc_text_margin >>= post
+textMarginAU :: (Fractional u, PsDouble u, DrawingCtxM m) => m (u,u)
+textMarginAU = query dc_text_margin >>= post
+  where
+    post (TextMargin xem yem) = dsize xem >>= \x -> dsize yem >>= \y ->
+                                return (fromPsDouble x, fromPsDouble y)
+
+    -- cannot use castsizeF on a pair
+
+
+-- | Get the (x,y) margin around text.
+--
+-- Note - not all text operations in Wumpus are drawn with text 
+-- margin. 
+-- 
+textMarginRU :: (Fractional u, CtxSize u, DrawingCtxM m) => m (u,u)
+textMarginRU = query dc_text_margin >>= post
   where
     post (TextMargin xsep ysep) = (,) <$> castsize xsep <*> castsize ysep
 
@@ -189,31 +227,44 @@ getTextColour :: DrawingCtxM m => m RGBi
 getTextColour = query dc_text_colour
 
 
-
--- | Vertical distance between baselines of consecutive text 
--- lines.
---
-baselineSpacing :: (Fractional u, DrawingCtxM m) => m u
-baselineSpacing = 
-    (\sz factor -> realToFrac $ factor * fromIntegral sz)
-      <$> query dc_font_size  <*> query dc_line_spacing_factor
-
 -- | The /mark/ height is the height of a lowercase letter in the 
 -- Courier font at the current point size.
 --
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: (CtxSize u, DrawingCtxM m) => m u
-markHeight = query (FS.xcharHeight . dc_font_size) >>= usize
+markHeightAU :: (PsDouble u, DrawingCtxM m) => m u
+markHeightAU = fromPsDouble <$> query (FS.xcharHeight . dc_font_size)
 
 
-markHalfHeight :: (Fractional u, CtxSize u, DrawingCtxM m) => m u
-markHalfHeight = (0.5*) <$> markHeight
+
+-- | Relative unit version of 'markHeightAU'.
+-- 
+markHeightRU :: (CtxSize u, DrawingCtxM m) => m u
+markHeightRU = query (FS.xcharHeight . dc_font_size) >>= usize
 
 
--- Note - there are probably enough functions that use just 
--- markHeight to merit a withMarkHeight function.
+markHalfHeightAU :: (Fractional u, PsDouble u, DrawingCtxM m) => m u
+markHalfHeightAU = (0.5*) <$> markHeightAU
+
+
+markHalfHeightRU :: (Fractional u, CtxSize u, DrawingCtxM m) => m u
+markHalfHeightRU = (0.5*) <$> markHeightRU
+
+
+
+-- | Vertical distance between baselines of consecutive text 
+-- lines.
+--
+-- This is a /scaling factor/ hence there is no absolute or
+-- relative unit distinction.
+-- 
+baselineSpacing :: (Fractional u, DrawingCtxM m) => m u
+baselineSpacing = 
+    (\sz factor -> realToFrac $ factor * fromIntegral sz)
+      <$> query dc_font_size  <*> query dc_line_spacing_factor
+
+
 
 
 --------------------------------------------------------------------------------
@@ -223,30 +274,56 @@ glyphQuery :: DrawingCtxM m
 glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> queryCtx
 
 
+
 -- | Get the font bounding box - this is the maximum boundary of 
 -- the glyphs in the font. The span of the height is expected to 
 -- be bigger than the cap_height plus descender depth.
 --
-glyphBoundingBox :: (CtxSize u, DrawingCtxM m) => m (BoundingBox u)
-glyphBoundingBox = glyphQuery get_bounding_box >>= usizeF
+glyphBoundingBoxAU :: (PsDouble u, DrawingCtxM m) => m (BoundingBox u)
+glyphBoundingBoxAU = fmap fromPsDouble <$> glyphQuery get_bounding_box
 
 
+-- | Get the font bounding box - this is the maximum boundary of 
+-- the glyphs in the font. The span of the height is expected to 
+-- be bigger than the cap_height plus descender depth.
+--
+glyphBoundingBoxRU :: (CtxSize u, DrawingCtxM m) => m (BoundingBox u)
+glyphBoundingBoxRU = glyphQuery get_bounding_box >>= usizeF
 
 
+-- | Height of a capital letter.
+--
+capHeightAU :: (PsDouble u, DrawingCtxM m) => m u
+capHeightAU = fromPsDouble <$> glyphQuery get_cap_height
 
-glyphCapHeight :: (CtxSize u, DrawingCtxM m) => m u
-glyphCapHeight = glyphQuery get_cap_height >>= usize
+
+-- | Height of a capital letter.
+--
+capHeightRU :: (CtxSize u, DrawingCtxM m) => m u
+capHeightRU = glyphQuery get_cap_height >>= usize
 
 -- | Note - descender is expected to be negative.
 --
-glyphDescender :: (CtxSize u, DrawingCtxM m) => m u
-glyphDescender = glyphQuery get_descender >>= usize
+descenderAU :: (PsDouble u, DrawingCtxM m) => m u
+descenderAU = fromPsDouble <$> glyphQuery get_descender
+
+-- | Note - descender is expected to be negative.
+--
+descenderRU :: (CtxSize u, DrawingCtxM m) => m u
+descenderRU = glyphQuery get_descender >>= usize
 
 -- | This is the distance from cap_height to descender.
 --
-glyphVerticalSpan :: (CtxSize u, DrawingCtxM m) => m u
-glyphVerticalSpan = 
-    (\ch dd -> ch - dd) <$> glyphCapHeight <*> glyphDescender
+verticalSpanAU :: (PsDouble u, DrawingCtxM m) => m u
+verticalSpanAU = 
+    (\ch dd -> ch - dd) <$> capHeightAU <*> descenderAU
+
+
+-- | This is the distance from cap_height to descender.
+--
+verticalSpanRU :: (CtxSize u, DrawingCtxM m) => m u
+verticalSpanRU = 
+    (\ch dd -> ch - dd) <$> capHeightRU <*> descenderRU
 
 
 -- | Note the CharWidthLookup is not parameteric on units.

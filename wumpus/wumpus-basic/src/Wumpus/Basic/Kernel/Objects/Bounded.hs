@@ -85,6 +85,8 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 
 
 
+
+
 -- | 'centerOrthoBBox' : @ theta * bbox -> BBox @
 -- 
 -- Rotate a bounding box by @theta@ about its center. Take the 

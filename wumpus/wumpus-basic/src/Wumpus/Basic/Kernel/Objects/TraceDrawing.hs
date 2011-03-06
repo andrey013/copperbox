@@ -77,7 +77,6 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
@@ -449,7 +448,9 @@ xdrawi_ xl img = xdrawi xl img >> return ()
 
 -- | Draw with grid coordinate...
 --
-node :: (Fractional u, CtxSize u, TraceM m u, DrawingCtxM m) 
+-- Absolute units.
+-- 
+node :: (Fractional u, PsDouble u, TraceM m u, DrawingCtxM m) 
      => (Int,Int) -> LocGraphic u -> m ()
 node coord gf = queryCtx       >>= \ctx -> 
                 position coord >>= \pt  -> 
@@ -459,7 +460,9 @@ node coord gf = queryCtx       >>= \ctx ->
 
 -- | Draw with grid coordinate...
 -- 
-nodei :: ( Fractional u, CtxSize u, TraceM m u, DrawingCtxM m)
+-- Absolute units.
+--
+nodei :: ( Fractional u, PsDouble u, TraceM m u, DrawingCtxM m)
       => (Int,Int) -> LocImage t u -> m (t u)
 nodei coord imgL = queryCtx    >>= \ctx -> 
                    position coord >>= \pt  -> 
@@ -471,7 +474,9 @@ nodei coord imgL = queryCtx    >>= \ctx ->
  
 -- | Draw with grid coordinate...
 --
-nodei_ :: (Fractional u, CtxSize u, TraceM m u, DrawingCtxM m)
+-- Absolute units.
+-- 
+nodei_ :: (Fractional u, PsDouble u, TraceM m u, DrawingCtxM m)
        => (Int,Int) -> LocImage t u -> m ()
 nodei_ coord imgL = nodei coord imgL >> return ()
 

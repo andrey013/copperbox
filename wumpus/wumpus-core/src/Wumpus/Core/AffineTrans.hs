@@ -85,7 +85,7 @@ module Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Units
 
-
+import Control.Applicative
 
 --
 -- Design note - the formulation of the affine classes is not 
@@ -116,8 +116,17 @@ inout f = fmap fromPsDouble . f . fmap toPsDouble
 class Transform t where
   transform :: DMatrix3'3 -> t -> t
 
+
+instance Transform () where
+  transform _ = id
+
 instance Transform a => Transform (Maybe a) where
   transform = fmap . transform
+
+
+instance Transform a => Transform (Const a b) where
+  transform mtrx (Const a) = Const $ transform mtrx a
+
 
 instance (Transform a, Transform b) => Transform (a,b)  where
   transform mtrx (a,b) = (transform mtrx a, transform mtrx b)
@@ -137,9 +146,14 @@ instance PsDouble u => Transform (Vec2 u) where
 class Rotate t where
   rotate :: Radian -> t -> t
 
+instance Rotate () where
+  rotate _ = id
 
 instance Rotate u => Rotate (Maybe u) where
   rotate = fmap . rotate
+
+instance Rotate a => Rotate (Const a b) where
+  rotate ang (Const a) = Const $ rotate ang a
 
 instance (Rotate a, Rotate b) => Rotate (a,b)  where
   rotate ang (a,b) = (rotate ang a, rotate ang b)
@@ -163,8 +177,15 @@ class RotateAbout t where
   rotateAbout :: PsDouble u  => Radian -> Point2 u -> t -> t
 
 
+instance RotateAbout () where
+  rotateAbout _ _ = id
+
 instance RotateAbout a => RotateAbout (Maybe a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
+
+
+instance RotateAbout a => RotateAbout (Const a b) where
+  rotateAbout ang pt (Const a) = Const $ rotateAbout ang pt a
 
 instance (RotateAbout a, RotateAbout b) => 
     RotateAbout (a,b) where
@@ -187,8 +208,15 @@ instance PsDouble u => RotateAbout (Vec2 u) where
 class Scale t where
   scale :: Double -> Double -> t -> t
 
+
+instance Scale () where
+  scale _ _ = id
+
 instance Scale a => Scale (Maybe a) where
   scale sx sy = fmap (scale sx sy)
+
+instance Scale a => Scale (Const a b) where
+  scale sx sy (Const a) = Const $ scale sx sy a
 
 instance (Scale a, Scale b) => Scale (a,b) where
   scale sx sy (a,b) = (scale sx sy a, scale sx sy b)
@@ -209,6 +237,9 @@ class Translate t where
 
 instance Translate a => Translate (Maybe a) where
   translate dx dy = fmap (translate dx dy)
+
+instance Translate a => Translate (Const a b) where
+  translate dx dy (Const a) = Const $ translate dx dy a
 
 instance (Translate a, Translate b) => 
     Translate (a,b) where
