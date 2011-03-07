@@ -29,16 +29,9 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , castsizeF
 
   , textAttr
-  , withTextAttr
-
   , strokeAttr
-  , withStrokeAttr
-
   , fillAttr
-  , withFillAttr
-
   , borderedAttr
-  , withBorderedAttr
 
   , position
   , snapmove
@@ -109,34 +102,18 @@ castsizeF = dsizeF >=> usizeF
 textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
 textAttr = (,) <$> query dc_text_colour <*> getFontAttr
 
--- | Because @textAttr@ is so commonly used here is a functional
--- version that avoids tupling.
---
-withTextAttr :: DrawingCtxM m => (RGBi -> FontAttr -> a) -> m a
-withTextAttr fn = fn <$> query dc_text_colour <*> getFontAttr
-
 
 strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
 strokeAttr = (,) <$> query dc_stroke_colour <*> query dc_stroke_props
-
-withStrokeAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> a) -> m a
-withStrokeAttr fn = fn <$> query dc_stroke_colour <*> query dc_stroke_props
 
 
 fillAttr :: DrawingCtxM m => m RGBi
 fillAttr = query dc_fill_colour
 
-withFillAttr :: DrawingCtxM m => (RGBi -> a) -> m a
-withFillAttr fn = fn <$> query dc_fill_colour
 
 borderedAttr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
 borderedAttr = (,,) <$> query dc_fill_colour <*> query dc_stroke_props 
                                              <*> query dc_stroke_colour
-
-withBorderedAttr :: DrawingCtxM m => (RGBi -> StrokeAttr -> RGBi -> a) -> m a
-withBorderedAttr fn = 
-    fn <$> query dc_fill_colour <*> query dc_stroke_props 
-                                <*> query dc_stroke_colour
 
 
 

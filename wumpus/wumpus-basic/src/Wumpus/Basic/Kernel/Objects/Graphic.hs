@@ -44,8 +44,6 @@ module Wumpus.Basic.Kernel.Objects.Graphic
   , intoLocImage
   , intoLocThetaImage
 
-  , emptyLocGraphic
-  , emptyLocThetaGraphic 
 
   , decorate
   , annotate
@@ -56,7 +54,6 @@ module Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -161,34 +158,7 @@ intoLocThetaImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 
 
--- | 'emptyLocGraphic' : @ LocGraphic @
---
--- Build an empty 'LocGraphic' (i.e. a function 
--- /from Point to Graphic/). This is a path with a start point 
--- but no path segments. 
--- 
--- The 'emptyLocGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, although it does generate a 
--- minimum bounding box at the implicit start point.
--- 
-emptyLocGraphic :: CtxSize u => LocGraphic u
-emptyLocGraphic = promoteR1 $ \pt -> 
-                    dsizeF pt >>= \pt1 -> 
-                    return $ imageAns noAns (zostroke $ emptyPrimPath pt1)
 
-
-
--- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @
---
--- Build an empty 'LocThetaGraphic' (i.e. a function 
--- /from Point and Inclination to Graphic/). 
--- 
--- The 'emptyLocThetaGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, although it does generate a 
--- minimum bounding box at the implicit start point.
--- 
-emptyLocThetaGraphic :: CtxSize u => LocThetaGraphic u
-emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
 

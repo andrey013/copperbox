@@ -119,7 +119,7 @@ centerOrthoBBox theta bb =
 -- upper-right corners at the implicit start point.
 --
 emptyBoundedLocGraphic :: CtxSize u => BoundedLocGraphic u
-emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
+emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphicRU
   where
     fn = promoteR1 $ \pt -> pure (BBox pt pt)
 
@@ -140,8 +140,6 @@ emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
 --------------------------------------------------------------------------------
 -- 
 
--- This is a common pattern so needs a name...
-
 illustrateBoundedGraphic :: (Fractional u, CtxSize u) 
                          => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedGraphic mf = annotate mf bbrectangle
@@ -156,18 +154,18 @@ illustrateBoundedLocGraphic mf =
 illustrateBoundedLocThetaGraphic :: (Fractional u, CtxSize u)
     => BoundedLocThetaGraphic u -> BoundedLocThetaGraphic u
 illustrateBoundedLocThetaGraphic mf = 
-    promoteR2 $ \pt theta-> illustrateBoundedGraphic $ apply2R2 mf pt theta
+    promoteR2 $ \pt theta -> illustrateBoundedGraphic $ apply2R2 mf pt theta
 
 
 -- 
 bbrectangle :: (Fractional u, CtxSize u) => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
-    | llx == urx && lly == ury = emptyLocGraphic `at` p1
+    | llx == urx && lly == ury = emptyLocGraphicRU `at` p1
     | otherwise                = 
         localize drawing_props $ rect1 `oplus` cross
   where
     drawing_props = cap_round . dotted_line
-    rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
-    cross         = straightLineGraphic p1 p2 
-                      `oplus` straightLineGraphic (P2 llx ury) (P2 urx lly)
+    rect1         = strokedRectangleRU (urx-llx) (ury-lly) `at` p1
+    cross         = straightLineRU p1 p2 
+                      `oplus` straightLineRU (P2 llx ury) (P2 urx lly)
 

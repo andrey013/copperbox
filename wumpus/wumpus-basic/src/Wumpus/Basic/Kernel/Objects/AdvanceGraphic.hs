@@ -40,6 +40,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.BaseObjects
+import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -85,7 +86,7 @@ intoAdvGraphic = intoLocImage
 -- the empty vector @(V2 0 0)@.
 -- 
 emptyAdvGraphic :: CtxSize u => AdvGraphic u
-emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
+emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphicRU
 
 
 

@@ -36,6 +36,7 @@ module Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.BaseObjects
+import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Graphic
 
 
@@ -103,8 +104,8 @@ intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- 
 emptyConnectorGraphic :: CtxSize u => ConnectorGraphic u 
 emptyConnectorGraphic = promoteR2 $ \start end -> 
-    let a = emptyLocGraphic `at` start
-        b = emptyLocGraphic `at` end
+    let a = emptyLocGraphicRU `at` start
+        b = emptyLocGraphicRU `at` end
     in a `oplus` b
 
 
