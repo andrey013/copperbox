@@ -62,6 +62,8 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
+
+
 -- | Datatype enumerating positions within a rectangle that can be
 -- derived for a 'PosGraphic'.  
 --
@@ -209,7 +211,7 @@ makePosImage opos gf = promoteR2 $ \start rpos ->
 -- that draws it at some angle of inclination.
 --
 makePosThetaImage :: Fractional u 
-             => ObjectPos u -> LocThetaImage t u -> PosThetaImage t u
+                  => ObjectPos u -> LocThetaImage t u -> PosThetaImage t u
 makePosThetaImage opos gf = promoteR3 $ \start rpos theta -> 
     let v1 = startVector rpos opos 
     in atRot gf (displaceVec v1 start) theta

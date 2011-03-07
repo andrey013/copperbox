@@ -24,15 +24,19 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
 
 
   , intoAdvGraphic
-  , emptyAdvGraphic
+  , emptyAdvGraphicAU
+  , emptyAdvGraphicRU
 
 
   -- * Composition
   , advcat
   , advsep
-  , advconcat
-  , advspace
-  , advpunctuate
+  , advconcatAU
+  , advconcatRU
+  , advspaceAU
+  , advspaceRU
+  , advpunctuateAU
+  , advpunctuateRU
   , advfill
 
   ) where
@@ -77,7 +81,7 @@ intoAdvGraphic :: LocCF u (Vec2 u)
 intoAdvGraphic = intoLocImage
 
 
--- | 'emptyAdvGraphic' : @ AdvGraphic @
+-- | 'emptyAdvGraphicAU' : @ AdvGraphic @
 --
 -- Build an empty 'AdvGraphic'.
 -- 
@@ -85,14 +89,14 @@ intoAdvGraphic = intoLocImage
 -- @Wumpus-Core@ and is not drawn, the answer vetor generated is
 -- the empty vector @(V2 0 0)@.
 -- 
-emptyAdvGraphic :: CtxSize u => AdvGraphic u
-emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphicRU
+emptyAdvGraphicAU :: PsDouble u => AdvGraphic u
+emptyAdvGraphicAU = replaceAns (V2 0 0) $ emptyLocGraphicAU
 
+-- | Relative unit version of 'emptyAdvGraphicAU'.
+--
+emptyAdvGraphicRU :: CtxSize u => AdvGraphic u
+emptyAdvGraphicRU = replaceAns (V2 0 0) $ emptyLocGraphicRU
 
-
--- runAdvGraphic :: DrawingContext  -> Point2 u -> AdvGraphic u 
---               -> (Point2 u, PrimGraphic u)
--- runAdvGraphic ctx pt df = runCF1 ctx pt df
 
 
 
@@ -134,36 +138,54 @@ advsep sv af ag = promoteR1 $ \start ->
                          (af `at` start)
                          (\v1 -> ag `at` start .+^ sv ^+^ v1)
 
+-- | Helper function - general combiner.
+--
+advcombine :: AdvGraphic u 
+           -> (AdvGraphic u -> AdvGraphic u -> AdvGraphic u) 
+           -> [AdvGraphic u] 
+           -> AdvGraphic u
+advcombine empty _  []     = empty
+advcombine _     op (x:xs) = step x xs
+  where
+    step a (b:bs) = step (a `op` b) bs
+    step a []     = a
+
+
 
 -- | Concatenate the list of AdvGraphic with 'advcat'.
 --
-advconcat :: CtxSize u => [AdvGraphic u] -> AdvGraphic u
-advconcat []     = emptyAdvGraphic
-advconcat (x:xs) = step x xs
-  where
-    step a (b:bs) = step (a `advcat` b) bs
-    step a []     = a
+advconcatAU :: PsDouble u => [AdvGraphic u] -> AdvGraphic u
+advconcatAU = advcombine emptyAdvGraphicAU advcat
+
+-- | Relative unit version of 'advconcatAU'.
+--
+advconcatRU :: CtxSize u => [AdvGraphic u] -> AdvGraphic u
+advconcatRU = advcombine emptyAdvGraphicRU advcat
 
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advspace :: CtxSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
-advspace _  []     = emptyAdvGraphic
-advspace sv (x:xs) = step x xs
-  where
-    step a (b:bs) = step (advsep sv a b) bs
-    step a []     = a
+advspaceAU :: PsDouble u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
+advspaceAU sv = advcombine emptyAdvGraphicAU (advsep sv) 
+
+-- | Relative unit version of 'advspaceAU'.
+--
+advspaceRU :: CtxSize u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
+advspaceRU sv = advcombine emptyAdvGraphicRU (advsep sv) 
 
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advpunctuate :: CtxSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
-advpunctuate _  []     = emptyAdvGraphic
-advpunctuate sep (x:xs) = step x xs
-  where
-    step a (b:bs) = step (a `advcat` sep `advcat` b) bs
-    step a []     = a
+advpunctuateAU :: PsDouble u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+advpunctuateAU sep = 
+    advcombine emptyAdvGraphicAU (\a b -> a `advcat` sep `advcat` b)
 
+-- | Relative unit version of 'advpunctuateAU'.
+--
+advpunctuateRU :: CtxSize u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+advpunctuateRU sep = 
+    advcombine emptyAdvGraphicRU (\a b -> a `advcat` sep `advcat` b)
+    
 
 -- | Render the supplied AdvGraphic, but swap the result advance
 -- for the supplied vector. This function has behaviour analogue 

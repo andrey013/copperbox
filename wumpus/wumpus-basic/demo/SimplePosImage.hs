@@ -50,10 +50,10 @@ mf = do
     draw $ testDrawBl    NW     `at` (P2 225 0)
     
 
-testDrawBl :: (Floating u, CxSize u) => RectPosition -> LocGraphic u
-testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
+testDrawBl :: (Floating u, PsDouble u) => RectPosition -> LocGraphic u
+testDrawBl rpos = filledDiskAU 2 `oplus` (rectBl `startPos` rpos)
 
-rectBl :: (Floating u, CxSize u) => PosGraphic u 
+rectBl :: (Fractional u, PsDouble u) => PosGraphic u
 rectBl = makePosImage opos (mkRectBl w h)
   where
     w    = 40 
@@ -65,19 +65,15 @@ rectBl = makePosImage opos (mkRectBl w h)
  
 
 -- start-point - bottom left
-mkRectBl :: (Floating u, CxSize u) => u -> u -> LocGraphic u
-mkRectBl w h = promoteR1 $ \bl -> 
-    let br = displaceH w bl
-        tr = displaceV h br
-        tl = displaceV h bl
-    in vertexPath [bl, br, tr, tl] >>= closedStroke
+mkRectBl :: PsDouble u => u -> u -> LocGraphic u
+mkRectBl w h = strokedRectangleAU w h
 
 
 
-testDrawMinor :: (Floating u, CxSize u) => RectPosition -> LocGraphic u
-testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
+testDrawMinor :: (Floating u, PsDouble u) => RectPosition -> LocGraphic u
+testDrawMinor rpos = filledDiskAU 2 `oplus` (rectMinor `startPos` rpos)
 
-rectMinor :: (Floating u, CxSize u) => PosGraphic u 
+rectMinor :: (Fractional u, PsDouble u) => PosGraphic u 
 rectMinor = makePosImage opos (mkRectMinor m w h)
   where
     m    = 10
@@ -90,11 +86,11 @@ rectMinor = makePosImage opos (mkRectMinor m w h)
  
 
 -- start-point - +10 +10
-mkRectMinor :: (Floating u, CxSize u) => u -> u -> u -> LocGraphic u
+mkRectMinor :: PsDouble u => u -> u -> u -> LocGraphic u
 mkRectMinor m w h = promoteR1 $ \pt -> 
     let bl = displaceVec (vec (-m) (-m)) pt
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in vertexPath [bl, br, tr, tl] >>= closedStroke
+    in closedStroke $ vertexPathAU [bl, br, tr, tl]
 

@@ -46,38 +46,39 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 -- Its use case is converting a start point for LocGraphics.
 --
-ptCnv :: (CtxSize cxu, CtxSize u) => FontSize -> Point2 u -> Point2 cxu
-ptCnv sz = fmap (csSize sz . cfSize sz)
+ptcnv :: (CtxSize cxu, PsDouble u) => FontSize -> Point2 u -> Point2 cxu
+ptcnv sz = fmap (csSize sz . toPsDouble)
 
 
-converti :: (Functor t, CtxSize u, CtxSize u1) 
+converti :: (Functor t, CtxSize u, PsDouble u1) 
          => Image t u -> Image t u1
-converti img = getFontSize >>= \sz -> cxConverti sz img
+converti img = getFontSize >>= \sz -> ctxConverti sz img
 
 
 
 
-convertli :: (Functor t, CtxSize u, CtxSize u1) 
+convertli :: (Functor t, CtxSize u, PsDouble u1) 
           => LocImage t u -> LocImage t u1
 convertli img = promoteR1 $ \pt -> 
-    getFontSize >>= \sz -> cxConverti sz (img `at` ptCnv sz pt)
+    getFontSize >>= \sz -> ctxConverti sz (img `at` ptcnv sz pt)
 
 
-convertlti :: (Functor t, CtxSize u, CtxSize u1) 
+convertlti :: (Functor t, CtxSize u, PsDouble u1) 
            => LocThetaImage t u -> LocThetaImage t u1
 convertlti img = promoteR2 $ \pt ang -> 
-    getFontSize >>= \sz -> cxConverti sz $ atRot img (ptCnv sz pt) ang
+    getFontSize >>= \sz -> ctxConverti sz $ atRot img (ptcnv sz pt) ang
 
 
-convertconn :: (Functor t, CtxSize u, CtxSize u1) 
+convertconn :: (Functor t, CtxSize u, PsDouble u1) 
             => ConnectorImage t u -> ConnectorImage t u1
 convertconn img = promoteR2 $ \p1 p2 -> 
-    getFontSize >>= \sz -> cxConverti sz $ connect img (ptCnv sz p1) (ptCnv sz p2)
+    getFontSize >>= \sz -> 
+      ctxConverti sz $ connect img (ptcnv sz p1) (ptcnv sz p2)
 
 
-convertpti :: (Functor t, CtxSize u, CtxSize u1) 
+convertpti :: (Functor t, CtxSize u, PsDouble u1) 
            => PosThetaImage t u -> PosThetaImage t u1
 convertpti img = promoteR3 $ \pt rpos ang -> 
-    getFontSize >>= \sz -> cxConverti sz $ apply3R3 img (ptCnv sz pt) rpos ang
+    getFontSize >>= \sz -> ctxConverti sz $ apply3R3 img (ptcnv sz pt) rpos ang
 
 

@@ -29,7 +29,8 @@ module Wumpus.Basic.Kernel.Objects.Connector
   , DConnectorImage
 
   , intoConnectorImage
-  , emptyConnectorGraphic
+  , emptyConnectorAU
+  , emptyConnectorRU
 
   ) where
 
@@ -37,8 +38,8 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
-import Wumpus.Basic.Kernel.Objects.Graphic
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
@@ -93,7 +94,7 @@ intoConnectorImage :: ConnectorCF u (t u) -> ConnectorGraphic u
 intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 
 
--- | 'emptyConnectorGraphic' : @ ConnectorGraphic @
+-- | 'emptyConnectorAU' : @ ConnectorGraphic @
 --
 -- Build an empty 'ConnectorGraphic'.
 -- 
@@ -102,8 +103,16 @@ intoConnectorImage = liftA2 (\a ans -> bimapImageAns (const a) id ans)
 -- bounding box around the rectangular hull of the start and end 
 -- points.
 -- 
-emptyConnectorGraphic :: CtxSize u => ConnectorGraphic u 
-emptyConnectorGraphic = promoteR2 $ \start end -> 
+emptyConnectorAU :: PsDouble u => ConnectorGraphic u 
+emptyConnectorAU = promoteR2 $ \start end -> 
+    let a = emptyLocGraphicAU `at` start
+        b = emptyLocGraphicAU `at` end
+    in a `oplus` b
+
+-- | Relative unit version of 'emptyConnectorAU'.
+--
+emptyConnectorRU :: CtxSize u => ConnectorGraphic u 
+emptyConnectorRU = promoteR2 $ \start end -> 
     let a = emptyLocGraphicRU `at` start
         b = emptyLocGraphicRU `at` end
     in a `oplus` b

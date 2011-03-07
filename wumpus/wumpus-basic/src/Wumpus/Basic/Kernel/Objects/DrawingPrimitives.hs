@@ -25,7 +25,8 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   -- * Empty graphics
   , emptyLocGraphicAU 
   , emptyLocGraphicRU
-  , emptyLocThetaGraphic
+  , emptyLocThetaGraphicAU
+  , emptyLocThetaGraphicRU
 
   -- * Paths
   , locPathAU
@@ -177,11 +178,13 @@ emptyLocGraphicAU :: PsDouble u => LocGraphic u
 emptyLocGraphicAU = emptyLocPathAU >>= (lift0R1 . openStroke)
 
 
+-- | Relative unit version of 'emptyLocGraphicAU'.
+--
 emptyLocGraphicRU :: CtxSize u => LocGraphic u
 emptyLocGraphicRU = emptyLocPathRU >>= (lift0R1 . openStroke)
 
 
--- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @
+-- | 'emptyLocThetaGraphicAU' : @ LocThetaGraphic @
 --
 -- Build an empty 'LocThetaGraphic' (i.e. a function 
 -- /from Point and Inclination to Graphic/). 
@@ -190,8 +193,13 @@ emptyLocGraphicRU = emptyLocPathRU >>= (lift0R1 . openStroke)
 -- @Wumpus-Core@ and is not drawn, although it does generate a 
 -- minimum bounding box at the implicit start point.
 -- 
-emptyLocThetaGraphic :: CtxSize u => LocThetaGraphic u
-emptyLocThetaGraphic = lift1R2 emptyLocGraphicRU
+emptyLocThetaGraphicAU :: PsDouble u => LocThetaGraphic u
+emptyLocThetaGraphicAU = lift1R2 emptyLocGraphicAU
+
+-- | Relative unit version of 'emptyLocThetaGraphicAU'.
+--
+emptyLocThetaGraphicRU :: CtxSize u => LocThetaGraphic u
+emptyLocThetaGraphicRU = lift1R2 emptyLocGraphicRU
 
 
 
@@ -212,13 +220,7 @@ locPathAU vs = promoteR1 $ \pt  ->
     return $ vectorPrimPath (dPoint pt) (map dVec vs)
 
 
--- | 'locPathRU' : @ [next_vector] -> (Point2 ~> PrimPath) @
---
--- Create a path 'LocCF' - i.e. a functional type 
--- /from Point to PrimPath/.
--- 
--- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
--- result is produced /within/ the 'DrawingContext'.
+-- | Relative unit version of 'locPathAU'.
 --
 locPathRU :: CtxSize u => [Vec2 u] -> LocCF u PrimPath
 locPathRU vs = ctxStartPoint $ \pt1  ->
@@ -238,13 +240,7 @@ emptyLocPathAU :: PsDouble u => LocCF u PrimPath
 emptyLocPathAU = locPathAU []
 
 
--- | 'emptyLocPathRU' : @ (Point ~> PrimPath) @
---
--- Create an empty path 'LocCF' - i.e. a functional type 
--- /from Point to PrimPath/.
---
--- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
--- result is produced /within/ the 'DrawingContext'.
+-- | Relative unit version of 'emptyLocPathAU'.
 --
 emptyLocPathRU :: CtxSize u => LocCF u PrimPath
 emptyLocPathRU = locPathRU []
@@ -263,13 +259,7 @@ vertexPathAU xs = vertexPrimPath $ map (fmap toPsDouble) xs
 
 
 
--- | 'vertexPathRU' : @ (Point ~> PrimPath) @
---
--- Create a path made of straight line segments joining the 
--- supplied points.
---
--- This is the analogue to 'vertexPrimPath' in @Wumpus-Core@, but 
--- it is polymorphic on unit.
+-- | Relative unit version of 'vertexPathAU'.
 --
 vertexPathRU :: CtxSize u => [Point2 u] -> DrawingInfo PrimPath
 vertexPathRU xs = vertexPrimPath <$> mapM dsizeF xs
@@ -290,13 +280,7 @@ curvedPathAU xs = curvedPrimPath $ map (fmap toPsDouble) xs
 
 
 
--- | 'vertexPathRU' : @ (Point ~> PrimPath) @
---
--- Create a path made of Bezier curve segments joining the 
--- supplied points.
---
--- This is the analogue to 'curvedPrimPath' in @Wumpus-Core@, but 
--- it is polymorphic on unit.
+-- | Relative unit version of 'curvedPathAU'.
 --
 curvedPathRU :: CtxSize u => [Point2 u] -> DrawingInfo PrimPath
 curvedPathRU xs = curvedPrimPath <$> mapM dsizeF xs

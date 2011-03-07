@@ -182,16 +182,6 @@ class Num u => CtxSize u where
   cfSize :: FontSize -> u -> Double
   csSize :: FontSize -> Double -> u
 
-instance CtxSize Double where
-  cfSize _ = id  
-  csSize _ = id
-
-
-instance CtxSize Centimeter where
-  cfSize _ = toPsDouble
-  csSize _ = fromPsDouble
-
-
 
 --------------------------------------------------------------------------------
 

@@ -29,15 +29,23 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   , BoundedLocThetaGraphic
   , DBoundedLocThetaGraphic
 
-  , emptyBoundedLocGraphic
-  , emptyBoundedLocThetaGraphic
+  , emptyBoundedLocGraphicAU
+  , emptyBoundedLocGraphicRU
+  , emptyBoundedLocThetaGraphicAU
+  , emptyBoundedLocThetaGraphicRU
 
-  , centerOrthoBBox
-  , illustrateBoundedGraphic
-  , illustrateBoundedLocGraphic
-  , illustrateBoundedLocThetaGraphic
+  , centerOrthoBBoxAU
+  , centerOrthoBBoxRU
 
-  , bbrectangle
+  , illustrateBoundedAU
+  , illustrateBoundedRU
+  , illustrateBoundedLocAU
+  , illustrateBoundedLocRU
+  , illustrateBoundedLocThetaAU
+  , illustrateBoundedLocThetaRU
+
+  , bbrectangleAU
+  , bbrectangleRU
 
   ) where
 
@@ -87,7 +95,7 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 
 
 
--- | 'centerOrthoBBox' : @ theta * bbox -> BBox @
+-- | 'centerOrthoBBoxAU' : @ theta * bbox -> BBox @
 -- 
 -- Rotate a bounding box by @theta@ about its center. Take the 
 -- new bounding box.
@@ -96,20 +104,29 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 -- so the dimensions as well as the positions may change under 
 -- rotation. 
 --
-centerOrthoBBox :: (Real u, Floating u, CtxSize u, DrawingCtxM m) 
+
+centerOrthoBBoxAU :: (Real u, Floating u, PsDouble u) 
+                  => Radian -> BoundingBox u -> BoundingBox u
+centerOrthoBBoxAU theta bb = 
+    traceBoundary $ map (rotateAbout theta ctr) ps
+  where 
+    ps  = boundaryCornerList bb
+    ctr = boundaryCenter bb
+
+-- | Relative unit version of 'centerOrthoBBoxAU'.
+-- 
+-- Note this function is monadic whereas 'centerOrthoBBoxAU' is 
+-- pure.
+--     
+centerOrthoBBoxRU :: (Real u, Floating u, CtxSize u, DrawingCtxM m) 
                 => Radian -> BoundingBox u -> m (BoundingBox u)
-centerOrthoBBox theta bb = 
-    dsizeF bb >>= \bb1 -> 
-    let ps  = boundaryCornerList bb1
-        ctr = boundaryCenter bb1
-        bb2 = traceBoundary $ map (rotateAbout theta ctr) ps
-    in usizeF bb2
+centerOrthoBBoxRU theta bb = 
+    dsizeF bb >>= \bb1 -> usizeF $ centerOrthoBBoxAU theta bb1
 
 
 
 
-
--- | 'emptyBoundedLocGraphic' : @ BoundedLocGraphic @
+-- | 'emptyBoundedLocGraphicAU' : @ BoundedLocGraphic @
 --
 -- Build an empty 'BoundedLocGraphic'.
 -- 
@@ -118,13 +135,21 @@ centerOrthoBBox theta bb =
 -- the minimum bounding box with both the bottom-left and 
 -- upper-right corners at the implicit start point.
 --
-emptyBoundedLocGraphic :: CtxSize u => BoundedLocGraphic u
-emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphicRU
+emptyBoundedLocGraphicAU :: PsDouble u => BoundedLocGraphic u
+emptyBoundedLocGraphicAU = intoLocImage fn emptyLocGraphicAU
   where
     fn = promoteR1 $ \pt -> pure (BBox pt pt)
 
 
--- | 'emptyBoundedLocThetaGraphic' : @ BoundedLocThetaGraphic @
+-- | Relative unit version of 'emptyBoundedLocGraphicAU'.
+--
+emptyBoundedLocGraphicRU :: CtxSize u => BoundedLocGraphic u
+emptyBoundedLocGraphicRU = intoLocImage fn emptyLocGraphicRU
+  where
+    fn = promoteR1 $ \pt -> pure (BBox pt pt)
+
+
+-- | 'emptyBoundedLocThetaGraphicAU' : @ BoundedLocThetaGraphic @
 --
 -- Build an empty 'BoundedLocThetaGraphic'.
 -- 
@@ -134,32 +159,79 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphicRU
 -- upper-right corners at the implicit start point (the implicit 
 -- inclination can be ignored).
 --
-emptyBoundedLocThetaGraphic :: CtxSize u => BoundedLocThetaGraphic u
-emptyBoundedLocThetaGraphic = lift1R2 emptyBoundedLocGraphic
+emptyBoundedLocThetaGraphicAU :: PsDouble u => BoundedLocThetaGraphic u
+emptyBoundedLocThetaGraphicAU = lift1R2 emptyBoundedLocGraphicAU
+
+-- | Relative unit version of 'emptyBoundedLocThetaGraphicAU'.
+--
+emptyBoundedLocThetaGraphicRU :: CtxSize u => BoundedLocThetaGraphic u
+emptyBoundedLocThetaGraphicRU = lift1R2 emptyBoundedLocGraphicRU
 
 --------------------------------------------------------------------------------
 -- 
 
-illustrateBoundedGraphic :: (Fractional u, CtxSize u) 
-                         => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic mf = annotate mf bbrectangle
+-- | Draw a BoundedGraphic, illustrating the bounding box.
+--
+illustrateBoundedAU :: PsDouble u
+                           => BoundedGraphic u -> BoundedGraphic u
+illustrateBoundedAU mf = annotate mf bbrectangleAU
+
+-- | Relative unit version of 'emptyBoundedLocThetaAU'.
+--
+illustrateBoundedRU :: CtxSize u
+                           => BoundedGraphic u -> BoundedGraphic u
+illustrateBoundedRU mf = annotate mf bbrectangleRU
 
 
-illustrateBoundedLocGraphic :: (Fractional u, CtxSize u) 
-                            => BoundedLocGraphic u -> BoundedLocGraphic u
-illustrateBoundedLocGraphic mf = 
-    promoteR1 $ \pt -> illustrateBoundedGraphic $ apply1R1 mf pt
+-- | Draw a BoundedLocGraphic, illustrating the bounding box.
+--
+illustrateBoundedLocAU :: PsDouble u
+                       => BoundedLocGraphic u -> BoundedLocGraphic u
+illustrateBoundedLocAU mf = 
+    promoteR1 $ \pt -> illustrateBoundedAU $ apply1R1 mf pt
 
 
-illustrateBoundedLocThetaGraphic :: (Fractional u, CtxSize u)
-    => BoundedLocThetaGraphic u -> BoundedLocThetaGraphic u
-illustrateBoundedLocThetaGraphic mf = 
-    promoteR2 $ \pt theta -> illustrateBoundedGraphic $ apply2R2 mf pt theta
+-- | Relative unit version of 'illustrateBoundedLocAU'.
+--
+illustrateBoundedLocRU :: CtxSize u
+                       => BoundedLocGraphic u -> BoundedLocGraphic u
+illustrateBoundedLocRU mf = 
+    promoteR1 $ \pt -> illustrateBoundedRU $ apply1R1 mf pt
+
+
+-- | Draw a BoundedLocThetaGraphic, illustrating the bounding box.
+--
+illustrateBoundedLocThetaAU :: PsDouble u
+                            => BoundedLocThetaGraphic u 
+                            -> BoundedLocThetaGraphic u
+illustrateBoundedLocThetaAU mf = 
+    promoteR2 $ \pt theta -> illustrateBoundedAU $ apply2R2 mf pt theta
+
+-- | Relative unit version of 'illustrateBoundedLocThetaAU'.
+--
+illustrateBoundedLocThetaRU :: (Fractional u, CtxSize u)
+                            => BoundedLocThetaGraphic u 
+                            -> BoundedLocThetaGraphic u
+illustrateBoundedLocThetaRU mf = 
+    promoteR2 $ \pt theta -> illustrateBoundedRU $ apply2R2 mf pt theta
 
 
 -- 
-bbrectangle :: (Fractional u, CtxSize u) => BoundingBox u -> Graphic u
-bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
+
+bbrectangleAU :: PsDouble u => BoundingBox u -> Graphic u
+bbrectangleAU (BBox p1@(P2 llx lly) p2@(P2 urx ury))
+    | llx == urx && lly == ury = emptyLocGraphicAU `at` p1
+    | otherwise                = 
+        localize drawing_props $ rect1 `oplus` cross
+  where
+    drawing_props = cap_round . dotted_line
+    rect1         = strokedRectangleAU (urx-llx) (ury-lly) `at` p1
+    cross         = straightLineAU p1 p2 
+                      `oplus` straightLineAU (P2 llx ury) (P2 urx lly)
+
+
+bbrectangleRU :: CtxSize u => BoundingBox u -> Graphic u
+bbrectangleRU (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphicRU `at` p1
     | otherwise                = 
         localize drawing_props $ rect1 `oplus` cross
