@@ -19,7 +19,8 @@
 module Wumpus.Basic.Geometry.Paths
   ( 
     LocCoordPath
-  , coordinatePrimPath
+  , coordinatePrimPathAU
+  , coordinatePrimPathRU
 
   , rectangleCoordPath
   , diamondCoordPath
@@ -53,19 +54,19 @@ type LocCoordPath u = Point2 u -> [Point2 u]
 -- The Path data type will also need a similar function...
 --
  
-
--- | WARNING - this is (probably) the wrong type. 
--- 
--- Wumpus-Basic should not be propagating PrimPath.
+-- | Relative unit version of 'coordinatePrimPathAU'.
 --
-coordinatePrimPath :: CtxSize u 
-                   => Point2 u -> LocCoordPath u -> DrawingInfo PrimPath
-coordinatePrimPath pt fn = 
-    dsizeF pt >>= \pt1 -> go pt1 (fn pt)
-  where
-    go p0 []       = return $ emptyPrimPath p0        -- fallback
-    go _  ps       = mapM dsizeF  ps >>= return . vertexPrimPath
+coordinatePrimPathAU :: PsDouble u 
+                     => LocCoordPath u -> LocDrawingInfo u PrimPath
+coordinatePrimPathAU fn = promoteR1 $ \pt -> return $ vertexPathAU $ fn pt
 
+
+
+-- | Relative unit version of 'coordinatePrimPathAU'.
+--
+coordinatePrimPathRU :: CtxSize u 
+                     => LocCoordPath u -> LocDrawingInfo u PrimPath
+coordinatePrimPathRU fn = promoteR1 $ \pt -> vertexPathRU $ fn pt
 
 
 -- | Supplied point is /bottom-left/, subsequenct points are 
