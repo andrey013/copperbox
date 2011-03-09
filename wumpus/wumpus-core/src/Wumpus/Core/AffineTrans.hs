@@ -170,11 +170,11 @@ instance (Floating u, Real u, PsDouble u) => Rotate (Vec2 u) where
 
 -- | Type class for rotation about a point.
 --
--- Note this class has a type relation between the unit type of 
--- the object and the point-of-rotation.
+-- Note - the point is a @DPoint2@ - i.e. it has PostScript points
+-- for x and y-units.
 --
 class RotateAbout t where
-  rotateAbout :: PsDouble u  => Radian -> Point2 u -> t -> t
+  rotateAbout :: Radian -> DPoint2 -> t -> t
 
 
 instance RotateAbout () where
@@ -264,8 +264,8 @@ rotate30 = rotate (pi/6)
 
 -- | Rotate by 30 degrees about the supplied point.
 --
-rotate30About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
-rotate30About = rotateAbout (pi/6)
+rotate30About :: RotateAbout t => DPoint2 -> t -> t
+rotate30About = rotateAbout (pi/6) 
 
 -- | Rotate by 45 degrees about the origin. 
 --
@@ -274,7 +274,7 @@ rotate45 = rotate (pi/4)
 
 -- | Rotate by 45 degrees about the supplied point.
 --
-rotate45About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
+rotate45About :: RotateAbout t => DPoint2 -> t -> t
 rotate45About = rotateAbout (pi/4)
 
 -- | Rotate by 60 degrees about the origin. 
@@ -284,7 +284,7 @@ rotate60 = rotate (2*pi/3)
 
 -- | Rotate by 60 degrees about the supplied point.
 --
-rotate60About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
+rotate60About :: RotateAbout t => DPoint2 -> t -> t
 rotate60About = rotateAbout (2*pi/3)
 
 -- | Rotate by 90 degrees about the origin. 
@@ -294,7 +294,7 @@ rotate90 = rotate (pi/2)
 
 -- | Rotate by 90 degrees about the supplied point.
 --
-rotate90About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
+rotate90About :: RotateAbout t => DPoint2 -> t -> t
 rotate90About = rotateAbout (pi/2)
 
 -- | Rotate by 120 degrees about the origin. 
@@ -304,7 +304,7 @@ rotate120 = rotate (4*pi/3)
 
 -- | Rotate by 120 degrees about the supplied point.
 --
-rotate120About :: (RotateAbout t, PsDouble u) => Point2 u -> t -> t
+rotate120About :: RotateAbout t => DPoint2 -> t -> t
 rotate120About = rotateAbout (4*pi/3)
 
 
