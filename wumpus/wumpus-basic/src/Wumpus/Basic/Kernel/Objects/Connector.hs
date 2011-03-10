@@ -170,4 +170,4 @@ annoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 ->
 
 
 connect :: ConnectorImage t u -> Point2 u -> Point2 u -> Image t u
-connect gf p0 p1 = makeImageCtx $ \ctx -> getConnectorImage gf ctx p0 p1
+connect gf p0 p1 = rawImage $ \ctx -> getConnectorImage gf ctx p0 p1

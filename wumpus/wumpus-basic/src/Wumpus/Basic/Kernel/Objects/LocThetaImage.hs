@@ -120,6 +120,20 @@ opbindLocThetaImg op gf fn = LocThetaImage $ \ctx pt ang ->
 
 
 
+instance MoveStart LocThetaImage where
+  moveStart fn gf = LocThetaImage $ \ctx pt ang -> 
+                      getLocThetaImage gf ctx (fn pt) ang
+
+
+instance MoveStartTheta LocThetaImage where
+  moveStartTheta fn gf = LocThetaImage $ \ctx pt ang -> 
+                           getLocThetaImage gf ctx (fn ang pt) ang
+
+  moveStartThetaAngle fn gf = LocThetaImage $ \ctx pt ang -> 
+                                getLocThetaImage gf ctx pt (fn ang)
+
+
+
 instance IgnoreAns LocThetaImage where
   ignoreAns    = bimapLocThetaImage (const UNil) id
   replaceAns o = bimapLocThetaImage (const o) id

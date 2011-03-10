@@ -23,7 +23,7 @@ module Wumpus.Basic.Kernel.Objects.Image
    , Image
 
    , makeGraphic
-   , makeImageCtx
+   , rawImage
    , runImage
    , withQuery
    
@@ -140,8 +140,8 @@ makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, fn a)
 
 -- | This is for donwcasting LocImages, Connectors, etc. into Image.
 --
-makeImageCtx :: (DrawingContext -> (t u,Primitive)) -> Image t u
-makeImageCtx fn = Image $ \ctx -> fn ctx
+rawImage :: (DrawingContext -> (t u,Primitive)) -> Image t u
+rawImage fn = Image $ \ctx -> fn ctx
 
 runImage :: Image t u -> DrawingContext -> (t u, Primitive)
 runImage gf ctx = getImage gf ctx

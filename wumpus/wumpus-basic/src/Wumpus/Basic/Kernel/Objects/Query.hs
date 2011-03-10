@@ -16,9 +16,9 @@
 
 module Wumpus.Basic.Kernel.Objects.Query
   (
-
-
-    Query
+    Info(..)
+  
+  , Query
   , LocQuery
   , LocThetaQuery
 
@@ -41,6 +41,8 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
+class Info m where
+  info :: (DrawingContext -> a) -> m a
 
 newtype Query a = Query { getQuery :: DrawingContext -> a }
 
@@ -50,6 +52,26 @@ newtype LocQuery u a = LocQuery {
 
 newtype LocThetaQuery u a = LocThetaQuery { 
     getLocThetaQuery :: DrawingContext -> Point2 u -> Radian -> a }
+
+instance Functor Query where
+  fmap f mf = Query $ \ctx -> f $ getQuery mf ctx
+
+instance Applicative Query where
+  pure a    = Query $ \_ -> a
+  mf <*> ma = Query $ \ctx -> 
+                let f = getQuery mf ctx
+                    a = getQuery ma ctx
+                in f a
+
+instance Monad Query where
+  return a  = Query $ \_   -> a
+  ma >>= k  = Query $ \ctx -> let a = getQuery ma ctx in (getQuery . k) a ctx
+                
+
+
+
+instance Info Query where
+  info fn = Query $ \ctx -> fn ctx
 
 
 

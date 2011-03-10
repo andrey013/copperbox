@@ -40,8 +40,9 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , PosThetaGraphic
   , DPosThetaGraphic
 
-  , makePosImage
-  , makePosThetaImage
+
+--  , makePosImage
+--  , makePosThetaImage
 
   , startPos
   , atStartPos
@@ -52,15 +53,15 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Objects.BaseObjects
-import Wumpus.Basic.Kernel.Objects.Displacement
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Objects.Image
+import Wumpus.Basic.Kernel.Objects.ImageBasis
+import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Control.Applicative
 
 
 
@@ -102,7 +103,9 @@ data ObjectPos u = ObjectPos
 
 -- | A positionable Image.
 --
-type PosImage t u = CF2 (Point2 u) RectPosition (ImageAns t u)
+newtype PosImage t u = PosImage { 
+          getPosImage :: DrawingContext -> Point2 u -> 
+                         RectPosition   -> (t u, Primitive) }
     
 -- | Version of PosImage specialized to Double for the unit type.
 --
@@ -110,9 +113,10 @@ type DPosImage t = PosImage t Double
 
 
 
+
 -- | A positionable Graphic.
 --
-type PosGraphic u = PosImage (Const ()) u 
+type PosGraphic u = PosImage UNil u
     
 -- | Version of PosGraphic specialized to Double for the unit type.
 --
@@ -127,7 +131,9 @@ type DPosGraphic = PosGraphic Double
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-type PosThetaImage t u = CF3 (Point2 u) RectPosition Radian (ImageAns t u)
+newtype PosThetaImage t u = PosThetaImage {
+    getPosThetaImage :: DrawingContext -> Point2 u -> 
+                        RectPosition   -> Radian   -> (t u, Primitive) }
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --
@@ -142,7 +148,7 @@ type DPosThetaImage t = PosThetaImage t Double
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-type PosThetaGraphic u = PosThetaImage (Const ()) u
+type PosThetaGraphic u = PosThetaImage UNil u
     
 -- | Version of PosThetaGraphic specialized to Double for the unit type.
 --
@@ -150,6 +156,12 @@ type DPosThetaGraphic = PosThetaGraphic Double
 
 
 
+instance MoveStart PosImage where
+  moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
+
+instance MoveStart PosThetaImage where
+  moveStart fn gf = PosThetaImage $ \ctx pt rpos ang -> 
+                      getPosThetaImage gf ctx (fn pt) rpos ang
 
 
 --------------------------------------------------------------------------------
@@ -173,8 +185,6 @@ concatObjectPos op0 op1 = ObjectPos hw hw hh hh
 
 
 
---------------------------------------------------------------------------------
-
 
 -- | Find the half-width and half-height of an ObjectPos.
 -- 
@@ -190,7 +200,10 @@ halfDists :: Fractional u => ObjectPos u -> (u,u)
 halfDists (ObjectPos xmin xmaj ymin ymaj) = 
     (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
 
+--------------------------------------------------------------------------------
 
+
+{-
 -- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
 --
 -- Create a 'PosImage' from an 'ObjectPos' describing how it
@@ -216,7 +229,7 @@ makePosThetaImage opos gf = promoteR3 $ \start rpos theta ->
     let v1 = startVector rpos opos 
     in atRot gf (displaceVec v1 start) theta
 
-
+-}
 
 infixr 1 `startPos`
 
@@ -227,8 +240,11 @@ infixr 1 `startPos`
 --  
 startPos :: Floating u 
          => PosImage t u -> RectPosition -> LocImage t u
-startPos = apply1R2
+startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos) 
  
+
+
+
 -- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
 --
 -- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
@@ -236,7 +252,8 @@ startPos = apply1R2
 --  
 atStartPos ::  Floating u 
            => PosImage t u -> Point2 u -> RectPosition -> Image t u
-atStartPos = apply2R2
+atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos) 
+
 
 -- | The vector from some Rectangle position to the start point.
 --
@@ -260,6 +277,7 @@ startVector rpos (ObjectPos xminor xmajor yminor ymajor) = go rpos
     go SE     = V2 (-xmajor)          yminor
     go SW     = V2 xminor           yminor
     go NW     = V2 xminor           (-ymajor)
+
 
 
 

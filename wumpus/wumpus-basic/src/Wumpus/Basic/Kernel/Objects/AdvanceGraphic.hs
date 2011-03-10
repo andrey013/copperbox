@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -60,6 +61,9 @@ type DAdvGraphic       = AdvGraphic Double
 
 
 {-
+
+-- TODO - constructors for new images types need systemization.
+
 -- | 'intoAdvGraphic' : @ loc_context_function * graphic -> Image @
 --
 -- Build an 'AdvGraphic' from a context function ('CF') that 
@@ -109,11 +113,8 @@ comb op gf fn = gf `bind` \a -> fn a
 -- | Concatenate the two AdvGraphics.
 --
 advcat :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advcat af ag = comb (^+^) af (\v1 -> moveStart v1 ag)
+advcat af ag = comb (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
 
--- to sort out in displacement...
-moveStart :: Vec2 u -> AdvGraphic u -> AdvGraphic u
-moveStart _ = id
 
 
 -- | Concatenate the two AdvGraphics spacing them by the supplied 
@@ -121,7 +122,7 @@ moveStart _ = id
 --
 advsep :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
 advsep sep af ag = comb (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
-                        (\v1 -> moveStart (v1 ^+^ sep) ag)
+                        (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
 
 
 -- | Helper function - general combiner.

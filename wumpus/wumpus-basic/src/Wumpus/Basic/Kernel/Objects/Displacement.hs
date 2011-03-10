@@ -19,18 +19,8 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   (
 
 
-  -- * Moving points and angles
-    PointDisplace
-  , ThetaDisplace
-  , ThetaPointDisplace
 
-
-  , moveStart
-  , moveStartTheta
-  , moveStartThetaPoint
-  , moveStartThetaAngle
-
-  , displace
+    displace
   , displaceVec
   , displaceH
   , displaceV
@@ -78,6 +68,8 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Objects.ImageBasis
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -88,83 +80,6 @@ import Data.AffineSpace                         -- package: vector-space
 --------------------------------------------------------------------------------
 -- Displacing points
 
--- | 'PointDisplace' is a type representing functions 
--- @from Point to Point@.
---
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
---
-type PointDisplace u = Point2 u -> Point2 u
-
-
--- | 'ThetaDisplace' is a type representing functions 
--- @from Radian to Radian@.
---
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
---
-type ThetaDisplace = Radian -> Radian
-
-
--- | 'ThetaPointDisplace' is a type representing functions 
--- @from Radian * Point to Point@.
---
--- It is useful for building arrowheads which are constructed 
--- with an implicit angle representing the direction of the line 
--- at the arrow tip.
---
-type ThetaPointDisplace u = Radian -> PointDisplace u
-
-
-
--- | Move the start-point of a 'LocCF' with the supplied 
--- displacement function.
---
-moveStart :: PointDisplace u -> LocCF u a -> LocCF u a
-moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
-
-
-
-{-
--- UPDATE - This might not be necessary...
-
--- Need to be able to convert an ImageAns via a typeclass...
-
--- | Move the start-point of a 'LocCF' with the supplied 
--- displacement function.
---
-moveStart' :: forall u0 u t. (CxSize u0, PtSize u, Functor t) 
-           => PointDisplace u0 -> LocImage t u0 -> LocImage t u
-moveStart' f ma = promoteR1 $ \pt -> getFontSize >>= \sz ->
-    let v0::Vec2 u0   = pvec zeroPt (f zeroPt)
-        v1::Vec2 u    = fmap (dpoint . cfSize sz) v0
-        p0::Point2 u0 = fmap (csSize sz . psDouble) $ pt .+^ v1
-    in cxConverti sz $ ma `at` p0 
--}
-
-
--- | Move the start-point of a 'LocThetaCF' with the supplied 
--- displacement function.
---
-moveStartTheta :: ThetaPointDisplace u -> LocThetaCF u a -> LocThetaCF u a
-moveStartTheta f ma = promoteR2 $ \pt theta -> let p2 = f theta pt 
-                                               in apply2R2 ma p2 theta
-
-
--- | Move the start-point of a 'LocThetaCF' with the supplied 
--- displacement function.
---
-moveStartThetaPoint :: PointDisplace u -> LocThetaCF u a -> LocThetaCF u a
-moveStartThetaPoint f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
-
-
--- | Change the inclination of a 'LocThetaCF' with the supplied 
--- displacement function.
---
-moveStartThetaAngle :: ThetaDisplace -> LocThetaCF u a -> LocThetaCF u a
-moveStartThetaAngle f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
 
 
 
@@ -335,45 +250,45 @@ thetaSouthwestwards d =
 -- | Absolute units.
 -- 
 centerRelative :: (CenterAnchor t u, Fractional u, PsDouble u) 
-               => (Int,Int) -> t -> DrawingInfo (Point2 u)
+               => (Int,Int) -> t -> Query (Point2 u)
 centerRelative coord a =
-    let pt = center a in snapmove coord >>= \v -> return (pt .+^ v)
+   let pt = center a in info (snapmove coord) >>= \v -> return (pt .+^ v)
 
 
 -- | Absolute units.
 --
 right_of        :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 right_of        = centerRelative (1,0)
 
 -- | Absolute units.
 --
 left_of         :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 left_of         = centerRelative ((-1),0)
 
 -- | Absolute units.
 --
 above_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 above_right_of  = centerRelative (1,1)
 
 -- | Absolute units.
 --
 below_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 below_right_of  = centerRelative (1, (-1))
 
 -- | Absolute units.
 --
 above_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 above_left_of   = centerRelative ((-1),1)
 
 -- | Absolute units.
 --
 below_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> DrawingInfo (Point2 u)
+                => t -> Query (Point2 u)
 below_left_of   = centerRelative ((-1),(-1))
  
 

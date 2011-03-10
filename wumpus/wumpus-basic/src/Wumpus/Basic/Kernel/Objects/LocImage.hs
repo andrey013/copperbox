@@ -29,6 +29,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , uptoLocImage
    , intoLocImage
    , intoLocImage2     -- needs a new name
+   , rawLocImage
    , runLocImage
    , at
 
@@ -133,6 +134,9 @@ instance Localize LocImage where
    localize upd gf = LocImage $ \ctx pt -> getLocImage gf (upd ctx) pt
 
 
+instance MoveStart LocImage where
+  moveStart fn gf = LocImage $ \ctx pt -> getLocImage gf ctx (fn pt)
+
 instance Hyperlink (LocImage t u) where
   hyperlink hyp = bimapLocImage id (xlinkPrim hyp)
 
@@ -173,6 +177,10 @@ opbindLocImg op gf fn = LocImage $ \ctx pt ->
     in (a `op` b, o1 `oplus` o2)
 
 
+
+-- NOTE - Image building needs sorting out into a prime setof 
+-- functions.
+--
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
 -- @Image@ projecting up to a @LocImage@.
@@ -227,6 +235,12 @@ intoLocImage2 extr fn gf = LocImage $ \ctx pt ->
    in (ans,o)
 
 
+-- This seems to be the one for down casting...
+-- 
+rawLocImage :: (DrawingContext -> Point2 u -> (t u, Primitive)) -> LocImage t u
+rawLocImage fn = LocImage $ \ctx pt -> fn ctx pt
+
+
 runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, Primitive)
 runLocImage gf ctx pt = getLocImage gf ctx pt
 
@@ -235,4 +249,4 @@ runLocImage gf ctx pt = getLocImage gf ctx pt
 infixr 1 `at`
 
 at :: LocImage t u -> Point2 u -> Image t u
-gf `at` pt = makeImageCtx $ \ctx ->  getLocImage gf ctx pt
+gf `at` pt = rawImage $ \ctx ->  getLocImage gf ctx pt
