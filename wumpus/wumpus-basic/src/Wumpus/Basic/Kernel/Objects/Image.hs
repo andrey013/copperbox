@@ -112,14 +112,14 @@ instance Annotate Image where
 
 
 
-annoImg :: Image t u -> Graphic u -> Image t u
-annoImg fa fb = Image $ \ctx -> 
+decoImg :: Image t u -> Graphic u -> Image t u
+decoImg fa fb = Image $ \ctx -> 
     let (a,o1) = getImage fa ctx 
         (_,o2) = getImage fb ctx
     in (a,o1 `oplus` o2)
                         
-decoImg :: Image t u -> (t u -> Graphic u) -> Image t u
-decoImg fa mf = Image $ \ctx -> 
+annoImg :: Image t u -> (t u -> Graphic u) -> Image t u
+annoImg fa mf = Image $ \ctx -> 
     let (a,o1) = getImage fa ctx 
         (_,o2) = getImage (mf a) ctx
     in (a,o1 `oplus` o2)

@@ -26,6 +26,9 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , withLocQuery2 -- clearly needs a new name
 
    , makeLocGraphic
+   , uptoLocImage
+   , intoLocImage
+   , intoLocImage2     -- needs a new name
    , runLocImage
    , at
 
@@ -146,14 +149,14 @@ instance Annotate LocImage where
 
 
 
-annoLocImg :: LocImage t u -> LocGraphic u -> LocImage t u
-annoLocImg fa fb = LocImage $ \ctx pt -> 
+decoLocImg :: LocImage t u -> LocGraphic u -> LocImage t u
+decoLocImg fa fb = LocImage $ \ctx pt -> 
     let (a,o1) = getLocImage fa ctx pt
         (_,o2) = getLocImage fb ctx pt
     in (a, o1 `oplus` o2)
                         
-decoLocImg :: LocImage t u -> (t u -> LocGraphic u) -> LocImage t u
-decoLocImg fa mf = LocImage $ \ctx pt -> 
+annoLocImg :: LocImage t u -> (t u -> LocGraphic u) -> LocImage t u
+annoLocImg fa mf = LocImage $ \ctx pt -> 
     let (a,o1) = getLocImage fa ctx pt
         (_,o2) = getLocImage (mf a) ctx pt
     in (a, o1 `oplus` o2)
@@ -185,6 +188,32 @@ makeLocGraphic qry fn = LocImage $ \ctx pt ->
     let ans = qry ctx 
         sz  = dc_font_size ctx
     in (UNil, fn ans (uconvertExt sz pt))
+
+
+
+uptoLocImage :: Image t u -> LocImage t u
+uptoLocImage gf = LocImage $ \ctx _ -> runImage gf ctx
+
+
+intoLocImage :: (Point2 u -> t u) 
+             -> LocGraphic u
+             -> LocImage t u
+intoLocImage fn gf = LocImage $ \ctx pt -> 
+   let ans   = fn pt
+       (_,o) = getLocImage gf ctx pt
+   in (ans,o)
+
+
+intoLocImage2 :: InterpretUnit u
+              => (DrawingContext -> a) 
+              -> (a -> Point2 u -> t u) 
+              -> LocGraphic u
+              -> LocImage t u
+intoLocImage2 extr fn gf = LocImage $ \ctx pt -> 
+   let a     = extr ctx
+       ans   = fn a pt
+       (_,o) = getLocImage gf ctx pt
+   in (ans,o)
 
 
 runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, Primitive)

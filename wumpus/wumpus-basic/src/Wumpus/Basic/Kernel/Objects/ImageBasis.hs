@@ -29,7 +29,6 @@ module Wumpus.Basic.Kernel.Objects.ImageBasis
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.CtxUnits
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -49,8 +48,8 @@ class Hyperlink obj where
 -- Would these be better as parameterized modules?
 
 class Annotate t where 
-  annotate  :: t r u -> t UNil u -> t r u
-  decorate  :: t r u -> (r u -> t UNil u) -> t r u
+  decorate  :: t r u -> t UNil u -> t r u
+  annotate  :: t r u -> (r u -> t UNil u) -> t r u
     
 class IgnoreAns t where 
   ignoreAns  :: t r u -> t UNil u

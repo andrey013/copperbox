@@ -25,6 +25,11 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 
    , ignoreTheta -- needs new name
    , makeLocThetaGraphic
+   , uptoLocThetaImage2
+   , uptoLocThetaImage1
+
+   , intoLocThetaImage
+   , intoLocThetaImage2
    , withLocThetaQuery
    )
 
@@ -112,14 +117,15 @@ instance Annotate LocThetaImage where
 
 
 
-annoLocThetaImg :: LocThetaImage t u -> LocThetaGraphic u -> LocThetaImage t u
-annoLocThetaImg fa fb = LocThetaImage $ \ctx pt ang -> 
+decoLocThetaImg :: LocThetaImage t u -> LocThetaGraphic u -> LocThetaImage t u
+decoLocThetaImg fa fb = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage fa ctx pt ang
         (_,o2) = getLocThetaImage fb ctx pt ang
     in (a, o1 `oplus` o2)
                         
-decoLocThetaImg :: LocThetaImage t u -> (t u -> LocThetaGraphic u) -> LocThetaImage t u
-decoLocThetaImg fa mf = LocThetaImage $ \ctx pt ang -> 
+annoLocThetaImg :: LocThetaImage t u -> (t u -> LocThetaGraphic u) 
+                -> LocThetaImage t u
+annoLocThetaImg fa mf = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage fa ctx pt ang
         (_,o2) = getLocThetaImage (mf a) ctx pt ang
     in (a, o1 `oplus` o2)
@@ -137,6 +143,37 @@ makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang ->
     let ans = qry ctx 
         sz  = dc_font_size ctx
     in (UNil, fn ans (uconvertExt sz pt) ang)
+
+-- Name convention with arity suffixes is good for the upto functions!
+
+uptoLocThetaImage2 :: Image t u -> LocThetaImage t u
+uptoLocThetaImage2 gf = LocThetaImage $ \ctx _ _ -> runImage gf ctx
+
+uptoLocThetaImage1 :: LocImage t u -> LocThetaImage t u
+uptoLocThetaImage1 gf = LocThetaImage $ \ctx pt _ -> runLocImage gf ctx pt
+
+
+
+
+intoLocThetaImage :: (Point2 u -> Radian -> t u) 
+                  -> LocThetaGraphic u
+                  -> LocThetaImage t u
+intoLocThetaImage fn gf = LocThetaImage $ \ctx pt ang -> 
+   let ans   = fn pt ang
+       (_,o) = getLocThetaImage gf ctx pt ang
+   in (ans,o)
+
+
+intoLocThetaImage2 :: InterpretUnit u
+              => (DrawingContext -> a) 
+              -> (a -> Point2 u -> Radian -> t u) 
+              -> LocThetaGraphic u
+              -> LocThetaImage t u
+intoLocThetaImage2 extr fn gf = LocThetaImage $ \ctx pt ang -> 
+   let a     = extr ctx
+       ans   = fn a pt ang
+       (_,o) = getLocThetaImage gf ctx pt ang
+   in (ans,o)
 
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an

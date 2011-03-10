@@ -139,17 +139,17 @@ instance Annotate ConnectorImage where
 
 
 
-annoConnectorImg :: ConnectorImage t u -> ConnectorGraphic u 
+decoConnectorImg :: ConnectorImage t u -> ConnectorGraphic u 
                  -> ConnectorImage t u
-annoConnectorImg fa fb = ConnectorImage $ \ctx p0 p1 -> 
+decoConnectorImg fa fb = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage fa ctx p0 p1
         (_,o2) = getConnectorImage fb ctx p0 p1
     in (a, o1 `oplus` o2)
                         
-decoConnectorImg :: ConnectorImage t u 
+annoConnectorImg :: ConnectorImage t u 
                  -> (t u -> ConnectorGraphic u) 
                  -> ConnectorImage t u
-decoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 -> 
+annoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage fa ctx p0 p1
         (_,o2) = getConnectorImage (mf a) ctx p0 p1
     in (a, o1 `oplus` o2)
