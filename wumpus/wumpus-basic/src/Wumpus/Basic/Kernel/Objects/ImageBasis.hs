@@ -23,6 +23,7 @@ module Wumpus.Basic.Kernel.Objects.ImageBasis
   (
     Localize(..)
   , Hyperlink(..)
+  , OpBind(..)
   , Annotate(..)
   , IgnoreAns(..)
   ) where
@@ -45,7 +46,20 @@ class Localize t where
 class Hyperlink obj where
   hyperlink :: XLink -> obj -> obj
 
--- Would these be better as parameterized modules?
+
+
+-- Whoa - bind probably not useful without return, but return 
+-- is problemmatic as graphics are a semigroup not a monoid.
+--
+
+-- | Operator parameterized bind!
+
+
+class OpBind t where 
+  opbind  :: forall (r :: * -> *) (u :: *). 
+             (r u -> r u -> r u) -> t r u -> (r u -> t r u) -> t r u
+
+
 
 class Annotate t where 
   decorate  :: t r u -> t UNil u -> t r u

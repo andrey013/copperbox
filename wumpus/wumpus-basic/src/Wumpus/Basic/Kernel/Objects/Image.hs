@@ -106,11 +106,20 @@ instance IgnoreAns Image where
   replaceAns o = bimapImage (const o) id
 
 
+instance OpBind Image where
+  opbind = opbindImg
+
+opbindImg :: (t u -> t u -> t u) 
+          -> Image t u -> (t u -> Image t u) -> Image t u
+opbindImg op gf fn = Image $ \ctx -> 
+    let (a,o1) = getImage gf ctx
+        (b,o2) = getImage (fn a) ctx
+    in (a `op` b, o1 `oplus` o2)
+
+
 instance Annotate Image where
   annotate = annoImg
   decorate = decoImg
-
-
 
 decoImg :: Image t u -> Graphic u -> Image t u
 decoImg fa fb = Image $ \ctx -> 

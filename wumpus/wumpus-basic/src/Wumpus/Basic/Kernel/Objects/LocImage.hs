@@ -162,6 +162,17 @@ annoLocImg fa mf = LocImage $ \ctx pt ->
     in (a, o1 `oplus` o2)
 
 
+instance OpBind LocImage where
+  opbind = opbindLocImg
+
+opbindLocImg :: (t u -> t u -> t u) 
+             -> LocImage t u -> (t u -> LocImage t u) -> LocImage t u
+opbindLocImg op gf fn = LocImage $ \ctx pt -> 
+    let (a,o1) = getLocImage gf ctx pt
+        (b,o2) = getLocImage (fn a) ctx pt
+    in (a `op` b, o1 `oplus` o2)
+
+
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
 -- @Image@ projecting up to a @LocImage@.

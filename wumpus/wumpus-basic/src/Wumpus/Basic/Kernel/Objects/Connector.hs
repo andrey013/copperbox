@@ -133,6 +133,20 @@ instance IgnoreAns ConnectorImage where
   replaceAns o = bimapConnectorImage (const o) id
 
 
+
+
+instance OpBind ConnectorImage where
+  opbind = opbindConnectorImg
+
+opbindConnectorImg :: (t u -> t u -> t u) 
+                   -> ConnectorImage t u -> (t u -> ConnectorImage t u) 
+                   -> ConnectorImage t u
+opbindConnectorImg op gf fn = ConnectorImage $ \ctx p0 p1 -> 
+    let (a,o1) = getConnectorImage gf ctx p0 p1
+        (b,o2) = getConnectorImage (fn a) ctx p0 p1
+    in (a `op` b, o1 `oplus` o2)
+
+
 instance Annotate ConnectorImage where
   annotate = annoConnectorImg
   decorate = decoConnectorImg

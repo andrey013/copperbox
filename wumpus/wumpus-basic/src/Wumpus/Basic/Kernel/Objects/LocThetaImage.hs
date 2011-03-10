@@ -105,6 +105,20 @@ instance Hyperlink (LocThetaImage t u) where
   hyperlink hyp = bimapLocThetaImage id (xlinkPrim hyp)
 
 
+instance OpBind LocThetaImage where
+  opbind = opbindLocThetaImg
+
+
+opbindLocThetaImg :: (t u -> t u -> t u) 
+                  -> LocThetaImage t u 
+                  -> (t u -> LocThetaImage t u) 
+                  -> LocThetaImage t u
+opbindLocThetaImg op gf fn = LocThetaImage $ \ctx pt ang -> 
+    let (a,o1) = getLocThetaImage gf ctx pt ang
+        (b,o2) = getLocThetaImage (fn a) ctx pt ang
+    in (a `op` b, o1 `oplus` o2)
+
+
 
 instance IgnoreAns LocThetaImage where
   ignoreAns    = bimapLocThetaImage (const UNil) id
