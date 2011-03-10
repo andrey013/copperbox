@@ -28,8 +28,16 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceL
   , replaceR
 
-  -- * /Contextual/ unit size
-  , CtxSize(..)
+  -- * Unit phantom types 
+  , UNil(..)
+  , UOne(..)
+
+  -- * Unit interpretation with respect to the current Point size
+  , InterpretUnit(..)
+  , UnitConvert(..)
+  , UnitConvertExt(..)
+  , uconvertScalar
+  , intraMapPoint
 
 
   -- * Alignment
@@ -176,11 +184,104 @@ replaceR = bimapR . const
 
 
 --------------------------------------------------------------------------------
--- Contextual size
+-- Simple objects wrapped with unit phatom type 
 
-class Num u => CtxSize u where
-  cfSize :: FontSize -> u -> Double
-  csSize :: FontSize -> Double -> u
+
+data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
+
+data UOne a u = UOne a        deriving (Eq,Ord,Read,Show)
+
+instance Functor UNil where
+  fmap _ UNil= UNil
+
+
+instance Functor (UOne a) where
+  fmap _ (UOne a) = UOne a
+
+
+
+
+instance OPlus (UNil u) where
+  _ `oplus` _ = UNil
+
+instance OPlus a => OPlus (UOne a u) where
+  UOne a `oplus` UOne b = UOne $ a `oplus` b
+
+
+instance Rotate (UNil u) where
+  rotate _ = id
+
+instance Scale (UNil u) where
+  scale _ _  = id 
+
+instance RotateAbout (UNil u) where
+  rotateAbout _ _ = id
+
+instance Translate (UNil u) where
+  translate _ _ = id 
+
+
+--------------------------------------------------------------------------------
+-- Interpreting units 
+
+-- Units may or may not depend on current font size
+--
+
+class Num u => InterpretUnit u where
+  normalize :: FontSize -> u -> Double
+  dinterp   :: FontSize -> Double -> u
+
+instance InterpretUnit Double where
+  normalize _ = id
+  dinterp   _ = id 
+
+instance InterpretUnit Centimeter where
+  normalize _ = toPsDouble 
+  dinterp   _ = fromPsDouble
+
+
+
+class UnitConvert t where
+  uconvert :: (InterpretUnit u, InterpretUnit u1) => t u -> t u1
+
+class UnitConvertExt t where
+  uconvertExt :: (InterpretUnit u, InterpretUnit u1) => FontSize -> t u -> t u1
+
+
+instance UnitConvertExt UNil where
+  uconvertExt _ UNil = UNil 
+
+instance UnitConvertExt (UOne a) where
+  uconvertExt _ (UOne a) = UOne a 
+
+instance UnitConvertExt Vec2 where
+  uconvertExt sz = fmap (uconvertScalar sz)
+    
+instance UnitConvertExt Point2 where
+  uconvertExt sz = fmap (uconvertScalar sz)
+
+
+instance UnitConvertExt BoundingBox where
+  uconvertExt sz = fmap (uconvertScalar sz)
+
+
+-- | Convert a scalar value from one unit to another.
+--
+uconvertScalar :: (InterpretUnit u, InterpretUnit u1) => FontSize -> u -> u1
+uconvertScalar sz = dinterp sz . normalize sz
+
+
+-- Helper for defining Affine instances. This function allows 
+-- scaling etc to be applied on a Point coerced to a Double then
+-- converted back to the original unit. Thus transformations can 
+-- work in contextual units.
+--
+intraMapPoint :: InterpretUnit u 
+              => FontSize -> (DPoint2 -> DPoint2) -> Point2 u -> Point2 u
+intraMapPoint sz fn (P2 x y) = 
+    let P2 x' y' = fn $ P2 (normalize sz x) (normalize sz y)
+    in  P2 (dinterp sz x') (dinterp sz y')
+
 
 
 --------------------------------------------------------------------------------

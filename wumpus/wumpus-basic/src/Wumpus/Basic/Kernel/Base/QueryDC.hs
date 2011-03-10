@@ -21,21 +21,16 @@
 module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
-    dsize 
-  , dsizeF
-  , usize
-  , usizeF
-  , castsize
-  , castsizeF
-
-  , textAttr
-  , strokeAttr
-  , fillAttr
-  , borderedAttr
+    DCQuery
+  , stroke_attr
+  , fill_attr
+  , bordered_attr
+  , point_size
+  , text_attr
 
   , position
   , snapmove
-
+{-
   , roundCornerSizeAU
   , roundCornerSizeRU
   , textMarginAU
@@ -64,7 +59,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , verticalSpanRU
 
   , cwLookupTable
-
+-}
 
   ) where
 
@@ -78,7 +73,7 @@ import qualified Wumpus.Core.FontSize   as FS
 import Control.Applicative
 import Control.Monad
 
-
+{-
 dsize :: (DrawingCtxM m, CtxSize u) => u -> m Double
 dsize u = (\sz -> cfSize sz u) <$> query dc_font_size
 
@@ -97,51 +92,55 @@ castsize = dsize >=> usize
 castsizeF :: (Functor f, DrawingCtxM m, CtxSize u, CtxSize u1) 
           => f u -> m (f u1)
 castsizeF = dsizeF >=> usizeF
+-}
+
+type DCQuery a = DrawingContext -> a
+
+stroke_attr :: DCQuery (RGBi, StrokeAttr)
+stroke_attr = (,) <$> dc_stroke_colour <*> dc_stroke_props
+
+fill_attr :: DCQuery RGBi
+fill_attr = dc_fill_colour
 
 
-textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
-textAttr = (,) <$> query dc_text_colour <*> getFontAttr
+bordered_attr :: DCQuery (RGBi, StrokeAttr, RGBi)
+bordered_attr = (,,) <$> dc_fill_colour <*> dc_stroke_props 
+                                        <*> dc_stroke_colour
+
+point_size :: DCQuery FontSize
+point_size = dc_font_size
 
 
-strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
-strokeAttr = (,) <$> query dc_stroke_colour <*> query dc_stroke_props
+text_attr :: DCQuery (RGBi,FontAttr)
+text_attr = (\a b c -> (a, FontAttr b c)) 
+              <$> dc_text_colour <*> dc_font_size <*> dc_font_face
 
-
-fillAttr :: DrawingCtxM m => m RGBi
-fillAttr = query dc_fill_colour
-
-
-borderedAttr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
-borderedAttr = (,,) <$> query dc_fill_colour <*> query dc_stroke_props 
-                                             <*> query dc_stroke_colour
 
 
 
 -- | Get the Point corresponding the grid coordinates scaled by
 -- the snap-grid scaling factors.
 --
--- Absolute units.
--- 
-position :: (Fractional u, PsDouble u, DrawingCtxM m) 
-         => (Int,Int) -> m (Point2 u)
-position (x,y) = post <$> query dc_snap_grid_factors
+position :: Fractional u => (Int, Int) -> DCQuery (Point2 u)
+position (x,y) = post <$> dc_snap_grid_factors
   where
-    post (scx,scy) = P2 (fromPsDouble $ scx * fromIntegral x) 
-                        (fromPsDouble $ scy * fromIntegral y)
+    post (sx,sy) = P2 (realToFrac $ sx * fromIntegral x) 
+                      (realToFrac $ sy * fromIntegral y)
+
+
 
 
 -- | Scale a vector coordinate by the snap-grid scaling factors.
 --
 -- Absolute units.
 --
-snapmove :: (Fractional u, PsDouble u, DrawingCtxM m) 
-         => (Int,Int) -> m (Vec2 u)
-snapmove (x,y) = post <$> query dc_snap_grid_factors
+snapmove :: Fractional u => (Int,Int) -> DCQuery (Vec2 u)
+snapmove (x,y) = post <$> dc_snap_grid_factors
   where
-    post (scx,scy) = V2 (fromPsDouble $ scx * fromIntegral x) 
-                        (fromPsDouble $ scy * fromIntegral y)
+    post (sx,sy) = V2 (realToFrac $ sx * fromIntegral x) 
+                      (realToFrac $ sy * fromIntegral y)
 
-
+{-
 
 -- | Size of the round corner factor.
 --
@@ -311,3 +310,4 @@ verticalSpanRU =
 cwLookupTable :: DrawingCtxM m => m CharWidthLookup
 cwLookupTable = glyphQuery get_cw_table
 
+-}

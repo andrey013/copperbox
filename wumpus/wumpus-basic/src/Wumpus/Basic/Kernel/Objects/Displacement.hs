@@ -77,9 +77,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Objects.BaseObjects
 
 import Wumpus.Core                              -- package: wumpus-core
 

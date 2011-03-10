@@ -45,9 +45,9 @@ newtype Em = Em { getEm :: Double }
 instance Show Em where
   showsPrec p d = showsPrec p (getEm d)
 
-instance CtxSize Em where
-  cfSize sz a = fromIntegral sz * realToFrac a
-  csSize sz d = realToFrac d / fromIntegral sz
+instance InterpretUnit Em where
+  normalize sz a = fromIntegral sz * realToFrac a
+  dinterp sz d   = realToFrac d / fromIntegral sz
 
 data UEm = UEm
 
@@ -63,9 +63,9 @@ instance Show En where
   showsPrec p d = showsPrec p (getEn d)
 
 
-instance CtxSize En where
-  cfSize sz a = (realToFrac  a) * 0.5 * fromIntegral sz
-  csSize sz d = 2 * (realToFrac d) / (fromIntegral sz)
+instance InterpretUnit En where
+  normalize sz a = (realToFrac  a) * 0.5 * fromIntegral sz
+  dinterp sz d   = 2 * (realToFrac d) / (fromIntegral sz)
 
 
 data UEn = UEn

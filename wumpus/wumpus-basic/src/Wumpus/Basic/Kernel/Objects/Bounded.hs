@@ -111,7 +111,7 @@ centerOrthoBBoxAU theta bb =
     traceBoundary $ map (rotateAbout theta ctr) ps
   where 
     ps  = boundaryCornerList bb
-    ctr = boundaryCenter bb
+    ctr = fmap toPsDouble $ boundaryCenter bb
 
 -- | Relative unit version of 'centerOrthoBBoxAU'.
 -- 
@@ -179,7 +179,7 @@ illustrateBoundedAU mf = annotate mf bbrectangleAU
 -- | Relative unit version of 'emptyBoundedLocThetaAU'.
 --
 illustrateBoundedRU :: CtxSize u
-                           => BoundedGraphic u -> BoundedGraphic u
+                    => BoundedGraphic u -> BoundedGraphic u
 illustrateBoundedRU mf = annotate mf bbrectangleRU
 
 

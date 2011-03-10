@@ -63,7 +63,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   -- * Font properties
   , font_attr
   , set_font
-  , point_size
+  , set_font_size
 
 
   -- * Font / mark drawing size
@@ -337,13 +337,13 @@ loose_dashed      = set_dash_pattern $ Dash 0 [(3,4)]
 
 -- | Set the font attributes, point size and font face.
 --
-font_attr            :: FontFace -> Int -> DrawingContextF
-font_attr ff sz      = \s -> s { dc_font_size = sz, dc_font_face = ff }
+font_attr               :: FontFace -> Int -> DrawingContextF
+font_attr ff sz         = \s -> s { dc_font_size = sz, dc_font_face = ff }
 
 -- | Set the font face.
 --
-set_font             :: FontFace -> DrawingContextF
-set_font ff          = \s -> s { dc_font_face = ff }
+set_font                :: FontFace -> DrawingContextF
+set_font ff             = \s -> s { dc_font_face = ff }
 
 
 -- | Set the point size.
@@ -351,8 +351,8 @@ set_font ff          = \s -> s { dc_font_face = ff }
 -- This controls the drawing size of both 
 -- text labels and marks (e.g. dots and arrowheads).
 --
-point_size           :: Int -> DrawingContextF
-point_size sz        = \s -> s { dc_font_size = sz }
+set_font_size           :: Int -> DrawingContextF
+set_font_size sz        = \s -> s { dc_font_size = sz }
 
 
 -- | Scale the current point size by the supplied ratio.
@@ -363,7 +363,7 @@ point_size sz        = \s -> s { dc_font_size = sz }
 -- 
 scalePointSize    :: Ratio Int -> DrawingContextF
 scalePointSize r  = let (n,d) = (numerator r, denominator r)
-                      in (\s sz -> point_size (n * sz `div` d) s) 
+                      in (\s sz -> set_font_size (n * sz `div` d) s) 
                            <*> dc_font_size
 
 -- | Set the point size (font and mark size) to double the current 

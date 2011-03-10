@@ -292,7 +292,7 @@ wumpus_courier =
 --
 class (Applicative m, Monad m) => DrawingCtxM (m :: * -> *) where
   queryCtx  :: m DrawingContext
-  localize  :: (DrawingContext -> DrawingContext) -> m a -> m a
+  updateCtx  :: (DrawingContext -> DrawingContext) -> m a -> m a
 
 
 -- | Project a value out of the DrawingContext.

@@ -145,8 +145,8 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 --
 -- Transform a 'TraceDrawing' into a 'CtxPicture'.
 --
-drawTracing :: Unit utyp u => utyp -> TraceDrawing u a -> CtxPicture
-drawTracing _ mf = 
+drawTracing :: TraceDrawing u a -> CtxPicture
+drawTracing mf = 
     CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
 
 

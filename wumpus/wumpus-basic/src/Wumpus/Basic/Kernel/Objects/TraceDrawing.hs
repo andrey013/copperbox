@@ -44,7 +44,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , mbPictureU
  
 
-  , runQuery
+  , evalQuery
 
   , draw
   , drawi
@@ -56,18 +56,9 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , drawci
   , drawci_
 
-
-  , xdraw
-  , xdrawi
-  , xdrawi_
-
   , node
   , nodei
   , nodei_
-
-  , cxdraw
-  , cxdrawi
-  , cxdrawi_
  
   , drawrc
   , drawrci
@@ -77,13 +68,13 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
 
 import Wumpus.Basic.Kernel.Base.Anchors
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Objects.BaseObjects
 import Wumpus.Basic.Kernel.Objects.Connector
-import Wumpus.Basic.Kernel.Objects.Graphic
+import Wumpus.Basic.Kernel.Objects.Image
+import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -197,14 +188,14 @@ instance Monad m => TraceM (TraceDrawingT u m) u where
 -- DrawingCtxM
 
 instance DrawingCtxM (TraceDrawing u) where
-  queryCtx        = TraceDrawing $ \ctx -> (ctx, mempty)
-  localize upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
+  queryCtx         = TraceDrawing $ \ctx -> (ctx, mempty)
+  updateCtx upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
 
 
 
 instance Monad m => DrawingCtxM (TraceDrawingT u m) where
-  queryCtx        = TraceDrawingT $ \ctx -> return (ctx,mempty)
-  localize upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
+  queryCtx         = TraceDrawingT $ \ctx -> return (ctx,mempty)
+  updateCtx upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
 
 
 
@@ -298,8 +289,9 @@ mbPictureU (Just a) = a
 
 --------------------------------------------------------------------------------
 
-runQuery :: DrawingCtxM m => DrawingInfo a -> m a
-runQuery df = queryCtx >>= \ctx -> return $ runCF ctx df
+
+evalQuery :: DrawingCtxM m => Query a -> m a
+evalQuery df = queryCtx >>= \ctx -> return $ runQuery df ctx 
 
 
 
@@ -311,7 +303,7 @@ runQuery df = queryCtx >>= \ctx -> return $ runCF ctx df
 draw :: (TraceM m u, DrawingCtxM m) 
      => Graphic u -> m ()
 draw gf = queryCtx >>= \ctx -> 
-          trace (singleH $ snd $ getImageAns $ runCF ctx gf)
+          trace (singleH $ snd $ runImage gf ctx)
 
 
 
@@ -324,7 +316,7 @@ draw gf = queryCtx >>= \ctx ->
 drawi :: (TraceM m u, DrawingCtxM m) 
       => Image t u -> m (t u)
 drawi img = queryCtx >>= \ctx -> 
-            let (a,o) = getImageAns $ runCF ctx img 
+            let (a,o) = runImage img ctx
             in trace (singleH o) >> return a
 
 
@@ -332,7 +324,7 @@ drawi img = queryCtx >>= \ctx ->
 --
 drawi_ :: (TraceM m u, DrawingCtxM m) 
        => Image t u -> m ()
-drawi_ img = drawi img >> return ()
+drawi_ gf = drawi gf >> return ()
 
 
 -- | Draw a LocGraphic at the supplied Point taking the drawing 
@@ -343,7 +335,7 @@ drawi_ img = drawi img >> return ()
 drawl :: (TraceM m u, DrawingCtxM m) 
       => Point2 u -> LocGraphic u -> m ()
 drawl pt gf = queryCtx >>= \ctx -> 
-              trace (singleH $ snd $ getImageAns $ runCF ctx $ gf `at` pt)
+              trace (singleH $ snd $ runLocImage gf ctx pt)
 
 
 
@@ -355,7 +347,10 @@ drawl pt gf = queryCtx >>= \ctx ->
 -- 
 drawli :: (TraceM m u, DrawingCtxM m) 
        => Point2 u -> LocImage t u -> m (t u)
-drawli pt img = drawi (img `at` pt)
+drawli pt gf = queryCtx >>= \ctx -> 
+                let (a,o) = runLocImage gf ctx pt
+                in trace (singleH o) >> return a
+
 
 -- | Forgetful 'drawli'.
 --
@@ -382,6 +377,7 @@ drawc :: (TraceM m u, DrawingCtxM m)
       => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
 drawc p0 p1 gf = draw (connect gf p0 p1)
 
+
 -- | Draw a ConnectorImage with the supplied Points taking the 
 -- drawing style from the /drawing context/. 
 --
@@ -390,115 +386,45 @@ drawc p0 p1 gf = draw (connect gf p0 p1)
 -- 
 drawci :: (TraceM m u, DrawingCtxM m) 
        => Point2 u -> Point2 u -> ConnectorImage t u -> m (t u)
-drawci p0 p1 img = drawi (connect img p0 p1)
+drawci p0 p1 gf = drawi (connect gf p0 p1)
 
 
 -- | Forgetful 'drawci'.
 --
 drawci_ :: (TraceM m u, DrawingCtxM m) 
         => Point2 u -> Point2 u -> ConnectorImage t u -> m ()
-drawci_ p0 p1 img = drawi (connect img p0 p1) >> return ()
+drawci_ p0 p1 gf = drawi (connect gf p0 p1) >> return ()
 
 
-
--- Note - hyperlinking should probably use 'hyperlink' to annotate
--- Objects before drawing them. Having hyperlink versions of the 
--- trace drawing functions seems like a mistake and leads to API 
--- clutter.
-
-
--- | Hyperlink version of 'draw'.
---
--- Note - hyperlinking should probably use 'hyperlink' to annotate
--- Objects before drawing them. Having hyperlink versions of the 
--- trace drawing functions seems like a mistake and leads to API 
--- clutter, so this function is considered obsolete.
---
-xdraw :: (TraceM m u, DrawingCtxM m) 
-      => XLink -> Graphic u -> m ()
-xdraw xl gf = draw (hyperlink xl gf)
-
-
-
--- | Hyperlink version of 'drawi'.
---
--- Note - hyperlinking should probably use 'hyperlink' to annotate
--- Objects before drawing them. Having hyperlink versions of the 
--- trace drawing functions seems like a mistake and leads to API 
--- clutter, so this function is considered obsolete.
---
-xdrawi ::  (TraceM m u, DrawingCtxM m) 
-       => XLink -> Image t u -> m (t u)
-xdrawi xl img = drawi (hyperlink xl img)
-
-
--- | Forgetful 'xdrawi'.
---
--- Note - hyperlinking should probably use 'hyperlink' to annotate
--- Objects before drawing them. Having hyperlink versions of the 
--- drawing functions seems like a mistake and leads to API 
--- clutter, so this function is considered obsolete.
---
-xdrawi_ ::  (TraceM m u, DrawingCtxM m)
-        => XLink -> Image t u -> m ()
-xdrawi_ xl img = xdrawi xl img >> return ()
 
 
 
 
 -- | Draw with grid coordinate...
---
--- Absolute units.
 -- 
-node :: (Fractional u, PsDouble u, TraceM m u, DrawingCtxM m) 
+node :: (Fractional u, TraceM m u, DrawingCtxM m) 
      => (Int,Int) -> LocGraphic u -> m ()
-node coord gf = queryCtx       >>= \ctx -> 
-                position coord >>= \pt  -> 
-                let (_,prim) = getImageAns $ runCF1 ctx pt gf 
-                in trace (singleH prim)
-
+node coord gf = nodei coord gf >> return ()
 
 -- | Draw with grid coordinate...
--- 
--- Absolute units.
 --
-nodei :: ( Fractional u, PsDouble u, TraceM m u, DrawingCtxM m)
+nodei :: (Fractional u, TraceM m u, DrawingCtxM m)
       => (Int,Int) -> LocImage t u -> m (t u)
-nodei coord imgL = queryCtx    >>= \ctx -> 
-                   position coord >>= \pt  -> 
-                   let (a,o) = getImageAns $ runCF ctx (apply1R1 imgL pt)
-                   in trace (singleH o) >> return a
+nodei coord gf = queryCtx    >>= \ctx -> 
+                 let pt    = position coord ctx
+                     (a,o) = runLocImage gf ctx pt
+                 in trace (singleH o) >> return a
 
 
 
  
 -- | Draw with grid coordinate...
---
--- Absolute units.
 -- 
-nodei_ :: (Fractional u, PsDouble u, TraceM m u, DrawingCtxM m)
+nodei_ :: (Fractional u, TraceM m u, DrawingCtxM m)
        => (Int,Int) -> LocImage t u -> m ()
-nodei_ coord imgL = nodei coord imgL >> return ()
+nodei_ coord gf = nodei coord gf >> return ()
 
 
-
-cxdraw :: (Fractional u, TraceM m u, DrawingCtxM m) 
-       => DrawingInfo (Point2 u) -> LocGraphic u -> m ()
-cxdraw pf gf = 
-    queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
-                              (_,o) = getImageAns $ runCF1 ctx pt gf 
-                          in trace (singleH o)
-
-cxdrawi :: (Fractional u, TraceM m u, DrawingCtxM m) 
-       => DrawingInfo (Point2 u) -> LocImage t u -> m (t u)
-cxdrawi pf gf =  
-    queryCtx  >>= \ctx -> let pt    = runCF  ctx pf
-                              (a,o) = getImageAns $ runCF1 ctx pt gf 
-                          in trace (singleH o) >> return a
-
-cxdrawi_ :: (Fractional u, TraceM m u, DrawingCtxM m) 
-        => DrawingInfo (Point2 u) -> LocImage t u -> m ()
-cxdrawi_ pf gf = cxdrawi pf gf >> return ()
 
 
 
@@ -525,3 +451,6 @@ drawrci_ :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
             ) 
          => t1 -> t2 -> ConnectorImage t u -> m ()
 drawrci_ a b gf = drawrci a b gf >> return ()
+
+
+
