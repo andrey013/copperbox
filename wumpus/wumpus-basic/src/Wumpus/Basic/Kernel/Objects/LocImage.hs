@@ -22,16 +22,17 @@ module Wumpus.Basic.Kernel.Objects.LocImage
      LocGraphic
    , LocImage
 
-   , withLocQuery
-   , withLocQuery2 -- clearly needs a new name
-
-   , makeLocGraphic
-   , uptoLocImage
-   , intoLocImage
-   , intoLocImage2     -- needs a new name
-   , rawLocImage
    , runLocImage
+   , rawLocImage
    , at
+   , intoLocImage
+   , makeLocGraphic
+
+   , promote_li1
+   , lift_li1
+
+   , bindQuery_li
+   , bindLocQuery_li
 
    )
 
@@ -181,25 +182,37 @@ unitLocImg :: t u -> LocImage t u
 unitLocImg a = LocImage $ \_ _ -> (a,mempty)
 
 
--- NOTE - Image building needs sorting out into a prime setof 
--- functions.
+
+--------------------------------------------------------------------------------
+-- builders and destructors
+
+
+runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, CatPrim)
+runLocImage gf ctx pt = getLocImage gf ctx pt
+
+-- This seems to be the one for down casting...
+-- 
+rawLocImage :: (DrawingContext -> Point2 u -> (t u, CatPrim)) -> LocImage t u
+rawLocImage fn = LocImage $ \ctx pt -> fn ctx pt
+
+infixr 1 `at`
+
+at :: LocImage t u -> Point2 u -> Image t u
+gf `at` pt = rawImage $ \ctx ->  getLocImage gf ctx pt
+
+
+-- | 'intoLocImage' : @ loc_query * loc_graphic -> LocImage @
 --
-
--- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
--- @Image@ projecting up to a @LocImage@.
+-- /Loc/ version of 'intoImage'. 
+-- 
+-- The 'LocImage' is built as a function from an implicit start 
+-- point to the answer.
 --
-withLocQuery :: LocQuery u ans -> (ans -> Image t u) -> LocImage t u
-withLocQuery qry fn = LocImage $ \ctx pt -> 
-    let ans = runLocQuery qry ctx pt in runImage (fn ans) ctx
-
-
--- | Use a Query to generate ans @ans@ turn the @ans@ with the
--- builder.
---
-withLocQuery2 :: Query ans -> (ans -> LocImage t u) -> LocImage t u
-withLocQuery2 qry fn = LocImage $ \ctx pt -> 
-    let ans = runQuery qry ctx in runLocImage (fn ans) ctx pt
-
+intoLocImage :: LocQuery u (t u) -> LocGraphic u -> LocImage t u
+intoLocImage fn gf = LocImage $ \ctx pt -> 
+   let ans   = runQuery fn ctx pt
+       (_,o) = getLocImage gf ctx pt
+   in (ans,o)
 
 makeLocGraphic :: InterpretUnit u
                => (DrawingContext -> a) 
@@ -211,44 +224,35 @@ makeLocGraphic qry fn = LocImage $ \ctx pt ->
     in (UNil, prim1 $ fn ans (uconvertExt sz pt))
 
 
--- equivalent to promoteR1 ...
-uptoLocImage :: (Point2 u -> Image t u) -> LocImage t u
-uptoLocImage fn = LocImage $ \ctx pt -> runImage (fn pt) ctx
+promote_li1 :: (Point2 u -> Image t u) -> LocImage t u
+promote_li1 gf = 
+    LocImage $ \ctx pt -> runImage (gf pt) ctx
 
 
-intoLocImage :: (Point2 u -> t u) 
-             -> LocGraphic u
-             -> LocImage t u
-intoLocImage fn gf = LocImage $ \ctx pt -> 
-   let ans   = fn pt
-       (_,o) = getLocImage gf ctx pt
-   in (ans,o)
-
-
-intoLocImage2 :: InterpretUnit u
-              => (DrawingContext -> a) 
-              -> (a -> Point2 u -> t u) 
-              -> LocGraphic u
-              -> LocImage t u
-intoLocImage2 extr fn gf = LocImage $ \ctx pt -> 
-   let a     = extr ctx
-       ans   = fn a pt
-       (_,o) = getLocImage gf ctx pt
-   in (ans,o)
-
-
--- This seems to be the one for down casting...
--- 
-rawLocImage :: (DrawingContext -> Point2 u -> (t u, CatPrim)) -> LocImage t u
-rawLocImage fn = LocImage $ \ctx pt -> fn ctx pt
-
-
-runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, CatPrim)
-runLocImage gf ctx pt = getLocImage gf ctx pt
+lift_li1 :: Image t u -> LocImage t u
+lift_li1 gf = LocImage $ \ctx _ -> runImage gf ctx 
 
 
 
-infixr 1 `at`
 
-at :: LocImage t u -> Point2 u -> Image t u
-gf `at` pt = rawImage $ \ctx ->  getLocImage gf ctx pt
+-- | Use a Query to generate ans @ans@ turn the @ans@ with the
+-- builder.
+--
+bindQuery_li :: InterpretUnit u 
+             => Query ans -> (ans -> DPoint2 -> Image t u) -> LocImage t u
+bindQuery_li qy fn = LocImage $ \ctx pt -> 
+    let ans = runQuery qy ctx 
+        sz  = dc_font_size ctx        
+    in runImage (fn ans $ uconvertExt sz pt) ctx
+
+
+-- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
+-- @Image@ projecting up to a @LocImage@.
+--
+bindLocQuery_li :: LocQuery u ans -> (ans -> Image t u) -> LocImage t u
+bindLocQuery_li qry fn = LocImage $ \ctx pt -> 
+    let f1 = runQuery qry ctx in runImage (fn $ f1 pt) ctx
+
+
+
+

@@ -124,7 +124,7 @@ centerOrthoBBox theta bb =
 emptyBoundedLocGraphic :: InterpretUnit u => BoundedLocGraphic u
 emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
-    fn = \pt -> BBox pt pt
+    fn = makeQuery id (\_ pt -> BBox pt pt)
 
 
 
@@ -142,7 +142,7 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
 emptyBoundedLocThetaGraphic :: InterpretUnit u => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
   where
-    fn = \pt _ang -> BBox pt pt
+    fn = makeQuery id (\_ pt _ -> BBox pt pt)
 
 --------------------------------------------------------------------------------
 -- 
@@ -162,7 +162,7 @@ illustrateBoundedLoc :: InterpretUnit u
                      => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLoc gf = annotate gf fn
   where
-    fn bb = uptoLocImage (const $ bbrectangle bb)
+    fn bb = lift_li1 (bbrectangle bb)
 
 
 
@@ -176,7 +176,7 @@ illustrateBoundedLocTheta :: InterpretUnit u
                           -> BoundedLocThetaGraphic u
 illustrateBoundedLocTheta gf = annotate gf fn
   where
-    fn bb = uptoLocThetaImage2 (const $ const $ bbrectangle bb)
+    fn bb = lift_lti2 (bbrectangle bb)
 
 
 

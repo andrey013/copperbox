@@ -22,10 +22,13 @@ module Wumpus.Basic.Kernel.Objects.Image
      Graphic
    , Image
 
-   , makeGraphic
-   , rawImage
    , runImage
-   , withQuery
+   , rawImage
+   , intoImage
+
+   , bindQuery_i
+
+   , makeGraphic
    
    )
 
@@ -140,25 +143,41 @@ annoImg fa mf = Image $ \ctx ->
     in (a,o1 `mappend` o2)
 
 
+--------------------------------------------------------------------------------
+-- builders and destructors
 
-makeGraphic :: (DrawingContext -> a) -> (a -> Primitive) -> Graphic u
-makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, prim1 $ fn a)
+runImage :: Image t u -> DrawingContext -> (t u, CatPrim)
+runImage gf ctx = getImage gf ctx
 
 -- | This is for donwcasting LocImages, Connectors, etc. into Image.
 --
 rawImage :: (DrawingContext -> (t u, CatPrim)) -> Image t u
 rawImage fn = Image $ \ctx -> fn ctx
 
-runImage :: Image t u -> DrawingContext -> (t u, CatPrim)
-runImage gf ctx = getImage gf ctx
+
+-- Design note - there are no promoters or lifters, discounting 
+-- the DrawingContext, Images are considered arity zero.
+--
+
+intoImage :: Query (t u) -> Graphic u -> Image t u
+intoImage fn gf = Image $ \ctx -> 
+   let ans   = runQuery fn ctx 
+       (_,o) = getImage gf ctx
+   in (ans,o)
+
+
+makeGraphic :: (DrawingContext -> a) -> (a -> Primitive) -> Graphic u
+makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, prim1 $ fn a)
+
+
 
 
 -- | Use a Query to generate ans @ans@ turn the @ans@ with the
 -- builder.
 --
-withQuery :: Query ans -> (ans -> Image t u) -> Image t u
-withQuery qry fn = Image $ \ctx -> 
-    let ans = runQuery qry ctx in runImage (fn ans) ctx
+bindQuery_i :: Query ans -> (ans -> Image t u) -> Image t u
+bindQuery_i qy fn = Image $ \ctx -> 
+    let ans = runQuery qy ctx in runImage (fn ans) ctx
 
 
 

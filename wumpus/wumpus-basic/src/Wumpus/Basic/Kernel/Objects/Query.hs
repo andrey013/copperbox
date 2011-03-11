@@ -25,11 +25,7 @@ module Wumpus.Basic.Kernel.Objects.Query
   , makeQuery
   , makeLocQuery
   , makeLocThetaQuery
-
-  , cfLocQuery
   , runQuery
-  , runLocQuery
-  , runLocThetaQuery
 
   ) where
 
@@ -47,11 +43,11 @@ class Info m where
 newtype Query a = Query { getQuery :: DrawingContext -> a }
 
 
-newtype LocQuery u a = LocQuery { 
-    getLocQuery :: DrawingContext -> Point2 u -> a }
+type LocQuery u a = Query (Point2 u -> a)
 
-newtype LocThetaQuery u a = LocThetaQuery { 
-    getLocThetaQuery :: DrawingContext -> Point2 u -> Radian -> a }
+type LocThetaQuery u a = Query (Point2 u -> Radian -> a)
+
+
 
 instance Functor Query where
   fmap f mf = Query $ \ctx -> f $ getQuery mf ctx
@@ -80,34 +76,21 @@ makeQuery :: (DrawingContext -> a)
           -> Query ans
 makeQuery qry fn = Query $ \ctx -> let a = qry ctx in fn a
 
+
 makeLocQuery :: (DrawingContext -> a) 
              -> (a -> Point2 u -> ans) 
              -> LocQuery u ans
-makeLocQuery qry fn = LocQuery $ \ctx pt -> let a = qry ctx in fn a pt
+makeLocQuery qry fn = Query $ \ctx -> let a = qry ctx in (\pt -> fn a pt)
 
 
 makeLocThetaQuery :: (DrawingContext -> a) 
-             -> (a -> Point2 u -> Radian -> ans) 
-             -> LocThetaQuery u ans
-makeLocThetaQuery qry fn = LocThetaQuery $ \ctx pt ang -> 
-    let a = qry ctx in fn a pt ang
-
-
--- | /Context-free/ LocInfo constructor.
---
-cfLocQuery  :: (Point2 u -> a) -> LocQuery u a
-cfLocQuery fn = LocQuery $ \_ pt -> fn pt
+                  -> (a -> Point2 u -> Radian -> ans) 
+                  -> LocThetaQuery u ans
+makeLocThetaQuery qry fn = Query $ \ctx -> 
+    let a = qry ctx in (\pt ang -> fn a pt ang)
 
 
 runQuery :: Query ans -> DrawingContext -> ans
 runQuery qry ctx = getQuery qry ctx
-
-runLocQuery :: LocQuery u ans -> DrawingContext -> Point2 u -> ans
-runLocQuery qry ctx pt = getLocQuery qry ctx pt
-
-runLocThetaQuery :: LocThetaQuery u ans 
-                 -> DrawingContext -> Point2 u -> Radian -> ans
-runLocThetaQuery qry ctx pt ang = getLocThetaQuery qry ctx pt ang
-
 
 

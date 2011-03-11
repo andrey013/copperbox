@@ -23,8 +23,15 @@ module Wumpus.Basic.Kernel.Objects.Connector
    (
      ConnectorGraphic
    , ConnectorImage
+   , ConnectorQuery
 
+   , runConnectorImage
+   , rawConnectorImage
    , connect
+   , intoConnectorImage
+   , makeConnectorGraphic
+   , promote_conn
+   , lift_conn
 
    )
 
@@ -35,6 +42,7 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -55,6 +63,9 @@ newtype ConnectorImage t u = ConnectorImage {
 -- a graphic /primitive/.
 --
 type ConnectorGraphic u = ConnectorImage UNil u
+
+
+type ConnectorQuery t u = Query (Point2 u -> Point2 u -> t u)
 
 
 instance OPlus (t u) => OPlus (ConnectorImage t u) where
@@ -174,5 +185,65 @@ annoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 ->
     in (a, o1 `oplus` o2)
 
 
+--------------------------------------------------------------------------------
+-- builders and destructors
+
+
+runConnectorImage :: ConnectorImage t u 
+                  -> DrawingContext 
+                  -> Point2 u 
+                  -> Point2 u 
+                  -> (t u, CatPrim)
+runConnectorImage gf ctx p0 p1 = getConnectorImage gf ctx p0 p1
+
+
+
+-- This seems to be the one for down casting...
+-- 
+rawConnectorImage :: (DrawingContext -> Point2 u -> Point2 u -> (t u, CatPrim)) 
+                  -> ConnectorImage t u
+rawConnectorImage fn = ConnectorImage $ \ctx p0 p1 -> fn ctx p0 p1
+
+
+-- | Downcast a 'ConnectorCF' function by applying it to the 
+-- start and end point, making an arity-zero Context Function 
+-- (a 'CF'). 
+-- 
 connect :: ConnectorImage t u -> Point2 u -> Point2 u -> Image t u
 connect gf p0 p1 = rawImage $ \ctx -> getConnectorImage gf ctx p0 p1
+
+
+-- Design note - there are no promoters or lifters, discounting 
+-- the DrawingContext, Images are considered arity zero.
+--
+
+intoConnectorImage :: ConnectorQuery t u -> ConnectorGraphic u 
+                   -> ConnectorImage t u
+intoConnectorImage fn gf = ConnectorImage $ \ctx p0 p1 -> 
+   let ans   = runQuery fn ctx p0 p1
+       (_,o) = getConnectorImage gf ctx p0 p1
+   in (ans,o)
+
+
+makeConnectorGraphic :: InterpretUnit u 
+                     => (DrawingContext -> a) 
+                     -> (a -> DPoint2 -> DPoint2 -> Primitive) 
+                     -> ConnectorGraphic u
+makeConnectorGraphic qry fn = ConnectorImage $ \ctx p0 p1 -> 
+    let a  = qry ctx 
+        sz = dc_font_size ctx
+    in (UNil, prim1 $ fn a (uconvertExt sz p0) (uconvertExt sz p1))
+
+
+-- Design note - the promoters and lifters work differently to 
+-- LocImage or LocThetaImage hence we don\'t have arity 1 and 
+-- arity 2 versions.
+--
+
+promote_conn :: (Point2 u -> Point2 u -> Image t u) -> ConnectorImage t u
+promote_conn gf = 
+    ConnectorImage $ \ctx p0 p1 -> runImage (gf p0 p1) ctx
+
+
+lift_conn :: Image t u -> ConnectorImage t u
+lift_conn gf = ConnectorImage $ \ctx _ _ -> runImage gf ctx 
