@@ -33,10 +33,13 @@ module Wumpus.Basic.Kernel.Objects.Image
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
+
+import Data.Monoid
 
 
 -- | Image - function from the DrawingContext to a polymorphic 
@@ -44,7 +47,7 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 -- The answer is expected to be a Functor.
 --
-newtype Image t u = Image { getImage :: DrawingContext -> (t u, Primitive) }
+newtype Image t u = Image { getImage :: DrawingContext -> (t u, CatPrim) }
 
 -- | Graphic - function from the DrawingContext to a graphic 
 -- /primitive/.
@@ -68,7 +71,7 @@ instance Functor t => Functor (Image t) where
 
 bimapImage :: (t u -> t' u) -> (Primitive -> Primitive) 
            -> Image t u -> Image t' u
-bimapImage l r gf = Image $ \ctx -> bimap l r $ getImage gf ctx
+bimapImage l r gf = Image $ \ctx -> bimap l (cpmap r) $ getImage gf ctx
 
 -- This needs drawing context so cannot be done with 'ansMapImage'.
 --
@@ -106,16 +109,19 @@ instance IgnoreAns Image where
   replaceAns o = bimapImage (const o) id
 
 
-instance OpBind Image where
-  opbind = opbindImg
+instance UMonad Image where
+  bind = bindImg
+  unit = unitImg
 
-opbindImg :: (t u -> t u -> t u) 
-          -> Image t u -> (t u -> Image t u) -> Image t u
-opbindImg op gf fn = Image $ \ctx -> 
+bindImg :: Image t u -> (t u -> Image t1 u) -> Image t1 u
+bindImg gf fn = Image $ \ctx -> 
     let (a,o1) = getImage gf ctx
         (b,o2) = getImage (fn a) ctx
-    in (a `op` b, o1 `oplus` o2)
+    in (b, o1 `oplus` o2)
 
+
+unitImg :: t u -> Image t u
+unitImg a = Image $ \_ -> (a, mempty)
 
 instance Annotate Image where
   annotate = annoImg
@@ -125,25 +131,25 @@ decoImg :: Image t u -> Graphic u -> Image t u
 decoImg fa fb = Image $ \ctx -> 
     let (a,o1) = getImage fa ctx 
         (_,o2) = getImage fb ctx
-    in (a,o1 `oplus` o2)
+    in (a,o1 `mappend` o2)
                         
 annoImg :: Image t u -> (t u -> Graphic u) -> Image t u
 annoImg fa mf = Image $ \ctx -> 
     let (a,o1) = getImage fa ctx 
         (_,o2) = getImage (mf a) ctx
-    in (a,o1 `oplus` o2)
+    in (a,o1 `mappend` o2)
 
 
 
 makeGraphic :: (DrawingContext -> a) -> (a -> Primitive) -> Graphic u
-makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, fn a)
+makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, prim1 $ fn a)
 
 -- | This is for donwcasting LocImages, Connectors, etc. into Image.
 --
-rawImage :: (DrawingContext -> (t u,Primitive)) -> Image t u
+rawImage :: (DrawingContext -> (t u, CatPrim)) -> Image t u
 rawImage fn = Image $ \ctx -> fn ctx
 
-runImage :: Image t u -> DrawingContext -> (t u, Primitive)
+runImage :: Image t u -> DrawingContext -> (t u, CatPrim)
 runImage gf ctx = getImage gf ctx
 
 

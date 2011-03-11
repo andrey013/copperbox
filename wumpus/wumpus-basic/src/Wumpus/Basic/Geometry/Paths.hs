@@ -19,8 +19,7 @@
 module Wumpus.Basic.Geometry.Paths
   ( 
     LocCoordPath
-  , coordinatePrimPathAU
-  , coordinatePrimPathRU
+  , coordinatePrimPath
 
   , rectangleCoordPath
   , diamondCoordPath
@@ -56,21 +55,14 @@ type LocCoordPath u = Point2 u -> [Point2 u]
  
 -- | Relative unit version of 'coordinatePrimPathAU'.
 --
-coordinatePrimPathAU :: PsDouble u 
-                     => LocCoordPath u -> LocDrawingInfo u PrimPath
-coordinatePrimPathAU fn = promoteR1 $ \pt -> return $ vertexPathAU $ fn pt
+coordinatePrimPath :: InterpretUnit u 
+                   => LocCoordPath u -> Point2 u -> Query PrimPath
+coordinatePrimPath fn pt = vertexPath $ fn pt
 
-
-
--- | Relative unit version of 'coordinatePrimPathAU'.
---
-coordinatePrimPathRU :: CtxSize u 
-                     => LocCoordPath u -> LocDrawingInfo u PrimPath
-coordinatePrimPathRU fn = promoteR1 $ \pt -> vertexPathRU $ fn pt
 
 
 -- | Supplied point is /bottom-left/, subsequenct points are 
--- counter-clockise so [ bl, br, tr, tl ] .
+-- counter-clockwise so [ bl, br, tr, tl ] .
 --
 rectangleCoordPath :: Num u => u -> u -> LocCoordPath u
 rectangleCoordPath w h bl = [ bl, br, tr, tl ]

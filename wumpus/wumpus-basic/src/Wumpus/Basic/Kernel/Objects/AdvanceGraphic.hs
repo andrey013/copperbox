@@ -105,9 +105,7 @@ comb :: (Vec2 u -> Vec2 u -> Vec2 u)
      -> AdvGraphic u
      -> (Vec2 u -> AdvGraphic u) 
      -> AdvGraphic u
-comb op gf fn = gf `bind` \a -> fn a  
-  where
-    bind = opbind op
+comb op gf fn = gf `bind` \a -> fn a `bind` \b -> unit (a `op` b)  
 
 
 -- | Concatenate the two AdvGraphics.

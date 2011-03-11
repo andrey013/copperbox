@@ -39,13 +39,14 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 
 -- | Graphic - function from DrawingContext and start point to a 
@@ -54,7 +55,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- The answer is expected to be a Functor.
 --
 newtype LocImage t u = LocImage { 
-          getLocImage :: DrawingContext -> Point2 u -> (t u, Primitive) }
+          getLocImage :: DrawingContext -> Point2 u -> (t u, CatPrim) }
 
 
 -- | LocGraphic - function from DrawingContext and start point to 
@@ -82,7 +83,7 @@ instance OPlus (t u) => OPlus (LocImage t u) where
 bimapLocImage :: (t u -> t' u) -> (Primitive -> Primitive) 
            -> LocImage t u -> LocImage t' u
 bimapLocImage l r gf = LocImage $ \ctx pt -> 
-    bimap l r $ getLocImage gf ctx pt
+    bimap l (cpmap r) $ getLocImage gf ctx pt
 
 
 -- This needs drawing context so cannot be done with 'bimapLocImage'.
@@ -166,16 +167,18 @@ annoLocImg fa mf = LocImage $ \ctx pt ->
     in (a, o1 `oplus` o2)
 
 
-instance OpBind LocImage where
-  opbind = opbindLocImg
+instance UMonad LocImage where
+  bind = bindLocImg
+  unit = unitLocImg
 
-opbindLocImg :: (t u -> t u -> t u) 
-             -> LocImage t u -> (t u -> LocImage t u) -> LocImage t u
-opbindLocImg op gf fn = LocImage $ \ctx pt -> 
+bindLocImg :: LocImage t u -> (t u -> LocImage t1 u) -> LocImage t1 u
+bindLocImg gf fn = LocImage $ \ctx pt -> 
     let (a,o1) = getLocImage gf ctx pt
         (b,o2) = getLocImage (fn a) ctx pt
-    in (a `op` b, o1 `oplus` o2)
+    in (b, o1 `oplus` o2)
 
+unitLocImg :: t u -> LocImage t u
+unitLocImg a = LocImage $ \_ _ -> (a,mempty)
 
 
 -- NOTE - Image building needs sorting out into a prime setof 
@@ -198,7 +201,6 @@ withLocQuery2 qry fn = LocImage $ \ctx pt ->
     let ans = runQuery qry ctx in runLocImage (fn ans) ctx pt
 
 
-
 makeLocGraphic :: InterpretUnit u
                => (DrawingContext -> a) 
                -> (a -> DPoint2 -> Primitive) 
@@ -206,12 +208,12 @@ makeLocGraphic :: InterpretUnit u
 makeLocGraphic qry fn = LocImage $ \ctx pt -> 
     let ans = qry ctx 
         sz  = dc_font_size ctx
-    in (UNil, fn ans (uconvertExt sz pt))
+    in (UNil, prim1 $ fn ans (uconvertExt sz pt))
 
 
-
-uptoLocImage :: Image t u -> LocImage t u
-uptoLocImage gf = LocImage $ \ctx _ -> runImage gf ctx
+-- equivalent to promoteR1 ...
+uptoLocImage :: (Point2 u -> Image t u) -> LocImage t u
+uptoLocImage fn = LocImage $ \ctx pt -> runImage (fn pt) ctx
 
 
 intoLocImage :: (Point2 u -> t u) 
@@ -237,11 +239,11 @@ intoLocImage2 extr fn gf = LocImage $ \ctx pt ->
 
 -- This seems to be the one for down casting...
 -- 
-rawLocImage :: (DrawingContext -> Point2 u -> (t u, Primitive)) -> LocImage t u
+rawLocImage :: (DrawingContext -> Point2 u -> (t u, CatPrim)) -> LocImage t u
 rawLocImage fn = LocImage $ \ctx pt -> fn ctx pt
 
 
-runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, Primitive)
+runLocImage :: LocImage t u -> DrawingContext -> Point2 u -> (t u, CatPrim)
 runLocImage gf ctx pt = getLocImage gf ctx pt
 
 

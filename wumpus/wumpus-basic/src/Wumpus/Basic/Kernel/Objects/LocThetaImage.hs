@@ -37,6 +37,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -44,7 +45,7 @@ import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 
 -- | Graphic - function from DrawingContext and start point to a 
@@ -53,7 +54,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- The answer is expected to be a Functor.
 --
 newtype LocThetaImage t u = LocThetaImage { 
-    getLocThetaImage :: DrawingContext -> Point2 u -> Radian -> (t u, Primitive) }
+    getLocThetaImage :: DrawingContext -> Point2 u -> Radian -> (t u, CatPrim) }
 
 
 -- | LocThetaGraphic - function from DrawingContext and start point to 
@@ -75,7 +76,7 @@ instance OPlus (t u) => OPlus (LocThetaImage t u) where
 bimapLocThetaImage :: (t u -> t' u) -> (Primitive -> Primitive) 
            -> LocThetaImage t u -> LocThetaImage t' u
 bimapLocThetaImage l r gf = LocThetaImage $ \ctx pt ang -> 
-    bimap l r $ getLocThetaImage gf ctx pt ang
+    bimap l (cpmap r) $ getLocThetaImage gf ctx pt ang
 
 
 -- This needs drawing context so cannot be done with 'bimapLocThetaImage'.
@@ -86,8 +87,6 @@ instance UnitConvertExt t => UnitConvert (LocThetaImage t) where
           (a,o) = getLocThetaImage gf ctx (uconvertExt sz pt) ang
       in (uconvertExt sz a, o)
 
--- movestartLocThetaImage :: (Point2 u -> Point2 u) -> LocThetaImage t u -> LocThetaImage t u
--- movestartLocThetaImage fn gf = LocThetaImage $ \ctx pt -> getLocThetaImage gf ctx (fn pt) 
 
 
 -- LocTheta objects do not have Affine instances.
@@ -105,20 +104,20 @@ instance Hyperlink (LocThetaImage t u) where
   hyperlink hyp = bimapLocThetaImage id (xlinkPrim hyp)
 
 
-instance OpBind LocThetaImage where
-  opbind = opbindLocThetaImg
+instance UMonad LocThetaImage where
+  bind = bindLocThetaImg
+  unit = unitLocThetaImg
 
-
-opbindLocThetaImg :: (t u -> t u -> t u) 
-                  -> LocThetaImage t u 
-                  -> (t u -> LocThetaImage t u) 
-                  -> LocThetaImage t u
-opbindLocThetaImg op gf fn = LocThetaImage $ \ctx pt ang -> 
+bindLocThetaImg :: LocThetaImage t u 
+                -> (t u -> LocThetaImage t1 u) 
+                -> LocThetaImage t1 u
+bindLocThetaImg gf fn = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage gf ctx pt ang
         (b,o2) = getLocThetaImage (fn a) ctx pt ang
-    in (a `op` b, o1 `oplus` o2)
+    in (b, o1 `oplus` o2)
 
-
+unitLocThetaImg :: t u -> LocThetaImage t u
+unitLocThetaImg a = LocThetaImage $ \_ _ _ -> (a, mempty)
 
 instance MoveStart LocThetaImage where
   moveStart fn gf = LocThetaImage $ \ctx pt ang -> 
@@ -170,15 +169,19 @@ makeLocThetaGraphic :: InterpretUnit u
 makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang -> 
     let ans = qry ctx 
         sz  = dc_font_size ctx
-    in (UNil, fn ans (uconvertExt sz pt) ang)
+    in (UNil, prim1 $ fn ans (uconvertExt sz pt) ang)
 
 -- Name convention with arity suffixes is good for the upto functions!
 
-uptoLocThetaImage2 :: Image t u -> LocThetaImage t u
-uptoLocThetaImage2 gf = LocThetaImage $ \ctx _ _ -> runImage gf ctx
+-- equivalent to promoteR2
 
-uptoLocThetaImage1 :: LocImage t u -> LocThetaImage t u
-uptoLocThetaImage1 gf = LocThetaImage $ \ctx pt _ -> runLocImage gf ctx pt
+uptoLocThetaImage2 :: (Point2 u -> Radian -> Image t u) -> LocThetaImage t u
+uptoLocThetaImage2 gf = 
+    LocThetaImage $ \ctx pt ang -> runImage (gf pt ang) ctx
+
+uptoLocThetaImage1 :: (Radian -> LocImage t u) -> LocThetaImage t u
+uptoLocThetaImage1 gf = 
+    LocThetaImage $ \ctx pt ang -> runLocImage (gf ang) ctx pt
 
 
 

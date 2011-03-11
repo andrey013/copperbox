@@ -28,7 +28,7 @@ module Wumpus.Basic.Kernel.Objects.ImageBasis
 
   , Localize(..)
   , Hyperlink(..)
-  , OpBind(..)
+  , UMonad(..)
   , MoveStart(..)
   , MoveStartTheta(..)
   , Annotate(..)
@@ -87,17 +87,15 @@ class Hyperlink obj where
   hyperlink :: XLink -> obj -> obj
 
 
+infixl 1 `bind`
 
--- Whoa - bind probably not useful without return, but return 
--- is problemmatic as graphics are a semigroup not a monoid.
+-- | Monad with answer type parameterized by unit @u@.
 --
+class UMonad t where 
+  bind  :: forall (r :: * -> *) (r1 :: * -> *) (u :: *). 
+           t r u -> (r u -> t r1 u) -> t r1 u
 
--- | Operator parameterized bind!
-
-
-class OpBind t where 
-  opbind  :: forall (r :: * -> *) (u :: *). 
-             (r u -> r u -> r u) -> t r u -> (r u -> t r u) -> t r u
+  unit  :: forall (r :: * -> *) (u :: *). r u -> t r u
 
 
 class MoveStart t where

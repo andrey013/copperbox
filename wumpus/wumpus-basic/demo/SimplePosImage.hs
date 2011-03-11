@@ -25,7 +25,7 @@ std_ctx = standardContext 24
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing UDouble $ localize (fill_colour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 mf :: TraceDrawing Double ()
@@ -51,7 +51,7 @@ mf = do
     
 
 testDrawBl :: (Floating u, PsDouble u) => RectPosition -> LocGraphic u
-testDrawBl rpos = filledDiskAU 2 `oplus` (rectBl `startPos` rpos)
+testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
 rectBl :: (Fractional u, PsDouble u) => PosGraphic u
 rectBl = makePosImage opos (mkRectBl w h)
@@ -66,14 +66,14 @@ rectBl = makePosImage opos (mkRectBl w h)
 
 -- start-point - bottom left
 mkRectBl :: PsDouble u => u -> u -> LocGraphic u
-mkRectBl w h = strokedRectangleAU w h
+mkRectBl w h = strokedRectangle w h
 
 
 
 testDrawMinor :: (Floating u, PsDouble u) => RectPosition -> LocGraphic u
-testDrawMinor rpos = filledDiskAU 2 `oplus` (rectMinor `startPos` rpos)
+testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
-rectMinor :: (Fractional u, PsDouble u) => PosGraphic u 
+rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
 rectMinor = makePosImage opos (mkRectMinor m w h)
   where
     m    = 10
@@ -86,11 +86,11 @@ rectMinor = makePosImage opos (mkRectMinor m w h)
  
 
 -- start-point - +10 +10
-mkRectMinor :: PsDouble u => u -> u -> u -> LocGraphic u
-mkRectMinor m w h = promoteR1 $ \pt -> 
+mkRectMinor :: InterpretUnit u => u -> u -> u -> LocGraphic u
+mkRectMinor m w h = uptoLocImage $ \pt -> 
     let bl = displaceVec (vec (-m) (-m)) pt
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in closedStroke $ vertexPathAU [bl, br, tr, tl]
+    in closedStroke $ vertexPath [bl, br, tr, tl]
 

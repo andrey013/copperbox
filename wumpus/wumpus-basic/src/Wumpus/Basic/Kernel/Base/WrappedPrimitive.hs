@@ -17,8 +17,14 @@
 module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   (
 
+
+
   -- * Primitives
-    HPrim
+    CatPrim
+  , prim1
+  , cpmap
+
+  , HPrim
   , hprimToList
   , singleH
 
@@ -27,7 +33,8 @@ module Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
   ) where
 
-import Wumpus.Basic.Utils.JoinList
+import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -36,9 +43,44 @@ import Data.Monoid
 
 
 
+-- | To enable monadic operations on graphic objects such as Image 
+-- we need primtives to support @empty@ and @append@ like the 
+-- collector of a writer monad.
+--
+data CatPrim = PZero | PCat Primitive
+
+instance Monoid CatPrim where
+  mempty                  = PZero
+  PZero  `mappend` b      = b
+  a      `mappend` PZero  = a
+  PCat a `mappend` PCat b = PCat $ a `primCat` b
 
 
+instance OPlus CatPrim where
+  oplus = mappend
 
+instance Rotate CatPrim where
+  rotate ang (PCat a) = PCat $ rotate ang a
+  rotate _   a        = a
+
+instance RotateAbout CatPrim where
+  rotateAbout pt ang (PCat a) = PCat $ rotateAbout pt ang a
+  rotateAbout _  _   a        = a
+
+instance Scale CatPrim where
+  scale sx sy (PCat a) = PCat $ scale sx sy a
+  scale _  _  a        = a
+
+instance Translate CatPrim where
+  translate dx dy (PCat a) = PCat $ translate dx dy a
+  translate _  _  a        = a
+
+prim1 :: Primitive -> CatPrim 
+prim1 = PCat
+
+cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
+cpmap _ PZero    = PZero
+cpmap f (PCat a) = PCat $ f a
 
 --------------------------------------------------------------------------------
 -- Lists of primitives...
@@ -57,28 +99,28 @@ import Data.Monoid
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
-newtype HPrim u = HPrim { getHPrim :: JoinList Primitive }
+-- NOTE - currently HPrim has a phantom unit @u@, this is so 
+-- trace drawings can have a unit type, but this may change as 
+-- perhaps trace drawings don\'t benefit from having units.
+--
+
+newtype HPrim u = HPrim { getHPrim :: H Primitive }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
 -- shown, fmapped etc.
 
 instance Monoid (HPrim u) where
-  mempty          = HPrim mempty
-  ha `mappend` hb = HPrim $ getHPrim ha `mappend` getHPrim hb
-
-
--- instance Functor HPrim where
---   fmap f = HPrim . fmap (fmap f) . getHPrim
-
-
+  mempty          = HPrim emptyH
+  ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
 
 
 hprimToList :: HPrim u -> [Primitive]
-hprimToList = toList . getHPrim
+hprimToList = toListH . getHPrim
 
 
-singleH :: Primitive -> HPrim u
-singleH = HPrim . one 
+singleH :: CatPrim -> HPrim u
+singleH PZero    = mempty 
+singleH (PCat a) = HPrim $ wrapH a
 
 
 

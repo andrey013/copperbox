@@ -32,12 +32,13 @@ module Wumpus.Basic.Kernel.Objects.Connector
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 
 -- | Graphic - function from DrawingContext and start point to a 
@@ -46,7 +47,8 @@ import Wumpus.Core                              -- package: wumpus-core
 -- The answer is expected to be a Functor.
 --
 newtype ConnectorImage t u = ConnectorImage { 
-    getConnectorImage :: DrawingContext -> Point2 u -> Point2 u -> (t u, Primitive) }
+    getConnectorImage :: DrawingContext -> 
+                         Point2 u       -> Point2 u  -> (t u, CatPrim) }
 
 
 -- | ConnectorGraphic - function from DrawingContext and start point to 
@@ -68,7 +70,7 @@ instance OPlus (t u) => OPlus (ConnectorImage t u) where
 bimapConnectorImage :: (t u -> t' u) -> (Primitive -> Primitive) 
            -> ConnectorImage t u -> ConnectorImage t' u
 bimapConnectorImage l r gf = ConnectorImage $ \ctx p0 p1 -> 
-    bimap l r $ getConnectorImage gf ctx p0 p1
+    bimap l (cpmap r) $ getConnectorImage gf ctx p0 p1
 
 
 -- This needs drawing context so cannot be done with 'bimapConnectorImage'.
@@ -135,16 +137,19 @@ instance IgnoreAns ConnectorImage where
 
 
 
-instance OpBind ConnectorImage where
-  opbind = opbindConnectorImg
+instance UMonad ConnectorImage where
+  bind = bindConnectorImg
+  unit = unitConnectorImg
 
-opbindConnectorImg :: (t u -> t u -> t u) 
-                   -> ConnectorImage t u -> (t u -> ConnectorImage t u) 
-                   -> ConnectorImage t u
-opbindConnectorImg op gf fn = ConnectorImage $ \ctx p0 p1 -> 
+bindConnectorImg :: ConnectorImage t u -> (t u -> ConnectorImage t1 u) 
+                 -> ConnectorImage t1 u
+bindConnectorImg gf fn = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage gf ctx p0 p1
         (b,o2) = getConnectorImage (fn a) ctx p0 p1
-    in (a `op` b, o1 `oplus` o2)
+    in (b, o1 `oplus` o2)
+
+unitConnectorImg :: t u -> ConnectorImage t u
+unitConnectorImg a = ConnectorImage $ \_ _ _ -> (a,mempty)
 
 
 instance Annotate ConnectorImage where

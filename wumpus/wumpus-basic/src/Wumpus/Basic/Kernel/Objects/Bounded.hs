@@ -162,7 +162,7 @@ illustrateBoundedLoc :: InterpretUnit u
                      => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLoc gf = annotate gf fn
   where
-    fn = uptoLocImage . bbrectangle
+    fn bb = uptoLocImage (const $ bbrectangle bb)
 
 
 
@@ -176,7 +176,7 @@ illustrateBoundedLocTheta :: InterpretUnit u
                           -> BoundedLocThetaGraphic u
 illustrateBoundedLocTheta gf = annotate gf fn
   where
-    fn = uptoLocThetaImage2 . bbrectangle
+    fn bb = uptoLocThetaImage2 (const $ const $ bbrectangle bb)
 
 
 

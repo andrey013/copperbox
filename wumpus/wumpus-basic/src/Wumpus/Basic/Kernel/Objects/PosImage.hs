@@ -54,6 +54,7 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -105,7 +106,7 @@ data ObjectPos u = ObjectPos
 --
 newtype PosImage t u = PosImage { 
           getPosImage :: DrawingContext -> Point2 u -> 
-                         RectPosition   -> (t u, Primitive) }
+                         RectPosition   -> (t u, CatPrim) }
     
 -- | Version of PosImage specialized to Double for the unit type.
 --
@@ -133,7 +134,7 @@ type DPosGraphic = PosGraphic Double
 --
 newtype PosThetaImage t u = PosThetaImage {
     getPosThetaImage :: DrawingContext -> Point2 u -> 
-                        RectPosition   -> Radian   -> (t u, Primitive) }
+                        RectPosition   -> Radian   -> (t u, CatPrim) }
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --

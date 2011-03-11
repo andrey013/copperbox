@@ -22,7 +22,7 @@ std_attr = standardContext 24
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing UDouble $ mf 
+drawing01 = drawTracing mf 
 
 
 
@@ -42,16 +42,16 @@ mf = do
 -- Normally, text calculate the advance vector from the font 
 -- metrics...
 --
-text01 :: PsDouble u => AdvGraphic u 
-text01 = replaceAns (hvec 84) $ textlineAU "text01"
+text01 :: AdvGraphic Double
+text01 = replaceAns (hvec 84) $ textline "text01"
     
 
-text02 :: PsDouble u => AdvGraphic u 
-text02 = replaceAns (hvec 210) $ textlineAU "text number two"
+text02 :: AdvGraphic Double
+text02 = replaceAns (hvec 210) $ textline "text number two"
 
 
-miniDisk :: PsDouble u => AdvGraphic u
-miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDiskAU 3
+miniDisk :: AdvGraphic Double
+miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
 
 
 sienna :: RGBi
