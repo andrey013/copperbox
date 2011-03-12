@@ -25,6 +25,10 @@ module Wumpus.Basic.Kernel.Objects.Query
   , makeQuery
   , makeLocQuery
   , makeLocThetaQuery
+  , cfQuery
+  , cfLocQuery
+  , cfLocThetaQuery
+
   , runQuery
 
   ) where
@@ -88,6 +92,23 @@ makeLocThetaQuery :: (DrawingContext -> a)
                   -> LocThetaQuery u ans
 makeLocThetaQuery qry fn = Query $ \ctx -> 
     let a = qry ctx in (\pt ang -> fn a pt ang)
+
+
+-- | Note this is just @return@. 
+--
+cfQuery :: ans -> Query ans
+cfQuery = return 
+
+-- | /Context free/ version of makeLocQuery.
+--
+cfLocQuery :: (Point2 u -> ans) -> LocQuery u ans
+cfLocQuery fn = Query $ \_ pt -> fn pt
+
+
+-- | /Context free/ version of makeLocQuery.
+--
+cfLocThetaQuery :: (Point2 u -> Radian -> ans) -> LocThetaQuery u ans
+cfLocThetaQuery fn = Query $ \_ pt ang -> fn pt ang 
 
 
 runQuery :: Query ans -> DrawingContext -> ans

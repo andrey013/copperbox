@@ -124,7 +124,7 @@ centerOrthoBBox theta bb =
 emptyBoundedLocGraphic :: InterpretUnit u => BoundedLocGraphic u
 emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
-    fn = makeQuery id (\_ pt -> BBox pt pt)
+    fn = cfLocQuery (\pt -> BBox pt pt)
 
 
 
@@ -142,7 +142,7 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
 emptyBoundedLocThetaGraphic :: InterpretUnit u => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
   where
-    fn = makeQuery id (\_ pt _ -> BBox pt pt)
+    fn = cfLocThetaQuery (\pt _ -> BBox pt pt)
 
 --------------------------------------------------------------------------------
 -- 

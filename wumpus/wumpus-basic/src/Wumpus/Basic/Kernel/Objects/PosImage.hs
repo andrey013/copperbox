@@ -34,18 +34,17 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , PosGraphic
   , DPosGraphic
 
-  , PosThetaImage
-  , DPosThetaImage
-
-  , PosThetaGraphic
-  , DPosThetaGraphic
-
-
---  , makePosImage
---  , makePosThetaImage
-
+  , runPosImage
+  , rawPosImage
   , startPos
   , atStartPos
+
+  , promote_pi1
+  , promote_pi2
+  , lift_pi1
+  , lift_pi2
+
+  , posImage
 
   , objectPosBounds
 
@@ -55,6 +54,7 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -125,44 +125,10 @@ type DPosGraphic = PosGraphic Double
 
 
 
--- | A positionable Image that supports drawing at some angle of 
--- inclination.
--- 
--- Note - the rectangle frame is expected to represent an 
--- orthogonal frame bounding the maximum hull of the Image, the 
--- frame is not intended to be inclined itself.
---
-newtype PosThetaImage t u = PosThetaImage {
-    getPosThetaImage :: DrawingContext -> Point2 u -> 
-                        RectPosition   -> Radian   -> (t u, CatPrim) }
-    
--- | Version of PosThetaImage specialized to Double for the unit type.
---
-type DPosThetaImage t = PosThetaImage t Double
-
-
-
--- | A positionable Graphic that supports drawing at some angle of
--- inclination.
---
--- Note - the rectangle frame is expected to represent an 
--- orthogonal frame bounding the maximum hull of the Image, the 
--- frame is not intended to be inclined itself.
---
-type PosThetaGraphic u = PosThetaImage UNil u
-    
--- | Version of PosThetaGraphic specialized to Double for the unit type.
---
-type DPosThetaGraphic = PosThetaGraphic Double
-
 
 
 instance MoveStart PosImage where
   moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
-
-instance MoveStart PosThetaImage where
-  moveStart fn gf = PosThetaImage $ \ctx pt rpos ang -> 
-                      getPosThetaImage gf ctx (fn pt) rpos ang
 
 
 --------------------------------------------------------------------------------
@@ -201,36 +167,23 @@ halfDists :: Fractional u => ObjectPos u -> (u,u)
 halfDists (ObjectPos xmin xmaj ymin ymaj) = 
     (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
 
+
+
 --------------------------------------------------------------------------------
+-- builders and destructors
 
 
-{-
--- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
---
--- Create a 'PosImage' from an 'ObjectPos' describing how it
--- is orientated within a border rectangle and a 'LocImage' that 
--- draws it.
---
-makePosImage :: Fractional u 
-             => ObjectPos u -> LocImage t u -> PosImage t u
-makePosImage opos gf = promoteR2 $ \start rpos -> 
-    let v1 = startVector rpos opos in gf `at` displaceVec v1 start
+runPosImage :: PosImage t u -> DrawingContext -> Point2 u -> RectPosition 
+            -> (t u, CatPrim)
+runPosImage gf ctx pt rpos = getPosImage gf ctx pt rpos
+
+-- This seems to be the one for down casting...
+-- 
+rawPosImage :: (DrawingContext -> Point2 u -> RectPosition -> (t u, CatPrim)) 
+            -> PosImage t u
+rawPosImage fn = PosImage $ \ctx pt rpos -> fn ctx pt rpos
 
 
-
--- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
---
--- Create a 'PosThetaImage' from an 'ObjectPos' describing how it
--- is orientated within a border rectangle and a 'LocThetaImage' 
--- that draws it at some angle of inclination.
---
-makePosThetaImage :: Fractional u 
-                  => ObjectPos u -> LocThetaImage t u -> PosThetaImage t u
-makePosThetaImage opos gf = promoteR3 $ \start rpos theta -> 
-    let v1 = startVector rpos opos 
-    in atRot gf (displaceVec v1 start) theta
-
--}
 
 infixr 1 `startPos`
 
@@ -254,6 +207,49 @@ startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos)
 atStartPos ::  Floating u 
            => PosImage t u -> Point2 u -> RectPosition -> Image t u
 atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos) 
+
+--
+-- Design note
+--
+-- Do we need an @intoPosImage@ function? 
+-- It would mean adding @PosQuery@ and all its details...
+--
+
+
+promote_pi1 :: (RectPosition -> LocImage t u) -> PosImage t u
+promote_pi1 gf = 
+    PosImage $ \ctx pt rpos -> runLocImage (gf rpos) ctx pt
+
+
+promote_pi2 :: (Point2 u -> RectPosition -> Image t u) -> PosImage t u
+promote_pi2 gf = 
+    PosImage $ \ctx pt rpos -> runImage (gf pt rpos) ctx
+
+
+lift_pi1 :: LocImage t u -> PosImage t u
+lift_pi1 gf = PosImage $ \ctx pt _ -> runLocImage gf ctx pt
+
+
+lift_pi2 :: Image t u -> PosImage t u
+lift_pi2 gf = PosImage $ \ctx _ _ -> runImage gf ctx 
+
+
+-- | 'posImage' : @ object_pos * loc_graphic -> PosGraphic @ 
+--
+-- Create a 'PosImage' from an 'ObjectPos' describing how it
+-- is orientated within a border rectangle and a 'LocImage' that 
+-- draws it.
+--
+-- This is the /primary/ constructor for PosImages. Because the
+-- PosImage type is considered as a specialized object it does
+-- not have the range of functions of LocImage or LocThetaImage.
+-- 
+posImage :: Fractional u 
+         => ObjectPos u -> LocImage t u -> PosImage t u
+posImage opos gf = promote_pi2 $ \start rpos -> 
+    let v1 = startVector rpos opos in gf `at` displaceVec v1 start
+
+
 
 
 -- | The vector from some Rectangle position to the start point.

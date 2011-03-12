@@ -28,6 +28,7 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , runConnectorImage
    , rawConnectorImage
    , connect
+
    , intoConnectorImage
    , makeConnectorGraphic
    , promote_conn
@@ -212,10 +213,6 @@ rawConnectorImage fn = ConnectorImage $ \ctx p0 p1 -> fn ctx p0 p1
 connect :: ConnectorImage t u -> Point2 u -> Point2 u -> Image t u
 connect gf p0 p1 = rawImage $ \ctx -> getConnectorImage gf ctx p0 p1
 
-
--- Design note - there are no promoters or lifters, discounting 
--- the DrawingContext, Images are considered arity zero.
---
 
 intoConnectorImage :: ConnectorQuery t u -> ConnectorGraphic u 
                    -> ConnectorImage t u
