@@ -16,8 +16,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    putStrLn $ "Note - the SVG optimization that should be used here"
-    putStrLn $ "has bit-rotted and is not currently in use.."
+    putStrLn $ "Check the generated SVG to see if font attrs are grouped..."
     --
     let pic1 = runCtxPictureU std_attr drawing01
     writeEPS "./out/font_delta01.eps" pic1
@@ -29,11 +28,11 @@ std_attr = standardContext 24
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing UDouble $ mf 
+drawing01 = drawTracing $ mf 
 
 
 mf :: TraceDrawing Double ()
-mf = do 
+mf = fontDelta $ do
     draw $ line1 `at` (P2 0 100)
     draw $ line2 `at` (P2 0  75)
     draw $ line3 `at` (P2 0  50)

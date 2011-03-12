@@ -90,8 +90,8 @@ import Data.Monoid
 -- TraceM works much like a writer monad.
 --
 class TraceM m u | m -> u where
-  trace  :: HPrim u -> m ()
-
+  trace     :: HPrim u -> m ()
+  fontDelta :: m a -> m a
 
 -- Note - TraceDrawing run \once\ - it is supplied with the starting
 -- environment (DrawingContext) and returns a Picture.
@@ -178,10 +178,25 @@ instance Monad m => Monad (TraceDrawingT u m) where
 
 instance TraceM (TraceDrawing u) u where
   trace a = TraceDrawing $ \_ -> ((), a)
+  fontDelta = fontDeltaMon
 
+fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
+fontDeltaMon mf = TraceDrawing $ \ctx -> 
+    let (_,fattr)   = text_attr ctx
+        (a,hf)      = runTraceDrawing ctx mf
+        prim        = fontDeltaContext fattr $ primGroup $ hprimToList hf
+    in (a, singleH $ prim1 $ prim)
 
 instance Monad m => TraceM (TraceDrawingT u m) u where
   trace a = TraceDrawingT $ \_ -> return ((), a)
+  fontDelta = fontDeltaTrans
+
+fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
+fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
+    let (_,fattr)   = text_attr ctx
+    in runTraceDrawingT ctx mf >>= \(a,hf) ->
+       let prim  = fontDeltaContext fattr $ primGroup $ hprimToList hf
+       in return (a, singleH $ prim1 $ prim)
 
 
 

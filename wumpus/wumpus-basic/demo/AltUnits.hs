@@ -22,7 +22,7 @@ std_attr = (stroke_colour firebrick . fill_colour linen) $ standardContext 12
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing UDouble $ combined
+drawing01 = drawTracing $ combined
 
 
 mf1 :: TraceDrawing Double ()
@@ -36,9 +36,9 @@ mf2 = do
 combined :: TraceDrawing Double ()
 combined = do 
     draw $ dblLocGraphic `at` P2 12 108
-    drawl (P2 12 72) $ convertli emLocGraphic
-    draw $ converti $ emLocGraphic `at` P2 1 3
-    drawl (P2 12 0) $ convertli $ enLocGraphic
+    drawl (P2 12 72) $ uconvert emLocGraphic
+    draw $ uconvert $ emLocGraphic `at` P2 1 3
+    drawl (P2 12 0) $ uconvert $ enLocGraphic
 
 dblLocGraphic :: LocGraphic Double
 dblLocGraphic = rect1 `oplus` rect2  
