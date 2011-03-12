@@ -30,6 +30,10 @@ module Wumpus.Basic.Kernel.Objects.PosThetaImage
 
   , runPosThetaImage
   , rawPosThetaImage
+
+  , atStartPosRot
+  , startPosRot
+  , ptRot
   
   , promote_pti1
   , promote_pti2
@@ -37,6 +41,8 @@ module Wumpus.Basic.Kernel.Objects.PosThetaImage
   , lift_pti1
   , lift_pti2
   , lift_pti3
+
+  , bindQuery_pti
 
   ) where
 
@@ -48,6 +54,7 @@ import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.ImageBasis
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.PosImage
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -131,18 +138,32 @@ startPos :: Floating u
 startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos) 
  
 
-
+-}
 
 -- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
 --
 -- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
 -- with an initial point and a 'RectPosition' (start position).
 --  
-atStartPos ::  Floating u 
-           => PosImage t u -> Point2 u -> RectPosition -> Image t u
-atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos) 
+atStartPosRot :: PosThetaImage t u -> Point2 u -> RectPosition -> Radian 
+              -> Image t u
+atStartPosRot gf pt rpos ang = 
+    rawImage $ \ctx -> getPosThetaImage gf ctx pt rpos ang
 
--}
+
+startPosRot :: PosThetaImage t u -> RectPosition -> Radian -> LocImage t u
+startPosRot gf rpos ang = 
+    rawLocImage $ \ctx pt -> getPosThetaImage gf ctx pt rpos ang
+
+
+infixr 1 `ptRot`
+
+ptRot :: PosThetaImage t u -> Radian -> PosImage t u
+ptRot gf ang = 
+    rawPosImage $ \ctx pt rpos -> getPosThetaImage gf ctx pt rpos ang
+
+
+
 
 
 promote_pti1 :: (Radian -> PosImage t u) -> PosThetaImage t u
@@ -174,3 +195,12 @@ lift_pti3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx
 
 
 -- TODO - what is the constructor function needed here?
+
+
+-- | WARNING - not correct... ignores rpos...
+--
+bindQuery_pti :: Query ans 
+              -> (ans -> PosThetaImage t u) 
+              -> PosThetaImage t u
+bindQuery_pti qry fn = PosThetaImage $ \ctx pt rpos ang -> 
+    let ans = runQuery qry ctx in runPosThetaImage (fn ans) ctx pt rpos ang

@@ -34,7 +34,7 @@ module Wumpus.Drawing.Paths.Base
   , traceCurvePoints
   , curveByAngles
 
-  , toPrimPath 
+  , toPrimPath
 
   , tipL
   , tipR
@@ -70,6 +70,7 @@ module Wumpus.Drawing.Paths.Base
 
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
+import Wumpus.Basic.Kernel
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
                                    , ViewR(..), viewr, cons, snoc, join )
 import qualified Wumpus.Basic.Utils.JoinList as JL
@@ -78,9 +79,15 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
 
+import Control.Applicative
 import Data.List ( foldl' ) 
 
 import Prelude hiding ( length )
+
+
+
+
+-- | Path data type.
 
 data Path u = Path { _path_length   :: u 
                    , _path_start    :: Point2 u
@@ -131,6 +138,22 @@ instance Functor PathSeg where
   fmap f (LineSeg u p0 p1)        = LineSeg (f u) (fmap f p0) (fmap f p1)  
   fmap f (CurveSeg u p0 p1 p2 p3) = 
       CurveSeg (f u) (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
+
+
+instance UnitConvertExt Path where
+  uconvertExt sz (Path u sp ls ep) = 
+    Path (uconvertScalar sz u) (uconvertExt sz sp) 
+                               (fmap (uconvertExt sz) ls) 
+                               (uconvertExt sz ep)
+
+
+instance UnitConvertExt PathSeg where
+  uconvertExt sz (LineSeg u p0 p1)        = 
+    LineSeg (uconvertScalar sz u) (uconvertExt sz p0) (uconvertExt sz p1)  
+
+  uconvertExt sz (CurveSeg u p0 p1 p2 p3) = 
+    CurveSeg (uconvertScalar sz u) (uconvertExt sz p0) (uconvertExt sz p1)  
+                                   (uconvertExt sz p2) (uconvertExt sz p3)  
 
 --------------------------------------------------------------------------------
 
@@ -184,7 +207,7 @@ line p0 p1 = let v = vlength $ pvec p0 p1
              in Path v p0 (JL.one $ LineSeg v p0 p1) p1
    
 
-curve :: (Floating u, Ord u, PtSize u)
+curve :: (Floating u, Ord u, LengthTolerance u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Path u 
 curve p0 p1 p2 p3 = let v = bezierLength (BezierCurve p0 p1 p2 p3)
                     in Path v p0 (JL.one $ CurveSeg v p0 p1 p2 p3) p3
@@ -218,7 +241,7 @@ traceLinePoints (a:b:xs) = step (line a b) b xs
 -- 'traceCurvePoints' throws a runtime error if the supplied list
 -- is has less than 4 elements (start, control1, control2, end). 
 --
-traceCurvePoints :: (Floating u, Ord u, PtSize u) 
+traceCurvePoints :: (Floating u, Ord u, LengthTolerance u) 
                  => [Point2 u] -> Path u
 traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
   where
@@ -228,7 +251,7 @@ traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
 traceCurvePoints _            = error "tracePointsCurve - less than 4 elems."
 
 
-curveByAngles :: (Floating u, Ord u, PtSize u) 
+curveByAngles :: (Floating u, Ord u, LengthTolerance u) 
               => Point2 u -> Radian -> Radian -> Point2 u -> Path u
 curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
   where
@@ -244,22 +267,24 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: PtSize u => Path u -> PrimPath
-toPrimPath (Path _ start segs _) = step1 $ viewl segs
+toPrimPath :: InterpretUnit u => Path u -> Query PrimPath
+toPrimPath (Path _ start segs _) = 
+    makeQuery dc_font_size $ \sz -> 
+    step1 (uconvertExt sz start) (viewl $ fmap (uconvertExt sz) segs)
   where
-    step1 EmptyL                  = emptyPath start
-    step1 (e :< se)               = let (p0,a) = seg1 e in 
-                                    primPath p0 $ a : step2 (viewl se)
+    step1 p0 EmptyL               = emptyPrimPath p0
+    step1 _  (e :< se)            = let (p0,a) = seg1 e
+                                        rest   = step2 (viewl se)
+                                    in primPath p0 (a:rest)
 
     step2 EmptyL                  = []
-    step2 (e :< se)               = seg2 e : step2 (viewl se)
+    step2 (e :< se)               =  seg2 e : step2 (viewl se)
     
-    seg1 (LineSeg  _ p0 p1)       = (p0, lineTo p1)
-    seg1 (CurveSeg _ p0 p1 p2 p3) = (p0, curveTo p1 p2 p3)
- 
-    seg2 (LineSeg  _ _  p1)       = lineTo p1
-    seg2 (CurveSeg _ _  p1 p2 p3) = curveTo p1 p2 p3
-
+    seg1 (LineSeg  _ p0 p1)       = (p0, absLineTo p1)
+    seg1 (CurveSeg _ p0 p1 p2 p3) = (p0, absCurveTo p1 p2 p3)
+    
+    seg2 (LineSeg  _ _ p1)        = absLineTo  p1
+    seg2 (CurveSeg _ _ p1 p2 p3)  = absCurveTo p1 p2 p3
 
 
 
@@ -520,7 +545,7 @@ pathViewR (Path u _ segs ep) = go (viewr segs)
 -- longer than half of /d/ (d - being the distance between the 
 -- /truncated/ points and the corner).
 --
-cornerCurve :: (Real u, Floating u, PtSize u) 
+cornerCurve :: (Real u, Floating u, LengthTolerance u) 
             => Point2 u -> Point2 u -> Point2 u -> Path u
 cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
   where
@@ -545,7 +570,7 @@ cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
 -- If the list has one element /the null path/ is built, if the 
 -- list has two elements a straight line is built.
 --
-roundTrail :: (Real u, Floating u, PtSize u) 
+roundTrail :: (Real u, Floating u, LengthTolerance u) 
            => u -> [Point2 u] -> Path u 
 roundTrail _ []             = error "roundTrail - empty list."
 roundTrail _ [a]            = pathZero a
@@ -564,7 +589,7 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 -- Note - the starting point is moved, this function is for 
 -- closed, rounded paths.
 --
-lineCurveTrail :: (Real u, Floating u, PtSize u) 
+lineCurveTrail :: (Real u, Floating u, LengthTolerance u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> Path u
 lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
   where
@@ -585,7 +610,7 @@ lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
 -- empty. If the list has one element /the null path/ is built, 
 -- if the list has two elements a straight line is built.
 --
-roundInterior :: (Real u, Floating u, PtSize u) 
+roundInterior :: (Real u, Floating u, LengthTolerance u) 
               => u -> [Point2 u] -> Path u 
 roundInterior _ []             = error "roundEveryInterior - empty list."
 roundInterior _ [a]            = pathZero a
@@ -605,7 +630,7 @@ roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
 -- Note - draws a straight line from the starting point - this is 
 -- the first step of an interior (non-closed) rounded path
 --
-lineCurveInter1 :: (Real u, Floating u, PtSize u) 
+lineCurveInter1 :: (Real u, Floating u, LengthTolerance u) 
                 => u -> Point2 u -> Point2 u -> Point2 u -> (Path u, Point2 u)
 lineCurveInter1 u a b c = 
     (line a p2 `append` cornerCurve p2 b p3, p3)

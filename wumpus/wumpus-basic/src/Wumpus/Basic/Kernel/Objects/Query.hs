@@ -25,6 +25,11 @@ module Wumpus.Basic.Kernel.Objects.Query
   , makeQuery
   , makeLocQuery
   , makeLocThetaQuery
+
+  , promoteQuery_lq
+  , promoteQuery_ltq
+  , promoteLocQuery_ltq
+
   , cfQuery
   , cfLocQuery
   , cfLocThetaQuery
@@ -78,20 +83,31 @@ instance Info Query where
 makeQuery :: (DrawingContext -> a) 
           -> (a -> ans) 
           -> Query ans
-makeQuery qry fn = Query $ \ctx -> let a = qry ctx in fn a
+makeQuery qy fn = Query $ \ctx -> let a = qy ctx in fn a
 
 
 makeLocQuery :: (DrawingContext -> a) 
              -> (a -> Point2 u -> ans) 
              -> LocQuery u ans
-makeLocQuery qry fn = Query $ \ctx -> let a = qry ctx in (\pt -> fn a pt)
+makeLocQuery qy fn = Query $ \ctx -> let a = qy ctx in (\pt -> fn a pt)
 
 
 makeLocThetaQuery :: (DrawingContext -> a) 
                   -> (a -> Point2 u -> Radian -> ans) 
                   -> LocThetaQuery u ans
-makeLocThetaQuery qry fn = Query $ \ctx -> 
-    let a = qry ctx in (\pt ang -> fn a pt ang)
+makeLocThetaQuery qy fn = Query $ \ctx -> 
+    let a = qy ctx in (\pt ang -> fn a pt ang)
+
+
+
+promoteQuery_lq :: (Point2 u -> Query ans) -> LocQuery u ans
+promoteQuery_lq qy = Query $ \ctx pt -> getQuery (qy pt) ctx
+
+promoteLocQuery_ltq :: (Radian -> LocQuery u ans) -> LocThetaQuery u ans
+promoteLocQuery_ltq qy = Query $ \ctx pt ang -> getQuery (qy ang) ctx pt
+
+promoteQuery_ltq :: (Point2 u -> Radian -> Query ans) -> LocThetaQuery u ans
+promoteQuery_ltq qy = Query $ \ctx pt ang -> getQuery (qy pt ang) ctx
 
 
 -- | Note this is just @return@. 
@@ -112,6 +128,6 @@ cfLocThetaQuery fn = Query $ \_ pt ang -> fn pt ang
 
 
 runQuery :: Query ans -> DrawingContext -> ans
-runQuery qry ctx = getQuery qry ctx
+runQuery qy ctx = getQuery qy ctx
 
 

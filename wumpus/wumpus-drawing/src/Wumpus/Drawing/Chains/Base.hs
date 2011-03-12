@@ -19,6 +19,7 @@ module Wumpus.Drawing.Chains.Base
 
     chainDisplace
   , chainIterate
+
   , apChainDisplace
   , apChainIterate
 
@@ -33,7 +34,9 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
--- | 'chainDisplace' : @ disp_fun * [loc_fun] -> LocImage (end_point) @
+-- | chainDisplace with explicit empty.
+--
+-- | 'chainDisplaceAU' : @ disp_fun * [loc_fun] -> LocImage (end_point) @
 --
 -- Distribute the list of @loc_fun@ whilst the start point is 
 -- iterated with the displacement function.
@@ -44,12 +47,14 @@ import Wumpus.Core                              -- package: wumpus-core
 -- This models applying a finite list of LocFuns to an infinite
 -- supply of points.
 --
-chainDisplace :: PtSize u 
-              => PointDisplace u -> [LocImage t u] -> LocImage Point2 u
-chainDisplace _    []     = promoteR1 $ \start -> 
+chainDisplace :: InterpretUnit u 
+              => PointDisplace u 
+              -> [LocImage t u]
+              -> LocImage Point2 u
+chainDisplace _    []     = promote_li1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-chainDisplace next (f:fs) = promoteR1 $ \start -> 
+chainDisplace next (f:fs) = promote_li1 $ \start -> 
     go (next start) (start, ignoreAns $ f `at` start) fs
   where
     go _  (pt,acc) []    = replaceAns pt $ acc
@@ -62,15 +67,16 @@ chainDisplace next (f:fs) = promoteR1 $ \start ->
 -- start point with, rather than iterate the start point itself...
 
 
--- | Iteration version of 'chainDisplace' ...
+
+-- | chainIterate with explicit empty.
 --
-chainIterate :: PtSize u 
+chainIterate :: InterpretUnit u
              => (s -> s) -> (s -> PointDisplace u) -> s -> [LocImage t u] 
              -> LocImage Point2 u
-chainIterate _    _   _  []     = promoteR1 $ \start -> 
+chainIterate _    _   _  []     = promote_li1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-chainIterate next gen s  (f:fs) = promoteR1 $ \start -> 
+chainIterate next gen s  (f:fs) = promote_li1 $ \start -> 
     let fn = gen `flip` start
         p0 = fn s
     in go fn (next s) (p0, ignoreAns $ f `at` p0) fs
@@ -82,16 +88,18 @@ chainIterate next gen s  (f:fs) = promoteR1 $ \start ->
 
 
 
+
+
 -- | Variant of 'chainDisplace' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-apChainDisplace :: PtSize u 
-             => PointDisplace u -> (a -> LocImage t u) -> [a] 
-             -> LocImage Point2 u
-apChainDisplace _    _  []     = promoteR1 $ \start -> 
+apChainDisplace :: InterpretUnit u 
+                => PointDisplace u -> (a -> LocImage t u) -> [a] 
+                -> LocImage Point2 u
+apChainDisplace _    _  []     = promote_li1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-apChainDisplace next gf (x:xs) = promoteR1 $ \start -> 
+apChainDisplace next gf (x:xs) = promote_li1 $ \start -> 
     go (next start) (start, ignoreAns $ gf x `at` start) xs
   where
     go _  (pt,acc) []     = replaceAns pt $ acc
@@ -103,13 +111,13 @@ apChainDisplace next gf (x:xs) = promoteR1 $ \start ->
 -- | Variant of 'chainIterate' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-apChainIterate :: PtSize u 
+apChainIterate :: InterpretUnit u 
                => (s -> s) -> (s -> PointDisplace u) -> s 
                -> (a -> LocImage t u) -> [a] -> LocImage Point2 u
-apChainIterate _    _   _ _  []     = promoteR1 $ \start -> 
+apChainIterate _    _   _ _  []     = promote_li1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-apChainIterate next gen s gf (x:xs) = promoteR1 $ \start -> 
+apChainIterate next gen s gf (x:xs) = promote_li1 $ \start -> 
     let fn = gen `flip` start
         p0 = fn s
     in go fn (next s) (p0, ignoreAns $ gf x `at` p0) xs 
@@ -126,12 +134,12 @@ apChainIterate next gen s gf (x:xs) = promoteR1 $ \start ->
 -- | Variant of 'chainDisplace' where a LocGraphic building 
 -- function is applied to a list of values...
 --
-interChainDisplace :: PtSize u 
+interChainDisplace :: InterpretUnit u 
                    => [PointDisplace u] -> [LocImage t u] -> LocImage Point2 u
-interChainDisplace _   [] = promoteR1 $ \start -> 
+interChainDisplace _   [] = promote_li1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-interChainDisplace mvs (z:zs) = promoteR1 $ \start ->  
+interChainDisplace mvs (z:zs) = promote_li1 $ \start ->  
     step1 start (ignoreAns $ z `at` start) mvs zs
   where
     step1 pt acc []      _      = replaceAns pt acc

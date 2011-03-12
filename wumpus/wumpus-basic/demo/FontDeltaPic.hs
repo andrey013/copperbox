@@ -16,7 +16,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    putStrLn $ "Check the generated SVG to see if font attrs are grouped..."
+    putStrLn $ "Check the generated SVG to verify the font attrs are grouped..."
     --
     let pic1 = runCtxPictureU std_attr drawing01
     writeEPS "./out/font_delta01.eps" pic1

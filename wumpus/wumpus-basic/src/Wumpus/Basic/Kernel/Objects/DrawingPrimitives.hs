@@ -351,8 +351,8 @@ uconvKernChar ks =
 hkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
 hkernline ks = bindQuery_li (uconvKernChar ks) body   
   where
-    body ans pt = makeGraphic text_attr
-                              (\(rgb,attr) -> hkernlabel rgb attr ans pt)
+    body ans = makeLocGraphic text_attr
+                  (\(rgb,attr) pt -> hkernlabel rgb attr ans pt)
 
 
 
@@ -370,8 +370,8 @@ hkernline ks = bindQuery_li (uconvKernChar ks) body
 vkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
 vkernline ks = bindQuery_li (uconvKernChar ks) body
   where
-    body ans pt = makeGraphic text_attr
-                              (\(rgb,attr) -> vkernlabel rgb attr ans pt)
+    body ans = makeLocGraphic text_attr
+                  (\(rgb,attr) pt -> vkernlabel rgb attr ans pt)
 
 --------------------------------------------------------------------------------
 -- Lines
@@ -656,8 +656,8 @@ strokedDisk :: InterpretUnit u => u -> LocGraphic u
 strokedDisk radius = 
     bindQuery_li (scalarSize radius) body
   where
-    body r pt = makeGraphic stroke_attr
-                            (\(rgb,attr) -> strokeEllipse rgb attr r r pt)
+    body r = makeLocGraphic stroke_attr
+                (\(rgb,attr) pt -> strokeEllipse rgb attr r r pt)
 
 
 
@@ -678,8 +678,7 @@ filledDisk :: InterpretUnit u => u -> LocGraphic u
 filledDisk radius = 
     bindQuery_li (scalarSize radius) body
   where
-    body r pt = makeGraphic fill_attr
-                            (\rgb -> fillEllipse rgb r r pt)
+    body r = makeLocGraphic fill_attr (\rgb pt -> fillEllipse rgb r r pt)
 
 
 -- | 'borderedDisk' : @ radius -> LocGraphic @
@@ -703,8 +702,8 @@ borderedDisk :: InterpretUnit u => u -> LocGraphic u
 borderedDisk radius = 
     bindQuery_li (scalarSize radius) body
   where
-    body r pt = makeGraphic bordered_attr
-                  (\(frgb,attr,srgb) -> fillStrokeEllipse frgb attr srgb r r pt)
+    body r = makeLocGraphic bordered_attr
+                (\(frgb,attr,srgb) pt -> fillStrokeEllipse frgb attr srgb r r pt)
 
 
 -- | 'strokedEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
@@ -728,8 +727,8 @@ strokedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 strokedEllipseDisk rx ry =
     bindQuery_li (scalarPair rx ry) body
   where
-    body (drx,dry) pt = makeGraphic stroke_attr
-                          (\(rgb,attr) -> strokeEllipse rgb attr drx dry pt)
+    body (drx,dry) = makeLocGraphic stroke_attr
+                        (\(rgb,attr) pt -> strokeEllipse rgb attr drx dry pt)
 
 
 
@@ -749,8 +748,8 @@ filledEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 filledEllipseDisk rx ry =
     bindQuery_li (scalarPair rx ry) body
   where
-    body (drx,dry) pt = makeGraphic fill_attr
-                                    (\rgb -> fillEllipse rgb drx dry pt)
+    body (drx,dry) = makeLocGraphic fill_attr
+                        (\rgb pt -> fillEllipse rgb drx dry pt)
 
 
 -- | 'borderedEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
@@ -774,7 +773,7 @@ borderedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 borderedEllipseDisk rx ry = 
     bindQuery_li (scalarPair rx ry) body
   where
-    body (drx,dry) pt = makeGraphic bordered_attr
-                          (\(frgb,attr,srgb) -> 
+    body (drx,dry) = makeLocGraphic bordered_attr
+                          (\(frgb,attr,srgb) pt -> 
                                 fillStrokeEllipse frgb attr srgb drx dry pt)
 

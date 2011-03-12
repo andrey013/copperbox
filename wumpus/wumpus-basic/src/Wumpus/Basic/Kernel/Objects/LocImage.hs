@@ -233,18 +233,29 @@ lift_li1 :: Image t u -> LocImage t u
 lift_li1 gf = LocImage $ \ctx _ -> runImage gf ctx 
 
 
-
+-- WARNING - naming scheme for bindQuery needs attention 
 
 -- | Use a Query to generate ans @ans@ turn the @ans@ with the
 -- builder.
 --
-bindQuery_li :: InterpretUnit u 
-             => Query ans -> (ans -> DPoint2 -> Image t u) -> LocImage t u
+bindQuery_li ::  Query ans -> (ans -> LocImage t u) -> LocImage t u
 bindQuery_li qy fn = LocImage $ \ctx pt -> 
+    let ans = runQuery qy ctx 
+    in runLocImage (fn ans) ctx pt
+
+{-
+-- OUT OF DATE....
+
+-- | Use a Query to generate ans @ans@ turn the @ans@ with the
+-- builder.
+--
+bindQuery_li1 :: InterpretUnit u 
+              => Query ans -> (ans -> DPoint2 -> Image t u) -> LocImage t u
+bindQuery_li1 qy fn = LocImage $ \ctx pt -> 
     let ans = runQuery qy ctx 
         sz  = dc_font_size ctx        
     in runImage (fn ans $ uconvertExt sz pt) ctx
-
+-}
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
 -- @Image@ projecting up to a @LocImage@.

@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
@@ -19,18 +18,14 @@
 module Wumpus.Basic.Kernel.Base.CtxUnits
   (
 
-
     Em
-  , UEm(..)
   , En
-  , UEn(..)
 
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 
-import Wumpus.Core                              -- package: wumpus-core
 
 --------------------------------------------------------------------------------
 
@@ -49,9 +44,6 @@ instance InterpretUnit Em where
   normalize sz a = fromIntegral sz * realToFrac a
   dinterp sz d   = realToFrac d / fromIntegral sz
 
-data UEm = UEm
-
-instance Unit UEm Em
 
 
 -- | Wrapped Double representing an En.
@@ -68,7 +60,4 @@ instance InterpretUnit En where
   dinterp sz d   = 2 * (realToFrac d) / (fromIntegral sz)
 
 
-data UEn = UEn
-
-instance Unit UEn En
 
