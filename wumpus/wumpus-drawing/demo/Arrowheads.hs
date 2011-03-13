@@ -23,9 +23,9 @@ main = do
     writeEPS "./out/arrowheads01.eps" pic1
     writeSVG "./out/arrowheads01.svg" pic1
 
-arrow_drawing :: CtxPicture Double
+arrow_drawing :: CtxPicture
 arrow_drawing = 
-    drawTracing $ localize dotted_line $ tableGraphic arrtable
+    drawTracing $ updateCtx dotted_line $ tableGraphic arrtable
 
 arrtable :: [(Arrowhead Double, Arrowhead Double)]
 arrtable = 
@@ -59,8 +59,7 @@ arrtable =
     , (revcurveTip, revcurveTip)
     ]
 
-tableGraphic :: (Real u, Floating u, PtSize u) 
-             => [(Arrowhead u, Arrowhead u)] -> TraceDrawing u ()
+tableGraphic :: [(Arrowhead Double, Arrowhead Double)] -> TraceDrawing Double ()
 tableGraphic tips = 
     drawi_ $ chn (map makeArrowDrawing tips) `at` start
   where
@@ -73,13 +72,10 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeArrowDrawing :: (Real u, Floating u, PtSize u) 
-                 => (Arrowhead u, Arrowhead u) -> LocGraphic u
+makeArrowDrawing :: (Arrowhead Double, Arrowhead Double) -> LocGraphic Double
 makeArrowDrawing (arrl,arrr) = 
-    promoteR1 $ \p0 -> forget $
+    promote_li1 $ \p0 -> ignoreAns $
       connect (leftRightArrow arrl arrr connLine) p0 (mkP1 p0)
   where
     mkP1    = (.+^ hvec 100)
-    -- forget needs a better name, then adding to Wumpus-Basic.
-    forget  = fmap (replaceL uNil)  
 

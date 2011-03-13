@@ -22,6 +22,11 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
     DCQuery
+
+  , normalizeQ
+  , dinterpQ
+  , uconvertExtQ
+
   , stroke_attr
   , fill_attr
   , bordered_attr
@@ -66,6 +71,18 @@ import Control.Applicative
 
 
 type DCQuery a = DrawingContext -> a
+
+
+normalizeQ :: InterpretUnit u => u -> DCQuery Double
+normalizeQ u = (\sz -> normalize sz u) <$> point_size
+
+dinterpQ :: InterpretUnit u => Double -> DCQuery u
+dinterpQ u = (\sz -> dinterp sz u) <$> point_size
+
+uconvertExtQ :: (UnitConvertExt t, InterpretUnit u, InterpretUnit u1) 
+             => t u -> DCQuery (t u1)
+uconvertExtQ t = (\sz -> uconvertExt sz t) <$> point_size
+
 
 stroke_attr :: DCQuery (RGBi, StrokeAttr)
 stroke_attr = (,) <$> dc_stroke_colour <*> dc_stroke_props

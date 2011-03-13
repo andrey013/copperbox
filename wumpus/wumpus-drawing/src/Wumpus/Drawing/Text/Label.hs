@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -46,33 +43,33 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 locImageLabel :: Floating u 
-         => (a -> Point2 u) -> RectPosition 
-         -> PosImage u z -> LocImage u a -> LocImage u a
-locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    annotate (obj `at` pt)  (\a -> atStartPos lbl (fn a) rpos)
+              => ((t u) -> Point2 u) -> RectPosition 
+              -> PosImage t' u -> LocImage t u -> LocImage t u
+locImageLabel fn rpos lbl obj = promote_li1 $ \pt -> 
+    annotate (obj `at` pt)  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
 
 
-label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
-                => PosImage u no -> LocImage u a -> LocImage u a
+label_center_of :: (Floating u, CenterAnchor (t u) u) 
+                => PosImage t' u -> LocImage t u -> LocImage t u
 label_center_of = locImageLabel center CENTER
 
 
-label_left_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
-              => PosImage u no -> LocImage u a -> LocImage u a
+label_left_of :: (Floating u, CardinalAnchor (t u) u) 
+              => PosImage t' u -> LocImage t u -> LocImage t u
 label_left_of = locImageLabel west EE
 
-label_right_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
-               => PosImage u no -> LocImage u a -> LocImage u a
+label_right_of :: (Floating u, CardinalAnchor (t u) u) 
+               => PosImage t' u -> LocImage t u -> LocImage t u
 label_right_of = locImageLabel east WW
 
 
-label_above :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
-              => PosImage u no -> LocImage u a -> LocImage u a
+label_above :: (Floating u, CardinalAnchor (t u) u) 
+            => PosImage t' u -> LocImage t u -> LocImage t u
 label_above = locImageLabel north SS
 
 
-label_below :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
-              => PosImage u no -> LocImage u a -> LocImage u a
+label_below :: (Floating u, CardinalAnchor (t u) u) 
+            => PosImage t' u -> LocImage t u -> LocImage t u
 label_below = locImageLabel south NN
 
 
@@ -80,27 +77,27 @@ label_below = locImageLabel south NN
 
 connectorPathLabel :: Floating u 
                    => (Path u -> Point2 u) -> RectPosition 
-                   -> PosImage u z 
-                   -> ConnectorImage u (Path u) -> ConnectorImage u (Path u)
-connectorPathLabel fn rpos lbl obj = promoteR2 $ \p0 p1 -> 
-    annotate (connect obj p0 p1)  (\a -> atStartPos lbl (fn a) rpos)
+                   -> PosImage t u
+                   -> ConnectorImage Path u -> ConnectorImage Path u
+connectorPathLabel fn rpos lbl obj = promote_conn $ \p0 p1 -> 
+    annotate (connect obj p0 p1)  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
-                => RectPosition -> PosImage u z 
-                -> ConnectorImage u (Path u) -> ConnectorImage u (Path u)
+                => RectPosition -> PosImage t u 
+                -> ConnectorImage Path u -> ConnectorImage Path u
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
-                 => RectPosition -> PosImage u z 
-                 -> ConnectorImage u (Path u) -> ConnectorImage u (Path u)
+                 => RectPosition -> PosImage t u 
+                 -> ConnectorImage Path u -> ConnectorImage Path u
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
-                 => RectPosition -> PosImage u z 
-                 -> ConnectorImage u (Path u) -> ConnectorImage u (Path u)
+                 => RectPosition -> PosImage t u
+                 -> ConnectorImage Path u -> ConnectorImage Path u
 label_atend_of = connectorPathLabel atend_
 
 

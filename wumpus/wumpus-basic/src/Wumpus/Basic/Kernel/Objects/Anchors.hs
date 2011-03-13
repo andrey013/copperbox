@@ -71,7 +71,7 @@ class CenterAnchor t u where
 -- | Apex of an object.
 --
 class ApexAnchor t u where
-  apex :: t -> Anchor u
+  apex :: t u -> Anchor u
 
 
 -- | Cardinal (compass) positions on an object. 

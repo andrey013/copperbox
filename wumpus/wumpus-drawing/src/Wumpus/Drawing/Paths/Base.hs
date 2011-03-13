@@ -79,7 +79,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
 
-import Control.Applicative
 import Data.List ( foldl' ) 
 
 import Prelude hiding ( length )

@@ -49,7 +49,9 @@ module Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Drawing.Paths
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
+import Wumpus.Basic.Kernel
+
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( white )
 
@@ -75,8 +77,8 @@ import Control.Applicative
 -- \"node and link\" diagrams can be made easily.
 --
 data Shape t u = Shape 
-      { shape_ans_fun     :: LocThetaCF u (t u)
-      , shape_path_fun    :: LocThetaCF u (Path u) 
+      { shape_ans_fun     :: LocThetaQuery u (t u)
+      , shape_path_fun    :: LocThetaQuery u (Path u) 
       , shape_decoration  :: LocThetaGraphic u
       }
 
@@ -85,10 +87,15 @@ type DShape t = Shape t Double
 
 
 
+-- Design note - shapes look like they should be constrained to 
+-- InterpretUnit rather than CtxSize, this allows direct affine 
+-- transformations.
+--
+
 --------------------------------------------------------------------------------
 
 shapeMap :: (t u -> t' u) -> Shape t u -> Shape t' u
-shapeMap f = (\s i -> s { shape_ans_fun = fmap f i }) 
+shapeMap f = (\s i -> s { shape_ans_fun = promoteQ2 $ \pt ang -> fmap f $ applyQ2 i pt ang }) 
                 <*> shape_ans_fun
 
 
@@ -104,7 +111,8 @@ shapeMap f = (\s i -> s { shape_ans_fun = fmap f i })
 --------------------------------------------------------------------------------
 
 
-makeShape :: PtSize u => LocThetaCF u (t u) -> LocThetaCF u (Path u) -> Shape t u
+makeShape :: InterpretUnit u
+          => LocThetaQuery u (t u) -> LocThetaQuery u (Path u) -> Shape t u
 makeShape f g = Shape { shape_ans_fun    = f
                       , shape_path_fun   = g
                       , shape_decoration = emptyLocThetaGraphic
@@ -113,7 +121,7 @@ makeShape f g = Shape { shape_ans_fun    = f
 
 
 
-strokedShape :: PtSize u => Shape t u -> LocImage t u
+strokedShape :: InterpretUnit u => Shape t u -> LocImage t u
 strokedShape = shapeToLoc closedStroke
 
 
@@ -126,62 +134,62 @@ strokedShape = shapeToLoc closedStroke
 --
 -- Probably Wumpus should calculate two paths instead.
 --
-dblStrokedShape :: PtSize u => Shape t u -> LocImage t u
+dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage t u
 dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc closedStroke sh
-    back = getLineWidth >>= \lw -> localize (set_line_width $ lw * 3.0) img
+    back = bindQuery_li (info getLineWidth) $ \lw ->
+           localize (set_line_width $ lw * 3.0) img
     fore = ignoreAns $ localize (stroke_colour white) img
 
 
 
-filledShape :: PtSize u => Shape t u -> LocImage t u
+filledShape :: InterpretUnit u => Shape t u -> LocImage t u
 filledShape = shapeToLoc filledPath
 
 
-borderedShape :: PtSize u => Shape t u -> LocImage t u
+borderedShape :: InterpretUnit u => Shape t u -> LocImage t u
 borderedShape = shapeToLoc borderedPath
 
 
-shapeToLoc :: PtSize u 
+shapeToLoc :: InterpretUnit u
            => (PrimPath -> Graphic u) -> Shape t u -> LocImage t u
-shapeToLoc pathF sh = promoteR1 $ \pt -> 
-    atRot (shape_ans_fun sh)  pt 0 >>= \a -> 
-    atRot (shape_path_fun sh) pt 0 >>= \spath -> 
-    let g1 = pathF $ toPrimPath spath 
-        g2 = atRot (shape_decoration sh) pt 0 
-    in intoImage (pure a) (g1 `oplus` g2)
+shapeToLoc drawF sh = promote_li1 $ \pt -> 
+    bindQuery_i (applyQ2 (shape_ans_fun sh)  pt 0) $ \a -> 
+    bindQuery_i (applyQ2 (shape_path_fun sh) pt 0) $ \spath -> 
+    let g2 = atRot (shape_decoration sh) pt 0 
+    in intoImage (pure a) (decorate g2 $ bindQuery_i (toPrimPath spath) drawF)
 
 
 
-rstrokedShape :: PtSize u => Shape t u -> LocThetaImage t u
+rstrokedShape :: InterpretUnit u => Shape t u -> LocThetaImage t u
 rstrokedShape = shapeToLocTheta closedStroke
 
 
-rfilledShape :: PtSize u => Shape t u -> LocThetaImage t u
+rfilledShape :: InterpretUnit u => Shape t u -> LocThetaImage t u
 rfilledShape = shapeToLocTheta filledPath
 
 
-rborderedShape :: PtSize u => Shape t u -> LocThetaImage t u
+rborderedShape :: InterpretUnit u => Shape t u -> LocThetaImage t u
 rborderedShape = shapeToLocTheta borderedPath
 
 
-shapeToLocTheta :: PtSize u 
+shapeToLocTheta :: InterpretUnit u
                 => (PrimPath -> Graphic u) -> Shape t u -> LocThetaImage t u
-shapeToLocTheta pathF sh = promoteR2 $ \pt theta -> 
-    atRot (shape_ans_fun sh)  pt theta >>= \a -> 
-    atRot (shape_path_fun sh) pt theta >>= \spath -> 
-    let g1 = pathF $ toPrimPath spath 
-        g2 = atRot (shape_decoration sh) pt theta
-    in intoImage (pure a) (g1 `oplus` g2)
+shapeToLocTheta drawF sh = promote_lti2 $ \pt theta -> 
+    bindQuery_i (applyQ2 (shape_ans_fun sh)  pt theta) $ \a -> 
+    bindQuery_i (applyQ2 (shape_path_fun sh) pt theta) $ \spath -> 
+    let g2 = atRot (shape_decoration sh) pt theta
+    in intoImage (pure a) (decorate g2 $ bindQuery_i (toPrimPath spath) drawF)
 
 
 
 -- | Draw the shape path with round corners.
 -- 
-roundCornerShapePath :: (Real u, Floating u, PtSize u) 
-                     => [Point2 u] -> CF (Path u)
-roundCornerShapePath xs = getRoundCornerSize >>= \sz -> 
+roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+                     => [Point2 u] -> Query (Path u)
+roundCornerShapePath xs = 
+    info roundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
 
@@ -196,8 +204,10 @@ roundCornerShapePath xs = getRoundCornerSize >>= \sz ->
 -- 
 updatePathAngle :: (Radian -> Radian) -> Shape t u -> Shape t u
 updatePathAngle f = 
-    (\s i -> s { shape_path_fun = moveTheta (circularModulo . f) i})
+    (\s i -> s { shape_path_fun = promoteQ2 $ \pt ang -> applyQ2 i pt (mvTheta ang) })
       <*> shape_path_fun
+  where
+    mvTheta = circularModulo . f 
 
 setDecoration :: LocThetaGraphic u -> Shape t u -> Shape t u
 setDecoration gf = (\s -> s { shape_decoration = gf })
@@ -205,13 +215,14 @@ setDecoration gf = (\s -> s { shape_decoration = gf })
 
 
 
+{-
 -- For Wumpus-Basic...
 -- | Move the /rotation/ of a LocThetaImage with the supplied 
 -- displacement function.
 --
 moveTheta :: (Radian -> Radian) -> LocThetaCF u a -> LocThetaCF u a
 moveTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
-
+-}
 
 
 --------------------------------------------------------------------------------
@@ -221,8 +232,8 @@ moveTheta f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
 -- so this needs to be stored in the CTM.
 --
 
-data ShapeCTM u = ShapeCTM 
-      { ctm_center              :: Point2 u
+data ShapeCTM = ShapeCTM 
+      { ctm_center              :: DPoint2
       , ctm_scale_x             :: !Double
       , ctm_scale_y             :: !Double
       , ctm_rotation            :: Radian
@@ -230,52 +241,53 @@ data ShapeCTM u = ShapeCTM
   deriving (Eq,Ord,Show)
 
 
-makeShapeCTM :: Num u => Point2 u -> Radian -> ShapeCTM u
+makeShapeCTM :: DPoint2 -> Radian -> ShapeCTM
 makeShapeCTM pt ang = ShapeCTM { ctm_center   = pt
                                , ctm_scale_x  = 1
                                , ctm_scale_y  = 1
                                , ctm_rotation = ang }
 
 
-instance Num u => Scale (ShapeCTM u) where
+instance Scale ShapeCTM where
   scale sx sy = (\s x y -> s { ctm_scale_x = x*sx, ctm_scale_y = y*sy })
                   <*> ctm_scale_x <*> ctm_scale_y
 
 
-instance Rotate (ShapeCTM u) where
+instance Rotate ShapeCTM where
   rotate ang = (\s i -> s { ctm_rotation = circularModulo $ i+ang })
                   <*> ctm_rotation
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (ShapeCTM u) where
+instance RotateAbout ShapeCTM where
   rotateAbout ang pt = 
     (\s ctr i -> s { ctm_rotation = circularModulo $ i+ang
                    , ctm_center   = rotateAbout ang pt ctr })
       <*> ctm_center <*> ctm_rotation
 
 
-instance PtSize u => Translate (ShapeCTM u) where
+instance Translate ShapeCTM where
   translate dx dy = 
-    (\s (P2 x y) -> s { ctm_center = P2 (x + dpoint dx) (y + dpoint dy) })
+    (\s (P2 x y) -> s { ctm_center = P2 (x + fromPsDouble dx) 
+                                        (y + fromPsDouble dy) })
       <*> ctm_center
 
 
 
 
-ctmCenter :: ShapeCTM u  -> Point2 u
+ctmCenter :: ShapeCTM  -> DPoint2
 ctmCenter = ctm_center
 
-ctmAngle :: ShapeCTM u -> Radian
+ctmAngle :: ShapeCTM -> Radian
 ctmAngle = ctm_rotation
 
 
-displaceCenter :: (Real u, Floating u, PtSize u) 
-               => Vec2 u -> ShapeCTM u -> Point2 u
+displaceCenter :: InterpretUnit u => Vec2 u -> ShapeCTM -> Anchor u
 displaceCenter v0 (ShapeCTM { ctm_center   = ctr0
                             , ctm_scale_x  = sx
                             , ctm_scale_y  = sy
-                            , ctm_rotation = theta }) = ctr .+^ v
+                            , ctm_rotation = theta }) = 
+    info (uconvertExtQ v0) >>= \v' -> info (uconvertExtQ (ctr .+^ mkv v'))
   where
     ctr = rotate theta $ scale sx sy ctr0
-    v   = rotateAbout theta ctr $ scale sx sy v0
+    mkv = rotateAbout theta ctr . scale sx sy
      
     
