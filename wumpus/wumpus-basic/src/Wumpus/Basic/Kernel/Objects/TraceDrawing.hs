@@ -67,10 +67,10 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -447,24 +447,23 @@ drawrc :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
           , CenterAnchor t1 u, RadialAnchor  t1 u
           , CenterAnchor t2 u, RadialAnchor  t2 u
           ) 
-       => t1 -> t2 -> ConnectorGraphic u -> m ()
-drawrc a b gf = let (p0,p1) = radialConnectorPoints a b 
-                in draw (connect gf p0 p1)
+       => t1 u -> t2 u -> ConnectorGraphic u -> m ()
+drawrc a b gf = drawrci a b gf >> return ()
 
 
 drawrci :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
            , CenterAnchor t1 u, RadialAnchor  t1 u
            , CenterAnchor t2 u, RadialAnchor  t2 u
            ) 
-        => t1 -> t2 -> ConnectorImage t u -> m (t u)
-drawrci a b gf = let (p0,p1) = radialConnectorPoints a b 
-                 in drawci p0 p1 gf
+        => t1 u -> t2 u -> ConnectorImage t u -> m (t u)
+drawrci a b gf = 
+    evalQuery (radialConnectorPoints a b) >>= \(p0,p1) -> drawci p0 p1 gf
 
 drawrci_ :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
             , CenterAnchor t1 u, RadialAnchor  t1 u
             , CenterAnchor t2 u, RadialAnchor  t2 u
             ) 
-         => t1 -> t2 -> ConnectorImage t u -> m ()
+         => t1 u -> t2 u -> ConnectorImage t u -> m ()
 drawrci_ a b gf = drawrci a b gf >> return ()
 
 

@@ -1,11 +1,12 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Base.Anchors
+-- Module      :  Wumpus.Basic.Kernel.Objects.Anchors
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -27,11 +28,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Base.Anchors
+module Wumpus.Basic.Kernel.Objects.Anchors
   ( 
 
   -- * Anchors
-    CenterAnchor(..)
+    Anchor
+  , CenterAnchor(..)
   , ApexAnchor(..)
   , CardinalAnchor(..)
   , CardinalAnchor2(..)
@@ -48,21 +50,28 @@ module Wumpus.Basic.Kernel.Base.Anchors
 
   ) where
 
+import Wumpus.Basic.Kernel.Objects.Query
+
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
 
+import Control.Applicative
+
+-- | Note an Anchor is a Query.
+--
+type Anchor u = Query (Point2 u)
 
 -- | Center of an object.
 --
-class CenterAnchor t u | t -> u where
-  center :: t -> Point2 u
+class CenterAnchor t u where
+  center :: t u -> Anchor u
 
 
 -- | Apex of an object.
 --
-class ApexAnchor t u | t -> u where
-  apex :: t -> Point2 u
+class ApexAnchor t u where
+  apex :: t -> Anchor u
 
 
 -- | Cardinal (compass) positions on an object. 
@@ -72,11 +81,11 @@ class ApexAnchor t u | t -> u where
 -- positions or may be able to provide more efficient definitions 
 -- for the cardinal anchors. Hence the redundancy seems justified. 
 --
-class CardinalAnchor t u | t -> u  where
-  north :: t -> Point2 u
-  south :: t -> Point2 u
-  east  :: t -> Point2 u
-  west  :: t -> Point2 u
+class CardinalAnchor t u where
+  north :: t u -> Anchor u
+  south :: t u -> Anchor u
+  east  :: t u -> Anchor u
+  west  :: t u -> Anchor u
 
 --
 -- Note - a design change is probably in order where the cardinals 
@@ -98,11 +107,11 @@ class CardinalAnchor t u | t -> u  where
 -- problematic, hence the compass points are split into two 
 -- classes.
 --
-class CardinalAnchor2 t u | t -> u where
-  northeast :: t -> Point2 u
-  southeast :: t -> Point2 u
-  southwest :: t -> Point2 u
-  northwest :: t -> Point2 u
+class CardinalAnchor2 t u where
+  northeast :: t u -> Anchor u
+  southeast :: t u -> Anchor u
+  southwest :: t u -> Anchor u
+  northwest :: t u -> Anchor u
 
 
 -- | Anchor on a border that can be addressed by an angle.
@@ -110,8 +119,8 @@ class CardinalAnchor2 t u | t -> u where
 -- The angle is counter-clockwise from the right-horizontal, i.e.
 -- 0 is /east/.
 --
-class RadialAnchor t u | t -> u  where
-  radialAnchor :: Radian -> t -> Point2 u
+class RadialAnchor t u where
+  radialAnchor :: Radian -> t u -> Anchor u
 
 
 -- | Anchors at the top left and right corners of a shape.
@@ -121,16 +130,16 @@ class RadialAnchor t u | t -> u  where
 -- to be uniform. Wumpus will need to reconsider anchors at some 
 -- point...
 --
-class TopCornerAnchor t u | t -> u where
-  topLeftCorner  :: t -> Point2 u
-  topRightCorner :: t -> Point2 u
+class TopCornerAnchor t u where
+  topLeftCorner  :: t u -> Anchor u
+  topRightCorner :: t u -> Anchor u
 
 
 -- | Anchors at the bottom left and right corners of a shape.
 --
-class BottomCornerAnchor t u | t -> u where
-  bottomLeftCorner  :: t -> Point2 u
-  bottomRightCorner :: t -> Point2 u
+class BottomCornerAnchor t u where
+  bottomLeftCorner  :: t u -> Anchor u
+  bottomRightCorner :: t u -> Anchor u
 
 
 -- | Anchors in the center of a side.
@@ -143,8 +152,8 @@ class BottomCornerAnchor t u | t -> u where
 -- Implementations are also expected to modulo the side number, 
 -- rather than throw an out-of-bounds error.
 --
-class SideMidpointAnchor t u | t -> u where
-  sideMidpoint :: Int -> t -> Point2 u
+class SideMidpointAnchor t u where
+  sideMidpoint :: Int -> t u -> Anchor u
 
 
 
@@ -172,12 +181,10 @@ class SideMidpointAnchor t u | t -> u where
 -- from the intermediate anchor.
 --
 projectAnchor :: (Real u, Floating u, CenterAnchor t u) 
-              => (t -> Point2 u) -> u -> t -> Point2 u
-projectAnchor f d a = p1 .+^ (avec ang d)
-  where
-    p1  = f a
-    v   = pvec (center a) p1
-    ang = vdirection v
+              => (t u -> Anchor u) -> u -> t u -> Anchor u
+projectAnchor qy d a = 
+   qy a >>= \p1 -> center a >>= \ctr -> 
+   let v = pvec ctr p1 in return $ p1 .+^ (avec (vdirection v) d)
      
 
 
@@ -191,32 +198,33 @@ projectAnchor f d a = p1 .+^ (avec ang d)
 radialConnectorPoints :: ( Real u, Floating u
                          , CenterAnchor t1 u, RadialAnchor t1 u
                          , CenterAnchor t2 u, RadialAnchor t2 u) 
-                      => t1 -> t2 -> (Point2 u, Point2 u) 
-radialConnectorPoints a b = (radialAnchor theta a, radialAnchor (theta+pi) b)
-  where
-    theta = vdirection $ pvec (center a) (center b)
+                      => t1 u -> t2 u -> Query (Point2 u, Point2 u) 
+radialConnectorPoints a b = 
+    center a >>= \ca -> center b >>= \cb -> 
+    let ang = vdirection $ pvec ca cb
+    in (,) <$> radialAnchor ang a <*> radialAnchor (ang+pi) b
     
 
 --------------------------------------------------------------------------------
 -- Instances 
 
-instance Fractional u => CenterAnchor (BoundingBox u) u where
-  center (BBox (P2 xl ylo) (P2 xr yhi)) = P2 x y 
+instance Fractional u => CenterAnchor BoundingBox u where
+  center (BBox (P2 xl ylo) (P2 xr yhi)) = return $ P2 x y 
      where
        x = xl+0.5*(xr-xl)
        y = ylo+0.5*(yhi-ylo)
        
 
-instance Fractional u => CardinalAnchor (BoundingBox u) u where
-  north (BBox (P2 xl _  ) (P2 xr yhi)) = P2 (xl+0.5*(xr-xl)) yhi
-  south (BBox (P2 xl ylo) (P2 xr _  )) = P2 (xl+0.5*(xr-xl)) ylo
-  east  (BBox (P2 _  ylo) (P2 xr yhi)) = P2 xr (ylo+0.5*(yhi-ylo))
-  west  (BBox (P2 xl ylo) (P2 _  yhi)) = P2 xl (ylo+0.5*(yhi-ylo))
+instance Fractional u => CardinalAnchor BoundingBox u where
+  north (BBox (P2 xl _  ) (P2 xr yhi)) = return $ P2 (xl+0.5*(xr-xl)) yhi
+  south (BBox (P2 xl ylo) (P2 xr _  )) = return $ P2 (xl+0.5*(xr-xl)) ylo
+  east  (BBox (P2 _  ylo) (P2 xr yhi)) = return $ P2 xr (ylo+0.5*(yhi-ylo))
+  west  (BBox (P2 xl ylo) (P2 _  yhi)) = return $ P2 xl (ylo+0.5*(yhi-ylo))
 
 
-instance Fractional u => CardinalAnchor2 (BoundingBox u) u where
-  northeast (BBox _ ur)                 = ur
-  southeast (BBox (P2 _ ylo) (P2 xr _)) = P2 xr ylo
-  southwest (BBox ll _)                 = ll
-  northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi 
+instance Fractional u => CardinalAnchor2 BoundingBox u where
+  northeast (BBox _ ur)                 = return $ ur
+  southeast (BBox (P2 _ ylo) (P2 xr _)) = return $ P2 xr ylo
+  southwest (BBox ll _)                 = return $ ll
+  northwest (BBox (P2 xl _) (P2 _ yhi)) = return $ P2 xl yhi 
 

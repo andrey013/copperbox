@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.ImageBasis
+-- Module      :  Wumpus.Basic.Kernel.Objects.Basis
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.ImageBasis
+module Wumpus.Basic.Kernel.Objects.Basis
   (
 
     PointDisplace

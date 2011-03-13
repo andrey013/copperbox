@@ -70,7 +70,6 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.Anchors
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Objects.TraceDrawing
@@ -198,12 +197,48 @@ instance Translate CtxPicture where
 
 --------------------------------------------------------------------------------
 
+-- Note - it is easier to redefine anchors without the 
+-- DrawingContext than to try and adapt the regular anchors.
+--
+
+center :: Fractional u => BoundingBox u -> Point2 u
+center (BBox (P2 xl ylo) (P2 xr yhi)) = P2 x y 
+     where
+       x = xl+0.5*(xr-xl)
+       y = ylo+0.5*(yhi-ylo)
+       
+
+north :: Fractional u => BoundingBox u -> Point2 u
+north (BBox (P2 xl _  ) (P2 xr yhi)) = P2 (xl+0.5*(xr-xl)) yhi
+
+south :: Fractional u => BoundingBox u -> Point2 u
+south (BBox (P2 xl ylo) (P2 xr _  )) = P2 (xl+0.5*(xr-xl)) ylo
+
+east :: Fractional u => BoundingBox u -> Point2 u
+east  (BBox (P2 _  ylo) (P2 xr yhi)) = P2 xr (ylo+0.5*(yhi-ylo))
+
+west :: Fractional u => BoundingBox u -> Point2 u
+west  (BBox (P2 xl ylo) (P2 _  yhi)) = P2 xl (ylo+0.5*(yhi-ylo))
+
+northeast :: BoundingBox u -> Point2 u
+northeast (BBox _ ur)                 = ur
+
+southeast :: BoundingBox u -> Point2 u
+southeast (BBox (P2 _ ylo) (P2 xr _)) = P2 xr ylo
+
+southwest :: BoundingBox u -> Point2 u
+southwest (BBox ll _)                 = ll
+
+northwest :: BoundingBox u -> Point2 u
+northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi 
+
+
 
 --------------------------------------------------------------------------------
 -- Extract anchors
 
-boundaryExtr :: PsDouble u => (BoundingBox u -> a) -> Picture -> a
-boundaryExtr f = f . fmap fromPsDouble . boundary
+boundaryExtr :: (BoundingBox Double -> a) -> Picture -> a
+boundaryExtr f = f . boundary
 
 -- Operations on bounds
 
@@ -243,12 +278,12 @@ boundaryNW = boundaryExtr northwest
 -- | Extract the top-right corner.
 --
 boundaryNE :: Picture -> DPoint2
-boundaryNE = boundaryExtr ur_corner
+boundaryNE = boundaryExtr northeast
 
 -- | Extract the bottom-left corner.
 --
 boundarySW :: Picture -> DPoint2
-boundarySW = boundaryExtr ll_corner
+boundarySW = boundaryExtr southwest
 
 -- | Extract the bottom-right corner.
 --

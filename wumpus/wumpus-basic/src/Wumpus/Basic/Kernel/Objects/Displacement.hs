@@ -66,9 +66,10 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.Anchors
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Objects.ImageBasis
+import Wumpus.Basic.Kernel.Objects.Anchors
+import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -249,46 +250,46 @@ thetaSouthwestwards d =
 
 -- | Absolute units.
 -- 
-centerRelative :: (CenterAnchor t u, Fractional u, PsDouble u) 
-               => (Int,Int) -> t -> Query (Point2 u)
+centerRelative :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+               => (Int,Int) -> t u -> Anchor u
 centerRelative coord a =
-   let pt = center a in info (snapmove coord) >>= \v -> return (pt .+^ v)
+   center a >>= \pt -> info (snapmove coord) >>= \v -> return (pt .+^ v)
 
 
 -- | Absolute units.
 --
-right_of        :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+right_of        :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 right_of        = centerRelative (1,0)
 
 -- | Absolute units.
 --
-left_of         :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+left_of         :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 left_of         = centerRelative ((-1),0)
 
 -- | Absolute units.
 --
-above_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+above_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 above_right_of  = centerRelative (1,1)
 
 -- | Absolute units.
 --
-below_right_of  :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+below_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 below_right_of  = centerRelative (1, (-1))
 
 -- | Absolute units.
 --
-above_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+above_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 above_left_of   = centerRelative ((-1),1)
 
 -- | Absolute units.
 --
-below_left_of   :: (CenterAnchor t u, Fractional u, PsDouble u) 
-                => t -> Query (Point2 u)
+below_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
+                => t u -> Anchor u
 below_left_of   = centerRelative ((-1),(-1))
  
 
