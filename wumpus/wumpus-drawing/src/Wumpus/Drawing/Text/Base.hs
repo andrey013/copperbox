@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -48,21 +49,29 @@ import Data.Maybe
 
 -- | Single line text, returning its advance vector.
 --
-advtext :: PtSize u => EscapedText -> AdvGraphic u
-advtext esc = lift0R1 (textVector esc) >>= \v -> replaceAns v $ escapedline esc
+advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
+advtext esc = bindQuery_li (textVector esc) body
+  where
+    body v = replaceAns v $ escapedline esc
 
 
 -- kernchar versions to do...
 
 
-textVector :: PtSize u => EscapedText -> DrawingInfo (AdvanceVec u)
+textVector :: InterpretUnit u => EscapedText -> Query (AdvanceVec u)
 textVector esc = 
-    cwLookupTable >>= \table -> 
+    info cwLookupTable >>= \table -> 
+    info point_size    >>= \sz    -> 
        let cs = destrEscapedText id esc 
-       in return $ foldr (\c v -> v ^+^ (charWidth table c)) (vec 0 0) cs
-     
-charVector :: PtSize u => EscapedChar -> DrawingInfo (AdvanceVec u)
-charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
+       in return $ foldr (step sz table) (vec 0 0) cs
+  where
+    step sz table ch v = (v ^+^) $ charWidth sz table ch
+
+charVector :: InterpretUnit u => EscapedChar -> Query (AdvanceVec u)
+charVector ch = 
+    info cwLookupTable  >>= \table -> 
+    info point_size     >>= \sz    -> 
+    return $ charWidth sz table ch
    
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
 -- 
@@ -70,12 +79,12 @@ charVector ch = cwLookupTable >>= \table -> return $ charWidth table ch
 -- EscapedChar for the init of the the list, for the last element 
 -- it takes the charVector.
 --
-hkernVector :: PtSize u => [KerningChar] -> DrawingInfo (AdvanceVec u)
+hkernVector :: InterpretUnit u => [KernChar u] -> Query (AdvanceVec u)
 hkernVector = go 0
   where
-    go w []             = return (V2 w 0)
+    go w []             = return $ V2 w 0
     go w [(_, ch)]      = fmap (addWidth w) (charVector ch)
-    go w ((dx,_ ):xs)   = go (w + dpoint dx) xs
+    go w ((dx,_ ):xs)   = go (w + dx) xs
     
     addWidth w (V2 x y) = V2 (w+x) y
 
@@ -83,11 +92,11 @@ hkernVector = go 0
 -- | This is outside the Drawing context as we don\'t want to get
 -- the @cwLookupTable@ for every char.
 --
-charWidth :: PtSize u 
-          => CharWidthLookup u -> EscapedChar -> AdvanceVec u
-charWidth fn (CharLiteral c) = fn $ ord c
-charWidth fn (CharEscInt i)  = fn i
-charWidth fn (CharEscName s) = fn ix
+charWidth :: InterpretUnit u 
+          => FontSize -> CharWidthLookup -> EscapedChar -> AdvanceVec u
+charWidth sz fn (CharLiteral c) = fmap (dinterp sz) $ fn $ ord c
+charWidth sz fn (CharEscInt i)  = fmap (dinterp sz) $ fn i
+charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
@@ -100,12 +109,12 @@ charWidth fn (CharEscName s) = fn ix
 -- first line, then baseline-to-baseline span for the remaining
 -- lines.
 --
-multilineHeight :: (Real u, Floating u, PtSize u) 
-                   => Int -> DrawingInfo u
+multilineHeight :: (Real u, Floating u, InterpretUnit u) 
+                => Int -> Query u
 multilineHeight line_count 
     | line_count < 1  = return 0
-    | line_count == 1 = glyphVerticalSpan
-    | otherwise       = fn <$> glyphVerticalSpan <*> baselineSpacing
+    | line_count == 1 = info verticalSpan
+    | otherwise       = fn <$> info verticalSpan <*> info baselineSpacing
   where
     fn h1 bspan = let rest_spans = bspan * fromIntegral (line_count - 1)
                   in h1 + rest_spans
@@ -118,11 +127,11 @@ multilineHeight line_count
 -- Margin sizes are taken from the 'text_margin' field in the 
 -- 'DrawingContext'.
 --
-borderedTextPos :: (Real u, Floating u, PtSize u) 
-                      => Int -> u -> DrawingInfo (ObjectPos u)
+borderedTextPos :: (Real u, Floating u, InterpretUnit u) 
+                => Int -> u -> Query (ObjectPos u)
 borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
-    getTextMargin              >>= \(xsep,ysep) -> 
+    info textMargin            >>= \(xsep,ysep) -> 
     let hw    = xsep + (0.5 * w)
         hh    = ysep + (0.5 * h)
     in return $ ObjectPos hw hw hh hh 
@@ -133,10 +142,10 @@ borderedTextPos line_count w =
 
 -- | LR text needs the objectPos under rotation.
 --
-borderedRotTextPos :: (Real u, Floating u, PtSize u) 
-             => Radian -> Int -> u -> DrawingInfo (ObjectPos u)
+borderedRotTextPos :: (Real u, Floating u, InterpretUnit u) 
+             => Radian -> Int -> u -> Query (ObjectPos u)
 borderedRotTextPos theta line_count max_w =
-    fmap (orthoObjectPos theta) $ borderedTextPos line_count max_w 
+    borderedTextPos line_count max_w >>= orthoObjectPos theta
 
 
 -- | Note - this returns the answer in center form, regardless
@@ -145,18 +154,26 @@ borderedRotTextPos theta line_count max_w =
 -- So it is probably not a general enough function for the 
 -- PosImage library.
 --
-orthoObjectPos :: (Real u, Floating u, PtSize u) 
-               => Radian -> ObjectPos u -> ObjectPos u
-orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
+orthoObjectPos :: (Real u, Floating u, InterpretUnit u) 
+               => Radian -> ObjectPos u -> Query (ObjectPos u)
+orthoObjectPos ang opos = 
+    info point_size >>= \sz ->
+    let dopos = dblOrthoObjectPos ang $ uconvertExt sz opos
+    in return $ uconvertExt sz dopos
+
+
+
+dblOrthoObjectPos :: Radian -> ObjectPos Double -> ObjectPos Double
+dblOrthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
     ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
   where
-    input_hw  = 0.5 * (xmin + xmaj)
-    input_hh  = 0.5 * (ymin + ymaj)
     bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
-    bbox1     = retraceBoundary (rotateAbout theta dzeroPt) bbox0
+    bbox1     = retraceBoundary id $ rotateAbout theta (zeroPt::DPoint2) bbox0
     bbox_hw   = 0.5 * (boundaryWidth  bbox1)
     bbox_hh   = 0.5 * (boundaryHeight bbox1)
-
+    input_hw  = 0.5 * (xmin + xmaj)
+    input_hh  = 0.5 * (ymin + ymaj)
+    
 
 
 
@@ -164,18 +181,18 @@ orthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
 -- to the baseline. Note the height of a textbox is @vspan@ which 
 -- is cap_height + descender
 --
-centerToBaseline :: (Fractional u, PtSize u) => DrawingInfo u
+centerToBaseline :: (Fractional u, InterpretUnit u) => Query u
 centerToBaseline = 
-    (\ch vspan -> ch - 0.5 * vspan) <$> glyphCapHeight <*> glyphVerticalSpan
+    (\ch vspan -> ch - 0.5 * vspan) <$> info capHeight <*> info verticalSpan
 
 -- | All drawing is done on a spine that plots points from the 
 -- first line of text. The spine is calculated from its center and
 -- has to account for the inclination.
 --
 centerSpineDisps :: Floating u 
-                 => Int -> Radian -> DrawingInfo (PointDisplace u, PointDisplace u)
+                 => Int -> Radian -> Query (PointDisplace u, PointDisplace u)
 centerSpineDisps n theta =  
-    baselineSpacing >>= \h1 -> 
+    info baselineSpacing >>= \h1 -> 
     let dist_top    = h1 * centerCount n
         vec_to_top  = thetaNorthwards dist_top theta
     in return (vec_to_top, thetaSouthwards h1 theta)
@@ -192,3 +209,5 @@ centerSpineDisps n theta =
 --
 centerCount :: Fractional u => Int -> u
 centerCount i = (fromIntegral i) / 2 - 0.5
+
+

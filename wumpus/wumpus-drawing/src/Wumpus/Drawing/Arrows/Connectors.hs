@@ -58,17 +58,16 @@ type DPathConnector     = PathConnector Double
 
 -- | Connector with an arrow tip at the start point \/ left.
 --
-leftArrow :: (Real u, Floating u, PtSize u) 
-           => Arrowhead u -> PathCF u -> PathConnector u
-leftArrow arrh conn = promoteR2 $ \p0 p1 -> 
-    connect conn p0 p1           >>= \cpath -> 
-    arrowhead_retract_dist arrh  >>= \dl -> 
+leftArrow :: (Real u, Floating u, InterpretUnit u) 
+           => Arrowhead u -> PathQuery u -> PathConnector u
+leftArrow arrh conn = promote_conn $ \p0 p1 -> 
+    bindQuery_i (applyQ2 conn p0 p1)           $ \cpath -> 
+    bindQuery_i (arrowhead_retract_dist arrh)  $ \dl -> 
     let path1   = shortenL dl cpath
         ang     = directionL path1
         start   = tipL cpath
-        g1      = openStroke $ toPrimPath path1
         g2      = atRot (arrowhead_draw arrh) start ang
-    in  replaceAns cpath $ g1 `oplus` g2       
+    in replaceAns cpath $ decorate g2 $ bindQuery_i (toPrimPath path1) openStroke
 
 -- Note - returns original path and adds tips to the @cpath@ 
 -- which might have moved p0 and p1.
@@ -76,43 +75,42 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
 
 -- | Connector with an arrow tip at the end point \/ right.
 --
-rightArrow :: (Real u, Floating u, PtSize u) 
-           => Arrowhead u -> PathCF u -> PathConnector u
-rightArrow arrh conn = promoteR2 $ \p0 p1 -> 
-    connect conn p0 p1           >>= \cpath -> 
-    arrowhead_retract_dist arrh  >>= \dr -> 
+rightArrow :: (Real u, Floating u, InterpretUnit u) 
+           => Arrowhead u -> PathQuery u -> PathConnector u
+rightArrow arrh conn = promote_conn $ \p0 p1 -> 
+    bindQuery_i (applyQ2 conn p0 p1)           $ \cpath -> 
+    bindQuery_i (arrowhead_retract_dist arrh)  $ \dr -> 
     let path1   = shortenR dr cpath
         ang     = directionR path1
         end     = tipR cpath
-        g1      = openStroke $ toPrimPath path1
         g2      = atRot (arrowhead_draw arrh) end ang
-    in  replaceAns cpath $ g1 `oplus` g2
+    in replaceAns cpath $ decorate g2 $ bindQuery_i (toPrimPath path1) openStroke
 
 
 
 -- | Connector with two arrow tips, possibly different.
 --
-leftRightArrow :: (Real u, Floating u, PtSize u) 
-               => Arrowhead u -> Arrowhead u -> PathCF u 
+leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
+               => Arrowhead u -> Arrowhead u -> PathQuery u 
                -> PathConnector u
-leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 -> 
-    connect conn p0 p1           >>= \cpath -> 
-    arrowhead_retract_dist arrL  >>= \dL -> 
-    arrowhead_retract_dist arrR  >>= \dR -> 
+leftRightArrow arrL arrR conn = promote_conn $ \p0 p1 -> 
+    bindQuery_i (applyQ2 conn p0 p1)           $ \cpath -> 
+    bindQuery_i (arrowhead_retract_dist arrL)  $ \dL -> 
+    bindQuery_i (arrowhead_retract_dist arrR)  $ \dR -> 
     let path1   = shortenPath dL dR cpath
         angL    = directionL path1
         angR    = directionR path1
         start   = tipL cpath
         end     = tipR cpath
-        g1      = openStroke $ toPrimPath path1
         gL      = atRot (arrowhead_draw arrL) start angL
         gR      = atRot (arrowhead_draw arrR) end   angR
-    in  replaceAns cpath $ g1 `oplus` gL `oplus` gR
+    in replaceAns cpath $ decorate (gL `oplus` gR) $ 
+         bindQuery_i (toPrimPath path1) openStroke
 
 
 -- | Connector with the same arrow tip at both ends.
 --
-uniformArrow :: (Real u, Floating u, PtSize u) 
-             => Arrowhead u -> PathCF u -> PathConnector u
+uniformArrow :: (Real u, Floating u, InterpretUnit u) 
+             => Arrowhead u -> PathQuery u -> PathConnector u
 uniformArrow arrh cp = leftRightArrow arrh arrh cp
 

@@ -145,7 +145,7 @@ instance Hyperlink (ConnectorImage t u) where
 instance IgnoreAns ConnectorImage where
   ignoreAns    = bimapConnectorImage (const UNil) id
   replaceAns o = bimapConnectorImage (const o) id
-
+  mapAns f     = bimapConnectorImage f id
 
 
 

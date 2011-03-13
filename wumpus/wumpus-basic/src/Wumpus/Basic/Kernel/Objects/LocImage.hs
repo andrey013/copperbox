@@ -147,7 +147,7 @@ instance Hyperlink (LocImage t u) where
 instance IgnoreAns LocImage where
   ignoreAns    = bimapLocImage (const UNil) id
   replaceAns o = bimapLocImage (const o) id
-
+  mapAns f     = bimapLocImage f id
 
 instance Annotate LocImage where
   annotate = annoLocImg
@@ -222,6 +222,7 @@ makeLocGraphic qry fn = LocImage $ \ctx pt ->
     let ans = qry ctx 
         sz  = dc_font_size ctx
     in (UNil, prim1 $ fn ans (uconvertExt sz pt))
+
 
 
 promote_li1 :: (Point2 u -> Image t u) -> LocImage t u

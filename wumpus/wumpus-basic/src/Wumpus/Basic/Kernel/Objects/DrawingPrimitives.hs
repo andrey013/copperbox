@@ -115,7 +115,10 @@ scalarPair rx ry =
 -- minimum bounding box at the implicit start point.
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
-emptyLocGraphic = undefined -- emptyLocPath openStroke
+emptyLocGraphic = promote_li1 $ \pt -> 
+   bindQuery_i (applyQ1 emptyLocPath pt) openStroke
+
+
 
 
 -- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @

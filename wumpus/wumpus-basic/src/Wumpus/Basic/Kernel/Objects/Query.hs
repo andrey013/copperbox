@@ -26,6 +26,11 @@ module Wumpus.Basic.Kernel.Objects.Query
   , makeLocQuery
   , makeLocThetaQuery
 
+  , promoteQ1
+  , promoteQ2
+  , applyQ1
+  , applyQ2
+ 
   , promoteQuery_lq
   , promoteQuery_ltq
   , promoteLocQuery_ltq
@@ -100,8 +105,22 @@ makeLocThetaQuery qy fn = Query $ \ctx ->
 
 
 
+promoteQ1 :: (a -> Query ans) -> Query (a -> ans)
+promoteQ1 qy = Query $ \ctx a -> getQuery (qy a) ctx
+
+promoteQ2 :: (a -> b -> Query ans) -> Query (a -> b -> ans)
+promoteQ2 qy = Query $ \ctx a b -> getQuery (qy a b) ctx
+
+applyQ1 :: Query (a -> ans) -> a -> Query ans
+applyQ1 mf a = fmap ($ a) mf 
+
+applyQ2 :: Query (a -> b -> ans) -> a -> b -> Query ans
+applyQ2 mf a b = fmap (\f -> f a b) mf 
+
+
+-- OLD names ...
 promoteQuery_lq :: (Point2 u -> Query ans) -> LocQuery u ans
-promoteQuery_lq qy = Query $ \ctx pt -> getQuery (qy pt) ctx
+promoteQuery_lq = promoteQ1
 
 promoteLocQuery_ltq :: (Radian -> LocQuery u ans) -> LocThetaQuery u ans
 promoteLocQuery_ltq qy = Query $ \ctx pt ang -> getQuery (qy ang) ctx pt

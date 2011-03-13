@@ -40,7 +40,7 @@ makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font helvetica . metricsContext 18
 
 
-text_pic :: CtxPicture Double
+text_pic :: CtxPicture
 text_pic = drawTracing $ do 
     drawi_ $ (fn left_text)   `at` P2   0 100
     drawi_ $ (fn center_text) `at` P2 250 100
@@ -57,9 +57,9 @@ text_pic = drawTracing $ do
     draw $ redPlus            `at` P2 500   0 
        
   where
-    fn = illustrateBoundedLocGraphic
+    fn = illustrateBoundedLoc
 
-redPlus :: (Fractional u, PtSize u) => LocGraphic u
+redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 redPlus = localize (stroke_colour red) markPlus
 
 bl_oneline :: BoundedLocGraphic Double

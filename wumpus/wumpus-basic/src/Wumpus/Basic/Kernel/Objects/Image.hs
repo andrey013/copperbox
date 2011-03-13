@@ -110,7 +110,7 @@ instance Hyperlink (Image t u) where
 instance IgnoreAns Image where
   ignoreAns    = bimapImage (const UNil) id
   replaceAns o = bimapImage (const o) id
-
+  mapAns f     = bimapImage f id
 
 instance UMonad Image where
   bind = bindImg

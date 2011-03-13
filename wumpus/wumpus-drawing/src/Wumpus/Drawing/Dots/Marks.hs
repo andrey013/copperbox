@@ -60,7 +60,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-import Control.Applicative
 
 -- Marks should be the height of a lower-case letter...
 
@@ -75,20 +74,20 @@ import Control.Applicative
 
 infixr 9 `renderPathWith`
 
-renderPathWith :: LocDrawingInfo u PrimPath 
+renderPathWith :: LocQuery u PrimPath 
                -> (PrimPath -> Graphic u) 
                -> LocGraphic u
-renderPathWith m k = m >>= (lift0R1 . k)
+renderPathWith m k = promote_li1 $ \pt -> bindQuery_i (applyQ1 m pt) k
 
 
 
-markChar :: (Real u, Floating u, PtSize u) => Char -> LocGraphic u
+markChar :: (Real u, Floating u, InterpretUnit u) => Char -> LocGraphic u
 markChar ch = markText [ch]
 
 
 
 
-markText :: (Real u, Floating u, PtSize u) => String -> LocGraphic u
+markText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
 markText ss = ignoreAns $ textAlignCenter ss
 
 
@@ -96,44 +95,44 @@ markText ss = ignoreAns $ textAlignCenter ss
 
 -- | Supplied point is the center.
 --
-axialLine :: (Fractional u, PtSize u) => Vec2 u -> LocGraphic u
-axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (straightLine v)
+axialLine :: (Fractional u, InterpretUnit u) => Vec2 u -> LocGraphic u
+axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (locStraightLine v)
 
 
-markHLine :: (Fractional u, PtSize u) => LocGraphic u 
-markHLine = lift0R1 markHeight >>= \h -> axialLine (hvec h)
+markHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
+markHLine = bindQuery_li (info markHeight) $ \h -> axialLine (hvec h)
 
 
-markVLine :: (Fractional u, PtSize u) => LocGraphic u 
-markVLine = lift0R1 markHeight >>= \h -> axialLine (vvec h) 
+markVLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
+markVLine = bindQuery_li (info markHeight) $ \h -> axialLine (vvec h) 
 
 
-markX :: (Fractional u, PtSize u) => LocGraphic u
-markX = lift0R1 markHeight >>= mkX 
+markX :: (Fractional u, InterpretUnit u) => LocGraphic u
+markX = bindQuery_li (info markHeight)  mkX 
   where
     mkX h = let w = 0.75 * h
               in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
 
 
 
-markPlus :: (Fractional u, PtSize u) =>  LocGraphic u
+markPlus :: (Fractional u, InterpretUnit u) =>  LocGraphic u
 markPlus = markVLine `oplus` markHLine
 
 
-markCross :: (Floating u, PtSize u) =>  LocGraphic u
-markCross = markHeight >>= mkCross
+markCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
+markCross = bindQuery_li (info markHeight) mkCross
   where
     mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
     ang       = pi*0.25  
 
 -- Note - height is extended slightly to look good...
 
-pathDiamond :: (Fractional u, PtSize u) 
-            => LocDrawingInfo u PrimPath
+pathDiamond :: (Fractional u, InterpretUnit u) 
+            => LocQuery u PrimPath
 pathDiamond = 
-    promoteR1 $ \pt -> 
-      markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
-                           in return $ coordinatePrimPath pt cp
+    promoteQ1 $ \pt -> 
+      info markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
+                                in coordinatePrimPath cp pt
 
 
 
@@ -141,10 +140,10 @@ pathDiamond =
 -- pathDiamond  :: (ctx -> pt -> a)
 -- ans          :: (ctx -> pt -> prim)
 
-markDiamond :: (Fractional u, PtSize u) => LocGraphic u
+markDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markDiamond = pathDiamond `renderPathWith` closedStroke
 
-markFDiamond :: (Fractional u, PtSize u) => LocGraphic u
+markFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markFDiamond = pathDiamond `renderPathWith` filledPath
 
 
@@ -155,60 +154,60 @@ markFDiamond = pathDiamond `renderPathWith` filledPath
 -- A named combinator might be better.
 --
 
-markBDiamond :: (Fractional u, PtSize u) => LocGraphic u
+markBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markBDiamond = pathDiamond `renderPathWith` borderedPath
 
 
 -- | Note disk is filled.
 --
-markDisk :: (Fractional u, PtSize u) => LocGraphic u
-markDisk = lift0R1 markHalfHeight >>= filledDisk 
+markDisk :: (Fractional u, InterpretUnit u) => LocGraphic u
+markDisk = bindQuery_li (info markHalfHeight) filledDisk
 
 
 
-markSquare :: (Fractional u, PtSize u) => LocGraphic u
+markSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
 markSquare = 
-    lift0R1 markHeight >>= \h -> 
+    bindQuery_li (info markHeight) $ \h -> 
     let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
     
 
 
-markCircle :: (Fractional u, PtSize u) => LocGraphic u
-markCircle = lift0R1 markHalfHeight >>= strokedDisk 
+markCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
+markCircle = bindQuery_li (info markHalfHeight) strokedDisk
 
 
-markBCircle :: (Fractional u, PtSize u) => LocGraphic u
-markBCircle = lift0R1 markHalfHeight >>= borderedDisk 
+markBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
+markBCircle = bindQuery_li (info markHalfHeight) borderedDisk 
 
 
 
-markPentagon :: (Floating u, PtSize u) => LocGraphic u
-markPentagon = 
-    promoteR1 $ \pt -> 
-      markHeight >>= \h -> closedStroke $ pentagonPath pt (0.5*h)
+markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
+markPentagon = promote_li1 $ \pt -> 
+      bindQuery_i (pentagonPath pt) closedStroke
   where
-    pentagonPath pt hh = coordinatePrimPath pt $ polygonCoordPath 5 hh
+    pentagonPath pt = info markHalfHeight >>= \hh -> 
+                      coordinatePrimPath (polygonCoordPath 5 hh) pt
 
  
 
 
-markStar :: (Floating u, PtSize u) => LocGraphic u 
-markStar = lift0R1 markHeight >>= \h -> starLines (0.5*h)
+markStar :: (Floating u, InterpretUnit u) => LocGraphic u 
+markStar = bindQuery_li (info markHeight) $ \h -> starLines (0.5*h)
 
-starLines :: (Floating u, PtSize u) => u -> LocGraphic u
+starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 starLines hh = 
-    promoteR1 $ \ctr -> let cp = polygonCoordPath 5 hh
-                        in step $ map (fn ctr) $ cp ctr
+    promote_li1 $ \ctr -> let cp = polygonCoordPath 5 hh
+                          in step $ map (fn ctr) $ cp ctr
   where
-    fn p0 p1    = openStroke $ primPath p0 [lineTo p1]
+    fn p0 p1    = straightLine p0 p1
     step (x:xs) = oconcat x xs
     step _      = error "starLines - unreachable"
 
 
-markAsterisk :: (Floating u, PtSize u) => LocGraphic u
-markAsterisk = lift0R1 markHeight >>= asteriskLines
+markAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
+markAsterisk = bindQuery_li (info markHeight) asteriskLines
 
-asteriskLines :: (Floating u, PtSize u) => u -> LocGraphic u
+asteriskLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
   where
     ang     = (pi*2) / 6
@@ -217,27 +216,28 @@ asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
     lineF3  = axialLine (avec ((pi*0.5) + ang + ang) h)
 
 
-markOPlus :: (Fractional u, PtSize u) => LocGraphic u
+markOPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 markOPlus = markCircle `oplus` markPlus
 
 
-markOCross :: (Floating u, PtSize u) => LocGraphic u
+markOCross :: (Floating u, InterpretUnit u) => LocGraphic u
 markOCross = markCircle `oplus` markCross
 
 
-markFOCross :: (Floating u, PtSize u) => LocGraphic u
+markFOCross :: (Floating u, InterpretUnit u) => LocGraphic u
 markFOCross = markCross `oplus` markBCircle 
 
 
--- bkCircle :: (Fractional u, PtSize u) => LocGraphic u
+-- bkCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
 -- bkCircle = disk (fillAttr attr) (0.5*markHeight attr) 
 
 
 
-markTriangle :: (Floating u, PtSize u) => LocGraphic u
+markTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
 markTriangle = tripath `renderPathWith` closedStroke
   where
-    tripath = promoteR1 $ \pt -> 
-                markHeight >>= \h -> let cp = equilateralTriangleCoordPath h 
-                                     in pure $ coordinatePrimPath pt cp
+    tripath = promoteQ1 $ \pt -> 
+                info markHeight >>= \h -> 
+                  let cp = equilateralTriangleCoordPath h
+                  in coordinatePrimPath cp pt
 

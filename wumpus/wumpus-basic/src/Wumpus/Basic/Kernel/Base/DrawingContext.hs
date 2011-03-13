@@ -284,7 +284,7 @@ wumpus_courier =
 -- To avoid name clashes with @mtl@ this scheme is used:
 --
 -- > queryCtx  = ask
--- > localize  = local
+-- > updateCtx = local
 --
 -- Note, because the derived operation 'query' (aka @asks@) is
 -- expected to be used more often than queryCtx (aka @ask@) it 

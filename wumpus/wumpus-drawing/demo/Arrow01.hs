@@ -21,17 +21,17 @@ main = do
     writeSVG "./out/_temp_arrow01.svg" pic1 
 
          
-arrow_pic :: CtxPicture Double 
-arrow_pic = drawTracing $
-    localize line_ultra_thick $ do
-      draw $ openStroke $ toPrimPath large_curve2
-      localize (join_round . cap_round) $ do 
-        draw $ openStroke $ toPrimPath $ curveyArr 24 (P2 0 50)
+arrow_pic :: CtxPicture 
+arrow_pic = drawTracing $ do
+    updateCtx line_ultra_thick $  
+        draw $ bindQuery_i (toPrimPath large_curve2) openStroke
+    updateCtx (join_round . cap_round) $
+        draw $ bindQuery_i (toPrimPath $ curveyArr 24 (P2 0 50)) openStroke
 
-drawing02 :: CtxPicture Double 
+drawing02 :: CtxPicture
 drawing02 = drawTracing $
-    localize line_ultra_thick $ do
-      draw $ openStroke $ toPrimPath large_curve
+    updateCtx line_ultra_thick $ do
+      draw $ bindQuery_i (toPrimPath large_curve) openStroke
 
 large_curve :: Path Double
 large_curve = curve (P2 168 457) (P2 256 506) (P2 332 571) (P2 346 658)

@@ -144,6 +144,7 @@ instance MoveStartTheta LocThetaImage where
 instance IgnoreAns LocThetaImage where
   ignoreAns    = bimapLocThetaImage (const UNil) id
   replaceAns o = bimapLocThetaImage (const o) id
+  mapAns f     = bimapLocThetaImage f id
 
 
 instance Annotate LocThetaImage where
@@ -246,8 +247,6 @@ lift_lti1 gf = LocThetaImage $ \ctx pt _ -> runLocImage gf ctx pt
 lift_lti2 :: Image t u -> LocThetaImage t u
 lift_lti2 gf = LocThetaImage $ \ctx _ _ -> runImage gf ctx
 
--- apply_lti1 :: LocThetaImage u a -> Radian -> LocImage u a
--- apply_lti1 gf r = promote_li1 $ \pt -> undefined
 
 
 bindQuery_lti :: InterpretUnit u 

@@ -29,6 +29,7 @@ module Wumpus.Basic.Kernel.Objects.ImageBasis
   , Localize(..)
   , Hyperlink(..)
   , UMonad(..)
+
   , MoveStart(..)
   , MoveStartTheta(..)
   , Annotate(..)
@@ -87,6 +88,8 @@ class Hyperlink obj where
   hyperlink :: XLink -> obj -> obj
 
 
+ 
+
 infixl 1 `bind`
 
 -- | Monad with answer type parameterized by unit @u@.
@@ -96,6 +99,25 @@ class UMonad t where
            t r u -> (r u -> t r1 u) -> t r1 u
 
   unit  :: forall (r :: * -> *) (u :: *). r u -> t r u
+
+
+-- DESIGN NOTE:
+--
+-- class PromoteR1 t1 t | t1 -> t where
+--   promoteR1 :: forall (r :: * -> *) (u :: *).  (Point2 u -> t r u) -> t1 r u
+--
+-- A class for /promote/ seems difficult - it is hard to 
+-- generalize the @Point2 u@ being promoted, moving to this
+-- formulation loses the relation on units.
+-- 
+-- class PromoteR1 t1 t a | t1 -> t a where
+--
+-- A PromotePoint class would be possible:
+-- 
+-- class PromotePoint t1 t | t1 -> t where
+--   promotePoint :: forall (r :: * -> *) (u :: *).  (Point2 u -> t r u) -> t1 r u
+--
+
 
 
 class MoveStart t where
@@ -123,5 +145,10 @@ class Annotate t where
   annotate  :: t r u -> (r u -> t UNil u) -> t r u
     
 class IgnoreAns t where 
-  ignoreAns  :: t r u -> t UNil u
-  replaceAns :: r1 u  -> t r u -> t r1 u
+  ignoreAns  :: forall (r :: * -> *) (u :: *).  t r u -> t UNil u
+
+  replaceAns :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
+                r1 u  -> t r u -> t r1 u
+
+  mapAns     :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
+                (r u -> r1 u)  -> t r u -> t r1 u
