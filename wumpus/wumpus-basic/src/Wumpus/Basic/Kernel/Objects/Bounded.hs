@@ -185,7 +185,7 @@ bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphic `at` p1
     | otherwise                = 
-        localize drawing_props $ rect1 `oplus` cross
+        local_ctx drawing_props $ rect1 `oplus` cross
   where
     drawing_props = cap_round . dotted_line
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1

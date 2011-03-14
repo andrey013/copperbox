@@ -103,8 +103,8 @@ instance Functor t => UnitConvert (LocThetaImage t) where
 --
 
 
-instance Localize LocThetaImage where
-   localize upd gf = LocThetaImage $ \ctx pt ang -> 
+instance LocalCtx LocThetaImage where
+   local_ctx upd gf = LocThetaImage $ \ctx pt ang -> 
                        getLocThetaImage gf (upd ctx) pt ang
 
 
@@ -216,11 +216,11 @@ intoLocThetaImage fn gf = LocThetaImage $ \ctx pt ang ->
    in (ans,o)
 
 makeLocThetaGraphic :: InterpretUnit u
-                    => (DrawingContext -> a) 
+                    => Query a 
                     -> (a -> DPoint2 -> Radian -> Primitive) 
                     -> LocThetaGraphic u
 makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang -> 
-    let ans = qry ctx 
+    let ans = runQuery qry ctx 
         sz  = dc_font_size ctx
     in (UNil, prim1 $ fn ans (uconvertF sz pt) ang)
 

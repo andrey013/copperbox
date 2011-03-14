@@ -182,7 +182,7 @@ instance TraceM (TraceDrawing u) u where
 
 fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
 fontDeltaMon mf = TraceDrawing $ \ctx -> 
-    let (_,fattr)   = text_attr ctx
+    let (_,fattr)   = runQuery text_attr ctx
         (a,hf)      = runTraceDrawing ctx mf
         prim        = fontDeltaContext fattr $ primGroup $ hprimToList hf
     in (a, singleH $ prim1 $ prim)
@@ -193,7 +193,7 @@ instance Monad m => TraceM (TraceDrawingT u m) u where
 
 fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
 fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
-    let (_,fattr)   = text_attr ctx
+    let (_,fattr)   = runQuery text_attr ctx
     in runTraceDrawingT ctx mf >>= \(a,hf) ->
        let prim  = fontDeltaContext fattr $ primGroup $ hprimToList hf
        in return (a, singleH $ prim1 $ prim)
@@ -203,14 +203,16 @@ fontDeltaTrans mf = TraceDrawingT $ \ctx ->
 -- DrawingCtxM
 
 instance DrawingCtxM (TraceDrawing u) where
-  queryCtx         = TraceDrawing $ \ctx -> (ctx, mempty)
-  updateCtx upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
+  askDC           = TraceDrawing $ \ctx -> (ctx, mempty)
+  asksDC f        = TraceDrawing $ \ctx -> (f ctx, mempty)
+  localize upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
 
 
 
 instance Monad m => DrawingCtxM (TraceDrawingT u m) where
-  queryCtx         = TraceDrawingT $ \ctx -> return (ctx,mempty)
-  updateCtx upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
+  askDC           = TraceDrawingT $ \ctx -> return (ctx, mempty)
+  asksDC f        = TraceDrawingT $ \ctx -> return (f ctx, mempty)
+  localize upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
 
 
 
@@ -306,7 +308,7 @@ mbPictureU (Just a) = a
 
 
 evalQuery :: DrawingCtxM m => Query a -> m a
-evalQuery df = queryCtx >>= \ctx -> return $ runQuery df ctx 
+evalQuery df = askDC >>= \ctx -> return $ runQuery df ctx 
 
 
 
@@ -317,8 +319,7 @@ evalQuery df = queryCtx >>= \ctx -> return $ runQuery df ctx
 -- 
 draw :: (TraceM m u, DrawingCtxM m) 
      => Graphic u -> m ()
-draw gf = queryCtx >>= \ctx -> 
-          trace (singleH $ snd $ runImage gf ctx)
+draw gf = askDC >>= \ctx -> trace (singleH $ snd $ runImage gf ctx)
 
 
 
@@ -330,7 +331,7 @@ draw gf = queryCtx >>= \ctx ->
 -- 
 drawi :: (TraceM m u, DrawingCtxM m) 
       => Image t u -> m (t u)
-drawi img = queryCtx >>= \ctx -> 
+drawi img = askDC >>= \ctx -> 
             let (a,o) = runImage img ctx
             in trace (singleH o) >> return a
 
@@ -349,7 +350,7 @@ drawi_ gf = drawi gf >> return ()
 -- 
 drawl :: (TraceM m u, DrawingCtxM m) 
       => Point2 u -> LocGraphic u -> m ()
-drawl pt gf = queryCtx >>= \ctx -> 
+drawl pt gf = askDC >>= \ctx -> 
               trace (singleH $ snd $ runLocImage gf ctx pt)
 
 
@@ -362,9 +363,9 @@ drawl pt gf = queryCtx >>= \ctx ->
 -- 
 drawli :: (TraceM m u, DrawingCtxM m) 
        => Point2 u -> LocImage t u -> m (t u)
-drawli pt gf = queryCtx >>= \ctx -> 
-                let (a,o) = runLocImage gf ctx pt
-                in trace (singleH o) >> return a
+drawli pt gf = askDC >>= \ctx -> 
+               let (a,o) = runLocImage gf ctx pt
+               in trace (singleH o) >> return a
 
 
 -- | Forgetful 'drawli'.
@@ -425,9 +426,9 @@ node coord gf = nodei coord gf >> return ()
 --
 nodei :: (Fractional u, TraceM m u, DrawingCtxM m)
       => (Int,Int) -> LocImage t u -> m (t u)
-nodei coord gf = queryCtx    >>= \ctx -> 
-                 let pt    = position coord ctx
-                     (a,o) = runLocImage gf ctx pt
+nodei coord gf = askDC >>= \ctx -> 
+                 position coord >>= \pt ->
+                 let (a,o) = runLocImage gf ctx pt
                  in trace (singleH o) >> return a
 
 

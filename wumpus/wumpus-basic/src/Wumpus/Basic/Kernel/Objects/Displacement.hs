@@ -70,7 +70,6 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -253,7 +252,7 @@ thetaSouthwestwards d =
 centerRelative :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                => (Int,Int) -> t u -> Anchor u
 centerRelative coord a =
-   center a >>= \pt -> info (snapmove coord) >>= \v -> return (pt .+^ v)
+   center a >>= \pt ->  (snapmove coord) >>= \v -> return (pt .+^ v)
 
 
 -- | Absolute units.

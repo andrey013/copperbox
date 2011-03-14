@@ -49,14 +49,14 @@ dblLocGraphic = rect1 `oplus` rect2
 
 
 emLocGraphic :: LocGraphic Em
-emLocGraphic = localize swap_colours $  rect1 `oplus` rect2  
+emLocGraphic = local_ctx swap_colours $  rect1 `oplus` rect2  
   where
     rect1 = borderedRectangle 3 2 
     rect2 = moveStart (displaceH 3) $ borderedRectangle 5 2 
 
 
 enLocGraphic :: LocGraphic En
-enLocGraphic = localize (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
+enLocGraphic = local_ctx (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
   where
     rect1 = borderedRectangle 6 4
     rect2 = moveStart (displaceH 6) $ borderedRectangle 10 4

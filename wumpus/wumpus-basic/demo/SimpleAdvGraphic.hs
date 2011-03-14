@@ -51,7 +51,7 @@ text02 = replaceAns (hvec 210) $ textline "text number two"
 
 
 miniDisk :: AdvGraphic Double
-miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
+miniDisk = replaceAns (V2 0 0) $ local_ctx (fill_colour sienna) $ filledDisk 3
 
 
 sienna :: RGBi

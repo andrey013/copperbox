@@ -99,8 +99,8 @@ instance Translate (t u) => Translate (Image t u) where
 
 
 
-instance Localize Image where
-   localize upd gf = Image $ \ctx -> getImage gf (upd ctx) 
+instance LocalCtx Image where
+   local_ctx upd gf = Image $ \ctx -> getImage gf (upd ctx) 
 
 instance Hyperlink (Image t u) where
   hyperlink hyp = bimapImage id (xlinkPrim hyp)
@@ -166,8 +166,9 @@ intoImage fn gf = Image $ \ctx ->
    in (ans,o)
 
 
-makeGraphic :: (DrawingContext -> a) -> (a -> Primitive) -> Graphic u
-makeGraphic qry fn = Image $ \ctx -> let a = qry ctx in (UNil, prim1 $ fn a)
+makeGraphic :: Query a -> (a -> Primitive) -> Graphic u
+makeGraphic qry fn = Image $ \ctx -> 
+    let a = runQuery qry ctx in (UNil, prim1 $ fn a)
 
 
 

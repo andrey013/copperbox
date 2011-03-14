@@ -125,6 +125,11 @@ type DPosGraphic = PosGraphic Double
 
 
 
+instance LocalCtx PosImage where
+  local_ctx upd gf = PosImage $ \ctx pt rpos -> 
+      getPosImage gf (upd ctx) pt rpos
+
+
 
 instance MoveStart PosImage where
   moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos

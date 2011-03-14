@@ -21,11 +21,9 @@
 module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
-    DCQuery
-
-  , normalizeQ
-  , dinterpQ
-  , uconvertExtQ
+    normalizeDC
+  , dinterpDC
+  , uconvertFDC
 
   , stroke_attr
   , fill_attr
@@ -70,38 +68,39 @@ import qualified Wumpus.Core.FontSize   as FS
 import Control.Applicative
 
 
-type DCQuery a = DrawingContext -> a
 
 
-normalizeQ :: InterpretUnit u => u -> DCQuery Double
-normalizeQ u = (\sz -> normalize sz u) <$> point_size
+normalizeDC :: (DrawingCtxM m, InterpretUnit u) => u -> m Double
+normalizeDC u = (\sz -> normalize sz u) <$> point_size
 
-dinterpQ :: InterpretUnit u => Double -> DCQuery u
-dinterpQ u = (\sz -> dinterp sz u) <$> point_size
+dinterpDC :: (DrawingCtxM m, InterpretUnit u) => Double -> m u
+dinterpDC u = (\sz -> dinterp sz u) <$> point_size
 
-uconvertExtQ :: (Functor t, InterpretUnit u, InterpretUnit u1) 
-             => t u -> DCQuery (t u1)
-uconvertExtQ t = (\sz -> uconvertF sz t) <$> point_size
-
-
-stroke_attr :: DCQuery (RGBi, StrokeAttr)
-stroke_attr = (,) <$> dc_stroke_colour <*> dc_stroke_props
-
-fill_attr :: DCQuery RGBi
-fill_attr = dc_fill_colour
+uconvertFDC :: (DrawingCtxM m, Functor t, InterpretUnit u, InterpretUnit u1) 
+            => t u -> m (t u1)
+uconvertFDC t = (\sz -> uconvertF sz t) <$> point_size
 
 
-bordered_attr :: DCQuery (RGBi, StrokeAttr, RGBi)
-bordered_attr = (,,) <$> dc_fill_colour <*> dc_stroke_props 
-                                        <*> dc_stroke_colour
+stroke_attr :: DrawingCtxM m => m (RGBi, StrokeAttr)
+stroke_attr = (,) <$> asksDC dc_stroke_colour <*> asksDC dc_stroke_props
 
-point_size :: DCQuery FontSize
-point_size = dc_font_size
+fill_attr :: DrawingCtxM m => m RGBi
+fill_attr = asksDC dc_fill_colour
 
 
-text_attr :: DCQuery (RGBi,FontAttr)
-text_attr = (\a b c -> (a, FontAttr b c)) 
-              <$> dc_text_colour <*> dc_font_size <*> dc_font_face
+bordered_attr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
+bordered_attr = (,,) <$> asksDC dc_fill_colour 
+                     <*> asksDC dc_stroke_props 
+                     <*> asksDC dc_stroke_colour
+
+point_size :: DrawingCtxM m => m FontSize
+point_size = asksDC dc_font_size
+
+
+text_attr :: DrawingCtxM m => m (RGBi,FontAttr)
+text_attr = 
+    (\a b c -> (a, FontAttr b c)) 
+      <$> asksDC dc_text_colour <*> asksDC dc_font_size <*> asksDC dc_font_face
 
 
 
@@ -109,8 +108,8 @@ text_attr = (\a b c -> (a, FontAttr b c))
 -- | Get the Point corresponding the grid coordinates scaled by
 -- the snap-grid scaling factors.
 --
-position :: Fractional u => (Int, Int) -> DCQuery (Point2 u)
-position (x,y) = post <$> dc_snap_grid_factors
+position :: (DrawingCtxM m, Fractional u) => (Int, Int) -> m (Point2 u)
+position (x,y) = post <$> asksDC dc_snap_grid_factors
   where
     post (sx,sy) = P2 (realToFrac $ sx * fromIntegral x) 
                       (realToFrac $ sy * fromIntegral y)
@@ -122,8 +121,8 @@ position (x,y) = post <$> dc_snap_grid_factors
 --
 -- Absolute units.
 --
-snapmove :: Fractional u => (Int,Int) -> DCQuery (Vec2 u)
-snapmove (x,y) = post <$> dc_snap_grid_factors
+snapmove :: (DrawingCtxM m, Fractional u) => (Int,Int) -> m (Vec2 u)
+snapmove (x,y) = post <$> asksDC dc_snap_grid_factors
   where
     post (sx,sy) = V2 (realToFrac $ sx * fromIntegral x) 
                       (realToFrac $ sy * fromIntegral y)
@@ -134,8 +133,9 @@ snapmove (x,y) = post <$> dc_snap_grid_factors
 
 -- | Size of the round corner factor.
 --
-roundCornerSize :: InterpretUnit u => DCQuery u
-roundCornerSize = dinterp <$> dc_font_size <*> dc_round_corner_factor
+roundCornerSize :: (DrawingCtxM m, InterpretUnit u) => m u
+roundCornerSize = 
+    dinterp <$> asksDC dc_font_size <*> asksDC dc_round_corner_factor
 
 
 
@@ -146,8 +146,8 @@ roundCornerSize = dinterp <$> dc_font_size <*> dc_round_corner_factor
 -- Note - not all text operations in Wumpus are drawn with text 
 -- margin. 
 -- 
-textMargin :: InterpretUnit u => DCQuery (u,u)
-textMargin = post <$> dc_font_size <*> dc_text_margin
+textMargin :: (DrawingCtxM m, InterpretUnit u) => m (u,u)
+textMargin = post <$> asksDC dc_font_size <*> asksDC dc_text_margin
   where
     post sz (TextMargin xem yem) = (fn sz xem, fn sz yem)
     fn sz em                     = dinterp sz $ uconvertScalar sz em
@@ -156,23 +156,21 @@ textMargin = post <$> dc_font_size <*> dc_text_margin
 
 
 
-getLineWidth :: DCQuery Double
-getLineWidth = line_width <$> dc_stroke_props
+getLineWidth :: DrawingCtxM m => m Double
+getLineWidth = line_width <$> asksDC dc_stroke_props
 
-getFontAttr :: DCQuery FontAttr
-getFontAttr = FontAttr <$> dc_font_size <*> dc_font_face
+getFontAttr :: DrawingCtxM m => m FontAttr
+getFontAttr = FontAttr <$> asksDC dc_font_size <*> asksDC dc_font_face
 
 
--- These are not especially convenient now the drawing context 
--- has changed...
-getFontSize :: DCQuery Int
-getFontSize = dc_font_size
+getFontSize     :: DrawingCtxM m => m Int
+getFontSize     = asksDC dc_font_size
 
-getFontFace :: DCQuery FontFace
-getFontFace = dc_font_face
+getFontFace     :: DrawingCtxM m => m FontFace
+getFontFace     = asksDC dc_font_face
 
-getTextColour :: DCQuery RGBi
-getTextColour = dc_text_colour
+getTextColour   :: DrawingCtxM m => m RGBi
+getTextColour   = asksDC dc_text_colour
 
 
 -- | The /mark/ height is the height of a lowercase letter in the 
@@ -181,8 +179,8 @@ getTextColour = dc_text_colour
 -- Arrowheads, dots etc. should generally be drawn at the mark 
 -- height.
 -- 
-markHeight :: InterpretUnit u => DCQuery u
-markHeight = post <$> dc_font_size 
+markHeight :: (DrawingCtxM m, InterpretUnit u) => m u
+markHeight = post <$> asksDC dc_font_size 
   where
     post sz = dinterp sz (FS.xcharHeight sz)
 
@@ -190,7 +188,7 @@ markHeight = post <$> dc_font_size
 
 
 
-markHalfHeight :: (Fractional u, InterpretUnit u) => DCQuery u
+markHalfHeight :: (Fractional u, DrawingCtxM m, InterpretUnit u) => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 
@@ -201,8 +199,8 @@ markHalfHeight = (0.5*) <$> markHeight
 -- This is a /scaling factor/ hence there is no absolute or
 -- relative unit distinction.
 -- 
-baselineSpacing :: Fractional u => DCQuery u
-baselineSpacing = post <$> dc_font_size  <*> dc_line_spacing_factor
+baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
+baselineSpacing = post <$> asksDC dc_font_size  <*> asksDC dc_line_spacing_factor
   where
     post sz factor = realToFrac $ factor * fromIntegral sz
 
@@ -210,8 +208,8 @@ baselineSpacing = post <$> dc_font_size  <*> dc_line_spacing_factor
 --------------------------------------------------------------------------------
 
 
-glyphQuery :: (FontMetrics -> FontSize -> a) -> DCQuery a
-glyphQuery fn = (\ctx -> withFontMetrics fn ctx)
+glyphQuery :: DrawingCtxM m => (FontMetrics -> FontSize -> a) -> m a
+glyphQuery fn = (\ctx -> withFontMetrics fn ctx) <$> askDC
 
 
 
@@ -219,26 +217,27 @@ glyphQuery fn = (\ctx -> withFontMetrics fn ctx)
 -- the glyphs in the font. The span of the height is expected to 
 -- be bigger than the cap_height plus descender depth.
 --
-glyphBoundingBox :: InterpretUnit u => DCQuery (BoundingBox u)
-glyphBoundingBox = uconvertF <$> dc_font_size <*> glyphQuery get_bounding_box
+glyphBoundingBox :: (DrawingCtxM m, InterpretUnit u) => m (BoundingBox u)
+glyphBoundingBox = 
+    uconvertF <$> asksDC dc_font_size <*> glyphQuery get_bounding_box
 
 
 
 -- | Height of a capital letter.
 --
-capHeight :: InterpretUnit u => DCQuery u
-capHeight = dinterp <$> dc_font_size <*> glyphQuery get_cap_height
+capHeight :: (DrawingCtxM m, InterpretUnit u) => m u
+capHeight = dinterp <$> asksDC dc_font_size <*> glyphQuery get_cap_height
 
 
 -- | Note - descender is expected to be negative.
 --
-descender :: InterpretUnit u => DCQuery u
-descender = dinterp <$> dc_font_size <*> glyphQuery get_descender
+descender :: (DrawingCtxM m, InterpretUnit u) => m u
+descender = dinterp <$> asksDC dc_font_size <*> glyphQuery get_descender
 
 
 -- | This is the distance from cap_height to descender.
 --
-verticalSpan :: InterpretUnit u => DCQuery u
+verticalSpan :: (DrawingCtxM m, InterpretUnit u) => m u
 verticalSpan = 
     (\ch dd -> ch - dd) <$> capHeight <*> descender
 
@@ -249,6 +248,6 @@ verticalSpan =
 -- /CharWidth/ is always Double representing PostScript points.
 -- Client code must convert this value accordingly.
 --
-cwLookupTable :: DCQuery CharWidthLookup
+cwLookupTable :: DrawingCtxM m => m CharWidthLookup
 cwLookupTable = glyphQuery get_cw_table
 

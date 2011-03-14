@@ -25,7 +25,7 @@ std_ctx = standardContext 24
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing $ updateCtx (fill_colour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 mf :: TraceDrawing Double ()

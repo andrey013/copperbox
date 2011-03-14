@@ -26,7 +26,7 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ThetaDisplace
   , ThetaPointDisplace
 
-  , Localize(..)
+  , LocalCtx(..)
   , Hyperlink(..)
   , UMonad(..)
 
@@ -78,9 +78,9 @@ type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
 
 
 
-class Localize t where
-  localize :: forall (r :: * -> *) (u :: *). 
-              (DrawingContext -> DrawingContext) -> t r u -> t r u
+class LocalCtx t where
+  local_ctx :: forall (r :: * -> *) (u :: *). 
+               (DrawingContext -> DrawingContext) -> t r u -> t r u
 
 
 

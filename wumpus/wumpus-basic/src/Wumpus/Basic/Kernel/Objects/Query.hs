@@ -16,9 +16,8 @@
 
 module Wumpus.Basic.Kernel.Objects.Query
   (
-    Info(..)
   
-  , Query
+    Query
   , LocQuery
   , LocThetaQuery
 
@@ -51,8 +50,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
-class Info m where
-  info :: (DrawingContext -> a) -> m a
 
 newtype Query a = Query { getQuery :: DrawingContext -> a }
 
@@ -78,30 +75,31 @@ instance Monad Query where
   ma >>= k  = Query $ \ctx -> let a = getQuery ma ctx in (getQuery . k) a ctx
                 
 
+instance DrawingCtxM Query where
+  askDC          = Query $ \ctx -> ctx
+  localize fn qy = Query $ \ctx -> getQuery qy (fn ctx)
 
 
-instance Info Query where
-  info fn = Query $ \ctx -> fn ctx
 
 
-
-makeQuery :: (DrawingContext -> a) 
+makeQuery :: Query a 
           -> (a -> ans) 
           -> Query ans
-makeQuery qy fn = Query $ \ctx -> let a = qy ctx in fn a
+makeQuery qy fn = Query $ \ctx -> let a = runQuery qy ctx in fn a
 
 
-makeLocQuery :: (DrawingContext -> a) 
+makeLocQuery :: Query a
              -> (a -> Point2 u -> ans) 
              -> LocQuery u ans
-makeLocQuery qy fn = Query $ \ctx -> let a = qy ctx in (\pt -> fn a pt)
+makeLocQuery qy fn = Query $ \ctx -> 
+    let a = runQuery qy ctx in (\pt -> fn a pt)
 
 
-makeLocThetaQuery :: (DrawingContext -> a) 
+makeLocThetaQuery :: Query a
                   -> (a -> Point2 u -> Radian -> ans) 
                   -> LocThetaQuery u ans
 makeLocThetaQuery qy fn = Query $ \ctx -> 
-    let a = qy ctx in (\pt ang -> fn a pt ang)
+    let a = runQuery qy ctx in (\pt ang -> fn a pt ang)
 
 
 

@@ -96,6 +96,10 @@ type DPosThetaGraphic = PosThetaGraphic Double
 
 
 
+instance LocalCtx PosThetaImage where
+  local_ctx upd gf = PosThetaImage $ \ctx pt rpos ang -> 
+      getPosThetaImage gf (upd ctx) pt rpos ang
+
 
 instance MoveStart PosThetaImage where
   moveStart fn gf = PosThetaImage $ \ctx pt rpos ang -> 

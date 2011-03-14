@@ -132,8 +132,8 @@ instance (InterpretUnit u, Translate (t u)) => Translate (ConnectorImage t u) wh
       in (translate dx dy a, translate dx dy o)
 
 
-instance Localize ConnectorImage where
-   localize upd gf = ConnectorImage $ \ctx p0 p1 -> 
+instance LocalCtx ConnectorImage where
+   local_ctx upd gf = ConnectorImage $ \ctx p0 p1 -> 
                        getConnectorImage gf (upd ctx) p0 p1
 
 

@@ -148,8 +148,8 @@ instance (InterpretUnit u, Translate (t u)) => Translate (LocImage t u) where
       in (translate dx dy a, translate dx dy o)
 
 
-instance Localize LocImage where
-   localize upd gf = LocImage $ \ctx pt -> getLocImage gf (upd ctx) pt
+instance LocalCtx LocImage where
+   local_ctx upd gf = LocImage $ \ctx pt -> getLocImage gf (upd ctx) pt
 
 
 instance MoveStart LocImage where
@@ -231,11 +231,11 @@ intoLocImage fn gf = LocImage $ \ctx pt ->
    in (ans,o)
 
 makeLocGraphic :: InterpretUnit u
-               => (DrawingContext -> a) 
+               => Query a
                -> (a -> DPoint2 -> Primitive) 
                -> LocGraphic u
 makeLocGraphic qry fn = LocImage $ \ctx pt -> 
-    let ans = qry ctx 
+    let ans = runQuery qry ctx 
         sz  = dc_font_size ctx
     in (UNil, prim1 $ fn ans (uconvertF sz pt))
 

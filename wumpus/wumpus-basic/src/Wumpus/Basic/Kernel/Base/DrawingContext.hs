@@ -40,8 +40,6 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
 
   -- * DrawingCtxM (reader) monad
   , DrawingCtxM(..)
-  , query
-
 
   -- * Glyph metrics
   , withFontMetrics
@@ -283,28 +281,20 @@ wumpus_courier =
 --
 -- To avoid name clashes with @mtl@ this scheme is used:
 --
--- > queryCtx  = ask
--- > updateCtx = local
+-- > askDC    = ask
+-- > asksDC   = asks
+-- > localize = local
 --
 -- Note, because the derived operation 'query' (aka @asks@) is
 -- expected to be used more often than queryCtx (aka @ask@) it 
 -- gets the more convenient name.
 --
 class (Applicative m, Monad m) => DrawingCtxM (m :: * -> *) where
-  queryCtx  :: m DrawingContext
-  updateCtx  :: (DrawingContext -> DrawingContext) -> m a -> m a
+  askDC     :: m DrawingContext
+  asksDC    :: (DrawingContext -> a) -> m a
+  localize  :: (DrawingContext -> DrawingContext) -> m a -> m a
 
-
--- | Project a value out of the DrawingContext.
---
--- This is the analogue to @asks@ in @mtl@.
---
--- > withQuery = asks
--- 
-query :: DrawingCtxM m => (DrawingContext -> a) -> m a
-query f = queryCtx >>= (return . f)
-
-
+  asksDC f  = f <$> askDC
 
 
 --------------------------------------------------------------------------------
