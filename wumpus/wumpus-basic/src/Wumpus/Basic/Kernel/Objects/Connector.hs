@@ -132,26 +132,29 @@ instance (InterpretUnit u, Translate (t u)) => Translate (ConnectorImage t u) wh
       in (translate dx dy a, translate dx dy o)
 
 
-instance LocalCtx ConnectorImage where
-   local_ctx upd gf = ConnectorImage $ \ctx p0 p1 -> 
-                       getConnectorImage gf (upd ctx) p0 p1
 
 
-instance Hyperlink (ConnectorImage t u) where
+
+instance Object ConnectorImage where
+  local_ctx     = localConnectorImg
+  ignoreAns     = bimapConnectorImage (const UNil) id
+  replaceAns o  = bimapConnectorImage (const o) id
+  mapAns f      = bimapConnectorImage f id
   hyperlink hyp = bimapConnectorImage id (xlinkPrim hyp)
+  annotate      = annoConnectorImg
+  decorate      = decoConnectorImg
+  bind          = bindConnectorImg
+  unit          = unitConnectorImg
+
+
+localConnectorImg :: (DrawingContext -> DrawingContext) 
+                  -> ConnectorImage t u 
+                  -> ConnectorImage t u
+localConnectorImg upd gf = ConnectorImage $ \ctx p0 p1 -> 
+                           getConnectorImage gf (upd ctx) p0 p1
 
 
 
-instance IgnoreAns ConnectorImage where
-  ignoreAns    = bimapConnectorImage (const UNil) id
-  replaceAns o = bimapConnectorImage (const o) id
-  mapAns f     = bimapConnectorImage f id
-
-
-
-instance UMonad ConnectorImage where
-  bind = bindConnectorImg
-  unit = unitConnectorImg
 
 bindConnectorImg :: ConnectorImage t u -> (t u -> ConnectorImage t1 u) 
                  -> ConnectorImage t1 u
@@ -164,9 +167,6 @@ unitConnectorImg :: t u -> ConnectorImage t u
 unitConnectorImg a = ConnectorImage $ \_ _ _ -> (a,mempty)
 
 
-instance Annotate ConnectorImage where
-  annotate = annoConnectorImg
-  decorate = decoConnectorImg
 
 
 

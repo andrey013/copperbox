@@ -26,14 +26,11 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ThetaDisplace
   , ThetaPointDisplace
 
-  , LocalCtx(..)
-  , Hyperlink(..)
-  , UMonad(..)
+  , Object(..)
 
   , MoveStart(..)
   , MoveStartTheta(..)
-  , Annotate(..)
-  , IgnoreAns(..)
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -78,27 +75,40 @@ type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
 
 
 
-class LocalCtx t where
-  local_ctx :: forall (r :: * -> *) (u :: *). 
-               (DrawingContext -> DrawingContext) -> t r u -> t r u
-
-
-
-class Hyperlink obj where
-  hyperlink :: XLink -> obj -> obj
-
-
- 
-
 infixl 1 `bind`
 
--- | Monad with answer type parameterized by unit @u@.
---
-class UMonad t where 
-  bind  :: forall (r :: * -> *) (r1 :: * -> *) (u :: *). 
-           t r u -> (r u -> t r1 u) -> t r1 u
 
-  unit  :: forall (r :: * -> *) (u :: *). r u -> t r u
+
+class Object t where 
+  local_ctx     :: forall (r :: * -> *) (u :: *). 
+                   (DrawingContext -> DrawingContext) -> t r u -> t r u
+
+  ignoreAns     :: forall (r :: * -> *) (u :: *).  
+                   t r u -> t UNil u
+
+  replaceAns    :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
+                   r1 u  -> t r u -> t r1 u
+
+  mapAns        :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
+                   (r u -> r1 u)  -> t r u -> t r1 u
+
+  hyperlink     :: forall (r :: * -> *) (u :: *). 
+                   XLink -> t r u -> t r u 
+
+  decorate      :: forall (r :: * -> *) (u :: *). 
+                   t r u -> t UNil u -> t r u
+
+  annotate      :: forall (r :: * -> *) (u :: *). 
+                   t r u -> (r u -> t UNil u) -> t r u
+
+  bind          :: forall (r :: * -> *) (r1 :: * -> *) (u :: *). 
+                   t r u -> (r u -> t r1 u) -> t r1 u
+
+  unit          :: forall (r :: * -> *) (u :: *). 
+                   r u -> t r u
+
+
+
 
 
 -- DESIGN NOTE:
@@ -139,16 +149,3 @@ class MoveStartTheta t where
   moveStartThetaAngle :: forall (r :: * -> *) (u :: *).  
                          ThetaDisplace -> t r u -> t r u
 
-
-class Annotate t where 
-  decorate  :: t r u -> t UNil u -> t r u
-  annotate  :: t r u -> (r u -> t UNil u) -> t r u
-    
-class IgnoreAns t where 
-  ignoreAns  :: forall (r :: * -> *) (u :: *).  t r u -> t UNil u
-
-  replaceAns :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
-                r1 u  -> t r u -> t r1 u
-
-  mapAns     :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
-                (r u -> r1 u)  -> t r u -> t r1 u

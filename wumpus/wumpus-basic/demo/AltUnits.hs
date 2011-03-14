@@ -38,7 +38,7 @@ combined = do
     draw $ dblLocGraphic `at` P2 12 108
     drawl (P2 12 72) $ uconvert emLocGraphic
     draw $ uconvert $ emLocGraphic `at` P2 1 3
-    drawl (P2 12 0) $ uconvert $ enLocGraphic
+    drawl (P2 12 0) $ uconvert $ hyperlink haskell_org enLocGraphic
 
 dblLocGraphic :: LocGraphic Double
 dblLocGraphic = rect1 `oplus` rect2  
@@ -62,7 +62,8 @@ enLocGraphic = local_ctx (fill_colour lemon_chiffon) $  rect1 `oplus` rect2
     rect2 = moveStart (displaceH 6) $ borderedRectangle 10 4
 
 
-
+haskell_org :: XLink
+haskell_org = xlinkhref "http://www.haskell.org"
 
 firebrick               :: RGBi
 firebrick               = RGBi 0xb2 0x22 0x22

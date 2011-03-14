@@ -58,7 +58,7 @@ import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 
 
@@ -96,9 +96,67 @@ type DPosThetaGraphic = PosThetaGraphic Double
 
 
 
-instance LocalCtx PosThetaImage where
-  local_ctx upd gf = PosThetaImage $ \ctx pt rpos ang -> 
-      getPosThetaImage gf (upd ctx) pt rpos ang
+
+
+
+--------------------------------------------------------------------------------
+
+-- bimap has to be unit preserving as unit is a parmater of the 
+-- input as well as the output.
+--
+bimapPosThetaImage :: (t u -> t' u) -> (Primitive -> Primitive) 
+                   -> PosThetaImage t u -> PosThetaImage t' u
+bimapPosThetaImage l r gf = PosThetaImage $ \ctx pt rpos ang -> 
+    bimap l (cpmap r) $ getPosThetaImage gf ctx pt rpos ang
+
+
+instance Object PosThetaImage where
+  local_ctx     = localPosThetaImg
+  ignoreAns     = bimapPosThetaImage (const UNil) id
+  replaceAns o  = bimapPosThetaImage (const o) id
+  mapAns f      = bimapPosThetaImage f id
+  hyperlink hyp = bimapPosThetaImage id (xlinkPrim hyp)
+  annotate      = annoPosThetaImg
+  decorate      = decoPosThetaImg
+  bind          = bindPosThetaImg
+  unit          = unitPosThetaImg
+
+
+localPosThetaImg :: (DrawingContext -> DrawingContext) 
+                 -> PosThetaImage t u 
+                 -> PosThetaImage t u
+localPosThetaImg upd gf = PosThetaImage $ \ctx pt rpos ang -> 
+    getPosThetaImage gf (upd ctx) pt rpos ang
+
+
+
+decoPosThetaImg :: PosThetaImage t u 
+                -> PosThetaGraphic u 
+                -> PosThetaImage t u
+decoPosThetaImg fa fb = PosThetaImage $ \ctx pt rpos ang -> 
+    let (a,o1) = getPosThetaImage fa ctx pt rpos ang
+        (_,o2) = getPosThetaImage fb ctx pt rpos ang
+    in (a, o1 `oplus` o2)
+                        
+annoPosThetaImg :: PosThetaImage t u 
+                -> (t u -> PosThetaGraphic u) 
+                -> PosThetaImage t u
+annoPosThetaImg fa mf = PosThetaImage $ \ctx pt rpos ang -> 
+    let (a,o1) = getPosThetaImage fa ctx pt rpos ang
+        (_,o2) = getPosThetaImage (mf a) ctx pt rpos ang
+    in (a, o1 `oplus` o2)
+
+
+bindPosThetaImg :: PosThetaImage t u 
+                -> (t u -> PosThetaImage t1 u) 
+                -> PosThetaImage t1 u
+bindPosThetaImg gf fn = PosThetaImage $ \ctx pt rpos ang -> 
+    let (a,o1) = getPosThetaImage gf ctx pt rpos ang
+        (b,o2) = getPosThetaImage (fn a) ctx pt rpos ang
+    in (b, o1 `oplus` o2)
+
+unitPosThetaImg :: t u -> PosThetaImage t u
+unitPosThetaImg a = PosThetaImage $ \_ _ _ _ -> (a, mempty)
 
 
 instance MoveStart PosThetaImage where

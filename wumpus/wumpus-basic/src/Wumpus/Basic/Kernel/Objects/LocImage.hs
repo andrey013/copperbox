@@ -148,26 +148,20 @@ instance (InterpretUnit u, Translate (t u)) => Translate (LocImage t u) where
       in (translate dx dy a, translate dx dy o)
 
 
-instance LocalCtx LocImage where
-   local_ctx upd gf = LocImage $ \ctx pt -> getLocImage gf (upd ctx) pt
-
-
 instance MoveStart LocImage where
   moveStart fn gf = LocImage $ \ctx pt -> getLocImage gf ctx (fn pt)
 
-instance Hyperlink (LocImage t u) where
-  hyperlink hyp = bimapLocImage id (xlinkPrim hyp)
 
-
-
-instance IgnoreAns LocImage where
-  ignoreAns    = bimapLocImage (const UNil) id
-  replaceAns o = bimapLocImage (const o) id
-  mapAns f     = bimapLocImage f id
-
-instance Annotate LocImage where
-  annotate = annoLocImg
-  decorate = decoLocImg
+instance Object LocImage where
+  local_ctx upd gf = LocImage $ \ctx pt -> getLocImage gf (upd ctx) pt
+  ignoreAns        = bimapLocImage (const UNil) id
+  replaceAns o     = bimapLocImage (const o) id
+  mapAns f         = bimapLocImage f id
+  hyperlink hyp    = bimapLocImage id (xlinkPrim hyp)
+  annotate         = annoLocImg
+  decorate         = decoLocImg
+  bind             = bindLocImg
+  unit             = unitLocImg
 
 
 
@@ -184,9 +178,6 @@ annoLocImg fa mf = LocImage $ \ctx pt ->
     in (a, o1 `oplus` o2)
 
 
-instance UMonad LocImage where
-  bind = bindLocImg
-  unit = unitLocImg
 
 bindLocImg :: LocImage t u -> (t u -> LocImage t1 u) -> LocImage t1 u
 bindLocImg gf fn = LocImage $ \ctx pt -> 

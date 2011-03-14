@@ -63,7 +63,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-
+import Data.Monoid
 
 
 -- | Datatype enumerating positions within a rectangle that can be
@@ -125,14 +125,6 @@ type DPosGraphic = PosGraphic Double
 
 
 
-instance LocalCtx PosImage where
-  local_ctx upd gf = PosImage $ \ctx pt rpos -> 
-      getPosImage gf (upd ctx) pt rpos
-
-
-
-instance MoveStart PosImage where
-  moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
 
 
 --------------------------------------------------------------------------------
@@ -174,6 +166,63 @@ halfDists :: Fractional u => ObjectPos u -> (u,u)
 halfDists (ObjectPos xmin xmaj ymin ymaj) = 
     (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
 
+--------------------------------------------------------------------------------
+
+-- bimap has to be unit preserving as unit is a parmater of the 
+-- input as well as the output.
+--
+bimapPosImage :: (t u -> t' u) -> (Primitive -> Primitive) 
+              -> PosImage t u -> PosImage t' u
+bimapPosImage l r gf = PosImage $ \ctx pt rpos -> 
+    bimap l (cpmap r) $ getPosImage gf ctx pt rpos
+
+
+instance Object PosImage where
+  local_ctx     = localPosImg
+  ignoreAns     = bimapPosImage (const UNil) id
+  replaceAns o  = bimapPosImage (const o) id
+  mapAns f      = bimapPosImage f id
+  hyperlink hyp = bimapPosImage id (xlinkPrim hyp)
+  annotate      = annoPosImg
+  decorate      = decoPosImg
+  bind          = bindPosImg
+  unit          = unitPosImg
+
+
+localPosImg :: (DrawingContext -> DrawingContext) 
+            -> PosImage t u 
+            -> PosImage t u
+localPosImg upd gf = 
+    PosImage $ \ctx pt rpos -> getPosImage gf (upd ctx) pt rpos
+
+
+
+decoPosImg :: PosImage t u -> PosGraphic u -> PosImage t u
+decoPosImg fa fb = PosImage $ \ctx pt rpos -> 
+    let (a,o1) = getPosImage fa ctx pt rpos
+        (_,o2) = getPosImage fb ctx pt rpos
+    in (a, o1 `oplus` o2)
+                        
+annoPosImg :: PosImage t u -> (t u -> PosGraphic u) -> PosImage t u
+annoPosImg fa mf = PosImage $ \ctx pt rpos -> 
+    let (a,o1) = getPosImage fa ctx pt rpos
+        (_,o2) = getPosImage (mf a) ctx pt rpos
+    in (a, o1 `oplus` o2)
+
+
+
+bindPosImg :: PosImage t u -> (t u -> PosImage t1 u) -> PosImage t1 u
+bindPosImg gf fn = PosImage $ \ctx pt rpos -> 
+    let (a,o1) = getPosImage gf ctx pt rpos
+        (b,o2) = getPosImage (fn a) ctx pt rpos
+    in (b, o1 `oplus` o2)
+
+unitPosImg :: t u -> PosImage t u
+unitPosImg a = PosImage $ \_ _ _ -> (a, mempty)
+
+
+instance MoveStart PosImage where
+  moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
 
 --------------------------------------------------------------------------------
 -- builders and destructors

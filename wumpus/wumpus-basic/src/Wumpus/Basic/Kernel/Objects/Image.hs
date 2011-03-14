@@ -99,22 +99,16 @@ instance Translate (t u) => Translate (Image t u) where
 
 
 
-instance LocalCtx Image where
-   local_ctx upd gf = Image $ \ctx -> getImage gf (upd ctx) 
-
-instance Hyperlink (Image t u) where
-  hyperlink hyp = bimapImage id (xlinkPrim hyp)
-
-
-
-instance IgnoreAns Image where
-  ignoreAns    = bimapImage (const UNil) id
-  replaceAns o = bimapImage (const o) id
-  mapAns f     = bimapImage f id
-
-instance UMonad Image where
-  bind = bindImg
-  unit = unitImg
+instance Object Image where
+  local_ctx upd gf = Image $ \ctx -> getImage gf (upd ctx) 
+  ignoreAns        = bimapImage (const UNil) id
+  replaceAns o     = bimapImage (const o) id
+  mapAns f         = bimapImage f id
+  hyperlink hyp    = bimapImage id (xlinkPrim hyp)
+  annotate         = annoImg
+  decorate         = decoImg
+  bind             = bindImg
+  unit             = unitImg
 
 bindImg :: Image t u -> (t u -> Image t1 u) -> Image t1 u
 bindImg gf fn = Image $ \ctx -> 
@@ -126,9 +120,6 @@ bindImg gf fn = Image $ \ctx ->
 unitImg :: t u -> Image t u
 unitImg a = Image $ \_ -> (a, mempty)
 
-instance Annotate Image where
-  annotate = annoImg
-  decorate = decoImg
 
 decoImg :: Image t u -> Graphic u -> Image t u
 decoImg fa fb = Image $ \ctx -> 

@@ -103,29 +103,8 @@ instance Functor t => UnitConvert (LocThetaImage t) where
 --
 
 
-instance LocalCtx LocThetaImage where
-   local_ctx upd gf = LocThetaImage $ \ctx pt ang -> 
-                       getLocThetaImage gf (upd ctx) pt ang
 
 
-instance Hyperlink (LocThetaImage t u) where
-  hyperlink hyp = bimapLocThetaImage id (xlinkPrim hyp)
-
-
-instance UMonad LocThetaImage where
-  bind = bindLocThetaImg
-  unit = unitLocThetaImg
-
-bindLocThetaImg :: LocThetaImage t u 
-                -> (t u -> LocThetaImage t1 u) 
-                -> LocThetaImage t1 u
-bindLocThetaImg gf fn = LocThetaImage $ \ctx pt ang -> 
-    let (a,o1) = getLocThetaImage gf ctx pt ang
-        (b,o2) = getLocThetaImage (fn a) ctx pt ang
-    in (b, o1 `oplus` o2)
-
-unitLocThetaImg :: t u -> LocThetaImage t u
-unitLocThetaImg a = LocThetaImage $ \_ _ _ -> (a, mempty)
 
 instance MoveStart LocThetaImage where
   moveStart fn gf = LocThetaImage $ \ctx pt ang -> 
@@ -141,15 +120,22 @@ instance MoveStartTheta LocThetaImage where
 
 
 
-instance IgnoreAns LocThetaImage where
-  ignoreAns    = bimapLocThetaImage (const UNil) id
-  replaceAns o = bimapLocThetaImage (const o) id
-  mapAns f     = bimapLocThetaImage f id
-
-
-instance Annotate LocThetaImage where
-  annotate = annoLocThetaImg
-  decorate = decoLocThetaImg
+instance Object LocThetaImage where
+  local_ctx     = localLocThetaImg
+  ignoreAns     = bimapLocThetaImage (const UNil) id
+  replaceAns o  = bimapLocThetaImage (const o) id
+  mapAns f      = bimapLocThetaImage f id
+  hyperlink hyp = bimapLocThetaImage id (xlinkPrim hyp)
+  annotate      = annoLocThetaImg
+  decorate      = decoLocThetaImg
+  bind          = bindLocThetaImg
+  unit          = unitLocThetaImg
+  
+localLocThetaImg :: (DrawingContext -> DrawingContext) 
+                 -> LocThetaImage t u 
+                 -> LocThetaImage t u
+localLocThetaImg upd gf = LocThetaImage $ \ctx pt ang -> 
+                          getLocThetaImage gf (upd ctx) pt ang
 
 
 
@@ -166,6 +152,17 @@ annoLocThetaImg fa mf = LocThetaImage $ \ctx pt ang ->
         (_,o2) = getLocThetaImage (mf a) ctx pt ang
     in (a, o1 `oplus` o2)
 
+
+bindLocThetaImg :: LocThetaImage t u 
+                -> (t u -> LocThetaImage t1 u) 
+                -> LocThetaImage t1 u
+bindLocThetaImg gf fn = LocThetaImage $ \ctx pt ang -> 
+    let (a,o1) = getLocThetaImage gf ctx pt ang
+        (b,o2) = getLocThetaImage (fn a) ctx pt ang
+    in (b, o1 `oplus` o2)
+
+unitLocThetaImg :: t u -> LocThetaImage t u
+unitLocThetaImg a = LocThetaImage $ \_ _ _ -> (a, mempty)
 
 
 
