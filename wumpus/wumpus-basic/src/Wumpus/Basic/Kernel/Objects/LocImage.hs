@@ -73,10 +73,23 @@ instance OPlus (t u) => OPlus (LocImage t u) where
 -- DESIGN NOTE:
 --
 -- LocImage is not a Functor - we can change the current type 
--- slightly and have a Functor instance (@a@ for answer rather 
+-- slightly and have a Functor instance @a@ for answer rather 
 -- than @t u@, but then we can\'t have a UnitConvert instance.
 --
+-- To unit transform a LocImage we need to transform the input and
+-- the output.
+-- 
+-- In short - LocImage simply cannot be a Functor.
+--
 
+-- unitmap :: Functor t => (u -> u1) -> (u1 -> u) -> LocImage t u -> LocImage t u1
+-- unitmap f g mf = LocImage $ \ctx pt -> post $ getLocImage mf ctx (fmap g pt) 
+--    where
+--      post (ans,prim) = (fmap f ans,prim)
+
+-- unitmap does not seem to be able to do anything more than
+-- UnitConvert.
+--
 
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
@@ -87,13 +100,15 @@ bimapLocImage l r gf = LocImage $ \ctx pt ->
     bimap l (cpmap r) $ getLocImage gf ctx pt
 
 
+
+
 -- This needs drawing context so cannot be done with 'bimapLocImage'.
 --
-instance UnitConvertExt t => UnitConvert (LocImage t) where
+instance Functor t => UnitConvert (LocImage t) where
   uconvert gf = LocImage $ \ctx pt -> 
       let sz    = dc_font_size ctx
-          (a,o) = getLocImage gf ctx (uconvertExt sz pt)
-      in (uconvertExt sz a, o)
+          (a,o) = getLocImage gf ctx (uconvertF sz pt)
+      in (uconvertF sz a, o)
 
 -- movestartLocImage :: (Point2 u -> Point2 u) -> LocImage t u -> LocImage t u
 -- movestartLocImage fn gf = LocImage $ \ctx pt -> getLocImage gf ctx (fn pt) 
@@ -109,20 +124,21 @@ instance (InterpretUnit u, Rotate (t u)) => Rotate (LocImage t u) where
       in (rotate ang a, rotate ang o)
 
 
+instance (InterpretUnit u, RotateAbout (t u)) => 
+    RotateAbout (LocImage t u) where
+  rotateAbout ang p0 gf = LocImage $ \ctx pt -> 
+      let dP0   = uconvertF (dc_font_size ctx) p0
+          trafo = intraMapPoint (dc_font_size ctx) (rotateAbout ang dP0)
+          (a,o) = getLocImage gf ctx (trafo pt)
+      in (rotateAbout ang dP0 a, rotateAbout ang dP0 o)
+
+
 instance (InterpretUnit u, Scale (t u)) => Scale (LocImage t u) where
   scale sx sy gf = LocImage $ \ctx pt -> 
       let trafo = intraMapPoint (dc_font_size ctx) (scale sx sy)
           (a,o) = getLocImage gf ctx (trafo pt)
       in (scale sx sy a, scale sx sy o)
 
-
-instance (InterpretUnit u, RotateAbout (t u)) => 
-    RotateAbout (LocImage t u) where
-  rotateAbout ang p0 gf = LocImage $ \ctx pt -> 
-      let dP0   = uconvertExt (dc_font_size ctx) p0
-          trafo = intraMapPoint (dc_font_size ctx) (rotateAbout ang dP0)
-          (a,o) = getLocImage gf ctx (trafo pt)
-      in (rotateAbout ang dP0 a, rotateAbout ang dP0 o)
 
 
 instance (InterpretUnit u, Translate (t u)) => Translate (LocImage t u) where
@@ -221,7 +237,7 @@ makeLocGraphic :: InterpretUnit u
 makeLocGraphic qry fn = LocImage $ \ctx pt -> 
     let ans = qry ctx 
         sz  = dc_font_size ctx
-    in (UNil, prim1 $ fn ans (uconvertExt sz pt))
+    in (UNil, prim1 $ fn ans (uconvertF sz pt))
 
 
 

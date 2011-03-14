@@ -79,9 +79,9 @@ normalizeQ u = (\sz -> normalize sz u) <$> point_size
 dinterpQ :: InterpretUnit u => Double -> DCQuery u
 dinterpQ u = (\sz -> dinterp sz u) <$> point_size
 
-uconvertExtQ :: (UnitConvertExt t, InterpretUnit u, InterpretUnit u1) 
+uconvertExtQ :: (Functor t, InterpretUnit u, InterpretUnit u1) 
              => t u -> DCQuery (t u1)
-uconvertExtQ t = (\sz -> uconvertExt sz t) <$> point_size
+uconvertExtQ t = (\sz -> uconvertF sz t) <$> point_size
 
 
 stroke_attr :: DCQuery (RGBi, StrokeAttr)
@@ -220,7 +220,7 @@ glyphQuery fn = (\ctx -> withFontMetrics fn ctx)
 -- be bigger than the cap_height plus descender depth.
 --
 glyphBoundingBox :: InterpretUnit u => DCQuery (BoundingBox u)
-glyphBoundingBox = uconvertExt <$> dc_font_size <*> glyphQuery get_bounding_box
+glyphBoundingBox = uconvertF <$> dc_font_size <*> glyphQuery get_bounding_box
 
 
 

@@ -87,11 +87,11 @@ bimapConnectorImage l r gf = ConnectorImage $ \ctx p0 p1 ->
 
 -- This needs drawing context so cannot be done with 'bimapConnectorImage'.
 --
-instance UnitConvertExt t => UnitConvert (ConnectorImage t) where
+instance Functor t => UnitConvert (ConnectorImage t) where
   uconvert gf = ConnectorImage $ \ctx p0 p1 -> 
       let sz    = dc_font_size ctx
-          (a,o) = getConnectorImage gf ctx (uconvertExt sz p0) (uconvertExt sz p1)
-      in (uconvertExt sz a, o)
+          (a,o) = getConnectorImage gf ctx (uconvertF sz p0) (uconvertF sz p1)
+      in (uconvertF sz a, o)
 
 -- movestartConnectorImage :: (Point2 u -> Point2 u) 
 --                         -> ConnectorImage t u -> ConnectorImage t u
@@ -119,7 +119,7 @@ instance (InterpretUnit u, Scale (t u)) => Scale (ConnectorImage t u) where
 instance (InterpretUnit u, RotateAbout (t u)) => 
     RotateAbout (ConnectorImage t u) where
   rotateAbout ang pt gf = ConnectorImage $ \ctx p0 p1 -> 
-      let dP0   = uconvertExt (dc_font_size ctx) pt
+      let dP0   = uconvertF (dc_font_size ctx) pt
           trafo = intraMapPoint (dc_font_size ctx) (rotateAbout ang dP0)
           (a,o) = getConnectorImage gf ctx (trafo p0) (trafo p1)
       in (rotateAbout ang dP0 a, rotateAbout ang dP0 o)
@@ -229,7 +229,7 @@ makeConnectorGraphic :: InterpretUnit u
 makeConnectorGraphic qry fn = ConnectorImage $ \ctx p0 p1 -> 
     let a  = qry ctx 
         sz = dc_font_size ctx
-    in (UNil, prim1 $ fn a (uconvertExt sz p0) (uconvertExt sz p1))
+    in (UNil, prim1 $ fn a (uconvertF sz p0) (uconvertF sz p1))
 
 
 -- Design note - the promoters and lifters work differently to 

@@ -139,21 +139,6 @@ instance Functor PathSeg where
       CurveSeg (f u) (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
 
-instance UnitConvertExt Path where
-  uconvertExt sz (Path u sp ls ep) = 
-    Path (uconvertScalar sz u) (uconvertExt sz sp) 
-                               (fmap (uconvertExt sz) ls) 
-                               (uconvertExt sz ep)
-
-
-instance UnitConvertExt PathSeg where
-  uconvertExt sz (LineSeg u p0 p1)        = 
-    LineSeg (uconvertScalar sz u) (uconvertExt sz p0) (uconvertExt sz p1)  
-
-  uconvertExt sz (CurveSeg u p0 p1 p2 p3) = 
-    CurveSeg (uconvertScalar sz u) (uconvertExt sz p0) (uconvertExt sz p1)  
-                                   (uconvertExt sz p2) (uconvertExt sz p3)  
-
 --------------------------------------------------------------------------------
 
 
@@ -269,7 +254,7 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 toPrimPath :: InterpretUnit u => Path u -> Query PrimPath
 toPrimPath (Path _ start segs _) = 
     makeQuery dc_font_size $ \sz -> 
-    step1 (uconvertExt sz start) (viewl $ fmap (uconvertExt sz) segs)
+    step1 (uconvertF sz start) (viewl $ fmap (uconvertF sz) segs)
   where
     step1 p0 EmptyL               = emptyPrimPath p0
     step1 _  (e :< se)            = let (p0,a) = seg1 e

@@ -35,8 +35,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Unit interpretation with respect to the current Point size
   , InterpretUnit(..)
   , UnitConvert(..)
-  , UnitConvertExt(..)
   , uconvertScalar
+  , uconvertF
   , intraMapPoint
 
 
@@ -244,31 +244,23 @@ instance InterpretUnit Centimeter where
 class UnitConvert t where
   uconvert :: (InterpretUnit u, InterpretUnit u1) => t u -> t u1
 
-class UnitConvertExt t where
-  uconvertExt :: (InterpretUnit u, InterpretUnit u1) => FontSize -> t u -> t u1
 
-
-instance UnitConvertExt UNil where
-  uconvertExt _ UNil = UNil 
-
-instance UnitConvertExt (UOne a) where
-  uconvertExt _ (UOne a) = UOne a 
-
-instance UnitConvertExt Vec2 where
-  uconvertExt sz = fmap (uconvertScalar sz)
-    
-instance UnitConvertExt Point2 where
-  uconvertExt sz = fmap (uconvertScalar sz)
-
-
-instance UnitConvertExt BoundingBox where
-  uconvertExt sz = fmap (uconvertScalar sz)
 
 
 -- | Convert a scalar value from one unit to another.
 --
 uconvertScalar :: (InterpretUnit u, InterpretUnit u1) => FontSize -> u -> u1
 uconvertScalar sz = dinterp sz . normalize sz
+
+-- | Unit convert an object that gives access to its unit at the
+-- Functor position.
+--
+-- In practive this will be \*all\* Image answers.
+--
+uconvertF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
+          => FontSize -> t u -> t u1
+uconvertF sz = fmap (uconvertScalar sz)
+
 
 
 -- Helper for defining Affine instances. This function allows 

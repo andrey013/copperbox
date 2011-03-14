@@ -78,10 +78,10 @@ bimapImage l r gf = Image $ \ctx -> bimap l (cpmap r) $ getImage gf ctx
 
 -- This needs drawing context so cannot be done with 'ansMapImage'.
 --
-instance UnitConvertExt t => UnitConvert (Image t) where
+instance Functor t => UnitConvert (Image t) where
   uconvert gf = Image $ \ctx -> let (a,o) = getImage gf ctx
                                     sz    = dc_font_size ctx
-                                in (uconvertExt sz a, o)
+                                in (uconvertF sz a, o)
 
 
 

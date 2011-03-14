@@ -126,13 +126,15 @@ type DPosGraphic = PosGraphic Double
 
 
 
-
 instance MoveStart PosImage where
   moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
 
 
 --------------------------------------------------------------------------------
 
+instance Functor ObjectPos where
+  fmap f (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos (f xmin) (f xmaj) (f ymin) (f ymaj)
 
 instance (Fractional u, Ord u) => OPlus (ObjectPos u) where
   oplus = concatObjectPos
@@ -166,12 +168,6 @@ concatObjectPos op0 op1 = ObjectPos hw hw hh hh
 halfDists :: Fractional u => ObjectPos u -> (u,u)
 halfDists (ObjectPos xmin xmaj ymin ymaj) = 
     (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
-
-
-instance UnitConvertExt ObjectPos where
-  uconvertExt sz (ObjectPos xmin xmaj ymin ymaj) =
-      ObjectPos (uconvertScalar sz xmin) (uconvertScalar sz xmaj)
-                (uconvertScalar sz ymin) (uconvertScalar sz ymaj)
 
 
 --------------------------------------------------------------------------------

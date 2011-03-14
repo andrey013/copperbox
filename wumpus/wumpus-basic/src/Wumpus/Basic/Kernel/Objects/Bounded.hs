@@ -104,11 +104,11 @@ centerOrthoBBox :: (Fractional u, InterpretUnit u)
                 => Radian -> BoundingBox u -> Query (BoundingBox u)
 centerOrthoBBox theta bb = 
     makeQuery point_size 
-              (\sz -> let dbb = uconvertExt sz bb
+              (\sz -> let dbb = uconvertF sz bb
                           ps  = boundaryCornerList dbb
                           ctr = boundaryCenter dbb
                           ans = traceBoundary $ map (rotateAbout theta ctr) ps
-                      in uconvertExt sz ans)
+                      in uconvertF sz ans)
 
 
 

@@ -148,7 +148,7 @@ emptyLocThetaGraphic = lift_lti1 emptyLocGraphic
 --
 locPath :: InterpretUnit u => [Vec2 u] -> LocQuery u PrimPath
 locPath vs = makeQuery point_size $ \sz pt  ->
-    vectorPrimPath (uconvertExt sz pt) (map (uconvertExt sz) vs)
+    vectorPrimPath (uconvertF sz pt) (map (uconvertF sz) vs)
 
 
 
@@ -177,7 +177,7 @@ emptyLocPath = locPath []
 --
 vertexPath :: InterpretUnit u => [Point2 u] -> Query PrimPath
 vertexPath xs = makeQuery point_size $ \sz -> 
-    vertexPrimPath $ map (uconvertExt sz) xs
+    vertexPrimPath $ map (uconvertF sz) xs
 
 
 
@@ -191,7 +191,7 @@ vertexPath xs = makeQuery point_size $ \sz ->
 --
 curvedPath :: InterpretUnit u => [Point2 u] -> Query PrimPath
 curvedPath xs = makeQuery point_size $ \sz -> 
-    curvedPrimPath $ map (uconvertExt sz) xs
+    curvedPrimPath $ map (uconvertF sz) xs
 
 
 --------------------------------------------------------------------------------
@@ -433,7 +433,7 @@ curvedLine p0 p1 p2 p3 =
 circlePath :: InterpretUnit u 
          => u -> LocQuery u PrimPath
 circlePath r = makeLocQuery point_size $ \sz pt  ->
-    curvedPrimPath $ bezierCircle (uconvertScalar sz r) (uconvertExt sz pt) 
+    curvedPrimPath $ bezierCircle (uconvertScalar sz r) (uconvertF sz pt) 
 
 
 
@@ -487,7 +487,7 @@ ellipsePath :: InterpretUnit u
 ellipsePath rx ry = makeLocQuery point_size $ \sz pt  ->
     let drx = uconvertScalar sz rx
         dry = uconvertScalar sz ry 
-    in curvedPrimPath $ bezierEllipse drx dry(uconvertExt sz pt) 
+    in curvedPrimPath $ bezierEllipse drx dry (uconvertF sz pt) 
 
 
 
@@ -498,7 +498,7 @@ rellipsePath :: InterpretUnit u
 rellipsePath rx ry = makeLocThetaQuery point_size $ \sz pt ang ->
     let drx = uconvertScalar sz rx
         dry = uconvertScalar sz ry 
-    in curvedPrimPath $ rbezierEllipse drx dry ang (uconvertExt sz pt) 
+    in curvedPrimPath $ rbezierEllipse drx dry ang (uconvertF sz pt) 
 
 
 

@@ -89,11 +89,11 @@ bimapLocThetaImage l r gf = LocThetaImage $ \ctx pt ang ->
 
 -- This needs drawing context so cannot be done with 'bimapLocThetaImage'.
 --
-instance UnitConvertExt t => UnitConvert (LocThetaImage t) where
+instance Functor t => UnitConvert (LocThetaImage t) where
   uconvert gf = LocThetaImage $ \ctx pt ang -> 
       let sz    = dc_font_size ctx
-          (a,o) = getLocThetaImage gf ctx (uconvertExt sz pt) ang
-      in (uconvertExt sz a, o)
+          (a,o) = getLocThetaImage gf ctx (uconvertF sz pt) ang
+      in (uconvertF sz a, o)
 
 
 
@@ -222,7 +222,7 @@ makeLocThetaGraphic :: InterpretUnit u
 makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang -> 
     let ans = qry ctx 
         sz  = dc_font_size ctx
-    in (UNil, prim1 $ fn ans (uconvertExt sz pt) ang)
+    in (UNil, prim1 $ fn ans (uconvertF sz pt) ang)
 
 
 
@@ -255,7 +255,7 @@ bindQuery_lti :: InterpretUnit u
 bindQuery_lti qy fn = LocThetaImage $ \ctx pt ang -> 
     let ans = runQuery qy ctx 
         sz  = dc_font_size ctx        
-    in runImage (fn ans (uconvertExt sz pt) ang) ctx
+    in runImage (fn ans (uconvertF sz pt) ang) ctx
 
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
