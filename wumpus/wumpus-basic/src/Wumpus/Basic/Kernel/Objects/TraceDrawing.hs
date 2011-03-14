@@ -1,6 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -67,6 +65,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
@@ -85,12 +84,14 @@ import Data.Monoid
 
 --------------------------------------------------------------------------------
 
+
+
 -- | Collect elementary graphics as part of a larger drawing.
 --
 -- TraceM works much like a writer monad.
 --
-class TraceM m u | m -> u where
-  trace     :: HPrim u -> m ()
+class TraceM (m :: * -> *) where
+  trace     :: DUnit (m ()) ~ u => HPrim u -> m ()
   fontDelta :: m a -> m a
 
 -- Note - TraceDrawing run \once\ - it is supplied with the starting
@@ -107,6 +108,9 @@ newtype TraceDrawing u a   = TraceDrawing {
 
 newtype TraceDrawingT u m a = TraceDrawingT { 
           getTraceDrawingT :: DrawingContext -> m (a, HPrim u) }
+
+type instance DUnit (TraceDrawing u a) = u
+type instance DUnit (TraceDrawingT u m a) = u
 
 
 type DTraceDrawing a    = TraceDrawing Double a
@@ -176,7 +180,7 @@ instance Monad m => Monad (TraceDrawingT u m) where
 -- the drawing model would be valuable. 
 -- 
 
-instance TraceM (TraceDrawing u) u where
+instance TraceM (TraceDrawing u) where
   trace a = TraceDrawing $ \_ -> ((), a)
   fontDelta = fontDeltaMon
 
@@ -187,7 +191,7 @@ fontDeltaMon mf = TraceDrawing $ \ctx ->
         prim        = fontDeltaContext fattr $ primGroup $ hprimToList hf
     in (a, singleH $ prim1 $ prim)
 
-instance Monad m => TraceM (TraceDrawingT u m) u where
+instance Monad m => TraceM (TraceDrawingT u m) where
   trace a = TraceDrawingT $ \_ -> return ((), a)
   fontDelta = fontDeltaTrans
 
@@ -317,7 +321,7 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery df ctx
 --
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
-draw :: (TraceM m u, DrawingCtxM m) 
+draw :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
      => Graphic u -> m ()
 draw gf = askDC >>= \ctx -> trace (singleH $ snd $ runImage gf ctx)
 
@@ -329,7 +333,7 @@ draw gf = askDC >>= \ctx -> trace (singleH $ snd $ runImage gf ctx)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawi :: (TraceM m u, DrawingCtxM m) 
+drawi :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
       => Image t u -> m (t u)
 drawi img = askDC >>= \ctx -> 
             let (a,o) = runImage img ctx
@@ -338,7 +342,7 @@ drawi img = askDC >>= \ctx ->
 
 -- | Forgetful 'drawi'.
 --
-drawi_ :: (TraceM m u, DrawingCtxM m) 
+drawi_ :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
        => Image t u -> m ()
 drawi_ gf = drawi gf >> return ()
 
@@ -348,7 +352,7 @@ drawi_ gf = drawi gf >> return ()
 --
 -- This operation is analogeous to @tell@ in a Writer monad.
 -- 
-drawl :: (TraceM m u, DrawingCtxM m) 
+drawl :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
       => Point2 u -> LocGraphic u -> m ()
 drawl pt gf = askDC >>= \ctx -> 
               trace (singleH $ snd $ runLocImage gf ctx pt)
@@ -361,7 +365,7 @@ drawl pt gf = askDC >>= \ctx ->
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawli :: (TraceM m u, DrawingCtxM m) 
+drawli :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
        => Point2 u -> LocImage t u -> m (t u)
 drawli pt gf = askDC >>= \ctx -> 
                let (a,o) = runLocImage gf ctx pt
@@ -370,7 +374,7 @@ drawli pt gf = askDC >>= \ctx ->
 
 -- | Forgetful 'drawli'.
 --
-drawli_ :: (TraceM m u, DrawingCtxM m) 
+drawli_ :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
         => Point2 u -> LocImage t u -> m ()
 drawli_ pt img = drawli pt img >> return ()
 
@@ -389,7 +393,7 @@ drawli_ pt img = drawli pt img >> return ()
 -- | Draw a ConnectorGraphic with the supplied Points taking the 
 -- drawing style from the /drawing context/. 
 --
-drawc :: (TraceM m u, DrawingCtxM m) 
+drawc :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
       => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
 drawc p0 p1 gf = draw (connect gf p0 p1)
 
@@ -400,14 +404,14 @@ drawc p0 p1 gf = draw (connect gf p0 p1)
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawci :: (TraceM m u, DrawingCtxM m) 
+drawci :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
        => Point2 u -> Point2 u -> ConnectorImage t u -> m (t u)
 drawci p0 p1 gf = drawi (connect gf p0 p1)
 
 
 -- | Forgetful 'drawci'.
 --
-drawci_ :: (TraceM m u, DrawingCtxM m) 
+drawci_ :: (TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
         => Point2 u -> Point2 u -> ConnectorImage t u -> m ()
 drawci_ p0 p1 gf = drawi (connect gf p0 p1) >> return ()
 
@@ -418,13 +422,13 @@ drawci_ p0 p1 gf = drawi (connect gf p0 p1) >> return ()
 
 -- | Draw with grid coordinate...
 -- 
-node :: (Fractional u, TraceM m u, DrawingCtxM m) 
+node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
      => (Int,Int) -> LocGraphic u -> m ()
 node coord gf = nodei coord gf >> return ()
 
 -- | Draw with grid coordinate...
 --
-nodei :: (Fractional u, TraceM m u, DrawingCtxM m)
+nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
       => (Int,Int) -> LocImage t u -> m (t u)
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
@@ -436,7 +440,7 @@ nodei coord gf = askDC >>= \ctx ->
  
 -- | Draw with grid coordinate...
 -- 
-nodei_ :: (Fractional u, TraceM m u, DrawingCtxM m)
+nodei_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ DUnit (m ()) ) 
        => (Int,Int) -> LocImage t u -> m ()
 nodei_ coord gf = nodei coord gf >> return ()
 
@@ -444,25 +448,28 @@ nodei_ coord gf = nodei coord gf >> return ()
 
 
 
-drawrc :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
+drawrc :: ( Real u, Floating u, DrawingCtxM m,   TraceM m 
           , CenterAnchor t1 u, RadialAnchor  t1 u
           , CenterAnchor t2 u, RadialAnchor  t2 u
+          , u ~ DUnit (m ()) 
           ) 
        => t1 u -> t2 u -> ConnectorGraphic u -> m ()
 drawrc a b gf = drawrci a b gf >> return ()
 
 
-drawrci :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
+drawrci :: ( Real u, Floating u, DrawingCtxM m,   TraceM m
            , CenterAnchor t1 u, RadialAnchor  t1 u
            , CenterAnchor t2 u, RadialAnchor  t2 u
+           , u ~ DUnit (m ()) 
            ) 
         => t1 u -> t2 u -> ConnectorImage t u -> m (t u)
 drawrci a b gf = 
     evalQuery (radialConnectorPoints a b) >>= \(p0,p1) -> drawci p0 p1 gf
 
-drawrci_ :: ( Real u, Floating u, DrawingCtxM m,   TraceM m u
+drawrci_ :: ( Real u, Floating u, DrawingCtxM m,   TraceM m
             , CenterAnchor t1 u, RadialAnchor  t1 u
             , CenterAnchor t2 u, RadialAnchor  t2 u
+            , u ~ DUnit (m ())
             ) 
          => t1 u -> t2 u -> ConnectorImage t u -> m ()
 drawrci_ a b gf = drawrci a b gf >> return ()

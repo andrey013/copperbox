@@ -1,8 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -46,18 +41,18 @@ mf = do
 
 
 miniDisk :: InterpretUnit u => LocGraphic u
-miniDisk = localize (fill_colour sienna) $ filledDisk 3
+miniDisk = local_ctx (fill_colour sienna) $ filledDisk 3
 
 
 -- Should be the same size as 3 at 24 Point...
 --
 miniDiskEm :: LocGraphic Em
-miniDiskEm = localize (fill_colour aquamarine) $ filledDisk 0.125
+miniDiskEm = local_ctx (fill_colour aquamarine) $ filledDisk 0.125
 
 -- Should be the same size as 3 at 24 Point...
 --
 miniDiskEn :: LocGraphic En
-miniDiskEn = localize (fill_colour red) $ filledDisk 0.25
+miniDiskEn = local_ctx (fill_colour red) $ filledDisk 0.25
 
 
 sienna :: RGBi

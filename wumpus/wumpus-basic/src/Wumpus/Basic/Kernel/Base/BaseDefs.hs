@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,9 +18,11 @@
 
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
+  
+    DUnit
 
   -- * A semigroup class
-    OPlus(..)
+  , OPlus(..)
   , oconcat
   , altconcat
 
@@ -61,6 +64,7 @@ import Data.VectorSpace                         -- package: vector-space
 import Control.Applicative
 
 
+type family DUnit m :: *
 
 
 
