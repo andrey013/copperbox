@@ -46,7 +46,7 @@ import Control.Applicative
 -- | An isosceles triangle, oriented /upwards/.
 --
 data Triangle u = Triangle 
-      { tri_ctm         :: ShapeCTM u
+      { tri_ctm         :: ShapeCTM
       , tri_height      :: !u
       , tri_base_width  :: !u
       , tri_syn_props   :: SyntheticProps u
@@ -67,11 +67,10 @@ type DTriangle = Triangle Double
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapTriangleCTM :: (ShapeCTM u -> ShapeCTM u) 
-               -> Triangle u -> Triangle u
+mapTriangleCTM :: (ShapeCTM -> ShapeCTM) -> Triangle u -> Triangle u
 mapTriangleCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
 
-instance Num u => Scale (Triangle u) where
+instance Scale (Triangle u) where
   scale sx sy = mapTriangleCTM (scale sx sy)
 
 
@@ -79,11 +78,11 @@ instance Rotate (Triangle u) where
   rotate ang = mapTriangleCTM (rotate ang)
                   
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (Triangle u) where
+instance RotateAbout (Triangle u) where
   rotateAbout ang pt = mapTriangleCTM (rotateAbout ang pt)
 
 
-instance PtSize u => Translate (Triangle u) where
+instance Translate (Triangle u) where
   translate dx dy = mapTriangleCTM (translate dx dy)
 
 
@@ -95,8 +94,8 @@ instance PtSize u => Translate (Triangle u) where
 --                           * height_major 
 --                           * base_ang -> Vec ) * traingle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, PtSize u)
-                  => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Point2 u
+runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
+                  => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Anchor u
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
                                , tri_base_width = bw
                                , tri_syn_props  = syn }) =  
@@ -108,18 +107,18 @@ runDisplaceCenter fn (Triangle { tri_ctm        = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CenterAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CenterAnchor Triangle u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
-instance (Real u, Floating u, PtSize u) => 
-    ApexAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    ApexAnchor Triangle u where
   apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
 
 
-instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    BottomCornerAnchor Triangle u where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
   bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
 
@@ -127,21 +126,21 @@ instance (Real u, Floating u, PtSize u) =>
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CardinalAnchor Triangle u where
   north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
   east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
   west  = runDisplaceCenter $ \hbw hmin _    ang  -> findWest hbw hmin ang
 
 
-instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    SideMidpointAnchor Triangle u where
   sideMidpoint n a = step (n `mod` 3) 
     where
-      step 1 = midpoint (apex a) (bottomLeftCorner a)
-      step 2 = midpoint (bottomLeftCorner a) (bottomRightCorner a)
-      step _ = midpoint (bottomRightCorner a) (apex a)
+      step 1 = midpoint <$> apex a              <*> bottomLeftCorner a
+      step 2 = midpoint <$> bottomLeftCorner a  <*> bottomRightCorner a
+      step _ = midpoint <$> bottomRightCorner a <*> apex a
 
 
 findEast :: Fractional u => u -> u -> Radian -> Vec2 u
@@ -155,8 +154,8 @@ findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CardinalAnchor2 Triangle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -164,8 +163,8 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    RadialAnchor (Triangle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    RadialAnchor Triangle u where
   radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
                          triangleRadialVector hbw hmin hmaj theta
        
@@ -176,7 +175,7 @@ instance (Real u, Floating u, PtSize u) =>
 -- | 'triangle'  : @ base_width * height -> Shape @
 --
 --
-triangle :: (Real u, Floating u, PtSize u) 
+triangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
          => u -> u -> Shape Triangle u
 triangle bw h =
     let props  = synthesizeProps bw h
@@ -188,10 +187,11 @@ triangle bw h =
 
 
 
-mkTriangle :: (Real u, Fractional u) 
-           => u -> u -> SyntheticProps u -> LocThetaCF u (Triangle u)
-mkTriangle bw h props = promoteR2 $ \ctrd theta -> 
-    pure $ Triangle { tri_ctm        = makeShapeCTM ctrd theta
+mkTriangle :: (Real u, Fractional u, InterpretUnit u) 
+           => u -> u -> SyntheticProps u -> LocThetaQuery u (Triangle u)
+mkTriangle bw h props = promoteQ2 $ \ctrd theta -> 
+    uconvertFDC ctrd >>= \dctrd ->
+    pure $ Triangle { tri_ctm        = makeShapeCTM dctrd theta
                     , tri_base_width = bw
                     , tri_height     = h 
                     , tri_syn_props  = props
@@ -214,11 +214,12 @@ synthesizeProps bw h =
 
 
 
-mkTrianglePath :: (Real u, Floating u, PtSize u) 
-               => u -> u -> u -> LocThetaCF u (Path u)
-mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
-    roundCornerShapePath $ map (rotateAbout theta ctr) 
-                         $ trianglePath bw hminor hmajor ctr
+mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+               => u -> u -> u -> LocThetaQuery u (Path u)
+mkTrianglePath bw hminor hmajor = promoteQ2 $ \ctr theta -> 
+    let xs = trianglePath bw hminor hmajor ctr
+    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+
 
 
 trianglePath :: (Real u, Floating u) 

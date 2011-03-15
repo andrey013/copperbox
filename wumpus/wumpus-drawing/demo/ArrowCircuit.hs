@@ -72,8 +72,12 @@ makeCtx = set_font times_roman . metricsContext 11
 
 -- Note `at` currently does not work for Shapes.
          
-circuit_pic :: CtxPicture Double 
-circuit_pic = drawTracing $ do
+circuit_pic :: CtxPicture
+circuit_pic = drawTracing body 
+  where
+
+body :: TraceDrawing Double ()
+body = do
     a1 <- drawi $ rrectangle 12 66 30 `at` P2 0 72
     atext a1 "CONST 0"
     a2 <- drawi $ (strokedShape $ circle 16) `at` P2 120 60
@@ -82,10 +86,10 @@ circuit_pic = drawTracing $ do
     atext a3 "+1"
     a4 <- drawi $ (strokedShape $ rectangle 66 30) `at` P2 120 0
     atext a4 "DELAY 0"
-    connWith connLine (east a1) (east a1 .+^ hvec 76)
-    connWith connLine (east a2) (east a2 .+^ hvec 180)
-    connWith connLine (north a2 .+^ vvec 40) (north a2)
-    connWith connLine (north a3 .+^ vvec 16) (north a3)  
+    connWith connLine (east a1) (fmap (.+^ hvec 76) $ east a1)
+    connWith connLine (east a2) (fmap (.+^ hvec 180) $ east a2)
+    connWith connLine (fmap (.+^ vvec 40) $ north a2) (north a2)
+    connWith connLine (fmap (.+^ vvec 16) $ north a3) (north a3)  
     connWith connRightVH  (south a3) (east a4)
     connWith (connRightHVH (-30)) (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
@@ -96,21 +100,21 @@ circuit_pic = drawTracing $ do
 
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
-            , Real u, Floating u, PtSize u ) 
-         => PathCF u -> Point2 u -> Point2 u -> m ()
-connWith con p0 p1 = localize double_point_size $ 
-    drawi_ $ apply2R2 (rightArrow tri45 con) p0 p1
+            , Real u, Floating u, InterpretUnit u ) 
+         => PathQuery u -> Anchor u -> Anchor u -> m ()
+connWith con a0 a1 = localize double_point_size $ 
+    drawi_ $ a0 &=> \p0 -> a1 &=> \p1 -> connect (rightArrow tri45 con) p0 p1
 
 
-atext :: ( CenterAnchor t, DUnit t ~ u
-         , Real u, Floating u, PtSize u
+atext :: ( CenterAnchor t u
+         , Real u, Floating u, InterpretUnit u
          , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
-      => t -> String -> m ()
-atext ancr ss = let pt = center ancr in
-   drawi_ $ textAlignCenter ss `at` pt
+      => t u -> String -> m ()
+atext ancr ss = 
+   drawi_ $ center ancr &=> \pt -> textAlignCenter ss `at` pt
 
 
-ptext :: ( Real u, Floating u, PtSize u
+ptext :: ( Real u, Floating u, InterpretUnit u
          , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
@@ -119,7 +123,7 @@ ptext pt ss = localize (font_attr times_italic 14) $
 
 -- Note - return type is a LocImage not a shape...
 --
-rrectangle :: (Real u, Floating u, PtSize u) 
-           => Double -> u -> u -> LocImage u (Rectangle u)
+rrectangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+           => Double -> u -> u -> LocImage Rectangle u
 rrectangle r w h = 
-    localize (round_corner_factor r) $ strokedShape (rectangle w h)
+    local_ctx (round_corner_factor r) $ strokedShape (rectangle w h)

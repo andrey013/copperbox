@@ -53,7 +53,7 @@ import Control.Applicative
 -- | A trapezium.
 --
 data Trapezium u = Trapezium 
-      { tz_ctm          :: ShapeCTM u
+      { tz_ctm          :: ShapeCTM
       , tz_base_width   :: !u
       , tz_height       :: !u
       , tz_base_l_ang   :: Radian
@@ -67,10 +67,10 @@ type DTrapezium = Trapezium Double
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Trapezium u -> Trapezium u
+mapCTM :: (ShapeCTM -> ShapeCTM) -> Trapezium u -> Trapezium u
 mapCTM f = (\s i -> s { tz_ctm = f i }) <*> tz_ctm
 
-instance Num u => Scale (Trapezium u) where
+instance Scale (Trapezium u) where
   scale sx sy = mapCTM (scale sx sy)
 
 
@@ -78,11 +78,11 @@ instance Rotate (Trapezium u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (Trapezium u) where
+instance RotateAbout (Trapezium u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance PtSize u => Translate (Trapezium u) where
+instance Translate (Trapezium u) where
   translate dx dy = mapCTM (translate dx dy)
 
 
@@ -94,9 +94,9 @@ instance PtSize u => Translate (Trapezium u) where
 --                           * left_base_ang 
 --                           * right_base_ang -> Vec ) * trapzium -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, PtSize u)
+runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
                   => (u -> u -> Radian -> Radian -> Vec2 u) 
-                  -> Trapezium u -> Point2 u
+                  -> Trapezium u -> Anchor u
 runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
                                 , tz_base_width   = bw
                                 , tz_height       = h
@@ -104,20 +104,20 @@ runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
                                 , tz_base_r_ang   = rang }) =
     displaceCenter (fn (0.5 * bw) (0.5 * h) lang rang) ctm
 
-instance (Real u, Floating u, PtSize u) => 
-    CenterAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CenterAnchor Trapezium u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    BottomCornerAnchor Trapezium u where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hh _ _  -> V2 (-hbw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hbw hh _ _  -> V2  hbw   (-hh)
 
 
-instance (Real u, Floating u, PtSize u) => 
-    TopCornerAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    TopCornerAnchor Trapezium u where
   topLeftCorner  = runDisplaceCenter $ \hbw hh lang _  -> 
                      let vbase = V2 (-hbw) (-hh)
                          vup   = leftSideVec (2*hh) lang 
@@ -128,8 +128,8 @@ instance (Real u, Floating u, PtSize u) =>
                      in vbase ^+^ vup
 
 
-instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    SideMidpointAnchor Trapezium u where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -139,16 +139,16 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    CardinalAnchor Trapezium u where
   north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
   east  = tzRadialAnchor 0
   west  = tzRadialAnchor pi
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    CardinalAnchor2 Trapezium u where
   northeast = tzRadialAnchor (0.25*pi)
   southeast = tzRadialAnchor (1.75*pi)
   southwest = tzRadialAnchor (1.25*pi)
@@ -156,14 +156,14 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    RadialAnchor (Trapezium u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    RadialAnchor Trapezium u where
   radialAnchor = tzRadialAnchor
 
 -- TODO - update this to a quadrant function...
 --
-tzRadialAnchor :: (Real u, Floating u, PtSize u) 
-               => Radian -> Trapezium u -> Point2 u
+tzRadialAnchor :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+               => Radian -> Trapezium u -> Query (Point2 u)
 tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_base_width = bw
                                 , tz_height     = h
@@ -185,7 +185,7 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
 --     bottom_right_ang -> Shape @
 --
 --
-trapezium :: (Real u, Floating u, PtSize u) 
+trapezium :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
           => u -> u -> Radian -> Radian -> Shape Trapezium u
 trapezium bw h lang rang = 
     makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
@@ -194,7 +194,7 @@ trapezium bw h lang rang =
 -- | 'ztrapezium'  : @ base_width * height -> Trapezium @
 --
 --
-ztrapezium :: (Real u, Floating u, PtSize u) 
+ztrapezium :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => u -> u -> Shape Trapezium u
 ztrapezium bw h = trapezium bw h ang ang
   where
@@ -204,10 +204,11 @@ ztrapezium bw h = trapezium bw h ang ang
 --------------------------------------------------------------------------------
 
 
-mkTrapezium :: (Real u, Fractional u) 
-            => u -> u -> Radian -> Radian -> LocThetaCF u (Trapezium u)
-mkTrapezium bw h lang rang = promoteR2 $ \ctr theta -> 
-    pure $ Trapezium { tz_ctm           = makeShapeCTM ctr theta
+mkTrapezium :: (Real u, Fractional u, InterpretUnit u) 
+            => u -> u -> Radian -> Radian -> LocThetaQuery u (Trapezium u)
+mkTrapezium bw h lang rang = promoteQ2 $ \ctr theta -> 
+    uconvertFDC ctr >>= \dctr ->
+    pure $ Trapezium { tz_ctm           = makeShapeCTM dctr theta
                      , tz_base_width    = bw
                      , tz_height        = h
                      , tz_base_l_ang    = lang
@@ -215,11 +216,11 @@ mkTrapezium bw h lang rang = promoteR2 $ \ctr theta ->
                      }
 
 
-mkTrapeziumPath :: (Real u, Floating u, PtSize u) 
-                => u -> u -> Radian -> Radian -> LocThetaCF u (Path u)
-mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
-    roundCornerShapePath $ map (rotateAbout theta ctr) 
-                         $ tzPath bw h lang rang ctr
+mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+                => u -> u -> Radian -> Radian -> LocThetaQuery u (Path u)
+mkTrapeziumPath bw h lang rang = promoteQ2 $ \ctr theta -> 
+    let xs = tzPath bw h lang rang ctr 
+    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
 
 
 tzPath :: (Real u, Floating u) 

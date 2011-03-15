@@ -45,7 +45,7 @@ import Control.Applicative
 -- Datatype
 
 data Semicircle u = Semicircle 
-      { sc_ctm          :: ShapeCTM u
+      { sc_ctm          :: ShapeCTM
       , sc_radius       :: !u 
       , sc_syn_props    :: SyntheticProps u
       }
@@ -64,10 +64,10 @@ type DSemicircle = Semicircle Double
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Semicircle u -> Semicircle u
+mapCTM :: (ShapeCTM -> ShapeCTM) -> Semicircle u -> Semicircle u
 mapCTM f = (\s i -> s { sc_ctm = f i }) <*> sc_ctm
 
-instance Num u => Scale (Semicircle u) where
+instance Scale (Semicircle u) where
   scale sx sy = mapCTM (scale sx sy)
 
 
@@ -75,11 +75,11 @@ instance Rotate (Semicircle u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (Semicircle u) where
+instance RotateAbout (Semicircle u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance PtSize u => Translate (Semicircle u) where
+instance Translate (Semicircle u) where
   translate dx dy = mapCTM (translate dx dy)
 
 
@@ -90,29 +90,29 @@ instance PtSize u => Translate (Semicircle u) where
 --                           * height_minor 
 --                           * height_major -> Vec ) * semicircle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, PtSize u) 
-                  => (u -> u -> u -> Vec2 u) -> Semicircle u -> Point2 u
+runDisplaceCenter :: (Real u, Floating u, InterpretUnit u) 
+                  => (u -> u -> u -> Vec2 u) -> Semicircle u -> Anchor u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
                                  , sc_radius    = radius
                                  , sc_syn_props = syn    }) = 
     displaceCenter (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CenterAnchor (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CenterAnchor Semicircle u where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
-instance (Real u, Floating u, PtSize u) => 
-    ApexAnchor (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    ApexAnchor Semicircle u where
   apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
-instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    BottomCornerAnchor Semicircle u where
   bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
   bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CardinalAnchor Semicircle u where
   north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
   east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
@@ -128,8 +128,8 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
     pow2 = (^ (2::Int))
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    CardinalAnchor2 Semicircle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -138,13 +138,13 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    RadialAnchor (Semicircle u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    RadialAnchor Semicircle u where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
 -- helpers
 
-scRadialVec :: (Real u, Floating u, Ord u, PtSize u)
+scRadialVec :: (Real u, Floating u, Ord u, InterpretUnit u, LengthTolerance u)
             => Radian -> u -> u -> u -> Vec2 u
 scRadialVec theta radius hminor _ = go theta
   where
@@ -201,7 +201,7 @@ baselineRange radius hminor = (lang, rang)
 
 -- | 'semicircle'  : @ radius -> Shape @
 --
-semicircle :: (Real u, Floating u, PtSize u) 
+semicircle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => u -> Shape Semicircle u
 semicircle radius = 
     let props = synthesizeProps radius
@@ -219,9 +219,11 @@ synthesizeProps radius =
     cmajor = radius - cminor
 
 
-mkSemicircle :: Num u => u -> SyntheticProps u -> LocThetaCF u (Semicircle u)
-mkSemicircle radius props = promoteR2 $ \ctr theta -> 
-    pure $ Semicircle { sc_ctm = makeShapeCTM ctr theta
+mkSemicircle :: InterpretUnit u
+             => u -> SyntheticProps u -> LocThetaQuery u (Semicircle u)
+mkSemicircle radius props = promoteQ2 $ \ctr theta -> 
+    uconvertFDC ctr >>= \dctr ->
+    pure $ Semicircle { sc_ctm = makeShapeCTM dctr theta
                       , sc_radius = radius
                       , sc_syn_props = props 
                       }
@@ -231,9 +233,9 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 -- TODO - need to check other shapes to see if the are deriving 
 -- the center properly...
 --
-mkSemicirclePath :: (Real u, Floating u, PtSize u) 
-                 => u -> u -> LocThetaCF u (Path u)
-mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
+mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+                 => u -> u -> LocThetaQuery u (Path u)
+mkSemicirclePath radius cminor = promoteQ2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
     in pure $ traceCurvePoints $ bezierArcPoints pi radius theta ctr 
 
