@@ -138,6 +138,7 @@ instance Object PosThetaImage where
   replaceAns o  = bimapPosThetaImage (const o) id
   mapAns f      = bimapPosThetaImage f id
   hyperlink hyp = bimapPosThetaImage id (xlinkPrim hyp)
+  clipObject pp = bimapPosThetaImage id (clip pp)
   annotate      = annoPosThetaImg
   decorate      = decoPosThetaImg
   bind          = bindPosThetaImg

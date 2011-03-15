@@ -39,53 +39,53 @@ std_ctx :: DrawingContext
 std_ctx = standardContext 14
 
 
-top_pic :: DCtxPicture
+top_pic :: CtxPicture
 top_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    draw $ filledPath $ toPrimPath path01
-    draw $ localize (fill_colour powder_blue) $ filledPath $ toPrimPath path02
-    draw $ filledPath $ toPrimPath path03
-    draw $ filledPath $ toPrimPath path04
+    draw $ toPrimPath path01 &=> filledPath
+    draw $ local_ctx (fill_colour powder_blue) $ toPrimPath path02 &=> filledPath
+    draw $ toPrimPath path03 &=> filledPath
+    draw $ toPrimPath path04 &=> filledPath
 
-clip_pic :: DCtxPicture
+clip_pic :: CtxPicture
 clip_pic = drawTracing $ do
     mapM_ draw $ [ clip1, clip2, clip3, clip4 ]
 
 
-background :: RGBi -> DGraphic
+background :: RGBi -> Graphic Double
 background rgb = 
-    ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
+    ignoreAns $ local_ctx (text_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = tableDown 18 (86,16) (replicate 112 iheartHaskell)
 
 -- Wumpus-Basic needs a clip function, but is this the most 
 -- satisfactory definition?
 --
-clipGraphic :: (Num u, Ord u) => PrimPath u -> Graphic u -> Graphic u 
-clipGraphic cp = fmap (bimapR (metamorphPrim (clip cp)))
+clipGraphic :: PrimPath -> Graphic u -> Graphic u 
+clipGraphic cp = clipObject cp
 
 
-clip1 :: DGraphic
-clip1 = clipGraphic (toPrimPath path01) (background black)
+clip1 :: Graphic Double
+clip1 = toPrimPath path01 &=> \pp -> clipGraphic pp (background black)
   
-clip2 :: DGraphic
-clip2 = clipGraphic (toPrimPath path02) (background medium_violet_red)
+clip2 :: Graphic Double
+clip2 = toPrimPath path02 &=> \pp -> clipGraphic pp (background medium_violet_red)
 
-clip3 :: DGraphic 
-clip3 = clipGraphic (toPrimPath path03) (background black)
+clip3 :: Graphic Double
+clip3 = toPrimPath path03 &=> \pp -> clipGraphic pp (background black)
 
-clip4 :: DGraphic 
-clip4 = clipGraphic (toPrimPath path04) (background black)
+clip4 :: Graphic Double
+clip4 = toPrimPath path04 &=> \pp -> clipGraphic pp (background black)
 
 
-iheartHaskell :: Num u => PtSize u => LocGraphic u
+iheartHaskell :: LocGraphic Double
 iheartHaskell = promoteR1 $ \pt -> 
     let body  = textline "I Haskell" `at` pt
-        heart = localize (set_font symbol) $ 
+        heart = local_ctx (set_font symbol) $ 
                   textline "&heart;" `at` (pt .+^ hvec 7)
     in body `oplus` heart
 
 
-path01 :: Floating u => Path u
+path01 :: Path Double
 path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160) 
                                     >> rlineto (vec (-112) 160)
                                     >> hline (-80)
@@ -93,7 +93,7 @@ path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160)
                                     >> rlineto (vec (-112) (-160))
  
 
-path02 :: Floating u => Path u
+path02 :: Path Double
 path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
                                         >> rlineto (vec 72 (-112))
                                         >> hline 80
@@ -102,9 +102,9 @@ path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
                                         >> rlineto (vec 112 (-160))
                                         >> rlineto (vec (-112) (-160))
 
-path03 :: Floating u => Path u
+path03 :: Path Double
 path03 = execPath (P2 384 96) $ hline 96 >> vline 56 >> hline (-136) 
 
-path04 :: Floating u => Path u
+path04 :: Path Double
 path04 = execPath (P2 328 192) $ hline 152 >> vline 56 >> hline (-192) 
 

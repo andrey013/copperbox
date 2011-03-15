@@ -164,6 +164,7 @@ instance Object ConnectorImage where
   replaceAns o  = bimapConnectorImage (const o) id
   mapAns f      = bimapConnectorImage f id
   hyperlink hyp = bimapConnectorImage id (xlinkPrim hyp)
+  clipObject pp = bimapConnectorImage id (clip pp)
   annotate      = annoConnectorImg
   decorate      = decoConnectorImg
   bind          = bindConnectorImg

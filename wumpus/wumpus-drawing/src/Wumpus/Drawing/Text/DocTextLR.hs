@@ -64,7 +64,7 @@ import Data.Foldable ( foldrM )
 --
 
 
-newtype DocText u = DocText { getDocText :: CF (u, AdvGraphic u) }
+newtype DocText u = DocText { getDocText :: Query (u, AdvGraphic u) }
 
 -- Note being able to background fill would be very useful, 
 -- especially background fill with white.
@@ -86,30 +86,30 @@ rightAMove half_max elt_w = half_max - elt_w
 
 
 
-leftAlign :: (Real u, Floating u, PtSize u) 
+leftAlign :: (Real u, Floating u, InterpretUnit u) 
           => [DocText u] -> PosImage BoundingBox u
 leftAlign = drawMulti leftAMove
 
-centerAlign :: (Real u, Floating u, PtSize u) 
+centerAlign :: (Real u, Floating u, InterpretUnit u) 
             => [DocText u] -> PosImage BoundingBox u
 centerAlign = drawMulti centerAMove
 
-rightAlign :: (Real u, Floating u, PtSize u) 
+rightAlign :: (Real u, Floating u, InterpretUnit u) 
            => [DocText u] -> PosImage BoundingBox u
 rightAlign = drawMulti rightAMove
 
 
 
-drawMulti :: (Real u, Floating u, PtSize u) 
+drawMulti :: (Real u, Floating u, InterpretUnit u) 
           => HMove u -> [DocText u] -> PosImage BoundingBox u
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
-    evalAllLines xs                     >>= \all_lines -> 
-    centerToBaseline                    >>= \down -> 
-    borderedTextPos line_count (fst all_lines) >>= \opos ->
-    centerSpineDisps line_count 0 >>= \(disp_top, disp_next) ->
+    evalAllLines xs                             &=> \all_lines -> 
+    centerToBaseline                            &=> \down -> 
+    borderedTextPos line_count (fst all_lines)  &=> \opos ->
+    centerSpineDisps line_count 0               &=> \(disp_top, disp_next) ->
     let gs    = positionHLines moveF down all_lines 
         gf    = moveStart disp_top $ chainDisplace disp_next gs
-        posG  = makePosImage opos gf
+        posG  = posImage opos gf
         bbox  = objectPosBounds start rpos opos
     in replaceAns bbox $ atStartPos posG start rpos     
   where
@@ -129,7 +129,7 @@ positionHLines mkH down (max_w,xs) = map fn xs
 
 
 evalAllLines :: (Num u, Ord u) 
-             => [DocText u] -> DrawingInfo (u, [(u, AdvGraphic u)])
+             => [DocText u] -> Query (u, [(u, AdvGraphic u)])
 evalAllLines = foldrM fn (0,[]) 
   where
     fn dt (maxw,xs) = getDocText dt >>= \ans@(dx,_) -> 
@@ -138,13 +138,13 @@ evalAllLines = foldrM fn (0,[])
 
 -- | Build a blank DocText with no output and a 0 width vector.
 --
-blank :: PtSize u => DocText u
+blank :: InterpretUnit u => DocText u
 blank = DocText $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
 
 
 
 
-escaped :: PtSize u => EscapedText -> DocText u
+escaped :: InterpretUnit u => EscapedText -> DocText u
 escaped esc = DocText $ body 
    where
      body = textVector esc >>= \v -> 
@@ -155,14 +155,14 @@ escaped esc = DocText $ body
 -- 
 -- Note the string should not contain newlines or tabs.
 --
-string :: PtSize u => String -> DocText u
+string :: InterpretUnit u => String -> DocText u
 string = escaped . escapeString
 
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
-space :: PtSize u => DocText u
+space :: InterpretUnit u => DocText u
 space = DocText $ 
    charVector (CharEscInt $ ord ' ') >>= \v -> 
    return (advanceH v, replaceAns v $ emptyLocGraphic)
@@ -171,12 +171,12 @@ space = DocText $
 
 
 
-int :: PtSize u => Int -> DocText u
+int :: InterpretUnit u => Int -> DocText u
 int i = DocText $ 
     charVector (CharLiteral '0') >>= \v1 -> 
     uniformSpace (advanceH v1) (map CharLiteral $ show i)
 
-integer :: PtSize u => Integer -> DocText u
+integer :: InterpretUnit u => Integer -> DocText u
 integer i = DocText $ 
     charVector (CharLiteral '0') >>= \v1 -> 
     uniformSpace (advanceH v1) (map CharLiteral $ show i)
@@ -198,7 +198,7 @@ a <> b = DocText body
 
 -- | Concatenate two DocTexts separated with a space.
 --
-(<+>) :: PtSize u => DocText u -> DocText u -> DocText u
+(<+>) :: InterpretUnit u => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
 -- | Right fill
@@ -234,24 +234,25 @@ fontColour rgb = doclocal (text_colour rgb)
 --
 
 textSize :: Int -> DocText u -> DocText u
-textSize sz = doclocal (point_size sz)
+textSize sz = doclocal (set_font_size sz)
 
 
 --------------------------------------------------------------------------------
 -- Helpers
 
 
-hkernPrim :: PtSize u => [KerningChar] -> CF (u,AdvGraphic u)
-hkernPrim ks = hkernVector ks >>= \v ->
-               let v1 = fmap dpoint v
-               in return (vector_x v1, replaceAns v1 $ hkernline ks)
-
-
-uniformSpace :: PtSize u => u -> [EscapedChar] -> CF (u,AdvGraphic u)
-uniformSpace dx = hkernPrim . step1
+uniformSpace :: InterpretUnit u 
+             => u -> [EscapedChar] -> Query (u,AdvGraphic u)
+uniformSpace dx xs = hkernPrim $ go xs
   where 
-    step1 (c:cs) = (0,c) : map (\ch -> (psDouble dx,ch)) cs
-    step1 []     = []
+    go (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
+    go []     = []
+
+
+hkernPrim :: InterpretUnit u => [KernChar u] -> Query (u,AdvGraphic u)
+hkernPrim ks = hkernVector ks >>= \v ->
+               uconvertFDC v  >>= \v1 -> 
+               return (vector_x v1, replaceAns v1 $ hkernline ks)
 
 
 -- | Note - the changes to the DrawingContext have to be 
@@ -260,7 +261,7 @@ uniformSpace dx = hkernPrim . step1
 --
 doclocal :: DrawingContextF -> DocText u -> DocText u
 doclocal fn dt = DocText $ 
-    localize fn $ getDocText dt >>= \(u,gf) -> return (u, localize fn gf)
+    localize fn $ getDocText dt >>= \(u,gf) -> return (u, local_ctx fn gf)
 
 
 

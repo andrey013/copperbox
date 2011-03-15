@@ -56,7 +56,7 @@ makeCtx = set_font helvetica . metricsContext 18
 
 
 drawing01 :: CtxPicture
-drawing01 = drawTracing UDouble $ localize (fill_colour red) $ mf 
+drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text
@@ -75,11 +75,11 @@ mf = localize (text_margin 6.0 6.0)  $ do
     fn    = illustrateBoundedLocGraphic
 
 
-redPlus :: (Fractional u, PtSize u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
+redPlus = local_ctx (stroke_colour red) markPlus
 
 
-body :: (Ord u, PtSize u) => [DocText u]
+body :: (Ord u, InterpretUnit u) => [DocText u]
 body = [ string "Further work"
        , (textSize 36 $ string "on")
            <+> (fontColour blue $ string "multiline")

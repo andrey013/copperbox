@@ -187,6 +187,7 @@ instance Object LocImage where
   replaceAns o     = bimapLocImage (const o) id
   mapAns f         = bimapLocImage f id
   hyperlink hyp    = bimapLocImage id (xlinkPrim hyp)
+  clipObject pp    = bimapLocImage id (clip pp)
   annotate         = annoLocImg
   decorate         = decoLocImg
   bind             = bindLocImg

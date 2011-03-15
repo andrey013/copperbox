@@ -54,13 +54,13 @@ makeCtx = set_font times_roman . metricsContext 24
 
 
 
-drawing01 :: DCtxPicture
+drawing01 :: CtxPicture
 drawing01 = drawTracing $ localize (fill_colour red) $ mf 
 
 
 -- Note - Baseline positions not meaningful for multiline text
 
-mf :: (Real u, Floating u, Ord u, PtSize u) => TraceDrawing u ()
+mf :: TraceDrawing Double ()
 mf = do
     drawli_ zeroPt $ rectStart CENTER $ 
                        leftAlign [ string "0.12112"
@@ -70,5 +70,5 @@ mf = do
                                  , integer 10000000000000000000
                                  ]
 
-rectStart :: Floating  u => RectPosition -> PosImage u a -> LocImage u a
+rectStart :: Floating  u => RectPosition -> PosImage t u -> LocImage t u
 rectStart = flip startPos

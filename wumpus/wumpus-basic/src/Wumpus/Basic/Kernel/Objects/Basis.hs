@@ -104,6 +104,9 @@ class Object t where
   hyperlink     :: forall (r :: * -> *) (u :: *). 
                    XLink -> t r u -> t r u 
 
+  clipObject    :: forall (r :: * -> *) (u :: *). 
+                   PrimPath -> t r u -> t r u 
+
   decorate      :: forall (r :: * -> *) (u :: *). 
                    t r u -> t UNil u -> t r u
 
