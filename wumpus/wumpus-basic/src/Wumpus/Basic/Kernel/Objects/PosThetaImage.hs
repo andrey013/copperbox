@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -71,13 +73,17 @@ import Data.Monoid
 -- orthogonal frame bounding the maximum hull of the Image, the 
 -- frame is not intended to be inclined itself.
 --
-newtype PosThetaImage t u = PosThetaImage {
+newtype PosThetaImage r u = PosThetaImage {
     getPosThetaImage :: DrawingContext -> Point2 u -> 
-                        RectPosition   -> Radian   -> (t u, CatPrim) }
+                        RectPosition   -> Radian   -> (r u, CatPrim) }
+
+
+type instance Answer (PosThetaImage r u)     = r u
+
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --
-type DPosThetaImage t = PosThetaImage t Double
+type DPosThetaImage r = PosThetaImage r Double
 
 
 
@@ -95,7 +101,14 @@ type PosThetaGraphic u = PosThetaImage UNil u
 type DPosThetaGraphic = PosThetaGraphic Double
 
 
+--------------------------------------------------------------------------------
 
+type instance Arg1 (PosThetaImage r u) (Image r u) = Point2 u
+type instance Arg2 (PosThetaImage r u) (Image r u) = RectPosition
+type instance Arg3 (PosThetaImage r u) (Image r u) = Radian
+
+instance PromoteR3 (PosThetaImage r u) (Image r u) where
+  promoteR3 = promote_pti3
 
 
 
@@ -104,8 +117,8 @@ type DPosThetaGraphic = PosThetaGraphic Double
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
 --
-bimapPosThetaImage :: (t u -> t' u) -> (Primitive -> Primitive) 
-                   -> PosThetaImage t u -> PosThetaImage t' u
+bimapPosThetaImage :: (r u -> r1 u) -> (Primitive -> Primitive) 
+                   -> PosThetaImage r u -> PosThetaImage r1 u
 bimapPosThetaImage l r gf = PosThetaImage $ \ctx pt rpos ang -> 
     bimap l (cpmap r) $ getPosThetaImage gf ctx pt rpos ang
 
@@ -123,39 +136,39 @@ instance Object PosThetaImage where
 
 
 localPosThetaImg :: (DrawingContext -> DrawingContext) 
-                 -> PosThetaImage t u 
-                 -> PosThetaImage t u
+                 -> PosThetaImage r u 
+                 -> PosThetaImage r u
 localPosThetaImg upd gf = PosThetaImage $ \ctx pt rpos ang -> 
     getPosThetaImage gf (upd ctx) pt rpos ang
 
 
 
-decoPosThetaImg :: PosThetaImage t u 
+decoPosThetaImg :: PosThetaImage r u 
                 -> PosThetaGraphic u 
-                -> PosThetaImage t u
+                -> PosThetaImage r u
 decoPosThetaImg fa fb = PosThetaImage $ \ctx pt rpos ang -> 
     let (a,o1) = getPosThetaImage fa ctx pt rpos ang
         (_,o2) = getPosThetaImage fb ctx pt rpos ang
     in (a, o1 `oplus` o2)
                         
-annoPosThetaImg :: PosThetaImage t u 
-                -> (t u -> PosThetaGraphic u) 
-                -> PosThetaImage t u
+annoPosThetaImg :: PosThetaImage r u 
+                -> (r u -> PosThetaGraphic u) 
+                -> PosThetaImage r u
 annoPosThetaImg fa mf = PosThetaImage $ \ctx pt rpos ang -> 
     let (a,o1) = getPosThetaImage fa ctx pt rpos ang
         (_,o2) = getPosThetaImage (mf a) ctx pt rpos ang
     in (a, o1 `oplus` o2)
 
 
-bindPosThetaImg :: PosThetaImage t u 
-                -> (t u -> PosThetaImage t1 u) 
-                -> PosThetaImage t1 u
+bindPosThetaImg :: PosThetaImage r u 
+                -> (r u -> PosThetaImage r1 u) 
+                -> PosThetaImage r1 u
 bindPosThetaImg gf fn = PosThetaImage $ \ctx pt rpos ang -> 
     let (a,o1) = getPosThetaImage gf ctx pt rpos ang
         (b,o2) = getPosThetaImage (fn a) ctx pt rpos ang
     in (b, o1 `oplus` o2)
 
-unitPosThetaImg :: t u -> PosThetaImage t u
+unitPosThetaImg :: r u -> PosThetaImage r u
 unitPosThetaImg a = PosThetaImage $ \_ _ _ _ -> (a, mempty)
 
 
@@ -170,17 +183,17 @@ instance MoveStart PosThetaImage where
 -- builders and destructors
 
 
-runPosThetaImage :: PosThetaImage t u -> DrawingContext 
+runPosThetaImage :: PosThetaImage r u -> DrawingContext 
                  -> Point2 u -> RectPosition 
                  -> Radian
-                 -> (t u, CatPrim)
+                 -> (r u, CatPrim)
 runPosThetaImage gf ctx pt rpos ang = getPosThetaImage gf ctx pt rpos ang
 
 -- This seems to be the one for down casting...
 -- 
 rawPosThetaImage :: (DrawingContext -> Point2 u -> RectPosition 
-                                    -> Radian   ->  (t u, CatPrim)) 
-                 -> PosThetaImage t u
+                                    -> Radian   ->  (r u, CatPrim)) 
+                 -> PosThetaImage r u
 rawPosThetaImage fn = PosThetaImage $ \ctx pt rpos ang -> fn ctx pt rpos ang
 
 
@@ -196,7 +209,7 @@ infixr 1 `startPos`
 -- with a 'RectPosition' (start position).
 --  
 startPos :: Floating u 
-         => PosImage t u -> RectPosition -> LocImage t u
+         => PosImage r u -> RectPosition -> LocImage r u
 startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos) 
  
 
@@ -207,20 +220,20 @@ startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos)
 -- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
 -- with an initial point and a 'RectPosition' (start position).
 --  
-atStartPosRot :: PosThetaImage t u -> Point2 u -> RectPosition -> Radian 
-              -> Image t u
+atStartPosRot :: PosThetaImage r u -> Point2 u -> RectPosition -> Radian 
+              -> Image r u
 atStartPosRot gf pt rpos ang = 
     rawImage $ \ctx -> getPosThetaImage gf ctx pt rpos ang
 
 
-startPosRot :: PosThetaImage t u -> RectPosition -> Radian -> LocImage t u
+startPosRot :: PosThetaImage r u -> RectPosition -> Radian -> LocImage r u
 startPosRot gf rpos ang = 
     rawLocImage $ \ctx pt -> getPosThetaImage gf ctx pt rpos ang
 
 
 infixr 1 `ptRot`
 
-ptRot :: PosThetaImage t u -> Radian -> PosImage t u
+ptRot :: PosThetaImage r u -> Radian -> PosImage r u
 ptRot gf ang = 
     rawPosImage $ \ctx pt rpos -> getPosThetaImage gf ctx pt rpos ang
 
@@ -228,31 +241,31 @@ ptRot gf ang =
 
 
 
-promote_pti1 :: (Radian -> PosImage t u) -> PosThetaImage t u
+promote_pti1 :: (Radian -> PosImage r u) -> PosThetaImage r u
 promote_pti1 gf = 
     PosThetaImage $ \ctx pt rpos ang -> runPosImage (gf ang) ctx pt rpos
 
 
-promote_pti2 :: (RectPosition -> Radian -> LocImage t u) 
-             -> PosThetaImage t u
+promote_pti2 :: (RectPosition -> Radian -> LocImage r u) 
+             -> PosThetaImage r u
 promote_pti2 gf = 
     PosThetaImage $ \ctx pt rpos ang -> runLocImage (gf rpos ang) ctx pt
 
 
-promote_pti3 :: (Point2 u -> RectPosition -> Radian -> Image t u) 
-             -> PosThetaImage t u
+promote_pti3 :: (Point2 u -> RectPosition -> Radian -> Image r u) 
+             -> PosThetaImage r u
 promote_pti3 gf = 
     PosThetaImage $ \ctx pt rpos ang -> runImage (gf pt rpos ang) ctx
 
 
-lift_pti1 :: PosImage t u -> PosThetaImage t u
+lift_pti1 :: PosImage r u -> PosThetaImage r u
 lift_pti1 gf = PosThetaImage $ \ctx pt rpos _ -> runPosImage gf ctx pt rpos
 
 
-lift_pti2 :: LocImage t u -> PosThetaImage t u
+lift_pti2 :: LocImage r u -> PosThetaImage r u
 lift_pti2 gf = PosThetaImage $ \ctx pt _ _ -> runLocImage gf ctx pt
 
-lift_pti3 :: Image t u -> PosThetaImage t u
+lift_pti3 :: Image r u -> PosThetaImage r u
 lift_pti3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx 
 
 
@@ -262,7 +275,7 @@ lift_pti3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx
 -- | WARNING - not correct... ignores rpos...
 --
 bindQuery_pti :: Query ans 
-              -> (ans -> PosThetaImage t u) 
-              -> PosThetaImage t u
+              -> (ans -> PosThetaImage r u) 
+              -> PosThetaImage r u
 bindQuery_pti qry fn = PosThetaImage $ \ctx pt rpos ang -> 
     let ans = runQuery qry ctx in runPosThetaImage (fn ans) ctx pt rpos ang

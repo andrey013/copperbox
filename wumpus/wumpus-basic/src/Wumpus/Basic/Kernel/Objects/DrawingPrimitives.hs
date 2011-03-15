@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -81,6 +82,7 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Query
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -115,7 +117,7 @@ scalarPair rx ry =
 -- minimum bounding box at the implicit start point.
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
-emptyLocGraphic = promote_li1 $ \pt -> 
+emptyLocGraphic = promoteR1 $ \pt -> 
    bindQuery_i (applyQ1 emptyLocPath pt) openStroke
 
 
@@ -131,7 +133,7 @@ emptyLocGraphic = promote_li1 $ \pt ->
 -- minimum bounding box at the implicit start point.
 -- 
 emptyLocThetaGraphic :: InterpretUnit u => LocThetaGraphic u
-emptyLocThetaGraphic = lift_lti1 emptyLocGraphic
+emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
 --------------------------------------------------------------------------------

@@ -66,6 +66,10 @@ import Control.Applicative
 
 type family DUnit m :: *
 
+type instance DUnit (Point2 u)      = u
+type instance DUnit (Vec2 u)        = u
+type instance DUnit (Matrix3'3 u)   = u
+
 
 
 

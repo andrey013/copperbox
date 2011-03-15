@@ -82,6 +82,7 @@ instance DrawingCtxM Query where
 
 
 
+
 makeQuery :: Query a 
           -> (a -> ans) 
           -> Query ans

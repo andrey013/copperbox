@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
@@ -61,8 +62,10 @@ import Data.Monoid
 --
 -- The answer is expected to be a Functor.
 --
-newtype LocThetaImage t u = LocThetaImage { 
-    getLocThetaImage :: DrawingContext -> Point2 u -> Radian -> (t u, CatPrim) }
+newtype LocThetaImage r u = LocThetaImage { 
+    getLocThetaImage :: DrawingContext -> Point2 u -> Radian -> (r u, CatPrim) }
+
+type instance Answer (LocThetaImage r u) = r u
 
 
 -- | LocThetaGraphic - function from DrawingContext and start point to 
@@ -71,7 +74,34 @@ newtype LocThetaImage t u = LocThetaImage {
 type LocThetaGraphic u = LocThetaImage UNil u
 
 
-instance OPlus (t u) => OPlus (LocThetaImage t u) where
+
+--------------------------------------------------------------------------------
+
+type instance Arg1 (LocThetaImage r u) (Image r u) = Point2 u
+type instance Arg2 (LocThetaImage r u) (Image r u) = Radian
+
+
+instance PromoteR2 (LocThetaImage r u) (Image r u) where
+  promoteR2 = promote_lti2
+
+-- Note - we cannot have a PromoteR1 instance making only the 
+-- Radian argument available and promoting LocImage to 
+-- LocTheta image. To do so would require some sort of 
+-- counting of arguments making the PromoteR1 class very 
+-- complicated.
+-- 
+-- Possible we could have a Promote1R2 class...
+--
+
+instance Lift0R2 (LocThetaImage r u) (Image r u) where
+  lift0R2 = lift_lti2
+
+instance Lift1R2 (LocThetaImage r u) (LocImage r u) where
+  lift1R2 = lift_lti1
+
+--------------------------------------------------------------------------------
+
+instance OPlus (r u) => OPlus (LocThetaImage r u) where
   fa `oplus` fb = LocThetaImage $ \ctx pt ang -> 
       getLocThetaImage fa ctx pt ang `oplus` getLocThetaImage fb ctx pt ang
 
@@ -81,15 +111,15 @@ instance OPlus (t u) => OPlus (LocThetaImage t u) where
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
 --
-bimapLocThetaImage :: (t u -> t' u) -> (Primitive -> Primitive) 
-           -> LocThetaImage t u -> LocThetaImage t' u
+bimapLocThetaImage :: (r u -> r1 u) -> (Primitive -> Primitive) 
+                   -> LocThetaImage r u -> LocThetaImage r1 u
 bimapLocThetaImage l r gf = LocThetaImage $ \ctx pt ang -> 
     bimap l (cpmap r) $ getLocThetaImage gf ctx pt ang
 
 
 -- This needs drawing context so cannot be done with 'bimapLocThetaImage'.
 --
-instance Functor t => UnitConvert (LocThetaImage t) where
+instance Functor r => UnitConvert (LocThetaImage r) where
   uconvert gf = LocThetaImage $ \ctx pt ang -> 
       let sz    = dc_font_size ctx
           (a,o) = getLocThetaImage gf ctx (uconvertF sz pt) ang
@@ -132,36 +162,36 @@ instance Object LocThetaImage where
   unit          = unitLocThetaImg
   
 localLocThetaImg :: (DrawingContext -> DrawingContext) 
-                 -> LocThetaImage t u 
-                 -> LocThetaImage t u
+                 -> LocThetaImage r u 
+                 -> LocThetaImage r u
 localLocThetaImg upd gf = LocThetaImage $ \ctx pt ang -> 
                           getLocThetaImage gf (upd ctx) pt ang
 
 
 
-decoLocThetaImg :: LocThetaImage t u -> LocThetaGraphic u -> LocThetaImage t u
+decoLocThetaImg :: LocThetaImage r u -> LocThetaGraphic u -> LocThetaImage r u
 decoLocThetaImg fa fb = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage fa ctx pt ang
         (_,o2) = getLocThetaImage fb ctx pt ang
     in (a, o1 `oplus` o2)
                         
-annoLocThetaImg :: LocThetaImage t u -> (t u -> LocThetaGraphic u) 
-                -> LocThetaImage t u
+annoLocThetaImg :: LocThetaImage r u -> (r u -> LocThetaGraphic u) 
+                -> LocThetaImage r u
 annoLocThetaImg fa mf = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage fa ctx pt ang
         (_,o2) = getLocThetaImage (mf a) ctx pt ang
     in (a, o1 `oplus` o2)
 
 
-bindLocThetaImg :: LocThetaImage t u 
-                -> (t u -> LocThetaImage t1 u) 
-                -> LocThetaImage t1 u
+bindLocThetaImg :: LocThetaImage r u 
+                -> (r u -> LocThetaImage r1 u) 
+                -> LocThetaImage r1 u
 bindLocThetaImg gf fn = LocThetaImage $ \ctx pt ang -> 
     let (a,o1) = getLocThetaImage gf ctx pt ang
         (b,o2) = getLocThetaImage (fn a) ctx pt ang
     in (b, o1 `oplus` o2)
 
-unitLocThetaImg :: t u -> LocThetaImage t u
+unitLocThetaImg :: r u -> LocThetaImage r u
 unitLocThetaImg a = LocThetaImage $ \_ _ _ -> (a, mempty)
 
 
@@ -169,14 +199,14 @@ unitLocThetaImg a = LocThetaImage $ \_ _ _ -> (a, mempty)
 --------------------------------------------------------------------------------
 -- builders and destructors
 
-runLocThetaImage :: LocThetaImage t u 
-                 -> DrawingContext -> Point2 u -> Radian -> (t u, CatPrim)
+runLocThetaImage :: LocThetaImage r u 
+                 -> DrawingContext -> Point2 u -> Radian -> (r u, CatPrim)
 runLocThetaImage gf ctx pt ang = getLocThetaImage gf ctx pt ang
 
 -- This seems to be the one for down casting...
 -- 
-rawLocThetaImage :: (DrawingContext -> Point2 u -> Radian -> (t u, CatPrim)) 
-                 -> LocThetaImage t u
+rawLocThetaImage :: (DrawingContext -> Point2 u -> Radian -> (r u, CatPrim)) 
+                 -> LocThetaImage r u
 rawLocThetaImage fn = LocThetaImage $ \ctx pt ang -> fn ctx pt ang
 
 
@@ -186,14 +216,14 @@ infixr 1 `rot`
 -- | Downcast a 'LocThetaImage' by applying it to the supplied 
 -- angle, making a 'LocImage'. 
 -- 
-rot :: LocThetaImage t u -> Radian -> LocImage t u
+rot :: LocThetaImage r u -> Radian -> LocImage r u
 rot gf ang = rawLocImage $ \ctx pt -> getLocThetaImage gf ctx pt ang
 
 
 -- | Downcast a 'LocThetaImage' by applying it to the supplied 
 -- point and angle, making an 'Image'. 
 --
-atRot :: LocThetaImage t u -> Point2 u -> Radian -> Image t u
+atRot :: LocThetaImage r u -> Point2 u -> Radian -> Image r u
 atRot gf pt ang = rawImage $ \ctx -> getLocThetaImage gf ctx pt ang
 
 
@@ -205,8 +235,8 @@ atRot gf pt ang = rawImage $ \ctx -> getLocThetaImage gf ctx pt ang
 -- The 'LocThetaImage' is built as a function from an implicit 
 -- start point and angle of inclination to the answer.
 --
-intoLocThetaImage :: LocThetaQuery u (t u) -> LocThetaGraphic u 
-                  -> LocThetaImage t u
+intoLocThetaImage :: LocThetaQuery u (r u) -> LocThetaGraphic u 
+                  -> LocThetaImage r u
 intoLocThetaImage fn gf = LocThetaImage $ \ctx pt ang -> 
    let ans   = runQuery fn ctx pt ang
        (_,o) = getLocThetaImage gf ctx pt ang
@@ -227,28 +257,29 @@ makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang ->
 -- name 1 indicates lifting of 1 layer
 -- name 2 indicates lifting of 2 layers
 
-promote_lti1 :: (Radian -> LocImage t u) -> LocThetaImage t u
+promote_lti1 :: (Radian -> LocImage r u) -> LocThetaImage r u
 promote_lti1 gf = 
     LocThetaImage $ \ctx pt ang -> runLocImage (gf ang) ctx pt
 
 -- equivalent to promoteR2
 
-promote_lti2 :: (Point2 u -> Radian -> Image t u) -> LocThetaImage t u
+promote_lti2 :: (Point2 u -> Radian -> Image r u) -> LocThetaImage r u
 promote_lti2 gf = 
     LocThetaImage $ \ctx pt ang -> runImage (gf pt ang) ctx
 
+-- is ltiPromoteR2 a better name? 
 
-lift_lti1 :: LocImage t u -> LocThetaImage t u
+lift_lti1 :: LocImage r u -> LocThetaImage r u
 lift_lti1 gf = LocThetaImage $ \ctx pt _ -> runLocImage gf ctx pt
 
-lift_lti2 :: Image t u -> LocThetaImage t u
+lift_lti2 :: Image r u -> LocThetaImage r u
 lift_lti2 gf = LocThetaImage $ \ctx _ _ -> runImage gf ctx
 
 
 
 bindQuery_lti :: InterpretUnit u 
-              => Query ans -> (ans -> DPoint2 -> Radian -> Image t u) 
-              -> LocThetaImage t u
+              => Query ans -> (ans -> DPoint2 -> Radian -> Image r u) 
+              -> LocThetaImage r u
 bindQuery_lti qy fn = LocThetaImage $ \ctx pt ang -> 
     let ans = runQuery qy ctx 
         sz  = dc_font_size ctx        
@@ -259,15 +290,15 @@ bindQuery_lti qy fn = LocThetaImage $ \ctx pt ang ->
 -- @Image@ projecting up to a @LocImage@.
 --
 bindLocQuery_lti :: LocQuery u ans 
-                 -> (ans -> Radian -> Image t u) 
-                 -> LocThetaImage t u
+                 -> (ans -> Radian -> Image r u) 
+                 -> LocThetaImage r u
 bindLocQuery_lti qry fn = LocThetaImage $ \ctx pt ang -> 
     let f1 = runQuery qry ctx in runImage (fn (f1 pt) ang) ctx
 
 
 bindLocThetaQuery_lti :: LocThetaQuery u ans 
-                      -> (ans -> Image t u) 
-                      -> LocThetaImage t u
+                      -> (ans -> Image r u) 
+                      -> LocThetaImage r u
 bindLocThetaQuery_lti qry fn = LocThetaImage $ \ctx pt ang -> 
     let f1 = runQuery qry ctx in runImage (fn $ f1 pt ang) ctx
 

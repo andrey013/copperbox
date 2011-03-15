@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE KindSignatures             #-}
@@ -26,6 +27,17 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ThetaPointDisplace
 
   , Object(..)
+
+  , Arg1
+  , Arg2
+  , Arg3
+  , Answer
+  , PromoteR1(..)
+  , PromoteR2(..)
+  , PromoteR3(..)
+  , Lift0R1(..)
+  , Lift0R2(..)
+  , Lift1R2(..)
 
   , MoveStart(..)
   , MoveStartTheta(..)
@@ -127,6 +139,34 @@ class Object t where
 --   promotePoint :: forall (r :: * -> *) (u :: *).  (Point2 u -> t r u) -> t1 r u
 --
 
+
+type family Arg1 t1 t
+type family Arg2 t1 t 
+type family Arg3 t1 t
+
+type family Answer t
+
+class PromoteR1 t1 t where
+  promoteR1 :: (Answer t ~ Answer t1, a ~ Arg1 t1 t) => (a -> t) -> t1
+
+class PromoteR2 t1 t where
+  promoteR2 :: (Answer t ~ Answer t1, a ~ Arg1 t1 t, b ~ Arg2 t1 t) 
+            => (a -> b -> t) -> t1
+
+class PromoteR3 t1 t where
+  promoteR3 :: ( Answer s ~ Answer s1
+               , a ~ Arg1 t1 t, b ~ Arg2 t1 t, c ~ Arg3 t1 t ) 
+            => (a -> b -> c -> t) -> t1
+
+
+class Lift0R1 t1 t where
+  lift0R1 :: Answer t ~ Answer t1 => t -> t1
+
+class Lift0R2 t2 t where
+  lift0R2 :: Answer t ~ Answer t2 => t -> t2
+
+class Lift1R2 t2 t1 where
+  lift1R2 :: Answer t1 ~ Answer t2 => t1 -> t2
 
 
 class MoveStart t where

@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,17 +25,19 @@
 module Wumpus.Basic.Kernel.Objects.PosImage
   (
 
-    RectPosition(..)
-  , ObjectPos(..)
-
   -- * Positionable image
 
-  , PosImage
+    PosImage
   , DPosImage 
 
   , PosGraphic
   , DPosGraphic
 
+  -- * Components
+  , RectPosition(..)
+  , ObjectPos(..)
+
+  -- * Operations
   , runPosImage
   , rawPosImage
   , startPos
@@ -64,6 +68,34 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 import Data.Monoid
+
+
+
+-- | A positionable Image.
+--
+newtype PosImage r u = PosImage { 
+          getPosImage :: DrawingContext -> Point2 u -> 
+                         RectPosition   -> (r u, CatPrim) }
+
+
+type instance Answer (PosImage r u)     = r u
+
+    
+-- | Version of PosImage specialized to Double for the unit type.
+--
+type DPosImage t = PosImage t Double
+
+
+
+
+-- | A positionable Graphic.
+--
+type PosGraphic u = PosImage UNil u
+    
+-- | Version of PosGraphic specialized to Double for the unit type.
+--
+type DPosGraphic = PosGraphic Double
+
 
 
 -- | Datatype enumerating positions within a rectangle that can be
@@ -102,32 +134,20 @@ data ObjectPos u = ObjectPos
 
 
 
--- | A positionable Image.
---
-newtype PosImage t u = PosImage { 
-          getPosImage :: DrawingContext -> Point2 u -> 
-                         RectPosition   -> (t u, CatPrim) }
-    
--- | Version of PosImage specialized to Double for the unit type.
---
-type DPosImage t = PosImage t Double
-
-
-
-
--- | A positionable Graphic.
---
-type PosGraphic u = PosImage UNil u
-    
--- | Version of PosGraphic specialized to Double for the unit type.
---
-type DPosGraphic = PosGraphic Double
 
 
 
 
 
 --------------------------------------------------------------------------------
+
+type instance Arg1 (PosImage r u) (Image r u) = Point2 u
+type instance Arg2 (PosImage r u) (Image r u) = RectPosition
+
+instance PromoteR2 (PosImage r u) (Image r u) where
+  promoteR2 = promote_pi2
+
+
 
 instance Functor ObjectPos where
   fmap f (ObjectPos xmin xmaj ymin ymaj) = 
@@ -171,8 +191,8 @@ halfDists (ObjectPos xmin xmaj ymin ymaj) =
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
 --
-bimapPosImage :: (t u -> t' u) -> (Primitive -> Primitive) 
-              -> PosImage t u -> PosImage t' u
+bimapPosImage :: (r u -> r1 u) -> (Primitive -> Primitive) 
+              -> PosImage r u -> PosImage r1 u
 bimapPosImage l r gf = PosImage $ \ctx pt rpos -> 
     bimap l (cpmap r) $ getPosImage gf ctx pt rpos
 
@@ -190,20 +210,20 @@ instance Object PosImage where
 
 
 localPosImg :: (DrawingContext -> DrawingContext) 
-            -> PosImage t u 
-            -> PosImage t u
+            -> PosImage r u 
+            -> PosImage r u
 localPosImg upd gf = 
     PosImage $ \ctx pt rpos -> getPosImage gf (upd ctx) pt rpos
 
 
 
-decoPosImg :: PosImage t u -> PosGraphic u -> PosImage t u
+decoPosImg :: PosImage r u -> PosGraphic u -> PosImage r u
 decoPosImg fa fb = PosImage $ \ctx pt rpos -> 
     let (a,o1) = getPosImage fa ctx pt rpos
         (_,o2) = getPosImage fb ctx pt rpos
     in (a, o1 `oplus` o2)
                         
-annoPosImg :: PosImage t u -> (t u -> PosGraphic u) -> PosImage t u
+annoPosImg :: PosImage r u -> (r u -> PosGraphic u) -> PosImage r u
 annoPosImg fa mf = PosImage $ \ctx pt rpos -> 
     let (a,o1) = getPosImage fa ctx pt rpos
         (_,o2) = getPosImage (mf a) ctx pt rpos
@@ -211,13 +231,13 @@ annoPosImg fa mf = PosImage $ \ctx pt rpos ->
 
 
 
-bindPosImg :: PosImage t u -> (t u -> PosImage t1 u) -> PosImage t1 u
+bindPosImg :: PosImage r u -> (r u -> PosImage r1 u) -> PosImage r1 u
 bindPosImg gf fn = PosImage $ \ctx pt rpos -> 
     let (a,o1) = getPosImage gf ctx pt rpos
         (b,o2) = getPosImage (fn a) ctx pt rpos
     in (b, o1 `oplus` o2)
 
-unitPosImg :: t u -> PosImage t u
+unitPosImg :: r u -> PosImage r u
 unitPosImg a = PosImage $ \_ _ _ -> (a, mempty)
 
 
@@ -228,14 +248,14 @@ instance MoveStart PosImage where
 -- builders and destructors
 
 
-runPosImage :: PosImage t u -> DrawingContext -> Point2 u -> RectPosition 
-            -> (t u, CatPrim)
+runPosImage :: PosImage r u -> DrawingContext -> Point2 u -> RectPosition 
+            -> (r u, CatPrim)
 runPosImage gf ctx pt rpos = getPosImage gf ctx pt rpos
 
 -- This seems to be the one for down casting...
 -- 
-rawPosImage :: (DrawingContext -> Point2 u -> RectPosition -> (t u, CatPrim)) 
-            -> PosImage t u
+rawPosImage :: (DrawingContext -> Point2 u -> RectPosition -> (r u, CatPrim)) 
+            -> PosImage r u
 rawPosImage fn = PosImage $ \ctx pt rpos -> fn ctx pt rpos
 
 
@@ -248,7 +268,7 @@ infixr 1 `startPos`
 -- with a 'RectPosition' (start position).
 --  
 startPos :: Floating u 
-         => PosImage t u -> RectPosition -> LocImage t u
+         => PosImage r u -> RectPosition -> LocImage r u
 startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos) 
  
 
@@ -260,7 +280,7 @@ startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos)
 -- with an initial point and a 'RectPosition' (start position).
 --  
 atStartPos ::  Floating u 
-           => PosImage t u -> Point2 u -> RectPosition -> Image t u
+           => PosImage r u -> Point2 u -> RectPosition -> Image r u
 atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos) 
 
 --
@@ -271,21 +291,21 @@ atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos)
 --
 
 
-promote_pi1 :: (RectPosition -> LocImage t u) -> PosImage t u
+promote_pi1 :: (RectPosition -> LocImage r u) -> PosImage r u
 promote_pi1 gf = 
     PosImage $ \ctx pt rpos -> runLocImage (gf rpos) ctx pt
 
 
-promote_pi2 :: (Point2 u -> RectPosition -> Image t u) -> PosImage t u
+promote_pi2 :: (Point2 u -> RectPosition -> Image r u) -> PosImage r u
 promote_pi2 gf = 
     PosImage $ \ctx pt rpos -> runImage (gf pt rpos) ctx
 
 
-lift_pi1 :: LocImage t u -> PosImage t u
+lift_pi1 :: LocImage r u -> PosImage r u
 lift_pi1 gf = PosImage $ \ctx pt _ -> runLocImage gf ctx pt
 
 
-lift_pi2 :: Image t u -> PosImage t u
+lift_pi2 :: Image r u -> PosImage r u
 lift_pi2 gf = PosImage $ \ctx _ _ -> runImage gf ctx 
 
 
@@ -300,7 +320,7 @@ lift_pi2 gf = PosImage $ \ctx _ _ -> runImage gf ctx
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 posImage :: Fractional u 
-         => ObjectPos u -> LocImage t u -> PosImage t u
+         => ObjectPos u -> LocImage r u -> PosImage r u
 posImage opos gf = promote_pi2 $ \start rpos -> 
     let v1 = startVector rpos opos in gf `at` displaceVec v1 start
 

@@ -14,6 +14,8 @@
 --
 -- Bounded meaning they are actually Images that return the 
 -- bounding box of the Graphic.
+-- 
+-- These abojects are type synonyms.
 --
 --------------------------------------------------------------------------------
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -55,9 +56,12 @@ import Data.Monoid
 --
 -- The answer is expected to be a Functor.
 --
-newtype ConnectorImage t u = ConnectorImage { 
+newtype ConnectorImage r u = ConnectorImage { 
     getConnectorImage :: DrawingContext -> 
-                         Point2 u       -> Point2 u  -> (t u, CatPrim) }
+                         Point2 u       -> Point2 u  -> (r u, CatPrim) }
+
+
+type instance Answer (ConnectorImage r u)     = r u
 
 
 -- | ConnectorGraphic - function from DrawingContext and start point to 
@@ -66,12 +70,21 @@ newtype ConnectorImage t u = ConnectorImage {
 type ConnectorGraphic u = ConnectorImage UNil u
 
 
-type ConnectorQuery t u = Query (Point2 u -> Point2 u -> t u)
+type ConnectorQuery r u = Query (Point2 u -> Point2 u -> r u)
 
 
-instance OPlus (t u) => OPlus (ConnectorImage t u) where
+--------------------------------------------------------------------------------
+
+type instance Arg1 (ConnectorImage r u) (Image r u) = Point2 u
+type instance Arg2 (ConnectorImage r u) (Image r u) = Point2 u
+
+instance PromoteR2 (ConnectorImage r u) (Image r u) where
+  promoteR2 = promote_conn
+
+
+instance OPlus (r u) => OPlus (ConnectorImage r u) where
   fa `oplus` fb = ConnectorImage $ \ctx p0 p1 -> 
-                    getConnectorImage fa ctx p0 p1 `oplus` getConnectorImage fb ctx p0 p1
+      getConnectorImage fa ctx p0 p1 `oplus` getConnectorImage fb ctx p0 p1
 
 -- ConnectorImage is not a Functor - functor access would need to change 
 -- the unit of the start point.
@@ -79,8 +92,8 @@ instance OPlus (t u) => OPlus (ConnectorImage t u) where
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
 --
-bimapConnectorImage :: (t u -> t' u) -> (Primitive -> Primitive) 
-           -> ConnectorImage t u -> ConnectorImage t' u
+bimapConnectorImage :: (r u -> r1 u) -> (Primitive -> Primitive) 
+           -> ConnectorImage r u -> ConnectorImage r1 u
 bimapConnectorImage l r gf = ConnectorImage $ \ctx p0 p1 -> 
     bimap l (cpmap r) $ getConnectorImage gf ctx p0 p1
 
@@ -94,7 +107,7 @@ instance Functor t => UnitConvert (ConnectorImage t) where
       in (uconvertF sz a, o)
 
 -- movestartConnectorImage :: (Point2 u -> Point2 u) 
---                         -> ConnectorImage t u -> ConnectorImage t u
+--                         -> ConnectorImage r u -> ConnectorImage r u
 -- movestartConnectorImage fn gf = 
 --     ConnectorImage $ \ctx p0 p1 -> getConnectorImage gf ctx (fn p0 p1) 
 
@@ -102,22 +115,22 @@ instance Functor t => UnitConvert (ConnectorImage t) where
 -- Affine instances transfom the start point as well as the 
 -- answer.
 
-instance (InterpretUnit u, Rotate (t u)) => Rotate (ConnectorImage t u) where
+instance (InterpretUnit u, Rotate (r u)) => Rotate (ConnectorImage r u) where
   rotate ang gf = ConnectorImage $ \ctx p0 p1 -> 
       let trafo = intraMapPoint (dc_font_size ctx) (rotate ang)
           (a,o) = getConnectorImage gf ctx (trafo p0) (trafo p1)
       in (rotate ang a, rotate ang o)
 
 
-instance (InterpretUnit u, Scale (t u)) => Scale (ConnectorImage t u) where
+instance (InterpretUnit u, Scale (r u)) => Scale (ConnectorImage r u) where
   scale sx sy gf = ConnectorImage $ \ctx p0 p1 -> 
       let trafo = intraMapPoint (dc_font_size ctx) (scale sx sy)
           (a,o) = getConnectorImage gf ctx (trafo p0) (trafo p1)
       in (scale sx sy a, scale sx sy o)
 
 
-instance (InterpretUnit u, RotateAbout (t u)) => 
-    RotateAbout (ConnectorImage t u) where
+instance (InterpretUnit u, RotateAbout (r u)) => 
+    RotateAbout (ConnectorImage r u) where
   rotateAbout ang pt gf = ConnectorImage $ \ctx p0 p1 -> 
       let dP0   = uconvertF (dc_font_size ctx) pt
           trafo = intraMapPoint (dc_font_size ctx) (rotateAbout ang dP0)
@@ -125,7 +138,7 @@ instance (InterpretUnit u, RotateAbout (t u)) =>
       in (rotateAbout ang dP0 a, rotateAbout ang dP0 o)
 
 
-instance (InterpretUnit u, Translate (t u)) => Translate (ConnectorImage t u) where
+instance (InterpretUnit u, Translate (r u)) => Translate (ConnectorImage r u) where
   translate dx dy gf = ConnectorImage $ \ctx p0 p1 -> 
       let trafo = intraMapPoint (dc_font_size ctx) (translate dx dy)
           (a,o) = getConnectorImage gf ctx (trafo p0) (trafo p1)
@@ -148,38 +161,38 @@ instance Object ConnectorImage where
 
 
 localConnectorImg :: (DrawingContext -> DrawingContext) 
-                  -> ConnectorImage t u 
-                  -> ConnectorImage t u
+                  -> ConnectorImage r u 
+                  -> ConnectorImage r u
 localConnectorImg upd gf = ConnectorImage $ \ctx p0 p1 -> 
                            getConnectorImage gf (upd ctx) p0 p1
 
 
 
 
-bindConnectorImg :: ConnectorImage t u -> (t u -> ConnectorImage t1 u) 
-                 -> ConnectorImage t1 u
+bindConnectorImg :: ConnectorImage r u -> (r u -> ConnectorImage r1 u) 
+                 -> ConnectorImage r1 u
 bindConnectorImg gf fn = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage gf ctx p0 p1
         (b,o2) = getConnectorImage (fn a) ctx p0 p1
     in (b, o1 `oplus` o2)
 
-unitConnectorImg :: t u -> ConnectorImage t u
+unitConnectorImg :: r u -> ConnectorImage r u
 unitConnectorImg a = ConnectorImage $ \_ _ _ -> (a,mempty)
 
 
 
 
 
-decoConnectorImg :: ConnectorImage t u -> ConnectorGraphic u 
-                 -> ConnectorImage t u
+decoConnectorImg :: ConnectorImage r u -> ConnectorGraphic u 
+                 -> ConnectorImage r u
 decoConnectorImg fa fb = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage fa ctx p0 p1
         (_,o2) = getConnectorImage fb ctx p0 p1
     in (a, o1 `oplus` o2)
                         
-annoConnectorImg :: ConnectorImage t u 
-                 -> (t u -> ConnectorGraphic u) 
-                 -> ConnectorImage t u
+annoConnectorImg :: ConnectorImage r u 
+                 -> (r u -> ConnectorGraphic u) 
+                 -> ConnectorImage r u
 annoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 -> 
     let (a,o1) = getConnectorImage fa ctx p0 p1
         (_,o2) = getConnectorImage (mf a) ctx p0 p1
@@ -190,19 +203,19 @@ annoConnectorImg fa mf = ConnectorImage $ \ctx p0 p1 ->
 -- builders and destructors
 
 
-runConnectorImage :: ConnectorImage t u 
+runConnectorImage :: ConnectorImage r u 
                   -> DrawingContext 
                   -> Point2 u 
                   -> Point2 u 
-                  -> (t u, CatPrim)
+                  -> (r u, CatPrim)
 runConnectorImage gf ctx p0 p1 = getConnectorImage gf ctx p0 p1
 
 
 
 -- This seems to be the one for down casting...
 -- 
-rawConnectorImage :: (DrawingContext -> Point2 u -> Point2 u -> (t u, CatPrim)) 
-                  -> ConnectorImage t u
+rawConnectorImage :: (DrawingContext -> Point2 u -> Point2 u -> (r u, CatPrim)) 
+                  -> ConnectorImage r u
 rawConnectorImage fn = ConnectorImage $ \ctx p0 p1 -> fn ctx p0 p1
 
 
@@ -210,12 +223,12 @@ rawConnectorImage fn = ConnectorImage $ \ctx p0 p1 -> fn ctx p0 p1
 -- start and end point, making an arity-zero Context Function 
 -- (a 'CF'). 
 -- 
-connect :: ConnectorImage t u -> Point2 u -> Point2 u -> Image t u
+connect :: ConnectorImage r u -> Point2 u -> Point2 u -> Image r u
 connect gf p0 p1 = rawImage $ \ctx -> getConnectorImage gf ctx p0 p1
 
 
-intoConnectorImage :: ConnectorQuery t u -> ConnectorGraphic u 
-                   -> ConnectorImage t u
+intoConnectorImage :: ConnectorQuery r u -> ConnectorGraphic u 
+                   -> ConnectorImage r u
 intoConnectorImage fn gf = ConnectorImage $ \ctx p0 p1 -> 
    let ans   = runQuery fn ctx p0 p1
        (_,o) = getConnectorImage gf ctx p0 p1
@@ -237,10 +250,10 @@ makeConnectorGraphic qry fn = ConnectorImage $ \ctx p0 p1 ->
 -- arity 2 versions.
 --
 
-promote_conn :: (Point2 u -> Point2 u -> Image t u) -> ConnectorImage t u
+promote_conn :: (Point2 u -> Point2 u -> Image r u) -> ConnectorImage r u
 promote_conn gf = 
     ConnectorImage $ \ctx p0 p1 -> runImage (gf p0 p1) ctx
 
 
-lift_conn :: Image t u -> ConnectorImage t u
+lift_conn :: Image r u -> ConnectorImage r u
 lift_conn gf = ConnectorImage $ \ctx _ _ -> runImage gf ctx 
