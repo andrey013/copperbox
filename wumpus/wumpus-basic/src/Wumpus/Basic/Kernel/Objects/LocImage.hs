@@ -83,6 +83,12 @@ instance Lift0R1 (LocImage r u) (Image r u) where
   lift0R1 = lift_li1
 
 
+instance BindQuery1 LocImage where
+  (&=>) = bindQuery_li
+
+instance BindQuery2 (LocImage r u) (Image r u) where
+  (&==>) = bindLocQuery_li
+
 --------------------------------------------------------------------------------
 
 instance OPlus (r u) => OPlus (LocImage r u) where
@@ -271,6 +277,13 @@ bindQuery_li qy fn = LocImage $ \ctx pt ->
     let ans = runQuery qy ctx 
     in runLocImage (fn ans) ctx pt
 
+-- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
+-- @Image@ projecting up to a @LocImage@.
+--
+bindLocQuery_li :: LocQuery u ans -> (ans -> Image r u) -> LocImage r u
+bindLocQuery_li qry fn = LocImage $ \ctx pt -> 
+    let f1 = runQuery qry ctx in runImage (fn $ f1 pt) ctx
+
 
 
 {-
@@ -287,12 +300,6 @@ bindQuery_li1 qy fn = LocImage $ \ctx pt ->
     in runImage (fn ans $ uconvertExt sz pt) ctx
 -}
 
--- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
--- @Image@ projecting up to a @LocImage@.
---
-bindLocQuery_li :: LocQuery u ans -> (ans -> Image r u) -> LocImage r u
-bindLocQuery_li qry fn = LocImage $ \ctx pt -> 
-    let f1 = runQuery qry ctx in runImage (fn $ f1 pt) ctx
 
 
 

@@ -62,7 +62,12 @@ type instance Answer (Image r u)     = r u
 type Graphic u = Image UNil u
 
 
+--------------------------------------------------------------------------------
 
+instance BindQuery1 Image where
+  (&=>) = bindQuery_i
+
+--------------------------------------------------------------------------------
 instance OPlus (r u) => OPlus (Image r u) where
   fa `oplus` fb = Image $ \ctx -> 
                     getImage fa ctx `oplus` getImage fb ctx

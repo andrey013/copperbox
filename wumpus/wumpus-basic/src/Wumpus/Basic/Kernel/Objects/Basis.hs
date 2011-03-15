@@ -169,6 +169,9 @@ class Lift1R2 t2 t1 where
   lift1R2 :: Answer t1 ~ Answer t2 => t1 -> t2
 
 
+
+
+
 class MoveStart t where
   moveStart :: forall (r :: * -> *) (u :: *).  
                PointDisplace u -> t r u -> t r u

@@ -1,3 +1,7 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,7 +14,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- TEMP!
+-- Queries to build drawing objects.
 --
 --------------------------------------------------------------------------------
 
@@ -20,6 +24,9 @@ module Wumpus.Basic.Kernel.Objects.Query
     Query
   , LocQuery
   , LocThetaQuery
+
+  , BindQuery1(..)
+  , BindQuery2(..)
 
   , makeQuery
   , makeLocQuery
@@ -42,6 +49,7 @@ module Wumpus.Basic.Kernel.Objects.Query
 
   ) where
 
+import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Base.DrawingContext
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -81,6 +89,18 @@ instance DrawingCtxM Query where
 
 
 
+infixr 1 &=>, &==>
+
+class BindQuery1 t where
+  (&=>) :: forall (r :: * -> *) (u :: *) (ans :: *).  
+           Query ans -> (ans -> t r u) -> t r u
+
+
+class BindQuery2 t1 t where
+  (&==>)  :: (Answer t ~ Answer t1, r1 ~ Arg1 t1 t) =>
+             Query (r1 -> ans) -> (ans -> t) -> t1
+
+-- bindLocQuery_li :: LocQuery u ans -> (ans -> Image r u) -> LocImage r u
 
 
 makeQuery :: Query a 

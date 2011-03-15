@@ -117,9 +117,7 @@ scalarPair rx ry =
 -- minimum bounding box at the implicit start point.
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
-emptyLocGraphic = promoteR1 $ \pt -> 
-   bindQuery_i (applyQ1 emptyLocPath pt) openStroke
-
+emptyLocGraphic = emptyLocPath &==> openStroke
 
 
 
@@ -354,7 +352,7 @@ uconvKernChar ks =
 -- from the implicit 'DrawingContext'.
 --
 hkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
-hkernline ks = bindQuery_li (uconvKernChar ks) body   
+hkernline ks = uconvKernChar ks &=> body   
   where
     body ans = makeLocGraphic text_attr
                   (\(rgb,attr) pt -> hkernlabel rgb attr ans pt)
@@ -373,7 +371,7 @@ hkernline ks = bindQuery_li (uconvKernChar ks) body
 -- from the implicit 'DrawingContext'.
 --
 vkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
-vkernline ks = bindQuery_li (uconvKernChar ks) body
+vkernline ks = uconvKernChar ks &=> body
   where
     body ans = makeLocGraphic text_attr
                   (\(rgb,attr) pt -> vkernlabel rgb attr ans pt)
@@ -390,7 +388,7 @@ vkernline ks = bindQuery_li (uconvKernChar ks) body
 -- from the implicit 'DrawingContext'.
 -- 
 straightLine :: InterpretUnit u => Point2 u -> Point2 u -> Graphic u
-straightLine p1 p2 = bindQuery_i (vertexPath [p1,p2]) openStroke
+straightLine p1 p2 = vertexPath [p1,p2] &=> openStroke
 
 
 -- | 'locStraightLine' : @ vec_to -> LocGraphic @ 
@@ -406,7 +404,7 @@ straightLine p1 p2 = bindQuery_i (vertexPath [p1,p2]) openStroke
 -- from the implicit 'DrawingContext'.
 -- 
 locStraightLine :: InterpretUnit u => Vec2 u -> LocGraphic u
-locStraightLine v = bindLocQuery_li (locPath [v]) openStroke
+locStraightLine v = locPath [v] &==> openStroke
 
 
 
@@ -422,7 +420,7 @@ locStraightLine v = bindLocQuery_li (locPath [v]) openStroke
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
 curvedLine p0 p1 p2 p3 = 
-    bindQuery_i (curvedPath [p0,p1,p2,p3]) openStroke
+    curvedPath [p0,p1,p2,p3] &=> openStroke
 
 
 
@@ -449,7 +447,7 @@ circlePath r = makeLocQuery point_size $ \sz pt  ->
 -- from the implicit 'DrawingContext'.
 -- 
 strokedCircle :: InterpretUnit u => u -> LocGraphic u
-strokedCircle r = bindLocQuery_li (circlePath r) openStroke
+strokedCircle r = circlePath r &==> openStroke
 
 
 
@@ -462,7 +460,7 @@ strokedCircle r = bindLocQuery_li (circlePath r) openStroke
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 filledCircle :: InterpretUnit u => u -> LocGraphic u
-filledCircle r = bindLocQuery_li (circlePath r) filledPath 
+filledCircle r = circlePath r &==> filledPath 
 
 
 
@@ -475,7 +473,7 @@ filledCircle r = bindLocQuery_li (circlePath r) filledPath
 -- are taken from the implicit 'DrawingContext'.
 -- 
 borderedCircle :: InterpretUnit u => u -> LocGraphic u
-borderedCircle r = bindLocQuery_li (circlePath r) borderedPath
+borderedCircle r = circlePath r &==> borderedPath
 
 
 --------------------------------------------------------------------------------
@@ -515,7 +513,7 @@ rellipsePath rx ry = makeLocThetaQuery point_size $ \sz pt ang ->
 -- from the implicit 'DrawingContext'.
 -- 
 strokedEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-strokedEllipse rx ry = bindLocQuery_li (ellipsePath rx ry) closedStroke
+strokedEllipse rx ry = ellipsePath rx ry &==> closedStroke
 
 
 
@@ -544,7 +542,7 @@ rstrokedEllipse rx ry =
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 filledEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-filledEllipse rx ry = bindLocQuery_li (ellipsePath rx ry) filledPath
+filledEllipse rx ry = ellipsePath rx ry &==> filledPath
 
 
 -- | 'rfilledEllipse' : @ x_radius * y_radius -> LocGraphic @
@@ -570,7 +568,7 @@ rfilledEllipse rx ry =
 -- are taken from the implicit 'DrawingContext'.
 -- 
 borderedEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-borderedEllipse rx ry = bindLocQuery_li (ellipsePath rx ry) borderedPath
+borderedEllipse rx ry = ellipsePath rx ry &==> borderedPath
 
 
 
@@ -611,7 +609,7 @@ rectanglePath w h = locPath [hvec w, vvec h, hvec (-w)]
 -- from the implicit 'DrawingContext'.
 -- 
 strokedRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-strokedRectangle w h = bindLocQuery_li (rectanglePath w h) closedStroke
+strokedRectangle w h = rectanglePath w h &==> closedStroke
 
 
 -- | 'filledRectangle' : @ width * height -> LocGraphic @
@@ -622,7 +620,7 @@ strokedRectangle w h = bindLocQuery_li (rectanglePath w h) closedStroke
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 filledRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-filledRectangle w h = bindLocQuery_li (rectanglePath w h) filledPath
+filledRectangle w h = rectanglePath w h &==> filledPath
 
 
 -- | 'borderedRectangle' : @ width * height -> LocGraphic @
@@ -634,7 +632,7 @@ filledRectangle w h = bindLocQuery_li (rectanglePath w h) filledPath
 -- are taken from the implicit 'DrawingContext'.
 -- 
 borderedRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-borderedRectangle w h = bindLocQuery_li (rectanglePath w h) borderedPath 
+borderedRectangle w h = rectanglePath w h &==> borderedPath 
 
 
 
@@ -659,7 +657,7 @@ borderedRectangle w h = bindLocQuery_li (rectanglePath w h) borderedPath
 -- 
 strokedDisk :: InterpretUnit u => u -> LocGraphic u
 strokedDisk radius = 
-    bindQuery_li (scalarSize radius) body
+    scalarSize radius &=> body
   where
     body r = makeLocGraphic stroke_attr
                 (\(rgb,attr) pt -> strokeEllipse rgb attr r r pt)
@@ -681,7 +679,7 @@ strokedDisk radius =
 -- 
 filledDisk :: InterpretUnit u => u -> LocGraphic u
 filledDisk radius = 
-    bindQuery_li (scalarSize radius) body
+    scalarSize radius &=> body
   where
     body r = makeLocGraphic fill_attr (\rgb pt -> fillEllipse rgb r r pt)
 
@@ -705,7 +703,7 @@ filledDisk radius =
 -- 
 borderedDisk :: InterpretUnit u => u -> LocGraphic u
 borderedDisk radius = 
-    bindQuery_li (scalarSize radius) body
+    scalarSize radius &=> body
   where
     body r = makeLocGraphic bordered_attr
                 (\(frgb,attr,srgb) pt -> fillStrokeEllipse frgb attr srgb r r pt)
@@ -730,7 +728,7 @@ borderedDisk radius =
 -- 
 strokedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 strokedEllipseDisk rx ry =
-    bindQuery_li (scalarPair rx ry) body
+    scalarPair rx ry &=> body
   where
     body (drx,dry) = makeLocGraphic stroke_attr
                         (\(rgb,attr) pt -> strokeEllipse rgb attr drx dry pt)
@@ -751,7 +749,7 @@ strokedEllipseDisk rx ry =
 -- 
 filledEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 filledEllipseDisk rx ry =
-    bindQuery_li (scalarPair rx ry) body
+    scalarPair rx ry &=> body
   where
     body (drx,dry) = makeLocGraphic fill_attr
                         (\rgb pt -> fillEllipse rgb drx dry pt)
@@ -776,7 +774,7 @@ filledEllipseDisk rx ry =
 -- 
 borderedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
 borderedEllipseDisk rx ry = 
-    bindQuery_li (scalarPair rx ry) body
+    scalarPair rx ry &=> body
   where
     body (drx,dry) = makeLocGraphic bordered_attr
                           (\(frgb,attr,srgb) pt -> 
