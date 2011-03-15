@@ -23,14 +23,14 @@ main = do
          
 arrow_pic :: CtxPicture 
 arrow_pic = drawTracing $ do
-    updateCtx line_ultra_thick $  
+    localize line_ultra_thick $  
         draw $ bindQuery_i (toPrimPath large_curve2) openStroke
-    updateCtx (join_round . cap_round) $
+    localize (join_round . cap_round) $
         draw $ bindQuery_i (toPrimPath $ curveyArr 24 (P2 0 50)) openStroke
 
 drawing02 :: CtxPicture
 drawing02 = drawTracing $
-    updateCtx line_ultra_thick $ do
+    localize line_ultra_thick $ do
       draw $ bindQuery_i (toPrimPath large_curve) openStroke
 
 large_curve :: Path Double

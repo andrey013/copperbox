@@ -80,6 +80,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace
 
 import Data.List ( foldl' ) 
+import qualified Data.Traversable as T
 
 import Prelude hiding ( length )
 
@@ -253,8 +254,9 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 --
 toPrimPath :: InterpretUnit u => Path u -> Query PrimPath
 toPrimPath (Path _ start segs _) = 
-    makeQuery dc_font_size $ \sz -> 
-    step1 (uconvertF sz start) (viewl $ fmap (uconvertF sz) segs)
+    uconvertFDC start       >>= \dstart -> 
+    T.mapM uconvertFDC segs >>= \dsegs  ->
+    return $ step1 dstart (viewl dsegs)
   where
     step1 p0 EmptyL               = emptyPrimPath p0
     step1 _  (e :< se)            = let (p0,a) = seg1 e

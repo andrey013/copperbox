@@ -208,8 +208,8 @@ onelineARight max_adv otext = promote_lti2 $ \ctr theta ->
 orthoBB :: (Real u, Floating u, InterpretUnit u) 
         => AdvanceVec u -> Int -> Point2 u -> Radian -> Query (BoundingBox u)
 orthoBB (V2 w _) line_count ctr theta = 
-    fmap (0.5*) (info verticalSpan)     >>= \hh1 ->
-    info textMargin                     >>= \(xsep,ysep) -> 
+    fmap (0.5*) verticalSpan          >>= \hh1 ->
+    textMargin                        >>= \(xsep,ysep) -> 
     centerSpineDisps line_count theta >>= \(disp_top,_) ->
     let top_ctr = disp_top ctr
         hw      = 0.5 * w

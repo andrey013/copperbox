@@ -185,7 +185,7 @@ circleAnchor rad ctr = DotAnchor ctr
 circleLDO :: (Floating u, InterpretUnit u) => LocQuery u (DotAnchor u)
 circleLDO = 
     promoteQ1 $ \pt -> 
-      info markHeight >>= \diam -> pure $ circleAnchor (diam * 0.5) pt
+      markHeight >>= \diam -> pure $ circleAnchor (diam * 0.5) pt
 
 
 -- This might be better taking a function: ctr -> poly_points
@@ -195,7 +195,7 @@ polygonLDO :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
            => (u -> Point2 u -> [Point2 u]) -> LocQuery u (DotAnchor u)
 polygonLDO mk = 
     promoteQ1 $ \ctr -> 
-      info markHeight >>= \h -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
+      markHeight >>= \h -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
 
 
 --------------------------------------------------------------------------------
@@ -253,8 +253,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 dotSquare :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
 dotSquare = 
-    bindQuery_li (info markHeight) $ \h -> 
-    intoLocImage (rectangleLDO h h) markSquare
+    markHeight &=> \h -> intoLocImage (rectangleLDO h h) markSquare
 
 
 

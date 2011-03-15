@@ -60,35 +60,35 @@ text_pic = drawTracing $ do
     fn = illustrateBoundedLoc
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus = local_ctx (stroke_colour red) markPlus
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
-    localize (set_font times_roman . stroke_colour dark_slate_gray) $ 
+    local_ctx (set_font times_roman . stroke_colour dark_slate_gray) $ 
              textbox "Times-Roman" `startPos` SE
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter "Center-center..."
+    local_ctx (stroke_colour dark_slate_gray) $ textAlignCenter "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter ""
+    local_ctx (stroke_colour dark_slate_gray) $ textAlignCenter ""
 
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignLeft dummy_text
+    local_ctx (stroke_colour dark_slate_gray) $ textAlignLeft dummy_text
 
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignRight dummy_text
+    local_ctx (stroke_colour dark_slate_gray) $ textAlignRight dummy_text
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter dummy_text
+    local_ctx (stroke_colour dark_slate_gray) $ textAlignCenter dummy_text
 
 
 dummy_text :: String 

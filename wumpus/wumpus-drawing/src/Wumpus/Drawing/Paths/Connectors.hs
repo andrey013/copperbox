@@ -65,11 +65,13 @@ type PathQuery u = Query ( Point2 u -> Point2 u -> Path u )
 
 type DPathQuery  = PathQuery Double
 
+
 promoteQuery :: (Point2 u -> Point2 u -> Query (Path u)) -> PathQuery u
-promoteQuery fn = makeQuery id $ \ctx p0 p1 -> runQuery (fn p0 p1) ctx
+promoteQuery fn = promoteQ2 fn 
 
 cfPathQuery :: (Point2 u -> Point2 u -> Path u) -> PathQuery u
-cfPathQuery fn = makeQuery id $ \_ -> fn
+cfPathQuery fn = promoteQ2 $ \a b -> pure $ fn a b
+
 
 -- pathQuery :: 
 
@@ -79,9 +81,9 @@ cfPathQuery fn = makeQuery id $ \_ -> fn
 sconnect :: InterpretUnit u 
          => PathQuery u -> Point2 u -> Point2 u -> Image Path u
 sconnect mf p0 p1 = 
-    bindQuery_i mf $ \fn -> 
+    mf &=> \fn -> 
       let cpath = fn p0 p1 
-      in bindQuery_i (toPrimPath cpath) $ \ppath -> 
+      in toPrimPath cpath &=> \ppath -> 
          intoImage (pure cpath) (openStroke ppath)
                     
 
@@ -89,7 +91,7 @@ sconnect mf p0 p1 =
 -- 
 roundCornerPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                 => [Point2 u] -> Query (Path u)
-roundCornerPath xs = info roundCornerSize >>= \sz -> 
+roundCornerPath xs = roundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundInterior  sz xs)
 

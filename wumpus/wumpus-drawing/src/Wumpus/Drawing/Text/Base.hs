@@ -50,7 +50,7 @@ import Data.Maybe
 -- | Single line text, returning its advance vector.
 --
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
-advtext esc = bindQuery_li (textVector esc) body
+advtext esc = textVector esc &=> body
   where
     body v = replaceAns v $ escapedline esc
 
@@ -60,8 +60,8 @@ advtext esc = bindQuery_li (textVector esc) body
 
 textVector :: InterpretUnit u => EscapedText -> Query (AdvanceVec u)
 textVector esc = 
-    info cwLookupTable >>= \table -> 
-    info point_size    >>= \sz    -> 
+    cwLookupTable >>= \table -> 
+    point_size    >>= \sz    -> 
        let cs = destrEscapedText id esc 
        in return $ foldr (step sz table) (vec 0 0) cs
   where
@@ -69,9 +69,7 @@ textVector esc =
 
 charVector :: InterpretUnit u => EscapedChar -> Query (AdvanceVec u)
 charVector ch = 
-    info cwLookupTable  >>= \table -> 
-    info point_size     >>= \sz    -> 
-    return $ charWidth sz table ch
+    (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> point_size
    
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
 -- 
@@ -112,9 +110,9 @@ charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
 multilineHeight :: (Real u, Floating u, InterpretUnit u) 
                 => Int -> Query u
 multilineHeight line_count 
-    | line_count < 1  = return 0
-    | line_count == 1 = info verticalSpan
-    | otherwise       = fn <$> info verticalSpan <*> info baselineSpacing
+    | line_count < 1  = pure 0
+    | line_count == 1 = verticalSpan
+    | otherwise       = fn <$> verticalSpan <*> baselineSpacing
   where
     fn h1 bspan = let rest_spans = bspan * fromIntegral (line_count - 1)
                   in h1 + rest_spans
@@ -131,7 +129,7 @@ borderedTextPos :: (Real u, Floating u, InterpretUnit u)
                 => Int -> u -> Query (ObjectPos u)
 borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
-    info textMargin            >>= \(xsep,ysep) -> 
+    textMargin                 >>= \(xsep,ysep) -> 
     let hw    = xsep + (0.5 * w)
         hh    = ysep + (0.5 * h)
     in return $ ObjectPos hw hw hh hh 
@@ -157,9 +155,9 @@ borderedRotTextPos theta line_count max_w =
 orthoObjectPos :: (Real u, Floating u, InterpretUnit u) 
                => Radian -> ObjectPos u -> Query (ObjectPos u)
 orthoObjectPos ang opos = 
-    info point_size >>= \sz ->
-    let dopos = dblOrthoObjectPos ang $ uconvertExt sz opos
-    in return $ uconvertExt sz dopos
+    point_size >>= \sz ->
+    let dopos = dblOrthoObjectPos ang $ uconvertF sz opos
+    in return $ uconvertF sz dopos
 
 
 
@@ -183,7 +181,7 @@ dblOrthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
 --
 centerToBaseline :: (Fractional u, InterpretUnit u) => Query u
 centerToBaseline = 
-    (\ch vspan -> ch - 0.5 * vspan) <$> info capHeight <*> info verticalSpan
+    (\ch vspan -> ch - 0.5 * vspan) <$> capHeight <*> verticalSpan
 
 -- | All drawing is done on a spine that plots points from the 
 -- first line of text. The spine is calculated from its center and
@@ -192,7 +190,7 @@ centerToBaseline =
 centerSpineDisps :: Floating u 
                  => Int -> Radian -> Query (PointDisplace u, PointDisplace u)
 centerSpineDisps n theta =  
-    info baselineSpacing >>= \h1 -> 
+    baselineSpacing >>= \h1 -> 
     let dist_top    = h1 * centerCount n
         vec_to_top  = thetaNorthwards dist_top theta
     in return (vec_to_top, thetaSouthwards h1 theta)

@@ -100,15 +100,15 @@ axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (locStraightLine v)
 
 
 markHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markHLine = bindQuery_li (info markHeight) $ \h -> axialLine (hvec h)
+markHLine = markHeight &=> \h -> axialLine (hvec h)
 
 
 markVLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markVLine = bindQuery_li (info markHeight) $ \h -> axialLine (vvec h) 
+markVLine = markHeight &=> \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, InterpretUnit u) => LocGraphic u
-markX = bindQuery_li (info markHeight)  mkX 
+markX = markHeight &=> mkX 
   where
     mkX h = let w = 0.75 * h
               in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
@@ -120,7 +120,7 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
-markCross = bindQuery_li (info markHeight) mkCross
+markCross = markHeight &=> mkCross
   where
     mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
     ang       = pi*0.25  
@@ -131,8 +131,8 @@ pathDiamond :: (Fractional u, InterpretUnit u)
             => LocQuery u PrimPath
 pathDiamond = 
     promoteQ1 $ \pt -> 
-      info markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
-                                in coordinatePrimPath cp pt
+      markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
+                           in coordinatePrimPath cp pt
 
 
 
@@ -161,38 +161,38 @@ markBDiamond = pathDiamond `renderPathWith` borderedPath
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, InterpretUnit u) => LocGraphic u
-markDisk = bindQuery_li (info markHalfHeight) filledDisk
+markDisk = markHalfHeight &=> filledDisk
 
 
 
 markSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
 markSquare = 
-    bindQuery_li (info markHeight) $ \h -> 
+    markHeight &=> \h -> 
     let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
     
 
 
 markCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markCircle = bindQuery_li (info markHalfHeight) strokedDisk
+markCircle = markHalfHeight &=> strokedDisk
 
 
 markBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markBCircle = bindQuery_li (info markHalfHeight) borderedDisk 
+markBCircle = markHalfHeight &=> borderedDisk 
 
 
 
 markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
 markPentagon = promote_li1 $ \pt -> 
-      bindQuery_i (pentagonPath pt) closedStroke
+    pentagonPath pt &=> closedStroke
   where
-    pentagonPath pt = info markHalfHeight >>= \hh -> 
+    pentagonPath pt = markHalfHeight >>= \hh -> 
                       coordinatePrimPath (polygonCoordPath 5 hh) pt
 
  
 
 
 markStar :: (Floating u, InterpretUnit u) => LocGraphic u 
-markStar = bindQuery_li (info markHeight) $ \h -> starLines (0.5*h)
+markStar = markHeight &=> \h -> starLines (0.5*h)
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 starLines hh = 
@@ -205,7 +205,7 @@ starLines hh =
 
 
 markAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
-markAsterisk = bindQuery_li (info markHeight) asteriskLines
+markAsterisk = markHeight &=> asteriskLines
 
 asteriskLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
@@ -237,7 +237,7 @@ markTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
 markTriangle = tripath `renderPathWith` closedStroke
   where
     tripath = promoteQ1 $ \pt -> 
-                info markHeight >>= \h -> 
+                markHeight >>= \h -> 
                   let cp = equilateralTriangleCoordPath h
                   in coordinatePrimPath cp pt
 

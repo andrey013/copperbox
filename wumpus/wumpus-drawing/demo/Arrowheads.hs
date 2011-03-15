@@ -25,7 +25,7 @@ main = do
 
 arrow_drawing :: CtxPicture
 arrow_drawing = 
-    drawTracing $ updateCtx dotted_line $ tableGraphic arrtable
+    drawTracing $ localize dotted_line $ tableGraphic arrtable
 
 arrtable :: [(Arrowhead Double, Arrowhead Double)]
 arrtable = 
