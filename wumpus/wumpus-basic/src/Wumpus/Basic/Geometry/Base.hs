@@ -17,10 +17,8 @@
 module Wumpus.Basic.Geometry.Base
   ( 
 
-    LengthTolerance(..)
-
   -- * constants
-  , quarter_pi
+    quarter_pi
   , half_pi
   , two_pi
 
@@ -75,25 +73,6 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 
--- | Path length measurement in Wumpus does not have a strong 
--- need to be exact.
--- 
--- Bezier path lengths are calculated by iteration, so greater 
--- accuracy requires more compution. As it is hard to visually
--- differentiate measures of less than a point the tolerance 
--- for Points is quite high quite high (0.1).
--- 
--- The situation is more complicated for contextual units 
--- (Em and En) as they are really scaling factors. The bigger
--- the point size the less accurate the measure is.
--- 
-class LengthTolerance u where length_tolerance :: u
-
-instance LengthTolerance Double     where length_tolerance = 0.1
-instance LengthTolerance Centimeter where length_tolerance = 0.01
-instance LengthTolerance Em         where length_tolerance = 0.01
-instance LengthTolerance En         where length_tolerance = 0.01
-instance LengthTolerance AfmUnit    where length_tolerance = 0.1
 
 
 

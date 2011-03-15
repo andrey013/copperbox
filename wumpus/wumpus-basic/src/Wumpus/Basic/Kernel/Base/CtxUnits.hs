@@ -61,3 +61,5 @@ instance InterpretUnit En where
 
 
 
+instance LengthTolerance Em         where length_tolerance = 0.01
+instance LengthTolerance En         where length_tolerance = 0.01

@@ -120,7 +120,7 @@ circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
 
 mkCircle :: InterpretUnit u => u -> LocThetaQuery u (Circle u)
 mkCircle radius = promoteQ2 $ \ctr theta -> 
-    info (uconvertExtQ ctr) >>= \dctr ->
+    uconvertFDC ctr >>= \dctr ->
     pure $ Circle { circ_ctm    = makeShapeCTM dctr theta
                   , circ_radius = radius 
                   }

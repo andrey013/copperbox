@@ -36,6 +36,7 @@ module Wumpus.Basic.Geometry.Intersection
   where
 
 import Wumpus.Basic.Geometry.Base
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

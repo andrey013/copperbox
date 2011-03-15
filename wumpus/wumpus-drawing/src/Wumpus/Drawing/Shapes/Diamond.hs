@@ -146,7 +146,7 @@ diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
 mkDiamond hw hh = promoteQ2 $ \ctr theta -> 
-    info (uconvertExtQ ctr) >>= \dctr ->
+    uconvertFDC ctr >>= \dctr ->
     pure $ Diamond { dia_ctm = makeShapeCTM dctr theta
                    , dia_hw  = hw
                    , dia_hh  = hh 
@@ -160,14 +160,5 @@ mkDiamondPath hw hh = promoteQ2 $ \ctr theta ->
     in mapM (rotateAboutCtx theta ctr) ps >>= roundCornerShapePath 
 
 
-rotateAboutCtx :: (Functor t, InterpretUnit u, RotateAbout (t Double))
-               => Radian -> Point2 u -> t u -> Query (t u)
-rotateAboutCtx ang pt a = 
-  info (uconvertExtQ pt) >>= \(dctr :: DPoint2) ->
-  info (uconvertExtQ a)  >>= \(da   :: t Double)  -> 
-  let ans = rotateAbout ang dctr da in 
-  info (uconvertExtQ ans)
 
--- List version only doing one lookup would be good...  
 
--- Got to do something about info - it is horrible...

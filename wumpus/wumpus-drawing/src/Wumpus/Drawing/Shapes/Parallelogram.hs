@@ -50,7 +50,7 @@ import Control.Applicative
 -- | A Paralleogram.
 --
 data Parallelogram u = Parallelogram 
-      { pll_ctm         :: ShapeCTM u
+      { pll_ctm         :: ShapeCTM
       , pll_base_width  :: !u
       , pll_height      :: !u
       , pll_base_l_ang  :: Radian
@@ -78,10 +78,10 @@ type DParallelogram = Parallelogram Double
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Parallelogram u -> Parallelogram u
+mapCTM :: (ShapeCTM -> ShapeCTM) -> Parallelogram u -> Parallelogram u
 mapCTM f = (\s i -> s { pll_ctm = f i }) <*> pll_ctm
 
-instance Num u => Scale (Parallelogram u) where
+instance Scale (Parallelogram u) where
   scale sx sy = mapCTM (scale sx sy)
 
 
@@ -89,11 +89,11 @@ instance Rotate (Parallelogram u) where
   rotate ang = mapCTM (rotate ang)
                   
 
-instance (Real u, Floating u, PtSize u) => RotateAbout (Parallelogram u) where
+instance RotateAbout (Parallelogram u) where
   rotateAbout ang pt = mapCTM (rotateAbout ang pt)
 
 
-instance PtSize u => Translate (Parallelogram u) where
+instance Translate (Parallelogram u) where
   translate dx dy = mapCTM (translate dx dy)
 
 --------------------------------------------------------------------------------
@@ -104,8 +104,8 @@ instance PtSize u => Translate (Parallelogram u) where
 --                           * base_minor
 --                           * base_major -> Vec ) * parallelogram -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, PtSize u)
-                  => (u -> u -> u -> u -> Vec2 u) -> Parallelogram u -> Point2 u
+runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
+                  => (u -> u -> u -> u -> Vec2 u) -> Parallelogram u -> Anchor u
 runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
                                     , pll_base_width = bw
                                     , pll_height     = h  
@@ -115,43 +115,43 @@ runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CenterAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CenterAnchor Parallelogram u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 -- top anchors swap the base minor and major...
 --
-instance (Real u, Floating u, PtSize u) => 
-    TopCornerAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    TopCornerAnchor Parallelogram u where
   topLeftCorner  = runDisplaceCenter $ \_ hh _ bmaj -> V2 (-bmaj) hh
   topRightCorner = runDisplaceCenter $ \_ hh bmin _ -> V2 bmin    hh
 
-instance (Real u, Floating u, PtSize u) => 
-    BottomCornerAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    BottomCornerAnchor Parallelogram u where
   bottomLeftCorner  = runDisplaceCenter $ \_ hh bmin _ -> V2 (-bmin) (-hh)
   bottomRightCorner = runDisplaceCenter $ \_ hh _ bmaj -> V2 bmaj    (-hh)
 
-instance (Real u, Floating u, PtSize u) => 
-    SideMidpointAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    SideMidpointAnchor Parallelogram u where
   sideMidpoint n a = step (n `mod` 4) 
     where
-      step 1 = midpoint (topRightCorner a)    (topLeftCorner a)
-      step 2 = midpoint (topLeftCorner a)     (bottomLeftCorner a)
-      step 3 = midpoint (bottomLeftCorner a)  (bottomRightCorner a)
-      step _ = midpoint (bottomRightCorner a) (topRightCorner a)
+      step 1 = midpoint <$> topRightCorner a    <*> topLeftCorner a
+      step 2 = midpoint <$> topLeftCorner a     <*> bottomLeftCorner a
+      step 3 = midpoint <$> bottomLeftCorner a  <*> bottomRightCorner a
+      step _ = midpoint <$> bottomRightCorner a <*> topRightCorner a
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u) => 
+    CardinalAnchor Parallelogram u where
   north = runDisplaceCenter $ \_  hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_  hh _ _ -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  _ _ -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  _ _ -> V2 (-hw) 0
 
 
-instance (Real u, Floating u, PtSize u) => 
-    CardinalAnchor2 (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+    CardinalAnchor2 Parallelogram u where
   northeast = pllRadialAnchor (0.25*pi)
   southeast = pllRadialAnchor (1.75*pi)
   southwest = pllRadialAnchor (1.25*pi)
@@ -159,15 +159,15 @@ instance (Real u, Floating u, PtSize u) =>
 
 
 
-instance (Real u, Floating u, PtSize u) => 
-     RadialAnchor (Parallelogram u) u where
+instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+     RadialAnchor Parallelogram u where
    radialAnchor = pllRadialAnchor
 
 
 -- TODO - update this to a quadrant function...
 --
-pllRadialAnchor :: (Real u, Floating u, PtSize u) 
-                => Radian -> Parallelogram u -> Point2 u
+pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+                => Radian -> Parallelogram u -> Query (Point2 u)
 pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
                                      , pll_height    = h
                                      , pll_syn_props = syn }) =
@@ -186,7 +186,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
 -- | 'parallelogram'  : @ width * height * bottom_left_ang -> Parallelogram @
 --
 --
-parallelogram :: (Real u, Floating u, PtSize u) 
+parallelogram :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
@@ -198,7 +198,7 @@ parallelogram bw h lang =
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
 --
 --
-zparallelogram :: (Real u, Floating u, PtSize u) 
+zparallelogram :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> u -> Shape Parallelogram u
 zparallelogram bw h = parallelogram bw h ang
   where
@@ -208,11 +208,12 @@ zparallelogram bw h = parallelogram bw h ang
 --------------------------------------------------------------------------------
 
 
-mkParallelogram :: (Real u, Fractional u) 
+mkParallelogram :: (Real u, Fractional u, InterpretUnit u, LengthTolerance u) 
                 => u -> u -> Radian -> SyntheticProps u 
-                -> LocThetaCF u (Parallelogram u)
-mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
-    pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
+                -> LocThetaQuery u (Parallelogram u)
+mkParallelogram bw h lang props = promoteQ2 $ \ctr theta -> 
+    uconvertFDC ctr >>= \dctr ->
+    pure $ Parallelogram { pll_ctm          = makeShapeCTM dctr theta
                          , pll_base_width   = bw
                          , pll_height       = h
                          , pll_base_l_ang   = lang
@@ -239,11 +240,12 @@ synthesizeProps bw h lang
 
 
 
-mkParallelogramPath :: (Real u, Floating u, PtSize u) 
-                    => u -> u -> u -> LocThetaCF u (Path u)
-mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
-    roundCornerShapePath $ map (rotateAbout theta ctr) 
-                         $ pllPath bw_minor bw_major h ctr
+mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+                    => u -> u -> u -> LocThetaQuery u (Path u)
+mkParallelogramPath bw_minor bw_major h = promoteQ2 $ \ctr theta -> 
+    let xs = pllPath bw_minor bw_major h ctr
+    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+                         
 
 
 pllPath :: (Real u, Floating u) 

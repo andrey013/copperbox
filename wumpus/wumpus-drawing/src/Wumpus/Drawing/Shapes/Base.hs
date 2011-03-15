@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -43,14 +44,15 @@ module Wumpus.Drawing.Shapes.Base
   , ctmCenter
   , ctmAngle
   , displaceCenter
- 
+
+  , rotateAboutCtx
+  , rotateAboutCtxT 
 
   ) where
 
 import Wumpus.Drawing.Paths
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( white )
@@ -59,6 +61,8 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
+import Data.Traversable ( Traversable )
+import qualified Data.Traversable as T
 
 -- | Shape is a record of three /LocTheta/ functions - 
 -- functions /from Point and Angle to answer/. 
@@ -138,9 +142,9 @@ dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage t u
 dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc closedStroke sh
-    back = bindQuery_li (info getLineWidth) $ \lw ->
-           localize (set_line_width $ lw * 3.0) img
-    fore = ignoreAns $ localize (stroke_colour white) img
+    back = getLineWidth &=> \lw ->
+           local_ctx (set_line_width $ lw * 3.0) img
+    fore = ignoreAns $ local_ctx (stroke_colour white) img
 
 
 
@@ -155,10 +159,10 @@ borderedShape = shapeToLoc borderedPath
 shapeToLoc :: InterpretUnit u
            => (PrimPath -> Graphic u) -> Shape t u -> LocImage t u
 shapeToLoc drawF sh = promote_li1 $ \pt -> 
-    bindQuery_i (applyQ2 (shape_ans_fun sh)  pt 0) $ \a -> 
-    bindQuery_i (applyQ2 (shape_path_fun sh) pt 0) $ \spath -> 
+    applyQ2 (shape_ans_fun sh)  pt 0 &=> \a -> 
+    applyQ2 (shape_path_fun sh) pt 0 &=> \spath -> 
     let g2 = atRot (shape_decoration sh) pt 0 
-    in intoImage (pure a) (decorate g2 $ bindQuery_i (toPrimPath spath) drawF)
+    in intoImage (pure a) (decorate g2 $ toPrimPath spath &=> drawF)
 
 
 
@@ -177,10 +181,10 @@ rborderedShape = shapeToLocTheta borderedPath
 shapeToLocTheta :: InterpretUnit u
                 => (PrimPath -> Graphic u) -> Shape t u -> LocThetaImage t u
 shapeToLocTheta drawF sh = promote_lti2 $ \pt theta -> 
-    bindQuery_i (applyQ2 (shape_ans_fun sh)  pt theta) $ \a -> 
-    bindQuery_i (applyQ2 (shape_path_fun sh) pt theta) $ \spath -> 
+    applyQ2 (shape_ans_fun sh)  pt theta &=> \a -> 
+    applyQ2 (shape_path_fun sh) pt theta &=> \spath -> 
     let g2 = atRot (shape_decoration sh) pt theta
-    in intoImage (pure a) (decorate g2 $ bindQuery_i (toPrimPath spath) drawF)
+    in intoImage (pure a) (decorate g2 $ toPrimPath spath &=> drawF)
 
 
 
@@ -189,7 +193,7 @@ shapeToLocTheta drawF sh = promote_lti2 $ \pt theta ->
 roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                      => [Point2 u] -> Query (Path u)
 roundCornerShapePath xs = 
-    info roundCornerSize >>= \sz -> 
+    roundCornerSize >>= \sz -> 
     if sz == 0 then return (traceLinePoints xs) 
                else return (roundTrail  sz xs)
 
@@ -285,9 +289,25 @@ displaceCenter v0 (ShapeCTM { ctm_center   = ctr0
                             , ctm_scale_x  = sx
                             , ctm_scale_y  = sy
                             , ctm_rotation = theta }) = 
-    info (uconvertExtQ v0) >>= \v' -> info (uconvertExtQ (ctr .+^ mkv v'))
+    uconvertFDC v0 >>= \v' -> uconvertFDC (ctr .+^ mkv v')
   where
     ctr = rotate theta $ scale sx sy ctr0
     mkv = rotateAbout theta ctr . scale sx sy
      
     
+
+
+rotateAboutCtx :: (Functor r, InterpretUnit u, RotateAbout (r Double))
+               => Radian -> Point2 u -> r u -> Query (r u)
+rotateAboutCtx ang pt a = 
+    uconvertFDC pt >>= \(dctr :: DPoint2) ->
+    uconvertFDC a  >>= \(da   :: t Double)  -> 
+    let ans = rotateAbout ang dctr da in uconvertFDC ans
+
+rotateAboutCtxT :: (Functor r, Traversable t, InterpretUnit u, RotateAbout (r Double))
+                => Radian -> Point2 u -> t (r u) -> Query (t (r u))
+rotateAboutCtxT ang pt xs = 
+    uconvertFDC pt >>= \(dctr :: DPoint2) -> T.mapM (mf dctr) xs
+  where
+    mf dctr a = uconvertFDC a >>= \(da   :: t Double)  -> 
+                let ans = rotateAbout ang dctr da in uconvertFDC ans
