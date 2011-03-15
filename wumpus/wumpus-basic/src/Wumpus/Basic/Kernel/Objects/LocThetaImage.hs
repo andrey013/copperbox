@@ -99,6 +99,16 @@ instance Lift0R2 (LocThetaImage r u) (Image r u) where
 instance Lift1R2 (LocThetaImage r u) (LocImage r u) where
   lift1R2 = lift_lti1
 
+
+
+instance BindQuery1 (LocThetaImage r u) where
+  (&=>) = bindR1
+
+
+instance BindQuery3 (LocThetaImage r u) (Image r u) where
+  (&===>) = bindLocThetaQuery_lti
+
+
 --------------------------------------------------------------------------------
 
 instance OPlus (r u) => OPlus (LocThetaImage r u) where
@@ -303,4 +313,17 @@ bindLocThetaQuery_lti qry fn = LocThetaImage $ \ctx pt ang ->
     let f1 = runQuery qry ctx in runImage (fn $ f1 pt ang) ctx
 
 
+bindR1 :: Query ans 
+       -> (ans -> LocThetaImage r u) 
+       -> LocThetaImage r u
+bindR1 qry fn = LocThetaImage $ \ctx pt ang -> 
+    let a = runQuery qry ctx in runLocThetaImage (fn a) ctx pt ang
+
+
+
+bindR2 :: Query (Point2 u -> Radian -> ans)
+       -> (ans -> Point2 u -> Radian -> Image r u) 
+       -> LocThetaImage r u
+bindR2 qry fn = LocThetaImage $ \ctx pt ang -> 
+    let f1 = runQuery qry ctx in runImage (fn (f1 pt ang) pt ang) ctx
 

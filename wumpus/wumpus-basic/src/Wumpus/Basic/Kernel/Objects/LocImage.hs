@@ -83,7 +83,7 @@ instance Lift0R1 (LocImage r u) (Image r u) where
   lift0R1 = lift_li1
 
 
-instance BindQuery1 LocImage where
+instance BindQuery1 (LocImage r u) where
   (&=>) = bindQuery_li
 
 instance BindQuery2 (LocImage r u) (Image r u) where
@@ -286,19 +286,18 @@ bindLocQuery_li qry fn = LocImage $ \ctx pt ->
 
 
 
-{-
+
 -- OUT OF DATE....
 
 -- | Use a Query to generate ans @ans@ turn the @ans@ with the
 -- builder.
 --
-bindQuery_li1 :: InterpretUnit u 
-              => Query ans -> (ans -> DPoint2 -> Image r u) -> LocImage r u
+bindQuery_li1 :: Query (Point2 u -> ans) 
+              -> (ans -> Point2 u -> Image r u) 
+              -> LocImage r u
 bindQuery_li1 qy fn = LocImage $ \ctx pt -> 
-    let ans = runQuery qy ctx 
-        sz  = dc_font_size ctx        
-    in runImage (fn ans $ uconvertExt sz pt) ctx
--}
+    let f1 = runQuery qy ctx in runImage (fn (f1 pt) pt) ctx
+
 
 
 

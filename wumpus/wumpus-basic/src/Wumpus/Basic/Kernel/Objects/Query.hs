@@ -27,6 +27,7 @@ module Wumpus.Basic.Kernel.Objects.Query
 
   , BindQuery1(..)
   , BindQuery2(..)
+  , BindQuery3(..)
 
   , makeQuery
   , makeLocQuery
@@ -89,18 +90,23 @@ instance DrawingCtxM Query where
 
 
 
-infixr 1 &=>, &==>
+infixr 1 &=>, &==>, &===>
 
 class BindQuery1 t where
-  (&=>) :: forall (r :: * -> *) (u :: *) (ans :: *).  
-           Query ans -> (ans -> t r u) -> t r u
+  (&=>) :: Query ans -> (ans -> t) -> t
 
 
 class BindQuery2 t1 t where
   (&==>)  :: (Answer t ~ Answer t1, r1 ~ Arg1 t1 t) =>
              Query (r1 -> ans) -> (ans -> t) -> t1
 
--- bindLocQuery_li :: LocQuery u ans -> (ans -> Image r u) -> LocImage r u
+
+class BindQuery3 t2 t where
+  (&===>) :: (Answer t ~ Answer t2, r1 ~ Arg1 t2 t, r2 ~ Arg2 t2 t) =>
+             Query (r1 -> r2 -> ans) -> (ans -> t) -> t2
+
+
+
 
 
 makeQuery :: Query a 

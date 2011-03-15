@@ -419,8 +419,7 @@ locStraightLine v = locPath [v] &==> openStroke
 -- 
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curvedLine p0 p1 p2 p3 = 
-    curvedPath [p0,p1,p2,p3] &=> openStroke
+curvedLine p0 p1 p2 p3 = curvedPath [p0,p1,p2,p3] &=> openStroke
 
 
 
@@ -528,8 +527,7 @@ strokedEllipse rx ry = ellipsePath rx ry &==> closedStroke
 -- 
 rstrokedEllipse :: InterpretUnit u
                 => u -> u -> LocThetaGraphic u
-rstrokedEllipse rx ry = 
-    bindLocThetaQuery_lti (rellipsePath rx ry) closedStroke
+rstrokedEllipse rx ry = rellipsePath rx ry &===> closedStroke
 
 
 
@@ -554,8 +552,7 @@ filledEllipse rx ry = ellipsePath rx ry &==> filledPath
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 rfilledEllipse :: InterpretUnit u => u -> u -> LocThetaGraphic u
-rfilledEllipse rx ry = 
-    bindLocThetaQuery_lti (rellipsePath rx ry) filledPath
+rfilledEllipse rx ry = rellipsePath rx ry &===> filledPath
 
 
 
@@ -583,8 +580,7 @@ borderedEllipse rx ry = ellipsePath rx ry &==> borderedPath
 -- 
 rborderedEllipse :: InterpretUnit u
                  => u -> u -> LocThetaGraphic u
-rborderedEllipse rx ry = 
-    bindLocThetaQuery_lti (rellipsePath rx ry) borderedPath
+rborderedEllipse rx ry = rellipsePath rx ry &===> borderedPath
 
 
 
@@ -633,8 +629,6 @@ filledRectangle w h = rectanglePath w h &==> filledPath
 -- 
 borderedRectangle :: InterpretUnit u => u -> u -> LocGraphic u
 borderedRectangle w h = rectanglePath w h &==> borderedPath 
-
-
 
 ---------------------------------------------------------------------------
 

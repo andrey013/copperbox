@@ -64,7 +64,7 @@ type Graphic u = Image UNil u
 
 --------------------------------------------------------------------------------
 
-instance BindQuery1 Image where
+instance BindQuery1 (Image r u) where
   (&=>) = bindQuery_i
 
 --------------------------------------------------------------------------------

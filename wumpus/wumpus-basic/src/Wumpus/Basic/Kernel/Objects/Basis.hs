@@ -146,6 +146,16 @@ type family Arg3 t1 t
 
 type family Answer t
 
+{-
+type family R1o1 t1 t
+type family R1o2 t1 t 
+type family R2o2 t1 t 
+type family R1o3 t1 t
+type family R2o3 t1 t
+type family R2o3 t1 t
+-}
+
+
 class PromoteR1 t1 t where
   promoteR1 :: (Answer t ~ Answer t1, a ~ Arg1 t1 t) => (a -> t) -> t1
 
