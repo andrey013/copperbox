@@ -44,7 +44,6 @@ module Wumpus.Basic.Kernel.Objects.PosThetaImage
   , lift_pti2
   , lift_pti3
 
-  , bindQuery_pti
 
   ) where
 
@@ -79,7 +78,12 @@ newtype PosThetaImage r u = PosThetaImage {
 
 
 type instance Answer (PosThetaImage r u)     = r u
+type instance ArgDiff (PosThetaImage r u) (Image r u) 
+    = (Point2 u, RectPosition, Radian)
 
+
+
+type PosThetaQuery u ans = Query (Point2 u -> RectPosition -> Radian -> ans)
     
 -- | Version of PosThetaImage specialized to Double for the unit type.
 --
@@ -103,12 +107,17 @@ type DPosThetaGraphic = PosThetaGraphic Double
 
 --------------------------------------------------------------------------------
 
-type instance Arg1 (PosThetaImage r u) (Image r u) = Point2 u
-type instance Arg2 (PosThetaImage r u) (Image r u) = RectPosition
-type instance Arg3 (PosThetaImage r u) (Image r u) = Radian
 
 instance PromoteR3 (PosThetaImage r u) (Image r u) where
   promoteR3 = promote_pti3
+
+
+instance BindQuery (PosThetaImage r u) where
+   (&=>) = bindQuery
+
+
+instance BindQueryR3 (PosThetaImage r u) (Image r u) where
+   (&====>) = bindR3
 
 
 
@@ -272,10 +281,19 @@ lift_pti3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx
 -- TODO - what is the constructor function needed here?
 
 
--- | WARNING - not correct... ignores rpos...
---
-bindQuery_pti :: Query ans 
-              -> (ans -> PosThetaImage r u) 
-              -> PosThetaImage r u
-bindQuery_pti qry fn = PosThetaImage $ \ctx pt rpos ang -> 
+bindQuery :: Query ans 
+          -> (ans -> PosThetaImage r u) 
+          -> PosThetaImage r u
+bindQuery qry fn = PosThetaImage $ \ctx pt rpos ang -> 
     let ans = runQuery qry ctx in runPosThetaImage (fn ans) ctx pt rpos ang
+
+
+
+
+
+-- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
+-- @Image@ projecting up to a @LocImage@.
+--
+bindR3 :: PosThetaQuery u ans -> (ans -> Image r u) -> PosThetaImage r u
+bindR3 qy fn = PosThetaImage $ \ctx pt rpos ang -> 
+    let f1 = runQuery qy ctx in runImage (fn $ f1 pt rpos ang) ctx

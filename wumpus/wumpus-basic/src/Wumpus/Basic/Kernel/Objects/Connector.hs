@@ -62,6 +62,7 @@ newtype ConnectorImage r u = ConnectorImage {
 
 
 type instance Answer (ConnectorImage r u)     = r u
+type instance ArgDiff (ConnectorImage r u) (Image r u) = (Point2 u, Point2 u)
 
 
 -- | ConnectorGraphic - function from DrawingContext and start point to 
@@ -70,16 +71,25 @@ type instance Answer (ConnectorImage r u)     = r u
 type ConnectorGraphic u = ConnectorImage UNil u
 
 
-type ConnectorQuery r u = Query (Point2 u -> Point2 u -> r u)
+type ConnectorQuery u ans = Query (Point2 u -> Point2 u -> ans)
 
 
 --------------------------------------------------------------------------------
 
-type instance Arg1 (ConnectorImage r u) (Image r u) = Point2 u
-type instance Arg2 (ConnectorImage r u) (Image r u) = Point2 u
 
 instance PromoteR2 (ConnectorImage r u) (Image r u) where
   promoteR2 = promote_conn
+
+instance BindQuery (ConnectorImage r u) where
+   (&=>) = bindQuery
+
+
+instance BindQueryR2 (ConnectorImage r u) (Image r u) where
+   (&===>) = bindR2
+
+
+
+--------------------------------------------------------------------------------
 
 
 instance OPlus (r u) => OPlus (ConnectorImage r u) where
@@ -227,7 +237,7 @@ connect :: ConnectorImage r u -> Point2 u -> Point2 u -> Image r u
 connect gf p0 p1 = rawImage $ \ctx -> getConnectorImage gf ctx p0 p1
 
 
-intoConnectorImage :: ConnectorQuery r u -> ConnectorGraphic u 
+intoConnectorImage :: ConnectorQuery u (r u) -> ConnectorGraphic u 
                    -> ConnectorImage r u
 intoConnectorImage fn gf = ConnectorImage $ \ctx p0 p1 -> 
    let ans   = runQuery fn ctx p0 p1
@@ -257,3 +267,14 @@ promote_conn gf =
 
 lift_conn :: Image r u -> ConnectorImage r u
 lift_conn gf = ConnectorImage $ \ctx _ _ -> runImage gf ctx 
+
+
+
+bindQuery :: Query ans -> (ans -> ConnectorImage r u) -> ConnectorImage r u
+bindQuery qy fn = ConnectorImage $ \ctx p0 p1 -> 
+    let a = runQuery qy ctx in runConnectorImage (fn a) ctx p0 p1
+
+
+bindR2 :: ConnectorQuery u ans -> (ans -> Image r u) -> ConnectorImage r u
+bindR2 qy fn = ConnectorImage $ \ctx p0 p1 -> 
+    let f1 = runQuery qy ctx in runImage (fn $ f1 p0 p1) ctx

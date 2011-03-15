@@ -36,9 +36,6 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , lift_lti1
    , lift_lti2
 
-   , bindQuery_lti
-   , bindLocQuery_lti
-   , bindLocThetaQuery_lti
 
    )
 
@@ -67,6 +64,8 @@ newtype LocThetaImage r u = LocThetaImage {
 
 type instance Answer (LocThetaImage r u) = r u
 
+type instance ArgDiff (LocThetaImage r u) (Image r u) = (Point2 u, Radian)
+
 
 -- | LocThetaGraphic - function from DrawingContext and start point to 
 -- a graphic /primitive/.
@@ -77,8 +76,6 @@ type LocThetaGraphic u = LocThetaImage UNil u
 
 --------------------------------------------------------------------------------
 
-type instance Arg1 (LocThetaImage r u) (Image r u) = Point2 u
-type instance Arg2 (LocThetaImage r u) (Image r u) = Radian
 
 
 instance PromoteR2 (LocThetaImage r u) (Image r u) where
@@ -101,12 +98,12 @@ instance Lift1R2 (LocThetaImage r u) (LocImage r u) where
 
 
 
-instance BindQuery1 (LocThetaImage r u) where
-  (&=>) = bindR1
+instance BindQuery (LocThetaImage r u) where
+   (&=>) = bindQuery
 
 
-instance BindQuery3 (LocThetaImage r u) (Image r u) where
-  (&===>) = bindLocThetaQuery_lti
+instance BindQueryR2 (LocThetaImage r u) (Image r u) where
+   (&===>) = bindR2
 
 
 --------------------------------------------------------------------------------
@@ -287,43 +284,16 @@ lift_lti2 gf = LocThetaImage $ \ctx _ _ -> runImage gf ctx
 
 
 
-bindQuery_lti :: InterpretUnit u 
-              => Query ans -> (ans -> DPoint2 -> Radian -> Image r u) 
-              -> LocThetaImage r u
-bindQuery_lti qy fn = LocThetaImage $ \ctx pt ang -> 
-    let ans = runQuery qy ctx 
-        sz  = dc_font_size ctx        
-    in runImage (fn ans (uconvertF sz pt) ang) ctx
+
+bindQuery :: Query ans -> (ans -> LocThetaImage r u) -> LocThetaImage r u
+bindQuery qy fn = LocThetaImage $ \ctx pt ang -> 
+    let a = runQuery qy ctx in runLocThetaImage (fn a) ctx pt ang
 
 
 -- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
 -- @Image@ projecting up to a @LocImage@.
 --
-bindLocQuery_lti :: LocQuery u ans 
-                 -> (ans -> Radian -> Image r u) 
-                 -> LocThetaImage r u
-bindLocQuery_lti qry fn = LocThetaImage $ \ctx pt ang -> 
-    let f1 = runQuery qry ctx in runImage (fn (f1 pt) ang) ctx
-
-
-bindLocThetaQuery_lti :: LocThetaQuery u ans 
-                      -> (ans -> Image r u) 
-                      -> LocThetaImage r u
-bindLocThetaQuery_lti qry fn = LocThetaImage $ \ctx pt ang -> 
-    let f1 = runQuery qry ctx in runImage (fn $ f1 pt ang) ctx
-
-
-bindR1 :: Query ans 
-       -> (ans -> LocThetaImage r u) 
-       -> LocThetaImage r u
-bindR1 qry fn = LocThetaImage $ \ctx pt ang -> 
-    let a = runQuery qry ctx in runLocThetaImage (fn a) ctx pt ang
-
-
-
-bindR2 :: Query (Point2 u -> Radian -> ans)
-       -> (ans -> Point2 u -> Radian -> Image r u) 
-       -> LocThetaImage r u
-bindR2 qry fn = LocThetaImage $ \ctx pt ang -> 
-    let f1 = runQuery qry ctx in runImage (fn (f1 pt ang) pt ang) ctx
+bindR2 :: LocThetaQuery u ans -> (ans -> Image r u) -> LocThetaImage r u
+bindR2 qy fn = LocThetaImage $ \ctx pt ang -> 
+    let f1 = runQuery qy ctx in runImage (fn $ f1 pt ang) ctx
 

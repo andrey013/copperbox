@@ -64,8 +64,13 @@ type Graphic u = Image UNil u
 
 --------------------------------------------------------------------------------
 
-instance BindQuery1 (Image r u) where
+instance BindQuery (Image r u) where
   (&=>) = bindQuery_i
+
+-- Images have no arity except the DrawingContext so there is no
+-- BindQueryRN instance.
+
+
 
 --------------------------------------------------------------------------------
 instance OPlus (r u) => OPlus (Image r u) where

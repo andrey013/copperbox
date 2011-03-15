@@ -28,9 +28,7 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
   , Object(..)
 
-  , Arg1
-  , Arg2
-  , Arg3
+  , ArgDiff
   , Answer
   , PromoteR1(..)
   , PromoteR2(..)
@@ -140,33 +138,24 @@ class Object t where
 --
 
 
-type family Arg1 t1 t
-type family Arg2 t1 t 
-type family Arg3 t1 t
 
 type family Answer t
 
-{-
-type family R1o1 t1 t
-type family R1o2 t1 t 
-type family R2o2 t1 t 
-type family R1o3 t1 t
-type family R2o3 t1 t
-type family R2o3 t1 t
--}
+type family ArgDiff t1 t
+
+
 
 
 class PromoteR1 t1 t where
-  promoteR1 :: (Answer t ~ Answer t1, a ~ Arg1 t1 t) => (a -> t) -> t1
+  promoteR1 :: (Answer t ~ Answer t1, a ~ ArgDiff t1 t) => (a -> t) -> t1
 
-class PromoteR2 t1 t where
-  promoteR2 :: (Answer t ~ Answer t1, a ~ Arg1 t1 t, b ~ Arg2 t1 t) 
-            => (a -> b -> t) -> t1
+class PromoteR2 t2 t where
+  promoteR2 :: (Answer t ~ Answer t2, (a,b) ~ ArgDiff t2 t) 
+            => (a -> b -> t) -> t2
 
-class PromoteR3 t1 t where
-  promoteR3 :: ( Answer s ~ Answer s1
-               , a ~ Arg1 t1 t, b ~ Arg2 t1 t, c ~ Arg3 t1 t ) 
-            => (a -> b -> c -> t) -> t1
+class PromoteR3 t3 t where
+  promoteR3 :: (Answer s ~ Answer s1, (a,b,c) ~ ArgDiff t3 t) 
+            => (a -> b -> c -> t) -> t3
 
 
 class Lift0R1 t1 t where

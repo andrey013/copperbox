@@ -50,6 +50,7 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , straightLine
   , locStraightLine
   , curvedLine
+  , straightConnector
 
   -- * Circles
   , strokedCircle
@@ -83,16 +84,17 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Query
+import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
 
 
--- Helper
+-- Helpers
 
 scalarSize :: InterpretUnit u => u -> Query Double
 scalarSize u = makeQuery point_size (\sz -> uconvertScalar sz u)
@@ -421,6 +423,19 @@ curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
 curvedLine p0 p1 p2 p3 = curvedPath [p0,p1,p2,p3] &=> openStroke
 
+
+
+
+-- | 'straightConnector' : @ start_point * end_point -> Connector @ 
+-- 
+-- Create a straight line 'Graphic', the start and end point 
+-- are supplied implicitly.
+-- 
+-- The line properties (colour, pen thickness, etc.) are taken 
+-- from the implicit 'DrawingContext'.
+-- 
+straightConnector :: InterpretUnit u => ConnectorGraphic u
+straightConnector = promoteR2 $ \p0 p1 -> vertexPath [p0,p1] &=> openStroke
 
 
 

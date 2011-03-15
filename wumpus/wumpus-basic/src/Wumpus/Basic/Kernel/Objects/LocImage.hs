@@ -61,6 +61,11 @@ newtype LocImage r u = LocImage {
 
 type instance Answer (LocImage r u)  = r u
 
+type instance ArgDiff (LocImage r u) (Image r u) = Point2 u
+
+
+
+
 -- | LocGraphic - function from DrawingContext and start point to 
 -- a graphic /primitive/.
 --
@@ -73,8 +78,6 @@ type LocGraphic u = LocImage UNil u
 
 
 
-type instance Arg1 (LocImage r u) (Image r u) = Point2 u
-
 instance PromoteR1 (LocImage r u) (Image r u) where
   promoteR1 = promote_li1
 
@@ -83,10 +86,10 @@ instance Lift0R1 (LocImage r u) (Image r u) where
   lift0R1 = lift_li1
 
 
-instance BindQuery1 (LocImage r u) where
+instance BindQuery (LocImage r u) where
   (&=>) = bindQuery_li
 
-instance BindQuery2 (LocImage r u) (Image r u) where
+instance BindQueryR1 (LocImage r u) (Image r u) where
   (&==>) = bindLocQuery_li
 
 --------------------------------------------------------------------------------
@@ -288,7 +291,7 @@ bindLocQuery_li qry fn = LocImage $ \ctx pt ->
 
 
 -- OUT OF DATE....
-
+{-
 -- | Use a Query to generate ans @ans@ turn the @ans@ with the
 -- builder.
 --
@@ -297,7 +300,7 @@ bindQuery_li1 :: Query (Point2 u -> ans)
               -> LocImage r u
 bindQuery_li1 qy fn = LocImage $ \ctx pt -> 
     let f1 = runQuery qy ctx in runImage (fn (f1 pt) pt) ctx
-
+-}
 
 
 

@@ -62,6 +62,7 @@ import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -80,6 +81,8 @@ newtype PosImage r u = PosImage {
 
 type instance Answer (PosImage r u)     = r u
 
+type instance ArgDiff (PosImage r u) (Image r u) = (Point2 u, RectPosition)
+
     
 -- | Version of PosImage specialized to Double for the unit type.
 --
@@ -96,6 +99,8 @@ type PosGraphic u = PosImage UNil u
 --
 type DPosGraphic = PosGraphic Double
 
+
+type PosQuery u ans = Query (Point2 u -> RectPosition -> ans)
 
 
 -- | Datatype enumerating positions within a rectangle that can be
@@ -141,13 +146,21 @@ data ObjectPos u = ObjectPos
 
 --------------------------------------------------------------------------------
 
-type instance Arg1 (PosImage r u) (Image r u) = Point2 u
-type instance Arg2 (PosImage r u) (Image r u) = RectPosition
 
 instance PromoteR2 (PosImage r u) (Image r u) where
   promoteR2 = promote_pi2
 
 
+
+instance BindQuery (PosImage r u) where
+   (&=>) = bindQuery
+
+
+instance BindQueryR2 (PosImage r u) (Image r u) where
+   (&===>) = bindR2
+
+
+--------------------------------------------------------------------------------
 
 instance Functor ObjectPos where
   fmap f (ObjectPos xmin xmaj ymin ymaj) = 
@@ -307,6 +320,23 @@ lift_pi1 gf = PosImage $ \ctx pt _ -> runLocImage gf ctx pt
 
 lift_pi2 :: Image r u -> PosImage r u
 lift_pi2 gf = PosImage $ \ctx _ _ -> runImage gf ctx 
+
+
+
+bindQuery :: Query ans -> (ans -> PosImage r u) -> PosImage r u
+bindQuery qy fn = PosImage $ \ctx pt rpos -> 
+    let a = runQuery qy ctx in runPosImage (fn a) ctx pt rpos
+
+
+-- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
+-- @Image@ projecting up to a @LocImage@.
+--
+bindR2 :: PosQuery u ans -> (ans -> Image r u) -> PosImage r u
+bindR2 qy fn = PosImage $ \ctx pt rpos -> 
+    let f1 = runQuery qy ctx in runImage (fn $ f1 pt rpos) ctx
+
+
+--------------------------------------------------------------------------------
 
 
 -- | 'posImage' : @ object_pos * loc_graphic -> PosGraphic @ 

@@ -25,9 +25,11 @@ module Wumpus.Basic.Kernel.Objects.Query
   , LocQuery
   , LocThetaQuery
 
-  , BindQuery1(..)
-  , BindQuery2(..)
-  , BindQuery3(..)
+  , BindQuery(..)
+
+  , BindQueryR1(..)
+  , BindQueryR2(..)
+  , BindQueryR3(..)
 
   , makeQuery
   , makeLocQuery
@@ -92,19 +94,26 @@ instance DrawingCtxM Query where
 
 infixr 1 &=>, &==>, &===>
 
-class BindQuery1 t where
+
+-- | All objects should have BindQuery.
+
+class BindQuery t where
   (&=>) :: Query ans -> (ans -> t) -> t
 
+-- | Objects should have one BindQueryRN matching their arity.
 
-class BindQuery2 t1 t where
-  (&==>)  :: (Answer t ~ Answer t1, r1 ~ Arg1 t1 t) =>
-             Query (r1 -> ans) -> (ans -> t) -> t1
+class BindQueryR1 t1 t where
+  (&==>)    :: (Answer t ~ Answer t1, r1 ~ ArgDiff t1 t) =>
+               Query (r1 -> ans) -> (ans -> t) -> t1
 
 
-class BindQuery3 t2 t where
-  (&===>) :: (Answer t ~ Answer t2, r1 ~ Arg1 t2 t, r2 ~ Arg2 t2 t) =>
-             Query (r1 -> r2 -> ans) -> (ans -> t) -> t2
+class BindQueryR2 t2 t where
+  (&===>)   :: (Answer t ~ Answer t2, (r1,r2) ~ ArgDiff t2 t) =>
+               Query (r1 -> r2 -> ans) -> (ans -> t) -> t2
 
+class BindQueryR3 t3 t where
+  (&====>)  :: (Answer t ~ Answer t3, (r1,r2,r3) ~ ArgDiff t3 t) =>
+               Query (r1 -> r2 -> r3 -> ans) -> (ans -> t) -> t3
 
 
 
