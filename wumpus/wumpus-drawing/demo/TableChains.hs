@@ -21,6 +21,6 @@ main = do
 std_ctx :: DrawingContext
 std_ctx = fill_colour peru $ standardContext 18
 
-table_drawing :: CtxPicture Double
-table_drawing = drawTracing $ do 
+table_drawing :: CtxPicture
+table_drawing = udrawTracing (0::Double) $ do 
     drawi_ $ grid (4,2) cornflower_blue  `at` (P2 0 0)

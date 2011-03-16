@@ -62,7 +62,7 @@ makeCtx = set_font helvetica . metricsContext 14
 
 
 petri_net :: CtxPicture
-petri_net = drawTracing UDouble $ do
+petri_net = udrawTracing (0::Double) $ do
     pw     <- drawli (P2 0 140)   $ place
     tu1    <- drawli (P2 70 140)  $ transition
     rtw    <- drawli (P2 140 140) $ place
@@ -76,6 +76,7 @@ petri_net = drawTracing UDouble $ do
     tl2    <- drawli (P2 210 0)   $ transition
     r      <- drawli (P2 280 0)   $ place
     tl3    <- drawli (P2 350 0)   $ transition
+{-
     drawc (east pw)  (west tu1)   $ straightconn
     drawc (east tu1) (west rtw)   $ straightconn
     drawc (east rtw) (west tu2)   $ straightconn
@@ -104,50 +105,46 @@ petri_net = drawTracing UDouble $ do
     draw $ lblBold "processing_r"   `at` (projectAnchor north 12 pr)
     draw $ lblBold "ready_to_read"  `at` (projectAnchor north 12 rtr)
     draw $ lblBold "reading"        `at` (projectAnchor north 12 r)
+-}
     return ()
 
-greenFill :: DrawingCtxM m => m a -> m a
-greenFill = localize (fill_colour lime_green)
+greenFill :: LocImage t u -> LocImage t u
+greenFill = local_ctx (fill_colour lime_green)
 
 
-place :: ( Real u, Floating u, PtSize u) 
-      => LocImage Circle u
+place :: DLocImage Circle
 place = greenFill $ borderedShape $ circle 14
 
 
-transition :: ( Real u, Floating u, PtSize u) 
-           => LocImage Rectangle u
+transition :: DLocImage Rectangle 
 transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 
 
-straightconn :: (Real u, Floating u, PtSize u) 
-             => ConnectorGraphic u
+straightconn :: ConnectorGraphic Double
 straightconn = ignoreAns $ rightArrow tri45 connLine
 
 
-connectorC :: ( Real u, Floating u, PtSize u)
-           => u -> ConnectorGraphic u
+connectorC :: Double -> ConnectorGraphic Double
 connectorC v = ignoreAns $ rightArrow tri45 (connRightVHV v)
 
-connectorD :: ( Real u, Floating u, PtSize u)
-           => u -> ConnectorGraphic u
+connectorD :: Double -> ConnectorGraphic Double
 connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
-lblParensParens :: PtSize u => LocGraphic u
-lblParensParens = localize (set_font helvetica) $ textline "(),()"
+lblParensParens :: DLocGraphic
+lblParensParens = local_ctx (set_font helvetica) $ textline "(),()"
 
-lblParensParensParens :: PtSize u => LocGraphic u
-lblParensParensParens = localize (set_font helvetica) $ textline "(),(),()"
-
-
-lblBold' :: PtSize u => String -> LocGraphic u
-lblBold' ss = localize (set_font helvetica_bold) $ textline ss
+lblParensParensParens :: DLocGraphic
+lblParensParensParens = local_ctx (set_font helvetica) $ textline "(),(),()"
 
 
-lblBold :: (Real u, Floating u, PtSize u) => String -> LocGraphic u
-lblBold ss = localize (set_font helvetica_bold) $ 
+lblBold' :: String -> DLocGraphic
+lblBold' ss = local_ctx (set_font helvetica_bold) $ textline ss
+
+
+lblBold :: String -> DLocGraphic
+lblBold ss = local_ctx (set_font helvetica_bold) $ 
                 ignoreAns $ textAlignCenter ss
 

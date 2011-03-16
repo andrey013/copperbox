@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -43,7 +44,6 @@ import Wumpus.Drawing.Extras.Turtle.TurtleClass
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
-import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Control.Monad
@@ -72,7 +72,7 @@ newtype TurtleT u m a = TurtleT {
                      -> m (a, TurtleState) }
 
     
-
+type instance DUnit (TurtleT u m a) = u
 
 -- Functor
 
@@ -122,14 +122,14 @@ runTurtleT ogin cfg mf = getTurtleT mf cfg st0 >>= \(a,_) -> return a
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  queryCtx        = TurtleT $ \_ s -> queryCtx >>= \ ctx -> return (ctx,s)
+  askDC           = TurtleT $ \_ s -> askDC >>= \ ctx -> return (ctx,s)
   localize upd mf = TurtleT $ \r s -> localize upd (getTurtleT mf r s)
 
 
 -- This needs undecidable instances...
 
-instance (Monad m, TraceM m u) => TraceM (TurtleT u m) u where
-  trace a  = TurtleT $ \_ s -> trace a >> return ((),s)
-
+instance (Monad m, TraceM m, u ~ DUnit (m ()) ) => TraceM (TurtleT u m) where
+  trace a      = TurtleT $ \_ s -> trace a >> return ((),s)
+  fontDelta mf = TurtleT $ \r s -> fontDelta $ getTurtleT mf r s
 
 

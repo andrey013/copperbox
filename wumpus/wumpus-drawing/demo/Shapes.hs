@@ -22,8 +22,8 @@ main = do
     writeSVG "./out/shapes01.svg" pic1
     
 
-shapes :: DCtxPicture
-shapes = drawTracing $ do
+shapes :: CtxPicture
+shapes = udrawTracing (0::Double) $ do
     drawi_ $ translate 220 10 $ rotate45 $ 
              (borderedShape $ rectangle 90 30) `at` zeroPt -- "Rectangle"
     drawi_ $ (borderedShape $ circle 10) `at` P2 100 0  -- "C0"
@@ -39,9 +39,9 @@ shapes = drawTracing $ do
     --
     drawi_ $ (rotateAbout (0.5*pi) tri_ctr  $ borderedShape $ triangle 20 30) 
               `at` tri_ctr
-    redX $ tri_ctr
+    redX $ return tri_ctr
     drawi_ $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
-    redX $ tri_ctr
+    redX $ return tri_ctr
 
 
     drawi_ $ (rotateAbout deg45 tri2_ctr $ borderedShape $ triangle 20 30) 
@@ -54,8 +54,8 @@ shapes = drawTracing $ do
     tri2_ctr    = P2 100 150 
 
 
-redX :: (Real u, Floating u, PtSize u) => Point2 u -> TraceDrawing u ()
-redX pt = localize (stroke_colour red) $ draw $ markX `at` pt
+redX :: (Real u, Floating u, InterpretUnit u) => Anchor u -> TraceDrawing u ()
+redX a = localize (stroke_colour red) $ draw $ a &=> \a1 -> markX `at` a1
    
 
     -- NOTE - should coordinates even have a center anchor?

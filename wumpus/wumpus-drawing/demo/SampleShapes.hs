@@ -62,7 +62,7 @@ makeAfmPicture shapes font_dir = do
         writeEPS ("./out/shapes/" ++ name ++ "02.eps") pic1
         writeSVG ("./out/shapes/" ++ name ++ "02.svg") pic1
 
-type ShapeList = [(String, (String -> DCtxPicture))]
+type ShapeList = [(String, (String -> CtxPicture))]
 
 
 shape_list :: ShapeList
@@ -109,37 +109,36 @@ rotate05 = rotate (d2r (5::Double))
 voidExtra :: a -> TraceDrawing u ()
 voidExtra _ = return ()
 
-apexAnchor :: ( Real u, Floating u, PtSize u
-            , ApexAnchor a
-            , u ~ DUnit a )
-            => a -> TraceDrawing u a
+apexAnchor :: ( Real u, Floating u, InterpretUnit u
+              , ApexAnchor t u)
+            => t u -> TraceDrawing u (t u)
 apexAnchor a = do
     draw $ label EAST   "(apex)"    `at` apex  a
     return a
 
-bottomCorners :: ( Real u, Floating u, PtSize u
-               , BottomCornerAnchor a
-               , u ~ DUnit a )
-            => a -> TraceDrawing u a
+bottomCorners :: ( Real u, Floating u, InterpretUnit u
+                 , BottomCornerAnchor t u
+                 )
+            => t u -> TraceDrawing u (t u)
 bottomCorners a = do
     draw $ label SOUTH_WEST   "(bottom left)"    `at` bottomLeftCorner  a
     draw $ label SOUTH_EAST   "(bottom right)"   `at` bottomRightCorner a
     return a
 
-topCorners :: ( Real u, Floating u, PtSize u
-              , TopCornerAnchor a
-              , u ~ DUnit a )
-           => a -> TraceDrawing u a
+topCorners :: ( Real u, Floating u, InterpretUnit u
+              , TopCornerAnchor t u
+              )
+           => (t u) -> TraceDrawing u (t u)
 topCorners a = do
     draw $ label NORTH_WEST   "(top left)"    `at` topLeftCorner  a
     draw $ label NORTH_EAST   "(top right)"   `at` topRightCorner a
     return a
 
 
-midPoints :: ( Real u, Floating u, PtSize u
-             , SideMidpointAnchor a
-             , u ~ DUnit a )
-          => Int -> a -> TraceDrawing u a
+midPoints :: ( Real u, Floating u, InterpretUnit u
+             , SideMidpointAnchor t u
+             )
+          => Int -> t u -> TraceDrawing u (t u)
 midPoints n a = mapM_ mf [1..n] >> return a
   where
     mf i = let msg = "(side midpt " ++ show i ++ ")"
@@ -147,13 +146,14 @@ midPoints n a = mapM_ mf [1..n] >> return a
 
 
 
-
+{-
 shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
             , RadialAnchor a
             , Scale a, Rotate a
-            , DUnit a ~ Double) 
-         => (a -> DTraceDrawing b) -> DShape a -> String -> DCtxPicture
-shapePic mf sh name = drawTracing $ do
+            ) 
+         => (r u -> DTraceDrawing b) -> DShape a -> String -> CtxPicture
+-}
+shapePic mf sh name = udrawTracing (0::Double) $ do
     a1  <- localize shapeSty $ drawi $ 
               uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
@@ -173,7 +173,7 @@ shapePic mf sh name = drawTracing $ do
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
-    textF   = lift1R2 $ ignoreAns (apply2R3 (multiAlignCenter name) CENTER 0)
+    textF   = lift1R2 $ ignoreAns (startPosRot (multiAlignCenter name) CENTER 0)
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -188,13 +188,13 @@ shapePic mf sh name = drawTracing $ do
 shapeSty :: DrawingContextF
 shapeSty = stroke_colour light_steel_blue . line_ultra_thick
 
-label :: (Real u, Floating u, PtSize u) 
-           => Cardinal -> String -> LocGraphic u
+label :: (Real u, Floating u, InterpretUnit u) 
+      => Cardinal -> String -> LocGraphic u
 label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       apply2R3 (multiAlignCenter ss) rpos 0
+                       startPosRot (multiAlignCenter ss) rpos 0
 
     go NORTH      = (SS, northwards)
     go NORTH_EAST = (SW, northeastwards)
