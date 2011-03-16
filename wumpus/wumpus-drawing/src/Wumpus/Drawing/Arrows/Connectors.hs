@@ -32,7 +32,7 @@ import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
-import Wumpus.Core                              -- package: wumpus-core
+-- import Wumpus.Core                              -- package: wumpus-core
 
 -- An arrowhead always know how to draw itself (filled triangle, 
 -- stroked barb, etc.)

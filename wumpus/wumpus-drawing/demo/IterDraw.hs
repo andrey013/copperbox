@@ -24,7 +24,7 @@ main = do
 dctx :: DrawingContext
 dctx = set_font courier_bold $ standardContext 24
 
-iter_drawing :: DCtxPicture
+iter_drawing :: CtxPicture
 iter_drawing = drawTracing $ do 
     drawi_ $ (redA `advcat` greenB `advcat` blueC) `at` zeroPt
 
@@ -34,21 +34,24 @@ bldisplace = displace (-4) (-4)
 hspace :: Num u => (Vec2 u)
 hspace = hvec 28
 
-redA :: Fractional u => AdvGraphic u
+intoAdvGraphic :: Query (Vec2 u) -> LocGraphic u -> AdvGraphic u
+intoAdvGraphic qy gf = intoLocImage (promoteQ1 $ \_ -> qy) gf
+
+redA :: AdvGraphic Double
 redA = intoAdvGraphic (pure hspace) (background `oplus` textline "A")
   where
-    background = localize (fill_colour tomato) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+    background = local_ctx (fill_colour tomato) 
+                           (moveStart bldisplace $ filledRectangle 24 24)
 
-greenB :: Fractional u => AdvGraphic u
+greenB :: AdvGraphic Double
 greenB = intoAdvGraphic (pure hspace) (background `oplus` textline "B")
   where
-    background = localize (fill_colour yellow_green) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+    background = local_ctx (fill_colour yellow_green) 
+                           (moveStart bldisplace $ filledRectangle 24 24)
 
-blueC :: Fractional u => AdvGraphic u
+blueC :: AdvGraphic Double
 blueC = intoAdvGraphic (pure hspace) (background `oplus` textline "C")
   where
-    background = localize (fill_colour light_sky_blue) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+    background = local_ctx (fill_colour light_sky_blue) 
+                           (moveStart bldisplace $ filledRectangle 24 24)
 

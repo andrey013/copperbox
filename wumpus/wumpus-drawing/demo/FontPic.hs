@@ -42,7 +42,7 @@ fontMsg ff sz = msgF []
 
 
 makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic
-makeLabel rgb ff sz = localize upd (textline $ fontMsg ff sz)
+makeLabel rgb ff sz = local_ctx upd (textline $ fontMsg ff sz)
   where
     upd = fill_colour rgb . font_attr ff sz 
 
@@ -72,7 +72,7 @@ std_ctx :: DrawingContext
 std_ctx = standardContext 10
 
 
-fontDrawing :: [(RGBi,FontFace)] -> DCtxPicture
+fontDrawing :: [(RGBi,FontFace)] -> CtxPicture
 fontDrawing xs = drawTracing $  
     drawi_ $ chn (map (uncurry fontGraphic) xs) `at` start
   where
@@ -84,7 +84,7 @@ fontDrawing xs = drawTracing $
 --------------------------------------------------------------------------------
 -- Times
 
-times_cxpic :: CtxPicture Double
+times_cxpic :: CtxPicture
 times_cxpic = 
     fontDrawing [ (steel_blue,  times_roman)
                 , (indian_red1, times_italic)
@@ -92,7 +92,7 @@ times_cxpic =
                 , (indian_red1, times_bold_italic)
                 ] 
 
-helvetica_cxpic :: CtxPicture Double
+helvetica_cxpic :: CtxPicture
 helvetica_cxpic = 
     fontDrawing [ (steel_blue,  helvetica)
                 , (indian_red1, helvetica_oblique)
@@ -104,7 +104,7 @@ helvetica_cxpic =
 
 --------------------------------------------------------------------------------
 
-courier_cxpic :: CtxPicture Double
+courier_cxpic :: CtxPicture
 courier_cxpic = 
     fontDrawing [ (steel_blue,  courier)
                 , (indian_red1, courier_oblique)
@@ -116,6 +116,6 @@ courier_cxpic =
 --------------------------------------------------------------------------------
 
     
-symbol_cxpic :: CtxPicture Double
+symbol_cxpic :: CtxPicture
 symbol_cxpic = 
     fontDrawing [ (steel_blue, symbol) ]

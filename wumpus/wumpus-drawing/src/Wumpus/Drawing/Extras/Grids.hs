@@ -29,15 +29,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
--- | Get the Point corresponding the grid coordinates scaled by
--- the snap-grid scaling factors.
---
-snapGridFactors :: (Fractional u, PtSize u, DrawingCtxM m) 
-                =>  m (u,u)
-snapGridFactors = 
-    bimap conv conv <$> query dc_snap_grid_factors
-  where
-    conv x = (realToFrac x) * fromPsPoint 1
 
 
 -- Design note - grid will generally be used as a background so
@@ -49,17 +40,24 @@ snapGridFactors =
 -- | Note - the grid is originated at whatever implicit start
 -- point is used. It is not snapped to /nice round/ numbers.
 -- 
-grid :: (Fractional u, RealFrac u, PtSize u) 
+grid :: (Fractional u, InterpretUnit u)
      => (Int,Int) -> RGBi -> LocGraphic u
 grid (nx,ny) rgb    
     | nx < 1 || ny < 1 = emptyLocGraphic
-    | otherwise        = localize (stroke_colour rgb) $ 
-        snapGridFactors >>= \(x_incr, y_incr) ->
+    | otherwise        = local_ctx (stroke_colour rgb) $ 
+        snapGridFactors &=> \(x_incr, y_incr) ->
         let rectw  = x_incr * fromIntegral nx
             recth  = y_incr * fromIntegral ny
             grid1  = interiorGrid x_incr nx y_incr ny rectw recth
         in grid1 `oplus` strokedRectangle rectw recth
 
+
+
+-- | Get the Point corresponding the grid coordinates scaled by
+-- the snap-grid scaling factors.
+--
+snapGridFactors :: (Fractional u, InterpretUnit u) =>  Query (u,u)
+snapGridFactors = (\(V2 x y) -> (x,y)) <$> snapmove (1,1)
 
 
 -- | 'interiorGrid' : @ increment -> ConnectorGraphic @
@@ -72,12 +70,12 @@ grid (nx,ny) rgb
 -- increment, for instance with an increment of 10 but a start 
 -- point @(15,0)@ lines are drawn from @(20,0), (30,0)@ etc.
 --
-interiorGrid :: (RealFrac u, PtSize u) 
+interiorGrid :: InterpretUnit u
              => u -> Int -> u -> Int -> u -> u -> LocGraphic u
 interiorGrid x_step nx y_step ny w h = hlines `oplus` vlines
   where
-    hline1 = straightLine (hvec w)
-    vline1 = straightLine (vvec h)
+    hline1 = locStraightLine (hvec w)
+    vline1 = locStraightLine (vvec h)
     vlines = ignoreAns $ moveStart (displaceH x_step) $
                chainH x_step (replicate (nx-1) vline1) 
     hlines = ignoreAns $ moveStart (displaceV y_step) $ 

@@ -32,9 +32,9 @@ std_attr = fill_colour rosy_brown $ standardContext 12
 
 
 
-chain_pic :: DCtxPicture
+chain_pic :: CtxPicture
 chain_pic = drawTracing $ do 
-    drawli_ zeroPt $ snapGridX >>= \w -> 
+    drawli_ zeroPt $ snapGridX &=> \w -> 
                     chainDisplace (displaceH w) [dot1, dot1, dot1]
 
     drawli_ (P2 100 0) $ chainRadial 60 (pi*0.25) (d2r (30::Double) )
@@ -59,24 +59,24 @@ locGraphicDistrib fn = distribute fn
 -}
  
 
-dot1 :: PtSize u => LocGraphic u 
+dot1 :: DLocGraphic
 dot1 = dot red
 
-dot2 :: PtSize u => LocGraphic u 
+dot2 :: DLocGraphic
 dot2 = dot thistle
 
-dot :: PtSize u => RGBi -> LocGraphic u 
-dot rgb = localize (fill_colour rgb) $ filledDisk 6
+dot :: RGBi -> DLocGraphic 
+dot rgb = local_ctx (fill_colour rgb) $ filledDisk 6
 
 
-snapGridX :: PtSize u => DrawingCtxM m => m u
-snapGridX = (dpoint . fst) <$> query dc_snap_grid_factors
+snapGridX :: (DrawingCtxM m, Fractional u) => m u
+snapGridX = vector_x <$> snapmove (1,1)
 
 
 
 
-apChainIterateH :: Num u
-                 => u -> (a -> LocGraphic u) -> [a] -> LocImage u (Point2 u)
+apChainIterateH :: InterpretUnit u
+                => u -> (a -> LocGraphic u) -> [a] -> LocImage Point2 u
 apChainIterateH dx = apChainIterate (^+^ hvec dx)  (\s pt -> pt .+^ s) (V2 0 0)
 
 

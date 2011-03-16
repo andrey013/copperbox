@@ -74,7 +74,6 @@ makeCtx = set_font times_roman . metricsContext 11
          
 circuit_pic :: CtxPicture
 circuit_pic = drawTracing body 
-  where
 
 body :: TraceDrawing Double ()
 body = do

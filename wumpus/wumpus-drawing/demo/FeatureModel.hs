@@ -59,8 +59,8 @@ makeCtx = set_font courier_bold . metricsContext 18
 -- @repetitions@ yet.
 --
          
-feature_model :: CtxPicture Double 
-feature_model = drawTracing $ do
+feature_model :: CtxPicture
+feature_model = udrawTracing (0::Double) $ do
     lea <- widebox "e" $ P2 150 160    
     lra <- widebox "r" $ P2  60  80
     lsa <- widebox "s" $ P2 240  80
@@ -91,46 +91,46 @@ type Box u = Rectangle u
 
 -- Note - ctrCenterLine does not seem to be working well...
 
-makeBox :: (Real u, Floating u, PtSize u) 
+makeBox :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
-    drawi_ $ textAlignCenter ss `at` center a
+    drawi_ $ center a &=> \pc -> textAlignCenter ss `at` pc
     -- draw  $ filledDisk 2 `at` center a
     return a
 
-box :: (Real u, Floating u, PtSize u) 
+box :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
     => String -> Point2 u -> TraceDrawing u (Box u)
 box = makeBox 40
 
-widebox :: (Real u, Floating u, PtSize u) 
+widebox :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
         => String -> Point2 u -> TraceDrawing u (Box u)
 widebox = makeBox 60
 
 
-connWith :: ( Real u, Floating u, PtSize u ) 
+connWith :: ( Real u, Floating u, InterpretUnit u ) 
          => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
-   let p0 = south b0
-   let p1 = projectAnchor north (realToFrac lw) b1
-   drawi $ apply2R2 (rightArrow arrh connLine) p0 p1
+   p0 <- evalQuery $ south b0
+   p1 <- evalQuery $ projectAnchor north (realToFrac lw) b1
+   drawi $ connect (rightArrow arrh connLine) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 
-cmandatory :: ( Real u, Floating u, PtSize u ) 
+cmandatory :: ( Real u, Floating u, InterpretUnit u ) 
            => Box u -> Box u -> TraceDrawing u (Path u)
 cmandatory = connWith diskTip
 
-coptional :: ( Real u, Floating u, PtSize u ) 
+coptional :: ( Real u, Floating u, InterpretUnit u ) 
           => Box u -> Box u -> TraceDrawing u (Path u)
 coptional = connWith odiskTip
 
 
-cmandatory_ :: ( Real u, Floating u, PtSize u ) 
+cmandatory_ :: ( Real u, Floating u, InterpretUnit u ) 
             => Box u -> Box u -> TraceDrawing u ()
 cmandatory_ p0 p1 = connWith diskTip p0 p1 >> return ()
 
-coptional_ :: ( Real u, Floating u, PtSize u ) 
+coptional_ :: ( Real u, Floating u, InterpretUnit u ) 
            => Box u -> Box u -> TraceDrawing u ()
 coptional_ p0 p1 = connWith odiskTip p0 p1 >> return ()

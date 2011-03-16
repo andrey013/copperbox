@@ -28,8 +28,7 @@ module Wumpus.Drawing.Shapes.Circle
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

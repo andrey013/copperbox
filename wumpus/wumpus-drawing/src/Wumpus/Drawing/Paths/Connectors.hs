@@ -48,8 +48,7 @@ module Wumpus.Drawing.Paths.Connectors
 import Wumpus.Drawing.Paths.Base
 import Wumpus.Drawing.Paths.ControlPoints
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space

@@ -23,10 +23,10 @@ main = do
 
 
 
-conn_pic :: CtxPicture Double
+conn_pic :: CtxPicture 
 conn_pic = drawTracing $ tableGraphic $ conntable
 
-conntable :: [PathCF Double]
+conntable :: [PathQuery Double]
 conntable = 
     [ connLine
     , connRightVH
@@ -49,8 +49,7 @@ conntable =
     , connUZSquareCurve   
     ]
 
-tableGraphic :: (Real u, Floating u, PtSize u) 
-             => [PathCF u] -> TraceDrawing u ()
+tableGraphic :: [PathQuery Double] -> TraceDrawing Double ()
 tableGraphic conns = 
     drawi_ $ chn (map makeConnDrawing conns) `at` start
   where
@@ -63,10 +62,9 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (Real u, Floating u, PtSize u) 
-                 => PathCF u -> LocGraphic u
+makeConnDrawing :: PathQuery Double -> DLocGraphic 
 makeConnDrawing conn = 
-    promoteR1 $ \p0 -> fmap (replaceL uNil) $ 
+    promoteR1 $ \p0 -> ignoreAns $ 
         connect (uniformArrow curveTip conn) p0 (mkP1 p0)
   where
     mkP1 = displace 100 40

@@ -43,33 +43,34 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 locImageLabel :: Floating u 
-              => ((t u) -> Point2 u) -> RectPosition 
-              -> PosImage t' u -> LocImage t u -> LocImage t u
+              => ((t u) -> Anchor u) -> RectPosition 
+              -> PosImage t1 u -> LocImage t u -> LocImage t u
 locImageLabel fn rpos lbl obj = promote_li1 $ \pt -> 
-    annotate (obj `at` pt)  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
+    annotate (obj `at` pt)  (\a -> fn a &=> \a1 -> 
+                                   ignoreAns $ atStartPos lbl a1 rpos)
 
 
-label_center_of :: (Floating u, CenterAnchor (t u) u) 
-                => PosImage t' u -> LocImage t u -> LocImage t u
+label_center_of :: (Floating u, CenterAnchor t u) 
+                => PosImage t1 u -> LocImage t u -> LocImage t u
 label_center_of = locImageLabel center CENTER
 
 
-label_left_of :: (Floating u, CardinalAnchor (t u) u) 
-              => PosImage t' u -> LocImage t u -> LocImage t u
+label_left_of :: (Floating u, CardinalAnchor t u) 
+              => PosImage t1 u -> LocImage t u -> LocImage t u
 label_left_of = locImageLabel west EE
 
-label_right_of :: (Floating u, CardinalAnchor (t u) u) 
-               => PosImage t' u -> LocImage t u -> LocImage t u
+label_right_of :: (Floating u, CardinalAnchor t u) 
+               => PosImage t1 u -> LocImage t u -> LocImage t u
 label_right_of = locImageLabel east WW
 
 
-label_above :: (Floating u, CardinalAnchor (t u) u) 
-            => PosImage t' u -> LocImage t u -> LocImage t u
+label_above :: (Floating u, CardinalAnchor t u) 
+            => PosImage t1 u -> LocImage t u -> LocImage t u
 label_above = locImageLabel north SS
 
 
-label_below :: (Floating u, CardinalAnchor (t u) u) 
-            => PosImage t' u -> LocImage t u -> LocImage t u
+label_below :: (Floating u, CardinalAnchor t u) 
+            => PosImage t1 u -> LocImage t u -> LocImage t u
 label_below = locImageLabel south NN
 
 

@@ -62,15 +62,15 @@ makeCtx =
     snap_grid_factors 60.0 60.0 . set_font times_roman . metricsContext 14
 
 
-automata :: DCtxPicture
-automata = drawTracing $ do
+automata :: CtxPicture
+automata = drawTracing  $ do
     q0     <- nodei (8,0)   $ state "q0"
-    q1     <- cxdrawi  (above_right_of q0)      $ state "q1"
-    q2     <- cxdrawi  (below_right_of q0)      $ state "q2"
-    q3     <- cxdrawi  (below_right_of q1)      $ stopstate "q3"
+    q1     <- drawi $ above_right_of q0 `op` state "q1"
+    q2     <- drawi $ below_right_of q0 `op` state "q2"
+    q3     <- drawi $ below_right_of q1 `op` stopstate "q3"
 
-    s0     <- runQuery (left_of q0)
-    
+    s0     <- evalQuery (left_of q0)
+{-    
     drawrci_ q0 q1 $ label_midway_of SE (textbox "0") $ straightconn
     drawci_  (center q1) (north q1) $ label_midway_of SS (textbox "0") arrloop
     drawrci_ q1 q3 $ label_midway_of SW (textbox "1") $ straightconn
@@ -78,37 +78,41 @@ automata = drawTracing $ do
     drawrci_ q2 q3 $ label_midway_of NW (textbox "0") $ straightconn
     drawci_  (center q2) (south q2) $ label_midway_of NN (textbox "1") arrloop
     drawci_  s0 (west q0) $ label_atstart_of EE (textbox "start") straightconn
-
+-}
     return ()
 
+infixr 1 `op`
+
+-- Note - need name for this monadic version of @at@.
+--
+op :: Anchor u -> LocImage t u -> Image t u
+op ancr img = ancr &=> \pt -> img `at` pt
 
 
-state :: ( Real u, Floating u, PtSize u) 
-      => String -> LocImage u (Circle u)
+state :: String -> DLocImage Circle
 state ss = 
-    localize (set_font times_italic) $ 
+    local_ctx (set_font times_italic) $ 
         label_center_of (textbox ss) $ strokedShape $ circle 20
 
 
-stopstate :: ( Real u, Floating u, PtSize u) 
-          => String -> LocImage u (Circle u)
+stopstate :: String -> DLocImage Circle 
 stopstate ss = 
-    localize (set_font times_italic) $ 
+    local_ctx (set_font times_italic) $ 
         label_center_of lbl $ dblStrokedShape $ circle 20
   where
     lbl = textbox ss 
   
 
 
-straightconn :: (Real u, Floating u, PtSize u) 
-             => ConnectorImage u (Path u)
+straightconn :: (Real u, Floating u, InterpretUnit u) 
+             => ConnectorImage Path u
 straightconn = rightArrow tri45 connLine
 
 -- Note - there is a problem with @rightArrow@ as @loop@
 -- manufactures the start and end points...
 --
-arrloop :: (Real u, Floating u, PtSize u) 
-             => ConnectorImage u (Path u)
+arrloop :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+        => ConnectorImage Path u
 arrloop = rightArrow barb45 loop
 
 

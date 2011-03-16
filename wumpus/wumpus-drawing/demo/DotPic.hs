@@ -59,7 +59,7 @@ makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fill_colour peru . set_font helvetica . metricsContext 24
 
 
-dot_pic :: CtxPicture Double
+dot_pic :: CtxPicture
 dot_pic = drawTracing $ tableGraphic $ 
     [ dotHLine
     , dotVLine
@@ -82,8 +82,7 @@ dot_pic = drawTracing $ tableGraphic $
     ]
 
 
-tableGraphic :: (Real u, Floating u, PtSize u) 
-             => [DotLocImage u] -> TraceDrawing u ()
+tableGraphic :: [DotLocImage Double] -> TraceDrawing Double ()
 tableGraphic imgs = 
     drawi_ $ chn (map makeDotDrawing imgs) `at` pt
   where
@@ -96,20 +95,18 @@ tableGraphic imgs =
 -- This is a bit convoluted - maybe there should be chain-run 
 -- functions for TraceDrawings as well as LocGraphics?
 
-makeDotDrawing :: (Real u, Floating u, PtSize u) 
+makeDotDrawing :: (Real u, Floating u, InterpretUnit u) 
                => DotLocImage u -> LocGraphic u
 makeDotDrawing dotF = 
     promoteR1 $ \pt -> 
         let all_points = map (pt .+^) displacements
         in oconcat (dashline all_points)
-                   (map (\p1 -> ignoreL $ dotF `at` p1) all_points)
+                   (map (\p1 -> ignoreAns $ dotF `at` p1) all_points)
   where
-    dashline = \ps -> localize attrUpd (openStroke $ vertexPath ps)
+    dashline = \ps -> local_ctx attrUpd $ vertexPath ps &=> openStroke
 
     attrUpd  :: DrawingContext -> DrawingContext
     attrUpd  = packed_dotted . stroke_colour cadet_blue
-
-    ignoreL  = fmap (replaceL uNil) 
 
 displacements :: Num u => [Vec2 u]
 displacements = [V2 0 0, V2 64 20, V2 128 0, V2 192 20]

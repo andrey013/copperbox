@@ -57,7 +57,7 @@ text_pic = drawTracing $ do
     draw $ redPlus            `at` P2 500   0 
        
   where
-    fn = illustrateBoundedLoc
+    fn = illustrateBoundedLocGraphic
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 redPlus = local_ctx (stroke_colour red) markPlus

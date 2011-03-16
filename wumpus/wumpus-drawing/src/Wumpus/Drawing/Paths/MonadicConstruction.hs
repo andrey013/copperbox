@@ -41,8 +41,11 @@ module Wumpus.Drawing.Paths.MonadicConstruction
 
   ) where
 
-import Wumpus.Basic.Utils.HList
 import Wumpus.Drawing.Paths.Base
+
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -127,7 +130,7 @@ vline len = snocline (vvec len)
 
 
 
-bezierto :: (Floating u, Ord u, PtSize u) 
+bezierto :: (Floating u, Ord u, LengthTolerance u) 
          => Point2 u -> Point2 u -> Point2 u -> PathM u ()
 bezierto c1 c2 ep = PathM $ \(St p0 ac) -> 
     ((), St ep (ac `snocH` curve p0 c1 c2 ep))
@@ -139,7 +142,7 @@ bezierto c1 c2 ep = PathM $ \(St p0 ac) ->
 --
 
 
-curveto :: (Floating u, Ord u, PtSize u) 
+curveto :: (Floating u, Ord u, LengthTolerance u) 
         => Radian -> Radian -> Point2 u -> PathM u ()
 curveto cin cout end = PathM $ \(St p0 ac) -> 
     let seg  = curveByAngles p0 cin cout end 

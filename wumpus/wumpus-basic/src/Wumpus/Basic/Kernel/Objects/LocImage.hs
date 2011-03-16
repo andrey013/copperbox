@@ -22,6 +22,8 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    (
      LocGraphic
    , LocImage
+   , DLocImage
+   , DLocGraphic
 
    , runLocImage
    , rawLocImage
@@ -72,7 +74,8 @@ type instance ArgDiff (LocImage r u) (Image r u) = Point2 u
 type LocGraphic u = LocImage UNil u
 
 
-
+type DLocImage t    = LocImage t Double
+type DLocGraphic    = LocGraphic Double 
 
 --------------------------------------------------------------------------------
 

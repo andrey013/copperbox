@@ -34,7 +34,7 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
   , runCtxPicture
   , runCtxPictureU
   , drawTracing
-
+  , udrawTracing
 
   , mapCtxPicture
 
@@ -146,6 +146,15 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 --
 drawTracing :: TraceDrawing u a -> CtxPicture
 drawTracing mf = 
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
+
+-- | 'udrawTracing' : @ scalar * trace_drawing  -> CtxPicture @
+--
+-- Variant of 'drawTracing' with a phantom first argument - the 
+-- phantom identifies the unit type of the 'TraceDrawing'.
+--
+udrawTracing :: u -> TraceDrawing u a -> CtxPicture
+udrawTracing _ mf = 
     CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
 
 
