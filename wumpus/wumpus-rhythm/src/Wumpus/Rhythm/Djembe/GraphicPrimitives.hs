@@ -1,10 +1,9 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Rhythm.Djembe.GraphicPrimitives
--- Copyright   :  (c) Stephen Tetley 2010-2011
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -15,7 +14,39 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Rhythm.Djembe.GraphicPrimitives where
+module Wumpus.Rhythm.Djembe.GraphicPrimitives 
+  (
+  
+    NoteGlyph
+  , disk_note
+  , char_note
+  , period_note
+  , histroke_char
+  , lostroke_disk
+
+  , char_flam
+  , disk_flam
+  , other_hand
+  , dom_hand
+  , underscore
+  , angle_strike
+  , parens
+  , stroke_accent
+  , leadin_accent
+
+  , single_stem
+  , flam_stem
+  , div_stem
+  , swing_stem
+
+  , barline
+  , lrepeat
+  , rrepeat
+  , plet_bracket
+
+  , beam_line
+
+  ) where
 
 
 import Wumpus.Rhythm.Djembe.Parameters
@@ -45,30 +76,9 @@ scale_point_size sc =
 -- system for naming that I haven\'t yet worked out.
 --
 startPosR :: Floating u 
-          => RectPosition -> PosImage u a -> LocImage u a
-startPosR = flip apply1R2
+          => RectPosition -> PosImage t u -> LocImage t u
+startPosR = flip startPos
 
--- For Wumpus-Basic
-func_conv :: (Functor t, PtSize u1, PtSize u) => ConvertAlg (t u1) u1 (t u) u
-func_conv = 
-    ConvertAlg (fromPsPoint . toPsPoint) (fromPsPoint . toPsPoint)
-                                         (fmap (fromPsPoint . toPsPoint)) 
-               
-
--- Possibly for Displacement @move_left@ seems a more attrctive 
--- name than @southwards@.
---
-move_left :: Num u => u -> PointDisplace u
-move_left = displaceH . negate
-
-move_right :: Num u => u -> PointDisplace u
-move_right = displaceH
-
-move_up :: Num u => u -> PointDisplace u
-move_up = displaceV
-
-move_down :: Num u => u -> PointDisplace u
-move_down = displaceV . negate
 
 
 
@@ -81,25 +91,25 @@ type NoteGlyph = AdvGraphic AfmUnit
 noteGlyph :: NoteGlyph -> PointDisplace AfmUnit -> NoteGlyph
 noteGlyph = flip moveStart
 
-baselineCharGlyph :: (Floating u, PtSize u) 
-                  => EscapedChar -> LocImage u (AdvanceVec u)
+baselineCharGlyph :: (Floating u, InterpretUnit u) 
+                  => EscapedChar -> LocImage Vec2 u
 baselineCharGlyph ch = 
-    glyphDescender >>= \dy -> 
-    mapAns fn $ moveStart (displaceV dy) $ startPosR SS $ posEscChar ch
+    descender &=> \dy -> 
+    mapAns fn $ moveStart (move_down (abs dy)) $ startPosR SS $ posEscChar ch
   where
     fn bb = V2 (boundaryWidth bb) 0
 
 
 -- PosRects for hands...
 
-strokedPosRect :: Fractional u => u -> u -> PosGraphic u 
+strokedPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
 strokedPosRect w h = 
-    makePosImage (oposRectSW w h) (strokedRectangle w h)
+    posImage (oposRectSW w h) (strokedRectangle w h)
 
 
-filledPosRect :: Fractional u => u -> u -> PosGraphic u 
+filledPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
 filledPosRect w h = 
-    makePosImage (oposRectSW w h) (filledRectangle w h)
+    posImage (oposRectSW w h) (filledRectangle w h)
 
 oposRectSW :: Num u => u -> u -> ObjectPos u 
 oposRectSW w h  = ObjectPos { op_x_minor = 0
@@ -108,11 +118,17 @@ oposRectSW w h  = ObjectPos { op_x_minor = 0
                             , op_y_major = h }
  
 
-openStrokePath :: Num u => [Vec2 u] -> LocGraphic u
-openStrokePath vs = promoteR1 $ \pt -> openStroke $ vectorPath pt vs
+openStrokePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
+openStrokePath vs = promoteR1 $ \pt -> 
+    uconvertFDC pt      &=> \pt1 -> 
+    mapM uconvertFDC vs &=> \vs1 ->
+    openStroke $ vectorPrimPath pt1 vs1
 
-filledRelativePath :: Num u => [Vec2 u] -> LocGraphic u
-filledRelativePath vs = promoteR1 $ \pt -> filledPath $ vectorPath pt vs
+filledRelativePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
+filledRelativePath vs = promoteR1 $ \pt -> 
+    uconvertFDC pt      &=> \pt1 -> 
+    mapM uconvertFDC vs &=> \vs1 ->
+    filledPath $ vectorPrimPath pt1 vs1
 
 
 
@@ -122,7 +138,7 @@ disk_note :: NoteGlyph
 disk_note = noteGlyph note_draw start_move
   where
     note_draw  = replaceAns disk_width_vector $ filledDisk disk_radius
-    start_move = displaceV disk_ycenter
+    start_move = move_up disk_ycenter
     
 char_note :: Char -> NoteGlyph
 char_note ch = baselineCharGlyph $ CharLiteral ch
@@ -153,9 +169,9 @@ lostroke_disk = noteGlyph note_draw start_move
 
 
 
-letter_flam :: Char -> LocGraphic AfmUnit
-letter_flam ch = 
-    localize (scale_point_size 0.75) $ moveStart start_move note_draw
+char_flam :: Char -> LocGraphic AfmUnit
+char_flam ch = 
+    local_ctx (scale_point_size 0.75) $ moveStart start_move note_draw
   where
     note_draw  = ignoreAns $ baselineCharGlyph $ CharLiteral ch
     start_move = move_left flam_xminor . move_up flam_char_baseline
@@ -183,28 +199,30 @@ underscore :: NoteGlyph -> NoteGlyph
 underscore = (`annotate` (body . vector_x))
   where
     body w = moveStart (move_left (0.5*w) . displaceV strike_baseline) 
-               $ straightLine (hvec w) 
+               $ locStraightLine (hvec w) 
+
+
+angle_strike :: NoteGlyph -> NoteGlyph
+angle_strike mf = mf `annotate` (\a -> ignoreAns $ astrike $ vector_x a)
+  where
+    astrike w = let ang  = 0.25*pi
+                    dist = (1.25*w) / fromRadian (cos ang)
+                in moveStart (move_left (0.625*w) . displaceV strike_baseline)
+                             (locStraightLine (avec ang dist))
 
 
 
 parens :: NoteGlyph -> NoteGlyph
 parens nh = nh `annotate` (lparen . vector_x) `annotate` (rparen . vector_x)
   where
-    lparen w = moveStart (move_left (0.66*w)  . displaceV paren_baseline)
+    lparen w = ignoreAns $ 
+               moveStart (move_left (0.66*w)  . displaceV paren_baseline)
                          (baselineCharGlyph $ CharEscName "parenleft")
 
-    rparen w = moveStart (move_right (0.66*w) . displaceV paren_baseline)
+    rparen w = ignoreAns $ 
+               moveStart (move_right (0.66*w) . displaceV paren_baseline)
                          (baselineCharGlyph $ CharEscName "parenright")
 
-
-
-anglestrike :: NoteGlyph -> NoteGlyph
-anglestrike = (`annotate` (astrike . vector_x))
-  where
-    astrike w = let ang  = 0.25*pi
-                    dist = (1.25*w) / fromRadian (cos ang)
-                in moveStart (move_left (0.625*w) . displaceV strike_baseline)
-                             (straightLine (avec ang dist))
 
 -- | A \'<\' sign about the stem.
 --
@@ -234,12 +252,13 @@ leadin_accent =
 
 -- Stems 
 
-singlestem :: LocGraphic AfmUnit
-singlestem = moveStart (move_up stem_base) (straightLine $ vvec stem_length)
+single_stem :: LocGraphic AfmUnit
+single_stem = 
+    moveStart (move_up stem_base)  (locStraightLine $ vvec stem_length)
 
 
-flamstem :: LocGraphic AfmUnit
-flamstem = moveStart (move_up stem_base) (openStrokePath flam_path)
+flam_stem :: LocGraphic AfmUnit
+flam_stem = moveStart (move_up stem_base) (openStrokePath flam_path)
   where
     flam_path  = [ vvec stem_length
                  , vec  (negate flam_xminor) (negate flam_xminor)
@@ -249,23 +268,23 @@ flamstem = moveStart (move_up stem_base) (openStrokePath flam_path)
 
 -- | divstem needs the unit width which is a global property.
 --
--- divstem is a \'H\'with the horizontal bar near the top.
+-- divstem is a \'H\' with the horizontal bar near the top.
 --
-divstem :: AfmUnit -> LocGraphic AfmUnit
-divstem uw = stem 0 `oplus` stem hw `oplus` hbar
+div_stem :: AfmUnit -> LocGraphic AfmUnit
+div_stem uw = stem 0 `oplus` stem hw `oplus` hbar
   where
     hw   = 0.5 * uw
     stem = \dx -> moveStart (move_up stem_base . move_right dx) 
-                            (straightLine $  vvec stem_length)
+                            (locStraightLine $  vvec stem_length)
 
-    hbar = moveStart (move_up divstem_beam_ypos) (straightLine $ hvec hw)
+    hbar = moveStart (move_up divstem_beam_ypos) (locStraightLine $ hvec hw)
 
 
-swingstem :: LocGraphic AfmUnit
-swingstem = stem 0 `oplus` stem flam_xminor `oplus` angle
+swing_stem :: LocGraphic AfmUnit
+swing_stem = stem 0 `oplus` stem flam_xminor `oplus` angle
   where
     stem     = \dx -> moveStart (move_up stem_base . move_right dx) 
-                                (straightLine $  vvec stem_length)
+                                (locStraightLine $  vvec stem_length)
     
     angle    = moveStart (move_up swing_symbol_baseline) 
                          (openStrokePath ang_path)
@@ -309,7 +328,7 @@ repeatSglStem = openStrokePath [vvec stem_top]
 
 repeatDblStem :: AfmUnit -> LocGraphic AfmUnit
 repeatDblStem dx = 
-   localize line_thick $ 
+   local_ctx line_thick $ 
        moveStart (displaceH dx) $ openStrokePath [vvec stem_top]
 
 
@@ -325,8 +344,8 @@ repeatDots dx = moveStart (displaceH dx) $ hi_dot `oplus` lo_dot
 -- plets
 
 
-pletBracket :: Int -> Ratio Int -> AfmUnit -> LocGraphic AfmUnit
-pletBracket n wr unit_width = 
+plet_bracket :: Int -> Ratio Int -> AfmUnit -> LocGraphic AfmUnit
+plet_bracket n wr unit_width = 
     moveStart (move_up plet_bracket_baseline) body 
   where
     hh           = 0.5  * plet_number_height
@@ -354,36 +373,18 @@ numberWidth i | i < 10    = plet_number_width
 
 centeredTwoThirdsText :: String -> LocGraphic AfmUnit
 centeredTwoThirdsText ss =
-    localize (scale_point_size (2/3)) $ 
+    local_ctx (scale_point_size (2/3)) $ 
       ignoreAns $ startPosR CENTER $ textbox ss 
 
 
 
+
 --------------------------------------------------------------------------------
+-- beaming
 
-
--- | Non-functorial scaling / conversion function.
---
-scaleFromAfm :: PtSize u 
-             => LocImage AfmUnit a -> LocImage u a
-scaleFromAfm obj = getFontSize >>= \sz -> 
-                   let fsz  = (* (fromIntegral sz))
-                       conv = convertli $ adaptConv fsz id unit_conv
-                   in conv obj
-
-
--- | Functorial scaling / conversion function.
---
-scaleFromAfm_f :: (Functor t, PtSize u) 
-               => LocImage AfmUnit (t AfmUnit) -> LocImage u (t u)
-scaleFromAfm_f obj = getFontSize >>= \sz -> 
-                     let fsz  = (* (fromIntegral sz))
-                         conv = convertli $ adaptConv fsz (fmap fsz) func_conv
-                     in conv obj
-
-
-
-
-
-
+beam_line :: Int -> AfmUnit -> LocGraphic AfmUnit
+beam_line n unit_width = 
+    moveStart (move_up stem_top) $ openStrokePath [ hvec beamlen ]
+  where
+    beamlen = unit_width * fromIntegral n
 

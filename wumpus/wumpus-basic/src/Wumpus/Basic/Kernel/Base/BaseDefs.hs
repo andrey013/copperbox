@@ -269,6 +269,10 @@ instance InterpretUnit Centimeter where
   dinterp   _ = fromPsDouble
 
 
+instance InterpretUnit AfmUnit where
+  normalize sz = afmValue sz 
+  dinterp   sz = afmUnit sz
+
 
 class UnitConvert t where
   uconvert :: (InterpretUnit u, InterpretUnit u1) => t u -> t u1
