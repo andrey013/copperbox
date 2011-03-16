@@ -164,7 +164,7 @@ illustrateBoundedLocGraphic :: InterpretUnit u
                             => BoundedLocGraphic u -> BoundedLocGraphic u
 illustrateBoundedLocGraphic gf = annotate gf fn
   where
-    fn bb = lift_li1 (bbrectangle bb)
+    fn bb = lift0R1 (bbrectangle bb)
 
 
 
@@ -178,7 +178,7 @@ illustrateBoundedLocThetaGraphic :: InterpretUnit u
                                  -> BoundedLocThetaGraphic u
 illustrateBoundedLocThetaGraphic gf = annotate gf fn
   where
-    fn bb = lift_lti2 (bbrectangle bb)
+    fn bb = lift0R2 (bbrectangle bb)
 
 
 

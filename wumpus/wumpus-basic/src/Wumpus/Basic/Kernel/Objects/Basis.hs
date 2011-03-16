@@ -36,6 +36,10 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , Lift0R1(..)
   , Lift0R2(..)
   , Lift1R2(..)
+  , Lift0R3(..)
+  , Lift1R3(..)
+  , Lift2R3(..)
+
 
   , MoveStart(..)
   , MoveStartTheta(..)
@@ -123,22 +127,6 @@ class Object t where
 
 
 
--- DESIGN NOTE:
---
--- class PromoteR1 t1 t | t1 -> t where
---   promoteR1 :: forall (r :: * -> *) (u :: *).  (Point2 u -> t r u) -> t1 r u
---
--- A class for /promote/ seems difficult - it is hard to 
--- generalize the @Point2 u@ being promoted, moving to this
--- formulation loses the relation on units.
--- 
--- class PromoteR1 t1 t a | t1 -> t a where
---
--- A PromotePoint class would be possible:
--- 
--- class PromotePoint t1 t | t1 -> t where
---   promotePoint :: forall (r :: * -> *) (u :: *).  (Point2 u -> t r u) -> t1 r u
---
 
 
 
@@ -157,19 +145,39 @@ class PromoteR2 t2 t where
             => (a -> b -> t) -> t2
 
 class PromoteR3 t3 t where
-  promoteR3 :: (Answer s ~ Answer s1, (a,b,c) ~ ArgDiff t3 t) 
+  promoteR3 :: (Answer t ~ Answer t3, (a,b,c) ~ ArgDiff t3 t) 
             => (a -> b -> c -> t) -> t3
 
 
+-- | Lift from arity 0 to arity 1.
+--
 class Lift0R1 t1 t where
   lift0R1 :: Answer t ~ Answer t1 => t -> t1
 
+-- | Lift from arity 0 to arity 2.
+--
 class Lift0R2 t2 t where
   lift0R2 :: Answer t ~ Answer t2 => t -> t2
 
+-- | Lift from arity 1 to arity 2.
+--
 class Lift1R2 t2 t1 where
   lift1R2 :: Answer t1 ~ Answer t2 => t1 -> t2
 
+-- | Lift from arity 0 to arity 3.
+--
+class Lift0R3 t3 t where
+  lift0R3 :: Answer t ~ Answer t3 => t -> t3
+
+-- | Lift from arity 1 to arity 3.
+--
+class Lift1R3 t3 t1 where
+  lift1R3 :: Answer t1 ~ Answer t3 => t1 -> t3
+
+-- | Lift from arity 2 to arity 3.
+--
+class Lift2R3 t3 t2 where
+  lift2R3 :: Answer t2 ~ Answer t3 => t2 -> t3
 
 
 
@@ -192,4 +200,6 @@ class MoveStartTheta t where
 
   moveStartThetaAngle :: forall (r :: * -> *) (u :: *).  
                          ThetaDisplace -> t r u -> t r u
+
+
 

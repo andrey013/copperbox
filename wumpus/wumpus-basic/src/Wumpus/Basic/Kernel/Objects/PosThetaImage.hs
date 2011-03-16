@@ -36,15 +36,7 @@ module Wumpus.Basic.Kernel.Objects.PosThetaImage
   , atStartPosRot
   , startPosRot
   , ptRot
-  
-  , promote_pti1
-  , promote_pti2
-  , promote_pti3
-  , lift_pti1
-  , lift_pti2
-  , lift_pti3
-
-
+ 
   ) where
 
 
@@ -110,6 +102,16 @@ type DPosThetaGraphic = PosThetaGraphic Double
 
 instance PromoteR3 (PosThetaImage r u) (Image r u) where
   promoteR3 = promote_pti3
+
+
+instance Lift0R3 (PosThetaImage r u) (Image r u) where
+  lift0R3 = lift_pti0R3
+
+instance Lift1R3 (PosThetaImage r u) (LocImage r u) where
+  lift1R3 = lift_pti1R3
+
+instance Lift2R3 (PosThetaImage r u) (PosImage r u) where
+  lift2R3 = lift_pti2R3
 
 
 instance BindQuery (PosThetaImage r u) where
@@ -249,34 +251,21 @@ ptRot gf ang =
 
 
 
-
-
-promote_pti1 :: (Radian -> PosImage r u) -> PosThetaImage r u
-promote_pti1 gf = 
-    PosThetaImage $ \ctx pt rpos ang -> runPosImage (gf ang) ctx pt rpos
-
-
-promote_pti2 :: (RectPosition -> Radian -> LocImage r u) 
-             -> PosThetaImage r u
-promote_pti2 gf = 
-    PosThetaImage $ \ctx pt rpos ang -> runLocImage (gf rpos ang) ctx pt
-
-
 promote_pti3 :: (Point2 u -> RectPosition -> Radian -> Image r u) 
              -> PosThetaImage r u
 promote_pti3 gf = 
     PosThetaImage $ \ctx pt rpos ang -> runImage (gf pt rpos ang) ctx
 
 
-lift_pti1 :: PosImage r u -> PosThetaImage r u
-lift_pti1 gf = PosThetaImage $ \ctx pt rpos _ -> runPosImage gf ctx pt rpos
+lift_pti2R3 :: PosImage r u -> PosThetaImage r u
+lift_pti2R3 gf = PosThetaImage $ \ctx pt rpos _ -> runPosImage gf ctx pt rpos
 
 
-lift_pti2 :: LocImage r u -> PosThetaImage r u
-lift_pti2 gf = PosThetaImage $ \ctx pt _ _ -> runLocImage gf ctx pt
+lift_pti1R3 :: LocImage r u -> PosThetaImage r u
+lift_pti1R3 gf = PosThetaImage $ \ctx pt _ _ -> runLocImage gf ctx pt
 
-lift_pti3 :: Image r u -> PosThetaImage r u
-lift_pti3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx 
+lift_pti0R3 :: Image r u -> PosThetaImage r u
+lift_pti0R3 gf = PosThetaImage $ \ctx _ _ _ -> runImage gf ctx 
 
 
 -- TODO - what is the constructor function needed here?

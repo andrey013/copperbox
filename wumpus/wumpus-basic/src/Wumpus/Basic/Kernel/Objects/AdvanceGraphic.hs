@@ -81,8 +81,8 @@ intoAdvGraphic = intoLocImage
 -- Build an empty 'AdvGraphic'.
 -- 
 -- The 'emptyAdvGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, the answer vetor generated is
--- the empty vector @(V2 0 0)@.
+-- @Wumpus-Core@ and is not drawn, the answer vector generated is
+-- the zero vector @(V2 0 0)@.
 -- 
 emptyAdvGraphic :: InterpretUnit u => AdvGraphic u
 emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
@@ -100,6 +100,8 @@ emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 infixr 6 `advcat`
 infixr 5 `advsep`
 
+-- Note - AdvanceGraphic @comp@ seems to be the only function 
+-- that actually needs bind and unit...
 
 comb :: (Vec2 u -> Vec2 u -> Vec2 u)
      -> AdvGraphic u

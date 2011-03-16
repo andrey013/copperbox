@@ -77,7 +77,7 @@ infixr 9 `renderPathWith`
 renderPathWith :: LocQuery u PrimPath 
                -> (PrimPath -> Graphic u) 
                -> LocGraphic u
-renderPathWith m k = promote_li1 $ \pt -> bindQuery_i (applyQ1 m pt) k
+renderPathWith qy mk = promoteR1 $ \pt -> applyQ1 qy pt &=> mk
 
 
 
@@ -182,7 +182,7 @@ markBCircle = markHalfHeight &=> borderedDisk
 
 
 markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
-markPentagon = promote_li1 $ \pt -> 
+markPentagon = promoteR1 $ \pt -> 
     pentagonPath pt &=> closedStroke
   where
     pentagonPath pt = markHalfHeight >>= \hh -> 
@@ -195,9 +195,9 @@ markStar :: (Floating u, InterpretUnit u) => LocGraphic u
 markStar = markHeight &=> \h -> starLines (0.5*h)
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
-starLines hh = 
-    promote_li1 $ \ctr -> let cp = polygonCoordPath 5 hh
-                          in step $ map (fn ctr) $ cp ctr
+starLines hh = promoteR1 $ \ctr -> 
+    let cp = polygonCoordPath 5 hh
+    in step $ map (fn ctr) $ cp ctr
   where
     fn p0 p1    = straightLine p0 p1
     step (x:xs) = oconcat x xs

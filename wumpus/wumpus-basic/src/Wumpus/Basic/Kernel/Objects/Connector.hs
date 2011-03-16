@@ -32,8 +32,6 @@ module Wumpus.Basic.Kernel.Objects.Connector
 
    , intoConnectorImage
    , makeConnectorGraphic
-   , promote_conn
-   , lift_conn
 
    )
 
@@ -78,7 +76,11 @@ type ConnectorQuery u ans = Query (Point2 u -> Point2 u -> ans)
 
 
 instance PromoteR2 (ConnectorImage r u) (Image r u) where
-  promoteR2 = promote_conn
+  promoteR2 = promoteConnectorImg
+
+instance Lift0R2 (ConnectorImage r u) (Image r u) where
+  lift0R2 = liftConnectorImg
+
 
 instance BindQuery (ConnectorImage r u) where
    (&=>) = bindQuery
@@ -256,18 +258,14 @@ makeConnectorGraphic qry fn = ConnectorImage $ \ctx p0 p1 ->
     in (UNil, prim1 $ fn a (uconvertF sz p0) (uconvertF sz p1))
 
 
--- Design note - the promoters and lifters work differently to 
--- LocImage or LocThetaImage hence we don\'t have arity 1 and 
--- arity 2 versions.
---
 
-promote_conn :: (Point2 u -> Point2 u -> Image r u) -> ConnectorImage r u
-promote_conn gf = 
+promoteConnectorImg :: (Point2 u -> Point2 u -> Image r u) -> ConnectorImage r u
+promoteConnectorImg gf = 
     ConnectorImage $ \ctx p0 p1 -> runImage (gf p0 p1) ctx
 
 
-lift_conn :: Image r u -> ConnectorImage r u
-lift_conn gf = ConnectorImage $ \ctx _ _ -> runImage gf ctx 
+liftConnectorImg :: Image r u -> ConnectorImage r u
+liftConnectorImg gf = ConnectorImage $ \ctx _ _ -> runImage gf ctx 
 
 
 

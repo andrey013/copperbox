@@ -55,15 +55,14 @@ advtext esc = textVector esc &=> body
     body v = replaceAns v $ escapedline esc
 
 
--- kernchar versions to do...
 
 
 textVector :: InterpretUnit u => EscapedText -> Query (AdvanceVec u)
 textVector esc = 
     cwLookupTable >>= \table -> 
     point_size    >>= \sz    -> 
-       let cs = destrEscapedText id esc 
-       in return $ foldr (step sz table) (vec 0 0) cs
+    let cs = destrEscapedText id esc 
+    in return $ foldr (step sz table) (vec 0 0) cs
   where
     step sz table ch v = (v ^+^) $ charWidth sz table ch
 

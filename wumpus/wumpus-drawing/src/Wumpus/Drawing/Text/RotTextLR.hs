@@ -120,14 +120,14 @@ textAlignRight ss = startPosRot (multiAlignRight ss) CENTER 0
 drawMultiline :: (Real u, Floating u, InterpretUnit u) 
               => OnelineGraphicF u -> [EscapedText] 
               -> PosThetaImage BoundingBox u
-drawMultiline _     []  = lift_pti2 emptyBoundedLocGraphic
-drawMultiline drawF xs  = promote_pti3 $ \start rpos theta ->
-    bindQuery_i (linesToInterims xs) $ \(max_adv, ones) ->
-    bindQuery_i (borderedRotTextPos theta line_count (advanceH max_adv)) $ \opos -> 
-    bindQuery_i (centerSpineDisps line_count theta) $ \(disp_top, disp_next) ->
+drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
+drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
+    linesToInterims xs  &=> \(max_adv, ones) ->
+    borderedRotTextPos theta line_count (advanceH max_adv) &=> \opos -> 
+    centerSpineDisps line_count theta &=> \(disp_top, disp_next) ->
     let gs         = map (\a -> rot (drawF max_adv a) theta) ones
         gf         = moveStart disp_top $ chainDisplace disp_next gs
-    in bindQuery_i (orthoBB max_adv line_count start theta) $ \ bb -> 
+    in orthoBB max_adv line_count start theta &=> \ bb -> 
     let img        = intoLocImage (return $ \_ -> bb) (ignoreAns gf)
         posG       = posImage opos img
     in atStartPos posG start rpos     
@@ -145,10 +145,10 @@ drawMultiline drawF xs  = promote_pti3 $ \start rpos theta ->
 --
 onelineALeft :: (Real u, Floating u, InterpretUnit u)  
              => OnelineGraphicF u 
-onelineALeft max_adv otext = promote_lti2 $ \ctr theta -> 
-    bindQuery_i centerToBaseline $ \down -> 
-      let pt = move down theta ctr 
-      in atRot (rescapedline $ text_content otext) pt theta
+onelineALeft max_adv otext = promoteR2 $ \ctr theta -> 
+    centerToBaseline &=> \down -> 
+    let pt = move down theta ctr 
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ max_adv
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -164,10 +164,10 @@ onelineALeft max_adv otext = promote_lti2 $ \ctr theta ->
 --
 onelineACenter :: (Real u, Floating u, InterpretUnit u)  
                => OnelineGraphicF u
-onelineACenter _ otext = promote_lti2 $ \ctr theta -> 
-    bindQuery_i centerToBaseline $ \down -> 
-      let pt = move down theta ctr 
-      in atRot (rescapedline $ text_content otext) pt theta
+onelineACenter _ otext = promoteR2 $ \ctr theta -> 
+    centerToBaseline &=> \down -> 
+    let pt = move down theta ctr 
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -183,10 +183,10 @@ onelineACenter _ otext = promote_lti2 $ \ctr theta ->
 --
 onelineARight :: (Real u, Floating u, InterpretUnit u)  
               => OnelineGraphicF u
-onelineARight max_adv otext = promote_lti2 $ \ctr theta -> 
-    bindQuery_i centerToBaseline $ \down -> 
-      let pt = move down theta ctr 
-      in atRot (rescapedline $ text_content otext) pt theta
+onelineARight max_adv otext = promoteR2 $ \ctr theta -> 
+    centerToBaseline &=> \down -> 
+    let pt = move down theta ctr 
+    in atRot (rescapedline $ text_content otext) pt theta
   where
     vec1      = (0.5 *^ max_adv) ^-^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang

@@ -27,8 +27,6 @@ module Wumpus.Basic.Kernel.Objects.Image
    , rawImage
    , intoImage
 
-   , bindQuery_i
-
    , makeGraphic
    
    )
@@ -65,7 +63,7 @@ type Graphic u = Image UNil u
 --------------------------------------------------------------------------------
 
 instance BindQuery (Image r u) where
-  (&=>) = bindQuery_i
+  (&=>) = bindQueryImg
 
 -- Images have no arity except the DrawingContext so there is no
 -- BindQueryRN instance.
@@ -182,8 +180,8 @@ makeGraphic qry fn = Image $ \ctx ->
 -- | Use a Query to generate ans @ans@ turn the @ans@ with the
 -- builder.
 --
-bindQuery_i :: Query ans -> (ans -> Image r u) -> Image r u
-bindQuery_i qy fn = Image $ \ctx -> 
+bindQueryImg :: Query ans -> (ans -> Image r u) -> Image r u
+bindQueryImg qy fn = Image $ \ctx -> 
     let ans = runQuery qy ctx in runImage (fn ans) ctx
 
 

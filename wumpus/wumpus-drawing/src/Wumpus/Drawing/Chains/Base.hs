@@ -51,10 +51,10 @@ chainDisplace :: InterpretUnit u
               => PointDisplace u 
               -> [LocImage t u]
               -> LocImage Point2 u
-chainDisplace _    []     = promote_li1 $ \start -> 
+chainDisplace _    []     = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-chainDisplace next (f:fs) = promote_li1 $ \start -> 
+chainDisplace next (f:fs) = promoteR1 $ \start -> 
     go (next start) (start, ignoreAns $ f `at` start) fs
   where
     go _  (pt,acc) []    = replaceAns pt $ acc
@@ -73,10 +73,10 @@ chainDisplace next (f:fs) = promote_li1 $ \start ->
 chainIterate :: InterpretUnit u
              => (s -> s) -> (s -> PointDisplace u) -> s -> [LocImage t u] 
              -> LocImage Point2 u
-chainIterate _    _   _  []     = promote_li1 $ \start -> 
+chainIterate _    _   _  []     = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-chainIterate next gen s  (f:fs) = promote_li1 $ \start -> 
+chainIterate next gen s  (f:fs) = promoteR1 $ \start -> 
     let fn = gen `flip` start
         p0 = fn s
     in go fn (next s) (p0, ignoreAns $ f `at` p0) fs
@@ -96,10 +96,10 @@ chainIterate next gen s  (f:fs) = promote_li1 $ \start ->
 apChainDisplace :: InterpretUnit u 
                 => PointDisplace u -> (a -> LocImage t u) -> [a] 
                 -> LocImage Point2 u
-apChainDisplace _    _  []     = promote_li1 $ \start -> 
+apChainDisplace _    _  []     = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-apChainDisplace next gf (x:xs) = promote_li1 $ \start -> 
+apChainDisplace next gf (x:xs) = promoteR1 $ \start -> 
     go (next start) (start, ignoreAns $ gf x `at` start) xs
   where
     go _  (pt,acc) []     = replaceAns pt $ acc
@@ -114,10 +114,10 @@ apChainDisplace next gf (x:xs) = promote_li1 $ \start ->
 apChainIterate :: InterpretUnit u 
                => (s -> s) -> (s -> PointDisplace u) -> s 
                -> (a -> LocImage t u) -> [a] -> LocImage Point2 u
-apChainIterate _    _   _ _  []     = promote_li1 $ \start -> 
+apChainIterate _    _   _ _  []     = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-apChainIterate next gen s gf (x:xs) = promote_li1 $ \start -> 
+apChainIterate next gen s gf (x:xs) = promoteR1 $ \start -> 
     let fn = gen `flip` start
         p0 = fn s
     in go fn (next s) (p0, ignoreAns $ gf x `at` p0) xs 
@@ -136,10 +136,10 @@ apChainIterate next gen s gf (x:xs) = promote_li1 $ \start ->
 --
 interChainDisplace :: InterpretUnit u 
                    => [PointDisplace u] -> [LocImage t u] -> LocImage Point2 u
-interChainDisplace _   [] = promote_li1 $ \start -> 
+interChainDisplace _   [] = promoteR1 $ \start -> 
     replaceAns start $ emptyLocGraphic `at` start
 
-interChainDisplace mvs (z:zs) = promote_li1 $ \start ->  
+interChainDisplace mvs (z:zs) = promoteR1 $ \start ->  
     step1 start (ignoreAns $ z `at` start) mvs zs
   where
     step1 pt acc []      _      = replaceAns pt acc

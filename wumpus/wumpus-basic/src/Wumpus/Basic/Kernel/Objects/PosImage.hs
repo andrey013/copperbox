@@ -43,11 +43,6 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , startPos
   , atStartPos
 
-  , promote_pi1
-  , promote_pi2
-  , lift_pi1
-  , lift_pi2
-
   , posImage
 
   , objectPosBounds
@@ -137,19 +132,17 @@ data ObjectPos u = ObjectPos
 
 
 
-
-
-
-
-
-
-
 --------------------------------------------------------------------------------
 
 
 instance PromoteR2 (PosImage r u) (Image r u) where
   promoteR2 = promote_pi2
 
+instance Lift0R2 (PosImage r u) (Image r u) where
+  lift0R2 = lift_pi2
+
+instance Lift1R2 (PosImage r u) (LocImage r u) where
+  lift1R2 = lift_pi1
 
 
 instance BindQuery (PosImage r u) where
@@ -303,11 +296,6 @@ atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos)
 -- Do we need an @intoPosImage@ function? 
 -- It would mean adding @PosQuery@ and all its details...
 --
-
-
-promote_pi1 :: (RectPosition -> LocImage r u) -> PosImage r u
-promote_pi1 gf = 
-    PosImage $ \ctx pt rpos -> runLocImage (gf rpos) ctx pt
 
 
 promote_pi2 :: (Point2 u -> RectPosition -> Image r u) -> PosImage r u

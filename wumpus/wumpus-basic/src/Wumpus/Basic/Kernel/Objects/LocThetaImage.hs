@@ -31,12 +31,6 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , intoLocThetaImage
    , makeLocThetaGraphic
    
-   , promote_lti1
-   , promote_lti2
-   , lift_lti1
-   , lift_lti2
-
-
    )
 
    where
@@ -81,14 +75,6 @@ type LocThetaGraphic u = LocThetaImage UNil u
 instance PromoteR2 (LocThetaImage r u) (Image r u) where
   promoteR2 = promote_lti2
 
--- Note - we cannot have a PromoteR1 instance making only the 
--- Radian argument available and promoting LocImage to 
--- LocTheta image. To do so would require some sort of 
--- counting of arguments making the PromoteR1 class very 
--- complicated.
--- 
--- Possible we could have a Promote1R2 class...
---
 
 instance Lift0R2 (LocThetaImage r u) (Image r u) where
   lift0R2 = lift_lti2
@@ -264,10 +250,6 @@ makeLocThetaGraphic qry fn = LocThetaImage $ \ctx pt ang ->
 
 -- name 1 indicates lifting of 1 layer
 -- name 2 indicates lifting of 2 layers
-
-promote_lti1 :: (Radian -> LocImage r u) -> LocThetaImage r u
-promote_lti1 gf = 
-    LocThetaImage $ \ctx pt ang -> runLocImage (gf ang) ctx pt
 
 -- equivalent to promoteR2
 

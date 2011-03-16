@@ -100,6 +100,7 @@ infixr 1 &=>, &==>, &===>
 class BindQuery t where
   (&=>) :: Query ans -> (ans -> t) -> t
 
+
 -- | Objects should have one BindQueryRN matching their arity.
 
 class BindQueryR1 t1 t where

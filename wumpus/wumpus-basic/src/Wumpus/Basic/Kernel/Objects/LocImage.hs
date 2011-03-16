@@ -31,12 +31,6 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , intoLocImage
    , makeLocGraphic
 
-   , promote_li1
-   , lift_li1
-
-   , bindQuery_li
-   , bindLocQuery_li
-
    )
 
    where
@@ -114,14 +108,6 @@ instance OPlus (r u) => OPlus (LocImage r u) where
 -- In short - LocImage simply cannot be a Functor.
 --
 
--- unitmap :: Functor r => (u -> u1) -> (u1 -> u) -> LocImage r u -> LocImage r u1
--- unitmap f g mf = LocImage $ \ctx pt -> post $ getLocImage mf ctx (fmap g pt) 
---    where
---      post (ans,prim) = (fmap f ans,prim)
-
--- unitmap does not seem to be able to do anything more than
--- UnitConvert.
---
 
 -- bimap has to be unit preserving as unit is a parmater of the 
 -- input as well as the output.
