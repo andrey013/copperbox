@@ -35,7 +35,7 @@ pic1 = runCtxPictureU std_ctx $ drawTracing mf
 mf :: TraceDrawing Double ()
 mf = do
     drawi_ $ miniDisk `at` P2 120 0
-    drawi_ $ miniDisk `at` P2 80  0
+    drawi_ $ rotate30 $ miniDisk `at` P2 80  0
     drawi_ $ (uconvertLocImg miniDiskEm) `at` P2 40  0
     drawi_ $ (uconvertLocImg miniDiskEn) `at` P2 0   0
 

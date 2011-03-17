@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -142,3 +143,25 @@ clipObject :: Functor cf
            => PrimPath -> cf (ImageAns t u) -> cf (ImageAns t u)
 clipObject pp = 
     fmap (\(Ans a prim) -> Ans a (cpmap (clip pp) prim))
+
+
+--------------------------------------------------------------------------------
+
+
+-- affine trans
+
+instance Rotate (t Double) => Rotate (ImageAns t Double) where
+  rotate ang (Ans ma p) = Ans (rotate ang ma) (rotate ang p)
+
+
+instance RotateAbout (t Double) => RotateAbout (ImageAns t Double) where
+  rotateAbout ang pt (Ans ma p) = 
+    Ans (rotateAbout ang pt ma) (rotateAbout ang pt p)
+
+
+instance Scale (t Double) => Scale (ImageAns t Double) where
+  scale sx sy (Ans ma p) = Ans (scale sx sy ma) (scale sx sy p)
+
+
+instance Translate (t Double) => Translate (ImageAns t Double) where
+  translate dx dy (Ans ma p) = Ans (translate dx dy ma) (translate dx dy p)

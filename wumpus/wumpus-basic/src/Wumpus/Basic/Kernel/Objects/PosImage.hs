@@ -1,7 +1,7 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -263,4 +263,26 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go SW     = bbox $ P2 x       y
     go NW     = bbox $ P2 x      (y-h)
 
+
+--------------------------------------------------------------------------------
+-- affine trans
+
+
+
+instance (Rotate (t Double), Functor t, InterpretUnit u) => 
+    Rotate (PosImage t u) where
+  rotate ang            = affineTransR2a (rotate ang) (rotate ang)
+
+instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
+    RotateAbout (PosImage t u) where
+  rotateAbout ang pt    = 
+    affineTransR2a (rotateAbout ang pt) (rotateAbout ang pt)
+
+instance (Scale (t Double), Functor t, InterpretUnit u) => 
+    Scale (PosImage t u) where
+  scale sx sy           = affineTransR2a (scale sx sy) (scale sx sy)
+
+instance (Translate (t Double), Functor t, InterpretUnit u) => 
+    Translate (PosImage t u) where
+  translate dx dy       = affineTransR2a (translate dx dy) (translate dx dy)
 

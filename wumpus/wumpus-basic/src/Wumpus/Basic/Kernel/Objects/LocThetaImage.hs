@@ -1,4 +1,7 @@
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -37,6 +40,7 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.LocImage
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
@@ -100,4 +104,26 @@ emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 uconvertLocThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                     => LocThetaImage t u -> LocThetaImage t u1
 uconvertLocThetaImg = uconvertR2a
+
+
+--------------------------------------------------------------------------------
+-- affine trans
+
+instance (Rotate (t Double), Functor t, InterpretUnit u) => 
+    Rotate (LocThetaImage t u) where
+  rotate ang            = affineTransR2a (rotate ang) (rotate ang)
+
+instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
+    RotateAbout (LocThetaImage t u) where
+  rotateAbout ang pt    = 
+    affineTransR2a (rotateAbout ang pt) (rotateAbout ang pt)
+
+instance (Scale (t Double), Functor t, InterpretUnit u) => 
+    Scale (LocThetaImage t u) where
+  scale sx sy           = affineTransR2a (scale sx sy) (scale sx sy)
+
+instance (Translate (t Double), Functor t, InterpretUnit u) => 
+    Translate (LocThetaImage t u) where
+  translate dx dy       = affineTransR2a (translate dx dy) (translate dx dy)
+
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -80,6 +82,12 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , connect
   , chain1
 
+  -- * Affine trafo
+  , affineTransR0
+  , affineTransR1a
+  , affineTransR2ab
+  , affineTransR2a
+  , affineTransR3a
 
   ) where
 
@@ -724,3 +732,90 @@ chain1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
 
 
 --------------------------------------------------------------------------------
+-- Affine trafos
+
+--
+-- DESIGN NOTE
+--
+-- Unfortunately the affine classes really don\'t work well with 
+-- contextual units. We have to metamorph in an out of Doubles to 
+-- use them.
+--
+
+affineTransR0 :: (InterpretUnit u, Functor t) 
+              => (t Double -> t Double) 
+              -> CF (t u)
+              -> CF (t u)
+affineTransR0 fn df = CF $ \ctx -> 
+    let sz    = dc_font_size ctx
+    in intraMapFunctor sz fn $ unCF df ctx
+
+
+
+
+
+-- Arity 1
+
+affineTransR1a :: (InterpretUnit u, Functor t) 
+               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+               -> CF1 (Point2 u) (t u)
+               -> CF1 (Point2 u) (t u)
+affineTransR1a f g df = CF1 $ \ctx pt -> 
+    let sz    = dc_font_size ctx
+        pt'   = intraMapPoint sz f pt 
+    in intraMapFunctor sz g $ unCF1 df ctx pt'
+
+
+
+
+
+-- Connectors
+
+
+affineTransR2ab :: (InterpretUnit u, Functor t) 
+               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+               -> CF2 (Point2 u) (Point2 u) (t u)
+               -> CF2 (Point2 u) (Point2 u) (t u)
+affineTransR2ab f g df = CF2 $ \ctx p0 p1 -> 
+    let sz    = dc_font_size ctx
+        p0'   = intraMapPoint sz f p0 
+        p1'   = intraMapPoint sz f p1
+    in intraMapFunctor sz g $ unCF2 df ctx p0' p1'
+
+
+
+
+-- Unfortunately, we cannot really have instances for polymorphic 
+-- arguments at position 2, as they would conflict with the 
+-- connector instance:
+--
+-- > -- Not allowed...
+-- >
+-- > instance (Translate a, InterpretUnit u) => 
+-- >    Translate (CF2 (Point2 u) r2 a) where
+--
+-- Instead we have to provide the means to roll-your-own.
+--
+
+-- | Roll-you-own helper for affine instances of CF2.
+--
+affineTransR2a :: (InterpretUnit u, Functor t)
+               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+               -> CF2 (Point2 u) r2 (t u)
+               -> CF2 (Point2 u) r2 (t u)
+affineTransR2a f g df = CF2 $ \ctx pt r2 -> 
+    let sz    = dc_font_size ctx
+        pt'   = intraMapPoint sz f pt 
+    in intraMapFunctor sz g $ unCF2 df ctx pt' r2
+
+
+-- | Roll-you-own helper for affine instances of CF2.
+--
+affineTransR3a :: (InterpretUnit u, Functor t)
+               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+               -> CF3 (Point2 u) r2 r3 (t u)
+               -> CF3 (Point2 u) r2 r3 (t u)
+affineTransR3a f g df = CF3 $ \ctx pt r2 r3 -> 
+    let sz    = dc_font_size ctx
+        pt'   = intraMapPoint sz f pt
+    in intraMapFunctor sz g $ unCF3 df ctx pt' r2 r3

@@ -1,7 +1,7 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -121,3 +121,25 @@ ptRot = apply1R3
 uconvertPosThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                     => PosThetaImage t u -> PosThetaImage t u1
 uconvertPosThetaImg = uconvertR3a
+
+--------------------------------------------------------------------------------
+
+
+instance (Rotate (t Double), Functor t, InterpretUnit u) => 
+    Rotate (PosThetaImage t u) where
+  rotate ang            = affineTransR3a (rotate ang) (rotate ang)
+
+instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
+    RotateAbout (PosThetaImage t u) where
+  rotateAbout ang pt    = 
+    affineTransR3a (rotateAbout ang pt) (rotateAbout ang pt)
+
+instance (Scale (t Double), Functor t, InterpretUnit u) => 
+    Scale (PosThetaImage t u) where
+  scale sx sy           = affineTransR3a (scale sx sy) (scale sx sy)
+
+instance (Translate (t Double), Functor t, InterpretUnit u) => 
+    Translate (PosThetaImage t u) where
+  translate dx dy       = affineTransR3a (translate dx dy) (translate dx dy)
+
+

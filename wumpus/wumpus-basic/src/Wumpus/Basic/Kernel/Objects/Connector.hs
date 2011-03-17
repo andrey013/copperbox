@@ -1,4 +1,7 @@
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -37,6 +40,7 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.LocImage
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
@@ -98,3 +102,24 @@ emptyConnectorGraphic = promoteR2 $ \start end ->
 uconvertConnectorImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                      => ConnectorImage t u -> ConnectorImage t u1
 uconvertConnectorImg = uconvertR2ab
+
+--------------------------------------------------------------------------------
+-- affine trans
+
+instance (Rotate (t Double), Functor t, InterpretUnit u) => 
+    Rotate (ConnectorImage t u) where
+  rotate ang = affineTransR2ab (rotate ang) (rotate ang)
+
+instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
+    RotateAbout (ConnectorImage t u) where
+  rotateAbout ang dpt = 
+    affineTransR2ab (rotateAbout ang dpt) (rotateAbout ang dpt)
+
+
+instance (Scale (t Double), Functor t, InterpretUnit u) => 
+    Scale (ConnectorImage t u) where
+  scale sx sy = affineTransR2ab (scale sx sy) (scale sx sy)
+
+instance (Translate (t Double), Functor t, InterpretUnit u) => 
+    Translate (ConnectorImage t u) where
+  translate dx dy = affineTransR2ab (translate dx dy) (translate dx dy)

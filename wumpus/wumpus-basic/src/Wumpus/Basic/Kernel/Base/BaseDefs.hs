@@ -42,7 +42,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , uconvertScalar
   , uconvertF
   , intraMapPoint
-
+  , intraMapFunctor
 
   -- * Alignment
   , HAlign(..)
@@ -298,6 +298,16 @@ intraMapPoint sz fn (P2 x y) =
     let P2 x' y' = fn $ P2 (normalize sz x) (normalize sz y)
     in  P2 (dinterp sz x') (dinterp sz y')
 
+
+
+-- Helper for defining Affine instances. This function allows 
+-- scaling etc to be applied on a Point coerced to a Double then
+-- converted back to the original unit. Thus transformations can 
+-- work in contextual units.
+--
+intraMapFunctor :: (Functor f, InterpretUnit u)
+                => FontSize -> (f Double -> f Double) -> f u -> f u
+intraMapFunctor sz fn ma = uconvertF sz $ fn $ uconvertF sz ma
 
 
 --------------------------------------------------------------------------------

@@ -1,4 +1,8 @@
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -33,6 +37,8 @@ module Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
+
+import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Applicative
@@ -76,4 +82,24 @@ intoImage = liftA2 (\a (Ans _ p) -> Ans a p)
 uconvertImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
             => Image t u -> Image t u1
 uconvertImg = uconvertR0
+
+
+--------------------------------------------------------------------------------
+
+instance (Rotate (t Double), Functor t, InterpretUnit u) => 
+    Rotate (Image t u) where
+  rotate ang            = affineTransR0 (rotate ang)
+
+instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
+    RotateAbout (Image t u) where
+  rotateAbout ang pt    = affineTransR0 (rotateAbout ang pt)
+
+instance (Scale (t Double), Functor t, InterpretUnit u) => 
+    Scale (Image t u) where
+  scale sx sy           = affineTransR0 (scale sx sy)
+
+instance (Translate (t Double), Functor t, InterpretUnit u) => 
+    Translate (Image t u) where
+  translate dx dy       = affineTransR0 (translate dx dy)
+
 
