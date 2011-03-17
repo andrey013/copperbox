@@ -34,7 +34,9 @@ module Wumpus.Basic.Kernel.Objects.PosThetaImage
   , atStartPosRot
   , startPosRot
   , ptRot
- 
+
+  , uconvertPosThetaImg 
+
   ) where
 
 
@@ -113,3 +115,9 @@ ptRot = apply1R3
 
 
 
+-- | Use this to convert both 'PosThetaImage' and 
+-- 'PosThetaGraphic'.
+--
+uconvertPosThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+                    => PosThetaImage t u -> PosThetaImage t u1
+uconvertPosThetaImg = uconvertR3a

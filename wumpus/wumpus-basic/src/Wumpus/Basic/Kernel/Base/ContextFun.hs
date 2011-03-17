@@ -55,8 +55,11 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , apply2R3
   , apply3R3
 
-  , uconvertCF
-  , uconvertLoc
+  , uconvertR0
+  , uconvertR1a
+  , uconvertR2a
+  , uconvertR2ab
+  , uconvertR3a
 
   -- * Extractors
   , drawingCtx
@@ -495,16 +498,64 @@ apply3R3 mf r1 r2 r3  = CF $ \ctx -> unCF3 mf ctx r1 r2 r3
 
 --------------------------------------------------------------------------------
 
+-- DESIGN NOTE
+--
+-- This is one place where abstracting over arity would be 
+-- especially useful. Unfortuantely it is not possible - even 
+-- though the type synonyms LocImage, PosImage etc. make the 
+-- actual graphic objects tantalizing uniform. The problem
+-- is the synonyms have the similarity not the actaul types.
+-- 
+-- The letter suffixes indicate which inputr arguments are 
+-- transformed.
+--
 
 
-uconvertCF :: (Functor t, InterpretUnit u, InterpretUnit u1) => CF (t u) -> CF (t u1)
-uconvertCF df = CF $ \ctx -> uconvertF (dc_font_size ctx) $ unCF df ctx
+-- | This converts Image.
+--
+uconvertR0 :: (Functor t, InterpretUnit u, InterpretUnit u1) 
+           => CF (t u) -> CF (t u1)
+uconvertR0 df = CF $ \ctx -> uconvertF (dc_font_size ctx) $ unCF df ctx
 
-uconvertLoc :: (InterpretUnit u, InterpretUnit u1, Functor t)
-             => LocQuery u (t u) -> LocQuery u1 (t u1)
-uconvertLoc df = CF1 $ \ctx pt -> 
+
+-- | This converts LocImage.
+--
+uconvertR1a :: (InterpretUnit u, InterpretUnit u1, Functor t)
+            => CF1 (Point2 u)  (t u) 
+            -> CF1 (Point2 u1) (t u1)
+uconvertR1a df = CF1 $ \ctx pt -> 
     let ptu = uconvertF (dc_font_size ctx) pt 
     in uconvertF (dc_font_size ctx) $ unCF1 df ctx ptu
+
+-- | This converts LocThetaImage and PosImage.
+--
+uconvertR2a :: (InterpretUnit u, InterpretUnit u1, Functor t)
+            => CF2 (Point2 u)  r2 (t u) 
+            -> CF2 (Point2 u1) r2 (t u1)
+uconvertR2a df = CF2 $ \ctx pt r2 -> 
+    let ptu = uconvertF (dc_font_size ctx) pt 
+    in uconvertF (dc_font_size ctx) $ unCF2 df ctx ptu r2
+
+
+-- | This converts ConnectorImage.
+--
+uconvertR2ab :: (InterpretUnit u, InterpretUnit u1, Functor t)
+            => CF2 (Point2 u)  (Point2 u)  (t u) 
+            -> CF2 (Point2 u1) (Point2 u1) (t u1)
+uconvertR2ab df = CF2 $ \ctx p0 p1 -> 
+    let p0u = uconvertF (dc_font_size ctx) p0
+        p1u = uconvertF (dc_font_size ctx) p1
+    in uconvertF (dc_font_size ctx) $ unCF2 df ctx p0u p1u
+
+
+-- | This converts PosThetaImage.
+--
+uconvertR3a :: (InterpretUnit u, InterpretUnit u1, Functor t)
+            => CF3 (Point2 u)  r2 r3 (t u) 
+            -> CF3 (Point2 u1) r2 r3 (t u1)
+uconvertR3a df = CF3 $ \ctx pt r2 r3 -> 
+    let ptu = uconvertF (dc_font_size ctx) pt 
+    in uconvertF (dc_font_size ctx) $ unCF3 df ctx ptu r2 r3
 
 
 --------------------------------------------------------------------------------
@@ -673,4 +724,3 @@ chain1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
 
 
 --------------------------------------------------------------------------------
-

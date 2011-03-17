@@ -25,6 +25,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
    , intoLocImage
    , emptyLocGraphic
+   , uconvertLocImg
 
    )
 
@@ -94,7 +95,12 @@ intoLocImage = liftA2 (\a (Ans _ p) -> Ans a p)
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                    uconvertFDC pt >>= \dpt ->
-                    return $ Ans UNil (prim1 $ zostroke $ emptyPrimPath dpt)
+                  uconvertFDC pt >>= \dpt ->
+                  return $ Ans UNil (prim1 $ zostroke $ emptyPrimPath dpt)
 
 
+-- | Use this to convert both 'LocImage' and 'LocGraphic'.
+--
+uconvertLocImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+               => LocImage t u -> LocImage t u1
+uconvertLocImg = uconvertR1a

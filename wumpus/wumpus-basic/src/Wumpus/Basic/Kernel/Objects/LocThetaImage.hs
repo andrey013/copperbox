@@ -26,6 +26,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 
    , intoLocThetaImage
    , emptyLocThetaGraphic
+   , uconvertLocThetaImg
    
    )
 
@@ -91,3 +92,12 @@ intoLocThetaImage = liftA2 (\a (Ans _ p) -> Ans a p)
 -- 
 emptyLocThetaGraphic :: InterpretUnit u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
+
+
+-- | Use this to convert both 'LocThetaImage' and 
+-- 'LocThetaGraphic'.
+--
+uconvertLocThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+                    => LocThetaImage t u -> LocThetaImage t u1
+uconvertLocThetaImg = uconvertR2a
+

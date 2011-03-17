@@ -26,6 +26,7 @@ module Wumpus.Basic.Kernel.Objects.Connector
 
    , intoConnectorImage
    , emptyConnectorGraphic
+   , uconvertConnectorImg
 
    )
 
@@ -89,3 +90,11 @@ emptyConnectorGraphic = promoteR2 $ \start end ->
     let a = emptyLocGraphic `at` start
         b = emptyLocGraphic `at` end
     in a `oplus` b
+
+
+-- | Use this to convert both 'ConnectorImage' and 
+-- 'ConnectorGraphic'.
+--
+uconvertConnectorImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+                     => ConnectorImage t u -> ConnectorImage t u1
+uconvertConnectorImg = uconvertR2ab

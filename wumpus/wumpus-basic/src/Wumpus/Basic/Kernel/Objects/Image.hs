@@ -24,6 +24,7 @@ module Wumpus.Basic.Kernel.Objects.Image
    , DGraphic
 
    , intoImage
+   , uconvertImg
 
    )
 
@@ -70,5 +71,9 @@ type DGraphic           = Graphic Double
 intoImage :: Query (t u) -> Graphic u -> Image t u
 intoImage = liftA2 (\a (Ans _ p) -> Ans a p)
 
-
+-- | Use this to convert both 'Image' and 'Graphic'.
+--
+uconvertImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+            => Image t u -> Image t u1
+uconvertImg = uconvertR0
 

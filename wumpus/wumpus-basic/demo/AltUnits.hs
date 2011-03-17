@@ -36,9 +36,9 @@ mf2 = do
 combined :: TraceDrawing Double ()
 combined = do 
     draw $ dblLocGraphic `at` P2 12 108
-    drawl (P2 12 72) $ uconvert emLocGraphic
-    draw $ uconvert $ emLocGraphic `at` P2 1 3
-    drawl (P2 12 0) $ uconvert $ hyperlink haskell_org enLocGraphic
+    drawl (P2 12 72) $ uconvertLocImg emLocGraphic
+    draw $ uconvertImg $ emLocGraphic `at` P2 1 3
+    drawl (P2 12 0) $ uconvertLocImg $ hyperlink haskell_org enLocGraphic
 
 dblLocGraphic :: LocGraphic Double
 dblLocGraphic = rect1 `oplus` rect2  
@@ -49,14 +49,14 @@ dblLocGraphic = rect1 `oplus` rect2
 
 
 emLocGraphic :: LocGraphic Em
-emLocGraphic = local_ctx swap_colours $  rect1 `oplus` rect2  
+emLocGraphic = localize swap_colours $  rect1 `oplus` rect2  
   where
     rect1 = borderedRectangle 3 2 
     rect2 = moveStart (displaceH 3) $ borderedRectangle 5 2 
 
 
 enLocGraphic :: LocGraphic En
-enLocGraphic = local_ctx (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
+enLocGraphic = localize (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
   where
     rect1 = borderedRectangle 6 4
     rect2 = moveStart (displaceH 6) $ borderedRectangle 10 4
