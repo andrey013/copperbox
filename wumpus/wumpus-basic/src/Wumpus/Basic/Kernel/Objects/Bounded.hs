@@ -46,6 +46,8 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
@@ -53,7 +55,6 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
-import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -105,12 +106,11 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 centerOrthoBBox :: (Fractional u, InterpretUnit u)
                 => Radian -> BoundingBox u -> Query (BoundingBox u)
 centerOrthoBBox theta bb = 
-    makeQuery point_size 
-              (\sz -> let dbb = uconvertF sz bb
-                          ps  = boundaryCornerList dbb
-                          ctr = boundaryCenter dbb
-                          ans = traceBoundary $ map (rotateAbout theta ctr) ps
-                      in uconvertF sz ans)
+    normalizeFDC bb >>= \dbb ->
+    let ps  = boundaryCornerList dbb
+        ctr = boundaryCenter dbb
+        ans = traceBoundary $ map (rotateAbout theta ctr) ps
+    in dinterpFDC ans
 
 
 
@@ -126,7 +126,7 @@ centerOrthoBBox theta bb =
 emptyBoundedLocGraphic :: InterpretUnit u => BoundedLocGraphic u
 emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
   where
-    fn = cfLocQuery (\pt -> BBox pt pt)
+    fn = promoteR1 $ \pt -> return $ BBox pt pt
 
 
 
@@ -144,7 +144,7 @@ emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
 emptyBoundedLocThetaGraphic :: InterpretUnit u => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
   where
-    fn = cfLocThetaQuery (\pt _ -> BBox pt pt)
+    fn = promoteR2 $ \pt _ -> return $ BBox pt pt
 
 --------------------------------------------------------------------------------
 -- 
@@ -187,7 +187,7 @@ bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = emptyLocGraphic `at` p1
     | otherwise                = 
-        local_ctx drawing_props $ rect1 `oplus` cross
+        localize drawing_props $ rect1 `oplus` cross
   where
     drawing_props = cap_round . dotted_line
     rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1

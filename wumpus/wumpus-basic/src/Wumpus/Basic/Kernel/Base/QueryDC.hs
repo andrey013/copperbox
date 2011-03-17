@@ -22,14 +22,18 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
     normalizeDC
+  , normalizeFDC
   , dinterpDC
+  , dinterpFDC
+
   , uconvertFDC
 
-  , stroke_attr
-  , fill_attr
-  , bordered_attr
-  , point_size
-  , text_attr
+  , pointSize
+
+  , strokeAttr
+  , fillAttr
+  , borderedAttr
+  , textAttr
 
   , position
   , snapmove
@@ -71,34 +75,42 @@ import Control.Applicative
 
 
 normalizeDC :: (DrawingCtxM m, InterpretUnit u) => u -> m Double
-normalizeDC u = (\sz -> normalize sz u) <$> point_size
+normalizeDC u = (\sz -> normalize sz u) <$> pointSize
+
+normalizeFDC :: (DrawingCtxM m, Functor t, InterpretUnit u) 
+             => t u -> m (t Double)
+normalizeFDC t = (\sz -> fmap (normalize sz) t) <$> pointSize
 
 dinterpDC :: (DrawingCtxM m, InterpretUnit u) => Double -> m u
-dinterpDC u = (\sz -> dinterp sz u) <$> point_size
+dinterpDC u = (\sz -> dinterp sz u) <$> pointSize
+
+dinterpFDC :: (DrawingCtxM m, Functor t, InterpretUnit u) => t Double -> m (t u)
+dinterpFDC u = (\sz -> fmap (dinterp sz) u) <$> pointSize
 
 uconvertFDC :: (DrawingCtxM m, Functor t, InterpretUnit u, InterpretUnit u1) 
             => t u -> m (t u1)
-uconvertFDC t = (\sz -> uconvertF sz t) <$> point_size
+uconvertFDC t = (\sz -> uconvertF sz t) <$> pointSize
 
 
-stroke_attr :: DrawingCtxM m => m (RGBi, StrokeAttr)
-stroke_attr = (,) <$> asksDC dc_stroke_colour <*> asksDC dc_stroke_props
+pointSize :: DrawingCtxM m => m FontSize
+pointSize = asksDC dc_font_size
 
-fill_attr :: DrawingCtxM m => m RGBi
-fill_attr = asksDC dc_fill_colour
+strokeAttr :: DrawingCtxM m => m (RGBi, StrokeAttr)
+strokeAttr = (,) <$> asksDC dc_stroke_colour <*> asksDC dc_stroke_props
 
-
-bordered_attr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
-bordered_attr = (,,) <$> asksDC dc_fill_colour 
-                     <*> asksDC dc_stroke_props 
-                     <*> asksDC dc_stroke_colour
-
-point_size :: DrawingCtxM m => m FontSize
-point_size = asksDC dc_font_size
+fillAttr :: DrawingCtxM m => m RGBi
+fillAttr = asksDC dc_fill_colour
 
 
-text_attr :: DrawingCtxM m => m (RGBi,FontAttr)
-text_attr = 
+borderedAttr :: DrawingCtxM m => m (RGBi, StrokeAttr, RGBi)
+borderedAttr = (,,) <$> asksDC dc_fill_colour 
+                    <*> asksDC dc_stroke_props 
+                    <*> asksDC dc_stroke_colour
+
+
+
+textAttr :: DrawingCtxM m => m (RGBi,FontAttr)
+textAttr = 
     (\a b c -> (a, FontAttr b c)) 
       <$> asksDC dc_text_colour <*> asksDC dc_font_size <*> asksDC dc_font_face
 

@@ -22,6 +22,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
     AdvGraphic
   , DAdvGraphic
 
+  , intoAdvGraphic
   , emptyAdvGraphic
 
   -- * Composition
@@ -35,9 +36,9 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
-import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -60,9 +61,6 @@ type DAdvGraphic       = AdvGraphic Double
 
 
 
-{-
-
--- TODO - constructors for new images types need systemization.
 
 -- | 'intoAdvGraphic' : @ loc_context_function * graphic -> Image @
 --
@@ -70,11 +68,11 @@ type DAdvGraphic       = AdvGraphic Double
 -- generates the answer displacement vector and a 'LocGraphic' 
 -- that draws the 'AdvGraphic'.
 --
-intoAdvGraphic :: LocCF u (Vec2 u)
+intoAdvGraphic :: LocQuery u (Vec2 u)
                -> LocGraphic u 
                -> AdvGraphic u
 intoAdvGraphic = intoLocImage
--}
+
 
 -- | 'emptyAdvGraphicAU' : @ AdvGraphic @
 --
@@ -107,7 +105,9 @@ comb :: (Vec2 u -> Vec2 u -> Vec2 u)
      -> AdvGraphic u
      -> (Vec2 u -> AdvGraphic u) 
      -> AdvGraphic u
-comb op gf fn = gf `bind` \a -> fn a `bind` \b -> unit (a `op` b)  
+comb op gf fn = gf   >>= \(Ans a p1) -> 
+                fn a >>= \(Ans b p2) -> 
+                return $ Ans (a `op` b) (p1 `oplus` p2)
 
 
 -- | Concatenate the two AdvGraphics.

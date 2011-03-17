@@ -19,6 +19,7 @@ module Wumpus.Basic.Kernel
   (
     module Wumpus.Basic.Kernel.Base.BaseDefs
   , module Wumpus.Basic.Kernel.Base.CtxUnits
+  , module Wumpus.Basic.Kernel.Base.ContextFun
   , module Wumpus.Basic.Kernel.Base.DrawingContext
   , module Wumpus.Basic.Kernel.Base.FontMetrics
   , module Wumpus.Basic.Kernel.Base.QueryDC
@@ -38,13 +39,13 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
   , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.PosThetaImage
-  , module Wumpus.Basic.Kernel.Objects.Query
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.CtxUnits 
+import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontMetrics
 import Wumpus.Basic.Kernel.Base.QueryDC
@@ -64,5 +65,4 @@ import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.PosThetaImage
-import Wumpus.Basic.Kernel.Objects.Query
 import Wumpus.Basic.Kernel.Objects.TraceDrawing

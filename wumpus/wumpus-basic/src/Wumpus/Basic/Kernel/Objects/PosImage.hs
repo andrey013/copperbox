@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,22 +29,22 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   -- * Positionable image
 
     PosImage
-  , DPosImage 
-
   , PosGraphic
+
+  , DPosImage 
   , DPosGraphic
+
+  , PosQuery
 
   -- * Components
   , RectPosition(..)
   , ObjectPos(..)
 
   -- * Operations
-  , runPosImage
-  , rawPosImage
   , startPos
   , atStartPos
 
-  , posImage
+  , makePosImage
 
   , objectPosBounds
 
@@ -51,32 +52,28 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
-import Wumpus.Basic.Kernel.Objects.Query
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Data.Monoid
 
 
 
--- | A positionable Image.
+-- | A positionable 'LocImage'.
 --
-newtype PosImage r u = PosImage { 
-          getPosImage :: DrawingContext -> Point2 u -> 
-                         RectPosition   -> (r u, CatPrim) }
+type PosImage t u = CF2 (Point2 u) RectPosition (ImageAns t u)
 
 
-type instance Answer (PosImage r u)     = r u
-
-type instance ArgDiff (PosImage r u) (Image r u) = (Point2 u, RectPosition)
+-- | A positionable 'LocGraphic'.
+--
+type PosGraphic u = PosImage UNil u
+    
 
     
 -- | Version of PosImage specialized to Double for the unit type.
@@ -84,18 +81,16 @@ type instance ArgDiff (PosImage r u) (Image r u) = (Point2 u, RectPosition)
 type DPosImage t = PosImage t Double
 
 
-
-
--- | A positionable Graphic.
---
-type PosGraphic u = PosImage UNil u
-    
 -- | Version of PosGraphic specialized to Double for the unit type.
 --
 type DPosGraphic = PosGraphic Double
 
 
-type PosQuery u ans = Query (Point2 u -> RectPosition -> ans)
+type PosQuery u ans = CF2 (Point2 u) RectPosition ans
+
+
+
+--------------------------------------------------------------------------------
 
 
 -- | Datatype enumerating positions within a rectangle that can be
@@ -130,27 +125,6 @@ data ObjectPos u = ObjectPos
   deriving (Eq,Ord,Show)
 
 
-
-
---------------------------------------------------------------------------------
-
-
-instance PromoteR2 (PosImage r u) (Image r u) where
-  promoteR2 = promote_pi2
-
-instance Lift0R2 (PosImage r u) (Image r u) where
-  lift0R2 = lift_pi2
-
-instance Lift1R2 (PosImage r u) (LocImage r u) where
-  lift1R2 = lift_pi1
-
-
-instance BindQuery (PosImage r u) where
-   (&=>) = bindQuery
-
-
-instance BindQueryR2 (PosImage r u) (Image r u) where
-   (&===>) = bindR2
 
 
 --------------------------------------------------------------------------------
@@ -192,79 +166,6 @@ halfDists :: Fractional u => ObjectPos u -> (u,u)
 halfDists (ObjectPos xmin xmaj ymin ymaj) = 
     (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
 
---------------------------------------------------------------------------------
-
--- bimap has to be unit preserving as unit is a parmater of the 
--- input as well as the output.
---
-bimapPosImage :: (r u -> r1 u) -> (Primitive -> Primitive) 
-              -> PosImage r u -> PosImage r1 u
-bimapPosImage l r gf = PosImage $ \ctx pt rpos -> 
-    bimap l (cpmap r) $ getPosImage gf ctx pt rpos
-
-
-instance Object PosImage where
-  local_ctx     = localPosImg
-  ignoreAns     = bimapPosImage (const UNil) id
-  replaceAns o  = bimapPosImage (const o) id
-  mapAns f      = bimapPosImage f id
-  hyperlink hyp = bimapPosImage id (xlinkPrim hyp)
-  clipObject pp = bimapPosImage id (clip pp)
-  annotate      = annoPosImg
-  decorate      = decoPosImg
-  bind          = bindPosImg
-  unit          = unitPosImg
-
-
-localPosImg :: (DrawingContext -> DrawingContext) 
-            -> PosImage r u 
-            -> PosImage r u
-localPosImg upd gf = 
-    PosImage $ \ctx pt rpos -> getPosImage gf (upd ctx) pt rpos
-
-
-
-decoPosImg :: PosImage r u -> PosGraphic u -> PosImage r u
-decoPosImg fa fb = PosImage $ \ctx pt rpos -> 
-    let (a,o1) = getPosImage fa ctx pt rpos
-        (_,o2) = getPosImage fb ctx pt rpos
-    in (a, o1 `oplus` o2)
-                        
-annoPosImg :: PosImage r u -> (r u -> PosGraphic u) -> PosImage r u
-annoPosImg fa mf = PosImage $ \ctx pt rpos -> 
-    let (a,o1) = getPosImage fa ctx pt rpos
-        (_,o2) = getPosImage (mf a) ctx pt rpos
-    in (a, o1 `oplus` o2)
-
-
-
-bindPosImg :: PosImage r u -> (r u -> PosImage r1 u) -> PosImage r1 u
-bindPosImg gf fn = PosImage $ \ctx pt rpos -> 
-    let (a,o1) = getPosImage gf ctx pt rpos
-        (b,o2) = getPosImage (fn a) ctx pt rpos
-    in (b, o1 `oplus` o2)
-
-unitPosImg :: r u -> PosImage r u
-unitPosImg a = PosImage $ \_ _ _ -> (a, mempty)
-
-
-instance MoveStart PosImage where
-  moveStart fn gf = PosImage $ \ctx pt rpos -> getPosImage gf ctx (fn pt) rpos
-
---------------------------------------------------------------------------------
--- builders and destructors
-
-
-runPosImage :: PosImage r u -> DrawingContext -> Point2 u -> RectPosition 
-            -> (r u, CatPrim)
-runPosImage gf ctx pt rpos = getPosImage gf ctx pt rpos
-
--- This seems to be the one for down casting...
--- 
-rawPosImage :: (DrawingContext -> Point2 u -> RectPosition -> (r u, CatPrim)) 
-            -> PosImage r u
-rawPosImage fn = PosImage $ \ctx pt rpos -> fn ctx pt rpos
-
 
 
 infixr 1 `startPos`
@@ -276,7 +177,7 @@ infixr 1 `startPos`
 --  
 startPos :: Floating u 
          => PosImage r u -> RectPosition -> LocImage r u
-startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos) 
+startPos = apply1R2
  
 
 
@@ -288,47 +189,14 @@ startPos gf rpos = rawLocImage (\ctx pt -> getPosImage gf ctx pt rpos)
 --  
 atStartPos ::  Floating u 
            => PosImage r u -> Point2 u -> RectPosition -> Image r u
-atStartPos gf pt rpos = rawImage (\ctx -> getPosImage gf ctx pt rpos) 
+atStartPos = apply2R2 
 
---
--- Design note
---
--- Do we need an @intoPosImage@ function? 
--- It would mean adding @PosQuery@ and all its details...
---
-
-
-promote_pi2 :: (Point2 u -> RectPosition -> Image r u) -> PosImage r u
-promote_pi2 gf = 
-    PosImage $ \ctx pt rpos -> runImage (gf pt rpos) ctx
-
-
-lift_pi1 :: LocImage r u -> PosImage r u
-lift_pi1 gf = PosImage $ \ctx pt _ -> runLocImage gf ctx pt
-
-
-lift_pi2 :: Image r u -> PosImage r u
-lift_pi2 gf = PosImage $ \ctx _ _ -> runImage gf ctx 
-
-
-
-bindQuery :: Query ans -> (ans -> PosImage r u) -> PosImage r u
-bindQuery qy fn = PosImage $ \ctx pt rpos -> 
-    let a = runQuery qy ctx in runPosImage (fn a) ctx pt rpos
-
-
--- | Use a Loc query to generate ans @ans@ turn the @ans@ into an
--- @Image@ projecting up to a @LocImage@.
---
-bindR2 :: PosQuery u ans -> (ans -> Image r u) -> PosImage r u
-bindR2 qy fn = PosImage $ \ctx pt rpos -> 
-    let f1 = runQuery qy ctx in runImage (fn $ f1 pt rpos) ctx
 
 
 --------------------------------------------------------------------------------
 
 
--- | 'posImage' : @ object_pos * loc_graphic -> PosGraphic @ 
+-- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
 --
 -- Create a 'PosImage' from an 'ObjectPos' describing how it
 -- is orientated within a border rectangle and a 'LocImage' that 
@@ -338,9 +206,9 @@ bindR2 qy fn = PosImage $ \ctx pt rpos ->
 -- PosImage type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-posImage :: Fractional u 
-         => ObjectPos u -> LocImage r u -> PosImage r u
-posImage opos gf = promote_pi2 $ \start rpos -> 
+makePosImage :: Fractional u 
+             => ObjectPos u -> LocImage r u -> PosImage r u
+makePosImage opos gf = promoteR2 $ \start rpos -> 
     let v1 = startVector rpos opos in gf `at` displaceVec v1 start
 
 

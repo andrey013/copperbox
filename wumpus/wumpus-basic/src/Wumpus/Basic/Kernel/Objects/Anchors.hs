@@ -49,7 +49,7 @@ module Wumpus.Basic.Kernel.Objects.Anchors
 
   ) where
 
-import Wumpus.Basic.Kernel.Objects.Query
+import Wumpus.Basic.Kernel.Base.ContextFun
 
 import Wumpus.Core                      -- package: wumpus-core
 

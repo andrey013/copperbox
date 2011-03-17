@@ -19,7 +19,7 @@
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
   
-    DUnit
+    MonUnit
 
   , LengthTolerance(..)
 
@@ -39,7 +39,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
   -- * Unit interpretation with respect to the current Point size
   , InterpretUnit(..)
-  , UnitConvert(..)
   , uconvertScalar
   , uconvertF
   , intraMapPoint
@@ -66,11 +65,7 @@ import Data.VectorSpace                         -- package: vector-space
 import Control.Applicative
 
 
-type family DUnit m :: *
-
-type instance DUnit (Point2 u)      = u
-type instance DUnit (Vec2 u)        = u
-type instance DUnit (Matrix3'3 u)   = u
+type family MonUnit m :: *
 
 
 
@@ -272,10 +267,6 @@ instance InterpretUnit Centimeter where
 instance InterpretUnit AfmUnit where
   normalize sz = afmValue sz 
   dinterp   sz = afmUnit sz
-
-
-class UnitConvert t where
-  uconvert :: (InterpretUnit u, InterpretUnit u1) => t u -> t u1
 
 
 

@@ -1,7 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,184 +19,126 @@
 module Wumpus.Basic.Kernel.Objects.Basis
   (
 
-    PointDisplace
-  , ThetaDisplace
-  , ThetaPointDisplace
+    ImageAns(..)
+  , GraphicAns
 
-  , Object(..)
+  , ignoreAns
+  , replaceAns
+  , mapAns
 
-  , ArgDiff
-  , Answer
-  , PromoteR1(..)
-  , PromoteR2(..)
-  , PromoteR3(..)
-  , Lift0R1(..)
-  , Lift0R2(..)
-  , Lift1R2(..)
-  , Lift0R3(..)
-  , Lift1R3(..)
-  , Lift2R3(..)
-
-
-  , MoveStart(..)
-  , MoveStartTheta(..)
+  , decorate
+  , annotate
+  , hyperlink
+  , clipObject
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
--- | 'PointDisplace' is a type representing functions 
--- @from Point to Point@.
+-- | An Image always returns a pair of some polymorphic answer @a@
+-- and a PrimGraphic.
 --
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
+data ImageAns t u       = Ans (t u) CatPrim
+
+
+type GraphicAns u       = ImageAns UNil u
+
+
+instance Functor t => Functor (ImageAns t) where
+  fmap f (Ans a prim) = Ans (fmap f a) prim
+
+instance OPlus (t u) => OPlus (ImageAns t u) where
+  Ans a p1 `oplus` Ans b p2 = Ans (a `oplus` b) (p1 `oplus` p2)
+
+
+-- | Ignore the answer produced by an Image (or LocImage, etc.)
+-- and form a Graphic instead.
 --
-type PointDisplace u = Point2 u -> Point2 u
+ignoreAns :: Functor cf
+          => cf (ImageAns t u) -> cf (GraphicAns u)
+ignoreAns = fmap (\(Ans _ prim) -> Ans UNil prim)
 
 
-
-
--- | 'ThetaDisplace' is a type representing functions 
--- @from Radian to Radian@.
+-- | Replace the answer produced by a graphic object.
 --
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
+-- Note - the new answer must share the same unit type as the
+-- initial answer, although it does not need to have the same
+-- wrapper type.
 --
-type ThetaDisplace = Radian -> Radian
+replaceAns :: Functor cf
+          => t1 u -> cf (ImageAns t u) -> cf (ImageAns t1 u)
+replaceAns ans = fmap (\(Ans _ prim) -> Ans ans prim)
 
 
--- | 'ThetaPointDisplace' is a type representing functions 
--- @from Radian * Point to Point@.
+-- | Map the answer produced by a graphic object.
 --
--- It is useful for building arrowheads which are constructed 
--- with an implicit angle representing the direction of the line 
--- at the arrow tip.
+-- Note - the new answer must share the same unit type as the
+-- initial answer, although it does not need to have the same
+-- wrapper type.
 --
-type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
+mapAns :: Functor cf
+          => (t u -> t1 u) -> cf (ImageAns t u) -> cf (ImageAns t1 u)
+mapAns f = fmap (\(Ans a prim) -> Ans (f a) prim)
 
 
-
-
-
-infixl 1 `bind`
-
-
-
-class Object t where 
-  local_ctx     :: forall (r :: * -> *) (u :: *). 
-                   (DrawingContext -> DrawingContext) -> t r u -> t r u
-
-  ignoreAns     :: forall (r :: * -> *) (u :: *).  
-                   t r u -> t UNil u
-
-  replaceAns    :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
-                   r1 u  -> t r u -> t r1 u
-
-  mapAns        :: forall (r1 :: * -> *) (r :: * -> *) (u :: *).  
-                   (r u -> r1 u)  -> t r u -> t r1 u
-
-  hyperlink     :: forall (r :: * -> *) (u :: *). 
-                   XLink -> t r u -> t r u 
-
-  clipObject    :: forall (r :: * -> *) (u :: *). 
-                   PrimPath -> t r u -> t r u 
-
-  decorate      :: forall (r :: * -> *) (u :: *). 
-                   t r u -> t UNil u -> t r u
-
-  annotate      :: forall (r :: * -> *) (u :: *). 
-                   t r u -> (r u -> t UNil u) -> t r u
-
-  bind          :: forall (r :: * -> *) (r1 :: * -> *) (u :: *). 
-                   t r u -> (r u -> t r1 u) -> t r1 u
-
-  unit          :: forall (r :: * -> *) (u :: *). 
-                   r u -> t r u
-
-
-
-
-
-
-
-
-type family Answer t
-
-type family ArgDiff t1 t
-
-
-
-
-class PromoteR1 t1 t where
-  promoteR1 :: (Answer t ~ Answer t1, a ~ ArgDiff t1 t) => (a -> t) -> t1
-
-class PromoteR2 t2 t where
-  promoteR2 :: (Answer t ~ Answer t2, (a,b) ~ ArgDiff t2 t) 
-            => (a -> b -> t) -> t2
-
-class PromoteR3 t3 t where
-  promoteR3 :: (Answer t ~ Answer t3, (a,b,c) ~ ArgDiff t3 t) 
-            => (a -> b -> c -> t) -> t3
-
-
--- | Lift from arity 0 to arity 1.
+-- | Decorate an Image by superimposing a Graphic.
 --
-class Lift0R1 t1 t where
-  lift0R1 :: Answer t ~ Answer t1 => t -> t1
-
--- | Lift from arity 0 to arity 2.
+-- Note - this function has a very general type signature and
+-- supports various graphic types:
 --
-class Lift0R2 t2 t where
-  lift0R2 :: Answer t ~ Answer t2 => t -> t2
-
--- | Lift from arity 1 to arity 2.
+-- > decorate :: Image u a -> Graphic u -> Image u a
+-- > decorate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > decorate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
 --
-class Lift1R2 t2 t1 where
-  lift1R2 :: Answer t1 ~ Answer t2 => t1 -> t2
+decorate :: Monad cf
+         => cf (ImageAns t u) -> cf (GraphicAns u) -> cf (ImageAns t u) 
+decorate img gf = 
+    img >>= \(Ans a g1) -> 
+    gf  >>= \(Ans _ g2) -> 
+    return $ Ans a (g1 `oplus` g2)
 
--- | Lift from arity 0 to arity 3.
+
+-- | Version of 'decorate' where the annotation Graphic has access 
+-- to the result produced by the Image.
 --
-class Lift0R3 t3 t where
-  lift0R3 :: Answer t ~ Answer t3 => t -> t3
-
--- | Lift from arity 1 to arity 3.
+-- Again, this function has a very general type signature and
+-- supports various graphic types:
 --
-class Lift1R3 t3 t1 where
-  lift1R3 :: Answer t1 ~ Answer t3 => t1 -> t3
-
--- | Lift from arity 2 to arity 3.
+-- > annotate :: Image u a -> Graphic u -> Image u a
+-- > annotate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > annotate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
 --
-class Lift2R3 t3 t2 where
-  lift2R3 :: Answer t2 ~ Answer t3 => t2 -> t3
+annotate :: Monad cf 
+         => cf (ImageAns t u) -> (t u -> cf (GraphicAns u)) -> cf (ImageAns t u)
+annotate img f = 
+    img >>= \(Ans a g1) -> 
+    f a >>= \(Ans _ g0) -> 
+    return $ Ans a (g0 `oplus` g1)
 
 
-
-
-class MoveStart t where
-  moveStart :: forall (r :: * -> *) (u :: *).  
-               PointDisplace u -> t r u -> t r u
-
-
--- | 'moveStartTheta' - move the start-point of an inclined 
--- object with the supplied displacement function.
+-- | Hyperlink a graphic object.
+-- 
+-- This function has a very general type signature and supports 
+-- various graphic types:
 --
--- 'moveStartThetaAngle' - change the inclination of an inclined
--- object with the supplied displacement function.
+-- > hyperlink :: XLink -> Graphic u -> Graphic u
+-- > hyperlink :: XLink -> Image u a -> Image u a
+-- > hyperlink :: XLink -> LocImage u a -> LocImage u a
+-- > hyperlink :: XLink -> LocThetaImage u a -> LocThetaImage u a
 --
-class MoveStartTheta t where
-  moveStartTheta :: forall (r :: * -> *) (u :: *).  
-                    ThetaPointDisplace u -> t r u -> t r u
+hyperlink :: Functor cf 
+          => XLink -> cf (ImageAns t u) -> cf (ImageAns t u)
+hyperlink hypl = 
+    fmap (\(Ans a prim) -> Ans a (cpmap (xlinkPrim hypl) prim))
 
 
-  moveStartThetaAngle :: forall (r :: * -> *) (u :: *).  
-                         ThetaDisplace -> t r u -> t r u
-
-
-
+-- | Clip a graphic object.
+-- 
+clipObject :: Functor cf 
+           => PrimPath -> cf (ImageAns t u) -> cf (ImageAns t u)
+clipObject pp = 
+    fmap (\(Ans a prim) -> Ans a (cpmap (clip pp) prim))

@@ -18,9 +18,16 @@
 module Wumpus.Basic.Kernel.Objects.Displacement
   (
 
+    PointDisplace
+  , ThetaDisplace
+  , ThetaPointDisplace
 
+  , moveStart
+  , moveStartTheta
+  , moveStartThetaPoint
+  , moveStartThetaIncl
 
-    displace
+  , displace
   , displaceVec
   , displaceH
   , displaceV
@@ -67,9 +74,9 @@ module Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Anchors
-import Wumpus.Basic.Kernel.Objects.Basis
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -77,10 +84,73 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
+
+-- | 'PointDisplace' is a type representing functions 
+-- @from Point to Point@.
+--
+-- It is especially useful for building composite graphics where 
+-- one part of the graphic is drawn from a different start point 
+-- to the other part.
+--
+type PointDisplace u = Point2 u -> Point2 u
+
+
+
+
+-- | 'ThetaDisplace' is a type representing functions 
+-- @from Radian to Radian@.
+--
+-- It is especially useful for building composite graphics where 
+-- one part of the graphic is drawn from a different start point 
+-- to the other part.
+--
+type ThetaDisplace = Radian -> Radian
+
+
+-- | 'ThetaPointDisplace' is a type representing functions 
+-- @from Radian * Point to Point@.
+--
+-- It is useful for building arrowheads which are constructed 
+-- with an implicit angle representing the direction of the line 
+-- at the arrow tip.
+--
+type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
+
+
 --------------------------------------------------------------------------------
--- Displacing points
+-- Displacing points and inclination
 
 
+-- | Move the start-point of a 'LocQuery' with the supplied 
+-- displacement function.
+--
+moveStart :: PointDisplace u -> LocQuery u a -> LocQuery u a
+moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
+
+
+
+-- | Move the start-point of a 'LocThetaQuery' with the supplied 
+-- displacement function.
+--
+moveStartTheta :: ThetaPointDisplace u 
+               -> LocThetaQuery u a -> LocThetaQuery u a
+moveStartTheta f ma = promoteR2 $ \pt theta -> let p2 = f theta pt 
+                                               in apply2R2 ma p2 theta
+
+
+-- | Move the start-point of a 'LocThetaCF' with the supplied 
+-- displacement function.
+--
+moveStartThetaPoint :: PointDisplace u 
+                    -> LocThetaQuery u a -> LocThetaQuery u a
+moveStartThetaPoint f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
+
+
+-- | Change the inclination of a 'LocThetaCF' with the supplied 
+-- displacement function.
+--
+moveStartThetaIncl :: ThetaDisplace -> LocThetaQuery u a -> LocThetaQuery u a
+moveStartThetaIncl f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
 
 
 --------------------------------------------------------------------------------
