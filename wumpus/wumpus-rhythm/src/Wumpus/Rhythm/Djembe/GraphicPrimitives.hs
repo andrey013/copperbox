@@ -94,7 +94,7 @@ noteGlyph = flip moveStart
 baselineCharGlyph :: (Floating u, InterpretUnit u) 
                   => EscapedChar -> LocImage Vec2 u
 baselineCharGlyph ch = 
-    descender &=> \dy -> 
+    descender >>= \dy -> 
     mapAns fn $ moveStart (move_down (abs dy)) $ startPosR SS $ posEscChar ch
   where
     fn bb = V2 (boundaryWidth bb) 0
@@ -104,12 +104,12 @@ baselineCharGlyph ch =
 
 strokedPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
 strokedPosRect w h = 
-    posImage (oposRectSW w h) (strokedRectangle w h)
+    makePosImage (oposRectSW w h) (strokedRectangle w h)
 
 
 filledPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
 filledPosRect w h = 
-    posImage (oposRectSW w h) (filledRectangle w h)
+    makePosImage (oposRectSW w h) (filledRectangle w h)
 
 oposRectSW :: Num u => u -> u -> ObjectPos u 
 oposRectSW w h  = ObjectPos { op_x_minor = 0
@@ -120,14 +120,14 @@ oposRectSW w h  = ObjectPos { op_x_minor = 0
 
 openStrokePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promoteR1 $ \pt -> 
-    uconvertFDC pt      &=> \pt1 -> 
-    mapM uconvertFDC vs &=> \vs1 ->
+    uconvertFDC pt      >>= \pt1 -> 
+    mapM uconvertFDC vs >>= \vs1 ->
     openStroke $ vectorPrimPath pt1 vs1
 
 filledRelativePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 filledRelativePath vs = promoteR1 $ \pt -> 
-    uconvertFDC pt      &=> \pt1 -> 
-    mapM uconvertFDC vs &=> \vs1 ->
+    uconvertFDC pt      >>= \pt1 -> 
+    mapM uconvertFDC vs >>= \vs1 ->
     filledPath $ vectorPrimPath pt1 vs1
 
 
@@ -171,7 +171,7 @@ lostroke_disk = noteGlyph note_draw start_move
 
 char_flam :: Char -> LocGraphic AfmUnit
 char_flam ch = 
-    local_ctx (scale_point_size 0.75) $ moveStart start_move note_draw
+    localize (scale_point_size 0.75) $ moveStart start_move note_draw
   where
     note_draw  = ignoreAns $ baselineCharGlyph $ CharLiteral ch
     start_move = move_left flam_xminor . move_up flam_char_baseline
@@ -328,7 +328,7 @@ repeatSglStem = openStrokePath [vvec stem_top]
 
 repeatDblStem :: AfmUnit -> LocGraphic AfmUnit
 repeatDblStem dx = 
-   local_ctx line_thick $ 
+   localize line_thick $ 
        moveStart (displaceH dx) $ openStrokePath [vvec stem_top]
 
 
@@ -373,7 +373,7 @@ numberWidth i | i < 10    = plet_number_width
 
 centeredTwoThirdsText :: String -> LocGraphic AfmUnit
 centeredTwoThirdsText ss =
-    local_ctx (scale_point_size (2/3)) $ 
+    localize (scale_point_size (2/3)) $ 
       ignoreAns $ startPosR CENTER $ textbox ss 
 
 

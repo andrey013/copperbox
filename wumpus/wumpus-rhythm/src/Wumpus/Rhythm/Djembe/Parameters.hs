@@ -98,7 +98,7 @@ disk_radius             = 272
 -- | Baseline to disk center, vertical measure.
 --
 disk_ycenter            :: AfmUnit 
-disk_ycenter            = 306 -- 765
+disk_ycenter            = 306
 
 
 -- | Radius of period notehead - this is the /rest/ note (??) for 
@@ -109,7 +109,7 @@ period_radius           = 60
 
 
 period_ycenter          :: AfmUnit
-period_ycenter          = 270 -- OLD 108
+period_ycenter          = 108
 
 
 lostroke_disk_ycenter   :: AfmUnit

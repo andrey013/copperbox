@@ -36,6 +36,6 @@ makeCtx = join_bevel . set_font helvetica . metricsContext 24
 djembe_drawing :: CtxPicture
 djembe_drawing = udrawTracing (0::Double) $ 
     localize (snap_grid_factors 20 20 . fill_use_stroke_colour) $ do 
-      draw $ local_ctx (stroke_colour red) $ locStraightLine (hvec 200) `at` zeroPt
+      draw $ localize (stroke_colour red) $ locStraightLine (hvec 200) `at` zeroPt
       drawli_ zeroPt       $ beamgroup [tone, tone, bassB, period]
 
