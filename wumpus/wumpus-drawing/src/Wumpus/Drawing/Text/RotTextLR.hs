@@ -64,7 +64,7 @@ data OnelineText u = OnelineText
 
 
 
-type OnelineGraphicF u = AdvanceVec u -> OnelineText u -> LocThetaGraphic u
+type OnelineGraphicF u = u -> OnelineText u -> LocThetaGraphic u
 
 
 
@@ -121,21 +121,26 @@ drawMultiline :: (Real u, Floating u, InterpretUnit u)
               => OnelineGraphicF u -> [EscapedText] 
               -> PosThetaImage BoundingBox u
 drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
-drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
-    linesToInterims xs  &=> \(max_adv, ones) ->
-    borderedRotTextPos theta line_count (advanceH max_adv) &=> \opos -> 
-    centerSpineDisps line_count theta &=> \(disp_top, disp_next) ->
-    let gs         = map (\a -> rot (drawF max_adv a) theta) ones
-        gf         = moveStart disp_top $ chainDisplace disp_next gs
-    in orthoBB max_adv line_count start theta &=> \ bb -> 
-    let img        = intoLocImage (return $ \_ -> bb) (ignoreAns gf)
-        posG       = posImage opos img
+drawMultiline drawF xs  = promoteR3 $ \start rpos ang ->
+    linesToInterims xs                        >>= \(max_w, ones) ->
+    borderedRotTextPos ang line_count max_w   >>= \opos -> 
+    let gf         = multilineGraphic drawF max_w opos ang ones
+        bbf        = orthoBB max_w line_count ang
+        img        = intoLocImage bbf gf
+        posG       = makePosImage opos img
     in atStartPos posG start rpos     
   where
     line_count = length xs
 
 
-
+multilineGraphic :: (Floating u, InterpretUnit u)
+                 => OnelineGraphicF u -> u -> ObjectPos u 
+                 -> Radian -> [OnelineText u]
+                 -> LocGraphic u
+multilineGraphic drawF max_w opos ang xs = 
+    lift0R1 (centerSpineDisps (length xs) ang) >>= \(disp_top, disp_next) ->
+    let gs         = map (\a -> rot (drawF max_w a) ang) xs
+    in ignoreAns $ moveStart disp_top $ chainDisplace disp_next gs
 
 -- | Draw left-aligned text. Effictively this is:
 --
@@ -145,12 +150,12 @@ drawMultiline drawF xs  = promoteR3 $ \start rpos theta ->
 --
 onelineALeft :: (Real u, Floating u, InterpretUnit u)  
              => OnelineGraphicF u 
-onelineALeft max_adv otext = promoteR2 $ \ctr theta -> 
-    centerToBaseline &=> \down -> 
+onelineALeft width otext = promoteR2 $ \ctr theta -> 
+    centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
     in atRot (rescapedline $ text_content otext) pt theta
   where
-    vec1      = negateV $ 0.5 *^ max_adv
+    vec1      = hvec $ negate $ 0.5 * width
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
@@ -165,7 +170,7 @@ onelineALeft max_adv otext = promoteR2 $ \ctr theta ->
 onelineACenter :: (Real u, Floating u, InterpretUnit u)  
                => OnelineGraphicF u
 onelineACenter _ otext = promoteR2 $ \ctr theta -> 
-    centerToBaseline &=> \down -> 
+    centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
     in atRot (rescapedline $ text_content otext) pt theta
   where
@@ -175,7 +180,7 @@ onelineACenter _ otext = promoteR2 $ \ctr theta ->
 
 -- | Draw right-aligned text. Effictively this is:
 --
--- > Rightwards for the half the max vector
+-- > Rightwards for the half the max width
 -- >
 -- > Leftwards for the width vector
 -- >
@@ -183,12 +188,12 @@ onelineACenter _ otext = promoteR2 $ \ctr theta ->
 --
 onelineARight :: (Real u, Floating u, InterpretUnit u)  
               => OnelineGraphicF u
-onelineARight max_adv otext = promoteR2 $ \ctr theta -> 
-    centerToBaseline &=> \down -> 
+onelineARight max_w otext = promoteR2 $ \ctr theta -> 
+    centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
     in atRot (rescapedline $ text_content otext) pt theta
   where
-    vec1      = (0.5 *^ max_adv) ^-^ oneline_adv otext
+    vec1      = hvec (0.5 * max_w) ^-^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
 
 
@@ -206,8 +211,8 @@ onelineARight max_adv otext = promoteR2 $ \ctr theta ->
 -- two triangles meeting at the (rectangle) center.
 
 orthoBB :: (Real u, Floating u, InterpretUnit u) 
-        => AdvanceVec u -> Int -> Point2 u -> Radian -> Query (BoundingBox u)
-orthoBB (V2 w _) line_count ctr theta = 
+        => u -> Int -> Radian -> LocQuery u (BoundingBox u)
+orthoBB w line_count theta = promoteR1 $ \ctr ->
     fmap (0.5*) verticalSpan          >>= \hh1 ->
     textMargin                        >>= \(xsep,ysep) -> 
     centerSpineDisps line_count theta >>= \(disp_top,_) ->
@@ -232,20 +237,17 @@ orthoBB (V2 w _) line_count ctr theta =
 
 -- | Turn the input list of lines of 'EscapedText' into 
 -- 'OnelineText' and return the result list twinned with the 
--- largest 'AdvanceVec'.
+-- largest width.
 --
 linesToInterims :: (InterpretUnit u, Ord u) 
-                => [EscapedText] -> Query (AdvanceVec u, [OnelineText u])
+                => [EscapedText] -> Query (u, [OnelineText u])
 linesToInterims = fmap post . mapM onelineEscText
   where
-    post xs                    = let vmax = foldr fn (hvec 0) xs in (vmax,xs)
-    fn (OnelineText _ av) vmax = avMaxWidth av vmax
+    post xs                    = let vmax = foldr fn 0 xs in (vmax,xs)
+    fn (OnelineText _ av) wmax = max (advanceH av) wmax
 
 
 
-
-avMaxWidth :: Ord u => AdvanceVec u -> AdvanceVec u -> AdvanceVec u
-avMaxWidth a@(V2 w1 _) b@(V2 w2 _) = if w2 > w1 then b else a
 
 onelineEscText :: InterpretUnit u => EscapedText -> Query (OnelineText u)
 onelineEscText esc = fmap (OnelineText esc) $ textVector esc

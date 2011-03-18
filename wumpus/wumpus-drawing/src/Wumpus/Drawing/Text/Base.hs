@@ -50,7 +50,7 @@ import Data.Maybe
 -- | Single line text, returning its advance vector.
 --
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
-advtext esc = textVector esc &=> body
+advtext esc = lift0R1 (textVector esc) >>= body
   where
     body v = replaceAns v $ escapedline esc
 
@@ -60,7 +60,7 @@ advtext esc = textVector esc &=> body
 textVector :: InterpretUnit u => EscapedText -> Query (AdvanceVec u)
 textVector esc = 
     cwLookupTable >>= \table -> 
-    point_size    >>= \sz    -> 
+    pointSize    >>= \sz    -> 
     let cs = destrEscapedText id esc 
     in return $ foldr (step sz table) (vec 0 0) cs
   where
@@ -68,7 +68,7 @@ textVector esc =
 
 charVector :: InterpretUnit u => EscapedChar -> Query (AdvanceVec u)
 charVector ch = 
-    (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> point_size
+    (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> pointSize
    
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
 -- 
@@ -154,10 +154,8 @@ borderedRotTextPos theta line_count max_w =
 orthoObjectPos :: (Real u, Floating u, InterpretUnit u) 
                => Radian -> ObjectPos u -> Query (ObjectPos u)
 orthoObjectPos ang opos = 
-    point_size >>= \sz ->
-    let dopos = dblOrthoObjectPos ang $ uconvertF sz opos
-    in return $ uconvertF sz dopos
-
+    (\sz -> intraMapFunctor sz (dblOrthoObjectPos ang) opos) 
+      <$> pointSize
 
 
 dblOrthoObjectPos :: Radian -> ObjectPos Double -> ObjectPos Double

@@ -60,6 +60,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
+import Control.Applicative
 
 -- Marks should be the height of a lower-case letter...
 
@@ -77,7 +78,7 @@ infixr 9 `renderPathWith`
 renderPathWith :: LocQuery u PrimPath 
                -> (PrimPath -> Graphic u) 
                -> LocGraphic u
-renderPathWith qy mk = promoteR1 $ \pt -> applyQ1 qy pt &=> mk
+renderPathWith qy mk = promoteR1 $ \pt -> apply1R1 qy pt >>= mk
 
 
 
@@ -100,15 +101,15 @@ axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (locStraightLine v)
 
 
 markHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markHLine = markHeight &=> \h -> axialLine (hvec h)
+markHLine = markHeight >>= \h -> axialLine (hvec h)
 
 
 markVLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markVLine = markHeight &=> \h -> axialLine (vvec h) 
+markVLine = markHeight >>= \h -> axialLine (vvec h) 
 
 
 markX :: (Fractional u, InterpretUnit u) => LocGraphic u
-markX = markHeight &=> mkX 
+markX = markHeight >>= mkX 
   where
     mkX h = let w = 0.75 * h
               in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
@@ -120,7 +121,7 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
-markCross = markHeight &=> mkCross
+markCross = markHeight >>= mkCross
   where
     mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
     ang       = pi*0.25  
@@ -129,10 +130,9 @@ markCross = markHeight &=> mkCross
 
 pathDiamond :: (Fractional u, InterpretUnit u) 
             => LocQuery u PrimPath
-pathDiamond = 
-    promoteQ1 $ \pt -> 
-      markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
-                           in coordinatePrimPath cp pt
+pathDiamond = promoteR1 $ \pt -> 
+    markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
+                         in coordinatePrimPath cp pt
 
 
 
@@ -161,29 +161,29 @@ markBDiamond = pathDiamond `renderPathWith` borderedPath
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, InterpretUnit u) => LocGraphic u
-markDisk = markHalfHeight &=> filledDisk
+markDisk = markHalfHeight >>= filledDisk
 
 
 
 markSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
 markSquare = 
-    markHeight &=> \h -> 
+    markHeight >>= \h -> 
     let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
     
 
 
 markCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markCircle = markHalfHeight &=> strokedDisk
+markCircle = markHalfHeight >>= strokedDisk
 
 
 markBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markBCircle = markHalfHeight &=> borderedDisk 
+markBCircle = markHalfHeight >>= borderedDisk 
 
 
 
 markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
 markPentagon = promoteR1 $ \pt -> 
-    pentagonPath pt &=> closedStroke
+    pentagonPath pt >>= closedStroke
   where
     pentagonPath pt = markHalfHeight >>= \hh -> 
                       coordinatePrimPath (polygonCoordPath 5 hh) pt
@@ -192,7 +192,7 @@ markPentagon = promoteR1 $ \pt ->
 
 
 markStar :: (Floating u, InterpretUnit u) => LocGraphic u 
-markStar = markHeight &=> \h -> starLines (0.5*h)
+markStar = markHeight >>= \h -> starLines (0.5*h)
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 starLines hh = promoteR1 $ \ctr -> 
@@ -205,7 +205,7 @@ starLines hh = promoteR1 $ \ctr ->
 
 
 markAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
-markAsterisk = markHeight &=> asteriskLines
+markAsterisk = markHeight >>= asteriskLines
 
 asteriskLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
@@ -236,7 +236,7 @@ markFOCross = markCross `oplus` markBCircle
 markTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
 markTriangle = tripath `renderPathWith` closedStroke
   where
-    tripath = promoteQ1 $ \pt -> 
+    tripath = promoteR1 $ \pt -> 
                 markHeight >>= \h -> 
                   let cp = equilateralTriangleCoordPath h
                   in coordinatePrimPath cp pt

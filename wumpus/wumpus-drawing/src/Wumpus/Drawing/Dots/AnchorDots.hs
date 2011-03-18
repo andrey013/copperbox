@@ -174,7 +174,7 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
 rectangleLDO :: (Real u, Floating u) 
              => u -> u -> LocQuery u (DotAnchor u)
 rectangleLDO w h = 
-    promoteQ1 $ \pt -> pure $ rectangleAnchor (w*0.5) (h*0.5) pt
+    promoteR1 $ \pt -> pure $ rectangleAnchor (w*0.5) (h*0.5) pt
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -184,7 +184,7 @@ circleAnchor rad ctr = DotAnchor ctr
 
 circleLDO :: (Floating u, InterpretUnit u) => LocQuery u (DotAnchor u)
 circleLDO = 
-    promoteQ1 $ \pt -> 
+    promoteR1 $ \pt -> 
       markHeight >>= \diam -> pure $ circleAnchor (diam * 0.5) pt
 
 
@@ -194,7 +194,7 @@ circleLDO =
 polygonLDO :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => (u -> Point2 u -> [Point2 u]) -> LocQuery u (DotAnchor u)
 polygonLDO mk = 
-    promoteQ1 $ \ctr -> 
+    promoteR1 $ \ctr -> 
       markHeight >>= \h -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
 
 
@@ -253,7 +253,7 @@ dotDisk = intoLocImage circleLDO markDisk
 
 dotSquare :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
 dotSquare = 
-    markHeight &=> \h -> intoLocImage (rectangleLDO h h) markSquare
+    markHeight >>= \h -> intoLocImage (rectangleLDO h h) markSquare
 
 
 

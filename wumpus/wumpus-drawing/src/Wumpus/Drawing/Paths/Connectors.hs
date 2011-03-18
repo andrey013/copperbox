@@ -60,16 +60,11 @@ import Prelude hiding ( length )
 -- | Note - a PathCF is a context function not a graphic 
 --  
 
-type PathQuery u = Query ( Point2 u -> Point2 u -> Path u )
+type PathQuery u = ConnectorQuery u (Path u)
 
 type DPathQuery  = PathQuery Double
 
 
-promoteQuery :: (Point2 u -> Point2 u -> Query (Path u)) -> PathQuery u
-promoteQuery fn = promoteQ2 fn 
-
-cfPathQuery :: (Point2 u -> Point2 u -> Path u) -> PathQuery u
-cfPathQuery fn = promoteQ2 $ \a b -> pure $ fn a b
 
 
 -- pathQuery :: 
@@ -80,10 +75,9 @@ cfPathQuery fn = promoteQ2 $ \a b -> pure $ fn a b
 sconnect :: InterpretUnit u 
          => PathQuery u -> Point2 u -> Point2 u -> Image Path u
 sconnect mf p0 p1 = 
-    mf &=> \fn -> 
-      let cpath = fn p0 p1 
-      in toPrimPath cpath &=> \ppath -> 
-         intoImage (pure cpath) (openStroke ppath)
+    connect mf p0 p1 >>= \cpath ->
+    toPrimPath cpath >>= \ppath -> 
+    intoImage (pure cpath) (openStroke ppath)
                     
 
 -- | Build the path with interior round corners.
@@ -101,7 +95,7 @@ roundCornerPath xs = roundCornerSize >>= \sz ->
 -- | Connect with a straight line.
 --
 connLine :: Floating u => PathQuery u
-connLine = cfPathQuery $ \p0 p1 -> line p0 p1
+connLine = promoteR2 $ \p0 p1 -> return $ line p0 p1
 
 
 
@@ -109,7 +103,7 @@ connLine = cfPathQuery $ \p0 p1 -> line p0 p1
 --
 connRightVH :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
             => PathQuery u
-connRightVH = promoteQuery $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
+connRightVH = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
     let mid = P2 x0 y1 in roundCornerPath [p0, mid, p1]
 
 
@@ -118,7 +112,7 @@ connRightVH = promoteQuery $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 --
 connRightHV :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
             => PathQuery u
-connRightHV = promoteQuery $ \ p0@(P2 _ y0) p1@(P2 x1 _) -> 
+connRightHV = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 x1 _) -> 
     let mid = P2 x1 y0 in roundCornerPath [p0, mid, p1]
 
 -- | Right-angled connector - go vertical for the supplied 
@@ -127,7 +121,7 @@ connRightHV = promoteQuery $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
 -- 
 connRightVHV :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
              => u -> PathQuery u
-connRightVHV v = promoteQuery $ \ p0@(P2 x0 _) p1@(P2 x1 _) ->
+connRightVHV v = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 x1 _) ->
     let a0 = p0 .+^ vvec v
         a1 = a0 .+^ hvec (x1 - x0)
     in roundCornerPath [p0, a0, a1, p1]
@@ -139,7 +133,7 @@ connRightVHV v = promoteQuery $ \ p0@(P2 x0 _) p1@(P2 x1 _) ->
 -- 
 connRightHVH :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
              => u -> PathQuery u
-connRightHVH h = promoteQuery $ \ p0@(P2 _ y0) p1@(P2 _ y1) -> 
+connRightHVH h = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 _ y1) -> 
     let a0 = p0 .+^ hvec h
         a1 = a0 .+^ vvec (y1 - y0)
     in roundCornerPath [p0,a0,a1,p1]
@@ -151,7 +145,7 @@ connRightHVH h = promoteQuery $ \ p0@(P2 _ y0) p1@(P2 _ y1) ->
 --
 connIsosceles :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> PathQuery u 
-connIsosceles dy = promoteQuery $ \ p0 p1 -> 
+connIsosceles dy = promoteR2 $ \ p0 p1 -> 
     let mid_pt  = midpointIsosceles dy p0 p1
     in roundCornerPath [p0, mid_pt, p1]
  
@@ -165,7 +159,7 @@ connIsosceles dy = promoteQuery $ \ p0 p1 ->
 --
 connIsosceles2 :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
                => u -> PathQuery u 
-connIsosceles2 u = promoteQuery $ \ p0 p1 -> 
+connIsosceles2 u = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = dblpointIsosceles u p0 p1
     in roundCornerPath [ p0, cp0, cp1, p1 ]
 
@@ -178,7 +172,7 @@ connIsosceles2 u = promoteQuery $ \ p0 p1 ->
 --
 connLightningBolt :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                   => u -> PathQuery u 
-connLightningBolt u = promoteQuery $ \ p0 p1 -> 
+connLightningBolt u = promoteR2 $ \ p0 p1 -> 
     let cp0 = midpointIsosceles   u  p0 p1
         cp1 = midpointIsosceles (-u) p0 p1
     in roundCornerPath [ p0, cp0, cp1, p1 ]
@@ -197,7 +191,7 @@ connLightningBolt u = promoteQuery $ \ p0 p1 ->
 --
 connIsoscelesCurve :: (Real u, Floating u, LengthTolerance u) 
                    => u -> PathQuery u 
-connIsoscelesCurve u = promoteQuery $ \ p0 p1 ->
+connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
     let control_pt  = midpointIsosceles u p0 p1
     in pure $ traceCurvePoints [p0, control_pt, control_pt, p1]
    
@@ -210,7 +204,7 @@ connIsoscelesCurve u = promoteQuery $ \ p0 p1 ->
 -- 
 connSquareCurve :: (Real u, Floating u, LengthTolerance u) 
                 => PathQuery u 
-connSquareCurve = promoteQuery $ \ p0 p1 ->
+connSquareCurve = promoteR2 $ \ p0 p1 ->
     let (cp0,cp1) = squareFromBasePoints p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
 
@@ -225,7 +219,7 @@ connSquareCurve = promoteQuery $ \ p0 p1 ->
 -- 
 connUSquareCurve :: (Real u, Floating u, LengthTolerance u) 
                  => PathQuery u 
-connUSquareCurve = promoteQuery $ \ p0 p1 -> 
+connUSquareCurve = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = usquareFromBasePoints p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
 
@@ -236,7 +230,7 @@ connUSquareCurve = promoteQuery $ \ p0 p1 ->
 -- 
 connTrapezoidCurve :: (Real u, Floating u, LengthTolerance u) 
                    => u -> u -> PathQuery u 
-connTrapezoidCurve u ratio_to_base = promoteQuery $ \p0 p1 -> 
+connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = trapezoidFromBasePoints u ratio_to_base p0 p1
     in pure $ traceCurvePoints [p0, cp0, cp1, p1]
 
@@ -246,7 +240,7 @@ connTrapezoidCurve u ratio_to_base = promoteQuery $ \p0 p1 ->
 --
 connZSquareCurve :: (Real u, Floating u, LengthTolerance u) 
                  => PathQuery u 
-connZSquareCurve = promoteQuery $ \p0 p1 -> 
+connZSquareCurve = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = squareFromCornerPoints p0 p1
     in pure $ traceCurvePoints [p0,cp0,cp1,p1]
 
@@ -258,7 +252,7 @@ connZSquareCurve = promoteQuery $ \p0 p1 ->
 -- 
 connUZSquareCurve :: (Real u, Floating u, LengthTolerance u) 
                   => PathQuery u 
-connUZSquareCurve = promoteQuery $ \ p0 p1 ->  
+connUZSquareCurve = promoteR2 $ \ p0 p1 ->  
    let (cp0,cp1)  = squareFromCornerPoints p0 p1 
    in pure $ traceCurvePoints [p0,cp1,cp0,p1]
 
