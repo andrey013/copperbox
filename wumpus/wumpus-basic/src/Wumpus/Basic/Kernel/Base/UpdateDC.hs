@@ -74,6 +74,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
   , text_margin
   , text_margin_none
+  , text_margin_tight
   , text_margin_default
   , text_margin_loose
 
@@ -403,15 +404,21 @@ text_margin_none    :: DrawingContextF
 text_margin_none    = text_margin 0 0 
 
 
--- | Set the text margin to (2.0,2.0).
+
+-- | Set the text margin to (0.25 em, 0.25 em).
+-- 
+text_margin_tight       :: DrawingContextF
+text_margin_tight       = text_margin 0.25 0.25
+
+-- | Set the text margin to (0.5 em, 0.5 em).
 -- 
 text_margin_default :: DrawingContextF
-text_margin_default = text_margin 2.0 2.0
+text_margin_default = text_margin 0.5 0.5
 
--- | Set the text margin to (8.0,8.0).
+-- | Set the text margin to (1.0 em, 1.0 em).
 -- 
 text_margin_loose   :: DrawingContextF
-text_margin_loose = text_margin 8.0 8.0
+text_margin_loose = text_margin 1.0 1.0
 
 
 --------------------------------------------------------------------------------

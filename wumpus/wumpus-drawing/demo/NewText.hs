@@ -62,7 +62,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 -- Note - Baseline positions not meaningful for multiline text
 
 mf :: TraceDrawing Double ()
-mf = localize (text_margin 6.0 6.0)  $ do
+mf = localize text_margin_tight  $ do
     drawi_ $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw   $ redPlus `at` zeroPt
 

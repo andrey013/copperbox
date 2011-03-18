@@ -56,7 +56,6 @@ import Wumpus.Drawing.Text.RotTextLR
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Base.Datatypes
 
 import Wumpus.Core                              -- package: wumpus-core
 

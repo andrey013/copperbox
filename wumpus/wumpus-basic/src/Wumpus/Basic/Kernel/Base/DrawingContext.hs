@@ -103,14 +103,13 @@ type DrawingContextF = DrawingContext -> DrawingContext
 -- | The text margin is measured in 'Em' so it is relative to the
 -- current font size.
 -- 
--- The default value is 2.
+-- The default value is 0.5.
 --
 data TextMargin = TextMargin
        { text_margin_x          :: !Em
        , text_margin_y          :: !Em
        }
 
-       -- TODO - this would be preferably as Em or En...
 
 -- | 'standardContext' : @ font_size -> DrawingContext @  
 --
@@ -141,7 +140,7 @@ data TextMargin = TextMargin
 -- > text_colour:         black
 -- > line_spacing_factor: 1.2
 -- > round_corner_factor: 0
--- > text_margin:         (2.0 pt, 2.0 pt) 
+-- > text_margin:         (0.5 em, 0.5 em) 
 --
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
@@ -208,7 +207,7 @@ addFontTables (FontLoadResult table msgs) =
 -- > text_colour:         black
 -- > line_spacing_factor: 1.2
 -- > round_corner_factor: 0
--- > text_margin:         (2.0, 2.0) 
+-- > text_margin:         (0.5 em, 0.5 em) 
 --
 reset_drawing_properties :: DrawingContextF 
 reset_drawing_properties dcxt = 
@@ -237,7 +236,7 @@ reset_drawing_properties dcxt =
 -- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
 -- > line_spacing_factor: 1.2
 -- > round_corner_factor: 0
--- > text_margin:         (2.0, 2.0) 
+-- > text_margin:         (0.5 em, 0.5 em) 
 --
 reset_drawing_metrics :: DrawingContextF 
 reset_drawing_metrics dcxt = 
@@ -252,7 +251,7 @@ reset_drawing_metrics dcxt =
 -- Helpers - not exported
 
 default_text_margin :: TextMargin
-default_text_margin = TextMargin { text_margin_x = 2.0, text_margin_y = 2.0 }
+default_text_margin = TextMargin { text_margin_x = 0.5, text_margin_y = 0.5 }
 
 default_line_spacing :: Double
 default_line_spacing = 1.2

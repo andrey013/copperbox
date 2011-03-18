@@ -69,16 +69,16 @@ automata = drawTracing  $ do
     q2     <- drawi $ below_right_of q0 `op` state "q2"
     q3     <- drawi $ below_right_of q1 `op` stopstate "q3"
 
-    s0     <- evalQuery (left_of q0)
-{-    
-    drawrci_ q0 q1 $ label_midway_of SE (textbox "0") $ straightconn
-    drawci_  (center q1) (north q1) $ label_midway_of SS (textbox "0") arrloop
-    drawrci_ q1 q3 $ label_midway_of SW (textbox "1") $ straightconn
-    drawrci_ q0 q2 $ label_midway_of NE (textbox "1") $ straightconn 
-    drawrci_ q2 q3 $ label_midway_of NW (textbox "0") $ straightconn
-    drawci_  (center q2) (south q2) $ label_midway_of NN (textbox "1") arrloop
-    drawci_  s0 (west q0) $ label_atstart_of EE (textbox "start") straightconn
--}
+    let s0 = left_of q0
+
+    drawi_ $ label_midway_of SE (textbox "0") $ straightconn q0 q1
+    drawi_ $ label_midway_of SS (textbox "0") $ arrloop (center q1) (north q1) 
+    drawi_ $ label_midway_of SW (textbox "1") $ straightconn q1 q3
+    drawi_ $ label_midway_of NE (textbox "1") $ straightconn q0 q2
+    drawi_ $ label_midway_of NW (textbox "0") $ straightconn q2 q3
+    drawi_ $ label_midway_of NN (textbox "1") $ arrloop (center q2) (south q2) 
+    drawi_ $ label_atstart_of EE (textbox "start")$ astraightconn s0 (west q0) 
+
     return ()
 
 infixr 1 `op`
@@ -104,16 +104,29 @@ stopstate ss =
   
 
 
-straightconn :: (Real u, Floating u, InterpretUnit u) 
-             => ConnectorImage Path u
-straightconn = rightArrow tri45 connLine
+straightconn :: ( Real u, Floating u, InterpretUnit u
+                , CenterAnchor t1 u, RadialAnchor  t1 u
+                , CenterAnchor t2 u, RadialAnchor  t2 u
+                )
+             => t1 u -> t2 u -> Image Path u
+straightconn a b =
+    radialConnectorPoints a b >>= \(p0,p1) -> 
+    connect (rightArrow tri45 connLine) p0 p1
+
+
+astraightconn :: ( Real u, Floating u, InterpretUnit u)
+              => Anchor u -> Anchor u -> Image Path u
+astraightconn a b =
+    a >>= \p0 -> b >>= \p1 -> connect (rightArrow tri45 connLine) p0 p1
+
 
 -- Note - there is a problem with @rightArrow@ as @loop@
 -- manufactures the start and end points...
 --
-arrloop :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-        => ConnectorImage Path u
-arrloop = rightArrow barb45 loop
+arrloop :: ( Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+        => Anchor u -> Anchor u -> Image Path u
+arrloop a b =
+    a >>= \p0 -> b >>= \p1 -> connect (rightArrow barb45 loop) p0 p1
 
 
 

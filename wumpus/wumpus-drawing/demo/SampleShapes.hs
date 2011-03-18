@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -155,13 +155,16 @@ midPoints n a = mapM_ mf [1..n] >> return a
 
 
 
-{-
-shapePic :: ( CenterAnchor a, CardinalAnchor a, CardinalAnchor2 a
-            , RadialAnchor a
-            , Scale a, Rotate a
+
+shapePic :: ( Functor t
+            , CenterAnchor t Double
+            , CardinalAnchor t Double
+            , CardinalAnchor2 t Double
+            , RadialAnchor t Double
+            , Scale (t Double)
+            , Rotate (t Double)
             ) 
-         => (r u -> DTraceDrawing b) -> DShape a -> String -> CtxPicture
--}
+         => (t Double -> DTraceDrawing a) -> DShape t -> String -> CtxPicture
 shapePic mf sh name = udrawTracing (0::Double) $ do
     a1  <- localize shapeSty $ drawi $ 
               uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)

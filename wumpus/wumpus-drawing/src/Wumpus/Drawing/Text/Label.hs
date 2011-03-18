@@ -79,26 +79,26 @@ label_below = locImageLabel south NN
 connectorPathLabel :: Floating u 
                    => (Path u -> Point2 u) -> RectPosition 
                    -> PosImage t u
-                   -> ConnectorImage Path u -> ConnectorImage Path u
-connectorPathLabel fn rpos lbl obj = promoteR2 $ \p0 p1 -> 
-    annotate (connect obj p0 p1)  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
+                   -> Image Path u -> Image Path u
+connectorPathLabel fn rpos lbl img =  
+    annotate img  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
                 => RectPosition -> PosImage t u 
-                -> ConnectorImage Path u -> ConnectorImage Path u
+                -> Image Path u -> Image Path u
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
                  => RectPosition -> PosImage t u 
-                 -> ConnectorImage Path u -> ConnectorImage Path u
+                 -> Image Path u -> Image Path u
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
                  => RectPosition -> PosImage t u
-                 -> ConnectorImage Path u -> ConnectorImage Path u
+                 -> Image Path u -> Image Path u
 label_atend_of = connectorPathLabel atend_
 
 
