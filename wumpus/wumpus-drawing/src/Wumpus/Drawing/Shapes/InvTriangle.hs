@@ -46,6 +46,10 @@ newtype InvTriangle u = InvTriangle { getInvTriangle :: Triangle u }
 type DInvTriangle = InvTriangle Double
 
 
+instance Functor InvTriangle where
+  fmap f = InvTriangle . fmap f . getInvTriangle
+
+
 --------------------------------------------------------------------------------
 -- Affine trans
 

@@ -103,13 +103,13 @@ rightAlign = drawMulti rightAMove
 drawMulti :: (Real u, Floating u, InterpretUnit u) 
           => HMove u -> [DocText u] -> PosImage BoundingBox u
 drawMulti moveF xs = promoteR2 $ \start rpos -> 
-    evalAllLines xs                             &=> \all_lines -> 
-    centerToBaseline                            &=> \down -> 
-    borderedTextPos line_count (fst all_lines)  &=> \opos ->
-    centerSpineDisps line_count 0               &=> \(disp_top, disp_next) ->
+    evalAllLines xs                             >>= \all_lines -> 
+    centerToBaseline                            >>= \down -> 
+    borderedTextPos line_count (fst all_lines)  >>= \opos ->
+    centerSpineDisps line_count 0               >>= \(disp_top, disp_next) ->
     let gs    = positionHLines moveF down all_lines 
         gf    = moveStart disp_top $ chainDisplace disp_next gs
-        posG  = posImage opos gf
+        posG  = makePosImage opos gf
         bbox  = objectPosBounds start rpos opos
     in replaceAns bbox $ atStartPos posG start rpos     
   where
@@ -261,7 +261,7 @@ hkernPrim ks = hkernVector ks >>= \v ->
 --
 doclocal :: DrawingContextF -> DocText u -> DocText u
 doclocal fn dt = DocText $ 
-    localize fn $ getDocText dt >>= \(u,gf) -> return (u, local_ctx fn gf)
+    localize fn $ getDocText dt >>= \(u,gf) -> return (u, localize fn gf)
 
 
 

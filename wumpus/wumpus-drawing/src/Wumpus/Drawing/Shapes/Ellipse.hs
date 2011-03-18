@@ -57,6 +57,10 @@ data Ellipse u = Ellipse
 type DEllipse = Ellipse Double
 
 
+instance Functor Ellipse where
+  fmap f (Ellipse ctm rx ry) = Ellipse ctm (f rx) (f ry)
+
+
 --------------------------------------------------------------------------------
 -- Affine trans
 
@@ -139,7 +143,7 @@ ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
 
 mkEllipse :: InterpretUnit u => u -> u -> LocThetaQuery u (Ellipse u)
-mkEllipse rx ry = promoteQ2 $ \ctr theta -> 
+mkEllipse rx ry = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Ellipse { ell_ctm = makeShapeCTM dctr theta
                    , ell_rx  = rx
@@ -149,7 +153,7 @@ mkEllipse rx ry = promoteQ2 $ \ctr theta ->
 
 mkEllipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> u -> LocThetaQuery u (Path u)
-mkEllipsePath rx ry = promoteQ2 $ \pt theta -> 
+mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
     let xs = bezierEllipse rx ry pt
     in traceCurvePoints <$> rotateAboutCtxT theta pt xs
 

@@ -73,6 +73,13 @@ data SyntheticProps u = SyntheticProps
 type DParallelogram = Parallelogram Double
 
 
+instance Functor Parallelogram where
+  fmap f (Parallelogram ctm bw h lang props) = 
+      Parallelogram ctm (f bw) (f h) lang (fmap f props)
+
+instance Functor SyntheticProps where
+  fmap f (SyntheticProps bmin bmaj) = SyntheticProps (f bmin) (f bmaj)
+
 
 
 --------------------------------------------------------------------------------
@@ -211,7 +218,7 @@ zparallelogram bw h = parallelogram bw h ang
 mkParallelogram :: (Real u, Fractional u, InterpretUnit u, LengthTolerance u) 
                 => u -> u -> Radian -> SyntheticProps u 
                 -> LocThetaQuery u (Parallelogram u)
-mkParallelogram bw h lang props = promoteQ2 $ \ctr theta -> 
+mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Parallelogram { pll_ctm          = makeShapeCTM dctr theta
                          , pll_base_width   = bw
@@ -242,7 +249,7 @@ synthesizeProps bw h lang
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                     => u -> u -> u -> LocThetaQuery u (Path u)
-mkParallelogramPath bw_minor bw_major h = promoteQ2 $ \ctr theta -> 
+mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
     let xs = pllPath bw_minor bw_major h ctr
     in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
                          

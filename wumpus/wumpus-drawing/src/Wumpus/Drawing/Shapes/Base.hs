@@ -99,7 +99,8 @@ type DShape t = Shape t Double
 --------------------------------------------------------------------------------
 
 shapeMap :: (t u -> t' u) -> Shape t u -> Shape t' u
-shapeMap f = (\s i -> s { shape_ans_fun = promoteQ2 $ \pt ang -> fmap f $ applyQ2 i pt ang }) 
+shapeMap f = (\s sf -> s { shape_ans_fun = promoteR2 $ \pt ang -> 
+                                           fmap f $ apply2R2 sf pt ang }) 
                 <*> shape_ans_fun
 
 
@@ -142,9 +143,9 @@ dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage t u
 dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc closedStroke sh
-    back = getLineWidth &=> \lw ->
-           local_ctx (set_line_width $ lw * 3.0) img
-    fore = ignoreAns $ local_ctx (stroke_colour white) img
+    back = getLineWidth >>= \lw ->
+           localize (set_line_width $ lw * 3.0) img
+    fore = ignoreAns $ localize (stroke_colour white) img
 
 
 
@@ -158,11 +159,11 @@ borderedShape = shapeToLoc borderedPath
 
 shapeToLoc :: InterpretUnit u
            => (PrimPath -> Graphic u) -> Shape t u -> LocImage t u
-shapeToLoc drawF sh = promote_li1 $ \pt -> 
-    applyQ2 (shape_ans_fun sh)  pt 0 &=> \a -> 
-    applyQ2 (shape_path_fun sh) pt 0 &=> \spath -> 
+shapeToLoc drawF sh = promoteR1 $ \pt -> 
+    apply2R2 (shape_ans_fun sh)  pt 0 >>= \a -> 
+    apply2R2 (shape_path_fun sh) pt 0 >>= \spath -> 
     let g2 = atRot (shape_decoration sh) pt 0 
-    in intoImage (pure a) (decorate g2 $ toPrimPath spath &=> drawF)
+    in intoImage (pure a) (decorate g2 $ toPrimPath spath >>= drawF)
 
 
 
@@ -180,11 +181,11 @@ rborderedShape = shapeToLocTheta borderedPath
 
 shapeToLocTheta :: InterpretUnit u
                 => (PrimPath -> Graphic u) -> Shape t u -> LocThetaImage t u
-shapeToLocTheta drawF sh = promote_lti2 $ \pt theta -> 
-    applyQ2 (shape_ans_fun sh)  pt theta &=> \a -> 
-    applyQ2 (shape_path_fun sh) pt theta &=> \spath -> 
+shapeToLocTheta drawF sh = promoteR2 $ \pt theta -> 
+    apply2R2 (shape_ans_fun sh)  pt theta >>= \a -> 
+    apply2R2 (shape_path_fun sh) pt theta >>= \spath -> 
     let g2 = atRot (shape_decoration sh) pt theta
-    in intoImage (pure a) (decorate g2 $ toPrimPath spath &=> drawF)
+    in intoImage (pure a) (decorate g2 $ toPrimPath spath >>= drawF)
 
 
 
@@ -208,7 +209,8 @@ roundCornerShapePath xs =
 -- 
 updatePathAngle :: (Radian -> Radian) -> Shape t u -> Shape t u
 updatePathAngle f = 
-    (\s i -> s { shape_path_fun = promoteQ2 $ \pt ang -> applyQ2 i pt (mvTheta ang) })
+    (\s i -> s { shape_path_fun = promoteR2 $ \pt ang -> 
+                                  apply2R2 i pt (mvTheta ang) })
       <*> shape_path_fun
   where
     mvTheta = circularModulo . f 

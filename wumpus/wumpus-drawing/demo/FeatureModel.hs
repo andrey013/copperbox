@@ -95,7 +95,7 @@ makeBox :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
-    drawi_ $ center a &=> \pc -> textAlignCenter ss `at` pc
+    drawi_ $ center a >>= \pc -> textAlignCenter ss `at` pc
     -- draw  $ filledDisk 2 `at` center a
     return a
 

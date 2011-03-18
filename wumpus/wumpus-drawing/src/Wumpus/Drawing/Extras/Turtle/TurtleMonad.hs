@@ -72,7 +72,7 @@ newtype TurtleT u m a = TurtleT {
                      -> m (a, TurtleState) }
 
     
-type instance DUnit (TurtleT u m a) = u
+type instance MonUnit (TurtleT u m a) = u
 
 -- Functor
 
@@ -128,7 +128,7 @@ instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
 
 -- This needs undecidable instances...
 
-instance (Monad m, TraceM m, u ~ DUnit (m ()) ) => TraceM (TurtleT u m) where
+instance (Monad m, TraceM m, u ~ MonUnit (m ()) ) => TraceM (TurtleT u m) where
   trace a      = TurtleT $ \_ s -> trace a >> return ((),s)
   fontDelta mf = TurtleT $ \r s -> fontDelta $ getTurtleT mf r s
 

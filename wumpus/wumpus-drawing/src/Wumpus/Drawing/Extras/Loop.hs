@@ -37,8 +37,8 @@ import Data.AffineSpace                         -- package: vector-space
 -- and end points are synthesized.
 --
 loop :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-     => Query (Point2 u -> Point2 u -> Path u)
-loop = promoteQ2 $ \ctr radpt -> 
+     => ConnectorQuery u (Path u)
+loop = promoteR2 $ \ctr radpt -> 
    let incline = lineDirection ctr radpt
        radius  = abs $ vlength $ pvec ctr radpt
        ps      = loopPoints radius ctr incline

@@ -63,6 +63,8 @@ data Trapezium u = Trapezium
 
 type DTrapezium = Trapezium Double
 
+instance Functor Trapezium where
+  fmap f (Trapezium ctm bw h lang rang) = Trapezium ctm (f bw) (f h) lang rang
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -206,7 +208,7 @@ ztrapezium bw h = trapezium bw h ang ang
 
 mkTrapezium :: (Real u, Fractional u, InterpretUnit u) 
             => u -> u -> Radian -> Radian -> LocThetaQuery u (Trapezium u)
-mkTrapezium bw h lang rang = promoteQ2 $ \ctr theta -> 
+mkTrapezium bw h lang rang = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Trapezium { tz_ctm           = makeShapeCTM dctr theta
                      , tz_base_width    = bw
@@ -218,7 +220,7 @@ mkTrapezium bw h lang rang = promoteQ2 $ \ctr theta ->
 
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                 => u -> u -> Radian -> Radian -> LocThetaQuery u (Path u)
-mkTrapeziumPath bw h lang rang = promoteQ2 $ \ctr theta -> 
+mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
     let xs = tzPath bw h lang rang ctr 
     in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
 

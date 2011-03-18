@@ -45,6 +45,9 @@ type DInvSemiellipse = InvSemiellipse Double
 
 
 
+instance Functor InvSemiellipse where
+  fmap f = InvSemiellipse . fmap f . getInvSemiellipse
+
 --------------------------------------------------------------------------------
 -- Affine trans
 

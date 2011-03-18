@@ -61,6 +61,13 @@ data SyntheticProps u = SyntheticProps
 type DSemicircle = Semicircle Double
 
 
+instance Functor Semicircle where
+  fmap f (Semicircle ctm r props) = Semicircle ctm (f r) (fmap f props)
+
+instance Functor SyntheticProps where
+  fmap f (SyntheticProps cmin cmaj) = SyntheticProps (f cmin) (f cmaj)
+
+
 --------------------------------------------------------------------------------
 -- Affine trans
 
@@ -221,7 +228,7 @@ synthesizeProps radius =
 
 mkSemicircle :: InterpretUnit u
              => u -> SyntheticProps u -> LocThetaQuery u (Semicircle u)
-mkSemicircle radius props = promoteQ2 $ \ctr theta -> 
+mkSemicircle radius props = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Semicircle { sc_ctm = makeShapeCTM dctr theta
                       , sc_radius = radius
@@ -235,7 +242,7 @@ mkSemicircle radius props = promoteQ2 $ \ctr theta ->
 --
 mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                  => u -> u -> LocThetaQuery u (Path u)
-mkSemicirclePath radius cminor = promoteQ2 $ \pt theta ->
+mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
     in pure $ traceCurvePoints $ bezierArcPoints pi radius theta ctr 
 

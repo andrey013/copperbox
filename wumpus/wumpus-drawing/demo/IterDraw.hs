@@ -34,24 +34,22 @@ bldisplace = displace (-4) (-4)
 hspace :: Num u => (Vec2 u)
 hspace = hvec 28
 
-intoAdvGraphic :: Query (Vec2 u) -> LocGraphic u -> AdvGraphic u
-intoAdvGraphic qy gf = intoLocImage (promoteQ1 $ \_ -> qy) gf
 
 redA :: AdvGraphic Double
 redA = intoAdvGraphic (pure hspace) (background `oplus` textline "A")
   where
-    background = local_ctx (fill_colour tomato) 
-                           (moveStart bldisplace $ filledRectangle 24 24)
+    background = localize (fill_colour tomato) 
+                          (moveStart bldisplace $ filledRectangle 24 24)
 
 greenB :: AdvGraphic Double
 greenB = intoAdvGraphic (pure hspace) (background `oplus` textline "B")
   where
-    background = local_ctx (fill_colour yellow_green) 
-                           (moveStart bldisplace $ filledRectangle 24 24)
+    background = localize (fill_colour yellow_green) 
+                          (moveStart bldisplace $ filledRectangle 24 24)
 
 blueC :: AdvGraphic Double
 blueC = intoAdvGraphic (pure hspace) (background `oplus` textline "C")
   where
-    background = local_ctx (fill_colour light_sky_blue) 
-                           (moveStart bldisplace $ filledRectangle 24 24)
+    background = localize (fill_colour light_sky_blue) 
+                          (moveStart bldisplace $ filledRectangle 24 24)
 

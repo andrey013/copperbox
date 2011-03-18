@@ -39,21 +39,21 @@ posChar = posEscChar . CharLiteral
 
 posEscChar :: (Fractional u, InterpretUnit u) => EscapedChar -> PosChar u
 posEscChar esc = 
-   charVector esc &=> \wv -> 
-   makeOPos wv    &=> \opos ->
-   posImage opos (charImg wv esc)
+   lift0R2 (charVector esc) >>= \wv -> 
+   lift0R2 (makeOPos wv)    >>= \opos ->
+   makePosImage opos (charImg wv esc)
 
 charImg :: InterpretUnit u
         => AdvanceVec u -> EscapedChar -> LocImage BoundingBox u
 charImg wv esc = promoteR1 $ \pt ->
-    applyQ1 (makeBBox wv) pt  &=> \bbox -> 
+    apply1R1 (makeBBox wv) pt  >>= \bbox -> 
     replaceAns bbox $ escText1 esc `at` pt
 
 -- | Bounding box is baseline-left form.
 --
 makeBBox :: InterpretUnit u 
          => AdvanceVec u -> LocQuery u (BoundingBox u)
-makeBBox (V2 w _) = promoteQ1 $ \(P2 x y) ->
+makeBBox (V2 w _) = promoteR1 $ \(P2 x y) ->
     capHeight            >>= \ymajor -> 
     fmap abs descender   >>= \yminor  ->
     let sw = P2 x     (y-yminor)

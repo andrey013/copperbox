@@ -86,18 +86,18 @@ infixr 1 `op`
 -- Note - need name for this monadic version of @at@.
 --
 op :: Anchor u -> LocImage t u -> Image t u
-op ancr img = ancr &=> \pt -> img `at` pt
+op ancr img = ancr >>= \pt -> img `at` pt
 
 
 state :: String -> DLocImage Circle
 state ss = 
-    local_ctx (set_font times_italic) $ 
+    localize (set_font times_italic) $ 
         label_center_of (textbox ss) $ strokedShape $ circle 20
 
 
 stopstate :: String -> DLocImage Circle 
 stopstate ss = 
-    local_ctx (set_font times_italic) $ 
+    localize (set_font times_italic) $ 
         label_center_of lbl $ dblStrokedShape $ circle 20
   where
     lbl = textbox ss 

@@ -47,6 +47,8 @@ data Circle u = Circle
   
 type DCircle = Circle Double
 
+instance Functor Circle where
+  fmap f (Circle ctm r) = Circle ctm (f r)
 
 
 --------------------------------------------------------------------------------
@@ -118,7 +120,7 @@ circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
 
 
 mkCircle :: InterpretUnit u => u -> LocThetaQuery u (Circle u)
-mkCircle radius = promoteQ2 $ \ctr theta -> 
+mkCircle radius = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Circle { circ_ctm    = makeShapeCTM dctr theta
                   , circ_radius = radius 
@@ -129,7 +131,7 @@ mkCircle radius = promoteQ2 $ \ctr theta ->
 --
 mkCirclePath :: (Floating u, Ord u, InterpretUnit u, LengthTolerance u)
              => u -> LocThetaQuery u (Path u)
-mkCirclePath radius = promoteQ2 $ \ctr _ -> 
+mkCirclePath radius = promoteR2 $ \ctr _ -> 
     pure $ traceCurvePoints $ bezierCircle radius ctr 
 
 

@@ -54,6 +54,8 @@ data Rectangle u = Rectangle
 type DRectangle = Rectangle Double
 
 
+instance Functor Rectangle where
+  fmap f (Rectangle ctm hw hh) = Rectangle ctm (f hw) (f hh)
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -151,7 +153,7 @@ rectangle w h =
 
 
 mkRectangle :: InterpretUnit u => u -> u -> LocThetaQuery u (Rectangle u)
-mkRectangle hw hh = promoteQ2 $ \ctr theta -> 
+mkRectangle hw hh = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Rectangle { rect_ctm    = makeShapeCTM dctr theta
                      , rect_hw     = hw
@@ -161,7 +163,7 @@ mkRectangle hw hh = promoteQ2 $ \ctr theta ->
 
 mkRectPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => u -> u -> LocThetaQuery u (Path u)
-mkRectPath hw hh = promoteQ2 $ \ctr theta -> 
+mkRectPath hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr
         xs       = rectangleCoordPath (2*hw) (2*hh) btm_left
     in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath

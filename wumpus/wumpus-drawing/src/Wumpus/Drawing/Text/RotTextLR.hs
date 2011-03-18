@@ -124,7 +124,7 @@ drawMultiline _     []  = lift1R3 emptyBoundedLocGraphic
 drawMultiline drawF xs  = promoteR3 $ \start rpos ang ->
     linesToInterims xs                        >>= \(max_w, ones) ->
     borderedRotTextPos ang line_count max_w   >>= \opos -> 
-    let gf         = multilineGraphic drawF max_w opos ang ones
+    let gf         = multilineGraphic drawF max_w ang ones
         bbf        = orthoBB max_w line_count ang
         img        = intoLocImage bbf gf
         posG       = makePosImage opos img
@@ -134,10 +134,12 @@ drawMultiline drawF xs  = promoteR3 $ \start rpos ang ->
 
 
 multilineGraphic :: (Floating u, InterpretUnit u)
-                 => OnelineGraphicF u -> u -> ObjectPos u 
-                 -> Radian -> [OnelineText u]
+                 => OnelineGraphicF u 
+                 -> u 
+                 -> Radian 
+                 -> [OnelineText u]
                  -> LocGraphic u
-multilineGraphic drawF max_w opos ang xs = 
+multilineGraphic drawF max_w ang xs = 
     lift0R1 (centerSpineDisps (length xs) ang) >>= \(disp_top, disp_next) ->
     let gs         = map (\a -> rot (drawF max_w a) ang) xs
     in ignoreAns $ moveStart disp_top $ chainDisplace disp_next gs

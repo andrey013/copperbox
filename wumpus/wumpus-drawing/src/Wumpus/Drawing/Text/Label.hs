@@ -45,8 +45,8 @@ import Wumpus.Core                              -- package: wumpus-core
 locImageLabel :: Floating u 
               => ((t u) -> Anchor u) -> RectPosition 
               -> PosImage t1 u -> LocImage t u -> LocImage t u
-locImageLabel fn rpos lbl obj = promote_li1 $ \pt -> 
-    annotate (obj `at` pt)  (\a -> fn a &=> \a1 -> 
+locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
+    annotate (obj `at` pt)  (\a -> fn a >>= \a1 -> 
                                    ignoreAns $ atStartPos lbl a1 rpos)
 
 
@@ -80,7 +80,7 @@ connectorPathLabel :: Floating u
                    => (Path u -> Point2 u) -> RectPosition 
                    -> PosImage t u
                    -> ConnectorImage Path u -> ConnectorImage Path u
-connectorPathLabel fn rpos lbl obj = promote_conn $ \p0 p1 -> 
+connectorPathLabel fn rpos lbl obj = promoteR2 $ \p0 p1 -> 
     annotate (connect obj p0 p1)  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
 
 

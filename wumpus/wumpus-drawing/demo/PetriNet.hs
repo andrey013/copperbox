@@ -109,7 +109,7 @@ petri_net = udrawTracing (0::Double) $ do
     return ()
 
 greenFill :: LocImage t u -> LocImage t u
-greenFill = local_ctx (fill_colour lime_green)
+greenFill = localize (fill_colour lime_green)
 
 
 place :: DLocImage Circle
@@ -134,17 +134,17 @@ connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
 lblParensParens :: DLocGraphic
-lblParensParens = local_ctx (set_font helvetica) $ textline "(),()"
+lblParensParens = localize (set_font helvetica) $ textline "(),()"
 
 lblParensParensParens :: DLocGraphic
-lblParensParensParens = local_ctx (set_font helvetica) $ textline "(),(),()"
+lblParensParensParens = localize (set_font helvetica) $ textline "(),(),()"
 
 
 lblBold' :: String -> DLocGraphic
-lblBold' ss = local_ctx (set_font helvetica_bold) $ textline ss
+lblBold' ss = localize (set_font helvetica_bold) $ textline ss
 
 
 lblBold :: String -> DLocGraphic
-lblBold ss = local_ctx (set_font helvetica_bold) $ 
+lblBold ss = localize (set_font helvetica_bold) $ 
                 ignoreAns $ textAlignCenter ss
 

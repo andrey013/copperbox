@@ -97,24 +97,28 @@ body = do
     return ()
 
 
+aconnect :: ConnectorQuery u a -> Anchor u -> Anchor u -> Query a
+aconnect conn a0 a1 = a0 >>= \p0 -> a1 >>= \p1 -> connect conn p0 p1
 
-connWith :: ( TraceM m, DrawingCtxM m, u ~ DUnit (m ())
+
+
+connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit (m ())
             , Real u, Floating u, InterpretUnit u ) 
          => PathQuery u -> Anchor u -> Anchor u -> m ()
 connWith con a0 a1 = localize double_point_size $ 
-    drawi_ $ a0 &=> \p0 -> a1 &=> \p1 -> connect (rightArrow tri45 con) p0 p1
+    drawi_ $ aconnect (rightArrow tri45 con) a0 a1
 
 
 atext :: ( CenterAnchor t u
          , Real u, Floating u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
+         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => t u -> String -> m ()
 atext ancr ss = 
-   drawi_ $ center ancr &=> \pt -> textAlignCenter ss `at` pt
+   drawi_ $ center ancr >>= \pt -> textAlignCenter ss `at` pt
 
 
 ptext :: ( Real u, Floating u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ DUnit (m ()) )
+         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
     drawi_ $ textAlignCenter ss `at` pt
@@ -125,4 +129,4 @@ ptext pt ss = localize (font_attr times_italic 14) $
 rrectangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => Double -> u -> u -> LocImage Rectangle u
 rrectangle r w h = 
-    local_ctx (round_corner_factor r) $ strokedShape (rectangle w h)
+    localize (round_corner_factor r) $ strokedShape (rectangle w h)

@@ -44,8 +44,8 @@ grid :: (Fractional u, InterpretUnit u)
      => (Int,Int) -> RGBi -> LocGraphic u
 grid (nx,ny) rgb    
     | nx < 1 || ny < 1 = emptyLocGraphic
-    | otherwise        = local_ctx (stroke_colour rgb) $ 
-        snapGridFactors &=> \(x_incr, y_incr) ->
+    | otherwise        = localize (stroke_colour rgb) $ 
+        lift0R1 snapGridFactors >>= \(x_incr, y_incr) ->
         let rectw  = x_incr * fromIntegral nx
             recth  = y_incr * fromIntegral ny
             grid1  = interiorGrid x_incr nx y_incr ny rectw recth

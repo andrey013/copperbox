@@ -109,7 +109,7 @@ text_pic = udrawTracing (0::Double) $ do
     fn = illustrateBoundedLocGraphic
    
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = local_ctx (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) markPlus
 
 
 

@@ -51,7 +51,7 @@ tableGraphic row_count xs =
    
 
 colourSample :: String -> RGBi -> LocGraphic Double
-colourSample name rgb = local_ctx (fill_colour rgb) $ 
+colourSample name rgb = localize (fill_colour rgb) $ 
     promoteR1 $ \pt ->  
       oplus (borderedRectangle 15 10 `at` pt)
             (textline name `at` displace 20 2 pt)

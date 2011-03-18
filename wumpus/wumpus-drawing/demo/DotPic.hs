@@ -103,7 +103,7 @@ makeDotDrawing dotF =
         in oconcat (dashline all_points)
                    (map (\p1 -> ignoreAns $ dotF `at` p1) all_points)
   where
-    dashline = \ps -> local_ctx attrUpd $ vertexPath ps &=> openStroke
+    dashline = \ps -> localize attrUpd $ vertexPath ps >>= openStroke
 
     attrUpd  :: DrawingContext -> DrawingContext
     attrUpd  = packed_dotted . stroke_colour cadet_blue

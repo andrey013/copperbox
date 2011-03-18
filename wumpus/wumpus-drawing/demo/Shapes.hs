@@ -55,7 +55,7 @@ shapes = udrawTracing (0::Double) $ do
 
 
 redX :: (Real u, Floating u, InterpretUnit u) => Anchor u -> TraceDrawing u ()
-redX a = localize (stroke_colour red) $ draw $ a &=> \a1 -> markX `at` a1
+redX a = localize (stroke_colour red) $ draw $ a >>= \a1 -> markX `at` a1
    
 
     -- NOTE - should coordinates even have a center anchor?

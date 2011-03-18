@@ -76,7 +76,7 @@ mf = localize (text_margin 6.0 6.0)  $ do
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = local_ctx (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) markPlus
 
 
 body :: (Ord u, InterpretUnit u) => [DocText u]

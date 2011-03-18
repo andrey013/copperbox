@@ -42,7 +42,7 @@ fontMsg ff sz = msgF []
 
 
 makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic
-makeLabel rgb ff sz = local_ctx upd (textline $ fontMsg ff sz)
+makeLabel rgb ff sz = localize upd (textline $ fontMsg ff sz)
   where
     upd = fill_colour rgb . font_attr ff sz 
 

@@ -34,7 +34,7 @@ std_attr = fill_colour rosy_brown $ standardContext 12
 
 chain_pic :: CtxPicture
 chain_pic = drawTracing $ do 
-    drawli_ zeroPt $ snapGridX &=> \w -> 
+    drawli_ zeroPt $ snapGridX >>= \w -> 
                     chainDisplace (displaceH w) [dot1, dot1, dot1]
 
     drawli_ (P2 100 0) $ chainRadial 60 (pi*0.25) (d2r (30::Double) )
@@ -66,7 +66,7 @@ dot2 :: DLocGraphic
 dot2 = dot thistle
 
 dot :: RGBi -> DLocGraphic 
-dot rgb = local_ctx (fill_colour rgb) $ filledDisk 6
+dot rgb = localize (fill_colour rgb) $ filledDisk 6
 
 
 snapGridX :: (DrawingCtxM m, Fractional u) => m u

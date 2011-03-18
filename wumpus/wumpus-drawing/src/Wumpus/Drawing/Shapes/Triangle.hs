@@ -47,8 +47,8 @@ import Control.Applicative
 --
 data Triangle u = Triangle 
       { tri_ctm         :: ShapeCTM
-      , tri_height      :: !u
       , tri_base_width  :: !u
+      , tri_height      :: !u
       , tri_syn_props   :: SyntheticProps u
       }
       
@@ -62,7 +62,12 @@ data SyntheticProps u = SyntheticProps
 
 type DTriangle = Triangle Double
 
+instance Functor Triangle where
+  fmap f (Triangle ctm bw h props) = Triangle ctm (f bw) (f h) (fmap f props)
 
+instance Functor SyntheticProps where
+  fmap f (SyntheticProps hmin hmaj ang1 ang2) = 
+      SyntheticProps (f hmin) (f hmaj) ang1 ang2
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -189,7 +194,7 @@ triangle bw h =
 
 mkTriangle :: (Real u, Fractional u, InterpretUnit u) 
            => u -> u -> SyntheticProps u -> LocThetaQuery u (Triangle u)
-mkTriangle bw h props = promoteQ2 $ \ctrd theta -> 
+mkTriangle bw h props = promoteR2 $ \ctrd theta -> 
     uconvertFDC ctrd >>= \dctrd ->
     pure $ Triangle { tri_ctm        = makeShapeCTM dctrd theta
                     , tri_base_width = bw
@@ -216,7 +221,7 @@ synthesizeProps bw h =
 
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                => u -> u -> u -> LocThetaQuery u (Path u)
-mkTrianglePath bw hminor hmajor = promoteQ2 $ \ctr theta -> 
+mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
     let xs = trianglePath bw hminor hmajor ctr
     in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
 

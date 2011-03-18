@@ -56,6 +56,8 @@ data Diamond u = Diamond
 type DDiamond = Diamond Double
 
 
+instance Functor Diamond where
+  fmap f (Diamond ctm hw hh) = Diamond ctm (f hw) (f hh)
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -145,7 +147,7 @@ diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
-mkDiamond hw hh = promoteQ2 $ \ctr theta -> 
+mkDiamond hw hh = promoteR2 $ \ctr theta -> 
     uconvertFDC ctr >>= \dctr ->
     pure $ Diamond { dia_ctm = makeShapeCTM dctr theta
                    , dia_hw  = hw
@@ -155,7 +157,7 @@ mkDiamond hw hh = promoteQ2 $ \ctr theta ->
 
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
               => u -> u -> LocThetaQuery u (Path u)
-mkDiamondPath hw hh = promoteQ2 $ \ctr theta ->
+mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
     let ps = diamondCoordPath hw hh ctr
     in mapM (rotateAboutCtx theta ctr) ps >>= roundCornerShapePath 
 

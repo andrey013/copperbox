@@ -33,22 +33,22 @@ path_pic = drawTracing $ do
 
          
 curve1 :: Graphic Double
-curve1 = curvedPath xs &=> openStroke
+curve1 = curvedPath xs >>= openStroke
   where
     xs :: [DPoint2]
     xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 
 
 
 curve2 :: Graphic Double
-curve2 =  local_ctx (stroke_colour red) (toPrimPath path_one &=> openStroke)
+curve2 =  localize (stroke_colour red) (toPrimPath path_one >>= openStroke)
   where
     path_one = execPath (zeroPt::DPoint2) $ curveto 0 (3*pi/2) (P2 60 60)
 
 
 
 curve3 :: Graphic Double
-curve3 = local_ctx (stroke_colour blue) 
-                   (toPrimPath (shortenPath 10 10 path1) &=> openStroke)
+curve3 = localize (stroke_colour blue) 
+                  (toPrimPath (shortenPath 10 10 path1) >>= openStroke)
 
 
 path1 :: Path Double
@@ -56,7 +56,7 @@ path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = local_ctx (fill_colour gold) (filledCircle 60 `at` zeroPt)
+circle1 = localize (fill_colour gold) (filledCircle 60 `at` zeroPt)
 
 cto4 :: Path Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
@@ -70,8 +70,8 @@ cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 --
 
 eastUpWest :: Graphic Double
-eastUpWest = local_ctx (stroke_colour blue) 
-                       (mkP1 (P2 140 0) (P2 160 20) &=> openStroke)
+eastUpWest = localize (stroke_colour blue) 
+                      (mkP1 (P2 140 0) (P2 160 20) >>= openStroke)
 
 
 -- Potentially this may introduce the style that using AGraphic2 

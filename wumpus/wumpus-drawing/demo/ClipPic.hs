@@ -41,10 +41,10 @@ std_ctx = standardContext 14
 
 top_pic :: CtxPicture
 top_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    draw $ toPrimPath path01 &=> filledPath
-    draw $ local_ctx (fill_colour powder_blue) $ toPrimPath path02 &=> filledPath
-    draw $ toPrimPath path03 &=> filledPath
-    draw $ toPrimPath path04 &=> filledPath
+    draw $ toPrimPath path01 >>= filledPath
+    draw $ localize (fill_colour powder_blue) $ toPrimPath path02 >>= filledPath
+    draw $ toPrimPath path03 >>= filledPath
+    draw $ toPrimPath path04 >>= filledPath
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ do
@@ -53,7 +53,7 @@ clip_pic = drawTracing $ do
 
 background :: RGBi -> Graphic Double
 background rgb = 
-    ignoreAns $ local_ctx (text_colour rgb) $ ihh `at` P2 0 288
+    ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = tableDown 18 (86,16) (replicate 112 iheartHaskell)
 
@@ -65,22 +65,22 @@ clipGraphic cp = clipObject cp
 
 
 clip1 :: Graphic Double
-clip1 = toPrimPath path01 &=> \pp -> clipGraphic pp (background black)
+clip1 = toPrimPath path01 >>= \pp -> clipGraphic pp (background black)
   
 clip2 :: Graphic Double
-clip2 = toPrimPath path02 &=> \pp -> clipGraphic pp (background medium_violet_red)
+clip2 = toPrimPath path02 >>= \pp -> clipGraphic pp (background medium_violet_red)
 
 clip3 :: Graphic Double
-clip3 = toPrimPath path03 &=> \pp -> clipGraphic pp (background black)
+clip3 = toPrimPath path03 >>= \pp -> clipGraphic pp (background black)
 
 clip4 :: Graphic Double
-clip4 = toPrimPath path04 &=> \pp -> clipGraphic pp (background black)
+clip4 = toPrimPath path04 >>= \pp -> clipGraphic pp (background black)
 
 
 iheartHaskell :: LocGraphic Double
 iheartHaskell = promoteR1 $ \pt -> 
     let body  = textline "I Haskell" `at` pt
-        heart = local_ctx (set_font symbol) $ 
+        heart = localize (set_font symbol) $ 
                   textline "&heart;" `at` (pt .+^ hvec 7)
     in body `oplus` heart
 

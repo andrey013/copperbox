@@ -44,6 +44,9 @@ newtype InvSemicircle u = InvSemicircle { getInvSemicircle :: Semicircle u }
 type DInvSemicircle = InvSemicircle Double
 
 
+instance Functor InvSemicircle where
+  fmap f = InvSemicircle . fmap f . getInvSemicircle
+
 --------------------------------------------------------------------------------
 -- Affine trans
 
