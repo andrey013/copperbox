@@ -54,7 +54,7 @@ testDrawBl :: (Floating u, InterpretUnit u) => RectPosition -> LocGraphic u
 testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
 rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
-rectBl = posImage opos (mkRectBl w h)
+rectBl = makePosImage opos (mkRectBl w h)
   where
     w    = 40 
     h    = 20
@@ -74,7 +74,7 @@ testDrawMinor :: (Floating u, InterpretUnit u) => RectPosition -> LocGraphic u
 testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
 rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectMinor = posImage opos (mkRectMinor m w h)
+rectMinor = makePosImage opos (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 
@@ -87,10 +87,10 @@ rectMinor = posImage opos (mkRectMinor m w h)
 
 -- start-point - +10 +10
 mkRectMinor :: InterpretUnit u => u -> u -> u -> LocGraphic u
-mkRectMinor m w h = promote_li1 $ \pt -> 
+mkRectMinor m w h = promoteR1 $ \pt -> 
     let bl = displaceVec (vec (-m) (-m)) pt
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in bindQuery_i (vertexPath [bl, br, tr, tl]) closedStroke
+    in vertexPath [bl, br, tr, tl] >>= closedStroke
 

@@ -46,21 +46,16 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
   , draw
   , drawi
-  , drawi_
   , drawl
   , drawli
-  , drawli_
   , drawc
   , drawci
-  , drawci_
 
   , node
   , nodei
-  , nodei_
  
   , drawrc
   , drawrci
-  , drawrci_ 
 
   ) where
 
@@ -320,11 +315,13 @@ evalQuery df = askDC >>= \ctx -> return $ runCF df ctx
 -- | Draw a Graphic taking the drawing style from the 
 -- /drawing context/. 
 --
--- This operation is analogeous to @tell@ in a Writer monad.
+-- This function is the /forgetful/ version of 'drawi'. 
+-- Commonly, it is used to draw 'Graphic' objects which 
+-- have no /answer/.
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => Graphic u -> m ()
-draw gf = askDC >>= \ctx -> let (Ans _ o) = runCF gf ctx in trace (singleH o)
+     => Image t u -> m ()
+draw img = drawi img >> return ()
 
 
 
@@ -341,22 +338,16 @@ drawi img = askDC >>= \ctx ->
             in trace (singleH o) >> return a
 
 
--- | Forgetful 'drawi'.
---
-drawi_ :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Image t u -> m ()
-drawi_ gf = drawi gf >> return ()
-
-
--- | Draw a LocGraphic at the supplied Point taking the drawing 
+-- | Draw a LocImage at the supplied Anchor taking the drawing 
 -- style from the /drawing context/. 
 --
--- This operation is analogeous to @tell@ in a Writer monad.
+-- This function is the /forgetful/ version of 'drawli'. 
+-- Commonly, it is used to draw 'LocGraphic' objects which 
+-- have no /answer/.
 -- 
 drawl :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Point2 u -> LocGraphic u -> m ()
-drawl pt gf = askDC >>= \ctx -> 
-              let (Ans _ o) = runCF1 gf ctx pt in trace (singleH o)
+      => Anchor u -> LocImage t u -> m ()
+drawl ancr img = drawli ancr img >> return ()
 
 
 
@@ -367,17 +358,12 @@ drawl pt gf = askDC >>= \ctx ->
 -- monad, and the result is returned.
 -- 
 drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Point2 u -> LocImage t u -> m (t u)
-drawli pt gf = askDC >>= \ctx -> 
-               let (Ans a o) = runCF1 gf ctx pt
-               in trace (singleH o) >> return a
+       => Anchor u -> LocImage t u -> m (t u)
+drawli ancr img = askDC >>= \ctx -> 
+                  let pt        = runCF ancr ctx 
+                      (Ans a o) = runCF1 img ctx pt
+                  in trace (singleH o) >> return a
 
-
--- | Forgetful 'drawli'.
---
-drawli_ :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
-        => Point2 u -> LocImage t u -> m ()
-drawli_ pt img = drawli pt img >> return ()
 
 
 -- Design note - having @drawlti@ for LocThetaImage does not seem 
@@ -386,17 +372,21 @@ drawli_ pt img = drawli pt img >> return ()
 --
 -- Connectors however are be different. 
 -- 
--- (PosImages are still to consider).
+-- PosImages would seem to be the same as LocThetaImages.
 --
 
 
 
--- | Draw a ConnectorGraphic with the supplied Points taking the 
+-- | Draw a ConnectorGraphic with the supplied Anchors taking the 
 -- drawing style from the /drawing context/. 
 --
+-- This function is the /forgetful/ version of 'drawci'. 
+-- Commonly, it is used to draw 'ConnectorGraphic' objects which 
+-- have no /answer/.
+-- 
 drawc :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Point2 u -> Point2 u -> ConnectorGraphic u -> m ()
-drawc p0 p1 gf = draw (connect gf p0 p1)
+      => Anchor u -> Anchor u -> ConnectorImage t u -> m ()
+drawc an0 an1 img = drawci an0 an1 img >> return () 
 
 
 -- | Draw a ConnectorImage with the supplied Points taking the 
@@ -406,29 +396,35 @@ drawc p0 p1 gf = draw (connect gf p0 p1)
 -- monad, and the result is returned.
 -- 
 drawci :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Point2 u -> Point2 u -> ConnectorImage t u -> m (t u)
-drawci p0 p1 gf = drawi (connect gf p0 p1)
-
-
--- | Forgetful 'drawci'.
---
-drawci_ :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-        => Point2 u -> Point2 u -> ConnectorImage t u -> m ()
-drawci_ p0 p1 gf = drawi (connect gf p0 p1) >> return ()
+       => Anchor u -> Anchor u -> ConnectorImage t u -> m (t u)
+drawci an0 an1 img = evalQuery an0 >>= \p0 -> 
+                     evalQuery an1 >>= \p1 -> 
+                     drawi (connect img p0 p1)
 
 
 
 
 
 
--- | Draw with grid coordinate...
+
+
+-- | Draw the object with the supplied grid coordinate. The 
+-- actual position is scaled according to the 
+-- @snap_grid_factors@ in the /drawing context/.
+-- 
+-- This function is the /forgetful/ version of 'nodei'. 
+-- Commonly, it is used to draw 'LocGraphic' objects which 
+-- have no /answer/.
 -- 
 node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => (Int,Int) -> LocGraphic u -> m ()
+     => (Int,Int) -> LocImage t u -> m ()
 node coord gf = nodei coord gf >> return ()
 
--- | Draw with grid coordinate...
---
+
+-- | Draw the object with the supplied grid coordinate. The 
+-- actual position is scaled according to the 
+-- @snap_grid_factors@ in the /drawing context/.
+-- 
 nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => (Int,Int) -> LocImage t u -> m (t u)
 nodei coord gf = askDC >>= \ctx -> 
@@ -439,41 +435,42 @@ nodei coord gf = askDC >>= \ctx ->
 
 
  
--- | Draw with grid coordinate...
+
+
+
+
+-- | Draw a connector between two objects. The projection of the
+-- connector line is drawn on the line from center to center of 
+-- the objects, the actual start and end points of the drawn line
+-- are the radial points on the objects borders that cross the 
+-- projected line.
 -- 
-nodei_ :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => (Int,Int) -> LocImage t u -> m ()
-nodei_ coord gf = nodei coord gf >> return ()
-
-
-
-
-
+-- This function is the /forgetful/ version of 'drawrci'. 
+-- Commonly, it is used to draw 'LocGraphic' objects which 
+-- have no /answer/.
+-- 
 drawrc :: ( Real u, Floating u, DrawingCtxM m, TraceM m 
           , CenterAnchor t1 u, RadialAnchor  t1 u
           , CenterAnchor t2 u, RadialAnchor  t2 u
           , u ~ MonUnit (m ()) 
           ) 
-       => t1 u -> t2 u -> ConnectorGraphic u -> m ()
+       => t1 u -> t2 u -> ConnectorImage t u -> m ()
 drawrc a b gf = drawrci a b gf >> return ()
 
 
+-- | Draw a connector between two objects. The projection of the
+-- connector line is drawn on the line from center to center of 
+-- the objects, the actual start and end points of the drawn line
+-- are the radial points on the objects borders that cross the 
+-- projected line.
+-- 
 drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
            , CenterAnchor t1 u, RadialAnchor  t1 u
            , CenterAnchor t2 u, RadialAnchor  t2 u
            , u ~ MonUnit (m ()) 
            ) 
         => t1 u -> t2 u -> ConnectorImage t u -> m (t u)
-drawrci a b gf = 
-    evalQuery (radialConnectorPoints a b) >>= \(p0,p1) -> drawci p0 p1 gf
-
-drawrci_ :: ( Real u, Floating u, DrawingCtxM m, TraceM m
-            , CenterAnchor t1 u, RadialAnchor  t1 u
-            , CenterAnchor t2 u, RadialAnchor  t2 u
-            , u ~ MonUnit (m ())
-            ) 
-         => t1 u -> t2 u -> ConnectorImage t u -> m ()
-drawrci_ a b gf = drawrci a b gf >> return ()
-
-
+drawrci a b img = 
+    evalQuery (radialConnectorPoints a b) >>= \(p0,p1) ->
+    drawi (connect img p0 p1)
 

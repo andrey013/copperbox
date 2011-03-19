@@ -32,6 +32,9 @@ module Wumpus.Basic.Kernel.Objects.Anchors
 
   -- * Anchors
     Anchor
+  , anchor
+
+  -- * Anchor classes
   , CenterAnchor(..)
   , ApexAnchor(..)
   , CardinalAnchor(..)
@@ -60,6 +63,11 @@ import Control.Applicative
 -- | Note an Anchor is a Query.
 --
 type Anchor u = Query (Point2 u)
+
+
+anchor :: Point2 u -> Anchor u
+anchor = pure
+
 
 -- | Center of an object.
 --

@@ -16,7 +16,7 @@
 --
 -- By convention, underscore-separated names are used for 
 -- DrawingContext modifiers in this module. This is because the 
--- modifiers defined here are expected to be used as static 
+-- modifiers defined here are expected to be used mostly as static 
 -- \"properties\" resembling constants in drawings.
 -- 
 --------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
 
   -- * Font / mark drawing size
-  , scalePointSize
+  , scale_point_size
 
   , double_point_size
   , half_point_size
@@ -98,9 +98,6 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
-
-import Data.Ratio
-
 
 
 --------------------------------------------------------------------------------
@@ -362,16 +359,15 @@ set_font_size sz        = \s -> s { dc_font_size = sz }
 -- operation is not exact - for instance scaling 15pt by (1%2) 
 -- results in 7pt.
 -- 
-scalePointSize    :: Ratio Int -> DrawingContextF
-scalePointSize r  = let (n,d) = (numerator r, denominator r)
-                      in (\s sz -> set_font_size (n * sz `div` d) s) 
-                           <*> dc_font_size
+scale_point_size    :: Double -> DrawingContextF
+scale_point_size a  = (\s sz -> set_font_size (floor $ a * fromIntegral sz) s) 
+                         <*> dc_font_size
 
 -- | Set the point size (font and mark size) to double the current 
 -- size.
 --
 double_point_size   :: DrawingContextF
-double_point_size   = scalePointSize 2 
+double_point_size   = scale_point_size 2 
 
 
 -- | Set the point size to half the current size, note the point
@@ -381,7 +377,7 @@ double_point_size   = scalePointSize 2
 -- operation is not exact - half size of 15pt type is 7pt.
 -- 
 half_point_size     :: DrawingContextF
-half_point_size     = scalePointSize (1%2)
+half_point_size     = scale_point_size 0.5
 
 
 -- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @

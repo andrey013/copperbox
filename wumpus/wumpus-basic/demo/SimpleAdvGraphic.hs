@@ -33,10 +33,10 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawi_ $ advspace (hvec 10) [text01, text02, text01] `at` P2 0 120
-    drawi_ $ advconcat [text01, text02, text01] `at` P2 0 80
-    drawi_ $ (miniDisk `advcat` text01 `advcat` miniDisk) `at` P2 0 40 
-    drawi_ $ (miniDisk `advcat` text02 `advcat` miniDisk) `at` P2 0 0 
+    draw $ advspace (hvec 10) [text01, text02, text01] `at` P2 0 120
+    draw $ advconcat [text01, text02, text01] `at` P2 0 80
+    draw $ (miniDisk `advcat` text01 `advcat` miniDisk) `at` P2 0 40 
+    draw $ (miniDisk `advcat` text02 `advcat` miniDisk) `at` P2 0 0 
 
 
 -- Normally, text calculate the advance vector from the font 
@@ -51,7 +51,7 @@ text02 = replaceAns (hvec 210) $ textline "text number two"
 
 
 miniDisk :: AdvGraphic Double
-miniDisk = replaceAns (V2 0 0) $ local_ctx (fill_colour sienna) $ filledDisk 3
+miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
 
 
 sienna :: RGBi
