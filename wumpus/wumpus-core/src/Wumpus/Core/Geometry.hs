@@ -176,20 +176,6 @@ newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
 --------------------------------------------------------------------------------
-{-
-
--- Family instances
-
-type instance DUnit (UNil u)        = u
-type instance DUnit (Point2 u)      = u
-type instance DUnit (Vec2 u)        = u
-type instance DUnit (Matrix3'3 u)   = u
-
-type instance DUnit (Maybe a)       = DUnit a
-type instance DUnit (a,b)           = GuardEq (DUnit a) (DUnit b)
--}
-
---------------------------------------------------------------------------------
 -- lifters / convertors
 
 lift2Vec2 :: (u -> u -> u) -> Vec2 u -> Vec2 u -> Vec2 u
@@ -402,7 +388,7 @@ vvec d = V2 0 d
 avec :: Floating u => Radian -> u -> Vec2 u
 avec theta d = V2 x y 
   where
-    ang = fromRadian theta
+    ang = fromRadian $ circularModulo theta
     x   = d * cos ang
     y   = d * sin ang
 

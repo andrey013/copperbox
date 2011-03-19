@@ -262,7 +262,7 @@ triTLG triang drawF =
     promoteR2 $ \pt theta ->
       localize fill_use_stroke_colour $ 
         apply2R2 (tripointsByAngle triang) pt theta >>= \(u,v) -> 
-        vertexPath [pt,u,v]                         >>= drawF
+        vertexPP [pt,u,v] >>= drawF
 
 
 
@@ -296,7 +296,7 @@ revtriTLG triang drawF =
     promoteR2 $ \pt theta -> 
       localize fill_use_stroke_colour $ 
         apply2R2 (revtripointsByAngle triang) pt theta >>= \(u,pt',v) -> 
-        vertexPath [u,pt',v]                           >>= drawF
+        vertexPP [u,pt',v] >>= drawF
 
 
 
@@ -332,7 +332,7 @@ barbTLG :: (Floating u, Real u, InterpretUnit u)
 barbTLG ang =  
     promoteR2 $ \pt theta -> 
       apply2R2 (tripointsByAngle ang) pt theta >>= \(u,v) -> 
-      vertexPath [u,pt,v]                      >>= solidOpenStroke
+      vertexPP [u,pt,v] >>= solidOpenStroke
 
 
 
@@ -353,7 +353,7 @@ revbarbTLG :: (Floating u, Real u, InterpretUnit u)
 revbarbTLG ang = 
     promoteR2 $ \pt theta -> 
       apply2R2 (revtripointsByAngle ang) pt theta >>= \(u,pt',v) -> 
-      vertexPath [u,pt',v]                        >>= solidOpenStroke
+      vertexPP [u,pt',v] >>= solidOpenStroke
 
 revbarb90 :: (Floating u, Real u, InterpretUnit u) => Arrowhead u
 revbarb90 = Arrowhead markHeight (revbarbTLG (pi/2))
@@ -374,7 +374,7 @@ perpTLG =
 
 rperpPath :: (Floating u, InterpretUnit u) 
           => u -> Point2 u -> Radian -> Query PrimPath
-rperpPath hh ctr theta = vertexPath [p0,p1]
+rperpPath hh ctr theta = vertexPP [p0,p1]
   where
     p0 = displacePerpendicular   hh  theta ctr
     p1 = displacePerpendicular (-hh) theta ctr 
@@ -394,7 +394,7 @@ bracketTLG =
 
 rbracketPath :: (Floating u, InterpretUnit u) 
              => u -> Point2 u -> Radian -> Query PrimPath
-rbracketPath hh pt theta = vertexPath [p0,p1,p2,p3]
+rbracketPath hh pt theta = vertexPP [p0,p1,p2,p3]
   where
     p1 = displacePerpendicular   hh  theta pt
     p0 = displaceParallel      (-hh) theta p1
@@ -436,7 +436,7 @@ squareTLG drawF =
 
 rsquarePath :: (Floating u, InterpretUnit u) 
             => Point2 u -> Radian -> u -> Query PrimPath
-rsquarePath pt theta hh = vertexPath [p0,p1,p2,p3]
+rsquarePath pt theta hh = vertexPP [p0,p1,p2,p3]
   where
     p0 = displacePerpendicular     hh  theta pt
     p3 = displacePerpendicular   (-hh) theta pt
@@ -463,7 +463,7 @@ diamondTLG drawF =
 
 rdiamondPath :: (Floating u, InterpretUnit u) 
              => Point2 u -> Radian -> u -> Query PrimPath
-rdiamondPath pt theta hh = vertexPath [pt,p1,p2,p3]
+rdiamondPath pt theta hh = vertexPP [pt,p1,p2,p3]
   where
     ctr = displaceParallel       (-2*hh) theta pt
     p1  = displacePerpendicular     hh   theta ctr

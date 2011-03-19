@@ -244,5 +244,5 @@ mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
                  => u -> u -> LocThetaQuery u (Path u)
 mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
-    in pure $ traceCurvePoints $ bezierArcPoints pi radius theta ctr 
+    in pure $ curvePath $ bezierArcPoints pi radius theta ctr 
 

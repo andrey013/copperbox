@@ -85,7 +85,7 @@ sconnect mf p0 p1 =
 roundCornerPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                 => [Point2 u] -> Query (Path u)
 roundCornerPath xs = roundCornerSize >>= \sz -> 
-    if sz == 0 then return (traceLinePoints xs) 
+    if sz == 0 then return (vertexPath xs) 
                else return (roundInterior  sz xs)
 
 
@@ -193,7 +193,7 @@ connIsoscelesCurve :: (Real u, Floating u, LengthTolerance u)
                    => u -> PathQuery u 
 connIsoscelesCurve u = promoteR2 $ \ p0 p1 ->
     let control_pt  = midpointIsosceles u p0 p1
-    in pure $ traceCurvePoints [p0, control_pt, control_pt, p1]
+    in pure $ curvePath [p0, control_pt, control_pt, p1]
    
     
 
@@ -206,7 +206,7 @@ connSquareCurve :: (Real u, Floating u, LengthTolerance u)
                 => PathQuery u 
 connSquareCurve = promoteR2 $ \ p0 p1 ->
     let (cp0,cp1) = squareFromBasePoints p0 p1
-    in pure $ traceCurvePoints [p0, cp0, cp1, p1]
+    in pure $ curvePath [p0, cp0, cp1, p1]
 
 
 
@@ -221,7 +221,7 @@ connUSquareCurve :: (Real u, Floating u, LengthTolerance u)
                  => PathQuery u 
 connUSquareCurve = promoteR2 $ \ p0 p1 -> 
     let (cp0,cp1) = usquareFromBasePoints p0 p1
-    in pure $ traceCurvePoints [p0, cp0, cp1, p1]
+    in pure $ curvePath [p0, cp0, cp1, p1]
 
 
 -- | altitude * ratio_to_base 
@@ -232,7 +232,7 @@ connTrapezoidCurve :: (Real u, Floating u, LengthTolerance u)
                    => u -> u -> PathQuery u 
 connTrapezoidCurve u ratio_to_base = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = trapezoidFromBasePoints u ratio_to_base p0 p1
-    in pure $ traceCurvePoints [p0, cp0, cp1, p1]
+    in pure $ curvePath [p0, cp0, cp1, p1]
 
 
 -- | Make a curve within a square, following the corner points as
@@ -242,7 +242,7 @@ connZSquareCurve :: (Real u, Floating u, LengthTolerance u)
                  => PathQuery u 
 connZSquareCurve = promoteR2 $ \p0 p1 -> 
     let (cp0,cp1)  = squareFromCornerPoints p0 p1
-    in pure $ traceCurvePoints [p0,cp0,cp1,p1]
+    in pure $ curvePath [p0,cp0,cp1,p1]
 
 -- | Make a curve within a square, following the corner points as
 -- a Z.
@@ -254,5 +254,5 @@ connUZSquareCurve :: (Real u, Floating u, LengthTolerance u)
                   => PathQuery u 
 connUZSquareCurve = promoteR2 $ \ p0 p1 ->  
    let (cp0,cp1)  = squareFromCornerPoints p0 p1 
-   in pure $ traceCurvePoints [p0,cp1,cp0,p1]
+   in pure $ curvePath [p0,cp1,cp0,p1]
 

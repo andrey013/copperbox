@@ -22,12 +22,12 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   (
 
 
-  -- * Paths
-    locPath
+  -- * Prim Paths
+    locPP
 
-  , emptyLocPath
-  , vertexPath
-  , curvedPath
+  , emptyLocPP
+  , vertexPP
+  , curvePP
 
   , openStroke
   , closedStroke
@@ -122,8 +122,12 @@ makeLocThetaGraphic qy fn = promoteR2 $ \pt ang ->
 --------------------------------------------------------------------------------
 -- Paths
 
+-- Note - naming convention, the PP suffix is to avoid confusion 
+-- with the Path data type in Wumpus-Drawing. These paths are
+-- considered more /internal/.
+--
 
--- | 'locPath' : @ [next_vector] -> LocQuery PrimPath @
+-- | 'locPP' : @ [next_vector] -> LocQuery PrimPath @
 --
 -- Create a path 'LocQuery' - i.e. a functional type 
 -- /from Point to PrimPath/.
@@ -131,14 +135,14 @@ makeLocThetaGraphic qy fn = promoteR2 $ \pt ang ->
 -- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
 -- result is produced /within/ the 'DrawingContext'.
 --
-locPath :: InterpretUnit u => [Vec2 u] -> LocQuery u PrimPath
-locPath vs = promoteR1 $ \ pt  ->
+locPP :: InterpretUnit u => [Vec2 u] -> LocQuery u PrimPath
+locPP vs = promoteR1 $ \ pt  ->
     vectorPrimPath <$> uconvertFDC pt <*> mapM uconvertFDC vs
 
 
 
 
--- | 'emptyLocPath' : @ (Point ~> PrimPath) @
+-- | 'emptyLocPP' : @ (Point ~> PrimPath) @
 --
 -- Create an empty path 'LocQuery' - i.e. a functional type 
 -- /from Point to PrimPath/.
@@ -146,26 +150,26 @@ locPath vs = promoteR1 $ \ pt  ->
 -- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
 -- result is produced /within/ the 'DrawingContext'.
 --
-emptyLocPath :: InterpretUnit u => LocQuery u PrimPath
-emptyLocPath = locPath []
+emptyLocPP :: InterpretUnit u => LocQuery u PrimPath
+emptyLocPP = locPP []
 
 
 
 
--- | 'vertexPath' : @ (Point ~> PrimPath) @
+-- | 'vertexPP' : @ (Point ~> PrimPath) @
 --
--- Create a path made of straight line segments joining the 
+-- Create a PrimPath made of straight line segments joining the 
 -- supplied points.
 --
 -- This is the analogue to 'vertexPrimPath' in @Wumpus-Core@, but 
 -- it is polymorphic on unit.
 --
-vertexPath :: InterpretUnit u => [Point2 u] -> Query PrimPath
-vertexPath xs = vertexPrimPath <$> mapM uconvertFDC xs
+vertexPP :: InterpretUnit u => [Point2 u] -> Query PrimPath
+vertexPP xs = vertexPrimPath <$> mapM uconvertFDC xs
 
 
 
--- | 'curvedPath' : @ (Point ~> PrimPath) @
+-- | 'curvePP' : @ (Point ~> PrimPath) @
 --
 -- Create a path made of straight line segments joining the 
 -- supplied points.
@@ -173,8 +177,8 @@ vertexPath xs = vertexPrimPath <$> mapM uconvertFDC xs
 -- This is the analogue to 'curvedPrimPath' in @Wumpus-Core@, but 
 -- it is polymorphic on unit.
 --
-curvedPath :: InterpretUnit u => [Point2 u] -> Query PrimPath
-curvedPath xs = curvedPrimPath <$> mapM uconvertFDC xs
+curvePP :: InterpretUnit u => [Point2 u] -> Query PrimPath
+curvePP xs = curvedPrimPath <$> mapM uconvertFDC xs
 
 
 --------------------------------------------------------------------------------
@@ -370,7 +374,7 @@ vkernline ks = lift0R1 (uconvKernChar ks) >>= body
 -- from the implicit 'DrawingContext'.
 -- 
 straightLine :: InterpretUnit u => Point2 u -> Point2 u -> Graphic u
-straightLine p1 p2 = vertexPath [p1,p2] >>= openStroke
+straightLine p1 p2 = vertexPP [p1,p2] >>= openStroke
 
 
 -- | 'locStraightLine' : @ vec_to -> LocGraphic @ 
@@ -387,7 +391,7 @@ straightLine p1 p2 = vertexPath [p1,p2] >>= openStroke
 -- 
 locStraightLine :: InterpretUnit u => Vec2 u -> LocGraphic u
 locStraightLine v = promoteR1 $ \pt -> 
-    (locPath [v] `at` pt) >>= openStroke
+    apply1R1 (locPP [v]) pt >>= openStroke
 
 
 
@@ -402,7 +406,7 @@ locStraightLine v = promoteR1 $ \pt ->
 -- 
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curvedLine p0 p1 p2 p3 = curvedPath [p0,p1,p2,p3] >>= openStroke
+curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= openStroke
 
 
 
@@ -416,7 +420,7 @@ curvedLine p0 p1 p2 p3 = curvedPath [p0,p1,p2,p3] >>= openStroke
 -- from the implicit 'DrawingContext'.
 -- 
 straightConnector :: InterpretUnit u => ConnectorGraphic u
-straightConnector = promoteR2 $ \p0 p1 -> vertexPath [p0,p1] >>= openStroke
+straightConnector = promoteR2 $ \p0 p1 -> vertexPP [p0,p1] >>= openStroke
 
 
 
@@ -595,7 +599,7 @@ rborderedEllipse rx ry = promoteR2 $ \pt ang ->
 --
 rectanglePath :: InterpretUnit u 
               => u -> u -> LocQuery u PrimPath
-rectanglePath w h = locPath [hvec w, vvec h, hvec (-w)]
+rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 
 
 -- | 'strokedRectangle' : @ width * height -> LocGraphic @

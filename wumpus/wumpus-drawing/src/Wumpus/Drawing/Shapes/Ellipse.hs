@@ -155,6 +155,6 @@ mkEllipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
               => u -> u -> LocThetaQuery u (Path u)
 mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
     let xs = bezierEllipse rx ry pt
-    in traceCurvePoints <$> rotateAboutCtxT theta pt xs
+    in curvePath <$> rotateAboutCtxT theta pt xs
 
 

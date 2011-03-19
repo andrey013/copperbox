@@ -132,7 +132,7 @@ mkCircle radius = promoteR2 $ \ctr theta ->
 mkCirclePath :: (Floating u, Ord u, InterpretUnit u, LengthTolerance u)
              => u -> LocThetaQuery u (Path u)
 mkCirclePath radius = promoteR2 $ \ctr _ -> 
-    pure $ traceCurvePoints $ bezierCircle radius ctr 
+    pure $ curvePath $ bezierCircle radius ctr 
 
 
 

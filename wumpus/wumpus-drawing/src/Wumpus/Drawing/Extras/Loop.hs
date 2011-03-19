@@ -42,7 +42,7 @@ loop = promoteR2 $ \ctr radpt ->
    let incline = lineDirection ctr radpt
        radius  = abs $ vlength $ pvec ctr radpt
        ps      = loopPoints radius ctr incline
-   in return $ traceCurvePoints ps
+   in return $ curvePath ps
 
 -- | Note - intermediate names and quadrants represent a loop 
 -- drawn upwards.

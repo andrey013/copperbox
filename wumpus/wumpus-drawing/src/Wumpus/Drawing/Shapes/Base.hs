@@ -195,7 +195,7 @@ roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
                      => [Point2 u] -> Query (Path u)
 roundCornerShapePath xs = 
     roundCornerSize >>= \sz -> 
-    if sz == 0 then return (traceLinePoints xs) 
+    if sz == 0 then return (vertexPath xs) 
                else return (roundTrail  sz xs)
 
 -- | The path angle can be modified. This allows /inverse/ 

@@ -57,7 +57,7 @@ type LocCoordPath u = Point2 u -> [Point2 u]
 --
 coordinatePrimPath :: InterpretUnit u 
                    => LocCoordPath u -> Point2 u -> Query PrimPath
-coordinatePrimPath fn pt = vertexPath $ fn pt
+coordinatePrimPath fn pt = vertexPP $ fn pt
 
 
 

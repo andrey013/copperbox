@@ -30,8 +30,8 @@ module Wumpus.Drawing.Paths.Base
   , line
   , curve
   , pivot
-  , traceLinePoints
-  , traceCurvePoints
+  , vertexPath
+  , curvePath
   , curveByAngles
 
   , toPrimPath
@@ -206,34 +206,34 @@ pivot :: Floating u => Point2 u -> Path u
 pivot p0 = Path 0 p0 (JL.one $ LineSeg 0 p0 p0) p0
 
 
--- | 'traceLinePoints' throws a runtime error if the supplied list
+-- | 'vertexPath' throws a runtime error if the supplied list
 -- is empty. 
 --
-traceLinePoints :: Floating u => [Point2 u] -> Path u
-traceLinePoints []       = error "traceLinePoints - empty point list."
-traceLinePoints [a]      = line a a
-traceLinePoints (a:b:xs) = step (line a b) b xs
+vertexPath :: Floating u => [Point2 u] -> Path u
+vertexPath []       = error "traceLinePoints - empty point list."
+vertexPath [a]      = line a a
+vertexPath (a:b:xs) = step (line a b) b xs
   where
     step acc _ []     = acc
     step acc e (y:ys) = step (acc `append` line e y) y ys
 
 
--- | 'traceCurvePoints' consumes 4 points from the list on the 
+-- | 'curvePath' consumes 4 points from the list on the 
 -- intial step (start, control1, control2, end) then steps 
 -- through the list taking 3 points at a time thereafter
 -- (control1,control2, end). Leftover points are discarded.    
 -- 
--- 'traceCurvePoints' throws a runtime error if the supplied list
+-- 'curvePath' throws a runtime error if the supplied list
 -- is has less than 4 elements (start, control1, control2, end). 
 --
-traceCurvePoints :: (Floating u, Ord u, LengthTolerance u) 
+curvePath :: (Floating u, Ord u, LengthTolerance u) 
                  => [Point2 u] -> Path u
-traceCurvePoints (a:b:c:d:xs) = step (curve a b c d) d xs
+curvePath (a:b:c:d:xs) = step (curve a b c d) d xs
   where
     step acc p0 (x:y:z:zs) = step (acc `append` curve p0 x y z) z zs
     step acc _  _          = acc
 
-traceCurvePoints _            = error "tracePointsCurve - less than 4 elems."
+curvePath _            = error "curvePath - less than 4 elems."
 
 
 curveByAngles :: (Floating u, Ord u, LengthTolerance u) 

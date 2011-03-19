@@ -92,5 +92,5 @@ mkRectMinor m w h = promoteR1 $ \pt ->
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in vertexPath [bl, br, tr, tl] >>= closedStroke
+    in vertexPP [bl, br, tr, tl] >>= closedStroke
 

@@ -232,7 +232,7 @@ mkSemiellipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
         xs  = bezierSemiellipsePoints rx ry ctr
-    in rotateAboutCtxT theta ctr xs >>= return . traceCurvePoints
+    in rotateAboutCtxT theta ctr xs >>= return . curvePath
 
 
 bezierSemiellipsePoints :: Floating u
