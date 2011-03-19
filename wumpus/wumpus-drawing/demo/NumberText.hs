@@ -62,7 +62,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawli_ zeroPt $ rectStart CENTER $ 
+    drawl (anchor zeroPt) $ rectStart CENTER $ 
                        leftAlign [ string "0.12112"
                                  , string "12113111411115111116"
                                  , string "00000000000000000000" 

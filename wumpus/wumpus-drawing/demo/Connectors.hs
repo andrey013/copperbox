@@ -51,7 +51,7 @@ conntable =
 
 tableGraphic :: [PathQuery Double] -> TraceDrawing Double ()
 tableGraphic conns = 
-    drawi_ $ chn (map makeConnDrawing conns) `at` start
+    draw $ chn (map makeConnDrawing conns) `at` start
   where
     chn   = tableDown 10 (120,52) 
     start = P2 0 520 

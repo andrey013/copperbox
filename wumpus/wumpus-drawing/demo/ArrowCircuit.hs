@@ -97,16 +97,12 @@ body = do
     return ()
 
 
-aconnect :: ConnectorQuery u a -> Anchor u -> Anchor u -> Query a
-aconnect conn a0 a1 = a0 >>= \p0 -> a1 >>= \p1 -> connect conn p0 p1
-
-
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit (m ())
             , Real u, Floating u, InterpretUnit u ) 
          => PathQuery u -> Anchor u -> Anchor u -> m ()
 connWith con a0 a1 = localize double_point_size $ 
-    drawi_ $ aconnect (rightArrow tri45 con) a0 a1
+    drawc a0 a1 (rightArrow tri45 con)
 
 
 atext :: ( CenterAnchor t u
@@ -114,14 +110,14 @@ atext :: ( CenterAnchor t u
          , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => t u -> String -> m ()
 atext ancr ss = 
-   drawi_ $ center ancr >>= \pt -> textAlignCenter ss `at` pt
+    draw $ center ancr >>= \pt -> textAlignCenter ss `at` pt
 
 
 ptext :: ( Real u, Floating u, InterpretUnit u
          , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
-    drawi_ $ textAlignCenter ss `at` pt
+    draw $ textAlignCenter ss `at` pt
 
 
 -- Note - return type is a LocImage not a shape...

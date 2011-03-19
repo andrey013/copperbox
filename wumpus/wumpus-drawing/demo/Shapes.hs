@@ -24,27 +24,27 @@ main = do
 
 shapes :: CtxPicture
 shapes = udrawTracing (0::Double) $ do
-    drawi_ $ translate 220 10 $ rotate45 $ 
+    draw $ translate 220 10 $ rotate45 $ 
              (borderedShape $ rectangle 90 30) `at` zeroPt -- "Rectangle"
-    drawi_ $ (borderedShape $ circle 10) `at` P2 100 0  -- "C0"
+    draw $ (borderedShape $ circle 10) `at` P2 100 0  -- "C0"
    
     localize (stroke_colour red) $ draw $ markDisk `at` (P2 220 10)
     a <- drawi $ (borderedShape $ diamond 10 10) `at` (P2 40 0) -- "d1"
     redX $ radialAnchor (0.5*pi) a
-    drawi_ $ (borderedShape $ rectangle 20 100) `at` (P2 400 50) -- "R2"
-    drawi_ $ (borderedShape $ ellipse 20 10) `at` (P2 0 50)
+    draw $ (borderedShape $ rectangle 20 100) `at` (P2 400 50) -- "R2"
+    draw $ (borderedShape $ ellipse 20 10) `at` (P2 0 50)
     
     -- Note - the rotate is rotating both the primGraphic and the 
     -- answer. A LocShape cannot be rotated directly.
     --
-    drawi_ $ (rotateAbout (0.5*pi) tri_ctr  $ borderedShape $ triangle 20 30) 
+    draw $ (rotateAbout (0.5*pi) tri_ctr  $ borderedShape $ triangle 20 30) 
               `at` tri_ctr
     redX $ return tri_ctr
-    drawi_ $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
+    draw $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
     redX $ return tri_ctr
 
 
-    drawi_ $ (rotateAbout deg45 tri2_ctr $ borderedShape $ triangle 20 30) 
+    draw $ (rotateAbout deg45 tri2_ctr $ borderedShape $ triangle 20 30) 
                `at` displaceVec (hvec 25) tri2_ctr 
 
     return ()

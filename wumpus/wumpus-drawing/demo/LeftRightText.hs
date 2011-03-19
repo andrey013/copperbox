@@ -71,23 +71,23 @@ makeCtx = set_font helvetica . metricsContext 15
 
 text_pic :: CtxPicture
 text_pic = udrawTracing (0::Double) $ do 
-    drawi_ $ (fn left_text)       `at` P2   0 400
-    drawi_ $ (fn center_text)     `at` P2 150 400
-    drawi_ $ (fn right_text)      `at` P2 300 400
-    drawi_ $ (fn blank_text)      `at` P2   0 300
-    drawi_ $ (fn ne_oneline)      `at` P2 150 300 
-    drawi_ $ (fn cc_oneline)      `at` P2 300 300
+    draw $ (fn left_text)       `at` P2   0 400
+    draw $ (fn center_text)     `at` P2 150 400
+    draw $ (fn right_text)      `at` P2 300 400
+    draw $ (fn blank_text)      `at` P2   0 300
+    draw $ (fn ne_oneline)      `at` P2 150 300 
+    draw $ (fn cc_oneline)      `at` P2 300 300
 
 
-    drawi_ $ (fn sw_oneline)      `at` P2   0 200
-    drawi_ $ (fn ss_oneline)      `at` P2 150 200
-    drawi_ $ (fn se_oneline)      `at` P2 300 200
-    drawi_ $ (fn swr_multi)       `at` P2   0 100
-    drawi_ $ (fn ssr_multi)       `at` P2 150 100
-    drawi_ $ (fn ner_multi)       `at` P2 300 100
-    drawi_ $ (fn rleft_text)      `at` P2   0 (-75)
-    drawi_ $ (fn rcenter_text)    `at` P2 150 (-75)
-    drawi_ $ (fn rright_text)     `at` P2 300 (-75)
+    draw $ (fn sw_oneline)      `at` P2   0 200
+    draw $ (fn ss_oneline)      `at` P2 150 200
+    draw $ (fn se_oneline)      `at` P2 300 200
+    draw $ (fn swr_multi)       `at` P2   0 100
+    draw $ (fn ssr_multi)       `at` P2 150 100
+    draw $ (fn ner_multi)       `at` P2 300 100
+    draw $ (fn rleft_text)      `at` P2   0 (-75)
+    draw $ (fn rcenter_text)    `at` P2 150 (-75)
+    draw $ (fn rright_text)     `at` P2 300 (-75)
 
     draw $ redPlus            `at` P2   0 400
     draw $ redPlus            `at` P2 150 400

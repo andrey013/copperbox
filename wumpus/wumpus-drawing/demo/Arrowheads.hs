@@ -61,7 +61,7 @@ arrtable =
 
 tableGraphic :: [(Arrowhead Double, Arrowhead Double)] -> TraceDrawing Double ()
 tableGraphic tips = 
-    drawi_ $ chn (map makeArrowDrawing tips) `at` start
+    draw $ chn (map makeArrowDrawing tips) `at` start
   where
     chn   = tableDown 20 (120,24)
     start = P2 0 480

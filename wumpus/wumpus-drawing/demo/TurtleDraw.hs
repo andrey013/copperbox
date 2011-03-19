@@ -28,8 +28,8 @@ turtle_pic = udrawTracing (0::Double) $ do
       
 tnode :: ( Fractional u, InterpretUnit u, DrawingCtxM m, TraceM m, TurtleM m
          , u ~ MonUnit (m()) )
-      => LocGraphic u -> m ()
-tnode gf = getLoc >>= \coord -> position coord >>= \pt -> drawl pt gf
+      => LocImage t u -> m ()
+tnode img = getLoc >>= \coord -> drawl (position coord) img
         
 
 

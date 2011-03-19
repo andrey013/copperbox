@@ -84,7 +84,7 @@ dot_pic = drawTracing $ tableGraphic $
 
 tableGraphic :: [DotLocImage Double] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    drawi_ $ chn (map makeDotDrawing imgs) `at` pt
+    draw $ chn (map makeDotDrawing imgs) `at` pt
   where
     row_count   = length imgs
     chn         = tableDown row_count (1,36)

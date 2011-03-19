@@ -31,9 +31,9 @@ std_ctx = set_font times_roman $ standardContext 12
 --
 symbols :: CtxPicture
 symbols = udrawTracing (0::Double) $ do
-    drawi_ $ localize (set_font symbol) $ 
+    draw $ localize (set_font symbol) $ 
                chn (map sdraw all_letters) `at` start
-    drawi_ $ chn (map ldraw all_letters) `at` start
+    draw $ chn (map ldraw all_letters) `at` start
   where
     chn             = tableDown 30 (100,20) 
     start           = P2 0 (30*20)

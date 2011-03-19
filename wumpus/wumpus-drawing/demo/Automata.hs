@@ -71,13 +71,13 @@ automata = drawTracing  $ do
 
     let s0 = left_of q0
 
-    drawi_ $ label_midway_of SE (textbox "0") $ straightconn q0 q1
-    drawi_ $ label_midway_of SS (textbox "0") $ arrloop (center q1) (north q1) 
-    drawi_ $ label_midway_of SW (textbox "1") $ straightconn q1 q3
-    drawi_ $ label_midway_of NE (textbox "1") $ straightconn q0 q2
-    drawi_ $ label_midway_of NW (textbox "0") $ straightconn q2 q3
-    drawi_ $ label_midway_of NN (textbox "1") $ arrloop (center q2) (south q2) 
-    drawi_ $ label_atstart_of EE (textbox "start")$ astraightconn s0 (west q0) 
+    draw $ label_midway_of SE (textbox "0") $ straightconn q0 q1
+    draw $ label_midway_of SS (textbox "0") $ arrloop (center q1) (north q1) 
+    draw $ label_midway_of SW (textbox "1") $ straightconn q1 q3
+    draw $ label_midway_of NE (textbox "1") $ straightconn q0 q2
+    draw $ label_midway_of NW (textbox "0") $ straightconn q2 q3
+    draw $ label_midway_of NN (textbox "1") $ arrloop (center q2) (south q2) 
+    draw $ label_atstart_of EE (textbox "start")$ astraightconn s0 (west q0) 
 
     return ()
 

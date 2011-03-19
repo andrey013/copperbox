@@ -42,12 +42,12 @@ makeCtx = set_font helvetica . metricsContext 18
 
 text_pic :: CtxPicture
 text_pic = drawTracing $ do 
-    drawi_ $ (fn left_text)   `at` P2   0 100
-    drawi_ $ (fn center_text) `at` P2 250 100
-    drawi_ $ (fn right_text)  `at` P2 500 100
-    drawi_ $ (fn blank_text)  `at` P2   0   0
-    drawi_ $ (fn bl_oneline)  `at` P2 250   0
-    drawi_ $ (fn cc_oneline)  `at` P2 500   0
+    draw $ (fn left_text)   `at` P2   0 100
+    draw $ (fn center_text) `at` P2 250 100
+    draw $ (fn right_text)  `at` P2 500 100
+    draw $ (fn blank_text)  `at` P2   0   0
+    draw $ (fn bl_oneline)  `at` P2 250   0
+    draw $ (fn cc_oneline)  `at` P2 500   0
     
     draw $ redPlus            `at` P2   0 100
     draw $ redPlus            `at` P2 250 100
