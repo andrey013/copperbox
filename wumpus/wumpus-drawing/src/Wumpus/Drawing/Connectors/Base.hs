@@ -16,7 +16,7 @@
 
 module Wumpus.Drawing.Connectors.Base
   ( 
-    promoteConnS
+    promoteConn
 
   ) where
 
@@ -34,12 +34,15 @@ import Data.AffineSpace                         -- package: vector-space
 -- This should be used instead of @promoteR2@ for functions 
 -- building connectors.
 --
-promoteConnS :: (Real u, Floating u, InterpretUnit u) 
-             => (Point2 u -> Point2 u -> CF a) -> CF2 (Point2 u) (Point2 u) a
-promoteConnS fn = promoteR2 $ \p0 p1 -> 
+promoteConn :: (Real u, Floating u, InterpretUnit u) 
+            => (Point2 u -> Point2 u -> CF a) -> CF2 (Point2 u) (Point2 u) a
+promoteConn fn = promoteR2 $ \p0 p1 -> 
     connectorSrcSep >>= \sep0 ->
     connectorDstSep >>= \sep1 ->
+    connectorSrcOffset >>= \off0 ->
+    connectorDstOffset >>= \off1 ->
     let ang = vdirection $ pvec p0 p1
-    in fn (p0 .+^ avec ang sep0) (p1 .-^ avec ang sep1)
+    in fn (displacePerpendicular off0 ang $ p0 .+^ avec ang sep0) 
+          (displacePerpendicular off1 ang $ p1 .-^ avec ang sep1)
    
 

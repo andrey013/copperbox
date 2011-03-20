@@ -63,6 +63,8 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   -- * Connector props
   , connectorSrcSep
   , connectorDstSep
+  , connectorSrcOffset
+  , connectorDstOffset
   , connectorArcAngle
   , connectorSrcArm
   , connectorDstArm
@@ -289,6 +291,15 @@ connectorSrcSep = (\sz u -> uconvertScalar sz u)
 connectorDstSep :: (DrawingCtxM m, InterpretUnit u) => m u 
 connectorDstSep = (\sz u -> uconvertScalar sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_dst_sep
+
+connectorSrcOffset :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorSrcOffset = (\sz u -> uconvertScalar sz u) 
+                       <$> pointSize <*> connectorAsks dc_conn_src_offset
+
+
+connectorDstOffset :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorDstOffset = (\sz u -> uconvertScalar sz u) 
+                       <$> pointSize <*> connectorAsks dc_conn_dst_offset
 
 
 connectorArcAngle :: DrawingCtxM m => m Radian

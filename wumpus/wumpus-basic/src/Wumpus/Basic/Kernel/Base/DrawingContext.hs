@@ -119,6 +119,8 @@ data TextMargin = TextMargin
 data ConnectorProps = ConnectorProps
       { dc_conn_src_sep         :: !Em
       , dc_conn_dst_sep         :: !Em
+      , dc_conn_src_offset      :: !Em
+      , dc_conn_dst_offset      :: !Em
       , dc_conn_arc_ang         :: !Radian
       , dc_conn_src_arm         :: !Em
       , dc_conn_dst_arm         :: !Em
@@ -278,6 +280,8 @@ default_connector_props :: ConnectorProps
 default_connector_props = 
     ConnectorProps { dc_conn_src_sep    = 0
                    , dc_conn_dst_sep    = 0
+                   , dc_conn_src_offset = 0
+                   , dc_conn_dst_offset = 0
                    , dc_conn_arc_ang    = pi / 12
                    , dc_conn_src_arm    = 1
                    , dc_conn_dst_arm    = 1

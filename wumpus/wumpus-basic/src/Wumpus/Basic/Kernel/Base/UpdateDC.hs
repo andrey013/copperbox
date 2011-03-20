@@ -92,6 +92,8 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   -- * Connector Props
   , source_sep
   , dest_sep
+  , source_offset
+  , dest_offset
   , uniform_conn_sep
   , conn_arc_angle
   , source_arm_len
@@ -528,6 +530,32 @@ uniform_conn_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 uniform_conn_sep u = withFontSize $ \sz -> 
     connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz $ normZero u
                           , dc_conn_dst_arm = uconvertScalar sz $ normZero u })
+
+
+
+-- | Set the connector source offset.
+--
+-- The offset is used to shift the start point /upwards/ 
+-- perpendicular to its true origin (negative values are 
+-- downwards). This can be used to draw a connector with two 
+-- parallel lines, for example.
+--
+-- Upwards and downwards in this description are dependent on the
+-- direction of the line, of course. Generally the documentations 
+-- consider lines are left-to-right unless specifically noted.
+--
+source_offset :: (Ord u, InterpretUnit u) => u -> DrawingContextF
+source_offset u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_src_offset = uconvertScalar sz u })
+
+
+-- | Set the connector destination offset.
+--
+-- See 'source_offset' for an explanation.
+--
+dest_offset :: (Ord u, InterpretUnit u) => u -> DrawingContextF
+dest_offset u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_dst_offset = uconvertScalar sz u })
 
 
 -- | Set the connector arc angle.

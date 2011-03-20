@@ -21,9 +21,8 @@ module Wumpus.Drawing.Connectors.BoxConnectors
 
   ) where
 
-import Wumpus.Drawing.Connectors.Base
 
-import Wumpus.Basic.Kernel hiding ( promoteR2 ) -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -41,13 +40,20 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 type ConnectorBox u = ConnectorGraphic u
 
+
+--
+-- DESIGN NOTE - boxes (probably) should not use source and dest
+-- separators.
+--
+
+
 -- | Draw a stroked, rectangular box around the connector points.
 --
 -- The rectangle will be inclined to the line.
 --
 connbox :: (Real u, Floating u, InterpretUnit u) 
         => ConnectorBox u
-connbox = promoteConnS $ \p0 p1 -> 
+connbox = promoteR2 $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1 
