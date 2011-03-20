@@ -113,6 +113,7 @@ library
     Wumpus.Drawing.Chains.Derived,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
+    Wumpus.Drawing.Connectors.ConnectorPaths,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.Marks,
     Wumpus.Drawing.Extras.Grids,

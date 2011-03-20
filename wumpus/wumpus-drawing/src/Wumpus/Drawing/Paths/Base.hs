@@ -199,8 +199,8 @@ curve p0 p1 p2 p3 = let v = bezierLength (BezierCurve p0 p1 p2 p3)
 
 -- | A draw a /straight line/ of length 0 at the supplied point. 
 --
--- This is /might/ be useful in concatenating curved paths
--- as it introduces and extra control point.
+-- In som ecircumstances, this is may be useful for concatenating 
+-- curved paths as it introduces and extra control point.
 -- 
 pivot :: Floating u => Point2 u -> Path u 
 pivot p0 = Path 0 p0 (JL.one $ LineSeg 0 p0 p0) p0

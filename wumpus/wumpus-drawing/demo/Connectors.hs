@@ -6,6 +6,7 @@ module Connectors where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths hiding ( length )
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -28,7 +29,17 @@ conn_pic = drawTracing $ tableGraphic $ conntable
 
 conntable :: [PathQuery Double]
 conntable = 
-    [ connLine
+    [ connline
+    , connarc
+    , connhdiagh
+    , connvdiagv
+    , conndiagh
+    , conndiagv
+    , connhdiag
+    , connvdiag
+
+    -- OLD 
+    , connLine
     , connRightVH
     , connRightHV
     , connRightVHV 15
@@ -53,7 +64,7 @@ tableGraphic :: [PathQuery Double] -> TraceDrawing Double ()
 tableGraphic conns = 
     draw $ chn (map makeConnDrawing conns) `at` start
   where
-    chn   = tableDown 10 (120,52) 
+    chn   = tableDown 8 (120,64) 
     start = P2 0 520 
 
  
@@ -67,6 +78,6 @@ makeConnDrawing conn =
     promoteR1 $ \p0 -> ignoreAns $ 
         connect (uniformArrow curveTip conn) p0 (mkP1 p0)
   where
-    mkP1 = displace 100 40
+    mkP1 = displace 80 60
   
 

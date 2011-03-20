@@ -88,10 +88,17 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , swap_colours
   , fill_use_stroke_colour
   , stroke_use_fill_colour
+
+  -- * Connector Props
+  , connector_arc_angle
+  , source_arm_len
+  , dest_arm_len
+  , uniform_arm_len
   
   ) where
 
 
+import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.DrawingContext
 
@@ -107,6 +114,9 @@ updateStrokeProps :: (StrokeAttr -> StrokeAttr) -> DrawingContextF
 updateStrokeProps fn = 
     (\s i -> s { dc_stroke_props = fn i }) <*> dc_stroke_props
 
+
+withFontSize :: (FontSize -> DrawingContextF) -> DrawingContextF
+withFontSize fn = (\s i -> fn i s) <*> dc_font_size
 
 --------------------------------------------------------------------------------
 
@@ -463,10 +473,47 @@ fill_use_stroke_colour =
 -- | Set the stroke colour to use the current fill colour.
 --
 stroke_use_fill_colour :: DrawingContextF
-stroke_use_fill_colour = (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
+stroke_use_fill_colour = 
+    (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
+
+
+--------------------------------------------------------------------------------
+-- Connector props
+
+-- helper 
+connectorUpd :: (ConnectorProps -> ConnectorProps) -> DrawingContextF
+connectorUpd f = 
+   (\s a -> s { dc_connector_props = f a }) <*> dc_connector_props
+
+
+
+-- | Set the connector arc angle.
+--
+connector_arc_angle :: Radian -> DrawingContextF
+connector_arc_angle ang = 
+    connectorUpd (\s -> s { dc_conn_arc_ang = ang })
+
+
+-- | Set the connector source arm length.
+--
+source_arm_len :: InterpretUnit u => u -> DrawingContextF
+source_arm_len u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz u })
+                       
+
+-- | Set the connector destination arm length.
+--
+dest_arm_len :: InterpretUnit u => u -> DrawingContextF
+dest_arm_len u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_dst_arm = uconvertScalar sz u })
 
 
 
 
-
-
+-- | Set the connector source and destination arms to the same 
+-- length.
+--
+uniform_arm_len :: InterpretUnit u => u -> DrawingContextF
+uniform_arm_len u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz u
+                          , dc_conn_dst_arm = uconvertScalar sz u })

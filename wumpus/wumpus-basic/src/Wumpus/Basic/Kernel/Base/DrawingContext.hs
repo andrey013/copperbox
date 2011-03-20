@@ -29,6 +29,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
 
   , DrawingContextF
   , TextMargin(..)
+  , ConnectorProps(..)
 
   -- * Construction
   , standardContext
@@ -82,7 +83,7 @@ data DrawingContext = DrawingContext
       , dc_font_load_log        :: FontLoadLog
       , dc_fallback_metrics     :: FontMetrics
       , dc_font_face            :: FontFace
-      , dc_font_size            :: !Int
+      , dc_font_size            :: !FontSize
       , dc_snap_grid_factors    :: (Double,Double)
       , dc_stroke_props         :: StrokeAttr
       , dc_stroke_colour        :: RGBi      -- also text colour...
@@ -91,6 +92,7 @@ data DrawingContext = DrawingContext
       , dc_line_spacing_factor  :: Double
       , dc_round_corner_factor  :: Double
       , dc_text_margin          :: TextMargin
+      , dc_connector_props      :: ConnectorProps
       }
 
 -- TODO - what parts of the Drawing Context should be strict? 
@@ -109,6 +111,17 @@ data TextMargin = TextMargin
        { text_margin_x          :: !Em
        , text_margin_y          :: !Em
        }
+
+
+-- | ConnectorProps control the drawing of connectors in 
+-- Wumpus-Drawing.
+-- 
+data ConnectorProps = ConnectorProps
+      { dc_conn_arc_ang         :: !Radian
+      , dc_conn_src_arm         :: !Em
+      , dc_conn_dst_arm         :: !Em
+      }
+
 
 
 -- | 'standardContext' : @ font_size -> DrawingContext @  
@@ -157,6 +170,7 @@ standardContext sz =
                    , dc_line_spacing_factor  = default_line_spacing  
                    , dc_round_corner_factor  = default_no_round_corners
                    , dc_text_margin          = default_text_margin
+                   , dc_connector_props      = default_connector_props
                    }
 
 
@@ -218,6 +232,7 @@ reset_drawing_properties dcxt =
          , dc_line_spacing_factor   = default_line_spacing
          , dc_round_corner_factor   = default_no_round_corners
          , dc_text_margin           = default_text_margin
+         , dc_connector_props       = default_connector_props
          }
 
 -- Ideally @reset_drawing_properties@ would be in the UpdateDC 
@@ -252,6 +267,17 @@ reset_drawing_metrics dcxt =
 
 default_text_margin :: TextMargin
 default_text_margin = TextMargin { text_margin_x = 0.5, text_margin_y = 0.5 }
+
+
+-- Arc angle is 15deg - quite shallow.
+--
+default_connector_props :: ConnectorProps
+default_connector_props = 
+    ConnectorProps { dc_conn_arc_ang    = pi / 12
+                   , dc_conn_src_arm    = 1
+                   , dc_conn_dst_arm    = 1
+                   }
+
 
 default_line_spacing :: Double
 default_line_spacing = 1.2

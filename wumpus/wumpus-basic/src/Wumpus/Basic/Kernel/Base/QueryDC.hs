@@ -60,6 +60,12 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , cwLookupTable
 
 
+  -- * Connector props
+  , connectorArcAngle
+  , connectorSrcArm
+  , connectorDstArm
+
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -262,4 +268,25 @@ verticalSpan =
 --
 cwLookupTable :: DrawingCtxM m => m CharWidthLookup
 cwLookupTable = glyphQuery get_cw_table
+
+--------------------------------------------------------------------------------
+-- Connector props
+
+-- helper 
+connectorAsks :: DrawingCtxM m => (ConnectorProps -> a) -> m a
+connectorAsks f = f <$> asksDC dc_connector_props
+
+
+connectorArcAngle :: DrawingCtxM m => m Radian
+connectorArcAngle = connectorAsks dc_conn_arc_ang
+
+
+connectorSrcArm :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorSrcArm = (\sz u -> uconvertScalar sz u) 
+                    <$> pointSize <*> connectorAsks dc_conn_src_arm
+
+
+connectorDstArm :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorDstArm = (\sz u -> uconvertScalar sz u) 
+                    <$> pointSize <*> connectorAsks dc_conn_dst_arm
 
