@@ -25,7 +25,8 @@ main = do
 
 
 conn_pic :: CtxPicture 
-conn_pic = drawTracing $ tableGraphic $ conntable
+conn_pic = drawTracing $ localize (dest_arm_len (0.75::Em))
+                       $ tableGraphic conntable
 
 conntable :: [PathQuery Double]
 conntable = 
@@ -37,6 +38,16 @@ conntable =
     , conndiagv
     , connhdiag
     , connvdiag
+    , connabar
+    , connbbar
+    , connaright
+    , connbright
+    , connhrr
+    , connrrh
+    , connvrr
+    , connrrv    
+    , connaloop
+    , connbloop
 
     -- OLD 
     , connLine
@@ -78,6 +89,6 @@ makeConnDrawing conn =
     promoteR1 $ \p0 -> ignoreAns $ 
         connect (uniformArrow curveTip conn) p0 (mkP1 p0)
   where
-    mkP1 = displace 80 60
+    mkP1 = displace 60 40
   
 

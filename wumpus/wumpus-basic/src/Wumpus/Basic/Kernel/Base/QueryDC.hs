@@ -64,7 +64,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , connectorArcAngle
   , connectorSrcArm
   , connectorDstArm
-
+  , connectorLoopSize
 
   ) where
 
@@ -290,3 +290,7 @@ connectorDstArm :: (DrawingCtxM m, InterpretUnit u) => m u
 connectorDstArm = (\sz u -> uconvertScalar sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_dst_arm
 
+
+connectorLoopSize :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorLoopSize = (\sz u -> uconvertScalar sz u) 
+                      <$> pointSize <*> connectorAsks dc_conn_loop_size

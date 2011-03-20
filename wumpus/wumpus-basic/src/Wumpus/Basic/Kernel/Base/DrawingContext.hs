@@ -120,6 +120,7 @@ data ConnectorProps = ConnectorProps
       { dc_conn_arc_ang         :: !Radian
       , dc_conn_src_arm         :: !Em
       , dc_conn_dst_arm         :: !Em
+      , dc_conn_loop_size       :: !Em
       }
 
 
@@ -276,6 +277,7 @@ default_connector_props =
     ConnectorProps { dc_conn_arc_ang    = pi / 12
                    , dc_conn_src_arm    = 1
                    , dc_conn_dst_arm    = 1
+                   , dc_conn_loop_size  = 2 
                    }
 
 

@@ -90,11 +90,12 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , stroke_use_fill_colour
 
   -- * Connector Props
-  , connector_arc_angle
+  , conn_arc_angle
   , source_arm_len
   , dest_arm_len
   , uniform_arm_len
-  
+  , conn_loop_size
+
   ) where
 
 
@@ -489,8 +490,8 @@ connectorUpd f =
 
 -- | Set the connector arc angle.
 --
-connector_arc_angle :: Radian -> DrawingContextF
-connector_arc_angle ang = 
+conn_arc_angle :: Radian -> DrawingContextF
+conn_arc_angle ang = 
     connectorUpd (\s -> s { dc_conn_arc_ang = ang })
 
 
@@ -517,3 +518,10 @@ uniform_arm_len :: InterpretUnit u => u -> DrawingContextF
 uniform_arm_len u = withFontSize $ \sz -> 
     connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz u
                           , dc_conn_dst_arm = uconvertScalar sz u })
+
+
+-- | Set the connector loop size.
+--
+conn_loop_size :: InterpretUnit u => u -> DrawingContextF
+conn_loop_size u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_loop_size = uconvertScalar sz u })
