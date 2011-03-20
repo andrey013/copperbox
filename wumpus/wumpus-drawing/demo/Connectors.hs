@@ -6,6 +6,7 @@ module Connectors where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths hiding ( length )
 
@@ -48,6 +49,8 @@ conntable =
     , connrrv    
     , connaloop
     , connbloop
+    , connhbezier
+    , connvbezier
 
     -- OLD 
     , connLine

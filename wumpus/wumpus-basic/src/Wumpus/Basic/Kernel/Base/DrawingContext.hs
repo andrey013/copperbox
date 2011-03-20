@@ -117,7 +117,9 @@ data TextMargin = TextMargin
 -- Wumpus-Drawing.
 -- 
 data ConnectorProps = ConnectorProps
-      { dc_conn_arc_ang         :: !Radian
+      { dc_conn_src_sep         :: !Em
+      , dc_conn_dst_sep         :: !Em
+      , dc_conn_arc_ang         :: !Radian
       , dc_conn_src_arm         :: !Em
       , dc_conn_dst_arm         :: !Em
       , dc_conn_loop_size       :: !Em
@@ -274,7 +276,9 @@ default_text_margin = TextMargin { text_margin_x = 0.5, text_margin_y = 0.5 }
 --
 default_connector_props :: ConnectorProps
 default_connector_props = 
-    ConnectorProps { dc_conn_arc_ang    = pi / 12
+    ConnectorProps { dc_conn_src_sep    = 0
+                   , dc_conn_dst_sep    = 0
+                   , dc_conn_arc_ang    = pi / 12
                    , dc_conn_src_arm    = 1
                    , dc_conn_dst_arm    = 1
                    , dc_conn_loop_size  = 2 

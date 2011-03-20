@@ -43,12 +43,16 @@ module Wumpus.Drawing.Connectors.ConnectorPaths
   , connaloop
   , connbloop
 
+  , connhbezier
+  , connvbezier
+
   ) where
 
+import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry.Quadrant           -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel hiding ( promoteR2 )
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -66,8 +70,8 @@ type Connector u = ConnectorQuery u (Path u)
 
 -- | Straight line connector.
 --
-connline :: Floating u => Connector u
-connline = promoteR2 $ \p0 p1 -> return $ line p0 p1
+connline :: (Real u, Floating u, InterpretUnit u) => Connector u
+connline = promoteConnS $ \p0 p1 -> return $ line p0 p1
 
 
 
@@ -81,9 +85,9 @@ connline = promoteR2 $ \p0 p1 -> return $ line p0 p1
 -- course.
 -- 
 --
-connarc :: (Real u, Floating u, Ord u, LengthTolerance u) 
+connarc :: (Real u, Floating u, Ord u, InterpretUnit u, LengthTolerance u) 
         => Connector u
-connarc = promoteR2 $ \p0 p1 -> 
+connarc = promoteConnS $ \p0 p1 -> 
     connectorArcAngle >>= \arc_ang ->
     let v1      = pvec p0 p1
         hlen    = 0.5 * vlength v1
@@ -106,7 +110,7 @@ connarc = promoteR2 $ \p0 p1 ->
 -- 
 connhdiagh :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-connhdiagh = promoteR2 $ \p0 p1 -> 
+connhdiagh = promoteConnS $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -135,7 +139,7 @@ connhdiagh = promoteR2 $ \p0 p1 ->
 -- 
 connvdiagv :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-connvdiagv = promoteR2 $ \p0 p1 -> 
+connvdiagv = promoteConnS $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -163,7 +167,7 @@ connvdiagv = promoteR2 $ \p0 p1 ->
 -- 
 conndiagh :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-conndiagh = promoteR2 $ \p0 p1 -> 
+conndiagh = promoteConnS $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 dst_arm
@@ -188,7 +192,7 @@ conndiagh = promoteR2 $ \p0 p1 ->
 -- 
 conndiagv :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-conndiagv = promoteR2 $ \p0 p1 -> 
+conndiagv = promoteConnS $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up    p0 p1 dst_arm
@@ -213,7 +217,7 @@ conndiagv = promoteR2 $ \p0 p1 ->
 -- 
 connhdiag :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-connhdiag = promoteR2 $ \p0 p1 -> 
+connhdiag = promoteConnS $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 src_arm
@@ -238,7 +242,7 @@ connhdiag = promoteR2 $ \p0 p1 ->
 -- 
 connvdiag :: (Real u, Floating u, InterpretUnit u)
           => Connector u
-connvdiag = promoteR2 $ \p0 p1 -> 
+connvdiag = promoteConnS $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up    p0 p1 src_arm
@@ -264,7 +268,7 @@ connvdiag = promoteR2 $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connabar :: (Real u, Floating u, InterpretUnit u) => Connector u
-connabar = promoteR2 $ \p0 p1 ->
+connabar = promoteConnS $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
@@ -282,7 +286,7 @@ connabar = promoteR2 $ \p0 p1 ->
 -- The bar is drawn /below/ the points.
 --
 connbbar :: (Real u, Floating u, InterpretUnit u) => Connector u
-connbbar = promoteR2 $ \p0 p1 ->
+connbbar = promoteConnS $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
@@ -300,7 +304,7 @@ connbbar = promoteR2 $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connaright :: (Real u, Floating u, InterpretUnit u) => Connector u
-connaright = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
+connaright = promoteConnS $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
     let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
 
 
@@ -313,7 +317,7 @@ connaright = promoteR2 $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 -- The bar is drawn /below/ the points.
 --
 connbright :: (Real u, Floating u, InterpretUnit u) => Connector u
-connbright = promoteR2 $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
+connbright = promoteConnS $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
     let mid = P2 x1 y0 in return $ vertexPath [p0, mid, p1]
 
 
@@ -340,7 +344,7 @@ directional src dst arm = if  src < dst then arm else negate arm
 --
 connhrr :: (Real u, Floating u, InterpretUnit u) 
         => Connector u
-connhrr = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+connhrr = promoteConnS $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorSrcArm >>= \ src_arm -> 
     let a0 = p0 .+^ hvec src_arm
         a1 = a0 .+^ vvec (y1 - y0)
@@ -360,7 +364,7 @@ connhrr = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 --
 connrrh :: (Real u, Floating u, InterpretUnit u) 
         => Connector u
-connrrh = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+connrrh = promoteConnS $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorDstArm >>= \ dst_arm -> 
     let a1 = p1 .-^ hvec dst_arm
         a0 = a1 .-^ vvec (y1 - y0)
@@ -377,7 +381,7 @@ connrrh = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 --
 connvrr :: (Real u, Floating u, InterpretUnit u) 
         => Connector u
-connvrr = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+connvrr = promoteConnS $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorSrcArm >>= \ src_arm -> 
     let a0 = p0 .+^ vvec src_arm
         a1 = a0 .+^ hvec (x1 - x0)
@@ -394,7 +398,7 @@ connvrr = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 --
 connrrv :: (Real u, Floating u, InterpretUnit u) 
                => Connector u
-connrrv = promoteR2 $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+connrrv = promoteConnS $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorDstArm >>= \ dst_arm -> 
     let a1 = p1 .-^ vvec dst_arm
         a0 = a1 .-^ hvec (x1 - x0)
@@ -429,7 +433,7 @@ connbloop = loopbody negate
 --
 loopbody :: (Real u, Floating u, InterpretUnit u) 
          => (u -> u) -> Connector u
-loopbody fn = promoteR2 $ \p0 p1 ->
+loopbody fn = promoteConnS $ \p0 p1 ->
     connectorSrcArm   >>= \src_arm ->
     connectorDstArm   >>= \dst_arm ->
     connectorLoopSize >>= \loop_len ->
@@ -439,4 +443,58 @@ loopbody fn = promoteR2 $ \p0 p1 ->
         z0  = displaceParallel dst_arm ang p1
         z1  = displacePerpendicular (fn loop_len) ang z0
     in return $ vertexPath [ p0, a0, a1, z1, z0, p1 ]
+
+-- | Bezier curve connector - the control points are positioned 
+-- horizontally respective to the source and dest.
+--
+-- >  *--@ 
+-- >    .  
+-- >   . 
+-- >  o--*  
+--
+-- Note - the source and dest arm lengths are doubled, generally 
+-- this produces nicer curves.
+--
+connhbezier :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+            => Connector u
+connhbezier = promoteConnS $ \p0 p1 -> 
+    fmap (2*) connectorSrcArm   >>= \src_arm ->
+    fmap (2*) connectorDstArm   >>= \dst_arm ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> right p0 p1 src_arm dst_arm
+      QUAD_SE -> right p0 p1 src_arm dst_arm
+      _       -> left  p0 p1 src_arm dst_arm
+  where
+    right p0 p1 h0 h1 = return $ curve p0 (p0 .+^ hvec h0) (p1 .-^ hvec h1) p1
+
+    left  p0 p1 h0 h1 = return $ curve p0 (p0 .-^ hvec h0) (p1 .+^ hvec h1) p1
+
+
+-- | Bezier curve connector - the control points are positioned 
+-- vertically respective to the source and dest.
+--
+-- >        @ 
+-- >       .|  
+-- >  *  .  *
+-- >  |.
+-- >  o
+--
+-- Note - the source and dest arm lengths are doubled, generally 
+-- this produces nicer curves.
+--
+connvbezier :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+            => Connector u
+connvbezier = promoteConnS $ \p0 p1 -> 
+    fmap (2*) connectorSrcArm   >>= \src_arm ->
+    fmap (2*) connectorDstArm   >>= \dst_arm ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> up   p0 p1 src_arm dst_arm
+      QUAD_NW -> up   p0 p1 src_arm dst_arm
+      _       -> down p0 p1 src_arm dst_arm
+  where
+    up   p0 p1 v0 v1 = return $ curve p0 (p0 .+^ vvec v0) (p1 .-^ vvec v1) p1
+
+    down p0 p1 v0 v1 = return $ curve p0 (p0 .-^ vvec v0) (p1 .+^ vvec v1) p1
+
+
 

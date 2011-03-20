@@ -325,38 +325,56 @@ centerRelative coord a =
    center a >>= \pt ->  (snapmove coord) >>= \v -> return (pt .+^ v)
 
 
--- | Absolute units.
+-- | Value is 1 snap unit right.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 right_of        :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 right_of        = centerRelative (1,0)
 
--- | Absolute units.
+-- | Value is 1 snap move left.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 left_of         :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 left_of         = centerRelative ((-1),0)
 
--- | Absolute units.
+-- | Value is 1 snap move up, 1 snap move right.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 above_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 above_right_of  = centerRelative (1,1)
 
--- | Absolute units.
+-- | Value is 1 snap move below, 1 snap move right.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 below_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 below_right_of  = centerRelative (1, (-1))
 
--- | Absolute units.
+-- | Value is 1 snap move up, 1 snap move left.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 above_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 above_left_of   = centerRelative ((-1),1)
 
--- | Absolute units.
+-- | Value is 1 snap move down, 1 snap move left.
 --
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
 below_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
                 => t u -> Anchor u
 below_left_of   = centerRelative ((-1),(-1))
