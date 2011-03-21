@@ -13,43 +13,27 @@ import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import FontLoaderUtils
 
 
 import System.Directory
 
+
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    maybe gs_failk  makeGSPicture  $ mb_gs
-    maybe afm_failk makeAfmPicture $ mb_afm
+main = defaultFontLoader body >> return ()
   where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+    body loader = do 
+      base_metrics <- loader ["Helvetica"]
+      printLoadErrors base_metrics
+      let pic1 = runCtxPictureU (makeCtx base_metrics) conn_pic
+      writeEPS "./out/connectors01.eps" pic1
+      writeSVG "./out/connectors01.svg" pic1 
+          
 
-makeGSPicture :: FilePath -> IO ()
-makeGSPicture font_dir = do 
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSFontMetrics font_dir ["Helvetica"]
-    printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx base_metrics) conn_pic
-    writeEPS "./out/connectors01.eps" pic1
-    writeSVG "./out/connectors01.svg" pic1 
 
-makeAfmPicture :: FilePath -> IO ()
-makeAfmPicture font_dir = do 
-    putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmFontMetrics font_dir ["Helvetica"]
-    printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx base_metrics) conn_pic
-    writeEPS "./out/connectors02.eps" pic1
-    writeSVG "./out/connectors02.svg" pic1 
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font helvetica . metricsContext 11
