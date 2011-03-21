@@ -23,14 +23,16 @@ import System.Directory
 
 
 main :: IO ()
-main = defaultFontLoader body >> return ()
-  where
-    body loader = do 
-      base_metrics <- loader ["Helvetica"]
-      printLoadErrors base_metrics
-      let pic1 = runCtxPictureU (makeCtx base_metrics) conn_pic
-      writeEPS "./out/connectors01.eps" pic1
-      writeSVG "./out/connectors01.svg" pic1 
+main = simpleFontLoader main1 >> return ()
+
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/"    
+    base_metrics <- loader ["Helvetica"]
+    printLoadErrors base_metrics
+    let pic1 = runCtxPictureU (makeCtx base_metrics) conn_pic
+    writeEPS "./out/connectors.eps" pic1
+    writeSVG "./out/connectors.svg" pic1 
           
 
 

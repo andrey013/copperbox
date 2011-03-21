@@ -13,11 +13,9 @@ import Wumpus.Drawing.Text.SafeFonts
 import Wumpus.Drawing.Text.Label
 import Wumpus.Drawing.Text.RotTextLR
 
-import FontLoaderUtils
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -25,34 +23,18 @@ import System.Directory
 
 
 
-
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    maybe gs_failk  makeGSPicture  $ mb_gs
-    maybe afm_failk makeAfmPicture $ mb_afm
-  where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+main = simpleFontLoader main1 >> return ()
 
-makeGSPicture :: FilePath -> IO ()
-makeGSPicture font_dir = do 
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSFontMetrics font_dir automata_fonts 
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/"    
+    base_metrics <- loader automata_fonts 
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
-    writeEPS "./out/automata01.eps" pic1
-    writeSVG "./out/automata01.svg" pic1 
+    writeEPS "./out/automata.eps" pic1
+    writeSVG "./out/automata.svg" pic1 
 
-makeAfmPicture :: FilePath -> IO ()
-makeAfmPicture font_dir = do 
-    putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmFontMetrics font_dir automata_fonts
-    printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx base_metrics) automata
-    writeEPS "./out/automata02.eps" pic1
-    writeSVG "./out/automata02.svg" pic1 
 
 automata_fonts :: [FontName]
 automata_fonts = map ps_font_name [ times_roman, times_italic ]

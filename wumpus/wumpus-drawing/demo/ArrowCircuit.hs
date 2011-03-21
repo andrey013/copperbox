@@ -17,12 +17,9 @@ import Wumpus.Drawing.Text.RotTextLR
 import Wumpus.Drawing.Text.SafeFonts
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
-
-import FontLoaderUtils
 
 
 import Data.AffineSpace
@@ -31,33 +28,16 @@ import System.Directory
 
 
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    maybe gs_failk  makeGSPicture  $ mb_gs
-    maybe afm_failk makeAfmPicture $ mb_afm
-  where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+main = simpleFontLoader main1 >> return ()
 
-makeGSPicture :: FilePath -> IO ()
-makeGSPicture font_dir = do 
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSFontMetrics font_dir ["Times-Roman", "Times-Italic"]
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/"    
+    base_metrics <- loader ["Times-Roman", "Times-Italic"]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit01.eps" pic1
     writeSVG "./out/arrow_circuit01.svg" pic1 
-
-makeAfmPicture :: FilePath -> IO ()
-makeAfmPicture font_dir = do 
-    putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmFontMetrics font_dir ["Times-Roman", "Times-Italic"]
-    printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
-    writeEPS "./out/arrow_circuit02.eps" pic1
-    writeSVG "./out/arrow_circuit02.svg" pic1 
-
 
  
 makeCtx :: FontLoadResult -> DrawingContext

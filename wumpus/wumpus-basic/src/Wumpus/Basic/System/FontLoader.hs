@@ -19,7 +19,7 @@ module Wumpus.Basic.System.FontLoader
     FontLoader
   , afmLoaderByEnv
   , gsLoaderByEnv
-  , defaultFontLoader
+  , simpleFontLoader
 
   , processCmdLine
   , default_font_loader_help
@@ -77,8 +77,12 @@ gsLoaderByEnv =
 --
 -- Runs the IO action on the loader if it finds one.
 --
-defaultFontLoader :: (FontLoader -> IO a) ->  IO (Maybe a)
-defaultFontLoader mf = 
+-- Either of one of the environment variables 
+-- @WUMPUS_AFM_FONT_DIR@ or @WUMPUS_GS_FONT_DIR@ must be defined
+-- and point to their respective directory. 
+-- 
+simpleFontLoader :: (FontLoader -> IO a) ->  IO (Maybe a)
+simpleFontLoader mf = 
     gsLoaderByEnv >>= maybe fk1 sk 
   where
    fk1       = afmLoaderByEnv >>= maybe fk2 sk

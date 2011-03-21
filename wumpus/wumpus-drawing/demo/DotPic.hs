@@ -9,11 +9,8 @@ import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Drawing.Text.SafeFonts
 
-import FontLoaderUtils
-
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -21,39 +18,19 @@ import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
-
-
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    maybe gs_failk  makeGSPicture  $ mb_gs
-    maybe afm_failk makeAfmPicture $ mb_afm
-  where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+main = simpleFontLoader main1 >> return ()
 
-
-makeGSPicture :: FilePath -> IO ()
-makeGSPicture font_dir = do 
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSFontMetrics font_dir ["Helvetica"]
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/" 
+    base_metrics <- loader ["Helvetica"]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
-    writeEPS "./out/dot_pic01_gs.eps" pic1
-    writeSVG "./out/dot_pic01_gs.svg" pic1
+    writeEPS "./out/dot_pic.eps" pic1
+    writeSVG "./out/dot_pic.svg" pic1
 
  
-
-makeAfmPicture :: FilePath -> IO ()
-makeAfmPicture font_dir = do 
-    putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmFontMetrics font_dir ["Helvetica"]
-    printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx base_metrics) dot_pic
-    writeEPS "./out/dot_pic01_afm.eps" pic1
-    writeSVG "./out/dot_pic01_afm.svg" pic1
-
  
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = fill_colour peru . set_font helvetica . metricsContext 24
@@ -103,7 +80,7 @@ makeDotDrawing dotF =
         in oconcat (dashline all_points)
                    (map (\p1 -> ignoreAns $ dotF `at` p1) all_points)
   where
-    dashline = \ps -> localize attrUpd $ vertexPath ps >>= openStroke
+    dashline = \ps -> localize attrUpd $ vertexPP ps >>= openStroke
 
     attrUpd  :: DrawingContext -> DrawingContext
     attrUpd  = packed_dotted . stroke_colour cadet_blue
