@@ -4,7 +4,7 @@
 module IterDraw where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

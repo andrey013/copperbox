@@ -13,8 +13,8 @@ module ArrowCircuit where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.RotTextLR
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader
@@ -33,7 +33,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
-    base_metrics <- loader ["Times-Roman", "Times-Italic"]
+    base_metrics <- loader [times_roman, times_italic]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit01.eps" pic1

@@ -16,7 +16,7 @@ import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.MonadicConstruction
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

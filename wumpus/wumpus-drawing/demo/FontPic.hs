@@ -5,7 +5,7 @@ module FontPic where
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours ( steel_blue )
 import Wumpus.Drawing.Colour.X11Colours ( indian_red1 )
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -35,16 +35,17 @@ main = do
     writeSVG "./out/font_symbol.svg"    symbol_pic
 
 
-fontMsg :: FontFace -> Int -> String
-fontMsg ff sz = msgF []
+fontMsg :: FontDef -> Int -> String
+fontMsg ft sz = msgF []
   where
-    msgF = showString (ps_font_name ff) . showChar ' ' . shows sz . showString "pt"
+    msgF = showString name . showChar ' ' . shows sz . showString "pt"
+    name = ps_font_name $ font_def_face ft 
 
 
-makeLabel :: RGBi -> FontFace -> Int -> DLocGraphic
-makeLabel rgb ff sz = localize upd (textline $ fontMsg ff sz)
+makeLabel :: RGBi -> FontDef -> Int -> DLocGraphic
+makeLabel rgb ft sz = localize upd (textline $ fontMsg ft sz)
   where
-    upd = fill_colour rgb . font_attr ff sz 
+    upd = fill_colour rgb . font_attr ft sz 
 
 -- indian_red1
 -- steel_blue
@@ -60,18 +61,18 @@ pointChain :: [LocImage t Double] -> LocImage Point2 Double
 pointChain = chainStepsV $ map (fromIntegral . (+2)) point_sizes
 
 
-fontGraphic :: RGBi -> FontFace -> DLocGraphic 
-fontGraphic rgb ff = 
+fontGraphic :: RGBi -> FontDef -> DLocGraphic 
+fontGraphic rgb ft = 
     ignoreAns $ pointChain (map mkGF point_sizes) 
   where
-    mkGF sz = makeLabel rgb ff sz
+    mkGF sz = makeLabel rgb ft sz
 
 
 std_ctx :: DrawingContext
 std_ctx = standardContext 10
 
 
-fontDrawing :: [(RGBi,FontFace)] -> CtxPicture
+fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
     draw $ chn (map (uncurry fontGraphic) xs) `at` start
   where

@@ -6,8 +6,8 @@ module SingleChar where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Text.PosChar
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader
@@ -23,7 +23,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader ["Helvetica"]
+    base_metrics <- loader [helvetica]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) drawing01
     writeEPS "./out/single_char.eps" pic1

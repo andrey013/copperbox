@@ -9,9 +9,9 @@ import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Extras.Loop
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 import Wumpus.Drawing.Text.Label
-import Wumpus.Drawing.Text.RotTextLR
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -29,15 +29,12 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
-    base_metrics <- loader automata_fonts 
+    base_metrics <- loader [ times_roman, times_italic ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata.eps" pic1
     writeSVG "./out/automata.svg" pic1 
 
-
-automata_fonts :: [FontName]
-automata_fonts = map ps_font_name [ times_roman, times_italic ]
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = 

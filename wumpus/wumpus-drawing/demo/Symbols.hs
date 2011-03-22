@@ -3,7 +3,7 @@
 module Symbols where
 
 import Wumpus.Drawing.Chains
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core

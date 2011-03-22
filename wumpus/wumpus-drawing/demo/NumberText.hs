@@ -4,8 +4,8 @@
 module NumberText where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Text.DocTextLR
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader
@@ -20,7 +20,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader ["Times-Roman"]
+    base_metrics <- loader [times_roman]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) drawing01
     writeEPS "./out/number_text.eps" pic1

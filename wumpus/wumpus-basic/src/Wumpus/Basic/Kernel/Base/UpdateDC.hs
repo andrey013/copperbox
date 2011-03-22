@@ -107,6 +107,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.CtxUnits
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.FontMetrics
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -351,13 +352,14 @@ loose_dashed      = set_dash_pattern $ Dash 0 [(3,4)]
 
 -- | Set the font attributes, point size and font face.
 --
-font_attr               :: FontFace -> Int -> DrawingContextF
-font_attr ff sz         = \s -> s { dc_font_size = sz, dc_font_face = ff }
+font_attr               :: FontDef -> Int -> DrawingContextF
+font_attr ft sz         = \s -> s { dc_font_size = sz
+                                  , dc_font_face = font_def_face ft }
 
 -- | Set the font face.
 --
-set_font                :: FontFace -> DrawingContextF
-set_font ff             = \s -> s { dc_font_face = ff }
+set_font                :: FontDef -> DrawingContextF
+set_font ft             = \s -> s { dc_font_face = font_def_face ft }
 
 
 -- | Set the point size.

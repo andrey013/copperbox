@@ -41,7 +41,7 @@ import System.IO.Error
 -- | A FontLoader is an action from a list of fonts to a
 -- 'FontLoadResult' returned in @IO@.
 -- 
-type FontLoader = [FontName] -> IO FontLoadResult
+type FontLoader = [FontDef] -> IO FontLoadResult
 
 
 -- | Environment variable pointing to the GhostScript font

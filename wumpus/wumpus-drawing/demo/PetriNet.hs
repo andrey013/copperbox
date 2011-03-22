@@ -11,9 +11,8 @@ import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.RotTextLR
-import Wumpus.Drawing.Text.SafeFonts
-
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader
@@ -30,7 +29,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader ["Helvetica", "Helvetica-Bold"]
+    base_metrics <- loader [helvetica, helvetica_bold]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) petri_net
     writeEPS "./out/petri_net.eps" pic1

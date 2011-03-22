@@ -5,62 +5,36 @@
 module SampleShapes where
 
 
-import FontLoaderUtils
-
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.RotTextLR
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
-
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Monad
 import System.Directory
 
-
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/shapes/"
-    maybe gs_failk  (makeGSPicture shape_list)  $ mb_gs
-    maybe afm_failk (makeAfmPicture shape_list) $ mb_afm
-  where
-    gs_failk  = putStrLn "No GhostScript font path supplied..."
-    afm_failk = putStrLn "No AFM v4.1 font path supplied..."
+main = simpleFontLoader main1 >> return ()
 
-
-makeGSPicture :: ShapeList -> FilePath -> IO ()
-makeGSPicture shapes font_dir = do
-    putStrLn "Using GhostScript metrics..."
-    base_metrics <- loadGSFontMetrics font_dir ["Courier"]
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/" 
+    base_metrics <- loader [courier]
     printLoadErrors base_metrics
     let ctx = makeCtx base_metrics
-    mapM_ (out1 ctx) shapes 
+    mapM_ (out1 ctx) shape_list
   where
     out1 ctx (name, shape_pic) = do 
        let pic1 = runCtxPictureU ctx $ shape_pic name
        writeEPS ("./out/shapes/" ++ name ++ "01.eps") pic1
        writeSVG ("./out/shapes/" ++ name ++ "01.svg") pic1
 
-
-makeAfmPicture :: ShapeList -> FilePath -> IO ()
-makeAfmPicture shapes font_dir = do
-    putStrLn "Using AFM 4.1 metrics..."
-    base_metrics <- loadAfmFontMetrics font_dir ["Courier"]
-    printLoadErrors base_metrics
-    let ctx = makeCtx base_metrics
-    mapM_ (out1 ctx) shapes 
-  where
-    out1 ctx (name, shape_pic) = do 
-        let pic1 = runCtxPictureU ctx $ shape_pic name
-        writeEPS ("./out/shapes/" ++ name ++ "02.eps") pic1
-        writeSVG ("./out/shapes/" ++ name ++ "02.svg") pic1
 
 type ShapeList = [(String, (String -> CtxPicture))]
 

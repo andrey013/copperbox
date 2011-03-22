@@ -20,6 +20,8 @@ module Wumpus.Basic.Kernel.Base.FontMetrics
 
     FontName
   , CodePoint
+  , FontDef(..)
+
   , CharWidthLookup
 
   , FontMetrics(..)
@@ -56,7 +58,15 @@ type FontName = String
 --
 type CodePoint = Int
 
-
+-- | FontDef wraps @FontFace@ from Wumpus-Core with file name
+-- information for the font loaders.
+--
+data FontDef = FontDef
+      { font_def_face   :: FontFace
+      , gs_file_name    :: String
+      , afm_file_name   :: String
+      }
+  deriving (Eq,Ord,Show)
 
 
 -- | A lookup function from code point to /width vector/.

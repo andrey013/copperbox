@@ -31,7 +31,6 @@ import Wumpus.Basic.Kernel
 import Wumpus.Basic.System.FontLoader.Base.AfmV2Parser
 import Wumpus.Basic.System.FontLoader.Base.Datatypes
 import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
-import Wumpus.Basic.System.FontLoader.Base.GSFontMap
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -47,11 +46,11 @@ import Data.Monoid
 -- Note - if a font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadGSFontMetrics :: FilePath -> [FontName] -> IO FontLoadResult
-loadGSFontMetrics font_dir_path ns = 
-    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
+loadGSFontMetrics :: FilePath -> [FontDef] -> IO FontLoadResult
+loadGSFontMetrics font_dir_path ds = 
+    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ds
   where
-    mkFun = gsLoadFontMetrics font_dir_path ghostscript_fontmap_8_54 
+    mkFun = gsLoadFontMetrics font_dir_path  
 
     post (Left err,msgs) = let errs = fontLoadMsg err `mappend` msgs
                            in FontLoadResult mempty errs 
@@ -69,10 +68,9 @@ loadGSFontMetrics font_dir_path ns =
 -- Note - if the font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadGSFont1 :: FilePath -> FontName -> IO FontLoadResult
-loadGSFont1 font_dir_path name = 
-   liftM post $ runFontLoadIO $ 
-      gsLoadFontMetrics font_dir_path ghostscript_fontmap_8_54 name
+loadGSFont1 :: FilePath -> FontDef -> IO FontLoadResult
+loadGSFont1 font_dir_path font_def = 
+   liftM post $ runFontLoadIO $ gsLoadFontMetrics font_dir_path font_def
   where
     post (Left err,msgs)    = let errs = fontLoadMsg err `mappend` msgs
                               in FontLoadResult mempty errs 
@@ -81,21 +79,18 @@ loadGSFont1 font_dir_path name =
 
 
 
-gsLoadFontMetrics :: FilePath -> GSFontMap -> FontName 
+gsLoadFontMetrics :: FilePath -> FontDef
                   -> FontLoadIO (FontName,FontMetrics)
-gsLoadFontMetrics font_dir_path fm name = do
-    tellLoadMsg  $ "Loading " ++ name
-    font_file   <- resolveFontFile fm name 
-    path        <- checkFontPath font_dir_path font_file
+gsLoadFontMetrics font_dir_path font_def = do
+    tellLoadMsg  $ "Loading " ++ gs_file
+    path        <- checkFontPath font_dir_path gs_file
     ans         <- runParserFLIO path afmV2Parser
     props       <- buildAfmFontProps  ghostscript_mono_defaults_8_54 ans
     return (name, buildMetricsOps afmValue props)
-
-
-resolveFontFile :: GSFontMap -> FontName -> FontLoadIO FilePath
-resolveFontFile fm name = maybe errk return $ gsMetricsFile fm name
   where
-    errk = loadError $ "Could note resolve GhostScript alias for " ++ name
+    gs_file     = gs_file_name font_def
+    name        = ps_font_name $ font_def_face font_def
+
 
 
 -- | These are values extracted from the file @n022003l.afm@

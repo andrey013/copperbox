@@ -6,8 +6,8 @@ module AfmV4Dot1 where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Text.RotTextLR
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader.Afm
@@ -29,7 +29,7 @@ font_directory = "D:/coding/haskell/GHC_workspace/wumpus/_font_metrics/adobe_cor
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    base_metrics <- loadAfmFontMetrics font_directory ["Helvetica", "Times-Roman"]
+    base_metrics <- loadAfmFontMetrics font_directory [ helvetica, times_roman ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) text_pic
     writeEPS "./out/afm4dot1_01.eps" pic1

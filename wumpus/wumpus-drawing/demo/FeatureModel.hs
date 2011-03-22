@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -8,8 +7,8 @@ module FeatureModel where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.RotTextLR
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.System.FontLoader
@@ -25,7 +24,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader ["Courier-Bold"]
+    base_metrics <- loader [courier_bold]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model01.eps" pic1

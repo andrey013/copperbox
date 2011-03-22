@@ -51,9 +51,9 @@ import Data.Monoid
 -- Note - if a font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadAfmFontMetrics :: FilePath -> [FontName] -> IO FontLoadResult
-loadAfmFontMetrics font_dir_path ns = 
-    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ns
+loadAfmFontMetrics :: FilePath -> [FontDef] -> IO FontLoadResult
+loadAfmFontMetrics font_dir_path ds = 
+    liftM post $ runFontLoadIO $ sequenceAll $ map mkFun ds
   where
     mkFun                = afmLoadFontMetrics font_dir_path  
  
@@ -69,16 +69,16 @@ loadAfmFontMetrics font_dir_path ns =
 
 
 -- | 'loadAfmFont1' : 
--- @ path_to_afm_fonts * font_name -> IO FontLoadResult @ 
+-- @ path_to_afm_fonts * font_def -> IO FontLoadResult @ 
 -- 
 -- Load a single AFM font. 
 -- 
 -- Note - if the font fails to load a message is written to the 
 -- log and monospaced /fallback metrics/ are used.
 --
-loadAfmFont1 :: FilePath -> FontName -> IO FontLoadResult
-loadAfmFont1 font_dir_path name =
-    liftM post $ runFontLoadIO $ afmLoadFontMetrics font_dir_path name
+loadAfmFont1 :: FilePath -> FontDef -> IO FontLoadResult
+loadAfmFont1 font_dir_path font_def =
+    liftM post $ runFontLoadIO $ afmLoadFontMetrics font_dir_path font_def
   where
     post (Left err,msgs)    = let errs = fontLoadMsg err `mappend` msgs
                               in FontLoadResult mempty errs
@@ -87,14 +87,16 @@ loadAfmFont1 font_dir_path name =
     
 
 
-afmLoadFontMetrics :: FilePath -> FontName -> FontLoadIO (FontName,FontMetrics)
-afmLoadFontMetrics font_dir_path name = do
-    tellLoadMsg  $ "Loading " ++ name
-    path        <- checkFontPath font_dir_path (name ++ ".afm")
+afmLoadFontMetrics :: FilePath -> FontDef -> FontLoadIO (FontName,FontMetrics)
+afmLoadFontMetrics font_dir_path font_def = do
+    tellLoadMsg  $ "Loading " ++ afm_file
+    path        <- checkFontPath font_dir_path afm_file
     ans         <- runParserFLIO path afmV4Dot1Parser
     props       <- buildAfmFontProps  afm_mono_defaults_4_1 ans
     return (name, buildMetricsOps afmValue props)
-
+  where
+    afm_file    = afm_file_name font_def
+    name        = ps_font_name $ font_def_face font_def
 
 
 -- | These are values extracted from Courier in the core 14 fonts.

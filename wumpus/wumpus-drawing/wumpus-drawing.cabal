@@ -85,7 +85,6 @@ extra-source-files:
   demo/Connectors.hs
   demo/DotPic.hs,
   demo/FeatureModel.hs,
-  demo/FontLoaderUtils.hs,
   demo/FontPic.hs,
   demo/LeftRightText.hs,
   demo/PetriNet.hs,
@@ -142,11 +141,12 @@ library
     Wumpus.Drawing.Shapes.Semiellipse,
     Wumpus.Drawing.Shapes.Triangle,
     Wumpus.Drawing.Text.Base,
+    Wumpus.Drawing.Text.DirectionZero,
     Wumpus.Drawing.Text.DocTextLR,
     Wumpus.Drawing.Text.Label,
     Wumpus.Drawing.Text.PosChar,
     Wumpus.Drawing.Text.RotTextLR,
-    Wumpus.Drawing.Text.SafeFonts,
+    Wumpus.Drawing.Text.StandardFontDefs,
     Wumpus.Drawing.VersionNumber
 
   other-modules:
