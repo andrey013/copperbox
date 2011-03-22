@@ -46,6 +46,10 @@ module Wumpus.Core.WumpusTypes
   , Format(..)
   , stringformat
 
+  , boundaryPicture
+  , boundaryPrimitive
+  , boundaryPath
+
   ) where
 
 

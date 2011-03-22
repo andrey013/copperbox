@@ -141,9 +141,9 @@ frame :: [Primitive] -> Picture
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
 frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
-    step a []     = (boundary a, one a)
+    step a []     = (boundaryPrimitive a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundary a `boundaryUnion` bb', cons a rest )
+                    in ( boundaryPrimitive a `boundaryUnion` bb', cons a rest )
 
 
 
@@ -156,9 +156,9 @@ multi :: [Picture] -> Picture
 multi []      = error "Wumpus.Core.Picture.multi - empty list"
 multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones 
   where
-    step a []     = (boundary a, one a)
+    step a []     = (boundaryPicture a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundary a `boundaryUnion` bb', cons a rest )
+                    in ( boundaryPicture a `boundaryUnion` bb', cons a rest )
 
 
 -- | Update the font /delta/ attributes for SVG output.
@@ -765,7 +765,7 @@ infixr 6 `picBeside`, `picOver`
 picOver :: Picture -> Picture -> Picture
 a `picOver` b = Picture (bb,[]) (join (one b) (one a))   
   where
-    bb = boundary a `boundaryUnion` boundary b
+    bb = boundaryPicture a `boundaryUnion` boundaryPicture b
 
 -- NOTE - picOver - draw b, put b first in the list, so it draws 
 -- first in the output (this is also @behind@ in the Z-Order).
@@ -786,8 +786,8 @@ p `picMoveBy` (V2 x y) = affineTranslate x y p
 picBeside :: Picture -> Picture -> Picture
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
-    (P2 x1 _) = ur_corner $ boundary a
-    (P2 x2 _) = ll_corner $ boundary b 
+    (P2 x1 _) = ur_corner $ boundaryPicture a
+    (P2 x2 _) = ll_corner $ boundaryPicture b 
     v         = hvec $ x1 - x2 
 
 --------------------------------------------------------------------------------
@@ -805,7 +805,8 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 -- The bounding box image will be drawn in the supplied colour.
 --
 illustrateBounds :: RGBi -> Picture -> Picture
-illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p $ []) 
+illustrateBounds rgb p =
+    p `picOver` (frame $ boundsPrims rgb (boundaryPicture p) $ []) 
 
 
 -- | 'illustrateBoundsPrim' : @ bbox_rgb * primitive -> Picture @
@@ -816,17 +817,18 @@ illustrateBounds rgb p = p `picOver` (frame $ boundsPrims rgb p $ [])
 -- The result will be lifted from Primitive to Picture.
 -- 
 illustrateBoundsPrim :: RGBi -> Primitive -> Picture
-illustrateBoundsPrim rgb p = frame $ boundsPrims rgb p $ [p]
+illustrateBoundsPrim rgb p = 
+    frame $ boundsPrims rgb (boundaryPrimitive p) $ [p]
 
 
 
 -- | Draw a the rectangle of a bounding box, plus cross lines
 -- joining the corners.
 --
-boundsPrims :: Boundary t Double => RGBi -> t -> H Primitive
-boundsPrims rgb a = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
+boundsPrims :: RGBi -> BoundingBox Double -> H Primitive
+boundsPrims rgb bb = fromListH $ [ bbox_rect, bl_to_tr, br_to_tl ]
   where
-    (bl,br,tr,tl) = boundaryCorners $ boundary a
+    (bl,br,tr,tl) = boundaryCorners bb
     bbox_rect     = cstroke rgb line_attr $ vertexPrimPath [bl,br,tr,tl]
     bl_to_tr      = ostroke rgb line_attr $ vertexPrimPath [bl,tr]
     br_to_tl      = ostroke rgb line_attr $ vertexPrimPath [br,tl]

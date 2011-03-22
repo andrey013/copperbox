@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -31,8 +29,6 @@ module Wumpus.Core.BoundingBox
     BoundingBox(..)
   , DBoundingBox
 
-  -- * Type class
-  , Boundary(..)
   
   -- * Constructors
   , boundingBox
@@ -125,15 +121,6 @@ instance AffineScale (BoundingBox Double) where
 instance AffineTranslate (BoundingBox Double) where
   affineTranslate dx dy = pointTransform (affineTranslate dx dy)
 
-
---------------------------------------------------------------------------------
--- Boundary class
-
--- | Type class extracting the bounding box of an object - 
--- Picture, Path etc.
---
-class Boundary t u | t -> u where
-  boundary :: t -> BoundingBox u 
 
 
 --------------------------------------------------------------------------------

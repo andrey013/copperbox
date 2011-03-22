@@ -45,10 +45,8 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.Text.Base
-  , module Wumpus.Core.Units
   , module Wumpus.Core.VersionNumber
   , module Wumpus.Core.WumpusTypes
-
 
   ) where
 
@@ -67,7 +65,6 @@ import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.Text.Base
-import Wumpus.Core.Units
 import Wumpus.Core.VersionNumber
 import Wumpus.Core.WumpusTypes
 

@@ -66,8 +66,15 @@ description:
     @vectorPrimPath@, @emptyPath@ becomes @emptyPrimPath@ and 
     @curvedPath@ becomes @curvedPrimPath@. @xlink@ becomes 
     @xlinkPrim@.
-  .  
-  * API change - PtSize data type replaced by AfmUnit.
+  . 
+  * The @Boundary@ type class has been removed from the 
+    BoundingBox module. The class was not suitable for proper use 
+    with units, none polymorphic replacements have been added - 
+    @boundaryPicture@ for @Picture@, @boundaryPrimitive@ for 
+    @Primitive@.   
+  .
+  * API change - PtSize data type replaced by AfmUnit for font 
+    sizes.
   .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.
@@ -99,6 +106,7 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
+  demo/AffineCompat.hs,
   demo/AffineTest01.hs,
   demo/AffineTest02.hs,
   demo/AffineTest03.hs,
@@ -148,7 +156,6 @@ library
     Wumpus.Core.Text.Latin1Encoding,
     Wumpus.Core.Text.StandardEncoding,
     Wumpus.Core.Text.Symbol,
-    Wumpus.Core.Units,
     Wumpus.Core.VersionNumber,
     Wumpus.Core.WumpusTypes
 

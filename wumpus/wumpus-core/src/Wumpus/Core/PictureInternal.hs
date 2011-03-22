@@ -38,7 +38,9 @@ module Wumpus.Core.PictureInternal
 
   , GraphicsState(..)
 
-  , pathBoundary
+  , boundaryPicture
+  , boundaryPrimitive
+  , boundaryPath
   , mapLocale
 
   -- * Additional operations
@@ -400,35 +402,32 @@ instance Format XLink where
 
 --------------------------------------------------------------------------------
 
-instance Boundary Picture Double where
-  boundary (Leaf    (bb,_) _)   = bb
-  boundary (Picture (bb,_) _)   = bb
+boundaryPicture :: Picture -> BoundingBox Double
+boundaryPicture (Leaf    (bb,_) _)   = bb
+boundaryPicture (Picture (bb,_) _)   = bb
 
 
-instance Boundary Primitive Double where
-  boundary = bbPrim
+boundaryPrimitive :: Primitive -> BoundingBox Double
+boundaryPrimitive (PPath _ p)      = boundaryPath p
+boundaryPrimitive (PLabel a l)     = labelBoundary (label_font a) l
+boundaryPrimitive (PEllipse _ e)   = ellipseBoundary e
+boundaryPrimitive (PContext _ a)   = boundaryPrimitive a
+boundaryPrimitive (PSVG _ a)       = boundaryPrimitive a
+boundaryPrimitive (PClip p _)      = boundaryPath p
+boundaryPrimitive (PGroup ones)    = outer $ viewl ones 
+  where
+    outer (OneL a)     = boundaryPrimitive a
+    outer (a :< as)    = inner (boundaryPrimitive a) (viewl as)
 
-
-bbPrim :: Primitive -> BoundingBox Double
-bbPrim (PPath _ p)      = pathBoundary p
-bbPrim (PLabel a l)     = labelBoundary (label_font a) l
-bbPrim (PEllipse _ e)   = ellipseBoundary e
-bbPrim (PContext _ a)   = boundary a
-bbPrim (PSVG _ a)       = boundary a
-bbPrim (PClip p _)      = pathBoundary p
-bbPrim (PGroup ones)    = outer $ viewl ones 
-    where
-      outer (OneL a)     = boundary a
-      outer (a :< as)    = inner (boundary a) (viewl as)
-
-      inner bb (OneL a)  = bb `boundaryUnion` boundary a
-      inner bb (a :< as) = inner (bb `boundaryUnion` boundary a) (viewl as)
+    inner bb (OneL a)  = bb `boundaryUnion` boundaryPrimitive a
+    inner bb (a :< as) = inner (bb `boundaryUnion` boundaryPrimitive a) 
+                               (viewl as)
 
 
 
 
-pathBoundary :: PrimPath -> BoundingBox Double
-pathBoundary (PrimPath vs ctm) = 
+boundaryPath :: PrimPath -> BoundingBox Double
+boundaryPath (PrimPath vs ctm) = 
     retraceBoundary (m33 *#) $ step zeroPt (zeroPt,zeroPt) vs
   where
     m33         = matrixRepCTM ctm
@@ -762,7 +761,7 @@ deconsMatrix (M3'3 e0x e1x ox
 -- user defined.
 --
 repositionDeltas :: Picture -> (BoundingBox Double, Maybe DVec2)
-repositionDeltas = step . boundary 
+repositionDeltas = step . boundaryPicture
   where
     step bb@(BBox (P2 llx lly) (P2 urx ury))
         | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
