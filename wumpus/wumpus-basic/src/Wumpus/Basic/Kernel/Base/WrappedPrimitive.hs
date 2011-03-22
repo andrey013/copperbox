@@ -59,6 +59,8 @@ instance Monoid CatPrim where
 instance OPlus CatPrim where
   oplus = mappend
 
+{-
+
 instance Rotate CatPrim where
   rotate ang (PCat a) = PCat $ rotate ang a
   rotate _   a        = a
@@ -74,6 +76,7 @@ instance Scale CatPrim where
 instance Translate CatPrim where
   translate dx dy (PCat a) = PCat $ translate dx dy a
   translate _  _  a        = a
+-}
 
 prim1 :: Primitive -> CatPrim 
 prim1 = PCat

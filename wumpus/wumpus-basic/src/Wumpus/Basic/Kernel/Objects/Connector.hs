@@ -106,6 +106,8 @@ uconvertConnectorImg = uconvertR2ab
 --------------------------------------------------------------------------------
 -- affine trans
 
+{-
+
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (ConnectorImage t u) where
   rotate ang = affineTransR2ab (rotate ang) (rotate ang)
@@ -123,3 +125,4 @@ instance (Scale (t Double), Functor t, InterpretUnit u) =>
 instance (Translate (t Double), Functor t, InterpretUnit u) => 
     Translate (ConnectorImage t u) where
   translate dx dy = affineTransR2ab (translate dx dy) (translate dx dy)
+-}

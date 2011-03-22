@@ -109,6 +109,8 @@ uconvertLocThetaImg = uconvertR2a
 --------------------------------------------------------------------------------
 -- affine trans
 
+{-
+
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (LocThetaImage t u) where
   rotate ang            = affineTransR2a (rotate ang) (rotate ang)
@@ -126,4 +128,4 @@ instance (Translate (t Double), Functor t, InterpretUnit u) =>
     Translate (LocThetaImage t u) where
   translate dx dy       = affineTransR2a (translate dx dy) (translate dx dy)
 
-
+-}

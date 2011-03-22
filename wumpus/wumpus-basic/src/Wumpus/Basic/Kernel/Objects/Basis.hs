@@ -150,6 +150,7 @@ clipObject pp =
 
 -- affine trans
 
+{-
 instance Rotate (t Double) => Rotate (ImageAns t Double) where
   rotate ang (Ans ma p) = Ans (rotate ang ma) (rotate ang p)
 
@@ -165,3 +166,4 @@ instance Scale (t Double) => Scale (ImageAns t Double) where
 
 instance Translate (t Double) => Translate (ImageAns t Double) where
   translate dx dy (Ans ma p) = Ans (translate dx dy ma) (translate dx dy p)
+-}

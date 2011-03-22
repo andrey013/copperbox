@@ -85,7 +85,6 @@ type family MonUnit m :: *
 class LengthTolerance u where length_tolerance :: u
 
 instance LengthTolerance Double     where length_tolerance = 0.1
-instance LengthTolerance Centimeter where length_tolerance = 0.01
 instance LengthTolerance AfmUnit    where length_tolerance = 0.1
 
 
@@ -231,7 +230,7 @@ instance OPlus (UNil u) where
 instance OPlus a => OPlus (UOne a u) where
   UOne a `oplus` UOne b = UOne $ a `oplus` b
 
-
+{-
 instance Rotate (UNil u) where
   rotate _ = id
 
@@ -243,7 +242,7 @@ instance RotateAbout (UNil u) where
 
 instance Translate (UNil u) where
   translate _ _ = id 
-
+-}
 
 --------------------------------------------------------------------------------
 -- Interpreting units 
@@ -259,9 +258,6 @@ instance InterpretUnit Double where
   normalize _ = id
   dinterp   _ = id 
 
-instance InterpretUnit Centimeter where
-  normalize _ = toPsDouble 
-  dinterp   _ = fromPsDouble
 
 
 instance InterpretUnit AfmUnit where

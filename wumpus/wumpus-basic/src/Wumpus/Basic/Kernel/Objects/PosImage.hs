@@ -268,6 +268,7 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
 -- affine trans
 
 
+{-
 
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (PosImage t u) where
@@ -286,3 +287,4 @@ instance (Translate (t Double), Functor t, InterpretUnit u) =>
     Translate (PosImage t u) where
   translate dx dy       = affineTransR2a (translate dx dy) (translate dx dy)
 
+-}

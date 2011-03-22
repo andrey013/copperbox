@@ -109,7 +109,7 @@ centerOrthoBBox theta bb =
     normalizeFDC bb >>= \dbb ->
     let ps  = boundaryCornerList dbb
         ctr = boundaryCenter dbb
-        ans = traceBoundary $ map (rotateAbout theta ctr) ps
+        ans = traceBoundary $ map (affineRotateAbout theta ctr) ps
     in dinterpFDC ans
 
 

@@ -86,6 +86,8 @@ uconvertImg = uconvertR0
 
 --------------------------------------------------------------------------------
 
+{-
+
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (Image t u) where
   rotate ang            = affineTransR0 (rotate ang)
@@ -101,5 +103,5 @@ instance (Scale (t Double), Functor t, InterpretUnit u) =>
 instance (Translate (t Double), Functor t, InterpretUnit u) => 
     Translate (Image t u) where
   translate dx dy       = affineTransR0 (translate dx dy)
-
+-}
 

@@ -188,7 +188,7 @@ mapCtxPicture pf pic1 = CtxPicture $ \ctx -> fmap pf $ getCtxPicture pic1 ctx
 --------------------------------------------------------------------------------
 
 
-
+{-
 
 instance Rotate CtxPicture where 
   rotate ang = mapCtxPicture (rotate ang)
@@ -202,7 +202,7 @@ instance Scale CtxPicture where
 instance Translate CtxPicture where
   translate dx dy = mapCtxPicture (translate dx dy)
 
-
+-}
 
 --------------------------------------------------------------------------------
 
@@ -247,7 +247,7 @@ northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi
 -- Extract anchors
 
 boundaryExtr :: (BoundingBox Double -> a) -> Picture -> a
-boundaryExtr f = f . boundary
+boundaryExtr f = f . boundaryPicture
 
 -- Operations on bounds
 
@@ -443,14 +443,13 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 
 -- | Center the picture at the supplied point.
 --
-cxpCenteredAt :: (Fractional u, PsDouble u) 
-              => CtxPicture -> Point2 u -> CtxPicture
+cxpCenteredAt :: CtxPicture -> DPoint2 -> CtxPicture
 cxpCenteredAt pic (P2 x y) = mapCtxPicture fn pic
   where
-    fn p = let bb = fmap fromPsDouble $ boundary p
+    fn p = let bb = boundaryPicture p
                dx = x - (boundaryWidth  bb * 0.5)
                dy = y - (boundaryHeight bb * 0.5)
-           in p `picMoveBy` vec (toPsDouble dx) (toPsDouble dy)
+           in p `picMoveBy` vec dx dy
 
 
 
@@ -490,11 +489,10 @@ cxpColumn = foldl' cxpDown
 -- Horizontal composition - move @b@, placing it to the right 
 -- of @a@ with a horizontal gap of @n@ separating the pictures.
 --
-cxpRightSep :: (Num u, Ord u, PsDouble u) 
-            => u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpRightSep :: Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
   where
-    moveFun a b pic = pic `picMoveBy` hvec ((toPsDouble n) + a - b)
+    moveFun a b pic = pic `picMoveBy` hvec (n + a - b)
 
     
 
@@ -505,11 +503,10 @@ cxpRightSep n = megaCombR boundaryRightEdge boundaryLeftEdge moveFun
 -- Vertical composition - move @b@, placing it below @a@ with a
 -- vertical gap of @n@ separating the pictures.
 --
-cxpDownSep :: (Num u, Ord u, PsDouble u) 
-           => u -> CtxPicture -> CtxPicture -> CtxPicture
+cxpDownSep :: Double  -> CtxPicture -> CtxPicture -> CtxPicture
 cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
   where 
-    moveFun a b pic = pic `picMoveBy`  vvec (a - b - (toPsDouble n))
+    moveFun a b pic = pic `picMoveBy`  vvec (a - b - n)
 
 
 
@@ -519,8 +516,7 @@ cxpDownSep n = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 -- @hspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpRowSep :: (Real u, Floating u, PsDouble u) 
-          => u -> CtxPicture -> [CtxPicture] -> CtxPicture
+cxpRowSep :: Double -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpRowSep n = foldl' (cxpRightSep n)
 
 
@@ -531,8 +527,7 @@ cxpRowSep n = foldl' (cxpRightSep n)
 -- @vspace@ starting at @x@. The pictures are interspersed with 
 -- spaces of @n@ units.
 --
-cxpColumnSep :: (Real u, Floating u, PsDouble u) 
-             => u -> CtxPicture -> [CtxPicture] -> CtxPicture
+cxpColumnSep :: Double -> CtxPicture -> [CtxPicture] -> CtxPicture
 cxpColumnSep n = foldl' (cxpDownSep n)
 
 

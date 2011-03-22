@@ -111,10 +111,11 @@ uconvertLocImg = uconvertR1a
 --------------------------------------------------------------------------------
 -- affine trans
 
+{-
+
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (LocImage t u) where
   rotate ang = affineTransR1a (rotate ang) (rotate ang)
-
 
 -- Note - with curent implementation of Wumpus-Core the 
 -- point-of-rotation is always a Double. Potentially that makes
@@ -132,3 +133,5 @@ instance (Scale (t Double), Functor t, InterpretUnit u) =>
 instance (Translate (t Double), Functor t, InterpretUnit u) => 
     Translate (LocImage t u) where
   translate dx dy = affineTransR1a (translate dx dy) (translate dx dy)
+
+-}

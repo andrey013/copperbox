@@ -124,6 +124,7 @@ uconvertPosThetaImg = uconvertR3a
 
 --------------------------------------------------------------------------------
 
+{-
 
 instance (Rotate (t Double), Functor t, InterpretUnit u) => 
     Rotate (PosThetaImage t u) where
@@ -142,4 +143,4 @@ instance (Translate (t Double), Functor t, InterpretUnit u) =>
     Translate (PosThetaImage t u) where
   translate dx dy       = affineTransR3a (translate dx dy) (translate dx dy)
 
-
+-}
