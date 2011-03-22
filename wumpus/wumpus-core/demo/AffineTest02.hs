@@ -15,12 +15,12 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
                [ circle_cpa, ellipse_cpa, path_cpa ]
 
 
-scale_onehalf_x_two :: Scale t => t -> t
-scale_onehalf_x_two = scale 1.5 2.0
+scale_onehalf_x_two :: AffineScale t => t -> t
+scale_onehalf_x_two = affineScale 1.5 2.0
 
 
 scale_onehalf_x_twoP :: Primitive -> Primitive
-scale_onehalf_x_twoP = scale 1.5 2.0
+scale_onehalf_x_twoP = affineScale 1.5 2.0
 
 -- Primitive - Text
 

@@ -776,7 +776,7 @@ a `picOver` b = Picture (bb,[]) (join (one b) (one a))
 --  Move a picture by the supplied vector. 
 --
 picMoveBy :: Picture -> DVec2 -> Picture
-p `picMoveBy` v1 = translateBy v1 p 
+p `picMoveBy` (V2 x y) = affineTranslate x y p 
 
 -- | 'picBeside' : @ picture * picture -> Picture @
 --

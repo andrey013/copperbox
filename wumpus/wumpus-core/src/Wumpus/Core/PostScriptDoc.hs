@@ -77,7 +77,6 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.Common
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -186,7 +185,7 @@ ps_grestore = command "grestore" []
 -- | @ ... setlinewidth @
 --
 ps_setlinewidth :: Double -> Doc
-ps_setlinewidth u = command "setlinewidth" [psptFmt u]
+ps_setlinewidth u = command "setlinewidth" [dtruncFmt u]
 
 -- | @ ... setlinecap @
 --
@@ -201,7 +200,7 @@ ps_setlinejoin a = command "setlinejoin" [int $ fromEnum a]
 -- | @ ... setmiterlimit @
 --
 ps_setmiterlimit :: Double -> Doc
-ps_setmiterlimit u = command "setmiterlimit" [psptFmt u]
+ps_setmiterlimit u = command "setmiterlimit" [dtruncFmt u]
 
 -- | @ [... ...] ... setdash @
 --
@@ -218,7 +217,7 @@ ps_setdash (Dash n pairs) = command "setdash" [brackets $ step pairs, int n]
 ps_setrgbcolor :: RGBi -> Doc
 ps_setrgbcolor (RGBi r g b) = command "setrgbcolor" [fn r, fn g, fn b]
   where
-    fn i = psptFmt $ (fromIntegral i / d255)
+    fn i = dtruncFmt $ (fromIntegral i / d255)
     d255 :: Double
     d255 = 255.0
 

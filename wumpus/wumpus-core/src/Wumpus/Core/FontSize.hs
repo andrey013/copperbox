@@ -68,8 +68,6 @@ module Wumpus.Core.FontSize
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.Text.Base
-import Wumpus.Core.Units
-
 
 
 type CharCount = Int
@@ -88,17 +86,17 @@ instance Show AfmUnit where
   showsPrec p d = showsPrec p (getAfmUnit d)
 
 
--- | Internal no verloaded version of 'afmValue'.
+-- | Flipped version of 'afmValue'.
 --
-afmValueD :: AfmUnit -> FontSize -> Double
-afmValueD u sz = realToFrac u * (fromIntegral sz) / 1000
+afmValueSZ :: AfmUnit -> FontSize -> Double
+afmValueSZ = flip afmValue
 
 
 -- | Compute the size of a measurement in PostScript points 
 -- scaling the Afm unit size by the point size of the font.
 --
-afmValue :: PsDouble u => FontSize -> AfmUnit -> u
-afmValue sz u = fromPsDouble $ afmValueD u sz
+afmValue :: FontSize -> AfmUnit -> Double
+afmValue sz u = realToFrac u * (fromIntegral sz) / 1000
 
 
 -- | Compute the size of a measurement in Afm units scaled by the
@@ -198,7 +196,7 @@ mono_right_margin = 50
 -- metrics derived from the Courier font.
 --
 charWidth :: FontSize -> Double
-charWidth = afmValueD mono_width
+charWidth = afmValueSZ mono_width
 
 
 
@@ -226,21 +224,21 @@ capHeight = fromIntegral
 -- the Courier monospaced font.
 --
 xcharHeight :: FontSize -> Double
-xcharHeight = afmValueD mono_x_height
+xcharHeight = afmValueSZ mono_x_height
 
 -- | The total height span of the glyph bounding box for the 
 -- Courier monospaced font.
 --
 totalCharHeight :: FontSize -> Double
 totalCharHeight sz =  
-    afmValueD mono_max_height sz + negate (afmValueD mono_max_depth sz)
+    afmValueSZ mono_max_height sz + negate (afmValueSZ mono_max_depth sz)
   
 
 -- | Ascender height for font size @sz@ using metrics from the 
 -- Courier monospaced font.
 -- 
 ascenderHeight :: FontSize -> Double
-ascenderHeight = afmValueD mono_ascender
+ascenderHeight = afmValueSZ mono_ascender
 
 
 
@@ -248,7 +246,7 @@ ascenderHeight = afmValueD mono_ascender
 -- Courier monospaced font.
 -- 
 descenderDepth :: FontSize -> Double
-descenderDepth = afmValueD mono_descender
+descenderDepth = afmValueSZ mono_descender
 
 
 -- | 'textBounds' : @ font_size * baseline_left * text -> BBox @
@@ -264,8 +262,7 @@ descenderDepth = afmValueD mono_descender
 -- For proportional fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: (Num u, Ord u, PsDouble u) 
-           => FontSize -> Point2 u -> String -> BoundingBox u
+textBounds :: FontSize -> DPoint2 -> String -> BoundingBox Double
 textBounds sz pt ss = textBoundsBody sz pt (charCount ss) 
 
 
@@ -273,20 +270,18 @@ textBounds sz pt ss = textBoundsBody sz pt (charCount ss)
 -- 
 --  Version of textBounds for already escaped text.
 --
-textBoundsEsc :: (Num u, Ord u, PsDouble u) 
-           => FontSize -> Point2 u -> EscapedText -> BoundingBox u
+textBoundsEsc :: FontSize -> DPoint2 -> EscapedText -> BoundingBox Double
 textBoundsEsc sz pt esc = textBoundsBody sz pt (textLength esc) 
 
 
-textBoundsBody :: (Num u, Ord u, PsDouble u) 
-               => FontSize -> Point2 u -> Int -> BoundingBox u
+textBoundsBody :: FontSize -> DPoint2 -> Int -> BoundingBox Double
 textBoundsBody sz (P2 x y) len = boundingBox ll ur
   where
-    w           = fromPsDouble $ textWidth  sz len
-    left_m      = fromPsDouble $ afmValueD mono_left_margin  sz
-    right_m     = fromPsDouble $ afmValueD mono_right_margin sz
-    max_depth   = fromPsDouble $ afmValueD mono_max_depth    sz
-    max_height  = fromPsDouble $ afmValueD mono_max_height   sz
+    w           = textWidth  sz len
+    left_m      = afmValueSZ mono_left_margin  sz
+    right_m     = afmValueSZ mono_right_margin sz
+    max_depth   = afmValueSZ mono_max_depth    sz
+    max_height  = afmValueSZ mono_max_height   sz
     ll          = P2 (x + left_m)      (y + max_depth)
     ur          = P2 (x + w + right_m) (y + max_height)
 

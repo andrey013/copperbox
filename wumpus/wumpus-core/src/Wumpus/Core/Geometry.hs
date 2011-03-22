@@ -88,12 +88,9 @@ module Wumpus.Core.Geometry
 
 
 import Wumpus.Core.Utils.FormatCombinators
-import Wumpus.Core.Units
 
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
-
-
 
 
 
@@ -319,29 +316,17 @@ infixr 7 *#
 -- represented as homogeneous coordinates. 
 --
 class MatrixMult t where 
-  (*#) :: Matrix3'3 Double -> t -> t
+  (*#) :: Num u => Matrix3'3 u -> t u -> t u
 
 
-instance PsDouble u => MatrixMult (Vec2 u) where       
-  (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a'*m+b'*n+c'*0) (d'*m+e'*n+f'*0)
-    where
-      a' = fromPsDouble a
-      b' = fromPsDouble b
-      c' = fromPsDouble c
-      d' = fromPsDouble d
-      e' = fromPsDouble e
-      f' = fromPsDouble f
+instance MatrixMult Vec2 where       
+  (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m + b*n + c*0) 
+                                            (d*m + e*n + f*0)
 
 
-instance PsDouble u => MatrixMult (Point2 u) where
-  (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a'*m+b'*n+c'*1) (d'*m+e'*n+f'*1)
-    where
-      a' = fromPsDouble a
-      b' = fromPsDouble b
-      c' = fromPsDouble c
-      d' = fromPsDouble d
-      e' = fromPsDouble e
-      f' = fromPsDouble f
+instance MatrixMult Point2 where
+  (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m + b*n + c*1) 
+                                            (d*m + e*n + f*1)
 
 
 --------------------------------------------------------------------------------
@@ -773,14 +758,14 @@ bezierEllipse rx ry (P2 x y) =
 -- Although this function produces an approximation of a ellipse, 
 -- the approximation seems fine in practice.
 --
-rbezierEllipse :: (Real u, Floating u, PsDouble u) 
+rbezierEllipse :: (Real u, Floating u) 
                => u -> u -> Radian -> Point2 u -> [Point2 u]
 rbezierEllipse rx ry theta pt@(P2 x y) = 
     [ p00,c01,c02, p03,c04,c05, p06,c07,c08, p09,c10,c11, p00 ]
   where
     lrx   = rx * kappa
     lry   = ry * kappa
-    rotM  = fmap toPsDouble $ originatedRotationMatrix theta pt
+    rotM  = originatedRotationMatrix theta pt
 
     --    hvec becomes para
     para  = \d -> avec theta d

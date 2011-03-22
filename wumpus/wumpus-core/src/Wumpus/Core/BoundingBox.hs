@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -55,7 +56,6 @@ module Wumpus.Core.BoundingBox
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
-import Wumpus.Core.Units
 import Wumpus.Core.Utils.FormatCombinators
 
 
@@ -92,16 +92,11 @@ instance Format u => Format (BoundingBox u) where
 
 
 --------------------------------------------------------------------------------
--- 
+-- Transform...
 
--- type instance DUnit (BoundingBox u) = u
-
-
-pointTransform :: (PsDouble u , Ord u)
-               => (DPoint2 -> DPoint2) -> BoundingBox u -> BoundingBox u
+pointTransform :: (DPoint2 -> DPoint2) -> BoundingBox Double -> BoundingBox Double
 pointTransform fn bb = 
-    traceBoundary $ map (fmap fromPsDouble . fn . fmap toPsDouble) 
-                  $ [bl,br,tr,tl]
+    traceBoundary $ map fn $ [bl,br,tr,tl]
   where 
     (bl,br,tr,tl) = boundaryCorners bb
 
@@ -115,20 +110,20 @@ pointTrans2 fn bb =
 
 
 
-instance PsDouble u => Transform (BoundingBox u) where
-  transform mtrx = pointTransform  (mtrx *#)
+instance AffineTransform (BoundingBox Double) where
+  affineTransform mtrx = pointTransform  (mtrx *#)
 
-instance PsDouble u => Rotate (BoundingBox u) where
-  rotate theta = pointTransform (rotate theta)
+instance AffineRotate (BoundingBox Double) where
+  affineRotate theta = pointTransform (affineRotate theta)
 
-instance PsDouble u => RotateAbout (BoundingBox u) where
-  rotateAbout theta pt = pointTrans2 (rotateAbout theta pt)
+instance AffineRotateAbout (BoundingBox Double) where
+  affineRotateAbout theta pt = pointTrans2 (affineRotateAbout theta pt)
 
-instance PsDouble u => Scale (BoundingBox u) where
-  scale sx sy = pointTransform (scale sx sy)
+instance AffineScale (BoundingBox Double) where
+  affineScale sx sy = pointTransform (affineScale sx sy)
 
-instance PsDouble u => Translate (BoundingBox u) where
-  translate dx dy = pointTransform (translate dx dy)
+instance AffineTranslate (BoundingBox Double) where
+  affineTranslate dx dy = pointTransform (affineTranslate dx dy)
 
 
 --------------------------------------------------------------------------------

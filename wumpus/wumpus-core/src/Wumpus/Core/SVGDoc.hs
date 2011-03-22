@@ -80,7 +80,6 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicProps
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.Units ( psptFmt )
 import Wumpus.Core.Utils.Common ( dtruncFmt )
 import Wumpus.Core.Utils.FormatCombinators
 
@@ -219,7 +218,7 @@ attr_id = svgAttr "id" . text
 -- | @ x=\"...\" @
 --
 attr_x :: Double -> Doc
-attr_x = svgAttr "x" . psptFmt
+attr_x = svgAttr "x" . dtruncFmt
 
 
 -- | @ x=\"... ... ...\" @
@@ -351,13 +350,13 @@ attr_stroke_none = svgAttr "stroke" (text "none")
 -- | @ stroke-width=\"...\" @
 --
 attr_stroke_width :: Double -> Doc
-attr_stroke_width = svgAttr "stroke-width" . psptFmt
+attr_stroke_width = svgAttr "stroke-width" . dtruncFmt
 
 
 -- | @ stroke-miterlimit=\"...\" @
 --
 attr_stroke_miterlimit :: Double -> Doc
-attr_stroke_miterlimit = svgAttr "stroke-miterlimit" . psptFmt
+attr_stroke_miterlimit = svgAttr "stroke-miterlimit" . dtruncFmt
 
 -- | @ stroke-linejoin=\"...\" @
 --

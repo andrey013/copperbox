@@ -15,11 +15,11 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
                [ circle_cpa, ellipse_cpa, path_cpa ]
 
 
-translate_20x40 :: Translate t => t -> t
-translate_20x40 = translate 20.0 40.0
+translate_20x40 :: AffineTranslate t => t -> t
+translate_20x40 = affineTranslate 20.0 40.0
 
 translate_20x40P :: Primitive -> Primitive
-translate_20x40P = translate 20.0 40.0
+translate_20x40P = affineTranslate 20.0 40.0
 
 -- Primitive - Text
 
