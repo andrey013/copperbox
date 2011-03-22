@@ -20,26 +20,19 @@ module Wumpus.Rhythm.Djembe.HelveticaLoader
     loadHelveticaMetrics
   ) where
 
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
-
-import Control.Monad
-import System.Environment
-import System.IO.Error ( try )
-
-wumpus_gs_font_dir :: String
-wumpus_gs_font_dir = "WUMPUS_GS_FONT_DIR"
-
-wumpus_afm_font_dir :: String
-wumpus_afm_font_dir = "WUMPUS_AFM_FONT_DIR"
+import Wumpus.Basic.System.FontLoader
 
 
-loadHelveticaMetrics :: IO (Either String FontLoadResult)
-loadHelveticaMetrics = 
-   loadAfm_helvetica >>= maybe fk1 (return . Right)
+
+
+loadHelveticaMetrics :: FontDef -> IO (Either String FontLoadResult)
+loadHelveticaMetrics fnt = 
+   loadGS_helvetica fnt >>= maybe fk1 (return . Right)
  where
-   fk1 = loadGS_helvetica >>= maybe (return $ Left help_message) (return . Right)
+   fk1 = loadAfm_helvetica fnt >>= maybe fk2 (return . Right)
+   fk2 = return $ Left help_message
 
 
 help_message :: String
@@ -51,38 +44,29 @@ help_message = unlines $
     , "" 
     , "To use the Adode Core 14 font metrics download and unzip the "
     , "archive from the Adobe website and set the environment variable "
-    , wumpus_afm_font_dir ++ " to point to it."
+    , "WUMPUS_AFM_FONT_DIR to point to it."
     , ""
     , "To use GhostScripts font metrics set the environemt variable"
-    , wumpus_gs_font_dir ++ " to point to the GhostScript fonts"
+    , "WUMPUS_GS_FONT_DIR to point to the GhostScript fonts"
     , "directory (e.g. /usr/share/ghostscript/fonts)"
     , ""
     ]
 
 
 
-loadGS_helvetica :: IO (Maybe FontLoadResult)
-loadGS_helvetica = 
-    envLookup wumpus_gs_font_dir >>= maybe (return Nothing) sk
-  where
-    sk dir = do { metrics  <- loadGSFontMetrics dir ["Helvetica"]
-                ; printLoadErrors metrics
-                ; return $ Just metrics
-                }
-
-loadAfm_helvetica :: IO (Maybe FontLoadResult)
-loadAfm_helvetica = 
-    envLookup wumpus_afm_font_dir >>= maybe (return Nothing) sk 
-  where
-    sk dir = do { metrics <- loadAfmFontMetrics dir ["Helvetica"]
-                ; printLoadErrors metrics
-                ; return $ Just metrics
-                }
+loadGS_helvetica :: FontDef -> IO (Maybe FontLoadResult)
+loadGS_helvetica fnt = 
+    gsLoaderByEnv >>= maybe (return Nothing) (fmap Just . loadHelvetica fnt)
 
 
-envLookup :: String -> IO (Maybe String)
-envLookup name = liftM fn $ try $ getEnv name
-  where
-    fn (Left _)  = Nothing
-    fn (Right a) = Just a
+loadAfm_helvetica :: FontDef -> IO (Maybe FontLoadResult)
+loadAfm_helvetica fnt = 
+    afmLoaderByEnv >>= maybe (return Nothing) (fmap Just . loadHelvetica fnt)
+
+
+loadHelvetica :: FontDef -> FontLoader -> IO FontLoadResult
+loadHelvetica helv_def loader = do 
+    metrics  <- loader [helv_def]
+    printLoadErrors metrics
+    return $ metrics
 

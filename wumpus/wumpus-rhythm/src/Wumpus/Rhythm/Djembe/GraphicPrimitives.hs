@@ -63,12 +63,6 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 import Data.Ratio
 
--- Maybe this is better than the one currently in Wumpus-Basic?
---
-scale_point_size :: Double -> DrawingContextF
-scale_point_size sc = 
-    (\s sz -> s { dc_font_size = floor $ sc * fromIntegral sz}) 
-      <*> dc_font_size
 
 -- For clarity Wumpus-Basic needs flipped versions of the 
 -- @startPos@, @atRot@, etc. operators. However they need some
