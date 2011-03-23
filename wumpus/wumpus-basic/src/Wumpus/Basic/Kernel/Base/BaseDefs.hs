@@ -19,7 +19,8 @@
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
   
-    MonUnit
+    DUnit
+  , MonUnit
 
   , LengthTolerance(..)
 
@@ -66,6 +67,25 @@ import Data.VectorSpace                         -- package: vector-space
 import Control.Applicative
 
 
+
+-- | Type family to access the unit parameter of graphical 
+-- objects - Point2, Vec2, etc. 
+-- 
+-- Not all the unit parameterized types are Functors so DUnit can 
+-- gives some access to the Unit for classes and type signatures.
+--
+type family DUnit m :: *
+
+
+type instance DUnit (Point2 u)          = u
+type instance DUnit (Vec2 u)            = u
+type instance DUnit (BoundingBox u)     = u
+
+
+
+-- | Type family to access the unit parameter of a TraceDrawing
+-- or a promoted TraceDrawingT transformer.
+--
 type family MonUnit m :: *
 
 
@@ -297,7 +317,7 @@ intraMapPoint sz fn (P2 x y) =
 --
 intraMapFunctor :: (Functor f, InterpretUnit u)
                 => FontSize -> (f Double -> f Double) -> f u -> f u
-intraMapFunctor sz fn ma = uconvertF sz $ fn $ uconvertF sz ma
+intraMapFunctor sz fn ma = dinterpF sz $ fn $ normalizeF sz ma
 
 
 --------------------------------------------------------------------------------

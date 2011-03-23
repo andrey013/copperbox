@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
@@ -91,6 +93,7 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   ) where
 
+import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 
@@ -116,6 +119,8 @@ import Data.Monoid
 --
 newtype CF a            = CF  { unCF :: DrawingContext -> a }
 
+type instance DUnit (CF (t u)) = u
+
 
 -- | Variation of 'CF' with one parametric /static argument/.
 --
@@ -125,6 +130,8 @@ newtype CF a            = CF  { unCF :: DrawingContext -> a }
 -- > CF1 :: DrawingContext -> r1 -> a 
 --
 newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
+
+type instance DUnit (CF1 r1 (t u)) = u
 
 
 -- | Variation of 'CF' with two parametric /static arguments/.
@@ -138,6 +145,7 @@ newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
 --
 newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 
+type instance DUnit (CF2 r1 r2 (t u)) = u
 
 -- | Variation of 'CF' with three parametric /static arguments/.
 --
@@ -145,6 +153,7 @@ newtype CF2 r1 r2 a     = CF2 { unCF2 :: DrawingContext -> r1 -> r2 -> a }
 --
 newtype CF3 r1 r2 r3 a = CF3 { unCF3 :: DrawingContext -> r1 -> r2 -> r3 -> a }
 
+type instance DUnit (CF3 r1 r2 r3 (t u)) = u
 
 
 -- | Alias for 'CF'. Wumpus considers Context functions that
@@ -742,45 +751,37 @@ chain1 f g = CF1 $ \ctx s -> let (s1,a1) = unCF1 f ctx s
 -- use them.
 --
 
-affineTransR0 :: (InterpretUnit u, Functor t) 
-              => (t Double -> t Double) 
+affineTransR0 :: (InterpretUnit u) 
+              => (FontSize -> t u -> t u)
               -> CF (t u)
               -> CF (t u)
 affineTransR0 fn df = CF $ \ctx -> 
-    let sz    = dc_font_size ctx
-    in intraMapFunctor sz fn $ unCF df ctx
-
-
-
+    let sz    = dc_font_size ctx in fn sz $ unCF df ctx
 
 
 -- Arity 1
 
-affineTransR1a :: (InterpretUnit u, Functor t) 
-               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+affineTransR1a :: (InterpretUnit u) 
+               => (FontSize -> Point2 u -> Point2 u) 
+               -> (FontSize -> t u -> t u) 
                -> CF1 (Point2 u) (t u)
                -> CF1 (Point2 u) (t u)
 affineTransR1a f g df = CF1 $ \ctx pt -> 
     let sz    = dc_font_size ctx
-        pt'   = intraMapPoint sz f pt 
-    in intraMapFunctor sz g $ unCF1 df ctx pt'
-
-
-
+    in g sz $ unCF1 df ctx (f sz pt)
 
 
 -- Connectors
 
 
-affineTransR2ab :: (InterpretUnit u, Functor t) 
-               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+affineTransR2ab :: InterpretUnit u 
+               => (FontSize -> Point2 u -> Point2 u) 
+               -> (FontSize -> t u -> t u) 
                -> CF2 (Point2 u) (Point2 u) (t u)
                -> CF2 (Point2 u) (Point2 u) (t u)
 affineTransR2ab f g df = CF2 $ \ctx p0 p1 -> 
     let sz    = dc_font_size ctx
-        p0'   = intraMapPoint sz f p0 
-        p1'   = intraMapPoint sz f p1
-    in intraMapFunctor sz g $ unCF2 df ctx p0' p1'
+    in g sz $ unCF2 df ctx (f sz p0) (f sz p1)
 
 
 
@@ -799,23 +800,116 @@ affineTransR2ab f g df = CF2 $ \ctx p0 p1 ->
 
 -- | Roll-you-own helper for affine instances of CF2.
 --
-affineTransR2a :: (InterpretUnit u, Functor t)
-               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+affineTransR2a :: InterpretUnit u
+               => (FontSize -> Point2 u -> Point2 u) 
+               -> (FontSize -> t u -> t u) 
                -> CF2 (Point2 u) r2 (t u)
                -> CF2 (Point2 u) r2 (t u)
 affineTransR2a f g df = CF2 $ \ctx pt r2 -> 
     let sz    = dc_font_size ctx
-        pt'   = intraMapPoint sz f pt 
-    in intraMapFunctor sz g $ unCF2 df ctx pt' r2
+    in g sz $ unCF2 df ctx (f sz pt) r2
 
 
--- | Roll-you-own helper for affine instances of CF2.
+-- | Roll-you-own helper for affine instances of CF3.
 --
-affineTransR3a :: (InterpretUnit u, Functor t)
-               => (DPoint2 -> DPoint2) -> (t Double -> t Double) 
+affineTransR3a :: InterpretUnit u
+               => (FontSize -> Point2 u -> Point2 u) 
+               -> (FontSize -> t u -> t u) 
                -> CF3 (Point2 u) r2 r3 (t u)
                -> CF3 (Point2 u) r2 r3 (t u)
 affineTransR3a f g df = CF3 $ \ctx pt r2 r3 -> 
     let sz    = dc_font_size ctx
-        pt'   = intraMapPoint sz f pt
-    in intraMapFunctor sz g $ unCF3 df ctx pt' r2 r3
+    in g sz $ unCF3 df ctx (f sz pt) r2 r3
+
+
+-- These CF instance cover Images and Graphics.
+
+instance (CtxRotate t u, InterpretUnit u) => 
+    Rotate (CF (t u)) where
+  rotate ang = affineTransR0 (\sz -> ctxRotate sz ang)
+
+instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    RotateAbout (CF (t u)) u where
+  rotateAbout ang p0 = affineTransR0 (\sz -> ctxRotateAbout sz ang p0)
+
+instance (CtxScale t u, InterpretUnit u) => 
+    Scale (CF (t u)) where
+  scale sx sy = affineTransR0 (\sz -> ctxScale sz sx sy)
+
+instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    Translate (CF (t u)) u where
+  translate dx dy = affineTransR0 (\sz -> ctxTranslate sz dx dy)
+
+
+-- These CF1 instances cover LocGraphic and LocImage.
+
+instance (CtxRotate t u, Functor t, InterpretUnit u) => 
+    Rotate (CF1 (Point2 u) (t u)) where
+  rotate ang = affineTransR1a (\sz -> ctxRotate sz ang) 
+                              (\sz -> ctxRotate sz ang)
+
+instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    RotateAbout (CF1 (Point2 u) (t u)) u where
+  rotateAbout ang p0 = affineTransR1a (\sz -> ctxRotateAbout sz ang p0)
+                                      (\sz -> ctxRotateAbout sz ang p0)
+     
+instance (CtxScale t u, InterpretUnit u) => 
+    Scale (CF1 (Point2 u) (t u)) where
+  scale sx sy = affineTransR1a (\sz -> ctxScale sz sx sy)
+                               (\sz -> ctxScale sz sx sy)
+
+instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    Translate (CF1 (Point2 u) (t u)) u where
+  translate dx dy = affineTransR1a (\sz -> ctxTranslate sz dx dy) 
+                                   (\sz -> ctxTranslate sz dx dy)
+
+
+-- These CF2 instances cover ConnectorGraphic and ConnectorImage.
+
+instance (CtxRotate t u, Functor t, InterpretUnit u) => 
+    Rotate (CF2 (Point2 u) (Point2 u) (t u)) where
+  rotate ang = affineTransR2ab (\sz -> ctxRotate sz ang) 
+                               (\sz -> ctxRotate sz ang)
+
+
+instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    RotateAbout (CF2 (Point2 u) (Point2 u) (t u)) u where
+  rotateAbout ang p0 = affineTransR2ab (\sz -> ctxRotateAbout sz ang p0)
+                                       (\sz -> ctxRotateAbout sz ang p0)
+
+instance (CtxScale t u, InterpretUnit u) => 
+    Scale (CF2 (Point2 u) (Point2 u) (t u)) where
+  scale sx sy = affineTransR2ab (\sz -> ctxScale sz sx sy)
+                                (\sz -> ctxScale sz sx sy)
+
+instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    Translate (CF2 (Point2 u) (Point2 u) (t u)) u where
+  translate dx dy = affineTransR2ab (\sz -> ctxTranslate sz dx dy) 
+                                    (\sz -> ctxTranslate sz dx dy)
+
+
+
+
+-- These CF2 instances cover LocThetaGraphic and LocThetaImage.
+
+instance (CtxRotate t u, Functor t, InterpretUnit u) => 
+    Rotate (CF2 (Point2 u) Radian (t u)) where
+  rotate ang = affineTransR2a (\sz -> ctxRotate sz ang) 
+                              (\sz -> ctxRotate sz ang)
+
+instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    RotateAbout (CF2 (Point2 u) Radian (t u)) u where
+  rotateAbout ang p0 = affineTransR2a (\sz -> ctxRotateAbout sz ang p0)
+                                      (\sz -> ctxRotateAbout sz ang p0)
+
+instance (CtxScale t u, InterpretUnit u) => 
+    Scale (CF2 (Point2 u) Radian (t u)) where
+  scale sx sy = affineTransR2a (\sz -> ctxScale sz sx sy)
+                               (\sz -> ctxScale sz sx sy)
+
+instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
+    Translate (CF2 (Point2 u) Radian (t u)) u where
+  translate dx dy = affineTransR2a (\sz -> ctxTranslate sz dx dy) 
+                                   (\sz -> ctxTranslate sz dx dy)
+
+

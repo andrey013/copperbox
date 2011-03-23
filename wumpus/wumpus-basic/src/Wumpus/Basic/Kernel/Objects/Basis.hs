@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -46,6 +47,9 @@ import Wumpus.Core                              -- package: wumpus-core
 -- and a PrimGraphic.
 --
 data ImageAns t u       = Ans (t u) CatPrim
+
+type instance DUnit (ImageAns t u) = u
+
 
 
 type GraphicAns u       = ImageAns UNil u
@@ -176,3 +180,8 @@ instance (CtxTranslate t u, InterpretUnit u) =>
     let ddx = normalize sz dx
         ddy = normalize sz dy
     in Ans (ctxTranslate sz dx dy ma) (dtranslate ddx ddy p)
+
+
+
+
+

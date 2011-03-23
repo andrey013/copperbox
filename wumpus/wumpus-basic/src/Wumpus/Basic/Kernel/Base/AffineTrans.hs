@@ -1,6 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -46,29 +48,34 @@ import Wumpus.Core                              -- package: wumpus-core
 
 -- affine trans
 
-class Rotate t u where
-  rotate :: Radian -> t u -> t u
+class Rotate o where
+  rotate :: Radian -> o -> o
 
 class CtxRotate t u where
   ctxRotate :: FontSize -> Radian -> t u -> t u
 
+-- Rotate About
 
-class RotateAbout t u where
-  rotateAbout :: Radian -> Point2 u -> t u -> t u
+class RotateAbout o u where
+  rotateAbout :: DUnit o ~ u => Radian -> Point2 u -> o -> o
 
 class CtxRotateAbout t u where
   ctxRotateAbout :: FontSize -> Radian -> Point2 u -> t u -> t u
 
 
-class Scale t u where
-  scale :: Double -> Double -> t u -> t u
+-- Scale
+
+class Scale o where
+  scale :: Double -> Double -> o -> o
 
 class CtxScale t u where
   ctxScale :: FontSize -> Double -> Double -> t u -> t u
 
 
-class Translate t u where
-  translate :: u -> u -> t u -> t u
+-- Translate
+
+class Translate o u where
+  translate :: DUnit o ~ u => u -> u -> o -> o
 
 class CtxTranslate t u where
   ctxTranslate :: FontSize -> u -> u -> t u -> t u
@@ -76,12 +83,58 @@ class CtxTranslate t u where
 
 --------------------------------------------------------------------------------
 
+-- Point2 
 
 instance InterpretUnit u => CtxRotate Point2 u where
-  ctxRotate sz ang pt = uconvertF sz $ drotate ang $ normalizeF sz pt
+  ctxRotate sz ang = intraMapFunctor sz (drotate ang)
+
+instance InterpretUnit u => CtxRotateAbout Point2 u where
+  ctxRotateAbout sz ang p0 = 
+      intraMapFunctor sz (drotateAbout ang (normalizeF sz p0))
+
+instance InterpretUnit u => CtxScale Point2 u where
+  ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
+
+instance InterpretUnit u => CtxTranslate Point2 u where
+  ctxTranslate sz dx dy = 
+      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
+
+-- Vec2 
+
+instance InterpretUnit u => CtxRotate Vec2 u where
+  ctxRotate sz ang = intraMapFunctor sz (drotate ang)
+
+instance InterpretUnit u => CtxRotateAbout Vec2 u where
+  ctxRotateAbout sz ang p0 = 
+      intraMapFunctor sz (drotateAbout ang (normalizeF sz p0))
+
+instance InterpretUnit u => CtxScale Vec2 u where
+  ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
+
+instance InterpretUnit u => CtxTranslate Vec2 u where
+  ctxTranslate sz dx dy = 
+      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
+              
+
+-- BoundingBox
+
+instance InterpretUnit u => CtxRotate BoundingBox u where
+  ctxRotate sz ang = intraMapFunctor sz (drotate ang)
+
+instance InterpretUnit u => CtxRotateAbout BoundingBox u where
+  ctxRotateAbout sz ang p0 = 
+      intraMapFunctor sz (drotateAbout ang (normalizeF sz p0))
+
+instance InterpretUnit u => CtxScale BoundingBox u where
+  ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
+
+instance InterpretUnit u => CtxTranslate BoundingBox u where
+  ctxTranslate sz dx dy = 
+      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
 
 
 
+-- UNil
 
 instance CtxRotate UNil u where
   ctxRotate _ _ = id

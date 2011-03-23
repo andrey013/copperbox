@@ -1,7 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
-{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -108,30 +105,3 @@ uconvertLocImg :: (InterpretUnit u, InterpretUnit u1, Functor t)
                => LocImage t u -> LocImage t u1
 uconvertLocImg = uconvertR1a
 
---------------------------------------------------------------------------------
--- affine trans
-
-{-
-
-instance (Rotate (t Double), Functor t, InterpretUnit u) => 
-    Rotate (LocImage t u) where
-  rotate ang = affineTransR1a (rotate ang) (rotate ang)
-
--- Note - with curent implementation of Wumpus-Core the 
--- point-of-rotation is always a Double. Potentially that makes
--- this instance useless...
--- 
-instance (RotateAbout (t Double), Functor t, InterpretUnit u) => 
-    RotateAbout (LocImage t u) where
-  rotateAbout ang dpt = affineTransR1a (rotateAbout ang dpt) (rotateAbout ang dpt)
-
-
-instance (Scale (t Double), Functor t, InterpretUnit u) => 
-    Scale (LocImage t u) where
-  scale sx sy = affineTransR1a (scale sx sy) (scale sx sy)
-
-instance (Translate (t Double), Functor t, InterpretUnit u) => 
-    Translate (LocImage t u) where
-  translate dx dy = affineTransR1a (translate dx dy) (translate dx dy)
-
--}
