@@ -106,20 +106,20 @@ pointTrans2 fn bb =
 
 
 
-instance AffineTransform (BoundingBox Double) where
-  affineTransform mtrx = pointTransform  (mtrx *#)
+instance DTransform (BoundingBox Double) where
+  dtransform mtrx = pointTransform  (mtrx *#)
 
-instance AffineRotate (BoundingBox Double) where
-  affineRotate theta = pointTransform (affineRotate theta)
+instance DRotate (BoundingBox Double) where
+  drotate theta = pointTransform (drotate theta)
 
-instance AffineRotateAbout (BoundingBox Double) where
-  affineRotateAbout theta pt = pointTrans2 (affineRotateAbout theta pt)
+instance DRotateAbout (BoundingBox Double) where
+  drotateAbout theta pt = pointTrans2 (drotateAbout theta pt)
 
-instance AffineScale (BoundingBox Double) where
-  affineScale sx sy = pointTransform (affineScale sx sy)
+instance DScale (BoundingBox Double) where
+  dscale sx sy = pointTransform (dscale sx sy)
 
-instance AffineTranslate (BoundingBox Double) where
-  affineTranslate dx dy = pointTransform (affineTranslate dx dy)
+instance DTranslate (BoundingBox Double) where
+  dtranslate dx dy = pointTransform (dtranslate dx dy)
 
 
 

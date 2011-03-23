@@ -24,21 +24,21 @@ main = do
 
 pic1 :: Picture
 pic1 = illustrateBounds grey $ frame $ 
-    [ uniformScale 0.5 $ square blue 50 (P2 100 100)
+    [ dscale 0.5 0.5 $ square blue 50 (P2 100 100)
     , square red 50 (P2 100 100)
     ]
 
 
 pic2 :: Picture
 pic2 = illustrateBounds grey $ frame $ 
-    [ uniformScale 0.5 $ ellipseHH blue 25 (P2 100 100)
+    [ dscale 0.5 0.5 $ ellipseHH blue 25 (P2 100 100)
     , ellipseHH red 25 (P2 100 100)
     ]
 
 
 pic3 :: Picture
 pic3 = illustrateBounds grey $ frame $
-    [ uniformScale 0.5 $ label blue (P2 100 100)
+    [ dscale 0.5 0.5 $ label blue (P2 100 100)
     , label red (P2 100 100)
     ]
 

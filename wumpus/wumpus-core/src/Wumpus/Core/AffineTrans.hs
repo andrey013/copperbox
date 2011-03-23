@@ -55,24 +55,24 @@
 -- they cannot be accommodated without some monadic context.
 -- 
 -- For this reason, the naming scheme for the affine classes was
--- changed at revision 0.50.0 to the current long-winded names.
+-- changed at revision 0.50.0 to the current \"d\"-prefixed names.
 -- This allows higher-level frameworks to define their own 
 -- functions or class-methods using the obvious good names 
 -- (@rotate@, @scale@ etc.). The derived operations (@rotate30@, 
--- @uniformScale, etc.) have been removed, an higher-level 
+-- @uniformScale, etc.) have been removed as a higher-level 
 -- implementation is expected to re-implement them accounting for 
--- units as necessary.
+-- polymorphic units as necessary.
 --  
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.AffineTrans
   ( 
   -- * Type classes
-    AffineTransform(..)
-  , AffineRotate(..)
-  , AffineRotateAbout(..)
-  , AffineScale(..)
-  , AffineTranslate(..)
+    DTransform(..)
+  , DRotate(..)
+  , DRotateAbout(..)
+  , DScale(..)
+  , DTranslate(..)
 
 
   ) where
@@ -86,51 +86,51 @@ import Wumpus.Core.Geometry
 
 -- | Apply a matrix transformation directly.
 --
-class AffineTransform t where
-  affineTransform :: DMatrix3'3 -> t -> t
+class DTransform t where
+  dtransform :: DMatrix3'3 -> t -> t
 
 
-instance AffineTransform () where
-  affineTransform _ = id
+instance DTransform () where
+  dtransform _ = id
 
-instance AffineTransform a => AffineTransform (Maybe a) where
-  affineTransform = fmap . affineTransform
+instance DTransform a => DTransform (Maybe a) where
+  dtransform = fmap . dtransform
 
-instance (AffineTransform a, AffineTransform b) => 
-    AffineTransform (a,b)  where
-  affineTransform mtrx (a,b) = (affineTransform mtrx a, affineTransform mtrx b)
+instance (DTransform a, DTransform b) => 
+    DTransform (a,b)  where
+  dtransform mtrx (a,b) = (dtransform mtrx a, dtransform mtrx b)
 
 
-instance AffineTransform (Point2 Double) where
-  affineTransform ctm = (ctm *#)
+instance DTransform (Point2 Double) where
+  dtransform ctm = (ctm *#)
 
-instance AffineTransform (Vec2 Double) where
-  affineTransform ctm = (ctm *#)
+instance DTransform (Vec2 Double) where
+  dtransform ctm = (ctm *#)
 
 
 --------------------------------------------------------------------------------
 
 -- | Type class for rotation.
 -- 
-class AffineRotate t where
-  affineRotate :: Radian -> t -> t
+class DRotate t where
+  drotate :: Radian -> t -> t
 
-instance AffineRotate () where
-  affineRotate _ = id
+instance DRotate () where
+  drotate _ = id
 
-instance AffineRotate a => AffineRotate (Maybe a) where
-  affineRotate = fmap . affineRotate
-
-
-instance (AffineRotate a, AffineRotate b) => AffineRotate (a,b)  where
-  affineRotate ang (a,b) = (affineRotate ang a, affineRotate ang b)
+instance DRotate a => DRotate (Maybe a) where
+  drotate = fmap . drotate
 
 
-instance AffineRotate (Point2 Double) where
-  affineRotate ang = ((rotationMatrix ang) *#)
+instance (DRotate a, DRotate b) => DRotate (a,b)  where
+  drotate ang (a,b) = (drotate ang a, drotate ang b)
 
-instance AffineRotate (Vec2 Double) where
-  affineRotate ang = ((rotationMatrix ang) *#)
+
+instance DRotate (Point2 Double) where
+  drotate ang = ((rotationMatrix ang) *#)
+
+instance DRotate (Vec2 Double) where
+  drotate ang = ((rotationMatrix ang) *#)
 
 --
 --
@@ -140,72 +140,70 @@ instance AffineRotate (Vec2 Double) where
 -- Note - the point is a @DPoint2@ - i.e. it has PostScript points
 -- for x and y-units.
 --
-class AffineRotateAbout t where
-  affineRotateAbout :: Radian -> DPoint2 -> t -> t
+class DRotateAbout t where
+  drotateAbout :: Radian -> DPoint2 -> t -> t
 
 
-instance AffineRotateAbout () where
-  affineRotateAbout _ _ = id
+instance DRotateAbout () where
+  drotateAbout _ _ = id
 
-instance AffineRotateAbout a => AffineRotateAbout (Maybe a) where
-  affineRotateAbout ang pt = fmap (affineRotateAbout ang pt)
-
-
-instance (AffineRotateAbout a, AffineRotateAbout b) => 
-    AffineRotateAbout (a,b) where
-  affineRotateAbout ang pt (a,b) = ( affineRotateAbout ang pt a
-                                   , affineRotateAbout ang pt b )
-
-instance AffineRotateAbout (Point2 Double) where
-  affineRotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
+instance DRotateAbout a => DRotateAbout (Maybe a) where
+  drotateAbout ang pt = fmap (drotateAbout ang pt)
 
 
-instance AffineRotateAbout (Vec2 Double) where
-  affineRotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
+instance (DRotateAbout a, DRotateAbout b) => DRotateAbout (a,b) where
+  drotateAbout ang pt (a,b) = (drotateAbout ang pt a, drotateAbout ang pt b)
+
+instance DRotateAbout (Point2 Double) where
+  drotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
+
+
+instance DRotateAbout (Vec2 Double) where
+  drotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
   
 --------------------------------------------------------------------------------
 -- Scale
 
 -- | Type class for scaling.
 --
-class AffineScale t where
-  affineScale :: Double -> Double -> t -> t
+class DScale t where
+  dscale :: Double -> Double -> t -> t
 
 
-instance AffineScale () where
-  affineScale _ _ = id
+instance DScale () where
+  dscale _ _ = id
 
-instance AffineScale a => AffineScale (Maybe a) where
-  affineScale sx sy = fmap (affineScale sx sy)
+instance DScale a => DScale (Maybe a) where
+  dscale sx sy = fmap (dscale sx sy)
 
-instance (AffineScale a, AffineScale b) => AffineScale (a,b) where
-  affineScale sx sy (a,b) = (affineScale sx sy a, affineScale sx sy b)
+instance (DScale a, DScale b) => DScale (a,b) where
+  dscale sx sy (a,b) = (dscale sx sy a, dscale sx sy b)
 
-instance AffineScale (Point2 Double) where
-  affineScale sx sy = ((scalingMatrix sx sy) *#)
+instance DScale (Point2 Double) where
+  dscale sx sy = ((scalingMatrix sx sy) *#)
 
-instance AffineScale (Vec2 Double) where
-  affineScale sx sy = ((scalingMatrix sx sy) *#)
+instance DScale (Vec2 Double) where
+  dscale sx sy = ((scalingMatrix sx sy) *#)
 
 --------------------------------------------------------------------------------
 -- Translate
 
 -- | Type class for translation.
 --
-class AffineTranslate t where
-  affineTranslate :: Double -> Double -> t -> t
+class DTranslate t where
+  dtranslate :: Double -> Double -> t -> t
 
-instance AffineTranslate a => AffineTranslate (Maybe a) where
-  affineTranslate dx dy = fmap (affineTranslate dx dy)
+instance DTranslate a => DTranslate (Maybe a) where
+  dtranslate dx dy = fmap (dtranslate dx dy)
 
-instance (AffineTranslate a, AffineTranslate b) => 
-    AffineTranslate (a,b) where
-  affineTranslate dx dy (a,b) = (affineTranslate dx dy a, affineTranslate dx dy b)
+instance (DTranslate a, DTranslate b) => 
+    DTranslate (a,b) where
+  dtranslate dx dy (a,b) = (dtranslate dx dy a, dtranslate dx dy b)
 
-instance AffineTranslate (Point2 Double) where
-  affineTranslate dx dy (P2 x y) = P2 (x + dx) (y + dy)
+instance DTranslate (Point2 Double) where
+  dtranslate dx dy (P2 x y) = P2 (x + dx) (y + dy)
 
-instance AffineTranslate (Vec2 Double) where
-  affineTranslate dx dy (V2 x y) = V2 (x + dx) (y + dy)
+instance DTranslate (Vec2 Double) where
+  dtranslate dx dy (V2 x y) = V2 (x + dx) (y + dy)
 
 

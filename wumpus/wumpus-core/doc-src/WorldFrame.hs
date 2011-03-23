@@ -7,10 +7,11 @@ import Wumpus.Core.Colour ( black )
 import Wumpus.Core.Text.StandardEncoding
 
 main :: IO ()
-main = writeEPS "WorldFrame.eps" world_frame
+main = writeEPS "./out/WorldFrame.eps" world_frame >>
+       writeSVG "./out/WorldFrame.svg" world_frame
 
 world_frame :: Picture
-world_frame = uniformScale 0.75 $ 
+world_frame = dscale 0.75 0.75 $ 
     frame [ ogin, btm_right, top_left, top_right
           , x_axis, y_axis, line1
           ]
@@ -35,6 +36,5 @@ makeLabelPrim = textlabel black attrs
 makeLinePrim :: Double -> DPoint2 -> DPoint2 -> Primitive
 makeLinePrim lw a b = ostroke black attrs $ primPath a [absLineTo b]
   where
-    attrs = default_stroke_attr {line_width=lw}
-
+    attrs = default_stroke_attr { line_width =  lw }
 

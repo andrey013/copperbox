@@ -50,15 +50,23 @@ description:
   .
   v0.43.0 to v0.50.0:
   .
-  * Major change hence the version number jump - re-worked unit 
-    type classes. They are now in the module @Core.Unit@, which 
-    replaces the module @Core.PtSize@. The classes @PSUnit@ and 
-    @FromPtSize@ are replaced by the class @PtSize@. The name 
-    @PtSize@ was previously used for a type name - this type is 
-    now @PsPoint@. NOTE - the class constraint @PtSize@ now 
-    appears on more function signatures than previously, clients
-    will have to update accordingly.
-  .
+  * Major change hence the version number jump - the notion of 
+    polymorphic unit has been largely removed (it remains only 
+    for the geometric objects @Point2@, @Vec2@ etc.). The 
+    superficial treatment of units in Wumpus-Core was actually
+    hampering their more substantial treatment in Wumpus-Basic.
+    Certain useful units @em@ and @en@ are contextual on 
+    the \"current point size\", such units cannot be handled in
+    Wumpus-Core which has no notion of a \"graphics state\". 
+    To improve Wumpus-Core, all objects apart from the ones
+    in @Core.Geometry@ are now fixed to use Double (representing 
+    a PostScript point) as the unit. This includes the affine
+    transformation classes which have been renamed - it is 
+    expected that a higher-level layer that wants a systematic 
+    treatment of units will have to implement its own affine 
+    classes, so the versions in Wumpus-Core have relinquished  
+    the good names.
+  .  
   * Picture API change. Various function names changed - 
     @lineTo@ becomes @absLineTo@ and @curveTo@ becomes 
     @absCurveTo@. The path builders are qualified with /Prim/, 

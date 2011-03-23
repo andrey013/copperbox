@@ -529,30 +529,30 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
 -- update (frame change).
 --
 
-instance AffineTransform Picture where
-  affineTransform mtrx = 
+instance DTransform Picture where
+  dtransform mtrx = 
     mapLocale $ \(bb,xs) -> let cmd = Matrix mtrx
-                            in (affineTransform mtrx bb, cmd : xs)
+                            in (dtransform mtrx bb, cmd : xs)
 
-instance AffineRotate Picture where
-  affineRotate theta = 
-    mapLocale $ \(bb,xs) -> (affineRotate theta bb, Rotate theta:xs)
+instance DRotate Picture where
+  drotate theta = 
+    mapLocale $ \(bb,xs) -> (drotate theta bb, Rotate theta:xs)
 
 
-instance AffineRotateAbout Picture where
-  affineRotateAbout theta pt = 
+instance DRotateAbout Picture where
+  drotateAbout theta pt = 
     mapLocale $ \(bb,xs) -> let cmd = RotAbout theta pt
-                            in (affineRotateAbout theta pt bb, cmd : xs)
+                            in (drotateAbout theta pt bb, cmd : xs)
 
-instance AffineScale Picture where
-  affineScale sx sy = 
+instance DScale Picture where
+  dscale sx sy = 
     mapLocale $ \(bb,xs) -> let cmd = Scale sx sy
-                            in (affineScale sx sy bb, cmd : xs)
+                            in (dscale sx sy bb, cmd : xs)
 
-instance AffineTranslate Picture where
-  affineTranslate dx dy = 
+instance DTranslate Picture where
+  dtranslate dx dy = 
     mapLocale $ \(bb,xs) -> let cmd = Translate dx dy
-                            in ( affineTranslate dx dy bb, cmd : xs)
+                            in (dtranslate dx dy bb, cmd : xs)
                      
 
 
@@ -570,82 +570,69 @@ mapLocale f (Picture lc ones)  = Picture (f lc) ones
 -- (ShapeCTM is not a real matrix).
 -- 
 
-instance AffineRotate Primitive where
-  affineRotate r (PPath a path)   = PPath a    $ rotatePath r path
-  affineRotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
-  affineRotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
-  affineRotate r (PContext a chi) = PContext a $ affineRotate r chi 
-  affineRotate r (PSVG a chi)     = PSVG a     $ affineRotate r chi 
-  affineRotate r (PGroup xs)      = PGroup     $ fmap (affineRotate r) xs
-  affineRotate r (PClip p chi)    = PClip (rotatePath r p) (affineRotate r chi)
+instance DRotate Primitive where
+  drotate r (PPath a path)   = PPath a    $ rotatePath r path
+  drotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
+  drotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
+  drotate r (PContext a chi) = PContext a $ drotate r chi 
+  drotate r (PSVG a chi)     = PSVG a     $ drotate r chi 
+  drotate r (PGroup xs)      = PGroup     $ fmap (drotate r) xs
+  drotate r (PClip p chi)    = PClip (rotatePath r p) (drotate r chi)
 
-instance AffineRotateAbout Primitive where
-  affineRotateAbout ang p0 (PPath a path)   = 
+instance DRotateAbout Primitive where
+  drotateAbout ang p0 (PPath a path)   = 
       PPath a    $ rotateAboutPath ang p0 path
 
-  affineRotateAbout ang  p0 (PLabel a lbl)   = 
+  drotateAbout ang  p0 (PLabel a lbl)   = 
       PLabel a   $ rotateAboutLabel ang p0 lbl
 
-  affineRotateAbout ang p0 (PEllipse a ell) = 
+  drotateAbout ang p0 (PEllipse a ell) = 
       PEllipse a $ rotateAboutEllipse ang p0 ell
 
-  affineRotateAbout ang p0 (PContext a chi) = 
-      PContext a $ affineRotateAbout ang p0 chi
+  drotateAbout ang p0 (PContext a chi) = 
+      PContext a $ drotateAbout ang p0 chi
 
-  affineRotateAbout ang p0 (PSVG a chi)     = 
-      PSVG a     $ affineRotateAbout ang p0 chi
+  drotateAbout ang p0 (PSVG a chi)     = 
+      PSVG a     $ drotateAbout ang p0 chi
 
-  affineRotateAbout ang p0 (PGroup xs)      = 
-      PGroup     $ fmap (affineRotateAbout ang p0) xs
+  drotateAbout ang p0 (PGroup xs)      = 
+      PGroup     $ fmap (drotateAbout ang p0) xs
 
-  affineRotateAbout ang p0 (PClip p chi)    = 
-      PClip (rotateAboutPath ang p0 p) (affineRotateAbout ang p0 chi)
-
-
-instance AffineScale Primitive where
-  affineScale sx sy (PPath a path)    = 
-      PPath a    $ scalePath sx sy path
-
-  affineScale sx sy (PLabel a lbl)    = 
-      PLabel a   $ scaleLabel sx sy lbl
-
-  affineScale sx sy (PEllipse a ell)  = 
-      PEllipse a $ scaleEllipse sx sy ell
-
-  affineScale sx sy (PContext a chi)  = 
-      PContext a $ affineScale sx sy chi
-
-  affineScale sx sy (PSVG a chi)      = 
-      PSVG a     $ affineScale sx sy chi
-
-  affineScale sx sy (PGroup xs)       = 
-      PGroup     $ fmap (affineScale sx sy) xs
-
-  affineScale sx sy (PClip p chi)     = 
-      PClip (scalePath sx sy p) (affineScale sx sy chi)
+  drotateAbout ang p0 (PClip p chi)    = 
+      PClip (rotateAboutPath ang p0 p) (drotateAbout ang p0 chi)
 
 
-instance AffineTranslate Primitive where
-  affineTranslate dx dy (PPath a path)   = 
+instance DScale Primitive where
+  dscale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
+  dscale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
+  dscale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
+  dscale sx sy (PContext a chi)  = PContext a $ dscale sx sy chi
+  dscale sx sy (PSVG a chi)      = PSVG a     $ dscale sx sy chi
+  dscale sx sy (PGroup xs)       = PGroup     $ fmap (dscale sx sy) xs
+  dscale sx sy (PClip p chi)     = PClip (scalePath sx sy p) (dscale sx sy chi)
+
+
+instance DTranslate Primitive where
+  dtranslate dx dy (PPath a path)   = 
       PPath a    $ translatePath dx dy path
 
-  affineTranslate dx dy (PLabel a lbl)   = 
+  dtranslate dx dy (PLabel a lbl)   = 
       PLabel a   $ translateLabel dx dy lbl
 
-  affineTranslate dx dy (PEllipse a ell) = 
+  dtranslate dx dy (PEllipse a ell) = 
       PEllipse a $ translateEllipse dx dy ell
 
-  affineTranslate dx dy (PContext a chi) = 
-      PContext a $ affineTranslate dx dy chi
+  dtranslate dx dy (PContext a chi) = 
+      PContext a $ dtranslate dx dy chi
 
-  affineTranslate dx dy (PSVG a chi)     = 
-      PSVG a     $ affineTranslate dx dy chi
+  dtranslate dx dy (PSVG a chi)     = 
+      PSVG a     $ dtranslate dx dy chi
 
-  affineTranslate dx dy (PGroup xs)      = 
-      PGroup     $ fmap (affineTranslate dx dy) xs
+  dtranslate dx dy (PGroup xs)      = 
+      PGroup     $ fmap (dtranslate dx dy) xs
 
-  affineTranslate dx dy (PClip p chi)    = 
-      PClip (translatePath dx dy p) (affineTranslate dx dy chi)
+  dtranslate dx dy (PClip p chi)    = 
+      PClip (translatePath dx dy p) (dtranslate dx dy chi)
 
 
 --------------------------------------------------------------------------------
@@ -777,7 +764,7 @@ extractRelPath :: PrimPath -> (DPoint2, [PrimPathSegment])
 extractRelPath (PrimPath ss ctm) = (start, usegs)
   where 
     (start,dctm)  = unCTM ctm
-    mtrafo        = affineTransform (matrixRepCTM dctm)
+    mtrafo        = dtransform (matrixRepCTM dctm)
     usegs         = map fn ss
     
     fn (RelCurveTo v1 v2 v3) = RelCurveTo (mtrafo v1) (mtrafo v2) (mtrafo v3)

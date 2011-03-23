@@ -23,16 +23,16 @@ pic1 = frame [ ellipse01 $ P2 50 50
 
 ellipse01 :: DPoint2 -> Primitive
 ellipse01 pt = cstroke black default_stroke_attr $ 
-    curvedPath $ bezierEllipse 20 30 pt
+    curvedPrimPath $ bezierEllipse 20 30 pt
 
 
 ellipse02 :: DPoint2 -> Primitive
 ellipse02 pt = cstroke red default_stroke_attr $ 
-    curvedPath $ rbezierEllipse 20 30 0 pt
+    curvedPrimPath $ rbezierEllipse 20 30 0 pt
 
 
 
 ellipse03 :: DPoint2 -> Primitive
 ellipse03 pt = cstroke red default_stroke_attr $ 
-    curvedPath $ rbezierEllipse 20 30 (negate $ d2r (10::Double)) pt
+    curvedPrimPath $ rbezierEllipse 20 30 (negate $ d2r (10::Double)) pt
 

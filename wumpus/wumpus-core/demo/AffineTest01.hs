@@ -18,7 +18,7 @@ main = runAlgs [ text_ata, circle_ata, ellipse_ata, path_ata ]
                [ circle_cpa, ellipse_cpa, path_cpa ]
 
 
-rot30 :: AffineRotate t => t -> t
+rot30 :: DRotate t => t -> t
 rot30 = rotate30
 
 rot30P :: Primitive -> Primitive

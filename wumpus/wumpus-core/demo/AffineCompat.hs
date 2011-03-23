@@ -43,53 +43,53 @@ import Wumpus.Core
 
 -- | Rotate by 30 degrees about the origin. 
 --
-rotate30 :: AffineRotate t => t -> t
-rotate30 = affineRotate (pi/6) 
+rotate30 :: DRotate t => t -> t
+rotate30 = drotate (pi/6) 
 
 -- | Rotate by 30 degrees about the supplied point.
 --
-rotate30About :: AffineRotateAbout t => DPoint2 -> t -> t
-rotate30About = affineRotateAbout (pi/6) 
+rotate30About :: DRotateAbout t => DPoint2 -> t -> t
+rotate30About = drotateAbout (pi/6) 
 
 -- | Rotate by 45 degrees about the origin. 
 --
-rotate45 :: AffineRotate t => t -> t
-rotate45 = affineRotate (pi/4) 
+rotate45 :: DRotate t => t -> t
+rotate45 = drotate (pi/4) 
 
 -- | Rotate by 45 degrees about the supplied point.
 --
-rotate45About :: AffineRotateAbout t => DPoint2 -> t -> t
-rotate45About = affineRotateAbout (pi/4)
+rotate45About :: DRotateAbout t => DPoint2 -> t -> t
+rotate45About = drotateAbout (pi/4)
 
 -- | Rotate by 60 degrees about the origin. 
 --
-rotate60 :: AffineRotate t => t -> t
-rotate60 = affineRotate (2*pi/3) 
+rotate60 :: DRotate t => t -> t
+rotate60 = drotate (2*pi/3) 
 
 -- | Rotate by 60 degrees about the supplied point.
 --
-rotate60About :: AffineRotateAbout t => DPoint2 -> t -> t
-rotate60About = affineRotateAbout (2*pi/3)
+rotate60About :: DRotateAbout t => DPoint2 -> t -> t
+rotate60About = drotateAbout (2*pi/3)
 
 -- | Rotate by 90 degrees about the origin. 
 --
-rotate90 :: AffineRotate t => t -> t
-rotate90 = affineRotate (pi/2) 
+rotate90 :: DRotate t => t -> t
+rotate90 = drotate (pi/2) 
 
 -- | Rotate by 90 degrees about the supplied point.
 --
-rotate90About :: AffineRotateAbout t => DPoint2 -> t -> t
-rotate90About = affineRotateAbout (pi/2)
+rotate90About :: DRotateAbout t => DPoint2 -> t -> t
+rotate90About = drotateAbout (pi/2)
 
 -- | Rotate by 120 degrees about the origin. 
 --
-rotate120 :: AffineRotate t => t -> t
-rotate120 = affineRotate (4*pi/3) 
+rotate120 :: DRotate t => t -> t
+rotate120 = drotate (4*pi/3) 
 
 -- | Rotate by 120 degrees about the supplied point.
 --
-rotate120About :: AffineRotateAbout t => DPoint2 -> t -> t
-rotate120About = affineRotateAbout (4*pi/3)
+rotate120About :: DRotateAbout t => DPoint2 -> t -> t
+rotate120About = drotateAbout (4*pi/3)
 
 
 
@@ -98,26 +98,26 @@ rotate120About = affineRotateAbout (4*pi/3)
 
 -- | Scale both x and y dimensions by the same amount.
 --
-uniformScale :: AffineScale t => Double -> t -> t
-uniformScale a = affineScale a a 
+uniformScale :: DScale t => Double -> t -> t
+uniformScale a = dscale a a 
 
 -- | Reflect in the X-plane about the origin.
 --
-reflectX :: AffineScale t => t -> t
-reflectX = affineScale (-1) 1
+reflectX :: DScale t => t -> t
+reflectX = dscale (-1) 1
 
 -- | Reflect in the Y-plane about the origin.
 --
-reflectY :: AffineScale t => t -> t
-reflectY = affineScale 1 (-1)
+reflectY :: DScale t => t -> t
+reflectY = dscale 1 (-1)
 
 --------------------------------------------------------------------------------
 -- Translations
 
 -- | Translate by the x and y components of a vector.
 --
-translateBy :: AffineTranslate t => DVec2 -> t -> t
-translateBy (V2 x y) = affineTranslate x y
+translateBy :: DTranslate t => DVec2 -> t -> t
+translateBy (V2 x y) = dtranslate x y
 
 
 --------------------------------------------------------------------------------
@@ -125,14 +125,12 @@ translateBy (V2 x y) = affineTranslate x y
 
 -- | Reflect in the X plane that intersects the supplied point. 
 --
-reflectXPlane :: (AffineScale t, AffineTranslate t) 
+reflectXPlane :: (DScale t, DTranslate t) 
               => DPoint2 -> t -> t
-reflectXPlane (P2 x y) = 
-    affineTranslate x y . affineScale (-1) 1 . affineTranslate (-x) (-y)
+reflectXPlane (P2 x y) = dtranslate x y . dscale (-1) 1 . dtranslate (-x) (-y)
 
 -- | Reflect in the Y plane that intersects the supplied point.
 --
-reflectYPlane :: (AffineScale t, AffineTranslate t) 
+reflectYPlane :: (DScale t, DTranslate t) 
               => DPoint2 -> t -> t
-reflectYPlane (P2 x y) = 
-    affineTranslate x y . affineScale 1 (-1) . affineTranslate (-x) (-y)
+reflectYPlane (P2 x y) = dtranslate x y . dscale 1 (-1) . dtranslate (-x) (-y)

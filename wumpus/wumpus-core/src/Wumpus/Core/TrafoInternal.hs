@@ -151,21 +151,27 @@ translateCTM x1 y1 (PrimCTM dx dy sx sy ang) =
 -- It is expected that the point is extracted from the matrix, so
 -- scales and rotations operate on the point coordinates as well
 -- as the scale and rotation components. 
+--
 
+-- | Scale the CTM.
+--
 scaleCTM :: Double -> Double -> PrimCTM -> PrimCTM
 scaleCTM x1 y1 (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = affineScale x1 y1 (P2 dx dy) 
+    let P2 x y = dscale x1 y1 (P2 dx dy) 
     in PrimCTM x y (x1*sx) (y1*sy) ang
 
-
+-- | Rotate the CTM.
+--
 rotateCTM :: Radian -> PrimCTM -> PrimCTM
 rotateCTM theta (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = affineRotate theta (P2 dx dy) 
+    let P2 x y = drotate theta (P2 dx dy) 
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
+-- | RotateAbout the CTM.
+--
 rotateAboutCTM :: Radian -> DPoint2 -> PrimCTM -> PrimCTM
 rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = affineRotateAbout theta pt (P2 dx dy)
+    let P2 x y = drotateAbout theta pt (P2 dx dy)
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
 
