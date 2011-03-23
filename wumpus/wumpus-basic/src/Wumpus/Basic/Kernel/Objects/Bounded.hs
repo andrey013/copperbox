@@ -106,11 +106,11 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 centerOrthoBBox :: (Fractional u, InterpretUnit u)
                 => Radian -> BoundingBox u -> Query (BoundingBox u)
 centerOrthoBBox theta bb = 
-    normalizeFDC bb >>= \dbb ->
+    normalizeCtxF bb >>= \dbb ->
     let ps  = boundaryCornerList dbb
         ctr = boundaryCenter dbb
-        ans = traceBoundary $ map (affineRotateAbout theta ctr) ps
-    in dinterpFDC ans
+        ans = traceBoundary $ map (drotateAbout theta ctr) ps
+    in dinterpCtxF ans
 
 
 

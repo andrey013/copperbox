@@ -98,7 +98,7 @@ import Control.Applicative
 
 
 norm2 :: InterpretUnit u => u -> u -> Query (Double,Double)
-norm2 a b = (,) <$> normalizeDC a <*> normalizeDC b
+norm2 a b = (,) <$> normalizeCtx a <*> normalizeCtx b
 
 makeGraphic :: Query a -> (a -> Primitive) -> Graphic u
 makeGraphic qy fn = qy >>= \a -> return $ Ans UNil (prim1 $ fn a)
@@ -107,14 +107,14 @@ makeGraphic qy fn = qy >>= \a -> return $ Ans UNil (prim1 $ fn a)
 makeLocGraphic :: InterpretUnit u 
                => Query a -> (a -> DPoint2 -> Primitive) -> LocGraphic u
 makeLocGraphic qy fn = promoteR1 $ \pt -> 
-    uconvertFDC pt >>= \dpt ->
+    normalizeCtxF pt >>= \dpt ->
     qy >>= \a -> return $ Ans UNil (prim1 $ fn a dpt)
 
 makeLocThetaGraphic :: InterpretUnit u 
                     => Query a -> (a -> DPoint2 -> Radian -> Primitive) 
                     -> LocThetaGraphic u
 makeLocThetaGraphic qy fn = promoteR2 $ \pt ang -> 
-    uconvertFDC pt >>= \dpt ->
+    normalizeCtxF pt >>= \dpt ->
     qy >>= \a -> return $ Ans UNil (prim1 $ fn a dpt ang)
 
 
@@ -137,7 +137,7 @@ makeLocThetaGraphic qy fn = promoteR2 $ \pt ang ->
 --
 locPP :: InterpretUnit u => [Vec2 u] -> LocQuery u PrimPath
 locPP vs = promoteR1 $ \ pt  ->
-    vectorPrimPath <$> uconvertFDC pt <*> mapM uconvertFDC vs
+    vectorPrimPath <$> normalizeCtxF pt <*> mapM normalizeCtxF vs
 
 
 
@@ -165,7 +165,7 @@ emptyLocPP = locPP []
 -- it is polymorphic on unit.
 --
 vertexPP :: InterpretUnit u => [Point2 u] -> Query PrimPath
-vertexPP xs = vertexPrimPath <$> mapM uconvertFDC xs
+vertexPP xs = vertexPrimPath <$> mapM normalizeCtxF xs
 
 
 
@@ -178,7 +178,7 @@ vertexPP xs = vertexPrimPath <$> mapM uconvertFDC xs
 -- it is polymorphic on unit.
 --
 curvePP :: InterpretUnit u => [Point2 u] -> Query PrimPath
-curvePP xs = curvedPrimPath <$> mapM uconvertFDC xs
+curvePP xs = curvedPrimPath <$> mapM normalizeCtxF xs
 
 
 --------------------------------------------------------------------------------
@@ -322,7 +322,7 @@ type KernChar u = (u,EscapedChar)
 uconvKernChar :: InterpretUnit u => [KernChar u] -> Query [KerningChar]
 uconvKernChar = mapM mf
   where
-    mf (u,ch) = (\u1 -> (u1,ch)) <$> normalizeDC u
+    mf (u,ch) = (\u1 -> (u1,ch)) <$> normalizeCtx u
 
 
 
@@ -433,7 +433,7 @@ circlePath :: InterpretUnit u
          => u -> LocQuery u PrimPath
 circlePath r = promoteR1 $ \pt  ->
     (\dr dpt -> curvedPrimPath $ bezierCircle dr dpt) 
-      <$> normalizeDC r <*> normalizeFDC pt
+      <$> normalizeCtx r <*> normalizeCtxF pt
 
 
 
@@ -489,7 +489,7 @@ ellipsePath :: InterpretUnit u
             => u -> u -> LocQuery u PrimPath
 ellipsePath rx ry = promoteR1 $ \pt ->
     (\drx dry dpt -> curvedPrimPath $ bezierEllipse drx dry dpt) 
-      <$> normalizeDC rx <*> normalizeDC ry <*> normalizeFDC pt
+      <$> normalizeCtx rx <*> normalizeCtx ry <*> normalizeCtxF pt
 
 
 -- | Helper for ellipse drawing.
@@ -498,7 +498,7 @@ rellipsePath :: InterpretUnit u
             => u -> u -> LocThetaQuery u PrimPath
 rellipsePath rx ry = promoteR2 $ \pt ang ->
     (\drx dry dpt -> curvedPrimPath $ rbezierEllipse drx dry ang dpt) 
-      <$> normalizeDC rx <*> normalizeDC ry <*> normalizeFDC pt
+      <$> normalizeCtx rx <*> normalizeCtx ry <*> normalizeCtxF pt
 
 
 
@@ -660,7 +660,7 @@ borderedRectangle w h = promoteR1 $ \pt ->
 -- 
 strokedDisk :: InterpretUnit u => u -> LocGraphic u
 strokedDisk radius = 
-    normalizeDC radius >>= body
+    normalizeCtx radius >>= body
   where
     body r = makeLocGraphic strokeAttr
                 (\(rgb,attr) pt -> strokeEllipse rgb attr r r pt)
@@ -682,7 +682,7 @@ strokedDisk radius =
 -- 
 filledDisk :: InterpretUnit u => u -> LocGraphic u
 filledDisk radius = 
-    normalizeDC radius >>= body
+    normalizeCtx radius >>= body
   where
     body r = makeLocGraphic fillAttr (\rgb pt -> fillEllipse rgb r r pt)
 
@@ -706,7 +706,7 @@ filledDisk radius =
 -- 
 borderedDisk :: InterpretUnit u => u -> LocGraphic u
 borderedDisk radius = 
-    normalizeDC radius >>= body
+    normalizeCtx radius >>= body
   where
     body r = makeLocGraphic borderedAttr
                 (\(frgb,attr,srgb) pt -> fillStrokeEllipse frgb attr srgb r r pt)

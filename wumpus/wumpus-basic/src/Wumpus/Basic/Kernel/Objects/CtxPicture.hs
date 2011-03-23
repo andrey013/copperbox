@@ -188,21 +188,26 @@ mapCtxPicture pf pic1 = CtxPicture $ \ctx -> fmap pf $ getCtxPicture pic1 ctx
 --------------------------------------------------------------------------------
 
 
-{-
+-- Note - CtxPicture is not Polymorphic on unit so it cannot 
+-- implement the Wumpus-Basic affine classes. 
+-- 
+-- It can implement the Wumpus-Basic classes, although this 
+-- potentially makes the API less usable \/ untuitive.
+-- 
 
-instance Rotate CtxPicture where 
-  rotate ang = mapCtxPicture (rotate ang)
+instance DRotate CtxPicture where 
+  drotate ang = mapCtxPicture (drotate ang)
 
-instance RotateAbout CtxPicture where
-  rotateAbout r pt = mapCtxPicture (rotateAbout r pt)
+instance DRotateAbout CtxPicture where
+  drotateAbout r pt = mapCtxPicture (drotateAbout r pt)
 
-instance Scale CtxPicture where
-  scale sx sy = mapCtxPicture (scale sx sy)
+instance DScale CtxPicture where
+  dscale sx sy = mapCtxPicture (dscale sx sy)
 
-instance Translate CtxPicture where
-  translate dx dy = mapCtxPicture (translate dx dy)
+instance DTranslate CtxPicture where
+  dtranslate dx dy = mapCtxPicture (dtranslate dx dy)
 
--}
+
 
 --------------------------------------------------------------------------------
 

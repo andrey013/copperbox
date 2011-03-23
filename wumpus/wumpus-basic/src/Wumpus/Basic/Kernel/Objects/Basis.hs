@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -34,6 +35,7 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
   ) where
 
+import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
@@ -150,20 +152,27 @@ clipObject pp =
 
 -- affine trans
 
-{-
-instance Rotate (t Double) => Rotate (ImageAns t Double) where
-  rotate ang (Ans ma p) = Ans (rotate ang ma) (rotate ang p)
 
 
-instance RotateAbout (t Double) => RotateAbout (ImageAns t Double) where
-  rotateAbout ang pt (Ans ma p) = 
-    Ans (rotateAbout ang pt ma) (rotateAbout ang pt p)
+instance (CtxRotate t u, InterpretUnit u) => 
+    CtxRotate (ImageAns t) u where
+  ctxRotate sz ang (Ans ma p) = Ans (ctxRotate sz ang ma) (drotate ang p)
 
 
-instance Scale (t Double) => Scale (ImageAns t Double) where
-  scale sx sy (Ans ma p) = Ans (scale sx sy ma) (scale sx sy p)
+instance (CtxRotateAbout t u, InterpretUnit u) => 
+    CtxRotateAbout (ImageAns t) u where
+  ctxRotateAbout sz ang pt (Ans ma p) = 
+    let dpt = normalizeF sz pt 
+    in Ans (ctxRotateAbout sz ang pt ma) (drotateAbout ang dpt p)
 
 
-instance Translate (t Double) => Translate (ImageAns t Double) where
-  translate dx dy (Ans ma p) = Ans (translate dx dy ma) (translate dx dy p)
--}
+instance (CtxScale t u, InterpretUnit u) => CtxScale (ImageAns t) u where
+  ctxScale sz sx sy (Ans ma p) = Ans (ctxScale sz sx sy ma) (dscale sx sy p)
+
+
+instance (CtxTranslate t u, InterpretUnit u) => 
+    CtxTranslate (ImageAns t) u where
+  ctxTranslate sz dx dy (Ans ma p) = 
+    let ddx = normalize sz dx
+        ddy = normalize sz dy
+    in Ans (ctxTranslate sz dx dy ma) (dtranslate ddx ddy p)

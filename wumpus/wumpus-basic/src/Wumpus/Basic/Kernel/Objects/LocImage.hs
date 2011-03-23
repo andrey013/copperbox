@@ -98,7 +98,7 @@ intoLocImage = liftA2 (\a (Ans _ p) -> Ans a p)
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                  uconvertFDC pt >>= \dpt ->
+                  uconvertCtxF pt >>= \dpt ->
                   return $ Ans UNil (prim1 $ zostroke $ emptyPrimPath dpt)
 
 

@@ -17,7 +17,8 @@
 
 module Wumpus.Basic.Kernel
   (
-    module Wumpus.Basic.Kernel.Base.BaseDefs
+    module Wumpus.Basic.Kernel.Base.AffineTrans
+  , module Wumpus.Basic.Kernel.Base.BaseDefs
   , module Wumpus.Basic.Kernel.Base.ContextFun
   , module Wumpus.Basic.Kernel.Base.DrawingContext
   , module Wumpus.Basic.Kernel.Base.FontMetrics
@@ -43,6 +44,7 @@ module Wumpus.Basic.Kernel
 
   ) where
 
+import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext

@@ -508,7 +508,7 @@ normZero u = if u < 0 then 0 else u
 --
 source_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 source_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz $ normZero u })
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz $ normZero u })
 
 
 -- | Set the connector destination separator.
@@ -521,7 +521,7 @@ source_sep u = withFontSize $ \sz ->
 --
 dest_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 dest_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_dst_arm = uconvertScalar sz $ normZero u })
+    connectorUpd (\s -> s { dc_conn_dst_arm = uconvert1 sz $ normZero u })
 
 
 
@@ -530,8 +530,8 @@ dest_sep u = withFontSize $ \sz ->
 --
 uniform_conn_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 uniform_conn_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz $ normZero u
-                          , dc_conn_dst_arm = uconvertScalar sz $ normZero u })
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz $ normZero u
+                          , dc_conn_dst_arm = uconvert1 sz $ normZero u })
 
 
 
@@ -548,7 +548,7 @@ uniform_conn_sep u = withFontSize $ \sz ->
 --
 source_offset :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 source_offset u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_offset = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_src_offset = uconvert1 sz u })
 
 
 -- | Set the connector destination offset.
@@ -557,7 +557,7 @@ source_offset u = withFontSize $ \sz ->
 --
 dest_offset :: (Ord u, InterpretUnit u) => u -> DrawingContextF
 dest_offset u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_dst_offset = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_dst_offset = uconvert1 sz u })
 
 
 -- | Set the connector arc angle.
@@ -571,7 +571,7 @@ conn_arc_angle ang =
 --
 source_arm_len :: InterpretUnit u => u -> DrawingContextF
 source_arm_len u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz u })
                        
 
 
@@ -580,7 +580,7 @@ source_arm_len u = withFontSize $ \sz ->
 --
 dest_arm_len :: InterpretUnit u => u -> DrawingContextF
 dest_arm_len u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_dst_arm = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_dst_arm = uconvert1 sz u })
 
 
 
@@ -590,12 +590,12 @@ dest_arm_len u = withFontSize $ \sz ->
 --
 uniform_arm_len :: InterpretUnit u => u -> DrawingContextF
 uniform_arm_len u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvertScalar sz u
-                          , dc_conn_dst_arm = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz u
+                          , dc_conn_dst_arm = uconvert1 sz u })
 
 
 -- | Set the connector loop size.
 --
 conn_loop_size :: InterpretUnit u => u -> DrawingContextF
 conn_loop_size u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_loop_size = uconvertScalar sz u })
+    connectorUpd (\s -> s { dc_conn_loop_size = uconvert1 sz u })

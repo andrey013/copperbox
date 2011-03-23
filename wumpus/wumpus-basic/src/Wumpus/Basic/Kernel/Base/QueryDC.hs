@@ -21,12 +21,13 @@
 module Wumpus.Basic.Kernel.Base.QueryDC
   ( 
 
-    normalizeDC
-  , normalizeFDC
-  , dinterpDC
-  , dinterpFDC
+    normalizeCtx
+  , normalizeCtxF
+  , dinterpCtx
+  , dinterpCtxF
 
-  , uconvertFDC
+  , uconvertCtx1
+  , uconvertCtxF
 
   , pointSize
 
@@ -85,22 +86,26 @@ import Control.Applicative
 
 
 
-normalizeDC :: (DrawingCtxM m, InterpretUnit u) => u -> m Double
-normalizeDC u = (\sz -> normalize sz u) <$> pointSize
+normalizeCtx :: (DrawingCtxM m, InterpretUnit u) => u -> m Double
+normalizeCtx u = (\sz -> normalize sz u) <$> pointSize
 
-normalizeFDC :: (DrawingCtxM m, Functor t, InterpretUnit u) 
+normalizeCtxF :: (DrawingCtxM m, Functor t, InterpretUnit u) 
              => t u -> m (t Double)
-normalizeFDC t = (\sz -> fmap (normalize sz) t) <$> pointSize
+normalizeCtxF t = (\sz -> fmap (normalize sz) t) <$> pointSize
 
-dinterpDC :: (DrawingCtxM m, InterpretUnit u) => Double -> m u
-dinterpDC u = (\sz -> dinterp sz u) <$> pointSize
+dinterpCtx :: (DrawingCtxM m, InterpretUnit u) => Double -> m u
+dinterpCtx u = (\sz -> dinterp sz u) <$> pointSize
 
-dinterpFDC :: (DrawingCtxM m, Functor t, InterpretUnit u) => t Double -> m (t u)
-dinterpFDC u = (\sz -> fmap (dinterp sz) u) <$> pointSize
+dinterpCtxF :: (DrawingCtxM m, Functor t, InterpretUnit u) => t Double -> m (t u)
+dinterpCtxF u = (\sz -> fmap (dinterp sz) u) <$> pointSize
 
-uconvertFDC :: (DrawingCtxM m, Functor t, InterpretUnit u, InterpretUnit u1) 
+uconvertCtx1 :: (DrawingCtxM m, InterpretUnit u, InterpretUnit u1) 
+             => u -> m u1
+uconvertCtx1 t = (\sz -> uconvert1 sz t) <$> pointSize
+
+uconvertCtxF :: (DrawingCtxM m, Functor t, InterpretUnit u, InterpretUnit u1) 
             => t u -> m (t u1)
-uconvertFDC t = (\sz -> uconvertF sz t) <$> pointSize
+uconvertCtxF t = (\sz -> uconvertF sz t) <$> pointSize
 
 
 pointSize :: DrawingCtxM m => m FontSize
@@ -172,8 +177,7 @@ roundCornerSize =
 textMargin :: (DrawingCtxM m, InterpretUnit u) => m (u,u)
 textMargin = post <$> asksDC dc_font_size <*> asksDC dc_text_margin
   where
-    post sz (TextMargin xem yem) = (fn sz xem, fn sz yem)
-    fn sz em                     = dinterp sz $ uconvertScalar sz em
+    post sz (TextMargin xem yem) = (uconvert1 sz xem, uconvert1 sz yem)
 
 
 
@@ -284,21 +288,21 @@ connectorAsks f = f <$> asksDC dc_connector_props
 
 
 connectorSrcSep :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorSrcSep = (\sz u -> uconvertScalar sz u) 
+connectorSrcSep = (\sz u -> uconvert1 sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_src_sep
 
 
 connectorDstSep :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorDstSep = (\sz u -> uconvertScalar sz u) 
+connectorDstSep = (\sz u -> uconvert1 sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_dst_sep
 
 connectorSrcOffset :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorSrcOffset = (\sz u -> uconvertScalar sz u) 
+connectorSrcOffset = (\sz u -> uconvert1 sz u) 
                        <$> pointSize <*> connectorAsks dc_conn_src_offset
 
 
 connectorDstOffset :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorDstOffset = (\sz u -> uconvertScalar sz u) 
+connectorDstOffset = (\sz u -> uconvert1 sz u) 
                        <$> pointSize <*> connectorAsks dc_conn_dst_offset
 
 
@@ -307,15 +311,15 @@ connectorArcAngle = connectorAsks dc_conn_arc_ang
 
 
 connectorSrcArm :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorSrcArm = (\sz u -> uconvertScalar sz u) 
+connectorSrcArm = (\sz u -> uconvert1 sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_src_arm
 
 
 connectorDstArm :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorDstArm = (\sz u -> uconvertScalar sz u) 
+connectorDstArm = (\sz u -> uconvert1 sz u) 
                     <$> pointSize <*> connectorAsks dc_conn_dst_arm
 
 
 connectorLoopSize :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorLoopSize = (\sz u -> uconvertScalar sz u) 
+connectorLoopSize = (\sz u -> uconvert1 sz u) 
                       <$> pointSize <*> connectorAsks dc_conn_loop_size

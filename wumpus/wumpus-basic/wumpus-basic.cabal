@@ -135,6 +135,7 @@ library
     Wumpus.Basic.Geometry.Paths,
     Wumpus.Basic.Geometry.Quadrant,
     Wumpus.Basic.Kernel,
+    Wumpus.Basic.Kernel.Base.AffineTrans,
     Wumpus.Basic.Kernel.Base.BaseDefs,
     Wumpus.Basic.Kernel.Base.ContextFun,
     Wumpus.Basic.Kernel.Base.DrawingContext,

@@ -33,13 +33,14 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , replaceL
   , replaceR
 
-  -- * Unit phantom types 
+  -- * Unit phantom type
   , UNil(..)
-  , UOne(..)
 
   -- * Unit interpretation with respect to the current Point size
   , InterpretUnit(..)
-  , uconvertScalar
+  , dinterpF
+  , normalizeF
+  , uconvert1
   , uconvertF
   , intraMapPoint
   , intraMapFunctor
@@ -85,7 +86,7 @@ type family MonUnit m :: *
 class LengthTolerance u where length_tolerance :: u
 
 instance LengthTolerance Double     where length_tolerance = 0.1
-instance LengthTolerance AfmUnit    where length_tolerance = 0.1
+instance LengthTolerance AfmUnit    where length_tolerance = 1.0
 
 
 infixr 6 `oplus`
@@ -210,39 +211,20 @@ replaceR = bimapR . const
 -- Simple objects wrapped with unit phatom type 
 
 
+-- | The empty data type - i.e. @()@ - wrapped with a phantom unit 
+-- parameter.
+--
 data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
 
-data UOne a u = UOne a        deriving (Eq,Ord,Read,Show)
 
 instance Functor UNil where
   fmap _ UNil= UNil
 
 
-instance Functor (UOne a) where
-  fmap _ (UOne a) = UOne a
-
-
-
-
 instance OPlus (UNil u) where
   _ `oplus` _ = UNil
 
-instance OPlus a => OPlus (UOne a u) where
-  UOne a `oplus` UOne b = UOne $ a `oplus` b
 
-{-
-instance Rotate (UNil u) where
-  rotate _ = id
-
-instance Scale (UNil u) where
-  scale _ _  = id 
-
-instance RotateAbout (UNil u) where
-  rotateAbout _ _ = id
-
-instance Translate (UNil u) where
-  translate _ _ = id 
--}
 
 --------------------------------------------------------------------------------
 -- Interpreting units 
@@ -265,12 +247,24 @@ instance InterpretUnit AfmUnit where
   dinterp   sz = afmUnit sz
 
 
+-- | 'dinterp' an object that gives access to its unit at the 
+-- functor position.
+--
+dinterpF :: (Functor t, InterpretUnit u) => FontSize -> t Double -> t u
+dinterpF sz = fmap (dinterp sz)
+
+
+-- | 'normalize' an object that gives access to its unit at the 
+-- functor position.
+--
+normalizeF :: (Functor t, InterpretUnit u) => FontSize -> t u -> t Double
+normalizeF sz = fmap (normalize sz)
 
 
 -- | Convert a scalar value from one unit to another.
 --
-uconvertScalar :: (InterpretUnit u, InterpretUnit u1) => FontSize -> u -> u1
-uconvertScalar sz = dinterp sz . normalize sz
+uconvert1 :: (InterpretUnit u, InterpretUnit u1) => FontSize -> u -> u1
+uconvert1 sz = dinterp sz . normalize sz
 
 -- | Unit convert an object that gives access to its unit at the
 -- Functor position.
@@ -279,7 +273,7 @@ uconvertScalar sz = dinterp sz . normalize sz
 --
 uconvertF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
           => FontSize -> t u -> t u1
-uconvertF sz = fmap (uconvertScalar sz)
+uconvertF sz = fmap (uconvert1 sz)
 
 
 

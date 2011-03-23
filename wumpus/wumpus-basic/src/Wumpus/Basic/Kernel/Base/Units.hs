@@ -18,9 +18,20 @@
 module Wumpus.Basic.Kernel.Base.Units
   (
 
+  -- * Centimeter
     Centimeter
+  , cm
+  , dcm
+
+  -- * Pica
   , Pica
+  , pica
+  , dpica
+
+  -- * Em
   , Em
+
+  -- * En
   , En
 
   ) where
@@ -40,11 +51,19 @@ newtype Centimeter = Centimeter { getCentimeter :: Double }
 instance Show Centimeter where
   showsPrec p d = showsPrec p (getCentimeter d)
 
-dcm :: Double -> Centimeter
-dcm = Centimeter . (0.03514598 *)
-                            
+-- | Cast a value in Centimeters to some Fractional type.
+-- 
+-- Note - this casting should only be used for non-contextual
+-- units such as Double.
+--
 cm :: Fractional u => Centimeter -> u 
 cm = realToFrac . (28.45275619 *) . getCentimeter
+
+-- | Convert Double to Centimer.
+-- 
+dcm :: Double -> Centimeter
+dcm = Centimeter . (0.03514598 *)
+
 
 instance InterpretUnit Centimeter where
   normalize _ = cm 
@@ -63,11 +82,21 @@ instance Show Pica where
   showsPrec p d = showsPrec p (getPica d)
 
                             
+-- | Cast a value in Pica to some Fractional type.
+-- 
+-- Note - this casting should only be used for non-contextual
+-- units such as Double.
+--
 pica :: Fractional u => Pica -> u 
 pica = realToFrac . (* 12.0) . getPica
 
+-- | Convert a Double to a Pica.
+--
 dpica :: Double -> Pica
 dpica = Pica . (\x -> x / 12.0)
+
+
+instance LengthTolerance Pica       where length_tolerance = 0.01
 
 instance InterpretUnit Pica where
   normalize _ = pica
@@ -85,6 +114,8 @@ newtype Em = Em { getEm :: Double }
 
 instance Show Em where
   showsPrec p d = showsPrec p (getEm d)
+
+
 
 instance InterpretUnit Em where
   normalize sz a = fromIntegral sz * realToFrac a
