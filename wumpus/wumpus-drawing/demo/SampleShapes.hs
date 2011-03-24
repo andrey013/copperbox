@@ -75,7 +75,7 @@ shape_list =
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font courier . metricsContext 16
 
-rotate05 :: Rotate a => a -> a
+rotate05 :: (CtxRotate t u, InterpretUnit u) => Image t u -> Image t u
 rotate05 = rotate (d2r (5::Double))
 
 -- Extra elaboration...
@@ -135,8 +135,8 @@ shapePic :: ( Functor t
             , CardinalAnchor t Double
             , CardinalAnchor2 t Double
             , RadialAnchor t Double
-            , Scale (t Double)
-            , Rotate (t Double)
+            , CtxScale t Double
+            , CtxRotate t Double
             ) 
          => (t Double -> DTraceDrawing a) -> DShape t -> String -> CtxPicture
 shapePic mf sh name = udrawTracing (0::Double) $ do

@@ -49,7 +49,7 @@ import Control.Applicative
 
 
 data Ellipse u = Ellipse
-      { ell_ctm     :: ShapeCTM
+      { ell_ctm     :: ShapeCTM u
       , ell_rx      :: !u
       , ell_ry      :: !u
       }
@@ -58,29 +58,27 @@ type DEllipse = Ellipse Double
 
 
 instance Functor Ellipse where
-  fmap f (Ellipse ctm rx ry) = Ellipse ctm (f rx) (f ry)
+  fmap f (Ellipse ctm rx ry) = Ellipse (fmap f ctm) (f rx) (f ry)
 
 
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapEllipseCTM :: (ShapeCTM -> ShapeCTM) -> Ellipse u -> Ellipse u
-mapEllipseCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
-
-instance Scale (Ellipse u) where
-  scale sx sy = mapEllipseCTM (scale sx sy)
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Ellipse u -> Ellipse u
+mapCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
 
 
-instance Rotate (Ellipse u) where
-  rotate ang = mapEllipseCTM (rotate ang)
-                  
+instance CtxRotate Ellipse u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Ellipse u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance RotateAbout (Ellipse u) where
-  rotateAbout ang pt = mapEllipseCTM (rotateAbout ang pt)
+instance InterpretUnit u => CtxScale Ellipse u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-
-instance Translate (Ellipse u) where
-  translate dx dy = mapEllipseCTM (translate dx dy)
+instance InterpretUnit u => CtxTranslate Ellipse u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -93,7 +91,7 @@ runDisplaceCenter :: InterpretUnit u
 runDisplaceCenter mf (Ellipse { ell_ctm = ctm
                               , ell_rx  = rx
                               , ell_ry  = ry }) = 
-    mf rx ry >>= \v -> displaceCenter v ctm
+    mf rx ry >>= \v -> projectFromCtr v ctm
 
 
 -- NOTE - the Affine instances provided by Wumpus-Core for Point 
@@ -104,9 +102,10 @@ runDisplaceCenter mf (Ellipse { ell_ctm = ctm
 --
 scaleEll :: (Fractional u, InterpretUnit u) 
          => u -> u -> Vec2 u -> Query (Vec2 u)
-scaleEll rx ry v = normalizeDC (ry/rx) >>= \rat  -> 
-                   uconvertFDC v       >>= \(dv :: Vec2 Double) -> 
-                   uconvertFDC $ scale 1 rat dv
+scaleEll rx ry v = pointSize            >>= \sz -> 
+                   normalizeCtx (ry/rx) >>= \rat  -> 
+                   uconvertCtxF v       >>= \(dv :: Vec2 Double) -> 
+                   uconvertCtxF $ ctxScale sz 1 rat dv
 
 
 instance (InterpretUnit u) => CenterAnchor Ellipse u where
@@ -144,8 +143,7 @@ ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
 mkEllipse :: InterpretUnit u => u -> u -> LocThetaQuery u (Ellipse u)
 mkEllipse rx ry = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Ellipse { ell_ctm = makeShapeCTM dctr theta
+    pure $ Ellipse { ell_ctm = makeShapeCTM ctr theta
                    , ell_rx  = rx
                    , ell_ry  = ry 
                    }
@@ -154,7 +152,8 @@ mkEllipse rx ry = promoteR2 $ \ctr theta ->
 mkEllipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> u -> LocThetaQuery u (Path u)
 mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
-    let xs = bezierEllipse rx ry pt
-    in curvePath <$> rotateAboutCtxT theta pt xs
+    (\sz -> let xs = map (ctxRotateAbout sz theta pt) $ bezierEllipse rx ry pt
+            in curvePath xs)
+      <$> pointSize
 
 

@@ -53,24 +53,21 @@ instance Functor InvTriangle where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapTriangle :: (Triangle u -> Triangle u) -> InvTriangle u -> InvTriangle u
-mapTriangle f = InvTriangle . f . getInvTriangle 
+mapInner :: (Triangle u -> Triangle u) -> InvTriangle u -> InvTriangle u
+mapInner f = InvTriangle . f . getInvTriangle 
 
+instance CtxRotate InvTriangle u where
+  ctxRotate sz ang = mapInner (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout InvTriangle u where
+  ctxRotateAbout sz ang pt = mapInner (ctxRotateAbout sz ang pt)
 
-instance Num u => Scale (InvTriangle u) where
-  scale sx sy = mapTriangle (scale sx sy)
+instance InterpretUnit u => CtxScale InvTriangle u where
+  ctxScale sz sx sy = mapInner (ctxScale sz sx sy)
 
+instance InterpretUnit u => CtxTranslate InvTriangle u where
+  ctxTranslate sz dx dy = mapInner (ctxTranslate sz dx dy)
 
-instance Rotate (InvTriangle u) where
-  rotate ang = mapTriangle (rotate ang)
-                  
-
-instance (Real u, Floating u, InterpretUnit u) => RotateAbout (InvTriangle u) where
-  rotateAbout ang pt = mapTriangle (rotateAbout ang pt)
-
-
-instance InterpretUnit u => Translate (InvTriangle u) where
-  translate dx dy = mapTriangle (translate dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -81,7 +78,10 @@ instance InterpretUnit u => Translate (InvTriangle u) where
 runRotateAnchor :: (Real u, Floating u, InterpretUnit u) 
                 => (Triangle u -> Anchor u) -> InvTriangle u -> Anchor u
 runRotateAnchor f (InvTriangle a) =
-   center a >>= \ctr -> f a >>= \a1 -> rotateAboutCtx pi ctr a1
+   center a  >>= \ctr -> 
+   f a       >>= \a1 -> 
+   pointSize >>= \sz -> 
+   return $ ctxRotateAbout sz pi ctr a1
 
 
 instance (Real u, Floating u, InterpretUnit u) => 

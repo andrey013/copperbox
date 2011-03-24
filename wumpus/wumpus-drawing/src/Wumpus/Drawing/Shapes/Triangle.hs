@@ -46,7 +46,7 @@ import Control.Applicative
 -- | An isosceles triangle, oriented /upwards/.
 --
 data Triangle u = Triangle 
-      { tri_ctm         :: ShapeCTM
+      { tri_ctm         :: ShapeCTM u
       , tri_base_width  :: !u
       , tri_height      :: !u
       , tri_syn_props   :: SyntheticProps u
@@ -63,7 +63,8 @@ data SyntheticProps u = SyntheticProps
 type DTriangle = Triangle Double
 
 instance Functor Triangle where
-  fmap f (Triangle ctm bw h props) = Triangle ctm (f bw) (f h) (fmap f props)
+  fmap f (Triangle ctm bw h props) = 
+      Triangle (fmap f ctm) (f bw) (f h) (fmap f props)
 
 instance Functor SyntheticProps where
   fmap f (SyntheticProps hmin hmaj ang1 ang2) = 
@@ -72,24 +73,22 @@ instance Functor SyntheticProps where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapTriangleCTM :: (ShapeCTM -> ShapeCTM) -> Triangle u -> Triangle u
-mapTriangleCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
-
-instance Scale (Triangle u) where
-  scale sx sy = mapTriangleCTM (scale sx sy)
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Triangle u -> Triangle u
+mapCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
 
 
-instance Rotate (Triangle u) where
-  rotate ang = mapTriangleCTM (rotate ang)
-                  
 
-instance RotateAbout (Triangle u) where
-  rotateAbout ang pt = mapTriangleCTM (rotateAbout ang pt)
+instance CtxRotate Triangle u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Triangle u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
+instance InterpretUnit u => CtxScale Triangle u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-instance Translate (Triangle u) where
-  translate dx dy = mapTriangleCTM (translate dx dy)
-
+instance InterpretUnit u => CtxTranslate Triangle u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -104,7 +103,7 @@ runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
                                , tri_base_width = bw
                                , tri_syn_props  = syn }) =  
-    displaceCenter (fn (0.5*bw) hminor hmajor base_ang) ctm
+    projectFromCtr (fn (0.5*bw) hminor hmajor base_ang) ctm
   where
     hminor   = tri_hminor syn        
     hmajor   = tri_hmajor syn
@@ -195,8 +194,7 @@ triangle bw h =
 mkTriangle :: (Real u, Fractional u, InterpretUnit u) 
            => u -> u -> SyntheticProps u -> LocThetaQuery u (Triangle u)
 mkTriangle bw h props = promoteR2 $ \ctrd theta -> 
-    uconvertFDC ctrd >>= \dctrd ->
-    pure $ Triangle { tri_ctm        = makeShapeCTM dctrd theta
+    pure $ Triangle { tri_ctm        = makeShapeCTM ctrd theta
                     , tri_base_width = bw
                     , tri_height     = h 
                     , tri_syn_props  = props
@@ -222,8 +220,9 @@ synthesizeProps bw h =
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                => u -> u -> u -> LocThetaQuery u (Path u)
 mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
+    pointSize >>= \sz -> 
     let xs = trianglePath bw hminor hmajor ctr
-    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs
 
 
 

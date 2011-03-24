@@ -251,7 +251,7 @@ uniformSpace dx xs = hkernPrim $ go xs
 
 hkernPrim :: InterpretUnit u => [KernChar u] -> Query (u,AdvGraphic u)
 hkernPrim ks = hkernVector ks >>= \v ->
-               uconvertFDC v  >>= \v1 -> 
+               uconvertCtxF v  >>= \v1 -> 
                return (vector_x v1, replaceAns v1 $ hkernline ks)
 
 

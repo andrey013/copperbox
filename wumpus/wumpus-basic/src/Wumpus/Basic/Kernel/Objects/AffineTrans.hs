@@ -30,6 +30,24 @@ module Wumpus.Basic.Kernel.Objects.AffineTrans
   , scale
   , translate
 
+  , rotate30
+  , rotate30About
+  , rotate45
+  , rotate45About
+  , rotate60
+  , rotate60About
+  , rotate90
+  , rotate90About
+  , rotate120
+  , rotate120About
+
+  , uniformScale
+  , reflectX
+  , reflectY
+  , translateBy
+  , reflectXPlane
+  , reflectYPlane
+  
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -105,12 +123,129 @@ translate dx dy     = affineTransImg (\sz -> ctxTranslate sz dx dy)
 
 
 
+-------------------------------------------------------------------------------- 
+-- Common rotations
+
+
+
+-- | Rotate by 30 degrees about the origin. 
+--
+rotate30 :: (CtxRotate t u, InterpretUnit u)
+         => Image t u -> Image t u
+rotate30 = rotate (pi/6) 
+
+-- | Rotate by 30 degrees about the supplied point.
+--
+rotate30About :: (CtxRotateAbout t u, InterpretUnit u)
+              => Point2 u -> Image t u -> Image t u
+rotate30About = rotateAbout (pi/6) 
+
+-- | Rotate by 45 degrees about the origin. 
+--
+rotate45 :: (CtxRotate t u, InterpretUnit u)
+         => Image t u -> Image t u
+rotate45 = rotate (pi/4) 
+
+-- | Rotate by 45 degrees about the supplied point.
+--
+rotate45About :: (CtxRotateAbout t u, InterpretUnit u)
+              => Point2 u -> Image t u -> Image t u
+rotate45About = rotateAbout (pi/4)
+
+-- | Rotate by 60 degrees about the origin. 
+--
+rotate60 :: (CtxRotate t u, InterpretUnit u)
+         => Image t u -> Image t u
+rotate60 = rotate (2*pi/3) 
+
+-- | Rotate by 60 degrees about the supplied point.
+--
+rotate60About :: (CtxRotateAbout t u, InterpretUnit u)
+              => Point2 u -> Image t u -> Image t u
+rotate60About = rotateAbout (2*pi/3)
+
+-- | Rotate by 90 degrees about the origin. 
+--
+rotate90 :: (CtxRotate t u, InterpretUnit u)
+         => Image t u -> Image t u
+rotate90 = rotate (pi/2) 
+
+-- | Rotate by 90 degrees about the supplied point.
+--
+rotate90About :: (CtxRotateAbout t u, InterpretUnit u)
+              => Point2 u -> Image t u -> Image t u
+rotate90About = rotateAbout (pi/2)
+
+-- | Rotate by 120 degrees about the origin. 
+--
+rotate120 :: (CtxRotate t u, InterpretUnit u)
+          => Image t u -> Image t u
+rotate120 = rotate (4*pi/3) 
+
+-- | Rotate by 120 degrees about the supplied point.
+--
+rotate120About :: (CtxRotateAbout t u, InterpretUnit u)
+               => Point2 u -> Image t u -> Image t u
+rotate120About = rotateAbout (4*pi/3)
+
+
+
+--------------------------------------------------------------------------------
+-- Common scalings
+
+-- | Scale both x and y dimensions by the same amount.
+--
+uniformScale :: (CtxScale t u, InterpretUnit u) 
+             => Double -> Image t u -> Image t u
+uniformScale a = scale a a 
+
+-- | Reflect in the X-plane about the origin.
+--
+reflectX :: (CtxScale t u, InterpretUnit u) 
+         => Image t u -> Image t u
+reflectX = scale (-1) 1
+
+-- | Reflect in the Y-plane about the origin.
+--
+reflectY :: (CtxScale t u, InterpretUnit u) 
+         => Image t u -> Image t u
+reflectY = scale 1 (-1)
+
+--------------------------------------------------------------------------------
+-- Translations
+
+-- | Translate by the x and y components of a vector.
+--
+translateBy :: (CtxTranslate t u, InterpretUnit u) 
+            => Vec2 u -> Image t u -> Image t u
+translateBy (V2 x y) = translate x y
+
+
+--------------------------------------------------------------------------------
+-- Translation and scaling
+
+-- | Reflect in the X plane that intersects the supplied point. 
+--
+reflectXPlane :: (CtxTranslate t u, CtxScale t u, InterpretUnit u) 
+              => Point2 u -> Image t u -> Image t u
+reflectXPlane (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
+
+-- | Reflect in the Y plane that intersects the supplied point.
+--
+reflectYPlane :: (CtxTranslate t u, CtxScale t u, InterpretUnit u) 
+              => Point2 u -> Image t u -> Image t u
+reflectYPlane (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)
+
+
 --------------------------------------------------------------------------------
 
 
 -- affine trans
 
-
+-- Note - ImageAns needs more than Functor access to transform
+-- its body (it needs to operate on the CatPrim). Thus we are 
+-- burdened with the Ctx family of classes.
+-- 
 
 instance (CtxRotate t u, InterpretUnit u) => 
     CtxRotate (ImageAns t) u where

@@ -51,25 +51,22 @@ instance Functor InvSemiellipse where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapSemiellipse :: (Semiellipse u -> Semiellipse u) 
-              -> InvSemiellipse u 
-              -> InvSemiellipse u
-mapSemiellipse f = InvSemiellipse . f . getInvSemiellipse
+mapInner :: (Semiellipse u -> Semiellipse u) 
+         -> InvSemiellipse u 
+         -> InvSemiellipse u
+mapInner f = InvSemiellipse . f . getInvSemiellipse
 
-instance Num u => Scale (InvSemiellipse u) where
-  scale sx sy = mapSemiellipse (scale sx sy)
+instance CtxRotate InvSemiellipse u where
+  ctxRotate sz ang = mapInner (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout InvSemiellipse u where
+  ctxRotateAbout sz ang pt = mapInner (ctxRotateAbout sz ang pt)
 
+instance InterpretUnit u => CtxScale InvSemiellipse u where
+  ctxScale sz sx sy = mapInner (ctxScale sz sx sy)
 
-instance Rotate (InvSemiellipse u) where
-  rotate ang = mapSemiellipse (rotate ang)
-                  
-
-instance (Real u, Floating u, InterpretUnit u) => RotateAbout (InvSemiellipse u) where
-  rotateAbout ang pt = mapSemiellipse (rotateAbout ang pt)
-
-
-instance InterpretUnit u => Translate (InvSemiellipse u) where
-  translate dx dy = mapSemiellipse (translate dx dy)
+instance InterpretUnit u => CtxTranslate InvSemiellipse u where
+  ctxTranslate sz dx dy = mapInner (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -78,7 +75,10 @@ instance InterpretUnit u => Translate (InvSemiellipse u) where
 runRotateAnchor :: (Real u, Floating u, InterpretUnit u) 
                 => (Semiellipse u -> Anchor u) -> InvSemiellipse u -> Anchor u
 runRotateAnchor f (InvSemiellipse a) =
-   center a >>= \ctr -> f a >>= \a1 -> rotateAboutCtx pi ctr a1
+   center a  >>= \ctr -> 
+   f a       >>= \a1 -> 
+   pointSize >>= \sz -> 
+   return $ ctxRotateAbout sz pi ctr a1
 
 
 

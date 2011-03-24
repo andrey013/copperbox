@@ -45,7 +45,7 @@ import Control.Applicative
 -- Data type
 
 data Rectangle u = Rectangle 
-      { rect_ctm    :: ShapeCTM
+      { rect_ctm    :: ShapeCTM u
       , rect_hw     :: !u
       , rect_hh     :: !u 
       }
@@ -55,28 +55,27 @@ type DRectangle = Rectangle Double
 
 
 instance Functor Rectangle where
-  fmap f (Rectangle ctm hw hh) = Rectangle ctm (f hw) (f hh)
+  fmap f (Rectangle ctm hw hh) = Rectangle (fmap f ctm) (f hw) (f hh)
 
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM -> ShapeCTM) -> Rectangle u -> Rectangle u
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Rectangle u -> Rectangle u
 mapCTM f = (\s i -> s { rect_ctm = f i }) <*> rect_ctm
 
-instance Scale (Rectangle u) where
-  scale sx sy = mapCTM (scale sx sy)
 
 
-instance Rotate (Rectangle u) where
-  rotate ang = mapCTM (rotate ang)
-                  
+instance CtxRotate Rectangle u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Rectangle u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance RotateAbout (Rectangle u) where
-  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
+instance InterpretUnit u => CtxScale Rectangle u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-
-instance Translate (Rectangle u) where
-  translate dx dy = mapCTM (translate dx dy)
+instance InterpretUnit u => CtxTranslate Rectangle u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -91,7 +90,7 @@ runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
 runDisplaceCenter fn (Rectangle { rect_ctm = ctm
                                 , rect_hw  = hw
                                 , rect_hh  = hh }) = 
-   displaceCenter (fn hw hh) ctm
+   projectFromCtr (fn hw hh) ctm
 
 
 instance (Real u, Floating u, InterpretUnit u) => 
@@ -154,8 +153,7 @@ rectangle w h =
 
 mkRectangle :: InterpretUnit u => u -> u -> LocThetaQuery u (Rectangle u)
 mkRectangle hw hh = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Rectangle { rect_ctm    = makeShapeCTM dctr theta
+    pure $ Rectangle { rect_ctm    = makeShapeCTM ctr theta
                      , rect_hw     = hw
                      , rect_hh     = hh
                      }
@@ -164,9 +162,10 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 mkRectPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => u -> u -> LocThetaQuery u (Path u)
 mkRectPath hw hh = promoteR2 $ \ctr theta -> 
+    pointSize >>= \sz -> 
     let btm_left = displace (-hw) (-hh) ctr
         xs       = rectangleCoordPath (2*hw) (2*hh) btm_left
-    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs
     
 
 

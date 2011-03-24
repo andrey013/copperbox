@@ -50,7 +50,7 @@ import Control.Applicative
 -- | A Paralleogram.
 --
 data Parallelogram u = Parallelogram 
-      { pll_ctm         :: ShapeCTM
+      { pll_ctm         :: ShapeCTM u
       , pll_base_width  :: !u
       , pll_height      :: !u
       , pll_base_l_ang  :: Radian
@@ -75,7 +75,7 @@ type DParallelogram = Parallelogram Double
 
 instance Functor Parallelogram where
   fmap f (Parallelogram ctm bw h lang props) = 
-      Parallelogram ctm (f bw) (f h) lang (fmap f props)
+      Parallelogram (fmap f ctm) (f bw) (f h) lang (fmap f props)
 
 instance Functor SyntheticProps where
   fmap f (SyntheticProps bmin bmaj) = SyntheticProps (f bmin) (f bmaj)
@@ -85,23 +85,21 @@ instance Functor SyntheticProps where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM -> ShapeCTM) -> Parallelogram u -> Parallelogram u
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Parallelogram u -> Parallelogram u
 mapCTM f = (\s i -> s { pll_ctm = f i }) <*> pll_ctm
 
-instance Scale (Parallelogram u) where
-  scale sx sy = mapCTM (scale sx sy)
 
+instance CtxRotate Parallelogram u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Parallelogram u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance Rotate (Parallelogram u) where
-  rotate ang = mapCTM (rotate ang)
-                  
+instance InterpretUnit u => CtxScale Parallelogram u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-instance RotateAbout (Parallelogram u) where
-  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
-
-
-instance Translate (Parallelogram u) where
-  translate dx dy = mapCTM (translate dx dy)
+instance InterpretUnit u => CtxTranslate Parallelogram u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -117,7 +115,7 @@ runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
                                     , pll_base_width = bw
                                     , pll_height     = h  
                                     , pll_syn_props  = syn }) = 
-    displaceCenter (fn (0.5 * bw) (0.5 * h) 
+    projectFromCtr (fn (0.5 * bw) (0.5 * h) 
                        (pll_base_minor syn) (pll_base_major syn)) ctm
 
 
@@ -182,8 +180,8 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
   where 
     ps   = pllPoints (pll_base_minor syn) (pll_base_major syn) h
     post = \ans -> case ans of 
-                    Nothing       -> displaceCenter (V2 0 0) ctm
-                    Just (P2 x y) -> displaceCenter (V2 x y) ctm
+                    Nothing       -> projectFromCtr (V2 0 0) ctm
+                    Just (P2 x y) -> projectFromCtr (V2 x y) ctm
     
 
 --------------------------------------------------------------------------------
@@ -219,8 +217,7 @@ mkParallelogram :: (Real u, Fractional u, InterpretUnit u, LengthTolerance u)
                 => u -> u -> Radian -> SyntheticProps u 
                 -> LocThetaQuery u (Parallelogram u)
 mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Parallelogram { pll_ctm          = makeShapeCTM dctr theta
+    pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
                          , pll_base_width   = bw
                          , pll_height       = h
                          , pll_base_l_ang   = lang
@@ -250,8 +247,9 @@ synthesizeProps bw h lang
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                     => u -> u -> u -> LocThetaQuery u (Path u)
 mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
+    pointSize >>= \ sz -> 
     let xs = pllPath bw_minor bw_major h ctr
-    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs 
                          
 
 

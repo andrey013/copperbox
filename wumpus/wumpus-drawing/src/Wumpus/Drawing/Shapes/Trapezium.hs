@@ -53,7 +53,7 @@ import Control.Applicative
 -- | A trapezium.
 --
 data Trapezium u = Trapezium 
-      { tz_ctm          :: ShapeCTM
+      { tz_ctm          :: ShapeCTM u
       , tz_base_width   :: !u
       , tz_height       :: !u
       , tz_base_l_ang   :: Radian
@@ -64,28 +64,27 @@ data Trapezium u = Trapezium
 type DTrapezium = Trapezium Double
 
 instance Functor Trapezium where
-  fmap f (Trapezium ctm bw h lang rang) = Trapezium ctm (f bw) (f h) lang rang
+  fmap f (Trapezium ctm bw h lang rang) = 
+    Trapezium (fmap f ctm) (f bw) (f h) lang rang
 
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM -> ShapeCTM) -> Trapezium u -> Trapezium u
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Trapezium u -> Trapezium u
 mapCTM f = (\s i -> s { tz_ctm = f i }) <*> tz_ctm
 
-instance Scale (Trapezium u) where
-  scale sx sy = mapCTM (scale sx sy)
 
+instance CtxRotate Trapezium u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Trapezium u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance Rotate (Trapezium u) where
-  rotate ang = mapCTM (rotate ang)
-                  
+instance InterpretUnit u => CtxScale Trapezium u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-instance RotateAbout (Trapezium u) where
-  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
-
-
-instance Translate (Trapezium u) where
-  translate dx dy = mapCTM (translate dx dy)
+instance InterpretUnit u => CtxTranslate Trapezium u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -104,7 +103,7 @@ runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
                                 , tz_height       = h
                                 , tz_base_l_ang   = lang
                                 , tz_base_r_ang   = rang }) =
-    displaceCenter (fn (0.5 * bw) (0.5 * h) lang rang) ctm
+    projectFromCtr (fn (0.5 * bw) (0.5 * h) lang rang) ctm
 
 instance (Real u, Floating u, InterpretUnit u) => 
     CenterAnchor Trapezium u where
@@ -175,8 +174,8 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
   where 
     ps   = tzPoints bw h lang rang
     post = \ans -> case ans of 
-                    Nothing       -> displaceCenter (V2 0 0) ctm
-                    Just (P2 x y) -> displaceCenter (V2 x y) ctm
+                    Nothing       -> projectFromCtr (V2 0 0) ctm
+                    Just (P2 x y) -> projectFromCtr (V2 x y) ctm
     
     
 --------------------------------------------------------------------------------
@@ -209,8 +208,7 @@ ztrapezium bw h = trapezium bw h ang ang
 mkTrapezium :: (Real u, Fractional u, InterpretUnit u) 
             => u -> u -> Radian -> Radian -> LocThetaQuery u (Trapezium u)
 mkTrapezium bw h lang rang = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Trapezium { tz_ctm           = makeShapeCTM dctr theta
+    pure $ Trapezium { tz_ctm           = makeShapeCTM ctr theta
                      , tz_base_width    = bw
                      , tz_height        = h
                      , tz_base_l_ang    = lang
@@ -221,8 +219,9 @@ mkTrapezium bw h lang rang = promoteR2 $ \ctr theta ->
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                 => u -> u -> Radian -> Radian -> LocThetaQuery u (Path u)
 mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
+    pointSize >>= \sz -> 
     let xs = tzPath bw h lang rang ctr 
-    in rotateAboutCtxT theta ctr xs >>= roundCornerShapePath
+    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs
 
 
 tzPath :: (Real u, Floating u) 

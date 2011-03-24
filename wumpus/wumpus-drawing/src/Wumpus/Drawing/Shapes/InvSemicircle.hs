@@ -50,25 +50,24 @@ instance Functor InvSemicircle where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapSemicircle :: (Semicircle u -> Semicircle u) 
+mapInner :: (Semicircle u -> Semicircle u) 
               -> InvSemicircle u 
               -> InvSemicircle u
-mapSemicircle f = InvSemicircle . f . getInvSemicircle
-
-instance Scale (InvSemicircle u) where
-  scale sx sy = mapSemicircle (scale sx sy)
+mapInner f = InvSemicircle . f . getInvSemicircle
 
 
-instance Rotate (InvSemicircle u) where
-  rotate ang = mapSemicircle (rotate ang)
-                  
 
-instance RotateAbout (InvSemicircle u) where
-  rotateAbout ang pt = mapSemicircle (rotateAbout ang pt)
+instance CtxRotate InvSemicircle u where
+  ctxRotate sz ang = mapInner (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout InvSemicircle u where
+  ctxRotateAbout sz ang pt = mapInner (ctxRotateAbout sz ang pt)
 
+instance InterpretUnit u => CtxScale InvSemicircle u where
+  ctxScale sz sx sy = mapInner (ctxScale sz sx sy)
 
-instance Translate (InvSemicircle u) where
-  translate dx dy = mapSemicircle (translate dx dy)
+instance InterpretUnit u => CtxTranslate InvSemicircle u where
+  ctxTranslate sz dx dy = mapInner (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -77,7 +76,10 @@ instance Translate (InvSemicircle u) where
 runRotateAnchor :: (Real u, Floating u, InterpretUnit u) 
                 => (Semicircle u -> Anchor u) -> InvSemicircle u -> Anchor u
 runRotateAnchor f (InvSemicircle a) = 
-   center a >>= \ctr -> f a >>= \a1 -> rotateAboutCtx pi ctr a1
+   center a  >>= \ctr -> 
+   f a       >>= \a1 -> 
+   pointSize >>= \sz -> 
+   return $ ctxRotateAbout sz pi ctr a1
 
 
 instance (Real u, Floating u, InterpretUnit u) => 

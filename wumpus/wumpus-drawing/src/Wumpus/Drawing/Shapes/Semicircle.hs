@@ -45,7 +45,7 @@ import Control.Applicative
 -- Datatype
 
 data Semicircle u = Semicircle 
-      { sc_ctm          :: ShapeCTM
+      { sc_ctm          :: ShapeCTM u
       , sc_radius       :: !u 
       , sc_syn_props    :: SyntheticProps u
       }
@@ -62,7 +62,7 @@ type DSemicircle = Semicircle Double
 
 
 instance Functor Semicircle where
-  fmap f (Semicircle ctm r props) = Semicircle ctm (f r) (fmap f props)
+  fmap f (Semicircle ctm r props) = Semicircle (fmap f ctm) (f r) (fmap f props)
 
 instance Functor SyntheticProps where
   fmap f (SyntheticProps cmin cmaj) = SyntheticProps (f cmin) (f cmaj)
@@ -71,23 +71,22 @@ instance Functor SyntheticProps where
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM -> ShapeCTM) -> Semicircle u -> Semicircle u
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Semicircle u -> Semicircle u
 mapCTM f = (\s i -> s { sc_ctm = f i }) <*> sc_ctm
 
-instance Scale (Semicircle u) where
-  scale sx sy = mapCTM (scale sx sy)
 
 
-instance Rotate (Semicircle u) where
-  rotate ang = mapCTM (rotate ang)
-                  
+instance CtxRotate Semicircle u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Semicircle u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance RotateAbout (Semicircle u) where
-  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
+instance InterpretUnit u => CtxScale Semicircle u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-
-instance Translate (Semicircle u) where
-  translate dx dy = mapCTM (translate dx dy)
+instance InterpretUnit u => CtxTranslate Semicircle u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -102,7 +101,7 @@ runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
                                  , sc_radius    = radius
                                  , sc_syn_props = syn    }) = 
-    displaceCenter (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
+    projectFromCtr (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
 instance (Real u, Floating u, InterpretUnit u) => 
@@ -229,8 +228,7 @@ synthesizeProps radius =
 mkSemicircle :: InterpretUnit u
              => u -> SyntheticProps u -> LocThetaQuery u (Semicircle u)
 mkSemicircle radius props = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Semicircle { sc_ctm = makeShapeCTM dctr theta
+    pure $ Semicircle { sc_ctm = makeShapeCTM ctr theta
                       , sc_radius = radius
                       , sc_syn_props = props 
                       }

@@ -163,7 +163,7 @@ dblOrthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) =
     ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
   where
     bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
-    bbox1     = retraceBoundary id $ rotateAbout theta (zeroPt::DPoint2) bbox0
+    bbox1     = retraceBoundary id $ drotateAbout theta (zeroPt::DPoint2) bbox0
     bbox_hw   = 0.5 * (boundaryWidth  bbox1)
     bbox_hh   = 0.5 * (boundaryHeight bbox1)
     input_hw  = 0.5 * (xmin + xmaj)

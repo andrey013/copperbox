@@ -254,8 +254,8 @@ curveByAngles start cin cout end = curve start (start .+^ v1) (end .+^ v2) end
 --
 toPrimPath :: InterpretUnit u => Path u -> Query PrimPath
 toPrimPath (Path _ start segs _) = 
-    uconvertFDC start       >>= \dstart -> 
-    T.mapM uconvertFDC segs >>= \dsegs  ->
+    uconvertCtxF start       >>= \dstart -> 
+    T.mapM uconvertCtxF segs >>= \dsegs  ->
     return $ step1 dstart (viewl dsegs)
   where
     step1 p0 EmptyL               = emptyPrimPath p0

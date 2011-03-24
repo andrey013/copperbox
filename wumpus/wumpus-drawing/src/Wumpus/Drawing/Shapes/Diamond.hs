@@ -48,7 +48,7 @@ import Control.Applicative
 
 
 data Diamond u = Diamond 
-      { dia_ctm   :: ShapeCTM
+      { dia_ctm   :: ShapeCTM u
       , dia_hw    :: !u
       , dia_hh    :: !u
       }
@@ -57,29 +57,27 @@ type DDiamond = Diamond Double
 
 
 instance Functor Diamond where
-  fmap f (Diamond ctm hw hh) = Diamond ctm (f hw) (f hh)
+  fmap f (Diamond ctm hw hh) = Diamond (fmap f ctm) (f hw) (f hh)
 
 --------------------------------------------------------------------------------
 -- Affine trans
 
-mapCTM :: (ShapeCTM -> ShapeCTM) -> Diamond u -> Diamond u
+mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Diamond u -> Diamond u
 mapCTM f = (\s i -> s { dia_ctm = f i }) <*> dia_ctm
 
-instance Scale (Diamond u) where
-  scale sx sy = mapCTM (scale sx sy)
 
 
-instance Rotate (Diamond u) where
-  rotate ang = mapCTM (rotate ang)
-                  
+instance CtxRotate Diamond u where
+  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+              
+instance InterpretUnit u => CtxRotateAbout Diamond u where
+  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
 
-instance RotateAbout (Diamond u) where
-  rotateAbout ang pt = mapCTM (rotateAbout ang pt)
+instance InterpretUnit u => CtxScale Diamond u where
+  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
 
-
-instance Translate (Diamond u) where
-  translate dx dy = mapCTM (translate dx dy)
-
+instance InterpretUnit u => CtxTranslate Diamond u where
+  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -93,7 +91,7 @@ runDisplaceCenter :: InterpretUnit u
 runDisplaceCenter fn (Diamond { dia_ctm = ctm
                               , dia_hw = hw
                               , dia_hh = hh }) = 
-   displaceCenter (fn hw hh) ctm
+   projectFromCtr (fn hw hh) ctm
 
 
 instance InterpretUnit u => CenterAnchor Diamond u where
@@ -148,8 +146,7 @@ diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
 mkDiamond hw hh = promoteR2 $ \ctr theta -> 
-    uconvertFDC ctr >>= \dctr ->
-    pure $ Diamond { dia_ctm = makeShapeCTM dctr theta
+    pure $ Diamond { dia_ctm = makeShapeCTM ctr theta
                    , dia_hw  = hw
                    , dia_hh  = hh 
                    }
@@ -158,8 +155,9 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
               => u -> u -> LocThetaQuery u (Path u)
 mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
-    let ps = diamondCoordPath hw hh ctr
-    in mapM (rotateAboutCtx theta ctr) ps >>= roundCornerShapePath 
+    pointSize >>= \sz -> 
+    let ps = map (ctxRotateAbout sz theta ctr) $ diamondCoordPath hw hh ctr
+    in roundCornerShapePath ps
 
 
 
