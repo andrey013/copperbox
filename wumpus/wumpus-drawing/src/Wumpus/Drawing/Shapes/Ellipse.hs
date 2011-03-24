@@ -68,7 +68,7 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Ellipse u -> Ellipse u
 mapCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
 
 
-instance CtxRotate Ellipse u where
+instance InterpretUnit u => CtxRotate Ellipse u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Ellipse u where

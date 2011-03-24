@@ -56,7 +56,7 @@ instance Functor InvTriangle where
 mapInner :: (Triangle u -> Triangle u) -> InvTriangle u -> InvTriangle u
 mapInner f = InvTriangle . f . getInvTriangle 
 
-instance CtxRotate InvTriangle u where
+instance InterpretUnit u => CtxRotate InvTriangle u where
   ctxRotate sz ang = mapInner (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout InvTriangle u where

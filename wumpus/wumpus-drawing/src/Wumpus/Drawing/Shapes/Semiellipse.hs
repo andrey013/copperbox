@@ -73,7 +73,7 @@ instance Functor SyntheticProps where
 mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Semiellipse u -> Semiellipse u
 mapCTM f = (\s i -> s { se_ctm = f i }) <*> se_ctm
 
-instance CtxRotate Semiellipse u where
+instance InterpretUnit u => CtxRotate Semiellipse u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Semiellipse u where

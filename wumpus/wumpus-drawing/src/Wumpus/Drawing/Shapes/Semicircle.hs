@@ -76,7 +76,7 @@ mapCTM f = (\s i -> s { sc_ctm = f i }) <*> sc_ctm
 
 
 
-instance CtxRotate Semicircle u where
+instance InterpretUnit u => CtxRotate Semicircle u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Semicircle u where

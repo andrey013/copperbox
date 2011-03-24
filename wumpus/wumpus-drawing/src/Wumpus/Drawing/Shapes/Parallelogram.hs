@@ -89,7 +89,7 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Parallelogram u -> Parallelogram u
 mapCTM f = (\s i -> s { pll_ctm = f i }) <*> pll_ctm
 
 
-instance CtxRotate Parallelogram u where
+instance InterpretUnit u => CtxRotate Parallelogram u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Parallelogram u where

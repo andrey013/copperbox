@@ -65,7 +65,7 @@ mapCTM f = (\s i -> s { rect_ctm = f i }) <*> rect_ctm
 
 
 
-instance CtxRotate Rectangle u where
+instance InterpretUnit u => CtxRotate Rectangle u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Rectangle u where

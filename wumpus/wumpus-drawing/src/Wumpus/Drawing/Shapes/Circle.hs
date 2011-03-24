@@ -59,7 +59,7 @@ mapCTM f = (\s i -> s { circ_ctm = f i }) <*> circ_ctm
 
 
 
-instance CtxRotate Circle u where
+instance InterpretUnit u => CtxRotate Circle u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
                   
 

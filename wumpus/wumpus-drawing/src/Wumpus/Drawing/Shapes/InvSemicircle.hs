@@ -57,7 +57,7 @@ mapInner f = InvSemicircle . f . getInvSemicircle
 
 
 
-instance CtxRotate InvSemicircle u where
+instance InterpretUnit u => CtxRotate InvSemicircle u where
   ctxRotate sz ang = mapInner (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout InvSemicircle u where

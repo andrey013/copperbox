@@ -67,7 +67,7 @@ mapCTM f = (\s i -> s { dia_ctm = f i }) <*> dia_ctm
 
 
 
-instance CtxRotate Diamond u where
+instance InterpretUnit u => CtxRotate Diamond u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Diamond u where

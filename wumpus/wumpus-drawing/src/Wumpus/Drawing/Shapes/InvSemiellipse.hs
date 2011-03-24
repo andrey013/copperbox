@@ -56,7 +56,7 @@ mapInner :: (Semiellipse u -> Semiellipse u)
          -> InvSemiellipse u
 mapInner f = InvSemiellipse . f . getInvSemiellipse
 
-instance CtxRotate InvSemiellipse u where
+instance InterpretUnit u => CtxRotate InvSemiellipse u where
   ctxRotate sz ang = mapInner (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout InvSemiellipse u where

@@ -76,15 +76,11 @@ class CtxRotateAbout t u where
 
 
 -- Scale
-
-
 class CtxScale t u where
   ctxScale :: FontSize -> Double -> Double -> t u -> t u
 
 
 -- Translate
-
-
 class CtxTranslate t u where
   ctxTranslate :: FontSize -> u -> u -> t u -> t u
 
@@ -273,8 +269,11 @@ instance (CtxTranslate t u, InterpretUnit u) =>
 
 
 
-
-
+-- 
+-- Translates on /simple/ objects are just additions as the 
+-- translation amount is in the same unit as the Point or
+-- Vectors components.
+--
 
 -- Point2 
 
@@ -289,8 +288,7 @@ instance InterpretUnit u => CtxScale Point2 u where
   ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
 
 instance InterpretUnit u => CtxTranslate Point2 u where
-  ctxTranslate sz dx dy = 
-      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
+  ctxTranslate _ dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 -- Vec2 
 
@@ -305,8 +303,7 @@ instance InterpretUnit u => CtxScale Vec2 u where
   ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
 
 instance InterpretUnit u => CtxTranslate Vec2 u where
-  ctxTranslate sz dx dy = 
-      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
+  ctxTranslate _ dx dy (V2 x y) = V2 (x+dx) (y+dy)
               
 
 -- BoundingBox
@@ -322,8 +319,10 @@ instance InterpretUnit u => CtxScale BoundingBox u where
   ctxScale sz sx sy = intraMapFunctor sz (dscale sx sy)
 
 instance InterpretUnit u => CtxTranslate BoundingBox u where
-  ctxTranslate sz dx dy = 
-      intraMapFunctor sz (dscale (normalize sz dx) (normalize sz dy))
+  ctxTranslate _ dx dy (BBox (P2 x0 y0) (P2 x1 y1)) = 
+      let ll = P2 (x0+dx) (y0+dy)
+          ur = P2 (x1+dx) (y1+dy)
+      in BBox ll ur
 
 
 

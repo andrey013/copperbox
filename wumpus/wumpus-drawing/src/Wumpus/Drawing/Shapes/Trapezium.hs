@@ -74,7 +74,7 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Trapezium u -> Trapezium u
 mapCTM f = (\s i -> s { tz_ctm = f i }) <*> tz_ctm
 
 
-instance CtxRotate Trapezium u where
+instance InterpretUnit u => CtxRotate Trapezium u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Trapezium u where

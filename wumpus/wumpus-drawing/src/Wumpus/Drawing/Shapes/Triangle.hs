@@ -78,7 +78,7 @@ mapCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
 
 
 
-instance CtxRotate Triangle u where
+instance InterpretUnit u => CtxRotate Triangle u where
   ctxRotate sz ang = mapCTM (ctxRotate sz ang)
               
 instance InterpretUnit u => CtxRotateAbout Triangle u where

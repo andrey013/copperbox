@@ -245,6 +245,13 @@ makeShapeCTM pt ang = ShapeCTM { ctm_center   = pt
                                , ctm_rotation = ang }
 
 
+ctmCenter :: ShapeCTM u -> Point2 u
+ctmCenter = ctm_center
+
+ctmAngle :: ShapeCTM u -> Radian
+ctmAngle = ctm_rotation
+
+
 instance InterpretUnit u => CtxScale ShapeCTM u where
   ctxScale sz sx sy = (\s x y pt -> s { ctm_scale_x = x*sx
                                       , ctm_scale_y = y*sy 
@@ -252,9 +259,11 @@ instance InterpretUnit u => CtxScale ShapeCTM u where
                         <*> ctm_scale_x <*> ctm_scale_y <*> ctm_center
 
 
-instance CtxRotate ShapeCTM u where
-  ctxRotate _ ang = (\s i -> s { ctm_rotation = circularModulo $ i+ang })
-                      <*> ctm_rotation
+instance InterpretUnit u => CtxRotate ShapeCTM u where
+  ctxRotate sz ang = (\s i pt -> let ctr = ctxRotate sz ang pt
+                                 in s { ctm_rotation = circularModulo $ i+ang
+                                      , ctm_center   = ctr })
+                      <*> ctm_rotation <*> ctm_center
 
 
 instance InterpretUnit u => CtxRotateAbout ShapeCTM u where
@@ -271,23 +280,13 @@ instance InterpretUnit u => CtxTranslate ShapeCTM u where
 
 
 
-
-ctmCenter :: ShapeCTM u -> Point2 u
-ctmCenter = ctm_center
-
-ctmAngle :: ShapeCTM u -> Radian
-ctmAngle = ctm_rotation
-
--- This is wrong...
--- 
 projectFromCtr :: InterpretUnit u => Vec2 u -> ShapeCTM u -> Anchor u
-projectFromCtr v0 (ShapeCTM { ctm_center   = ctr0
-                               , ctm_scale_x  = sx
-                               , ctm_scale_y  = sy
-                               , ctm_rotation = theta }) = 
-     pointSize >>= \sz -> return $ ctr sz .+^ v sz
-  where
-    ctr = \sz -> ctxRotate sz theta $ ctxScale sz sx sy ctr0
-    v   = \sz -> ctxRotateAbout sz theta (ctr sz) $ ctxScale sz sx sy v0
+projectFromCtr v (ShapeCTM { ctm_center   = ctr
+                           , ctm_scale_x  = sx
+                           , ctm_scale_y  = sy
+                           , ctm_rotation = theta }) = 
+     pointSize >>= \sz -> 
+     let v1 = ctxRotate sz theta $ ctxScale sz sx sy $ v 
+     in return $ ctr .+^ v1
 
 
