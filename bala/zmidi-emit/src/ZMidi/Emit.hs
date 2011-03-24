@@ -35,9 +35,9 @@ module ZMidi.Emit
   -- * Data types
   , HiMidi
   , Track
-  , ChannelStream
+  , Voice
   , Section
-  , SectionVoice
+  , Overlay
   , Primitive
   , VoiceMsg
   , PrimProps

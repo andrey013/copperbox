@@ -184,13 +184,13 @@ outputAudioTrack :: Int -> Track -> MidiTrack
 outputAudioTrack track_num (Track im) = MidiTrack $ info : body
   where 
     info = sequenceName $ "Track" ++ show track_num
-    body = collapseChannels $ map (uncurry outputChannelStream) 
+    body = collapseChannels $ map (uncurry outputVoice) 
                             $ limit16 $ IM.toAscList im
 
 
 -- | Midi can only support upto 16 tracks, indexed [0..15].
 --
-limit16 :: [(Int,ChannelStream)] -> [(Int,ChannelStream)]
+limit16 :: [(Int,Voice)] -> [(Int,Voice)]
 limit16 = takeWhile (\(n,_) -> n < 16)
 
 
@@ -205,9 +205,9 @@ collapseChannels = deltaTransform . concatMessages
 -- | The sections in a ChannelStream are rendered sequentially
 -- one after the other.
 --
-outputChannelStream :: Int -> ChannelStream -> TrackData
-outputChannelStream ch strm = 
-    runOutMonad ch $ F.foldlM mf mempty $ getSections strm
+outputVoice :: Int -> Voice -> TrackData
+outputVoice ch vce = 
+    runOutMonad ch $ F.foldlM mf mempty $ getVoice vce
   where
     mf :: TrackData -> Section -> OutMonad TrackData
     mf ac e = (\a -> ac `mappend` a) <$> outputSection e
@@ -228,7 +228,7 @@ outputSection (Section tmpo ovs) =
 -- This becomes the actual end-time after all the overlays have 
 -- been rendered.
 --
-outputOverlays :: Overlays -> OutMonad TrackData
+outputOverlays :: JoinList Overlay -> OutMonad TrackData
 outputOverlays xs = do
     common_start <- getEllapsedTime
     (track_data,max_end) <- F.foldlM (mf common_start) (mempty,0) xs
@@ -237,7 +237,7 @@ outputOverlays xs = do
   where
     cat                   = mergeOrdered compare
     mf ct (ac,max_end) sv = do { setEllapsedTime ct
-                               ; body <- sectionVoice sv
+                               ; body <- overlay sv
                                ; et   <- getEllapsedTime
                                ; return (ac `cat` body, max max_end et)
                                }
@@ -281,8 +281,8 @@ end_of_track :: MidiMessage
 end_of_track = (0, MetaEvent $ EndOfTrack)
 
 
-sectionVoice :: SectionVoice -> OutMonad TrackData
-sectionVoice (SectionVoice xs) = primitives xs 
+overlay :: Overlay -> OutMonad TrackData
+overlay (Overlay xs) = primitives xs 
 
 
 primitives :: [Primitive] -> OutMonad TrackData

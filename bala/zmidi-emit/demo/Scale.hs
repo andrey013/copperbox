@@ -8,22 +8,27 @@ import ZMidi.Emit
 import ZMidi.Core                               -- package: zmidi-core
 
 import Data.Monoid
+import System.Directory
 
 main :: IO ()
 main = demo01 >> demo02
 
 -- default tempo is 120 beats per minute
 
+outfile_midi :: FilePath
+outfile_midi = "./out/scale.mid"
+
 demo01 :: IO ()
 demo01 = do
-    putStrLn "Writing scale.mid..."
-    writeHiMidi "scale.mid" $ 
+    createDirectoryIfMissing True "./out/"
+    putStrLn $ "Writing " ++ outfile_midi
+    writeHiMidi outfile_midi $ 
       hiMidi `meta`  genericText  "C major scale"
              `addT`  track 0 scale_track
              
 
-scale_track :: ChannelStream
-scale_track  = section 120 c_major_up `mappend` section 120 c_major_down
+scale_track :: Voice
+scale_track  = monoVoice 120 c_major_up `mappend` monoVoice 120 c_major_down
 
 
 
@@ -44,7 +49,7 @@ qn pch = note pch dquarter
 
 demo02 :: IO ()
 demo02 = do
-    ans <- readMidi "scale.mid"
+    ans <- readMidi outfile_midi
     case ans of
       Left (n,msg) -> putStrLn $ "Parse failure at " ++ show n ++ ": " ++ msg
       Right m      -> printMidi m

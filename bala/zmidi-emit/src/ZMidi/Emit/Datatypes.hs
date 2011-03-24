@@ -27,10 +27,9 @@ module ZMidi.Emit.Datatypes
   -- * Higher level syntax
   ,  HiMidi(..)
   , Track(..)
-  , ChannelStream(..)
+  , Voice(..)
   , Section(..)
-  , Overlays
-  , SectionVoice(..)
+  , Overlay(..)
   , Primitive(..)
   , VoiceMsg(..)
   , PrimProps(..)
@@ -136,7 +135,7 @@ data HiMidi = HiMidi
 -- 
 -- Note - channel 9 is reserved for MIDI percussion.
 --
-newtype Track = Track { getTrack :: IntMap ChannelStream }
+newtype Track = Track { getTrack :: IntMap Voice }
   deriving (Show)
 
 
@@ -148,12 +147,12 @@ newtype Track = Track { getTrack :: IntMap ChannelStream }
 type ChannelNumber = Word8
 
 
--- | ChannelStream supports concatenation through @mappend@.
--- Concantenation is sequential - the notes from the second 
--- ChannelStream are concatenated after the notes in the first 
--- stream to for the amalgamated stream.
+-- | Voice supports concatenation through @mappend@.
 --
-newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
+-- Concantenation is sequential - the notes from the second 
+-- Voice are concatenated after the notes in the first.
+--
+newtype Voice = Voice { getVoice :: JoinList Section  }
   deriving (Show)
 
 
@@ -167,18 +166,17 @@ newtype ChannelStream = ChannelStream { getSections :: JoinList Section  }
 --
 data Section = Section 
       { section_tempo           :: Double
-      , section_overlays        :: Overlays
+      , section_overlays        :: JoinList Overlay
       }
   deriving (Show)
 
 
-type Overlays = JoinList SectionVoice
 
 
 -- | A section voice allows chords, but otherwise it is 
 -- monophonic.
 --
-newtype SectionVoice = SectionVoice { voice_notelist :: [Primitive] }
+newtype Overlay = Overlay { getOverlay :: [Primitive] }
   deriving (Show)
 
 
@@ -234,9 +232,9 @@ instance Monoid Track where
   mempty        = Track mempty
   a `mappend` b = Track $ getTrack a `mappend` getTrack b
 
-instance Monoid ChannelStream where
-  mempty        = ChannelStream mempty
-  a `mappend` b = ChannelStream $ getSections a `mappend` getSections b
+instance Monoid Voice where
+  mempty        = Voice mempty
+  a `mappend` b = Voice $ getVoice a `mappend` getVoice b
 
 
 

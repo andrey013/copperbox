@@ -25,6 +25,8 @@ module ZMidi.Emit.Construction
   , addT
   , track
 
+  , hplus
+
   -- ** Meta info
   , MetaInfo            -- opaque
   , meta
@@ -36,8 +38,8 @@ module ZMidi.Emit.Construction
   -- ** Monadically build note lists  
   , NoteList            -- re-export
 
-  , section
-  , overlays
+  , monoVoice
+  , polyVoice
 
   , instrument
   , volume
@@ -350,13 +352,27 @@ addT :: HiMidi -> Track -> HiMidi
 addT = addTrack
 
 
--- | 'track' : @ chan_num * channel_stream -> Track @
+-- | 'track' : @ chan_num * voice -> Track @
 -- 
--- Create a 'Track' from a 'ChannelStream', assigning it
+-- Create a 'Track' from a 'Voice', assigning it
 -- to the channel @chan_num@.
 --
-track :: Int -> ChannelStream -> Track
+track :: Int -> Voice -> Track
 track ch_num ch_body = Track $ IM.insert ch_num ch_body IM.empty 
+
+
+infixl 5 `hplus`
+
+hplus :: Voice -> Voice -> Voice
+hplus = mappend
+
+{-
+-- vplus feels the wrong name - or Track is the wrong name.
+-- Really we are adding channels (maps of channels).
+--
+vplus :: Track -> Track -> Track
+vplus = mappend
+-}
 
 
 --------------------------------------------------------------------------------
@@ -408,33 +424,33 @@ genericText msg = MetaInfo $ TextEvent GENERIC_TEXT msg
 --
 -- Effectively this is a @run@ function for the 'NoteList' monad.
 --
-voice :: NoteList a -> SectionVoice
-voice = SectionVoice . execNoteList build_env_zero
+overlay :: NoteList a -> Overlay
+overlay = Overlay . execNoteList build_env_zero
 
 
 
--- | 'section' : @ bpm * note_list -> ChannelStream @
+-- | 'monoVoice' : @ bpm * note_list -> Voice @
 --
--- Build a 'ChannelStream' from a 'NoteList' played at the 
+-- Build a monophonic 'Voice' from a 'NoteList' played at the 
 -- supplied tempo (bpm).
 --
 -- Effectively this is a @run@ function for the 'NoteList' monad.
 --
-section :: Double -> NoteList a -> ChannelStream
-section bpm xs = ChannelStream $ JL.one $ Section bpm $ JL.one $ voice xs
+monoVoice :: Double -> NoteList a -> Voice
+monoVoice bpm xs = Voice $ JL.one $ Section bpm $ JL.one $ overlay xs
 
 
--- | 'overlays' : @ bpm * [note_list] -> ChannelStream @
+-- | 'overlays' : @ bpm * [note_list] -> Voice @
 --
--- Build a 'ChannelStream' by simultaneously overlaying the 
+-- Build a polyphonic 'Voice' by simultaneously overlaying the 
 -- NoteLists. All the overlayed NoteLists are played at the 
 -- supplied tempo (bpm).
 --
 -- Effectively this is a @run@ function for the 'NoteList' monad.
 --
-overlays :: Double -> [NoteList a] -> ChannelStream
-overlays bpm xs = 
-    ChannelStream $ JL.one $ Section bpm $ JL.fromListF voice xs
+polyVoice :: Double -> [NoteList a] -> Voice
+polyVoice bpm xs = 
+    Voice $ JL.one $ Section bpm $ JL.fromListF overlay xs
 
 
 
