@@ -17,8 +17,7 @@
 
 module Wumpus.Basic.Kernel
   (
-    module Wumpus.Basic.Kernel.Base.AffineTrans
-  , module Wumpus.Basic.Kernel.Base.BaseDefs
+    module Wumpus.Basic.Kernel.Base.BaseDefs
   , module Wumpus.Basic.Kernel.Base.ContextFun
   , module Wumpus.Basic.Kernel.Base.DrawingContext
   , module Wumpus.Basic.Kernel.Base.FontMetrics
@@ -28,6 +27,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   , module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+  , module Wumpus.Basic.Kernel.Objects.AffineTrans
   , module Wumpus.Basic.Kernel.Objects.Anchors
   , module Wumpus.Basic.Kernel.Objects.Basis
   , module Wumpus.Basic.Kernel.Objects.Bounded
@@ -44,7 +44,6 @@ module Wumpus.Basic.Kernel
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
@@ -55,6 +54,7 @@ import Wumpus.Basic.Kernel.Base.Units
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+import Wumpus.Basic.Kernel.Objects.AffineTrans
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded

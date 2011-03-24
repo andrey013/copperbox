@@ -1,9 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
-{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -53,7 +48,6 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
@@ -265,59 +259,4 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go SE     = bbox $ P2 (x-w)   y
     go SW     = bbox $ P2 x       y
     go NW     = bbox $ P2 x      (y-h)
-
-
---------------------------------------------------------------------------------
--- affine trans
-
-
-
--- These CF2 instances cover PosGraphic and PosImage.
-
-instance (CtxRotate t u, Functor t, InterpretUnit u) => 
-    Rotate (CF2 (Point2 u) RectPosition (t u)) where
-  rotate ang = affineTransR2a (\sz -> ctxRotate sz ang) 
-                              (\sz -> ctxRotate sz ang)
-
-instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
-    RotateAbout (CF2 (Point2 u) RectPosition (t u)) u where
-  rotateAbout ang p0 = affineTransR2a (\sz -> ctxRotateAbout sz ang p0)
-                                      (\sz -> ctxRotateAbout sz ang p0)
-
-instance (CtxScale t u, InterpretUnit u) => 
-    Scale (CF2 (Point2 u) RectPosition (t u)) where
-  scale sx sy = affineTransR2a (\sz -> ctxScale sz sx sy)
-                               (\sz -> ctxScale sz sx sy)
-
-instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
-    Translate (CF2 (Point2 u) RectPosition (t u)) u where
-  translate dx dy = affineTransR2a (\sz -> ctxTranslate sz dx dy) 
-                                   (\sz -> ctxTranslate sz dx dy)
-
-
-
-
--- These CF3 instances cover PosThetaGraphic and PosThetaImage
--- (defined elsewhere)
-
-instance (CtxRotate t u, Functor t, InterpretUnit u) => 
-    Rotate (CF3 (Point2 u) RectPosition Radian (t u)) where
-  rotate ang = affineTransR3a (\sz -> ctxRotate sz ang) 
-                              (\sz -> ctxRotate sz ang)
-
-instance (CtxRotateAbout t u, InterpretUnit u, u ~ DUnit (t u)) => 
-    RotateAbout (CF3 (Point2 u) RectPosition Radian (t u)) u where
-  rotateAbout ang p0 = affineTransR3a (\sz -> ctxRotateAbout sz ang p0)
-                                      (\sz -> ctxRotateAbout sz ang p0)
-
-instance (CtxScale t u, InterpretUnit u) => 
-    Scale (CF3 (Point2 u) RectPosition Radian (t u)) where
-  scale sx sy = affineTransR3a (\sz -> ctxScale sz sx sy)
-                               (\sz -> ctxScale sz sx sy)
-
-instance (CtxTranslate t u, InterpretUnit u, u ~ DUnit (t u)) => 
-    Translate (CF3 (Point2 u) RectPosition Radian (t u)) u where
-  translate dx dy = affineTransR3a (\sz -> ctxTranslate sz dx dy) 
-                                   (\sz -> ctxTranslate sz dx dy)
-
 

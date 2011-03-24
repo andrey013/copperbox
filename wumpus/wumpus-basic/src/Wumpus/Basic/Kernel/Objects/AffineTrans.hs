@@ -1,8 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,26 +17,26 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Base.AffineTrans
+module Wumpus.Basic.Kernel.Objects.AffineTrans
   (
-    Rotate(..)
-  , CtxRotate(..)
-
-  -- * Rotate about
-  , RotateAbout(..)
+   
+    CtxRotate(..)
   , CtxRotateAbout(..)
-
-  -- * Scale
-  , Scale(..)
   , CtxScale(..)
-  
-  -- * Translate
-  , Translate(..)
   , CtxTranslate(..)
+
+  , rotate
+  , rotateAbout
+  , scale
+  , translate
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Objects.Basis
+import Wumpus.Basic.Kernel.Objects.Image
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -48,16 +46,12 @@ import Wumpus.Core                              -- package: wumpus-core
 
 -- affine trans
 
-class Rotate o where
-  rotate :: Radian -> o -> o
 
 class CtxRotate t u where
   ctxRotate :: FontSize -> Radian -> t u -> t u
 
 -- Rotate About
 
-class RotateAbout o u where
-  rotateAbout :: DUnit o ~ u => Radian -> Point2 u -> o -> o
 
 class CtxRotateAbout t u where
   ctxRotateAbout :: FontSize -> Radian -> Point2 u -> t u -> t u
@@ -65,8 +59,6 @@ class CtxRotateAbout t u where
 
 -- Scale
 
-class Scale o where
-  scale :: Double -> Double -> o -> o
 
 class CtxScale t u where
   ctxScale :: FontSize -> Double -> Double -> t u -> t u
@@ -74,14 +66,80 @@ class CtxScale t u where
 
 -- Translate
 
-class Translate o u where
-  translate :: DUnit o ~ u => u -> u -> o -> o
 
 class CtxTranslate t u where
   ctxTranslate :: FontSize -> u -> u -> t u -> t u
 
 
+
+
+
+affineTransImg :: InterpretUnit u
+              => (FontSize -> ImageAns t u -> ImageAns t u)
+              -> Image t u
+              -> Image t u
+affineTransImg fn df = drawingCtx >>= \ctx -> 
+    let sz  = dc_font_size ctx in return $ fn sz $ runCF df ctx
+
+
+
+
+
+rotate :: (CtxRotate t u, InterpretUnit u) 
+       => Radian -> Image t u -> Image t u
+rotate ang          = affineTransImg (\sz -> ctxRotate sz ang)
+
+rotateAbout :: (CtxRotateAbout t u, InterpretUnit u) 
+            => Radian -> Point2 u -> Image t u -> Image t u
+rotateAbout ang p0  = affineTransImg (\sz -> ctxRotateAbout sz ang p0)
+
+scale :: (CtxScale t u, InterpretUnit u) 
+      => Double -> Double -> Image t u -> Image t u
+scale sx sy         = affineTransImg (\sz -> ctxScale sz sx sy)
+
+translate :: (CtxTranslate t u, InterpretUnit u) 
+          => u -> u -> Image t u -> Image t u 
+translate dx dy     = affineTransImg (\sz -> ctxTranslate sz dx dy)
+
+
+
+
+
 --------------------------------------------------------------------------------
+
+
+-- affine trans
+
+
+
+instance (CtxRotate t u, InterpretUnit u) => 
+    CtxRotate (ImageAns t) u where
+  ctxRotate sz ang = trafoImageAns (ctxRotate sz ang) (drotate ang)
+
+
+instance (CtxRotateAbout t u, InterpretUnit u) => 
+    CtxRotateAbout (ImageAns t) u where
+  ctxRotateAbout sz ang pt = let dpt = normalizeF sz pt 
+                             in trafoImageAns (ctxRotateAbout sz ang pt) 
+                                              (drotateAbout ang dpt)
+
+
+instance (CtxScale t u, InterpretUnit u) => 
+    CtxScale (ImageAns t) u where
+  ctxScale sz sx sy = trafoImageAns (ctxScale sz sx sy) (dscale sx sy)
+
+
+instance (CtxTranslate t u, InterpretUnit u) => 
+    CtxTranslate (ImageAns t) u where
+  ctxTranslate sz dx dy = let ddx = normalize sz dx
+                              ddy = normalize sz dy
+                          in trafoImageAns (ctxTranslate sz dx dy) 
+                                           (dtranslate ddx ddy)
+
+
+
+
+
 
 -- Point2 
 

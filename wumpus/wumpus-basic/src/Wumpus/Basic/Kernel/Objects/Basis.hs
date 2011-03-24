@@ -1,7 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,6 +25,7 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ignoreAns
   , replaceAns
   , mapAns
+  , trafoImageAns
 
   , decorate
   , annotate
@@ -36,7 +34,6 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.AffineTrans
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
@@ -47,8 +44,6 @@ import Wumpus.Core                              -- package: wumpus-core
 -- and a PrimGraphic.
 --
 data ImageAns t u       = Ans (t u) CatPrim
-
-type instance DUnit (ImageAns t u) = u
 
 
 
@@ -88,8 +83,23 @@ replaceAns ans = fmap (\(Ans _ prim) -> Ans ans prim)
 -- wrapper type.
 --
 mapAns :: Functor cf
-          => (t u -> t1 u) -> cf (ImageAns t u) -> cf (ImageAns t1 u)
-mapAns f = fmap (\(Ans a prim) -> Ans (f a) prim)
+       => (t u -> t1 u) -> cf (ImageAns t u) -> cf (ImageAns t1 u)
+mapAns f = fmap (trafoImageAns f id) 
+
+
+
+-- | Transform both the answer produced by a graphic object and 
+-- transform the primitive drawing.
+--
+-- Note - the new answer must share the same unit type as the
+-- initial answer, although it does not need to have the same
+-- wrapper type. Also this function is specifically exposed to
+-- enable affine transofrmations - it is not expected to be 
+-- generally useful.
+--
+trafoImageAns :: (t u -> t1 u) -> (CatPrim -> CatPrim) 
+              -> ImageAns t u -> ImageAns t1 u
+trafoImageAns f g (Ans a prim) = Ans (f a) (g prim)
 
 
 -- | Decorate an Image by superimposing a Graphic.
@@ -149,39 +159,4 @@ clipObject :: Functor cf
            => PrimPath -> cf (ImageAns t u) -> cf (ImageAns t u)
 clipObject pp = 
     fmap (\(Ans a prim) -> Ans a (cpmap (clip pp) prim))
-
-
---------------------------------------------------------------------------------
-
-
--- affine trans
-
-
-
-instance (CtxRotate t u, InterpretUnit u) => 
-    CtxRotate (ImageAns t) u where
-  ctxRotate sz ang (Ans ma p) = Ans (ctxRotate sz ang ma) (drotate ang p)
-
-
-instance (CtxRotateAbout t u, InterpretUnit u) => 
-    CtxRotateAbout (ImageAns t) u where
-  ctxRotateAbout sz ang pt (Ans ma p) = 
-    let dpt = normalizeF sz pt 
-    in Ans (ctxRotateAbout sz ang pt ma) (drotateAbout ang dpt p)
-
-
-instance (CtxScale t u, InterpretUnit u) => CtxScale (ImageAns t) u where
-  ctxScale sz sx sy (Ans ma p) = Ans (ctxScale sz sx sy ma) (dscale sx sy p)
-
-
-instance (CtxTranslate t u, InterpretUnit u) => 
-    CtxTranslate (ImageAns t) u where
-  ctxTranslate sz dx dy (Ans ma p) = 
-    let ddx = normalize sz dx
-        ddy = normalize sz dy
-    in Ans (ctxTranslate sz dx dy ma) (dtranslate ddx ddy p)
-
-
-
-
 

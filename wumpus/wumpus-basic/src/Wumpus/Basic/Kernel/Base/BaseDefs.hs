@@ -19,8 +19,7 @@
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
   
-    DUnit
-  , MonUnit
+    MonUnit 
 
   , LengthTolerance(..)
 
@@ -68,18 +67,6 @@ import Control.Applicative
 
 
 
--- | Type family to access the unit parameter of graphical 
--- objects - Point2, Vec2, etc. 
--- 
--- Not all the unit parameterized types are Functors so DUnit can 
--- gives some access to the Unit for classes and type signatures.
---
-type family DUnit m :: *
-
-
-type instance DUnit (Point2 u)          = u
-type instance DUnit (Vec2 u)            = u
-type instance DUnit (BoundingBox u)     = u
 
 
 
