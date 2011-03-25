@@ -155,7 +155,7 @@ onelineALeft :: (Real u, Floating u, InterpretUnit u)
 onelineALeft width otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
-    in atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescTextLine $ text_content otext) pt theta
   where
     vec1      = hvec $ negate $ 0.5 * width
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -174,7 +174,7 @@ onelineACenter :: (Real u, Floating u, InterpretUnit u)
 onelineACenter _ otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
-    in atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescTextLine $ text_content otext) pt theta
   where
     vec1      = negateV $ 0.5 *^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang
@@ -193,7 +193,7 @@ onelineARight :: (Real u, Floating u, InterpretUnit u)
 onelineARight max_w otext = promoteR2 $ \ctr theta -> 
     centerToBaseline >>= \down -> 
     let pt = move down theta ctr 
-    in atRot (rescapedline $ text_content otext) pt theta
+    in atRot (rescTextLine $ text_content otext) pt theta
   where
     vec1      = hvec (0.5 * max_w) ^-^ oneline_adv otext
     move down = \ang -> thetaSouthwards down ang . displaceOrtho vec1 ang

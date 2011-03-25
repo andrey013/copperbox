@@ -52,7 +52,7 @@ import Data.Maybe
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
 advtext esc = lift0R1 (textVector esc) >>= body
   where
-    body v = replaceAns v $ escapedline esc
+    body v = replaceAns v $ escTextLine esc
 
 
 

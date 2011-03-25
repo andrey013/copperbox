@@ -148,7 +148,7 @@ escaped :: InterpretUnit u => EscapedText -> DocText u
 escaped esc = DocText $ body 
    where
      body = textVector esc >>= \v -> 
-            return (vector_x v, replaceAns v $ escapedline esc)
+            return (vector_x v, replaceAns v $ escTextLine esc)
 
 
 -- | Build a DocText from a string.
@@ -252,7 +252,7 @@ uniformSpace dx xs = hkernPrim $ go xs
 hkernPrim :: InterpretUnit u => [KernChar u] -> Query (u,AdvGraphic u)
 hkernPrim ks = hkernVector ks >>= \v ->
                uconvertCtxF v  >>= \v1 -> 
-               return (vector_x v1, replaceAns v1 $ hkernline ks)
+               return (vector_x v1, replaceAns v1 $ hkernLine ks)
 
 
 -- | Note - the changes to the DrawingContext have to be 

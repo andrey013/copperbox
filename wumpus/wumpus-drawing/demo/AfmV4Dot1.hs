@@ -10,7 +10,7 @@ import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
+import Wumpus.Basic.System.FontLoader.AfmTopLevel
 
 import Wumpus.Core                              -- package: wumpus-core
 

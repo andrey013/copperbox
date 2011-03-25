@@ -71,4 +71,4 @@ makeOPos (V2 w _) =
     return $ ObjectPos 0 w yminor ymajor
 
 escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
-escText1 ch = escapedline $ wrapEscChar ch
+escText1 ch = escTextLine $ wrapEscChar ch
