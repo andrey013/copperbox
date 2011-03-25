@@ -43,11 +43,11 @@ mf = do
 -- metrics...
 --
 text01 :: AdvGraphic Double
-text01 = replaceAns (hvec 84) $ textline "text01"
+text01 = replaceAns (hvec 84) $ plainTextLine "text01"
     
 
 text02 :: AdvGraphic Double
-text02 = replaceAns (hvec 210) $ textline "text number two"
+text02 = replaceAns (hvec 210) $ plainTextLine "text number two"
 
 
 miniDisk :: AdvGraphic Double

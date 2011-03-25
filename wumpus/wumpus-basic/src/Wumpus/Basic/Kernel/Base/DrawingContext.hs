@@ -49,7 +49,7 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.FontMetrics
+import Wumpus.Basic.Kernel.Base.FontSupport
 import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core

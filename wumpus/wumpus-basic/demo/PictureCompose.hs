@@ -141,7 +141,7 @@ picAnno pic msg = cxpAlignSepH HCenter (30::Double) pic lbl
   where
     lbl = drawTracing $ body
     body :: TraceDrawing Double ()
-    body = draw $ textline msg `at` zeroPt 
+    body = draw $ plainTextLine msg `at` zeroPt 
 
 
 rect_red :: CtxPicture

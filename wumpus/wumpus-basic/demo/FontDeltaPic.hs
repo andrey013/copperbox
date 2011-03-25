@@ -39,11 +39,11 @@ mf = fontDelta $ do
     draw $ line4 `at` (P2 0  25)
     draw $ line5 `at` (P2 0   0) 
   where
-    line1 = textline "All the lines of this drawing" 
-    line2 = textline "should be grouped within a SVG"
-    line3 = textline "g-element, from where they"
-    line4 = textline "inherit the font-family and"
-    line5 = textline "font-size attributes."
+    line1 = plainTextLine "All the lines of this drawing" 
+    line2 = plainTextLine "should be grouped within a SVG"
+    line3 = plainTextLine "g-element, from where they"
+    line4 = plainTextLine "inherit the font-family and"
+    line5 = plainTextLine "font-size attributes."
 
 
 

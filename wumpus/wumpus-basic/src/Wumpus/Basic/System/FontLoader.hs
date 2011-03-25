@@ -25,10 +25,9 @@ module Wumpus.Basic.System.FontLoader
   , default_font_loader_help
   ) where
 
--- @FontSupport@ might be a better name
-import Wumpus.Basic.Kernel.Base.FontMetrics     
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
+import Wumpus.Basic.Kernel.Base.FontSupport  
+import Wumpus.Basic.System.FontLoader.AfmTopLevel
+import Wumpus.Basic.System.FontLoader.GSTopLevel
 
 import Control.Applicative
 import Control.Monad

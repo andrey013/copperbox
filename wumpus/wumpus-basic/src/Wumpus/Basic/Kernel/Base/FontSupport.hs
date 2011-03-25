@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Base.FontMetrics
+-- Module      :  Wumpus.Basic.Kernel.Base.FontSupport
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Base.FontMetrics
+module Wumpus.Basic.Kernel.Base.FontSupport
   ( 
 
     FontName

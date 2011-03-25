@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.Afm
+-- Module      :  Wumpus.Basic.System.FontLoader.AfmTopLevel
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -10,16 +10,15 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Font loader / import shim for the Adobe \"Core 14\" glyph 
--- metrics.
+-- Top-level AFM V4.1 font loader. 
 --
--- Use this loader if you have the Adode glyph metrics set
--- (AFM v4.1). This metrics set is avaiable from the Adobe 
--- website.
---
+-- Use this module to build a font loader if you want to work with 
+-- the Adobe metrics sets, but find the @simpleFontLoader@ in 
+-- @Wumpus.Basic.System.FontLoader@ too inflexible.
+-- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.Afm
+module Wumpus.Basic.System.FontLoader.AfmTopLevel
   ( 
 
     loadAfmFontMetrics
@@ -29,9 +28,9 @@ module Wumpus.Basic.System.FontLoader.Afm
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Base.AfmV4Dot1Parser
-import Wumpus.Basic.System.FontLoader.Base.Datatypes
-import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
+import Wumpus.Basic.System.FontLoader.AfmV4Dot1Parser
+import Wumpus.Basic.System.FontLoader.Datatypes
+import Wumpus.Basic.System.FontLoader.FontLoadMonad
 
 
 import Wumpus.Core                              -- package: wumpus-core

@@ -106,7 +106,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.FontMetrics
+import Wumpus.Basic.Kernel.Base.FontSupport
 import Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Core                              -- package: wumpus-core

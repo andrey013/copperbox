@@ -43,47 +43,35 @@ import Data.Monoid
 
 
 
--- | To enable monadic operations on graphic objects such as Image 
--- we need primtives to support @empty@ and @append@ like the 
--- collector of a writer monad.
+-- | CatPrim could probably manage happily just being a
+-- Primitive, but it is wrapped as a newtype...
 --
-data CatPrim = PZero | PCat Primitive
-
-instance Monoid CatPrim where
-  mempty                  = PZero
-  PZero  `mappend` b      = b
-  a      `mappend` PZero  = a
-  PCat a `mappend` PCat b = PCat $ a `primCat` b
+newtype CatPrim = CatPrim { getCatPrim :: Primitive}
 
 
 instance OPlus CatPrim where
-  oplus = mappend
+  a `oplus` b = CatPrim $ getCatPrim a `primCat` getCatPrim b
 
 
 
 instance DRotate CatPrim where
-  drotate ang (PCat a) = PCat $ drotate ang a
-  drotate _   a        = a
+  drotate ang = CatPrim . drotate ang . getCatPrim
 
 instance DRotateAbout CatPrim where
-  drotateAbout pt ang (PCat a) = PCat $ drotateAbout pt ang a
-  drotateAbout _  _   a        = a
+  drotateAbout pt ang = CatPrim . drotateAbout pt ang . getCatPrim
 
 instance DScale CatPrim where
-  dscale sx sy (PCat a) = PCat $ dscale sx sy a
-  dscale _  _  a        = a
+  dscale sx sy = CatPrim . dscale sx sy . getCatPrim
 
 instance DTranslate CatPrim where
-  dtranslate dx dy (PCat a) = PCat $ dtranslate dx dy a
-  dtranslate _  _  a        = a
+  dtranslate dx dy = CatPrim . dtranslate dx dy . getCatPrim
 
 
 prim1 :: Primitive -> CatPrim 
-prim1 = PCat
+prim1 = CatPrim
 
 cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
-cpmap _ PZero    = PZero
-cpmap f (PCat a) = PCat $ f a
+cpmap f  = CatPrim . f . getCatPrim
 
 --------------------------------------------------------------------------------
 -- Lists of primitives...
@@ -122,8 +110,7 @@ hprimToList = toListH . getHPrim
 
 
 singleH :: CatPrim -> HPrim u
-singleH PZero    = mempty 
-singleH (PCat a) = HPrim $ wrapH a
+singleH = HPrim . wrapH . getCatPrim 
 
 
 

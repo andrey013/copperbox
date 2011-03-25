@@ -34,14 +34,14 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , borderedPath
 
   -- * Text
-  , textline
-  , rtextline
-  , escapedline
-  , rescapedline
+  , plainTextLine
+  , rplainTextLine
+  , escTextLine
+  , rescTextLine
 
   , KernChar
-  , hkernline
-  , vkernline
+  , hkernLine
+  , vkernLine
 
   -- * Lines
   , straightLine
@@ -235,7 +235,7 @@ borderedPath pp =
 --------------------------------------------------------------------------------
 -- Text
 
--- | 'textline' : @ string -> LocGraphic @
+-- | 'plainTextLine' : @ string -> LocGraphic @
 -- 
 -- Create a text 'LocGraphic' - i.e. a functional type 
 -- /from Point to Graphic/.
@@ -246,8 +246,8 @@ borderedPath pp =
 -- text properties (font family, font size, colour) are taken from
 -- the implicit 'DrawingContext'.
 --
-textline :: InterpretUnit u => String -> LocGraphic u
-textline ss = 
+plainTextLine :: InterpretUnit u => String -> LocGraphic u
+plainTextLine ss = 
     makeLocGraphic textAttr 
                    (\(rgb,attr) pt -> textlabel rgb attr ss pt)
 
@@ -255,7 +255,7 @@ textline ss =
 
 
 
--- | 'rtextline' : @ string -> LocThetaGraphic @
+-- | 'rplainTextLine' : @ string -> LocThetaGraphic @
 -- 
 -- Create a text 'LocThetaGraphic' - i.e. a functional type 
 -- /from Point and Angle to Graphic/.
@@ -268,13 +268,13 @@ textline ss =
 -- 
 -- This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
-rtextline :: InterpretUnit u => String -> LocThetaGraphic u
-rtextline ss =
+rplainTextLine :: InterpretUnit u => String -> LocThetaGraphic u
+rplainTextLine ss =
     makeLocThetaGraphic textAttr
                         (\(rgb,attr) pt ang -> rtextlabel rgb attr ss ang pt)
 
 
--- | 'escapedline' : @ escaped_text -> LocGraphic @
+-- | 'escTextline' : @ escaped_text -> LocGraphic @
 -- 
 -- Create a text 'LocGraphic' - i.e. a functional type 
 -- /from Point to Graphic/.
@@ -285,14 +285,14 @@ rtextline ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-escapedline :: InterpretUnit u => EscapedText -> LocGraphic u
-escapedline esc =           
+escTextLine :: InterpretUnit u => EscapedText -> LocGraphic u
+escTextLine esc =           
     makeLocGraphic textAttr 
                    (\(rgb,attr) pt -> escapedlabel rgb attr esc pt)
 
 
 
--- | 'rescapedline' : @ escaped_text -> LocThetaGraphic @
+-- | 'rescTextLine' : @ escaped_text -> LocThetaGraphic @
 -- 
 -- Create a text 'LocThetaGraphic' - i.e. a functional type 
 -- /from Point and Angle to Graphic/.
@@ -307,8 +307,8 @@ escapedline esc =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-rescapedline :: InterpretUnit u => EscapedText -> LocThetaGraphic u
-rescapedline esc = 
+rescTextLine :: InterpretUnit u => EscapedText -> LocThetaGraphic u
+rescTextLine esc = 
     makeLocThetaGraphic textAttr
                         (\(rgb,attr) pt ang -> rescapedlabel rgb attr esc ang pt)
 
@@ -325,7 +325,7 @@ uconvKernChar = mapM mf
 
 
 
--- | 'hkernline' : @ [kern_char] -> LocGraphic @
+-- | 'hkernLine' : @ [kern_char] -> LocGraphic @
 -- 
 -- Create a horizontally kerned text 'LocGraphic' - i.e. a 
 -- functional type /from Point to Graphic/.
@@ -336,15 +336,15 @@ uconvKernChar = mapM mf
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-hkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
-hkernline ks = lift0R1 (uconvKernChar ks) >>= body   
+hkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
+hkernLine ks = lift0R1 (uconvKernChar ks) >>= body   
   where
     body ans = makeLocGraphic textAttr
                   (\(rgb,attr) pt -> hkernlabel rgb attr ans pt)
 
 
 
--- | 'vkernline' : @ [kern_char] -> LocGraphic @
+-- | 'vkernLine' : @ [kern_char] -> LocGraphic @
 -- 
 -- Create a vertically kerned text 'LocGraphic' - i.e. a 
 -- functional type /from Point to Graphic/.
@@ -355,8 +355,8 @@ hkernline ks = lift0R1 (uconvKernChar ks) >>= body
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-vkernline :: InterpretUnit u => [KernChar u] -> LocGraphic u
-vkernline ks = lift0R1 (uconvKernChar ks) >>= body
+vkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
+vkernLine ks = lift0R1 (uconvKernChar ks) >>= body
   where
     body ans = makeLocGraphic textAttr
                   (\(rgb,attr) pt -> vkernlabel rgb attr ans pt)

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.System.FontLoader.GhostScript
+-- Module      :  Wumpus.Basic.System.FontLoader.GSTopLevel
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -10,15 +10,15 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Font loader / import shim for GhostScript glyph metrics.
+-- Top-level GhostScript font loader. 
 --
--- Use this loader if you have GhostScript installed and you want 
--- to use the (AFM v2.0) metrics that are distributed with 
--- GhostScript.
+-- Use this module to build a font loader if you want to work with 
+-- GhostScript, but find the @simpleFontLoader@ in 
+-- @Wumpus.Basic.System.FontLoader@ too inflexible.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.System.FontLoader.GhostScript
+module Wumpus.Basic.System.FontLoader.GSTopLevel
   ( 
 
     loadGSFontMetrics
@@ -28,9 +28,9 @@ module Wumpus.Basic.System.FontLoader.GhostScript
   ) where
 
 import Wumpus.Basic.Kernel
-import Wumpus.Basic.System.FontLoader.Base.AfmV2Parser
-import Wumpus.Basic.System.FontLoader.Base.Datatypes
-import Wumpus.Basic.System.FontLoader.Base.FontLoadMonad
+import Wumpus.Basic.System.FontLoader.AfmV2Parser
+import Wumpus.Basic.System.FontLoader.Datatypes
+import Wumpus.Basic.System.FontLoader.FontLoadMonad
 
 import Wumpus.Core                              -- package: wumpus-core
 
