@@ -16,11 +16,10 @@
 
 module Wumpus.Drawing.Extras.Grids
   ( 
-    Grid
-  , GridContextF
+   
+    GridContextF
   , grid
-  , evalGrid
-  , localizeGrid
+  , standard_grid
   , grid_major_colour
   , grid_major_line_width
   , grid_major_dotnum
@@ -40,7 +39,6 @@ import Wumpus.Core.Colour ( black )
 
 
 
-newtype Grid u = Grid { getGrid :: GridProps -> Graphic u }
 
 type GridContextF = GridProps -> GridProps
 
@@ -77,21 +75,16 @@ default_grid_props =
 
 
 grid :: (Fractional u, InterpretUnit u) 
-     => (Int,Int) -> (Int,Int) -> Grid u  
-grid bl tr = Grid $ \props -> 
-    if gp_minor_subdivs props < 1 
-       then gridMajor bl tr props
-       else gridMinor bl tr props `oplus` gridMajor bl tr props
+     => GridContextF -> (Int,Int) -> (Int,Int) -> Graphic u  
+grid upd bl tr = go (upd default_grid_props)
+  where
+    go props | gp_minor_subdivs props < 1 = gridMajor bl tr props
+             | otherwise = gridMinor bl tr props `oplus` gridMajor bl tr props
 
 
 
-
-evalGrid :: Grid u -> Graphic u
-evalGrid gf = getGrid gf default_grid_props 
-
-localizeGrid :: GridContextF -> Grid u -> Grid u 
-localizeGrid upd gf = Grid $ \props -> getGrid gf (upd props)
-
+standard_grid :: GridContextF
+standard_grid = id
 
 grid_major_colour :: RGBi -> GridContextF
 grid_major_colour rgb = (\s -> s { gp_major_colour = rgb })
@@ -234,68 +227,3 @@ sub1 :: Num u => u -> u
 sub1 = subtract 1
 
 
-{-
-advVLine :: InterpretUnit u => u -> u -> AdvGraphic u 
-advVLine len space = 
-    intoAdvGraphic (return $ hvec space) (locStraightLine $ vvec len)
-
-advHLine :: InterpretUnit u => u -> u ->  AdvGraphic u 
-advHLine len space = 
-    intoAdvGraphic (return $ vvec space) (locStraightLine $ hvec len)
-
--- FOR WUMPUS_BASIC...
---
--- | Repeat the graphic @n@ times concatenating the result.
---
-advtimes :: InterpretUnit u => Int -> AdvGraphic u -> AdvGraphic u
-advtimes n = advconcat . replicate n
--}
-
---------------------------------------------------------------------------------
-
-{-
--- | Note - the grid is originated at whatever implicit start
--- point is used. It is not snapped to /nice round/ numbers.
--- 
-grid :: (Fractional u, InterpretUnit u)
-     => (Int,Int) -> RGBi -> LocGraphic u
-grid (nx,ny) rgb    
-    | nx < 1 || ny < 1 = emptyLocGraphic
-    | otherwise        = localize (stroke_colour rgb) $ 
-        lift0R1 snapGridFactors >>= \(x_incr, y_incr) ->
-        let rectw  = x_incr * fromIntegral nx
-            recth  = y_incr * fromIntegral ny
-            grid1  = interiorGrid x_incr nx y_incr ny rectw recth
-        in grid1 `oplus` strokedRectangle rectw recth
-
-
-
--- | Get the Point corresponding the grid coordinates scaled by
--- the snap-grid scaling factors.
---
-snapGridFactors :: (Fractional u, InterpretUnit u) =>  Query (u,u)
-snapGridFactors = (\(V2 x y) -> (x,y)) <$> snapmove (1,1)
-
-
--- | 'interiorGrid' : @ increment -> ConnectorGraphic @
---
--- Draw the interior lines of a grid between the /connector/ 
--- points - start point is interpreted as bottom-left, end-point
--- is interpreted as top right.
---
--- The interior lines are calculated with repsect to the 0 and the 
--- increment, for instance with an increment of 10 but a start 
--- point @(15,0)@ lines are drawn from @(20,0), (30,0)@ etc.
---
-interiorGrid :: InterpretUnit u
-             => u -> Int -> u -> Int -> u -> u -> LocGraphic u
-interiorGrid x_step nx y_step ny w h = hlines `oplus` vlines
-  where
-    hline1 = locStraightLine (hvec w)
-    vline1 = locStraightLine (vvec h)
-    vlines = ignoreAns $ moveStart (displaceH x_step) $
-               chainH x_step (replicate (nx-1) vline1) 
-    hlines = ignoreAns $ moveStart (displaceV y_step) $ 
-               chainV y_step (replicate (ny-1) hline1) 
-
--}

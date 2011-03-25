@@ -6,6 +6,7 @@ module Grid01 where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Extras.Axes
 import Wumpus.Drawing.Extras.Grids
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -38,6 +39,6 @@ makeCtx = set_font helvetica . metricsContext 18
 
 grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
-    draw $ evalGrid $ localizeGrid (grid_major_colour red)
-                    $ grid ((-1),(-1)) (3,2)
+    draw $ grid (grid_major_colour red) ((-1),(-1)) (3,2)
+    draw $ orthontAxes (3,2)
     return ()
