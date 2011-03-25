@@ -29,6 +29,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , advcat
   , advsep
   , advconcat
+  , advtimes
   , advspace
   , advpunctuate
   , advfill
@@ -144,6 +145,10 @@ advcombine _     op (x:xs) = step x xs
 advconcat :: InterpretUnit u => [AdvGraphic u] -> AdvGraphic u
 advconcat = advcombine emptyAdvGraphic advcat
 
+-- | Repeat the graphic @n@ times concatenating the result.
+--
+advtimes :: InterpretUnit u => Int -> AdvGraphic u -> AdvGraphic u
+advtimes n = advconcat . replicate n
 
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
