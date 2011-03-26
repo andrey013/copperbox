@@ -146,6 +146,20 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
   where
     fn = promoteR2 $ \pt _ -> return $ BBox pt pt
 
+
+--
+-- NOTE - CONCATENATION
+--
+-- Because there is no tangible relation between the start point 
+-- and answer BoundingBox, LocBoundedGraphic supports exactly the
+-- same concatenation as LocImage.
+--
+-- PosImage and AdvGraphic are the objects that support more 
+-- sophisticated concatenation.
+---
+ 
+
+
 --------------------------------------------------------------------------------
 -- 
 

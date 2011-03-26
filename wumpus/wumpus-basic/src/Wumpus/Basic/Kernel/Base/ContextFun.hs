@@ -75,8 +75,8 @@ module Wumpus.Basic.Kernel.Base.ContextFun
 
   -- * Combinators
   , at
-  , rot
-  , atRot
+  , incline
+  , atIncline
   , connect
   , chain1
 
@@ -659,10 +659,8 @@ at :: LocQuery u a -> Point2 u -> CF a
 at = apply1R1
 
 
--- TODO - @rot@ show really be called something to indicate 
--- @inclination@ rather than /rotation/.
 
-infixr 1 `rot`
+infixr 1 `incline`
 
 
 -- | Downcast a 'LocThetaQuery' function by applying it to the 
@@ -670,16 +668,17 @@ infixr 1 `rot`
 -- 'LocCF'). 
 -- 
 
-rot :: LocThetaQuery u a -> Radian -> LocQuery u a
-rot = apply1R2
+incline :: LocThetaQuery u a -> Radian -> LocQuery u a
+incline = apply1R2
+
 
 
 -- | Downcast a 'LocThetaQuery' function by applying it to the 
 -- supplied point and angle, making an arity-zero Context 
 -- Function (a 'CF'). 
 --
-atRot :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
-atRot = apply2R2
+atIncline :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
+atIncline = apply2R2
 
 
 -- | Downcast a 'ConnectorQuery' function by applying it to the 

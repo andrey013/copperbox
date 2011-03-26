@@ -36,6 +36,15 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , hrepeatLI
    , vrepeatLI
    , concatLI
+   , hconcatLI
+   , vconcatLI
+   , encloseLI
+   , hencloseLI
+   , vencloseLI
+   , punctuateLI
+   , hpunctuateLI
+   , vpunctuateLI
+
    )
 
    where
@@ -122,15 +131,12 @@ uconvertLocImg = uconvertR1a
 -- Combining LocImages
 
 
--- BoundedGraphic not an exciting candidate for combinators as it
--- is @static@.
-
 -- | Concatenate two LocImages. The start point is /shared/.
 --
 -- This is just @oplus@.
 --
 catLI :: OPlus (t u) 
-            => LocImage t u -> LocImage t u -> LocImage t u
+      => LocImage t u -> LocImage t u -> LocImage t u
 catLI = oplus
 
 
@@ -143,7 +149,7 @@ catLI = oplus
 -- there boundaries are known beforehand.
 -- 
 -- Consider a more capable object such as a PosImage or AdvGraphic
--- if you need more sophisticated arragement.
+-- if you need more sophisticated arrangement.
 -- 
 sepLI :: (Num u, OPlus (t u))
       => Vec2 u -> LocImage t u -> LocImage t u -> LocImage t u
@@ -159,7 +165,7 @@ sepLI v g1 g2 = g1 `oplus` moveStart (displaceVec v) g2
 -- 
 hsepLI :: (Num u, OPlus (t u))
        => u -> LocImage t u -> LocImage t u -> LocImage t u
-hsepLI x = sepLI (hvec x)
+hsepLI u = sepLI (hvec u)
 
 
 
@@ -171,19 +177,19 @@ hsepLI x = sepLI (hvec x)
 -- 
 vsepLI :: (Num u, OPlus (t u))
        => u -> LocImage t u -> LocImage t u -> LocImage t u
-vsepLI y = sepLI (vvec y)
+vsepLI u = sepLI (vvec u)
 
 
--- | Repeatedly draw a LocImage, moving each time by the supplied 
--- vector.
+-- | Repeatedly draw a LocImage, moving the start point each time 
+-- by the supplied vector.
 --
 -- Note - the first LocImage argument is the /empty/ alternative
 -- this is drawn if the repeat count is less than 1.
 --
 repeatLI :: (Num u, OPlus (t u))
-         => Int -> Vec2 u -> LocImage t u -> LocImage t u -> LocImage t u
-repeatLI i _ alt _  | i < 1 = alt
-repeatLI i v _   gf         = promoteR1 $ \start -> 
+         => LocImage t u -> Int -> Vec2 u -> LocImage t u -> LocImage t u
+repeatLI alt i _  _  | i < 1 = alt
+repeatLI _   i v  gf         = promoteR1 $ \start -> 
     go (i-1) (gf `at` start) (mv start)
   where
     mv                      = displaceVec v
@@ -192,37 +198,39 @@ repeatLI i v _   gf         = promoteR1 $ \start ->
 
 
 
--- | Repeatedly draw a LocImage, moving horizontally each time by 
--- the supplied distance.
+-- | Repeatedly draw a LocImage, moving the start point 
+-- horizontally each time by the supplied distance.
 --
--- Note - this draws the LocImage even if the repeat count < 1.
+-- Note - this draws the alternative LocImage if the repeat count 
+-- is less than 1.
 --
 hrepeatLI :: (Num u, OPlus (t u))
-         => Int -> u -> LocImage t u -> LocImage t u -> LocImage t u
-hrepeatLI i x = repeatLI i (hvec x) 
+          => LocImage t u -> Int -> u -> LocImage t u -> LocImage t u
+hrepeatLI alt i u = repeatLI alt i (hvec u) 
 
 
 
 -- | Repeatedly draw a LocImage, moving vertically each time by 
 -- the supplied distance.
 --
--- Note - this draws the LocImage even if the repeat count < 1.
+-- Note - this draws the alternative LocImage if the repeat count 
+-- is less than 1.
 --
 vrepeatLI :: (Num u, OPlus (t u))
-         => Int -> u -> LocImage t u -> LocImage t u -> LocImage t u
-vrepeatLI i y = repeatLI i (vvec y) 
+          => LocImage t u -> Int -> u -> LocImage t u -> LocImage t u
+vrepeatLI alt i u = repeatLI alt i (vvec u) 
 
 
 
--- | Concatenate a list of LocImages, moving each time by the 
--- supplied vector.
+-- | Concatenate a list of LocImages, moving the start point each 
+-- time by the supplied vector.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
 concatLI :: (Num u, OPlus (t u))
-         => Vec2 u -> LocImage t u -> [LocImage t u] -> LocImage t u
-concatLI _ alt []     = alt
-concatLI v _   (g:gs) = promoteR1 $ \start -> 
+         => LocImage t u -> Vec2 u -> [LocImage t u] -> LocImage t u
+concatLI alt _ []     = alt
+concatLI _   v (g:gs) = promoteR1 $ \start -> 
     go  (g `at` start) (mv start) gs
   where
     mv               = displaceVec v
@@ -231,4 +239,93 @@ concatLI v _   (g:gs) = promoteR1 $ \start ->
 
 
 
+-- | Concatenate a list of LocImages, moving the start point 
+-- horizontally each time by the supplied distance.
+--
+-- Note - this draws the /empty/ alternative if the list is empty.
+--
+hconcatLI :: (Num u, OPlus (t u))
+          => LocImage t u -> u -> [LocImage t u] -> LocImage t u
+hconcatLI alt u = concatLI alt (hvec u)
+
+
+-- | Concatenate a list of LocImages, moving the start point 
+-- vertically each time by the supplied distance.
+--
+-- Note - this draws the /empty/ alternative if the list is empty.
+--
+vconcatLI :: (Num u, OPlus (t u))
+          => LocImage t u -> u -> [LocImage t u] -> LocImage t u
+vconcatLI alt u = concatLI alt (vvec u)
+
+
+-- | Enclose l r x
+--
+-- Note - the @left@ LocImage is drawn at the start point, the 
+-- LocImage @x@ is concatenated with 'sepLI' then the right 
+-- LocImage is concatenated with 'sepLi'.
+--
+encloseLI :: (Num u, OPlus (t u))
+          => Vec2 u -> LocImage t u -> LocImage t u -> LocImage t u 
+          -> LocImage t u
+encloseLI v lft rht obj = lft `op` obj `op` rht
+  where
+    op = sepLI v
+
+
+
+-- | Horizontal version of 'encloseLI'.
+--
+-- Note - the @left@ LocImage is drawn at the start point, the 
+-- LocImage @x@ is concatenated with 'sepLI' then the right 
+-- LocImage is concatenated with 'sepLI'.
+--
+hencloseLI :: (Num u, OPlus (t u))
+           => u -> LocImage t u -> LocImage t u -> LocImage t u 
+           -> LocImage t u
+hencloseLI u = encloseLI (hvec u)
+
+
+-- | Vertical version of 'encloseLI'.
+--
+-- Note - the @left@ LocImage is drawn at the start point, the 
+-- LocImage @x@ is concatenated with 'sepLI' then the right 
+-- LocImage is concatenated with 'sepLI'.
+--
+vencloseLI :: (Num u, OPlus (t u))
+           => u -> LocImage t u -> LocImage t u -> LocImage t u 
+           -> LocImage t u
+vencloseLI u = encloseLI (vvec u)
+
+
+
+-- | Concatenate a list of LocImages, punctuating with the 
+-- separator.
+--
+-- Note - this draws the /empty/ alternative if the list is empty.
+--
+punctuateLI :: (Num u, OPlus (t u))
+            => LocImage t u -> Vec2 u -> LocImage t u -> [LocImage t u] 
+            -> LocImage t u
+punctuateLI alt _ _   []     = alt
+punctuateLI _   v sep (g:gs) = go g gs
+  where 
+    go acc []     = acc
+    go acc (f:fs) = go (encloseLI v acc f sep) fs
+
+
+-- | Horizontal version of 'punctuateLI'
+--
+hpunctuateLI :: (Num u, OPlus (t u))
+             => LocImage t u -> u -> LocImage t u -> [LocImage t u] 
+             -> LocImage t u
+hpunctuateLI alt u = punctuateLI alt (hvec u)
+
+
+-- | Vertical version of 'punctuateLI'
+--
+vpunctuateLI :: (Num u, OPlus (t u))
+             => LocImage t u -> u -> LocImage t u -> [LocImage t u] 
+             -> LocImage t u
+vpunctuateLI alt u = punctuateLI alt (vvec u)
 
