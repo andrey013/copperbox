@@ -93,7 +93,9 @@ type PosQuery u ans = CF2 (Point2 u) RectPosition ans
 -- | Datatype enumerating positions within a rectangle that can be
 -- derived for a 'PosGraphic'.  
 --
-data RectPosition = CENTER | NN | SS | EE | WW | NE | NW | SE | SW 
+data RectPosition = CENTER 
+                  | NN | SS | EE | WW | NE | NW | SE | SW 
+                  | BLL | BLC | BLR
   deriving (Enum,Eq,Ord,Show)
 
 
@@ -220,22 +222,22 @@ startVector rpos (ObjectPos xminor xmajor yminor ymajor) = go rpos
     h         = yminor + ymajor
     hw        = 0.5 * w
     hh        = 0.5 * h
-    
+   
     -- CENTER, NN, SS, EE, WW all go to bottomleft then add back 
     -- the minors.
 
     go CENTER = V2 ((-hw) + xminor) ((-hh) + yminor)
     go NN     = V2 ((-hw) + xminor) ((-h)  + yminor)
-    go SS     = V2 ((-hw) + xminor)  yminor
+    go SS     = V2 ((-hw) + xminor)   yminor
     go EE     = V2 ((-w)  + xminor) ((-hh) + yminor)
     go WW     = V2 xminor           ((-hh) + yminor)
     go NE     = V2 (-xmajor)        (-ymajor)
     go SE     = V2 (-xmajor)          yminor
-    go SW     = V2 xminor           yminor
+    go SW     = V2 xminor             yminor
     go NW     = V2 xminor           (-ymajor)
-
-
-
+    go BLL    = V2 xminor             0
+    go BLC    = V2 ((-hw) + xminor)   0
+    go BLR    = V2 ((-w)  + xminor)   0 
 
 -- | Calculate the bounding box formed by locating the 'ObjectPos'
 -- at the supplied point.
@@ -250,6 +252,8 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     hh        = 0.5 * h
     bbox      = \bl -> BBox bl (bl .+^ vec w h)
 
+    -- go finds the bottom-left corner...
+
     go CENTER = bbox $ P2 (x-hw) (y-hh)
     go NN     = bbox $ P2 (x-hw) (y-h)
     go SS     = bbox $ P2 (x-hw)  y
@@ -259,4 +263,9 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go SE     = bbox $ P2 (x-w)   y
     go SW     = bbox $ P2 x       y
     go NW     = bbox $ P2 x      (y-h)
+    go BLL    = bbox $ P2 x       ymin
+    go BLC    = bbox $ P2 (x-hw)  ymin
+    go BLR    = bbox $ P2 (x-w)   ymin
+
+
 

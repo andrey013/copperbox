@@ -30,24 +30,32 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    draw $ testDrawMinor NN     `at` (P2   0 300)
-    draw $ testDrawMinor SS     `at` (P2  75 300)
-    draw $ testDrawMinor EE     `at` (P2 150 300)
-    draw $ testDrawMinor WW     `at` (P2 225 300)
-    draw $ testDrawMinor NE     `at` (P2   0 225)
-    draw $ testDrawMinor SE     `at` (P2  75 225)
-    draw $ testDrawMinor SW     `at` (P2 150 225)
-    draw $ testDrawMinor NW     `at` (P2 225 225)
-    draw $ testDrawMinor CENTER `at` (P2   0 150)
-    draw $ testDrawBl    CENTER `at` (P2 225 150)
-    draw $ testDrawBl    NN     `at` (P2   0 75)
-    draw $ testDrawBl    SS     `at` (P2  75 75)
-    draw $ testDrawBl    EE     `at` (P2 150 75)
-    draw $ testDrawBl    WW     `at` (P2 225 75)
-    draw $ testDrawBl    NE     `at` (P2   0 0)
-    draw $ testDrawBl    SE     `at` (P2  75 0)
-    draw $ testDrawBl    SW     `at` (P2 150 0)
-    draw $ testDrawBl    NW     `at` (P2 225 0)
+    draw $ testDrawMinor NN     `at` (P2   0 400)
+    draw $ testDrawMinor SS     `at` (P2  75 400)
+    draw $ testDrawMinor EE     `at` (P2 150 400)
+    draw $ testDrawMinor WW     `at` (P2 225 400)
+    draw $ testDrawMinor NE     `at` (P2   0 325)
+    draw $ testDrawMinor SE     `at` (P2  75 325)
+    draw $ testDrawMinor SW     `at` (P2 150 325)
+    draw $ testDrawMinor NW     `at` (P2 225 325)
+    draw $ testDrawMinor CENTER `at` (P2   0 250)
+    draw $ testDrawMinor BLL    `at` (P2  75 250)
+    draw $ testDrawMinor BLC    `at` (P2 150 250)
+    draw $ testDrawMinor BLR    `at` (P2 225 250)
+
+
+    draw $ testDrawBl    NN     `at` (P2   0 150)
+    draw $ testDrawBl    SS     `at` (P2  75 150)
+    draw $ testDrawBl    EE     `at` (P2 150 150)
+    draw $ testDrawBl    WW     `at` (P2 225 150)
+    draw $ testDrawBl    NE     `at` (P2   0 75)
+    draw $ testDrawBl    SE     `at` (P2  75 75)
+    draw $ testDrawBl    SW     `at` (P2 150 75)
+    draw $ testDrawBl    NW     `at` (P2 225 75)
+    draw $ testDrawBl    CENTER `at` (P2   0  0)
+    draw $ testDrawBl    BLL    `at` (P2  75  0)
+    draw $ testDrawBl    BLC    `at` (P2 150  0)
+    draw $ testDrawBl    BLR    `at` (P2 225  0)
     
 
 testDrawBl :: (Floating u, InterpretUnit u) => RectPosition -> LocGraphic u
@@ -57,7 +65,7 @@ rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
 rectBl = makePosImage opos (mkRectBl w h)
   where
     w    = 40 
-    h    = 20
+    h    = 30
     opos = ObjectPos { op_x_minor = 0
                      , op_x_major = w
                      , op_y_minor = 0
@@ -78,7 +86,7 @@ rectMinor = makePosImage opos (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 
-    h    = 20
+    h    = 30
     opos = ObjectPos { op_x_minor = m
                      , op_x_major = (w-m)
                      , op_y_minor = m

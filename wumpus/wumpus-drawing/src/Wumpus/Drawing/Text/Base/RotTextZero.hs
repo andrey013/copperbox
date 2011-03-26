@@ -1,9 +1,8 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.RotTextLR
+-- Module      :  Wumpus.Drawing.Text.Base.RotTextZero
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -11,16 +10,16 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Left-to-right measured text that supports radial inclination.
--- Caveat - rendering at any degree other than the horizontal may
--- not look good in PostScript or SVG.
+-- Direction zero (left-to-right) measured text that supports 
+-- radial inclination. Caveat - rendering at any inclination other 
+-- than the horizontal may not look good in PostScript or SVG.
 --
 -- \*\* WARNING \*\* - the API for this module needs some polish.
 --
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.RotTextLR
+module Wumpus.Drawing.Text.Base.RotTextZero
   ( 
 
     RotText
@@ -40,7 +39,7 @@ module Wumpus.Drawing.Text.RotTextLR
   ) where
 
 import Wumpus.Drawing.Chains
-import Wumpus.Drawing.Text.Base
+import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

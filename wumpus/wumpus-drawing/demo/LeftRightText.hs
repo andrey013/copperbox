@@ -48,7 +48,7 @@ makeCtx = set_font helvetica . metricsContext 15
 
 
 text_pic :: CtxPicture
-text_pic = udrawTracing (0::Double) $ do 
+text_pic = udrawTracing (0::Double) $ localize text_margin_tight $ do 
     draw $ (fn left_text)       `at` P2   0 400
     draw $ (fn center_text)     `at` P2 150 400
     draw $ (fn right_text)      `at` P2 300 400

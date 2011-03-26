@@ -58,7 +58,7 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 
 import Wumpus.Drawing.Dots.Marks
-import Wumpus.Drawing.Text.RotTextLR
+import Wumpus.Drawing.Text.Base.RotTextZero
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Geometry.Intersection

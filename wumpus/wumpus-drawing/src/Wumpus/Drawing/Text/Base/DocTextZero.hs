@@ -1,9 +1,8 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.DocTextLR
+-- Module      :  Wumpus.Drawing.Text.Base.DocTextZero
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,11 +13,11 @@
 -- Flexible text type, composable with @pretty-print@ style 
 -- operators.
 -- 
--- Left-to-right only.
+-- Direction zero (left-to-right) only.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.DocTextLR
+module Wumpus.Drawing.Text.Base.DocTextZero
   ( 
    
     DocText
@@ -44,7 +43,7 @@ module Wumpus.Drawing.Text.DocTextLR
   ) where
 
 import Wumpus.Drawing.Chains
-import Wumpus.Drawing.Text.Base
+import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

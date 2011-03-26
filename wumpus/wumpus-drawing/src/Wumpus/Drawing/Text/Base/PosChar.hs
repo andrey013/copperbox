@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.PosChar
+-- Module      :  Wumpus.Drawing.Text.Base.PosChar
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.PosChar
+module Wumpus.Drawing.Text.Base.PosChar
   ( 
     PosChar
 
@@ -23,7 +23,7 @@ module Wumpus.Drawing.Text.PosChar
 
   ) where
 
-import Wumpus.Drawing.Text.Base
+import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

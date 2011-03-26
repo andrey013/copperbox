@@ -16,12 +16,12 @@
 
 module Wumpus.Drawing.Text.DirectionZero
   ( 
-    module Wumpus.Drawing.Text.DocTextLR
-  , module Wumpus.Drawing.Text.PosChar
-  , module Wumpus.Drawing.Text.RotTextLR
+    module Wumpus.Drawing.Text.Base.DocTextZero
+  , module Wumpus.Drawing.Text.Base.PosChar
+  , module Wumpus.Drawing.Text.Base.RotTextZero
 
   ) where
 
-import Wumpus.Drawing.Text.DocTextLR
-import Wumpus.Drawing.Text.PosChar
-import Wumpus.Drawing.Text.RotTextLR
+import Wumpus.Drawing.Text.Base.DocTextZero
+import Wumpus.Drawing.Text.Base.PosChar
+import Wumpus.Drawing.Text.Base.RotTextZero

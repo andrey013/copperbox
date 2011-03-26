@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.Base
+-- Module      :  Wumpus.Drawing.Text.Base.Common
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.Base
+module Wumpus.Drawing.Text.Base.Common
   ( 
 
     advtext
