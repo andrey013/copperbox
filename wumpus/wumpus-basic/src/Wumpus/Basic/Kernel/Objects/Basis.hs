@@ -32,6 +32,8 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , hyperlink
   , clipObject
 
+  , combind
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -113,11 +115,7 @@ trafoImageAns f g (Ans a prim) = Ans (f a) (g prim)
 --
 decorate :: Monad cf
          => cf (ImageAns t u) -> cf (GraphicAns u) -> cf (ImageAns t u) 
-decorate img gf = 
-    img >>= \(Ans a g1) -> 
-    gf  >>= \(Ans _ g2) -> 
-    return $ Ans a (g1 `oplus` g2)
-
+decorate img gf = combind const img (const gf) 
 
 -- | Version of 'decorate' where the annotation Graphic has access 
 -- to the result produced by the Image.
@@ -131,10 +129,7 @@ decorate img gf =
 --
 annotate :: Monad cf 
          => cf (ImageAns t u) -> (t u -> cf (GraphicAns u)) -> cf (ImageAns t u)
-annotate img f = 
-    img >>= \(Ans a g1) -> 
-    f a >>= \(Ans _ g0) -> 
-    return $ Ans a (g0 `oplus` g1)
+annotate img gf = combind const img gf
 
 
 -- | Hyperlink a graphic object.
@@ -159,4 +154,29 @@ clipObject :: Functor cf
            => PrimPath -> cf (ImageAns t u) -> cf (ImageAns t u)
 clipObject pp = 
     fmap (\(Ans a prim) -> Ans a (cpmap (clip pp) prim))
+
+
+
+
+-- | This is a very general monadic combiner.
+-- 
+-- The first argument is a pure combiner cf. @liftM2@, @liftA2@
+-- 
+-- The second argument is an Image to be evaluated.
+--
+-- The third argument, uses the ouput from the first Image to 
+-- build a second Image.
+-- 
+-- The function concatenates the CatPrims formed by both Images
+-- and uses the pure combiner to build an answer from the
+-- intermediate answers.
+--
+combind :: Monad cf 
+        => (t1 u -> t2 u -> t3 u)
+        -> cf (ImageAns t1 u) 
+        -> (t1 u -> cf (ImageAns t2 u)) 
+        -> cf (ImageAns t3 u) 
+combind op gf fn = gf   >>= \(Ans a p1) -> 
+                   fn a >>= \(Ans b p2) -> 
+                   return $ Ans (a `op` b) (p1 `oplus` p2)
 

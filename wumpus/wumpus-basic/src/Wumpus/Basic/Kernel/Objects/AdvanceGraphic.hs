@@ -99,22 +99,12 @@ emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 infixr 6 `advcat`
 infixr 5 `advsep`
 
--- Note - AdvanceGraphic @comp@ seems to be the only function 
--- that actually needs bind and unit...
-
-comb :: (Vec2 u -> Vec2 u -> Vec2 u)
-     -> AdvGraphic u
-     -> (Vec2 u -> AdvGraphic u) 
-     -> AdvGraphic u
-comb op gf fn = gf   >>= \(Ans a p1) -> 
-                fn a >>= \(Ans b p2) -> 
-                return $ Ans (a `op` b) (p1 `oplus` p2)
 
 
 -- | Concatenate the two AdvGraphics.
 --
 advcat :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advcat af ag = comb (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
+advcat af ag = combind (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
 
 
 
@@ -122,8 +112,8 @@ advcat af ag = comb (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
 -- vector.
 --
 advsep :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advsep sep af ag = comb (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
-                        (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
+advsep sep af ag = combind (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
+                           (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
 
 
 -- | Helper function - general combiner.
