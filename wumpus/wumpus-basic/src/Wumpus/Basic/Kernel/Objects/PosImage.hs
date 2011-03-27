@@ -33,17 +33,12 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
   , PosQuery
 
-  , PosImage2
-  , PosGraphic2
-
-
   -- * Operations
   , startPos
   , atStartPos
 
   , makePosImage
-  , makePosImage2 
-  , runPosImage2
+  , runPosImage
 
   , illustratePosImage
 
@@ -81,9 +76,14 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
--- | A positionable 'LocImage'.
+-- | A positionable 'LocImage' - the implemenation is actually a
+-- pair of an 'ObjectPos' and a 'LocImage'.
 --
-type PosImage t u = CF2 (Point2 u) RectPosition (ImageAns t u)
+data PosImage t u = PosImage
+      { pi_object_pos          :: ObjectPos u
+      , pi_loc_image           :: LocImage t u
+      }
+
 
 
 -- | A positionable 'LocGraphic'.
@@ -106,13 +106,7 @@ type PosQuery u ans = CF2 (Point2 u) RectPosition ans
 
 
 
-data PosImage2 t u = PosImage
-      { pi_object_pos          :: ObjectPos u
-      , pi_loc_image           :: LocImage t u
-      }
 
-
-type PosGraphic2 u = PosImage2 UNil u
 
 --------------------------------------------------------------------------------
 
@@ -127,7 +121,7 @@ infixr 1 `startPos`
 --  
 startPos :: Floating u 
          => PosImage t u -> RectPosition -> LocImage t u
-startPos = apply1R2
+startPos img rpos = runPosImage rpos img
  
 
 
@@ -139,7 +133,7 @@ startPos = apply1R2
 --  
 atStartPos ::  Floating u 
            => PosImage t u -> Point2 u -> RectPosition -> Image t u
-atStartPos = apply2R2 
+atStartPos img pt rpos = runPosImage rpos img `at` pt
 
 
 
@@ -158,25 +152,19 @@ atStartPos = apply2R2
 -- 
 makePosImage :: Fractional u 
              => ObjectPos u -> LocImage t u -> PosImage t u
-makePosImage opos gf = promoteR2 $ \start rpos -> 
-    let v1 = objectPosStart rpos opos in gf `at` displaceVec v1 start
-
-
-makePosImage2 :: Fractional u 
-              => ObjectPos u -> LocImage t u -> PosImage2 t u
-makePosImage2 opos img = 
+makePosImage opos img = 
     PosImage { pi_object_pos = opos
              , pi_loc_image  = img
              }
 
-runPosImage2 :: Fractional u 
-             => RectPosition -> PosImage2 t u -> LocImage t u
-runPosImage2 rpos (PosImage opos gf) =
+runPosImage :: Fractional u 
+            => RectPosition -> PosImage t u -> LocImage t u
+runPosImage rpos (PosImage opos gf) =
     let sv = objectPosStart rpos opos in moveStart (displaceVec sv) gf
 
 
 illustratePosImage :: InterpretUnit u 
-                   => PosImage2 t u -> LocImage t u
+                   => PosImage t u -> LocImage t u
 illustratePosImage (PosImage opos gf) = 
     decorate gf (illustrateObjectPos opos)
 
@@ -205,48 +193,48 @@ illustrateObjectPos (ObjectPos xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
 
 
 hcatPI :: (Num u, Ord u, OPlus (t u))   
-       => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+       => PosImage t u -> PosImage t u -> PosImage t u
 hcatPI = genMoveAlign spinemoveH spineRight
 
 
 vcatPI :: (Num u, Ord u, OPlus (t u))   
-       => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+       => PosImage t u -> PosImage t u -> PosImage t u
 vcatPI = genMoveAlign spinemoveV spineAbove
 
 
 hcatBottomPI :: (Num u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+                => PosImage t u -> PosImage t u -> PosImage t u
 hcatBottomPI = genMoveAlign binmoveHBottom alignBottomR
 
 
 hcatCenterPI :: (Fractional u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+                => PosImage t u -> PosImage t u -> PosImage t u
 hcatCenterPI = genMoveAlign binmoveHCenter alignCenterR
 
 
 hcatTopPI :: (Num u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+                => PosImage t u -> PosImage t u -> PosImage t u
 hcatTopPI = genMoveAlign binmoveHTop alignTopR
 
 
 vcatLeftPI :: (Fractional u, Ord u, OPlus (t u))   
-           => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+           => PosImage t u -> PosImage t u -> PosImage t u
 vcatLeftPI = genMoveAlign binmoveVLeft alignLeftU
 
 
 vcatCenterPI :: (Fractional u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+                => PosImage t u -> PosImage t u -> PosImage t u
 vcatCenterPI = genMoveAlign binmoveVCenter alignCenterU
 
 vcatRightPI :: (Fractional u, Ord u, OPlus (t u))   
-            => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+            => PosImage t u -> PosImage t u -> PosImage t u
 vcatRightPI = genMoveAlign binmoveVRight alignRightU
 
 
 genMoveAlign :: (Num u, OPlus (t u))   
              => (ObjectPos u -> ObjectPos u -> Vec2 u) 
              -> (ObjectPos u -> ObjectPos u -> ObjectPos u) 
-             -> PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+             -> PosImage t u -> PosImage t u -> PosImage t u
 genMoveAlign mkV mkOP (PosImage opos0 g0) (PosImage opos1 g1) = 
    let v1   = mkV  opos0 opos1 
        opos = mkOP opos0 opos1

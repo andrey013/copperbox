@@ -68,12 +68,9 @@ mf = do
     drawl (anchor $ P2   0 0) $ illustratePosImage $  rectCenter `hcatPI` rectMinor
     drawl (anchor $ P2 150 0) $ illustratePosImage $  rectCenter `vcatPI` rectMinor
 
-unPosImage ::  Floating u 
-           => Point2 u -> RectPosition -> PosImage2 r u -> Image r u
-unPosImage pt rpos img = runPosImage2 rpos img  `at` pt
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosGraphic2 u 
-rectCenter = makePosImage2 opos (mkRectCenter w h)
+rectCenter :: (Fractional u, InterpretUnit u) => PosGraphic u 
+rectCenter = makePosImage opos (mkRectCenter w h)
   where
     w    = 50
     h    = 35
@@ -89,8 +86,8 @@ mkRectCenter w h = moveStart (displaceVec v1) $ strokedRectangle w h
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphic2 u
-rectBl = makePosImage2 opos (mkRectBl w h)
+rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
+rectBl = makePosImage opos (mkRectBl w h)
   where
     w    = 40  
     h    = 20
@@ -106,10 +103,8 @@ mkRectBl w h = strokedRectangle w h
 
 
 
-
-
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic2 u 
-rectMinor = makePosImage2 opos (mkRectMinor w h)
+rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
+rectMinor = makePosImage opos (mkRectMinor w h)
   where
     w    = 30 
     h    = 25

@@ -158,7 +158,6 @@ library
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
     Wumpus.Basic.Kernel.Objects.ObjectPos,
     Wumpus.Basic.Kernel.Objects.PosImage,
-    Wumpus.Basic.Kernel.Objects.PosThetaImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.FontLoader,
     Wumpus.Basic.System.FontLoader.AfmParserBase,
