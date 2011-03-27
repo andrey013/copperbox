@@ -26,6 +26,11 @@ module Wumpus.Basic.Kernel.Objects.ObjectPos
   , objectPosStart
   , objectPosBounds
 
+  , extendLeftOP
+  , extendRightOP
+  , extendDownOP
+  , extendUpOP
+
   , spineRight
   , spineAbove
   , alignBottomR
@@ -191,6 +196,26 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go BLC    = bbox $ P2 (x-hw)  ymin
     go BLR    = bbox $ P2 (x-w)   ymin
 
+
+--------------------------------------------------------------------------------
+-- Extending an arm
+
+extendLeftOP :: Num u => u -> ObjectPos u -> ObjectPos u
+extendLeftOP u (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos (u+xmin) xmaj ymin ymaj
+
+
+extendRightOP :: Num u => u -> ObjectPos u -> ObjectPos u
+extendRightOP u (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos xmin (u+xmaj) ymin ymaj
+
+extendDownOP :: Num u => u -> ObjectPos u -> ObjectPos u
+extendDownOP u (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos xmin xmaj (u+ymin) ymaj
+
+extendUpOP :: Num u => u -> ObjectPos u -> ObjectPos u
+extendUpOP u (ObjectPos xmin xmaj ymin ymaj) = 
+    ObjectPos xmin xmaj ymin (u+ymaj)
 
 --------------------------------------------------------------------------------
 -- Combining ObjectPos

@@ -40,8 +40,11 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , makePosImage
   , runPosImage
 
+  , emptyPosGraphic
+
   , illustratePosImage
 
+  -- * Concat
   , hcatPI
   , vcatPI
 
@@ -52,6 +55,24 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , vcatLeftPI
   , vcatCenterPI
   , vcatRightPI 
+
+  -- * Sep 
+  , hsepPI
+  , vsepPI
+
+  , hsepBottomPI
+  , hsepCenterPI
+  , hsepTopPI
+
+  , vsepLeftPI
+  , vsepCenterPI
+  , vsepRightPI 
+
+  , halignPI
+  , valignPI
+
+  , halignSepPI
+  , valignSepPI
 
   ) where
 
@@ -72,7 +93,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( red, blue )
 
 import Data.AffineSpace                         -- package: vector-space
-
+import Data.VectorSpace
 
 
 
@@ -150,8 +171,7 @@ atStartPos img pt rpos = runPosImage rpos img `at` pt
 -- PosImage type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-makePosImage :: Fractional u 
-             => ObjectPos u -> LocImage t u -> PosImage t u
+makePosImage :: ObjectPos u -> LocImage t u -> PosImage t u
 makePosImage opos img = 
     PosImage { pi_object_pos = opos
              , pi_loc_image  = img
@@ -162,6 +182,15 @@ runPosImage :: Fractional u
 runPosImage rpos (PosImage opos gf) =
     let sv = objectPosStart rpos opos in moveStart (displaceVec sv) gf
 
+
+-- | 'emptyPosGraphic' : @ PosGraphic @
+--
+-- Build an empty 'PosGraphic'.
+--
+emptyPosGraphic :: InterpretUnit u => PosGraphic u
+emptyPosGraphic = makePosImage (ObjectPos 0 0 0 0) emptyLocGraphic
+
+--------------------------------------------------------------------------------
 
 illustratePosImage :: InterpretUnit u 
                    => PosImage t u -> LocImage t u
@@ -202,18 +231,19 @@ vcatPI :: (Num u, Ord u, OPlus (t u))
 vcatPI = genMoveAlign spinemoveV spineAbove
 
 
+
 hcatBottomPI :: (Num u, Ord u, OPlus (t u))   
-                => PosImage t u -> PosImage t u -> PosImage t u
+             => PosImage t u -> PosImage t u -> PosImage t u
 hcatBottomPI = genMoveAlign binmoveHBottom alignBottomR
 
 
 hcatCenterPI :: (Fractional u, Ord u, OPlus (t u))   
-                => PosImage t u -> PosImage t u -> PosImage t u
+             => PosImage t u -> PosImage t u -> PosImage t u
 hcatCenterPI = genMoveAlign binmoveHCenter alignCenterR
 
 
 hcatTopPI :: (Num u, Ord u, OPlus (t u))   
-                => PosImage t u -> PosImage t u -> PosImage t u
+          => PosImage t u -> PosImage t u -> PosImage t u
 hcatTopPI = genMoveAlign binmoveHTop alignTopR
 
 
@@ -240,3 +270,118 @@ genMoveAlign mkV mkOP (PosImage opos0 g0) (PosImage opos1 g1) =
        opos = mkOP opos0 opos1
        gf   = g0 `oplus` moveStart (displaceVec v1) g1
    in PosImage opos gf    
+
+
+--------------------------------------------------------------------------------
+-- Sep
+
+hsepPI :: (Num u, Ord u, OPlus (t u))   
+       => u -> PosImage t u -> PosImage t u -> PosImage t u
+hsepPI = genMoveSepH spinemoveH spineRight
+
+
+vsepPI :: (Num u, Ord u, OPlus (t u))   
+       => u -> PosImage t u -> PosImage t u -> PosImage t u
+vsepPI = genMoveSepV spinemoveV spineAbove
+
+
+hsepBottomPI :: (Num u, Ord u, OPlus (t u))   
+             => u -> PosImage t u -> PosImage t u -> PosImage t u
+hsepBottomPI = genMoveSepH binmoveHBottom alignBottomR
+
+
+hsepCenterPI :: (Fractional u, Ord u, OPlus (t u))   
+             => u -> PosImage t u -> PosImage t u -> PosImage t u
+hsepCenterPI = genMoveSepH binmoveHCenter alignCenterR
+
+
+hsepTopPI :: (Num u, Ord u, OPlus (t u))   
+          => u -> PosImage t u -> PosImage t u -> PosImage t u
+hsepTopPI = genMoveSepH binmoveHTop alignTopR
+
+
+vsepLeftPI :: (Fractional u, Ord u, OPlus (t u))   
+           => u -> PosImage t u -> PosImage t u -> PosImage t u
+vsepLeftPI = genMoveSepV binmoveVLeft alignLeftU
+
+
+vsepCenterPI :: (Fractional u, Ord u, OPlus (t u))   
+             => u -> PosImage t u -> PosImage t u -> PosImage t u
+vsepCenterPI = genMoveSepV binmoveVCenter alignCenterU
+
+vsepRightPI :: (Fractional u, Ord u, OPlus (t u))   
+            => u -> PosImage t u -> PosImage t u -> PosImage t u
+vsepRightPI = genMoveSepV binmoveVRight alignRightU
+
+
+genMoveSepH :: (Num u, OPlus (t u))   
+            => (ObjectPos u -> ObjectPos u -> Vec2 u) 
+            -> (ObjectPos u -> ObjectPos u -> ObjectPos u) 
+            -> u
+            -> PosImage t u -> PosImage t u -> PosImage t u
+genMoveSepH mkV mkOP sep (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let v1   = mkV  opos0 opos1 
+       opos = extendRightOP sep $ mkOP opos0 opos1
+       gf   = g0 `oplus` moveStart (displaceVec $ hvec sep ^+^ v1) g1
+   in PosImage opos gf    
+
+
+genMoveSepV :: (Num u, OPlus (t u))   
+            => (ObjectPos u -> ObjectPos u -> Vec2 u) 
+            -> (ObjectPos u -> ObjectPos u -> ObjectPos u) 
+            -> u
+            -> PosImage t u -> PosImage t u -> PosImage t u
+genMoveSepV mkV mkOP sep (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let v1   = mkV  opos0 opos1 
+       opos = extendUpOP sep $ mkOP opos0 opos1
+       gf   = g0 `oplus` moveStart (displaceVec $ vvec sep ^+^ v1) g1
+   in PosImage opos gf    
+
+
+
+halignPI :: (Fractional u, Ord u, OPlus (t u))   
+         => PosImage t u -> HAlign -> [PosImage t u] -> PosImage t u
+halignPI alt _  []     = alt
+halignPI _   ha (x:xs) = go x xs
+  where
+    cat = case ha of HTop    -> hcatTopPI 
+                     HCenter -> hcatCenterPI 
+                     _       -> hcatBottomPI
+    go acc []     = acc
+    go acc (y:ys) = go (cat acc y) ys
+
+
+valignPI :: (Fractional u, Ord u, OPlus (t u))   
+         => PosImage t u -> VAlign -> [PosImage t u] -> PosImage t u
+valignPI alt _  []     = alt
+valignPI _   va (x:xs) = go x xs
+  where
+    cat = case va of VLeft   -> vcatLeftPI 
+                     VCenter -> vcatCenterPI 
+                     _       -> vcatRightPI
+    go acc []     = acc
+    go acc (y:ys) = go (cat acc y) ys
+
+
+halignSepPI :: (Fractional u, Ord u, OPlus (t u))   
+            => PosImage t u -> HAlign -> u -> [PosImage t u] -> PosImage t u
+halignSepPI alt _  _ []     = alt
+halignSepPI _   ha du (x:xs) = go x xs
+  where
+    cat = case ha of HTop    -> hsepTopPI du
+                     HCenter -> hsepCenterPI du
+                     _       -> hsepBottomPI du
+    go acc []     = acc
+    go acc (y:ys) = go (cat acc y) ys
+
+
+valignSepPI :: (Fractional u, Ord u, OPlus (t u))   
+         => PosImage t u -> VAlign -> u -> [PosImage t u] -> PosImage t u
+valignSepPI alt _  _  []     = alt
+valignSepPI _   va du (x:xs) = go x xs
+  where
+    cat = case va of VLeft   -> vsepLeftPI du 
+                     VCenter -> vsepCenterPI du 
+                     _       -> vsepRightPI du
+    go acc []     = acc
+    go acc (y:ys) = go (cat acc y) ys
