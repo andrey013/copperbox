@@ -36,9 +36,9 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , repeatLTI
    , paraRepeatLTI
    , perpRepeatLTI
-   , concatLTI
-   , paraConcatLTI
-   , perpConcatLTI
+   , spaceLTI
+   , paraSpaceLTI
+   , perpSpaceLTI
    , encloseLTI
    , paraEncloseLTI
    , perpEncloseLTI
@@ -128,6 +128,9 @@ uconvertLocThetaImg = uconvertR2a
 -- Combining LocThetaImages
 
 
+
+infixr 6 `catLTI`
+infixr 5 `sepLTI`
 
 -- | Concatenate two LocThetaImages. The start point is /shared/.
 --
@@ -232,16 +235,17 @@ perpRepeatLTI alt i u = repeatLTI alt i (vvec u)
 
 
 
--- | Concatenate a list of LocThetaImages, moving the start point 
--- /orthonormally/ each time by the supplied vector.
+-- | Concatenate a list of LocThetaImages, spacing them by moving 
+-- the start point /orthonormally/ each time by the supplied 
+-- vector.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-concatLTI :: (Floating u, OPlus (t u))
+spaceLTI :: (Floating u, OPlus (t u))
          => LocThetaImage t u -> Vec2 u -> [LocThetaImage t u] 
          -> LocThetaImage t u
-concatLTI alt _ []     = alt
-concatLTI _   v (g:gs) = promoteR2 $ \start ang -> body start ang 
+spaceLTI alt _ []     = alt
+spaceLTI _   v (g:gs) = promoteR2 $ \start ang -> body start ang 
   where
     body start ang = go (drawF g start) (moveF start) gs
       where
@@ -252,26 +256,28 @@ concatLTI _   v (g:gs) = promoteR2 $ \start ang -> body start ang
 
 
 
--- | Concatenate a list of LocThetaImages, moving the start point 
--- parallel to the inclination each time by the supplied distance.
+-- | Concatenate a list of LocThetaImages, spacing them by moving 
+-- the start point parallel to the inclination each time by the 
+-- supplied distance.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-paraConcatLTI :: (Floating u, OPlus (t u))
+paraSpaceLTI :: (Floating u, OPlus (t u))
               => LocThetaImage t u -> u -> [LocThetaImage t u] 
               -> LocThetaImage t u
-paraConcatLTI alt u = concatLTI alt (hvec u)
+paraSpaceLTI alt u = spaceLTI alt (hvec u)
 
 
--- | Concatenate a list of LocThetaImages, moving the start point 
--- perpendicular each time by the supplied distance.
+-- | Concatenate a list of LocThetaImages, spacing them by moving 
+-- the start point perpendicular to the inclination each time by 
+-- the supplied distance.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-perpConcatLTI :: (Floating u, OPlus (t u))
+perpSpaceLTI :: (Floating u, OPlus (t u))
               => LocThetaImage t u -> u -> [LocThetaImage t u] 
               -> LocThetaImage t u
-perpConcatLTI alt u = concatLTI alt (vvec u)
+perpSpaceLTI alt u = spaceLTI alt (vvec u)
 
 
 -- | Enclose l r x
@@ -308,7 +314,7 @@ paraEncloseLTI u = encloseLTI (hvec u)
 --
 -- Note - the @left@ LocThetaImage is drawn at the start point, the 
 -- LocThetaImage @x@ is concatenated with 'sepLTI' then the right 
--- LocThetaImage is concatenated with 'sepLi'.
+-- LocThetaImage is concatenated with 'sepLTI'.
 --
 perpEncloseLTI :: (Floating u, OPlus (t u))
                => u 

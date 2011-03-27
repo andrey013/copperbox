@@ -26,13 +26,14 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , emptyAdvGraphic
 
   -- * Composition
-  , advcat
-  , advsep
-  , advconcat
-  , advtimes
-  , advspace
-  , advpunctuate
-  , advfill
+  , catAdv
+  , sepAdv
+  , repeatAdv
+  , concatAdv
+  , spaceAdv
+  , encloseAdv
+  , punctuateAdv
+  , fillAdv
 
   ) where
 
@@ -88,33 +89,7 @@ emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
 
 
 --------------------------------------------------------------------------------
--- composition
-
--- Note there are opportunities for extra composition operators
--- like the /picture language/...
-
-
--- Naming convention - binary functions are favoured for shorter names.
-
-infixr 6 `advcat`
-infixr 5 `advsep`
-
-
-
--- | Concatenate the two AdvGraphics.
---
-advcat :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advcat af ag = combind (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
-
-
-
--- | Concatenate the two AdvGraphics spacing them by the supplied 
--- vector.
---
-advsep :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-advsep sep af ag = combind (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
-                           (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
-
+-- Combining AdvGraphics
 
 -- | Helper function - general combiner.
 --
@@ -130,35 +105,87 @@ advcombine _     op (x:xs) = step x xs
 
 
 
--- | Concatenate the list of AdvGraphic with 'advcat'.
---
-advconcat :: InterpretUnit u => [AdvGraphic u] -> AdvGraphic u
-advconcat = advcombine emptyAdvGraphic advcat
 
--- | Repeat the graphic @n@ times concatenating the result.
+
+-- Naming convention - binary functions are favoured for shorter names.
+
+infixr 6 `catAdv`
+infixr 5 `sepAdv`
+
+
+
+-- | Concatenate the two AdvGraphics.
 --
-advtimes :: InterpretUnit u => Int -> AdvGraphic u -> AdvGraphic u
-advtimes n = advconcat . replicate n
+-- Note - the concatenation uses the answer vector of the first 
+-- AdvGraphic to move the start of the second AdvGraphic.
+--
+-- This is different behaviour to the concatenation of LocImage.
+--
+-- Usually @cat@ is expected to put two AdvGraphics 
+-- \"side-by-side\", whereas @cat@ on a LocImage is expected to 
+-- draw the second LocImage on top of the first.
+--
+catAdv :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
+catAdv af ag = combind (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
+
+
+
+-- | Concatenate the two AdvGraphics spacing them by the supplied 
+-- vector.
+--
+-- Note - the concatenation uses the answer vector of the first 
+-- AdvGraphic and the separator to move the start of the second 
+-- AdvGraphic.
+--
+-- This is different behaviour to the sep-concat of LocImage.
+--
+sepAdv :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
+sepAdv sep af ag = combind (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
+                           (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
+
+-- | Repeat the AdvGraphic @n@ times concatenating the result.
+--
+repeatAdv :: InterpretUnit u => Int -> AdvGraphic u -> AdvGraphic u
+repeatAdv n = concatAdv . replicate n
+
+
+-- | Concatenate the list of AdvGraphic with 'catAdv'.
+--
+-- Note - unlike 'LocImage', AdvGraphic has a singular definition
+-- of /empty/, so the list combinators like 'concatAdv' do not 
+-- need to be supplied an alternative to draw when the list is 
+-- empty.
+--
+concatAdv :: InterpretUnit u => [AdvGraphic u] -> AdvGraphic u
+concatAdv = advcombine emptyAdvGraphic catAdv
+
+
+
+-- | Concatenate the list of AdvGraphic with 'sepAdv'.
+--
+spaceAdv :: InterpretUnit u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
+spaceAdv sv = advcombine emptyAdvGraphic (sepAdv sv) 
+
+
+
+-- | Enclose l r x
+--
+encloseAdv :: InterpretUnit u 
+           => AdvGraphic u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
+encloseAdv l r obj = l `catAdv` obj `catAdv` r 
 
 
 -- | Concatenate the list of AdvGraphic with 'advsep'.
 --
-advspace :: InterpretUnit u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
-advspace sv = advcombine emptyAdvGraphic (advsep sv) 
-
-
-
--- | Concatenate the list of AdvGraphic with 'advsep'.
---
-advpunctuate :: InterpretUnit u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
-advpunctuate sep = 
-    advcombine emptyAdvGraphic (\a b -> a `advcat` sep `advcat` b)
+punctuateAdv :: InterpretUnit u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
+punctuateAdv sep = 
+    advcombine emptyAdvGraphic (\a b -> a `catAdv` sep `catAdv` b)
 
 
 -- | Render the supplied AdvGraphic, but swap the result advance
 -- for the supplied vector. This function has behaviour analogue 
 -- to @fill@ in the @wl-pprint@ library.
 -- 
-advfill :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u
-advfill sv = replaceAns sv
+fillAdv :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u
+fillAdv sv = replaceAns sv
 

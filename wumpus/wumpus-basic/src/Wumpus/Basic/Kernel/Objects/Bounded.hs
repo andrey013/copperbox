@@ -156,7 +156,7 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
 --
 -- PosImage and AdvGraphic are the objects that support more 
 -- sophisticated concatenation.
----
+--
  
 
 

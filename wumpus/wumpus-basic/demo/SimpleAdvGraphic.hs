@@ -33,10 +33,10 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    draw $ advspace (hvec 10) [text01, text02, text01] `at` P2 0 120
-    draw $ advconcat [text01, text02, text01] `at` P2 0 80
-    draw $ (miniDisk `advcat` text01 `advcat` miniDisk) `at` P2 0 40 
-    draw $ (miniDisk `advcat` text02 `advcat` miniDisk) `at` P2 0 0 
+    draw $ spaceAdv (hvec 10) [text01, text02, text01] `at` P2 0 120
+    draw $ concatAdv [text01, text02, text01] `at` P2 0 80
+    draw $ (miniDisk `catAdv` text01 `catAdv` miniDisk) `at` P2 0 40 
+    draw $ (miniDisk `catAdv` text02 `catAdv` miniDisk) `at` P2 0 0 
 
 
 -- Normally, text calculate the advance vector from the font 

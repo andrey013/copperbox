@@ -35,9 +35,9 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , repeatLI
    , hrepeatLI
    , vrepeatLI
-   , concatLI
-   , hconcatLI
-   , vconcatLI
+   , spaceLI
+   , hspaceLI
+   , vspaceLI
    , encloseLI
    , hencloseLI
    , vencloseLI
@@ -129,6 +129,9 @@ uconvertLocImg = uconvertR1a
 
 --------------------------------------------------------------------------------
 -- Combining LocImages
+
+infixr 6 `catLI`
+infixr 5 `sepLI`
 
 
 -- | Concatenate two LocImages. The start point is /shared/.
@@ -222,15 +225,15 @@ vrepeatLI alt i u = repeatLI alt i (vvec u)
 
 
 
--- | Concatenate a list of LocImages, moving the start point each 
--- time by the supplied vector.
+-- | Concatenate a list of LocImages, spacing them by moving the 
+-- start point each time by the supplied vector.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-concatLI :: (Num u, OPlus (t u))
+spaceLI :: (Num u, OPlus (t u))
          => LocImage t u -> Vec2 u -> [LocImage t u] -> LocImage t u
-concatLI alt _ []     = alt
-concatLI _   v (g:gs) = promoteR1 $ \start -> 
+spaceLI alt _ []     = alt
+spaceLI _   v (g:gs) = promoteR1 $ \start -> 
     go  (g `at` start) (mv start) gs
   where
     mv               = displaceVec v
@@ -239,24 +242,24 @@ concatLI _   v (g:gs) = promoteR1 $ \start ->
 
 
 
--- | Concatenate a list of LocImages, moving the start point 
--- horizontally each time by the supplied distance.
+-- | Concatenate a list of LocImages, spacing them by moving the 
+-- start point horizontally each time by the supplied distance.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-hconcatLI :: (Num u, OPlus (t u))
+hspaceLI :: (Num u, OPlus (t u))
           => LocImage t u -> u -> [LocImage t u] -> LocImage t u
-hconcatLI alt u = concatLI alt (hvec u)
+hspaceLI alt u = spaceLI alt (hvec u)
 
 
--- | Concatenate a list of LocImages, moving the start point 
--- vertically each time by the supplied distance.
+-- | Concatenate a list of LocImages, spacing them by moving the 
+-- start point vertically each time by the supplied distance.
 --
 -- Note - this draws the /empty/ alternative if the list is empty.
 --
-vconcatLI :: (Num u, OPlus (t u))
+vspaceLI :: (Num u, OPlus (t u))
           => LocImage t u -> u -> [LocImage t u] -> LocImage t u
-vconcatLI alt u = concatLI alt (vvec u)
+vspaceLI alt u = spaceLI alt (vvec u)
 
 
 -- | Enclose l r x

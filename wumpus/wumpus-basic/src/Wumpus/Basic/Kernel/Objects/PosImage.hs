@@ -33,6 +33,9 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
   , PosQuery
 
+  , PosImage2
+  , PosGraphic2
+
   -- * Components
   , RectPosition(..)
   , ObjectPos(..)
@@ -42,20 +45,36 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , atStartPos
 
   , makePosImage
+  , makePosImage2 
+  , runPosImage2
+
+  , illustratePosImage
 
   , objectPosBounds
+
+  , hcatPI
+  , vcatPI
+
+  , hcatAlignBottom
+  , hcatAlignCenter
+  , hcatAlignTop
 
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
+import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Colour ( red, blue )
 
 import Data.AffineSpace                         -- package: vector-space
 
@@ -86,6 +105,14 @@ type DPosGraphic = PosGraphic Double
 type PosQuery u ans = CF2 (Point2 u) RectPosition ans
 
 
+
+data PosImage2 t u = PosImage
+      { pi_object_pos          :: ObjectPos u
+      , pi_loc_image           :: LocImage t u
+      }
+
+
+type PosGraphic2 u = PosImage2 UNil u
 
 --------------------------------------------------------------------------------
 
@@ -175,7 +202,7 @@ infixr 1 `startPos`
 -- with a 'RectPosition' (start position).
 --  
 startPos :: Floating u 
-         => PosImage r u -> RectPosition -> LocImage r u
+         => PosImage t u -> RectPosition -> LocImage t u
 startPos = apply1R2
  
 
@@ -187,7 +214,7 @@ startPos = apply1R2
 -- with an initial point and a 'RectPosition' (start position).
 --  
 atStartPos ::  Floating u 
-           => PosImage r u -> Point2 u -> RectPosition -> Image r u
+           => PosImage t u -> Point2 u -> RectPosition -> Image t u
 atStartPos = apply2R2 
 
 
@@ -195,7 +222,7 @@ atStartPos = apply2R2
 --------------------------------------------------------------------------------
 
 
--- | 'makePosImage' : @ object_pos * loc_graphic -> PosGraphic @ 
+-- | 'makePosImage' : @ object_pos * loc_image -> PosImage @ 
 --
 -- Create a 'PosImage' from an 'ObjectPos' describing how it
 -- is orientated within a border rectangle and a 'LocImage' that 
@@ -206,12 +233,22 @@ atStartPos = apply2R2
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 makePosImage :: Fractional u 
-             => ObjectPos u -> LocImage r u -> PosImage r u
+             => ObjectPos u -> LocImage t u -> PosImage t u
 makePosImage opos gf = promoteR2 $ \start rpos -> 
     let v1 = startVector rpos opos in gf `at` displaceVec v1 start
 
 
+makePosImage2 :: Fractional u 
+              => ObjectPos u -> LocImage t u -> PosImage2 t u
+makePosImage2 opos img = 
+    PosImage { pi_object_pos = opos
+             , pi_loc_image  = img
+             }
 
+runPosImage2 :: Fractional u 
+             => RectPosition -> PosImage2 t u -> LocImage t u
+runPosImage2 rpos (PosImage opos gf) =
+    let sv = startVector rpos opos in moveStart (displaceVec sv) gf
 
 -- | The vector from some Rectangle position to the start point.
 --
@@ -268,4 +305,160 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go BLR    = bbox $ P2 (x-w)   ymin
 
 
+illustratePosImage :: InterpretUnit u 
+                   => PosImage2 t u -> LocImage t u
+illustratePosImage (PosImage opos gf) = 
+    decorate gf (illustrateObjectPos opos)
 
+illustrateObjectPos :: InterpretUnit u 
+                    => ObjectPos u -> LocGraphic u
+illustrateObjectPos (ObjectPos xmin xmaj ymin ymaj) = promoteR1 $ \pt -> 
+    dinterpCtx 3 >>= \radius -> 
+    let upd = localize (fill_colour blue . dotted_line)
+        bl  = pt .-^ V2 xmin ymin
+        dot = localize (fill_colour red) $ filledDisk radius `at` pt
+        hln = upd $ locStraightLine (hvec $ xmin+xmaj) `at` pt .-^ hvec xmin
+        vln = upd $ locStraightLine (vvec $ ymin+ymaj) `at` pt .-^ vvec ymin
+        bdr = upd $ strokedRectangle (xmin+xmaj) (ymin+ymaj) `at` bl
+    in bdr `oplus` hln `oplus` vln `oplus` dot
+
+--------------------------------------------------------------------------------
+-- Combining ObjectPos
+
+-- Note - there are lots of concatenations (due to alignment) 
+-- we need a consistent name scheme...
+
+
+-- | Second ObjectPos is moved /to the right/ of the first along
+-- the /spine/ i.e the baseline.
+--
+spineRight :: (Num u, Ord u) 
+            => ObjectPos u -> ObjectPos u -> ObjectPos u
+spineRight (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
+           (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
+    ObjectPos { op_x_minor = xmin0
+              , op_x_major = xmaj0 + xmin1 + xmaj1 
+              , op_y_minor = max ymin0 ymin1
+              , op_y_major = max ymaj0 ymaj1
+              }
+
+
+-- | Second ObjectPos is moved /above/ the first along the spine
+-- i.e. the vertical point between the left minor and right major
+-- (not the same as the horizontal center).
+--
+spineAbove :: (Num u, Ord u) 
+           => ObjectPos u -> ObjectPos u -> ObjectPos u
+spineAbove (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
+           (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
+    ObjectPos { op_x_minor = max xmin0 xmin1
+              , op_x_major = max xmaj0 xmaj1
+              , op_y_minor = ymin0 
+              , op_y_major = ymaj0 + ymin1 + ymaj1
+              }
+
+
+
+-- | xmin and xmaj same as left.
+--
+alignBottomR :: (Num u, Ord u) 
+             => ObjectPos u -> ObjectPos u -> ObjectPos u
+alignBottomR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
+             (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
+    let hr = ymin1 + ymaj1
+    in ObjectPos { op_x_minor = xmin0
+                 , op_x_major = xmaj0 + xmin1 + xmaj1
+                 , op_y_minor = ymin0
+                 , op_y_major = max ymaj0 (hr - ymin0)
+                 }
+
+
+-- | xmin same as left.
+--
+alignCenterR :: (Fractional u, Ord u) 
+             => ObjectPos u -> ObjectPos u -> ObjectPos u
+alignCenterR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
+             (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
+    let hl         = ymin0 + ymaj0
+        hr         = ymin1 + ymaj1
+        half_diff  = 0.5 * (hr - hl)
+    in ObjectPos { op_x_minor = xmin0
+                 , op_x_major = xmaj0 + xmin1 + xmaj1
+                 , op_y_minor = if hl >= hr then ymin0 else (ymin0 + half_diff)
+                 , op_y_major = if hl >= hr then ymaj0 else (ymaj0 + half_diff)
+                 }
+
+
+
+-- | xmin and ymaj same as left.
+--
+alignTopR :: (Num u, Ord u) 
+             => ObjectPos u -> ObjectPos u -> ObjectPos u
+alignTopR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
+          (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
+    let hr = ymin1 + ymaj1
+    in ObjectPos { op_x_minor = xmin0
+                 , op_x_major = xmaj0 + xmin1 + xmaj1
+                 , op_y_minor = max ymin0 (hr - ymaj0)
+                 , op_y_major = ymaj0
+                 }
+
+
+--------------------------------------------------------------------------------
+-- Combining PosImage
+
+
+--
+-- NOTE - CONCATENATION
+--
+-- PosImage (currently) is not the right object to support the
+-- concatenation that it should.
+--
+
+
+hcatPI :: (Num u, Ord u, OPlus (t u))   
+       => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatPI (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let v1   = hvec (op_x_major opos0 + op_x_minor opos1)
+       opos = spineRight opos0 opos1
+       gf   = g0 `oplus` moveStart (displaceVec v1) g1
+   in PosImage opos gf    
+
+
+vcatPI :: (Num u, Ord u, OPlus (t u))   
+       => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+vcatPI (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let v1   = vvec (op_y_major opos0 + op_y_minor opos1) 
+       opos = spineAbove opos0 opos1
+       gf   = g0 `oplus` moveStart (displaceVec v1) g1
+   in PosImage opos gf    
+
+
+hcatAlignBottom :: (Num u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatAlignBottom (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let hdist  = op_x_major opos0 + op_x_minor opos1
+       vdist  = negate $ op_y_minor opos0 - op_y_minor opos1
+       opos   = alignBottomR opos0 opos1
+       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
+   in PosImage opos gf    
+
+
+hcatAlignCenter :: (Fractional u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatAlignCenter (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let hdist  = op_x_major opos0 + op_x_minor opos1
+       vdist  = op_y_major opos0 - op_y_major opos1
+       opos   = alignCenterR opos0 opos1
+       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
+   in PosImage opos gf    
+
+
+hcatAlignTop :: (Num u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatAlignTop (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let hdist  = op_x_major opos0 + op_x_minor opos1
+       vdist  = op_y_major opos0 - op_y_major opos1
+       opos   = alignTopR opos0 opos1
+       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
+   in PosImage opos gf    
