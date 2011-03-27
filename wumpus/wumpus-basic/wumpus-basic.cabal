@@ -156,6 +156,7 @@ library
     Wumpus.Basic.Kernel.Objects.Image,
     Wumpus.Basic.Kernel.Objects.LocImage,
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
+    Wumpus.Basic.Kernel.Objects.ObjectPos,
     Wumpus.Basic.Kernel.Objects.PosImage,
     Wumpus.Basic.Kernel.Objects.PosThetaImage,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,

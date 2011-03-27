@@ -36,9 +36,6 @@ module Wumpus.Basic.Kernel.Objects.PosImage
   , PosImage2
   , PosGraphic2
 
-  -- * Components
-  , RectPosition(..)
-  , ObjectPos(..)
 
   -- * Operations
   , startPos
@@ -50,14 +47,16 @@ module Wumpus.Basic.Kernel.Objects.PosImage
 
   , illustratePosImage
 
-  , objectPosBounds
-
   , hcatPI
   , vcatPI
 
-  , hcatAlignBottom
-  , hcatAlignCenter
-  , hcatAlignTop
+  , hcatBottomPI
+  , hcatCenterPI
+  , hcatTopPI
+
+  , vcatLeftPI
+  , vcatCenterPI
+  , vcatRightPI 
 
   ) where
 
@@ -72,6 +71,7 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.ObjectPos
 
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( red, blue )
@@ -117,82 +117,6 @@ type PosGraphic2 u = PosImage2 UNil u
 --------------------------------------------------------------------------------
 
 
--- | Datatype enumerating positions within a rectangle that can be
--- derived for a 'PosGraphic'.  
---
-data RectPosition = CENTER 
-                  | NN | SS | EE | WW | NE | NW | SE | SW 
-                  | BLL | BLC | BLR
-  deriving (Enum,Eq,Ord,Show)
-
-
--- | Utility datatype representing orientation within a 
--- rectangular /frame/. ObjectPos is useful for graphics such as 
--- text where the start point is not necessarily at the center 
--- (or bottom left).
---
--- > x_minor is the horizontal distance from the left to the start point
--- >
--- > x_major is the horizontal distance from the start point to the right
--- >
--- > y_minor is the vertical distance from the bottom to the start point
--- >
--- > y_major is the vertical distance from the start point to the top
---
--- Values should be not be negative!
---
--- 
-data ObjectPos u = ObjectPos 
-      { op_x_minor      :: !u
-      , op_x_major      :: !u
-      , op_y_minor      :: !u
-      , op_y_major      :: !u
-      }
-  deriving (Eq,Ord,Show)
-
-
-
-
---------------------------------------------------------------------------------
-
-instance Functor ObjectPos where
-  fmap f (ObjectPos xmin xmaj ymin ymaj) = 
-    ObjectPos (f xmin) (f xmaj) (f ymin) (f ymaj)
-
-instance (Fractional u, Ord u) => OPlus (ObjectPos u) where
-  oplus = concatObjectPos
-
-
--- | Concatenation here essentially turns both ObjectPos objects
--- into /center-form/ then finds the maximum rectangle.
---
-concatObjectPos :: (Fractional u, Ord u) 
-                => ObjectPos u -> ObjectPos u -> ObjectPos u
-concatObjectPos op0 op1 = ObjectPos hw hw hh hh
-  where
-    (hw0,hh0) = halfDists op0
-    (hw1,hh1) = halfDists op1
-    hw        = max hw0 hw1
-    hh        = max hh0 hh1
-
-
-
-
--- | Find the half-width and half-height of an ObjectPos.
--- 
--- Essentially this is /center-form/ of an ObjectPos, but 
--- in /center-form/ there is duplication: 
---
--- > xminor == xmajor
--- > yminor == ymajor
--- 
--- So instead, the result type is just a pair.
---
-halfDists :: Fractional u => ObjectPos u -> (u,u)
-halfDists (ObjectPos xmin xmaj ymin ymaj) = 
-    (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
-
-
 
 infixr 1 `startPos`
 
@@ -235,7 +159,7 @@ atStartPos = apply2R2
 makePosImage :: Fractional u 
              => ObjectPos u -> LocImage t u -> PosImage t u
 makePosImage opos gf = promoteR2 $ \start rpos -> 
-    let v1 = startVector rpos opos in gf `at` displaceVec v1 start
+    let v1 = objectPosStart rpos opos in gf `at` displaceVec v1 start
 
 
 makePosImage2 :: Fractional u 
@@ -248,61 +172,7 @@ makePosImage2 opos img =
 runPosImage2 :: Fractional u 
              => RectPosition -> PosImage2 t u -> LocImage t u
 runPosImage2 rpos (PosImage opos gf) =
-    let sv = startVector rpos opos in moveStart (displaceVec sv) gf
-
--- | The vector from some Rectangle position to the start point.
---
-startVector :: Fractional u => RectPosition -> ObjectPos u -> Vec2 u
-startVector rpos (ObjectPos xminor xmajor yminor ymajor) = go rpos
-  where
-    w         = xminor + xmajor
-    h         = yminor + ymajor
-    hw        = 0.5 * w
-    hh        = 0.5 * h
-   
-    -- CENTER, NN, SS, EE, WW all go to bottomleft then add back 
-    -- the minors.
-
-    go CENTER = V2 ((-hw) + xminor) ((-hh) + yminor)
-    go NN     = V2 ((-hw) + xminor) ((-h)  + yminor)
-    go SS     = V2 ((-hw) + xminor)   yminor
-    go EE     = V2 ((-w)  + xminor) ((-hh) + yminor)
-    go WW     = V2 xminor           ((-hh) + yminor)
-    go NE     = V2 (-xmajor)        (-ymajor)
-    go SE     = V2 (-xmajor)          yminor
-    go SW     = V2 xminor             yminor
-    go NW     = V2 xminor           (-ymajor)
-    go BLL    = V2 xminor             0
-    go BLC    = V2 ((-hw) + xminor)   0
-    go BLR    = V2 ((-w)  + xminor)   0 
-
--- | Calculate the bounding box formed by locating the 'ObjectPos'
--- at the supplied point.
--- 
-objectPosBounds :: Fractional u 
-                => Point2 u -> RectPosition -> ObjectPos u -> BoundingBox u
-objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
-  where
-    w         = xmin + xmaj
-    h         = ymin + ymaj
-    hw        = 0.5 * w
-    hh        = 0.5 * h
-    bbox      = \bl -> BBox bl (bl .+^ vec w h)
-
-    -- go finds the bottom-left corner...
-
-    go CENTER = bbox $ P2 (x-hw) (y-hh)
-    go NN     = bbox $ P2 (x-hw) (y-h)
-    go SS     = bbox $ P2 (x-hw)  y
-    go EE     = bbox $ P2 (x-w)  (y-hh)
-    go WW     = bbox $ P2  x     (y-hh)
-    go NE     = bbox $ P2 (x-w)  (y-h)
-    go SE     = bbox $ P2 (x-w)   y
-    go SW     = bbox $ P2 x       y
-    go NW     = bbox $ P2 x      (y-h)
-    go BLL    = bbox $ P2 x       ymin
-    go BLC    = bbox $ P2 (x-hw)  ymin
-    go BLR    = bbox $ P2 (x-w)   ymin
+    let sv = objectPosStart rpos opos in moveStart (displaceVec sv) gf
 
 
 illustratePosImage :: InterpretUnit u 
@@ -323,88 +193,6 @@ illustrateObjectPos (ObjectPos xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
     in bdr `oplus` hln `oplus` vln `oplus` dot
 
 --------------------------------------------------------------------------------
--- Combining ObjectPos
-
--- Note - there are lots of concatenations (due to alignment) 
--- we need a consistent name scheme...
-
-
--- | Second ObjectPos is moved /to the right/ of the first along
--- the /spine/ i.e the baseline.
---
-spineRight :: (Num u, Ord u) 
-            => ObjectPos u -> ObjectPos u -> ObjectPos u
-spineRight (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
-           (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
-    ObjectPos { op_x_minor = xmin0
-              , op_x_major = xmaj0 + xmin1 + xmaj1 
-              , op_y_minor = max ymin0 ymin1
-              , op_y_major = max ymaj0 ymaj1
-              }
-
-
--- | Second ObjectPos is moved /above/ the first along the spine
--- i.e. the vertical point between the left minor and right major
--- (not the same as the horizontal center).
---
-spineAbove :: (Num u, Ord u) 
-           => ObjectPos u -> ObjectPos u -> ObjectPos u
-spineAbove (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
-           (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
-    ObjectPos { op_x_minor = max xmin0 xmin1
-              , op_x_major = max xmaj0 xmaj1
-              , op_y_minor = ymin0 
-              , op_y_major = ymaj0 + ymin1 + ymaj1
-              }
-
-
-
--- | xmin and xmaj same as left.
---
-alignBottomR :: (Num u, Ord u) 
-             => ObjectPos u -> ObjectPos u -> ObjectPos u
-alignBottomR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
-             (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
-    let hr = ymin1 + ymaj1
-    in ObjectPos { op_x_minor = xmin0
-                 , op_x_major = xmaj0 + xmin1 + xmaj1
-                 , op_y_minor = ymin0
-                 , op_y_major = max ymaj0 (hr - ymin0)
-                 }
-
-
--- | xmin same as left.
---
-alignCenterR :: (Fractional u, Ord u) 
-             => ObjectPos u -> ObjectPos u -> ObjectPos u
-alignCenterR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
-             (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
-    let hl         = ymin0 + ymaj0
-        hr         = ymin1 + ymaj1
-        half_diff  = 0.5 * (hr - hl)
-    in ObjectPos { op_x_minor = xmin0
-                 , op_x_major = xmaj0 + xmin1 + xmaj1
-                 , op_y_minor = if hl >= hr then ymin0 else (ymin0 + half_diff)
-                 , op_y_major = if hl >= hr then ymaj0 else (ymaj0 + half_diff)
-                 }
-
-
-
--- | xmin and ymaj same as left.
---
-alignTopR :: (Num u, Ord u) 
-             => ObjectPos u -> ObjectPos u -> ObjectPos u
-alignTopR (ObjectPos xmin0 xmaj0 ymin0 ymaj0) 
-          (ObjectPos xmin1 xmaj1 ymin1 ymaj1) = 
-    let hr = ymin1 + ymaj1
-    in ObjectPos { op_x_minor = xmin0
-                 , op_x_major = xmaj0 + xmin1 + xmaj1
-                 , op_y_minor = max ymin0 (hr - ymaj0)
-                 , op_y_major = ymaj0
-                 }
-
-
---------------------------------------------------------------------------------
 -- Combining PosImage
 
 
@@ -418,47 +206,49 @@ alignTopR (ObjectPos xmin0 xmaj0 ymin0 ymaj0)
 
 hcatPI :: (Num u, Ord u, OPlus (t u))   
        => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
-hcatPI (PosImage opos0 g0) (PosImage opos1 g1) = 
-   let v1   = hvec (op_x_major opos0 + op_x_minor opos1)
-       opos = spineRight opos0 opos1
-       gf   = g0 `oplus` moveStart (displaceVec v1) g1
-   in PosImage opos gf    
+hcatPI = genMoveAlign spinemoveH spineRight
 
 
 vcatPI :: (Num u, Ord u, OPlus (t u))   
        => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
-vcatPI (PosImage opos0 g0) (PosImage opos1 g1) = 
-   let v1   = vvec (op_y_major opos0 + op_y_minor opos1) 
-       opos = spineAbove opos0 opos1
+vcatPI = genMoveAlign spinemoveV spineAbove
+
+
+hcatBottomPI :: (Num u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatBottomPI = genMoveAlign binmoveHBottom alignBottomR
+
+
+hcatCenterPI :: (Fractional u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatCenterPI = genMoveAlign binmoveHCenter alignCenterR
+
+
+hcatTopPI :: (Num u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+hcatTopPI = genMoveAlign binmoveHTop alignTopR
+
+
+vcatLeftPI :: (Fractional u, Ord u, OPlus (t u))   
+           => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+vcatLeftPI = genMoveAlign binmoveVLeft alignLeftU
+
+
+vcatCenterPI :: (Fractional u, Ord u, OPlus (t u))   
+                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+vcatCenterPI = genMoveAlign binmoveVCenter alignCenterU
+
+vcatRightPI :: (Fractional u, Ord u, OPlus (t u))   
+            => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+vcatRightPI = genMoveAlign binmoveVRight alignRightU
+
+
+genMoveAlign :: (Num u, OPlus (t u))   
+             => (ObjectPos u -> ObjectPos u -> Vec2 u) 
+             -> (ObjectPos u -> ObjectPos u -> ObjectPos u) 
+             -> PosImage2 t u -> PosImage2 t u -> PosImage2 t u
+genMoveAlign mkV mkOP (PosImage opos0 g0) (PosImage opos1 g1) = 
+   let v1   = mkV  opos0 opos1 
+       opos = mkOP opos0 opos1
        gf   = g0 `oplus` moveStart (displaceVec v1) g1
-   in PosImage opos gf    
-
-
-hcatAlignBottom :: (Num u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
-hcatAlignBottom (PosImage opos0 g0) (PosImage opos1 g1) = 
-   let hdist  = op_x_major opos0 + op_x_minor opos1
-       vdist  = negate $ op_y_minor opos0 - op_y_minor opos1
-       opos   = alignBottomR opos0 opos1
-       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
-   in PosImage opos gf    
-
-
-hcatAlignCenter :: (Fractional u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
-hcatAlignCenter (PosImage opos0 g0) (PosImage opos1 g1) = 
-   let hdist  = op_x_major opos0 + op_x_minor opos1
-       vdist  = op_y_major opos0 - op_y_major opos1
-       opos   = alignCenterR opos0 opos1
-       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
-   in PosImage opos gf    
-
-
-hcatAlignTop :: (Num u, Ord u, OPlus (t u))   
-                => PosImage2 t u -> PosImage2 t u -> PosImage2 t u
-hcatAlignTop (PosImage opos0 g0) (PosImage opos1 g1) = 
-   let hdist  = op_x_major opos0 + op_x_minor opos1
-       vdist  = op_y_major opos0 - op_y_major opos1
-       opos   = alignTopR opos0 opos1
-       gf     = g0 `oplus` moveStart (displaceVec $ V2 hdist vdist) g1
    in PosImage opos gf    

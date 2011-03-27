@@ -38,6 +38,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Image
   , module Wumpus.Basic.Kernel.Objects.LocImage
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
+  , module Wumpus.Basic.Kernel.Objects.ObjectPos
   , module Wumpus.Basic.Kernel.Objects.PosImage
   , module Wumpus.Basic.Kernel.Objects.PosThetaImage
   , module Wumpus.Basic.Kernel.Objects.TraceDrawing
@@ -65,6 +66,7 @@ import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
+import Wumpus.Basic.Kernel.Objects.ObjectPos
 import Wumpus.Basic.Kernel.Objects.PosImage
 import Wumpus.Basic.Kernel.Objects.PosThetaImage
 import Wumpus.Basic.Kernel.Objects.TraceDrawing
