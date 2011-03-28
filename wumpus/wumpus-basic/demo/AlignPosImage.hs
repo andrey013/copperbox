@@ -30,54 +30,54 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (anchor $ P2 0   400) $ illustratePosImage rectCenter
-    drawl (anchor $ P2 100 400) $ illustratePosImage rectMinor
-    drawl (anchor $ P2 200 400) $ illustratePosImage rectBl
+    drawl (anchor $ P2 0   400) $ illustratePosObject rectCenter
+    drawl (anchor $ P2 100 400) $ illustratePosObject rectMinor
+    drawl (anchor $ P2 200 400) $ illustratePosObject rectBl
 
-    drawl (anchor $ P2   0 275) $ illustratePosImage $ vs1
-    drawl (anchor $ P2 150 275) $ illustratePosImage $ vs2
-    drawl (anchor $ P2 300 275) $ illustratePosImage $ vs3
+    drawl (anchor $ P2   0 275) $ illustratePosObject $ vs1
+    drawl (anchor $ P2 150 275) $ illustratePosObject $ vs2
+    drawl (anchor $ P2 300 275) $ illustratePosObject $ vs3
 
-    drawl (anchor $ P2   0 200) $ illustratePosImage $ hs1
-    drawl (anchor $ P2 150 200) $ illustratePosImage $ hs2
-    drawl (anchor $ P2 300 200) $ illustratePosImage $ hs3
+    drawl (anchor $ P2   0 200) $ illustratePosObject $ hs1
+    drawl (anchor $ P2 150 200) $ illustratePosObject $ hs2
+    drawl (anchor $ P2 300 200) $ illustratePosObject $ hs3
 
-    drawl (anchor $ P2   0 75)  $ illustratePosImage $ va1
-    drawl (anchor $ P2 150 75)  $ illustratePosImage $ va2
-    drawl (anchor $ P2 300 75)  $ illustratePosImage $ va3
+    drawl (anchor $ P2   0 75)  $ illustratePosObject $ va1
+    drawl (anchor $ P2 150 75)  $ illustratePosObject $ va2
+    drawl (anchor $ P2 300 75)  $ illustratePosObject $ va3
 
-    drawl (anchor $ P2   0 0)   $ illustratePosImage $ ha1
-    drawl (anchor $ P2 150 0)   $ illustratePosImage $ ha2
-    drawl (anchor $ P2 300 0)   $ illustratePosImage $ ha3
+    drawl (anchor $ P2   0 0)   $ illustratePosObject $ ha1
+    drawl (anchor $ P2 150 0)   $ illustratePosObject $ ha2
+    drawl (anchor $ P2 300 0)   $ illustratePosObject $ ha3
     return ()
   where
     objs  = [ rectCenter, rectMinor, rectBl ]
-    ha1   = halignPI emptyPosGraphic HTop    objs
-    ha2   = halignPI emptyPosGraphic HCenter objs
-    ha3   = halignPI emptyPosGraphic HBottom objs
-    va1   = valignPI emptyPosGraphic VLeft   objs
-    va2   = valignPI emptyPosGraphic VCenter objs
-    va3   = valignPI emptyPosGraphic VRight  objs
+    ha1   = halignPO emptyPosGraphicObject HTop    objs
+    ha2   = halignPO emptyPosGraphicObject HCenter objs
+    ha3   = halignPO emptyPosGraphicObject HBottom objs
+    va1   = valignPO emptyPosGraphicObject VLeft   objs
+    va2   = valignPO emptyPosGraphicObject VCenter objs
+    va3   = valignPO emptyPosGraphicObject VRight  objs
 
 
-    hs1   = halignSepPI emptyPosGraphic HTop    8 objs
-    hs2   = halignSepPI emptyPosGraphic HCenter 8 objs
-    hs3   = halignSepPI emptyPosGraphic HBottom 8 objs 
-    vs1   = valignSepPI emptyPosGraphic VLeft   8 objs
-    vs2   = valignSepPI emptyPosGraphic VCenter 8 objs
-    vs3   = valignSepPI emptyPosGraphic VRight  8 objs
+    hs1   = halignSepPO emptyPosGraphicObject HTop    8 objs
+    hs2   = halignSepPO emptyPosGraphicObject HCenter 8 objs
+    hs3   = halignSepPO emptyPosGraphicObject HBottom 8 objs 
+    vs1   = valignSepPO emptyPosGraphicObject VLeft   8 objs
+    vs2   = valignSepPO emptyPosGraphicObject VCenter 8 objs
+    vs3   = valignSepPO emptyPosGraphicObject VRight  8 objs
  
 ---
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectCenter = makePosImage opos (mkRectCenter w h)
+rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectCenter = makePosObject opos (mkRectCenter w h)
   where
     w    = 50
     h    = 35
-    opos = ObjectPos { op_x_minor = 0.5 * w
-                     , op_x_major = 0.5 * w
-                     , op_y_minor = 0.5 * h
-                     , op_y_major = 0.5 * h }
+    opos = Orientation { or_x_minor = 0.5 * w
+                       , or_x_major = 0.5 * w
+                       , or_y_minor = 0.5 * h
+                       , or_y_major = 0.5 * h }
  
 
 mkRectCenter :: (Fractional u, InterpretUnit u) => u -> u -> LocGraphic u
@@ -86,15 +86,15 @@ mkRectCenter w h = moveStart (displaceVec v1) $ strokedRectangle w h
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
-rectBl = makePosImage opos (mkRectBl w h)
+rectBl :: (Fractional u, InterpretUnit u) => PosGraphicObject u
+rectBl = makePosObject opos (mkRectBl w h)
   where
     w    = 40  
     h    = 20
-    opos = ObjectPos { op_x_minor = 0
-                     , op_x_major = w
-                     , op_y_minor = 0
-                     , op_y_major = h }
+    opos = Orientation { or_x_minor = 0
+                       , or_x_major = w
+                       , or_y_minor = 0
+                       , or_y_major = h }
  
 
 -- start-point - bottom left
@@ -103,15 +103,15 @@ mkRectBl w h = strokedRectangle w h
 
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectMinor = makePosImage opos (mkRectMinor w h)
+rectMinor :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectMinor = makePosObject opos (mkRectMinor w h)
   where
     w    = 30 
     h    = 25
-    opos = ObjectPos { op_x_minor = 10
-                     , op_x_major = (w-10)
-                     , op_y_minor = 10
-                     , op_y_major = (h-10) }
+    opos = Orientation { or_x_minor = 10
+                       , or_x_major = (w-10)
+                       , or_y_minor = 10
+                       , or_y_major = (h-10) }
  
 
 mkRectMinor :: InterpretUnit u => u -> u -> LocGraphic u

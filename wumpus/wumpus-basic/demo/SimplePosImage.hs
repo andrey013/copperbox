@@ -58,18 +58,18 @@ mf = do
     draw $ testDrawBl    BLR    `at` (P2 225  0)
     
 
-testDrawBl :: (Floating u, InterpretUnit u) => RectPosition -> LocGraphic u
+testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
-rectBl = makePosImage opos (mkRectBl w h)
+rectBl :: (Fractional u, InterpretUnit u) => PosGraphicObject u
+rectBl = makePosObject opos (mkRectBl w h)
   where
     w    = 40 
     h    = 30
-    opos = ObjectPos { op_x_minor = 0
-                     , op_x_major = w
-                     , op_y_minor = 0
-                     , op_y_major = h }
+    opos = Orientation { or_x_minor = 0
+                       , or_x_major = w
+                       , or_y_minor = 0
+                       , or_y_major = h }
  
 
 -- start-point - bottom left
@@ -78,19 +78,19 @@ mkRectBl w h = strokedRectangle w h
 
 
 
-testDrawMinor :: (Floating u, InterpretUnit u) => RectPosition -> LocGraphic u
+testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectMinor = makePosImage opos (mkRectMinor m w h)
+rectMinor :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectMinor = makePosObject opos (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 
     h    = 30
-    opos = ObjectPos { op_x_minor = m
-                     , op_x_major = (w-m)
-                     , op_y_minor = m
-                     , op_y_major = (h-m) }
+    opos = Orientation { or_x_minor = m
+                       , or_x_major = (w-m)
+                       , or_y_minor = m
+                       , or_y_major = (h-m) }
  
 
 -- start-point - +10 +10
