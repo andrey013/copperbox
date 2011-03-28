@@ -52,7 +52,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-type TextLine u = PosImage BoundingBox u
+type TextLine u = PosObject BoundingBox u
 
 
 -- | Single line text with margins. 
@@ -86,8 +86,8 @@ textAlignRight ss =
 
 
 makeTextLine :: InterpretUnit u => String -> Query (TextLine u)
-makeTextLine ss = (\opos -> makeBoundedPosImage opos (escTextLine esc))
-                    <$> textOPosZero esc
+makeTextLine ss = (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
+                    <$> textOrientationZero esc
   where
     esc = escapeString ss 
 

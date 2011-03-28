@@ -19,16 +19,16 @@
 module Wumpus.Drawing.Text.Base.Common
   ( 
 
-    makeBoundedPosImage
-  , emptyBoundedPosImage
+    makeBoundedPosObject
+  , emptyBoundedPosObject
   , advtext
   , textVector
-  , textOPosZero
+  , textOrientationZero
 
   , charVector
-  , charOPosZero
+  , charOrientationZero
   , hkernVector
-  , hkernOPosZero
+  , hkernOrientationZero
 
   , multilineHeight
   , borderedTextPos
@@ -57,19 +57,20 @@ import Data.Maybe
 --
 -- This builds them.
 --
-makeBoundedPosImage :: Num u 
-                    => ObjectPos u 
-                    -> LocImage t u 
-                    -> PosImage BoundingBox u
-makeBoundedPosImage opos gf = makePosImage opos body
+makeBoundedPosObject :: Num u 
+                     => Orientation u 
+                     -> LocImage t u 
+                     -> PosObject BoundingBox u
+makeBoundedPosObject ortt gf = makePosObject ortt body
   where
     body = promoteR1 $ \pt -> 
-           let bb = objectPosBoundsLocus opos pt
+           let bb = orientationBounds ortt pt
            in replaceAns bb $ gf `at` pt
 
 
-emptyBoundedPosImage :: InterpretUnit u => PosImage BoundingBox u
-emptyBoundedPosImage = makeBoundedPosImage (ObjectPos 0 0 0 0) emptyLocGraphic
+emptyBoundedPosObject :: InterpretUnit u => PosObject BoundingBox u
+emptyBoundedPosObject = 
+    makeBoundedPosObject (Orientation 0 0 0 0) emptyLocGraphic
 
 -- | Single line text, returning its advance vector.
 --
@@ -92,26 +93,28 @@ charVector :: InterpretUnit u => EscapedChar -> Query (AdvanceVec u)
 charVector ch = 
     (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> pointSize
 
--- | Build the ObjectPos of a single line of EscapedText.
+-- | Build the Orientation of a single line of EscapedText.
 -- 
--- The locus of the ObjectPos is baseline left - margins are 
+-- The locus of the Orientation is baseline left - margins are 
 -- added.
 --
-textOPosZero :: InterpretUnit u => EscapedText -> Query (ObjectPos u)
-textOPosZero esc = textVector esc >>= bllOPosZero
+textOrientationZero :: InterpretUnit u 
+                    => EscapedText -> Query (Orientation u)
+textOrientationZero esc = textVector esc >>= bllOrientationZero
 
--- | Build the ObjectPos of an EscapedChar.
+-- | Build the Orientation of an EscapedChar.
 -- 
--- The locus of the ObjectPos is baseline left - margins are 
+-- The locus of the Orientation is baseline left - margins are 
 -- added.
 --
-charOPosZero :: InterpretUnit u => EscapedChar -> Query (ObjectPos u)
-charOPosZero ch = charVector ch >>= bllOPosZero 
+charOrientationZero :: InterpretUnit u 
+                    => EscapedChar -> Query (Orientation u)
+charOrientationZero ch = charVector ch >>= bllOrientationZero 
 
 
-bllOPosZero :: InterpretUnit u => AdvanceVec u -> Query (ObjectPos u)
-bllOPosZero (V2 w _) = 
-    (\(xsep,ysep) ymin ymaj -> ObjectPos xsep (w+xsep) (ymin+ysep) (ymaj+ysep))
+bllOrientationZero :: InterpretUnit u => AdvanceVec u -> Query (Orientation u)
+bllOrientationZero (V2 w _) = 
+    (\(xsep,ysep) ymin ymaj -> Orientation xsep (w+xsep) (ymin+ysep) (ymaj+ysep))
       <$> textMargin <*> capHeight <*> descender
 
 
@@ -132,8 +135,9 @@ hkernVector = go 0
     addWidth w (V2 x y) = V2 (w+x) y
 
 
-hkernOPosZero :: InterpretUnit u => [KernChar u] -> Query (ObjectPos u)
-hkernOPosZero xs = hkernVector xs >>= bllOPosZero
+hkernOrientationZero :: InterpretUnit u 
+                     => [KernChar u] -> Query (Orientation u)
+hkernOrientationZero xs = hkernVector xs >>= bllOrientationZero
  
 -- | This is outside the Drawing context as we don\'t want to get
 -- the @cwLookupTable@ for every char.
@@ -168,20 +172,20 @@ multilineHeight line_count
 
 
 
--- | Variant of 'textObjectPos' where the calculation includes
+-- | Variant of 'textOrientation' where the calculation includes
 -- margins around all four sides of the enclosing rectangle.
 --
 -- Margin sizes are taken from the 'text_margin' field in the 
 -- 'DrawingContext'.
 --
 borderedTextPos :: (Real u, Floating u, InterpretUnit u) 
-                => Int -> u -> Query (ObjectPos u)
+                => Int -> u -> Query (Orientation u)
 borderedTextPos line_count w =
     multilineHeight line_count >>= \h ->
     textMargin                 >>= \(xsep,ysep) -> 
     let hw    = xsep + (0.5 * w)
         hh    = ysep + (0.5 * h)
-    in return $ ObjectPos hw hw hh hh 
+    in return $ Orientation hw hw hh hh 
 
 
 
@@ -190,9 +194,9 @@ borderedTextPos line_count w =
 -- | LR text needs the objectPos under rotation.
 --
 borderedRotTextPos :: (Real u, Floating u, InterpretUnit u) 
-             => Radian -> Int -> u -> Query (ObjectPos u)
+             => Radian -> Int -> u -> Query (Orientation u)
 borderedRotTextPos theta line_count max_w =
-    borderedTextPos line_count max_w >>= orthoObjectPos theta
+    borderedTextPos line_count max_w >>= orthoOrientation theta
 
 
 -- | Note - this returns the answer in center form, regardless
@@ -201,16 +205,16 @@ borderedRotTextPos theta line_count max_w =
 -- So it is probably not a general enough function for the 
 -- PosImage library.
 --
-orthoObjectPos :: (Real u, Floating u, InterpretUnit u) 
-               => Radian -> ObjectPos u -> Query (ObjectPos u)
-orthoObjectPos ang opos = 
-    (\sz -> intraMapFunctor sz (dblOrthoObjectPos ang) opos) 
+orthoOrientation :: (Real u, Floating u, InterpretUnit u) 
+               => Radian -> Orientation u -> Query (Orientation u)
+orthoOrientation ang opos = 
+    (\sz -> intraMapFunctor sz (dblOrthoOrientation ang) opos) 
       <$> pointSize
 
 
-dblOrthoObjectPos :: Radian -> ObjectPos Double -> ObjectPos Double
-dblOrthoObjectPos theta (ObjectPos xmin xmaj ymin ymaj) = 
-    ObjectPos bbox_hw bbox_hw bbox_hh bbox_hh
+dblOrthoOrientation :: Radian -> Orientation Double -> Orientation Double
+dblOrthoOrientation theta (Orientation xmin xmaj ymin ymaj) = 
+    Orientation bbox_hw bbox_hw bbox_hh bbox_hh
   where
     bbox0     = BBox (P2 (-input_hw) (-input_hh)) (P2 input_hw input_hh)
     bbox1     = retraceBoundary id $ drotateAbout theta (zeroPt::DPoint2) bbox0

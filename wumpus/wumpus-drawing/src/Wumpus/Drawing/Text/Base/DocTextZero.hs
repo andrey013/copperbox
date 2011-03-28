@@ -63,16 +63,16 @@ import Data.Foldable ( foldrM )
 -- vertical composition operator and delegating to the rendering
 -- instead:
 --
--- > rightAlign :: [CatText u] -> PosImage BoundingBox u
+-- > rightAlign :: [CatText u] -> PosObject BoundingBox u
 --
 
-newtype DocText u = DocText { getDocText :: Query (PosImage BoundingBox u) }
+newtype DocText u = DocText { getDocText :: Query (PosObject BoundingBox u) }
 
 
 
 
 
-type TextBox u = RectPosition -> BoundedLocGraphic u
+type TextBox u = RectAddress -> BoundedLocGraphic u
 
 
 leftAlign :: (Real u, Floating u, InterpretUnit u) 
@@ -81,24 +81,24 @@ leftAlign xs = \rpos -> promoteR1 $ \pt ->
                         body >>= \a -> atStartPos a pt rpos
   where
     body  = let qs = map getDocText xs in sequence qs >>= \xs ->  
-            return $ valignSepPI emptyBoundedPosImage VLeft 10 xs
+            return $ valignSepPO emptyBoundedPosObject VLeft 10 xs
     
 
 
 -- | Build a blank DocText with no output and a 0 width vector.
 --
 blank :: InterpretUnit u => DocText u
-blank = DocText $ return $ makeBoundedPosImage zeroOP emptyLocGraphic
+blank = DocText $ return $ makeBoundedPosObject zeroOrtt emptyLocGraphic
   where
-    zeroOP = ObjectPos 0 0 0 0
+    zeroOrtt = Orientation 0 0 0 0
 
 
 
 
 escaped :: InterpretUnit u => EscapedText -> DocText u
 escaped esc = DocText $ 
-    (\opos -> makeBoundedPosImage opos (escTextLine esc))
-      <$> textOPosZero esc
+    (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
+      <$> textOrientationZero esc
 
 
 -- | Build a DocText from a string.
@@ -115,8 +115,8 @@ string = escaped . escapeString
 --
 space :: InterpretUnit u => DocText u
 space = DocText $ 
-     (\opos -> makeBoundedPosImage opos emptyLocGraphic)
-        <$> charOPosZero (CharEscInt $ ord ' ')
+     (\ortt -> makeBoundedPosObject ortt emptyLocGraphic)
+        <$> charOrientationZero (CharEscInt $ ord ' ')
 
 
 int :: InterpretUnit u => Int -> DocText u
@@ -140,7 +140,7 @@ infixr 6 <>, <+>
 (<>) :: (Num u, Ord u) => DocText u -> DocText u -> DocText u
 a <> b = DocText body 
   where 
-    body = hcatPI <$> getDocText a <*> getDocText b
+    body = hcatPO <$> getDocText a <*> getDocText b
  
 
 -- | Concatenate two DocTexts separated with a space.
@@ -170,7 +170,7 @@ lfill w dt = DocText $ getDocText dt >>= \(u,gf) ->
 -- Note - @fill@ combinators cf. @wl-pprint@ (but left and right) 
 -- will be very useful.
 --
--- Also PosImages can be inlined in text...
+-- Also PosObjects can be inlined in text...
 --
 
 fontColour :: RGBi -> DocText u -> DocText u
@@ -189,16 +189,16 @@ textSize sz = doclocal (set_font_size sz)
 -- Helpers
 
 uniformSpace :: InterpretUnit u 
-             => u -> [EscapedChar] -> Query (PosImage BoundingBox u)
+             => u -> [EscapedChar] -> Query (PosObject BoundingBox u)
 uniformSpace dx xs = hkernPrim $ go xs
   where 
     go (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
     go []     = []
 
 
-hkernPrim :: InterpretUnit u => [KernChar u] -> Query (PosImage BoundingBox u)
-hkernPrim ks = (\opos -> makeBoundedPosImage opos (hkernLine ks))
-                 <$> hkernOPosZero ks
+hkernPrim :: InterpretUnit u => [KernChar u] -> Query (PosObject BoundingBox u)
+hkernPrim ks = (\ortt -> makeBoundedPosObject ortt (hkernLine ks))
+                 <$> hkernOrientationZero ks
 
 -- Cannot have doc local anymore...
 --
