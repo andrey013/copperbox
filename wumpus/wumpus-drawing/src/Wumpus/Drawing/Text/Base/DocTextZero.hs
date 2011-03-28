@@ -19,13 +19,15 @@
 
 module Wumpus.Drawing.Text.Base.DocTextZero
   ( 
-   
+
+
     DocText
+  , TextBox
 
   , leftAlign
-  , centerAlign
+{-  , centerAlign
   , rightAlign
-
+-}
   , blank
   , space
   , string
@@ -34,11 +36,12 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , (<>)
   , (<+>) 
 
-  , rfill
-  , lfill
+--  , rfill
+--  , lfill
 
   , fontColour
   , textSize
+
 
   ) where
 
@@ -49,6 +52,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Applicative
 import Data.Char ( ord )
 import Data.Foldable ( foldrM )
 
@@ -62,92 +66,39 @@ import Data.Foldable ( foldrM )
 -- > rightAlign :: [CatText u] -> PosImage BoundingBox u
 --
 
-
-newtype DocText u = DocText { getDocText :: Query (u, AdvGraphic u) }
-
--- Note being able to background fill would be very useful, 
--- especially background fill with white.
+newtype DocText u = DocText { getDocText :: Query (PosImage BoundingBox u) }
 
 
 
--- | 'HMove' : @ half_max_width * line_width -> Horizontal_Displacement @
---
-type HMove u = u -> u -> u
 
-leftAMove :: Num u => HMove u
-leftAMove half_max _ = negate half_max
- 
-centerAMove :: Fractional u => HMove u
-centerAMove _ elt_w = negate $ 0.5 * elt_w
 
-rightAMove :: Num u => HMove u
-rightAMove half_max elt_w = half_max - elt_w
-
+type TextBox u = RectPosition -> BoundedLocGraphic u
 
 
 leftAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [DocText u] -> PosImage BoundingBox u
-leftAlign = drawMulti leftAMove
-
-centerAlign :: (Real u, Floating u, InterpretUnit u) 
-            => [DocText u] -> PosImage BoundingBox u
-centerAlign = drawMulti centerAMove
-
-rightAlign :: (Real u, Floating u, InterpretUnit u) 
-           => [DocText u] -> PosImage BoundingBox u
-rightAlign = drawMulti rightAMove
-
-
-
-drawMulti :: (Real u, Floating u, InterpretUnit u) 
-          => HMove u -> [DocText u] -> PosImage BoundingBox u
-drawMulti moveF xs = promoteR2 $ \start rpos -> 
-    evalAllLines xs                             >>= \all_lines -> 
-    centerToBaseline                            >>= \down -> 
-    borderedTextPos line_count (fst all_lines)  >>= \opos ->
-    centerSpineDisps line_count 0               >>= \(disp_top, disp_next) ->
-    let gs    = positionHLines moveF down all_lines 
-        gf    = moveStart disp_top $ chainDisplace disp_next gs
-        posG  = makePosImage opos gf
-        bbox  = objectPosBounds start rpos opos
-    in replaceAns bbox $ atStartPos posG start rpos     
+          => [DocText u] -> TextBox u
+leftAlign xs = \rpos -> promoteR1 $ \pt -> 
+                        body >>= \a -> atStartPos a pt rpos
   where
-    line_count    = length xs
-
-    -- chain is many graphics 
-
-
-positionHLines :: Fractional u 
-               => HMove u -> u -> (u,[(u, AdvGraphic u)]) -> [LocGraphic u]
-positionHLines mkH down (max_w,xs) = map fn xs
-  where
-    half_max       = 0.5 * max_w
-    moveF w1       = let v = vec (mkH half_max w1) (-down) 
-                     in moveStart $ displaceVec v 
-    fn (elt_w, gf) = ignoreAns $ moveF elt_w $ gf
-
-
-evalAllLines :: (Num u, Ord u) 
-             => [DocText u] -> Query (u, [(u, AdvGraphic u)])
-evalAllLines = foldrM fn (0,[]) 
-  where
-    fn dt (maxw,xs) = getDocText dt >>= \ans@(dx,_) -> 
-                      return (max dx maxw, ans:xs)
+    body  = let qs = map getDocText xs in sequence qs >>= \xs ->  
+            return $ valignSepPI emptyBoundedPosImage VLeft 10 xs
+    
 
 
 -- | Build a blank DocText with no output and a 0 width vector.
 --
 blank :: InterpretUnit u => DocText u
-blank = DocText $ return (0, replaceAns (hvec 0) $ emptyLocGraphic)
+blank = DocText $ return $ makeBoundedPosImage zeroOP emptyLocGraphic
+  where
+    zeroOP = ObjectPos 0 0 0 0
 
 
 
 
 escaped :: InterpretUnit u => EscapedText -> DocText u
-escaped esc = DocText $ body 
-   where
-     body = textVector esc >>= \v -> 
-            return (vector_x v, replaceAns v $ escTextLine esc)
+escaped esc = DocText $ 
+    (\opos -> makeBoundedPosImage opos (escTextLine esc))
+      <$> textOPosZero esc
 
 
 -- | Build a DocText from a string.
@@ -157,23 +108,22 @@ escaped esc = DocText $ body
 string :: InterpretUnit u => String -> DocText u
 string = escaped . escapeString
 
+
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
 space :: InterpretUnit u => DocText u
 space = DocText $ 
-   charVector (CharEscInt $ ord ' ') >>= \v -> 
-   return (advanceH v, replaceAns v $ emptyLocGraphic)
-
-
-
+     (\opos -> makeBoundedPosImage opos emptyLocGraphic)
+        <$> charOPosZero (CharEscInt $ ord ' ')
 
 
 int :: InterpretUnit u => Int -> DocText u
 int i = DocText $ 
     charVector (CharLiteral '0') >>= \v1 -> 
     uniformSpace (advanceH v1) (map CharLiteral $ show i)
+
 
 integer :: InterpretUnit u => Integer -> DocText u
 integer i = DocText $ 
@@ -187,19 +137,18 @@ infixr 6 <>, <+>
 
 -- | Concatenate two DocTexts separated with no spacing.
 --
-(<>) :: Num u => DocText u -> DocText u -> DocText u
+(<>) :: (Num u, Ord u) => DocText u -> DocText u -> DocText u
 a <> b = DocText body 
   where 
-    body = getDocText a >>= \(dx0,gf0) -> 
-           getDocText b >>= \(dx1,gf1) -> 
-           return (dx0 + dx1, gf0 `oplus` moveStart (displaceH dx0) gf1)  
-
+    body = hcatPI <$> getDocText a <*> getDocText b
+ 
 
 -- | Concatenate two DocTexts separated with a space.
 --
-(<+>) :: InterpretUnit u => DocText u -> DocText u -> DocText u
+(<+>) :: (InterpretUnit u, Ord u) => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
+{-
 -- | Right fill
 --
 rfill :: Ord u => u -> DocText u -> DocText u
@@ -212,7 +161,7 @@ lfill :: (Num u, Ord u) => u -> DocText u -> DocText u
 lfill w dt = DocText $ getDocText dt >>= \(u,gf) -> 
   if u < w then return (w, moveStart (displaceH $ w - u) gf) 
            else return (u,gf)
-
+-}
 
 -- A contextual version might be useful...
 -- cxrfill :: Ord u => DrawingInfo u -> DocText u -> DocText u
@@ -239,28 +188,26 @@ textSize sz = doclocal (set_font_size sz)
 --------------------------------------------------------------------------------
 -- Helpers
 
-
 uniformSpace :: InterpretUnit u 
-             => u -> [EscapedChar] -> Query (u,AdvGraphic u)
+             => u -> [EscapedChar] -> Query (PosImage BoundingBox u)
 uniformSpace dx xs = hkernPrim $ go xs
   where 
     go (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
     go []     = []
 
 
-hkernPrim :: InterpretUnit u => [KernChar u] -> Query (u,AdvGraphic u)
-hkernPrim ks = hkernVector ks >>= \v ->
-               uconvertCtxF v  >>= \v1 -> 
-               return (vector_x v1, replaceAns v1 $ hkernLine ks)
+hkernPrim :: InterpretUnit u => [KernChar u] -> Query (PosImage BoundingBox u)
+hkernPrim ks = (\opos -> makeBoundedPosImage opos (hkernLine ks))
+                 <$> hkernOPosZero ks
 
+-- Cannot have doc local anymore...
+--
 
 -- | Note - the changes to the DrawingContext have to be 
 -- propagated both to the function that generates the answer and 
 -- to the AdvGraphic of result.
 --
 doclocal :: DrawingContextF -> DocText u -> DocText u
-doclocal fn dt = DocText $ 
-    localize fn $ getDocText dt >>= \(u,gf) -> return (u, localize fn gf)
-
+doclocal upd a = DocText $ localize upd (getDocText a)
 
 

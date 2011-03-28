@@ -48,5 +48,5 @@ mf = do
                                  , integer 10000000000000000000
                                  ]
 
-rectStart :: Floating  u => RectPosition -> PosImage t u -> LocImage t u
-rectStart = flip startPos
+rectStart :: Floating  u => RectPosition -> TextBox u -> BoundedLocGraphic u
+rectStart rpos fn = fn rpos 

@@ -19,10 +19,16 @@
 module Wumpus.Drawing.Text.Base.Common
   ( 
 
-    advtext
+    makeBoundedPosImage
+  , emptyBoundedPosImage
+  , advtext
   , textVector
+  , textOPosZero
+
   , charVector
+  , charOPosZero
   , hkernVector
+  , hkernOPosZero
 
   , multilineHeight
   , borderedTextPos
@@ -47,14 +53,30 @@ import qualified Data.Map               as Map
 import Data.Maybe 
 
 
+-- | Most text objects are @PosImage BoundingBox u@.
+--
+-- This builds them.
+--
+makeBoundedPosImage :: Num u 
+                    => ObjectPos u 
+                    -> LocImage t u 
+                    -> PosImage BoundingBox u
+makeBoundedPosImage opos gf = makePosImage opos body
+  where
+    body = promoteR1 $ \pt -> 
+           let bb = objectPosBoundsLocus opos pt
+           in replaceAns bb $ gf `at` pt
+
+
+emptyBoundedPosImage :: InterpretUnit u => PosImage BoundingBox u
+emptyBoundedPosImage = makeBoundedPosImage (ObjectPos 0 0 0 0) emptyLocGraphic
+
 -- | Single line text, returning its advance vector.
 --
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
 advtext esc = lift0R1 (textVector esc) >>= body
   where
     body v = replaceAns v $ escTextLine esc
-
-
 
 
 textVector :: InterpretUnit u => EscapedText -> Query (AdvanceVec u)
@@ -69,6 +91,30 @@ textVector esc =
 charVector :: InterpretUnit u => EscapedChar -> Query (AdvanceVec u)
 charVector ch = 
     (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> pointSize
+
+-- | Build the ObjectPos of a single line of EscapedText.
+-- 
+-- The locus of the ObjectPos is baseline left - margins are 
+-- added.
+--
+textOPosZero :: InterpretUnit u => EscapedText -> Query (ObjectPos u)
+textOPosZero esc = textVector esc >>= bllOPosZero
+
+-- | Build the ObjectPos of an EscapedChar.
+-- 
+-- The locus of the ObjectPos is baseline left - margins are 
+-- added.
+--
+charOPosZero :: InterpretUnit u => EscapedChar -> Query (ObjectPos u)
+charOPosZero ch = charVector ch >>= bllOPosZero 
+
+
+bllOPosZero :: InterpretUnit u => AdvanceVec u -> Query (ObjectPos u)
+bllOPosZero (V2 w _) = 
+    (\(xsep,ysep) ymin ymaj -> ObjectPos xsep (w+xsep) (ymin+ysep) (ymaj+ysep))
+      <$> textMargin <*> capHeight <*> descender
+
+
    
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
 -- 
@@ -85,6 +131,9 @@ hkernVector = go 0
     
     addWidth w (V2 x y) = V2 (w+x) y
 
+
+hkernOPosZero :: InterpretUnit u => [KernChar u] -> Query (ObjectPos u)
+hkernOPosZero xs = hkernVector xs >>= bllOPosZero
  
 -- | This is outside the Drawing context as we don\'t want to get
 -- the @cwLookupTable@ for every char.
@@ -96,6 +145,7 @@ charWidth sz fn (CharEscInt i)  = fmap (dinterp sz) $ fn i
 charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
   where
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
+
 
 
 --------------------------------------------------------------------------------

@@ -30,18 +30,31 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
+-- Note this type doesn\'t support concat...
+-- 
+-- While it may be adequate, it does need another prefix.
+--
+type PosChar u = RectPosition -> BoundedLocGraphic u
 
-type PosChar u = PosImage BoundingBox u
-
-posChar :: (Fractional u, InterpretUnit u) => Char -> PosChar u
-posChar = posEscChar . CharLiteral
+posChar :: (Floating u, InterpretUnit u) => Char -> PosChar u
+posChar ch = posEscChar $ CharLiteral ch
 
 
-posEscChar :: (Fractional u, InterpretUnit u) => EscapedChar -> PosChar u
-posEscChar esc = 
-   lift0R2 (charVector esc) >>= \wv -> 
-   lift0R2 (makeOPos wv)    >>= \opos ->
-   makePosImage opos (charImg wv esc)
+posEscChar :: (Floating u, InterpretUnit u) => EscapedChar -> PosChar u
+posEscChar esc = \rpos -> lift0R1 (makePosChar esc) >>= \gf -> startPos gf rpos
+
+
+makePosChar :: InterpretUnit u 
+            => EscapedChar -> Query (PosImage BoundingBox u)
+makePosChar esc = 
+    charOPosZero esc >>= \opos -> 
+    return $ makeBoundedPosImage opos (escText1 esc)
+
+
+escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
+escText1 ch = escTextLine $ wrapEscChar ch
+
+{-
 
 charImg :: InterpretUnit u
         => AdvanceVec u -> EscapedChar -> LocImage BoundingBox u
@@ -69,6 +82,5 @@ makeOPos (V2 w _) =
     capHeight            >>= \ymajor -> 
     fmap abs descender   >>= \yminor  ->
     return $ ObjectPos 0 w yminor ymajor
+-}
 
-escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
-escText1 ch = escTextLine $ wrapEscChar ch

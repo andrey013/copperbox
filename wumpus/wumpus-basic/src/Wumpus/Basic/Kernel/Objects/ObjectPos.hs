@@ -25,6 +25,7 @@ module Wumpus.Basic.Kernel.Objects.ObjectPos
 
   , objectPosStart
   , objectPosBounds
+  , objectPosBoundsLocus
 
   , extendLeftOP
   , extendRightOP
@@ -195,6 +196,17 @@ objectPosBounds (P2 x y) pos (ObjectPos xmin xmaj ymin ymaj) = go pos
     go BLL    = bbox $ P2 x       ymin
     go BLC    = bbox $ P2 (x-hw)  ymin
     go BLR    = bbox $ P2 (x-w)   ymin
+
+
+-- | Calculate the bounding box formed by locating the 'ObjectPos'
+-- at the supplied point.
+-- 
+objectPosBoundsLocus :: Num u 
+                     => ObjectPos u -> Point2 u -> BoundingBox u
+objectPosBoundsLocus (ObjectPos xmin xmaj ymin ymaj) (P2 x y) = BBox llc urc
+  where
+    llc   = P2 (x-xmin) (y-ymin)
+    urc   = P2 (x+xmaj) (y+ymaj)
 
 
 --------------------------------------------------------------------------------

@@ -66,7 +66,7 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
     let path1   = shortenL dl cpath
         ang     = directionL path1
         start   = tipL cpath
-        g2      = atRot (arrowhead_draw arrh) start ang
+        g2      = atIncline (arrowhead_draw arrh) start ang
     in replaceAns cpath $ decorate g2 $ toPrimPath path1 >>= openStroke
 
 -- Note - returns original path and adds tips to the @cpath@ 
@@ -83,7 +83,7 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
     let path1   = shortenR dr cpath
         ang     = directionR path1
         end     = tipR cpath
-        g2      = atRot (arrowhead_draw arrh) end ang
+        g2      = atIncline (arrowhead_draw arrh) end ang
     in replaceAns cpath $ decorate g2 $ toPrimPath path1 >>= openStroke
 
 
@@ -102,8 +102,8 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
         angR    = directionR path1
         start   = tipL cpath
         end     = tipR cpath
-        gL      = atRot (arrowhead_draw arrL) start angL
-        gR      = atRot (arrowhead_draw arrR) end   angR
+        gL      = atIncline (arrowhead_draw arrL) start angL
+        gR      = atIncline (arrowhead_draw arrR) end   angR
     in replaceAns cpath $ decorate (gL `oplus` gR) $ 
         toPrimPath path1 >>= openStroke
 

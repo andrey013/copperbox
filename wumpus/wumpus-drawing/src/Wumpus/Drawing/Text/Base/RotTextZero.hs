@@ -21,7 +21,12 @@
 
 module Wumpus.Drawing.Text.Base.RotTextZero
   ( 
+    TextLine
+  , textAlignLeft
+  , textAlignCenter
+  , textAlignRight
 
+{-
     RotText
   , rotTextStart
 
@@ -32,22 +37,63 @@ module Wumpus.Drawing.Text.Base.RotTextZero
   , multiAlignCenter
   , multiAlignRight
 
-  , textAlignCenter
   , textAlignLeft
   , textAlignRight
+-}
 
   ) where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
+import Control.Applicative
+
+type TextLine u = PosImage BoundingBox u
+
+
+-- | Single line text with margins. 
+-- 
+-- Start point is baseline-left.
+--
+textAlignLeft :: (Real u, Floating u, InterpretUnit u) 
+              => String -> LocImage BoundingBox u
+textAlignLeft ss = 
+    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLL
+
+
+-- | Single line text with mragins.
+--
+-- start point is baseline-center.
+--
+textAlignCenter :: (Real u, Floating u, InterpretUnit u) 
+                => String -> LocImage BoundingBox u
+textAlignCenter ss = 
+    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLC
+
+
+-- | Single line text with margins. 
+-- 
+-- Start point is baseline-right.
+--
+textAlignRight :: (Real u, Floating u, InterpretUnit u) 
+               => String -> LocImage BoundingBox u
+textAlignRight ss = 
+    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLR 
+
+
+makeTextLine :: InterpretUnit u => String -> Query (TextLine u)
+makeTextLine ss = (\opos -> makeBoundedPosImage opos (escTextLine esc))
+                    <$> textOPosZero esc
+  where
+    esc = escapeString ss 
+
+
+
+{-
 
 type RotText u = PosThetaImage BoundingBox u
 
@@ -75,6 +121,7 @@ rotTextStart = startPosRot
 textbox :: (Real u, Floating u, InterpretUnit u) 
         => String -> PosImage BoundingBox u
 textbox ss =  multiAlignCenter ss `ptRot` 0
+
 
 
 rtextbox :: (Real u, Floating u, InterpretUnit u) 
@@ -254,3 +301,4 @@ onelineEscText :: InterpretUnit u => EscapedText -> Query (OnelineText u)
 onelineEscText esc = fmap (OnelineText esc) $ textVector esc
 
 
+-}
