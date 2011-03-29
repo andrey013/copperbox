@@ -62,7 +62,7 @@ testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
 
 rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
-rectBl = makePosImage $ makePosObject opos (mkRectBl w h)
+rectBl = makePosImage $ makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40 
     h    = 30
@@ -82,7 +82,7 @@ testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
 
 rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectMinor = makePosImage $ makePosObject opos (mkRectMinor m w h)
+rectMinor = makePosImage $ makePosObject (return opos) (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 

@@ -26,7 +26,7 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   , orientationStart
   , orientationBounds
  
-
+  , extendOrientation
   , extendOLeft
   , extendORight
   , extendODown
@@ -181,6 +181,11 @@ orientationBounds (Orientation xmin xmaj ymin ymaj) (P2 x y) = BBox llc urc
 
 --------------------------------------------------------------------------------
 -- Extending an arm of the orientation
+
+extendOrientation :: Num u 
+                  => u -> u -> u -> u -> Orientation u -> Orientation u
+extendOrientation dxl dxr dyd dyu (Orientation xmin xmaj ymin ymaj) = 
+    Orientation (xmin+dxl) (xmaj+dxr) (ymin+dyd) (ymaj+dyu)
 
 extendOLeft :: Num u => u -> Orientation u -> Orientation u
 extendOLeft u (Orientation xmin xmaj ymin ymaj) = 

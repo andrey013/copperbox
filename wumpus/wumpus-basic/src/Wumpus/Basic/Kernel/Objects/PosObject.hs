@@ -42,6 +42,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   , makePosObject
   , runPosObject
+  , bimapPosObject
 
   , makePosImage
   , startPos
@@ -105,12 +106,12 @@ import Wumpus.Core.Colour ( red, blue )
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-
+import Control.Applicative
 
 -- | A positionable \"Object\" that is drawn as a 'LocImage'.
 --
 data PosObject t u = PosObject
-      { pi_object_ortt         :: Orientation u
+      { pi_object_ortt         :: Query (Orientation u)
       , pi_loc_image           :: LocImage t u
       }
 
@@ -152,6 +153,8 @@ type PosGraphic u = PosImage UNil u
 
 type BoundedPosGraphic u = PosImage BoundingBox u
 
+
+
 --------------------------------------------------------------------------------
 
 
@@ -165,16 +168,24 @@ type BoundedPosGraphic u = PosImage BoundingBox u
 -- PosObject type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-makePosObject :: Orientation u -> LocImage t u -> PosObject t u
-makePosObject ortt img = 
-    PosObject { pi_object_ortt  = ortt
+makePosObject :: Query (Orientation u) -> LocImage t u -> PosObject t u
+makePosObject qort img = 
+    PosObject { pi_object_ortt  = qort
               , pi_loc_image    = img
               }
 
 runPosObject :: Fractional u 
              => Point2 u -> RectAddress -> PosObject t u -> Image t u
-runPosObject pt raddr (PosObject opos gf) =
-    let sv = orientationStart raddr opos in gf `at` (displaceVec sv pt)
+runPosObject pt raddr (PosObject qort gf) =
+    qort >>= \ortt -> let sv = orientationStart raddr ortt
+                      in gf `at` (displaceVec sv pt)
+
+
+bimapPosObject :: (Orientation u -> Orientation u) 
+               -> (LocImage t u -> LocImage t u)
+               -> PosObject t u
+               -> PosObject t u
+bimapPosObject f g (PosObject ortt img) = PosObject (fmap f ortt) (g img)
 
 -- | Make a 'PosImage' from a 'PosObject'.
 -- 
@@ -217,7 +228,8 @@ atStartPos = apply2R2
 -- Build an empty 'PosGraphicObject'.
 --
 emptyPosGraphicObject :: InterpretUnit u => PosGraphicObject u
-emptyPosGraphicObject = makePosObject (Orientation 0 0 0 0) emptyLocGraphic
+emptyPosGraphicObject = 
+    makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
 
 
@@ -226,12 +238,13 @@ emptyPosGraphicObject = makePosObject (Orientation 0 0 0 0) emptyLocGraphic
 -- This builds them.
 --
 makeBoundedPosObject :: Num u 
-                     => Orientation u 
+                     => Query (Orientation u )
                      -> LocImage t u 
                      -> BoundedPosObject u
-makeBoundedPosObject ortt gf = makePosObject ortt body
+makeBoundedPosObject qort gf = makePosObject qort body
   where
-    body = promoteR1 $ \pt -> 
+    body = promoteR1 $ \pt ->
+           qort >>= \ortt -> 
            let bb = orientationBounds ortt pt
            in replaceAns bb $ gf `at` pt
 
@@ -239,7 +252,7 @@ makeBoundedPosObject ortt gf = makePosObject ortt body
 
 emptyBoundedPosObject :: InterpretUnit u => BoundedPosObject u
 emptyBoundedPosObject = 
-    makeBoundedPosObject (Orientation 0 0 0 0) emptyLocGraphic
+    makeBoundedPosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
 
 
@@ -247,8 +260,8 @@ emptyBoundedPosObject =
 
 illustratePosObject :: InterpretUnit u 
                    => PosObject t u -> LocImage t u
-illustratePosObject (PosObject opos gf) = 
-    decorate gf (illustrateOrientation opos)
+illustratePosObject (PosObject qort gf) = 
+    lift0R1 qort >>= \ortt -> decorate gf (illustrateOrientation ortt)
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u
@@ -318,11 +331,11 @@ genMoveAlign :: (Num u, OPlus (t u))
              => (Orientation u -> Orientation u -> Vec2 u) 
              -> (Orientation u -> Orientation u -> Orientation u) 
              -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveAlign mkV mkOP (PosObject opos0 g0) (PosObject opos1 g1) = 
-   let v1   = mkV  opos0 opos1 
-       opos = mkOP opos0 opos1
-       gf   = g0 `oplus` moveStart (displaceVec v1) g1
-   in PosObject opos gf    
+genMoveAlign mkV mkOP (PosObject q0 g0) (PosObject q1 g1) = 
+   let vM   = mkV  <$> q0 <*> q1 
+       qort = mkOP <$> q0 <*> q1
+       gf   = lift0R1 vM >>= \v1 -> g0 `oplus` moveStart (displaceVec v1) g1
+   in PosObject qort gf    
 
 
 --------------------------------------------------------------------------------
@@ -372,11 +385,12 @@ genMoveSepH :: (Num u, OPlus (t u))
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
             -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveSepH mkV mkOP sep (PosObject opos0 g0) (PosObject opos1 g1) = 
-   let v1   = mkV  opos0 opos1 
-       opos = extendORight sep $ mkOP opos0 opos1
-       gf   = g0 `oplus` moveStart (displaceVec $ hvec sep ^+^ v1) g1
-   in PosObject opos gf    
+genMoveSepH mkV mkOP sep (PosObject q0 g0) (PosObject q1 g1) = 
+   let vM   = mkV <$> q0 <*> q1
+       qort = (\or0 or1 -> extendORight sep $ mkOP or0 or1) <$> q0 <*> q1
+       gf   = lift0R1 vM >>= \v1 -> 
+              g0 `oplus` moveStart (displaceVec $ hvec sep ^+^ v1) g1
+   in PosObject qort gf    
 
 
 genMoveSepV :: (Num u, OPlus (t u))   
@@ -384,11 +398,12 @@ genMoveSepV :: (Num u, OPlus (t u))
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
             -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveSepV mkV mkOP sep (PosObject opos0 g0) (PosObject opos1 g1) = 
-   let v1   = mkV  opos0 opos1 
-       opos = extendOUp sep $ mkOP opos0 opos1
-       gf   = g0 `oplus` moveStart (displaceVec $ vvec sep ^+^ v1) g1
-   in PosObject opos gf    
+genMoveSepV mkV mkOP sep (PosObject q0 g0) (PosObject q1 g1) = 
+   let vM   = mkV <$> q0 <*> q1
+       qort = (\or0 or1 -> extendOUp sep $ mkOP or0 or1) <$> q0 <*> q1
+       gf   = lift0R1 vM >>= \v1 -> 
+              g0 `oplus` moveStart (displaceVec $ vvec sep ^+^ v1) g1
+   in PosObject qort gf    
 
 
 

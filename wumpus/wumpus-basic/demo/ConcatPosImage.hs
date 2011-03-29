@@ -70,7 +70,7 @@ mf = do
 
 
 rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
-rectCenter = makePosObject opos (mkRectCenter w h)
+rectCenter = makePosObject (return opos) (mkRectCenter w h)
   where
     w    = 50
     h    = 35
@@ -87,7 +87,7 @@ mkRectCenter w h = moveStart (displaceVec v1) $ strokedRectangle w h
     
 
 rectBl :: (Fractional u, InterpretUnit u) => PosGraphicObject u
-rectBl = makePosObject opos (mkRectBl w h)
+rectBl = makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40  
     h    = 20
@@ -104,7 +104,7 @@ mkRectBl w h = strokedRectangle w h
 
 
 rectMinor :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
-rectMinor = makePosObject opos (mkRectMinor w h)
+rectMinor = makePosObject (return opos) (mkRectMinor w h)
   where
     w    = 30 
     h    = 25
