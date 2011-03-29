@@ -36,8 +36,13 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , (<>)
   , (<+>) 
 
-  , rfill
---  , lfill
+  , lfillString
+  , lfillEscaped
+  , cfillString
+  , cfillEscaped
+  , rfillString
+  , rfillEscaped
+
 
   , fontColour
   , textSize
@@ -154,20 +159,64 @@ a <> b = a `hcatPO` b
 (<+>) :: (InterpretUnit u, Ord u) => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
-
--- | Right fill
 --
-rfill :: Num u => u -> DocText u -> DocText u
-rfill w = extendPosBounds 0 w 0 0
-
-{-
--- | Left fill
+-- Design note - there is no useful /feedback/ between the 
+-- Orientation-Query and the LocImage in a PosObject, so we 
+-- cannot have this more general fill combinator 
 --
-lfill :: (Num u, Ord u) => u -> DocText u -> DocText u
-lfill w dt = DocText $ getDocText dt >>= \(u,gf) -> 
-  if u < w then return (w, moveStart (displaceH $ w - u) gf) 
-           else return (u,gf)
--}
+-- > lfill :: u -> DocText u -> DocText u
+--
+--
+
+-- | Left fill string.
+--
+lfillString :: (Ord u, InterpretUnit u) => u -> String -> DocText u
+lfillString w ss = lfillEscaped w (escapeString ss)
+
+
+-- | Left fill escaped text.
+--
+lfillEscaped :: (Ord u, InterpretUnit u) => u -> EscapedText -> DocText u
+lfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
+  where
+    calcOrtt = fmap (lfillOrientation w) $ textOrientationZero esc
+
+
+
+
+-- | Center fill String - i.e. add equal fill at left and right.
+--
+cfillString :: (Fractional u, Ord u, InterpretUnit u) 
+            => u -> String -> DocText u
+cfillString w ss = cfillEscaped w (escapeString ss)
+
+
+-- | Center fill escaped text - i.e. add equal fill at left and 
+-- right.
+--
+cfillEscaped :: (Fractional u, Ord u, InterpretUnit u) 
+             => u -> EscapedText -> DocText u
+cfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
+  where
+    calcOrtt = fmap (cfillOrientation w) $ textOrientationZero esc
+
+
+-- | Right fill String.
+--
+rfillString :: (Ord u, InterpretUnit u) => u -> String -> DocText u
+rfillString w ss = rfillEscaped w (escapeString ss)
+
+
+-- | Right fill escaped text
+--
+rfillEscaped :: (Ord u, InterpretUnit u) => u -> EscapedText -> DocText u
+rfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
+  where
+    calcOrtt = fmap (rfillOrientation w) $ textOrientationZero esc
+
+
+
+
 
 -- A contextual version might be useful...
 -- cxrfill :: Ord u => DrawingInfo u -> DocText u -> DocText u
@@ -217,14 +266,24 @@ doclocal :: DrawingContextF -> DocText u -> DocText u
 doclocal upd = bimapPosObject (localize upd) (localize upd)
 
 
-
--- Currently incorrect - needs changing for fill...
-extendPosBounds :: Num u 
-                => u -> u -> u -> u -> BoundedPosObject u -> BoundedPosObject u
-extendPosBounds x0 x1 y0 y1 =
-    bimapPosObject (fmap $ extendOrientation x0 x1 y0 y1) (mapAns fn) 
+lfillOrientation :: (Num u, Ord u) => u -> Orientation u -> Orientation u
+lfillOrientation lw o@(Orientation xmin xmaj ymin ymaj) =
+   if lw > w then Orientation (xmin+dx) xmaj ymin ymaj else o
   where
-    fn (BBox (P2 llx lly) (P2 urx ury)) = let ll = P2 (llx - x0) (lly - y0) 
-                                              ur = P2 (urx + x1) (ury + y1) 
-                                          in BBox ll ur
-       
+    w  = xmin + xmaj
+    dx = lw - w 
+
+cfillOrientation :: (Fractional u, Ord u) => u -> Orientation u -> Orientation u
+cfillOrientation rw o@(Orientation xmin xmaj ymin ymaj) =
+   if rw > w then Orientation (xmin+hdx) (xmaj+hdx) ymin ymaj else o
+  where
+    w   = xmin + xmaj
+    hdx = 0.5 * (rw - w)
+
+rfillOrientation :: (Num u, Ord u) => u -> Orientation u -> Orientation u
+rfillOrientation rw o@(Orientation xmin xmaj ymin ymaj) =
+   if rw > w then Orientation xmin (xmaj+dx) ymin ymaj else o
+  where
+    w  = xmin + xmaj
+    dx = rw - w 
+

@@ -61,5 +61,5 @@ body = [ string "Further work"
        , (textSize 48 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
-       , ( rfill 50 $ string "and") <> string "other things."
+       , ( rfillString 50 "and") <> string "other things."
        ] 
