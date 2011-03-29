@@ -18,8 +18,8 @@
 
 module Wumpus.Drawing.Text.Base.Common
   ( 
-
-    advtext
+    posTextWithMargins
+  , advtext
   , textVector
   , textOrientationZero
 
@@ -45,8 +45,23 @@ import Data.Maybe
 
 
 
--- FOR WUMPUS-BASIC
+posTextWithMargins :: (Fractional u, InterpretUnit u) 
+                   => BoundedPosObject u -> BoundedPosGraphic u
+posTextWithMargins obj = promoteR2 $ \pt addr -> 
+    textMargin >>= \(xsep,ysep) -> 
+    let body = extendPosBounds xsep xsep ysep ysep obj
+    in runPosObject pt addr body
 
+
+extendPosBounds :: Num u 
+                => u -> u -> u -> u -> BoundedPosObject u -> BoundedPosObject u
+extendPosBounds x0 x1 y0 y1 =
+    bimapPosObject (fmap $ extendOrientation x0 x1 y0 y1) (mapAns fn) 
+  where
+    fn (BBox (P2 llx lly) (P2 urx ury)) = let ll = P2 (llx - x0) (lly - y0) 
+                                              ur = P2 (urx + x1) (ury + y1) 
+                                          in BBox ll ur
+       
 
 
 -- | Single line text, returning its advance vector.
@@ -89,10 +104,14 @@ charOrientationZero :: InterpretUnit u
 charOrientationZero ch = charVector ch >>= bllOrientationZero 
 
 
+
+-- NOTE - TextMargin should probably be added as a final step
+-- not during construction...
+
 bllOrientationZero :: InterpretUnit u => AdvanceVec u -> Query (Orientation u)
 bllOrientationZero (V2 w _) = 
-    (\(xsep,ysep) ymin ymaj -> Orientation xsep (w+xsep) (ymin+ysep) (ymaj+ysep))
-      <$> textMargin <*> capHeight <*> descender
+    (\ymin ymaj -> Orientation 0 w ymin ymaj) 
+      <$> fmap abs descender <*> capHeight
 
 
    

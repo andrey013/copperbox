@@ -181,11 +181,11 @@ runPosObject pt raddr (PosObject qort gf) =
                       in gf `at` (displaceVec sv pt)
 
 
-bimapPosObject :: (Orientation u -> Orientation u) 
+bimapPosObject :: (Query (Orientation u) -> Query (Orientation u))
                -> (LocImage t u -> LocImage t u)
                -> PosObject t u
                -> PosObject t u
-bimapPosObject f g (PosObject ortt img) = PosObject (fmap f ortt) (g img)
+bimapPosObject f g (PosObject qort img) = PosObject (f qort) (g img)
 
 -- | Make a 'PosImage' from a 'PosObject'.
 -- 

@@ -36,12 +36,11 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , (<>)
   , (<+>) 
 
---  , rfill
+  , rfill
 --  , lfill
 
   , fontColour
   , textSize
-
 
   ) where
 
@@ -55,8 +54,10 @@ import Control.Applicative
 import Data.Char ( ord )
 
 
-newtype DocText u = DocText { getDocText :: Query (BoundedPosObject u) }
+-- I\'m not convinced this is the right type...
 
+type DocText u = BoundedPosObject u
+      
 
 
 
@@ -84,22 +85,18 @@ rightAlign = renderMultiLine VRight
 
 renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
                 => VAlign -> [DocText u] -> TextFrame u
-renderMultiLine va ds = 
-    promoteR2 $ \pt addr -> body >>= \a -> runPosObject pt addr a
+renderMultiLine va docs = lift0R2 body >>= posTextWithMargins
   where
-    runDocs  = sequence . reverse . map getDocText
-    body     = (\docs dy -> valignSepPO emptyBoundedPosObject va dy docs)
-                 <$> runDocs ds  <*> textlineSpace
+    body     = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse docs)
+                 <$> textlineSpace
+
+
           
-    
-
-
-
 
 -- | Build a blank DocText with no output and a 0 width vector.
 --
 blank :: InterpretUnit u => DocText u
-blank = DocText $ return $ makeBoundedPosObject zeroOrtt emptyLocGraphic
+blank = makeBoundedPosObject (pure $ zeroOrtt) emptyLocGraphic
   where
     zeroOrtt = Orientation 0 0 0 0
 
@@ -107,9 +104,8 @@ blank = DocText $ return $ makeBoundedPosObject zeroOrtt emptyLocGraphic
 
 
 escaped :: InterpretUnit u => EscapedText -> DocText u
-escaped esc = DocText $ 
-    (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
-      <$> textOrientationZero esc
+escaped esc = makeBoundedPosObject (textOrientationZero esc) (escTextLine esc)
+ 
 
 
 -- | Build a DocText from a string.
@@ -125,22 +121,23 @@ string = escaped . escapeString
 -- the current font.
 --
 space :: InterpretUnit u => DocText u
-space = DocText $ 
-     (\ortt -> makeBoundedPosObject ortt emptyLocGraphic)
-        <$> charOrientationZero (CharEscInt $ ord ' ')
+space = makeBoundedPosObject qort emptyLocGraphic
+  where
+    qort = charOrientationZero (CharEscInt $ ord ' ')
 
 
 int :: InterpretUnit u => Int -> DocText u
-int i = DocText $ 
-    charVector (CharLiteral '0') >>= \v1 -> 
-    uniformSpace (advanceH v1) (map CharLiteral $ show i)
+int i = uniformSpace (map CharLiteral $ show i) mkvecQ 
+  where
+    mkvecQ = advanceH <$> charVector (CharLiteral '0') 
+        
 
 
 integer :: InterpretUnit u => Integer -> DocText u
-integer i = DocText $ 
-    charVector (CharLiteral '0') >>= \v1 -> 
-    uniformSpace (advanceH v1) (map CharLiteral $ show i)
-
+integer i = uniformSpace (map CharLiteral $ show i) mkvecQ
+  where
+    mkvecQ = advanceH <$> charVector (CharLiteral '0')
+    
 
 
 infixr 6 <>, <+>
@@ -149,9 +146,7 @@ infixr 6 <>, <+>
 -- | Concatenate two DocTexts separated with no spacing.
 --
 (<>) :: (Num u, Ord u) => DocText u -> DocText u -> DocText u
-a <> b = DocText body 
-  where 
-    body = hcatPO <$> getDocText a <*> getDocText b
+a <> b = a `hcatPO` b
  
 
 -- | Concatenate two DocTexts separated with a space.
@@ -159,13 +154,13 @@ a <> b = DocText body
 (<+>) :: (InterpretUnit u, Ord u) => DocText u -> DocText u -> DocText u
 a <+> b = a <> space <> b 
 
-{-
+
 -- | Right fill
 --
-rfill :: Ord u => u -> DocText u -> DocText u
-rfill w dt = DocText $ getDocText dt >>= \(u,gf) -> return (max w u, gf)
+rfill :: Num u => u -> DocText u -> DocText u
+rfill w = extendPosBounds 0 w 0 0
 
-
+{-
 -- | Left fill
 --
 lfill :: (Num u, Ord u) => u -> DocText u -> DocText u
@@ -199,26 +194,37 @@ textSize sz = doclocal (set_font_size sz)
 --------------------------------------------------------------------------------
 -- Helpers
 
+
 uniformSpace :: InterpretUnit u 
-             => u -> [EscapedChar] -> Query (BoundedPosObject u)
-uniformSpace dx xs = hkernPrim $ go xs
+             => [EscapedChar] -> Query u -> BoundedPosObject u
+uniformSpace xs qx = hkernPrim $ qx >>= go xs
   where 
-    go (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
-    go []     = []
+    go (c:cs) dx = return $ (0,c) : map (\ch -> (dx,ch)) cs
+    go []     _  = return []
 
 
-hkernPrim :: InterpretUnit u => [KernChar u] -> Query (BoundedPosObject u)
-hkernPrim ks = (\ortt -> makeBoundedPosObject ortt (hkernLine ks))
-                 <$> hkernOrientationZero ks
+hkernPrim :: InterpretUnit u => Query [KernChar u] -> BoundedPosObject u
+hkernPrim qks = 
+    makeBoundedPosObject (qks >>= hkernOrientationZero) (lift0R1 qks >>= hkernLine)
+           
 
--- Cannot have doc local anymore...
---
 
--- | Note - the changes to the DrawingContext have to be 
--- propagated both to the function that generates the answer and 
--- to the AdvGraphic of result.
+-- This works but it looks flaky - as DocText is essentially a 
+-- query, it has to (a) transform the environment which it is run,
+-- (b) transform the LocImage part of the PosObject
 --
 doclocal :: DrawingContextF -> DocText u -> DocText u
-doclocal upd a = DocText $ localize upd (getDocText a)
+doclocal upd = bimapPosObject (localize upd) (localize upd)
 
 
+
+-- Currently incorrect - needs changing for fill...
+extendPosBounds :: Num u 
+                => u -> u -> u -> u -> BoundedPosObject u -> BoundedPosObject u
+extendPosBounds x0 x1 y0 y1 =
+    bimapPosObject (fmap $ extendOrientation x0 x1 y0 y1) (mapAns fn) 
+  where
+    fn (BBox (P2 llx lly) (P2 urx ury)) = let ll = P2 (llx - x0) (lly - y0) 
+                                              ur = P2 (urx + x1) (ury + y1) 
+                                          in BBox ll ur
+       

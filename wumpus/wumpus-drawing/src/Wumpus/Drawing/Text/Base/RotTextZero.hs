@@ -38,7 +38,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Control.Applicative
 
 type TextLine u = BoundedPosGraphic u
 
@@ -49,7 +48,7 @@ type TextLineObject u = BoundedPosObject u
 --
 textline :: (Fractional u, InterpretUnit u) 
          => String -> BoundedPosGraphic u
-textline ss = lift0R2 (makeTextLine ss) >>= makePosImage
+textline ss = posTextWithMargins (makeTextLine ss)
 
 
 bllTextline :: (Floating u, InterpretUnit u) 
@@ -67,13 +66,13 @@ ccTextline ss = startPos (textline ss) CENTER
 
 
 
-makeTextLine :: InterpretUnit u => String -> Query (TextLineObject u)
+makeTextLine :: InterpretUnit u => String -> TextLineObject u
 makeTextLine = makeEscLine . escapeString 
 
 
-makeEscLine :: InterpretUnit u => EscapedText -> Query (TextLineObject u)
-makeEscLine esc = (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
-                    <$> textOrientationZero esc
+makeEscLine :: InterpretUnit u => EscapedText -> TextLineObject u
+makeEscLine esc = 
+    makeBoundedPosObject (textOrientationZero esc) (escTextLine esc)
 
 
 

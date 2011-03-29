@@ -39,7 +39,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 -- Note - Baseline positions not meaningful for multiline text
 
 mf :: TraceDrawing Double ()
-mf = localize text_margin_tight  $ do
+mf = localize text_margin_loose  $ do
     draw $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
     draw $ redPlus `at` zeroPt
 
@@ -58,8 +58,8 @@ redPlus = localize (stroke_colour red) markPlus
 
 body :: (Ord u, InterpretUnit u) => [DocText u]
 body = [ string "Further work"
-       , (textSize 36 $ string "on")
-           <+> (fontColour blue $ string "multiline")
+       , (textSize 48 $ string "on")
+           <+> (fontColour red $ string "multiline")
            <+> string "text"
-       , ( {- rfill 50 $ -} string "and") <> string "other things."
+       , ( rfill 50 $ string "and") <> string "other things."
        ] 

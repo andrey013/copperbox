@@ -29,7 +29,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Control.Applicative
 
 
 -- Note this type doesn\'t support concat...
@@ -43,15 +42,14 @@ posChar ch = posEscChar $ CharLiteral ch
 
 
 posEscChar :: (Floating u, InterpretUnit u) => EscapedChar -> PosChar u
-posEscChar esc = promoteR2 $ \pt addr -> 
-    makePosChar esc >>= \obj -> runPosObject pt addr obj
+posEscChar esc = 
+    promoteR2 $ \pt addr -> runPosObject pt addr (makePosChar esc) 
 
 
 makePosChar :: InterpretUnit u 
-            => EscapedChar -> Query (BoundedPosObject u)
+            => EscapedChar -> BoundedPosObject u
 makePosChar esc = 
-    (\ortt -> makeBoundedPosObject ortt (escText1 esc))
-      <$> charOrientationZero esc
+    makeBoundedPosObject (charOrientationZero esc) (escText1 esc)
 
 
 escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
