@@ -36,18 +36,19 @@ import Control.Applicative
 -- 
 -- While it may be adequate, it does need another prefix.
 --
-type PosChar u = RectAddress -> BoundedLocGraphic u
+type PosChar u = BoundedPosGraphic u
 
 posChar :: (Floating u, InterpretUnit u) => Char -> PosChar u
 posChar ch = posEscChar $ CharLiteral ch
 
 
 posEscChar :: (Floating u, InterpretUnit u) => EscapedChar -> PosChar u
-posEscChar esc = \rpos -> lift0R1 (makePosChar esc) >>= \gf -> startPos gf rpos
+posEscChar esc = promoteR2 $ \pt addr -> 
+    makePosChar esc >>= \obj -> runPosObject pt addr obj
 
 
 makePosChar :: InterpretUnit u 
-            => EscapedChar -> Query (PosObject BoundingBox u)
+            => EscapedChar -> Query (BoundedPosObject u)
 makePosChar esc = 
     (\ortt -> makeBoundedPosObject ortt (escText1 esc))
       <$> charOrientationZero esc

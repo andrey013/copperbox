@@ -27,18 +27,30 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
     PosObject
   , PosGraphicObject
+  , BoundedPosObject
   
   , DPosObject
   , DPosGraphicObject
+  , DBoundedPosObject
+
+  , LocRectAddrQuery
+  , PosImage
+  , PosGraphic
+  , BoundedPosGraphic
 
   -- * Operations
-  , startPos
-  , atStartPos
 
   , makePosObject
   , runPosObject
 
+  , makePosImage
+  , startPos
+  , atStartPos
+
   , emptyPosGraphicObject
+
+  , makeBoundedPosObject
+  , emptyBoundedPosObject
 
   , illustratePosObject
 
@@ -98,7 +110,7 @@ import Data.VectorSpace
 -- | A positionable \"Object\" that is drawn as a 'LocImage'.
 --
 data PosObject t u = PosObject
-      { pi_object_pos          :: Orientation u
+      { pi_object_ortt         :: Orientation u
       , pi_loc_image           :: LocImage t u
       }
 
@@ -109,51 +121,36 @@ data PosObject t u = PosObject
 type PosGraphicObject u = PosObject UNil u
     
 
+
+-- | A 'PosObject' that returns a BoundingBox.
+--
+type BoundedPosObject u = PosObject BoundingBox u
+
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
 type DPosObject t = PosObject t Double
 
 
--- | Version of PosGraphic specialized to Double for the unit type.
+-- | Version of PosGraphic specialized to Double for the unit 
+-- type.
 --
 type DPosGraphicObject = PosGraphicObject Double
 
-
--- type PosQuery u ans = CF2 (Point2 u) RectAddress ans
-
-
-
-
-
---------------------------------------------------------------------------------
-
-
-
-infixr 1 `startPos`
-
--- | 'startPos' : @ pos_image * rect_pos -> LocImage @
+-- | Version of BoundedPosObject specialized to Double for the 
+-- unit type.
 --
--- /Downcast/ a 'PosObject' to a 'LocImage' by supplying it 
--- with a 'RectAddress' (start position).
---  
-startPos :: Floating u 
-         => PosObject t u -> RectAddress -> LocImage t u
-startPos img rpos = runPosObject rpos img
- 
+type DBoundedPosObject = BoundedPosObject Double
 
 
 
--- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
---
--- /Downcast/ a 'PosGraphic' to an 'Image' by supplying it 
--- with an initial point and a 'RectAddress' (start position).
---  
-atStartPos ::  Floating u 
-           => PosObject t u -> Point2 u -> RectAddress -> Image t u
-atStartPos img pt rpos = runPosObject rpos img `at` pt
+type LocRectAddrQuery u a = CF2 (Point2 u) RectAddress a
 
+type PosImage t u = LocRectAddrQuery u (ImageAns t u)
 
+type PosGraphic u = PosImage UNil u
+
+type BoundedPosGraphic u = PosImage BoundingBox u
 
 --------------------------------------------------------------------------------
 
@@ -169,15 +166,50 @@ atStartPos img pt rpos = runPosObject rpos img `at` pt
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 makePosObject :: Orientation u -> LocImage t u -> PosObject t u
-makePosObject opos img = 
-    PosObject { pi_object_pos = opos
-             , pi_loc_image  = img
-             }
+makePosObject ortt img = 
+    PosObject { pi_object_ortt  = ortt
+              , pi_loc_image    = img
+              }
 
 runPosObject :: Fractional u 
-            => RectAddress -> PosObject t u -> LocImage t u
-runPosObject rpos (PosObject opos gf) =
-    let sv = orientationStart rpos opos in moveStart (displaceVec sv) gf
+             => Point2 u -> RectAddress -> PosObject t u -> Image t u
+runPosObject pt raddr (PosObject opos gf) =
+    let sv = orientationStart raddr opos in gf `at` (displaceVec sv pt)
+
+-- | Make a 'PosImage' from a 'PosObject'.
+-- 
+-- This turns a PosObject (concatenatable) into a PosImage 
+-- (drawable).
+--
+makePosImage :: Fractional u => PosObject t u -> PosImage t u
+makePosImage po = promoteR2 $ \pt addr -> runPosObject pt addr po
+
+
+
+
+infixr 1 `startPos`
+
+-- | 'startPos' : @ pos_image * rect_pos -> LocImage @
+--
+-- /Downcast/ a 'PosImage' to a 'LocImage' by supplying it 
+-- with a 'RectAddress' (start address on the rectangle frame).
+--  
+startPos :: Floating u 
+         => PosImage t u -> RectAddress -> LocImage t u
+startPos = apply1R2 
+
+
+
+-- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
+--
+-- /Downcast/ a 'PosImage' to an 'Image' by supplying it with an 
+-- initial point and a 'RectAddress' (start address on the rectangle 
+-- frame).
+--  
+atStartPos ::  Floating u 
+           => PosImage t u -> Point2 u -> RectAddress -> Image t u
+atStartPos = apply2R2
+
 
 
 -- | 'emptyPosGraphicObject' : @ PosGraphicObject @
@@ -186,6 +218,29 @@ runPosObject rpos (PosObject opos gf) =
 --
 emptyPosGraphicObject :: InterpretUnit u => PosGraphicObject u
 emptyPosGraphicObject = makePosObject (Orientation 0 0 0 0) emptyLocGraphic
+
+
+
+-- | Most text objects in Wumpus-Drawing are @BoundedPosObject@.
+--
+-- This builds them.
+--
+makeBoundedPosObject :: Num u 
+                     => Orientation u 
+                     -> LocImage t u 
+                     -> BoundedPosObject u
+makeBoundedPosObject ortt gf = makePosObject ortt body
+  where
+    body = promoteR1 $ \pt -> 
+           let bb = orientationBounds ortt pt
+           in replaceAns bb $ gf `at` pt
+
+-- FOR WUMPUS-BASIC
+
+emptyBoundedPosObject :: InterpretUnit u => BoundedPosObject u
+emptyBoundedPosObject = 
+    makeBoundedPosObject (Orientation 0 0 0 0) emptyLocGraphic
+
 
 
 --------------------------------------------------------------------------------

@@ -22,12 +22,12 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
 
     DocText
-  , TextBox
+  , TextFrame
 
   , leftAlign
-{-  , centerAlign
+  , centerAlign
   , rightAlign
--}
+
   , blank
   , space
   , string
@@ -45,7 +45,6 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
   ) where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -54,35 +53,47 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Data.Char ( ord )
-import Data.Foldable ( foldrM )
 
--- Need to know line width (horizontal) and line count (vertical) 
--- to render...
+
+newtype DocText u = DocText { getDocText :: Query (BoundedPosObject u) }
+
+
+
+
+-- | TextFrame is the result Graphic made from rendering multiple
+-- lines of DocText.
 --
--- Can obviously access line count if we avoid operators for 
--- vertical composition operator and delegating to the rendering
--- instead:
---
--- > rightAlign :: [CatText u] -> PosObject BoundingBox u
---
-
-newtype DocText u = DocText { getDocText :: Query (PosObject BoundingBox u) }
-
-
-
-
-
-type TextBox u = RectAddress -> BoundedLocGraphic u
+type TextFrame u = BoundedPosGraphic u
 
 
 leftAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [DocText u] -> TextBox u
-leftAlign xs = \rpos -> promoteR1 $ \pt -> 
-                        body >>= \a -> atStartPos a pt rpos
+          => [DocText u] -> TextFrame u
+leftAlign = renderMultiLine VLeft
+
+centerAlign :: (Real u, Floating u, InterpretUnit u) 
+          => [DocText u] -> TextFrame u
+centerAlign = renderMultiLine VCenter
+
+
+rightAlign :: (Real u, Floating u, InterpretUnit u) 
+          => [DocText u] -> TextFrame u
+rightAlign = renderMultiLine VRight
+
+
+
+
+renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
+                => VAlign -> [DocText u] -> TextFrame u
+renderMultiLine va ds = 
+    promoteR2 $ \pt addr -> body >>= \a -> runPosObject pt addr a
   where
-    body  = let qs = map getDocText xs in sequence qs >>= \xs ->  
-            return $ valignSepPO emptyBoundedPosObject VLeft 10 xs
+    runDocs  = sequence . reverse . map getDocText
+    body     = (\docs dy -> valignSepPO emptyBoundedPosObject va dy docs)
+                 <$> runDocs ds  <*> textlineSpace
+          
     
+
+
 
 
 -- | Build a blank DocText with no output and a 0 width vector.
@@ -189,14 +200,14 @@ textSize sz = doclocal (set_font_size sz)
 -- Helpers
 
 uniformSpace :: InterpretUnit u 
-             => u -> [EscapedChar] -> Query (PosObject BoundingBox u)
+             => u -> [EscapedChar] -> Query (BoundedPosObject u)
 uniformSpace dx xs = hkernPrim $ go xs
   where 
     go (c:cs) = (0,c) : map (\ch -> (dx,ch)) cs
     go []     = []
 
 
-hkernPrim :: InterpretUnit u => [KernChar u] -> Query (PosObject BoundingBox u)
+hkernPrim :: InterpretUnit u => [KernChar u] -> Query (BoundedPosObject u)
 hkernPrim ks = (\ortt -> makeBoundedPosObject ortt (hkernLine ks))
                  <$> hkernOrientationZero ks
 

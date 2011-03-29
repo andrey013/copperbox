@@ -156,7 +156,7 @@ data ConnectorProps = ConnectorProps
 -- > stroke_colour:       black
 -- > fill_colour:         light_gray
 -- > text_colour:         black
--- > line_spacing_factor: 1.2
+-- > line_spacing_factor: 0.2
 -- > round_corner_factor: 0
 -- > text_margin:         (0.5 em, 0.5 em) 
 --
@@ -224,7 +224,7 @@ addFontTables (FontLoadResult table msgs) =
 -- > stroke_colour:       black
 -- > fill_colour:         light_gray
 -- > text_colour:         black
--- > line_spacing_factor: 1.2
+-- > line_spacing_factor: 0.2
 -- > round_corner_factor: 0
 -- > text_margin:         (0.5 em, 0.5 em) 
 --
@@ -254,7 +254,7 @@ reset_drawing_properties dcxt =
 -- 'reset_drawing_properties' and changes the following fields:
 --
 -- > stroke_props:        line_width 1, no dash_pattern, cap-butt, join-miter. 
--- > line_spacing_factor: 1.2
+-- > line_spacing_factor: 0.2
 -- > round_corner_factor: 0
 -- > text_margin:         (0.5 em, 0.5 em) 
 --
@@ -290,7 +290,7 @@ default_connector_props =
 
 
 default_line_spacing :: Double
-default_line_spacing = 1.2
+default_line_spacing = 0.2
 
 default_no_round_corners :: Double
 default_no_round_corners = 0

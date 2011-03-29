@@ -47,6 +47,12 @@ mf = do
                                  , integer 12113111411115111116
                                  , integer 10000000000000000000
                                  ]
+--    a <- evalQuery textlineSpace
+--    error $ show (a `asTypeOf` dZero)
+    return ()
+
+dZero :: Double
+dZero = 0
 
 rectStart :: Floating  u => RectAddress -> TextBox u -> BoundedLocGraphic u
-rectStart rpos fn = fn rpos 
+rectStart rpos gf = apply1R2 gf rpos 

@@ -19,9 +19,7 @@
 module Wumpus.Drawing.Text.Base.Common
   ( 
 
-    makeBoundedPosObject
-  , emptyBoundedPosObject
-  , advtext
+    advtext
   , textVector
   , textOrientationZero
 
@@ -29,13 +27,6 @@ module Wumpus.Drawing.Text.Base.Common
   , charOrientationZero
   , hkernVector
   , hkernOrientationZero
-
-  , multilineHeight
-  , borderedTextPos
-  , borderedRotTextPos
-
-  , centerToBaseline
-  , centerSpineDisps
 
   ) where
 
@@ -53,24 +44,10 @@ import qualified Data.Map               as Map
 import Data.Maybe 
 
 
--- | Most text objects are @PosImage BoundingBox u@.
---
--- This builds them.
---
-makeBoundedPosObject :: Num u 
-                     => Orientation u 
-                     -> LocImage t u 
-                     -> PosObject BoundingBox u
-makeBoundedPosObject ortt gf = makePosObject ortt body
-  where
-    body = promoteR1 $ \pt -> 
-           let bb = orientationBounds ortt pt
-           in replaceAns bb $ gf `at` pt
+
+-- FOR WUMPUS-BASIC
 
 
-emptyBoundedPosObject :: InterpretUnit u => PosObject BoundingBox u
-emptyBoundedPosObject = 
-    makeBoundedPosObject (Orientation 0 0 0 0) emptyLocGraphic
 
 -- | Single line text, returning its advance vector.
 --
@@ -151,6 +128,7 @@ charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
     ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
 
+{-
 
 --------------------------------------------------------------------------------
 -- Measurement and start points for multiline text
@@ -259,4 +237,4 @@ centerSpineDisps n theta =
 centerCount :: Fractional u => Int -> u
 centerCount i = (fromIntegral i) / 2 - 0.5
 
-
+-}

@@ -22,24 +22,12 @@
 module Wumpus.Drawing.Text.Base.RotTextZero
   ( 
     TextLine
-  , textAlignLeft
-  , textAlignCenter
-  , textAlignRight
+  , textline
+  , bllTextline
+  , blcTextline
+  , ccTextline
 
-{-
-    RotText
-  , rotTextStart
 
-  , textbox
-  , rtextbox
-
-  , multiAlignLeft
-  , multiAlignCenter
-  , multiAlignRight
-
-  , textAlignLeft
-  , textAlignRight
--}
 
   ) where
 
@@ -52,44 +40,42 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-type TextLine u = PosObject BoundingBox u
+type TextLine u = BoundedPosGraphic u
+
+type TextLineObject u = BoundedPosObject u
 
 
--- | Single line text with margins. 
--- 
--- Start point is baseline-left.
+-- | Draw a single line of text.
 --
-textAlignLeft :: (Real u, Floating u, InterpretUnit u) 
-              => String -> LocImage BoundingBox u
-textAlignLeft ss = 
-    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLL
+textline :: (Fractional u, InterpretUnit u) 
+         => String -> BoundedPosGraphic u
+textline ss = lift0R2 (makeTextLine ss) >>= makePosImage
 
 
--- | Single line text with mragins.
---
--- start point is baseline-center.
---
-textAlignCenter :: (Real u, Floating u, InterpretUnit u) 
-                => String -> LocImage BoundingBox u
-textAlignCenter ss = 
-    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLC
+bllTextline :: (Floating u, InterpretUnit u) 
+            => String -> BoundedLocGraphic u
+bllTextline ss = startPos (textline ss) BLL
 
 
--- | Single line text with margins. 
--- 
--- Start point is baseline-right.
---
-textAlignRight :: (Real u, Floating u, InterpretUnit u) 
-               => String -> LocImage BoundingBox u
-textAlignRight ss = 
-    lift0R1 (makeTextLine ss) >>= \gf -> startPos gf BLR 
+blcTextline :: (Floating u, InterpretUnit u) 
+            => String -> BoundedLocGraphic u
+blcTextline ss = startPos (textline ss) BLC
+
+ccTextline :: (Floating u, InterpretUnit u) 
+            => String -> BoundedLocGraphic u
+ccTextline ss = startPos (textline ss) CENTER
 
 
-makeTextLine :: InterpretUnit u => String -> Query (TextLine u)
-makeTextLine ss = (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
+
+makeTextLine :: InterpretUnit u => String -> Query (TextLineObject u)
+makeTextLine = makeEscLine . escapeString 
+
+
+makeEscLine :: InterpretUnit u => EscapedText -> Query (TextLineObject u)
+makeEscLine esc = (\ortt -> makeBoundedPosObject ortt (escTextLine esc))
                     <$> textOrientationZero esc
-  where
-    esc = escapeString ss 
+
+
 
 
 

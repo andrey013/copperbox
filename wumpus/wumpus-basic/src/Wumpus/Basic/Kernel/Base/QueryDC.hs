@@ -50,7 +50,7 @@ module Wumpus.Basic.Kernel.Base.QueryDC
 
   , markHeight
   , markHalfHeight
-  , baselineSpacing
+  , textlineSpace
 
   -- * Glyph metrics
   , glyphBoundingBox
@@ -213,24 +213,19 @@ markHeight = post <$> asksDC dc_font_size
 
 
 
-
-
 markHalfHeight :: (Fractional u, DrawingCtxM m, InterpretUnit u) => m u
 markHalfHeight = (0.5*) <$> markHeight
 
 
 
--- | Vertical distance between baselines of consecutive text 
--- lines.
---
--- This is a /scaling factor/ hence there is no absolute or
--- relative unit distinction.
+-- | Vertical distance between descender of a line and the 
+-- cap-height of the line below. 
 -- 
-baselineSpacing :: (DrawingCtxM m, Fractional u) => m u
-baselineSpacing = post <$> asksDC dc_font_size  <*> asksDC dc_line_spacing_factor
+textlineSpace :: (DrawingCtxM m, Fractional u, InterpretUnit u) => m u
+textlineSpace = 
+    post <$> asksDC dc_font_size <*> asksDC dc_line_spacing_factor
   where
-    post sz factor = realToFrac $ factor * fromIntegral sz
-
+    post sz factor = dinterp sz ((fromIntegral sz) * (realToFrac factor))
 
 --------------------------------------------------------------------------------
 

@@ -88,7 +88,7 @@ markChar ch = markText [ch]
 
 
 markText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
-markText ss = ignoreAns $ textAlignCenter ss
+markText ss = ignoreAns $ ccTextline ss
 
 
 
