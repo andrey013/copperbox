@@ -90,6 +90,6 @@ makeConnDrawing (ss,conn) =
     disk pt    = localize (fill_colour red) $ filledDisk 2 `at` pt
     dcon p0 p1 = ignoreAns $ connect (uniformArrow curveTip conn) p0 p1
 
-    lbl  pt    = ignoreAns $ atStartPos (textbox ss) (displaceH 10 pt) WW
+    lbl  pt    = ignoreAns $ atStartAddr (textline ss) (displaceH 10 pt) WW
 
 

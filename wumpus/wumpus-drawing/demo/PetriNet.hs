@@ -79,7 +79,7 @@ petri_net = udrawTracing (0::Double) $ do
     drawl (projectAnchor south 12 pw)     $ lblBold "processing_w"
     drawl (projectAnchor south 12 rtw)    $ lblBold "ready_to_write"
     drawl (projectAnchor south 12 w)      $ lblBold "writing"
-    draw $ lblBold' "resource"      `at` (P2 300 72)
+    draw $ lblBold "resource"      `at` (P2 300 72)
     drawl (projectAnchor north 12 pr)     $ lblBold "processing_r"
     drawl (projectAnchor north 12 rtr)    $ lblBold "ready_to_read"
     drawl (projectAnchor north 12 r)      $ lblBold "reading"
@@ -112,17 +112,16 @@ connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
 
 
 lblParensParens :: DLocGraphic
-lblParensParens = localize (set_font helvetica) $ textline "(),()"
+lblParensParens = 
+    localize (set_font helvetica) $ ignoreAns $ ccTextline "(),()"
 
 lblParensParensParens :: DLocGraphic
-lblParensParensParens = localize (set_font helvetica) $ textline "(),(),()"
+lblParensParensParens = 
+    localize (set_font helvetica) $ ignoreAns $ ccTextline "(),(),()"
 
-
-lblBold' :: String -> DLocGraphic
-lblBold' ss = localize (set_font helvetica_bold) $ textline ss
 
 
 lblBold :: String -> DLocGraphic
-lblBold ss = localize (set_font helvetica_bold) $ 
-                ignoreAns $ textAlignCenter ss
+lblBold ss = 
+    localize (set_font helvetica_bold) $ ignoreAns $ ccTextline ss
 

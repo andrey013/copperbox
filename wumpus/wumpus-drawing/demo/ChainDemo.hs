@@ -17,8 +17,6 @@ import Control.Applicative
 import System.Directory
 
 
--- WARNING - interoirGRid seems to be drawing exteriors as well...
-
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
@@ -44,7 +42,6 @@ chain_pic = drawTracing $ do
     drawl (anchor $ P2 0 200) $ apChainIterateH 60 dot 
                                        [bisque, gray, khaki, khaki, bisque, gray]
 
-    drawl (anchor zeroPt) $ grid (5,4) blue
 
                                     
 {-

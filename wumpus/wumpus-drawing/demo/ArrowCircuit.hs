@@ -36,8 +36,8 @@ main1 loader = do
     base_metrics <- loader [times_roman, times_italic]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
-    writeEPS "./out/arrow_circuit01.eps" pic1
-    writeSVG "./out/arrow_circuit01.svg" pic1 
+    writeEPS "./out/arrow_circuit.eps" pic1
+    writeSVG "./out/arrow_circuit.svg" pic1 
 
  
 makeCtx :: FontLoadResult -> DrawingContext
@@ -90,14 +90,14 @@ atext :: ( CenterAnchor t u
          , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => t u -> String -> m ()
 atext ancr ss = 
-    draw $ center ancr >>= \pt -> textAlignCenter ss `at` pt
+    draw $ center ancr >>= \pt -> ccTextline ss `at` pt
 
 
 ptext :: ( Real u, Floating u, InterpretUnit u
          , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => Point2 u -> String -> m ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
-    draw $ textAlignCenter ss `at` pt
+    draw $ ccTextline ss `at` pt
 
 
 -- Note - return type is a LocImage not a shape...

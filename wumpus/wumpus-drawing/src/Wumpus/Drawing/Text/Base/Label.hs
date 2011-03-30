@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Text.Label
+-- Module      :  Wumpus.Drawing.Text.Base.Label
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Text.Label
+module Wumpus.Drawing.Text.Base.Label
   ( 
 
     locImageLabel
@@ -43,61 +43,61 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 locImageLabel :: Floating u 
-              => ((t u) -> Anchor u) -> RectPosition 
-              -> PosImage t1 u -> LocImage t u -> LocImage t u
+              => ((t u) -> Anchor u) -> RectAddress 
+              -> LocRectImage t1 u -> LocImage t u -> LocImage t u
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
     annotate (obj `at` pt)  (\a -> fn a >>= \a1 -> 
-                                   ignoreAns $ atStartPos lbl a1 rpos)
+                                   ignoreAns $ atStartAddr lbl a1 rpos)
 
 
 label_center_of :: (Floating u, CenterAnchor t u) 
-                => PosImage t1 u -> LocImage t u -> LocImage t u
+                => LocRectImage t1 u -> LocImage t u -> LocImage t u
 label_center_of = locImageLabel center CENTER
 
 
 label_left_of :: (Floating u, CardinalAnchor t u) 
-              => PosImage t1 u -> LocImage t u -> LocImage t u
+              => LocRectImage t1 u -> LocImage t u -> LocImage t u
 label_left_of = locImageLabel west EE
 
 label_right_of :: (Floating u, CardinalAnchor t u) 
-               => PosImage t1 u -> LocImage t u -> LocImage t u
+               => LocRectImage t1 u -> LocImage t u -> LocImage t u
 label_right_of = locImageLabel east WW
 
 
 label_above :: (Floating u, CardinalAnchor t u) 
-            => PosImage t1 u -> LocImage t u -> LocImage t u
+            => LocRectImage t1 u -> LocImage t u -> LocImage t u
 label_above = locImageLabel north SS
 
 
 label_below :: (Floating u, CardinalAnchor t u) 
-            => PosImage t1 u -> LocImage t u -> LocImage t u
+            => LocRectImage t1 u -> LocImage t u -> LocImage t u
 label_below = locImageLabel south NN
 
 
 
 
 connectorPathLabel :: Floating u 
-                   => (Path u -> Point2 u) -> RectPosition 
-                   -> PosImage t u
+                   => (Path u -> Point2 u) -> RectAddress
+                   -> LocRectImage t u
                    -> Image Path u -> Image Path u
 connectorPathLabel fn rpos lbl img =  
-    annotate img  (\a -> ignoreAns $ atStartPos lbl (fn a) rpos)
+    annotate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
-                => RectPosition -> PosImage t u 
+                => RectAddress -> LocRectImage t u 
                 -> Image Path u -> Image Path u
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
-                 => RectPosition -> PosImage t u 
+                 => RectAddress -> LocRectImage t u 
                  -> Image Path u -> Image Path u
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
-                 => RectPosition -> PosImage t u
+                 => RectAddress -> LocRectImage t u
                  -> Image Path u -> Image Path u
 label_atend_of = connectorPathLabel atend_
 
@@ -118,7 +118,7 @@ label_atend_of = connectorPathLabel atend_
 -- not seem so bad (indeed, this was the original point of 
 -- anchors). Obviously it is important to add labels to LocImages
 -- (the original point of the label functions) but what about 
--- LocThetaImages and PosImages. Is it acceptable to /saturate/
+-- LocThetaImages and LocRectImages. Is it acceptable to /saturate/
 -- them to LocImages before labelling them?
 -- 
 -- Connectors support different /anchor-like/ positions so they 

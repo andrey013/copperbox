@@ -71,26 +71,26 @@ mf = do
     
 
 testDrawL :: (Real u, Floating u, Ord u, InterpretUnit u) 
-          => RectPosition -> LocGraphic u
+          => RectAddress -> LocGraphic u
 testDrawL rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startPosRot (multiAlignLeft sample_text) rpos 0
+            startAddr (multiAlignLeft sample_text) rpos
 
 testDrawC :: (Real u, Floating u, Ord u, InterpretUnit u) 
-          => RectPosition -> LocGraphic u
+          => RectAddress -> LocGraphic u
 testDrawC rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startPosRot (multiAlignCenter sample_text)  rpos 0
+            startAddr (multiAlignCenter sample_text)  rpos
 
 
 testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u) 
-          => RectPosition -> LocGraphic u
+          => RectAddress -> LocGraphic u
 testDrawR rpos = filledDisk 2 `oplus` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startPosRot (multiAlignRight sample_text) rpos 0
+            startAddr (multiAlignRight sample_text) rpos
 
 sample_text :: String
 sample_text = "Is\nthis\nokay&question;"

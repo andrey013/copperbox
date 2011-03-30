@@ -43,22 +43,22 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = localize (text_margin 6.0 6.0)  $ do
-    draw $ (fn $ posChar 'S' `startPos` SS) `at` zeroPt
+    draw $ (fn $ posChar 'S' `startAddr` SS) `at` zeroPt
     draw $ redPlus `at` zeroPt
 
-    draw $ (fn $ posChar 'N' `startPos` NN) `at` P2 40 0
+    draw $ (fn $ posChar 'N' `startAddr` NN) `at` P2 40 0
     draw $ redPlus `at` P2 40 0
 
-    draw $ (fn $ posChar 'E' `startPos` EE) `at` P2 80 0
+    draw $ (fn $ posChar 'E' `startAddr` EE) `at` P2 80 0
     draw $ redPlus `at` P2 80 0
 
-    draw $ (fn $ posChar 'W' `startPos` WW) `at` P2 120 0
+    draw $ (fn $ posChar 'W' `startAddr` WW) `at` P2 120 0
     draw $ redPlus `at` P2 120 0
 
-    draw $ (fn $ posChar 'C' `startPos` CENTER) `at` P2 160 0
+    draw $ (fn $ posChar 'C' `startAddr` CENTER) `at` P2 160 0
     draw $ redPlus `at` P2 160 0
 
-    draw $ (fn $ posChar 'X' `startPos` NE) `at` P2 200 0
+    draw $ (fn $ posChar 'X' `startAddr` NE) `at` P2 200 0
     draw $ redPlus `at` P2 200 0
 
   where

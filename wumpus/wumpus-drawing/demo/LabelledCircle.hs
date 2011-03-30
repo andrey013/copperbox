@@ -5,7 +5,7 @@ module LabelledCircle where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Shapes
-import Wumpus.Drawing.Text.Label
+import Wumpus.Drawing.Text.Base.Label
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -46,10 +46,10 @@ circle_drawing = do
     draw $ southeast a `op` filledDisk 3
     return ()
   where
-    f1 = label_above (textbox "label-above")
-    f2 = label_below (textbox "label-below")
-    f3 = label_left_of  (textbox "label-left")
-    f4 = label_right_of (textbox "label-right")
+    f1 = label_above (textline "label-above")
+    f2 = label_below (textline "label-below")
+    f3 = label_left_of  (textline "label-left")
+    f4 = label_right_of (textline "label-right")
 
 strokeFill :: RGBi -> RGBi -> DrawingContextF
 strokeFill s f = stroke_colour s . fill_colour f

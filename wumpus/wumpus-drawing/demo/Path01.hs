@@ -33,7 +33,7 @@ path_pic = drawTracing $ do
 
          
 curve1 :: Graphic Double
-curve1 = curvedPath xs >>= openStroke
+curve1 = toPrimPath (curvePath xs) >>= openStroke
   where
     xs :: [DPoint2]
     xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 

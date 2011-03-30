@@ -159,7 +159,7 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
-    textF   = lift1R2 $ ignoreAns (startPosRot (multiAlignCenter name) CENTER 0)
+    textF   = lift1R2 $ ignoreAns (startAddr (multiAlignCenter name) CENTER)
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -180,7 +180,7 @@ label cpos ss = markX `oplus` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       startPosRot (multiAlignCenter ss) rpos 0
+                       startAddr (multiAlignCenter ss) rpos
 
     go NORTH      = (SS, northwards)
     go NORTH_EAST = (SW, northeastwards)

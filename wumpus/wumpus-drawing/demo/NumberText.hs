@@ -40,7 +40,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (anchor zeroPt) $ rectStart CENTER $ 
+    drawl (anchor zeroPt) $ startAddr `flip` CENTER $ 
                        leftAlign [ string "0.12112"
                                  , string "12113111411115111116"
                                  , string "00000000000000000000" 
@@ -54,5 +54,3 @@ mf = do
 dZero :: Double
 dZero = 0
 
-rectStart :: Floating  u => RectAddress -> TextBox u -> BoundedLocGraphic u
-rectStart rpos gf = apply1R2 gf rpos 

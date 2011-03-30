@@ -78,7 +78,7 @@ ccTextline ss = startAddr (textline ss) CENTER
 multiAlignLeft :: (Real u, Floating u, InterpretUnit u) 
                => String -> LocRectTextLine u
 multiAlignLeft ss = 
-    renderMultiLine VCenter (map makeTextObject $ lines ss)
+    renderMultiLine VLeft (map makeTextObject $ lines ss)
 
 multiAlignCenter :: (Real u, Floating u, InterpretUnit u) 
                  => String -> LocRectTextLine u
@@ -88,7 +88,7 @@ multiAlignCenter ss =
 multiAlignRight :: (Real u, Floating u, InterpretUnit u) 
                 => String -> LocRectTextLine u
 multiAlignRight ss = 
-    renderMultiLine VCenter (map makeTextObject $ lines ss)
+    renderMultiLine VRight (map makeTextObject $ lines ss)
 
 
 renderMultiLine :: (Real u, Floating u, InterpretUnit u) 

@@ -37,8 +37,8 @@ symbols = udrawTracing (0::Double) $ do
   where
     chn             = tableDown 30 (100,20) 
     start           = P2 0 (30*20)
-    sdraw (s,_)     = textline s
-    ldraw (_,name)  = moveStart (displaceH 16) (textline name)
+    sdraw (s,_)     = plainTextLine s
+    ldraw (_,name)  = moveStart (displaceH 16) (plainTextLine name)
 
 
 all_letters :: [(String, String)]

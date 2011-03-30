@@ -23,8 +23,8 @@ turtle_pic :: CtxPicture
 turtle_pic = udrawTracing (0::Double) $ do 
     draw $ filledRectangle 40 10 `at` zeroPt
     runTurtleT (0,0) (coordinateScaling 14 14) $ 
-      moveUp >> moveUp >> moveUp >> tnode (textline "up3") >>  
-      moveRight >> moveRight >> tnode (textline "right2")
+      moveUp >> moveUp >> moveUp >> tnode (plainTextLine "up3") >>  
+      moveRight >> moveRight >> tnode (plainTextLine "right2")
       
 tnode :: ( Fractional u, InterpretUnit u, DrawingCtxM m, TraceM m, TurtleM m
          , u ~ MonUnit (m()) )

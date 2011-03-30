@@ -32,8 +32,8 @@ main = do
     base_metrics <- loadAfmFontMetrics font_directory [ helvetica, times_roman ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) text_pic
-    writeEPS "./out/afm4dot1_01.eps" pic1
-    writeSVG "./out/afm4dot1_01.svg" pic1
+    writeEPS "./out/afm4dot1.eps" pic1
+    writeSVG "./out/afm4dot1.svg" pic1
 
 
 makeCtx :: FontLoadResult -> DrawingContext
@@ -65,30 +65,31 @@ redPlus = localize (stroke_colour red) markPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (set_font times_roman . stroke_colour dark_slate_gray) $ 
-             textbox "Times-Roman" `startPos` SE
+             bllTextline "Times-Roman"
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter "Center-center..."
+    localize (stroke_colour dark_slate_gray) $ ccTextline "Center-center..."
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter ""
+    localize (stroke_colour dark_slate_gray) $ bllTextline ""
 
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignLeft dummy_text
+    localize (stroke_colour dark_slate_gray) $ ccTextline dummy_text
 
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignRight dummy_text
+    localize (stroke_colour dark_slate_gray) $ 
+       textline dummy_text `startAddr` BLR
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (stroke_colour dark_slate_gray) $ textAlignCenter dummy_text
+    localize (stroke_colour dark_slate_gray) $ blcTextline dummy_text
 
 
 dummy_text :: String 

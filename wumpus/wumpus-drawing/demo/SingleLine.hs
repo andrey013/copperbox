@@ -51,10 +51,10 @@ mf = do
     draw $ testDraw CENTER    `at` (P2   0 0)
     
 
-testDraw :: RectPosition -> LocGraphic Double
+testDraw :: RectAddress -> LocGraphic Double
 testDraw rpos = filledDisk 2 `oplus` (ignoreAns ans)
   where
-    ans = textbox "Qwerty" `startPos` rpos
+    ans = textline "Qwerty" `startAddr` rpos
 
 
 

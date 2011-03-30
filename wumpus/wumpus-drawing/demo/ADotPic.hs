@@ -15,8 +15,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"    
     let pic1 = runCtxPictureU std_attr dot_pic
-    writeEPS "./out/adot_pic01.eps" pic1
-    writeSVG "./out/adot_pic01.svg" pic1
+    writeEPS "./out/adot_pic.eps" pic1
+    writeSVG "./out/adot_pic.svg" pic1
 
 
 std_attr :: DrawingContext

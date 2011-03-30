@@ -20,8 +20,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let pic1 = runCtxPictureU std_ctx arrow_drawing
-    writeEPS "./out/arrowheads01.eps" pic1
-    writeSVG "./out/arrowheads01.svg" pic1
+    writeEPS "./out/arrowheads.eps" pic1
+    writeSVG "./out/arrowheads.svg" pic1
 
 arrow_drawing :: CtxPicture
 arrow_drawing = 

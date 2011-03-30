@@ -217,7 +217,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
-dotText ss = mapAns bboxRectAnchor $ textAlignCenter ss
+dotText ss = mapAns bboxRectAnchor $ ccTextline ss
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 

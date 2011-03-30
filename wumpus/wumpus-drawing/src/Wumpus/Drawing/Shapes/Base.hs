@@ -161,7 +161,7 @@ shapeToLoc :: InterpretUnit u
 shapeToLoc drawF sh = promoteR1 $ \pt -> 
     apply2R2 (shape_ans_fun sh)  pt 0 >>= \a -> 
     apply2R2 (shape_path_fun sh) pt 0 >>= \spath -> 
-    let g2 = atRot (shape_decoration sh) pt 0 
+    let g2 = atIncline (shape_decoration sh) pt 0 
     in intoImage (pure a) (decorate g2 $ toPrimPath spath >>= drawF)
 
 
@@ -183,7 +183,7 @@ shapeToLocTheta :: InterpretUnit u
 shapeToLocTheta drawF sh = promoteR2 $ \pt theta -> 
     apply2R2 (shape_ans_fun sh)  pt theta >>= \a -> 
     apply2R2 (shape_path_fun sh) pt theta >>= \spath -> 
-    let g2 = atRot (shape_decoration sh) pt theta
+    let g2 = atIncline (shape_decoration sh) pt theta
     in intoImage (pure a) (decorate g2 $ toPrimPath spath >>= drawF)
 
 

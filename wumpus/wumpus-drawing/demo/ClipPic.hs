@@ -79,9 +79,9 @@ clip4 = toPrimPath path04 >>= \pp -> clipGraphic pp (background black)
 
 iheartHaskell :: LocGraphic Double
 iheartHaskell = promoteR1 $ \pt -> 
-    let body  = textline "I Haskell" `at` pt
+    let body  = plainTextLine "I Haskell" `at` pt
         heart = localize (set_font symbol) $ 
-                  textline "&heart;" `at` (pt .+^ hvec 7)
+                  plainTextLine "&heart;" `at` (pt .+^ hvec 7)
     in body `oplus` heart
 
 
