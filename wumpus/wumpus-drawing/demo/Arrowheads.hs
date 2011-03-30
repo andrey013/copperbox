@@ -6,6 +6,7 @@ module Arrowheads where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths hiding ( length )
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -75,7 +76,7 @@ std_ctx = fill_colour peru $ standardContext 18
 makeArrowDrawing :: (Arrowhead Double, Arrowhead Double) -> LocGraphic Double
 makeArrowDrawing (arrl,arrr) = 
     promoteR1 $ \p0 -> ignoreAns $
-      connect (leftRightArrow arrl arrr connLine) p0 (mkP1 p0)
+      connect (leftRightArrow arrl arrr connline) p0 (mkP1 p0)
   where
     mkP1    = (.+^ hvec 100)
 

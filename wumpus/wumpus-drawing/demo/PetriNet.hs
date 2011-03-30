@@ -9,6 +9,7 @@ module PetriNet where
 
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -60,19 +61,19 @@ petri_net = udrawTracing (0::Double) $ do
     drawc (east rtw) (west tu2)   $ straightconn
     drawc (east tu2) (west w)     $ straightconn
     drawc (east w)   (west tu3)   $ straightconn
-    drawc (north tu3) (north pw)  $ connectorC 32 
+    drawc (north tu3) (north pw)  $ connectorC 
     drawc (east pr)  (west tl1)   $ straightconn
     drawc (east tl1) (west rtr)   $ straightconn
     drawc (east rtr) (west tl2)   $ straightconn
     drawc (east tl2) (west r)     $ straightconn
     drawc (east r)   (west tl3)   $ straightconn
-    drawc (south tl3) (south pr)  $ connectorC (-32)
+    drawc (south tl3) (south pr)  $ connectorC'
     drawc (southwest res) (northeast tl2) $ straightconn
     drawc (northwest tl3) (southeast res) $ straightconn
-    drawc (southwest tu3) (northeast res) $ connectorD 6
-    drawc (southwest tu3) (northeast res) $ connectorD (-6)
-    drawc (northwest res) (southeast tu2) $ connectorD 6
-    drawc (northwest res) (southeast tu2) $ connectorD (-6)
+    drawc (southwest tu3) (northeast res) $ connectorD
+    drawc (southwest tu3) (northeast res) $ connectorD'
+    drawc (northwest res) (southeast tu2) $ connectorD
+    drawc (northwest res) (southeast tu2) $ connectorD'
     draw $ lblParensParens `at` (P2 (-36) 150)
     draw $ lblParensParens `at` (P2 300 60)
     draw $ lblParensParensParens `at` (P2 (-52) (-14))
@@ -101,14 +102,24 @@ transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 straightconn :: ConnectorGraphic Double
-straightconn = ignoreAns $ rightArrow tri45 connLine
+straightconn = ignoreAns $ rightArrow tri45 connline
 
 
-connectorC :: Double -> ConnectorGraphic Double
-connectorC v = ignoreAns $ rightArrow tri45 (connRightVHV v)
+connectorC :: ConnectorGraphic Double
+connectorC = 
+    localize (uniform_arm_len  (30::Double)) $ ignoreAns $ rightArrow tri45 connbbar
 
-connectorD :: Double -> ConnectorGraphic Double
-connectorD u = ignoreAns $ rightArrow tri45 (connIsosceles u)
+connectorC' :: ConnectorGraphic Double
+connectorC' = 
+    localize (uniform_arm_len  (30::Double)) $ ignoreAns $ rightArrow tri45 connabar
+
+connectorD :: ConnectorGraphic Double
+connectorD = ignoreAns $ rightArrow tri45 connarc
+
+connectorD' :: ConnectorGraphic Double
+connectorD' = 
+    ignoreAns $ localize (conn_arc_angle $ negate $ pi / 12) 
+              $ rightArrow tri45 connarc
 
 
 lblParensParens :: DLocGraphic

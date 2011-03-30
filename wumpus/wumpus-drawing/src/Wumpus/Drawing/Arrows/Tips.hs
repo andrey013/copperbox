@@ -537,3 +537,27 @@ revcurveTip :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
             => Arrowhead u
 revcurveTip = Arrowhead markHeight revcurveTLG
 
+
+
+-- | 'trapezoidFromBasePoints' : 
+-- @ altitude * ratio_to_base * start_pt * end_pt -> (top_left, top_right) @
+--
+-- Control points form an isosceles trapezoid.
+--
+-- The two manufactured control points form the top corners, 
+-- so the supplied points map as @start_point == bottom_left@ and 
+-- @end_point == bottom_right@.
+-- 
+trapezoidFromBasePoints :: (Real u, Floating u) 
+                        => u -> u -> Point2 u -> Point2 u 
+                        -> (Point2 u, Point2 u) 
+trapezoidFromBasePoints u ratio_to_base p1 p2 = (cp1, cp2)
+  where
+    base_vec  = pvec p1 p2
+    base_len  = vlength base_vec
+    theta     = vdirection base_vec
+    half_ulen = 0.5 * ratio_to_base * base_len
+    base_mid  = displaceParallel (0.5 * base_len) theta p1
+    ubase_mid = displacePerpendicular u theta base_mid
+    cp1       = displaceParallel (-half_ulen) theta ubase_mid
+    cp2       = displaceParallel   half_ulen  theta ubase_mid

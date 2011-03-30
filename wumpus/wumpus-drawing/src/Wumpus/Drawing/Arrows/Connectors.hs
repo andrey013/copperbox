@@ -19,6 +19,8 @@ module Wumpus.Drawing.Arrows.Connectors
 
     PathConnector
   , DPathConnector
+  , PathQuery
+  , DPathQuery
 
   , leftArrow
   , rightArrow
@@ -49,6 +51,14 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 --
 type PathConnector u    = ConnectorImage Path u
 type DPathConnector     = PathConnector Double
+
+
+-- | Note - a PathCF is a context function not a graphic 
+--  
+
+type PathQuery u = ConnectorQuery u (Path u)
+
+type DPathQuery  = PathQuery Double
 
 -- Design note - the above definitions should be in a different 
 -- file. 

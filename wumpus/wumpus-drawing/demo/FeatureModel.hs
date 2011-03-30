@@ -5,6 +5,7 @@
 module FeatureModel where
 
 import Wumpus.Drawing.Arrows
+import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -92,7 +93,7 @@ connWith arrh b0 b1 = do
    lw <- getLineWidth
    p0 <- evalQuery $ south b0
    p1 <- evalQuery $ projectAnchor north (realToFrac lw) b1
-   drawi $ connect (rightArrow arrh connLine) p0 p1
+   drawi $ connect (rightArrow arrh connline) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

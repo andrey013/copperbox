@@ -21,12 +21,8 @@ module Wumpus.Drawing.Paths
   ( 
 
     module Wumpus.Drawing.Paths.Base
-  , module Wumpus.Drawing.Paths.Connectors
-  , module Wumpus.Drawing.Paths.ControlPoints
 
   ) where
 
 import Wumpus.Drawing.Paths.Base
-import Wumpus.Drawing.Paths.Connectors
-import Wumpus.Drawing.Paths.ControlPoints
 

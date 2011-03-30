@@ -11,6 +11,7 @@
 module ArrowCircuit where
 
 import Wumpus.Drawing.Arrows
+import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths 
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -65,18 +66,18 @@ body = do
     atext a3 "+1"
     a4 <- drawi $ (strokedShape $ rectangle 66 30) `at` P2 120 0
     atext a4 "DELAY 0"
-    connWith connLine (east a1) (fmap (.+^ hvec 76) $ east a1)
-    connWith connLine (east a2) (fmap (.+^ hvec 180) $ east a2)
-    connWith connLine (fmap (.+^ vvec 40) $ north a2) (north a2)
-    connWith connLine (fmap (.+^ vvec 16) $ north a3) (north a3)  
-    connWith connRightVH  (south a3) (east a4)
-    connWith (connRightHVH (-30)) (west a4)  (southwest a2)
+    connWith connline (east a1) (fmap (.+^ hvec 76) $ east a1)
+    connWith connline (east a2) (fmap (.+^ hvec 180) $ east a2)
+    connWith connline (fmap (.+^ vvec 40) $ north a2) (north a2)
+    connWith connline (fmap (.+^ vvec 16) $ north a3) (north a3)  
+    connWith connaright  (south a3) (east a4)
+    connWith connabar (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
     ptext (P2 152 100) "reset"
     ptext (P2 252  72) "output"
     return ()
 
-
+    -- Note - need a variant of /bar/ that draws UDLR only.
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit (m ())
             , Real u, Floating u, InterpretUnit u ) 

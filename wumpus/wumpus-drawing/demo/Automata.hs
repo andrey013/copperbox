@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -6,7 +5,8 @@
 module Automata where
 
 import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Extras.Loop
+import Wumpus.Drawing.Connectors.ConnectorPaths
+import Wumpus.Drawing.Connectors.Loop
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -88,13 +88,13 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
              => t1 u -> t2 u -> Image Path u
 straightconn a b =
     radialConnectorPoints a b >>= \(p0,p1) -> 
-    connect (rightArrow tri45 connLine) p0 p1
+    connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
               => Anchor u -> Anchor u -> Image Path u
 astraightconn a b =
-    a >>= \p0 -> b >>= \p1 -> connect (rightArrow tri45 connLine) p0 p1
+    a >>= \p0 -> b >>= \p1 -> connect (rightArrow tri45 connline) p0 p1
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@
