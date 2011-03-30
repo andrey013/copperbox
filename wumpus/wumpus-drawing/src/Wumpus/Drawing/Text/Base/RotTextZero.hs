@@ -21,13 +21,21 @@
 
 module Wumpus.Drawing.Text.Base.RotTextZero
   ( 
-    TextLine
+    LocRectTextLine
+  , LocTextLine
+  , TextObject
+
   , textline
   , bllTextline
   , blcTextline
   , ccTextline
 
+  , multiAlignLeft
+  , multiAlignCenter
+  , multiAlignRight
 
+  , rtextline
+  , rescTextline
 
   ) where
 
@@ -37,45 +45,125 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Applicative
 
+type LocRectTextLine u  = BoundedLocRectGraphic u
+type LocTextLine u      = BoundedLocGraphic u
 
-type TextLine u = BoundedPosGraphic u
+type TextObject u       = BoundedPosObject u
 
-type TextLineObject u = BoundedPosObject u
 
 
 -- | Draw a single line of text.
 --
 textline :: (Fractional u, InterpretUnit u) 
-         => String -> BoundedPosGraphic u
-textline ss = posTextWithMargins (makeTextLine ss)
+         => String -> LocRectTextLine u
+textline ss = posTextWithMargins (makeTextObject ss)
 
 
 bllTextline :: (Floating u, InterpretUnit u) 
-            => String -> BoundedLocGraphic u
-bllTextline ss = startPos (textline ss) BLL
+            => String -> LocTextLine u
+bllTextline ss = startAddr (textline ss) BLL
 
 
 blcTextline :: (Floating u, InterpretUnit u) 
-            => String -> BoundedLocGraphic u
-blcTextline ss = startPos (textline ss) BLC
+            => String -> LocTextLine u
+blcTextline ss = startAddr (textline ss) BLC
 
 ccTextline :: (Floating u, InterpretUnit u) 
-            => String -> BoundedLocGraphic u
-ccTextline ss = startPos (textline ss) CENTER
+            => String -> LocTextLine u
+ccTextline ss = startAddr (textline ss) CENTER
 
 
+multiAlignLeft :: (Real u, Floating u, InterpretUnit u) 
+               => String -> LocRectTextLine u
+multiAlignLeft ss = 
+    renderMultiLine VCenter (map makeTextObject $ lines ss)
 
-makeTextLine :: InterpretUnit u => String -> TextLineObject u
-makeTextLine = makeEscLine . escapeString 
+multiAlignCenter :: (Real u, Floating u, InterpretUnit u) 
+                 => String -> LocRectTextLine u
+multiAlignCenter ss = 
+    renderMultiLine VCenter (map makeTextObject $ lines ss)
+
+multiAlignRight :: (Real u, Floating u, InterpretUnit u) 
+                => String -> LocRectTextLine u
+multiAlignRight ss = 
+    renderMultiLine VCenter (map makeTextObject $ lines ss)
 
 
-makeEscLine :: InterpretUnit u => EscapedText -> TextLineObject u
-makeEscLine esc = 
+renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
+                => VAlign -> [TextObject u] -> LocRectTextLine u
+renderMultiLine va docs = lift0R2 body >>= posTextWithMargins
+  where
+    body     = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse docs)
+                 <$> textlineSpace
+
+
+makeTextObject :: InterpretUnit u => String -> TextObject u
+makeTextObject = makeEscTextObject . escapeString 
+
+
+makeEscTextObject :: InterpretUnit u => EscapedText -> TextObject u
+makeEscTextObject esc = 
     makeBoundedPosObject (textOrientationZero esc) (escTextLine esc)
 
 
+-- Note inclided text will (probably) have to construct with the 
+-- incline angle rather than apply it as part of the run function.
+--
 
+rtextline :: (Real u, Floating u, Ord u, InterpretUnit u) 
+          => Radian -> String -> LocRectTextLine u
+rtextline ang ss = rescTextline ang (escapeString ss) 
+
+-- Is rotated text better with no margin?
+rescTextline :: (Real u, Floating u, Ord u, InterpretUnit u) 
+          => Radian -> EscapedText -> LocRectTextLine u
+rescTextline ang esc = promoteR2 $ \pt addr -> 
+    runPosObject pt addr $ makeBoundedPosObject ortt body
+  where
+    ortt = fmap (rotOrientation ang) $ textOrientationZero esc
+    body = incline (rescTextLine esc) ang
+
+-- | Rotate an Orientation about its locus.
+--
+rotOrientation :: (Real u, Floating u, Ord u) 
+               => Radian -> Orientation u -> Orientation u
+rotOrientation ang (Orientation xmin xmaj ymin ymaj) = 
+    orthoOrientation bl br tl tr  
+  where
+    bl  = rotateCorner ang $ P2 (-xmin) (-ymin)
+    br  = rotateCorner ang $ P2   xmaj  (-ymaj)
+    tr  = rotateCorner ang $ P2   xmaj    ymaj
+    tl  = rotateCorner ang $ P2 (-xmin)   ymaj
+  
+
+-- | This is not necessarily correct...
+--
+orthoOrientation :: (Num u, Ord u)
+                 => Point2 u -> Point2 u -> Point2 u -> Point2 u 
+                 -> Orientation u
+orthoOrientation (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = 
+    Orientation { or_x_minor = abs $ min4 x0 x1 x2 x3
+                , or_x_major = max4 x0 x1 x2 x3
+                , or_y_minor = abs $ min4 y0 y1 y2 y3
+                , or_y_major = max4 y0 y1 y2 y3
+                }
+
+
+rotateCorner :: (Real u, Floating u) => Radian -> Point2 u -> Point2 u
+rotateCorner ang pt = displaceVec v2 zeroPt
+  where
+    v1    = pvec zeroPt pt 
+    theta = vdirection v1
+    hyp   = vlength v1
+    v2    = avec (ang+theta) hyp
+
+min4 :: Ord u => u -> u -> u -> u -> u
+min4 a b c d = min (min a b) (min c d)
+
+max4 :: Ord u => u -> u -> u -> u -> u
+max4 a b c d = max (max a b) (max c d)
 
 
 {-

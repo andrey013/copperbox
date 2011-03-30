@@ -16,7 +16,7 @@
 
 module Wumpus.Drawing.Text.Base.PosChar
   ( 
-    PosChar
+    LocRectChar
 
   , posChar
   , posEscChar
@@ -35,13 +35,14 @@ import Wumpus.Core                              -- package: wumpus-core
 -- 
 -- While it may be adequate, it does need another prefix.
 --
-type PosChar u = BoundedPosGraphic u
+type LocRectChar u = BoundedLocRectGraphic u
 
-posChar :: (Floating u, InterpretUnit u) => Char -> PosChar u
+posChar :: (Floating u, InterpretUnit u) => Char -> LocRectChar u
 posChar ch = posEscChar $ CharLiteral ch
 
 
-posEscChar :: (Floating u, InterpretUnit u) => EscapedChar -> PosChar u
+posEscChar :: (Floating u, InterpretUnit u) 
+           => EscapedChar -> LocRectChar u
 posEscChar esc = 
     promoteR2 $ \pt addr -> runPosObject pt addr (makePosChar esc) 
 
@@ -56,35 +57,4 @@ escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
 escText1 ch = escTextLine $ wrapEscChar ch
 
 
-
-
-{-
-
-charImg :: InterpretUnit u
-        => AdvanceVec u -> EscapedChar -> LocImage BoundingBox u
-charImg wv esc = promoteR1 $ \pt ->
-    apply1R1 (makeBBox wv) pt  >>= \bbox -> 
-    replaceAns bbox $ escText1 esc `at` pt
-
--- | Bounding box is baseline-left form.
---
-makeBBox :: InterpretUnit u 
-         => AdvanceVec u -> LocQuery u (BoundingBox u)
-makeBBox (V2 w _) = promoteR1 $ \(P2 x y) ->
-    capHeight            >>= \ymajor -> 
-    fmap abs descender   >>= \yminor  ->
-    let sw = P2 x     (y-yminor)
-        ne = P2 (x+w) (y+ymajor)
-    in return $ BBox sw ne
-
-
--- | Object pos is baseline-left form.
---
-makeOPos :: InterpretUnit u 
-         => AdvanceVec u -> Query (ObjectPos u)
-makeOPos (V2 w _) = 
-    capHeight            >>= \ymajor -> 
-    fmap abs descender   >>= \yminor  ->
-    return $ ObjectPos 0 w yminor ymajor
--}
 

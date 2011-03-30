@@ -48,7 +48,7 @@ makeCtx = set_font helvetica . metricsContext 15
 
 
 text_pic :: CtxPicture
-text_pic = udrawTracing (0::Double) $ localize text_margin_tight $ do 
+text_pic = udrawTracing (0::Double) $ localize text_margin_loose $ do 
     draw $ (fn left_text)       `at` P2   0 400
     draw $ (fn center_text)     `at` P2 150 400
     draw $ (fn right_text)      `at` P2 300 400
@@ -60,12 +60,9 @@ text_pic = udrawTracing (0::Double) $ localize text_margin_tight $ do
     draw $ (fn sw_oneline)      `at` P2   0 200
     draw $ (fn ss_oneline)      `at` P2 150 200
     draw $ (fn se_oneline)      `at` P2 300 200
-    draw $ (fn swr_multi)       `at` P2   0 100
-    draw $ (fn ssr_multi)       `at` P2 150 100
-    draw $ (fn ner_multi)       `at` P2 300 100
-    draw $ (fn rleft_text)      `at` P2   0 (-75)
-    draw $ (fn rcenter_text)    `at` P2 150 (-75)
-    draw $ (fn rright_text)     `at` P2 300 (-75)
+    draw $ (fn swr_single)      `at` P2   0 100
+    draw $ (fn ssr_single)      `at` P2 150 100
+    draw $ (fn ner_single)      `at` P2 300 100
 
     draw $ redPlus            `at` P2   0 400
     draw $ redPlus            `at` P2 150 400
@@ -94,70 +91,59 @@ redPlus = localize (stroke_colour red) markPlus
 -- single line
 --
 ne_oneline :: BoundedLocGraphic Double
-ne_oneline = textbox "north east" `startPos` NE
+ne_oneline = textline "north east" `startAddr` NE
 
 
 -- single line
 --
 se_oneline :: BoundedLocGraphic Double
-se_oneline = textbox "south east" `startPos` SE
+se_oneline = textline "south east" `startAddr` SE
 
 -- single line
 --
 ss_oneline :: BoundedLocGraphic Double
-ss_oneline = textbox "south" `startPos` SS
+ss_oneline = textline "south" `startAddr` SS
 
 -- single line
 --
 sw_oneline :: BoundedLocGraphic Double
-sw_oneline = textbox "south west" `startPos` SW
+sw_oneline = textline "south west" `startAddr` SW
 
 
--- multi line
+
+-- single line rot
 --
-ssr_multi :: BoundedLocGraphic Double
-ssr_multi = rotTextStart (multiAlignCenter "south rot45") SS (0.25*pi) 
+ssr_single :: BoundedLocGraphic Double
+ssr_single = rtextline (0.25*pi) "south rot45" `startAddr` SS
 
--- multi line
+-- single line rot
 --
-swr_multi :: BoundedLocGraphic Double
-swr_multi = rotTextStart (multiAlignCenter "south west rot45") SW (0.25*pi)
+swr_single :: BoundedLocGraphic Double
+swr_single = rtextline (0.25*pi)  "south west rot45" `startAddr` SW
 
--- multi line
+-- single line rot
 --
-ner_multi :: BoundedLocGraphic Double
-ner_multi = rotTextStart (multiAlignCenter "north east rot45") NE (0.25*pi)
+ner_single :: BoundedLocGraphic Double
+ner_single = rtextline (0.25*pi)  "north east rot45" `startAddr`  NE
 
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = rotTextStart (rtextbox "Center-center...") CENTER 0
+cc_oneline = ccTextline "Center-center..."
 
 
 blank_text :: BoundedLocGraphic Double
-blank_text = rotTextStart (multiAlignCenter "") CENTER 0 
+blank_text = blcTextline ""
 
 
 left_text :: BoundedLocGraphic Double
-left_text = rotTextStart (multiAlignLeft dummy_text) CENTER 0
+left_text = multiAlignLeft dummy_text `startAddr` CENTER
 
 
 right_text :: BoundedLocGraphic Double
-right_text = rotTextStart (multiAlignRight dummy_text) CENTER 0
+right_text = multiAlignRight dummy_text `startAddr` CENTER
 
 center_text :: BoundedLocGraphic Double
-center_text = rotTextStart (multiAlignCenter dummy_text) CENTER 0
-
-
-rleft_text :: BoundedLocGraphic Double
-rleft_text = rotTextStart (multiAlignLeft dummy_text) CENTER (0.25*pi)
-
-
-rright_text :: BoundedLocGraphic Double
-rright_text = rotTextStart (multiAlignRight dummy_text) CENTER (0.25*pi)
-
-rcenter_text :: BoundedLocGraphic Double
-rcenter_text = rotTextStart (multiAlignCenter dummy_text) CENTER (0.25*pi)
-
+center_text = multiAlignCenter dummy_text `startAddr` CENTER
 
 dummy_text :: String 
 dummy_text = unlines $ [ "The quick brown"

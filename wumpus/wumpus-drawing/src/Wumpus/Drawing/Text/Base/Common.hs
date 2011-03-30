@@ -46,7 +46,7 @@ import Data.Maybe
 
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
-                   => BoundedPosObject u -> BoundedPosGraphic u
+                   => BoundedPosObject u -> BoundedLocRectGraphic u
 posTextWithMargins obj = promoteR2 $ \pt addr -> 
     textMargin >>= \(xsep,ysep) -> 
     let body = extendPosBounds xsep xsep ysep ysep obj

@@ -40,13 +40,13 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = localize text_margin_loose  $ do
-    draw $ (fn $ leftAlign body `startPos` SS) `at` zeroPt
+    draw $ (fn $ leftAlign body `startAddr` SS) `at` zeroPt
     draw $ redPlus `at` zeroPt
 
-    draw $ (fn $ centerAlign body `startPos` SS) `at` P2 0 150
+    draw $ (fn $ centerAlign body `startAddr` SS) `at` P2 0 150
     draw $ redPlus `at` P2 0 150
 
-    draw $ (fn $ rightAlign body `startPos` SS) `at` P2 0 300
+    draw $ (fn $ rightAlign body `startAddr` SS) `at` P2 0 300
     draw $ redPlus `at` P2 0 300
   where
     fn    = illustrateBoundedLocGraphic

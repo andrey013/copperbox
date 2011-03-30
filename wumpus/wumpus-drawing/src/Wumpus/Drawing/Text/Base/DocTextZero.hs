@@ -59,7 +59,11 @@ import Control.Applicative
 import Data.Char ( ord )
 
 
--- I\'m not convinced this is the right type...
+-- Design note - constructing /syntax/ like the internal Doc
+-- type in @wl-pprint@ might allow the best API for multi-line
+-- text.
+--
+
 
 type DocText u = BoundedPosObject u
       
@@ -69,7 +73,7 @@ type DocText u = BoundedPosObject u
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
 --
-type TextFrame u = BoundedPosGraphic u
+type TextFrame u = BoundedLocRectGraphic u
 
 
 leftAlign :: (Real u, Floating u, InterpretUnit u) 
