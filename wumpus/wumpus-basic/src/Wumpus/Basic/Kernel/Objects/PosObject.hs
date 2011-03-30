@@ -33,10 +33,10 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , DPosGraphicObject
   , DBoundedPosObject
 
-  , LocRectAddrQuery
-  , PosImage
-  , PosGraphic
-  , BoundedPosGraphic
+  , LocRectQuery
+  , LocRectImage
+  , LocRectGraphic
+  , BoundedLocRectGraphic
 
   -- * Operations
 
@@ -44,9 +44,9 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , runPosObject
   , bimapPosObject
 
-  , makePosImage
-  , startPos
-  , atStartPos
+  , makeLocRectImage
+  , startAddr
+  , atStartAddr
 
   , emptyPosGraphicObject
 
@@ -145,13 +145,13 @@ type DBoundedPosObject = BoundedPosObject Double
 
 
 
-type LocRectAddrQuery u a = CF2 (Point2 u) RectAddress a
+type LocRectQuery u a = CF2 (Point2 u) RectAddress a
 
-type PosImage t u = LocRectAddrQuery u (ImageAns t u)
+type LocRectImage t u = LocRectQuery u (ImageAns t u)
 
-type PosGraphic u = PosImage UNil u
+type LocRectGraphic u = LocRectImage UNil u
 
-type BoundedPosGraphic u = PosImage BoundingBox u
+type BoundedLocRectGraphic u = LocRectImage BoundingBox u
 
 
 
@@ -187,39 +187,39 @@ bimapPosObject :: (Query (Orientation u) -> Query (Orientation u))
                -> PosObject t u
 bimapPosObject f g (PosObject qort img) = PosObject (f qort) (g img)
 
--- | Make a 'PosImage' from a 'PosObject'.
+-- | Make a 'LocRectImage' from a 'PosObject'.
 -- 
--- This turns a PosObject (concatenatable) into a PosImage 
--- (drawable).
+-- This turns a PosObject (concatenatable) into a LocRectImage 
+-- (drawable at rectangle positions).
 --
-makePosImage :: Fractional u => PosObject t u -> PosImage t u
-makePosImage po = promoteR2 $ \pt addr -> runPosObject pt addr po
+makeLocRectImage :: Fractional u => PosObject t u -> LocRectImage t u
+makeLocRectImage po = promoteR2 $ \pt addr -> runPosObject pt addr po
 
 
 
 
-infixr 1 `startPos`
+infixr 1 `startAddr`
 
--- | 'startPos' : @ pos_image * rect_pos -> LocImage @
+-- | 'startAddr' : @ loc_rect_image * rect_pos -> LocImage @
 --
--- /Downcast/ a 'PosImage' to a 'LocImage' by supplying it 
+-- /Downcast/ a 'LocRectImage' to a 'LocImage' by supplying it 
 -- with a 'RectAddress' (start address on the rectangle frame).
 --  
-startPos :: Floating u 
-         => PosImage t u -> RectAddress -> LocImage t u
-startPos = apply1R2 
+startAddr :: Floating u 
+          => LocRectImage t u -> RectAddress -> LocImage t u
+startAddr = apply1R2 
 
 
 
--- | 'atStartPos' : @ pos_image * start_point * rect_pos -> LocImage @
+-- | 'atStartAddr' : @ loc_rect_image * start_point * rect_pos -> LocImage @
 --
--- /Downcast/ a 'PosImage' to an 'Image' by supplying it with an 
+-- /Downcast/ a 'LocRectImage' to an 'Image' by supplying it with an 
 -- initial point and a 'RectAddress' (start address on the rectangle 
 -- frame).
 --  
-atStartPos ::  Floating u 
-           => PosImage t u -> Point2 u -> RectAddress -> Image t u
-atStartPos = apply2R2
+atStartAddr ::  Floating u 
+            => LocRectImage t u -> Point2 u -> RectAddress -> Image t u
+atStartAddr = apply2R2
 
 
 

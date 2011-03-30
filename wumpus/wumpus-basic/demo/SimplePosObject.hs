@@ -1,7 +1,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module SimplePosImage where
+module SimplePosObject where
 
 import Wumpus.Basic.Kernel
 
@@ -16,8 +16,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let pic1 = runCtxPictureU std_ctx drawing01
-    writeEPS "./out/simple_pos_image01.eps" pic1
-    writeSVG "./out/simple_pos_image01.svg" pic1
+    writeEPS "./out/simple_pos_object01.eps" pic1
+    writeSVG "./out/simple_pos_object01.svg" pic1
 
 
 std_ctx :: DrawingContext
@@ -59,14 +59,14 @@ mf = do
     
 
 testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startPos` rpos)
+testDrawBl rpos = filledDisk 2 `oplus` (rectBl `startAddr` rpos)
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphic u
-rectBl = makePosImage $ makePosObject (return opos) (mkRectBl w h)
+rectBl :: (Fractional u, InterpretUnit u) => LocRectGraphic u
+rectBl = makeLocRectImage $ makePosObject (return ortt) (mkRectBl w h)
   where
     w    = 40 
     h    = 30
-    opos = Orientation { or_x_minor = 0
+    ortt = Orientation { or_x_minor = 0
                        , or_x_major = w
                        , or_y_minor = 0
                        , or_y_major = h }
@@ -79,15 +79,15 @@ mkRectBl w h = strokedRectangle w h
 
 
 testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startPos` rpos)
+testDrawMinor rpos = filledDisk 2 `oplus` (rectMinor `startAddr` rpos)
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphic u 
-rectMinor = makePosImage $ makePosObject (return opos) (mkRectMinor m w h)
+rectMinor :: (Fractional u, InterpretUnit u) => LocRectGraphic u 
+rectMinor = makeLocRectImage $ makePosObject (return ortt) (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 
     h    = 30
-    opos = Orientation { or_x_minor = m
+    ortt = Orientation { or_x_minor = m
                        , or_x_major = (w-m)
                        , or_y_minor = m
                        , or_y_major = (h-m) }

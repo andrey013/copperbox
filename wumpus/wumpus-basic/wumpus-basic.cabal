@@ -117,7 +117,7 @@ extra-source-files:
   demo/AltUnits.hs,
   demo/FontDeltaPic.hs,
   demo/SimpleAdvGraphic.hs,
-  demo/SimplePosImage.hs
+  demo/SimplePosObject.hs
 
 library
   hs-source-dirs:     src

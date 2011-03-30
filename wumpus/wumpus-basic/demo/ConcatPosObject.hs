@@ -1,7 +1,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module AlignPosImage where
+module ConcatPosObject where
 
 import Wumpus.Basic.Kernel
 
@@ -16,8 +16,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let pic1 = runCtxPictureU std_ctx drawing01
-    writeEPS "./out/align_pos_image01.eps" pic1
-    writeSVG "./out/align_pos_image01.svg" pic1
+    writeEPS "./out/concat_pos_object01.eps" pic1
+    writeSVG "./out/concat_pos_object01.svg" pic1
 
 
 std_ctx :: DrawingContext
@@ -32,42 +32,42 @@ mf :: TraceDrawing Double ()
 mf = do
     drawl (anchor $ P2 0   400) $ illustratePosObject rectCenter
     drawl (anchor $ P2 100 400) $ illustratePosObject rectMinor
-    drawl (anchor $ P2 200 400) $ illustratePosObject rectBl
 
-    drawl (anchor $ P2   0 275) $ illustratePosObject $ vs1
-    drawl (anchor $ P2 150 275) $ illustratePosObject $ vs2
-    drawl (anchor $ P2 300 275) $ illustratePosObject $ vs3
+    drawl (anchor $ P2   0 300) $ illustratePosObject $  
+                  rectCenter `vcatCenterPO` rectMinor
+    drawl (anchor $ P2 150 300) $ illustratePosObject $  
+                  rectMinor `vcatCenterPO` rectCenter
 
-    drawl (anchor $ P2   0 200) $ illustratePosObject $ hs1
-    drawl (anchor $ P2 150 200) $ illustratePosObject $ hs2
-    drawl (anchor $ P2 300 200) $ illustratePosObject $ hs3
-
-    drawl (anchor $ P2   0 75)  $ illustratePosObject $ va1
-    drawl (anchor $ P2 150 75)  $ illustratePosObject $ va2
-    drawl (anchor $ P2 300 75)  $ illustratePosObject $ va3
-
-    drawl (anchor $ P2   0 0)   $ illustratePosObject $ ha1
-    drawl (anchor $ P2 150 0)   $ illustratePosObject $ ha2
-    drawl (anchor $ P2 300 0)   $ illustratePosObject $ ha3
-    return ()
-  where
-    objs  = [ rectCenter, rectMinor, rectBl ]
-    ha1   = halignPO emptyPosGraphicObject HTop    objs
-    ha2   = halignPO emptyPosGraphicObject HCenter objs
-    ha3   = halignPO emptyPosGraphicObject HBottom objs
-    va1   = valignPO emptyPosGraphicObject VLeft   objs
-    va2   = valignPO emptyPosGraphicObject VCenter objs
-    va3   = valignPO emptyPosGraphicObject VRight  objs
+    drawl (anchor $ P2 300 300) $ illustratePosObject $  
+                  rectCenter `vcatRightPO` rectMinor
+    drawl (anchor $ P2 450 300) $ illustratePosObject $  
+                  rectMinor `vcatRightPO` rectCenter
 
 
-    hs1   = halignSepPO emptyPosGraphicObject HTop    8 objs
-    hs2   = halignSepPO emptyPosGraphicObject HCenter 8 objs
-    hs3   = halignSepPO emptyPosGraphicObject HBottom 8 objs 
-    vs1   = valignSepPO emptyPosGraphicObject VLeft   8 objs
-    vs2   = valignSepPO emptyPosGraphicObject VCenter 8 objs
-    vs3   = valignSepPO emptyPosGraphicObject VRight  8 objs
- 
----
+    drawl (anchor $ P2   0 200) $ illustratePosObject $  
+                  rectCenter `hcatCenterPO` rectMinor
+    drawl (anchor $ P2 150 200) $ illustratePosObject $  
+                  rectMinor `hcatCenterPO` rectCenter
+
+    drawl (anchor $ P2 300 200) $ illustratePosObject $  
+                  rectCenter `vcatLeftPO` rectMinor
+    drawl (anchor $ P2 450 200) $ illustratePosObject $  
+                  rectMinor `vcatLeftPO` rectCenter
+
+
+    drawl (anchor $ P2   0 100) $ illustratePosObject $  
+                  rectCenter `hcatBottomPO` rectMinor
+    drawl (anchor $ P2 150 100) $ illustratePosObject $  
+                  rectMinor `hcatBottomPO` rectCenter
+    drawl (anchor $ P2 300 100) $ illustratePosObject $  
+                  rectCenter `hcatTopPO` rectMinor
+    drawl (anchor $ P2 450 100) $ illustratePosObject $  
+                  rectMinor `hcatTopPO` rectCenter
+
+
+    drawl (anchor $ P2   0 0) $ illustratePosObject $  rectCenter `hcatPO` rectMinor
+    drawl (anchor $ P2 150 0) $ illustratePosObject $  rectCenter `vcatPO` rectMinor
+
 
 rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
 rectCenter = makePosObject (return opos) (mkRectCenter w h)
