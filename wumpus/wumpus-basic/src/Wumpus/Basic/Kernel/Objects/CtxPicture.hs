@@ -193,7 +193,7 @@ instance Rotate CtxPicture where
   rotate ang            = mapCtxPicture (rotate ang)
 
 instance RotateAbout CtxPicture where
-  rotateAbout r pt      = mapCtxPicture (rotateAbout r pt)
+  rotateAbout ang pt    = mapCtxPicture (rotateAbout ang pt)
 
 instance Scale CtxPicture where
   scale sx sy           = mapCtxPicture (scale sx sy)

@@ -32,7 +32,6 @@ module Wumpus.Basic.Kernel.Objects.Anchors
 
   -- * Anchors
     Anchor
-  , anchor
 
   -- * Anchor classes
   , CenterAnchor(..)
@@ -52,21 +51,15 @@ module Wumpus.Basic.Kernel.Objects.Anchors
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.ContextFun
 
 import Wumpus.Core                      -- package: wumpus-core
 
 import Data.AffineSpace                 -- package: vector-space
 
-import Control.Applicative
 
--- | Note an Anchor is a Query.
+-- | Note an Anchor is just a Point2.
 --
-type Anchor u = Query (Point2 u)
-
-
-anchor :: Point2 u -> Anchor u
-anchor = pure
+type Anchor u = Point2 u
 
 
 -- | Center of an object.
@@ -189,9 +182,10 @@ class SideMidpointAnchor r u where
 --
 projectAnchor :: (Real u, Floating u, CenterAnchor r u) 
               => (r u -> Anchor u) -> u -> r u -> Anchor u
-projectAnchor qy d a = 
-   qy a >>= \p1 -> center a >>= \ctr -> 
-   let v = pvec ctr p1 in return $ p1 .+^ (avec (vdirection v) d)
+projectAnchor fn d a = p1 .+^ (avec (vdirection v) d)
+  where
+    p1  = fn a 
+    v   = pvec (center a) p1 
      
 
 
@@ -205,33 +199,33 @@ projectAnchor qy d a =
 radialConnectorPoints :: ( Real u, Floating u
                          , CenterAnchor t1 u, RadialAnchor t1 u
                          , CenterAnchor t2 u, RadialAnchor t2 u) 
-                      => t1 u -> t2 u -> Query (Point2 u, Point2 u) 
-radialConnectorPoints a b = 
-    center a >>= \ca -> center b >>= \cb -> 
-    let ang = vdirection $ pvec ca cb
-    in (,) <$> radialAnchor ang a <*> radialAnchor (ang+pi) b
+                      => t1 u -> t2 u -> (Point2 u, Point2 u) 
+radialConnectorPoints a b = (radialAnchor ang a, radialAnchor (ang+pi) b)
+  where
+    ang = vdirection $ pvec (center a) (center b)
+     
     
 
 --------------------------------------------------------------------------------
 -- Instances 
 
 instance Fractional u => CenterAnchor BoundingBox u where
-  center (BBox (P2 xl ylo) (P2 xr yhi)) = return $ P2 x y 
+  center (BBox (P2 xl ylo) (P2 xr yhi)) = P2 x y 
      where
        x = xl+0.5*(xr-xl)
        y = ylo+0.5*(yhi-ylo)
        
 
 instance Fractional u => CardinalAnchor BoundingBox u where
-  north (BBox (P2 xl _  ) (P2 xr yhi)) = return $ P2 (xl+0.5*(xr-xl)) yhi
-  south (BBox (P2 xl ylo) (P2 xr _  )) = return $ P2 (xl+0.5*(xr-xl)) ylo
-  east  (BBox (P2 _  ylo) (P2 xr yhi)) = return $ P2 xr (ylo+0.5*(yhi-ylo))
-  west  (BBox (P2 xl ylo) (P2 _  yhi)) = return $ P2 xl (ylo+0.5*(yhi-ylo))
+  north (BBox (P2 xl _  ) (P2 xr yhi)) = P2 (xl+0.5*(xr-xl)) yhi
+  south (BBox (P2 xl ylo) (P2 xr _  )) = P2 (xl+0.5*(xr-xl)) ylo
+  east  (BBox (P2 _  ylo) (P2 xr yhi)) = P2 xr (ylo+0.5*(yhi-ylo))
+  west  (BBox (P2 xl ylo) (P2 _  yhi)) = P2 xl (ylo+0.5*(yhi-ylo))
 
 
 instance Fractional u => CardinalAnchor2 BoundingBox u where
-  northeast (BBox _ ur)                 = return $ ur
-  southeast (BBox (P2 _ ylo) (P2 xr _)) = return $ P2 xr ylo
-  southwest (BBox ll _)                 = return $ ll
-  northwest (BBox (P2 xl _) (P2 _ yhi)) = return $ P2 xl yhi 
+  northeast (BBox _ ur)                 = ur
+  southeast (BBox (P2 _ ylo) (P2 xr _)) = P2 xr ylo
+  southwest (BBox ll _)                 = ll
+  northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi 
 

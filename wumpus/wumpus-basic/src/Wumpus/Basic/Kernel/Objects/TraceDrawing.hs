@@ -359,10 +359,9 @@ drawl ancr img = drawli ancr img >> return ()
 -- 
 drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> LocImage t u -> m (t u)
-drawli ancr img = askDC >>= \ctx -> 
-                  let pt        = runCF ancr ctx 
-                      (Ans a o) = runCF1 img ctx pt
-                  in trace (singleH o) >> return a
+drawli pt img = askDC >>= \ctx -> 
+                let (Ans a o) = runCF1 img ctx pt 
+                in trace (singleH o) >> return a
 
 
 
@@ -397,9 +396,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- 
 drawci :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> Anchor u -> ConnectorImage t u -> m (t u)
-drawci an0 an1 img = evalQuery an0 >>= \p0 -> 
-                     evalQuery an1 >>= \p1 -> 
-                     drawi (connect img p0 p1)
+drawci p0 p1 img = drawi (connect img p0 p1)
 
 
 
@@ -471,6 +468,5 @@ drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
            ) 
         => t1 u -> t2 u -> ConnectorImage t u -> m (t u)
 drawrci a b img = 
-    evalQuery (radialConnectorPoints a b) >>= \(p0,p1) ->
-    drawi (connect img p0 p1)
+    let (p0,p1) = radialConnectorPoints a b in drawi (connect img p0 p1)
 

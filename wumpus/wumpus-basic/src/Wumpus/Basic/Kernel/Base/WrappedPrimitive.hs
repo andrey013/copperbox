@@ -54,13 +54,13 @@ type instance DUnit CatPrim = Double
 instance OPlus CatPrim where
   a `oplus` b = CatPrim $ getCatPrim a `primCat` getCatPrim b
 
-
+--------------------------------------------------------------------------------
 
 instance Rotate CatPrim where
   rotate ang = CatPrim . rotate ang . getCatPrim
 
 instance RotateAbout CatPrim where
-  rotateAbout pt ang = CatPrim . rotateAbout pt ang . getCatPrim
+  rotateAbout ang pt = CatPrim . rotateAbout ang pt . getCatPrim
 
 instance Scale CatPrim where
   scale sx sy = CatPrim . scale sx sy . getCatPrim
@@ -68,6 +68,8 @@ instance Scale CatPrim where
 instance Translate CatPrim where
   translate dx dy = CatPrim . translate dx dy . getCatPrim
 
+
+--------------------------------------------------------------------------------
 
 prim1 :: Primitive -> CatPrim 
 prim1 = CatPrim

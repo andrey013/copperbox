@@ -36,6 +36,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Unit phantom type
   , UNil(..)
 
+  -- * Non-contextual unit conversion.
+  , ScalarUnit(..)
+
   -- * Unit interpretation with respect to the current Point size
   , InterpretUnit(..)
   , dinterpF
@@ -223,6 +226,7 @@ replaceR = bimapR . const
 --
 data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
 
+type instance DUnit (UNil u) = u
 
 instance Functor UNil where
   fmap _ UNil= UNil
@@ -230,6 +234,32 @@ instance Functor UNil where
 
 instance OPlus (UNil u) where
   _ `oplus` _ = UNil
+
+
+
+
+instance Rotate (UNil u) where
+  rotate _              = id
+
+instance RotateAbout (UNil u) where
+  rotateAbout _ _       = id
+
+instance Scale (UNil u) where
+  scale _ _             = id
+
+instance Translate (UNil u) where
+  translate _ _         = id
+
+--------------------------------------------------------------------------------
+-- Non-contextual units
+
+class ScalarUnit a where
+  fromPsPoint :: Double -> a 
+  toPsPoint   :: a -> Double
+
+instance ScalarUnit Double where
+  fromPsPoint = id
+  toPsPoint   = id 
 
 
 
@@ -246,8 +276,6 @@ class Num u => InterpretUnit u where
 instance InterpretUnit Double where
   normalize _ = id
   dinterp   _ = id 
-
-
 
 instance InterpretUnit AfmUnit where
   normalize sz = afmValue sz 

@@ -18,6 +18,7 @@
 module Wumpus.Basic.Kernel.Base.Units
   (
 
+
   -- * Centimeter
     Centimeter
   , cm
@@ -38,6 +39,8 @@ module Wumpus.Basic.Kernel.Base.Units
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+
+
 
 
 --------------------------------------------------------------------------------
@@ -64,6 +67,9 @@ cm = realToFrac . (28.45275619 *) . getCentimeter
 dcm :: Double -> Centimeter
 dcm = Centimeter . (0.03514598 *)
 
+instance ScalarUnit Centimeter where
+  fromPsPoint = dcm
+  toPsPoint   = cm 
 
 instance InterpretUnit Centimeter where
   normalize _ = cm 
@@ -97,6 +103,11 @@ dpica = Pica . (\x -> x / 12.0)
 
 
 instance LengthTolerance Pica       where length_tolerance = 0.01
+
+
+instance ScalarUnit Pica where
+  fromPsPoint = dpica
+  toPsPoint   = pica
 
 instance InterpretUnit Pica where
   normalize _ = pica

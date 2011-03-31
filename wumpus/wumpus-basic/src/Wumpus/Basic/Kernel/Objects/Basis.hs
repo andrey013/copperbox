@@ -1,4 +1,6 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -42,12 +44,17 @@ import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Core                              -- package: wumpus-core
 
 
+-- Not exported - thanks to Max Bollingbroke.
+--
+type family   GuardEqAns a b :: *
+type instance GuardEqAns a a = a
+
 -- | An Image always returns a pair of some polymorphic answer @a@
 -- and a PrimGraphic.
 --
 data ImageAns t u       = Ans (t u) CatPrim
 
-
+type instance DUnit (ImageAns t u) = GuardEqAns u (DUnit (t u))
 
 type GraphicAns u       = ImageAns UNil u
 
@@ -57,6 +64,44 @@ instance Functor t => Functor (ImageAns t) where
 
 instance OPlus (t u) => OPlus (ImageAns t u) where
   Ans a p1 `oplus` Ans b p2 = Ans (a `oplus` b) (p1 `oplus` p2)
+
+
+--------------------------------------------------------------------------------
+-- Affine instances 
+
+-- 
+-- Design Note
+--
+-- Translate and RotateAbout require the unit to be /scalar/ 
+-- e.g. Double, Centimeter, Pica.
+--
+-- This is annoying and a limitation, but an alternative would
+-- need access to current-font-size which cannot be a pure 
+-- function.
+-- 
+
+instance Rotate (t u) => Rotate (ImageAns t u) where
+  rotate ang (Ans a p) = Ans (rotate ang a) (rotate ang p)
+
+
+instance (RotateAbout (t u), ScalarUnit u, u ~ DUnit (t u)) => 
+    RotateAbout (ImageAns t u) where
+  rotateAbout ang pt@(P2 x y) (Ans a p) = 
+    Ans (rotateAbout ang pt a) 
+        (rotateAbout ang (P2 (toPsPoint x) (toPsPoint y)) p)
+
+
+instance Scale (t u) => Scale (ImageAns t u) where
+  scale sx sy (Ans a p) = Ans (scale sx sy a) (scale sx sy p)
+
+
+instance (Translate (t u), ScalarUnit u, u ~ DUnit (t u)) => 
+    Translate (ImageAns t u) where
+  translate dx dy (Ans a p) = 
+    Ans (translate dx dy a) (translate (toPsPoint dx) (toPsPoint dy) p)
+
+
+--------------------------------------------------------------------------------
 
 
 -- | Ignore the answer produced by an Image (or LocImage, etc.)

@@ -320,9 +320,8 @@ thetaSouthwestwards d =
 -- | Absolute units.
 -- 
 centerRelative :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-               => (Int,Int) -> t u -> Anchor u
-centerRelative coord a =
-   center a >>= \pt ->  (snapmove coord) >>= \v -> return (pt .+^ v)
+               => (Int,Int) -> t u -> Query (Anchor u)
+centerRelative coord a = snapmove coord >>= \v -> return $ center a .+^ v
 
 
 -- | Value is 1 snap unit right.
@@ -331,7 +330,7 @@ centerRelative coord a =
 -- re-think.
 -- 
 right_of        :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 right_of        = centerRelative (1,0)
 
 -- | Value is 1 snap move left.
@@ -340,7 +339,7 @@ right_of        = centerRelative (1,0)
 -- re-think.
 -- 
 left_of         :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 left_of         = centerRelative ((-1),0)
 
 -- | Value is 1 snap move up, 1 snap move right.
@@ -349,7 +348,7 @@ left_of         = centerRelative ((-1),0)
 -- re-think.
 -- 
 above_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 above_right_of  = centerRelative (1,1)
 
 -- | Value is 1 snap move below, 1 snap move right.
@@ -358,7 +357,7 @@ above_right_of  = centerRelative (1,1)
 -- re-think.
 -- 
 below_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 below_right_of  = centerRelative (1, (-1))
 
 -- | Value is 1 snap move up, 1 snap move left.
@@ -367,7 +366,7 @@ below_right_of  = centerRelative (1, (-1))
 -- re-think.
 -- 
 above_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 above_left_of   = centerRelative ((-1),1)
 
 -- | Value is 1 snap move down, 1 snap move left.
@@ -376,7 +375,7 @@ above_left_of   = centerRelative ((-1),1)
 -- re-think.
 -- 
 below_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Anchor u
+                => t u -> Query (Anchor u)
 below_left_of   = centerRelative ((-1),(-1))
  
 

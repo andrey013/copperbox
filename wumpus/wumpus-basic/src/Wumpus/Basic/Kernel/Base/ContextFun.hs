@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -122,6 +123,7 @@ type instance DUnit (CF a) = DUnit a
 --
 newtype CF1 r1 a        = CF1 { unCF1 :: DrawingContext -> r1 -> a }
 
+type instance DUnit (CF1 r1 a) = DUnit a
 
 
 -- | Variation of 'CF' with two parametric /static arguments/.
@@ -328,7 +330,7 @@ instance Rotate a => Rotate (CF a) where
   rotate ang            = fmap (rotate ang)
 
 instance RotateAbout a => RotateAbout (CF a) where
-  rotateAbout pt ang    = fmap (rotateAbout pt ang)
+  rotateAbout ang pt    = fmap (rotateAbout ang pt)
 
 instance Scale a => Scale (CF a) where
   scale sx sy           = fmap (scale sx sy)
@@ -336,6 +338,30 @@ instance Scale a => Scale (CF a) where
 instance Translate a => Translate (CF a) where
   translate dx dy       = fmap (translate dx dy)
 
+
+
+instance (Real u, Floating u, Rotate a, u ~ DUnit a) => 
+    Rotate (CF1 (Point2 u) a) where
+  rotate ang cf         = CF1 $ \ctx pt -> 
+                            rotate ang $ unCF1 cf ctx (rotate ang pt)
+
+
+instance (Real u, Floating u, RotateAbout a, u ~ DUnit a) => 
+    RotateAbout (CF1 (Point2 u) a) where
+  rotateAbout ang p0 cf = CF1 $ \ctx pt -> 
+                             rotateAbout ang p0 $ 
+                               unCF1 cf ctx (rotateAbout ang p0 pt)
+
+instance (Fractional u, Scale a) => Scale (CF1 (Point2 u) a) where
+  scale sx sy cf        = CF1 $ \ctx pt -> 
+                            scale sx sy $ unCF1 cf ctx (scale sx sy pt)
+
+
+instance (Num u, Translate a, u ~ DUnit a) => 
+    Translate (CF1 (Point2 u) a) where
+  translate dx dy cf    = CF1 $ \ctx pt -> 
+                            translate dx dy $ 
+                              unCF1 cf ctx (translate dx dy pt)
 
 
 --------------------------------------------------------------------------------
