@@ -127,10 +127,14 @@ instance (DRotate a, DRotate b) => DRotate (a,b)  where
 
 
 instance DRotate (Point2 Double) where
-  drotate ang = ((rotationMatrix ang) *#)
+  drotate ang pt = P2 x y 
+    where
+      v        = pvec zeroPt pt
+      (V2 x y) = avec (ang + vdirection v) $ vlength v
+
 
 instance DRotate (Vec2 Double) where
-  drotate ang = ((rotationMatrix ang) *#)
+  drotate ang v = avec (ang + vdirection v) $ vlength v
 
 --
 --
@@ -155,11 +159,15 @@ instance (DRotateAbout a, DRotateAbout b) => DRotateAbout (a,b) where
   drotateAbout ang pt (a,b) = (drotateAbout ang pt a, drotateAbout ang pt b)
 
 instance DRotateAbout (Point2 Double) where
-  drotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
+  drotateAbout ang (P2 ox oy) = 
+    dtranslate ox oy . drotate ang . dtranslate (-ox) (-oy) 
+
 
 
 instance DRotateAbout (Vec2 Double) where
-  drotateAbout ang pt = ((originatedRotationMatrix ang pt) *#) 
+  drotateAbout ang (P2 ox oy) = 
+    dtranslate ox oy . drotate ang . dtranslate (-ox) (-oy) 
+
   
 --------------------------------------------------------------------------------
 -- Scale
@@ -180,10 +188,10 @@ instance (DScale a, DScale b) => DScale (a,b) where
   dscale sx sy (a,b) = (dscale sx sy a, dscale sx sy b)
 
 instance DScale (Point2 Double) where
-  dscale sx sy = ((scalingMatrix sx sy) *#)
+  dscale sx sy (P2 x y) = P2 (x * sx) (y * sy)
 
 instance DScale (Vec2 Double) where
-  dscale sx sy = ((scalingMatrix sx sy) *#)
+  dscale sx sy (V2 x y) = V2 (x * sx) (y * sy)
 
 --------------------------------------------------------------------------------
 -- Translate
@@ -203,7 +211,9 @@ instance (DTranslate a, DTranslate b) =>
 instance DTranslate (Point2 Double) where
   dtranslate dx dy (P2 x y) = P2 (x + dx) (y + dy)
 
+-- | Vectors do not respond to translation.
+--
 instance DTranslate (Vec2 Double) where
-  dtranslate dx dy (V2 x y) = V2 (x + dx) (y + dy)
+  dtranslate _ _ v0 = v0
 
 
