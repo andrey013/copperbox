@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -50,13 +51,15 @@ data Semiellipse u = Semiellipse
       , se_syn_props    :: SyntheticProps u
       }
 
-
+type instance DUnit (Semiellipse u) = u
 
 -- | rect_width is the width of the (greater) enclosing rectangle.
 data SyntheticProps u = SyntheticProps
       { se_ry_minor  :: u
       , se_ry_major  :: u
       }
+
+type instance DUnit (SyntheticProps u) = u
   
 type DSemiellipse = Semiellipse Double
 
@@ -73,17 +76,19 @@ instance Functor SyntheticProps where
 mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Semiellipse u -> Semiellipse u
 mapCTM f = (\s i -> s { se_ctm = f i }) <*> se_ctm
 
-instance InterpretUnit u => CtxRotate Semiellipse u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+
+instance (Real u, Floating u) => Rotate (Semiellipse u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Semiellipse u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Semiellipse u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Semiellipse u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Semiellipse u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Semiellipse u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (Semiellipse u) where
+  translate dx dy       = mapCTM (translate dx dy)
+
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -94,7 +99,7 @@ instance InterpretUnit u => CtxTranslate Semiellipse u where
 --                           * ry_minor 
 --                           * ry_major -> Vec ) * semiellipse -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, InterpretUnit u) 
+runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> u -> Vec2 u) -> Semiellipse u -> Anchor u
 runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
                                   , se_rx        = rx
@@ -105,28 +110,28 @@ runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
 
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
    CenterAnchor Semiellipse u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     ApexAnchor Semiellipse u where
   apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     BottomCornerAnchor Semiellipse u where
   bottomLeftCorner  = runDisplaceCenter $ \rx _ ry_minor _  -> V2 (-rx) (-ry_minor)
   bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CardinalAnchor Semiellipse u where
   north = apex
   south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
   east  = radialAnchor 0
   west  = radialAnchor pi
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CardinalAnchor2 Semiellipse u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -135,7 +140,7 @@ instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     RadialAnchor Semiellipse u where
   radialAnchor theta = runDisplaceCenter (seRadialVec theta)
 
@@ -212,8 +217,7 @@ synthesizeProps ry =
     ry_major = ry - ry_minor
 
 
-mkSemiellipse :: InterpretUnit u
-              => u -> u -> SyntheticProps u -> LocThetaQuery u (Semiellipse u)
+mkSemiellipse :: u -> u -> SyntheticProps u -> LocThetaQuery u (Semiellipse u)
 mkSemiellipse rx ry props = promoteR2 $ \ctr theta -> 
     pure $ Semiellipse { se_ctm = makeShapeCTM ctr theta
                        , se_rx = rx
@@ -222,13 +226,12 @@ mkSemiellipse rx ry props = promoteR2 $ \ctr theta ->
                        }
 
 
-mkSemiellipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkSemiellipsePath :: (Real u, Floating u, LengthTolerance u) 
                   => u -> u -> u -> LocThetaQuery u (Path u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
-    pointSize >>= \sz -> 
     let ctr = displacePerpendicular (-cminor) theta pt
         xs  = bezierSemiellipsePoints rx ry ctr
-    in return $ curvePath $ map (ctxRotateAbout sz theta ctr) xs 
+    in return $ curvePath $ map (rotateAbout theta ctr) xs 
 
 
 bezierSemiellipsePoints :: Floating u

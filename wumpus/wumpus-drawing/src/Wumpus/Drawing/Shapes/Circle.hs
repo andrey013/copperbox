@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -44,7 +45,9 @@ data Circle u = Circle
       { circ_ctm    :: ShapeCTM u
       , circ_radius :: !u 
       }
-  
+
+type instance DUnit (Circle u) = u  
+
 type DCircle = Circle Double
 
 instance Functor Circle where
@@ -59,24 +62,23 @@ mapCTM f = (\s i -> s { circ_ctm = f i }) <*> circ_ctm
 
 
 
-instance InterpretUnit u => CtxRotate Circle u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Circle u) where
+  rotate ang            = mapCTM (rotate ang)
                   
+instance (Real u, Floating u) => RotateAbout (Circle u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxRotateAbout Circle u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance Fractional u => Scale (Circle u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxScale Circle u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
-
-instance InterpretUnit u => CtxTranslate Circle u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance Num u => Translate (Circle u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
-runDisplaceCenter :: InterpretUnit u
+runDisplaceCenter :: (Real u, Floating u)
                   => (u -> Vec2 u) -> Circle u -> Anchor u
 runDisplaceCenter fn (Circle { circ_ctm    = ctm
                              , circ_radius = radius }) = 
@@ -84,25 +86,25 @@ runDisplaceCenter fn (Circle { circ_ctm    = ctm
 
 -- Anchors look like they need ctx...
 
-instance InterpretUnit u => CenterAnchor Circle u where
+instance (Real u, Floating u) => CenterAnchor Circle u where
   center = runDisplaceCenter $ \_ -> V2 0 0 
 
 
-instance InterpretUnit u => CardinalAnchor Circle u where
+instance (Real u, Floating u) => CardinalAnchor Circle u where
   north = runDisplaceCenter $ \r -> V2 0    r
   south = runDisplaceCenter $ \r -> V2 0  (-r)
   east  = runDisplaceCenter $ \r -> V2 r    0
   west  = runDisplaceCenter $ \r -> V2 (-r) 0
 
 
-instance (Floating u, InterpretUnit u) => CardinalAnchor2 Circle u where
+instance (Real u, Floating u) => CardinalAnchor2 Circle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Floating u, InterpretUnit u) => RadialAnchor Circle u where
+instance (Real u, Floating u) => RadialAnchor Circle u where
   radialAnchor ang = runDisplaceCenter $ \r -> avec ang r
 
 

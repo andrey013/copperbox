@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -40,6 +41,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 newtype InvSemiellipse u = InvSemiellipse { getInvSemiellipse :: Semiellipse u }
 
+type instance DUnit (InvSemiellipse u) = u
   
 type DInvSemiellipse = InvSemiellipse Double
 
@@ -56,46 +58,44 @@ mapInner :: (Semiellipse u -> Semiellipse u)
          -> InvSemiellipse u
 mapInner f = InvSemiellipse . f . getInvSemiellipse
 
-instance InterpretUnit u => CtxRotate InvSemiellipse u where
-  ctxRotate sz ang = mapInner (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (InvSemiellipse u) where
+  rotate ang            = mapInner (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout InvSemiellipse u where
-  ctxRotateAbout sz ang pt = mapInner (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (InvSemiellipse u) where
+  rotateAbout ang pt    = mapInner (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale InvSemiellipse u where
-  ctxScale sz sx sy = mapInner (ctxScale sz sx sy)
+instance Fractional u => Scale (InvSemiellipse u) where
+  scale sx sy           = mapInner (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate InvSemiellipse u where
-  ctxTranslate sz dx dy = mapInner (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (InvSemiellipse u) where
+  translate dx dy       = mapInner (translate dx dy)
+
 
 
 --------------------------------------------------------------------------------
 -- Anchors
 
-runRotateAnchor :: (Real u, Floating u, InterpretUnit u) 
+runRotateAnchor :: (Real u, Floating u) 
                 => (Semiellipse u -> Anchor u) -> InvSemiellipse u -> Anchor u
 runRotateAnchor f (InvSemiellipse a) =
-   center a  >>= \ctr -> 
-   f a       >>= \a1 -> 
-   pointSize >>= \sz -> 
-   return $ ctxRotateAbout sz pi ctr a1
+    let ctr = center a in rotateAbout pi ctr (f a)
 
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CenterAnchor InvSemiellipse u where
   center = center . getInvSemiellipse
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     ApexAnchor InvSemiellipse u where
   apex = runRotateAnchor apex
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     TopCornerAnchor InvSemiellipse u where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CardinalAnchor InvSemiellipse u where
   north = runRotateAnchor south
   south = runRotateAnchor north
@@ -103,7 +103,7 @@ instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CardinalAnchor2 InvSemiellipse u where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -112,7 +112,7 @@ instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     RadialAnchor InvSemiellipse u where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)

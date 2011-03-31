@@ -88,24 +88,24 @@ data DotAnchor u = forall s.
 
 
 instance CenterAnchor DotAnchor u where
-  center (DotAnchor ca _ _) = pure ca
+  center (DotAnchor ca _ _) = ca
 
 instance RadialAnchor DotAnchor u where
-   radialAnchor theta (DotAnchor _ ra _) = pure $ ra theta
+   radialAnchor theta (DotAnchor _ ra _) = ra theta
 
 instance CardinalAnchor DotAnchor u where
-   north (DotAnchor _ _ c1) = pure $ c1 NORTH
-   south (DotAnchor _ _ c1) = pure $ c1 SOUTH
-   east  (DotAnchor _ _ c1) = pure $ c1 EAST
-   west  (DotAnchor _ _ c1) = pure $ c1 WEST
+   north (DotAnchor _ _ c1) = c1 NORTH
+   south (DotAnchor _ _ c1) = c1 SOUTH
+   east  (DotAnchor _ _ c1) = c1 EAST
+   west  (DotAnchor _ _ c1) = c1 WEST
 
 
 
 instance CardinalAnchor2 DotAnchor u where
-   northeast (DotAnchor _ _ c1) = pure $ c1 NORTH_EAST
-   southeast (DotAnchor _ _ c1) = pure $ c1 SOUTH_EAST
-   southwest (DotAnchor _ _ c1) = pure $ c1 SOUTH_WEST
-   northwest (DotAnchor _ _ c1) = pure $ c1 NORTH_WEST
+   northeast (DotAnchor _ _ c1) = c1 NORTH_EAST
+   southeast (DotAnchor _ _ c1) = c1 SOUTH_EAST
+   southwest (DotAnchor _ _ c1) = c1 SOUTH_WEST
+   northwest (DotAnchor _ _ c1) = c1 NORTH_WEST
 
 
 radialCardinal :: Floating u => u -> Point2 u -> Cardinal -> Point2 u

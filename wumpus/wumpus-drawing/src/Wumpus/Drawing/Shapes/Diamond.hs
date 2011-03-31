@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -53,6 +54,8 @@ data Diamond u = Diamond
       , dia_hh    :: !u
       }
 
+type instance DUnit (Diamond u) = u
+
 type DDiamond = Diamond Double
 
 
@@ -67,17 +70,17 @@ mapCTM f = (\s i -> s { dia_ctm = f i }) <*> dia_ctm
 
 
 
-instance InterpretUnit u => CtxRotate Diamond u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Diamond u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Diamond u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Diamond u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Diamond u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Diamond u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Diamond u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance Num u => Translate (Diamond u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -86,7 +89,7 @@ instance InterpretUnit u => CtxTranslate Diamond u where
 -- | 'runDisplaceCenter' : @ ( half_width 
 --                           * half_height -> Vec ) * diamond -> Point @
 --
-runDisplaceCenter :: InterpretUnit u
+runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> Vec2 u) -> Diamond u -> Anchor u
 runDisplaceCenter fn (Diamond { dia_ctm = ctm
                               , dia_hw = hw
@@ -94,37 +97,37 @@ runDisplaceCenter fn (Diamond { dia_ctm = ctm
    projectFromCtr (fn hw hh) ctm
 
 
-instance InterpretUnit u => CenterAnchor Diamond u where
+instance (Real u, Floating u) => CenterAnchor Diamond u where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance InterpretUnit u => ApexAnchor Diamond u where
+instance (Real u, Floating u) => ApexAnchor Diamond u where
   apex = runDisplaceCenter $ \_  hh -> V2 0 hh
 
-instance (Fractional u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     SideMidpointAnchor Diamond u where
   sideMidpoint n a = step (n `mod` 4) 
     where
-      step 1 = midpoint <$> north a <*> west a
-      step 2 = midpoint <$> west a  <*> south a
-      step 3 = midpoint <$> south a <*> east a
-      step _ = midpoint <$> east a  <*> north a
+      step 1 = midpoint (north a) (west a)
+      step 2 = midpoint (west a)  (south a)
+      step 3 = midpoint (south a) (east a)
+      step _ = midpoint (east a)  (north a)
 
 
-instance InterpretUnit u => CardinalAnchor Diamond u where
+instance (Real u, Floating u) => CardinalAnchor Diamond u where
   north = apex
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
-instance (Fractional u, InterpretUnit u) => CardinalAnchor2 Diamond u where
-  northeast x = midpoint <$> north x <*> east x
-  southeast x = midpoint <$> south x <*> east x
-  southwest x = midpoint <$> south x <*> west x
-  northwest x = midpoint <$> north x <*> west x
+instance (Real u, Floating u) => CardinalAnchor2 Diamond u where
+  northeast x = midpoint (north x) (east x)
+  southeast x = midpoint (south x) (east x)
+  southwest x = midpoint (south x) (west x)
+  northwest x = midpoint (north x) (west x)
 
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
       RadialAnchor Diamond u where
   radialAnchor ang = runDisplaceCenter $ \hw hh -> 
                      diamondRadialVector hw hh ang
@@ -155,8 +158,7 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
               => u -> u -> LocThetaQuery u (Path u)
 mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
-    pointSize >>= \sz -> 
-    let ps = map (ctxRotateAbout sz theta ctr) $ diamondCoordPath hw hh ctr
+    let ps = map (rotateAbout theta ctr) $ diamondCoordPath hw hh ctr
     in roundCornerShapePath ps
 
 

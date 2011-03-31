@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -51,6 +52,8 @@ data Triangle u = Triangle
       , tri_height      :: !u
       , tri_syn_props   :: SyntheticProps u
       }
+
+type instance DUnit (Triangle u) = u
       
 data SyntheticProps u = SyntheticProps
       { tri_hmajor      :: u           
@@ -58,6 +61,8 @@ data SyntheticProps u = SyntheticProps
       , tri_base_ang    :: Radian
       , tri_apex_ang    :: Radian
       }
+
+type instance DUnit (SyntheticProps u) = u
 
 
 type DTriangle = Triangle Double
@@ -77,18 +82,17 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Triangle u -> Triangle u
 mapCTM f = (\s i -> s { tri_ctm = f i }) <*> tri_ctm
 
 
-
-instance InterpretUnit u => CtxRotate Triangle u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Triangle u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Triangle u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Triangle u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Triangle u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Triangle u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Triangle u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (Triangle u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -98,7 +102,7 @@ instance InterpretUnit u => CtxTranslate Triangle u where
 --                           * height_major 
 --                           * base_ang -> Vec ) * traingle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, InterpretUnit u)
+runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Anchor u
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
                                , tri_base_width = bw
@@ -111,17 +115,17 @@ runDisplaceCenter fn (Triangle { tri_ctm        = ctm
 
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CenterAnchor Triangle u where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     ApexAnchor Triangle u where
   apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     BottomCornerAnchor Triangle u where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
   bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
@@ -130,7 +134,7 @@ instance (Real u, Floating u, InterpretUnit u) =>
 -- east and west should be parallel to the centroid.
 --
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CardinalAnchor Triangle u where
   north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
@@ -138,13 +142,13 @@ instance (Real u, Floating u, InterpretUnit u) =>
   west  = runDisplaceCenter $ \hbw hmin _    ang  -> findWest hbw hmin ang
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     SideMidpointAnchor Triangle u where
   sideMidpoint n a = step (n `mod` 3) 
     where
-      step 1 = midpoint <$> apex a              <*> bottomLeftCorner a
-      step 2 = midpoint <$> bottomLeftCorner a  <*> bottomRightCorner a
-      step _ = midpoint <$> bottomRightCorner a <*> apex a
+      step 1 = midpoint (apex a)              (bottomLeftCorner a)
+      step 2 = midpoint (bottomLeftCorner a)  (bottomRightCorner a)
+      step _ = midpoint (bottomRightCorner a) (apex a)
 
 
 findEast :: Fractional u => u -> u -> Radian -> Vec2 u
@@ -158,7 +162,7 @@ findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0
 
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CardinalAnchor2 Triangle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -167,7 +171,7 @@ instance (Real u, Floating u, InterpretUnit u) =>
 
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     RadialAnchor Triangle u where
   radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
                          triangleRadialVector hbw hmin hmaj theta
@@ -220,9 +224,8 @@ synthesizeProps bw h =
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
                => u -> u -> u -> LocThetaQuery u (Path u)
 mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
-    pointSize >>= \sz -> 
     let xs = trianglePath bw hminor hmajor ctr
-    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs
+    in roundCornerShapePath $ map (rotateAbout theta ctr) xs
 
 
 

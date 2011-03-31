@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -50,13 +51,16 @@ data Semicircle u = Semicircle
       , sc_syn_props    :: SyntheticProps u
       }
 
-
+type instance DUnit (Semicircle u) = u
 
 -- | rect_width is the width of the (greater) enclosing rectangle.
 data SyntheticProps u = SyntheticProps
       { sc_ctr_minor  :: u
       , sc_ctr_major  :: u
       }
+
+type instance DUnit (SyntheticProps u) = u
+
   
 type DSemicircle = Semicircle Double
 
@@ -75,18 +79,17 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Semicircle u -> Semicircle u
 mapCTM f = (\s i -> s { sc_ctm = f i }) <*> sc_ctm
 
 
-
-instance InterpretUnit u => CtxRotate Semicircle u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Semicircle u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Semicircle u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Semicircle u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Semicircle u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Semicircle u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Semicircle u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (Semicircle u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -96,7 +99,7 @@ instance InterpretUnit u => CtxTranslate Semicircle u where
 --                           * height_minor 
 --                           * height_major -> Vec ) * semicircle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, InterpretUnit u) 
+runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> Vec2 u) -> Semicircle u -> Anchor u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
                                  , sc_radius    = radius
@@ -104,20 +107,20 @@ runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
     projectFromCtr (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CenterAnchor Semicircle u where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     ApexAnchor Semicircle u where
   apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     BottomCornerAnchor Semicircle u where
   bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
   bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CardinalAnchor Semicircle u where
   north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
@@ -134,7 +137,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
     pow2 = (^ (2::Int))
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     CardinalAnchor2 Semicircle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -144,13 +147,13 @@ instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, LengthTolerance u) => 
     RadialAnchor Semicircle u where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
 -- helpers
 
-scRadialVec :: (Real u, Floating u, Ord u, InterpretUnit u, LengthTolerance u)
+scRadialVec :: (Real u, Floating u, Ord u, LengthTolerance u)
             => Radian -> u -> u -> u -> Vec2 u
 scRadialVec theta radius hminor _ = go theta
   where

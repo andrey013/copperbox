@@ -66,10 +66,10 @@ body = do
     atext a3 "+1"
     a4 <- drawi $ (strokedShape $ rectangle 66 30) `at` P2 120 0
     atext a4 "DELAY 0"
-    connWith connline (east a1) (fmap (.+^ hvec 76) $ east a1)
-    connWith connline (east a2) (fmap (.+^ hvec 180) $ east a2)
-    connWith connline (fmap (.+^ vvec 40) $ north a2) (north a2)
-    connWith connline (fmap (.+^ vvec 16) $ north a3) (north a3)  
+    connWith connline (east a1) ((.+^ hvec 76) $ east a1)
+    connWith connline (east a2) ((.+^ hvec 180) $ east a2)
+    connWith connline ((.+^ vvec 40) $ north a2) (north a2)
+    connWith connline ((.+^ vvec 16) $ north a3) (north a3)  
     connWith connaright  (south a3) (east a4)
     connWith connabar (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
@@ -91,7 +91,7 @@ atext :: ( CenterAnchor t u
          , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => t u -> String -> m ()
 atext ancr ss = 
-    draw $ center ancr >>= \pt -> ccTextline ss `at` pt
+    draw $ ccTextline ss `at` (center ancr)
 
 
 ptext :: ( Real u, Floating u, InterpretUnit u

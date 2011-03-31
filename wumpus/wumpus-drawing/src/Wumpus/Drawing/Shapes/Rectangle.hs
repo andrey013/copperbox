@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -51,6 +52,8 @@ data Rectangle u = Rectangle
       }
   deriving (Eq,Ord,Show)
 
+type instance DUnit (Rectangle u) = u
+
 type DRectangle = Rectangle Double
 
 
@@ -65,17 +68,17 @@ mapCTM f = (\s i -> s { rect_ctm = f i }) <*> rect_ctm
 
 
 
-instance InterpretUnit u => CtxRotate Rectangle u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Rectangle u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Rectangle u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Rectangle u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Rectangle u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Rectangle u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Rectangle u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (Rectangle u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 --------------------------------------------------------------------------------
 -- Anchors
@@ -85,7 +88,7 @@ instance InterpretUnit u => CtxTranslate Rectangle u where
 -- | 'runDisplaceCenter' : @ ( half_width
 --                           * half_height -> Vec ) * rectangle -> Point @
 --
-runDisplaceCenter :: (Real u, Floating u, InterpretUnit u) 
+runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> Vec2 u) -> Rectangle u -> Anchor u
 runDisplaceCenter fn (Rectangle { rect_ctm = ctm
                                 , rect_hw  = hw
@@ -93,21 +96,21 @@ runDisplaceCenter fn (Rectangle { rect_ctm = ctm
    projectFromCtr (fn hw hh) ctm
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CenterAnchor Rectangle u where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     TopCornerAnchor Rectangle u where
   topLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
   topRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  hh
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     BottomCornerAnchor Rectangle u where
   bottomLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  (-hh)
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     SideMidpointAnchor Rectangle u where
   sideMidpoint n a = step (n `mod` 4) 
     where
@@ -117,14 +120,14 @@ instance (Real u, Floating u, InterpretUnit u) =>
       step _ = east a
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CardinalAnchor Rectangle u where
   north = runDisplaceCenter $ \_  hh -> V2 0 hh
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     CardinalAnchor2 Rectangle u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -132,7 +135,7 @@ instance (Real u, Floating u, InterpretUnit u) =>
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u, InterpretUnit u) => 
+instance (Real u, Floating u) => 
     RadialAnchor Rectangle u where
   radialAnchor theta = runDisplaceCenter $ \hw hh -> 
                           rectRadialVector hw hh theta
@@ -162,10 +165,9 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 mkRectPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
            => u -> u -> LocThetaQuery u (Path u)
 mkRectPath hw hh = promoteR2 $ \ctr theta -> 
-    pointSize >>= \sz -> 
     let btm_left = displace (-hw) (-hh) ctr
         xs       = rectangleCoordPath (2*hw) (2*hh) btm_left
-    in roundCornerShapePath $ map (ctxRotateAbout sz theta ctr) xs
+    in roundCornerShapePath $ map (rotateAbout theta ctr) xs
     
 
 

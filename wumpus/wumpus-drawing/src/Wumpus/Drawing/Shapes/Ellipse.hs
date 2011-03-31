@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -54,6 +55,8 @@ data Ellipse u = Ellipse
       , ell_ry      :: !u
       }
 
+type instance DUnit (Ellipse u) = u
+
 type DEllipse = Ellipse Double
 
 
@@ -68,17 +71,17 @@ mapCTM :: (ShapeCTM u -> ShapeCTM u) -> Ellipse u -> Ellipse u
 mapCTM f = (\s i -> s { ell_ctm = f i }) <*> ell_ctm
 
 
-instance InterpretUnit u => CtxRotate Ellipse u where
-  ctxRotate sz ang = mapCTM (ctxRotate sz ang)
+instance (Real u, Floating u) => Rotate (Ellipse u) where
+  rotate ang            = mapCTM (rotate ang)
               
-instance InterpretUnit u => CtxRotateAbout Ellipse u where
-  ctxRotateAbout sz ang pt = mapCTM (ctxRotateAbout sz ang pt)
+instance (Real u, Floating u) => RotateAbout (Ellipse u) where
+  rotateAbout ang pt    = mapCTM (rotateAbout ang pt)
 
-instance InterpretUnit u => CtxScale Ellipse u where
-  ctxScale sz sx sy = mapCTM (ctxScale sz sx sy)
+instance Fractional u => Scale (Ellipse u) where
+  scale sx sy           = mapCTM (scale sx sy)
 
-instance InterpretUnit u => CtxTranslate Ellipse u where
-  ctxTranslate sz dx dy = mapCTM (ctxTranslate sz dx dy)
+instance InterpretUnit u => Translate (Ellipse u) where
+  translate dx dy       = mapCTM (translate dx dy)
 
 
 --------------------------------------------------------------------------------
@@ -86,12 +89,12 @@ instance InterpretUnit u => CtxTranslate Ellipse u where
 
 -- Note - this is monadic for Ellipse...
 
-runDisplaceCenter :: InterpretUnit u 
-                  => (u -> u -> Query (Vec2 u)) -> Ellipse u -> Anchor u
-runDisplaceCenter mf (Ellipse { ell_ctm = ctm
+runDisplaceCenter :: (Real u, Floating u)
+                  => (u -> u -> Vec2 u) -> Ellipse u -> Anchor u
+runDisplaceCenter fn (Ellipse { ell_ctm = ctm
                               , ell_rx  = rx
                               , ell_ry  = ry }) = 
-    mf rx ry >>= \v -> projectFromCtr v ctm
+    projectFromCtr (fn rx ry) ctm
 
 
 -- NOTE - the Affine instances provided by Wumpus-Core for Point 
@@ -100,31 +103,28 @@ runDisplaceCenter mf (Ellipse { ell_ctm = ctm
 
 -- | x_radius is the unit length.
 --
-scaleEll :: (Fractional u, InterpretUnit u) 
-         => u -> u -> Vec2 u -> Query (Vec2 u)
-scaleEll rx ry v = pointSize            >>= \sz -> 
-                   normalizeCtx (ry/rx) >>= \rat  -> 
-                   uconvertCtxF v       >>= \(dv :: Vec2 Double) -> 
-                   uconvertCtxF $ ctxScale sz 1 rat dv
+scaleEll :: (Real u, Fractional u)
+         => u -> u -> Vec2 u -> Vec2 u
+scaleEll rx ry v = let rat = realToFrac (ry/rx) in scale 1 rat v
 
 
-instance (InterpretUnit u) => CenterAnchor Ellipse u where
-  center = runDisplaceCenter $ \_ _ -> pure $ V2 0 0
+instance (Real u, Floating u) => CenterAnchor Ellipse u where
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 
-instance (Floating u, InterpretUnit u) => RadialAnchor Ellipse u where
+instance (Real u, Floating u) => RadialAnchor Ellipse u where
   radialAnchor theta = runDisplaceCenter $ \rx ry -> 
                          scaleEll rx ry $ avec theta rx
 
 
-instance (Floating u, InterpretUnit u) => CardinalAnchor Ellipse u where
+instance (Real u, Floating u) => CardinalAnchor Ellipse u where
   north = radialAnchor (0.5*pi)
   south = radialAnchor (1.5*pi)
   east  = radialAnchor  0
   west  = radialAnchor  pi
 
 
-instance (Floating u, InterpretUnit u) => CardinalAnchor2 Ellipse u where
+instance (Real u, Floating u) => CardinalAnchor2 Ellipse u where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -152,8 +152,7 @@ mkEllipse rx ry = promoteR2 $ \ctr theta ->
 mkEllipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
               => u -> u -> LocThetaQuery u (Path u)
 mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
-    (\sz -> let xs = map (ctxRotateAbout sz theta pt) $ bezierEllipse rx ry pt
-            in curvePath xs)
-      <$> pointSize
+    let xs = map (rotateAbout theta pt) $ bezierEllipse rx ry pt
+    in return $ curvePath xs
 
 

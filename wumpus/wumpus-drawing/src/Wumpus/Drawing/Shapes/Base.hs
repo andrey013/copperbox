@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -234,6 +235,9 @@ data ShapeCTM u = ShapeCTM
       }
   deriving (Eq,Ord,Show)
 
+type instance DUnit (ShapeCTM u) = u
+
+
 instance Functor ShapeCTM where
   fmap f = (\s i -> s { ctm_center = fmap f i }) <*> ctm_center
 
@@ -252,41 +256,39 @@ ctmAngle :: ShapeCTM u -> Radian
 ctmAngle = ctm_rotation
 
 
-instance InterpretUnit u => CtxScale ShapeCTM u where
-  ctxScale sz sx sy = (\s x y pt -> s { ctm_scale_x = x*sx
-                                      , ctm_scale_y = y*sy 
-                                      , ctm_center  = ctxScale sz sx sy pt })
-                        <*> ctm_scale_x <*> ctm_scale_y <*> ctm_center
+instance (Fractional u) => Scale (ShapeCTM u) where
+  scale sx sy = (\s x y pt -> s { ctm_scale_x = x*sx
+                                , ctm_scale_y = y*sy 
+                                , ctm_center  = scale sx sy pt })
+                    <*> ctm_scale_x <*> ctm_scale_y <*> ctm_center
 
 
-instance InterpretUnit u => CtxRotate ShapeCTM u where
-  ctxRotate sz ang = (\s i pt -> let ctr = ctxRotate sz ang pt
-                                 in s { ctm_rotation = circularModulo $ i+ang
-                                      , ctm_center   = ctr })
-                      <*> ctm_rotation <*> ctm_center
+instance (Real u, Floating u) => Rotate (ShapeCTM u) where
+  rotate ang = (\s i pt -> let ctr = rotate ang pt
+                           in s { ctm_rotation = circularModulo $ i+ang
+                                , ctm_center   = ctr })
+                    <*> ctm_rotation <*> ctm_center
 
 
-instance InterpretUnit u => CtxRotateAbout ShapeCTM u where
-  ctxRotateAbout sz ang pt = 
+instance (Real u, Floating u) => RotateAbout (ShapeCTM u) where
+  rotateAbout ang pt = 
     (\s ctr i -> s { ctm_rotation = circularModulo $ i+ang
-                   , ctm_center   = ctxRotateAbout sz ang pt ctr })
+                   , ctm_center   = rotateAbout ang pt ctr })
       <*> ctm_center <*> ctm_rotation
 
 
-instance InterpretUnit u => CtxTranslate ShapeCTM u where
-  ctxTranslate sz dx dy = 
-    (\s i -> s { ctm_center = ctxTranslate sz dx dy i })
+instance (Num u) => Translate (ShapeCTM u) where
+  translate dx dy = 
+    (\s i -> s { ctm_center = translate dx dy i })
       <*> ctm_center
 
 
 
-projectFromCtr :: InterpretUnit u => Vec2 u -> ShapeCTM u -> Anchor u
+projectFromCtr :: (Real u, Floating u) => Vec2 u -> ShapeCTM u -> Anchor u
 projectFromCtr v (ShapeCTM { ctm_center   = ctr
                            , ctm_scale_x  = sx
                            , ctm_scale_y  = sy
                            , ctm_rotation = theta }) = 
-     pointSize >>= \sz -> 
-     let v1 = ctxRotate sz theta $ ctxScale sz sx sy $ v 
-     in return $ ctr .+^ v1
+     let v1 = rotate theta $ scale sx sy $ v in ctr .+^ v1
 
 
