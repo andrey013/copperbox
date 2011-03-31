@@ -75,7 +75,7 @@ shape_list =
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font courier . metricsContext 16
 
-rotate05 :: (CtxRotate t u, InterpretUnit u) => Image t u -> Image t u
+rotate05 :: Rotate (t u) => Image t u -> Image t u
 rotate05 = rotate (d2r (5::Double))
 
 -- Extra elaboration...
@@ -83,12 +83,12 @@ rotate05 = rotate (d2r (5::Double))
 voidExtra :: a -> TraceDrawing u ()
 voidExtra _ = return ()
 
--- What to call this one?
+-- What to call flipped at?
 --
 infixr 1 `aat`
 
 aat :: LocImage t u -> Anchor u -> Image t u
-aat img a = a >>= \pt -> img `at` pt
+aat img a = img `at` a
 
 
 
@@ -135,8 +135,8 @@ shapePic :: ( Functor t
             , CardinalAnchor t Double
             , CardinalAnchor2 t Double
             , RadialAnchor t Double
-            , CtxScale t Double
-            , CtxRotate t Double
+            , Scale (t Double)
+            , Rotate (t Double)
             ) 
          => (t Double -> DTraceDrawing a) -> DShape t -> String -> CtxPicture
 shapePic mf sh name = udrawTracing (0::Double) $ do

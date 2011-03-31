@@ -91,8 +91,8 @@ connWith :: ( Real u, Floating u, InterpretUnit u )
          => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
-   p0 <- evalQuery $ south b0
-   p1 <- evalQuery $ projectAnchor north (realToFrac lw) b1
+   let p0 = south b0
+   let p1 = projectAnchor north (realToFrac lw) b1
    drawi $ connect (rightArrow arrh connline) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`

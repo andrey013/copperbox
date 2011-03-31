@@ -43,7 +43,7 @@ circle_drawing :: TraceDrawing Double ()
 circle_drawing = do
     a <- drawi $ localize (strokeFill maroon moccasin) $
           (f1 $ f2 $ f3 $ f4 $ borderedShape $ circle 100) `at` P2 200 200
-    draw $ southeast a `op` filledDisk 3
+    draw $ filledDisk 3 `at` southeast a
     return ()
   where
     f1 = label_above (textline "label-above")
@@ -54,13 +54,3 @@ circle_drawing = do
 strokeFill :: RGBi -> RGBi -> DrawingContextF
 strokeFill s f = stroke_colour s . fill_colour f
 
-
-infixr 1 `op`
-
--- Note - need name for this monadic version of @at@.
---
-op :: Anchor u -> LocImage t u -> Image t u
-op ancr img = ancr >>= \pt -> img `at` pt
-
-
--- Note - maybe LRText should use margins afterall...

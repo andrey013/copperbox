@@ -46,8 +46,7 @@ locImageLabel :: Floating u
               => ((t u) -> Anchor u) -> RectAddress 
               -> LocRectImage t1 u -> LocImage t u -> LocImage t u
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    annotate (obj `at` pt)  (\a -> fn a >>= \a1 -> 
-                                   ignoreAns $ atStartAddr lbl a1 rpos)
+    annotate (obj `at` pt)  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_center_of :: (Floating u, CenterAnchor t u) 

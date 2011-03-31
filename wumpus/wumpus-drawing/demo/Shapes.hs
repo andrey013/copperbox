@@ -39,9 +39,9 @@ shapes = udrawTracing (0::Double) $ do
     --
     draw $ rotateAbout (0.5*pi) tri_ctr  $ (borderedShape $ triangle 20 30)
               `at` tri_ctr
-    redX $ return tri_ctr
+    redX $ tri_ctr
     draw $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
-    redX $ return tri_ctr
+    redX $ tri_ctr
 
 
     draw $ rotateAbout deg45 tri2_ctr $ (borderedShape $ triangle 20 30) 
@@ -55,7 +55,7 @@ shapes = udrawTracing (0::Double) $ do
 
 
 redX :: (Real u, Floating u, InterpretUnit u) => Anchor u -> TraceDrawing u ()
-redX a = localize (stroke_colour red) $ draw $ a >>= \a1 -> markX `at` a1
+redX a = localize (stroke_colour red) $ draw $ markX `at` a
    
 
     -- NOTE - should coordinates even have a center anchor?

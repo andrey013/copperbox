@@ -22,7 +22,7 @@ main = do
     writeSVG "./out/SVGcolours.svg" svg_pic
     --
     let x11_p = runCtxPictureU draw_ctx x11_portrait
-    writeEPS "./out/X11colours.eps" $ dscale 0.75 0.75 x11_p
+    writeEPS "./out/X11colours.eps" $ scale 0.75 0.75 x11_p
     let x11_l = runCtxPictureU draw_ctx x11_landscape
     writeSVG "./out/X11colours.svg" x11_l
 

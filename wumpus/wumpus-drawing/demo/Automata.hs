@@ -48,7 +48,7 @@ automata = drawTracing  $ do
     q2     <- drawi $ below_right_of q0 `op` state "q2"
     q3     <- drawi $ below_right_of q1 `op` stopstate "q3"
 
-    let s0 = left_of q0
+    s0     <- evalQuery $ left_of q0
 
     draw $ label_midway_of SE (textline "0") $ straightconn q0 q1
     draw $ label_midway_of SS (textline "0") $ arrloop (center q1) (north q1) 
@@ -61,12 +61,8 @@ automata = drawTracing  $ do
     return ()
 
 infixr 1 `op`
-
--- Note - need name for this monadic version of @at@.
---
-op :: Anchor u -> LocImage t u -> Image t u
-op ancr img = ancr >>= \pt -> img `at` pt
-
+op :: Query (Point2 u) -> LocImage t u -> Image t u
+op qry a = qry >>= \pt -> a `at` pt
 
 state :: String -> DLocImage Circle
 state ss = 
@@ -87,14 +83,13 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
                 )
              => t1 u -> t2 u -> Image Path u
 straightconn a b =
-    radialConnectorPoints a b >>= \(p0,p1) -> 
-    connect (rightArrow tri45 connline) p0 p1
+    let (p0,p1) = radialConnectorPoints a b
+    in connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
               => Anchor u -> Anchor u -> Image Path u
-astraightconn a b =
-    a >>= \p0 -> b >>= \p1 -> connect (rightArrow tri45 connline) p0 p1
+astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@
@@ -102,8 +97,7 @@ astraightconn a b =
 --
 arrloop :: ( Real u, Floating u, InterpretUnit u, LengthTolerance u) 
         => Anchor u -> Anchor u -> Image Path u
-arrloop a b =
-    a >>= \p0 -> b >>= \p1 -> connect (rightArrow barb45 loop) p0 p1
+arrloop p0 p1 = connect (rightArrow barb45 loop) p0 p1
 
 
 
