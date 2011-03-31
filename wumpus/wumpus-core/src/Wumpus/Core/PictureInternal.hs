@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
@@ -38,9 +39,6 @@ module Wumpus.Core.PictureInternal
 
   , GraphicsState(..)
 
-  , boundaryPicture
-  , boundaryPrimitive
-  , boundaryPath
   , mapLocale
 
   -- * Additional operations
@@ -95,7 +93,7 @@ data Picture = Leaf     Locale  (JoinList Primitive)
              | Picture  Locale  (JoinList Picture)
   deriving (Show)
 
-
+type instance DUnit Picture = Double
 
 -- | Locale = (bounding box * current translation matrix)
 -- 
@@ -162,6 +160,7 @@ data Primitive = PPath    PathProps         PrimPath
                | PClip    PrimPath          Primitive
   deriving (Eq,Show)
 
+type instance DUnit Primitive = Double
 
 
 -- | Set the font /delta/ for SVG rendering. 
@@ -217,6 +216,8 @@ data SvgAttr = SvgAttr
 data PrimPath = PrimPath [PrimPathSegment] PrimCTM
   deriving (Eq,Show)
 
+type instance DUnit PrimPath = Double
+
 
 -- | PrimPathSegment - either a relative cubic Bezier /curve-to/ 
 -- or a relative /line-to/.
@@ -225,6 +226,7 @@ data PrimPathSegment = RelCurveTo  DVec2 DVec2 DVec2
                      | RelLineTo   DVec2
   deriving (Eq,Show)
 
+type instance DUnit PrimPathSegment = Double
 
 
 -- | AbsPathSegment - either a cubic Bezier curve or a line.
@@ -238,6 +240,7 @@ data AbsPathSegment = AbsCurveTo  DPoint2 DPoint2 DPoint2
   deriving (Eq,Show)
 
 
+type instance DUnit AbsPathSegment = Double
 
 
 -- | Label - represented by baseline-left point and text.
@@ -251,6 +254,7 @@ data PrimLabel = PrimLabel
       }
   deriving (Eq,Show)
 
+type instance DUnit PrimLabel = Double
 
 
 -- | Label can be draw with 3 layouts.
@@ -270,6 +274,8 @@ data LabelBody = StdLayout EscapedText
                | KernTextV [KerningChar]
   deriving (Eq,Show)
 
+type instance DUnit LabelBody = Double
+
 
 -- | A Char (possibly escaped) paired with its displacement from 
 -- the previous KerningChar.
@@ -288,6 +294,7 @@ data PrimEllipse = PrimEllipse
       } 
   deriving (Eq,Show)
 
+type instance DUnit PrimEllipse = Double
 
 --
 -- Design note - the CTM unit type is fixed to Double (PS point) 
@@ -402,18 +409,24 @@ instance Format XLink where
 
 --------------------------------------------------------------------------------
 
+instance Boundary Picture where
+  boundary = boundaryPicture
+
 boundaryPicture :: Picture -> BoundingBox Double
 boundaryPicture (Leaf    (bb,_) _)   = bb
 boundaryPicture (Picture (bb,_) _)   = bb
 
 
+instance Boundary Primitive where
+  boundary = boundaryPrimitive
+
 boundaryPrimitive :: Primitive -> BoundingBox Double
-boundaryPrimitive (PPath _ p)      = boundaryPath p
+boundaryPrimitive (PPath _ p)      = boundaryPrimPath p
 boundaryPrimitive (PLabel a l)     = labelBoundary (label_font a) l
 boundaryPrimitive (PEllipse _ e)   = ellipseBoundary e
 boundaryPrimitive (PContext _ a)   = boundaryPrimitive a
 boundaryPrimitive (PSVG _ a)       = boundaryPrimitive a
-boundaryPrimitive (PClip p _)      = boundaryPath p
+boundaryPrimitive (PClip p _)      = boundaryPrimPath p
 boundaryPrimitive (PGroup ones)    = outer $ viewl ones 
   where
     outer (OneL a)     = boundaryPrimitive a
@@ -424,10 +437,12 @@ boundaryPrimitive (PGroup ones)    = outer $ viewl ones
                                (viewl as)
 
 
+instance Boundary PrimPath where
+  boundary = boundaryPrimPath
 
 
-boundaryPath :: PrimPath -> BoundingBox Double
-boundaryPath (PrimPath vs ctm) = 
+boundaryPrimPath :: PrimPath -> BoundingBox Double
+boundaryPrimPath (PrimPath vs ctm) = 
     retraceBoundary (m33 *#) $ step zeroPt (zeroPt,zeroPt) vs
   where
     m33         = matrixRepCTM ctm
@@ -529,30 +544,30 @@ ellipseBoundary (PrimEllipse hw hh ctm) =
 -- update (frame change).
 --
 
-instance DTransform Picture where
-  dtransform mtrx = 
+instance Transform Picture where
+  transform mtrx = 
     mapLocale $ \(bb,xs) -> let cmd = Matrix mtrx
-                            in (dtransform mtrx bb, cmd : xs)
+                            in (transform mtrx bb, cmd : xs)
 
-instance DRotate Picture where
-  drotate theta = 
-    mapLocale $ \(bb,xs) -> (drotate theta bb, Rotate theta:xs)
+instance Rotate Picture where
+  rotate theta = 
+    mapLocale $ \(bb,xs) -> (rotate theta bb, Rotate theta:xs)
 
 
-instance DRotateAbout Picture where
-  drotateAbout theta pt = 
+instance RotateAbout Picture where
+  rotateAbout theta pt = 
     mapLocale $ \(bb,xs) -> let cmd = RotAbout theta pt
-                            in (drotateAbout theta pt bb, cmd : xs)
+                            in (rotateAbout theta pt bb, cmd : xs)
 
-instance DScale Picture where
-  dscale sx sy = 
+instance Scale Picture where
+  scale sx sy = 
     mapLocale $ \(bb,xs) -> let cmd = Scale sx sy
-                            in (dscale sx sy bb, cmd : xs)
+                            in (scale sx sy bb, cmd : xs)
 
-instance DTranslate Picture where
-  dtranslate dx dy = 
+instance Translate Picture where
+  translate dx dy = 
     mapLocale $ \(bb,xs) -> let cmd = Translate dx dy
-                            in (dtranslate dx dy bb, cmd : xs)
+                            in (translate dx dy bb, cmd : xs)
                      
 
 
@@ -570,69 +585,69 @@ mapLocale f (Picture lc ones)  = Picture (f lc) ones
 -- (ShapeCTM is not a real matrix).
 -- 
 
-instance DRotate Primitive where
-  drotate r (PPath a path)   = PPath a    $ rotatePath r path
-  drotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
-  drotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
-  drotate r (PContext a chi) = PContext a $ drotate r chi 
-  drotate r (PSVG a chi)     = PSVG a     $ drotate r chi 
-  drotate r (PGroup xs)      = PGroup     $ fmap (drotate r) xs
-  drotate r (PClip p chi)    = PClip (rotatePath r p) (drotate r chi)
+instance Rotate Primitive where
+  rotate r (PPath a path)   = PPath a    $ rotatePath r path
+  rotate r (PLabel a lbl)   = PLabel a   $ rotateLabel r lbl
+  rotate r (PEllipse a ell) = PEllipse a $ rotateEllipse r ell
+  rotate r (PContext a chi) = PContext a $ rotate r chi 
+  rotate r (PSVG a chi)     = PSVG a     $ rotate r chi 
+  rotate r (PGroup xs)      = PGroup     $ fmap (rotate r) xs
+  rotate r (PClip p chi)    = PClip (rotatePath r p) (rotate r chi)
 
-instance DRotateAbout Primitive where
-  drotateAbout ang p0 (PPath a path)   = 
+instance RotateAbout Primitive where
+  rotateAbout ang p0 (PPath a path)   = 
       PPath a    $ rotateAboutPath ang p0 path
 
-  drotateAbout ang  p0 (PLabel a lbl)   = 
+  rotateAbout ang  p0 (PLabel a lbl)   = 
       PLabel a   $ rotateAboutLabel ang p0 lbl
 
-  drotateAbout ang p0 (PEllipse a ell) = 
+  rotateAbout ang p0 (PEllipse a ell) = 
       PEllipse a $ rotateAboutEllipse ang p0 ell
 
-  drotateAbout ang p0 (PContext a chi) = 
-      PContext a $ drotateAbout ang p0 chi
+  rotateAbout ang p0 (PContext a chi) = 
+      PContext a $ rotateAbout ang p0 chi
 
-  drotateAbout ang p0 (PSVG a chi)     = 
-      PSVG a     $ drotateAbout ang p0 chi
+  rotateAbout ang p0 (PSVG a chi)     = 
+      PSVG a     $ rotateAbout ang p0 chi
 
-  drotateAbout ang p0 (PGroup xs)      = 
-      PGroup     $ fmap (drotateAbout ang p0) xs
+  rotateAbout ang p0 (PGroup xs)      = 
+      PGroup     $ fmap (rotateAbout ang p0) xs
 
-  drotateAbout ang p0 (PClip p chi)    = 
-      PClip (rotateAboutPath ang p0 p) (drotateAbout ang p0 chi)
-
-
-instance DScale Primitive where
-  dscale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
-  dscale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
-  dscale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
-  dscale sx sy (PContext a chi)  = PContext a $ dscale sx sy chi
-  dscale sx sy (PSVG a chi)      = PSVG a     $ dscale sx sy chi
-  dscale sx sy (PGroup xs)       = PGroup     $ fmap (dscale sx sy) xs
-  dscale sx sy (PClip p chi)     = PClip (scalePath sx sy p) (dscale sx sy chi)
+  rotateAbout ang p0 (PClip p chi)    = 
+      PClip (rotateAboutPath ang p0 p) (rotateAbout ang p0 chi)
 
 
-instance DTranslate Primitive where
-  dtranslate dx dy (PPath a path)   = 
+instance Scale Primitive where
+  scale sx sy (PPath a path)    = PPath a    $ scalePath sx sy path
+  scale sx sy (PLabel a lbl)    = PLabel a   $ scaleLabel sx sy lbl
+  scale sx sy (PEllipse a ell)  = PEllipse a $ scaleEllipse sx sy ell
+  scale sx sy (PContext a chi)  = PContext a $ scale sx sy chi
+  scale sx sy (PSVG a chi)      = PSVG a     $ scale sx sy chi
+  scale sx sy (PGroup xs)       = PGroup     $ fmap (scale sx sy) xs
+  scale sx sy (PClip p chi)     = PClip (scalePath sx sy p) (scale sx sy chi)
+
+
+instance Translate Primitive where
+  translate dx dy (PPath a path)   = 
       PPath a    $ translatePath dx dy path
 
-  dtranslate dx dy (PLabel a lbl)   = 
+  translate dx dy (PLabel a lbl)   = 
       PLabel a   $ translateLabel dx dy lbl
 
-  dtranslate dx dy (PEllipse a ell) = 
+  translate dx dy (PEllipse a ell) = 
       PEllipse a $ translateEllipse dx dy ell
 
-  dtranslate dx dy (PContext a chi) = 
-      PContext a $ dtranslate dx dy chi
+  translate dx dy (PContext a chi) = 
+      PContext a $ translate dx dy chi
 
-  dtranslate dx dy (PSVG a chi)     = 
-      PSVG a     $ dtranslate dx dy chi
+  translate dx dy (PSVG a chi)     = 
+      PSVG a     $ translate dx dy chi
 
-  dtranslate dx dy (PGroup xs)      = 
-      PGroup     $ fmap (dtranslate dx dy) xs
+  translate dx dy (PGroup xs)      = 
+      PGroup     $ fmap (translate dx dy) xs
 
-  dtranslate dx dy (PClip p chi)    = 
-      PClip (translatePath dx dy p) (dtranslate dx dy chi)
+  translate dx dy (PClip p chi)    = 
+      PClip (translatePath dx dy p) (translate dx dy chi)
 
 
 --------------------------------------------------------------------------------
@@ -764,7 +779,7 @@ extractRelPath :: PrimPath -> (DPoint2, [PrimPathSegment])
 extractRelPath (PrimPath ss ctm) = (start, usegs)
   where 
     (start,dctm)  = unCTM ctm
-    mtrafo        = dtransform (matrixRepCTM dctm)
+    mtrafo        = transform (matrixRepCTM dctm)
     usegs         = map fn ss
     
     fn (RelCurveTo v1 v2 v3) = RelCurveTo (mtrafo v1) (mtrafo v2) (mtrafo v3)

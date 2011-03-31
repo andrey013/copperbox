@@ -18,7 +18,7 @@ main = do
 
 
 pic1 :: Picture
-pic1 = dscale 2 2 $ frame $ 
+pic1 = scale 2 2 $ frame $ 
     [ fillEllipse blue 10 10  zeroPt
     , fillEllipse red 10 10   (P2 40 40)
     , ztextlabel "Wumpus!"    (P2 40 20)

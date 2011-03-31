@@ -42,7 +42,7 @@ import Wumpus.Core.TrafoInternal
 
 
 svgPageTranslation :: Picture -> Picture
-svgPageTranslation pic = dscale 1 (-1) (trivPic pic)
+svgPageTranslation pic = scale 1 (-1) (trivPic pic)
 
 
 

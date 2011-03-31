@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -75,7 +76,7 @@ data PrimCTM = PrimCTM
   deriving (Eq,Show)
 
 
-
+type instance DUnit PrimCTM = Double
 
 
 -- | For Pictures - Affine transformations are represented as 
@@ -88,6 +89,7 @@ data AffineTrafo = Matrix (Matrix3'3 Double)
                  | Translate Double Double
   deriving (Eq,Show)                 
 
+type instance DUnit AffineTrafo = Double
 
 --------------------------------------------------------------------------------
 -- instances
@@ -157,21 +159,21 @@ translateCTM x1 y1 (PrimCTM dx dy sx sy ang) =
 --
 scaleCTM :: Double -> Double -> PrimCTM -> PrimCTM
 scaleCTM x1 y1 (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = dscale x1 y1 (P2 dx dy) 
+    let P2 x y = scale x1 y1 (P2 dx dy) 
     in PrimCTM x y (x1*sx) (y1*sy) ang
 
 -- | Rotate the CTM.
 --
 rotateCTM :: Radian -> PrimCTM -> PrimCTM
 rotateCTM theta (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = drotate theta (P2 dx dy) 
+    let P2 x y = rotate theta (P2 dx dy) 
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
 -- | RotateAbout the CTM.
 --
 rotateAboutCTM :: Radian -> DPoint2 -> PrimCTM -> PrimCTM
 rotateAboutCTM theta pt (PrimCTM dx dy sx sy ang) = 
-    let P2 x y = drotateAbout theta pt (P2 dx dy)
+    let P2 x y = rotateAbout theta pt (P2 dx dy)
     in PrimCTM x y sx sy (circularModulo $ theta+ang)
 
 

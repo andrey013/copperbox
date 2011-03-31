@@ -51,21 +51,15 @@ description:
   v0.43.0 to v0.50.0:
   .
   * Major change hence the version number jump - the notion of 
-    polymorphic unit has been largely removed (it remains only 
-    for the geometric objects @Point2@, @Vec2@ etc.). The 
-    superficial treatment of units in Wumpus-Core was actually
-    hampering their more substantial treatment in Wumpus-Basic.
-    Certain useful units @em@ and @en@ are contextual on 
+    polymorphic unit has been largely removed from the /Picture/ 
+    objects (it remains the geometric objects @Point2@, @Vec2@ 
+    etc.). Certain useful units @em@ and @en@ are contextual on 
     the \"current point size\", such units cannot be handled in
     Wumpus-Core which has no notion of a \"graphics state\". 
-    To improve Wumpus-Core, all objects apart from the ones
-    in @Core.Geometry@ are now fixed to use Double (representing 
-    a PostScript point) as the unit. This includes the affine
-    transformation classes which have been renamed - it is 
-    expected that a higher-level layer that wants a systematic 
-    treatment of units will have to implement its own affine 
-    classes, so the versions in Wumpus-Core have relinquished  
-    the good names.
+    To improve Wumpus-Core, all Picture objects (those defined 
+    or exported from @Core.Picture@) are now fixed to use Double.
+    Geometric objects (objects defined in @Core.Geometry@, e.g.
+    @Point2@, @Vec2@) are still polymorphic on unit. 
   .  
   * Picture API change. Various function names changed - 
     @lineTo@ becomes @absLineTo@ and @curveTo@ becomes 
@@ -75,12 +69,6 @@ description:
     @curvedPath@ becomes @curvedPrimPath@. @xlink@ becomes 
     @xlinkPrim@.
   . 
-  * The @Boundary@ type class has been removed from the 
-    BoundingBox module. The class was not suitable for proper use 
-    with units, none polymorphic replacements have been added - 
-    @boundaryPicture@ for @Picture@, @boundaryPrimitive@ for 
-    @Primitive@.   
-  .
   * API change - PtSize data type replaced by AfmUnit for font 
     sizes.
   .
@@ -89,12 +77,7 @@ description:
     This should make them more useful. The type of the function 
     @clip@ in @Core.Picture@ has likewise changed.
   .
-  * API change - the @StrokeAttr@ dataype now represents 
-    line_width and miter_limit with the @PsPoint@ type rather than 
-    a Double. These sizes represent the same measurement (Double 
-    implicitly means PostScript point to Wumpus), but using 
-    @PsPoint@ is more exact.
-  .
+
   v0.42.1 to v0.43.0:
   .
   * API change - the function @bezierCircle@ in @Core.Geometry@

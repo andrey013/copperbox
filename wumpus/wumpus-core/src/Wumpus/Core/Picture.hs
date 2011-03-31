@@ -141,9 +141,9 @@ frame :: [Primitive] -> Picture
 frame []     = error "Wumpus.Core.Picture.frame - empty list"
 frame (p:ps) = let (bb,ones) = step p ps in Leaf (bb,[]) ones 
   where
-    step a []     = (boundaryPrimitive a, one a)
+    step a []     = (boundary a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundaryPrimitive a `boundaryUnion` bb', cons a rest )
+                    in ( boundary a `boundaryUnion` bb', cons a rest )
 
 
 
@@ -156,9 +156,9 @@ multi :: [Picture] -> Picture
 multi []      = error "Wumpus.Core.Picture.multi - empty list"
 multi (p:ps)  = let (bb,ones) = step p ps in Picture (bb,[]) ones 
   where
-    step a []     = (boundaryPicture a, one a)
+    step a []     = (boundary a, one a)
     step a (x:xs) = let (bb', rest) = step x xs
-                    in ( boundaryPicture a `boundaryUnion` bb', cons a rest )
+                    in ( boundary a `boundaryUnion` bb', cons a rest )
 
 
 -- | Update the font /delta/ attributes for SVG output.
@@ -765,7 +765,7 @@ infixr 6 `picBeside`, `picOver`
 picOver :: Picture -> Picture -> Picture
 a `picOver` b = Picture (bb,[]) (join (one b) (one a))   
   where
-    bb = boundaryPicture a `boundaryUnion` boundaryPicture b
+    bb = boundary a `boundaryUnion` boundary b
 
 -- NOTE - picOver - draw b, put b first in the list, so it draws 
 -- first in the output (this is also @behind@ in the Z-Order).
@@ -776,7 +776,7 @@ a `picOver` b = Picture (bb,[]) (join (one b) (one a))
 --  Move a picture by the supplied vector. 
 --
 picMoveBy :: Picture -> DVec2 -> Picture
-p `picMoveBy` (V2 x y) = dtranslate x y p 
+p `picMoveBy` (V2 x y) = translate x y p 
 
 -- | 'picBeside' : @ picture * picture -> Picture @
 --
@@ -786,8 +786,8 @@ p `picMoveBy` (V2 x y) = dtranslate x y p
 picBeside :: Picture -> Picture -> Picture
 a `picBeside` b = a `picOver` (b `picMoveBy` v) 
   where 
-    (P2 x1 _) = ur_corner $ boundaryPicture a
-    (P2 x2 _) = ll_corner $ boundaryPicture b 
+    (P2 x1 _) = ur_corner $ boundary a
+    (P2 x2 _) = ll_corner $ boundary b 
     v         = hvec $ x1 - x2 
 
 --------------------------------------------------------------------------------
@@ -806,7 +806,7 @@ printPicture pic = putStrLn (show $ format pic) >> putStrLn []
 --
 illustrateBounds :: RGBi -> Picture -> Picture
 illustrateBounds rgb p =
-    p `picOver` (frame $ boundsPrims rgb (boundaryPicture p) $ []) 
+    p `picOver` (frame $ boundsPrims rgb (boundary p) $ []) 
 
 
 -- | 'illustrateBoundsPrim' : @ bbox_rgb * primitive -> Picture @
@@ -818,7 +818,7 @@ illustrateBounds rgb p =
 -- 
 illustrateBoundsPrim :: RGBi -> Primitive -> Picture
 illustrateBoundsPrim rgb p = 
-    frame $ boundsPrims rgb (boundaryPrimitive p) $ [p]
+    frame $ boundsPrims rgb (boundary p) $ [p]
 
 
 

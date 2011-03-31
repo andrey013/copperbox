@@ -11,7 +11,7 @@ main = writeEPS "./out/WorldFrame.eps" world_frame >>
        writeSVG "./out/WorldFrame.svg" world_frame
 
 world_frame :: Picture
-world_frame = dscale 0.75 0.75 $ 
+world_frame = scale 0.75 0.75 $ 
     frame [ ogin, btm_right, top_left, top_right
           , x_axis, y_axis, line1
           ]

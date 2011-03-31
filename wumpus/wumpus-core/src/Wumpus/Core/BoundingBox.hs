@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -29,6 +30,8 @@ module Wumpus.Core.BoundingBox
     BoundingBox(..)
   , DBoundingBox
 
+  -- * Type class
+  , Boundary(..)
   
   -- * Constructors
   , boundingBox
@@ -74,7 +77,7 @@ data BoundingBox u = BBox
 
 type DBoundingBox = BoundingBox Double
 
-
+type instance DUnit (BoundingBox u) = u
 
 --------------------------------------------------------------------------------
 -- instances
@@ -90,38 +93,44 @@ instance Format u => Format (BoundingBox u) where
 --------------------------------------------------------------------------------
 -- Transform...
 
-pointTransform :: (DPoint2 -> DPoint2) -> BoundingBox Double -> BoundingBox Double
+-- | Helper for transformation.
+--
+pointTransform :: (Num u, Ord u) 
+               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
 pointTransform fn bb = 
     traceBoundary $ map fn $ [bl,br,tr,tl]
   where 
     (bl,br,tr,tl) = boundaryCorners bb
 
 
-pointTrans2 :: (Num u, Ord u) 
-            => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-pointTrans2 fn bb = 
-    traceBoundary $ map fn $ [bl,br,tr,tl]
-  where 
-    (bl,br,tr,tl) = boundaryCorners bb
+
+instance (Num u, Ord u) => Transform (BoundingBox u) where
+  transform mtrx = pointTransform  (mtrx *#)
+
+instance (Real u, Floating u, Ord u) => Rotate (BoundingBox u) where
+  rotate theta = pointTransform (rotate theta)
+
+instance (Real u, Floating u, Ord u) => RotateAbout (BoundingBox u) where
+  rotateAbout theta pt = pointTransform (rotateAbout theta pt)
+
+instance (Fractional u, Ord u) => Scale (BoundingBox u) where
+  scale sx sy = pointTransform (scale sx sy)
+
+instance (Num u, Ord u) => Translate (BoundingBox u) where
+  translate dx dy = pointTransform (translate dx dy)
+
+--------------------------------------------------------------------------------
+-- Boundary class
+
+-- | Type class extracting the bounding box of an object - 
+-- Picture, Path etc.
+--
+class Boundary t where
+  boundary :: u ~ DUnit t => t -> BoundingBox u 
 
 
-
-instance DTransform (BoundingBox Double) where
-  dtransform mtrx = pointTransform  (mtrx *#)
-
-instance DRotate (BoundingBox Double) where
-  drotate theta = pointTransform (drotate theta)
-
-instance DRotateAbout (BoundingBox Double) where
-  drotateAbout theta pt = pointTrans2 (drotateAbout theta pt)
-
-instance DScale (BoundingBox Double) where
-  dscale sx sy = pointTransform (dscale sx sy)
-
-instance DTranslate (BoundingBox Double) where
-  dtranslate dx dy = pointTransform (dtranslate dx dy)
-
-
+instance Boundary (BoundingBox u) where
+  boundary = id
 
 --------------------------------------------------------------------------------
 

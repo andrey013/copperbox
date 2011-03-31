@@ -39,16 +39,16 @@ pic1 = cb `picOver` ell `picOver` xy_frame "no transform"
 pic2 :: Picture
 pic2 = cb `picOver` ell `picOver` xy_frame "rotate 30deg"
   where
-     ell  = mkRedEllipse (drotate ang) 20 10 pt
-     cb   = drotate ang $ crossbar 20 10 pt
+     ell  = mkRedEllipse (rotate ang) 20 10 pt
+     cb   = rotate ang $ crossbar 20 10 pt
      pt   = P2 70 10
      ang  = d2r (30::Double)
 
 pic3 :: Picture
 pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
-     ell  = mkRedEllipse (drotateAbout ang pto) 20 10 pt
-     cb   = drotateAbout ang pto $ crossbar 20 10 pt
+     ell  = mkRedEllipse (rotateAbout ang pto) 20 10 pt
+     cb   = rotateAbout ang pto $ crossbar 20 10 pt
      pt   = P2 70 10
      pto  = P2 60 0 `asTypeOf` dpt
      ang  = d2r (30::Double)
@@ -57,15 +57,15 @@ pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
 pic4 :: Picture
 pic4 = cb `picOver` ell `picOver` xy_frame "scale 1 2"
   where
-     ell  = mkRedEllipse (dscale 1 2) 20 10 pt
-     cb   = dscale 1 2 $ crossbar 20 10 pt
+     ell  = mkRedEllipse (scale 1 2) 20 10 pt
+     cb   = scale 1 2 $ crossbar 20 10 pt
      pt   = P2 70 10
 
 pic5 :: Picture
 pic5 = cb `picOver` ell `picOver` xy_frame "translate -70 -10"
   where
-     ell  = mkRedEllipse (dtranslate (-70) (-10)) 20 10 pt
-     cb   = dtranslate (-70) (-10) $ crossbar 20 10 pt
+     ell  = mkRedEllipse (translate (-70) (-10)) 20 10 pt
+     cb   = translate (-70) (-10) $ crossbar 20 10 pt
      pt   = P2 70 10
 
 

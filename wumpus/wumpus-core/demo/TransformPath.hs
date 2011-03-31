@@ -37,8 +37,8 @@ pic1 = pth `picOver` ch `picOver` xy_frame "no transform"
 pic2 :: Picture
 pic2 = pth `picOver` ch `picOver` xy_frame "rotate 30deg"
   where
-     pth  = mkBlackPath (drotate ang) pt
-     ch   = drotate ang $ zcrosshair pt
+     pth  = mkBlackPath (rotate ang) pt
+     ch   = rotate ang $ zcrosshair pt
      pt   = P2 70 10
      ang  = d2r (30::Double)
 
@@ -46,8 +46,8 @@ pic2 = pth `picOver` ch `picOver` xy_frame "rotate 30deg"
 pic3 :: Picture
 pic3 = pth `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
   where
-     pth  = mkBlackPath (drotateAbout ang pto) pt
-     ch   = drotateAbout ang pto $ zcrosshair pt
+     pth  = mkBlackPath (rotateAbout ang pto) pt
+     ch   = rotateAbout ang pto $ zcrosshair pt
      pt   = P2 70 10
      pto  = P2 60 0 `asTypeOf` dpt
      ang  = d2r (30::Double)
@@ -56,15 +56,15 @@ pic3 = pth `picOver` ch `picOver` xy_frame "rotateAbout (60,0) 30deg"
 pic4 :: Picture
 pic4 = pth `picOver` ch `picOver` xy_frame "scale 1 2"
   where
-     pth  = mkBlackPath (dscale 1 2) pt
-     ch   = dscale 1 2 $ zcrosshair pt
+     pth  = mkBlackPath (scale 1 2) pt
+     ch   = scale 1 2 $ zcrosshair pt
      pt   = P2 70 10
 
 pic5 :: Picture
 pic5 = pth `picOver` ch `picOver` xy_frame "translate -70 -10"
   where
-     pth  = mkBlackPath (dtranslate (-70) (-10)) pt
-     ch   = dtranslate (-70) (-10) $ zcrosshair pt
+     pth  = mkBlackPath (translate (-70) (-10)) pt
+     ch   = translate (-70) (-10) $ zcrosshair pt
      pt   = P2 70 10
 
 

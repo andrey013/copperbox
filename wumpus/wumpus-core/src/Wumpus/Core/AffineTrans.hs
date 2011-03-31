@@ -1,6 +1,7 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
-
+{-# LANGUAGE UndecidableInstances       #-}
 
 ------------------------------------------------------------------------------
 -- |
@@ -68,12 +69,35 @@
 module Wumpus.Core.AffineTrans
   ( 
   -- * Type classes
-    DTransform(..)
-  , DRotate(..)
-  , DRotateAbout(..)
-  , DScale(..)
-  , DTranslate(..)
+    Transform(..)
+  , Rotate(..)
+  , RotateAbout(..)
+  , Scale(..)
+  , Translate(..)
 
+  -- * Common rotations
+  , rotate30
+  , rotate30About
+  , rotate45
+  , rotate45About
+  , rotate60
+  , rotate60About
+  , rotate90
+  , rotate90About
+  , rotate120
+  , rotate120About
+  
+  -- * Common scalings
+  , uniformScale
+  , reflectX
+  , reflectY
+
+  -- * Translate by a vector
+  , translateBy
+  
+  -- * Reflections in supplied plane rather than about the origin
+  , reflectXPlane
+  , reflectYPlane   
 
   ) where
 
@@ -84,57 +108,60 @@ import Wumpus.Core.Geometry
 --------------------------------------------------------------------------------
 -- Affine transformations 
 
+--
+-- Design Note 
+--
+-- Perhaps the Transform class is not generally useful in the
+-- presence of units.
+-- 
+
+
 -- | Apply a matrix transformation directly.
 --
-class DTransform t where
-  dtransform :: DMatrix3'3 -> t -> t
+class Transform t where
+  transform :: u ~ DUnit t => Matrix3'3 u -> t -> t
 
 
-instance DTransform () where
-  dtransform _ = id
+instance Transform a => Transform (Maybe a) where
+  transform = fmap . transform
 
-instance DTransform a => DTransform (Maybe a) where
-  dtransform = fmap . dtransform
-
-instance (DTransform a, DTransform b) => 
-    DTransform (a,b)  where
-  dtransform mtrx (a,b) = (dtransform mtrx a, dtransform mtrx b)
+instance (u ~ DUnit a, u ~ DUnit b, Transform a, Transform b) => 
+    Transform (a,b)  where
+  transform mtrx (a,b) = (transform mtrx a, transform mtrx b)
 
 
-instance DTransform (Point2 Double) where
-  dtransform ctm = (ctm *#)
+instance Num u => Transform (Point2 u) where
+  transform ctm = (ctm *#)
 
-instance DTransform (Vec2 Double) where
-  dtransform ctm = (ctm *#)
+instance Num u => Transform (Vec2 u) where
+  transform ctm = (ctm *#)
 
 
 --------------------------------------------------------------------------------
 
 -- | Type class for rotation.
 -- 
-class DRotate t where
-  drotate :: Radian -> t -> t
-
-instance DRotate () where
-  drotate _ = id
-
-instance DRotate a => DRotate (Maybe a) where
-  drotate = fmap . drotate
+class Rotate t where
+  rotate :: Radian -> t -> t
 
 
-instance (DRotate a, DRotate b) => DRotate (a,b)  where
-  drotate ang (a,b) = (drotate ang a, drotate ang b)
+instance Rotate a => Rotate (Maybe a) where
+  rotate = fmap . rotate
 
 
-instance DRotate (Point2 Double) where
-  drotate ang pt = P2 x y 
+instance (Rotate a, Rotate b) => Rotate (a,b)  where
+  rotate ang (a,b) = (rotate ang a, rotate ang b)
+
+
+instance (Real u, Floating u) => Rotate (Point2 u) where
+  rotate ang pt = P2 x y 
     where
       v        = pvec zeroPt pt
       (V2 x y) = avec (ang + vdirection v) $ vlength v
 
 
-instance DRotate (Vec2 Double) where
-  drotate ang v = avec (ang + vdirection v) $ vlength v
+instance (Real u, Floating u) => Rotate (Vec2 u) where
+  rotate ang v = avec (ang + vdirection v) $ vlength v
 
 --
 --
@@ -144,29 +171,27 @@ instance DRotate (Vec2 Double) where
 -- Note - the point is a @DPoint2@ - i.e. it has PostScript points
 -- for x and y-units.
 --
-class DRotateAbout t where
-  drotateAbout :: Radian -> DPoint2 -> t -> t
+class RotateAbout t where
+  rotateAbout :: u ~ DUnit t => Radian -> Point2 u -> t -> t
 
 
-instance DRotateAbout () where
-  drotateAbout _ _ = id
-
-instance DRotateAbout a => DRotateAbout (Maybe a) where
-  drotateAbout ang pt = fmap (drotateAbout ang pt)
+instance RotateAbout a => RotateAbout (Maybe a) where
+  rotateAbout ang pt = fmap (rotateAbout ang pt)
 
 
-instance (DRotateAbout a, DRotateAbout b) => DRotateAbout (a,b) where
-  drotateAbout ang pt (a,b) = (drotateAbout ang pt a, drotateAbout ang pt b)
+instance (u ~ DUnit a, u ~ DUnit b, RotateAbout a, RotateAbout b) => 
+    RotateAbout (a,b) where
+  rotateAbout ang pt (a,b) = (rotateAbout ang pt a, rotateAbout ang pt b)
 
-instance DRotateAbout (Point2 Double) where
-  drotateAbout ang (P2 ox oy) = 
-    dtranslate ox oy . drotate ang . dtranslate (-ox) (-oy) 
+instance (Real u, Floating u) => RotateAbout (Point2 u) where
+  rotateAbout ang (P2 ox oy) = 
+    translate ox oy . rotate ang . translate (-ox) (-oy) 
 
 
 
-instance DRotateAbout (Vec2 Double) where
-  drotateAbout ang (P2 ox oy) = 
-    dtranslate ox oy . drotate ang . dtranslate (-ox) (-oy) 
+instance (Real u, Floating u) => RotateAbout (Vec2 u) where
+  rotateAbout ang (P2 ox oy) = 
+    translate ox oy . rotate ang . translate (-ox) (-oy) 
 
   
 --------------------------------------------------------------------------------
@@ -174,46 +199,141 @@ instance DRotateAbout (Vec2 Double) where
 
 -- | Type class for scaling.
 --
-class DScale t where
-  dscale :: Double -> Double -> t -> t
+class Scale t where
+  scale :: Double -> Double -> t -> t
 
 
-instance DScale () where
-  dscale _ _ = id
+instance Scale a => Scale (Maybe a) where
+  scale sx sy = fmap (scale sx sy)
 
-instance DScale a => DScale (Maybe a) where
-  dscale sx sy = fmap (dscale sx sy)
+instance (Scale a, Scale b) => Scale (a,b) where
+  scale sx sy (a,b) = (scale sx sy a, scale sx sy b)
 
-instance (DScale a, DScale b) => DScale (a,b) where
-  dscale sx sy (a,b) = (dscale sx sy a, dscale sx sy b)
+instance Fractional u => Scale (Point2 u) where
+  scale sx sy (P2 x y) = P2 (x * realToFrac sx) (y * realToFrac sy)
 
-instance DScale (Point2 Double) where
-  dscale sx sy (P2 x y) = P2 (x * sx) (y * sy)
-
-instance DScale (Vec2 Double) where
-  dscale sx sy (V2 x y) = V2 (x * sx) (y * sy)
+instance Fractional u => Scale (Vec2 u) where
+  scale sx sy (V2 x y) = V2 (x * realToFrac sx) (y * realToFrac sy)
 
 --------------------------------------------------------------------------------
 -- Translate
 
 -- | Type class for translation.
 --
-class DTranslate t where
-  dtranslate :: Double -> Double -> t -> t
+class Translate t where
+  translate :: u ~ DUnit t => u -> u -> t -> t
 
-instance DTranslate a => DTranslate (Maybe a) where
-  dtranslate dx dy = fmap (dtranslate dx dy)
+instance Translate a => Translate (Maybe a) where
+  translate dx dy = fmap (translate dx dy)
 
-instance (DTranslate a, DTranslate b) => 
-    DTranslate (a,b) where
-  dtranslate dx dy (a,b) = (dtranslate dx dy a, dtranslate dx dy b)
+instance (u ~ DUnit a, u ~ DUnit b, Translate a, Translate b) => 
+    Translate (a,b) where
+  translate dx dy (a,b) = (translate dx dy a, translate dx dy b)
 
-instance DTranslate (Point2 Double) where
-  dtranslate dx dy (P2 x y) = P2 (x + dx) (y + dy)
+instance Num u => Translate (Point2 u) where
+  translate dx dy (P2 x y) = P2 (x + dx) (y + dy)
 
 -- | Vectors do not respond to translation.
 --
-instance DTranslate (Vec2 Double) where
-  dtranslate _ _ v0 = v0
+instance Translate (Vec2 u) where
+  translate _ _ v0 = v0
 
 
+
+-------------------------------------------------------------------------------- 
+-- Common rotations
+
+
+-- | Rotate by 30 degrees about the origin. 
+--
+rotate30 :: Rotate t => t -> t 
+rotate30 = rotate (pi/6) 
+
+-- | Rotate by 30 degrees about the supplied point.
+--
+rotate30About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate30About = rotateAbout (pi/6)
+
+-- | Rotate by 45 degrees about the origin. 
+--
+rotate45 :: Rotate t => t -> t 
+rotate45 = rotate (pi/4) 
+
+-- | Rotate by 45 degrees about the supplied point.
+--
+rotate45About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate45About = rotateAbout (pi/4)
+
+-- | Rotate by 60 degrees about the origin. 
+--
+rotate60 :: Rotate t => t -> t 
+rotate60 = rotate (2*pi/3) 
+
+-- | Rotate by 60 degrees about the supplied point.
+--
+rotate60About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate60About = rotateAbout (2*pi/3)
+
+-- | Rotate by 90 degrees about the origin. 
+--
+rotate90 :: Rotate t => t -> t 
+rotate90 = rotate (pi/2) 
+
+-- | Rotate by 90 degrees about the supplied point.
+--
+rotate90About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate90About = rotateAbout (pi/2)
+
+-- | Rotate by 120 degrees about the origin. 
+--
+rotate120 :: Rotate t => t -> t 
+rotate120 = rotate (4*pi/3) 
+
+-- | Rotate by 120 degrees about the supplied point.
+--
+rotate120About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
+rotate120About = rotateAbout (4*pi/3)
+
+
+
+--------------------------------------------------------------------------------
+-- Common scalings
+
+-- | Scale both x and y dimensions by the same amount.
+--
+uniformScale :: Scale t => Double -> t -> t 
+uniformScale a = scale a a 
+
+-- | Reflect in the X-plane about the origin.
+--
+reflectX :: Scale t => t -> t
+reflectX = scale (-1) 1
+
+-- | Reflect in the Y-plane about the origin.
+--
+reflectY :: Scale t => t -> t
+reflectY = scale 1 (-1)
+
+--------------------------------------------------------------------------------
+-- Translations
+
+-- | Translate by the x and y components of a vector.
+--
+translateBy :: (Translate t, DUnit t ~ u) => Vec2 u -> t -> t 
+translateBy (V2 x y) = translate x y
+
+
+--------------------------------------------------------------------------------
+-- Translation and scaling
+
+-- | Reflect in the X plane that intersects the supplied point. 
+--
+reflectXPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectXPlane (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
+
+-- | Reflect in the Y plane that intersects the supplied point.
+--
+reflectYPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectYPlane (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)

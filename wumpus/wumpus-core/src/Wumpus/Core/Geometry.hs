@@ -26,9 +26,11 @@
 module Wumpus.Core.Geometry
   ( 
 
-  
+    -- * Type family 
+    DUnit
+
   -- * Data types
-    Vec2(..)
+  , Vec2(..)
   , DVec2
   , Point2(..)
   , DPoint2
@@ -95,6 +97,23 @@ import Data.VectorSpace
 
 
 --------------------------------------------------------------------------------
+
+-- | Some unit of dimension usually Double.
+--
+-- This very useful for reducing the kind of type classes to *.
+-- 
+-- Then constraints on the Unit type can be declared on the 
+-- instances rather than in the class declaration.
+-- 
+type family DUnit a :: *
+
+
+-- Not exported - thanks to Max Bollingbroke.
+--
+type family   GuardEq a b :: *
+type instance GuardEq a a = a
+
+
 
 -- Datatypes 
 
@@ -171,6 +190,17 @@ type DMatrix3'3 = Matrix3'3 Double
 -- is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
+
+
+--------------------------------------------------------------------------------
+-- Family instances
+
+type instance DUnit (Point2 u)      = u
+type instance DUnit (Vec2 u)        = u
+type instance DUnit (Matrix3'3 u)   = u
+
+type instance DUnit (Maybe a)       = DUnit a
+type instance DUnit (a,b)           = GuardEq (DUnit a) (DUnit b)
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
