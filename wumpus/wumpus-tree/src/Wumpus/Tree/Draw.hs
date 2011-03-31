@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -32,7 +31,7 @@ import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
+import Control.Applicative
 import Control.Monad
 import qualified Data.IntMap as IntMap
 import Data.Tree hiding ( drawTree )
@@ -40,13 +39,13 @@ import Data.Tree hiding ( drawTree )
 
 
 
-drawTree :: (Real u, Floating u, FromPtSize u) 
+drawTree :: (Real u, Floating u, InterpretUnit u) 
           => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
 drawTree annos tree = drawStep annos radialConns tree >> return ()
 
 
 
-drawFamilyTree :: (Real u, Floating u, FromPtSize u) 
+drawFamilyTree :: (Real u, Floating u, InterpretUnit u) 
           => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
 drawFamilyTree annos tree = drawStep annos familyConn tree >> return ()
 
@@ -70,22 +69,23 @@ drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
 
 
 
-radialConns :: ( Real u, Floating u
-               , CenterAnchor a, RadialAnchor a, u ~ DUnit a ) 
-            => a -> [a] -> Graphic u
-radialConns a []            = emptyLocGraphic `at` center a
-radialConns a (x:xs)        = oconcat (connector a x) (map (connector a) xs)
+radialConns :: ( Real u, Floating u, InterpretUnit u
+               , CenterAnchor t u, RadialAnchor t u ) 
+            => t u -> [t u] -> Graphic u
+radialConns a []     = center a >>= \p0 -> emptyLocGraphic `at` p0
+radialConns a (x:xs) = oconcat (connector a x) (map (connector a) xs)
 
 
 
-connector :: ( Real u, Floating u
-             , CenterAnchor a, RadialAnchor a, u ~ DUnit a )  
-          => a -> a -> Graphic u
-connector a1 a2 = openStroke $ vertexPath [p1,p2]
-  where  
-    (ang0,ang1)    = anchorAngles (center a1) (center a2)
-    p1             = radialAnchor ang0 a1
-    p2             = radialAnchor ang1 a2 
+connector :: ( Real u, Floating u, InterpretUnit u
+             , CenterAnchor t u, RadialAnchor t u )  
+          => t u -> t u -> Graphic u
+connector a0 a1 = 
+   center a0 >>= \p0 -> 
+   center a1 >>= \p1 ->
+   let (ang0, ang1) = anchorAngles p0 p1 
+   in radialAnchor ang0 a0 >>= \pt0 -> 
+      radialAnchor ang1 a1 >>= \pt1 -> vertexPP [pt0,pt1] >>= openStroke
 
 
 
@@ -106,26 +106,28 @@ anchorAngles f t = (theta0, theta1)
 --------------------------------------------------------------------------------
 -- 
 
-familyConn :: ( Real u, Fractional u
-              , CenterAnchor a, CardinalAnchor a, u ~ DUnit a ) 
-           => a -> [a] -> Graphic u
-familyConn a []            = emptyLocGraphic `at` center a
-familyConn a xs            = famconn (south a) (map north xs)
+familyConn :: ( Real u, Fractional u, InterpretUnit u
+              , CenterAnchor t u, CardinalAnchor t u ) 
+           => t u -> [t u] -> Graphic u
+familyConn a [] = center a >>= \p0 -> emptyLocGraphic `at` p0
+familyConn a xs = south a >>= \p0 -> mapM north xs >>= \ps -> famconn p0 ps
 
-famconn :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
+famconn :: (Fractional u, Ord u, InterpretUnit u) 
+        => Point2 u -> [Point2 u] -> Graphic u
 famconn _       []         = error "famconn - empty list"
 famconn pt_from [p1]       = famconn1 pt_from p1
 famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
    where
      hh         = halfHeight pt_from p1
-     downtick   = straightLine (vvec (-hh)) `at` pt_from
+     downtick   = locStraightLine (vvec (-hh)) `at` pt_from
      horizontal = midline (displaceV (-hh) pt_from) xs 
-     upticks    = map (straightLine (vvec hh) `at`) xs
+     upticks    = map (locStraightLine (vvec hh) `at`) xs
 
-midline :: (Fractional u, Ord u) => Point2 u -> [Point2 u] -> Graphic u
+midline :: (Fractional u, Ord u, InterpretUnit u) 
+        => Point2 u -> [Point2 u] -> Graphic u
 midline _        []           = error "midline - empty list" 
 midline (P2 _ y) (P2 x0 _:zs) = 
-    let (a,b) = foldr fn (x0,x0) zs in straightLineGraphic (P2 a y) (P2 b y)
+    let (a,b) = foldr fn (x0,x0) zs in straightLine (P2 a y) (P2 b y)
   where   
     fn (P2 x _) (lo,hi) | x < lo    = (x,hi)
                         | x > hi    = (lo,x)
@@ -135,10 +137,12 @@ halfHeight :: Fractional u => Point2 u -> Point2 u -> u
 halfHeight (P2 _ ya) (P2 _ yb) = 0.5 * (abs $ ya - yb)
  
 -- special case - should always be a vertical, but...
-famconn1 :: Fractional u => Point2 u -> Point2 u -> Graphic u
+--
+famconn1 :: (Fractional u, InterpretUnit u)
+         => Point2 u -> Point2 u -> Graphic u
 famconn1 a@(P2 xa _) b@(P2 xb _) 
-    | xa == xb  = straightLineGraphic a b
-    | otherwise = openStroke $ vertexPath [a,m1,m2,b] 
+    | xa == xb  = straightLine a b
+    | otherwise = vertexPP [a,m1,m2,b] >>= openStroke
   where
     hh = halfHeight a b
     m1 = displaceV (-hh)     a  

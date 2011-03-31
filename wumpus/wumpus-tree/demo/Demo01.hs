@@ -17,47 +17,29 @@ module Demo01 where
 import Wumpus.Tree
 import Wumpus.Tree.TreeBuildMonad
 
+import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-drawing
+import Wumpus.Drawing.Text.StandardFontDefs
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
-import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
-
-import FontLoaderUtils
-
 
 import Data.Tree hiding ( drawTree )
 import System.Directory
 
--- Note - @main@ prioritizes GhostScript metrics...
-
 
 main :: IO ()
-main = do 
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    case (mb_gs, mb_afm) of       
-      (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
-                          ; metrics <- loadGSFontMetrics  dir ["Times-Roman"]
-                          ; printLoadErrors metrics
-                          ; makePictures metrics
-                          }
-      (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
-                          ; metrics <- loadAfmFontMetrics dir ["Times-Roman"]
-                          ; printLoadErrors metrics
-                          ; makePictures metrics
-                          }
-      _             -> putStrLn default_font_loader_help
+main = simpleFontLoader main1 >> return ()
 
-
-makePictures :: FontLoadResult -> IO ()
-makePictures base_metrics = do 
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/" 
+    base_metrics <- loader [helvetica, helvetica_bold]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_pic1
     writeEPS "./out/regular_tree01.eps"  pic1
     writeSVG "./out/regular_tree01.svg"  pic1
-
 
 
 makeCtx :: FontSize -> FontLoadResult -> DrawingContext
@@ -65,28 +47,28 @@ makeCtx sz m = set_font times_roman $ metricsContext sz m
 
 
 
-tree_pic1 :: DCtxPicture
-tree_pic1 = drawTracing $ do
+tree_pic1 :: CtxPicture
+tree_pic1 = udrawTracing (0::Double) $ do
     --
-    draw $ textline "Tree 1:"        `at` (P2 0  530)
+    draw $ plainTextLine "Tree 1:"        `at` (P2 0  530)
     drawScaledTree (uniformSF 30)         (P2 80 530) $ 
        runTreeBuild charNode tree1
     --
-    draw $ textline "Tree 2:"       `at` (P2 160 530) 
+    draw $ plainTextLine "Tree 2:"       `at` (P2 160 530) 
     drawScaledTree (uniformSF 30)        (P2 240 530) $ 
         runTreeBuild (diskNode red) tree2
 
-    draw $ textline "Tree 3:"       `at` (P2 0  410) 
-    localize (point_size 12) $ 
+    draw $ plainTextLine "Tree 3:"       `at` (P2 0  410) 
+    localize (set_font_size 12) $ 
         drawScaledFamilyTree (uniformSF 25) (P2 280 410) $ 
           runTreeBuild charNode tree3
 
     --
-    draw $ textline "Tree 4:"       `at` (P2 0  200)
+    draw $ plainTextLine "Tree 4:"       `at` (P2 0  200)
     drawScaledTree (scaleFactors 20 30)  (P2 80 200) $ 
         runTreeBuild (circleNode black) tree4
     --
-    draw $ textline "Tree 5:"        `at` zeroPt
+    draw $ plainTextLine "Tree 5:"        `at` zeroPt
     drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
         runTreeBuild (circleNode black)  tree5
 

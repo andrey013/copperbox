@@ -66,7 +66,6 @@ import Data.VectorSpace                         -- package: vector-space
 --
 type ScaleFactors u = ScalingContext u Int u
 
-type instance DUnit (ScaleFactors u) = u
 
 
 
@@ -85,7 +84,7 @@ scaleFactors sx sy = ScalingContext (\x -> sx * x)
 
 -- 
 
-drawScaledTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+drawScaledTree :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
                => ScaleFactors u -> Point2 u -> TreeBuildAns u 
                -> TreeDrawing u
 drawScaledTree scale_f ogin (tree,annos) = 
@@ -96,7 +95,7 @@ drawScaledTree scale_f ogin (tree,annos) =
 data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
   deriving (Eq,Ord,Show)
 
-drawScaledTreeD :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+drawScaledTreeD :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
                 => ScaleFactors u -> Point2 u 
                 -> TreeDirection -> TreeBuildAns u 
                 -> TreeDrawing u
@@ -116,7 +115,7 @@ rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 
 
 
-drawScaledFamilyTree :: (Real u, Floating u, FromPtSize u, InnerSpace (Vec2 u)) 
+drawScaledFamilyTree :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
                => ScaleFactors u -> Point2 u -> TreeBuildAns u 
                -> TreeDrawing u
 drawScaledFamilyTree scale_f ogin (tree,annos) = 
@@ -129,7 +128,7 @@ drawScaledFamilyTree scale_f ogin (tree,annos) =
 --
 --  Useful for rendering @ Data.Tree Char @.
 --
-charNode :: (Real u, Floating u, FromPtSize u) 
+charNode :: (Real u, Floating u, InterpretUnit u) 
          => Char -> TreeNode u
 charNode = dotChar
 
@@ -143,7 +142,7 @@ charNode = dotChar
 -- Also, only a single line of text is printed - any text after 
 -- the first newline character will be dropped.
 --
-textNode :: (Real u, Floating u, FromPtSize u) 
+textNode :: (Real u, Floating u, InterpretUnit u) 
          => String -> TreeNode u
 textNode = dotText . uptoNewline
   where
@@ -153,7 +152,7 @@ textNode = dotText . uptoNewline
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-circleNode :: (Floating u, FromPtSize u) 
+circleNode :: (Floating u, InterpretUnit u) 
            => RGBi -> (a -> TreeNode u)
 circleNode rgb = \_ -> localize (stroke_colour rgb) dotCircle
 
@@ -162,7 +161,7 @@ circleNode rgb = \_ -> localize (stroke_colour rgb) dotCircle
 --
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
-diskNode :: (Floating u, FromPtSize u) 
+diskNode :: (Floating u, InterpretUnit u) 
          => RGBi -> (a -> TreeNode u)
 diskNode rgb = \_ -> localize (fill_colour rgb) dotDisk
 

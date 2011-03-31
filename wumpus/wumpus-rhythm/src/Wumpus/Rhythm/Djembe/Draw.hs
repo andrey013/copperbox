@@ -35,9 +35,8 @@ beamgroup :: (Fractional u, InterpretUnit u) => [LocGraphic u] -> AdvGraphic u
 beamgroup [] = replaceAns (hvec 0) $ emptyLocGraphic
 beamgroup gs = 
     lift0R1 unitWidth >>= \w1 -> 
-    lift0R1 (cvt w1)  >>= \w1u  ->
-    replaceAns (hvec (w1u * fromIntegral len)) $ 
-      chainH w1u gs `decorate` beamline (len-1) w1u
+    replaceAns (hvec (w1 * fromIntegral len)) $ 
+      chainH w1 gs `decorate` beamline (len-1) w1
   where
     len = length gs
 
@@ -45,13 +44,7 @@ beamgroup gs =
 -- | point is base line
 beamline :: InterpretUnit u => Int -> u -> LocGraphic u
 beamline n w1 = uconvertLocImg $ 
-    lift0R1 (cvt w1) >>= \w1u -> beam_line n w1u
-
--- Note - conversion in context needs sorting out in 
--- Wumpus-Basic.
---
-cvt :: (InterpretUnit u, InterpretUnit u1) => u -> Query u1
-cvt a = normalizeDC a >>= dinterpDC
+    uconvertCtx1 w1 >>= \w1u -> beam_line n w1u
 
 
 tone :: InterpretUnit u => LocGraphic u
@@ -95,5 +88,5 @@ tick1 = uconvertLocImg $
     tick = locStraightLine (vvec (1000::AfmUnit))
 
 
-unitWidth :: Query AfmUnit
-unitWidth =  normalizeDC (1360::AfmUnit) >>= dinterpDC
+unitWidth :: InterpretUnit u => Query u
+unitWidth = uconvertCtx1 (1360::AfmUnit)

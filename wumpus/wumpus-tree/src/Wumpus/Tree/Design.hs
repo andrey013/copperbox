@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
@@ -234,16 +233,19 @@ rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) =
     mv dx dy (Node (P2 x y, a) ks) = let ks' = map (mv dx dy) ks 
                                      in Node (P2 (x+dx) (y+dy), a) ks'
 
-
+-- Updating this to the latest Wumpus-Basic would make the 
+-- function a query...
+--
 rotateAboutRoot :: (Real u, Floating u) 
                 => Radian -> CoordTree u a -> CoordTree u a
-rotateAboutRoot ang (Node (ogin,val) kids) =  
+rotateAboutRoot ang dummy@(Node (ogin,val) kids) = dummy
+{-
     Node (ogin, val) $ map step kids
   where
     step (Node (p0, a) ks) = Node (rotA p0, a) $ map step ks
 
     rotA                   = rotateAbout ang ogin
-
+-}
 -- find height and width
 --
 stats :: (Num u, Ord u) => Extent u -> (Int, HSpan u)

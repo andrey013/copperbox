@@ -88,7 +88,6 @@ data St u = St
       , anno_refs       :: NodeAnnoRefs u
       }
 
-type instance DUnit (St u) = u
 
 zeroSt :: St u
 zeroSt = St { uid_counter = 0, node_refs = mempty, anno_refs = mempty }
@@ -125,7 +124,7 @@ type TreeBuildAns u = (Tree (TreeNodeAns u), NodeAnnoRefs u)
 -- monad is only significant for producing a @Tree (TreeNode u)@.
 --
 
-runTreeBuild :: (Real u, Floating u, FromPtSize u)
+runTreeBuild :: (Real u, Floating u, InterpretUnit u)
              => (a -> TreeNode u) -> TreeBuild u (TreeSpec a) -> TreeBuildAns u
 runTreeBuild regDrawF ma = 
     let (a,s) = getTreeBuild ma zeroSt
@@ -139,7 +138,7 @@ runTreeBuild regDrawF ma =
 -- unreachable we still need it in the code to make the 
 -- IntMap.lookup total.
 --
-postRun :: (Real u, Floating u, FromPtSize u)
+postRun :: (Real u, Floating u, InterpretUnit u)
         => (a -> TreeNode u) -> (TreeSpec a,NodeDrawRefs u) 
         -> Tree (TreeNode u, Maybe Int)
 postRun regDrawF (tree1,table) = fmap changeNode tree1
@@ -199,7 +198,7 @@ branch uid kids = Node uid kids
 -- | Default /branch/ - has children.
 --
 zbranch :: [ZTreeSpec u] -> ZTreeSpec u
-zbranch kids = Node (RegularNode uNil) kids 
+zbranch kids = Node (RegularNode UNil) kids 
 
 leaf :: NodeId a -> TreeSpec a
 leaf uid = Node uid []
@@ -207,7 +206,7 @@ leaf uid = Node uid []
 -- | Default /leaf/ - tree node with no children.
 --
 zleaf :: ZTreeSpec u
-zleaf = Node (RegularNode uNil) []
+zleaf = Node (RegularNode UNil) []
 
 
             

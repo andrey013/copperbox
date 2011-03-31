@@ -51,8 +51,7 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
 
 import Wumpus.Rhythm.Djembe.Parameters
 
-import Wumpus.Drawing.Text.PosChar              -- package: wumpus-drawing
-import Wumpus.Drawing.Text.RotTextLR
+import Wumpus.Drawing.Text.DirectionZero        -- package: wumpus-drawing
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -68,9 +67,9 @@ import Data.Ratio
 -- @startPos@, @atRot@, etc. operators. However they need some
 -- system for naming that I haven\'t yet worked out.
 --
-startPosR :: Floating u 
-          => RectPosition -> PosImage t u -> LocImage t u
-startPosR = flip startPos
+startAddrR :: Floating u 
+          => RectAddress -> LocRectImage t u -> LocImage t u
+startAddrR = flip startAddr
 
 
 
@@ -88,42 +87,39 @@ baselineCharGlyph :: (Floating u, InterpretUnit u)
                   => EscapedChar -> LocImage Vec2 u
 baselineCharGlyph ch = 
     descender >>= \dy -> 
-    mapAns fn $ moveStart (move_down (abs dy)) $ startPosR SS $ posEscChar ch
+    mapAns fn $ moveStart (move_down (abs dy)) $ startAddrR SS $ posEscChar ch
   where
     fn bb = V2 (boundaryWidth bb) 0
 
 
 -- PosRects for hands...
 
-strokedPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
+strokedPosRect :: (Fractional u, InterpretUnit u) 
+               => u -> u -> PosGraphicObject u 
 strokedPosRect w h = 
-    makePosImage (oposRectSW w h) (strokedRectangle w h)
+    makePosObject (pure $ oposRectSW w h) (strokedRectangle w h)
 
 
-filledPosRect :: (Fractional u, InterpretUnit u) => u -> u -> PosGraphic u 
+filledPosRect :: (Fractional u, InterpretUnit u) 
+              => u -> u -> PosGraphicObject u 
 filledPosRect w h = 
-    makePosImage (oposRectSW w h) (filledRectangle w h)
+    makePosObject (pure $ oposRectSW w h) (filledRectangle w h)
 
-oposRectSW :: Num u => u -> u -> ObjectPos u 
-oposRectSW w h  = ObjectPos { op_x_minor = 0
-                            , op_x_major = w
-                            , op_y_minor = 0
-                            , op_y_major = h }
+oposRectSW :: Num u => u -> u -> Orientation u 
+oposRectSW w h  = Orientation { or_x_minor = 0
+                              , or_x_major = w
+                              , or_y_minor = 0
+                              , or_y_major = h }
  
 
 openStrokePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promoteR1 $ \pt -> 
-    uconvertFDC pt      >>= \pt1 -> 
-    mapM uconvertFDC vs >>= \vs1 ->
-    openStroke $ vectorPrimPath pt1 vs1
+    (locPP vs `at` pt) >>= openStroke 
+
 
 filledRelativePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 filledRelativePath vs = promoteR1 $ \pt -> 
-    uconvertFDC pt      >>= \pt1 -> 
-    mapM uconvertFDC vs >>= \vs1 ->
-    filledPath $ vectorPrimPath pt1 vs1
-
-
+    (locPP vs `at` pt) >>= filledPath
 
 --------------------------------------------------------------------------------
 
@@ -175,11 +171,12 @@ disk_flam = moveStart start_move (filledDisk flam_disk_radius)
     start_move = move_left flam_xminor . move_up flam_disk_ycenter
 
 
-decohand :: (AfmUnit -> AfmUnit -> PosGraphic AfmUnit) -> NoteGlyph -> NoteGlyph
+decohand :: (AfmUnit -> AfmUnit -> PosGraphicObject AfmUnit) 
+         -> NoteGlyph -> NoteGlyph
 decohand fn = (`decorate` body) 
   where
     body = moveStart (displaceV hand_baseline) rect
-    rect = startPosR SS $ fn hand_side_length hand_side_length
+    rect = startAddrR SS $ makeLocRectImage $ fn hand_side_length hand_side_length
 
 other_hand :: NoteGlyph -> NoteGlyph
 other_hand = decohand strokedPosRect
@@ -367,7 +364,7 @@ numberWidth i | i < 10    = plet_number_width
 centeredTwoThirdsText :: String -> LocGraphic AfmUnit
 centeredTwoThirdsText ss =
     localize (scale_point_size (2/3)) $ 
-      ignoreAns $ startPosR CENTER $ textbox ss 
+      ignoreAns $ startAddrR CENTER $ textline ss 
 
 
 

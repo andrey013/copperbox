@@ -8,12 +8,13 @@ import FontLoaderUtils
 import Wumpus.Tree
 import Wumpus.Tree.TreeBuildMonad
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.System.FontLoader.Afm
-import Wumpus.Basic.System.FontLoader.GhostScript
-import Wumpus.Drawing.Dots.AnchorDots
+
+import Wumpus.Drawing.Dots.AnchorDots           -- package: wumpus-drawing
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Text.SafeFonts
+import Wumpus.Drawing.Text.StandardFontDefs
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -22,27 +23,13 @@ import System.Directory
 
 
 main :: IO ()
-main = do
-    (mb_gs, mb_afm) <- processCmdLine default_font_loader_help
-    createDirectoryIfMissing True "./out/"
-    case (mb_gs, mb_afm) of       
-      (Just dir, _) -> do { putStrLn "Using GhostScript metrics..."
-                          ; metrics <- loadGSFontMetrics  dir ["Times-Roman"]
-                          ; printLoadErrors metrics
-                          ; makePictures metrics
-                          }
-      (_, Just dir) -> do { putStrLn "Using AFM v4.1 metrics..."
-                          ; metrics <- loadAfmFontMetrics dir ["Times-Roman"]
-                          ; printLoadErrors metrics
-                          ; makePictures metrics
-                          }
-      _             -> putStrLn default_font_loader_help
+main = simpleFontLoader main1 >> return ()
 
-
-
-
-makePictures :: FontLoadResult -> IO ()
-makePictures base_metrics = do 
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/" 
+    base_metrics <- loader [helvetica, helvetica_bold]
+    printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
     writeEPS "./out/mon_tree01.eps"  pic1
     writeSVG "./out/mon_tree01.svg"  pic1
@@ -68,21 +55,24 @@ tree1 = return $
                              , leaf $ label 'J' ] ]
 
 
-tree_drawing1 :: DCtxPicture
-tree_drawing1 = drawTracing $ 
+tree_drawing1 :: CtxPicture
+tree_drawing1 = udrawTracing (0::Double) $ 
     drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
 
+{-
 -- Don\'t necessarily need @annotate@ from TreeMonad ...
 --
-nodeanno :: Num u 
-         => DotLocImage u -> (DotAnchor u -> Point2 u) -> DotLocImage u
-nodeanno img fn = annotate img deco
+nodeanno :: InterpretUnit u 
+         => DotLocImage u -> Anchor u -> DotLocImage u
+nodeanno img ancr = lift0R1 ancr >>= \pt -> annotate img (deco pt)
   where
-    deco a = promoteR1 $ \_ -> let pt = fn a in textline "deco" `at` pt
+    deco pt a = promoteR1 $ \_ -> plainTextLine "deco" `at` pt
+-}
 
-tree2 :: (Real u, Floating u, FromPtSize u) => TreeBuild u (ZTreeSpec u)
+tree2 :: (Real u, Floating u, InterpretUnit u) 
+      => TreeBuild u (ZTreeSpec u)
 tree2 = do
-    special   <- nodeId $ nodeanno (dotText "a") south
+    special   <- nodeId $ dotText "a"
     rightmost <- nodeId $ dotText "z"
     let bs = [zleaf, zleaf, zleaf]
     let gs = [zleaf, zleaf, leaf $ rightmost ]
@@ -92,9 +82,9 @@ tree2 = do
 
 
 
-tree_drawing2 :: DCtxPicture
-tree_drawing2 = drawTracing $ do
-    draw $ textline "Tree 2" `at` zeroPt
+tree_drawing2 :: CtxPicture
+tree_drawing2 = udrawTracing (0::Double) $ do
+    draw $ plainTextLine "Tree 2" `at` zeroPt
     draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
     draw $ filledDisk 2      `at` tree_ogin
     draw $ filledDisk 2      `at` displaceH   40  tree_ogin
