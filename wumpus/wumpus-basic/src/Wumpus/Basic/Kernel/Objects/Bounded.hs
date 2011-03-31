@@ -48,7 +48,6 @@ module Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
@@ -103,15 +102,12 @@ type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 -- rotation. 
 --
 
-centerOrthoBBox :: (Fractional u, InterpretUnit u)
-                => Radian -> BoundingBox u -> Query (BoundingBox u)
-centerOrthoBBox theta bb = 
-    normalizeCtxF bb >>= \dbb ->
-    let ps  = boundaryCornerList dbb
-        ctr = boundaryCenter dbb
-        ans = traceBoundary $ map (drotateAbout theta ctr) ps
-    in dinterpCtxF ans
-
+centerOrthoBBox :: (Real u, Floating u, Ord u)
+                => Radian -> BoundingBox u -> BoundingBox u
+centerOrthoBBox theta bb = traceBoundary $ map (rotateAbout theta ctr) ps
+  where
+    ctr = boundaryCenter bb
+    ps  = boundaryCornerList bb
 
 
 -- | 'emptyBoundedLocGraphic' : @ BoundedLocGraphic @

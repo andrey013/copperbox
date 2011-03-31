@@ -145,7 +145,6 @@ library
     Wumpus.Basic.Kernel.Base.UpdateDC,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
     Wumpus.Basic.Kernel.Objects.AdvanceGraphic,
-    Wumpus.Basic.Kernel.Objects.AffineTrans,
     Wumpus.Basic.Kernel.Objects.Anchors,
     Wumpus.Basic.Kernel.Objects.Basis,
     Wumpus.Basic.Kernel.Objects.Bounded,

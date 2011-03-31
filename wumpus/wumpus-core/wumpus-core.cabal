@@ -97,7 +97,6 @@ cabal-version:      >= 1.2
 extra-source-files:
   CHANGES,
   LICENSE,
-  demo/AffineCompat.hs,
   demo/AffineTest01.hs,
   demo/AffineTest02.hs,
   demo/AffineTest03.hs,

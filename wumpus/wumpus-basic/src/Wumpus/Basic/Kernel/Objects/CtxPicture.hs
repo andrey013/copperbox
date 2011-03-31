@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
@@ -109,7 +110,7 @@ import Data.List ( foldl' )
 newtype CtxPicture = CtxPicture { 
           getCtxPicture :: DrawingContext -> (Maybe Picture) }
 
-
+type instance DUnit CtxPicture = Double
 
 
 
@@ -188,24 +189,17 @@ mapCtxPicture pf pic1 = CtxPicture $ \ctx -> fmap pf $ getCtxPicture pic1 ctx
 --------------------------------------------------------------------------------
 
 
--- Note - CtxPicture is not Polymorphic on unit so it cannot 
--- implement the Wumpus-Basic affine classes. 
--- 
--- It can implement the Wumpus-Basic classes, although this 
--- potentially makes the API less usable \/ untuitive.
--- 
+instance Rotate CtxPicture where 
+  rotate ang            = mapCtxPicture (rotate ang)
 
-instance DRotate CtxPicture where 
-  drotate ang = mapCtxPicture (drotate ang)
+instance RotateAbout CtxPicture where
+  rotateAbout r pt      = mapCtxPicture (rotateAbout r pt)
 
-instance DRotateAbout CtxPicture where
-  drotateAbout r pt = mapCtxPicture (drotateAbout r pt)
+instance Scale CtxPicture where
+  scale sx sy           = mapCtxPicture (scale sx sy)
 
-instance DScale CtxPicture where
-  dscale sx sy = mapCtxPicture (dscale sx sy)
-
-instance DTranslate CtxPicture where
-  dtranslate dx dy = mapCtxPicture (dtranslate dx dy)
+instance Translate CtxPicture where
+  translate dx dy       = mapCtxPicture (translate dx dy)
 
 
 
@@ -252,7 +246,7 @@ northwest (BBox (P2 xl _) (P2 _ yhi)) = P2 xl yhi
 -- Extract anchors
 
 boundaryExtr :: (BoundingBox Double -> a) -> Picture -> a
-boundaryExtr f = f . boundaryPicture
+boundaryExtr f = f . boundary
 
 -- Operations on bounds
 
@@ -451,7 +445,7 @@ cxpDown = megaCombR boundaryBottomEdge boundaryTopEdge moveFun
 cxpCenteredAt :: CtxPicture -> DPoint2 -> CtxPicture
 cxpCenteredAt pic (P2 x y) = mapCtxPicture fn pic
   where
-    fn p = let bb = boundaryPicture p
+    fn p = let bb = boundary p
                dx = x - (boundaryWidth  bb * 0.5)
                dy = y - (boundaryHeight bb * 0.5)
            in p `picMoveBy` vec dx dy

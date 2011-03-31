@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -46,25 +47,26 @@ import Data.Monoid
 -- | CatPrim could probably manage happily just being a
 -- Primitive, but it is wrapped as a newtype...
 --
-newtype CatPrim = CatPrim { getCatPrim :: Primitive}
+newtype CatPrim = CatPrim { getCatPrim :: Primitive }
 
+type instance DUnit CatPrim = Double
 
 instance OPlus CatPrim where
   a `oplus` b = CatPrim $ getCatPrim a `primCat` getCatPrim b
 
 
 
-instance DRotate CatPrim where
-  drotate ang = CatPrim . drotate ang . getCatPrim
+instance Rotate CatPrim where
+  rotate ang = CatPrim . rotate ang . getCatPrim
 
-instance DRotateAbout CatPrim where
-  drotateAbout pt ang = CatPrim . drotateAbout pt ang . getCatPrim
+instance RotateAbout CatPrim where
+  rotateAbout pt ang = CatPrim . rotateAbout pt ang . getCatPrim
 
-instance DScale CatPrim where
-  dscale sx sy = CatPrim . dscale sx sy . getCatPrim
+instance Scale CatPrim where
+  scale sx sy = CatPrim . scale sx sy . getCatPrim
 
-instance DTranslate CatPrim where
-  dtranslate dx dy = CatPrim . dtranslate dx dy . getCatPrim
+instance Translate CatPrim where
+  translate dx dy = CatPrim . translate dx dy . getCatPrim
 
 
 prim1 :: Primitive -> CatPrim 

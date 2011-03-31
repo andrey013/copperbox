@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -95,6 +96,9 @@ import Data.Monoid
 --------------------------------------------------------------------------------
 --
 
+-- NOTE - 31.03.11 - is there an advantage to adding a phantom
+-- unit param to the CF functions?
+
 -- | Most drawing operations in Wumpus-Basic have an implicit 
 -- /graphics state/ the 'DrawingContext', so the most primitive 
 -- building block is a function from the DrawingContext to some 
@@ -107,7 +111,7 @@ import Data.Monoid
 --
 newtype CF a            = CF  { unCF :: DrawingContext -> a }
 
-
+type instance DUnit (CF a) = DUnit a
 
 -- | Variation of 'CF' with one parametric /static argument/.
 --
@@ -313,6 +317,25 @@ instance DrawingCtxM (CF2 r1 r2) where
 instance DrawingCtxM (CF3 r1 r2 r3) where
   askDC           = CF3 $ \ctx _  _  _  -> ctx
   localize upd df = CF3 $ \ctx r1 r2 r3 -> unCF3 df (upd ctx) r1 r2 r3
+
+
+--------------------------------------------------------------------------------
+-- Affine instances
+
+
+
+instance Rotate a => Rotate (CF a) where
+  rotate ang            = fmap (rotate ang)
+
+instance RotateAbout a => RotateAbout (CF a) where
+  rotateAbout pt ang    = fmap (rotateAbout pt ang)
+
+instance Scale a => Scale (CF a) where
+  scale sx sy           = fmap (scale sx sy)
+
+instance Translate a => Translate (CF a) where
+  translate dx dy       = fmap (translate dx dy)
+
 
 
 --------------------------------------------------------------------------------
