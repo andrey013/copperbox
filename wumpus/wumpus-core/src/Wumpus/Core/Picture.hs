@@ -38,9 +38,12 @@ module Wumpus.Core.Picture
     frame
   , multi
   , fontDeltaContext
-  , primPath
+  , absPrimPath
   , absLineTo
   , absCurveTo
+  , relPrimPath
+  , relLineTo
+  , relCurveTo
   , vertexPrimPath
   , vectorPrimPath
   , emptyPrimPath
@@ -193,12 +196,12 @@ fontDeltaContext :: FontAttr -> Primitive -> Primitive
 fontDeltaContext fa p = PContext (FontCtx fa) p
 
 
--- | 'primPath' : @ start_point * [path_segment] -> PrimPath @
+-- | 'absPrimPath' : @ start_point * [abs_path_segment] -> PrimPath @
 --
--- Create a Path from a start point and a list of PathSegments.
+-- Create a Path from a start point and a list of AbsPathSegments.
 --
-primPath :: DPoint2 -> [AbsPathSegment] -> PrimPath
-primPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
+absPrimPath :: DPoint2 -> [AbsPathSegment] -> PrimPath
+absPrimPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
   where
     step p (AbsLineTo p1:rest)        = RelLineTo (p1 .-. p) : step p1 rest
     step p (AbsCurveTo p1 p2 p3:rest) = 
@@ -217,7 +220,7 @@ primPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
 absLineTo :: DPoint2 -> AbsPathSegment 
 absLineTo = AbsLineTo
 
--- | 'curveTo' : @ control_point1 * control_point2 * end_point -> 
+-- | 'absCurveTo' : @ control_point1 * control_point2 * end_point -> 
 --        path_segment @
 -- 
 -- Create a curved PathSegment, the start point is implicitly the 
@@ -227,7 +230,32 @@ absLineTo = AbsLineTo
 absCurveTo :: DPoint2 -> DPoint2 -> DPoint2 -> AbsPathSegment
 absCurveTo = AbsCurveTo
 
+
+-- | 'relPrimPath' : @ start_point * [rel_path_segment] -> PrimPath @
+--
+-- Create a Path from a start point and a list of RelPathSegments.
+--
+relPrimPath :: DPoint2 -> [PrimPathSegment] -> PrimPath
+relPrimPath pt xs = PrimPath xs (startPointCTM pt)
+
+
+
+-- | 'relLineTo' : @ vec_to_end -> path_segment @
+-- 
+-- Create a straight-line relative PathSegment, the vector is the 
+-- relative displacement.
+--
+relLineTo :: DVec2 -> PrimPathSegment 
+relLineTo = RelLineTo
     
+-- | 'relCurveTo' : @ vec_to_cp1 * vec_to_cp2 * vec_to_end -> 
+--        path_segment @
+-- 
+-- Create a curved relative PathSegment.
+--
+--
+relCurveTo :: DVec2 -> DVec2 -> DVec2 -> PrimPathSegment
+relCurveTo = RelCurveTo
 
 
 -- | 'vertexPrimPath' : @ [point] -> PrimPath @
@@ -873,7 +901,8 @@ pathCtrlLines rgb ppath =
 
     step _ []                       = emptyH
 
-    mkLine s v                      = let pp = (primPath s [absLineTo $ s .+^ v]) 
+    mkLine s v                      = let seg1 = absLineTo $ s .+^ v
+                                          pp   = absPrimPath s [seg1] 
                                       in ostroke rgb default_stroke_attr pp 
 
 

@@ -76,7 +76,7 @@ mkRedEllipse trafo rx ry pt =
 
 crossbar :: Double -> Double -> DPoint2 -> Picture
 crossbar rx ry ctr = 
-    frame [ostroke black default_stroke_attr $ primPath west ps]
+    frame [ostroke black default_stroke_attr $ absPrimPath west ps]
   where
     ps    = [ absLineTo east, absLineTo ctr, absLineTo north, absLineTo south ]
     north = ctr .+^ vvec ry
@@ -93,7 +93,8 @@ xy_frame ss =
           ]
 
   where
-    mkline p1 p2 = ostroke black default_stroke_attr $ primPath p1 [absLineTo p2]
+    mkline p1 p2 = ostroke black default_stroke_attr $ 
+                     absPrimPath p1 [absLineTo p2]
 
 dpt :: DPoint2
 dpt = zeroPt

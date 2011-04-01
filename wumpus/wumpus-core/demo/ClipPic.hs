@@ -33,7 +33,7 @@ blue_circle = fillEllipse blue 60 60    $ P2 80 0
 
 
 dog_house :: PrimPath
-dog_house = primPath zeroPt $ 
+dog_house = absPrimPath zeroPt $ 
     [ absLineTo  (P2 0 60) 
     , absLineTo  (P2 40 100)
     , absLineTo  (P2 80 60)

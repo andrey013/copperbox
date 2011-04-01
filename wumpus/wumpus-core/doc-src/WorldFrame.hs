@@ -34,7 +34,7 @@ makeLabelPrim = textlabel black attrs
                                       SVG_REGULAR standard_encoding)
 
 makeLinePrim :: Double -> DPoint2 -> DPoint2 -> Primitive
-makeLinePrim lw a b = ostroke black attrs $ primPath a [absLineTo b]
+makeLinePrim lw a b = ostroke black attrs $ absPrimPath a [absLineTo b]
   where
     attrs = default_stroke_attr { line_width =  lw }
 

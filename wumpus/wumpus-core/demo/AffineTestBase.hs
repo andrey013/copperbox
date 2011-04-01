@@ -126,14 +126,14 @@ rgbPath rgb = ostroke rgb default_stroke_attr $ dog_kennel
 
 
 dog_kennel :: PrimPath
-dog_kennel = primPath zeroPt
-                      [ absLineTo  (P2 0 60) 
-                      , absLineTo  (P2 40 100)
-                      , absLineTo  (P2 80 60)
-                      , absLineTo  (P2 80 0)
-                      , absLineTo  (P2 60 0)  
-                      , absLineTo  (P2 60 30)
-                      , absCurveTo (P2 60 50) (P2 50 60) (P2 40 60)
-                      , absCurveTo (P2 30 60) (P2 20 50) (P2 20 30)
-                      , absLineTo  (P2 20 0)
-                      ]
+dog_kennel = absPrimPath zeroPt $ 
+    [ absLineTo  (P2 0 60) 
+    , absLineTo  (P2 40 100)
+    , absLineTo  (P2 80 60)
+    , absLineTo  (P2 80 0)
+    , absLineTo  (P2 60 0)  
+    , absLineTo  (P2 60 30)
+    , absCurveTo (P2 60 50) (P2 50 60) (P2 40 60)
+    , absCurveTo (P2 30 60) (P2 20 50) (P2 20 30)
+    , absLineTo  (P2 20 0)
+    ]
