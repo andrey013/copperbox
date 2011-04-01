@@ -227,7 +227,7 @@ mkSemiellipse rx ry props = promoteR2 $ \ctr theta ->
 
 
 mkSemiellipsePath :: (Real u, Floating u, LengthTolerance u) 
-                  => u -> u -> u -> LocThetaQuery u (Path u)
+                  => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
         xs  = bezierSemiellipsePoints rx ry ctr

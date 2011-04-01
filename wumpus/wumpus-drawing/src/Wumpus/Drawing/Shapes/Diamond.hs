@@ -156,7 +156,7 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
 
 
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
-              => u -> u -> LocThetaQuery u (Path u)
+              => u -> u -> LocThetaQuery u (AbsPath u)
 mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
     let ps = map (rotateAbout theta ctr) $ diamondCoordPath hw hh ctr
     in roundCornerShapePath ps

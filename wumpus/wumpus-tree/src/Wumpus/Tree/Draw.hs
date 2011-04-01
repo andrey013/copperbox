@@ -31,7 +31,6 @@ import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Control.Applicative
 import Control.Monad
 import qualified Data.IntMap as IntMap
 import Data.Tree hiding ( drawTree )
@@ -72,7 +71,7 @@ drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
 radialConns :: ( Real u, Floating u, InterpretUnit u
                , CenterAnchor t u, RadialAnchor t u ) 
             => t u -> [t u] -> Graphic u
-radialConns a []     = center a >>= \p0 -> emptyLocGraphic `at` p0
+radialConns a []     = emptyLocGraphic `at` (center a)
 radialConns a (x:xs) = oconcat (connector a x) (map (connector a) xs)
 
 
@@ -80,12 +79,12 @@ radialConns a (x:xs) = oconcat (connector a x) (map (connector a) xs)
 connector :: ( Real u, Floating u, InterpretUnit u
              , CenterAnchor t u, RadialAnchor t u )  
           => t u -> t u -> Graphic u
-connector a0 a1 = 
-   center a0 >>= \p0 -> 
-   center a1 >>= \p1 ->
-   let (ang0, ang1) = anchorAngles p0 p1 
-   in radialAnchor ang0 a0 >>= \pt0 -> 
-      radialAnchor ang1 a1 >>= \pt1 -> vertexPP [pt0,pt1] >>= openStroke
+connector a0 a1 = vertexPP [pt0,pt1] >>= openStroke
+  where
+    (ang0,ang1) = anchorAngles (center a0) (center a1)
+    pt0         = radialAnchor ang0 a0
+    pt1         = radialAnchor ang1 a1
+    
 
 
 
@@ -109,8 +108,8 @@ anchorAngles f t = (theta0, theta1)
 familyConn :: ( Real u, Fractional u, InterpretUnit u
               , CenterAnchor t u, CardinalAnchor t u ) 
            => t u -> [t u] -> Graphic u
-familyConn a [] = center a >>= \p0 -> emptyLocGraphic `at` p0
-familyConn a xs = south a >>= \p0 -> mapM north xs >>= \ps -> famconn p0 ps
+familyConn a [] = emptyLocGraphic `at` (center a)
+familyConn a xs = famconn (south a) (map north xs)
 
 famconn :: (Fractional u, Ord u, InterpretUnit u) 
         => Point2 u -> [Point2 u] -> Graphic u

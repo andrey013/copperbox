@@ -222,7 +222,7 @@ synthesizeProps bw h =
 
 
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-               => u -> u -> u -> LocThetaQuery u (Path u)
+               => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
     let xs = trianglePath bw hminor hmajor ctr
     in roundCornerShapePath $ map (rotateAbout theta ctr) xs

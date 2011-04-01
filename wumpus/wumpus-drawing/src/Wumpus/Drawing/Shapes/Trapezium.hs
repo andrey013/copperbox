@@ -219,7 +219,7 @@ mkTrapezium bw h lang rang = promoteR2 $ \ctr theta ->
 
 
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-                => u -> u -> Radian -> Radian -> LocThetaQuery u (Path u)
+                => u -> u -> Radian -> Radian -> LocThetaQuery u (AbsPath u)
 mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
     let xs = tzPath bw h lang rang ctr 
     in roundCornerShapePath $ map (rotateAbout theta ctr) xs

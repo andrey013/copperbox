@@ -238,14 +238,13 @@ rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) =
 --
 rotateAboutRoot :: (Real u, Floating u) 
                 => Radian -> CoordTree u a -> CoordTree u a
-rotateAboutRoot ang dummy@(Node (ogin,val) kids) = dummy
-{-
+rotateAboutRoot ang (Node (ogin,val) kids) =
     Node (ogin, val) $ map step kids
   where
     step (Node (p0, a) ks) = Node (rotA p0, a) $ map step ks
 
     rotA                   = rotateAbout ang ogin
--}
+
 -- find height and width
 --
 stats :: (Num u, Ord u) => Extent u -> (Int, HSpan u)

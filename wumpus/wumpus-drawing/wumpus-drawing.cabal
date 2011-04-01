@@ -123,7 +123,7 @@ library
     Wumpus.Drawing.Extras.Turtle.TurtleClass,
     Wumpus.Drawing.Extras.Turtle.TurtleMonad,
     Wumpus.Drawing.Paths,
-    Wumpus.Drawing.Paths.Base,
+    Wumpus.Drawing.Paths.Absolute,
     Wumpus.Drawing.Paths.MonadicConstruction,
     Wumpus.Drawing.Shapes,
     Wumpus.Drawing.Shapes.Base,

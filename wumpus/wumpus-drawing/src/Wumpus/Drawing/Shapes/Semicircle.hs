@@ -242,7 +242,7 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 -- the center properly...
 --
 mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-                 => u -> u -> LocThetaQuery u (Path u)
+                 => u -> u -> LocThetaQuery u (AbsPath u)
 mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt
     in pure $ curvePath $ bezierArcPoints pi radius theta ctr 

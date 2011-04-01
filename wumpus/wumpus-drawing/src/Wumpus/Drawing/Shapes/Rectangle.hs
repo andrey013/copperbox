@@ -163,7 +163,7 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 
 
 mkRectPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-           => u -> u -> LocThetaQuery u (Path u)
+           => u -> u -> LocThetaQuery u (AbsPath u)
 mkRectPath hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr
         xs       = rectangleCoordPath (2*hw) (2*hh) btm_left

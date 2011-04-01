@@ -82,7 +82,7 @@ import Control.Applicative
 --
 data Shape t u = Shape 
       { shape_ans_fun     :: LocThetaQuery u (t u)
-      , shape_path_fun    :: LocThetaQuery u (Path u) 
+      , shape_path_fun    :: LocThetaQuery u (AbsPath u) 
       , shape_decoration  :: LocThetaGraphic u
       }
 
@@ -117,7 +117,7 @@ shapeMap f = (\s sf -> s { shape_ans_fun = promoteR2 $ \pt ang ->
 
 
 makeShape :: InterpretUnit u
-          => LocThetaQuery u (t u) -> LocThetaQuery u (Path u) -> Shape t u
+          => LocThetaQuery u (t u) -> LocThetaQuery u (AbsPath u) -> Shape t u
 makeShape f g = Shape { shape_ans_fun    = f
                       , shape_path_fun   = g
                       , shape_decoration = emptyLocThetaGraphic
@@ -191,8 +191,8 @@ shapeToLocTheta drawF sh = promoteR2 $ \pt theta ->
 
 -- | Draw the shape path with round corners.
 -- 
-roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-                     => [Point2 u] -> Query (Path u)
+roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+                     => [Point2 u] -> Query (AbsPath u)
 roundCornerShapePath xs = 
     roundCornerSize >>= \sz -> 
     if sz == 0 then return (vertexPath xs) 

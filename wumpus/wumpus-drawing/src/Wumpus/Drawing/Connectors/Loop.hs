@@ -36,7 +36,7 @@ import Data.AffineSpace                         -- package: vector-space
 -- and end points are synthesized.
 --
 loop :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-     => ConnectorQuery u (Path u)
+     => ConnectorQuery u (AbsPath u)
 loop = promoteR2 $ \ctr radpt -> 
    let incl    = lineDirection ctr radpt
        radius  = abs $ vlength $ pvec ctr radpt

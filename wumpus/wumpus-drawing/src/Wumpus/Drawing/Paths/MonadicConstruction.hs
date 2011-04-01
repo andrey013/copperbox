@@ -41,7 +41,7 @@ module Wumpus.Drawing.Paths.MonadicConstruction
 
   ) where
 
-import Wumpus.Drawing.Paths.Base
+import Wumpus.Drawing.Paths.Absolute
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -67,7 +67,7 @@ import Data.List
 
 data St u = St
       { current_point :: Point2 u 
-      , path_acc      :: H (Path u)
+      , path_acc      :: H (AbsPath u)
       }
 
 
@@ -93,7 +93,7 @@ instance Monad (PathM u) where
 
 -- Running the path is (probably) agnostic to the DrawingCtx.
 --
-runPath :: Floating u => Point2 u -> PathM u a -> (a, Path u)
+runPath :: Floating u => Point2 u -> PathM u a -> (a, AbsPath u)
 runPath start mf = 
     let (a,s') = getPathM mf s in (a, post $ toListH $ path_acc s')
   where
@@ -103,7 +103,7 @@ runPath start mf =
     post []     = line start start
     post (x:xs) = foldl' append x xs  
 
-execPath :: Floating u => Point2 u -> PathM u a -> Path u
+execPath :: Floating u => Point2 u -> PathM u a -> AbsPath u
 execPath start mf = snd $ runPath start mf
 
 snocline :: Floating u => Vec2 u -> PathM u ()

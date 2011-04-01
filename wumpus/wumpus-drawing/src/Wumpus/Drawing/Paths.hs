@@ -20,9 +20,9 @@
 module Wumpus.Drawing.Paths 
   ( 
 
-    module Wumpus.Drawing.Paths.Base
+    module Wumpus.Drawing.Paths.Absolute
 
   ) where
 
-import Wumpus.Drawing.Paths.Base
+import Wumpus.Drawing.Paths.Absolute
 

@@ -76,28 +76,28 @@ label_below = locImageLabel south NN
 
 
 connectorPathLabel :: Floating u 
-                   => (Path u -> Point2 u) -> RectAddress
+                   => (AbsPath u -> Point2 u) -> RectAddress
                    -> LocRectImage t u
-                   -> Image Path u -> Image Path u
+                   -> Image AbsPath u -> Image AbsPath u
 connectorPathLabel fn rpos lbl img =  
     annotate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
                 => RectAddress -> LocRectImage t u 
-                -> Image Path u -> Image Path u
+                -> Image AbsPath u -> Image AbsPath u
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
                  => RectAddress -> LocRectImage t u 
-                 -> Image Path u -> Image Path u
+                 -> Image AbsPath u -> Image AbsPath u
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
                  => RectAddress -> LocRectImage t u
-                 -> Image Path u -> Image Path u
+                 -> Image AbsPath u -> Image AbsPath u
 label_atend_of = connectorPathLabel atend_
 
 

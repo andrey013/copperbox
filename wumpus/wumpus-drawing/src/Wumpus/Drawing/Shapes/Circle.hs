@@ -131,7 +131,7 @@ mkCircle radius = promoteR2 $ \ctr theta ->
 -- Rotation (theta) can be ignored.
 --
 mkCirclePath :: (Floating u, Ord u, InterpretUnit u, LengthTolerance u)
-             => u -> LocThetaQuery u (Path u)
+             => u -> LocThetaQuery u (AbsPath u)
 mkCirclePath radius = promoteR2 $ \ctr _ -> 
     pure $ curvePath $ bezierCircle radius ctr 
 

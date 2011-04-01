@@ -249,7 +249,7 @@ synthesizeProps bw h lang
 
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-                    => u -> u -> u -> LocThetaQuery u (Path u)
+                    => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
     let xs = pllPath bw_minor bw_major h ctr
     in roundCornerShapePath $ map (rotateAbout theta ctr) xs 
