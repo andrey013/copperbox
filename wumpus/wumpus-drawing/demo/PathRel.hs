@@ -11,7 +11,6 @@ import qualified Wumpus.Drawing.Paths.Absolute as A
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace
 
 import System.Directory
 
@@ -25,24 +24,35 @@ main = do
 
 path_pic :: CtxPicture
 path_pic = drawTracing $ do
-    drawl zeroPt       $ path1
-    drawl (P2 100 0)   $ path2
+    drawl (P2 0 0)   $ path1
+    drawl (P2 0 150) $ path2
     return ()  
     
 
-path1 :: LocGraphic Double
-path1 = strokeRelPath $ lineTo (hvec 20)
+path0 :: LocGraphic Double
+path0 = strokeRelPath $ lineTo (hvec 20)
+
+path1 :: LocImage A.AbsPath Double
+path1 = localize (stroke_colour red) $ strokePathSpec path_spec1
 
 path2 :: LocImage A.AbsPath Double
-path2 = evalPath 
-    [ move (0,20) 
-    , move (20,0) 
-    , insert disk1 
-    , pen_up
-    , move (0, (-20))
-    , pen_down 
-    , move (40,0) 
-    
+path2 = localize (stroke_colour red) $ fillPathSpec path_spec1
+
+
+path_spec1 :: PathSpec Double
+path_spec1 =  
+    [ (id, [ move (0,50) 
+           , move (50,0) 
+           , insert disk1 
+           , pen_up
+           , move (0, (-50))
+           , pen_down 
+           , move (100,0) 
+           ])
+    , (stroke_colour blue, 
+           [ move (50,0)
+           , move (0,50)
+           ])
     ]
   where
-    disk1 = strokedDisk 2
+    disk1 = strokedDisk 10

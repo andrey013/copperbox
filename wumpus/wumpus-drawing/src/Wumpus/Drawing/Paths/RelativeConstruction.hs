@@ -19,13 +19,17 @@
 
 module Wumpus.Drawing.Paths.RelativeConstruction
   ( 
-
-    Action
-  , evalPath
+    PathSpec
+  , Action
+  , fillPathSpec
+  , strokePathSpec
+ 
   , move
   , insert
   , pen_up
   , pen_down
+
+  
 
   ) where
 
@@ -46,12 +50,17 @@ import Control.Applicative
 import Data.Monoid
 
 
+-- PathSpec is a non-empty list of segments and DrawingContext 
+-- update functions.
+--
+type PathSpec u = [(DrawingContextF, [Action u])]
+
+-- Note - with TikZ draw (stroke) does not close the path.
 
 data Action u = Move (Vec2 u)
               | Insert (LocGraphic u)
               | PenUp
               | PenDown
-
 
 data ActivePen path = PenStateUp | PenStateDown path
 
@@ -78,7 +87,7 @@ data Log u = Log { insert_trace    :: H (LocGraphic u)
            | NoLog
 
 instance Monoid (Log u) where
-  mempty = NoLog
+  mempty                = NoLog
   NoLog `mappend` b     = b
   a     `mappend` NoLog = a
   a     `mappend` b     = Log (insert_trace a `appendH` insert_trace b)
@@ -115,41 +124,56 @@ instance Monad (EvalM u) where
                     (b,st2,w2) = (getEvalM . k) a st1
                 in (b, st2, w1 `mappend` w2)
 
+-- | Cumulative vector * commulative path * path_img * insert_img
+--
+type SegmentAns u = (Vec2 u, RelPath u, LocGraphic u, LocGraphic u)
 
 -- Note - active pen needs flushing.
 --
 execEvalM :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-          => EvalM u a -> (RelPath u, LocGraphic u, LocGraphic u) 
-execEvalM mf = post $ getEvalM mf zeroSt
+          => Vec2 u -> EvalM u a -> SegmentAns u
+execEvalM v0 mf = post $ getEvalM mf (initSt v0)
   where
-    mkGraphic     = altconcat emptyLocGraphic . toListH
-    post (_,st,w) = let path_img = mkGraphic $ pen_trace w
-                        ins_img  = mkGraphic $ insert_trace w
+    post (_,st,w) = let path_img = penTrace w
+                        ins_img  = insertTrace w
                         path_ans = cumulative_path st 
+                        v_end    = cumulative_disp st
                     in case active_pen st of
-                         (_, PenStateUp)     -> (path_ans, path_img, ins_img)
+                         (_, PenStateUp) -> (v_end, path_ans, path_img, ins_img)
+                         
                          (v, PenStateDown p) -> let g1 = penGraphic v p 
-                                                in ( path_ans 
+                                                in ( v_end
+                                                   , path_ans 
                                                    , path_img `oplus` g1
                                                    , ins_img )
-                                             
+-- warning wrong v...
 
-zeroSt :: Num u => St u
-zeroSt = St { cumulative_disp   = V2 0 0
-            , cumulative_path   = emptyRelPath
-            , active_pen        = (V2 0 0, PenStateDown emptyRelPath)
-            }
+penTrace :: InterpretUnit u => Log u -> LocGraphic u
+penTrace NoLog                   = emptyLocGraphic
+penTrace (Log { pen_trace = hl}) = altconcat emptyLocGraphic $ toListH hl
+
+insertTrace :: InterpretUnit u => Log u -> LocGraphic u
+insertTrace NoLog                      = emptyLocGraphic
+insertTrace (Log { insert_trace = hl}) = altconcat emptyLocGraphic $ toListH hl
+
+
+
+initSt :: Num u => Vec2 u -> St u
+initSt v = St { cumulative_disp   = v
+              , cumulative_path   = emptyRelPath
+              , active_pen        = (v, PenStateDown emptyRelPath)
+              }
 
 
 perform :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-        => [Action u] -> (RelPath u, LocGraphic u, LocGraphic u)
-perform []     = (emptyRelPath, emptyLocGraphic, emptyLocGraphic)
-perform (x:xs) = execEvalM (go x xs)
+        => Vec2 u -> [Action u] -> SegmentAns u
+perform v []     = (v, emptyRelPath, emptyLocGraphic, emptyLocGraphic)
+perform v (x:xs) = execEvalM v (go x xs)
   where
     go a []     = step1 a 
     go a (b:bs) = step1 a >> go b bs 
     
-    step1 (Move v)    = interpMove v
+    step1 (Move v1)   = interpMove v1
     step1 (Insert gf) = interpInsert gf
     step1 PenUp       = interpPenUp
     step1 PenDown     = interpPenDown
@@ -224,13 +248,38 @@ interpPenDown =
 
 
 
-evalPath :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-         => [Action u] -> LocImage AbsPath u
-evalPath xs = promoteR1 $ \start -> 
-    replaceAns (toAbsPath start rp) $ decorate img deco `at` start
+execPathSpec :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+             => PathSpec u -> (RelPath u, LocGraphic u, LocGraphic u)
+execPathSpec []     = (emptyRelPath, emptyLocGraphic, emptyLocGraphic)
+execPathSpec (a:as) = go1 (V2 0 0) a as
   where
-    (rp,img,deco) = perform xs
-        
+    go1 v (upd,cmds) xs                   = 
+        let (v1,path,gfp,gfi) = perform v cmds
+        in go2 v1 (path, localize upd gfp, gfi) xs
+
+    go2 _ acc            []               = acc
+    go2 v (p0,gfp0,gfi0) ((upd,cmds):xs)  = 
+        let (v1,p1,gfp1,gfi1) = perform v cmds
+            gpath             = gfp0 `oplus` localize upd gfp1
+            gins              = gfi0 `oplus` gfi1
+        in go2 v1 (p0 `append` p1, gpath, gins) xs
+                                        
+
+fillPathSpec :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+             => PathSpec u -> LocImage AbsPath u
+fillPathSpec spec = promoteR1 $ \start -> 
+    let (rp,_,deco) = execPathSpec spec
+        ap          = toAbsPath start rp
+    in Abs.toPrimPath ap >>= \pp -> 
+       replaceAns ap $ decorate (filledPath pp) (deco `at` start)
+
+
+strokePathSpec :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+             => PathSpec u -> LocImage AbsPath u
+strokePathSpec spec = promoteR1 $ \start -> 
+    let (rp,img,deco) = execPathSpec spec
+        ap            = toAbsPath start rp
+    in replaceAns ap $ decorate (img `at` start) (deco `at` start)
 
 
 drawPath :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
@@ -238,7 +287,13 @@ drawPath :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u)
 drawPath rp = promoteR1 $ \start -> 
     let ap = toAbsPath start rp
     in replaceAns ap $ Abs.toPrimPath ap >>= openStroke
+
+
+
+
     
+--------------------------------------------------------------------------------
+-- user commands
 
 
 move :: (u,u) -> Action u
