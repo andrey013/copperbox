@@ -6,6 +6,7 @@ import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.MonadicConstruction
 
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -51,14 +52,14 @@ curve3 = localize (stroke_colour blue)
                   (toPrimPath (shortenPath 10 10 path1) >>= openStroke)
 
 
-path1 :: Path Double
+path1 :: AbsPath Double
 path1 = execPath (P2 60 0) $ curveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
 circle1 = localize (fill_colour gold) (filledCircle 60 `at` zeroPt)
 
-cto4 :: Path Double
+cto4 :: AbsPath Double
 cto4 = execPath (P2 180 0) $ curveto (pi/2) 0 (P2 120 60)
 
 

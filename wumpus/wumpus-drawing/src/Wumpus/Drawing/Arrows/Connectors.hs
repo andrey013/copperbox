@@ -49,14 +49,14 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 -- /Image/, drawing it returns the path - positions can be taken 
 -- on the path (e.g. @midpoint@) for further decoration.
 --
-type PathConnector u    = ConnectorImage Path u
+type PathConnector u    = ConnectorImage AbsPath u
 type DPathConnector     = PathConnector Double
 
 
 -- | Note - a PathCF is a context function not a graphic 
 --  
 
-type PathQuery u = ConnectorQuery u (Path u)
+type PathQuery u = ConnectorQuery u (AbsPath u)
 
 type DPathQuery  = PathQuery Double
 

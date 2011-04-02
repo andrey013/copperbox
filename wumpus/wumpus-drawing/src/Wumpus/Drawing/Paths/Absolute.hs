@@ -28,6 +28,7 @@ module Wumpus.Drawing.Paths.Absolute
   , length
   , append
   , pconcat
+  , pathZero
   , line
   , curve
   , pivot
@@ -91,10 +92,10 @@ import Prelude hiding ( length )
 -- | Absolute path data type.
 
 data AbsPath u = AbsPath 
-      { abs_path_length   :: u 
-      , abs_path_start    :: Point2 u
-      , abs_path_elements :: JoinList (AbsPathSeg u)
-      , abs_path_end      :: Point2 u
+      { _abs_path_length   :: u 
+      , _abs_path_start    :: Point2 u
+      , _abs_path_elements :: JoinList (AbsPathSeg u)
+      , _abs_path_end      :: Point2 u
       }
   deriving (Eq,Show)
 
@@ -120,16 +121,16 @@ type DAbsPath = AbsPath Double
 -- Annotation is length...
 -- 
 data AbsPathSeg u = AbsLineSeg  
-                        { abs_line_length  :: u 
-                        , abs_line_start   :: Point2 u
-                        , abs_line_end     :: Point2 u
+                        { _abs_line_length  :: u 
+                        , _abs_line_start   :: Point2 u
+                        , _abs_line_end     :: Point2 u
                         }
                   | AbsCurveSeg 
-                        { abs_curve_length :: u 
-                        , abs_curve_start  :: Point2 u
-                        , abs_ctrl_pt_one  :: Point2 u
-                        , abs_ctrl_pt_two  :: Point2 u
-                        , abs_curve_end    :: Point2 u
+                        { _abs_curve_length :: u 
+                        , _abs_curve_start  :: Point2 u
+                        , _abs_ctrl_pt_one  :: Point2 u
+                        , _abs_ctrl_pt_two  :: Point2 u
+                        , _abs_curve_end    :: Point2 u
                         }
   deriving (Eq,Show)
 
@@ -277,7 +278,7 @@ toPrimPath (AbsPath _ start segs _) =
     step1 p0 EmptyL                   = emptyPrimPath p0
     step1 _  (e :< se)                = let (p0,a) = seg1 e
                                             rest   = step2 (viewl se)
-                                        in primPath p0 (a:rest)
+                                        in absPrimPath p0 (a:rest)
 
     step2 EmptyL                      = []
     step2 (e :< se)                   = seg2 e : step2 (viewl se)
