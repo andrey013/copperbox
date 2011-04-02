@@ -34,6 +34,15 @@ path1 :: LocGraphic Double
 path1 = strokeRelPath $ lineTo (hvec 20)
 
 path2 :: LocImage A.AbsPath Double
-path2 = evalPath [ move (0,20) , move (20,0) , insert disk1 , move (0, (-20)) ]
+path2 = evalPath 
+    [ move (0,20) 
+    , move (20,0) 
+    , insert disk1 
+    , pen_up
+    , move (0, (-20))
+    , pen_down 
+    , move (40,0) 
+    
+    ]
   where
     disk1 = strokedDisk 2
