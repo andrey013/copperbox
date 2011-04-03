@@ -56,10 +56,10 @@ redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 redPlus = localize (stroke_colour red) markPlus
 
 
-body :: (Ord u, InterpretUnit u) => [DocText u]
+body :: (Ord u, InterpretUnit u) => [Doc u]
 body = [ string "Further work"
        , (textSize 48 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
-       , ( rfillString 50 "and") <> string "other things."
+       , ( rfill 50 $ string "and") <> string "other things."
        ] 

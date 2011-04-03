@@ -20,8 +20,7 @@
 module Wumpus.Drawing.Text.Base.DocTextZero
   ( 
 
-
-    DocText
+    Doc 
   , TextFrame
 
   , leftAlign
@@ -31,18 +30,15 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , blank
   , space
   , string
-  , int
-  , integer
+  , escaped
+--  , int
+--  , integer
   , (<>)
   , (<+>) 
 
-  , lfillString
-  , lfillEscaped
-  , cfillString
-  , cfillEscaped
-  , rfillString
-  , rfillEscaped
-
+  , lfill
+  , rfill
+  , centerfill
 
   , fontColour
   , textSize
@@ -59,16 +55,16 @@ import Control.Applicative
 import Data.Char ( ord )
 
 
--- Design note - constructing /syntax/ like the internal Doc
--- type in @wl-pprint@ might allow the best API for multi-line
--- text.
+
+-- | Space is the width of a space in the current font - it is 
+-- filled in during interpretation.
 --
-
-
-type DocText u = BoundedPosObject u
-      
-
-
+data Doc u = Empty
+           | Space 
+           | Text  EscapedText
+           | Cat   (Doc u)          (Doc u)
+           | Fill  VAlign           u         (Doc u)
+           | Local DrawingContextF  (Doc u)
 
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
@@ -76,64 +72,201 @@ type DocText u = BoundedPosObject u
 type TextFrame u = BoundedLocRectGraphic u
 
 
+blank       :: Doc u
+blank       = Empty
+
+space       :: Doc u
+space       = Space
+
+string      :: String -> Doc u
+string      = Text . escapeString
+
+escaped     :: EscapedText -> Doc u
+escaped     = Text
+
+
+infixr 6 <>, <+>
+
+
+-- | Concatenate two DocTexts separated with no spacing.
+--
+(<>) :: Doc u -> Doc u -> Doc u
+a <> b = Cat a b
+ 
+
+-- | Concatenate two DocTexts separated with a space.
+--
+(<+>) :: Doc u -> Doc u -> Doc u
+a <+> b = a <> space <> b 
+
+
+rfill :: u -> Doc u -> Doc u
+rfill = Fill VLeft
+
+lfill :: u -> Doc u -> Doc u
+lfill = Fill VRight
+
+
+centerfill :: u -> Doc u -> Doc u
+centerfill = Fill VCenter
+
+
+
+fontColour :: RGBi -> Doc u -> Doc u
+fontColour rgb = Local (text_colour rgb)
+
+
+-- Note with the formulation @ CF (u,AdvGraphic u) @ changing
+-- text size will not work.
+--
+
+textSize :: Int -> Doc u -> Doc u
+textSize sz = Local (set_font_size sz)
+
+
+
+type BoundedDoc u = BoundedPosObject u
+
+
+
+newtype EvalM a = EvalM { getEvalM :: DrawingContext -> a }
+
+instance Functor EvalM where
+  fmap f mf = EvalM $ \ctx -> f $ getEvalM mf ctx
+
+
+instance Applicative EvalM where
+  pure a    = EvalM $ \_   -> a
+  mf <*> ma = EvalM $ \ctx -> 
+                let f = getEvalM mf ctx
+                    a = getEvalM ma ctx
+                in f a
+
+instance Monad EvalM where
+  return a  = EvalM $ \_   -> a
+  ma >>= k  = EvalM $ \ctx -> 
+                let a = getEvalM ma ctx
+                in (getEvalM . k) a ctx
+
+
+instance DrawingCtxM EvalM where
+  askDC           = EvalM $ \ctx -> ctx
+  asksDC f        = EvalM $ \ctx -> f ctx
+  localize upd mf = EvalM $ \ctx -> getEvalM mf (upd ctx)
+
+
+runEvalM :: DrawingContext -> EvalM a -> a
+runEvalM ctx mf = getEvalM mf ctx
+
+
+
+type InterpAns u = (Orientation u, BoundedDoc u)
+
+
 leftAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [DocText u] -> TextFrame u
+          => [Doc u] -> TextFrame u
 leftAlign = renderMultiLine VLeft
 
 centerAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [DocText u] -> TextFrame u
+          => [Doc u] -> TextFrame u
 centerAlign = renderMultiLine VCenter
 
 
 rightAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [DocText u] -> TextFrame u
+          => [Doc u] -> TextFrame u
 rightAlign = renderMultiLine VRight
 
 
 
-
 renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
-                => VAlign -> [DocText u] -> TextFrame u
-renderMultiLine va docs = lift0R2 body >>= posTextWithMargins
+                => VAlign -> [Doc u] -> BoundedLocRectGraphic u
+renderMultiLine va docs = 
+    askDC >>= \ctx -> 
+    let xs = map (snd . runEvalM ctx . interpret) docs
+    in body xs >>= posTextWithMargins
   where
-    body     = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse docs)
+    body xs = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse xs)
                  <$> textlineSpace
 
 
-          
 
--- | Build a blank DocText with no output and a 0 width vector.
---
-blank :: InterpretUnit u => DocText u
-blank = makeBoundedPosObject (pure $ zeroOrtt) emptyLocGraphic
-  where
-    zeroOrtt = Orientation 0 0 0 0
-
-
-
-
-escaped :: InterpretUnit u => EscapedText -> DocText u
-escaped esc = makeBoundedPosObject (textOrientationZero esc) (escTextLine esc)
- 
+interpret :: (Fractional u, Ord u, InterpretUnit u) 
+          => Doc u -> EvalM (InterpAns u)
+interpret Empty             = interpEmpty
+interpret Space             = interpSpace
+interpret (Text esc)        = interpText esc
+interpret (Cat a b)         = catAns <$> interpret a <*> interpret b
+interpret (Fill va w a)     = fillAns va w <$> interpret a
+interpret (Local upd mf)    = interpLocal upd mf 
 
 
--- | Build a DocText from a string.
+makeInterpAns :: Num u => Orientation u -> LocGraphic u -> InterpAns u
+makeInterpAns ortt gf = (ortt, makeBoundedPosObject (pure $ ortt) gf)
+
+interpEmpty :: InterpretUnit u => EvalM (InterpAns u)
+interpEmpty = return $ makeInterpAns (Orientation 0 0 0 0) emptyLocGraphic
+
+
+
+-- | Note - the current way of seeding the LocGraphic with the 
+-- DrawingContext looks dodgy (substantial copying). 
 -- 
--- Note the string should not contain newlines or tabs.
+-- Maybe EvalM should have a private, much smaller 
+-- DrawingContext...
 --
-string :: InterpretUnit u => String -> DocText u
-string = escaped . escapeString
+interpText :: InterpretUnit u
+           => EscapedText -> EvalM (InterpAns u)
+interpText esc = 
+    (\ortt ctx -> (ortt, makeBoundedPosObject (pure ortt) $ 
+                            localize (const ctx) $ escTextLine esc))
+      <$> textOrientationZero esc <*> askDC 
 
 
 -- | Note - a space character is not draw in the output, instead 
 -- 'space' advances the width vector by the width of a space in 
 -- the current font.
 --
-space :: InterpretUnit u => DocText u
-space = makeBoundedPosObject qort emptyLocGraphic
-  where
-    qort = charOrientationZero (CharEscInt $ ord ' ')
+interpSpace :: InterpretUnit u 
+            => EvalM (InterpAns u)
+interpSpace = 
+    (\ortt -> makeInterpAns ortt emptyLocGraphic)
+      <$> charOrientationZero (CharEscInt $ ord ' ')
 
+
+-- | Don\'t need the monad for @Cat@.
+--
+catAns :: (Num u, Ord u) => InterpAns u -> InterpAns u -> InterpAns u
+catAns (o0,gf0) (o1,gf1) = (o0 `spineRight` o1, gf0 `hcatPO` gf1)
+
+
+fillAns :: (Fractional u, Ord u) 
+        => VAlign -> u -> InterpAns u -> InterpAns u
+fillAns va w (o@(Orientation xmin xmaj _ _), po) = 
+    if (w <= ow) then (o,po)
+                 else (omove va o, gmove va po)
+  where
+    ow            = xmin + xmaj
+    dx            = w - ow
+    
+    omove VLeft   = extendORight dx 
+    omove VCenter = extendORight (0.5*dx) . extendOLeft (0.5*dx)
+    omove VRight  = extendOLeft dx
+
+    gmove VLeft   = bimapPosObject (fmap $ omove VLeft) id
+    gmove VCenter = bimapPosObject (fmap $ omove VCenter) 
+                                   (moveStart (displaceVec $ hvec $ 0.5*dx))
+    gmove VRight  = bimapPosObject (fmap $ omove VRight) 
+                                   (moveStart (displaceVec $ hvec dx))
+
+
+
+
+interpLocal :: (Fractional u, Ord u, InterpretUnit u) 
+            => DrawingContextF -> Doc u -> EvalM (InterpAns u)
+interpLocal upd doc = localize upd (interpret doc)
+
+
+{-
 
 int :: InterpretUnit u => Int -> DocText u
 int i = uniformSpace (map CharLiteral $ show i) mkvecQ 
@@ -147,103 +280,11 @@ integer i = uniformSpace (map CharLiteral $ show i) mkvecQ
   where
     mkvecQ = advanceH <$> charVector (CharLiteral '0')
     
-
-
-infixr 6 <>, <+>
-
-
--- | Concatenate two DocTexts separated with no spacing.
---
-(<>) :: (Num u, Ord u) => DocText u -> DocText u -> DocText u
-a <> b = a `hcatPO` b
- 
-
--- | Concatenate two DocTexts separated with a space.
---
-(<+>) :: (InterpretUnit u, Ord u) => DocText u -> DocText u -> DocText u
-a <+> b = a <> space <> b 
-
---
--- Design note - there is no useful /feedback/ between the 
--- Orientation-Query and the LocImage in a PosObject, so we 
--- cannot have this more general fill combinator 
---
--- > lfill :: u -> DocText u -> DocText u
---
---
-
--- | Left fill string.
---
-lfillString :: (Ord u, InterpretUnit u) => u -> String -> DocText u
-lfillString w ss = lfillEscaped w (escapeString ss)
-
-
--- | Left fill escaped text.
---
-lfillEscaped :: (Ord u, InterpretUnit u) => u -> EscapedText -> DocText u
-lfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
-  where
-    calcOrtt = fmap (lfillOrientation w) $ textOrientationZero esc
+-}
 
 
 
-
--- | Center fill String - i.e. add equal fill at left and right.
---
-cfillString :: (Fractional u, Ord u, InterpretUnit u) 
-            => u -> String -> DocText u
-cfillString w ss = cfillEscaped w (escapeString ss)
-
-
--- | Center fill escaped text - i.e. add equal fill at left and 
--- right.
---
-cfillEscaped :: (Fractional u, Ord u, InterpretUnit u) 
-             => u -> EscapedText -> DocText u
-cfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
-  where
-    calcOrtt = fmap (cfillOrientation w) $ textOrientationZero esc
-
-
--- | Right fill String.
---
-rfillString :: (Ord u, InterpretUnit u) => u -> String -> DocText u
-rfillString w ss = rfillEscaped w (escapeString ss)
-
-
--- | Right fill escaped text
---
-rfillEscaped :: (Ord u, InterpretUnit u) => u -> EscapedText -> DocText u
-rfillEscaped w esc = makeBoundedPosObject calcOrtt (escTextLine esc)
-  where
-    calcOrtt = fmap (rfillOrientation w) $ textOrientationZero esc
-
-
-
-
-
--- A contextual version might be useful...
--- cxrfill :: Ord u => DrawingInfo u -> DocText u -> DocText u
-
-
--- Note - @fill@ combinators cf. @wl-pprint@ (but left and right) 
--- will be very useful.
---
--- Also PosObjects can be inlined in text...
---
-
-fontColour :: RGBi -> DocText u -> DocText u
-fontColour rgb = doclocal (text_colour rgb)
-
-
--- Note with the formulation @ CF (u,AdvGraphic u) @ changing
--- text size will not work.
---
-
-textSize :: Int -> DocText u -> DocText u
-textSize sz = doclocal (set_font_size sz)
-
-
+{-
 --------------------------------------------------------------------------------
 -- Helpers
 
@@ -260,34 +301,5 @@ hkernPrim :: InterpretUnit u => Query [KernChar u] -> BoundedPosObject u
 hkernPrim qks = 
     makeBoundedPosObject (qks >>= hkernOrientationZero) (lift0R1 qks >>= hkernLine)
            
-
-
--- This works but it looks flaky - as DocText is essentially a 
--- query, it has to (a) transform the environment which it is run,
--- (b) transform the LocImage part of the PosObject
---
-doclocal :: DrawingContextF -> DocText u -> DocText u
-doclocal upd = bimapPosObject (localize upd) (localize upd)
-
-
-lfillOrientation :: (Num u, Ord u) => u -> Orientation u -> Orientation u
-lfillOrientation lw o@(Orientation xmin xmaj ymin ymaj) =
-   if lw > w then Orientation (xmin+dx) xmaj ymin ymaj else o
-  where
-    w  = xmin + xmaj
-    dx = lw - w 
-
-cfillOrientation :: (Fractional u, Ord u) => u -> Orientation u -> Orientation u
-cfillOrientation rw o@(Orientation xmin xmaj ymin ymaj) =
-   if rw > w then Orientation (xmin+hdx) (xmaj+hdx) ymin ymaj else o
-  where
-    w   = xmin + xmaj
-    hdx = 0.5 * (rw - w)
-
-rfillOrientation :: (Num u, Ord u) => u -> Orientation u -> Orientation u
-rfillOrientation rw o@(Orientation xmin xmaj ymin ymaj) =
-   if rw > w then Orientation xmin (xmaj+dx) ymin ymaj else o
-  where
-    w  = xmin + xmaj
-    dx = rw - w 
+-}
 
