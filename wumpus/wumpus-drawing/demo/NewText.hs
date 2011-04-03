@@ -58,7 +58,7 @@ redPlus = localize (stroke_colour red) markPlus
 
 body :: (Ord u, InterpretUnit u) => [Doc u]
 body = [ string "Further work"
-       , (textSize 48 $ string "on")
+       , (textSize 36 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
        , ( rfill 50 $ string "and") <> string "other things."

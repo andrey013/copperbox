@@ -64,7 +64,7 @@ data Doc u = Empty
            | Text  EscapedText
            | Cat   (Doc u)          (Doc u)
            | Fill  VAlign           u         (Doc u)
-           | Local DrawingContextF  (Doc u)
+           | Local TextCtxF         (Doc u)
 
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
@@ -113,7 +113,7 @@ centerfill = Fill VCenter
 
 
 fontColour :: RGBi -> Doc u -> Doc u
-fontColour rgb = Local (text_colour rgb)
+fontColour rgb = Local (\s -> s { diff_text_colour = Just rgb })
 
 
 -- Note with the formulation @ CF (u,AdvGraphic u) @ changing
@@ -121,7 +121,7 @@ fontColour rgb = Local (text_colour rgb)
 --
 
 textSize :: Int -> Doc u -> Doc u
-textSize sz = Local (set_font_size sz)
+textSize sz = Local (\s -> s { diff_font_size = Just sz} )
 
 
 
@@ -129,36 +129,67 @@ type BoundedDoc u = BoundedPosObject u
 
 
 
-newtype EvalM a = EvalM { getEvalM :: DrawingContext -> a }
+newtype EvalM a = EvalM { getEvalM :: DrawingContext -> TextCtx -> a }
+
+
+-- | TextCtx gets around the fact that we are evaluating in a
+-- different monad to the one we are (finally) drawing in.
+--
+data TextCtx = TextCtx 
+      { diff_font_size    :: Maybe FontSize
+      , diff_text_colour  :: Maybe RGBi
+      , diff_font_def     :: Maybe FontDef
+      }
+
+type TextCtxF = TextCtx -> TextCtx
 
 instance Functor EvalM where
-  fmap f mf = EvalM $ \ctx -> f $ getEvalM mf ctx
+  fmap f mf = EvalM $ \ctx tcx -> f $ getEvalM mf ctx tcx
 
 
 instance Applicative EvalM where
-  pure a    = EvalM $ \_   -> a
-  mf <*> ma = EvalM $ \ctx -> 
-                let f = getEvalM mf ctx
-                    a = getEvalM ma ctx
+  pure a    = EvalM $ \_   _   -> a
+  mf <*> ma = EvalM $ \ctx tcx -> 
+                let f = getEvalM mf ctx tcx
+                    a = getEvalM ma ctx tcx
                 in f a
 
 instance Monad EvalM where
-  return a  = EvalM $ \_   -> a
-  ma >>= k  = EvalM $ \ctx -> 
-                let a = getEvalM ma ctx
-                in (getEvalM . k) a ctx
+  return a  = EvalM $ \_   _   -> a
+  ma >>= k  = EvalM $ \ctx tcx -> 
+                let a = getEvalM ma ctx tcx
+                in (getEvalM . k) a ctx tcx
 
 
 instance DrawingCtxM EvalM where
-  askDC           = EvalM $ \ctx -> ctx
-  asksDC f        = EvalM $ \ctx -> f ctx
-  localize upd mf = EvalM $ \ctx -> getEvalM mf (upd ctx)
+  askDC           = EvalM $ \ctx _   -> ctx
+  asksDC f        = EvalM $ \ctx _   -> f ctx
+  localize upd mf = EvalM $ \ctx tcx -> getEvalM mf (upd ctx) tcx
 
+
+-- | This is a one off - so no need for a class.
+--
+localizeTextCtx :: TextCtxF -> EvalM a -> EvalM a
+localizeTextCtx upd mf = EvalM $ \ctx tcx -> getEvalM mf ctx (upd tcx)
 
 runEvalM :: DrawingContext -> EvalM a -> a
-runEvalM ctx mf = getEvalM mf ctx
+runEvalM ctx mf = getEvalM mf ctx zeroTextCtx
+
+zeroTextCtx :: TextCtx
+zeroTextCtx = TextCtx { diff_font_size    = Nothing
+                      , diff_text_colour  = Nothing
+                      , diff_font_def     = Nothing
+                      }
 
 
+
+ctxUpdate :: EvalM DrawingContextF 
+ctxUpdate = EvalM $ \_ tcx -> 
+    diffSize tcx . diffColour tcx . diffFace tcx
+  where
+    diffSize    = maybe id set_font_size . diff_font_size
+    diffColour  = maybe id text_colour   . diff_text_colour
+    diffFace    = maybe id set_font      . diff_font_def
 
 type InterpAns u = (Orientation u, BoundedDoc u)
 
@@ -188,6 +219,12 @@ renderMultiLine va docs =
     body xs = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse xs)
                  <$> textlineSpace
 
+ctxInterp :: Num u 
+          => EvalM (Orientation u) -> LocGraphic u -> EvalM (InterpAns u)
+ctxInterp mo img = 
+    ctxUpdate       >>= \upd  -> 
+    localize upd mo >>= \ortt -> 
+    return (ortt, makeBoundedPosObject (pure $ ortt) (localize upd img))
 
 
 interpret :: (Fractional u, Ord u, InterpretUnit u) 
@@ -200,11 +237,9 @@ interpret (Fill va w a)     = fillAns va w <$> interpret a
 interpret (Local upd mf)    = interpLocal upd mf 
 
 
-makeInterpAns :: Num u => Orientation u -> LocGraphic u -> InterpAns u
-makeInterpAns ortt gf = (ortt, makeBoundedPosObject (pure $ ortt) gf)
 
 interpEmpty :: InterpretUnit u => EvalM (InterpAns u)
-interpEmpty = return $ makeInterpAns (Orientation 0 0 0 0) emptyLocGraphic
+interpEmpty = ctxInterp (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
 
 
@@ -217,9 +252,9 @@ interpEmpty = return $ makeInterpAns (Orientation 0 0 0 0) emptyLocGraphic
 interpText :: InterpretUnit u
            => EscapedText -> EvalM (InterpAns u)
 interpText esc = 
-    (\ortt ctx -> (ortt, makeBoundedPosObject (pure ortt) $ 
-                            localize (const ctx) $ escTextLine esc))
-      <$> textOrientationZero esc <*> askDC 
+    ctxInterp (textOrientationZero esc) (escTextLine esc)
+   
+
 
 
 -- | Note - a space character is not draw in the output, instead 
@@ -229,8 +264,8 @@ interpText esc =
 interpSpace :: InterpretUnit u 
             => EvalM (InterpAns u)
 interpSpace = 
-    (\ortt -> makeInterpAns ortt emptyLocGraphic)
-      <$> charOrientationZero (CharEscInt $ ord ' ')
+    ctxInterp (charOrientationZero $ CharEscInt $ ord ' ') emptyLocGraphic
+
 
 
 -- | Don\'t need the monad for @Cat@.
@@ -262,8 +297,8 @@ fillAns va w (o@(Orientation xmin xmaj _ _), po) =
 
 
 interpLocal :: (Fractional u, Ord u, InterpretUnit u) 
-            => DrawingContextF -> Doc u -> EvalM (InterpAns u)
-interpLocal upd doc = localize upd (interpret doc)
+            => TextCtxF -> Doc u -> EvalM (InterpAns u)
+interpLocal upd doc = localizeTextCtx upd (interpret doc)
 
 
 {-
