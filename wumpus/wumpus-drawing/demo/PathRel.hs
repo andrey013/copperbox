@@ -29,8 +29,6 @@ path_pic = drawTracing $ do
     return ()  
     
 
-path0 :: LocGraphic Double
-path0 = strokeRelPath $ lineTo (hvec 20)
 
 path1 :: LocImage A.AbsPath Double
 path1 = localize (stroke_colour red) $ strokePathSpec path_spec1
@@ -41,18 +39,26 @@ path2 = localize (stroke_colour red) $ fillPathSpec path_spec1
 
 path_spec1 :: PathSpec Double
 path_spec1 =  
-    [ (id, [ move (0,50) 
-           , move (50,0) 
+    [ (id, [ lineto (0,50) 
+           , lineto (50,0) 
            , insert disk1 
-           , pen_up
-           , move (0, (-50))
-           , pen_down 
-           , move (100,0) 
+           , moveto (0, (-50))
+           , lineto (100,0) 
+           , vamp   (40,40) (dotted_line) square
+           , lineto (20, 0)
            ])
     , (stroke_colour blue, 
-           [ move (50,0)
-           , move (0,50)
+           [ lineto (50,0)
+           , lineto (0,(-40))
            ])
     ]
   where
     disk1 = strokedDisk 10
+
+
+
+-- What about close / cycle ?
+--
+square :: RelPath Double
+square = lineTo (hvec 40) `append` lineTo (vvec 40) 
+    `append` lineTo (hvec $ negate 40) `append` lineTo (vvec $ negate 40)

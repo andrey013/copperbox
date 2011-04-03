@@ -24,12 +24,11 @@ module Wumpus.Drawing.Paths.RelativeConstruction
   , fillPathSpec
   , strokePathSpec
  
-  , move
+  , moveto
+  , lineto
+  , curveto
   , insert
-  , pen_up
-  , pen_down
-
-  
+  , vamp
 
   ) where
 
@@ -48,7 +47,7 @@ import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
-
+import Prelude hiding ( null )
 
 -- PathSpec is a non-empty list of segments and DrawingContext 
 -- update functions.
@@ -57,28 +56,18 @@ type PathSpec u = [(DrawingContextF, [Action u])]
 
 -- Note - with TikZ draw (stroke) does not close the path.
 
-data Action u = Move (Vec2 u)
-              | Insert (LocGraphic u)
-              | PenUp
-              | PenDown
+data Action u = Line    (Vec2 u)
+              | Move    (Vec2 u)
+              | Curve   (Vec2 u)  (Vec2 u)  (Vec2 u)
+              | Insert  (LocGraphic u)
+              | Vamp    (Vec2 u)  DrawingContextF  (RelPath u)
 
-data ActivePen path = PenStateUp | PenStateDown path
-
-type RelPen u = ActivePen (RelPath u)
-
-continuePath :: RelPath u -> RelPen u -> RelPen u
-continuePath _  PenStateUp         = PenStateUp
-continuePath s1 (PenStateDown acc) = PenStateDown $ acc `append` s1
-
-
-continuePen :: RelPath u -> (Vec2 u, RelPen u) -> (Vec2 u, RelPen u)
-continuePen s1 (v,pen) = (v, continuePath s1 pen)
 
 
 data St u = St 
       { cumulative_disp   :: Vec2 u
       , cumulative_path   :: RelPath u
-      , active_pen        :: (Vec2 u, RelPen u)
+      , active_path       :: (Vec2 u, RelPath u)
       }
 
 data Log u = Log { insert_trace    :: H (LocGraphic u)
@@ -87,11 +76,10 @@ data Log u = Log { insert_trace    :: H (LocGraphic u)
            | NoLog
 
 instance Monoid (Log u) where
-  mempty                = NoLog
-  NoLog `mappend` b     = b
-  a     `mappend` NoLog = a
-  a     `mappend` b     = Log (insert_trace a `appendH` insert_trace b)
-                              (pen_trace a `appendH` pen_trace b)
+  mempty                        = NoLog
+  NoLog     `mappend` b         = b
+  a         `mappend` NoLog     = a
+  Log li lp `mappend` Log ri rp = Log (li `appendH` ri) (lp `appendH` rp)
 
  
 -- Don\'t want to write pen trace along with the insert commands 
@@ -134,19 +122,12 @@ execEvalM :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u)
           => Vec2 u -> EvalM u a -> SegmentAns u
 execEvalM v0 mf = post $ getEvalM mf (initSt v0)
   where
-    post (_,st,w) = let path_img = penTrace w
-                        ins_img  = insertTrace w
-                        path_ans = cumulative_path st 
-                        v_end    = cumulative_disp st
-                    in case active_pen st of
-                         (_, PenStateUp) -> (v_end, path_ans, path_img, ins_img)
-                         
-                         (v, PenStateDown p) -> let g1 = penGraphic v p 
-                                                in ( v_end
-                                                   , path_ans 
-                                                   , path_img `oplus` g1
-                                                   , ins_img )
--- warning wrong v...
+    post (_,st,w) = let last_path = uncurry penGraphic $ active_path st
+                        path_img  = penTrace w `oplus` last_path
+                        ins_img   = insertTrace w
+                        path_ans  = cumulative_path st 
+                        v_end     = cumulative_disp st
+                    in (v_end, path_ans, path_img, ins_img)
 
 penTrace :: InterpretUnit u => Log u -> LocGraphic u
 penTrace NoLog                   = emptyLocGraphic
@@ -161,27 +142,10 @@ insertTrace (Log { insert_trace = hl}) = altconcat emptyLocGraphic $ toListH hl
 initSt :: Num u => Vec2 u -> St u
 initSt v = St { cumulative_disp   = v
               , cumulative_path   = emptyRelPath
-              , active_pen        = (v, PenStateDown emptyRelPath)
+              , active_path       = (v, emptyRelPath)
               }
 
 
-perform :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-        => Vec2 u -> [Action u] -> SegmentAns u
-perform v []     = (v, emptyRelPath, emptyLocGraphic, emptyLocGraphic)
-perform v (x:xs) = execEvalM v (go x xs)
-  where
-    go a []     = step1 a 
-    go a (b:bs) = step1 a >> go b bs 
-    
-    step1 (Move v1)   = interpMove v1
-    step1 (Insert gf) = interpInsert gf
-    step1 PenUp       = interpPenUp
-    step1 PenDown     = interpPenDown
-
-
-penGraphic :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-           => Vec2 u -> RelPath u -> LocGraphic u
-penGraphic v p = ignoreAns $ moveStart (displaceVec v) $ drawPath p 
       
 
 -- sets :: (St u -> (a, St u)) -> EvalM u a
@@ -202,49 +166,87 @@ tellInsertImage g = EvalM $ \s0 -> ((), s0, log1)
      log1 = Log { insert_trace    = wrapH g
                 , pen_trace       = emptyH  }
 
-tellPenImage :: LocGraphic u -> EvalM u ()
-tellPenImage g = EvalM $ \s0 -> ((), s0, log1)
-   where
-     log1 = Log { insert_trace    = emptyH
-                , pen_trace       = wrapH g }
+
+    
+tellVPath :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+          => (Vec2 u, RelPath u) -> DrawingContextF -> EvalM u ()
+tellVPath (v,rp) upd | null rp   = return () 
+                     | otherwise = EvalM $ \s0 -> ((), s0, log1)
+  where
+    log1 = Log { insert_trace = emptyH
+               , pen_trace    = wrapH $ localize upd $ penGraphic v rp }
 
 
-interpMove :: Num u => Vec2 u -> EvalM u () 
-interpMove v = sets_ upd where
+
+perform :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+        => Vec2 u -> [Action u] -> SegmentAns u
+perform v []     = (v, emptyRelPath, emptyLocGraphic, emptyLocGraphic)
+perform v (x:xs) = execEvalM v (go x xs)
+  where
+    go a []     = step1 a 
+    go a (b:bs) = step1 a >> go b bs 
+    
+    step1 (Line v1)             = interpLine v1
+    step1 (Move v1)             = interpMove v1
+    step1 (Curve v1 v2 v3)      = interpCurve v1 v2 v3
+    step1 (Insert gf)           = interpInsert gf
+    step1 (Vamp v1 upd rp)      = interpVamp v1 upd rp
+
+
+penGraphic :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+           => Vec2 u -> RelPath u -> LocGraphic u
+penGraphic v p = ignoreAns $ moveStart (displaceVec v) $ drawPath p
+
+
+interpLine :: Num u => Vec2 u -> EvalM u () 
+interpLine v = sets_ upd 
+  where
    upd = (\s i j k -> s { cumulative_disp = i ^+^ v
                         , cumulative_path = j `append` lineTo v 
-                        , active_pen      = continuePen (lineTo v) k }) 
-           <*> cumulative_disp <*> cumulative_path <*> active_pen
+                        , active_path     = fn k (lineTo v) }) 
+           <*> cumulative_disp <*> cumulative_path <*> active_path
+   
+   fn (sv,p1) p2 = (sv,p1 `append` p2)
 
 interpInsert :: Num u => LocGraphic u -> EvalM u ()
 interpInsert gf = gets cumulative_disp >>= \v -> 
                   tellInsertImage (moveStart (displaceVec v) gf)
 
-interpPenUp :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-            => EvalM u ()
-interpPenUp = gets active_pen      >>= \pen ->
-              gets cumulative_disp >>= \v -> 
-              tellPen pen >> sets_ (upd v)
+
+
+
+interpCurve :: Num u => Vec2 u -> Vec2 u -> Vec2 u -> EvalM u () 
+interpCurve v1 v2 v3 = sets_ upd 
   where
-    tellPen (_, PenStateUp)     = return ()
-    tellPen (v, PenStateDown p) = tellPenImage $ penGraphic v p
-    upd v                       = (\s -> s { active_pen = (v, PenStateUp) })
+   upd = (\s i j k -> let curve1 = curveTo v1 v2 v3
+                      in s { cumulative_disp = i ^+^ v1 ^+^ v2 ^+^ v3
+                           , cumulative_path = j `append` curve1
+                          , active_path     = fn k curve1 }) 
+           <*> cumulative_disp <*> cumulative_path <*> active_path
+   
+   fn (sv,p1) p2 = (sv,p1 `append` p2)
+   
 
 
 
-interpPenDown :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-            => EvalM u ()
-interpPenDown = 
-    gets active_pen      >>= \pen ->
-    gets cumulative_disp >>= \v -> 
-    tellPen pen >> sets_ (upd v)
+interpMove :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+           => Vec2 u -> EvalM u ()
+interpMove vnext = 
+    gets active_path >>= \ans -> tellVPath ans id >> sets_ upd 
   where
-    tellPen (_, PenStateUp)     = return ()
-    tellPen (v, PenStateDown p) = let gf = moveStart (displaceVec v) $ drawPath p 
-                                  in tellPenImage (ignoreAns gf)
-    upd v                       = (\s -> let pst = PenStateDown emptyRelPath
-                                         in s { active_pen = (v, pst) } )
+   upd = (\s i j -> let vcurrent = i ^+^ vnext
+                    in s { cumulative_disp = vcurrent
+                         , cumulative_path = j `append` lineTo vnext
+                         , active_path     = (vcurrent, emptyRelPath) }) 
+           <*> cumulative_disp <*> cumulative_path
 
+   
+
+interpVamp :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
+           => Vec2 u -> DrawingContextF -> RelPath u -> EvalM u ()
+interpVamp vnext upd rp = 
+    gets cumulative_disp >>= \v0 -> interpMove vnext >> tellVPath (v0,rp) upd
+    
 
 
 
@@ -296,15 +298,18 @@ drawPath rp = promoteR1 $ \start ->
 -- user commands
 
 
-move :: (u,u) -> Action u
-move (x,y) = Move $ V2 x y
+lineto :: (u,u) -> Action u
+lineto (x,y) = Line $ V2 x y
+
+
+moveto :: (u,u) -> Action u
+moveto (x,y) = Move (V2 x y)
+
+curveto :: (u,u) -> (u,u) -> (u,u) -> Action u
+curveto (x1,y1) (x2,y2) (x3,y3) = Curve (V2 x1 y1) (V2 x2 y2) (V2 x3 y3)
 
 insert :: LocGraphic u -> Action u
 insert = Insert
 
-pen_up :: Action u 
-pen_up = PenUp
-
-
-pen_down :: Action u 
-pen_down = PenDown
+vamp :: (u,u) -> DrawingContextF -> RelPath u -> Action u
+vamp (x,y) upd rp = Vamp (V2 x y) upd rp

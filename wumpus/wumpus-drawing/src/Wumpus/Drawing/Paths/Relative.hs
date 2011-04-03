@@ -25,6 +25,7 @@ module Wumpus.Drawing.Paths.Relative
     RelPath
   , DRelPath
 
+  , null
   , emptyRelPath
   , append
   
@@ -53,6 +54,7 @@ import Data.AffineSpace
 import qualified Data.Foldable          as F
 import Data.Monoid
 import qualified Data.Traversable       as T
+import Prelude hiding ( null )
 
 
 
@@ -104,6 +106,8 @@ instance Monoid (RelPath u) where
 
 type LocRelPath u = LocQuery u (RelPath u)
 
+null :: RelPath u -> Bool
+null = JL.null . getRelPath
 
 infixr 1 `append`
 
