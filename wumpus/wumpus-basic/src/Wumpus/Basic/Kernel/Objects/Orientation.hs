@@ -32,6 +32,11 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   , extendODown
   , extendOUp
 
+  , padOLeft
+  , padORight
+  , padODown
+  , padOUp
+
   , spineRight
   , spineAbove
   , alignBottomR
@@ -203,6 +208,43 @@ extendODown u (Orientation xmin xmaj ymin ymaj) =
 extendOUp :: Num u => u -> Orientation u -> Orientation u
 extendOUp u (Orientation xmin xmaj ymin ymaj) = 
     Orientation xmin xmaj ymin (u+ymaj)
+
+
+--------------------------------------------------------------------------------
+
+padORight :: (Num u, Ord u) 
+          => u -> Orientation u -> Orientation u
+padORight w ortt@(Orientation xmin xmaj _ _) = 
+    if w > ow then ortt { or_x_minor = xmin + dx } else ortt
+  where
+    ow = xmin + xmaj
+    dx = w - ow
+
+padOLeft :: (Num u, Ord u)
+         => u -> Orientation u -> Orientation u
+padOLeft w ortt@(Orientation xmin xmaj _ _) = 
+    if w > ow then ortt { or_x_major = xmin + dx } else ortt
+  where
+    ow = xmin + xmaj
+    dx = w - ow
+
+padODown :: (Num u, Ord u) 
+         => u -> Orientation u -> Orientation u
+padODown h ortt@(Orientation _ _ ymin ymaj) = 
+    if h > oh then ortt { or_y_minor = ymin + dy } else ortt
+  where
+    oh = ymin + ymaj
+    dy = h - oh
+
+
+padOUp :: (Num u, Ord u) 
+       => u -> Orientation u -> Orientation u
+padOUp h ortt@(Orientation _ _ ymin ymaj) = 
+    if h > oh then ortt { or_y_major = ymaj + dy } else ortt
+  where
+    oh = ymin + ymaj
+    dy = h - oh
+
 
 --------------------------------------------------------------------------------
 -- Combining Orientation

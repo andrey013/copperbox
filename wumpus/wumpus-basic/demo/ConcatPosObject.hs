@@ -57,7 +57,7 @@ mf = do
     drawl (P2 150 0) $ illustratePosObject $  rectCenter `vcatPO` rectMinor
 
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectCenter :: (Fractional u, InterpretUnit u) => PosObject u 
 rectCenter = makePosObject (return opos) (mkRectCenter w h)
   where
     w    = 50
@@ -74,7 +74,7 @@ mkRectCenter w h = moveStart (displaceVec v1) $ strokedRectangle w h
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphicObject u
+rectBl :: (Fractional u, InterpretUnit u) => PosObject u
 rectBl = makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40  
@@ -91,7 +91,7 @@ mkRectBl w h = strokedRectangle w h
 
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectMinor :: (Fractional u, InterpretUnit u) => PosObject u 
 rectMinor = makePosObject (return opos) (mkRectMinor w h)
   where
     w    = 30 

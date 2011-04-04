@@ -52,24 +52,24 @@ mf = do
     return ()
   where
     objs  = [ rectCenter, rectMinor, rectBl ]
-    ha1   = halignPO emptyPosGraphicObject HTop    objs
-    ha2   = halignPO emptyPosGraphicObject HCenter objs
-    ha3   = halignPO emptyPosGraphicObject HBottom objs
-    va1   = valignPO emptyPosGraphicObject VLeft   objs
-    va2   = valignPO emptyPosGraphicObject VCenter objs
-    va3   = valignPO emptyPosGraphicObject VRight  objs
+    ha1   = halignPO emptyPosObject HTop    objs
+    ha2   = halignPO emptyPosObject HCenter objs
+    ha3   = halignPO emptyPosObject HBottom objs
+    va1   = valignPO emptyPosObject VLeft   objs
+    va2   = valignPO emptyPosObject VCenter objs
+    va3   = valignPO emptyPosObject VRight  objs
 
 
-    hs1   = halignSepPO emptyPosGraphicObject HTop    8 objs
-    hs2   = halignSepPO emptyPosGraphicObject HCenter 8 objs
-    hs3   = halignSepPO emptyPosGraphicObject HBottom 8 objs 
-    vs1   = valignSepPO emptyPosGraphicObject VLeft   8 objs
-    vs2   = valignSepPO emptyPosGraphicObject VCenter 8 objs
-    vs3   = valignSepPO emptyPosGraphicObject VRight  8 objs
+    hs1   = halignSepPO emptyPosObject HTop    8 objs
+    hs2   = halignSepPO emptyPosObject HCenter 8 objs
+    hs3   = halignSepPO emptyPosObject HBottom 8 objs 
+    vs1   = valignSepPO emptyPosObject VLeft   8 objs
+    vs2   = valignSepPO emptyPosObject VCenter 8 objs
+    vs3   = valignSepPO emptyPosObject VRight  8 objs
  
 ---
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectCenter :: (Fractional u, InterpretUnit u) => PosObject u 
 rectCenter = makePosObject (return opos) (mkRectCenter w h)
   where
     w    = 50
@@ -86,7 +86,7 @@ mkRectCenter w h = moveStart (displaceVec v1) $ strokedRectangle w h
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosGraphicObject u
+rectBl :: (Fractional u, InterpretUnit u) => PosObject u
 rectBl = makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40  
@@ -103,7 +103,7 @@ mkRectBl w h = strokedRectangle w h
 
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosGraphicObject u 
+rectMinor :: (Fractional u, InterpretUnit u) => PosObject u 
 rectMinor = makePosObject (return opos) (mkRectMinor w h)
   where
     w    = 30 

@@ -26,34 +26,22 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   -- * Positionable image
 
     PosObject
-  , PosGraphicObject
-  , BoundedPosObject
-  
   , DPosObject
-  , DPosGraphicObject
-  , DBoundedPosObject
 
   , LocRectQuery
-  , LocRectImage
-  , LocRectGraphic
   , BoundedLocRectGraphic
 
   -- * Operations
 
   , makePosObject
+  , emptyPosObject
   , runPosObject
---  , bimapPosObject
 
-  , makeLocRectImage
+  , makeBoundedLocRectGraphic
   , startAddr
   , atStartAddr
 
-  , emptyPosGraphicObject
-
-  , makeBoundedPosObject
-  , emptyBoundedPosObject
-
-  , extendBoundedPosObject
+  , extendPosObject
 
   , illustratePosObject
 
@@ -97,9 +85,9 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
+import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Displacement
-import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.Orientation
 
@@ -118,50 +106,25 @@ import Control.Applicative
 -- graphic from a PosImage have to be generated within the same 
 -- DrawingContext.
 --
-type CtxFreeLocImage t u = Point2 u -> ImageAns t u
+type CtxFreeLocGraphic u = Point2 u -> GraphicAns u
 
 
 -- | A positionable \"Object\" that is drawn as a 'LocImage'.
 --
-newtype PosObject t u = PosObject
-         { getPosObject :: CF (Orientation u, CtxFreeLocImage t u) }
-
-
--- | A 'PosObject' that draws a 'Graphic'.
---
-type PosGraphicObject u = PosObject UNil u
-    
-
-
--- | A 'PosObject' that returns a BoundingBox.
---
-type BoundedPosObject u = PosObject BoundingBox u
+newtype PosObject u = PosObject
+         { getPosObject :: CF (Orientation u, CtxFreeLocGraphic u) }
 
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
-type DPosObject t = PosObject t Double
+type DPosObject = PosObject Double
 
-
--- | Version of PosGraphic specialized to Double for the unit 
--- type.
---
-type DPosGraphicObject = PosGraphicObject Double
-
--- | Version of BoundedPosObject specialized to Double for the 
--- unit type.
---
-type DBoundedPosObject = BoundedPosObject Double
 
 
 
 type LocRectQuery u a = CF2 (Point2 u) RectAddress a
 
-type LocRectImage t u = LocRectQuery u (ImageAns t u)
-
-type LocRectGraphic u = LocRectImage UNil u
-
-type BoundedLocRectGraphic u = LocRectImage BoundingBox u
+type BoundedLocRectGraphic u = LocRectQuery u (ImageAns BoundingBox u)
 
 
 
@@ -178,119 +141,98 @@ type BoundedLocRectGraphic u = LocRectImage BoundingBox u
 -- PosObject type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-makePosObject :: Query (Orientation u) -> LocImage t u -> PosObject t u
+makePosObject :: Query (Orientation u) -> LocGraphic u -> PosObject u
 makePosObject qortt img = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
            let ortt = runCF qortt ctx
-               fun  = \start -> runCF1 img ctx start
-           in return (ortt,fun)
+               pf   = runCF1 img ctx
+           in return (ortt,pf)
+
+-- | 'emptyPosObject' : @ PosObject @
+--
+-- Build an empty 'PosGraphicObject'.
+--
+emptyPosObject :: InterpretUnit u => PosObject u
+emptyPosObject = 
+    makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
+
     
 -- | Run a PosObject forming an Image.
 --
 runPosObject :: Fractional u 
-             => Point2 u -> RectAddress -> PosObject t u -> Image t u
+             => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
 runPosObject pt addr (PosObject mf) = 
     mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
-                          in pure $ ptf $ displaceVec sv pt
-
-{-
-bimapPosObject :: (Query (Orientation u) -> Query (Orientation u))
-               -> (LocImage t u -> LocImage t u)
-               -> PosObject t u
-               -> PosObject t u
-bimapPosObject f g (PosObject qort img) = PosObject (f qort) (g img)
--}
+                              bb = orientationBounds ortt pt
+                          in replaceAns bb $ pure $ ptf $ displaceVec sv pt
 
 
--- | Make a 'LocRectImage' from a 'PosObject'.
+
+-- | Make a 'BoundedLocRectGraphic' from a 'PosObject'.
 -- 
 -- This turns a PosObject (concatenatable) into a LocRectImage 
 -- (drawable at rectangle positions).
 --
-makeLocRectImage :: Fractional u => PosObject t u -> LocRectImage t u
-makeLocRectImage po = promoteR2 $ \pt addr -> runPosObject pt addr po
+makeBoundedLocRectGraphic :: Fractional u 
+                          => PosObject u -> BoundedLocRectGraphic u
+makeBoundedLocRectGraphic po = promoteR2 $ \pt addr -> runPosObject pt addr po
 
 
 
 infixr 1 `startAddr`
 
--- | 'startAddr' : @ loc_rect_image * rect_pos -> LocImage @
+-- | 'startAddr' : @ bounded_loc_rect * rect_pos -> BoundedlocGraphic @
 --
--- /Downcast/ a 'LocRectImage' to a 'LocImage' by supplying it 
--- with a 'RectAddress' (start address on the rectangle frame).
+-- /Downcast/ a 'BoundedLocRectGraphic' to a 'BoundedLocGraphic' 
+-- by supplying it with a 'RectAddress' (start address on the 
+-- rectangle frame).
 --  
 startAddr :: Floating u 
-          => LocRectImage t u -> RectAddress -> LocImage t u
+          => BoundedLocRectGraphic u -> RectAddress -> BoundedLocGraphic u
 startAddr = apply1R2 
 
 
 
--- | 'atStartAddr' : @ loc_rect_image * start_point * rect_pos -> LocImage @
+-- | 'atStartAddr' : @ bounded_loc_rect * start_point * rect_pos 
+--      -> BoundedGraphic @
 --
--- /Downcast/ a 'LocRectImage' to an 'Image' by supplying it with an 
--- initial point and a 'RectAddress' (start address on the rectangle 
--- frame).
+-- /Downcast/ a 'BoundedLocRectGraphic' to a 'BoundedGraphic' by 
+-- supplying it with an initial point and a 'RectAddress' (start 
+-- address on the rectangle frame).
 --  
 atStartAddr ::  Floating u 
-            => LocRectImage t u -> Point2 u -> RectAddress -> Image t u
+            => BoundedLocRectGraphic u -> Point2 u -> RectAddress 
+            -> BoundedGraphic u
 atStartAddr = apply2R2
 
 
 
--- | 'emptyPosGraphicObject' : @ PosGraphicObject @
+-- | Extend the orientation.
 --
--- Build an empty 'PosGraphicObject'.
+-- TODO - does the start point need moving too... ?
 --
-emptyPosGraphicObject :: InterpretUnit u => PosGraphicObject u
-emptyPosGraphicObject = 
-    makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
-
-
-
--- | Most text objects in Wumpus-Drawing are @BoundedPosObject@.
---
--- This builds them.
---
-makeBoundedPosObject :: Num u 
-                     => Query (Orientation u )
-                     -> LocImage t u 
-                     -> BoundedPosObject u
-makeBoundedPosObject qort gf = makePosObject qort body
-  where
-    body = promoteR1 $ \pt ->
-           qort >>= \ortt -> 
-           let bb = orientationBounds ortt pt
-           in replaceAns bb $ gf `at` pt
-
-
-emptyBoundedPosObject :: InterpretUnit u => BoundedPosObject u
-emptyBoundedPosObject = 
-    makeBoundedPosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
-
-
-
-extendBoundedPosObject :: Num u 
-                       => u -> u -> u -> u -> BoundedPosObject u 
-                       -> BoundedPosObject u
-extendBoundedPosObject x0 x1 y0 y1 po = PosObject body
+extendPosObject :: Num u 
+                => u -> u -> u -> u -> PosObject u -> PosObject u
+extendPosObject x0 x1 y0 y1 po = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
            let (o0,pf0) = runCF (getPosObject po) ctx
                ortt     = extendOrientation x0 x1 y0 y1 o0
-               trafo    = trafoImageAns (extendBBox x0 x1 y0 y1) id
-               pf       = \pt -> trafo $ pf0 pt
-           in return (ortt,pf)
+           in return (ortt,pf0)
 
-extendBBox :: Num u => u -> u -> u -> u -> BoundingBox u -> BoundingBox u
-extendBBox x0 x1 y0 y1 (BBox (P2 llx lly) (P2 urx ury)) = BBox ll ur 
-  where 
-    ll = P2 (llx - x0) (lly - y0) 
-    ur = P2 (urx + x1) (ury + y1) 
            
+--------------------------------------------------------------------------------
+-- Fills
 
-
-
+-- leftFillPosObject 
+{-
+padBPOLeft :: (Num u, Ord u) 
+           => u -> BoundedPosObject u -> BoundedPosObject u
+padBPOLeft w po = PosObject body
+  where
+    body 
+-}
 --------------------------------------------------------------------------------
 
 -- | Illustrate a 'PosObject' by super-imposing its 'Orientation'.
@@ -299,8 +241,8 @@ extendBBox x0 x1 y0 y1 (BBox (P2 llx lly) (P2 urx ury)) = BBox ll ur
 -- of the PosObject.
 --
 illustratePosObject :: InterpretUnit u 
-                   => PosObject t u -> LocImage t u
-illustratePosObject (PosObject mf) = promoteR1 $ \pt -> 
+                   => PosObject u -> LocGraphic u
+illustratePosObject (PosObject mf)  = promoteR1 $ \pt ->   
     mf >>= \(ortt,ptf) -> 
     decorate (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
 
@@ -323,50 +265,50 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
 
 
 
-hcatPO :: (Num u, Ord u, OPlus (t u))   
-       => PosObject t u -> PosObject t u -> PosObject t u
+hcatPO :: (Num u, Ord u)   
+       => PosObject u -> PosObject u -> PosObject u
 hcatPO = genMoveAlign spinemoveH spineRight
 
 
-vcatPO :: (Num u, Ord u, OPlus (t u))   
-       => PosObject t u -> PosObject t u -> PosObject t u
+vcatPO :: (Num u, Ord u)   
+       => PosObject u -> PosObject u -> PosObject u
 vcatPO = genMoveAlign spinemoveV spineAbove
 
 
 
-hcatBottomPO :: (Num u, Ord u, OPlus (t u))   
-             => PosObject t u -> PosObject t u -> PosObject t u
+hcatBottomPO :: (Num u, Ord u)   
+             => PosObject u -> PosObject u -> PosObject u
 hcatBottomPO = genMoveAlign binmoveHBottom alignBottomR
 
 
-hcatCenterPO :: (Fractional u, Ord u, OPlus (t u))   
-             => PosObject t u -> PosObject t u -> PosObject t u
+hcatCenterPO :: (Fractional u, Ord u)   
+             => PosObject u -> PosObject u -> PosObject u
 hcatCenterPO = genMoveAlign binmoveHCenter alignCenterR
 
 
-hcatTopPO :: (Num u, Ord u, OPlus (t u))   
-          => PosObject t u -> PosObject t u -> PosObject t u
+hcatTopPO :: (Num u, Ord u)   
+          => PosObject u -> PosObject u -> PosObject u
 hcatTopPO = genMoveAlign binmoveHTop alignTopR
 
 
-vcatLeftPO :: (Fractional u, Ord u, OPlus (t u))   
-           => PosObject t u -> PosObject t u -> PosObject t u
+vcatLeftPO :: (Fractional u, Ord u)   
+           => PosObject u -> PosObject u -> PosObject u
 vcatLeftPO = genMoveAlign binmoveVLeft alignLeftU
 
 
-vcatCenterPO :: (Fractional u, Ord u, OPlus (t u))   
-                => PosObject t u -> PosObject t u -> PosObject t u
+vcatCenterPO :: (Fractional u, Ord u)   
+                => PosObject u -> PosObject u -> PosObject u
 vcatCenterPO = genMoveAlign binmoveVCenter alignCenterU
 
-vcatRightPO :: (Fractional u, Ord u, OPlus (t u))   
-            => PosObject t u -> PosObject t u -> PosObject t u
+vcatRightPO :: (Fractional u, Ord u)   
+            => PosObject u -> PosObject u -> PosObject u
 vcatRightPO = genMoveAlign binmoveVRight alignRightU
 
 
-genMoveAlign :: (Num u, OPlus (t u))   
+genMoveAlign :: (Num u)   
              => (Orientation u -> Orientation u -> Vec2 u) 
              -> (Orientation u -> Orientation u -> Orientation u) 
-             -> PosObject t u -> PosObject t u -> PosObject t u
+             -> PosObject u -> PosObject u -> PosObject u
 genMoveAlign mkV mkO po0 po1 = PosObject body
   where
    body = drawingCtx >>= \ctx -> 
@@ -381,50 +323,50 @@ genMoveAlign mkV mkO po0 po1 = PosObject body
 --------------------------------------------------------------------------------
 -- Sep
 
-hsepPO :: (Num u, Ord u, OPlus (t u))   
-       => u -> PosObject t u -> PosObject t u -> PosObject t u
+hsepPO :: (Num u, Ord u)   
+       => u -> PosObject u -> PosObject u -> PosObject u
 hsepPO = genMoveSepH spinemoveH spineRight
 
 
-vsepPO :: (Num u, Ord u, OPlus (t u))   
-       => u -> PosObject t u -> PosObject t u -> PosObject t u
+vsepPO :: (Num u, Ord u)   
+       => u -> PosObject u -> PosObject u -> PosObject u
 vsepPO = genMoveSepV spinemoveV spineAbove
 
 
-hsepBottomPO :: (Num u, Ord u, OPlus (t u))   
-             => u -> PosObject t u -> PosObject t u -> PosObject t u
+hsepBottomPO :: (Num u, Ord u)   
+             => u -> PosObject u -> PosObject u -> PosObject u
 hsepBottomPO = genMoveSepH binmoveHBottom alignBottomR
 
 
-hsepCenterPO :: (Fractional u, Ord u, OPlus (t u))   
-             => u -> PosObject t u -> PosObject t u -> PosObject t u
+hsepCenterPO :: (Fractional u, Ord u)   
+             => u -> PosObject u -> PosObject u -> PosObject u
 hsepCenterPO = genMoveSepH binmoveHCenter alignCenterR
 
 
-hsepTopPO :: (Num u, Ord u, OPlus (t u))   
-          => u -> PosObject t u -> PosObject t u -> PosObject t u
+hsepTopPO :: (Num u, Ord u)   
+          => u -> PosObject u -> PosObject u -> PosObject u
 hsepTopPO = genMoveSepH binmoveHTop alignTopR
 
 
-vsepLeftPO :: (Fractional u, Ord u, OPlus (t u))   
-           => u -> PosObject t u -> PosObject t u -> PosObject t u
+vsepLeftPO :: (Fractional u, Ord u)   
+           => u -> PosObject u -> PosObject u -> PosObject u
 vsepLeftPO = genMoveSepV binmoveVLeft alignLeftU
 
 
-vsepCenterPO :: (Fractional u, Ord u, OPlus (t u))   
-             => u -> PosObject t u -> PosObject t u -> PosObject t u
+vsepCenterPO :: (Fractional u, Ord u)   
+             => u -> PosObject u -> PosObject u -> PosObject u
 vsepCenterPO = genMoveSepV binmoveVCenter alignCenterU
 
-vsepRightPO :: (Fractional u, Ord u, OPlus (t u))   
-            => u -> PosObject t u -> PosObject t u -> PosObject t u
+vsepRightPO :: (Fractional u, Ord u)   
+            => u -> PosObject u -> PosObject u -> PosObject u
 vsepRightPO = genMoveSepV binmoveVRight alignRightU
 
 
-genMoveSepH :: (Num u, OPlus (t u))   
+genMoveSepH :: (Num u)   
             => (Orientation u -> Orientation u -> Vec2 u) 
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
-            -> PosObject t u -> PosObject t u -> PosObject t u
+            -> PosObject u -> PosObject u -> PosObject u
 genMoveSepH mkV mkO sep po0 po1  = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
@@ -436,11 +378,11 @@ genMoveSepH mkV mkO sep po0 po1  = PosObject body
            in return (ortt,pf)
 
 
-genMoveSepV :: (Num u, OPlus (t u))   
+genMoveSepV :: (Num u)   
             => (Orientation u -> Orientation u -> Vec2 u) 
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
-            -> PosObject t u -> PosObject t u -> PosObject t u
+            -> PosObject u -> PosObject u -> PosObject u
 genMoveSepV mkV mkO sep po0 po1 = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
@@ -451,8 +393,8 @@ genMoveSepV mkV mkO sep po0 po1 = PosObject body
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
 
-halignPO :: (Fractional u, Ord u, OPlus (t u))   
-         => PosObject t u -> HAlign -> [PosObject t u] -> PosObject t u
+halignPO :: (Fractional u, Ord u)   
+         => PosObject u -> HAlign -> [PosObject u] -> PosObject u
 halignPO alt _  []     = alt
 halignPO _   ha (x:xs) = go x xs
   where
@@ -463,8 +405,8 @@ halignPO _   ha (x:xs) = go x xs
     go acc (y:ys) = go (cat acc y) ys
 
 
-valignPO :: (Fractional u, Ord u, OPlus (t u))   
-         => PosObject t u -> VAlign -> [PosObject t u] -> PosObject t u
+valignPO :: (Fractional u, Ord u)   
+         => PosObject u -> VAlign -> [PosObject u] -> PosObject u
 valignPO alt _  []     = alt
 valignPO _   va (x:xs) = go x xs
   where
@@ -475,8 +417,8 @@ valignPO _   va (x:xs) = go x xs
     go acc (y:ys) = go (cat acc y) ys
 
 
-halignSepPO :: (Fractional u, Ord u, OPlus (t u))   
-            => PosObject t u -> HAlign -> u -> [PosObject t u] -> PosObject t u
+halignSepPO :: (Fractional u, Ord u)   
+            => PosObject u -> HAlign -> u -> [PosObject u] -> PosObject u
 halignSepPO alt _  _ []     = alt
 halignSepPO _   ha du (x:xs) = go x xs
   where
@@ -487,8 +429,8 @@ halignSepPO _   ha du (x:xs) = go x xs
     go acc (y:ys) = go (cat acc y) ys
 
 
-valignSepPO :: (Fractional u, Ord u, OPlus (t u))   
-         => PosObject t u -> VAlign -> u -> [PosObject t u] -> PosObject t u
+valignSepPO :: (Fractional u, Ord u)   
+         => PosObject u -> VAlign -> u -> [PosObject u] -> PosObject u
 valignSepPO alt _  _  []     = alt
 valignSepPO _   va du (x:xs) = go x xs
   where
