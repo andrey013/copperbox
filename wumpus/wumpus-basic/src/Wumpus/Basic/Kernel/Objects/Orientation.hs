@@ -32,10 +32,12 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   , extendODown
   , extendOUp
 
-  , padOLeft
-  , padORight
-  , padODown
-  , padOUp
+  , padHEven
+  , padXMinor
+  , padXMajor
+  , padVEven
+  , padYMajor
+  , padYMinor
 
   , spineRight
   , spineAbove
@@ -212,34 +214,55 @@ extendOUp u (Orientation xmin xmaj ymin ymaj) =
 
 --------------------------------------------------------------------------------
 
-padORight :: (Num u, Ord u) 
+padHEven :: (Fractional u, Ord u) 
           => u -> Orientation u -> Orientation u
-padORight w ortt@(Orientation xmin xmaj _ _) = 
+padHEven w ortt@(Orientation xmin xmaj _ _) = 
+    if w > ow then ortt { or_x_minor = xmin + hdx
+                        , or_x_major = xmaj + hdx } 
+              else ortt
+  where
+    ow = xmin + xmaj
+    hdx = 0.5 * (w - ow)
+
+
+padXMinor :: (Num u, Ord u) 
+          => u -> Orientation u -> Orientation u
+padXMinor w ortt@(Orientation xmin xmaj _ _) = 
     if w > ow then ortt { or_x_minor = xmin + dx } else ortt
   where
     ow = xmin + xmaj
     dx = w - ow
 
-padOLeft :: (Num u, Ord u)
+padXMajor :: (Num u, Ord u)
          => u -> Orientation u -> Orientation u
-padOLeft w ortt@(Orientation xmin xmaj _ _) = 
-    if w > ow then ortt { or_x_major = xmin + dx } else ortt
+padXMajor w ortt@(Orientation xmin xmaj _ _) = 
+    if w > ow then ortt { or_x_major = xmaj + dx } else ortt
   where
     ow = xmin + xmaj
     dx = w - ow
 
-padODown :: (Num u, Ord u) 
+padVEven :: (Fractional u, Ord u) 
+          => u -> Orientation u -> Orientation u
+padVEven h ortt@(Orientation _ _ ymin ymaj) = 
+    if h > oh then ortt { or_y_minor = ymin + hdy
+                        , or_y_major = ymaj + hdy } 
+              else ortt
+  where
+    oh = ymin + ymaj
+    hdy = 0.5 * (h - oh)
+
+padYMinor :: (Num u, Ord u) 
          => u -> Orientation u -> Orientation u
-padODown h ortt@(Orientation _ _ ymin ymaj) = 
+padYMinor h ortt@(Orientation _ _ ymin ymaj) = 
     if h > oh then ortt { or_y_minor = ymin + dy } else ortt
   where
     oh = ymin + ymaj
     dy = h - oh
 
 
-padOUp :: (Num u, Ord u) 
+padYMajor :: (Num u, Ord u) 
        => u -> Orientation u -> Orientation u
-padOUp h ortt@(Orientation _ _ ymin ymaj) = 
+padYMajor h ortt@(Orientation _ _ ymin ymaj) = 
     if h > oh then ortt { or_y_major = ymaj + dy } else ortt
   where
     oh = ymin + ymaj

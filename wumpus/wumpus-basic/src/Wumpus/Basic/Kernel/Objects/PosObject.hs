@@ -43,6 +43,13 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   , extendPosObject
 
+  , padHorizontalPO
+  , padLeftPO
+  , padRightPO
+  , padVerticalPO
+  , padUpPO
+  , padDownPO
+
   , illustratePosObject
 
 
@@ -109,7 +116,8 @@ import Control.Applicative
 type CtxFreeLocGraphic u = Point2 u -> GraphicAns u
 
 
--- | A positionable \"Object\" that is drawn as a 'LocImage'.
+-- | A positionable \"Object\" that is drawn as a 
+-- 'BoundedLocGraphic'.
 --
 newtype PosObject u = PosObject
          { getPosObject :: CF (Orientation u, CtxFreeLocGraphic u) }
@@ -164,7 +172,7 @@ runPosObject :: Fractional u
              => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
 runPosObject pt addr (PosObject mf) = 
     mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
-                              bb = orientationBounds ortt pt
+                              bb = orientationBounds ortt (displaceVec sv pt)
                           in replaceAns bb $ pure $ ptf $ displaceVec sv pt
 
 
@@ -223,16 +231,37 @@ extendPosObject x0 x1 y0 y1 po = PosObject body
 
            
 --------------------------------------------------------------------------------
--- Fills
+-- Padding
 
--- leftFillPosObject 
-{-
-padBPOLeft :: (Num u, Ord u) 
-           => u -> BoundedPosObject u -> BoundedPosObject u
-padBPOLeft w po = PosObject body
+padHorizontalPO     :: (Fractional u, Ord u) => u -> PosObject u -> PosObject u
+padHorizontalPO w   = genPad (padHEven w)
+
+padLeftPO       :: (Num u, Ord u) => u -> PosObject u -> PosObject u
+padLeftPO w     = genPad (padXMinor w)
+
+padRightPO      :: (Num u, Ord u) => u -> PosObject u -> PosObject u
+padRightPO w    = genPad (padXMajor w)
+
+
+padVerticalPO       :: (Fractional u, Ord u) => u -> PosObject u -> PosObject u
+padVerticalPO w     = genPad (padVEven w)
+
+padUpPO         :: (Num u, Ord u) => u -> PosObject u -> PosObject u
+padUpPO h       = genPad (padYMajor h)
+
+padDownPO       :: (Num u, Ord u) => u -> PosObject u -> PosObject u
+padDownPO h     = genPad (padYMinor h)
+
+
+genPad :: (Orientation u -> Orientation u) -> PosObject u -> PosObject u
+genPad fn po = PosObject body
   where
-    body 
--}
+    body = drawingCtx >>= \ctx -> 
+           let (o0,pf0) = runCF (getPosObject po) ctx
+               ortt     = fn o0
+           in return (ortt,pf0)
+
+
 --------------------------------------------------------------------------------
 
 -- | Illustrate a 'PosObject' by super-imposing its 'Orientation'.
