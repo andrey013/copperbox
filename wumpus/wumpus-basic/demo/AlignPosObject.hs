@@ -30,25 +30,25 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (anchor $ P2 0   400) $ illustratePosObject rectCenter
-    drawl (anchor $ P2 100 400) $ illustratePosObject rectMinor
-    drawl (anchor $ P2 200 400) $ illustratePosObject rectBl
+    drawl (P2 0   400) $ illustratePosObject rectCenter
+    drawl (P2 100 400) $ illustratePosObject rectMinor
+    drawl (P2 200 400) $ illustratePosObject rectBl
 
-    drawl (anchor $ P2   0 275) $ illustratePosObject $ vs1
-    drawl (anchor $ P2 150 275) $ illustratePosObject $ vs2
-    drawl (anchor $ P2 300 275) $ illustratePosObject $ vs3
+    drawl (P2   0 275) $ illustratePosObject $ vs1
+    drawl (P2 150 275) $ illustratePosObject $ vs2
+    drawl (P2 300 275) $ illustratePosObject $ vs3
 
-    drawl (anchor $ P2   0 200) $ illustratePosObject $ hs1
-    drawl (anchor $ P2 150 200) $ illustratePosObject $ hs2
-    drawl (anchor $ P2 300 200) $ illustratePosObject $ hs3
+    drawl (P2   0 200) $ illustratePosObject $ hs1
+    drawl (P2 150 200) $ illustratePosObject $ hs2
+    drawl (P2 300 200) $ illustratePosObject $ hs3
 
-    drawl (anchor $ P2   0 75)  $ illustratePosObject $ va1
-    drawl (anchor $ P2 150 75)  $ illustratePosObject $ va2
-    drawl (anchor $ P2 300 75)  $ illustratePosObject $ va3
+    drawl (P2   0 75)  $ illustratePosObject $ va1
+    drawl (P2 150 75)  $ illustratePosObject $ va2
+    drawl (P2 300 75)  $ illustratePosObject $ va3
 
-    drawl (anchor $ P2   0 0)   $ illustratePosObject $ ha1
-    drawl (anchor $ P2 150 0)   $ illustratePosObject $ ha2
-    drawl (anchor $ P2 300 0)   $ illustratePosObject $ ha3
+    drawl (P2   0 0)   $ illustratePosObject $ ha1
+    drawl (P2 150 0)   $ illustratePosObject $ ha2
+    drawl (P2 300 0)   $ illustratePosObject $ ha3
     return ()
   where
     objs  = [ rectCenter, rectMinor, rectBl ]

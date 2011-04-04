@@ -30,43 +30,31 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (anchor $ P2 0   400) $ illustratePosObject rectCenter
-    drawl (anchor $ P2 100 400) $ illustratePosObject rectMinor
+    drawl (P2 0   400) $ illustratePosObject rectCenter
+    drawl (P2 100 400) $ illustratePosObject rectMinor
 
-    drawl (anchor $ P2   0 300) $ illustratePosObject $  
-                  rectCenter `vcatCenterPO` rectMinor
-    drawl (anchor $ P2 150 300) $ illustratePosObject $  
-                  rectMinor `vcatCenterPO` rectCenter
+    drawl (P2   0 300) $ illustratePosObject $ rectCenter `vcatCenterPO` rectMinor
+    drawl (P2 150 300) $ illustratePosObject $ rectMinor `vcatCenterPO` rectCenter
 
-    drawl (anchor $ P2 300 300) $ illustratePosObject $  
-                  rectCenter `vcatRightPO` rectMinor
-    drawl (anchor $ P2 450 300) $ illustratePosObject $  
-                  rectMinor `vcatRightPO` rectCenter
+    drawl (P2 300 300) $ illustratePosObject $ rectCenter `vcatRightPO` rectMinor
+    drawl (P2 450 300) $ illustratePosObject $ rectMinor `vcatRightPO` rectCenter
 
 
-    drawl (anchor $ P2   0 200) $ illustratePosObject $  
-                  rectCenter `hcatCenterPO` rectMinor
-    drawl (anchor $ P2 150 200) $ illustratePosObject $  
-                  rectMinor `hcatCenterPO` rectCenter
+    drawl (P2   0 200) $ illustratePosObject $ rectCenter `hcatCenterPO` rectMinor
+    drawl (P2 150 200) $ illustratePosObject $ rectMinor `hcatCenterPO` rectCenter
 
-    drawl (anchor $ P2 300 200) $ illustratePosObject $  
-                  rectCenter `vcatLeftPO` rectMinor
-    drawl (anchor $ P2 450 200) $ illustratePosObject $  
-                  rectMinor `vcatLeftPO` rectCenter
+    drawl (P2 300 200) $ illustratePosObject $ rectCenter `vcatLeftPO` rectMinor
+    drawl (P2 450 200) $ illustratePosObject $ rectMinor `vcatLeftPO` rectCenter
 
 
-    drawl (anchor $ P2   0 100) $ illustratePosObject $  
-                  rectCenter `hcatBottomPO` rectMinor
-    drawl (anchor $ P2 150 100) $ illustratePosObject $  
-                  rectMinor `hcatBottomPO` rectCenter
-    drawl (anchor $ P2 300 100) $ illustratePosObject $  
-                  rectCenter `hcatTopPO` rectMinor
-    drawl (anchor $ P2 450 100) $ illustratePosObject $  
-                  rectMinor `hcatTopPO` rectCenter
+    drawl (P2   0 100) $ illustratePosObject $ rectCenter `hcatBottomPO` rectMinor
+    drawl (P2 150 100) $ illustratePosObject $ rectMinor `hcatBottomPO` rectCenter
+    drawl (P2 300 100) $ illustratePosObject $ rectCenter `hcatTopPO` rectMinor
+    drawl (P2 450 100) $ illustratePosObject $ rectMinor `hcatTopPO` rectCenter
 
 
-    drawl (anchor $ P2   0 0) $ illustratePosObject $  rectCenter `hcatPO` rectMinor
-    drawl (anchor $ P2 150 0) $ illustratePosObject $  rectCenter `vcatPO` rectMinor
+    drawl (P2   0 0) $ illustratePosObject $  rectCenter `hcatPO` rectMinor
+    drawl (P2 150 0) $ illustratePosObject $  rectCenter `vcatPO` rectMinor
 
 
 rectCenter :: (Fractional u, InterpretUnit u) => PosGraphicObject u 

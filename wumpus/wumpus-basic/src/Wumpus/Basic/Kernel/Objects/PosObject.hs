@@ -42,7 +42,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   , makePosObject
   , runPosObject
-  , bimapPosObject
+--  , bimapPosObject
 
   , makeLocRectImage
   , startAddr
@@ -53,7 +53,10 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , makeBoundedPosObject
   , emptyBoundedPosObject
 
+  , extendBoundedPosObject
+
   , illustratePosObject
+
 
   -- * Concat
   , hcatPO
@@ -108,13 +111,20 @@ import Data.VectorSpace
 
 import Control.Applicative
 
+-- | Helper for PosObject - a LocImage that is /pre-applied/ to 
+-- the DrawingContext.
+--
+-- This is somewhat contrived, but the orientation and the result
+-- graphic from a PosImage have to be generated within the same 
+-- DrawingContext.
+--
+type CtxFreeLocImage t u = Point2 u -> ImageAns t u
+
+
 -- | A positionable \"Object\" that is drawn as a 'LocImage'.
 --
-data PosObject t u = PosObject
-      { pi_object_ortt         :: Query (Orientation u)
-      , pi_loc_image           :: LocImage t u
-      }
-
+newtype PosObject t u = PosObject
+         { getPosObject :: CF (Orientation u, CtxFreeLocImage t u) }
 
 
 -- | A 'PosObject' that draws a 'Graphic'.
@@ -169,23 +179,29 @@ type BoundedLocRectGraphic u = LocRectImage BoundingBox u
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 makePosObject :: Query (Orientation u) -> LocImage t u -> PosObject t u
-makePosObject qort img = 
-    PosObject { pi_object_ortt  = qort
-              , pi_loc_image    = img
-              }
-
+makePosObject qortt img = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let ortt = runCF qortt ctx
+               fun  = \start -> runCF1 img ctx start
+           in return (ortt,fun)
+    
+-- | Run a PosObject forming an Image.
+--
 runPosObject :: Fractional u 
              => Point2 u -> RectAddress -> PosObject t u -> Image t u
-runPosObject pt raddr (PosObject qort gf) =
-    qort >>= \ortt -> let sv = orientationStart raddr ortt
-                      in gf `at` (displaceVec sv pt)
+runPosObject pt addr (PosObject mf) = 
+    mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
+                          in pure $ ptf $ displaceVec sv pt
 
-
+{-
 bimapPosObject :: (Query (Orientation u) -> Query (Orientation u))
                -> (LocImage t u -> LocImage t u)
                -> PosObject t u
                -> PosObject t u
 bimapPosObject f g (PosObject qort img) = PosObject (f qort) (g img)
+-}
+
 
 -- | Make a 'LocRectImage' from a 'PosObject'.
 -- 
@@ -194,7 +210,6 @@ bimapPosObject f g (PosObject qort img) = PosObject (f qort) (g img)
 --
 makeLocRectImage :: Fractional u => PosObject t u -> LocRectImage t u
 makeLocRectImage po = promoteR2 $ \pt addr -> runPosObject pt addr po
-
 
 
 
@@ -248,7 +263,6 @@ makeBoundedPosObject qort gf = makePosObject qort body
            let bb = orientationBounds ortt pt
            in replaceAns bb $ gf `at` pt
 
--- FOR WUMPUS-BASIC
 
 emptyBoundedPosObject :: InterpretUnit u => BoundedPosObject u
 emptyBoundedPosObject = 
@@ -256,12 +270,40 @@ emptyBoundedPosObject =
 
 
 
+extendBoundedPosObject :: Num u 
+                       => u -> u -> u -> u -> BoundedPosObject u 
+                       -> BoundedPosObject u
+extendBoundedPosObject x0 x1 y0 y1 po = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let (o0,pf0) = runCF (getPosObject po) ctx
+               ortt     = extendOrientation x0 x1 y0 y1 o0
+               trafo    = trafoImageAns (extendBBox x0 x1 y0 y1) id
+               pf       = \pt -> trafo $ pf0 pt
+           in return (ortt,pf)
+
+extendBBox :: Num u => u -> u -> u -> u -> BoundingBox u -> BoundingBox u
+extendBBox x0 x1 y0 y1 (BBox (P2 llx lly) (P2 urx ury)) = BBox ll ur 
+  where 
+    ll = P2 (llx - x0) (lly - y0) 
+    ur = P2 (urx + x1) (ury + y1) 
+           
+
+
+
 --------------------------------------------------------------------------------
 
+-- | Illustrate a 'PosObject' by super-imposing its 'Orientation'.
+--
+-- This turns the 'PosObject' into a 'LocImage' drawn at the locus
+-- of the PosObject.
+--
 illustratePosObject :: InterpretUnit u 
                    => PosObject t u -> LocImage t u
-illustratePosObject (PosObject qort gf) = 
-    lift0R1 qort >>= \ortt -> decorate gf (illustrateOrientation ortt)
+illustratePosObject (PosObject mf) = promoteR1 $ \pt -> 
+    mf >>= \(ortt,ptf) -> 
+    decorate (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
+
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u
@@ -275,16 +317,10 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
         bdr = upd $ strokedRectangle (xmin+xmaj) (ymin+ymaj) `at` bl
     in bdr `oplus` hln `oplus` vln `oplus` dot
 
+
 --------------------------------------------------------------------------------
 -- Combining PosObject
 
-
---
--- NOTE - CONCATENATION
---
--- PosObject (currently) is not the right object to support the
--- concatenation that it should.
---
 
 
 hcatPO :: (Num u, Ord u, OPlus (t u))   
@@ -331,11 +367,15 @@ genMoveAlign :: (Num u, OPlus (t u))
              => (Orientation u -> Orientation u -> Vec2 u) 
              -> (Orientation u -> Orientation u -> Orientation u) 
              -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveAlign mkV mkOP (PosObject q0 g0) (PosObject q1 g1) = 
-   let vM   = mkV  <$> q0 <*> q1 
-       qort = mkOP <$> q0 <*> q1
-       gf   = lift0R1 vM >>= \v1 -> g0 `oplus` moveStart (displaceVec v1) g1
-   in PosObject qort gf    
+genMoveAlign mkV mkO po0 po1 = PosObject body
+  where
+   body = drawingCtx >>= \ctx -> 
+          let (ortt0,pf0) = runCF (getPosObject po0) ctx
+              (ortt1,pf1) = runCF (getPosObject po1) ctx
+              v1          = mkV ortt0 ortt1
+              ortt        = mkO ortt0 ortt1
+              pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+          in return (ortt,pf)
 
 
 --------------------------------------------------------------------------------
@@ -385,12 +425,15 @@ genMoveSepH :: (Num u, OPlus (t u))
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
             -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveSepH mkV mkOP sep (PosObject q0 g0) (PosObject q1 g1) = 
-   let vM   = mkV <$> q0 <*> q1
-       qort = (\or0 or1 -> extendORight sep $ mkOP or0 or1) <$> q0 <*> q1
-       gf   = lift0R1 vM >>= \v1 -> 
-              g0 `oplus` moveStart (displaceVec $ hvec sep ^+^ v1) g1
-   in PosObject qort gf    
+genMoveSepH mkV mkO sep po0 po1  = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let (ortt0,pf0) = runCF (getPosObject po0) ctx
+               (ortt1,pf1) = runCF (getPosObject po1) ctx
+               v1          = hvec sep ^+^ mkV ortt0 ortt1
+               ortt        = extendORight sep $ mkO ortt0 ortt1
+               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+           in return (ortt,pf)
 
 
 genMoveSepV :: (Num u, OPlus (t u))   
@@ -398,14 +441,15 @@ genMoveSepV :: (Num u, OPlus (t u))
             -> (Orientation u -> Orientation u -> Orientation u) 
             -> u
             -> PosObject t u -> PosObject t u -> PosObject t u
-genMoveSepV mkV mkOP sep (PosObject q0 g0) (PosObject q1 g1) = 
-   let vM   = mkV <$> q0 <*> q1
-       qort = (\or0 or1 -> extendOUp sep $ mkOP or0 or1) <$> q0 <*> q1
-       gf   = lift0R1 vM >>= \v1 -> 
-              g0 `oplus` moveStart (displaceVec $ vvec sep ^+^ v1) g1
-   in PosObject qort gf    
-
-
+genMoveSepV mkV mkO sep po0 po1 = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let (ortt0,pf0) = runCF (getPosObject po0) ctx
+               (ortt1,pf1) = runCF (getPosObject po1) ctx
+               v1          = vvec sep ^+^ mkV ortt0 ortt1
+               ortt        = extendOUp sep $ mkO ortt0 ortt1
+               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+           in return (ortt,pf)
 
 halignPO :: (Fractional u, Ord u, OPlus (t u))   
          => PosObject t u -> HAlign -> [PosObject t u] -> PosObject t u
@@ -453,3 +497,5 @@ valignSepPO _   va du (x:xs) = go x xs
                      _       -> vsepRightPO du
     go acc []     = acc
     go acc (y:ys) = go (cat acc y) ys
+
+
