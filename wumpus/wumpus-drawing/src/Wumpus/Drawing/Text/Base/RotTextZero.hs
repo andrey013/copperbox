@@ -50,7 +50,7 @@ import Control.Applicative
 type LocRectTextLine u  = BoundedLocRectGraphic u
 type LocTextLine u      = BoundedLocGraphic u
 
-type TextObject u       = BoundedPosObject u
+type TextObject u       = PosObject u
 
 
 
@@ -95,7 +95,7 @@ renderMultiLine :: (Real u, Floating u, InterpretUnit u)
                 => VAlign -> [TextObject u] -> LocRectTextLine u
 renderMultiLine va docs = lift0R2 body >>= posTextWithMargins
   where
-    body     = (\dy -> valignSepPO emptyBoundedPosObject va dy $ reverse docs)
+    body     = (\dy -> valignSepPO emptyPosObject va dy $ reverse docs)
                  <$> textlineSpace
 
 
@@ -105,7 +105,7 @@ makeTextObject = makeEscTextObject . escapeString
 
 makeEscTextObject :: InterpretUnit u => EscapedText -> TextObject u
 makeEscTextObject esc = 
-    makeBoundedPosObject (textOrientationZero esc) (escTextLine esc)
+    makePosObject (textOrientationZero esc) (escTextLine esc)
 
 
 -- Note inclided text will (probably) have to construct with the 
@@ -120,7 +120,7 @@ rtextline ang ss = rescTextline ang (escapeString ss)
 rescTextline :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => Radian -> EscapedText -> LocRectTextLine u
 rescTextline ang esc = promoteR2 $ \pt addr -> 
-    runPosObject pt addr $ makeBoundedPosObject ortt body
+    runPosObject pt addr $ makePosObject ortt body
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero esc
     body = incline (rescTextLine esc) ang

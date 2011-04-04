@@ -99,14 +99,14 @@ instance Functor (EvalM u) where
 
 
 instance Applicative (EvalM u) where
-  pure a    = EvalM $ \st0   -> (a, st0, mempty)
+  pure a    = EvalM $ \st0 -> (a, st0, mempty)
   mf <*> ma = EvalM $ \st0 -> 
                 let (f,st1,w1) = getEvalM mf st0
                     (a,st2,w2) = getEvalM ma st1
                 in (f a, st2, w1 `mappend` w2)
 
 instance Monad (EvalM u) where
-  return a  = EvalM $ \st0   -> (a, st0, mempty)
+  return a  = EvalM $ \st0 -> (a, st0, mempty)
   ma >>= k  = EvalM $ \st0 -> 
                 let (a,st1,w1) = getEvalM ma st0
                     (b,st2,w2) = (getEvalM . k) a st1

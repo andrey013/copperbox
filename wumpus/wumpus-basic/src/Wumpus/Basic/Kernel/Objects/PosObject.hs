@@ -36,7 +36,8 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , makePosObject
   , emptyPosObject
   , runPosObject
-
+  , localizePO 
+ 
   , makeBoundedLocRectGraphic
   , startAddr
   , atStartAddr
@@ -122,6 +123,7 @@ type CtxFreeLocGraphic u = Point2 u -> GraphicAns u
 newtype PosObject u = PosObject
          { getPosObject :: CF (Orientation u, CtxFreeLocGraphic u) }
 
+
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
@@ -133,8 +135,6 @@ type DPosObject = PosObject Double
 type LocRectQuery u a = CF2 (Point2 u) RectAddress a
 
 type BoundedLocRectGraphic u = LocRectQuery u (ImageAns BoundingBox u)
-
-
 
 --------------------------------------------------------------------------------
 
@@ -177,6 +177,11 @@ runPosObject pt addr (PosObject mf) =
 
 
 
+
+localizePO :: DrawingContextF -> PosObject u -> PosObject u
+localizePO upd = PosObject . localize upd . getPosObject
+
+
 -- | Make a 'BoundedLocRectGraphic' from a 'PosObject'.
 -- 
 -- This turns a PosObject (concatenatable) into a LocRectImage 
@@ -217,8 +222,6 @@ atStartAddr = apply2R2
 
 
 -- | Extend the orientation.
---
--- TODO - does the start point need moving too... ?
 --
 extendPosObject :: Num u 
                 => u -> u -> u -> u -> PosObject u -> PosObject u

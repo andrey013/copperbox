@@ -48,9 +48,8 @@ posEscChar esc =
 
 
 makePosChar :: InterpretUnit u 
-            => EscapedChar -> BoundedPosObject u
-makePosChar esc = 
-    makeBoundedPosObject (charOrientationZero esc) (escText1 esc)
+            => EscapedChar -> PosObject u
+makePosChar esc = makePosObject (charOrientationZero esc) (escText1 esc)
 
 
 escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
