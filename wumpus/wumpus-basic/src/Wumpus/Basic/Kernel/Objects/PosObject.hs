@@ -38,6 +38,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , emptyPosObject
   , runPosObject
   , localizePO 
+  , elaboratePO
  
   , makeBoundedLocRectGraphic
   , startAddr
@@ -196,9 +197,21 @@ runPosObject pt addr (PosObject mf) =
 
 
 
-
+-- | Run a DrawingContext update within a 'PosObject'.
+--
 localizePO :: DrawingContextF -> PosObject u -> PosObject u
 localizePO upd = PosObject . localize upd . getPosObject
+
+
+-- | 'decorate' -like functionality.
+--
+elaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
+elaboratePO fn po = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let (ortt,ptf) = runCF (getPosObject po) ctx
+               deco       = runCF1 (fn ortt) ctx
+           in return (ortt, ptf `oplus` deco)
 
 
 -- | Make a 'BoundedLocRectGraphic' from a 'PosObject'.

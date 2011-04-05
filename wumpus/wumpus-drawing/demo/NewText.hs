@@ -41,13 +41,13 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = localize text_margin_loose  $ do
-    draw $ (fn $ leftAlign body `startAddr` SS) `at` zeroPt
+    draw $ (fn $ leftAlign body `startAddr` SS)   `at` P2 0 300
     draw $ redPlus `at` zeroPt
 
     draw $ (fn $ centerAlign body `startAddr` SS) `at` P2 0 150
     draw $ redPlus `at` P2 0 150
 
-    draw $ (fn $ rightAlign body `startAddr` SS) `at` P2 0 300
+    draw $ (fn $ rightAlign body `startAddr` SS)  `at` P2 0 0
     draw $ redPlus `at` P2 0 300
   where
     fn    = illustrateBoundedLocGraphic
@@ -59,7 +59,7 @@ redPlus = localize (stroke_colour red) markPlus
 
 body :: (Ord u, InterpretUnit u) => [Doc u]
 body = [ string "Further work"
-       , (textSize 36 $ string "on")
+       , underline $ (textSize 36 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
        , ( lfill 50 $ string "and") <> string "other things."

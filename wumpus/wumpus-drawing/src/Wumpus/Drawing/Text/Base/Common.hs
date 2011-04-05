@@ -118,11 +118,13 @@ hkernVector :: (DrawingCtxM m, InterpretUnit u)
 hkernVector = go 0
   where
     go w []             = return $ V2 w 0
-    go w [(_, ch)]      = fmap (addWidth w) (charVector ch)
+    go w [(dx,ch)]      = fmap (addWidth $ w + dx) (charVector ch)
     go w ((dx,_ ):xs)   = go (w + dx) xs
     
     addWidth w (V2 x y) = V2 (w+x) y
 
+    -- ERROR this not the right way to count...
+    
 
 hkernOrientationZero :: (DrawingCtxM m, InterpretUnit u )
                      => [KernChar u] -> m (Orientation u)
