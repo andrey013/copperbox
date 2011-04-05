@@ -15,6 +15,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
+
 main :: IO ()
 main = simpleFontLoader main1 >> return ()
 
@@ -61,5 +62,6 @@ body = [ string "Further work"
        , (textSize 36 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
-       , ( rfill 50 $ string "and") <> string "other things."
+       , ( lfill 50 $ string "and") <> string "other things."
+       , float (sin (0.5::Double))
        ] 

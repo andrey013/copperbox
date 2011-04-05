@@ -44,32 +44,32 @@ import Wumpus.Core                              -- package: wumpus-core
 
 locImageLabel :: Floating u 
               => ((t u) -> Anchor u) -> RectAddress 
-              -> LocRectImage t1 u -> LocImage t u -> LocImage t u
+              -> BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
     annotate (obj `at` pt)  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_center_of :: (Floating u, CenterAnchor t u) 
-                => LocRectImage t1 u -> LocImage t u -> LocImage t u
+                => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 label_center_of = locImageLabel center CENTER
 
 
 label_left_of :: (Floating u, CardinalAnchor t u) 
-              => LocRectImage t1 u -> LocImage t u -> LocImage t u
+              => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 label_left_of = locImageLabel west EE
 
 label_right_of :: (Floating u, CardinalAnchor t u) 
-               => LocRectImage t1 u -> LocImage t u -> LocImage t u
+               => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 label_right_of = locImageLabel east WW
 
 
 label_above :: (Floating u, CardinalAnchor t u) 
-            => LocRectImage t1 u -> LocImage t u -> LocImage t u
+            => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 label_above = locImageLabel north SS
 
 
 label_below :: (Floating u, CardinalAnchor t u) 
-            => LocRectImage t1 u -> LocImage t u -> LocImage t u
+            => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 label_below = locImageLabel south NN
 
 
@@ -77,26 +77,29 @@ label_below = locImageLabel south NN
 
 connectorPathLabel :: Floating u 
                    => (AbsPath u -> Point2 u) -> RectAddress
-                   -> LocRectImage t u
+                   -> BoundedLocRectGraphic u
                    -> Image AbsPath u -> Image AbsPath u
 connectorPathLabel fn rpos lbl img =  
     annotate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
-                => RectAddress -> LocRectImage t u 
+                => RectAddress 
+                -> BoundedLocRectGraphic u 
                 -> Image AbsPath u -> Image AbsPath u
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
-                 => RectAddress -> LocRectImage t u 
+                 => RectAddress 
+                 -> BoundedLocRectGraphic u 
                  -> Image AbsPath u -> Image AbsPath u
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
-                 => RectAddress -> LocRectImage t u
+                 => RectAddress 
+                 -> BoundedLocRectGraphic u
                  -> Image AbsPath u -> Image AbsPath u
 label_atend_of = connectorPathLabel atend_
 

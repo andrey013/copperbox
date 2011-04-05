@@ -31,8 +31,11 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , space
   , string
   , escaped
---  , int
---  , integer
+  , int
+  , integer
+  , float
+  , ffloat
+
   , (<>)
   , (<+>) 
 
@@ -53,7 +56,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Data.Char ( ord )
-
+import Numeric
 
 
 -- | Space is the width of a space in the current font - it is 
@@ -62,9 +65,10 @@ import Data.Char ( ord )
 data Doc u = Empty
            | Space 
            | Text  EscapedText
-           | Cat   (Doc u)          (Doc u)
-           | Fill  VAlign           u         (Doc u)
-           | Local DrawingContextF  (Doc u)
+           | Cat   (Doc u)                (Doc u)
+           | Fill  VAlign                 u             (Doc u)
+           | Local DrawingContextF        (Doc u)
+           | Mono  (Query (AdvanceVec u)) [EscapedChar]
 
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
@@ -85,6 +89,34 @@ escaped     :: EscapedText -> Doc u
 escaped     = Text
 
 
+
+int :: InterpretUnit u => Int -> Doc u
+int i = integer $ fromIntegral i
+
+
+integer :: InterpretUnit u => Integer -> Doc u
+integer i = Mono (charVector $ CharLiteral '0') (map CharLiteral $ show i)
+
+-- | Specialized version of 'ffloat' - the answer is always 
+-- rendered at \"full precision\".
+--
+float :: (RealFloat a, InterpretUnit u) => a -> Doc u
+float = ffloat Nothing
+
+
+-- | This is equivalent to 'showFFloat' in the Numeric module.
+-- 
+-- Like 'showFFloat', the answer is rendered to supplied 
+-- precision. @Nothing@ indicated full precision.
+--
+ffloat :: (RealFloat a, InterpretUnit u) => (Maybe Int) -> a -> Doc u
+ffloat mb d = Mono (charVector $ CharLiteral '0') xs
+  where
+    xs = (map CharLiteral $ ($ []) $ showFFloat mb d)
+
+
+
+
 infixr 6 <>, <+>
 
 
@@ -98,6 +130,8 @@ a <> b = Cat a b
 --
 (<+>) :: Doc u -> Doc u -> Doc u
 a <+> b = a <> space <> b 
+
+
 
 
 rfill :: u -> Doc u -> Doc u
@@ -156,6 +190,7 @@ interpret (Text esc)        = interpText esc
 interpret (Cat a b)         = hcatPO (interpret a) (interpret b)
 interpret (Fill va w a)     = interpFill va w (interpret a)
 interpret (Local upd a)     = localizePO upd (interpret a)
+interpret (Mono q1 xs)      = interpMono q1 xs
 
 
 
@@ -195,41 +230,23 @@ interpFill VCenter = padHorizontalPO
 interpFill VRight  = padRightPO
 
 
-
-{-
-
-int :: InterpretUnit u => Int -> DocText u
-int i = uniformSpace (map CharLiteral $ show i) mkvecQ 
+interpMono :: InterpretUnit u 
+           => Query (AdvanceVec u) -> [EscapedChar] -> PosObject u
+interpMono qy1 chs = makeBindPosObject qy hkernOrientationZero hkernLine
   where
-    mkvecQ = advanceH <$> charVector (CharLiteral '0') 
-        
-
-
-integer :: InterpretUnit u => Integer -> DocText u
-integer i = uniformSpace (map CharLiteral $ show i) mkvecQ
-  where
-    mkvecQ = advanceH <$> charVector (CharLiteral '0')
-    
--}
+    qy = (\v1 -> monoSpace (advanceH v1) chs ) <$> qy1 
 
 
 
-{-
+
 --------------------------------------------------------------------------------
 -- Helpers
 
 
-uniformSpace :: InterpretUnit u 
-             => [EscapedChar] -> Query u -> BoundedPosObject u
-uniformSpace xs qx = hkernPrim $ qx >>= go xs
-  where 
-    go (c:cs) dx = return $ (0,c) : map (\ch -> (dx,ch)) cs
-    go []     _  = return []
+monoSpace :: Num u => u -> [EscapedChar] -> [KernChar u]
+monoSpace w1 (c:cs) = (0,c) : map (\ch -> (w1,ch)) cs
+monoSpace _  []     = []
 
-
-hkernPrim :: InterpretUnit u => Query [KernChar u] -> BoundedPosObject u
-hkernPrim qks = 
-    makeBoundedPosObject (qks >>= hkernOrientationZero) (lift0R1 qks >>= hkernLine)
            
--}
+
 

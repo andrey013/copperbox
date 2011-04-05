@@ -34,6 +34,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   -- * Operations
 
   , makePosObject
+  , makeBindPosObject
   , emptyPosObject
   , runPosObject
   , localizePO 
@@ -156,6 +157,24 @@ makePosObject qortt img = PosObject body
            let ortt = runCF qortt ctx
                pf   = runCF1 img ctx
            in return (ortt,pf)
+
+
+-- | This is a bit of a hack to overcome that the newtype 
+-- wrapper around PosObject stops monadic bind operating 
+-- with the internal CF function.
+--
+makeBindPosObject :: Query a 
+                  -> (a -> Query (Orientation u)) -> (a -> LocGraphic u) 
+                  -> PosObject u 
+makeBindPosObject qy mkO mkG = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let a    = runCF qy ctx
+               ortt = runCF (mkO a) ctx
+               pf   = runCF1 (mkG a) ctx
+           in return (ortt,pf)
+
+
 
 -- | 'emptyPosObject' : @ PosObject @
 --
