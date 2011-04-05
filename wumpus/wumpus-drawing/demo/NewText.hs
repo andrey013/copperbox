@@ -40,28 +40,29 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 -- Note - Baseline positions not meaningful for multiline text
 
 mf :: TraceDrawing Double ()
-mf = localize text_margin_loose  $ do
-    draw $ (fn $ leftAlign body `startAddr` SS)   `at` P2 0 300
+mf = localize text_margin_tight  $ do
+    draw $ (fn SS leftAlign)   `at` P2 0 300
     draw $ redPlus `at` zeroPt
 
-    draw $ (fn $ centerAlign body `startAddr` SS) `at` P2 0 150
+    draw $ (fn SS centerAlign) `at` P2 0 150
     draw $ redPlus `at` P2 0 150
 
-    draw $ (fn $ rightAlign body `startAddr` SS)  `at` P2 0 0
+    draw $ (fn SS rightAlign)  `at` P2 0 0
     draw $ redPlus `at` P2 0 300
   where
-    fn    = illustrateBoundedLocGraphic
+    fn addr af = illustrateBoundedLocGraphic $ 
+                   render (af body) `startAddr` addr
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 redPlus = localize (stroke_colour red) markPlus
 
 
-body :: (Ord u, InterpretUnit u) => [Doc u]
+body :: (Fractional u, Ord u, InterpretUnit u) => [Doc u]
 body = [ string "Further work"
        , underline $ (textSize 36 $ string "on")
            <+> (fontColour red $ string "multiline")
            <+> string "text"
-       , ( lfill 50 $ string "and") <> string "other things."
+       , ( lfill 50 $ string "and") <> highlight light_blue (string "other things.")
        , float (sin (0.5::Double))
        ] 

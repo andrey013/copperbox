@@ -34,17 +34,17 @@ mf = do
     drawl (P2 100 400) $ illustratePosObject rectMinor
     drawl (P2 200 400) $ illustratePosObject rectBl
 
-    drawl (P2   0 275) $ illustratePosObject $ vs1
-    drawl (P2 150 275) $ illustratePosObject $ vs2
-    drawl (P2 300 275) $ illustratePosObject $ vs3
+    drawl (P2   0 350) $ illustratePosObject $ vs1
+    drawl (P2 150 350) $ illustratePosObject $ vs2
+    drawl (P2 300 350) $ illustratePosObject $ vs3
 
     drawl (P2   0 200) $ illustratePosObject $ hs1
     drawl (P2 150 200) $ illustratePosObject $ hs2
     drawl (P2 300 200) $ illustratePosObject $ hs3
 
-    drawl (P2   0 75)  $ illustratePosObject $ va1
-    drawl (P2 150 75)  $ illustratePosObject $ va2
-    drawl (P2 300 75)  $ illustratePosObject $ va3
+    drawl (P2   0 150)  $ illustratePosObject $ va1
+    drawl (P2 150 150)  $ illustratePosObject $ va2
+    drawl (P2 300 150)  $ illustratePosObject $ va3
 
     drawl (P2   0 0)   $ illustratePosObject $ ha1
     drawl (P2 150 0)   $ illustratePosObject $ ha2

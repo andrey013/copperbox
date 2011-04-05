@@ -40,13 +40,14 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   , padYMinor
 
   , spineRight
-  , spineAbove
-  , alignBottomR
-  , alignCenterR
-  , alignTopR
-  , alignLeftU
-  , alignCenterU
-  , alignRightU
+  , spineBelow
+
+  , halignBottomO
+  , halignCenterO
+  , halignTopO
+  , valignLeftO
+  , valignCenterO
+  , valignRightO
 
   , spinemoveH
   , spinemoveV
@@ -290,28 +291,27 @@ spineRight (Orientation xmin0 xmaj0 ymin0 ymaj0)
                 }
 
 
--- | Second Orientation is moved /above/ the first along the spine
+-- | Second Orientation is moved /below/ the first along the spine
 -- i.e. the vertical point between the left minor and right major
 -- (not the same as the horizontal center).
 --
-spineAbove :: (Num u, Ord u) 
+spineBelow :: (Num u, Ord u) 
            => Orientation u -> Orientation u -> Orientation u
-spineAbove (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+spineBelow (Orientation xmin0 xmaj0 ymin0 ymaj0) 
            (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     Orientation { or_x_minor = max xmin0 xmin1
                 , or_x_major = max xmaj0 xmaj1
-                , or_y_minor = ymin0 
-                , or_y_major = ymaj0 + ymin1 + ymaj1
+                , or_y_minor = ymin0 + ymaj1 + ymin1
+                , or_y_major = ymaj0
                 }
-
 
 
 -- | xmin and xmaj same as left.
 --
-alignBottomR :: (Num u, Ord u) 
-             => Orientation u -> Orientation u -> Orientation u
-alignBottomR (Orientation xmin0 xmaj0 ymin0 ymaj0) 
-             (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
+halignBottomO :: (Num u, Ord u) 
+            => Orientation u -> Orientation u -> Orientation u
+halignBottomO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+              (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let hr = ymin1 + ymaj1
     in Orientation { or_x_minor = xmin0
                    , or_x_major = xmaj0 + xmin1 + xmaj1
@@ -325,9 +325,9 @@ alignBottomR (Orientation xmin0 xmaj0 ymin0 ymaj0)
 
 -- | xmin same as left.
 --
-alignCenterR :: (Fractional u, Ord u) 
-             => Orientation u -> Orientation u -> Orientation u
-alignCenterR (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+halignCenterO :: (Fractional u, Ord u) 
+              => Orientation u -> Orientation u -> Orientation u
+halignCenterO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
              (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let hl         = ymin0 + ymaj0
         hr         = ymin1 + ymaj1
@@ -343,10 +343,10 @@ alignCenterR (Orientation xmin0 xmaj0 ymin0 ymaj0)
 
 -- | xmin and ymaj same as left.
 --
-alignTopR :: (Num u, Ord u) 
-             => Orientation u -> Orientation u -> Orientation u
-alignTopR (Orientation xmin0 xmaj0 ymin0 ymaj0) 
-          (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
+halignTopO :: (Num u, Ord u) 
+           => Orientation u -> Orientation u -> Orientation u
+halignTopO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+           (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let hr = ymin1 + ymaj1
     in Orientation { or_x_minor = xmin0
                    , or_x_major = xmaj0 + xmin1 + xmaj1
@@ -354,49 +354,49 @@ alignTopR (Orientation xmin0 xmaj0 ymin0 ymaj0)
                    , or_y_major = ymaj0
                    }
 
--- | xmin and ymin are same as left.
+-- | Align second below - xmin and ymaj are same as left.
 --
-alignLeftU :: (Fractional u, Ord u) 
-             => Orientation u -> Orientation u -> Orientation u
-alignLeftU (Orientation xmin0 xmaj0 ymin0 ymaj0) 
-           (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
+valignLeftO :: (Fractional u, Ord u) 
+            => Orientation u -> Orientation u -> Orientation u
+valignLeftO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+            (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let wr = xmin1 + xmaj1
     in Orientation { or_x_minor = xmin0
                    , or_x_major = max xmaj0 (wr - xmin0)
-                   , or_y_minor = ymin0
-                   , or_y_major = ymaj0 + ymin1 + ymaj1
+                   , or_y_minor = ymin0 + ymin1 + ymaj1
+                   , or_y_major = ymaj0
                    }
 
 
 
--- | ymin same as left.
+-- | Align second below - ymaj same as left.
 --
-alignCenterU :: (Fractional u, Ord u) 
+valignCenterO :: (Fractional u, Ord u) 
              => Orientation u -> Orientation u -> Orientation u
-alignCenterU (Orientation xmin0 xmaj0 ymin0 ymaj0) 
-             (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
+valignCenterO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+              (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let wl         = xmin0 + xmaj0
         wr         = xmin1 + xmaj1
         half_diff  = 0.5 * (wr - wl)
     in Orientation 
           { or_x_minor = if wl >= wr then xmin0 else (xmin0 + half_diff)
           , or_x_major = if wl >= wr then xmaj0 else (xmaj0 + half_diff)
-          , or_y_minor = ymin0 
-          , or_y_major = ymaj0 + ymin1 + ymaj1
+          , or_y_minor = ymin0 + ymin1 + ymaj1
+          , or_y_major = ymaj0 
           }
 
 
--- | xmaj and ymin are same as left.
+-- | Align second below - xmaj and ymaj are same as left.
 --
-alignRightU :: (Fractional u, Ord u) 
+valignRightO :: (Fractional u, Ord u) 
              => Orientation u -> Orientation u -> Orientation u
-alignRightU (Orientation xmin0 xmaj0 ymin0 ymaj0) 
-            (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
+valignRightO (Orientation xmin0 xmaj0 ymin0 ymaj0) 
+             (Orientation xmin1 xmaj1 ymin1 ymaj1) = 
     let wr = xmin1 + xmaj1
     in Orientation { or_x_minor = max xmin0 (wr - xmaj0)
                    , or_x_major = xmaj0 
-                   , or_y_minor = ymin0
-                   , or_y_major = ymaj0 + ymin1 + ymaj1
+                   , or_y_minor = ymin0 + ymin1 + ymaj1
+                   , or_y_major = ymaj0 
                    }
 
 
@@ -411,16 +411,19 @@ downUp :: Num u => u -> u -> u
 {-# INLINE downUp #-}
 downUp d u = negate d + u
 
-
+-- | Move second right.
+--
 spinemoveH :: Num u => Orientation u -> Orientation u -> Vec2 u
 spinemoveH op0 op1 = V2 hdist 0
   where
     hdist = or_x_major op0 + or_x_minor op1
 
+-- | Move second below.
+--
 spinemoveV :: Num u => Orientation u -> Orientation u -> Vec2 u
-spinemoveV op0 op1 = V2 0 vdist
+spinemoveV op0 op1 = V2 0 (negate vdist)
   where
-    vdist = or_y_major op0 + or_y_minor op1
+    vdist = or_y_minor op0 + or_y_major op1
    
 
 
@@ -467,13 +470,13 @@ binmoveVLeft :: Num u => Orientation u -> Orientation u -> Vec2 u
 binmoveVLeft op0 op1 = V2 hdist vdist
   where
     hdist = leftRight (or_x_minor op0) (or_x_minor op1)
-    vdist = or_y_major op0 + or_y_minor op1
+    vdist = negate $ or_y_minor op0 + or_y_major op1
 
 
 binmoveVCenter :: (Fractional u, Ord u) 
                => Orientation u -> Orientation u -> Vec2 u
-binmoveVCenter (Orientation xmin0 xmaj0 _     ymaj0) 
-               (Orientation xmin1 xmaj1 ymin1 _    ) = 
+binmoveVCenter (Orientation xmin0 xmaj0 ymin0 _) 
+               (Orientation xmin1 xmaj1 _     ymaj1) = 
     V2 hdist vdist
   where
     w0        = xmin0 + xmaj0
@@ -481,7 +484,7 @@ binmoveVCenter (Orientation xmin0 xmaj0 _     ymaj0)
     half_diff = abs $ 0.5 * (w1 - w0)
     hdist     = if w0 >= w1 then leftRight xmin0 (half_diff + xmin1)
                             else rightLeft (xmaj0 + half_diff) xmaj1
-    vdist     = ymaj0 + ymin1
+    vdist     = negate $ ymin0 + ymaj1
 
 
 
@@ -489,5 +492,5 @@ binmoveVRight :: Num u => Orientation u -> Orientation u -> Vec2 u
 binmoveVRight op0 op1 = V2 hdist vdist
   where
     hdist = rightLeft (or_x_major op0) (or_x_major op1)
-    vdist = or_y_major op0 + or_y_minor op1
+    vdist = negate $ or_y_minor op0 + or_y_major op1
    

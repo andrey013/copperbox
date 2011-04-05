@@ -39,6 +39,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , runPosObject
   , localizePO 
   , elaboratePO
+  , aelaboratePO 
  
   , makeBoundedLocRectGraphic
   , startAddr
@@ -213,6 +214,17 @@ elaboratePO fn po = PosObject body
                deco       = runCF1 (fn ortt) ctx
            in return (ortt, ptf `oplus` deco)
 
+-- | ante-eloborate
+--
+aelaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
+aelaboratePO fn po = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let (ortt,ptf) = runCF (getPosObject po) ctx
+               deco       = runCF1 (fn ortt) ctx
+           in return (ortt, deco `oplus` ptf)
+
+
 
 -- | Make a 'BoundedLocRectGraphic' from a 'PosObject'.
 -- 
@@ -336,37 +348,37 @@ hcatPO = genMoveAlign spinemoveH spineRight
 
 vcatPO :: (Num u, Ord u)   
        => PosObject u -> PosObject u -> PosObject u
-vcatPO = genMoveAlign spinemoveV spineAbove
+vcatPO = genMoveAlign spinemoveV spineBelow
 
 
 
 hcatBottomPO :: (Num u, Ord u)   
              => PosObject u -> PosObject u -> PosObject u
-hcatBottomPO = genMoveAlign binmoveHBottom alignBottomR
+hcatBottomPO = genMoveAlign binmoveHBottom halignBottomO
 
 
 hcatCenterPO :: (Fractional u, Ord u)   
              => PosObject u -> PosObject u -> PosObject u
-hcatCenterPO = genMoveAlign binmoveHCenter alignCenterR
+hcatCenterPO = genMoveAlign binmoveHCenter halignCenterO
 
 
 hcatTopPO :: (Num u, Ord u)   
           => PosObject u -> PosObject u -> PosObject u
-hcatTopPO = genMoveAlign binmoveHTop alignTopR
+hcatTopPO = genMoveAlign binmoveHTop halignTopO
 
 
 vcatLeftPO :: (Fractional u, Ord u)   
            => PosObject u -> PosObject u -> PosObject u
-vcatLeftPO = genMoveAlign binmoveVLeft alignLeftU
+vcatLeftPO = genMoveAlign binmoveVLeft valignLeftO
 
 
 vcatCenterPO :: (Fractional u, Ord u)   
                 => PosObject u -> PosObject u -> PosObject u
-vcatCenterPO = genMoveAlign binmoveVCenter alignCenterU
+vcatCenterPO = genMoveAlign binmoveVCenter valignCenterO
 
 vcatRightPO :: (Fractional u, Ord u)   
             => PosObject u -> PosObject u -> PosObject u
-vcatRightPO = genMoveAlign binmoveVRight alignRightU
+vcatRightPO = genMoveAlign binmoveVRight valignRightO
 
 
 genMoveAlign :: (Num u)   
@@ -394,36 +406,36 @@ hsepPO = genMoveSepH spinemoveH spineRight
 
 vsepPO :: (Num u, Ord u)   
        => u -> PosObject u -> PosObject u -> PosObject u
-vsepPO = genMoveSepV spinemoveV spineAbove
+vsepPO = genMoveSepV spinemoveV spineBelow
 
 
 hsepBottomPO :: (Num u, Ord u)   
              => u -> PosObject u -> PosObject u -> PosObject u
-hsepBottomPO = genMoveSepH binmoveHBottom alignBottomR
+hsepBottomPO = genMoveSepH binmoveHBottom halignBottomO
 
 
 hsepCenterPO :: (Fractional u, Ord u)   
              => u -> PosObject u -> PosObject u -> PosObject u
-hsepCenterPO = genMoveSepH binmoveHCenter alignCenterR
+hsepCenterPO = genMoveSepH binmoveHCenter halignCenterO
 
 
 hsepTopPO :: (Num u, Ord u)   
           => u -> PosObject u -> PosObject u -> PosObject u
-hsepTopPO = genMoveSepH binmoveHTop alignTopR
+hsepTopPO = genMoveSepH binmoveHTop halignTopO
 
 
 vsepLeftPO :: (Fractional u, Ord u)   
            => u -> PosObject u -> PosObject u -> PosObject u
-vsepLeftPO = genMoveSepV binmoveVLeft alignLeftU
+vsepLeftPO = genMoveSepV binmoveVLeft valignLeftO
 
 
 vsepCenterPO :: (Fractional u, Ord u)   
              => u -> PosObject u -> PosObject u -> PosObject u
-vsepCenterPO = genMoveSepV binmoveVCenter alignCenterU
+vsepCenterPO = genMoveSepV binmoveVCenter valignCenterO
 
 vsepRightPO :: (Fractional u, Ord u)   
             => u -> PosObject u -> PosObject u -> PosObject u
-vsepRightPO = genMoveSepV binmoveVRight alignRightU
+vsepRightPO = genMoveSepV binmoveVRight valignRightO
 
 
 genMoveSepH :: (Num u)   
@@ -452,8 +464,8 @@ genMoveSepV mkV mkO sep po0 po1 = PosObject body
     body = drawingCtx >>= \ctx -> 
            let (ortt0,pf0) = runCF (getPosObject po0) ctx
                (ortt1,pf1) = runCF (getPosObject po1) ctx
-               v1          = vvec sep ^+^ mkV ortt0 ortt1
-               ortt        = extendOUp sep $ mkO ortt0 ortt1
+               v1          = vvec (-sep) ^+^ mkV ortt0 ortt1
+               ortt        = extendODown sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
 

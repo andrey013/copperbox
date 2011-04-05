@@ -46,7 +46,7 @@ locImageLabel :: Floating u
               => ((t u) -> Anchor u) -> RectAddress 
               -> BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    annotate (obj `at` pt)  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
+    elaborate (obj `at` pt)  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_center_of :: (Floating u, CenterAnchor t u) 
@@ -80,7 +80,7 @@ connectorPathLabel :: Floating u
                    -> BoundedLocRectGraphic u
                    -> Image AbsPath u -> Image AbsPath u
 connectorPathLabel fn rpos lbl img =  
-    annotate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
+    elaborate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 

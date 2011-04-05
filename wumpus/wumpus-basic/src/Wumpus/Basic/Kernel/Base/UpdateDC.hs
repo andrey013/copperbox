@@ -89,6 +89,12 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , fill_use_stroke_colour
   , stroke_use_fill_colour
 
+  , fill_use_text_colour
+  , stroke_use_text_colour
+
+  , text_use_stroke_colour
+  , text_use_fill_colour
+
   -- * Connector Props
   , source_sep
   , dest_sep
@@ -483,6 +489,36 @@ fill_use_stroke_colour =
 stroke_use_fill_colour :: DrawingContextF
 stroke_use_fill_colour = 
     (\s a -> s { dc_stroke_colour = a }) <*> dc_fill_colour
+
+
+-- | Set the fill colour to use the current text colour.
+--
+fill_use_text_colour :: DrawingContextF
+fill_use_text_colour = 
+    (\s a -> s { dc_fill_colour = a }) <*> dc_text_colour
+
+
+-- | Set the stroke colour to use the current fill colour.
+--
+stroke_use_text_colour :: DrawingContextF
+stroke_use_text_colour = 
+    (\s a -> s { dc_stroke_colour = a }) <*> dc_text_colour
+
+
+
+-- | Set the text colour to use the current stroke colour.
+--
+text_use_stroke_colour :: DrawingContextF
+text_use_stroke_colour = 
+    (\s a -> s { dc_text_colour = a }) <*> dc_stroke_colour
+
+
+-- | Set the text colour to use the current fill colour.
+--
+text_use_fill_colour :: DrawingContextF
+text_use_fill_colour = 
+    (\s a -> s { dc_text_colour = a }) <*> dc_fill_colour
+
 
 
 --------------------------------------------------------------------------------

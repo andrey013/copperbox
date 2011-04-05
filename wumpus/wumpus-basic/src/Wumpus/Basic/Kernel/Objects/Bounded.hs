@@ -164,7 +164,7 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
 --
 illustrateBoundedGraphic :: InterpretUnit u
                          => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic gf = annotate gf bbrectangle
+illustrateBoundedGraphic gf = elaborate gf bbrectangle
 
 
 
@@ -172,7 +172,7 @@ illustrateBoundedGraphic gf = annotate gf bbrectangle
 --
 illustrateBoundedLocGraphic :: InterpretUnit u
                             => BoundedLocGraphic u -> BoundedLocGraphic u
-illustrateBoundedLocGraphic gf = annotate gf fn
+illustrateBoundedLocGraphic gf = elaborate gf fn
   where
     fn bb = lift0R1 (bbrectangle bb)
 
@@ -186,7 +186,7 @@ illustrateBoundedLocGraphic gf = annotate gf fn
 illustrateBoundedLocThetaGraphic :: InterpretUnit u
                                  => BoundedLocThetaGraphic u 
                                  -> BoundedLocThetaGraphic u
-illustrateBoundedLocThetaGraphic gf = annotate gf fn
+illustrateBoundedLocThetaGraphic gf = elaborate gf fn
   where
     fn bb = lift0R2 (bbrectangle bb)
 

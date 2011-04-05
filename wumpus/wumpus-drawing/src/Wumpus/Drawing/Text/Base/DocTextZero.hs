@@ -22,6 +22,7 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
     Doc 
   , TextFrame
+  , render 
 
   , leftAlign
   , centerAlign
@@ -51,6 +52,7 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   
   , strikethrough
   , underline
+  , highlight
 
   ) where
 
@@ -77,9 +79,14 @@ data Doc u = Empty
            | DLocal DrawingContextF (Doc u)
            | TLocal TextContextF (Doc u)
            | Mono (WidthQuery u) [EscapedChar]
+           | AElab (AElaborateF u) (Doc u)
 
 type WidthQuery u = Query (AdvanceVec u)
+
 type TextContextF = TextContext -> TextContext
+
+type AElaborateF u = Orientation u -> LocGraphic u
+
 
 
 -- | TextFrame is the result Graphic made from rendering multiple
@@ -172,6 +179,25 @@ vcatc = VCat VCenter
 vcatr :: Doc u -> Doc u -> Doc u
 vcatr = VCat VRight
 
+leftAlign  :: [Doc u] -> Doc u
+leftAlign  = multiline vcatl
+
+centerAlign  :: [Doc u] -> Doc u
+centerAlign  = multiline vcatc
+
+rightAlign  :: [Doc u] -> Doc u
+rightAlign  = multiline vcatr
+
+
+multiline :: (Doc u -> Doc u -> Doc u) -> [Doc u] -> Doc u
+multiline _  []     = blank 
+multiline op (x:xs) = go x xs
+  where
+    go a [] = a
+    go a (b:bs) = go (a `op` b) bs
+
+
+
 
 rfill :: u -> Doc u -> Doc u
 rfill = Fill VLeft
@@ -203,31 +229,18 @@ strikethrough = TLocal (\s -> s { text_strikethrough = True })
 underline :: Doc u -> Doc u
 underline = TLocal (\s -> s { text_underline = True })
 
-
-
-leftAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [Doc u] -> TextFrame u
-leftAlign = renderMultiLine VLeft
-
-centerAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [Doc u] -> TextFrame u
-centerAlign = renderMultiLine VCenter
-
-
-rightAlign :: (Real u, Floating u, InterpretUnit u) 
-          => [Doc u] -> TextFrame u
-rightAlign = renderMultiLine VRight
+-- | Background fill.
+--
+highlight :: (Fractional u, InterpretUnit u) 
+          => RGBi -> Doc u -> Doc u
+highlight rgb = AElab (drawBackfill rgb)
 
 
 
-renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
-                => VAlign -> [Doc u] -> BoundedLocRectGraphic u
-renderMultiLine va docs = body >>= posTextWithMargins
-  where
-    body = (\dy -> let xs = map (runEvalM zeroTextCtx . interpret) docs
-                   in valignSepPO emptyPosObject va dy $ reverse xs)
-              <$> textlineSpace
-
+render :: (Real u, Floating u, InterpretUnit u) 
+       => Doc u -> BoundedLocRectGraphic u 
+render doc = 
+    posTextWithMargins $ runEvalM zeroTextCtx (interpret doc) 
 
 --
 -- Note - could track @strike-through@ etc. in a monad then apply 
@@ -240,6 +253,8 @@ data TextContext = TextContext
       { text_strikethrough      :: Bool
       , text_underline          :: Bool
       }
+      -- TODO - add line sep...
+
 
 zeroTextCtx :: TextContext
 zeroTextCtx = TextContext 
@@ -289,6 +304,7 @@ interpret (Fill va w a)     = ppad va w <$> interpret a
 interpret (DLocal upd a)    = localizePO upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
 interpret (Mono q1 xs)      = interpMono q1 xs
+interpret (AElab fn a)      = aelaboratePO fn <$> interpret a
 
 
 interpretLeaf :: (Fractional u, InterpretUnit u)
@@ -333,7 +349,7 @@ pvcat :: (Fractional u, Ord u, InterpretUnit u)
            => VAlign -> PosObject u -> PosObject u 
            -> PosObject u
 pvcat VLeft     = vcatLeftPO
-pvcat VCenter   = vcatRightPO
+pvcat VCenter   = vcatCenterPO
 pvcat VRight    = vcatRightPO
 
 
@@ -375,7 +391,7 @@ monoSpace _  []     = []
 drawStrikethrough :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawStrikethrough (Orientation xmin xmaj _ ymaj) = 
-    moveStart (displaceVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (displaceVec $ vec (-xmin) vpos) hline 
   where
     vpos  = 0.5* ymaj
     hline = locStraightLine (hvec $ xmin + xmaj)
@@ -385,7 +401,31 @@ drawStrikethrough (Orientation xmin xmaj _ ymaj) =
 drawUnderline :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawUnderline (Orientation xmin xmaj ymin _) = 
-    moveStart (displaceVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (displaceVec $ vec (-xmin) vpos) hline 
   where
-    vpos  = negate $ 0.33 * ymin
+    vpos  = negate $ 0.45 * ymin
     hline = locStraightLine (hvec $ xmin + xmaj)
+
+linestyle :: LocGraphic u -> LocGraphic u
+linestyle mf = 
+    pointSize >>= \sz -> 
+    localize (stroke_use_text_colour . set_line_width (lim sz)) mf
+  where
+    lim i | i < 10    = 1.0
+          | otherwise = (fromIntegral i) / 15.0 
+
+
+-- | Note - halving the TextMargin looks good.
+--
+drawBackfill :: (Fractional u, InterpretUnit u) 
+              => RGBi -> Orientation u -> LocGraphic u
+drawBackfill rgb (Orientation xmin xmaj ymin ymaj) = 
+    textMargin >>= \(dx,dy) -> 
+    let hdx = 0.5 * dx
+        hdy = 0.5 * dy 
+    in localize (fill_colour rgb) $ moveStart (mkVec hdx hdy) (mkRect hdx hdy)
+  where
+    mkVec  dx dy = displaceVec $ vec (negate $ xmin+dx) (negate $ ymin+dy)
+    mkRect dx dy = let w = dx + xmin + xmaj + dx
+                       h = dy + ymin + ymaj + dy
+                   in filledRectangle w h

@@ -30,7 +30,10 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , trafoImageAns
 
   , decorate
-  , annotate
+  , adecorate
+  , elaborate
+  , aelaborate
+
   , hyperlink
   , clipObject
 
@@ -162,19 +165,37 @@ decorate :: Monad cf
          => cf (ImageAns t u) -> cf (GraphicAns u) -> cf (ImageAns t u) 
 decorate img gf = combind const img (const gf) 
 
--- | Version of 'decorate' where the annotation Graphic has access 
+
+-- | Ante-decorate - version of 'decorate' where the decoration is 
+-- drawn behind the Image.
+--
+adecorate :: Monad cf
+          => cf (ImageAns t u) -> cf (GraphicAns u) -> cf (ImageAns t u) 
+adecorate img gf = acombind const img (const gf)
+
+
+-- | Version of 'elaborate' where the decorating Graphic has access 
 -- to the result produced by the Image.
 --
 -- Again, this function has a very general type signature and
 -- supports various graphic types:
 --
--- > annotate :: Image u a -> Graphic u -> Image u a
--- > annotate :: LocImage u a -> LocGraphic u -> LocImage u a
--- > annotate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
+-- > elaborate :: Image u a -> Graphic u -> Image u a
+-- > elaborate :: LocImage u a -> LocGraphic u -> LocImage u a
+-- > elaborate :: LocThetaImage u a -> LocThetaGraphic u -> LocTheteImage u a
 --
-annotate :: Monad cf 
-         => cf (ImageAns t u) -> (t u -> cf (GraphicAns u)) -> cf (ImageAns t u)
-annotate img gf = combind const img gf
+elaborate :: Monad cf 
+          => cf (ImageAns t u) 
+          -> (t u -> cf (GraphicAns u)) 
+          -> cf (ImageAns t u)
+elaborate img gf = combind const img gf
+
+-- | Ante-elaborate - version of 'elaborate' where the decoration 
+-- is drawn behind the Image.
+--
+aelaborate :: Monad cf 
+           => cf (ImageAns t u) -> (t u -> cf (GraphicAns u)) -> cf (ImageAns t u)
+aelaborate img gf = acombind const img gf
 
 
 -- | Hyperlink a graphic object.
@@ -224,4 +245,16 @@ combind :: Monad cf
 combind op gf fn = gf   >>= \(Ans a p1) -> 
                    fn a >>= \(Ans b p2) -> 
                    return $ Ans (a `op` b) (p1 `oplus` p2)
+
+
+-- | Version of combind where the drawing order is flipped.
+--
+acombind :: Monad cf 
+         => (t1 u -> t2 u -> t3 u)
+         -> cf (ImageAns t1 u) 
+         -> (t1 u -> cf (ImageAns t2 u)) 
+         -> cf (ImageAns t3 u) 
+acombind op gf fn = gf   >>= \(Ans a p1) -> 
+                    fn a >>= \(Ans b p2) -> 
+                    return $ Ans (a `op` b) (p2 `oplus` p1)
 
