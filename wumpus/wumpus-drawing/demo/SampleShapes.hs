@@ -25,7 +25,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [courier]
+    base_metrics <- loader [ Left courier ]
     printLoadErrors base_metrics
     let ctx = makeCtx base_metrics
     mapM_ (out1 ctx) shape_list

@@ -23,7 +23,7 @@ import Wumpus.Basic.System.FontLoader
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Data.AffineSpace
+import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
@@ -34,7 +34,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
-    base_metrics <- loader [times_roman, times_italic]
+    base_metrics <- loader [ Right times_roman_family ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) circuit_pic
     writeEPS "./out/arrow_circuit.eps" pic1

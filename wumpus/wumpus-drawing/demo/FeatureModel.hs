@@ -25,7 +25,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [courier_bold]
+    base_metrics <- loader [ Left courier_bold ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) feature_model 
     writeEPS "./out/feature_model01.eps" pic1
@@ -88,7 +88,7 @@ widebox = makeBox 60
 
 
 connWith :: ( Real u, Floating u, InterpretUnit u ) 
-         => Arrowhead u -> Box u -> Box u -> TraceDrawing u (Path u)
+         => Arrowhead u -> Box u -> Box u -> TraceDrawing u (AbsPath u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
@@ -98,11 +98,11 @@ connWith arrh b0 b1 = do
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 
 cmandatory :: ( Real u, Floating u, InterpretUnit u ) 
-           => Box u -> Box u -> TraceDrawing u (Path u)
+           => Box u -> Box u -> TraceDrawing u (AbsPath u)
 cmandatory = connWith diskTip
 
 coptional :: ( Real u, Floating u, InterpretUnit u ) 
-          => Box u -> Box u -> TraceDrawing u (Path u)
+          => Box u -> Box u -> TraceDrawing u (AbsPath u)
 coptional = connWith odiskTip
 
 

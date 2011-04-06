@@ -125,6 +125,8 @@ library
     Wumpus.Drawing.Paths,
     Wumpus.Drawing.Paths.Absolute,
     Wumpus.Drawing.Paths.MonadicConstruction,
+    Wumpus.Drawing.Paths.Relative,
+    Wumpus.Drawing.Paths.RelativeConstruction,
     Wumpus.Drawing.Shapes,
     Wumpus.Drawing.Shapes.Base,
     Wumpus.Drawing.Shapes.Circle,

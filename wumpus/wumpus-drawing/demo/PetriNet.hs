@@ -30,7 +30,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [helvetica, helvetica_bold]
+    base_metrics <- loader [ Right helvetica_family ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) petri_net
     writeEPS "./out/petri_net.eps" pic1

@@ -29,7 +29,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
-    base_metrics <- loader [ times_roman, times_italic ]
+    base_metrics <- loader [ Right times_roman_family  ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata.eps" pic1
@@ -81,14 +81,14 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
                 , CenterAnchor t1 u, RadialAnchor  t1 u
                 , CenterAnchor t2 u, RadialAnchor  t2 u
                 )
-             => t1 u -> t2 u -> Image Path u
+             => t1 u -> t2 u -> Image AbsPath u
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
     in connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
-              => Anchor u -> Anchor u -> Image Path u
+              => Anchor u -> Anchor u -> Image AbsPath u
 astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 
 
@@ -96,7 +96,7 @@ astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 -- manufactures the start and end points...
 --
 arrloop :: ( Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-        => Anchor u -> Anchor u -> Image Path u
+        => Anchor u -> Anchor u -> Image AbsPath u
 arrloop p0 p1 = connect (rightArrow barb45 loop) p0 p1
 
 
