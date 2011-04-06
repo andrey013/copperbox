@@ -20,7 +20,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [times_roman]
+    base_metrics <- loader [ Right times_roman_family ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) drawing01
     writeEPS "./out/number_text.eps" pic1
@@ -40,15 +40,14 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl zeroPt $ startAddr `flip` CENTER $ 
-                       leftAlign [ string "0.12112"
+    drawl zeroPt $ startAddr `flip` CENTER $ render times_roman_family $
+                       leftAlign [ float  (0.12112 :: Double)
+                                 , string "0.12112"
                                  , string "12113111411115111116"
                                  , string "00000000000000000000" 
                                  , integer 12113111411115111116
                                  , integer 10000000000000000000
                                  ]
---    a <- evalQuery textlineSpace
---    error $ show (a `asTypeOf` dZero)
     return ()
 
 dZero :: Double

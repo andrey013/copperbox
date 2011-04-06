@@ -22,7 +22,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [helvetica]
+    base_metrics <- loader [Right helvetica_family]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) drawing01
     writeEPS "./out/new_text.eps" pic1
@@ -51,7 +51,7 @@ mf = localize text_margin_tight  $ do
     draw $ redPlus `at` P2 0 300
   where
     fn addr af = illustrateBoundedLocGraphic $ 
-                   render (af body) `startAddr` addr
+                   render helvetica_family (af body) `startAddr` addr
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -64,5 +64,6 @@ body = [ string "Further work"
            <+> (fontColour red $ string "multiline")
            <+> string "text"
        , ( lfill 50 $ string "and") <> highlight light_blue (string "other things.")
-       , float (sin (0.5::Double))
+       , strikethrough $ float (sin (0.5::Double))
+       , bold (string "Now with bold") <+> italic (string "and italic.") 
        ] 

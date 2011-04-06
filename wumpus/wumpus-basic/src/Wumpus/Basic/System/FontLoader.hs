@@ -21,26 +21,33 @@ module Wumpus.Basic.System.FontLoader
   , gsLoaderByEnv
   , simpleFontLoader
 
-  , processCmdLine
   , default_font_loader_help
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.FontSupport  
 import Wumpus.Basic.System.FontLoader.AfmTopLevel
 import Wumpus.Basic.System.FontLoader.GSTopLevel
 
-import Control.Applicative
 import Control.Monad
-import System.Directory
-import System.Console.GetOpt
 import System.Environment
 import System.IO.Error
+
+
 
 
 -- | A FontLoader is an action from a list of fonts to a
 -- 'FontLoadResult' returned in @IO@.
 -- 
-type FontLoader = [FontDef] -> IO FontLoadResult
+-- Fonts are supplied in a list of @Either FontDef FontFamily@,
+-- this is a little cumbersome but it allows the loader to load
+-- individual fonts and \/ or a whole families with a single API
+-- call.
+--
+type FontLoader = [Either FontDef FontFamily] -> IO FontLoadResult
+
+
+
 
 
 -- | Environment variable pointing to the GhostScript font
@@ -63,13 +70,19 @@ wumpus_afm_font_dir = "WUMPUS_AFM_FONT_DIR"
 
 
 afmLoaderByEnv :: IO (Maybe FontLoader)
-afmLoaderByEnv =
-    envLookup wumpus_afm_font_dir >>= return . fmap loadAfmFontMetrics
+afmLoaderByEnv = do 
+    mb <- envLookup wumpus_afm_font_dir
+    case mb of 
+      Nothing   -> return Nothing
+      Just path -> return $ Just (\xs -> loadAfmFontMetrics path $ fontList xs)
 
 
 gsLoaderByEnv :: IO (Maybe FontLoader)
-gsLoaderByEnv =
-    envLookup wumpus_gs_font_dir >>= return . fmap loadGSFontMetrics
+gsLoaderByEnv = do
+    mb <- envLookup wumpus_gs_font_dir
+    case mb of
+      Nothing   -> return Nothing
+      Just path -> return $ Just (\xs -> loadGSFontMetrics path $ fontList xs)
 
 
 -- | Tries to find the GhostScript metrics first...
@@ -88,7 +101,23 @@ simpleFontLoader mf =
    fk2       = putStrLn default_font_loader_help >> return Nothing
    sk loader = mf loader >>= return . Just
 
+
+envLookup :: String -> IO (Maybe String)
+envLookup name = liftM fn $ try $ getEnv name
+  where
+    fn (Left _)  = Nothing
+    fn (Right a) = Just a
+
    
+
+fontList :: [Either FontDef FontFamily] -> [FontDef]
+fontList = foldr fn []
+  where
+    fn (Left a)  acc = a:acc
+    fn (Right b) acc = let f1 = maybe id (\a -> (a:)) $ ff_bold b
+                           f2 = maybe id (\a -> (a:)) $ ff_italic b
+                           f3 = maybe id (\a -> (a:)) $ ff_bold_italic b
+                     in ff_regular b : (f1 $ f2 $ f3 acc)
 
 
 default_font_loader_help :: String
@@ -109,56 +138,4 @@ default_font_loader_help = unlines $
     , "If you have both environment variables set, the GhostScript loader"
     , "will be used."
     ]
-
-
-data CmdLineFlag = Help
-                 | GS_FontDir  String
-                 | AFM_FontDir String
-  deriving (Eq,Ord,Show)
-
-processCmdLine :: String -> IO (Maybe FilePath, Maybe FilePath)
-processCmdLine help_message = 
-    let options = makeCmdLineOptions help_message in do
-        args <- getArgs
-        let (opts, _, _) = getOpt Permute options args
-        if Help `elem` opts then failk help_message
-                            else succk opts
-  where
-    failk msg   = putStr msg >> return (Nothing,Nothing) 
-    succk flags = (,) <$> gsFontDirectory flags <*> afmFontDirectory flags 
-       
-
-makeCmdLineOptions :: String -> [OptDescr CmdLineFlag]
-makeCmdLineOptions help_message =
-    [ Option ['h'] ["help"]   (NoArg Help)                help_message
-    , Option []    ["afm"]    (ReqArg AFM_FontDir "DIR")  "AFM v4.1 metrics dir"
-    , Option []    ["gs"]     (ReqArg GS_FontDir  "DIR")  "GhoshScript font dir"
-    ]
-
-
-gsFontDirectory :: [CmdLineFlag] -> IO (Maybe FilePath)
-gsFontDirectory = step 
-  where
-    step (GS_FontDir p:xs)  = doesDirectoryExist p >>= \check -> 
-                              if check then return (Just p) else step xs
-
-    step (_:xs)             = step xs
-    step []                 = envLookup wumpus_gs_font_dir
- 
-
-afmFontDirectory :: [CmdLineFlag] -> IO (Maybe FilePath)
-afmFontDirectory = step 
-  where
-    step (AFM_FontDir p:xs) = doesDirectoryExist p >>= \check -> 
-                              if check then return (Just p) else step xs
-
-    step (_:xs)             = step xs
-    step []                 = envLookup wumpus_afm_font_dir
-
-
-envLookup :: String -> IO (Maybe String)
-envLookup name = liftM fn $ try $ getEnv name
-  where
-    fn (Left _)  = Nothing
-    fn (Right a) = Just a
 

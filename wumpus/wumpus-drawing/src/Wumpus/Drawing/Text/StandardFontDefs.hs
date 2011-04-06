@@ -20,18 +20,24 @@
 module Wumpus.Drawing.Text.StandardFontDefs
   ( 
   -- * Times Roman
-    times_roman
+    times_roman_family
+  
+  , times_roman
   , times_italic
   , times_bold
   , times_bold_italic
 
   -- * Helvetica
+  , helvetica_family
+
   , helvetica
   , helvetica_oblique
   , helvetica_bold
   , helvetica_bold_oblique
 
   -- * Courier
+  , courier_family
+
   , courier
   , courier_oblique
   , courier_bold
@@ -58,6 +64,17 @@ import Wumpus.Core.Text.Symbol
 
 --------------------------------------------------------------------------------
 -- 
+
+-- | 'FontFamily' definition for Times-Roman.
+--
+times_roman_family :: FontFamily
+times_roman_family = 
+    FontFamily { ff_regular     = times_roman
+               , ff_bold        = Just times_bold
+               , ff_italic      = Just times_italic
+               , ff_bold_italic = Just times_bold_italic
+               }
+
 
 -- | Times-Roman
 -- 
@@ -126,7 +143,19 @@ times_bold_italic =
 --------------------------------------------------------------------------------
 -- Helvetica
 
--- | Helvetica 
+-- | 'FontFamily' definition for Helvetica.
+--
+helvetica_family :: FontFamily
+helvetica_family = 
+    FontFamily { ff_regular     = helvetica
+               , ff_bold        = Just helvetica_bold
+               , ff_italic      = Just helvetica_oblique
+               , ff_bold_italic = Just helvetica_bold_oblique
+               }
+
+
+
+-- | Helvetica regular weight.
 --
 helvetica :: FontDef
 helvetica =
@@ -191,6 +220,18 @@ helvetica_bold_oblique =
 
 
 --------------------------------------------------------------------------------
+
+-- | 'FontFamily' definition for Courier.
+--
+courier_family :: FontFamily
+courier_family = 
+    FontFamily { ff_regular     = courier
+               , ff_bold        = Just courier_bold
+               , ff_italic      = Just courier_oblique
+               , ff_bold_italic = Just courier_bold_oblique
+               }
+
+
 
 -- | Courier
 -- 

@@ -21,6 +21,11 @@ module Wumpus.Basic.Kernel.Base.FontSupport
     FontName
   , CodePoint
   , FontDef(..)
+  , FontFamily(..)
+  , regularWeight
+  , boldWeight
+  , italicWeight
+  , boldItalicWeight
 
   , CharWidthLookup
 
@@ -67,6 +72,64 @@ data FontDef = FontDef
       , afm_file_name   :: String
       }
   deriving (Eq,Ord,Show)
+
+
+
+-- | A family group of FontDefs (regular, bold, italic and 
+-- bold-italic).
+--
+-- It is convenient for some higher-level text objects in Wumpus 
+-- (particularly @Doc@ in Wumpus-Drawing) to treat a font and its
+-- standard weights as the same entity. This allows @Doc@ API to 
+-- provide a @bold@ operation to simply change to the the bold
+-- weight of the current family, rather than use the primitive 
+-- @set_font@ operation to change to an explicitly named font.
+--
+--
+data FontFamily = FontFamily
+      { ff_regular      :: FontDef
+      , ff_bold         :: Maybe FontDef
+      , ff_italic       :: Maybe FontDef
+      , ff_bold_italic  :: Maybe FontDef  
+      }
+
+-- | Extract the regular weight 'FontDef' from a 'FontFamily'.
+--
+regularWeight :: FontFamily -> FontDef
+regularWeight = ff_regular
+
+
+-- | Extract the bold weight 'FontDef' from a 'FontFamily'.
+--
+-- Note - this falls back to the regular weight if the font family 
+-- has no bold weight. To get the bold weight or @Nothing@ if it
+-- is not present use the record selector @ff_bold@.
+--
+boldWeight :: FontFamily -> FontDef
+boldWeight s = maybe (ff_regular s) id $ ff_bold s
+
+
+-- | Extract the @italic@ weight 'FontDef' from a 'FontFamily'.
+--
+-- Note - this falls back to the regular weight if the font family 
+-- has no italic weight. To get the italic weight or @Nothing@ if 
+-- it is not present use the record selector @ff_italic@.
+--
+italicWeight :: FontFamily -> FontDef
+italicWeight s = maybe (ff_regular s) id $ ff_italic s
+
+
+-- | Extract the @bold-italic@ weight 'FontDef' from a 
+-- 'FontFamily'.
+--
+-- Note - this falls back to the regular weight if the font family 
+-- has no bold-italic weight. To get the bold-italic weight or 
+-- @Nothing@ if it is not present use the record selector 
+-- @ff_bold_italic@.
+--
+boldItalicWeight :: FontFamily -> FontDef
+boldItalicWeight s = maybe (ff_regular s) id $ ff_bold_italic s
+
 
 
 -- | A lookup function from code point to /width vector/.

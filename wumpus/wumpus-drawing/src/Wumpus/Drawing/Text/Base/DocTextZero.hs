@@ -49,7 +49,9 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
   , fontColour
   , textSize
-  
+  , bold
+  , italic
+  , boldItalic  
   , strikethrough
   , underline
   , highlight
@@ -77,13 +79,13 @@ data Doc u = Empty
            | VCat VAlign (Doc u) (Doc u)
            | Fill VAlign u (Doc u)
            | DLocal DrawingContextF (Doc u)
-           | TLocal TextContextF (Doc u)
+           | TLocal (TextContextF u) (Doc u)
            | Mono (WidthQuery u) [EscapedChar]
            | AElab (AElaborateF u) (Doc u)
 
 type WidthQuery u = Query (AdvanceVec u)
 
-type TextContextF = TextContext -> TextContext
+type TextContextF u = TextContext u -> TextContext u
 
 type AElaborateF u = Orientation u -> LocGraphic u
 
@@ -215,12 +217,20 @@ fontColour :: RGBi -> Doc u -> Doc u
 fontColour rgb = DLocal (text_colour rgb)
 
 
--- Note with the formulation @ CF (u,AdvGraphic u) @ changing
--- text size will not work.
---
 
 textSize :: Int -> Doc u -> Doc u
 textSize sz = DLocal (set_font_size sz)
+
+
+
+bold        :: Doc u -> Doc u
+bold        = TLocal (\s -> s { text_bold = True, text_italic = False })
+
+italic      :: Doc u -> Doc u
+italic      = TLocal (\s -> s { text_bold = False, text_italic = True })
+
+boldItalic  :: Doc u -> Doc u
+boldItalic  = TLocal (\s -> s { text_bold = True, text_italic = True })
 
 
 strikethrough :: Doc u -> Doc u
@@ -238,68 +248,76 @@ highlight rgb = AElab (drawBackfill rgb)
 
 
 render :: (Real u, Floating u, InterpretUnit u) 
-       => Doc u -> BoundedLocRectGraphic u 
-render doc = 
-    posTextWithMargins $ runEvalM zeroTextCtx (interpret doc) 
+       => FontFamily -> Doc u -> BoundedLocRectGraphic u 
+render ff doc = localize (set_font $ regularWeight ff) $
+    textlineSpace               >>= \sep -> 
+    posTextWithMargins $ runEvalM (initTextCtx sep ff) (interpret doc) 
 
---
--- Note - could track @strike-through@ etc. in a monad then apply 
--- them at the evaluation of each @leaf@. This would overcome 
--- the problem that multiline PosObjects cannot be striked, 
--- underlined...
---
 
-data TextContext = TextContext
+data TextContext u = TextContext
       { text_strikethrough      :: Bool
       , text_underline          :: Bool
+      , text_sep                :: u
+      , text_font_family        :: FontFamily
+      , text_bold               :: Bool
+      , text_italic             :: Bool
       }
-      -- TODO - add line sep...
+  
 
 
-zeroTextCtx :: TextContext
-zeroTextCtx = TextContext 
+initTextCtx :: u -> FontFamily -> TextContext u
+initTextCtx sep ff = TextContext 
     { text_strikethrough      = False
     , text_underline          = False
+    , text_sep                = sep
+    , text_font_family        = ff
+    , text_bold               = False
+    , text_italic             = False 
     }
 
-newtype EvalM a = EvalM { getEvalM :: TextContext -> a }
+newtype EvalM u a = EvalM { getEvalM :: TextContext u -> a }
 
 
-instance Functor EvalM where
+instance Functor (EvalM u) where
   fmap f mf = EvalM $ \ctx -> f $ getEvalM mf ctx
 
 
-instance Applicative EvalM where
+instance Applicative (EvalM u) where
   pure a    = EvalM $ \_   -> a
   mf <*> ma = EvalM $ \ctx -> 
                 let f = getEvalM mf ctx
                     a = getEvalM ma ctx
                 in f a
 
-instance Monad EvalM where
+instance Monad (EvalM u) where
   return a  = EvalM $ \_   -> a
   ma >>= k  = EvalM $ \ctx -> 
                 let a = getEvalM ma ctx
                 in (getEvalM . k) a ctx
 
-asks :: (TextContext -> a) -> EvalM a
+asks :: (TextContext u -> a) -> EvalM u a
 asks f = EvalM $ \ctx -> f ctx
 
-local :: (TextContext -> TextContext) -> EvalM a -> EvalM a
+lineSpace :: EvalM u u
+lineSpace = asks text_sep
+
+local :: (TextContext u -> TextContext u) -> EvalM u a -> EvalM u a
 local upd mf = EvalM $ \ctx -> getEvalM mf (upd ctx)
 
-runEvalM :: TextContext -> EvalM a -> a
+runEvalM :: TextContext u -> EvalM u a -> a
 runEvalM ctx mf = getEvalM mf ctx
 
 
 
 interpret :: (Fractional u, Ord u, InterpretUnit u) 
-          => Doc u -> EvalM (PosObject u)
+          => Doc u -> EvalM u (PosObject u)
 interpret Empty             = interpEmpty
 interpret Space             = interpSpace
 interpret (Text esc)        = interpText esc
 interpret (Cat a b)         = hcatPO    <$> interpret a <*> interpret b
-interpret (VCat va a b)     = pvcat va  <$> interpret a <*> interpret b
+interpret (VCat va a b)     = 
+    pvsep va  <$> lineSpace <*> interpret a <*> interpret b
+
 interpret (Fill va w a)     = ppad va w <$> interpret a
 interpret (DLocal upd a)    = localizePO upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
@@ -307,16 +325,9 @@ interpret (Mono q1 xs)      = interpMono q1 xs
 interpret (AElab fn a)      = aelaboratePO fn <$> interpret a
 
 
-interpretLeaf :: (Fractional u, InterpretUnit u)
-              => PosObject u -> EvalM (PosObject u)
-interpretLeaf po = 
-    (\f1 f2 -> f1 $ f2 $ po) 
-       <$> (fmap (condE drawUnderline)       $ asks text_underline)
-       <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
-   where
-     condE f b = if b then elaboratePO f else id
 
-interpEmpty :: InterpretUnit u => EvalM (PosObject u)
+
+interpEmpty :: InterpretUnit u => EvalM u (PosObject u)
 interpEmpty = return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
 
@@ -328,7 +339,7 @@ interpEmpty = return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphi
 -- DrawingContext...
 --
 interpText :: (Fractional u, InterpretUnit u) 
-           => EscapedText -> EvalM (PosObject u)
+           => EscapedText -> EvalM u (PosObject u)
 interpText esc = interpretLeaf $
     makePosObject (textOrientationZero esc) (escTextLine esc)
    
@@ -340,17 +351,17 @@ interpText esc = interpretLeaf $
 -- the current font.
 --
 interpSpace :: InterpretUnit u 
-            => EvalM (PosObject u)
+            => EvalM u (PosObject u)
 interpSpace = return $ makePosObject qy1  emptyLocGraphic
   where
     qy1 = charOrientationZero $ CharEscInt $ ord ' '
 
-pvcat :: (Fractional u, Ord u, InterpretUnit u)
-           => VAlign -> PosObject u -> PosObject u 
-           -> PosObject u
-pvcat VLeft     = vcatLeftPO
-pvcat VCenter   = vcatCenterPO
-pvcat VRight    = vcatRightPO
+pvsep :: (Fractional u, Ord u, InterpretUnit u)
+       => VAlign -> u -> PosObject u -> PosObject u 
+       -> PosObject u
+pvsep VLeft     = vsepLeftPO
+pvsep VCenter   = vsepCenterPO
+pvsep VRight    = vsepRightPO
 
 
 
@@ -363,7 +374,7 @@ ppad VRight  = padRightPO
 
 interpMono :: (Fractional u, InterpretUnit u)
            => Query (AdvanceVec u) -> [EscapedChar] 
-           -> EvalM (PosObject u)
+           -> EvalM u (PosObject u)
 interpMono qy1 chs = interpretLeaf $
     makeBindPosObject qy hkernOrientationZero hkernLine
   where
@@ -371,6 +382,25 @@ interpMono qy1 chs = interpretLeaf $
 
 
 
+
+interpretLeaf :: (Fractional u, InterpretUnit u)
+              => PosObject u -> EvalM u (PosObject u)
+interpretLeaf po = 
+    (\f1 f2 sty -> f1 $ f2 $ localizePO sty po) 
+       <$> (fmap (condE drawUnderline)       $ asks text_underline)
+       <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
+       <*> textstyle
+   where
+     condE f b = if b then elaboratePO f else id
+
+textstyle :: EvalM u DrawingContextF
+textstyle = 
+    fn <$> asks text_font_family <*> asks text_bold <*> asks text_italic
+  where
+    fn ff False False = set_font $ regularWeight ff
+    fn ff True  False = set_font $ boldWeight ff
+    fn ff False True  = set_font $ italicWeight ff
+    fn ff _     _     = set_font $ boldItalicWeight ff
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -393,7 +423,7 @@ drawStrikethrough :: (Fractional u, InterpretUnit u)
 drawStrikethrough (Orientation xmin xmaj _ ymaj) = 
     linestyle $ moveStart (displaceVec $ vec (-xmin) vpos) hline 
   where
-    vpos  = 0.5* ymaj
+    vpos  = 0.45 * ymaj
     hline = locStraightLine (hvec $ xmin + xmaj)
 
 
