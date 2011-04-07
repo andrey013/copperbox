@@ -45,9 +45,16 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Monoid
 
+infixr 6 `superior`, `anterior`
+
 -- | Minimal defintion is 'superior', 'anterior' is usually 
 -- @flip superior@.
 --
+-- > `superior` (infixr 6)
+--
+-- > `anterior` (infixr 6)
+-- 
+-- 
 class ZConcat o where
   anterior :: o -> o -> o 
   superior :: o -> o -> o

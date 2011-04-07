@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -57,35 +58,6 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , illustratePosObject
 
 
-  -- * Concat
-  , hcatPO
-  , vcatPO
-
-  , hcatBottomPO
-  , hcatCenterPO
-  , hcatTopPO
-
-  , vcatLeftPO
-  , vcatCenterPO
-  , vcatRightPO 
-
-  -- * Sep 
-  , hsepPO
-  , vsepPO
-
-  , hsepBottomPO
-  , hsepCenterPO
-  , hsepTopPO
-
-  , vsepLeftPO
-  , vsepCenterPO
-  , vsepRightPO 
-
-  , halignPO
-  , valignPO
-
-  , halignSepPO
-  , valignSepPO
 
   ) where
 
@@ -110,6 +82,7 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
+import Data.Monoid
 
 -- | Helper for PosObject - a LocImage that is /pre-applied/ to 
 -- the DrawingContext.
@@ -127,7 +100,7 @@ type CtxFreeLocGraphic u = Point2 u -> GraphicAns u
 newtype PosObject u = PosObject
          { getPosObject :: CF (Orientation u, CtxFreeLocGraphic u) }
 
-
+type instance DUnit (PosObject u) = u
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
@@ -144,7 +117,22 @@ type BoundedLocRectGraphic u = LocRectQuery u (ImageAns BoundingBox u)
 
 
 instance (Fractional u, Ord u) => OPlus (PosObject u) where
-  a `oplus` b = PosObject body
+  oplus = poconcat
+
+instance (Fractional u, Ord u, InterpretUnit u) => Monoid (PosObject u) where
+  mempty = pozero
+  mappend = poconcat
+
+
+pozero :: InterpretUnit u => PosObject u
+pozero = PosObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let pf = \pt -> runCF (emptyLocGraphic `at` pt) ctx
+           in return (Orientation 0 0 0 0, pf)
+
+poconcat :: (Fractional u, Ord u) => PosObject u -> PosObject u -> PosObject u
+poconcat a b = PosObject body
    where
      body = drawingCtx >>= \ctx -> 
             let (o0,pf0) = runCF (getPosObject a) ctx
@@ -357,47 +345,24 @@ instance (Fractional u, Ord u) => ZConcat (PosObject u) where
 
 
 instance (Num u, Ord u) => Concat (PosObject u) where
-  hconcat = hcatPO 
-  vconcat = vcatPO
+  hconcat = genMoveAlign spinemoveH spineRight
+  vconcat = genMoveAlign spinemoveV spineBelow
 
-hcatPO :: (Num u, Ord u)   
-       => PosObject u -> PosObject u -> PosObject u
-hcatPO = genMoveAlign spinemoveH spineRight
-
-
-vcatPO :: (Num u, Ord u)   
-       => PosObject u -> PosObject u -> PosObject u
-vcatPO = genMoveAlign spinemoveV spineBelow
+instance (Num u, Ord u) => CatSpace (PosObject u) where
+  hspace = genMoveSepH spinemoveH spineRight
+  vspace = genMoveSepV spinemoveV spineBelow
 
 
 
-hcatBottomPO :: (Num u, Ord u)   
-             => PosObject u -> PosObject u -> PosObject u
-hcatBottomPO = genMoveAlign binmoveHBottom halignBottomO
+instance (Fractional u, Ord u) => Align (PosObject u) where
+  halign HTop    = genMoveAlign binmoveHTop    halignTopO
+  halign HCenter = genMoveAlign binmoveHCenter halignCenterO
+  halign HBottom = genMoveAlign binmoveHBottom halignBottomO
 
+  valign VLeft   = genMoveAlign binmoveVLeft valignLeftO
+  valign VCenter = genMoveAlign binmoveVCenter valignCenterO
+  valign VRight  = genMoveAlign binmoveVRight valignRightO
 
-hcatCenterPO :: (Fractional u, Ord u)   
-             => PosObject u -> PosObject u -> PosObject u
-hcatCenterPO = genMoveAlign binmoveHCenter halignCenterO
-
-
-hcatTopPO :: (Num u, Ord u)   
-          => PosObject u -> PosObject u -> PosObject u
-hcatTopPO = genMoveAlign binmoveHTop halignTopO
-
-
-vcatLeftPO :: (Fractional u, Ord u)   
-           => PosObject u -> PosObject u -> PosObject u
-vcatLeftPO = genMoveAlign binmoveVLeft valignLeftO
-
-
-vcatCenterPO :: (Fractional u, Ord u)   
-                => PosObject u -> PosObject u -> PosObject u
-vcatCenterPO = genMoveAlign binmoveVCenter valignCenterO
-
-vcatRightPO :: (Fractional u, Ord u)   
-            => PosObject u -> PosObject u -> PosObject u
-vcatRightPO = genMoveAlign binmoveVRight valignRightO
 
 
 genMoveAlign :: (Num u)   
@@ -418,43 +383,14 @@ genMoveAlign mkV mkO po0 po1 = PosObject body
 --------------------------------------------------------------------------------
 -- Sep
 
-hsepPO :: (Num u, Ord u)   
-       => u -> PosObject u -> PosObject u -> PosObject u
-hsepPO = genMoveSepH spinemoveH spineRight
+instance (Fractional u, Ord u) => AlignSpace (PosObject u) where
+  halignSpace HTop    = genMoveSepH binmoveHTop halignTopO
+  halignSpace HCenter = genMoveSepH binmoveHCenter halignCenterO
+  halignSpace HBottom = genMoveSepH binmoveHBottom halignBottomO
 
-
-vsepPO :: (Num u, Ord u)   
-       => u -> PosObject u -> PosObject u -> PosObject u
-vsepPO = genMoveSepV spinemoveV spineBelow
-
-
-hsepBottomPO :: (Num u, Ord u)   
-             => u -> PosObject u -> PosObject u -> PosObject u
-hsepBottomPO = genMoveSepH binmoveHBottom halignBottomO
-
-
-hsepCenterPO :: (Fractional u, Ord u)   
-             => u -> PosObject u -> PosObject u -> PosObject u
-hsepCenterPO = genMoveSepH binmoveHCenter halignCenterO
-
-
-hsepTopPO :: (Num u, Ord u)   
-          => u -> PosObject u -> PosObject u -> PosObject u
-hsepTopPO = genMoveSepH binmoveHTop halignTopO
-
-
-vsepLeftPO :: (Fractional u, Ord u)   
-           => u -> PosObject u -> PosObject u -> PosObject u
-vsepLeftPO = genMoveSepV binmoveVLeft valignLeftO
-
-
-vsepCenterPO :: (Fractional u, Ord u)   
-             => u -> PosObject u -> PosObject u -> PosObject u
-vsepCenterPO = genMoveSepV binmoveVCenter valignCenterO
-
-vsepRightPO :: (Fractional u, Ord u)   
-            => u -> PosObject u -> PosObject u -> PosObject u
-vsepRightPO = genMoveSepV binmoveVRight valignRightO
+  valignSpace VLeft   = genMoveSepV binmoveVLeft valignLeftO
+  valignSpace VCenter = genMoveSepV binmoveVCenter valignCenterO
+  valignSpace VRight  = genMoveSepV binmoveVRight valignRightO
 
 
 genMoveSepH :: (Num u)   
@@ -487,52 +423,3 @@ genMoveSepV mkV mkO sep po0 po1 = PosObject body
                ortt        = extendODown sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
-
-halignPO :: (Fractional u, Ord u)   
-         => PosObject u -> HAlign -> [PosObject u] -> PosObject u
-halignPO alt _  []     = alt
-halignPO _   ha (x:xs) = go x xs
-  where
-    op = case ha of HTop    -> hcatTopPO 
-                    HCenter -> hcatCenterPO 
-                    _       -> hcatBottomPO
-    go acc []     = acc
-    go acc (y:ys) = go (acc `op` y) ys
-
-
-valignPO :: (Fractional u, Ord u)   
-         => PosObject u -> VAlign -> [PosObject u] -> PosObject u
-valignPO alt _  []     = alt
-valignPO _   va (x:xs) = go x xs
-  where
-    op = case va of VLeft   -> vcatLeftPO 
-                    VCenter -> vcatCenterPO 
-                    _       -> vcatRightPO
-    go acc []     = acc
-    go acc (y:ys) = go (acc `op` y) ys
-
-
-halignSepPO :: (Fractional u, Ord u)   
-            => PosObject u -> HAlign -> u -> [PosObject u] -> PosObject u
-halignSepPO alt _  _ []     = alt
-halignSepPO _   ha du (x:xs) = go x xs
-  where
-    op = case ha of HTop    -> hsepTopPO du
-                    HCenter -> hsepCenterPO du
-                    _       -> hsepBottomPO du
-    go acc []     = acc
-    go acc (y:ys) = go (acc `op` y) ys
-
-
-valignSepPO :: (Fractional u, Ord u)   
-         => PosObject u -> VAlign -> u -> [PosObject u] -> PosObject u
-valignSepPO alt _  _  []     = alt
-valignSepPO _   va du (x:xs) = go x xs
-  where
-    op = case va of VLeft   -> vsepLeftPO du 
-                    VCenter -> vsepCenterPO du 
-                    _       -> vsepRightPO du
-    go acc []     = acc
-    go acc (y:ys) = go (acc `op` y) ys
-
-

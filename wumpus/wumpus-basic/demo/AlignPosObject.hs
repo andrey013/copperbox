@@ -52,20 +52,20 @@ mf = do
     return ()
   where
     objs  = [ rectCenter, rectMinor, rectBl ]
-    ha1   = halignPO emptyPosObject HTop    objs
-    ha2   = halignPO emptyPosObject HCenter objs
-    ha3   = halignPO emptyPosObject HBottom objs
-    va1   = valignPO emptyPosObject VLeft   objs
-    va2   = valignPO emptyPosObject VCenter objs
-    va3   = valignPO emptyPosObject VRight  objs
+    ha1   = alignRow HTop    objs
+    ha2   = alignRow HCenter objs
+    ha3   = alignRow HBottom objs
+    va1   = alignColumn VLeft   objs
+    va2   = alignColumn VCenter objs
+    va3   = alignColumn VRight  objs
 
 
-    hs1   = halignSepPO emptyPosObject HTop    8 objs
-    hs2   = halignSepPO emptyPosObject HCenter 8 objs
-    hs3   = halignSepPO emptyPosObject HBottom 8 objs 
-    vs1   = valignSepPO emptyPosObject VLeft   8 objs
-    vs2   = valignSepPO emptyPosObject VCenter 8 objs
-    vs3   = valignSepPO emptyPosObject VRight  8 objs
+    hs1   = alignRowSep HTop    8 objs
+    hs2   = alignRowSep HCenter 8 objs
+    hs3   = alignRowSep HBottom 8 objs 
+    vs1   = alignColumnSep VLeft   8 objs
+    vs2   = alignColumnSep VCenter 8 objs
+    vs3   = alignColumnSep VRight  8 objs
  
 ---
 
