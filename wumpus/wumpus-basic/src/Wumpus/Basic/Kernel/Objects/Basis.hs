@@ -13,7 +13,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Experimental extras for BaseDefs...
+-- Common types and operations.
 -- 
 --
 --------------------------------------------------------------------------------

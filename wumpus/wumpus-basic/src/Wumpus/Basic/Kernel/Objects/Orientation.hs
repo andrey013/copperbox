@@ -65,7 +65,7 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 -- | Datatype enumerating the addressable positions of a rectangle 
 -- that can be derived for a 'PosObject'.  
@@ -114,6 +114,10 @@ instance Functor Orientation where
 instance (Fractional u, Ord u) => OPlus (Orientation u) where
   oplus = concatOrientation
 
+
+instance (Fractional u, Ord u) => Monoid (Orientation u) where
+  mempty  = Orientation 0 0 0 0
+  mappend = concatOrientation
 
 -- | Concatenation here essentially turns both Orientation objects
 -- into /center-form/ then finds the maximum rectangle.

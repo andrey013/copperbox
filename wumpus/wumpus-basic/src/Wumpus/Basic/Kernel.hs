@@ -30,6 +30,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.Anchors
   , module Wumpus.Basic.Kernel.Objects.Basis
   , module Wumpus.Basic.Kernel.Objects.Bounded
+  , module Wumpus.Basic.Kernel.Objects.Concat
   , module Wumpus.Basic.Kernel.Objects.Connector
   , module Wumpus.Basic.Kernel.Objects.CtxPicture
   , module Wumpus.Basic.Kernel.Objects.Displacement
@@ -57,6 +58,7 @@ import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.Connector
+import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.CtxPicture
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives

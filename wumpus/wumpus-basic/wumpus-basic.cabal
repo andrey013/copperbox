@@ -148,6 +148,7 @@ library
     Wumpus.Basic.Kernel.Objects.Anchors,
     Wumpus.Basic.Kernel.Objects.Basis,
     Wumpus.Basic.Kernel.Objects.Bounded,
+    Wumpus.Basic.Kernel.Objects.Concat,
     Wumpus.Basic.Kernel.Objects.Connector,
     Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Displacement,

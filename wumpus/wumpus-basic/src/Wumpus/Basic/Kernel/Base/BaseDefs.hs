@@ -28,6 +28,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , oconcat
   , altconcat
 
+
   -- * A bifunctor class
   , Bimap(..)
   , replaceL

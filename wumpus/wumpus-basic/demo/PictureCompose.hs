@@ -22,78 +22,78 @@ pic_drawing_ctx = standardContext 14
 
 
 pictures :: CtxPicture
-pictures = cxpColumnSep (12::Double) pic1 [ pic2, pic3, pic4, pic5
-                                          , pic6, pic7, pic8, pic9 
-                                          , pic10, pic11, pic12
-                                          ] 
+pictures = vsep (12::Double) [ pic1, pic2, pic3, pic4
+                             , pic5, pic6, pic7, pic8
+                             , pic9, pic10, pic11, pic12
+                             ] 
 
 drawBlueBounds :: CtxPicture -> CtxPicture
 drawBlueBounds = mapCtxPicture (illustrateBounds blue)
 
 pic1 :: CtxPicture
-pic1 = picAnno pic "red `oplus` green `oplus` blue"
+pic1 = picAnno pic "red `superior` green `superior` blue"
   where
     pic :: CtxPicture
-    pic = drawBlueBounds $ rect_red `oplus` rect_green `oplus` rect_blue
+    pic = drawBlueBounds $ rect_red `superior` rect_green `superior` rect_blue
 
 
 
 pic2 :: CtxPicture
-pic2 = picAnno pic "red `cxpBeneath` green `cxpBeneath` blue"
+pic2 = picAnno pic "red `anterior` green `anterior` blue"
   where
     pic :: CtxPicture
-    pic = drawBlueBounds $ rect_red `cxpBeneath` rect_green `cxpBeneath` rect_blue
+    pic = drawBlueBounds $ rect_red `anterior` rect_green `anterior` rect_blue
 
 
 pic3 :: CtxPicture 
-pic3 = picAnno pic "red `cxpUniteCenter` green `cxpUniteCenter` blue"
+pic3 = picAnno pic "red `uniteCenter` green `uniteCenter` blue"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            rect_red `cxpUniteCenter` rect_green `cxpUniteCenter` rect_blue
+            rect_red `uniteCenter` rect_green `uniteCenter` rect_blue
 
 
 -- Note - @oright@ only moves pictures in the horizontal.
 --
 pic4 :: CtxPicture 
-pic4 = picAnno pic "red `cxpRight` green `cxpRight` blue"
+pic4 = picAnno pic "red `hconcat` green `hconcat` blue"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            rect_red `cxpRight` rect_green `cxpRight` rect_blue
+            rect_red `hconcat` rect_green `hconcat` rect_blue
 
 -- Note - @odown@ only moves pictures in the vertical.
 --
 pic5 :: CtxPicture 
-pic5 = picAnno pic "red `cxpDown` green `cxpDown` blue"
+pic5 = picAnno pic "red `vconcat` green `vconcat` blue"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            rect_red `cxpDown` rect_green `cxpDown` rect_blue
+            rect_red `vconcat` rect_green `vconcat` rect_blue
 
 
 pic6 :: CtxPicture
-pic6 = picAnno pic "oconcat red [green, blue]"
+pic6 = picAnno pic "cat [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            oconcat rect_red [rect_green, rect_blue]
+            cat [rect_red, rect_green, rect_blue]
 
 
 pic7 :: CtxPicture
-pic7 = picAnno pic "cxpRow red [green, blue]"
+pic7 = picAnno pic "hcat [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpRow rect_red [rect_green, rect_blue]
+            hcat [rect_red, rect_green, rect_blue]
 
 
 pic8 :: CtxPicture
-pic8 = picAnno pic "cxpColumn red [green, blue]"
+pic8 = picAnno pic "vcat [red,green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpColumn rect_red [rect_green, rect_blue]
+            vcat [rect_red, rect_green, rect_blue]
 
 
 -- Note - API naming, where functions are called Sep they should 
@@ -102,34 +102,34 @@ pic8 = picAnno pic "cxpColumn red [green, blue]"
 --
 
 pic9 :: CtxPicture
-pic9 = picAnno pic "cxpRowSep 10 red [green, blue]"
+pic9 = picAnno pic "hsep 10 [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpRowSep (10::Double) rect_red [rect_green, rect_blue]
+            hsep (10::Double) [rect_red, rect_green, rect_blue]
 
 pic10 :: CtxPicture
-pic10 = picAnno pic "cxpColumnSep 10 red [green, blue]"
+pic10 = picAnno pic "vsep 10 [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpColumnSep (10::Double) rect_red [rect_green, rect_blue]
+            vsep (10::Double) [rect_red, rect_green, rect_blue]
 
 
 pic11 :: CtxPicture
-pic11 = picAnno pic "cxpAlignRow HTop red [green, blue]"
+pic11 = picAnno pic "alignRow HTop [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpAlignRow HTop rect_red [rect_green, rect_blue]
+            alignRow HTop [rect_red, rect_green, rect_blue]
 
 
 pic12 :: CtxPicture
-pic12 = picAnno pic "cxpAlignColumn VRight red [green, blue]"
+pic12 = picAnno pic "alignColumn VRight [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            cxpAlignColumn VRight rect_red [rect_green, rect_blue]
+            alignColumn VRight [rect_red, rect_green, rect_blue]
 
 
 --------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ pic12 = picAnno pic "cxpAlignColumn VRight red [green, blue]"
 
 
 picAnno :: CtxPicture -> String -> CtxPicture
-picAnno pic msg = cxpAlignSepH HCenter (30::Double) pic lbl
+picAnno pic msg = halignSpace HCenter (30::Double) pic lbl
   where
     lbl = drawTracing $ body
     body :: TraceDrawing Double ()

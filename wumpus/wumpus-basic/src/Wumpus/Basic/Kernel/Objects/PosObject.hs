@@ -97,6 +97,7 @@ import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded
+import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -140,6 +141,16 @@ type LocRectQuery u a = CF2 (Point2 u) RectAddress a
 type BoundedLocRectGraphic u = LocRectQuery u (ImageAns BoundingBox u)
 
 --------------------------------------------------------------------------------
+
+
+instance (Fractional u, Ord u) => OPlus (PosObject u) where
+  a `oplus` b = PosObject body
+   where
+     body = drawingCtx >>= \ctx -> 
+            let (o0,pf0) = runCF (getPosObject a) ctx
+                (o1,pf1) = runCF (getPosObject b) ctx
+                pf       = \pt -> pf0 pt `oplus` pf1 pt
+            in return (o0 `oplus` o1, pf)
 
 
 -- | 'makePosObject' : @ object_pos * loc_image -> PosObject @ 
@@ -340,6 +351,14 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
 -- Combining PosObject
 
 
+instance (Fractional u, Ord u) => ZConcat (PosObject u) where
+  superior = oplus
+  anterior = flip oplus
+
+
+instance (Num u, Ord u) => Concat (PosObject u) where
+  hconcat = hcatPO 
+  vconcat = vcatPO
 
 hcatPO :: (Num u, Ord u)   
        => PosObject u -> PosObject u -> PosObject u
@@ -474,11 +493,11 @@ halignPO :: (Fractional u, Ord u)
 halignPO alt _  []     = alt
 halignPO _   ha (x:xs) = go x xs
   where
-    cat = case ha of HTop    -> hcatTopPO 
-                     HCenter -> hcatCenterPO 
-                     _       -> hcatBottomPO
+    op = case ha of HTop    -> hcatTopPO 
+                    HCenter -> hcatCenterPO 
+                    _       -> hcatBottomPO
     go acc []     = acc
-    go acc (y:ys) = go (cat acc y) ys
+    go acc (y:ys) = go (acc `op` y) ys
 
 
 valignPO :: (Fractional u, Ord u)   
@@ -486,11 +505,11 @@ valignPO :: (Fractional u, Ord u)
 valignPO alt _  []     = alt
 valignPO _   va (x:xs) = go x xs
   where
-    cat = case va of VLeft   -> vcatLeftPO 
-                     VCenter -> vcatCenterPO 
-                     _       -> vcatRightPO
+    op = case va of VLeft   -> vcatLeftPO 
+                    VCenter -> vcatCenterPO 
+                    _       -> vcatRightPO
     go acc []     = acc
-    go acc (y:ys) = go (cat acc y) ys
+    go acc (y:ys) = go (acc `op` y) ys
 
 
 halignSepPO :: (Fractional u, Ord u)   
@@ -498,11 +517,11 @@ halignSepPO :: (Fractional u, Ord u)
 halignSepPO alt _  _ []     = alt
 halignSepPO _   ha du (x:xs) = go x xs
   where
-    cat = case ha of HTop    -> hsepTopPO du
-                     HCenter -> hsepCenterPO du
-                     _       -> hsepBottomPO du
+    op = case ha of HTop    -> hsepTopPO du
+                    HCenter -> hsepCenterPO du
+                    _       -> hsepBottomPO du
     go acc []     = acc
-    go acc (y:ys) = go (cat acc y) ys
+    go acc (y:ys) = go (acc `op` y) ys
 
 
 valignSepPO :: (Fractional u, Ord u)   
@@ -510,10 +529,10 @@ valignSepPO :: (Fractional u, Ord u)
 valignSepPO alt _  _  []     = alt
 valignSepPO _   va du (x:xs) = go x xs
   where
-    cat = case va of VLeft   -> vsepLeftPO du 
-                     VCenter -> vsepCenterPO du 
-                     _       -> vsepRightPO du
+    op = case va of VLeft   -> vsepLeftPO du 
+                    VCenter -> vsepCenterPO du 
+                    _       -> vsepRightPO du
     go acc []     = acc
-    go acc (y:ys) = go (cat acc y) ys
+    go acc (y:ys) = go (acc `op` y) ys
 
 
