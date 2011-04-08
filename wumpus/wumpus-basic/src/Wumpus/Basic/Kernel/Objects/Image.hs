@@ -25,7 +25,9 @@ module Wumpus.Basic.Kernel.Objects.Image
    , DGraphic
 
    , intoImage
-   , uconvertImg
+   , uconvGraphic
+   , uconvImageF
+   , uconvImageZ
 
    )
 
@@ -43,19 +45,20 @@ import Control.Applicative
 --
 -- The answer is expected to be a Functor.
 --
-type Image t u          = CF (ImageAns t u)
+type Image u a          = CF (ImageAns u a)
+
 
 
 -- | Graphic - function from the DrawingContext to a graphic 
 -- /primitive/.
 --
-type Graphic u          = Image UNil u
+type Graphic u          = Image u ()
 
 
 
 -- | Type specialized version of 'Image'.
 --
-type DImage t           = Image t Double         
+type DImage a           = Image Double a 
 
 
 -- | Type specialized version of 'Graphic'.
@@ -68,15 +71,28 @@ type DGraphic           = Graphic Double
 -- Build an 'Image' from a context function ('CF') that generates 
 -- the answer and a 'Graphic' that draws the 'Image'.
 --
-intoImage :: Query (t u) -> Graphic u -> Image t u
-intoImage = liftA2 (\a (Ans _ p) -> Ans a p)
+intoImage :: Query a -> Graphic u -> Image u a
+intoImage qf ma = replaceAns <$> qf <*> ma
 
 
--- | Use this to convert both 'Image' and 'Graphic'.
+-- | Use this to convert 'Graphic'.
 --
-uconvertImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-            => Image t u -> Image t u1
-uconvertImg = uconvertR0
+uconvGraphic :: (InterpretUnit u, InterpretUnit u1) 
+            => Graphic u -> Graphic u1
+uconvGraphic = uconvR0 szconvGraphicAns
+
+
+-- | Use this to convert 'Image' with Functor answer.
+--
+uconvImageF :: (Functor t, InterpretUnit u, InterpretUnit u1)
+            => Image u (t u) -> Image u1 (t u1)
+uconvImageF = uconvR0 szconvImageAnsF
+
+
+uconvImageZ :: (InterpretUnit u, InterpretUnit u1)
+            => Image u a -> Image u1 a
+uconvImageZ = uconvR0 szconvImageAnsZ
+
 
 
 --------------------------------------------------------------------------------

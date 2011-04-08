@@ -182,9 +182,9 @@ instance TraceM (TraceDrawing u) where
 
 fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
 fontDeltaMon mf = TraceDrawing $ \ctx -> 
-    let (_,fattr)   = runCF textAttr ctx
-        (a,hf)      = runTraceDrawing ctx mf
-        prim        = fontDeltaContext fattr $ primGroup $ hprimToList hf
+    let (_,font_attrs) = runCF ctx textAttr
+        (a,hf)         = runTraceDrawing ctx mf
+        prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
     in (a, singleH $ prim1 $ prim)
 
 instance Monad m => TraceM (TraceDrawingT u m) where
@@ -193,9 +193,9 @@ instance Monad m => TraceM (TraceDrawingT u m) where
 
 fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
 fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
-    let (_,fattr)   = runCF textAttr ctx
+    let (_,font_props) = runCF ctx textAttr
     in runTraceDrawingT ctx mf >>= \(a,hf) ->
-       let prim  = fontDeltaContext fattr $ primGroup $ hprimToList hf
+       let prim  = fontDeltaContext font_props $ primGroup $ hprimToList hf
        in return (a, singleH $ prim1 $ prim)
 
 
@@ -308,7 +308,7 @@ mbPictureU (Just a) = a
 
 
 evalQuery :: DrawingCtxM m => Query a -> m a
-evalQuery df = askDC >>= \ctx -> return $ runCF df ctx 
+evalQuery df = askDC >>= \ctx -> return $ runCF ctx  df
 
 
 
@@ -320,8 +320,11 @@ evalQuery df = askDC >>= \ctx -> return $ runCF df ctx
 -- have no /answer/.
 -- 
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => Image t u -> m ()
-draw img = drawi img >> return ()
+     => Image u a -> m ()
+draw gf = askDC >>= \ctx -> 
+          let Ans o _ = runCF ctx gf
+          in trace (singleH o) >> return ()
+
 
 
 
@@ -332,9 +335,9 @@ draw img = drawi img >> return ()
 -- monad, and the result is returned.
 -- 
 drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Image t u -> m (t u)
+      => Image u a -> m a
 drawi img = askDC >>= \ctx -> 
-            let (Ans a o) = runCF img ctx
+            let Ans o a = runCF ctx img
             in trace (singleH o) >> return a
 
 
@@ -346,7 +349,7 @@ drawi img = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawl :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Anchor u -> LocImage t u -> m ()
+      => Anchor u -> LocImage u a -> m ()
 drawl ancr img = drawli ancr img >> return ()
 
 
@@ -358,9 +361,9 @@ drawl ancr img = drawli ancr img >> return ()
 -- monad, and the result is returned.
 -- 
 drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Anchor u -> LocImage t u -> m (t u)
+       => Anchor u -> LocImage u a -> m a
 drawli pt img = askDC >>= \ctx -> 
-                let (Ans a o) = runCF1 img ctx pt 
+                let Ans o a = runCF ctx img pt 
                 in trace (singleH o) >> return a
 
 
@@ -384,7 +387,7 @@ drawli pt img = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawc :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Anchor u -> Anchor u -> ConnectorImage t u -> m ()
+      => Anchor u -> Anchor u -> ConnectorImage u a -> m ()
 drawc an0 an1 img = drawci an0 an1 img >> return () 
 
 
@@ -395,7 +398,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- monad, and the result is returned.
 -- 
 drawci :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Anchor u -> Anchor u -> ConnectorImage t u -> m (t u)
+       => Anchor u -> Anchor u -> ConnectorImage u a -> m a
 drawci p0 p1 img = drawi (connect img p0 p1)
 
 
@@ -414,7 +417,7 @@ drawci p0 p1 img = drawi (connect img p0 p1)
 -- have no /answer/.
 -- 
 node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => (Int,Int) -> LocImage t u -> m ()
+     => (Int,Int) -> LocImage u a -> m ()
 node coord gf = nodei coord gf >> return ()
 
 
@@ -423,10 +426,10 @@ node coord gf = nodei coord gf >> return ()
 -- @snap_grid_factors@ in the /drawing context/.
 -- 
 nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => (Int,Int) -> LocImage t u -> m (t u)
+      => (Int,Int) -> LocImage u a -> m a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 let (Ans a o) = runCF1 gf ctx pt
+                 let Ans o a = runCF ctx gf pt
                  in trace (singleH o) >> return a
 
 
@@ -447,11 +450,11 @@ nodei coord gf = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawrc :: ( Real u, Floating u, DrawingCtxM m, TraceM m 
-          , CenterAnchor t1 u, RadialAnchor  t1 u
-          , CenterAnchor t2 u, RadialAnchor  t2 u
-          , u ~ MonUnit (m ()) 
+          , CenterAnchor a, RadialAnchor a
+          , CenterAnchor b, RadialAnchor b
+          , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b 
           ) 
-       => t1 u -> t2 u -> ConnectorImage t u -> m ()
+       => a -> b -> ConnectorImage u ans -> m ()
 drawrc a b gf = drawrci a b gf >> return ()
 
 
@@ -462,11 +465,11 @@ drawrc a b gf = drawrci a b gf >> return ()
 -- projected line.
 -- 
 drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
-           , CenterAnchor t1 u, RadialAnchor  t1 u
-           , CenterAnchor t2 u, RadialAnchor  t2 u
-           , u ~ MonUnit (m ()) 
+           , CenterAnchor a, RadialAnchor  a
+           , CenterAnchor b, RadialAnchor  b
+           , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b
            ) 
-        => t1 u -> t2 u -> ConnectorImage t u -> m (t u)
+        => a -> b -> ConnectorImage u ans -> m ans
 drawrci a b img = 
     let (p0,p1) = radialConnectorPoints a b in drawi (connect img p0 p1)
 

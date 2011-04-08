@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
@@ -21,6 +22,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
     PointDisplace
   , ThetaDisplace
   , ThetaPointDisplace
+
 
   , moveStart
   , moveStartTheta
@@ -77,6 +79,7 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Anchors
+import Wumpus.Basic.Kernel.Objects.Basis
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -121,11 +124,12 @@ type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
 -- Displacing points and inclination
 
 
+
 -- | Move the start-point of a 'LocQuery' with the supplied 
 -- displacement function.
 --
 moveStart :: PointDisplace u -> LocQuery u a -> LocQuery u a
-moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
+moveStart f ma = domMap1 f ma
 
 
 
@@ -134,8 +138,8 @@ moveStart f ma = promoteR1 $ \pt -> apply1R1 ma (f pt)
 --
 moveStartTheta :: ThetaPointDisplace u 
                -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartTheta f ma = promoteR2 $ \pt theta -> let p2 = f theta pt 
-                                               in apply2R2 ma p2 theta
+moveStartTheta f cf = consCF $ \ctx -> 
+    (\pt ang -> let f1 = runCF ctx cf in f1 (f ang pt) ang)
 
 
 -- | Move the start-point of a 'LocThetaCF' with the supplied 
@@ -143,14 +147,14 @@ moveStartTheta f ma = promoteR2 $ \pt theta -> let p2 = f theta pt
 --
 moveStartThetaPoint :: PointDisplace u 
                     -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartThetaPoint f ma = promoteR2 $ \pt theta -> apply2R2 ma (f pt) theta
+moveStartThetaPoint f = domMap2 f id
 
 
 -- | Change the inclination of a 'LocThetaCF' with the supplied 
 -- displacement function.
 --
 moveStartThetaIncl :: ThetaDisplace -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartThetaIncl f ma = promoteR2 $ \pt theta -> apply2R2 ma pt (f theta)
+moveStartThetaIncl f = domMap2 id f
 
 
 --------------------------------------------------------------------------------
@@ -319,8 +323,8 @@ thetaSouthwestwards d =
 
 -- | Absolute units.
 -- 
-centerRelative :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-               => (Int,Int) -> t u -> Query (Anchor u)
+centerRelative :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+               => (Int,Int) -> a -> Query (Anchor u)
 centerRelative coord a = snapmove coord >>= \v -> return $ center a .+^ v
 
 
@@ -329,8 +333,8 @@ centerRelative coord a = snapmove coord >>= \v -> return $ center a .+^ v
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-right_of        :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+right_of        :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 right_of        = centerRelative (1,0)
 
 -- | Value is 1 snap move left.
@@ -338,8 +342,8 @@ right_of        = centerRelative (1,0)
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-left_of         :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+left_of         :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 left_of         = centerRelative ((-1),0)
 
 -- | Value is 1 snap move up, 1 snap move right.
@@ -347,8 +351,8 @@ left_of         = centerRelative ((-1),0)
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-above_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+above_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 above_right_of  = centerRelative (1,1)
 
 -- | Value is 1 snap move below, 1 snap move right.
@@ -356,8 +360,8 @@ above_right_of  = centerRelative (1,1)
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-below_right_of  :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+below_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 below_right_of  = centerRelative (1, (-1))
 
 -- | Value is 1 snap move up, 1 snap move left.
@@ -365,8 +369,8 @@ below_right_of  = centerRelative (1, (-1))
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-above_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+above_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 above_left_of   = centerRelative ((-1),1)
 
 -- | Value is 1 snap move down, 1 snap move left.
@@ -374,11 +378,8 @@ above_left_of   = centerRelative ((-1),1)
 -- This function should be considered obsolete, pending a 
 -- re-think.
 -- 
-below_left_of   :: (CenterAnchor t u, Fractional u, InterpretUnit u) 
-                => t u -> Query (Anchor u)
+below_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query (Anchor u)
 below_left_of   = centerRelative ((-1),(-1))
  
-
-
-
 

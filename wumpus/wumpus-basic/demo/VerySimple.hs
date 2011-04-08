@@ -36,8 +36,8 @@ mf :: TraceDrawing Double ()
 mf = do
     draw $ miniDisk `at` P2 120 0
     draw $ rotate30 $ miniDisk `at` P2 80  0
-    draw $ (uconvertLocImg miniDiskEm) `at` P2 40  0
-    draw $ (uconvertLocImg miniDiskEn) `at` P2 0   0
+    draw $ (uconvLocGraphic miniDiskEm) `at` P2 40  0
+    draw $ (uconvLocGraphic miniDiskEn) `at` P2 0   0
 
 
 miniDisk :: InterpretUnit u => LocGraphic u

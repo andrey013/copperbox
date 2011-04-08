@@ -26,7 +26,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , emptyAdvGraphic
 
   -- * Composition
-  , catAdv
+{-  , catAdv
   , sepAdv
   , repeatAdv
   , concatAdv
@@ -34,7 +34,7 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , encloseAdv
   , punctuateAdv
   , fillAdv
-
+-}
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -53,7 +53,7 @@ import Data.VectorSpace                         -- package: vector-space
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
 --
-type AdvGraphic u      = LocImage Vec2 u
+type AdvGraphic u      = LocImage u (Vec2 u)
 
 type DAdvGraphic       = AdvGraphic Double
 
@@ -85,7 +85,7 @@ intoAdvGraphic = intoLocImage
 -- the zero vector @(V2 0 0)@.
 -- 
 emptyAdvGraphic :: InterpretUnit u => AdvGraphic u
-emptyAdvGraphic = replaceAns (V2 0 0) $ emptyLocGraphic
+emptyAdvGraphic = fmap (fmap (replaceAns (V2 0 0))) $ emptyLocGraphic
 
 
 --------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ advcombine _     op (x:xs) = step x xs
 
 
 
-
+{-
 
 -- Naming convention - binary functions are favoured for shorter names.
 
@@ -189,3 +189,4 @@ punctuateAdv sep =
 fillAdv :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u
 fillAdv sv = replaceAns sv
 
+-}

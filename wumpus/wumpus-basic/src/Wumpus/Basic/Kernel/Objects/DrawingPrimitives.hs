@@ -100,21 +100,21 @@ norm2 :: InterpretUnit u => u -> u -> Query (Double,Double)
 norm2 a b = (,) <$> normalizeCtx a <*> normalizeCtx b
 
 makeGraphic :: Query a -> (a -> Primitive) -> Graphic u
-makeGraphic qy fn = qy >>= \a -> return $ Ans UNil (prim1 $ fn a)
+makeGraphic qy fn = qy >>= \a -> return $ graphicAns $ prim1 $ fn a
 
 
 makeLocGraphic :: InterpretUnit u 
                => Query a -> (a -> DPoint2 -> Primitive) -> LocGraphic u
 makeLocGraphic qy fn = promoteR1 $ \pt -> 
     normalizeCtxF pt >>= \dpt ->
-    qy >>= \a -> return $ Ans UNil (prim1 $ fn a dpt)
+    qy >>= \a -> return $ graphicAns $ prim1 $ fn a dpt
 
 makeLocThetaGraphic :: InterpretUnit u 
                     => Query a -> (a -> DPoint2 -> Radian -> Primitive) 
                     -> LocThetaGraphic u
 makeLocThetaGraphic qy fn = promoteR2 $ \pt ang -> 
     normalizeCtxF pt >>= \dpt ->
-    qy >>= \a -> return $ Ans UNil (prim1 $ fn a dpt ang)
+    qy >>= \a -> return $ graphicAns $ prim1 $ fn a dpt ang
 
 
 
@@ -337,7 +337,7 @@ uconvKernChar = mapM mf
 -- from the implicit 'DrawingContext'.
 --
 hkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
-hkernLine ks = lift0R1 (uconvKernChar ks) >>= body   
+hkernLine ks = uconvKernChar ks >>= body   
   where
     body ans = makeLocGraphic textAttr
                   (\(rgb,attr) pt -> hkernlabel rgb attr ans pt)
@@ -356,7 +356,7 @@ hkernLine ks = lift0R1 (uconvKernChar ks) >>= body
 -- from the implicit 'DrawingContext'.
 --
 vkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
-vkernLine ks = lift0R1 (uconvKernChar ks) >>= body
+vkernLine ks = uconvKernChar ks >>= body
   where
     body ans = makeLocGraphic textAttr
                   (\(rgb,attr) pt -> vkernlabel rgb attr ans pt)
@@ -729,7 +729,7 @@ borderedDisk radius =
 -- from the implicit 'DrawingContext'.
 -- 
 strokedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-strokedEllipseDisk rx ry = lift0R1 (norm2 rx ry) >>= body
+strokedEllipseDisk rx ry = norm2 rx ry >>= body
   where
     body (drx,dry) = makeLocGraphic strokeAttr
                         (\(rgb,attr) pt -> strokeEllipse rgb attr drx dry pt)
@@ -749,7 +749,7 @@ strokedEllipseDisk rx ry = lift0R1 (norm2 rx ry) >>= body
 -- The fill colour is taken from the implicit 'DrawingContext'.
 -- 
 filledEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-filledEllipseDisk rx ry = lift0R1 (norm2 rx ry) >>= body
+filledEllipseDisk rx ry = norm2 rx ry >>= body
   where
     body (drx,dry) = makeLocGraphic fillAttr
                         (\rgb pt -> fillEllipse rgb drx dry pt)
@@ -773,7 +773,7 @@ filledEllipseDisk rx ry = lift0R1 (norm2 rx ry) >>= body
 -- are taken from the implicit 'DrawingContext'.
 -- 
 borderedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-borderedEllipseDisk rx ry = lift0R1 (norm2 rx ry) >>= body
+borderedEllipseDisk rx ry = norm2 rx ry >>= body
   where
     body (drx,dry) = makeLocGraphic borderedAttr
                           (\(frgb,attr,srgb) pt -> 

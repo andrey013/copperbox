@@ -37,9 +37,9 @@ module Wumpus.Basic.Kernel.Objects.Bounded
 
   , centerOrthoBBox
 
-  , illustrateBoundedGraphic
-  , illustrateBoundedLocGraphic
-  , illustrateBoundedLocThetaGraphic
+--  , illustrateBoundedGraphic
+--  , illustrateBoundedLocGraphic
+--  , illustrateBoundedLocThetaGraphic
 
   , bbrectangle
 
@@ -62,7 +62,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 -- | Graphic with a bounding box.
 -- 
-type BoundedGraphic u      = Image BoundingBox u
+type BoundedGraphic u      = Image u (BoundingBox u)
 
 type DBoundedGraphic       = BoundedGraphic Double
 
@@ -71,7 +71,7 @@ type DBoundedGraphic       = BoundedGraphic Double
 
 -- | LocGraphic with a bounding box.
 --
-type BoundedLocGraphic u      = LocImage BoundingBox u
+type BoundedLocGraphic u      = LocImage u (BoundingBox u)
 
 type DBoundedLocGraphic       = BoundedLocGraphic Double
 
@@ -82,7 +82,7 @@ type DBoundedLocGraphic       = BoundedLocGraphic Double
 -- according to the rotation. A bounding box is always 
 -- orthonormal (?) to the x- and y-axes.
 --
-type BoundedLocThetaGraphic u   = LocThetaImage BoundingBox u
+type BoundedLocThetaGraphic u   = LocThetaImage u (BoundingBox u)
 
 type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
 
@@ -159,7 +159,7 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
 --------------------------------------------------------------------------------
 -- 
 
-
+{-
 -- | Draw a BoundedGraphic, illustrating the bounding box.
 --
 illustrateBoundedGraphic :: InterpretUnit u
@@ -190,7 +190,7 @@ illustrateBoundedLocThetaGraphic gf = elaborate gf fn
   where
     fn bb = lift0R2 (bbrectangle bb)
 
-
+-}
 
 
 bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u

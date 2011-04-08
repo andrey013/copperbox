@@ -21,9 +21,28 @@
 module Wumpus.Basic.Kernel.Objects.Basis
   (
 
-    ImageAns(..)
-  , GraphicAns
+    LocQuery
+  , LocThetaQuery
+  , ConnectorQuery 
 
+  , GraphicAns
+  , ImageAns(..)
+
+  , graphicAns
+  , replaceAns
+  , ignoreAns
+
+  
+  , szconvGraphicAns 
+  , szconvImageAnsF
+  , szconvImageAnsZ
+
+
+  , at
+  , atIncline
+  , connect
+
+{-
   , ignoreAns
   , replaceAns
   , mapAns
@@ -38,14 +57,152 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , clipObject
 
   , combind
-
+-}
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+type LocQuery u a               = CF (Point2 u -> a)
+type LocThetaQuery u a          = CF (Point2 u -> Radian -> a)
+type ConnectorQuery u a         = CF (Point2 u -> Point2 u -> a)
+
+
+-- Design note - GraphicAns needs a unit for consistency even 
+-- though it is never scrutinized.
+-- 
+
+type GraphicAns u = ImageAns u ()
+
+data ImageAns u a = Ans CatPrim a
+
+type instance DUnit (ImageAns u a) = u
+
+
+instance OPlus a => OPlus (ImageAns u a) where
+  Ans cp0 a `oplus` Ans cp1 b = Ans (cp0 `oplus` cp1) (a `oplus` b)
+
+
+
+--------------------------------------------------------------------------------
+-- Affine instances 
+
+-- 
+-- Design Note
+--
+-- Translate and RotateAbout require the unit to be /scalar/ 
+-- e.g. Double, Centimeter, Pica.
+--
+-- This is annoying and a limitation, but an alternative would
+-- need access to current-font-size which cannot be a pure 
+-- function.
+-- 
+
+instance Rotate a => Rotate (ImageAns u a) where
+  rotate ang (Ans cp a) = Ans (rotate ang cp) (rotate ang a)
+
+
+instance (RotateAbout a, ScalarUnit u, u ~ DUnit a) => 
+    RotateAbout (ImageAns u a) where
+  rotateAbout ang pt@(P2 x y) (Ans cp a) = 
+    Ans (rotateAbout ang (P2 (toPsPoint x) (toPsPoint y)) cp)
+        (rotateAbout ang pt a) 
+        
+
+
+instance Scale a => Scale (ImageAns u a) where
+  scale sx sy (Ans cp a) = Ans (scale sx sy cp) (scale sx sy a)
+
+
+instance (Translate a, ScalarUnit u, u ~ DUnit a) => 
+    Translate (ImageAns u a) where
+  translate dx dy (Ans cp a) = 
+    Ans (translate (toPsPoint dx) (toPsPoint dy) cp) (translate dx dy a) 
+
+-- For wumpus-core
+
+instance Rotate () where
+  rotate _ = id
+
+instance RotateAbout () where
+  rotateAbout _ _ = id
+
+instance Scale () where
+  scale _ _ = id
+
+instance Translate () where
+  translate _ _ = id
+
+--------------------------------------------------------------------------------
+
+-- | Replace the answer produced by a graphic object.
+--
+-- Note - the new answer must share the same unit type as the
+-- initial answer, although it does not need to have the same
+-- wrapper type.
+--
+replaceAns :: ans -> ImageAns u a -> ImageAns u ans
+replaceAns ans (Ans prim _) = Ans prim ans
+
+
+-- | Ignore the answer produced by an Image (or LocImage, etc.)
+-- and form a Graphic instead.
+--
+ignoreAns :: ImageAns u a -> GraphicAns u
+ignoreAns (Ans prim _) = Ans prim ()
+
+
+
+graphicAns :: CatPrim -> GraphicAns u
+graphicAns prim = Ans prim ()
+
+
+szconvGraphicAns :: FontSize -> GraphicAns u -> GraphicAns u1
+szconvGraphicAns _ (Ans prim ()) = Ans prim ()
+
+
+szconvImageAnsF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
+                => FontSize -> ImageAns u (t u) -> ImageAns u1 (t u1)
+szconvImageAnsF sz (Ans prim a) = Ans prim (uconvertF sz a)
+
+szconvImageAnsZ :: FontSize -> ImageAns u a -> ImageAns u1 a
+szconvImageAnsZ _ (Ans prim a) = Ans prim a
+
+
+
+infixr 1 `at`
+
+
+-- | Downcast a 'LocCF' function by applying it to the supplied 
+-- point, making an arity-zero Context Function. 
+-- 
+-- Remember a 'LocCF' function is a 'CF1' context function where
+-- the /static argument/ is specialized to a start point.
+--
+at :: LocQuery u a -> Point2 u -> CF a
+at = apply1R1
+
+
+atIncline :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
+atIncline = apply2R2
+
+
+-- | Downcast a 'ConnectorQuery' function by applying it to the 
+-- start and end point, making an arity-zero Context Function 
+-- (a 'CF'). 
+-- 
+connect :: ConnectorQuery u a -> Point2 u -> Point2 u -> CF a
+connect = apply2R2
+
+
+
+
+
+{-
 
 -- Not exported - thanks to Max Bollingbroke.
 --
@@ -110,9 +267,10 @@ instance (Translate (t u), ScalarUnit u, u ~ DUnit (t u)) =>
 -- | Ignore the answer produced by an Image (or LocImage, etc.)
 -- and form a Graphic instead.
 --
-ignoreAns :: Functor cf
+ignoreAns :: Functor f
           => cf (ImageAns t u) -> cf (GraphicAns u)
 ignoreAns = fmap (\(Ans _ prim) -> Ans UNil prim)
+
 
 
 -- | Replace the answer produced by a graphic object.
@@ -258,3 +416,4 @@ acombind op gf fn = gf   >>= \(Ans a p1) ->
                     fn a >>= \(Ans b p2) -> 
                     return $ Ans (a `op` b) (p2 `oplus` p1)
 
+-}

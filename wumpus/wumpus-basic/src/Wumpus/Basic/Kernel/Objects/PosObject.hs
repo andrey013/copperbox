@@ -55,8 +55,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , padUpPO
   , padDownPO
 
-  , illustratePosObject
-
+--  , illustratePosObject
 
 
   ) where
@@ -84,6 +83,7 @@ import Data.VectorSpace
 import Control.Applicative
 import Data.Monoid
 
+
 -- | Helper for PosObject - a LocImage that is /pre-applied/ to 
 -- the DrawingContext.
 --
@@ -91,14 +91,14 @@ import Data.Monoid
 -- graphic from a PosImage have to be generated within the same 
 -- DrawingContext.
 --
-type CtxFreeLocGraphic u = Point2 u -> GraphicAns u
+type PosDraw u = Point2 u -> GraphicAns u
 
 
 -- | A positionable \"Object\" that is drawn as a 
 -- 'BoundedLocGraphic'.
 --
 newtype PosObject u = PosObject
-         { getPosObject :: CF (Orientation u, CtxFreeLocGraphic u) }
+         { getPosObject :: CF (Orientation u, PosDraw u) }
 
 type instance DUnit (PosObject u) = u
     
@@ -109,9 +109,9 @@ type DPosObject = PosObject Double
 
 
 
-type LocRectQuery u a = CF2 (Point2 u) RectAddress a
+type LocRectQuery u a = CF (Point2 u ->  RectAddress -> a)
 
-type BoundedLocRectGraphic u = LocRectQuery u (ImageAns BoundingBox u)
+type BoundedLocRectGraphic u = LocRectQuery u (ImageAns u (BoundingBox u))
 
 --------------------------------------------------------------------------------
 
@@ -128,15 +128,15 @@ pozero :: InterpretUnit u => PosObject u
 pozero = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let pf = \pt -> runCF (emptyLocGraphic `at` pt) ctx
+           let pf = \pt -> runCF ctx (apply1R1 emptyLocGraphic pt)
            in return (Orientation 0 0 0 0, pf)
 
 poconcat :: (Fractional u, Ord u) => PosObject u -> PosObject u -> PosObject u
 poconcat a b = PosObject body
    where
      body = drawingCtx >>= \ctx -> 
-            let (o0,pf0) = runCF (getPosObject a) ctx
-                (o1,pf1) = runCF (getPosObject b) ctx
+            let (o0,pf0) = runCF ctx (getPosObject a)
+                (o1,pf1) = runCF ctx (getPosObject b)
                 pf       = \pt -> pf0 pt `oplus` pf1 pt
             in return (o0 `oplus` o1, pf)
 
@@ -155,8 +155,8 @@ makePosObject :: Query (Orientation u) -> LocGraphic u -> PosObject u
 makePosObject qortt img = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let ortt = runCF qortt ctx
-               pf   = runCF1 img ctx
+           let ortt = runCF ctx qortt
+               pf   = runCF ctx img
            in return (ortt,pf)
 
 
@@ -170,9 +170,9 @@ makeBindPosObject :: Query a
 makeBindPosObject qy mkO mkG = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let a    = runCF qy ctx
-               ortt = runCF (mkO a) ctx
-               pf   = runCF1 (mkG a) ctx
+           let a    = runCF ctx qy
+               ortt = runCF ctx (mkO a)
+               pf   = runCF ctx (mkG a)
            in return (ortt,pf)
 
 
@@ -193,8 +193,7 @@ runPosObject :: Fractional u
 runPosObject pt addr (PosObject mf) = 
     mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
                               bb = orientationBounds ortt (displaceVec sv pt)
-                          in replaceAns bb $ pure $ ptf $ displaceVec sv pt
-
+                          in pure $ replaceAns bb $ ptf $ displaceVec sv pt
 
 
 -- | Run a DrawingContext update within a 'PosObject'.
@@ -209,8 +208,8 @@ elaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
 elaboratePO fn po = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (ortt,ptf) = runCF (getPosObject po) ctx
-               deco       = runCF1 (fn ortt) ctx
+           let (ortt,ptf) = runCF ctx (getPosObject po)
+               deco       = runCF ctx (fn ortt)
            in return (ortt, ptf `oplus` deco)
 
 -- | ante-eloborate
@@ -219,8 +218,8 @@ aelaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
 aelaboratePO fn po = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (ortt,ptf) = runCF (getPosObject po) ctx
-               deco       = runCF1 (fn ortt) ctx
+           let (ortt,ptf) = runCF ctx (getPosObject po)
+               deco       = runCF ctx (fn ortt)
            in return (ortt, deco `oplus` ptf)
 
 
@@ -271,7 +270,7 @@ extendPosObject :: Num u
 extendPosObject x0 x1 y0 y1 po = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (o0,pf0) = runCF (getPosObject po) ctx
+           let (o0,pf0) = runCF ctx (getPosObject po)
                ortt     = extendOrientation x0 x1 y0 y1 o0
            in return (ortt,pf0)
 
@@ -303,13 +302,14 @@ genPad :: (Orientation u -> Orientation u) -> PosObject u -> PosObject u
 genPad fn po = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (o0,pf0) = runCF (getPosObject po) ctx
+           let (o0,pf0) = runCF ctx (getPosObject po)
                ortt     = fn o0
            in return (ortt,pf0)
 
 
 --------------------------------------------------------------------------------
 
+{-
 -- | Illustrate a 'PosObject' by super-imposing its 'Orientation'.
 --
 -- This turns the 'PosObject' into a 'LocImage' drawn at the locus
@@ -320,7 +320,7 @@ illustratePosObject :: InterpretUnit u
 illustratePosObject (PosObject mf)  = promoteR1 $ \pt ->   
     mf >>= \(ortt,ptf) -> 
     decorate (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
-
+-}
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u
@@ -359,9 +359,9 @@ instance (Fractional u, Ord u) => Align (PosObject u) where
   halign HCenter = genMoveAlign binmoveHCenter halignCenterO
   halign HBottom = genMoveAlign binmoveHBottom halignBottomO
 
-  valign VLeft   = genMoveAlign binmoveVLeft valignLeftO
+  valign VLeft   = genMoveAlign binmoveVLeft   valignLeftO
   valign VCenter = genMoveAlign binmoveVCenter valignCenterO
-  valign VRight  = genMoveAlign binmoveVRight valignRightO
+  valign VRight  = genMoveAlign binmoveVRight  valignRightO
 
 
 
@@ -372,8 +372,8 @@ genMoveAlign :: (Num u)
 genMoveAlign mkV mkO po0 po1 = PosObject body
   where
    body = drawingCtx >>= \ctx -> 
-          let (ortt0,pf0) = runCF (getPosObject po0) ctx
-              (ortt1,pf1) = runCF (getPosObject po1) ctx
+          let (ortt0,pf0) = runCF ctx (getPosObject po0)
+              (ortt1,pf1) = runCF ctx (getPosObject po1)
               v1          = mkV ortt0 ortt1
               ortt        = mkO ortt0 ortt1
               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -384,13 +384,13 @@ genMoveAlign mkV mkO po0 po1 = PosObject body
 -- Sep
 
 instance (Fractional u, Ord u) => AlignSpace (PosObject u) where
-  halignSpace HTop    = genMoveSepH binmoveHTop halignTopO
+  halignSpace HTop    = genMoveSepH binmoveHTop    halignTopO
   halignSpace HCenter = genMoveSepH binmoveHCenter halignCenterO
   halignSpace HBottom = genMoveSepH binmoveHBottom halignBottomO
 
-  valignSpace VLeft   = genMoveSepV binmoveVLeft valignLeftO
+  valignSpace VLeft   = genMoveSepV binmoveVLeft   valignLeftO
   valignSpace VCenter = genMoveSepV binmoveVCenter valignCenterO
-  valignSpace VRight  = genMoveSepV binmoveVRight valignRightO
+  valignSpace VRight  = genMoveSepV binmoveVRight  valignRightO
 
 
 genMoveSepH :: (Num u)   
@@ -401,8 +401,8 @@ genMoveSepH :: (Num u)
 genMoveSepH mkV mkO sep po0 po1  = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (ortt0,pf0) = runCF (getPosObject po0) ctx
-               (ortt1,pf1) = runCF (getPosObject po1) ctx
+           let (ortt0,pf0) = runCF ctx (getPosObject po0)
+               (ortt1,pf1) = runCF ctx (getPosObject po1)
                v1          = hvec sep ^+^ mkV ortt0 ortt1
                ortt        = extendORight sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -417,8 +417,8 @@ genMoveSepV :: (Num u)
 genMoveSepV mkV mkO sep po0 po1 = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
-           let (ortt0,pf0) = runCF (getPosObject po0) ctx
-               (ortt1,pf1) = runCF (getPosObject po1) ctx
+           let (ortt0,pf0) = runCF ctx (getPosObject po0)
+               (ortt1,pf1) = runCF ctx (getPosObject po1)
                v1          = vvec (-sep) ^+^ mkV ortt0 ortt1
                ortt        = extendODown sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)

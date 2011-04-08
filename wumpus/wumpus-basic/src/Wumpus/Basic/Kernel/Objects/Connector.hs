@@ -26,7 +26,7 @@ module Wumpus.Basic.Kernel.Objects.Connector
 
    , intoConnectorImage
    , emptyConnectorGraphic
-   , uconvertConnectorImg
+--   , uconvertConnectorImg
 
    )
 
@@ -44,18 +44,18 @@ import Control.Applicative
 -- | ConnectorImage - function from DrawingContext and start and 
 -- end points to a polymorphic /answer/ and a graphic /primitive/.
 --
-type ConnectorImage t u = ConnectorQuery u (ImageAns t u)
+type ConnectorImage u a = ConnectorQuery u (ImageAns u a)
 
 
 -- | ConnectorGraphic - function from DrawingContext and start and 
 -- end points to a graphic /primitive/.
 --
-type ConnectorGraphic u = ConnectorImage UNil u
+type ConnectorGraphic u = ConnectorQuery u (GraphicAns u)
 
 
 -- | Type specialized version of 'ConnectorImage'.
 --
-type DConnectorImage t   = ConnectorImage t Double
+type DConnectorImage a   = ConnectorImage Double a
 
 -- | Type specialized version of 'ConnectorGraphic'.
 --
@@ -70,10 +70,12 @@ type DConnectorGraphic   = ConnectorGraphic Double
 -- The 'ConnectorImage' is built as a function from an implicit 
 -- start and end points to the answer.
 --
-intoConnectorImage :: ConnectorQuery u (t u) 
+intoConnectorImage :: ConnectorQuery u a
                    -> ConnectorGraphic u 
-                   -> ConnectorImage t u
-intoConnectorImage = liftA2 (\a (Ans _ p) -> Ans a p)
+                   -> ConnectorImage u a
+intoConnectorImage qf ma = 
+    promoteR2 $ \a b -> replaceAns <$> apply2R2 qf a b <*> apply2R2 ma a b  
+
 
 
 -- | 'emptyConnectorGraphic' : @ ConnectorGraphic @
@@ -91,7 +93,7 @@ emptyConnectorGraphic = promoteR2 $ \start end ->
         b = emptyLocGraphic `at` end
     in a `oplus` b
 
-
+{-
 -- | Use this to convert both 'ConnectorImage' and 
 -- 'ConnectorGraphic'.
 --
@@ -99,3 +101,4 @@ uconvertConnectorImg :: (InterpretUnit u, InterpretUnit u1, Functor t)
                      => ConnectorImage t u -> ConnectorImage t u1
 uconvertConnectorImg = uconvertR2ab
 
+-}

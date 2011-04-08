@@ -26,8 +26,9 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 
    , intoLocThetaImage
    , emptyLocThetaGraphic
-   , uconvertLocThetaImg
+--   , uconvertLocThetaImg
 
+{-
    -- * Combining LocThetaImages
    , catLTI
    , sepLTI
@@ -45,6 +46,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , punctuateLTI
    , paraPunctuateLTI
    , perpPunctuateLTI
+-}
    
    )
 
@@ -67,18 +69,18 @@ import Control.Applicative
 --
 -- The answer is expected to be a Functor.
 --
-type LocThetaImage t u  = LocThetaQuery u (ImageAns t u)
+type LocThetaImage u a = LocThetaQuery u (ImageAns u a)
 
 
 -- | LocThetaGraphic - function from DrawingContext, start point 
 -- and inclination to a graphic /primitive/ (GraphicAns).
 --
-type LocThetaGraphic u  = LocThetaImage UNil u
+type LocThetaGraphic u  = LocThetaQuery u (GraphicAns u)
 
 
 -- | Type specialized version of 'LocThetaImage'.
 --
-type DLocThetaImage t   = LocThetaImage t Double
+type DLocThetaImage a   = LocThetaImage Double a
 
 -- | Type specialized version of 'LocThetaGraphic'.
 --
@@ -94,10 +96,11 @@ type DLocThetaGraphic   = LocThetaGraphic Double
 -- The 'LocThetaImage' is built as a function from an implicit 
 -- start point and angle of inclination to the answer.
 --
-intoLocThetaImage :: LocThetaQuery u (t u) 
+intoLocThetaImage :: LocThetaQuery u a 
                   -> LocThetaGraphic u 
-                  -> LocThetaImage t u
-intoLocThetaImage = liftA2 (\a (Ans _ p) -> Ans a p)
+                  -> LocThetaImage u a
+intoLocThetaImage qf ma = 
+    promoteR2 $ \a b -> replaceAns <$> apply2R2 qf a b <*> apply2R2 ma a b
 
 
 
@@ -114,20 +117,21 @@ emptyLocThetaGraphic :: InterpretUnit u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
+{-
 -- | Use this to convert both 'LocThetaImage' and 
 -- 'LocThetaGraphic'.
 --
 uconvertLocThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                     => LocThetaImage t u -> LocThetaImage t u1
 uconvertLocThetaImg = uconvertR2a
-
+-}
 
 
 
 --------------------------------------------------------------------------------
 -- Combining LocThetaImages
 
-
+{-
 
 infixr 6 `catLTI`
 infixr 5 `sepLTI`
@@ -357,3 +361,4 @@ perpPunctuateLTI :: (Floating u, OPlus (t u))
                  -> LocThetaImage t u
 perpPunctuateLTI alt u = punctuateLTI alt (vvec u)
 
+-}

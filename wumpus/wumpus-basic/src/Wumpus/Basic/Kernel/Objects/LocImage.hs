@@ -25,8 +25,12 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
    , intoLocImage
    , emptyLocGraphic
-   , uconvertLocImg
 
+   , uconvLocGraphic
+   , uconvLocImageF
+   , uconvLocImageZ
+
+{-
    -- * Combining LocImages
    , catLI
    , sepLI
@@ -44,7 +48,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , punctuateLI
    , hpunctuateLI
    , vpunctuateLI
-
+-}
    )
 
    where
@@ -66,7 +70,7 @@ import Control.Applicative
 --
 -- The answer is expected to be a Functor.
 --
-type LocImage t u = LocQuery u (ImageAns t u)
+type LocImage u a       = LocQuery u (ImageAns u a)
 
 
 
@@ -74,16 +78,16 @@ type LocImage t u = LocQuery u (ImageAns t u)
 -- | LocGraphic - function from DrawingContext and start point to 
 -- a graphic /primitive/.
 --
-type LocGraphic u = LocImage UNil u
+type LocGraphic u       = LocQuery u (GraphicAns u)
 
 
 -- | Type specialized version of 'LocImage'.
 --
-type DLocImage t    = LocImage t Double
+type DLocImage a        = LocImage Double a
 
 -- | Type specialized version of 'LocGraphic'.
 --
-type DLocGraphic    = LocGraphic Double 
+type DLocGraphic        = LocGraphic Double 
 
 
 
@@ -97,11 +101,9 @@ type DLocGraphic    = LocGraphic Double
 -- The 'LocImage' is built as a function from an implicit start 
 -- point to the answer.
 --
-intoLocImage :: LocQuery u (t u) -> LocGraphic u -> LocImage t u
-intoLocImage = liftA2 (\a (Ans _ p) -> Ans a p)
-
-
-
+intoLocImage :: LocQuery u a -> LocGraphic u -> LocImage u a
+intoLocImage ma gf = promoteR1 $ \pt -> 
+                     replaceAns <$> apply1R1 ma pt <*> apply1R1 gf pt
 
 -- | 'emptyLocGraphic' : @ LocGraphic @
 --
@@ -115,18 +117,35 @@ intoLocImage = liftA2 (\a (Ans _ p) -> Ans a p)
 -- 
 emptyLocGraphic :: InterpretUnit u => LocGraphic u
 emptyLocGraphic = promoteR1 $ \pt -> 
-                  uconvertCtxF pt >>= \dpt ->
-                  return $ Ans UNil (prim1 $ zostroke $ emptyPrimPath dpt)
+                  uconvertCtxF pt >>= \dpt -> 
+                  return $ graphicAns $ prim1 $ zostroke $ emptyPrimPath dpt
 
 
--- | Use this to convert both 'LocImage' and 'LocGraphic'.
+
+
+-- | Use this to convert 'Graphic'.
 --
-uconvertLocImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-               => LocImage t u -> LocImage t u1
-uconvertLocImg = uconvertR1a
+uconvLocGraphic :: (InterpretUnit u, InterpretUnit u1) 
+                => LocGraphic u -> LocGraphic u1
+uconvLocGraphic = uconvR1 szconvGraphicAns
+
+
+-- | Use this to convert 'LocImage' with Functor answer.
+--
+uconvLocImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+               => LocImage u (t u) -> LocImage u1 (t u1)
+uconvLocImageF = uconvR1 szconvImageAnsF
 
 
 
+-- | Use this to convert 'LocImage' with unit-less answer.
+--
+uconvLocImageZ :: (InterpretUnit u, InterpretUnit u1) 
+               => LocImage u a -> LocImage u1 a
+uconvLocImageZ = uconvR1 szconvImageAnsZ
+
+
+{-
 --------------------------------------------------------------------------------
 -- Combining LocImages
 
@@ -332,3 +351,4 @@ vpunctuateLI :: (Num u, OPlus (t u))
              -> LocImage t u
 vpunctuateLI alt u = punctuateLI alt (vvec u)
 
+-}
