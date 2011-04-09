@@ -88,8 +88,8 @@ makeConnDrawing (ss,conn) =
     fn p0 p1   = disk p0 `oplus` disk p1 `oplus` dcon p0 p1 `oplus` lbl p1
 
     disk pt    = localize (fill_colour red) $ filledDisk 2 `at` pt
-    dcon p0 p1 = ignoreAns $ connect (uniformArrow curveTip conn) p0 p1
+    dcon p0 p1 = fmap ignoreAns $ connect (uniformArrow curveTip conn) p0 p1
 
-    lbl  pt    = ignoreAns $ atStartAddr (textline ss) (displaceH 10 pt) WW
+    lbl  pt    = fmap ignoreAns $ atStartAddr (textline ss) (displaceH 10 pt) WW
 
 

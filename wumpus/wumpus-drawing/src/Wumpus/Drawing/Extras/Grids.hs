@@ -195,8 +195,8 @@ minorInterior cbl@(xmin,ymin) (xmaj,ymaj) scount =
 
         vlines1 = moveStart (displaceH subw1) 
                     $ chainlike (scount-1) (displaceH subw1) (vline uh)
-        hlines  = chainlike ycount (displaceV h1) (ignoreAns hlines1)
-        vlines  = chainlike xcount (displaceH w1) (ignoreAns vlines1)
+        hlines  = chainlike ycount (displaceV h1) hlines1
+        vlines  = chainlike xcount (displaceH w1) vlines1
 
     in         (apply1R1 hlines bl)  
        `oplus` (apply1R1 vlines bl) 

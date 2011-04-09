@@ -78,7 +78,7 @@ makeDotDrawing dotF =
     promoteR1 $ \pt -> 
         let all_points = map (pt .+^) displacements
         in oconcat (dashline all_points)
-                   (map (\p1 -> ignoreAns $ dotF `at` p1) all_points)
+                   (map (\p1 -> fmap ignoreAns $ dotF `at` p1) all_points)
   where
     dashline = \ps -> localize attrUpd $ vertexPP ps >>= openStroke
 

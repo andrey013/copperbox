@@ -30,7 +30,7 @@ import System.Directory
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
-    let pic1 = runCtxPictureU std_ctx $ top_pic `cxpDown` clip_pic
+    let pic1 = runCtxPictureU std_ctx $ top_pic `vconcat` clip_pic
     writeEPS "./out/clip_pic.eps" pic1
     writeSVG "./out/clip_pic.svg" pic1
 
@@ -53,7 +53,7 @@ clip_pic = drawTracing $ do
 
 background :: RGBi -> Graphic Double
 background rgb = 
-    ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
+    fmap ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = tableDown 18 (86,16) (replicate 112 iheartHaskell)
 
@@ -61,7 +61,7 @@ background rgb =
 -- satisfactory definition?
 --
 clipGraphic :: PrimPath -> Graphic u -> Graphic u 
-clipGraphic cp = clipObject cp
+clipGraphic cp = fmap (clipObject cp)
 
 
 clip1 :: Graphic Double
@@ -85,7 +85,7 @@ iheartHaskell = promoteR1 $ \pt ->
     in body `oplus` heart
 
 
-path01 :: Path Double
+path01 :: AbsPath Double
 path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160) 
                                     >> rlineto (vec (-112) 160)
                                     >> hline (-80)
@@ -93,7 +93,7 @@ path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160)
                                     >> rlineto (vec (-112) (-160))
  
 
-path02 :: Path Double
+path02 :: AbsPath Double
 path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
                                         >> rlineto (vec 72 (-112))
                                         >> hline 80
@@ -102,9 +102,9 @@ path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
                                         >> rlineto (vec 112 (-160))
                                         >> rlineto (vec (-112) (-160))
 
-path03 :: Path Double
+path03 :: AbsPath Double
 path03 = execPath (P2 384 96) $ hline 96 >> vline 56 >> hline (-136) 
 
-path04 :: Path Double
+path04 :: AbsPath Double
 path04 = execPath (P2 328 192) $ hline 152 >> vline 56 >> hline (-192) 
 

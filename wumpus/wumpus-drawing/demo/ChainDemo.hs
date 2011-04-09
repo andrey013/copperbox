@@ -73,7 +73,7 @@ snapGridX = vector_x <$> snapmove (1,1)
 
 
 apChainIterateH :: InterpretUnit u
-                => u -> (a -> LocGraphic u) -> [a] -> LocImage Point2 u
+                => u -> (a -> LocGraphic u) -> [a] -> LocImage u (Point2 u)
 apChainIterateH dx = apChainIterate (^+^ hvec dx)  (\s pt -> pt .+^ s) (V2 0 0)
 
 

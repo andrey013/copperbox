@@ -57,13 +57,13 @@ positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
 
-pointChain :: [LocImage t Double] -> LocImage Point2 Double
+pointChain :: [LocImage Double a] -> DLocImage DPoint2
 pointChain = chainStepsV $ map (fromIntegral . (+2)) point_sizes
 
 
 fontGraphic :: RGBi -> FontDef -> DLocGraphic 
 fontGraphic rgb ft = 
-    ignoreAns $ pointChain (map mkGF point_sizes) 
+    fmap (fmap ignoreAns) $ pointChain (map mkGF point_sizes) 
   where
     mkGF sz = makeLabel rgb ft sz
 

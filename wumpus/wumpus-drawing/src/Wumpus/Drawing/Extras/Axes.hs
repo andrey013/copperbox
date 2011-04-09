@@ -43,8 +43,8 @@ orthontAxes (w,h) =
         uh    = h1 * realToFrac h
         ptX   = displaceH uw zeroPt
         ptY   = displaceV uh zeroPt
-    in  localize cap_square $         ignoreAns (connect conn1 zeroPt ptX) 
-                              `oplus` ignoreAns (connect conn1 zeroPt ptY)
+    in  localize cap_square $         fmap ignoreAns (connect conn1 zeroPt ptX) 
+                              `oplus` fmap ignoreAns (connect conn1 zeroPt ptY)
 
 
     

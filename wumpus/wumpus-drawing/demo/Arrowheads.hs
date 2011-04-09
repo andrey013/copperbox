@@ -75,7 +75,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 makeArrowDrawing :: (Arrowhead Double, Arrowhead Double) -> LocGraphic Double
 makeArrowDrawing (arrl,arrr) = 
-    promoteR1 $ \p0 -> ignoreAns $
+    promoteR1 $ \p0 -> fmap ignoreAns $
       connect (leftRightArrow arrl arrr connline) p0 (mkP1 p0)
   where
     mkP1    = (.+^ hvec 100)

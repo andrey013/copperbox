@@ -50,7 +50,8 @@ import Wumpus.Core                              -- package: wumpus-core
 -- The table grows down and right, the implicit initial point is 
 -- @top-left@.
 --
-tableDown :: InterpretUnit u => Int -> (u,u) -> [LocImage t u] -> LocImage Point2 u
+tableDown :: InterpretUnit u 
+          => Int -> (u,u) -> [LocImage u a] -> LocImage u (Point2 u)
 tableDown n (rw,rh) = chainIterate succ gen 0
   where
     gen i   = let (x,y) = i `divMod` n 
@@ -63,7 +64,7 @@ tableDown n (rw,rh) = chainIterate succ gen 0
 -- @top-left@.
 --
 tableRight :: InterpretUnit u 
-           => Int -> (u,u) -> [LocImage t u] -> LocImage Point2 u
+           => Int -> (u,u) -> [LocImage u a] -> LocImage u (Point2 u)
 tableRight n (rw,rh) = chainIterate succ gen 0
   where
     gen i   = let (y,x) = i `divMod` n 
@@ -75,7 +76,8 @@ tableRight n (rw,rh) = chainIterate succ gen 0
 --
 -- The chain grows right by the supplied increment.
 --
-chainH :: InterpretUnit u => u -> [LocImage t u] -> LocImage Point2 u
+chainH :: InterpretUnit u 
+       => u -> [LocImage u a] -> LocImage u (Point2 u)
 chainH dx = chainDisplace (displaceH dx)
 
 
@@ -84,7 +86,8 @@ chainH dx = chainDisplace (displaceH dx)
 --
 -- The chain grows up by the supplied increment.
 --
-chainV :: InterpretUnit u => u -> [LocImage t u] -> LocImage Point2 u
+chainV :: InterpretUnit u 
+       => u -> [LocImage u a] -> LocImage u (Point2 u)
 chainV dy = chainDisplace (displaceV dy)
 
 
@@ -96,7 +99,7 @@ chainV dy = chainDisplace (displaceV dy)
 -- iterated with radially the supplied angle.
 --
 chainRadial :: (Floating u, InterpretUnit u)
-            => u -> Radian -> Radian -> [LocImage t u] -> LocImage Point2 u
+            => u -> Radian -> Radian -> [LocImage u a] -> LocImage u (Point2 u)
 chainRadial radius start_ang rot_ang = 
     chainIterate (+ rot_ang) (\a -> displaceVec (avec a radius)) start_ang
 
@@ -107,7 +110,8 @@ chainRadial radius start_ang rot_ang =
 --
 -- This is a @scanl@ successive displacing the start point.
 --
-chainStepsH :: InterpretUnit u => [u] -> [LocImage t u] -> LocImage Point2 u
+chainStepsH :: InterpretUnit u 
+            => [u] -> [LocImage u a] -> LocImage u (Point2 u)
 chainStepsH xs gs = interChainDisplace (map displaceH xs) gs
 
 
@@ -117,7 +121,8 @@ chainStepsH xs gs = interChainDisplace (map displaceH xs) gs
 --
 -- This is a @scanl@ successive displacing the start point.
 --
-chainStepsV :: InterpretUnit u => [u] -> [LocImage t u] -> LocImage Point2 u
+chainStepsV :: InterpretUnit u 
+            => [u] -> [LocImage u a] -> LocImage u (Point2 u)
 chainStepsV xs gs = interChainDisplace (map displaceV xs) gs
  
 
