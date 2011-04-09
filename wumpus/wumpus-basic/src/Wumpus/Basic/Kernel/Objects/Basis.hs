@@ -31,7 +31,7 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , graphicAns
   , replaceAns
   , ignoreAns
-
+  , answer
   
   , szconvGraphicAns 
   , szconvImageAnsF
@@ -41,6 +41,9 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , at
   , atIncline
   , connect
+
+  , decorate
+
 
 {-
   , ignoreAns
@@ -67,6 +70,8 @@ import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Core                              -- package: wumpus-core
 
 
+import Control.Applicative
+
 type LocQuery u a               = CF (Point2 u -> a)
 type LocThetaQuery u a          = CF (Point2 u -> Radian -> a)
 type ConnectorQuery u a         = CF (Point2 u -> Point2 u -> a)
@@ -76,9 +81,12 @@ type ConnectorQuery u a         = CF (Point2 u -> Point2 u -> a)
 -- though it is never scrutinized.
 -- 
 
-type GraphicAns u = ImageAns u ()
 
 data ImageAns u a = Ans CatPrim a
+
+type GraphicAns u = ImageAns u (UNil u)
+
+
 
 type instance DUnit (ImageAns u a) = u
 
@@ -123,19 +131,6 @@ instance (Translate a, ScalarUnit u, u ~ DUnit a) =>
   translate dx dy (Ans cp a) = 
     Ans (translate (toPsPoint dx) (toPsPoint dy) cp) (translate dx dy a) 
 
--- For wumpus-core
-
-instance Rotate () where
-  rotate _ = id
-
-instance RotateAbout () where
-  rotateAbout _ _ = id
-
-instance Scale () where
-  scale _ _ = id
-
-instance Translate () where
-  translate _ _ = id
 
 --------------------------------------------------------------------------------
 
@@ -149,20 +144,33 @@ replaceAns :: ans -> ImageAns u a -> ImageAns u ans
 replaceAns ans (Ans prim _) = Ans prim ans
 
 
--- | Ignore the answer produced by an Image (or LocImage, etc.)
--- and form a Graphic instead.
+-- | Turn an imageAns into a GraphicAns by ignoring the 
+-- result.
+-- 
+-- Usually this function will be used with one of the @push@ 
+-- family of combinators.
+--
+-- > LocImage-to-LocGraphic = pushR1 ignoreAns 
 --
 ignoreAns :: ImageAns u a -> GraphicAns u
-ignoreAns (Ans prim _) = Ans prim ()
+ignoreAns(Ans prim _) = Ans prim UNil
 
 
 
 graphicAns :: CatPrim -> GraphicAns u
-graphicAns prim = Ans prim ()
+graphicAns prim = Ans prim UNil
+
+-- | Extractor for the answer part of an image.
+--
+answer :: ImageAns u a -> a
+answer (Ans _ a) = a
+
+--------------------------------------------------------------------------------
+-- Helpers for unit conversion...
 
 
 szconvGraphicAns :: FontSize -> GraphicAns u -> GraphicAns u1
-szconvGraphicAns _ (Ans prim ()) = Ans prim ()
+szconvGraphicAns _ (Ans prim _) = Ans prim UNil
 
 
 szconvImageAnsF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
@@ -198,6 +206,18 @@ atIncline = apply2R2
 connect :: ConnectorQuery u a -> Point2 u -> Point2 u -> CF a
 connect = apply2R2
 
+
+
+
+-- | Decorate an Image by superimposing a Graphic.
+--
+-- Note - this function has a very general type signature and
+-- supports various graphic types:
+--
+decorate :: CF (ImageAns u a) -> CF (GraphicAns u) -> CF (ImageAns u a) 
+decorate img gf = op <$> img <*> gf
+  where
+    op (Ans cp a) (Ans cp1 _) = Ans (cp `oplus` cp1) a
 
 
 
@@ -394,6 +414,8 @@ clipObject pp =
 -- The function concatenates the CatPrims formed by both Images
 -- and uses the pure combiner to build an answer from the
 -- intermediate answers.
+--
+-- NOTE - note useful with CF representation change.
 --
 combind :: Monad cf 
         => (t1 u -> t2 u -> t3 u)

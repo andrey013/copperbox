@@ -52,7 +52,7 @@ type Image u a          = CF (ImageAns u a)
 -- | Graphic - function from the DrawingContext to a graphic 
 -- /primitive/.
 --
-type Graphic u          = Image u ()
+type Graphic u          = CF (GraphicAns u)
 
 
 

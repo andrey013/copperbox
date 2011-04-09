@@ -38,6 +38,10 @@ module Wumpus.Basic.Kernel.Base.ContextFun
   , promoteR1
   , promoteR2
 
+  , pushR0
+  , pushR1
+  , pushR2
+
   , apply1R1
   , apply1R2
   , apply2R2
@@ -203,6 +207,36 @@ promoteR1 mf = CF $ \ctx r1 -> getCF (mf r1) ctx
 
 promoteR2 :: (r1 -> r2 -> CF a) -> CF (r1 -> r2 -> a)
 promoteR2 mf = CF $ \ctx r1 r2 -> getCF (mf r1 r2) ctx
+
+-- | Apply the value transformer to the answer of the context 
+-- function. Figuratively /push it right/ so it works on the 
+-- answer.
+--
+-- > pushR0 = fmap
+--
+pushR0 :: (a -> a1) -> CF a -> CF a1
+pushR0 = fmap
+
+
+-- | Apply the value transformer to the answer of the context 
+-- function. Figuratively /push it right/ so it works on the 
+-- answer.
+--
+-- > pushR1 = fmap . fmap
+--
+pushR1 :: (a -> a1) -> CF (r1 -> a) -> CF (r1 -> a1)
+pushR1 = fmap . fmap
+
+-- | Apply the value transformer to the answer of the context 
+-- function. Figuratively /push it right/ so it works on the 
+-- answer.
+--
+-- > pushR2 = fmap . fmap . fmap 
+--
+pushR2 :: (a -> a1) -> CF (r1 -> r2 -> a) -> CF (r1 -> r2 -> a1)
+pushR2 = fmap . fmap . fmap
+
+
 
 
 apply1R1 :: CF (r1 -> a) -> r1 -> CF a

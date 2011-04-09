@@ -59,7 +59,8 @@ mf = do
     
 
 testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawBl rpos = filledDisk 2 `oplus` (ignoreAns $ rectBl `startAddr` rpos)
+testDrawBl rpos = 
+    filledDisk 2 `oplus` (pushR1 ignoreAns $ rectBl `startAddr` rpos)
 
 rectBl :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u
 rectBl = makeBoundedLocRectGraphic $ makePosObject (return ortt) (mkRectBl w h)
@@ -79,7 +80,9 @@ mkRectBl w h = strokedRectangle w h
 
 
 testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawMinor rpos = filledDisk 2 `oplus` (ignoreAns $ rectMinor `startAddr` rpos)
+testDrawMinor rpos = 
+    filledDisk 2 `oplus` (pushR1 ignoreAns $ rectMinor `startAddr` rpos)
+
 
 rectMinor :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u 
 rectMinor = 

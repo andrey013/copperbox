@@ -7,6 +7,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                      -- package: wumpus-core
 
+import Control.Applicative
 import System.Directory
 
 main :: IO ()
@@ -33,25 +34,34 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    draw $ spaceAdv (hvec 10) [text01, text02, text01] `at` P2 0 120
-    draw $ concatAdv [text01, text02, text01] `at` P2 0 80
-    draw $ (miniDisk `catAdv` text01 `catAdv` miniDisk) `at` P2 0 40 
-    draw $ (miniDisk `catAdv` text02 `catAdv` miniDisk) `at` P2 0 0 
+    drawl (P2 0 120) $ 
+        runAdvanceObject $ evenspace (hvec 10) [text01, text02, text01]
+
+    drawl (P2 0 80) $ 
+        runAdvanceObject $ nexts [text01, text02, text01]
+
+    drawl (P2 0 40) $ 
+        runAdvanceObject (miniDisk `next` text01 `next` miniDisk)
+
+    drawl (P2 0 0) $
+        runAdvanceObject (miniDisk `next` text02 `next` miniDisk)
 
 
 -- Normally, text calculate the advance vector from the font 
 -- metrics...
 --
-text01 :: AdvGraphic Double
-text01 = replaceAns (hvec 84) $ plainTextLine "text01"
+text01 :: AdvanceObject Double
+text01 = makeAdvanceObject (pure $ hvec 84) $ plainTextLine "text01"
     
 
-text02 :: AdvGraphic Double
-text02 = replaceAns (hvec 210) $ plainTextLine "text number two"
+text02 :: AdvanceObject Double
+text02 = makeAdvanceObject (pure $ hvec 210) $ plainTextLine "text number two"
 
 
-miniDisk :: AdvGraphic Double
-miniDisk = replaceAns (V2 0 0) $ localize (fill_colour sienna) $ filledDisk 3
+miniDisk :: AdvanceObject Double
+miniDisk = makeAdvanceObject (pure $ V2 0 0) disk1 
+  where
+   disk1 = localize (fill_colour sienna) $ filledDisk 3
 
 
 sienna :: RGBi

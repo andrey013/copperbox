@@ -55,7 +55,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , padUpPO
   , padDownPO
 
---  , illustratePosObject
+  , illustratePosObject
 
 
   ) where
@@ -97,8 +97,8 @@ type PosDraw u = Point2 u -> GraphicAns u
 -- | A positionable \"Object\" that is drawn as a 
 -- 'BoundedLocGraphic'.
 --
-newtype PosObject u = PosObject
-         { getPosObject :: CF (Orientation u, PosDraw u) }
+newtype PosObject u = PosObject 
+          { getPosObject :: CF (Orientation u, PosDraw u) }
 
 type instance DUnit (PosObject u) = u
     
@@ -152,11 +152,11 @@ poconcat a b = PosObject body
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 makePosObject :: Query (Orientation u) -> LocGraphic u -> PosObject u
-makePosObject qortt img = PosObject body
+makePosObject qortt gf = PosObject body
   where
     body = drawingCtx >>= \ctx -> 
            let ortt = runCF ctx qortt
-               pf   = runCF ctx img
+               pf   = runCF ctx gf
            in return (ortt,pf)
 
 
@@ -309,7 +309,7 @@ genPad fn po = PosObject body
 
 --------------------------------------------------------------------------------
 
-{-
+
 -- | Illustrate a 'PosObject' by super-imposing its 'Orientation'.
 --
 -- This turns the 'PosObject' into a 'LocImage' drawn at the locus
@@ -320,7 +320,7 @@ illustratePosObject :: InterpretUnit u
 illustratePosObject (PosObject mf)  = promoteR1 $ \pt ->   
     mf >>= \(ortt,ptf) -> 
     decorate (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
--}
+
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u

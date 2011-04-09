@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,23 +19,28 @@
 module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   (
 
-  -- * Advance-vector graphic
-    AdvGraphic
+  -- * Advance-vector object and graphic
+    AdvanceObject
+  , DAdvanceObject
+  
+  , AdvGraphic
   , DAdvGraphic
 
-  , intoAdvGraphic
-  , emptyAdvGraphic
+  , makeAdvanceObject
+  , emptyAdvanceObject
+
+  , runAdvanceObject
 
   -- * Composition
-{-  , catAdv
-  , sepAdv
-  , repeatAdv
-  , concatAdv
-  , spaceAdv
-  , encloseAdv
-  , punctuateAdv
-  , fillAdv
--}
+  , next
+  , nexts
+  , nextSpace
+  , evenspace
+
+  , repeatnext
+  , punctuate
+  , advfill
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -45,148 +51,178 @@ import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
+import Control.Applicative
+import Data.Monoid
+
+
+
+type AdvDraw u = Point2 u -> GraphicAns u
 
 
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
 --
-type AdvGraphic u      = LocImage u (Vec2 u)
+newtype AdvanceObject u = AdvanceObject 
+          { getAdvanceObject :: CF (Vec2 u, AdvDraw u) }
 
-type DAdvGraphic       = AdvGraphic Double
+type instance DUnit (AdvanceObject u) = u
 
+type DAdvanceObject     = AdvanceObject Double
+
+
+type AdvGraphic u       = LocImage u (Vec2 u)
+type DAdvGraphic        = AdvGraphic Double
 
 
 --------------------------------------------------------------------------------
 
+instance (InterpretUnit u) => Monoid (AdvanceObject u) where
+  mempty  = emptyAdvanceObject
+  mappend = advplus
 
 
-
--- | 'intoAdvGraphic' : @ loc_context_function * graphic -> Image @
+-- | 'makeAdvanceObject' : @ loc_context_function * graphic -> AdvanceObject @
 --
--- Build an 'AdvGraphic' from a context function ('CF') that 
+-- Build an 'AdvanceObject' from a context function ('CF') that 
 -- generates the answer displacement vector and a 'LocGraphic' 
--- that draws the 'AdvGraphic'.
+-- that draws the 'AdvanceObject'.
 --
-intoAdvGraphic :: LocQuery u (Vec2 u)
-               -> LocGraphic u 
-               -> AdvGraphic u
-intoAdvGraphic = intoLocImage
+makeAdvanceObject :: Query (Vec2 u)
+                  -> LocGraphic u 
+                  -> AdvanceObject u
+makeAdvanceObject qvec gf = AdvanceObject body
+  where
+    body = drawingCtx >>= \ctx -> 
+           let v1   = runCF ctx qvec
+               pf   = runCF ctx gf
+           in return (v1,pf)
 
 
--- | 'emptyAdvGraphicAU' : @ AdvGraphic @
+
+-- | 'emptyAdvanceObjectAU' : @ AdvanceObject @
 --
--- Build an empty 'AdvGraphic'.
+-- Build an empty 'AdvanceObject'.
 -- 
--- The 'emptyAdvGraphic' is treated as a /null primitive/ by 
+-- The 'emptyAdvanceObject' is treated as a /null primitive/ by 
 -- @Wumpus-Core@ and is not drawn, the answer vector generated is
 -- the zero vector @(V2 0 0)@.
 -- 
-emptyAdvGraphic :: InterpretUnit u => AdvGraphic u
-emptyAdvGraphic = fmap (fmap (replaceAns (V2 0 0))) $ emptyLocGraphic
+emptyAdvanceObject :: InterpretUnit u => AdvanceObject u
+emptyAdvanceObject = makeAdvanceObject (pure $ V2 0 0) emptyLocGraphic
+
+
+runAdvanceObject :: AdvanceObject u -> AdvGraphic u
+runAdvanceObject (AdvanceObject mf) = promoteR1 $ \pt -> 
+   (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
 
 
 --------------------------------------------------------------------------------
--- Combining AdvGraphics
+-- Combining AdvanceObjects
 
--- | Helper function - general combiner.
+
+
+-- | Primitive combination.
+-- 
+-- Move second object by the advance vector of the first. Sum 
+-- both advance vecots.
 --
-advcombine :: AdvGraphic u 
-           -> (AdvGraphic u -> AdvGraphic u -> AdvGraphic u) 
-           -> [AdvGraphic u] 
-           -> AdvGraphic u
-advcombine empty _  []     = empty
-advcombine _     op (x:xs) = step x xs
+advplus :: Num u 
+          => AdvanceObject u -> AdvanceObject u -> AdvanceObject u
+advplus a b = AdvanceObject body
+  where 
+    body = drawingCtx >>= \ctx ->
+           let (v0,pf0) = runCF ctx (getAdvanceObject a)
+               (v1,pf1) = runCF ctx (getAdvanceObject b)
+               pf       = \pt -> pf0 pt `oplus` pf1 (pt .+^ v0)
+           in return (v0 ^+^ v1, pf)
+
+-- Helper for list concatenation.
+-- 
+listcat :: InterpretUnit u 
+        => (AdvanceObject u -> AdvanceObject u -> AdvanceObject u)
+        -> [AdvanceObject u] -> AdvanceObject u
+listcat _ []     = emptyAdvanceObject
+listcat op (x:xs) = go x xs
   where
-    step a (b:bs) = step (a `op` b) bs
-    step a []     = a
+    go acc []     = acc
+    go acc (b:bs) = go (acc `op` b) bs
 
 
 
-{-
+-- AdvanceObject does not have the same ability to be concatenated
+-- as PosObject - all the advance vector says is \"where to go 
+-- next\". Nothing in the AdvanceObject tracks the boundary so we
+-- cannot implement the Concat classes.
 
--- Naming convention - binary functions are favoured for shorter names.
-
-infixr 6 `catAdv`
-infixr 5 `sepAdv`
+infixr 6 `next`
 
 
-
--- | Concatenate the two AdvGraphics.
+-- | Draw the first AdvanceObject and use the advance vector to 
+-- displace the second AdvanceObject.
 --
--- Note - the concatenation uses the answer vector of the first 
--- AdvGraphic to move the start of the second AdvGraphic.
+-- The final answer is the sum of both advance vectors.
 --
--- This is different behaviour to the concatenation of LocImage.
+next :: Num u 
+     => AdvanceObject u -> AdvanceObject u -> AdvanceObject u
+next = advplus
+  
+
+-- | Concatenate the list of AdvanceObjects with 'next'.
 --
--- Usually @cat@ is expected to put two AdvGraphics 
--- \"side-by-side\", whereas @cat@ on a LocImage is expected to 
--- draw the second LocImage on top of the first.
+nexts :: InterpretUnit u => [AdvanceObject u] -> AdvanceObject u
+nexts = listcat next
+
+
+-- | Combine the AdvanceObjects using the answer vector of the 
+-- first object plus the separator to move the start of the second
+-- object. 
 --
-catAdv :: Num u => AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-catAdv af ag = combind (^+^) af (\v1 -> moveStart (displaceVec v1) ag)
+nextSpace :: Num u 
+          => Vec2 u -> AdvanceObject u -> AdvanceObject u -> AdvanceObject u
+nextSpace sep a b = AdvanceObject body
+  where 
+    body = drawingCtx >>= \ctx ->
+           let (v0,pf0) = runCF ctx (getAdvanceObject a)
+               (v1,pf1) = runCF ctx (getAdvanceObject b)
+               pf       = \pt -> pf0 pt `oplus` pf1 (displaceVec (sep ^+^ v0) pt)
+           in return (v0 ^+^ sep ^+^ v1, pf)
 
-
-
--- | Concatenate the two AdvGraphics spacing them by the supplied 
--- vector.
+-- | List version of 'nextSpace'.
 --
--- Note - the concatenation uses the answer vector of the first 
--- AdvGraphic and the separator to move the start of the second 
--- AdvGraphic.
+evenspace :: InterpretUnit u 
+          => Vec2 u -> [AdvanceObject u] -> AdvanceObject u
+evenspace v = listcat (nextSpace v)
+
+
+
+-- | Repeat the AdvanceObject @n@ times, each time moving @next@.
 --
--- This is different behaviour to the sep-concat of LocImage.
+repeatnext :: InterpretUnit u => Int -> AdvanceObject u -> AdvanceObject u
+repeatnext n = nexts . replicate n
+
+
+-- | Concatenate the list of AdvanceObjects, going next and adding
+-- the separator at each step.
 --
-sepAdv :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-sepAdv sep af ag = combind (\v1 v2 -> v1 ^+^ sep ^+^  v2) af
-                           (\v1 -> moveStart (displaceVec (v1 ^+^ sep)) ag)
-
--- | Repeat the AdvGraphic @n@ times concatenating the result.
---
-repeatAdv :: InterpretUnit u => Int -> AdvGraphic u -> AdvGraphic u
-repeatAdv n = concatAdv . replicate n
-
-
--- | Concatenate the list of AdvGraphic with 'catAdv'.
---
--- Note - unlike 'LocImage', AdvGraphic has a singular definition
--- of /empty/, so the list combinators like 'concatAdv' do not 
--- need to be supplied an alternative to draw when the list is 
--- empty.
---
-concatAdv :: InterpretUnit u => [AdvGraphic u] -> AdvGraphic u
-concatAdv = advcombine emptyAdvGraphic catAdv
+punctuate :: InterpretUnit u 
+          => AdvanceObject u -> [AdvanceObject u] -> AdvanceObject u
+punctuate sep =  listcat (\a b -> a `next` sep `next` b)
 
 
 
--- | Concatenate the list of AdvGraphic with 'sepAdv'.
---
-spaceAdv :: InterpretUnit u => Vec2 u -> [AdvGraphic u] -> AdvGraphic u
-spaceAdv sv = advcombine emptyAdvGraphic (sepAdv sv) 
-
-
-
--- | Enclose l r x
---
-encloseAdv :: InterpretUnit u 
-           => AdvGraphic u -> AdvGraphic u -> AdvGraphic u -> AdvGraphic u
-encloseAdv l r obj = l `catAdv` obj `catAdv` r 
-
-
--- | Concatenate the list of AdvGraphic with 'advsep'.
---
-punctuateAdv :: InterpretUnit u => AdvGraphic u -> [AdvGraphic u] -> AdvGraphic u
-punctuateAdv sep = 
-    advcombine emptyAdvGraphic (\a b -> a `catAdv` sep `catAdv` b)
-
-
--- | Render the supplied AdvGraphic, but swap the result advance
+-- | Render the supplied AdvanceObject, but swap the result advance
 -- for the supplied vector. This function has behaviour analogue 
 -- to @fill@ in the @wl-pprint@ library.
 -- 
-fillAdv :: Num u => Vec2 u -> AdvGraphic u -> AdvGraphic u
-fillAdv sv = replaceAns sv
+advfill :: Num u => Vec2 u -> AdvanceObject u -> AdvanceObject u
+advfill sv a = AdvanceObject body
+  where 
+    body = drawingCtx >>= \ctx ->
+           let (_,pf) = runCF ctx (getAdvanceObject a) in return (sv, pf)
 
--}
+
+
