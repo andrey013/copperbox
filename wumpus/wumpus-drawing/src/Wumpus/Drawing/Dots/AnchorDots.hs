@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -85,15 +86,15 @@ data DotAnchor u = forall s.
                               , radial_anchor   :: Radian   -> Point2 u
                               , cardinal_anchor :: Cardinal -> Point2 u }
 
+type instance DUnit (DotAnchor u) = u
 
-
-instance CenterAnchor DotAnchor u where
+instance CenterAnchor (DotAnchor u) where
   center (DotAnchor ca _ _) = ca
 
-instance RadialAnchor DotAnchor u where
+instance RadialAnchor (DotAnchor u) where
    radialAnchor theta (DotAnchor _ ra _) = ra theta
 
-instance CardinalAnchor DotAnchor u where
+instance CardinalAnchor (DotAnchor u) where
    north (DotAnchor _ _ c1) = c1 NORTH
    south (DotAnchor _ _ c1) = c1 SOUTH
    east  (DotAnchor _ _ c1) = c1 EAST
@@ -101,7 +102,7 @@ instance CardinalAnchor DotAnchor u where
 
 
 
-instance CardinalAnchor2 DotAnchor u where
+instance CardinalAnchor2 (DotAnchor u) where
    northeast (DotAnchor _ _ c1) = c1 NORTH_EAST
    southeast (DotAnchor _ _ c1) = c1 SOUTH_EAST
    southwest (DotAnchor _ _ c1) = c1 SOUTH_WEST
@@ -201,7 +202,7 @@ polygonLDO mk =
 --------------------------------------------------------------------------------
 
 
-type DotLocImage u = LocImage DotAnchor u
+type DotLocImage u = LocImage u (DotAnchor u)
 
 type DDotLocImage = DotLocImage Double 
 
@@ -217,7 +218,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
-dotText ss = mapAns bboxRectAnchor $ ccTextline ss
+dotText ss = pushR1 (mapAns bboxRectAnchor) $ ccTextline ss
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 

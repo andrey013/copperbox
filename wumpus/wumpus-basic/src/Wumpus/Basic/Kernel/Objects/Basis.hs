@@ -29,9 +29,12 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ImageAns(..)
 
   , graphicAns
+  , mapAns
   , replaceAns
   , ignoreAns
   , answer
+  , hyperlink  
+  , clipObject 
   
   , szconvGraphicAns 
   , szconvImageAnsF
@@ -39,28 +42,19 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
 
   , at
+  , incline
   , atIncline
   , connect
 
-  , decorate
+  , decorateR0
+  , decorateR1
+  , decorateR2
 
+  , elaborateR0
+  , elaborateR1
+  , elaborateR2
+  
 
-{-
-  , ignoreAns
-  , replaceAns
-  , mapAns
-  , trafoImageAns
-
-  , decorate
-  , adecorate
-  , elaborate
-  , aelaborate
-
-  , hyperlink
-  , clipObject
-
-  , combind
--}
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -134,6 +128,19 @@ instance (Translate a, ScalarUnit u, u ~ DUnit a) =>
 
 --------------------------------------------------------------------------------
 
+
+
+-- | Map the answer produced by a graphic object.
+--
+-- Note - the new answer must share the same unit type as the
+-- initial answer, although it does not need to have the same
+-- wrapper type.
+--
+mapAns :: (a -> a1) -> ImageAns u a -> ImageAns u a1
+mapAns f (Ans cp a) = Ans cp (f a) 
+
+
+
 -- | Replace the answer produced by a graphic object.
 --
 -- Note - the new answer must share the same unit type as the
@@ -165,6 +172,21 @@ graphicAns prim = Ans prim UNil
 answer :: ImageAns u a -> a
 answer (Ans _ a) = a
 
+
+-- | Note - maybe this requires an arity family instead?
+--
+hyperlink :: XLink -> ImageAns u a -> ImageAns u a
+hyperlink hypl (Ans prim a) = Ans (cpmap (xlinkPrim hypl) prim) a
+
+
+-- | Clip a graphic object.
+-- 
+-- Note - maybe this requires an arity family instead?
+--
+clipObject :: PrimPath -> ImageAns t u -> ImageAns t u
+clipObject pp (Ans prim a) =  Ans (cpmap (clip pp) prim) a
+
+
 --------------------------------------------------------------------------------
 -- Helpers for unit conversion...
 
@@ -195,6 +217,22 @@ at :: LocQuery u a -> Point2 u -> CF a
 at = apply1R1
 
 
+
+infixr 1 `incline`
+
+
+-- | Downcast a 'LocThetaQuery' function by applying it to the 
+-- supplied angle, making an arity-one Context Function (a 
+-- 'LocCF'). 
+-- 
+incline :: LocThetaQuery u a -> Radian -> LocQuery u a
+incline = apply1R2
+
+
+-- | Downcast a LocThetaQuery function by applying it to the 
+-- supplied point and angle, making an arity-zero Context Function 
+-- (a CF). 
+--
 atIncline :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
 atIncline = apply2R2
 
@@ -214,10 +252,66 @@ connect = apply2R2
 -- Note - this function has a very general type signature and
 -- supports various graphic types:
 --
-decorate :: CF (ImageAns u a) -> CF (GraphicAns u) -> CF (ImageAns u a) 
-decorate img gf = op <$> img <*> gf
+decorateR0 :: CF (ImageAns u a) -> CF (GraphicAns u) -> CF (ImageAns u a) 
+decorateR0 img gf = op <$> img <*> gf
   where
     op (Ans cp a) (Ans cp1 _) = Ans (cp `oplus` cp1) a
+
+
+decorateR1 :: CF (r1 -> ImageAns u a) 
+           -> CF (r1 -> GraphicAns u) 
+           -> CF (r1 -> ImageAns u a) 
+decorateR1 img gf = promoteR1 $ \r1 ->
+    op <$> apply1R1 img r1 <*> apply1R1 gf r1
+  where
+    op (Ans cp a) (Ans cp1 _) = Ans (cp `oplus` cp1) a
+
+
+decorateR2 :: CF (r1 -> r2 -> ImageAns u a) 
+           -> CF (r1 -> r2 -> GraphicAns u) 
+           -> CF (r1 -> r2 -> ImageAns u a) 
+decorateR2 img gf = promoteR2 $ \r1 r2 ->
+    op <$> apply2R2 img r1 r2 <*> apply2R2 gf r1 r2
+  where
+    op (Ans cp a) (Ans cp1 _) = Ans (cp `oplus` cp1) a
+
+
+-- | Decorate an Image by superimposing a Graphic.
+--
+-- Note - this function has a very general type signature and
+-- supports various graphic types:
+--
+elaborateR0 :: CF (ImageAns u a) -> (a -> CF (GraphicAns u)) -> CF (ImageAns u a) 
+elaborateR0 img gf = 
+    img  >>= \(Ans p1 a) ->
+    gf a >>= \(Ans p2 _) -> 
+    return $ Ans (p1 `oplus` p2) a
+
+
+
+
+-- | Decorate an Image by superimposing a Graphic.
+--
+-- Note - this function has a very general type signature and
+-- supports various graphic types:
+--
+elaborateR1 :: CF (r1 -> ImageAns u a) 
+            -> (a -> CF (r1 -> GraphicAns u)) 
+            -> CF (r1 -> ImageAns u a) 
+elaborateR1 img gf = promoteR1 $ \r1 -> 
+    apply1R1 img r1    >>= \(Ans p1 a) ->
+    apply1R1 (gf a) r1 >>= \(Ans p2 _) -> 
+    return $ Ans (p1 `oplus` p2) a
+
+
+
+elaborateR2 :: CF (r1 -> r2 -> ImageAns u a) 
+            -> (a -> CF (r1 -> r2 -> GraphicAns u)) 
+            -> CF (r1 -> r2 -> ImageAns u a) 
+elaborateR2 img gf = promoteR2 $ \r1 r2 -> 
+    apply2R2 img r1 r2    >>= \(Ans p1 a) ->
+    apply2R2 (gf a) r1 r2 >>= \(Ans p2 _) -> 
+    return $ Ans (p1 `oplus` p2) a
 
 
 

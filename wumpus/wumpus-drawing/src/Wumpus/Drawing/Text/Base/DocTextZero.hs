@@ -314,9 +314,9 @@ interpret :: (Fractional u, Ord u, InterpretUnit u)
 interpret Empty             = interpEmpty
 interpret Space             = interpSpace
 interpret (Text esc)        = interpText esc
-interpret (Cat a b)         = hcatPO    <$> interpret a <*> interpret b
+interpret (Cat a b)         = hconcat <$> interpret a <*> interpret b
 interpret (VCat va a b)     = 
-    pvsep va  <$> lineSpace <*> interpret a <*> interpret b
+    valignSpace va  <$> lineSpace <*> interpret a <*> interpret b
 
 interpret (Fill va w a)     = ppad va w <$> interpret a
 interpret (DLocal upd a)    = localizePO upd <$> interpret a
@@ -355,14 +355,6 @@ interpSpace :: InterpretUnit u
 interpSpace = return $ makePosObject qy1  emptyLocGraphic
   where
     qy1 = charOrientationZero $ CharEscInt $ ord ' '
-
-pvsep :: (Fractional u, Ord u, InterpretUnit u)
-       => VAlign -> u -> PosObject u -> PosObject u 
-       -> PosObject u
-pvsep VLeft     = vsepLeftPO
-pvsep VCenter   = vsepCenterPO
-pvsep VRight    = vsepRightPO
-
 
 
 ppad :: (Fractional u, Ord u) 

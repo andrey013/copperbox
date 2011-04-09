@@ -37,9 +37,9 @@ module Wumpus.Basic.Kernel.Objects.Bounded
 
   , centerOrthoBBox
 
---  , illustrateBoundedGraphic
---  , illustrateBoundedLocGraphic
---  , illustrateBoundedLocThetaGraphic
+  , illustrateBoundedGraphic
+  , illustrateBoundedLocGraphic
+  , illustrateBoundedLocThetaGraphic
 
   , bbrectangle
 
@@ -159,12 +159,12 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
 --------------------------------------------------------------------------------
 -- 
 
-{-
+
 -- | Draw a BoundedGraphic, illustrating the bounding box.
 --
 illustrateBoundedGraphic :: InterpretUnit u
                          => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic gf = elaborate gf bbrectangle
+illustrateBoundedGraphic gf = elaborateR0 gf bbrectangle
 
 
 
@@ -172,11 +172,9 @@ illustrateBoundedGraphic gf = elaborate gf bbrectangle
 --
 illustrateBoundedLocGraphic :: InterpretUnit u
                             => BoundedLocGraphic u -> BoundedLocGraphic u
-illustrateBoundedLocGraphic gf = elaborate gf fn
+illustrateBoundedLocGraphic gf = elaborateR1 gf fn
   where
     fn bb = lift0R1 (bbrectangle bb)
-
-
 
 
 
@@ -186,11 +184,11 @@ illustrateBoundedLocGraphic gf = elaborate gf fn
 illustrateBoundedLocThetaGraphic :: InterpretUnit u
                                  => BoundedLocThetaGraphic u 
                                  -> BoundedLocThetaGraphic u
-illustrateBoundedLocThetaGraphic gf = elaborate gf fn
+illustrateBoundedLocThetaGraphic gf = elaborateR2 gf fn
   where
     fn bb = lift0R2 (bbrectangle bb)
 
--}
+
 
 
 bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u

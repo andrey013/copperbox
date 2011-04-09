@@ -93,10 +93,9 @@ multiAlignRight ss =
 
 renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
                 => VAlign -> [TextObject u] -> LocRectTextLine u
-renderMultiLine va docs = lift0R2 body >>= posTextWithMargins
+renderMultiLine va docs = body >>= posTextWithMargins
   where
-    body     = (\dy -> valignSepPO emptyPosObject va dy $ reverse docs)
-                 <$> textlineSpace
+    body  = (\dy -> alignColumnSep va dy $ reverse docs) <$> textlineSpace
 
 
 makeTextObject :: InterpretUnit u => String -> TextObject u

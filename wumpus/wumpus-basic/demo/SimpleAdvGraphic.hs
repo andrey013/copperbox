@@ -61,7 +61,7 @@ text02 = makeAdvanceObject (pure $ hvec 210) $ plainTextLine "text number two"
 miniDisk :: AdvanceObject Double
 miniDisk = makeAdvanceObject (pure $ V2 0 0) disk1 
   where
-   disk1 = localize (fill_colour sienna) $ filledDisk 3
+    disk1 = localize (fill_colour sienna) $ filledDisk 3
 
 
 sienna :: RGBi

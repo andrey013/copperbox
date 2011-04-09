@@ -319,7 +319,7 @@ illustratePosObject :: InterpretUnit u
                    => PosObject u -> LocGraphic u
 illustratePosObject (PosObject mf)  = promoteR1 $ \pt ->   
     mf >>= \(ortt,ptf) -> 
-    decorate (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
+    decorateR0 (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
 
 
 illustrateOrientation :: InterpretUnit u 

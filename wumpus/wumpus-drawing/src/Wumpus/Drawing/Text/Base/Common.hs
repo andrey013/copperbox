@@ -56,9 +56,9 @@ posTextWithMargins obj = promoteR2 $ \pt addr ->
 -- | Single line text, returning its advance vector.
 --
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
-advtext esc = lift0R1 (textVector esc) >>= body
+advtext esc = textVector esc >>= body
   where
-    body v = replaceAns v $ escTextLine esc
+    body v = pushR1 (replaceAns v) $ escTextLine esc
 
 
 textVector :: (DrawingCtxM m, InterpretUnit u) 
