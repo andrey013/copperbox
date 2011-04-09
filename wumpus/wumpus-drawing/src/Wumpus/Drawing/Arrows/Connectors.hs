@@ -49,7 +49,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 -- /Image/, drawing it returns the path - positions can be taken 
 -- on the path (e.g. @midpoint@) for further decoration.
 --
-type PathConnector u    = ConnectorImage AbsPath u
+type PathConnector u    = ConnectorImage u (AbsPath u)
 type DPathConnector     = PathConnector Double
 
 
@@ -77,7 +77,7 @@ leftArrow arrh conn = promoteR2 $ \p0 p1 ->
         ang     = directionL path1
         start   = tipL cpath
         g2      = atIncline (arrowhead_draw arrh) start ang
-    in replaceAns cpath $ decorate g2 $ toPrimPath path1 >>= openStroke
+    in fmap (replaceAns cpath) $ decorateR0 g2 $ toPrimPath path1 >>= openStroke
 
 -- Note - returns original path and adds tips to the @cpath@ 
 -- which might have moved p0 and p1.
@@ -94,7 +94,7 @@ rightArrow arrh conn = promoteR2 $ \p0 p1 ->
         ang     = directionR path1
         end     = tipR cpath
         g2      = atIncline (arrowhead_draw arrh) end ang
-    in replaceAns cpath $ decorate g2 $ toPrimPath path1 >>= openStroke
+    in fmap (replaceAns cpath) $ decorateR0 g2 $ toPrimPath path1 >>= openStroke
 
 
 
@@ -114,7 +114,7 @@ leftRightArrow arrL arrR conn = promoteR2 $ \p0 p1 ->
         end     = tipR cpath
         gL      = atIncline (arrowhead_draw arrL) start angL
         gR      = atIncline (arrowhead_draw arrR) end   angR
-    in replaceAns cpath $ decorate (gL `oplus` gR) $ 
+    in fmap (replaceAns cpath) $ decorateR0 (gL `oplus` gR) $ 
         toPrimPath path1 >>= openStroke
 
 

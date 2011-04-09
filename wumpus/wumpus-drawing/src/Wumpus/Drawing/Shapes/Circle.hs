@@ -86,25 +86,25 @@ runDisplaceCenter fn (Circle { circ_ctm    = ctm
 
 -- Anchors look like they need ctx...
 
-instance (Real u, Floating u) => CenterAnchor Circle u where
+instance (Real u, Floating u) => CenterAnchor (Circle u) where
   center = runDisplaceCenter $ \_ -> V2 0 0 
 
 
-instance (Real u, Floating u) => CardinalAnchor Circle u where
+instance (Real u, Floating u) => CardinalAnchor (Circle u) where
   north = runDisplaceCenter $ \r -> V2 0    r
   south = runDisplaceCenter $ \r -> V2 0  (-r)
   east  = runDisplaceCenter $ \r -> V2 r    0
   west  = runDisplaceCenter $ \r -> V2 (-r) 0
 
 
-instance (Real u, Floating u) => CardinalAnchor2 Circle u where
+instance (Real u, Floating u) => CardinalAnchor2 (Circle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u) => RadialAnchor Circle u where
+instance (Real u, Floating u) => RadialAnchor (Circle u) where
   radialAnchor ang = runDisplaceCenter $ \r -> avec ang r
 
 

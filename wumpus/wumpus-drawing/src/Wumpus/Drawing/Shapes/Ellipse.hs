@@ -108,23 +108,23 @@ scaleEll :: (Real u, Fractional u)
 scaleEll rx ry v = let rat = realToFrac (ry/rx) in scale 1 rat v
 
 
-instance (Real u, Floating u) => CenterAnchor Ellipse u where
+instance (Real u, Floating u) => CenterAnchor (Ellipse u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 
-instance (Real u, Floating u) => RadialAnchor Ellipse u where
+instance (Real u, Floating u) => RadialAnchor (Ellipse u) where
   radialAnchor theta = runDisplaceCenter $ \rx ry -> 
                          scaleEll rx ry $ avec theta rx
 
 
-instance (Real u, Floating u) => CardinalAnchor Ellipse u where
+instance (Real u, Floating u) => CardinalAnchor (Ellipse u) where
   north = radialAnchor (0.5*pi)
   south = radialAnchor (1.5*pi)
   east  = radialAnchor  0
   west  = radialAnchor  pi
 
 
-instance (Real u, Floating u) => CardinalAnchor2 Ellipse u where
+instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)

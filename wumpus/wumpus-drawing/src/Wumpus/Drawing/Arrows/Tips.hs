@@ -194,7 +194,7 @@ solidStrokedDisk = solidArrTip . strokedDisk
 --------------------------------------------------------------------------------
 
 tipBody :: InterpretUnit u 
-        => (Point2 u -> Radian -> u -> Image t u) -> LocThetaImage t u
+        => (Point2 u -> Radian -> u -> Image u (t u)) -> LocThetaImage u (t u)
 tipBody mf = promoteR2 $ \pt theta -> 
              markHeight >>= \h -> mf pt theta h 
 

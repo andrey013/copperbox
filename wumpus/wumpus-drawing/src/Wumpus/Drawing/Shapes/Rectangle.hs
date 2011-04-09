@@ -97,21 +97,21 @@ runDisplaceCenter fn (Rectangle { rect_ctm = ctm
 
 
 instance (Real u, Floating u) => 
-    CenterAnchor Rectangle u where
+    CenterAnchor (Rectangle u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 instance (Real u, Floating u) => 
-    TopCornerAnchor Rectangle u where
+    TopCornerAnchor (Rectangle u) where
   topLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) hh
   topRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  hh
 
 instance (Real u, Floating u) => 
-    BottomCornerAnchor Rectangle u where
+    BottomCornerAnchor (Rectangle u) where
   bottomLeftCorner  = runDisplaceCenter $ \hw hh -> V2 (-hw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hw hh -> V2   hw  (-hh)
 
 instance (Real u, Floating u) => 
-    SideMidpointAnchor Rectangle u where
+    SideMidpointAnchor (Rectangle u) where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -121,14 +121,14 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u) => 
-    CardinalAnchor Rectangle u where
+    CardinalAnchor (Rectangle u) where
   north = runDisplaceCenter $ \_  hh -> V2 0 hh
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
 instance (Real u, Floating u) => 
-    CardinalAnchor2 Rectangle u where
+    CardinalAnchor2 (Rectangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -136,7 +136,7 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u) => 
-    RadialAnchor Rectangle u where
+    RadialAnchor (Rectangle u) where
   radialAnchor theta = runDisplaceCenter $ \hw hh -> 
                           rectRadialVector hw hh theta
 

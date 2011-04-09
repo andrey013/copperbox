@@ -35,7 +35,8 @@ import Data.AffineSpace                         -- package: vector-space
 -- building connectors.
 --
 promoteConn :: (Real u, Floating u, InterpretUnit u) 
-            => (Point2 u -> Point2 u -> CF a) -> CF2 (Point2 u) (Point2 u) a
+            => (Point2 u -> Point2 u -> CF a) 
+            -> CF (Point2 u -> Point2 u -> a)
 promoteConn fn = promoteR2 $ \p0 p1 -> 
     connectorSrcSep >>= \sep0 ->
     connectorDstSep >>= \sep1 ->

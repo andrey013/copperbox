@@ -83,20 +83,20 @@ runRotateAnchor f (InvSemiellipse a) =
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CenterAnchor InvSemiellipse u where
+    CenterAnchor (InvSemiellipse u) where
   center = center . getInvSemiellipse
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    ApexAnchor InvSemiellipse u where
+    ApexAnchor (InvSemiellipse u) where
   apex = runRotateAnchor apex
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    TopCornerAnchor InvSemiellipse u where
+    TopCornerAnchor (InvSemiellipse u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor InvSemiellipse u where
+    CardinalAnchor (InvSemiellipse u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
@@ -104,7 +104,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor2 InvSemiellipse u where
+    CardinalAnchor2 (InvSemiellipse u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
   southwest = runRotateAnchor northeast
@@ -113,7 +113,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    RadialAnchor InvSemiellipse u where
+    RadialAnchor (InvSemiellipse u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 

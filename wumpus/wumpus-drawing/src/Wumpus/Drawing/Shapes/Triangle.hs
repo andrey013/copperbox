@@ -116,17 +116,17 @@ runDisplaceCenter fn (Triangle { tri_ctm        = ctm
 
 
 instance (Real u, Floating u) => 
-    CenterAnchor Triangle u where
+    CenterAnchor (Triangle u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 instance (Real u, Floating u) => 
-    ApexAnchor Triangle u where
+    ApexAnchor (Triangle u) where
   apex = runDisplaceCenter $ \_ _ hmaj _ -> V2 0 hmaj
 
 
 instance (Real u, Floating u) => 
-    BottomCornerAnchor Triangle u where
+    BottomCornerAnchor (Triangle u) where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hmin _ _  -> V2 (-hbw) (-hmin)
   bottomRightCorner = runDisplaceCenter $ \hbw hmin _ _  -> V2  hbw   (-hmin)
 
@@ -135,7 +135,7 @@ instance (Real u, Floating u) =>
 --
 
 instance (Real u, Floating u) => 
-    CardinalAnchor Triangle u where
+    CardinalAnchor (Triangle u) where
   north = runDisplaceCenter $ \_   _    hmaj _    -> V2 0 hmaj
   south = runDisplaceCenter $ \_   hmin _    _    -> V2 0 (-hmin)
   east  = runDisplaceCenter $ \hbw hmin _    ang  -> findEast hbw hmin ang
@@ -143,7 +143,7 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u) => 
-    SideMidpointAnchor Triangle u where
+    SideMidpointAnchor (Triangle u) where
   sideMidpoint n a = step (n `mod` 3) 
     where
       step 1 = midpoint (apex a)              (bottomLeftCorner a)
@@ -163,7 +163,7 @@ findWest hbw hm ang = let (V2 xdist 0) = findEast hbw hm ang in V2 (-xdist) 0
 
 
 instance (Real u, Floating u) => 
-    CardinalAnchor2 Triangle u where
+    CardinalAnchor2 (Triangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -172,7 +172,7 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u) => 
-    RadialAnchor Triangle u where
+    RadialAnchor (Triangle u) where
   radialAnchor theta = runDisplaceCenter $ \hbw hmin hmaj _ -> 
                          triangleRadialVector hbw hmin hmaj theta
        

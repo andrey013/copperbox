@@ -108,20 +108,20 @@ runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
 
 
 instance (Real u, Floating u) => 
-    CenterAnchor Semicircle u where
+    CenterAnchor (Semicircle u) where
   center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
 instance (Real u, Floating u) => 
-    ApexAnchor Semicircle u where
+    ApexAnchor (Semicircle u) where
   apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
 
 instance (Real u, Floating u) => 
-    BottomCornerAnchor Semicircle u where
+    BottomCornerAnchor (Semicircle u) where
   bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
   bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
 
 instance (Real u, Floating u) => 
-    CardinalAnchor Semicircle u where
+    CardinalAnchor (Semicircle u) where
   north = apex
   south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
   east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
@@ -138,7 +138,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor2 Semicircle u where
+    CardinalAnchor2 (Semicircle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -148,7 +148,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    RadialAnchor Semicircle u where
+    RadialAnchor (Semicircle u) where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
 -- helpers

@@ -97,14 +97,14 @@ runDisplaceCenter fn (Diamond { dia_ctm = ctm
    projectFromCtr (fn hw hh) ctm
 
 
-instance (Real u, Floating u) => CenterAnchor Diamond u where
+instance (Real u, Floating u) => CenterAnchor (Diamond u) where
   center = runDisplaceCenter $ \_ _ -> V2 0 0
 
-instance (Real u, Floating u) => ApexAnchor Diamond u where
+instance (Real u, Floating u) => ApexAnchor (Diamond u) where
   apex = runDisplaceCenter $ \_  hh -> V2 0 hh
 
 instance (Real u, Floating u) => 
-    SideMidpointAnchor Diamond u where
+    SideMidpointAnchor (Diamond u) where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = midpoint (north a) (west a)
@@ -113,13 +113,13 @@ instance (Real u, Floating u) =>
       step _ = midpoint (east a)  (north a)
 
 
-instance (Real u, Floating u) => CardinalAnchor Diamond u where
+instance (Real u, Floating u) => CardinalAnchor (Diamond u) where
   north = apex
   south = runDisplaceCenter $ \_  hh -> V2 0 (-hh)
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
-instance (Real u, Floating u) => CardinalAnchor2 Diamond u where
+instance (Real u, Floating u) => CardinalAnchor2 (Diamond u) where
   northeast x = midpoint (north x) (east x)
   southeast x = midpoint (south x) (east x)
   southwest x = midpoint (south x) (west x)
@@ -128,7 +128,7 @@ instance (Real u, Floating u) => CardinalAnchor2 Diamond u where
 
 
 instance (Real u, Floating u) => 
-      RadialAnchor Diamond u where
+      RadialAnchor (Diamond u) where
   radialAnchor ang = runDisplaceCenter $ \hw hh -> 
                      diamondRadialVector hw hh ang
 

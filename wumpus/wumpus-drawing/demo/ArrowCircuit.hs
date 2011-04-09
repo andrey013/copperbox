@@ -86,9 +86,9 @@ connWith con a0 a1 = localize double_point_size $
     drawc a0 a1 (rightArrow tri45 con)
 
 
-atext :: ( CenterAnchor t u
+atext :: ( CenterAnchor (t u)
          , Real u, Floating u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
+         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()), u ~ DUnit (t u) )
       => t u -> String -> m ()
 atext ancr ss = 
     draw $ ccTextline ss `at` (center ancr)
@@ -104,6 +104,6 @@ ptext pt ss = localize (font_attr times_italic 14) $
 -- Note - return type is a LocImage not a shape...
 --
 rrectangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-           => Double -> u -> u -> LocImage Rectangle u
+           => Double -> u -> u -> LocImage u (Rectangle u)
 rrectangle r w h = 
     localize (round_corner_factor r) $ strokedShape (rectangle w h)

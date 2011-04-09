@@ -108,19 +108,19 @@ runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
     projectFromCtr (fn (0.5 * bw) (0.5 * h) lang rang) ctm
 
 instance (Real u, Floating u) => 
-    CenterAnchor Trapezium u where
+    CenterAnchor (Trapezium u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 
 
 instance (Real u, Floating u) => 
-    BottomCornerAnchor Trapezium u where
+    BottomCornerAnchor (Trapezium u) where
   bottomLeftCorner  = runDisplaceCenter $ \hbw hh _ _  -> V2 (-hbw) (-hh)
   bottomRightCorner = runDisplaceCenter $ \hbw hh _ _  -> V2  hbw   (-hh)
 
 
 instance (Real u, Floating u) => 
-    TopCornerAnchor Trapezium u where
+    TopCornerAnchor (Trapezium u) where
   topLeftCorner  = runDisplaceCenter $ \hbw hh lang _  -> 
                      let vbase = V2 (-hbw) (-hh)
                          vup   = leftSideVec (2*hh) lang 
@@ -132,7 +132,7 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    SideMidpointAnchor Trapezium u where
+    SideMidpointAnchor (Trapezium u) where
   sideMidpoint n a = step (n `mod` 4) 
     where
       step 1 = north a
@@ -143,7 +143,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor Trapezium u where
+    CardinalAnchor (Trapezium u) where
   north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
   east  = tzRadialAnchor 0
@@ -151,7 +151,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor2 Trapezium u where
+    CardinalAnchor2 (Trapezium u) where
   northeast = tzRadialAnchor (0.25*pi)
   southeast = tzRadialAnchor (1.75*pi)
   southwest = tzRadialAnchor (1.25*pi)
@@ -160,7 +160,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    RadialAnchor Trapezium u where
+    RadialAnchor (Trapezium u) where
   radialAnchor = tzRadialAnchor
 
 -- TODO - update this to a quadrant function...

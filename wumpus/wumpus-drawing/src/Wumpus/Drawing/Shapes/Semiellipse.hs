@@ -111,28 +111,28 @@ runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
 
 
 instance (Real u, Floating u) => 
-   CenterAnchor Semiellipse u where
+    CenterAnchor (Semiellipse u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    ApexAnchor Semiellipse u where
+    ApexAnchor (Semiellipse u) where
   apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
 
 instance (Real u, Floating u) => 
-    BottomCornerAnchor Semiellipse u where
+    BottomCornerAnchor (Semiellipse u) where
   bottomLeftCorner  = runDisplaceCenter $ \rx _ ry_minor _  -> V2 (-rx) (-ry_minor)
   bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor Semiellipse u where
+    CardinalAnchor (Semiellipse u) where
   north = apex
   south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
   east  = radialAnchor 0
   west  = radialAnchor pi
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor2 Semiellipse u where
+    CardinalAnchor2 (Semiellipse u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
   southwest = radialAnchor (1.25*pi)
@@ -141,7 +141,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    RadialAnchor Semiellipse u where
+    RadialAnchor (Semiellipse u) where
   radialAnchor theta = runDisplaceCenter (seRadialVec theta)
 
 

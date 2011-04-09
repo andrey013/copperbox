@@ -82,20 +82,20 @@ runRotateAnchor f (InvSemicircle a) =
 
 
 instance (Real u, Floating u) => 
-    CenterAnchor InvSemicircle u where
+    CenterAnchor (InvSemicircle u) where
   center = center . getInvSemicircle
 
 instance (Real u, Floating u) => 
-    ApexAnchor InvSemicircle u where
+    ApexAnchor (InvSemicircle u) where
   apex = runRotateAnchor apex
 
 instance (Real u, Floating u) => 
-    TopCornerAnchor InvSemicircle u where
+    TopCornerAnchor (InvSemicircle u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
 instance (Real u, Floating u) => 
-    CardinalAnchor InvSemicircle u where
+    CardinalAnchor (InvSemicircle u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
   east  = runRotateAnchor west
@@ -103,7 +103,7 @@ instance (Real u, Floating u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    CardinalAnchor2 InvSemicircle u where
+    CardinalAnchor2 (InvSemicircle u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
   southwest = runRotateAnchor northeast
@@ -112,7 +112,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 instance (Real u, Floating u, LengthTolerance u) => 
-    RadialAnchor InvSemicircle u where
+    RadialAnchor (InvSemicircle u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 
