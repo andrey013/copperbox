@@ -25,8 +25,12 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , DConnectorGraphic
 
    , intoConnectorImage
+   , connectorGraphic_
+
    , emptyConnectorGraphic
---   , uconvertConnectorImg
+
+   , uconvConnectorImageF
+   , uconvConnectorImageZ
 
    )
 
@@ -77,6 +81,14 @@ intoConnectorImage qf ma =
     promoteR2 $ \a b -> replaceAns <$> apply2R2 qf a b <*> apply2R2 ma a b  
 
 
+-- | /Downcast/ an 'ConnectorImage' to a 'ConnectorGraphic'.
+-- 
+-- This means forgetting the answer of the Image, replacing it 
+-- with @()@.
+--
+connectorGraphic_ :: ConnectorImage u a -> ConnectorGraphic u
+connectorGraphic_ = (fmap . fmap . fmap) ignoreAns
+
 
 -- | 'emptyConnectorGraphic' : @ ConnectorGraphic @
 --
@@ -93,12 +105,23 @@ emptyConnectorGraphic = promoteR2 $ \start end ->
         b = emptyLocGraphic `at` end
     in a `oplus` b
 
-{-
--- | Use this to convert both 'ConnectorImage' and 
--- 'ConnectorGraphic'.
---
-uconvertConnectorImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-                     => ConnectorImage t u -> ConnectorImage t u1
-uconvertConnectorImg = uconvertR2ab
 
--}
+
+
+
+-- | Use this to convert 'ConnectorGraphic' or 'ConnectorImage' 
+-- with Functor answer.
+--
+uconvConnectorImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+                     => ConnectorImage u (t u) -> ConnectorImage u1 (t u1)
+uconvConnectorImageF = uconvR2ab szconvAnsF
+
+
+
+-- | Use this to convert 'ConnectorImage' with unit-less answer.
+--
+uconvConnectorImageZ :: (InterpretUnit u, InterpretUnit u1) 
+                     => ConnectorImage u a -> ConnectorImage u1 a
+uconvConnectorImageZ = uconvR2ab szconvAnsZ
+
+

@@ -35,31 +35,31 @@ drawing01 = drawTracing mf
 mf :: TraceDrawing Double ()
 mf = do
     drawl (P2 0 120) $ 
-        runAdvanceObject $ evenspace (hvec 10) [text01, text02, text01]
+        runAdvObject $ evenspace (hvec 10) [text01, text02, text01]
 
     drawl (P2 0 80) $ 
-        runAdvanceObject $ nexts [text01, text02, text01]
+        runAdvObject $ nexts [text01, text02, text01]
 
     drawl (P2 0 40) $ 
-        runAdvanceObject (miniDisk `next` text01 `next` miniDisk)
+        runAdvObject (miniDisk `next` text01 `next` miniDisk)
 
     drawl (P2 0 0) $
-        runAdvanceObject (miniDisk `next` text02 `next` miniDisk)
+        runAdvObject (miniDisk `next` text02 `next` miniDisk)
 
 
 -- Normally, text calculate the advance vector from the font 
 -- metrics...
 --
-text01 :: AdvanceObject Double
-text01 = makeAdvanceObject (pure $ hvec 84) $ plainTextLine "text01"
+text01 :: AdvObject Double
+text01 = makeAdvObject (pure $ hvec 84) $ plainTextLine "text01"
     
 
-text02 :: AdvanceObject Double
-text02 = makeAdvanceObject (pure $ hvec 210) $ plainTextLine "text number two"
+text02 :: AdvObject Double
+text02 = makeAdvObject (pure $ hvec 210) $ plainTextLine "text number two"
 
 
-miniDisk :: AdvanceObject Double
-miniDisk = makeAdvanceObject (pure $ V2 0 0) disk1 
+miniDisk :: AdvObject Double
+miniDisk = makeAdvObject (pure $ V2 0 0) disk1 
   where
     disk1 = localize (fill_colour sienna) $ filledDisk 3
 

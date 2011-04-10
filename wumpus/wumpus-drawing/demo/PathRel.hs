@@ -30,10 +30,10 @@ path_pic = drawTracing $ do
     
 
 
-path1 :: LocImage A.AbsPath Double
+path1 :: DLocImage (A.AbsPath Double)
 path1 = localize (stroke_colour red) $ strokePathSpec path_spec1
 
-path2 :: LocImage A.AbsPath Double
+path2 :: DLocImage (A.AbsPath Double)
 path2 = localize (stroke_colour red) $ fillPathSpec path_spec1
 
 

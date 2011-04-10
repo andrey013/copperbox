@@ -25,7 +25,8 @@ module Wumpus.Basic.Kernel.Objects.Image
    , DGraphic
 
    , intoImage
-   , uconvGraphic
+   , graphic_
+
    , uconvImageF
    , uconvImageZ
 
@@ -75,23 +76,28 @@ intoImage :: Query a -> Graphic u -> Image u a
 intoImage qf ma = replaceAns <$> qf <*> ma
 
 
--- | Use this to convert 'Graphic'.
+-- | /Downcast/ an 'Image' to a 'Graphic'.
+-- 
+-- This means forgetting the answer of the Image, replacing it 
+-- with @()@.
 --
-uconvGraphic :: (InterpretUnit u, InterpretUnit u1) 
-            => Graphic u -> Graphic u1
-uconvGraphic = uconvR0 szconvGraphicAns
+graphic_ :: Image u a -> Graphic u
+graphic_ = fmap ignoreAns
 
 
--- | Use this to convert 'Image' with Functor answer.
+
+
+
+-- | Use this to convert 'Graphic' or 'Image' with Functor answer.
 --
 uconvImageF :: (Functor t, InterpretUnit u, InterpretUnit u1)
             => Image u (t u) -> Image u1 (t u1)
-uconvImageF = uconvR0 szconvImageAnsF
+uconvImageF = uconvR0 szconvAnsF
 
 
 uconvImageZ :: (InterpretUnit u, InterpretUnit u1)
             => Image u a -> Image u1 a
-uconvImageZ = uconvR0 szconvImageAnsZ
+uconvImageZ = uconvR0 szconvAnsZ
 
 
 

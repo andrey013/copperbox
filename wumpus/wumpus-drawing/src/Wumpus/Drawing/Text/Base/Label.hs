@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -43,64 +44,66 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 locImageLabel :: Floating u 
-              => ((t u) -> Anchor u) -> RectAddress 
-              -> BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+              => (a -> Anchor u) -> RectAddress 
+              -> BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    elaborate (obj `at` pt)  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
+    elaborateR0 (obj `at` pt)  (\a -> graphic_ $ atStartAddr lbl (fn a) rpos)
 
 
-label_center_of :: (Floating u, CenterAnchor t u) 
-                => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
+                => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_center_of = locImageLabel center CENTER
 
 
-label_left_of :: (Floating u, CardinalAnchor t u) 
-              => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+label_left_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+              => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_left_of = locImageLabel west EE
 
-label_right_of :: (Floating u, CardinalAnchor t u) 
-               => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+label_right_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+               => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_right_of = locImageLabel east WW
 
 
-label_above :: (Floating u, CardinalAnchor t u) 
-            => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+label_above :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+            => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_above = locImageLabel north SS
 
 
-label_below :: (Floating u, CardinalAnchor t u) 
-            => BoundedLocRectGraphic u -> LocImage t u -> LocImage t u
+label_below :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+            => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_below = locImageLabel south NN
 
 
 
 
 connectorPathLabel :: Floating u 
-                   => (AbsPath u -> Point2 u) -> RectAddress
+                   => (AbsPath u -> Point2 u) 
+                   -> RectAddress
                    -> BoundedLocRectGraphic u
-                   -> Image AbsPath u -> Image AbsPath u
+                   -> Image u (AbsPath u) 
+                   -> Image u (AbsPath u)
 connectorPathLabel fn rpos lbl img =  
-    elaborate img  (\a -> ignoreAns $ atStartAddr lbl (fn a) rpos)
+    elaborateR0 img  (\a -> graphic_ $ atStartAddr lbl (fn a) rpos)
 
 
 label_midway_of :: (Real u, Floating u) 
                 => RectAddress 
                 -> BoundedLocRectGraphic u 
-                -> Image AbsPath u -> Image AbsPath u
+                -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_midway_of = connectorPathLabel midway_
 
 
 label_atstart_of :: (Real u, Floating u) 
                  => RectAddress 
                  -> BoundedLocRectGraphic u 
-                 -> Image AbsPath u -> Image AbsPath u
+                 -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atstart_of = connectorPathLabel atstart_
 
 
 label_atend_of :: (Real u, Floating u) 
                  => RectAddress 
                  -> BoundedLocRectGraphic u
-                 -> Image AbsPath u -> Image AbsPath u
+                 -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atend_of = connectorPathLabel atend_
 
 

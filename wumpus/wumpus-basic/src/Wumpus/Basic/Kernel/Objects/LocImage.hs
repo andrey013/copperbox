@@ -24,31 +24,13 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , DLocGraphic
 
    , intoLocImage
+   , locGraphic_
+
    , emptyLocGraphic
 
-   , uconvLocGraphic
    , uconvLocImageF
    , uconvLocImageZ
 
-{-
-   -- * Combining LocImages
-   , catLI
-   , sepLI
-   , hsepLI
-   , vsepLI
-   , repeatLI
-   , hrepeatLI
-   , vrepeatLI
-   , spaceLI
-   , hspaceLI
-   , vspaceLI
-   , encloseLI
-   , hencloseLI
-   , vencloseLI
-   , punctuateLI
-   , hpunctuateLI
-   , vpunctuateLI
--}
    )
 
    where
@@ -58,7 +40,6 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -105,6 +86,16 @@ intoLocImage :: LocQuery u a -> LocGraphic u -> LocImage u a
 intoLocImage ma gf = promoteR1 $ \pt -> 
                      replaceAns <$> apply1R1 ma pt <*> apply1R1 gf pt
 
+
+-- | /Downcast/ an 'LocImage' to a 'LocGraphic'.
+-- 
+-- This means forgetting the answer of the LocImage, replacing it 
+-- with @()@.
+--
+locGraphic_ :: LocImage u a -> LocGraphic u
+locGraphic_ = (fmap . fmap) ignoreAns
+
+
 -- | 'emptyLocGraphic' : @ LocGraphic @
 --
 -- Build an empty 'LocGraphic' (i.e. a function 
@@ -123,18 +114,13 @@ emptyLocGraphic = promoteR1 $ \pt ->
 
 
 
--- | Use this to convert 'Graphic'.
---
-uconvLocGraphic :: (InterpretUnit u, InterpretUnit u1) 
-                => LocGraphic u -> LocGraphic u1
-uconvLocGraphic = uconvR1 szconvGraphicAns
 
-
--- | Use this to convert 'LocImage' with Functor answer.
+-- | Use this to convert 'LocGraphic' or 'LocImage' with Functor 
+-- answer.
 --
 uconvLocImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                => LocImage u (t u) -> LocImage u1 (t u1)
-uconvLocImageF = uconvR1 szconvImageAnsF
+uconvLocImageF = uconvR1 szconvAnsF
 
 
 
@@ -142,12 +128,14 @@ uconvLocImageF = uconvR1 szconvImageAnsF
 --
 uconvLocImageZ :: (InterpretUnit u, InterpretUnit u1) 
                => LocImage u a -> LocImage u1 a
-uconvLocImageZ = uconvR1 szconvImageAnsZ
+uconvLocImageZ = uconvR1 szconvAnsZ
 
 
-{-
+
 --------------------------------------------------------------------------------
 -- Combining LocImages
+
+{-
 
 infixr 6 `catLI`
 infixr 5 `sepLI`

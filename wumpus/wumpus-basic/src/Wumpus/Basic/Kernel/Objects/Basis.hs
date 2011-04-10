@@ -36,15 +36,18 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , hyperlink  
   , clipObject 
   
-  , szconvGraphicAns 
-  , szconvImageAnsF
-  , szconvImageAnsZ
+  , szconvAnsF
+  , szconvAnsZ
 
 
   , at
   , incline
   , atIncline
   , connect
+
+  , replaceAnsR0
+  , replaceAnsR1
+  , replaceAnsR2
 
   , decorateR0
   , decorateR1
@@ -191,16 +194,13 @@ clipObject pp (Ans prim a) =  Ans (cpmap (clip pp) prim) a
 -- Helpers for unit conversion...
 
 
-szconvGraphicAns :: FontSize -> GraphicAns u -> GraphicAns u1
-szconvGraphicAns _ (Ans prim _) = Ans prim UNil
 
-
-szconvImageAnsF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
+szconvAnsF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
                 => FontSize -> ImageAns u (t u) -> ImageAns u1 (t u1)
-szconvImageAnsF sz (Ans prim a) = Ans prim (uconvertF sz a)
+szconvAnsF sz (Ans prim a) = Ans prim (uconvertF sz a)
 
-szconvImageAnsZ :: FontSize -> ImageAns u a -> ImageAns u1 a
-szconvImageAnsZ _ (Ans prim a) = Ans prim a
+szconvAnsZ :: FontSize -> ImageAns u a -> ImageAns u1 a
+szconvAnsZ _ (Ans prim a) = Ans prim a
 
 
 
@@ -245,6 +245,25 @@ connect :: ConnectorQuery u a -> Point2 u -> Point2 u -> CF a
 connect = apply2R2
 
 
+
+-- | Replace the ans - arity 0.
+-- 
+replaceAnsR0 :: ans -> CF (ImageAns u a) -> CF (ImageAns u ans)
+replaceAnsR0 ans = fmap (replaceAns ans)
+
+
+-- | Replace the ans - arity 1.
+--
+replaceAnsR1 :: ans -> CF (r1 -> ImageAns u a) -> CF (r1 -> ImageAns u ans)
+replaceAnsR1 ans = fmap $ fmap (replaceAns ans)
+
+
+-- | Replace the ans - arity 2.
+--
+replaceAnsR2 :: ans 
+             -> CF (r1 -> r2 -> ImageAns u a) 
+             -> CF (r1 -> r2 -> ImageAns u ans)
+replaceAnsR2 ans = fmap $ fmap $ fmap (replaceAns ans) 
 
 
 -- | Decorate an Image by superimposing a Graphic.

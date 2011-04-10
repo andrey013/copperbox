@@ -87,52 +87,54 @@ petri_net = udrawTracing (0::Double) $ do
 
     return ()
 
-greenFill :: LocImage t u -> LocImage t u
+greenFill :: LocImage u a -> LocImage u a
 greenFill = localize (fill_colour lime_green)
 
 
-place :: DLocImage Circle
+place :: DLocImage (Circle Double)
 place = greenFill $ borderedShape $ circle 14
 
 
-transition :: DLocImage Rectangle 
+transition :: DLocImage (Rectangle Double)
 transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 
 
 straightconn :: ConnectorGraphic Double
-straightconn = ignoreAns $ rightArrow tri45 connline
+straightconn = connectorGraphic_ $ rightArrow tri45 connline
 
 
 connectorC :: ConnectorGraphic Double
 connectorC = 
-    localize (uniform_arm_len  (30::Double)) $ ignoreAns $ rightArrow tri45 connbbar
+    connectorGraphic_ $ localize (uniform_arm_len  (30::Double)) 
+                      $ rightArrow tri45 connbbar
 
 connectorC' :: ConnectorGraphic Double
 connectorC' = 
-    localize (uniform_arm_len  (30::Double)) $ ignoreAns $ rightArrow tri45 connabar
+    connectorGraphic_ $ localize (uniform_arm_len  (30::Double)) 
+                      $ rightArrow tri45 connabar
 
 connectorD :: ConnectorGraphic Double
-connectorD = ignoreAns $ rightArrow tri45 connarc
+connectorD = connectorGraphic_ $ rightArrow tri45 connarc
 
 connectorD' :: ConnectorGraphic Double
 connectorD' = 
-    ignoreAns $ localize (conn_arc_angle $ negate $ pi / 12) 
-              $ rightArrow tri45 connarc
+    connectorGraphic_ $ localize (conn_arc_angle $ negate $ pi / 12) 
+                      $ rightArrow tri45 connarc
 
 
 lblParensParens :: DLocGraphic
 lblParensParens = 
-    localize (set_font helvetica) $ ignoreAns $ ccTextline "(),()"
+    locGraphic_ $ localize (set_font helvetica) $ ccTextline "(),()"
 
 lblParensParensParens :: DLocGraphic
 lblParensParensParens = 
-    localize (set_font helvetica) $ ignoreAns $ ccTextline "(),(),()"
+    locGraphic_ $ localize (set_font helvetica) $ ccTextline "(),(),()"
 
 
 
 lblBold :: String -> DLocGraphic
 lblBold ss = 
-    localize (set_font helvetica_bold) $ ignoreAns $ ccTextline ss
+    locGraphic_ $ localize (set_font helvetica_bold) $ ccTextline ss
 

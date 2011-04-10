@@ -195,7 +195,7 @@ perform v (x:xs) = execEvalM v (go x xs)
 
 penGraphic :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
            => Vec2 u -> RelPath u -> LocGraphic u
-penGraphic v p = ignoreAns $ moveStart (displaceVec v) $ drawPath p
+penGraphic v p = locGraphic_ $ moveStart (displaceVec v) $ drawPath p
 
 
 interpLine :: Num u => Vec2 u -> EvalM u () 
@@ -268,27 +268,27 @@ execPathSpec (a:as) = go1 (V2 0 0) a as
                                         
 
 fillPathSpec :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-             => PathSpec u -> LocImage AbsPath u
+             => PathSpec u -> LocImage u (AbsPath u)
 fillPathSpec spec = promoteR1 $ \start -> 
     let (rp,_,deco) = execPathSpec spec
         ap          = toAbsPath start rp
     in Abs.toPrimPath ap >>= \pp -> 
-       replaceAns ap $ decorate (filledPath pp) (deco `at` start)
+       fmap (replaceAns ap) $ decorateR0 (filledPath pp) (deco `at` start)
 
 
 strokePathSpec :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-             => PathSpec u -> LocImage AbsPath u
+             => PathSpec u -> LocImage u (AbsPath u)
 strokePathSpec spec = promoteR1 $ \start -> 
     let (rp,img,deco) = execPathSpec spec
         ap            = toAbsPath start rp
-    in replaceAns ap $ decorate (img `at` start) (deco `at` start)
+    in fmap (replaceAns ap) $ decorateR0 (img `at` start) (deco `at` start)
 
 
 drawPath :: (Floating u, Ord u, LengthTolerance u, InterpretUnit u) 
-         => RelPath u -> LocImage AbsPath u 
+         => RelPath u -> LocImage u (AbsPath u)
 drawPath rp = promoteR1 $ \start -> 
     let ap = toAbsPath start rp
-    in replaceAns ap $ Abs.toPrimPath ap >>= openStroke
+    in fmap (replaceAns ap) $ Abs.toPrimPath ap >>= openStroke
 
 
 

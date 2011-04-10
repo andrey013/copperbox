@@ -26,29 +26,29 @@ dctx = set_font courier_bold $ standardContext 24
 
 iter_drawing :: CtxPicture
 iter_drawing = drawTracing $ do 
-    draw $ (redA `catAdv` greenB `catAdv` blueC) `at` zeroPt
+    draw $ (runAdvObject $ redA `next` greenB `next` blueC) `at` zeroPt
 
 bldisplace :: Num u => PointDisplace u
 bldisplace = displace (-4) (-4)
 
-hspace :: Num u => (Vec2 u)
-hspace = hvec 28
+hdist :: Num u => (Vec2 u)
+hdist = hvec 28
 
 
-redA :: AdvGraphic Double
-redA = intoAdvGraphic (pure hspace) (background `oplus` plainTextLine "A")
+redA :: AdvObject Double
+redA = makeAdvObject (pure hdist) (background `oplus` plainTextLine "A")
   where
     background = localize (fill_colour tomato) 
                           (moveStart bldisplace $ filledRectangle 24 24)
 
-greenB :: AdvGraphic Double
-greenB = intoAdvGraphic (pure hspace) (background `oplus` plainTextLine "B")
+greenB :: AdvObject Double
+greenB = makeAdvObject (pure hdist) (background `oplus` plainTextLine "B")
   where
     background = localize (fill_colour yellow_green) 
                           (moveStart bldisplace $ filledRectangle 24 24)
 
-blueC :: AdvGraphic Double
-blueC = intoAdvGraphic (pure hspace) (background `oplus` plainTextLine "C")
+blueC :: AdvObject Double
+blueC = makeAdvObject (pure hdist) (background `oplus` plainTextLine "C")
   where
     background = localize (fill_colour light_sky_blue) 
                           (moveStart bldisplace $ filledRectangle 24 24)

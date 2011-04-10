@@ -25,28 +25,13 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , DLocThetaImage
 
    , intoLocThetaImage
-   , emptyLocThetaGraphic
---   , uconvertLocThetaImg
+   , locThetaGraphic_
 
-{-
-   -- * Combining LocThetaImages
-   , catLTI
-   , sepLTI
-   , paraSepLTI
-   , perpSepLTI
-   , repeatLTI
-   , paraRepeatLTI
-   , perpRepeatLTI
-   , spaceLTI
-   , paraSpaceLTI
-   , perpSpaceLTI
-   , encloseLTI
-   , paraEncloseLTI
-   , perpEncloseLTI
-   , punctuateLTI
-   , paraPunctuateLTI
-   , perpPunctuateLTI
--}
+   , emptyLocThetaGraphic
+
+   , uconvLocThetaImageF
+   , uconvLocThetaImageZ
+
    
    )
 
@@ -55,10 +40,10 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Displacement
+-- import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.LocImage
 
-import Wumpus.Core                              -- package: wumpus-core
+-- import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
@@ -104,6 +89,15 @@ intoLocThetaImage qf ma =
 
 
 
+-- | /Downcast/ an 'LocThetaImage' to a 'LocThetaGraphic'.
+-- 
+-- This means forgetting the answer of the Image, replacing it 
+-- with @()@.
+--
+locThetaGraphic_ :: LocThetaImage u a -> LocThetaGraphic u
+locThetaGraphic_ = (fmap . fmap . fmap) ignoreAns
+
+
 -- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @
 --
 -- Build an empty 'LocThetaGraphic' (i.e. a function 
@@ -117,14 +111,23 @@ emptyLocThetaGraphic :: InterpretUnit u => LocThetaGraphic u
 emptyLocThetaGraphic = lift1R2 emptyLocGraphic
 
 
-{-
--- | Use this to convert both 'LocThetaImage' and 
--- 'LocThetaGraphic'.
+
+
+-- | Use this to convert 'LocThetaGraphic' or 'LocThetaImage' 
+-- with Functor answer.
 --
-uconvertLocThetaImg :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-                    => LocThetaImage t u -> LocThetaImage t u1
-uconvertLocThetaImg = uconvertR2a
--}
+uconvLocThetaImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
+                    => LocThetaImage u (t u) -> LocThetaImage u1 (t u1)
+uconvLocThetaImageF = uconvR2a szconvAnsF
+
+
+
+-- | Use this to convert 'LocThetaImage' with unit-less answer.
+--
+uconvLocThetaImageZ :: (InterpretUnit u, InterpretUnit u1) 
+                    => LocThetaImage u a -> LocThetaImage u1 a
+uconvLocThetaImageZ = uconvR2a szconvAnsZ
+
 
 
 
