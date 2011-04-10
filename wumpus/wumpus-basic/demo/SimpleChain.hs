@@ -7,7 +7,6 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                      -- package: wumpus-core
 
-import Control.Applicative
 import System.Directory
 
 main :: IO ()
@@ -34,7 +33,10 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (P2 0 0) $ chain_ (chainH 100) [text01, miniDisk, text02, miniDisk]
+    drawl (P2 0 0) $ chain_ (chainH 70) [text01, minidisk, text02, minidisk]
+    drawl (P2 0 0) $ localize (fill_colour sienna) $ filledRectangle 4 4
+
+    drawl (P2 0 200) $ chain (tableDown 6 (30,15)) $ replicate 30 minidisk
 
 
 -- Normally, text calculate the advance vector from the font 
@@ -48,8 +50,8 @@ text02 :: LocGraphic Double
 text02 = plainTextLine "T02"
 
 
-miniDisk :: LocGraphic Double
-miniDisk = localize (fill_colour sienna) $ filledDisk 3
+minidisk :: LocGraphic Double
+minidisk = localize (fill_colour sienna) $ moveStart (displaceV 7) $ filledDisk 3
 
 
 sienna :: RGBi
