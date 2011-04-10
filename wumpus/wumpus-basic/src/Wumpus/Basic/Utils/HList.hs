@@ -29,6 +29,7 @@ module Wumpus.Basic.Utils.HList
   , concatH
 
   , toListH
+  , prefixListH
   , fromListH
 
 
@@ -79,6 +80,9 @@ concatH = foldr (.) id
 
 toListH :: H a -> [a]
 toListH = ($ [])
+
+prefixListH :: H a -> [a] -> [a]
+prefixListH hf xs = hf $ xs
 
 fromListH :: [a] -> H a
 fromListH xs = (xs++)
