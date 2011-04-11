@@ -38,13 +38,13 @@ mf = do
         runAdvObject $ evenspace (hvec 10) [text01, text02, text01]
 
     drawl (P2 0 80) $ 
-        runAdvObject $ nexts [text01, text02, text01]
+        runAdvObject $ advances [text01, text02, text01]
 
     drawl (P2 0 40) $ 
-        runAdvObject (miniDisk `next` text01 `next` miniDisk)
+        runAdvObject (miniDisk `advance` text01 `advance` miniDisk)
 
     drawl (P2 0 0) $
-        runAdvObject (miniDisk `next` text02 `next` miniDisk)
+        runAdvObject (miniDisk `advance` text02 `advance` miniDisk)
 
 
 -- Normally, text calculate the advance vector from the font 

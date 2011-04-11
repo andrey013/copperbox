@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+-- Module      :  Wumpus.Basic.Kernel.Objects.AdvObject
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+module Wumpus.Basic.Kernel.Objects.AdvObject
   (
 
   -- * Advance-vector object and graphic
@@ -32,12 +32,12 @@ module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
   , runAdvObject
 
   -- * Composition
-  , next
-  , nexts
-  , nextSpace
+  , advance
+  , advances
+  , advspace
   , evenspace
 
-  , repeatnext
+  , advrepeat
   , punctuate
   , advfill
 
@@ -154,7 +154,7 @@ listcat op (x:xs) = go x xs
 -- next\". Nothing in the AdvObject tracks the boundary so we
 -- cannot implement the Concat classes.
 
-infixr 6 `next`
+infixr 6 `advance`
 
 
 -- | Draw the first AdvObject and use the advance vector to 
@@ -162,22 +162,22 @@ infixr 6 `next`
 --
 -- The final answer is the sum of both advance vectors.
 --
-next :: Num u => AdvObject u -> AdvObject u -> AdvObject u
-next = advplus
+advance :: Num u => AdvObject u -> AdvObject u -> AdvObject u
+advance = advplus
   
 
--- | Concatenate the list of AdvObjects with 'next'.
+-- | Concatenate the list of AdvObjects with 'advance'.
 --
-nexts :: InterpretUnit u => [AdvObject u] -> AdvObject u
-nexts = listcat next
+advances :: InterpretUnit u => [AdvObject u] -> AdvObject u
+advances = listcat advance
 
 
 -- | Combine the AdvObjects using the answer vector of the 
 -- first object plus the separator to move the start of the second
 -- object. 
 --
-nextSpace :: Num u => Vec2 u -> AdvObject u -> AdvObject u -> AdvObject u
-nextSpace sep a b = AdvObject body
+advspace :: Num u => Vec2 u -> AdvObject u -> AdvObject u -> AdvObject u
+advspace sep a b = AdvObject body
   where 
     body = drawingCtx >>= \ctx ->
            let (v0,pf0) = runCF ctx (getAdvObject a)
@@ -188,21 +188,22 @@ nextSpace sep a b = AdvObject body
 -- | List version of 'nextSpace'.
 --
 evenspace :: InterpretUnit u => Vec2 u -> [AdvObject u] -> AdvObject u
-evenspace v = listcat (nextSpace v)
+evenspace v = listcat (advspace v)
 
 
 
--- | Repeat the AdvObject @n@ times, each time moving @next@.
+-- | Repeat the AdvObject @n@ times, moving each time with 
+-- 'advance'.
 --
-repeatnext :: InterpretUnit u => Int -> AdvObject u -> AdvObject u
-repeatnext n = nexts . replicate n
+advrepeat :: InterpretUnit u => Int -> AdvObject u -> AdvObject u
+advrepeat n = advances . replicate n
 
 
 -- | Concatenate the list of AdvObjects, going next and adding
 -- the separator at each step.
 --
 punctuate :: InterpretUnit u => AdvObject u -> [AdvObject u] -> AdvObject u
-punctuate sep =  listcat (\a b -> a `next` sep `next` b)
+punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 
 
 

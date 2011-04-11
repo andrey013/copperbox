@@ -26,7 +26,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.Units
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
-  , module Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+  , module Wumpus.Basic.Kernel.Objects.AdvObject
   , module Wumpus.Basic.Kernel.Objects.Anchors
   , module Wumpus.Basic.Kernel.Objects.Basis
   , module Wumpus.Basic.Kernel.Objects.Bounded
@@ -54,7 +54,7 @@ import Wumpus.Basic.Kernel.Base.ScalingContext
 import Wumpus.Basic.Kernel.Base.Units 
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Objects.AdvanceGraphic
+import Wumpus.Basic.Kernel.Objects.AdvObject
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded

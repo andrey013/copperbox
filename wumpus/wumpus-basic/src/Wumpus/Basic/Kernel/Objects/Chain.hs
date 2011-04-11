@@ -56,7 +56,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- 
 -- @Linear@ simply iterates points.
 --
--- @Perfix@ runs the left chain @n@ times then runs the right 
+-- @Prefix@ runs the left chain @n@ times then runs the right 
 -- chain from the end point of the left chain.
 -- 
 data ChainAlg u = L1 (Scheme u)
