@@ -4,7 +4,6 @@ module Connectors where
 
 
 import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorPaths
@@ -70,10 +69,10 @@ conntable =
 
 tableGraphic :: [(String, PathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    draw $ chn (map makeConnDrawing conns) `at` start
+    draw $ chain_ chn_alg (map makeConnDrawing conns) `at` start
   where
-    chn   = tableDown 8 (180,64) 
-    start = P2 0 520 
+    chn_alg   = tableDown 8 (180,64) 
+    start     = P2 0 520 
 
  
 std_ctx :: DrawingContext

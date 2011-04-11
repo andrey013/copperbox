@@ -2,7 +2,6 @@
 
 module FontPic where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours ( steel_blue )
 import Wumpus.Drawing.Colour.X11Colours ( indian_red1 )
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -45,7 +44,7 @@ fontMsg ft sz = msgF []
 makeLabel :: RGBi -> FontDef -> Int -> DLocGraphic
 makeLabel rgb ft sz = localize upd (plainTextLine $ fontMsg ft sz)
   where
-    upd = fill_colour rgb . font_attr ft sz 
+    upd = text_colour rgb . font_attr ft sz 
 
 -- indian_red1
 -- steel_blue
@@ -56,14 +55,18 @@ point_sizes = [10, 12, 18, 24, 36, 48]
 positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
+-- Note - this chain might be worth putting in a library...
+pointChain :: (Int -> DLocGraphic) -> DLocImage DPoint2
+pointChain fn = chain chn_alg $ map fn point_sizes
+  where
+    chn_alg = linear $ iterationScheme start step
+    start   = \pt -> (pt,point_sizes)
 
-pointChain :: [LocImage Double a] -> DLocImage DPoint2
-pointChain = chainStepsV $ map (fromIntegral . (+2)) point_sizes
-
+    step (pt,[])     = ((displaceV 50 pt, []), pt)
+    step (pt,(y:ys)) = ((displaceV (fromIntegral $ 2 + y)  pt, ys), pt)
 
 fontGraphic :: RGBi -> FontDef -> DLocGraphic 
-fontGraphic rgb ft = 
-    fmap (fmap ignoreAns) $ pointChain (map mkGF point_sizes) 
+fontGraphic rgb ft = locGraphic_ $ pointChain mkGF
   where
     mkGF sz = makeLabel rgb ft sz
 
@@ -74,10 +77,10 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
-    draw $ chn (map (uncurry fontGraphic) xs) `at` start
+    draw $ chain_ chn_alg (map (uncurry fontGraphic) xs) `at` start
   where
-    chn   = tableDown 4 (1,180)
-    start = P2 0 (4*180)
+    chn_alg   = tableDown 4 (1,180)
+    start     = P2 0 (4*180)
 
 
 

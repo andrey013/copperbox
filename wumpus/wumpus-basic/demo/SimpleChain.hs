@@ -38,9 +38,16 @@ mf = do
     drawl (P2 0 0) $ chain_ (chainH 70) [text01, minidisk, text02, minidisk]
     drawl (P2 0 0) $ localize (fill_colour sienna) $ filledRectangle 4 4
 
-    drawl (P2 0 200) $ chain (tableDown 6 (30,18)) $ diskList 30
+    drawl (P2 0 200) $ chain (tableRight 6 (30,18)) $ diskList 32
 
-    drawl (P2 300 100) $ chain (chainCircle 50 0 (pi/8)) $ diskList 15
+    drawl (P2 300 100) $ chain pchain $ diskList 30
+
+
+
+pchain :: ChainAlg Double
+pchain = prefix 12 (radialChain 50 (0.5*pi) (pi/8)) 
+       $ prefix 15 (chainH 20) 
+       $ chainV 20
 
 
 -- Normally, text calculate the advance vector from the font 

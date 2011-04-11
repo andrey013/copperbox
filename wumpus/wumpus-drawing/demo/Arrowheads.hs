@@ -4,7 +4,6 @@ module Arrowheads where
 
 
 import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors.ConnectorPaths
 import Wumpus.Drawing.Paths hiding ( length )
@@ -62,9 +61,9 @@ arrtable =
 
 tableGraphic :: [(Arrowhead Double, Arrowhead Double)] -> TraceDrawing Double ()
 tableGraphic tips = 
-    draw $ chn (map makeArrowDrawing tips) `at` start
+    drawl start $ chain_ chn_alg (map makeArrowDrawing tips)
   where
-    chn   = tableDown 20 (120,24)
+    chn_alg   = tableDown 20 (120,24)
     start = P2 0 480
 
  

@@ -2,16 +2,11 @@
 
 module ChainDemo where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Extras.Grids
 
 import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Wumpus.Core                      -- package: wumpus-core
-
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 import Control.Applicative
 import System.Directory
@@ -33,27 +28,16 @@ std_attr = fill_colour rosy_brown $ standardContext 12
 chain_pic :: CtxPicture
 chain_pic = drawTracing $ do 
     drawl (zeroPt) $ snapGridX >>= \w -> 
-                    chainDisplace (displaceH w) [dot1, dot1, dot1]
+                     chain_ (chainH w) [dot1, dot1, dot1]
 
-    drawl (P2 100 0) $ chainRadial 60 (pi*0.25) (d2r (30::Double) )
-                                        [dot2, dot1, dot2, dot1, dot2]
+    drawl (P2 100 0) $ chain_ (radialChain 60 (pi*0.25) (d2r (30::Double)) )
+                              [dot2, dot1, dot2, dot1, dot2]
 
 
-    drawl (P2 0 200) $ apChainIterateH 60 dot 
+    drawl (P2 0 200) $ chain (chainH 60) $ map dot 
                                        [bisque, gray, khaki, khaki, bisque, gray]
 
 
-                                    
-{-
--- SOLVED.
-    
--- How onerous is the @empty__@ argument? 
--- Obviously @empty__@ names are already long...
-
-locGraphicDistrib :: Num u 
-                  => PointDisplace u -> [LocGraphic u] -> LocGraphic u
-locGraphicDistrib fn = distribute fn
--}
  
 
 dot1 :: DLocGraphic
@@ -70,24 +54,4 @@ snapGridX :: (DrawingCtxM m, Fractional u) => m u
 snapGridX = vector_x <$> snapmove (1,1)
 
 
-
-
-apChainIterateH :: InterpretUnit u
-                => u -> (a -> LocGraphic u) -> [a] -> LocImage u (Point2 u)
-apChainIterateH dx = apChainIterate (^+^ hvec dx)  (\s pt -> pt .+^ s) (V2 0 0)
-
-
-
-
-
-{-
--- Can write an analogy to distribute but cannot re-implement it
--- with genIterate.
---
-distribute' :: Num u
-           => Vec2 u -> [LocGraphic u] -> LocImage u (Point2 u)
-distribute' v = genIterate (^+^ v)  (\s pt -> pt .+^ s) (V2 0 0)
-
-
--}
 

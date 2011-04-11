@@ -19,20 +19,24 @@
 
 module Wumpus.Basic.Kernel.Objects.Chain
   (
-    ChainAlg(..)
-
-  , interpChainAlg -- TEMP
+    ChainAlg
+  , IterationScheme
   
   , chain
   , chain_
   
-  
+  , linear
+  , prefix
+  , iterationScheme
+
+  , chainIterate
   , chainH
   , chainV
 
+  , tableRight  
   , tableDown
 
-  , chainCircle
+  , radialChain
 
   ) where
 
@@ -59,7 +63,7 @@ import Wumpus.Core                              -- package: wumpus-core
 -- @Prefix@ runs the left chain @n@ times then runs the right 
 -- chain from the end point of the left chain.
 -- 
-data ChainAlg u = L1 (Scheme u)
+data ChainAlg u = L1 (IterationScheme u)
                 | PX Int (ChainAlg u) (ChainAlg u)
 
 
@@ -69,12 +73,12 @@ type instance DUnit (ChainAlg u) = u
 
 
 
-data Scheme u = forall st. Scheme 
+data IterationScheme u = forall st. Scheme 
       { scheme_start    :: Point2 u -> st
       , scheme_step     :: st -> (st, Point2 u)
       }
 
-type instance DUnit (Scheme u) = u
+type instance DUnit (IterationScheme u) = u
 
 
 
@@ -142,11 +146,32 @@ chain_ :: InterpretUnit u => ChainAlg u -> [LocImage u a] -> LocGraphic u
 chain_ alg xs = locGraphic_ $ chain alg xs
 
 
+linear :: IterationScheme u -> ChainAlg u
+linear = L1
+
+prefix :: Int -> ChainAlg u -> ChainAlg u -> ChainAlg u
+prefix n c1 c2 | n < 1     = c2
+               | otherwise = PX n c1 c2
+
+
+iterationScheme :: (Point2 u -> st) 
+                -> (st -> (st, Point2 u)) 
+                -> IterationScheme u
+iterationScheme start stepper = Scheme start stepper
+
+
+
+
+chainIterate :: (Point2 u -> Point2 u) -> ChainAlg u
+chainIterate fn = L1 $ Scheme { scheme_start = id
+                              , scheme_step  = \pt -> (fn pt, pt)
+                              }
+
 
 chainH :: Num u => u -> ChainAlg u
 chainH = L1 . scHorizontal
 
-scHorizontal :: Num u => u -> Scheme u
+scHorizontal :: Num u => u -> IterationScheme u
 scHorizontal dx = Scheme { scheme_start = id
                          , scheme_step  = \pt -> (displaceH dx pt, pt)
                          }
@@ -156,15 +181,22 @@ scHorizontal dx = Scheme { scheme_start = id
 chainV :: Num u => u -> ChainAlg u
 chainV = L1 . scVertical
 
-scVertical :: Num u => u -> Scheme u
+scVertical :: Num u => u -> IterationScheme u
 scVertical dy = Scheme { scheme_start = id
                        , scheme_step  = \pt -> (displaceV dy pt, pt)
                        }
 
 
+tableRight :: Num u => Int -> (u,u) -> ChainAlg u
+tableRight num_cols (col_width,row_height) = 
+    L1 $ scStepper downF num_cols rightF
+  where
+    downF   = displaceV $ negate row_height
+    rightF  = displaceH col_width
+
 tableDown :: Num u => Int -> (u,u) -> ChainAlg u
 tableDown num_rows (col_width,row_height) = 
-    L1 $ scStepper downF num_rows rightF
+    L1 $ scStepper rightF num_rows downF
   where
     downF   = displaceV $ negate row_height
     rightF  = displaceH col_width
@@ -172,7 +204,7 @@ tableDown num_rows (col_width,row_height) =
 
 -- | Outer and inner steppers.
 --
-scStepper :: PointDisplace u -> Int -> PointDisplace u -> Scheme u
+scStepper :: PointDisplace u -> Int -> PointDisplace u -> IterationScheme u
 scStepper outF n innF = Scheme start step
   where
     start pt                      = (pt,pt,0)
@@ -183,11 +215,11 @@ scStepper outF n innF = Scheme start step
 
 
 
-chainCircle :: Floating u => u -> Radian -> Radian -> ChainAlg u
-chainCircle radius start step = L1 $ scCircular radius start step
+radialChain :: Floating u => u -> Radian -> Radian -> ChainAlg u
+radialChain radius start step = L1 $ scCircular radius start step
 
    
-scCircular :: Floating u => u -> Radian -> Radian -> Scheme u
+scCircular :: Floating u => u -> Radian -> Radian -> IterationScheme u
 scCircular radius angstart angseg = Scheme start step 
   where
     start pt        = (pt,angstart)

@@ -2,7 +2,6 @@
 
 module Symbols where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -31,11 +30,11 @@ std_ctx = set_font times_roman $ standardContext 12
 --
 symbols :: CtxPicture
 symbols = udrawTracing (0::Double) $ do
-    draw $ localize (set_font symbol) $ 
-               chn (map sdraw all_letters) `at` start
-    draw $ chn (map ldraw all_letters) `at` start
+    localize (set_font symbol) $ fontDelta $ draw $
+               chain_ chn_alg (map sdraw all_letters) `at` start
+    fontDelta $ draw $ chain chn_alg (map ldraw all_letters) `at` start
   where
-    chn             = tableDown 30 (100,20) 
+    chn_alg         = tableDown 30 (100,20) 
     start           = P2 0 (30*20)
     sdraw (s,_)     = plainTextLine s
     ldraw (_,name)  = moveStart (displaceH 16) (plainTextLine name)

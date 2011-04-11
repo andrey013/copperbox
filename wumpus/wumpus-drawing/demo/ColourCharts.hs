@@ -4,7 +4,6 @@ module ColourCharts where
 
 import ColourChartUtils
 
-import Wumpus.Drawing.Chains
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -42,7 +41,7 @@ makeDrawing :: Int -> [(String,RGBi)] -> CtxPicture
 makeDrawing row_count xs = drawTracing $ tableGraphic row_count xs
 
 tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
-tableGraphic row_count xs = draw $ chn gs `at` pt
+tableGraphic row_count xs = draw $ (chain_ chn gs) `at` pt
   where
     chn  = tableDown row_count (152,11)
     pt   = displaceV (fromIntegral $ 11 * row_count) zeroPt 

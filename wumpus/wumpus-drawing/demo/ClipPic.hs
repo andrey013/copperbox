@@ -12,7 +12,6 @@
 
 module ClipPic where
 
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.MonadicConstruction
@@ -55,7 +54,7 @@ background :: RGBi -> Graphic Double
 background rgb = 
     fmap ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = tableDown 18 (86,16) (replicate 112 iheartHaskell)
+    ihh = chain (tableDown 18 (86,16)) (replicate 112 iheartHaskell)
 
 -- Wumpus-Basic needs a clip function, but is this the most 
 -- satisfactory definition?

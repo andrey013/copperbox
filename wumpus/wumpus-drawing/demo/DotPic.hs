@@ -2,9 +2,6 @@
 
 module DotPic where
 
-
-
-import Wumpus.Drawing.Chains
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -61,10 +58,10 @@ dot_pic = drawTracing $ tableGraphic $
 
 tableGraphic :: [DotLocImage Double] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    draw $ chn (map makeDotDrawing imgs) `at` pt
+    draw $ chain_ chn_alg (map makeDotDrawing imgs) `at` pt
   where
     row_count   = length imgs
-    chn         = tableDown row_count (1,36)
+    chn_alg     = tableDown row_count (1,36)
     pt          = displaceV (fromIntegral $ 36 * row_count) zeroPt 
 
 
