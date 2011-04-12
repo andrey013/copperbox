@@ -68,6 +68,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Control.Applicative
+import Data.Monoid
+
 
 type LocQuery u a               = CF (Point2 u -> a)
 type LocThetaQuery u a          = CF (Point2 u -> Radian -> a)
@@ -88,9 +90,17 @@ type GraphicAns u = ImageAns u (UNil u)
 type instance DUnit (ImageAns u a) = u
 
 
+--------------------------------------------------------------------------------
+-- OPlus and monoid
+
+
 instance OPlus a => OPlus (ImageAns u a) where
   Ans cp0 a `oplus` Ans cp1 b = Ans (cp0 `oplus` cp1) (a `oplus` b)
 
+
+instance Monoid a => Monoid (ImageAns u a) where
+  mempty                        = Ans mempty mempty
+  Ans cp0 a `mappend` Ans cp1 b = Ans (cp0 `mappend` cp1) (a `mappend` b)
 
 
 --------------------------------------------------------------------------------

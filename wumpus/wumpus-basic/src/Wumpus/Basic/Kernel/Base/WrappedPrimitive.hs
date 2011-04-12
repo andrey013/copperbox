@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Listified version of the Primitive type from Wumpus-Core.
+-- Wrapped versions of the @Primitive@ type from Wumpus-Core.
 --
 --------------------------------------------------------------------------------
 
@@ -47,35 +47,52 @@ import Data.Monoid
 -- | CatPrim could probably manage happily just being a
 -- Primitive, but it is wrapped as a newtype...
 --
-newtype CatPrim = CatPrim { getCatPrim :: Primitive }
+data CatPrim = CZero
+             | Cat1 Primitive
 
 type instance DUnit CatPrim = Double
 
 instance OPlus CatPrim where
-  a `oplus` b = CatPrim $ getCatPrim a `primCat` getCatPrim b
+  CZero  `oplus` b      = b
+  a      `oplus` CZero  = a
+  Cat1 a `oplus` Cat1 b = Cat1 $ a `primCat` b
+
+
+instance Monoid CatPrim where
+  mempty                  = CZero
+  CZero  `mappend` b      = b
+  a      `mappend` CZero  = a
+  Cat1 a `mappend` Cat1 b = Cat1 $ a `primCat` b
+
+
 
 --------------------------------------------------------------------------------
 
 instance Rotate CatPrim where
-  rotate ang = CatPrim . rotate ang . getCatPrim
+  rotate _   CZero              = CZero
+  rotate ang (Cat1 a)           = Cat1 $ rotate ang a
 
 instance RotateAbout CatPrim where
-  rotateAbout ang pt = CatPrim . rotateAbout ang pt . getCatPrim
+  rotateAbout _   _  CZero      = CZero
+  rotateAbout ang pt (Cat1 a)   = Cat1 $ rotateAbout ang pt a
 
 instance Scale CatPrim where
-  scale sx sy = CatPrim . scale sx sy . getCatPrim
+  scale _  _  CZero             = CZero
+  scale sx sy (Cat1 a)          = Cat1 $ scale sx sy a
 
 instance Translate CatPrim where
-  translate dx dy = CatPrim . translate dx dy . getCatPrim
+  translate _  _  CZero         = CZero
+  translate dx dy (Cat1 a)      = Cat1 $ translate dx dy a
 
 
 --------------------------------------------------------------------------------
 
 prim1 :: Primitive -> CatPrim 
-prim1 = CatPrim
+prim1 = Cat1
 
 cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
-cpmap f  = CatPrim . f . getCatPrim
+cpmap _ CZero    = CZero
+cpmap f (Cat1 a) = Cat1 $ f a
 
 --------------------------------------------------------------------------------
 -- Lists of primitives...
@@ -114,7 +131,8 @@ hprimToList = toListH . getHPrim
 
 
 singleH :: CatPrim -> HPrim u
-singleH = HPrim . wrapH . getCatPrim 
+singleH CZero    = HPrim emptyH
+singleH (Cat1 a) = HPrim $ wrapH a
 
 
 
