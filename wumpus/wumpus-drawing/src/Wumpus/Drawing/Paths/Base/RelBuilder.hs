@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.RelativeConstruction
+-- Module      :  Wumpus.Drawing.Paths.Base.RelBuilder
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -10,14 +10,14 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Build relative paths.
+-- Build relative paths monadically.
 --
 -- \*\* WARNING \*\* this module is an experiment, and may 
 -- change significantly or even be dropped from future revisions.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.RelativeConstruction
+module Wumpus.Drawing.Paths.Base.RelBuilder
   ( 
     PathSpec
   , Action
@@ -32,9 +32,9 @@ module Wumpus.Drawing.Paths.RelativeConstruction
 
   ) where
 
-import Wumpus.Drawing.Paths.Relative
-import Wumpus.Drawing.Paths.Absolute ( AbsPath )
-import qualified Wumpus.Drawing.Paths.Absolute as Abs
+import Wumpus.Drawing.Paths.Base.RelPath
+import Wumpus.Drawing.Paths.Base.AbsPath ( AbsPath )
+import qualified Wumpus.Drawing.Paths.Base.AbsPath as Abs
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -55,6 +55,10 @@ import Prelude hiding ( null )
 type PathSpec u = [(DrawingContextF, [Action u])]
 
 -- Note - with TikZ draw (stroke) does not close the path.
+
+-- Note - Action is wrong. Use monadic operations and (>>) like 
+-- MonadicConstruction.
+--
 
 data Action u = Line    (Vec2 u)
               | Move    (Vec2 u)

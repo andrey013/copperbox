@@ -1,6 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,7 +27,7 @@ module Wumpus.Drawing.Shapes.Rectangle
 
   ) where
 
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Basic.Geometry.Paths              -- package: wumpus-basic

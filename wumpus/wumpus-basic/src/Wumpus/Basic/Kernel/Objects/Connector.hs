@@ -125,3 +125,15 @@ uconvConnectorImageZ :: (InterpretUnit u, InterpretUnit u1)
 uconvConnectorImageZ = uconvR2ab szconvAnsZ
 
 
+--------------------------------------------------------------------------------
+
+
+--
+-- Design note - potentially there are no useful combining 
+-- operators on Connectors (!).
+--
+-- Division - i.e. splitting a path at points between the start 
+-- and end - seems a more obvious operation on connector paths 
+-- than combination. See the ConnectorPath operations in 
+-- Wumpus-Drawing for some examples.
+--

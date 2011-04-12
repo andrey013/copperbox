@@ -1,10 +1,9 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.MonadicConstruction
+-- Module      :  Wumpus.Drawing.Paths.Base.AbsBuilder
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -12,14 +11,14 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Build paths monadically.
+-- Build absolute paths monadically.
 --
 -- \*\* WARNING \*\* this module is an experiment, and may 
 -- change significantly or even be dropped from future revisions.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.MonadicConstruction
+module Wumpus.Drawing.Paths.Base.AbsBuilder
   ( 
 
     PathM
@@ -41,7 +40,7 @@ module Wumpus.Drawing.Paths.MonadicConstruction
 
   ) where
 
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths.Base.AbsPath
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

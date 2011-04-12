@@ -61,7 +61,7 @@ module Wumpus.Drawing.Arrows.Tips
 
   ) where
 
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

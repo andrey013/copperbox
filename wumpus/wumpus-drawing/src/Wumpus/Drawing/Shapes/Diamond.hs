@@ -1,7 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,7 +25,7 @@ module Wumpus.Drawing.Shapes.Diamond
 
   ) where
 
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic

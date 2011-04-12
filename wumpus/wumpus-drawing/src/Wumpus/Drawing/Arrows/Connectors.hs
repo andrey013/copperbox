@@ -30,7 +30,7 @@ module Wumpus.Drawing.Arrows.Connectors
   ) where
 
 import Wumpus.Drawing.Arrows.Tips
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

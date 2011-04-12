@@ -21,7 +21,7 @@ module Wumpus.Drawing.Connectors.Loop
   ) where
 
 
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Kernel
