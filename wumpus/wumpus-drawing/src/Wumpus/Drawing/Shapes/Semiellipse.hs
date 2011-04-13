@@ -112,7 +112,7 @@ instance (Real u, Floating u) =>
     CenterAnchor (Semiellipse u) where
   center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     ApexAnchor (Semiellipse u) where
   apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
 
@@ -122,14 +122,14 @@ instance (Real u, Floating u) =>
   bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor (Semiellipse u) where
   north = apex
   south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
   east  = radialAnchor 0
   west  = radialAnchor pi
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor2 (Semiellipse u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -138,12 +138,12 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     RadialAnchor (Semiellipse u) where
   radialAnchor theta = runDisplaceCenter (seRadialVec theta)
 
 
-seRadialVec :: (Real u, Floating u, Ord u, LengthTolerance u)
+seRadialVec :: (Real u, Floating u, Ord u, Tolerance u)
             => Radian -> u -> u -> u -> u -> Vec2 u
 seRadialVec theta rx ry hminor _ = go theta
   where
@@ -196,7 +196,7 @@ baselineRange rx hminor = (lang, rang)
 
 -- | 'semiellipse'  : @ x_radius * y_radius -> Shape @
 --
-semiellipse :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+semiellipse :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => u -> u -> Shape Semiellipse u
 semiellipse rx ry = 
     let props = synthesizeProps ry
@@ -224,7 +224,7 @@ mkSemiellipse rx ry props = promoteR2 $ \ctr theta ->
                        }
 
 
-mkSemiellipsePath :: (Real u, Floating u, LengthTolerance u) 
+mkSemiellipsePath :: (Real u, Floating u, Tolerance u) 
                   => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt

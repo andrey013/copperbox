@@ -100,7 +100,7 @@ instance (Real u, Floating u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor2 (InvSemicircle u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -109,7 +109,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     RadialAnchor (InvSemicircle u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
@@ -120,7 +120,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 -- | 'invsemicircle'  : @ radius -> Shape @
 --
-invsemicircle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+invsemicircle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> Shape InvSemicircle u
 invsemicircle radius = 
     shapeMap InvSemicircle $ updatePathAngle (+ pi) $ semicircle radius

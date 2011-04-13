@@ -141,7 +141,7 @@ instance (Real u, Floating u) =>
 -- | 'invtriangle'  : @ top_base_width * height -> Triangle @
 --
 --
-invtriangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+invtriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => u -> u -> Shape InvTriangle u
 invtriangle bw h = 
     shapeMap InvTriangle $ updatePathAngle (+ pi) $ triangle bw h

@@ -291,7 +291,7 @@ type DBezierCurve = BezierCurve Double
 -- The result is found through repeated subdivision so the 
 -- calculation is potentially costly.
 --
-bezierLength :: (Floating u, Ord u, LengthTolerance u)
+bezierLength :: (Floating u, Ord u, Tolerance u)
              => BezierCurve u -> u
 bezierLength = gravesenLength length_tolerance 
 

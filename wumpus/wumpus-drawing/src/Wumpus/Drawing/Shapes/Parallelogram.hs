@@ -157,7 +157,7 @@ instance (Real u, Floating u) =>
   west  = runDisplaceCenter $ \hw _  _ _ -> V2 (-hw) 0
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (Parallelogram u) where
   northeast = pllRadialAnchor (0.25*pi)
   southeast = pllRadialAnchor (1.75*pi)
@@ -166,14 +166,14 @@ instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, InterpretUnit u, LengthTolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
      RadialAnchor (Parallelogram u) where
    radialAnchor = pllRadialAnchor
 
 
 -- TODO - update this to a quadrant function...
 --
-pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                 => Radian -> Parallelogram u -> Anchor u
 pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
                                      , pll_height    = h
@@ -193,7 +193,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
 -- | 'parallelogram'  : @ width * height * bottom_left_ang -> Parallelogram @
 --
 --
-parallelogram :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+parallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
@@ -205,7 +205,7 @@ parallelogram bw h lang =
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
 --
 --
-zparallelogram :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+zparallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> Shape Parallelogram u
 zparallelogram bw h = parallelogram bw h ang
   where
@@ -215,7 +215,7 @@ zparallelogram bw h = parallelogram bw h ang
 --------------------------------------------------------------------------------
 
 
-mkParallelogram :: (Real u, Fractional u, InterpretUnit u, LengthTolerance u) 
+mkParallelogram :: (Real u, Fractional u, InterpretUnit u, Tolerance u) 
                 => u -> u -> Radian -> SyntheticProps u 
                 -> LocThetaQuery u (Parallelogram u)
 mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
@@ -246,7 +246,7 @@ synthesizeProps bw h lang
 
 
 
-mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                     => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
     let xs = pllPath bw_minor bw_major h ctr

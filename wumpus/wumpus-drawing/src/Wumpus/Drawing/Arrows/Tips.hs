@@ -490,7 +490,7 @@ odiamondTip =
 -- Note - points flipped to get the second trapezium to 
 -- draw /underneath/.
 --
-curveTLG :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+curveTLG :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
          => LocThetaGraphic u
 curveTLG = 
     tipBody $ \pt theta h -> 
@@ -498,7 +498,7 @@ curveTLG =
         localize (join_round . cap_round) (solidOpenStroke path)
 
 
-cxCurvePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+cxCurvePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => Point2 u -> Radian -> u -> Query PrimPath
 cxCurvePath pt theta hh =
     apply2R2 tripointsByDist pt theta >>= \(tup,tlo) -> 
@@ -509,7 +509,7 @@ cxCurvePath pt theta hh =
 
 
 
-curveTip :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+curveTip :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
          => Arrowhead u
 curveTip = Arrowhead (realToFrac <$> getLineWidth) curveTLG
 
@@ -517,14 +517,14 @@ curveTip = Arrowhead (realToFrac <$> getLineWidth) curveTLG
 -- Note - points flipped to get the second trapezium to 
 -- draw /underneath/.
 --
-revcurveTLG :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+revcurveTLG :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => LocThetaGraphic u
 revcurveTLG = 
     tipBody $ \pt theta h ->
       cxRevcurvePath pt theta (0.5*h) >>= \path ->
         localize (join_round . cap_round) (solidOpenStroke path)
 
-cxRevcurvePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+cxRevcurvePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                => Point2 u -> Radian -> u -> Query PrimPath
 cxRevcurvePath pt theta hh = 
     apply2R2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
@@ -533,7 +533,7 @@ cxRevcurvePath pt theta hh =
       in toPrimPath $ curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
 
 
-revcurveTip :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+revcurveTip :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => Arrowhead u
 revcurveTip = Arrowhead markHeight revcurveTLG
 

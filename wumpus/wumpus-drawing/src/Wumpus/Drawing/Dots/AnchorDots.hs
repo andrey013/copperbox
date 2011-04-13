@@ -154,7 +154,7 @@ rectangleAnchor hw hh ctr =
     fn theta =  displaceVec (rectRadialVector hw hh theta) ctr
 
 
-polygonAnchor :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+polygonAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => [Point2 u] -> Point2 u -> DotAnchor u
 polygonAnchor ps ctr = 
     DotAnchor { center_anchor   = ctr
@@ -192,7 +192,7 @@ circleLDO =
 -- This might be better taking a function: ctr -> poly_points
 -- ...
 --
-polygonLDO :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+polygonLDO :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => (u -> Point2 u -> [Point2 u]) -> LocQuery u (DotAnchor u)
 polygonLDO mk = 
     promoteR1 $ \ctr -> 
@@ -283,7 +283,7 @@ dotFOCross :: (Floating u, InterpretUnit u) => DotLocImage u
 dotFOCross = intoLocImage circleLDO markFOCross
 
 
-dotTriangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+dotTriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => DotLocImage u
 dotTriangle = intoLocImage (polygonLDO fn) markTriangle
   where 

@@ -104,7 +104,6 @@ instance Monoid (RelPath u) where
 
 --------------------------------------------------------------------------------
 
-type LocRelPath u = LocQuery u (RelPath u)
 
 null :: RelPath u -> Bool
 null = JL.null . getRelPath
@@ -145,11 +144,11 @@ toPrimPath (RelPath segs) = promoteR1 $ \start ->
     fn (RelCurveSeg v1 v2 v3) ac = relCurveTo v1 v2 v3 : ac
 
 
-toAbsPath :: (Floating u, Ord u, LengthTolerance u) 
+toAbsPath :: (Floating u, Ord u, Tolerance u) 
           => Point2 u -> RelPath u -> AbsPath u
 toAbsPath start (RelPath segs) = step1 start $ viewl segs
   where
-    step1 p0 EmptyL                           = Abs.pathZero p0
+    step1 p0 EmptyL                           = Abs.empty p0
 
     step1 p0 (RelLineSeg v1 :< se)            = 
         let (pth,end) = line p0 v1 in step2 end pth (viewl se)

@@ -86,7 +86,7 @@ interLineLine (p1,p2) (q1,q2) =
 -- An answer of @Nothing@ indicates that the line segments 
 -- coincide, or that there is no intersection.
 --
-interLinesegLineseg :: (Fractional u, Ord u, LengthTolerance u)
+interLinesegLineseg :: (Fractional u, Ord u, Tolerance u)
                     => LineSegment u -> LineSegment u -> Maybe (Point2 u)
 interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) = 
     interLineLine (p,q) (s,t) >>= segcheck
@@ -102,7 +102,7 @@ interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) =
 -- An answer of @Nothing@ indicates that the the line and line
 -- segment coincide, or that there is no intersection.
 --
-interLinesegLine :: (Fractional u, Ord u, LengthTolerance u)
+interLinesegLine :: (Fractional u, Ord u, Tolerance u)
                  => LineSegment u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
 interLinesegLine a@(LineSegment p q) line = 
     interLineLine (p,q) line >>= segcheck
@@ -118,7 +118,7 @@ mbCheck test a = if test a then Just a else Nothing
 -- Note - this function is to be used \*after\* an intersection
 -- has been found. Hence it is not export.
 --
-withinPoints :: (Ord u, Fractional u, LengthTolerance u) 
+withinPoints :: (Ord u, Fractional u, Tolerance u) 
              => Point2 u -> LineSegment u -> Bool
 withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =  
     between x (ordpair x0 x1) && between y (ordpair y0 y1)
@@ -127,31 +127,19 @@ withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =
     between a (s,t) = (s `tGT` a) && (a `tGT` t)
 
 
--- | Note - its important to use tolerance for the @withPoints@ 
--- function.
---
-extra_tolerance :: (Fractional u, LengthTolerance u) => u
-extra_tolerance = 0.1 * length_tolerance
 
+pve :: (Fractional u, Ord u, Tolerance u) => u -> Bool
+pve a = a > eq_tolerance
 
-tEQ :: (Fractional u, Ord u, LengthTolerance u) => u -> u -> Bool
-tEQ a b = abs (a-b) < extra_tolerance
-
-tGT :: (Fractional u, Ord u, LengthTolerance u) => u -> u -> Bool
-tGT a b = a < b || abs (a-b) < extra_tolerance
-
-pve :: (Fractional u, Ord u, LengthTolerance u) => u -> Bool
-pve a = a > extra_tolerance
-
-nve :: (Fractional u, Ord u, LengthTolerance u) => u -> Bool
-nve a = a < (negate extra_tolerance)
+nve :: (Fractional u, Ord u, Tolerance u) => u -> Bool
+nve a = a < (negate eq_tolerance)
 
 
 
 --------------------------------------------------------------------------------
 -- intersection of line and Bezier curve
 
-interCurveLine :: (Floating u , Ord u, LengthTolerance u)
+interCurveLine :: (Floating u , Ord u, Tolerance u)
                => BezierCurve u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
 interCurveLine c0 (p,q) = step c0
   where
@@ -170,7 +158,7 @@ interCurveLine c0 (p,q) = step c0
 -- as it saves performing a subdivision. But make the return type
 -- a bit involved.
 --
-cut :: (Floating u , Ord u, LengthTolerance u)
+cut :: (Floating u , Ord u, Tolerance u)
     => BezierCurve u -> LineEquation u -> Either (Point2 u) Bool
 cut (BezierCurve p0 p1 p2 p3) line = 
     if d0 `tEQ` 0 then Left p0 else
@@ -198,7 +186,7 @@ cut (BezierCurve p0 p1 p2 p3) line =
 -- at angle @theta@ and the supplied line segments, if there 
 -- is one. 
 --
-findIntersect :: (Floating u, Real u, Ord u, LengthTolerance u)
+findIntersect :: (Floating u, Real u, Ord u, Tolerance u)
               => Point2 u -> Radian -> [LineSegment u] 
               -> Maybe (Point2 u)
 findIntersect radial_ogin ang = step 

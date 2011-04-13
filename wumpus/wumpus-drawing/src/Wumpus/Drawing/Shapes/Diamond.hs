@@ -139,7 +139,7 @@ instance (Real u, Floating u) =>
 --
 -- Note - args might change to tull_width and full_height...
 --
-diamond :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+diamond :: (Real u, Floating u, InterpretUnit u, Tolerance u)
         => u -> u -> Shape Diamond u
 diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
@@ -152,7 +152,7 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
                    }
 
 
-mkDiamondPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
               => u -> u -> LocThetaQuery u (AbsPath u)
 mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
     let ps = map (rotateAbout theta ctr) $ diamondCoordPath hw hh ctr

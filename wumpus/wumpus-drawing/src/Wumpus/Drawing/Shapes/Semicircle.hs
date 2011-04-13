@@ -135,7 +135,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
     pow2 = (^ (2::Int))
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor2 (Semicircle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -145,13 +145,13 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     RadialAnchor (Semicircle u) where
   radialAnchor theta = runDisplaceCenter (scRadialVec theta)
 
 -- helpers
 
-scRadialVec :: (Real u, Floating u, Ord u, LengthTolerance u)
+scRadialVec :: (Real u, Floating u, Ord u, Tolerance u)
             => Radian -> u -> u -> u -> Vec2 u
 scRadialVec theta radius hminor _ = go theta
   where
@@ -208,7 +208,7 @@ baselineRange radius hminor = (lang, rang)
 
 -- | 'semicircle'  : @ radius -> Shape @
 --
-semicircle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+semicircle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> Shape Semicircle u
 semicircle radius = 
     let props = synthesizeProps radius
@@ -239,7 +239,7 @@ mkSemicircle radius props = promoteR2 $ \ctr theta ->
 -- TODO - need to check other shapes to see if the are deriving 
 -- the center properly...
 --
-mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                  => u -> u -> LocThetaQuery u (AbsPath u)
 mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
     let ctr = displacePerpendicular (-cminor) theta pt

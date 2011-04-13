@@ -181,7 +181,7 @@ instance (Real u, Floating u) =>
 -- | 'triangle'  : @ base_width * height -> Shape @
 --
 --
-triangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+triangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
          => u -> u -> Shape Triangle u
 triangle bw h =
     let props  = synthesizeProps bw h
@@ -219,7 +219,7 @@ synthesizeProps bw h =
 
 
 
-mkTrianglePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkTrianglePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
     let xs = trianglePath bw hminor hmajor ctr

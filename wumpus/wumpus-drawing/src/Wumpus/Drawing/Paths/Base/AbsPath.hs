@@ -25,10 +25,16 @@ module Wumpus.Drawing.Paths.Base.AbsPath
 
     AbsPath
   , DAbsPath
+
+  , null
+  , empty
+
   , length
   , append
+  , consLineTo
+  , snocLineTo
+
   , pconcat
-  , pathZero
   , line
   , curve
   , pivot
@@ -84,7 +90,7 @@ import Data.AffineSpace
 import Data.List ( foldl' ) 
 import qualified Data.Traversable as T
 
-import Prelude hiding ( length )
+import Prelude hiding ( null, length )
 
 
 
@@ -154,6 +160,18 @@ instance Functor AbsPathSeg where
 
 --------------------------------------------------------------------------------
 
+-- TODO - must organize the Path datatype modules so they provide
+-- Containers-like API functions when appropriate.
+
+null :: AbsPath u -> Bool
+null = JL.null . _abs_path_elements
+
+
+-- | Note - an empty path always needs a start point.
+--
+empty :: Floating u => Point2 u -> AbsPath u
+empty = zeroPath
+
 
 length :: Num u => AbsPath u -> u
 length (AbsPath u _ _ _) = u
@@ -161,6 +179,9 @@ length (AbsPath u _ _ _) = u
 
 
 infixr 1 `append`
+
+-- CAUTION - @append@ is using Floating Point equality to see if
+-- points are equal...
 
 append :: Floating u => AbsPath u -> AbsPath u -> AbsPath u
 append (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
@@ -170,8 +191,20 @@ append (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2)
                            segs      = se1 `join` (cons joint se2)
                        in AbsPath total_len start1 segs end2 
 
--- CAUTION - @append@ is using Floating Point equality to see if
--- points are equal...
+
+consLineTo :: Floating u => Point2 u -> AbsPath u -> AbsPath u
+consLineTo p0 (AbsPath len1 sp se1 ep) = AbsPath (v+len1) p0 (cons s1 se1) ep
+  where
+    s1@(AbsLineSeg v _ _) = lineSegment p0 sp  
+
+
+snocLineTo :: Floating u => AbsPath u -> Point2 u -> AbsPath u
+snocLineTo (AbsPath len1 sp se1 ep) p1 = AbsPath (len1+v) sp (snoc se1 s1) p1
+  where
+    s1@(AbsLineSeg v _ _) = lineSegment ep p1
+
+
+-- consCurveTo :: 
 
 
 pconcat :: Floating u => AbsPath u -> [AbsPath u] -> AbsPath u
@@ -197,8 +230,8 @@ lineSegment :: Floating u => Point2 u -> Point2 u -> AbsPathSeg u
 lineSegment p0 p1 = let v = vlength $ pvec p0 p1 in AbsLineSeg v p0 p1
 
 
-pathZero :: Floating u => Point2 u -> AbsPath u 
-pathZero p0 = AbsPath 0 p0 JL.empty p0
+zeroPath :: Floating u => Point2 u -> AbsPath u 
+zeroPath p0 = AbsPath 0 p0 JL.empty p0
    
 
 line :: Floating u => Point2 u -> Point2 u -> AbsPath u 
@@ -207,7 +240,7 @@ line p0 p1 = AbsPath v p0 (JL.one $ AbsLineSeg v p0 p1) p1
     v = vlength $ pvec p0 p1 
 
 
-curve :: (Floating u, Ord u, LengthTolerance u)
+curve :: (Floating u, Ord u, Tolerance u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u 
 curve p0 p1 p2 p3 = AbsPath v p0 (JL.one $ AbsCurveSeg v p0 p1 p2 p3) p3
   where
@@ -242,7 +275,7 @@ vertexPath (a:b:xs) = step (line a b) b xs
 -- 'curvePath' throws a runtime error if the supplied list
 -- is has less than 4 elements (start, control1, control2, end). 
 --
-curvePath :: (Floating u, Ord u, LengthTolerance u) 
+curvePath :: (Floating u, Ord u, Tolerance u) 
           => [Point2 u] -> AbsPath u
 curvePath (a:b:c:d:xs) = step (curve a b c d) d xs
   where
@@ -252,7 +285,7 @@ curvePath (a:b:c:d:xs) = step (curve a b c d) d xs
 curvePath _            = error "curvePath - less than 4 elems."
 
 
-curveByAngles :: (Floating u, Ord u, LengthTolerance u) 
+curveByAngles :: (Floating u, Ord u, Tolerance u) 
               => Point2 u -> Radian -> Radian -> Point2 u -> AbsPath u
 curveByAngles start cin cout end = 
     curve start (start .+^ v1) (end .+^ v2) end
@@ -556,7 +589,7 @@ pathViewR (AbsPath u _ segs ep) = go (viewr segs)
 -- longer than half of /d/ (d - being the distance between the 
 -- /truncated/ points and the corner).
 --
-cornerCurve :: (Real u, Floating u, LengthTolerance u) 
+cornerCurve :: (Real u, Floating u, Tolerance u) 
             => Point2 u -> Point2 u -> Point2 u -> AbsPath u
 cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
   where
@@ -581,10 +614,10 @@ cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
 -- If the list has one element /the null path/ is built, if the 
 -- list has two elements a straight line is built.
 --
-roundTrail :: (Real u, Floating u, LengthTolerance u) 
+roundTrail :: (Real u, Floating u, Tolerance u) 
            => u -> [Point2 u] -> AbsPath u 
 roundTrail _ []             = error "roundTrail - empty list."
-roundTrail _ [a]            = pathZero a
+roundTrail _ [a]            = zeroPath a
 roundTrail _ [a,b]          = line a b
 roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
   where
@@ -600,7 +633,7 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 -- Note - the starting point is moved, this function is for 
 -- closed, rounded paths.
 --
-lineCurveTrail :: (Real u, Floating u, LengthTolerance u) 
+lineCurveTrail :: (Real u, Floating u, Tolerance u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
 lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
   where
@@ -621,10 +654,10 @@ lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
 -- empty. If the list has one element /the null path/ is built, 
 -- if the list has two elements a straight line is built.
 --
-roundInterior :: (Real u, Floating u, LengthTolerance u) 
+roundInterior :: (Real u, Floating u, Tolerance u) 
               => u -> [Point2 u] -> AbsPath u 
 roundInterior _ []             = error "roundEveryInterior - empty list."
-roundInterior _ [a]            = pathZero a
+roundInterior _ [a]            = zeroPath a
 roundInterior _ [a,b]          = line a b
 roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
                                  in step path1 (p1:c:xs)
@@ -641,7 +674,7 @@ roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
 -- Note - draws a straight line from the starting point - this is 
 -- the first step of an interior (non-closed) rounded path
 --
-lineCurveInter1 :: (Real u, Floating u, LengthTolerance u) 
+lineCurveInter1 :: (Real u, Floating u, Tolerance u) 
                 => u -> Point2 u -> Point2 u -> Point2 u 
                 -> (AbsPath u, Point2 u)
 lineCurveInter1 u a b c = 

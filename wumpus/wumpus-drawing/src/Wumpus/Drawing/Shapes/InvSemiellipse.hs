@@ -80,20 +80,20 @@ runRotateAnchor f (InvSemiellipse a) =
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CenterAnchor (InvSemiellipse u) where
   center = center . getInvSemiellipse
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     ApexAnchor (InvSemiellipse u) where
   apex = runRotateAnchor apex
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     TopCornerAnchor (InvSemiellipse u) where
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor (InvSemiellipse u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
@@ -101,7 +101,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor2 (InvSemiellipse u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -110,7 +110,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     RadialAnchor (InvSemiellipse u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
@@ -121,7 +121,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 -- | 'invsemiellipse'  : @ rx * ry -> Shape @
 --
-invsemiellipse :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+invsemiellipse :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> Shape InvSemiellipse u
 invsemiellipse rx ry = 
     shapeMap InvSemiellipse $ updatePathAngle (+ pi) $ semiellipse rx ry

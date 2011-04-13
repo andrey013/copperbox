@@ -122,6 +122,7 @@ library
     Wumpus.Drawing.Paths.Absolute,
     Wumpus.Drawing.Paths.Base.AbsBuilder,
     Wumpus.Drawing.Paths.Base.AbsPath,
+    Wumpus.Drawing.Paths.Base.BuildTrace,
     Wumpus.Drawing.Paths.Base.RelBuilder,
     Wumpus.Drawing.Paths.Base.RelPath,
     Wumpus.Drawing.Paths.Relative,

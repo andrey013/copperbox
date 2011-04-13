@@ -102,7 +102,9 @@ dpica :: Double -> Pica
 dpica = Pica . (\x -> x / 12.0)
 
 
-instance LengthTolerance Pica       where length_tolerance = 0.01
+instance Tolerance Pica where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
 
 
 instance ScalarUnit Pica where
@@ -132,7 +134,9 @@ instance InterpretUnit Em where
   normalize sz a = fromIntegral sz * realToFrac a
   dinterp sz d   = realToFrac d / fromIntegral sz
 
-instance LengthTolerance Centimeter where length_tolerance = 0.01
+instance Tolerance Centimeter where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
 
 
 -- | Wrapped Double representing an En.
@@ -150,5 +154,10 @@ instance InterpretUnit En where
 
 
 
-instance LengthTolerance Em         where length_tolerance = 0.01
-instance LengthTolerance En         where length_tolerance = 0.01
+instance Tolerance Em where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
+
+instance Tolerance En where
+  eq_tolerance     = 0.001 
+  length_tolerance = 0.01

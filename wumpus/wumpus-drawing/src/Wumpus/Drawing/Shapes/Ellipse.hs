@@ -133,7 +133,7 @@ instance (Real u, Floating u) => CardinalAnchor2 (Ellipse u) where
 
 -- | 'ellipse'  : @ x_radii * y_radii -> shape @
 --
-ellipse :: (Real u, Floating u, Ord u, InterpretUnit u, LengthTolerance u) 
+ellipse :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
         => u -> u -> Shape Ellipse u
 ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
@@ -146,7 +146,7 @@ mkEllipse rx ry = promoteR2 $ \ctr theta ->
                    }
 
 
-mkEllipsePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkEllipsePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> LocThetaQuery u (AbsPath u)
 mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
     let xs = map (rotateAbout theta pt) $ bezierEllipse rx ry pt

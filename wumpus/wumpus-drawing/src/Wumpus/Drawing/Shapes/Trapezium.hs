@@ -129,7 +129,7 @@ instance (Real u, Floating u) =>
                      in vbase ^+^ vup
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     SideMidpointAnchor (Trapezium u) where
   sideMidpoint n a = step (n `mod` 4) 
     where
@@ -140,7 +140,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor (Trapezium u) where
   north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
   south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
@@ -148,7 +148,7 @@ instance (Real u, Floating u, LengthTolerance u) =>
   west  = tzRadialAnchor pi
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor2 (Trapezium u) where
   northeast = tzRadialAnchor (0.25*pi)
   southeast = tzRadialAnchor (1.75*pi)
@@ -157,13 +157,13 @@ instance (Real u, Floating u, LengthTolerance u) =>
 
 
 
-instance (Real u, Floating u, LengthTolerance u) => 
+instance (Real u, Floating u, Tolerance u) => 
     RadialAnchor (Trapezium u) where
   radialAnchor = tzRadialAnchor
 
 -- TODO - update this to a quadrant function...
 --
-tzRadialAnchor :: (Real u, Floating u, LengthTolerance u) 
+tzRadialAnchor :: (Real u, Floating u, Tolerance u) 
                => Radian -> Trapezium u -> Anchor u
 tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_base_width = bw
@@ -186,7 +186,7 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
 --     bottom_right_ang -> Shape @
 --
 --
-trapezium :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+trapezium :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
           => u -> u -> Radian -> Radian -> Shape Trapezium u
 trapezium bw h lang rang = 
     makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
@@ -195,7 +195,7 @@ trapezium bw h lang rang =
 -- | 'ztrapezium'  : @ base_width * height -> Trapezium @
 --
 --
-ztrapezium :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+ztrapezium :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> Shape Trapezium u
 ztrapezium bw h = trapezium bw h ang ang
   where
@@ -216,7 +216,7 @@ mkTrapezium bw h lang rang = promoteR2 $ \ctr theta ->
                      }
 
 
-mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                 => u -> u -> Radian -> Radian -> LocThetaQuery u (AbsPath u)
 mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
     let xs = tzPath bw h lang rang ctr 

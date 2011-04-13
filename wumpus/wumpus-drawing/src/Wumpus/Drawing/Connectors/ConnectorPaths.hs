@@ -85,7 +85,7 @@ connline = promoteConn $ \p0 p1 -> return $ line p0 p1
 -- course.
 -- 
 --
-connarc :: (Real u, Floating u, Ord u, InterpretUnit u, LengthTolerance u) 
+connarc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
         => Connector u
 connarc = promoteConn $ \p0 p1 -> 
     connectorArcAngle >>= \arc_ang ->
@@ -455,7 +455,7 @@ loopbody fn = promoteConn $ \p0 p1 ->
 -- Note - the source and dest arm lengths are doubled, generally 
 -- this produces nicer curves.
 --
-connhbezier :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => Connector u
 connhbezier = promoteConn $ \p0 p1 -> 
     fmap (2*) connectorSrcArm   >>= \src_arm ->
@@ -482,7 +482,7 @@ connhbezier = promoteConn $ \p0 p1 ->
 -- Note - the source and dest arm lengths are doubled, generally 
 -- this produces nicer curves.
 --
-connvbezier :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => Connector u
 connvbezier = promoteConn $ \p0 p1 -> 
     fmap (2*) connectorSrcArm   >>= \src_arm ->

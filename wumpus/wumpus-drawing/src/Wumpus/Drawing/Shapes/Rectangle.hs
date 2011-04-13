@@ -146,7 +146,7 @@ instance (Real u, Floating u) =>
 
 -- | 'rectangle'  : @ width * height -> shape @
 --
-rectangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+rectangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
           => u -> u -> Shape Rectangle u
 rectangle w h = 
     makeShape (mkRectangle (0.5*w) (0.5*h)) (mkRectPath  (0.5*w) (0.5*h))
@@ -160,7 +160,7 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
                      }
 
 
-mkRectPath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> LocThetaQuery u (AbsPath u)
 mkRectPath hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr

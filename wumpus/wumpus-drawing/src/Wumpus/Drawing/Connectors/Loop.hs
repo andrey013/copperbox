@@ -35,7 +35,7 @@ import Data.AffineSpace                         -- package: vector-space
 -- | Note this has problems vis adding tips as the actual start
 -- and end points are synthesized.
 --
-loop :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
      => ConnectorQuery u (AbsPath u)
 loop = promoteR2 $ \ctr radpt -> 
    let incl    = lineDirection ctr radpt

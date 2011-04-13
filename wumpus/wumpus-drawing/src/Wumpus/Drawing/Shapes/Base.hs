@@ -187,7 +187,7 @@ shapeToLocTheta drawF sh = promoteR2 $ \pt theta ->
 
 -- | Draw the shape path with round corners.
 -- 
-roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, LengthTolerance u)
+roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
                      => [Point2 u] -> Query (AbsPath u)
 roundCornerShapePath xs = 
     roundCornerSize >>= \sz -> 
