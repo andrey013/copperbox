@@ -22,17 +22,25 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
   ( 
 
     AbsBuild
-
+  , runAbsBuild
+  , execAbsBuild
+  , evalAbsBuild
 
   , tip
 
   , lineto
+  , curveto
+  , moveto
+  , ctrlcurveto
+
+  , insert
+  , vamp
+
 {-  , rlineto
   , hline
   , vline
 
   , bezierto
-  , curveto
 
   , verticalHorizontal
   , horizontalVertical
@@ -42,18 +50,19 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
 import Wumpus.Drawing.Paths.Base.AbsPath
 import qualified Wumpus.Drawing.Paths.Base.AbsPath as A
 import Wumpus.Drawing.Paths.Base.BuildTrace
+import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative hiding ( empty )
-import Data.List
 import Data.Monoid
+
+import Prelude hiding ( log )
 
 -- Note - connectors and paths are quite different things.
 --
@@ -95,7 +104,7 @@ instance Applicative (AbsBuild u) where
   pure a    = AbsBuild $ \s0 t0 -> (a,s0,t0)
   mf <*> ma = AbsBuild $ \s0 t0 -> let (f,s1,t1) = getAbsBuild mf s0 t0
                                        (a,s2,t2) = getAbsBuild ma s1 t1
-                                in (f a,s2,t1)
+                                in (f a,s2,t2)
 
 instance Monad (AbsBuild u) where
   return a  = AbsBuild $ \s0 t0 -> (a,s0,t0)
@@ -103,9 +112,6 @@ instance Monad (AbsBuild u) where
                                    in (getAbsBuild . k) a s1 t1
 
 
--- run  - (path,graphic)
--- exec - graphic
--- eval - path
 
 
 
@@ -117,6 +123,9 @@ initSt pt = St { current_point     = pt
                , active_path       = (pt, empty pt)
                }
 
+-- run  - (path,graphic)
+-- exec - graphic
+-- eval - path
 
 -- | Note - runAbsBuild drops the monadic answer and returns the
 -- constructed path and a trace of the inserts and sub-paths.
@@ -127,32 +136,45 @@ runAbsBuild pt mf = post $ getAbsBuild mf (initSt pt) mempty
   where
     post (_,st,log) = let sub_last  = snd $ active_path st
                           empty_gfx = emptyLocGraphic `at` pt
-                          log2      = logSubPath SPE_Open sub_last log
-                          output    = extractTrace empty_gfx log2
-                      in (cumulative_path st, output)
+                          log2      = logSubPath SPE_Open id sub_last log
+                          (pen,ins) = extractTrace empty_gfx log2
+                      in (cumulative_path st, pen `oplus` ins)
 
 
-logSubPath :: InterpretUnit u => SubPathEnd -> AbsPath u -> Log u -> Log u 
-logSubPath spe subp log 
+execAbsBuild :: (Floating u, InterpretUnit u)
+             => Point2 u -> AbsBuild u a -> Graphic u
+execAbsBuild pt mf = snd $ runAbsBuild pt mf
+
+evalAbsBuild :: (Floating u, InterpretUnit u)
+             => Point2 u -> AbsBuild u a -> AbsPath u
+evalAbsBuild pt mf = fst $ runAbsBuild pt mf
+
+
+
+logSubPath :: InterpretUnit u 
+           => SubPathEnd -> DrawingContextF -> AbsPath u -> Log u -> Log u 
+logSubPath spe upd subp log 
     | A.null subp  = log
-    | otherwise    = addPen (toPrimPath subp >>= drawF) log
+    | otherwise    = addPen (toPrimPath subp >>= localize upd . drawF) log
   where
     drawF = if spe == SPE_Closed then closedStroke else openStroke
 
 
 
-tellSubClosed :: InterpretUnit u => AbsPath u -> AbsBuild u ()
-tellSubClosed subp = 
-    AbsBuild $ \s0 t0 -> ((), s0, logSubPath SPE_Closed subp t0)
+tellSubClosed :: InterpretUnit u 
+              => DrawingContextF -> AbsPath u -> AbsBuild u ()
+tellSubClosed upd subp = 
+    AbsBuild $ \s0 t0 -> ((), s0, logSubPath SPE_Closed upd subp t0)
 
-tellSubOpen :: InterpretUnit u => AbsPath u -> AbsBuild u ()
-tellSubOpen subp = 
-    AbsBuild $ \s0 t0 -> ((), s0, logSubPath SPE_Open subp t0)
+tellSubOpen :: InterpretUnit u 
+            => DrawingContextF -> AbsPath u -> AbsBuild u ()
+tellSubOpen upd subp = 
+    AbsBuild $ \s0 t0 -> ((), s0, logSubPath SPE_Open upd subp t0)
 
 
-tellInsert :: LocGraphic u -> AbsBuild u ()
-tellInsert gf = AbsBuild $ \s0 t0 -> let g1 = gf `at` current_point s0
-                                     in ((),s0, addInsert g1 t0)
+tellInsert :: Graphic u -> AbsBuild u ()
+tellInsert g1 = 
+    AbsBuild $ \s0 t0 -> ((),s0, addInsert g1 t0)
 
 
 sets_   :: (St u -> St u) -> AbsBuild u ()
@@ -177,12 +199,67 @@ lineto :: Floating u => (u,u) -> AbsBuild u ()
 lineto (x,y) = sets_ upd
   where
     pt  = P2 x y
-    upd = (\s i j k -> s { current_point = pt
-                         , cumulative_path  = j `snocLineTo` pt
-                         , active_path      = bimapR (`snocLineTo` pt) k }) 
-            <*> current_point <*> cumulative_path <*> active_path
+    upd = (\s i j -> s { current_point    = pt
+                       , cumulative_path  = i `snocLineTo` pt
+                       , active_path      = bimapR (`snocLineTo` pt) j })
+            <*> cumulative_path <*> active_path
    
 
+
+
+curveto :: (Floating u, Ord u, Tolerance u)
+        => (u,u) -> (u,u) -> (u,u) -> AbsBuild u ()
+curveto (x1,y1) (x2,y2) (x3,y3) = sets_ upd
+  where
+    p1  = P2 x1 y1
+    p2  = P2 x2 y2
+    p3  = P2 x3 y3
+    ext = (\abp -> snocCurveTo abp p1 p2 p3)
+    upd = (\s i j -> s { current_point    = p3
+                       , cumulative_path  = ext i
+                       , active_path      = bimapR ext j }) 
+            <*> cumulative_path <*> active_path
+
+
+
+ctrlcurveto :: (Floating u, Ord u, Tolerance u) 
+            => Radian -> Radian -> (u,u)-> AbsBuild u ()
+ctrlcurveto cin cout (x1,y1) = sets_ upd
+  where
+    p1  = P2 x1 y1
+    upd = (\s i j k -> let suffix = controlCurve i cin cout p1
+                       in s { current_point    = p1
+                            , cumulative_path  = j `append` suffix
+                            , active_path      = bimapR (`append` suffix) k }) 
+            <*> current_point <*> cumulative_path <*> active_path
+
+
+   
+-- | 'moveto' is a pen up.
+--
+moveto :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+       => (u,u) -> AbsBuild u ()
+moveto (x,y) = 
+    gets active_path >>= \(_,ans) -> tellSubOpen id ans >> sets_ upd 
+  where
+    pnext = P2 x y
+    upd   = (\s i -> s { current_point   = pnext
+                       , cumulative_path = i `snocLineTo` pnext
+                       , active_path     = (pnext, empty pnext) }) 
+              <*> cumulative_path
+
+
+
+insert :: Num u => LocGraphic u -> AbsBuild u ()
+insert gf = gets current_point >>= \pt -> tellInsert (gf `at` pt)
+
+
+vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+     => Vec2 u -> DrawingContextF -> R.RelPath u -> AbsBuild u ()
+vamp vnext upd relp = 
+    gets current_point                          >>= \p0 -> 
+    let (P2 x y) = p0 .+^ vnext in moveto (x,y) >>
+    let pvamp = R.toAbsPath p0 relp in tellSubOpen upd pvamp
 
 
 {-

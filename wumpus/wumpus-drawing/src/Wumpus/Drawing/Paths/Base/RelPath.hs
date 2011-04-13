@@ -40,8 +40,8 @@ module Wumpus.Drawing.Paths.Base.RelPath
   ) where
 
 
-import Wumpus.Drawing.Paths.Absolute ( AbsPath )
-import qualified Wumpus.Drawing.Paths.Absolute as Abs
+import Wumpus.Drawing.Paths.Base.AbsPath ( AbsPath )
+import qualified Wumpus.Drawing.Paths.Base.AbsPath as Abs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl, join )

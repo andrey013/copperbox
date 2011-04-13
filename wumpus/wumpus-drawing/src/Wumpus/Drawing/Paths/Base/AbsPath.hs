@@ -23,36 +23,48 @@
 module Wumpus.Drawing.Paths.Base.AbsPath
   ( 
 
+  -- * Absolute path type
     AbsPath
   , DAbsPath
 
-  , null
-  , empty
 
+  -- * Construction
+  , empty
+  , line
+  , curve
+  , vertexPath
+  , curvePath
+  , controlCurve
+
+  -- * Queries
+  , null
   , length
+
+  -- * Concat and extension
   , append
   , consLineTo
   , snocLineTo
+  , consCurveTo
+  , snocCurveTo
 
-  , pconcat
-  , line
-  , curve
-  , pivot
-  , vertexPath
-  , curvePath
-  , curveByAngles
+  , pathconcat
 
+  -- * Conversion
   , toPrimPath
 
-  , tipL
-  , tipR
 
+  -- * Shortening
   , shortenPath
   , shortenL
   , shortenR
+
+  -- * Tips and direction
+  , tipL
+  , tipR
   , directionL
   , directionR
 
+  -- * Path anchors
   , midway
   , midway_
   , atstart
@@ -60,6 +72,7 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   , atend
   , atend_
 
+  -- * Views
   , PathViewL(..)
   , DPathViewL
   , PathViewR(..)
@@ -163,108 +176,51 @@ instance Functor AbsPathSeg where
 -- TODO - must organize the Path datatype modules so they provide
 -- Containers-like API functions when appropriate.
 
-null :: AbsPath u -> Bool
-null = JL.null . _abs_path_elements
 
 
--- | Note - an empty path always needs a start point.
+--------------------------------------------------------------------------------
+-- Construction
+
+-- | Create the empty path.
+-- 
+-- Note - an absolute path needs /locating/ and cannot be built 
+-- without a start point. Figuratively, the empty path is a path
+-- from the start point to the start point.
+--
+-- Thus AbsPath operates as a semigroup but not a monoid.
 --
 empty :: Floating u => Point2 u -> AbsPath u
 empty = zeroPath
 
 
-length :: Num u => AbsPath u -> u
-length (AbsPath u _ _ _) = u
-
-
-
-infixr 1 `append`
-
--- CAUTION - @append@ is using Floating Point equality to see if
--- points are equal...
-
-append :: Floating u => AbsPath u -> AbsPath u -> AbsPath u
-append (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
-    | end1 == start2 = AbsPath (len1+len2) start1 (se1 `join` se2) end2 
-    | otherwise      = let joint     = lineSegment end1 start2
-                           total_len = len1 + len2 + segmentLength joint
-                           segs      = se1 `join` (cons joint se2)
-                       in AbsPath total_len start1 segs end2 
-
-
-consLineTo :: Floating u => Point2 u -> AbsPath u -> AbsPath u
-consLineTo p0 (AbsPath len1 sp se1 ep) = AbsPath (v+len1) p0 (cons s1 se1) ep
-  where
-    s1@(AbsLineSeg v _ _) = lineSegment p0 sp  
-
-
-snocLineTo :: Floating u => AbsPath u -> Point2 u -> AbsPath u
-snocLineTo (AbsPath len1 sp se1 ep) p1 = AbsPath (len1+v) sp (snoc se1 s1) p1
-  where
-    s1@(AbsLineSeg v _ _) = lineSegment ep p1
-
-
--- consCurveTo :: 
-
-
-pconcat :: Floating u => AbsPath u -> [AbsPath u] -> AbsPath u
-pconcat p0 ps = foldl' append p0 ps
-
-segmentLength :: AbsPathSeg u -> u
-segmentLength (AbsLineSeg u _ _)       = u
-segmentLength (AbsCurveSeg u _ _ _ _)  = u
-
-
-segmentStart :: AbsPathSeg u -> Point2 u
-segmentStart (AbsLineSeg  _ p0 _)      = p0
-segmentStart (AbsCurveSeg _ p0 _ _ _)  = p0
-
-segmentEnd :: AbsPathSeg u -> Point2 u
-segmentEnd (AbsLineSeg  _ _ p1)        = p1
-segmentEnd (AbsCurveSeg _ _ _ _ p3)    = p3
-
-
-
-
-lineSegment :: Floating u => Point2 u -> Point2 u -> AbsPathSeg u 
-lineSegment p0 p1 = let v = vlength $ pvec p0 p1 in AbsLineSeg v p0 p1
-
-
-zeroPath :: Floating u => Point2 u -> AbsPath u 
-zeroPath p0 = AbsPath 0 p0 JL.empty p0
-   
-
+-- | Create a path as a straight line between the supplied points.
+--
 line :: Floating u => Point2 u -> Point2 u -> AbsPath u 
 line p0 p1 = AbsPath v p0 (JL.one $ AbsLineSeg v p0 p1) p1
   where
     v = vlength $ pvec p0 p1 
 
-
+-- | Create a path as a cubic Bezier curve.
+--
 curve :: (Floating u, Ord u, Tolerance u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u 
 curve p0 p1 p2 p3 = AbsPath v p0 (JL.one $ AbsCurveSeg v p0 p1 p2 p3) p3
   where
     v = bezierLength (BezierCurve p0 p1 p2 p3)
 
--- | A draw a /straight line/ of length 0 at the supplied point. 
---
--- In som ecircumstances, this is may be useful for concatenating 
--- curved paths as it introduces and extra control point.
--- 
-pivot :: Floating u => Point2 u -> AbsPath u 
-pivot p0 = AbsPath 0 p0 (JL.one $ AbsLineSeg 0 p0 p0) p0
-
 
 -- | 'vertexPath' throws a runtime error if the supplied list
 -- is empty. 
 --
-vertexPath :: Floating u => [Point2 u] -> AbsPath u
+vertexPath :: (Floating u, Ord u, Tolerance u) 
+           => [Point2 u] -> AbsPath u
 vertexPath []       = error "traceLinePoints - empty point list."
 vertexPath [a]      = line a a
 vertexPath (a:b:xs) = step (line a b) b xs
   where
     step acc _ []     = acc
     step acc e (y:ys) = step (acc `append` line e y) y ys
+
 
 
 -- | 'curvePath' consumes 4 points from the list on the 
@@ -285,14 +241,168 @@ curvePath (a:b:c:d:xs) = step (curve a b c d) d xs
 curvePath _            = error "curvePath - less than 4 elems."
 
 
-curveByAngles :: (Floating u, Ord u, Tolerance u) 
-              => Point2 u -> Radian -> Radian -> Point2 u -> AbsPath u
-curveByAngles start cin cout end = 
+
+-- NOTE - need a proper arc path builder.
+
+
+
+-- | This is not an arc...
+-- 
+controlCurve :: (Floating u, Ord u, Tolerance u) 
+         => Point2 u -> Radian -> Radian -> Point2 u -> AbsPath u
+controlCurve start cin cout end = 
     curve start (start .+^ v1) (end .+^ v2) end
   where
     sz     = 0.375 * (vlength $ pvec start end)
     v1     = avec cin  sz
     v2     = avec cout sz
+
+
+--------------------------------------------------------------------------------
+-- Queries
+
+-- | Is the path empty?
+--
+null :: AbsPath u -> Bool
+null = JL.null . _abs_path_elements
+
+-- | Length of the Path.
+--
+-- Length is the length of the path as it is drawn, it is not a 
+-- count of the number or path segments.
+--
+-- Length is cached so this operation is cheap - though this put 
+-- a tax on the build operations. 
+-- 
+length :: Num u => AbsPath u -> u
+length (AbsPath u _ _ _) = u
+
+
+--------------------------------------------------------------------------------
+-- Concat
+
+infixr 1 `append`
+
+-- | Append two AbsPaths. 
+-- 
+-- If the end of the first path and the start of the second path
+-- coalesce then the paths are joined directly, otherwise, a
+-- straight line segment is added to join the paths.
+-- 
+-- Neither path is /moved/. Consider 'RelPath' if you need 
+-- different concatenation.
+--
+append :: (Floating u, Ord u, Tolerance u) 
+       => AbsPath u -> AbsPath u -> AbsPath u
+append (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
+    | end1 == start2 = AbsPath (len1+len2) start1 (se1 `join` se2) end2 
+    | otherwise      = AbsPath total_len start1 segs end2 
+  where
+    joint     = lineSegment end1 start2
+    total_len = len1 + len2 + segmentLength joint
+    segs      = se1 `join` (cons joint se2)
+
+
+-- | Prefix the path with a straight line segment from the 
+-- supplied point.
+--
+consLineTo :: Floating u => Point2 u -> AbsPath u -> AbsPath u
+consLineTo p0 (AbsPath len1 sp se1 ep) = AbsPath (v+len1) p0 (cons s1 se1) ep
+  where
+    s1@(AbsLineSeg v _ _) = lineSegment p0 sp  
+
+
+-- | Suffix the path with a straight line segment to the 
+-- supplied point.
+--
+snocLineTo :: Floating u => AbsPath u -> Point2 u -> AbsPath u
+snocLineTo (AbsPath len1 sp se1 ep) p1 = AbsPath (len1+v) sp (snoc se1 s1) p1
+  where
+    s1@(AbsLineSeg v _ _) = lineSegment ep p1
+
+
+-- | Prefix the path with a Bezier curve segment formed by the 
+-- supplied points.
+--
+consCurveTo :: (Floating u, Ord u, Tolerance u)
+            => Point2 u -> Point2 u -> Point2 u -> AbsPath u -> AbsPath u
+consCurveTo p0 p1 p2 (AbsPath len1 sp se1 ep) = 
+    AbsPath (v+len1) p0 (cons s1 se1) ep
+  where
+    s1@(AbsCurveSeg v _ _ _ _) = curveSegment p0 p1 p2 sp
+
+
+-- | Suffix the path with a Bezier curve segment formed by the 
+-- supplied points.
+--
+snocCurveTo :: (Floating u, Ord u, Tolerance u)
+            => AbsPath u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
+snocCurveTo (AbsPath len1 sp se1 ep) p1 p2 p3 = 
+    AbsPath (v+len1) sp (snoc se1 s1) p3
+  where
+    s1@(AbsCurveSeg v _ _ _ _) = curveSegment ep p1 p2 p3
+ 
+
+ 
+
+-- | Concat the list of paths onto the intial path.
+-- 
+-- Because a true empty path cannot be constructed (i.e. the
+-- /empty/ path needs a start point even if it has no segments) - 
+-- the list is in /destructor form/. Client code has to decide 
+-- how to handle the empty list case, e.g.:
+--
+-- > case paths of
+-- >  (x:xs) -> Just $ pathconcat x xs
+-- >  []     -> Nothing
+--
+-- 
+pathconcat :: (Floating u, Ord u, Tolerance u) 
+           => AbsPath u -> [AbsPath u] -> AbsPath u
+pathconcat p0 ps = foldl' append p0 ps
+
+segmentLength :: AbsPathSeg u -> u
+segmentLength (AbsLineSeg u _ _)       = u
+segmentLength (AbsCurveSeg u _ _ _ _)  = u
+
+
+segmentStart :: AbsPathSeg u -> Point2 u
+segmentStart (AbsLineSeg  _ p0 _)      = p0
+segmentStart (AbsCurveSeg _ p0 _ _ _)  = p0
+
+segmentEnd :: AbsPathSeg u -> Point2 u
+segmentEnd (AbsLineSeg  _ _ p1)        = p1
+segmentEnd (AbsCurveSeg _ _ _ _ p3)    = p3
+
+
+
+
+-- | Helper - construct a curve segment.
+-- 
+lineSegment :: Floating u => Point2 u -> Point2 u -> AbsPathSeg u 
+lineSegment p0 p1 = AbsLineSeg v p0 p1
+  where
+    v = vlength $ pvec p0 p1
+
+
+-- | Helper - construct a curve segment.
+-- 
+curveSegment :: (Floating u, Ord u, Tolerance u) 
+             => Point2 u -> Point2 u -> Point2 u -> Point2 u -> AbsPathSeg u 
+curveSegment p0 p1 p2 p3 = AbsCurveSeg v p0 p1 p2 p3
+  where
+    v = bezierLength (BezierCurve p0 p1 p2 p3)
+
+
+-- | Helper - construct the /empty/ but located path.
+-- 
+zeroPath :: Floating u => Point2 u -> AbsPath u 
+zeroPath p0 = AbsPath 0 p0 JL.empty p0
+   
+
+
+
+
 
 
 
@@ -323,16 +433,6 @@ toPrimPath (AbsPath _ start segs _) =
     seg2 (AbsCurveSeg _ _ p1 p2 p3)   = absCurveTo p1 p2 p3
 
 
-
---------------------------------------------------------------------------------
--- tips 
-
-tipL :: AbsPath u -> Point2 u
-tipL (AbsPath _ sp _ _) = sp
-
-
-tipR :: AbsPath u -> Point2 u
-tipR (AbsPath _ _ _ ep) = ep
 
 
 
@@ -447,6 +547,16 @@ shortenLineR n p0 p1 = p1 .+^ v
     v  = avec (vdirection v0) n
 
 
+
+--------------------------------------------------------------------------------
+-- tips 
+
+tipL :: AbsPath u -> Point2 u
+tipL (AbsPath _ sp _ _) = sp
+
+
+tipR :: AbsPath u -> Point2 u
+tipR (AbsPath _ _ _ ep) = ep
 
 
 --------------------------------------------------------------------------------
@@ -584,6 +694,14 @@ pathViewR (AbsPath u _ segs ep) = go (viewr segs)
 
 --------------------------------------------------------------------------------
 -- Round corners
+
+-- NOTE - round corners are probably better suited to construction 
+-- rather than transformation.
+-- 
+-- The code below is pencilled in to change.
+--
+
+
 
 -- | The length of the control-point vector wants to be slighly 
 -- longer than half of /d/ (d - being the distance between the 

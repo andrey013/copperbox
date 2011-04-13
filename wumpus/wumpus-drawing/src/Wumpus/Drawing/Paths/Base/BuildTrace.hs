@@ -34,13 +34,10 @@ import Wumpus.Basic.Utils.HList
 
 import Data.Monoid
 
--- Note - connectors and paths are quite different things.
+-- | Monadic builders allow both inserts (patterned after TikZ)
+-- which are decorations along the path and sub paths that are 
+-- stroked and possibly closed.
 --
--- Connectors always know start and end points, a path is built 
--- from a start point.
---
-
-
 data BuildLog a  = Log { insert_trace    :: H a
                        , pen_trace       :: H a
                        }
@@ -66,11 +63,12 @@ instance Monoid (BuildLog a) where
 -- Any sub-paths traced by the pen are drawn at the back in the 
 -- Z-order.
 --
-extractTrace :: OPlus a => a -> BuildLog a -> a
-extractTrace zero NoLog           = zero
-extractTrace zero (Log ins pen)   = altconcat zero xs 
+extractTrace :: OPlus a => a -> BuildLog a -> (a,a)
+extractTrace zero NoLog           = (zero,zero)
+extractTrace zero (Log ins pen)   = (pent,inst)
   where
-    xs = toListH $ pen `appendH` ins
+    pent = altconcat zero $ toListH $ pen 
+    inst = altconcat zero $ toListH $ ins
 
 
 -- | Add an /insert/.
