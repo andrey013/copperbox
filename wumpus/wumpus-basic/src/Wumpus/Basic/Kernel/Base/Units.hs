@@ -40,7 +40,7 @@ module Wumpus.Basic.Kernel.Base.Units
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 
-
+import Wumpus.Core                              -- package: wumpus-core
 
 
 --------------------------------------------------------------------------------

@@ -85,6 +85,10 @@ newtype AfmUnit = AfmUnit { getAfmUnit :: Double }
 instance Show AfmUnit where
   showsPrec p d = showsPrec p (getAfmUnit d)
 
+instance Tolerance AfmUnit where
+  eq_tolerance     = 0.001
+  length_tolerance = 0.1
+
 
 -- | Flipped version of 'afmValue'.
 --

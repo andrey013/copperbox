@@ -175,6 +175,19 @@ class RotateAbout t where
   rotateAbout :: u ~ DUnit t => Radian -> Point2 u -> t -> t
 
 
+--
+-- Note - it seems GHC 7.0.2 at least, would let us define a 
+-- RotateAbout instance for @()@, even though it has no valid
+-- DUnit instance.
+--
+-- Still it seems safer to define a nil type with a phantom unit:
+--
+-- > data UNil u = UNil
+-- 
+-- This data type is provided by Wumpus-Basic.
+-- 
+
+
 instance RotateAbout a => RotateAbout (Maybe a) where
   rotateAbout ang pt = fmap (rotateAbout ang pt)
 

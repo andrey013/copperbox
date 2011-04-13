@@ -29,6 +29,9 @@ module Wumpus.Core.Geometry
     -- * Type family 
     DUnit
 
+  , Tolerance(..)
+
+
   -- * Data types
   , Vec2(..)
   , DVec2
@@ -41,6 +44,14 @@ module Wumpus.Core.Geometry
 
   , MatrixMult(..)
 
+
+  -- * Tolerance helpers
+  , tEQ
+  , tGT
+  , tLT
+  , tGTE
+  , tLTE
+  , tCompare
 
   -- * Vector operations
   , vec
@@ -115,16 +126,53 @@ type instance GuardEq a a = a
 
 
 
+
+-- | Class for tolerance on floating point numbers.
+-- 
+-- Two tolerances are required tolerance for equality - commonly 
+-- used for testing if two points are equal - and tolerance for 
+-- path length measurement.
+-- 
+-- Path length measurement in Wumpus does not have a strong 
+-- need to be exact (precision is computational costly) - by 
+-- default it is 100x the equality tolerance.
+-- 
+-- Bezier path lengths are calculated by iteration, so greater 
+-- accuracy requires more compution. As it is hard to visually
+-- differentiate measures of less than a point the tolerance 
+-- for Points is quite high quite high (0.1).
+-- 
+-- The situation is more complicated for contextual units 
+-- (Em and En) as they are really scaling factors. The bigger
+-- the point size the less accurate the measure is.
+-- 
+class Num u => Tolerance u where 
+  eq_tolerance     :: u
+  length_tolerance :: u
+
+  length_tolerance = 100 * eq_tolerance 
+
+
+
+instance Tolerance Double where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.1
+
+
+
 -- Datatypes 
 
 
 -- | 2D Vector - both components are strict.
 --
+-- Note - equality is defined with 'Tolerance' and tolerance is 
+-- quite high for the usual units. See the note for 'Point2'.
+-- 
 data Vec2 u = V2 
       { vector_x :: !u 
       , vector_y :: !u
       }
-  deriving (Eq,Show)
+  deriving (Show)
 
 type DVec2 = Vec2 Double
 
@@ -132,14 +180,19 @@ type DVec2 = Vec2 Double
 
 -- | 2D Point - both components are strict.
 -- 
--- Note - Point2 derives Ord so it can be used as a key in 
--- Data.Map etc.
+-- Note - equality is defined with 'Tolerance' and tolerance is 
+-- quite high for the usual units. 
+-- 
+-- This is useful for drawing, *but* unacceptable data centric 
+-- work. If more accurate equality is needed define a newtype
+-- wrapper over the unit type and make a @Tolerance@ instance with 
+-- much greater accuracy.
 --
 data Point2 u = P2 
       { point_x    :: !u
       , point_y    :: !u
       }
-  deriving (Eq,Ord,Show)
+  deriving (Show)
 
 type DPoint2 = Point2 Double
 
@@ -218,6 +271,31 @@ lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) =
 
 --------------------------------------------------------------------------------
 -- instances
+
+-- Eq (with tolerance)
+
+instance (Tolerance u, Ord u) => Eq (Vec2 u) where
+  V2 x0 y0 == V2 x1 y1 = x0 `tEQ` x1 && y0 `tEQ` y1
+
+
+instance (Tolerance u, Ord u) => Eq (Point2 u) where
+  P2 x0 y0 == P2 x1 y1 = x0 `tEQ` x1 && y0 `tEQ` y1
+
+
+-- Ord (with Tolerance)
+
+instance (Tolerance u, Ord u) => Ord (Vec2 u) where
+  V2 x0 y0 `compare` V2 x1 y1 = case tCompare x0 x1 of
+                                  EQ  -> tCompare y0 y1
+                                  ans -> ans
+
+
+instance (Tolerance u, Ord u) => Ord (Point2 u) where
+  P2 x0 y0 `compare` P2 x1 y1 = case tCompare x0 x1 of
+                                  EQ  -> tCompare y0 y1
+                                  ans -> ans
+
+
 
 
 -- Functor
@@ -357,6 +435,63 @@ instance MatrixMult Vec2 where
 instance MatrixMult Point2 where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m + b*n + c*1) 
                                             (d*m + e*n + f*1)
+
+
+--------------------------------------------------------------------------------
+
+infix 4 `tEQ`, `tLT`, `tGT`
+
+-- | Tolerant equality - helper function for defining Eq instances
+-- that use tolerance.
+--
+-- Note - the definition actually needs Ord which is 
+-- unfortunate (as Ord is /inaccurate/).
+--
+tEQ :: (Tolerance u, Ord u) => u -> u -> Bool
+tEQ a b = (abs (a-b)) < eq_tolerance
+
+-- | Tolerant less than.
+--
+-- Note - the definition actually needs Ord which is 
+-- unfortunate (as Ord is /inaccurate/).
+--
+tLT :: (Tolerance u, Ord u) => u -> u -> Bool
+tLT a b = a < b && (b - a) > eq_tolerance
+
+
+-- | Tolerant greater than.
+--
+-- Note - the definition actually needs Ord which is 
+-- unfortunate (as Ord is /inaccurate/).
+--
+tGT :: (Tolerance u, Ord u) => u -> u -> Bool
+tGT a b = a > b && (a - b) > eq_tolerance
+
+
+
+-- | Tolerant less than or equal.
+--
+-- Note - the definition actually needs Ord which is 
+-- unfortunate (as Ord is /inaccurate/).
+--
+tLTE :: (Tolerance u, Ord u) => u -> u -> Bool
+tLTE a b = tEQ a b || tLT a b
+
+
+-- | Tolerant greater than or equal.
+--
+-- Note - the definition actually needs Ord which is 
+-- unfortunate (as Ord is /inaccurate/).
+--
+tGTE :: (Tolerance u, Ord u) => u -> u -> Bool
+tGTE a b = tEQ a b || tGT a b
+
+
+-- | Tolerant @compare@.
+--
+tCompare :: (Tolerance u, Ord u) => u -> u -> Ordering
+tCompare a b | a `tEQ` b = EQ
+             | otherwise = compare a b
 
 
 --------------------------------------------------------------------------------

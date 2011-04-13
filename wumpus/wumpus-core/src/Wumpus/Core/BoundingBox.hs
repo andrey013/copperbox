@@ -73,7 +73,7 @@ data BoundingBox u = BBox
       { ll_corner :: Point2 u
       , ur_corner :: Point2 u 
       }
-  deriving (Eq,Show)
+  deriving (Show)
 
 type DBoundingBox = BoundingBox Double
 
@@ -81,6 +81,9 @@ type instance DUnit (BoundingBox u) = u
 
 --------------------------------------------------------------------------------
 -- instances
+
+instance (Tolerance u, Ord u) => Eq (BoundingBox u) where
+  BBox ll0 ur0 == BBox ll1 ur1  = ll0 == ll1 && ur0 == ur1
 
 instance Functor BoundingBox where
   fmap f (BBox p0 p1) = BBox (fmap f p0) (fmap f p1)
@@ -242,7 +245,7 @@ boundaryCenter (BBox (P2 x0 y0) (P2 x1 y1)) = P2 x y
 -- 
 -- Within test - is the supplied point within the bounding box?
 --
-withinBoundary :: Ord u => Point2 u -> BoundingBox u -> Bool
+withinBoundary :: (Tolerance u, Ord u) => Point2 u -> BoundingBox u -> Bool
 withinBoundary p (BBox ll ur) = (minPt p ll) == ll && (maxPt p ur) == ur
 
 

@@ -21,12 +21,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   
     MonUnit 
 
-  -- * Floating point tolerance
-  , Tolerance(..)
-  , tEQ
-  , tLT
-  , tGT
-
   -- * A semigroup class
   , OPlus(..)
   , oconcat
@@ -85,68 +79,6 @@ type family MonUnit m :: *
 
 
 
-
--- | Class for tolerance on floating point numbers.
--- 
--- Two tolerances are required tolerance for equality - commonly 
--- used for testing if two points are equal - and tolerance for 
--- path length measurement.
--- 
--- Path length measurement in Wumpus does not have a strong 
--- need to be exact - by default it is 10x the equality tolerance.
--- 
--- Bezier path lengths are calculated by iteration, so greater 
--- accuracy requires more compution. As it is hard to visually
--- differentiate measures of less than a point the tolerance 
--- for Points is quite high quite high (0.1).
--- 
--- The situation is more complicated for contextual units 
--- (Em and En) as they are really scaling factors. The bigger
--- the point size the less accurate the measure is.
--- 
-class Num u => Tolerance u where 
-  eq_tolerance     :: u
-  length_tolerance :: u
-
-  length_tolerance = 10 * eq_tolerance 
-
-instance Tolerance Double where 
-  eq_tolerance     = 0.01
-  length_tolerance = 0.1
-
-
-instance Tolerance AfmUnit where 
-  eq_tolerance     = 0.1
-  length_tolerance = 1.0
-
-
-
-infix 4 `tEQ`, `tLT`, `tGT`
-
--- | Tolerant equality.
---
--- Note - the definition actually needs Ord which is 
--- unfortunate (as Ord is /inaccurate/).
---
-tEQ :: (Tolerance u, Ord u) => u -> u -> Bool
-tEQ a b = (abs (a-b)) < eq_tolerance
-
--- | Tolerant less than.
---
--- Note - the definition actually needs Ord which is 
--- unfortunate (as Ord is /inaccurate/).
---
-tLT :: (Tolerance u, Ord u) => u -> u -> Bool
-tLT a b = a < b && (b - a) > eq_tolerance
-
-
--- | Tolerant greater than.
---
--- Note - the definition actually needs Ord which is 
--- unfortunate (as Ord is /inaccurate/).
---
-tGT :: (Tolerance u, Ord u) => u -> u -> Bool
-tGT a b = a > b && (a - b) > eq_tolerance
 
 
 

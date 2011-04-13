@@ -84,6 +84,9 @@ description:
   * Picture API change - changed @primPath@ to @absPrimPath@, added
     the functions @relPrimPath@, @relLineTo@, @relCurveTo@.
   . 
+  * Added the class @Tolerance@ to @Core.Geometry@ and made the Eq 
+    instances of @Point2@, @Vec2@ and @BoundingBox@ tolerant.
+  .
   v0.42.1 to v0.43.0:
   .
   * API change - the function @bezierCircle@ in @Core.Geometry@
