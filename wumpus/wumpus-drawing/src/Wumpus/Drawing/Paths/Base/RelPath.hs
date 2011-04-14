@@ -130,12 +130,11 @@ curveTo v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
 
 strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
 strokeRelPath rp = 
-    let qry = toPrimPath rp
-    in promoteR1 $ \start -> (qry `at` start) >>= openStroke
+    promoteR1 $ \start -> toPrimPath start rp >>= openStroke
 
 
-toPrimPath :: InterpretUnit u => RelPath u -> LocQuery u PrimPath
-toPrimPath (RelPath segs) = promoteR1 $ \start -> 
+toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query PrimPath
+toPrimPath start (RelPath segs) = 
     uconvertCtxF start       >>= \dstart -> 
     T.mapM uconvertCtxF segs >>= \dsegs  ->
     return $ relPrimPath dstart $ F.foldr fn [] dsegs

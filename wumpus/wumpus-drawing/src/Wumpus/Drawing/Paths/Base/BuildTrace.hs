@@ -23,6 +23,9 @@ module Wumpus.Drawing.Paths.Base.BuildTrace
   , extractTrace
   , addInsert
   , addPen
+
+  , insert1
+  , pen1
      
   ) where
 
@@ -81,6 +84,14 @@ addInsert a NoLog = Log { insert_trace = wrapH a, pen_trace = emptyH }
 addInsert a s@(Log { insert_trace=i }) = s { insert_trace = i `snocH` a }
 
 
+-- | Build a trace from an /insert/.
+--
+-- This is a decoration drawn at the /current point/ during path
+-- building.
+-- 
+insert1 :: a -> BuildLog a
+insert1 a = Log { insert_trace = wrapH a, pen_trace = emptyH }
+
 -- | Add a /pen/ drawing. 
 --
 -- This is a stroked path sub-path formed prior to a @moveto@ 
@@ -91,6 +102,14 @@ addPen :: a -> BuildLog a -> BuildLog a
 addPen a NoLog = Log { insert_trace = wrapH a, pen_trace = emptyH }
 addPen a s@(Log { pen_trace=i }) = s { pen_trace = i `snocH` a }
 
+
+-- | Build a trace from an /insert/.
+--
+-- This is a decoration drawn at the /current point/ during path
+-- building.
+-- 
+pen1 :: a -> BuildLog a
+pen1 a = Log { insert_trace = emptyH, pen_trace = wrapH a }
 
 
 

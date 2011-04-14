@@ -4,7 +4,6 @@ module PathRel where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths.Relative
-import Wumpus.Drawing.Paths.RelativeConstruction
 
 import qualified Wumpus.Drawing.Paths.Absolute as A
 
@@ -30,28 +29,32 @@ path_pic = drawTracing $ do
     
 
 
-path1 :: DLocImage (A.AbsPath Double)
-path1 = localize (stroke_colour red) $ strokePathSpec path_spec1
-
-path2 :: DLocImage (A.AbsPath Double)
-path2 = localize (stroke_colour red) $ fillPathSpec path_spec1
+path1 :: DLocGraphic
+path1 = localize (stroke_colour red) $ execRelBuild path_spec1
 
 
-path_spec1 :: PathSpec Double
+
+path2 :: DLocGraphic 
+path2 = localize (stroke_colour red) $  promoteR1 $ \pt -> 
+   let relp = evalRelBuild path_spec1 
+   in toPrimPath pt relp >>= filledPath
+
+
+path_spec1 :: RelBuild Double ()
 path_spec1 =  
-    [ (id, [ lineto (0,50) 
-           , lineto (50,0) 
-           , insert disk1 
-           , moveto (0, (-50))
-           , lineto (100,0) 
-           , vamp   (40,40) (dotted_line) square
-           , lineto (20, 0)
-           ])
-    , (stroke_colour blue, 
-           [ lineto (50,0)
-           , lineto (0,(-40))
-           ])
-    ]
+       rlineto (V2 0 50)
+    >> rlineto (V2 50 0)
+    >> insert disk1
+    >> rmoveto (V2 0 (-50))
+    >> rlineto (V2 100 0) 
+    >> vamp   (V2 40 40) (dotted_line) square
+    >> rlineto (V2 20 0)
+         
+--    (stroke_colour blue)
+    >> rlineto (V2 50 0)
+    >> rlineto (V2 0 (-40))
+          
+ 
   where
     disk1 = strokedDisk 10
 

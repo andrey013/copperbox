@@ -7,7 +7,7 @@ import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Paths hiding ( length )
+-- import Wumpus.Drawing.Paths hiding ( length )
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 

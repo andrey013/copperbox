@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,26 +20,30 @@
 
 module Wumpus.Drawing.Paths.Base.RelBuilder
   ( 
-    PathSpec
-  , Action
-  , fillPathSpec
-  , strokePathSpec
- 
-  , moveto
-  , lineto
-  , curveto
+
+    RelBuild
+  , runRelBuild
+  , execRelBuild
+  , evalRelBuild
+
+
+  , tip 
+  , rlineto
+  , rcurveto  
+  , rmoveto
+
   , insert
   , vamp
 
   ) where
 
+-- import qualified Wumpus.Drawing.Paths.Base.AbsPath as A
+import Wumpus.Drawing.Paths.Base.BuildTrace
 import Wumpus.Drawing.Paths.Base.RelPath
-import Wumpus.Drawing.Paths.Base.AbsPath ( AbsPath )
-import qualified Wumpus.Drawing.Paths.Base.AbsPath as Abs
+import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -47,25 +52,7 @@ import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
-import Prelude hiding ( null )
-
--- PathSpec is a non-empty list of segments and DrawingContext 
--- update functions.
---
-type PathSpec u = [(DrawingContextF, [Action u])]
-
--- Note - with TikZ draw (stroke) does not close the path.
-
--- Note - Action is wrong. Use monadic operations and (>>) like 
--- MonadicConstruction.
---
-
-data Action u = Line    (Vec2 u)
-              | Move    (Vec2 u)
-              | Curve   (Vec2 u)  (Vec2 u)  (Vec2 u)
-              | Insert  (LocGraphic u)
-              | Vamp    (Vec2 u)  DrawingContextF  (RelPath u)
-
+import Prelude hiding ( null, log )
 
 
 data St u = St 
@@ -74,11 +61,9 @@ data St u = St
       , active_path       :: (Vec2 u, RelPath u)
       }
 
+type instance DUnit (St u) = u
 
-data Log u  = Log { insert_trace    :: H (LocGraphic u)
-                  , pen_trace       :: H (LocGraphic u)
-                  }
-            | NoLog
+type Log u  = BuildLog (LocGraphic u)
 
 
 
@@ -93,16 +78,11 @@ data Log u  = Log { insert_trace    :: H (LocGraphic u)
 --
 data RelBuild u a = RelBuild { getRelBuild :: St u -> (a, St u, Log u) }
 
+type instance DUnit (RelBuild u a) = u
+
 
 --------------------------------------------------------------------------------
 -- instances
-
-
-instance Monoid (Log a) where
-  mempty                        = NoLog
-  NoLog     `mappend` b         = b
-  a         `mappend` NoLog     = a
-  Log li lp `mappend` Log ri rp = Log (li `appendH` ri) (lp `appendH` rp)
 
 
 
@@ -125,33 +105,6 @@ instance Monad (RelBuild u) where
                     (b,s2,w2) = (getRelBuild . k) a s1
                 in (b, s2, w1 `mappend` w2)
 
--- | Cumulative vector * commulative path * path_img * insert_img
---
-type SegmentAns u = (Vec2 u, RelPath u, LocGraphic u, LocGraphic u)
-
--- Note - active pen needs flushing.
---
-execRelBuild :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-          => Vec2 u -> RelBuild u a -> SegmentAns u
-execRelBuild v0 mf = post $ getRelBuild mf (initSt v0)
-  where
-    post (_,st,w) = let last_path = uncurry penGraphic $ active_path st
-                        path_img  = penTrace w `oplus` last_path
-                        ins_img   = insertTrace w
-                        path_ans  = cumulative_path st 
-                        v_end     = cumulative_disp st
-                    in (v_end, path_ans, path_img, ins_img)
-
-
-
-penTrace :: InterpretUnit u => Log u -> LocGraphic u
-penTrace NoLog                   = emptyLocGraphic
-penTrace (Log { pen_trace = hl}) = altconcat emptyLocGraphic $ toListH hl
-
-insertTrace :: InterpretUnit u => Log u -> LocGraphic u
-insertTrace NoLog                      = emptyLocGraphic
-insertTrace (Log { insert_trace = hl}) = altconcat emptyLocGraphic $ toListH hl
-
 
 
 initSt :: Num u => Vec2 u -> St u
@@ -161,170 +114,136 @@ initSt v = St { cumulative_disp   = v
               }
 
 
-      
 
--- sets :: (St u -> (a, St u)) -> RelBuild u a
--- sets f = RelBuild $ \s0  -> let (a,s1) = f s0 in (a, s1, mempty)
+-- | Note - runAbsBuild drops the monadic answer and returns the
+-- constructed path and a trace of the inserts and sub-paths.
+--
+runRelBuild :: (Floating u, InterpretUnit u)
+            => RelBuild u a -> (RelPath u, LocGraphic u)
+runRelBuild mf = post $ getRelBuild mf (initSt $ V2 0 0)
+  where
+    post (_,st,log) = let sub_last  = snd $ active_path st
+                          log_last  = logSubPath SPE_Open id sub_last
+                          log2      = log `mappend` log_last
+                          (pen,ins) = extractTrace emptyLocGraphic log2
+                      in (cumulative_path st, pen `oplus` ins)
+
+
+
+-- | Run an 'RelBuild' - return the LocGraphic formed by the pen 
+-- trace and the insert trace, /forget/ the outline of the path.
+-- 
+execRelBuild :: (Floating u, InterpretUnit u)
+             => RelBuild u a -> LocGraphic u
+execRelBuild mf = snd $ runRelBuild mf
+
+
+
+-- | Run an 'RelBuild' - return the outline of the path, /forget/
+-- the LocGraphic formed by the pen trace and the insert trace.
+-- 
+evalRelBuild :: (Floating u, InterpretUnit u)
+             => RelBuild u a -> RelPath u
+evalRelBuild mf = fst $ runRelBuild mf
+
+
+{-
+fillRelBuild :: RelBuild u a -> LocImage u (A.AbsPath u)
+fillRelBuild mf = promoteR1 $ \pt -> 
+    let (rp,gf) = runRelBuild mf
+    in pushR1 (replaceAns $ toAbsPath pt rp) gf
+-}
+
+logSubPath :: InterpretUnit u 
+           => SubPathEnd -> DrawingContextF -> RelPath u -> Log u 
+logSubPath spe upd subp 
+    | R.null subp  = mempty
+    | otherwise    = pen1 gf
+  where
+    drawF = if spe == SPE_Closed then closedStroke else openStroke
+    gf    = promoteR1 $ \pt -> 
+              toPrimPath pt subp >>= \pp -> localize upd (drawF pp)
+
+
+tellSubClosed :: InterpretUnit u 
+              => DrawingContextF -> RelPath u -> RelBuild u ()
+tellSubClosed upd subp = 
+    RelBuild $ \s0 -> ((), s0, logSubPath SPE_Closed upd subp)
+
+tellSubOpen :: InterpretUnit u 
+            => DrawingContextF -> RelPath u -> RelBuild u ()
+tellSubOpen upd subp = 
+    RelBuild $ \s0 -> ((), s0, logSubPath SPE_Open upd subp)
+
+
+tellInsert :: LocGraphic u -> RelBuild u ()
+tellInsert g1 = 
+    RelBuild $ \s0 -> ((),s0, insert1 g1)
+
 
 sets_ :: (St u -> St u) -> RelBuild u ()
 sets_ f = RelBuild $ \s0  -> ((), f s0, mempty)
 
--- get :: RelBuild u (St u)
--- get = RelBuild $ \s0 -> (s0, s0, mempty)
 
 gets :: (St u -> a) -> RelBuild u a
 gets f = RelBuild $ \s0 -> (f s0, s0, mempty)
 
-tellInsertImage :: LocGraphic u -> RelBuild u ()
-tellInsertImage g = RelBuild $ \s0 -> ((), s0, log1)
-   where
-     log1 = Log { insert_trace    = wrapH g
-                , pen_trace       = emptyH  }
 
 
-    
-tellVPath :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-          => (Vec2 u, RelPath u) -> DrawingContextF -> RelBuild u ()
-tellVPath (v,rp) upd | null rp   = return () 
-                     | otherwise = RelBuild $ \s0 -> ((), s0, log1)
-  where
-    log1 = Log { insert_trace = emptyH
-               , pen_trace    = wrapH $ localize upd $ penGraphic v rp }
-
-
-
-perform :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-        => Vec2 u -> [Action u] -> SegmentAns u
-perform v []     = (v, emptyRelPath, emptyLocGraphic, emptyLocGraphic)
-perform v (x:xs) = execRelBuild v (go x xs)
-  where
-    go a []     = step1 a 
-    go a (b:bs) = step1 a >> go b bs 
-    
-    step1 (Line v1)             = interpLine v1
-    step1 (Move v1)             = interpMove v1
-    step1 (Curve v1 v2 v3)      = interpCurve v1 v2 v3
-    step1 (Insert gf)           = interpInsert gf
-    step1 (Vamp v1 upd rp)      = interpVamp v1 upd rp
-
-
-penGraphic :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-           => Vec2 u -> RelPath u -> LocGraphic u
-penGraphic v p = locGraphic_ $ moveStart (displaceVec v) $ drawPath p
-
-
-interpLine :: Num u => Vec2 u -> RelBuild u () 
-interpLine v = sets_ upd 
-  where
-   upd = (\s i j k -> s { cumulative_disp = i ^+^ v
-                        , cumulative_path = j `append` lineTo v 
-                        , active_path     = fn k (lineTo v) }) 
-           <*> cumulative_disp <*> cumulative_path <*> active_path
-   
-   fn (sv,p1) p2 = (sv,p1 `append` p2)
-
-interpInsert :: Num u => LocGraphic u -> RelBuild u ()
-interpInsert gf = gets cumulative_disp >>= \v -> 
-                  tellInsertImage (moveStart (displaceVec v) gf)
-
-
-
-
-interpCurve :: Num u => Vec2 u -> Vec2 u -> Vec2 u -> RelBuild u () 
-interpCurve v1 v2 v3 = sets_ upd 
-  where
-   upd = (\s i j k -> let curve1 = curveTo v1 v2 v3
-                      in s { cumulative_disp = i ^+^ v1 ^+^ v2 ^+^ v3
-                           , cumulative_path = j `append` curve1
-                          , active_path     = fn k curve1 }) 
-           <*> cumulative_disp <*> cumulative_path <*> active_path
-   
-   fn (sv,p1) p2 = (sv,p1 `append` p2)
-   
-
-
-
-interpMove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-           => Vec2 u -> RelBuild u ()
-interpMove vnext = 
-    gets active_path >>= \ans -> tellVPath ans id >> sets_ upd 
-  where
-   upd = (\s i j -> let vcurrent = i ^+^ vnext
-                    in s { cumulative_disp = vcurrent
-                         , cumulative_path = j `append` lineTo vnext
-                         , active_path     = (vcurrent, emptyRelPath) }) 
-           <*> cumulative_disp <*> cumulative_path
-
-   
-
-interpVamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-           => Vec2 u -> DrawingContextF -> RelPath u -> RelBuild u ()
-interpVamp vnext upd rp = 
-    gets cumulative_disp >>= \v0 -> interpMove vnext >> tellVPath (v0,rp) upd
-    
-
-
-
-execPathSpec :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-             => PathSpec u -> (RelPath u, LocGraphic u, LocGraphic u)
-execPathSpec []     = (emptyRelPath, emptyLocGraphic, emptyLocGraphic)
-execPathSpec (a:as) = go1 (V2 0 0) a as
-  where
-    go1 v (upd,cmds) xs                   = 
-        let (v1,path,gfp,gfi) = perform v cmds
-        in go2 v1 (path, localize upd gfp, gfi) xs
-
-    go2 _ acc            []               = acc
-    go2 v (p0,gfp0,gfi0) ((upd,cmds):xs)  = 
-        let (v1,p1,gfp1,gfi1) = perform v cmds
-            gpath             = gfp0 `oplus` localize upd gfp1
-            gins              = gfi0 `oplus` gfi1
-        in go2 v1 (p0 `append` p1, gpath, gins) xs
-                                        
-
-fillPathSpec :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-             => PathSpec u -> LocImage u (AbsPath u)
-fillPathSpec spec = promoteR1 $ \start -> 
-    let (rp,_,deco) = execPathSpec spec
-        ap          = toAbsPath start rp
-    in Abs.toPrimPath ap >>= \pp -> 
-       fmap (replaceAns ap) $ decorateR0 (filledPath pp) (deco `at` start)
-
-
-strokePathSpec :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-             => PathSpec u -> LocImage u (AbsPath u)
-strokePathSpec spec = promoteR1 $ \start -> 
-    let (rp,img,deco) = execPathSpec spec
-        ap            = toAbsPath start rp
-    in fmap (replaceAns ap) $ decorateR0 (img `at` start) (deco `at` start)
-
-
-drawPath :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-         => RelPath u -> LocImage u (AbsPath u)
-drawPath rp = promoteR1 $ \start -> 
-    let ap = toAbsPath start rp
-    in fmap (replaceAns ap) $ Abs.toPrimPath ap >>= openStroke
-
-
-
-
-    
 --------------------------------------------------------------------------------
--- user commands
+-- operations
+
+tip :: RelBuild u (Vec2 u)
+tip = gets cumulative_disp
 
 
-lineto :: (u,u) -> Action u
-lineto (x,y) = Line $ V2 x y
+
+-- | Helper - extend the path.
+--
+extendPath :: Num u 
+           => (Vec2 u -> RelPath u -> RelPath u) -> Vec2 u -> RelBuild u ()
+extendPath fn v1 = sets_ upd
+  where
+    upd = (\s v0 i j -> s { cumulative_disp  = v0 ^+^ v1
+                          , cumulative_path  = fn v0 i
+                          , active_path      = bimapR (fn v0) j })
+           <*> cumulative_disp <*> cumulative_path <*> active_path
 
 
-moveto :: (u,u) -> Action u
-moveto (x,y) = Move (V2 x y)
+rlineto :: Floating u => Vec2 u -> RelBuild u ()
+rlineto v1 = extendPath (\_ acc -> acc `append` lineTo v1) v1
 
-curveto :: (u,u) -> (u,u) -> (u,u) -> Action u
-curveto (x1,y1) (x2,y2) (x3,y3) = Curve (V2 x1 y1) (V2 x2 y2) (V2 x3 y3)
+rcurveto :: Floating u 
+         => Vec2 u -> Vec2 u -> Vec2 u -> RelBuild u ()
+rcurveto v1 v2 v3 = extendPath (\_ acc -> acc `append` curveTo v1 v2 v3) v3
 
-insert :: LocGraphic u -> Action u
-insert = Insert
 
-vamp :: (u,u) -> DrawingContextF -> RelPath u -> Action u
-vamp (x,y) upd rp = Vamp (V2 x y) upd rp
+
+-- | 'rmoveto' is a pen up.
+--
+rmoveto :: (Floating u, InterpretUnit u)
+        => Vec2 u -> RelBuild u ()
+rmoveto v1 = 
+    gets active_path >>= \(_,ans) -> tellSubOpen id ans >> sets_ upd 
+  where
+    upd   = (\s v0 i -> s { cumulative_disp = v0 ^+^ v1
+                          , cumulative_path = i `append` lineTo v1
+                          , active_path     = (v0 ^+^ v1, mempty) })
+              <*> cumulative_disp <*> cumulative_path
+
+
+insert :: Num u => LocGraphic u -> RelBuild u ()
+insert gf = gets cumulative_disp >>= \v -> 
+            tellInsert (moveStart (displaceVec v) gf)
+
+
+
+-- Note - vamps should be a data type then we can have libraries 
+-- of them.
+
+vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+     => Vec2 u -> DrawingContextF -> RelPath u -> RelBuild u ()
+vamp vnext upd relp = 
+    rmoveto vnext >> tellSubOpen upd relp
+
+    -- do we need to consider cumulative disp?

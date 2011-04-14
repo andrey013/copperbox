@@ -12,7 +12,10 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace
 
+import Prelude hiding ( cycle )
 import System.Directory
+
+
 
 
 main :: IO ()
@@ -25,12 +28,23 @@ main = do
 path_pic :: CtxPicture
 path_pic = drawTracing $ do
     draw circle1
+    draw triangles
     draw curve1
     draw curve2
     draw curve3
     draw eastUpWest
     
-    
+
+triangles :: Graphic Double
+triangles = localize (set_line_width 8) $ execAbsBuild (P2 0 0) $ 
+    moveto (P2  60 0) >> tristeps >>
+    moveto (P2 120 0) >> tristeps >>
+    moveto (P2 180 0) >> tristeps >> cycle >>
+    moveto (P2 240 0) >> tristeps >> cycle
+  where
+    tristeps :: AbsBuild Double ()
+    tristeps = rlineto (V2 40 0) >> rlineto (V2 0 40) >> rlineto (V2 (-40) (-40))
+       
 
          
 curve1 :: Graphic Double
@@ -43,7 +57,7 @@ curve1 = toPrimPath (curvePath xs) >>= openStroke
 curve2 :: Graphic Double
 curve2 =  localize (stroke_colour red) (toPrimPath path_one >>= openStroke)
   where
-    path_one = evalAbsBuild (zeroPt::DPoint2) $ ctrlcurveto 0 (3*pi/2) (60,60)
+    path_one = evalAbsBuild (zeroPt::DPoint2) $ ctrlcurveto 0 (3*pi/2) (P2 60 60)
 
 
 
@@ -53,14 +67,14 @@ curve3 = localize (stroke_colour blue)
 
 
 path1 :: AbsPath Double
-path1 = evalAbsBuild (P2 60 0) $ ctrlcurveto (pi/2) 0 (0,60)
+path1 = evalAbsBuild (P2 60 0) $ ctrlcurveto (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
 circle1 = localize (fill_colour gold) (filledCircle 60 `at` zeroPt)
 
 cto4 :: AbsPath Double
-cto4 = evalAbsBuild (P2 180 0) $ ctrlcurveto (pi/2) 0 (120,60)
+cto4 = evalAbsBuild (P2 180 0) $ ctrlcurveto (pi/2) 0 (P2 120 60)
 
 
 -- Note - the distance from the barb ends to the curve is not 
@@ -84,12 +98,12 @@ eastUpWest = localize (stroke_colour blue)
 mkP1 :: Point2 Double -> Point2 Double -> Query PrimPath
 mkP1 start end@(P2 x1 y1) = 
     toPrimPath $ evalAbsBuild start $ 
-      horizontalVertical (end .+^ hvec 20) >> lineto (x1,y1)
+      horizontalVertical (end .+^ hvec 20) >> lineto (P2 x1 y1)
   
 
 horizontalVertical :: Floating u => Point2 u -> AbsBuild u ()
 horizontalVertical (P2 x y) = 
-    tip >>= \(P2 _ y0) -> lineto (x,y0) >> lineto (x,y)
+    tip >>= \(P2 _ y0) -> lineto (P2 x y0) >> lineto (P2 x y)
 
    
 

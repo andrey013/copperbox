@@ -108,7 +108,7 @@ connarc = promoteConn $ \p0 p1 ->
 -- Horizontal /arms/ are drawn from the start and end points, a
 -- diagonal segment joins the arms. 
 -- 
-connhdiagh :: (Real u, Floating u, InterpretUnit u)
+connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 connhdiagh = promoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
@@ -137,7 +137,7 @@ connhdiagh = promoteConn $ \p0 p1 ->
 -- Vertical /arms/ are drawn from the start and end points, a
 -- diagonal segment joins the arms. 
 -- 
-connvdiagv :: (Real u, Floating u, InterpretUnit u)
+connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 connvdiagv = promoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
@@ -165,7 +165,7 @@ connvdiagv = promoteConn $ \p0 p1 ->
 -- from the start point joining a horizontal arm drawn from the 
 -- end point
 -- 
-conndiagh :: (Real u, Floating u, InterpretUnit u)
+conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 conndiagh = promoteConn $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
@@ -190,7 +190,7 @@ conndiagh = promoteConn $ \p0 p1 ->
 -- from the start point joining a vertical arm drawn from the end 
 -- point.
 -- 
-conndiagv :: (Real u, Floating u, InterpretUnit u)
+conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 conndiagv = promoteConn $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
@@ -215,7 +215,7 @@ conndiagv = promoteConn $ \p0 p1 ->
 -- from the start point joining a diagonal segment drawn from the 
 -- end point.
 -- 
-connhdiag :: (Real u, Floating u, InterpretUnit u)
+connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 connhdiag = promoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
@@ -240,7 +240,7 @@ connhdiag = promoteConn $ \p0 p1 ->
 -- from the start point joining a vertical segment drawn from the 
 -- end point.
 -- 
-connvdiag :: (Real u, Floating u, InterpretUnit u)
+connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => Connector u
 connvdiag = promoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
@@ -267,7 +267,8 @@ connvdiag = promoteConn $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connabar :: (Real u, Floating u, InterpretUnit u) => Connector u
+connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => Connector u
 connabar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -285,7 +286,8 @@ connabar = promoteConn $ \p0 p1 ->
 --
 -- The bar is drawn /below/ the points.
 --
-connbbar :: (Real u, Floating u, InterpretUnit u) => Connector u
+connbbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => Connector u
 connbbar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -303,7 +305,8 @@ connbbar = promoteConn $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connaright :: (Real u, Floating u, InterpretUnit u) => Connector u
+connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => Connector u
 connaright = promoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
     let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
 
@@ -316,7 +319,8 @@ connaright = promoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 --
 -- The bar is drawn /below/ the points.
 --
-connbright :: (Real u, Floating u, InterpretUnit u) => Connector u
+connbright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => Connector u
 connbright = promoteConn $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
     let mid = P2 x1 y0 in return $ vertexPath [p0, mid, p1]
 
@@ -342,7 +346,7 @@ directional src dst arm = if  src < dst then arm else negate arm
 -- length. The length of the final segment is the remaing 
 -- horizontal distance. 
 --
-connhrr :: (Real u, Floating u, InterpretUnit u) 
+connhrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
         => Connector u
 connhrr = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorSrcArm >>= \ src_arm -> 
@@ -362,7 +366,7 @@ connhrr = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- arm length. The length of the initial segment is the remaining
 -- horizontal distance. 
 --
-connrrh :: (Real u, Floating u, InterpretUnit u) 
+connrrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
         => Connector u
 connrrh = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorDstArm >>= \ dst_arm -> 
@@ -379,7 +383,7 @@ connrrh = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  |
 -- >  o  
 --
-connvrr :: (Real u, Floating u, InterpretUnit u) 
+connvrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
         => Connector u
 connvrr = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorSrcArm >>= \ src_arm -> 
@@ -396,8 +400,8 @@ connvrr = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  |
 -- >  o  
 --
-connrrv :: (Real u, Floating u, InterpretUnit u) 
-               => Connector u
+connrrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+        => Connector u
 connrrv = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorDstArm >>= \ dst_arm -> 
     let a1 = p1 .-^ vvec dst_arm
@@ -415,7 +419,8 @@ connrrv = promoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 --
 -- The loop is drawn /above/ the points.
 --
-connaloop :: (Real u, Floating u, InterpretUnit u) => Connector u
+connaloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+          => Connector u
 connaloop = loopbody id
 
 -- | Loop connector.
@@ -426,12 +431,13 @@ connaloop = loopbody id
 --
 -- The loop is drawn /above/ the points.
 --
-connbloop :: (Real u, Floating u, InterpretUnit u) => Connector u
+connbloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+          => Connector u
 connbloop = loopbody negate
 
 -- | Looping just differs on a negate...
 --
-loopbody :: (Real u, Floating u, InterpretUnit u) 
+loopbody :: (Real u, Floating u, Tolerance u, InterpretUnit u)
          => (u -> u) -> Connector u
 loopbody fn = promoteConn $ \p0 p1 ->
     connectorSrcArm   >>= \src_arm ->
