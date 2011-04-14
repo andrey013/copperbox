@@ -46,7 +46,7 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
 
 import Wumpus.Drawing.Paths.Base.AbsPath
 import qualified Wumpus.Drawing.Paths.Base.AbsPath as A
-import Wumpus.Drawing.Paths.Base.BuildTrace
+import Wumpus.Drawing.Paths.Base.BuildCommon
 import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
 
@@ -132,7 +132,7 @@ runAbsBuild :: (Floating u, InterpretUnit u)
 runAbsBuild pt mf = post $ getAbsBuild mf (initSt pt)
   where
     post (_,st,log) = let sub_last  = snd $ active_path st
-                          log_last  = logSubPath SPE_Open id sub_last
+                          log_last  = logSubPath PATH_OPEN id sub_last
                           log2      = log `mappend` log_last
                           empty_gfx = emptyLocGraphic `at` pt
                           (pen,ins) = extractTrace empty_gfx log2
@@ -158,24 +158,24 @@ evalAbsBuild pt mf = fst $ runAbsBuild pt mf
 
 
 logSubPath :: InterpretUnit u 
-           => SubPathEnd -> DrawingContextF -> AbsPath u -> Log u 
+           => PathEnd -> DrawingContextF -> AbsPath u -> Log u 
 logSubPath spe upd subp 
     | A.null subp  = mempty
     | otherwise    = pen1 (toPrimPath subp >>= localize upd . drawF)
   where
-    drawF = if spe == SPE_Closed then closedStroke else openStroke
+    drawF = if spe == PATH_OPEN then openStroke else closedStroke
 
 
 
 tellSubClosed :: InterpretUnit u 
               => DrawingContextF -> AbsPath u -> AbsBuild u ()
 tellSubClosed upd subp = 
-    AbsBuild $ \s0 -> ((), s0, logSubPath SPE_Closed upd subp)
+    AbsBuild $ \s0 -> ((), s0, logSubPath PATH_CLOSED upd subp)
 
 tellSubOpen :: InterpretUnit u 
             => DrawingContextF -> AbsPath u -> AbsBuild u ()
 tellSubOpen upd subp = 
-    AbsBuild $ \s0 -> ((), s0, logSubPath SPE_Open upd subp)
+    AbsBuild $ \s0 -> ((), s0, logSubPath PATH_OPEN upd subp)
 
 
 tellInsert :: Graphic u -> AbsBuild u ()
@@ -267,10 +267,12 @@ insert gf = gets current_point >>= \pt -> tellInsert (gf `at` pt)
 -- of them.
 
 vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-     => Vec2 u -> DrawingContextF -> R.RelPath u -> AbsBuild u ()
-vamp vnext upd relp = 
+     => Vamp u -> AbsBuild u ()
+vamp (Vamp vnext upd relp path_end) = 
     gets current_point >>= \p0 -> 
-    moveto (p0 .+^ vnext) >> tellSubOpen upd (R.toAbsPath p0 relp)
+    moveto (p0 .+^ vnext) >> drawF upd (R.toAbsPath p0 relp)
+  where
+    drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
 
 cycle :: (Floating u, InterpretUnit u) => AbsBuild u ()
 cycle = 

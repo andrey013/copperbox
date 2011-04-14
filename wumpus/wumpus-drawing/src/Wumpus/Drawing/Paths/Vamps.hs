@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.Abolute
+-- Module      :  Wumpus.Drawing.Paths.Vamps
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,14 +15,17 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.Absolute
+module Wumpus.Drawing.Paths.Vamps
   ( 
 
-    module Wumpus.Drawing.Paths.Base.AbsBuilder
-  , module Wumpus.Drawing.Paths.Base.AbsPath
+    -- * Re-exported types
+    Vamp(..)
+  , PathEnd(..)
+
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.AbsBuilder
-import Wumpus.Drawing.Paths.Base.AbsPath
+import Wumpus.Drawing.Paths.Base.BuildCommon
 
+
+-- TODO - library of useful / illustrative vamps (circle, square etc.)

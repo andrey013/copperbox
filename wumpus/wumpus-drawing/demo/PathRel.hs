@@ -4,6 +4,7 @@ module PathRel where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths.Vamps
 
 import qualified Wumpus.Drawing.Paths.Absolute as A
 
@@ -47,7 +48,7 @@ path_spec1 =
     >> insert disk1
     >> rmoveto (V2 0 (-50))
     >> rlineto (V2 100 0) 
-    >> vamp   (V2 40 40) (dotted_line) square
+    >> vamp vamp1  
     >> rlineto (V2 20 0)
          
 --    (stroke_colour blue)
@@ -58,6 +59,11 @@ path_spec1 =
   where
     disk1 = strokedDisk 10
 
+    vamp1 = Vamp { vamp_move_span  = V2 40 40
+                 , vamp_dc_update  = dotted_line
+                 , vamp_deco_path  = square
+                 , vamp_path_end   = PATH_CLOSED 
+                 }
 
 
 -- What about close / cycle ?

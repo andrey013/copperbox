@@ -1,8 +1,9 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.Base.BuildTrace
+-- Module      :  Wumpus.Drawing.Paths.Base.BuildCommon
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -10,15 +11,16 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Common tracing data type for the monadic builders
+-- Common data types for the monadic builders.
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.Base.BuildTrace
+module Wumpus.Drawing.Paths.Base.BuildCommon
   ( 
 
     BuildLog
-  , SubPathEnd(..)
+  , PathEnd(..)
+  , Vamp(..)
   
   , extractTrace
   , addInsert
@@ -29,11 +31,12 @@ module Wumpus.Drawing.Paths.Base.BuildTrace
      
   ) where
 
-
+import Wumpus.Drawing.Paths.Base.RelPath ( RelPath )
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.Utils.HList
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Monoid
 
@@ -46,8 +49,18 @@ data BuildLog a  = Log { insert_trace    :: H a
                        }
                  | NoLog
 
-data SubPathEnd = SPE_Closed | SPE_Open
+data PathEnd = PATH_CLOSED | PATH_OPEN
   deriving (Eq,Show)
+
+
+data Vamp u = Vamp 
+      { vamp_move_span  :: Vec2 u
+      , vamp_dc_update  :: DrawingContextF
+      , vamp_deco_path  :: RelPath u
+      , vamp_path_end   :: PathEnd
+      }
+
+type instance DUnit (Vamp u) = u
 
 --------------------------------------------------------------------------------
 -- instances

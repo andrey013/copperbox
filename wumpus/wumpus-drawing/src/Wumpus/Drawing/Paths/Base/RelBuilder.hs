@@ -34,11 +34,12 @@ module Wumpus.Drawing.Paths.Base.RelBuilder
 
   , insert
   , vamp
+  , cycle
 
   ) where
 
 -- import qualified Wumpus.Drawing.Paths.Base.AbsPath as A
-import Wumpus.Drawing.Paths.Base.BuildTrace
+import Wumpus.Drawing.Paths.Base.BuildCommon
 import Wumpus.Drawing.Paths.Base.RelPath
 import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
@@ -52,7 +53,7 @@ import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
-import Prelude hiding ( null, log )
+import Prelude hiding ( null, log, cycle )
 
 
 data St u = St 
@@ -122,12 +123,12 @@ runRelBuild :: (Floating u, InterpretUnit u)
             => RelBuild u a -> (RelPath u, LocGraphic u)
 runRelBuild mf = post $ getRelBuild mf (initSt $ V2 0 0)
   where
-    post (_,st,log) = let sub_last  = snd $ active_path st
-                          log_last  = logSubPath SPE_Open id sub_last
-                          log2      = log `mappend` log_last
-                          (pen,ins) = extractTrace emptyLocGraphic log2
-                      in (cumulative_path st, pen `oplus` ins)
-
+    post (_,st,log) = (cumulative_path st, pen `oplus` ins)
+      where
+        (v1,sub_last) = active_path st
+        log_last      = logSubPath PATH_OPEN id v1 sub_last
+        log2          = log `mappend` log_last
+        (pen,ins)     = extractTrace emptyLocGraphic log2
 
 
 -- | Run an 'RelBuild' - return the LocGraphic formed by the pen 
@@ -147,33 +148,28 @@ evalRelBuild :: (Floating u, InterpretUnit u)
 evalRelBuild mf = fst $ runRelBuild mf
 
 
-{-
-fillRelBuild :: RelBuild u a -> LocImage u (A.AbsPath u)
-fillRelBuild mf = promoteR1 $ \pt -> 
-    let (rp,gf) = runRelBuild mf
-    in pushR1 (replaceAns $ toAbsPath pt rp) gf
--}
 
 logSubPath :: InterpretUnit u 
-           => SubPathEnd -> DrawingContextF -> RelPath u -> Log u 
-logSubPath spe upd subp 
+           => PathEnd -> DrawingContextF -> Vec2 u -> RelPath u -> Log u 
+logSubPath spe upd v1 subp 
     | R.null subp  = mempty
     | otherwise    = pen1 gf
   where
-    drawF = if spe == SPE_Closed then closedStroke else openStroke
+    drawF = if spe == PATH_OPEN then openStroke else closedStroke
     gf    = promoteR1 $ \pt -> 
-              toPrimPath pt subp >>= \pp -> localize upd (drawF pp)
+              toPrimPath (displaceVec v1 pt) subp >>= \pp -> 
+              localize upd (drawF pp)
 
 
 tellSubClosed :: InterpretUnit u 
-              => DrawingContextF -> RelPath u -> RelBuild u ()
-tellSubClosed upd subp = 
-    RelBuild $ \s0 -> ((), s0, logSubPath SPE_Closed upd subp)
+              => DrawingContextF -> Vec2 u -> RelPath u -> RelBuild u ()
+tellSubClosed upd v1 subp = 
+    RelBuild $ \s0 -> ((), s0, logSubPath PATH_CLOSED upd v1 subp)
 
 tellSubOpen :: InterpretUnit u 
-            => DrawingContextF -> RelPath u -> RelBuild u ()
-tellSubOpen upd subp = 
-    RelBuild $ \s0 -> ((), s0, logSubPath SPE_Open upd subp)
+            => DrawingContextF -> Vec2 u -> RelPath u -> RelBuild u ()
+tellSubOpen upd v1 subp = 
+    RelBuild $ \s0 -> ((), s0, logSubPath PATH_OPEN upd v1 subp)
 
 
 tellInsert :: LocGraphic u -> RelBuild u ()
@@ -224,7 +220,7 @@ rcurveto v1 v2 v3 = extendPath (\_ acc -> acc `append` curveTo v1 v2 v3) v3
 rmoveto :: (Floating u, InterpretUnit u)
         => Vec2 u -> RelBuild u ()
 rmoveto v1 = 
-    gets active_path >>= \(_,ans) -> tellSubOpen id ans >> sets_ upd 
+    gets active_path >>= \(v0,ans) -> tellSubOpen id v0 ans >> sets_ upd 
   where
     upd   = (\s v0 i -> s { cumulative_disp = v0 ^+^ v1
                           , cumulative_path = i `append` lineTo v1
@@ -242,8 +238,17 @@ insert gf = gets cumulative_disp >>= \v ->
 -- of them.
 
 vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-     => Vec2 u -> DrawingContextF -> RelPath u -> RelBuild u ()
-vamp vnext upd relp = 
-    rmoveto vnext >> tellSubOpen upd relp
+     => Vamp u -> RelBuild u ()
+vamp (Vamp vnext upd relp path_end) = 
+    gets cumulative_disp >>= \v0 -> rmoveto vnext >> drawF upd v0 relp
+  where
+    drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
 
-    -- do we need to consider cumulative disp?
+
+cycle :: (Floating u, InterpretUnit u) => RelBuild u ()
+cycle  = 
+    gets cumulative_disp >>= \v1 -> 
+    gets active_path     >>= \(start,acc) -> 
+    tellSubClosed id start (acc `append` lineTo start) >> 
+    sets_ (\s -> s { active_path = (v1, mempty)})
+
