@@ -37,6 +37,7 @@ path_pic = drawTracing $ do
 
 triangles :: Graphic Double
 triangles = localize (set_line_width 8) $ execAbsBuild (P2 0 0) $ 
+    penColour dark_slate_blue >>
     moveto (P2  60 0) >> tristeps >>
     moveto (P2 120 0) >> tristeps >>
     moveto (P2 180 0) >> tristeps >> cycle >>

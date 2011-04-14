@@ -51,7 +51,7 @@ path_spec1 =
     >> vamp vamp1  
     >> rlineto (V2 20 0)
          
---    (stroke_colour blue)
+    >> penColour blue
     >> rlineto (V2 50 0)
     >> rlineto (V2 0 (-40))
           
@@ -69,5 +69,5 @@ path_spec1 =
 -- What about close / cycle ?
 --
 square :: RelPath Double
-square = lineTo (hvec 40) `append` lineTo (vvec 40) 
-    `append` lineTo (hvec $ negate 40) `append` lineTo (vvec $ negate 40)
+square = line (hvec 40) `append` line (vvec 40) 
+    `append` line (hvec $ negate 40) `append` line (vvec $ negate 40)

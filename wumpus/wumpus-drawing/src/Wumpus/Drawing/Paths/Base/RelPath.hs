@@ -12,30 +12,46 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extended path type - more amenable for complex drawings than
--- the type in Wumpus-Core.
---
--- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- Relative path type - this should be more amenable for building 
+-- complex drawings than the PrimPath type in Wumpus-Core.
 -- 
+-- Note - RelPath is not directly equivalent to AbsPath.
+-- AbsPath is more powerful - as it is expected to have more 
+-- demanding use-cases (e.g. connector paths).
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Paths.Base.RelPath
   ( 
+
+
+  -- * Relative path type
+
     RelPath
   , DRelPath
 
+  -- * Construction
+  , empty
+  , line
+  , curve
+  , vertexPath
+
+  -- * Queries
   , null
-  , emptyRelPath
+
+
+  -- * Concat
   , append
-  
-  , lineTo
-  , curveTo
+  , consLineTo
+  , snocLineTo
+  , consCurveTo
+  , snocCurveTo
 
-  , strokeRelPath
 
+  -- * Conversion
   , toPrimPath
   , toAbsPath
+  , strokeRelPath
 
   ) where
 
@@ -73,7 +89,7 @@ type instance DUnit (RelPath u) = u
 
 type DRelPath = RelPath Double
 
--- No annotation...
+-- No annotations...
 -- 
 data RelPathSeg u = RelLineSeg  (Vec2 u)
                   | RelCurveSeg (Vec2 u) (Vec2 u) (Vec2 u)
@@ -98,40 +114,76 @@ instance Functor RelPathSeg where
 
 
 instance Monoid (RelPath u) where
-  mempty = emptyRelPath
+  mempty  = empty
   mappend = append
 
 
 --------------------------------------------------------------------------------
-
-
-null :: RelPath u -> Bool
-null = JL.null . getRelPath
-
-infixr 1 `append`
+-- Construction
 
 
 -- | An empty relative path is acceptible to Wumpus because 
 -- it is always drawn as a LocGraphic.
 --
-emptyRelPath :: RelPath u 
-emptyRelPath = RelPath mempty
+empty :: RelPath u 
+empty = RelPath mempty
+
+
+line :: Vec2 u -> RelPath u
+line = RelPath . JL.one . RelLineSeg
+
+
+curve :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
+curve v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
+
+
+vertexPath :: [Vec2 u] -> RelPath u
+vertexPath [] = empty
+vertexPath (x:xs) = go (line x) xs
+  where
+    go acc []     = acc
+    go acc (v:vs) = go (acc `snocLineTo` v) vs
+
+
+--------------------------------------------------------------------------------
+-- Queries
+
+null :: RelPath u -> Bool
+null = JL.null . getRelPath
+
+
+
+--------------------------------------------------------------------------------
+-- Concat 
+
+infixr 1 `append`
+
+
 
 append :: RelPath u -> RelPath u -> RelPath u
 append (RelPath se0) (RelPath se1) = RelPath $ se0 `join` se1
 
 
-lineTo :: Vec2 u -> RelPath u
-lineTo = RelPath . JL.one . RelLineSeg
+consLineTo :: Vec2 u -> RelPath u -> RelPath u 
+consLineTo v1 (RelPath se) = RelPath $ JL.cons (RelLineSeg v1) se
+
+snocLineTo :: RelPath u -> Vec2 u -> RelPath u
+snocLineTo (RelPath se) v1 = RelPath $ JL.snoc se (RelLineSeg v1)
 
 
-curveTo :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
-curveTo v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
 
-strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
-strokeRelPath rp = 
-    promoteR1 $ \start -> toPrimPath start rp >>= openStroke
+consCurveTo :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u -> RelPath u 
+consCurveTo v1 v2 v3 (RelPath se) = RelPath $ JL.cons (RelCurveSeg v1 v2 v3) se
 
+snocCurveTo :: RelPath u -> Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
+snocCurveTo (RelPath se) v1 v2 v3 = RelPath $ JL.snoc se (RelCurveSeg v1 v2 v3)
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Conversion
 
 toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query PrimPath
 toPrimPath start (RelPath segs) = 
@@ -150,25 +202,31 @@ toAbsPath start (RelPath segs) = step1 start $ viewl segs
     step1 p0 EmptyL                           = Abs.empty p0
 
     step1 p0 (RelLineSeg v1 :< se)            = 
-        let (pth,end) = line p0 v1 in step2 end pth (viewl se)
+        let (pth,end) = aline p0 v1 in step2 end pth (viewl se)
 
     step1 p0 (RelCurveSeg v1 v2 v3 :< se)     = 
-        let (pth,end) = curve p0 v1 v2 v3 in step2 end pth (viewl se)
+        let (pth,end) = acurve p0 v1 v2 v3 in step2 end pth (viewl se)
 
     step2 _  acc EmptyL                       = acc
     step2 p0 acc (RelLineSeg v1 :< se)        = 
-        let (s1,end) = line p0 v1 
+        let (s1,end) = aline p0 v1 
         in step2 end (acc `Abs.append` s1) (viewl se)
 
     step2 p0 acc (RelCurveSeg v1 v2 v3 :< se) = 
-        let (s1,end) = curve p0 v1 v2 v3 
+        let (s1,end) = acurve p0 v1 v2 v3 
         in step2 end (acc `Abs.append` s1) (viewl se)
 
-    line p0 v1                                = 
+    aline p0 v1                               = 
         let p1 = p0 .+^ v1 in (Abs.line p0 p1, p1)
 
-    curve p0 v1 v2 v3                         = 
+    acurve p0 v1 v2 v3                        = 
         let p1 = p0 .+^ v1
             p2 = p1 .+^ v2
             p3 = p2 .+^ v3
         in (Abs.curve p0 p1 p2 p3, p3)
+
+
+
+strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
+strokeRelPath rp = 
+    promoteR1 $ \start -> toPrimPath start rp >>= openStroke

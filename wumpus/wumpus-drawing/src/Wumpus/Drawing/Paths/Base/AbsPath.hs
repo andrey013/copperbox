@@ -12,11 +12,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extended path type - more amenable for complex drawings than
--- the type in Wumpus-Core.
---
--- \*\* WARNING \*\* this module is an experiment, and may 
--- change significantly or even be dropped from future revisions.
+-- Absolute path type - this should be more amenable for building 
+-- complex drawings than the PrimPath type in Wumpus-Core.
 -- 
 --------------------------------------------------------------------------------
 

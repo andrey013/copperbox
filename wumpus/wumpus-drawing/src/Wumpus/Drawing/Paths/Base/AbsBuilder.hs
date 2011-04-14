@@ -39,6 +39,7 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
   , ctrlcurveto
 
   , insert
+  , penColour
   , vamp
   , cycle
 
@@ -71,6 +72,7 @@ data St u = St
       { current_point     :: Point2 u 
       , cumulative_path   :: AbsPath u
       , active_path       :: (Point2 u, AbsPath u)
+      , pen_dc_modifier   :: DrawingContextF
       }
 
 type instance DUnit (St u) = u
@@ -118,6 +120,7 @@ initSt :: Floating u => Point2 u -> St u
 initSt pt = St { current_point     = pt
                , cumulative_path   = empty pt
                , active_path       = (pt, empty pt)
+               , pen_dc_modifier   = id
                }
 
 -- run  - (path,graphic)
@@ -132,7 +135,8 @@ runAbsBuild :: (Floating u, InterpretUnit u)
 runAbsBuild pt mf = post $ getAbsBuild mf (initSt pt)
   where
     post (_,st,log) = let sub_last  = snd $ active_path st
-                          log_last  = logSubPath PATH_OPEN id sub_last
+                          cf        = pen_dc_modifier st
+                          log_last  = logSubPath PATH_OPEN cf sub_last
                           log2      = log `mappend` log_last
                           empty_gfx = emptyLocGraphic `at` pt
                           (pen,ins) = extractTrace empty_gfx log2
@@ -225,7 +229,9 @@ curveto p1 p2 p3 = extendPath (\_ acc -> snocCurveTo acc p1 p2 p3) p3
 moveto :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
        => Point2 u -> AbsBuild u ()
 moveto p1 = 
-    gets active_path >>= \(_,ans) -> tellSubOpen id ans >> sets_ upd 
+    gets active_path            >>= \(_,ans) -> 
+    gets pen_dc_modifier        >>= \cf -> 
+    tellSubOpen cf ans          >> sets_ upd 
   where
     upd   = (\s i -> s { current_point   = p1
                        , cumulative_path = i `snocLineTo` p1
@@ -262,6 +268,14 @@ insert :: Num u => LocGraphic u -> AbsBuild u ()
 insert gf = gets current_point >>= \pt -> tellInsert (gf `at` pt)
 
 
+penColour :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => RGBi -> AbsBuild u ()
+penColour rgb = rmoveto (V2 0 0) >> sets_ upd
+  where
+    upd = (\s cf -> s { pen_dc_modifier = stroke_colour rgb . cf })
+            <*> pen_dc_modifier
+
+
 
 -- Note - vamps should be a data type then we can have libraries 
 -- of them.
@@ -276,9 +290,10 @@ vamp (Vamp vnext upd relp path_end) =
 
 cycle :: (Floating u, InterpretUnit u) => AbsBuild u ()
 cycle = 
-    gets current_point >>= \pt -> 
-    gets active_path   >>= \(start,acc) -> 
-    tellSubClosed id (acc `snocLineTo` start) >> 
+    gets current_point    >>= \pt -> 
+    gets pen_dc_modifier  >>= \cf ->
+    gets active_path      >>= \(start,acc) -> 
+    tellSubClosed cf (acc `snocLineTo` start) >> 
     sets_ (\s -> s { active_path = (pt, empty pt)})
 
 
