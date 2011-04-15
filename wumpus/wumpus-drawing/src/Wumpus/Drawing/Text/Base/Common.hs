@@ -47,10 +47,10 @@ import Data.Maybe
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
                    => PosObject u -> BoundedLocRectGraphic u
-posTextWithMargins obj = promoteR2 $ \pt addr -> 
+posTextWithMargins obj =  
     textMargin >>= \(xsep,ysep) -> 
     let body = extendPosObject xsep xsep ysep ysep obj
-    in runPosObject pt addr body
+    in runPosObjectR2 body
 
 
 -- | Single line text, returning its advance vector.
@@ -65,7 +65,7 @@ textVector :: (DrawingCtxM m, InterpretUnit u)
            => EscapedText -> m (AdvanceVec u)
 textVector esc = 
     cwLookupTable >>= \table -> 
-    pointSize    >>= \sz    -> 
+    pointSize     >>= \sz    -> 
     let cs = destrEscapedText id esc 
     in return $ foldr (step sz table) (vec 0 0) cs
   where

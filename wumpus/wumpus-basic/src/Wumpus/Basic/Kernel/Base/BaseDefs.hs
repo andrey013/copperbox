@@ -66,7 +66,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
-
+import Data.Monoid
 
 
 
@@ -214,6 +214,10 @@ type instance DUnit (UNil u) = u
 instance Functor UNil where
   fmap _ UNil= UNil
 
+
+instance Monoid (UNil u) where
+  mempty        = UNil
+  _ `mappend` _ = UNil
 
 instance OPlus (UNil u) where
   _ `oplus` _ = UNil

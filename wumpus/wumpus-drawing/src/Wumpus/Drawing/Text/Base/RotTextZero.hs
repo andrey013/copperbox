@@ -118,8 +118,7 @@ rtextline ang ss = rescTextline ang (escapeString ss)
 -- Is rotated text better with no margin?
 rescTextline :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => Radian -> EscapedText -> LocRectTextLine u
-rescTextline ang esc = promoteR2 $ \pt addr -> 
-    runPosObject pt addr $ makePosObject ortt body
+rescTextline ang esc = runPosObjectR2 $ makePosObject ortt body
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero esc
     body = incline (rescTextLine esc) ang

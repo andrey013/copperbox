@@ -21,6 +21,9 @@ module Wumpus.Drawing.Text.Base.PosChar
   , posChar
   , posEscChar
 
+  , charLabel
+  , escCharLabel
+
   ) where
 
 import Wumpus.Drawing.Text.Base.Common
@@ -30,6 +33,15 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
+type PosChar u = PosObject u
+
+posChar :: InterpretUnit u => Char -> PosChar u
+posChar = makePosChar . CharLiteral
+
+posEscChar :: InterpretUnit u => EscapedChar -> PosChar u
+posEscChar = makePosChar
+
+
 
 -- Note this type doesn\'t support concat...
 -- 
@@ -37,14 +49,16 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 type LocRectChar u = BoundedLocRectGraphic u
 
-posChar :: (Floating u, InterpretUnit u) => Char -> LocRectChar u
-posChar ch = posEscChar $ CharLiteral ch
 
 
-posEscChar :: (Floating u, InterpretUnit u) 
-           => EscapedChar -> LocRectChar u
-posEscChar esc = 
-    promoteR2 $ \pt addr -> runPosObject pt addr (makePosChar esc) 
+
+charLabel :: (Floating u, InterpretUnit u) => Char -> LocRectChar u
+charLabel ch = escCharLabel $ CharLiteral ch
+
+
+escCharLabel :: (Floating u, InterpretUnit u) 
+             => EscapedChar -> LocRectChar u
+escCharLabel esc = runPosObjectR2 (makePosChar esc) 
 
 
 makePosChar :: InterpretUnit u 

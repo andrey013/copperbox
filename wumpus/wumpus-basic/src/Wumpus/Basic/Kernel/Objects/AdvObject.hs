@@ -29,7 +29,9 @@ module Wumpus.Basic.Kernel.Objects.AdvObject
   , makeAdvObject
   , emptyAdvObject
 
-  , runAdvObject
+  , runAdvObjectR0
+  , runAdvObjectR1
+
 
   -- * Composition
   , advance
@@ -47,6 +49,7 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
+import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -112,8 +115,14 @@ emptyAdvObject :: InterpretUnit u => AdvObject u
 emptyAdvObject = makeAdvObject (pure $ V2 0 0) emptyLocGraphic
 
 
-runAdvObject :: AdvObject u -> AdvGraphic u
-runAdvObject (AdvObject mf) = promoteR1 $ \pt -> 
+
+runAdvObjectR0 :: Point2 u -> AdvObject u -> Image u (Vec2 u)
+runAdvObjectR0 pt (AdvObject mf) =  
+   (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
+
+
+runAdvObjectR1 :: AdvObject u -> AdvGraphic u
+runAdvObjectR1 (AdvObject mf) = promoteR1 $ \pt -> 
    (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
 
 

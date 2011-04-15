@@ -63,7 +63,7 @@ testDrawBl rpos =
     filledDisk 2 `oplus` (pushR1 ignoreAns $ rectBl `startAddr` rpos)
 
 rectBl :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u
-rectBl = makeBoundedLocRectGraphic $ makePosObject (return ortt) (mkRectBl w h)
+rectBl = runPosObjectR2 $ makePosObject (return ortt) (mkRectBl w h)
   where
     w    = 40 
     h    = 30
@@ -86,7 +86,7 @@ testDrawMinor rpos =
 
 rectMinor :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u 
 rectMinor = 
-    makeBoundedLocRectGraphic $ makePosObject (return ortt) (mkRectMinor m w h)
+    runPosObjectR2 $ makePosObject (return ortt) (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 

@@ -37,12 +37,15 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , makePosObject
   , makeBindPosObject
   , emptyPosObject
-  , runPosObject
+  , runPosObjectR0
+  , runPosObjectR1
+  , runPosObjectR2
+
+
   , localizePO 
   , elaboratePO
   , aelaboratePO 
  
-  , makeBoundedLocRectGraphic
   , startAddr
   , atStartAddr
 
@@ -186,14 +189,41 @@ emptyPosObject =
     makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
     
--- | Run a PosObject forming an Image.
+-- | Run a PosObject forming an Image (an /arity zero/ answer).
 --
-runPosObject :: Fractional u 
-             => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
-runPosObject pt addr (PosObject mf) = 
+runPosObjectR0 :: Fractional u 
+               => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
+runPosObjectR0 pt addr (PosObject mf) = 
     mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
                               bb = orientationBounds ortt (displaceVec sv pt)
                           in pure $ replaceAns bb $ ptf $ displaceVec sv pt
+
+
+
+-- | Version of 'runPosObject' that produces a 
+-- 'BoundedLocGraphic'. 
+-- 
+-- The 'PosObject' is run with only rect-address as an explicit 
+-- argument (start-point is implicit). The corresponding answer is 
+-- an /arity one/ Graphic that needs drawing with the start-point.
+--
+runPosObjectR1 :: Fractional u 
+               => RectAddress -> PosObject u -> BoundedLocGraphic u
+runPosObjectR1 addr obj = promoteR1 $ \start -> runPosObjectR0 start addr obj
+
+
+-- | Version of 'runPosObject' that produces a 
+-- 'BoundedLocRectGraphic'. 
+-- 
+-- The 'PosObject' is run with no explicit arguments (rect-address 
+-- or start-point) so the corresponding answer is an /arity two/ 
+-- Graphic that needs drawing with the start-point and 
+-- rect-address.
+--
+runPosObjectR2 :: Fractional u 
+               => PosObject u -> BoundedLocRectGraphic u
+runPosObjectR2 obj = promoteR2 $ \start addr -> runPosObjectR0 start addr obj
+
 
 
 -- | Run a DrawingContext update within a 'PosObject'.
@@ -223,15 +253,6 @@ aelaboratePO fn po = PosObject body
            in return (ortt, deco `oplus` ptf)
 
 
-
--- | Make a 'BoundedLocRectGraphic' from a 'PosObject'.
--- 
--- This turns a PosObject (concatenatable) into a LocRectImage 
--- (drawable at rectangle positions).
---
-makeBoundedLocRectGraphic :: Fractional u 
-                          => PosObject u -> BoundedLocRectGraphic u
-makeBoundedLocRectGraphic po = promoteR2 $ \pt addr -> runPosObject pt addr po
 
 
 
