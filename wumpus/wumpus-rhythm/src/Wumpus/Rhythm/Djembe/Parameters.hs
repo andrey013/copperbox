@@ -17,8 +17,11 @@
 module Wumpus.Rhythm.Djembe.Parameters 
   (
   
+  -- * Cap height
+    helvetica_cap_height    
+
   -- * Synthesized width vectors
-    disk_width_vector
+  , disk_width_vector
   , period_width_vector
 
   -- * Notehead params
@@ -29,11 +32,14 @@ module Wumpus.Rhythm.Djembe.Parameters
   , lostroke_disk_ycenter
   , histroke_char_baseline
 
+
+
   -- * Accents
   , accent_baseline
   , hand_baseline
   , hand_side_length
   , strike_baseline
+  , angle_strike_width
   , paren_baseline
   , leadin_mark_width
   , leadin_mark_height
@@ -48,6 +54,7 @@ module Wumpus.Rhythm.Djembe.Parameters
   , flam_disk_radius
   , flam_disk_ycenter
   , divstem_beam_ypos
+  , divstem_beam_ydrop
   , swing_symbol_baseline
 
   -- * Bar lines and repeats
@@ -70,6 +77,12 @@ module Wumpus.Rhythm.Djembe.Parameters
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
+
+
+-- | Note heads should use this for the y_major.
+--
+helvetica_cap_height    :: AfmUnit
+helvetica_cap_height    = 718
 
 
 -- | Note - the width is the same width as capital O in Helvetica.
@@ -137,6 +150,10 @@ hand_side_length        = 260
 strike_baseline         :: AfmUnit
 strike_baseline         = (-92)
 
+angle_strike_width      :: AfmUnit
+angle_strike_width      = 612
+
+
 paren_baseline          :: AfmUnit
 paren_baseline          = 72
 
@@ -182,6 +199,13 @@ flam_disk_ycenter       = 950
 --
 divstem_beam_ypos       :: AfmUnit
 divstem_beam_ypos       = 2200
+
+
+-- | Drop from the beam line to the \'H\' bar of a div stem.
+--
+divstem_beam_ydrop      :: AfmUnit
+divstem_beam_ydrop      = 140
+
 
 -- | Baseline for the \'\>\' symbol of a swing stem.
 --

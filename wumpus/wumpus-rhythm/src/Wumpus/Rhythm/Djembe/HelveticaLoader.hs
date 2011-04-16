@@ -66,7 +66,7 @@ loadAfm_helvetica fnt =
 
 loadHelvetica :: FontDef -> FontLoader -> IO FontLoadResult
 loadHelvetica helv_def loader = do 
-    metrics  <- loader [helv_def]
+    metrics  <- loader [ Left helv_def ]
     printLoadErrors metrics
     return $ metrics
 
