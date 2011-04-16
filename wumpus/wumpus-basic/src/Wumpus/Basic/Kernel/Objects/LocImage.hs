@@ -31,10 +31,15 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , uconvLocImageF
    , uconvLocImageZ
 
-   -- * /Distribution/
+   -- * Composing LocImages
    , distrib
    , distribH 
    , distribV
+   
+   , duplicate
+   , duplicateH
+   , duplicateV
+
 
    )
 
@@ -45,11 +50,13 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
+import Wumpus.Basic.Kernel.Objects.Displacement
 
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Control.Applicative
 import Data.Monoid
@@ -171,3 +178,22 @@ distribV :: (Monoid a, InterpretUnit u)
 distribV dy = distrib (hvec dy)
 
 
+
+-- | This is analogue to @replicate@ in the Prelude.
+--
+duplicate :: (Monoid a, InterpretUnit u) 
+          => Int -> Vec2 u -> LocImage u a -> LocImage u a
+duplicate n _ _   | n < 1 = pushR1 (replaceAns mempty) $ emptyLocGraphic
+duplicate n v img         = go img v n
+  where
+     go acc _  i | i < 1 = acc
+     go acc va i         = let img1 = moveStart (displaceVec va) img
+                           in go (acc `mappend` img1) (va ^+^ v) (i-1)
+
+duplicateH :: (Monoid a, InterpretUnit u) 
+           => Int -> u -> LocImage u a -> LocImage u a
+duplicateH n dx = duplicate n (hvec dx)
+
+duplicateV :: (Monoid a, InterpretUnit u) 
+           => Int -> u -> LocImage u a -> LocImage u a
+duplicateV n dy = duplicate n (vvec dy)

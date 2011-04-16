@@ -71,7 +71,7 @@ type Connector u = ConnectorQuery u (AbsPath u)
 -- | Straight line connector.
 --
 connline :: (Real u, Floating u, InterpretUnit u) => Connector u
-connline = promoteConn $ \p0 p1 -> return $ line p0 p1
+connline = promoteConn $ \p0 p1 -> return $ line1 p0 p1
 
 
 
@@ -94,7 +94,7 @@ connarc = promoteConn $ \p0 p1 ->
         ang     = vdirection v1
         cp0     = p0 .+^ avec (ang + arc_ang) hlen
         cp1     = p1 .+^ avec (pi + ang - arc_ang) hlen
-    in return $ curve p0 cp0 cp1 p1
+    in return $ curve1 p0 cp0 cp1 p1
 
 
 
@@ -273,9 +273,8 @@ connabar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
-    in 
-    return $ vertexPath [ p0, thetaNorthwards src_arm ang p0
-                        , thetaNorthwards dst_arm ang p1, p1 ]
+    in return $ vertexPath [ p0, adisp_north src_arm ang p0
+                           , adisp_north dst_arm ang p1, p1 ]
 
 
 -- | Bar connector.
@@ -292,8 +291,8 @@ connbbar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
-    in return $ vertexPath [ p0, thetaSouthwards src_arm ang p0
-                           , thetaSouthwards dst_arm ang p1, p1 ]
+    in return $ vertexPath [ p0, adisp_south src_arm ang p0
+                           , adisp_south dst_arm ang p1, p1 ]
 
 
 
@@ -471,9 +470,9 @@ connhbezier = promoteConn $ \p0 p1 ->
       QUAD_SE -> right p0 p1 src_arm dst_arm
       _       -> left  p0 p1 src_arm dst_arm
   where
-    right p0 p1 h0 h1 = return $ curve p0 (p0 .+^ hvec h0) (p1 .-^ hvec h1) p1
+    right p0 p1 h0 h1 = return $ curve1 p0 (p0 .+^ hvec h0) (p1 .-^ hvec h1) p1
 
-    left  p0 p1 h0 h1 = return $ curve p0 (p0 .-^ hvec h0) (p1 .+^ hvec h1) p1
+    left  p0 p1 h0 h1 = return $ curve1 p0 (p0 .-^ hvec h0) (p1 .+^ hvec h1) p1
 
 
 -- | Bezier curve connector - the control points are positioned 
@@ -498,9 +497,9 @@ connvbezier = promoteConn $ \p0 p1 ->
       QUAD_NW -> up   p0 p1 src_arm dst_arm
       _       -> down p0 p1 src_arm dst_arm
   where
-    up   p0 p1 v0 v1 = return $ curve p0 (p0 .+^ vvec v0) (p1 .-^ vvec v1) p1
+    up   p0 p1 v0 v1 = return $ curve1 p0 (p0 .+^ vvec v0) (p1 .-^ vvec v1) p1
 
-    down p0 p1 v0 v1 = return $ curve p0 (p0 .-^ vvec v0) (p1 .+^ vvec v1) p1
+    down p0 p1 v0 v1 = return $ curve1 p0 (p0 .-^ vvec v0) (p1 .+^ vvec v1) p1
 
 
 

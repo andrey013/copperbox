@@ -32,8 +32,8 @@ module Wumpus.Drawing.Paths.Base.RelPath
 
   -- * Construction
   , empty
-  , line
-  , curve
+  , line1
+  , curve1
   , vertexPath
 
   -- * Queries
@@ -128,18 +128,21 @@ instance Monoid (RelPath u) where
 empty :: RelPath u 
 empty = RelPath mempty
 
+-- | Create a relative path from a single straight line.
+--
+line1 :: Vec2 u -> RelPath u
+line1 = RelPath . JL.one . RelLineSeg
 
-line :: Vec2 u -> RelPath u
-line = RelPath . JL.one . RelLineSeg
 
-
-curve :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
-curve v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
+-- | Create a relative path from a single Bezier curve.
+--
+curve1 :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
+curve1 v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
 
 
 vertexPath :: [Vec2 u] -> RelPath u
 vertexPath [] = empty
-vertexPath (x:xs) = go (line x) xs
+vertexPath (x:xs) = go (line1 x) xs
   where
     go acc []     = acc
     go acc (v:vs) = go (acc `snocLineTo` v) vs
@@ -217,13 +220,13 @@ toAbsPath start (RelPath segs) = step1 start $ viewl segs
         in step2 end (acc `Abs.append` s1) (viewl se)
 
     aline p0 v1                               = 
-        let p1 = p0 .+^ v1 in (Abs.line p0 p1, p1)
+        let p1 = p0 .+^ v1 in (Abs.line1 p0 p1, p1)
 
     acurve p0 v1 v2 v3                        = 
         let p1 = p0 .+^ v1
             p2 = p1 .+^ v2
             p3 = p2 .+^ v3
-        in (Abs.curve p0 p1 p2 p3, p3)
+        in (Abs.curve1 p0 p1 p2 p3, p3)
 
 
 

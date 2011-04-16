@@ -27,8 +27,8 @@ module Wumpus.Drawing.Paths.Base.AbsPath
 
   -- * Construction
   , empty
-  , line
-  , curve
+  , line1
+  , curve1
   , vertexPath
   , curvePath
   , controlCurve
@@ -190,18 +190,19 @@ empty :: Floating u => Point2 u -> AbsPath u
 empty = zeroPath
 
 
--- | Create a path as a straight line between the supplied points.
+-- | Create an absolute path as a straight line between the 
+-- supplied points.
 --
-line :: Floating u => Point2 u -> Point2 u -> AbsPath u 
-line p0 p1 = AbsPath v p0 (JL.one $ AbsLineSeg v p0 p1) p1
+line1 :: Floating u => Point2 u -> Point2 u -> AbsPath u 
+line1 p0 p1 = AbsPath v p0 (JL.one $ AbsLineSeg v p0 p1) p1
   where
     v = vlength $ pvec p0 p1 
 
--- | Create a path as a cubic Bezier curve.
+-- | Create an absolute path from a single cubic Bezier curve.
 --
-curve :: (Floating u, Ord u, Tolerance u)
+curve1 :: (Floating u, Ord u, Tolerance u)
       => Point2 u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u 
-curve p0 p1 p2 p3 = AbsPath v p0 (JL.one $ AbsCurveSeg v p0 p1 p2 p3) p3
+curve1 p0 p1 p2 p3 = AbsPath v p0 (JL.one $ AbsCurveSeg v p0 p1 p2 p3) p3
   where
     v = bezierLength (BezierCurve p0 p1 p2 p3)
 
@@ -212,11 +213,11 @@ curve p0 p1 p2 p3 = AbsPath v p0 (JL.one $ AbsCurveSeg v p0 p1 p2 p3) p3
 vertexPath :: (Floating u, Ord u, Tolerance u) 
            => [Point2 u] -> AbsPath u
 vertexPath []       = error "traceLinePoints - empty point list."
-vertexPath [a]      = line a a
-vertexPath (a:b:xs) = step (line a b) b xs
+vertexPath [a]      = line1 a a
+vertexPath (a:b:xs) = step (line1 a b) b xs
   where
     step acc _ []     = acc
-    step acc e (y:ys) = step (acc `append` line e y) y ys
+    step acc e (y:ys) = step (acc `append` line1 e y) y ys
 
 
 
@@ -230,9 +231,9 @@ vertexPath (a:b:xs) = step (line a b) b xs
 --
 curvePath :: (Floating u, Ord u, Tolerance u) 
           => [Point2 u] -> AbsPath u
-curvePath (a:b:c:d:xs) = step (curve a b c d) d xs
+curvePath (a:b:c:d:xs) = step (curve1 a b c d) d xs
   where
-    step acc p0 (x:y:z:zs) = step (acc `append` curve p0 x y z) z zs
+    step acc p0 (x:y:z:zs) = step (acc `append` curve1 p0 x y z) z zs
     step acc _  _          = acc
 
 curvePath _            = error "curvePath - less than 4 elems."
@@ -248,7 +249,7 @@ curvePath _            = error "curvePath - less than 4 elems."
 controlCurve :: (Floating u, Ord u, Tolerance u) 
          => Point2 u -> Radian -> Radian -> Point2 u -> AbsPath u
 controlCurve start cin cout end = 
-    curve start (start .+^ v1) (end .+^ v2) end
+    curve1 start (start .+^ v1) (end .+^ v2) end
   where
     sz     = 0.375 * (vlength $ pvec start end)
     v1     = avec cin  sz
@@ -450,10 +451,10 @@ shortenPath l r = shortenL l .  shortenR r
 --
 shortenL :: (Real u, Floating u) => u -> AbsPath u -> AbsPath u
 shortenL n (AbsPath u _ segs ep) 
-    | n >= u                  = line ep ep
+    | n >= u                  = line1 ep ep
     | otherwise               = step n (viewl segs)
   where
-    step _ EmptyL     = line ep ep      -- should be unreachable
+    step _ EmptyL     = line1 ep ep      -- should be unreachable
     step d (e :< se)  = let z  = segmentLength e in
                         case compare d z of
                           GT -> step (d-z) (viewl se)
@@ -467,7 +468,7 @@ makeLeftPath :: Floating u
              => u -> JoinList (AbsPathSeg u) -> Point2 u -> AbsPath u
 makeLeftPath u se ep = 
     case viewl se of
-      EmptyL   -> line ep ep
+      EmptyL   -> line1 ep ep
       (e :< _) -> AbsPath u (segmentStart e) se ep
 
 
@@ -502,10 +503,10 @@ shortenLineL n p0 p1 = p0 .+^ v
 --
 shortenR :: (Real u, Floating u) => u -> AbsPath u -> AbsPath u
 shortenR n (AbsPath u sp segs _) 
-    | n >= u                  = line sp sp
+    | n >= u                  = line1 sp sp
     | otherwise               = step n (viewr segs)
   where
-    step _ EmptyR     = line sp sp      -- should be unreachable
+    step _ EmptyR     = line1 sp sp      -- should be unreachable
     step d (se :> e)  = let z = segmentLength e in
                         case compare d z of
                           GT -> step (d-z) (viewr se)
@@ -519,7 +520,7 @@ makeRightPath :: Floating u
               => u -> Point2 u -> JoinList (AbsPathSeg u) -> AbsPath u
 makeRightPath u sp se = 
     case viewr se of
-      EmptyR   -> line sp sp
+      EmptyR   -> line1 sp sp
       (_ :> e) -> AbsPath u sp se (segmentEnd e)
 
 
@@ -633,8 +634,8 @@ data PathViewR u = PathOneR (PathSegment u)
 type DPathViewR = PathViewR Double
 
 
-data PathSegment u = Line1  (Point2 u) (Point2 u)
-                   | Curve1 (Point2 u) (Point2 u) (Point2 u) (Point2 u)
+data PathSegment u = LineSeg  (Point2 u) (Point2 u)
+                   | CurveSeg (Point2 u) (Point2 u) (Point2 u) (Point2 u)
   deriving (Eq,Show) 
 
 type DPathSegment = PathSegment Double
@@ -643,9 +644,9 @@ type DPathSegment = PathSegment Double
 --------------------------------------------------------------------------------
 
 instance Functor PathSegment where
-  fmap f (Line1 p0 p1)        = Line1 (fmap f p0) (fmap f p1)
-  fmap f (Curve1 p0 p1 p2 p3) = 
-      Curve1 (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
+  fmap f (LineSeg p0 p1)        = LineSeg (fmap f p0) (fmap f p1)
+  fmap f (CurveSeg p0 p1 p2 p3) = 
+      CurveSeg (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
 instance Functor PathViewL where
   fmap f (PathOneL a) = PathOneL (fmap f a)
@@ -662,15 +663,15 @@ instance Functor PathViewR where
 pathViewL :: Num u => AbsPath u -> PathViewL u
 pathViewL (AbsPath u _ segs ep) = go (viewl segs)
   where
-    go EmptyL                   = error "pathViewL - (not) unreachable."
+    go EmptyL           = error "pathViewL - (not) unreachable."
      
     go (AbsLineSeg v p0 p1 :< se)
-        | JL.null se            = PathOneL (Line1 p0 p1)
-        | otherwise             = Line1 p0 p1 :<< AbsPath (u-v) p1 se ep
+        | JL.null se    = PathOneL (LineSeg p0 p1)
+        | otherwise     = LineSeg p0 p1 :<< AbsPath (u-v) p1 se ep
 
     go (AbsCurveSeg v p0 p1 p2 p3 :< se) 
-        | JL.null se            = PathOneL (Curve1 p0 p1 p2 p3)
-        | otherwise             = Curve1 p0 p1 p2 p3 :<< AbsPath (u-v) p3 se ep
+        | JL.null se    = PathOneL (CurveSeg p0 p1 p2 p3)
+        | otherwise     = CurveSeg p0 p1 p2 p3 :<< AbsPath (u-v) p3 se ep
 
 
 pathViewR :: Num u => AbsPath u -> PathViewR u
@@ -679,12 +680,12 @@ pathViewR (AbsPath u _ segs ep) = go (viewr segs)
     go EmptyR                   = error "pathViewR - (not) unreachable."
 
     go (se :> AbsLineSeg v p0 p1) 
-        | JL.null se            = PathOneR (Line1 p0 p1)
-        | otherwise             = AbsPath (u-v) p1 se ep :>> Line1 p0 p1
+        | JL.null se    = PathOneR (LineSeg p0 p1)
+        | otherwise     = AbsPath (u-v) p1 se ep :>> LineSeg p0 p1
 
     go (se :> AbsCurveSeg v p0 p1 p2 p3) 
-        | JL.null se            = PathOneR (Curve1 p0 p1 p2 p3)
-        | otherwise             = AbsPath (u-v) p3 se ep :>> Curve1 p0 p1 p2 p3
+        | JL.null se    = PathOneR (CurveSeg p0 p1 p2 p3)
+        | otherwise     = AbsPath (u-v) p3 se ep :>> CurveSeg p0 p1 p2 p3
 
 
 
@@ -706,7 +707,7 @@ pathViewR (AbsPath u _ segs ep) = go (viewr segs)
 --
 cornerCurve :: (Real u, Floating u, Tolerance u) 
             => Point2 u -> Point2 u -> Point2 u -> AbsPath u
-cornerCurve p1 p2 p3 = curve p1 cp1 cp2 p3
+cornerCurve p1 p2 p3 = curve1 p1 cp1 cp2 p3
   where
     len1 = 0.6 *  (vlength $ pvec p1 p2)
     len2 = 0.6 *  (vlength $ pvec p3 p2)
@@ -733,7 +734,7 @@ roundTrail :: (Real u, Floating u, Tolerance u)
            => u -> [Point2 u] -> AbsPath u 
 roundTrail _ []             = error "roundTrail - empty list."
 roundTrail _ [a]            = zeroPath a
-roundTrail _ [a,b]          = line a b
+roundTrail _ [a,b]          = line1 a b
 roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
   where
     step acc (m:n:o:ps)     = step (acc `append` lineCurveTrail u m n o) (n:o:ps)
@@ -750,7 +751,7 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 --
 lineCurveTrail :: (Real u, Floating u, Tolerance u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
-lineCurveTrail u a b c = line p1 p2 `append` cornerCurve p2 b p3
+lineCurveTrail u a b c = line1 p1 p2 `append` cornerCurve p2 b p3
   where
     p1 = a .+^ (avec (vdirection $ pvec a b) u)
     p2 = b .+^ (avec (vdirection $ pvec b a) u)
@@ -773,13 +774,13 @@ roundInterior :: (Real u, Floating u, Tolerance u)
               => u -> [Point2 u] -> AbsPath u 
 roundInterior _ []             = error "roundEveryInterior - empty list."
 roundInterior _ [a]            = zeroPath a
-roundInterior _ [a,b]          = line a b
+roundInterior _ [a,b]          = line1 a b
 roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
                                  in step path1 (p1:c:xs)
   where
     step acc (m:n:o:ps)     = let (seg2,p1) = lineCurveInter1 u m n o
                               in step (acc `append` seg2) (p1:o:ps)
-    step acc [n,o]          = acc `append` line n o
+    step acc [n,o]          = acc `append` line1 n o
     step acc _              = acc
 
 
@@ -793,7 +794,7 @@ lineCurveInter1 :: (Real u, Floating u, Tolerance u)
                 => u -> Point2 u -> Point2 u -> Point2 u 
                 -> (AbsPath u, Point2 u)
 lineCurveInter1 u a b c = 
-    (line a p2 `append` cornerCurve p2 b p3, p3)
+    (line1 a p2 `append` cornerCurve p2 b p3, p3)
   where
     p2 = b .+^ (avec (vdirection $ pvec b a) u)
     p3 = b .+^ (avec (vdirection $ pvec b c) u)

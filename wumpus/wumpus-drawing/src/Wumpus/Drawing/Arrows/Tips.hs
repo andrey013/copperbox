@@ -504,7 +504,7 @@ cxCurvePath pt theta hh =
     apply2R2 tripointsByDist pt theta >>= \(tup,tlo) -> 
       let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 pt tup
           (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo pt 
-      in toPrimPath $ curve tup u2 u1 pt `append` curve pt l1 l2 tlo
+      in toPrimPath $ curve1 tup u2 u1 pt `append` curve1 pt l1 l2 tlo
 
 
 
@@ -530,7 +530,7 @@ cxRevcurvePath pt theta hh =
     apply2R2 revtripointsByDist pt theta >>= \(tup,p1,tlo) -> 
       let (u1,u2) = trapezoidFromBasePoints (0.25*hh) 0.5 p1 tup
           (l2,l1) = trapezoidFromBasePoints (0.25*hh) 0.5 tlo p1
-      in toPrimPath $ curve tup u2 u1 p1 `append` curve p1 l1 l2 tlo
+      in toPrimPath $ curve1 tup u2 u1 p1 `append` curve1 p1 l1 l2 tlo
 
 
 revcurveTip :: (Real u, Floating u, InterpretUnit u, Tolerance u) 

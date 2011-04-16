@@ -34,35 +34,41 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , displaceH
   , displaceV
 
-  , move_up
-  , move_down
-  , move_left
-  , move_right
+  , disp_up
+  , disp_down
+  , disp_left
+  , disp_right
 
-  , northwards
-  , southwards 
-  , eastwards
-  , westwards  
+  , disp_up_left
+  , disp_up_right
+  , disp_down_left
+  , disp_down_right
+  
 
-  , northeastwards
-  , northwestwards
-  , southeastwards
-  , southwestwards
+  , disp_north
+  , disp_south
+  , disp_east
+  , disp_west
+
+  , disp_northeast
+  , disp_northwest
+  , disp_southeast
+  , disp_southwest
 
 
   , displaceParallel
   , displacePerpendicular
   , displaceOrtho
 
-  , thetaNorthwards
-  , thetaSouthwards 
-  , thetaEastwards
-  , thetaWestwards  
+  , adisp_north
+  , adisp_south
+  , adisp_east
+  , adisp_west  
 
-  , thetaNortheastwards
-  , thetaNorthwestwards
-  , thetaSoutheastwards
-  , thetaSouthwestwards
+  , adisp_northeast
+  , adisp_northwest
+  , adisp_southeast
+  , adisp_southwest
 
   , centerRelative
   , left_of
@@ -197,52 +203,67 @@ displaceV dy (P2 x y) = P2 x (y+dy)
 
 
 
--- Possibly for Displacement @move_down@ seems a more attrctive 
--- name than @southwards@.
+disp_up :: Num u => u -> PointDisplace u
+disp_up = displaceV
+
+disp_down :: Num u => u -> PointDisplace u
+disp_down = displaceV . negate
+
+disp_left :: Num u => u -> PointDisplace u
+disp_left = displaceH . negate
+
+disp_right :: Num u => u -> PointDisplace u
+disp_right = displaceH
+
+
+-- diagonals - these are different to cardinals which have the
+-- hypotenuese as the dist.
 --
-move_up :: Num u => u -> PointDisplace u
-move_up = displaceV
 
-move_down :: Num u => u -> PointDisplace u
-move_down = displaceV . negate
+disp_up_left :: Num u => u -> PointDisplace u
+disp_up_left u = displaceVec (V2 (-u) u)
 
-move_left :: Num u => u -> PointDisplace u
-move_left = displaceH . negate
+disp_up_right :: Num u => u -> PointDisplace u
+disp_up_right u = displaceVec (V2 u u)
 
-move_right :: Num u => u -> PointDisplace u
-move_right = displaceH
+disp_down_left :: Num u => u -> PointDisplace u
+disp_down_left u = displaceVec (V2 (-u) (-u))
+
+disp_down_right :: Num u => u -> PointDisplace u
+disp_down_right u = displaceVec (V2 u (-u))
+
+
+
 
 
 
 
 -- Cardinal displacement 
 
+disp_north :: Num u => u -> PointDisplace u
+disp_north = displaceV
 
 
-northwards :: Num u => u -> PointDisplace u
-northwards = displaceV
+disp_south :: Num u => u -> PointDisplace u
+disp_south =  displaceV . negate
 
+disp_east :: Num u => u -> PointDisplace u
+disp_east = displaceH
 
-southwards :: Num u => u -> PointDisplace u
-southwards =  displaceV . negate
+disp_west :: Num u => u -> PointDisplace u
+disp_west = displaceH . negate
 
-eastwards :: Num u => u -> PointDisplace u
-eastwards = displaceH
+disp_northeast :: Floating u => u -> PointDisplace u
+disp_northeast = displaceVec . avec (0.25 * pi)
 
-westwards :: Num u => u -> PointDisplace u
-westwards = displaceH . negate
+disp_northwest ::  Floating u => u -> PointDisplace u
+disp_northwest = displaceVec . avec (0.75 * pi)
 
-northeastwards :: Floating u => u -> PointDisplace u
-northeastwards = displaceVec . avec (0.25 * pi)
+disp_southeast ::  Floating u => u -> PointDisplace u
+disp_southeast = displaceVec . avec (1.75 * pi)
 
-northwestwards ::  Floating u => u -> PointDisplace u
-northwestwards = displaceVec . avec (0.75 * pi)
-
-southeastwards ::  Floating u => u -> PointDisplace u
-southeastwards = displaceVec . avec (1.75 * pi)
-
-southwestwards ::  Floating u => u -> PointDisplace u
-southwestwards = displaceVec . avec (1.25 * pi)
+disp_southwest ::  Floating u => u -> PointDisplace u
+disp_southwest = displaceVec . avec (1.25 * pi)
 
 
 --------------------------------------------------------------------------------
@@ -283,39 +304,35 @@ displaceOrtho (V2 x y) = \theta ->
     displaceParallel x theta . displacePerpendicular y theta
 
 
-thetaNorthwards :: Floating u => u -> ThetaPointDisplace u
-thetaNorthwards = displacePerpendicular
+adisp_north :: Floating u => u -> ThetaPointDisplace u
+adisp_north = displacePerpendicular
 
 
-thetaSouthwards :: Floating u => u -> ThetaPointDisplace u
-thetaSouthwards = displacePerpendicular . negate
+adisp_south :: Floating u => u -> ThetaPointDisplace u
+adisp_south = displacePerpendicular . negate
 
 
-thetaEastwards :: Floating u => u -> ThetaPointDisplace u
-thetaEastwards = displaceParallel
+adisp_east :: Floating u => u -> ThetaPointDisplace u
+adisp_east = displaceParallel
 
 
-thetaWestwards :: Floating u => u -> ThetaPointDisplace u
-thetaWestwards = displaceParallel . negate
+adisp_west :: Floating u => u -> ThetaPointDisplace u
+adisp_west = displaceParallel . negate
 
-thetaNortheastwards :: Floating u => u -> ThetaPointDisplace u
-thetaNortheastwards d = 
-    \theta pt -> pt .+^ avec (circularModulo $ theta + (0.25*pi)) d
-
-
-thetaNorthwestwards :: Floating u => u -> ThetaPointDisplace u
-thetaNorthwestwards d = 
-    \theta pt -> pt .+^ avec (circularModulo $ theta + (0.75*pi)) d
+adisp_northeast :: Floating u => u -> ThetaPointDisplace u
+adisp_northeast d = \ang pt -> pt .+^ avec (ang + (0.25*pi)) d
 
 
-thetaSoutheastwards :: Floating u => u -> ThetaPointDisplace u
-thetaSoutheastwards d = 
-    \theta pt -> pt .+^ avec (circularModulo $ theta + (1.75*pi)) d
+adisp_northwest :: Floating u => u -> ThetaPointDisplace u
+adisp_northwest d = \ang pt -> pt .+^ avec (ang + (0.75*pi)) d
 
 
-thetaSouthwestwards :: Floating u => u -> ThetaPointDisplace u
-thetaSouthwestwards d = 
-    \theta pt -> pt .+^ avec (circularModulo $ theta + (1.25*pi)) d
+adisp_southeast :: Floating u => u -> ThetaPointDisplace u
+adisp_southeast d = \ang pt -> pt .+^ avec (ang + (1.75*pi)) d
+
+
+adisp_southwest :: Floating u => u -> ThetaPointDisplace u
+adisp_southwest d = \ang pt -> pt .+^ avec (ang + (1.25*pi)) d
 
 
 
@@ -327,6 +344,11 @@ centerRelative :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a)
                => (Int,Int) -> a -> Query (Anchor u)
 centerRelative coord a = snapmove coord >>= \v -> return $ center a .+^ v
 
+-- TODO - These are really for Anchors.
+--
+-- Should the have a separate module or be rolled into the same
+-- module as the classes?
+--
 
 -- | Value is 1 snap unit right.
 --
