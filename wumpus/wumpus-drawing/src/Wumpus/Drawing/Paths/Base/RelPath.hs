@@ -148,6 +148,9 @@ vertexPath (x:xs) = go (line1 x) xs
     go acc (v:vs) = go (acc `snocLineTo` v) vs
 
 
+circle :: u -> Path u
+circle rad = 
+
 --------------------------------------------------------------------------------
 -- Queries
 
@@ -233,3 +236,5 @@ toAbsPath start (RelPath segs) = step1 start $ viewl segs
 strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
 strokeRelPath rp = 
     promoteR1 $ \start -> toPrimPath start rp >>= openStroke
+
+

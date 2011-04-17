@@ -22,7 +22,6 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.DrawingContext
   , module Wumpus.Basic.Kernel.Base.FontSupport
   , module Wumpus.Basic.Kernel.Base.QueryDC
-  , module Wumpus.Basic.Kernel.Base.ScalingContext
   , module Wumpus.Basic.Kernel.Base.Units
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
@@ -50,7 +49,6 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontSupport
 import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Base.ScalingContext
 import Wumpus.Basic.Kernel.Base.Units 
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive

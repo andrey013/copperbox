@@ -67,9 +67,7 @@ data TurtleState = TurtleState
       }
 
 newtype TurtleT u m a = TurtleT { 
-          getTurtleT :: ScalingContext Int Int u 
-                     -> TurtleState 
-                     -> m (a, TurtleState) }
+          getTurtleT :: TurtleState -> m (a, TurtleState) }
 
     
 type instance MonUnit (TurtleT u m a) = u
@@ -79,40 +77,39 @@ type instance MonUnit (TurtleT u m a) = u
 
 
 instance Monad m => Functor (TurtleT u m) where
-  fmap f m = TurtleT $ \r s -> getTurtleT m r s >>= \(a,s') ->
-                               return (f a, s')
+  fmap f m = TurtleT $ \s -> getTurtleT m s >>= \(a,s') ->
+                             return (f a, s')
 
 
 -- Applicative 
 
 instance Monad m => Applicative (TurtleT u m) where
-  pure a    = TurtleT $ \_ s -> return (a,s)
-  mf <*> ma = TurtleT $ \r s -> getTurtleT mf r s  >>= \(f,s')  ->
-                                getTurtleT ma r s' >>= \(a,s'') ->
-                                return (f a,s'') 
+  pure a    = TurtleT $ \s -> return (a,s)
+  mf <*> ma = TurtleT $ \s -> getTurtleT mf s  >>= \(f,s')  ->
+                              getTurtleT ma s' >>= \(a,s'') ->
+                              return (f a,s'') 
 
 
 -- Monad 
 
 instance Monad m => Monad (TurtleT u m) where
-  return a = TurtleT $ \_ s -> return (a,s)
-  m >>= k  = TurtleT $ \r s -> getTurtleT m r s        >>= \(a,s')  ->
-                               (getTurtleT . k) a r s' >>= \(b,s'') ->
-                               return (b,s'')
+  return a = TurtleT $ \s -> return (a,s)
+  m >>= k  = TurtleT $ \s -> getTurtleT m s   >>= \(a,s')  ->
+                             (getTurtleT . k) a s'
 
 
 
 
 instance Monad m => TurtleM (TurtleT u m) where
-  getLoc      = TurtleT $ \_ s@(TurtleState _ c) -> return (c,s)
-  setLoc c    = TurtleT $ \_ (TurtleState o _)   -> return ((),TurtleState o c)
-  getOrigin   = TurtleT $ \_ s@(TurtleState o _) -> return (o,s)
-  setOrigin o = TurtleT $ \_ (TurtleState _ c)   -> return ((),TurtleState o c)
+  getLoc      = TurtleT $ \s@(TurtleState _ c) -> return (c,s)
+  setLoc c    = TurtleT $ \(TurtleState o _)   -> return ((),TurtleState o c)
+  getOrigin   = TurtleT $ \s@(TurtleState o _) -> return (o,s)
+  setOrigin o = TurtleT $ \(TurtleState _ c)   -> return ((),TurtleState o c)
 
 
 runTurtleT :: (Monad m, Num u) 
-           => (Int,Int) -> ScalingContext Int Int u -> TurtleT u m a -> m a
-runTurtleT ogin cfg mf = getTurtleT mf cfg st0 >>= \(a,_) -> return a
+           => (Int,Int) -> TurtleT u m a -> m a
+runTurtleT ogin mf = getTurtleT mf st0 >>= \(a,_) -> return a
   where 
     st0 = TurtleState ogin ogin 
 
@@ -122,14 +119,14 @@ runTurtleT ogin cfg mf = getTurtleT mf cfg st0 >>= \(a,_) -> return a
 -- Cross instances
 
 instance DrawingCtxM m => DrawingCtxM (TurtleT u m) where
-  askDC           = TurtleT $ \_ s -> askDC >>= \ ctx -> return (ctx,s)
-  localize upd mf = TurtleT $ \r s -> localize upd (getTurtleT mf r s)
+  askDC           = TurtleT $ \s -> askDC >>= \ ctx -> return (ctx,s)
+  localize upd mf = TurtleT $ \s -> localize upd (getTurtleT mf s)
 
 
 -- This needs undecidable instances...
 
 instance (Monad m, TraceM m, u ~ MonUnit (m ()) ) => TraceM (TurtleT u m) where
-  trace a      = TurtleT $ \_ s -> trace a >> return ((),s)
-  fontDelta mf = TurtleT $ \r s -> fontDelta $ getTurtleT mf r s
+  trace a      = TurtleT $ \s -> trace a >> return ((),s)
+  fontDelta mf = TurtleT $ \s -> fontDelta $ getTurtleT mf s
 
 

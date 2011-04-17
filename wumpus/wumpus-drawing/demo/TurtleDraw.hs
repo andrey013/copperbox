@@ -20,9 +20,9 @@ main = do
 
 
 turtle_pic :: CtxPicture
-turtle_pic = udrawTracing (0::Double) $ do 
+turtle_pic = udrawTracing (0::Double) $ localize (snap_grid_factors 40 40) $ do 
     draw $ filledRectangle 40 10 `at` zeroPt
-    runTurtleT (0,0) (coordinateScaling 14 14) $ 
+    runTurtleT (0,0) $ 
       moveUp >> moveUp >> moveUp >> tnode (plainTextLine "up3") >>  
       moveRight >> moveRight >> tnode (plainTextLine "right2")
       

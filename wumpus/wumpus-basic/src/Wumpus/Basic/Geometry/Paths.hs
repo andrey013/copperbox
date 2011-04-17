@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,11 @@
 
 module Wumpus.Basic.Geometry.Paths
   ( 
-    LocCoordPath
+
+    PathAlg
+  , runPathAlg
+
+  , LocCoordPath
   , coordinatePrimPath
 
   , rectangleCoordPath
@@ -39,6 +44,30 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 import Data.List ( unfoldr )
+
+
+data PathAlgScheme = START_IS_START | START_IS_LOCUS 
+  deriving (Enum,Eq,Ord,Show)
+
+data PathAlg u = PathAlg 
+       { path_alg_scheme  :: PathAlgScheme
+       , path_alg_steps   :: [Vec2 u]
+       }
+
+
+type instance DUnit (PathAlg u) = u
+
+runPathAlg :: Num u => Point2 u -> PathAlg u -> [Point2 u]
+runPathAlg _  (PathAlg _   [])       = []
+runPathAlg p0 (PathAlg scm (v0:xs)) 
+    | scm == START_IS_START = p0 : step (p0 .+^ v0) xs
+    | otherwise             = step (p0 .+^ v0) xs
+  where
+    step pt []      = [pt]
+    step pt (v:vs)  = pt : step (pt .+^ v) vs
+
+
+
 
 
 -- | A functional type from /initial point/ to point list.
