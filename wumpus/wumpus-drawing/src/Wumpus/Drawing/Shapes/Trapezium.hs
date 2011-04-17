@@ -32,8 +32,7 @@ module Wumpus.Drawing.Shapes.Trapezium
 import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Intersection       -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core

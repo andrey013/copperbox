@@ -37,6 +37,7 @@ module Wumpus.Drawing.Paths.Base.RelBuilder
   , vamp
   , cycle
 
+  , setIncline
   , pivot
 
   -- * Derived operators
@@ -112,6 +113,7 @@ import Prelude hiding ( null, log, cycle )
 data St u = St 
       { cumulative_disp   :: Vec2 u
       , cumulative_path   :: RelPath u
+      , current_incline   :: Radian
       , active_path       :: (Vec2 u, RelPath u)
       , pen_dc_modifier   :: DrawingContextF
       , pivot_position    :: Vec2 u
@@ -166,6 +168,7 @@ instance Monad (RelBuild u) where
 zeroSt :: Num u => St u
 zeroSt = St { cumulative_disp   = V2 0 0 
             , cumulative_path   = mempty
+            , current_incline   = 0
             , active_path       = (V2 0 0, mempty)
             , pen_dc_modifier   = id
             , pivot_position    = V2 0 0
@@ -352,6 +355,12 @@ cycle =
     gets active_path      >>= \(start,acc) -> 
     tellSubClosed cf start (snocLineTo acc start) >> 
     sets_ (\s -> s { active_path = (v1, mempty)})
+
+
+setIncline :: Radian -> RelBuild u ()
+setIncline ang = sets_ upd
+  where
+    upd = (\s -> s { current_incline = ang })
 
 
 pivot :: RelBuild u ()

@@ -5,9 +5,7 @@ module Connectors where
 
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorPaths
--- import Wumpus.Drawing.Paths hiding ( length )
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -43,7 +41,7 @@ conn_pic :: CtxPicture
 conn_pic = drawTracing $ localize (dest_arm_len (0.75::Em))
                        $ tableGraphic conntable
 
-conntable :: [(String, PathQuery Double)]
+conntable :: [(String, Connector Double)]
 conntable = 
     [ ("connline",      connline)
     , ("connarc",       connarc)
@@ -67,7 +65,7 @@ conntable =
     , ("connvbezier",   connvbezier)
     ]
 
-tableGraphic :: [(String, PathQuery Double)] -> TraceDrawing Double ()
+tableGraphic :: [(String, Connector Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
     draw $ chain_ chn_alg (map makeConnDrawing conns) `at` start
   where
@@ -80,7 +78,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (String, PathQuery Double) -> DLocGraphic 
+makeConnDrawing :: (String, Connector Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
     promoteR1 $ \p0 -> fn p0 (displace 60 40 p0) 
   where

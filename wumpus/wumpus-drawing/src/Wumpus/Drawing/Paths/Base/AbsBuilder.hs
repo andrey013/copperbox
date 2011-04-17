@@ -28,20 +28,79 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
 
   , tip
 
-  , lineto
-  , curveto
-  , moveto
+  , line
+  , curve
+  , move
 
-  , rlineto
-  , rcurveto
-  , rmoveto
+  , relline
+  , relcurve
+  , relmove
 
-  , ctrlcurveto
+  , rellineParallel
+  , rellinePerpendicular
+
+  , relmoveParallel
+  , relmovePerpendicular
+
+
+
+  , ctrlcurve
 
   , insert
-  , penColour
   , vamp
   , cycle
+  , setIncline
+
+  -- * Derived operators
+  , pen_colour
+  , pen_width
+
+  , hline
+  , vline
+  , aline
+
+  , hmove
+  , vmove
+  , amove
+
+  , line_up
+  , line_down
+  , line_left
+  , line_right
+
+  , line_up_left
+  , line_up_right
+  , line_down_left
+  , line_down_right
+
+  , line_north
+  , line_south
+  , line_east
+  , line_west
+  , line_northeast
+  , line_northwest
+  , line_southeast
+  , line_southwest
+
+  , move_up
+  , move_down
+  , move_left
+  , move_right
+
+  , move_up_left
+  , move_up_right
+  , move_down_left
+  , move_down_right
+
+  , move_north
+  , move_south
+  , move_east
+  , move_west
+  , move_northeast
+  , move_northwest
+  , move_southeast
+  , move_southwest
+
 
   ) where
 
@@ -51,7 +110,8 @@ import Wumpus.Drawing.Paths.Base.BuildCommon
 import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry ( half_pi )        -- package: wumpus-basic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -70,6 +130,7 @@ import Prelude hiding ( log, cycle )
 
 data St u = St
       { current_point     :: Point2 u 
+      , current_incline   :: Radian
       , cumulative_path   :: AbsPath u
       , active_path       :: (Point2 u, AbsPath u)
       , pen_dc_modifier   :: DrawingContextF
@@ -118,6 +179,7 @@ instance Monad (AbsBuild u) where
 --
 initSt :: Floating u => Point2 u -> St u
 initSt pt = St { current_point     = pt
+               , current_incline   = 0
                , cumulative_path   = empty pt
                , active_path       = (pt, empty pt)
                , pen_dc_modifier   = id
@@ -212,23 +274,23 @@ extendPath fn end_pt = sets_ upd
                           , active_path      = bimapR (fn pt) j })
            <*> current_point <*> cumulative_path <*> active_path
 
-lineto :: Floating u => Point2 u -> AbsBuild u ()
-lineto p1 = extendPath (\_ acc -> acc `snocLineTo` p1) p1
+line :: Floating u => Point2 u -> AbsBuild u ()
+line p1 = extendPath (\_ acc -> acc `snocLineTo` p1) p1
 
 
 
-curveto :: (Floating u, Ord u, Tolerance u)
+curve :: (Floating u, Ord u, Tolerance u)
         => Point2 u -> Point2 u -> Point2 u -> AbsBuild u ()
-curveto p1 p2 p3 = extendPath (\_ acc -> snocCurveTo acc p1 p2 p3) p3
+curve p1 p2 p3 = extendPath (\_ acc -> snocCurveTo acc p1 p2 p3) p3
 
 
 
    
--- | 'moveto' is a pen up.
+-- | 'move' is a pen up.
 --
-moveto :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+move :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
        => Point2 u -> AbsBuild u ()
-moveto p1 = 
+move p1 = 
     gets active_path            >>= \(_,ans) -> 
     gets pen_dc_modifier        >>= \cf -> 
     tellSubOpen cf ans          >> sets_ upd 
@@ -239,27 +301,49 @@ moveto p1 =
               <*> cumulative_path
 
 
-rlineto :: Floating u => Vec2 u -> AbsBuild u ()
-rlineto v1 = gets current_point >>= \pt -> lineto (pt .+^ v1)
+relline :: Floating u => Vec2 u -> AbsBuild u ()
+relline v1 = gets current_point >>= \pt -> line (pt .+^ v1)
 
 
-rcurveto :: (Floating u, Ord u, Tolerance u)
+relcurve :: (Floating u, Ord u, Tolerance u)
          => Vec2 u -> Vec2 u -> Vec2 u -> AbsBuild u ()
-rcurveto v1 v2 v3 = 
+relcurve v1 v2 v3 = 
     gets current_point >>= \pt -> 
-    curveto (pt .+^ v1) (pt .+^ v1 ^+^ v2) (pt .+^ v1 ^+^ v2 ^+^ v3)
+    curve (pt .+^ v1) (pt .+^ v1 ^+^ v2) (pt .+^ v1 ^+^ v2 ^+^ v3)
 
 
-rmoveto :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+relmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
         => Vec2 u -> AbsBuild u ()
-rmoveto v1 = gets current_point >>= \pt -> moveto (pt .+^ v1)
+relmove v1 = gets current_point >>= \pt -> move (pt .+^ v1)
 
 
 
+rellineParallel :: Floating u => u -> AbsBuild u ()
+rellineParallel u = gets current_incline >>= \ang -> relline (avec ang u)
 
-ctrlcurveto :: (Floating u, Ord u, Tolerance u) 
-            => Radian -> Radian -> Point2 u -> AbsBuild u ()
-ctrlcurveto cin cout p1 = 
+rellinePerpendicular :: Floating u => u -> AbsBuild u ()
+rellinePerpendicular u = 
+    gets current_incline >>= \ang -> relline (avec (fn ang) u)
+  where
+    fn = circularModulo . (+ half_pi)
+
+relmoveParallel :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+                => u -> AbsBuild u ()
+relmoveParallel u = gets current_incline >>= \ang -> relmove (avec ang u)
+
+
+relmovePerpendicular :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+                     => u -> AbsBuild u ()
+relmovePerpendicular u = 
+    gets current_incline >>= \ang -> relmove (avec (fn ang) u)
+  where
+    fn = circularModulo . (+ half_pi)
+
+
+
+ctrlcurve :: (Floating u, Ord u, Tolerance u) 
+          => Radian -> Radian -> Point2 u -> AbsBuild u ()
+ctrlcurve cin cout p1 = 
     extendPath (\p0 acc -> acc `append` controlCurve p0 cin cout p1) p1
 
 
@@ -268,11 +352,11 @@ insert :: Num u => LocGraphic u -> AbsBuild u ()
 insert gf = gets current_point >>= \pt -> tellInsert (gf `at` pt)
 
 
-penColour :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-          => RGBi -> AbsBuild u ()
-penColour rgb = rmoveto (V2 0 0) >> sets_ upd
+penCtxUpdate :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+             => DrawingContextF -> AbsBuild u ()
+penCtxUpdate cf = relmove (V2 0 0) >> sets_ upd
   where
-    upd = (\s cf -> s { pen_dc_modifier = stroke_colour rgb . cf })
+    upd = (\s f -> s { pen_dc_modifier = cf . f })
             <*> pen_dc_modifier
 
 
@@ -284,7 +368,7 @@ vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u)
      => Vamp u -> AbsBuild u ()
 vamp (Vamp vnext vstart upd relp path_end) = 
     gets current_point >>= \p0 -> 
-    moveto (p0 .+^ vnext) >> drawF upd (R.toAbsPath (p0 .+^ vstart) relp)
+    move (p0 .+^ vnext) >> drawF upd (R.toAbsPath (p0 .+^ vstart) relp)
   where
     drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
 
@@ -295,5 +379,183 @@ cycle =
     gets active_path      >>= \(start,acc) -> 
     tellSubClosed cf (acc `snocLineTo` start) >> 
     sets_ (\s -> s { active_path = (pt, empty pt)})
+
+
+setIncline :: Radian -> AbsBuild u ()
+setIncline ang = sets_ upd
+  where
+    upd = (\s -> s { current_incline = ang })
+
+
+--------------------------------------------------------------------------------
+-- Derived operators
+
+
+pen_colour :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+           => RGBi -> AbsBuild u ()
+pen_colour rgb = penCtxUpdate (stroke_colour rgb)
+
+pen_width  :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+           => Double -> AbsBuild u ()
+pen_width d = penCtxUpdate (set_line_width d)
+
+
+
+
+hline :: Floating u => u -> AbsBuild u ()
+hline dx = relline (hvec dx)
+
+vline :: Floating u => u -> AbsBuild u ()
+vline dy = relline (vvec dy)
+
+aline :: Floating u => Radian -> u -> AbsBuild u ()
+aline ang u = relline (avec ang u)
+
+hmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+      => u -> AbsBuild u ()
+hmove dx = relmove (hvec dx)
+
+vmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+      => u -> AbsBuild u ()
+vmove dy = relmove (vvec dy)
+
+
+amove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+      => Radian -> u -> AbsBuild u ()
+amove ang u = relmove (avec ang u)
+
+
+
+line_up :: Floating u => u -> AbsBuild u ()
+line_up u = relline (vvec u)
+
+line_down :: Floating u => u -> AbsBuild u ()
+line_down u = relline (vvec $ negate u)
+
+line_left :: Floating u => u -> AbsBuild u ()
+line_left u = relline (hvec $ negate u)
+ 
+line_right :: Floating u => u -> AbsBuild u ()
+line_right u = relline (hvec u)
+
+-- | Diagonal lines 
+
+line_up_left :: Floating u => u -> AbsBuild u ()
+line_up_left u = relline (vec (-u) u)
+
+line_up_right :: Floating u => u -> AbsBuild u ()
+line_up_right u = relline (vec u u)
+
+line_down_left :: Floating u => u -> AbsBuild u ()
+line_down_left u = relline (vec (-u) (-u))
+
+line_down_right :: Floating u => u -> AbsBuild u ()
+line_down_right u = relline (vec u (-u))
+
+
+-- Cardinal lines
+
+line_north :: Floating u => u -> AbsBuild u ()
+line_north = vline
+
+
+line_south :: Floating u => u -> AbsBuild u ()
+line_south =  vline . negate
+
+line_east :: Floating u => u -> AbsBuild u ()
+line_east = hline
+
+line_west :: Floating u => u -> AbsBuild u ()
+line_west = hline . negate
+
+
+line_northeast ::  Floating u => u -> AbsBuild u ()
+line_northeast = relline . avec (0.25 * pi)
+
+line_northwest ::  Floating u => u -> AbsBuild u ()
+line_northwest = relline . avec (0.75 * pi)
+
+line_southeast ::  Floating u => u -> AbsBuild u ()
+line_southeast = relline . avec (1.75 * pi)
+
+line_southwest ::  Floating u => u -> AbsBuild u ()
+line_southwest = relline . avec (1.25 * pi)
+
+
+
+
+move_up :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+        => u -> AbsBuild u ()
+move_up u = relmove (vvec u)
+
+move_down :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+move_down u = relmove (vvec $ negate u)
+
+move_left :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+move_left u = relmove (hvec $ negate u)
+ 
+move_right :: (Floating u, Ord u, Tolerance u, InterpretUnit u)  
+           => u -> AbsBuild u ()
+move_right u = relmove (hvec u)
+
+
+
+-- | Diagonal moves 
+
+move_up_left :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+             => u -> AbsBuild u ()
+move_up_left u = relmove (vec (-u) u)
+
+move_up_right :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+              => u -> AbsBuild u ()
+move_up_right u = relmove (vec u u)
+
+move_down_left :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+               => u -> AbsBuild u ()
+move_down_left u = relmove (vec (-u) (-u))
+
+move_down_right :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+                => u -> AbsBuild u ()
+move_down_right u = relmove (vec u (-u))
+
+
+-- Cardinal moves
+
+move_north :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+           => u -> AbsBuild u ()
+move_north = vmove
+
+
+move_south :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+           => u -> AbsBuild u ()
+move_south =  vmove . negate
+
+move_east :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+move_east = hmove
+
+move_west :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+move_west = hmove . negate
+
+
+move_northeast :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+               => u -> AbsBuild u ()
+move_northeast = relmove . avec (0.25 * pi)
+
+move_northwest :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+               => u -> AbsBuild u ()
+move_northwest = relmove . avec (0.75 * pi)
+
+move_southeast :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+               => u -> AbsBuild u ()
+move_southeast = relmove . avec (1.75 * pi)
+
+move_southwest :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+               => u -> AbsBuild u ()
+move_southwest = relmove . avec (1.25 * pi)
+
 
 

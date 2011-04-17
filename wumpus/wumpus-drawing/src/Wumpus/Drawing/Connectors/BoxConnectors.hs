@@ -21,6 +21,7 @@ module Wumpus.Drawing.Connectors.BoxConnectors
 
   ) where
 
+-- import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
