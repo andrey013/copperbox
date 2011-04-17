@@ -170,7 +170,7 @@ vertexPP xs = vertexPrimPath <$> mapM normalizeCtxF xs
 
 -- | 'curvePP' : @ (Point ~> PrimPath) @
 --
--- Create a path made of straight line segments joining the 
+-- Create a path made of curve segments joining the 
 -- supplied points.
 --
 -- This is the analogue to 'curvedPrimPath' in @Wumpus-Core@, but 

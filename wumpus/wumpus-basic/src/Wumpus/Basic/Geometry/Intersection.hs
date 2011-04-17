@@ -20,16 +20,13 @@
 module Wumpus.Basic.Geometry.Intersection
   ( 
 
-    LineSegment
-  , interLineLine
+    interLineLine
   , interLinesegLineseg
   , interLinesegLine
   , interCurveLine
 
   , findIntersect
   , makePlane
-  , rectangleLineSegments
-  , polygonLineSegments
 
 
   ) 

@@ -337,13 +337,13 @@ penCtxUpdate cf = move (V2 0 0) >> sets_ upd
 
 vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
      => Vamp u -> RelBuild u ()
-vamp (Vamp vnext upd relp path_end) = 
+vamp (Vamp vnext vstart upd relp path_end) = 
     gets cumulative_disp        >>= \v0 -> 
     gets pen_dc_modifier        >>= \cf ->
-    move vnext                  >> drawF (upd . cf) v0 relp
+    move vnext                  >> drawF (upd . cf) (v0 ^+^ vstart) relp
   where
-    drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
-
+    drawF       = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
+ 
 
 cycle :: (Floating u, InterpretUnit u) => RelBuild u ()
 cycle = 

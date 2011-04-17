@@ -55,6 +55,7 @@ data PathEnd = PATH_CLOSED | PATH_OPEN
 
 data Vamp u = Vamp 
       { vamp_move_span  :: Vec2 u
+      , vamp_move_start :: Vec2 u
       , vamp_dc_update  :: DrawingContextF
       , vamp_deco_path  :: RelPath u
       , vamp_path_end   :: PathEnd

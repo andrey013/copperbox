@@ -282,9 +282,9 @@ penColour rgb = rmoveto (V2 0 0) >> sets_ upd
 
 vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
      => Vamp u -> AbsBuild u ()
-vamp (Vamp vnext upd relp path_end) = 
+vamp (Vamp vnext vstart upd relp path_end) = 
     gets current_point >>= \p0 -> 
-    moveto (p0 .+^ vnext) >> drawF upd (R.toAbsPath p0 relp)
+    moveto (p0 .+^ vnext) >> drawF upd (R.toAbsPath (p0 .+^ vstart) relp)
   where
     drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
 

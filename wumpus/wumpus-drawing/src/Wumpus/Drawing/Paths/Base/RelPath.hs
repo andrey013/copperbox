@@ -35,6 +35,9 @@ module Wumpus.Drawing.Paths.Base.RelPath
   , line1
   , curve1
   , vertexPath
+  , curvedPath
+  
+  , circular
 
   -- * Queries
   , null
@@ -49,6 +52,9 @@ module Wumpus.Drawing.Paths.Base.RelPath
 
 
   -- * Conversion
+  , fromPathAlgVertices
+  , fromPathAlgCurves
+
   , toPrimPath
   , toAbsPath
   , strokeRelPath
@@ -59,6 +65,7 @@ module Wumpus.Drawing.Paths.Base.RelPath
 import Wumpus.Drawing.Paths.Base.AbsPath ( AbsPath )
 import qualified Wumpus.Drawing.Paths.Base.AbsPath as Abs
 
+import Wumpus.Basic.Geometry
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl, join )
 import qualified Wumpus.Basic.Utils.JoinList as JL
@@ -148,8 +155,19 @@ vertexPath (x:xs) = go (line1 x) xs
     go acc (v:vs) = go (acc `snocLineTo` v) vs
 
 
-circle :: u -> Path u
-circle rad = 
+
+curvedPath :: [Vec2 u] -> RelPath u
+curvedPath xs = case xs of 
+    (v1:v2:v3:vs) -> go (curve1 v1 v2 v3) vs
+    _             -> empty
+  where
+    go acc (v1:v2:v3:vs) = go (acc `append` curve1 v1 v2 v3) vs
+    go acc _             = acc
+
+
+
+circular :: Floating u => u -> RelPath u
+circular = snd . fromPathAlgCurves . circlePathAlg 
 
 --------------------------------------------------------------------------------
 -- Queries
@@ -190,6 +208,17 @@ snocCurveTo (RelPath se) v1 v2 v3 = RelPath $ JL.snoc se (RelCurveSeg v1 v2 v3)
 
 --------------------------------------------------------------------------------
 -- Conversion
+
+fromPathAlgVertices :: Num u => PathAlg u -> (Vec2 u, RelPath u)
+fromPathAlgVertices = bimap fn vertexPath . runPathAlgVec
+  where
+    fn = maybe (V2 0 0) id
+
+fromPathAlgCurves :: Num u => PathAlg u -> (Vec2 u, RelPath u)
+fromPathAlgCurves = bimap fn curvedPath . runPathAlgVec
+  where
+    fn = maybe (V2 0 0) id
+
 
 toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query PrimPath
 toPrimPath start (RelPath segs) = 

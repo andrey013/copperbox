@@ -130,6 +130,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Basic.Geometry,
     Wumpus.Basic.Geometry.Base,
     Wumpus.Basic.Geometry.Intersection,
     Wumpus.Basic.Geometry.Paths,
