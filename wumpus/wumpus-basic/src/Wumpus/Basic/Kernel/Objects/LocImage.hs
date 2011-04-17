@@ -184,7 +184,7 @@ distribV dy = distrib (hvec dy)
 duplicate :: (Monoid a, InterpretUnit u) 
           => Int -> Vec2 u -> LocImage u a -> LocImage u a
 duplicate n _ _   | n < 1 = pushR1 (replaceAns mempty) $ emptyLocGraphic
-duplicate n v img         = go img v n
+duplicate n v img         = go img v (n-1)
   where
      go acc _  i | i < 1 = acc
      go acc va i         = let img1 = moveStart (displaceVec va) img
