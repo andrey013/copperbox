@@ -3,6 +3,7 @@
 
 module PathAlgs where
 
+import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Geometry.Paths
 import Wumpus.Basic.Kernel
 
@@ -13,8 +14,6 @@ import System.Directory
 
 import Data.VectorSpace
 
-dummy01 :: Vec2 Double
-dummy01 = (V2 1 0) ^-^ V2 0 (-1)
 
 
 main :: IO ()
@@ -35,9 +34,9 @@ drawing01 = drawTracing mf1
 
 mf1 :: TraceDrawing Double ()
 mf1 = do
-    drawl (P2 0 0)   $ duplicateH 6 100 $ filledDisk 3
-    drawl (P2 0   0) $ distribH 100 [ rect1, rect2, diamond1, poly5
-                                    , wedge1, circle1 ]
+    drawl (P2 0 0)   $ duplicateH 7 70 $ filledDisk 3
+    drawl (P2 0   0) $ distribH 70 [ rect1, rect2, diamond1, poly5
+                                    , arc1, arc2, circle1 ]
 
 
 
@@ -59,9 +58,14 @@ poly5 :: LocGraphic Double
 poly5 = promoteR1 $ \pt ->
     vertexPP (runPathAlgPoint pt $ polygonPathAlg 5 20) >>= closedStroke
 
-wedge1 :: LocGraphic Double
-wedge1 = promoteR1 $ \pt ->
-    curvePP (runPathAlgPoint pt $ minorArcPathAlg 20 0 (0.5*pi)) >>= openStroke
+arc1 :: LocGraphic Double
+arc1 = promoteR1 $ \pt ->
+    curvePP (runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) >>= openStroke
+
+arc2 :: LocGraphic Double
+arc2 = promoteR1 $ \pt ->
+    curvePP (runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) >>= openStroke
+
 
 circle1 :: LocGraphic Double
 circle1 = promoteR1 $ \pt ->

@@ -33,7 +33,7 @@ module Wumpus.Basic.Geometry.Paths
   , diamondPathAlg
   , polygonPathAlg
 
-  , minorArcPathAlg
+  , arcPathAlg
   , circlePathAlg
 
   , LocCoordPath
@@ -49,6 +49,7 @@ module Wumpus.Basic.Geometry.Paths
   ) 
   where
 
+import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -171,9 +172,28 @@ polygonPathAlg n radius = pathIterateLocus $ unfoldr phi (0,top)
                 | otherwise = Nothing
 
 
+arcPathAlg :: Floating u => u -> Radian -> Radian -> PathAlg u
+arcPathAlg r ang1 ang2 = pathStartIsLocus $ step1 $ arcdiv ang1 ang2
+  where
+    step1 []         = []
+    step1 ((a,b):xs) = let (v0,v1,v2,v3) = minorArcQuadVec r a b
+                       in v0 : v1: v2: v3 : step xs
 
-minorArcPathAlg :: Floating u => u -> Radian -> Radian -> PathAlg u
-minorArcPathAlg r ang1 ang2 = pathStartIsLocus [ v0, v1, v2, v3 ]
+    step []         = []
+    step ((a,b):xs)  = let (_,v1,v2,v3) = minorArcQuadVec r a b
+                       in v1: v2: v3 : step xs
+
+
+    
+-- | Helper - generate four vectors building a minor (<90 deg) 
+-- arc.
+--
+-- The first vec is from center - for cumulative arcs this should 
+-- only taken once.
+--
+minorArcQuadVec :: Floating u 
+                => u -> Radian -> Radian -> (Vec2 u, Vec2 u, Vec2 u, Vec2 u)
+minorArcQuadVec r ang1 ang2 = (v0, v1, v2, v3)
   where
     (p1,p2,p3,p4) = bezierArc r ang1 ang2 zeroPt
     v0            = pvec zeroPt p1 
@@ -193,12 +213,30 @@ circlePathAlg r = pathStartIsLocus vs
 
 -- | Helper - diff 
 -- 
+-- Note diff relies on the pointlist cycling the endpoint
+-- 
+-- > [p0, ..., p0]
+--
+-- This is how Wumpus-Core generates Bezier circles.
+-- 
 diff :: (a -> a -> b) -> [a] -> [b]
 diff _  [] = []
 diff op (x:xs) = step x xs
   where
     step _ []     = []
     step a (b:bs) = b `op` a : step b bs
+
+-- | Helper - divide an arc into quadrants plus remainder.
+--
+arcdiv :: Radian -> Radian -> [(Radian,Radian)]
+arcdiv ang1 ang2 | ang1 >  ang2 = step ang1 (ang2 + 2 * pi) 
+                 | otherwise    = step ang1 ang2
+  where
+    step a1 a2 | a1 == a2 = []
+    step a1 a2 | a2 - a1 > half_pi = norm (a1,a1+half_pi) : step (a1+half_pi) a2
+               | otherwise         = [(a1,a2)]
+
+    norm (a,b) = (circularModulo a, circularModulo b)
 
 
 
