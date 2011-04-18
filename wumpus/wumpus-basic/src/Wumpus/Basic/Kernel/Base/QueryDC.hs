@@ -62,15 +62,15 @@ module Wumpus.Basic.Kernel.Base.QueryDC
 
 
   -- * Connector props
-  , connectorSrcSep
-  , connectorDstSep
+  , connectorSrcSpace
+  , connectorDstSpace
   , connectorSrcOffset
   , connectorDstOffset
   , connectorArcAngle
   , connectorSrcArm
   , connectorDstArm
   , connectorLoopSize
-
+  , connectorBoxHalfSize
 
   ) where
 
@@ -282,14 +282,14 @@ connectorAsks f = f <$> asksDC dc_connector_props
 
 
 
-connectorSrcSep :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorSrcSep = (\sz u -> uconvert1 sz u) 
-                    <$> pointSize <*> connectorAsks dc_conn_src_sep
+connectorSrcSpace :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorSrcSpace = (\sz u -> uconvert1 sz u) 
+                      <$> pointSize <*> connectorAsks dc_conn_src_space
 
 
-connectorDstSep :: (DrawingCtxM m, InterpretUnit u) => m u 
-connectorDstSep = (\sz u -> uconvert1 sz u) 
-                    <$> pointSize <*> connectorAsks dc_conn_dst_sep
+connectorDstSpace :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorDstSpace = (\sz u -> uconvert1 sz u) 
+                      <$> pointSize <*> connectorAsks dc_conn_dst_space
 
 connectorSrcOffset :: (DrawingCtxM m, InterpretUnit u) => m u 
 connectorSrcOffset = (\sz u -> uconvert1 sz u) 
@@ -318,3 +318,9 @@ connectorDstArm = (\sz u -> uconvert1 sz u)
 connectorLoopSize :: (DrawingCtxM m, InterpretUnit u) => m u 
 connectorLoopSize = (\sz u -> uconvert1 sz u) 
                       <$> pointSize <*> connectorAsks dc_conn_loop_size
+
+
+connectorBoxHalfSize :: (DrawingCtxM m, InterpretUnit u) => m u 
+connectorBoxHalfSize = 
+    (\sz u -> uconvert1 sz u) 
+      <$> pointSize <*> connectorAsks dc_conn_box_halfsize

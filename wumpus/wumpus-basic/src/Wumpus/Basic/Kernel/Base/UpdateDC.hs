@@ -96,16 +96,17 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , text_use_fill_colour
 
   -- * Connector Props
-  , source_sep
-  , dest_sep
+  , source_space
+  , dest_space
   , source_offset
   , dest_offset
-  , uniform_conn_sep
+  , uniform_conn_space
   , conn_arc_angle
   , source_arm_len
   , dest_arm_len
   , uniform_arm_len
   , conn_loop_size
+  , conn_box_halfsize
 
   ) where
 
@@ -534,40 +535,42 @@ connectorUpd f =
 normZero :: (Num u, Ord u) => u -> u
 normZero u = if u < 0 then 0 else u
 
--- | Set the connector source separator.
+-- | Set the connector source spacing.
 --
--- The separator is used as a projection along the line formed 
--- between connector points to add spacing if required.
+-- The spacing is used as a projection along the line formed 
+-- between connector points making the connection /looser/ if 
+-- required.
 -- 
 -- The default value is 0. Negative values are not allowed, they
 -- are normalized to 0.
 --
-source_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
-source_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz $ normZero u })
+source_space :: (Ord u, InterpretUnit u) => u -> DrawingContextF
+source_space u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_src_space = uconvert1 sz $ normZero u })
 
 
--- | Set the connector destination separator.
+-- | Set the connector destination spacing.
 --
--- The separator is used as a projection along the line formed 
--- between connector points to add spacing if required.
+-- The spacing is used as a projection along the line formed 
+-- between connector points making the connection /looser/ if 
+-- required.
 -- 
 -- The default value is 0. Negative values are not allowed, they
 -- are normalized to 0.
 --
-dest_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
-dest_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_dst_arm = uconvert1 sz $ normZero u })
+dest_space :: (Ord u, InterpretUnit u) => u -> DrawingContextF
+dest_space u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_dst_space = uconvert1 sz $ normZero u })
 
 
 
--- | Set the connector source and destination separators to the 
+-- | Set the connector source and destination spacings to the 
 -- same length.
 --
-uniform_conn_sep :: (Ord u, InterpretUnit u) => u -> DrawingContextF
-uniform_conn_sep u = withFontSize $ \sz -> 
-    connectorUpd (\s -> s { dc_conn_src_arm = uconvert1 sz $ normZero u
-                          , dc_conn_dst_arm = uconvert1 sz $ normZero u })
+uniform_conn_space :: (Ord u, InterpretUnit u) => u -> DrawingContextF
+uniform_conn_space u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_src_space = uconvert1 sz $ normZero u
+                          , dc_conn_dst_space = uconvert1 sz $ normZero u })
 
 
 
@@ -635,3 +638,9 @@ uniform_arm_len u = withFontSize $ \sz ->
 conn_loop_size :: InterpretUnit u => u -> DrawingContextF
 conn_loop_size u = withFontSize $ \sz -> 
     connectorUpd (\s -> s { dc_conn_loop_size = uconvert1 sz u })
+
+-- | Set the connector box halfsize.
+--
+conn_box_halfsize :: InterpretUnit u => u -> DrawingContextF
+conn_box_halfsize u = withFontSize $ \sz -> 
+    connectorUpd (\s -> s { dc_conn_box_halfsize = uconvert1 sz u })

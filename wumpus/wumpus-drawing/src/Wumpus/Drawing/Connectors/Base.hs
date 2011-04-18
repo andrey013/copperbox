@@ -38,12 +38,16 @@ promoteConn :: (Real u, Floating u, InterpretUnit u)
             => (Point2 u -> Point2 u -> CF a) 
             -> CF (Point2 u -> Point2 u -> a)
 promoteConn fn = promoteR2 $ \p0 p1 -> 
-    connectorSrcSep >>= \sep0 ->
-    connectorDstSep >>= \sep1 ->
+    connectorSrcSpace >>= \sep0 ->
+    connectorDstSpace >>= \sep1 ->
     connectorSrcOffset >>= \off0 ->
     connectorDstOffset >>= \off1 ->
     let ang = vdirection $ pvec p0 p1
     in fn (displacePerpendicular off0 ang $ p0 .+^ avec ang sep0) 
           (displacePerpendicular off1 ang $ p1 .-^ avec ang sep1)
    
-
+--
+-- CAUTION - promoteConn projects the spacers along the (straight)
+-- connector line. This might not be what is wanted for jointed
+-- connectors.
+-- 

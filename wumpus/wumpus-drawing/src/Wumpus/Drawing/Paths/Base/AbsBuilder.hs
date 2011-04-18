@@ -28,9 +28,9 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
 
   , tip
 
-  , line
-  , curve
-  , move
+  , absline
+  , abscurve
+  , absmove
 
   , relline
   , relcurve
@@ -274,23 +274,23 @@ extendPath fn end_pt = sets_ upd
                           , active_path      = bimapR (fn pt) j })
            <*> current_point <*> cumulative_path <*> active_path
 
-line :: Floating u => Point2 u -> AbsBuild u ()
-line p1 = extendPath (\_ acc -> acc `snocLineTo` p1) p1
+absline :: Floating u => Point2 u -> AbsBuild u ()
+absline p1 = extendPath (\_ acc -> acc `snocLineTo` p1) p1
 
 
 
-curve :: (Floating u, Ord u, Tolerance u)
+abscurve :: (Floating u, Ord u, Tolerance u)
         => Point2 u -> Point2 u -> Point2 u -> AbsBuild u ()
-curve p1 p2 p3 = extendPath (\_ acc -> snocCurveTo acc p1 p2 p3) p3
+abscurve p1 p2 p3 = extendPath (\_ acc -> snocCurveTo acc p1 p2 p3) p3
 
 
 
    
--- | 'move' is a pen up.
+-- | 'absmove' is a pen up.
 --
-move :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+absmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
        => Point2 u -> AbsBuild u ()
-move p1 = 
+absmove p1 = 
     gets active_path            >>= \(_,ans) -> 
     gets pen_dc_modifier        >>= \cf -> 
     tellSubOpen cf ans          >> sets_ upd 
@@ -302,19 +302,19 @@ move p1 =
 
 
 relline :: Floating u => Vec2 u -> AbsBuild u ()
-relline v1 = gets current_point >>= \pt -> line (pt .+^ v1)
+relline v1 = gets current_point >>= \pt -> absline (pt .+^ v1)
 
 
 relcurve :: (Floating u, Ord u, Tolerance u)
          => Vec2 u -> Vec2 u -> Vec2 u -> AbsBuild u ()
 relcurve v1 v2 v3 = 
     gets current_point >>= \pt -> 
-    curve (pt .+^ v1) (pt .+^ v1 ^+^ v2) (pt .+^ v1 ^+^ v2 ^+^ v3)
+    abscurve (pt .+^ v1) (pt .+^ v1 ^+^ v2) (pt .+^ v1 ^+^ v2 ^+^ v3)
 
 
 relmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
         => Vec2 u -> AbsBuild u ()
-relmove v1 = gets current_point >>= \pt -> move (pt .+^ v1)
+relmove v1 = gets current_point >>= \pt -> absmove (pt .+^ v1)
 
 
 
@@ -368,7 +368,7 @@ vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u)
      => Vamp u -> AbsBuild u ()
 vamp (Vamp vnext vstart upd relp path_end) = 
     gets current_point >>= \p0 -> 
-    move (p0 .+^ vnext) >> drawF upd (R.toAbsPath (p0 .+^ vstart) relp)
+    relmove vnext >> drawF upd (R.toAbsPath (p0 .+^ vstart) relp)
   where
     drawF = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
 
