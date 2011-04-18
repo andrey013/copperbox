@@ -79,7 +79,7 @@ import Control.Applicative
 --
 -- The retract distance is context sensitive - usually just on
 -- the markHeight (or halfMarkHeight) so it has to be calculated
--- w.r.t. the DrawingCtx.
+-- w.r.t. the DrawingContext.
 --
 data Arrowhead u = Arrowhead 
       { arrowhead_retract_dist  :: Query u

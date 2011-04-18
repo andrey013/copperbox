@@ -6,7 +6,6 @@ module Arrowheads where
 import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Paths hiding ( length )
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

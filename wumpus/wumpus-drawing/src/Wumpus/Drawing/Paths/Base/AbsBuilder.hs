@@ -408,8 +408,8 @@ hline dx = relline (hvec dx)
 vline :: Floating u => u -> AbsBuild u ()
 vline dy = relline (vvec dy)
 
-aline :: Floating u => Radian -> u -> AbsBuild u ()
-aline ang u = relline (avec ang u)
+aline :: Floating u => u -> AbsBuild u ()
+aline u = gets current_incline >>= \ang -> relline (avec ang u)
 
 hmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
       => u -> AbsBuild u ()
@@ -421,8 +421,8 @@ vmove dy = relmove (vvec dy)
 
 
 amove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-      => Radian -> u -> AbsBuild u ()
-amove ang u = relmove (avec ang u)
+      => u -> AbsBuild u ()
+amove u = gets current_incline >>= \ang -> relmove (avec ang u)
 
 
 

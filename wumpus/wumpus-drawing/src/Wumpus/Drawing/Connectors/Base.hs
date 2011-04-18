@@ -38,8 +38,8 @@ promoteConn :: (Real u, Floating u, InterpretUnit u)
             => (Point2 u -> Point2 u -> CF a) 
             -> CF (Point2 u -> Point2 u -> a)
 promoteConn fn = promoteR2 $ \p0 p1 -> 
-    connectorSrcSpace >>= \sep0 ->
-    connectorDstSpace >>= \sep1 ->
+    connectorSrcSpace  >>= \sep0 ->
+    connectorDstSpace  >>= \sep1 ->
     connectorSrcOffset >>= \off0 ->
     connectorDstOffset >>= \off1 ->
     let ang = vdirection $ pvec p0 p1
