@@ -13,7 +13,6 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 

@@ -31,8 +31,8 @@ module Wumpus.Tree.Design
   where
 
 import Wumpus.Tree.Base
+import Wumpus.Tree.ScalingContext
 
-import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Wumpus.Core                      -- package: wumpus-core
 

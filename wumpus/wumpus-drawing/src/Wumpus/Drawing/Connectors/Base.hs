@@ -58,9 +58,7 @@ type TipDraw = Point2 En -> Radian -> GraphicAns En
 --
 type TipAns u = (u, u, TipDraw)
 
--- ERROR - retract distance is not the same as the tip-length
--- This data type should return two u\'s...
---
+
 data ArrowTip u = ArrowTip { getArrowTip :: CF (TipAns u) }
 
 
@@ -148,7 +146,7 @@ makeArrowTip retractq lengthq gf = ArrowTip body
            in return (rdist,tlen,drawf)
 
 
--- | Promote a function for souce and dest points to a connector 
+-- | Promote a function from source and dest points to a connector 
 -- function accounting for the separator values in the 
 -- DrawingContext.
 --

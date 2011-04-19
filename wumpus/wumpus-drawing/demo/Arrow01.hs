@@ -2,7 +2,7 @@
 
 module Arrow01 where
 
-import Wumpus.Drawing.Paths 
+import Wumpus.Drawing.Paths.Absolute 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -34,27 +34,27 @@ drawing02 = drawTracing $
       draw $ toPrimPath large_curve >>= openStroke
 
 large_curve :: AbsPath Double
-large_curve = curve (P2 168 457) (P2 256 506) (P2 332 571) (P2 346 658)
+large_curve = curve1 (P2 168 457) (P2 256 506) (P2 332 571) (P2 346 658)
 
 
 large_curve2 :: AbsPath Double
-large_curve2 = curve (P2 0 0) (P2 88 48) (P2 164 114) (P2 178 200)
+large_curve2 = curve1 (P2 0 0) (P2 88 48) (P2 164 114) (P2 178 200)
 
 curveyArr :: Double -> Point2 Double -> AbsPath Double
-curveyArr h pt = mkCurve h pt `append` line pt pt `append` mkCurveZ h pt
+curveyArr h pt = mkCurve h pt `append` line1 pt pt `append` mkCurveZ h pt
 
 mkCurve :: Double -> Point2 Double -> AbsPath Double
-mkCurve h pt = curve (pt .+^ vec (negate $ 0.45 * h) (0.5 * h))
-                     (pt .+^ vec (negate $ 0.40 * h) (0.28 * h))
-                     (pt .+^ vec (negate $ 0.22 * h) (0.12 * h))
-                     pt
+mkCurve h pt = curve1 (pt .+^ vec (negate $ 0.45 * h) (0.5 * h))
+                      (pt .+^ vec (negate $ 0.40 * h) (0.28 * h))
+                      (pt .+^ vec (negate $ 0.22 * h) (0.12 * h))
+                      pt
                      
                      
                
 
 
 mkCurveZ :: Double -> Point2 Double -> AbsPath Double
-mkCurveZ h pt = curve pt
-                     (pt .+^ vec (negate $ 0.22 * h) (negate $ 0.12 * h))
-                     (pt .+^ vec (negate $ 0.40 * h) (negate $ 0.28 * h))
-                     (pt .+^ vec (negate $ 0.45 * h) (negate $ 0.5 * h))
+mkCurveZ h pt = curve1 pt
+                      (pt .+^ vec (negate $ 0.22 * h) (negate $ 0.12 * h))
+                      (pt .+^ vec (negate $ 0.40 * h) (negate $ 0.28 * h))
+                      (pt .+^ vec (negate $ 0.45 * h) (negate $ 0.5 * h))

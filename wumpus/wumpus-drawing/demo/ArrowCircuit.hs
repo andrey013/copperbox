@@ -11,7 +11,6 @@
 module ArrowCircuit where
 
 import Wumpus.Drawing.Connectors
-import Wumpus.Drawing.Paths.Relative
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -104,5 +103,7 @@ ptext pt ss = localize (font_attr times_italic 14) $
 --
 rrectangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => Double -> u -> u -> LocImage u (Rectangle u)
-rrectangle r w h = 
-    localize (round_corner_factor r) $ strokedShape (rectangle w h)
+rrectangle _r w h = strokedShape (rectangle w h)
+    -- This should have round corners but they are currently
+    -- disabled pending a re-think. 
+    {- localize (round_corner_factor r) $ -} 

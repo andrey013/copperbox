@@ -41,6 +41,7 @@ module Wumpus.Tree
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
+import Wumpus.Tree.ScalingContext
 import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

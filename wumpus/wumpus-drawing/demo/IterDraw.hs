@@ -26,7 +26,7 @@ dctx = set_font courier_bold $ standardContext 24
 
 iter_drawing :: CtxPicture
 iter_drawing = drawTracing $ do 
-    draw $ (runAdvObject $ redA `next` greenB `next` blueC) `at` zeroPt
+    draw $ (runAdvObjectR1 $ redA `advance` greenB `advance` blueC) `at` zeroPt
 
 bldisplace :: Num u => PointDisplace u
 bldisplace = displace (-4) (-4)

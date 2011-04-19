@@ -6,7 +6,6 @@ import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths.Relative
 import Wumpus.Drawing.Paths.Vamps
 
-import qualified Wumpus.Drawing.Paths.Absolute as A
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core

@@ -5,10 +5,8 @@ module Grid01 where
 
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Extras.Axes
 import Wumpus.Drawing.Extras.Grids
-import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

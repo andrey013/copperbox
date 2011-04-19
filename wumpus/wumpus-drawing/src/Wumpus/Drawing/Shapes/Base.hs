@@ -188,11 +188,9 @@ shapeToLocTheta drawF sh = promoteR2 $ \pt theta ->
 -- | Draw the shape path with round corners.
 -- 
 roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-                     => [Point2 u] -> Query (AbsPath u)
-roundCornerShapePath xs = 
-    roundCornerSize >>= \sz -> 
-    if sz == 0 then return (vertexPath xs) 
-               else return (roundTrail  sz xs)
+                     => u -> [Point2 u] -> Query (AbsPath u)
+roundCornerShapePath sz xs = 
+    if sz `tEQ` 0 then return (vertexPath xs) else return (roundTrail  sz xs)
 
 -- | The path angle can be modified. This allows /inverse/ 
 -- versions of shapes (e.g. InvTriangle) to be made by

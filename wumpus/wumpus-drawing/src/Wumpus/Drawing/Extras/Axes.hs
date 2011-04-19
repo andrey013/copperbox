@@ -25,7 +25,6 @@ import Wumpus.Drawing.Connectors
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
-import Wumpus.Core.Colour ( black )
 
 
 -- Note - axes need labels working out...

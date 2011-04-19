@@ -25,8 +25,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   ( 
 
   -- * Modifiers       
-    round_corner_factor
-  , snap_grid_factors
+    snap_grid_factors
 
   -- ** Line widths
   , set_line_width
@@ -133,9 +132,6 @@ withFontSize :: (FontSize -> DrawingContextF) -> DrawingContextF
 withFontSize fn = (\s i -> fn i s) <*> dc_font_size
 
 --------------------------------------------------------------------------------
-
-round_corner_factor   :: Double -> DrawingContextF
-round_corner_factor d = \s -> s { dc_round_corner_factor = d }
 
 
 

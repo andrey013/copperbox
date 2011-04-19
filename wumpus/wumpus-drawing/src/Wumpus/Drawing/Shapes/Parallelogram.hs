@@ -198,8 +198,8 @@ parallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u)
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
     in makeShape (mkParallelogram bw h lang props) 
-                 (mkParallelogramPath (pll_base_minor props) 
-                                      (pll_base_major props) h)
+                 (mkParallelogramPath 0 (pll_base_minor props) 
+                                        (pll_base_major props) h)
 
 
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
@@ -247,10 +247,10 @@ synthesizeProps bw h lang
 
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                    => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkParallelogramPath bw_minor bw_major h = promoteR2 $ \ctr theta -> 
+                    => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
+mkParallelogramPath rnd bw_minor bw_major h = promoteR2 $ \ctr theta -> 
     let xs = pllPath bw_minor bw_major h ctr
-    in roundCornerShapePath $ map (rotateAbout theta ctr) xs 
+    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs 
                          
 
 

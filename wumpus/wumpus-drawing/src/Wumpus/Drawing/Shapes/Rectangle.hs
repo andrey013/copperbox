@@ -149,7 +149,7 @@ instance (Real u, Floating u) =>
 rectangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
           => u -> u -> Shape Rectangle u
 rectangle w h = 
-    makeShape (mkRectangle (0.5*w) (0.5*h)) (mkRectPath  (0.5*w) (0.5*h))
+    makeShape (mkRectangle (0.5*w) (0.5*h)) (mkRectPath 0 (0.5*w) (0.5*h))
 
 
 mkRectangle :: InterpretUnit u => u -> u -> LocThetaQuery u (Rectangle u)
@@ -161,11 +161,11 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 
 
 mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-           => u -> u -> LocThetaQuery u (AbsPath u)
-mkRectPath hw hh = promoteR2 $ \ctr theta -> 
+           => u -> u -> u -> LocThetaQuery u (AbsPath u)
+mkRectPath rnd hw hh = promoteR2 $ \ctr theta -> 
     let btm_left = displace (-hw) (-hh) ctr
         xs       = rectangleCoordPath (2*hw) (2*hh) btm_left
-    in roundCornerShapePath $ map (rotateAbout theta ctr) xs
+    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
     
 
 

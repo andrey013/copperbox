@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
@@ -69,16 +70,18 @@ drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
 
 
 radialConns :: ( Real u, Floating u, InterpretUnit u
-               , CenterAnchor t u, RadialAnchor t u ) 
-            => t u -> [t u] -> Graphic u
+               , CenterAnchor a, RadialAnchor a 
+               , u ~ DUnit a) 
+            => a -> [a] -> Graphic u
 radialConns a []     = emptyLocGraphic `at` (center a)
 radialConns a (x:xs) = oconcat (connector a x) (map (connector a) xs)
 
 
 
 connector :: ( Real u, Floating u, InterpretUnit u
-             , CenterAnchor t u, RadialAnchor t u )  
-          => t u -> t u -> Graphic u
+             , CenterAnchor a, RadialAnchor a
+             , u ~ DUnit a )  
+          => a -> a -> Graphic u
 connector a0 a1 = vertexPP [pt0,pt1] >>= openStroke
   where
     (ang0,ang1) = anchorAngles (center a0) (center a1)
@@ -106,8 +109,9 @@ anchorAngles f t = (theta0, theta1)
 -- 
 
 familyConn :: ( Real u, Fractional u, InterpretUnit u
-              , CenterAnchor t u, CardinalAnchor t u ) 
-           => t u -> [t u] -> Graphic u
+              , CenterAnchor a, CardinalAnchor a 
+              , u ~ DUnit a ) 
+           => a -> [a] -> Graphic u
 familyConn a [] = emptyLocGraphic `at` (center a)
 familyConn a xs = famconn (south a) (map north xs)
 

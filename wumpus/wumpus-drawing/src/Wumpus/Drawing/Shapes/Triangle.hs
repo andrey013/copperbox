@@ -187,7 +187,7 @@ triangle bw h =
     let props  = synthesizeProps bw h
         hminor = tri_hminor props
         hmajor = tri_hmajor props
-    in makeShape (mkTriangle bw h props) (mkTrianglePath bw hminor hmajor)
+    in makeShape (mkTriangle bw h props) (mkTrianglePath 0 bw hminor hmajor)
 
 
 
@@ -220,10 +220,10 @@ synthesizeProps bw h =
 
 
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-               => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkTrianglePath bw hminor hmajor = promoteR2 $ \ctr theta -> 
+               => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
+mkTrianglePath rnd bw hminor hmajor = promoteR2 $ \ctr theta -> 
     let xs = trianglePath bw hminor hmajor ctr
-    in roundCornerShapePath $ map (rotateAbout theta ctr) xs
+    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 
 
 

@@ -188,7 +188,7 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
 trapezium :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
           => u -> u -> Radian -> Radian -> Shape Trapezium u
 trapezium bw h lang rang = 
-    makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath bw h lang rang)
+    makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath 0 bw h lang rang)
 
 
 -- | 'ztrapezium'  : @ base_width * height -> Trapezium @
@@ -216,10 +216,11 @@ mkTrapezium bw h lang rang = promoteR2 $ \ctr theta ->
 
 
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                => u -> u -> Radian -> Radian -> LocThetaQuery u (AbsPath u)
-mkTrapeziumPath bw h lang rang = promoteR2 $ \ctr theta -> 
+                => u -> u -> u -> Radian -> Radian 
+                -> LocThetaQuery u (AbsPath u)
+mkTrapeziumPath rnd bw h lang rang = promoteR2 $ \ctr theta -> 
     let xs = tzPath bw h lang rang ctr 
-    in roundCornerShapePath $ map (rotateAbout theta ctr) xs
+    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 
 
 tzPath :: (Real u, Floating u) 

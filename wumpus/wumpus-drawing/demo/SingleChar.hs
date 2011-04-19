@@ -43,26 +43,26 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = localize (text_margin 6.0 6.0)  $ do
-    draw $ (fn $ posChar 'S' `startAddr` SS) `at` zeroPt
+    draw $ (fn SS $ posChar 'S') `at` zeroPt
     draw $ redPlus `at` zeroPt
 
-    draw $ (fn $ posChar 'N' `startAddr` NN) `at` P2 40 0
+    draw $ (fn NN $ posChar 'N') `at` P2 40 0
     draw $ redPlus `at` P2 40 0
 
-    draw $ (fn $ posChar 'E' `startAddr` EE) `at` P2 80 0
+    draw $ (fn EE $ posChar 'E') `at` P2 80 0
     draw $ redPlus `at` P2 80 0
 
-    draw $ (fn $ posChar 'W' `startAddr` WW) `at` P2 120 0
+    draw $ (fn WW $ posChar 'W') `at` P2 120 0
     draw $ redPlus `at` P2 120 0
 
-    draw $ (fn $ posChar 'C' `startAddr` CENTER) `at` P2 160 0
+    draw $ (fn CENTER $ posChar 'C') `at` P2 160 0
     draw $ redPlus `at` P2 160 0
 
-    draw $ (fn $ posChar 'X' `startAddr` NE) `at` P2 200 0
+    draw $ (fn NE $ posChar 'X') `at` P2 200 0
     draw $ redPlus `at` P2 200 0
 
   where
-    fn    = illustrateBoundedLocGraphic
+    fn addr obj = illustrateBoundedLocGraphic (runPosObjectR2 obj `startAddr` addr)
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u

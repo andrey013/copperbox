@@ -4,7 +4,6 @@ module Path01 where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Paths.Absolute
-import qualified Wumpus.Drawing.Paths.Relative as Rel
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

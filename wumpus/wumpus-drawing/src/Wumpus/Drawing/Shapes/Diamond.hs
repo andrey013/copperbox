@@ -141,7 +141,7 @@ instance (Real u, Floating u) =>
 --
 diamond :: (Real u, Floating u, InterpretUnit u, Tolerance u)
         => u -> u -> Shape Diamond u
-diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
+diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath 0 hw hh)
 
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
@@ -153,10 +153,10 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
 
 
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-              => u -> u -> LocThetaQuery u (AbsPath u)
-mkDiamondPath hw hh = promoteR2 $ \ctr theta ->
+              => u -> u -> u -> LocThetaQuery u (AbsPath u)
+mkDiamondPath rnd hw hh = promoteR2 $ \ctr theta ->
     let ps = map (rotateAbout theta ctr) $ diamondCoordPath hw hh ctr
-    in roundCornerShapePath ps
+    in roundCornerShapePath rnd ps
 
 
 

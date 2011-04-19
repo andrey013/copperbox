@@ -39,7 +39,6 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , position
   , snapmove
 
-  , roundCornerSize
   , textMargin
 
   , getLineWidth
@@ -154,18 +153,6 @@ snapmove (x,y) = post <$> asksDC dc_snap_grid_factors
   where
     post (sx,sy) = V2 (realToFrac $ sx * fromIntegral x) 
                       (realToFrac $ sy * fromIntegral y)
-
-
-
-
-
--- | Size of the round corner factor.
---
-roundCornerSize :: (DrawingCtxM m, InterpretUnit u) => m u
-roundCornerSize = 
-    dinterp <$> asksDC dc_font_size <*> asksDC dc_round_corner_factor
-
-
 
 
 

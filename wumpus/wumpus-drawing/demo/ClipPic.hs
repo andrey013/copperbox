@@ -13,8 +13,7 @@
 module ClipPic where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Paths.MonadicConstruction
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -85,25 +84,27 @@ iheartHaskell = promoteR1 $ \pt ->
 
 
 path01 :: AbsPath Double
-path01 = execPath zeroPt $ hline 80 >> rlineto (vec 112 160) 
-                                    >> rlineto (vec (-112) 160)
-                                    >> hline (-80)
-                                    >> rlineto (vec 112 (-160))
-                                    >> rlineto (vec (-112) (-160))
+path01 = evalAbsBuild zeroPt $  hline 80 
+                             >> relline (vec 112 160) 
+                             >> relline (vec (-112) 160)
+                             >> hline (-80)
+                             >> relline (vec 112 (-160))
+                             >> relline (vec (-112) (-160))
  
 
 path02 :: AbsPath Double
-path02 = execPath (P2 112 0) $ hline 80 >> rlineto (vec 72 112)
-                                        >> rlineto (vec 72 (-112))
-                                        >> hline 80
-                                        >> rlineto (vec (-224) 320)
-                                        >> hline (-80)
-                                        >> rlineto (vec 112 (-160))
-                                        >> rlineto (vec (-112) (-160))
+path02 = evalAbsBuild (P2 112 0) $  hline 80 
+                                 >> relline (vec 72 112)
+                                 >> relline (vec 72 (-112))
+                                 >> hline 80
+                                 >> relline (vec (-224) 320)
+                                 >> hline (-80)
+                                 >> relline (vec 112 (-160))
+                                 >> relline (vec (-112) (-160))
 
 path03 :: AbsPath Double
-path03 = execPath (P2 384 96) $ hline 96 >> vline 56 >> hline (-136) 
+path03 = evalAbsBuild (P2 384 96) $ hline 96 >> vline 56 >> hline (-136) 
 
 path04 :: AbsPath Double
-path04 = execPath (P2 328 192) $ hline 152 >> vline 56 >> hline (-192) 
+path04 = evalAbsBuild (P2 328 192) $ hline 152 >> vline 56 >> hline (-192) 
 

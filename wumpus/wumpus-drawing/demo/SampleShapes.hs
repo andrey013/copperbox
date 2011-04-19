@@ -177,13 +177,13 @@ label cpos ss = markX `oplus` msg
     msg           = locGraphic_ $ moveStart (fn 10) $ 
                        startAddr (multiAlignCenter ss) rpos
 
-    go NORTH      = (SS, northwards)
-    go NORTH_EAST = (SW, northeastwards)
-    go EAST       = (WW, eastwards) 
-    go SOUTH_EAST = (NW, southeastwards)
-    go SOUTH      = (NN, southwards)
-    go SOUTH_WEST = (NE, southwestwards)
-    go WEST       = (EE, westwards)
-    go NORTH_WEST = (SE, northwestwards)
+    go NORTH      = (SS, disp_north)
+    go NORTH_EAST = (SW, disp_northeast)
+    go EAST       = (WW, disp_east) 
+    go SOUTH_EAST = (NW, disp_southeast)
+    go SOUTH      = (NN, disp_south)
+    go SOUTH_WEST = (NE, disp_southwest)
+    go WEST       = (EE, disp_west)
+    go NORTH_WEST = (SE, disp_northwest)
   
 

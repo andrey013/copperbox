@@ -65,19 +65,17 @@ import Data.Monoid
 -- operation (called @localize@ in Wumpus), rather than permanent
 -- until overridden as per @set@ of a State monad.
 -- 
--- Note - @round_corner_factor@ is only accounted for by some 
--- graphic objects (certain Path objects and Shapes in 
--- Wumpus-Drawing for instance). There many be many objects that 
--- ignore it and are drawn only with angular corners.
--- 
--- Also note - in contrast to most other drawing objects in 
--- Wumpus, none of the measurement values are parameteric - 
--- usually notated with the type variable @u@ in Wumpus. This is 
--- so Wumpus can (potentially) support different units e.g. 
--- centimeters rather than just Doubles (represening printers 
--- points), though adding support for other units has a very low 
--- priority.
--- 
+-- Note - in contrast to most other drawing objects in Wumpus, 
+-- none of the types of measurement values are parameteric  
+-- (usually notated with the type variable @u@ in Wumpus). Types 
+-- are either 'Double' representing PostScript points or Em - a 
+-- contextual size that is interpreted according to the current 
+-- font size.
+--
+-- It is easier to specialize all the measurement types and 
+-- within the 'DrawingContext' and add parametricity to the 
+-- /getters/ and /setters/ instead.
+--
 data DrawingContext = DrawingContext
       { dc_font_metrics_table   :: FontTable
       , dc_font_load_log        :: FontLoadLog
@@ -86,11 +84,10 @@ data DrawingContext = DrawingContext
       , dc_font_size            :: !FontSize
       , dc_snap_grid_factors    :: (Double,Double)
       , dc_stroke_props         :: StrokeAttr
-      , dc_stroke_colour        :: RGBi      -- also text colour...
+      , dc_stroke_colour        :: RGBi
       , dc_fill_colour          :: RGBi      
       , dc_text_colour          :: RGBi
       , dc_line_spacing_factor  :: Double
-      , dc_round_corner_factor  :: Double
       , dc_text_margin          :: TextMargin
       , dc_connector_props      :: ConnectorProps
       }
@@ -219,7 +216,6 @@ standardContext sz =
                    , dc_fill_colour          = wumpus_light_gray
                    , dc_text_colour          = wumpus_black
                    , dc_line_spacing_factor  = default_line_spacing  
-                   , dc_round_corner_factor  = default_no_round_corners
                    , dc_text_margin          = default_text_margin
                    , dc_connector_props      = default_connector_props
                    }
@@ -281,7 +277,6 @@ reset_drawing_properties dcxt =
          , dc_fill_colour           = wumpus_light_gray
          , dc_text_colour           = wumpus_black
          , dc_line_spacing_factor   = default_line_spacing
-         , dc_round_corner_factor   = default_no_round_corners
          , dc_text_margin           = default_text_margin
          , dc_connector_props       = default_connector_props
          }
@@ -308,7 +303,6 @@ reset_drawing_metrics :: DrawingContextF
 reset_drawing_metrics dcxt = 
     dcxt { dc_stroke_props          = default_stroke_attr
          , dc_line_spacing_factor   = default_line_spacing
-         , dc_round_corner_factor   = default_no_round_corners
          , dc_text_margin           = default_text_margin
          }
 
@@ -338,9 +332,6 @@ default_connector_props =
 
 default_line_spacing :: Double
 default_line_spacing = 0.2
-
-default_no_round_corners :: Double
-default_no_round_corners = 0
 
 wumpus_black            :: RGBi
 wumpus_black            = RGBi 0 0 0 
