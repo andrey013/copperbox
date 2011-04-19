@@ -23,19 +23,20 @@
 \section{About \wumpuscore}
 %-----------------------------------------------------------------
 
-This guide was last updated for \wumpuscore version 0.44.0.
+This guide was last updated for \wumpuscore version 0.50.0.
 
-\wumpuscore is a Haskell library for generating 2D vector 
+\wumpuscore is a Haskell library for generating static 2D vector 
 pictures. It is written with portability as a priority, so it has 
 no dependencies on foreign C libraries. Output to PostScript and 
 SVG (Scalable Vector Graphics) is supported. 
 
 \wumpuscore is rather primitive, the basic drawing objects are 
 paths and text labels. A two additional libraries 
-\texttt{wumpus-basic} and \texttt{wumpus-drawing} contain code for 
-higher level drawing but they are experimental and the APIs they 
-present are a long way from stable (they should probably be 
-considered a \emph{technology preview}).
+\texttt{wumpus-basic} and \texttt{wumpus-drawing} build on 
+\wumpuscore adding significant capabilities but they are 
+experimental and the APIs they present are unfortunately a long 
+way from stable - currently they should be considered a 
+\emph{technology preview} not ready for general use.
 
 Although \wumpuscore is heavily inspired by PostScript it avoids 
 PostScript's notion of an (implicit) current point and the 
@@ -76,22 +77,22 @@ colour as a triple of integers (Word8) - black is (0, 0, 0); white
 is (255, 255, 255). Some named colours are defined, although they 
 are hidden by the top level shim module to avoid name clashes with
 libraries providing more extensive lists of colours. 
-\texttt{Wumpus.Core.Colour} can be imported directly if elementary 
-named colours are required.
+\texttt{Wumpus.Core.Colour} can be imported directly if its
+elementary set of named colours is required.
 
 \item[\texttt{Wumpus.Core.FontSize.}]
-Various calculations for font size metrics. \wumpuscore has only
-approximate handling of font / character size as it does not 
+Various calculations for font size measurements. \wumpuscore has 
+only approximate handling of font / character size as it does not 
 interpret the metrics within font files (doing so is a substantial 
-task handled by \texttt{Wumpus.Basic} but currently only for the 
-simple and out-dated \texttt{AFM} font format). Instead, 
-\wumpuscore makes do with operations based on measurements derived 
-from the Courier mono-spaced font. Generally using metrics from a 
-mono-spaced font over-estimates sizes for proportional fonts, 
-though in practice this is tolerable.
+task handled by \texttt{Wumpus.Basic} for the simple \texttt{AFM} 
+font format). Instead, \wumpuscore makes do with operations based 
+on measurements derived from the Courier fixed width font. 
+Generally using metrics from a fixed width font over-estimates 
+sizes for proportional fonts, in practice this is fine as 
+\wumpuscore has limited needs.
 
 \item[\texttt{Wumpus.Core.Geometry.}]
-The usual types an operations from affine geometry - points, 
+The usual types and operations from affine geometry - points, 
 vectors and 3x3 matrices, also the \texttt{DUnit} type family.
 Essentially this type family is a trick used heavily within 
 \wumpuscore to avoid annotating class declarations with 
@@ -105,7 +106,7 @@ rather than burden class declarations.
 Data types modelling the attributes of PostScript's graphics 
 state (stroke style, dash pattern, etc.). Note that 
 \wumpuscore labels all primitives - paths, text labels - with 
-their rendering style, unlike PostScript there is no 
+their drawing attributes, unlike PostScript there is no 
 \emph{inheritance} of a Graphics State in \wumpuscore.
 
 \item[\texttt{Wumpus.Core.OutputPostScript.}]
@@ -123,11 +124,6 @@ constructors for data types from the hidden module
 \texttt{PictureInternal} are exported with opaque signatures by 
 \texttt{Wumpus.Core.WumpusTypes}.
 
-\item[\texttt{Wumpus.Core.PtSize.}]
-Text size calculations in \texttt{Core.FontSize} use 
-\emph{printer's points} (i.e. 1/72 of an inch). The 
-\texttt{PtSize} module is a numeric type to represent them.
-
 \item[\texttt{Wumpus.Core.Text.Base.}]
 Types for handling escaped \emph{special} characters within input 
 text. Wumpus mostly follows SVG conventions for escaping strings, 
@@ -141,11 +137,11 @@ the resolution of character codes is dependent on the encoding of
 the font used to render it. As the core PostScript fonts use their 
 own encoding rather than the common Latin1 encoding, using using 
 numeric character codes (expected to be Latin1) can produce 
-unexpected results.
+unanticipated results.
 
 Unfortunately, even core fonts are often missing glyphs that 
 familiarity with Unicode and Web publishing might expect them 
-support. Generally, a PostScript renderer cannot do anything about 
+support. Generally, a PostScript renderer can do nothing about 
 missing glyphs - it might print a space or an open, tall rectangle. 
 As \wumpuscore is oblivious to the contents of fonts, it cannot 
 issue a warning if a glyph is not present when it generates a 
@@ -153,15 +149,16 @@ document, so PostScript output must be proof-read if extended
 glyphs are used.
 
 \item[\texttt{Wumpus.Core.Text.GlyphIndices.}]
-An map of PostScript glyph names to Unicode code points. 
+An map of PostScript glyph names to Unicode code points.  
 
 \item[\texttt{Wumpus.Core.Text.GlyphNames.}]
 An map of Unicode code points to PostScript glyph names. 
 Unfortunately this table is \emph{lossy} - some code points have 
 more than one name, and as this file is auto-generated the 
-resolution of which glyph name matches a code point is arbtirary. 
-\wumpuscore uses this table only as a fallback if PostScript glyph 
-name resolution cannot be solved through an encoding vector.
+resolution of which overlapping glyph name matches a code point is 
+arbitrary. \wumpuscore uses this table only as a fallback if 
+PostScript glyph name resolution cannot be solved through a font's 
+encoding vector.
 
 \item[\texttt{Wumpus.Core.Text.Latin1Encoding.}]
 An encoding vector for the Latin 1 character set. 
@@ -192,10 +189,10 @@ hidden.
 \section{Drawing model}
 %-----------------------------------------------------------------
 
-\wumpuscore has two main drawable primitives \emph{paths}
-and text \emph{labels}, ellipses are also a primitive although 
-this is a concession to efficiency when drawing dots (which would 
-otherwise require 4 Bezier arcs to describe). Paths are made 
+\wumpuscore has two main drawing primitives \emph{paths}
+and text \emph{labels}. Ellipses are also a primitive although 
+this is a concession to efficiency for drawing dots, which would 
+otherwise require four Bezier arcs to describe. Paths are made 
 from straight sections or Bezier curves, they can be open and 
 \emph{stroked} to produce a line; or closed and \emph{stroked}, 
 \emph{filled} or \emph{clipped}. Labels represent a single 
@@ -206,12 +203,12 @@ character should not be used.
 Primitives are attributed with drawing styles - font name and 
 point size for labels; line width, colour, etc. for paths. 
 Primitives can be grouped to support support hyperlinks in SVG 
-output (so Primitives are not strictly \emph{primitive} as they 
+output (thus Primitives are not strictly \emph{primitive} as they 
 are implemented with some nesting). The function \texttt{frame} 
 assembles a list of primitives into a \texttt{Picture} with the 
 standard affine frame where the origin is at (0,0) and the X 
-and Y axes have the unit bases (i.e. they have a \emph{scaling} 
-value of 1). 
+and Y axes have the unit bases (i.e. they have a 
+\emph{scaling value} of 1). 
 
 \begin{figure}
 \centering
@@ -220,13 +217,13 @@ value of 1).
 \end{figure}
 
 \wumpuscore uses the same picture frame as PostScript where 
-the origin at the bottom left, see Figure 1. This contrasts to SVG 
-where the origin is at the top-left. When \wumpuscore generates 
-SVG, the whole picture is generated within a matrix transformation 
-[ 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 ] that changes the picture to use 
-PostScript coordinates. This has the side-effect that text is 
-otherwise drawn upside down, so \wumpuscore adds a rectifying 
-transformation to each text element.
+the origin at is the bottom left, see Figure 1. This contrasts to 
+SVG where the origin is at the top-left. When \wumpuscore 
+generates SVG, the whole picture is generated within a matrix 
+transformation [ 1.0, 0.0, 0.0, -1.0, 0.0, 0.0 ] that changes the 
+picture to use PostScript coordinates. This has the side-effect 
+that text is otherwise drawn upside down, so \wumpuscore adds a 
+rectifying transformation to each text element.
 
 Once labels and paths are assembled as a \emph{Picture} they are
 transformable with the usual affine transformations (scaling, 
@@ -239,8 +236,8 @@ In some ways this is a limitation - for instance, the
 \texttt{Diagrams} library appears to support some notion of 
 attribute overriding; however avoiding mutable attributes does 
 keep this part of \wumpuscore conceptually simple. To make a 
-blue or red arrow with \wumpuscore, one would make the drawing 
-colour a parameter of the arrow constructor function.
+blue or red triangle with \wumpuscore, one would make the drawing 
+colour a parameter of the triangle constructor function.
 
 %-----------------------------------------------------------------
 \section{Affine transformations}
@@ -248,7 +245,7 @@ colour a parameter of the arrow constructor function.
 
 For affine transformations Wumpus uses the \texttt{Matrix3'3} data 
 type to represent 3x3 matrices in row-major form. The constructor
- \texttt{(M3'3 a b c  d e f  g h i)} builds this matrix:
+\texttt{(M3'3 a b c  d e f  g h i)} builds this matrix:
 
 \begin{displaymath}
 \begin{array}{ccc}
@@ -279,9 +276,9 @@ Affine transformations on Pictures are communicated to PostScript
 as \texttt{concat} commands. For Pictures, \wumpuscore performs no
 transformations itself, delegating all the work to PostScript or
 SVG. Internally \wumpuscore transforms the bounding boxes of  
-Pictures - it needs to do this to maintain their size metrics 
-allowing transformed pictures to be composed with picture 
-composition operators like the \texttt{picBeside} combinator.
+Pictures - the bounding box of a pictured is cached so that 
+pictures can be composed with \emph{picture composition} operators 
+like the \texttt{picBeside} combinator.
 
 PostScript uses column-major form and uses a six element matrix
 rather than a nine element one. The translation matrix above 
