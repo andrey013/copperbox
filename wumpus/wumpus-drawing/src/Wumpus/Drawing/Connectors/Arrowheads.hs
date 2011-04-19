@@ -16,12 +16,8 @@
 
 module Wumpus.Drawing.Connectors.Arrowheads
   (
-   
-    ArrowTip 
-    
-  , leftRightArrow      -- temporarily here
 
-  , tri90
+    tri90
   , tri60
   , tri45
   , otri90
@@ -63,7 +59,7 @@ module Wumpus.Drawing.Connectors.Arrowheads
   ) where
 
 
-import Wumpus.Drawing.Connectors.ConnectorPaths ( Connector )
+import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -74,56 +70,6 @@ import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
-
-type ArrowConnector u = ConnectorImage u (AbsPath u)
-
-type TipDraw = Point2 En -> Radian -> GraphicAns En
-
-
-data ArrowTip u = ArrowTip { getArrowTip :: CF (u, TipDraw) }
-
-
--- | Connector with two arrow tips, possibly different.
---
-leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip u -> ArrowTip u -> Connector u 
-               -> ArrowConnector u
-leftRightArrow tipl tipr conn = promoteR2 $ \p0 p1 ->
-    apply2R2 conn p0 p1 >>= \full_path -> 
-    getArrowTip tipl    >>= \(dl,mkl) -> 
-    getArrowTip tipr    >>= \(dr,mkr) -> 
-    uconvertCtxF p0     >>= \emp0     ->       
-    uconvertCtxF p1     >>= \emp1     ->       
-    let angl            = tipDirectionL dl full_path
-        angr            = tipDirectionR dr full_path
-        short_path      = shortenPath dl dr full_path
-        deco            = convertTipAns $ mkl emp0 angl `oplus`  mkr emp1 angr  
-    in fmap (replaceAns full_path) $ 
-         decorateR0 deco $ toPrimPath short_path >>= openStroke
-
-
-convertTipAns :: InterpretUnit u => GraphicAns En -> Graphic u
-convertTipAns = uconvImageF . pure 
-
--- | Helper - direction looks best at half the retract distance.
---
-tipDirectionL :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionL u absp | u <= 0   = directionL absp
-                     |otherwise = directionL $ shortenL (0.5*u) absp
-   
-tipDirectionR :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionR u absp | u <= 0   = directionR absp
-                     |otherwise = directionR $ shortenR (0.5*u) absp
-   
-
-
-makeArrowTip :: Query u -> LocThetaGraphic En -> ArrowTip u
-makeArrowTip mq gf = ArrowTip body
-  where
-    body = drawingCtx >>= \ctx -> 
-           let rdist = runCF ctx mq
-               drawf = runCF ctx gf
-           in return (rdist,drawf)
 
 
 
@@ -212,10 +158,36 @@ ang45 :: Radian
 ang45 = pi / 4
 
 
+len_one :: InterpretUnit u => Query u
+len_one = uconvertCtx1 (1::En)
+
+len_two :: InterpretUnit u => Query u
+len_two = uconvertCtx1 (2::En)
+
+len_half :: InterpretUnit u => Query u
+len_half = uconvertCtx1 (0.5::En)
+
+len_zero :: InterpretUnit u => Query u
+len_zero = pure 0
+
+retract_one :: InterpretUnit u => Query u
+retract_one = uconvertCtx1 (1::En)
+
+retract_two :: InterpretUnit u => Query u
+retract_two = uconvertCtx1 (2::En)
+
+
+-- retract_half :: InterpretUnit u => Query u
+-- retract_half = uconvertCtx1 (0.5::En)
+
+retract_zero :: InterpretUnit u => Query u
+retract_zero = pure 0
+
+
 
 filledTri :: InterpretUnit u => Radian -> ArrowTip u
 filledTri ang = 
-    makeArrowTip (uconvertCtx1 (1::En)) (filledTipPath spec)
+    makeArrowTip retract_one len_one (filledTipPath spec)
   where
     spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
                  in [zeroVec, v1, v2]
@@ -233,7 +205,7 @@ tri45 = filledTri ang45
 
 strokedClosedTri :: InterpretUnit u => Radian -> ArrowTip u
 strokedClosedTri ang = 
-    makeArrowTip (uconvertCtx1 (1::En)) (closedTipPath spec)
+    makeArrowTip retract_one len_one (closedTipPath spec)
   where
     spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
                  in [zeroVec, v1, v2]
@@ -251,7 +223,7 @@ otri45 = strokedClosedTri ang45
 
 filledRevTri :: InterpretUnit u => Radian -> ArrowTip u
 filledRevTri ang = 
-    makeArrowTip (uconvertCtx1 (1::En)) (filledTipPath spec)
+    makeArrowTip retract_one len_one (filledTipPath spec)
   where
     spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
                  in [v0, v1, v2]
@@ -268,7 +240,7 @@ revtri45 = filledRevTri ang45
 
 strokedClosedRevTri :: InterpretUnit u => Radian -> ArrowTip u
 strokedClosedRevTri ang = 
-    makeArrowTip (uconvertCtx1 (1::En)) (closedTipPath spec)
+    makeArrowTip retract_one len_one (closedTipPath spec)
   where
     spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
                  in [v0, v1, v2]
@@ -287,7 +259,7 @@ orevtri45 = strokedClosedRevTri ang45
 
 strokedBarb :: InterpretUnit u => Radian -> ArrowTip u
 strokedBarb ang = 
-    makeArrowTip (pure 0) (openTipPath spec)
+    makeArrowTip retract_zero len_one (openTipPath spec)
   where
     spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
                  in [v1,zeroVec,v2]
@@ -305,7 +277,7 @@ barb45 = strokedBarb ang45
 
 strokedRevBarb :: InterpretUnit u => Radian -> ArrowTip u
 strokedRevBarb ang = 
-    makeArrowTip (uconvertCtx1 (1::En)) (openTipPath spec)
+    makeArrowTip retract_one len_one (openTipPath spec)
   where
     spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
                  in [v1,v0,v2]
@@ -323,7 +295,7 @@ revbarb45 = strokedRevBarb ang45
 
 perp :: InterpretUnit u => ArrowTip u
 perp = 
-    makeArrowTip (pure 0) (openTipPath spec)
+    makeArrowTip retract_zero len_zero (openTipPath spec)
   where
     spec theta = let oa = avec (theta + ang90) 0.5
                      ob = avec (theta - ang90) 0.5
@@ -332,7 +304,7 @@ perp =
 
 bracket :: InterpretUnit u => ArrowTip u
 bracket = 
-    makeArrowTip (pure 0) (openTipPath spec)
+    makeArrowTip retract_zero len_half (openTipPath spec)
   where
     spec theta = let oa = avec (theta + ang90) 0.5
                      ob = avec (theta - ang90) 0.5
@@ -343,7 +315,7 @@ bracket =
 
 diskTip :: InterpretUnit u => ArrowTip u
 diskTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) 
+    makeArrowTip retract_one len_one  
                  (promoteR2 $ \pt theta -> body theta `at` pt)
   where
     body :: Radian -> LocGraphic En
@@ -354,7 +326,7 @@ diskTip =
 
 odiskTip :: InterpretUnit u => ArrowTip u
 odiskTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) 
+    makeArrowTip retract_one len_one 
                  (promoteR2 $ \pt theta -> body theta `at` pt)
   where
     body :: Radian -> LocGraphic En
@@ -382,11 +354,11 @@ squareSpec theta = [ oa ^+^ ov, oa, ob, ob ^+^ ov ]
 
 squareTip :: InterpretUnit u => ArrowTip u
 squareTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) (filledTipPath squareSpec)
+    makeArrowTip retract_one len_one (filledTipPath squareSpec)
 
 osquareTip :: InterpretUnit u => ArrowTip u
 osquareTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) (closedTipPath squareSpec)
+    makeArrowTip retract_one len_one (closedTipPath squareSpec)
 
 
 
@@ -410,20 +382,20 @@ diamondSpec width theta = [ ow, oa, zeroVec, ob ]
 
 diamondTip :: InterpretUnit u => ArrowTip u
 diamondTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) (filledTipPath $ diamondSpec 1)
+    makeArrowTip retract_one len_one (filledTipPath $ diamondSpec 1)
 
 odiamondTip :: InterpretUnit u => ArrowTip u
 odiamondTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) (closedTipPath $ diamondSpec 1)
+    makeArrowTip retract_one len_one (closedTipPath $ diamondSpec 1)
 
 
 diamondWideTip :: InterpretUnit u => ArrowTip u
 diamondWideTip = 
-    makeArrowTip (uconvertCtx1 (2::En)) (filledTipPath $ diamondSpec 2)
+    makeArrowTip retract_two len_two (filledTipPath $ diamondSpec 2)
 
 odiamondWideTip :: InterpretUnit u => ArrowTip u
 odiamondWideTip = 
-    makeArrowTip (uconvertCtx1 (2::En)) (closedTipPath $ diamondSpec 2)
+    makeArrowTip retract_two len_two (closedTipPath $ diamondSpec 2)
 
 
 curveTipPath :: Point2 En -> Radian -> AbsPath En
@@ -440,7 +412,7 @@ curveTipPath pt theta =
 
 curveTip :: InterpretUnit u => ArrowTip u
 curveTip = 
-    makeArrowTip (pure 0) 
+    makeArrowTip retract_zero len_one
                  (promoteR2 $ \pt theta -> 
                     localize (join_bevel . solid_stroke_tip) $ 
                       toPrimPath (curveTipPath pt theta) >>= openStroke)
@@ -461,7 +433,7 @@ curveTipRevPath pt theta =
 
 revcurveTip :: InterpretUnit u => ArrowTip u
 revcurveTip = 
-    makeArrowTip (uconvertCtx1 (1::En)) 
+    makeArrowTip retract_one len_one
                  (promoteR2 $ \pt theta -> 
                     localize (join_bevel . solid_stroke_tip) $ 
                       toPrimPath (curveTipRevPath pt theta) >>= openStroke)

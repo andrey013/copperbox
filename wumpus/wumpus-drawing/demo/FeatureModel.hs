@@ -4,9 +4,8 @@
 
 module FeatureModel where
 
-import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Paths 
+import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -71,24 +70,24 @@ type Box u = Rectangle u
 
 -- Note - ctrCenterLine does not seem to be working well...
 
-makeBox :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+makeBox :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
     drawl (center a) $ ccTextline ss
     return a
 
-box :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+box :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
     => String -> Point2 u -> TraceDrawing u (Box u)
 box = makeBox 40
 
-widebox :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+widebox :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
         => String -> Point2 u -> TraceDrawing u (Box u)
 widebox = makeBox 60
 
 
 connWith :: ( Real u, Floating u, InterpretUnit u ) 
-         => Arrowhead u -> Box u -> Box u -> TraceDrawing u (AbsPath u)
+         => ArrowTip u -> Box u -> Box u -> TraceDrawing u (AbsPath u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0

@@ -2,12 +2,14 @@
 
 module Arrowheads where
 
-
-import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Connectors.ConnectorPaths
+import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Text.DirectionZero
+import Wumpus.Drawing.Text.StandardFontDefs
+
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -16,54 +18,69 @@ import Data.AffineSpace                         -- package: vector-space
 import System.Directory
 
 main :: IO ()
-main = do 
-    createDirectoryIfMissing True "./out/"
-    let pic1 = runCtxPictureU std_ctx arrow_drawing
+main = simpleFontLoader main1 >> return ()
+
+main1 :: FontLoader -> IO ()
+main1 loader = do
+    createDirectoryIfMissing True "./out/"    
+    base_metrics <- loader [ Left helvetica ]
+    printLoadErrors base_metrics
+    let pic1 = runCtxPictureU (makeCtx base_metrics) arrow_drawing
     writeEPS "./out/arrowheads.eps" pic1
     writeSVG "./out/arrowheads.svg" pic1
+
+
+makeCtx :: FontLoadResult -> DrawingContext
+makeCtx = set_font helvetica . metricsContext 14
+
+
 
 arrow_drawing :: CtxPicture
 arrow_drawing = 
     drawTracing $ localize dotted_line $ tableGraphic arrtable
 
-arrtable :: [(Arrowhead Double, Arrowhead Double)]
+arrtable :: [(String, ArrowTip Double)]
 arrtable = 
-    [ (tri90,       tri90)
-    , (tri60,       tri60)
-    , (tri45,       tri45)
-    , (otri90,      otri90)
-    , (otri60,      otri60)
-    , (otri45,      otri45)
-    , (revtri90,    revtri90)
-    , (revtri60,    revtri60)
-    , (revtri45,    revtri45)
-    , (orevtri90,   orevtri90)
-    , (orevtri60,   orevtri60)
-    , (orevtri45,   orevtri45)
-    , (barb90,      barb90)
-    , (barb60,      barb60)
-    , (barb45,      barb45)
-    , (revbarb90,   revbarb90)
-    , (revbarb60,   revbarb60)
-    , (revbarb45,   revbarb45)
-    , (perp,        perp)
-    , (bracket,     bracket)
-    , (diskTip,     diskTip)
-    , (odiskTip,    odiskTip)
-    , (squareTip,   squareTip)
-    , (osquareTip,  osquareTip)
-    , (diamondTip,  diamondTip)
-    , (odiamondTip, odiamondTip)
-    , (curveTip,    curveTip)
-    , (revcurveTip, revcurveTip)
+    [ ("tri90",                 tri90)
+    , ("tri60",                 tri60)
+    , ("tri45",                 tri45)  
+    , ("otri90",                otri90)
+    , ("otri60",                otri60)
+    , ("otri45",                otri45)
+    , ("revtri90",              revtri90)
+    , ("revtri60",              revtri60)
+    , ("revtri45",              revtri45)
+    , ("orevtri90",             orevtri90)
+    , ("orevtri60",             orevtri60)
+    , ("orevtri45",             orevtri45)
+    , ("barb90",                barb90)
+    , ("barb60",                barb60)
+    , ("barb45",                barb45)
+    , ("revbarb90",             revbarb90)
+    , ("revbarb60",             revbarb60)
+    , ("revbarb45",             revbarb45)
+    , ("perp",                  perp)
+    , ("bracket",               bracket)
+    , ("diskTip",               diskTip)
+    , ("odiskTip",              odiskTip)
+    , ("squareTip",             squareTip)
+    , ("osquareTip",            osquareTip)
+    , ("diamondTip",            diamondTip)
+    , ("odiamondTip",           odiamondTip)
+    , ("diamondWideTip",        diamondWideTip)
+    , ("odiamondWideTip",       odiamondWideTip)
+    , ("curveTip",              curveTip)
+    , ("revcurveTip",           revcurveTip)    
     ]
 
-tableGraphic :: [(Arrowhead Double, Arrowhead Double)] -> TraceDrawing Double ()
+
+
+tableGraphic :: [(String, ArrowTip Double)] -> TraceDrawing Double ()
 tableGraphic tips = 
     drawl start $ chain_ chn_alg (map makeArrowDrawing tips)
   where
-    chn_alg   = tableDown 20 (120,24)
-    start = P2 0 480
+    chn_alg = tableDown 18 (180,24)
+    start   = P2 0 480
 
  
 std_ctx :: DrawingContext
@@ -71,10 +88,12 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeArrowDrawing :: (Arrowhead Double, Arrowhead Double) -> LocGraphic Double
-makeArrowDrawing (arrl,arrr) = 
-    promoteR1 $ \p0 -> fmap ignoreAns $
-      connect (leftRightArrow arrl arrr connline) p0 (mkP1 p0)
+makeArrowDrawing :: (String, ArrowTip Double) -> LocGraphic Double
+makeArrowDrawing (name, utip) = aconn `oplus` lbl
   where
-    mkP1    = (.+^ hvec 100)
+    aconn = promoteR1 $ \pt -> fmap ignoreAns $ 
+              connect (uniformArrow utip connline) pt (displaceH 60 pt)
+
+    lbl   = promoteR1 $ \pt -> fmap ignoreAns $ 
+              atStartAddr (textline name) (displaceH 66 pt) WW
 

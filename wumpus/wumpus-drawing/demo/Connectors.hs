@@ -2,10 +2,8 @@
 
 module Connectors where
 
-
-import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Connectors.ConnectorPaths
+import Wumpus.Drawing.Connectors
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -31,8 +29,6 @@ main1 loader = do
     writeEPS "./out/connectors.eps" pic1
     writeSVG "./out/connectors.svg" pic1 
           
-
-
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font helvetica . metricsContext 11

@@ -17,8 +17,7 @@
 module Wumpus.Drawing.Connectors.ConnectorPaths
   ( 
 
-    Connector
-  , connline
+    connline
   , connarc
   , connhdiagh
   , connvdiagv
@@ -60,11 +59,6 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
-
--- | The type of Connectors - a query from start and end point to 
--- a Path.
---
-type Connector u = ConnectorQuery u (AbsPath u)
 
 
 

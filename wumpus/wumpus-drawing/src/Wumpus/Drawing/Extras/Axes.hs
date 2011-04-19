@@ -21,8 +21,7 @@ module Wumpus.Drawing.Extras.Axes
 
   ) where
 
-import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Connectors.ConnectorPaths
+import Wumpus.Drawing.Connectors
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core

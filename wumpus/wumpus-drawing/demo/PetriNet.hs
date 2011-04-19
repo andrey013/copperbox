@@ -7,10 +7,9 @@
 
 module PetriNet where
 
-import Wumpus.Drawing.Arrows
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs

@@ -104,11 +104,10 @@ library
 
   
   exposed-modules:
-    Wumpus.Drawing.Arrows,
-    Wumpus.Drawing.Arrows.Connectors,
-    Wumpus.Drawing.Arrows.Tips,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
+    Wumpus.Drawing.Connectors,
+    Wumpus.Drawing.Connectors.Arrowheads,
     Wumpus.Drawing.Connectors.Base,
     Wumpus.Drawing.Connectors.BoxConnectors,
     Wumpus.Drawing.Connectors.ConnectorPaths,

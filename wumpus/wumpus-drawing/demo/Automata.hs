@@ -1,13 +1,10 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
-
-
 
 module Automata where
 
-import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Connectors.Loop
-import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -42,11 +39,11 @@ makeCtx =
 
 
 automata :: CtxPicture
-automata = drawTracing  $ do
+automata = udrawTracing (0::Double) $ do
     q0     <- nodei (8,0)   $ state "q0"
-    q1     <- drawi $ above_right_of q0 `op` state "q1"
-    q2     <- drawi $ below_right_of q0 `op` state "q2"
-    q3     <- drawi $ below_right_of q1 `op` stopstate "q3"
+    q1     <- drawi $ state "q1"      `mat` above_right_of q0
+    q2     <- drawi $ state "q2"      `mat` below_right_of q0
+    q3     <- drawi $ stopstate "q3"  `mat` below_right_of q1
 
     s0     <- evalQuery $ left_of q0
 
@@ -60,17 +57,19 @@ automata = drawTracing  $ do
 
     return ()
 
-infixr 1 `op`
-op :: Query (Point2 u) -> LocImage t u -> Image t u
-op qry a = qry >>= \pt -> a `at` pt
 
-state :: String -> DLocImage Circle
+infixr 1 `mat`
+
+mat :: LocImage u a -> Query (Point2 u) -> Image u a
+mat img mq = mq >>= \pt -> img `at` pt
+
+state :: String -> DLocImage DCircle
 state ss = 
     localize (set_font times_italic) $ 
         label_center_of (textline ss) $ strokedShape $ circle 20
 
 
-stopstate :: String -> DLocImage Circle 
+stopstate :: String -> DLocImage DCircle 
 stopstate ss = 
     localize (set_font times_italic) $ 
         label_center_of (textline ss) $ dblStrokedShape $ circle 20
@@ -78,25 +77,26 @@ stopstate ss =
 
 
 straightconn :: ( Real u, Floating u, InterpretUnit u
-                , CenterAnchor t1 u, RadialAnchor  t1 u
-                , CenterAnchor t2 u, RadialAnchor  t2 u
+                , u ~ DUnit a, u ~ DUnit b
+                , CenterAnchor a, RadialAnchor a
+                , CenterAnchor b, RadialAnchor b
                 )
-             => t1 u -> t2 u -> Image AbsPath u
+             => a -> b -> Image u (AbsPath u)
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
     in connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
-              => Anchor u -> Anchor u -> Image AbsPath u
+              => Anchor u -> Anchor u -> Image u (AbsPath u)
 astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@
 -- manufactures the start and end points...
 --
-arrloop :: ( Real u, Floating u, InterpretUnit u, LengthTolerance u) 
-        => Anchor u -> Anchor u -> Image AbsPath u
+arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
+        => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop p0 p1 = connect (rightArrow barb45 loop) p0 p1
 
 

@@ -10,9 +10,8 @@
 
 module ArrowCircuit where
 
-import Wumpus.Drawing.Arrows
-import Wumpus.Drawing.Connectors.ConnectorPaths
-import Wumpus.Drawing.Paths 
+import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Paths.Relative
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -81,7 +80,7 @@ body = do
 
 connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit (m ())
             , Real u, Floating u, InterpretUnit u ) 
-         => PathQuery u -> Anchor u -> Anchor u -> m ()
+         => Connector u -> Anchor u -> Anchor u -> m ()
 connWith con a0 a1 = localize double_point_size $ 
     drawc a0 a1 (rightArrow tri45 con)
 
@@ -103,7 +102,7 @@ ptext pt ss = localize (font_attr times_italic 14) $
 
 -- Note - return type is a LocImage not a shape...
 --
-rrectangle :: (Real u, Floating u, InterpretUnit u, LengthTolerance u) 
+rrectangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => Double -> u -> u -> LocImage u (Rectangle u)
 rrectangle r w h = 
     localize (round_corner_factor r) $ strokedShape (rectangle w h)
