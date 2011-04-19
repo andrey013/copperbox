@@ -51,21 +51,21 @@ description:
   v0.43.0 to v0.50.0:
   .
   * Major change hence the version number jump - the notion of 
-    polymorphic unit has been largely removed from the /Picture/ 
-    objects (it remains the Geometric objects @Point2@, @Vec2@ 
-    etc.). Certain useful units, e.g. @em@ and @en@, are 
-    contextual on the \"current point size\", and having
-    polymorphic was actually a hinderance to supporting such 
-    units in higher-level layers. Instead, all Picture objects 
-    (those defined or exported from @Core.Picture@) are now fixed 
-    to use Double (representing PostScript point) - higher level
-    layers that intends to support alternative units must 
-    translate them to PostScript points /before/ calling the 
-    Picture API. Geometric objects (objects defined in 
-    @Core.Geometry@, e.g. @Point2@, @Vec2@) are still polymorphic 
+    parametric unit has been removed from the @Picture@ objects 
+    (it for remains the @Geometric@ objects @Point2@, @Vec2@ etc.). 
+    Certain useful units, e.g. @em@ and @en@, are contextual on 
+    the \"current point size\", and having a parametric unit here 
+    was actually a hinderance to supporting units properly in 
+    higher-level layers. Now all Picture objects (those defined 
+    or exported from @Core.Picture@) are fixed to use Double 
+    (representing PostScript point). Higher level layers that 
+    intend to support alternative units must translate drawing 
+    objects to PostScript point measurements /before/ calling the 
+    Picture API. Geometric objects - objects defined in 
+    @Core.Geometry@, e.g. @Point2@, @Vec2@ - are still polymorphic 
     on unit. 
   .  
-  * Picture API change. Various function names changed - 
+  * Picture API change - Various function names changed.
     @lineTo@ becomes @absLineTo@ and @curveTo@ becomes 
     @absCurveTo@. The path builders are qualified with /Prim/, 
     @vertexPath@ becomes @vertexPrimPath@, @vectorPath@ becomes 
@@ -74,7 +74,7 @@ description:
     @xlinkPrim@.
   . 
   * API change - @PtSize@ data type replaced by @AfmUnit@ for font 
-    sizes.
+    measurements.
   .
   * API and representation change - clipping paths are represented
     as @Primitive@ constructor rather than a @Picture@ constructor.
@@ -85,7 +85,10 @@ description:
     the functions @relPrimPath@, @relLineTo@, @relCurveTo@.
   . 
   * Added the class @Tolerance@ to @Core.Geometry@ and made the Eq 
-    instances of @Point2@, @Vec2@ and @BoundingBox@ tolerant.
+    instances of @Point2@, @Vec2@ and @BoundingBox@ tolerant. 
+    Tolerance accounts for a fairly lax equality on floating point 
+    numbers - it is suitable for Wumpus (printing) where high 
+    accuracy is needed.
   .
   v0.42.1 to v0.43.0:
   .

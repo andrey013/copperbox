@@ -12,7 +12,6 @@ import Wumpus.Core.Colour
 
 import System.Directory
 
-import Data.VectorSpace
 
 
 

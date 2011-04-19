@@ -27,7 +27,7 @@ demo02 = do
     writeSVG "./out/label02.svg" p1
   where
     p1 = lbl1 `picBeside` lbl1 
-              `picBeside` (drotateAbout (pi/4) (center lbl1) lbl1) 
+              `picBeside` (rotateAbout (pi/4) (center lbl1) lbl1) 
               `picBeside` lbl1
 
 demo03 :: IO ()
@@ -37,7 +37,7 @@ demo03 = do
   where
     p1 = (drawBounds lbl1) `picBeside` 
          (drawBounds lbl1) `picBeside` 
-         (drawBounds $ drotateAbout (pi/4) (center lbl1) lbl1) `picBeside` 
+         (drawBounds $ rotateAbout (pi/4) (center lbl1) lbl1) `picBeside` 
          (drawBounds lbl1)
 
 
@@ -48,8 +48,8 @@ demo04 = do
     writeSVG "./out/label04.svg" p1
   where
     p1 =           (drawBounds lbl1) 
-         `picOver` (drawBounds $ dscale 2 2 lbl1)
-         `picOver` (drawBounds $ dscale 3 3 lbl1)
+         `picOver` (drawBounds $ scale 2 2 lbl1)
+         `picOver` (drawBounds $ scale 3 3 lbl1)
 
 
 
@@ -60,7 +60,7 @@ bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
 bigLetter :: RGBi -> Char -> Picture
-bigLetter rgb ch = dscale 5 5 $ frame [textlabel rgb attrs [ch] zeroPt]
+bigLetter rgb ch = scale 5 5 $ frame [textlabel rgb attrs [ch] zeroPt]
   where
     attrs = FontAttr 12 (FontFace "Helvetica" "Helvetica" 
                                   SVG_REGULAR standard_encoding)
@@ -72,7 +72,7 @@ demo05 = do
     writeEPS "./out/label05.eps" p1
     writeSVG "./out/label05.svg" p1
   where
-    p1 = dscale 10 10 $ bigA `picOver` bigB `picOver` bigT
+    p1 = scale 10 10 $ bigA `picOver` bigB `picOver` bigT
 
 
 
@@ -84,7 +84,7 @@ demo06 = do
     p1 = pA `picBeside` pB `picBeside` pC `picBeside` pA
     
     pA = drawBounds bigA
-    pB = drawBounds $ dscale 2 2 bigB
+    pB = drawBounds $ scale 2 2 bigB
     pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
@@ -96,7 +96,7 @@ demo07 = do
     p1 = pA `picBeside` pB `picBeside` pC
     
     pA = drawBounds bigA
-    pB = drawBounds $ dscale 2 2 bigB
+    pB = drawBounds $ scale 2 2 bigB
     pC = drawBounds $ picMoveBy `flip` (vec 0 10) $ bigLetter peru 'C'
 
 
@@ -110,14 +110,14 @@ drawBounds :: Picture -> Picture
 drawBounds p        = p `picOver` (frame [zcstroke ph])
   where
     ph            = vertexPrimPath $ [bl,br,tr,tl]
-    (bl,br,tr,tl) = boundaryCorners $ boundaryPicture p
+    (bl,br,tr,tl) = boundaryCorners $ boundary p
 
 
 -- | The center of a picture.
 center :: Picture -> DPoint2
 center a = P2 hcenter vcenter 
   where  
-    BBox (P2 x0 y0) (P2 x1 y1) = boundaryPicture a
+    BBox (P2 x0 y0) (P2 x1 y1) = boundary a
     hcenter                    = x0 + 0.5 * (x1 - x0)
     vcenter                    = y0 + 0.5 * (y1 - y0)
 

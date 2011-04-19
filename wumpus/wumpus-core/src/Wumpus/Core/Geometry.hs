@@ -77,7 +77,7 @@ module Wumpus.Core.Geometry
   , rotationMatrix
   , originatedRotationMatrix
 
-  -- * matrix operations
+  -- * Matrix operations
   , invert
   , determinant
   , transpose

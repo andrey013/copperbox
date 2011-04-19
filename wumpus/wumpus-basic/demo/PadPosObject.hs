@@ -67,14 +67,14 @@ type Trafo = PosObject Double -> PosObject Double
 testDraw :: Trafo -> RectAddress -> LocGraphic Double
 testDraw trafo rpos = filledDisk 2 `oplus` bbobj
   where
-    bbobj = ignoreAns $ illustrateBoundedLocGraphic $ 
+    bbobj = locGraphic_ $ illustrateBoundedLocGraphic $ 
               (lrgBox trafo `startAddr` rpos)
 
 
 
 
 lrgBox :: Trafo -> BoundedLocRectGraphic Double
-lrgBox trafo = makeBoundedLocRectGraphic $ trafo poBox 
+lrgBox trafo = runPosObjectR2 $ trafo poBox 
 
 poBox :: PosObject Double
 poBox = makePosObject  mkOrtt mkRect
@@ -84,7 +84,7 @@ poBox = makePosObject  mkOrtt mkRect
 
     mkRect = capHeight >>= \ch -> 
              descender >>= \dd -> 
-             moveStart (move_down (abs dd)) 
+             moveStart (disp_down (abs dd)) 
                            $ borderedRectangle (5*ch) (ch + abs dd)
 
 

@@ -36,9 +36,9 @@ mf2 = do
 combined :: TraceDrawing Double ()
 combined = do 
     draw $ dblLocGraphic `at` P2 12 108
-    drawl (anchor $ P2 12 72) $ uconvertLocImg emLocGraphic
-    draw $ uconvertImg $ emLocGraphic `at` P2 1 3
-    drawl (anchor $ P2 12 0) $ uconvertLocImg $ hyperlink haskell_org enLocGraphic
+    drawl (P2 12 72) $ uconvLocImageF emLocGraphic
+    draw $ uconvImageF $ emLocGraphic `at` P2 1 3
+    drawl (P2 12 0) $ uconvLocImageF $ pushR1 (hyperlink haskell_org) enLocGraphic
 
 dblLocGraphic :: LocGraphic Double
 dblLocGraphic = rect1 `oplus` rect2  
