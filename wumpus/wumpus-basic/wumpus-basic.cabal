@@ -32,12 +32,13 @@ description:
   . 
   v0.16.0 to v0.17.0:
   .
+  * Changed representation of ContextFuns - context funs are no 
+    longer an arity family of newtypes. The new representation 
+    is simpler, but some of the opportunities for overloading 
+    have been lost.
+  .
   * Substantial round of renaming for the @DrawingContext@ types
     an query and update functions.
-  .
-  * DUnit type family removed from Wumpus-Core, so all type 
-    instances removed. The MonUnit type family is still necessary
-    and used by TraceDrawing.
   .
   * Re-worked the font metrics and font loader modules. The new
     names should be more systematic. Removed the need for the 
@@ -45,7 +46,9 @@ description:
     GhostScript font files.    
   .
   * Superceded the PointSupplyM class by adding snapping grid 
-    scaling to the DrawingContext.
+    scaling to the DrawingContext. 
+  . 
+  * Removed @ScalingContext@ module.
   .
   * Made text colour a distinct property in the DrawingContext. 
     Text is now drawn with the text colour rather than the stroke 
@@ -53,9 +56,6 @@ description:
   .
   * Added FontLoadLog to the DrawingContext - this allows access 
     to the errors recorded during font loading.
-  .
-  * Changed internal representation of WrappedPrimtive so it can
-    have a unit-change transformation.
   .
   v0.15.0 to v0.16.0:
   .

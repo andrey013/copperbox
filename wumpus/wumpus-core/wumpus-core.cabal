@@ -58,7 +58,7 @@ description:
     was actually a hinderance to supporting units properly in 
     higher-level layers. Now all Picture objects (those defined 
     or exported from @Core.Picture@) are fixed to use Double 
-    (representing PostScript point). Higher level layers that 
+    - representing PostScript points. Higher level layers that 
     intend to support alternative units must translate drawing 
     objects to PostScript point measurements /before/ calling the 
     Picture API. Geometric objects - objects defined in 
