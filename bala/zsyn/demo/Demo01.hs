@@ -3,7 +3,9 @@
 
 module Demo01 where
 
-import ZSyn.HSStream
+import ZSyn.Base
+import qualified ZSyn.HSStream  as S
+import ZSyn.HSStream  ( (*>), HSStream(..) )
 import ZSyn.WavHeader
 import ZSyn.WavOutput
 
@@ -18,7 +20,7 @@ sample_rate = 44100
 dpiSR :: Double
 dpiSR = 2*pi / (fromIntegral sample_rate)
 
-oscil :: Double -> HSStream Double
+oscil :: Double -> AudioStream
 oscil fr = y 
   where
     ohm = dpiSR * fr
@@ -26,6 +28,16 @@ oscil fr = y
     v   = (sin ohm) :< ((2 * cos ohm) *> v - y)
 
 
-main = outputWav_1Chan_16Bit "newarr.wav" a440 sample_rate 400000
+main :: IO ()
+main = outputWav_1Chan_16Bit "demo01.wav" sound1 sample_rate 400000
 
+a440 :: AudioStream
 a440 = oscil 440
+
+
+env :: ControlStream 
+env = lineSeg [0, 1.0, 0.0] [2,4]
+
+
+sound1 :: AudioStream 
+sound1 = (*) a440 (upSample env)

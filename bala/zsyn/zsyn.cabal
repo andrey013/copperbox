@@ -27,6 +27,7 @@ library
                       array             < 0.4
   
   exposed-modules:
+    ZSyn.Base,
     ZSyn.HSStream,
     ZSyn.WavHeader,
     ZSyn.WavOutput

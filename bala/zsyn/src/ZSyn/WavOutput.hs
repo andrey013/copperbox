@@ -21,6 +21,7 @@ module ZSyn.WavOutput
 
   where 
 
+import ZSyn.Base
 import ZSyn.HSStream
 import ZSyn.WavHeader
 
@@ -70,7 +71,7 @@ output_BUFFER_SIZE = 1024
 
 
 
-outputWav_1Chan_16Bit :: FilePath -> HSStream Double -> Word32 -> Int -> IO ()
+outputWav_1Chan_16Bit :: FilePath -> AudioStream -> Word32 -> Int -> IO ()
 outputWav_1Chan_16Bit path strm sr len = withBinaryFile path WriteMode body
   where
     body h = do 
@@ -235,7 +236,7 @@ toInt = conv . clamp (-1) 1
 
 -- outputs 1 channel at 16 bit ...
 --
-hPut1Ch_16Bit :: Handle -> HSStream Double -> Int -> IO ()
+hPut1Ch_16Bit :: Handle -> AudioStream -> Int -> IO ()
 hPut1Ch_16Bit h ss len = do
     arr    <- newArray (0, output_BUFFER_SIZE) 0
     go arr len ss
