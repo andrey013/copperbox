@@ -1,5 +1,5 @@
 name:             wumpus-drawing
-version:          0.3.0
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -38,46 +38,11 @@ description:
   .
   Changelog:
   .
-  v0.2.0 to v0.3.0:
+  v0.3.0 to v0.4.0:
   .
   * Moved Turtle and Grids into the @Wumpus.Drawing.Extras@
     name-space. Modules here are considered sketches.
   .
-  * Re-implemented arrowheads and connectors.
-  .
-  * Re-implemented monadic path construction. This is now 
-    essentially \"turtle drawing\" with a path trace.
-  .
-  * Removed chains - a simplified implementation is now 
-    provided by Wumpus-Basic.
-  .
-  * Re-implemented and expanded Text.  
-  .
-  v0.1.0 to v0.2.0:
-  .
-  * Added new Shapes.
-  .
-  * Move Geometry modules to Wumpus-Basic.
-  .
-  * Re-implemented Chains.
-  .
-  * Re-implemented LR-Text. Added CatText.
-  .
-  v0.1.0:
-  .
-  * Initial release - this is a split from @Wumpus-Basic@ making 
-    the (very prototypical - read sub-alpha, unstable...) modules 
-    in the @Drawing@ hierarchy a separate package.
-  .
-  * Simplified Chains - chains are now regular lists (though often
-    infinite). Drawings are made with chains using new zip-like
-    functions.
-  .
-  * Re-worked Shapes.
-  .
-  * Re-worked Arrow and Arrow Tip types.
-  .
-  * Re-worked ConnectorPaths.
   .
 build-type:         Simple
 stability:          highly unstable
@@ -110,7 +75,7 @@ library
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.50.0  && <  0.51.0,
-                      wumpus-basic    == 0.17.0
+                      wumpus-basic    == 0.18.0
 
   
   exposed-modules:

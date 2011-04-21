@@ -61,10 +61,7 @@ module Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Drawing.Dots.Marks
 import Wumpus.Drawing.Text.Base.RotTextZero
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Intersection
-import Wumpus.Basic.Geometry.Paths
-import Wumpus.Basic.Geometry.Quadrant
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel               
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -287,4 +284,5 @@ dotTriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => DotLocImage u
 dotTriangle = intoLocImage (polygonLDO fn) markTriangle
   where 
-    fn h ctr = let (bl,br,top) = equilateralTrianglePoints h ctr in [bl,br,top]
+    fn h ctr = let (v1,v2,v3) = equilateralTriangleVertices h
+               in map (ctr .+^) [v1,v2,v3]

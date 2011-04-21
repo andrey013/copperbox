@@ -1,4 +1,30 @@
 
+
+0.2.0 to 0.3.0:
+
+  * Moved Turtle and Grids into the @Wumpus.Drawing.Extras@
+    name-space. Modules here are considered sketches.
+
+  * Re-implemented arrowheads and connectors.
+
+  * Re-implemented monadic path construction. This is now 
+    essentially \"turtle drawing\" with a path trace.
+
+  * Removed chains - a simplified implementation is now 
+    provided by Wumpus-Basic.
+
+  * Re-implemented and expanded Text.  
+
+0.1.0 to 0.2.0:
+
+  * Added new Shapes.
+
+  * Move Geometry modules to Wumpus-Basic.
+
+  * Re-implemented Chains.
+
+  * Re-implemented LR-Text. Added CatText.
+
 0.1.0:
 
   * Initial release - this is a split from @Wumpus-Basic@ making 

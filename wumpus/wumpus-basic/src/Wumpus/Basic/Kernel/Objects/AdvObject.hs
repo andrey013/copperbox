@@ -19,8 +19,15 @@
 module Wumpus.Basic.Kernel.Objects.AdvObject
   (
 
+
+  -- * Advance vector
+    AdvanceVec
+  , advanceH
+  , advanceV
+
+
   -- * Advance-vector object and graphic
-    AdvObject
+  , AdvObject
   , DAdvObject
   
   , AdvGraphic
@@ -61,6 +68,37 @@ import Control.Applicative
 import Data.Monoid
 
 
+
+--------------------------------------------------------------------------------
+
+-- | Advance vectors provide an idiom for drawing consecutive
+-- graphics. PostScript uses them to draw left-to-right text - 
+-- each character has an advance vector for the width and 
+-- as characters are drawn they successively displace the start
+-- point for the next character with their advance vector.
+--
+-- Type alias for Vec2.
+--
+type AdvanceVec u = Vec2 u
+
+
+-- | Extract the horizontal component of an advance vector.
+--
+-- For left-to-right latin text, the vertical component of an
+-- advance vector is expected to be 0. Ingoring it seems 
+-- permissible when drawing text.
+--
+advanceH :: AdvanceVec u -> u
+advanceH (V2 w _)  = w
+
+-- | Extract the verticall component of an advance vector.
+--
+advanceV :: AdvanceVec u -> u
+advanceV (V2 _ h)  = h
+
+
+--------------------------------------------------------------------------------
+-- AdvObject
 
 type AdvDraw u = Point2 u -> GraphicAns u
 

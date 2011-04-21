@@ -52,7 +52,7 @@ module Wumpus.Drawing.Dots.Marks
 
 import Wumpus.Drawing.Text.Base.RotTextZero
 
-import Wumpus.Basic.Geometry.Paths              -- package: wumpus-basic
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -130,8 +130,9 @@ markCross = markHeight >>= mkCross
 pathDiamond :: (Fractional u, InterpretUnit u) 
             => LocQuery u PrimPath
 pathDiamond = promoteR1 $ \pt -> 
-    markHeight >>= \h -> let cp = diamondCoordPath (0.5*h) (0.66*h) 
-                         in coordinatePrimPath cp pt
+    markHeight >>= \h -> let cp = diamondPathAlg (0.5*h) (0.66*h) 
+                             ps = runPathAlgPoint pt cp
+                         in vertexPP ps
 
 
 
@@ -185,7 +186,9 @@ markPentagon = promoteR1 $ \pt ->
     pentagonPath pt >>= closedStroke
   where
     pentagonPath pt = markHalfHeight >>= \hh -> 
-                      coordinatePrimPath (polygonCoordPath 5 hh) pt
+                      let path1 = polygonPathAlg 5 hh
+                          ps    = runPathAlgPoint pt path1
+                      in vertexPP ps 
 
  
 
@@ -195,8 +198,8 @@ markStar = markHeight >>= \h -> starLines (0.5*h)
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 starLines hh = promoteR1 $ \ctr -> 
-    let cp = polygonCoordPath 5 hh
-    in step $ map (fn ctr) $ cp ctr
+    let ps = runPathAlgPoint ctr $ polygonPathAlg 5 hh
+    in step $ map (fn ctr) ps
   where
     fn p0 p1    = straightLine p0 p1
     step (x:xs) = oconcat x xs
@@ -237,6 +240,8 @@ markTriangle = tripath `renderPathWith` closedStroke
   where
     tripath = promoteR1 $ \pt -> 
                 markHeight >>= \h -> 
-                  let cp = equilateralTriangleCoordPath h
-                  in coordinatePrimPath cp pt
+                  let (v1,v2,v3) = equilateralTriangleVertices h
+                      alg        = pathStartIsLocus [v1,v2,v3]
+                      ps         = runPathAlgPoint pt alg
+                  in vertexPP ps
 

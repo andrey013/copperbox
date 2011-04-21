@@ -13,11 +13,12 @@
 --
 -- Wrapped versions of the @Primitive@ type from Wumpus-Core.
 --
+-- This file is essentially /internal/ to Wumpus-Basic.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   (
-
 
 
   -- * Primitives
@@ -28,9 +29,6 @@ module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   , HPrim
   , hprimToList
   , singleH
-
-
-
 
   ) where
 
@@ -44,8 +42,10 @@ import Data.Monoid
 
 
 
--- | CatPrim could probably manage happily just being a
--- Primitive, but it is wrapped as a newtype...
+-- | A wrapped version of 'Primitive' from Wumpus-Core that 
+-- supports Monoid.
+--
+-- This type is essentially internal to Wumpus-Basic.
 --
 data CatPrim = CZero
              | Cat1 Primitive
@@ -90,12 +90,15 @@ instance Translate CatPrim where
 prim1 :: Primitive -> CatPrim 
 prim1 = Cat1
 
+
+-- | Map 
 cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
 cpmap _ CZero    = CZero
 cpmap f (Cat1 a) = Cat1 $ f a
 
 --------------------------------------------------------------------------------
 -- Lists of primitives...
+
 
 -- | Graphics objects, even simple ones (line, arrow, dot) might 
 -- need more than one primitive (path or text label) for their
@@ -111,11 +114,8 @@ cpmap f (Cat1 a) = Cat1 $ f a
 -- representation, and a Hughes list which supports
 -- efficient concatenation is wise.
 --
--- NOTE - currently HPrim has a phantom unit @u@, this is so 
--- trace drawings can have a unit type, but this may change as 
--- perhaps trace drawings don\'t benefit from having units.
---
-
+-- This type is essentially internal to Wumpus-Basic.
+-- 
 newtype HPrim u = HPrim { getHPrim :: H Primitive }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
@@ -126,10 +126,14 @@ instance Monoid (HPrim u) where
   ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
 
 
+-- | Extract the internal list of 'Primitive' from a 'HPrim'.
+--
 hprimToList :: HPrim u -> [Primitive]
 hprimToList = toListH . getHPrim
 
 
+-- | Form a 'HPrim' from a 'CatPrim'.
+--
 singleH :: CatPrim -> HPrim u
 singleH CZero    = HPrim emptyH
 singleH (Cat1 a) = HPrim $ wrapH a

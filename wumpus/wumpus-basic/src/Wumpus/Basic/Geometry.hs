@@ -21,6 +21,7 @@ module Wumpus.Basic.Geometry
   , module Wumpus.Basic.Geometry.Intersection
   , module Wumpus.Basic.Geometry.Paths
   , module Wumpus.Basic.Geometry.Quadrant
+  , module Wumpus.Basic.Geometry.Vertices
 
   ) where
 
@@ -29,3 +30,4 @@ import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Geometry.Intersection
 import Wumpus.Basic.Geometry.Paths
 import Wumpus.Basic.Geometry.Quadrant
+import Wumpus.Basic.Geometry.Vertices

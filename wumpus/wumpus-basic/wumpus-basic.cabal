@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.17.0
+version:          0.18.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -9,8 +9,8 @@ category:         Graphics
 synopsis:         Basic objects and system code built on Wumpus-Core.
 description:
   .
-  Kernel code for higher-level drawing built on Wumpus-Core.
-  This package provides font loader code (limited to AFM font 
+  Kernel code for higher-level drawing built on Wumpus-Core. This 
+  package provides font loader code (currently limited to AFM font 
   files) and a various /drawing objects/ intended to be a 
   higher-level basis to make vector drawings than the primitives 
   (paths, text labels) provided by Wumpus-Core. 
@@ -29,83 +29,13 @@ description:
   .
   .
   Changelog:
+  .
+  v0.17.0 to v0.18.0:
   . 
-  v0.16.0 to v0.17.0:
+  * Moved vertices generating functions from @Geometry.Path@ to 
+    @Geometry.Vertices@.
   .
-  * Changed representation of ContextFuns - context funs are no 
-    longer an arity family of newtypes. The new representation 
-    is simpler, but some of the opportunities for overloading 
-    have been lost.
-  .
-  * Substantial round of renaming for the @DrawingContext@ types
-    an query and update functions.
-  .
-  * Re-worked the font metrics and font loader modules. The new
-    names should be more systematic. Removed the need for the 
-    GhostScript font modules to match PostScript names to 
-    GhostScript font files.    
-  .
-  * Superceded the PointSupplyM class by adding snapping grid 
-    scaling to the DrawingContext. 
-  . 
-  * Removed @ScalingContext@ module.
-  .
-  * Made text colour a distinct property in the DrawingContext. 
-    Text is now drawn with the text colour rather than the stroke 
-    colour.
-  .
-  * Added FontLoadLog to the DrawingContext - this allows access 
-    to the errors recorded during font loading.
-  .
-  v0.15.0 to v0.16.0:
-  .
-  * Moved the Geometry modules from Wumpus-Drawing into 
-    Wumpus-Basic.
-  .
-  * Re-worked the @CtxPicture@ API, although the current naming 
-    scheme is not satisfactory.
-  .
-  * Added extra Anchor classes.
-  .
-  * Added @PosImage@ object - this is a rectangle-framed object 
-    that can be drawn from any of its corners or its center. 
-  .
-  * Added @CF3@, an arity three /ContextFunction/.
-  .
-  * Added @Displacement@ module. This defines the @PointDisplace@
-    type and provides a library of @PointDisplace@ functions.
-    Note - some of the new functions have taken names previously 
-    used for anchor projection functions (@northwards@, 
-    @southwards@, etc.), anchor projections are now build with the 
-    function @projectAnchor@.
-  .
-  * Added the property @descender@ to the font metrics.
-  .
-  * Split drawing primitives from type in @Objects.Graphic@, 
-    drawing primitives are now in the module 
-    @Objects.DrawingPrimitives@.
-  .
-  v0.14.0 to v0.15.0:
-  . 
-  * Split previous @Wumpus-Basic@ package into two packages:
-    @Wumpus-Basic@ and @Wumpus-Drawing@. This is a pratical move 
-    to separate the developed (although not yet polished) @Kernel@ 
-    and @FontLoader@ code from the prototypical @Drawing@ code.
-  .
-  * Renamed the @Drawing@ object to @CtxPicture@. Although 
-    @CtxPicture@ is a less pleasant name, it should be less 
-    confusing. A @CtxPicture@ is the essentially the @Picture@ 
-    type from Wumpus-Core with an implicit context - 
-    @ContextPicture@ is simply too long and @CtxPicture@ is 
-    almost jibberish but the previous unrelated name @Drawing@ 
-    was not helpful.
-  .
-  * @Kernel.Base.ScalingContext@ has been simplified. 
-    ScalingContexts are no longer manipulated via a custom Reader
-    monad or transformer as the type signatures were too unwieldy.
-  .
-  * Added @TextMargin@ to the @DrawingContext@ - Wumpus-Drawing 
-    can now calculate more appealing bounding boxes for text.
+  * ??
   .
 build-type:         Simple
 stability:          highly unstable
@@ -135,6 +65,7 @@ library
     Wumpus.Basic.Geometry.Intersection,
     Wumpus.Basic.Geometry.Paths,
     Wumpus.Basic.Geometry.Quadrant,
+    Wumpus.Basic.Geometry.Vertices,
     Wumpus.Basic.Kernel,
     Wumpus.Basic.Kernel.Base.BaseDefs,
     Wumpus.Basic.Kernel.Base.ContextFun,
