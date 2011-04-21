@@ -30,8 +30,7 @@ module Wumpus.Drawing.Shapes.Rectangle
 import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Paths              -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Quadrant
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -163,8 +162,7 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkRectPath rnd hw hh = promoteR2 $ \ctr theta -> 
-    let btm_left = displace (-hw) (-hh) ctr
-        xs       = rectangleCoordPath (2*hw) (2*hh) btm_left
+    let xs       = runVertices4 ctr $ rectangleVertices hw hh
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
     
 

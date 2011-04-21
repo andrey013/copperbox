@@ -30,9 +30,7 @@ module Wumpus.Drawing.Shapes.Parallelogram
 import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Intersection
-import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -180,7 +178,9 @@ pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
                                      , pll_syn_props = syn }) =
     post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps   = pllPoints (pll_base_minor syn) (pll_base_major syn) h
+    ps   = runVertices4 zeroPt $ 
+             parallelogramVertices (pll_base_minor syn) (pll_base_major syn) h
+
     post = \ans -> case ans of 
                     Nothing       -> projectFromCtr (V2 0 0) ctm
                     Just (P2 x y) -> projectFromCtr (V2 x y) ctm
@@ -249,31 +249,9 @@ synthesizeProps bw h lang
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                     => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkParallelogramPath rnd bw_minor bw_major h = promoteR2 $ \ctr theta -> 
-    let xs = pllPath bw_minor bw_major h ctr
+    let xs = runVertices4 ctr  $ parallelogramVertices bw_minor bw_major h
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs 
                          
-
-
-pllPath :: (Real u, Floating u) 
-       => u -> u -> u -> LocCoordPath u
-pllPath bw_minor bw_major h (P2 x y) = [ bl, br, tr, tl ]
-  where
-    hh = 0.5 * h
-    bl = P2 (x - bw_minor) (y - hh)
-    br = P2 (x + bw_major) (y - hh)
-    tl = P2 (x - bw_major) (y + hh)     -- topleft subtracts major
-    tr = P2 (x + bw_minor) (y + hh)     -- topright adds minor
-
-
-pllPoints :: (Real u, Floating u) 
-          => u -> u -> u -> [Point2 u]
-pllPoints bw_minor bw_major h = [ bl, br, tr, tl ]
-  where
-    hh = 0.5 * h     
-    bl = P2 (-bw_minor) (-hh) 
-    br = P2   bw_major  (-hh)
-    tl = P2 (-bw_major) hh
-    tr = P2   bw_minor  hh
 
 
 

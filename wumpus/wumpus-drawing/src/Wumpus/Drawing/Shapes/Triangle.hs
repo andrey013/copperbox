@@ -27,9 +27,7 @@ module Wumpus.Drawing.Shapes.Triangle
 import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Quadrant
-import Wumpus.Basic.Geometry.Paths
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -222,17 +220,17 @@ synthesizeProps bw h =
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkTrianglePath rnd bw hminor hmajor = promoteR2 $ \ctr theta -> 
-    let xs = trianglePath bw hminor hmajor ctr
+    let xs = runVertices3 ctr $ trianglePath bw hminor hmajor
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 
 
 
 trianglePath :: (Real u, Floating u) 
-             => u -> u -> u -> LocCoordPath u
-trianglePath bw hminor hmajor (P2 x y) = [br, apx, bl]
+             => u -> u -> u -> Vertices3 u
+trianglePath bw hminor hmajor = (br, apx, bl)
   where
     half_base = 0.5 * bw
-    br        = P2 (x + half_base ) (y - hminor)
-    apx       = P2 x (y + hmajor)
-    bl        = P2 (x - half_base ) (y - hminor)
+    br        = V2   half_base  (-hminor)
+    apx       = V2   0            hmajor
+    bl        = V2 (-half_base) (-hminor)
 

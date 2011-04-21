@@ -171,7 +171,7 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_base_r_ang = rang }) =
     post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps   = tzPoints bw h lang rang
+    ps   = runVertices4 zeroPt $ trapeziumVertices bw h lang rang
     post = \ans -> case ans of 
                     Nothing       -> projectFromCtr (V2 0 0) ctm
                     Just (P2 x y) -> projectFromCtr (V2 x y) ctm
@@ -219,32 +219,8 @@ mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
                 => u -> u -> u -> Radian -> Radian 
                 -> LocThetaQuery u (AbsPath u)
 mkTrapeziumPath rnd bw h lang rang = promoteR2 $ \ctr theta -> 
-    let xs = tzPath bw h lang rang ctr 
+    let xs = runVertices4 ctr $ trapeziumVertices bw h lang rang
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
-
-
-tzPath :: (Real u, Floating u) 
-       => u -> u -> Radian -> Radian -> LocCoordPath u
-tzPath bw h lang rang (P2 x y) = [ bl, br, tr, tl ]
-  where
-    half_base = 0.5 * bw
-    hh        = 0.5 * h
-    br        = P2 (x + half_base ) (y - hh)
-    bl        = P2 (x - half_base ) (y - hh)
-    tr        = displaceVec (rightSideVec h rang) br
-    tl        = displaceVec (leftSideVec h lang) bl
-
-
-tzPoints :: (Real u, Floating u) 
-               => u -> u -> Radian -> Radian -> [Point2 u]
-tzPoints bw h lang rang = [ bl, br, tr, tl ]
-  where
-    half_base = 0.5 * bw
-    hh        = 0.5 * h
-    bl        = P2 (-half_base) (-hh)
-    br        = P2 half_base    (-hh)
-    tr        = displaceVec (rightSideVec h rang) br
-    tl        = displaceVec (leftSideVec h lang) bl
 
 
 
