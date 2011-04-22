@@ -86,19 +86,19 @@ type PointGen = Radian -> [Vec2 En]
 filledTipPath :: PointGen -> LocThetaGraphic En
 filledTipPath fn = 
     localize fill_use_stroke_colour $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= filledPath
+      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath FILL
 
 
 closedTipPath :: PointGen -> LocThetaGraphic En
 closedTipPath fn = 
     localize solid_stroke_tip $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= closedStroke
+      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath STROKE
 
 
 openTipPath :: PointGen -> LocThetaGraphic En
 openTipPath fn = 
     localize solid_stroke_tip $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= openStroke
+      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcOpenPath
 
 
 
@@ -321,7 +321,7 @@ diskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize fill_use_stroke_colour $ 
-                      moveStart (displaceVec v1) (filledDisk 0.5)
+                      moveStart (displaceVec v1) (dcDisk FILL 0.5)
 
 
 odiskTip :: InterpretUnit u => ArrowTip u
@@ -332,7 +332,7 @@ odiskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize solid_stroke_tip $ 
-                      moveStart (displaceVec v1) (strokedDisk 0.5)
+                      moveStart (displaceVec v1) (dcDisk STROKE 0.5)
 
 
 -- | squareSpec:
@@ -415,7 +415,7 @@ curveTip =
     makeArrowTip retract_zero len_one
                  (promoteR2 $ \pt theta -> 
                     localize (join_bevel . solid_stroke_tip) $ 
-                      toPrimPath (curveTipPath pt theta) >>= openStroke)
+                      toPrimPath (curveTipPath pt theta) >>= dcOpenPath)
 
 
 
@@ -436,7 +436,7 @@ revcurveTip =
     makeArrowTip retract_one len_one
                  (promoteR2 $ \pt theta -> 
                     localize (join_bevel . solid_stroke_tip) $ 
-                      toPrimPath (curveTipRevPath pt theta) >>= openStroke)
+                      toPrimPath (curveTipRevPath pt theta) >>= dcOpenPath)
 
 
     

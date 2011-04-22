@@ -156,7 +156,7 @@ outerRect :: (Fractional u, InterpretUnit u)
 outerRect cbl@(xmin,ymin) (xmaj,ymaj) = 
     snapmove (xmaj-xmin, ymaj-ymin) >>= \(V2 uw uh) ->
     position cbl                    >>= \bl ->
-    strokedRectangle uw uh `at` bl
+    dcRectangle STROKE uw uh `at` bl
 
 
 

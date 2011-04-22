@@ -264,6 +264,6 @@ toAbsPath start (RelPath segs) = step1 start $ viewl segs
 
 strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
 strokeRelPath rp = 
-    promoteR1 $ \start -> toPrimPath start rp >>= openStroke
+    promoteR1 $ \start -> toPrimPath start rp >>= dcOpenPath
 
 

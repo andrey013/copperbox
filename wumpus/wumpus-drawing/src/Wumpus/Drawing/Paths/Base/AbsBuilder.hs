@@ -229,7 +229,7 @@ logSubPath spe upd subp
     | A.null subp  = mempty
     | otherwise    = pen1 (toPrimPath subp >>= localize upd . drawF)
   where
-    drawF = if spe == PATH_OPEN then openStroke else closedStroke
+    drawF = if spe == PATH_OPEN then dcOpenPath else dcClosedPath STROKE
 
 
 

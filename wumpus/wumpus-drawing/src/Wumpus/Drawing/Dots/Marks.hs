@@ -91,6 +91,8 @@ markText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
 markText ss = pushR1 ignoreAns $ ccTextline ss
 
 
+umark :: InterpretUnit u => LocGraphic Em -> LocGraphic u
+umark = uconvLocImageF
 
 
 -- | Supplied point is the center.
@@ -100,18 +102,15 @@ axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (locStraightLine v)
 
 
 markHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markHLine = markHeight >>= \h -> axialLine (hvec h)
+markHLine = umark $ axialLine (hvec 1)
 
 
 markVLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-markVLine = markHeight >>= \h -> axialLine (vvec h) 
+markVLine = umark $ axialLine (vvec 1) 
 
 
 markX :: (Fractional u, InterpretUnit u) => LocGraphic u
-markX = markHeight >>= mkX 
-  where
-    mkX h = let w = 0.75 * h
-              in axialLine (vec w h) `oplus` axialLine (vec (-w) h)
+markX = umark $ axialLine (vec 0.75 1) `oplus` axialLine (vec (-0.75) 1)
 
 
 
@@ -120,19 +119,18 @@ markPlus = markVLine `oplus` markHLine
 
 
 markCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
-markCross = markHeight >>= mkCross
-  where
-    mkCross h = axialLine (avec ang h) `oplus` axialLine (avec (-ang) h)
-    ang       = pi*0.25  
+markCross = 
+    umark $ axialLine (avec ang 1) `oplus` axialLine (avec (-ang) 1)
+  where 
+    ang = pi*0.25  
 
 -- Note - height is extended slightly to look good...
 
-pathDiamond :: (Fractional u, InterpretUnit u) 
-            => LocQuery u PrimPath
+pathDiamond :: LocQuery Em PrimPath
 pathDiamond = promoteR1 $ \pt -> 
-    markHeight >>= \h -> let cp = diamondPathAlg (0.5*h) (0.66*h) 
-                             ps = runPathAlgPoint pt cp
-                         in vertexPP ps
+    let cp = diamondPathAlg 0.5 0.66
+        ps = runPathAlgPoint pt cp
+    in vertexPP ps
 
 
 
@@ -141,10 +139,10 @@ pathDiamond = promoteR1 $ \pt ->
 -- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markDiamond = pathDiamond `renderPathWith` closedStroke
+markDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath STROKE
 
 markFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markFDiamond = pathDiamond `renderPathWith` filledPath
+markFDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath FILL 
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -155,35 +153,35 @@ markFDiamond = pathDiamond `renderPathWith` filledPath
 --
 
 markBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markBDiamond = pathDiamond `renderPathWith` borderedPath
+markBDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath FILL_STROKE
 
 
 -- | Note disk is filled.
 --
 markDisk :: (Fractional u, InterpretUnit u) => LocGraphic u
-markDisk = markHalfHeight >>= filledDisk
+markDisk = umark $ dcDisk FILL 0.5
 
 
 
 markSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
 markSquare = 
     markHeight >>= \h -> 
-    let d = 0.5*(-h) in moveStart (displace d d) $ strokedRectangle h h
+    let d = 0.5*(-h) in moveStart (displace d d) $ dcRectangle STROKE h h
     
 
 
 markCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markCircle = markHalfHeight >>= strokedDisk
+markCircle = umark $ dcDisk STROKE 0.5
 
 
 markBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-markBCircle = markHalfHeight >>= borderedDisk 
+markBCircle = umark $ dcDisk FILL_STROKE 0.5
 
 
 
 markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
 markPentagon = promoteR1 $ \pt -> 
-    pentagonPath pt >>= closedStroke
+    pentagonPath pt >>= dcClosedPath STROKE
   where
     pentagonPath pt = markHalfHeight >>= \hh -> 
                       let path1 = polygonPathAlg 5 hh
@@ -194,7 +192,7 @@ markPentagon = promoteR1 $ \pt ->
 
 
 markStar :: (Floating u, InterpretUnit u) => LocGraphic u 
-markStar = markHeight >>= \h -> starLines (0.5*h)
+markStar = umark $ starLines 0.5
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 starLines hh = promoteR1 $ \ctr -> 
@@ -207,7 +205,7 @@ starLines hh = promoteR1 $ \ctr ->
 
 
 markAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
-markAsterisk = markHeight >>= asteriskLines
+markAsterisk = umark $ asteriskLines 1
 
 asteriskLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
 asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
@@ -227,7 +225,7 @@ markOCross = markCircle `oplus` markCross
 
 
 markFOCross :: (Floating u, InterpretUnit u) => LocGraphic u
-markFOCross = markCross `oplus` markBCircle 
+markFOCross = markBCircle `oplus` markCross
 
 
 -- bkCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -236,12 +234,11 @@ markFOCross = markCross `oplus` markBCircle
 
 
 markTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-markTriangle = tripath `renderPathWith` closedStroke
+markTriangle = umark $ tripath `renderPathWith` dcClosedPath STROKE
   where
     tripath = promoteR1 $ \pt -> 
-                markHeight >>= \h -> 
-                  let (v1,v2,v3) = equilateralTriangleVertices h
-                      alg        = pathStartIsLocus [v1,v2,v3]
-                      ps         = runPathAlgPoint pt alg
-                  in vertexPP ps
+                let (v1,v2,v3) = equilateralTriangleVertices 1
+                    alg        = pathStartIsLocus [v1,v2,v3]
+                    ps         = runPathAlgPoint pt alg
+                in vertexPP ps
 

@@ -328,7 +328,8 @@ interpret (AElab fn a)      = aelaboratePO fn <$> interpret a
 
 
 interpEmpty :: InterpretUnit u => EvalM u (PosObject u)
-interpEmpty = return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
+interpEmpty = 
+    return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
 
 
 
@@ -341,7 +342,7 @@ interpEmpty = return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphi
 interpText :: (Fractional u, InterpretUnit u) 
            => EscapedText -> EvalM u (PosObject u)
 interpText esc = interpretLeaf $
-    makePosObject (textOrientationZero esc) (escTextLine esc)
+    makePosObject (textOrientationZero esc) (dcEscapedlabel esc)
    
 
 
@@ -450,4 +451,4 @@ drawBackfill rgb (Orientation xmin xmaj ymin ymaj) =
     mkVec  dx dy = displaceVec $ vec (negate $ xmin+dx) (negate $ ymin+dy)
     mkRect dx dy = let w = dx + xmin + xmaj + dx
                        h = dy + ymin + ymaj + dy
-                   in filledRectangle w h
+                   in dcRectangle FILL w h

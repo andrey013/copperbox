@@ -104,7 +104,7 @@ makeTextObject = makeEscTextObject . escapeString
 
 makeEscTextObject :: InterpretUnit u => EscapedText -> TextObject u
 makeEscTextObject esc = 
-    makePosObject (textOrientationZero esc) (escTextLine esc)
+    makePosObject (textOrientationZero esc) (dcEscapedlabel esc)
 
 
 -- Note inclided text will (probably) have to construct with the 
@@ -121,7 +121,7 @@ rescTextline :: (Real u, Floating u, Ord u, InterpretUnit u)
 rescTextline ang esc = runPosObjectR2 $ makePosObject ortt body
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero esc
-    body = incline (rescTextLine esc) ang
+    body = incline (dcREscapedlabel esc) ang
 
 -- | Rotate an Orientation about its locus.
 --

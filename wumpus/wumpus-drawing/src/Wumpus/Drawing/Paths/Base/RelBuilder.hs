@@ -34,6 +34,7 @@ module Wumpus.Drawing.Paths.Base.RelBuilder
   , move
 
   , insert
+  , penCtxUpdate
   , vamp
   , cycle
 
@@ -231,7 +232,7 @@ logSubPath spe upd v1 subp
     | R.null subp  = mempty
     | otherwise    = pen1 gf
   where
-    drawF = if spe == PATH_OPEN then openStroke else closedStroke
+    drawF = if spe == PATH_OPEN then dcOpenPath else dcClosedPath STROKE
     gf    = promoteR1 $ \pt -> 
               toPrimPath (displaceVec v1 pt) subp >>= \pp -> 
               localize upd (drawF pp)

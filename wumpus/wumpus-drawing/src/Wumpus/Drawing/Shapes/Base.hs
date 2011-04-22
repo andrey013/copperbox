@@ -123,7 +123,7 @@ makeShape f g = Shape { shape_ans_fun    = f
 
 
 strokedShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
-strokedShape = shapeToLoc closedStroke
+strokedShape = shapeToLoc (dcClosedPath STROKE)
 
 
 -- | Note - this is simplistic double stroking - draw a background 
@@ -138,7 +138,7 @@ strokedShape = shapeToLoc closedStroke
 dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
 dblStrokedShape sh = decorateR1 back fore 
   where
-    img  = shapeToLoc closedStroke sh
+    img  = shapeToLoc (dcClosedPath STROKE) sh
     back = getLineWidth >>= \lw ->
            localize (set_line_width $ lw * 3.0) img
     fore = pushR1 ignoreAns $ localize (stroke_colour white) img
@@ -146,11 +146,11 @@ dblStrokedShape sh = decorateR1 back fore
 
 
 filledShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
-filledShape = shapeToLoc filledPath
+filledShape = shapeToLoc (dcClosedPath FILL)
 
 
 borderedShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
-borderedShape = shapeToLoc borderedPath
+borderedShape = shapeToLoc (dcClosedPath FILL_STROKE)
 
 
 shapeToLoc :: InterpretUnit u
@@ -164,15 +164,15 @@ shapeToLoc drawF sh = promoteR1 $ \pt ->
 
 
 rstrokedShape :: InterpretUnit u => Shape t u -> LocThetaImage u (t u)
-rstrokedShape = shapeToLocTheta closedStroke
+rstrokedShape = shapeToLocTheta (dcClosedPath STROKE)
 
 
 rfilledShape :: InterpretUnit u => Shape t u -> LocThetaImage u (t u)
-rfilledShape = shapeToLocTheta filledPath
+rfilledShape = shapeToLocTheta (dcClosedPath FILL)
 
 
 rborderedShape :: InterpretUnit u => Shape t u -> LocThetaImage u (t u)
-rborderedShape = shapeToLocTheta borderedPath
+rborderedShape = shapeToLocTheta (dcClosedPath FILL_STROKE)
 
 
 shapeToLocTheta :: InterpretUnit u

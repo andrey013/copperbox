@@ -76,7 +76,7 @@ leftArrow tipl conn = promoteR2 $ \p0 p1 ->
         short_path      = shortenL dxl full_path
         deco            = convertTipAns $ mkl emp0 angl
     in fmap (replaceAns full_path) $ 
-         decorateR0 deco $ toPrimPath short_path >>= openStroke
+         decorateR0 deco $ toPrimPath short_path >>= dcOpenPath
 
 -- | Connector with an arrow tip at the end point (i.e right).
 --
@@ -90,7 +90,7 @@ rightArrow tipr conn = promoteR2 $ \p0 p1 ->
         short_path      = shortenR dxr full_path
         deco            = convertTipAns $ mkl emp1 angr
     in fmap (replaceAns full_path) $ 
-         decorateR0 deco $ toPrimPath short_path >>= openStroke
+         decorateR0 deco $ toPrimPath short_path >>= dcOpenPath
 
 
 -- | Connector with two arrow tips, possibly different.
@@ -109,7 +109,7 @@ leftRightArrow tipl tipr conn = promoteR2 $ \p0 p1 ->
         short_path      = shortenPath dxl dxr full_path
         deco            = convertTipAns $ mkl emp0 angl `oplus`  mkr emp1 angr  
     in fmap (replaceAns full_path) $ 
-         decorateR0 deco $ toPrimPath short_path >>= openStroke
+         decorateR0 deco $ toPrimPath short_path >>= dcOpenPath
 
 
 -- | Connector with the same arrow tip at both ends.

@@ -4,6 +4,8 @@ module DotPic where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
+import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -30,33 +32,38 @@ main1 loader = do
  
  
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fill_colour peru . set_font helvetica . metricsContext 24
+makeCtx = fill_colour peru . set_font helvetica . metricsContext 14
 
 
 dot_pic :: CtxPicture
-dot_pic = drawTracing $ tableGraphic $ 
-    [ dotHLine
-    , dotVLine
-    , dotX
-    , dotPlus
-    , dotCross
-    , dotDiamond
-    , dotDisk
-    , dotSquare
-    , dotCircle
-    , dotPentagon
-    , dotStar
-    , dotAsterisk
-    , dotOPlus
-    , dotOCross
-    , dotFOCross
-    , dotFDiamond
-    , dotText "%" 
-    , dotTriangle
+dot_pic = drawTracing $ tableGraphic dottable
+
+
+dottable :: [(String, DotLocImage Double)]
+dottable =   
+    [ ("dotHLine",      dotHLine)
+    , ("dotVLine",      dotVLine)
+    , ("dotX",          dotX)
+    , ("dotPlus",       dotPlus)
+    , ("dotCross",      dotCross)
+    , ("dotDiamond",    dotDiamond)
+    , ("dotDisk",       dotDisk)
+    , ("dotSquare",     dotSquare)
+    , ("dotCircle",     dotCircle)
+    , ("dotPentagon",   dotPentagon)
+    , ("dotStar",       dotStar)
+    , ("dotAsterisk",   dotAsterisk)
+    , ("dotOPlus",      dotOPlus)
+    , ("dotOCross",     dotOCross)
+    , ("dotFOCross",    dotFOCross)
+    , ("dotFDiamond",   dotFDiamond)
+    , ("dotText" ,      dotText "%")
+    , ("dotTriangle",   dotTriangle) 
     ]
 
 
-tableGraphic :: [DotLocImage Double] -> TraceDrawing Double ()
+
+tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
     draw $ chain_ chn_alg (map makeDotDrawing imgs) `at` pt
   where
@@ -66,32 +73,20 @@ tableGraphic imgs =
 
 
 
--- This is a bit convoluted - maybe there should be chain-run 
--- functions for TraceDrawings as well as LocGraphics?
 
-makeDotDrawing :: (Real u, Floating u, InterpretUnit u) 
-               => DotLocImage u -> LocGraphic u
-makeDotDrawing dotF = 
-    promoteR1 $ \pt -> 
-        let all_points = map (pt .+^) displacements
-        in oconcat (dashline all_points)
-                   (map (\p1 -> fmap ignoreAns $ dotF `at` p1) all_points)
+makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic 
+makeDotDrawing (name,df) = 
+    drawing `oplus` moveStart (displaceVec $ vec 140 18) lbl
   where
-    dashline = \ps -> localize attrUpd $ vertexPP ps >>= openStroke
+    drawing     = execRelBuild $ 
+                    penCtxUpdate path_style >> 
+                    insert dot >> mapM (\v -> line v >> insert dot) steps
 
-    attrUpd  :: DrawingContext -> DrawingContext
-    attrUpd  = packed_dotted . stroke_colour cadet_blue
+    lbl         = promoteR1 $ \pt -> fmap ignoreAns $ 
+                    atStartAddr (textline name) (displaceH 66 pt) WW
 
-displacements :: Num u => [Vec2 u]
-displacements = [V2 0 0, V2 64 20, V2 128 0, V2 192 20]
+    steps       = [V2 60 20, V2 60 (-20), V2 60 20]
+    dot         = locGraphic_ df
+    path_style  = packed_dotted . stroke_colour cadet_blue
 
-
--- Should these produce a DashPattern or a StrokeAttr?
-
-evenDashes :: Int -> DashPattern 
-evenDashes n = Dash 0 [(n,n)]
-
-dashOffset :: Int -> DashPattern -> DashPattern
-dashOffset _ Solid       = Solid
-dashOffset n (Dash _ xs) = Dash n xs
 

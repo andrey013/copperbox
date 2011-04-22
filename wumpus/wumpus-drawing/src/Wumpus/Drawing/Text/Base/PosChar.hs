@@ -67,7 +67,7 @@ makePosChar esc = makePosObject (charOrientationZero esc) (escText1 esc)
 
 
 escText1 :: InterpretUnit u => EscapedChar -> LocGraphic u
-escText1 ch = escTextLine $ wrapEscChar ch
+escText1 ch = dcEscapedlabel $ wrapEscChar ch
 
 
 

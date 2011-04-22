@@ -62,4 +62,4 @@ connbox = promoteR2 $ \p0 p1 ->
         tl  = displaceOrtho (V2 (-src_arm)   src_arm ) ang p0
         br  = displaceOrtho (V2   dst_arm  (-src_arm)) ang p1
         tr  = displaceOrtho (V2   dst_arm    src_arm ) ang p1
-    in vertexPP [ bl, br, tr, tl ] >>= closedStroke
+    in vertexPP [ bl, br, tr, tl ] >>= dcClosedPath STROKE

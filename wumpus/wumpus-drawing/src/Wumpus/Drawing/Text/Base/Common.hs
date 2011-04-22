@@ -58,7 +58,7 @@ posTextWithMargins obj =
 advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
 advtext esc = textVector esc >>= body
   where
-    body v = pushR1 (replaceAns v) $ escTextLine esc
+    body v = pushR1 (replaceAns v) $ dcEscapedlabel esc
 
 
 textVector :: (DrawingCtxM m, InterpretUnit u) 
