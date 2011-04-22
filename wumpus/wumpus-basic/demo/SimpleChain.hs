@@ -36,7 +36,7 @@ drawing01 = drawTracing mf
 mf :: TraceDrawing Double ()
 mf = do
     drawl (P2 0 0) $ chain_ (chainH 70) [text01, minidisk, text02, minidisk]
-    drawl (P2 0 0) $ localize (fill_colour sienna) $ filledRectangle 4 4
+    drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle FILL 4 4
 
     drawl (P2 0 200) $ chain (tableRight 6 (30,18)) $ diskList 32
 
@@ -54,16 +54,16 @@ pchain = prefix 12 (radialChain 50 (0.5*pi) (pi/8))
 -- metrics...
 --
 text01 :: LocGraphic Double
-text01 = plainTextLine "T01"
+text01 = dcTextlabel "T01"
     
 
 text02 :: LocGraphic Double
-text02 = plainTextLine "T02"
+text02 = dcTextlabel "T02"
 
 
 
 minidisk :: LocGraphic Double
-minidisk = moveStart (displaceV 7) $ filledDisk 6
+minidisk = moveStart (displaceV 7) $ dcDisk FILL 6
 
 diskList :: Int -> [LocGraphic Double]
 diskList n = take n $ unfoldr phi black
@@ -74,4 +74,3 @@ diskList n = take n $ unfoldr phi black
 sienna :: RGBi
 sienna = RGBi 160 82 45
 
--- NOTE - next in AdvGrphic is purloining of a good name.

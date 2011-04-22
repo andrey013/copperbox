@@ -51,17 +51,17 @@ mf = do
 -- metrics...
 --
 text01 :: AdvObject Double
-text01 = makeAdvObject (pure $ hvec 84) $ plainTextLine "text01"
+text01 = makeAdvObject (pure $ hvec 84) $ dcTextlabel "text01"
     
 
 text02 :: AdvObject Double
-text02 = makeAdvObject (pure $ hvec 210) $ plainTextLine "text number two"
+text02 = makeAdvObject (pure $ hvec 210) $ dcTextlabel "text number two"
 
 
 miniDisk :: AdvObject Double
 miniDisk = makeAdvObject (pure $ V2 0 0) disk1 
   where
-    disk1 = localize (fill_colour sienna) $ filledDisk 3
+    disk1 = localize (fill_colour sienna) $ dcDisk FILL 3
 
 
 sienna :: RGBi

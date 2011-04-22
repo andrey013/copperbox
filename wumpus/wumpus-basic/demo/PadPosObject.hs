@@ -65,7 +65,7 @@ shrink = padLeftPO 10
 type Trafo = PosObject Double -> PosObject Double
 
 testDraw :: Trafo -> RectAddress -> LocGraphic Double
-testDraw trafo rpos = filledDisk 2 `oplus` bbobj
+testDraw trafo rpos = dcDisk FILL 2 `oplus` bbobj
   where
     bbobj = locGraphic_ $ illustrateBoundedLocGraphic $ 
               (lrgBox trafo `startAddr` rpos)
@@ -85,6 +85,6 @@ poBox = makePosObject  mkOrtt mkRect
     mkRect = capHeight >>= \ch -> 
              descender >>= \dd -> 
              moveStart (disp_down (abs dd)) 
-                           $ borderedRectangle (5*ch) (ch + abs dd)
+                           $ dcRectangle FILL_STROKE (5*ch) (ch + abs dd)
 
 

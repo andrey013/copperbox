@@ -141,7 +141,7 @@ picAnno pic msg = halignSpace HCenter (30::Double) pic lbl
   where
     lbl = drawTracing $ body
     body :: TraceDrawing Double ()
-    body = draw $ plainTextLine msg `at` zeroPt 
+    body = draw $ dcTextlabel msg `at` zeroPt 
 
 
 rect_red :: CtxPicture
@@ -149,14 +149,14 @@ rect_red = drawTracing $ body
   where  
     body :: TraceDrawing Double ()
     body = localize (fill_colour indian_red)
-                    (draw $ borderedRectangle 30 10 `at` (P2 0 10))
+                    (draw $ dcRectangle FILL_STROKE 30 10 `at` (P2 0 10))
                  
 rect_green :: CtxPicture
 rect_green = drawTracing $ body
   where
     body :: TraceDrawing Double ()
     body = localize (fill_colour olive_drab)
-                    (draw $ borderedRectangle 15 15 `at` (P2 10 10))
+                    (draw $ dcRectangle FILL_STROKE 15 15 `at` (P2 10 10))
 
 
 rect_blue :: CtxPicture
@@ -164,7 +164,7 @@ rect_blue = drawTracing $ body
   where
     body :: TraceDrawing Double ()
     body = localize (fill_colour powder_blue)
-                    (draw $ borderedRectangle 20 30 `at` (P2 10 0))
+                    (draw $ dcRectangle FILL_STROKE 20 30 `at` (P2 10 0))
 
 
 

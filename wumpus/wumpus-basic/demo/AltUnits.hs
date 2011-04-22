@@ -43,23 +43,23 @@ combined = do
 dblLocGraphic :: LocGraphic Double
 dblLocGraphic = rect1 `oplus` rect2  
   where
-    rect1 = borderedRectangle 36 24 
-    rect2 = moveStart (displaceH 36) $ borderedRectangle 60 24 
+    rect1 = dcRectangle FILL_STROKE 36 24 
+    rect2 = moveStart (displaceH 36) $ dcRectangle FILL_STROKE 60 24 
 
 
 
 emLocGraphic :: LocGraphic Em
 emLocGraphic = localize swap_colours $  rect1 `oplus` rect2  
   where
-    rect1 = borderedRectangle 3 2 
-    rect2 = moveStart (displaceH 3) $ borderedRectangle 5 2 
+    rect1 = dcRectangle FILL_STROKE 3 2 
+    rect2 = moveStart (displaceH 3) $ dcRectangle FILL_STROKE 5 2 
 
 
 enLocGraphic :: LocGraphic En
 enLocGraphic = localize (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
   where
-    rect1 = borderedRectangle 6 4
-    rect2 = moveStart (displaceH 6) $ borderedRectangle 10 4
+    rect1 = dcRectangle FILL_STROKE 6 4
+    rect2 = moveStart (displaceH 6) $ dcRectangle FILL_STROKE 10 4
 
 
 haskell_org :: XLink

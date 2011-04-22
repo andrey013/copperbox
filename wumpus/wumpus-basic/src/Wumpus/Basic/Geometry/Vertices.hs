@@ -76,8 +76,7 @@ rectangleVertices hw hh = (bl, br, tr, tl)
 --
 -- Vertices are from the centeriod to (bl, br,apex).
 --
-isoscelesTriangleVertices :: Floating u 
-                        => u -> u -> Vertices3 u
+isoscelesTriangleVertices :: Floating u => u -> u -> Vertices3 u
 isoscelesTriangleVertices bw h = (bl, br, top) 
   where
     hw         = 0.5*bw 

@@ -22,6 +22,7 @@ module Wumpus.Basic.Geometry.Paths
     PathAlg
   , runPathAlgPoint
   , runPathAlgVec
+
   , pathStartIsStart
   , pathStartIsLocus
   , pathIterateLocus
@@ -68,6 +69,7 @@ data PathAlg u = PathAlg { path_alg_scheme  :: PathAlgScheme
 
 type instance DUnit (PathAlg u) = u
 
+
 runPathAlgPoint :: Num u => Point2 u -> PathAlg u -> [Point2 u]
 runPathAlgPoint _  (PathAlg _   [])       = []
 runPathAlgPoint p0 (PathAlg scm (v0:xs)) 
@@ -81,6 +83,7 @@ runPathAlgPoint p0 (PathAlg scm (v0:xs))
 runPathAlgVec :: PathAlg u -> (Maybe (Vec2 u), [Vec2 u]) 
 runPathAlgVec (PathAlg START_IS_LOCUS (v:vs)) = (Just v, vs)
 runPathAlgVec (PathAlg _ vs)                  = (Nothing, vs)
+
 
 
 

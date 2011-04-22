@@ -198,7 +198,7 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
         localize drawing_props $ rect1 `oplus` cross
   where
     drawing_props = cap_round . dotted_line
-    rect1         = strokedRectangle (urx-llx) (ury-lly) `at` p1
+    rect1         = dcRectangle STROKE (urx-llx) (ury-lly) `at` p1
     cross         = straightLine p1 p2 
                       `oplus` straightLine (P2 llx ury) (P2 urx lly)
 

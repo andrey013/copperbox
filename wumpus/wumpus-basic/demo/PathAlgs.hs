@@ -33,7 +33,7 @@ drawing01 = drawTracing mf1
 
 mf1 :: TraceDrawing Double ()
 mf1 = do
-    drawl (P2 0 0)   $ duplicateH 7 70 $ filledDisk 3
+    drawl (P2 0 0)   $ duplicateH 7 70 $ dcDisk FILL 3
     drawl (P2 0   0) $ distribH 70 [ rect1, rect2, diamond1, poly5
                                     , arc1, arc2, circle1 ]
 
@@ -41,34 +41,34 @@ mf1 = do
 
 rect1 :: LocGraphic Double
 rect1 = promoteR1 $ \pt -> 
-    vertexPP (runPathAlgPoint pt $ rectanglePathAlg 36 24) >>= closedStroke
+    vertexPP (runPathAlgPoint pt $ rectanglePathAlg 36 24) >>= dcClosedPath STROKE
 
 
 rect2 :: LocGraphic Double
 rect2 = promoteR1 $ \pt ->
-    vertexPP (runPathAlgPoint pt $ blRectanglePathAlg 36 24) >>= closedStroke
+    vertexPP (runPathAlgPoint pt $ blRectanglePathAlg 36 24) >>= dcClosedPath STROKE
 
 diamond1 :: LocGraphic Double
 diamond1 = promoteR1 $ \pt ->
-    vertexPP (runPathAlgPoint pt $ diamondPathAlg 16 20) >>= closedStroke
+    vertexPP (runPathAlgPoint pt $ diamondPathAlg 16 20) >>= dcClosedPath STROKE
 
 
 poly5 :: LocGraphic Double
 poly5 = promoteR1 $ \pt ->
-    vertexPP (runPathAlgPoint pt $ polygonPathAlg 5 20) >>= closedStroke
+    vertexPP (runPathAlgPoint pt $ polygonPathAlg 5 20) >>= dcClosedPath STROKE
 
 arc1 :: LocGraphic Double
 arc1 = promoteR1 $ \pt ->
-    curvePP (runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) >>= openStroke
+    curvePP (runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) >>= dcOpenPath
 
 arc2 :: LocGraphic Double
 arc2 = promoteR1 $ \pt ->
-    curvePP (runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) >>= openStroke
+    curvePP (runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) >>= dcOpenPath
 
 
 circle1 :: LocGraphic Double
 circle1 = promoteR1 $ \pt ->
-    curvePP (runPathAlgPoint pt $ circlePathAlg 20) >>= closedStroke
+    curvePP (runPathAlgPoint pt $ circlePathAlg 20) >>= dcClosedPath STROKE
 
 
 

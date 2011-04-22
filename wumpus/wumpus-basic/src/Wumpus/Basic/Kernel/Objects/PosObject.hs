@@ -349,10 +349,10 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
     dinterpCtx 3 >>= \radius -> 
     let upd = localize (fill_colour blue . dotted_line)
         bl  = pt .-^ V2 xmin ymin
-        dot = localize (fill_colour red) $ filledDisk radius `at` pt
+        dot = localize (fill_colour red) $ dcDisk FILL radius `at` pt
         hln = upd $ locStraightLine (hvec $ xmin+xmaj) `at` pt .-^ hvec xmin
         vln = upd $ locStraightLine (vvec $ ymin+ymaj) `at` pt .-^ vvec ymin
-        bdr = upd $ strokedRectangle (xmin+xmaj) (ymin+ymaj) `at` bl
+        bdr = upd $ dcRectangle STROKE (xmin+xmaj) (ymin+ymaj) `at` bl
     in bdr `oplus` hln `oplus` vln `oplus` dot
 
 

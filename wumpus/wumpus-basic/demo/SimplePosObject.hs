@@ -60,7 +60,7 @@ mf = do
 
 testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawBl rpos = 
-    filledDisk 2 `oplus` (pushR1 ignoreAns $ rectBl `startAddr` rpos)
+    dcDisk FILL 2 `oplus` (pushR1 ignoreAns $ rectBl `startAddr` rpos)
 
 rectBl :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u
 rectBl = runPosObjectR2 $ makePosObject (return ortt) (mkRectBl w h)
@@ -75,13 +75,13 @@ rectBl = runPosObjectR2 $ makePosObject (return ortt) (mkRectBl w h)
 
 -- start-point - bottom left
 mkRectBl :: InterpretUnit u => u -> u -> LocGraphic u
-mkRectBl w h = strokedRectangle w h
+mkRectBl w h = dcRectangle STROKE w h
 
 
 
 testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
 testDrawMinor rpos = 
-    filledDisk 2 `oplus` (pushR1 ignoreAns $ rectMinor `startAddr` rpos)
+    dcDisk FILL 2 `oplus` (pushR1 ignoreAns $ rectMinor `startAddr` rpos)
 
 
 rectMinor :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u 
@@ -104,5 +104,5 @@ mkRectMinor m w h = promoteR1 $ \pt ->
         br = displaceH w bl
         tr = displaceV h br
         tl = displaceV h bl
-    in vertexPP [bl, br, tr, tl] >>= closedStroke
+    in vertexPP [bl, br, tr, tl] >>= dcClosedPath STROKE
 

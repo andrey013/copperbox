@@ -28,16 +28,14 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , vertexPP
   , curvePP
 
-  , openStroke
-  , closedStroke
-  , filledPath
-  , borderedPath
+  , dcOpenPath
+  , dcClosedPath
 
   -- * Text
-  , plainTextLine
-  , rplainTextLine
-  , escTextLine
-  , rescTextLine
+  , dcTextlabel
+  , dcRTextlabel
+  , dcEscapedlabel
+  , dcREscapedlabel
 
   , KernChar
   , hkernLine
@@ -50,31 +48,19 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , straightConnector
 
   -- * Circles
-  , strokedCircle
-  , filledCircle
-  , borderedCircle
+  , dcCircle
 
   -- * Ellipses
-  , strokedEllipse
-  , rstrokedEllipse
-  , filledEllipse
-  , rfilledEllipse
-  , borderedEllipse
-  , rborderedEllipse
+  , dcEllipse
+  , dcREllipse
+
 
   -- * Rectangles
-  , strokedRectangle
-  , filledRectangle
-  , borderedRectangle
+  , dcRectangle
 
   -- * Disks  
-  , strokedDisk
-  , filledDisk
-  , borderedDisk
-
-  , strokedEllipseDisk
-  , filledEllipseDisk
-  , borderedEllipseDisk
+  , dcDisk
+  , dcEllipseDisk
 
   ) where
 
@@ -96,25 +82,58 @@ import Control.Applicative
 -- Helpers
 
 
-norm2 :: InterpretUnit u => u -> u -> Query (Double,Double)
-norm2 a b = (,) <$> normalizeCtx a <*> normalizeCtx b
-
-makeGraphic :: Query a -> (a -> Primitive) -> Graphic u
-makeGraphic qy fn = qy >>= \a -> return $ graphicAns $ prim1 $ fn a
+textR0 :: (RGBi -> FontAttr -> Primitive) -> Graphic u
+textR0 fn = 
+    textAttr >>= \(rgb,attr) -> return $ graphicAns $ prim1 $ fn rgb attr
 
 
-makeLocGraphic :: InterpretUnit u 
-               => Query a -> (a -> DPoint2 -> Primitive) -> LocGraphic u
-makeLocGraphic qy fn = promoteR1 $ \pt -> 
-    normalizeCtxF pt >>= \dpt ->
-    qy >>= \a -> return $ graphicAns $ prim1 $ fn a dpt
+strokeR0 :: (RGBi -> StrokeAttr -> Primitive) -> Graphic u
+strokeR0 fn = 
+    strokeAttr >>= \(rgb,attr) -> return $ graphicAns $ prim1 $ fn rgb attr
 
-makeLocThetaGraphic :: InterpretUnit u 
-                    => Query a -> (a -> DPoint2 -> Radian -> Primitive) 
-                    -> LocThetaGraphic u
-makeLocThetaGraphic qy fn = promoteR2 $ \pt ang -> 
-    normalizeCtxF pt >>= \dpt ->
-    qy >>= \a -> return $ graphicAns $ prim1 $ fn a dpt ang
+fillR0 :: (RGBi -> Primitive) -> Graphic u
+fillR0 fn = 
+    fillAttr >>= \rgb -> return $ graphicAns $ prim1 $ fn rgb
+
+
+fillStrokeR0 :: (RGBi -> StrokeAttr -> RGBi -> Primitive) -> Graphic u
+fillStrokeR0 fn = 
+    borderedAttr >>= \(frgb,attr,srgb) -> 
+        return $ graphicAns $ prim1 $ fn frgb attr srgb
+
+textLoc :: InterpretUnit u 
+        => (RGBi -> FontAttr -> DPoint2 -> Primitive) -> LocGraphic u
+textLoc fn = promoteR1 $ \pt -> 
+    normalizeCtxF pt >>= \dpt -> textR0 (\rgb attr -> fn rgb attr dpt)
+
+
+
+strokeLoc :: InterpretUnit u
+          => (RGBi -> StrokeAttr -> DPoint2 -> Primitive) -> LocGraphic u
+strokeLoc fn = promoteR1 $ \pt -> 
+    normalizeCtxF pt >>= \dpt -> strokeR0 (\rgb attr -> fn rgb attr dpt)
+
+
+fillLoc :: InterpretUnit u 
+        => (RGBi -> DPoint2 -> Primitive) -> LocGraphic u
+fillLoc fn = promoteR1 $ \pt ->
+    normalizeCtxF pt >>= \dpt -> fillR0 (\rgb -> fn rgb dpt)
+
+fillStrokeLoc :: InterpretUnit u
+              => (RGBi -> StrokeAttr -> RGBi -> DPoint2 -> Primitive) 
+              -> LocGraphic u
+fillStrokeLoc fn = promoteR1 $ \pt ->
+    normalizeCtxF pt >>= \dpt -> 
+    fillStrokeR0 (\frgb attr srgb -> fn frgb attr srgb dpt) 
+ 
+
+
+textLocTheta :: InterpretUnit u 
+             => (RGBi -> FontAttr -> DPoint2 -> Radian -> Primitive) 
+             -> LocThetaGraphic u
+textLocTheta fn = promoteR2 $ \pt ang -> 
+    normalizeCtxF pt >>= \dpt -> textR0 (\rgb attr -> fn rgb attr dpt ang)
+
 
 
 
@@ -183,59 +202,41 @@ curvePP xs = curvedPrimPath <$> mapM normalizeCtxF xs
 --------------------------------------------------------------------------------
 
 --
--- Drawing paths (stroke, fill, bordered)...
+-- Drawing paths (stroke, fill, fillStroke)...
 --
 
--- | 'openStroke' : @ path -> Graphic @
---
--- This is the analogue to 'ostroke' in @Wumpus-core@, but the 
--- drawing properties (colour, line width, etc.) are taken from 
--- the implicit 'DrawingContext'.
---
-openStroke :: PrimPath -> Graphic u
-openStroke pp = makeGraphic strokeAttr (\(rgb,attr) -> ostroke rgb attr pp)
 
-
-
--- | 'closedStroke' : @ path -> Graphic @
+-- | 'dcOpenPath' : @ path -> Graphic @
 --
--- This is the analogue to 'cstroke' in @Wumpus-core@, but the 
--- drawing properties (colour, line width, etc.) are taken from 
--- the implicit 'DrawingContext'.
---
-closedStroke :: PrimPath -> Graphic u
-closedStroke pp = 
-    makeGraphic strokeAttr (\(rgb,attr) -> cstroke rgb attr pp)
-
-
--- | 'filledPath' : @ path -> Graphic @
--- 
--- This is the analogue to 'fill' in @Wumpus-core@, but the 
--- fill colour is taken from the implicit 'DrawingContext'.
---
---
-filledPath :: PrimPath -> Graphic u
-filledPath pp = makeGraphic fillAttr (\rgb -> fill rgb pp)
-                 
-
--- | 'borderedPath' : @ path -> Graphic @
---
--- This is the analogue to 'fillStroke' in @Wumpus-core@, but the 
--- drawing properties (fill colour, border colour, line width, 
+-- This is the analogue to the 'ostroke' function in 
+-- @Wumpus-Core@, but the drawing properties (colour, line width, 
 -- etc.) are taken from the implicit 'DrawingContext'.
 --
---
-borderedPath :: PrimPath -> Graphic u
-borderedPath pp =
-    makeGraphic borderedAttr 
-                (\(frgb,attr,srgb) -> fillStroke frgb attr srgb pp)
+dcOpenPath :: PrimPath -> Graphic u
+dcOpenPath pp = strokeR0 (\rgb attr -> ostroke rgb attr pp)
 
+
+-- | 'dcClosedPath' : @ DrawStyle * path -> Graphic @
+--
+-- Draw a closed path according to the supplied DrawStyle
+-- ( fill | stroke | fill_stroke). 
+---
+-- Drawing properties (colour, line width, etc.) for the 
+-- respective style are taken from the implicit 'DrawingContext'.
+--
+dcClosedPath :: DrawStyle -> PrimPath -> Graphic u
+dcClosedPath FILL        pp = fillR0 (\rgb -> fill rgb pp)
+
+dcClosedPath STROKE      pp = strokeR0 (\rgb attr -> cstroke rgb attr pp)
+
+dcClosedPath FILL_STROKE pp = 
+    fillStrokeR0 (\frgb attr srgb -> fillStroke frgb attr srgb pp)
 
 
 --------------------------------------------------------------------------------
 -- Text
 
--- | 'plainTextLine' : @ string -> LocGraphic @
+-- | 'dcTextlabel' : @ string -> LocGraphic @
 -- 
 -- Create a text 'LocGraphic' - i.e. a functional type 
 -- /from Point to Graphic/.
@@ -246,16 +247,14 @@ borderedPath pp =
 -- text properties (font family, font size, colour) are taken from
 -- the implicit 'DrawingContext'.
 --
-plainTextLine :: InterpretUnit u => String -> LocGraphic u
-plainTextLine ss = 
-    makeLocGraphic textAttr 
-                   (\(rgb,attr) pt -> textlabel rgb attr ss pt)
+dcTextlabel :: InterpretUnit u => String -> LocGraphic u
+dcTextlabel ss = textLoc (\rgb attr pt -> textlabel rgb attr ss pt)
 
 
 
 
 
--- | 'rplainTextLine' : @ string -> LocThetaGraphic @
+-- | 'dcRTextlabel' : @ string -> LocThetaGraphic @
 -- 
 -- Create a text 'LocThetaGraphic' - i.e. a functional type 
 -- /from Point and Angle to Graphic/.
@@ -268,13 +267,12 @@ plainTextLine ss =
 -- 
 -- This is the analogue to 'rtextlabel' in @Wumpus-core@.
 --
-rplainTextLine :: InterpretUnit u => String -> LocThetaGraphic u
-rplainTextLine ss =
-    makeLocThetaGraphic textAttr
-                        (\(rgb,attr) pt ang -> rtextlabel rgb attr ss ang pt)
+dcRTextlabel :: InterpretUnit u => String -> LocThetaGraphic u
+dcRTextlabel ss =
+    textLocTheta (\rgb attr pt ang -> rtextlabel rgb attr ss ang pt)
 
 
--- | 'escTextline' : @ escaped_text -> LocGraphic @
+-- | 'dcEscapedlabel' : @ escaped_text -> LocGraphic @
 -- 
 -- Create a text 'LocGraphic' - i.e. a functional type 
 -- /from Point to Graphic/.
@@ -285,14 +283,13 @@ rplainTextLine ss =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-escTextLine :: InterpretUnit u => EscapedText -> LocGraphic u
-escTextLine esc =           
-    makeLocGraphic textAttr 
-                   (\(rgb,attr) pt -> escapedlabel rgb attr esc pt)
+dcEscapedlabel :: InterpretUnit u => EscapedText -> LocGraphic u
+dcEscapedlabel esc =           
+    textLoc (\rgb attr pt -> escapedlabel rgb attr esc pt)
 
 
 
--- | 'rescTextLine' : @ escaped_text -> LocThetaGraphic @
+-- | 'dcREscapedlabel' : @ escaped_text -> LocThetaGraphic @
 -- 
 -- Create a text 'LocThetaGraphic' - i.e. a functional type 
 -- /from Point and Angle to Graphic/.
@@ -307,10 +304,9 @@ escTextLine esc =
 -- the text properties (font family, font size, colour) are taken 
 -- from the implicit 'DrawingContext'.
 --
-rescTextLine :: InterpretUnit u => EscapedText -> LocThetaGraphic u
-rescTextLine esc = 
-    makeLocThetaGraphic textAttr
-                        (\(rgb,attr) pt ang -> rescapedlabel rgb attr esc ang pt)
+dcREscapedlabel :: InterpretUnit u => EscapedText -> LocThetaGraphic u
+dcREscapedlabel esc = 
+    textLocTheta (\rgb attr pt ang -> rescapedlabel rgb attr esc ang pt)
 
 
 
@@ -339,8 +335,7 @@ uconvKernChar = mapM mf
 hkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
 hkernLine ks = uconvKernChar ks >>= body   
   where
-    body ans = makeLocGraphic textAttr
-                  (\(rgb,attr) pt -> hkernlabel rgb attr ans pt)
+    body ans = textLoc (\rgb attr pt -> hkernlabel rgb attr ans pt)
 
 
 
@@ -358,8 +353,7 @@ hkernLine ks = uconvKernChar ks >>= body
 vkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
 vkernLine ks = uconvKernChar ks >>= body
   where
-    body ans = makeLocGraphic textAttr
-                  (\(rgb,attr) pt -> vkernlabel rgb attr ans pt)
+    body ans = textLoc (\rgb attr pt -> vkernlabel rgb attr ans pt)
 
 --------------------------------------------------------------------------------
 -- Lines
@@ -373,7 +367,7 @@ vkernLine ks = uconvKernChar ks >>= body
 -- from the implicit 'DrawingContext'.
 -- 
 straightLine :: InterpretUnit u => Point2 u -> Point2 u -> Graphic u
-straightLine p1 p2 = vertexPP [p1,p2] >>= openStroke
+straightLine p1 p2 = vertexPP [p1,p2] >>= dcOpenPath
 
 
 -- | 'locStraightLine' : @ vec_to -> LocGraphic @ 
@@ -390,7 +384,7 @@ straightLine p1 p2 = vertexPP [p1,p2] >>= openStroke
 -- 
 locStraightLine :: InterpretUnit u => Vec2 u -> LocGraphic u
 locStraightLine v = promoteR1 $ \pt -> 
-    apply1R1 (locPP [v]) pt >>= openStroke
+    apply1R1 (locPP [v]) pt >>= dcOpenPath
 
 
 
@@ -405,7 +399,7 @@ locStraightLine v = promoteR1 $ \pt ->
 -- 
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= openStroke
+curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= dcOpenPath
 
 
 
@@ -419,7 +413,7 @@ curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= openStroke
 -- from the implicit 'DrawingContext'.
 -- 
 straightConnector :: InterpretUnit u => ConnectorGraphic u
-straightConnector = promoteR2 $ \p0 p1 -> vertexPP [p0,p1] >>= openStroke
+straightConnector = promoteR2 $ \p0 p1 -> vertexPP [p0,p1] >>= dcOpenPath
 
 
 
@@ -435,47 +429,18 @@ circlePath r = promoteR1 $ \pt  ->
       <$> normalizeCtx r <*> normalizeCtxF pt
 
 
-
-
--- | 'strokedCircle' : @ radius -> LocGraphic @
+-- | 'dcCircle' : @ DrawStyle * radius -> LocGraphic @
 --
--- Create a stroked circle 'LocGraphic' - the implicit point is 
+-- Create a circle 'LocGraphic' - the implicit point is 
 -- center. The circle is drawn with four Bezier curves. 
 -- 
--- The line properties (colour, pen thickness, etc.) are taken 
--- from the implicit 'DrawingContext'.
+-- The respective line or fill properties for the 'DrawStyle' are 
+-- taken from the implicit 'DrawingContext'.
 -- 
-strokedCircle :: InterpretUnit u => u -> LocGraphic u
-strokedCircle r = promoteR1 $ \pt -> 
-    apply1R1 (circlePath r) pt >>= openStroke
+dcCircle :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
+dcCircle style r = promoteR1 $ \pt -> 
+    apply1R1 (circlePath r) pt >>= dcClosedPath style
 
-
-
-
--- | 'filledCircle' : @ radius -> LocGraphic @
---
--- Create a filled circle 'LocGraphic' - the implicit point is 
--- center. The circle is drawn with four Bezier curves. 
--- 
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-filledCircle :: InterpretUnit u => u -> LocGraphic u
-filledCircle r = promoteR1 $ \pt -> 
-    apply1R1 (circlePath r) pt >>= filledPath 
-
-
-
--- | 'borderedCircle' : @ radius -> LocGraphic @
---
--- Create a bordered circle 'LocGraphic' - the implicit point is 
--- center. The circle is drawn with four Bezier curves. 
--- 
--- The background fill colour and the outline stroke properties 
--- are taken from the implicit 'DrawingContext'.
--- 
-borderedCircle :: InterpretUnit u => u -> LocGraphic u
-borderedCircle r = promoteR1 $ \pt -> 
-    apply1R1 (circlePath r) pt >>= borderedPath
 
 
 --------------------------------------------------------------------------------
@@ -500,8 +465,6 @@ rellipsePath rx ry = promoteR2 $ \pt ang ->
       <$> normalizeCtx rx <*> normalizeCtx ry <*> normalizeCtxF pt
 
 
-
-
 -- | 'strokedEllipse' : @ x_radius * y_radius -> LocGraphic @
 --
 -- Create a stroked ellipse 'LocGraphic' - the implicit point is 
@@ -510,70 +473,12 @@ rellipsePath rx ry = promoteR2 $ \pt ang ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-strokedEllipse rx ry = promoteR1 $ \pt ->
-   apply1R1 (ellipsePath rx ry) pt >>= closedStroke
+dcEllipse :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcEllipse style rx ry = promoteR1 $ \pt ->
+   apply1R1 (ellipsePath rx ry) pt >>= dcClosedPath style 
 
 
-
--- | 'rstrokedEllipse' : @ x_radius * y_radius -> LocThetaGraphic @
---
--- Create a stroked ellipse 'LocThetaGraphic' - the implicit point
--- is center and the angle is rotation about the center. The 
--- ellipse is drawn with four Bezier curves. 
--- 
--- The line properties (colour, pen thickness, etc.) are taken 
--- from the implicit 'DrawingContext'.
--- 
-rstrokedEllipse :: InterpretUnit u
-                => u -> u -> LocThetaGraphic u
-rstrokedEllipse rx ry = promoteR2 $ \pt ang -> 
-    apply2R2 (rellipsePath rx ry) pt ang >>= closedStroke
-
-
-
-
--- | 'filledEllipse' : @ x_radius * y_radius -> LocGraphic @
---
--- Create a filled ellipse 'LocGraphic' - the implicit point is 
--- center. The ellipse is drawn with four Bezier curves. 
--- 
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-filledEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-filledEllipse rx ry = promoteR1 $ \pt -> 
-    apply1R1 (ellipsePath rx ry) pt >>= filledPath
-
-
--- | 'rfilledEllipse' : @ x_radius * y_radius -> LocGraphic @
---
--- Create a filled ellipse 'LocThetaGraphic' - the implicit point
--- is center and the angle is rotation about the center. The 
--- ellipse is drawn with four Bezier curves.  
--- 
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-rfilledEllipse :: InterpretUnit u => u -> u -> LocThetaGraphic u
-rfilledEllipse rx ry = promoteR2 $ \pt ang ->
-    apply2R2 (rellipsePath rx ry) pt ang >>= filledPath
-
-
-
--- | 'borderedEllipse' : @ x_radius * y_radius -> LocGraphic @
---
--- Create a bordered ellipse 'LocGraphic' - the implicit point is 
--- center. The ellipse is drawn with four Bezier curves. 
--- 
--- The background fill colour and the outline stroke properties 
--- are taken from the implicit 'DrawingContext'.
--- 
-borderedEllipse :: InterpretUnit u => u -> u -> LocGraphic u
-borderedEllipse rx ry = promoteR1 $ \pt -> 
-    apply1R1 (ellipsePath rx ry) pt >>= borderedPath
-
-
-
--- | 'rborderedEllipse' : @ x_radius * y_radius -> LocGraphic @
+-- | 'dcREllipse' : @ x_radius * y_radius -> LocGraphic @
 --
 -- Create a bordered ellipse 'LocThetaGraphic' - the implicit point
 -- is center and the angle is rotation about the center. The 
@@ -582,12 +487,10 @@ borderedEllipse rx ry = promoteR1 $ \pt ->
 -- The background fill colour and the outline stroke properties 
 -- are taken from the implicit 'DrawingContext'.
 -- 
-rborderedEllipse :: InterpretUnit u
-                 => u -> u -> LocThetaGraphic u
-rborderedEllipse rx ry = promoteR2 $ \pt ang -> 
-    apply2R2 (rellipsePath rx ry) pt ang >>= borderedPath
-
-
+dcREllipse :: InterpretUnit u
+           => DrawStyle -> u -> u -> LocThetaGraphic u
+dcREllipse style rx ry = promoteR2 $ \pt ang -> 
+    apply2R2 (rellipsePath rx ry) pt ang >>= dcClosedPath style
 
 -- Note - clipping to do...
 
@@ -601,6 +504,7 @@ rectanglePath :: InterpretUnit u
 rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 
 
+
 -- | 'strokedRectangle' : @ width * height -> LocGraphic @
 --
 -- Create a stroked rectangle 'LocGraphic' - the implicit point is 
@@ -609,41 +513,17 @@ rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-strokedRectangle w h = promoteR1 $ \pt -> 
-    apply1R1 (rectanglePath w h) pt >>= closedStroke
+dcRectangle :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcRectangle style w h = promoteR1 $ \pt -> 
+    apply1R1 (rectanglePath w h) pt >>= dcClosedPath style
 
-
--- | 'filledRectangle' : @ width * height -> LocGraphic @
---
--- Create a filled rectangle 'LocGraphic' - the implicit point is 
--- the bottom-left. 
--- 
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-filledRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-filledRectangle w h = promoteR1 $ \pt -> 
-    apply1R1 (rectanglePath w h) pt >>= filledPath
-
-
--- | 'borderedRectangle' : @ width * height -> LocGraphic @
---
--- Create a bordered rectangle 'LocGraphic' - the implicit point is 
--- bottom-left. 
--- 
--- The background fill colour and the outline stroke properties 
--- are taken from the implicit 'DrawingContext'.
--- 
-borderedRectangle :: InterpretUnit u => u -> u -> LocGraphic u
-borderedRectangle w h = promoteR1 $ \pt -> 
-    apply1R1 (rectanglePath w h) pt >>= borderedPath 
 
 ---------------------------------------------------------------------------
 
--- | 'strokedDisk' : @ radius -> LocGraphic @
+-- | 'dcDisk' : @ radius -> LocGraphic @
 --
--- Create a stroked circle 'LocGraphic' - the implicit point is 
--- the center. 
+-- Create a circle 'LocGraphic' - the implicit point is the 
+-- center. 
 -- 
 -- This is a efficient representation of circles using 
 -- PostScript\'s @arc@ or SVG\'s @circle@ in the generated 
@@ -652,66 +532,28 @@ borderedRectangle w h = promoteR1 $ \pt ->
 -- the shape.
 --
 -- For stroked circles that can be adequately scaled, use 
--- 'strokedCircle' instead.
+-- 'dcCircle' instead.
 --
--- The line properties (colour, pen thickness, etc.) are taken 
--- from the implicit 'DrawingContext'.
+-- The fill or stroke properties for the respective DrawStyle are
+-- taken from the implicit 'DrawingContext'.
 -- 
-strokedDisk :: InterpretUnit u => u -> LocGraphic u
-strokedDisk radius = 
-    normalizeCtx radius >>= body
-  where
-    body r = makeLocGraphic strokeAttr
-                (\(rgb,attr) pt -> strokeEllipse rgb attr r r pt)
+dcDisk :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
+dcDisk FILL radius = 
+    normalizeCtx radius >>= \r -> 
+    fillLoc (\rgb pt -> fillEllipse rgb r r pt)
+
+dcDisk STROKE radius = 
+    normalizeCtx radius >>= \r -> 
+    strokeLoc (\rgb attr pt -> strokeEllipse rgb attr r r pt)
+
+dcDisk FILL_STROKE radius = 
+    normalizeCtx radius >>= \r -> 
+    fillStrokeLoc (\frgb attr srgb pt -> fillStrokeEllipse srgb attr frgb r r pt)
 
 
 
 
--- | 'filledDisk' : @ radius -> LocGraphic @
---
--- Create a filled circle 'LocGraphic' - the implicit point is 
--- the center. 
--- 
--- This is a efficient representation of circles using 
--- PostScript\'s @arc@ or SVG\'s @circle@ in the generated 
--- output. As the circle is filled rather than drawn with a 
--- \"pen\" a @filledDisk@ can be scaled. 
---
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-filledDisk :: InterpretUnit u => u -> LocGraphic u
-filledDisk radius = 
-    normalizeCtx radius >>= body
-  where
-    body r = makeLocGraphic fillAttr (\rgb pt -> fillEllipse rgb r r pt)
-
-
--- | 'borderedDisk' : @ radius -> LocGraphic @
---
--- Create a bordered circle 'LocGraphic' - the implicit point is 
--- the center. 
--- 
--- This is a efficient representation of circles using 
--- PostScript\'s @arc@ or SVG\'s @circle@ in the generated 
--- output. However, bordereded circles do not draw well after 
--- non-uniform scaling - the pen width of the outline is scaled as 
--- well as the shape.
---
--- For bordered circles that can be adequately scaled, use 
--- 'borderedCircle' instead.
---
--- The background fill colour and the outline stroke properties 
--- are taken from the implicit 'DrawingContext'.
--- 
-borderedDisk :: InterpretUnit u => u -> LocGraphic u
-borderedDisk radius = 
-    normalizeCtx radius >>= body
-  where
-    body r = makeLocGraphic borderedAttr
-                (\(frgb,attr,srgb) pt -> fillStrokeEllipse frgb attr srgb r r pt)
-
-
--- | 'strokedEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
+-- | 'strokeEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
 --
 -- Create a stroked ellipse 'LocGraphic' - the implicit point is 
 -- the center. 
@@ -728,54 +570,15 @@ borderedDisk radius =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-strokedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-strokedEllipseDisk rx ry = norm2 rx ry >>= body
-  where
-    body (drx,dry) = makeLocGraphic strokeAttr
-                        (\(rgb,attr) pt -> strokeEllipse rgb attr drx dry pt)
+dcEllipseDisk :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcEllipseDisk style rx ry = 
+    normalizeCtx rx >>= \drx -> 
+    normalizeCtx ry >>= \dry -> 
+    case style of
+      FILL -> fillLoc (\rgb pt -> fillEllipse rgb drx dry pt)
+      STROKE -> strokeLoc (\rgb attr pt -> strokeEllipse rgb attr drx dry pt)
+      FILL_STROKE -> fillStrokeLoc $ 
+                       (\frgb attr srgb pt -> 
+                           fillStrokeEllipse frgb attr srgb drx dry pt)
 
-
-
--- | 'filledEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
---
--- Create a filled ellipse 'LocGraphic' - the implicit point is 
--- the center. 
--- 
--- This is a efficient representation of ellipses using 
--- PostScript\'s @arc@ or SVG\'s @ellipse@ in the generated 
--- output. As the ellipse is filled rather than drawn with a 
--- \"pen\" a @filledEllipseDisk@ can be scaled. 
---
--- The fill colour is taken from the implicit 'DrawingContext'.
--- 
-filledEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-filledEllipseDisk rx ry = norm2 rx ry >>= body
-  where
-    body (drx,dry) = makeLocGraphic fillAttr
-                        (\rgb pt -> fillEllipse rgb drx dry pt)
-
-
--- | 'borderedEllipseDisk' : @ x_radius * y_radius -> LocGraphic @
---
--- Create a bordered ellipse 'LocGraphic' - the implicit point is 
--- the center. 
--- 
--- This is a efficient representation of ellipses using 
--- PostScript\'s @arc@ or SVG\'s @ellipse@ in the generated 
--- output. However, bordereded ellipses do not draw well after 
--- non-uniform scaling - the pen width of the outline is scaled as 
--- well as the shape.
---
--- For bordered ellipses that can be adequately scaled, use 
--- 'borderedEllipse' instead.
---
--- The background fill colour and the outline stroke properties 
--- are taken from the implicit 'DrawingContext'.
--- 
-borderedEllipseDisk :: InterpretUnit u => u -> u -> LocGraphic u
-borderedEllipseDisk rx ry = norm2 rx ry >>= body
-  where
-    body (drx,dry) = makeLocGraphic borderedAttr
-                          (\(frgb,attr,srgb) pt -> 
-                                fillStrokeEllipse frgb attr srgb drx dry pt)
 

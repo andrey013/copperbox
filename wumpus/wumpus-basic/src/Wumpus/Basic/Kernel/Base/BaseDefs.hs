@@ -47,6 +47,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , intraMapPoint
   , intraMapFunctor
 
+  -- * Drawing paths
+  , DrawStyle(..)
+
   -- * Alignment
   , HAlign(..)
   , VAlign(..)  
@@ -317,6 +320,12 @@ intraMapFunctor :: (Functor f, InterpretUnit u)
                 => FontSize -> (f Double -> f Double) -> f u -> f u
 intraMapFunctor sz fn ma = dinterpF sz $ fn $ normalizeF sz ma
 
+
+--------------------------------------------------------------------------------
+-- Drawing closed paths
+
+data DrawStyle = FILL | STROKE | FILL_STROKE
+  deriving (Bounded,Enum,Eq,Ord,Show)
 
 --------------------------------------------------------------------------------
 
