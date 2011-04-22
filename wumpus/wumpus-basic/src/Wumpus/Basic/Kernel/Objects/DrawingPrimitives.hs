@@ -95,24 +95,21 @@ fillR0 :: (RGBi -> Primitive) -> Graphic u
 fillR0 fn = 
     fillAttr >>= \rgb -> return $ graphicAns $ prim1 $ fn rgb
 
-
 fillStrokeR0 :: (RGBi -> StrokeAttr -> RGBi -> Primitive) -> Graphic u
 fillStrokeR0 fn = 
     borderedAttr >>= \(frgb,attr,srgb) -> 
         return $ graphicAns $ prim1 $ fn frgb attr srgb
+
 
 textLoc :: InterpretUnit u 
         => (RGBi -> FontAttr -> DPoint2 -> Primitive) -> LocGraphic u
 textLoc fn = promoteR1 $ \pt -> 
     normalizeCtxF pt >>= \dpt -> textR0 (\rgb attr -> fn rgb attr dpt)
 
-
-
 strokeLoc :: InterpretUnit u
           => (RGBi -> StrokeAttr -> DPoint2 -> Primitive) -> LocGraphic u
 strokeLoc fn = promoteR1 $ \pt -> 
     normalizeCtxF pt >>= \dpt -> strokeR0 (\rgb attr -> fn rgb attr dpt)
-
 
 fillLoc :: InterpretUnit u 
         => (RGBi -> DPoint2 -> Primitive) -> LocGraphic u
@@ -548,7 +545,7 @@ dcDisk STROKE radius =
 
 dcDisk FILL_STROKE radius = 
     normalizeCtx radius >>= \r -> 
-    fillStrokeLoc (\frgb attr srgb pt -> fillStrokeEllipse srgb attr frgb r r pt)
+    fillStrokeLoc (\frgb attr srgb pt -> fillStrokeEllipse frgb attr srgb r r pt)
 
 
 

@@ -22,6 +22,7 @@ module Wumpus.Basic.Geometry.Paths
     PathAlg
   , runPathAlgPoint
   , runPathAlgVec
+  , drawVertexPathAlg
 
   , pathStartIsStart
   , pathStartIsLocus
@@ -40,6 +41,7 @@ module Wumpus.Basic.Geometry.Paths
   where
 
 import Wumpus.Basic.Geometry.Base
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -87,10 +89,12 @@ runPathAlgVec (PathAlg _ vs)                  = (Nothing, vs)
 
 
 
--- TO CLARIFY - should all four side paths of a rectangle be 
--- generated, or three sides with the implication that close forms
--- the fourth?
---
+drawVertexPathAlg :: InterpretUnit u 
+                  => DrawStyle -> PathAlg u -> LocGraphic u
+drawVertexPathAlg style alg = promoteR1 $ \pt -> 
+    vertexPP (runPathAlgPoint pt alg) >>= dcClosedPath style
+
+
 
 pathStartIsStart :: [Vec2 u] -> PathAlg u
 pathStartIsStart vs = PathAlg { path_alg_scheme = START_IS_START

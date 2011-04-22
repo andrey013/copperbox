@@ -72,14 +72,6 @@ import Data.VectorSpace
 
 
 
-infixr 9 `renderPathWith`
-
-renderPathWith :: LocQuery u PrimPath 
-               -> (PrimPath -> Graphic u) 
-               -> LocGraphic u
-renderPathWith qy mk = promoteR1 $ \pt -> apply1R1 qy pt >>= mk
-
-
 
 markChar :: (Real u, Floating u, InterpretUnit u) => Char -> LocGraphic u
 markChar ch = markText [ch]
@@ -124,13 +116,6 @@ markCross =
   where 
     ang = pi*0.25  
 
--- Note - height is extended slightly to look good...
-
-pathDiamond :: LocQuery Em PrimPath
-pathDiamond = promoteR1 $ \pt -> 
-    let cp = diamondPathAlg 0.5 0.66
-        ps = runPathAlgPoint pt cp
-    in vertexPP ps
 
 
 
@@ -139,10 +124,10 @@ pathDiamond = promoteR1 $ \pt ->
 -- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath STROKE
+markDiamond = umark $ drawVertexPathAlg STROKE (diamondPathAlg 0.5 0.66)
 
 markFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markFDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath FILL 
+markFDiamond = umark $ drawVertexPathAlg FILL (diamondPathAlg 0.5 0.66)
 
 
 -- Note - the (const . fn) composition doesn\'t /tell/ much about
@@ -153,7 +138,7 @@ markFDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath FILL
 --
 
 markBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-markBDiamond = umark $ pathDiamond `renderPathWith` dcClosedPath FILL_STROKE
+markBDiamond = umark $ drawVertexPathAlg FILL_STROKE (diamondPathAlg 0.5 0.66)
 
 
 -- | Note disk is filled.
@@ -164,10 +149,7 @@ markDisk = umark $ dcDisk FILL 0.5
 
 
 markSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
-markSquare = 
-    markHeight >>= \h -> 
-    let d = 0.5*(-h) in moveStart (displace d d) $ dcRectangle STROKE h h
-    
+markSquare = umark $ drawVertexPathAlg STROKE (rectanglePathAlg 1 1)
 
 
 markCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -180,14 +162,7 @@ markBCircle = umark $ dcDisk FILL_STROKE 0.5
 
 
 markPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
-markPentagon = promoteR1 $ \pt -> 
-    pentagonPath pt >>= dcClosedPath STROKE
-  where
-    pentagonPath pt = markHalfHeight >>= \hh -> 
-                      let path1 = polygonPathAlg 5 hh
-                          ps    = runPathAlgPoint pt path1
-                      in vertexPP ps 
-
+markPentagon = umark $ drawVertexPathAlg STROKE (polygonPathAlg 5 0.5)
  
 
 
@@ -225,7 +200,7 @@ markOCross = markCircle `oplus` markCross
 
 
 markFOCross :: (Floating u, InterpretUnit u) => LocGraphic u
-markFOCross = markBCircle `oplus` markCross
+markFOCross = markBCircle -- `oplus` markCross
 
 
 -- bkCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -234,11 +209,7 @@ markFOCross = markBCircle `oplus` markCross
 
 
 markTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-markTriangle = umark $ tripath `renderPathWith` dcClosedPath STROKE
+markTriangle = umark $ drawVertexPathAlg STROKE alg 
   where
-    tripath = promoteR1 $ \pt -> 
-                let (v1,v2,v3) = equilateralTriangleVertices 1
-                    alg        = pathStartIsLocus [v1,v2,v3]
-                    ps         = runPathAlgPoint pt alg
-                in vertexPP ps
-
+    alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices 1
+    fn3 = \(a,b,c) -> [a,b,c]

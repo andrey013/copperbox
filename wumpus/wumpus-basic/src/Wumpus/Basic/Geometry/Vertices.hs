@@ -76,25 +76,31 @@ rectangleVertices hw hh = (bl, br, tr, tl)
 --
 -- Vertices are from the centeriod to (bl, br,apex).
 --
+
+-- | @ height -> (BL,BR,Apex)@
+-- 
+-- Point is centroid (not incenter).
+--
 isoscelesTriangleVertices :: Floating u => u -> u -> Vertices3 u
 isoscelesTriangleVertices bw h = (bl, br, top) 
   where
-    hw         = 0.5*bw 
-    theta      = atan $ h / hw
-    centroid_h = hw * tan (0.5*theta)
-    top        = vvec (h - centroid_h)
-    br         = V2   hw  (-centroid_h)
-    bl         = V2 (-hw) (-centroid_h)
+    hw            = 0.5*bw 
+    centroid_min  = 1 * (h / 3)
+    centroid_maj  = h - centroid_min
+    top           = vvec centroid_maj
+    br            = V2   hw  (-centroid_min)
+    bl            = V2 (-hw) (-centroid_min)
+
+
 
 
 
 -- | @ side_length -> (BL,BR,Apex)@
 --
 equilateralTriangleVertices :: Floating u => u -> Vertices3 u
-equilateralTriangleVertices sl = isoscelesTriangleVertices sl h
+equilateralTriangleVertices h = isoscelesTriangleVertices sl h
   where
-    h = sl * sin (pi/3)
-
+    sl = 2.0 * (h / tan (pi/3))
 
 
 
