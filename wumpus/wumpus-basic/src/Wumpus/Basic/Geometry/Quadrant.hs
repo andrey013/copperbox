@@ -27,13 +27,16 @@ module Wumpus.Basic.Geometry.Quadrant
   , runQuadrantAlg
 
 
+  , hypotenuseQI
+  , rectangleQI
+  , qdltrlHMajorQI
+
   , rectangleQuadrantAlg
   , diamondQuadrantAlg
+  , isoscelesTriQuadrantAlg
 
-
+  -- OLD...
   , rectRadialVector
-  , rectangleQI
-
   , diamondRadialVector
   , triangleRadialVector
   , triangleQI
@@ -177,6 +180,84 @@ hypotenuseQI dx dy ang = avec ang dist
     dist     = sin base_ang * (dx / sin apex)
 
 
+
+-- | 'rectangleQI' : @ width * height * ang -> Vec @
+--
+-- Find where a line from (0,0) in direction @ang@ intersects the 
+-- top or right side of a rectangle in QI (left side is the 
+-- y-axis, bottom is the x-axis).  
+--
+-- > ang must be in the @range 0 < ang <= 90 deg@.
+-- >
+-- > width and height must be positive.
+--
+rectangleQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u    
+rectangleQI dx dy ang
+    | ang < theta  = let y1 = dx * fromRadian (tan ang) in V2 dx y1
+    | otherwise    = let x1 = dy / fromRadian (tan ang) in V2 x1 dy
+  where
+    theta               = toRadian $ atan (dy/dx)
+
+
+
+-- | 'qdltrlHMajorQI' : @ dx * dy * ang -> RadialIntersect @
+--
+-- Find where a line from (0,0) with elevation @ang@ intersects 
+-- a quadrilateral in /H Major/ form in QI.  
+--
+-- > ang must be in the @range 0 < ang <= 90@.
+-- >
+-- > dx (top width @bc@) and dy (height @ab) must be positive.
+--
+-- H Major quadrilateral (@H@ because one of the two 
+-- \"sides of interest\" is horizontal, /major/ because the 
+-- horizontal side of interest @bc@ is greater than the other 
+-- horizontal @ad@):
+--
+-- >      
+-- > b----*---c
+-- > |       /
+-- > |      %
+-- > |     /
+-- > a----d
+-- >
+--
+qdltrlHMajorQI :: (Real u, Floating u) 
+               => u -> u -> Radian -> RadialIntersect u
+qdltrlHMajorQI bc ab bcd ang = 
+    if ang >= cad then bisecting_top else bisecting_dc
+  where
+    cad           = half_pi - (atan $ toRadian $ bc / ab)
+    adc           = pi - bcd
+    star_c        = ab / (fromRadian $ tan bcd)
+    ad            = bc - star_c
+
+    -- This is intersecting bc at star.
+    --
+    bisecting_top = let theta = half_pi - ang 
+                        htop  = ab * (fromRadian $ tan theta)
+                    in V2 htop ab
+    
+    -- This is intersecting dc at percent-sign - now called z.
+    --
+    -- Know one side (ad) and two angs (zad which is ang) and (adc)
+    -- Use law of sines to find (az) :
+    -- 
+    -- >
+    -- >        z
+    -- >   . ' /
+    -- > a----d
+    -- > 
+    --
+    bisecting_dc  = let adz  = adc
+                        azd  = pi - (ang + adz)
+                        sine = fromRadian . sin
+                        az   = (ad * (sine adz)) / sine azd 
+                    in avec ang az
+
+
+
+
 -- | 'diamondQuadrantAlg' : @ width * height -> QuadrantAlg @
 --
 -- Find where a radial line extended from (0,0) with the elevation
@@ -219,58 +300,36 @@ rectangleQuadrantAlg w h = QuadrantAlg
     hh = 0.5 * h
 
 
--- | 'quadrilHMajor' : @ dx * dy * ang -> RadialIntersect @
+-- | 'isoscelesTriQuadrantAlg' : @ base_width * height -> QuadrantAlg @
 --
--- Find where a line from (0,0) with elevation @ang@ intersects 
--- a quadrilateral in /H Major/ form in QI.  
+-- Find where a radial line extended from (0,0) with the elevation
+-- @ang@ intersects with an enclosing isosceles triangle. 
+-- 
+-- Note the /center/ of the triangle (0,0) is the centroid not the
+-- incenter.
+-- 
+-- Internally the calculation is made in quadrant I (north east),
+-- symmetry is used to translate result to the other quadrants.
 --
--- > ang must be in the @range 0 < ang <= 90@.
--- >
--- > dx (top width @bc@) and dy (height @ab) must be positive.
---
--- H Major quadrilateral (@H@ because one of the two 
--- \"sides of interest\" is horizontal, /major/ because the 
--- horizontal side of interest @bc@ is greater than the other 
--- horizontal @ad@):
---
--- >      
--- > b----*--c
--- > |      /
--- > |     /
--- > a----d
--- >
---
-quadrilHMajor :: (Real u, Floating u) => u -> u -> Radian -> RadialIntersect u
-quadrilHMajor bc ab bcd ang = 
-    if ang >= cad then bisecting_top else bisecting_dc
+isoscelesTriQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
+isoscelesTriQuadrantAlg bw h = QuadrantAlg 
+      { calc_quad1 = hypotenuseQI ctrdw ymaj
+      , calc_quad2 = reflectCalcQ2ToQ1 (hypotenuseQI ctrdw ymaj)
+      , calc_quad3 = reflectCalcQ3ToQ1 (qdltrlHMajorQI hbw ymin ang)
+      , calc_quad4 = reflectCalcQ4ToQ1 (qdltrlHMajorQI hbw ymin ang)
+      }
   where
-    cad           = half_pi - (atan $ toRadian $ bc / ab)
-    adc           = pi - bcd
-    star_c        = ab / (fromRadian $ tan bcd)
-    ad            = bc - star_c
-
-    -- This is bisecting bc at star.
-    --
-    bisecting_top = let theta = half_pi - ang 
-                        htop  = ab * (fromRadian $ tan theta)
-                    in V2 htop ab
+    ymaj      = 2 * (h / 3)
+    ymin      = h / 3
+    hbw       = 0.5 * bw
+    half_apex = atan (toRadian $ hbw / h)
+    ctrdw     = ymaj * (fromRadian $ tan half_apex)
+    ang       = half_pi - half_apex
     
-    -- Know one side (ad) and two angs (zad which is ang and adc)
-    -- Use law of sines to find (az) :
-    -- 
-    -- >
-    -- >        z
-    -- >   . ' /
-    -- > a----d
-    -- > 
-    --
-    bisecting_dc  = let azd  = pi - (ang + adc)
-                        s1   = fromRadian $ sin ang
-                        s2   = fromRadian $ sin azd
-                        az  = (ad * s1) / s2 
-                    in avec ang az
 
 
+
+-- OLD ...
 
 -- | 'rectRadialVector' : @ half_width * half_height * ang -> Vec @
 --
@@ -289,23 +348,6 @@ rectRadialVector hw hh ang = fn $ circularModulo ang
          | a < 1.5*pi   = negateXY $ rectangleQI hw hh (a - pi) 
          | otherwise    = negateY  $ rectangleQI hw hh (2*pi - a)
 
-
--- | 'rectangleQI' : @ width * height * ang -> Vec @
---
--- Find where a line from (0,0) in direction @ang@ intersects the 
--- top or right side of a rectangle in QI (left side is the 
--- y-axis, bottom is the x-axis).  
---
--- > ang must be in the @range 0 < ang <= 90 deg@.
--- >
--- > width and height must be positive.
---
-rectangleQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u    
-rectangleQI dx dy ang
-    | ang < theta  = let y1 = dx * fromRadian (tan ang) in V2 dx y1
-    | otherwise    = let x1 = dy / fromRadian (tan ang) in V2 x1 dy
-  where
-    theta               = toRadian $ atan (dy/dx)
 
 
 -- | 'diamondRadialVector' : @ half_width * half_height * ang -> Vec @

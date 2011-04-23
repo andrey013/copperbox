@@ -32,6 +32,7 @@ module Wumpus.Basic.Geometry.Paths
   , blRectanglePathAlg
 
   , diamondPathAlg
+  , isoscelesTriPathAlg
   , polygonPathAlg
 
   , arcPathAlg
@@ -41,6 +42,7 @@ module Wumpus.Basic.Geometry.Paths
   where
 
 import Wumpus.Basic.Geometry.Base
+import Wumpus.Basic.Geometry.Vertices
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -95,19 +97,50 @@ drawVertexPathAlg style alg = promoteR1 $ \pt ->
     vertexPP (runPathAlgPoint pt alg) >>= dcClosedPath style
 
 
-
+-- | Create a PathAlg from the vertex list.
+--
+-- When the PathAlg is run the supplied point will be the start 
+-- of the path. 
+-- 
 pathStartIsStart :: [Vec2 u] -> PathAlg u
 pathStartIsStart vs = PathAlg { path_alg_scheme = START_IS_START
                               , path_alg_steps  = vs }
 
 
 
+-- | Create a PathAlg from the vector list - the first vector
+-- displaces the /start point/ the subsequent vectors displace 
+-- the /current tip/. Figuratively, this is rather like Logo 
+-- /turtle drawing/.
+--
+-- When the PathAlg is run, the supplied point is the /locus/ of 
+-- the path and it does not form part of the path proper.
+-- 
+-- This constructor is typically used to make /shape paths/ where
+-- the supplied point is the center and the generated path is the 
+-- border.
+-- 
 pathStartIsLocus :: [Vec2 u] -> PathAlg u
 pathStartIsLocus vs = PathAlg { path_alg_scheme = START_IS_LOCUS
                               , path_alg_steps  = vs }
 
--- | Note this creates a path very the first vector represents a
+
+-- | Note this creates a path where the first vector represents a
 -- @moveto@, then the subsequence vectors represent @linetos@.
+-- 
+
+
+-- | Create a PathAlg from the vector list - each vector in the 
+-- input list iterates to the start point rather then the 
+-- cumulative tip.
+--
+-- When the PathAlg is run, the supplied point is the /locus/ of 
+-- the path and it does not form part of the path proper.
+-- 
+-- Like 'pathStartIsLocus', this constructor is typically used to 
+-- make /shape paths/. Some shapes are easier to express as 
+-- iterated displacements of the center rather than 
+-- /turtle drawing/. 
 -- 
 pathIterateLocus :: Num u => [Vec2 u] -> PathAlg u
 pathIterateLocus []      = pathStartIsLocus []
@@ -119,19 +152,26 @@ pathIterateLocus (v0:xs) = pathStartIsLocus $ v0 : step v0 xs
 
 
 
--- | Supplied point is /center/, the genearated points are 
--- counter-clockwise so [ bl, br, tr, tl ] .
+-- | Implicit start point is /center/, the genearated moves are 
+-- counter-clockwise so the move-list is
+--
+-- > [ moveto_bl, moveto_br, moveto_tr, moveto_tl ]
 --
 rectanglePathAlg :: Fractional u => u -> u -> PathAlg u
-rectanglePathAlg w h = pathStartIsLocus [ vbl, vbr, vtr, vtl ]
+rectanglePathAlg w h = 
+    pathStartIsLocus [ to_bl, to_br, to_tr, to_tl ]
   where
-    vbl = vec (negate $ 0.5*w) (negate $ 0.5*h)
-    vbr = hvec w
-    vtr = vvec h
-    vtl = hvec (-w) 
+    to_bl = vec (negate $ 0.5*w) (negate $ 0.5*h)
+    to_br = hvec w
+    to_tr = vvec h
+    to_tl = hvec (-w) 
 
--- | Supplied point is /bottom-left/, subsequent points are 
--- counter-clockwise so [ bl, br, tr, tl ] .
+
+
+-- | Implicit start point is /bottom-left/, subsequent moves are 
+-- counter-clockwise so the move-list is:
+--
+-- > [ moveto_br, moveto_tr, moveto_tl, moveto_bl ]
 --
 blRectanglePathAlg :: Num u => u -> u -> PathAlg u
 blRectanglePathAlg w h = pathStartIsStart [ vbr, vtr, vtl, vbl ]
@@ -153,6 +193,19 @@ diamondPathAlg hw hh = pathIterateLocus [ vs,ve,vn,vw ]
     ve = hvec hw
     vn = vvec hh
     vw = hvec (-hw)
+
+
+
+-- | 'isoscelesTriPathAlg' : @ base_width * height -> PathAlg @
+--
+-- Start point is centtroid not incenter.
+--
+isoscelesTriPathAlg :: Floating u => u -> u -> PathAlg u
+isoscelesTriPathAlg bw h = 
+    pathIterateLocus [ to_bl, to_br, to_apex ]
+  where
+    (to_bl, to_br, to_apex) = isoscelesTriangleVertices bw h
+
     
 
 -- | 'polygonPathAlg' : @ num_points * radius -> PathAlg @ 
@@ -167,6 +220,8 @@ polygonPathAlg n radius = pathIterateLocus $ unfoldr phi (0,top)
                 | otherwise = Nothing
 
 
+-- | 'arcPathAlg' : @ radius * angle1 * angle2 ->  PathAlg @ 
+--
 arcPathAlg :: Floating u => u -> Radian -> Radian -> PathAlg u
 arcPathAlg r ang1 ang2 = pathStartIsLocus $ step1 $ arcdiv ang1 ang2
   where
