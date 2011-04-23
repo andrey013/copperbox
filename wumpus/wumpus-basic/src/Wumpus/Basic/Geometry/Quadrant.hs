@@ -21,7 +21,15 @@ module Wumpus.Basic.Geometry.Quadrant
     Quadrant(..)
 
   , quadrant
-  , qiModulo
+
+  , RadialIntersect
+  , QuadrantAlg(..)
+  , runQuadrantAlg
+
+
+  , rectangleQuadrantAlg
+  , diamondQuadrantAlg
+
 
   , rectRadialVector
   , rectangleQI
@@ -35,6 +43,8 @@ module Wumpus.Basic.Geometry.Quadrant
 
   ) 
   where
+
+import Wumpus.Basic.Geometry.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -54,29 +64,212 @@ quadrant = fn . circularModulo
          | otherwise    = QUAD_SE
 
 
--- | 'qiModulo' : @ ang -> Radian @
+-- | 'reflectionModuloQI' : @ ang -> Radian @
 -- 
--- Modulo an angle so it lies in quadrant I (north east), 
--- i.e. modulo into the range @0..(pi/2)@.
+-- Modulo an angle so it lies in quadrant I (north east) 
+-- /by reflection/ - thats to say:
+-- 
+-- > If the angle is in QI the result is identity.
 --
-qiModulo :: Radian -> Radian 
-qiModulo r = d2r $ dec + (fromIntegral $ i `mod` 90)
+-- > If the angle is in QII it is reflected about the Y-axis.
+-- >
+-- > e.g. 170deg becomes 10deg.
+-- 
+-- > If the angle is in QIII it is reflected about both axes.
+-- >
+-- > e.g. 190deg becomes 10deg.
+-- 
+-- > If the angle is in QIV it is reflected about the X-axis.
+-- >
+-- > e.g. 350deg becomes 10deg.
+-- 
+--
+reflectionModuloQI :: Radian -> Radian
+reflectionModuloQI = step . circularModulo 
   where
-    i       :: Integer
-    dec     :: Double
-    (i,dec) = properFraction $ r2d r
+    step ang | ang < 0.5*pi   = ang
+             | ang < pi       = pi - ang
+             | ang < 1.5*pi   = ang - pi
+             | otherwise      = two_pi - ang
 
 
---------------------------------------------------------------------------------
+type RadialIntersect u = Radian -> Vec2 u
 
+
+-- | A /Quadrant algorithm/.
+--
+data QuadrantAlg u = QuadrantAlg 
+      { calc_quad1 :: RadialIntersect u
+      , calc_quad2 :: RadialIntersect u
+      , calc_quad3 :: RadialIntersect u
+      , calc_quad4 :: RadialIntersect u
+      }
+
+runQuadrantAlg :: Radian -> QuadrantAlg u -> Vec2 u
+runQuadrantAlg a qa = step (circularModulo a)
+  where
+    step ang | ang < half_pi  = calc_quad1 qa ang
+             | ang < pi       = calc_quad2 qa ang
+             | ang < 1.5*pi   = calc_quad3 qa ang
+             | otherwise      = calc_quad4 qa ang
+
+    
+
+-- | Reuse a QI algorithm to work in QII /provided/ it works
+-- under reflection.
+--
+reflectCalcQ2ToQ1 :: Num u => RadialIntersect u -> RadialIntersect u
+reflectCalcQ2ToQ1 q1Fun = negateX . q1Fun . reflectionModuloQI
+
+
+-- | Reuse a QI algorithm to work in QIII /provided/ it works
+-- under reflection.
+--
+reflectCalcQ3ToQ1 :: Num u => RadialIntersect u -> RadialIntersect u
+reflectCalcQ3ToQ1 q1Fun = negateXY . q1Fun . reflectionModuloQI
+
+
+-- | Reuse a QI algorithm to work in QIV /provided/ it works
+-- under reflection.
+--
+reflectCalcQ4ToQ1 :: Num u => RadialIntersect u -> RadialIntersect u
+reflectCalcQ4ToQ1 q1Fun = negateY . q1Fun . reflectionModuloQI
+
+
+
+--
+-- Negating vectors - aka relfecting them:
+
+-- | Negate a vector in X - aka reflect it about the Y-axis.
+--
 negateX :: Num u => Vec2 u -> Vec2 u
 negateX (V2 x y) = V2 (-x) y
 
+-- | Negate a vector in Y - aka reflect it about the X-axis.
+--
 negateY :: Num u => Vec2 u -> Vec2 u
 negateY (V2 x y) = V2 x (-y)
 
+-- | Negate a vector in X and Y - aka reflect it about both axes.
+--
 negateXY :: Num u => Vec2 u -> Vec2 u
 negateXY (V2 x y) = V2 (-x) (-y)
+
+--------------------------------------------------------------------------------
+
+
+
+-- | 'triangleQI' : @ dx * dy -> RadialIntersect @
+--
+-- Find where a line from (0,0) with elevation @ang@ intersects 
+-- the hypotenuse a right triangle in QI (the legs of the triangle 
+-- take the x and y-axes).  
+--
+-- > ang must be in the @range 0 < ang <= 90@.
+-- >
+-- > width and height must be positive.
+--
+hypotenuseQI :: (Real u, Floating u) => u -> u -> RadialIntersect u
+hypotenuseQI dx dy ang = avec ang dist
+  where
+    base_ang = atan (dy / dx)
+    apex     = pi - (base_ang + fromRadian ang)
+    dist     = sin base_ang * (dx / sin apex)
+
+
+-- | 'diamondQuadrantAlg' : @ width * height -> QuadrantAlg @
+--
+-- Find where a radial line extended from (0,0) with the elevation
+-- @ang@ intersects with an enclosing diamond. The diamond is 
+-- centered at (0,0).
+-- 
+-- Internally the calculation is made in quadrant I (north east),
+-- symmetry is used to translate result to the other quadrants.
+--
+diamondQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
+diamondQuadrantAlg w h = QuadrantAlg 
+      { calc_quad1 = hypotenuseQI hw hh
+      , calc_quad2 = reflectCalcQ2ToQ1 (hypotenuseQI hw hh)
+      , calc_quad3 = reflectCalcQ3ToQ1 (hypotenuseQI hw hh)
+      , calc_quad4 = reflectCalcQ4ToQ1 (hypotenuseQI hw hh)
+      }
+  where
+    hw = 0.5 * w
+    hh = 0.5 * h
+
+
+-- | 'rectangleQuadrantAlg' : @ width * height -> QuadrantAlg @
+--
+-- Find where a radial line extended from (0,0) with the elevation
+-- @ang@ intersects with an enclosing rectangle. The rectangle is 
+-- centered at (0,0).
+-- 
+-- Internally the calculation is made in quadrant I (north east),
+-- symmetry is used to translate result to the other quadrants.
+--
+rectangleQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
+rectangleQuadrantAlg w h = QuadrantAlg 
+      { calc_quad1 = rectangleQI hw hh
+      , calc_quad2 = reflectCalcQ2ToQ1 (rectangleQI hw hh)
+      , calc_quad3 = reflectCalcQ3ToQ1 (rectangleQI hw hh)
+      , calc_quad4 = reflectCalcQ4ToQ1 (rectangleQI hw hh)
+      }
+  where
+    hw = 0.5 * w
+    hh = 0.5 * h
+
+
+-- | 'quadrilHMajor' : @ dx * dy * ang -> RadialIntersect @
+--
+-- Find where a line from (0,0) with elevation @ang@ intersects 
+-- a quadrilateral in /H Major/ form in QI.  
+--
+-- > ang must be in the @range 0 < ang <= 90@.
+-- >
+-- > dx (top width @bc@) and dy (height @ab) must be positive.
+--
+-- H Major quadrilateral (@H@ because one of the two 
+-- \"sides of interest\" is horizontal, /major/ because the 
+-- horizontal side of interest @bc@ is greater than the other 
+-- horizontal @ad@):
+--
+-- >      
+-- > b----*--c
+-- > |      /
+-- > |     /
+-- > a----d
+-- >
+--
+quadrilHMajor :: (Real u, Floating u) => u -> u -> Radian -> RadialIntersect u
+quadrilHMajor bc ab bcd ang = 
+    if ang >= cad then bisecting_top else bisecting_dc
+  where
+    cad           = half_pi - (atan $ toRadian $ bc / ab)
+    adc           = pi - bcd
+    star_c        = ab / (fromRadian $ tan bcd)
+    ad            = bc - star_c
+
+    -- This is bisecting bc at star.
+    --
+    bisecting_top = let theta = half_pi - ang 
+                        htop  = ab * (fromRadian $ tan theta)
+                    in V2 htop ab
+    
+    -- Know one side (ad) and two angs (zad which is ang and adc)
+    -- Use law of sines to find (az) :
+    -- 
+    -- >
+    -- >        z
+    -- >   . ' /
+    -- > a----d
+    -- > 
+    --
+    bisecting_dc  = let azd  = pi - (ang + adc)
+                        s1   = fromRadian $ sin ang
+                        s2   = fromRadian $ sin azd
+                        az  = (ad * s1) / s2 
+                    in avec ang az
+
 
 
 -- | 'rectRadialVector' : @ half_width * half_height * ang -> Vec @
@@ -108,11 +301,11 @@ rectRadialVector hw hh ang = fn $ circularModulo ang
 -- > width and height must be positive.
 --
 rectangleQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u    
-rectangleQI w h ang
-    | ang < theta  = let y = w * fromRadian (tan ang) in V2 w y
-    | otherwise    = let x = h / fromRadian (tan ang) in V2 x h
+rectangleQI dx dy ang
+    | ang < theta  = let y1 = dx * fromRadian (tan ang) in V2 dx y1
+    | otherwise    = let x1 = dy / fromRadian (tan ang) in V2 x1 dy
   where
-    theta               = toRadian $ atan (h/w)
+    theta               = toRadian $ atan (dy/dx)
 
 
 -- | 'diamondRadialVector' : @ half_width * half_height * ang -> Vec @
@@ -301,6 +494,5 @@ rightTrapeziumBaseWidth tw h tr_ang
     | tr_ang > half_pi = tw + extend
     | otherwise        = tw
   where
-    half_pi  = 0.5*pi
     shorten  = h / fromRadian (tan tr_ang)
     extend   = let lr_ang = pi - tr_ang in h / fromRadian (tan lr_ang)

@@ -50,7 +50,7 @@ import Data.AffineSpace                         -- package: vector-space
 -- Lines are infinite they are represented by points on them, 
 -- they are not line segments.
 --
--- An answer of @Nothing@ may indicate wither the lines coincide
+-- An answer of @Nothing@ may indicate either the lines coincide
 -- or the are parallel.
 --
 interLineLine :: Fractional u 
