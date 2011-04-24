@@ -35,7 +35,6 @@ module Wumpus.Basic.Geometry.Quadrant
   , rectangleQuadrantAlg
   , diamondQuadrantAlg
   , isoscelesTriQuadrantAlg
-  , parallelogramQuadrantAlg
 
   -- OLD...
   , rectRadialVector
@@ -50,7 +49,6 @@ module Wumpus.Basic.Geometry.Quadrant
   where
 
 import Wumpus.Basic.Geometry.Base
-import Wumpus.Basic.Geometry.Vertices
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -390,22 +388,6 @@ isoscelesTriQuadrantAlg bw h =
     qtop      = hypotenuseQI ctrdw ymaj
     qbase     = hquadrilAcuteQI hbw ymin ang
     
-
-
-parallelogramQuadrantAlg :: (Real u, Floating u) 
-                         => u -> u -> Radian -> QuadrantAlg u
-parallelogramQuadrantAlg w h bl_ang 
-    | bl_ang <= half_pi = makeReflectionQuadrantAlg qacute qobtus qacute qobtus
-    | otherwise         = makeReflectionQuadrantAlg qobtus qacute qobtus qacute
-  where
-    (xmin,xmaj) = parallelogramHComponents w h bl_ang
-    hh          = 0.5 * h
-    br_ang      = pi - bl_ang
-
-    qacute      = hquadrilAcuteQI xmaj hh bl_ang
-    qobtus      = hquadrilObtusQI xmin hh br_ang
-
-
 
 
 -- OLD ...

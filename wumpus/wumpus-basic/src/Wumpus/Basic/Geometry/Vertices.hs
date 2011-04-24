@@ -31,7 +31,6 @@ module Wumpus.Basic.Geometry.Vertices
   , equilateralTriangleVertices
 
   , parallelogramVertices
-  , parallelogramHComponents
 
   , trapeziumVertices
 
@@ -118,15 +117,21 @@ parallelogramVertices w h bl_ang = (bl, br, tr, tl)
     tr              = V2   xminor    hh     -- topright adds minor
 
 
+
+-- | This is probably wrong and needs more thought.
+-- 
+-- The concern is for parallelograms that are taller than they 
+-- are wide...
+--
 parallelogramHComponents :: Fractional u => u -> u -> Radian -> (u,u)
-parallelogramHComponents w h bl_ang = (xminor,xmajor)
+parallelogramHComponents bw h bl_ang = (xminor,xmajor)
   where
     half_ang  = 0.5 * bl_ang
     hh        = 0.5 * h
     
     -- | find xminor (adj) from half_angle and hh (op) 
     xminor    = hh / (fromRadian $ tan half_ang)
-    xmajor    = w - xminor
+    xmajor    = bw - xminor
 
 
 

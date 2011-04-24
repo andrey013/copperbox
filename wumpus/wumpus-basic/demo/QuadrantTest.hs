@@ -55,9 +55,17 @@ tdrawing = do
     drawl (P2 300 0) $ dcDisk FILL 3
     drawl (P2 300 0) $ diskV (qdQI (dd2r 10))
 
-    drawl (P2 0 120) $ para1
-    drawl (P2 0 120) $ dcDisk FILL 3
-    drawl (P2 0 120) $ diskV (runQuadrantAlg (dd2r 5) paraQA)
+    -- This does not work - there are pathological parallelograms
+    -- with parts of 3 lines in a quadrant.
+    -- 
+    -- A quadrant alg is not sufficient.
+    --
+
+    drawl (P2   0 120) $ para1
+    drawl (P2   0 120) $ dcDisk FILL 3
+
+    drawl (P2 150 120) $ para2
+    drawl (P2 150 120) $ dcDisk FILL 3
 
 
 dd2r :: Double -> Radian
@@ -93,11 +101,11 @@ triQA = isoscelesTriQuadrantAlg 40 60
 
 
 para1 :: LocGraphic Double 
-para1 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 45))
+para1 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 30))
 
 
-paraQA :: QuadrantAlg Double
-paraQA = parallelogramQuadrantAlg 60 40 (dd2r 45)
+para2 :: LocGraphic Double 
+para2 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 120))
 
 
 diskV :: Vec2 Double -> LocGraphic Double
