@@ -29,7 +29,10 @@ module Wumpus.Basic.Geometry.Vertices
   , rectangleVertices  
   , isoscelesTriangleVertices
   , equilateralTriangleVertices
+
   , parallelogramVertices
+  , parallelogramHComponents
+
   , trapeziumVertices
 
   ) 
@@ -104,14 +107,26 @@ equilateralTriangleVertices h = isoscelesTriangleVertices sl h
 
 
 
-parallelogramVertices :: Floating u => u -> u -> u -> Vertices4 u
-parallelogramVertices bw_minor bw_major h = (bl, br, tr, tl)
+parallelogramVertices :: Floating u => u -> u -> Radian -> Vertices4 u
+parallelogramVertices w h bl_ang = (bl, br, tr, tl)
   where
-    hh = 0.5 * h
-    bl = V2 (-bw_minor) (-hh)
-    br = V2   bw_major  (-hh)
-    tl = V2 (-bw_major)   hh     -- topleft subtracts major
-    tr = V2   bw_minor    hh     -- topright adds minor
+    hh              = 0.5 * h
+    (xminor,xmajor) = parallelogramHComponents w h bl_ang
+    bl              = V2 (-xminor) (-hh)
+    br              = V2   xmajor  (-hh)
+    tl              = V2 (-xmajor)   hh     -- topleft subtracts major
+    tr              = V2   xminor    hh     -- topright adds minor
+
+
+parallelogramHComponents :: Fractional u => u -> u -> Radian -> (u,u)
+parallelogramHComponents w h bl_ang = (xminor,xmajor)
+  where
+    half_ang  = 0.5 * bl_ang
+    hh        = 0.5 * h
+    
+    -- | find xminor (adj) from half_angle and hh (op) 
+    xminor    = hh / (fromRadian $ tan half_ang)
+    xmajor    = w - xminor
 
 
 

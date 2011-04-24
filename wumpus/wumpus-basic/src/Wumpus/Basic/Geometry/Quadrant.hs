@@ -29,12 +29,13 @@ module Wumpus.Basic.Geometry.Quadrant
 
   , hypotenuseQI
   , rectangleQI
-  , qdltrlHMajorQI
-  , qdltrlHMinorQI
+  , hquadrilAcuteQI
+  , hquadrilObtusQI
 
   , rectangleQuadrantAlg
   , diamondQuadrantAlg
   , isoscelesTriQuadrantAlg
+  , parallelogramQuadrantAlg
 
   -- OLD...
   , rectRadialVector
@@ -49,6 +50,7 @@ module Wumpus.Basic.Geometry.Quadrant
   where
 
 import Wumpus.Basic.Geometry.Base
+import Wumpus.Basic.Geometry.Vertices
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -159,6 +161,27 @@ negateY (V2 x y) = V2 x (-y)
 negateXY :: Num u => Vec2 u -> Vec2 u
 negateXY (V2 x y) = V2 (-x) (-y)
 
+
+
+-- | Builder for the usual case of /Quadrant algorithm/ where
+-- each quadrant is calculated in QI then the answer is reflected 
+-- to the respective quadrant.
+--
+-- Calulating for QI is usually easier...
+--
+makeReflectionQuadrantAlg :: Num u 
+                          => RadialIntersect u 
+                          -> RadialIntersect u
+                          -> RadialIntersect u 
+                          -> RadialIntersect u
+                          -> QuadrantAlg u
+makeReflectionQuadrantAlg f1 f2 f3 f4 = 
+    QuadrantAlg { calc_quad1 = f1
+                , calc_quad2 = reflectCalcQ2ToQ1 f2
+                , calc_quad3 = reflectCalcQ3ToQ1 f3
+                , calc_quad4 = reflectCalcQ4ToQ1 f4
+                }
+
 --------------------------------------------------------------------------------
 
 
@@ -201,19 +224,18 @@ rectangleQI dx dy ang
 
 
 
--- | 'qdltrlHMajorQI' : @ dx * dy * ang -> RadialIntersect @
+-- | 'hquadrilAcuteQI' : @ dx * dy * ang -> RadialIntersect @
 --
 -- Find where a line from (0,0) with elevation @ang@ intersects 
--- a quadrilateral in /H Major/ form in QI.  
+-- a quadrilateral in /H acute/ form in QI.  
 --
 -- > ang must be in the @range 0 < ang <= 90@.
 -- >
 -- > dx (top width @bc@) and dy (height @ab) must be positive.
 --
--- H Major quadrilateral (@H@ because one of the two 
--- \"sides of interest\" is horizontal, /major/ because the 
--- horizontal side of interest @bc@ is longer than the other 
--- horizontal @ad@):
+-- Horizontal acute quadrilateral (@H@ because one of the two 
+-- \"sides of interest\" is horizontal, /acute/ because the 
+-- angle of interest @bcd@ is acute:
 --
 -- >      
 -- >  b---*----c
@@ -223,9 +245,9 @@ rectangleQI dx dy ang
 -- >  a----d
 -- >
 --
-qdltrlHMajorQI :: (Real u, Floating u) 
-               => u -> u -> Radian -> RadialIntersect u
-qdltrlHMajorQI bc ab bcd ang = 
+hquadrilAcuteQI :: (Real u, Floating u) 
+                => u -> u -> Radian -> RadialIntersect u
+hquadrilAcuteQI bc ab bcd ang = 
     if ang >= cad then bisectingHTop ab ang else bisecting_dc ad adc ang
   where
     cad           = half_pi - (atan $ toRadian $ bc / ab)
@@ -270,19 +292,18 @@ bisectingHTop ab ang = V2 bo ab
     bo  = ab * (fromRadian $ tan bao)
      
 
--- | 'qdltrlHMinorQI' : @ dx * dy * ang -> RadialIntersect @
+-- | 'hquadrilObtusQI' : @ dx * dy * ang -> RadialIntersect @
 --
 -- Find where a line from (0,0) with elevation @ang@ intersects 
--- a quadrilateral in /H Minor/ form in QI.  
+-- a quadrilateral in /H obtus/ form in QI.  
 --
 -- > ang must be in the @range 0 < ang <= 90@.
 -- >
 -- > dx (top width @bc@) and dy (height @ab) must be positive.
 --
--- H Minor quadrilateral (@H@ because one of the two 
--- \"sides of interest\" is horizontal, /minor/ because the 
--- horizontal side of interest @bc@ is shorter than the other 
--- horizontal @ad@):
+-- H Obtus quadrilateral (@H@ because one of the two 
+-- \"sides of interest\" is horizontal, /obtus/ because the 
+-- angle interest @bcd@ is obtuse:
 --
 -- >      
 -- >  b---*----c
@@ -292,9 +313,9 @@ bisectingHTop ab ang = V2 bo ab
 -- >  a------------d
 -- >
 --
-qdltrlHMinorQI :: (Real u, Floating u) 
-               => u -> u -> Radian -> RadialIntersect u
-qdltrlHMinorQI bc ab bcd ang = 
+hquadrilObtusQI :: (Real u, Floating u) 
+                => u -> u -> Radian -> RadialIntersect u
+hquadrilObtusQI bc ab bcd ang = 
     if ang < cad then bisecting_dc ad adc ang else bisectingHTop ab ang 
   where
     cad           = half_pi - (atan $ toRadian $ bc / ab)
@@ -321,15 +342,11 @@ qdltrlHMinorQI bc ab bcd ang =
 -- symmetry is used to translate result to the other quadrants.
 --
 diamondQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
-diamondQuadrantAlg w h = QuadrantAlg 
-      { calc_quad1 = hypotenuseQI hw hh
-      , calc_quad2 = reflectCalcQ2ToQ1 (hypotenuseQI hw hh)
-      , calc_quad3 = reflectCalcQ3ToQ1 (hypotenuseQI hw hh)
-      , calc_quad4 = reflectCalcQ4ToQ1 (hypotenuseQI hw hh)
-      }
+diamondQuadrantAlg w h = makeReflectionQuadrantAlg q1 q1 q1 q1
   where
     hw = 0.5 * w
     hh = 0.5 * h
+    q1 = hypotenuseQI hw hh
 
 
 -- | 'rectangleQuadrantAlg' : @ width * height -> QuadrantAlg @
@@ -342,16 +359,11 @@ diamondQuadrantAlg w h = QuadrantAlg
 -- symmetry is used to translate result to the other quadrants.
 --
 rectangleQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
-rectangleQuadrantAlg w h = QuadrantAlg 
-      { calc_quad1 = rectangleQI hw hh
-      , calc_quad2 = reflectCalcQ2ToQ1 (rectangleQI hw hh)
-      , calc_quad3 = reflectCalcQ3ToQ1 (rectangleQI hw hh)
-      , calc_quad4 = reflectCalcQ4ToQ1 (rectangleQI hw hh)
-      }
+rectangleQuadrantAlg w h = makeReflectionQuadrantAlg q1 q1 q1 q1
   where
     hw = 0.5 * w
     hh = 0.5 * h
-
+    q1 = rectangleQI hw hh
 
 -- | 'isoscelesTriQuadrantAlg' : @ base_width * height -> QuadrantAlg @
 --
@@ -365,12 +377,8 @@ rectangleQuadrantAlg w h = QuadrantAlg
 -- symmetry is used to translate result to the other quadrants.
 --
 isoscelesTriQuadrantAlg :: (Real u, Floating u) => u -> u -> QuadrantAlg u
-isoscelesTriQuadrantAlg bw h = QuadrantAlg 
-      { calc_quad1 = hypotenuseQI ctrdw ymaj
-      , calc_quad2 = reflectCalcQ2ToQ1 (hypotenuseQI ctrdw ymaj)
-      , calc_quad3 = reflectCalcQ3ToQ1 (qdltrlHMajorQI hbw ymin ang)
-      , calc_quad4 = reflectCalcQ4ToQ1 (qdltrlHMajorQI hbw ymin ang)
-      }
+isoscelesTriQuadrantAlg bw h = 
+    makeReflectionQuadrantAlg qtop qtop qbase qbase
   where
     ymaj      = 2 * (h / 3)
     ymin      = h / 3
@@ -378,7 +386,25 @@ isoscelesTriQuadrantAlg bw h = QuadrantAlg
     half_apex = atan (toRadian $ hbw / h)
     ctrdw     = ymaj * (fromRadian $ tan half_apex)
     ang       = half_pi - half_apex
+
+    qtop      = hypotenuseQI ctrdw ymaj
+    qbase     = hquadrilAcuteQI hbw ymin ang
     
+
+
+parallelogramQuadrantAlg :: (Real u, Floating u) 
+                         => u -> u -> Radian -> QuadrantAlg u
+parallelogramQuadrantAlg w h bl_ang 
+    | bl_ang <= half_pi = makeReflectionQuadrantAlg qacute qobtus qacute qobtus
+    | otherwise         = makeReflectionQuadrantAlg qobtus qacute qobtus qacute
+  where
+    (xmin,xmaj) = parallelogramHComponents w h bl_ang
+    hh          = 0.5 * h
+    br_ang      = pi - bl_ang
+
+    qacute      = hquadrilAcuteQI xmaj hh bl_ang
+    qobtus      = hquadrilObtusQI xmin hh br_ang
+
 
 
 

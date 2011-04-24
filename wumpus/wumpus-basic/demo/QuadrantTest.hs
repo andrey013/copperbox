@@ -55,6 +55,10 @@ tdrawing = do
     drawl (P2 300 0) $ dcDisk FILL 3
     drawl (P2 300 0) $ diskV (qdQI (dd2r 10))
 
+    drawl (P2 0 120) $ para1
+    drawl (P2 0 120) $ dcDisk FILL 3
+    drawl (P2 0 120) $ diskV (runQuadrantAlg (dd2r 5) paraQA)
+
 
 dd2r :: Double -> Radian
 dd2r = d2r
@@ -65,7 +69,7 @@ quadr1 = drawVertexPathAlg STROKE (pathStartIsStart vs)
     vs = [ hvec 60 , vec (-20) 20 , hvec (-40), vvec (-20) ]
 
 qdQI :: RadialIntersect Double
-qdQI = qdltrlHMajorQI 40 20 (0.75 * pi)
+qdQI = hquadrilAcuteQI 40 20 (0.75 * pi)
 
 
 rect1 :: LocGraphic Double
@@ -88,8 +92,17 @@ triQA :: QuadrantAlg Double
 triQA = isoscelesTriQuadrantAlg 40 60
 
 
+para1 :: LocGraphic Double 
+para1 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 45))
+
+
+paraQA :: QuadrantAlg Double
+paraQA = parallelogramQuadrantAlg 60 40 (dd2r 45)
+
+
 diskV :: Vec2 Double -> LocGraphic Double
 diskV v1 = moveStart (displaceVec v1) $ dcDisk FILL 3
+
 
 
 black                   :: RGBi

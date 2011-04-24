@@ -38,6 +38,8 @@ module Wumpus.Basic.Geometry.Paths
   , arcPathAlg
   , circlePathAlg
 
+  , parallelogramPathAlg
+
   ) 
   where
 
@@ -288,6 +290,14 @@ arcdiv ang1 ang2 | ang1 >  ang2 = step ang1 (ang2 + 2 * pi)
 
     norm (a,b) = (circularModulo a, circularModulo b)
 
+
+
+
+parallelogramPathAlg :: Floating u => u -> u -> Radian -> PathAlg u
+parallelogramPathAlg w h bl_ang = 
+    pathIterateLocus [ bl, br, tr, tl ]
+  where
+    (bl, br, tr, tl) = parallelogramVertices w h bl_ang
 
 
 
