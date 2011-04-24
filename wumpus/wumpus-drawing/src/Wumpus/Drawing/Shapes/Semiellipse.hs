@@ -149,7 +149,7 @@ seRadialVec theta rx ry hminor _ = go theta
   where
     (lang,rang)                     = baselineRange rx hminor
     (bctr, br, _, bl)               = constructionPoints rx ry hminor
-    plane                           = makePlane zeroPt theta
+    plane                           = inclinedLine zeroPt theta
     base_line                       = LineSegment bl br
     (right_curve,left_curve)        = bezierSemiellipse rx ry bctr
     post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)

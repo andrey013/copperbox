@@ -46,15 +46,15 @@ import Control.Applicative
 data Semicircle u = Semicircle 
       { sc_ctm          :: ShapeCTM u
       , sc_radius       :: !u 
-      , sc_syn_props    :: SyntheticProps u
       }
 
 type instance DUnit (Semicircle u) = u
 
--- | rect_width is the width of the (greater) enclosing rectangle.
-data SyntheticProps u = SyntheticProps
-      { sc_ctr_minor  :: u
-      , sc_ctr_major  :: u
+-- | Height minor and major.
+--
+data SyntheticProps u = SP
+      { sc_hminor  :: u
+      , sc_hmajor  :: u
       }
 
 type instance DUnit (SyntheticProps u) = u
@@ -64,10 +64,20 @@ type DSemicircle = Semicircle Double
 
 
 instance Functor Semicircle where
-  fmap f (Semicircle ctm r props) = Semicircle (fmap f ctm) (f r) (fmap f props)
+  fmap f (Semicircle ctm r) = Semicircle (fmap f ctm) (f r)
 
 instance Functor SyntheticProps where
-  fmap f (SyntheticProps cmin cmaj) = SyntheticProps (f cmin) (f cmaj)
+  fmap f (SP cmin cmaj) = SP (f cmin) (f cmaj)
+
+
+
+
+synthesizeProps :: Floating u => u -> SyntheticProps u
+synthesizeProps radius = 
+    SP { sc_hminor = hminor, sc_hmajor = hmajor  }
+  where
+    hminor = (4 * radius) / (3 * pi)
+    hmajor = radius - hminor
 
 
 --------------------------------------------------------------------------------
@@ -100,10 +110,12 @@ instance InterpretUnit u => Translate (Semicircle u) where
 runDisplaceCenter :: (Real u, Floating u) 
                   => (u -> u -> u -> Vec2 u) -> Semicircle u -> Anchor u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
-                                 , sc_radius    = radius
-                                 , sc_syn_props = syn    }) = 
-    projectFromCtr (fn radius (sc_ctr_minor syn) (sc_ctr_major syn)) ctm
-
+                                 , sc_radius    = radius }) = 
+    projectFromCtr (fn radius hminor hmajor) ctm
+  where
+    props  = synthesizeProps radius  
+    hminor = sc_hminor props
+    hmajor = sc_hmajor props
 
 instance (Real u, Floating u) => 
     CenterAnchor (Semicircle u) where
@@ -151,20 +163,26 @@ instance (Real u, Floating u, Tolerance u) =>
 
 -- helpers
 
+-- | Semicircle does not fit into a QuadrantAlg easily.
+--
+-- So all the work has to be done here.
+--
 scRadialVec :: (Real u, Floating u, Ord u, Tolerance u)
             => Radian -> u -> u -> u -> Vec2 u
-scRadialVec theta radius hminor _ = go theta
+scRadialVec theta radius hminor _ = go (circularModulo theta)
   where
     (lang,rang)                     = baselineRange radius hminor
     (bctr, br, _, bl)               = constructionPoints radius hminor
-    plane                           = makePlane zeroPt theta
+    plane                           = inclinedLine zeroPt theta
     base_line                       = LineSegment bl br
     left_curve                      = mkCurve radius half_pi bctr
     right_curve                     = mkCurve radius 0 bctr
     post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
-    go a | lang <= a && a <= rang   = post $ interLinesegLine base_line plane 
-         | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
-         | otherwise                = post $ interCurveLine right_curve plane
+    go a 
+      | lang    <= a && a <= rang   = post $ interLinesegLine base_line plane 
+      | half_pi <= a && a <  lang   = post $ interCurveLine left_curve plane
+      | otherwise                   = post $ interCurveLine right_curve plane
+
 
 
 mkCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
@@ -186,7 +204,7 @@ constructionPoints radius hminor = (bctr, br, apx, bl)
     bctr  = P2 0 (-hminor)
     br    = bctr .+^ hvec radius
     apx   = bctr .+^ vvec radius
-    bl    = bctr .-^ hvec radius
+    bl    = bctr .+^ hvec (-radius)
 
 
 
@@ -212,26 +230,16 @@ semicircle :: (Real u, Floating u, InterpretUnit u, Tolerance u)
            => u -> Shape Semicircle u
 semicircle radius = 
     let props = synthesizeProps radius
-    in makeShape (mkSemicircle radius props) 
-                 (mkSemicirclePath radius (sc_ctr_minor props))
+    in makeShape (mkSemicircle radius) 
+                 (mkSemicirclePath radius (sc_hminor props))
           
-
-synthesizeProps :: Floating u => u -> SyntheticProps u
-synthesizeProps radius = 
-    SyntheticProps { sc_ctr_minor  = cminor
-                   , sc_ctr_major  = cmajor
-                   }
-  where
-    cminor = (4 * radius) / (3 * pi)
-    cmajor = radius - cminor
 
 
 mkSemicircle :: InterpretUnit u
-             => u -> SyntheticProps u -> LocThetaQuery u (Semicircle u)
-mkSemicircle radius props = promoteR2 $ \ctr theta -> 
-    pure $ Semicircle { sc_ctm = makeShapeCTM ctr theta
+             => u -> LocThetaQuery u (Semicircle u)
+mkSemicircle radius = promoteR2 $ \ctr theta -> 
+    pure $ Semicircle { sc_ctm    = makeShapeCTM ctr theta
                       , sc_radius = radius
-                      , sc_syn_props = props 
                       }
 
 

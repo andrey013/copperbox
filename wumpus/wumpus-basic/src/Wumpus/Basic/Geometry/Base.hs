@@ -32,7 +32,7 @@ module Wumpus.Basic.Geometry.Base
 
   -- * Line 
   , Line(..)
-  , aline
+  , inclinedLine
   
   -- * Line in equational form 
   , LineEquation(..)
@@ -174,13 +174,13 @@ type instance DUnit (Line u) = u
 
 
 
--- | 'aline' : @ point * ang -> Line @
+-- | 'inclinedLine' : @ point * ang -> Line @
 --
 -- Make an infinite line passing through the supplied point 
 -- inclined by @ang@.
 --
-aline :: Floating u => Point2 u -> Radian -> Line u
-aline radial_ogin ang = Line radial_ogin (radial_ogin .+^ avec ang 100)
+inclinedLine :: Floating u => Point2 u -> Radian -> Line u
+inclinedLine radial_ogin ang = Line radial_ogin (radial_ogin .+^ avec ang 100)
 
 
 

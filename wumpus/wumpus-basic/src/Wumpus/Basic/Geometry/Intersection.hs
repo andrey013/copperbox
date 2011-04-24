@@ -109,7 +109,7 @@ mbCheck test a = if test a then Just a else Nothing
 -- | Check the point is \"within\" the span of the line.
 --
 -- Note - this function is to be used \*after\* an intersection
--- has been found. Hence it is not export.
+-- has been found. Hence it is not exported.
 --
 withinPoints :: (Ord u, Fractional u, Tolerance u) 
              => Point2 u -> LineSegment u -> Bool
@@ -117,7 +117,7 @@ withinPoints (P2 x y) (LineSegment (P2 x0 y0) (P2 x1 y1)) =
     between x (ordpair x0 x1) && between y (ordpair y0 y1)
   where
     ordpair a b     = (min a b, max a b)
-    between a (s,t) = (s `tGT` a) && (a `tGT` t)
+    between a (s,t) = (s `tLTE` a) && (a `tLTE` t)
 
 
 
@@ -184,7 +184,7 @@ findIntersect :: (Floating u, Real u, Ord u, Tolerance u)
               -> Maybe (Point2 u)
 findIntersect radial_ogin ang = step 
   where
-    line1       = aline radial_ogin ang
+    line1       = inclinedLine radial_ogin ang
     step []     = Nothing
     step (x:xs) = case interLinesegLine x line1 of 
                      Just pt | quadrantCheck ang radial_ogin pt -> Just pt

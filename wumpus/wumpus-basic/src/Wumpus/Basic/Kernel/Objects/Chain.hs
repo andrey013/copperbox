@@ -25,8 +25,8 @@ module Wumpus.Basic.Kernel.Objects.Chain
   , chain
   , chain_
   
-  , linear
-  , prefix
+  , linearChain
+  , prefixChain
   , iterationScheme
 
   , chainIterate
@@ -146,12 +146,12 @@ chain_ :: InterpretUnit u => ChainAlg u -> [LocImage u a] -> LocGraphic u
 chain_ alg xs = locGraphic_ $ chain alg xs
 
 
-linear :: IterationScheme u -> ChainAlg u
-linear = L1
+linearChain :: IterationScheme u -> ChainAlg u
+linearChain = L1
 
-prefix :: Int -> ChainAlg u -> ChainAlg u -> ChainAlg u
-prefix n c1 c2 | n < 1     = c2
-               | otherwise = PX n c1 c2
+prefixChain :: Int -> ChainAlg u -> ChainAlg u -> ChainAlg u
+prefixChain n c1 c2 | n < 1     = c2
+                    | otherwise = PX n c1 c2
 
 
 iterationScheme :: (Point2 u -> st) 

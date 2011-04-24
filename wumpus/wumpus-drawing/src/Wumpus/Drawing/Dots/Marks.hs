@@ -119,9 +119,6 @@ markCross =
 
 
 
--- closedStroke :: (a -> ctx -> prim) 
--- pathDiamond  :: (ctx -> pt -> a)
--- ans          :: (ctx -> pt -> prim)
 
 markDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markDiamond = umark $ drawVertexPathAlg STROKE (diamondPathAlg 0.5 0.66)
@@ -130,12 +127,6 @@ markFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markFDiamond = umark $ drawVertexPathAlg FILL (diamondPathAlg 0.5 0.66)
 
 
--- Note - the (const . fn) composition doesn\'t /tell/ much about
--- what is going on - though obviously it can be decoded - make 
--- the function obvious to the second argument. 
--- 
--- A named combinator might be better.
---
 
 markBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
 markBDiamond = umark $ drawVertexPathAlg FILL_STROKE (diamondPathAlg 0.5 0.66)
@@ -200,7 +191,7 @@ markOCross = markCircle `oplus` markCross
 
 
 markFOCross :: (Floating u, InterpretUnit u) => LocGraphic u
-markFOCross = markBCircle -- `oplus` markCross
+markFOCross = markBCircle `oplus` markCross
 
 
 -- bkCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
