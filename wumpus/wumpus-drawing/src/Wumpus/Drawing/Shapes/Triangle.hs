@@ -46,7 +46,6 @@ data Triangle u = Triangle
       { tri_ctm         :: ShapeCTM u
       , tri_base_width  :: !u
       , tri_height      :: !u
-      , tri_syn_props   :: SyntheticProps u
       }
 
 type instance DUnit (Triangle u) = u
@@ -58,18 +57,27 @@ data SyntheticProps u = SyntheticProps
       , tri_apex_ang    :: Radian
       }
 
-type instance DUnit (SyntheticProps u) = u
-
 
 type DTriangle = Triangle Double
 
 instance Functor Triangle where
-  fmap f (Triangle ctm bw h props) = 
-      Triangle (fmap f ctm) (f bw) (f h) (fmap f props)
+  fmap f (Triangle ctm bw h) = Triangle (fmap f ctm) (f bw) (f h)
 
-instance Functor SyntheticProps where
-  fmap f (SyntheticProps hmin hmaj ang1 ang2) = 
-      SyntheticProps (f hmin) (f hmaj) ang1 ang2
+
+synthesizeProps :: (Real u, Fractional u) => u -> u -> SyntheticProps u
+synthesizeProps bw h = 
+    SyntheticProps { tri_hmajor      = hmajor
+                   , tri_hminor      = hminor
+                   , tri_base_ang    = base_ang
+                   , tri_apex_ang    = apex_ang
+                   }
+  where
+    half_base   = 0.5 * bw 
+    hminor      = h / 3
+    hmajor      = 2 * hminor 
+    base_ang    = atan $ toRadian (h / half_base)
+    apex_ang    = 2 * ((pi/4) - base_ang)
+
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -101,13 +109,14 @@ instance InterpretUnit u => Translate (Triangle u) where
 runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> u -> Radian -> Vec2 u) -> Triangle u -> Anchor u
 runDisplaceCenter fn (Triangle { tri_ctm        = ctm
-                               , tri_base_width = bw
-                               , tri_syn_props  = syn }) =  
+                               , tri_base_width = bw 
+                               , tri_height     = h   }) =  
     projectFromCtr (fn (0.5*bw) hminor hmajor base_ang) ctm
   where
-    hminor   = tri_hminor syn        
-    hmajor   = tri_hmajor syn
-    base_ang = tri_base_ang syn
+    props    = synthesizeProps bw h
+    hminor   = tri_hminor props  
+    hmajor   = tri_hmajor props
+    base_ang = tri_base_ang props
 
 
 
@@ -185,35 +194,21 @@ triangle bw h =
     let props  = synthesizeProps bw h
         hminor = tri_hminor props
         hmajor = tri_hmajor props
-    in makeShape (mkTriangle bw h props) (mkTrianglePath 0 bw hminor hmajor)
+    in makeShape (mkTriangle bw h) (mkTrianglePath 0 bw hminor hmajor)
 
 
 
 
 
 mkTriangle :: (Real u, Fractional u, InterpretUnit u) 
-           => u -> u -> SyntheticProps u -> LocThetaQuery u (Triangle u)
-mkTriangle bw h props = promoteR2 $ \ctrd theta -> 
+           => u -> u -> LocThetaQuery u (Triangle u)
+mkTriangle bw h = promoteR2 $ \ctrd theta -> 
     pure $ Triangle { tri_ctm        = makeShapeCTM ctrd theta
                     , tri_base_width = bw
                     , tri_height     = h 
-                    , tri_syn_props  = props
                     }
 
 
-synthesizeProps :: (Real u, Fractional u) => u -> u -> SyntheticProps u
-synthesizeProps bw h = 
-    SyntheticProps { tri_hmajor      = hmajor
-                   , tri_hminor      = hminor
-                   , tri_base_ang    = base_ang
-                   , tri_apex_ang    = apex_ang
-                   }
-  where
-    half_base   = 0.5 * bw 
-    hminor      = h / 3
-    hmajor      = 2 * hminor 
-    base_ang    = atan $ toRadian (h / half_base)
-    apex_ang    = 2 * ((pi/4) - base_ang)
 
 
 

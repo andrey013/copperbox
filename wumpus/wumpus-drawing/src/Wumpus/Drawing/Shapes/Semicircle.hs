@@ -66,11 +66,6 @@ type DSemicircle = Semicircle Double
 instance Functor Semicircle where
   fmap f (Semicircle ctm r) = Semicircle (fmap f ctm) (f r)
 
-instance Functor SyntheticProps where
-  fmap f (SP cmin cmaj) = SP (f cmin) (f cmaj)
-
-
-
 
 synthesizeProps :: Floating u => u -> SyntheticProps u
 synthesizeProps radius = 

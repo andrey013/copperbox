@@ -51,7 +51,6 @@ data Parallelogram u = Parallelogram
       , pll_base_width  :: !u
       , pll_height      :: !u
       , pll_base_l_ang  :: Radian
-      , pll_syn_props   :: SyntheticProps u
       }
 
 type instance DUnit (Parallelogram u) = u
@@ -62,25 +61,37 @@ type instance DUnit (Parallelogram u) = u
 -- > base_minor is the (center) to left corner.
 -- > base_major is the (center) to right corner.
 --
-data SyntheticProps u = SyntheticProps
+data SyntheticProps u = SP
       { pll_base_minor  :: u
       , pll_base_major  :: u
       }
-
-type instance DUnit (SyntheticProps u) = u
-
 
 type DParallelogram = Parallelogram Double
 
 
 instance Functor Parallelogram where
-  fmap f (Parallelogram ctm bw h lang props) = 
-      Parallelogram (fmap f ctm) (f bw) (f h) lang (fmap f props)
-
-instance Functor SyntheticProps where
-  fmap f (SyntheticProps bmin bmaj) = SyntheticProps (f bmin) (f bmaj)
+  fmap f (Parallelogram ctm bw h lang) = 
+      Parallelogram (fmap f ctm) (f bw) (f h) lang
 
 
+
+-- Note - expects ang value 0 < ang < 180, though does not check...
+-- 
+synthesizeProps :: Fractional u => u -> u -> Radian -> SyntheticProps u
+synthesizeProps bw h lang
+    | lang == 0.5*pi = let hw = 0.5 * bw in SP hw hw
+    | lang >  0.5*pi = less_ninety
+    | otherwise      = grtr_ninety
+  where
+    less_ninety = let extw            = h / (fromRadian $ tan lang)
+                      half_rect_width = 0.5 * (bw + extw)
+                  in SP half_rect_width (half_rect_width - extw)
+
+    grtr_ninety = let extw            = h / (fromRadian $ tan (pi-lang))
+                      half_rect_width = 0.5 * (bw + extw)
+                  in SP (half_rect_width - extw) half_rect_width
+
+                       
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -113,10 +124,13 @@ runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> u -> u -> Vec2 u) -> Parallelogram u -> Anchor u
 runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
                                     , pll_base_width = bw
-                                    , pll_height     = h  
-                                    , pll_syn_props  = syn }) = 
-    projectFromCtr (fn (0.5 * bw) (0.5 * h) 
-                       (pll_base_minor syn) (pll_base_major syn)) ctm
+                                    , pll_height     = h 
+                                    , pll_base_l_ang = lang }) =
+    projectFromCtr (fn (0.5 * bw) (0.5 * h) base_min base_maj) ctm
+  where
+    props  = synthesizeProps bw h lang
+    base_min = pll_base_minor props
+    base_maj = pll_base_major props
 
 
 
@@ -173,15 +187,18 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
 --
 pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                 => Radian -> Parallelogram u -> Anchor u
-pllRadialAnchor theta (Parallelogram { pll_ctm       = ctm
-                                     , pll_height    = h
-                                     , pll_syn_props = syn }) =
+pllRadialAnchor theta (Parallelogram { pll_ctm         = ctm
+                                     , pll_base_width  = bw
+                                     , pll_height      = h
+                                     , pll_base_l_ang  = lang }) =
     post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps   = runVertices4 zeroPt $ 
-             parallelogramVertices (pll_base_minor syn) (pll_base_major syn) h
+    props = synthesizeProps bw h lang
+    ps    = runVertices4 zeroPt $ 
+              parallelogramVertices (pll_base_minor props) 
+                                    (pll_base_major props) h
 
-    post = \ans -> case ans of 
+    post  = \ans -> case ans of 
                     Nothing       -> projectFromCtr (V2 0 0) ctm
                     Just (P2 x y) -> projectFromCtr (V2 x y) ctm
     
@@ -197,7 +214,7 @@ parallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u)
               => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
     let props = synthesizeProps bw h lang 
-    in makeShape (mkParallelogram bw h lang props) 
+    in makeShape (mkParallelogram bw h lang) 
                  (mkParallelogramPath 0 (pll_base_minor props) 
                                         (pll_base_major props) h)
 
@@ -216,33 +233,14 @@ zparallelogram bw h = parallelogram bw h ang
 
 
 mkParallelogram :: (Real u, Fractional u, InterpretUnit u, Tolerance u) 
-                => u -> u -> Radian -> SyntheticProps u 
-                -> LocThetaQuery u (Parallelogram u)
-mkParallelogram bw h lang props = promoteR2 $ \ctr theta -> 
+                => u -> u -> Radian -> LocThetaQuery u (Parallelogram u)
+mkParallelogram bw h lang = promoteR2 $ \ctr theta -> 
     pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
                          , pll_base_width   = bw
                          , pll_height       = h
                          , pll_base_l_ang   = lang
-                         , pll_syn_props    = props
                          }
 
--- Note - expects ang value 0 < ang < 180, though does not check...
--- 
-synthesizeProps :: Fractional u => u -> u -> Radian -> SyntheticProps u
-synthesizeProps bw h lang 
-    | lang == 0.5*pi = let hw = 0.5 * bw in SyntheticProps hw hw
-    | lang >  0.5*pi = less_ninety
-    | otherwise      = grtr_ninety
-  where
-    less_ninety = let extw            = h / (fromRadian $ tan lang)
-                      half_rect_width = 0.5 * (bw + extw)
-                  in SyntheticProps half_rect_width (half_rect_width - extw)
-
-    grtr_ninety = let extw            = h / (fromRadian $ tan (pi-lang))
-                      half_rect_width = 0.5 * (bw + extw)
-                  in SyntheticProps (half_rect_width - extw) half_rect_width
-
-                       
 
 
 

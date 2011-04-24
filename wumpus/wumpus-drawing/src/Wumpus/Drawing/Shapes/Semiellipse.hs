@@ -46,15 +46,14 @@ data Semiellipse u = Semiellipse
       { se_ctm          :: ShapeCTM u
       , se_rx           :: !u 
       , se_ry           :: !u
-      , se_syn_props    :: SyntheticProps u
       }
 
 type instance DUnit (Semiellipse u) = u
 
--- | rect_width is the width of the (greater) enclosing rectangle.
-data SyntheticProps u = SyntheticProps
-      { se_ry_minor  :: u
-      , se_ry_major  :: u
+
+data SyntheticProps u = SP
+      { se_hminor  :: u
+      , se_hmajor  :: u
       }
 
 type instance DUnit (SyntheticProps u) = u
@@ -62,11 +61,17 @@ type instance DUnit (SyntheticProps u) = u
 type DSemiellipse = Semiellipse Double
 
 instance Functor Semiellipse where
-  fmap f (Semiellipse ctm rx ry props) = 
-    Semiellipse (fmap f ctm) (f rx) (f ry) (fmap f props)
+  fmap f (Semiellipse ctm rx ry) = Semiellipse (fmap f ctm) (f rx) (f ry)
 
-instance Functor SyntheticProps where
-  fmap f (SyntheticProps rymin rymaj) = SyntheticProps (f rymin) (f rymaj)
+
+
+synthesizeProps :: Floating u => u -> SyntheticProps u
+synthesizeProps ry = 
+    SP { se_hminor = ry_minor, se_hmajor = ry_major }
+  where
+    ry_minor = (4 * ry) / (3 * pi)
+    ry_major = ry - ry_minor
+
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -101,9 +106,12 @@ runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> u -> u -> Vec2 u) -> Semiellipse u -> Anchor u
 runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
                                   , se_rx        = rx
-                                  , se_ry        = ry
-                                  , se_syn_props = syn    }) = 
-    projectFromCtr (fn rx ry (se_ry_minor syn) (se_ry_major syn)) ctm
+                                  , se_ry        = ry  }) = 
+    projectFromCtr (fn rx ry hminor hmajor) ctm
+  where
+    props  = synthesizeProps ry  
+    hminor = se_hminor props
+    hmajor = se_hmajor props
 
 
 
@@ -200,34 +208,24 @@ semiellipse :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => u -> u -> Shape Semiellipse u
 semiellipse rx ry = 
     let props = synthesizeProps ry
-    in makeShape (mkSemiellipse rx ry props) 
-                 (mkSemiellipsePath rx ry (se_ry_minor props))
+    in makeShape (mkSemiellipse rx ry) 
+                 (mkSemiellipsePath rx ry (se_hminor props))
           
 
 
-synthesizeProps :: Floating u => u -> SyntheticProps u
-synthesizeProps ry = 
-    SyntheticProps { se_ry_minor  = ry_minor
-                   , se_ry_major  = ry_major
-                   }
-  where
-    ry_minor = (4 * ry) / (3 * pi)
-    ry_major = ry - ry_minor
 
-
-mkSemiellipse :: u -> u -> SyntheticProps u -> LocThetaQuery u (Semiellipse u)
-mkSemiellipse rx ry props = promoteR2 $ \ctr theta -> 
+mkSemiellipse :: u -> u -> LocThetaQuery u (Semiellipse u)
+mkSemiellipse rx ry = promoteR2 $ \ctr theta -> 
     pure $ Semiellipse { se_ctm = makeShapeCTM ctr theta
                        , se_rx = rx
                        , se_ry = ry
-                       , se_syn_props = props 
                        }
 
 
 mkSemiellipsePath :: (Real u, Floating u, Tolerance u) 
                   => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkSemiellipsePath rx ry cminor = promoteR2 $ \pt theta ->
-    let ctr = displacePerpendicular (-cminor) theta pt
+mkSemiellipsePath rx ry hminor = promoteR2 $ \pt theta ->
+    let ctr = displacePerpendicular (-hminor) theta pt
         xs  = bezierSemiellipsePoints rx ry ctr
     in return $ curvePath $ map (rotateAbout theta ctr) xs 
 
