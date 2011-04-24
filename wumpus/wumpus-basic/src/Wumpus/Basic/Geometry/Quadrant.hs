@@ -30,6 +30,7 @@ module Wumpus.Basic.Geometry.Quadrant
   , hypotenuseQI
   , rectangleQI
   , qdltrlHMajorQI
+  , qdltrlHMinorQI
 
   , rectangleQuadrantAlg
   , diamondQuadrantAlg
@@ -211,49 +212,101 @@ rectangleQI dx dy ang
 --
 -- H Major quadrilateral (@H@ because one of the two 
 -- \"sides of interest\" is horizontal, /major/ because the 
--- horizontal side of interest @bc@ is greater than the other 
+-- horizontal side of interest @bc@ is longer than the other 
 -- horizontal @ad@):
 --
 -- >      
--- > b----*---c
--- > |       /
--- > |      %
--- > |     /
--- > a----d
+-- >  b---*----c
+-- >  |       /
+-- >  |      %
+-- >  |     /
+-- >  a----d
 -- >
 --
 qdltrlHMajorQI :: (Real u, Floating u) 
                => u -> u -> Radian -> RadialIntersect u
 qdltrlHMajorQI bc ab bcd ang = 
-    if ang >= cad then bisecting_top else bisecting_dc
+    if ang >= cad then bisectingHTop ab ang else bisecting_dc ad adc ang
   where
     cad           = half_pi - (atan $ toRadian $ bc / ab)
     adc           = pi - bcd
     star_c        = ab / (fromRadian $ tan bcd)
     ad            = bc - star_c
 
-    -- This is intersecting bc at star.
-    --
-    bisecting_top = let theta = half_pi - ang 
-                        htop  = ab * (fromRadian $ tan theta)
-                    in V2 htop ab
     
-    -- This is intersecting dc at percent-sign - now called z.
-    --
-    -- Know one side (ad) and two angs (zad which is ang) and (adc)
-    -- Use law of sines to find (az) :
-    -- 
-    -- >
-    -- >        z
-    -- >   . ' /
-    -- > a----d
-    -- > 
-    --
-    bisecting_dc  = let adz  = adc
-                        azd  = pi - (ang + adz)
-                        sine = fromRadian . sin
-                        az   = (ad * (sine adz)) / sine azd 
-                    in avec ang az
+-- This is intersecting dc at percent-sign - now called z.
+--
+-- Know one side (ad) and two angs (zad which is ang) and (adc == adz)
+-- Use law of sines to find (az) :
+-- 
+-- >
+-- >         z
+-- >    . ' /
+-- >  a----d
+-- > 
+--
+bisecting_dc :: Floating u => u -> Radian -> Radian -> Vec2 u
+bisecting_dc ad adc ang = avec ang az
+  where
+    adz  = adc
+    azd  = pi - (ang + adz)
+    sine = fromRadian . sin
+    az   = (ad * (sine adz)) / sine azd 
+  
+
+
+-- This is intersecting bc at star now called o.
+--
+-- >  b---o----c
+-- >  |  / 
+-- >  | /  
+-- >  |/    
+-- >  a-----
+--
+bisectingHTop :: Fractional u => u -> Radian -> Vec2 u
+bisectingHTop ab ang = V2 bo ab
+  where
+    bao = half_pi - ang 
+    bo  = ab * (fromRadian $ tan bao)
+     
+
+-- | 'qdltrlHMinorQI' : @ dx * dy * ang -> RadialIntersect @
+--
+-- Find where a line from (0,0) with elevation @ang@ intersects 
+-- a quadrilateral in /H Minor/ form in QI.  
+--
+-- > ang must be in the @range 0 < ang <= 90@.
+-- >
+-- > dx (top width @bc@) and dy (height @ab) must be positive.
+--
+-- H Minor quadrilateral (@H@ because one of the two 
+-- \"sides of interest\" is horizontal, /minor/ because the 
+-- horizontal side of interest @bc@ is shorter than the other 
+-- horizontal @ad@):
+--
+-- >      
+-- >  b---*----c
+-- >  |         \
+-- >  |          %
+-- >  |           \
+-- >  a------------d
+-- >
+--
+qdltrlHMinorQI :: (Real u, Floating u) 
+               => u -> u -> Radian -> RadialIntersect u
+qdltrlHMinorQI bc ab bcd ang = 
+    if ang < cad then bisecting_dc ad adc ang else bisectingHTop ab ang 
+  where
+    cad           = half_pi - (atan $ toRadian $ bc / ab)
+    adc           = pi - bcd
+    star_c        = ab / (fromRadian $ tan bcd)
+    ad            = bc - star_c
+
+
+
+
+
+     
 
 
 

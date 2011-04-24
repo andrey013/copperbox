@@ -64,6 +64,7 @@ library
   exposed-modules:
     Wumpus.Basic.Geometry,
     Wumpus.Basic.Geometry.Base,
+    Wumpus.Basic.Geometry.Illustrate,
     Wumpus.Basic.Geometry.Intersection,
     Wumpus.Basic.Geometry.Paths,
     Wumpus.Basic.Geometry.Quadrant,

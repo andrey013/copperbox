@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,6 +29,10 @@ module Wumpus.Basic.Geometry.Base
   , identity2'2
   , det2'2
   , transpose2'2
+
+  -- * Line 
+  , Line(..)
+  , aline
   
   -- * Line in equational form 
   , LineEquation(..)
@@ -65,7 +70,7 @@ module Wumpus.Basic.Geometry.Base
   ) 
   where
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -100,6 +105,8 @@ two_pi          = 2.0 * pi
 
 data Matrix2'2 u = M2'2 !u !u   !u !u
   deriving (Eq)
+
+type instance DUnit (Matrix2'2 u) = u
 
 type DMatrix2'2 = Matrix2'2 Double
 
@@ -158,6 +165,29 @@ transpose2'2 (M2'2 a b
 
 --------------------------------------------------------------------------------
 
+-- | Infinite line represented by two points.
+--
+data Line u = Line (Point2 u) (Point2 u)
+  deriving (Eq,Show)
+
+type instance DUnit (Line u) = u
+
+
+
+-- | 'aline' : @ point * ang -> Line @
+--
+-- Make an infinite line passing through the supplied point 
+-- inclined by @ang@.
+--
+aline :: Floating u => Point2 u -> Radian -> Line u
+aline radial_ogin ang = Line radial_ogin (radial_ogin .+^ avec ang 100)
+
+
+
+
+
+--------------------------------------------------------------------------------
+
 -- | Line in equational form, i.e. @Ax + By + C = 0@.
 --
 data LineEquation u = LineEquation 
@@ -166,6 +196,9 @@ data LineEquation u = LineEquation
       , line_eqn_C :: !u 
       }
   deriving (Eq,Show)
+
+type instance DUnit (LineEquation u) = u
+
 
 type DLineEquation = LineEquation Double
 
@@ -230,6 +263,9 @@ pointLineDistance (P2 u v) (LineEquation a b c) =
 data LineSegment u = LineSegment (Point2 u) (Point2 u)
   deriving (Eq,Ord,Show)
 
+type instance DUnit (LineSegment u) = u
+
+
 type DLineSegment = LineSegment Double
 
 
@@ -274,6 +310,9 @@ polygonLineSegments (x:xs) = step x xs
 --
 data BezierCurve u = BezierCurve !(Point2 u) !(Point2 u) !(Point2 u) !(Point2 u)
   deriving (Eq,Ord,Show)
+
+type instance DUnit (BezierCurve u) = u
+
 
 type DBezierCurve = BezierCurve Double
 

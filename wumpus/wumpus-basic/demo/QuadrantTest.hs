@@ -10,6 +10,20 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
+dummy1 :: Maybe DPoint2
+dummy1 = interLinesegLine lseg1 line1
+  where
+    lseg1 = LineSegment (P2 (-150) (-63)) (P2 150 (-63))
+    line1 = Line zeroPt (P2 34 (-93))
+
+
+dummy2 :: Maybe DPoint2
+dummy2 = interLinesegLine lseg1 line1
+  where
+    lseg1 = LineSegment (P2 (-150) 0) (P2 150 0)
+    line1 = Line (P2 0 63) (P2 34 (-30))
+
+
 main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
@@ -30,25 +44,28 @@ tdrawing :: TraceDrawing Double ()
 tdrawing = do
     drawl zeroPt $ rect1
     drawl zeroPt $ dcDisk FILL 3
-    drawl zeroPt $ diskV (runQuadrantAlg (d2r 350) rectQA)
+    drawl zeroPt $ diskV (runQuadrantAlg (dd2r 350) rectQA)
     drawl (P2 100 0) $ dia1
     drawl (P2 100 0) $ dcDisk FILL 3
-    drawl (P2 100 0) $ diskV (runQuadrantAlg (d2r 350) diaQA)
+    drawl (P2 100 0) $ diskV (runQuadrantAlg (dd2r 350) diaQA)
     drawl (P2 200 0) $ tri1
     drawl (P2 200 0) $ dcDisk FILL 3
-    drawl (P2 200 0) $ diskV (runQuadrantAlg (d2r 350) triQA)
+    drawl (P2 200 0) $ diskV (runQuadrantAlg (dd2r 350) triQA)
     drawl (P2 300 0) $ quadr1
     drawl (P2 300 0) $ dcDisk FILL 3
-    drawl (P2 300 0) $ diskV (qdQI (d2r 10))
+    drawl (P2 300 0) $ diskV (qdQI (dd2r 10))
 
+
+dd2r :: Double -> Radian
+dd2r = d2r
 
 quadr1 :: LocGraphic Double
 quadr1 = drawVertexPathAlg STROKE (pathStartIsStart vs)
   where
-    vs = [ hvec 40 , vec 20 20 , hvec (-60), vvec (-20) ]
+    vs = [ hvec 60 , vec (-20) 20 , hvec (-40), vvec (-20) ]
 
 qdQI :: RadialIntersect Double
-qdQI = qdltrlHMajorQI 60 20 quarter_pi 
+qdQI = qdltrlHMajorQI 40 20 (0.75 * pi)
 
 
 rect1 :: LocGraphic Double

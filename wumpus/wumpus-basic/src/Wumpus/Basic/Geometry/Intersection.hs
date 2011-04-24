@@ -26,7 +26,6 @@ module Wumpus.Basic.Geometry.Intersection
   , interCurveLine
 
   , findIntersect
-  , makePlane
 
 
   ) 
@@ -36,7 +35,6 @@ import Wumpus.Basic.Geometry.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 
 
@@ -54,9 +52,8 @@ import Data.AffineSpace                         -- package: vector-space
 -- or the are parallel.
 --
 interLineLine :: Fractional u 
-              => (Point2 u, Point2 u) -> (Point2 u, Point2 u) 
-              -> Maybe (Point2 u)
-interLineLine (p1,p2) (q1,q2) = 
+              => Line u -> Line u -> Maybe (Point2 u)
+interLineLine (Line p1 p2) (Line q1 q2) = 
     if det_co == 0 then Nothing 
                    else Just $ P2 (det_xm / det_co) (det_ym / det_co)
   where
@@ -85,7 +82,7 @@ interLineLine (p1,p2) (q1,q2) =
 interLinesegLineseg :: (Fractional u, Ord u, Tolerance u)
                     => LineSegment u -> LineSegment u -> Maybe (Point2 u)
 interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) = 
-    interLineLine (p,q) (s,t) >>= segcheck
+    interLineLine (Line p q) (Line s t) >>= segcheck
   where
     segcheck = mbCheck (\pt -> withinPoints pt a && withinPoints pt b)
  
@@ -99,9 +96,9 @@ interLinesegLineseg a@(LineSegment p q) b@(LineSegment s t) =
 -- segment coincide, or that there is no intersection.
 --
 interLinesegLine :: (Fractional u, Ord u, Tolerance u)
-                 => LineSegment u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
+                 => LineSegment u -> Line u -> Maybe (Point2 u)
 interLinesegLine a@(LineSegment p q) line = 
-    interLineLine (p,q) line >>= segcheck
+    interLineLine (Line p q) line >>= segcheck
   where
     segcheck = mbCheck (\pt -> withinPoints pt a)
 
@@ -136,8 +133,8 @@ nve a = a < (negate eq_tolerance)
 -- intersection of line and Bezier curve
 
 interCurveLine :: (Floating u , Ord u, Tolerance u)
-               => BezierCurve u -> (Point2 u, Point2 u) -> Maybe (Point2 u)
-interCurveLine c0 (p,q) = step c0
+               => BezierCurve u -> Line u -> Maybe (Point2 u)
+interCurveLine c0 (Line p q) = step c0
   where
     eqline  = lineEquation p q
     step c  = case cut c eqline of
@@ -156,15 +153,15 @@ interCurveLine c0 (p,q) = step c0
 --
 cut :: (Floating u , Ord u, Tolerance u)
     => BezierCurve u -> LineEquation u -> Either (Point2 u) Bool
-cut (BezierCurve p0 p1 p2 p3) line = 
+cut (BezierCurve p0 p1 p2 p3) eqline = 
     if d0 `tEQ` 0 then Left p0 else
     if d3 `tEQ` 0 then Left p3 else
     let ds = [d0,d1,d2,d3] in Right $ not $ all pve ds || all nve ds
   where
-    d0  = pointLineDistance p0 line 
-    d1  = pointLineDistance p1 line 
-    d2  = pointLineDistance p2 line 
-    d3  = pointLineDistance p3 line 
+    d0  = pointLineDistance p0 eqline 
+    d1  = pointLineDistance p1 eqline 
+    d2  = pointLineDistance p2 eqline 
+    d3  = pointLineDistance p3 eqline 
 
 
 
@@ -187,9 +184,9 @@ findIntersect :: (Floating u, Real u, Ord u, Tolerance u)
               -> Maybe (Point2 u)
 findIntersect radial_ogin ang = step 
   where
-    plane       = makePlane radial_ogin ang
+    line1       = aline radial_ogin ang
     step []     = Nothing
-    step (x:xs) = case interLinesegLine x plane of 
+    step (x:xs) = case interLinesegLine x line1 of 
                      Just pt | quadrantCheck ang radial_ogin pt -> Just pt
                      _       -> step xs
 
@@ -200,16 +197,5 @@ quadrantCheck :: (Real u, Floating u)
               => Radian -> Point2 u -> Point2 u -> Bool
 quadrantCheck theta ctr pt = theta == lineAngle ctr pt
 
-
-
-
-
--- | 'makePlane' : @ point * ang -> Line @
---
--- Make an infinite line \/ plane passing through the supplied 
--- with elevation @ang@.
---
-makePlane :: Floating u => Point2 u -> Radian -> (Point2 u, Point2 u)
-makePlane radial_ogin ang = (radial_ogin, radial_ogin .+^ avec ang 100)
 
 
