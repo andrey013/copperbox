@@ -11,10 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Trapezium.
---
--- Note cardinal anchors correspond directly to the compass 
--- positions.
+-- Isoceles Trapezium.
 -- 
 --------------------------------------------------------------------------------
 
@@ -24,7 +21,6 @@ module Wumpus.Drawing.Shapes.Trapezium
     Trapezium
   , DTrapezium
   , trapezium
-  , ztrapezium
 
 
   ) where
@@ -38,7 +34,6 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 
@@ -53,9 +48,8 @@ import Control.Applicative
 data Trapezium u = Trapezium 
       { tz_ctm          :: ShapeCTM u
       , tz_base_width   :: !u
+      , tz_top_width   :: !u
       , tz_height       :: !u
-      , tz_base_l_ang   :: Radian
-      , tz_base_r_ang   :: Radian
       }
 
 type instance DUnit (Trapezium u) = u
@@ -63,8 +57,7 @@ type instance DUnit (Trapezium u) = u
 type DTrapezium = Trapezium Double
 
 instance Functor Trapezium where
-  fmap f (Trapezium ctm bw h lang rang) = 
-    Trapezium (fmap f ctm) (f bw) (f h) lang rang
+  fmap f (Trapezium ctm bw tw h) = Trapezium (fmap f ctm) (f bw) (f tw) (f h)
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -89,43 +82,40 @@ instance InterpretUnit u => Translate (Trapezium u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
+
+
 -- | 'runDisplaceCenter' : @ ( half_base_width 
---                           * half_height
---                           * left_base_ang 
---                           * right_base_ang -> Vec ) * trapzium -> Point @
+--                           * half_top_width
+--                           * half_height -> Vec ) * trapezium -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u)
-                  => (u -> u -> Radian -> Radian -> Vec2 u) 
+                  => (u -> u -> u -> Vec2 u) 
                   -> Trapezium u -> Anchor u
 runDisplaceCenter fn (Trapezium { tz_ctm          = ctm
                                 , tz_base_width   = bw
-                                , tz_height       = h
-                                , tz_base_l_ang   = lang
-                                , tz_base_r_ang   = rang }) =
-    projectFromCtr (fn (0.5 * bw) (0.5 * h) lang rang) ctm
+                                , tz_top_width    = tw
+                                , tz_height       = h   }) =
+    projectFromCtr (fn (0.5 * bw) (0.5 * tw) (0.5 * h)) ctm
 
 instance (Real u, Floating u) => 
     CenterAnchor (Trapezium u) where
-  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
+  center = runDisplaceCenter $ \_ _ _ -> V2 0 0
 
 
 
 instance (Real u, Floating u) => 
     BottomCornerAnchor (Trapezium u) where
-  bottomLeftCorner  = runDisplaceCenter $ \hbw hh _ _  -> V2 (-hbw) (-hh)
-  bottomRightCorner = runDisplaceCenter $ \hbw hh _ _  -> V2  hbw   (-hh)
+  bottomLeftCorner  = runDisplaceCenter $ \hbw _ hh -> V2 (-hbw) (-hh)
+  bottomRightCorner = runDisplaceCenter $ \hbw _ hh -> V2  hbw   (-hh)
+
+
+
 
 
 instance (Real u, Floating u) => 
     TopCornerAnchor (Trapezium u) where
-  topLeftCorner  = runDisplaceCenter $ \hbw hh lang _  -> 
-                     let vbase = V2 (-hbw) (-hh)
-                         vup   = leftSideVec (2*hh) lang 
-                     in vbase ^+^ vup
-  topRightCorner = runDisplaceCenter $ \hbw hh _ rang  ->
-                     let vbase = V2  hbw   (-hh)
-                         vup   = rightSideVec (2*hh) rang
-                     in vbase ^+^ vup
+  topLeftCorner  = runDisplaceCenter $ \_ htw hh -> V2 (-htw) hh
+  topRightCorner = runDisplaceCenter $ \_ htw hh -> V2   htw  hh
 
 
 instance (Real u, Floating u, Tolerance u) => 
@@ -141,8 +131,8 @@ instance (Real u, Floating u, Tolerance u) =>
 
 instance (Real u, Floating u, Tolerance u) => 
     CardinalAnchor (Trapezium u) where
-  north = runDisplaceCenter $ \_ hh _ _ -> V2 0 hh
-  south = runDisplaceCenter $ \_ hh _ _ -> V2 0 (-hh)
+  north = runDisplaceCenter $ \_ _ hh -> V2 0 hh
+  south = runDisplaceCenter $ \_ _ hh -> V2 0 (-hh)
   east  = tzRadialAnchor 0
   west  = tzRadialAnchor pi
 
@@ -160,18 +150,16 @@ instance (Real u, Floating u, Tolerance u) =>
     RadialAnchor (Trapezium u) where
   radialAnchor = tzRadialAnchor
 
--- TODO - update this to a quadrant function...
---
+-- 
 tzRadialAnchor :: (Real u, Floating u, Tolerance u) 
                => Radian -> Trapezium u -> Anchor u
 tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
                                 , tz_base_width = bw
-                                , tz_height     = h
-                                , tz_base_l_ang = lang
-                                , tz_base_r_ang = rang }) =
+                                , tz_top_width  = tw
+                                , tz_height     = h  }) =
     post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    ps   = runVertices4 zeroPt $ trapeziumVertices bw h lang rang
+    ps   = runVertices4 zeroPt $ isoscelesTrapeziumVertices bw tw h
     post = \ans -> case ans of 
                     Nothing       -> projectFromCtr (V2 0 0) ctm
                     Just (P2 x y) -> projectFromCtr (V2 x y) ctm
@@ -186,74 +174,30 @@ tzRadialAnchor theta (Trapezium { tz_ctm        = ctm
 --
 --
 trapezium :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-          => u -> u -> Radian -> Radian -> Shape Trapezium u
-trapezium bw h lang rang = 
-    makeShape (mkTrapezium bw h lang rang) (mkTrapeziumPath 0 bw h lang rang)
+          => u -> u -> u -> Shape Trapezium u
+trapezium bw tw h = 
+    makeShape (mkTrapezium bw tw h) (mkTrapeziumPath 0 bw tw h)
 
 
--- | 'ztrapezium'  : @ base_width * height -> Trapezium @
---
---
-ztrapezium :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-           => u -> u -> Shape Trapezium u
-ztrapezium bw h = trapezium bw h ang ang
-  where
-    ang = d2r (60::Double)
 
 
 --------------------------------------------------------------------------------
 
 
 mkTrapezium :: (Real u, Fractional u, InterpretUnit u) 
-            => u -> u -> Radian -> Radian -> LocThetaQuery u (Trapezium u)
-mkTrapezium bw h lang rang = promoteR2 $ \ctr theta -> 
+            => u -> u -> u -> LocThetaQuery u (Trapezium u)
+mkTrapezium bw tw h = promoteR2 $ \ctr theta -> 
     pure $ Trapezium { tz_ctm           = makeShapeCTM ctr theta
                      , tz_base_width    = bw
+                     , tz_top_width     = tw
                      , tz_height        = h
-                     , tz_base_l_ang    = lang
-                     , tz_base_r_ang    = rang
                      }
 
 
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                => u -> u -> u -> Radian -> Radian 
-                -> LocThetaQuery u (AbsPath u)
-mkTrapeziumPath rnd bw h lang rang = promoteR2 $ \ctr theta -> 
-    let xs = runVertices4 ctr $ trapeziumVertices bw h lang rang
+                => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
+mkTrapeziumPath rnd bw tw h = promoteR2 $ \ctr theta -> 
+    let xs = runVertices4 ctr $ isoscelesTrapeziumVertices bw tw h
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 
-
-
--- | Calculate the vector that produces the upper-left point given
--- the lower-left point.
---
--- Note - expects ang value 0 < ang < 180, though does not check...
--- 
-leftSideVec :: Floating u => u -> Radian -> Vec2 u
-leftSideVec h lang | lang <  0.5*pi = less_ninety
-                   | lang == 0.5*pi = vvec h
-                   | otherwise      = grtr_ninety
-  where
-    less_ninety = let dist = h / (fromRadian $ sin lang) in avec lang dist
-    grtr_ninety = let theta = lang - (0.5*pi) 
-                      dist  = h / (fromRadian $ cos theta) 
-                  in avec lang dist
-
-
-
-
--- | Calculate the vector that produces the upper-right point given
--- the lower-right point.
---
--- Note - expects ang value 0 < ang < 180, though does not check...
--- 
-rightSideVec :: Floating u => u -> Radian -> Vec2 u
-rightSideVec h rang | rang <  0.5*pi = less_ninety
-                    | rang == 0.5*pi = vvec h
-                    | otherwise      = grtr_ninety
-  where
-    less_ninety = let dist  = h / (fromRadian $ sin rang) in avec (pi - rang) dist
-    grtr_ninety = let theta = rang - (0.5*pi) 
-                      dist  = h / (fromRadian $ cos theta) 
-                  in avec (pi - rang) dist
 

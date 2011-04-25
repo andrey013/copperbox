@@ -42,6 +42,8 @@ module Wumpus.Basic.Geometry.Vertices
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
+
 
 type Vertices2 u = (Vec2 u, Vec2 u)
 type Vertices3 u = (Vec2 u, Vec2 u, Vec2 u)
@@ -107,31 +109,17 @@ equilateralTriangleVertices h = isoscelesTriangleVertices sl h
 
 
 parallelogramVertices :: Floating u => u -> u -> Radian -> Vertices4 u
-parallelogramVertices w h bl_ang = (bl, br, tr, tl)
+parallelogramVertices w h bl_ang = (to_bl, to_br, to_tr, to_tl)
   where
+    hw              = 0.5 * w
     hh              = 0.5 * h
-    (xminor,xmajor) = parallelogramHComponents w h bl_ang
-    bl              = V2 (-xminor) (-hh)
-    br              = V2   xmajor  (-hh)
-    tl              = V2 (-xmajor)   hh     -- topleft subtracts major
-    tr              = V2   xminor    hh     -- topright adds minor
+    hypo            = hh / (fromRadian $ sin bl_ang)
 
+    to_bl           = hvec (-hw) ^+^ avec bl_ang (-hypo)
+    to_br           = hvec hw    ^+^ avec bl_ang (-hypo)
+    to_tl           = hvec (-hw) ^+^ avec bl_ang hypo
+    to_tr           = hvec hw    ^+^ avec bl_ang hypo
 
-
--- | This is probably wrong and needs more thought.
--- 
--- The concern is for parallelograms that are taller than they 
--- are wide...
---
-parallelogramHComponents :: Fractional u => u -> u -> Radian -> (u,u)
-parallelogramHComponents bw h bl_ang = (xminor,xmajor)
-  where
-    half_ang  = 0.5 * bl_ang
-    hh        = 0.5 * h
-    
-    -- | find xminor (adj) from half_angle and hh (op) 
-    xminor    = hh / (fromRadian $ tan half_ang)
-    xmajor    = bw - xminor
 
 
 
@@ -152,56 +140,3 @@ isoscelesTrapeziumVertices wbase wtop h =
     to_tl = V2 (-htw)   hh 
     to_tr = V2   htw    hh
 
-{-
-
--- | Center is intersection of the diagonals:
-
-trapeziumVertices :: Floating u
-                  => u -> u -> Radian -> Radian -> Vertices4 u
-trapeziumVertices bw h lang rang = (to_bl, to_br, to_tr, to_tl)
-  where
-    sine                = fromRadian . sin
-    -- WRONG! - diags not necessarily half the ang
-    half_lang           = 0.5 * lang    
-    half_rang           = 0.5 * rang
-
-    -- find hypotenuses of bottom diagonals to the center.
-    (bl_diag,br_diag)   = losLegs half_lang bw half_rang 
-
-    hminor    = bl_diag * sine half_lang 
-    hmajor    = h - hminor
-
-    mmratio   = hmajor / hminor
-
-    vscale    = (*^)
-    
-    -- These are abit convoluted because we have to manufacture
-    -- the angle from the intersection center...
-    to_bl     = vreverse $ avec half_lang bl_diag
-    to_br     = avec (two_pi - half_rang) br_diag
-
-    to_tr     = vscale mmratio $ vreverse to_bl
-    to_tl     = vscale mmratio $ vreverse to_br
-
-
-
--- | @law-of-sines legs@ - Find (ab,bc) given ac, bac and bca:
--- 
--- >            b
--- >        . '  \
--- >    . '       \
--- >  a------------c
--- > 
---
--- (Law of sines)
---
-losLegs :: Fractional u => Radian -> u -> Radian -> (u,u)
-losLegs bAc ac bCa = (ab,bc)
-   where
-     aBc  = pi - (bAc + bCa)
-     sine = fromRadian . sin
-     ab   = (ac * sine bCa) / (sine aBc)
-     bc   = (ac * sine bAc) / (sine aBc)
-
-
--}

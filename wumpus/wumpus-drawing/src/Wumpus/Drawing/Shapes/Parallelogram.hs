@@ -35,6 +35,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 
@@ -55,16 +56,6 @@ data Parallelogram u = Parallelogram
 
 type instance DUnit (Parallelogram u) = u
 
--- | Note (center) is a line dropped from the center of the
--- paralleogram.
--- 
--- > base_minor is the (center) to left corner.
--- > base_major is the (center) to right corner.
---
-data SyntheticProps u = SP
-      { pll_base_minor  :: u
-      , pll_base_major  :: u
-      }
 
 type DParallelogram = Parallelogram Double
 
@@ -74,24 +65,6 @@ instance Functor Parallelogram where
       Parallelogram (fmap f ctm) (f bw) (f h) lang
 
 
-
--- Note - expects ang value 0 < ang < 180, though does not check...
--- 
-synthesizeProps :: Fractional u => u -> u -> Radian -> SyntheticProps u
-synthesizeProps bw h lang
-    | lang == 0.5*pi = let hw = 0.5 * bw in SP hw hw
-    | lang >  0.5*pi = less_ninety
-    | otherwise      = grtr_ninety
-  where
-    less_ninety = let extw            = h / (fromRadian $ tan lang)
-                      half_rect_width = 0.5 * (bw + extw)
-                  in SP half_rect_width (half_rect_width - extw)
-
-    grtr_ninety = let extw            = h / (fromRadian $ tan (pi-lang))
-                      half_rect_width = 0.5 * (bw + extw)
-                  in SP (half_rect_width - extw) half_rect_width
-
-                       
 
 --------------------------------------------------------------------------------
 -- Affine trans
@@ -121,34 +94,42 @@ instance InterpretUnit u => Translate (Parallelogram u) where
 --                           * base_major -> Vec ) * parallelogram -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u)
-                  => (u -> u -> u -> u -> Vec2 u) -> Parallelogram u -> Anchor u
+                  => (u -> u -> Radian -> Vec2 u) -> Parallelogram u -> Anchor u
 runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
                                     , pll_base_width = bw
                                     , pll_height     = h 
                                     , pll_base_l_ang = lang }) =
-    projectFromCtr (fn (0.5 * bw) (0.5 * h) base_min base_maj) ctm
-  where
-    props  = synthesizeProps bw h lang
-    base_min = pll_base_minor props
-    base_maj = pll_base_major props
+    projectFromCtr (fn (0.5 * bw) (0.5 * h) lang) ctm
 
 
 
 instance (Real u, Floating u) => 
     CenterAnchor (Parallelogram u) where
-  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
+  center = runDisplaceCenter $ \_ _ _ -> V2 0 0
+
+
+-- | WARNING - WRONG...
 
 -- top anchors swap the base minor and major...
 --
+
 instance (Real u, Floating u) => 
     TopCornerAnchor (Parallelogram u) where
-  topLeftCorner  = runDisplaceCenter $ \_ hh _ bmaj -> V2 (-bmaj) hh
-  topRightCorner = runDisplaceCenter $ \_ hh bmin _ -> V2 bmin    hh
+  topLeftCorner  = runDisplaceCenter $ \hw hh lang -> 
+      let hypo = hh / (fromRadian $ sin lang) in hvec (-hw) ^+^ avec lang hypo
+
+  topRightCorner = runDisplaceCenter $ \hw hh lang ->
+      let hypo = hh / (fromRadian $ sin lang) in hvec hw ^+^ avec lang hypo
 
 instance (Real u, Floating u) => 
     BottomCornerAnchor (Parallelogram u) where
-  bottomLeftCorner  = runDisplaceCenter $ \_ hh bmin _ -> V2 (-bmin) (-hh)
-  bottomRightCorner = runDisplaceCenter $ \_ hh _ bmaj -> V2 bmaj    (-hh)
+  bottomLeftCorner  = runDisplaceCenter $ \hw hh lang ->
+      let hypo = hh / (fromRadian $ sin lang) in hvec (-hw) ^+^ avec lang (-hypo)
+
+  bottomRightCorner = runDisplaceCenter $ \hw hh lang -> 
+      let hypo = hh / (fromRadian $ sin lang) in hvec hw ^+^ avec lang (-hypo)
+
+
 
 instance (Real u, Floating u) => 
     SideMidpointAnchor (Parallelogram u) where
@@ -163,10 +144,10 @@ instance (Real u, Floating u) =>
 
 instance (Real u, Floating u) => 
     CardinalAnchor (Parallelogram u) where
-  north = runDisplaceCenter $ \_  hh _ _ -> V2 0 hh
-  south = runDisplaceCenter $ \_  hh _ _ -> V2 0 (-hh)
-  east  = runDisplaceCenter $ \hw _  _ _ -> V2 hw 0
-  west  = runDisplaceCenter $ \hw _  _ _ -> V2 (-hw) 0
+  north = runDisplaceCenter $ \_  hh _ -> V2 0 hh
+  south = runDisplaceCenter $ \_  hh _ -> V2 0 (-hh)
+  east  = runDisplaceCenter $ \hw _  _ -> V2 hw 0
+  west  = runDisplaceCenter $ \hw _  _ -> V2 (-hw) 0
 
 
 instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
@@ -183,7 +164,11 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
    radialAnchor = pllRadialAnchor
 
 
--- TODO - update this to a quadrant function...
+-- | Note - it is not worth changing this to a quadrantAlg.
+--
+-- There are pathological parallelograms that the current 
+-- QuadrantAlg code cannot handle, and a better abstraction is
+-- needed (rather than better implementation of QuadrantAlg).
 --
 pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                 => Radian -> Parallelogram u -> Anchor u
@@ -193,10 +178,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm         = ctm
                                      , pll_base_l_ang  = lang }) =
     post $ findIntersect zeroPt theta $ polygonLineSegments ps
   where 
-    props = synthesizeProps bw h lang
-    ps    = runVertices4 zeroPt $ 
-              parallelogramVertices (pll_base_minor props) 
-                                    (pll_base_major props) h
+    ps    = runVertices4 zeroPt $ parallelogramVertices bw h lang
 
     post  = \ans -> case ans of 
                     Nothing       -> projectFromCtr (V2 0 0) ctm
@@ -213,10 +195,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm         = ctm
 parallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
-    let props = synthesizeProps bw h lang 
-    in makeShape (mkParallelogram bw h lang) 
-                 (mkParallelogramPath 0 (pll_base_minor props) 
-                                        (pll_base_major props) h)
+    makeShape (mkParallelogram bw h lang) (mkParallelogramPath 0 bw h lang)
 
 
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
@@ -245,9 +224,9 @@ mkParallelogram bw h lang = promoteR2 $ \ctr theta ->
 
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                    => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkParallelogramPath rnd bw_minor bw_major h = promoteR2 $ \ctr theta -> 
-    let xs = runVertices4 ctr  $ parallelogramVertices bw_minor bw_major h
+                    => u -> u -> u -> Radian -> LocThetaQuery u (AbsPath u)
+mkParallelogramPath rnd bw h lang = promoteR2 $ \ctr theta -> 
+    let xs = runVertices4 ctr  $ parallelogramVertices bw h lang
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs 
                          
 

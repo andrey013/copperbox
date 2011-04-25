@@ -67,7 +67,7 @@ shape_list =
       , shapePic (apexAnchor >=> bottomCorners) $ semiellipse 100 150) 
     , ( "trapezium"
       ,  shapePic (bottomCorners >=> topCorners >=> midPoints 4) $ 
-          ztrapezium 300 150)
+          trapezium 300 200 150)
     , ( "triangle"
       , shapePic (apexAnchor >=> bottomCorners >=> midPoints 3) $ 
           triangle 300 150 )

@@ -67,6 +67,15 @@ instance Functor Semicircle where
   fmap f (Semicircle ctm r) = Semicircle (fmap f ctm) (f r)
 
 
+
+-- | Use the formula:
+--
+-- >   4r
+-- >  ---
+-- >  3pi
+--
+-- to get the yminor.
+--
 synthesizeProps :: Floating u => u -> SyntheticProps u
 synthesizeProps radius = 
     SP { sc_hminor = hminor, sc_hmajor = hmajor  }
