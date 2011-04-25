@@ -32,20 +32,16 @@ module Wumpus.Basic.Geometry.Vertices
 
   , parallelogramVertices
 
-  , trapeziumVertices
-
-  , losLegs
+  , isoscelesTrapeziumVertices
 
   ) 
   where
 
 
-import Wumpus.Basic.Geometry.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 type Vertices2 u = (Vec2 u, Vec2 u)
 type Vertices3 u = (Vec2 u, Vec2 u, Vec2 u)
@@ -139,6 +135,25 @@ parallelogramHComponents bw h bl_ang = (xminor,xmajor)
 
 
 
+-- Trapezium - make an isosceles trapezium...
+-- base - top - height 
+
+-- 
+isoscelesTrapeziumVertices :: Floating u
+                           => u -> u -> u -> Vertices4 u
+isoscelesTrapeziumVertices wbase wtop h = 
+    (to_bl, to_br, to_tr, to_tl)
+  where
+    hh    = 0.5 * h
+    hbw   = 0.5 * wbase
+    htw   = 0.5 * wtop    
+    to_bl = V2 (-hbw) (-hh) 
+    to_br = V2   hbw  (-hh) 
+    to_tl = V2 (-htw)   hh 
+    to_tr = V2   htw    hh
+
+{-
+
 -- | Center is intersection of the diagonals:
 
 trapeziumVertices :: Floating u
@@ -189,3 +204,4 @@ losLegs bAc ac bCa = (ab,bc)
      bc   = (ac * sine bAc) / (sine aBc)
 
 
+-}

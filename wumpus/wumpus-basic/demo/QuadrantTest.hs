@@ -10,16 +10,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
-dummy1 :: (Double,Double)
-dummy1 = losLegs (dd2r 30) 10 (dd2r 30)
-
-
-dummy2 :: Maybe DPoint2
-dummy2 = interLinesegLine lseg1 line1
-  where
-    lseg1 = LineSegment (P2 (-150) 0) (P2 150 0)
-    line1 = Line (P2 0 63) (P2 34 (-30))
-
 
 main :: IO ()
 main = do 
@@ -108,7 +98,7 @@ para2 :: LocGraphic Double
 para2 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 120))
 
 trap1 :: LocGraphic Double 
-trap1 = drawVertexPathAlg STROKE (trapeziumPathAlg 60 40 (dd2r 60) (dd2r 60))
+trap1 = drawVertexPathAlg STROKE (isoscelesTrapeziumPathAlg 60 40 40)
 
 
 diskV :: Vec2 Double -> LocGraphic Double

@@ -39,7 +39,7 @@ module Wumpus.Basic.Geometry.Paths
   , circlePathAlg
 
   , parallelogramPathAlg
-  , trapeziumPathAlg
+  , isoscelesTrapeziumPathAlg
 
   ) 
   where
@@ -303,13 +303,13 @@ parallelogramPathAlg w h bl_ang =
 
 
 
--- | @ base_width * height * bottom_left_angle @
+-- | @ base_width * top_width * height @
 --
-trapeziumPathAlg :: Floating u => u -> u -> Radian -> Radian -> PathAlg u
-trapeziumPathAlg bw h bl_ang br_ang = 
+isoscelesTrapeziumPathAlg :: Floating u => u -> u -> u -> PathAlg u
+isoscelesTrapeziumPathAlg bw tw h = 
     pathIterateLocus [ bl, br, tr, tl ]
   where
-    (bl, br, tr, tl) = trapeziumVertices bw h bl_ang br_ang
+    (bl, br, tr, tl) = isoscelesTrapeziumVertices bw tw h
 
 
 
