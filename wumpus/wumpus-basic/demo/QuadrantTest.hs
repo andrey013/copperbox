@@ -10,11 +10,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
-dummy1 :: Maybe DPoint2
-dummy1 = interLinesegLine lseg1 line1
-  where
-    lseg1 = LineSegment (P2 (-150) (-63)) (P2 150 (-63))
-    line1 = Line zeroPt (P2 34 (-93))
+dummy1 :: (Double,Double)
+dummy1 = losLegs (dd2r 30) 10 (dd2r 30)
 
 
 dummy2 :: Maybe DPoint2
@@ -67,6 +64,9 @@ tdrawing = do
     drawl (P2 150 120) $ para2
     drawl (P2 150 120) $ dcDisk FILL 3
 
+    drawl (P2 300 120) $ trap1
+    drawl (P2 300 120) $ dcDisk FILL 3
+
 
 dd2r :: Double -> Radian
 dd2r = d2r
@@ -106,6 +106,9 @@ para1 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 30))
 
 para2 :: LocGraphic Double 
 para2 = drawVertexPathAlg STROKE (parallelogramPathAlg 60 40 (dd2r 120))
+
+trap1 :: LocGraphic Double 
+trap1 = drawVertexPathAlg STROKE (trapeziumPathAlg 60 40 (dd2r 60) (dd2r 60))
 
 
 diskV :: Vec2 Double -> LocGraphic Double

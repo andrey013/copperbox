@@ -39,6 +39,7 @@ module Wumpus.Basic.Geometry.Paths
   , circlePathAlg
 
   , parallelogramPathAlg
+  , trapeziumPathAlg
 
   ) 
   where
@@ -292,12 +293,23 @@ arcdiv ang1 ang2 | ang1 >  ang2 = step ang1 (ang2 + 2 * pi)
 
 
 
-
+-- | @ width * height * bottom_left_angle @
+--
 parallelogramPathAlg :: Floating u => u -> u -> Radian -> PathAlg u
 parallelogramPathAlg w h bl_ang = 
     pathIterateLocus [ bl, br, tr, tl ]
   where
     (bl, br, tr, tl) = parallelogramVertices w h bl_ang
+
+
+
+-- | @ base_width * height * bottom_left_angle @
+--
+trapeziumPathAlg :: Floating u => u -> u -> Radian -> Radian -> PathAlg u
+trapeziumPathAlg bw h bl_ang br_ang = 
+    pathIterateLocus [ bl, br, tr, tl ]
+  where
+    (bl, br, tr, tl) = trapeziumVertices bw h bl_ang br_ang
 
 
 

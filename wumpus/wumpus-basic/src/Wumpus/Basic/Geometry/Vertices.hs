@@ -34,9 +34,13 @@ module Wumpus.Basic.Geometry.Vertices
 
   , trapeziumVertices
 
+  , losLegs
+
   ) 
   where
 
+
+import Wumpus.Basic.Geometry.Base
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -135,50 +139,53 @@ parallelogramHComponents bw h bl_ang = (xminor,xmajor)
 
 
 
+-- | Center is intersection of the diagonals:
 
 trapeziumVertices :: Floating u
                   => u -> u -> Radian -> Radian -> Vertices4 u
-trapeziumVertices bw h lang rang = (bl, br, tr, tl)
+trapeziumVertices bw h lang rang = (to_bl, to_br, to_tr, to_tl)
   where
-    half_base = 0.5 * bw
-    hh        = 0.5 * h
-    br        = V2 half_base (-hh)
-    bl        = V2 half_base (-hh)
-    tr        = br ^+^ tzRightSideVec h rang
-    tl        = bl ^+^ tzLeftSideVec h lang
+    sine                = fromRadian . sin
+    -- WRONG! - diags not necessarily half the ang
+    half_lang           = 0.5 * lang    
+    half_rang           = 0.5 * rang
+
+    -- find hypotenuses of bottom diagonals to the center.
+    (bl_diag,br_diag)   = losLegs half_lang bw half_rang 
+
+    hminor    = bl_diag * sine half_lang 
+    hmajor    = h - hminor
+
+    mmratio   = hmajor / hminor
+
+    vscale    = (*^)
+    
+    -- These are abit convoluted because we have to manufacture
+    -- the angle from the intersection center...
+    to_bl     = vreverse $ avec half_lang bl_diag
+    to_br     = avec (two_pi - half_rang) br_diag
+
+    to_tr     = vscale mmratio $ vreverse to_bl
+    to_tl     = vscale mmratio $ vreverse to_br
 
 
 
--- | Calculate the vector that produces the upper-left point given
--- the lower-left point.
---
--- Note - expects ang value 0 < ang < 180, though does not check...
+-- | @law-of-sines legs@ - Find (ab,bc) given ac, bac and bca:
 -- 
-tzLeftSideVec :: Floating u => u -> Radian -> Vec2 u
-tzLeftSideVec h lang | lang <  0.5*pi = less_ninety
-                     | lang == 0.5*pi = vvec h
-                     | otherwise      = grtr_ninety
-  where
-    less_ninety = let dist = h / (fromRadian $ sin lang) in avec lang dist
-    grtr_ninety = let theta = lang - (0.5*pi) 
-                      dist  = h / (fromRadian $ cos theta) 
-                  in avec lang dist
-
-
-
-
--- | Calculate the vector that produces the upper-right point given
--- the lower-right point.
+-- >            b
+-- >        . '  \
+-- >    . '       \
+-- >  a------------c
+-- > 
 --
--- Note - expects ang value 0 < ang < 180, though does not check...
--- 
-tzRightSideVec :: Floating u => u -> Radian -> Vec2 u
-tzRightSideVec h rang | rang <  0.5*pi = less_ninety
-                      | rang == 0.5*pi = vvec h
-                      | otherwise      = grtr_ninety
-  where
-    less_ninety = let dist  = h / (fromRadian $ sin rang) in avec (pi - rang) dist
-    grtr_ninety = let theta = rang - (0.5*pi) 
-                      dist  = h / (fromRadian $ cos theta) 
-                  in avec (pi - rang) dist
+-- (Law of sines)
+--
+losLegs :: Fractional u => Radian -> u -> Radian -> (u,u)
+losLegs bAc ac bCa = (ab,bc)
+   where
+     aBc  = pi - (bAc + bCa)
+     sine = fromRadian . sin
+     ab   = (ac * sine bCa) / (sine aBc)
+     bc   = (ac * sine bAc) / (sine aBc)
+
 
