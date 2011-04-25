@@ -47,7 +47,7 @@ dot2 :: DLocGraphic
 dot2 = dot thistle
 
 dot :: RGBi -> DLocGraphic 
-dot rgb = localize (fill_colour rgb) $ filledDisk 6
+dot rgb = localize (fill_colour rgb) $ dcDisk FILL 6
 
 
 snapGridX :: (DrawingCtxM m, Fractional u) => m u

@@ -51,7 +51,7 @@ tableGraphic row_count xs = draw $ (chain_ chn gs) `at` pt
 colourSample :: String -> RGBi -> LocGraphic Double
 colourSample name rgb = localize (fill_colour rgb) $ 
     promoteR1 $ \pt ->  
-      oplus (borderedRectangle 15 10 `at` pt)
-            (plainTextLine name `at` displace 20 2 pt)
+      oplus (dcRectangle FILL_STROKE 15 10 `at` pt)
+            (dcTextlabel name `at` displace 20 2 pt)
         
 

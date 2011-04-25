@@ -41,7 +41,7 @@ path1 = localize (stroke_colour dark_red) $ execRelBuild path_spec1
 path2 :: DLocGraphic 
 path2 = localize (stroke_colour red) $  promoteR1 $ \pt -> 
    let relp = evalRelBuild path_spec1 
-   in toPrimPath pt relp >>= filledPath
+   in toPrimPath pt relp >>= dcClosedPath FILL
 
 makePD :: RelBuild Double () -> DLocGraphic
 makePD spec = localize (stroke_colour red) $ execRelBuild spec
@@ -64,7 +64,7 @@ path_spec1 =
           
  
   where
-    disk1 = strokedDisk 10
+    disk1 = dcDisk STROKE 10
 
     vamp1 = Vamp { vamp_move_span  = V2 40 40
                  , vamp_move_start = V2 0 0

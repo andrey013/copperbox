@@ -24,14 +24,14 @@ main = do
 arrow_pic :: CtxPicture 
 arrow_pic = drawTracing $ do
     localize line_ultra_thick $  
-        draw $ toPrimPath large_curve2 >>= openStroke
+        draw $ toPrimPath large_curve2 >>= dcOpenPath
     localize (join_round . cap_round) $
-        draw $ toPrimPath (curveyArr 24 (P2 0 50)) >>= openStroke
+        draw $ toPrimPath (curveyArr 24 (P2 0 50)) >>= dcOpenPath
 
 drawing02 :: CtxPicture
 drawing02 = drawTracing $
     localize line_ultra_thick $ do
-      draw $ toPrimPath large_curve >>= openStroke
+      draw $ toPrimPath large_curve >>= dcOpenPath
 
 large_curve :: AbsPath Double
 large_curve = curve1 (P2 168 457) (P2 256 506) (P2 332 571) (P2 346 658)

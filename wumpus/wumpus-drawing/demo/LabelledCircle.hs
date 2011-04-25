@@ -43,7 +43,7 @@ circle_drawing :: TraceDrawing Double ()
 circle_drawing = do
     a <- drawi $ localize (strokeFill maroon moccasin) $
           (f1 $ f2 $ f3 $ f4 $ borderedShape $ circle 100) `at` P2 200 200
-    draw $ filledDisk 3 `at` southeast a
+    draw $ dcDisk FILL 3 `at` southeast a
     return ()
   where
     f1 = label_above (textline "label-above")

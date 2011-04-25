@@ -48,14 +48,14 @@ triangles = localize (set_line_width 8) $ execAbsBuild (P2 0 0) $
 
          
 curve01 :: Graphic Double
-curve01 = toPrimPath (curvePath xs) >>= openStroke
+curve01 = toPrimPath (curvePath xs) >>= dcOpenPath
   where
     xs :: [DPoint2]
     xs = [P2 0 0, P2 32 0, P2 60 28, P2 60 60] 
 
 
 curve02 :: Graphic Double
-curve02 =  localize (stroke_colour red) (toPrimPath path_one >>= openStroke)
+curve02 =  localize (stroke_colour red) (toPrimPath path_one >>= dcOpenPath)
   where
     path_one = evalAbsBuild (zeroPt::DPoint2) $ ctrlcurve 0 (3*pi/2) (P2 60 60)
 
@@ -63,7 +63,7 @@ curve02 =  localize (stroke_colour red) (toPrimPath path_one >>= openStroke)
 
 curve03 :: Graphic Double
 curve03 = localize (stroke_colour blue) 
-                  (toPrimPath (shortenPath 10 10 path1) >>= openStroke)
+                  (toPrimPath (shortenPath 10 10 path1) >>= dcOpenPath)
 
 
 path1 :: AbsPath Double
@@ -71,7 +71,7 @@ path1 = evalAbsBuild (P2 60 0) $ ctrlcurve (pi/2) 0 (P2 0 60)
 
 
 circle1 :: Graphic Double
-circle1 = localize (fill_colour gold) (filledCircle 60 `at` zeroPt)
+circle1 = localize (fill_colour gold) (dcCircle FILL 60 `at` zeroPt)
 
 cto4 :: AbsPath Double
 cto4 = evalAbsBuild (P2 180 0) $ ctrlcurve (pi/2) 0 (P2 120 60)
@@ -86,7 +86,7 @@ cto4 = evalAbsBuild (P2 180 0) $ ctrlcurve (pi/2) 0 (P2 120 60)
 
 eastUpWest :: Graphic Double
 eastUpWest = localize (stroke_colour blue) 
-                      (mkP1 (P2 140 0) (P2 160 20) >>= openStroke)
+                      (mkP1 (P2 140 0) (P2 160 20) >>= dcOpenPath)
 
 
 -- Potentially this may introduce the style that using AGraphic2 

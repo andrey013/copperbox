@@ -39,10 +39,10 @@ std_ctx = standardContext 14
 
 top_pic :: CtxPicture
 top_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    draw $ toPrimPath path01 >>= filledPath
-    draw $ localize (fill_colour powder_blue) $ toPrimPath path02 >>= filledPath
-    draw $ toPrimPath path03 >>= filledPath
-    draw $ toPrimPath path04 >>= filledPath
+    draw $ toPrimPath path01 >>= dcClosedPath FILL
+    draw $ localize (fill_colour powder_blue) $ toPrimPath path02 >>= dcClosedPath FILL
+    draw $ toPrimPath path03 >>= dcClosedPath FILL
+    draw $ toPrimPath path04 >>= dcClosedPath FILL
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ do
@@ -77,9 +77,9 @@ clip4 = toPrimPath path04 >>= \pp -> clipGraphic pp (background black)
 
 iheartHaskell :: LocGraphic Double
 iheartHaskell = promoteR1 $ \pt -> 
-    let body  = plainTextLine "I Haskell" `at` pt
+    let body  = dcTextlabel "I Haskell" `at` pt
         heart = localize (set_font symbol) $ 
-                  plainTextLine "&heart;" `at` (pt .+^ hvec 7)
+                  dcTextlabel "&heart;" `at` (pt .+^ hvec 7)
     in body `oplus` heart
 
 

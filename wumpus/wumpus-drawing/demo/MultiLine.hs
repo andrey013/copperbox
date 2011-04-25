@@ -72,14 +72,14 @@ mf = do
 
 testDrawL :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawL rpos = filledDisk 2 `oplus` (locGraphic_ txt)
+testDrawL rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
   where
     txt = illustrateBoundedLocGraphic $ 
             startAddr (multiAlignLeft sample_text) rpos
 
 testDrawC :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawC rpos = filledDisk 2 `oplus` (locGraphic_ txt)
+testDrawC rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
   where
     txt = illustrateBoundedLocGraphic $ 
             startAddr (multiAlignCenter sample_text)  rpos
@@ -87,7 +87,7 @@ testDrawC rpos = filledDisk 2 `oplus` (locGraphic_ txt)
 
 testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawR rpos = filledDisk 2 `oplus` (locGraphic_ txt)
+testDrawR rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
   where
     txt = illustrateBoundedLocGraphic $ 
             startAddr (multiAlignRight sample_text) rpos

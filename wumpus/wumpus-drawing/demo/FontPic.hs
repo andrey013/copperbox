@@ -42,7 +42,7 @@ fontMsg ft sz = msgF []
 
 
 makeLabel :: RGBi -> FontDef -> Int -> DLocGraphic
-makeLabel rgb ft sz = localize upd (plainTextLine $ fontMsg ft sz)
+makeLabel rgb ft sz = localize upd (dcTextlabel $ fontMsg ft sz)
   where
     upd = text_colour rgb . font_attr ft sz 
 
@@ -59,7 +59,7 @@ positions = [0, 12, 27, 49, 78, 122]
 pointChain :: (Int -> DLocGraphic) -> DLocImage DPoint2
 pointChain fn = chain chn_alg $ map fn point_sizes
   where
-    chn_alg = linear $ iterationScheme start step
+    chn_alg = linearChain $ iterationScheme start step
     start   = \pt -> (pt,point_sizes)
 
     step (pt,[])     = ((displaceV 50 pt, []), pt)

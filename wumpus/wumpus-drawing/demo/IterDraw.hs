@@ -36,20 +36,20 @@ hdist = hvec 28
 
 
 redA :: AdvObject Double
-redA = makeAdvObject (pure hdist) (background `oplus` plainTextLine "A")
+redA = makeAdvObject (pure hdist) (background `oplus` dcTextlabel "A")
   where
     background = localize (fill_colour tomato) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+                          (moveStart bldisplace $ dcRectangle FILL 24 24)
 
 greenB :: AdvObject Double
-greenB = makeAdvObject (pure hdist) (background `oplus` plainTextLine "B")
+greenB = makeAdvObject (pure hdist) (background `oplus` dcTextlabel "B")
   where
     background = localize (fill_colour yellow_green) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+                          (moveStart bldisplace $ dcRectangle FILL 24 24)
 
 blueC :: AdvObject Double
-blueC = makeAdvObject (pure hdist) (background `oplus` plainTextLine "C")
+blueC = makeAdvObject (pure hdist) (background `oplus` dcTextlabel "C")
   where
     background = localize (fill_colour light_sky_blue) 
-                          (moveStart bldisplace $ filledRectangle 24 24)
+                          (moveStart bldisplace $ dcRectangle FILL 24 24)
 

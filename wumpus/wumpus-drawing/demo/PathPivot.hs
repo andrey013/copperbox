@@ -20,7 +20,7 @@ main = do
 
 path_pic :: CtxPicture
 path_pic = drawTracing $ localize (set_line_width 2) $ do
-    drawl (P2 0 0)   $ duplicateH 3 80 (filledDisk 4)
+    drawl (P2 0 0)   $ duplicateH 3 80 (dcDisk FILL 4)
     drawl (P2 0 0)   $ distribH 80 $ map execPivot [path1, path2, path3, path4]
     return ()  
     

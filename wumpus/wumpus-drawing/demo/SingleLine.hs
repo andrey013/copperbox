@@ -52,7 +52,7 @@ mf = do
     
 
 testDraw :: RectAddress -> LocGraphic Double
-testDraw rpos = filledDisk 2 `oplus` (locGraphic_ ans)
+testDraw rpos = dcDisk FILL 2 `oplus` (locGraphic_ ans)
   where
     ans = textline "Qwerty" `startAddr` rpos
 
