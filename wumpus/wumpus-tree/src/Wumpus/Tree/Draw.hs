@@ -82,7 +82,7 @@ connector :: ( Real u, Floating u, InterpretUnit u
              , CenterAnchor a, RadialAnchor a
              , u ~ DUnit a )  
           => a -> a -> Graphic u
-connector a0 a1 = vertexPP [pt0,pt1] >>= openStroke
+connector a0 a1 = vertexPP [pt0,pt1] >>= dcOpenPath
   where
     (ang0,ang1) = anchorAngles (center a0) (center a1)
     pt0         = radialAnchor ang0 a0
@@ -145,7 +145,7 @@ famconn1 :: (Fractional u, InterpretUnit u)
          => Point2 u -> Point2 u -> Graphic u
 famconn1 a@(P2 xa _) b@(P2 xb _) 
     | xa == xb  = straightLine a b
-    | otherwise = vertexPP [a,m1,m2,b] >>= openStroke
+    | otherwise = vertexPP [a,m1,m2,b] >>= dcOpenPath
   where
     hh = halfHeight a b
     m1 = displaceV (-hh)     a  

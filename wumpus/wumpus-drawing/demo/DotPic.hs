@@ -41,7 +41,12 @@ dot_pic = drawTracing $ tableGraphic dottable
 
 dottable :: [(String, DotLocImage Double)]
 dottable =   
-    [ ("dotHLine",      dotHLine)
+    [ ("smallDisk",     smallDisk)
+    , ("largeDisk",     largeDisk)
+    , ("smallCirc",     smallCirc)
+    , ("largeCirc",     largeCirc)
+    , ("dotNone",       dotNone)
+    , ("dotHLine",      dotHLine)
     , ("dotVLine",      dotVLine)
     , ("dotX",          dotX)
     , ("dotPlus",       dotPlus)
@@ -67,8 +72,8 @@ tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
     draw $ chain_ chn_alg (map makeDotDrawing imgs) `at` pt
   where
-    row_count   = length imgs
-    chn_alg     = tableDown row_count (1,36)
+    row_count   = 18
+    chn_alg     = tableDown row_count (180,36)
     pt          = displaceV (fromIntegral $ 36 * row_count) zeroPt 
 
 
@@ -76,16 +81,16 @@ tableGraphic imgs =
 
 makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic 
 makeDotDrawing (name,df) = 
-    drawing `oplus` moveStart (displaceVec $ vec 140 18) lbl
+    drawing `oplus` moveStart (displaceVec $ vec 86 14) lbl
   where
     drawing     = execRelBuild $ 
                     penCtxUpdate path_style >> 
                     insert dot >> mapM (\v -> line v >> insert dot) steps
 
     lbl         = promoteR1 $ \pt -> fmap ignoreAns $ 
-                    atStartAddr (textline name) (displaceH 66 pt) WW
+                    atStartAddr (textline name) pt WW
 
-    steps       = [V2 60 20, V2 60 (-20), V2 60 20]
+    steps       = [V2 25 15, V2 25 (-15), V2 25 15]
     dot         = locGraphic_ df
     path_style  = packed_dotted . stroke_colour cadet_blue
 

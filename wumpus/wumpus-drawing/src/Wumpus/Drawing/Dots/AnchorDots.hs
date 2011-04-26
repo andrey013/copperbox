@@ -1,7 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -32,6 +29,14 @@ module Wumpus.Drawing.Dots.AnchorDots
   , DDotLocImage
 
   -- * Dots with anchor points
+  , smallDisk
+  , largeDisk
+
+  , smallCirc
+  , largeCirc
+
+
+  , dotNone
   , dotChar
   , dotText
   , dotHLine
@@ -58,7 +63,8 @@ module Wumpus.Drawing.Dots.AnchorDots
   ) where
 
 
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
+import qualified Wumpus.Drawing.Dots.SimpleDots as SD
 import Wumpus.Drawing.Text.Base.RotTextZero
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
@@ -71,17 +77,15 @@ import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
--- An existential thing that supports anchors.
--- This means any dot can retun the same (opaque) structure
+
+-- | All dots return the same thing a 'DotAnchor' which supports 
+-- the same (limited) see of anchors.
 --
--- But it does mean that which anchor class are supported is 
--- fixed - the datatype needs a field for each one.
--- Supporting north, southeast etc. will also be tedious...
---
-data DotAnchor u = forall s.  
-                    DotAnchor { center_anchor   :: Point2 u
-                              , radial_anchor   :: Radian   -> Point2 u
-                              , cardinal_anchor :: Cardinal -> Point2 u }
+data DotAnchor u = DotAnchor 
+      { center_anchor   :: Point2 u
+      , radial_anchor   :: Radian   -> Point2 u
+      , cardinal_anchor :: Cardinal -> Point2 u 
+      }
 
 type instance DUnit (DotAnchor u) = u
 
@@ -141,6 +145,14 @@ polyCardinal f WEST                 = f pi
 polyCardinal f NORTH_WEST           = f (0.75 * pi) 
 
 
+-- | All anchors are the center!
+--
+zeroAnchor :: Point2 u -> DotAnchor u
+zeroAnchor ctr = 
+    DotAnchor { center_anchor   = ctr
+              , radial_anchor   = const ctr 
+              , cardinal_anchor = const ctr }
+
 
 rectangleAnchor :: (Real u, Floating u) => u -> u -> Point2 u -> DotAnchor u
 rectangleAnchor hw hh ctr = 
@@ -149,6 +161,15 @@ rectangleAnchor hw hh ctr =
               , cardinal_anchor = rectCardinal hw hh ctr }
   where
     fn theta =  displaceVec (rectRadialVector hw hh theta) ctr
+
+
+circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
+circleAnchor rad ctr = 
+    DotAnchor { center_anchor   = ctr
+              , radial_anchor   = fn 
+              , cardinal_anchor = radialCardinal rad ctr }
+  where
+    fn theta = ctr .+^ (avec theta rad)
 
 
 polygonAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
@@ -169,31 +190,41 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
        hh = 0.5 * (y2 - y1)
    in rectangleAnchor hw hh (bl .+^ vec hw hh)
 
-rectangleLDO :: (Real u, Floating u) 
-             => u -> u -> LocQuery u (DotAnchor u)
-rectangleLDO w h = 
-    promoteR1 $ \pt -> pure $ rectangleAnchor (w*0.5) (h*0.5) pt
+
+zeroLDO :: LocQuery u (DotAnchor u)
+zeroLDO = promoteR1 $ \pt -> return $ zeroAnchor pt
+
+rectangleLDO :: (Real u, Floating u, InterpretUnit u) 
+             => MarkSize -> MarkSize -> LocQuery u (DotAnchor u)
+rectangleLDO w h = promoteR1 $ \pt -> 
+    (\uw uh -> rectangleAnchor (uw*0.5) (uh*0.5) pt) 
+      <$> uconvertCtx1 w <*> uconvertCtx1 h
 
 
-circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
-circleAnchor rad ctr = DotAnchor ctr 
-                                 (\theta -> ctr .+^ (avec theta rad))
-                                 (radialCardinal rad ctr)
 
-circleLDO :: (Floating u, InterpretUnit u) => LocQuery u (DotAnchor u)
-circleLDO = 
+circleLDO :: (Floating u, InterpretUnit u) 
+          => MarkSize -> LocQuery u (DotAnchor u)
+circleLDO rad = 
     promoteR1 $ \pt -> 
-      markHeight >>= \diam -> pure $ circleAnchor (diam * 0.5) pt
+      uconvertCtx1 rad >>= \urad ->  pure $ circleAnchor urad pt
 
 
--- This might be better taking a function: ctr -> poly_points
--- ...
---
-polygonLDO :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-           => (u -> Point2 u -> [Point2 u]) -> LocQuery u (DotAnchor u)
-polygonLDO mk = 
-    promoteR1 $ \ctr -> 
-      markHeight >>= \h -> let ps = mk h ctr in pure $ polygonAnchor ps ctr
+-- Probably better just using bounding circle for polygons 
+-- If you really care about anchors use shapes
+-- 
+
+-- Triangle probably benefits proper calculation...
+
+triangleLDO :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+            => MarkSize -> LocQuery u (DotAnchor u)
+triangleLDO h = 
+    promoteR1 $ \pt -> 
+      uconvertCtx1 h >>= \uh -> 
+      let alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices uh
+          ps  = runPathAlgPoint pt alg
+      in return $ polygonAnchor ps pt
+  where
+    fn3 (a,b,c) = [a,b,c]
 
 
 --------------------------------------------------------------------------------
@@ -202,6 +233,27 @@ polygonLDO mk =
 type DotLocImage u = LocImage u (DotAnchor u)
 
 type DDotLocImage = DotLocImage Double 
+
+
+dotNone :: InterpretUnit u => DotLocImage u
+dotNone = intoLocImage zeroLDO SD.dotNone
+
+
+
+smallDisk :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
+smallDisk = intoLocImage (circleLDO 0.25) SD.smallDisk
+
+
+largeDisk :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
+largeDisk = intoLocImage (circleLDO 1.00) SD.largeDisk
+
+smallCirc :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
+smallCirc = intoLocImage (circleLDO 0.25) SD.smallCirc
+
+
+largeCirc :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
+largeCirc = intoLocImage (circleLDO 1.00) SD.largeCirc
+
 
 dotChar :: (Floating u, Real u, InterpretUnit u) => Char -> DotLocImage u
 dotChar ch = dotText [ch]
@@ -221,68 +273,64 @@ dotText ss = pushR1 (mapAns bboxRectAnchor) $ ccTextline ss
 
 
 dotHLine :: (Floating u, InterpretUnit u) => DotLocImage u
-dotHLine = intoLocImage circleLDO markHLine
+dotHLine = intoLocImage (circleLDO 0.5) SD.dotHLine
 
 
 dotVLine :: (Floating u, InterpretUnit u) => DotLocImage u
-dotVLine = intoLocImage circleLDO markVLine
+dotVLine = intoLocImage (circleLDO 0.5) SD.dotVLine
 
 
 dotX :: (Floating u, InterpretUnit u) => DotLocImage u
-dotX = intoLocImage circleLDO markX
+dotX = intoLocImage (circleLDO 0.5) SD.dotX
 
 dotPlus :: (Floating u, InterpretUnit u) => DotLocImage u
-dotPlus = intoLocImage circleLDO markPlus
+dotPlus = intoLocImage (circleLDO 0.5) SD.dotPlus
 
 dotCross :: (Floating u, InterpretUnit u) => DotLocImage u
-dotCross = intoLocImage circleLDO markCross
+dotCross = intoLocImage (circleLDO 0.5) SD.dotCross
 
 dotDiamond :: (Floating u, InterpretUnit u) => DotLocImage u
-dotDiamond = intoLocImage circleLDO markDiamond
+dotDiamond = intoLocImage (circleLDO 0.5) SD.dotDiamond
 
 dotFDiamond :: (Floating u, InterpretUnit u) => DotLocImage u
-dotFDiamond = intoLocImage circleLDO markFDiamond
+dotFDiamond = intoLocImage (circleLDO 0.5) SD.dotFDiamond
 
 
 
 dotDisk :: (Floating u, InterpretUnit u) => DotLocImage u
-dotDisk = intoLocImage circleLDO markDisk
+dotDisk = intoLocImage (circleLDO 0.5) SD.dotDisk
 
 
 dotSquare :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
-dotSquare = 
-    markHeight >>= \h -> intoLocImage (rectangleLDO h h) markSquare
+dotSquare = intoLocImage (rectangleLDO 1 1) SD.dotSquare
 
 
 
 
 dotCircle :: (Floating u, InterpretUnit u) => DotLocImage u
-dotCircle = intoLocImage circleLDO markCircle
+dotCircle = intoLocImage (circleLDO 0.5) SD.dotCircle
 
 
 dotPentagon :: (Floating u, InterpretUnit u) => DotLocImage u
-dotPentagon = intoLocImage circleLDO markPentagon
+dotPentagon = intoLocImage (circleLDO 0.5) SD.dotPentagon
 
 dotStar :: (Floating u, InterpretUnit u) => DotLocImage u
-dotStar = intoLocImage circleLDO markStar
+dotStar = intoLocImage (circleLDO 0.5) SD.dotStar
 
 
 dotAsterisk :: (Floating u, InterpretUnit u) => DotLocImage u
-dotAsterisk = intoLocImage circleLDO markAsterisk
+dotAsterisk = intoLocImage (circleLDO 0.5) SD.dotAsterisk
 
 dotOPlus :: (Floating u, InterpretUnit u) => DotLocImage u
-dotOPlus = intoLocImage circleLDO markOPlus
+dotOPlus = intoLocImage (circleLDO 0.5) SD.dotOPlus
 
 dotOCross :: (Floating u, InterpretUnit u) => DotLocImage u
-dotOCross = intoLocImage circleLDO markOCross
+dotOCross = intoLocImage (circleLDO 0.5) SD.dotOCross
 
 dotFOCross :: (Floating u, InterpretUnit u) => DotLocImage u
-dotFOCross = intoLocImage circleLDO markFOCross
+dotFOCross = intoLocImage (circleLDO 0.5) SD.dotFOCross
 
 
 dotTriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => DotLocImage u
-dotTriangle = intoLocImage (polygonLDO fn) markTriangle
-  where 
-    fn h ctr = let (v1,v2,v3) = equilateralTriangleVertices h
-               in map (ctr .+^) [v1,v2,v3]
+dotTriangle = intoLocImage (triangleLDO 1) SD.dotTriangle

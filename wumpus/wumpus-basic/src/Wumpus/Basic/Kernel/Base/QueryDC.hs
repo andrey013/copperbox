@@ -47,8 +47,6 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , getFontFace
   , getTextColour
 
-  , markHeight
-  , markHalfHeight
   , textlineSpace
 
   -- * Glyph metrics
@@ -185,23 +183,6 @@ getFontFace     = asksDC dc_font_face
 
 getTextColour   :: DrawingCtxM m => m RGBi
 getTextColour   = asksDC dc_text_colour
-
-
--- | The /mark/ height is the height of a lowercase letter in the 
--- Courier font at the current point size.
---
--- Arrowheads, dots etc. should generally be drawn at the mark 
--- height.
--- 
-markHeight :: (DrawingCtxM m, InterpretUnit u) => m u
-markHeight = post <$> asksDC dc_font_size 
-  where
-    post sz = dinterp sz (FS.xcharHeight sz)
-
-
-
-markHalfHeight :: (Fractional u, DrawingCtxM m, InterpretUnit u) => m u
-markHalfHeight = (0.5*) <$> markHeight
 
 
 

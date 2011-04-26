@@ -28,17 +28,34 @@ main1 loader = do
     createDirectoryIfMissing True "./out/" 
     base_metrics <- loader [ Right helvetica_family ]
     printLoadErrors base_metrics
-    let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_drawing1
-    writeEPS "./out/mon_tree01.eps"  pic1
-    writeSVG "./out/mon_tree01.svg"  pic1
+    let out1 = runCtxPictureU (makeCtx 18 base_metrics) tree_pic1
+    writeEPS "./out/mon_tree01.eps"  out1
+    writeSVG "./out/mon_tree01.svg"  out1
 
-    let pic2 = runCtxPictureU (makeCtx 24 base_metrics) tree_drawing2
-    writeEPS "./out/mon_tree02.eps"  pic2
-    writeSVG "./out/mon_tree02.svg"  pic2
+    let out2 = runCtxPictureU (makeCtx 24 base_metrics) tree_pic2
+    writeEPS "./out/mon_tree02.eps"  out2
+    writeSVG "./out/mon_tree02.svg"  out2
 
 
 makeCtx :: FontSize -> FontLoadResult -> DrawingContext
 makeCtx sz m = set_font times_roman $ metricsContext sz m
+
+
+tree_pic1 :: CtxPicture
+tree_pic1 = udrawTracing (0::Double) $ 
+    drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
+
+
+tree_pic2 :: CtxPicture
+tree_pic2 = udrawTracing (0::Double) $ do
+    draw $ dcTextlabel "Tree 2" `at` zeroPt
+    draw $ smallDisk      `at` displaceH (-40) tree_ogin 
+    draw $ smallDisk      `at` tree_ogin
+    draw $ smallDisk      `at` displaceH   40  tree_ogin
+    drawScaledTreeD (uniformSF 60) tree_ogin TREE_RIGHT 
+         $ runTreeBuild (diskNode red) tree2 
+  where
+    tree_ogin = P2 240 0
 
 
 -- Note - @label@ in TreeMonad is a waste of a valuable name...
@@ -53,19 +70,8 @@ tree1 = return $
                              , leaf $ label 'J' ] ]
 
 
-tree_drawing1 :: CtxPicture
-tree_drawing1 = udrawTracing (0::Double) $ 
-    drawScaledTree (uniformSF 30) zeroPt $ runTreeBuild charNode tree1
 
-{-
--- Don\'t necessarily need @annotate@ from TreeMonad ...
---
-nodeanno :: InterpretUnit u 
-         => DotLocImage u -> Anchor u -> DotLocImage u
-nodeanno img ancr = lift0R1 ancr >>= \pt -> annotate img (deco pt)
-  where
-    deco pt a = promoteR1 $ \_ -> plainTextLine "deco" `at` pt
--}
+
 
 tree2 :: (Real u, Floating u, InterpretUnit u) 
       => TreeBuild u (ZTreeSpec u)
@@ -78,16 +84,4 @@ tree2 = do
         branch special [zbranch bs, zleaf, zbranch gs]
 
 
-
-
-tree_drawing2 :: CtxPicture
-tree_drawing2 = udrawTracing (0::Double) $ do
-    draw $ plainTextLine "Tree 2" `at` zeroPt
-    draw $ filledDisk 2      `at` displaceH (-40) tree_ogin 
-    draw $ filledDisk 2      `at` tree_ogin
-    draw $ filledDisk 2      `at` displaceH   40  tree_ogin
-    drawScaledTreeD (uniformSF 60) tree_ogin TREE_RIGHT 
-         $ runTreeBuild (diskNode red) tree2 
-  where
-    tree_ogin = P2 240 0
 

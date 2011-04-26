@@ -50,25 +50,25 @@ makeCtx sz m = set_font times_roman $ metricsContext sz m
 tree_pic1 :: CtxPicture
 tree_pic1 = udrawTracing (0::Double) $ do
     --
-    draw $ plainTextLine "Tree 1:"        `at` (P2 0  530)
+    draw $ dcTextlabel "Tree 1:"        `at` (P2 0  530)
     drawScaledTree (uniformSF 30)         (P2 80 530) $ 
        runTreeBuild charNode tree1
     --
-    draw $ plainTextLine "Tree 2:"       `at` (P2 160 530) 
+    draw $ dcTextlabel "Tree 2:"       `at` (P2 160 530) 
     drawScaledTree (uniformSF 30)        (P2 240 530) $ 
         runTreeBuild (diskNode red) tree2
 
-    draw $ plainTextLine "Tree 3:"       `at` (P2 0  410) 
+    draw $ dcTextlabel "Tree 3:"       `at` (P2 0  410) 
     localize (set_font_size 12) $ 
         drawScaledFamilyTree (uniformSF 25) (P2 280 410) $ 
           runTreeBuild charNode tree3
 
     --
-    draw $ plainTextLine "Tree 4:"       `at` (P2 0  200)
+    draw $ dcTextlabel "Tree 4:"       `at` (P2 0  200)
     drawScaledTree (scaleFactors 20 30)  (P2 80 200) $ 
         runTreeBuild (circleNode black) tree4
     --
-    draw $ plainTextLine "Tree 5:"        `at` zeroPt
+    draw $ dcTextlabel "Tree 5:"        `at` zeroPt
     drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
         runTreeBuild (circleNode black)  tree5
 

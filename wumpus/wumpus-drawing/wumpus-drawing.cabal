@@ -40,9 +40,8 @@ description:
   .
   v0.3.0 to v0.4.0:
   .
-  * Moved Turtle and Grids into the @Wumpus.Drawing.Extras@
-    name-space. Modules here are considered sketches.
-  .
+  * Simplified Trapezium shape so it only produces isosceles
+    Trapeziums.
   .
 build-type:         Simple
 stability:          highly unstable
@@ -88,7 +87,7 @@ library
     Wumpus.Drawing.Connectors.ConnectorPaths,
     Wumpus.Drawing.Connectors.Loop,
     Wumpus.Drawing.Dots.AnchorDots,
-    Wumpus.Drawing.Dots.Marks,
+    Wumpus.Drawing.Dots.SimpleDots,
     Wumpus.Drawing.Extras.Axes,
     Wumpus.Drawing.Extras.Grids,
     Wumpus.Drawing.Extras.Turtle.TurtleClass,
