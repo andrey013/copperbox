@@ -5,35 +5,29 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Tree
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
+-- Note - this module is a kludge whilst I work out a usable API.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Tree
   (
-  -- * The type of rendered trees
-
-    ScaleFactors
-  , uniformSF
-  , scaleFactors
-
-  , drawScaledTree
-  , TreeDirection(..)
-  , drawScaledTreeD
-
-  , drawScaledFamilyTree
-
-
-  -- * Drawing nodes
+  -- * Re-exports
+    TreeDirection(..) 
+  
+  -- * Definitions
+  , scaledFamilyTree
+  , scaledTree
   , charNode
-  , textNode
-  , circleNode
   , diskNode
+  , circleNode
+  , textNode
 
   )
   where
@@ -41,7 +35,6 @@ module Wumpus.Tree
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
-import Wumpus.Tree.ScalingContext
 import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -51,63 +44,58 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.VectorSpace                         -- package: vector-space
 
+import Data.Tree ( Tree )
 
 
 
--- | Customize the size of the printed tree.
---
--- A tree is /designed/ with a height of 1 unit between 
--- parent and child nodes.
---
--- The y-scaling factor multiplies the unit height, a scaling 
--- factor of 30 represents 30 /points/.
---
--- In the horizontal, 1 unit is the smallest possible distance 
--- between child nodes.
---
-type ScaleFactors u = ScalingContext u Int u
+gridScale :: Fractional u => UW -> UW -> Query (Vec2 u)
+gridScale uwx uwy = snapmove (1,1) >>= \(V2 x y) ->
+                    return $ V2 (x * realToFrac uwx) (y * realToFrac uwy)
+
+scaleFactors :: Fractional u => u -> u -> (UW -> UW -> Query (Vec2 u))
+scaleFactors sx sy = \uwx uwy -> 
+    return $ V2 (sx * realToFrac uwx) (sy * realToFrac uwy)
 
 
+scaledFamilyTree :: ( Real u, Floating u, InterpretUnit u
+                    , CenterAnchor a, CardinalAnchor a 
+                    , u ~ DUnit a
+                    )
+                 => u -> u -> TreeDirection -> Tree (LocImage u a) -> LocGraphic u
+scaledFamilyTree sx sy dir tree =  
+    drawTree props $ rotTree dir $ design tree
+  where
+    props = TreeProps { tp_scale      = scaleFactors sx sy
+                      , tp_multiconn  = familyConn         
+                      , tp_direction  = dir
+                      }  
 
+-- Note - these functions won\'t be the proper API.
+-- They are just a placeholder whilst I work things out.
 
--- | Build uniform x- and y-scaling factors, i.e. @ x == y @.
---
-uniformSF :: Num u => u -> ScaleFactors u
-uniformSF u = ScalingContext (\x -> u * x)
-                             (\y -> u * fromIntegral y) 
+scaledTree :: ( Real u, Floating u, InterpretUnit u
+              , CenterAnchor a, RadialAnchor a
+              , u ~ DUnit a
+              )  
+           => u -> u -> TreeDirection -> Tree (LocImage u a) -> LocGraphic u
+scaledTree sx sy dir tree =  
+    drawTree props $ rotTree dir $ design tree
+  where
+    props = TreeProps { tp_scale      = scaleFactors sx sy
+                      , tp_multiconn  = radialConn         
+                      , tp_direction  = dir
+                      }  
 
-
-scaleFactors :: Num u => u -> u -> ScaleFactors u
-scaleFactors sx sy = ScalingContext (\x -> sx * x)
-                                    (\y -> sy * fromIntegral y)	
-
-
-
--- 
-
-drawScaledTree :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
-               => ScaleFactors u -> Point2 u -> TreeBuildAns u 
-               -> TreeDrawing u
-drawScaledTree scale_f ogin (tree,annos) = 
-    drawTree annos $ design ogin scale_f tree
-
-
-
-data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
-  deriving (Eq,Ord,Show)
-
-drawScaledTreeD :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
-                => ScaleFactors u -> Point2 u 
-                -> TreeDirection -> TreeBuildAns u 
-                -> TreeDrawing u
-drawScaledTreeD scale_f ogin tdir (tree,annos) = 
-    drawTree annos $ rotTree tdir $ design ogin scale_f tree
+            
 
 
 
 
-rotTree :: (Real u, Floating u) 
-        => TreeDirection -> CoordTree u a -> CoordTree u a
+
+
+
+
+rotTree :: TreeDirection -> CoordTree a -> CoordTree a
 rotTree TREE_UP     = rotateAboutRoot pi
 rotTree TREE_DOWN   = id
 rotTree TREE_LEFT   = rotateAboutRoot (1.5*pi)
@@ -115,12 +103,6 @@ rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 
 
 
-
-drawScaledFamilyTree :: (Real u, Floating u, InterpretUnit u, InnerSpace (Vec2 u)) 
-               => ScaleFactors u -> Point2 u -> TreeBuildAns u 
-               -> TreeDrawing u
-drawScaledFamilyTree scale_f ogin (tree,annos) = 
-    drawFamilyTree annos $ design ogin scale_f tree
 
 --------------------------------------------------------------------------------
 -- Drawing functions

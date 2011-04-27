@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Tree.Draw
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -19,19 +19,24 @@
 module Wumpus.Tree.Draw 
   (
     drawTree
-  , drawFamilyTree
+
+  , radialConn
+  , familyConn
 
   ) where
 
 import Wumpus.Tree.Base
 import Wumpus.Tree.TreeBuildMonad
 
+import Wumpus.Drawing.Dots.AnchorDots           -- package: wumpus-drawing
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.AffineSpace                         -- package: vector-space
 
+import Control.Applicative
 import Control.Monad
 import qualified Data.IntMap as IntMap
 import Data.Tree hiding ( drawTree )
@@ -40,41 +45,37 @@ import Data.Tree hiding ( drawTree )
 
 
 drawTree :: (Real u, Floating u, InterpretUnit u) 
-          => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
-drawTree annos tree = drawStep annos radialConns tree >> return ()
+         => TreeProps u a -> CoordTree (LocImage u a) -> LocGraphic u
+drawTree props tree = locGraphic_ $ drawStep props tree
 
 
 
-drawFamilyTree :: (Real u, Floating u, InterpretUnit u) 
-          => NodeAnnoRefs u -> CoordTree u (TreeNodeAns u) -> TreeDrawing u
-drawFamilyTree annos tree = drawStep annos familyConn tree >> return ()
+drawStep :: (Real u, Floating u, InterpretUnit u) 
+         => TreeProps u a -> CoordTree (LocImage u a) -> LocImage u a
+drawStep props (Node (P2 uwx uwy, gf) ns) = promoteR1 $ \proot ->
+    tp_scale props uwx uwy >>= \v1 -> 
+    let pt   = proot .+^ v1 
+        imgs = lsconcat $ map (drawStep props) ns
+    in apply1R1 gf pt           >>= \(Ans o1 x) -> 
+       apply1R1 imgs proot      >>= \(Ans o2 xs) ->
+       tp_multiconn props x xs  >>= \(Ans o3 _) ->
+       return $ Ans (o1 `oplus` o2 `oplus` o3) x
 
 
-drawStep :: (Real u, Floating u) 
-         => NodeAnnoRefs u 
-         -> (DotAnchor u -> [DotAnchor u] -> Graphic u)
-         -> CoordTree u (TreeNodeAns u) -> TraceDrawing u (DotAnchor u)
-drawStep annos connF (Node (pt,(fn, mb_ix)) ns) = do 
-    ancr <- drawi $ fn `at` pt
-    xs   <- mapM (drawStep annos connF) ns   
-    when (not $ null xs) $ draw $ connF ancr xs
-    drawAnno annos ancr mb_ix
-    return ancr
-
-drawAnno :: NodeAnnoRefs u -> DotAnchor u -> Maybe Int -> TraceDrawing u ()
-drawAnno _    _    Nothing   = return ()
-drawAnno refs ancr (Just ix) = maybe (return ()) sk $ IntMap.lookup ix refs
-  where
-    sk fn = draw $ fn ancr
+lsconcat :: InterpretUnit u => [LocImage u a] -> LocImage u [a]
+lsconcat []      = pushR1 (replaceAns []) emptyLocGraphic
+lsconcat (gf:gs) = promoteR1 $ \pt -> 
+                   apply1R1 gf pt            >>= \(Ans o1 x) -> 
+                   apply1R1 (lsconcat gs) pt >>= \(Ans o2 xs) ->
+                   return $ Ans (o1 `oplus` o2) (x:xs)
 
 
-
-radialConns :: ( Real u, Floating u, InterpretUnit u
-               , CenterAnchor a, RadialAnchor a 
-               , u ~ DUnit a) 
-            => a -> [a] -> Graphic u
-radialConns a []     = emptyLocGraphic `at` (center a)
-radialConns a (x:xs) = oconcat (connector a x) (map (connector a) xs)
+radialConn :: ( Real u, Floating u, InterpretUnit u
+              , CenterAnchor a, RadialAnchor a 
+              , u ~ DUnit a) 
+           => a -> [a] -> Graphic u
+radialConn a []     = emptyLocGraphic `at` (center a)
+radialConn a (x:xs) = oconcat (connector a x) (map (connector a) xs)
 
 
 

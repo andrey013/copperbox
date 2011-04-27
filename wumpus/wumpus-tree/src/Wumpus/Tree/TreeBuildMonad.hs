@@ -131,6 +131,7 @@ runTreeBuild regDrawF ma =
     in (t1, anno_refs s)
 
 
+
 -- As the constructor to build NodeIds is not exposed a 
 -- TreeBuild should not be able to refer to uninstantiated
 -- nodes, however while the failure continuation should be 

@@ -1,10 +1,11 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Tree.Base
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -18,8 +19,12 @@
 module Wumpus.Tree.Base
   (
 
-    TreeDrawing
-  , DTreeDrawing
+
+    UW    
+  
+  , TreeProps(..)
+  , TreeDirection(..)
+
   , CoordTree
   
   , TreeNode
@@ -35,21 +40,43 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Tree
 
+-- | tree unit width...
+--
+newtype UW = UW { getUW :: Double }
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+instance Show UW where
+  showsPrec p d = showsPrec p (getUW d)
+
+
 
 -- | A rendered tree - alias for for @Picture Double@ in 
 -- Wumpus-Core.
 --
-type TreeDrawing u      = TraceDrawing u ()
+-- OLD HAT (?)
 
-type DTreeDrawing       = TreeDrawing Double
+-- type TreeDrawing u      = TraceDrawing u ()
+
+-- type DTreeDrawing       = TreeDrawing Double
 
 
+
+
+data TreeProps u a = TreeProps
+      { tp_scale      :: UW -> UW -> Query (Vec2 u)
+      , tp_multiconn  :: a -> [a] -> Graphic u
+      , tp_direction  :: TreeDirection
+      }  
+
+
+data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
+  deriving (Eq,Ord,Show)
 
 
 
 -- | Tree annotated with positions.
 --
-type CoordTree u a = Tree (Point2 u, a)
+type CoordTree a = Tree (Point2 UW, a)
 
 
 
@@ -61,9 +88,9 @@ type CoordTree u a = Tree (Point2 u, a)
 type TreeNode u = DotLocImage u
 
 
-data Design u a = Design 
-      { tree_design     :: CoordTree u a
-      , tree_bbox       :: BoundingBox u
+data Design a = Design 
+      { tree_design     :: CoordTree a
+      , tree_bbox       :: BoundingBox UW
       }
 
 

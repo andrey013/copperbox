@@ -15,9 +15,10 @@
 module Demo01 where
 
 import Wumpus.Tree
-import Wumpus.Tree.TreeBuildMonad
+-- import Wumpus.Tree.TreeBuildMonad
 
 import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-drawing
+import Wumpus.Drawing.Dots.AnchorDots
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -50,39 +51,36 @@ makeCtx sz m = set_font times_roman $ metricsContext sz m
 tree_pic1 :: CtxPicture
 tree_pic1 = udrawTracing (0::Double) $ do
     --
-    draw $ dcTextlabel "Tree 1:"        `at` (P2 0  530)
-    drawScaledTree (uniformSF 30)         (P2 80 530) $ 
-       runTreeBuild charNode tree1
+    draw $ dcTextlabel "Tree 1:"        `at` (P2 0  550)
+    drawl (P2 10 500) $ scaledTree 30 30 TREE_RIGHT tree1
     --
-    draw $ dcTextlabel "Tree 2:"       `at` (P2 160 530) 
-    drawScaledTree (uniformSF 30)        (P2 240 530) $ 
-        runTreeBuild (diskNode red) tree2
+    draw $ dcTextlabel "Tree 2:"       `at` (P2 200 550) 
+    drawl (P2 300 550) $ scaledTree 30 30 TREE_DOWN $ tree2
 
     draw $ dcTextlabel "Tree 3:"       `at` (P2 0  410) 
     localize (set_font_size 12) $ 
-        drawScaledFamilyTree (uniformSF 25) (P2 280 410) $ 
-          runTreeBuild charNode tree3
+        drawl (P2 280 410) $ scaledFamilyTree 25 25 TREE_DOWN $ tree3
 
     --
     draw $ dcTextlabel "Tree 4:"       `at` (P2 0  200)
-    drawScaledTree (scaleFactors 20 30)  (P2 80 200) $ 
-        runTreeBuild (circleNode black) tree4
+    drawl (P2 80 200) $ scaledTree 20 30 TREE_DOWN $ tree4
     --
     draw $ dcTextlabel "Tree 5:"        `at` zeroPt
-    drawScaledTree (scaleFactors 20 30)  (P2 240 0) $
-        runTreeBuild (circleNode black)  tree5
+    drawl (P2 240 0) $ scaledTree 20 30 TREE_DOWN $ tree5
 
 
 
-tree1 :: TreeBuild u (TreeSpec Char)
-tree1 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' fs]
+tree1 :: (Real u, Floating u, InterpretUnit u) 
+      => Tree (DotLocImage u)
+tree1 = fmap (diskNode red) $ Node 'A' [Node 'B' bs, Node 'F' fs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
 
-tree2 :: TreeBuild u (TreeSpec Char)
-tree2 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
+tree2 :: (Real u, Floating u, InterpretUnit u) 
+      => Tree (DotLocImage u)
+tree2 = fmap dotChar $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     gs = [Node 'H' [], Node 'I' [], Node 'J' []]
@@ -91,8 +89,9 @@ tree2 = regularBuild $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
 -- This is the tree from Andrew Kennedy's 
 -- /Functional Pearl Drawing Trees/
 --
-tree3 :: TreeBuild u (TreeSpec Char)
-tree3 = regularBuild $ Node 'A' [a1, a2, a3]
+tree3 :: (Real u, Floating u, InterpretUnit u) 
+      => Tree (DotLocImage u)
+tree3 = fmap dotChar $ Node 'A' [a1, a2, a3]
   where
     a1 = Node 'B' [b1, b2]
     a2 = Node 'S' [b3,b4]
@@ -123,8 +122,9 @@ tleaf a = Node a []
 -- This is the tree (a) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
 -- 
-tree4 :: TreeBuild u (TreeSpec Int)
-tree4 = regularBuild $ Node 1 [a1, a2]
+tree4 :: (Real u, Floating u, InterpretUnit u) 
+      => Tree (DotLocImage u)
+tree4 = fmap (circleNode black) $ Node 1 [a1, a2]
   where
     a1 = Node  2 [b1]
     a2 = Node  3 [b2, b3]
@@ -144,8 +144,9 @@ tree4 = regularBuild $ Node 1 [a1, a2]
 -- spaces the leaves, it looks like the trees in that paper are 
 -- evenly spaced at the interior nodes too.
 -- 
-tree5 :: TreeBuild u (TreeSpec Int)
-tree5 = regularBuild $
+tree5 :: (Real u, Floating u, InterpretUnit u) 
+      => Tree (DotLocImage u)
+tree5 = fmap (circleNode black) $
     Node 1 [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
   where
     a1 = Node  2 [ tleaf 11, tleaf 12, tleaf 13, tleaf 14, tleaf 15, tleaf 16
@@ -155,3 +156,4 @@ tree5 = regularBuild $
     b1 = Node 21 [ tleaf 24, tleaf 25, tleaf 26, tleaf 27, tleaf 28, tleaf 29
                  , tleaf 30, tleaf 31, tleaf 32, tleaf 33, tleaf 34]
     b2 = Node 23 [ tleaf 35 ]
+

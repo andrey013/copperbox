@@ -34,48 +34,13 @@ description:
   .
   v0.15.0 to v0.16.0:
   .
-  v0.14.0 to v0.15.0:
+  * Re-worked so tree drawings form a @LocGraphic@ rather than a 
+    @TraceDrawing@, this makes more in line with other graphic 
+    objects in Wumpus like shapes.
   .
-  * Updated to work with latest Wumpus libraries. 
-    @ScalingContext@ has been temporarily added from Wumpus-Basic 
-    (it was considered obsolete there). At some point the 
-    functionality needs re-implementing so it can be removed from 
-    Tree.
-  .  
-  v0.13.0 to v0.14.0:
+  * Changed node type to be any @LocImage@ where the answer 
+    supports anchors.
   .
-  * Updated to work with latest Wumpus libraries. 
-  .
-  v0.12.0 to v0.13.0:
-  .
-  * Changed the specification of trees so that they are built in a
-    monad. The bind operation of the monad allows /anchors/ to be 
-    extracted from tree nodes so they can be annotated with 
-    supplementary graphics. At the moment this is rather limited 
-    as Wumpus-Basic and Wumpus-Drawing do not offer much support 
-    for anchors other than the basic type classes.
-  .
-  * Changed the type of the rendering functions so they produce a 
-    TreeDrawing. This type is more suitable for building composite
-    pictures than the previous type TreePicture. 
-  .
-  * Also the rendering functions now take a start point for the 
-    root node, again this should be more convenient for drawing 
-    composite pictures - see the demo which now draws all the 
-    example trees on one page.
-  .
-  * Internally the tree design is now more flexible - trees can be 
-    designed upwards or leftwards rightwards, rather than just 
-    downwards; and edge drawing style is lifted out of the 
-    rendering to use a supplied combinator. Currently these 
-    features are not exposed by the API, the API needs more 
-    thought (possibly warranting changes to Wumpus-Basic and 
-    Wumpus-Drawing).
-  .
-  .
-  v0.11.1 to v0.12.0:
-  .
-  * Internal changes to track updates to Wumpus-Basic.
   . 
   .
 build-type:         Simple
@@ -102,7 +67,6 @@ library
     Wumpus.Tree.Base,
     Wumpus.Tree.Design,
     Wumpus.Tree.Draw,
-    Wumpus.Tree.ScalingContext,
     Wumpus.Tree.TreeBuildMonad,
     Wumpus.Tree.VersionNumber
 
