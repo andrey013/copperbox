@@ -20,10 +20,13 @@ module Wumpus.Tree
   (
   -- * Re-exports
     TreeDirection(..) 
-  
+  , tree_direction
+  , familyConn 
+  , radialConn
+
   -- * Definitions
-  , scaledFamilyTree
-  , scaledTree
+  , runTree
+  , standardTreeProps
   , charNode
   , diskNode
   , circleNode
@@ -35,7 +38,7 @@ module Wumpus.Tree
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 import Wumpus.Tree.Draw
-import Wumpus.Tree.TreeBuildMonad
+import Wumpus.Tree.OTMConnectors
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Drawing.Dots.AnchorDots
@@ -56,6 +59,22 @@ scaleFactors :: Fractional u => u -> u -> (UW -> UW -> Query (Vec2 u))
 scaleFactors sx sy = \uwx uwy -> 
     return $ V2 (sx * realToFrac uwx) (sy * realToFrac uwy)
 
+
+runTree :: (Real u, Floating u, InterpretUnit u) 
+        => TreeProps u a -> Tree (LocImage u a) -> LocGraphic u
+runTree props = 
+    drawTree props . orientateCoordTree (tp_direction props) . design
+
+
+standardTreeProps :: Fractional u 
+                  => u -> u -> OTMConnector u a -> TreeProps u a
+standardTreeProps sx sy otm_conn = 
+    TreeProps { tp_scale      = scaleFactors sx sy
+              , tp_multiconn  = otm_conn         
+              , tp_direction  = TREE_DOWN
+              }  
+
+{-
 
 scaledFamilyTree :: ( Real u, Floating u, InterpretUnit u
                     , CenterAnchor a, CardinalAnchor a 
@@ -87,19 +106,11 @@ scaledTree sx sy dir tree =
                       }  
 
             
+-}
 
 
 
 
-
-
-
-
-rotTree :: TreeDirection -> CoordTree a -> CoordTree a
-rotTree TREE_UP     = rotateAboutRoot pi
-rotTree TREE_DOWN   = id
-rotTree TREE_LEFT   = rotateAboutRoot (1.5*pi)
-rotTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
 
 
 

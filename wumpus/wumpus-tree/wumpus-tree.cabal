@@ -58,8 +58,8 @@ library
                       containers        >= 0.3.0     && <= 0.6.0,
                       vector-space      >= 0.6       && <  1.0,
                       wumpus-core       >= 0.50.0    && <  0.51.0,
-                      wumpus-basic      == 0.17.0,
-                      wumpus-drawing    == 0.3.0
+                      wumpus-basic      == 0.18.0,
+                      wumpus-drawing    == 0.4.0
 
   
   exposed-modules:
@@ -67,7 +67,7 @@ library
     Wumpus.Tree.Base,
     Wumpus.Tree.Design,
     Wumpus.Tree.Draw,
-    Wumpus.Tree.TreeBuildMonad,
+    Wumpus.Tree.OTMConnectors,
     Wumpus.Tree.VersionNumber
 
   other-modules:

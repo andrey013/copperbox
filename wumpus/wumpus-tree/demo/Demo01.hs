@@ -52,22 +52,27 @@ tree_pic1 :: CtxPicture
 tree_pic1 = udrawTracing (0::Double) $ do
     --
     draw $ dcTextlabel "Tree 1:"        `at` (P2 0  550)
-    drawl (P2 10 500) $ scaledTree 30 30 TREE_RIGHT tree1
+    drawl (P2 10 500) $ runTree props1 tree1
     --
     draw $ dcTextlabel "Tree 2:"       `at` (P2 200 550) 
-    drawl (P2 300 550) $ scaledTree 30 30 TREE_DOWN $ tree2
+    drawl (P2 300 550) $ runTree props2 tree2
 
     draw $ dcTextlabel "Tree 3:"       `at` (P2 0  410) 
     localize (set_font_size 12) $ 
-        drawl (P2 280 410) $ scaledFamilyTree 25 25 TREE_DOWN $ tree3
+        drawl (P2 280 410) $ runTree props3 tree3
 
     --
     draw $ dcTextlabel "Tree 4:"       `at` (P2 0  200)
-    drawl (P2 80 200) $ scaledTree 20 30 TREE_DOWN $ tree4
+    drawl (P2 80 200) $ runTree props4 tree4
     --
     draw $ dcTextlabel "Tree 5:"        `at` zeroPt
-    drawl (P2 240 0) $ scaledTree 20 30 TREE_DOWN $ tree5
-
+    drawl (P2 240 0) $ runTree props5 tree5
+  where
+    props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialConn
+    props2 = standardTreeProps 30 40 familyConn
+    props3 = standardTreeProps 25 25 familyConn
+    props4 = standardTreeProps 20 30 radialConn
+    props5 = standardTreeProps 20 30 radialConn
 
 
 tree1 :: (Real u, Floating u, InterpretUnit u) 
