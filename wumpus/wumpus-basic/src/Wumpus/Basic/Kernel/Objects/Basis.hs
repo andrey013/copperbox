@@ -97,10 +97,18 @@ type instance DUnit (ImageAns u a) = u
 instance OPlus a => OPlus (ImageAns u a) where
   Ans cp0 a `oplus` Ans cp1 b = Ans (cp0 `oplus` cp1) (a `oplus` b)
 
-
+-- Note - like CF the mconcat definition avoids starting with 
+-- mempty.
+--
 instance Monoid a => Monoid (ImageAns u a) where
   mempty                        = Ans mempty mempty
   Ans cp0 a `mappend` Ans cp1 b = Ans (cp0 `mappend` cp1) (a `mappend` b)
+
+  mconcat []      = mempty
+  mconcat (a:as)  = step a as
+    where
+      step ac []     = ac
+      step ac (x:xs) = step (ac `mappend` x) xs
 
 
 --------------------------------------------------------------------------------

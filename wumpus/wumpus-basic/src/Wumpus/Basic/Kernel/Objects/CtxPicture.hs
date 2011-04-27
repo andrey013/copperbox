@@ -177,9 +177,17 @@ instance Translate CtxPicture where
 --------------------------------------------------------------------------------
 -- Monoid
 
+-- | Avoid initial mempty for mconcat.
+--
 instance Monoid CtxPicture where
   mempty  = CtxPicture $ \_ -> Nothing
   mappend = moveSnd $ \_ _ -> V2 0 0
+
+  mconcat []      = mempty
+  mconcat (a:as)  = step a as
+    where
+      step ac []     = ac
+      step ac (x:xs) = step (ac `mappend` x) xs
 
 
 --------------------------------------------------------------------------------

@@ -64,6 +64,11 @@ instance Monoid CatPrim where
   a      `mappend` CZero  = a
   Cat1 a `mappend` Cat1 b = Cat1 $ a `primCat` b
 
+  mconcat []      = mempty
+  mconcat (a:as)  = step a as
+    where
+      step ac []     = ac
+      step ac (x:xs) = step (ac `mappend` x) xs
 
 
 --------------------------------------------------------------------------------
@@ -124,6 +129,12 @@ newtype HPrim u = HPrim { getHPrim :: H Primitive }
 instance Monoid (HPrim u) where
   mempty          = HPrim emptyH
   ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
+
+  mconcat []      = mempty
+  mconcat (a:as)  = step a as
+    where
+      step ac []     = ac
+      step ac (x:xs) = step (ac `mappend` x) xs
 
 
 -- | Extract the internal list of 'Primitive' from a 'HPrim'.

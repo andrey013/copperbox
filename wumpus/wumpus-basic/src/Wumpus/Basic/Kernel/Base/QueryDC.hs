@@ -76,7 +76,6 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontSupport
 
 import Wumpus.Core                              -- package: wumpus-core
-import qualified Wumpus.Core.FontSize   as FS
  
 import Control.Applicative
 

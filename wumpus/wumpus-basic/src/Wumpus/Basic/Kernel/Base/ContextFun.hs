@@ -114,12 +114,21 @@ instance OPlus a => OPlus (CF a)  where
   fa `oplus` fb = CF $ \ctx -> getCF fa ctx `oplus` getCF fb ctx
 
 
--- Monoid
- 
+-- | Monoid
+--
+-- Note - the mconcat definition avoids starting with an initial 
+-- mempty. This contrasts with the default definition in the 
+-- Monoid class that uses foldr.
+--
 instance Monoid a => Monoid (CF a) where 
   mempty          = CF $ \_   -> mempty
   fa `mappend` fb = CF $ \ctx -> getCF fa ctx `mappend` getCF fb ctx
 
+  mconcat []      = mempty
+  mconcat (a:as)  = step a as
+    where
+      step ac []     = ac
+      step ac (x:xs) = step (ac `mappend` x) xs
 
 -- Functor
 
