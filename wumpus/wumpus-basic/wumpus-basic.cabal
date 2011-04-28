@@ -37,7 +37,7 @@ description:
   * Moved vertices generating functions from @Geometry.Path@ to 
     @Geometry.Vertices@.
   .
-  * ??
+  * Added LocTrace.
   .
 build-type:         Simple
 stability:          highly unstable
@@ -91,6 +91,7 @@ library
     Wumpus.Basic.Kernel.Objects.Image,
     Wumpus.Basic.Kernel.Objects.LocImage,
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
+    Wumpus.Basic.Kernel.Objects.LocTrace,
     Wumpus.Basic.Kernel.Objects.Orientation,
     Wumpus.Basic.Kernel.Objects.PosObject,
     Wumpus.Basic.Kernel.Objects.TraceDrawing,
