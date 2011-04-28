@@ -79,6 +79,7 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   , pathViewL
   , pathViewR
 
+  , optimizeLines
 
   , roundTrail
   , roundInterior
@@ -689,6 +690,34 @@ pathViewR (AbsPath u _ segs ep) = go (viewr segs)
 
 
 
+--------------------------------------------------------------------------------
+
+
+-- Path should be same length afterwards.
+
+optimizeLines :: (Real u, Floating u, Ord u, Tolerance u) 
+              => AbsPath u -> AbsPath u
+optimizeLines (AbsPath _ sp0 segs _) = outer (zeroPath sp0) (viewl segs)
+  where
+    outer acc (AbsLineSeg _ p0 p1 :< se)                = 
+        inner acc (vdirection $ pvec p0 p1) p0 p1 (viewl se)
+
+    outer acc (AbsCurveSeg _ _ p1 p2 p3 :< se)          = 
+        outer (snocCurveTo acc p1 p2 p3) (viewl se)
+
+    outer acc EmptyL                                    = acc
+
+    inner acc d1 sp ep (AbsLineSeg _ p0 p1 :< se)       =
+        let d2 = vdirection $ pvec p0 p1 in 
+        if (d1 == d2) 
+          then inner acc d1 sp p1 (viewl se)
+          else inner (acc `snocLineTo` ep) d2 ep p1 (viewl se)
+
+    inner acc _  _  ep (AbsCurveSeg _ _ p1 p2 p3 :< se) = 
+        let acc1 = snocCurveTo (snocLineTo acc ep) p1 p2 p3
+        in outer acc1 (viewl se)
+
+    inner acc _  _  ep EmptyL                           = acc `snocLineTo` ep
 
 --------------------------------------------------------------------------------
 -- Round corners

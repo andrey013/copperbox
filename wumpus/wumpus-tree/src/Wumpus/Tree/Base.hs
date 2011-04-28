@@ -22,11 +22,12 @@ module Wumpus.Tree.Base
 
     UW    
 
-  , OTMConnector
+  , OTMAnchorConn
   , TreeProps(..)
   , TreePropsF
   , TreeDirection(..)
   , tree_direction
+  , getTreeConnector
 
   , CoordTree
   
@@ -53,24 +54,13 @@ instance Show UW where
 
 
 
--- | A rendered tree - alias for for @Picture Double@ in 
--- Wumpus-Core.
---
--- OLD HAT (?)
 
--- type TreeDrawing u      = TraceDrawing u ()
-
--- type DTreeDrawing       = TreeDrawing Double
-
-
--- TODO - this (most likely) should be @point2@ rather than @a@...
---
-type OTMConnector u a = a -> [a] -> Graphic u
+type OTMAnchorConn u a = TreeDirection -> u -> a -> [a] -> Graphic u
 
 
 data TreeProps u a = TreeProps
       { tp_scale      :: UW -> UW -> Query (Vec2 u)
-      , tp_multiconn  :: OTMConnector u a
+      , tp_multiconn  :: OTMAnchorConn u a
       , tp_direction  :: TreeDirection
       }  
 
@@ -81,6 +71,17 @@ data TreeDirection = TREE_UP | TREE_DOWN | TREE_LEFT | TREE_RIGHT
 
 tree_direction :: TreeDirection -> TreePropsF u a
 tree_direction dir props = props { tp_direction = dir }
+
+
+getTreeConnector :: TreeProps u a -> Query (a -> [a] -> Graphic u)
+getTreeConnector (TreeProps { tp_scale     = scaleQ
+                            , tp_multiconn = conn
+                            , tp_direction = dir    }) = 
+    scaleQ 1 1 >>= \(V2 x y) -> 
+    if dir == TREE_UP || dir == TREE_DOWN 
+       then return (conn dir y) else return (conn dir x)
+
+
 
 -- | Tree annotated with positions.
 --

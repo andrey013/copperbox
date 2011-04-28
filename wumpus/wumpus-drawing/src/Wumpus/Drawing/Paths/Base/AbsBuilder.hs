@@ -59,9 +59,9 @@ module Wumpus.Drawing.Paths.Base.AbsBuilder
   , vline
   , aline
 
-  , hmove
-  , vmove
-  , amove
+  , hmove_tip
+  , vmove_tip
+  , amove_tip
 
   , line_up
   , line_down
@@ -411,18 +411,18 @@ vline dy = relline (vvec dy)
 aline :: Floating u => u -> AbsBuild u ()
 aline u = gets current_incline >>= \ang -> relline (avec ang u)
 
-hmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-      => u -> AbsBuild u ()
-hmove dx = relmove (hvec dx)
+hmove_tip :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+hmove_tip dx = relmove (hvec dx)
 
-vmove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-      => u -> AbsBuild u ()
-vmove dy = relmove (vvec dy)
+vmove_tip :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+vmove_tip dy = relmove (vvec dy)
 
 
-amove :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-      => u -> AbsBuild u ()
-amove u = gets current_incline >>= \ang -> relmove (avec ang u)
+amove_tip :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
+          => u -> AbsBuild u ()
+amove_tip u = gets current_incline >>= \ang -> relmove (avec ang u)
 
 
 
@@ -525,20 +525,20 @@ move_down_right u = relmove (vec u (-u))
 
 move_north :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
            => u -> AbsBuild u ()
-move_north = vmove
+move_north = vmove_tip
 
 
 move_south :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
            => u -> AbsBuild u ()
-move_south =  vmove . negate
+move_south =  vmove_tip . negate
 
 move_east :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
           => u -> AbsBuild u ()
-move_east = hmove
+move_east = hmove_tip
 
 move_west :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
           => u -> AbsBuild u ()
-move_west = hmove . negate
+move_west = hmove_tip . negate
 
 
 move_northeast :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 

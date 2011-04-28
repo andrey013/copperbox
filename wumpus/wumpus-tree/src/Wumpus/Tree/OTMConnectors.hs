@@ -25,9 +25,8 @@ module Wumpus.Tree.OTMConnectors
   ) where
 
 import Wumpus.Tree.Base
-import Wumpus.Tree.TreeBuildMonad
 
-import Wumpus.Drawing.Dots.AnchorDots           -- package: wumpus-drawing
+import Wumpus.Drawing.Paths.Absolute            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -35,34 +34,26 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
-import Control.Applicative
-import Control.Monad
+import Data.Monoid
 
 
 
 
-radialConn :: ( Real u, Floating u, InterpretUnit u
-              , CenterAnchor a, RadialAnchor a 
-              , u ~ DUnit a) 
-           => a -> [a] -> Graphic u
-radialConn a []     = emptyLocGraphic `at` (center a)
-radialConn a (x:xs) = oconcat (connector a x) (map (connector a) xs)
+
+-- Pulling out the points (nodes) from parent plus list of 
+-- children.
 
 
-
-connector :: ( Real u, Floating u, InterpretUnit u
-             , CenterAnchor a, RadialAnchor a
-             , u ~ DUnit a )  
-          => a -> a -> Graphic u
-connector a0 a1 = vertexPP [pt0,pt1] >>= dcOpenPath
+radialNodes :: ( Real u, Floating u, InterpretUnit u
+               , CenterAnchor a, RadialAnchor a
+               , u ~ DUnit a )  
+            => a -> [a] -> [(Point2 u, Point2 u)]
+radialNodes a as = map fn as
   where
-    (ang0,ang1) = anchorAngles (center a0) (center a1)
-    pt0         = radialAnchor ang0 a0
-    pt1         = radialAnchor ang1 a1
-    
-
-
-
+    actr = center a
+    fn x = (radialAnchor ang0 a , radialAnchor ang1 x) 
+             where (ang0, ang1) = anchorAngles actr (center x)
+        
 
 anchorAngles :: (Real u, Floating u) 
              => Point2 u -> Point2 u -> (Radian,Radian)
@@ -71,8 +62,24 @@ anchorAngles f t = (theta0, theta1)
     conn_v  = pvec f t
     theta0  = vdirection conn_v
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
-    
 
+
+-- 
+-- @radialConn@ cannot be represented as a connector from
+-- one-point-to-many-points as the initial points all start from
+-- slightly different places. 
+--
+
+
+-- | 'radialConn' has no need for the TreeDirection or height step.
+-- 
+radialConn :: ( Real u, Floating u, InterpretUnit u
+              , CenterAnchor a, RadialAnchor a 
+              , u ~ DUnit a) 
+           => OTMAnchorConn u a
+radialConn _ _ a xs = mconcat $ map fn $ radialNodes a xs
+  where
+    fn (p0,p1) = vertexPP [p0,p1] >>= dcOpenPath
 
 
 
@@ -80,45 +87,75 @@ anchorAngles f t = (theta0, theta1)
 --------------------------------------------------------------------------------
 -- 
 
-familyConn :: ( Real u, Fractional u, InterpretUnit u
+-- Note - can the \"crossbar\" of a famillyConn cannot be 
+-- calcuated parent-to-arbitrary-child?
+-- 
+-- Probably we need to know half the height step, rather than 
+-- calculate it from anchors.
+--
+
+-- Drawing a fmaily connector is quite horrible...
+
+
+
+familyConn :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
               , CenterAnchor a, CardinalAnchor a 
               , u ~ DUnit a ) 
-           => a -> [a] -> Graphic u
-familyConn a [] = emptyLocGraphic `at` (center a)
-familyConn a xs = famconn (south a) (map north xs)
-
-famconn :: (Fractional u, Ord u, InterpretUnit u) 
-        => Point2 u -> [Point2 u] -> Graphic u
-famconn _       []         = error "famconn - empty list"
-famconn pt_from [p1]       = famconn1 pt_from p1
-famconn pt_from xs@(p1:_)  = oconcat downtick (horizontal : upticks)
-   where
-     hh         = halfHeight pt_from p1
-     downtick   = locStraightLine (vvec (-hh)) `at` pt_from
-     horizontal = midline (displaceV (-hh) pt_from) xs 
-     upticks    = map (locStraightLine (vvec hh) `at`) xs
-
-midline :: (Fractional u, Ord u, InterpretUnit u) 
-        => Point2 u -> [Point2 u] -> Graphic u
-midline _        []           = error "midline - empty list" 
-midline (P2 _ y) (P2 x0 _:zs) = 
-    let (a,b) = foldr fn (x0,x0) zs in straightLine (P2 a y) (P2 b y)
-  where   
-    fn (P2 x _) (lo,hi) | x < lo    = (x,hi)
-                        | x > hi    = (lo,x)
-                        | otherwise = (lo,hi)
-
-halfHeight :: Fractional u => Point2 u -> Point2 u -> u
-halfHeight (P2 _ ya) (P2 _ yb) = 0.5 * (abs $ ya - yb)
- 
--- special case - should always be a vertical, but...
---
-famconn1 :: (Fractional u, InterpretUnit u)
-         => Point2 u -> Point2 u -> Graphic u
-famconn1 a@(P2 xa _) b@(P2 xb _) 
-    | xa == xb  = straightLine a b
-    | otherwise = vertexPP [a,m1,m2,b] >>= dcOpenPath
+           => OTMAnchorConn u a
+familyConn _   _ _ [] = mempty
+familyConn dir h a xs = 
+    let hh        = 0.5 * h
+        (paF,caF) = famAnchors dir
+        ptick     = outtick hh (center a) (paF a)
+        cticks    = map (\o -> outtick hh (center o) (caF o)) xs
+        kids      = imgconcat ptick cticks
+    in graphic_ ptick `oplus` (graphic_ $ elaborateR0 kids fn)
   where
-    hh = halfHeight a b
-    m1 = displaceV (-hh)     a  
-    m2 = displaceH (xb - xa) m1
+    fn ps = case linkAll ps of
+              Nothing -> emptyLocGraphic `at` (center a)
+              Just path -> toPrimPath path >>= dcOpenPath
+
+
+imgconcat :: Image u a -> [Image u a] -> Image u [a] 
+imgconcat alt []      = alt >>= \(Ans o1 x) -> return $ Ans o1 [x]
+imgconcat _   (gf:gs) = step gf gs 
+  where
+    step ma []     = ma >>= \(Ans o1 x) -> return $ Ans o1 [x]
+    step ma (k:ks) = ma >>= \(Ans o1 x) -> 
+                     step k ks >>= \(Ans o2 xs) ->
+                     return $ Ans (o1 `oplus` o2) (x:xs)
+
+
+famAnchors :: (CardinalAnchor a, u ~ DUnit a ) 
+             => TreeDirection -> (a -> Anchor u, a -> Anchor u)
+famAnchors TREE_UP    = (north, south)
+famAnchors TREE_DOWN  = (south, north)
+famAnchors TREE_LEFT  = (west,  east)
+famAnchors TREE_RIGHT = (east,  west)
+
+
+
+outtick :: (Real u, Floating u, InterpretUnit u) 
+        => u -> Point2 u -> Point2 u -> Image u (Point2 u)
+outtick ll p0 p1 = 
+    let v0  = pvec p0 p1
+        ang = vdirection v0
+        v1  = avec ang ll
+        p2  = p0 .+^ v1
+    in pushR0 (replaceAns p2) (straightLine p1 p2)
+
+-- | The input list is expected to be ordered...
+--
+linkAll :: (Real u, Floating u, Ord u, Tolerance u) 
+        => [Point2 u] -> Maybe (AbsPath u)
+linkAll [] = Nothing
+linkAll xs = Just $ optimizeLines $ vertexPath xs
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+
+

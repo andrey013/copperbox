@@ -31,7 +31,7 @@ module Wumpus.Drawing.Paths.Base.RelBuilder
   , tip 
   , line
   , curve
-  , move
+  , move_tip
 
   , insert
   , penCtxUpdate
@@ -49,9 +49,9 @@ module Wumpus.Drawing.Paths.Base.RelBuilder
   , vline
   , aline
 
-  , hmove
-  , vmove
-  , amove
+  , hmove_tip
+  , vmove_tip
+  , amove_tip
 
   , line_up
   , line_down
@@ -305,10 +305,10 @@ curve v1 v2 v3 = extendPath (\_ acc -> snocCurveTo acc v1 v2 v3) v3
 
 
 
--- | 'rmoveto' is a pen up.
+-- | 'moveTip' is a pen up.
 --
-move :: (Floating u, InterpretUnit u) => Vec2 u -> RelBuild u ()
-move v1 = 
+move_tip :: (Floating u, InterpretUnit u) => Vec2 u -> RelBuild u ()
+move_tip v1 = 
     gets active_path            >>= \(v0,ans) -> 
     gets pen_dc_modifier        >>= \cf -> 
     tellSubOpen cf v0 ans       >>  sets_ upd 
@@ -329,7 +329,7 @@ insert gf = gets cumulative_disp >>= \v ->
 
 penCtxUpdate :: (Floating u, InterpretUnit u) 
              => DrawingContextF -> RelBuild u ()
-penCtxUpdate cf = move (V2 0 0) >> sets_ upd
+penCtxUpdate cf = move_tip (V2 0 0) >> sets_ upd
   where
     upd = (\s f -> s { pen_dc_modifier = cf . f }) <*> pen_dc_modifier
 
@@ -344,7 +344,7 @@ vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u)
 vamp (Vamp vnext vstart upd relp path_end) = 
     gets cumulative_disp        >>= \v0 -> 
     gets pen_dc_modifier        >>= \cf ->
-    move vnext                  >> drawF (upd . cf) (v0 ^+^ vstart) relp
+    move_tip vnext              >> drawF (upd . cf) (v0 ^+^ vstart) relp
   where
     drawF       = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
  
@@ -393,15 +393,15 @@ vline dy = line (vvec dy)
 aline :: Floating u => Radian -> u -> RelBuild u ()
 aline ang u = line (avec ang u)
 
-hmove :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-hmove dx = move (hvec dx)
+hmove_tip :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
+hmove_tip dx = move_tip (hvec dx)
 
-vmove :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-vmove dy = move (vvec dy)
+vmove_tip :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
+vmove_tip dy = move_tip (vvec dy)
 
 
-amove :: (Floating u, InterpretUnit u) => Radian -> u -> RelBuild u ()
-amove ang u = move (avec ang u)
+amove_tip :: (Floating u, InterpretUnit u) => Radian -> u -> RelBuild u ()
+amove_tip ang u = move_tip (avec ang u)
 
 
 line_up :: Floating u => u -> RelBuild u ()
@@ -463,59 +463,59 @@ line_southwest = line . avec (1.25 * pi)
 
 
 move_up :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_up u = move (vvec u)
+move_up u = move_tip (vvec u)
 
 move_down :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_down u = move (vvec $ negate u)
+move_down u = move_tip (vvec $ negate u)
 
 move_left :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_left u = move (hvec $ negate u)
+move_left u = move_tip (hvec $ negate u)
  
 move_right :: (Floating u, InterpretUnit u)  => u -> RelBuild u ()
-move_right u = move (hvec u)
+move_right u = move_tip (hvec u)
 
 
 
 -- | Diagonal moves 
 
 move_up_left :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_up_left u = move (vec (-u) u)
+move_up_left u = move_tip (vec (-u) u)
 
 move_up_right :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_up_right u = move (vec u u)
+move_up_right u = move_tip (vec u u)
 
 move_down_left :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_down_left u = move (vec (-u) (-u))
+move_down_left u = move_tip (vec (-u) (-u))
 
 move_down_right :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_down_right u = move (vec u (-u))
+move_down_right u = move_tip (vec u (-u))
 
 
 -- Cardinal moves
 
 move_north :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_north = vmove
+move_north = vmove_tip
 
 
 move_south :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_south =  vmove . negate
+move_south =  vmove_tip . negate
 
 move_east :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_east = hmove
+move_east = hmove_tip
 
 move_west :: (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_west = hmove . negate
+move_west = hmove_tip . negate
 
 
 move_northeast ::  (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_northeast = move . avec (0.25 * pi)
+move_northeast = move_tip . avec (0.25 * pi)
 
 move_northwest ::  (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_northwest = move . avec (0.75 * pi)
+move_northwest = move_tip . avec (0.75 * pi)
 
 move_southeast ::  (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_southeast = move . avec (1.75 * pi)
+move_southeast = move_tip . avec (1.75 * pi)
 
 move_southwest ::  (Floating u, InterpretUnit u) => u -> RelBuild u ()
-move_southwest = move . avec (1.25 * pi)
+move_southwest = move_tip . avec (1.25 * pi)
 

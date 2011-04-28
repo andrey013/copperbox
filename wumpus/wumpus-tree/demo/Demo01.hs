@@ -70,7 +70,7 @@ tree_pic1 = udrawTracing (0::Double) $ do
   where
     props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialConn
     props2 = standardTreeProps 30 40 familyConn
-    props3 = standardTreeProps 25 25 familyConn
+    props3 = tree_direction TREE_UP $ standardTreeProps 25 25 familyConn
     props4 = standardTreeProps 20 30 radialConn
     props5 = standardTreeProps 20 30 radialConn
 
@@ -129,7 +129,7 @@ tleaf a = Node a []
 -- 
 tree4 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
-tree4 = fmap (circleNode black) $ Node 1 [a1, a2]
+tree4 = fmap (circleNode black) $ Node (1::Int) [a1, a2]
   where
     a1 = Node  2 [b1]
     a2 = Node  3 [b2, b3]
@@ -152,7 +152,7 @@ tree4 = fmap (circleNode black) $ Node 1 [a1, a2]
 tree5 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
 tree5 = fmap (circleNode black) $
-    Node 1 [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
+    Node (1::Int) [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
   where
     a1 = Node  2 [ tleaf 11, tleaf 12, tleaf 13, tleaf 14, tleaf 15, tleaf 16
                  , tleaf 17, tleaf 18, tleaf 19, tleaf 20, b1]
