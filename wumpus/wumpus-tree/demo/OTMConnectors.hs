@@ -44,9 +44,13 @@ tree_pic1 = udrawTracing (0::Double) $ do
     drawl (P2 120 50)  $ runTree (tree_direction TREE_UP    props2) little_tree
     drawl (P2 220 50)  $ runTree (tree_direction TREE_RIGHT props2) little_tree
     drawl (P2 420 50)  $ runTree (tree_direction TREE_LEFT  props2) little_tree
+    drawl (P2 520 220) $ runTree props3 little_tree
+    drawl (P2 520 50)  $ runTree props4 little_tree
   where
-    props1 = standardTreeProps 30 40 familyConn
-    props2 = standardTreeProps 30 40 familyConn
+    props1 = standardTreeProps 30 40 familyOTMC
+    props2 = standardTreeProps 30 40 familyOTMC
+    props3 = standardTreeProps 30 40 blankOTMC
+    props4 = standardTreeProps 30 40 splayOTMC
 
 
 little_tree :: (Real u, Floating u, InterpretUnit u) 

@@ -27,6 +27,8 @@ module Wumpus.Basic.Kernel.Objects.Image
    , intoImage
    , graphic_
 
+   , sequenceImage
+
    , uconvImageF
    , uconvImageZ
 
@@ -39,7 +41,7 @@ import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 
 import Control.Applicative
-
+import Data.Monoid
 
 -- | Image - function from the DrawingContext to a polymorphic 
 -- /answer/ and a graphic /primitive/.
@@ -84,6 +86,18 @@ intoImage qf ma = replaceAns <$> qf <*> ma
 graphic_ :: Image u a -> Graphic u
 graphic_ = fmap ignoreAns
 
+
+-- | Sequence a list of Images (i.e. draw them all), return a list
+-- of the answers.
+--
+sequenceImage :: [Image u a] -> Image u [a] 
+sequenceImage []      = return $ Ans mempty []
+sequenceImage (gf:gs) = step gf gs 
+  where
+    step ma []     = ma >>= \(Ans o1 x) -> return $ Ans o1 [x]
+    step ma (k:ks) = ma >>= \(Ans o1 x) -> 
+                     step k ks >>= \(Ans o2 xs) ->
+                     return $ Ans (o1 `oplus` o2) (x:xs)
 
 
 

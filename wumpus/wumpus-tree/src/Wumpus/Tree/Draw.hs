@@ -51,21 +51,22 @@ drawStep props (Node (P2 uwx uwy, gf) ns) = promoteR1 $ \proot ->
     tp_scale props uwx uwy >>= \v1 -> 
     getTreeConnector props >>= \conn ->
     let pt   = proot .+^ v1 
-        imgs = lsconcat $ map (drawStep props) ns
-    in apply1R1 gf pt           >>= \(Ans o1 x) -> 
-       apply1R1 imgs proot      >>= \(Ans o2 xs) ->
-       conn x xs                >>= \(Ans o3 _) ->
-       return $ Ans (o1 `oplus` o2 `oplus` o3) x
+        imgs = sequenceLocImage $ map (drawStep props) ns
+    in dblelaborate (apply1R1 gf pt) (apply1R1 imgs proot) conn
+      
 
-    
-lsconcat :: InterpretUnit u => [LocImage u a] -> LocImage u [a]
-lsconcat []      = pushR1 (replaceAns []) emptyLocGraphic
-lsconcat (gf:gs) = promoteR1 $ \pt -> 
-                   apply1R1 gf pt            >>= \(Ans o1 x) -> 
-                   apply1R1 (lsconcat gs) pt >>= \(Ans o2 xs) ->
-                   return $ Ans (o1 `oplus` o2) (x:xs)
-
-
+-- | This is not really a generally function (it returns only the 
+-- first answer but consumes the second), so it doesn\'t belong
+-- in Wumpus-Basic. However, it is a problematic that it needs to 
+-- deconstruct the Ans directly - this suggests there is a need 
+-- for a more general version of this combinator in Wumpus-Basic.
+-- 
+dblelaborate :: Image u a -> Image u b -> (a -> b -> Graphic u) -> Image u a
+dblelaborate ma mb fn = 
+    ma       >>= \(Ans o1 x) -> 
+    mb       >>= \(Ans o2 xs) ->
+    fn x xs  >>= \(Ans o3 _) ->
+    return $ Ans (o1 `oplus` o2 `oplus` o3) x
 
 orientateCoordTree :: TreeDirection -> CoordTree a -> CoordTree a
 orientateCoordTree TREE_UP     = rotateAboutRoot pi

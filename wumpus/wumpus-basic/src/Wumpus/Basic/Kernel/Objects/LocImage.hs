@@ -27,6 +27,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , locGraphic_
 
    , emptyLocGraphic
+   , sequenceLocImage
 
    , uconvLocImageF
    , uconvLocImageZ
@@ -128,7 +129,17 @@ emptyLocGraphic = promoteR1 $ \pt ->
                   return $ graphicAns $ prim1 $ zostroke $ emptyPrimPath dpt
 
 
-
+-- | Sequence a list of LocImages (i.e. draw them all at the same 
+-- start point), return a list of the answers.
+--
+sequenceLocImage :: InterpretUnit u => [LocImage u a] -> LocImage u [a]
+sequenceLocImage []      = pushR1 (replaceAns []) emptyLocGraphic
+sequenceLocImage (gf:gs) = promoteR1 $ \pt -> step pt gf gs 
+  where
+    step pt ma []     = apply1R1 ma pt >>= \(Ans o1 x) -> return $ Ans o1 [x]
+    step pt ma (k:ks) = apply1R1 ma pt >>= \(Ans o1 x) -> 
+                        step pt k ks >>= \(Ans o2 xs) ->
+                        return $ Ans (o1 `oplus` o2) (x:xs)
 
 
 -- | Use this to convert 'LocGraphic' or 'LocImage' with Functor 

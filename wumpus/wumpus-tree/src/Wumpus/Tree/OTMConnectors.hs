@@ -19,8 +19,10 @@
 module Wumpus.Tree.OTMConnectors
   (
 
-    radialConn
-  , familyConn
+    radialOTMC
+  , blankOTMC
+  , familyOTMC
+  , splayOTMC
 
   ) where
 
@@ -71,17 +73,23 @@ anchorAngles f t = (theta0, theta1)
 --
 
 
--- | 'radialConn' has no need for the TreeDirection or height step.
+-- | 'radialOTMC' has no need for the TreeDirection or height step.
 -- 
-radialConn :: ( Real u, Floating u, InterpretUnit u
+radialOTMC :: ( Real u, Floating u, InterpretUnit u
               , CenterAnchor a, RadialAnchor a 
               , u ~ DUnit a) 
            => OTMAnchorConn u a
-radialConn _ _ a xs = mconcat $ map fn $ radialNodes a xs
+radialOTMC _ _ a xs = mconcat $ map fn $ radialNodes a xs
   where
     fn (p0,p1) = vertexPP [p0,p1] >>= dcOpenPath
 
-
+-- | Blank connector - nothing is drawn.
+--
+blankOTMC :: ( Real u, Floating u, InterpretUnit u
+            , CenterAnchor a
+            , u ~ DUnit a) 
+         => OTMAnchorConn u a
+blankOTMC _ _ a _ = emptyLocGraphic `at` center a
 
 
 --------------------------------------------------------------------------------
@@ -98,32 +106,23 @@ radialConn _ _ a xs = mconcat $ map fn $ radialNodes a xs
 
 
 
-familyConn :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
+familyOTMC :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
               , CenterAnchor a, CardinalAnchor a 
               , u ~ DUnit a ) 
            => OTMAnchorConn u a
-familyConn _   _ _ [] = mempty
-familyConn dir h a xs = 
+familyOTMC _   _ _ [] = mempty
+familyOTMC dir h a xs = 
     let hh        = 0.5 * h
         (paF,caF) = famAnchors dir
         ptick     = outtick hh (center a) (paF a)
         cticks    = map (\o -> outtick hh (center o) (caF o)) xs
-        kids      = imgconcat ptick cticks
+        kids      = sequenceImage cticks
     in graphic_ ptick `oplus` (graphic_ $ elaborateR0 kids fn)
   where
     fn ps = case linkAll ps of
               Nothing -> emptyLocGraphic `at` (center a)
               Just path -> toPrimPath path >>= dcOpenPath
 
-
-imgconcat :: Image u a -> [Image u a] -> Image u [a] 
-imgconcat alt []      = alt >>= \(Ans o1 x) -> return $ Ans o1 [x]
-imgconcat _   (gf:gs) = step gf gs 
-  where
-    step ma []     = ma >>= \(Ans o1 x) -> return $ Ans o1 [x]
-    step ma (k:ks) = ma >>= \(Ans o1 x) -> 
-                     step k ks >>= \(Ans o2 xs) ->
-                     return $ Ans (o1 `oplus` o2) (x:xs)
 
 
 famAnchors :: (CardinalAnchor a, u ~ DUnit a ) 
@@ -153,6 +152,19 @@ linkAll xs = Just $ optimizeLines $ vertexPath xs
 
 
 
+
+
+splayOTMC :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
+              , CenterAnchor a, CardinalAnchor a 
+              , u ~ DUnit a ) 
+           => OTMAnchorConn u a
+splayOTMC _   _ _ [] = mempty
+splayOTMC dir _ a xs = 
+    let (paF,caF) = famAnchors dir
+        p0        = paF a
+    in mconcat $ map (\x -> fn p0 (caF x)) xs
+  where
+    fn p0 p1 = vertexPP [p0,p1] >>= dcOpenPath
 
 
 

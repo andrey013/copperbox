@@ -19,8 +19,10 @@ module Wumpus.Tree
   -- * Re-exports
     TreeDirection(..) 
   , tree_direction
-  , familyConn 
-  , radialConn
+  , familyOTMC
+  , blankOTMC
+  , radialOTMC
+  , splayOTMC
 
   -- * Definitions
   , runTree
