@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,11 +24,13 @@ module ZSyn.Base
    
   , AudioStream
   , ControlStream 
-
-  , Time
-  , timeToSamples
+  , Clock(..)
   
   , lineSeg
+
+  , EnvelopeGen
+  , envelope
+
 
   , upSample
   , coerce
@@ -36,8 +39,16 @@ module ZSyn.Base
   ) where
 
 import ZSyn.HSStream
+import ZSyn.Seconds
+
 
 import Prelude hiding ( drop, map, iterate, repeat )
+
+newtype Strip s a = Strip { getStrip :: a }
+
+instance Functor (Strip s) where
+  fmap f = Strip . f . getStrip
+
 
 data Aud44
 
@@ -59,11 +70,6 @@ instance Clock Ctl44 where
   rate _ = 4410
 
 
-type Time = Double
-
-timeToSamples :: Double -> Time -> Int
-timeToSamples sr dur = truncate (dur * sr)
-
 
 upSample :: forall p1 p2 a. (Clock p1, Clock p2)
          => HSStream p1 a -> HSStream p2 a
@@ -82,19 +88,49 @@ coerce ss = if ratio >= 1.0 then interpSkip ratio ss else interpUp ratio ss
     ratio    = realToFrac $ out_rate / inn_rate
 
 
+withSampleRate :: forall p u. Clock p => (Double -> HSStream p u) -> HSStream p u
+withSampleRate fn = fn sr
+  where
+    sr = rate (undefined :: p)
 
-lineSeg :: forall p. Clock p => [Double] -> [Time] -> HSStream p Double
+lineSeg :: forall p. Clock p => [Double] -> [Seconds] -> HSStream p Double
 lineSeg amps durs = go amps durs
   where
-    sr                   = rate (undefined :: p) 
+    sr                   = rate (undefined :: p)
 
     go (a1:a2:as) (d:ds) = prefix samples ss (go (a2:as) ds)
       where
-        samples          = truncate (d * sr)
-        dd               = (a2 - a1) / (d * sr)
+        samples          = secondsToSamples sr d
+        dd               = (a2 - a1) / (sr * realToFrac d)
         ss               = iterate (+dd) a1
 
     go _          _      = repeat 0
+
+
+type EnvelopeGen p a = Seconds -> HSStream p a
+
+
+envelope :: forall p. Clock p 
+         => Seconds -> Seconds -> Seconds -> Double -> Double -> Double 
+         -> EnvelopeGen p Double
+envelope t1 t2 t4 l1 l2 l3 dur = 
+    fn sz1 atk $ fn sz2 dcy $ fn sz3 sus $ fn sz4 rel $ repeat 0
+  where
+    t3  = dur - (t1 + t2 + t4)
+    sr  = rate (undefined :: p) 
+
+    fn sz ss = \rest -> prefix (truncate sz) ss rest
+
+    sz1 = sr * realToFrac t1
+    sz2 = sr * realToFrac t2
+    sz3 = sr * realToFrac t3
+    sz4 = sr * realToFrac t4
+
+    atk = let dx = (l1 - 0)  / sz1 in iterate (+dx) 0
+    dcy = let dx = (l2 - l1) / sz2 in iterate (+dx) l1
+    sus = let dx = (l3 - l2) / sz3 in iterate (+dx) l2
+    rel = let dx = (0  - l3) / sz4 in iterate (+dx) l3
+    
 
 -- ratio is [0..1]
 interpUp :: RealFrac a => a -> HSStream p1 a -> HSStream p2 a

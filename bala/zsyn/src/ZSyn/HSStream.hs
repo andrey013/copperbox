@@ -50,6 +50,8 @@ module ZSyn.HSStream
 import Prelude hiding ( head, tail, repeat, map, zip, take, drop
                       , iterate, cycle, sum, const )
 
+import Control.Applicative hiding ( (*>) )
+
 --------------------------------------------------------------------------------
 
 
@@ -68,6 +70,22 @@ instance Eq a => Eq (HSStream p a) where
 instance Show a => Show (HSStream p a) where
   showsPrec n s = showsPrec n (take 8 s) . showString " ..." 
 
+
+instance Functor (HSStream p) where
+  fmap = map
+
+
+instance Applicative (HSStream p) where
+  pure  = repeat
+  (<*>) = zip ($)
+
+
+instance Monad (HSStream p) where
+  return   = repeat
+  xs >>= f = join (fmap f xs)
+
+join :: HSStream p (HSStream p a) -> HSStream p a
+join (xs :< xss) = (head xs) :< (join (map tail xss))
 
 
 infixr 5 :<

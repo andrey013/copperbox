@@ -29,6 +29,7 @@ library
   exposed-modules:
     ZSyn.Base,
     ZSyn.HSStream,
+    ZSyn.Seconds,
     ZSyn.WavHeader,
     ZSyn.WavOutput
 

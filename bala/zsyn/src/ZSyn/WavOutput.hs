@@ -23,6 +23,7 @@ module ZSyn.WavOutput
 
 import ZSyn.Base
 import ZSyn.HSStream
+import ZSyn.Seconds
 import ZSyn.WavHeader
 
 
@@ -71,12 +72,13 @@ output_BUFFER_SIZE = 1024
 
 
 
-outputWav_1Chan_16Bit :: FilePath -> AudioStream -> Word32 -> Int -> IO ()
+outputWav_1Chan_16Bit :: FilePath -> AudioStream -> Word32 -> Seconds -> IO ()
 outputWav_1Chan_16Bit path strm sr len = withBinaryFile path WriteMode body
   where
+    sz     = secondsToSamples (fromIntegral sr) len
     body h = do 
-        hPutHeader h (makeWavHeader len 1 sr 16)
-        hPut1Ch_16Bit h strm len
+        hPutHeader h (makeWavHeader sz 1 sr 16)
+        hPut1Ch_16Bit h strm sz
 
 --------------------------------------------------------------------------------
 
