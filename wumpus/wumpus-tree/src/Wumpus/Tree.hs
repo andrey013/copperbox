@@ -63,14 +63,14 @@ scaleFactors sx sy = \uwx uwy ->
 
 runTree :: (Real u, Floating u, InterpretUnit u) 
         => TreeProps u a -> Tree (LocImage u a) -> LocGraphic u
-runTree props = 
-    drawTree props . orientateCoordTree (tp_direction props) . design
+runTree props = drawTree props
 
 
 standardTreeProps :: Fractional u 
                   => u -> u -> OTMAnchorConn u a -> TreeProps u a
 standardTreeProps sx sy otm_conn = 
-    TreeProps { tp_scale      = scaleFactors sx sy
+    TreeProps { tp_scale_in_x = sx 
+              , tp_scale_in_y = sy
               , tp_multiconn  = otm_conn         
               , tp_direction  = TREE_DOWN
               }  
@@ -84,7 +84,7 @@ standardTreeProps sx sy otm_conn =
 --  Useful for rendering @ Data.Tree Char @.
 --
 charNode :: (Real u, Floating u, InterpretUnit u) 
-         => Char -> TreeNode u
+         => Char -> DotLocImage u
 charNode = dotChar
 
 
@@ -98,7 +98,7 @@ charNode = dotChar
 -- the first newline character will be dropped.
 --
 textNode :: (Real u, Floating u, InterpretUnit u) 
-         => String -> TreeNode u
+         => String -> DotLocImage u
 textNode = dotText . uptoNewline
   where
     uptoNewline = takeWhile (/='\n')
@@ -108,7 +108,7 @@ textNode = dotText . uptoNewline
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 circleNode :: (Floating u, InterpretUnit u) 
-           => RGBi -> (a -> TreeNode u)
+           => RGBi -> (a -> DotLocImage u)
 circleNode rgb = \_ -> localize (stroke_colour rgb) dotCircle
 
 
@@ -117,7 +117,7 @@ circleNode rgb = \_ -> localize (stroke_colour rgb) dotCircle
 -- Suitable for printing the shape of a tree, ignoring the data.
 --
 diskNode :: (Floating u, InterpretUnit u) 
-         => RGBi -> (a -> TreeNode u)
+         => RGBi -> (a -> DotLocImage u)
 diskNode rgb = \_ -> localize (fill_colour rgb) dotDisk
 
 

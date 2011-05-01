@@ -20,7 +20,6 @@ module Wumpus.Tree.Draw
   (
     drawTree
 
-  , orientateCoordTree
 
   ) where
 
@@ -40,40 +39,39 @@ import Data.Tree hiding ( drawTree )
 
 
 drawTree :: (Real u, Floating u, InterpretUnit u) 
-         => TreeProps u a -> CoordTree (LocImage u a) -> LocGraphic u
-drawTree props tree = locGraphic_ $ drawStep props tree
-
+         => TreeProps u a -> Tree (LocImage u a) -> LocGraphic u
+drawTree props tree =  
+    runDesign props tree >>= \tree1 -> 
+    locGraphic_ $ drawStep props tree1
 
 
 drawStep :: (Real u, Floating u, InterpretUnit u) 
-         => TreeProps u a -> CoordTree (LocImage u a) -> LocImage u a
-drawStep props (Node (P2 uwx uwy, gf) ns) = promoteR1 $ \proot ->
-    tp_scale props uwx uwy >>= \v1 -> 
+         => TreeProps u a -> Tree (LocImage u a) -> LocImage u a
+drawStep props (Node gf ns) =
     getTreeConnector props >>= \conn ->
-    let pt   = proot .+^ v1 
-        imgs = sequenceLocImage $ map (drawStep props) ns
-    in dblelaborate (apply1R1 gf pt) (apply1R1 imgs proot) conn
+    let imgs = sequenceLocImage $ map (drawStep props) ns
+    in dblelaborate gf imgs conn
       
 
--- | This is not really a generally function (it returns only the 
--- first answer but consumes the second), so it doesn\'t belong
--- in Wumpus-Basic. However, it is a problematic that it needs to 
+-- | This is not really a generally function - the types are not
+-- complementary and it returns only the first answer but consumes 
+-- the second, so it doesn\'t belong in Wumpus-Basic. 
+-- 
+-- However, it is a problematic that it needs to 
 -- deconstruct the Ans directly - this suggests there is a need 
 -- for a more general version of this combinator in Wumpus-Basic.
 -- 
-dblelaborate :: Image u a -> Image u b -> (a -> b -> Graphic u) -> Image u a
-dblelaborate ma mb fn = 
-    ma       >>= \(Ans o1 x) -> 
-    mb       >>= \(Ans o2 xs) ->
+dblelaborate :: LocImage u a -> LocImage u b -> (a -> b -> Graphic u) -> LocImage u a
+dblelaborate ma mb fn = promoteR1 $ \pt -> 
+    apply1R1 ma pt >>= \(Ans o1 x) -> 
+    apply1R1 mb pt >>= \(Ans o2 xs) ->
     fn x xs  >>= \(Ans o3 _) ->
     return $ Ans (o1 `oplus` o2 `oplus` o3) x
 
-orientateCoordTree :: TreeDirection -> CoordTree a -> CoordTree a
-orientateCoordTree TREE_UP     = rotateAboutRoot pi
-orientateCoordTree TREE_DOWN   = id
-orientateCoordTree TREE_LEFT   = rotateAboutRoot (1.5*pi)
-orientateCoordTree TREE_RIGHT  = rotateAboutRoot (0.5*pi)
-
+    -- potentially we need a function like elaborate that also 
+    -- transforms the answer...
+    -- Also arg order of eleborate and decorate might be better 
+    -- flipped.
 
 
 

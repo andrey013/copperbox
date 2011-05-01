@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
@@ -25,12 +26,17 @@
 
 module Wumpus.Tree.Design
   (
-    design
-  , rotateAboutRoot
+
+    UW
+  , CoordTree
+  , runDesign
+
   )
   where
 
 import Wumpus.Tree.Base
+
+import Wumpus.Basic.Kernel              -- package: wumpus-basic
 
 import Wumpus.Core                      -- package: wumpus-core
 
@@ -39,6 +45,25 @@ import Data.Maybe
 import Data.Tree
 
 
+-- | tree unit width...
+--
+newtype UW = UW { getUW :: Double }
+  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
+
+instance Show UW where
+  showsPrec p d = showsPrec p (getUW d)
+
+instance InterpretUnit UW where
+  normalize _ = realToFrac
+  dinterp   _ = realToFrac
+
+
+-- | Tree annotated with positions.
+--
+type CoordTree u a = Tree (Point2 u, a)
+
+
+type UWCoordTree a = Tree (Point2 UW, a)
 
 
 -- | XPos is an absolute position
@@ -57,6 +82,26 @@ type Delta = UW
 data HSpan = HSpan !UW !UW
   deriving (Eq,Ord,Show)
 
+
+
+runDesign :: InterpretUnit u 
+          => TreeProps u a  -> Tree (LocImage u a) 
+          -> Query (Tree (LocImage u a))
+runDesign props tree =  
+    makeScalingFun props >>= \sf -> 
+    return $ fmap (fn . bimapL sf) $ orientateTree dir $ design tree
+  where
+    fn ((P2 x y), gf) = moveStart (displaceVec (V2 x y)) gf
+    dir               = tp_direction props
+
+
+makeScalingFun :: InterpretUnit u 
+               => TreeProps u a -> Query (Point2 UW -> Point2 u)
+makeScalingFun (TreeProps { tp_scale_in_x = sx, tp_scale_in_y = sy }) = 
+   getFontSize >>= \sz -> 
+   return (\(P2 x y) -> let ux = sx * (dinterp sz $ realToFrac x)
+                            uy = sy * (dinterp sz $ realToFrac y)
+                        in P2 ux uy)
 
 
 outsideMerge :: HSpan -> HSpan -> HSpan
@@ -192,7 +237,7 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
 -- 1.0 separating nodes it is rescaled as a post-processing step
 -- into drawable coordinates. 
 --
-design :: Tree a -> CoordTree a
+design :: Tree a -> UWCoordTree a
 design t = rootOrientate zeroPt $ decorateYPosns 0 t3
   where
     (t1,ext)                    = designl t
@@ -208,7 +253,7 @@ design t = rootOrientate zeroPt $ decorateYPosns 0 t3
 -- Originally the tree has no y-positions, recurse through the 
 -- tree adding them...
 --
-decorateYPosns :: UW -> Tree (XPos, a) -> CoordTree a
+decorateYPosns :: UW -> Tree (XPos, a) -> UWCoordTree a
 decorateYPosns lvl (Node (xpos,a) kids) = Node (pt,a) kids'
   where
     pt    = P2 xpos lvl
@@ -216,17 +261,24 @@ decorateYPosns lvl (Node (xpos,a) kids) = Node (pt,a) kids'
      
     
 
-rootOrientate :: Point2 UW -> CoordTree a -> CoordTree a
+rootOrientate :: Point2 UW -> UWCoordTree a -> UWCoordTree a
 rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) = 
     Node (P2 ox oy, val) $ map (mv (ox-x0) (oy-y0)) kids
   where
     mv dx dy (Node (P2 x y, a) ks) = let ks' = map (mv dx dy) ks 
                                      in Node (P2 (x+dx) (y+dy), a) ks'
 
--- Updating this to the latest Wumpus-Basic would make the 
--- function a query...
+
+-- | orientateTree...
 --
-rotateAboutRoot :: Radian -> CoordTree a -> CoordTree a
+orientateTree :: TreeDirection -> UWCoordTree a -> UWCoordTree a
+orientateTree TREE_DOWN  tree = tree
+orientateTree TREE_UP    tree = rotateAboutRoot pi tree
+orientateTree TREE_LEFT  tree = rotateAboutRoot (1.5*pi) tree
+orientateTree TREE_RIGHT tree = rotateAboutRoot (0.5*pi) tree
+
+
+rotateAboutRoot :: Radian -> UWCoordTree a -> UWCoordTree a
 rotateAboutRoot ang (Node (ogin,val) kids) =
     Node (ogin, val) $ map step kids
   where

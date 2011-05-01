@@ -68,11 +68,11 @@ tree_pic1 = udrawTracing (0::Double) $ do
     draw $ dcTextlabel "Tree 5:"        `at` zeroPt
     drawl (P2 240 0) $ runTree props5 tree5
   where
-    props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialConn
-    props2 = standardTreeProps 30 40 familyConn
-    props3 = tree_direction TREE_UP $ standardTreeProps 25 25 familyConn
-    props4 = standardTreeProps 20 30 radialConn
-    props5 = standardTreeProps 20 30 radialConn
+    props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialOTMC
+    props2 = standardTreeProps 30 40 familyOTMC
+    props3 = tree_direction TREE_DOWN $ standardTreeProps 25 25 familyOTMC
+    props4 = standardTreeProps 20 30 radialOTMC
+    props5 = standardTreeProps 20 30 radialOTMC
 
 
 tree1 :: (Real u, Floating u, InterpretUnit u) 
