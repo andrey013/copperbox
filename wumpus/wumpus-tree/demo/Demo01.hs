@@ -77,11 +77,12 @@ tree_pic1 = udrawTracing (0::Double) $ do
 
 tree1 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
-tree1 = fmap (diskNode red) $ Node 'A' [Node 'B' bs, Node 'F' fs]
+tree1 = fmap (const red_dot) $ Node 'A' [Node 'B' bs, Node 'F' fs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
+    red_dot = localize (fill_colour red) dotDisk
 
 tree2 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
@@ -129,7 +130,7 @@ tleaf a = Node a []
 -- 
 tree4 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
-tree4 = fmap (circleNode black) $ Node (1::Int) [a1, a2]
+tree4 = fmap (const circ_dot) $ Node (1::Int) [a1, a2]
   where
     a1 = Node  2 [b1]
     a2 = Node  3 [b2, b3]
@@ -142,6 +143,8 @@ tree4 = fmap (circleNode black) $ Node (1::Int) [a1, a2]
     d1 = Node 11 [tleaf 14]
     d2 = Node 13 [tleaf 15]
 
+    circ_dot = localize (stroke_colour black) dotCircle
+
 -- This is the tree (b) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
 -- 
@@ -151,7 +154,7 @@ tree4 = fmap (circleNode black) $ Node (1::Int) [a1, a2]
 -- 
 tree5 :: (Real u, Floating u, InterpretUnit u) 
       => Tree (DotLocImage u)
-tree5 = fmap (circleNode black) $
+tree5 = fmap (const circ_dot) $
     Node (1::Int) [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
   where
     a1 = Node  2 [ tleaf 11, tleaf 12, tleaf 13, tleaf 14, tleaf 15, tleaf 16
@@ -162,3 +165,4 @@ tree5 = fmap (circleNode black) $
                  , tleaf 30, tleaf 31, tleaf 32, tleaf 33, tleaf 34]
     b2 = Node 23 [ tleaf 35 ]
 
+    circ_dot = localize (stroke_colour black) dotCircle

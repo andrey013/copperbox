@@ -30,12 +30,8 @@ module Wumpus.Tree.Base
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-import Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Core                              -- package: wumpus-core
-
-import Data.Tree
-
 
 
 

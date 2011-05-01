@@ -29,7 +29,10 @@ module Wumpus.Tree.Design
 
     UW
   , CoordTree
-  , runDesign
+  
+
+  , design
+  , orientateTree
 
   )
   where
@@ -45,7 +48,11 @@ import Data.Maybe
 import Data.Tree
 
 
--- | tree unit width...
+-- | Tree unit width.
+-- 
+-- Trees are designed with 1.0 as the ideal width between nodes.
+-- This is represented as a specific newtype so it can be 
+-- contextually scaled after the design, before the tree is drawn.
 --
 newtype UW = UW { getUW :: Double }
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
@@ -59,11 +66,10 @@ instance InterpretUnit UW where
 
 
 -- | Tree annotated with positions.
+-- 
+-- This is the result of 'design'.
 --
-type CoordTree u a = Tree (Point2 u, a)
-
-
-type UWCoordTree a = Tree (Point2 UW, a)
+type CoordTree a = Tree (Point2 UW, a)
 
 
 -- | XPos is an absolute position
@@ -82,26 +88,6 @@ type Delta = UW
 data HSpan = HSpan !UW !UW
   deriving (Eq,Ord,Show)
 
-
-
-runDesign :: InterpretUnit u 
-          => TreeProps u a  -> Tree (LocImage u a) 
-          -> Query (Tree (LocImage u a))
-runDesign props tree =  
-    makeScalingFun props >>= \sf -> 
-    return $ fmap (fn . bimapL sf) $ orientateTree dir $ design tree
-  where
-    fn ((P2 x y), gf) = moveStart (displaceVec (V2 x y)) gf
-    dir               = tp_direction props
-
-
-makeScalingFun :: InterpretUnit u 
-               => TreeProps u a -> Query (Point2 UW -> Point2 u)
-makeScalingFun (TreeProps { tp_scale_in_x = sx, tp_scale_in_y = sy }) = 
-   getFontSize >>= \sz -> 
-   return (\(P2 x y) -> let ux = sx * (dinterp sz $ realToFrac x)
-                            uy = sy * (dinterp sz $ realToFrac y)
-                        in P2 ux uy)
 
 
 outsideMerge :: HSpan -> HSpan -> HSpan
@@ -196,9 +182,11 @@ fitright = post . foldr fn Nothing
 
 
 
--- Note - this will tell how wide the tree is...
--- though the last exten is not necessarily the widest.
 
+-- | Design the tree from the left.
+-- 
+-- Left and right tree designs are merged.
+--
 designl :: forall a. Tree a -> (XTree a, Extent)
 designl (Node a [])   = (Node (0.0,a)  [],    extentOne 0.0)
 designl (Node a kids) = (Node (xpos,a) kids', ext1)
@@ -213,7 +201,10 @@ designl (Node a kids) = (Node (xpos,a) kids', ext1)
     xpos            = midtop 0.0 ext0
     ext1            = xpos `extlink` ext0
 
-
+-- | Design the tree from the right.
+-- 
+-- Right and left tree designs are merged.
+--
 designr :: forall a. XPos -> Tree a -> (XTree a, Extent)
 designr r (Node a [])   = (Node (r,a)  [],    extentOne r)
 designr r (Node a kids) = (Node (xpos,a) kids', ext1)
@@ -237,7 +228,7 @@ designr r (Node a kids) = (Node (xpos,a) kids', ext1)
 -- 1.0 separating nodes it is rescaled as a post-processing step
 -- into drawable coordinates. 
 --
-design :: Tree a -> UWCoordTree a
+design :: Tree a -> CoordTree a
 design t = rootOrientate zeroPt $ decorateYPosns 0 t3
   where
     (t1,ext)                    = designl t
@@ -253,7 +244,7 @@ design t = rootOrientate zeroPt $ decorateYPosns 0 t3
 -- Originally the tree has no y-positions, recurse through the 
 -- tree adding them...
 --
-decorateYPosns :: UW -> Tree (XPos, a) -> UWCoordTree a
+decorateYPosns :: UW -> Tree (XPos, a) -> CoordTree a
 decorateYPosns lvl (Node (xpos,a) kids) = Node (pt,a) kids'
   where
     pt    = P2 xpos lvl
@@ -261,7 +252,7 @@ decorateYPosns lvl (Node (xpos,a) kids) = Node (pt,a) kids'
      
     
 
-rootOrientate :: Point2 UW -> UWCoordTree a -> UWCoordTree a
+rootOrientate :: Point2 UW -> CoordTree a -> CoordTree a
 rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) = 
     Node (P2 ox oy, val) $ map (mv (ox-x0) (oy-y0)) kids
   where
@@ -269,16 +260,18 @@ rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) =
                                      in Node (P2 (x+dx) (y+dy), a) ks'
 
 
--- | orientateTree...
+-- | Orientate the Tree according to it\'s drawing direction.
+-- 
+-- This is a rotation about the root node.
 --
-orientateTree :: TreeDirection -> UWCoordTree a -> UWCoordTree a
+orientateTree :: TreeDirection -> CoordTree a -> CoordTree a
 orientateTree TREE_DOWN  tree = tree
 orientateTree TREE_UP    tree = rotateAboutRoot pi tree
 orientateTree TREE_LEFT  tree = rotateAboutRoot (1.5*pi) tree
 orientateTree TREE_RIGHT tree = rotateAboutRoot (0.5*pi) tree
 
 
-rotateAboutRoot :: Radian -> UWCoordTree a -> UWCoordTree a
+rotateAboutRoot :: Radian -> CoordTree a -> CoordTree a
 rotateAboutRoot ang (Node (ogin,val) kids) =
     Node (ogin, val) $ map step kids
   where

@@ -31,9 +31,11 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 import Data.Tree hiding ( drawTree )
+
+
+
 
 
 
@@ -70,8 +72,37 @@ dblelaborate ma mb fn = promoteR1 $ \pt ->
 
     -- potentially we need a function like elaborate that also 
     -- transforms the answer...
-    -- Also arg order of eleborate and decorate might be better 
+    -- Also arg order of elaborate and decorate might be better 
     -- flipped.
+
+
+
+
+
+
+-- | Transform a tree where each node is a LocImage into a tree
+-- where each LocImage is displaced by the necessary coordinate
+-- so it can be drawn.
+--
+runDesign :: InterpretUnit u 
+          => TreeProps u a  -> Tree (LocImage u a) 
+          -> Query (Tree (LocImage u a))
+runDesign props tree =  
+    makeScalingFun props >>= \sf -> 
+    return $ fmap (fn . bimapL sf) $ orientateTree dir $ design tree
+  where
+    fn ((P2 x y), gf) = moveStart (displaceVec (V2 x y)) gf
+    dir               = tp_direction props
+
+
+makeScalingFun :: InterpretUnit u 
+               => TreeProps u a -> Query (Point2 UW -> Point2 u)
+makeScalingFun (TreeProps { tp_scale_in_x = sx, tp_scale_in_y = sy }) = 
+   getFontSize >>= \sz -> 
+   return (\(P2 x y) -> let ux = sx * (dinterp sz $ realToFrac x)
+                            uy = sy * (dinterp sz $ realToFrac y)
+                        in P2 ux uy)
+
 
 
 
