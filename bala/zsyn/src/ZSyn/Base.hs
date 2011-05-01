@@ -25,7 +25,11 @@ module ZSyn.Base
   , AudioStream
   , ControlStream 
   , Clock(..)
-  
+
+  , sawtooth
+  , triangle
+  , square
+
   , lineSeg
 
   , EnvelopeGen
@@ -92,6 +96,39 @@ withSampleRate :: forall p u. Clock p => (Double -> HSStream p u) -> HSStream p 
 withSampleRate fn = fn sr
   where
     sr = rate (undefined :: p)
+
+
+
+
+sawtooth :: forall p. Clock p => Double -> HSStream p Double
+sawtooth fr = unfold fn (-1.0)
+  where
+    incr = (2*fr) / rate (undefined :: p)
+    fn t = if t >= 1.0 then (-1.0,(-1.0)) else let t1 = t+incr in (t1,t1)
+
+
+
+triangle :: forall p. Clock p => Double -> HSStream p Double
+triangle fr = unfold fn 0
+  where
+    incr     = fr * (twoPi / rate (undefined :: p))
+    twoDivPi = 2.0 / pi
+    twoPi    = 2.0 * pi
+    fn phz | phz <  0         = (1.0 + (phz * twoDivPi), phz + incr)
+           | phz + incr >= pi = (1.0 - (phz * twoDivPi), phz - twoPi)
+           | otherwise        = (1.0 - (phz * twoDivPi), phz + incr)
+
+
+square :: forall p. Clock p => Double -> HSStream p Double
+square fr = unfold fn 0
+  where
+    sr                   = rate (undefined :: p)
+    unit                 = 1 / sr
+    period               = 1 / fr
+    midpoint             = period  / 2.0
+    fn phz  | phz < midpoint = (1, phz + unit)
+            | phz >= period  = ((-1), 0)
+            | otherwise      = ((-1), phz + unit)
 
 lineSeg :: forall p. Clock p => [Double] -> [Seconds] -> HSStream p Double
 lineSeg amps durs = go amps durs

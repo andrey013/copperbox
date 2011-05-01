@@ -10,7 +10,7 @@ synopsis:         Little synthesizer
 description:
   Little synthesizer.
   .
-  (c) Stephen Tetley 2010
+  (c) Stephen Tetley 2011
   .
 
 build-type:         Simple
@@ -23,11 +23,15 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base              < 5,
-                      array             < 0.4
+  build-depends:      base              <  5,
+                      array             <  0.4,
+                      vector-space      >= 0.6      && <  1.0
   
   exposed-modules:
+    ZSyn,
+    ZSyn.Active,
     ZSyn.Base,
+    ZSyn.Filters,
     ZSyn.HSStream,
     ZSyn.Seconds,
     ZSyn.WavHeader,

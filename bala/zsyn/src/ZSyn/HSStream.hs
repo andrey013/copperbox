@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,8 +18,11 @@
 
 module ZSyn.HSStream
   ( 
+  -- * MultGroup
+    MultGroup(..)
+
   -- * Stream
-    HSStream(..)
+  , HSStream(..)
   , head
   , tail
   , repeat
@@ -26,20 +30,18 @@ module ZSyn.HSStream
   , zip
 
   , iterate
+  , unfold
   , (<<)
   , diff
   , sum
   , const
 
-  , (*>)
   , merge
   , cycle
   , take
   , prefix
   , drop
 
-  , (>*<)
-  , (>/<)
 
   , duplicate
   , skip
@@ -52,8 +54,16 @@ import Prelude hiding ( head, tail, repeat, map, zip, take, drop
 
 import Control.Applicative hiding ( (*>) )
 
+
+import Data.VectorSpace                         -- package: vector-space
+
 --------------------------------------------------------------------------------
 
+infixr 7 ^*^
+
+class MultGroup v where
+  oneV  :: v
+  (^*^) :: v -> v -> v
 
 -- | Head strict stream.
 -- 
@@ -110,8 +120,19 @@ zip f sx sy = step sx sy
     step (a :< sa) (b :< sb) = f a b :< step sa sb  
 
 
+instance Num a => AdditiveGroup (HSStream p a) where
+  zeroV   = repeat 0
+  (^+^)   = zip (+)
+  negateV = map negate 
+
+instance Num a => MultGroup (HSStream p a) where
+  oneV   = repeat 1
+  (^*^)   = zip (*)
 
 
+instance Num a => VectorSpace (HSStream p a) where
+  type Scalar (HSStream p a) = a
+  (*^) s = map (*s)
 
 instance Num a => Num (HSStream p a) where
   (+)           = zip (+)
@@ -124,6 +145,12 @@ instance Num a => Num (HSStream p a) where
 
 iterate :: (a -> a) -> a -> HSStream p a
 iterate f a = a :< iterate f (f a)
+
+unfold :: (st -> (a,st)) -> st -> HSStream p a
+unfold phi st = go (phi st)
+  where
+    go (a,s2) = a :< go (phi s2)
+
 
 infixr 5 <<
 
@@ -141,9 +168,11 @@ sum s = t where t = 0 :< t + s
 const :: Num a => a -> HSStream p a
 const n = n :< repeat 0
 
-
+{-
 (*>) :: Num a => a -> HSStream p a -> HSStream p a
 (*>) x s = map (x*) s
+-}
+
 
 merge :: HSStream p a -> HSStream p a -> HSStream p a
 merge (a :< sa) (b :< sb) = a :< b :< merge sa sb
@@ -169,7 +198,7 @@ drop n s          | n <= 0 = s
 drop n (_ :< sa)           = drop (n-1) sa
 
 
-
+{-
 (>*<) :: Num a => HSStream p a -> HSStream p a -> HSStream p a
 (>*<) (b0 :< bq) a@(a0 :< aq) = b0 * a0 :< aq + bq >*< a
 
@@ -178,7 +207,7 @@ drop n (_ :< sa)           = drop (n-1) sa
 (>/<) (b0 :< bq) a@(a0 :< aq) = w0 :< (bq - w0 *> aq) >/< a
   where
     w0 = b0 / a0
-
+-}
 
 
 -- | 'duplicate' is a stream transformer so it allows phantom 

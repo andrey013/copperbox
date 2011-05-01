@@ -22,10 +22,17 @@ module ZSyn.Active
     Active
   , runActive
 
-  , delay
+  , decorate
+  , delayOnset
+  , at
+
   , oplus
+  , over
   
   , simpleNote
+  , sawNote
+  , triNote
+  , squNote
 
   ) where
 
@@ -33,8 +40,11 @@ import ZSyn.Base
 import ZSyn.HSStream
 import ZSyn.Seconds
 
-import Control.Applicative hiding ( (*>) )
+import Data.VectorSpace                         -- package: vector-space
+
+import Control.Applicative
 import Data.Word
+
 
 type Duration = Seconds
 type Onset    = Seconds
@@ -59,16 +69,23 @@ runActive (Active on d1 f) = prefix samps (pure 0) (f d1)
     sr    = rate (undefined :: p)
     samps = secondsToSamples sr on 
 
+decorate :: (HSStream p a -> HSStream p a) -> Active p a -> Active p a
+decorate fn (Active on dur f) = Active on dur (\d -> (fn . f) d)
 
-delay :: Duration -> Active p a -> Active p a
-delay dx (Active on drn f) = Active (on + dx) drn f
+delayOnset :: Duration -> Active p a -> Active p a
+delayOnset dx (Active on dur f) = Active (on + dx) dur f
 
 infixr 6 `oplus`
+
+at :: Duration -> Active p a -> Active p a
+at x (Active _ drn f) = Active x drn f
+
+
 
 -- | Play one Active after the other.
 --
 oplus :: forall a p. Clock p 
-        => Active p a -> Active p a -> Active p a
+      => Active p a -> Active p a -> Active p a
 oplus (Active on1 d1 f) (Active _ d2 g) =
     Active on1 tot (\d -> let dl    = d1r * d
                               dr    = d2r * d
@@ -82,6 +99,13 @@ oplus (Active on1 d1 f) (Active _ d2 g) =
     d1r = d1/tot
     d2r = d2/tot
 
+infixr 5 `over`
+
+-- | Play simultaneously (additive synthesis).
+--
+over :: Num a => Active p a -> Active p a -> Active p a
+over (Active on1 d1 f) (Active _ d2 g) =
+    Active on1 (max d1 d2) (\d -> f d + g d)
 
 simpleNote :: Double -> Duration -> Active Aud44 Double
 simpleNote freq dur = Active 0 dur mk 
@@ -101,4 +125,22 @@ oscil fr = y
     ar  = undefined
     ohm = dpiSR (rate ar) * fr
     y   = 0 :< v
-    v   = (sin ohm) :< ((2 * cos ohm) *> v - y)
+    v   = (sin ohm) :< ((2 * cos ohm) *^ v - y)
+
+
+mkNote :: (Double -> HSStream Aud44 Double) 
+       -> (Double -> Duration -> Active Aud44 Double)
+mkNote genWave freq dur = Active 0 dur mk 
+  where
+    mk = \d -> let env = envelope 0.05 0.1 0.5 1.0 0.5 0.4 d
+               in (*) (genWave freq) env
+
+
+sawNote :: Double -> Duration -> Active Aud44 Double
+sawNote = mkNote sawtooth
+
+triNote :: Double -> Duration -> Active Aud44 Double
+triNote = mkNote triangle
+
+squNote :: Double -> Duration -> Active Aud44 Double
+squNote = mkNote square
