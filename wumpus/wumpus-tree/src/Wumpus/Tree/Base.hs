@@ -51,8 +51,8 @@ tree_direction :: TreeDirection -> TreePropsF u a
 tree_direction dir props = props { tp_direction = dir }
 
 
-getTreeConnector :: InterpretUnit u 
-                 => TreeProps u a -> Query (a -> [a] -> Graphic u)
+getTreeConnector :: (DrawingCtxM m, InterpretUnit u)
+                 => TreeProps u a -> m (a -> [a] -> Graphic u)
 getTreeConnector (TreeProps { tp_level_distance   = lvl
                             , tp_multiconn        = conn
                             , tp_direction        = dir  }) = 

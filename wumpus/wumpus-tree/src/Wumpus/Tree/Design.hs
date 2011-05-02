@@ -299,8 +299,8 @@ treeZipWith f (Node a xs) (Node b ys) = Node (f a b) (step xs ys)
 -- Scale a CoordTree - this forms a tree where the node label
 -- is a pair of @Point2 u@ and an @a@ (usually a LocImage).
 -- 
-scaleTree :: InterpretUnit u 
-          => u -> u -> CoordTree a -> Query (Tree (Point2 u, a))
+scaleTree :: (DrawingCtxM m, InterpretUnit u)
+          => u -> u -> CoordTree a -> m (Tree (Point2 u, a))
 scaleTree sib_dist lvl_dist tree = 
     getFontSize >>= \sz -> 
     let fn = mkFun sz in return $ fmap (bimapL fn) tree
