@@ -1,16 +1,5 @@
 {-# OPTIONS -Wall #-}
 
--- Note - @main@ is more convoluted than would normally be 
--- expected as it supports both sources of glyph metrics - the 
--- GhostScript distribution or the Core 14 metrics from Adobe.
--- 
--- \"Real\" applications would be expected to choose one source. 
---
--- I-am-not-a-lawyer, but it does look as though the Adobe font
--- metrics are redistributable, the GhostScript metrics are 
--- seemingly redistributable under the same terms as the larger
--- GhostScript distribution.
--- 
 
 module Demo01 where
 
@@ -36,7 +25,7 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [ Right helvetica_family ]
+    base_metrics <- loader [ Right times_roman_family ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx 18 base_metrics) tree_pic1
     writeEPS "./out/regular_tree01.eps"  pic1
@@ -52,41 +41,43 @@ tree_pic1 :: CtxPicture
 tree_pic1 = udrawTracing (0::Double) $ do
     --
     draw $ dcTextlabel "Tree 1:"        `at` (P2 0  550)
-    drawl (P2 10 500) $ runTree props1 tree1
+    drawl (P2 10 500) $ runTreeLoc props1 (const red_dot) tree1
     --
     draw $ dcTextlabel "Tree 2:"       `at` (P2 200 550) 
-    drawl (P2 300 550) $ runTree props2 tree2
+    drawl (P2 300 550) $ runTreeLoc props2 dotChar tree2
 
     draw $ dcTextlabel "Tree 3:"       `at` (P2 0  410) 
     localize (set_font_size 12) $ 
-        drawl (P2 280 410) $ runTree props3 tree3
+        drawl (P2 280 410) $ runTreeLoc props3 dotChar tree3
 
     --
-    draw $ dcTextlabel "Tree 4:"       `at` (P2 0  200)
-    drawl (P2 80 200) $ runTree props4 tree4
+    draw $ dcTextlabel "Tree 4:"       `at` (P2 0  190)
+    drawl (P2 80 190) $ runTreeLoc props4 (const circ_dot) tree4
     --
     draw $ dcTextlabel "Tree 5:"        `at` zeroPt
-    drawl (P2 240 0) $ runTree props5 tree5
+    drawl (P2 320 0) $ runTreeLoc props5 (const circ_dot) tree5
   where
+    red_dot  = localize (fill_colour red) dotDisk
+    circ_dot = localize (stroke_colour black) dotCircle
+
     props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialOTMC
     props2 = standardTreeProps 30 40 familyOTMC
-    props3 = tree_direction TREE_DOWN $ standardTreeProps 25 25 familyOTMC
+    props3 = tree_direction TREE_DOWN $ standardTreeProps 25 30 familyOTMC
     props4 = standardTreeProps 20 30 radialOTMC
-    props5 = standardTreeProps 20 30 radialOTMC
+    props5 = standardTreeProps 30 36 radialOTMC
 
 
-tree1 :: (Real u, Floating u, InterpretUnit u) 
-      => Tree (DotLocImage u)
-tree1 = fmap (const red_dot) $ Node 'A' [Node 'B' bs, Node 'F' fs]
+tree1 :: Tree Char
+tree1 = Node 'A' [Node 'B' bs, Node 'F' fs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     fs = [Node 'G' [Node 'H' [], Node 'I' [], Node 'J' []]]
 
-    red_dot = localize (fill_colour red) dotDisk
 
-tree2 :: (Real u, Floating u, InterpretUnit u) 
-      => Tree (DotLocImage u)
-tree2 = fmap dotChar $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
+
+
+tree2 :: Tree Char
+tree2 = Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
   where
     bs = [Node 'C' [], Node 'D' [], Node 'E' []]
     gs = [Node 'H' [], Node 'I' [], Node 'J' []]
@@ -95,9 +86,10 @@ tree2 = fmap dotChar $ Node 'A' [Node 'B' bs, Node 'F' [], Node 'G' gs]
 -- This is the tree from Andrew Kennedy's 
 -- /Functional Pearl Drawing Trees/
 --
-tree3 :: (Real u, Floating u, InterpretUnit u) 
-      => Tree (DotLocImage u)
-tree3 = fmap dotChar $ Node 'A' [a1, a2, a3]
+-- Draw with dotChar.
+--
+tree3 :: Tree Char
+tree3 = Node 'A' [a1, a2, a3]
   where
     a1 = Node 'B' [b1, b2]
     a2 = Node 'S' [b3,b4]
@@ -128,9 +120,8 @@ tleaf a = Node a []
 -- This is the tree (a) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
 -- 
-tree4 :: (Real u, Floating u, InterpretUnit u) 
-      => Tree (DotLocImage u)
-tree4 = fmap (const circ_dot) $ Node (1::Int) [a1, a2]
+tree4 :: Tree Int
+tree4 = Node 1 [a1, a2]
   where
     a1 = Node  2 [b1]
     a2 = Node  3 [b2, b3]
@@ -143,7 +134,6 @@ tree4 = fmap (const circ_dot) $ Node (1::Int) [a1, a2]
     d1 = Node 11 [tleaf 14]
     d2 = Node 13 [tleaf 15]
 
-    circ_dot = localize (stroke_colour black) dotCircle
 
 -- This is the tree (b) T3 from Buchheim, Junger and Leipert
 -- /Improving Walker\'s Algorithm to Run in Linear Time/.
@@ -152,10 +142,9 @@ tree4 = fmap (const circ_dot) $ Node (1::Int) [a1, a2]
 -- spaces the leaves, it looks like the trees in that paper are 
 -- evenly spaced at the interior nodes too.
 -- 
-tree5 :: (Real u, Floating u, InterpretUnit u) 
-      => Tree (DotLocImage u)
-tree5 = fmap (const circ_dot) $
-    Node (1::Int) [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
+tree5 :: Tree Int
+tree5 = 
+    Node 1 [a1, tleaf 3, tleaf 4, tleaf 5, a2, tleaf 7, tleaf 8, tleaf 9, a3]
   where
     a1 = Node  2 [ tleaf 11, tleaf 12, tleaf 13, tleaf 14, tleaf 15, tleaf 16
                  , tleaf 17, tleaf 18, tleaf 19, tleaf 20, b1]
@@ -164,5 +153,3 @@ tree5 = fmap (const circ_dot) $
     b1 = Node 21 [ tleaf 24, tleaf 25, tleaf 26, tleaf 27, tleaf 28, tleaf 29
                  , tleaf 30, tleaf 31, tleaf 32, tleaf 33, tleaf 34]
     b2 = Node 23 [ tleaf 35 ]
-
-    circ_dot = localize (stroke_colour black) dotCircle

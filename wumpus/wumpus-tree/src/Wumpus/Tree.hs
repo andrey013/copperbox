@@ -21,39 +21,29 @@ module Wumpus.Tree
 
   , TreeDirection(..) 
   , tree_direction
+  , runTreeLoc
 
   -- * Definitions
-  , runTree
   , standardTreeProps
 
   )
   where
 
 import Wumpus.Tree.Base
-import Wumpus.Tree.Draw
+import Wumpus.Tree.DrawLoc
 import Wumpus.Tree.OTMConnectors
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
-
-
-import Data.Tree ( Tree )
 
 
 
-
-
-
-runTree :: (Real u, Floating u, InterpretUnit u) 
-        => TreeProps u a -> Tree (LocImage u a) -> LocGraphic u
-runTree props = drawTree props
 
 
 standardTreeProps :: Fractional u 
                   => u -> u -> OTMAnchorConn u a -> TreeProps u a
 standardTreeProps sx sy otm_conn = 
-    TreeProps { tp_scale_in_x = sx 
-              , tp_scale_in_y = sy
-              , tp_multiconn  = otm_conn         
-              , tp_direction  = TREE_DOWN
+    TreeProps { tp_sibling_distance = sx 
+              , tp_level_distance   = sy
+              , tp_multiconn        = otm_conn         
+              , tp_direction        = TREE_DOWN
               }  
 

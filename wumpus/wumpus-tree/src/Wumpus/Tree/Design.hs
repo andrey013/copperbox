@@ -27,11 +27,13 @@
 module Wumpus.Tree.Design
   (
 
+  -- * Design a tree
     UW
   , CoordTree
-  
-
   , design
+
+  -- * Post transform a tree design
+  , scaleTree
   , orientateTree
 
   )
@@ -63,6 +65,8 @@ instance Show UW where
 instance InterpretUnit UW where
   normalize _ = realToFrac
   dinterp   _ = realToFrac
+
+
 
 
 -- | Tree annotated with positions.
@@ -260,26 +264,6 @@ rootOrientate (P2 ox oy) (Node (P2 x0 y0, val) kids) =
                                      in Node (P2 (x+dx) (y+dy), a) ks'
 
 
--- | Orientate the Tree according to it\'s drawing direction.
--- 
--- This is a rotation about the root node.
---
-orientateTree :: TreeDirection -> CoordTree a -> CoordTree a
-orientateTree TREE_DOWN  tree = tree
-orientateTree TREE_UP    tree = rotateAboutRoot pi tree
-orientateTree TREE_LEFT  tree = rotateAboutRoot (1.5*pi) tree
-orientateTree TREE_RIGHT tree = rotateAboutRoot (0.5*pi) tree
-
-
-rotateAboutRoot :: Radian -> CoordTree a -> CoordTree a
-rotateAboutRoot ang (Node (ogin,val) kids) =
-    Node (ogin, val) $ map step kids
-  where
-    step (Node (v0, a) ks) = Node (rotA v0, a) $ map step ks
-
-    rotA                   = rotateAbout ang ogin
-
-
 -- find height and width
 --
 stats :: Extent -> (Int, HSpan)
@@ -301,6 +285,53 @@ treeZipWith f (Node a xs) (Node b ys) = Node (f a b) (step xs ys)
   where
     step (p:ps) (q:qs) = treeZipWith f p q : step ps qs
     step _      _      = [] 
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Post design transformations...
+
+
+-- | 'scaleTree' : @ sibling_distance * level_distance * CoordTree -> Tree @
+--
+-- Scale a CoordTree - this forms a tree where the node label
+-- is a pair of @Point2 u@ and an @a@ (usually a LocImage).
+-- 
+scaleTree :: InterpretUnit u 
+          => u -> u -> CoordTree a -> Query (Tree (Point2 u, a))
+scaleTree sib_dist lvl_dist tree = 
+    getFontSize >>= \sz -> 
+    let fn = mkFun sz in return $ fmap (bimapL fn) tree
+  where
+    mkFun sz = \(P2 x y) -> let ux = sib_dist * (dinterp sz $ realToFrac x)
+                                uy = lvl_dist * (dinterp sz $ realToFrac y)
+                            in P2 ux uy
+
+
+
+
+-- | Orientate the Tree according to it\'s drawing direction.
+-- 
+-- This is a rotation about the root node.
+--
+orientateTree :: (Real u, Floating u)
+              => TreeDirection -> Tree (Point2 u, a) -> Tree (Point2 u, a)
+orientateTree TREE_DOWN  tree = tree
+orientateTree TREE_UP    tree = rotateAboutRoot pi tree
+orientateTree TREE_LEFT  tree = rotateAboutRoot (1.5*pi) tree
+orientateTree TREE_RIGHT tree = rotateAboutRoot (0.5*pi) tree
+
+
+rotateAboutRoot :: (Real u, Floating u)
+                => Radian -> Tree (Point2 u, a) -> Tree (Point2 u, a)
+rotateAboutRoot ang (Node (ogin,val) kids) =
+    Node (ogin, val) $ map step kids
+  where
+    step (Node (v0, a) ks) = Node (rotA v0, a) $ map step ks
+
+    rotA                   = rotateAbout ang ogin
 
 
 
