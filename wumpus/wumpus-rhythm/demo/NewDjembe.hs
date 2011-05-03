@@ -14,8 +14,13 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
+import Data.Ratio -- temp
 
-
+dummy :: Rational -> Int -> Int
+dummy r sz = ceiling $ (dsz * fromRational r)
+  where
+    dsz :: Double
+    dsz = fromIntegral sz
 
 main :: IO ()
 main = do 
@@ -49,6 +54,7 @@ pic01 = udrawTracing (0::Double) $ do
                                           ]
     
 
+    drawl (P2 0 300) $ locBeamGroup 1500 4
 
 pic02 :: CtxPicture
 pic02 = udrawTracing (0::Double) $ 

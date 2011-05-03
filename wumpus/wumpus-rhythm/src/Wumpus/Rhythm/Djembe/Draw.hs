@@ -21,10 +21,12 @@ module Wumpus.Rhythm.Djembe.Draw where
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Rhythm.Djembe.Parameters
 
+import Wumpus.Drawing.Paths.Relative            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Monad
 
 --------------------------------------------------------------------------------
 
@@ -34,6 +36,30 @@ data Note = Note   NoteHead
           | Flam   NoteHead               -- add little flam ...
           | Swing  NoteHead
           | Div    NoteHead   NoteHead
+
+
+
+
+-- | Start point is top-left.
+--
+-- TODO - the outline path is inefficient, Wumpus-Drawing needs
+-- optimizing...
+-- 
+locBeamGroup :: InterpretUnit u => AfmUnit -> Int -> LocGraphic u 
+locBeamGroup uw i 
+    | i <= 0    = emptyLocGraphic
+    | i == 1    = uconvLocImageF $ beam_one
+    | otherwise = uconvLocImageF $ execRelBuild path_spec 
+  where
+    width     = uw * fromIntegral i
+    beam_one  = locStraightLine (vvec $ negate stem_length)
+
+    path_spec =  vline stem_length 
+              >> pivot 
+              >> replicateM_ (i-2) (hline uw >> insert beam_one)
+              >> hline uw 
+              >> vline (-stem_length)
+
 
 
 

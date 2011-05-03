@@ -93,9 +93,12 @@ import Data.Ratio
 
 
 
-
 type NoteHead = PosObject AfmUnit
 type Stem     = LocGraphic AfmUnit
+
+
+
+
 
 runNoteHead :: InterpretUnit u => NoteHead -> LocGraphic u
 runNoteHead nh = uconvLocImageF $ locGraphic_ $ runPosObjectR1 BLC nh
@@ -104,60 +107,115 @@ runStem :: InterpretUnit u => Stem -> LocGraphic u
 runStem = uconvLocImageF . moveStart (displaceV stem_top)
 
 
-charNote :: Char -> NoteHead
-charNote = posChar 
+
+-- Note - we expect to draw histroke glyph at the horizontal center 
+
+data NoteHeadDesc = NoteHeadDesc
+      { nhd_note_head           :: PosObject AfmUnit
+      , nhd_histroke_glyph      :: LocGraphic AfmUnit
+      , nhd_histroke_ypos       :: AfmUnit
+      , nhd_flam_glyph          :: LocGraphic AfmUnit
+      }
 
 
--- | Note - even though disk is a PosObject, the graphic is moved
--- above the yminor. This is because we always want to print note 
--- heads via the rect address BLC (baseline-center).
+
+-- | The height of a NoteHead is always the same - all we really
+-- care about is adding parens to the left an right and drawing 
+-- at @baseline center@.
 --
-diskNote :: NoteHead
-diskNote = makePosObject (pure ortt) disk1
+-- Except for on of the character note heads, we always treat
+-- width as the same too - the diameter of @disk@.
+-- 
+stdNoteHead :: AfmUnit -> LocGraphic AfmUnit -> NoteHead
+stdNoteHead blc_to_c gf = 
+    makePosObject (pure disk_orientation) (moveStart (displaceV blc_to_c) gf)
   where
-    ortt = Orientation { or_x_minor = disk_radius
-                       , or_x_major = disk_radius
-                       , or_y_minor = 0
-                       , or_y_major = helvetica_cap_height }
+    disk_orientation :: Orientation AfmUnit
+    disk_orientation = Orientation { or_x_minor = disk_radius
+                                   , or_x_major = disk_radius
+                                   , or_y_minor = 0
+                                   , or_y_major = helvetica_cap_height 
+                                   }
 
-    disk1 = moveStart (displaceV disk_ycenter) $ filledDisk disk_radius
+
+charNote :: Char -> NoteHead
+charNote = nhd_note_head . charDesc 
+
+
+
+charDesc :: Char -> NoteHeadDesc
+charDesc ch = NoteHeadDesc 
+    { nhd_note_head         = posChar ch
+    , nhd_histroke_glyph    = glyph
+    , nhd_histroke_ypos     = 0 -- TODO
+    , nhd_flam_glyph        = flam_glyph
+    }
+  where
+    glyph       = locGraphic_ $ runPosObjectR1 BLC $ posChar ch
+    flam_glyph  = localize (scale_point_size 0.75) glyph
+
+
+
+toneDesc :: NoteHeadDesc
+toneDesc = NoteHeadDesc 
+    { nhd_note_head         = stdNoteHead disk_ycenter glyph
+    , nhd_histroke_glyph    = glyph
+    , nhd_histroke_ypos     = 0 -- TODO
+    , nhd_flam_glyph        = flam_glyph
+    }
+  where
+    glyph       = dcDisk FILL disk_radius
+    flam_glyph  = dcDisk FILL flam_disk_radius
+
+
+
+diskNote :: NoteHead
+diskNote = nhd_note_head toneDesc
+
+
+periodDesc :: NoteHeadDesc
+periodDesc = NoteHeadDesc 
+    { nhd_note_head         = stdNoteHead period_ycenter glyph
+    , nhd_histroke_glyph    = glyph
+    , nhd_histroke_ypos     = 0 -- TODO
+    , nhd_flam_glyph        = glyph
+    }
+  where
+    glyph       = dcDisk FILL period_radius
 
 
 periodNote :: NoteHead 
-periodNote = makePosObject (pure ortt) disk1
-  where
-    -- Note - use disk radius for x lengths.
-    ortt = Orientation { or_x_minor = disk_radius
-                       , or_x_major = disk_radius
-                       , or_y_minor = 0
-                       , or_y_major = helvetica_cap_height }
+periodNote = nhd_note_head periodDesc 
 
-    disk1 = moveStart (displaceV period_ycenter) $ filledDisk period_radius
-
+ 
+-- | Note - we still want to build the note head with 
+-- 'stdNoteHead' this is so we get a satifying blank inbetween
+-- parens.
+-- 
+noNoteDesc :: NoteHeadDesc
+noNoteDesc = NoteHeadDesc 
+    { nhd_note_head         = stdNoteHead 0 emptyLocGraphic
+    , nhd_histroke_glyph    = emptyLocGraphic
+    , nhd_histroke_ypos     = 0
+    , nhd_flam_glyph        = emptyLocGraphic
+    }
 
 noNote :: NoteHead 
-noNote = makePosObject (pure ortt) emptyLocGraphic
-  where
-    -- Note - use disk radius for x lengths.
-    ortt = Orientation { or_x_minor = disk_radius
-                       , or_x_major = disk_radius
-                       , or_y_minor = 0
-                       , or_y_major = helvetica_cap_height }
+noNote = nhd_note_head noNoteDesc 
 
 
 
-
-
-
--- | Note - parens would look better shifted up a little...
+-- | Note - parens would look better shifted up a little.
+--
+-- Also this is probably an elaborate...
 --
 parens2 :: NoteHead -> NoteHead
 parens2 obj = hcat [ lparen, obj, rparen ]
   where
     lparen = posEscChar $ CharEscName "parenleft"
     rparen = posEscChar $ CharEscName "parenright"
-
-
+    
+    
 
 
 underscore2 :: NoteHead -> NoteHead
@@ -165,7 +223,7 @@ underscore2 = elaboratePO body
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
-                 in execPivot $    vmove strike_baseline >> move_left xmin
+                 in execPivot $    vmove_tip strike_baseline >> move_left xmin
                                 >> line_right (xmin + xmaj)
 
 
@@ -177,7 +235,7 @@ angleStrike = elaboratePO body
     body _ = let ang  = 0.25*pi
                  dist = angle_strike_width / fromRadian (cos ang)
                  hw   = 0.5 * angle_strike_width
-             in execPivot $    vmove strike_baseline >> move_left hw
+             in execPivot $    vmove_tip strike_baseline >> move_left hw
                             >> aline ang dist
 
 
@@ -217,10 +275,10 @@ flamStem :: LocGraphic AfmUnit
 flamStem = execPivot flam_path 
 -- moveStart (disp_down stem_length) $ openStrokePath flam_path
   where
-    flam_path =  line_up flam_stem_length 
-              >> line_up_right flam_xminor
+    flam_path =  line_up        flam_stem_length 
+              >> line_up_right  flam_xminor
               >> pivot
-              >> line_down stem_length
+              >> line_down      stem_length
 
 
 flamStemX :: LocGraphic AfmUnit
@@ -321,13 +379,13 @@ baselineCharGlyph ch =
 strokedPosRect :: (Fractional u, InterpretUnit u) 
                => u -> u -> PosObject u 
 strokedPosRect w h = 
-    makePosObject (pure $ oposRectSW w h) (strokedRectangle w h)
+    makePosObject (pure $ oposRectSW w h) (dcRectangle STROKE w h)
 
 
 filledPosRect :: (Fractional u, InterpretUnit u) 
               => u -> u -> PosObject u 
 filledPosRect w h = 
-    makePosObject (pure $ oposRectSW w h) (filledRectangle w h)
+    makePosObject (pure $ oposRectSW w h) (dcRectangle FILL w h)
 
 oposRectSW :: Num u => u -> u -> Orientation u 
 oposRectSW w h  = Orientation { or_x_minor = 0
@@ -338,19 +396,19 @@ oposRectSW w h  = Orientation { or_x_minor = 0
 
 openStrokePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 openStrokePath vs = promoteR1 $ \pt -> 
-    (locPP vs `at` pt) >>= openStroke 
+    (locPP vs `at` pt) >>= dcOpenPath 
 
 
 filledRelativePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
 filledRelativePath vs = promoteR1 $ \pt -> 
-    (locPP vs `at` pt) >>= filledPath
+    (locPP vs `at` pt) >>= dcClosedPath FILL
 
 --------------------------------------------------------------------------------
 
 disk_note :: NoteGlyph
 disk_note = noteGlyph note_draw start_move
   where
-    note_draw  = pushR1 (replaceAns disk_width_vector) $ filledDisk disk_radius
+    note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
     start_move = disp_up disk_ycenter
     
 char_note :: Char -> NoteGlyph
@@ -359,7 +417,7 @@ char_note ch = baselineCharGlyph $ CharLiteral ch
 period_note :: NoteGlyph
 period_note =  noteGlyph note_draw start_move
   where
-    note_draw  = pushR1 (replaceAns period_width_vector) $ filledDisk period_radius
+    note_draw  = pushR1 (replaceAns period_width_vector) $ dcDisk FILL period_radius
     start_move = displaceV period_ycenter
 
 -- | Draw a Char at the histroke position usually @X@.
@@ -377,7 +435,7 @@ histroke_char ch = noteGlyph note_draw start_move
 lostroke_disk :: NoteGlyph
 lostroke_disk = noteGlyph note_draw start_move
   where
-    note_draw  = pushR1 (replaceAns disk_width_vector) $ filledDisk disk_radius
+    note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
     start_move = displaceV lostroke_disk_ycenter
 
 
@@ -390,7 +448,7 @@ char_flam ch =
     start_move = disp_left flam_xminor . disp_up flam_char_baseline
 
 disk_flam :: LocGraphic AfmUnit
-disk_flam = moveStart start_move (filledDisk flam_disk_radius)
+disk_flam = moveStart start_move (dcDisk FILL flam_disk_radius)
   where
     start_move = disp_left flam_xminor . disp_up flam_disk_ycenter
 
@@ -553,7 +611,7 @@ repeatDots dx = moveStart (displaceH dx) $ hi_dot `oplus` lo_dot
   where
     hi_dot  = moveStart (disp_up hi_repeat_dot_center) dot1
     lo_dot  = moveStart (disp_up lo_repeat_dot_center) dot1 
-    dot1    = filledDisk repeat_dot_radius 
+    dot1    = dcDisk FILL repeat_dot_radius 
 
 
 --------------------------------------------------------------------------------
