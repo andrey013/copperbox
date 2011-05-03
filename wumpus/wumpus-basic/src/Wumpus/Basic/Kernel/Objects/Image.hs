@@ -28,6 +28,7 @@ module Wumpus.Basic.Kernel.Objects.Image
    , graphic_
 
    , sequenceImage
+   , bothImage
 
    , uconvImageF
    , uconvImageZ
@@ -99,7 +100,13 @@ sequenceImage (gf:gs) = step gf gs
                      step k ks >>= \(Ans o2 xs) ->
                      return $ Ans (o1 `oplus` o2) (x:xs)
 
-
+-- | Combine two Images, concatening the drawings and return the
+-- results as a pair.
+--
+bothImage :: Image u a -> Image u b -> Image u (a,b)
+bothImage ma mb = comb <$> ma <*> mb 
+  where
+    comb (Ans o1 a) (Ans o2 b) = Ans (o1 `oplus` o2) (a,b)
 
 
 -- | Use this to convert 'Graphic' or 'Image' with Functor answer.

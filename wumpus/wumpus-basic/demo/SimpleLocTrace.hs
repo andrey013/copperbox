@@ -34,9 +34,9 @@ drawing01 = drawTracing mf1
 mf1 :: TraceDrawing Double ()
 mf1 = do
     drawl (P2 0   0) $ execLocTrace $
-         write rect1    >> hmove 30 
-      >> write rect2    >> hmove 30
-      >> write diamond1 >> vmove 50 
+         write rect1    >> hmoveBy 30 
+      >> write rect2    >> hmoveBy 30
+      >> write diamond1 >> vmoveBy 50 
       >> write (localize (stroke_colour indigo) poly5)   -- no move
       >> write circle1
 

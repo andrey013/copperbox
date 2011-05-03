@@ -28,6 +28,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
    , emptyLocGraphic
    , sequenceLocImage
+   , bothLocImage
 
    , uconvLocImageF
    , uconvLocImageZ
@@ -140,6 +141,18 @@ sequenceLocImage (gf:gs) = promoteR1 $ \pt -> step pt gf gs
     step pt ma (k:ks) = apply1R1 ma pt >>= \(Ans o1 x) -> 
                         step pt k ks >>= \(Ans o2 xs) ->
                         return $ Ans (o1 `oplus` o2) (x:xs)
+
+-- | Combine two LocImages, concatening the drawings and return the
+-- results as a pair.
+--
+bothLocImage :: LocImage u a -> LocImage u b -> LocImage u (a,b)
+bothLocImage ma mb = 
+    promoteR1 $ \pt -> comb <$> apply1R1 ma pt <*> apply1R1 mb pt
+  where
+    comb (Ans o1 a) (Ans o2 b) = Ans (o1 `oplus` o2) (a,b)
+
+
+
 
 
 -- | Use this to convert 'LocGraphic' or 'LocImage' with Functor 

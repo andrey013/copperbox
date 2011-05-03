@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.LocTrace
+-- Module      :  Wumpus.Basic.Kernel.Objects.TraceLocGraphic
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -12,11 +12,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Imperative /turtle/ style drawing to build LocGraphics.
+-- Writer monad with imperative /turtle/ style movement to build LocGraphics.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.LocTrace
+module Wumpus.Basic.Kernel.Objects.TraceLocGraphic
    (
 
    -- * LocTrace monads
@@ -35,8 +35,8 @@ module Wumpus.Basic.Kernel.Objects.LocTrace
    , LocTraceM(..)
 
    -- * Derived operations
-   , hmove
-   , vmove
+   , hmoveBy
+   , vmoveBy
 
    )
 
@@ -142,13 +142,16 @@ execLocTraceT = liftM post . runLocTraceT
 
 
 
+-- Note - @write@ and @reset@ steal too general names. 
+-- They need changing...
+
 -- | 'write' analogue to Writer monad @tell@.
 --
 class LocTraceM (m :: * -> *) where
   write     :: MonUnit (m ()) ~ u => LocGraphic u -> m ()
   write_    :: MonUnit (m ()) ~ u => LocImage u a -> m ()
   
-  move      :: MonUnit (m ()) ~ u => Vec2 u -> m ()
+  moveBy    :: MonUnit (m ()) ~ u => Vec2 u -> m ()
   location  :: MonUnit (m ()) ~ u => m (Vec2 u)
 
   reset     :: m ()
@@ -162,7 +165,7 @@ class LocTraceM (m :: * -> *) where
 
 instance Num u => LocTraceM (LocTrace u) where
   write gf  = LocTrace $ \v0 -> ((), v0, moveStart (displaceVec v0) gf)
-  move  v   = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
+  moveBy v  = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
   location  = LocTrace $ \v0 -> (v0, v0, mempty)
   reset     = LocTrace $ \_  -> ((), V2 0 0, mempty)
   branch ma = LocTrace $ \v0 -> let (a,_,o) = getLocTrace ma v0 in (a,v0,o)
@@ -170,7 +173,7 @@ instance Num u => LocTraceM (LocTrace u) where
 
 instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
   write gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (displaceVec v0) gf)
-  move  v   = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
+  moveBy v  = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
   location  = LocTraceT $ \v0 -> return (v0, v0, mempty)
   reset     = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
   branch ma = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,_,o) -> 
@@ -183,10 +186,10 @@ instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
 
 -- | Move the /cursor/ horizontally.
 --
-hmove :: (LocTraceM m, Num u, u ~ MonUnit (m ())) => u -> m ()
-hmove dx = move (hvec dx)
+hmoveBy :: (LocTraceM m, Num u, u ~ MonUnit (m ())) => u -> m ()
+hmoveBy dx = moveBy (hvec dx)
 
 -- | Move the /cursor/ vertically.
 --
-vmove :: (LocTraceM m, Num u, u ~ MonUnit (m ())) => u -> m ()
-vmove dx = move (vvec dx)
+vmoveBy :: (LocTraceM m, Num u, u ~ MonUnit (m ())) => u -> m ()
+vmoveBy dx = moveBy (vvec dx)
