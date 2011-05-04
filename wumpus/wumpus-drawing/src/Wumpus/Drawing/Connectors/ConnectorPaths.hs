@@ -267,8 +267,8 @@ connabar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
-    in return $ vertexPath [ p0, adisp_north src_arm ang p0
-                           , adisp_north dst_arm ang p1, p1 ]
+    in return $ vertexPath [ p0, dispDirectionTheta UP src_arm ang p0
+                           , dispDirectionTheta UP dst_arm ang p1, p1 ]
 
 
 -- | Bar connector.
@@ -285,8 +285,8 @@ connbbar = promoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1
-    in return $ vertexPath [ p0, adisp_south src_arm ang p0
-                           , adisp_south dst_arm ang p1, p1 ]
+    in return $ vertexPath [ p0, dispDirectionTheta DOWN src_arm ang p0
+                           , dispDirectionTheta DOWN dst_arm ang p1, p1 ]
 
 
 
@@ -437,10 +437,10 @@ loopbody fn = promoteConn $ \p0 p1 ->
     connectorDstArm   >>= \dst_arm ->
     connectorLoopSize >>= \loop_len ->
     let ang = vdirection $ pvec p0 p1 
-        a0  = displaceParallel (negate src_arm) ang p0
-        a1  = displacePerpendicular (fn loop_len) ang a0
-        z0  = displaceParallel dst_arm ang p1
-        z1  = displacePerpendicular (fn loop_len) ang z0
+        a0  = dispParallel (negate src_arm) ang p0
+        a1  = dispPerpendicular (fn loop_len) ang a0
+        z0  = dispParallel dst_arm ang p1
+        z1  = dispPerpendicular (fn loop_len) ang z0
     in return $ vertexPath [ p0, a0, a1, z1, z0, p1 ]
 
 -- | Bezier curve connector - the control points are positioned 

@@ -221,7 +221,7 @@ execPivot :: (Floating u, InterpretUnit u)
 execPivot mf = post $ runBuildMonad mf
   where
     post (_,st,gf) = let v1 = pivot_position st
-                     in moveStart (displaceVec $ vreverse v1) gf
+                     in moveStart (dispVec $ vreverse v1) gf
 
 
 
@@ -234,7 +234,7 @@ logSubPath spe upd v1 subp
   where
     drawF = if spe == PATH_OPEN then dcOpenPath else dcClosedPath STROKE
     gf    = promoteR1 $ \pt -> 
-              toPrimPath (displaceVec v1 pt) subp >>= \pp -> 
+              toPrimPath (dispVec v1 pt) subp >>= \pp -> 
               localize upd (drawF pp)
 
 
@@ -324,7 +324,7 @@ move_tip v1 =
 
 insert :: Num u => LocGraphic u -> RelBuild u ()
 insert gf = gets cumulative_disp >>= \v -> 
-            tellInsert (moveStart (displaceVec v) gf)
+            tellInsert (moveStart (dispVec v) gf)
 
 
 penCtxUpdate :: (Floating u, InterpretUnit u) 

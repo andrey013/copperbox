@@ -150,7 +150,7 @@ orthoOrientation (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) =
 
 
 rotateCorner :: (Real u, Floating u) => Radian -> Point2 u -> Point2 u
-rotateCorner ang pt = displaceVec v2 zeroPt
+rotateCorner ang pt = dispVec v2 zeroPt
   where
     v1    = pvec zeroPt pt 
     theta = vdirection v1

@@ -39,8 +39,8 @@ orthontAxes (w,h) =
     let conn1 = rightArrow barb45 connline
         uw    = w1 * realToFrac w
         uh    = h1 * realToFrac h
-        ptX   = displaceH uw zeroPt
-        ptY   = displaceV uh zeroPt
+        ptX   = dispH uw zeroPt
+        ptY   = dispV uh zeroPt
     in  localize cap_square $         graphic_ (connect conn1 zeroPt ptX) 
                               `oplus` graphic_ (connect conn1 zeroPt ptY)
 

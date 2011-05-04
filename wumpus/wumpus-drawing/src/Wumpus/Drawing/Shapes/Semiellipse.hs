@@ -225,7 +225,7 @@ mkSemiellipse rx ry = promoteR2 $ \ctr theta ->
 mkSemiellipsePath :: (Real u, Floating u, Tolerance u) 
                   => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkSemiellipsePath rx ry hminor = promoteR2 $ \pt theta ->
-    let ctr = displacePerpendicular (-hminor) theta pt
+    let ctr = dispPerpendicular (-hminor) theta pt
         xs  = bezierSemiellipsePoints rx ry ctr
     in return $ curvePath $ map (rotateAbout theta ctr) xs 
 

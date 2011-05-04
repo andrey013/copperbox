@@ -160,7 +160,7 @@ rectangleAnchor hw hh ctr =
               , radial_anchor   = fn  
               , cardinal_anchor = rectCardinal hw hh ctr }
   where
-    fn theta =  displaceVec (rectRadialVector hw hh theta) ctr
+    fn theta =  dispVec (rectRadialVector hw hh theta) ctr
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -169,7 +169,7 @@ circleAnchor rad ctr =
               , radial_anchor   = fn 
               , cardinal_anchor = radialCardinal rad ctr }
   where
-    fn theta = ctr .+^ (avec theta rad)
+    fn theta = dispVec (avec theta rad) ctr
 
 
 polygonAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 

@@ -170,10 +170,10 @@ majorInterior cbl@(xmin,ymin) (xmaj,ymaj) =
     position cbl                    >>= \bl ->
     let xcount = sub1 (xmaj - xmin)
         ycount = sub1 (ymaj - ymin)
-        hlines = chainlike ycount (displaceV h1) (hline uw)
-        vlines = chainlike xcount (displaceH w1) (vline uh)
-    in         (apply1R1 hlines $ displaceV h1 bl)  
-       `oplus` (apply1R1 vlines $ displaceH w1 bl) 
+        hlines = chainlike ycount (dispV h1) (hline uw)
+        vlines = chainlike xcount (dispH w1) (vline uh)
+    in         (apply1R1 hlines $ dispV h1 bl)  
+       `oplus` (apply1R1 vlines $ dispH w1 bl) 
 
 
 
@@ -190,13 +190,13 @@ minorInterior cbl@(xmin,ymin) (xmaj,ymaj) scount =
         ycount = ymaj - ymin
         subw1    = w1 / fromIntegral scount
         subh1    = h1 / fromIntegral scount
-        hlines1 = moveStart (displaceV subh1) 
-                    $ chainlike (scount-1) (displaceV subh1) (hline uw)
+        hlines1 = moveStart (dispV subh1) 
+                    $ chainlike (scount-1) (dispV subh1) (hline uw)
 
-        vlines1 = moveStart (displaceH subw1) 
-                    $ chainlike (scount-1) (displaceH subw1) (vline uh)
-        hlines  = chainlike ycount (displaceV h1) hlines1
-        vlines  = chainlike xcount (displaceH w1) vlines1
+        vlines1 = moveStart (dispH subw1) 
+                    $ chainlike (scount-1) (dispH subw1) (vline uh)
+        hlines  = chainlike ycount (dispV h1) hlines1
+        vlines  = chainlike xcount (dispH w1) vlines1
 
     in         (apply1R1 hlines bl)  
        `oplus` (apply1R1 vlines bl) 

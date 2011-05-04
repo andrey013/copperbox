@@ -162,8 +162,8 @@ promoteConn fn = promoteR2 $ \p0 p1 ->
     connectorSrcOffset >>= \off0 ->
     connectorDstOffset >>= \off1 ->
     let ang = vdirection $ pvec p0 p1
-    in fn (displacePerpendicular off0 ang $ p0 .+^ avec ang sep0) 
-          (displacePerpendicular off1 ang $ p1 .-^ avec ang sep1)
+    in fn (dispPerpendicular off0 ang $ p0 .+^ avec ang sep0) 
+          (dispPerpendicular off1 ang $ p1 .-^ avec ang sep1)
    
 --
 -- CAUTION - promoteConn projects the spacers along the (straight)

@@ -62,25 +62,25 @@ loopPoints circ_radius circ_ctr incl =
     top_right   = negate $ 0.8 * circ_radius
     top_left    = 0.8 * circ_radius
 
-    top         = displaceParallel height incl circ_ctr
-    kiter       = displaceOrtho (V2 hminor (-hw)) incl circ_ctr
-    kitel       = displaceOrtho (V2 hminor (hw) ) incl circ_ctr
+    top         = dispParallel height incl circ_ctr
+    kiter       = dispOrtho (V2 hminor (-hw)) incl circ_ctr
+    kitel       = dispOrtho (V2 hminor (hw) ) incl circ_ctr
     
     startr      = circ_ctr .+^ avec (circularModulo $ incl - theta) circ_radius
     startl      = circ_ctr .+^ avec (circularModulo $ incl + theta) circ_radius
 
     -- quadrant III
     cp1         = startl .+^ end_vec 
-    cp2         = displaceParallel minor_down incl kitel
+    cp2         = dispParallel minor_down incl kitel
 
     -- quadrant II 
-    cp3         = displaceParallel major_up incl kitel
-    cp4         = displacePerpendicular top_left incl top
+    cp3         = dispParallel major_up incl kitel
+    cp4         = dispPerpendicular top_left incl top
 
     -- quadrant I
-    cp5         = displacePerpendicular top_right incl top
-    cp6         = displaceParallel major_up incl kiter
+    cp5         = dispPerpendicular top_right incl top
+    cp6         = dispParallel major_up incl kiter
 
     -- quadrant IV 
-    cp7         = displaceParallel minor_down incl kiter
+    cp7         = dispParallel minor_down incl kiter
     cp8         = startr .+^ start_vec

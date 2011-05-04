@@ -321,7 +321,7 @@ diskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize fill_use_stroke_colour $ 
-                      moveStart (displaceVec v1) (dcDisk FILL 0.5)
+                      moveStart (dispVec v1) (dcDisk FILL 0.5)
 
 
 odiskTip :: InterpretUnit u => ArrowTip u
@@ -332,7 +332,7 @@ odiskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize solid_stroke_tip $ 
-                      moveStart (displaceVec v1) (dcDisk STROKE 0.5)
+                      moveStart (dispVec v1) (dcDisk STROKE 0.5)
 
 
 -- | squareSpec:
@@ -458,7 +458,7 @@ trapezoidFromBasePoints u ratio_to_base p1 p2 = (cp1, cp2)
     base_len  = vlength base_vec
     theta     = vdirection base_vec
     half_ulen = 0.5 * ratio_to_base * base_len
-    base_mid  = displaceParallel (0.5 * base_len) theta p1
-    ubase_mid = displacePerpendicular u theta base_mid
-    cp1       = displaceParallel (-half_ulen) theta ubase_mid
-    cp2       = displaceParallel   half_ulen  theta ubase_mid
+    base_mid  = dispParallel (0.5 * base_len) theta p1
+    ubase_mid = dispPerpendicular u theta base_mid
+    cp1       = dispParallel (-half_ulen) theta ubase_mid
+    cp2       = dispParallel   half_ulen  theta ubase_mid

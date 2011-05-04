@@ -414,7 +414,7 @@ monoSpace _  []     = []
 drawStrikethrough :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawStrikethrough (Orientation xmin xmaj _ ymaj) = 
-    linestyle $ moveStart (displaceVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (dispVec $ vec (-xmin) vpos) hline 
   where
     vpos  = 0.45 * ymaj
     hline = locStraightLine (hvec $ xmin + xmaj)
@@ -424,7 +424,7 @@ drawStrikethrough (Orientation xmin xmaj _ ymaj) =
 drawUnderline :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawUnderline (Orientation xmin xmaj ymin _) = 
-    linestyle $ moveStart (displaceVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (dispVec $ vec (-xmin) vpos) hline 
   where
     vpos  = negate $ 0.45 * ymin
     hline = locStraightLine (hvec $ xmin + xmaj)
@@ -448,7 +448,7 @@ drawBackfill rgb (Orientation xmin xmaj ymin ymaj) =
         hdy = 0.5 * dy 
     in localize (fill_colour rgb) $ moveStart (mkVec hdx hdy) (mkRect hdx hdy)
   where
-    mkVec  dx dy = displaceVec $ vec (negate $ xmin+dx) (negate $ ymin+dy)
+    mkVec  dx dy = dispVec $ vec (negate $ xmin+dx) (negate $ ymin+dy)
     mkRect dx dy = let w = dx + xmin + xmaj + dx
                        h = dy + ymin + ymaj + dy
                    in dcRectangle FILL w h
