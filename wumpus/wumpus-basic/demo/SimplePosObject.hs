@@ -100,9 +100,9 @@ rectMinor =
 -- start-point - +10 +10
 mkRectMinor :: InterpretUnit u => u -> u -> u -> LocGraphic u
 mkRectMinor m w h = promoteR1 $ \pt -> 
-    let bl = displaceVec (vec (-m) (-m)) pt
-        br = displaceH w bl
-        tr = displaceV h br
-        tl = displaceV h bl
+    let bl = dispVec (vec (-m) (-m)) pt
+        br = dispH w bl
+        tr = dispV h br
+        tl = dispV h bl
     in vertexPP [bl, br, tr, tl] >>= dcClosedPath STROKE
 

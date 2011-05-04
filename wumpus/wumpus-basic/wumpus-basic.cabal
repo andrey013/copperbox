@@ -32,6 +32,8 @@ description:
   .
   v0.17.0 to v0.18.0:
   . 
+  * Changed Displacement API so it is smaller, function naming unified.
+  . 
   * Changed @DrawingPimitives@ to use @DrawStyle@.
   . 
   * Moved vertices generating functions from @Geometry.Path@ to 

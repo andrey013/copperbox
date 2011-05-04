@@ -30,45 +30,21 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , moveStartThetaIncl
 
   , displace
-  , displaceVec
-  , displaceH
-  , displaceV
+  , dispVec
+  , dispH
+  , dispV
 
-  , disp_up
-  , disp_down
-  , disp_left
-  , disp_right
-
-  , disp_up_left
-  , disp_up_right
-  , disp_down_left
-  , disp_down_right
-  
-
-  , disp_north
-  , disp_south
-  , disp_east
-  , disp_west
-
-  , disp_northeast
-  , disp_northwest
-  , disp_southeast
-  , disp_southwest
+  , dispDirection
+  , dispCorner
+  , dispCardinal
 
 
-  , displaceParallel
-  , displacePerpendicular
-  , displaceOrtho
+  , dispParallel
+  , dispPerpendicular
+  , dispOrtho
 
-  , adisp_north
-  , adisp_south
-  , adisp_east
-  , adisp_west  
-
-  , adisp_northeast
-  , adisp_northwest
-  , adisp_southeast
-  , adisp_southwest
+  , dispDirectionTheta
+  , dispCardinalTheta
 
   , centerRelative
   , left_of
@@ -175,164 +151,152 @@ displace :: Num u => u -> u -> PointDisplace u
 displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
 
 
--- | 'displaceV' : @ (V2 x y) -> PointDisplace @
+-- | 'dispVec' : @ (V2 x y) -> PointDisplace @
 -- 
 -- Version of 'displace' where the displacement is supplied as
 -- a vector rather than two parameters.
 -- 
-displaceVec :: Num u => Vec2 u -> PointDisplace u
-displaceVec (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
+dispVec :: Num u => Vec2 u -> PointDisplace u
+dispVec (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
 
 
--- | 'displaceH' : @ x -> PointDisplace @
+-- | 'dispH' : @ x -> PointDisplace @
 -- 
 -- Build a combinator to move @Points@ by horizontally the 
 -- supplied @x@ distance.
 --
-displaceH :: Num u => u -> PointDisplace u
-displaceH dx (P2 x y) = P2 (x+dx) y
+dispH :: Num u => u -> PointDisplace u
+dispH dx (P2 x y) = P2 (x+dx) y
 
--- | 'displaceV' : @ y -> PointDisplace @
+-- | 'dispV' : @ y -> PointDisplace @
 -- 
 -- Build a combinator to move @Points@ vertically by the supplied 
 -- @y@ distance.
 --
-displaceV :: Num u => u -> PointDisplace u
-displaceV dy (P2 x y) = P2 x (y+dy)
+dispV :: Num u => u -> PointDisplace u
+dispV dy (P2 x y) = P2 x (y+dy)
+
+-- 
+
+dispDirection :: Num u => Direction -> u -> PointDisplace u
+dispDirection UP     = dispV
+dispDirection DOWN   = dispV . negate
+dispDirection LEFT   = dispH . negate
+dispDirection RIGHT  = dispH   
 
 
 
 
-disp_up :: Num u => u -> PointDisplace u
-disp_up = displaceV
-
-disp_down :: Num u => u -> PointDisplace u
-disp_down = displaceV . negate
-
-disp_left :: Num u => u -> PointDisplace u
-disp_left = displaceH . negate
-
-disp_right :: Num u => u -> PointDisplace u
-disp_right = displaceH
-
-
--- diagonals - these are different to cardinals which have the
--- hypotenuese as the dist.
+-- | For the /corner/ cardinals (north-east, etc.)
+-- this displaces horizontally and vertically by the supplied 
+-- unit distance - i.e. displacing to the corner of the bounding 
+-- square.
 --
-
-disp_up_left :: Num u => u -> PointDisplace u
-disp_up_left u = displaceVec (V2 (-u) u)
-
-disp_up_right :: Num u => u -> PointDisplace u
-disp_up_right u = displaceVec (V2 u u)
-
-disp_down_left :: Num u => u -> PointDisplace u
-disp_down_left u = displaceVec (V2 (-u) (-u))
-
-disp_down_right :: Num u => u -> PointDisplace u
-disp_down_right u = displaceVec (V2 u (-u))
-
+-- Use 'dispCardinal' to displace with the radial length.
+-- 
+dispCorner :: Num u => Cardinal -> u -> PointDisplace u
+dispCorner NORTH      du = dispVec $ V2   0     du
+dispCorner NORTH_EAST du = dispVec $ V2   du    du
+dispCorner EAST       du = dispVec $ V2   du     0
+dispCorner SOUTH_EAST du = dispVec $ V2   du  (-du)
+dispCorner SOUTH      du = dispVec $ V2    0  (-du)
+dispCorner SOUTH_WEST du = dispVec $ V2 (-du) (-du)
+dispCorner WEST       du = dispVec $ V2 (-du)    0
+dispCorner NORTH_WEST du = dispVec $ V2 (-du)   du
 
 
-
-
-
-
--- Cardinal displacement 
-
-disp_north :: Num u => u -> PointDisplace u
-disp_north = displaceV
-
-
-disp_south :: Num u => u -> PointDisplace u
-disp_south =  displaceV . negate
-
-disp_east :: Num u => u -> PointDisplace u
-disp_east = displaceH
-
-disp_west :: Num u => u -> PointDisplace u
-disp_west = displaceH . negate
-
-disp_northeast :: Floating u => u -> PointDisplace u
-disp_northeast = displaceVec . avec (0.25 * pi)
-
-disp_northwest ::  Floating u => u -> PointDisplace u
-disp_northwest = displaceVec . avec (0.75 * pi)
-
-disp_southeast ::  Floating u => u -> PointDisplace u
-disp_southeast = displaceVec . avec (1.75 * pi)
-
-disp_southwest ::  Floating u => u -> PointDisplace u
-disp_southwest = displaceVec . avec (1.25 * pi)
+-- | Displace radially in the supplied direction. 
+-- 
+-- The supplied distance is the length of radius of a bounding 
+-- circle.
+--
+dispCardinal :: Floating u => Cardinal -> u -> PointDisplace u
+dispCardinal NORTH      = dispV
+dispCardinal NORTH_EAST = dispVec . avec (0.25 * pi)
+dispCardinal EAST       = dispH . negate
+dispCardinal SOUTH_EAST = dispVec . avec (1.75 * pi)
+dispCardinal SOUTH      = dispV . negate
+dispCardinal SOUTH_WEST = dispVec . avec (1.25 * pi)
+dispCardinal WEST       = dispH
+dispCardinal NORTH_WEST = dispVec . avec (0.75 * pi)
 
 
 --------------------------------------------------------------------------------
 -- ThetaPointDisplace functions
 
 
--- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
+-- | 'dispParallel' : @ dist -> ThetaPointDisplace @
 -- 
 -- Build a combinator to move @Points@ in parallel to the 
 -- direction of the implicit angle by the supplied distance 
 -- @dist@. 
 --
-displaceParallel :: Floating u => u -> ThetaPointDisplace u
-displaceParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
+dispParallel :: Floating u => u -> ThetaPointDisplace u
+dispParallel d = \theta pt -> pt .+^ avec (circularModulo theta) d
 
 
--- | 'displaceParallel' : @ dist -> ThetaPointDisplace @
+-- | 'dispParallel' : @ dist -> ThetaPointDisplace @
 -- 
 -- Build a combinator to move @Points@ perpendicular to the 
 -- inclnation of the implicit angle by the supplied distance 
 -- @dist@. 
 --
-displacePerpendicular :: Floating u => u -> ThetaPointDisplace u
-displacePerpendicular d = 
+dispPerpendicular :: Floating u => u -> ThetaPointDisplace u
+dispPerpendicular d = 
     \theta pt -> pt .+^ avec (circularModulo $ theta + (0.5*pi)) d
 
 
 
--- | 'displaceOrtho' : @ vec -> ThetaPointDisplace @
+-- | 'dispOrtho' : @ vec -> ThetaPointDisplace @
 -- 
 -- This is a combination of @displaceParallel@ and 
 -- @displacePerpendicular@, with the x component of the vector
 -- displaced in parallel and the y component displaced
 -- perpendicular. 
 -- 
-displaceOrtho :: Floating u => Vec2 u -> ThetaPointDisplace u
-displaceOrtho (V2 x y) = \theta -> 
-    displaceParallel x theta . displacePerpendicular y theta
+dispOrtho :: Floating u => Vec2 u -> ThetaPointDisplace u
+dispOrtho (V2 x y) = \theta -> dispParallel x theta . dispPerpendicular y theta
 
 
-adisp_north :: Floating u => u -> ThetaPointDisplace u
-adisp_north = displacePerpendicular
 
 
-adisp_south :: Floating u => u -> ThetaPointDisplace u
-adisp_south = displacePerpendicular . negate
+-- | /Angular/ version of 'dispDirection'. 
+--
+-- The displacement direction is with respect to implicit angle
+-- of inclination, so:
+--
+-- > up    == perpendicular
+-- > down  == perdendicular . negate
+-- > left  == parallel . negate
+-- > right == parallel
+-- 
+dispDirectionTheta :: Floating u => Direction -> u -> ThetaPointDisplace u
+dispDirectionTheta UP      = dispPerpendicular
+dispDirectionTheta DOWN    = dispPerpendicular . negate
+dispDirectionTheta LEFT    = dispParallel . negate
+dispDirectionTheta RIGHT   = dispParallel
 
 
-adisp_east :: Floating u => u -> ThetaPointDisplace u
-adisp_east = displaceParallel
+-- | /Angular/ version of 'dispCardinal'.
+--
+-- The displacement direction is with respect to implicit angle
+-- of inclination, so:
+--
+-- > north == perpendicular
+-- > east  == parallel
+-- > south == perdendicular . negate
+-- > etc.
+-- 
+dispCardinalTheta :: Floating u => Cardinal -> u -> ThetaPointDisplace u
+dispCardinalTheta NORTH      = dispPerpendicular
+dispCardinalTheta NORTH_EAST = \d ang -> dispVec (avec (ang + (0.25*pi)) d)
+dispCardinalTheta EAST       = dispParallel
+dispCardinalTheta SOUTH_EAST = \d ang -> dispVec (avec (ang + (1.75*pi)) d)
+dispCardinalTheta SOUTH      = dispPerpendicular . negate
+dispCardinalTheta SOUTH_WEST = \d ang -> dispVec (avec (ang + (1.25*pi)) d)
+dispCardinalTheta WEST       = dispParallel . negate
+dispCardinalTheta NORTH_WEST = \d ang -> dispVec (avec (ang + (0.75*pi)) d)
 
-
-adisp_west :: Floating u => u -> ThetaPointDisplace u
-adisp_west = displaceParallel . negate
-
-adisp_northeast :: Floating u => u -> ThetaPointDisplace u
-adisp_northeast d = \ang pt -> pt .+^ avec (ang + (0.25*pi)) d
-
-
-adisp_northwest :: Floating u => u -> ThetaPointDisplace u
-adisp_northwest d = \ang pt -> pt .+^ avec (ang + (0.75*pi)) d
-
-
-adisp_southeast :: Floating u => u -> ThetaPointDisplace u
-adisp_southeast d = \ang pt -> pt .+^ avec (ang + (1.75*pi)) d
-
-
-adisp_southwest :: Floating u => u -> ThetaPointDisplace u
-adisp_southwest d = \ang pt -> pt .+^ avec (ang + (1.25*pi)) d
 
 
 

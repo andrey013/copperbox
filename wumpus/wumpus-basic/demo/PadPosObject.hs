@@ -84,7 +84,7 @@ poBox = makePosObject  mkOrtt mkRect
 
     mkRect = capHeight >>= \ch -> 
              descender >>= \dd -> 
-             moveStart (disp_down (abs dd)) 
+             moveStart (dispDirection DOWN (abs dd)) 
                            $ dcRectangle FILL_STROKE (5*ch) (ch + abs dd)
 
 

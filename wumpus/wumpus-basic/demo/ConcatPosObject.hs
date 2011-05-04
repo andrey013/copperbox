@@ -69,7 +69,7 @@ rectCenter = makePosObject (return opos) (mkRectCenter w h)
  
 
 mkRectCenter :: (Fractional u, InterpretUnit u) => u -> u -> LocGraphic u
-mkRectCenter w h = moveStart (displaceVec v1) $ dcRectangle STROKE w h
+mkRectCenter w h = moveStart (dispVec v1) $ dcRectangle STROKE w h
   where
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
@@ -103,6 +103,6 @@ rectMinor = makePosObject (return opos) (mkRectMinor w h)
  
 
 mkRectMinor :: InterpretUnit u => u -> u -> LocGraphic u
-mkRectMinor w h = moveStart (displaceVec v1) $ dcRectangle STROKE w h
+mkRectMinor w h = moveStart (dispVec v1) $ dcRectangle STROKE w h
   where
     v1 = V2 (-10) (-10)

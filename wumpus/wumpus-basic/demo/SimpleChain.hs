@@ -45,8 +45,8 @@ mf = do
 
 
 pchain :: ChainAlg Double
-pchain = prefix 12 (radialChain 50 (0.5*pi) (pi/8)) 
-       $ prefix 15 (chainH 20) 
+pchain = prefixChain 12 (radialChain 50 (0.5*pi) (pi/8)) 
+       $ prefixChain 15 (chainH 20) 
        $ chainV 20
 
 
@@ -63,7 +63,7 @@ text02 = dcTextlabel "T02"
 
 
 minidisk :: LocGraphic Double
-minidisk = moveStart (displaceV 7) $ dcDisk FILL 6
+minidisk = moveStart (dispV 7) $ dcDisk FILL 6
 
 diskList :: Int -> [LocGraphic Double]
 diskList n = take n $ unfoldr phi black

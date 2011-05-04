@@ -173,7 +173,7 @@ chainH = L1 . scHorizontal
 
 scHorizontal :: Num u => u -> IterationScheme u
 scHorizontal dx = Scheme { scheme_start = id
-                         , scheme_step  = \pt -> (displaceH dx pt, pt)
+                         , scheme_step  = \pt -> (dispH dx pt, pt)
                          }
    
 
@@ -183,7 +183,7 @@ chainV = L1 . scVertical
 
 scVertical :: Num u => u -> IterationScheme u
 scVertical dy = Scheme { scheme_start = id
-                       , scheme_step  = \pt -> (displaceV dy pt, pt)
+                       , scheme_step  = \pt -> (dispV dy pt, pt)
                        }
 
 
@@ -191,15 +191,15 @@ tableRight :: Num u => Int -> (u,u) -> ChainAlg u
 tableRight num_cols (col_width,row_height) = 
     L1 $ scStepper downF num_cols rightF
   where
-    downF   = displaceV $ negate row_height
-    rightF  = displaceH col_width
+    downF   = dispV $ negate row_height
+    rightF  = dispH col_width
 
 tableDown :: Num u => Int -> (u,u) -> ChainAlg u
 tableDown num_rows (col_width,row_height) = 
     L1 $ scStepper rightF num_rows downF
   where
-    downF   = displaceV $ negate row_height
-    rightF  = displaceH col_width
+    downF   = dispV $ negate row_height
+    rightF  = dispH col_width
 
 
 -- | Outer and inner steppers.
@@ -223,6 +223,6 @@ scCircular :: Floating u => u -> Radian -> Radian -> IterationScheme u
 scCircular radius angstart angseg = Scheme start step 
   where
     start pt        = (pt,angstart)
-    step (ogin,ang) = ((ogin,ang + angseg), displaceVec (avec ang radius) ogin)
+    step (ogin,ang) = ((ogin,ang + angseg), dispVec (avec ang radius) ogin)
 
 

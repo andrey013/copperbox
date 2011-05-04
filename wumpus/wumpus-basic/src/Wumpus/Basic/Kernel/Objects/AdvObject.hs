@@ -228,8 +228,8 @@ advspace sep a b = AdvObject body
   where 
     body = drawingCtx >>= \ctx ->
            let (v0,pf0) = runCF ctx (getAdvObject a)
-               (v1,pf1) = runCF ctx (getAdvObject b)
-               pf       = \pt -> pf0 pt `oplus` pf1 (displaceVec (sep ^+^ v0) pt)
+               (v1,pf1) = runCF ctx (getAdvObject b)      
+               pf       = \pt -> pf0 pt `oplus` pf1 (dispVec (sep ^+^ v0) pt)
            in return (v0 ^+^ sep ^+^ v1, pf)
 
 -- | List version of 'nextSpace'.

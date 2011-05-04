@@ -211,7 +211,7 @@ duplicate n _ _   | n < 1 = pushR1 (replaceAns mempty) $ emptyLocGraphic
 duplicate n v img         = go img v (n-1)
   where
      go acc _  i | i < 1 = acc
-     go acc va i         = let img1 = moveStart (displaceVec va) img
+     go acc va i         = let img1 = moveStart (dispVec va) img
                            in go (acc `mappend` img1) (va ^+^ v) (i-1)
 
 duplicateH :: (Monoid a, InterpretUnit u) 

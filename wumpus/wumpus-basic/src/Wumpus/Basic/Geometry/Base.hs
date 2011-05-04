@@ -454,10 +454,10 @@ bezierMinorArc ang radius theta pt = BezierCurve p0 c1 c2 p3
     rl      = kfactor * radius * kappa
     totang  = circularModulo $ ang + theta
 
-    p0      = displaceParallel radius theta pt
-    c1      = displacePerpendicular rl theta p0
-    c2      = displacePerpendicular (-rl) totang p3
-    p3      = displaceParallel radius totang pt
+    p0      = dispParallel radius theta pt
+    c1      = dispPerpendicular rl theta p0
+    c2      = dispPerpendicular (-rl) totang p3
+    p3      = dispParallel radius totang pt
 
 
 --------------------------------------------------------------------------------

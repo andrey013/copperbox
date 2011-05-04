@@ -57,6 +57,10 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Cardinal (compass) positions
   , Cardinal(..)
 
+  -- * Direction enumeration
+  , Direction(..)
+  
+
 
   ) where
 
@@ -351,3 +355,8 @@ data Cardinal = NORTH | NORTH_EAST | EAST | SOUTH_EAST
               | SOUTH | SOUTH_WEST | WEST | NORTH_WEST
    deriving (Enum,Eq,Ord,Show) 
 
+
+-- | An enumerated type representing horizontal and vertical 
+-- directions.
+data Direction = UP | DOWN | LEFT | RIGHT
+   deriving (Enum,Eq,Ord,Show) 

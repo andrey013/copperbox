@@ -195,8 +195,8 @@ runPosObjectR0 :: Fractional u
                => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
 runPosObjectR0 pt addr (PosObject mf) = 
     mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
-                              bb = orientationBounds ortt (displaceVec sv pt)
-                          in pure $ replaceAns bb $ ptf $ displaceVec sv pt
+                              bb = orientationBounds ortt (dispVec sv pt)
+                          in pure $ replaceAns bb $ ptf $ dispVec sv pt
 
 
 

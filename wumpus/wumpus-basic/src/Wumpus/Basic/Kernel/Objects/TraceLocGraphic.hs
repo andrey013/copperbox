@@ -164,7 +164,7 @@ class LocTraceM (m :: * -> *) where
 
 
 instance Num u => LocTraceM (LocTrace u) where
-  write gf  = LocTrace $ \v0 -> ((), v0, moveStart (displaceVec v0) gf)
+  write gf  = LocTrace $ \v0 -> ((), v0, moveStart (dispVec v0) gf)
   moveBy v  = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
   location  = LocTrace $ \v0 -> (v0, v0, mempty)
   reset     = LocTrace $ \_  -> ((), V2 0 0, mempty)
@@ -172,7 +172,7 @@ instance Num u => LocTraceM (LocTrace u) where
   
 
 instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
-  write gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (displaceVec v0) gf)
+  write gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (dispVec v0) gf)
   moveBy v  = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
   location  = LocTraceT $ \v0 -> return (v0, v0, mempty)
   reset     = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
