@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.TraceLocGraphic
+-- Module      :  Wumpus.Drawing.Basis.TraceLocGraphic
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.TraceLocGraphic
+module Wumpus.Drawing.Basis.TraceLocGraphic
    (
 
    -- * LocTrace monads

@@ -43,6 +43,12 @@ description:
   * Simplified Trapezium shape so it only produces isosceles
     Trapeziums.
   .
+  * Added Basis modules. These are \"mid-level\" modules similar 
+    to ones in @Wumpus.Basic.Kernel.Objects@, however they are 
+    considered less general so there are put here where they can 
+    be imported individually (and so not pollute the namespace).
+  .
+  .
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2
@@ -78,6 +84,8 @@ library
 
   
   exposed-modules:
+    Wumpus.Drawing.Basis.TraceGraphic,
+    Wumpus.Drawing.Basis.TraceLocGraphic,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Connectors,

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.TraceGraphic
+-- Module      :  Wumpus.Drawing.Basis.TraceGraphic
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -20,7 +20,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.TraceGraphic
+module Wumpus.Drawing.Basis.TraceGraphic
   (
     TraceGraphic
   , TraceGraphicT
