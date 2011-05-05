@@ -15,7 +15,7 @@
 -- monad).
 --
 -- Note - the run functions for the transformer and the plain
--- monad are quite different. This mandated by the need to  
+-- monad are quite different. This is mandated by the need to  
 -- single-thread the DrawingContext through the transformer.
 --
 --------------------------------------------------------------------------------

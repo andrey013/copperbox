@@ -18,11 +18,11 @@
 module Wumpus.Drawing.Paths.Absolute
   ( 
 
-    module Wumpus.Drawing.Paths.Base.AbsBuilder
-  , module Wumpus.Drawing.Paths.Base.AbsPath
+    module Wumpus.Drawing.Paths.Base.AbsPath
+  , module Wumpus.Drawing.Paths.Base.PathBuilder
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.AbsBuilder
 import Wumpus.Drawing.Paths.Base.AbsPath
+import Wumpus.Drawing.Paths.Base.PathBuilder
 

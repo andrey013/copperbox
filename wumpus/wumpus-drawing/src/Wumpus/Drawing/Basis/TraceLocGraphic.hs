@@ -17,30 +17,33 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Basis.TraceLocGraphic
-   (
+  (
 
-   -- * LocTrace monads
-     LocTrace
-   , LocTraceT
+  -- * LocTrace monads
+    LocTrace
+  , LocTraceT
 
-   , runLocTrace
-   , evalLocTrace
-   , execLocTrace
+  , runLocTrace
+  , evalLocTrace
+  , execLocTrace
 
-   , runLocTraceT
-   , evalLocTraceT
-   , execLocTraceT
+  , runLocTraceT
+  , evalLocTraceT
+  , execLocTraceT
 
-   -- * LocTrace class
-   , LocTraceM(..)
+  , liftLocTraceT
 
-   -- * Derived operations
-   , hmoveBy
-   , vmoveBy
+  -- * LocTrace classes
+  , LocTraceM(..)
+  , LocForkTraceM(..)
 
-   )
+  -- * Derived operations
+  , hmoveBy
+  , vmoveBy
 
-   where
+  )
+
+  where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Objects.Displacement
@@ -82,23 +85,54 @@ type instance DUnit (LocTraceT u m a) = u
 type instance MonUnit (LocTrace u a) = u
 type instance MonUnit (LocTraceT u m a) = u
 
+
+-- Functor
+
 instance Functor (LocTrace u) where
   fmap f ma = LocTrace $ \v0 -> let (a,v1,o) = getLocTrace ma v0
                                 in (f a, v1, o)
 
+instance Monad m => Functor (LocTraceT u m) where
+  fmap f ma = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,v1,o) -> 
+                                 return (f a, v1, o)
+
+-- Applicative
+
 instance Applicative (LocTrace u) where
-  pure a    = LocTrace $ \v0  -> (a, v0, mempty)
+  pure a    = LocTrace $ \v0 -> (a, v0, mempty)
   mf <*> ma = LocTrace $ \v0 -> 
                 let (f,v1,o1) = getLocTrace mf v0
                     (a,v2,o2) = getLocTrace ma v1
                 in (f a, v2, o1 `mappend` o2)
 
+
+
+
+instance Monad m => Applicative (LocTraceT u m) where
+  pure a    = LocTraceT $ \v0 -> return (a, v0, mempty)
+  mf <*> ma = LocTraceT $ \v0 -> 
+                getLocTraceT mf v0 >>= \(f,v1,o1) ->
+                getLocTraceT ma v1 >>= \(a,v2,o2) ->
+                return (f a, v2, o1 `mappend` o2)
+
+
+
+-- Monad
+
 instance Monad (LocTrace u) where
-  return a  = LocTrace $ \v0  -> (a, v0, mempty)
+  return a  = LocTrace $ \v0 -> (a, v0, mempty)
   ma >>= k  = LocTrace $ \v0 -> 
                 let (a,v1,o1) = getLocTrace ma v0
                     (b,v2,o2) = (getLocTrace . k) a v1
                 in (b, v2, o1 `mappend` o2)
+
+instance Monad m => Monad (LocTraceT u m) where
+  return a  = LocTraceT $ \v0 -> return (a, v0, mempty)
+  ma >>= k  = LocTraceT $ \v0 -> 
+                getLocTraceT ma v0 >>= \(a,v1,o1) ->
+                (getLocTraceT . k) a v1 >>= \(b,v2,o2) -> 
+                return (b, v2, o1 `mappend` o2)
+
 
 
 runLocTrace :: Num u => LocTrace u a -> (a, Vec2 u, LocGraphic u)
@@ -142,41 +176,65 @@ execLocTraceT = liftM post . runLocTraceT
 
 
 
--- Note - @write@ and @reset@ steal too general names. 
--- They need changing...
+liftLocTraceT :: Monad m => m a -> LocTraceT u m a 
+liftLocTraceT ma = LocTraceT $ \v0 -> 
+                             ma >>= \a -> return (a,v0,mempty)
 
--- | 'write' analogue to Writer monad @tell@.
+
+
+
+-- | 'insertl' analogue to Writer monad @tell@.
 --
-class LocTraceM (m :: * -> *) where
-  write     :: MonUnit (m ()) ~ u => LocGraphic u -> m ()
-  write_    :: MonUnit (m ()) ~ u => LocImage u a -> m ()
+class Monad m => LocTraceM (m :: * -> *) where
+  insertl   :: MonUnit (m ()) ~ u => LocGraphic u -> m ()
+  insertl_  :: MonUnit (m ()) ~ u => LocImage u a -> m ()
   
   moveBy    :: MonUnit (m ()) ~ u => Vec2 u -> m ()
   location  :: MonUnit (m ()) ~ u => m (Vec2 u)
 
+
+  insertl_ = insertl . locGraphic_ 
+
+
+
+-- Note - @reset@ steals a too general name. 
+-- It needs changing...
+
+-- | Add operations for branching (fork at the current point)
+-- and resetting to the start point.
+-- 
+-- Not all drawings that support tracing support branching. For
+-- instance Paths can be built by tracing but they always need 
+-- a cumulative progression of /next point/ they cannot resrt to 
+-- the start point and go in a differnt direction.
+-- 
+class LocTraceM m => LocForkTraceM (m :: * -> *) where
   reset     :: m ()
-  
+
   -- Branch is like @local@ in the Reader monad.
   branch    :: m a -> m a
 
 
-  write_ = write . locGraphic_ 
 
 
 instance Num u => LocTraceM (LocTrace u) where
-  write gf  = LocTrace $ \v0 -> ((), v0, moveStart (dispVec v0) gf)
-  moveBy v  = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
-  location  = LocTrace $ \v0 -> (v0, v0, mempty)
-  reset     = LocTrace $ \_  -> ((), V2 0 0, mempty)
-  branch ma = LocTrace $ \v0 -> let (a,_,o) = getLocTrace ma v0 in (a,v0,o)
+  insertl gf  = LocTrace $ \v0 -> ((), v0, moveStart (dispVec v0) gf)
+  moveBy v    = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
+  location    = LocTrace $ \v0 -> (v0, v0, mempty)
+
+instance Num u => LocForkTraceM (LocTrace u) where
+  reset       = LocTrace $ \_  -> ((), V2 0 0, mempty)
+  branch ma   = LocTrace $ \v0 -> let (a,_,o) = getLocTrace ma v0 in (a,v0,o)
   
 
 instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
-  write gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (dispVec v0) gf)
-  moveBy v  = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
-  location  = LocTraceT $ \v0 -> return (v0, v0, mempty)
-  reset     = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
-  branch ma = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,_,o) -> 
+  insertl gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (dispVec v0) gf)
+  moveBy v    = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
+  location    = LocTraceT $ \v0 -> return (v0, v0, mempty)
+
+instance (LocTraceM m, Num u) => LocForkTraceM (LocTraceT u m) where
+  reset       = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
+  branch ma   = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,_,o) -> 
                                  return (a,v0,o)
 
 

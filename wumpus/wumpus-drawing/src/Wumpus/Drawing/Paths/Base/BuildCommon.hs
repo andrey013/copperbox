@@ -63,6 +63,8 @@ data Vamp u = Vamp
 
 type instance DUnit (Vamp u) = u
 
+-- TODO - vamp is probably an AdvGraphic...
+
 --------------------------------------------------------------------------------
 -- instances
 

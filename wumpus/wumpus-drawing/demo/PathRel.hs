@@ -34,33 +34,33 @@ path_pic = drawTracing $ do
 
 
 path1 :: DLocGraphic
-path1 = localize (stroke_colour dark_red) $ execRelBuild path_spec1
+path1 = localize (stroke_colour dark_red) $ execPathSpec path_spec1
 
 
 
 path2 :: DLocGraphic 
 path2 = localize (stroke_colour red) $  promoteR1 $ \pt -> 
-   let relp = evalRelBuild path_spec1 
+   let relp = evalPathSpec path_spec1 
    in toPrimPath pt relp >>= dcClosedPath FILL
 
-makePD :: RelBuild Double () -> DLocGraphic
-makePD spec = localize (stroke_colour red) $ execRelBuild spec
+makePD :: PathSpec Double () -> DLocGraphic
+makePD spec = localize (stroke_colour red) $ execPathSpec spec
 
 
 
-path_spec1 :: RelBuild Double ()
+path_spec1 :: PathSpec Double ()
 path_spec1 =  
-       line (V2 0 50)
-    >> line (V2 50 0)
-    >> insert disk1
-    >> move (V2 0 (-50))
-    >> line (V2 100 0) 
-    >> vamp vamp1  
-    >> line (V2 20 0)
+       line     (V2 0 50)
+    >> line     (V2 50 0)
+    >> insertl  disk1
+    >> moveBy   (V2 0 (-50))
+    >> line     (V2 100 0) 
+--    >> vamp     vamp1  
+    >> line     (V2 20 0)
          
     >> pen_colour blue
-    >> line (V2 50 0)
-    >> line (V2 0 (-40))
+    >> line     (V2 50 0)
+    >> line     (V2 0 (-40))
           
  
   where
@@ -75,14 +75,14 @@ path_spec1 =
 
 
 
-path_spec2 :: RelBuild Double ()
+path_spec2 :: PathSpec Double ()
 path_spec2 = hline (-30) >> vamp (circleVamp $ hvec (-30)) >> hline (-30)
 
-path_spec3 :: RelBuild Double ()
+path_spec3 :: PathSpec Double ()
 path_spec3 = hline 30 >> vamp (circleVamp $ hvec 30) >> hline 30
 
 
-path_spec4 :: RelBuild Double ()
+path_spec4 :: PathSpec Double ()
 path_spec4 = line_up_right 25 >> vamp (circleVamp $ vec 25 25) >> line_up_right 25
 
 

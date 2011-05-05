@@ -17,11 +17,11 @@
 module Wumpus.Drawing.Paths.Relative
   ( 
 
-    module Wumpus.Drawing.Paths.Base.RelBuilder
+    module Wumpus.Drawing.Paths.Base.PathBuilder
   , module Wumpus.Drawing.Paths.Base.RelPath
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.RelBuilder
+import Wumpus.Drawing.Paths.Base.PathBuilder
 import Wumpus.Drawing.Paths.Base.RelPath
 
