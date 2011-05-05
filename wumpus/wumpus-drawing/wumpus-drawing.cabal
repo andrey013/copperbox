@@ -102,7 +102,6 @@ library
     Wumpus.Drawing.Extras.Turtle.TurtleMonad,
     Wumpus.Drawing.Paths.Absolute,
     Wumpus.Drawing.Paths.Base.AbsPath,
-    Wumpus.Drawing.Paths.Base.BuildCommon,
     Wumpus.Drawing.Paths.Base.PathBuilder,
     Wumpus.Drawing.Paths.Base.RelPath,
     Wumpus.Drawing.Paths.Relative,

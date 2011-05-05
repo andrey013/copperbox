@@ -25,9 +25,9 @@ path_pic :: CtxPicture
 path_pic = drawTracing $ do
     drawl (P2 0 0)   $ path1
     drawl (P2 0 100) $ path2
-    drawl (P2 400 0) $ makePD path_spec2
-    drawl (P2 0 200) $ makePD path_spec3
-    drawl (P2 100 200) $ makePD path_spec4
+--    drawl (P2 400 0) $ makePD path_spec2
+--    drawl (P2 0 200) $ makePD path_spec3
+--    drawl (P2 100 200) $ makePD path_spec4
 
     return ()  
     
@@ -55,25 +55,21 @@ path_spec1 =
     >> insertl  disk1
     >> moveBy   (V2 0 (-50))
     >> line     (V2 100 0) 
---    >> vamp     vamp1  
+    >> vamp     vamp1  
     >> line     (V2 20 0)
-         
+
+
     >> pen_colour blue
     >> line     (V2 50 0)
     >> line     (V2 0 (-40))
-          
- 
+           
   where
     disk1 = dcDisk STROKE 10
 
-    vamp1 = Vamp { vamp_move_span  = V2 40 40
-                 , vamp_move_start = V2 0 0
-                 , vamp_dc_update  = dotted_line
-                 , vamp_deco_path  = square
-                 , vamp_path_end   = PATH_CLOSED 
-                 }
+    vamp1 = squareWE 40 
 
 
+{-
 
 path_spec2 :: PathSpec Double ()
 path_spec2 = hline (-30) >> vamp (circleVamp $ hvec (-30)) >> hline (-30)
@@ -84,7 +80,7 @@ path_spec3 = hline 30 >> vamp (circleVamp $ hvec 30) >> hline 30
 
 path_spec4 :: PathSpec Double ()
 path_spec4 = line_up_right 25 >> vamp (circleVamp $ vec 25 25) >> line_up_right 25
-
+-}
 
 -- What about close / cycle ?
 --

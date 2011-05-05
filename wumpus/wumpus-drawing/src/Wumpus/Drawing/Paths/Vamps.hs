@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Shim import module for the Absolute Path modules.
+-- Library of vamps (currently small).
 --
 -- 
 --------------------------------------------------------------------------------
@@ -18,22 +18,18 @@
 module Wumpus.Drawing.Paths.Vamps
   ( 
 
-    -- * Re-exported types
-    Vamp(..)
-  , PathEnd(..)
-
-  , circleVamp
+    squareWE
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.BuildCommon
+import Wumpus.Drawing.Paths.Base.PathBuilder
 import Wumpus.Drawing.Paths.Base.RelPath
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
+-- import Wumpus.Basic.Geometry                    -- package: wumpus-basic
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
 
 
 -- TODO - library of useful / illustrative vamps (circle, square etc.)
@@ -41,8 +37,14 @@ import Data.VectorSpace                         -- package: vector-space
 
 
 
-circleVamp :: (Fractional u, Floating u) => Vec2 u -> Vamp u
-circleVamp v0 = Vamp { vamp_move_span   = v0
+squareWE :: Fractional u => u -> Vamp u
+squareWE diam = makeVamp (hvec diam) rpath (SUBPATH_CLOSED STROKE)
+  where
+    hdiam = 0.5 * diam
+    rpath = vertexPath [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]
+
+{-
+Vamp { vamp_move_span   = v0
                      , vamp_move_start  = half_v0 ^+^ v1
                      , vamp_dc_update   = id
                      , vamp_deco_path   = path
@@ -54,3 +56,5 @@ circleVamp v0 = Vamp { vamp_move_span   = v0
     (v1,path)   = fromPathAlgCurves $ circlePathAlg radius
 
     -- Note - circlePathAlg starts from east
+
+-}

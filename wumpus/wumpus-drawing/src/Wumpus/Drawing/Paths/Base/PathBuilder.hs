@@ -26,6 +26,10 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   , PathSpec
   , PathSpecT
 
+  , Vamp
+  , SubPath(..)
+  , makeVamp
+
   , runPathSpec
   , execPathSpec
   , evalPathSpec
@@ -39,11 +43,9 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
 
 
 {-
-  , vamp
-  , cycle
-
   , setIncline
 -}
+
   -- * Derived operators
   , pen_colour
   , pen_width
@@ -54,7 +56,6 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   ) where
 
 import Wumpus.Drawing.Basis.TraceLocGraphic
-import Wumpus.Drawing.Paths.Base.BuildCommon
 import Wumpus.Drawing.Paths.Base.RelPath
 import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
@@ -73,29 +74,6 @@ import Prelude hiding ( null, log, cycle )
 
 
 
--- DESIGN NOTE - running Paths within the LocTrace monad would 
--- make for a simpler implementation and arguably a simpler API.
--- 
--- Cons: 
--- 1. Cannot get a cumulative path.
--- 2. Changing pen properties takes more code.
--- 
--- Big problem cannot insert in the middle of a path spec...
--- This makes it a non-starter.
---
-
-
--- > path (hline 10 >> vline 20)
---
--- Could do something like:
--- 
--- > strokePath (stroke_colour red) (hline 10 >> vline 20) 
---
--- > localize (stroke_colour red) $ path (hline 10 >> vline 20) 
---
--- Perhaps is seems more /functional/ cf. reader monad running in 
--- contexts rather than state monad updating the /current/ state.
---
 
 
 
@@ -122,19 +100,34 @@ newtype PathSpecT u m a = PathSpecT {
 
 
 
- 
--- Don\'t want to write pen trace along with the insert commands 
--- as some renderings (fill) should ignore the the pen trace.
-
-
--- | Evaluation is two States - a vector for cumulative 
--- displacement and a cummulative path - plus one Writer - a trace 
--- of TikZ-like @insert@ commands.
---
-
 
 type instance MonUnit (PathSpec u a) = u
 type instance MonUnit (PathSpecT u m a) = u
+
+
+-- Doh this is (probably) the wrong type 
+
+-- | Vamps...
+--
+data Vamp u = Vamp 
+       { vamp_move :: Vec2 u
+       , vamp_path :: RelPath u
+       , vamp_term :: SubPath
+       }
+
+
+type instance DUnit (Vamp u) = u
+
+
+data SubPath = SUBPATH_OPEN | SUBPATH_CLOSED DrawStyle
+  deriving (Eq,Show)
+
+
+makeVamp :: Vec2 u -> RelPath u -> SubPath -> Vamp u
+makeVamp v1 ph pe = Vamp { vamp_move = v1
+                         , vamp_path = ph
+                         , vamp_term = pe  
+                         }
 
 
 --------------------------------------------------------------------------------
@@ -183,7 +176,8 @@ instance Monad m => Monad (PathSpecT u m) where
             
 
 
-
+-- | Make the initial build state.
+--
 zeroBuildSt :: InterpretUnit u => BuildSt u
 zeroBuildSt = BuildSt { cumulative_path   = mempty
                       , current_incline   = 0
@@ -295,8 +289,6 @@ type BuildStF u = BuildSt u -> BuildSt u
 
 
 
-data SubPath = SUBPATH_OPEN | SUBPATH_CLOSED DrawStyle
-  deriving (Eq,Show)
 
 logSubPath :: InterpretUnit u 
            => SubPath -> Vec2 u -> BuildStF u
@@ -304,16 +296,29 @@ logSubPath term vnew st@(BuildSt { pen_dc_modifier = upd
                                  , pen_trace       = g0       
                                  , active_path     = (v1,subp) })
     | R.null subp  = st
-    | otherwise    = st { pen_trace   = g0 `oplus` gf
-                        , active_path = (vnew,mempty) }                        
+    | otherwise    = let tip = subPathDraw upd subp term v1
+                     in st { pen_trace   = g0 `oplus` tip
+                           , active_path = (vnew,mempty) }                        
+
+
+logPathVamp :: InterpretUnit u 
+            => RelPath u -> SubPath -> Vec2 u -> Vec2 u -> BuildStF u
+logPathVamp vph term vtip vdif st = fn s1
+  where
+    s1  = logSubPath SUBPATH_OPEN (vtip ^+^ vdif) st
+    fn  = (\s i j -> let tip = subPathDraw j vph term vtip
+                   in s { pen_trace = i `oplus` tip } ) 
+            <*> pen_trace <*> pen_dc_modifier 
+
+
+subPathDraw :: InterpretUnit u 
+            => DrawingContextF -> RelPath u -> SubPath -> Vec2 u -> LocGraphic u
+subPathDraw upd subp term v0 = promoteR1 $ \pt -> 
+    toPrimPath (dispVec v0 pt) subp >>= \pp -> localize upd (drawF pp)
   where
     drawF = case term of
               SUBPATH_OPEN -> dcOpenPath
               SUBPATH_CLOSED sty -> dcClosedPath sty
-    gf    = promoteR1 $ \pt -> 
-              toPrimPath (dispVec v1 pt) subp >>= \pp -> 
-              localize upd (drawF pp)
-
 
 
 -- | Helper - extend the path.
@@ -350,10 +355,16 @@ withStateTrans :: Monad m
                => (BuildSt u -> LocTraceT u m (a, BuildSt u)) -> PathSpecT u m a
 withStateTrans sf = PathSpecT $ \s0 -> sf s0 
 
+
+
 moveByAlg :: (LocTraceM m, InterpretUnit u, u ~ MonUnit (m ()) )
           => Vec2 u -> (BuildSt u -> m ((), BuildSt u))
 moveByAlg v s0 = moveBy v >> location >>= \vnew -> 
-                 let s1 = logSubPath SUBPATH_OPEN vnew s0 in return ((),s1)
+                 let s1 = logSubPath SUBPATH_OPEN vnew s0 
+                 in return ((),upd s1)
+  where
+    upd = (\s i -> s { cumulative_path = i `snocLineTo` v }) 
+           <*> cumulative_path
 
 
 -- moveBy becomes a pen up
@@ -408,6 +419,17 @@ cycleAlg sty s0 =
     in location >>= \vold -> moveBy (vnew ^-^ vold) >> return ((), s1)
 
 
+vampAlg :: (LocTraceM m, InterpretUnit u, u ~ MonUnit (m ()))
+        => Vamp u -> (BuildSt u -> m ((), BuildSt u))
+vampAlg (Vamp v1 vph pe) s0 = 
+    location >>= \vtip -> moveBy v1 >> 
+    let s1 = logPathVamp vph pe vtip v1 s0
+    in return ((), upd s1)
+  where
+    upd = (\s i -> s { cumulative_path = i `snocLineTo` v1 }) 
+           <*> cumulative_path
+
+
 -- | @updatePen@ will draw any in-progress path as an open-stroked
 -- line before changing the pen properties.
 --
@@ -416,19 +438,21 @@ class PathOpM m where
   curve        :: u ~ MonUnit (m ()) => Vec2 u -> Vec2 u -> Vec2 u -> m ()
   updatePen    :: DrawingContextF -> m ()
   cycleSubPath :: DrawStyle -> m ()
-
+  vamp         :: u ~ MonUnit (m ()) => Vamp u -> m ()
 
 instance InterpretUnit u => PathOpM (PathSpec u) where
   line v1           = withStatePlain (lineAlg v1)
   curve v1 v2 v3    = withStatePlain (curveAlg v1 v2 v3)
   updatePen upd     = withStatePlain (penAlg upd)
   cycleSubPath sty  = withStatePlain (cycleAlg sty)
+  vamp vp           = withStatePlain (vampAlg vp)  
 
 instance (Monad m, InterpretUnit u) => PathOpM (PathSpecT u m) where
   line v1           = withStateTrans (lineAlg v1)
   curve v1 v2 v3    = withStateTrans (curveAlg v1 v2 v3) 
   updatePen upd     = withStateTrans (penAlg upd)
   cycleSubPath sty  = withStateTrans (cycleAlg sty)
+  vamp vp           = withStateTrans (vampAlg vp)
 
 
 
@@ -436,31 +460,8 @@ instance (Monad m, InterpretUnit u) => PathOpM (PathSpecT u m) where
 -- operations
 
 
+
 {-
-
-
-
--- Note - vamps should be a data type then we can have libraries 
--- of them.
-
-vamp :: (Floating u, Ord u, Tolerance u, InterpretUnit u) 
-     => Vamp u -> PathSpec u ()
-vamp (Vamp vnext vstart upd relp path_end) = 
-    gets cumulative_disp        >>= \v0 -> 
-    gets pen_dc_modifier        >>= \cf ->
-    move_tip vnext              >> drawF (upd . cf) (v0 ^+^ vstart) relp
-  where
-    drawF       = if path_end == PATH_OPEN then tellSubOpen else tellSubClosed
- 
-
-cycle :: (Floating u, InterpretUnit u) => PathSpec u ()
-cycle = 
-    gets cumulative_disp  >>= \v1 -> 
-    gets pen_dc_modifier  >>= \cf ->
-    gets active_path      >>= \(start,acc) -> 
-    tellSubClosed cf start (snocLineTo acc start) >> 
-    sets_ (\s -> s { active_path = (v1, mempty)})
-
 
 setIncline :: Radian -> PathSpec u ()
 setIncline ang = sets_ upd
