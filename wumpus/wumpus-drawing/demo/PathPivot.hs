@@ -9,7 +9,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import System.Directory
-
+import Prelude hiding ( lines )
 
 main :: IO ()
 main = do 
@@ -20,20 +20,35 @@ main = do
 
 path_pic :: CtxPicture
 path_pic = drawTracing $ localize (set_line_width 2) $ do
-    drawl (P2 0 0)   $ duplicateH 3 80 (dcDisk FILL 4)
-    drawl (P2 0 0)   $ distribH 80 $ map execPivot [path1, path2, path3, path4]
+    drawl (P2 0 0)   $ duplicateH 4 80 (dcDisk FILL 4)
+    drawl (P2 0 0)   $ distribH 80 [path1, path2, path3, path4]
     return ()  
     
 
-path1 :: RelBuild Double ()
-path1 = line_up 20 >> line_up_right 20 >> line_down 60
+path1 :: LocGraphic Double
+path1 = execPivot (lines []) (lines [go_up 20 , up_right 20, go_down 60])
 
-path2 :: RelBuild Double ()
-path2 = line_up 20 >> pivot >> line_up_right 20 >> line_down 60
+path2 :: LocGraphic Double
+path2 = execPivot (lines [go_up 20]) (lines [up_right 20, go_down 60])
 
-path3 :: RelBuild Double ()
-path3 = line_up 20 >> line_up_right 20 >> pivot >> line_down 60
+path3 :: LocGraphic Double
+path3 = execPivot (lines [go_up 20, up_right 20]) (lines [go_down 60])
 
-path4 :: RelBuild Double ()
-path4 = line_up 20 >> line_up_right 20 >> line_down 60 >> pivot
+path4 :: LocGraphic Double
+path4 = execPivot (lines [go_up 20, up_right 20, go_down 60]) (lines [])
 
+
+
+-- This looks like a good idiom!
+-- 
+-- Better to put the vocalulary of moves into vectors then every 
+-- that takes vectors as arguments an use them.
+--
+up_right :: u -> Vec2 u
+up_right du = V2 du du
+
+go_up :: Num u => u -> Vec2 u
+go_up du = V2 0 du
+
+go_down :: Num u => u -> Vec2 u
+go_down du = V2 0 (-du)

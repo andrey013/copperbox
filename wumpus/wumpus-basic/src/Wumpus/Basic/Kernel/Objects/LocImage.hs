@@ -33,6 +33,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , uconvLocImageF
    , uconvLocImageZ
 
+
    -- * Composing LocImages
    , distrib
    , distribH 
@@ -221,3 +222,5 @@ duplicateH n dx = duplicate n (hvec dx)
 duplicateV :: (Monoid a, InterpretUnit u) 
            => Int -> u -> LocImage u a -> LocImage u a
 duplicateV n dy = duplicate n (vvec dy)
+
+

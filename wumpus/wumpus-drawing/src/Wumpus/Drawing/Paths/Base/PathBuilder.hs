@@ -38,6 +38,9 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   , execPathSpecT
   , evalPathSpecT
 
+  , execPivot
+  , execPivotT
+
 
   , PathOpM(..)
 
@@ -50,8 +53,14 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   , pen_colour
   , pen_width
 
+  , lines
+
   , hline
   , vline
+  , dline
+
+  , cornerline
+  , cardline
  
   ) where
 
@@ -70,7 +79,7 @@ import Data.VectorSpace                         -- package: vector-space
 import Control.Applicative
 import Control.Monad
 import Data.Monoid
-import Prelude hiding ( null, log, cycle )
+import Prelude hiding ( null, cycle, lines )
 
 
 
@@ -282,6 +291,34 @@ evalPathSpecT mf = liftM post $ runPathSpecT mf
     post (_,ph,_,_,_) = ph
 
 
+-- | Form a \"pivot path\" drawing from two path specifications.
+-- The start point of the drawing is the pivot formed by joining
+-- the paths.
+--
+execPivot :: (Floating u, InterpretUnit u)
+          => PathSpec u a -> PathSpec u a -> LocGraphic u
+execPivot a b = drawing1 `oplus` drawing2 
+  where
+   (_, _, vl, penl, insl) = runPathSpec a
+   (_, _,  _, penr, insr) = runPathSpec b
+   
+   drawing1               = moveStart (dispVec $ negateV vl) $ penl `oplus` insl
+   drawing2               = penr `oplus` insr
+   
+
+-- | Transformer version of 'execPivot'.
+-- 
+execPivotT :: (Floating u, InterpretUnit u, Monad m)
+           => PathSpecT u m a -> PathSpecT u m a -> m (LocGraphic u)
+execPivotT a b = liftM2 post (runPathSpecT a) (runPathSpecT b)
+  where
+   post (_, _, vl, penl, insl) (_, _, _, penr, insr) = d1 `oplus` d2 
+     where
+       d1 = moveStart (dispVec $ negateV vl) $ penl `oplus` insl
+       d2 = penr `oplus` insr
+
+
+--------------------------------------------------------------------------------
 
 -- BuildSt modifiers.
 
@@ -433,7 +470,7 @@ vampAlg (Vamp v1 vph pe) s0 =
 -- | @updatePen@ will draw any in-progress path as an open-stroked
 -- line before changing the pen properties.
 --
-class PathOpM m where
+class Monad m => PathOpM m where
   line         :: u ~ MonUnit (m ()) => Vec2 u -> m ()
   curve        :: u ~ MonUnit (m ()) => Vec2 u -> Vec2 u -> Vec2 u -> m ()
   updatePen    :: DrawingContextF -> m ()
@@ -483,6 +520,14 @@ pen_width  :: PathOpM m
 pen_width d = updatePen (set_line_width d)
 
 
+lines :: (PathOpM m, u ~ MonUnit (m ())) => [Vec2 u] -> m ()
+lines = mapM_ line
+
+
+--
+-- Note - these names are not consistent with Displacement in 
+-- Wumpus-Basic.
+--
 
 hline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
 hline dx = line (hvec dx)
@@ -490,5 +535,30 @@ hline dx = line (hvec dx)
 vline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
 vline dy = line (vvec dy)
 
+dline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => Direction -> u -> m ()
+dline UP     = vline
+dline DOWN   = vline . negate
+dline LEFT   = hline . negate
+dline RIGHT  = hline  
 
+cornerline :: (PathOpM m, Num u, u ~ MonUnit (m ())) 
+           => Cardinal -> u -> m ()
+cornerline NORTH      du = line $ V2   0     du
+cornerline NORTH_EAST du = line $ V2   du    du
+cornerline EAST       du = line $ V2   du     0
+cornerline SOUTH_EAST du = line $ V2   du  (-du)
+cornerline SOUTH      du = line $ V2    0  (-du)
+cornerline SOUTH_WEST du = line $ V2 (-du) (-du)
+cornerline WEST       du = line $ V2 (-du)    0
+cornerline NORTH_WEST du = line $ V2 (-du)   du
 
+cardline :: (PathOpM m, Floating u, u ~ MonUnit (m ())) 
+         => Cardinal -> u -> m ()
+cardline NORTH      = vline
+cardline NORTH_EAST = line . avec (0.25 * pi)
+cardline EAST       = vline . negate
+cardline SOUTH_EAST = line . avec (1.75 * pi)
+cardline SOUTH      = hline . negate
+cardline SOUTH_WEST = line . avec (1.25 * pi)
+cardline WEST       = hline
+cardline NORTH_WEST = line . avec (0.75 * pi)

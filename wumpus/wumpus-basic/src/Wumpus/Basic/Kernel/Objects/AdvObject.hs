@@ -36,6 +36,8 @@ module Wumpus.Basic.Kernel.Objects.AdvObject
   , makeAdvObject
   , emptyAdvObject
 
+
+  
   , runAdvObjectR0
   , runAdvObjectR1
 
@@ -153,15 +155,20 @@ emptyAdvObject :: InterpretUnit u => AdvObject u
 emptyAdvObject = makeAdvObject (pure $ V2 0 0) emptyLocGraphic
 
 
-
+-- | Run an 'AdvObject' at the supplied point turning it into an 
+-- 'Image' that returns the advance vector.
+--
 runAdvObjectR0 :: Point2 u -> AdvObject u -> Image u (Vec2 u)
 runAdvObjectR0 pt (AdvObject mf) =  
    (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
 
 
+-- | Run an 'AdvObject' turning it into an 'AdvGraphic'.
+--
 runAdvObjectR1 :: AdvObject u -> AdvGraphic u
 runAdvObjectR1 (AdvObject mf) = promoteR1 $ \pt -> 
    (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
+
 
 
 --------------------------------------------------------------------------------
