@@ -19,16 +19,20 @@
 module Wumpus.Basic.Kernel.Objects.Displacement
   (
 
+
+  -- * Displacement types
     PointDisplace
   , ThetaDisplace
   , ThetaPointDisplace
 
 
+  -- * Apply a displacement
   , moveStart
   , moveStartTheta
   , moveStartThetaPoint
   , moveStartThetaIncl
 
+  -- * Build a displacement
   , displace
   , dispVec
   , dispH
@@ -46,6 +50,28 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , dispDirectionTheta
   , dispCardinalTheta
 
+  -- * Named vectors
+
+  , go_up
+  , go_down
+  , go_left
+  , go_right
+
+  , go_north
+  , go_south
+  , go_east
+  , go_west
+  , go_north_east
+  , go_north_west
+  , go_south_east
+  , go_south_west
+  
+  , go_up_left
+  , go_up_right
+  , go_down_left
+  , go_down_right
+
+  -- * Orphans - these functions need a new home...
   , centerRelative
   , left_of
   , right_of
@@ -176,7 +202,12 @@ dispH dx (P2 x y) = P2 (x+dx) y
 dispV :: Num u => u -> PointDisplace u
 dispV dy (P2 x y) = P2 x (y+dy)
 
--- 
+
+-- Note - maybe dispDirection etc. are no longer merited.
+--
+-- Using the /go vectors/ probably adds clarity to client code
+-- that using these \"exotic\" displacements would obscure.
+--
 
 dispDirection :: Num u => Direction -> u -> PointDisplace u
 dispDirection UP     = dispV
@@ -298,6 +329,60 @@ dispCardinalTheta WEST       = dispParallel . negate
 dispCardinalTheta NORTH_WEST = \d ang -> dispVec (avec (ang + (0.75*pi)) d)
 
 
+--------------------------------------------------------------------------------
+-- Named vectors
+
+
+go_up :: Num u => u -> Vec2 u
+go_up d = V2 0 d
+
+go_down :: Num u => u -> Vec2 u
+go_down d = V2 0 (-d)
+
+go_left :: Num u => u -> Vec2 u
+go_left d = V2 (-d) 0
+
+go_right :: Num u => u -> Vec2 u
+go_right d = V2 d 0
+
+
+go_north :: Num u => u -> Vec2 u
+go_north = go_up
+
+go_south :: Num u => u -> Vec2 u
+go_south = go_down
+
+go_east :: Num u => u -> Vec2 u
+go_east = go_right
+
+go_west :: Num u => u -> Vec2 u
+go_west = go_left
+
+
+go_north_east :: Floating u => u -> Vec2 u
+go_north_east = avec (0.25*pi)
+
+go_north_west :: Floating u => u -> Vec2 u
+go_north_west = avec (0.75*pi)
+
+go_south_east :: Floating u => u -> Vec2 u
+go_south_east = avec (1.75*pi)
+
+go_south_west :: Floating u => u -> Vec2 u
+go_south_west = avec (1.25*pi)
+
+
+go_up_left :: Num u => u -> Vec2 u
+go_up_left d = V2 (-d) d
+
+go_up_right :: Num u => u -> Vec2 u
+go_up_right d = V2 d d
+
+go_down_left :: Num u => u -> Vec2 u
+go_down_left d = V2 (-d) (-d)
+
+go_down_right :: Num u => u -> Vec2 u
+go_down_right d = V2 d (-d)
 
 
 --------------------------------------------------------------------------------

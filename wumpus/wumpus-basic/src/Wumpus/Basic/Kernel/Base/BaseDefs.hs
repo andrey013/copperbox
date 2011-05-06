@@ -61,6 +61,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , Direction(..)
   
 
+  -- * Misc (potentially for Wumpus-Core)
+  , vsum
 
   ) where
 
@@ -360,3 +362,19 @@ data Cardinal = NORTH | NORTH_EAST | EAST | SOUTH_EAST
 -- directions.
 data Direction = UP | DOWN | LEFT | RIGHT
    deriving (Enum,Eq,Ord,Show) 
+
+
+
+
+-- | Sum a list of Vectors.
+--
+-- Note - this function is a candidate to go in Wumpus-Core, but
+-- it will be added when there is an intrinsic reason to to update
+-- Core (bug fix, or API change).
+--
+vsum :: Num u => [Vec2 u] -> Vec2 u
+vsum [] = V2 0 0
+vsum (v:vs) = go v vs
+  where
+    go a []     = a
+    go a (b:bs) = go (a ^+^ b) bs

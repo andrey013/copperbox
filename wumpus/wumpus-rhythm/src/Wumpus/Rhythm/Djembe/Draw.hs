@@ -49,14 +49,12 @@ locBeamGroup :: InterpretUnit u => AfmUnit -> Int -> LocGraphic u
 locBeamGroup uw i 
     | i <= 0    = emptyLocGraphic
     | i == 1    = uconvLocImageF $ beam_one
-    | otherwise = uconvLocImageF $ execRelBuild path_spec 
+    | otherwise = uconvLocImageF $ execPivot pathl pathr
   where
-    width     = uw * fromIntegral i
     beam_one  = locStraightLine (vvec $ negate stem_length)
 
-    path_spec =  vline stem_length 
-              >> pivot 
-              >> replicateM_ (i-2) (hline uw >> insert beam_one)
+    pathl     = vline stem_length 
+    pathr     = replicateM_ (i-2) (hline uw >> insertl beam_one)
               >> hline uw 
               >> vline (-stem_length)
 
@@ -93,7 +91,7 @@ leftExt _ (Swing a) =
 leftExt w (Div a b) = 
     uconvertCtx1 w >>= \wa -> 
     let n1 = runNoteHead a
-        n2 = moveStart (displaceH $ 0.5*w) $ runNoteHead b
+        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
     in n1 `oplus` n2 `oplus` runStem (divStemLX wa)
 
 
@@ -113,7 +111,7 @@ inner _ (Swing a) =
 inner w (Div a b) = 
     uconvertCtx1 w >>= \wa -> 
     let n1 = runNoteHead a
-        n2 = moveStart (displaceH $ 0.5*w) $ runNoteHead b
+        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
     in n1 `oplus` n2 `oplus` runStem (divStem wa)
 
 rightExt :: (Fractional u, InterpretUnit u) => u -> Note -> LocGraphic u
@@ -128,15 +126,16 @@ rightExt _ (Flam a) =
 
 rightExt _ (Swing a) = 
     uconvertCtx1 flam_xminor >>= \wa -> 
-    moveStart (displaceH wa) (runNoteHead a) `oplus` runStem swingStemRX
+    moveStart (dispH wa) (runNoteHead a) `oplus` runStem swingStemRX
 
 rightExt w (Div a b) = 
     uconvertCtx1 w >>= \wa -> 
     let n1 = runNoteHead a
-        n2 = moveStart (displaceH $ 0.5*w) $ runNoteHead b
+        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
     in n1 `oplus` n2 `oplus` runStem (divStemRX wa)
 
 
+{-
 
 -- OLD 
 
@@ -208,3 +207,5 @@ tick1 = uconvLocImageF $
 
 unitWidth :: InterpretUnit u => Query u
 unitWidth = uconvertCtx1 (1360::AfmUnit)
+
+-}

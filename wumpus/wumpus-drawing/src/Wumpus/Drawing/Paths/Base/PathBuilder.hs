@@ -45,10 +45,6 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   , PathOpM(..)
 
 
-{-
-  , setIncline
--}
-
   -- * Derived operators
   , pen_colour
   , pen_width
@@ -57,10 +53,8 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
 
   , hline
   , vline
-  , dline
+  , aline
 
-  , cornerline
-  , cardline
  
   ) where
 
@@ -97,6 +91,11 @@ data BuildSt u = BuildSt
       , pen_dc_modifier   :: DrawingContextF
       }
 
+      -- TODO - is incline worthwhile?
+      
+
+
+
 type instance DUnit (BuildSt u) = u
 
 
@@ -108,13 +107,15 @@ newtype PathSpecT u m a = PathSpecT {
       getPathSpecT :: BuildSt u -> LocTraceT u m (a, BuildSt u) } 
 
 
+-- Note - splitting the state between BuildSt and the /path tip/
+-- in LocTrace as actually detrimental to clarity of the code 
+-- below. It would make some sense to add the tip and the insert 
+-- trace to @BuildSt@ so everything is in one place.
 
 
 type instance MonUnit (PathSpec u a) = u
 type instance MonUnit (PathSpecT u m a) = u
 
-
--- Doh this is (probably) the wrong type 
 
 -- | Vamps...
 --
@@ -291,33 +292,31 @@ evalPathSpecT mf = liftM post $ runPathSpecT mf
     post (_,ph,_,_,_) = ph
 
 
+
 -- | Form a \"pivot path\" drawing from two path specifications.
 -- The start point of the drawing is the pivot formed by joining
 -- the paths.
 --
 execPivot :: (Floating u, InterpretUnit u)
           => PathSpec u a -> PathSpec u a -> LocGraphic u
-execPivot a b = drawing1 `oplus` drawing2 
+execPivot ma mb = moveStart (dispVec $ negateV v) $ pen `oplus` ins
   where
-   (_, _, vl, penl, insl) = runPathSpec a
-   (_, _,  _, penr, insr) = runPathSpec b
-   
-   drawing1               = moveStart (dispVec $ negateV vl) $ penl `oplus` insl
-   drawing2               = penr `oplus` insr
-   
+   (v, _, _, pen, ins) = runPathSpec ( ma >> location >>= \ans -> 
+                                       mb >> return ans )
 
 -- | Transformer version of 'execPivot'.
 -- 
 execPivotT :: (Floating u, InterpretUnit u, Monad m)
            => PathSpecT u m a -> PathSpecT u m a -> m (LocGraphic u)
-execPivotT a b = liftM2 post (runPathSpecT a) (runPathSpecT b)
+execPivotT ma mb = 
+    liftM post $ runPathSpecT ( ma >> location >>= \ans -> 
+                                mb >> return ans )
   where
-   post (_, _, vl, penl, insl) (_, _, _, penr, insr) = d1 `oplus` d2 
-     where
-       d1 = moveStart (dispVec $ negateV vl) $ penl `oplus` insl
-       d2 = penr `oplus` insr
+    post (v, _, _, pen, ins) = moveStart (dispVec $ negateV v) $ pen `oplus` ins
+       
 
 
+ 
 --------------------------------------------------------------------------------
 
 -- BuildSt modifiers.
@@ -398,10 +397,11 @@ moveByAlg :: (LocTraceM m, InterpretUnit u, u ~ MonUnit (m ()) )
           => Vec2 u -> (BuildSt u -> m ((), BuildSt u))
 moveByAlg v s0 = moveBy v >> location >>= \vnew -> 
                  let s1 = logSubPath SUBPATH_OPEN vnew s0 
-                 in return ((),upd s1)
+                 in return ((),upd vnew s1)
   where
-    upd = (\s i -> s { cumulative_path = i `snocLineTo` v }) 
-           <*> cumulative_path
+    upd vnew = (\s i -> s { cumulative_path = i `snocLineTo` v
+                          , active_path     = (vnew,mempty) }) 
+                 <*> cumulative_path
 
 
 -- moveBy becomes a pen up
@@ -535,30 +535,6 @@ hline dx = line (hvec dx)
 vline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
 vline dy = line (vvec dy)
 
-dline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => Direction -> u -> m ()
-dline UP     = vline
-dline DOWN   = vline . negate
-dline LEFT   = hline . negate
-dline RIGHT  = hline  
 
-cornerline :: (PathOpM m, Num u, u ~ MonUnit (m ())) 
-           => Cardinal -> u -> m ()
-cornerline NORTH      du = line $ V2   0     du
-cornerline NORTH_EAST du = line $ V2   du    du
-cornerline EAST       du = line $ V2   du     0
-cornerline SOUTH_EAST du = line $ V2   du  (-du)
-cornerline SOUTH      du = line $ V2    0  (-du)
-cornerline SOUTH_WEST du = line $ V2 (-du) (-du)
-cornerline WEST       du = line $ V2 (-du)    0
-cornerline NORTH_WEST du = line $ V2 (-du)   du
-
-cardline :: (PathOpM m, Floating u, u ~ MonUnit (m ())) 
-         => Cardinal -> u -> m ()
-cardline NORTH      = vline
-cardline NORTH_EAST = line . avec (0.25 * pi)
-cardline EAST       = vline . negate
-cardline SOUTH_EAST = line . avec (1.75 * pi)
-cardline SOUTH      = hline . negate
-cardline SOUTH_WEST = line . avec (1.25 * pi)
-cardline WEST       = hline
-cardline NORTH_WEST = line . avec (0.75 * pi)
+aline :: (PathOpM m, Floating u, u ~ MonUnit (m ())) => Radian -> u -> m ()
+aline ang d = line (avec ang d)

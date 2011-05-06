@@ -56,6 +56,7 @@ pic01 = udrawTracing (0::Double) $ do
 
     drawl (P2 0 300) $ locBeamGroup 1500 4
 
+{-
 pic02 :: CtxPicture
 pic02 = udrawTracing (0::Double) $ 
     localize (snap_grid_factors 20 20 . fill_use_stroke_colour) $ do 
@@ -63,3 +64,4 @@ pic02 = udrawTracing (0::Double) $
       drawl zeroPt   $ beamgroup [tone, tone, bassB, period]
 
    
+-}

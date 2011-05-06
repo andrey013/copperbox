@@ -43,36 +43,6 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
   , swingStemRX
 
 
-  -- * OLD
-  , NoteGlyph
-  , disk_note
-  , char_note
-  , period_note
-  , histroke_char
-  , lostroke_disk
-
-  , char_flam
-  , disk_flam
-  , other_hand
-  , dom_hand
-  , underscore
-  , angle_strike
-  , parens
-  , stroke_accent
-  , leadin_accent
-
-  , single_stem
-  , flam_stem
-  , div_stem
-  , swing_stem
-
-  , barline
-  , lrepeat
-  , rrepeat
-  , plet_bracket
-
-  , beam_line
-
   ) where
 
 
@@ -87,9 +57,11 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
+import Data.AffineSpace                         -- package: vector-space
+
 import Control.Applicative
 import Data.Ratio
-
+import Prelude hiding ( lines )
 
 
 
@@ -104,7 +76,7 @@ runNoteHead :: InterpretUnit u => NoteHead -> LocGraphic u
 runNoteHead nh = uconvLocImageF $ locGraphic_ $ runPosObjectR1 BLC nh
 
 runStem :: InterpretUnit u => Stem -> LocGraphic u
-runStem = uconvLocImageF . moveStart (displaceV stem_top)
+runStem = uconvLocImageF . moveStart (dispV stem_top)
 
 
 
@@ -128,7 +100,7 @@ data NoteHeadDesc = NoteHeadDesc
 -- 
 stdNoteHead :: AfmUnit -> LocGraphic AfmUnit -> NoteHead
 stdNoteHead blc_to_c gf = 
-    makePosObject (pure disk_orientation) (moveStart (displaceV blc_to_c) gf)
+    makePosObject (pure disk_orientation) (moveStart (dispV blc_to_c) gf)
   where
     disk_orientation :: Orientation AfmUnit
     disk_orientation = Orientation { or_x_minor = disk_radius
@@ -223,8 +195,8 @@ underscore2 = elaboratePO body
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
-                 in execPivot $    vmove_tip strike_baseline >> move_left xmin
-                                >> line_right (xmin + xmaj)
+                 in  moveStart (dispV strike_baseline) 
+                               (pivotLine xmin xmaj 0)
 
 
 
@@ -235,10 +207,14 @@ angleStrike = elaboratePO body
     body _ = let ang  = 0.25*pi
                  dist = angle_strike_width / fromRadian (cos ang)
                  hw   = 0.5 * angle_strike_width
-             in execPivot $    vmove_tip strike_baseline >> move_left hw
-                            >> aline ang dist
+             in execPathSpec $ moveBy (vsum [ vvec strike_baseline, go_left hw])
+                             >> aline ang dist
 
 
+
+pivotLine :: (Floating u, InterpretUnit u) => u -> u -> Radian -> LocGraphic u
+pivotLine lu ru ang = promoteR1 $ \pt -> 
+    straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
 
 --
 -- Stems are drawn from top 
@@ -251,15 +227,16 @@ angleStrike = elaboratePO body
 --
 beamBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
 beamBracket _  n | n < 1 = emptyLocGraphic
-beamBracket uw n         = let w = uw * fromIntegral n in 
-                           execPivot $  move_up stem_base 
-                                     >> line_up stem_length 
-                                     >> line_right w 
-                                     >> line_down stem_length
+beamBracket uw n         = 
+    let w = uw * fromIntegral n 
+    in execPathSpec $  moveBy (go_up stem_base) 
+                    >> lines [ go_up    stem_length 
+                             , go_right w 
+                             , go_down  stem_length ]
 
 
 singleStem :: LocGraphic AfmUnit
-singleStem = execPivot $ line_down stem_length
+singleStem = execPathSpec (line $ go_down stem_length)
 
 
 -- | Extremity stem - draw if the stem is first or last in a beam
@@ -272,21 +249,18 @@ singleStemX = emptyLocGraphic
 -- TODO - Flam needs to be contextual on Unit width / font size
 
 flamStem :: LocGraphic AfmUnit
-flamStem = execPivot flam_path 
--- moveStart (disp_down stem_length) $ openStrokePath flam_path
+flamStem = execPivot flaml flamr
   where
-    flam_path =  line_up        flam_stem_length 
-              >> line_up_right  flam_xminor
-              >> pivot
-              >> line_down      stem_length
+    flaml = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
+    flamr = lines [ go_down stem_length ]
 
 
 flamStemX :: LocGraphic AfmUnit
-flamStemX = execPivot flam_path
+flamStemX = execPivot flam_path (return ())
   where
-    flam_path =  line_up flam_stem_length 
-              >> line_up_right flam_xminor
-              >> pivot
+    flam_path =  lines [go_up flam_stem_length, go_up_right flam_xminor ]
+              
+    -- Note Pivot prbably needs a re-think...
 
 
 
@@ -306,10 +280,10 @@ divStemRX uw = divStemLX uw `oplus` hbar
 
 
 divStemLX :: AfmUnit -> LocGraphic AfmUnit
-divStemLX uw = moveStart (displaceH hw) singleStem `oplus` hbar
+divStemLX uw = moveStart (dispH hw) singleStem `oplus` hbar
   where
     hw   = 0.5 * uw
-    hbar = execPivot $ move_down divstem_beam_ydrop >> line_right hw
+    hbar = execPathSpec $ moveBy (go_down divstem_beam_ydrop) >> line (go_right hw)
 
 
 
@@ -318,26 +292,24 @@ swingStem :: LocGraphic AfmUnit
 swingStem = singleStem `oplus` swingStemLX
 
 swingStemRX :: LocGraphic AfmUnit
-swingStemRX = execPivot topbar_and_stem `oplus` swingAngle
+swingStemRX = execPathSpec topbar_and_stem `oplus` swingAngle
   where
-    topbar_and_stem =  line_right flam_xminor
-                    >> line_down stem_length
+    topbar_and_stem =  lines [go_right flam_xminor, go_down stem_length]
 
 
 
 
 
 swingStemLX :: LocGraphic AfmUnit
-swingStemLX = moveStart (displaceH flam_xminor) singleStem `oplus` swingAngle
+swingStemLX = moveStart (dispH flam_xminor) singleStem `oplus` swingAngle
 
 
 swingAngle :: LocGraphic AfmUnit
-swingAngle = execPivot ang_path
+swingAngle = execPathSpec ang_path
   where
     w        = 0.9 * flam_xminor 
-    ang_path =  move_down divstem_beam_ydrop
-             >> line_down_right w 
-             >> line_down_left  w
+    ang_path =  moveBy (go_down divstem_beam_ydrop)
+             >> lines [go_down_right w, go_down_left w]
 
 
 --------------------------------------------------------------------------------
@@ -357,6 +329,7 @@ startAddrR = flip startAddr
 --------------------------------------------------------------------------------
 
 
+{-
 
 type NoteGlyph = AdvGraphic AfmUnit
 
@@ -409,7 +382,7 @@ disk_note :: NoteGlyph
 disk_note = noteGlyph note_draw start_move
   where
     note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
-    start_move = disp_up disk_ycenter
+    start_move = dispVec $ go_up disk_ycenter
     
 char_note :: Char -> NoteGlyph
 char_note ch = baselineCharGlyph $ CharLiteral ch
@@ -418,7 +391,7 @@ period_note :: NoteGlyph
 period_note =  noteGlyph note_draw start_move
   where
     note_draw  = pushR1 (replaceAns period_width_vector) $ dcDisk FILL period_radius
-    start_move = displaceV period_ycenter
+    start_move = dispV period_ycenter
 
 -- | Draw a Char at the histroke position usually @X@.
 --
@@ -426,7 +399,7 @@ histroke_char :: Char -> NoteGlyph
 histroke_char ch = noteGlyph note_draw start_move
   where
     note_draw  = baselineCharGlyph $ CharLiteral ch
-    start_move = displaceV histroke_char_baseline 
+    start_move = dispV histroke_char_baseline 
    
 
 
@@ -436,7 +409,7 @@ lostroke_disk :: NoteGlyph
 lostroke_disk = noteGlyph note_draw start_move
   where
     note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
-    start_move = displaceV lostroke_disk_ycenter
+    start_move = dispV lostroke_disk_ycenter
 
 
 
@@ -445,19 +418,19 @@ char_flam ch =
     localize (scale_point_size 0.75) $ moveStart start_move note_draw
   where
     note_draw  = locGraphic_ $ baselineCharGlyph $ CharLiteral ch
-    start_move = disp_left flam_xminor . disp_up flam_char_baseline
+    start_move = dispVec $ go_left flam_xminor . dispVec $ go_up flam_char_baseline
 
 disk_flam :: LocGraphic AfmUnit
 disk_flam = moveStart start_move (dcDisk FILL flam_disk_radius)
   where
-    start_move = disp_left flam_xminor . disp_up flam_disk_ycenter
+    start_move = dispVec $ go_left flam_xminor . dispVec $ go_up flam_disk_ycenter
 
 
 decohand :: (AfmUnit -> AfmUnit -> PosObject AfmUnit) 
          -> NoteGlyph -> NoteGlyph
 decohand fn = (`decorateR1` body) 
   where
-    body = moveStart (displaceV hand_baseline) rect
+    body = moveStart (dispV hand_baseline) rect
     rect = locGraphic_ $ runPosObjectR1 SS $ fn hand_side_length hand_side_length
 
 other_hand :: NoteGlyph -> NoteGlyph
@@ -470,7 +443,7 @@ dom_hand = decohand filledPosRect
 underscore :: NoteGlyph -> NoteGlyph
 underscore = (`elaborateR1` (body . vector_x))
   where
-    body w = moveStart (disp_left (0.5*w) . displaceV strike_baseline) 
+    body w = moveStart (dispVec $ go_left (0.5*w) . dispV strike_baseline) 
                $ locStraightLine (hvec w) 
 
 
@@ -480,7 +453,7 @@ angle_strike mf =
   where
     astrike w = let ang  = 0.25*pi
                     dist = (1.25*w) / fromRadian (cos ang)
-                in moveStart (disp_left (0.625*w) . displaceV strike_baseline)
+                in moveStart (dispVec $ go_left (0.625*w) . dispV strike_baseline)
                              (locStraightLine (avec ang dist))
 
 
@@ -490,11 +463,11 @@ parens nh =
     nh `elaborateR1` (lparen . vector_x) `elaborateR1` (rparen . vector_x)
   where
     lparen w = locGraphic_ $ 
-               moveStart (disp_left (0.66*w)  . displaceV paren_baseline)
+               moveStart (dispVec $ go_left (0.66*w)  . dispV paren_baseline)
                          (baselineCharGlyph $ CharEscName "parenleft")
 
     rparen w = locGraphic_ $ 
-               moveStart (disp_right (0.66*w) . displaceV paren_baseline)
+               moveStart (dispVec $ go_right (0.66*w) . dispV paren_baseline)
                          (baselineCharGlyph $ CharEscName "parenright")
 
 
@@ -504,7 +477,7 @@ stroke_accent :: NoteGlyph -> NoteGlyph
 stroke_accent = (`decorateR1` moveStart start_move accent)
   where
     accent     = locGraphic_ $ baselineCharGlyph $ CharEscName "greater"
-    start_move = disp_up accent_baseline
+    start_move = dispVec $ go_up accent_baseline
     
 
 
@@ -512,7 +485,7 @@ stroke_accent = (`decorateR1` moveStart start_move accent)
 --
 leadin_accent :: LocGraphic AfmUnit
 leadin_accent = 
-    moveStart (disp_up stem_top) (vertical_stalk `oplus` triangle_tip)
+    moveStart (dispVec $ go_up stem_top) (vertical_stalk `oplus` triangle_tip)
   where
     vertical_stalk = openStrokePath [vvec leadin_mark_height]
     triangle_tip   = filledRelativePath vpath
@@ -528,11 +501,11 @@ leadin_accent =
 
 single_stem :: LocGraphic AfmUnit
 single_stem = 
-    moveStart (disp_up stem_base)  (locStraightLine $ vvec stem_length)
+    moveStart (dispVec $ go_up stem_base)  (locStraightLine $ vvec stem_length)
 
 
 flam_stem :: LocGraphic AfmUnit
-flam_stem = moveStart (disp_up stem_base) (openStrokePath flam_path)
+flam_stem = moveStart (dispVec $ go_up stem_base) (openStrokePath flam_path)
   where
     flam_path  = [ vvec stem_length
                  , vec  (negate flam_xminor) (negate flam_xminor)
@@ -548,19 +521,19 @@ div_stem :: AfmUnit -> LocGraphic AfmUnit
 div_stem uw = stem 0 `oplus` stem hw `oplus` hbar
   where
     hw   = 0.5 * uw
-    stem = \dx -> moveStart (disp_up stem_base . disp_right dx) 
+    stem = \dx -> moveStart (dispVec $ go_up stem_base . dispVec $ go_right dx) 
                             (locStraightLine $  vvec stem_length)
 
-    hbar = moveStart (disp_up divstem_beam_ypos) (locStraightLine $ hvec hw)
+    hbar = moveStart (dispVec $ go_up divstem_beam_ypos) (locStraightLine $ hvec hw)
 
 
 swing_stem :: LocGraphic AfmUnit
 swing_stem = stem 0 `oplus` stem flam_xminor `oplus` angle
   where
-    stem     = \dx -> moveStart (disp_up stem_base . disp_right dx) 
+    stem     = \dx -> moveStart (dispVec $ go_up stem_base . dispVec $ go_right dx) 
                                 (locStraightLine $  vvec stem_length)
     
-    angle    = moveStart (disp_up swing_symbol_baseline) 
+    angle    = moveStart (dispVec $ go_up swing_symbol_baseline) 
                          (openStrokePath ang_path)
 
     ang_path = let w = 0.9 * flam_xminor in [ vec w w, vec (-w) w ]
@@ -581,7 +554,7 @@ barline = openStrokePath [vvec barline_top]
 --
 
 lrepeat :: LocGraphic AfmUnit
-lrepeat = moveStart (disp_up repeat_baseline) $ body
+lrepeat = moveStart (dispVec $ go_up repeat_baseline) $ body
   where
     body = repeatSglStem `oplus` repeatDblStem (-repeat_line_hspacing)
                          `oplus` repeatDots      repeat_dot_hspacing
@@ -589,7 +562,7 @@ lrepeat = moveStart (disp_up repeat_baseline) $ body
 
 
 rrepeat :: LocGraphic AfmUnit
-rrepeat = moveStart (disp_up repeat_baseline) $ body
+rrepeat = moveStart (dispVec $ go_up repeat_baseline) $ body
   where
     body = repeatSglStem `oplus` repeatDblStem   repeat_line_hspacing
                          `oplus` repeatDots    (-repeat_dot_hspacing)
@@ -603,14 +576,14 @@ repeatSglStem = openStrokePath [vvec stem_top]
 repeatDblStem :: AfmUnit -> LocGraphic AfmUnit
 repeatDblStem dx = 
    localize line_thick $ 
-       moveStart (displaceH dx) $ openStrokePath [vvec stem_top]
+       moveStart (dispH dx) $ openStrokePath [vvec stem_top]
 
 
 repeatDots :: AfmUnit -> LocGraphic AfmUnit
-repeatDots dx = moveStart (displaceH dx) $ hi_dot `oplus` lo_dot
+repeatDots dx = moveStart (dispH dx) $ hi_dot `oplus` lo_dot
   where
-    hi_dot  = moveStart (disp_up hi_repeat_dot_center) dot1
-    lo_dot  = moveStart (disp_up lo_repeat_dot_center) dot1 
+    hi_dot  = moveStart (dispVec $ go_up hi_repeat_dot_center) dot1
+    lo_dot  = moveStart (dispVec $ go_up lo_repeat_dot_center) dot1 
     dot1    = dcDisk FILL repeat_dot_radius 
 
 
@@ -620,7 +593,7 @@ repeatDots dx = moveStart (displaceH dx) $ hi_dot `oplus` lo_dot
 
 plet_bracket :: Int -> Ratio Int -> AfmUnit -> LocGraphic AfmUnit
 plet_bracket n wr unit_width = 
-    moveStart (disp_up plet_bracket_baseline) body 
+    moveStart (dispVec $ go_up plet_bracket_baseline) body 
   where
     hh           = 0.5  * plet_number_height
     th           = 0.4  * plet_number_width
@@ -631,10 +604,10 @@ plet_bracket n wr unit_width =
 
     lbracket     = openStrokePath [ vvec hh, hvec bracketw ]
 
-    rbracket     = moveStart (displaceH (2*hw)) $ 
+    rbracket     = moveStart (dispH (2*hw)) $ 
                       openStrokePath [ vvec hh, hvec (-bracketw) ]
 
-    num_text     = moveStart (displaceH hw . displaceV th) $ 
+    num_text     = moveStart (dispH hw . dispV th) $ 
                       centeredTwoThirdsText (show n) 
 
 
@@ -658,7 +631,8 @@ centeredTwoThirdsText ss =
 
 beam_line :: Int -> AfmUnit -> LocGraphic AfmUnit
 beam_line n unit_width = 
-    moveStart (disp_up stem_top) $ openStrokePath [ hvec beamlen ]
+    moveStart (dispVec $ go_up stem_top) $ openStrokePath [ hvec beamlen ]
   where
     beamlen = unit_width * fromIntegral n
 
+-}
