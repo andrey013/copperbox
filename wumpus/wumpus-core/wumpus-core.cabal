@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.50.0
+version:          0.50.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -47,6 +47,11 @@ description:
   .  
   .
   Changelog:
+  .
+  v0.50.0 to v0.50.1:
+  .
+  * Added special cases to handle continuity to the function 
+    @lineDirection@ in @Core.Geometry@.
   .
   v0.43.0 to v0.50.0:
   .
