@@ -58,8 +58,6 @@ data ParamName = ParamName
 data UgenSpec = UgenSpec
       { ugen_name       :: String
       , ugen_calc_rate  :: Int8
-      , ugen_kinput     :: Int16
-      , ugen_koutput    :: Int16
       , ugen_sindex     :: Int16
       , ugen_inputs     :: [InputSpec]
       , ugen_outputs    :: [OutputSpec]
@@ -67,8 +65,8 @@ data UgenSpec = UgenSpec
   deriving (Eq,Ord,Show)
 
 
-data InputSpec = InputKonst Int16
-               | InputUgen  Int16
+data InputSpec = InputKonst { konst_index :: Int16 }
+               | InputUgen  { ugen_index :: Int16, ugen_out_index :: Int16 }
   deriving (Eq,Ord,Show)
 
 

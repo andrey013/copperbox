@@ -42,34 +42,8 @@ printBin a =
     (s,t,u,v) = packSingle a 
   
 
-
-
-unpackSingle :: Word8 -> Word8 -> Word8 -> Word8 -> Double
-unpackSingle b24_31 b16_23 b8_15 b0_7 =  sign $ fract * (2 ^^ expo)
-  where
-    sign  = if b24_31 `testBit` 7 then negate else id
-  
-    expo  = exponent b24_31 b16_23
-  
-    fract = fraction b16_23 b8_15 b0_7
-
-
-exponent :: Word8 -> Word8 -> Int
-exponent a b = (a' `shiftL` 1) + (b' `shiftR` 7) - 127
-  where
-    a' = fromIntegral $ (a .&. 0x7f) 
-    b' = fromIntegral $ (b .&. 0x80)
-
-
-iPow :: Double -> Integer -> Double
-iPow = (^^)
-
-fraction :: Word8 -> Word8 -> Word8 -> Double
-fraction b16_24 b8_15 b0_7 = 1.0 + ((fromIntegral frac) / (2 `iPow` 23))
-  where
-   frac :: Int 
-   frac = (shiftL16 (b16_24 .&. 0x7f)) + (shiftL8 b8_15) + fromIntegral b0_7
-    
+--------------------------------------------------------------------------------
+-- pack
 
 
 packSingle :: Double -> (Word8,Word8,Word8,Word8)
@@ -120,6 +94,37 @@ mantWords x = (a,b,c)
     b = fromIntegral $ (`shiftR` 8)  $ x .&. 0xff00
     a = fromIntegral $ (`shiftR` 16) $ x .&. 0xff0000
 
+
+
+--------------------------------------------------------------------------------
+-- Unpack
+
+unpackSingle :: Word8 -> Word8 -> Word8 -> Word8 -> Double
+unpackSingle b24_31 b16_23 b8_15 b0_7 =  sign $ fract * (2 ^^ expo)
+  where
+    sign  = if b24_31 `testBit` 7 then negate else id
+  
+    expo  = exponent b24_31 b16_23
+  
+    fract = fraction b16_23 b8_15 b0_7
+
+
+exponent :: Word8 -> Word8 -> Int
+exponent a b = (a' `shiftL` 1) + (b' `shiftR` 7) - 127
+  where
+    a' = fromIntegral $ (a .&. 0x7f) 
+    b' = fromIntegral $ (b .&. 0x80)
+
+
+iPow :: Double -> Integer -> Double
+iPow = (^^)
+
+fraction :: Word8 -> Word8 -> Word8 -> Double
+fraction b16_24 b8_15 b0_7 = 1.0 + ((fromIntegral frac) / (2 `iPow` 23))
+  where
+   frac :: Int 
+   frac = (shiftL16 (b16_24 .&. 0x7f)) + (shiftL8 b8_15) + fromIntegral b0_7
+    
 
 
 shiftL8 :: (Bits b, Integral b) => Word8 -> b

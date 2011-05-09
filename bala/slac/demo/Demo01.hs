@@ -21,27 +21,20 @@ process file_name = do
     ans <- readSynthDefFile file_name
     case ans of
       Left err -> print err
-      Right a  -> print a
+      Right a  -> do { print a; writeSynthDefFile (file_name ++ ".001") a }
 
 
 demo01 = process "./samples/aSynthDef.scsyndef"
+demo02 = process "./samples/default.scsyndef"
 
 
 
-demo02 = unpackSingle 0x3d 0xcc 0xcc 0xcd
+demo03 = unpackSingle 0x3d 0xcc 0xcc 0xcd
 
 -- | should be (-1)
-demo03 = runParser bs int16be
+demo04 = runParser bs int16be
   where 
     bs = L.pack [0xff, 0xff]
 
 
-def1 :: SynthDef
-def1 = SynthDef 
-    { synth_name      = "SinOsc"
-    , synth_consts    = []
-    , synth_pvalues   = []
-    , synth_pnames    = []
-    , synth_ugens     = []     
-    }
-
+demo05 = packSingle 0.0

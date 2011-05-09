@@ -33,13 +33,12 @@ module Sound.Slac.Supercollider.SynthDef.ReadFile
 
 
 import Sound.Slac.Supercollider.SynthDef.Datatypes
-import Sound.Slac.Supercollider.SynthDef.Internal.IEEE754
 import Sound.Slac.Supercollider.SynthDef.Internal.ParserMonad
 
 import Control.Applicative
 import Control.Monad
 import qualified Data.ByteString.Lazy   as L
-import Data.Int
+
 
 readSynthDefFile :: FilePath -> IO (Either ParseErr SynthDefFile)
 readSynthDefFile file_name =
@@ -48,7 +47,7 @@ readSynthDefFile file_name =
 
 synthDefFile :: ParserM SynthDefFile
 synthDefFile = do 
-    assertString "SCgf"
+    _  <- assertString "SCgf"
     vn <- int32be
     sc <- int16be
     dfs <- count (fromIntegral sc) synthDef
@@ -60,7 +59,12 @@ synthDefFile = do
 
 
 synthDef :: ParserM SynthDef
-synthDef = SynthDef <$> pstring <*> consts <*> params <*> pnames <*> ugens
+synthDef = 
+    SynthDef <$> pstring 
+             <*> ("constants" <??> consts)
+             <*> ("params"    <??> params)
+             <*> ("pnames"    <??> pnames)
+             <*> ("ugens"     <??> ugens)
   where
     consts = fmap fromIntegral int16be >>= count `flip` ieee754Single
     params = fmap fromIntegral int16be >>= count `flip` ieee754Single
@@ -69,36 +73,34 @@ synthDef = SynthDef <$> pstring <*> consts <*> params <*> pnames <*> ugens
 
 
 paramName :: ParserM ParamName 
-paramName = ParamName <$> pstring <*> int16be
+paramName = "paramName" <??> ParamName <$> pstring <*> int16be
 
 
 ugenSpec :: ParserM UgenSpec
-ugenSpec = do 
+ugenSpec = "ugenSpec" <??> do 
     nm  <- pstring
-    cr  <- int8
+    cr  <- int8    
     ic  <- int16be
     oc  <- int16be
     si  <- int16be
     ics <- count (fromIntegral ic) inputSpec
-    ocs <- count (fromIntegral ic) outputSpec
+    ocs <- count (fromIntegral oc) outputSpec
     return $ UgenSpec 
                 { ugen_name       = nm
                 , ugen_calc_rate  = cr
-                , ugen_kinput     = ic
-                , ugen_koutput    = oc
                 , ugen_sindex     = si
                 , ugen_inputs     = ics
                 , ugen_outputs    = ocs
                 }
 
 inputSpec :: ParserM InputSpec
-inputSpec = int16be >>= step
+inputSpec = "inputSpec" <??> int16be >>= step
   where
-    step i | i == (-1) = InputKonst <$> int16be
-           | otherwise = InputUgen  <$> int16be
+    step i | i == (-1) = InputKonst  <$> int16be
+           | otherwise = InputUgen i <$> int16be
 
 outputSpec :: ParserM OutputSpec
-outputSpec = OutputSpec <$> int8
+outputSpec = "outputSpec" <??> OutputSpec <$> int8
 
 
 -- | String prefixed by its length.
@@ -109,19 +111,17 @@ pstring = getSize >>= \sz -> count sz char8
     getSize = fmap fromIntegral word8
 
 
+--------------------------------------------------------------------------------
+-- Helpers
+
+
+
 assertString :: String -> ParserM String
 assertString s = postCheck (text $ length s) (==s) msg
   where
     msg a = "assertString - input: \"" ++ a ++ 
             "\" did not match expected: \"" ++ s ++ "\""
 
-
-             
-assertInt32 :: Integral a => a -> ParserM Int32
-assertInt32 i = postCheck int32be ((==i) . fromIntegral) msg
-  where
-    msg a = "assertInt32 - input: "      ++ show a ++ 
-            ", did not match expected: " ++ show i
 
 
 -- | Apply parse then apply the check, if the check fails report
