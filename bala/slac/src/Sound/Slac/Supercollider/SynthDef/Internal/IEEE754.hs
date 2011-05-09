@@ -21,99 +21,158 @@ module Sound.Slac.Supercollider.SynthDef.Internal.IEEE754
   , unpackSingle  
 
   , printBin
+  , printHex
+  , showBinary
 
   ) where
 
 import Data.Bits
-import Data.Char
 import Data.Word
 import Numeric
 import Prelude hiding ( exponent )
 
-const_B :: Int
-const_B = 127
-
 
 printBin :: Double -> ShowS
-printBin a = 
-    f s . showChar ' ' . f t . showChar ' ' . f u . showChar ' ' . f v
+printBin dd = 
+    sign . showString " | " . expo . showString " | " . mant
   where
-    f = showIntAtBase 2 (chr . (48+))
-    (s,t,u,v) = packSingle a 
+    (s,t,u,v)      = packSingle dd
   
+    mkBit a ix     = if testBit a ix then showChar '1' else showChar '0'
+    sign           = mkBit s 7
+    expo           = bits s (down 6) . showChar ' ' . bits t [7]
+    mant           = bits t (down 6) . showChar ' ' . bits u (down 7) 
+                                     . showChar ' ' . bits v (down 7)
+    bits _ []      = id
+    bits a (i:is)  = mkBit a i . bits a is
+
+    down i | i < 0 = []
+    down i         = i : down (i-1)
+
+printHex :: Double -> ShowS
+printHex dd = 
+    showString "0x" . showHex s 
+                    . sep . showHex t . sep . showHex u . sep . showHex v           
+  where
+    (s,t,u,v)      = packSingle dd
+    sep            = showString " 0x"
+
+showBinary :: Integral a => a -> ShowS
+showBinary = showIntAtBase 2 fn
+  where
+    fn 0 = '0'
+    fn 1 = '1'
+    fn _ = '?'
+
+
 
 --------------------------------------------------------------------------------
 -- pack
 
 
+-- Note - cannot use built-in decodeFloat / exponent as it returns 
+-- answers in the wrong range.
+
+
+
 packSingle :: Double -> (Word8,Word8,Word8,Word8)
-packSingle a = (flipSign b24_31, exp_part+mant_part, b8_15, b0_7)
+packSingle a | a == 0 = (0,0,0,0)
+packSingle a          = (flipSign b24_31, exp_part+mant_part, b8_15, b0_7)
   where
-    k     = findPosExpo $ abs a
-    e     = k + const_B
-    halfa = (abs a) / (2 `iPow` fromIntegral k)
-    f     = expand $ halfa - 1
+    dd          = abs a
+    (k,zerodf)  = base2ExpoK dd
+    e           = bias127 k
+    fstr        = mantissa zerodf
     
     (b24_31, exp_part)          = expoWords e
-    (mant_part,b8_15, b0_7)     = mantWords f
+    (mant_part,b8_15, b0_7)     = mantWords fstr
     
-    flipSign = if a > 0 then id else (`setBit` 7)
+    flipSign = if a >= 0 then id else (`setBit` 7)
 
 
-findPosExpo :: Double -> Int
-findPosExpo r | r <= 0    = 0 
-              | otherwise = step r 1
+
+-- | Condition: 0 <= r
+--
+-- ans = (k,0.aaaa)
+--
+base2ExpoK :: Double -> (Int,Double)
+base2ExpoK r | r < 1 = kmult r 0
+             | r > 2 = kdiv r 0
+             | otherwise = (0,fracpart r)
   where
-    step r' k | r <= fromIntegral (2::Int) ^^ k = k-1
-              | otherwise                       = step r' (k+1)
+    kmult k n | k >= 1    = (-n,fracpart k)
+              | n >  127  = error $ "base2ExpoK - " ++ show r
+              | otherwise = kmult (2*k) (n+1)
+
+    kdiv k n  | k <  2    = (n, fracpart k)
+              | n > 127   = error $ "base2ExpoK - " ++ show r
+              | otherwise = kdiv (k / 2) (n+1)
+
+    fracpart k = k - (fromIntegral $ floori k)
+
+    floori :: Double -> Integer
+    floori = floor
 
 
-expand :: Double -> Word32
-expand n = (`shiftR` 9) $ step n 0 id
+
+     
+bias127 :: Int -> Word8
+bias127 k = 127 + (fromIntegral k)
+
+-- | Condition: 0 <= r < 1
+-- 
+mantissa :: Double -> Word32
+mantissa r = step r 1 0
   where
-    step x ix f | x <= 0    = f (0::Word32) 
-                | otherwise = let y = 1 / (2 ^^ (ix+1))
-                              in if x >= y 
-                                 then step (x-y) (ix+1) (f . (`setBit` (31-ix)))
-                                 else step x (ix+1) f
+    two :: Integer
+    two = 2
+
+    step :: Double -> Int -> Word32 -> Word32
+    step v i str 
+        | v <= 0 = str
+        | otherwise = let pw   = (1 / (fromIntegral $ two^i))
+                      in if pw > v then step v (i+1) str
+                                   else step (v-pw) (i+1) (setBit str (23-i))  
 
 
-
--- 7 bits left, 1 bit right
-expoWords :: Int -> (Word8,Word8)
-expoWords n = (left, right)
+-- | a (exponent) 7 bits left, b (mantissa) 1 bit right
+--
+expoWords :: Word8 -> (Word8,Word8)
+expoWords e = (a, b)
   where
-    right = if n `testBit` 0 then 128 else 0
-    left  = fromIntegral $ n `shiftR` 1
-
+    a = e `shiftR` 1
+    b = (e .&. 0x01) `shiftL` 7
 
 mantWords :: Word32 -> (Word8,Word8,Word8)
 mantWords x = (a,b,c)
   where
     c = fromIntegral $ x .&. 0xff
     b = fromIntegral $ (`shiftR` 8)  $ x .&. 0xff00
-    a = fromIntegral $ (`shiftR` 16) $ x .&. 0xff0000
+    a = fromIntegral $ (`shiftR` 16) $ x .&. 0x7f0000
 
 
 
 --------------------------------------------------------------------------------
 -- Unpack
 
+-- unpack seems to work...
+
 unpackSingle :: Word8 -> Word8 -> Word8 -> Word8 -> Double
-unpackSingle b24_31 b16_23 b8_15 b0_7 =  sign $ fract * (2 ^^ expo)
+unpackSingle 0 0 0 0 = 0.0
+unpackSingle a b c d =  sign $ fract * (2 ^^ expo)
   where
-    sign  = if b24_31 `testBit` 7 then negate else id
+    sign  = if a `testBit` 7 then negate else id
   
-    expo  = exponent b24_31 b16_23
+    expo  = exponent a b
   
-    fract = fraction b16_23 b8_15 b0_7
+    fract = fraction b c d
 
-
+-- Exponent is bits [6..0] of @a@ and bit 7 of @b@
 exponent :: Word8 -> Word8 -> Int
-exponent a b = (a' `shiftL` 1) + (b' `shiftR` 7) - 127
+exponent a b = a' + b' - 127
   where
-    a' = fromIntegral $ (a .&. 0x7f) 
-    b' = fromIntegral $ (b .&. 0x80)
+    a' = (`shiftL` 1) $ fromIntegral $ (a .&. 0x7f) 
+    b' = if b `testBit` 7 then 1 else 0
 
 
 iPow :: Double -> Integer -> Double
