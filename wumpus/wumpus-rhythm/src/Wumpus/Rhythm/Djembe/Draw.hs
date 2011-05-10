@@ -21,191 +21,149 @@ module Wumpus.Rhythm.Djembe.Draw where
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Rhythm.Djembe.Parameters
 
-import Wumpus.Drawing.Paths.Relative            -- package: wumpus-drawing
+import Wumpus.Drawing.Basis.TraceLocGraphic     -- package: wumpus-drawing
+import Wumpus.Drawing.Paths.Relative       
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.VectorSpace                         -- package: vector-space
+
+import Control.Applicative
 import Control.Monad
+import Data.Monoid
 
 --------------------------------------------------------------------------------
 
 
+data FlamHead = FlamChar Char
+              | FlamDisk
+              | FlamNone
+  deriving (Eq,Ord,Show)
+
+data NoteHead = NoteChar Char
+              | NoteDisk
+              | NotePeriod
+              | NoteNone
+
+
 data Note = Note   NoteHead
-          | HiNote NoteHead 
-          | Flam   NoteHead               -- add little flam ...
+          | Flam   NoteHead   FlamHead 
           | Swing  NoteHead
           | Div    NoteHead   NoteHead
 
 
-
-
--- | Start point is top-left.
---
--- TODO - the outline path is inefficient, Wumpus-Drawing needs
--- optimizing...
--- 
-locBeamGroup :: InterpretUnit u => AfmUnit -> Int -> LocGraphic u 
-locBeamGroup uw i 
-    | i <= 0    = emptyLocGraphic
-    | i == 1    = uconvLocImageF $ beam_one
-    | otherwise = uconvLocImageF $ execPivot pathl pathr
-  where
-    beam_one  = locStraightLine (vvec $ negate stem_length)
-
-    pathl     = vline stem_length 
-    pathr     = replicateM_ (i-2) (hline uw >> insertl beam_one)
-              >> hline uw 
-              >> vline (-stem_length)
+-- Design note - Hi and Lo notes now seem to look like a 
+-- decoration, in that a note can also have a hi or lo note.
 
 
 
 
-drawBeamGroup :: (Floating u, InterpretUnit u) => u -> [Note] -> LocGraphic u
-drawBeamGroup _  []     = emptyLocGraphic
-drawBeamGroup uw (x:xs) = 
-    uconvertCtx1 uw >>= \wa -> 
-    elems `oplus` uconvLocImageF (beamBracket wa (length xs))
-  where
-    elems       = distribH uw $ leftExt uw x : step xs
-    step []     = []
-    step [b]    = [rightExt uw b]
-    step (b:bs) = inner uw b : step bs
+drawBeamGroup :: [Note] -> DjembeDraw ()
+drawBeamGroup []     = return ()
+drawBeamGroup (_:xs) = 
+    askUnitWidth >>= \uw -> insertl (beamBracket uw (length xs))
     
 
 
 
-leftExt :: (Fractional u, InterpretUnit u) => u -> Note -> LocGraphic u
-leftExt _ (Note a) = 
-    runNoteHead a `oplus` runStem singleStemX
-
-leftExt _ (HiNote a) = 
-    runNoteHead a `oplus` runStem singleStemX
-
-leftExt _ (Flam a) = 
-    runNoteHead a `oplus` runStem flamStemX
-
-leftExt _ (Swing a) = 
-    runNoteHead a `oplus` runStem swingStemLX
-
-leftExt w (Div a b) = 
-    uconvertCtx1 w >>= \wa -> 
-    let n1 = runNoteHead a
-        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
-    in n1 `oplus` n2 `oplus` runStem (divStemLX wa)
-
-
-inner :: (Fractional u, InterpretUnit u) => u -> Note -> LocGraphic u
-inner _ (Note a) = 
-    runNoteHead a `oplus` runStem singleStem
-
-inner _ (HiNote a) = 
-    runNoteHead a `oplus` runStem singleStem
-
-inner _ (Flam a) = 
-    runNoteHead a `oplus` runStem flamStem
-
-inner _ (Swing a) = 
-    runNoteHead a `oplus` runStem swingStem
-
-inner w (Div a b) = 
-    uconvertCtx1 w >>= \wa -> 
-    let n1 = runNoteHead a
-        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
-    in n1 `oplus` n2 `oplus` runStem (divStem wa)
-
-rightExt :: (Fractional u, InterpretUnit u) => u -> Note -> LocGraphic u
-rightExt _ (Note a) = 
-    runNoteHead a `oplus` runStem singleStemX
-
-rightExt _ (HiNote a) = 
-    runNoteHead a `oplus` runStem singleStemX
-
-rightExt _ (Flam a) = 
-    runNoteHead a `oplus` runStem flamStemX
-
-rightExt _ (Swing a) = 
-    uconvertCtx1 flam_xminor >>= \wa -> 
-    moveStart (dispH wa) (runNoteHead a) `oplus` runStem swingStemRX
-
-rightExt w (Div a b) = 
-    uconvertCtx1 w >>= \wa -> 
-    let n1 = runNoteHead a
-        n2 = moveStart (dispH $ 0.5*w) $ runNoteHead b
-    in n1 `oplus` n2 `oplus` runStem (divStemRX wa)
-
-
-{-
-
--- OLD 
-
--- Note - Assembling notes within a beam group can be an 
--- \"even distribution\" or a chain.
---
--- Assembling beam groups, barlines etc. looks like a job for
--- 'advances'.
--- 
-
-
-beamgroup :: (Fractional u, InterpretUnit u) => [LocGraphic u] -> AdvGraphic u
-beamgroup [] = pushR1 (replaceAns (hvec 0)) $ emptyLocGraphic
-beamgroup gs = 
-    unitWidth >>= \w1 -> 
-    pushR1 (replaceAns (hvec $ w1 * fromIntegral len)) $ 
-      body w1 `decorateR1` beamline (len-1) w1
+stem1 :: StemPos -> Note -> DjembeDraw ()
+stem1 pos note = askUnitWidth >>= \uw -> insertl (body note uw)
   where
-    len  = length gs
-    body = \w1 -> chain_ (chainH w1) gs
-
-
--- | point is base line
-beamline :: InterpretUnit u => Int -> u -> LocGraphic u
-beamline n w1 = uconvLocImageF $ 
-    uconvertCtx1 w1 >>= \w1u -> beam_line n w1u
-
-
-tone :: InterpretUnit u => LocGraphic u
-tone = uconvLocImageF $ tone_body
-
-bassB :: InterpretUnit u => LocGraphic u
-bassB = uconvLocImageF $ bassB_body
-
-rest :: InterpretUnit u => LocGraphic u
-rest = uconvLocImageF $ single_stem
-
-period :: InterpretUnit u => LocGraphic u
-period = uconvLocImageF $ locGraphic_ period_note `oplus` single_stem
-
-loTone :: InterpretUnit u => LocGraphic u
-loTone = uconvLocImageF $ locGraphic_ lostroke_disk `oplus` single_stem
-
-
-tone_body :: LocGraphic AfmUnit
-tone_body = locGraphic_ disk_note `oplus` single_stem
-
-bassB_body :: LocGraphic AfmUnit
-bassB_body = single_stem `oplus` locGraphic_ (char_note 'B')
-
-
-toneFlam :: InterpretUnit u =>  LocGraphic u
-toneFlam = uconvLocImageF $ 
-    locGraphic_ disk_note `oplus` disk_flam `oplus` flam_stem
-
-flamgd :: InterpretUnit u =>  LocGraphic u
-flamgd = uconvLocImageF $ 
-    locGraphic_ (char_note 'd') `oplus` char_flam 'g' `oplus` flam_stem
+    body (Note _)       = plainStem pos
+    body (Flam _ _)     = flamStem pos
+    body (Swing _)      = swingStem pos
+    body (Div _ _)      = divStem pos
 
 
 
-tick1 :: InterpretUnit u =>  LocGraphic u
-tick1 = uconvLocImageF $ 
-    tick `oplus` moveStart (displaceH 1000) tick 
-         `oplus` moveStart (displaceH 2000) tick
+note1 :: Note -> DjembeDraw ()
+note1 note = askUnitWidth >>= \uw -> insertl (body note uw)
   where
-    tick = locStraightLine (vvec (1000::AfmUnit))
+    body (Note a)   _        = runPosNoteHead 0 $ noteHeadPos a
+
+    body (Flam a b) _        = ga `mappend` gb
+      where
+        ga    = runPosNoteHead 0 $ noteHeadPos a
+        gb    = moveStart (dispVec flamv) (flamHead b)
+        flamv = go_left flam_xminor ^+^ go_up flam_ynorth
+
+    body (Swing a)  _       = runPosNoteHead flam_xminor $ noteHeadPos a
+
+    body (Div a b)  uw      = ga `mappend` gb
+      where
+        ga    = runPosNoteHead 0 $ noteHeadPos a
+        gb    = runPosNoteHead (0.5*uw) $ noteHeadPos b
 
 
-unitWidth :: InterpretUnit u => Query u
-unitWidth = uconvertCtx1 (1360::AfmUnit)
+noteHeadPos :: NoteHead -> PosNoteHead
+noteHeadPos (NoteChar ch)   = charNote ch
+noteHeadPos NoteDisk        = diskNote
+noteHeadPos NotePeriod      = periodNote
+noteHeadPos NoteNone        = noNote
 
--}
+
+flamHead :: FlamHead -> LocGraphic AfmUnit
+flamHead (FlamChar ch)      = charFlam ch
+flamHead FlamDisk           = diskFlam
+flamHead FlamNone           = mempty
+
+
+
+--------------------------------------------------------------------------------
+-- Drawing Monad
+
+-- Reader (unit width) plus LocTrace.
+
+type UnitWidth = AfmUnit
+
+
+newtype DjembeDraw a = DjembeDraw { 
+      getDjembeDraw :: UnitWidth -> LocTrace UnitWidth a }
+
+type instance MonUnit (DjembeDraw a) = UnitWidth
+
+
+-- Functor
+
+instance Functor DjembeDraw where
+  fmap f mf = DjembeDraw $ \r -> 
+                getDjembeDraw mf r >>= \a -> return (f a)
+
+
+-- Applicative
+                                
+instance Applicative DjembeDraw where
+  pure a    = DjembeDraw $ \_ -> return a
+  mf <*> ma = DjembeDraw $ \r -> 
+                getDjembeDraw mf r >>= \f ->
+                getDjembeDraw ma r >>= \a ->
+                return (f a)
+
+-- Monad
+
+instance Monad DjembeDraw where
+  return a  = DjembeDraw $ \_ -> return a
+  ma >>= k  = DjembeDraw $ \r -> 
+                getDjembeDraw ma r >>= \a -> (getDjembeDraw . k) a r
+
+
+
+instance LocTraceM DjembeDraw where
+  insertl a = DjembeDraw $ \_ -> insertl a
+  location  = DjembeDraw $ \_ -> location 
+  moveBy v  = DjembeDraw $ \_ -> moveBy v
+
+
+asksUnitWidth :: (AfmUnit -> a) -> DjembeDraw a
+asksUnitWidth f = DjembeDraw $ \r -> return (f r)
+
+askUnitWidth :: DjembeDraw AfmUnit
+askUnitWidth = DjembeDraw $ \r -> return r
+
+
+
+runDjembeDraw :: InterpretUnit u => UnitWidth -> DjembeDraw a -> LocGraphic u
+runDjembeDraw uw mf = post $ runLocTrace $ getDjembeDraw mf uw 
+  where
+    post (_,_,gf) = uconvLocImageF gf

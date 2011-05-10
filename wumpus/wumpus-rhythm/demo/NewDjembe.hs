@@ -39,22 +39,22 @@ makeCtx = join_bevel . fill_colour black . set_font helvetica . metricsContext 3
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
-    drawl (P2 0 0) $ distribH 50 [ runNoteHead $ underscore2 $ charNote 'X'
-                                 , runNoteHead $ parens2 $ charNote 'P'
-                                 , runNoteHead $ parens2 $ diskNote
-                                 , runNoteHead $ parens2 $ noNote
-                                 , runNoteHead $ charNote 'g'
-                                 , runNoteHead $ periodNote
-                                 , runNoteHead $ angleStrike $ diskNote
+    drawl (P2 0 0) $ distribH 50 [ fn $ underscore2 $ charNote 'X'
+                                 , fn $ parens2 $ charNote 'P'
+                                 , fn $ parens2 $ diskNote
+                                 , fn $ parens2 $ noNote
+                                 , fn $ charNote 'g'
+                                 , fn $ periodNote
+                                 , fn $ angleStrike $ diskNote
                                  ]
-
+{-
     drawl (P2 0 200) $ drawBeamGroup 60 $ [ Flam $ parens2 $ diskNote
                                           , Note $ parens2 $ diskNote
                                           , Swing $ charNote 'X'
                                           ]
-    
-
-    drawl (P2 0 300) $ locBeamGroup 1500 4
+-}    
+  where
+    fn = runPosNoteHead 0
 
 {-
 pic02 :: CtxPicture

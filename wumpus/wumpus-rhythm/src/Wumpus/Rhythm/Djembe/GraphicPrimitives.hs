@@ -17,30 +17,37 @@
 module Wumpus.Rhythm.Djembe.GraphicPrimitives 
   (
 
-    NoteHead
-  , runNoteHead
+
+  -- * Note heads
+    PosNoteHead
+  , runPosNoteHead
   , runStem
 
   , charNote
+  , charFlam
+
   , diskNote  
+  , diskFlam
+
   , periodNote
   , noNote
 
+  -- * Decorations
   , parens2
   , underscore2
   , angleStrike
 
-  , beamBracket
-  , singleStem
-  , singleStemX
+
+  -- * Stems
+  , StemPos(..)
+  , Stem
+
+  , plainStem
   , flamStem
-  , flamStemX
   , divStem
-  , divStemLX
-  , divStemRX
   , swingStem
-  , swingStemLX
-  , swingStemRX
+
+  , beamBracket
 
 
   ) where
@@ -60,46 +67,63 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
-import Data.Ratio
+import Data.Monoid
 import Prelude hiding ( lines )
 
 
 
-type NoteHead = PosObject AfmUnit
-type Stem     = LocGraphic AfmUnit
+type PosNoteHead = PosObject AfmUnit
 
 
 
 
+runPosNoteHead :: InterpretUnit u 
+               => AfmUnit -> PosNoteHead -> LocGraphic u
+runPosNoteHead dx nh = 
+    uconvLocImageF $ locGraphic_ $ moveStart (dispH dx) (runPosObjectR1 BLC nh)
 
-runNoteHead :: InterpretUnit u => NoteHead -> LocGraphic u
-runNoteHead nh = uconvLocImageF $ locGraphic_ $ runPosObjectR1 BLC nh
 
-runStem :: InterpretUnit u => Stem -> LocGraphic u
-runStem = uconvLocImageF . moveStart (dispV stem_top)
+
+runStem :: InterpretUnit u => StemPos -> AfmUnit -> Stem -> LocGraphic u
+runStem pos uw mf = uconvLocImageF $ moveStart (dispV stem_top) $ mf pos uw
 
 
 
 -- Note - we expect to draw histroke glyph at the horizontal center 
 
+
+-- | Component parts specifying a note head / flam note head.
+-- 
+-- > note_head is always drawn at baseline_center.
+--
+-- (Note heads can be decorated with parens, so they need to be a 
+-- PosObject).
+--
+-- > high and low notes are also draw with north as the start point.
+--
+-- > flam_note_head is always drawn with north as the start point.
+-- 
 data NoteHeadDesc = NoteHeadDesc
-      { nhd_note_head           :: PosObject AfmUnit
-      , nhd_histroke_glyph      :: LocGraphic AfmUnit
-      , nhd_histroke_ypos       :: AfmUnit
-      , nhd_flam_glyph          :: LocGraphic AfmUnit
+      { nhd_note_head               :: PosObject AfmUnit
+      , nhd_high_low_glyph          :: LocGraphic AfmUnit
+      , nhd_high_low_north_disp     :: AfmUnit
+      , nhd_flam_glyph              :: LocGraphic AfmUnit
+      , nhd_flam_north_disp         :: AfmUnit
       }
 
 
 
--- | The height of a NoteHead is always the same - all we really
+
+
+-- | The height of a PosNoteHead is always the same - all we really
 -- care about is adding parens to the left an right and drawing 
 -- at @baseline center@.
 --
 -- Except for on of the character note heads, we always treat
 -- width as the same too - the diameter of @disk@.
 -- 
-stdNoteHead :: AfmUnit -> LocGraphic AfmUnit -> NoteHead
-stdNoteHead blc_to_c gf = 
+stdPosNoteHead :: AfmUnit -> LocGraphic AfmUnit -> PosNoteHead
+stdPosNoteHead blc_to_c gf = 
     makePosObject (pure disk_orientation) (moveStart (dispV blc_to_c) gf)
   where
     disk_orientation :: Orientation AfmUnit
@@ -110,30 +134,45 @@ stdNoteHead blc_to_c gf =
                                    }
 
 
-charNote :: Char -> NoteHead
+makeFlamGraphic :: NoteHeadDesc -> LocGraphic AfmUnit
+makeFlamGraphic desc = 
+    moveStart (dispH $ negate $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
+
+
+-- | Drawn at baseline center.
+--
+charNote :: Char -> PosNoteHead
 charNote = nhd_note_head . charDesc 
 
 
+-- | drawn at north.
+--
+charFlam :: Char -> LocGraphic AfmUnit
+charFlam = makeFlamGraphic . charDesc
 
 charDesc :: Char -> NoteHeadDesc
 charDesc ch = NoteHeadDesc 
-    { nhd_note_head         = posChar ch
-    , nhd_histroke_glyph    = glyph
-    , nhd_histroke_ypos     = 0 -- TODO
-    , nhd_flam_glyph        = flam_glyph
+    { nhd_note_head             = posChar ch
+    , nhd_high_low_glyph        = glyph
+    , nhd_high_low_north_disp   = 0
+    , nhd_flam_glyph            = flam_glyph
+    , nhd_flam_north_disp       = 0
     }
   where
-    glyph       = locGraphic_ $ runPosObjectR1 BLC $ posChar ch
+    -- Char glyphs can be drawn at north directly.
+    --
+    glyph       = locGraphic_ $ runPosObjectR1 NN $ posChar ch
     flam_glyph  = localize (scale_point_size 0.75) glyph
 
 
 
-toneDesc :: NoteHeadDesc
-toneDesc = NoteHeadDesc 
-    { nhd_note_head         = stdNoteHead disk_ycenter glyph
-    , nhd_histroke_glyph    = glyph
-    , nhd_histroke_ypos     = 0 -- TODO
-    , nhd_flam_glyph        = flam_glyph
+diskDesc :: NoteHeadDesc
+diskDesc = NoteHeadDesc 
+    { nhd_note_head             = stdPosNoteHead disk_ycenter glyph
+    , nhd_high_low_glyph        = glyph
+    , nhd_high_low_north_disp   = disk_radius
+    , nhd_flam_glyph            = flam_glyph
+    , nhd_flam_north_disp       = flam_disk_radius
     }
   where
     glyph       = dcDisk FILL disk_radius
@@ -141,22 +180,28 @@ toneDesc = NoteHeadDesc
 
 
 
-diskNote :: NoteHead
-diskNote = nhd_note_head toneDesc
+diskNote :: PosNoteHead
+diskNote = nhd_note_head diskDesc
+
+-- | drawn at north.
+--
+diskFlam :: LocGraphic AfmUnit
+diskFlam = makeFlamGraphic diskDesc
 
 
 periodDesc :: NoteHeadDesc
 periodDesc = NoteHeadDesc 
-    { nhd_note_head         = stdNoteHead period_ycenter glyph
-    , nhd_histroke_glyph    = glyph
-    , nhd_histroke_ypos     = 0 -- TODO
-    , nhd_flam_glyph        = glyph
+    { nhd_note_head             = stdPosNoteHead period_ycenter glyph
+    , nhd_high_low_glyph        = glyph
+    , nhd_high_low_north_disp   = disk_radius
+    , nhd_flam_glyph            = glyph
+    , nhd_flam_north_disp       = flam_disk_radius
     }
   where
     glyph       = dcDisk FILL period_radius
 
 
-periodNote :: NoteHead 
+periodNote :: PosNoteHead 
 periodNote = nhd_note_head periodDesc 
 
  
@@ -166,22 +211,26 @@ periodNote = nhd_note_head periodDesc
 -- 
 noNoteDesc :: NoteHeadDesc
 noNoteDesc = NoteHeadDesc 
-    { nhd_note_head         = stdNoteHead 0 emptyLocGraphic
-    , nhd_histroke_glyph    = emptyLocGraphic
-    , nhd_histroke_ypos     = 0
-    , nhd_flam_glyph        = emptyLocGraphic
+    { nhd_note_head             = stdPosNoteHead 0 mempty
+    , nhd_high_low_glyph        = mempty
+    , nhd_high_low_north_disp   = 0
+    , nhd_flam_glyph            = mempty
+    , nhd_flam_north_disp       = 0
     }
 
-noNote :: NoteHead 
+noNote :: PosNoteHead 
 noNote = nhd_note_head noNoteDesc 
 
 
+
+-------------------------------------------------------------------------------
+-- Decorations
 
 -- | Note - parens would look better shifted up a little.
 --
 -- Also this is probably an elaborate...
 --
-parens2 :: NoteHead -> NoteHead
+parens2 :: PosNoteHead -> PosNoteHead
 parens2 obj = hcat [ lparen, obj, rparen ]
   where
     lparen = posEscChar $ CharEscName "parenleft"
@@ -190,7 +239,7 @@ parens2 obj = hcat [ lparen, obj, rparen ]
     
 
 
-underscore2 :: NoteHead -> NoteHead
+underscore2 :: PosNoteHead -> PosNoteHead
 underscore2 = elaboratePO body
   where
     body ortt  = let xmin = or_x_minor ortt
@@ -201,7 +250,7 @@ underscore2 = elaboratePO body
 
 
 
-angleStrike :: NoteHead -> NoteHead
+angleStrike :: PosNoteHead -> PosNoteHead
 angleStrike = elaboratePO body
   where
     body _ = let ang  = 0.25*pi
@@ -216,24 +265,128 @@ pivotLine :: (Floating u, InterpretUnit u) => u -> u -> Radian -> LocGraphic u
 pivotLine lu ru ang = promoteR1 $ \pt -> 
     straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
 
+
+
+--------------------------------------------------------------------------------
+-- Stems
+
+
+
+-- | Stems have three drawings depending whether they are the 
+-- first, last or inside elements of a beam group.
+--
+-- This is because the beam is always drawn first and it includes
+-- single stems for the outermost elements. It draws the outer 
+-- stems so the corner joints will be properly formed.
+--
+data StemPos = LEFT_EXT | STEM_INNER | RIGHT_EXT
+  deriving (Enum,Eq,Ord,Show)
+
+
+-- | Stem is a function from @unit width@ to graphic.
+--
+type Stem = StemPos -> (AfmUnit -> LocGraphic AfmUnit)
+
+single_stem_path :: PathSpec AfmUnit ()
+single_stem_path = line $ go_down stem_length
+
+
+-- | Draw either a single stem (inner) or nothing for the 
+-- extremities.
+--
+plainStem :: Stem
+plainStem LEFT_EXT      = const mempty
+plainStem STEM_INNER    = const $ execPathSpec single_stem_path
+plainStem RIGHT_EXT     = const mempty
+
+
+
+flam_stem_left :: PathSpec AfmUnit ()
+flam_stem_left = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
+
+
+-- | Draw the left stem for both extremities. Draw the combined
+-- stem for the inners.
+--
+flamStem :: Stem
+flamStem LEFT_EXT      = const $ execPathSpec flam_stem_left
+flamStem STEM_INNER    = const $ execPivot flam_stem_left single_stem_path
+flamStem RIGHT_EXT     = const $ execPathSpec flam_stem_left
+
+
+data RightExt = LINE | MOVE
+  deriving (Enum,Eq,Ord,Show)
+
+
+-- | Plot the right part of a div stem. The initial segment may be
+-- either a line or a move.
+--
+-- >  ...
+-- >    |
+-- >  --|
+-- >    |
+-- >    |
+--
+div_stem_right :: RightExt -> AfmUnit -> PathSpec AfmUnit ()
+div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_path 
+  where
+    hw          = 0.5 * uw
+    step1 MOVE  = moveBy (go_right hw)
+    step1 LINE  = line   (go_right hw) 
+
+    crossbar    = moveStart (dispV divstem_beam_ydrop) (horizontalLine (-hw))
+
+horizontalLine :: InterpretUnit u => u -> LocGraphic u
+horizontalLine = locStraightLine . hvec
+
+divStem :: Stem 
+divStem LEFT_EXT   uw = execPathSpec $ div_stem_right MOVE uw
+divStem STEM_INNER uw = execPivot single_stem_path (div_stem_right MOVE uw)
+divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
+
+
+
+
+-- | Plot the right part of a swing stem. The initial segment may be
+-- either a line or a move.
+--
+-- >  ...
+-- >   \|
+-- >   /|
+-- >    |
+-- >    |
+--
+swing_stem_right :: RightExt -> PathSpec AfmUnit ()
+swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_path 
+  where
+    step1 MOVE  = moveBy (go_right flam_xminor)
+    step1 LINE  = line   (go_right flam_xminor) 
+
+
+swingAngle :: LocGraphic AfmUnit
+swingAngle = execPathSpec ang_path
+  where
+    w        = 0.9 * flam_xminor 
+    ang_path =  moveBy (go_down divstem_beam_ydrop)
+             >> lines [go_down_right w, go_down_left w]
+
+
+
+
+swingStem :: Stem
+swingStem LEFT_EXT   = const $ execPathSpec $ swing_stem_right MOVE
+swingStem STEM_INNER = const $ execPivot single_stem_path (swing_stem_right MOVE)
+swingStem RIGHT_EXT  = const $ execPathSpec $ swing_stem_right LINE
+
+
+
+{-
 --
 -- Stems are drawn from top 
 -- 
 -- Using paths doesn\'t seem to work because we aren\'t working 
 -- from a useful start point. Flams go both ways from the start.
 --
-
--- | Just the extremity stems are drawn.
---
-beamBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
-beamBracket _  n | n < 1 = emptyLocGraphic
-beamBracket uw n         = 
-    let w = uw * fromIntegral n 
-    in execPathSpec $  moveBy (go_up stem_base) 
-                    >> lines [ go_up    stem_length 
-                             , go_right w 
-                             , go_down  stem_length ]
-
 
 singleStem :: LocGraphic AfmUnit
 singleStem = execPathSpec (line $ go_down stem_length)
@@ -244,8 +397,9 @@ singleStem = execPathSpec (line $ go_down stem_length)
 -- 
 singleStemX :: LocGraphic AfmUnit
 singleStemX = emptyLocGraphic
+-}
 
-
+{-
 -- TODO - Flam needs to be contextual on Unit width / font size
 
 flamStem :: LocGraphic AfmUnit
@@ -262,7 +416,9 @@ flamStemX = execPivot flam_path (return ())
               
     -- Note Pivot prbably needs a re-think...
 
+-}
 
+{-
 
 -- | divstem needs the unit width which is a global property.
 --
@@ -311,6 +467,26 @@ swingAngle = execPathSpec ang_path
     ang_path =  moveBy (go_down divstem_beam_ydrop)
              >> lines [go_down_right w, go_down_left w]
 
+-}
+
+-- 
+
+
+-- | Start point is top left - the path is drawn as a pivot.
+--
+--
+-- >  o--------.
+-- >  |        |
+-- >
+-- 
+beamBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
+beamBracket _  n | n < 1 = mempty
+beamBracket uw n         = execPivot pathl pathr
+  where
+    w = uw * fromIntegral n 
+    pathl = lines [ go_up    stem_length ]
+    pathr = lines [ go_right w, go_down stem_length ]
+
 
 --------------------------------------------------------------------------------
 -- OLD 
@@ -330,6 +506,8 @@ startAddrR = flip startAddr
 
 
 {-
+
+-- OLD ...
 
 type NoteGlyph = AdvGraphic AfmUnit
 
@@ -377,6 +555,7 @@ filledRelativePath vs = promoteR1 $ \pt ->
     (locPP vs `at` pt) >>= dcClosedPath FILL
 
 --------------------------------------------------------------------------------
+-- OLD ...
 
 disk_note :: NoteGlyph
 disk_note = noteGlyph note_draw start_move
@@ -401,6 +580,7 @@ histroke_char ch = noteGlyph note_draw start_move
     note_draw  = baselineCharGlyph $ CharLiteral ch
     start_move = dispV histroke_char_baseline 
    
+-- OLD ...
 
 
 -- | Draw a disk at the lostroke position.
@@ -496,6 +676,7 @@ leadin_accent =
                      , vec (-vhw) (negate vhmid)
                      , vec (-vhw) vhmid          ]
 
+-- OLD ...
 
 -- Stems 
 
@@ -544,6 +725,7 @@ swing_stem = stem 0 `oplus` stem flam_xminor `oplus` angle
 --------------------------------------------------------------------------------
 -- bar lines
 
+-- OLD ...
 
 barline :: LocGraphic AfmUnit
 barline = openStrokePath [vvec barline_top]
@@ -590,6 +772,7 @@ repeatDots dx = moveStart (dispH dx) $ hi_dot `oplus` lo_dot
 --------------------------------------------------------------------------------
 -- plets
 
+-- OLD ...
 
 plet_bracket :: Int -> Ratio Int -> AfmUnit -> LocGraphic AfmUnit
 plet_bracket n wr unit_width = 
@@ -628,6 +811,8 @@ centeredTwoThirdsText ss =
 
 --------------------------------------------------------------------------------
 -- beaming
+
+-- OLD ...
 
 beam_line :: Int -> AfmUnit -> LocGraphic AfmUnit
 beam_line n unit_width = 

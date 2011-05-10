@@ -49,6 +49,8 @@ module Wumpus.Rhythm.Djembe.Parameters
   , stem_base
   , stem_length
   , flam_xminor
+  , flam_ynorth
+
   , flam_char_baseline
   , flam_stem_length
   , flam_disk_radius
@@ -180,6 +182,9 @@ stem_length             = stem_top - stem_base
 
 flam_xminor             :: AfmUnit
 flam_xminor             = 354
+
+flam_ynorth             :: AfmUnit
+flam_ynorth             = flam_char_baseline -- TODO
 
 flam_char_baseline      :: AfmUnit
 flam_char_baseline      = 904
