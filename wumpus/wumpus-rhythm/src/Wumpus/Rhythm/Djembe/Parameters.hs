@@ -20,6 +20,9 @@ module Wumpus.Rhythm.Djembe.Parameters
   -- * Cap height
     helvetica_cap_height    
 
+  , unit_width_12_8
+
+
   -- * Synthesized width vectors
   , disk_width_vector
   , period_width_vector
@@ -46,7 +49,6 @@ module Wumpus.Rhythm.Djembe.Parameters
 
   -- * Stems
   , stem_top
-  , stem_base
   , stem_length
   , flam_xminor
   , flam_ynorth
@@ -85,6 +87,12 @@ import Wumpus.Core                              -- package: wumpus-core
 --
 helvetica_cap_height    :: AfmUnit
 helvetica_cap_height    = 718
+
+
+unit_width_12_8         :: AfmUnit
+unit_width_12_8         = 1454
+
+
 
 
 -- | Note - the width is the same width as capital O in Helvetica.
@@ -173,11 +181,9 @@ leadin_mark_height      = 408
 stem_top                :: AfmUnit
 stem_top                = 2272
 
-stem_base               :: AfmUnit
-stem_base               = 818
 
 stem_length             :: AfmUnit
-stem_length             = stem_top - stem_base
+stem_length             = 1454
 
 
 flam_xminor             :: AfmUnit

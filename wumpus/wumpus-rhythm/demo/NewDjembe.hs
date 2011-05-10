@@ -5,6 +5,7 @@ module NewDjembe where
 import Wumpus.Rhythm.Djembe.Draw
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Rhythm.Djembe.HelveticaLoader
+import Wumpus.Rhythm.Djembe.Parameters
 
 import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-drawing
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -47,21 +48,14 @@ pic01 = udrawTracing (0::Double) $ do
                                  , fn $ periodNote
                                  , fn $ angleStrike $ diskNote
                                  ]
-{-
-    drawl (P2 0 200) $ drawBeamGroup 60 $ [ Flam $ parens2 $ diskNote
-                                          , Note $ parens2 $ diskNote
-                                          , Swing $ charNote 'X'
-                                          ]
--}    
+
+    drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $
+                          drawBeamGroup [ Note NoteDisk
+                                        , Note NoteDisk
+                                        , Swing $ NoteChar 'X'
+                                        , Div NoteDisk NoteDisk
+                                        , Note NoteNone
+                                        ]
+
   where
     fn = runPosNoteHead 0
-
-{-
-pic02 :: CtxPicture
-pic02 = udrawTracing (0::Double) $ 
-    localize (snap_grid_factors 20 20 . fill_use_stroke_colour) $ do 
-      draw $ localize (stroke_colour red) $ locStraightLine (hvec 200) `at` zeroPt
-      drawl zeroPt   $ beamgroup [tone, tone, bassB, period]
-
-   
--}

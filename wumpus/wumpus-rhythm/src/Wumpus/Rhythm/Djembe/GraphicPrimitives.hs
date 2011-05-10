@@ -65,6 +65,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Control.Applicative
 import Data.Monoid
@@ -287,16 +288,19 @@ data StemPos = LEFT_EXT | STEM_INNER | RIGHT_EXT
 --
 type Stem = StemPos -> (AfmUnit -> LocGraphic AfmUnit)
 
-single_stem_path :: PathSpec AfmUnit ()
-single_stem_path = line $ go_down stem_length
+single_stem_down :: PathSpec AfmUnit ()
+single_stem_down = line $ go_down stem_length
 
+
+single_stem_up :: PathSpec AfmUnit ()
+single_stem_up = line $ go_up stem_length
 
 -- | Draw either a single stem (inner) or nothing for the 
 -- extremities.
 --
 plainStem :: Stem
 plainStem LEFT_EXT      = const mempty
-plainStem STEM_INNER    = const $ execPathSpec single_stem_path
+plainStem STEM_INNER    = const $ execPathSpec single_stem_down
 plainStem RIGHT_EXT     = const mempty
 
 
@@ -310,7 +314,7 @@ flam_stem_left = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
 --
 flamStem :: Stem
 flamStem LEFT_EXT      = const $ execPathSpec flam_stem_left
-flamStem STEM_INNER    = const $ execPivot flam_stem_left single_stem_path
+flamStem STEM_INNER    = const $ execPivot flam_stem_left single_stem_down
 flamStem RIGHT_EXT     = const $ execPathSpec flam_stem_left
 
 
@@ -328,20 +332,22 @@ data RightExt = LINE | MOVE
 -- >    |
 --
 div_stem_right :: RightExt -> AfmUnit -> PathSpec AfmUnit ()
-div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_path 
+div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
   where
     hw          = 0.5 * uw
     step1 MOVE  = moveBy (go_right hw)
     step1 LINE  = line   (go_right hw) 
 
-    crossbar    = moveStart (dispV divstem_beam_ydrop) (horizontalLine (-hw))
+    crossbar    = moveStart (dispVec startvec) (horizontalLine (-hw))
+    startvec    = go_down divstem_beam_ydrop
+
 
 horizontalLine :: InterpretUnit u => u -> LocGraphic u
 horizontalLine = locStraightLine . hvec
 
 divStem :: Stem 
 divStem LEFT_EXT   uw = execPathSpec $ div_stem_right MOVE uw
-divStem STEM_INNER uw = execPivot single_stem_path (div_stem_right MOVE uw)
+divStem STEM_INNER uw = execPivot single_stem_up (div_stem_right MOVE uw)
 divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
 
 
@@ -357,7 +363,7 @@ divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
 -- >    |
 --
 swing_stem_right :: RightExt -> PathSpec AfmUnit ()
-swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_path 
+swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_down
   where
     step1 MOVE  = moveBy (go_right flam_xminor)
     step1 LINE  = line   (go_right flam_xminor) 
@@ -366,8 +372,9 @@ swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_path
 swingAngle :: LocGraphic AfmUnit
 swingAngle = execPathSpec ang_path
   where
-    w        = 0.9 * flam_xminor 
-    ang_path =  moveBy (go_down divstem_beam_ydrop)
+    w        = 0.8 * flam_xminor 
+    w1       = 0.9 * flam_xminor
+    ang_path =  moveBy (go_left w1 ^+^ go_down divstem_beam_ydrop)
              >> lines [go_down_right w, go_down_left w]
 
 
@@ -375,99 +382,11 @@ swingAngle = execPathSpec ang_path
 
 swingStem :: Stem
 swingStem LEFT_EXT   = const $ execPathSpec $ swing_stem_right MOVE
-swingStem STEM_INNER = const $ execPivot single_stem_path (swing_stem_right MOVE)
+swingStem STEM_INNER = const $ execPivot single_stem_up (swing_stem_right MOVE)
 swingStem RIGHT_EXT  = const $ execPathSpec $ swing_stem_right LINE
 
 
 
-{-
---
--- Stems are drawn from top 
--- 
--- Using paths doesn\'t seem to work because we aren\'t working 
--- from a useful start point. Flams go both ways from the start.
---
-
-singleStem :: LocGraphic AfmUnit
-singleStem = execPathSpec (line $ go_down stem_length)
-
-
--- | Extremity stem - draw if the stem is first or last in a beam
--- group. 
--- 
-singleStemX :: LocGraphic AfmUnit
-singleStemX = emptyLocGraphic
--}
-
-{-
--- TODO - Flam needs to be contextual on Unit width / font size
-
-flamStem :: LocGraphic AfmUnit
-flamStem = execPivot flaml flamr
-  where
-    flaml = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
-    flamr = lines [ go_down stem_length ]
-
-
-flamStemX :: LocGraphic AfmUnit
-flamStemX = execPivot flam_path (return ())
-  where
-    flam_path =  lines [go_up flam_stem_length, go_up_right flam_xminor ]
-              
-    -- Note Pivot prbably needs a re-think...
-
--}
-
-{-
-
--- | divstem needs the unit width which is a global property.
---
--- divstem is a \'H\' with the horizontal bar near the top.
---
-divStem :: AfmUnit -> LocGraphic AfmUnit
-divStem uw = singleStem `oplus` divStemLX uw
-
-
-divStemRX :: AfmUnit -> LocGraphic AfmUnit
-divStemRX uw = divStemLX uw `oplus` hbar
-  where
-    hw   = 0.5 * uw
-    hbar = locStraightLine $ hvec hw
-
-
-divStemLX :: AfmUnit -> LocGraphic AfmUnit
-divStemLX uw = moveStart (dispH hw) singleStem `oplus` hbar
-  where
-    hw   = 0.5 * uw
-    hbar = execPathSpec $ moveBy (go_down divstem_beam_ydrop) >> line (go_right hw)
-
-
-
-
-swingStem :: LocGraphic AfmUnit
-swingStem = singleStem `oplus` swingStemLX
-
-swingStemRX :: LocGraphic AfmUnit
-swingStemRX = execPathSpec topbar_and_stem `oplus` swingAngle
-  where
-    topbar_and_stem =  lines [go_right flam_xminor, go_down stem_length]
-
-
-
-
-
-swingStemLX :: LocGraphic AfmUnit
-swingStemLX = moveStart (dispH flam_xminor) singleStem `oplus` swingAngle
-
-
-swingAngle :: LocGraphic AfmUnit
-swingAngle = execPathSpec ang_path
-  where
-    w        = 0.9 * flam_xminor 
-    ang_path =  moveBy (go_down divstem_beam_ydrop)
-             >> lines [go_down_right w, go_down_left w]
-
--}
 
 -- 
 
@@ -488,16 +407,6 @@ beamBracket uw n         = execPivot pathl pathr
     pathr = lines [ go_right w, go_down stem_length ]
 
 
---------------------------------------------------------------------------------
--- OLD 
-
--- For clarity Wumpus-Basic needs flipped versions of the 
--- @startPos@, @atRot@, etc. operators. However they need some
--- system for naming that I haven\'t yet worked out.
---
-startAddrR :: Floating u 
-          => RectAddress -> BoundedLocRectGraphic u -> BoundedLocGraphic u
-startAddrR = flip startAddr
 
 
 
