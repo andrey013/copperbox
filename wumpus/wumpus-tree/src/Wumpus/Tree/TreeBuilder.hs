@@ -36,9 +36,7 @@ module Wumpus.Tree.TreeBuilder
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 
--- TEMP - probably due to go into Wumpus-Basic
-import Wumpus.Tree.TraceGraphic 
-
+import Wumpus.Drawing.Basis.TraceGraphic        -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Basic.Utils.HList
@@ -49,6 +47,9 @@ import Control.Applicative
 import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Tree
+
+-- TODO - are you sure this needs to build a Graphic rather than 
+-- a LocGraphic?
 
 
 data TbNode u a = RefNode Int (LocImage u a)
@@ -167,7 +168,7 @@ makeCoordRefTree props (P2 x y) tree =
     scaleTree sx sy (design tree) >>= \ans -> return $ moveTree $ orient ans
   where
     orient   = orientateTree (tp_direction props)
-    moveTree = fmap (bimapL (displaceVec $ V2 x y))
+    moveTree = fmap (bimapL (dispVec $ V2 x y))
     sx       = tp_sibling_distance props
     sy       = tp_level_distance props
 

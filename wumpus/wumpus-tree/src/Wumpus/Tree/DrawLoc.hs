@@ -117,6 +117,6 @@ runDesign props tree =
     designOrientateScale props tree >>= \tree2 -> 
     return $ fmap fn tree2
   where
-    fn ((P2 x y), gf) = moveStart (displaceVec (V2 x y)) gf
+    fn ((P2 x y), gf) = moveStart (dispVec (V2 x y)) gf
 
 

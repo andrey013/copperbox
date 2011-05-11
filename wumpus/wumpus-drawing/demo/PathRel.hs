@@ -62,7 +62,7 @@ path_spec1 =
     >> pen_colour blue
     >> line     (V2 50 0)
     >> line     (V2 0 (-40))
-           
+    >> cycleSubPath FILL_STROKE           
   where
     disk1 = dcDisk STROKE 10
 
