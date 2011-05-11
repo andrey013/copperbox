@@ -33,8 +33,8 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
   , noNote
 
   -- * Decorations
-  , parens2
-  , underscore2
+  , parens
+  , underscore
   , angleStrike
 
 
@@ -55,8 +55,10 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
 
 import Wumpus.Rhythm.Djembe.Parameters
 
+-- package: wumpus-drawing
+import qualified Wumpus.Drawing.Basis.DrawingPrimitives as WD
 import Wumpus.Drawing.Paths.Relative
-import Wumpus.Drawing.Text.DirectionZero        -- package: wumpus-drawing
+import Wumpus.Drawing.Text.DirectionZero        
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -64,7 +66,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Data.AffineSpace                         -- package: vector-space
+-- import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
 import Control.Applicative
@@ -137,7 +139,13 @@ stdPosNoteHead blc_to_c gf =
 
 makeFlamGraphic :: NoteHeadDesc -> LocGraphic AfmUnit
 makeFlamGraphic desc = 
+    moveStart (dispV $ negate $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
+
+{-
+makeHighStroke :: NoteHeadDesc -> LocGraphic AfmUnit
+makeHighStroke desc = 
     moveStart (dispH $ negate $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
+-}
 
 
 -- | Drawn at baseline center.
@@ -231,8 +239,8 @@ noNote = nhd_note_head noNoteDesc
 --
 -- Also this is probably an elaborate...
 --
-parens2 :: PosNoteHead -> PosNoteHead
-parens2 obj = hcat [ lparen, obj, rparen ]
+parens :: PosNoteHead -> PosNoteHead
+parens obj = hcat [ lparen, obj, rparen ]
   where
     lparen = posEscChar $ CharEscName "parenleft"
     rparen = posEscChar $ CharEscName "parenright"
@@ -240,13 +248,13 @@ parens2 obj = hcat [ lparen, obj, rparen ]
     
 
 
-underscore2 :: PosNoteHead -> PosNoteHead
-underscore2 = elaboratePO body
+underscore :: PosNoteHead -> PosNoteHead
+underscore = elaboratePO body
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
                  in  moveStart (dispV strike_baseline) 
-                               (pivotLine xmin xmaj 0)
+                               (WD.pivotLine xmin xmaj 0)
 
 
 
@@ -261,10 +269,6 @@ angleStrike = elaboratePO body
                              >> aline ang dist
 
 
-
-pivotLine :: (Floating u, InterpretUnit u) => u -> u -> Radian -> LocGraphic u
-pivotLine lu ru ang = promoteR1 $ \pt -> 
-    straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
 
 
 
@@ -313,9 +317,9 @@ flam_stem_left = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
 -- stem for the inners.
 --
 flamStem :: Stem
-flamStem LEFT_EXT      = const $ execPathSpec flam_stem_left
+flamStem LEFT_EXT      = const $ execPivot flam_stem_left (return ())
 flamStem STEM_INNER    = const $ execPivot flam_stem_left single_stem_down
-flamStem RIGHT_EXT     = const $ execPathSpec flam_stem_left
+flamStem RIGHT_EXT     = const $ execPivot flam_stem_left (return ())
 
 
 data RightExt = LINE | MOVE

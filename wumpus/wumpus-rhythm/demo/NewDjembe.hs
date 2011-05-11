@@ -15,13 +15,6 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import System.Directory
 
-import Data.Ratio -- temp
-
-dummy :: Rational -> Int -> Int
-dummy r sz = ceiling $ (dsz * fromRational r)
-  where
-    dsz :: Double
-    dsz = fromIntegral sz
 
 main :: IO ()
 main = do 
@@ -35,27 +28,40 @@ main = do
                         }
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = join_bevel . fill_colour black . set_font helvetica . metricsContext 36
+makeCtx = fill_colour black . set_font helvetica . metricsContext 18
 
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
-    drawl (P2 0 0) $ distribH 50 [ fn $ underscore2 $ charNote 'X'
-                                 , fn $ parens2 $ charNote 'P'
-                                 , fn $ parens2 $ diskNote
-                                 , fn $ parens2 $ noNote
+    drawl (P2 0 0) $ distribH 50 [ fn $ underscore $ charNote 'X'
+                                 , fn $ parens $ charNote 'P'
+                                 , fn $ parens $ diskNote
+                                 , fn $ parens $ noNote
                                  , fn $ charNote 'g'
                                  , fn $ periodNote
                                  , fn $ angleStrike $ diskNote
                                  ]
 
     drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $
-                          drawBeamGroup [ Note NoteDisk
-                                        , Note NoteDisk
-                                        , Swing $ NoteChar 'X'
-                                        , Div NoteDisk NoteDisk
-                                        , Note NoteNone
+                          drawBeamGroup [ Note $ strike disk
+                                        , Note $ muffled disk
+                                        , Swing $ optional (NoteChar 'X', zeroDeco)
+                                        , Div disk disk
+                                        , Note (NoteNone, zeroDeco)
+                                        , Flam disk FlamDisk
                                         ]
-
+     
+    drawl (P2 0 300) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
   where
     fn = runPosNoteHead 0
+    disk = (NoteDisk, zeroDeco)
+
+simple1 :: [[Note]]
+simple1 = [a,b,b,c]
+  where
+    a = [ Flam disk FlamDisk, Note disk, Note disk ]
+    b = [ Note disk, Note disk, Note period ]
+    c = [ Note disk, Note period, Note period ]
+      
+    disk = (NoteDisk, zeroDeco)
+    period = (NotePeriod, zeroDeco)

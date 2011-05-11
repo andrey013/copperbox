@@ -35,6 +35,8 @@ import Data.Monoid
 --------------------------------------------------------------------------------
 
 
+-- Syntax
+
 data FlamHead = FlamChar Char
               | FlamDisk
               | FlamNone
@@ -46,16 +48,60 @@ data NoteHead = NoteChar Char
               | NoteNone
 
 
-data Note = Note   NoteHead
-          | Flam   NoteHead   FlamHead 
-          | Swing  NoteHead
-          | Div    NoteHead   NoteHead
+-- | Noteheads get decorated with pressed (diag strike), optional 
+-- (parens) and muffled (underscore).
+--
+-- Noteheads can also have hand hits (tone disk up the stem) and 
+-- more.
+-- 
+-- 
+data NoteHeadDeco = NoteHeadDeco 
+      { deco_pos_object  :: PosObject AfmUnit -> PosObject AfmUnit 
+      , deco_loc_graphic :: LocGraphic AfmUnit
+      }
+
+type DNoteHead = (NoteHead, NoteHeadDeco)
+
+
+data Note = Note   DNoteHead
+          | Flam   DNoteHead   FlamHead 
+          | Swing  DNoteHead
+          | Div    DNoteHead   DNoteHead
+
+
+
+zeroDeco :: NoteHeadDeco
+zeroDeco = NoteHeadDeco 
+      { deco_pos_object  = id 
+      , deco_loc_graphic = mempty
+      }
+
+decoNoteL :: (PosObject AfmUnit -> PosObject AfmUnit) -> DNoteHead -> DNoteHead
+decoNoteL fn (nh,deco) = let f0 = deco_pos_object deco
+                         in (nh, deco { deco_pos_object = fn . f0 } )
+
+decoNoteR :: LocGraphic AfmUnit -> DNoteHead -> DNoteHead
+decoNoteR gf (nh,deco) = let g0 = deco_loc_graphic deco
+                         in (nh, deco { deco_loc_graphic = g0 `mappend` gf } )
+
+optional :: DNoteHead -> DNoteHead
+optional = decoNoteL parens
+
+muffled  :: DNoteHead -> DNoteHead
+muffled  = decoNoteL underscore
+
+strike   :: DNoteHead -> DNoteHead
+strike   = decoNoteL angleStrike
+
+
+
 
 
 -- Design note - Hi and Lo notes now seem to look like a 
 -- decoration, in that a note can also have a hi or lo note.
 
-
+drawBeamGroups :: [[Note]] -> DjembeDraw ()
+drawBeamGroups = mapM_ drawBeamGroup
 
 
 drawBeamGroup :: [Note] -> DjembeDraw ()
@@ -84,27 +130,29 @@ stem1 pos note = askUnitWidth >>= \uw -> insertStemTop (body note uw)
 note1 :: Note -> DjembeDraw ()
 note1 note = askUnitWidth >>= \uw -> insertBaselineCenter (body note uw)
   where
-    body (Note a)   _        = runPosNoteHead 0 $ noteHeadPos a
+    body (Note a)   _        = runPosNoteHead 0 $ dnoteHeadPos a
 
     body (Flam a b) _        = ga `mappend` gb
       where
-        ga    = runPosNoteHead 0 $ noteHeadPos a
+        ga    = runPosNoteHead 0 $ dnoteHeadPos a
         gb    = moveStart (dispVec flamv) (flamHead b)
         flamv = go_left flam_xminor ^+^ go_up flam_ynorth
 
-    body (Swing a)  _       = runPosNoteHead flam_xminor $ noteHeadPos a
+    body (Swing a)  _       = runPosNoteHead flam_xminor $ dnoteHeadPos a
 
     body (Div a b)  uw      = ga `mappend` gb
       where
-        ga    = runPosNoteHead       0  $ noteHeadPos a
-        gb    = runPosNoteHead (0.5*uw) $ noteHeadPos b
+        ga    = runPosNoteHead       0  $ dnoteHeadPos a
+        gb    = runPosNoteHead (0.5*uw) $ dnoteHeadPos b
 
 
-noteHeadPos :: NoteHead -> PosNoteHead
-noteHeadPos (NoteChar ch)   = charNote ch
-noteHeadPos NoteDisk        = diskNote
-noteHeadPos NotePeriod      = periodNote
-noteHeadPos NoteNone        = noNote
+dnoteHeadPos :: DNoteHead -> PosNoteHead
+dnoteHeadPos (nh, d) = let upd = deco_pos_object d in upd $ step nh
+  where
+    step (NoteChar ch) = charNote ch
+    step NoteDisk      = diskNote
+    step NotePeriod    = periodNote
+    step NoteNone      = noNote
 
 
 flamHead :: FlamHead -> LocGraphic AfmUnit
@@ -163,14 +211,10 @@ runDjembeDraw uw mf = post $ runLocTrace $ getDjembeDraw mf uw
                       uconvLocImageF gf
     
     fn sz         = let s1 = (fromIntegral sz) / (10.0::Double)
-                    in 0.5 * (fromIntegral $ ceiling s1)
+                        i1 = ceiling s1 `asTypeOf` (1::Integer)
+                    in 0.5 * (fromIntegral $ i1)
 
 
--- For wumpus-basic...
---
-relative_line_width :: (FontSize -> Double) -> DrawingContextF
-relative_line_width fn = 
-    withFontSize $ \sz s -> set_line_width (fn sz) s
 
 
 withFontSize :: (FontSize -> DrawingContextF) -> DrawingContextF

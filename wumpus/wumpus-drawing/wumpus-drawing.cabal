@@ -84,6 +84,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Drawing.Basis.DrawingPrimitives,
     Wumpus.Drawing.Basis.TraceGraphic,
     Wumpus.Drawing.Basis.TraceLocGraphic,
     Wumpus.Drawing.Colour.SVGColours,

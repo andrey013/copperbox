@@ -24,30 +24,32 @@
 module Wumpus.Basic.Kernel.Base.UpdateDC
   ( 
 
-  -- * Modifiers       
+  -- * Globals
     snap_grid_factors
 
-  -- ** Line widths
+  -- * Line widths
   , set_line_width
 
   , line_default
   , line_thin
   , line_thick
   , line_ultra_thick
+  
+  , relative_line_width
 
-  -- ** Line caps
+  -- * Line cap
   , cap_default
   , cap_butt
   , cap_round
   , cap_square
 
-  -- ** Line joins
+  -- * Line join
   , join_default
   , join_miter
   , join_round
   , join_bevel
 
-  -- ** Dash Pattern
+  -- * Dash pattern
   , set_dash_pattern
 
   , solid_line
@@ -63,14 +65,13 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , font_attr
   , set_font
   , set_font_size
-
-
-  -- * Font / mark drawing size
   , scale_point_size
 
   , double_point_size
   , half_point_size
 
+
+  -- * Text margins
   , text_margin
   , text_margin_none
   , text_margin_tight
@@ -187,6 +188,15 @@ line_ultra_thick    :: DrawingContextF
 line_ultra_thick    = set_line_width 4.0
 
 
+
+-- | Set the line width to a size relative to the current font 
+-- size. The size is calculated with the supplied function.
+--
+relative_line_width :: (FontSize -> Double) -> DrawingContextF
+relative_line_width fn = 
+    withFontSize $ \sz s -> set_line_width (fn sz) s
+
+
 --
 -- All options share the prefix so the enumeration is obvious...
 --
@@ -211,9 +221,13 @@ cap_default         = cap_butt
 
 -- | Set the line_cap to @butt@.
 --
--- Butt squares of the stroke at the end point.
+-- Butt chamfers off the stroke, flush to the end point.
 --
 -- This is the default.
+--
+-- >  .-------.
+-- >  |=======|
+-- >  '-------'
 --
 cap_butt            :: DrawingContextF
 cap_butt            = setLineCap CapButt
@@ -223,14 +237,22 @@ cap_butt            = setLineCap CapButt
 -- This rounds the end of the stroke and the visually the 
 -- rounding slightly extends the length of the line.
 --
+-- >  .-------.
+-- > ( ======= )
+-- >  '-------'
+--
 cap_round           :: DrawingContextF
 cap_round           = setLineCap CapRound
 
 
 -- | Set the line_cap to @square@.
 --
--- This squares off the end of the stroke, visually extending 
--- the stroke by half the line width.
+-- This squares off the end of the stroke, but visual extends the 
+-- stroke by half the line width.
+--
+-- >  .---------.
+-- >  | ======= |
+-- >  '---------'
 --
 cap_square          :: DrawingContextF
 cap_square          = setLineCap CapSquare
@@ -251,6 +273,12 @@ join_default        = join_miter
 --
 -- This is the default.
 --
+-- >      /\
+-- >     /..\ 
+-- >    /./\.\
+-- >   /./  \.\
+-- >  /./    \.\
+--
 join_miter          :: DrawingContextF
 join_miter          = setLineJoin JoinMiter
 
@@ -259,6 +287,12 @@ join_miter          = setLineJoin JoinMiter
 --
 -- This rounds off the corner of the joined line segments.
 --
+-- >  \.\  
+-- >   \.\ 
+-- >    ,.)
+-- >   /./
+-- >  /./
+
 join_round          :: DrawingContextF
 join_round          = setLineJoin JoinRound
 
@@ -267,6 +301,12 @@ join_round          = setLineJoin JoinRound
 --
 -- This bevels off the corner of the joined line segments with a 
 -- notch.
+--
+-- >      __
+-- >     /..\ 
+-- >    /./\.\
+-- >   /./  \.\
+-- >  /./    \.\
 --
 join_bevel          :: DrawingContextF
 join_bevel          = setLineJoin JoinBevel
@@ -403,7 +443,7 @@ half_point_size     = scale_point_size 0.5
 
 -- | 'text_margin' : @ x_sep * y_sep -> DrawingContextF @
 --
--- NOTE - ideally this would use Em or En rather thn Double...
+-- Note - this is in @Em@ units.
 --
 text_margin   :: Em -> Em -> DrawingContextF
 text_margin xsep ysep = \s -> 
