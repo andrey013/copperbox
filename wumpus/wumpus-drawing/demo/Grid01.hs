@@ -37,6 +37,6 @@ makeCtx = set_font helvetica . metricsContext 18
 
 grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
-    draw $ grid (grid_major_colour red) ((-1),(-1)) (3,2)
+    drawl zeroPt $ grid (grid_major_colour red) 4 3
     draw $ orthontAxes (3,2)
     return ()

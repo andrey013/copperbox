@@ -29,10 +29,13 @@ module Wumpus.Drawing.Basis.RefTrace
     LocTraceM(..)
 
   , RefTrace
+  , RefTraceT
+
   , Ref
   , RefTraceM(..)
 
   , runRefTrace
+  , runRefTraceT
 
   , unaryLink
   , binaryLink
@@ -59,10 +62,18 @@ import Data.Monoid
 
 
 
-newtype RefTrace u z a = RefTrace { getRefTrace :: RefSt u z -> (a, RefSt u z) }
+newtype RefTrace u z a = RefTrace { 
+          getRefTrace :: RefSt u z -> (a, RefSt u z) }
 
 
 type instance MonUnit (RefTrace u z a) = u
+
+newtype RefTraceT u z m a = RefTraceT { 
+          getRefTraceT :: RefSt u z -> m (a, RefSt u z) }
+
+
+type instance MonUnit (RefTraceT u z m a) = u
+
 
 newtype Ref = Ref { getRefUid :: Int }
 
@@ -121,6 +132,9 @@ zeroRefSt = RefSt { uid_count   = 0
 instance Functor (RefTrace u z) where
   fmap f ma = RefTrace $ \s0 -> let (a,s1) = getRefTrace ma s0 in (f a, s1)
 
+instance Monad m => Functor (RefTraceT u z m) where
+  fmap f ma = RefTraceT $ \s0 -> getRefTraceT ma s0 >>= \(a,s1) ->
+                                 return (f a, s1)
 
 
 
@@ -134,26 +148,60 @@ instance Applicative (RefTrace u z) where
                 in (f a, s2)
 
 
+
+instance Monad m => Applicative (RefTraceT u z m) where
+  pure a    = RefTraceT $ \s0 -> return (a, s0)
+  mf <*> ma = RefTraceT $ \s0 -> getRefTraceT mf s0 >>= \(f,s1) -> 
+                                 getRefTraceT ma s1 >>= \(a,s2) ->
+                                 return (f a, s2)
+
+
+
 -- Monad
 
 instance Monad (RefTrace u z) where
   return a  = RefTrace $ \s0 -> (a, s0)
   ma >>= k  = RefTrace $ \s0 -> 
                 let (a,s1) = getRefTrace ma s0
-                    (b,s2) = (getRefTrace . k) a s1
-                in (b, s2)
+                in (getRefTrace . k) a s1
 
+
+instance Monad m => Monad (RefTraceT u z m) where
+  return a  = RefTraceT $ \s0 -> return (a, s0)
+  ma >>= k  = RefTraceT $ \s0 -> getRefTraceT ma s0 >>= \(a,s1) ->
+                                 (getRefTraceT . k) a s1
+                
+
+
+
+-- LocTraceM
 
 instance Num u => LocTraceM (RefTrace u z) where
   insertl gf  = RefTrace $ \s0 -> ((), insertSt gf s0)
   moveBy v    = RefTrace $ \s0 -> ((), moveSt v s0)
   location    = RefTrace $ \s0 -> (current_tip s0, s0)
 
--- TODO - add the elaborations ...
+
+instance (Monad m, Num u) => LocTraceM (RefTraceT u z m) where
+  insertl gf  = RefTraceT $ \s0 -> return ((), insertSt gf s0)
+  moveBy v    = RefTraceT $ \s0 -> return ((), moveSt v s0)
+  location    = RefTraceT $ \s0 -> return (current_tip s0, s0)
+
+
+
+-- Run functions
+
 runRefTrace :: Num u => RefTrace u ans a -> LocImage u a
 runRefTrace mf = post $ getRefTrace mf zeroRefSt
   where
     post (a,st) = pushR1 (replaceAns a) $ reconcileRefSt st
+
+
+runRefTraceT :: (Monad m, Num u) => RefTraceT u ans m a -> m (LocImage u a)
+runRefTraceT mf = liftM post $ getRefTraceT mf zeroRefSt
+  where
+    post (a,st) = pushR1 (replaceAns a) $ reconcileRefSt st
+
 
 
 -- Note we have to drop the vector

@@ -33,11 +33,14 @@ module Wumpus.Drawing.Extras.Grids
   ) where
 
 
+import Wumpus.Drawing.Basis.DrawingPrimitives
+import Wumpus.Drawing.Basis.LocTrace
+
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
-
+import Data.Monoid
 
 
 type GridContextF = GridProps -> GridProps
@@ -74,17 +77,11 @@ default_grid_props =
 
 
 
-grid :: (Fractional u, InterpretUnit u) 
-     => GridContextF -> (Int,Int) -> (Int,Int) -> Graphic u  
-grid upd bl tr = go (upd default_grid_props)
-  where
-    go props | gp_minor_subdivs props < 1 = gridMajor bl tr props
-             | otherwise = gridMinor bl tr props `oplus` gridMajor bl tr props
-
-
 
 standard_grid :: GridContextF
 standard_grid = id
+
+-- Setters for client code.
 
 grid_major_colour :: RGBi -> GridContextF
 grid_major_colour rgb = (\s -> s { gp_major_colour = rgb })
@@ -117,28 +114,20 @@ grid_label_colour rgb = (\s -> s { gp_label_colour = rgb })
 
 
 
---------------------------------------------------------------------------------
 
+-- Drawing context updaters...
 
+major_line_update :: GridProps -> DrawingContextF
+major_line_update (GridProps { gp_major_colour  = rgb
+                             , gp_major_lnwidth = lnwidth
+                             , gp_major_dotnum  = dotnum }) = 
+    lineProps rgb lnwidth dotnum 
 
-gridMinor :: (Fractional u, InterpretUnit u) 
-          => (Int,Int) -> (Int,Int) -> GridProps -> Graphic u
-gridMinor bl tr props = 
-    let mi    = minorInterior bl tr (gp_minor_subdivs props)
-        minF  = lineProps (gp_minor_colour props) (gp_minor_lnwidth props)
-                          (gp_minor_dotnum props)
-    in localize minF mi
-
-gridMajor :: (Fractional u, InterpretUnit u) 
-          => (Int,Int) -> (Int,Int) -> GridProps -> Graphic u
-gridMajor bl tr props = 
-    let mj    = majorInterior bl tr
-        outer = outerRect bl tr
-        majF  = lineProps (gp_major_colour props) (gp_major_lnwidth props)
-                          (gp_major_dotnum props)        
-    in localize majF (mj `oplus` outer)
-
-
+minor_line_update :: GridProps -> DrawingContextF
+minor_line_update (GridProps { gp_minor_colour  = rgb
+                             , gp_minor_lnwidth = lnwidth
+                             , gp_minor_dotnum  = dotnum }) = 
+    lineProps rgb lnwidth dotnum 
 
 
 lineProps :: RGBi -> Double -> Int -> DrawingContextF
@@ -149,81 +138,67 @@ lineProps rgb lw n
     dashesF = set_dash_pattern $ Dash 0 [(1,n)]
 
 
--- | Coordinates are expected to be normalized.
---
-outerRect :: (Fractional u, InterpretUnit u) 
-          => (Int,Int) -> (Int,Int) -> Graphic u  
-outerRect cbl@(xmin,ymin) (xmaj,ymaj) = 
-    snapmove (xmaj-xmin, ymaj-ymin) >>= \(V2 uw uh) ->
-    position cbl                    >>= \bl ->
-    dcRectangle STROKE uw uh `at` bl
+
+--------------------------------------------------------------------------------
 
 
+grid :: (Fractional u, InterpretUnit u) 
+     => GridContextF -> Int -> Int -> LocGraphic u  
+grid upd nx ny = 
+    snapmove (1,1) >>= \(V2 uw uh) ->
+    let props  = upd default_grid_props
+        width  = uw * fromIntegral nx
+        height = uh * fromIntegral ny
+        intrr = gridInterior nx width uw ny height uh props
+        rect   = localize (major_line_update props) $ 
+                   blRectangle STROKE width height
+    in intrr `mappend` rect
 
--- | The major interior is the snap grid. 
---
-majorInterior :: (Fractional u, InterpretUnit u)
-              => (Int,Int) -> (Int,Int) -> Graphic u
-majorInterior cbl@(xmin,ymin) (xmaj,ymaj) = 
-    snapmove (xmaj-xmin, ymaj-ymin) >>= \(V2 uw uh) ->
-    snapmove (1,1)                  >>= \(V2 w1 h1) ->
-    position cbl                    >>= \bl ->
-    let xcount = sub1 (xmaj - xmin)
-        ycount = sub1 (ymaj - ymin)
-        hlines = chainlike ycount (dispV h1) (hline uw)
-        vlines = chainlike xcount (dispH w1) (vline uh)
-    in         (apply1R1 hlines $ dispV h1 bl)  
-       `oplus` (apply1R1 vlines $ dispH w1 bl) 
+                 
 
-
-
-
--- | The minor interior divides each element of the snap grid.
---
-minorInterior :: (Fractional u, InterpretUnit u)
-              => (Int,Int) -> (Int,Int) -> Int -> Graphic u
-minorInterior cbl@(xmin,ymin) (xmaj,ymaj) scount = 
-    snapmove (xmaj-xmin, ymaj-ymin) >>= \(V2 uw uh) ->
-    snapmove (1,1)                  >>= \(V2 w1 h1) ->
-    position cbl                    >>= \bl ->
-    let xcount = xmaj - xmin
-        ycount = ymaj - ymin
-        subw1    = w1 / fromIntegral scount
-        subh1    = h1 / fromIntegral scount
-        hlines1 = moveStart (dispV subh1) 
-                    $ chainlike (scount-1) (dispV subh1) (hline uw)
-
-        vlines1 = moveStart (dispH subw1) 
-                    $ chainlike (scount-1) (dispH subw1) (vline uh)
-        hlines  = chainlike ycount (dispV h1) hlines1
-        vlines  = chainlike xcount (dispH w1) vlines1
-
-    in         (apply1R1 hlines bl)  
-       `oplus` (apply1R1 vlines bl) 
-
--- This doesn\'t work as an advGraphic
-
-
--- | This is an operation chain should support, but chain needs a 
--- rethink...
---
-chainlike :: Int -> PointDisplace u -> LocGraphic u -> LocGraphic u
-chainlike i mv g = promoteR1 $ \start -> go (i-1) (g `at` start) (mv start)
+gridInterior :: (Fractional u, InterpretUnit u) 
+             => Int -> u -> u -> Int -> u -> u -> GridProps -> LocGraphic u
+gridInterior nx w uw ny h uh props = hlines `mappend` vlines
   where
-    go n acc pt | n < 1     = acc
-                | otherwise = go (n-1) (acc `oplus` (g `at` pt)) (mv pt)
-    
+    hlines = horizontalLines ny w uh props
+    vlines = verticalLines   nx h uw props
 
 
-vline :: InterpretUnit u => u -> LocGraphic u 
-vline len = locStraightLine $ vvec len
+horizontalLines :: (Fractional u, InterpretUnit u) 
+                => Int -> u -> u -> GridProps -> LocGraphic u
+horizontalLines numh w uh props = 
+    moveStart (dispV minu) $ minorMajor tot subs (vvec minu) mnr mjr 
+  where
+    subs = gp_minor_subdivs props
+    minu = uh / (fromIntegral subs)
+    tot  = (numh * subs) - 1
+    mnr  = localize (minor_line_update props) $ hline w
+    mjr  = localize (major_line_update props) $ hline w
 
-hline :: InterpretUnit u => u -> LocGraphic u 
-hline len = locStraightLine $ hvec len
+
+
+verticalLines :: (Fractional u, InterpretUnit u) 
+              => Int -> u -> u -> GridProps -> LocGraphic u
+verticalLines numv h uw props = 
+    moveStart (dispH minu) $ minorMajor tot subs (hvec minu) mnr mjr 
+  where
+    subs = gp_minor_subdivs props
+    minu = uw / (fromIntegral subs)
+    tot  = (numv * subs) - 1
+    mnr  = localize (minor_line_update props) $ vline h
+    mjr  = localize (major_line_update props) $ vline h
 
 
 
-sub1 :: Num u => u -> u
-sub1 = subtract 1
+
+minorMajor :: Num u 
+           => Int -> Int -> Vec2 u -> LocGraphic u -> LocGraphic u 
+           -> LocGraphic u
+minorMajor count alt mv mnr mjr = execLocTrace (step count)
+  where
+    step n | n <= 0           = return ()
+           | n `mod` alt == 0 = insertl mjr >> moveBy mv >> step (n-1)
+           | otherwise        = insertl mnr >> moveBy mv >> step (n-1)
+ 
 
 
