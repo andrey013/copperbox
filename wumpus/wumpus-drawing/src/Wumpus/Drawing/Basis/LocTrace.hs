@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Basis.TraceLocGraphic
+-- Module      :  Wumpus.Drawing.Basis.LocTrace
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -12,11 +12,12 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Writer monad with imperative /turtle/ style movement to build LocGraphics.
+-- Writer monad with imperative /turtle/ style movement to build 
+-- LocGraphics.
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Basis.TraceLocGraphic
+module Wumpus.Drawing.Basis.LocTrace
   (
 
   -- * LocTrace monads

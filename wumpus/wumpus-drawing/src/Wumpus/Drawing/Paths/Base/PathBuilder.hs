@@ -58,7 +58,7 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
  
   ) where
 
-import Wumpus.Drawing.Basis.TraceLocGraphic
+import Wumpus.Drawing.Basis.LocTrace
 import Wumpus.Drawing.Paths.Base.RelPath
 -- import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
