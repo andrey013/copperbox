@@ -41,7 +41,7 @@ module Wumpus.Drawing.Paths.Base.RelPath
 
   -- * Queries
   , null
-
+  , length
 
   -- * Concat
   , append
@@ -57,7 +57,9 @@ module Wumpus.Drawing.Paths.Base.RelPath
 
   , toPrimPath
   , toAbsPath
-  , strokeRelPath
+
+  , openRelPath
+  , closedRelPath
 
   ) where
 
@@ -80,7 +82,7 @@ import Data.VectorSpace
 import qualified Data.Foldable          as F
 import Data.Monoid
 import qualified Data.Traversable       as T
-import Prelude hiding ( null )
+import Prelude hiding ( null, length )
 
 
 
@@ -224,6 +226,16 @@ circular = snd . fromPathAlgCurves . circlePathAlg
 null :: RelPath u -> Bool
 null = JL.null . rel_path_segs
 
+-- | Length of the Path.
+--
+-- Length is the length of the path as it is drawn, it is not a 
+-- count of the number or path segments.
+--
+-- Length is cached so this operation is cheap - though this puts 
+-- a tax on the build operations. 
+-- 
+length :: RelPath u -> u
+length = rel_path_len
 
 
 --------------------------------------------------------------------------------
@@ -324,8 +336,12 @@ toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
 
 
 
-strokeRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
-strokeRelPath rp = 
+openRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
+openRelPath rp = 
     promoteR1 $ \start -> toPrimPath start rp >>= dcOpenPath
 
+
+closedRelPath :: InterpretUnit u => DrawStyle -> RelPath u -> LocGraphic u
+closedRelPath sty rp = 
+    promoteR1 $ \start -> toPrimPath start rp >>= dcClosedPath sty
 

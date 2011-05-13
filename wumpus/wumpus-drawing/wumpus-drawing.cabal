@@ -71,7 +71,7 @@ extra-source-files:
   demo/SingleChar.hs,
   demo/SingleLine.hs,
   demo/SampleShapes.hs,
-  demo/Symbols.hs,
+  demo/Symbols.hs
 
 library
   hs-source-dirs:     src

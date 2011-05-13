@@ -270,7 +270,7 @@ null = JL.null . _abs_path_elements
 -- Length is the length of the path as it is drawn, it is not a 
 -- count of the number or path segments.
 --
--- Length is cached so this operation is cheap - though this put 
+-- Length is cached so this operation is cheap - though this puts
 -- a tax on the build operations. 
 -- 
 length :: Num u => AbsPath u -> u
