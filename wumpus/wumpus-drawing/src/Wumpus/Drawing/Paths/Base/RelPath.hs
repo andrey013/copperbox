@@ -72,7 +72,10 @@ import qualified Wumpus.Basic.Utils.JoinList as JL
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace
+
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
+
 
 import qualified Data.Foldable          as F
 import Data.Monoid
@@ -88,7 +91,9 @@ import Prelude hiding ( null )
 -- Note this type is more limited than AbsPath, it does not
 -- support /introspective/ operations like @length@ or anchors.
 --
-newtype RelPath u = RelPath { getRelPath :: JoinList (RelPathSeg u) }
+data RelPath u = RelPath 
+      { rel_path_len    :: u
+      , rel_path_segs   :: JoinList (RelPathSeg u) }
   deriving (Eq,Show)
 
 type instance DUnit (RelPath u) = u
@@ -98,8 +103,16 @@ type DRelPath = RelPath Double
 
 -- No annotations...
 -- 
-data RelPathSeg u = RelLineSeg  (Vec2 u)
-                  | RelCurveSeg (Vec2 u) (Vec2 u) (Vec2 u)
+data RelPathSeg u = RelLineSeg  
+                      { rel_line_len    :: u 
+                      , rel_line_to     :: Vec2 u
+                      }
+                  | RelCurveSeg 
+                      { rel_curve_len   :: u
+                      , rel_curve_cp1   :: Vec2 u
+                      , rel_curve_cp2   :: Vec2 u
+                      , rel_curve_cp3   :: Vec2 u
+                      }
   deriving (Eq,Show)
 
 
@@ -110,17 +123,17 @@ type instance DUnit (RelPathSeg u) = u
 --------------------------------------------------------------------------------
 
 instance Functor RelPath where
-  fmap f = RelPath . fmap (fmap f) . getRelPath
+  fmap f (RelPath len xs) = RelPath (f len) (fmap (fmap f) xs)
 
 instance Functor RelPathSeg where
-  fmap f (RelLineSeg v1)        = 
-      RelLineSeg (fmap f v1)
+  fmap f (RelLineSeg len v1)        = 
+      RelLineSeg (f len) (fmap f v1)
 
-  fmap f (RelCurveSeg v1 v2 v3) = 
-      RelCurveSeg (fmap f v1) (fmap f v2) (fmap f v3)
+  fmap f (RelCurveSeg len v1 v2 v3) = 
+      RelCurveSeg (f len) (fmap f v1) (fmap f v2) (fmap f v3)
 
 
-instance Monoid (RelPath u) where
+instance Num u => Monoid (RelPath u) where
   mempty  = empty
   mappend = append
 
@@ -129,25 +142,61 @@ instance Monoid (RelPath u) where
 -- Construction
 
 
+-- | Helper - construct a straight line segment.
+-- 
+lineSegment :: Floating u => Vec2 u -> (u, RelPathSeg u)
+lineSegment v1 = 
+    (len, RelLineSeg { rel_line_len = len, rel_line_to = v1 })
+  where
+    len = vlength v1
+
+
+-- | Helper - construct a curve segment.
+-- 
+curveSegment :: (Floating u, Ord u, Tolerance u) 
+             => Vec2 u -> Vec2 u -> Vec2 u -> (u, RelPathSeg u)
+curveSegment v1 v2 v3 = (len, cseg)
+  where
+    p0    = zeroPt
+    p1    = p0 .+^ v1
+    p2    = p1 .+^ v2
+    p3    = p2 .+^ v3
+    
+    len   = bezierLength (BezierCurve p0 p1 p2 p3)
+    cseg  = RelCurveSeg { rel_curve_len = len
+                        , rel_curve_cp1 = v1
+                        , rel_curve_cp2 = v2
+                        , rel_curve_cp3 = v3
+                        }    
+
+
+
+
 -- | An empty relative path is acceptible to Wumpus because 
 -- it is always drawn as a LocGraphic.
 --
-empty :: RelPath u 
-empty = RelPath mempty
+empty :: Num u => RelPath u 
+empty = RelPath { rel_path_len = 0, rel_path_segs = mempty }
 
 -- | Create a relative path from a single straight line.
 --
-line1 :: Vec2 u -> RelPath u
-line1 = RelPath . JL.one . RelLineSeg
+line1 :: Floating u => Vec2 u -> RelPath u
+line1 v = RelPath len (JL.one $ RelLineSeg len v)
+  where
+    len = vlength v
+   
 
 
 -- | Create a relative path from a single Bezier curve.
 --
-curve1 :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
-curve1 v1 v2 v3 = RelPath $ JL.one $ RelCurveSeg v1 v2 v3
+curve1 :: Floating u 
+       => Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
+curve1 v1 v2 v3 = RelPath len (JL.one $ RelCurveSeg len v1 v2 v3)
+  where
+    len = vlength $ v1 ^+^ v2 ^+^ v3
 
 
-vertexPath :: [Vec2 u] -> RelPath u
+vertexPath :: Floating u => [Vec2 u] -> RelPath u
 vertexPath [] = empty
 vertexPath (x:xs) = go (line1 x) xs
   where
@@ -156,7 +205,7 @@ vertexPath (x:xs) = go (line1 x) xs
 
 
 
-curvedPath :: [Vec2 u] -> RelPath u
+curvedPath :: Floating u => [Vec2 u] -> RelPath u
 curvedPath xs = case xs of 
     (v1:v2:v3:vs) -> go (curve1 v1 v2 v3) vs
     _             -> empty
@@ -173,7 +222,7 @@ circular = snd . fromPathAlgCurves . circlePathAlg
 -- Queries
 
 null :: RelPath u -> Bool
-null = JL.null . getRelPath
+null = JL.null . rel_path_segs
 
 
 
@@ -184,23 +233,35 @@ infixr 1 `append`
 
 
 
-append :: RelPath u -> RelPath u -> RelPath u
-append (RelPath se0) (RelPath se1) = RelPath $ se0 `join` se1
+append :: Num u => RelPath u -> RelPath u -> RelPath u
+append (RelPath la ssa) (RelPath lb ssb) = RelPath (la + lb)  $ ssa `join` ssb
 
 
-consLineTo :: Vec2 u -> RelPath u -> RelPath u 
-consLineTo v1 (RelPath se) = RelPath $ JL.cons (RelLineSeg v1) se
+consLineTo :: Floating u 
+           => Vec2 u -> RelPath u -> RelPath u 
+consLineTo v1 (RelPath len se) = RelPath (len + vl) $ JL.cons s se
+  where
+    (vl,s) = lineSegment v1 
 
-snocLineTo :: RelPath u -> Vec2 u -> RelPath u
-snocLineTo (RelPath se) v1 = RelPath $ JL.snoc se (RelLineSeg v1)
+snocLineTo :: Floating u 
+           => RelPath u -> Vec2 u -> RelPath u
+snocLineTo (RelPath len se) v1 = RelPath (len + vl) $ JL.snoc se s
+  where
+    (vl,s) = lineSegment v1 
 
 
 
-consCurveTo :: Vec2 u -> Vec2 u -> Vec2 u -> RelPath u -> RelPath u 
-consCurveTo v1 v2 v3 (RelPath se) = RelPath $ JL.cons (RelCurveSeg v1 v2 v3) se
+consCurveTo :: (Floating u, Ord u, Tolerance u) 
+            => Vec2 u -> Vec2 u -> Vec2 u -> RelPath u -> RelPath u 
+consCurveTo v1 v2 v3 (RelPath len se) = RelPath (len + cl) $ JL.cons s se
+  where
+    (cl,s) = curveSegment v1 v2 v3
 
-snocCurveTo :: RelPath u -> Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
-snocCurveTo (RelPath se) v1 v2 v3 = RelPath $ JL.snoc se (RelCurveSeg v1 v2 v3)
+snocCurveTo :: (Floating u, Ord u, Tolerance u) 
+            => RelPath u -> Vec2 u -> Vec2 u -> Vec2 u -> RelPath u
+snocCurveTo (RelPath len se) v1 v2 v3 = RelPath (len + cl) $ JL.snoc se s
+  where
+    (cl,s) = curveSegment v1 v2 v3
 
 
 
@@ -209,45 +270,46 @@ snocCurveTo (RelPath se) v1 v2 v3 = RelPath $ JL.snoc se (RelCurveSeg v1 v2 v3)
 --------------------------------------------------------------------------------
 -- Conversion
 
-fromPathAlgVertices :: Num u => PathAlg u -> (Vec2 u, RelPath u)
+fromPathAlgVertices :: Floating u => PathAlg u -> (Vec2 u, RelPath u)
 fromPathAlgVertices = bimap fn vertexPath . runPathAlgVec
   where
     fn = maybe (V2 0 0) id
 
-fromPathAlgCurves :: Num u => PathAlg u -> (Vec2 u, RelPath u)
+fromPathAlgCurves :: Floating u => PathAlg u -> (Vec2 u, RelPath u)
 fromPathAlgCurves = bimap fn curvedPath . runPathAlgVec
   where
     fn = maybe (V2 0 0) id
 
 
 toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query PrimPath
-toPrimPath start (RelPath segs) = 
+toPrimPath start (RelPath _ segs) = 
     uconvertCtxF start       >>= \dstart -> 
     T.mapM uconvertCtxF segs >>= \dsegs  ->
     return $ relPrimPath dstart $ F.foldr fn [] dsegs
   where
-    fn (RelLineSeg v1)        ac = relLineTo v1 : ac
-    fn (RelCurveSeg v1 v2 v3) ac = relCurveTo v1 v2 v3 : ac
+    fn (RelLineSeg _ v1)        ac = relLineTo v1 : ac
+    fn (RelCurveSeg _ v1 v2 v3) ac = relCurveTo v1 v2 v3 : ac
+
 
 
 toAbsPath :: (Floating u, Ord u, Tolerance u) 
           => Point2 u -> RelPath u -> AbsPath u
-toAbsPath start (RelPath segs) = step1 start $ viewl segs
+toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
   where
     step1 p0 EmptyL                           = Abs.empty p0
 
-    step1 p0 (RelLineSeg v1 :< se)            = 
+    step1 p0 (RelLineSeg _ v1 :< se)            = 
         let (pth,end) = aline p0 v1 in step2 end pth (viewl se)
 
-    step1 p0 (RelCurveSeg v1 v2 v3 :< se)     = 
+    step1 p0 (RelCurveSeg _ v1 v2 v3 :< se)     = 
         let (pth,end) = acurve p0 v1 v2 v3 in step2 end pth (viewl se)
 
     step2 _  acc EmptyL                       = acc
-    step2 p0 acc (RelLineSeg v1 :< se)        = 
+    step2 p0 acc (RelLineSeg _ v1 :< se)        = 
         let (s1,end) = aline p0 v1 
         in step2 end (acc `Abs.append` s1) (viewl se)
 
-    step2 p0 acc (RelCurveSeg v1 v2 v3 :< se) = 
+    step2 p0 acc (RelCurveSeg _ v1 v2 v3 :< se) = 
         let (s1,end) = acurve p0 v1 v2 v3 
         in step2 end (acc `Abs.append` s1) (viewl se)
 

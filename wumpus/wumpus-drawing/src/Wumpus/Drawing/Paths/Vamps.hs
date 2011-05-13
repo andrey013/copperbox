@@ -36,7 +36,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
-squareWE :: Fractional u => u -> Vamp u
+squareWE :: (Fractional u, Floating u) => u -> Vamp u
 squareWE diam = makeVamp (hvec diam) rpath (SUBPATH_CLOSED STROKE)
   where
     hdiam = 0.5 * diam

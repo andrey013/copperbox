@@ -68,22 +68,3 @@ path_spec1 =
 
     vamp1 = squareWE 40 
 
-
-{-
-
-path_spec2 :: PathSpec Double ()
-path_spec2 = hline (-30) >> vamp (circleVamp $ hvec (-30)) >> hline (-30)
-
-path_spec3 :: PathSpec Double ()
-path_spec3 = hline 30 >> vamp (circleVamp $ hvec 30) >> hline 30
-
-
-path_spec4 :: PathSpec Double ()
-path_spec4 = line_up_right 25 >> vamp (circleVamp $ vec 25 25) >> line_up_right 25
--}
-
--- What about close / cycle ?
---
-square :: RelPath Double
-square = line1 (hvec 40) `append` line1 (vvec 40) 
-    `append` line1 (hvec $ negate 40) `append` line1 (vvec $ negate 40)

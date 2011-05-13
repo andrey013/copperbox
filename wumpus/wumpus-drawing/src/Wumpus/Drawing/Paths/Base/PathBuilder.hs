@@ -346,7 +346,7 @@ type BuildStF u = BuildSt u -> BuildSt u
 -- 
 -- This is an implicit PEN_DOWN if the active pen is UP.
 --
-extendPath :: Num u 
+extendPath :: Floating u 
            => Vec2 u -> BuildStF u
 extendPath v1 = (\s v0 ph pa -> s { cumulative_tip   = v0 ^+^ v1
                                   , cumulative_path  = updP ph
@@ -364,7 +364,7 @@ extendPath v1 = (\s v0 ph pa -> s { cumulative_tip   = v0 ^+^ v1
 --
 -- This is an implicit PEN_DOWN if the active pen is UP.
 -- 
-extendPathC :: Num u 
+extendPathC :: (Floating u, Ord u, Tolerance u)
             => Vec2 u -> Vec2 u -> Vec2 u -> BuildStF u
 extendPathC c1 c2 c3 = 
     (\s v0 ph pa -> s { cumulative_tip   = v0 ^+^ c1 ^+^ c2 ^+^ c3
@@ -395,7 +395,8 @@ penUp term =
 --
 -- This is an implicit PEN_UP if the active pen is DOWN.
 -- 
-moveTip :: InterpretUnit u => Vec2 u -> BuildStF u
+moveTip :: (Floating u, InterpretUnit u) 
+        => Vec2 u -> BuildStF u
 moveTip v1 = 
     (\s pa v0 cp -> let s1 = case pa of PEN_UP -> s; _ -> penUp SUBPATH_OPEN s
                     in s1 { cumulative_tip  = v0 ^+^ v1
@@ -405,7 +406,8 @@ moveTip v1 =
 
 -- | Cycle the current active path.
 --
-cycleAP :: InterpretUnit u => DrawStyle -> BuildStF u
+cycleAP :: (Floating u, InterpretUnit u) 
+        => DrawStyle -> BuildStF u
 cycleAP sty = 
     (\s pa vtip cp -> case pa of
                         PEN_UP -> s
@@ -437,7 +439,8 @@ insertGf gf =
                
 
 
-appendVamp :: InterpretUnit u => Vamp u -> BuildStF u
+appendVamp :: (Floating u, InterpretUnit u) 
+           => Vamp u -> BuildStF u
 appendVamp (Vamp { vamp_path = vph, vamp_term = term, vamp_move = mv }) =
     next . penUp SUBPATH_OPEN
   where
@@ -471,7 +474,8 @@ subPathDraw upd v0 subp term = promoteR1 $ \pt ->
 
 -- moveBy becomes a pen up
 
-instance InterpretUnit u => LocTraceM (PathSpec u) where
+instance (Floating u, InterpretUnit u) => 
+    LocTraceM (PathSpec u) where
   insertl a = PathSpec $ \s0 -> ((), insertGf a s0)
   location  = PathSpec $ \s0 -> (cumulative_tip s0, s0)
   moveBy v  = PathSpec $ \s0 -> ((), moveTip v s0)
@@ -479,7 +483,8 @@ instance InterpretUnit u => LocTraceM (PathSpec u) where
 
 
 
-instance (Monad m, InterpretUnit u) => LocTraceM (PathSpecT u m) where
+instance (Monad m, Floating u, InterpretUnit u) => 
+    LocTraceM (PathSpecT u m) where
   insertl a = PathSpecT $ \s0 -> return ((), insertGf a s0)
   location  = PathSpecT $ \s0 -> return (cumulative_tip s0, s0)
   moveBy v  = PathSpecT $ \s0 -> return ((), moveTip v s0)
@@ -502,7 +507,8 @@ class Monad m => PathOpM m where
 
 
 
-instance InterpretUnit u => PathOpM (PathSpec u) where
+instance (Floating u, Ord u, Tolerance u, InterpretUnit u) => 
+    PathOpM (PathSpec u) where
   line v1           = PathSpec $ \s0 -> ((), extendPath v1 s0)
   curve v1 v2 v3    = PathSpec $ \s0 -> ((), extendPathC v1 v2 v3 s0)
   updatePen upd     = PathSpec $ \s0 -> ((), changePen upd s0)
@@ -511,7 +517,8 @@ instance InterpretUnit u => PathOpM (PathSpec u) where
 
 
 
-instance (Monad m, InterpretUnit u) => PathOpM (PathSpecT u m) where
+instance (Monad m, Floating u, Ord u, Tolerance u, InterpretUnit u) => 
+    PathOpM (PathSpecT u m) where
   line v1           = PathSpecT $ \s0 -> return ((), extendPath v1 s0)
   curve v1 v2 v3    = PathSpecT $ \s0 -> return ((), extendPathC v1 v2 v3 s0)
   updatePen upd     = PathSpecT $ \s0 -> return ((), changePen upd s0)
