@@ -62,8 +62,8 @@ pointChain fn = chain chn_alg $ map fn point_sizes
     chn_alg = linearChain $ iterationScheme start step
     start   = \pt -> (pt,point_sizes)
 
-    step (pt,[])     = ((displaceV 50 pt, []), pt)
-    step (pt,(y:ys)) = ((displaceV (fromIntegral $ 2 + y)  pt, ys), pt)
+    step (pt,[])     = ((dispV 50 pt, []), pt)
+    step (pt,(y:ys)) = ((dispV (fromIntegral $ 2 + y)  pt, ys), pt)
 
 fontGraphic :: RGBi -> FontDef -> DLocGraphic 
 fontGraphic rgb ft = locGraphic_ $ pointChain mkGF

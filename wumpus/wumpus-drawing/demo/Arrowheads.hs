@@ -91,8 +91,8 @@ makeArrowDrawing :: (String, ArrowTip Double) -> LocGraphic Double
 makeArrowDrawing (name, utip) = aconn `oplus` lbl
   where
     aconn = promoteR1 $ \pt -> fmap ignoreAns $ 
-              connect (uniformArrow utip connline) pt (displaceH 60 pt)
+              connect (uniformArrow utip connline) pt (dispH 60 pt)
 
     lbl   = promoteR1 $ \pt -> fmap ignoreAns $ 
-              atStartAddr (textline name) (displaceH 66 pt) WW
+              atStartAddr (textline name) (dispH 66 pt) WW
 

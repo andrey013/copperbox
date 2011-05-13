@@ -13,7 +13,6 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 import System.Directory
 
@@ -74,18 +73,18 @@ tableGraphic imgs =
   where
     row_count   = 18
     chn_alg     = tableDown row_count (180,36)
-    pt          = displaceV (fromIntegral $ 36 * row_count) zeroPt 
+    pt          = dispV (fromIntegral $ 36 * row_count) zeroPt 
 
 
 
 
 makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic 
 makeDotDrawing (name,df) = 
-    drawing `oplus` moveStart (displaceVec $ vec 86 14) lbl
+    drawing `oplus` moveStart (dispVec $ vec 86 14) lbl
   where
-    drawing     = execRelBuild $ 
-                    penCtxUpdate path_style >> 
-                    insert dot >> mapM (\v -> line v >> insert dot) steps
+    drawing     = execPathSpec $ 
+                    updatePen path_style >> 
+                    insertl dot >> mapM (\v -> line v >> insertl dot) steps
 
     lbl         = promoteR1 $ \pt -> fmap ignoreAns $ 
                     atStartAddr (textline name) pt WW

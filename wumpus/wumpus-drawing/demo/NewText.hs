@@ -4,7 +4,7 @@
 module NewText where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -55,7 +55,7 @@ mf = localize text_margin_tight  $ do
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) dotPlus
 
 
 body :: (Fractional u, Ord u, InterpretUnit u) => [Doc u]

@@ -4,7 +4,7 @@
 module Shapes where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Shapes
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -28,7 +28,7 @@ shapes = udrawTracing (0::Double) $ do
              (borderedShape $ rectangle 90 30) `at` zeroPt -- "Rectangle"
     draw $ (borderedShape $ circle 10) `at` P2 100 0  -- "C0"
    
-    localize (stroke_colour red) $ draw $ markDisk `at` (P2 220 10)
+    localize (stroke_colour red) $ draw $ dotDisk `at` (P2 220 10)
     a <- drawi $ (borderedShape $ diamond 10 10) `at` (P2 40 0) -- "d1"
     redX $ radialAnchor (0.5*pi) a
     draw $ (borderedShape $ rectangle 20 100) `at` (P2 400 50) -- "R2"
@@ -40,12 +40,12 @@ shapes = udrawTracing (0::Double) $ do
     draw $ rotateAbout (0.5*pi) tri_ctr  $ (borderedShape $ triangle 20 30)
               `at` tri_ctr
     redX $ tri_ctr
-    draw $ (borderedShape $ triangle 20 30) `at` displaceVec (hvec 25) tri_ctr
+    draw $ (borderedShape $ triangle 20 30) `at` dispVec (hvec 25) tri_ctr
     redX $ tri_ctr
 
 
     draw $ rotateAbout deg45 tri2_ctr $ (borderedShape $ triangle 20 30) 
-               `at` displaceVec (hvec 25) tri2_ctr 
+               `at` dispVec (hvec 25) tri2_ctr 
 
     return ()
   where
@@ -55,7 +55,7 @@ shapes = udrawTracing (0::Double) $ do
 
 
 redX :: (Real u, Floating u, InterpretUnit u) => Anchor u -> TraceDrawing u ()
-redX a = localize (stroke_colour red) $ draw $ markX `at` a
+redX a = localize (stroke_colour red) $ draw $ dotX `at` a
    
 
     -- NOTE - should coordinates even have a center anchor?

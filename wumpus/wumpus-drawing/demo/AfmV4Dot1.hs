@@ -5,7 +5,7 @@ module AfmV4Dot1 where
 
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -42,9 +42,9 @@ makeCtx = set_font helvetica . metricsContext 18
 
 text_pic :: CtxPicture
 text_pic = drawTracing $ do 
-    draw $ (fn left_text)   `at` P2   0 100
+    draw $ (fn right_text)  `at` P2   0 100
     draw $ (fn center_text) `at` P2 250 100
-    draw $ (fn right_text)  `at` P2 500 100
+    draw $ (fn left_text)   `at` P2 500 100
     draw $ (fn blank_text)  `at` P2   0   0
     draw $ (fn bl_oneline)  `at` P2 250   0
     draw $ (fn cc_oneline)  `at` P2 500   0
@@ -60,7 +60,7 @@ text_pic = drawTracing $ do
     fn = illustrateBoundedLocGraphic
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) dotPlus
 
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 

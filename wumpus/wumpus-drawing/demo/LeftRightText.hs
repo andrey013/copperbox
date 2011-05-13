@@ -1,23 +1,12 @@
 {-# OPTIONS -Wall #-}
 
--- Note - @main@ is more convoluted than would normally be 
--- expected as it supports both sources of glyph metrics - the 
--- GhostScript distribution or the Core 14 metrics from Adobe.
--- 
--- \"Real\" applications would be expected to choose one source. 
---
--- I-am-not-a-lawyer, but it does look as though the Adobe font
--- metrics are redistributable, the GhostScript metrics are 
--- seemingly redistributable under the same terms as the larger
--- GhostScript distribution.
--- 
 
 
 module LeftRightText where
 
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -84,7 +73,7 @@ text_pic = udrawTracing (0::Double) $ localize text_margin_loose $ do
     fn = illustrateBoundedLocGraphic
    
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) dotPlus
 
 
 

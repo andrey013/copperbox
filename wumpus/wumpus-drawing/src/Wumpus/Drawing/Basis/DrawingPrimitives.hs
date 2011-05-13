@@ -105,13 +105,15 @@ ctrRectangle sty w h = moveStart (displace (-hw) (-hh)) $ dcRectangle sty w h
 -- Wedge
 
 
--- | arc : radius * apex angle
+-- | arc : radius * apex_angle
 -- 
 arc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
 arc radius ang = promoteR2 $ \pt inclin -> 
     let ps = bezierArcPoints ang radius inclin pt
     in curvePP ps >>= dcOpenPath
 
+-- | wedge : radius * apex_angle
+-- 
 wedge :: (Floating u, InterpretUnit u) 
       => DrawStyle -> u -> Radian -> LocThetaGraphic u
 wedge sty radius ang = promoteR2 $ \pt inclin -> 
@@ -120,8 +122,8 @@ wedge sty radius ang = promoteR2 $ \pt inclin ->
        mapM uconvertCtxF ps >>= \dps -> 
        dcClosedPath sty (build dpt dps)
   where
-    -- Note - this relies on an implicit straight line cycle to 
-    -- the start point.
+    -- Note - this relies on an implicit straight line cycle back 
+    -- to the start point.
     --
     build :: DPoint2 -> [DPoint2] -> PrimPath
     build pt []         = emptyPrimPath pt

@@ -5,7 +5,7 @@ module SingleChar where
 
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Dots.Marks
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -66,5 +66,5 @@ mf = localize (text_margin 6.0 6.0)  $ do
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-redPlus = localize (stroke_colour red) markPlus
+redPlus = localize (stroke_colour red) dotPlus
 

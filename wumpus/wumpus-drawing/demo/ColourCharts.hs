@@ -4,6 +4,7 @@ module ColourCharts where
 
 import ColourChartUtils
 
+import Wumpus.Drawing.Basis.DrawingPrimitives
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -44,14 +45,14 @@ tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = draw $ (chain_ chn gs) `at` pt
   where
     chn  = tableDown row_count (152,11)
-    pt   = displaceV (fromIntegral $ 11 * row_count) zeroPt 
+    pt   = dispV (fromIntegral $ 11 * row_count) zeroPt 
     gs   = map (uncurry colourSample) xs
    
 
 colourSample :: String -> RGBi -> LocGraphic Double
 colourSample name rgb = localize (fill_colour rgb) $ 
     promoteR1 $ \pt ->  
-      oplus (dcRectangle FILL_STROKE 15 10 `at` pt)
+      oplus (blRectangle FILL_STROKE 15 10 `at` pt)
             (dcTextlabel name `at` displace 20 2 pt)
         
 
