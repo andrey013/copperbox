@@ -314,7 +314,7 @@ decorateR0 img gf = op <$> img <*> gf
 --
 -- Note - this function has a very general type signature and
 -- supports various graphic types. The usual case is to decorate
--- a LocGraphic with a LocImage.
+-- a LocImage with a LocGraphic.
 --
 decorateR1 :: CF (r1 -> ImageAns u a) 
            -> CF (r1 -> GraphicAns u) 

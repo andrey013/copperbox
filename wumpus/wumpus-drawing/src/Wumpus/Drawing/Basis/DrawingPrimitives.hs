@@ -35,15 +35,21 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
   , blRectangle
   , ctrRectangle
 
+
+  -- * Arc and wedge
+  , arc
+  , wedge
+
   )
 
   where
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+import Wumpus.Basic.Geometry                    -- package: wumpus-basic
+import Wumpus.Basic.Kernel
+
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-
 
 
 --------------------------------------------------------------------------------
@@ -91,3 +97,37 @@ ctrRectangle sty w h = moveStart (displace (-hw) (-hh)) $ dcRectangle sty w h
   where
     hw = 0.5 * w
     hh = 0.5 * h
+
+
+
+
+--------------------------------------------------------------------------------
+-- Wedge
+
+
+-- | arc : radius * apex angle
+-- 
+arc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
+arc radius ang = promoteR2 $ \pt inclin -> 
+    let ps = bezierArcPoints ang radius inclin pt
+    in curvePP ps >>= dcOpenPath
+
+wedge :: (Floating u, InterpretUnit u) 
+      => DrawStyle -> u -> Radian -> LocThetaGraphic u
+wedge sty radius ang = promoteR2 $ \pt inclin -> 
+    let ps = bezierArcPoints ang radius inclin pt
+    in uconvertCtxF pt      >>= \dpt -> 
+       mapM uconvertCtxF ps >>= \dps -> 
+       dcClosedPath sty (build dpt dps)
+  where
+    -- Note - this relies on an implicit straight line cycle to 
+    -- the start point.
+    --
+    build :: DPoint2 -> [DPoint2] -> PrimPath
+    build pt []         = emptyPrimPath pt
+    build pt (p1:ps)    = let cs = curves ps
+                          in absPrimPath pt (absLineTo p1 : cs)
+    
+    curves (a:b:c:ps)   = absCurveTo a b c : curves ps
+    curves _            = []
+    

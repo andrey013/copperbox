@@ -401,7 +401,7 @@ kappa = 4 * ((sqrt 2 - 1) / 3)
 
 
 
--- | 'bezierArcPoints' : @ apex_angle * radius * rotation * center -> [Point] @
+-- | 'bezierArcPoints' : @ apex_angle * radius * inclination * center -> [Point] @
 --
 -- > ang should be in the range 0 < ang < 360deg.
 --

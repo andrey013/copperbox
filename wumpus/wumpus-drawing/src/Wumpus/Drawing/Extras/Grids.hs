@@ -20,6 +20,8 @@ module Wumpus.Drawing.Extras.Grids
     GridContextF
   , grid
   , standard_grid
+  , dotted_major_grid
+
   , grid_major_colour
   , grid_major_line_width
   , grid_major_dotnum
@@ -81,6 +83,10 @@ default_grid_props =
 standard_grid :: GridContextF
 standard_grid = id
 
+dotted_major_grid :: GridContextF
+dotted_major_grid = 
+    grid_minor_subdivisions 0 . grid_major_dotnum 2
+
 -- Setters for client code.
 
 grid_major_colour :: RGBi -> GridContextF
@@ -93,7 +99,7 @@ grid_major_dotnum :: Int -> GridContextF
 grid_major_dotnum n = (\s -> s { gp_major_dotnum = n })
 
 grid_minor_subdivisions :: Int -> GridContextF
-grid_minor_subdivisions n = (\s -> s { gp_major_dotnum = n })
+grid_minor_subdivisions n = (\s -> s { gp_minor_subdivs = n })
 
 grid_minor_colour :: RGBi -> GridContextF
 grid_minor_colour rgb = (\s -> s { gp_minor_colour = rgb })
@@ -166,12 +172,12 @@ gridInterior nx w uw ny h uh props = hlines `mappend` vlines
 
 horizontalLines :: (Fractional u, InterpretUnit u) 
                 => Int -> u -> u -> GridProps -> LocGraphic u
-horizontalLines numh w uh props = 
-    moveStart (dispV minu) $ minorMajor tot subs (vvec minu) mnr mjr 
+horizontalLines numh w uh props@(GridProps { gp_minor_subdivs = subs })
+    | subs > 0  = let dy = uh / (fromIntegral subs)
+                      n  = (numh * subs) - 1
+                  in moveStart (dispV dy) $ minorMajor n subs (vvec dy) mnr mjr
+    | otherwise = moveStart (dispV uh) $ duplicate numh (vvec uh) mjr
   where
-    subs = gp_minor_subdivs props
-    minu = uh / (fromIntegral subs)
-    tot  = (numh * subs) - 1
     mnr  = localize (minor_line_update props) $ hline w
     mjr  = localize (major_line_update props) $ hline w
 
@@ -179,12 +185,12 @@ horizontalLines numh w uh props =
 
 verticalLines :: (Fractional u, InterpretUnit u) 
               => Int -> u -> u -> GridProps -> LocGraphic u
-verticalLines numv h uw props = 
-    moveStart (dispH minu) $ minorMajor tot subs (hvec minu) mnr mjr 
+verticalLines numv h uw props@(GridProps { gp_minor_subdivs = subs })
+    | subs > 0  = let dx = uw / (fromIntegral subs)
+                      n  = (numv * subs) - 1
+                  in moveStart (dispH dx) $ minorMajor n subs (hvec dx) mnr mjr
+    | otherwise = moveStart (dispH uw) $ duplicate numv (hvec uw) mjr
   where
-    subs = gp_minor_subdivs props
-    minu = uw / (fromIntegral subs)
-    tot  = (numv * subs) - 1
     mnr  = localize (minor_line_update props) $ vline h
     mjr  = localize (major_line_update props) $ vline h
 

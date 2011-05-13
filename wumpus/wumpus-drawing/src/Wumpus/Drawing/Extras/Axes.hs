@@ -30,20 +30,18 @@ import Wumpus.Core                              -- package: wumpus-core
 -- Note - axes need labels working out...
 
 
--- | Draw axes from (0,0).
+-- | Simple orthonormal axes using snap grid units.
 --
 orthontAxes :: (Real u, Floating u, InterpretUnit u)
-            => (Double, Double) -> Graphic u
-orthontAxes (w,h) = 
-    snapmove (1,1) >>= \(V2 w1 h1) ->
+            => (Int,Int) -> (Int,Int) -> LocGraphic u
+orthontAxes (xl,xr) (yl,yr) = 
+    promoteR1 $ \(P2 x y) -> 
+    snapmove (1,1) >>= \(V2 uw uh) ->
     let conn1 = rightArrow barb45 connline
-        uw    = w1 * realToFrac w
-        uh    = h1 * realToFrac h
-        ptX   = dispH uw zeroPt
-        ptY   = dispV uh zeroPt
-    in  localize cap_square $         graphic_ (connect conn1 zeroPt ptX) 
-                              `oplus` graphic_ (connect conn1 zeroPt ptY)
+        xPtl  = P2 (x - (uw * fromIntegral xl)) y
+        xPtr  = P2 (x + (uw * fromIntegral xr)) y
+        yPtl  = P2 x (y - (uh * fromIntegral yl))
+        yPtr  = P2 x (y + (uh * fromIntegral yr))
+    in  localize cap_square $         graphic_ (connect conn1 xPtl xPtr) 
+                              `oplus` graphic_ (connect conn1 yPtl yPtr)
 
-
-    
-    
