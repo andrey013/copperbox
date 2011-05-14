@@ -27,14 +27,12 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
-    putStrLn temp_warning
     base_metrics <- loader [ Right times_roman_family  ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata.eps" pic1
     writeSVG "./out/automata.svg" pic1 
-  where
-    temp_warning = "Warning - currently the loop tips do not draw correctly..."
+
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = 
@@ -88,7 +86,7 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
              => a -> b -> Image u (AbsPath u)
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
-    in connect (rightArrow' tri45' connline) p0 p1
+    in connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
@@ -103,7 +101,7 @@ arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop ctr p1 = 
     apply2R2 (loop zradius) ctr zincl >>= \absp -> 
-    rightArrowPath tri45' absp 
+    rightArrowPath tri45 absp 
   where
     v1      = pvec ctr p1
     zradius = vlength v1

@@ -38,7 +38,7 @@ arrow_drawing :: CtxPicture
 arrow_drawing = 
     drawTracing $ localize dotted_line $ tableGraphic arrtable
 
-arrtable :: [(String, ArrowTip Double)]
+arrtable :: [(String, ArrowTip)]
 arrtable = 
     [ ("tri90",                 tri90)
     , ("tri60",                 tri60)
@@ -74,7 +74,7 @@ arrtable =
 
 
 
-tableGraphic :: [(String, ArrowTip Double)] -> TraceDrawing Double ()
+tableGraphic :: [(String, ArrowTip)] -> TraceDrawing Double ()
 tableGraphic tips = 
     drawl start $ chain_ chn_alg (map makeArrowDrawing tips)
   where
@@ -87,7 +87,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeArrowDrawing :: (String, ArrowTip Double) -> LocGraphic Double
+makeArrowDrawing :: (String, ArrowTip) -> LocGraphic Double
 makeArrowDrawing (name, utip) = aconn `oplus` lbl
   where
     aconn = promoteR1 $ \pt -> fmap ignoreAns $ 

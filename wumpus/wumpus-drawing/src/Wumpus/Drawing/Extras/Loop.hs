@@ -51,22 +51,6 @@ loop zradius = promoteR2 $ \zctr ang ->
 -- than the side length
 
 
-{-
-
--- | Note this has problems vis adding tips as the actual start
--- and end points are synthesized.
---
--- This seems to indicate that loop is not actually a connector,
--- but rather a decoration.
---
-loop_OLD :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-      => ConnectorQuery u (AbsPath u)
-loop_OLD = promoteR2 $ \ctr radpt -> 
-   let incl    = lineDirection ctr radpt
-       radius  = abs $ vlength $ pvec ctr radpt
-       ps      = loopPoints radius ctr incl
-   in return $ curvePath ps
--}
 
 
 -- | Note - intermediate names and quadrants represent a loop 
