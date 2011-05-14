@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Connectors.Loop
+-- Module      :  Wumpus.Drawing.Extras.Loop
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Connectors.Loop
+module Wumpus.Drawing.Extras.Loop
   ( 
     loop
   , loopPoints
@@ -31,9 +31,15 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 
+-- TODO - Loop is a decoration not a connector.
+-- It should probably have the same signature as wedge / arc.
+
 
 -- | Note this has problems vis adding tips as the actual start
 -- and end points are synthesized.
+--
+-- This seems to indicate that loop is not actually a connector,
+-- but rather a decoration.
 --
 loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
      => ConnectorQuery u (AbsPath u)

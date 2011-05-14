@@ -95,7 +95,7 @@ renderMultiLine :: (Real u, Floating u, InterpretUnit u)
                 => VAlign -> [TextObject u] -> LocRectTextLine u
 renderMultiLine va docs = body >>= posTextWithMargins
   where
-    body  = (\dy -> alignColumnSep va dy $ reverse docs) <$> textlineSpace
+    body  = (\dy -> alignColumnSep va dy docs) <$> textlineSpace
 
 
 makeTextObject :: InterpretUnit u => String -> TextObject u

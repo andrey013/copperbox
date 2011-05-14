@@ -13,6 +13,7 @@
 module ClipPic where
 
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Extras.Clip
 import Wumpus.Drawing.Paths.Relative
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -56,12 +57,6 @@ background rgb = promoteR1 $ \_ ->
     ihh = chain (tableDown 18 (86,16)) (replicate 112 iheartHaskell)
 
 
-
--- TODO - where should this go?
---
-locClip :: InterpretUnit u => RelPath u -> LocGraphic u -> LocGraphic u
-locClip rp gf = promoteR1 $ \pt -> 
-             toPrimPath pt rp >>= \pp -> fmap (clipObject pp) (gf `at` pt)
 
 clip1 :: LocGraphic Double
 clip1 = locClip path01 $ background black

@@ -48,6 +48,9 @@ description:
     considered less general so there are put here where they can 
     be imported individually (and so not pollute the namespace).
   .
+  * Removed the Turtle modules. The new @LocTrace@ and @RefTrace@ 
+    modules supercede the Turtle modules.
+  .
   .
 build-type:         Simple
 stability:          highly unstable
@@ -94,13 +97,12 @@ library
     Wumpus.Drawing.Connectors.Base,
     Wumpus.Drawing.Connectors.BoxConnectors,
     Wumpus.Drawing.Connectors.ConnectorPaths,
-    Wumpus.Drawing.Connectors.Loop,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.SimpleDots,
     Wumpus.Drawing.Extras.Axes,
+    Wumpus.Drawing.Extras.Clip,
     Wumpus.Drawing.Extras.Grids,
-    Wumpus.Drawing.Extras.Turtle.TurtleClass,
-    Wumpus.Drawing.Extras.Turtle.TurtleMonad,
+    Wumpus.Drawing.Extras.Loop,
     Wumpus.Drawing.Paths.Absolute,
     Wumpus.Drawing.Paths.Base.AbsPath,
     Wumpus.Drawing.Paths.Base.PathBuilder,

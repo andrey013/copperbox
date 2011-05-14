@@ -42,14 +42,15 @@ makeCtx = set_font helvetica . metricsContext 18
 
 text_pic :: CtxPicture
 text_pic = drawTracing $ do 
-    draw $ (fn right_text)  `at` P2   0 100
+    draw $ largeDisk `at` zeroPt
+    draw $ (fn right_text)  `at` P2 150 100
     draw $ (fn center_text) `at` P2 250 100
     draw $ (fn left_text)   `at` P2 500 100
     draw $ (fn blank_text)  `at` P2   0   0
     draw $ (fn bl_oneline)  `at` P2 250   0
     draw $ (fn cc_oneline)  `at` P2 500   0
     
-    draw $ redPlus            `at` P2   0 100
+    draw $ redPlus            `at` P2 150 100
     draw $ redPlus            `at` P2 250 100
     draw $ redPlus            `at` P2 500 100
     draw $ redPlus            `at` P2   0   0  
@@ -79,7 +80,7 @@ blank_text =
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (stroke_colour dark_slate_gray) $ ccTextline dummy_text
+    localize (stroke_colour dark_slate_gray) $ bllTextline dummy_text
 
 
 right_text :: BoundedLocGraphic Double
@@ -93,6 +94,5 @@ center_text =
 
 
 dummy_text :: String 
-dummy_text = unlines $ [ "Using Afm V4.1"
-                       , "metrics..."
-                       ]
+dummy_text = "Using Afm V4.1..."
+             

@@ -4,6 +4,7 @@
 module Automata where
 
 import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Extras.Loop
 import Wumpus.Drawing.Paths.Absolute
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -26,12 +27,14 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/"    
+    putStrLn temp_warning
     base_metrics <- loader [ Right times_roman_family  ]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) automata
     writeEPS "./out/automata.eps" pic1
     writeSVG "./out/automata.svg" pic1 
-
+  where
+    temp_warning = "Warning - currently the loop tips do not draw correctly..."
 
 makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = 
@@ -57,7 +60,8 @@ automata = udrawTracing (0::Double) $ do
 
     return ()
 
-
+-- Monadic at - this is a hack that needs a rethink...
+-- 
 infixr 1 `mat`
 
 mat :: LocImage u a -> Query (Point2 u) -> Image u a
