@@ -336,12 +336,14 @@ toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
 
 
 
-openRelPath :: InterpretUnit u => RelPath u -> LocGraphic u
-openRelPath rp = 
+openRelPath :: InterpretUnit u 
+            => RelPath u -> LocImage u (RelPath u)
+openRelPath rp = pushR1 (replaceAns rp) $ 
     promoteR1 $ \start -> toPrimPath start rp >>= dcOpenPath
 
 
-closedRelPath :: InterpretUnit u => DrawStyle -> RelPath u -> LocGraphic u
-closedRelPath sty rp = 
+closedRelPath :: InterpretUnit u 
+              => DrawStyle -> RelPath u -> LocImage u (RelPath u)
+closedRelPath sty rp = pushR1 (replaceAns rp) $ 
     promoteR1 $ \start -> toPrimPath start rp >>= dcClosedPath sty
 

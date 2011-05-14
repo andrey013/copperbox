@@ -88,7 +88,7 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
              => a -> b -> Image u (AbsPath u)
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
-    in connect (rightArrow tri45 connline) p0 p1
+    in connect (rightArrow' tri45' connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
@@ -101,7 +101,13 @@ astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 --
 arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
-arrloop p0 p1 = connect (rightArrow barb45 loop) p0 p1
+arrloop ctr p1 = 
+    apply2R2 (loop zradius) ctr zincl >>= \absp -> 
+    rightArrowPath tri45' absp 
+  where
+    v1      = pvec ctr p1
+    zradius = vlength v1
+    zincl   = vdirection v1
 
 
 

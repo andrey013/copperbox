@@ -18,6 +18,10 @@ module Wumpus.Drawing.Connectors.Base
   ( 
 
     Connector    
+
+  , ArrowAlg(..)
+  , rightArrow'
+  , rightArrowPath
   , ArrowConnector
   , ArrowTip
   , makeArrowTip
@@ -48,7 +52,19 @@ import Control.Applicative
 --
 type Connector u = ConnectorQuery u (AbsPath u)
 
+-- | Arrowhead /algorithm/ the components of an arrowhead.
+-- 
+-- Retract distance may have to account for line width.
+--
+data ArrowAlg = ArrowAlg
+      { retract_distance :: Double -> En
+      , tip_half_len     :: En
+      , tip_deco         :: LocThetaGraphic En
+      }
 
+-- Ideally there should be a plus operation to combine tips 
+-- allowing double tips.
+-- 
 
 type ArrowConnector u = ConnectorImage u (AbsPath u)
 
@@ -56,13 +72,62 @@ type TipDraw = Point2 En -> Radian -> GraphicAns En
 
 -- | TipAns - retract_distance * tip length * TipDraw
 --
-type TipAns u = (u, u, TipDraw)
+data TipAns u = TipAns
+      { retract_dist :: u
+      , tip_length   :: u
+      , tip_draw     :: TipDraw
+      }
 
 
 data ArrowTip u = ArrowTip { getArrowTip :: CF (TipAns u) }
 
+runArrowAlg :: InterpretUnit u => ArrowAlg -> CF (u, u, LocThetaGraphic u)
+runArrowAlg (ArrowAlg df len deco) = 
+   getLineWidth             >>= \lw    -> 
+   uconvertCtx1 (df lw)     >>= \uretd ->
+   uconvertCtx1 len         >>= \ulen  ->
+   return (uretd, ulen, uconvLocThetaImageF deco)
 
 
+-- | Connector with an arrow tip at the end point (i.e right).
+--
+rightArrow' :: (Real u, Floating u, InterpretUnit u) 
+            => ArrowAlg -> Connector u -> ArrowConnector u
+rightArrow' alg conn = promoteR2 $ \p0 p1 ->
+    apply2R2 conn p0 p1 >>= \full_path -> 
+    rightArrowPath alg full_path 
+
+-- | Connector with an arrow tip at the end point (i.e right).
+--
+-- TODO - shortening a curve does not seem to be working properly...
+-- 
+--
+rightArrowPath :: (Real u, Floating u, InterpretUnit u) 
+               => ArrowAlg -> AbsPath u -> Image u (AbsPath u)
+rightArrowPath alg full_path =
+    runArrowAlg alg     >>= \(retract, len, deco) -> 
+    let short_path      = if retract > 0 then shortenR retract full_path 
+                                         else full_path
+        mid_ang         = tipDirectionR len full_path
+        tip             = apply2R2 deco (tipR full_path) mid_ang
+    in fmap (replaceAns full_path) $ 
+         decorateR0 tip $ toPrimPath short_path >>= dcOpenPath
+
+
+
+-- Note - extracting TipDraw is unsafe. 
+--
+-- The code below relies on there being no changes to the 
+-- DrawingContext between the tip being extracted and when it is 
+-- used to decorate the Image.
+--
+-- This means TipAns cannot be exported and any decoration with
+-- arrow tips has to be defined in this module.
+--
+--
+-- Is there a better definition for TipAns?
+-- (preferably where the decoration is a LocThetaGraphic ?)
+--
 
 -- | Connector with an arrow tip at the start point (i.e left).
 --
@@ -70,7 +135,7 @@ leftArrow :: (Real u, Floating u, InterpretUnit u)
           => ArrowTip u -> Connector u -> ArrowConnector u
 leftArrow tipl conn = promoteR2 $ \p0 p1 ->
     apply2R2 conn p0 p1 >>= \full_path -> 
-    getArrowTip tipl    >>= \(dxl,wl,mkl) -> 
+    getArrowTip tipl    >>= \(TipAns dxl wl mkl) -> 
     uconvertCtxF p0     >>= \emp0     ->       
     let angl            = tipDirectionL wl full_path
         short_path      = shortenL dxl full_path
@@ -84,7 +149,7 @@ rightArrow :: (Real u, Floating u, InterpretUnit u)
            => ArrowTip u -> Connector u -> ArrowConnector u
 rightArrow tipr conn = promoteR2 $ \p0 p1 ->
     apply2R2 conn p0 p1 >>= \full_path -> 
-    getArrowTip tipr    >>= \(dxr,wr,mkl) -> 
+    getArrowTip tipr    >>= \(TipAns dxr wr mkl) -> 
     uconvertCtxF p1     >>= \emp1     ->       
     let angr            = tipDirectionR wr full_path
         short_path      = shortenR dxr full_path
@@ -100,8 +165,8 @@ leftRightArrow :: (Real u, Floating u, InterpretUnit u)
                -> ArrowConnector u
 leftRightArrow tipl tipr conn = promoteR2 $ \p0 p1 ->
     apply2R2 conn p0 p1 >>= \full_path -> 
-    getArrowTip tipl    >>= \(dxl,wl,mkl) -> 
-    getArrowTip tipr    >>= \(dxr,wr,mkr) -> 
+    getArrowTip tipl    >>= \(TipAns dxl wl mkl) -> 
+    getArrowTip tipr    >>= \(TipAns dxr wr mkr) -> 
     uconvertCtxF p0     >>= \emp0     ->       
     uconvertCtxF p1     >>= \emp1     ->       
     let angl            = tipDirectionL wl full_path
@@ -143,7 +208,9 @@ makeArrowTip retractq lengthq gf = ArrowTip body
            let rdist = runCF ctx retractq
                tlen  = runCF ctx lengthq
                drawf = runCF ctx gf
-           in return (rdist,tlen,drawf)
+           in return $ TipAns { retract_dist  = rdist
+                              , tip_length    = tlen
+                              , tip_draw      = drawf }
 
 
 -- | Promote a function from source and dest points to a connector 

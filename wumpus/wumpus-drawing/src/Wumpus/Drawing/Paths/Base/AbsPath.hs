@@ -49,6 +49,8 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   -- * Conversion
   , toPrimPath
 
+  , openAbsPath
+  , closedAbsPath
 
   -- * Shortening
   , shortenPath
@@ -401,8 +403,16 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
 
 
 
+openAbsPath :: InterpretUnit u 
+            => AbsPath u -> Image u (AbsPath u)
+openAbsPath rp = 
+    pushR0 (replaceAns rp) $ toPrimPath rp >>= dcOpenPath
 
 
+closedAbsPath :: InterpretUnit u 
+              => DrawStyle -> AbsPath u -> Image u (AbsPath u)
+closedAbsPath sty rp = 
+    pushR0 (replaceAns rp) $ toPrimPath rp >>= dcClosedPath sty
 
 
 -- | Turn a Path into an ordinary PrimPath.

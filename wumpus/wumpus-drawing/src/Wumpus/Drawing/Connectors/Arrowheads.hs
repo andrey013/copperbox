@@ -17,7 +17,11 @@
 module Wumpus.Drawing.Connectors.Arrowheads
   (
 
-    tri90
+  
+
+    tri90'
+  , tri45'
+  , tri90
   , tri60
   , tri45
   , otri90
@@ -86,7 +90,7 @@ type PointGen = Radian -> [Vec2 En]
 filledTipPath :: PointGen -> LocThetaGraphic En
 filledTipPath fn = 
     localize fill_use_stroke_colour $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath FILL
+      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath STROKE -- FILL
 
 
 closedTipPath :: PointGen -> LocThetaGraphic En
@@ -183,6 +187,26 @@ retract_two = uconvertCtx1 (2::En)
 retract_zero :: InterpretUnit u => Query u
 retract_zero = pure 0
 
+
+
+filledTriangle :: Radian -> ArrowAlg
+filledTriangle ang = 
+    ArrowAlg
+      { retract_distance = const 1
+      , tip_half_len     = 0.5
+      , tip_deco         = filledTipPath spec
+      }
+  where
+    spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
+                 in [zeroVec, v1, v2]
+
+
+tri90' :: ArrowAlg
+tri90' = filledTriangle ang90
+
+
+tri45' :: ArrowAlg
+tri45' = filledTriangle ang45
 
 
 filledTri :: InterpretUnit u => Radian -> ArrowTip u

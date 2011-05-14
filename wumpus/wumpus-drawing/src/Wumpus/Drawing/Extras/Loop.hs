@@ -34,6 +34,24 @@ import Data.AffineSpace                         -- package: vector-space
 -- TODO - Loop is a decoration not a connector.
 -- It should probably have the same signature as wedge / arc.
 
+-- | Generate a loop - suitable for decorating a circle.
+--
+-- The radius and the (implicit) start point are the center and 
+-- radius of the initial circle not the loop itself.
+--
+loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+      => u -> LocThetaQuery u (AbsPath u)
+loop zradius = promoteR2 $ \zctr ang -> 
+                 return $ curvePath $ loopPoints zradius zctr ang
+
+
+
+-- Should be able to use trig to get a loop suitable for
+-- decorating rectangles (provided the start-to-end arc is smaller
+-- than the side length
+
+
+{-
 
 -- | Note this has problems vis adding tips as the actual start
 -- and end points are synthesized.
@@ -41,13 +59,15 @@ import Data.AffineSpace                         -- package: vector-space
 -- This seems to indicate that loop is not actually a connector,
 -- but rather a decoration.
 --
-loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-     => ConnectorQuery u (AbsPath u)
-loop = promoteR2 $ \ctr radpt -> 
+loop_OLD :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+      => ConnectorQuery u (AbsPath u)
+loop_OLD = promoteR2 $ \ctr radpt -> 
    let incl    = lineDirection ctr radpt
        radius  = abs $ vlength $ pvec ctr radpt
        ps      = loopPoints radius ctr incl
    in return $ curvePath ps
+-}
+
 
 -- | Note - intermediate names and quadrants represent a loop 
 -- drawn upwards.
