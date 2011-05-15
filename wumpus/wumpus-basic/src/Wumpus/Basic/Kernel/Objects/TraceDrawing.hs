@@ -42,12 +42,13 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , mbPictureU
  
 
-  , evalQuery
+--  , evalQuery
 
   , draw
   , drawi
   , drawl
   , drawli
+{-
   , drawc
   , drawci
 
@@ -56,19 +57,18 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
  
   , drawrc
   , drawrci
-
+-}
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
+-- import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Connector
-import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -182,7 +182,7 @@ instance TraceM (TraceDrawing u) where
 
 fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
 fontDeltaMon mf = TraceDrawing $ \ctx -> 
-    let (_,font_attrs) = runCF ctx textAttr
+    let (_,font_attrs) = primAnswer $ runImage ctx textAttr
         (a,hf)         = runTraceDrawing ctx mf
         prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
     in (a, singleH $ prim1 $ prim)
@@ -193,7 +193,7 @@ instance Monad m => TraceM (TraceDrawingT u m) where
 
 fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
 fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
-    let (_,font_props) = runCF ctx textAttr
+    let (_,font_props) = primAnswer $ runImage ctx textAttr
     in runTraceDrawingT ctx mf >>= \(a,hf) ->
        let prim  = fontDeltaContext font_props $ primGroup $ hprimToList hf
        in return (a, singleH $ prim1 $ prim)
@@ -307,8 +307,8 @@ mbPictureU (Just a) = a
 --------------------------------------------------------------------------------
 
 
-evalQuery :: DrawingCtxM m => Query a -> m a
-evalQuery df = askDC >>= \ctx -> return $ runCF ctx  df
+-- evalQuery :: DrawingCtxM m => Query a -> m a
+-- evalQuery df = askDC >>= \ctx -> return $ runCF ctx  df
 
 
 
@@ -322,8 +322,9 @@ evalQuery df = askDC >>= \ctx -> return $ runCF ctx  df
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
      => Image u a -> m ()
 draw gf = askDC >>= \ctx -> 
-          let Ans o _ = runCF ctx gf
-          in trace (singleH o) >> return ()
+          case runImage ctx gf of
+            Pure _    -> return ()
+            PrimW o _ -> trace (singleH o) >> return ()
 
 
 
@@ -336,9 +337,11 @@ draw gf = askDC >>= \ctx ->
 -- 
 drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => Image u a -> m a
-drawi img = askDC >>= \ctx -> 
-            let Ans o a = runCF ctx img
-            in trace (singleH o) >> return a
+drawi gf = askDC >>= \ctx -> 
+           case runImage ctx gf of
+             Pure a    -> return a
+             PrimW o a -> trace (singleH o) >> return a
+            
 
 
 -- | Draw a LocImage at the supplied Anchor taking the drawing 
@@ -362,10 +365,10 @@ drawl ancr img = drawli ancr img >> return ()
 -- 
 drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> LocImage u a -> m a
-drawli pt img = askDC >>= \ctx -> 
-                let Ans o a = runCF ctx img pt 
-                in trace (singleH o) >> return a
-
+drawli pt gf = askDC >>= \ctx -> 
+                case runLocImage pt ctx gf of
+                  Pure a    -> return a
+                  PrimW o a -> trace (singleH o) >> return a
 
 
 -- Design note - having @drawlti@ for LocThetaImage does not seem 
@@ -378,7 +381,7 @@ drawli pt img = askDC >>= \ctx ->
 --
 
 
-
+{-
 -- | Draw a ConnectorGraphic with the supplied Anchors taking the 
 -- drawing style from the /drawing context/. 
 --
@@ -473,3 +476,4 @@ drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
 drawrci a b img = 
     let (p0,p1) = radialConnectorPoints a b in drawi (connect img p0 p1)
 
+-}

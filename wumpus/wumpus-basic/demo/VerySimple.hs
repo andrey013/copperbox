@@ -3,8 +3,8 @@
 
 module VerySimple where
 
-import Wumpus.Basic.Geometry
 import Wumpus.Basic.Kernel
+
 
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( red )

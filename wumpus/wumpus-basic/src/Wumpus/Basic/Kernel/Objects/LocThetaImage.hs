@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,101 +25,99 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , DLocThetaGraphic
    , DLocThetaImage
 
-   , intoLocThetaImage
-   , locThetaGraphic_
-
-   , emptyLocThetaGraphic
-
    , uconvLocThetaImageF
    , uconvLocThetaImageZ
 
+   , emptyLocThetaImage
    
    )
 
    where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Basis
--- import Wumpus.Basic.Kernel.Objects.Displacement
-import Wumpus.Basic.Kernel.Objects.LocImage
+-- import Wumpus.Basic.Kernel.Objects.LocImage
 
--- import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
+import Data.Monoid
 
-
--- | 'LocThetaImage' - function from DrawingContext, start point 
--- and inclination to a polymorphic /answer/ and a graphic 
--- /primitive/ (ImageAns).
+-- | 'LocThetaImage' - function from start point, inclination and
+-- DrawingContext to a polymorphic /answer/ and a graphic 
+-- /primitive/ (PrimW).
 --
--- The answer is expected to be a Functor.
---
-type LocThetaImage u a = LocThetaQuery u (ImageAns u a)
+newtype LocThetaImage u a = LocThetaImage { 
+          getLocThetaImage :: Point2 u -> Radian -> Image u a }
 
+type instance DUnit (LocThetaImage u a) = u
+type instance Answer (LocThetaImage u a) = a
 
--- | LocThetaGraphic - function from DrawingContext, start point 
--- and inclination to a graphic /primitive/ (GraphicAns).
---
-type LocThetaGraphic u  = LocThetaQuery u (GraphicAns u)
+type LocThetaGraphic u = LocThetaImage u (UNil u)
 
 
 -- | Type specialized version of 'LocThetaImage'.
 --
-type DLocThetaImage a   = LocThetaImage Double a
+type DLocThetaImage a        = LocThetaImage Double a
 
 -- | Type specialized version of 'LocThetaGraphic'.
 --
-type DLocThetaGraphic   = LocThetaGraphic Double 
+type DLocThetaGraphic        = LocThetaGraphic Double 
 
 
 
+instance Functor (LocThetaImage u) where
+  fmap f ma = LocThetaImage $ \pt ang -> 
+                fmap f $ getLocThetaImage ma pt ang
 
--- | 'intoLocThetaImage' : @ loc_theta_query * loc_theta_graphic -> LocThetaImage @
---
--- /LocTheta/ version of 'intoImage'. 
--- 
--- The 'LocThetaImage' is built as a function from an implicit 
--- start point and angle of inclination to the answer.
---
-intoLocThetaImage :: LocThetaQuery u a 
-                  -> LocThetaGraphic u 
-                  -> LocThetaImage u a
-intoLocThetaImage qf ma = 
-    promoteR2 $ \a b -> replaceAns <$> apply2R2 qf a b <*> apply2R2 ma a b
+instance Applicative (LocThetaImage u) where
+  pure a    = LocThetaImage $ \_  _   -> pure a
+  mf <*> ma = LocThetaImage $ \pt ang -> 
+                getLocThetaImage mf pt ang <*> getLocThetaImage ma pt ang
 
 
-
--- | /Downcast/ an 'LocThetaImage' to a 'LocThetaGraphic'.
--- 
--- This means forgetting the answer of the Image, replacing it 
--- with @()@.
---
-locThetaGraphic_ :: LocThetaImage u a -> LocThetaGraphic u
-locThetaGraphic_ = (fmap . fmap . fmap) ignoreAns
+instance Monad (LocThetaImage u) where
+  return a  = LocThetaImage $ \_  _   -> return a
+  ma >>= k  = LocThetaImage $ \pt ang -> 
+                getLocThetaImage ma pt ang >>= \ans -> 
+                getLocThetaImage (k ans) pt ang
 
 
--- | 'emptyLocThetaGraphic' : @ LocThetaGraphic @
---
--- Build an empty 'LocThetaGraphic' (i.e. a function 
--- /from Point and Inclination to Graphic/). 
--- 
--- The 'emptyLocThetaGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, although it does generate a 
--- minimum bounding box at the implicit start point.
--- 
-emptyLocThetaGraphic :: InterpretUnit u => LocThetaGraphic u
-emptyLocThetaGraphic = lift1R2 emptyLocGraphic
+instance Monoid a => Monoid (LocThetaImage u a) where
+  mempty          = pure mempty
+  ma `mappend` mb = LocThetaImage $ \pt ang -> 
+                      getLocThetaImage ma pt ang 
+                         `mappend` getLocThetaImage mb pt ang
 
 
 
+instance DrawingCtxM (LocThetaImage u) where
+  askDC           = LocThetaImage $ \_  _   -> askDC
+  asksDC fn       = LocThetaImage $ \_  _   -> asksDC fn
+  localize upd ma = LocThetaImage $ \pt ang -> 
+                      localize upd (getLocThetaImage ma pt ang)
 
--- | Use this to convert 'LocThetaGraphic' or 'LocThetaImage' 
+
+instance BinaryObj (LocThetaImage u a) where
+  type BinaryR1 (LocThetaImage u a) = Point2 u 
+  type BinaryR2 (LocThetaImage u a) = Radian
+  
+  promoteB fn       = LocThetaImage $ \pt ang -> fn pt ang
+  applyB mf pt ang  = getLocThetaImage mf pt ang
+
+
+-- | Use this to convert 'LocThetaThetaGraphic' or 'LocThetaThetaImage' 
 -- with Functor answer.
 --
 uconvLocThetaImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                     => LocThetaImage u (t u) -> LocThetaImage u1 (t u1)
-uconvLocThetaImageF = uconvR2a szconvAnsF
+uconvLocThetaImageF ma = LocThetaImage $ \pt ang -> 
+    getFontSize >>= \sz -> 
+    let ptu = uconvertF sz pt
+    in uconvImageF $ getLocThetaImage ma ptu ang
+
 
 
 
@@ -126,242 +125,15 @@ uconvLocThetaImageF = uconvR2a szconvAnsF
 --
 uconvLocThetaImageZ :: (InterpretUnit u, InterpretUnit u1) 
                     => LocThetaImage u a -> LocThetaImage u1 a
-uconvLocThetaImageZ = uconvR2a szconvAnsZ
+uconvLocThetaImageZ ma = LocThetaImage $ \pt ang -> 
+    getFontSize >>= \sz -> 
+    let ptu = uconvertF sz pt
+    in uconvImageZ $ getLocThetaImage ma ptu ang
 
 
 
-
---------------------------------------------------------------------------------
--- Combining LocThetaImages
-
-{-
-
-infixr 6 `catLTI`
-infixr 5 `sepLTI`
-
--- | Concatenate two LocThetaImages. The start point is /shared/.
---
--- This is just @oplus@.
---
-catLTI :: OPlus (t u)
-       => LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u
-catLTI = oplus
-
-
-
--- | Concatenate two LocThetaImages, the second LocThetaImage is 
--- displaced /orthonormally/ from the the start point by the 
--- supplied vector (separator). 
---
--- Here, /orthonormally/ means that the x-component of the vector
--- displaces the second LocThetaImage in parallel to the angle
--- of inclination, the y-component of the vector displaces 
--- perpendicular to the incliantion.
---
--- Note - the separator is exactly a displacement of the start
--- point, LocImages have no notion of border so this function
--- can only be used to concatenate to objects side by side if
--- there boundaries are known beforehand.
+-- | Having /empty/ at the specific 'LocThetaImage' type is useful.
 -- 
--- Consider a PosThetaImage if you need more sophisticated arrangement.
--- 
-sepLTI :: (Floating u, OPlus (t u))
-       => Vec2 u -> LocThetaImage t u -> LocThetaImage t u 
-       -> LocThetaImage t u
-sepLTI v g1 g2 = g1 `oplus` moveStartTheta (displaceOrtho v) g2
+emptyLocThetaImage :: Monoid a => LocThetaImage u a
+emptyLocThetaImage = mempty
 
-
-
--- | Concatenate two LocThetaImages, the second LocImage is 
--- displaced parallel to the inclination by the supplied distance. 
---
--- Note - this is exactly a start point displacement. See the 
--- caveat for 'sepLTI'.
--- 
-paraSepLTI :: (Floating u, OPlus (t u))
-           => u -> LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u
-paraSepLTI u = sepLTI (hvec u)
-
-
-
--- | Concatenate two LocThetaImages, the second LocThetaImage is 
--- displaced perpendicular to the inclination by the supplied 
--- distance.
---
--- Note - this is exactly a start point displacement. See the 
--- caveat for 'sepLTI'.
--- 
-perpSepLTI :: (Floating u, OPlus (t u))
-       => u -> LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u
-perpSepLTI u = sepLTI (vvec u)
-
-
--- | Repeatedly draw a LocThetaImage, moving the start point each time 
--- /orthonormally/ by the supplied vector.
---
--- Note - the first LocThetaImage argument is the /empty/ alternative
--- this is drawn if the repeat count is less than 1.
---
-repeatLTI :: (Floating u, OPlus (t u))
-          => LocThetaImage t u -> Int -> Vec2 u -> LocThetaImage t u 
-          -> LocThetaImage t u
-repeatLTI alt i _  _  | i < 1 = alt
-repeatLTI _   i v  gf         = promoteR2 $ \start ang -> body start ang
-  where
-    body start ang = go (i-1) (drawF start) (moveF start)
-      where
-        drawF pt                = atIncline gf pt ang
-        moveF pt                = displaceOrtho v ang pt
-        go n acc pt | n < 1     = acc
-                    | otherwise = go (n-1) (acc `oplus` drawF pt) (moveF pt)
-
-
-
--- | Repeatedly draw a LocThetaImage, moving parallel to the 
--- inclination each time by the supplied distance.
---
--- Note - this draws the alternative LocThetaImage if the repeat count 
--- is less than 1.
---
-paraRepeatLTI :: (Floating u, OPlus (t u))
-              => LocThetaImage t u -> Int -> u -> LocThetaImage t u 
-              -> LocThetaImage t u
-paraRepeatLTI alt i u = repeatLTI alt i (hvec u) 
-
-
-
--- | Repeatedly draw a LocThetaImage, moving perpendicular to the
--- inclination each time by the supplied distance.
---
--- Note - this draws the alternative LocThetaImage if the repeat count 
--- is less than 1.
---
-perpRepeatLTI :: (Floating u, OPlus (t u))
-          => LocThetaImage t u -> Int -> u -> LocThetaImage t u -> LocThetaImage t u
-perpRepeatLTI alt i u = repeatLTI alt i (vvec u) 
-
-
-
--- | Concatenate a list of LocThetaImages, spacing them by moving 
--- the start point /orthonormally/ each time by the supplied 
--- vector.
---
--- Note - this draws the /empty/ alternative if the list is empty.
---
-spaceLTI :: (Floating u, OPlus (t u))
-         => LocThetaImage t u -> Vec2 u -> [LocThetaImage t u] 
-         -> LocThetaImage t u
-spaceLTI alt _ []     = alt
-spaceLTI _   v (g:gs) = promoteR2 $ \start ang -> body start ang 
-  where
-    body start ang = go (drawF g start) (moveF start) gs
-      where
-        drawF gf pt      = atIncline gf pt ang
-        moveF pt         = displaceOrtho v ang pt
-        go acc _  []     = acc
-        go acc pt (f:fs) = go (acc `oplus` drawF f pt) (moveF pt) fs
-
-
-
--- | Concatenate a list of LocThetaImages, spacing them by moving 
--- the start point parallel to the inclination each time by the 
--- supplied distance.
---
--- Note - this draws the /empty/ alternative if the list is empty.
---
-paraSpaceLTI :: (Floating u, OPlus (t u))
-              => LocThetaImage t u -> u -> [LocThetaImage t u] 
-              -> LocThetaImage t u
-paraSpaceLTI alt u = spaceLTI alt (hvec u)
-
-
--- | Concatenate a list of LocThetaImages, spacing them by moving 
--- the start point perpendicular to the inclination each time by 
--- the supplied distance.
---
--- Note - this draws the /empty/ alternative if the list is empty.
---
-perpSpaceLTI :: (Floating u, OPlus (t u))
-              => LocThetaImage t u -> u -> [LocThetaImage t u] 
-              -> LocThetaImage t u
-perpSpaceLTI alt u = spaceLTI alt (vvec u)
-
-
--- | Enclose l r x
---
--- Note - the @left@ LocThetaImage is drawn at the start point, the 
--- LocThetaImage @x@ is concatenated with 'sepLTI' then the right 
--- LocThetaImage is concatenated with 'sepLi'.
---
-encloseLTI :: (Floating u, OPlus (t u))
-           => Vec2 u 
-           -> LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u 
-           -> LocThetaImage t u
-encloseLTI v lft rht obj = lft `op` obj `op` rht
-  where
-    op = sepLTI v
-
-
-
--- | Parallel version of 'encloseLTI'.
---
--- Note - the @left@ LocThetaImage is drawn at the start point, the 
--- LocThetaImage @x@ is concatenated with 'sepLTI' then the right 
--- LocThetaImage is concatenated with 'sepLTI'.
---
-paraEncloseLTI :: (Floating u, OPlus (t u))
-               => u 
-               -> LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u 
-               -> LocThetaImage t u
-paraEncloseLTI u = encloseLTI (hvec u)
-
-
-
--- | Perpendicular version of 'encloseLTI'.
---
--- Note - the @left@ LocThetaImage is drawn at the start point, the 
--- LocThetaImage @x@ is concatenated with 'sepLTI' then the right 
--- LocThetaImage is concatenated with 'sepLTI'.
---
-perpEncloseLTI :: (Floating u, OPlus (t u))
-               => u 
-               -> LocThetaImage t u -> LocThetaImage t u -> LocThetaImage t u 
-               -> LocThetaImage t u
-perpEncloseLTI u = encloseLTI (vvec u)
-
-
-
--- | Concatenate a list of LocThetaImages, punctuating with the 
--- separator.
---
--- Note - this draws the /empty/ alternative if the list is empty.
---
-punctuateLTI :: (Floating u, OPlus (t u))
-             => LocThetaImage t u -> Vec2 u 
-             -> LocThetaImage t u -> [LocThetaImage t u] 
-             -> LocThetaImage t u
-punctuateLTI alt _ _   []     = alt
-punctuateLTI _   v sep (g:gs) = go g gs
-  where 
-    go acc []     = acc
-    go acc (f:fs) = go (encloseLTI v acc f sep) fs
-
-
--- | Parallel version of 'punctuateLTI'
---
-paraPunctuateLTI :: (Floating u, OPlus (t u))
-                 => LocThetaImage t u -> u 
-                 -> LocThetaImage t u -> [LocThetaImage t u] 
-                 -> LocThetaImage t u
-paraPunctuateLTI alt u = punctuateLTI alt (hvec u)
-
-
--- | Perpendicular version of 'punctuateLTI'
---
-perpPunctuateLTI :: (Floating u, OPlus (t u))
-                 => LocThetaImage t u -> u 
-                 -> LocThetaImage t u -> [LocThetaImage t u] 
-                 -> LocThetaImage t u
-perpPunctuateLTI alt u = punctuateLTI alt (vvec u)
-
--}

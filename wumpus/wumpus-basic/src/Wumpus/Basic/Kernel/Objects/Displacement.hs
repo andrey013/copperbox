@@ -20,28 +20,10 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   (
 
 
-  -- * Displacement types
+  -- * Displacement
     PointDisplace
-  , ThetaDisplace
   , ThetaPointDisplace
-
-
-  -- * Apply a displacement
-  , moveStart
-  , moveStartTheta
-  , moveStartThetaPoint
-  , moveStartThetaIncl
-
-  -- * Build a displacement
   , displace
-  , dispVec
-  , dispH
-  , dispV
-
-  , dispDirection
-  , dispCorner
-  , dispCardinal
-
 
   , dispParallel
   , dispPerpendicular
@@ -71,23 +53,11 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , go_down_left
   , go_down_right
 
-  -- * Orphans - these functions need a new home...
-  , centerRelative
-  , left_of
-  , right_of
-  , above_left_of
-  , above_right_of
-  , below_left_of
-  , below_right_of
 
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Objects.Anchors
-import Wumpus.Basic.Kernel.Objects.Basis
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -108,16 +78,6 @@ type PointDisplace u = Point2 u -> Point2 u
 
 
 
--- | 'ThetaDisplace' is a type representing functions 
--- @from Radian to Radian@.
---
--- It is especially useful for building composite graphics where 
--- one part of the graphic is drawn from a different start point 
--- to the other part.
---
-type ThetaDisplace = Radian -> Radian
-
-
 -- | 'ThetaPointDisplace' is a type representing functions 
 -- @from Radian * Point to Point@.
 --
@@ -128,128 +88,19 @@ type ThetaDisplace = Radian -> Radian
 type ThetaPointDisplace u = Radian -> Point2 u -> Point2 u
 
 
---------------------------------------------------------------------------------
--- Displacing points and inclination
 
-
-
--- | Move the start-point of a 'LocQuery' with the supplied 
--- displacement function.
+-- | 'displace' : @ Vec2 -> PointDisplace @
 --
-moveStart :: PointDisplace u -> LocQuery u a -> LocQuery u a
-moveStart f ma = domMap1 f ma
-
-
-
--- | Move the start-point of a 'LocThetaQuery' with the supplied 
--- displacement function.
+-- Alias for @.+^@ from @Data.AffineSpace@.
 --
-moveStartTheta :: ThetaPointDisplace u 
-               -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartTheta f cf = consCF $ \ctx -> 
-    (\pt ang -> let f1 = runCF ctx cf in f1 (f ang pt) ang)
-
-
--- | Move the start-point of a 'LocThetaCF' with the supplied 
--- displacement function.
---
-moveStartThetaPoint :: PointDisplace u 
-                    -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartThetaPoint f = domMap2 f id
-
-
--- | Change the inclination of a 'LocThetaCF' with the supplied 
--- displacement function.
---
-moveStartThetaIncl :: ThetaDisplace -> LocThetaQuery u a -> LocThetaQuery u a
-moveStartThetaIncl f = domMap2 id f
-
-
---------------------------------------------------------------------------------
--- PointDisplace functions
-
--- | 'displace' : @ x -> y -> PointDisplace @
---
--- Build a combinator to move @Points@ by the supplied @x@ and 
--- @y@ distances.
---
-displace :: Num u => u -> u -> PointDisplace u
-displace dx dy (P2 x y) = P2 (x+dx) (y+dy)
-
-
--- | 'dispVec' : @ (V2 x y) -> PointDisplace @
--- 
--- Version of 'displace' where the displacement is supplied as
--- a vector rather than two parameters.
--- 
-dispVec :: Num u => Vec2 u -> PointDisplace u
-dispVec (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
-
-
--- | 'dispH' : @ x -> PointDisplace @
--- 
--- Build a combinator to move @Points@ by horizontally the 
--- supplied @x@ distance.
---
-dispH :: Num u => u -> PointDisplace u
-dispH dx (P2 x y) = P2 (x+dx) y
-
--- | 'dispV' : @ y -> PointDisplace @
--- 
--- Build a combinator to move @Points@ vertically by the supplied 
--- @y@ distance.
---
-dispV :: Num u => u -> PointDisplace u
-dispV dy (P2 x y) = P2 x (y+dy)
-
-
--- Note - maybe dispDirection etc. are no longer merited.
---
--- Using the /go vectors/ probably adds clarity to client code
--- that using these \"exotic\" displacements would obscure.
---
-
-dispDirection :: Num u => Direction -> u -> PointDisplace u
-dispDirection UP     = dispV
-dispDirection DOWN   = dispV . negate
-dispDirection LEFT   = dispH . negate
-dispDirection RIGHT  = dispH   
+displace :: Num u => Vec2 u -> PointDisplace u
+displace (V2 dx dy) (P2 x y) = P2 (x+dx) (y+dy)
 
 
 
 
--- | For the /corner/ cardinals (north-east, etc.)
--- this displaces horizontally and vertically by the supplied 
--- unit distance - i.e. displacing to the corner of the bounding 
--- square.
---
--- Use 'dispCardinal' to displace with the radial length.
--- 
-dispCorner :: Num u => Cardinal -> u -> PointDisplace u
-dispCorner NORTH      du = dispVec $ V2   0     du
-dispCorner NORTH_EAST du = dispVec $ V2   du    du
-dispCorner EAST       du = dispVec $ V2   du     0
-dispCorner SOUTH_EAST du = dispVec $ V2   du  (-du)
-dispCorner SOUTH      du = dispVec $ V2    0  (-du)
-dispCorner SOUTH_WEST du = dispVec $ V2 (-du) (-du)
-dispCorner WEST       du = dispVec $ V2 (-du)    0
-dispCorner NORTH_WEST du = dispVec $ V2 (-du)   du
 
 
--- | Displace radially in the supplied direction. 
--- 
--- The supplied distance is the length of radius of a bounding 
--- circle.
---
-dispCardinal :: Floating u => Cardinal -> u -> PointDisplace u
-dispCardinal NORTH      = dispV
-dispCardinal NORTH_EAST = dispVec . avec (0.25 * pi)
-dispCardinal EAST       = dispH . negate
-dispCardinal SOUTH_EAST = dispVec . avec (1.75 * pi)
-dispCardinal SOUTH      = dispV . negate
-dispCardinal SOUTH_WEST = dispVec . avec (1.25 * pi)
-dispCardinal WEST       = dispH
-dispCardinal NORTH_WEST = dispVec . avec (0.75 * pi)
 
 
 --------------------------------------------------------------------------------
@@ -320,13 +171,13 @@ dispDirectionTheta RIGHT   = dispParallel
 -- 
 dispCardinalTheta :: Floating u => Cardinal -> u -> ThetaPointDisplace u
 dispCardinalTheta NORTH      = dispPerpendicular
-dispCardinalTheta NORTH_EAST = \d ang -> dispVec (avec (ang + (0.25*pi)) d)
+dispCardinalTheta NORTH_EAST = \d ang -> displace (avec (ang + (0.25*pi)) d)
 dispCardinalTheta EAST       = dispParallel
-dispCardinalTheta SOUTH_EAST = \d ang -> dispVec (avec (ang + (1.75*pi)) d)
+dispCardinalTheta SOUTH_EAST = \d ang -> displace (avec (ang + (1.75*pi)) d)
 dispCardinalTheta SOUTH      = dispPerpendicular . negate
-dispCardinalTheta SOUTH_WEST = \d ang -> dispVec (avec (ang + (1.25*pi)) d)
+dispCardinalTheta SOUTH_WEST = \d ang -> displace (avec (ang + (1.25*pi)) d)
 dispCardinalTheta WEST       = dispParallel . negate
-dispCardinalTheta NORTH_WEST = \d ang -> dispVec (avec (ang + (0.75*pi)) d)
+dispCardinalTheta NORTH_WEST = \d ang -> displace (avec (ang + (0.75*pi)) d)
 
 
 --------------------------------------------------------------------------------
@@ -386,6 +237,11 @@ go_down_right d = V2 d (-d)
 
 
 --------------------------------------------------------------------------------
+
+
+{-
+
+-- ORPHANS - need a new home...
 
 -- | Absolute units.
 -- 
@@ -454,3 +310,4 @@ below_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a)
 below_left_of   = centerRelative ((-1),(-1))
  
 
+-}

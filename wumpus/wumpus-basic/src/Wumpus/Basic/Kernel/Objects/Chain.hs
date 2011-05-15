@@ -42,16 +42,14 @@ module Wumpus.Basic.Kernel.Objects.Chain
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.LocImage
-import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 
 -- In TikZ chains are finite node list and iterated (infite) points
 
@@ -121,29 +119,28 @@ takeAndLast n (a:as)  = go (wrapH a,a) (n-1) as
     go (af,_) i (x:xs) | i > 0     = go (af `snocH` x, x) (i-1) xs
     go acc    _ _                  = acc
 
-
+emptyLoc :: LocGraphic u
+emptyLoc = mempty
 
 -- | Returns the end point...
 --
-chain :: InterpretUnit u 
+chain :: InterpretUnit u
       => ChainAlg u -> [LocImage u a] -> LocImage u (Point2 u)
-chain _   []      = promoteR1 $ \pt -> 
-    fmap (replaceAns pt) $ emptyLocGraphic `at` pt
-
-chain alg fs = promoteR1 $ \pt -> 
-    let ps = interpChainAlg  alg pt in go1 fs pt ps 
+chain _   [] = promoteU $ \pt -> replaceAns pt (applyU emptyLoc pt)
+chain alg fs = promoteU $ \pt -> 
+    let ps = interpChainAlg alg pt in go1 fs pt ps 
   where
-    go1 (gf:gs) _  (p:ps)     = go (graphic_ $ gf `at` p) gs p ps
-    go1 _       p0 _          = fmap (replaceAns p0) $ emptyLocGraphic `at` p0
+    go1 (gf:gs) _  (p:ps)     = go (ignoreAns $ applyU gf p) gs p ps
+    go1 _       p0 _          = replaceAns p0 $ applyU emptyLoc p0
 
-    go acc (gf:gs) _  (p:ps)  = let g1 = graphic_ $ gf `at` p
-                                in go (acc `oplus` g1) gs  p ps
-    go acc _       p0 _       = fmap (replaceAns p0) acc
+    go acc (gf:gs) _  (p:ps)  = let g1 = ignoreAns $ applyU gf p
+                                in go (acc `mappend` g1) gs  p ps
+    go acc _       p0 _       = replaceAns p0 acc
 
 
 -- | Returns no answer, just a 'LocGraphic'.
 chain_ :: InterpretUnit u => ChainAlg u -> [LocImage u a] -> LocGraphic u
-chain_ alg xs = locGraphic_ $ chain alg xs
+chain_ alg xs = fmap (const UNil) $ chain alg xs
 
 
 linearChain :: IterationScheme u -> ChainAlg u
@@ -173,7 +170,7 @@ chainH = L1 . scHorizontal
 
 scHorizontal :: Num u => u -> IterationScheme u
 scHorizontal dx = Scheme { scheme_start = id
-                         , scheme_step  = \pt -> (dispH dx pt, pt)
+                         , scheme_step  = \pt -> (displace (hvec dx) pt, pt)
                          }
    
 
@@ -183,7 +180,7 @@ chainV = L1 . scVertical
 
 scVertical :: Num u => u -> IterationScheme u
 scVertical dy = Scheme { scheme_start = id
-                       , scheme_step  = \pt -> (dispV dy pt, pt)
+                       , scheme_step  = \pt -> (displace (vvec dy) pt, pt)
                        }
 
 
@@ -191,15 +188,15 @@ tableRight :: Num u => Int -> (u,u) -> ChainAlg u
 tableRight num_cols (col_width,row_height) = 
     L1 $ scStepper downF num_cols rightF
   where
-    downF   = dispV $ negate row_height
-    rightF  = dispH col_width
+    downF   = displace $ vvec $ negate row_height
+    rightF  = displace $ hvec col_width
 
 tableDown :: Num u => Int -> (u,u) -> ChainAlg u
 tableDown num_rows (col_width,row_height) = 
     L1 $ scStepper rightF num_rows downF
   where
-    downF   = dispV $ negate row_height
-    rightF  = dispH col_width
+    downF   = displace $ vvec $ negate row_height
+    rightF  = displace $ hvec col_width
 
 
 -- | Outer and inner steppers.
@@ -223,6 +220,6 @@ scCircular :: Floating u => u -> Radian -> Radian -> IterationScheme u
 scCircular radius angstart angseg = Scheme start step 
   where
     start pt        = (pt,angstart)
-    step (ogin,ang) = ((ogin,ang + angseg), dispVec (avec ang radius) ogin)
+    step (ogin,ang) = ((ogin,ang + angseg), displace (avec ang radius) ogin)
 
 

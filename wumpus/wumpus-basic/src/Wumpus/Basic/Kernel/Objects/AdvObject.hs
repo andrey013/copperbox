@@ -71,6 +71,9 @@ import Data.Monoid
 
 
 
+-- Needs to be implemented as a new type as Monoid is different
+
+
 --------------------------------------------------------------------------------
 
 -- | Advance vectors provide an idiom for drawing consecutive

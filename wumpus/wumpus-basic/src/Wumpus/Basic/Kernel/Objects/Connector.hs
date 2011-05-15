@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,87 +25,88 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , DConnectorImage
    , DConnectorGraphic
 
-   , intoConnectorImage
-   , connectorGraphic_
-
-   , emptyConnectorGraphic
-
    , uconvConnectorImageF
    , uconvConnectorImageZ
+
+   , emptyConnectorImage
 
    )
 
    where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.LocImage
 
+import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
+import Data.Monoid
 
 
 -- | ConnectorImage - function from DrawingContext and start and 
 -- end points to a polymorphic /answer/ and a graphic /primitive/.
 --
-type ConnectorImage u a = ConnectorQuery u (ImageAns u a)
+newtype ConnectorImage u a = ConnectorImage { 
+          getConnectorImage :: Point2 u -> Point2 u -> Image u a }
 
 
--- | ConnectorGraphic - function from DrawingContext and start and 
--- end points to a graphic /primitive/.
---
-type ConnectorGraphic u = ConnectorQuery u (GraphicAns u)
+type instance DUnit (ConnectorImage u a) = u
+type instance Answer (ConnectorImage u a) = a
 
+
+
+type ConnectorGraphic u = ConnectorImage u (UNil u)
 
 -- | Type specialized version of 'ConnectorImage'.
 --
-type DConnectorImage a   = ConnectorImage Double a
+type DConnectorImage a        = ConnectorImage Double a
 
 -- | Type specialized version of 'ConnectorGraphic'.
 --
-type DConnectorGraphic   = ConnectorGraphic Double 
+type DConnectorGraphic        = ConnectorGraphic Double 
 
 
 
--- | 'intoConnectorImage' : @ conn_query * conn_graphic -> LocImage @
---
--- /Connector/ version of 'intoImage'. 
--- 
--- The 'ConnectorImage' is built as a function from an implicit 
--- start and end points to the answer.
---
-intoConnectorImage :: ConnectorQuery u a
-                   -> ConnectorGraphic u 
-                   -> ConnectorImage u a
-intoConnectorImage qf ma = 
-    promoteR2 $ \a b -> replaceAns <$> apply2R2 qf a b <*> apply2R2 ma a b  
+instance Functor (ConnectorImage u) where
+  fmap f ma = ConnectorImage $ \p0 p1 -> fmap f $ getConnectorImage ma p0 p1
+
+instance Applicative (ConnectorImage u) where
+  pure a    = ConnectorImage $ \_  _  -> pure a
+  mf <*> ma = ConnectorImage $ \p0 p1 -> 
+                getConnectorImage mf p0 p1 <*> getConnectorImage ma p0 p1
 
 
--- | /Downcast/ an 'ConnectorImage' to a 'ConnectorGraphic'.
--- 
--- This means forgetting the answer of the Image, replacing it 
--- with @()@.
---
-connectorGraphic_ :: ConnectorImage u a -> ConnectorGraphic u
-connectorGraphic_ = (fmap . fmap . fmap) ignoreAns
+instance Monad (ConnectorImage u) where
+  return a  = ConnectorImage $ \_  _  -> return a
+  ma >>= k  = ConnectorImage $ \p0 p1 -> 
+                getConnectorImage ma p0 p1 >>= \ans -> 
+                getConnectorImage (k ans) p0 p1
 
 
--- | 'emptyConnectorGraphic' : @ ConnectorGraphic @
---
--- Build an empty 'ConnectorGraphic'.
--- 
--- The 'emptyConnectorGraphic' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, although it does generate a 
--- bounding box around the rectangular hull of the start and end 
--- points.
--- 
-emptyConnectorGraphic :: InterpretUnit u => ConnectorGraphic u 
-emptyConnectorGraphic = promoteR2 $ \start end -> 
-    let a = emptyLocGraphic `at` start
-        b = emptyLocGraphic `at` end
-    in a `oplus` b
+instance Monoid a => Monoid (ConnectorImage u a) where
+  mempty          = pure mempty
+  ma `mappend` mb = ConnectorImage $ \p0 p1 -> 
+                      getConnectorImage ma p0 p1 
+                      `mappend` getConnectorImage mb p0 p1 
 
+
+
+instance DrawingCtxM (ConnectorImage u) where
+  askDC           = ConnectorImage $ \_  _  -> askDC
+  asksDC fn       = ConnectorImage $ \_  _  -> asksDC fn
+  localize upd ma = ConnectorImage $ \p0 p1 -> 
+                      localize upd (getConnectorImage ma p0 p1)
+
+
+
+instance BinaryObj (ConnectorImage u a) where
+  type BinaryR1 (ConnectorImage u a) = Point2 u 
+  type BinaryR2 (ConnectorImage u a) = Point2 u 
+  
+  promoteB fn       = ConnectorImage $ \p0 p1 -> fn p0 p1
+  applyB mf p0 p1   = getConnectorImage mf p0 p1
 
 
 
@@ -114,7 +116,12 @@ emptyConnectorGraphic = promoteR2 $ \start end ->
 --
 uconvConnectorImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                      => ConnectorImage u (t u) -> ConnectorImage u1 (t u1)
-uconvConnectorImageF = uconvR2ab szconvAnsF
+uconvConnectorImageF ma = ConnectorImage $ \p0 p1 -> 
+    getFontSize >>= \sz -> 
+    let p0u = uconvertF sz p0
+        p1u = uconvertF sz p1
+    in uconvImageF $ getConnectorImage ma p0u p1u
+
 
 
 
@@ -122,10 +129,20 @@ uconvConnectorImageF = uconvR2ab szconvAnsF
 --
 uconvConnectorImageZ :: (InterpretUnit u, InterpretUnit u1) 
                      => ConnectorImage u a -> ConnectorImage u1 a
-uconvConnectorImageZ = uconvR2ab szconvAnsZ
+uconvConnectorImageZ ma = ConnectorImage $ \p0 p1 -> 
+    getFontSize >>= \sz -> 
+    let p0u = uconvertF sz p0
+        p1u = uconvertF sz p1
+    in uconvImageZ $ getConnectorImage ma p0u p1u
+
+-- | Having /empty/ at the specific 'ConnectorImage' type is useful.
+-- 
+emptyConnectorImage :: Monoid a => ConnectorImage u a
+emptyConnectorImage = mempty
 
 
 --------------------------------------------------------------------------------
+
 
 
 --
@@ -137,3 +154,4 @@ uconvConnectorImageZ = uconvR2ab szconvAnsZ
 -- than combination. See the ConnectorPath operations in 
 -- Wumpus-Drawing for some examples.
 --
+
