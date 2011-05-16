@@ -10,12 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Bounded versions of Graphic and LocGraphic.
---
--- Bounded meaning they are actually Images that return the 
--- bounding box of the Graphic.
--- 
--- These abojects are type synonyms.
+-- Helpers for working with Images and LocImages that produce
+-- bounding boxes.
 --
 --------------------------------------------------------------------------------
 
@@ -23,72 +19,35 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   (
 
 
-  -- * Bounded graphic / loc graphic
-    BoundedGraphic
-  , DBoundedGraphic
-  , BoundedLocGraphic
-  , DBoundedLocGraphic
-  , BoundedLocThetaGraphic
-  , DBoundedLocThetaGraphic
+  -- * Bounding box graphic helpers
+    centerOrthoBBox
 
 
   , emptyBoundedLocGraphic
   , emptyBoundedLocThetaGraphic
 
-  , centerOrthoBBox
 
-  , illustrateBoundedGraphic
-  , illustrateBoundedLocGraphic
-  , illustrateBoundedLocThetaGraphic
+--  , illustrateBoundedGraphic
+--  , illustrateBoundedLocGraphic
+--  , illustrateBoundedLocThetaGraphic
 
   , bbrectangle
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
-import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 
 --------------------------------------------------------------------------------
-
--- | Graphic with a bounding box.
--- 
-type BoundedGraphic u      = Image u (BoundingBox u)
-
-type DBoundedGraphic       = BoundedGraphic Double
-
-
-
-
--- | LocGraphic with a bounding box.
---
-type BoundedLocGraphic u      = LocImage u (BoundingBox u)
-
-type DBoundedLocGraphic       = BoundedLocGraphic Double
-
-
--- | LocThetaGraphic with a bounding box.
---
--- Note the size of bounding box for the \"same\" shape will vary 
--- according to the rotation. A bounding box is always 
--- orthonormal (?) to the x- and y-axes.
---
-type BoundedLocThetaGraphic u   = LocThetaImage u (BoundingBox u)
-
-type DBoundedLocThetaGraphic    = BoundedLocThetaGraphic Double
-
-
-
-
 
 
 
@@ -110,37 +69,32 @@ centerOrthoBBox theta bb = traceBoundary $ map (rotateAbout theta ctr) ps
     ps  = boundaryCornerList bb
 
 
--- | 'emptyBoundedLocGraphic' : @ BoundedLocGraphic @
---
--- Build an empty 'BoundedLocGraphic'.
+
+-- | Build an empty 'LocGraphic' returning a bounding box.
 -- 
 -- The 'emptyBoundedLocGraphic' is treated as a /null primitive/ 
 -- by @Wumpus-Core@ and is not drawn, although it does generate
 -- the minimum bounding box with both the bottom-left and 
 -- upper-right corners at the implicit start point.
 --
-emptyBoundedLocGraphic :: InterpretUnit u => BoundedLocGraphic u
-emptyBoundedLocGraphic = intoLocImage fn emptyLocGraphic
-  where
-    fn = promoteR1 $ \pt -> return $ BBox pt pt
+emptyBoundedLocGraphic :: InterpretUnit u => LocImage u (BoundingBox u)
+emptyBoundedLocGraphic = promoteU $ \pt -> 
+    replaceAns (BBox pt pt) $ primGraphic mempty
 
 
 
 
--- | 'emptyBoundedLocThetaGraphic' : @ BoundedLocThetaGraphic @
---
--- Build an empty 'BoundedLocThetaGraphic'.
+-- | Build an empty 'LocThetaGraphic' returning a bounding box.
 -- 
--- The 'emptyBoundedLocThetaGraphic' is treated as a /null primitive/ 
--- by @Wumpus-Core@ and is not drawn, although it does generate
--- the minimum bounding box with both the bottom-left and 
--- upper-right corners at the implicit start point (the implicit 
--- inclination can be ignored).
+-- The 'emptyBoundedLocThetaGraphic' is treated as a 
+-- /null primitive/  by @Wumpus-Core@ and is not drawn, although 
+-- it does generate the minimum bounding box with both the 
+-- bottom-left and upper-right corners at the implicit start point 
 --
-emptyBoundedLocThetaGraphic :: InterpretUnit u => BoundedLocThetaGraphic u
-emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
-  where
-    fn = promoteR2 $ \pt _ -> return $ BBox pt pt
+emptyBoundedLocThetaGraphic :: InterpretUnit u 
+                            => LocThetaImage u (BoundingBox u)
+emptyBoundedLocThetaGraphic = promoteB $ \pt _ -> 
+    replaceAns (BBox pt pt) $ primGraphic mempty
 
 
 --
@@ -159,7 +113,7 @@ emptyBoundedLocThetaGraphic = intoLocThetaImage fn emptyLocThetaGraphic
 --------------------------------------------------------------------------------
 -- 
 
-
+{-
 -- | Draw a BoundedGraphic, illustrating the bounding box.
 --
 illustrateBoundedGraphic :: InterpretUnit u
@@ -188,17 +142,17 @@ illustrateBoundedLocThetaGraphic gf = elaborateR2 gf fn
   where
     fn bb = lift0R2 (bbrectangle bb)
 
-
+-}
 
 
 bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
-    | llx == urx && lly == ury = emptyLocGraphic `at` p1
+    | llx == urx && lly == ury = mempty `at` p1
     | otherwise                = 
-        localize drawing_props $ rect1 `oplus` cross
+        localize drawing_props $ rect1 `mappend` cross
   where
     drawing_props = cap_round . dotted_line
     rect1         = dcRectangle STROKE (urx-llx) (ury-lly) `at` p1
     cross         = straightLine p1 p2 
-                      `oplus` straightLine (P2 llx ury) (P2 urx lly)
+                      `mappend` straightLine (P2 llx ury) (P2 urx lly)
 

@@ -35,16 +35,16 @@ drawing01 = drawTracing mf
 mf :: TraceDrawing Double ()
 mf = do
     drawl (P2 0 120) $ 
-        runAdvObjectR1 $ evenspace (hvec 10) [text01, text02, text01]
+        runAdvObject $ evenspace (hvec 10) [text01, text02, text01]
 
     drawl (P2 0 80) $ 
-        runAdvObjectR1 $ advances [text01, text02, text01]
+        runAdvObject $ advances [text01, text02, text01]
 
     drawl (P2 0 40) $ 
-        runAdvObjectR1 (miniDisk `advance` text01 `advance` miniDisk)
+        runAdvObject (miniDisk `advance` text01 `advance` miniDisk)
 
     drawl (P2 0 0) $
-        runAdvObjectR1 (miniDisk `advance` text02 `advance` miniDisk)
+        runAdvObject (miniDisk `advance` text02 `advance` miniDisk)
 
 
 -- Normally, text calculate the advance vector from the font 

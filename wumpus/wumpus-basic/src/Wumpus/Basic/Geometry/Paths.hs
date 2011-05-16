@@ -96,7 +96,7 @@ runPathAlgVec (PathAlg _ vs)                  = (Nothing, vs)
 
 drawVertexPathAlg :: InterpretUnit u 
                   => DrawStyle -> PathAlg u -> LocGraphic u
-drawVertexPathAlg style alg = promoteR1 $ \pt -> 
+drawVertexPathAlg style alg = promoteU $ \pt -> 
     vertexPP (runPathAlgPoint pt alg) >>= dcClosedPath style
 
 

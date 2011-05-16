@@ -55,6 +55,9 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , ignoreAns
   , replaceAns
 
+  , Decorate(..)
+
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -244,23 +247,53 @@ class BinaryObj (obj :: * ) where
    
 
 
-
+-- Note - maybe this should just be an operator on LocImage...
+--
 class MoveStart img where
   moveStart :: u ~ DUnit img => Vec2 u -> img -> img
 
 
-ignoreAns :: Functor f => f u -> f (UNil u)
+-- | Note - the kind of f allows fo unit annotation.
+--
+ignoreAns :: Functor (f u) => f u a -> f u (UNil u)
 ignoreAns = fmap (const UNil)
 
 -- | Replace the answer produced by a graphic object.
 --
--- Note - the new answer must share the same unit type as the
--- initial answer, although it does not need to have the same
--- wrapper type.
---
-replaceAns :: Functor f => a -> f z -> f a
+replaceAns :: Functor (f u) => a -> f u z -> f u a
 replaceAns a = fmap (const a)
 
+
+class Decorate (f :: * -> * -> *) where
+  decorate :: f u a -> f u z -> f u a
+  elaborate :: f u a -> (a -> f u z) -> f u a
+
+-- | Should a decoration \"lift\" a query (Pure) to an image (PrimW)? 
+--
+-- Currently I don\'t think it should.
+--
+decoratePrimW :: PrimW u a -> PrimW u z -> PrimW u a
+decoratePrimW (PrimW ca a) (PrimW cb _) = PrimW (ca `mappend` cb) a
+decoratePrimW a            _            = a
+
+
+-- | However elaborating seems natural to take a query (Pure) to 
+-- an image (PrimW) as it works like /swapping/ bind.
+--
+elaborateImage :: Image u a -> (a -> Image u z) -> Image u a
+elaborateImage ma k = Image $ \ ctx -> case getImage ma ctx of 
+    PrimW ca a -> let cb = getCA $ getImage (k a) ctx in PrimW (ca `mappend` cb) a
+    Pure a     -> let cb = getCA $ getImage (k a) ctx in PrimW cb a
+  where
+    getCA (PrimW ca _) = ca
+    getCA _            = mempty
+
+
+instance Decorate Image where
+  decorate ma mz = Image $ \ctx -> 
+                     decoratePrimW (getImage ma ctx) (getImage mz ctx)
+
+  elaborate = elaborateImage  
 
 
 --------------------------------------------------------------------------------
@@ -336,84 +369,6 @@ instance (Translate a, InterpretUnit u, u ~ DUnit a) =>
 
 -- OLD 
 {-
-
-type LocQuery u a               = CF (Point2 u -> a)
-type LocThetaQuery u a          = CF (Point2 u -> Radian -> a)
-type ConnectorQuery u a         = CF (Point2 u -> Point2 u -> a)
-
-
-
-
-
--- Design note - GraphicAns needs a unit for consistency even 
--- though it is never scrutinized.
--- 
-
-
-data ImageAns u a = Ans CatPrim a
-
-type GraphicAns u = ImageAns u (UNil u)
-
-
-
-type instance DUnit (ImageAns u a) = u
-
-
---------------------------------------------------------------------------------
--- OPlus and monoid
-
-
-instance OPlus a => OPlus (ImageAns u a) where
-  Ans cp0 a `oplus` Ans cp1 b = Ans (cp0 `oplus` cp1) (a `oplus` b)
-
--- Note - like CF the mconcat definition avoids starting with 
--- mempty.
---
-instance Monoid a => Monoid (ImageAns u a) where
-  mempty                        = Ans mempty mempty
-  Ans cp0 a `mappend` Ans cp1 b = Ans (cp0 `mappend` cp1) (a `mappend` b)
-
-  mconcat []      = mempty
-  mconcat (a:as)  = step a as
-    where
-      step ac []     = ac
-      step ac (x:xs) = step (ac `mappend` x) xs
-
-
---------------------------------------------------------------------------------
--- Affine instances 
-
--- 
--- Design Note
---
--- Translate and RotateAbout require the unit to be /scalar/ 
--- e.g. Double, Centimeter, Pica.
---
--- This is annoying and a limitation, but an alternative would
--- need access to current-font-size which cannot be a pure 
--- function.
--- 
-
-instance Rotate a => Rotate (ImageAns u a) where
-  rotate ang (Ans cp a) = Ans (rotate ang cp) (rotate ang a)
-
-
-instance (RotateAbout a, ScalarUnit u, u ~ DUnit a) => 
-    RotateAbout (ImageAns u a) where
-  rotateAbout ang pt@(P2 x y) (Ans cp a) = 
-    Ans (rotateAbout ang (P2 (toPsPoint x) (toPsPoint y)) cp)
-        (rotateAbout ang pt a) 
-        
-
-
-instance Scale a => Scale (ImageAns u a) where
-  scale sx sy (Ans cp a) = Ans (scale sx sy cp) (scale sx sy a)
-
-
-instance (Translate a, ScalarUnit u, u ~ DUnit a) => 
-    Translate (ImageAns u a) where
-  translate dx dy (Ans cp a) = 
-    Ans (translate (toPsPoint dx) (toPsPoint dy) cp) (translate dx dy a) 
 
 
 --------------------------------------------------------------------------------
@@ -492,18 +447,6 @@ szconvAnsZ _ (Ans prim a) = Ans prim a
 
 
 
-infixr 1 `at`
-
-
--- | Downcast a 'LocCF' function by applying it to the supplied 
--- point, making an arity-zero Context Function. 
--- 
--- Remember a 'LocCF' function is a 'CF1' context function where
--- the /static argument/ is specialized to a start point.
---
-at :: LocQuery u a -> Point2 u -> CF a
-at = apply1R1
-
 
 
 infixr 1 `incline`
@@ -523,14 +466,6 @@ incline = apply1R2
 --
 atIncline :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
 atIncline = apply2R2
-
-
--- | Downcast a 'ConnectorQuery' function by applying it to the 
--- start and end point, making an arity-zero Context Function 
--- (a 'CF'). 
--- 
-connect :: ConnectorQuery u a -> Point2 u -> Point2 u -> CF a
-connect = apply2R2
 
 
 

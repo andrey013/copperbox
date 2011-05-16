@@ -30,6 +30,9 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour 
 
+import Data.Monoid
+
+
 emline :: InterpretUnit u => Vec2 Em -> LocGraphic u
 emline = uconvLocImageF . locStraightLine
 
@@ -42,7 +45,7 @@ enDot = uconvLocImageF body
 illustrateLine :: (Real u, Floating u, InterpretUnit u) 
                => Line u -> Graphic u
 illustrateLine (Line p1 p2) = 
-    prefix `oplus` join_line `oplus` suffix `oplus` d1 `oplus` d2
+    mconcat [ prefix, join_line, suffix, d1, d2 ]
   where
     join_line = straightLine p1 p2
     v1        = pvec p1 p2
@@ -59,7 +62,7 @@ illustrateLine (Line p1 p2) =
 
 illustrateLineSegment :: InterpretUnit u => LineSegment u -> Graphic u
 illustrateLineSegment (LineSegment p1 p2) = 
-    join_line `oplus` d1 `oplus` d2
+    join_line `mappend` d1 `mappend` d2
   where
     join_line = straightLine p1 p2
     d1        = enDot `at` p1

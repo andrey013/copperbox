@@ -48,7 +48,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , drawi
   , drawl
   , drawli
-{-
+
   , drawc
   , drawci
 
@@ -57,12 +57,11 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
  
   , drawrc
   , drawrci
--}
+
   ) where
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
--- import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
@@ -381,7 +380,7 @@ drawli pt gf = askDC >>= \ctx ->
 --
 
 
-{-
+
 -- | Draw a ConnectorGraphic with the supplied Anchors taking the 
 -- drawing style from the /drawing context/. 
 --
@@ -402,7 +401,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- 
 drawci :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> Anchor u -> ConnectorImage u a -> m a
-drawci p0 p1 img = drawi (connect img p0 p1)
+drawci p0 p1 img = drawi (connect p0 p1 img)
 
 
 
@@ -432,11 +431,9 @@ nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => (Int,Int) -> LocImage u a -> m a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 let Ans o a = runCF ctx gf pt
-                 in trace (singleH o) >> return a
-
-
-
+                 case runLocImage pt ctx gf of
+                   Pure a    -> return a
+                   PrimW o a -> trace (singleH o) >> return a
  
 
 
@@ -473,7 +470,6 @@ drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
            , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b
            ) 
         => a -> b -> ConnectorImage u ans -> m ans
-drawrci a b img = 
-    let (p0,p1) = radialConnectorPoints a b in drawi (connect img p0 p1)
+drawrci a b gf = 
+    let (p0,p1) = radialConnectorPoints a b in drawi (connect p0 p1 gf)
 
--}

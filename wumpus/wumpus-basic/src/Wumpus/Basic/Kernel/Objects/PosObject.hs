@@ -29,19 +29,15 @@ module Wumpus.Basic.Kernel.Objects.PosObject
     PosObject
   , DPosObject
 
-  , LocRectQuery
-  , BoundedLocRectGraphic
 
   -- * Operations
+  , runPosObject
 
   , makePosObject
-  , makeBindPosObject
+--  , makeBindPosObject
   , emptyPosObject
-  , runPosObjectR0
-  , runPosObjectR1
-  , runPosObjectR2
 
-
+{-
   , localizePO 
   , elaboratePO
   , aelaboratePO 
@@ -57,7 +53,7 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , padVerticalPO
   , padUpPO
   , padDownPO
-
+-}
   , illustratePosObject
 
 
@@ -65,10 +61,10 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.Concat
@@ -94,14 +90,14 @@ import Data.Monoid
 -- graphic from a PosImage have to be generated within the same 
 -- DrawingContext.
 --
-type PosDraw u = Point2 u -> GraphicAns u
+type PosDraw u = Point2 u -> CatPrim
 
 
 -- | A positionable \"Object\" that is drawn as a 
 -- 'BoundedLocGraphic'.
 --
 newtype PosObject u = PosObject 
-          { getPosObject :: CF (Orientation u, PosDraw u) }
+          { getPosObject :: Query u (Orientation u, PosDraw u) }
 
 type instance DUnit (PosObject u) = u
     
@@ -112,36 +108,55 @@ type DPosObject = PosObject Double
 
 
 
-type LocRectQuery u a = CF (Point2 u ->  RectAddress -> a)
-
-type BoundedLocRectGraphic u = LocRectQuery u (ImageAns u (BoundingBox u))
 
 --------------------------------------------------------------------------------
 
 
-instance (Fractional u, Ord u) => OPlus (PosObject u) where
-  oplus = poconcat
 
 instance (Fractional u, Ord u, InterpretUnit u) => Monoid (PosObject u) where
-  mempty = pozero
+  mempty  = emptyPosObject
   mappend = poconcat
 
 
-pozero :: InterpretUnit u => PosObject u
-pozero = PosObject body
-  where
-    body = drawingCtx >>= \ctx -> 
-           let pf = \pt -> runCF ctx (apply1R1 emptyLocGraphic pt)
-           in return (Orientation 0 0 0 0, pf)
 
 poconcat :: (Fractional u, Ord u) => PosObject u -> PosObject u -> PosObject u
 poconcat a b = PosObject body
    where
-     body = drawingCtx >>= \ctx -> 
-            let (o0,pf0) = runCF ctx (getPosObject a)
-                (o1,pf1) = runCF ctx (getPosObject b)
-                pf       = \pt -> pf0 pt `oplus` pf1 pt
-            in return (o0 `oplus` o1, pf)
+    body = askDC >>= \ctx ->
+           let ans1 = runImage ctx (getPosObject a)
+               ans2 = runImage ctx (getPosObject b)
+           in pure (appendW ans1 ans2)
+
+
+
+appendW :: (Fractional u, Ord u)
+        => PrimW u (Orientation u, PosDraw u) 
+        -> PrimW u (Orientation u, PosDraw u) 
+        -> (Orientation u, PosDraw u)
+appendW a b = step (primAnswer a) (primAnswer b)
+  where
+    step (o0,pf0) (o1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
+                             in (o0 `mappend` o1, pf)
+
+
+
+-- | Version of 'runPosObject' that produces a 
+-- 'LocImage' that returns a bounding box. 
+-- 
+-- The 'PosObject' is run with only rect-address as an explicit 
+-- argument (start-point is implicit). The corresponding answer is 
+-- an /arity one/ Graphic that needs drawing with the start-point.
+--
+runPosObject :: Fractional u 
+             => RectAddress -> PosObject u -> LocImage u (BoundingBox u)
+runPosObject addr (PosObject mf) = promoteU $ \pt ->
+   askDC >>= \ctx -> 
+   let (o1,df) = primAnswer $ runImage ctx mf
+       v1      = orientationStart addr o1
+       p1      = pt .+^ v1
+       bb      = orientationBounds o1 p1
+   in replaceAns bb $ primGraphic (df p1)
+
 
 
 -- | 'makePosObject' : @ object_pos * loc_image -> PosObject @ 
@@ -154,15 +169,19 @@ poconcat a b = PosObject body
 -- PosObject type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-makePosObject :: Query (Orientation u) -> LocGraphic u -> PosObject u
+makePosObject :: Query u (Orientation u) -> LocGraphic u -> PosObject u
 makePosObject qortt gf = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let ortt = runCF ctx qortt
-               pf   = runCF ctx gf
-           in return (ortt,pf)
+    body = askDC >>= \ctx -> 
+           let v1   = primAnswer $ runImage ctx qortt
+               pf   = \pt -> getCP $ runLocImage pt ctx gf
+           in return (v1,pf)
+
+    getCP (Pure _)     = mempty
+    getCP (PrimW ca _) = ca
 
 
+{-
 -- | This is a bit of a hack to overcome that the newtype 
 -- wrapper around PosObject stops monadic bind operating 
 -- with the internal CF function.
@@ -178,53 +197,18 @@ makeBindPosObject qy mkO mkG = PosObject body
                pf   = runCF ctx (mkG a)
            in return (ortt,pf)
 
-
+-}
 
 -- | 'emptyPosObject' : @ PosObject @
 --
 -- Build an empty 'PosGraphicObject'.
 --
 emptyPosObject :: InterpretUnit u => PosObject u
-emptyPosObject = 
-    makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
+emptyPosObject = PosObject $ pure (Orientation 0 0 0 0, const mempty)
 
     
--- | Run a PosObject forming an Image (an /arity zero/ answer).
---
-runPosObjectR0 :: Fractional u 
-               => Point2 u -> RectAddress -> PosObject u -> BoundedGraphic u
-runPosObjectR0 pt addr (PosObject mf) = 
-    mf >>= \(ortt,ptf) -> let sv = orientationStart addr ortt
-                              bb = orientationBounds ortt (dispVec sv pt)
-                          in pure $ replaceAns bb $ ptf $ dispVec sv pt
 
-
-
--- | Version of 'runPosObject' that produces a 
--- 'BoundedLocGraphic'. 
--- 
--- The 'PosObject' is run with only rect-address as an explicit 
--- argument (start-point is implicit). The corresponding answer is 
--- an /arity one/ Graphic that needs drawing with the start-point.
---
-runPosObjectR1 :: Fractional u 
-               => RectAddress -> PosObject u -> BoundedLocGraphic u
-runPosObjectR1 addr obj = promoteR1 $ \start -> runPosObjectR0 start addr obj
-
-
--- | Version of 'runPosObject' that produces a 
--- 'BoundedLocRectGraphic'. 
--- 
--- The 'PosObject' is run with no explicit arguments (rect-address 
--- or start-point) so the corresponding answer is an /arity two/ 
--- Graphic that needs drawing with the start-point and 
--- rect-address.
---
-runPosObjectR2 :: Fractional u 
-               => PosObject u -> BoundedLocRectGraphic u
-runPosObjectR2 obj = promoteR2 $ \start addr -> runPosObjectR0 start addr obj
-
-
+{-
 
 -- | Run a DrawingContext update within a 'PosObject'.
 --
@@ -253,34 +237,6 @@ aelaboratePO fn po = PosObject body
            in return (ortt, deco `oplus` ptf)
 
 
-
-
-
-infixr 1 `startAddr`
-
--- | 'startAddr' : @ bounded_loc_rect * rect_pos -> BoundedlocGraphic @
---
--- /Downcast/ a 'BoundedLocRectGraphic' to a 'BoundedLocGraphic' 
--- by supplying it with a 'RectAddress' (start address on the 
--- rectangle frame).
---  
-startAddr :: Floating u 
-          => BoundedLocRectGraphic u -> RectAddress -> BoundedLocGraphic u
-startAddr = apply1R2 
-
-
-
--- | 'atStartAddr' : @ bounded_loc_rect * start_point * rect_pos 
---      -> BoundedGraphic @
---
--- /Downcast/ a 'BoundedLocRectGraphic' to a 'BoundedGraphic' by 
--- supplying it with an initial point and a 'RectAddress' (start 
--- address on the rectangle frame).
---  
-atStartAddr ::  Floating u 
-            => BoundedLocRectGraphic u -> Point2 u -> RectAddress 
-            -> BoundedGraphic u
-atStartAddr = apply2R2
 
 
 
@@ -327,7 +283,7 @@ genPad fn po = PosObject body
                ortt     = fn o0
            in return (ortt,pf0)
 
-
+-}
 --------------------------------------------------------------------------------
 
 
@@ -338,14 +294,14 @@ genPad fn po = PosObject body
 --
 illustratePosObject :: InterpretUnit u 
                    => PosObject u -> LocGraphic u
-illustratePosObject (PosObject mf)  = promoteR1 $ \pt ->   
+illustratePosObject (PosObject mf)  = promoteU $ \pt ->   
     mf >>= \(ortt,ptf) -> 
-    decorateR0 (pure $ ptf pt) (illustrateOrientation ortt `at` pt)
+    decorate (primGraphic $ ptf pt) (illustrateOrientation ortt `at` pt)
 
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u
-illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt -> 
+illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteU $ \pt -> 
     dinterpCtx 3 >>= \radius -> 
     let upd = localize (fill_colour blue . dotted_line)
         bl  = pt .-^ V2 xmin ymin
@@ -353,16 +309,16 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteR1 $ \pt ->
         hln = upd $ locStraightLine (hvec $ xmin+xmaj) `at` pt .-^ hvec xmin
         vln = upd $ locStraightLine (vvec $ ymin+ymaj) `at` pt .-^ vvec ymin
         bdr = upd $ dcRectangle STROKE (xmin+xmaj) (ymin+ymaj) `at` bl
-    in bdr `oplus` hln `oplus` vln `oplus` dot
+    in mconcat [ bdr, hln, vln, dot ]
 
 
 --------------------------------------------------------------------------------
 -- Combining PosObject
 
 
-instance (Fractional u, Ord u) => ZConcat (PosObject u) where
-  superior = oplus
-  anterior = flip oplus
+instance (Fractional u, Ord u, InterpretUnit u) => ZConcat (PosObject u) where
+  superior = mappend
+  anterior = flip mappend
 
 
 instance (Num u, Ord u) => Concat (PosObject u) where
@@ -392,9 +348,9 @@ genMoveAlign :: (Num u)
              -> PosObject u -> PosObject u -> PosObject u
 genMoveAlign mkV mkO po0 po1 = PosObject body
   where
-   body = drawingCtx >>= \ctx -> 
-          let (ortt0,pf0) = runCF ctx (getPosObject po0)
-              (ortt1,pf1) = runCF ctx (getPosObject po1)
+   body = askDC >>= \ctx -> 
+          let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
+              (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
               v1          = mkV ortt0 ortt1
               ortt        = mkO ortt0 ortt1
               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -421,9 +377,9 @@ genMoveSepH :: (Num u)
             -> PosObject u -> PosObject u -> PosObject u
 genMoveSepH mkV mkO sep po0 po1  = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let (ortt0,pf0) = runCF ctx (getPosObject po0)
-               (ortt1,pf1) = runCF ctx (getPosObject po1)
+    body = askDC >>= \ctx -> 
+           let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
+               (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
                v1          = hvec sep ^+^ mkV ortt0 ortt1
                ortt        = extendORight sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -437,10 +393,11 @@ genMoveSepV :: (Num u)
             -> PosObject u -> PosObject u -> PosObject u
 genMoveSepV mkV mkO sep po0 po1 = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let (ortt0,pf0) = runCF ctx (getPosObject po0)
-               (ortt1,pf1) = runCF ctx (getPosObject po1)
+    body = askDC >>= \ctx -> 
+           let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
+               (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
                v1          = vvec (-sep) ^+^ mkV ortt0 ortt1
                ortt        = extendODown sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
+

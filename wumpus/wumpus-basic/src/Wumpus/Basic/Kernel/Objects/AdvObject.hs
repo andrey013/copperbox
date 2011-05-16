@@ -30,17 +30,12 @@ module Wumpus.Basic.Kernel.Objects.AdvObject
   , AdvObject
   , DAdvObject
   
-  , AdvGraphic
-  , DAdvGraphic
+  , runAdvObject
 
   , makeAdvObject
   , emptyAdvObject
-
-
+  , blankAdvObject
   
-  , runAdvObjectR0
-  , runAdvObjectR1
-
 
   -- * Composition
   , advance
@@ -55,10 +50,9 @@ module Wumpus.Basic.Kernel.Objects.AdvObject
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Displacement
-import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -70,8 +64,6 @@ import Control.Applicative
 import Data.Monoid
 
 
-
--- Needs to be implemented as a new type as Monoid is different
 
 
 --------------------------------------------------------------------------------
@@ -105,29 +97,37 @@ advanceV (V2 _ h)  = h
 --------------------------------------------------------------------------------
 -- AdvObject
 
-type AdvDraw u = Point2 u -> GraphicAns u
+type AdvDraw u = Point2 u -> CatPrim
 
 
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
 --
-newtype AdvObject u = AdvObject { getAdvObject :: CF (Vec2 u, AdvDraw u) }
+newtype AdvObject u = AdvObject { getAdvObject :: Query u (Vec2 u, AdvDraw u) }
 
 type instance DUnit (AdvObject u) = u
 
 type DAdvObject     = AdvObject Double
 
 
-type AdvGraphic u       = LocImage u (Vec2 u)
-type DAdvGraphic        = AdvGraphic Double
 
 
 --------------------------------------------------------------------------------
 
 instance (InterpretUnit u) => Monoid (AdvObject u) where
-  mempty  = emptyAdvObject
+  mempty  = blankAdvObject (V2 0 0)
   mappend = advplus
+
+
+-- | Run an 'AdvObject' turning it into an 'LocImage'.
+--
+runAdvObject :: AdvObject u -> LocImage u (Vec2 u)
+runAdvObject (AdvObject mf) = promoteU $ \pt -> 
+   askDC >>= \ctx -> 
+   case runImage ctx mf of
+     Pure (v1,df) -> replaceAns v1 $ primGraphic (df pt)
+     PrimW _ (v1,df) -> replaceAns v1 $ primGraphic (df pt)
 
 
 -- | 'makeAdvObject' : @ loc_context_function * graphic -> AdvObject @
@@ -136,14 +136,16 @@ instance (InterpretUnit u) => Monoid (AdvObject u) where
 -- generates the answer displacement vector and a 'LocGraphic' 
 -- that draws the 'AdvObject'.
 --
-makeAdvObject :: Query (Vec2 u) -> LocGraphic u -> AdvObject u
+makeAdvObject :: Query u (Vec2 u) -> LocGraphic u -> AdvObject u
 makeAdvObject qvec gf = AdvObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let v1   = runCF ctx qvec
-               pf   = runCF ctx gf
+    body = askDC >>= \ctx -> 
+           let v1   = primAnswer $ runImage ctx qvec
+               pf   = \pt -> getCP $ runLocImage pt ctx gf
            in return (v1,pf)
 
+    getCP (Pure _)     = mempty
+    getCP (PrimW ca _) = ca
 
 
 -- | 'emptyAdvObjectAU' : @ AdvObject @
@@ -155,28 +157,40 @@ makeAdvObject qvec gf = AdvObject body
 -- the zero vector @(V2 0 0)@.
 -- 
 emptyAdvObject :: InterpretUnit u => AdvObject u
-emptyAdvObject = makeAdvObject (pure $ V2 0 0) emptyLocGraphic
+emptyAdvObject = blankAdvObject (V2 0 0)
 
 
--- | Run an 'AdvObject' at the supplied point turning it into an 
--- 'Image' that returns the advance vector.
---
-runAdvObjectR0 :: Point2 u -> AdvObject u -> Image u (Vec2 u)
-runAdvObjectR0 pt (AdvObject mf) =  
-   (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
+blankAdvObject :: Vec2 u -> AdvObject u
+blankAdvObject v1 = AdvObject $ pure (v1, const mempty)
 
 
--- | Run an 'AdvObject' turning it into an 'AdvGraphic'.
---
-runAdvObjectR1 :: AdvObject u -> AdvGraphic u
-runAdvObjectR1 (AdvObject mf) = promoteR1 $ \pt -> 
-   (\(v1,pf) -> replaceAns v1 $ pf pt) <$> mf
 
 
 
 --------------------------------------------------------------------------------
 -- Combining AdvObjects
 
+
+-- | Design note - this is rather /uncool/.
+--
+-- Here it would be nicer if PrimW didn\'t cover two cases - 
+-- queries (Pure) and images (PrimW). However implementing this 
+-- would double the amount of code and then require extra 
+-- bind-like combinators to promote queries to images.
+--
+-- This is simulated in @appendW@ by dropping any graphic embedded 
+-- in a PrimW (everything should be a query anyway). But it would 
+-- be nicer in this particular case, if the type system enforced 
+-- this.
+--
+appendW :: Num u 
+        => PrimW u (Vec2 u, AdvDraw u) 
+        -> PrimW u (Vec2 u, AdvDraw u) 
+        -> (Vec2 u, AdvDraw u)
+appendW a b = step (primAnswer a) (primAnswer b)
+  where
+    step (v0,pf0) (v1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 (pt .+^ v0)
+                             in (v0 ^+^ v1, pf)
 
 
 -- | Primitive combination.
@@ -187,18 +201,20 @@ runAdvObjectR1 (AdvObject mf) = promoteR1 $ \pt ->
 advplus :: Num u => AdvObject u -> AdvObject u -> AdvObject u
 advplus a b = AdvObject body
   where 
-    body = drawingCtx >>= \ctx ->
-           let (v0,pf0) = runCF ctx (getAdvObject a)
-               (v1,pf1) = runCF ctx (getAdvObject b)
-               pf       = \pt -> pf0 pt `oplus` pf1 (pt .+^ v0)
-           in return (v0 ^+^ v1, pf)
+    body = askDC >>= \ctx ->
+           let ans1 = runImage ctx (getAdvObject a)
+               ans2 = runImage ctx (getAdvObject b)
+           in pure (appendW ans1 ans2)
+
+
+
 
 -- Helper for list concatenation.
 -- 
 listcat :: InterpretUnit u 
         => (AdvObject u -> AdvObject u -> AdvObject u)
         -> [AdvObject u] -> AdvObject u
-listcat _ []     = emptyAdvObject
+listcat _ []     = mempty
 listcat op (x:xs) = go x xs
   where
     go acc []     = acc
@@ -234,13 +250,9 @@ advances = listcat advance
 -- object. 
 --
 advspace :: Num u => Vec2 u -> AdvObject u -> AdvObject u -> AdvObject u
-advspace sep a b = AdvObject body
-  where 
-    body = drawingCtx >>= \ctx ->
-           let (v0,pf0) = runCF ctx (getAdvObject a)
-               (v1,pf1) = runCF ctx (getAdvObject b)      
-               pf       = \pt -> pf0 pt `oplus` pf1 (dispVec (sep ^+^ v0) pt)
-           in return (v0 ^+^ sep ^+^ v1, pf)
+advspace sep a b = a `advplus` blank `advplus` b
+  where
+    blank = blankAdvObject sep
 
 -- | List version of 'nextSpace'.
 --
@@ -271,8 +283,10 @@ punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 advfill :: Num u => Vec2 u -> AdvObject u -> AdvObject u
 advfill sv a = AdvObject body
   where 
-    body = drawingCtx >>= \ctx ->
-           let (_,pf) = runCF ctx (getAdvObject a) in return (sv, pf)
+    body = askDC >>= \ctx ->
+           case runImage ctx (getAdvObject a) of
+             Pure (_,df)   -> pure (sv,df)
+             PrimW _ (_,df) -> pure (sv,df)
 
 
 

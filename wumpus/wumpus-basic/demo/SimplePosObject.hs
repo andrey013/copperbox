@@ -8,6 +8,7 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( red )
 
+import Data.Monoid
 import System.Directory
 
 
@@ -59,11 +60,13 @@ mf = do
     
 
 testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawBl rpos = 
-    dcDisk FILL 2 `oplus` (pushR1 ignoreAns $ rectBl `startAddr` rpos)
+testDrawBl raddr = dcDisk FILL 2 `mappend` rectBl raddr
 
-rectBl :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u
-rectBl = runPosObjectR2 $ makePosObject (return ortt) (mkRectBl w h)
+
+rectBl :: (Fractional u, InterpretUnit u) 
+       => RectAddress -> LocGraphic u
+rectBl raddr = 
+    ignoreAns $ runPosObject raddr $ makePosObject (return ortt) (mkRectBl w h)
   where
     w    = 40 
     h    = 30
@@ -79,14 +82,16 @@ mkRectBl w h = dcRectangle STROKE w h
 
 
 
-testDrawMinor :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
-testDrawMinor rpos = 
-    dcDisk FILL 2 `oplus` (pushR1 ignoreAns $ rectMinor `startAddr` rpos)
+testDrawMinor :: (Floating u, InterpretUnit u) 
+              => RectAddress -> LocGraphic u
+testDrawMinor raddr = 
+    dcDisk FILL 2 `mappend` (ignoreAns $ rectMinor raddr)
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => BoundedLocRectGraphic u 
-rectMinor = 
-    runPosObjectR2 $ makePosObject (return ortt) (mkRectMinor m w h)
+rectMinor :: (Fractional u, InterpretUnit u) 
+          => RectAddress -> LocImage u (BoundingBox u)
+rectMinor raddr = 
+    runPosObject raddr $ makePosObject (return ortt) (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 
@@ -99,10 +104,10 @@ rectMinor =
 
 -- start-point - +10 +10
 mkRectMinor :: InterpretUnit u => u -> u -> u -> LocGraphic u
-mkRectMinor m w h = promoteR1 $ \pt -> 
-    let bl = dispVec (vec (-m) (-m)) pt
-        br = dispH w bl
-        tr = dispV h br
-        tl = dispV h bl
+mkRectMinor m w h = promoteU $ \pt -> 
+    let bl = displace (vec (-m) (-m)) pt
+        br = displace (hvec w) bl
+        tr = displace (vvec h) br
+        tl = displace (vvec h) bl
     in vertexPP [bl, br, tr, tl] >>= dcClosedPath STROKE
 

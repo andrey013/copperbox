@@ -124,6 +124,13 @@ instance UnaryObj (LocImage u a) where
   promoteU fn = LocImage $ \pt -> fn pt
   applyU mf pt = getLocImage mf pt
   
+instance Decorate LocImage where
+  decorate ma mz = LocImage $ \pt -> 
+                      getLocImage ma pt `decorate` getLocImage mz pt 
+  elaborate ma f = LocImage $ \pt -> 
+                      getLocImage ma pt `elaborate` (\a -> getLocImage (f a) pt)
+
+
 
 runLocImage :: Point2 u -> DrawingContext -> LocImage u a -> PrimW u a
 runLocImage pt ctx mf = runImage ctx (getLocImage mf pt)

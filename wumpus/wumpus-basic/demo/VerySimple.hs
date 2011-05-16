@@ -3,6 +3,7 @@
 
 module VerySimple where
 
+import Wumpus.Basic.Geometry
 import Wumpus.Basic.Kernel
 
 
