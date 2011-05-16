@@ -27,11 +27,9 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
    , runLocImage
 
-   , uconvLocImageF
-   , uconvLocImageZ
-
    , emptyLocImage
 
+   , moveStart
    , at
 
    -- * Composing LocImages
@@ -114,8 +112,6 @@ instance DrawingCtxM (LocImage u) where
   localize upd ma = LocImage $ \pt -> localize upd (getLocImage ma pt)
 
 
-instance Num u => MoveStart (LocImage u a) where
-  moveStart v1 ma = LocImage $ \pt -> getLocImage ma (pt .+^ v1) 
 
 
 instance UnaryObj (LocImage u a) where
@@ -127,9 +123,15 @@ instance UnaryObj (LocImage u a) where
 instance Decorate LocImage where
   decorate ma mz = LocImage $ \pt -> 
                       getLocImage ma pt `decorate` getLocImage mz pt 
+
   elaborate ma f = LocImage $ \pt -> 
                       getLocImage ma pt `elaborate` (\a -> getLocImage (f a) pt)
 
+  obliterate ma mz = LocImage $ \pt -> 
+                       getLocImage ma pt `obliterate` getLocImage mz pt 
+
+  hyperlink xl ma = LocImage $ \pt -> 
+                       hyperlink xl $ getLocImage ma pt 
 
 
 runLocImage :: Point2 u -> DrawingContext -> LocImage u a -> PrimW u a
@@ -163,6 +165,11 @@ instance (Num u, Translate a, ScalarUnit u, u ~ DUnit a) =>
 
 --------------------------------------------------------------------------------
 
+
+instance UConvert LocImage where
+  uconvF = uconvLocImageF
+  uconvZ = uconvLocImageZ
+
 -- | Use this to convert 'LocGraphic' or 'LocImage' with Functor 
 -- answer.
 --
@@ -171,7 +178,7 @@ uconvLocImageF :: (InterpretUnit u, InterpretUnit u1, Functor t)
 uconvLocImageF ma = LocImage $ \pt -> 
     getFontSize >>= \sz -> 
     let ptu = uconvertF sz pt
-    in uconvImageF $ getLocImage ma ptu
+    in uconvF $ getLocImage ma ptu
 
 
 
@@ -182,7 +189,7 @@ uconvLocImageZ :: (InterpretUnit u, InterpretUnit u1)
 uconvLocImageZ ma = LocImage $ \pt -> 
     getFontSize >>= \sz ->  
     let ptu = uconvertF sz pt
-    in uconvImageZ $ getLocImage ma ptu
+    in uconvZ $ getLocImage ma ptu
 
 
 -- | Having /empty/ at the specific 'LocImage' type is useful.
@@ -193,15 +200,20 @@ emptyLocImage = mempty
 
 
 
+-- Note - maybe this should just be an operator on LocImage...
+--
+
+moveStart :: Num u => Vec2 u -> LocImage u a -> LocImage u a
+moveStart v1 ma = LocImage $ \pt -> getLocImage ma (pt .+^ v1) 
+
+
+
 infixr 1 `at`
 
 
--- | Downcast a 'LocCF' function by applying it to the supplied 
--- point, making an arity-zero Context Function. 
+-- | Downcast a 'LocImage' function by applying it to the supplied 
+-- point, making an 'Image'. 
 -- 
--- Remember a 'LocCF' function is a 'CF1' context function where
--- the /static argument/ is specialized to a start point.
---
 at :: LocImage u a -> Point2 u -> Image u a
 at mf pt = getLocImage mf pt
 

@@ -34,10 +34,10 @@ import Data.Monoid
 
 
 emline :: InterpretUnit u => Vec2 Em -> LocGraphic u
-emline = uconvLocImageF . locStraightLine
+emline = uconvF . locStraightLine
 
 enDot :: InterpretUnit u => LocGraphic u
-enDot = uconvLocImageF body
+enDot = uconvF body
   where
     body :: LocGraphic En
     body = localize (fill_colour white) $ dcDisk FILL_STROKE 0.5

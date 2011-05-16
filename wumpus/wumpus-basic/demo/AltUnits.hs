@@ -7,6 +7,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -36,30 +37,30 @@ mf2 = do
 combined :: TraceDrawing Double ()
 combined = do 
     draw $ dblLocGraphic `at` P2 12 108
-    drawl (P2 12 72) $ uconvLocImageF emLocGraphic
-    draw $ uconvImageF $ emLocGraphic `at` P2 1 3
-    drawl (P2 12 0) $ uconvLocImageF $ pushR1 (hyperlink haskell_org) enLocGraphic
+    drawl (P2 12 72) $ uconvF emLocGraphic
+    draw $ uconvF $ emLocGraphic `at` P2 1 3
+    drawl (P2 12 0) $ uconvF $ hyperlink haskell_org enLocGraphic
 
 dblLocGraphic :: LocGraphic Double
-dblLocGraphic = rect1 `oplus` rect2  
+dblLocGraphic = rect1 `mappend` rect2  
   where
     rect1 = dcRectangle FILL_STROKE 36 24 
-    rect2 = moveStart (dispH 36) $ dcRectangle FILL_STROKE 60 24 
+    rect2 = moveStart (hvec 36) $ dcRectangle FILL_STROKE 60 24 
 
 
 
 emLocGraphic :: LocGraphic Em
-emLocGraphic = localize swap_colours $  rect1 `oplus` rect2  
+emLocGraphic = localize swap_colours $  rect1 `mappend` rect2  
   where
     rect1 = dcRectangle FILL_STROKE 3 2 
-    rect2 = moveStart (dispH 3) $ dcRectangle FILL_STROKE 5 2 
+    rect2 = moveStart (hvec 3) $ dcRectangle FILL_STROKE 5 2 
 
 
 enLocGraphic :: LocGraphic En
-enLocGraphic = localize (fill_colour lemon_chiffon) $  rect1 `oplus` rect2  
+enLocGraphic = localize (fill_colour lemon_chiffon) $ rect1 `mappend` rect2  
   where
     rect1 = dcRectangle FILL_STROKE 6 4
-    rect2 = moveStart (dispH 6) $ dcRectangle FILL_STROKE 10 4
+    rect2 = moveStart (hvec 6) $ dcRectangle FILL_STROKE 10 4
 
 
 haskell_org :: XLink

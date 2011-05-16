@@ -25,10 +25,11 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , DLocThetaGraphic
    , DLocThetaImage
 
-   , uconvLocThetaImageF
-   , uconvLocThetaImageZ
+   , runLocThetaImage
 
    , emptyLocThetaImage
+
+   , incline
    
    )
 
@@ -38,7 +39,7 @@ import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Objects.Basis
--- import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -108,6 +109,37 @@ instance BinaryObj (LocThetaImage u a) where
   applyB mf pt ang  = getLocThetaImage mf pt ang
 
 
+instance Decorate LocThetaImage where
+  decorate ma mz = LocThetaImage $ \pt ang -> 
+                      getLocThetaImage ma pt ang `decorate` 
+                        getLocThetaImage mz pt ang
+
+  elaborate ma f = LocThetaImage $ \pt ang -> 
+                     getLocThetaImage ma pt ang `elaborate` 
+                       (\a -> getLocThetaImage (f a) pt ang)
+
+  obliterate ma mz = LocThetaImage $ \pt ang -> 
+                       getLocThetaImage ma pt ang `obliterate` 
+                         getLocThetaImage mz pt ang
+
+  hyperlink xl ma = LocThetaImage $ \pt ang -> 
+                       hyperlink xl $ getLocThetaImage ma pt ang
+           
+
+
+
+runLocThetaImage :: Point2 u -> Radian -> DrawingContext 
+                 -> LocThetaImage u a 
+                 -> PrimW u a
+runLocThetaImage pt incl ctx mf = runImage ctx (getLocThetaImage mf pt incl)
+
+
+
+instance UConvert LocThetaImage where
+  uconvF = uconvLocThetaImageF
+  uconvZ = uconvLocThetaImageZ
+
+
 -- | Use this to convert 'LocThetaThetaGraphic' or 'LocThetaThetaImage' 
 -- with Functor answer.
 --
@@ -116,7 +148,7 @@ uconvLocThetaImageF :: (InterpretUnit u, InterpretUnit u1, Functor t)
 uconvLocThetaImageF ma = LocThetaImage $ \pt ang -> 
     getFontSize >>= \sz -> 
     let ptu = uconvertF sz pt
-    in uconvImageF $ getLocThetaImage ma ptu ang
+    in uconvF $ getLocThetaImage ma ptu ang
 
 
 
@@ -128,7 +160,7 @@ uconvLocThetaImageZ :: (InterpretUnit u, InterpretUnit u1)
 uconvLocThetaImageZ ma = LocThetaImage $ \pt ang -> 
     getFontSize >>= \sz -> 
     let ptu = uconvertF sz pt
-    in uconvImageZ $ getLocThetaImage ma ptu ang
+    in uconvZ $ getLocThetaImage ma ptu ang
 
 
 
@@ -136,4 +168,17 @@ uconvLocThetaImageZ ma = LocThetaImage $ \pt ang ->
 -- 
 emptyLocThetaImage :: Monoid a => LocThetaImage u a
 emptyLocThetaImage = mempty
+
+
+
+
+
+infixr 1 `incline`
+
+
+-- | Downcast a 'LocThetaImage' function by applying it to the 
+-- supplied angle, making a 'LocImage'. 
+-- 
+incline :: LocThetaImage u a -> Radian -> LocImage u a
+incline ma incl = promoteU $ \pt -> getLocThetaImage ma pt incl
 

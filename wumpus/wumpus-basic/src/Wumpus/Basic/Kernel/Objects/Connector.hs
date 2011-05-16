@@ -28,9 +28,6 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , runConnectorImage
    , connect
 
-   , uconvConnectorImageF
-   , uconvConnectorImageZ
-
    , emptyConnectorImage
 
    )
@@ -112,6 +109,25 @@ instance BinaryObj (ConnectorImage u a) where
   applyB mf p0 p1   = getConnectorImage mf p0 p1
 
 
+
+instance Decorate ConnectorImage where
+  decorate ma mz = ConnectorImage $ \p0 p1 -> 
+                      getConnectorImage ma p0 p1 `decorate` 
+                        getConnectorImage mz p0 p1
+
+  elaborate ma f = ConnectorImage $ \p0 p1 -> 
+                     getConnectorImage ma p0 p1 `elaborate` 
+                       (\a -> getConnectorImage (f a) p0 p1)
+
+  obliterate ma mz = ConnectorImage $ \p0 p1 -> 
+                       getConnectorImage ma p0 p1 `obliterate` 
+                         getConnectorImage mz p0 p1
+
+  hyperlink xl ma = ConnectorImage $ \p0 p1 -> 
+                       hyperlink xl $ getConnectorImage ma p0 p1
+
+
+
 runConnectorImage :: Point2 u -> Point2 u 
                   -> DrawingContext -> ConnectorImage u a 
                   -> PrimW u a
@@ -119,6 +135,14 @@ runConnectorImage p0 p1 ctx mf = runImage ctx (getConnectorImage mf p0 p1)
 
 connect :: Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
 connect p0 p1 mf = getConnectorImage mf p0 p1
+
+
+
+
+instance UConvert ConnectorImage where
+  uconvF = uconvConnectorImageF
+  uconvZ = uconvConnectorImageZ
+
 
 -- | Use this to convert 'ConnectorGraphic' or 'ConnectorImage' 
 -- with Functor answer.

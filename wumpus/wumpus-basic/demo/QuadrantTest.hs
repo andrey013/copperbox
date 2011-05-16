@@ -102,7 +102,7 @@ trap1 = drawVertexPathAlg STROKE (isoscelesTrapeziumPathAlg 60 40 40)
 
 
 diskV :: Vec2 Double -> LocGraphic Double
-diskV v1 = moveStart (dispVec v1) $ dcDisk FILL 3
+diskV v1 = moveStart v1 $ dcDisk FILL 3
 
 
 

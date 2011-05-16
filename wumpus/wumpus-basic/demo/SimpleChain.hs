@@ -63,7 +63,7 @@ text02 = dcTextlabel "T02"
 
 
 minidisk :: LocGraphic Double
-minidisk = moveStart (dispV 7) $ dcDisk FILL 6
+minidisk = moveStart (vvec 7) $ dcDisk FILL 6
 
 diskList :: Int -> [LocGraphic Double]
 diskList n = take n $ unfoldr phi black

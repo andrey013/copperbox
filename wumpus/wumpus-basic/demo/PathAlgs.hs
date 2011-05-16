@@ -40,34 +40,34 @@ mf1 = do
 
 
 rect1 :: LocGraphic Double
-rect1 = promoteR1 $ \pt -> 
+rect1 = promoteU $ \pt -> 
     vertexPP (runPathAlgPoint pt $ rectanglePathAlg 36 24) >>= dcClosedPath STROKE
 
 
 rect2 :: LocGraphic Double
-rect2 = promoteR1 $ \pt ->
+rect2 = promoteU $ \pt ->
     vertexPP (runPathAlgPoint pt $ blRectanglePathAlg 36 24) >>= dcClosedPath STROKE
 
 diamond1 :: LocGraphic Double
-diamond1 = promoteR1 $ \pt ->
+diamond1 = promoteU $ \pt ->
     vertexPP (runPathAlgPoint pt $ diamondPathAlg 16 20) >>= dcClosedPath STROKE
 
 
 poly5 :: LocGraphic Double
-poly5 = promoteR1 $ \pt ->
+poly5 = promoteU $ \pt ->
     vertexPP (runPathAlgPoint pt $ polygonPathAlg 5 20) >>= dcClosedPath STROKE
 
 arc1 :: LocGraphic Double
-arc1 = promoteR1 $ \pt ->
+arc1 = promoteU $ \pt ->
     curvePP (runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) >>= dcOpenPath
 
 arc2 :: LocGraphic Double
-arc2 = promoteR1 $ \pt ->
+arc2 = promoteU $ \pt ->
     curvePP (runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) >>= dcOpenPath
 
 
 circle1 :: LocGraphic Double
-circle1 = promoteR1 $ \pt ->
+circle1 = promoteU $ \pt ->
     curvePP (runPathAlgPoint pt $ circlePathAlg 20) >>= dcClosedPath STROKE
 
 

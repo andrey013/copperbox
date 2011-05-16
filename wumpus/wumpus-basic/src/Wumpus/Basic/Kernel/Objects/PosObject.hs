@@ -42,11 +42,10 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , elaboratePO
   , aelaboratePO 
  
-  , startAddr
-  , atStartAddr
-
+-}
   , extendPosObject
 
+{-
   , padHorizontalPO
   , padLeftPO
   , padRightPO
@@ -66,10 +65,8 @@ import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Bounded
 import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
-import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.Orientation
 
@@ -237,7 +234,7 @@ aelaboratePO fn po = PosObject body
            in return (ortt, deco `oplus` ptf)
 
 
-
+-}
 
 
 -- | Extend the orientation.
@@ -246,12 +243,12 @@ extendPosObject :: Num u
                 => u -> u -> u -> u -> PosObject u -> PosObject u
 extendPosObject x0 x1 y0 y1 po = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let (o0,pf0) = runCF ctx (getPosObject po)
+    body = askDC >>= \ctx -> 
+           let (o0,pf0) = primAnswer $ runImage ctx (getPosObject po)
                ortt     = extendOrientation x0 x1 y0 y1 o0
            in return (ortt,pf0)
 
-           
+{-           
 --------------------------------------------------------------------------------
 -- Padding
 
