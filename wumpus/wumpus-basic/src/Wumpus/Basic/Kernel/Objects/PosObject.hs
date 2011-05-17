@@ -120,20 +120,18 @@ poconcat :: (Fractional u, Ord u) => PosObject u -> PosObject u -> PosObject u
 poconcat a b = PosObject body
    where
     body = askDC >>= \ctx ->
-           let ans1 = runImage ctx (getPosObject a)
-               ans2 = runImage ctx (getPosObject b)
+           let ans1 = runQuery ctx (getPosObject a)
+               ans2 = runQuery ctx (getPosObject b)
            in pure (appendW ans1 ans2)
 
 
 
 appendW :: (Fractional u, Ord u)
-        => PrimW u (Orientation u, PosDraw u) 
-        -> PrimW u (Orientation u, PosDraw u) 
+        => (Orientation u, PosDraw u) 
+        -> (Orientation u, PosDraw u) 
         -> (Orientation u, PosDraw u)
-appendW a b = step (primAnswer a) (primAnswer b)
-  where
-    step (o0,pf0) (o1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
-                             in (o0 `mappend` o1, pf)
+appendW (o0,pf0) (o1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
+                            in (o0 `mappend` o1, pf)
 
 
 
@@ -146,9 +144,9 @@ appendW a b = step (primAnswer a) (primAnswer b)
 --
 runPosObject :: Fractional u 
              => RectAddress -> PosObject u -> LocImage u (BoundingBox u)
-runPosObject addr (PosObject mf) = promoteU $ \pt ->
+runPosObject addr (PosObject mf) = promoteLoc $ \pt ->
    askDC >>= \ctx -> 
-   let (o1,df) = primAnswer $ runImage ctx mf
+   let (o1,df) = runQuery ctx mf
        v1      = orientationStart addr o1
        p1      = pt .+^ v1
        bb      = orientationBounds o1 p1
@@ -170,11 +168,10 @@ makePosObject :: Query u (Orientation u) -> LocGraphic u -> PosObject u
 makePosObject qortt gf = PosObject body
   where
     body = askDC >>= \ctx -> 
-           let v1   = primAnswer $ runImage ctx qortt
+           let v1   = runQuery ctx qortt
                pf   = \pt -> getCP $ runLocImage pt ctx gf
            in return (v1,pf)
 
-    getCP (Pure _)     = mempty
     getCP (PrimW ca _) = ca
 
 
@@ -244,7 +241,7 @@ extendPosObject :: Num u
 extendPosObject x0 x1 y0 y1 po = PosObject body
   where
     body = askDC >>= \ctx -> 
-           let (o0,pf0) = primAnswer $ runImage ctx (getPosObject po)
+           let (o0,pf0) = runQuery ctx (getPosObject po)
                ortt     = extendOrientation x0 x1 y0 y1 o0
            in return (ortt,pf0)
 
@@ -291,14 +288,14 @@ genPad fn po = PosObject body
 --
 illustratePosObject :: InterpretUnit u 
                    => PosObject u -> LocGraphic u
-illustratePosObject (PosObject mf)  = promoteU $ \pt ->   
-    mf >>= \(ortt,ptf) -> 
+illustratePosObject (PosObject mf)  = promoteLoc $ \pt ->   
+    zapQuery mf >>= \(ortt,ptf) -> 
     decorate (primGraphic $ ptf pt) (illustrateOrientation ortt `at` pt)
 
 
 illustrateOrientation :: InterpretUnit u 
                     => Orientation u -> LocGraphic u
-illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteU $ \pt -> 
+illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteLoc $ \pt -> 
     dinterpCtx 3 >>= \radius -> 
     let upd = localize (fill_colour blue . dotted_line)
         bl  = pt .-^ V2 xmin ymin
@@ -346,8 +343,8 @@ genMoveAlign :: (Num u)
 genMoveAlign mkV mkO po0 po1 = PosObject body
   where
    body = askDC >>= \ctx -> 
-          let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
-              (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
+          let (ortt0,pf0) = runQuery ctx (getPosObject po0)
+              (ortt1,pf1) = runQuery ctx (getPosObject po1)
               v1          = mkV ortt0 ortt1
               ortt        = mkO ortt0 ortt1
               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -375,8 +372,8 @@ genMoveSepH :: (Num u)
 genMoveSepH mkV mkO sep po0 po1  = PosObject body
   where
     body = askDC >>= \ctx -> 
-           let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
-               (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
+           let (ortt0,pf0) = runQuery ctx (getPosObject po0)
+               (ortt1,pf1) = runQuery ctx (getPosObject po1)
                v1          = hvec sep ^+^ mkV ortt0 ortt1
                ortt        = extendORight sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
@@ -391,8 +388,8 @@ genMoveSepV :: (Num u)
 genMoveSepV mkV mkO sep po0 po1 = PosObject body
   where
     body = askDC >>= \ctx -> 
-           let (ortt0,pf0) = primAnswer $ runImage ctx (getPosObject po0)
-               (ortt1,pf1) = primAnswer $ runImage ctx (getPosObject po1)
+           let (ortt0,pf0) = runQuery ctx (getPosObject po0)
+               (ortt1,pf1) = runQuery ctx (getPosObject po1)
                v1          = vvec (-sep) ^+^ mkV ortt0 ortt1
                ortt        = extendODown sep $ mkO ortt0 ortt1
                pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)

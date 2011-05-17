@@ -321,9 +321,8 @@ mbPictureU (Just a) = a
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
      => Image u a -> m ()
 draw gf = askDC >>= \ctx -> 
-          case runImage ctx gf of
-            Pure _    -> return ()
-            PrimW o _ -> trace (singleH o) >> return ()
+          let (PrimW o _) = runImage ctx gf
+          in trace (singleH o) >> return ()
 
 
 
@@ -337,9 +336,8 @@ draw gf = askDC >>= \ctx ->
 drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => Image u a -> m a
 drawi gf = askDC >>= \ctx -> 
-           case runImage ctx gf of
-             Pure a    -> return a
-             PrimW o a -> trace (singleH o) >> return a
+           let (PrimW o a) = runImage ctx gf 
+           in trace (singleH o) >> return a
             
 
 
@@ -365,9 +363,8 @@ drawl ancr img = drawli ancr img >> return ()
 drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> LocImage u a -> m a
 drawli pt gf = askDC >>= \ctx -> 
-                case runLocImage pt ctx gf of
-                  Pure a    -> return a
-                  PrimW o a -> trace (singleH o) >> return a
+               let (PrimW o a) = runLocImage pt ctx gf
+               in trace (singleH o) >> return a
 
 
 -- Design note - having @drawlti@ for LocThetaImage does not seem 
@@ -431,9 +428,8 @@ nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
       => (Int,Int) -> LocImage u a -> m a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 case runLocImage pt ctx gf of
-                   Pure a    -> return a
-                   PrimW o a -> trace (singleH o) >> return a
+                 let (PrimW o a) = runLocImage pt ctx gf
+                 in trace (singleH o) >> return a
  
 
 

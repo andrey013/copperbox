@@ -126,14 +126,14 @@ emptyLoc = mempty
 --
 chain :: InterpretUnit u
       => ChainAlg u -> [LocImage u a] -> LocImage u (Point2 u)
-chain _   [] = promoteU $ \pt -> replaceAns pt (applyU emptyLoc pt)
-chain alg fs = promoteU $ \pt -> 
+chain _   [] = promoteLoc $ \pt -> replaceAns pt (applyLoc emptyLoc pt)
+chain alg fs = promoteLoc $ \pt -> 
     let ps = interpChainAlg alg pt in go1 fs pt ps 
   where
-    go1 (gf:gs) _  (p:ps)     = go (ignoreAns $ applyU gf p) gs p ps
-    go1 _       p0 _          = replaceAns p0 $ applyU emptyLoc p0
+    go1 (gf:gs) _  (p:ps)     = go (ignoreAns $ applyLoc gf p) gs p ps
+    go1 _       p0 _          = replaceAns p0 $ applyLoc emptyLoc p0
 
-    go acc (gf:gs) _  (p:ps)  = let g1 = ignoreAns $ applyU gf p
+    go acc (gf:gs) _  (p:ps)  = let g1 = ignoreAns $ applyLoc gf p
                                 in go (acc `mappend` g1) gs  p ps
     go acc _       p0 _       = replaceAns p0 acc
 

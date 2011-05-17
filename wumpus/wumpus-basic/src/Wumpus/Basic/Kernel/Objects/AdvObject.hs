@@ -100,6 +100,7 @@ advanceV (V2 _ h)  = h
 type AdvDraw u = Point2 u -> CatPrim
 
 
+
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
@@ -123,11 +124,10 @@ instance (InterpretUnit u) => Monoid (AdvObject u) where
 -- | Run an 'AdvObject' turning it into an 'LocImage'.
 --
 runAdvObject :: AdvObject u -> LocImage u (Vec2 u)
-runAdvObject (AdvObject mf) = promoteU $ \pt -> 
+runAdvObject (AdvObject mf) = promoteLoc $ \pt -> 
    askDC >>= \ctx -> 
-   case runImage ctx mf of
-     Pure (v1,df) -> replaceAns v1 $ primGraphic (df pt)
-     PrimW _ (v1,df) -> replaceAns v1 $ primGraphic (df pt)
+   let (v1,df) = runQuery ctx mf
+   in replaceAns v1 $ primGraphic (df pt)
 
 
 -- | 'makeAdvObject' : @ loc_context_function * graphic -> AdvObject @
@@ -137,14 +137,13 @@ runAdvObject (AdvObject mf) = promoteU $ \pt ->
 -- that draws the 'AdvObject'.
 --
 makeAdvObject :: Query u (Vec2 u) -> LocGraphic u -> AdvObject u
-makeAdvObject qvec gf = AdvObject body
+makeAdvObject mq gf = AdvObject body
   where
     body = askDC >>= \ctx -> 
-           let v1   = primAnswer $ runImage ctx qvec
+           let v1   = runQuery ctx mq
                pf   = \pt -> getCP $ runLocImage pt ctx gf
            in return (v1,pf)
 
-    getCP (Pure _)     = mempty
     getCP (PrimW ca _) = ca
 
 
@@ -184,27 +183,25 @@ blankAdvObject v1 = AdvObject $ pure (v1, const mempty)
 -- this.
 --
 appendW :: Num u 
-        => PrimW u (Vec2 u, AdvDraw u) 
-        -> PrimW u (Vec2 u, AdvDraw u) 
+        => (Vec2 u, AdvDraw u) 
+        -> (Vec2 u, AdvDraw u) 
         -> (Vec2 u, AdvDraw u)
-appendW a b = step (primAnswer a) (primAnswer b)
-  where
-    step (v0,pf0) (v1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 (pt .+^ v0)
-                             in (v0 ^+^ v1, pf)
+appendW (v0,pf0) (v1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 (pt .+^ v0)
+                            in (v0 ^+^ v1, pf)
 
 
 -- | Primitive combination.
 -- 
 -- Move second object by the advance vector of the first. Sum 
--- both advance vecots.
+-- both advance vectors.
 --
 advplus :: Num u => AdvObject u -> AdvObject u -> AdvObject u
 advplus a b = AdvObject body
   where 
     body = askDC >>= \ctx ->
-           let ans1 = runImage ctx (getAdvObject a)
-               ans2 = runImage ctx (getAdvObject b)
-           in pure (appendW ans1 ans2)
+           let ans1 = runQuery ctx (getAdvObject a)
+               ans2 = runQuery ctx (getAdvObject b)
+           in return (appendW ans1 ans2)
 
 
 
@@ -284,9 +281,7 @@ advfill :: Num u => Vec2 u -> AdvObject u -> AdvObject u
 advfill sv a = AdvObject body
   where 
     body = askDC >>= \ctx ->
-           case runImage ctx (getAdvObject a) of
-             Pure (_,df)   -> pure (sv,df)
-             PrimW _ (_,df) -> pure (sv,df)
-
+           let (_,df) = runQuery ctx (getAdvObject a)
+           in return (sv,df)
 
 

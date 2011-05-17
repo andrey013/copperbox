@@ -78,7 +78,7 @@ centerOrthoBBox theta bb = traceBoundary $ map (rotateAbout theta ctr) ps
 -- upper-right corners at the implicit start point.
 --
 emptyBoundedLocGraphic :: InterpretUnit u => LocImage u (BoundingBox u)
-emptyBoundedLocGraphic = promoteU $ \pt -> 
+emptyBoundedLocGraphic = promoteLoc $ \pt -> 
     replaceAns (BBox pt pt) $ primGraphic mempty
 
 
@@ -93,7 +93,7 @@ emptyBoundedLocGraphic = promoteU $ \pt ->
 --
 emptyBoundedLocThetaGraphic :: InterpretUnit u 
                             => LocThetaImage u (BoundingBox u)
-emptyBoundedLocThetaGraphic = promoteB $ \pt _ -> 
+emptyBoundedLocThetaGraphic = promoteLocTheta $ \pt _ -> 
     replaceAns (BBox pt pt) $ primGraphic mempty
 
 

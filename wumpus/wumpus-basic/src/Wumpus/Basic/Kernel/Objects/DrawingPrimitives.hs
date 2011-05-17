@@ -106,24 +106,24 @@ fillStrokePrim fn =
 
 textLoc :: InterpretUnit u 
         => (RGBi -> FontAttr -> DPoint2 -> Primitive) -> LocGraphic u
-textLoc fn = promoteU $ \pt -> 
+textLoc fn = promoteLoc $ \pt -> 
     normalizeCtxF pt >>= \dpt -> textPrim (\rgb attr -> fn rgb attr dpt)
 
 
 strokeLoc :: InterpretUnit u
           => (RGBi -> StrokeAttr -> DPoint2 -> Primitive) -> LocGraphic u
-strokeLoc fn = promoteU $ \pt -> 
+strokeLoc fn = promoteLoc $ \pt -> 
     normalizeCtxF pt >>= \dpt -> strokePrim (\rgb attr -> fn rgb attr dpt)
 
 fillLoc :: InterpretUnit u 
         => (RGBi -> DPoint2 -> Primitive) -> LocGraphic u
-fillLoc fn = promoteU $ \pt ->
+fillLoc fn = promoteLoc $ \pt ->
     normalizeCtxF pt >>= \dpt -> fillPrim (\rgb -> fn rgb dpt)
 
 fillStrokeLoc :: InterpretUnit u
               => (RGBi -> StrokeAttr -> RGBi -> DPoint2 -> Primitive) 
               -> LocGraphic u
-fillStrokeLoc fn = promoteU $ \pt ->
+fillStrokeLoc fn = promoteLoc $ \pt ->
     normalizeCtxF pt >>= \dpt -> 
     fillStrokePrim (\frgb attr srgb -> fn frgb attr srgb dpt) 
  
@@ -132,7 +132,7 @@ fillStrokeLoc fn = promoteU $ \pt ->
 textLocTheta :: InterpretUnit u 
              => (RGBi -> FontAttr -> DPoint2 -> Radian -> Primitive) 
              -> LocThetaGraphic u
-textLocTheta fn = promoteB $ \pt ang -> 
+textLocTheta fn = promoteLocTheta $ \pt ang -> 
     normalizeCtxF pt >>= \dpt -> textPrim (\rgb attr -> fn rgb attr dpt ang)
 
 
@@ -154,8 +154,8 @@ textLocTheta fn = promoteB $ \pt ang ->
 -- This is the analogue to 'vectorPath' in @Wumpus-Core@, but the 
 -- result is produced /within/ the 'DrawingContext'.
 --
-locPP :: InterpretUnit u => [Vec2 u] -> Point2 u -> Query u PrimPath
-locPP vs pt =
+locPP :: InterpretUnit u => [Vec2 u] -> LocQuery u PrimPath
+locPP vs = qpromoteLoc $ \pt -> 
     vectorPrimPath <$> normalizeCtxF pt <*> mapM normalizeCtxF vs
 
 
@@ -169,8 +169,8 @@ locPP vs pt =
 -- This is the analogue to 'emptyPath' in @Wumpus-Core@, but the
 -- result is produced /within/ the 'DrawingContext'.
 --
-emptyLocPP :: InterpretUnit u => Point2 u -> Query u PrimPath
-emptyLocPP pt = locPP [] pt
+emptyLocPP :: InterpretUnit u => LocQuery u PrimPath
+emptyLocPP = locPP []
 
 
 
@@ -335,9 +335,9 @@ uconvKernChar = mapM mf
 -- from the implicit 'DrawingContext'.
 --
 hkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
-hkernLine ks = promoteU $ \pt -> 
+hkernLine ks = promoteLoc $ \pt -> 
                normalizeCtxF pt >>= \dpt -> 
-               uconvKernChar ks >>= body dpt
+               zapQuery (uconvKernChar ks) >>= body dpt
   where
     body pt ans = textPrim (\rgb attr -> hkernlabel rgb attr ans pt)
 
@@ -355,9 +355,9 @@ hkernLine ks = promoteU $ \pt ->
 -- from the implicit 'DrawingContext'.
 --
 vkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
-vkernLine ks = promoteU $ \pt -> 
+vkernLine ks = promoteLoc $ \pt -> 
                normalizeCtxF pt >>= \dpt -> 
-               uconvKernChar ks >>= body dpt
+               zapQuery (uconvKernChar ks) >>= body dpt
   where
     body pt ans = textPrim (\rgb attr -> vkernlabel rgb attr ans pt)
 
@@ -373,7 +373,7 @@ vkernLine ks = promoteU $ \pt ->
 -- from the implicit 'DrawingContext'.
 -- 
 straightLine :: InterpretUnit u => Point2 u -> Point2 u -> Graphic u
-straightLine p1 p2 = vertexPP [p1,p2] >>= dcOpenPath
+straightLine p1 p2 = zapQuery (vertexPP [p1,p2]) >>= dcOpenPath
 
 
 -- | 'locStraightLine' : @ vec_to -> LocGraphic @ 
@@ -389,7 +389,7 @@ straightLine p1 p2 = vertexPP [p1,p2] >>= dcOpenPath
 -- from the implicit 'DrawingContext'.
 -- 
 locStraightLine :: InterpretUnit u => Vec2 u -> LocGraphic u
-locStraightLine v = promoteU $ \pt -> (locPP [v]) pt >>= dcOpenPath
+locStraightLine v = promoteLoc $ \pt -> zapLocQuery (locPP [v]) pt >>= dcOpenPath
 
 
 
@@ -404,7 +404,8 @@ locStraightLine v = promoteU $ \pt -> (locPP [v]) pt >>= dcOpenPath
 -- 
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= dcOpenPath
+curvedLine p0 p1 p2 p3 = 
+    zapQuery (curvePP [p0,p1,p2,p3]) >>= dcOpenPath
 
 
 
@@ -418,7 +419,8 @@ curvedLine p0 p1 p2 p3 = curvePP [p0,p1,p2,p3] >>= dcOpenPath
 -- from the implicit 'DrawingContext'.
 -- 
 straightConnector :: InterpretUnit u => ConnectorGraphic u
-straightConnector = promoteB $ \p0 p1 -> vertexPP [p0,p1] >>= dcOpenPath
+straightConnector = promoteConn $ \p0 p1 -> 
+    zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
 
 
 
@@ -428,8 +430,8 @@ straightConnector = promoteB $ \p0 p1 -> vertexPP [p0,p1] >>= dcOpenPath
 -- | Helper for circle drawing.
 --
 circlePath :: InterpretUnit u 
-         => u -> Point2 u -> Query u PrimPath
-circlePath r pt =
+         => u -> LocQuery u PrimPath
+circlePath r = qpromoteLoc $ \pt -> 
     (\dr dpt -> curvedPrimPath $ bezierCircle dr dpt) 
       <$> normalizeCtx r <*> normalizeCtxF pt
 
@@ -443,8 +445,8 @@ circlePath r pt =
 -- taken from the implicit 'DrawingContext'.
 -- 
 dcCircle :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
-dcCircle style r = promoteU $ \pt -> 
-    circlePath r pt >>= dcClosedPath style
+dcCircle style r = promoteLoc $ \pt -> 
+    zapLocQuery (circlePath r) pt >>= dcClosedPath style
 
 
 
@@ -455,8 +457,8 @@ dcCircle style r = promoteU $ \pt ->
 -- | Helper for ellipse drawing.
 --
 ellipsePath :: InterpretUnit u 
-            => u -> u -> Point2 u -> Query u PrimPath
-ellipsePath rx ry pt =
+            => u -> u -> LocQuery u PrimPath
+ellipsePath rx ry = qpromoteLoc $ \pt -> 
     (\drx dry dpt -> curvedPrimPath $ bezierEllipse drx dry dpt) 
       <$> normalizeCtx rx <*> normalizeCtx ry <*> normalizeCtxF pt
 
@@ -464,8 +466,8 @@ ellipsePath rx ry pt =
 -- | Helper for ellipse drawing.
 --
 rellipsePath :: InterpretUnit u 
-            => u -> u -> Point2 u -> Radian -> Query u PrimPath
-rellipsePath rx ry pt ang =
+            => u -> u -> LocThetaQuery u PrimPath
+rellipsePath rx ry = qpromoteLocTheta $ \pt ang ->
     (\drx dry dpt -> curvedPrimPath $ rbezierEllipse drx dry ang dpt) 
       <$> normalizeCtx rx <*> normalizeCtx ry <*> normalizeCtxF pt
 
@@ -479,8 +481,8 @@ rellipsePath rx ry pt ang =
 -- from the implicit 'DrawingContext'.
 -- 
 dcEllipse :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
-dcEllipse style rx ry = promoteU $ \pt ->
-   ellipsePath rx ry pt >>= dcClosedPath style 
+dcEllipse style rx ry = promoteLoc $ \pt ->
+   zapLocQuery (ellipsePath rx ry) pt >>= dcClosedPath style 
 
 
 -- | 'dcREllipse' : @ x_radius * y_radius -> LocGraphic @
@@ -494,8 +496,8 @@ dcEllipse style rx ry = promoteU $ \pt ->
 -- 
 dcREllipse :: InterpretUnit u
            => DrawStyle -> u -> u -> LocThetaGraphic u
-dcREllipse style rx ry = promoteB $ \pt ang -> 
-    rellipsePath rx ry pt ang >>= dcClosedPath style
+dcREllipse style rx ry = promoteLocTheta $ \pt ang -> 
+    zapLocThetaQuery (rellipsePath rx ry) pt ang >>= dcClosedPath style
 
 
 -- Note - clipping needs some higher level path object than is defined here.
@@ -506,7 +508,7 @@ dcREllipse style rx ry = promoteB $ \pt ang ->
 -- | Supplied point is /bottom-left/.
 --
 rectanglePath :: InterpretUnit u 
-              => u -> u -> Point2 u -> Query u PrimPath
+              => u -> u -> LocQuery u PrimPath
 rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 
 
@@ -520,8 +522,8 @@ rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 -- from the implicit 'DrawingContext'.
 -- 
 dcRectangle :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
-dcRectangle style w h = promoteU $ \pt -> 
-    rectanglePath w h pt >>= dcClosedPath style
+dcRectangle style w h = promoteLoc $ \pt -> 
+    zapLocQuery (rectanglePath w h) pt >>= dcClosedPath style
 
 
 ---------------------------------------------------------------------------

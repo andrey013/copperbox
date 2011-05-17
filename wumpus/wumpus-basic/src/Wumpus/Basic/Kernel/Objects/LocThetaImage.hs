@@ -25,11 +25,20 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , DLocThetaGraphic
    , DLocThetaImage
 
+   , LocThetaQuery
+
    , runLocThetaImage
+   , runLocThetaQuery
+
+   , promoteLocTheta
+   , applyLocTheta
+   , qpromoteLocTheta
+   , zapLocThetaQuery
 
    , emptyLocThetaImage
 
    , incline
+   , atIncline
    
    )
 
@@ -54,7 +63,6 @@ newtype LocThetaImage u a = LocThetaImage {
           getLocThetaImage :: Point2 u -> Radian -> Image u a }
 
 type instance DUnit (LocThetaImage u a) = u
-type instance Answer (LocThetaImage u a) = a
 
 type LocThetaGraphic u = LocThetaImage u (UNil u)
 
@@ -68,16 +76,34 @@ type DLocThetaImage a        = LocThetaImage Double a
 type DLocThetaGraphic        = LocThetaGraphic Double 
 
 
+newtype LocThetaQuery u a = LocThetaQuery { 
+          getLocThetaQuery :: Point2 u -> Radian -> Query u a }
+
+-- Functor
 
 instance Functor (LocThetaImage u) where
   fmap f ma = LocThetaImage $ \pt ang -> 
                 fmap f $ getLocThetaImage ma pt ang
+
+instance Functor (LocThetaQuery u) where
+  fmap f ma = LocThetaQuery $ \pt ang -> 
+                fmap f $ getLocThetaQuery ma pt ang
+
+
+-- Applicative
 
 instance Applicative (LocThetaImage u) where
   pure a    = LocThetaImage $ \_  _   -> pure a
   mf <*> ma = LocThetaImage $ \pt ang -> 
                 getLocThetaImage mf pt ang <*> getLocThetaImage ma pt ang
 
+instance Applicative (LocThetaQuery u) where
+  pure a    = LocThetaQuery $ \_  _   -> pure a
+  mf <*> ma = LocThetaQuery $ \pt ang -> 
+                getLocThetaQuery mf pt ang <*> getLocThetaQuery ma pt ang
+
+
+-- Monad 
 
 instance Monad (LocThetaImage u) where
   return a  = LocThetaImage $ \_  _   -> return a
@@ -85,6 +111,14 @@ instance Monad (LocThetaImage u) where
                 getLocThetaImage ma pt ang >>= \ans -> 
                 getLocThetaImage (k ans) pt ang
 
+
+instance Monad (LocThetaQuery u) where
+  return a  = LocThetaQuery $ \_  _   -> return a
+  ma >>= k  = LocThetaQuery $ \pt ang -> 
+                getLocThetaQuery ma pt ang >>= \ans -> 
+                getLocThetaQuery (k ans) pt ang
+
+-- Monoid
 
 instance Monoid a => Monoid (LocThetaImage u a) where
   mempty          = pure mempty
@@ -94,20 +128,27 @@ instance Monoid a => Monoid (LocThetaImage u a) where
 
 
 
+instance Monoid a => Monoid (LocThetaQuery u a) where
+  mempty          = pure mempty
+  ma `mappend` mb = LocThetaQuery $ \pt ang -> 
+                      getLocThetaQuery ma pt ang 
+                         `mappend` getLocThetaQuery mb pt ang
+
+-- DrawingCtxM
+
 instance DrawingCtxM (LocThetaImage u) where
   askDC           = LocThetaImage $ \_  _   -> askDC
   asksDC fn       = LocThetaImage $ \_  _   -> asksDC fn
   localize upd ma = LocThetaImage $ \pt ang -> 
                       localize upd (getLocThetaImage ma pt ang)
 
+instance DrawingCtxM (LocThetaQuery u) where
+  askDC           = LocThetaQuery $ \_  _   -> askDC
+  asksDC fn       = LocThetaQuery $ \_  _   -> asksDC fn
+  localize upd ma = LocThetaQuery $ \pt ang -> 
+                      localize upd (getLocThetaQuery ma pt ang)
 
-instance BinaryObj (LocThetaImage u a) where
-  type BinaryR1 (LocThetaImage u a) = Point2 u 
-  type BinaryR2 (LocThetaImage u a) = Radian
-  
-  promoteB fn       = LocThetaImage $ \pt ang -> fn pt ang
-  applyB mf pt ang  = getLocThetaImage mf pt ang
-
+--
 
 instance Decorate LocThetaImage where
   decorate ma mz = LocThetaImage $ \pt ang -> 
@@ -132,6 +173,30 @@ runLocThetaImage :: Point2 u -> Radian -> DrawingContext
                  -> LocThetaImage u a 
                  -> PrimW u a
 runLocThetaImage pt incl ctx mf = runImage ctx (getLocThetaImage mf pt incl)
+
+
+runLocThetaQuery :: Point2 u -> Radian -> DrawingContext 
+                 -> LocThetaQuery u a 
+                 -> a
+runLocThetaQuery pt incl ctx mf = runQuery ctx (getLocThetaQuery mf pt incl)
+
+
+promoteLocTheta ::  (Point2 u -> Radian -> Image u a) -> LocThetaImage u a
+promoteLocTheta k = LocThetaImage $ \pt ang -> k pt ang
+
+applyLocTheta :: LocThetaImage u a -> Point2 u -> Radian -> Image u a
+applyLocTheta mq pt ang = getLocThetaImage mq pt ang
+
+
+qpromoteLocTheta :: (Point2 u -> Radian -> Query u a) -> LocThetaQuery u a
+qpromoteLocTheta k = LocThetaQuery $ \pt ang -> k pt ang
+
+
+-- | \"zero-apply\" a LocThetaQuery.
+--
+zapLocThetaQuery :: LocThetaQuery u a -> Point2 u -> Radian -> Image u a
+zapLocThetaQuery mq pt ang = askDC >>= \ctx -> 
+    let a = runLocThetaQuery pt ang ctx mq in return a
 
 
 
@@ -180,5 +245,7 @@ infixr 1 `incline`
 -- supplied angle, making a 'LocImage'. 
 -- 
 incline :: LocThetaImage u a -> Radian -> LocImage u a
-incline ma incl = promoteU $ \pt -> getLocThetaImage ma pt incl
+incline ma incl = promoteLoc $ \pt -> getLocThetaImage ma pt incl
 
+atIncline :: LocThetaImage u a -> Point2 u -> Radian -> Image u a
+atIncline ma pt incl = getLocThetaImage ma pt incl

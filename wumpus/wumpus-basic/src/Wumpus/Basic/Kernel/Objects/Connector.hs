@@ -25,8 +25,16 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , DConnectorImage
    , DConnectorGraphic
 
+   , ConnectorQuery
+
    , runConnectorImage
+   , runConnectorQuery
    , connect
+
+   , promoteConn
+   , applyConn
+   , qpromoteConn
+   , zapConnectorQuery
 
    , emptyConnectorImage
 
@@ -53,7 +61,6 @@ newtype ConnectorImage u a = ConnectorImage {
 
 
 type instance DUnit (ConnectorImage u a) = u
-type instance Answer (ConnectorImage u a) = a
 
 
 
@@ -68,15 +75,33 @@ type DConnectorImage a        = ConnectorImage Double a
 type DConnectorGraphic        = ConnectorGraphic Double 
 
 
+newtype ConnectorQuery u a = ConnectorQuery { 
+          getConnectorQuery :: Point2 u -> Point2 u -> Query u a }
+
+
+-- Functor 
 
 instance Functor (ConnectorImage u) where
   fmap f ma = ConnectorImage $ \p0 p1 -> fmap f $ getConnectorImage ma p0 p1
+
+instance Functor (ConnectorQuery u) where
+  fmap f ma = ConnectorQuery $ \p0 p1 -> fmap f $ getConnectorQuery ma p0 p1
+
+
+-- Applicative
 
 instance Applicative (ConnectorImage u) where
   pure a    = ConnectorImage $ \_  _  -> pure a
   mf <*> ma = ConnectorImage $ \p0 p1 -> 
                 getConnectorImage mf p0 p1 <*> getConnectorImage ma p0 p1
 
+instance Applicative (ConnectorQuery u) where
+  pure a    = ConnectorQuery $ \_  _  -> pure a
+  mf <*> ma = ConnectorQuery $ \p0 p1 -> 
+                getConnectorQuery mf p0 p1 <*> getConnectorQuery ma p0 p1
+
+
+-- Monad 
 
 instance Monad (ConnectorImage u) where
   return a  = ConnectorImage $ \_  _  -> return a
@@ -85,13 +110,31 @@ instance Monad (ConnectorImage u) where
                 getConnectorImage (k ans) p0 p1
 
 
+instance Monad (ConnectorQuery u) where
+  return a  = ConnectorQuery $ \_  _  -> return a
+  ma >>= k  = ConnectorQuery $ \p0 p1 -> 
+                getConnectorQuery ma p0 p1 >>= \ans -> 
+                getConnectorQuery (k ans) p0 p1
+
+
+-- Monoid
+
 instance Monoid a => Monoid (ConnectorImage u a) where
   mempty          = pure mempty
   ma `mappend` mb = ConnectorImage $ \p0 p1 -> 
                       getConnectorImage ma p0 p1 
-                      `mappend` getConnectorImage mb p0 p1 
+                        `mappend` getConnectorImage mb p0 p1 
 
 
+instance Monoid a => Monoid (ConnectorQuery u a) where
+  mempty          = pure mempty
+  ma `mappend` mb = ConnectorQuery $ \p0 p1 -> 
+                      getConnectorQuery ma p0 p1 
+                        `mappend` getConnectorQuery mb p0 p1 
+
+
+
+-- DrawingCtxM
 
 instance DrawingCtxM (ConnectorImage u) where
   askDC           = ConnectorImage $ \_  _  -> askDC
@@ -99,15 +142,14 @@ instance DrawingCtxM (ConnectorImage u) where
   localize upd ma = ConnectorImage $ \p0 p1 -> 
                       localize upd (getConnectorImage ma p0 p1)
 
+instance DrawingCtxM (ConnectorQuery u) where
+  askDC           = ConnectorQuery $ \_  _  -> askDC
+  asksDC fn       = ConnectorQuery $ \_  _  -> asksDC fn
+  localize upd ma = ConnectorQuery $ \p0 p1 -> 
+                      localize upd (getConnectorQuery ma p0 p1)
 
 
-instance BinaryObj (ConnectorImage u a) where
-  type BinaryR1 (ConnectorImage u a) = Point2 u 
-  type BinaryR2 (ConnectorImage u a) = Point2 u 
   
-  promoteB fn       = ConnectorImage $ \p0 p1 -> fn p0 p1
-  applyB mf p0 p1   = getConnectorImage mf p0 p1
-
 
 
 instance Decorate ConnectorImage where
@@ -133,9 +175,35 @@ runConnectorImage :: Point2 u -> Point2 u
                   -> PrimW u a
 runConnectorImage p0 p1 ctx mf = runImage ctx (getConnectorImage mf p0 p1)
 
+
+runConnectorQuery :: Point2 u -> Point2 u 
+                  -> DrawingContext -> ConnectorQuery u a 
+                  -> a
+runConnectorQuery p0 p1 ctx mf = runQuery ctx (getConnectorQuery mf p0 p1)
+
+
 connect :: Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
 connect p0 p1 mf = getConnectorImage mf p0 p1
 
+
+
+
+promoteConn :: (Point2 u -> Point2 u -> Image u a) -> ConnectorImage u a
+promoteConn fn       = ConnectorImage $ \p0 p1 -> fn p0 p1
+
+applyConn :: ConnectorImage u a -> Point2 u -> Point2 u -> Image u a
+applyConn mf p0 p1   = getConnectorImage mf p0 p1
+
+
+qpromoteConn :: (Point2 u -> Point2 u -> Query u a) -> ConnectorQuery u a
+qpromoteConn k = ConnectorQuery $ \p0 p1 -> k p0 p1
+
+
+-- | \"zero-apply\" a Connector.
+--
+zapConnectorQuery :: ConnectorQuery u a -> Point2 u -> Point2 u -> Image u a
+zapConnectorQuery mq p0 p1  = askDC >>= \ctx -> 
+    let a = runConnectorQuery p0 p1 ctx mq in return a
 
 
 

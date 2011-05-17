@@ -23,21 +23,21 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
     PrimW(..)
   , primAnswer
-  , szconvPrimF
-  , szconvPrimZ
-
 
   , Image
   , Graphic 
+
   , Query
 
   , DImage
   , DGraphic
 
   , runImage
+  , runQuery
+  , zapQuery
 
   , primGraphic
-
+  , clipImage
 
   , UConvert(..)
   , uconvImageF
@@ -47,10 +47,6 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
 
   , both
-
-  , Answer
-  , UnaryObj(..)
-  , BinaryObj(..)
 
   , ignoreAns
   , replaceAns
@@ -75,48 +71,40 @@ import Data.Monoid
 -- | Unit @u@ is a phantom.
 --
 data PrimW u a = PrimW CatPrim a
-               | Pure a
 
 type instance DUnit (PrimW u a) = u
 
 
 instance Monoid a => Monoid (PrimW u a) where
-  mempty = Pure mempty
-  Pure a     `mappend` Pure b     = Pure (a `mappend` b)
-  Pure a     `mappend` PrimW cb b = PrimW cb (a `mappend` b)
-  PrimW ca a `mappend` Pure b     = PrimW ca (a `mappend` b)
+  mempty = PrimW mempty mempty
   PrimW ca a `mappend` PrimW cb b = PrimW (ca `mappend` cb) (a `mappend` b)
 
 instance Functor (PrimW u) where
   fmap f (PrimW w a) = PrimW w (f a)
-  fmap f (Pure a)    = Pure (f a)
 
 
 instance Applicative (PrimW u) where
-  pure a                        = Pure a
-  (Pure f)     <*> ma           = fmap f ma
-  (PrimW c1 f) <*> (Pure a)     = PrimW c1 (f a)
+  pure a                        = PrimW mempty a
   (PrimW c1 f) <*> (PrimW c2 a) = PrimW (c1 `mappend` c2) (f a) 
 
 
 instance Monad (PrimW u) where
-  return a            = Pure a
-  (Pure a)     >>= mf = mf a
-  (PrimW c1 a) >>= mf = case mf a of
-                          Pure b     -> PrimW c1 b
-                          PrimW c2 b -> PrimW (c1 `mappend` c2) b
+  return a            = PrimW mempty a
+  (PrimW c1 a) >>= mf = let (PrimW c2 b) = mf a
+                        in PrimW (c1 `mappend` c2) b
 
 
 primAnswer :: PrimW u a -> a
 primAnswer (PrimW _ a) = a
-primAnswer (Pure a)    = a
 
 
 -- | For the moment the second fun is type preserving...
 --
 bimapPrimW :: (CatPrim -> CatPrim) -> (a -> a) -> PrimW u a -> PrimW u a
 bimapPrimW f g (PrimW ca a) = PrimW (f ca) (g a)
-bimapPrimW _ g (Pure a)     = Pure (g a)
+
+
+
 
 
 
@@ -126,7 +114,6 @@ bimapPrimW _ g (Pure a)     = Pure (g a)
 --
 szconvPrimF :: (Functor t, InterpretUnit u, InterpretUnit u1)
             => FontSize -> PrimW u (t u)  -> PrimW u1 (t u1)
-szconvPrimF sz (Pure a)    = Pure (uconvertF sz a)
 szconvPrimF sz (PrimW c a) = PrimW c (uconvertF sz a)
 
 
@@ -134,7 +121,6 @@ szconvPrimF sz (PrimW c a) = PrimW c (uconvertF sz a)
 --
 szconvPrimZ :: (InterpretUnit u, InterpretUnit u1)
             => FontSize -> PrimW u a  -> PrimW u1 a
-szconvPrimZ _ (Pure a)    = Pure a
 szconvPrimZ _ (PrimW c a) = PrimW c a
 
 
@@ -148,8 +134,6 @@ type instance DUnit (Image u a) = u
 
 type Graphic u = Image u (UNil u)
 
-type Query u a = Image u a
-
 
 -- | Type specialized version of 'Image'.
 --
@@ -160,39 +144,94 @@ type DImage a       = Image Double a
 type DGraphic       = Graphic Double 
 
 
+newtype Query u a = Query { 
+          getQuery :: DrawingContext -> a }
+
+type instance DUnit (Query u a) = u
+
+-- Functor
+
 instance Functor (Image u) where
   fmap f ma = Image $ \ctx -> fmap f $ getImage ma ctx
 
+instance Functor (Query u) where
+  fmap f ma = Query $ \ctx -> f $ getQuery ma ctx
+
+-- Applicative
+
 instance Applicative (Image u) where
-  pure a    = Image $ \_ -> pure a
+  pure a    = Image $ \_   -> pure a
   mf <*> ma = Image $ \ctx -> 
                 getImage mf ctx <*> getImage ma ctx
 
+instance Applicative (Query u) where
+  pure a    = Query $ \_   -> a
+  mf <*> ma = Query $ \ctx -> let f = getQuery mf ctx 
+                                  a = getQuery ma ctx
+                              in f a
+
+
+-- Monad
 
 instance Monad (Image u) where
   return a = Image $ \_ -> return a
   ma >>= k = Image $ \ctx -> getImage ma ctx >>= \ans -> getImage (k ans) ctx
 
 
+instance Monad (Query u) where
+  return a = Query $ \_   -> a
+  ma >>= k = Query $ \ctx -> let a = getQuery ma ctx in getQuery (k a) ctx
+
+-- Monoid
 
 instance Monoid a => Monoid (Image u a) where
   mempty          = pure mempty
   ma `mappend` mb = Image $ \ctx -> 
                       getImage ma ctx `mappend` getImage mb ctx
 
+instance Monoid a => Monoid (Query u a) where
+  mempty          = pure mempty
+  ma `mappend` mb = Query $ \ctx -> 
+                      getQuery ma ctx `mappend` getQuery mb ctx
+
+
+-- DrawingCtxM
+
+
 instance DrawingCtxM (Image u) where
-  askDC           = Image $ \ctx -> Pure ctx
-  asksDC fn       = Image $ \ctx -> Pure (fn ctx)
+  askDC           = Image $ \ctx -> return ctx
+  asksDC fn       = Image $ \ctx -> return (fn ctx)
   localize upd ma = Image $ \ctx -> getImage ma (upd ctx)
+
+instance DrawingCtxM (Query u) where
+  askDC           = Query $ \ctx -> ctx
+  asksDC fn       = Query $ \ctx -> (fn ctx)
+  localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
 runImage :: DrawingContext -> Image u a -> PrimW u a
 runImage ctx mf = getImage mf ctx
 
+runQuery :: DrawingContext -> Query u a -> a
+runQuery ctx mf = getQuery mf ctx
+
+
+
+zapQuery :: Query u a -> Image u a
+zapQuery mq = askDC >>= \ctx -> let a = runQuery ctx mq in return a
+
 -- | Constructor for Primtive graphics.
 --
 primGraphic :: CatPrim -> Graphic u
 primGraphic ca = Image $ \_ -> PrimW ca UNil
+
+
+-- | Clip an Image.
+-- 
+clipImage :: PrimPath -> Image u a -> Image u a
+clipImage pp ma = Image $ \ctx -> step (getImage ma ctx)
+  where
+    step (PrimW ca a) = PrimW (cpmap (clip pp) ca) a
 
 
 
@@ -234,30 +273,6 @@ emptyImage = mempty
 both :: Applicative f => f a -> f b -> f (a,b)
 both fa fb = (,) <$> fa <*> fb
 
-type family Answer a :: *
-
-class UnaryObj (obj :: * ) where
-   type UnaryR obj :: *
-   promoteU :: (u ~ DUnit obj, a ~ Answer obj) 
-            => (UnaryR obj -> Image u a) -> obj
-
-   applyU   :: (u ~ DUnit obj, a ~ Answer obj) 
-            => obj -> UnaryR obj -> Image u a
-   
-
-
-class BinaryObj (obj :: * ) where
-   type BinaryR1 obj :: *
-   type BinaryR2 obj :: *
-
-   promoteB :: (u ~ DUnit obj, a ~ Answer obj, u ~ DUnit a) 
-            => (BinaryR1 obj -> BinaryR2 obj -> Image u a) -> obj
-
-   applyB   :: (u ~ DUnit obj, a ~ Answer obj, u ~ DUnit a) 
-            => obj -> BinaryR1 obj -> BinaryR2 obj -> Image u a
-   
-
-
 
 -- | Note - the kind of f allows fo unit annotation.
 --
@@ -288,7 +303,6 @@ class Decorate (f :: * -> * -> *) where
 --
 getCatPrim :: PrimW u a -> CatPrim
 getCatPrim (PrimW ca _) = ca
-getCatPrim (Pure _)     = mempty
 
 -- | Should a decoration \"lift\" a query (Pure) to an image (PrimW)? 
 --
@@ -299,17 +313,14 @@ decorateImage ma mb = Image $ \ctx ->
     step (getImage ma ctx) (getImage mb ctx)
   where
     step (PrimW ca a) (PrimW cb _) = PrimW (ca `mappend` cb) a
-    step a            _            = a
 
 
--- | However elaborating seems natural to take a query (Pure) to 
--- an image (PrimW) as it works like /swapping/ bind.
+-- |
 --
 elaborateImage :: Image u a -> (a -> Image u z) -> Image u a
 elaborateImage ma k = Image $ \ ctx -> case getImage ma ctx of 
     PrimW ca a -> let cb = getCatPrim $ getImage (k a) ctx 
                   in PrimW (ca `mappend` cb) a
-    Pure a     -> let cb = getCatPrim $ getImage (k a) ctx in PrimW cb a
 
 obliterateImage :: Image u a -> Image u z -> Image u a
 obliterateImage ma mb = Image $ \ctx -> 
@@ -321,7 +332,6 @@ hyperlinkImage :: XLink -> Image u a -> Image u a
 hyperlinkImage xl ma = Image $ \ctx -> step (getImage ma ctx)
   where
     step (PrimW ca a) = PrimW (cpmap (xlinkPrim xl) ca) a
-    step (Pure a)     = Pure a
 
 
 
@@ -342,31 +352,25 @@ instance Decorate Image where
 
 instance Rotate a => Rotate (PrimW u a) where
   rotate ang (PrimW ca a) = PrimW (rotate ang ca) (rotate ang a)
-  rotate ang (Pure a)     = Pure  (rotate ang a)
 
 
 instance (RotateAbout a, ScalarUnit u, u ~ DUnit a) => 
     RotateAbout (PrimW u a) where
-  
   rotateAbout ang pt@(P2 x y) (PrimW ca a) = 
     PrimW (rotateAbout ang (P2 (toPsPoint x) (toPsPoint y)) ca)
           (rotateAbout ang pt a) 
         
-  rotateAbout ang pt (Pure a) = Pure (rotateAbout ang pt a) 
 
 
 instance Scale a => Scale (PrimW u a) where
   scale sx sy (PrimW ca a) = PrimW (scale sx sy ca) (scale sx sy a)
-  scale sx sy (Pure a)     = Pure (scale sx sy a)
 
 
 instance (Translate a, ScalarUnit u, u ~ DUnit a) => 
     Translate (PrimW u a) where
-
   translate dx dy (PrimW cp a) = 
     PrimW (translate (toPsPoint dx) (toPsPoint dy) cp) (translate dx dy a) 
 
-  translate dx dy (Pure a) = Pure (translate dx dy a) 
 
 
 -- Image
@@ -402,19 +406,11 @@ instance (Translate a, InterpretUnit u, u ~ DUnit a) =>
 
 
 
+
+
 {-
 
 -- OLD STUFF
-
--- | Clip a graphic object.
--- 
--- Note - maybe this requires an arity family instead?
---
-clipObject :: PrimPath -> ImageAns t u -> ImageAns t u
-clipObject pp (Ans prim a) =  Ans (cpmap (clip pp) prim) a
-
-
-
 
 
 -- | Downcast a LocThetaQuery function by applying it to the 
