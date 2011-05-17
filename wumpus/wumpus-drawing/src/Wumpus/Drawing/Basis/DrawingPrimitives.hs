@@ -74,7 +74,7 @@ hline len = locStraightLine $ hvec len
 -- the line from the pivot. 
 --
 pivotLine :: (Floating u, InterpretUnit u) => u -> u -> Radian -> LocGraphic u
-pivotLine lu ru ang = promoteR1 $ \pt -> 
+pivotLine lu ru ang = promoteLoc $ \pt -> 
     straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
 
 
@@ -93,7 +93,8 @@ blRectangle = dcRectangle
 --
 ctrRectangle :: (Fractional u, InterpretUnit u) 
              => DrawStyle -> u -> u -> LocGraphic u
-ctrRectangle sty w h = moveStart (displace (-hw) (-hh)) $ dcRectangle sty w h
+ctrRectangle sty w h = 
+    moveStart (vec (-hw) (-hh)) $ dcRectangle sty w h
   where
     hw = 0.5 * w
     hh = 0.5 * h
@@ -108,15 +109,15 @@ ctrRectangle sty w h = moveStart (displace (-hw) (-hh)) $ dcRectangle sty w h
 -- | arc : radius * apex_angle
 -- 
 arc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
-arc radius ang = promoteR2 $ \pt inclin -> 
+arc radius ang = promoteLocTheta $ \pt inclin -> 
     let ps = bezierArcPoints ang radius inclin pt
-    in curvePP ps >>= dcOpenPath
+    in zapQuery (curvePP ps) >>= dcOpenPath
 
 -- | wedge : radius * apex_angle
 -- 
 wedge :: (Floating u, InterpretUnit u) 
       => DrawStyle -> u -> Radian -> LocThetaGraphic u
-wedge sty radius ang = promoteR2 $ \pt inclin -> 
+wedge sty radius ang = promoteLocTheta $ \pt inclin -> 
     let ps = bezierArcPoints ang radius inclin pt
     in uconvertCtxF pt      >>= \dpt -> 
        mapM uconvertCtxF ps >>= \dps -> 

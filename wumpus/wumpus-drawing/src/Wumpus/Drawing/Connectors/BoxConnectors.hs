@@ -54,7 +54,7 @@ type ConnectorBox u = ConnectorGraphic u
 --
 connbox :: (Real u, Floating u, InterpretUnit u) 
         => ConnectorBox u
-connbox = promoteR2 $ \p0 p1 -> 
+connbox = promoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
     let ang = vdirection $ pvec p0 p1 
@@ -62,4 +62,4 @@ connbox = promoteR2 $ \p0 p1 ->
         tl  = dispOrtho (V2 (-src_arm)   src_arm ) ang p0
         br  = dispOrtho (V2   dst_arm  (-src_arm)) ang p1
         tr  = dispOrtho (V2   dst_arm    src_arm ) ang p1
-    in vertexPP [ bl, br, tr, tl ] >>= dcClosedPath STROKE
+    in zapQuery (vertexPP [ bl, br, tr, tl ]) >>= dcClosedPath STROKE

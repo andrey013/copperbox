@@ -13,7 +13,7 @@ import Wumpus.Basic.System.FontLoader
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
+import Data.Monoid
 import System.Directory
 
 
@@ -76,13 +76,13 @@ std_ctx = fill_colour peru $ standardContext 18
 
 makeConnDrawing :: (String, Connector Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
-    promoteR1 $ \p0 -> fn p0 (displace 60 40 p0) 
+    promoteLoc $ \p0 -> fn p0 (displace (vec 60 40) p0) 
   where
-    fn p0 p1   = disk p0 `oplus` disk p1 `oplus` dcon p0 p1 `oplus` lbl p1
+    fn p0 p1   = mconcat [disk p0, disk p1, dcon p0 p1, lbl p1]
 
     disk pt    = localize (fill_colour red) $ dcDisk FILL 2 `at` pt
-    dcon p0 p1 = fmap ignoreAns $ connect (uniformArrow curveTip conn) p0 p1
+    dcon p0 p1 = ignoreAns $ connect p0 p1 (uniformArrow curveTip conn)
 
-    lbl  pt    = fmap ignoreAns $ atStartAddr (textline ss) (dispH 10 pt) WW
+    lbl  pt    = ignoreAns $ textline ss WW `at` (displace (hvec 10) pt)
 
 

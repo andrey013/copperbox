@@ -10,6 +10,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 import System.Directory
 
 
@@ -45,14 +46,14 @@ tableGraphic :: Int -> [(String,RGBi)] -> TraceDrawing Double ()
 tableGraphic row_count xs = draw $ (chain_ chn gs) `at` pt
   where
     chn  = tableDown row_count (152,11)
-    pt   = dispV (fromIntegral $ 11 * row_count) zeroPt 
+    pt   = displace (vvec $ fromIntegral $ 11 * row_count) zeroPt 
     gs   = map (uncurry colourSample) xs
    
 
 colourSample :: String -> RGBi -> LocGraphic Double
 colourSample name rgb = localize (fill_colour rgb) $ 
-    promoteR1 $ \pt ->  
-      oplus (blRectangle FILL_STROKE 15 10 `at` pt)
-            (dcTextlabel name `at` displace 20 2 pt)
+    promoteLoc $ \pt ->  
+      mappend (blRectangle FILL_STROKE 15 10 `at` pt)
+              (dcTextlabel name `at` displace (vec 20 2) pt)
         
 

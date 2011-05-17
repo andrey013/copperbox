@@ -84,20 +84,23 @@ type PointGen = Radian -> [Vec2 En]
 
 filledTipPath :: PointGen -> LocThetaGraphic En
 filledTipPath fn = 
-    localize fill_use_stroke_colour $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath FILL
+    localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
+      let vs = fn theta 
+      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcClosedPath FILL
 
 
 closedTipPath :: PointGen -> LocThetaGraphic En
 closedTipPath fn = 
-    localize solid_stroke_tip $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcClosedPath STROKE
+    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
+      let vs = fn theta 
+      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcClosedPath STROKE
 
 
 openTipPath :: PointGen -> LocThetaGraphic En
 openTipPath fn = 
-    localize solid_stroke_tip $ promoteR2 $ \pt theta ->
-      let vs = fn theta in vertexPP (map (pt .+^) vs) >>= dcOpenPath
+    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
+      let vs = fn theta 
+      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcOpenPath
 
 
 
@@ -329,13 +332,13 @@ diskTip =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = promoteR2 $ \pt theta -> body theta `at` pt
+      , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
       }
   where
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize fill_use_stroke_colour $ 
-                      moveStart (dispVec v1) (dcDisk FILL 0.5)
+                      moveStart v1 (dcDisk FILL 0.5)
 
 
 odiskTip :: ArrowTip
@@ -343,13 +346,13 @@ odiskTip =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = promoteR2 $ \pt theta -> body theta `at` pt
+      , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
       }
   where
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize solid_stroke_tip $ 
-                      moveStart (dispVec v1) (dcDisk STROKE 0.5)
+                      moveStart v1 (dcDisk STROKE 0.5)
 
 
 -- | squareSpec:
@@ -459,9 +462,9 @@ curveTip =
       , tip_deco         = body
       }
   where
-    body = promoteR2 $ \pt theta -> 
+    body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               toPrimPath (curveTipPath pt theta) >>= dcOpenPath
+               zapQuery (toPrimPath $ curveTipPath pt theta) >>= dcOpenPath
 
 
 
@@ -485,9 +488,9 @@ revcurveTip =
       , tip_deco         = body
       }
   where
-    body = promoteR2 $ \pt theta -> 
+    body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               toPrimPath (curveTipRevPath pt theta) >>= dcOpenPath
+               zapQuery (toPrimPath $ curveTipRevPath pt theta) >>= dcOpenPath
 
 
     

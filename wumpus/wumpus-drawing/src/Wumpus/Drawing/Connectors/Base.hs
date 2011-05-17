@@ -30,7 +30,7 @@ module Wumpus.Drawing.Connectors.Base
   , rightArrowPath
 
   
-  , promoteConn
+  , buildConn
 
   ) where
 
@@ -47,7 +47,7 @@ import Data.Monoid
 -- | The type of Connectors - a query from start and end point to 
 -- a Path.
 --
-type Connector u = Point2 u -> Point2 u -> Query u (AbsPath u)
+type Connector u = ConnectorQuery u (AbsPath u)
 
 -- | Arrowhead /algorithm/ - the components of an arrowhead.
 -- 
@@ -79,8 +79,8 @@ runArrowTip (ArrowTip df len deco) =
 --
 rightArrow :: (Real u, Floating u, InterpretUnit u) 
             => ArrowTip -> Connector u -> ArrowConnector u
-rightArrow alg conn = promoteB $ \p0 p1 ->
-    applyB conn p0 p1 >>= \full_path -> 
+rightArrow alg conn = promoteConn $ \p0 p1 ->
+    zapConnectorQuery conn p0 p1 >>= \full_path -> 
     rightArrowPath alg full_path 
 
 
@@ -89,8 +89,8 @@ rightArrow alg conn = promoteB $ \p0 p1 ->
 --
 leftArrow :: (Real u, Floating u, InterpretUnit u) 
             => ArrowTip -> Connector u -> ArrowConnector u
-leftArrow alg conn = promoteB $ \p0 p1 ->
-    applyB conn p0 p1 >>= \full_path -> 
+leftArrow alg conn = promoteConn $ \p0 p1 ->
+    zapConnectorQuery conn p0 p1 >>= \full_path -> 
     leftArrowPath alg full_path 
 
 
@@ -99,8 +99,8 @@ leftArrow alg conn = promoteB $ \p0 p1 ->
 --
 leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip -> ArrowTip ->  Connector u -> ArrowConnector u
-leftRightArrow algl algr conn = promoteB $ \p0 p1 ->
-    applyB conn p0 p1 >>= \full_path -> 
+leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
+    zapConnectorQuery conn p0 p1 >>= \full_path -> 
     leftRightArrowPath algl algr full_path 
 
 
@@ -110,8 +110,8 @@ leftRightArrow algl algr conn = promoteB $ \p0 p1 ->
 --
 uniformArrow :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip ->  Connector u -> ArrowConnector u
-uniformArrow alg conn = promoteB $ \p0 p1 ->
-    applyB conn p0 p1 >>= \full_path -> 
+uniformArrow alg conn = promoteConn $ \p0 p1 ->
+    zapConnectorQuery conn p0 p1 >>= \full_path -> 
     leftRightArrowPath alg alg full_path 
 
 
@@ -128,13 +128,13 @@ uniformArrow alg conn = promoteB $ \p0 p1 ->
 leftArrowPath :: (Real u, Floating u, InterpretUnit u) 
               => ArrowTip -> AbsPath u -> Image u (AbsPath u)
 leftArrowPath alg full_path =
-    runArrowTip alg     >>= \(retract, len, deco) -> 
+    zapQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
     let short_path      = if retract > 0 then shortenL retract full_path 
                                          else full_path
         mid_ang         = tipDirectionL len full_path
-        tip             = applyB deco (tipL full_path) mid_ang
+        tip             = applyLocTheta deco (tipL full_path) mid_ang
     in replaceAns full_path $ 
-         decorate tip $ toPrimPath short_path >>= dcOpenPath
+         decorate tip $ zapQuery (toPrimPath short_path) >>= dcOpenPath
 
 
 
@@ -146,13 +146,13 @@ leftArrowPath alg full_path =
 rightArrowPath :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip -> AbsPath u -> Image u (AbsPath u)
 rightArrowPath alg full_path =
-    runArrowTip alg     >>= \(retract, len, deco) -> 
+    zapQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
     let short_path      = if retract > 0 then shortenR retract full_path 
                                          else full_path
         mid_ang         = tipDirectionR len full_path
-        tip             = applyB deco (tipR full_path) mid_ang
+        tip             = applyLocTheta deco (tipR full_path) mid_ang
     in replaceAns full_path $ 
-         decorate tip $ toPrimPath short_path >>= dcOpenPath
+         decorate tip $ zapQuery (toPrimPath short_path) >>= dcOpenPath
 
 
 
@@ -165,15 +165,16 @@ rightArrowPath alg full_path =
 leftRightArrowPath :: (Real u, Floating u, InterpretUnit u) 
                    => ArrowTip -> ArrowTip -> AbsPath u -> Image u (AbsPath u)
 leftRightArrowPath algl algr full_path =
-    runArrowTip algl    >>= \(retractl, lenl, decol) -> 
-    runArrowTip algr    >>= \(retractr, lenr, decor) -> 
+    zapQuery (runArrowTip algl) >>= \(retractl, lenl, decol) -> 
+    zapQuery (runArrowTip algr) >>= \(retractr, lenr, decor) -> 
     let short_path      = shortenPath retractl retractr full_path
         mid_angl        = tipDirectionL lenl full_path
         mid_angr        = tipDirectionR lenr full_path
-        tipl            = applyB decol (tipL full_path) mid_angl
-        tipr            = applyB decor (tipR full_path) mid_angr
-    in fmap (replaceAns full_path) $ 
-         decorate (tipl `mappend` tipr) $ toPrimPath short_path >>= dcOpenPath
+        tipl            = applyLocTheta decol (tipL full_path) mid_angl
+        tipr            = applyLocTheta decor (tipR full_path) mid_angr
+    in replaceAns full_path $ 
+         decorate (tipl `mappend` tipr) $ 
+            zapQuery (toPrimPath short_path) >>= dcOpenPath
 
 
 
@@ -195,13 +196,13 @@ tipDirectionR u absp | u <= 0   = directionR absp
 -- function accounting for the separator values in the 
 -- DrawingContext.
 --
--- This should be used instead of @promoteR2@ for functions 
+-- This should be used instead of @promoteConn@ for functions 
 -- building connectors.
 --
-promoteConn :: (Real u, Floating u, InterpretUnit u) 
+buildConn :: (Real u, Floating u, InterpretUnit u) 
             => (Point2 u -> Point2 u -> Image u a) 
             -> ConnectorImage u a
-promoteConn fn = promoteB $ \p0 p1 -> 
+buildConn fn = promoteConn $ \p0 p1 -> 
     connectorSrcSpace  >>= \sep0 ->
     connectorDstSpace  >>= \sep1 ->
     connectorSrcOffset >>= \off0 ->
@@ -211,7 +212,7 @@ promoteConn fn = promoteB $ \p0 p1 ->
           (dispPerpendicular off1 ang $ p1 .-^ avec ang sep1)
    
 --
--- CAUTION - promoteConn projects the spacers along the (straight)
+-- CAUTION - buildConn projects the spacers along the (straight)
 -- connector line. This might not be what is wanted for jointed
 -- connectors.
 -- 
