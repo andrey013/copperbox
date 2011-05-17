@@ -213,7 +213,7 @@ zparallelogram bw h = parallelogram bw h ang
 
 mkParallelogram :: (Real u, Fractional u, InterpretUnit u, Tolerance u) 
                 => u -> u -> Radian -> LocThetaQuery u (Parallelogram u)
-mkParallelogram bw h lang = promoteR2 $ \ctr theta -> 
+mkParallelogram bw h lang = qpromoteLocTheta $ \ctr theta -> 
     pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
                          , pll_base_width   = bw
                          , pll_height       = h
@@ -225,7 +225,7 @@ mkParallelogram bw h lang = promoteR2 $ \ctr theta ->
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                     => u -> u -> u -> Radian -> LocThetaQuery u (AbsPath u)
-mkParallelogramPath rnd bw h lang = promoteR2 $ \ctr theta -> 
+mkParallelogramPath rnd bw h lang = qpromoteLocTheta $ \ctr theta -> 
     let xs = runVertices4 ctr  $ parallelogramVertices bw h lang
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs 
                          

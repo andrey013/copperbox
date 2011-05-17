@@ -83,7 +83,7 @@ data Doc u = Empty
            | Mono (WidthQuery u) [EscapedChar]
            | AElab (AElaborateF u) (Doc u)
 
-type WidthQuery u = Query (AdvanceVec u)
+type WidthQuery u = Query u (AdvanceVec u)
 
 type TextContextF u = TextContext u -> TextContext u
 
@@ -94,7 +94,7 @@ type AElaborateF u = Orientation u -> LocGraphic u
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
 --
-type TextFrame u = BoundedLocRectGraphic u
+type TextFrame u = RectAddress -> LocImage u (BoundingBox u)
 
 
 -- NOTE - should the API use @em@ for fill, padding etc.?
@@ -248,10 +248,11 @@ highlight rgb = AElab (drawBackfill rgb)
 
 
 render :: (Real u, Floating u, InterpretUnit u) 
-       => FontFamily -> Doc u -> BoundedLocRectGraphic u 
-render ff doc = localize (set_font $ regularWeight ff) $
+       => FontFamily -> Doc u -> (RectAddress -> LocImage u (BoundingBox u))
+render ff doc = \raddr -> localize (set_font $ regularWeight ff) $
     textlineSpace               >>= \sep -> 
-    posTextWithMargins $ runEvalM (initTextCtx sep ff) (interpret doc) 
+    let po = runEvalM (initTextCtx sep ff) (interpret doc) 
+    in posTextWithMargins po raddr
 
 
 data TextContext u = TextContext
@@ -319,17 +320,17 @@ interpret (VCat va a b)     =
     valignSpace va  <$> lineSpace <*> interpret a <*> interpret b
 
 interpret (Fill va w a)     = ppad va w <$> interpret a
-interpret (DLocal upd a)    = localizePO upd <$> interpret a
+interpret (DLocal upd a)    = error "interpret"  -- localizePO upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
 interpret (Mono q1 xs)      = interpMono q1 xs
-interpret (AElab fn a)      = aelaboratePO fn <$> interpret a
+interpret (AElab fn a)      = error "interpret" -- aelaboratePO fn <$> interpret a
 
 
 
 
 interpEmpty :: InterpretUnit u => EvalM u (PosObject u)
 interpEmpty = 
-    return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocGraphic
+    return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocImage
 
 
 
@@ -353,38 +354,45 @@ interpText esc = interpretLeaf $
 --
 interpSpace :: InterpretUnit u 
             => EvalM u (PosObject u)
-interpSpace = return $ makePosObject qy1  emptyLocGraphic
+interpSpace = return $ makePosObject qy1  emptyLocImage
   where
     qy1 = charOrientationZero $ CharEscInt $ ord ' '
 
 
 ppad :: (Fractional u, Ord u) 
-           => VAlign -> u -> PosObject u -> PosObject u
+     => VAlign -> u -> PosObject u -> PosObject u
+ppad _ = error "ppad"
+{-
 ppad VLeft   = padLeftPO
 ppad VCenter = padHorizontalPO
 ppad VRight  = padRightPO
-
+-}
 
 interpMono :: (Fractional u, InterpretUnit u)
-           => Query (AdvanceVec u) -> [EscapedChar] 
+           => Query u (AdvanceVec u) -> [EscapedChar] 
            -> EvalM u (PosObject u)
 interpMono qy1 chs = interpretLeaf $
+    error "interpMono"
+{-
     makeBindPosObject qy hkernOrientationZero hkernLine
   where
     qy = (\v1 -> monoSpace (advanceH v1) chs ) <$> qy1 
-
+-}
 
 
 
 interpretLeaf :: (Fractional u, InterpretUnit u)
               => PosObject u -> EvalM u (PosObject u)
 interpretLeaf po = 
+    error "interpretLeaf"
+{-
     (\f1 f2 sty -> f1 $ f2 $ localizePO sty po) 
        <$> (fmap (condE drawUnderline)       $ asks text_underline)
        <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
        <*> textstyle
    where
      condE f b = if b then elaboratePO f else id
+-}
 
 textstyle :: EvalM u DrawingContextF
 textstyle = 
@@ -414,7 +422,7 @@ monoSpace _  []     = []
 drawStrikethrough :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawStrikethrough (Orientation xmin xmaj _ ymaj) = 
-    linestyle $ moveStart (dispVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (vec (-xmin) vpos) hline 
   where
     vpos  = 0.45 * ymaj
     hline = locStraightLine (hvec $ xmin + xmaj)
@@ -424,7 +432,7 @@ drawStrikethrough (Orientation xmin xmaj _ ymaj) =
 drawUnderline :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawUnderline (Orientation xmin xmaj ymin _) = 
-    linestyle $ moveStart (dispVec $ vec (-xmin) vpos) hline 
+    linestyle $ moveStart (vec (-xmin) vpos) hline 
   where
     vpos  = negate $ 0.45 * ymin
     hline = locStraightLine (hvec $ xmin + xmaj)
@@ -448,7 +456,7 @@ drawBackfill rgb (Orientation xmin xmaj ymin ymaj) =
         hdy = 0.5 * dy 
     in localize (fill_colour rgb) $ moveStart (mkVec hdx hdy) (mkRect hdx hdy)
   where
-    mkVec  dx dy = dispVec $ vec (negate $ xmin+dx) (negate $ ymin+dy)
+    mkVec  dx dy = vec (negate $ xmin+dx) (negate $ ymin+dy)
     mkRect dx dy = let w = dx + xmin + xmaj + dx
                        h = dy + ymin + ymaj + dy
                    in dcRectangle FILL w h

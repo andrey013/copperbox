@@ -241,7 +241,7 @@ semicircle radius =
 
 mkSemicircle :: InterpretUnit u
              => u -> LocThetaQuery u (Semicircle u)
-mkSemicircle radius = promoteR2 $ \ctr theta -> 
+mkSemicircle radius = qpromoteLocTheta $ \ctr theta -> 
     pure $ Semicircle { sc_ctm    = makeShapeCTM ctr theta
                       , sc_radius = radius
                       }
@@ -253,7 +253,7 @@ mkSemicircle radius = promoteR2 $ \ctr theta ->
 --
 mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                  => u -> u -> LocThetaQuery u (AbsPath u)
-mkSemicirclePath radius cminor = promoteR2 $ \pt theta ->
+mkSemicirclePath radius cminor = qpromoteLocTheta $ \pt theta ->
     let ctr = dispPerpendicular (-cminor) theta pt
     in pure $ curvePath $ bezierArcPoints pi radius theta ctr 
 

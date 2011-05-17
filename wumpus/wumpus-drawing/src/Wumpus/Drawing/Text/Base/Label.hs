@@ -19,6 +19,7 @@ module Wumpus.Drawing.Text.Base.Label
   ( 
 
     locImageLabel
+{-
   , label_center_of
   , label_left_of
   , label_right_of
@@ -29,7 +30,7 @@ module Wumpus.Drawing.Text.Base.Label
   , label_midway_of
   , label_atstart_of
   , label_atend_of
-
+-}
   ) where
 
 
@@ -44,11 +45,15 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 locImageLabel :: Floating u 
-              => (a -> Anchor u) -> RectAddress 
-              -> BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
-locImageLabel fn rpos lbl obj = promoteR1 $ \pt -> 
-    elaborateR0 (obj `at` pt)  (\a -> graphic_ $ atStartAddr lbl (fn a) rpos)
+              => (a -> Anchor u) 
+              -> RectAddress 
+              -> (RectAddress -> LocImage u (BoundingBox u)) 
+              -> LocImage u a 
+              -> LocImage u a
+locImageLabel fn rpos mklabel obj = promoteU $ \pt -> 
+    elaborate (obj `at` pt)  (\a -> ignoreAns $ mklabel rpos `at` fn a)
 
+{-
 
 label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
                 => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
@@ -106,7 +111,7 @@ label_atend_of :: (Real u, Floating u)
                  -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atend_of = connectorPathLabel atend_
 
-
+-}
 
 -- TikZ has label=below etc.
 -- 

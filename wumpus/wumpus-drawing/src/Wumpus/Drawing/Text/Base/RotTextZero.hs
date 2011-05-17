@@ -47,8 +47,8 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 
-type LocRectTextLine u  = BoundedLocRectGraphic u
-type LocTextLine u      = BoundedLocGraphic u
+type LocRectTextLine u  = RectAddress -> LocImage u (BoundingBox u)
+type LocTextLine u      = LocImage u (BoundingBox u)
 
 type TextObject u       = PosObject u
 
@@ -63,16 +63,16 @@ textline ss = posTextWithMargins (makeTextObject ss)
 
 bllTextline :: (Floating u, InterpretUnit u) 
             => String -> LocTextLine u
-bllTextline ss = startAddr (textline ss) BLL
+bllTextline ss = textline ss BLL
 
 
 blcTextline :: (Floating u, InterpretUnit u) 
             => String -> LocTextLine u
-blcTextline ss = startAddr (textline ss) BLC
+blcTextline ss = textline ss BLC
 
 ccTextline :: (Floating u, InterpretUnit u) 
             => String -> LocTextLine u
-ccTextline ss = startAddr (textline ss) CENTER
+ccTextline ss = textline ss CENTER
 
 
 multiAlignLeft :: (Real u, Floating u, InterpretUnit u) 
@@ -93,7 +93,8 @@ multiAlignRight ss =
 
 renderMultiLine :: (Real u, Floating u, InterpretUnit u) 
                 => VAlign -> [TextObject u] -> LocRectTextLine u
-renderMultiLine va docs = body >>= posTextWithMargins
+renderMultiLine va docs = \raddr -> 
+    body >>= \ans -> posTextWithMargins ans raddr
   where
     body  = (\dy -> alignColumnSep va dy docs) <$> textlineSpace
 
@@ -118,7 +119,7 @@ rtextline ang ss = rescTextline ang (escapeString ss)
 
 rescTextline :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => Radian -> EscapedText -> LocRectTextLine u
-rescTextline ang esc = runPosObjectR2 $ makePosObject ortt body
+rescTextline ang esc = \raddr -> runPosObject raddr $ makePosObject ortt body
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero esc
     body = incline (dcREscapedlabel esc) ang

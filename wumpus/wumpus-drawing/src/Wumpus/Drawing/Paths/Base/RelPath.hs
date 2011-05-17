@@ -293,7 +293,7 @@ fromPathAlgCurves = bimap fn curvedPath . runPathAlgVec
     fn = maybe (V2 0 0) id
 
 
-toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query PrimPath
+toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query u PrimPath
 toPrimPath start (RelPath _ segs) = 
     uconvertCtxF start       >>= \dstart -> 
     T.mapM uconvertCtxF segs >>= \dsegs  ->
@@ -338,12 +338,12 @@ toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
 
 openRelPath :: InterpretUnit u 
             => RelPath u -> LocImage u (RelPath u)
-openRelPath rp = pushR1 (replaceAns rp) $ 
-    promoteR1 $ \start -> toPrimPath start rp >>= dcOpenPath
+openRelPath rp = replaceAns rp $ 
+    promoteLoc $ \start -> zapQuery (toPrimPath start rp) >>= dcOpenPath
 
 
 closedRelPath :: InterpretUnit u 
               => DrawStyle -> RelPath u -> LocImage u (RelPath u)
-closedRelPath sty rp = pushR1 (replaceAns rp) $ 
-    promoteR1 $ \start -> toPrimPath start rp >>= dcClosedPath sty
+closedRelPath sty rp = replaceAns rp $ 
+    promoteLoc $ \start -> zapQuery (toPrimPath start rp) >>= dcClosedPath sty
 

@@ -36,6 +36,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 -- | Clip a LocGraphic.
 --
 locClip :: InterpretUnit u => RelPath u -> LocGraphic u -> LocGraphic u
-locClip rp gf = promoteR1 $ \pt -> 
-             toPrimPath pt rp >>= \pp -> fmap (clipObject pp) (gf `at` pt)
+locClip rp gf = promoteLoc $ \pt -> 
+    zapQuery (toPrimPath pt rp) >>= \pp -> clipImage pp (gf `at` pt)
 

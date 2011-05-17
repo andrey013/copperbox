@@ -34,6 +34,7 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , promoteConn
    , applyConn
    , qpromoteConn
+   , qapplyConn
    , zapConnectorQuery
 
    , emptyConnectorImage
@@ -196,7 +197,10 @@ applyConn mf p0 p1   = getConnectorImage mf p0 p1
 
 
 qpromoteConn :: (Point2 u -> Point2 u -> Query u a) -> ConnectorQuery u a
-qpromoteConn k = ConnectorQuery $ \p0 p1 -> k p0 p1
+qpromoteConn fn      = ConnectorQuery $ \p0 p1 -> fn p0 p1
+
+qapplyConn :: ConnectorQuery u a -> Point2 u -> Point2 u -> Query u a
+qapplyConn mf p0 p1   = getConnectorQuery mf p0 p1
 
 
 -- | \"zero-apply\" a Connector.

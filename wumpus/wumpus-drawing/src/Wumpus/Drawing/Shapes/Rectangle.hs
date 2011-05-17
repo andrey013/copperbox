@@ -152,7 +152,7 @@ rectangle w h =
 
 
 mkRectangle :: InterpretUnit u => u -> u -> LocThetaQuery u (Rectangle u)
-mkRectangle hw hh = promoteR2 $ \ctr theta -> 
+mkRectangle hw hh = qpromoteLocTheta $ \ctr theta -> 
     pure $ Rectangle { rect_ctm    = makeShapeCTM ctr theta
                      , rect_hw     = hw
                      , rect_hh     = hh
@@ -161,7 +161,7 @@ mkRectangle hw hh = promoteR2 $ \ctr theta ->
 
 mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkRectPath rnd hw hh = promoteR2 $ \ctr theta -> 
+mkRectPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
     let xs       = runVertices4 ctr $ rectangleVertices hw hh
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
     

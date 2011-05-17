@@ -75,6 +75,7 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
+import Data.Monoid
 
 -- Marks should be the height of a lower-case letter...
 
@@ -104,7 +105,7 @@ instance InterpretUnit MarkSize where
 
 
 umark :: InterpretUnit u => LocGraphic MarkSize -> LocGraphic u
-umark = uconvLocImageF
+umark = uconvF
 
 
 -- | Filled disk - radius 0.25 MarkSize.
@@ -135,7 +136,7 @@ largeCirc = umark $ dcDisk STROKE 1
 -- szCirc :: u -> LocGraphic u
 
 dotNone :: InterpretUnit u => LocGraphic u
-dotNone = emptyLocGraphic
+dotNone = emptyLocImage
 
 dotChar :: (Real u, Floating u, InterpretUnit u) => Char -> LocGraphic u
 dotChar ch = dotText [ch]
@@ -143,7 +144,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
-dotText ss = pushR1 ignoreAns $ ccTextline ss
+dotText ss = ignoreAns $ ccTextline ss
 
 
 
@@ -151,7 +152,7 @@ dotText ss = pushR1 ignoreAns $ ccTextline ss
 -- | Supplied point is the center.
 --
 axialLine :: (Fractional u, InterpretUnit u) => Vec2 u -> LocGraphic u
-axialLine v = moveStart (\ctr -> ctr .-^ (0.5 *^ v)) (locStraightLine v)
+axialLine v = moveStart (negateV (0.5 *^ v)) (locStraightLine v)
 
 
 dotHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
@@ -163,17 +164,17 @@ dotVLine = umark $ axialLine (vvec 1)
 
 
 dotX :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotX = umark $ axialLine (vec 0.75 1) `oplus` axialLine (vec (-0.75) 1)
+dotX = umark $ axialLine (vec 0.75 1) `mappend` axialLine (vec (-0.75) 1)
 
 
 
 dotPlus :: (Fractional u, InterpretUnit u) =>  LocGraphic u
-dotPlus = dotVLine `oplus` dotHLine
+dotPlus = dotVLine `mappend` dotHLine
 
 
 dotCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
 dotCross = 
-    umark $ axialLine (avec ang 1) `oplus` axialLine (avec (-ang) 1)
+    umark $ axialLine (avec ang 1) `mappend` axialLine (avec (-ang) 1)
   where 
     ang = pi*0.25  
 
@@ -222,12 +223,12 @@ dotStar :: (Floating u, InterpretUnit u) => LocGraphic u
 dotStar = umark $ starLines 0.5
 
 starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
-starLines hh = promoteR1 $ \ctr -> 
+starLines hh = promoteLoc $ \ctr -> 
     let ps = runPathAlgPoint ctr $ polygonPathAlg 5 hh
     in step $ map (fn ctr) ps
   where
     fn p0 p1    = straightLine p0 p1
-    step (x:xs) = oconcat x xs
+    step (x:xs) = mconcat $ x:xs
     step _      = error "starLines - unreachable"
 
 
@@ -235,7 +236,7 @@ dotAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
 dotAsterisk = umark $ asteriskLines 1
 
 asteriskLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
-asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
+asteriskLines h = lineF1 `mappend` lineF2 `mappend` lineF3
   where
     ang     = (pi*2) / 6
     lineF1  = axialLine (vvec h)
@@ -244,15 +245,15 @@ asteriskLines h = lineF1 `oplus` lineF2 `oplus` lineF3
 
 
 dotOPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotOPlus = dotCircle `oplus` dotPlus
+dotOPlus = dotCircle `mappend` dotPlus
 
 
 dotOCross :: (Floating u, InterpretUnit u) => LocGraphic u
-dotOCross = dotCircle `oplus` dotCross
+dotOCross = dotCircle `mappend` dotCross
 
 
 dotFOCross :: (Floating u, InterpretUnit u) => LocGraphic u
-dotFOCross = dotBCircle `oplus` dotCross
+dotFOCross = dotBCircle `mappend` dotCross
 
 
 -- bkCircle :: (Fractional u, InterpretUnit u) => LocGraphic u

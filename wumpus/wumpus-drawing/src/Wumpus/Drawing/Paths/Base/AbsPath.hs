@@ -405,14 +405,14 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
 
 openAbsPath :: InterpretUnit u 
             => AbsPath u -> Image u (AbsPath u)
-openAbsPath rp = 
-    pushR0 (replaceAns rp) $ toPrimPath rp >>= dcOpenPath
+openAbsPath rp = replaceAns rp $
+    zapQuery (toPrimPath rp) >>= dcOpenPath
 
 
 closedAbsPath :: InterpretUnit u 
               => DrawStyle -> AbsPath u -> Image u (AbsPath u)
-closedAbsPath sty rp = 
-    pushR0 (replaceAns rp) $ toPrimPath rp >>= dcClosedPath sty
+closedAbsPath sty rp = replaceAns rp $ 
+    zapQuery (toPrimPath rp) >>= dcClosedPath sty
 
 
 -- | Turn a Path into an ordinary PrimPath.
@@ -421,7 +421,7 @@ closedAbsPath sty rp =
 -- segment is the same point as the start point of the next
 -- segment.
 --
-toPrimPath :: InterpretUnit u => AbsPath u -> Query PrimPath
+toPrimPath :: InterpretUnit u => AbsPath u -> Query u PrimPath
 toPrimPath (AbsPath _ start segs _) = 
     uconvertCtxF start       >>= \dstart -> 
     T.mapM uconvertCtxF segs >>= \dsegs  ->

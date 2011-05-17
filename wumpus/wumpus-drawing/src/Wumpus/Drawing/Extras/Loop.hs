@@ -40,9 +40,8 @@ import Data.AffineSpace                         -- package: vector-space
 -- radius of the initial circle not the loop itself.
 --
 loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-      => u -> LocThetaQuery u (AbsPath u)
-loop zradius = promoteR2 $ \zctr ang -> 
-                 return $ curvePath $ loopPoints zradius zctr ang
+      => u -> Point2 u -> Radian -> Query u (AbsPath u)
+loop zradius zctr ang = return $ curvePath $ loopPoints zradius zctr ang
 
 
 

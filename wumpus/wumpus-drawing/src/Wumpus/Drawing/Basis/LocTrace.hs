@@ -46,9 +46,7 @@ module Wumpus.Drawing.Basis.LocTrace
 
   where
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Objects.Displacement
-import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -194,7 +192,7 @@ class Monad m => LocTraceM (m :: * -> *) where
   location  :: MonUnit (m ()) ~ u => m (Vec2 u)
 
 
-  insertl_ = insertl . locGraphic_ 
+  insertl_ = insertl . ignoreAns 
 
 
 
@@ -219,7 +217,7 @@ class LocTraceM m => LocForkTraceM (m :: * -> *) where
 
 
 instance Num u => LocTraceM (LocTrace u) where
-  insertl gf  = LocTrace $ \v0 -> ((), v0, moveStart (dispVec v0) gf)
+  insertl gf  = LocTrace $ \v0 -> ((), v0, moveStart v0 gf)
   moveBy v    = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
   location    = LocTrace $ \v0 -> (v0, v0, mempty)
 
@@ -229,14 +227,14 @@ instance Num u => LocForkTraceM (LocTrace u) where
   
 
 instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
-  insertl gf  = LocTraceT $ \v0 -> return ((), v0, moveStart (dispVec v0) gf)
+  insertl gf  = LocTraceT $ \v0 -> return ((), v0, moveStart v0 gf)
   moveBy v    = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
   location    = LocTraceT $ \v0 -> return (v0, v0, mempty)
 
 instance (LocTraceM m, Num u) => LocForkTraceM (LocTraceT u m) where
   reset       = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
   branch ma   = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,_,o) -> 
-                                 return (a,v0,o)
+                                   return (a,v0,o)
 
 
 --------------------------------------------------------------------------------

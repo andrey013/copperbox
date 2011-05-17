@@ -265,7 +265,7 @@ execPathSpec :: (Floating u, InterpretUnit u)
              => PathSpec u a -> LocGraphic u
 execPathSpec mf = post $ runPathSpec mf
   where
-    post (_,_,_,g1,g2) = g1 `oplus` g2
+    post (_,_,_,g1,g2) = g1 `mappend` g2
 
 
 
@@ -297,7 +297,7 @@ execPathSpecT :: (Monad m, Floating u, InterpretUnit u)
               => PathSpecT u m a -> m (LocGraphic u)
 execPathSpecT mf = liftM post $ runPathSpecT mf
   where
-    post (_,_,_,g1,g2) = g1 `oplus` g2
+    post (_,_,_,g1,g2) = g1 `mappend` g2
 
 
 -- | Transformer version of 'evalPathSpec'.
@@ -317,7 +317,7 @@ evalPathSpecT mf = liftM post $ runPathSpecT mf
 --
 execPivot :: (Floating u, InterpretUnit u)
           => PathSpec u a -> PathSpec u a -> LocGraphic u
-execPivot ma mb = moveStart (dispVec $ negateV v) $ pen `oplus` ins
+execPivot ma mb = moveStart (negateV v) $ pen `mappend` ins
   where
    (v, _, _, pen, ins) = runPathSpec ( ma >> location >>= \ans -> 
                                        mb >> return ans )
@@ -330,7 +330,7 @@ execPivotT ma mb =
     liftM post $ runPathSpecT ( ma >> location >>= \ans -> 
                                 mb >> return ans )
   where
-    post (v, _, _, pen, ins) = moveStart (dispVec $ negateV v) $ pen `oplus` ins
+    post (v, _, _, pen, ins) = moveStart (negateV v) $ pen `mappend` ins
        
 
 
@@ -433,7 +433,7 @@ changePen upd =
 
 insertGf :: Num u => LocGraphic u -> BuildStF u
 insertGf gf = 
-    (\s ins v1 -> let g1 = moveStart (dispVec v1) gf
+    (\s ins v1 -> let g1 = moveStart v1 gf
                   in s { ins_trace = ins `mappend` g1 })
       <*> ins_trace <*> cumulative_tip
                
@@ -456,8 +456,8 @@ appendVamp (Vamp { vamp_path = vph, vamp_term = term, vamp_move = mv }) =
 subPathDraw :: InterpretUnit u 
             => DrawingContextF -> Vec2 u -> RelPath u -> PathTerm 
             -> LocGraphic u
-subPathDraw upd v0 subp term = promoteR1 $ \pt -> 
-    toPrimPath (dispVec v0 pt) subp >>= \pp -> localize upd (drawF pp)
+subPathDraw upd v0 subp term = promoteLoc $ \pt -> 
+    zapQuery (toPrimPath (displace v0 pt) subp) >>= \pp -> localize upd (drawF pp)
   where
     drawF = case term of
               SUBPATH_OPEN -> dcOpenPath

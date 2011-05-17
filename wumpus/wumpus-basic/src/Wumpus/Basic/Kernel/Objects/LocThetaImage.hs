@@ -33,6 +33,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , promoteLocTheta
    , applyLocTheta
    , qpromoteLocTheta
+   , qapplyLocTheta
    , zapLocThetaQuery
 
    , emptyLocThetaImage
@@ -191,6 +192,9 @@ applyLocTheta mq pt ang = getLocThetaImage mq pt ang
 qpromoteLocTheta :: (Point2 u -> Radian -> Query u a) -> LocThetaQuery u a
 qpromoteLocTheta k = LocThetaQuery $ \pt ang -> k pt ang
 
+
+qapplyLocTheta :: LocThetaQuery u a -> Point2 u -> Radian -> Query u a
+qapplyLocTheta mq pt ang = getLocThetaQuery mq pt ang
 
 -- | \"zero-apply\" a LocThetaQuery.
 --

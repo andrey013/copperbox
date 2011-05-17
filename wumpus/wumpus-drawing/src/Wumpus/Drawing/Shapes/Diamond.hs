@@ -145,7 +145,7 @@ diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath 0 hw hh)
 
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
-mkDiamond hw hh = promoteR2 $ \ctr theta -> 
+mkDiamond hw hh = qpromoteLocTheta $ \ctr theta -> 
     pure $ Diamond { dia_ctm = makeShapeCTM ctr theta
                    , dia_hw  = hw
                    , dia_hh  = hh 
@@ -154,7 +154,7 @@ mkDiamond hw hh = promoteR2 $ \ctr theta ->
 
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
               => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkDiamondPath rnd hw hh = promoteR2 $ \ctr theta ->
+mkDiamondPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
     let ps = runPathAlgPoint ctr $ diamondPathAlg hw hh
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) ps
 

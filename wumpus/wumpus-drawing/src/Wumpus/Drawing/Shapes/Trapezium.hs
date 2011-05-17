@@ -186,7 +186,7 @@ trapezium bw tw h =
 
 mkTrapezium :: (Real u, Fractional u, InterpretUnit u) 
             => u -> u -> u -> LocThetaQuery u (Trapezium u)
-mkTrapezium bw tw h = promoteR2 $ \ctr theta -> 
+mkTrapezium bw tw h = qpromoteLocTheta $ \ctr theta -> 
     pure $ Trapezium { tz_ctm           = makeShapeCTM ctr theta
                      , tz_base_width    = bw
                      , tz_top_width     = tw
@@ -196,7 +196,7 @@ mkTrapezium bw tw h = promoteR2 $ \ctr theta ->
 
 mkTrapeziumPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                 => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkTrapeziumPath rnd bw tw h = promoteR2 $ \ctr theta -> 
+mkTrapeziumPath rnd bw tw h = qpromoteLocTheta $ \ctr theta -> 
     let xs = runVertices4 ctr $ isoscelesTrapeziumVertices bw tw h
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 

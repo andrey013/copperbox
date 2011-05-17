@@ -46,19 +46,19 @@ import Data.Maybe
 
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
-                   => PosObject u -> BoundedLocRectGraphic u
-posTextWithMargins obj =  
+                   => PosObject u -> (RectAddress -> LocImage u (BoundingBox u))
+posTextWithMargins obj = \raddr ->
     textMargin >>= \(xsep,ysep) -> 
     let body = extendPosObject xsep xsep ysep ysep obj
-    in runPosObjectR2 body
+    in runPosObject raddr body
 
 
 -- | Single line text, returning its advance vector.
 --
-advtext :: InterpretUnit u => EscapedText -> AdvGraphic u
+advtext :: InterpretUnit u => EscapedText -> LocImage u (Vec2 u)
 advtext esc = textVector esc >>= body
   where
-    body v = pushR1 (replaceAns v) $ dcEscapedlabel esc
+    body v = replaceAns v $ dcEscapedlabel esc
 
 
 textVector :: (DrawingCtxM m, InterpretUnit u) 

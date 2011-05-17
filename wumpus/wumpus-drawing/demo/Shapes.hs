@@ -40,12 +40,12 @@ shapes = udrawTracing (0::Double) $ do
     draw $ rotateAbout (0.5*pi) tri_ctr  $ (borderedShape $ triangle 20 30)
               `at` tri_ctr
     redX $ tri_ctr
-    draw $ (borderedShape $ triangle 20 30) `at` dispVec (hvec 25) tri_ctr
+    draw $ (borderedShape $ triangle 20 30) `at` displace (hvec 25) tri_ctr
     redX $ tri_ctr
 
 
     draw $ rotateAbout deg45 tri2_ctr $ (borderedShape $ triangle 20 30) 
-               `at` dispVec (hvec 25) tri2_ctr 
+               `at` displace (hvec 25) tri2_ctr 
 
     return ()
   where

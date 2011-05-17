@@ -82,21 +82,16 @@ data Shape t u = Shape
       , shape_decoration  :: LocThetaGraphic u
       }
 
+type instance DUnit (Shape t u) = u
 
 type DShape t = Shape t Double
 
 
-
--- Design note - shapes look like they should be constrained to 
--- InterpretUnit rather than CtxSize, this allows direct affine 
--- transformations.
---
-
 --------------------------------------------------------------------------------
 
 shapeMap :: (t u -> t' u) -> Shape t u -> Shape t' u
-shapeMap f = (\s sf -> s { shape_ans_fun = promoteR2 $ \pt ang -> 
-                                           fmap f $ apply2R2 sf pt ang }) 
+shapeMap f = (\s sf -> s { shape_ans_fun = qpromoteLocTheta $ \pt ang -> 
+                                           fmap f $ qapplyLocTheta sf pt ang }) 
                 <*> shape_ans_fun
 
 
@@ -116,7 +111,7 @@ makeShape :: InterpretUnit u
           => LocThetaQuery u (t u) -> LocThetaQuery u (AbsPath u) -> Shape t u
 makeShape f g = Shape { shape_ans_fun    = f
                       , shape_path_fun   = g
-                      , shape_decoration = emptyLocThetaGraphic
+                      , shape_decoration = emptyLocThetaImage
                       }
 
 
@@ -136,12 +131,12 @@ strokedShape = shapeToLoc (dcClosedPath STROKE)
 -- Probably Wumpus should calculate two paths instead.
 --
 dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
-dblStrokedShape sh = decorateR1 back fore 
+dblStrokedShape sh = decorate back fore 
   where
     img  = shapeToLoc (dcClosedPath STROKE) sh
     back = getLineWidth >>= \lw ->
            localize (set_line_width $ lw * 3.0) img
-    fore = pushR1 ignoreAns $ localize (stroke_colour white) img
+    fore = ignoreAns $ localize (stroke_colour white) img
 
 
 
@@ -155,11 +150,11 @@ borderedShape = shapeToLoc (dcClosedPath FILL_STROKE)
 
 shapeToLoc :: InterpretUnit u
            => (PrimPath -> Graphic u) -> Shape t u -> LocImage u (t u)
-shapeToLoc drawF sh = promoteR1 $ \pt -> 
-    apply2R2 (shape_ans_fun sh)  pt 0 >>= \a -> 
-    apply2R2 (shape_path_fun sh) pt 0 >>= \spath -> 
+shapeToLoc drawF sh = promoteLoc $ \pt -> 
+    zapLocThetaQuery (shape_ans_fun sh)  pt 0 >>= \a -> 
+    zapLocThetaQuery (shape_path_fun sh) pt 0 >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt 0 
-    in intoImage (pure a) (decorateR0 g2 $ toPrimPath spath >>= drawF)
+    in replaceAns a (decorate g2 $ zapQuery (toPrimPath spath) >>= drawF)
 
 
 
@@ -177,18 +172,18 @@ rborderedShape = shapeToLocTheta (dcClosedPath FILL_STROKE)
 
 shapeToLocTheta :: InterpretUnit u
                 => (PrimPath -> Graphic u) -> Shape t u -> LocThetaImage u (t u)
-shapeToLocTheta drawF sh = promoteR2 $ \pt theta -> 
-    apply2R2 (shape_ans_fun sh)  pt theta >>= \a -> 
-    apply2R2 (shape_path_fun sh) pt theta >>= \spath -> 
+shapeToLocTheta drawF sh = promoteLocTheta $ \pt theta -> 
+    zapLocThetaQuery (shape_ans_fun  sh) pt theta >>= \a -> 
+    zapLocThetaQuery (shape_path_fun sh) pt theta >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt theta
-    in intoImage (pure a) (decorateR0 g2 $ toPrimPath spath >>= drawF)
+    in replaceAns a $ decorate g2 (zapQuery (toPrimPath spath) >>= drawF)
 
 
 
 -- | Draw the shape path with round corners.
 -- 
 roundCornerShapePath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-                     => u -> [Point2 u] -> Query (AbsPath u)
+                     => u -> [Point2 u] -> Query u (AbsPath u)
 roundCornerShapePath sz xs = 
     if sz `tEQ` 0 then return (vertexPath xs) else return (roundTrail  sz xs)
 
@@ -203,8 +198,8 @@ roundCornerShapePath sz xs =
 -- 
 updatePathAngle :: (Radian -> Radian) -> Shape t u -> Shape t u
 updatePathAngle f = 
-    (\s i -> s { shape_path_fun = promoteR2 $ \pt ang -> 
-                                  apply2R2 i pt (mvTheta ang) })
+    (\s fi -> s { shape_path_fun = qpromoteLocTheta $ \pt ang -> 
+                                   qapplyLocTheta fi pt (mvTheta ang) })
       <*> shape_path_fun
   where
     mvTheta = circularModulo . f 

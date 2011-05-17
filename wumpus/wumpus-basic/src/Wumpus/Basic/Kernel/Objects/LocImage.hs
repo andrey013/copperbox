@@ -33,6 +33,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , promoteLoc
    , applyLoc
    , qpromoteLoc
+   , qapplyLoc
    , zapLocQuery
 
    , emptyLocImage
@@ -186,6 +187,10 @@ applyLoc mq pt = getLocImage mq pt
 
 qpromoteLoc :: (Point2 u -> Query u a) -> LocQuery u a
 qpromoteLoc k = LocQuery $ \pt -> k pt
+
+qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
+qapplyLoc mq pt = getLocQuery mq pt
+
 
 -- qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
 -- qapplyLoc mq pt = getLocQuery mq pt

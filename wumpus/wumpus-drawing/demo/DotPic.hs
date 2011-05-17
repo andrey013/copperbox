@@ -13,7 +13,7 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -73,24 +73,24 @@ tableGraphic imgs =
   where
     row_count   = 18
     chn_alg     = tableDown row_count (180,36)
-    pt          = dispV (fromIntegral $ 36 * row_count) zeroPt 
+    pt          = displace (vvec $ fromIntegral $ 36 * row_count) zeroPt 
 
 
 
 
 makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic 
 makeDotDrawing (name,df) = 
-    drawing `oplus` moveStart (dispVec $ vec 86 14) lbl
+    drawing `mappend` moveStart (vec 86 14) lbl
   where
     drawing     = execPathSpec $ 
                     updatePen path_style >> 
                     insertl dot >> mapM (\v -> line v >> insertl dot) steps
 
-    lbl         = promoteR1 $ \pt -> fmap ignoreAns $ 
-                    atStartAddr (textline name) pt WW
+    lbl         = ignoreAns $ promoteLoc $ \pt -> 
+                    textline name WW `at` pt
 
     steps       = [V2 25 15, V2 25 (-15), V2 25 15]
-    dot         = locGraphic_ df
+    dot         = ignoreAns df
     path_style  = packed_dotted . stroke_colour cadet_blue
 
 

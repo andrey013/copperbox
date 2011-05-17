@@ -160,7 +160,7 @@ rectangleAnchor hw hh ctr =
               , radial_anchor   = fn  
               , cardinal_anchor = rectCardinal hw hh ctr }
   where
-    fn theta =  dispVec (rectRadialVector hw hh theta) ctr
+    fn theta =  displace (rectRadialVector hw hh theta) ctr
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -169,7 +169,7 @@ circleAnchor rad ctr =
               , radial_anchor   = fn 
               , cardinal_anchor = radialCardinal rad ctr }
   where
-    fn theta = dispVec (avec theta rad) ctr
+    fn theta = displace (avec theta rad) ctr
 
 
 polygonAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
@@ -192,11 +192,11 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
 
 
 zeroLDO :: LocQuery u (DotAnchor u)
-zeroLDO = promoteR1 $ \pt -> return $ zeroAnchor pt
+zeroLDO = qpromoteLoc $ \pt -> return $ zeroAnchor pt
 
 rectangleLDO :: (Real u, Floating u, InterpretUnit u) 
              => MarkSize -> MarkSize -> LocQuery u (DotAnchor u)
-rectangleLDO w h = promoteR1 $ \pt -> 
+rectangleLDO w h = qpromoteLoc $ \pt -> 
     (\uw uh -> rectangleAnchor (uw*0.5) (uh*0.5) pt) 
       <$> uconvertCtx1 w <*> uconvertCtx1 h
 
@@ -204,9 +204,8 @@ rectangleLDO w h = promoteR1 $ \pt ->
 
 circleLDO :: (Floating u, InterpretUnit u) 
           => MarkSize -> LocQuery u (DotAnchor u)
-circleLDO rad = 
-    promoteR1 $ \pt -> 
-      uconvertCtx1 rad >>= \urad ->  pure $ circleAnchor urad pt
+circleLDO rad = qpromoteLoc $ \pt -> 
+    uconvertCtx1 rad >>= \urad ->  pure $ circleAnchor urad pt
 
 
 -- Probably better just using bounding circle for polygons 
@@ -217,12 +216,11 @@ circleLDO rad =
 
 triangleLDO :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
             => MarkSize -> LocQuery u (DotAnchor u)
-triangleLDO h = 
-    promoteR1 $ \pt -> 
-      uconvertCtx1 h >>= \uh -> 
-      let alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices uh
-          ps  = runPathAlgPoint pt alg
-      in return $ polygonAnchor ps pt
+triangleLDO h = qpromoteLoc $ \pt -> 
+    uconvertCtx1 h >>= \uh -> 
+    let alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices uh
+        ps  = runPathAlgPoint pt alg
+    in return $ polygonAnchor ps pt
   where
     fn3 (a,b,c) = [a,b,c]
 
@@ -267,7 +265,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
-dotText ss = pushR1 (mapAns bboxRectAnchor) $ ccTextline ss
+dotText ss = fmap bboxRectAnchor $ ccTextline ss
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 
@@ -334,3 +332,10 @@ dotFOCross = intoLocImage (circleLDO 0.5) SD.dotFOCross
 dotTriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => DotLocImage u
 dotTriangle = intoLocImage (triangleLDO 1) SD.dotTriangle
+
+
+intoLocImage :: LocQuery u a -> LocImage u z -> LocImage u a
+intoLocImage mq gf = promoteLoc $ \pt -> 
+                     askDC >>= \ctx -> 
+                     let ans = runLocQuery pt ctx mq
+                     in replaceAns ans $ applyLoc gf pt

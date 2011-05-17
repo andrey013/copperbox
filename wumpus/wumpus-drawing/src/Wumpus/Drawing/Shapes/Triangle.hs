@@ -202,7 +202,7 @@ triangle bw h =
 
 mkTriangle :: (Real u, Fractional u, InterpretUnit u) 
            => u -> u -> LocThetaQuery u (Triangle u)
-mkTriangle bw h = promoteR2 $ \ctrd theta -> 
+mkTriangle bw h = qpromoteLocTheta $ \ctrd theta -> 
     pure $ Triangle { tri_ctm        = makeShapeCTM ctrd theta
                     , tri_base_width = bw
                     , tri_height     = h 
@@ -214,7 +214,7 @@ mkTriangle bw h = promoteR2 $ \ctrd theta ->
 
 mkTrianglePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                => u -> u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkTrianglePath rnd bw hminor hmajor = promoteR2 $ \ctr theta -> 
+mkTrianglePath rnd bw hminor hmajor = qpromoteLocTheta $ \ctr theta -> 
     let xs = runVertices3 ctr $ trianglePath bw hminor hmajor
     in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
 

@@ -139,7 +139,7 @@ ellipse rx ry = makeShape (mkEllipse rx ry) (mkEllipsePath rx ry)
 
 
 mkEllipse :: InterpretUnit u => u -> u -> LocThetaQuery u (Ellipse u)
-mkEllipse rx ry = promoteR2 $ \ctr theta -> 
+mkEllipse rx ry = qpromoteLocTheta $ \ctr theta -> 
     pure $ Ellipse { ell_ctm = makeShapeCTM ctr theta
                    , ell_rx  = rx
                    , ell_ry  = ry 
@@ -148,7 +148,7 @@ mkEllipse rx ry = promoteR2 $ \ctr theta ->
 
 mkEllipsePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> LocThetaQuery u (AbsPath u)
-mkEllipsePath rx ry = promoteR2 $ \pt theta -> 
+mkEllipsePath rx ry = qpromoteLocTheta $ \pt theta -> 
     let xs = map (rotateAbout theta pt) $ bezierEllipse rx ry pt
     in return $ curvePath xs
 

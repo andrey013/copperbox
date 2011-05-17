@@ -23,6 +23,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
+import Data.Monoid
 import System.Directory
 
 
@@ -51,8 +52,8 @@ clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
 
 
 background :: RGBi -> LocGraphic Double
-background rgb = promoteR1 $ \_ -> 
-    graphic_ $ localize (text_colour rgb) $ ihh `at` P2 0 288
+background rgb = promoteLoc $ \_ -> 
+    ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
     ihh = chain (tableDown 18 (86,16)) (replicate 112 iheartHaskell)
 
@@ -72,11 +73,11 @@ clip4 = locClip path04 $ background black
 
 
 iheartHaskell :: LocGraphic Double
-iheartHaskell = promoteR1 $ \pt -> 
+iheartHaskell = promoteLoc $ \pt -> 
     let body  = dcTextlabel "I Haskell" `at` pt
         heart = localize (set_font symbol) $ 
                   dcTextlabel "&heart;" `at` (pt .+^ hvec 7)
-    in body `oplus` heart
+    in body `mappend` heart
 
 
 -- zeroPt

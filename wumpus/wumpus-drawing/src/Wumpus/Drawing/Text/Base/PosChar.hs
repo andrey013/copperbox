@@ -47,7 +47,7 @@ posEscChar = makePosChar
 -- 
 -- While it may be adequate, it does need another prefix.
 --
-type LocRectChar u = BoundedLocRectGraphic u
+type LocRectChar u = RectAddress -> LocImage u (BoundingBox u)
 
 
 
@@ -58,7 +58,7 @@ charLabel ch = escCharLabel $ CharLiteral ch
 
 escCharLabel :: (Floating u, InterpretUnit u) 
              => EscapedChar -> LocRectChar u
-escCharLabel esc = runPosObjectR2 (makePosChar esc) 
+escCharLabel esc = \raddr -> runPosObject raddr (makePosChar esc) 
 
 
 makePosChar :: InterpretUnit u 

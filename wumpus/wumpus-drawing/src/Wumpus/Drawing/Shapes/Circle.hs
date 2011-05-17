@@ -120,7 +120,7 @@ circle radius = makeShape (mkCircle radius) (mkCirclePath radius)
 
 
 mkCircle :: InterpretUnit u => u -> LocThetaQuery u (Circle u)
-mkCircle radius = promoteR2 $ \ctr theta -> 
+mkCircle radius = qpromoteLocTheta $ \ctr theta -> 
     pure $ Circle { circ_ctm    = makeShapeCTM ctr theta
                   , circ_radius = radius 
                   }
@@ -130,7 +130,7 @@ mkCircle radius = promoteR2 $ \ctr theta ->
 --
 mkCirclePath :: (Floating u, Ord u, InterpretUnit u, Tolerance u)
              => u -> LocThetaQuery u (AbsPath u)
-mkCirclePath radius = promoteR2 $ \ctr _ -> 
+mkCirclePath radius = qpromoteLocTheta $ \ctr _ ->
     pure $ curvePath $ bezierCircle radius ctr 
 
 
