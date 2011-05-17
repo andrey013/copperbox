@@ -42,7 +42,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   , mbPictureU
  
 
---  , evalQuery
+  , evalQuery
 
   , draw
   , drawi
@@ -306,8 +306,8 @@ mbPictureU (Just a) = a
 --------------------------------------------------------------------------------
 
 
--- evalQuery :: DrawingCtxM m => Query a -> m a
--- evalQuery df = askDC >>= \ctx -> return $ runCF ctx  df
+evalQuery :: DrawingCtxM m => Query u a -> m a
+evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 
 
 

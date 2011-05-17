@@ -19,17 +19,22 @@ module Wumpus.Basic.Kernel.Objects.Bounded
   (
 
 
+  -- * Type synonyms
+    BoundedGraphic
+  , BoundedLocGraphic
+  , BoundedLocThetaGraphic
+
   -- * Bounding box graphic helpers
-    centerOrthoBBox
+  , centerOrthoBBox
 
 
   , emptyBoundedLocGraphic
   , emptyBoundedLocThetaGraphic
 
 
---  , illustrateBoundedGraphic
---  , illustrateBoundedLocGraphic
---  , illustrateBoundedLocThetaGraphic
+  , illustrateBoundedGraphic
+  , illustrateBoundedLocGraphic
+  , illustrateBoundedLocThetaGraphic
 
   , bbrectangle
 
@@ -49,6 +54,10 @@ import Data.Monoid
 
 --------------------------------------------------------------------------------
 
+
+type BoundedGraphic u           = Image u (BoundingBox u)
+type BoundedLocGraphic u        = LocImage u (BoundingBox u)
+type BoundedLocThetaGraphic u   = LocThetaImage u (BoundingBox u)
 
 
 -- | 'centerOrthoBBox' : @ theta * bbox -> BBox @
@@ -113,22 +122,23 @@ emptyBoundedLocThetaGraphic = promoteLocTheta $ \pt _ ->
 --------------------------------------------------------------------------------
 -- 
 
-{-
+
 -- | Draw a BoundedGraphic, illustrating the bounding box.
 --
 illustrateBoundedGraphic :: InterpretUnit u
-                         => BoundedGraphic u -> BoundedGraphic u
-illustrateBoundedGraphic gf = elaborateR0 gf bbrectangle
+                         => Image u (BoundingBox u) -> Image u (BoundingBox u)
+illustrateBoundedGraphic gf = elaborate gf bbrectangle
 
 
 
 -- | Draw a BoundedLocGraphic, illustrating the bounding box.
 --
 illustrateBoundedLocGraphic :: InterpretUnit u
-                            => BoundedLocGraphic u -> BoundedLocGraphic u
-illustrateBoundedLocGraphic gf = elaborateR1 gf fn
+                            => LocImage u (BoundingBox u) 
+                            -> LocImage u (BoundingBox u)
+illustrateBoundedLocGraphic gf = elaborate gf fn
   where
-    fn bb = lift0R1 (bbrectangle bb)
+    fn bb = promoteLoc $ \_ ->bbrectangle bb
 
 
 
@@ -136,13 +146,13 @@ illustrateBoundedLocGraphic gf = elaborateR1 gf fn
 -- | Draw a BoundedLocThetaGraphic, illustrating the bounding box.
 --
 illustrateBoundedLocThetaGraphic :: InterpretUnit u
-                                 => BoundedLocThetaGraphic u 
-                                 -> BoundedLocThetaGraphic u
-illustrateBoundedLocThetaGraphic gf = elaborateR2 gf fn
+                                 => LocThetaImage u (BoundingBox u)
+                                 -> LocThetaImage u (BoundingBox u)
+illustrateBoundedLocThetaGraphic gf = elaborate gf fn
   where
-    fn bb = lift0R2 (bbrectangle bb)
+    fn bb = promoteLocTheta $ \_ _ -> bbrectangle bb
 
--}
+
 
 
 bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u

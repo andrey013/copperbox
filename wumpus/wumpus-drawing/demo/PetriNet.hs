@@ -100,39 +100,39 @@ transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 straightconn :: ConnectorGraphic Double
-straightconn = connectorGraphic_ $ rightArrow tri45 connline
+straightconn = ignoreAns $ rightArrow tri45 connline
 
 
 connectorC :: ConnectorGraphic Double
 connectorC = 
-    connectorGraphic_ $ localize (uniform_arm_len  (30::Double)) 
-                      $ rightArrow tri45 connbbar
+    ignoreAns $ localize (uniform_arm_len  (30::Double)) 
+              $ rightArrow tri45 connbbar
 
 connectorC' :: ConnectorGraphic Double
 connectorC' = 
-    connectorGraphic_ $ localize (uniform_arm_len  (30::Double)) 
+    ignoreAns $ localize (uniform_arm_len  (30::Double)) 
                       $ rightArrow tri45 connabar
 
 connectorD :: ConnectorGraphic Double
-connectorD = connectorGraphic_ $ rightArrow tri45 connarc
+connectorD = ignoreAns $ rightArrow tri45 connarc
 
 connectorD' :: ConnectorGraphic Double
 connectorD' = 
-    connectorGraphic_ $ localize (conn_arc_angle $ negate $ pi / 12) 
+    ignoreAns $ localize (conn_arc_angle $ negate $ pi / 12) 
                       $ rightArrow tri45 connarc
 
 
 lblParensParens :: DLocGraphic
 lblParensParens = 
-    locGraphic_ $ localize (set_font helvetica) $ ccTextline "(),()"
+    ignoreAns $ localize (set_font helvetica) $ ccTextline "(),()"
 
 lblParensParensParens :: DLocGraphic
 lblParensParensParens = 
-    locGraphic_ $ localize (set_font helvetica) $ ccTextline "(),(),()"
+    ignoreAns $ localize (set_font helvetica) $ ccTextline "(),(),()"
 
 
 
 lblBold :: String -> DLocGraphic
 lblBold ss = 
-    locGraphic_ $ localize (set_font helvetica_bold) $ ccTextline ss
+    ignoreAns $ localize (set_font helvetica_bold) $ ccTextline ss
 

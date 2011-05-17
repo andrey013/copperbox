@@ -72,8 +72,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
+import Data.VectorSpace                         -- package: vector-space
 
 import Data.Monoid
 

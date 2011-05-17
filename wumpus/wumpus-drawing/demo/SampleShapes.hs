@@ -18,6 +18,7 @@ import Wumpus.Basic.System.FontLoader
 import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Monad
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -154,7 +155,8 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
-    textF   = lift1R2 $ locGraphic_ (startAddr (multiAlignCenter name) CENTER)
+    textF   = promoteLocTheta $ \pt _ -> 
+                ignoreAns (multiAlignCenter name CENTER) `at` pt
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -171,19 +173,19 @@ shapeSty = stroke_colour light_steel_blue . line_ultra_thick
 
 label :: (Real u, Floating u, InterpretUnit u) 
       => Cardinal -> String -> LocGraphic u
-label cpos ss = dotX `oplus` msg
+label cpos ss = dotX `mappend` msg
   where
     (rpos,fn)     = go cpos
-    msg           = locGraphic_ $ moveStart (fn 10) $ 
-                       startAddr (multiAlignCenter ss) rpos
+    msg           = ignoreAns $ moveStart (fn 10) $ 
+                       multiAlignCenter ss rpos
 
-    go NORTH      = (SS, dispCardinal NORTH)
-    go NORTH_EAST = (SW, dispCardinal NORTH_EAST)
-    go EAST       = (WW, dispCardinal EAST) 
-    go SOUTH_EAST = (NW, dispCardinal SOUTH_EAST)
-    go SOUTH      = (NN, dispCardinal SOUTH)
-    go SOUTH_WEST = (NE, dispCardinal SOUTH_WEST)
-    go WEST       = (EE, dispCardinal WEST)
-    go NORTH_WEST = (SE, dispCardinal NORTH_WEST)
+    go NORTH      = (SS, go_north)
+    go NORTH_EAST = (SW, go_north_east)
+    go EAST       = (WW, go_east) 
+    go SOUTH_EAST = (NW, go_south_east)
+    go SOUTH      = (NN, go_south)
+    go SOUTH_WEST = (NE, go_south_west)
+    go WEST       = (EE, go_west)
+    go NORTH_WEST = (SE, go_north_west)
   
 

@@ -87,12 +87,12 @@ widebox = makeBox 60
 
 
 connWith :: ( Real u, Floating u, InterpretUnit u ) 
-         => ArrowTip u -> Box u -> Box u -> TraceDrawing u (AbsPath u)
+         => ArrowTip -> Box u -> Box u -> TraceDrawing u (AbsPath u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
    let p1 = projectAnchor north (realToFrac lw) b1
-   drawi $ connect (rightArrow arrh connline) p0 p1
+   drawi $ connect p0 p1 (rightArrow arrh connline)
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

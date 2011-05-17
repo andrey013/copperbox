@@ -51,7 +51,7 @@ mf = localize text_margin_tight  $ do
     draw $ redPlus `at` P2 0 300
   where
     fn addr af = illustrateBoundedLocGraphic $ 
-                   render helvetica_family (af body) `startAddr` addr
+                   render helvetica_family (af body) addr
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u

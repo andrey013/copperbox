@@ -80,40 +80,40 @@ redPlus = localize (stroke_colour red) dotPlus
 -- single line
 --
 ne_oneline :: BoundedLocGraphic Double
-ne_oneline = textline "north east" `startAddr` NE
+ne_oneline = textline "north east" NE
 
 
 -- single line
 --
 se_oneline :: BoundedLocGraphic Double
-se_oneline = textline "south east" `startAddr` SE
+se_oneline = textline "south east" SE
 
 -- single line
 --
 ss_oneline :: BoundedLocGraphic Double
-ss_oneline = textline "south" `startAddr` SS
+ss_oneline = textline "south" SS
 
 -- single line
 --
 sw_oneline :: BoundedLocGraphic Double
-sw_oneline = textline "south west" `startAddr` SW
+sw_oneline = textline "south west" SW
 
 
 
 -- single line rot
 --
 ssr_single :: BoundedLocGraphic Double
-ssr_single = rtextline (0.25*pi) "south rot45" `startAddr` SS
+ssr_single = rtextline (0.25*pi) "south rot45"  SS
 
 -- single line rot
 --
 swr_single :: BoundedLocGraphic Double
-swr_single = rtextline (0.25*pi)  "south west rot45" `startAddr` SW
+swr_single = rtextline (0.25*pi)  "south west rot45" SW
 
 -- single line rot
 --
 ner_single :: BoundedLocGraphic Double
-ner_single = rtextline (0.25*pi)  "north east rot45" `startAddr`  NE
+ner_single = rtextline (0.25*pi)  "north east rot45" NE
 
 
 cc_oneline :: BoundedLocGraphic Double
@@ -125,14 +125,14 @@ blank_text = blcTextline ""
 
 
 left_text :: BoundedLocGraphic Double
-left_text = multiAlignLeft dummy_text `startAddr` CENTER
+left_text = multiAlignLeft dummy_text CENTER
 
 
 right_text :: BoundedLocGraphic Double
-right_text = multiAlignRight dummy_text `startAddr` CENTER
+right_text = multiAlignRight dummy_text CENTER
 
 center_text :: BoundedLocGraphic Double
-center_text = multiAlignCenter dummy_text `startAddr` CENTER
+center_text = multiAlignCenter dummy_text CENTER
 
 dummy_text :: String 
 dummy_text = unlines $ [ "The quick brown"

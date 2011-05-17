@@ -19,7 +19,7 @@ module Wumpus.Drawing.Text.Base.Label
   ( 
 
     locImageLabel
-{-
+
   , label_center_of
   , label_left_of
   , label_right_of
@@ -30,7 +30,15 @@ module Wumpus.Drawing.Text.Base.Label
   , label_midway_of
   , label_atstart_of
   , label_atend_of
--}
+
+  , centerRelative
+  , right_of
+  , left_of
+  , above_right_of
+  , below_right_of
+  , above_left_of
+  , below_left_of
+
   ) where
 
 
@@ -41,7 +49,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
+type BoundedLocRectGraphic u = RectAddress -> LocImage u (BoundingBox u)
 
 
 locImageLabel :: Floating u 
@@ -53,7 +61,7 @@ locImageLabel :: Floating u
 locImageLabel fn rpos mklabel obj = promoteLoc $ \pt -> 
     elaborate (obj `at` pt)  (\a -> ignoreAns $ mklabel rpos `at` fn a)
 
-{-
+
 
 label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
                 => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
@@ -88,7 +96,7 @@ connectorPathLabel :: Floating u
                    -> Image u (AbsPath u) 
                    -> Image u (AbsPath u)
 connectorPathLabel fn rpos lbl img =  
-    elaborateR0 img  (\a -> graphic_ $ atStartAddr lbl (fn a) rpos)
+    elaborate img  (\a -> ignoreAns $ lbl rpos `at` (fn a))
 
 
 label_midway_of :: (Real u, Floating u) 
@@ -111,7 +119,78 @@ label_atend_of :: (Real u, Floating u)
                  -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atend_of = connectorPathLabel atend_
 
--}
+
+
+
+-- | Absolute units.
+-- 
+centerRelative :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+               => (Int,Int) -> a -> Query u (Anchor u)
+centerRelative coord a = 
+    snapmove coord >>= \v -> return $ displace v (center a)
+
+-- TODO - These are really for Anchors.
+--
+-- Should the have a separate module or be rolled into the same
+-- module as the classes?
+--
+
+-- | Value is 1 snap unit right.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+right_of        :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+right_of        = centerRelative (1,0)
+
+-- | Value is 1 snap move left.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+left_of         :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+left_of         = centerRelative ((-1),0)
+
+-- | Value is 1 snap move up, 1 snap move right.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+above_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+above_right_of  = centerRelative (1,1)
+
+-- | Value is 1 snap move below, 1 snap move right.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+below_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+below_right_of  = centerRelative (1, (-1))
+
+-- | Value is 1 snap move up, 1 snap move left.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+above_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+above_left_of   = centerRelative ((-1),1)
+
+-- | Value is 1 snap move down, 1 snap move left.
+--
+-- This function should be considered obsolete, pending a 
+-- re-think.
+-- 
+below_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
+                => a -> Query u (Anchor u)
+below_left_of   = centerRelative ((-1),(-1))
+ 
+
+
 
 -- TikZ has label=below etc.
 -- 

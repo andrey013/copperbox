@@ -13,7 +13,7 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -88,11 +88,11 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 makeArrowDrawing :: (String, ArrowTip) -> LocGraphic Double
-makeArrowDrawing (name, utip) = aconn `oplus` lbl
+makeArrowDrawing (name, utip) = aconn `mappend` lbl
   where
-    aconn = promoteR1 $ \pt -> fmap ignoreAns $ 
-              connect (uniformArrow utip connline) pt (dispH 60 pt)
+    aconn = ignoreAns $ promoteLoc $ \pt ->
+              connect pt (displace (hvec 60) pt) (uniformArrow utip connline)
 
-    lbl   = promoteR1 $ \pt -> fmap ignoreAns $ 
-              atStartAddr (textline name) (dispH 66 pt) WW
+    lbl   = ignoreAns $ promoteLoc $ \pt -> 
+              textline name WW `at` (displace (hvec 66) pt)
 

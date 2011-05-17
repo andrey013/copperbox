@@ -12,6 +12,7 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 import System.Directory
 
 
@@ -52,9 +53,9 @@ mf = do
     
 
 testDraw :: RectAddress -> LocGraphic Double
-testDraw rpos = dcDisk FILL 2 `oplus` (locGraphic_ ans)
+testDraw rpos = dcDisk FILL 2 `mappend` (ignoreAns ans)
   where
-    ans = textline "Qwerty" `startAddr` rpos
+    ans = textline "Qwerty" rpos
 
 
 

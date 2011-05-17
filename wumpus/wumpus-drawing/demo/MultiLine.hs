@@ -12,6 +12,7 @@ import Wumpus.Basic.System.FontLoader
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -72,25 +73,25 @@ mf = do
 
 testDrawL :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawL rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
+testDrawL rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startAddr (multiAlignLeft sample_text) rpos
+            multiAlignLeft sample_text rpos
 
 testDrawC :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawC rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
+testDrawC rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startAddr (multiAlignCenter sample_text)  rpos
+            multiAlignCenter sample_text rpos
 
 
 testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
-testDrawR rpos = dcDisk FILL 2 `oplus` (locGraphic_ txt)
+testDrawR rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            startAddr (multiAlignRight sample_text) rpos
+            multiAlignRight sample_text rpos
 
 sample_text :: String
 sample_text = "Is\nthis\nokay&question;"

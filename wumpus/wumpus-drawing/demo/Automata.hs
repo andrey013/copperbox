@@ -62,8 +62,8 @@ automata = udrawTracing (0::Double) $ do
 -- 
 infixr 1 `mat`
 
-mat :: LocImage u a -> Query (Point2 u) -> Image u a
-mat img mq = mq >>= \pt -> img `at` pt
+mat :: LocImage u a -> Query u (Point2 u) -> Image u a
+mat img mq = zapQuery mq >>= \pt -> img `at` pt
 
 state :: String -> DLocImage DCircle
 state ss = 
@@ -86,12 +86,12 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
              => a -> b -> Image u (AbsPath u)
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
-    in connect (rightArrow tri45 connline) p0 p1
+    in connect p0 p1 (rightArrow tri45 connline)
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
               => Anchor u -> Anchor u -> Image u (AbsPath u)
-astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
+astraightconn p0 p1 = connect p0 p1 (rightArrow tri45 connline)
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@
@@ -100,7 +100,7 @@ astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop ctr p1 = 
-    apply2R2 (loop zradius) ctr zincl >>= \absp -> 
+    zapQuery (loop zradius ctr zincl) >>= \absp -> 
     rightArrowPath tri45 absp 
   where
     v1      = pvec ctr p1

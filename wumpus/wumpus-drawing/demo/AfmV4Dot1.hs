@@ -85,8 +85,7 @@ left_text =
 
 right_text :: BoundedLocGraphic Double
 right_text = 
-    localize (stroke_colour dark_slate_gray) $ 
-       textline dummy_text `startAddr` BLR
+    localize (stroke_colour dark_slate_gray) $ textline dummy_text BLR
 
 center_text :: BoundedLocGraphic Double
 center_text = 
