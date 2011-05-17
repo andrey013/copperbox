@@ -194,13 +194,13 @@ instance (Monad m, Num u) => LocTraceM (RefTraceT u z m) where
 runRefTrace :: Num u => RefTrace u ans a -> LocImage u a
 runRefTrace mf = post $ getRefTrace mf zeroRefSt
   where
-    post (a,st) = pushR1 (replaceAns a) $ reconcileRefSt st
+    post (a,st) = replaceAns a $ reconcileRefSt st
 
 
 runRefTraceT :: (Monad m, Num u) => RefTraceT u ans m a -> m (LocImage u a)
 runRefTraceT mf = liftM post $ getRefTraceT mf zeroRefSt
   where
-    post (a,st) = pushR1 (replaceAns a) $ reconcileRefSt st
+    post (a,st) = replaceAns a $ reconcileRefSt st
 
 
 
@@ -210,20 +210,20 @@ reconcileRefSt :: RefSt u z -> LocGraphic u
 reconcileRefSt st = 
     step (ref_acc st) (JL.toList $ ref_links st)
   where
-    step img xs = locGraphic_ $ elaborateR1 img (\a -> mconcat $ map (fn a) xs)
+    step img xs = ignoreAns $ elaborate img (\a -> mconcat $ map (fn a) xs)
     
     fn im (Unary r1 ar1 gf) = 
-      maybe mempty (\pt -> promoteR1 $ \_ -> apply1R1 gf pt) (projectRef r1 ar1 im)
+      maybe mempty (\pt -> promoteLoc $ \_ -> applyLoc gf pt) (projectRef r1 ar1 im)
    
     fn im (Binary r1 r2 ar1 ar2 conn) = 
       case (projectRef r1 ar1 im, projectRef r2 ar2 im) of
-        (Just p1, Just p2) -> promoteR1 $ \_ -> apply2R2 conn p1 p2
+        (Just p1, Just p2) -> promoteLoc $ \_ -> applyConn conn p1 p2
         _                  -> mempty
 
 
     fn im (Multiway rs ar1 gf) = 
         let ps = catMaybes $ map (\a -> projectRef a ar1 im) rs
-        in promoteR1 $ \_ -> gf ps
+        in promoteLoc $ \_ -> gf ps
                                  
 
 
@@ -250,8 +250,8 @@ moveSt v = (\s i -> s { current_tip = i ^+^ v })
              <*> current_tip
 
 insertSt :: Num u => LocImage u z2 -> RefStF u ans
-insertSt gf = (\s ac v -> let g1 = locGraphic_ $ moveStart (dispVec v) gf
-                          in s { ref_acc = decorateR1 ac g1 }) 
+insertSt gf = (\s ac v1 -> let g1 = ignoreAns $ moveStart v1 gf
+                           in s { ref_acc = decorate ac g1 }) 
                 <*> ref_acc <*> current_tip
 
 snocLink :: LinkRef u ans -> RefStF u ans
@@ -263,13 +263,12 @@ incrementSt :: Num u
             => LocImage u ans -> RefSt u ans -> (Int, RefSt u ans)
 incrementSt img s0 = (uid_count s0, upd s0)
   where
-    upd = (\s ac v ix -> let img1 = moveStart (dispVec v) img
-                         in s { ref_acc   = fn ix ac img1
-                              , uid_count = ix+1 }) 
+    upd = (\s ac v1 ix -> let img1 = moveStart v1 img
+                          in s { ref_acc   = fn ix ac img1
+                               , uid_count = ix+1 }) 
                 <*> ref_acc <*> current_tip <*> uid_count 
 
-    fn ix ac gf = pushR1 (mapAns (\(a,b) -> IntMap.insert ix b a)) $ 
-                    bothLocImage ac gf
+    fn ix ac gf = fmap (\(a,b) -> IntMap.insert ix b a) $ both ac gf
 
 
 

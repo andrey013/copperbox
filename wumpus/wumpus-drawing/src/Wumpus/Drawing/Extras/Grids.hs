@@ -175,8 +175,8 @@ horizontalLines :: (Fractional u, InterpretUnit u)
 horizontalLines numh w uh props@(GridProps { gp_minor_subdivs = subs })
     | subs > 0  = let dy = uh / (fromIntegral subs)
                       n  = (numh * subs) - 1
-                  in moveStart (dispV dy) $ minorMajor n subs (vvec dy) mnr mjr
-    | otherwise = moveStart (dispV uh) $ duplicate numh (vvec uh) mjr
+                  in moveStart (vvec dy) $ minorMajor n subs (vvec dy) mnr mjr
+    | otherwise = moveStart (vvec uh) $ duplicate numh (vvec uh) mjr
   where
     mnr  = localize (minor_line_update props) $ hline w
     mjr  = localize (major_line_update props) $ hline w
@@ -188,8 +188,8 @@ verticalLines :: (Fractional u, InterpretUnit u)
 verticalLines numv h uw props@(GridProps { gp_minor_subdivs = subs })
     | subs > 0  = let dx = uw / (fromIntegral subs)
                       n  = (numv * subs) - 1
-                  in moveStart (dispH dx) $ minorMajor n subs (hvec dx) mnr mjr
-    | otherwise = moveStart (dispH uw) $ duplicate numv (hvec uw) mjr
+                  in moveStart (hvec dx) $ minorMajor n subs (hvec dx) mnr mjr
+    | otherwise = moveStart (hvec uw) $ duplicate numv (hvec uw) mjr
   where
     mnr  = localize (minor_line_update props) $ vline h
     mjr  = localize (major_line_update props) $ vline h

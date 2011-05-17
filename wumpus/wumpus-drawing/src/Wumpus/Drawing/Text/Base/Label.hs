@@ -50,7 +50,7 @@ locImageLabel :: Floating u
               -> (RectAddress -> LocImage u (BoundingBox u)) 
               -> LocImage u a 
               -> LocImage u a
-locImageLabel fn rpos mklabel obj = promoteU $ \pt -> 
+locImageLabel fn rpos mklabel obj = promoteLoc $ \pt -> 
     elaborate (obj `at` pt)  (\a -> ignoreAns $ mklabel rpos `at` fn a)
 
 {-

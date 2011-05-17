@@ -35,12 +35,7 @@ module Wumpus.Drawing.Basis.TraceGraphic
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
-import Wumpus.Basic.Kernel.Base.ContextFun
-import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.WrappedPrimitive
-import Wumpus.Basic.Kernel.Objects.Basis
-import Wumpus.Basic.Kernel.Objects.Image
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Control.Applicative
 import Data.Monoid
@@ -136,23 +131,23 @@ class Monad m => TraceGraphicM m where
 
 instance TraceGraphicM (TraceGraphic u) where
   tellImage  img = TraceGraphic $ \ctx -> 
-                     let (Ans o a) = runCF ctx img in (a,o)
+                     let (PrimW o a) = runImage ctx img in (a,o)
 
   tellImage_ img = TraceGraphic $ \ctx -> 
-                     let (Ans o _) = runCF ctx img in ((),o)
+                     let (PrimW o _) = runImage ctx img in ((),o)
 
 
 instance Monad m => TraceGraphicM (TraceGraphicT u m) where
   tellImage  img = TraceGraphicT $ \ctx ->  
-                     let (Ans o a) = runCF ctx img in return (a,o) 
+                     let (PrimW o a) = runImage ctx img in return (a,o) 
 
   tellImage_ img = TraceGraphicT $ \ctx -> 
-                     let (Ans o _) = runCF ctx img in return ((),o)
+                     let (PrimW o _) = runImage ctx img in return ((),o)
 
 
 runTraceGraphic :: TraceGraphic u a -> Image u a
 runTraceGraphic mf = askDC >>= \ctx -> let (a,o) = getTraceGraphic mf ctx
-                                       in return (Ans o a)
+                                       in replaceAns a $ primGraphic o
 
 
 -- | Note - this needs DrawingContext as an explicit parameter,
