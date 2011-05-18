@@ -186,6 +186,7 @@ data SvgAnno = ALink XLink
              | SvgAG XLink [SvgAttr]
    deriving (Eq,Show)
 
+
 -- | Primitives can be grouped with hyperlinks in SVG output.
 --
 -- Note - this is always printed as @xlink:href="..."@. Other
@@ -203,16 +204,49 @@ newtype XLink = XLink { getXLink :: String }
 -- properties. Graphical properties (fill_colour, font_size, etc.)
 -- should be set through the appropriate Wumpus functions.
 --
+-- Also note, this functionality is has not been widely used. It
+-- might be something of a white elephant.
+--
 data SvgAttr = SvgAttr 
       { svg_attr_name   :: String
       , svg_attr_value  :: String 
       }
   deriving (Eq,Show)
 
--- | PrimPath - a list of path segments and a CTM.
+
+-- | PrimPath - a list of path segments and a CTM (translation 
+-- matrix).
 -- 
--- Start point is the dx - dy of the CTM.
+-- The start point of the path forms the (dx,dy) of the CTM. The 
+-- CTM is otherwise hidden from the public constructors of this 
+-- data type.
+-- 
+-- Note - the PrimPath type does not support concatenation.
+-- It is expected that all PrimPaths will be created /in one go/,
+-- and client code defines a higher-level path type that supports
+-- concatenation, splitting etc.
 --
+-- Primitively paths can be built like this:
+--
+-- > 
+-- > path1 :: PrimPath
+-- > path1 = absPrimPath zeroPt [ absLineTo  (P2 0 60) 
+-- >                            , absLineTo  (P2 40 100)
+-- >                            , absLineTo  (P2 80 60)
+-- >                            , absLineTo  (P2 80 0)
+-- >                            , absLineTo  (P2 60 0)  
+-- >                            , absLineTo  (P2 60 30)
+-- >                            , absCurveTo (P2 60 50) (P2 50 60) (P2 40 60)
+-- >                            , absCurveTo (P2 30 60) (P2 20 50) (P2 20 30)
+-- >                            , absLineTo  (P2 20 0)
+-- >                            ]
+-- >
+--
+-- Although it\'s generally expected that PrimPaths will be 
+-- constructed by traversing a higher-level path object and 
+-- collecting calls to the @absCurevTo@ and @absLineTo@ functions
+-- in a list.
+-- 
 data PrimPath = PrimPath [PrimPathSegment] PrimCTM
   deriving (Eq,Show)
 

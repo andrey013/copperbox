@@ -117,7 +117,7 @@ ref :: LocImage u node -> TreeSpec node u (TbNode u node)
 ref img = TreeSpec $ \s0 -> (RefNode s0 img, s0+1, mempty)
 
 leaf :: TbNode u node -> RefTree u node 
-leaf node = Node node []
+leaf nod = Node nod []
 
 root :: TbNode u node -> [RefTree u node ] -> RefTree u node 
 root n1 xs = Node n1 xs
@@ -152,9 +152,9 @@ drawTreeSpec :: ( Real u, Floating u, InterpretUnit u
              => TreeProps u node -> Point2 u 
              -> AbsTreeSpec u node
              -> m ()
-drawTreeSpec props root ma = 
+drawTreeSpec props rootpt ma = 
     let (rtree,links) = runTreeSpec ma
-    in  makeCoordRefTree props root rtree >>= \ctree -> 
+    in  makeCoordRefTree props rootpt rtree >>= \ctree -> 
         askDC >>= \ctx ->
         let prim = rawBuildPrim ctx props ctree links
         in trace prim 
@@ -168,7 +168,7 @@ makeCoordRefTree props (P2 x y) tree =
     scaleTree sx sy (design tree) >>= \ans -> return $ moveTree $ orient ans
   where
     orient   = orientateTree (tp_direction props)
-    moveTree = fmap (bimapL (dispVec $ V2 x y))
+    moveTree = fmap (bimapL (displace $ V2 x y))
     sx       = tp_sibling_distance props
     sy       = tp_level_distance props
 
@@ -195,7 +195,7 @@ rawBuildPrim ctx props tree links =
     in w1 `mappend` w2
   where
     fn imap (i,j,drawF) acc = case (IM.lookup i imap, IM.lookup j imap) of
-        (Just a, Just b) -> let (Ans o _) = runCF ctx (drawF a b)
+        (Just a, Just b) -> let (PrimW o _) = runImage ctx (drawF a b)
                             in singleH o `mappend` acc
         _                -> acc
 
@@ -203,7 +203,7 @@ rawBuildPrim ctx props tree links =
 node1 :: InterpretUnit u
       => CoordRefTree u node -> Builder node u node
 node1 (Node (pt, RefNode ix gf) kids) = 
-    let img = apply1R1 gf pt
+    let img = applyLoc gf pt
     in do { a <- tellImage img
           ; addNodeRef ix a
           ; as <- mapM node1 kids
@@ -213,7 +213,7 @@ node1 (Node (pt, RefNode ix gf) kids) =
           }
 
 node1 (Node (pt, PlainNode gf) kids) = 
-    let img = apply1R1 gf pt
+    let img = applyLoc gf pt
     in do { a <- tellImage img
           ; as <- mapM node1 kids
           ; conn <- currentConnector

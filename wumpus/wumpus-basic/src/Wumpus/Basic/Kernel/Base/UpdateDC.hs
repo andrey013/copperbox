@@ -292,7 +292,7 @@ join_miter          = setLineJoin JoinMiter
 -- >    ,.)
 -- >   /./
 -- >  /./
-
+--
 join_round          :: DrawingContextF
 join_round          = setLineJoin JoinRound
 

@@ -72,16 +72,62 @@ data StrokeAttr = StrokeAttr
 
 -- | Line cap - default in output is butt.
 --
+-- >  Cap Butt:
+--
+-- >  .-------.
+-- >  |=======|
+-- >  '-------'
+--
+-- >  Cap Round:
+--
+-- >  .-------.
+-- > ( ======= )
+-- >  '-------'
+--
+-- >  Cap Square:
+--
+-- >  .---------.
+-- >  | ======= |
+-- >  '---------'
+--
 data LineCap = CapButt | CapRound | CapSquare
   deriving (Enum,Eq,Show)
 
 -- | Line join - default in output is miter.
+--
+-- >  Join Miter:
+--
+-- >      /\
+-- >     /..\ 
+-- >    /./\.\
+-- >   /./  \.\
+-- >  /./    \.\
+--
+-- > Join Round:
+--
+-- >  \.\  
+-- >   \.\ 
+-- >    ,.)
+-- >   /./
+-- >  /./
+--
+-- > Join Bevel:
+--
+-- >      __
+-- >     /..\ 
+-- >    /./\.\
+-- >   /./  \.\
+-- >  /./    \.\
 --
 data LineJoin = JoinMiter | JoinRound | JoinBevel
   deriving (Enum,Eq,Show)
 
 -- | Dash pattern - either a solid line or a list of on-off pairs
 -- together with an /offset/ into the dashes.
+-- 
+-- > Solid
+--
+-- > Dash offset [(on,off )..]
 --
 data DashPattern = Solid | Dash Int [(Int,Int)]
   deriving (Eq,Show)
@@ -92,8 +138,7 @@ data DashPattern = Solid | Dash Int [(Int,Int)]
 -- font style (e.g. @Times-BoldItalic@) whereas an SVG font has 
 -- a name (the @font-family@ attribute) and a style.
 --
--- For PostScript, the following fonts are expected to exist on 
--- most platforms:
+-- For PostScript, the following fonts are expected to exist:
 --
 -- > Times-Roman  Times-Italic  Times-Bold  Times-BoldOtalic
 -- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
@@ -157,6 +202,15 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
 --   of the shape. The actual size depends on the thickness
 --   of the line (stroke width).
 --
+-- > CFill - closed path filled with the colour.
+--
+-- > CStroke - closed path, stroked with the colour.
+--
+-- > OStroke - open path, stroked with the colour.
+--
+-- > CFillStroke - closed path, filled with the first colour, 
+-- > stroked with the stroke attributes and second colour.
+--
 data PathProps = CFill RGBi 
                | CStroke StrokeAttr RGBi
                | OStroke StrokeAttr RGBi
@@ -176,6 +230,13 @@ data LabelProps = LabelProps
 
 
 -- | Ellipses and circles are always closed.
+--
+-- > EFill - filled ellipse.
+--
+-- > EStroke - stroked ellipse.
+--
+-- > EFillStroke - ellipse filled with the first colour and stroked 
+-- > with the stroke attributes and second colour.
 --
 data EllipseProps = EFill RGBi
                   | EStroke StrokeAttr RGBi 

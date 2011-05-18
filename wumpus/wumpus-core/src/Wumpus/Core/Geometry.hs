@@ -54,6 +54,7 @@ module Wumpus.Core.Geometry
   , tCompare
 
   -- * Vector operations
+  , zeroVec
   , vec
   , hvec
   , vvec
@@ -497,6 +498,16 @@ tCompare a b | a `tEQ` b = EQ
 --------------------------------------------------------------------------------
 -- Vectors
 
+-- | Construct a the empty vector (0,0).
+--
+-- Note - this is equivalent to @zeroV@ in @Data.AdditiveGroup@.
+-- It is provided here for convenience as it may save an extra
+-- module import in client code. 
+--
+zeroVec :: Num u => Vec2 u
+zeroVec = V2 0 0
+
+
 
 -- | 'vec' : @ x_component * y_component -> Vec2 @
 --
@@ -631,9 +642,9 @@ maxPt (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 lineDirection :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
 lineDirection (P2 x1 y1) (P2 x2 y2) = step (x2 - x1) (y2 - y1)
   where
-    -- Special cases for continuity - th equality should catch
-    -- both 0.0 and (-0.0).
-    -- Note - there is no doubt a better way of doing this.
+    -- Special cases for continuity - the equality test should 
+    -- catch both 0.0 and (-0.0).
+    -- Note - there is undoubtedly a better way of doing this.
 
     step x y | x == 0 && y == 0 = 0 
 

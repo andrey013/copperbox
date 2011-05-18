@@ -134,7 +134,7 @@ import Data.List ( mapAccumL )
 --
 -- The order of the list maps to the order of printing - the 
 -- front of the list is drawn first in the file. This also means
--- that the front of the list is drawn /at the back/ in the 
+-- that the front of the list is drawn /underneath/ in the 
 -- Z-Order.
 --
 -- \*\* WARNING \*\* - this function throws a runtime error when 
@@ -198,7 +198,8 @@ fontDeltaContext fa p = PContext (FontCtx fa) p
 
 -- | 'absPrimPath' : @ start_point * [abs_path_segment] -> PrimPath @
 --
--- Create a Path from a start point and a list of AbsPathSegments.
+-- Create a 'PrimPath' from a start point and a list of /absolute/ 
+-- path segments.
 --
 absPrimPath :: DPoint2 -> [AbsPathSegment] -> PrimPath
 absPrimPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
@@ -214,7 +215,7 @@ absPrimPath pt xs = PrimPath (step pt xs) (startPointCTM pt)
          
 -- | 'absLineTo' : @ end_point -> path_segment @
 -- 
--- Create a straight-line PathSegment, the start point is 
+-- Create a straight-line 'AbsPathSegment', the start point is 
 -- implicitly the previous point in a path.
 --
 absLineTo :: DPoint2 -> AbsPathSegment 
@@ -223,8 +224,8 @@ absLineTo = AbsLineTo
 -- | 'absCurveTo' : @ control_point1 * control_point2 * end_point -> 
 --        path_segment @
 -- 
--- Create a curved PathSegment, the start point is implicitly the 
--- previous point in a path.
+-- Create a curved 'AbsPathSegment', the start point is implicitly 
+-- the previous point in a path.
 --
 --
 absCurveTo :: DPoint2 -> DPoint2 -> DPoint2 -> AbsPathSegment
@@ -233,7 +234,12 @@ absCurveTo = AbsCurveTo
 
 -- | 'relPrimPath' : @ start_point * [rel_path_segment] -> PrimPath @
 --
--- Create a Path from a start point and a list of RelPathSegments.
+-- Create a 'PrimPath' from a start point and a list of /relative/ 
+-- path segments.
+--
+-- Note - internally Wumpus works with relative paths so 
+-- constructing them directly with 'relPrimPath' is more efficient
+-- than using 'absPrimPath'.
 --
 relPrimPath :: DPoint2 -> [PrimPathSegment] -> PrimPath
 relPrimPath pt xs = PrimPath xs (startPointCTM pt)
@@ -242,7 +248,7 @@ relPrimPath pt xs = PrimPath xs (startPointCTM pt)
 
 -- | 'relLineTo' : @ vec_to_end -> path_segment @
 -- 
--- Create a straight-line relative PathSegment, the vector is the 
+-- Create a straight-line 'PrimPathSegment', the vector is the 
 -- relative displacement.
 --
 relLineTo :: DVec2 -> PrimPathSegment 
@@ -251,7 +257,7 @@ relLineTo = RelLineTo
 -- | 'relCurveTo' : @ vec_to_cp1 * vec_to_cp2 * vec_to_end -> 
 --        path_segment @
 -- 
--- Create a curved relative PathSegment.
+-- Create a curved 'RelPathSegment'.
 --
 --
 relCurveTo :: DVec2 -> DVec2 -> DVec2 -> PrimPathSegment
@@ -318,13 +324,18 @@ curvedPrimPath (x:xs) = PrimPath (step x xs) (startPointCTM x)
                         in RelCurveTo v1 v2 v3 : step c ys
     step _ _          = []
 
+
 -- | Create a hyperlink for SVG output.
+--
+-- Note - hyperlinks are ignored in the PostScript output.
 --
 xlinkhref :: String -> XLink
 xlinkhref = XLink
 
 
 -- | Create a hyperlinked Primitive.
+--
+-- Note - hyperlinks are ignored in the PostScript output.
 --
 xlinkPrim :: XLink -> Primitive -> Primitive
 xlinkPrim hypl p = PSVG (ALink hypl) p  
@@ -410,7 +421,7 @@ primCat p1         p2         = PGroup $ join (one p1) (one p2)
 
 -- | 'ostroke' : @ rgb * stroke_attr * path -> Primitive @
 --
--- Create a open, stroked path.
+-- Create an open, stroked path from the 'PrimPath' specification.
 --
 ostroke :: RGBi -> StrokeAttr -> PrimPath -> Primitive
 ostroke rgb sa p = PPath (OStroke sa rgb) p
@@ -418,7 +429,7 @@ ostroke rgb sa p = PPath (OStroke sa rgb) p
 
 -- | 'cstroke' : @ rgb * stroke_attr * path -> Primitive @
 -- 
--- Create a closed, stroked path.
+-- Create a closed, stroked path from the 'PrimPath' specfication.
 --
 cstroke :: RGBi -> StrokeAttr -> PrimPath -> Primitive
 cstroke rgb sa p = PPath (CStroke sa rgb) p
@@ -446,14 +457,15 @@ zcstroke = cstroke black default_stroke_attr
 
 -- | 'fill' : @ rgb * path -> Primitive @
 --
---  Create a filled path.
+--  Create a filled path from the 'PrimPath' specification.
 --
 fill :: RGBi -> PrimPath -> Primitive
 fill rgb p = PPath (CFill rgb) p
 
 -- | 'zfill' : @ path -> Primitive @
 --
--- Create a filled path coloured black. 
+-- Draw a filled path coloured black. 
+--
 zfill :: PrimPath -> Primitive
 zfill = fill black
 
@@ -478,7 +490,7 @@ fillStroke frgb sa srgb p = PPath (CFillStroke frgb sa srgb) p
 
 -- | 'clip' : @ path * primitive -> Primitive @
 -- 
--- Clip a primitive with respect to the supplied path.
+-- Clip a primitive to be inside the supplied path.
 --
 clip :: PrimPath -> Primitive -> Primitive
 clip cp p = PClip cp p

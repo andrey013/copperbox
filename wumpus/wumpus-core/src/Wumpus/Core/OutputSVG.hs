@@ -13,16 +13,14 @@
 --
 -- Output SVG. 
 --
--- This is complicated by two differences with PostScript.
+-- Note - the coordinate systems of Wumpus and SVG are different.
 --
--- 1. The coordinate space of SVG is /origin top-left/, for 
--- PostScript it is /origin bottom-left/.
--- 
--- 2. Clipping in SVG uses /tagging/. A clipPath element is 
--- declared and named, subsequent elements within the clipping 
--- area reference it via the clip-path attribute - 
--- @clip-path=\"url(#clip_path_tag)\"@.
+-- > Wumpus - (0,0) is bottom-left.
 --
+-- > SVG - (0,0) is top-left.
+--
+-- To accommodate this, Wumpus adds rectifying matrix 
+-- transformations to the generated SVG code.
 --
 --------------------------------------------------------------------------------
 
@@ -57,6 +55,21 @@ import Data.Char
 import Data.List ( mapAccumL )
 import qualified Data.Map as Map
 import Data.Maybe
+
+
+-- DESIGN NOTE
+--
+-- SVG output is complicated by two differences with PostScript.
+--
+-- 1. The coordinate space of SVG is /origin top-left/, for 
+-- PostScript it is /origin bottom-left/.
+-- 
+-- 2. Clipping in SVG uses /tagging/. A clipPath element is 
+-- declared and named, subsequent elements within the clipping 
+-- area reference it via the clip-path attribute - 
+-- @clip-path=\"url(#clip_path_tag)\"@.
+--
+
 
 -- SvgMonad is two Readers plus Int state for clip paths...
 --
@@ -146,10 +159,15 @@ writeSVG :: FilePath -> Picture -> IO ()
 writeSVG filepath pic = 
     writeFile filepath $ show $ svgDraw Nothing pic 
 
+
+
 -- | 'writeSVG_defs' : @ file_name -> defs -> picture -> IO () @
 --
 -- Output a picture to a SVG file the supplied /defs/ are
 -- written into the defs section of SVG file verbatim. 
+--
+-- This is considered an experimental feature, use 'writeSVG' 
+-- instead.
 --
 writeSVG_defs :: FilePath -> String -> Picture -> IO ()
 writeSVG_defs filepath ss pic = 

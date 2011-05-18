@@ -147,9 +147,6 @@ revTripointsFromTip baselen ang = \theta ->
 
 
 
-zeroVec :: Vec2 En
-zeroVec = V2 0 0 
-
 ang90 :: Radian
 ang90 = pi / 2
 
