@@ -21,7 +21,7 @@ module Wumpus.Rhythm.Djembe.Draw where
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Rhythm.Djembe.Parameters
 
-import Wumpus.Drawing.Basis.TraceLocGraphic     -- package: wumpus-drawing
+import Wumpus.Drawing.Basis.LocTrace            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
@@ -135,7 +135,7 @@ note1 note = askUnitWidth >>= \uw -> insertBaselineCenter (body note uw)
     body (Flam a b) _        = ga `mappend` gb
       where
         ga    = runPosNoteHead 0 $ dnoteHeadPos a
-        gb    = moveStart (dispVec flamv) (flamHead b)
+        gb    = moveStart flamv (flamHead b)
         flamv = go_left flam_xminor ^+^ go_up flam_ynorth
 
     body (Swing a)  _       = runPosNoteHead flam_xminor $ dnoteHeadPos a
@@ -208,7 +208,7 @@ runDjembeDraw :: InterpretUnit u
 runDjembeDraw uw mf = post $ runLocTrace $ getDjembeDraw mf uw 
   where
     post (_,_,gf) = localize (relative_line_width fn . join_miter) $ 
-                      uconvLocImageF gf
+                      uconvF gf
     
     fn sz         = let s1 = (fromIntegral sz) / (10.0::Double)
                         i1 = ceiling s1 `asTypeOf` (1::Integer)
@@ -236,9 +236,7 @@ insertBaselineCenter gf = DjembeDraw $ \_ -> insertl_ gf
 -- stems and beams (drawn with a pivot).
 --
 insertStemTop :: LocGraphic AfmUnit -> DjembeDraw ()
-insertStemTop gf = DjembeDraw $ \_ -> insertl_ (moveStart mv gf)
-  where
-    mv = dispV stem_top
+insertStemTop gf = DjembeDraw $ \_ -> insertl_ (moveStart (vvec stem_top) gf)
 
 
 asksUnitWidth :: (AfmUnit -> a) -> DjembeDraw a

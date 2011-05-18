@@ -83,12 +83,12 @@ type PosNoteHead = PosObject AfmUnit
 runPosNoteHead :: InterpretUnit u 
                => AfmUnit -> PosNoteHead -> LocGraphic u
 runPosNoteHead dx nh = 
-    uconvLocImageF $ locGraphic_ $ moveStart (dispH dx) (runPosObjectR1 BLC nh)
+    uconvF $ ignoreAns $ moveStart (hvec dx) (runPosObject BLC nh)
 
 
 
 runStem :: InterpretUnit u => StemPos -> AfmUnit -> Stem -> LocGraphic u
-runStem pos uw mf = uconvLocImageF $ moveStart (dispV stem_top) $ mf pos uw
+runStem pos uw mf = uconvF $ moveStart (go_up stem_top) $ mf pos uw
 
 
 
@@ -127,7 +127,7 @@ data NoteHeadDesc = NoteHeadDesc
 -- 
 stdPosNoteHead :: AfmUnit -> LocGraphic AfmUnit -> PosNoteHead
 stdPosNoteHead blc_to_c gf = 
-    makePosObject (pure disk_orientation) (moveStart (dispV blc_to_c) gf)
+    makePosObject (pure disk_orientation) $ moveStart (vvec blc_to_c) gf
   where
     disk_orientation :: Orientation AfmUnit
     disk_orientation = Orientation { or_x_minor = disk_radius
@@ -139,7 +139,7 @@ stdPosNoteHead blc_to_c gf =
 
 makeFlamGraphic :: NoteHeadDesc -> LocGraphic AfmUnit
 makeFlamGraphic desc = 
-    moveStart (dispV $ negate $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
+    moveStart (go_down $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
 
 {-
 makeHighStroke :: NoteHeadDesc -> LocGraphic AfmUnit
@@ -170,7 +170,7 @@ charDesc ch = NoteHeadDesc
   where
     -- Char glyphs can be drawn at north directly.
     --
-    glyph       = locGraphic_ $ runPosObjectR1 NN $ posChar ch
+    glyph       = ignoreAns $ runPosObject NN (posChar ch)
     flam_glyph  = localize (scale_point_size 0.75) glyph
 
 
@@ -249,18 +249,18 @@ parens obj = hcat [ lparen, obj, rparen ]
 
 
 underscore :: PosNoteHead -> PosNoteHead
-underscore = elaboratePO body
+underscore = decoPosObject body SUPERIOR
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
-                 in  moveStart (dispV strike_baseline) 
+                 in  moveStart (go_up strike_baseline) 
                                (WD.pivotLine xmin xmaj 0)
 
 
 
 
 angleStrike :: PosNoteHead -> PosNoteHead
-angleStrike = elaboratePO body
+angleStrike = decoPosObject body SUPERIOR
   where
     body _ = let ang  = 0.25*pi
                  dist = angle_strike_width / fromRadian (cos ang)
@@ -342,7 +342,8 @@ div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
     step1 MOVE  = moveBy (go_right hw)
     step1 LINE  = line   (go_right hw) 
 
-    crossbar    = moveStart (dispVec startvec) (horizontalLine (-hw))
+    crossbar    :: LocGraphic AfmUnit
+    crossbar    = moveStart startvec (WD.hline (-hw))
     startvec    = go_down divstem_beam_ydrop
 
 

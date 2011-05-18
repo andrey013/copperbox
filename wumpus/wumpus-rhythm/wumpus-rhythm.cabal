@@ -34,28 +34,22 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   CHANGES,
-  demo/DjembeBoxNotation.hs,
-  demo/BoxAbioueka.hs
+  demo/NewDjmebe.hs
 
 library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6          && < 1.0,
-                      wumpus-core       == 0.41.0,
-                      wumpus-basic      == 0.14.0,
-                      zmidi-core        == 0.2.0,
-                      zmidi-emitter     == 0.1.0
-
+                      wumpus-core       >= 0.51.0       && < 0.52.0,
+                      wumpus-basic      == 0.18.0,
+                      wumpus-drawing    == 0.4.0
 
   
   exposed-modules:
-    Wumpus.Rhythm.Djembe.Base,
-    Wumpus.Rhythm.Djembe.BoxNotation,
-    Wumpus.Rhythm.Djembe.GraphicInterpretation,
+    Wumpus.Rhythm.Djembe.Draw,
     Wumpus.Rhythm.Djembe.GraphicPrimitives,
     Wumpus.Rhythm.Djembe.HelveticaLoader,
-    Wumpus.Rhythm.Djembe.MidiInterpretation,
-    Wumpus.Rhythm.Djembe.MidiPrimitives,
+    Wumpus.Rhythm.Djembe.Parameters,
     Wumpus.Rhythm.VersionNumber
 
   other-modules:
