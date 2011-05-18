@@ -37,22 +37,12 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 --  , makeBindPosObject
   , emptyPosObject
 
-{-
-  , localizePO 
-  , elaboratePO
-  , aelaboratePO 
- 
--}
-  , extendPosObject
 
-{-
-  , padHorizontalPO
-  , padLeftPO
-  , padRightPO
-  , padVerticalPO
-  , padUpPO
-  , padDownPO
--}
+  , localPosObject
+  , decoPosObject
+  , extendPosObject
+  , mapOrientation
+
   , illustratePosObject
 
 
@@ -175,24 +165,6 @@ makePosObject qortt gf = PosObject body
     getCP (PrimW ca _) = ca
 
 
-{-
--- | This is a bit of a hack to overcome that the newtype 
--- wrapper around PosObject stops monadic bind operating 
--- with the internal CF function.
---
-makeBindPosObject :: Query a 
-                  -> (a -> Query (Orientation u)) -> (a -> LocGraphic u) 
-                  -> PosObject u 
-makeBindPosObject qy mkO mkG = PosObject body
-  where
-    body = drawingCtx >>= \ctx -> 
-           let a    = runCF ctx qy
-               ortt = runCF ctx (mkO a)
-               pf   = runCF ctx (mkG a)
-           in return (ortt,pf)
-
--}
-
 -- | 'emptyPosObject' : @ PosObject @
 --
 -- Build an empty 'PosGraphicObject'.
@@ -202,36 +174,28 @@ emptyPosObject = PosObject $ pure (Orientation 0 0 0 0, const mempty)
 
     
 
-{-
 
--- | Run a DrawingContext update within a 'PosObject'.
+
+-- | Apply a DrawingContext update to a 'PosObject'.
 --
-localizePO :: DrawingContextF -> PosObject u -> PosObject u
-localizePO upd = PosObject . localize upd . getPosObject
+localPosObject :: DrawingContextF -> PosObject u -> PosObject u
+localPosObject upd = PosObject . localize upd . getPosObject
 
 
--- | 'decorate' -like functionality.
---
-elaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
-elaboratePO fn po = PosObject body
+decoPosObject :: (Orientation u -> LocGraphic u) -> ZDeco 
+              -> PosObject u -> PosObject u
+decoPosObject fn zdec po = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let (ortt,ptf) = runCF ctx (getPosObject po)
-               deco       = runCF ctx (fn ortt)
-           in return (ortt, ptf `oplus` deco)
+    body = askDC >>= \ctx -> 
+           let (ortt,ptf) = runQuery ctx (getPosObject po)
+               deco       = \pt -> getCP $ runLocImage pt ctx (fn ortt)
+               gf         = case zdec of
+                              ANTERIOR -> deco `mappend` ptf
+                              SUPERIOR -> ptf  `mappend` deco
+           in return (ortt, gf)
 
--- | ante-eloborate
---
-aelaboratePO :: (Orientation u -> LocGraphic u) -> PosObject u -> PosObject u
-aelaboratePO fn po = PosObject body
-  where
-    body = drawingCtx >>= \ctx -> 
-           let (ortt,ptf) = runCF ctx (getPosObject po)
-               deco       = runCF ctx (fn ortt)
-           in return (ortt, deco `oplus` ptf)
+    getCP (PrimW ca _) = ca
 
-
--}
 
 
 -- | Extend the orientation.
@@ -245,39 +209,16 @@ extendPosObject x0 x1 y0 y1 po = PosObject body
                ortt     = extendOrientation x0 x1 y0 y1 o0
            in return (ortt,pf0)
 
-{-           
---------------------------------------------------------------------------------
--- Padding
-
-padHorizontalPO     :: (Fractional u, Ord u) => u -> PosObject u -> PosObject u
-padHorizontalPO w   = genPad (padHEven w)
-
-padLeftPO       :: (Num u, Ord u) => u -> PosObject u -> PosObject u
-padLeftPO w     = genPad (padXMinor w)
-
-padRightPO      :: (Num u, Ord u) => u -> PosObject u -> PosObject u
-padRightPO w    = genPad (padXMajor w)
 
 
-padVerticalPO       :: (Fractional u, Ord u) => u -> PosObject u -> PosObject u
-padVerticalPO w     = genPad (padVEven w)
-
-padUpPO         :: (Num u, Ord u) => u -> PosObject u -> PosObject u
-padUpPO h       = genPad (padYMajor h)
-
-padDownPO       :: (Num u, Ord u) => u -> PosObject u -> PosObject u
-padDownPO h     = genPad (padYMinor h)
-
-
-genPad :: (Orientation u -> Orientation u) -> PosObject u -> PosObject u
-genPad fn po = PosObject body
+mapOrientation :: (Orientation u -> Orientation u) -> PosObject u -> PosObject u
+mapOrientation fn po = PosObject body
   where
-    body = drawingCtx >>= \ctx -> 
-           let (o0,pf0) = runCF ctx (getPosObject po)
-               ortt     = fn o0
-           in return (ortt,pf0)
+    body = askDC >>= \ctx -> 
+           let (o0,pf0) = runQuery ctx (getPosObject po)
+           in return (fn o0,pf0)
 
--}
+
 --------------------------------------------------------------------------------
 
 

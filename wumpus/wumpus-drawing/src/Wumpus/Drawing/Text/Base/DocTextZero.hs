@@ -320,10 +320,10 @@ interpret (VCat va a b)     =
     valignSpace va  <$> lineSpace <*> interpret a <*> interpret b
 
 interpret (Fill va w a)     = ppad va w <$> interpret a
-interpret (DLocal upd a)    = error "interpret"  -- localizePO upd <$> interpret a
+interpret (DLocal upd a)    = localPosObject upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
 interpret (Mono q1 xs)      = interpMono q1 xs
-interpret (AElab fn a)      = error "interpret" -- aelaboratePO fn <$> interpret a
+interpret (AElab fn a)      = decoPosObject fn ANTERIOR <$> interpret a
 
 
 
@@ -361,38 +361,33 @@ interpSpace = return $ makePosObject qy1  emptyLocImage
 
 ppad :: (Fractional u, Ord u) 
      => VAlign -> u -> PosObject u -> PosObject u
-ppad _ = error "ppad"
-{-
-ppad VLeft   = padLeftPO
-ppad VCenter = padHorizontalPO
-ppad VRight  = padRightPO
--}
+ppad VLeft   du = mapOrientation (padXMinor du)
+ppad VCenter du = mapOrientation (padHEven $ 0.5 * du)
+ppad VRight  du = mapOrientation (padXMajor du)
+
 
 interpMono :: (Fractional u, InterpretUnit u)
            => Query u (AdvanceVec u) -> [EscapedChar] 
            -> EvalM u (PosObject u)
-interpMono qy1 chs = interpretLeaf $
-    error "interpMono"
-{-
-    makeBindPosObject qy hkernOrientationZero hkernLine
+interpMono avq chs = 
+    interpretLeaf $ makePosObject (qChars >>= hkernOrientationZero) 
+                                  (promoteLoc $ \pt -> 
+                                    zapQuery qChars >>= \ks -> hkernLine ks `at` pt)
   where
-    qy = (\v1 -> monoSpace (advanceH v1) chs ) <$> qy1 
--}
+    qChars = (\v1 -> monoSpace (advanceH v1) chs) <$> avq
 
+                        
 
 
 interpretLeaf :: (Fractional u, InterpretUnit u)
               => PosObject u -> EvalM u (PosObject u)
 interpretLeaf po = 
-    error "interpretLeaf"
-{-
-    (\f1 f2 sty -> f1 $ f2 $ localizePO sty po) 
+    (\f1 f2 sty -> f1 $ f2 $ localPosObject sty po) 
        <$> (fmap (condE drawUnderline)       $ asks text_underline)
        <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
        <*> textstyle
    where
-     condE f b = if b then elaboratePO f else id
--}
+     condE f b = if b then decoPosObject f SUPERIOR else id
 
 textstyle :: EvalM u DrawingContextF
 textstyle = 

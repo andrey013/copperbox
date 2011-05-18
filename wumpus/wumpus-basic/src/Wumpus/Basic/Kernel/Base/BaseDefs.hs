@@ -50,6 +50,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Drawing paths
   , DrawStyle(..)
 
+  -- * Drawing /layer/
+  , ZDeco(..)  
+
   -- * Alignment
   , HAlign(..)
   , VAlign(..)  
@@ -332,6 +335,18 @@ intraMapFunctor sz fn ma = dinterpF sz $ fn $ normalizeF sz ma
 
 data DrawStyle = FILL | STROKE | FILL_STROKE
   deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+
+-- | Decorating with resepct to the Z-order 
+-- 
+-- > SUPERIOR - in front. 
+--
+-- > ANTERIOR - behind.
+--
+data ZDeco = SUPERIOR | ANTERIOR
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
 
 --------------------------------------------------------------------------------
 
