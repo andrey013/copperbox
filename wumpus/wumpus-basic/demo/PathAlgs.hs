@@ -40,35 +40,42 @@ mf1 = do
 
 
 rect1 :: LocGraphic Double
-rect1 = promoteU $ \pt -> 
-    vertexPP (runPathAlgPoint pt $ rectanglePathAlg 36 24) >>= dcClosedPath STROKE
+rect1 = promoteLoc $ \pt -> 
+    zapQuery (vertexPP $ runPathAlgPoint pt $ rectanglePathAlg 36 24) 
+      >>= dcClosedPath STROKE
 
 
 rect2 :: LocGraphic Double
-rect2 = promoteU $ \pt ->
-    vertexPP (runPathAlgPoint pt $ blRectanglePathAlg 36 24) >>= dcClosedPath STROKE
+rect2 = promoteLoc $ \pt ->
+    zapQuery (vertexPP $ runPathAlgPoint pt $ blRectanglePathAlg 36 24) 
+      >>= dcClosedPath STROKE
 
 diamond1 :: LocGraphic Double
-diamond1 = promoteU $ \pt ->
-    vertexPP (runPathAlgPoint pt $ diamondPathAlg 16 20) >>= dcClosedPath STROKE
+diamond1 = promoteLoc $ \pt ->
+    zapQuery (vertexPP $ runPathAlgPoint pt $ diamondPathAlg 16 20) 
+      >>= dcClosedPath STROKE
 
 
 poly5 :: LocGraphic Double
-poly5 = promoteU $ \pt ->
-    vertexPP (runPathAlgPoint pt $ polygonPathAlg 5 20) >>= dcClosedPath STROKE
+poly5 = promoteLoc $ \pt ->
+    zapQuery (vertexPP $ runPathAlgPoint pt $ polygonPathAlg 5 20) 
+      >>= dcClosedPath STROKE
 
 arc1 :: LocGraphic Double
-arc1 = promoteU $ \pt ->
-    curvePP (runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) >>= dcOpenPath
+arc1 = promoteLoc $ \pt ->
+    zapQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) 
+      >>= dcOpenPath
 
 arc2 :: LocGraphic Double
-arc2 = promoteU $ \pt ->
-    curvePP (runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) >>= dcOpenPath
+arc2 = promoteLoc $ \pt ->
+    zapQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) 
+      >>= dcOpenPath
 
 
 circle1 :: LocGraphic Double
-circle1 = promoteU $ \pt ->
-    curvePP (runPathAlgPoint pt $ circlePathAlg 20) >>= dcClosedPath STROKE
+circle1 = promoteLoc $ \pt ->
+    zapQuery (curvePP $ runPathAlgPoint pt $ circlePathAlg 20) 
+      >>= dcClosedPath STROKE
 
 
 

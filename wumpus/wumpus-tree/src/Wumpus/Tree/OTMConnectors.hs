@@ -81,7 +81,7 @@ radialOTMC :: ( Real u, Floating u, InterpretUnit u
            => OTMAnchorConn u a
 radialOTMC _ _ a xs = mconcat $ map fn $ radialNodes a xs
   where
-    fn (p0,p1) = vertexPP [p0,p1] >>= dcOpenPath
+    fn (p0,p1) = zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
 
 -- | Blank connector - nothing is drawn.
 --
@@ -89,7 +89,7 @@ blankOTMC :: ( Real u, Floating u, InterpretUnit u
             , CenterAnchor a
             , u ~ DUnit a) 
          => OTMAnchorConn u a
-blankOTMC _ _ a _ = emptyLocGraphic `at` center a
+blankOTMC _ _ a _ = emptyLocImage `at` center a
 
 
 --------------------------------------------------------------------------------
@@ -116,12 +116,12 @@ familyOTMC dir h a xs =
         (paF,caF) = famAnchors dir
         ptick     = outtick hh (center a) (paF a)
         cticks    = map (\o -> outtick hh (center o) (caF o)) xs
-        kids      = sequenceImage cticks
-    in graphic_ ptick `oplus` (graphic_ $ elaborateR0 kids fn)
+        kids      = sequence cticks
+    in ignoreAns ptick `mappend` (ignoreAns $ elaborate kids fn)
   where
     fn ps = case linkAll ps of
-              Nothing -> emptyLocGraphic `at` (center a)
-              Just path -> toPrimPath path >>= dcOpenPath
+              Nothing -> emptyLocImage `at` (center a)
+              Just path -> zapQuery (toPrimPath path) >>= dcOpenPath
 
 
 
@@ -141,7 +141,7 @@ outtick ll p0 p1 =
         ang = vdirection v0
         v1  = avec ang ll
         p2  = p0 .+^ v1
-    in pushR0 (replaceAns p2) (straightLine p1 p2)
+    in replaceAns p2 (straightLine p1 p2)
 
 -- | The input list is expected to be ordered...
 --
@@ -164,7 +164,7 @@ splayOTMC dir _ a xs =
         p0        = paF a
     in mconcat $ map (\x -> fn p0 (caF x)) xs
   where
-    fn p0 p1 = vertexPP [p0,p1] >>= dcOpenPath
+    fn p0 p1 = zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
 
 
 

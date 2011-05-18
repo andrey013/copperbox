@@ -32,7 +32,14 @@ description:
   .
   v0.17.0 to v0.18.0:
   . 
-  * Changed Displacement API so it is smaller, function naming unified.
+  * Major change - removed @ContextFun@ from @Kernel.Base@. Now 
+    the drawing objects (Image, LocImage, Connector...) are 
+    newtype wrapped Reader-Writer monads rather than aliases to 
+    one of the arity family of ContextFuns. Being newtypes gives
+    a lot better opportunities for overloading.
+  .
+  * Changed Displacement API - it is smaller, and the function 
+    naming is more uniform.
   . 
   * Changed @DrawingPimitives@ to use @DrawStyle@.
   . 

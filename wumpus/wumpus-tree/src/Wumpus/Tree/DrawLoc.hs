@@ -29,7 +29,6 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-
 import Data.Tree hiding ( drawTree )
 
 
@@ -56,10 +55,10 @@ import Data.Tree hiding ( drawTree )
 runTreeLoc :: (Real u, Floating u, InterpretUnit u) 
            => TreeProps u a -> (elt -> LocImage u a) -> Tree elt 
            -> LocGraphic u
-runTreeLoc props drawF tree = 
+runTreeLoc props drawF tree = promoteLoc $ \pt ->
     let tree1 = fmap drawF tree
-    in runDesign props tree1 >>= \ans -> 
-       locGraphic_ (drawStep props ans)
+    in zapQuery (runDesign props tree1) >>= \ans -> 
+       ignoreAns (drawStep props ans `at` pt)
 
 
 
@@ -67,7 +66,7 @@ drawStep :: (Real u, Floating u, InterpretUnit u)
          => TreeProps u a -> Tree (LocImage u a) -> LocImage u a
 drawStep props (Node gf ns) =
     getTreeConnector props >>= \conn ->
-    let imgs = sequenceLocImage $ map (drawStep props) ns
+    let imgs = sequence $ map (drawStep props) ns
     in dblelaborate gf imgs conn
       
 
@@ -82,21 +81,12 @@ drawStep props (Node gf ns) =
 dblelaborate :: LocImage u a -> LocImage u b 
              -> (a -> b -> Graphic u) 
              -> LocImage u a
-dblelaborate ma mb fn = promoteR1 $ \pt -> 
-    apply1R1 ma pt >>= \(Ans o1 x) -> 
-    apply1R1 mb pt >>= \(Ans o2 xs) ->
-    fn x xs  >>= \(Ans o3 _) ->
-    return $ Ans (o1 `oplus` o2 `oplus` o3) x
-
-    -- potentially we need a function like elaborate that also 
-    -- transforms the answer...
-    -- Also arg order of elaborate and decorate might be better 
-    -- flipped.
-
+dblelaborate ma mb fn = promoteLoc $ \pt -> 
+    both (ma `at` pt) (mb `at` pt) >>= \(a,b) -> fn a b >> return a
 
 designOrientateScale :: (Real u, Floating u, InterpretUnit u)
                      => TreeProps u a  -> Tree (LocImage u a) 
-                     -> Query (Tree (Point2 u, LocImage u a))
+                     -> Query u (Tree (Point2 u, LocImage u a))
 designOrientateScale props tree =  
     scaleTree sx sy (design tree) >>= \ans -> return $ orientateTree dir ans
   where
@@ -112,11 +102,11 @@ designOrientateScale props tree =
 --
 runDesign :: (Real u, Floating u, InterpretUnit u)
           => TreeProps u a  -> Tree (LocImage u a) 
-          -> Query (Tree (LocImage u a))
+          -> Query u (Tree (LocImage u a))
 runDesign props tree =  
     designOrientateScale props tree >>= \tree2 -> 
     return $ fmap fn tree2
   where
-    fn ((P2 x y), gf) = moveStart (dispVec (V2 x y)) gf
+    fn ((P2 x y), gf) = moveStart (vec x y) gf
 
 

@@ -9,6 +9,7 @@ import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour ( red )
 
 import Control.Applicative 
+import Data.Monoid
 import System.Directory
 
 
@@ -42,39 +43,39 @@ mf = do
     
 
 lPad :: Trafo
-lPad = padLeftPO 80
+lPad = mapOrientation (padXMinor 80)
 
 rPad :: Trafo
-rPad = padRightPO 80
+rPad = mapOrientation (padXMajor 80)
 
 uPad :: Trafo
-uPad = padUpPO 36
+uPad = mapOrientation (padYMajor 36)
 
 dPad :: Trafo
-dPad = padDownPO 36
+dPad = mapOrientation (padYMinor 36)
 
 hPad :: Trafo
-hPad = padHorizontalPO 90
+hPad = mapOrientation (padHEven 90)
 
 vPad :: Trafo
-vPad = padVerticalPO 48
+vPad = mapOrientation (padVEven 48)
 
 shrink :: Trafo
-shrink = padLeftPO 10
+shrink = mapOrientation (padYMinor (-10))
 
 type Trafo = PosObject Double -> PosObject Double
 
 testDraw :: Trafo -> RectAddress -> LocGraphic Double
-testDraw trafo rpos = dcDisk FILL 2 `oplus` bbobj
+testDraw trafo rpos = dcDisk FILL 2 `mappend` bbobj
   where
-    bbobj = locGraphic_ $ illustrateBoundedLocGraphic $ 
-              (lrgBox trafo `startAddr` rpos)
+    bbobj = ignoreAns $ illustrateBoundedLocGraphic $ 
+              lrgBox trafo rpos
 
 
 
 
-lrgBox :: Trafo -> BoundedLocRectGraphic Double
-lrgBox trafo = runPosObjectR2 $ trafo poBox 
+lrgBox :: Trafo -> (RectAddress -> BoundedLocGraphic Double)
+lrgBox trafo = \raddr -> runPosObject raddr $ trafo poBox 
 
 poBox :: PosObject Double
 poBox = makePosObject  mkOrtt mkRect
@@ -84,7 +85,7 @@ poBox = makePosObject  mkOrtt mkRect
 
     mkRect = capHeight >>= \ch -> 
              descender >>= \dd -> 
-             moveStart (dispDirection DOWN (abs dd)) 
+             moveStart (go_down (abs dd)) 
                            $ dcRectangle FILL_STROKE (5*ch) (ch + abs dd)
 
 

@@ -104,10 +104,10 @@ rectMinor raddr =
 
 -- start-point - +10 +10
 mkRectMinor :: InterpretUnit u => u -> u -> u -> LocGraphic u
-mkRectMinor m w h = promoteU $ \pt -> 
+mkRectMinor m w h = promoteLoc $ \pt -> 
     let bl = displace (vec (-m) (-m)) pt
         br = displace (hvec w) bl
         tr = displace (vvec h) br
         tl = displace (vvec h) bl
-    in vertexPP [bl, br, tr, tl] >>= dcClosedPath STROKE
+    in zapQuery (vertexPP [bl, br, tr, tl]) >>= dcClosedPath STROKE
 
