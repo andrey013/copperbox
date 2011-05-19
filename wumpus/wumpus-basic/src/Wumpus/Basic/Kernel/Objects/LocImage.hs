@@ -157,17 +157,16 @@ instance DrawingCtxM (LocQuery u) where
 
   
 instance Decorate LocImage where
-  decorate ma mz = LocImage $ \pt -> 
-                      getLocImage ma pt `decorate` getLocImage mz pt 
+  decorate zo ma mz = LocImage $ \pt -> 
+    decorate zo (getLocImage ma pt) (getLocImage mz pt)
 
-  elaborate ma f = LocImage $ \pt -> 
-                      getLocImage ma pt `elaborate` (\a -> getLocImage (f a) pt)
+  elaborate zo ma f = LocImage $ \pt -> 
+    elaborate zo (getLocImage ma pt) (\a -> getLocImage (f a) pt)
 
   obliterate ma mz = LocImage $ \pt -> 
-                       getLocImage ma pt `obliterate` getLocImage mz pt 
+    getLocImage ma pt `obliterate` getLocImage mz pt 
 
-  hyperlink xl ma = LocImage $ \pt -> 
-                       hyperlink xl $ getLocImage ma pt 
+  hyperlink xl ma = LocImage $ \pt -> hyperlink xl $ getLocImage ma pt 
 
 
 runLocImage :: Point2 u -> DrawingContext -> LocImage u a -> PrimW u a

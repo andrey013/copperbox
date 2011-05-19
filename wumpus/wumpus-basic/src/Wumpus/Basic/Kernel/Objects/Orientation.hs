@@ -61,7 +61,6 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   ) where
 
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -69,6 +68,15 @@ import Data.Monoid
 
 -- | Datatype enumerating the addressable positions of a rectangle 
 -- that can be derived for a 'PosObject'.  
+--
+-- The positions are the compass points, plus the geometric center
+-- and the baseline positions: 
+-- 
+-- > BLL - baseline-left
+--
+-- > BLC - baseline-center 
+-- 
+-- > BLR - baseline-right
 --
 data RectAddress = CENTER 
                  | NN | SS | EE | WW | NE | NW | SE | SW 
@@ -111,8 +119,6 @@ instance Functor Orientation where
   fmap f (Orientation xmin xmaj ymin ymaj) = 
     Orientation (f xmin) (f xmaj) (f ymin) (f ymaj)
 
-instance (Fractional u, Ord u) => OPlus (Orientation u) where
-  oplus = concatOrientation
 
 
 instance (Fractional u, Ord u) => Monoid (Orientation u) where

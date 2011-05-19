@@ -99,7 +99,7 @@ type DPosObject = PosObject Double
 --------------------------------------------------------------------------------
 
 
-
+-- Monoid
 instance (Fractional u, Ord u, InterpretUnit u) => Monoid (PosObject u) where
   mempty  = emptyPosObject
   mappend = poconcat
@@ -182,8 +182,8 @@ localPosObject :: DrawingContextF -> PosObject u -> PosObject u
 localPosObject upd = PosObject . localize upd . getPosObject
 
 
-decoPosObject :: (Orientation u -> LocGraphic u) -> ZDeco 
-              -> PosObject u -> PosObject u
+decoPosObject :: (Orientation u -> LocGraphic u) 
+              -> ZDeco -> PosObject u -> PosObject u
 decoPosObject fn zdec po = PosObject body
   where
     body = askDC >>= \ctx -> 
@@ -231,7 +231,7 @@ illustratePosObject :: InterpretUnit u
                    => PosObject u -> LocGraphic u
 illustratePosObject (PosObject mf)  = promoteLoc $ \pt ->   
     zapQuery mf >>= \(ortt,ptf) -> 
-    decorate (primGraphic $ ptf pt) (illustrateOrientation ortt `at` pt)
+    adecorate (primGraphic $ ptf pt) (illustrateOrientation ortt `at` pt)
 
 
 illustrateOrientation :: InterpretUnit u 
@@ -267,13 +267,13 @@ instance (Num u, Ord u) => CatSpace (PosObject u) where
 
 
 instance (Fractional u, Ord u) => Align (PosObject u) where
-  halign HTop    = genMoveAlign binmoveHTop    halignTopO
-  halign HCenter = genMoveAlign binmoveHCenter halignCenterO
-  halign HBottom = genMoveAlign binmoveHBottom halignBottomO
+  halign HALIGN_TOP    = genMoveAlign binmoveHTop    halignTopO
+  halign HALIGN_CENTER = genMoveAlign binmoveHCenter halignCenterO
+  halign HALIGN_BASE   = genMoveAlign binmoveHBottom halignBottomO
 
-  valign VLeft   = genMoveAlign binmoveVLeft   valignLeftO
-  valign VCenter = genMoveAlign binmoveVCenter valignCenterO
-  valign VRight  = genMoveAlign binmoveVRight  valignRightO
+  valign VALIGN_LEFT   = genMoveAlign binmoveVLeft   valignLeftO
+  valign VALIGN_CENTER = genMoveAlign binmoveVCenter valignCenterO
+  valign VALIGN_RIGHT  = genMoveAlign binmoveVRight  valignRightO
 
 
 
@@ -288,7 +288,7 @@ genMoveAlign mkV mkO po0 po1 = PosObject body
               (ortt1,pf1) = runQuery ctx (getPosObject po1)
               v1          = mkV ortt0 ortt1
               ortt        = mkO ortt0 ortt1
-              pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+              pf          = \pt -> pf0 pt `mappend` (pf1 $ pt .+^ v1)
           in return (ortt,pf)
 
 
@@ -296,13 +296,13 @@ genMoveAlign mkV mkO po0 po1 = PosObject body
 -- Sep
 
 instance (Fractional u, Ord u) => AlignSpace (PosObject u) where
-  halignSpace HTop    = genMoveSepH binmoveHTop    halignTopO
-  halignSpace HCenter = genMoveSepH binmoveHCenter halignCenterO
-  halignSpace HBottom = genMoveSepH binmoveHBottom halignBottomO
+  halignSpace HALIGN_TOP    = genMoveSepH binmoveHTop    halignTopO
+  halignSpace HALIGN_CENTER = genMoveSepH binmoveHCenter halignCenterO
+  halignSpace HALIGN_BASE   = genMoveSepH binmoveHBottom halignBottomO
 
-  valignSpace VLeft   = genMoveSepV binmoveVLeft   valignLeftO
-  valignSpace VCenter = genMoveSepV binmoveVCenter valignCenterO
-  valignSpace VRight  = genMoveSepV binmoveVRight  valignRightO
+  valignSpace VALIGN_LEFT   = genMoveSepV binmoveVLeft   valignLeftO
+  valignSpace VALIGN_CENTER = genMoveSepV binmoveVCenter valignCenterO
+  valignSpace VALIGN_RIGHT  = genMoveSepV binmoveVRight  valignRightO
 
 
 genMoveSepH :: (Num u)   
@@ -317,7 +317,7 @@ genMoveSepH mkV mkO sep po0 po1  = PosObject body
                (ortt1,pf1) = runQuery ctx (getPosObject po1)
                v1          = hvec sep ^+^ mkV ortt0 ortt1
                ortt        = extendORight sep $ mkO ortt0 ortt1
-               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+               pf          = \pt -> pf0 pt `mappend` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
 
 
@@ -333,6 +333,6 @@ genMoveSepV mkV mkO sep po0 po1 = PosObject body
                (ortt1,pf1) = runQuery ctx (getPosObject po1)
                v1          = vvec (-sep) ^+^ mkV ortt0 ortt1
                ortt        = extendODown sep $ mkO ortt0 ortt1
-               pf          = \pt -> pf0 pt `oplus` (pf1 $ pt .+^ v1)
+               pf          = \pt -> pf0 pt `mappend` (pf1 $ pt .+^ v1)
            in return (ortt,pf)
 

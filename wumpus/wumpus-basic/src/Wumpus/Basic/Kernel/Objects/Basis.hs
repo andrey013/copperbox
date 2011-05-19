@@ -45,14 +45,15 @@ module Wumpus.Basic.Kernel.Objects.Basis
 
   , emptyImage
 
-
-  , both
-
   , ignoreAns
   , replaceAns
 
   , Decorate(..)
+  , sdecorate
+  , adecorate
 
+  , selaborate
+  , aelaborate
 
   ) where
 
@@ -270,9 +271,6 @@ emptyImage = mempty
 --------------------------------------------------------------------------------
 
 
-both :: Applicative f => f a -> f b -> f (a,b)
-both fa fb = (,) <$> fa <*> fb
-
 
 -- | Note - the kind of f allows fo unit annotation.
 --
@@ -293,10 +291,26 @@ replaceAns a = fmap (const a)
 -- it with the graphic from the second.
 --
 class Decorate (f :: * -> * -> *) where
-  decorate   :: f u a -> f u z -> f u a
-  elaborate  :: f u a -> (a -> f u z) -> f u a
+  decorate   :: ZDeco -> f u a -> f u z -> f u a
+  elaborate  :: ZDeco -> f u a -> (a -> f u z) -> f u a
   obliterate :: f u a -> f u z -> f u a
   hyperlink  :: XLink -> f u a -> f u a
+
+
+sdecorate :: Decorate f => f u a -> f u z -> f u a
+sdecorate = decorate SUPERIOR
+
+adecorate :: Decorate f => f u a -> f u z -> f u a
+adecorate = decorate ANTERIOR
+
+
+selaborate :: Decorate f => f u a -> (a -> f u z) -> f u a
+selaborate = elaborate SUPERIOR
+
+aelaborate :: Decorate f => f u a -> (a -> f u z) -> f u a
+aelaborate = elaborate ANTERIOR
+
+
 
 
 -- | Do not export...
@@ -304,23 +318,26 @@ class Decorate (f :: * -> * -> *) where
 getCatPrim :: PrimW u a -> CatPrim
 getCatPrim (PrimW ca _) = ca
 
--- | Should a decoration \"lift\" a query (Pure) to an image (PrimW)? 
+-- | Decorate Image.
 --
--- Currently I don\'t think it should.
---
-decorateImage :: Image u a -> Image u z -> Image u a
-decorateImage ma mb = Image $ \ctx -> 
-    step (getImage ma ctx) (getImage mb ctx)
+decorateImage :: ZDeco -> Image u a -> Image u z -> Image u a
+decorateImage zo ma mb = Image $ \ctx -> 
+    step zo (getImage ma ctx) (getImage mb ctx)
   where
-    step (PrimW ca a) (PrimW cb _) = PrimW (ca `mappend` cb) a
+    step SUPERIOR (PrimW ca a) (PrimW cb _) = PrimW (ca `mappend` cb) a
+    step ANTERIOR (PrimW ca a) (PrimW cb _) = PrimW (cb `mappend` ca) a
 
 
--- |
+-- | Elaborate Image.
 --
-elaborateImage :: Image u a -> (a -> Image u z) -> Image u a
-elaborateImage ma k = Image $ \ ctx -> case getImage ma ctx of 
-    PrimW ca a -> let cb = getCatPrim $ getImage (k a) ctx 
-                  in PrimW (ca `mappend` cb) a
+elaborateImage :: ZDeco -> Image u a -> (a -> Image u z) -> Image u a
+elaborateImage zo ma k = Image $ \ ctx ->
+    let (PrimW ca a) = getImage ma ctx
+        (PrimW cb _) = getImage (k a) ctx 
+    in case zo of
+      SUPERIOR -> PrimW (ca `mappend` cb) a
+      ANTERIOR -> PrimW (cb `mappend` ca) a
+
 
 obliterateImage :: Image u a -> Image u z -> Image u a
 obliterateImage ma mb = Image $ \ctx -> 

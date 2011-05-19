@@ -152,20 +152,18 @@ instance DrawingCtxM (LocThetaQuery u) where
 --
 
 instance Decorate LocThetaImage where
-  decorate ma mz = LocThetaImage $ \pt ang -> 
-                      getLocThetaImage ma pt ang `decorate` 
-                        getLocThetaImage mz pt ang
+  decorate zo ma mz = LocThetaImage $ \pt ang -> 
+    decorate zo (getLocThetaImage ma pt ang) (getLocThetaImage mz pt ang)
 
-  elaborate ma f = LocThetaImage $ \pt ang -> 
-                     getLocThetaImage ma pt ang `elaborate` 
-                       (\a -> getLocThetaImage (f a) pt ang)
+  elaborate zo ma f = LocThetaImage $ \pt ang -> 
+    elaborate zo (getLocThetaImage ma pt ang) 
+                 (\a -> getLocThetaImage (f a) pt ang)
 
   obliterate ma mz = LocThetaImage $ \pt ang -> 
-                       getLocThetaImage ma pt ang `obliterate` 
-                         getLocThetaImage mz pt ang
+    getLocThetaImage ma pt ang `obliterate` getLocThetaImage mz pt ang
 
   hyperlink xl ma = LocThetaImage $ \pt ang -> 
-                       hyperlink xl $ getLocThetaImage ma pt ang
+    hyperlink xl $ getLocThetaImage ma pt ang
            
 
 

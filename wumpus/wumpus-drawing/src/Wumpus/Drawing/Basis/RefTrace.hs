@@ -210,7 +210,7 @@ reconcileRefSt :: RefSt u z -> LocGraphic u
 reconcileRefSt st = 
     step (ref_acc st) (JL.toList $ ref_links st)
   where
-    step img xs = ignoreAns $ elaborate img (\a -> mconcat $ map (fn a) xs)
+    step img xs = ignoreAns $ selaborate img (\a -> mconcat $ map (fn a) xs)
     
     fn im (Unary r1 ar1 gf) = 
       maybe mempty (\pt -> promoteLoc $ \_ -> applyLoc gf pt) (projectRef r1 ar1 im)
@@ -251,7 +251,7 @@ moveSt v = (\s i -> s { current_tip = i ^+^ v })
 
 insertSt :: Num u => LocImage u z2 -> RefStF u ans
 insertSt gf = (\s ac v1 -> let g1 = ignoreAns $ moveStart v1 gf
-                           in s { ref_acc = decorate ac g1 }) 
+                           in s { ref_acc = sdecorate ac g1 }) 
                 <*> ref_acc <*> current_tip
 
 snocLink :: LinkRef u ans -> RefStF u ans

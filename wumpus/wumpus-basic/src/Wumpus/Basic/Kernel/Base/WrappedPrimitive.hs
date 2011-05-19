@@ -32,7 +32,6 @@ module Wumpus.Basic.Kernel.Base.WrappedPrimitive
 
   ) where
 
-import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Utils.HList
 
 import Wumpus.Core                      -- package: wumpus-core
@@ -52,10 +51,6 @@ data CatPrim = CZero
 
 type instance DUnit CatPrim = Double
 
-instance OPlus CatPrim where
-  CZero  `oplus` b      = b
-  a      `oplus` CZero  = a
-  Cat1 a `oplus` Cat1 b = Cat1 $ a `primCat` b
 
 
 instance Monoid CatPrim where

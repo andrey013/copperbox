@@ -24,10 +24,12 @@
 module Wumpus.Drawing.Basis.DrawingPrimitives
   (
 
+  -- * Monoid mappend
+    (<>)
 
   -- * Lines
 
-    hline
+  , hline
   , vline
   , pivotLine
 
@@ -50,6 +52,20 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
+
+
+import Data.Monoid
+
+infixr 6 <>
+
+
+-- | Alias for mappend in Monoid.
+--
+-- >  <> (infixr 6)
+-- 
+(<>) :: Monoid a => a -> a -> a
+(<>) = mappend
+
 
 
 --------------------------------------------------------------------------------

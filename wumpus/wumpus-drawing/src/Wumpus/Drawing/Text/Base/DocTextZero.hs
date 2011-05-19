@@ -165,21 +165,21 @@ infixr 5 `vcatl`, `vcatc`, `vcatr`
 -- (infixr 5) 
 --
 vcatl :: Doc u -> Doc u -> Doc u
-vcatl = VCat VLeft
+vcatl = VCat VALIGN_LEFT
 
 -- | Vertically concatenate - aligning center.
 -- 
 -- (infixr 5) 
 --
 vcatc :: Doc u -> Doc u -> Doc u
-vcatc = VCat VCenter
+vcatc = VCat VALIGN_CENTER
 
 -- | Vertically concatenate - aligning right.
 -- 
 -- (infixr 5) 
 --
 vcatr :: Doc u -> Doc u -> Doc u
-vcatr = VCat VRight
+vcatr = VCat VALIGN_RIGHT
 
 leftAlign  :: [Doc u] -> Doc u
 leftAlign  = multiline vcatl
@@ -202,14 +202,14 @@ multiline op (x:xs) = go x xs
 
 
 rfill :: u -> Doc u -> Doc u
-rfill = Fill VLeft
+rfill = Fill VALIGN_LEFT
 
 lfill :: u -> Doc u -> Doc u
-lfill = Fill VRight
+lfill = Fill VALIGN_RIGHT
 
 
 centerfill :: u -> Doc u -> Doc u
-centerfill = Fill VCenter
+centerfill = Fill VALIGN_CENTER
 
 
 
@@ -361,9 +361,9 @@ interpSpace = return $ makePosObject qy1  emptyLocImage
 
 ppad :: (Fractional u, Ord u) 
      => VAlign -> u -> PosObject u -> PosObject u
-ppad VLeft   du = mapOrientation (padXMinor du)
-ppad VCenter du = mapOrientation (padHEven $ 0.5 * du)
-ppad VRight  du = mapOrientation (padXMajor du)
+ppad VALIGN_LEFT   du = mapOrientation (padXMinor du)
+ppad VALIGN_CENTER du = mapOrientation (padHEven $ 0.5 * du)
+ppad VALIGN_RIGHT  du = mapOrientation (padXMajor du)
 
 
 interpMono :: (Fractional u, InterpretUnit u)

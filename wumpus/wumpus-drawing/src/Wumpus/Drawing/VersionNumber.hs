@@ -23,7 +23,7 @@ module Wumpus.Drawing.VersionNumber
 
 -- | Version number
 --
--- > (0,4,0)
+-- > (0,5,0)
 --
 wumpus_drawing_version :: (Int,Int,Int)
-wumpus_drawing_version = (0,4,0)
+wumpus_drawing_version = (0,5,0)

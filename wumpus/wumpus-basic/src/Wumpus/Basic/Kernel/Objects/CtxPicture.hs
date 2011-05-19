@@ -256,22 +256,9 @@ moveSnd mkV = combineP2 fn
                in pl `picOver` (picMoveBy pr v1)
 
 
-
-
--- | > a `oplus` b
--- 
--- Place \'drawing\' a over b. The idea of @over@ here is in 
--- terms z-ordering, nither picture a or b are actually moved.
---
-instance OPlus CtxPicture where
-  oplus = moveSnd $ \_ _ -> V2 0 0
-
-
-
-
 instance ZConcat CtxPicture where
-  superior = oplus
-  anterior = flip oplus
+  superior = mappend
+  anterior = flip mappend
 
 --------------------------------------------------------------------------------
 -- Composition
@@ -371,9 +358,9 @@ instance Align CtxPicture where
 -- of @a@ and align it with the top, center or bottom of @a@.
 -- 
 cxpAlignH :: HAlign -> CtxPicture -> CtxPicture -> CtxPicture
-cxpAlignH HTop     = moveSnd $ \a b -> northeast a .-. northwest b
-cxpAlignH HCenter  = moveSnd $ \a b -> east a .-. west b
-cxpAlignH HBottom  = moveSnd $ \a b -> southeast a .-. southwest b
+cxpAlignH HALIGN_TOP     = moveSnd $ \a b -> northeast a .-. northwest b
+cxpAlignH HALIGN_CENTER  = moveSnd $ \a b -> east a .-. west b
+cxpAlignH HALIGN_BASE    = moveSnd $ \a b -> southeast a .-. southwest b
 
 
 -- | > cxpAlignV align a b
@@ -382,9 +369,9 @@ cxpAlignH HBottom  = moveSnd $ \a b -> southeast a .-. southwest b
 -- and align it with the left, center or right of @a@.
 -- 
 cxpAlignV :: VAlign -> CtxPicture -> CtxPicture -> CtxPicture
-cxpAlignV VLeft    = moveSnd $ \a b -> southwest a .-. northwest b
-cxpAlignV VCenter  = moveSnd $ \a b -> south a .-. north b
-cxpAlignV VRight   = moveSnd $ \a b -> southeast a .-. northeast b
+cxpAlignV VALIGN_LEFT    = moveSnd $ \a b -> southwest a .-. northwest b
+cxpAlignV VALIGN_CENTER  = moveSnd $ \a b -> south a .-. north b
+cxpAlignV VALIGN_RIGHT   = moveSnd $ \a b -> southeast a .-. northeast b
 
 
 
@@ -400,10 +387,10 @@ instance AlignSpace CtxPicture where
 cxpAlignSpaceH :: HAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSpaceH align dx = go align
   where
-    mv f g     = moveSnd $ \a b -> hvec dx ^+^ (f a .-. g b)
-    go HTop    = mv northeast northwest
-    go HCenter = mv east west 
-    go HBottom = mv southeast southwest
+    mv f g           = moveSnd $ \a b -> hvec dx ^+^ (f a .-. g b)
+    go HALIGN_TOP    = mv northeast northwest
+    go HALIGN_CENTER = mv east west 
+    go HALIGN_BASE   = mv southeast southwest
 
 
 -- | > cxpAlignSpaceV align sep a b
@@ -414,8 +401,8 @@ cxpAlignSpaceH align dx = go align
 cxpAlignSpaceV :: VAlign -> Double -> CtxPicture -> CtxPicture -> CtxPicture
 cxpAlignSpaceV align dy = go align
   where
-    mv f g     = moveSnd $ \a b -> vvec (-dy) ^+^ (f a .-. g b)
-    go VLeft   = mv southwest northwest 
-    go VCenter = mv south north  
-    go VRight  = mv southeast northeast 
+    mv f g           = moveSnd $ \a b -> vvec (-dy) ^+^ (f a .-. g b)
+    go VALIGN_LEFT   = mv southwest northwest 
+    go VALIGN_CENTER = mv south north  
+    go VALIGN_RIGHT  = mv southeast northeast 
 

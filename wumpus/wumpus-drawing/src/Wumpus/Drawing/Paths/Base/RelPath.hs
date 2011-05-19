@@ -283,14 +283,16 @@ snocCurveTo (RelPath len se) v1 v2 v3 = RelPath (len + cl) $ JL.snoc se s
 -- Conversion
 
 fromPathAlgVertices :: Floating u => PathAlg u -> (Vec2 u, RelPath u)
-fromPathAlgVertices = bimap fn vertexPath . runPathAlgVec
+fromPathAlgVertices = step . runPathAlgVec
   where
-    fn = maybe (V2 0 0) id
+    step (Nothing, xs) = (zeroVec, vertexPath xs)
+    step (Just v1, xs) = (v1, vertexPath xs)
 
 fromPathAlgCurves :: Floating u => PathAlg u -> (Vec2 u, RelPath u)
-fromPathAlgCurves = bimap fn curvedPath . runPathAlgVec
+fromPathAlgCurves = step . runPathAlgVec
   where
-    fn = maybe (V2 0 0) id
+    step (Nothing, xs) = (zeroVec, curvedPath xs)
+    step (Just v1, xs) = (v1, curvedPath xs)
 
 
 toPrimPath :: InterpretUnit u => Point2 u -> RelPath u -> Query u PrimPath
