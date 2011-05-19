@@ -50,7 +50,9 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   , toPrimPath
 
   , drawOpenPath
+  , drawOpenPath_
   , drawClosedPath
+  , drawClosedPath_
 
   -- * Shortening
   , shortenPath
@@ -409,10 +411,20 @@ drawOpenPath rp = replaceAns rp $
     zapQuery (toPrimPath rp) >>= dcOpenPath
 
 
+drawOpenPath_ :: InterpretUnit u 
+              => AbsPath u -> Graphic u
+drawOpenPath_ rp = zapQuery (toPrimPath rp) >>= dcOpenPath
+
+
 drawClosedPath :: InterpretUnit u 
                => DrawStyle -> AbsPath u -> Image u (AbsPath u)
 drawClosedPath sty rp = replaceAns rp $ 
     zapQuery (toPrimPath rp) >>= dcClosedPath sty
+
+
+drawClosedPath_ :: InterpretUnit u 
+                => DrawStyle -> AbsPath u -> Graphic u
+drawClosedPath_ sty rp = zapQuery (toPrimPath rp) >>= dcClosedPath sty
 
 
 -- | Turn a Path into an ordinary PrimPath.

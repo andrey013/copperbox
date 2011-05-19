@@ -37,7 +37,7 @@ module Wumpus.Drawing.Text.Base.DocTextZero
   , float
   , ffloat
 
-  , (<>)
+  , dappend
   , (<+>) 
   , vcatl
   , vcatc 
@@ -58,6 +58,7 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
   ) where
 
+import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Text.Base.Common
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -66,6 +67,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Control.Applicative
 import Data.Char ( ord )
+import Data.Monoid
 import Numeric
 
 
@@ -90,11 +92,15 @@ type TextContextF u = TextContext u -> TextContext u
 type AElaborateF u = Orientation u -> LocGraphic u
 
 
-
 -- | TextFrame is the result Graphic made from rendering multiple
 -- lines of DocText.
 --
 type TextFrame u = RectAddress -> LocImage u (BoundingBox u)
+
+
+instance Monoid (Doc u) where
+  mempty        = Empty
+  a `mappend` b = Cat a b
 
 
 -- NOTE - should the API use @em@ for fill, padding etc.?
@@ -140,16 +146,18 @@ ffloat mb d = Mono (charVector $ CharLiteral '0') xs
 
 
 
-infixr 6 <>, <+>
+-- | Concatenate two Docs with no spacing.
+--
+-- Note - this is the Monoidal mappend for Doc:
+--
+-- > import Data.Monoid  -- to use `mappend`
+--
+-- > import Wumpus.Drawing.Basis.DrawingPrimitives  -- to use <>
+--
+dappend :: Doc u -> Doc u -> Doc u
+a `dappend` b = Cat a b
 
 
--- | Concatenate two DocTexts separated with no spacing.
---
--- (infixr 6)
---
-(<>) :: Doc u -> Doc u -> Doc u
-a <> b = Cat a b
- 
 
 -- | Concatenate two Docs separated with a space.
 --
@@ -417,20 +425,20 @@ monoSpace _  []     = []
 drawStrikethrough :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawStrikethrough (Orientation xmin xmaj _ ymaj) = 
-    linestyle $ moveStart (vec (-xmin) vpos) hline 
+    linestyle $ moveStart (vec (-xmin) vpos) ln
   where
     vpos  = 0.45 * ymaj
-    hline = locStraightLine (hvec $ xmin + xmaj)
+    ln    = locStraightLine (hvec $ xmin + xmaj)
 
 
 
 drawUnderline :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
 drawUnderline (Orientation xmin xmaj ymin _) = 
-    linestyle $ moveStart (vec (-xmin) vpos) hline 
+    linestyle $ moveStart (vec (-xmin) vpos) ln
   where
     vpos  = negate $ 0.45 * ymin
-    hline = locStraightLine (hvec $ xmin + xmaj)
+    ln    = locStraightLine (hvec $ xmin + xmaj)
 
 linestyle :: LocGraphic u -> LocGraphic u
 linestyle mf = 

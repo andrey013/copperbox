@@ -51,9 +51,9 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
 
   , lines
 
-  , hline
-  , vline
-  , aline
+  , hlineto
+  , vlineto
+  , alineto
 
  
   ) where
@@ -499,8 +499,8 @@ instance (Monad m, Floating u, InterpretUnit u) =>
 -- line before changing the pen properties.
 --
 class Monad m => PathOpM m where
-  line         :: u ~ MonUnit (m ()) => Vec2 u -> m ()
-  curve        :: u ~ MonUnit (m ()) => Vec2 u -> Vec2 u -> Vec2 u -> m ()
+  lineto       :: u ~ MonUnit (m ()) => Vec2 u -> m ()
+  curveto      :: u ~ MonUnit (m ()) => Vec2 u -> Vec2 u -> Vec2 u -> m ()
   updatePen    :: DrawingContextF -> m ()
   cycleSubPath :: DrawStyle -> m ()
   vamp         :: u ~ MonUnit (m ()) => Vamp u -> m ()
@@ -509,8 +509,8 @@ class Monad m => PathOpM m where
 
 instance (Floating u, Ord u, Tolerance u, InterpretUnit u) => 
     PathOpM (PathSpec u) where
-  line v1           = PathSpec $ \s0 -> ((), extendPath v1 s0)
-  curve v1 v2 v3    = PathSpec $ \s0 -> ((), extendPathC v1 v2 v3 s0)
+  lineto v1         = PathSpec $ \s0 -> ((), extendPath v1 s0)
+  curveto v1 v2 v3  = PathSpec $ \s0 -> ((), extendPathC v1 v2 v3 s0)
   updatePen upd     = PathSpec $ \s0 -> ((), changePen upd s0)
   cycleSubPath sty  = PathSpec $ \s0 -> ((), cycleAP sty s0)
   vamp vp           = PathSpec $ \s0 -> ((), appendVamp vp s0)
@@ -519,8 +519,8 @@ instance (Floating u, Ord u, Tolerance u, InterpretUnit u) =>
 
 instance (Monad m, Floating u, Ord u, Tolerance u, InterpretUnit u) => 
     PathOpM (PathSpecT u m) where
-  line v1           = PathSpecT $ \s0 -> return ((), extendPath v1 s0)
-  curve v1 v2 v3    = PathSpecT $ \s0 -> return ((), extendPathC v1 v2 v3 s0)
+  lineto v1         = PathSpecT $ \s0 -> return ((), extendPath v1 s0)
+  curveto v1 v2 v3  = PathSpecT $ \s0 -> return ((), extendPathC v1 v2 v3 s0)
   updatePen upd     = PathSpecT $ \s0 -> return ((), changePen upd s0)
   cycleSubPath sty  = PathSpecT $ \s0 -> return ((), cycleAP sty s0)
   vamp vp           = PathSpecT $ \s0 -> return ((), appendVamp vp s0)
@@ -555,22 +555,18 @@ pen_width  :: PathOpM m
            => Double -> m ()
 pen_width d = updatePen (set_line_width d)
 
-
+-- | A different name is needed for this one...
+--
 lines :: (PathOpM m, u ~ MonUnit (m ())) => [Vec2 u] -> m ()
-lines = mapM_ line
+lines = mapM_ lineto
 
 
---
--- Note - these names are not consistent with Displacement in 
--- Wumpus-Basic.
---
+hlineto :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
+hlineto dx = lineto (hvec dx)
 
-hline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
-hline dx = line (hvec dx)
-
-vline :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
-vline dy = line (vvec dy)
+vlineto :: (PathOpM m, Num u, u ~ MonUnit (m ())) => u -> m ()
+vlineto dy = lineto (vvec dy)
 
 
-aline :: (PathOpM m, Floating u, u ~ MonUnit (m ())) => Radian -> u -> m ()
-aline ang d = line (avec ang d)
+alineto :: (PathOpM m, Floating u, u ~ MonUnit (m ())) => Radian -> u -> m ()
+alineto ang d = lineto (avec ang d)

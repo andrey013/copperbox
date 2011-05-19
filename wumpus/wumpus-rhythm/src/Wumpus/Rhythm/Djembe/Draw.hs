@@ -162,6 +162,17 @@ flamHead FlamNone           = mempty
 
 
 
+barline :: DjembeDraw ()
+barline = insertBaselineCenter singleBarline >> moveNext
+
+lrepeat :: DjembeDraw ()
+lrepeat = insertBaselineCenter leftRepeat >> moveNext
+
+rrepeat :: DjembeDraw ()
+rrepeat = insertBaselineCenter rightRepeat >> moveNext
+
+
+
 --------------------------------------------------------------------------------
 -- Drawing Monad
 
@@ -207,7 +218,7 @@ runDjembeDraw :: InterpretUnit u
               => UnitWidth -> DjembeDraw a -> LocGraphic u
 runDjembeDraw uw mf = post $ runLocTrace $ getDjembeDraw mf uw 
   where
-    post (_,_,gf) = localize (relative_line_width fn . join_miter) $ 
+    post (_,_,gf) = localize (contextual_line_width fn . join_miter) $ 
                       uconvF gf
     
     fn sz         = let s1 = (fromIntegral sz) / (10.0::Double)

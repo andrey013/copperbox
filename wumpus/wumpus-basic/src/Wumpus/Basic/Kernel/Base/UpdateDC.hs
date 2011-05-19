@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Base.UpdateDC
   , line_thick
   , line_ultra_thick
   
+  , contextual_line_width
   , relative_line_width
 
   -- * Line cap
@@ -189,17 +190,22 @@ line_ultra_thick    = set_line_width 4.0
 
 
 
+-- | Scale the line width respective to its current value. 
+-- 
+-- The size is calculated with the supplied function.
+--
+relative_line_width :: (Double -> Double) -> DrawingContextF
+relative_line_width fn = 
+    updateStrokeProps (\s -> let lw = line_width s in s { line_width = fn lw })
+
+
 -- | Set the line width to a size relative to the current font 
 -- size. The size is calculated with the supplied function.
 --
-relative_line_width :: (FontSize -> Double) -> DrawingContextF
-relative_line_width fn = 
+contextual_line_width :: (FontSize -> Double) -> DrawingContextF
+contextual_line_width fn = 
     withFontSize $ \sz s -> set_line_width (fn sz) s
 
-
---
--- All options share the prefix so the enumeration is obvious...
---
 
 
 --------------------------------------------------------------------------------

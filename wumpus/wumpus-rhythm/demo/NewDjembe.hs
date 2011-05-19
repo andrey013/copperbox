@@ -42,16 +42,19 @@ pic01 = udrawTracing (0::Double) $ do
                                  , fn $ angleStrike $ diskNote
                                  ]
 
-    drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $
-                          drawBeamGroup [ Note $ strike disk
-                                        , Note $ muffled disk
-                                        , Swing $ optional (NoteChar 'X', zeroDeco)
-                                        , Div disk disk
-                                        , Note (NoteNone, zeroDeco)
-                                        , Flam disk FlamDisk
-                                        ]
+    drawl (P2 0 100) $ runDjembeDraw unit_width_12_8 $ do
+        { lrepeat
+        ; drawBeamGroup [ Note $ strike disk
+                         , Note $ muffled disk
+                         , Swing $ optional (NoteChar 'X', zeroDeco)
+                         , Div disk disk
+                         , Note (NoteNone, zeroDeco)
+                         , Flam disk FlamDisk
+                        ]
+        ; rrepeat
+        }
      
-    drawl (P2 0 300) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
+    drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
   where
     fn = runPosNoteHead 0
     disk = (NoteDisk, zeroDeco)

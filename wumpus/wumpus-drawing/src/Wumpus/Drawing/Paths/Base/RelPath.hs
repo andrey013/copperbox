@@ -59,7 +59,9 @@ module Wumpus.Drawing.Paths.Base.RelPath
   , toAbsPath
 
   , drawOpenPath
+  , drawOpenPath_
   , drawClosedPath
+  , drawClosedPath_
 
   ) where
 
@@ -340,12 +342,22 @@ toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
 
 drawOpenPath :: InterpretUnit u 
              => RelPath u -> LocImage u (RelPath u)
-drawOpenPath rp = replaceAns rp $ 
+drawOpenPath rp = replaceAns rp $
     promoteLoc $ \start -> zapQuery (toPrimPath start rp) >>= dcOpenPath
+
+drawOpenPath_ :: InterpretUnit u 
+              => RelPath u -> LocGraphic u
+drawOpenPath_ rp = promoteLoc $ \start -> 
+    zapQuery (toPrimPath start rp) >>= dcOpenPath
 
 
 drawClosedPath :: InterpretUnit u 
                => DrawStyle -> RelPath u -> LocImage u (RelPath u)
 drawClosedPath sty rp = replaceAns rp $ 
     promoteLoc $ \start -> zapQuery (toPrimPath start rp) >>= dcClosedPath sty
+
+drawClosedPath_ :: InterpretUnit u 
+                => DrawStyle -> RelPath u -> LocGraphic u
+drawClosedPath_ sty rp = promoteLoc $ \start -> 
+    zapQuery (toPrimPath start rp) >>= dcClosedPath sty
 

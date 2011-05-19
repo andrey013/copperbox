@@ -49,14 +49,18 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
 
   , beamBracket
 
+  -- * bar lines
+  , singleBarline
+  , leftRepeat
+  , rightRepeat
 
   ) where
 
 
 import Wumpus.Rhythm.Djembe.Parameters
 
--- package: wumpus-drawing
-import qualified Wumpus.Drawing.Basis.DrawingPrimitives as WD
+
+import Wumpus.Drawing.Basis.DrawingPrimitives   -- package: wumpus-drawing
 import Wumpus.Drawing.Paths.Relative
 import Wumpus.Drawing.Text.DirectionZero        
 
@@ -254,7 +258,7 @@ underscore = decoPosObject body SUPERIOR
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
                  in  moveStart (go_up strike_baseline) 
-                               (WD.pivotLine xmin xmaj 0)
+                               (pivotLine xmin xmaj 0)
 
 
 
@@ -266,7 +270,7 @@ angleStrike = decoPosObject body SUPERIOR
                  dist = angle_strike_width / fromRadian (cos ang)
                  hw   = 0.5 * angle_strike_width
              in execPathSpec $ moveBy (vsum [ vvec strike_baseline, go_left hw])
-                             >> aline ang dist
+                             >> alineto ang dist
 
 
 
@@ -293,11 +297,11 @@ data StemPos = LEFT_EXT | STEM_INNER | RIGHT_EXT
 type Stem = StemPos -> (AfmUnit -> LocGraphic AfmUnit)
 
 single_stem_down :: PathSpec AfmUnit ()
-single_stem_down = line $ go_down stem_length
+single_stem_down = lineto $ go_down stem_length
 
 
 single_stem_up :: PathSpec AfmUnit ()
-single_stem_up = line $ go_up stem_length
+single_stem_up = lineto $ go_up stem_length
 
 -- | Draw either a single stem (inner) or nothing for the 
 -- extremities.
@@ -340,15 +344,12 @@ div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
   where
     hw          = 0.5 * uw
     step1 MOVE  = moveBy (go_right hw)
-    step1 LINE  = line   (go_right hw) 
+    step1 LINE  = lineto (go_right hw) 
 
     crossbar    :: LocGraphic AfmUnit
-    crossbar    = moveStart startvec (WD.hline (-hw))
+    crossbar    = moveStart startvec $ hline (-hw)
     startvec    = go_down divstem_beam_ydrop
 
-
-horizontalLine :: InterpretUnit u => u -> LocGraphic u
-horizontalLine = locStraightLine . hvec
 
 divStem :: Stem 
 divStem LEFT_EXT   uw = execPathSpec $ div_stem_right MOVE uw
@@ -371,7 +372,7 @@ swing_stem_right :: RightExt -> PathSpec AfmUnit ()
 swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_down
   where
     step1 MOVE  = moveBy (go_right flam_xminor)
-    step1 LINE  = line   (go_right flam_xminor) 
+    step1 LINE  = lineto (go_right flam_xminor) 
 
 
 swingAngle :: LocGraphic AfmUnit
@@ -412,6 +413,41 @@ beamBracket uw n         = execPivot pathl pathr
     pathr = lines [ go_right w, go_down stem_length ]
 
 
+
+
+--------------------------------------------------------------------------------
+
+-- Start point for bar lines  is the base line
+
+singleBarline :: LocGraphic AfmUnit
+singleBarline = vline barline_top
+
+thickBarline :: LocGraphic AfmUnit
+thickBarline = localize dbl_thick $ vline barline_top
+  where
+    dbl_thick = relative_line_width (2*)
+
+repeatDots :: LocGraphic AfmUnit
+repeatDots = hi_dot <> lo_dot
+  where
+    hi_dot  = moveStart (go_up hi_repeat_dot_center) dot1
+    lo_dot  = moveStart (go_up lo_repeat_dot_center) dot1 
+    dot1    = dcDisk FILL repeat_dot_radius 
+
+
+-- | The thin line is draw at the original h-position.
+--
+leftRepeat :: LocGraphic AfmUnit
+leftRepeat = singleBarline 
+          <> moveStart (go_left repeat_dot_hspacing) thickBarline
+          <> moveStart (go_right repeat_dot_hspacing) repeatDots
+
+-- | The thin line is draw at the original h-position.
+--
+rightRepeat :: LocGraphic AfmUnit
+rightRepeat = singleBarline 
+           <> moveStart (go_left repeat_dot_hspacing) repeatDots
+           <> moveStart (go_right repeat_dot_hspacing) thickBarline
 
 
 
@@ -590,59 +626,11 @@ leadin_accent =
                      , vec (-vhw) (negate vhmid)
                      , vec (-vhw) vhmid          ]
 
--- OLD ...
-
--- Stems 
-
-single_stem :: LocGraphic AfmUnit
-single_stem = 
-    moveStart (dispVec $ go_up stem_base)  (locStraightLine $ vvec stem_length)
-
-
-flam_stem :: LocGraphic AfmUnit
-flam_stem = moveStart (dispVec $ go_up stem_base) (openStrokePath flam_path)
-  where
-    flam_path  = [ vvec stem_length
-                 , vec  (negate flam_xminor) (negate flam_xminor)
-                 , vvec (negate flam_stem_length)
-                 ]
-
-
--- | divstem needs the unit width which is a global property.
---
--- divstem is a \'H\' with the horizontal bar near the top.
---
-div_stem :: AfmUnit -> LocGraphic AfmUnit
-div_stem uw = stem 0 `oplus` stem hw `oplus` hbar
-  where
-    hw   = 0.5 * uw
-    stem = \dx -> moveStart (dispVec $ go_up stem_base . dispVec $ go_right dx) 
-                            (locStraightLine $  vvec stem_length)
-
-    hbar = moveStart (dispVec $ go_up divstem_beam_ypos) (locStraightLine $ hvec hw)
-
-
-swing_stem :: LocGraphic AfmUnit
-swing_stem = stem 0 `oplus` stem flam_xminor `oplus` angle
-  where
-    stem     = \dx -> moveStart (dispVec $ go_up stem_base . dispVec $ go_right dx) 
-                                (locStraightLine $  vvec stem_length)
-    
-    angle    = moveStart (dispVec $ go_up swing_symbol_baseline) 
-                         (openStrokePath ang_path)
-
-    ang_path = let w = 0.9 * flam_xminor in [ vec w w, vec (-w) w ]
-
-
-
 
 --------------------------------------------------------------------------------
 -- bar lines
 
 -- OLD ...
-
-barline :: LocGraphic AfmUnit
-barline = openStrokePath [vvec barline_top]
 
 
 -- Note - Repeats are not on the char baseline, instead they are 
@@ -721,17 +709,5 @@ centeredTwoThirdsText ss =
       locGraphic_ $ startAddrR CENTER $ textline ss 
 
 
-
-
---------------------------------------------------------------------------------
--- beaming
-
--- OLD ...
-
-beam_line :: Int -> AfmUnit -> LocGraphic AfmUnit
-beam_line n unit_width = 
-    moveStart (dispVec $ go_up stem_top) $ openStrokePath [ hvec beamlen ]
-  where
-    beamlen = unit_width * fromIntegral n
 
 -}
