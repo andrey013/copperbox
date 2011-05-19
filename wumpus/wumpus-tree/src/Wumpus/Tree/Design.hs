@@ -303,7 +303,7 @@ scaleTree :: (DrawingCtxM m, InterpretUnit u)
           => u -> u -> CoordTree a -> m (Tree (Point2 u, a))
 scaleTree sib_dist lvl_dist tree = 
     getFontSize >>= \sz -> 
-    let fn = mkFun sz in return $ fmap (bimapL fn) tree
+    let fn = mkFun sz in return $ fmap (\(a,b) -> (fn a, b)) tree
   where
     mkFun sz = \(P2 x y) -> let ux = sib_dist * (dinterp sz $ realToFrac x)
                                 uy = lvl_dist * (dinterp sz $ realToFrac y)

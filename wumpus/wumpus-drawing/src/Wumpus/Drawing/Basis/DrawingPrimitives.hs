@@ -33,6 +33,10 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
   , vline
   , pivotLine
 
+  , oStraightLines
+  , cStraightLines
+
+
   -- * Rectangles
   , blRectangle
   , ctrRectangle
@@ -92,6 +96,17 @@ hline len = locStraightLine $ hvec len
 pivotLine :: (Floating u, InterpretUnit u) => u -> u -> Radian -> LocGraphic u
 pivotLine lu ru ang = promoteLoc $ \pt -> 
     straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
+
+
+-- | Draw an open path formed from straight line segments.
+--
+oStraightLines :: InterpretUnit u => [Point2 u] -> Graphic u
+oStraightLines ps = zapQuery (vertexPP ps) >>= dcOpenPath
+
+-- | Draw an closed path formed from straight line segments.
+--
+cStraightLines :: InterpretUnit u => DrawStyle -> [Point2 u] -> Graphic u
+cStraightLines sty ps = zapQuery (vertexPP ps) >>= dcClosedPath sty
 
 
 --------------------------------------------------------------------------------

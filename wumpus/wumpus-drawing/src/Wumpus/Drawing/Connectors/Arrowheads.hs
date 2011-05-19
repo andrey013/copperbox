@@ -59,6 +59,7 @@ module Wumpus.Drawing.Connectors.Arrowheads
   ) where
 
 
+import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Paths.Absolute
 
@@ -83,24 +84,21 @@ type PointGen = Radian -> [Vec2 En]
 
 
 filledTipPath :: PointGen -> LocThetaGraphic En
-filledTipPath fn = 
+filledTipPath gen = 
     localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
-      let vs = fn theta 
-      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcClosedPath FILL
+      cStraightLines FILL $ map (pt .+^) $ gen theta
 
 
 closedTipPath :: PointGen -> LocThetaGraphic En
-closedTipPath fn = 
+closedTipPath gen = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      let vs = fn theta 
-      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcClosedPath STROKE
+      cStraightLines STROKE $ map (pt .+^) $ gen theta
 
 
 openTipPath :: PointGen -> LocThetaGraphic En
-openTipPath fn = 
+openTipPath gen = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      let vs = fn theta 
-      in zapQuery (vertexPP $ map (pt .+^) vs) >>= dcOpenPath
+      oStraightLines $ map (pt .+^) $ gen theta
 
 
 

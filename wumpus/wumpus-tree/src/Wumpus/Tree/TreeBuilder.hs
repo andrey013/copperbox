@@ -168,7 +168,7 @@ makeCoordRefTree props (P2 x y) tree =
     scaleTree sx sy (design tree) >>= \ans -> return $ moveTree $ orient ans
   where
     orient   = orientateTree (tp_direction props)
-    moveTree = fmap (bimapL (displace $ V2 x y))
+    moveTree = fmap (\(a,b) -> (displace (V2 x y) a, b))
     sx       = tp_sibling_distance props
     sy       = tp_level_distance props
 

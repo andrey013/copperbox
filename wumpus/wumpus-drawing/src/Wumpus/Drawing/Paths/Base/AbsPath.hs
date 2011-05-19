@@ -49,8 +49,8 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   -- * Conversion
   , toPrimPath
 
-  , openAbsPath
-  , closedAbsPath
+  , drawOpenPath
+  , drawClosedPath
 
   -- * Shortening
   , shortenPath
@@ -403,15 +403,15 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
 
 
 
-openAbsPath :: InterpretUnit u 
-            => AbsPath u -> Image u (AbsPath u)
-openAbsPath rp = replaceAns rp $
+drawOpenPath :: InterpretUnit u 
+             => AbsPath u -> Image u (AbsPath u)
+drawOpenPath rp = replaceAns rp $
     zapQuery (toPrimPath rp) >>= dcOpenPath
 
 
-closedAbsPath :: InterpretUnit u 
-              => DrawStyle -> AbsPath u -> Image u (AbsPath u)
-closedAbsPath sty rp = replaceAns rp $ 
+drawClosedPath :: InterpretUnit u 
+               => DrawStyle -> AbsPath u -> Image u (AbsPath u)
+drawClosedPath sty rp = replaceAns rp $ 
     zapQuery (toPrimPath rp) >>= dcClosedPath sty
 
 

@@ -55,8 +55,8 @@ spec1 :: (Real u, Floating u, Tolerance u, InterpretUnit u)
 spec1 = do
     a <- ref dotDisk
     b <- ref dotDisk
-    linkref a b (\a b -> graphic_ $ 
-                   connect (uniformArrow curveTip connhbezier) (west a) (east b))
+    linkref a b (\a b -> ignoreAns $ 
+                   connect (west a) (east b) (uniformArrow curveTip connhbezier) )
     return (root a [leaf b,  mkleaf dotCircle])
 
 

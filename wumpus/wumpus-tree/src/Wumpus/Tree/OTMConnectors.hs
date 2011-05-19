@@ -28,7 +28,8 @@ module Wumpus.Tree.OTMConnectors
 
 import Wumpus.Tree.Base
 
-import Wumpus.Drawing.Paths.Absolute            -- package: wumpus-drawing
+-- import Wumpus.Drawing.Basis.DrawingPrimitives   -- package: wumpus-drawing
+import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -81,7 +82,7 @@ radialOTMC :: ( Real u, Floating u, InterpretUnit u
            => OTMAnchorConn u a
 radialOTMC _ _ a xs = mconcat $ map fn $ radialNodes a xs
   where
-    fn (p0,p1) = zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
+    fn (p0,p1) = straightLine p0 p1
 
 -- | Blank connector - nothing is drawn.
 --
@@ -117,11 +118,11 @@ familyOTMC dir h a xs =
         ptick     = outtick hh (center a) (paF a)
         cticks    = map (\o -> outtick hh (center o) (caF o)) xs
         kids      = sequence cticks
-    in ignoreAns ptick `mappend` (ignoreAns $ elaborate kids fn)
+    in ignoreAns ptick `mappend` (ignoreAns $ selaborate kids fn)
   where
     fn ps = case linkAll ps of
               Nothing -> emptyLocImage `at` (center a)
-              Just path -> zapQuery (toPrimPath path) >>= dcOpenPath
+              Just path -> ignoreAns $ drawOpenPath path
 
 
 
@@ -164,7 +165,7 @@ splayOTMC dir _ a xs =
         p0        = paF a
     in mconcat $ map (\x -> fn p0 (caF x)) xs
   where
-    fn p0 p1 = zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
+    fn p0 p1 = straightLine p0 p1
 
 
 

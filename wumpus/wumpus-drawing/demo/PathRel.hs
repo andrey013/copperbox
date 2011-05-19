@@ -39,9 +39,8 @@ path1 = localize (stroke_colour dark_red) $ execPathSpec path_spec1
 
 
 path2 :: DLocGraphic 
-path2 = localize (stroke_colour red) $  promoteLoc $ \pt -> 
-   let relp = evalPathSpec path_spec1 
-   in zapQuery (toPrimPath pt relp) >>= dcClosedPath FILL
+path2 = ignoreAns $ localize (stroke_colour red) $ 
+    drawClosedPath FILL $ evalPathSpec path_spec1 
 
 makePD :: PathSpec Double () -> DLocGraphic
 makePD spec = localize (stroke_colour red) $ execPathSpec spec

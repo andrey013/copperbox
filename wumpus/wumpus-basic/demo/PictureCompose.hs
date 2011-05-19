@@ -117,19 +117,19 @@ pic10 = picAnno pic "vsep 10 [red, green, blue]"
 
 
 pic11 :: CtxPicture
-pic11 = picAnno pic "alignRow HTop [red, green, blue]"
+pic11 = picAnno pic "alignRow HALIGN_TOP [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            alignRow HTop [rect_red, rect_green, rect_blue]
+            alignRow HALIGN_TOP [rect_red, rect_green, rect_blue]
 
 
 pic12 :: CtxPicture
-pic12 = picAnno pic "alignColumn VRight [red, green, blue]"
+pic12 = picAnno pic "alignColumn VALIGN_RIGHT [red, green, blue]"
   where
     pic :: CtxPicture
     pic = drawBlueBounds $ 
-            alignColumn VRight [rect_red, rect_green, rect_blue]
+            alignColumn VALIGN_RIGHT [rect_red, rect_green, rect_blue]
 
 
 --------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ pic12 = picAnno pic "alignColumn VRight [red, green, blue]"
 
 
 picAnno :: CtxPicture -> String -> CtxPicture
-picAnno pic msg = halignSpace HCenter (30::Double) pic lbl
+picAnno pic msg = halignSpace HALIGN_CENTER (30::Double) pic lbl
   where
     lbl = drawTracing $ body
     body :: TraceDrawing Double ()
