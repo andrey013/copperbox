@@ -94,8 +94,9 @@ strike   :: DNoteHead -> DNoteHead
 strike   = decoNoteL angleStrike
 
 
-
-
+accent :: Accent -> DjembeDraw ()
+accent (StemAccent gf)          = insertStemTop gf
+accent (BaselineAccent gf)      = insertBLC gf
 
 -- Design note - Hi and Lo notes now seem to look like a 
 -- decoration, in that a note can also have a hi or lo note.
@@ -107,7 +108,7 @@ drawBeamGroups = mapM_ drawBeamGroup
 drawBeamGroup :: [Note] -> DjembeDraw ()
 drawBeamGroup []     = return ()
 drawBeamGroup (x:xs) = askUnitWidth >>= \uw -> 
-    insertStemTop (beamBracket uw (length xs)) >> stepl x >> inner xs
+    insertStemTop (beamBracket uw (length xs)) >> temp >> stepl x >> inner xs
   where
     stepl n      = stem1 LEFT_EXT n >> note1 n >> moveNext
 
@@ -115,6 +116,7 @@ drawBeamGroup (x:xs) = askUnitWidth >>= \uw ->
     inner [n]    = stem1 RIGHT_EXT n  >> note1 n >> moveNext
     inner (n:ns) = stem1 STEM_INNER n >> note1 n >> moveNext >> inner ns 
 
+    temp = insertStemTop $ pletBracket (3 * 1200) 3
 
 
 stem1 :: StemPos -> Note -> DjembeDraw ()
@@ -128,7 +130,7 @@ stem1 pos note = askUnitWidth >>= \uw -> insertStemTop (body note uw)
 
 
 note1 :: Note -> DjembeDraw ()
-note1 note = askUnitWidth >>= \uw -> insertBaselineCenter (body note uw)
+note1 note = askUnitWidth >>= \uw -> insertBLC (body note uw)
   where
     body (Note a)   _        = runPosNoteHead 0 $ dnoteHeadPos a
 
@@ -163,13 +165,13 @@ flamHead FlamNone           = mempty
 
 
 barline :: DjembeDraw ()
-barline = insertBaselineCenter singleBarline >> moveNext
+barline = insertBLC singleBarline >> moveNext
 
 lrepeat :: DjembeDraw ()
-lrepeat = insertBaselineCenter leftRepeat >> moveNext
+lrepeat = insertBLC leftRepeat >> moveNext
 
 rrepeat :: DjembeDraw ()
-rrepeat = insertBaselineCenter rightRepeat >> moveNext
+rrepeat = insertBLC rightRepeat >> moveNext
 
 
 
@@ -240,8 +242,8 @@ moveNext = DjembeDraw $ \r -> moveBy (hvec r)
 -- | Insert a graphic at /baseline center/ - this is the position 
 -- for notes.
 --
-insertBaselineCenter :: LocGraphic AfmUnit -> DjembeDraw ()
-insertBaselineCenter gf = DjembeDraw $ \_ -> insertl_ gf
+insertBLC :: LocGraphic AfmUnit -> DjembeDraw ()
+insertBLC gf = DjembeDraw $ \_ -> insertl_ gf
 
 -- | Insert a graphic at /stem top/ - this is the position for 
 -- stems and beams (drawn with a pivot).

@@ -54,6 +54,16 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
   , leftRepeat
   , rightRepeat
 
+  -- * Accents 
+  , Accent(..)
+  , leadinAccent
+  , strokeAccent
+  , domHand
+  , otherHand
+
+  -- * plet bracket
+  , pletBracket
+
   ) where
 
 
@@ -453,261 +463,92 @@ rightRepeat = singleBarline
 
 
 --------------------------------------------------------------------------------
+-- Accents and marks
 
+-- Accents are either positioned relative to the stem top
+-- or the baseline
 
-{-
-
--- OLD ...
-
-type NoteGlyph = AdvGraphic AfmUnit
-
-noteGlyph :: NoteGlyph -> PointDisplace AfmUnit -> NoteGlyph
-noteGlyph = flip moveStart
-
-baselineCharGlyph :: (Floating u, InterpretUnit u) 
-                  => EscapedChar -> LocImage u (Vec2 u)
-baselineCharGlyph ch = 
-    descender >>= \dy -> 
-    pushR1 (mapAns fn) $ moveStart (disp_down (abs dy)) 
-                       $ startAddrR SS $ escCharLabel ch
-  where
-    fn bb = V2 (boundaryWidth bb) 0
-
-
-
--- PosRects for hands...
-
-strokedPosRect :: (Fractional u, InterpretUnit u) 
-               => u -> u -> PosObject u 
-strokedPosRect w h = 
-    makePosObject (pure $ oposRectSW w h) (dcRectangle STROKE w h)
-
-
-filledPosRect :: (Fractional u, InterpretUnit u) 
-              => u -> u -> PosObject u 
-filledPosRect w h = 
-    makePosObject (pure $ oposRectSW w h) (dcRectangle FILL w h)
-
-oposRectSW :: Num u => u -> u -> Orientation u 
-oposRectSW w h  = Orientation { or_x_minor = 0
-                              , or_x_major = w
-                              , or_y_minor = 0
-                              , or_y_major = h }
- 
-
-openStrokePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
-openStrokePath vs = promoteR1 $ \pt -> 
-    (locPP vs `at` pt) >>= dcOpenPath 
-
-
-filledRelativePath :: InterpretUnit u => [Vec2 u] -> LocGraphic u
-filledRelativePath vs = promoteR1 $ \pt -> 
-    (locPP vs `at` pt) >>= dcClosedPath FILL
-
---------------------------------------------------------------------------------
--- OLD ...
-
-disk_note :: NoteGlyph
-disk_note = noteGlyph note_draw start_move
-  where
-    note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
-    start_move = dispVec $ go_up disk_ycenter
-    
-char_note :: Char -> NoteGlyph
-char_note ch = baselineCharGlyph $ CharLiteral ch
-
-period_note :: NoteGlyph
-period_note =  noteGlyph note_draw start_move
-  where
-    note_draw  = pushR1 (replaceAns period_width_vector) $ dcDisk FILL period_radius
-    start_move = dispV period_ycenter
-
--- | Draw a Char at the histroke position usually @X@.
---
-histroke_char :: Char -> NoteGlyph
-histroke_char ch = noteGlyph note_draw start_move
-  where
-    note_draw  = baselineCharGlyph $ CharLiteral ch
-    start_move = dispV histroke_char_baseline 
-   
--- OLD ...
-
-
--- | Draw a disk at the lostroke position.
---
-lostroke_disk :: NoteGlyph
-lostroke_disk = noteGlyph note_draw start_move
-  where
-    note_draw  = pushR1 (replaceAns disk_width_vector) $ dcDisk FILL disk_radius
-    start_move = dispV lostroke_disk_ycenter
-
-
-
-char_flam :: Char -> LocGraphic AfmUnit
-char_flam ch = 
-    localize (scale_point_size 0.75) $ moveStart start_move note_draw
-  where
-    note_draw  = locGraphic_ $ baselineCharGlyph $ CharLiteral ch
-    start_move = dispVec $ go_left flam_xminor . dispVec $ go_up flam_char_baseline
-
-disk_flam :: LocGraphic AfmUnit
-disk_flam = moveStart start_move (dcDisk FILL flam_disk_radius)
-  where
-    start_move = dispVec $ go_left flam_xminor . dispVec $ go_up flam_disk_ycenter
-
-
-decohand :: (AfmUnit -> AfmUnit -> PosObject AfmUnit) 
-         -> NoteGlyph -> NoteGlyph
-decohand fn = (`decorateR1` body) 
-  where
-    body = moveStart (dispV hand_baseline) rect
-    rect = locGraphic_ $ runPosObjectR1 SS $ fn hand_side_length hand_side_length
-
-other_hand :: NoteGlyph -> NoteGlyph
-other_hand = decohand strokedPosRect
-
-dom_hand :: NoteGlyph -> NoteGlyph
-dom_hand = decohand filledPosRect
-
-
-underscore :: NoteGlyph -> NoteGlyph
-underscore = (`elaborateR1` (body . vector_x))
-  where
-    body w = moveStart (dispVec $ go_left (0.5*w) . dispV strike_baseline) 
-               $ locStraightLine (hvec w) 
-
-
-angle_strike :: NoteGlyph -> NoteGlyph
-angle_strike mf = 
-    mf `elaborateR1` (\a -> astrike $ vector_x a)
-  where
-    astrike w = let ang  = 0.25*pi
-                    dist = (1.25*w) / fromRadian (cos ang)
-                in moveStart (dispVec $ go_left (0.625*w) . dispV strike_baseline)
-                             (locStraightLine (avec ang dist))
-
-
-
-parens :: NoteGlyph -> NoteGlyph
-parens nh = 
-    nh `elaborateR1` (lparen . vector_x) `elaborateR1` (rparen . vector_x)
-  where
-    lparen w = locGraphic_ $ 
-               moveStart (dispVec $ go_left (0.66*w)  . dispV paren_baseline)
-                         (baselineCharGlyph $ CharEscName "parenleft")
-
-    rparen w = locGraphic_ $ 
-               moveStart (dispVec $ go_right (0.66*w) . dispV paren_baseline)
-                         (baselineCharGlyph $ CharEscName "parenright")
-
-
--- | A \'<\' sign about the stem.
---
-stroke_accent :: NoteGlyph -> NoteGlyph
-stroke_accent = (`decorateR1` moveStart start_move accent)
-  where
-    accent     = locGraphic_ $ baselineCharGlyph $ CharEscName "greater"
-    start_move = dispVec $ go_up accent_baseline
-    
-
+data Accent = StemAccent (LocGraphic AfmUnit)
+            | BaselineAccent (LocGraphic AfmUnit)
 
 -- | A \'V\' with a stalk.
 --
-leadin_accent :: LocGraphic AfmUnit
-leadin_accent = 
-    moveStart (dispVec $ go_up stem_top) (vertical_stalk `oplus` triangle_tip)
+leadinAccent :: Accent
+leadinAccent = StemAccent ( vertical_stalk <> triangle_tip)
   where
-    vertical_stalk = openStrokePath [vvec leadin_mark_height]
-    triangle_tip   = filledRelativePath vpath
+    vertical_stalk = vline leadin_mark_height
+
+    triangle_tip :: LocGraphic AfmUnit
+    triangle_tip   = drawClosedPath_ FILL $ evalPathSpec $ lines vpath
+
     vh             = 0.75 * leadin_mark_height
     vhmid          = 0.4  * vh
     vhw            = 0.5  * leadin_mark_width
-    vpath          = [ vec vhw vh
-                     , vec (-vhw) (negate vhmid)
-                     , vec (-vhw) vhmid          ]
+    vpath          :: [Vec2 AfmUnit]
+    vpath          = [ vec (-vhw)    vh
+                     , vec   vhw   (-vhmid)
+                     , vec   vhw     vhmid 
+                     ]
 
 
---------------------------------------------------------------------------------
--- bar lines
 
--- OLD ...
-
-
--- Note - Repeats are not on the char baseline, instead they are 
--- on a baseline with the period note head.
+-- | A \'>\' sign about the stem.
 --
-
-lrepeat :: LocGraphic AfmUnit
-lrepeat = moveStart (dispVec $ go_up repeat_baseline) $ body
+strokeAccent :: Accent
+strokeAccent = StemAccent $ moveStart (go_up accent_stroke_ydist) greater
   where
-    body = repeatSglStem `oplus` repeatDblStem (-repeat_line_hspacing)
-                         `oplus` repeatDots      repeat_dot_hspacing
+    greater    = ignoreAns $ escCharLabel (CharEscName "greater") BLC
 
 
-
-rrepeat :: LocGraphic AfmUnit
-rrepeat = moveStart (dispVec $ go_up repeat_baseline) $ body
+domHand :: Accent 
+domHand = 
+    BaselineAccent $ moveStart (go_down accent_hand_ydist) filled_square
   where
-    body = repeatSglStem `oplus` repeatDblStem   repeat_line_hspacing
-                         `oplus` repeatDots    (-repeat_dot_hspacing)
+    filled_square = ctrRectangle FILL hand_side_length hand_side_length
 
 
 
-repeatSglStem :: LocGraphic AfmUnit
-repeatSglStem = openStrokePath [vvec stem_top]
-
-
-repeatDblStem :: AfmUnit -> LocGraphic AfmUnit
-repeatDblStem dx = 
-   localize line_thick $ 
-       moveStart (dispH dx) $ openStrokePath [vvec stem_top]
-
-
-repeatDots :: AfmUnit -> LocGraphic AfmUnit
-repeatDots dx = moveStart (dispH dx) $ hi_dot `oplus` lo_dot
+otherHand :: Accent 
+otherHand = 
+    BaselineAccent $ moveStart (go_down accent_hand_ydist) filled_square
   where
-    hi_dot  = moveStart (dispVec $ go_up hi_repeat_dot_center) dot1
-    lo_dot  = moveStart (dispVec $ go_up lo_repeat_dot_center) dot1 
-    dot1    = dcDisk FILL repeat_dot_radius 
+    filled_square = ctrRectangle STROKE hand_side_length hand_side_length
+
 
 
 --------------------------------------------------------------------------------
--- plets
 
--- OLD ...
-
-plet_bracket :: Int -> Ratio Int -> AfmUnit -> LocGraphic AfmUnit
-plet_bracket n wr unit_width = 
-    moveStart (dispVec $ go_up plet_bracket_baseline) body 
+-- | Drawn at stem top
+--
+-- Internally the drawing starts from the horizontal-center, this 
+-- is so the text can be drawn first.
+--
+pletBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
+pletBracket pw num = 
+    moveStart (go_right hw ^+^ go_up plet_ydist) gf
   where
-    hh           = 0.5  * plet_number_height
-    th           = 0.4  * plet_number_width
-    hw           = 0.5  * unit_width * (realToFrac wr) 
-    textw        = 0.66 * numberWidth n
-    bracketw     = hw - textw
-    body         = lbracket `oplus` num_text `oplus` rbracket
+    hw        = 0.5 * pw
+    gf        = ignoreAns $ localize (scale_point_size 0.75 . text_margin 0.2 0)
+                          $ selaborate (textline (show num) BLC) elab
+    elab bb   = let ee    = east bb 
+                    ww    = west bb
+                    bbw   = boundaryWidth bb
+                    bbhh  = 0.5 * boundaryHeight bb
+                    lx    = max 0 (0.5 * (pw - bbw))
+                in promoteLoc $ \_ -> let l1 = lpath lx bbhh `at` ww
+                                          l2 = rpath lx bbhh `at` ee
+                                      in l1 <> l2
 
-    lbracket     = openStrokePath [ vvec hh, hvec bracketw ]
-
-    rbracket     = moveStart (dispH (2*hw)) $ 
-                      openStrokePath [ vvec hh, hvec (-bracketw) ]
-
-    num_text     = moveStart (dispH hw . dispV th) $ 
-                      centeredTwoThirdsText (show n) 
-
-
-numberWidth :: Int -> AfmUnit
-numberWidth i | i < 10    = plet_number_width
-              | otherwise = plet_number_width + numberWidth (i `div` 10)
-
--- ERROR - currently this uses singleLineCC, but the examples
--- aren\'t loading font metrics...
-
-centeredTwoThirdsText :: String -> LocGraphic AfmUnit
-centeredTwoThirdsText ss =
-    localize (scale_point_size (2/3)) $ 
-      locGraphic_ $ startAddrR CENTER $ textline ss 
+    lpath w h = execPathSpec $ lines [ go_left w, go_down h ]
+    rpath w h = execPathSpec $ lines [ go_right w, go_down h ]
 
 
 
--}
+-- Caution - changing the Point size when working with a 
+-- contextual unit like AfmUnit looks as though it needs care.
+-- 
+-- It looks like it scales the start vector differently to the 
+-- other parts of the drawing.
+--
+-- (I\'ll have to work out o paper what is going on...)
+--

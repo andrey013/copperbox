@@ -8,6 +8,7 @@ import Wumpus.Rhythm.Djembe.HelveticaLoader
 import Wumpus.Rhythm.Djembe.Parameters
 
 import Wumpus.Drawing.Colour.SVGColours         -- package: wumpus-drawing
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -33,6 +34,7 @@ makeCtx = fill_colour black . set_font helvetica . metricsContext 18
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
+    drawl (P2 0 0) $ smallCirc
     drawl (P2 0 0) $ distribH 50 [ fn $ underscore $ charNote 'X'
                                  , fn $ parens $ charNote 'P'
                                  , fn $ parens $ diskNote
@@ -42,19 +44,24 @@ pic01 = udrawTracing (0::Double) $ do
                                  , fn $ angleStrike $ diskNote
                                  ]
 
+    drawl (P2 0 100) $ smallCirc
     drawl (P2 0 100) $ runDjembeDraw unit_width_12_8 $ do
         { lrepeat
+--        ; accent (leadinAccent)
+        ; accent domHand
         ; drawBeamGroup [ Note $ strike disk
-                         , Note $ muffled disk
-                         , Swing $ optional (NoteChar 'X', zeroDeco)
-                         , Div disk disk
-                         , Note (NoteNone, zeroDeco)
-                         , Flam disk FlamDisk
+                        , Note $ muffled disk
+                        , Swing $ optional (NoteChar 'X', zeroDeco)
+                        , Div disk disk
+                        , Note (NoteNone, zeroDeco)
+                        , Flam disk FlamDisk
                         ]
         ; rrepeat
         }
      
     drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
+    drawl (P2 0 200) $ uconvF $ pletBracket 4000 2
+    drawl (P2 0 200) $ smallCirc
   where
     fn = runPosNoteHead 0
     disk = (NoteDisk, zeroDeco)

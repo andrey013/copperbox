@@ -16,7 +16,8 @@
 
 module Wumpus.Drawing.Text.Base.PosChar
   ( 
-    LocRectChar
+    PosChar
+  , LocRectChar
 
   , posChar
   , posEscChar

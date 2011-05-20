@@ -38,6 +38,9 @@ module Wumpus.Rhythm.Djembe.Parameters
 
 
   -- * Accents
+  , accent_stroke_ydist
+  , accent_hand_ydist
+
   , accent_baseline
   , hand_baseline
   , hand_side_length
@@ -71,6 +74,8 @@ module Wumpus.Rhythm.Djembe.Parameters
   , lo_repeat_dot_center
 
   -- * Tuplet grouping
+  , plet_ydist
+
   , plet_bracket_baseline
   , plet_number_height
   , plet_number_width
@@ -144,6 +149,19 @@ histroke_char_baseline  = 1380
 
 --------------------------------------------------------------------------------
 -- Accents and annotations
+
+
+
+-- | stem_top to char baseline of \'<\'
+--
+accent_stroke_ydist     :: AfmUnit
+accent_stroke_ydist     = 32
+
+
+-- | baseline to center of hand rectangle.
+--
+accent_hand_ydist       ::  AfmUnit
+accent_hand_ydist       = 448
 
 -- | Baseline for accents drawn with the less-than \'\<\' char.
 --
@@ -253,6 +271,12 @@ lo_repeat_dot_center    = 842
 
 --------------------------------------------------------------------------------
 -- Tuplets
+
+-- | stem_top to plet_baseline.
+--
+plet_ydist              :: AfmUnit
+plet_ydist              = 32
+
 
 plet_bracket_baseline   :: AfmUnit
 plet_bracket_baseline   = 2356
