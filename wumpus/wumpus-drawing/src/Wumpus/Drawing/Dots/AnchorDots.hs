@@ -334,7 +334,8 @@ dotTriangle :: (Real u, Floating u, InterpretUnit u, Tolerance u)
 dotTriangle = intoLocImage (triangleLDO 1) SD.dotTriangle
 
 
-intoLocImage :: LocQuery u a -> LocImage u z -> LocImage u a
+intoLocImage :: InterpretUnit u 
+             => LocQuery u a -> LocImage u z -> LocImage u a
 intoLocImage mq gf = promoteLoc $ \pt -> 
                      askDC >>= \ctx -> 
                      let ans = runLocQuery pt ctx mq

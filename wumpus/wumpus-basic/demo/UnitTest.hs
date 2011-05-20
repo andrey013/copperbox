@@ -45,7 +45,8 @@ thing = a `mappend` b
           dcRectangle FILL_STROKE 4 4
 
 
-
+-- Pica is not contextual, so the localize should not matter...
+--
 thing2 :: LocGraphic Pica
 thing2 = a `mappend` b
   where

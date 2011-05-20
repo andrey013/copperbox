@@ -176,13 +176,13 @@ instance Monad m => Monad (RefTraceT u z m) where
 
 -- LocTraceM
 
-instance Num u => LocTraceM (RefTrace u z) where
+instance InterpretUnit u => LocTraceM (RefTrace u z) where
   insertl gf  = RefTrace $ \s0 -> ((), insertSt gf s0)
   moveBy v    = RefTrace $ \s0 -> ((), moveSt v s0)
   location    = RefTrace $ \s0 -> (current_tip s0, s0)
 
 
-instance (Monad m, Num u) => LocTraceM (RefTraceT u z m) where
+instance (Monad m, InterpretUnit u) => LocTraceM (RefTraceT u z m) where
   insertl gf  = RefTraceT $ \s0 -> return ((), insertSt gf s0)
   moveBy v    = RefTraceT $ \s0 -> return ((), moveSt v s0)
   location    = RefTraceT $ \s0 -> return (current_tip s0, s0)
@@ -191,13 +191,14 @@ instance (Monad m, Num u) => LocTraceM (RefTraceT u z m) where
 
 -- Run functions
 
-runRefTrace :: Num u => RefTrace u ans a -> LocImage u a
+runRefTrace :: InterpretUnit u => RefTrace u ans a -> LocImage u a
 runRefTrace mf = post $ getRefTrace mf zeroRefSt
   where
     post (a,st) = replaceAns a $ reconcileRefSt st
 
 
-runRefTraceT :: (Monad m, Num u) => RefTraceT u ans m a -> m (LocImage u a)
+runRefTraceT :: (Monad m, InterpretUnit u) 
+             => RefTraceT u ans m a -> m (LocImage u a)
 runRefTraceT mf = liftM post $ getRefTraceT mf zeroRefSt
   where
     post (a,st) = replaceAns a $ reconcileRefSt st
@@ -206,7 +207,7 @@ runRefTraceT mf = liftM post $ getRefTraceT mf zeroRefSt
 
 -- Note we have to drop the vector
 
-reconcileRefSt :: RefSt u z -> LocGraphic u
+reconcileRefSt :: InterpretUnit u => RefSt u z -> LocGraphic u
 reconcileRefSt st = 
     step (ref_acc st) (JL.toList $ ref_links st)
   where
@@ -237,7 +238,7 @@ class Monad m => RefTraceM (m :: * -> *) where
   insertRef   :: (MonRef m ~ a, MonUnit (m ()) ~ u) => LocImage u a -> m Ref
   linkRef     :: (MonRef m ~ a, MonUnit (m ()) ~ u) => LinkRef u a -> m ()
 
-instance Num u => RefTraceM (RefTrace u z) where
+instance InterpretUnit u => RefTraceM (RefTrace u z) where
   type MonRef (RefTrace u z) = z
   insertRef img = RefTrace $ \s0 -> let (ix,s1) = incrementSt img s0
                                     in (Ref ix, s1)
@@ -249,7 +250,7 @@ moveSt :: Num u => Vec2 u -> RefStF u z
 moveSt v = (\s i -> s { current_tip = i ^+^ v }) 
              <*> current_tip
 
-insertSt :: Num u => LocImage u z2 -> RefStF u ans
+insertSt :: InterpretUnit u => LocImage u z2 -> RefStF u ans
 insertSt gf = (\s ac v1 -> let g1 = ignoreAns $ moveStart v1 gf
                            in s { ref_acc = sdecorate ac g1 }) 
                 <*> ref_acc <*> current_tip
@@ -259,7 +260,7 @@ snocLink fn = (\s i -> s { ref_links = JL.snoc i fn })
                 <*> ref_links
 
 
-incrementSt :: Num u 
+incrementSt :: InterpretUnit u 
             => LocImage u ans -> RefSt u ans -> (Int, RefSt u ans)
 incrementSt img s0 = (uid_count s0, upd s0)
   where

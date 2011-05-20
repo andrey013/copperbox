@@ -197,7 +197,7 @@ verticalLines numv h uw props@(GridProps { gp_minor_subdivs = subs })
 
 
 
-minorMajor :: Num u 
+minorMajor :: InterpretUnit u 
            => Int -> Int -> Vec2 u -> LocGraphic u -> LocGraphic u 
            -> LocGraphic u
 minorMajor count alt mv mnr mjr = execLocTrace (step count)

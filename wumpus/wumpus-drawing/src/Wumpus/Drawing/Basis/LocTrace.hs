@@ -216,22 +216,22 @@ class LocTraceM m => LocForkTraceM (m :: * -> *) where
 
 
 
-instance Num u => LocTraceM (LocTrace u) where
+instance InterpretUnit u => LocTraceM (LocTrace u) where
   insertl gf  = LocTrace $ \v0 -> ((), v0, moveStart v0 gf)
   moveBy v    = LocTrace $ \v0 -> ((), v0 ^+^ v, mempty)
   location    = LocTrace $ \v0 -> (v0, v0, mempty)
 
-instance Num u => LocForkTraceM (LocTrace u) where
+instance InterpretUnit u => LocForkTraceM (LocTrace u) where
   reset       = LocTrace $ \_  -> ((), V2 0 0, mempty)
   branch ma   = LocTrace $ \v0 -> let (a,_,o) = getLocTrace ma v0 in (a,v0,o)
   
 
-instance (Monad m, Num u) => LocTraceM (LocTraceT u m) where
+instance (Monad m, InterpretUnit u) => LocTraceM (LocTraceT u m) where
   insertl gf  = LocTraceT $ \v0 -> return ((), v0, moveStart v0 gf)
   moveBy v    = LocTraceT $ \v0 -> return ((), v0 ^+^ v, mempty)
   location    = LocTraceT $ \v0 -> return (v0, v0, mempty)
 
-instance (LocTraceM m, Num u) => LocForkTraceM (LocTraceT u m) where
+instance (LocTraceM m, InterpretUnit u) => LocForkTraceM (LocTraceT u m) where
   reset       = LocTraceT $ \_  -> return ((), V2 0 0, mempty)
   branch ma   = LocTraceT $ \v0 -> getLocTraceT ma v0 >>= \(a,_,o) -> 
                                    return (a,v0,o)

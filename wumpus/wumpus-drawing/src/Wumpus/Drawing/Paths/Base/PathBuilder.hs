@@ -431,7 +431,7 @@ changePen upd =
 
 
 
-insertGf :: Num u => LocGraphic u -> BuildStF u
+insertGf :: InterpretUnit u => LocGraphic u -> BuildStF u
 insertGf gf = 
     (\s ins v1 -> let g1 = moveStart v1 gf
                   in s { ins_trace = ins `mappend` g1 })

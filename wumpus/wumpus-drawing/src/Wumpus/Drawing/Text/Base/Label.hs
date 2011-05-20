@@ -52,7 +52,7 @@ import Wumpus.Core                              -- package: wumpus-core
 type BoundedLocRectGraphic u = RectAddress -> LocImage u (BoundingBox u)
 
 
-locImageLabel :: Floating u 
+locImageLabel :: InterpretUnit u 
               => (a -> Anchor u) 
               -> RectAddress 
               -> (RectAddress -> LocImage u (BoundingBox u)) 
@@ -63,33 +63,33 @@ locImageLabel fn rpos mklabel obj = promoteLoc $ \pt ->
 
 
 
-label_center_of :: (Floating u, CenterAnchor a, u ~ DUnit a) 
+label_center_of :: (InterpretUnit u, CenterAnchor a, u ~ DUnit a) 
                 => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_center_of = locImageLabel center CENTER
 
 
-label_left_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+label_left_of :: (InterpretUnit u, CardinalAnchor a, u ~ DUnit a) 
               => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_left_of = locImageLabel west EE
 
-label_right_of :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+label_right_of :: (InterpretUnit u, CardinalAnchor a, u ~ DUnit a) 
                => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_right_of = locImageLabel east WW
 
 
-label_above :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+label_above :: (InterpretUnit u, CardinalAnchor a, u ~ DUnit a) 
             => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_above = locImageLabel north SS
 
 
-label_below :: (Floating u, CardinalAnchor a, u ~ DUnit a) 
+label_below :: (InterpretUnit u, CardinalAnchor a, u ~ DUnit a) 
             => BoundedLocRectGraphic u -> LocImage u a -> LocImage u a
 label_below = locImageLabel south NN
 
 
 
 
-connectorPathLabel :: Floating u 
+connectorPathLabel :: InterpretUnit u 
                    => (AbsPath u -> Point2 u) 
                    -> RectAddress
                    -> BoundedLocRectGraphic u
@@ -99,24 +99,24 @@ connectorPathLabel fn rpos lbl img =
     selaborate img  (\a -> ignoreAns $ lbl rpos `at` (fn a))
 
 
-label_midway_of :: (Real u, Floating u) 
+label_midway_of :: (Real u, Floating u, InterpretUnit u) 
                 => RectAddress 
                 -> BoundedLocRectGraphic u 
                 -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_midway_of = connectorPathLabel midway_
 
 
-label_atstart_of :: (Real u, Floating u) 
+label_atstart_of :: (Real u, Floating u, InterpretUnit u) 
                  => RectAddress 
                  -> BoundedLocRectGraphic u 
                  -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atstart_of = connectorPathLabel atstart_
 
 
-label_atend_of :: (Real u, Floating u) 
-                 => RectAddress 
-                 -> BoundedLocRectGraphic u
-                 -> Image u (AbsPath u) -> Image u (AbsPath u)
+label_atend_of :: (Real u, Floating u, InterpretUnit u) 
+               => RectAddress 
+               -> BoundedLocRectGraphic u
+               -> Image u (AbsPath u) -> Image u (AbsPath u)
 label_atend_of = connectorPathLabel atend_
 
 
