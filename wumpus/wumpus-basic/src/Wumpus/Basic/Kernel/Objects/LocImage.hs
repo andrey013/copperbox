@@ -76,7 +76,7 @@ import Data.Monoid
 -- /primitive/ (PrimW).
 --
 newtype LocImage u a = LocImage { 
-          getLocImage :: Point2 u -> Image u a }
+          getLocImage :: DPoint2 -> Image u a }
 
 type instance DUnit (LocImage u a) = u
 
@@ -169,19 +169,21 @@ instance Decorate LocImage where
   hyperlink xl ma = LocImage $ \pt -> hyperlink xl $ getLocImage ma pt 
 
 
-runLocImage :: Point2 u -> DrawingContext -> LocImage u a -> PrimW u a
-runLocImage pt ctx mf = runImage ctx (getLocImage mf pt)
+runLocImage :: InterpretUnit u 
+            => Point2 u -> DrawingContext -> LocImage u a -> PrimW u a
+runLocImage pt ctx mf = 
+    let dpt = normalizeF (dc_font_size ctx) pt in runImage ctx (getLocImage mf dpt)
 
 runLocQuery :: Point2 u -> DrawingContext -> LocQuery u a -> a
 runLocQuery pt ctx mf = runQuery ctx (getLocQuery mf pt)
 
 
 
-promoteLoc ::  (Point2 u -> Image u a) -> LocImage u a
-promoteLoc k = LocImage $ \pt -> k pt
+promoteLoc ::  InterpretUnit u => (Point2 u -> Image u a) -> LocImage u a
+promoteLoc k = LocImage $ \pt -> dinterpCtxF pt >>= \upt -> k upt
 
-applyLoc :: LocImage u a -> Point2 u -> Image u a
-applyLoc mq pt = getLocImage mq pt
+applyLoc :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
+applyLoc mq pt = zapQuery (normalizeCtxF pt) >>= \dpt -> getLocImage mq dpt
 
 
 qpromoteLoc :: (Point2 u -> Query u a) -> LocQuery u a
@@ -217,27 +219,35 @@ zapLocQuery mq pt = askDC >>= \ctx -> let a = runLocQuery pt ctx mq in return a
 --------------------------------------------------------------------------------
 -- Affine instances
 
-instance (Real u, Floating u, Rotate a) => Rotate (LocImage u a) where
+instance (Real u, Floating u, InterpretUnit u, Rotate a) => 
+    Rotate (LocImage u a) where
   rotate ang ma = promoteLoc $ \pt -> 
-                     fmap (rotate ang) $ getLocImage ma (rotate ang pt)
+                     zapQuery (normalizeCtxF pt) >>= \dpt ->  
+                     fmap (rotate ang) $ getLocImage ma (rotate ang dpt)
 
 
-instance (Real u, Floating u, RotateAbout a, ScalarUnit u, u ~ DUnit a) => 
+instance (Real u, Floating u, InterpretUnit u, RotateAbout a, u ~ DUnit a) => 
     RotateAbout (LocImage u a) where
-  rotateAbout ang pt ma = promoteLoc $ \p0 -> 
+  rotateAbout ang pt ma = promoteLoc $ \p0 ->
+                            zapQuery (normalizeCtxF p0) >>= \dp0 ->  
+                            zapQuery (normalizeCtxF pt) >>= \dpt ->  
                             fmap (rotateAbout ang pt) $ 
-                              getLocImage ma (rotateAbout ang pt p0)
+                              getLocImage ma (rotateAbout ang dpt dp0)
 
 
-instance (Fractional u, Scale a) => Scale (LocImage u a) where
+instance (Fractional u, InterpretUnit u, Scale a) => Scale (LocImage u a) where
   scale sx sy ma = promoteLoc $ \pt -> 
-                   fmap (scale sx sy) $ getLocImage ma (scale sx sy pt)
+                     zapQuery (normalizeCtxF pt) >>= \dpt -> 
+                     fmap (scale sx sy) $ getLocImage ma (scale sx sy dpt)
 
-instance (Num u, Translate a, ScalarUnit u, u ~ DUnit a) => 
+instance (InterpretUnit u, Translate a, ScalarUnit u, u ~ DUnit a) => 
     Translate (LocImage u a) where
   translate dx dy ma = promoteLoc $ \pt -> 
+                         zapQuery (normalizeCtxF pt) >>= \dpt -> 
+                         zapQuery (normalizeCtx dx)  >>= \ddx ->
+                         zapQuery (normalizeCtx dy)  >>= \ddy ->
                          fmap (translate dx dy) $ 
-                           getLocImage ma (translate dx dy pt)
+                             getLocImage ma (translate ddx ddy dpt)
 
 --------------------------------------------------------------------------------
 
@@ -251,10 +261,7 @@ instance UConvert LocImage where
 --
 uconvLocImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                => LocImage u (t u) -> LocImage u1 (t u1)
-uconvLocImageF ma = LocImage $ \pt -> 
-    getFontSize >>= \sz -> 
-    let ptu = uconvertF sz pt
-    in uconvF $ getLocImage ma ptu
+uconvLocImageF ma = LocImage $ \pt -> uconvF $ getLocImage ma pt
 
 
 
@@ -262,10 +269,7 @@ uconvLocImageF ma = LocImage $ \pt ->
 --
 uconvLocImageZ :: (InterpretUnit u, InterpretUnit u1) 
                => LocImage u a -> LocImage u1 a
-uconvLocImageZ ma = LocImage $ \pt -> 
-    getFontSize >>= \sz ->  
-    let ptu = uconvertF sz pt
-    in uconvZ $ getLocImage ma ptu
+uconvLocImageZ ma = LocImage $ \pt -> uconvZ $ getLocImage ma pt
 
 
 -- | Having /empty/ at the specific 'LocImage' type is useful.
@@ -279,8 +283,9 @@ emptyLocImage = mempty
 -- Note - maybe this should just be an operator on LocImage...
 --
 
-moveStart :: Num u => Vec2 u -> LocImage u a -> LocImage u a
-moveStart v1 ma = LocImage $ \pt -> getLocImage ma (pt .+^ v1) 
+moveStart :: InterpretUnit u => Vec2 u -> LocImage u a -> LocImage u a
+moveStart v1 ma = LocImage $ \pt -> 
+    zapQuery (normalizeCtxF v1) >>= \dv -> getLocImage ma (pt .+^ dv) 
 
 
 
@@ -290,8 +295,8 @@ infixr 1 `at`
 -- | Downcast a 'LocImage' function by applying it to the supplied 
 -- point, making an 'Image'. 
 -- 
-at :: LocImage u a -> Point2 u -> Image u a
-at mf pt = getLocImage mf pt
+at :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
+at mf pt = zapQuery (normalizeCtxF pt) >>= \dpt -> getLocImage mf dpt
 
 
 --------------------------------------------------------------------------------

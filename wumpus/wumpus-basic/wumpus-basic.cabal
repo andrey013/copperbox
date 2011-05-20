@@ -36,6 +36,12 @@ description:
     no longer so pertinent now that Image, LocImage etc. are 
     newtypes rther than /ContextFuns/.
   .
+  * Changed internals of LocImage, LocThetaImage and  Connector 
+    types so the internal points always have Double (PostScript 
+    point) as the unit. This fixes a bug where otherwise changing
+    the font size for drawings with Em or En units would break the
+    layout.
+  .
   v0.17.0 to v0.18.0:
   . 
   * Major change - removed @ContextFun@ from @Kernel.Base@. Now 

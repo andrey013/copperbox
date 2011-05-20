@@ -132,7 +132,7 @@ appendW (o0,pf0) (o1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
 -- argument (start-point is implicit). The corresponding answer is 
 -- an /arity one/ Graphic that needs drawing with the start-point.
 --
-runPosObject :: Fractional u 
+runPosObject :: (Fractional u, InterpretUnit u) 
              => RectAddress -> PosObject u -> LocImage u (BoundingBox u)
 runPosObject addr (PosObject mf) = promoteLoc $ \pt ->
    askDC >>= \ctx -> 
@@ -154,7 +154,8 @@ runPosObject addr (PosObject mf) = promoteLoc $ \pt ->
 -- PosObject type is considered as a specialized object it does
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
-makePosObject :: Query u (Orientation u) -> LocGraphic u -> PosObject u
+makePosObject :: InterpretUnit u
+              => Query u (Orientation u) -> LocGraphic u -> PosObject u
 makePosObject qortt gf = PosObject body
   where
     body = askDC >>= \ctx -> 
@@ -182,7 +183,8 @@ localPosObject :: DrawingContextF -> PosObject u -> PosObject u
 localPosObject upd = PosObject . localize upd . getPosObject
 
 
-decoPosObject :: (Orientation u -> LocGraphic u) 
+decoPosObject :: InterpretUnit u 
+              => (Orientation u -> LocGraphic u) 
               -> ZDeco -> PosObject u -> PosObject u
 decoPosObject fn zdec po = PosObject body
   where

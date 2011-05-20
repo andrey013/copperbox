@@ -80,7 +80,10 @@ import Wumpus.Core                              -- package: wumpus-core
 import Control.Applicative
 
 
-
+--
+-- NOTE 20.5.11 - The normalize functions are not satisfactory,
+-- point size is too promiscuous for evaluation contextual units.
+--
 
 normalizeCtx :: (DrawingCtxM m, InterpretUnit u) => u -> m Double
 normalizeCtx u = (\sz -> normalize sz u) <$> pointSize

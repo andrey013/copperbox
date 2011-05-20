@@ -348,7 +348,7 @@ drawi gf = askDC >>= \ctx ->
 -- Commonly, it is used to draw 'LocGraphic' objects which 
 -- have no /answer/.
 -- 
-drawl :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+drawl :: (TraceM m, InterpretUnit u, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => Anchor u -> LocImage u a -> m ()
 drawl ancr img = drawli ancr img >> return ()
 
@@ -360,7 +360,7 @@ drawl ancr img = drawli ancr img >> return ()
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawli :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+drawli :: (TraceM m, InterpretUnit u, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> LocImage u a -> m a
 drawli pt gf = askDC >>= \ctx -> 
                let (PrimW o a) = runLocImage pt ctx gf
@@ -385,7 +385,7 @@ drawli pt gf = askDC >>= \ctx ->
 -- Commonly, it is used to draw 'ConnectorGraphic' objects which 
 -- have no /answer/.
 -- 
-drawc :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+drawc :: (InterpretUnit u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => Anchor u -> Anchor u -> ConnectorImage u a -> m ()
 drawc an0 an1 img = drawci an0 an1 img >> return () 
 
@@ -396,7 +396,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawci :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+drawci :: (InterpretUnit u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> Anchor u -> ConnectorImage u a -> m a
 drawci p0 p1 img = drawi (connect p0 p1 img)
 
@@ -415,7 +415,8 @@ drawci p0 p1 img = drawi (connect p0 p1 img)
 -- Commonly, it is used to draw 'LocGraphic' objects which 
 -- have no /answer/.
 -- 
-node :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+node :: ( Fractional u, InterpretUnit u
+        , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
      => (Int,Int) -> LocImage u a -> m ()
 node coord gf = nodei coord gf >> return ()
 
@@ -424,7 +425,8 @@ node coord gf = nodei coord gf >> return ()
 -- actual position is scaled according to the 
 -- @snap_grid_factors@ in the /drawing context/.
 -- 
-nodei :: (Fractional u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
+nodei :: ( Fractional u, InterpretUnit u
+         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => (Int,Int) -> LocImage u a -> m a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
@@ -445,7 +447,8 @@ nodei coord gf = askDC >>= \ctx ->
 -- Commonly, it is used to draw 'LocGraphic' objects which 
 -- have no /answer/.
 -- 
-drawrc :: ( Real u, Floating u, DrawingCtxM m, TraceM m 
+drawrc :: ( Real u, Floating u, InterpretUnit u
+          , DrawingCtxM m, TraceM m 
           , CenterAnchor a, RadialAnchor a
           , CenterAnchor b, RadialAnchor b
           , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b 
@@ -460,7 +463,8 @@ drawrc a b gf = drawrci a b gf >> return ()
 -- are the radial points on the objects borders that cross the 
 -- projected line.
 -- 
-drawrci :: ( Real u, Floating u, DrawingCtxM m, TraceM m
+drawrci :: ( Real u, Floating u, InterpretUnit u
+           , DrawingCtxM m, TraceM m
            , CenterAnchor a, RadialAnchor  a
            , CenterAnchor b, RadialAnchor  b
            , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b

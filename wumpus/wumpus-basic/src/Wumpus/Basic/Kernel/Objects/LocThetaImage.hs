@@ -61,7 +61,7 @@ import Data.Monoid
 -- /primitive/ (PrimW).
 --
 newtype LocThetaImage u a = LocThetaImage { 
-          getLocThetaImage :: Point2 u -> Radian -> Image u a }
+          getLocThetaImage :: DPoint2 -> Radian -> Image u a }
 
 type instance DUnit (LocThetaImage u a) = u
 
@@ -168,10 +168,13 @@ instance Decorate LocThetaImage where
 
 
 
-runLocThetaImage :: Point2 u -> Radian -> DrawingContext 
+runLocThetaImage :: InterpretUnit u 
+                 => Point2 u -> Radian -> DrawingContext 
                  -> LocThetaImage u a 
                  -> PrimW u a
-runLocThetaImage pt incl ctx mf = runImage ctx (getLocThetaImage mf pt incl)
+runLocThetaImage pt incl ctx mf = 
+    let dpt = normalizeF (dc_font_size ctx) pt 
+    in runImage ctx (getLocThetaImage mf dpt incl)
 
 
 runLocThetaQuery :: Point2 u -> Radian -> DrawingContext 
@@ -180,11 +183,15 @@ runLocThetaQuery :: Point2 u -> Radian -> DrawingContext
 runLocThetaQuery pt incl ctx mf = runQuery ctx (getLocThetaQuery mf pt incl)
 
 
-promoteLocTheta ::  (Point2 u -> Radian -> Image u a) -> LocThetaImage u a
-promoteLocTheta k = LocThetaImage $ \pt ang -> k pt ang
+promoteLocTheta ::  InterpretUnit u 
+                => (Point2 u -> Radian -> Image u a) -> LocThetaImage u a
+promoteLocTheta k = LocThetaImage $ \pt ang -> 
+                      dinterpCtxF pt >>= \upt -> k upt ang
 
-applyLocTheta :: LocThetaImage u a -> Point2 u -> Radian -> Image u a
-applyLocTheta mq pt ang = getLocThetaImage mq pt ang
+applyLocTheta :: InterpretUnit u 
+              => LocThetaImage u a -> Point2 u -> Radian -> Image u a
+applyLocTheta mq pt ang = 
+    zapQuery (normalizeCtxF pt) >>= \dpt -> getLocThetaImage mq dpt ang
 
 
 qpromoteLocTheta :: (Point2 u -> Radian -> Query u a) -> LocThetaQuery u a
@@ -202,6 +209,7 @@ zapLocThetaQuery mq pt ang = askDC >>= \ctx ->
 
 
 
+
 instance UConvert LocThetaImage where
   uconvF = uconvLocThetaImageF
   uconvZ = uconvLocThetaImageZ
@@ -213,9 +221,7 @@ instance UConvert LocThetaImage where
 uconvLocThetaImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                     => LocThetaImage u (t u) -> LocThetaImage u1 (t u1)
 uconvLocThetaImageF ma = LocThetaImage $ \pt ang -> 
-    getFontSize >>= \sz -> 
-    let ptu = uconvertF sz pt
-    in uconvF $ getLocThetaImage ma ptu ang
+    uconvF $ getLocThetaImage ma pt ang
 
 
 
@@ -225,9 +231,7 @@ uconvLocThetaImageF ma = LocThetaImage $ \pt ang ->
 uconvLocThetaImageZ :: (InterpretUnit u, InterpretUnit u1) 
                     => LocThetaImage u a -> LocThetaImage u1 a
 uconvLocThetaImageZ ma = LocThetaImage $ \pt ang -> 
-    getFontSize >>= \sz -> 
-    let ptu = uconvertF sz pt
-    in uconvZ $ getLocThetaImage ma ptu ang
+    uconvZ $ getLocThetaImage ma pt ang
 
 
 
@@ -246,8 +250,12 @@ infixr 1 `incline`
 -- | Downcast a 'LocThetaImage' function by applying it to the 
 -- supplied angle, making a 'LocImage'. 
 -- 
-incline :: LocThetaImage u a -> Radian -> LocImage u a
-incline ma incl = promoteLoc $ \pt -> getLocThetaImage ma pt incl
+incline :: InterpretUnit u => LocThetaImage u a -> Radian -> LocImage u a
+incline ma incl = promoteLoc $ \pt -> 
+                    zapQuery (normalizeCtxF pt) >>= \dpt ->
+                    getLocThetaImage ma dpt incl
 
-atIncline :: LocThetaImage u a -> Point2 u -> Radian -> Image u a
-atIncline ma pt incl = getLocThetaImage ma pt incl
+atIncline :: InterpretUnit u 
+          => LocThetaImage u a -> Point2 u -> Radian -> Image u a
+atIncline ma pt incl = zapQuery (normalizeCtxF pt) >>= \dpt -> 
+                       getLocThetaImage ma dpt incl

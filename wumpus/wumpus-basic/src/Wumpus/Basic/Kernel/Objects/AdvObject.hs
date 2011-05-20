@@ -123,7 +123,7 @@ instance (InterpretUnit u) => Monoid (AdvObject u) where
 
 -- | Run an 'AdvObject' turning it into an 'LocImage'.
 --
-runAdvObject :: AdvObject u -> LocImage u (Vec2 u)
+runAdvObject :: InterpretUnit u => AdvObject u -> LocImage u (Vec2 u)
 runAdvObject (AdvObject mf) = promoteLoc $ \pt -> 
    askDC >>= \ctx -> 
    let (v1,df) = runQuery ctx mf
@@ -136,7 +136,8 @@ runAdvObject (AdvObject mf) = promoteLoc $ \pt ->
 -- generates the answer displacement vector and a 'LocGraphic' 
 -- that draws the 'AdvObject'.
 --
-makeAdvObject :: Query u (Vec2 u) -> LocGraphic u -> AdvObject u
+makeAdvObject :: InterpretUnit u 
+              => Query u (Vec2 u) -> LocGraphic u -> AdvObject u
 makeAdvObject mq gf = AdvObject body
   where
     body = askDC >>= \ctx -> 

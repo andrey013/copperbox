@@ -250,17 +250,13 @@ instance UConvert Image where
 uconvImageF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
             => Image u (t u) -> Image u1 (t u1) 
 uconvImageF ma = Image $ \ctx -> 
-                   let sz  = dc_font_size ctx
-                       ans = getImage ma ctx
-                   in szconvPrimF sz ans
+    szconvPrimF (dc_font_size ctx) $ getImage ma ctx
 
 
 uconvImageZ :: (InterpretUnit u, InterpretUnit u1) 
             => Image u a -> Image u1 a
 uconvImageZ ma = Image $ \ctx -> 
-                   let sz  = dc_font_size ctx
-                       ans = getImage ma ctx
-                   in szconvPrimZ sz ans
+    szconvPrimZ (dc_font_size ctx) $ getImage ma ctx
 
 
 -- | Having /empty/ at the specific 'Image' type is useful.

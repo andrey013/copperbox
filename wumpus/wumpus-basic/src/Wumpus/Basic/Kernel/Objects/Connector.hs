@@ -58,7 +58,7 @@ import Data.Monoid
 -- end points to a polymorphic /answer/ and a graphic /primitive/.
 --
 newtype ConnectorImage u a = ConnectorImage { 
-          getConnectorImage :: Point2 u -> Point2 u -> Image u a }
+          getConnectorImage :: DPoint2 -> DPoint2 -> Image u a }
 
 
 type instance DUnit (ConnectorImage u a) = u
@@ -169,10 +169,14 @@ instance Decorate ConnectorImage where
 
 
 
-runConnectorImage :: Point2 u -> Point2 u 
+runConnectorImage :: InterpretUnit u 
+                  => Point2 u -> Point2 u 
                   -> DrawingContext -> ConnectorImage u a 
                   -> PrimW u a
-runConnectorImage p0 p1 ctx mf = runImage ctx (getConnectorImage mf p0 p1)
+runConnectorImage p0 p1 ctx mf = 
+    let dp0 = normalizeF (dc_font_size ctx) p0
+        dp1 = normalizeF (dc_font_size ctx) p1 
+    in runImage ctx (getConnectorImage mf dp0 dp1)
 
 
 runConnectorQuery :: Point2 u -> Point2 u 
@@ -181,17 +185,27 @@ runConnectorQuery :: Point2 u -> Point2 u
 runConnectorQuery p0 p1 ctx mf = runQuery ctx (getConnectorQuery mf p0 p1)
 
 
-connect :: Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
-connect p0 p1 mf = getConnectorImage mf p0 p1
+connect :: InterpretUnit u 
+        => Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
+connect p0 p1 mf = 
+    zapQuery (normalizeCtxF p0) >>= \dp0 -> 
+    zapQuery (normalizeCtxF p1) >>= \dp1 -> 
+    getConnectorImage mf dp0 dp1
 
 
 
 
-promoteConn :: (Point2 u -> Point2 u -> Image u a) -> ConnectorImage u a
-promoteConn fn       = ConnectorImage $ \p0 p1 -> fn p0 p1
+promoteConn :: InterpretUnit u 
+            => (Point2 u -> Point2 u -> Image u a) -> ConnectorImage u a
+promoteConn k = ConnectorImage $ \p0 p1 ->
+    dinterpCtxF p0 >>= \up0 -> dinterpCtxF p1 >>= \up1 -> k up0 up1
 
-applyConn :: ConnectorImage u a -> Point2 u -> Point2 u -> Image u a
-applyConn mf p0 p1   = getConnectorImage mf p0 p1
+applyConn :: InterpretUnit u 
+          => ConnectorImage u a -> Point2 u -> Point2 u -> Image u a
+applyConn mf p0 p1 = 
+    zapQuery (normalizeCtxF p0) >>= \dp0 -> 
+    zapQuery (normalizeCtxF p1) >>= \dp1 -> 
+    getConnectorImage mf dp0 dp1
 
 
 qpromoteConn :: (Point2 u -> Point2 u -> Query u a) -> ConnectorQuery u a
@@ -220,10 +234,7 @@ instance UConvert ConnectorImage where
 uconvConnectorImageF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                      => ConnectorImage u (t u) -> ConnectorImage u1 (t u1)
 uconvConnectorImageF ma = ConnectorImage $ \p0 p1 -> 
-    getFontSize >>= \sz -> 
-    let p0u = uconvertF sz p0
-        p1u = uconvertF sz p1
-    in uconvImageF $ getConnectorImage ma p0u p1u
+    uconvF $ getConnectorImage ma p0 p1
 
 
 
@@ -233,10 +244,7 @@ uconvConnectorImageF ma = ConnectorImage $ \p0 p1 ->
 uconvConnectorImageZ :: (InterpretUnit u, InterpretUnit u1) 
                      => ConnectorImage u a -> ConnectorImage u1 a
 uconvConnectorImageZ ma = ConnectorImage $ \p0 p1 -> 
-    getFontSize >>= \sz -> 
-    let p0u = uconvertF sz p0
-        p1u = uconvertF sz p1
-    in uconvImageZ $ getConnectorImage ma p0u p1u
+    uconvZ $ getConnectorImage ma p0 p1
 
 -- | Having /empty/ at the specific 'ConnectorImage' type is useful.
 -- 
