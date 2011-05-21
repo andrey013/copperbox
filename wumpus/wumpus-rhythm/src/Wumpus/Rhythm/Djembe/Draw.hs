@@ -137,9 +137,9 @@ note1 note = askUnitWidth >>= \uw -> insertBLC (body note uw)
       where
         ga    = runPosNoteHead 0 $ dnoteHeadPos a
         gb    = moveStart flamv (flamHead b)
-        flamv = go_left flam_xminor ^+^ go_up flam_ynorth
+        flamv = go_left flam_xdist ^+^ go_up flam_ydist
 
-    body (Swing a)  _       = runPosNoteHead flam_xminor $ dnoteHeadPos a
+    body (Swing a)  _       = runPosNoteHead flam_xdist $ dnoteHeadPos a
 
     body (Div a b)  uw      = ga `mappend` gb
       where

@@ -34,7 +34,6 @@ makeCtx = fill_colour black . set_font helvetica . metricsContext 16
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
-    drawl (P2 0 0) $ smallCirc
     drawl (P2 0 0) $ distribH 50 [ fn $ underscore $ charNote 'X'
                                  , fn $ parens $ charNote 'P'
                                  , fn $ parens $ diskNote
@@ -42,9 +41,9 @@ pic01 = udrawTracing (0::Double) $ do
                                  , fn $ charNote 'g'
                                  , fn $ periodNote
                                  , fn $ angleStrike $ diskNote
+                                 , fn $ angleStrike $ charNote 'X'
                                  ]
 
-    drawl (P2 0 100) $ smallCirc
     drawl (P2 0 100) $ runDjembeDraw unit_width_12_8 $ do
         { lrepeat
 --        ; accent (leadinAccent)
@@ -60,8 +59,7 @@ pic01 = udrawTracing (0::Double) $ do
         }
      
     drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
-    drawl (P2 0 200) $ uconvF $ pletBracket 4000 6
-    drawl (P2 0 200) $ smallCirc
+    drawl (P2 0 180) $ uconvF $ pletBracket 4000 6
   where
     fn = runPosNoteHead 0
     disk = (NoteDisk, zeroDeco)

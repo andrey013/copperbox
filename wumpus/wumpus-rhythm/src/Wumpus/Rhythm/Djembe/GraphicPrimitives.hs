@@ -191,7 +191,7 @@ charDesc ch = NoteHeadDesc
 
 diskDesc :: NoteHeadDesc
 diskDesc = NoteHeadDesc 
-    { nhd_note_head             = stdPosNoteHead disk_ycenter glyph
+    { nhd_note_head             = stdPosNoteHead disk_ydist glyph
     , nhd_high_low_glyph        = glyph
     , nhd_high_low_north_disp   = disk_radius
     , nhd_flam_glyph            = flam_glyph
@@ -214,7 +214,7 @@ diskFlam = makeFlamGraphic diskDesc
 
 periodDesc :: NoteHeadDesc
 periodDesc = NoteHeadDesc 
-    { nhd_note_head             = stdPosNoteHead period_ycenter glyph
+    { nhd_note_head             = stdPosNoteHead period_ydist glyph
     , nhd_high_low_glyph        = glyph
     , nhd_high_low_north_disp   = disk_radius
     , nhd_flam_glyph            = glyph
@@ -267,24 +267,28 @@ underscore = decoPosObject body SUPERIOR
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
-                 in  moveStart (go_up strike_baseline) 
+                 in  moveStart (go_down underscore_ydist) 
                                (pivotLine xmin xmaj 0)
 
 
 
-
+-- Note - this produces an ugly graphic.
+--
+-- Strike does not seem to work well as a PosObject transformer
+-- as PosObject says nothing about the center of balance of the 
+-- object (strike looks best if it cuts the center).
+--
 angleStrike :: PosNoteHead -> PosNoteHead
 angleStrike = decoPosObject body SUPERIOR
   where
-    body _ = let ang  = 0.25*pi
-                 dist = angle_strike_width / fromRadian (cos ang)
-                 hw   = 0.5 * angle_strike_width
-             in execPathSpec $ moveBy (vsum [ vvec strike_baseline, go_left hw])
-                             >> alineto ang dist
+    body ortt  = let xmin = 1.5 * (or_x_minor ortt)
+                     xmaj = 1.5 * (or_x_major ortt)
+                     hh   = 0.5 * orientationHeight ortt
+                 in  moveStart (go_up $ 0.5 * hh) (pivotLine xmin xmaj (0.25*pi))
 
-
-
-
+-- Wumpus- basic should provide this...
+orientationHeight :: Num u => Orientation u -> u
+orientationHeight (Orientation _ _ ymin ymaj) = ymin + ymaj
 
 --------------------------------------------------------------------------------
 -- Stems
@@ -324,7 +328,7 @@ plainStem RIGHT_EXT     = const mempty
 
 
 flam_stem_left :: PathSpec AfmUnit ()
-flam_stem_left = lines [ go_up flam_stem_length, go_up_right flam_xminor ]
+flam_stem_left = lines [ go_up flam_vstem_length, go_up_right flam_xdist ]
 
 
 -- | Draw the left stem for both extremities. Draw the combined
@@ -381,15 +385,15 @@ divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
 swing_stem_right :: RightExt -> PathSpec AfmUnit ()
 swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_down
   where
-    step1 MOVE  = moveBy (go_right flam_xminor)
-    step1 LINE  = lineto (go_right flam_xminor) 
+    step1 MOVE  = moveBy (go_right flam_xdist)
+    step1 LINE  = lineto (go_right flam_xdist) 
 
 
 swingAngle :: LocGraphic AfmUnit
 swingAngle = execPathSpec ang_path
   where
-    w        = 0.8 * flam_xminor 
-    w1       = 0.9 * flam_xminor
+    w        = 0.8 * flam_xdist
+    w1       = 0.9 * flam_xdist
     ang_path =  moveBy (go_left w1 ^+^ go_down divstem_beam_ydrop)
              >> lines [go_down_right w, go_down_left w]
 
@@ -427,21 +431,23 @@ beamBracket uw n         = execPivot pathl pathr
 
 --------------------------------------------------------------------------------
 
--- Start point for bar lines  is the base line
+-- Start point for bar lines is the base line.
+-- Top of the bar line is stem top.
+
 
 singleBarline :: LocGraphic AfmUnit
-singleBarline = vline barline_top
+singleBarline = vline stem_top
 
 thickBarline :: LocGraphic AfmUnit
-thickBarline = localize dbl_thick $ vline barline_top
+thickBarline = localize dbl_thick $ vline stem_top
   where
     dbl_thick = relative_line_width (2*)
 
 repeatDots :: LocGraphic AfmUnit
 repeatDots = hi_dot <> lo_dot
   where
-    hi_dot  = moveStart (go_up hi_repeat_dot_center) dot1
-    lo_dot  = moveStart (go_up lo_repeat_dot_center) dot1 
+    hi_dot  = moveStart (go_up hi_repeat_dot_ydist) dot1
+    lo_dot  = moveStart (go_up lo_repeat_dot_ydist) dot1 
     dot1    = dcDisk FILL repeat_dot_radius 
 
 
@@ -449,15 +455,15 @@ repeatDots = hi_dot <> lo_dot
 --
 leftRepeat :: LocGraphic AfmUnit
 leftRepeat = singleBarline 
-          <> moveStart (go_left repeat_dot_hspacing) thickBarline
-          <> moveStart (go_right repeat_dot_hspacing) repeatDots
+          <> moveStart (go_left  repeat_line_hdist) thickBarline
+          <> moveStart (go_right repeat_dot_hdist) repeatDots
 
 -- | The thin line is draw at the original h-position.
 --
 rightRepeat :: LocGraphic AfmUnit
 rightRepeat = singleBarline 
-           <> moveStart (go_left repeat_dot_hspacing) repeatDots
-           <> moveStart (go_right repeat_dot_hspacing) thickBarline
+           <> moveStart (go_left  repeat_dot_hdist) repeatDots
+           <> moveStart (go_right repeat_line_hdist) thickBarline
 
 
 
