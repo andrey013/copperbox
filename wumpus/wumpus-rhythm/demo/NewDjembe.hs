@@ -29,7 +29,7 @@ main = do
                         }
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = fill_colour black . set_font helvetica . metricsContext 18
+makeCtx = fill_colour black . set_font helvetica . metricsContext 16
 
 
 pic01 :: CtxPicture
@@ -60,7 +60,7 @@ pic01 = udrawTracing (0::Double) $ do
         }
      
     drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
-    drawl (P2 0 200) $ uconvF $ pletBracket 4000 2
+    drawl (P2 0 200) $ uconvF $ pletBracket 4000 6
     drawl (P2 0 200) $ smallCirc
   where
     fn = runPosNoteHead 0

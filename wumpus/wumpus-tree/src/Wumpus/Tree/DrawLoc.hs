@@ -78,7 +78,8 @@ drawStep props (Node gf ns) =
 -- deconstruct the Ans directly - this suggests there is a need 
 -- for a more general version of this combinator in Wumpus-Basic.
 -- 
-dblelaborate :: LocImage u a -> LocImage u b 
+dblelaborate :: InterpretUnit u 
+             => LocImage u a -> LocImage u b 
              -> (a -> b -> Graphic u) 
              -> LocImage u a
 dblelaborate ma mb fn = promoteLoc $ \pt -> 

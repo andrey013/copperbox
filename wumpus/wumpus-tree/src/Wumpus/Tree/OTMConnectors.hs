@@ -122,7 +122,7 @@ familyOTMC dir h a xs =
   where
     fn ps = case linkAll ps of
               Nothing -> emptyLocImage `at` (center a)
-              Just path -> ignoreAns $ drawOpenPath path
+              Just path -> drawOpenPath_ path
 
 
 

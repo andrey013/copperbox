@@ -41,10 +41,10 @@ std_ctx = standardContext 14
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    drawl (P2   0 320) $ closedRelPath FILL path01
-    drawl (P2 112 320) $ localize (fill_colour powder_blue) $ closedRelPath FILL path02
-    drawl (P2 384 416) $ closedRelPath FILL path03
-    drawl (P2 328 512) $ closedRelPath FILL path04
+    drawl (P2   0 320) $ drawClosedPath FILL path01
+    drawl (P2 112 320) $ localize (fill_colour powder_blue) $ drawClosedPath FILL path02
+    drawl (P2 384 416) $ drawClosedPath FILL path03
+    drawl (P2 328 512) $ drawClosedPath FILL path04
     drawl (P2   0   0) $ clip1
     drawl (P2 112   0) $ clip2
     drawl (P2 384  96) $ clip3
@@ -82,29 +82,29 @@ iheartHaskell = promoteLoc $ \pt ->
 
 -- zeroPt
 path01 :: RelPath Double
-path01 = evalPathSpec $  hline 80 
-                      >> line (vec 112 160) 
-                      >> line (vec (-112) 160)
-                      >> hline (-80)
-                      >> line (vec 112 (-160))
-                      >> line (vec (-112) (-160))
+path01 = evalPathSpec $  hlineto 80 
+                      >> lineto (vec 112 160) 
+                      >> lineto (vec (-112) 160)
+                      >> hlineto (-80)
+                      >> lineto (vec 112 (-160))
+                      >> lineto (vec (-112) (-160))
  
 -- (P2 112 0)
 path02 :: RelPath Double
-path02 = evalPathSpec  $  hline 80 
-                       >> line (vec 72 112)
-                       >> line (vec 72 (-112))
-                       >> hline 80
-                       >> line (vec (-224) 320)
-                       >> hline (-80)
-                       >> line (vec 112 (-160))
-                       >> line (vec (-112) (-160))
+path02 = evalPathSpec  $  hlineto 80 
+                       >> lineto (vec 72 112)
+                       >> lineto (vec 72 (-112))
+                       >> hlineto 80
+                       >> lineto (vec (-224) 320)
+                       >> hlineto (-80)
+                       >> lineto (vec 112 (-160))
+                       >> lineto (vec (-112) (-160))
 
 -- (P2 384 96) 
 path03 :: RelPath Double
-path03 = evalPathSpec $ hline 96 >> vline 56 >> hline (-136) 
+path03 = evalPathSpec $ hlineto 96 >> vlineto 56 >> hlineto (-136) 
 
 -- (P2 328 192)
 path04 :: RelPath Double
-path04 = evalPathSpec  $ hline 152 >> vline 56 >> hline (-192) 
+path04 = evalPathSpec  $ hlineto 152 >> vlineto 56 >> hlineto (-192) 
 

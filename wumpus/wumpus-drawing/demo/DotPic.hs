@@ -84,7 +84,7 @@ makeDotDrawing (name,df) =
   where
     drawing     = execPathSpec $ 
                     updatePen path_style >> 
-                    insertl dot >> mapM (\v -> line v >> insertl dot) steps
+                    insertl dot >> mapM (\v -> lineto v >> insertl dot) steps
 
     lbl         = ignoreAns $ promoteLoc $ \pt -> 
                     textline name WW `at` pt

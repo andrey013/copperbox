@@ -49,18 +49,18 @@ makePD spec = localize (stroke_colour red) $ execPathSpec spec
 
 path_spec1 :: PathSpec Double ()
 path_spec1 =  
-       line     (V2 0 50)
-    >> line     (V2 50 0)
+       lineto   (V2 0 50)
+    >> lineto   (V2 50 0)
     >> insertl  disk1
     >> moveBy   (V2 0 (-50))
-    >> line     (V2 100 0) 
+    >> lineto   (V2 100 0) 
     >> vamp     vamp1  
-    >> line     (V2 20 0)
+    >> lineto   (V2 20 0)
 
 
     >> pen_colour blue
-    >> line     (V2 50 0)
-    >> line     (V2 0 (-40))
+    >> lineto   (V2 50 0)
+    >> lineto   (V2 0 (-40))
     >> cycleSubPath FILL_STROKE           
   where
     disk1 = dcDisk STROKE 10

@@ -3,6 +3,7 @@
 
 module NewText where
 
+import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero

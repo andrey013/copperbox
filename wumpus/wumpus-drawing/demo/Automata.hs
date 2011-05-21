@@ -62,7 +62,7 @@ automata = udrawTracing (0::Double) $ do
 -- 
 infixr 1 `mat`
 
-mat :: LocImage u a -> Query u (Point2 u) -> Image u a
+mat :: InterpretUnit u => LocImage u a -> Query u (Point2 u) -> Image u a
 mat img mq = zapQuery mq >>= \pt -> img `at` pt
 
 state :: String -> DLocImage DCircle

@@ -108,7 +108,7 @@ drawBeamGroups = mapM_ drawBeamGroup
 drawBeamGroup :: [Note] -> DjembeDraw ()
 drawBeamGroup []     = return ()
 drawBeamGroup (x:xs) = askUnitWidth >>= \uw -> 
-    insertStemTop (beamBracket uw (length xs)) >> temp >> stepl x >> inner xs
+    insertStemTop (beamBracket uw (length xs)) >> stepl x >> inner xs
   where
     stepl n      = stem1 LEFT_EXT n >> note1 n >> moveNext
 
@@ -116,7 +116,6 @@ drawBeamGroup (x:xs) = askUnitWidth >>= \uw ->
     inner [n]    = stem1 RIGHT_EXT n  >> note1 n >> moveNext
     inner (n:ns) = stem1 STEM_INNER n >> note1 n >> moveNext >> inner ns 
 
-    temp = insertStemTop $ pletBracket (3 * 1200) 3
 
 
 stem1 :: StemPos -> Note -> DjembeDraw ()

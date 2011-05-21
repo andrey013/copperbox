@@ -528,7 +528,7 @@ pletBracket pw num =
     moveStart (go_right hw ^+^ go_up plet_ydist) gf
   where
     hw        = 0.5 * pw
-    gf        = ignoreAns $ localize (scale_point_size 0.75 . text_margin 0.2 0)
+    gf        = ignoreAns {- $ localize (scale_point_size 0.75 . text_margin 0.2 0) -}
                           $ selaborate (textline (show num) BLC) elab
     elab bb   = let ee    = east bb 
                     ww    = west bb
@@ -542,6 +542,8 @@ pletBracket pw num =
     lpath w h = execPathSpec $ lines [ go_left w, go_down h ]
     rpath w h = execPathSpec $ lines [ go_right w, go_down h ]
 
+    -- pw wants to be upscaled to accommodate the 0.75 downscale...
+    -- Also there is some case that this graphic should be a connector
 
 
 -- Caution - changing the Point size when working with a 

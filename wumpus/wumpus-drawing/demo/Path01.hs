@@ -42,7 +42,7 @@ triangles = localize (set_line_width 8) $ execPathSpec $
     moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE
   where
     tristeps :: PathSpec Double ()
-    tristeps = line (V2 40 0) >> line (V2 0 40) >> line (V2 (-40) (-40))
+    tristeps = lineto (V2 40 0) >> lineto (V2 0 40) >> lineto (V2 (-40) (-40))
        
 
 {-
