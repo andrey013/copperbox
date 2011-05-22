@@ -25,6 +25,8 @@ module Wumpus.Basic.Kernel.Objects.Orientation
 
   , orientationStart
   , orientationBounds
+  , orientationWidth
+  , orientationHeight
  
   , extendOrientation
   , extendOLeft
@@ -69,8 +71,8 @@ import Data.Monoid
 -- | Datatype enumerating the addressable positions of a rectangle 
 -- that can be derived for a 'PosObject'.  
 --
--- The positions are the compass points, plus the geometric center
--- and the baseline positions: 
+-- The positions are the compass points, plus the geometric 
+-- center, origin and the baseline positions: 
 -- 
 -- > BLL - baseline-left
 --
@@ -78,7 +80,7 @@ import Data.Monoid
 -- 
 -- > BLR - baseline-right
 --
-data RectAddress = CENTER 
+data RectAddress = CENTER | ORIGIN
                  | NN | SS | EE | WW | NE | NW | SE | SW 
                  | BLL | BLC | BLR
   deriving (Enum,Eq,Ord,Show)
@@ -161,18 +163,21 @@ halfDists (Orientation xmin xmaj ymin ymaj) =
 
 -- | The vector from a 'RectAddress' to the start point.
 --
+-- Negate the vector to get from start point to 'RectAddress'.
+--
 orientationStart :: Fractional u => RectAddress -> Orientation u -> Vec2 u
-orientationStart rpos (Orientation xmin xmaj ymin ymaj) = go rpos
+orientationStart raddr (Orientation xmin xmaj ymin ymaj) = go raddr
   where
     w         = xmin + xmaj
     h         = ymin + ymaj
-    hw        = 0.5 * w
-    hh        = 0.5 * h
+    hw        = 0.5  * w
+    hh        = 0.5  * h
    
     -- CENTER, NN, SS, EE, WW all go to bottomleft then add back 
     -- the minors.
 
     go CENTER = V2 ((-hw) + xmin) ((-hh) + ymin)
+    go ORIGIN = zeroVec
     go NN     = V2 ((-hw) + xmin) ((-h)  + ymin)
     go SS     = V2 ((-hw) + xmin)   ymin
     go EE     = V2 ((-w)  + xmin) ((-hh) + ymin)
@@ -186,6 +191,7 @@ orientationStart rpos (Orientation xmin xmaj ymin ymaj) = go rpos
     go BLR    = V2 ((-w)  + xmin)   0 
 
 
+
 -- | Calculate the bounding box formed by locating the 'Orientation'
 -- at the supplied point.
 -- 
@@ -196,6 +202,16 @@ orientationBounds (Orientation xmin xmaj ymin ymaj) (P2 x y) = BBox llc urc
     llc   = P2 (x-xmin) (y-ymin)
     urc   = P2 (x+xmaj) (y+ymaj)
 
+
+-- | Height of the orientation.
+--
+orientationWidth :: Num u => Orientation u -> u
+orientationWidth (Orientation xmin xmaj _ _) = xmin + xmaj
+
+-- | Height of the orientation.
+--
+orientationHeight :: Num u => Orientation u -> u
+orientationHeight (Orientation _ _ ymin ymaj) = ymin + ymaj
 
 --------------------------------------------------------------------------------
 -- Extending an arm of the orientation

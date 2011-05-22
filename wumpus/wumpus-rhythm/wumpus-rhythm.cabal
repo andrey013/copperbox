@@ -47,6 +47,7 @@ library
   
   exposed-modules:
     Wumpus.Rhythm.Djembe.Draw,
+    Wumpus.Rhythm.Djembe.GDgdPT,
     Wumpus.Rhythm.Djembe.GraphicPrimitives,
     Wumpus.Rhythm.Djembe.HelveticaLoader,
     Wumpus.Rhythm.Djembe.Parameters,

@@ -34,12 +34,14 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , runPosObject
 
   , makePosObject
---  , makeBindPosObject
   , emptyPosObject
 
 
   , localPosObject
+
+  , elabPosObject
   , decoPosObject
+
   , extendPosObject
   , mapOrientation
 
@@ -182,22 +184,36 @@ emptyPosObject = PosObject $ pure (Orientation 0 0 0 0, const mempty)
 localPosObject :: DrawingContextF -> PosObject u -> PosObject u
 localPosObject upd = PosObject . localize upd . getPosObject
 
+--
+-- decorate  - oblivious to /answer/.
+-- elaborate - derives annotation from the /answer/ and makes a 
+--             cumulative graphic.
+--
+
+
+elabPosObject :: (Fractional u, InterpretUnit u)
+              => ZDeco -> RectAddress -> LocGraphic u -> PosObject u 
+              -> PosObject u
+elabPosObject zdec raddr gf po = decoPosObject zdec fn po
+  where
+    fn ortt = moveStart (negateV $ orientationStart raddr ortt) gf
+
+
 
 decoPosObject :: InterpretUnit u 
-              => (Orientation u -> LocGraphic u) 
-              -> ZDeco -> PosObject u -> PosObject u
-decoPosObject fn zdec po = PosObject body
+              => ZDeco -> (Orientation u -> LocGraphic u) -> PosObject u 
+              -> PosObject u
+decoPosObject zdec fn po = PosObject body
   where
     body = askDC >>= \ctx -> 
            let (ortt,ptf) = runQuery ctx (getPosObject po)
                deco       = \pt -> getCP $ runLocImage pt ctx (fn ortt)
-               gf         = case zdec of
+               ptf2       = case zdec of
                               ANTERIOR -> deco `mappend` ptf
                               SUPERIOR -> ptf  `mappend` deco
-           in return (ortt, gf)
+           in return (ortt, ptf2)
 
     getCP (PrimW ca _) = ca
-
 
 
 -- | Extend the orientation.

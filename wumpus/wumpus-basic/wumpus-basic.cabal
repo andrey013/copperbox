@@ -42,6 +42,9 @@ description:
     the font size for drawings with Em or En units would break the
     layout.
   .
+  * Added @ORIGIN@ to the @RectAddress@ enumeration. I had 
+    overlooked that @BLC /= ORIGIN@.
+  .
   v0.17.0 to v0.18.0:
   . 
   * Major change - removed @ContextFun@ from @Kernel.Base@. Now 

@@ -191,7 +191,7 @@ flam_xdist             = 354
 -- | Baseline to flam stem start.
 --
 flam_ydist              :: AfmUnit
-flam_ydist              = 904   
+flam_ydist              = 904
 
 
 -- | Length of the initial vertical stem of a flam.

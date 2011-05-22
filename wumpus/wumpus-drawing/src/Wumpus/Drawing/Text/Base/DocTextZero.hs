@@ -331,7 +331,7 @@ interpret (Fill va w a)     = ppad va w <$> interpret a
 interpret (DLocal upd a)    = localPosObject upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
 interpret (Mono q1 xs)      = interpMono q1 xs
-interpret (AElab fn a)      = decoPosObject fn ANTERIOR <$> interpret a
+interpret (AElab fn a)      = decoPosObject ANTERIOR fn <$> interpret a
 
 
 
@@ -395,7 +395,7 @@ interpretLeaf po =
        <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
        <*> textstyle
    where
-     condE f b = if b then decoPosObject f SUPERIOR else id
+     condE fn b = if b then decoPosObject SUPERIOR fn else id
 
 textstyle :: EvalM u DrawingContextF
 textstyle = 

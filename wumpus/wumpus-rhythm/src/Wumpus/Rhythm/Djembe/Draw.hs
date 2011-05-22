@@ -37,16 +37,7 @@ import Data.Monoid
 
 -- Syntax
 
-data FlamHead = FlamChar Char
-              | FlamDisk
-              | FlamNone
-  deriving (Eq,Ord,Show)
-
-data NoteHead = NoteChar Char
-              | NoteDisk
-              | NotePeriod
-              | NoteNone
-
+type FlamHead = LocGraphic AfmUnit
 
 -- | Noteheads get decorated with pressed (diag strike), optional 
 -- (parens) and muffled (underscore).
@@ -56,47 +47,54 @@ data NoteHead = NoteChar Char
 -- 
 -- 
 data NoteHeadDeco = NoteHeadDeco 
-      { deco_pos_object  :: PosObject AfmUnit -> PosObject AfmUnit 
-      , deco_loc_graphic :: LocGraphic AfmUnit
+      { deco_trafo_notehead  :: PosObject AfmUnit -> PosObject AfmUnit 
+      , deco_accent          :: LocGraphic AfmUnit
       }
 
-type DNoteHead = (NoteHead, NoteHeadDeco)
+data NoteHead = NoteHead 
+      { notehead_base   :: PosNoteHead
+      , notehead_trafo  :: PosObject AfmUnit -> PosObject AfmUnit 
+      , notehead_accent :: LocGraphic AfmUnit
+      }
+                        
+
+noteHead :: PosNoteHead -> NoteHead
+noteHead po = NoteHead { notehead_base   = po
+                       , notehead_trafo  = id
+                       , notehead_accent = mempty
+                       }
 
 
-data Note = Note   DNoteHead
-          | Flam   DNoteHead   FlamHead 
-          | Swing  DNoteHead
-          | Div    DNoteHead   DNoteHead
+data Note = Note   NoteHead
+          | Flam   FlamHead   NoteHead 
+          | Swing  NoteHead
+          | Div    NoteHead   NoteHead
 
 
 
 zeroDeco :: NoteHeadDeco
 zeroDeco = NoteHeadDeco 
-      { deco_pos_object  = id 
-      , deco_loc_graphic = mempty
+      { deco_trafo_notehead  = id 
+      , deco_accent          = mempty
       }
 
-decoNoteL :: (PosObject AfmUnit -> PosObject AfmUnit) -> DNoteHead -> DNoteHead
-decoNoteL fn (nh,deco) = let f0 = deco_pos_object deco
-                         in (nh, deco { deco_pos_object = fn . f0 } )
+addTrafo :: (PosObject AfmUnit -> PosObject AfmUnit) -> NoteHead -> NoteHead
+addTrafo fn = (\s i -> s { notehead_trafo = i `mappend` fn })
+                 <*> notehead_trafo
 
-decoNoteR :: LocGraphic AfmUnit -> DNoteHead -> DNoteHead
-decoNoteR gf (nh,deco) = let g0 = deco_loc_graphic deco
-                         in (nh, deco { deco_loc_graphic = g0 `mappend` gf } )
+addAccent :: LocGraphic AfmUnit -> NoteHead -> NoteHead
+addAccent gf = (\s i -> s { notehead_accent = i `mappend` gf })
+                 <*> notehead_accent
 
-optional :: DNoteHead -> DNoteHead
-optional = decoNoteL parens
+optional :: NoteHead -> NoteHead
+optional = addTrafo parenthesis
 
-muffled  :: DNoteHead -> DNoteHead
-muffled  = decoNoteL underscore
-
-strike   :: DNoteHead -> DNoteHead
-strike   = decoNoteL angleStrike
 
 
 accent :: Accent -> DjembeDraw ()
 accent (StemAccent gf)          = insertStemTop gf
 accent (BaselineAccent gf)      = insertBLC gf
+
 
 -- Design note - Hi and Lo notes now seem to look like a 
 -- decoration, in that a note can also have a hi or lo note.
@@ -135,8 +133,8 @@ note1 note = askUnitWidth >>= \uw -> insertBLC (body note uw)
 
     body (Flam a b) _        = ga `mappend` gb
       where
-        ga    = runPosNoteHead 0 $ dnoteHeadPos a
-        gb    = moveStart flamv (flamHead b)
+        ga    = moveStart flamv a
+        gb    = runPosNoteHead 0 $ dnoteHeadPos b
         flamv = go_left flam_xdist ^+^ go_up flam_ydist
 
     body (Swing a)  _       = runPosNoteHead flam_xdist $ dnoteHeadPos a
@@ -147,19 +145,8 @@ note1 note = askUnitWidth >>= \uw -> insertBLC (body note uw)
         gb    = runPosNoteHead (0.5*uw) $ dnoteHeadPos b
 
 
-dnoteHeadPos :: DNoteHead -> PosNoteHead
-dnoteHeadPos (nh, d) = let upd = deco_pos_object d in upd $ step nh
-  where
-    step (NoteChar ch) = charNote ch
-    step NoteDisk      = diskNote
-    step NotePeriod    = periodNote
-    step NoteNone      = noNote
-
-
-flamHead :: FlamHead -> LocGraphic AfmUnit
-flamHead (FlamChar ch)      = charFlam ch
-flamHead FlamDisk           = diskFlam
-flamHead FlamNone           = mempty
+dnoteHeadPos :: NoteHead -> PosNoteHead
+dnoteHeadPos (NoteHead note trafo _accent) = trafo note 
 
 
 

@@ -23,19 +23,28 @@ module Wumpus.Rhythm.Djembe.GraphicPrimitives
   , runPosNoteHead
   , runStem
 
-  , charNote
+  , charDesc
+  , charNoteHead
   , charFlam
 
+  , diskDesc
   , diskNote  
   , diskFlam
 
   , periodNote
   , noNote
 
+  , strikeNoteHead
+  , underscoreNoteHead
+
+  , highNoteHead
+  , lowNoteHead
+  , highBiNoteHead
+  , lowBiNoteHead
+
+
   -- * Decorations
-  , parens
-  , underscore
-  , angleStrike
+  , parenthesis
 
 
   -- * Stems
@@ -123,9 +132,11 @@ runStem pos uw mf = uconvF $ moveStart (go_up stem_top) $ mf pos uw
 data NoteHeadDesc = NoteHeadDesc
       { nhd_note_head               :: PosObject AfmUnit
       , nhd_high_low_glyph          :: LocGraphic AfmUnit
-      , nhd_high_low_north_disp     :: AfmUnit
+      , nhd_low_ydist               :: AfmUnit
+      , nhd_high_ydist              :: AfmUnit
       , nhd_flam_glyph              :: LocGraphic AfmUnit
-      , nhd_flam_north_disp         :: AfmUnit
+      , nhd_flam_ydist              :: AfmUnit
+      , nhd_strike_ydist            :: AfmUnit
       }
 
 
@@ -153,7 +164,7 @@ stdPosNoteHead blc_to_c gf =
 
 makeFlamGraphic :: NoteHeadDesc -> LocGraphic AfmUnit
 makeFlamGraphic desc = 
-    moveStart (go_down $ nhd_flam_north_disp desc) (nhd_flam_glyph desc)
+    moveStart (go_up $ nhd_flam_ydist desc) (nhd_flam_glyph desc)
 
 {-
 makeHighStroke :: NoteHeadDesc -> LocGraphic AfmUnit
@@ -164,8 +175,8 @@ makeHighStroke desc =
 
 -- | Drawn at baseline center.
 --
-charNote :: Char -> PosNoteHead
-charNote = nhd_note_head . charDesc 
+charNoteHead :: Char -> PosNoteHead
+charNoteHead = nhd_note_head . charDesc 
 
 
 -- | drawn at north.
@@ -177,9 +188,11 @@ charDesc :: Char -> NoteHeadDesc
 charDesc ch = NoteHeadDesc 
     { nhd_note_head             = posChar ch
     , nhd_high_low_glyph        = glyph
-    , nhd_high_low_north_disp   = 0
+    , nhd_low_ydist             = 560
+    , nhd_high_ydist            = 780
     , nhd_flam_glyph            = flam_glyph
-    , nhd_flam_north_disp       = 0
+    , nhd_flam_ydist            = 364
+    , nhd_strike_ydist          = 0 -- 0.5 * helvetica_cap_height
     }
   where
     -- Char glyphs can be drawn at north directly.
@@ -193,9 +206,11 @@ diskDesc :: NoteHeadDesc
 diskDesc = NoteHeadDesc 
     { nhd_note_head             = stdPosNoteHead disk_ydist glyph
     , nhd_high_low_glyph        = glyph
-    , nhd_high_low_north_disp   = disk_radius
+    , nhd_low_ydist             = 1164
+    , nhd_high_ydist            = 1100
     , nhd_flam_glyph            = flam_glyph
-    , nhd_flam_north_disp       = flam_disk_radius
+    , nhd_flam_ydist            = flam_disk_radius
+    , nhd_strike_ydist          = disk_ydist
     }
   where
     glyph       = dcDisk FILL disk_radius
@@ -216,9 +231,11 @@ periodDesc :: NoteHeadDesc
 periodDesc = NoteHeadDesc 
     { nhd_note_head             = stdPosNoteHead period_ydist glyph
     , nhd_high_low_glyph        = glyph
-    , nhd_high_low_north_disp   = disk_radius
+    , nhd_low_ydist             = 0
+    , nhd_high_ydist            = 0
     , nhd_flam_glyph            = glyph
-    , nhd_flam_north_disp       = flam_disk_radius
+    , nhd_flam_ydist            = flam_disk_radius
+    , nhd_strike_ydist          = period_ydist
     }
   where
     glyph       = dcDisk FILL period_radius
@@ -236,39 +253,15 @@ noNoteDesc :: NoteHeadDesc
 noNoteDesc = NoteHeadDesc 
     { nhd_note_head             = stdPosNoteHead 0 mempty
     , nhd_high_low_glyph        = mempty
-    , nhd_high_low_north_disp   = 0
+    , nhd_low_ydist             = 0
+    , nhd_high_ydist            = 0
     , nhd_flam_glyph            = mempty
-    , nhd_flam_north_disp       = 0
+    , nhd_flam_ydist            = 0
+    , nhd_strike_ydist          = 0.5 * helvetica_cap_height
     }
 
 noNote :: PosNoteHead 
 noNote = nhd_note_head noNoteDesc 
-
-
-
--------------------------------------------------------------------------------
--- Decorations
-
--- | Note - parens would look better shifted up a little.
---
--- Also this is probably an elaborate...
---
-parens :: PosNoteHead -> PosNoteHead
-parens obj = hcat [ lparen, obj, rparen ]
-  where
-    lparen = posEscChar $ CharEscName "parenleft"
-    rparen = posEscChar $ CharEscName "parenright"
-    
-    
-
-
-underscore :: PosNoteHead -> PosNoteHead
-underscore = decoPosObject body SUPERIOR
-  where
-    body ortt  = let xmin = or_x_minor ortt
-                     xmaj = or_x_major ortt
-                 in  moveStart (go_down underscore_ydist) 
-                               (pivotLine xmin xmaj 0)
 
 
 
@@ -278,17 +271,69 @@ underscore = decoPosObject body SUPERIOR
 -- as PosObject says nothing about the center of balance of the 
 -- object (strike looks best if it cuts the center).
 --
-angleStrike :: PosNoteHead -> PosNoteHead
-angleStrike = decoPosObject body SUPERIOR
+
+strikeNoteHead :: NoteHeadDesc -> PosNoteHead
+strikeNoteHead desc = 
+    decoPosObject SUPERIOR body $ nhd_note_head desc
   where
     body ortt  = let xmin = 1.5 * (or_x_minor ortt)
                      xmaj = 1.5 * (or_x_major ortt)
-                     hh   = 0.5 * orientationHeight ortt
-                 in  moveStart (go_up $ 0.5 * hh) (pivotLine xmin xmaj (0.25*pi))
+                     ypos = nhd_strike_ydist desc
+                 in  moveStart (go_up ypos) (pivotLine xmin xmaj (0.25*pi))
 
--- Wumpus- basic should provide this...
-orientationHeight :: Num u => Orientation u -> u
-orientationHeight (Orientation _ _ ymin ymaj) = ymin + ymaj
+
+
+underscoreNoteHead :: NoteHeadDesc -> PosNoteHead
+underscoreNoteHead desc = 
+    decoPosObject SUPERIOR body $ nhd_note_head desc
+  where
+    body ortt  = let xmin = or_x_minor ortt
+                     xmaj = or_x_major ortt
+                 in  moveStart (go_down underscore_ydist) $ 
+                               pivotLine xmin xmaj 0
+
+
+
+lowNoteHead :: NoteHeadDesc -> PosNoteHead
+lowNoteHead desc = lowBiNoteHead desc noNoteDesc
+
+
+highNoteHead :: NoteHeadDesc -> PosNoteHead
+highNoteHead desc = highBiNoteHead desc noNoteDesc
+
+highBiNoteHead :: NoteHeadDesc -> NoteHeadDesc -> PosNoteHead
+highBiNoteHead high desc = 
+    elabPosObject SUPERIOR BLC gf $ nhd_note_head desc 
+  where
+    dy  = nhd_high_ydist high
+    gf  = moveStart (go_up dy) $ nhd_high_low_glyph high
+
+
+
+lowBiNoteHead :: NoteHeadDesc -> NoteHeadDesc -> PosNoteHead
+lowBiNoteHead low desc = 
+    elabPosObject SUPERIOR BLC gf $ nhd_note_head desc 
+  where
+    dy  = nhd_low_ydist low
+    gf  = moveStart (go_up dy) $ nhd_high_low_glyph low
+
+
+-------------------------------------------------------------------------------
+-- Decorations
+
+-- | Note - parens would look better shifted up a little.
+--
+-- Also this is probably an elaborate...
+--
+parenthesis :: PosNoteHead -> PosNoteHead
+parenthesis obj = hcat [ lparen, obj, rparen ]
+  where
+    lparen = posEscChar $ CharEscName "parenleft"
+    rparen = posEscChar $ CharEscName "parenright"
+    
+    
+
+
 
 --------------------------------------------------------------------------------
 -- Stems
@@ -534,7 +579,7 @@ pletBracket pw num =
     moveStart (go_right hw ^+^ go_up plet_ydist) gf
   where
     hw        = 0.5 * pw
-    gf        = ignoreAns {- $ localize (scale_point_size 0.75 . text_margin 0.2 0) -}
+    gf        = ignoreAns $ localize (scale_point_size 0.75 . text_margin 0.2 0)
                           $ selaborate (textline (show num) BLC) elab
     elab bb   = let ee    = east bb 
                     ww    = west bb
@@ -552,11 +597,9 @@ pletBracket pw num =
     -- Also there is some case that this graphic should be a connector
 
 
--- Caution - changing the Point size when working with a 
--- contextual unit like AfmUnit looks as though it needs care.
+-- It is prabably easier to draw this with explicit calculations 
+-- rather than elaborating a PosObject. 
 -- 
--- It looks like it scales the start vector differently to the 
--- other parts of the drawing.
---
--- (I\'ll have to work out o paper what is going on...)
+-- Scaling the point size is not really a good approaching when 
+-- working with contextual units.
 --
