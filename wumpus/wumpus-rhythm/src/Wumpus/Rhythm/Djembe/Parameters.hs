@@ -23,7 +23,7 @@ module Wumpus.Rhythm.Djembe.Parameters
 
   -- * Cap height
   , helvetica_cap_height    
-
+  , helvetica_digit_width
 
 
 
@@ -91,6 +91,11 @@ unit_width_12_8         = 1454
 helvetica_cap_height    :: AfmUnit
 helvetica_cap_height    = 718
 
+
+-- | Note heads should use this for the y_major.
+--
+helvetica_digit_width   :: AfmUnit
+helvetica_digit_width   = 556
 
 
 

@@ -35,33 +35,22 @@ makeCtx = fill_colour black . set_font helvetica . metricsContext 16
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
-{-
-    drawl (P2 0 0) $ distribH 50 [ fn $ underscoreNoteHead $ charDesc 'X'
-                                 , fn $ optional $ slap_Pa
-                                 , fn $ optional $ diskNote
-                                 , fn $ optional $ noNote
-                                 , fn $ tone_go
-                                 , fn $ periodNote
-                                 , fn $ strikeNoteHead $ diskDesc
-                                 , fn $ strikeNoteHead $ charDesc 'X'
-                                 ]
--}
     drawl (P2 0 100) $ runDjembeDraw unit_width_12_8 $ do
         { lrepeat
 --        ; accent (leadinAccent)
         ; accent domHand
-        ; drawBeamGroup [ Note disk
-                        , Note doundounba_pressed_stroke
-                        , Swing kenkeni_pressed_stroke
-                        , Note kenkeni_lo_stroke
-                        , Div disk blank
-                        , Note downstroke_with_hand_hit
-                        ]
+        ; beamGroup [ N bass_drum_bell noAnno
+                    , N doundounba_pressed_stroke noAnno
+                    , S kenkeni_pressed_stroke noAnno
+                    , N kenkeni_lo_stroke noAnno
+                    , D disk blank noAnno
+                    , N downstroke_with_hand_hit noAnno
+                    ]
         ; rrepeat
         }
      
     drawl (P2 0 200) $ runDjembeDraw unit_width_12_8 $ drawBeamGroups simple1
-    drawl (P2 0 180) $ uconvF $ pletBracket 4000 6
+    drawl (P2 0 180) $ uconvF $ pletBracket 4000 12
     drawl (P2 0 300) $ uconvF $ get $ downstroke_with_hand_hit
 
   where
@@ -72,8 +61,8 @@ pic01 = udrawTracing (0::Double) $ do
 simple1 :: [[Note]]
 simple1 = [a,b,b,c]
   where
-    a = [ bass_flam_DGun , Note disk, Note disk ]
-    b = [ Note disk, Note disk, Note period ]
-    c = [ Note disk, Note period, Note period ]
+    a = [ bass_flam_DGun , note disk, note disk ]
+    b = notes [ disk, disk, period ]
+    c = notes [ disk, period, period ]
       
     disk = kenkeni_stroke

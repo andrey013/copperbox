@@ -51,9 +51,14 @@ module Wumpus.Rhythm.Djembe.GDgdPT
 
   , sangban_stroke
   , sangban_pressed_stroke
+  , sangban_hi_stroke
+  , sangban_stroke_plus_hi
+  , sangban_pressed_stroke_plus_hi
 
   , doundounba_stroke
   , doundounba_pressed_stroke
+  , doundounba_stroke_plus_hi
+  , doundounba_hi_stroke
 
   , bass_drum_bell
   , bell_stroke
@@ -148,22 +153,21 @@ muffled_slap_Ta         = noteHead $ strikeNoteHead $ charDesc 'T'
 -- Note the type is Note, not NoteHead.
 --
 bass_flam_DGun          :: Note
-bass_flam_DGun          = Flam (charFlam 'D') bass_Gun
+bass_flam_DGun          = F (charFlam 'D') bass_Gun noAnno
 
 -- | Flam - @[d]g@
 -- 
 -- Note the type is Note, not NoteHead.
 --
 tone_flam_dgo           :: Note
-tone_flam_dgo           = Flam (charFlam 'd') tone_go
+tone_flam_dgo           = F (charFlam 'd') tone_go noAnno
 
 -- | Flam - @[T]P@
 -- 
 -- Note the type is Note, not NoteHead.
 --
 slap_flam_TPa           :: Note
-slap_flam_TPa           = Flam (charFlam 'T') slap_Pa 
-
+slap_flam_TPa           = F (charFlam 'T') slap_Pa noAnno
 
 
 -- | Flam - @[G]D@
@@ -171,21 +175,21 @@ slap_flam_TPa           = Flam (charFlam 'T') slap_Pa
 -- Note the type is Note, not NoteHead.
 --
 bass_flam_GDun          :: Note
-bass_flam_GDun          = Flam (charFlam 'G') bass_Dun
+bass_flam_GDun          = F (charFlam 'G') bass_Dun noAnno
 
 -- | Flam - @[g]d@
 -- 
 -- Note the type is Note, not NoteHead.
 --
 tone_flam_gdo           :: Note
-tone_flam_gdo           = Flam (charFlam 'g') tone_do
+tone_flam_gdo           = F (charFlam 'g') tone_do noAnno
 
 -- | Flam - @[P]T@
 -- 
 -- Note the type is Note, not NoteHead.
 --
 slap_flam_PTa           :: Note
-slap_flam_PTa           = Flam (charFlam 'P') slap_Ta 
+slap_flam_PTa           = F (charFlam 'P') slap_Ta noAnno
 
 
 -- | Note is disk.
@@ -219,6 +223,27 @@ sangban_pressed_stroke  :: NoteHead
 sangban_pressed_stroke  = noteHead $ strikeNoteHead $ diskDesc
 
 
+-- | Note is 'X' at the high position.
+--
+sangban_hi_stroke       :: NoteHead
+sangban_hi_stroke       = noteHead $ highNoteHead $ charDesc 'X'
+
+
+-- | Note is disk, plus 'X' at high position.
+--
+sangban_stroke_plus_hi  :: NoteHead
+sangban_stroke_plus_hi  = 
+    noteHead $ highBiNoteHead (charDesc 'X') diskNote
+
+
+
+-- | Note is stroked disk, plus 'X' at high position.
+--
+sangban_pressed_stroke_plus_hi  :: NoteHead
+sangban_pressed_stroke_plus_hi  = 
+    noteHead $ highBiNoteHead (charDesc 'X') (strikeNoteHead $ diskDesc)
+
+
 -- | Note is 'B'
 --
 doundounba_stroke       :: NoteHead
@@ -229,6 +254,19 @@ doundounba_stroke       = noteHead $ charNoteHead 'B'
 --
 doundounba_pressed_stroke  :: NoteHead
 doundounba_pressed_stroke  = noteHead $ strikeNoteHead $ charDesc 'B'
+
+
+
+-- | Note is 'B', plus 'X' at high position.
+--
+doundounba_stroke_plus_hi  :: NoteHead
+doundounba_stroke_plus_hi  = 
+    noteHead $ highBiNoteHead (charDesc 'X') (charNoteHead 'B')
+
+
+doundounba_hi_stroke       :: NoteHead
+doundounba_hi_stroke       = noteHead $ highNoteHead $ charDesc 'X'
+
 
 
 -- | Note is 'X' at the high position.
@@ -242,7 +280,10 @@ bass_drum_bell          = noteHead $ highNoteHead $ charDesc 'X'
 bell_stroke          :: NoteHead
 bell_stroke          = noteHead $ charNoteHead 'X'
 
+
+
 -- | Note is 'X', low is disk.
 --
 downstroke_with_hand_hit  :: NoteHead
-downstroke_with_hand_hit  = noteHead $ lowBiNoteHead diskDesc (charDesc 'X')
+downstroke_with_hand_hit  = 
+    noteHead $ lowBiNoteHead diskDesc (charNoteHead 'X')

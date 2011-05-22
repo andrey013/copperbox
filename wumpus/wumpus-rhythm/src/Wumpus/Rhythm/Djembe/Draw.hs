@@ -39,56 +39,70 @@ import Data.Monoid
 
 type FlamHead = LocGraphic AfmUnit
 
--- | Noteheads get decorated with pressed (diag strike), optional 
--- (parens) and muffled (underscore).
---
--- Noteheads can also have hand hits (tone disk up the stem) and 
--- more.
--- 
--- 
-data NoteHeadDeco = NoteHeadDeco 
-      { deco_trafo_notehead  :: PosObject AfmUnit -> PosObject AfmUnit 
-      , deco_accent          :: LocGraphic AfmUnit
-      }
 
 data NoteHead = NoteHead 
       { notehead_base   :: PosNoteHead
       , notehead_trafo  :: PosObject AfmUnit -> PosObject AfmUnit 
-      , notehead_accent :: LocGraphic AfmUnit
       }
                         
 
 noteHead :: PosNoteHead -> NoteHead
 noteHead po = NoteHead { notehead_base   = po
                        , notehead_trafo  = id
-                       , notehead_accent = mempty
                        }
 
+-- | Legend:
+--
+-- > N - note
+-- > F - flam
+-- > S - swing
+-- > D - division of beat into two
+--
+data Note = N NoteHead              Anno
+          | F FlamHead   NoteHead   Anno
+          | S NoteHead              Anno
+          | D NoteHead   NoteHead   Anno
 
-data Note = Note   NoteHead
-          | Flam   FlamHead   NoteHead 
-          | Swing  NoteHead
-          | Div    NoteHead   NoteHead
+-- TODO - Accents are probably correct as Note embellishments
+-- but this makes constructing syntax in client code more 
+-- cumbersome...
 
+type Anno = DjembeDraw ()
 
+noAnno :: Anno
+noAnno = return ()
 
-zeroDeco :: NoteHeadDeco
-zeroDeco = NoteHeadDeco 
-      { deco_trafo_notehead  = id 
-      , deco_accent          = mempty
-      }
+notes :: [NoteHead] -> [Note]
+notes = map note
+
+note :: NoteHead -> Note 
+note a = N a noAnno
+
+flam :: FlamHead -> NoteHead -> Note
+flam fh nh = F fh nh noAnno
+
+swing :: NoteHead -> Note
+swing a = S a noAnno
+
+-- what to call div? 
 
 addTrafo :: (PosObject AfmUnit -> PosObject AfmUnit) -> NoteHead -> NoteHead
 addTrafo fn = (\s i -> s { notehead_trafo = i `mappend` fn })
                  <*> notehead_trafo
 
-addAccent :: LocGraphic AfmUnit -> NoteHead -> NoteHead
-addAccent gf = (\s i -> s { notehead_accent = i `mappend` gf })
-                 <*> notehead_accent
+
+addAccent :: Accent -> Note -> Note
+addAccent a (N nh an)       = N nh (an >> accent a)
+addAccent a (F fh nh an)    = F fh nh (an >> accent a)
+addAccent a (S nh an)       = S nh (an >> accent a)
+addAccent a (D n1 n2 an)    = D n1 n2 (an >> accent a)
+
 
 optional :: NoteHead -> NoteHead
 optional = addTrafo parenthesis
 
+leadin :: Note -> Note 
+leadin = addAccent leadinAccent
 
 
 accent :: Accent -> DjembeDraw ()
@@ -100,12 +114,12 @@ accent (BaselineAccent gf)      = insertBLC gf
 -- decoration, in that a note can also have a hi or lo note.
 
 drawBeamGroups :: [[Note]] -> DjembeDraw ()
-drawBeamGroups = mapM_ drawBeamGroup
+drawBeamGroups = mapM_ beamGroup
 
 
-drawBeamGroup :: [Note] -> DjembeDraw ()
-drawBeamGroup []     = return ()
-drawBeamGroup (x:xs) = askUnitWidth >>= \uw -> 
+beamGroup :: [Note] -> DjembeDraw ()
+beamGroup []     = return ()
+beamGroup (x:xs) = askUnitWidth >>= \uw -> 
     insertStemTop (beamBracket uw (length xs)) >> stepl x >> inner xs
   where
     stepl n      = stem1 LEFT_EXT n >> note1 n >> moveNext
@@ -119,39 +133,46 @@ drawBeamGroup (x:xs) = askUnitWidth >>= \uw ->
 stem1 :: StemPos -> Note -> DjembeDraw ()
 stem1 pos note = askUnitWidth >>= \uw -> insertStemTop (body note uw)
   where
-    body (Note _)       = plainStem pos
-    body (Flam _ _)     = flamStem pos
-    body (Swing _)      = swingStem pos
-    body (Div _ _)      = divStem pos
+    body (N _ _)    = plainStem pos
+    body (F _ _ _)  = flamStem pos
+    body (S _ _)    = swingStem pos
+    body (D _ _ _)  = divStem pos
 
 
 
 note1 :: Note -> DjembeDraw ()
-note1 note = askUnitWidth >>= \uw -> insertBLC (body note uw)
+note1 note = 
+    askUnitWidth >>= \uw -> body note uw
   where
-    body (Note a)   _        = runPosNoteHead 0 $ dnoteHeadPos a
+    body (N a ma)   _      = ma >> insertBLC (runPosNoteHead 0 $ dnoteHeadPos a)
 
-    body (Flam a b) _        = ga `mappend` gb
+    body (F a b ma) _      = ma >> insertBLC (ga `mappend` gb)
       where
         ga    = moveStart flamv a
         gb    = runPosNoteHead 0 $ dnoteHeadPos b
         flamv = go_left flam_xdist ^+^ go_up flam_ydist
 
-    body (Swing a)  _       = runPosNoteHead flam_xdist $ dnoteHeadPos a
+    body (S a ma)  _       = ma >> insertBLC (runPosNoteHead flam_xdist $ dnoteHeadPos a)
 
-    body (Div a b)  uw      = ga `mappend` gb
+    body (D a b ma)  uw    = ma >> insertBLC (ga `mappend` gb)
       where
         ga    = runPosNoteHead       0  $ dnoteHeadPos a
         gb    = runPosNoteHead (0.5*uw) $ dnoteHeadPos b
 
 
+-- drawAccents :: NoteHead -> DjembeDraw ()
+-- drawAccents (NoteHead _ _) = mapM_ accent xs
+
 dnoteHeadPos :: NoteHead -> PosNoteHead
-dnoteHeadPos (NoteHead note trafo _accent) = trafo note 
+dnoteHeadPos (NoteHead note trafo) = trafo note 
 
 
 
 barline :: DjembeDraw ()
 barline = insertBLC singleBarline >> moveNext
+
+inrepeat :: DjembeDraw a -> DjembeDraw ()
+inrepeat ma = lrepeat >> ma >> rrepeat
 
 lrepeat :: DjembeDraw ()
 lrepeat = insertBLC leftRepeat >> moveNext

@@ -189,7 +189,7 @@ charDesc ch = NoteHeadDesc
     { nhd_note_head             = posChar ch
     , nhd_high_low_glyph        = glyph
     , nhd_low_ydist             = 560
-    , nhd_high_ydist            = 780
+    , nhd_high_ydist            = 1388
     , nhd_flam_glyph            = flam_glyph
     , nhd_flam_ydist            = 364
     , nhd_strike_ydist          = 0 -- 0.5 * helvetica_cap_height
@@ -197,8 +197,9 @@ charDesc ch = NoteHeadDesc
   where
     -- Char glyphs can be drawn at north directly.
     --
-    glyph       = ignoreAns $ runPosObject NN (posChar ch)
-    flam_glyph  = localize (scale_point_size 0.75) glyph
+    glyph       = ignoreAns $ runPosObject BLC (posChar ch)
+    flam_glyph  = localize (scale_point_size 0.75) $ ignoreAns 
+                      $ runPosObject NN (posChar ch) 
 
 
 
@@ -295,24 +296,22 @@ underscoreNoteHead desc =
 
 
 lowNoteHead :: NoteHeadDesc -> PosNoteHead
-lowNoteHead desc = lowBiNoteHead desc noNoteDesc
+lowNoteHead desc = lowBiNoteHead desc noNote
 
 
 highNoteHead :: NoteHeadDesc -> PosNoteHead
-highNoteHead desc = highBiNoteHead desc noNoteDesc
+highNoteHead desc = highBiNoteHead desc noNote
 
-highBiNoteHead :: NoteHeadDesc -> NoteHeadDesc -> PosNoteHead
-highBiNoteHead high desc = 
-    elabPosObject SUPERIOR BLC gf $ nhd_note_head desc 
+highBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
+highBiNoteHead high note = elabPosObject SUPERIOR BLC gf note
   where
     dy  = nhd_high_ydist high
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph high
 
 
 
-lowBiNoteHead :: NoteHeadDesc -> NoteHeadDesc -> PosNoteHead
-lowBiNoteHead low desc = 
-    elabPosObject SUPERIOR BLC gf $ nhd_note_head desc 
+lowBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
+lowBiNoteHead low note = elabPosObject SUPERIOR BLC gf note 
   where
     dy  = nhd_low_ydist low
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph low
@@ -576,25 +575,27 @@ otherHand =
 --
 pletBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
 pletBracket pw num = 
-    moveStart (go_right hw ^+^ go_up plet_ydist) gf
+    moveStart (go_up plet_ydist) $ execPathSpec pathspec
   where
-    hw        = 0.5 * pw
-    gf        = ignoreAns $ localize (scale_point_size 0.75 . text_margin 0.2 0)
-                          $ selaborate (textline (show num) BLC) elab
-    elab bb   = let ee    = east bb 
-                    ww    = west bb
-                    bbw   = boundaryWidth bb
-                    bbhh  = 0.5 * boundaryHeight bb
-                    lx    = max 0 (0.5 * (pw - bbw))
-                in promoteLoc $ \_ -> let l1 = lpath lx bbhh `at` ww
-                                          l2 = rpath lx bbhh `at` ee
-                                      in l1 <> l2
+    numw      = numberWidth num
+    bhw       = 0.5 * (pw - numw)
+    bhh       = 0.5 * (0.75 * helvetica_cap_height) 
 
-    lpath w h = execPathSpec $ lines [ go_left w, go_down h ]
-    rpath w h = execPathSpec $ lines [ go_right w, go_down h ]
 
-    -- pw wants to be upscaled to accommodate the 0.75 downscale...
-    -- Also there is some case that this graphic should be a connector
+    pathspec  = vlineto bhh >> hlineto bhw        >> insertl_ text 
+                            >> moveBy (hvec numw) >> hlineto bhw 
+                            >> vlineto (-bhh)
+
+    text      = moveStart (vvec (-bhh) ^+^ hvec (0.5 * numw)) $ 
+                  localize (scale_point_size 0.75) $ textline (show num) BLC
+
+
+numberWidth :: Int -> AfmUnit
+numberWidth = (400 +) . ((0.75 * helvetica_digit_width) *) .  count 1
+  where
+    count n a | a < 10 = n
+    count n a          = count (n+1) (a `div` 10)
+ 
 
 
 -- It is prabably easier to draw this with explicit calculations 
