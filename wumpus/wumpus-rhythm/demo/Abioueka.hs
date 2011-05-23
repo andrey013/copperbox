@@ -34,8 +34,12 @@ makeCtx = fill_colour black . set_font helvetica . metricsContext 13
 
 pic01 :: CtxPicture
 pic01 = udrawTracing (0::Double) $ do
-
-    drawl (P2 0 270) $ runDjembeDraw unit_width_12_8 sangban1
+    drawl (P2 0 530) $ runDjembeDraw unit_width_12_8 djembe1
+    drawl (P2 0 480) $ runDjembeDraw unit_width_12_8 sangban1
+    drawl (P2 0 420) $ runDjembeDraw unit_width_12_8 doundounba1
+    drawl (P2 0 370) $ runDjembeDraw unit_width_12_8 kenkeni1
+    drawl (P2 0 320) $ runDjembeDraw unit_width_12_8 kenkeni2
+    drawl (P2 0 270) $ runDjembeDraw unit_width_12_8 sangban2
     drawl (P2 0 220) $ runDjembeDraw unit_width_12_8 sdoundounba1
     drawl (P2 0 150) $ runDjembeDraw unit_width_12_8 accomp1
     drawl (P2 0 100) $ runDjembeDraw unit_width_12_8 accomp2
@@ -43,11 +47,57 @@ pic01 = udrawTracing (0::Double) $ do
     drawl (P2 0   0) $ runDjembeDraw unit_width_12_8 accomp4
 
 
+djembe1 :: DjembeDraw ()
+djembe1 = inbar $ 
+    beamGroup a >> beamGroup b >> beamGroup c >> beamGroup d
+  where
+    a = [ tone_flam_dgo, note $ tone_do, note $ tone_go ]
+    b = notes [ tone_do, tone_go, period ]
+    c = notes [ tone_go, tone_do, period ]
+    d = notes [ tone_do, period, period ]
+
+
+sangban1 :: DjembeDraw ()
+sangban1 = inbar $ 
+    beamGroup a >> beamGroup a >> beamGroup a >> beamGroup b
+  where
+    a = notes [ blank, blank, blank ]
+    b = notes [ sangban_stroke, sangban_stroke, blank ]
+
+
+-- | doundounba
+
+doundounba1 :: DjembeDraw ()
+doundounba1 = inrepeat $ 
+    beamGroup a >> beamGroup b >> beamGroup c >> beamGroup d
+  where
+    a = notes [ doundounba_stroke_plus_hi, blank, doundounba_stroke_plus_hi ]
+    b = notes [ blank, sangban_stroke_plus_hi, sangban_stroke_plus_hi ]
+    c = notes [ blank, sangban_pressed_stroke_plus_hi, blank ]
+    d = [ leadin $ note sangban_stroke_plus_hi, note $ sangban_stroke_plus_hi, note blank ]
+ 
+
+
+-- | kenkeni
+
+kenkeni1 :: DjembeDraw ()
+kenkeni1 = inrepeat $ 
+    beamGroup a >> beamGroup a >> beamGroup a >> beamGroup a
+  where
+    a = notes [ kenkeni_stroke_plus_hi, kenkeni_hi_stroke, blank ]
+
+
+kenkeni2 :: DjembeDraw ()
+kenkeni2 = inrepeat $ 
+    beamGroup a >> beamGroup a >> beamGroup a >> beamGroup a
+  where
+    a = notes [ kenkeni_stroke_plus_hi, blank, kenkeni_hi_stroke ]
+
 
 -- | sangban
 
-sangban1 :: DjembeDraw ()
-sangban1 = inrepeat $ 
+sangban2 :: DjembeDraw ()
+sangban2 = inrepeat $ 
     beamGroup a >> beamGroup b >> beamGroup c >> beamGroup d
   where
     a = notes [ sangban_hi_stroke, blank, sangban_hi_stroke ]

@@ -131,7 +131,7 @@ beamGroup (x:xs) = askUnitWidth >>= \uw ->
 
 
 stem1 :: StemPos -> Note -> DjembeDraw ()
-stem1 pos note = askUnitWidth >>= \uw -> insertStemTop (body note uw)
+stem1 pos nt = askUnitWidth >>= \uw -> insertStemTop (body nt uw)
   where
     body (N _ _)    = plainStem pos
     body (F _ _ _)  = flamStem pos
@@ -141,8 +141,7 @@ stem1 pos note = askUnitWidth >>= \uw -> insertStemTop (body note uw)
 
 
 note1 :: Note -> DjembeDraw ()
-note1 note = 
-    askUnitWidth >>= \uw -> body note uw
+note1 nt = askUnitWidth >>= \uw -> body nt uw
   where
     body (N a ma)   _      = ma >> insertBLC (runPosNoteHead 0 $ dnoteHeadPos a)
 
@@ -164,7 +163,7 @@ note1 note =
 -- drawAccents (NoteHead _ _) = mapM_ accent xs
 
 dnoteHeadPos :: NoteHead -> PosNoteHead
-dnoteHeadPos (NoteHead note trafo) = trafo note 
+dnoteHeadPos (NoteHead nt trafo) = trafo nt 
 
 
 
@@ -173,6 +172,11 @@ barline = insertBLC singleBarline >> moveNext
 
 inrepeat :: DjembeDraw a -> DjembeDraw ()
 inrepeat ma = lrepeat >> ma >> rrepeat
+
+inbar :: DjembeDraw a -> DjembeDraw ()
+inbar ma = barline >> ma >> barline
+
+
 
 lrepeat :: DjembeDraw ()
 lrepeat = insertBLC leftRepeat >> moveNext

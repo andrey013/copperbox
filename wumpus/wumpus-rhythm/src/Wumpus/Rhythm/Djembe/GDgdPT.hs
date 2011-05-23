@@ -16,11 +16,12 @@
 
 module Wumpus.Rhythm.Djembe.GDgdPT 
   (
-    -- * Noteheads
 
+  -- * Utility  
     period
   , blank
 
+  -- * Djembe
   , bass_Gun
   , bass_Dun
   , muffled_bass_Gun
@@ -40,30 +41,42 @@ module Wumpus.Rhythm.Djembe.GDgdPT
   , tone_flam_dgo
   , slap_flam_TPa
 
-
   , bass_flam_GDun
   , tone_flam_gdo
   , slap_flam_PTa
 
+  -- * Kenkeni
   , kenkeni_stroke
   , kenkeni_pressed_stroke
   , kenkeni_lo_stroke
+  , kenkeni_stroke_plus_hi
+  , kenkeni_hi_stroke
 
+  -- * Sangban
   , sangban_stroke
   , sangban_pressed_stroke
   , sangban_hi_stroke
   , sangban_stroke_plus_hi
   , sangban_pressed_stroke_plus_hi
 
+  -- * Doundounba
   , doundounba_stroke
   , doundounba_pressed_stroke
   , doundounba_stroke_plus_hi
   , doundounba_hi_stroke
 
-  , bass_drum_bell
-  , bell_stroke
+  -- * Atoke
+  , atoke_bass_drum_bell
+  , atoke_bell_stroke
 
-  , downstroke_with_hand_hit
+  -- * Agogo
+  , agogo_hi_stroke
+  , agogo_lo_stroke
+
+  -- * Shekere
+  , shekere_downstroke
+  , shekere_upstroke
+  , shekere_downstroke_plus_hand_hit
 
   ) where
 
@@ -204,12 +217,23 @@ kenkeni_pressed_stroke  :: NoteHead
 kenkeni_pressed_stroke  = noteHead $ strikeNoteHead $ diskDesc
 
 
-
 -- | Note is disk.
 --
 kenkeni_lo_stroke       :: NoteHead
 kenkeni_lo_stroke       = noteHead $ lowNoteHead diskDesc
 
+-- | Note is disk, plus 'X' at high position.
+--
+kenkeni_stroke_plus_hi  :: NoteHead
+kenkeni_stroke_plus_hi  = noteHead $ highBiNoteHead (charDesc 'X') diskNote
+
+-- | Note is 'X' at the high position.
+--
+kenkeni_hi_stroke       :: NoteHead
+kenkeni_hi_stroke       = noteHead $ highNoteHead $ charDesc 'X'
+
+-- Note - terminology here is getting confused, hi and lo
+-- strokes for kenkeni use different note heads...
 
 -- | Note is disk.
 --
@@ -264,6 +288,8 @@ doundounba_stroke_plus_hi  =
     noteHead $ highBiNoteHead (charDesc 'X') (charNoteHead 'B')
 
 
+-- | 'X' at high position.
+--
 doundounba_hi_stroke       :: NoteHead
 doundounba_hi_stroke       = noteHead $ highNoteHead $ charDesc 'X'
 
@@ -271,19 +297,43 @@ doundounba_hi_stroke       = noteHead $ highNoteHead $ charDesc 'X'
 
 -- | Note is 'X' at the high position.
 --
-bass_drum_bell          :: NoteHead
-bass_drum_bell          = noteHead $ highNoteHead $ charDesc 'X'
+atoke_bass_drum_bell     :: NoteHead
+atoke_bass_drum_bell     = noteHead $ highNoteHead $ charDesc 'X'
 
 
 -- | Note is 'X'.
 --
-bell_stroke          :: NoteHead
-bell_stroke          = noteHead $ charNoteHead 'X'
+atoke_bell_stroke       :: NoteHead
+atoke_bell_stroke       = noteHead $ charNoteHead 'X'
 
+
+
+-- | Note is 'X' at the high position.
+--
+agogo_hi_stroke         :: NoteHead
+agogo_hi_stroke         = noteHead $ highNoteHead $ charDesc 'X'
+
+-- | Note is 'X'.
+--
+agogo_lo_stroke         :: NoteHead
+agogo_lo_stroke         = noteHead $ charNoteHead 'X'
+
+
+
+-- | Note is 'X'.
+--
+shekere_downstroke      :: NoteHead
+shekere_downstroke      = noteHead $ charNoteHead 'X'
+
+
+-- | Note is 'X' at the high position.
+--
+shekere_upstroke        :: NoteHead
+shekere_upstroke        = noteHead $ highNoteHead $ charDesc 'X'
 
 
 -- | Note is 'X', low is disk.
 --
-downstroke_with_hand_hit  :: NoteHead
-downstroke_with_hand_hit  = 
+shekere_downstroke_plus_hand_hit  :: NoteHead
+shekere_downstroke_plus_hand_hit  = 
     noteHead $ lowBiNoteHead diskDesc (charNoteHead 'X')
