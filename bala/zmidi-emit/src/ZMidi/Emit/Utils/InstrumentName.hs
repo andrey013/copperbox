@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  ZMidi.Emit.Utils.InstrumentName
--- Copyright   :  (c) Stephen Tetley 2010
+-- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -23,6 +23,8 @@ module ZMidi.Emit.Utils.InstrumentName
 
 import qualified Data.IntMap as IntMap
 import Data.Word
+
+
 
 -- | Get the General MIDI instrument name, index should be in the 
 -- range[0..127].
@@ -178,4 +180,6 @@ instrument_name_map = IntMap.fromAscList names
             , (126, "applause"                  )
             , (127, "gunshot"                   )
             ]
+
+
 

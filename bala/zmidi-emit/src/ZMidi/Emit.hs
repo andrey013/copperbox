@@ -23,6 +23,8 @@ module ZMidi.Emit
   ( 
 
     module ZMidi.Emit.Construction
+  , module ZMidi.Emit.GMDrums
+  , module ZMidi.Emit.GMInstruments
   , module ZMidi.Emit.VersionNumber
 
 
@@ -50,5 +52,7 @@ module ZMidi.Emit
 
 import ZMidi.Emit.Construction
 import ZMidi.Emit.Datatypes
+import ZMidi.Emit.GMDrums
+import ZMidi.Emit.GMInstruments
 import ZMidi.Emit.OutputMidi
 import ZMidi.Emit.VersionNumber

@@ -47,6 +47,8 @@ library
   exposed-modules:
     ZMidi.Emit,
     ZMidi.Emit.Construction,
+    ZMidi.Emit.GMDrums,
+    ZMidi.Emit.GMInstruments,
     ZMidi.Emit.VersionNumber
 
   other-modules:
