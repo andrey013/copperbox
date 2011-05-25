@@ -69,7 +69,7 @@ module ZMidi.Emit.GMDrums
   ) where
 
 
-import ZMidi.Emit.Datatypes
+import ZMidi.Emit.SyntaxInternal
 
 
 -------------------------------------------------------------------------------

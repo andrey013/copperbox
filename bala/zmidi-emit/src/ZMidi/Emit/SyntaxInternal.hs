@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.Emit.Datatypes
--- Copyright   :  (c) Stephen Tetley 2010
+-- Module      :  ZMidi.Emit.SyntaxInternal
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Emit.Datatypes
+module ZMidi.Emit.SyntaxInternal
   ( 
 
   -- * Type synonyms
@@ -25,7 +25,7 @@ module ZMidi.Emit.Datatypes
   , GMDrum
 
   -- * Higher level syntax
-  ,  HiMidi(..)
+  , HiMidi(..)
   , Track(..)
   , Voice(..)
   , Section(..)
@@ -118,6 +118,15 @@ data HiMidi = HiMidi
       , hm_data_tracks  :: JoinList Track 
       }
   deriving (Show)
+
+--
+-- Note HiMidi is probably superfluous.
+--
+-- The only \"interesting\" operation is write:
+--
+-- > writeHiMidi :: FilePath -> [MidiMetaEvent] -> [Track] -> IO ()
+--
+-- 
 
 
 -- | A Track supports upto 16 channels of simultaneous /voices/.
@@ -215,6 +224,9 @@ instance Show VoiceMsg where
 data PrimProps = PrimProps
       { velocity_on     :: Word8
       , velocity_off    :: Word8
+      , prim_volume     :: Word16
+      , prim_balance    :: Word16  -- 00 hard left, 7F7F hard right
+      , prim_inst       :: Word8
       }
   deriving (Eq,Ord,Show)
 

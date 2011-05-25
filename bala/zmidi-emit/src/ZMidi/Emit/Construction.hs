@@ -81,7 +81,7 @@ module ZMidi.Emit.Construction
 
   ) where
 
-import ZMidi.Emit.Datatypes
+import ZMidi.Emit.SyntaxInternal
 import ZMidi.Emit.Builder
 import ZMidi.Emit.Utils.InstrumentName
 import qualified ZMidi.Emit.Utils.JoinList as JL
@@ -179,6 +179,8 @@ infixl 6 `meta`
 -- As per 'addTrack' the argument order here follows the 
 -- /snoc list/ convention rather than the usual Haskell 
 -- convention.
+-- 
+-- THIS IS SLOW (pending replacement...)
 -- 
 meta :: HiMidi -> MetaInfo -> HiMidi
 meta rep meta_info = rep { hm_info_track = info }

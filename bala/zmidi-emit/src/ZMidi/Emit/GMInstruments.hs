@@ -183,7 +183,7 @@ module ZMidi.Emit.GMInstruments
 
   ) where
 
-import ZMidi.Emit.Datatypes
+import ZMidi.Emit.SyntaxInternal
 
 
 

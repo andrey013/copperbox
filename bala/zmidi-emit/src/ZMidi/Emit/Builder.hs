@@ -41,7 +41,7 @@ module ZMidi.Emit.Builder
   ) where
 
 
-import ZMidi.Emit.Datatypes
+import ZMidi.Emit.SyntaxInternal
 import ZMidi.Emit.Utils.HList
 
 import Control.Applicative

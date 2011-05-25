@@ -25,34 +25,18 @@ module ZMidi.Emit
     module ZMidi.Emit.Construction
   , module ZMidi.Emit.GMDrums
   , module ZMidi.Emit.GMInstruments
+  , module ZMidi.Emit.OutputMidi
+  , module ZMidi.Emit.Syntax
   , module ZMidi.Emit.VersionNumber
 
 
-  -- * Type synonyms
-  , MidiPitch
-  , MidiDuration
-  , GMInst
-  , GMDrum
-
-  -- * Data types
-  , HiMidi
-  , Track
-  , Voice
-  , Section
-  , Overlay
-  , Primitive
-  , VoiceMsg
-  , PrimProps
-
-  -- * Output
-  , writeHiMidi  -- re-export from Emit.OutputMidi
 
  
   ) where
 
 import ZMidi.Emit.Construction
-import ZMidi.Emit.Datatypes
 import ZMidi.Emit.GMDrums
 import ZMidi.Emit.GMInstruments
 import ZMidi.Emit.OutputMidi
+import ZMidi.Emit.Syntax
 import ZMidi.Emit.VersionNumber

@@ -46,15 +46,16 @@ library
   
   exposed-modules:
     ZMidi.Emit,
+    ZMidi.Emit.Builder,
     ZMidi.Emit.Construction,
+    ZMidi.Emit.Syntax,
+    ZMidi.Emit.OutputMidi,
     ZMidi.Emit.GMDrums,
     ZMidi.Emit.GMInstruments,
     ZMidi.Emit.VersionNumber
 
   other-modules:
-    ZMidi.Emit.Builder,
-    ZMidi.Emit.Datatypes,
-    ZMidi.Emit.OutputMidi,
+    ZMidi.Emit.SyntaxInternal,
     ZMidi.Emit.Utils.HList,
     ZMidi.Emit.Utils.InstrumentName,
     ZMidi.Emit.Utils.JoinList

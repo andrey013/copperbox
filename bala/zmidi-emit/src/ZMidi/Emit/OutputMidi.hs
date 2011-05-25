@@ -12,7 +12,7 @@
 --
 -- Output MIDI.
 --
--- WARNING TO SELF - are you printing sequence numbers in the infor track?
+-- WARNING TO SELF - are you printing sequence numbers in the info track?
 --
 --------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ module ZMidi.Emit.OutputMidi
     writeHiMidi
   ) where
 
-import ZMidi.Emit.Datatypes
+import ZMidi.Emit.SyntaxInternal
 import ZMidi.Emit.Utils.JoinList ( JoinList, ViewL(..), viewl, cons )
 import qualified ZMidi.Emit.Utils.JoinList as JL
 
@@ -72,7 +72,8 @@ durationr r = floor $ (4 * ticks_per_quarternote) * r
 -- is performed as a traversal afterwards
 
 data RState = RState
-      { rs_volume               :: Word8
+      { rs_volume               :: Word16
+      , rs_balance              :: Word16
       , rs_ellapsed_time        :: Word32
       }
 
@@ -151,9 +152,9 @@ outputZMR ztim (HiMidi info ts) =
 
 
 infoTrack :: JoinList MidiMetaEvent -> MidiTrack
-infoTrack mmes = MidiTrack $ body ++ [ sequenceName "Track 0", end_of_track ]
+infoTrack ms = MidiTrack $ F.foldr fn [ sequenceName "Track 0", end_of_track ] ms
   where
-    body = JL.toListF (\mme -> (0, MetaEvent mme)) mmes
+    fn e ac =  (0, MetaEvent e) : ac
 
 
 timeInfoTrack :: ZonedTime -> MidiTrack
