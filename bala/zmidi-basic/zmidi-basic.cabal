@@ -1,0 +1,77 @@
+name:             zmidi-basic
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Higher level music representation built on ZMidi-Core.
+description:
+  .
+  A simple MIDI-like but slightly higher-level music syntax
+  representation, intended as a backend emitter for generating 
+  MIDI files.
+  .
+  MIDI essentially represents the control of a keyboard 
+  synthesizer - pressing keys and releasing them. In contrast 
+  ZMidi-Basic represents music with notes and chords, although 
+  like MIDI it doesn\'t directly defined rests - there are nice
+  manipulations available if notes are represented with their
+  onset /delta times/. 
+  .
+  Like MIDI, ZMidi-Basic allows multiple tracks, which in turn can 
+  contain multiple channels.
+  .
+  Changelog:
+  . 
+  v0.1.0:
+  .
+  * Initial release.
+  .
+  .
+build-type:         Simple
+stability:          unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  CHANGES,
+  demo/Demo01.hs,
+  demo/Perc.hs,
+  demo/Scale.hs
+  demo/VolumeChange.hs,
+  demo/WasnRhythms.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      containers        >= 0.3    &&  < 0.6, 
+                      time              >= 1.1.3  &&  < 1.6,
+                      zmidi-core        >= 0.3.0  &&  < 0.4.0
+  
+  exposed-modules:
+    ZMidi.Basic,
+    ZMidi.Basic.Builder,
+    ZMidi.Basic.Construction,
+    ZMidi.Basic.GMDrums,
+    ZMidi.Basic.GMInstruments,
+    ZMidi.Basic.OutputMidi,
+    ZMidi.Basic.Syntax,
+    ZMidi.Basic.VersionNumber
+
+  other-modules:
+    ZMidi.Basic.SyntaxInternal,
+    ZMidi.Basic.Utils.HList,
+    ZMidi.Basic.Utils.InstrumentName,
+    ZMidi.Basic.Utils.JoinList
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
