@@ -9,9 +9,7 @@ category:         Music
 synopsis:         Higher level music representation built on ZMidi-Core.
 description:
   .
-  A simple MIDI-like but slightly higher-level music syntax
-  representation, intended as a backend emitter for generating 
-  MIDI files.
+  A high level music representation built on ZMidi-Core and MIDI.
   .
   MIDI essentially represents the control of a keyboard 
   synthesizer - pressing keys and releasing them. In contrast 
@@ -50,20 +48,19 @@ library
                       zmidi-core        >= 0.3.0  &&  < 0.4.0
   
   exposed-modules:
-    ZMidi.Basic,
-    ZMidi.Basic.Builder,
-    ZMidi.Basic.Construction,
-    ZMidi.Basic.GMDrums,
-    ZMidi.Basic.GMInstruments,
-    ZMidi.Basic.OutputMidi,
-    ZMidi.Basic.Syntax,
+    ZMidi.Basic.Kernel,
+    ZMidi.Basic.Kernel.Base.OutputMidi,
+    ZMidi.Basic.Kernel.Base.RenderContext,
+    ZMidi.Basic.Kernel.Base.Syntax,
+    ZMidi.Basic.Kernel.Base.WrappedPrimitive,
+    ZMidi.Basic.Kernel.Objects.GMDrums,
+    ZMidi.Basic.Kernel.Objects.GMInstruments,
+    ZMidi.Basic.Kernel.Objects.InstrumentName,
     ZMidi.Basic.VersionNumber
+    ZMidi.Basic.Utils.HList,
+    ZMidi.Basic.Utils.JoinList
 
   other-modules:
-    ZMidi.Basic.SyntaxInternal,
-    ZMidi.Basic.Utils.HList,
-    ZMidi.Basic.Utils.InstrumentName,
-    ZMidi.Basic.Utils.JoinList
       
   extensions:
     

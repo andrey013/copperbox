@@ -29,6 +29,7 @@ import ZMidi.Core                               -- package: zmidi-core
 
 import Control.Applicative
 import Control.Monad
+import Data.Bits
 import qualified Data.Foldable as F
 import Data.List
 import qualified Data.IntMap as IM
@@ -70,6 +71,14 @@ durationr r = floor $ (4 * ticks_per_quarternote) * r
 
 --------------------------------------------------------------------------------
 
+
+-- | Function from channel-number to MidiVoice event.
+--
+type VoiceMsg = Word8 -> MidiVoiceEvent
+
+
+-- | Monad for rendering.
+--
 newtype MidiMonad a = MidiMonad { 
           getMidiMonad :: DeltaState -> (a,DeltaState) }
 
@@ -126,24 +135,33 @@ setsDS fn = MidiMonad $ \s -> ((),fn s)
 
 
 
-incrEllapsedTime :: Int -> MidiMonad ()
-incrEllapsedTime n = 
-    setsDS (\s -> let i = st_ellapsed_time s in s { st_ellapsed_time = i+n})
 
 incrTrackNumber :: MidiMonad ()
 incrTrackNumber = 
     setsDS (\s -> let i = st_track_num s in s { st_track_num = i+1})
 
+getVolume           :: MidiMonad Word16
+getVolume           = getsDS st_volume
 
+setVolume           :: Word16 -> MidiMonad ()
+setVolume i         = setsDS (\s -> s { st_volume = i } )
 
 getEllapsedTime     :: MidiMonad Int
 getEllapsedTime     = getsDS st_ellapsed_time
 
--- Note - this is needed for overlays which all must begin at the 
+-- In the main, rendering uses @incr@ rtaher than @set@ for 
+-- ellapsed time.
+--
+incrEllapsedTime :: Int -> MidiMonad ()
+incrEllapsedTime n = 
+    setsDS (\s -> let i = st_ellapsed_time s in s { st_ellapsed_time = i+n})
+
+-- But @set@ is still needed for overlays which all must begin at the 
 -- same time.
 --
 setEllapsedTime  :: Int -> MidiMonad ()
 setEllapsedTime t = setsDS (\s -> s { st_ellapsed_time = t })
+
 
 getChannelNumber    :: MidiMonad Word8
 getChannelNumber    = getsDS st_channel_num
@@ -151,8 +169,8 @@ getChannelNumber    = getsDS st_channel_num
 setChannelNumber    :: Int -> MidiMonad ()
 setChannelNumber i  = setsDS (\s -> s { st_channel_num = fromIntegral i })
 
-resetDS             :: MidiMonad ()
-resetDS             = setsDS (\s -> s { st_volume         = 127
+resetDeltas         :: MidiMonad ()
+resetDeltas         = setsDS (\s -> s { st_volume         = 127
                                       , st_balance        = 0x7F7F `div` 2
                                       , st_ellapsed_time  = 0
                                       } )
@@ -234,7 +252,7 @@ nextTrack = incrTrackNumber
 --
 outputVoice :: (Int, Voice) -> MidiMonad ChannelStream
 outputVoice (ch,vce) = 
-    setChannelNumber ch >> F.foldlM mf mempty (getVoice vce)
+    setChannelNumber ch >> resetDeltas >> F.foldlM mf mempty (getVoice vce)
   where
     mf :: ChannelStream -> Measure -> MidiMonad ChannelStream
     mf ac e = (\a -> ac `mappend` a) <$> outputMeasure e
@@ -286,10 +304,27 @@ primitives (x:xs) = step x xs
 
 primitive :: Primitive -> MidiMonad ChannelStream
 primitive (PNote dt d props p)   = 
-    incrEllapsedTime (fromIntegral dt) >> primNote (durationr d) props p
+    incrEllapsedTime (fromIntegral dt) >> 
+    liftM2 mappend (deltaPrimProps props) (primNote (durationr d) props p)
 
 primitive (PChord dt d props ps) = 
-    incrEllapsedTime (fromIntegral dt) >> primChord (durationr d) props ps
+    incrEllapsedTime (fromIntegral dt) >> 
+    liftM2 mappend (deltaPrimProps props) (primChord (durationr d) props ps)
+
+
+deltaPrimProps :: PrimProps -> MidiMonad ChannelStream
+deltaPrimProps (PrimProps { prim_volume = vol }) = do
+    dvol <- getVolume 
+    if vol == dvol then return mempty
+                   else setVolume vol >> primVolumeCtrl vol
+
+primVolumeCtrl :: Word16 -> MidiMonad ChannelStream
+primVolumeCtrl vol = liftM2 JL.two (voiceMsg ctrl7) (voiceMsg ctrl38)
+  where
+    lsb     = fromIntegral $ vol .&. 0x7F
+    msb     = fromIntegral $ (vol `shiftR` 7) .&. 0x7F
+    ctrl7   = \ch -> Controller ch 7  msb
+    ctrl38  = \ch -> Controller ch 38 lsb
 
 
 primNote :: Word32 -> PrimProps -> Word8 -> MidiMonad ChannelStream
@@ -297,8 +332,6 @@ primNote d props p =
     (\non nof -> JL.two non nof) 
        <$> noteOn  p (prim_velo_on props)
        <*> (incrEllapsedTime (fromIntegral d) *> noteOff p (prim_velo_off props))
-
-
 
 
 primChord :: Word32 -> PrimProps -> [Word8] -> MidiMonad ChannelStream
@@ -310,14 +343,14 @@ primChord d props ps  =
 
 
 
--- voiceMsg :: VoiceMsg -> MidiMonad MidiMessage
--- voiceMsg f = (\et ch -> (et, VoiceEvent $ getVoiceMsg f ch)) 
---                 <$> getEllapsedTime <*> askChannelNumber
+voiceMsg :: VoiceMsg -> MidiMonad AbsMidiMessage
+voiceMsg f = (\et ch -> AMM et (VoiceEvent $ f ch)) 
+                 <$> getEllapsedTime <*> getChannelNumber
             
 
 
-metaEvent :: MidiMetaEvent -> MidiMonad AbsMidiMessage
-metaEvent evt = (\et -> AMM et (MetaEvent evt)) <$> getEllapsedTime
+-- metaEvent :: MidiMetaEvent -> MidiMonad AbsMidiMessage
+-- metaEvent evt = (\et -> AMM et (MetaEvent evt)) <$> getEllapsedTime
 
 
 noteOn :: Word8 -> Word8 -> MidiMonad AbsMidiMessage
@@ -363,6 +396,9 @@ pad2 i | i < 10    = ('0':) . shows i
 
 floori :: RealFrac a => a -> Int
 floori = floor
+
+
+
 
 
 --------------------------------------------------------------------------------

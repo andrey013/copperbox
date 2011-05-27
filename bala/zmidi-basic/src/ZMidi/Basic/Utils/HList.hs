@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.Emit.Utils.HList
--- Copyright   :  (c) Stephen Tetley 2010
+-- Module      :  ZMidi.Basic.Utils.HList
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Emit.Utils.HList
+module ZMidi.Basic.Utils.HList
   ( 
 
   -- * Hughes list
