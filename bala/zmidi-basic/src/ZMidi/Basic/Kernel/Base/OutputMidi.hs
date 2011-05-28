@@ -21,6 +21,7 @@ module ZMidi.Basic.Kernel.Base.OutputMidi
     writeHiMidi
   ) where
 
+import ZMidi.Basic.Kernel.Base.RenderContext ( default_volume, default_pan )
 import ZMidi.Basic.Kernel.Base.Syntax
 import ZMidi.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl, cons )
 import qualified ZMidi.Basic.Utils.JoinList as JL
@@ -170,8 +171,8 @@ setChannelNumber    :: Int -> MidiMonad ()
 setChannelNumber i  = setsDS (\s -> s { st_channel_num = fromIntegral i })
 
 resetDeltas         :: MidiMonad ()
-resetDeltas         = setsDS (\s -> s { st_volume         = 127
-                                      , st_balance        = 0x7F7F `div` 2
+resetDeltas         = setsDS (\s -> s { st_volume         = default_volume
+                                      , st_balance        = default_pan
                                       , st_ellapsed_time  = 0
                                       } )
 
