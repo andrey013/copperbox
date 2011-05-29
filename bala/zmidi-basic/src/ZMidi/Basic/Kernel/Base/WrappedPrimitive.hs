@@ -26,14 +26,11 @@ module ZMidi.Basic.Kernel.Base.WrappedPrimitive
 
   ) where
 
-import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.Syntax
 import ZMidi.Basic.Utils.HList
-import ZMidi.Basic.Utils.JoinList ( JoinList, ViewL(..), ViewR(..)
-                                  , viewr, viewl )
+import ZMidi.Basic.Utils.JoinList ( JoinList, ViewR(..), viewr )
 import qualified ZMidi.Basic.Utils.JoinList as JL
 
-import ZMidi.Core
 
 import Data.Monoid
 
@@ -55,20 +52,17 @@ instance Monoid CatPrim where
                             in Cat1 $ a `mappend` delayFirst dx b 
 
 
-durationLast :: JoinList Primitive -> DeltaTime
+durationLast :: JoinList Primitive -> Double
 durationLast = step . viewr
   where
-    step EmptyR = 0
-    step (_ :> (PNote _ d _ _))  = durationDT d
-    step (_ :> (PChord _ d _ _)) = durationDT d
+    step EmptyR                 = 0
+    step (_ :> (PNote d _ _))   = d
+    step (_ :> (PChord d _ _))  = d
+    step (_ :> (PRest d))       = d
 
 
-delayFirst :: DeltaTime -> JoinList Primitive -> JoinList Primitive
-delayFirst dx = step . viewl
-  where
-    step EmptyL                     = mempty
-    step ((PNote dt d p pch) :< se) = (PNote (dt+dx) d p pch) `JL.cons` se
-    step ((PChord dt d p xs) :< se) = (PChord (dt+dx) d p xs) `JL.cons` se
+delayFirst :: Double -> JoinList Primitive -> JoinList Primitive
+delayFirst dx = JL.cons (PRest dx) 
 
 
 

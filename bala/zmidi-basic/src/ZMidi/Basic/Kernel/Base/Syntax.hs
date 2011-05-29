@@ -35,7 +35,7 @@ module ZMidi.Basic.Kernel.Base.Syntax
   , Overlay(..)
   , Primitive(..)
   , PrimProps(..)
-
+  , default_props
 
   -- * Operations
   , addVoice
@@ -202,9 +202,7 @@ newtype Overlay = Overlay { getOverlay :: [Primitive] }
   deriving (Show)
 
 
--- | Primitive is either a note or chord. There are no rests - 
--- notes and chords include their /onset delta time/ as well as
--- their duration.
+-- | Primitive is either a note, rest or chord. 
 --
 -- Pitch is a Word8 - the MIDI pitch number. It is expected that
 -- client software will use some other type and call the pitch
@@ -214,8 +212,9 @@ newtype Overlay = Overlay { getOverlay :: [Primitive] }
 -- note. It is expected that client software will use some other 
 -- type but convert to Double as it builds the syntax.
 --
-data Primitive = PNote   DeltaTime Double PrimProps Word8
-               | PChord  DeltaTime Double PrimProps [Word8]
+data Primitive = PNote   Double PrimProps Word8
+               | PChord  Double PrimProps [Word8]
+               | PRest   Double
    deriving (Show)
 
 -- Note - if we have store delta time rather than explicit rest 
@@ -232,7 +231,11 @@ data PrimProps = PrimProps
       }
   deriving (Eq,Ord,Show)
 
-
+default_props :: PrimProps
+default_props = PrimProps { prim_velo_on    = 127
+                          , prim_velo_off   = 63
+                          , prim_volume     = 127
+                          }
 
 {-
       -- TODO - what decides the instrument in use?

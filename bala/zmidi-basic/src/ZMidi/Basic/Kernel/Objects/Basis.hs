@@ -29,8 +29,6 @@ module ZMidi.Basic.Kernel.Objects.Basis
   , ignoreAns
   , replaceAns
 
-  , Decorate(..)
-
   ) where
 
 import ZMidi.Basic.Kernel.Base.RenderContext
@@ -151,6 +149,18 @@ replaceAns a = fmap (const a)
 
 
 
+{-
+
+-- 
+-- Note - decorate seems to be a lot less useful for music than it 
+-- is for graphics.
+-- 
+-- If sequential concat is the better interpretation of mappend 
+-- for CatPrim, then decorate might not be useful at all...
+--
+
+
+
 -- | Decorate an object
 --
 -- oliterate - drops the residual event from the first object 
@@ -197,3 +207,5 @@ instance Decorate Event where
   decorate    = decorateEvent
   elaborate   = elaborateEvent  
   obliterate  = obliterateEvent
+
+-}

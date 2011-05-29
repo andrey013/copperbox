@@ -304,13 +304,14 @@ primitives (x:xs) = step x xs
 
 
 primitive :: Primitive -> MidiMonad ChannelStream
-primitive (PNote dt d props p)   = 
-    incrEllapsedTime (fromIntegral dt) >> 
+primitive (PNote d props p)   = 
     liftM2 mappend (deltaPrimProps props) (primNote (durationr d) props p)
 
-primitive (PChord dt d props ps) = 
-    incrEllapsedTime (fromIntegral dt) >> 
+primitive (PChord d props ps) = 
     liftM2 mappend (deltaPrimProps props) (primChord (durationr d) props ps)
+
+primitive (PRest d)           = 
+    incrEllapsedTime (fromIntegral $ durationr d) >> return mempty
 
 
 deltaPrimProps :: PrimProps -> MidiMonad ChannelStream
