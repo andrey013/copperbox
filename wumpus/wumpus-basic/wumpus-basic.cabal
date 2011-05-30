@@ -45,6 +45,9 @@ description:
   * Added @ORIGIN@ to the @RectAddress@ enumeration. I had 
     overlooked that @BLC /= ORIGIN@.
   .
+  * Added underline-position and underline-thickness to the font 
+    metrics read by the font loader.
+  .
   v0.17.0 to v0.18.0:
   . 
   * Major change - removed @ContextFun@ from @Kernel.Base@. Now 

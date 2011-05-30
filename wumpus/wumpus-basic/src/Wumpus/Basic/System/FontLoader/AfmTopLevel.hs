@@ -102,10 +102,12 @@ afmLoadFontMetrics font_dir_path font_def = do
 --
 afm_mono_defaults_4_1 :: MonospaceDefaults AfmUnit
 afm_mono_defaults_4_1 = 
-    MonospaceDefaults { default_letter_bbox  = bbox
-                      , default_cap_height   = 562
-                      , default_descender    = (-157)
-                      , default_char_width   = V2 600 0
+    MonospaceDefaults { default_letter_bbox         = bbox
+                      , default_cap_height          = 562
+                      , default_descender           = (-157)
+                      , default_underline_position  = (-100)
+                      , default_underline_thickness = 50 
+                      , default_char_width          = V2 600 0
                       }
   where
     bbox = BBox (P2 (-23) (-250)) (P2 715 805)

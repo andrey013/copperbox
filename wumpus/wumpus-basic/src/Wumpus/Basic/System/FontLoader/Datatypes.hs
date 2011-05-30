@@ -81,11 +81,13 @@ type GlobalInfo     = M.Map AfmKey String
 -- Encoding Scheme is optional in AFM files.
 --
 data AfmFile = AfmFile 
-      { afm_encoding        :: Maybe String
-      , afm_letter_bbox     :: Maybe AfmBoundingBox
-      , afm_cap_height      :: Maybe AfmUnit
-      , afm_descender       :: Maybe AfmUnit
-      , afm_glyph_metrics   :: [AfmGlyphMetrics]
+      { afm_encoding                :: Maybe String
+      , afm_letter_bbox             :: Maybe AfmBoundingBox
+      , afm_cap_height              :: Maybe AfmUnit
+      , afm_descender               :: Maybe AfmUnit
+      , afm_underline_position      :: Maybe AfmUnit
+      , afm_underline_thickness     :: Maybe AfmUnit
+      , afm_glyph_metrics           :: [AfmGlyphMetrics]
       }
   deriving (Show) 
   
@@ -109,10 +111,12 @@ data AfmGlyphMetrics = AfmGlyphMetrics
 -- in the distributed font files.
 --
 data MonospaceDefaults cu = MonospaceDefaults 
-      { default_letter_bbox  :: BoundingBox cu
-      , default_cap_height   :: cu
-      , default_descender    :: cu
-      , default_char_width   :: Vec2 cu
+      { default_letter_bbox         :: BoundingBox cu
+      , default_cap_height          :: cu
+      , default_descender           :: cu
+      , default_underline_position  :: cu
+      , default_underline_thickness :: cu
+      , default_char_width          :: Vec2 cu
       }
   deriving (Eq,Show)
 
@@ -133,6 +137,8 @@ data FontProps cu = FontProps
        , fp_adv_vecs            :: IM.IntMap (Vec2 cu)
        , fp_cap_height          :: cu
        , fp_descender           :: cu
+       , fp_underline_position  :: cu
+       , fp_underline_thickness :: cu
        }
 
 

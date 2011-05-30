@@ -99,10 +99,12 @@ gsLoadFontMetrics font_dir_path font_def = do
 --
 ghostscript_mono_defaults_8_54 :: MonospaceDefaults AfmUnit
 ghostscript_mono_defaults_8_54 = 
-    MonospaceDefaults { default_letter_bbox  = bbox
-                      , default_cap_height   = 563
-                      , default_descender    = (-186)
-                      , default_char_width   = V2 600 0
+    MonospaceDefaults { default_letter_bbox         = bbox
+                      , default_cap_height          = 563
+                      , default_descender           = (-186)
+                      , default_underline_position  = (-100)
+                      , default_underline_thickness = 50 
+                      , default_char_width          = V2 600 0
                       }
   where
     bbox = BBox (P2 (-46) (-273)) (P2 650 820)

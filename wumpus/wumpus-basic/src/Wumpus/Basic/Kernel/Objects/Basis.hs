@@ -338,8 +338,8 @@ elaborateImage zo ma k = Image $ \ ctx ->
 obliterateImage :: Image u a -> Image u z -> Image u a
 obliterateImage ma mb = Image $ \ctx -> 
     let a  = primAnswer $ getImage ma ctx
-        ca = getCatPrim $ getImage mb ctx
-    in PrimW ca a
+        cb = getCatPrim $ getImage mb ctx
+    in PrimW cb a
   
 hyperlinkImage :: XLink -> Image u a -> Image u a
 hyperlinkImage xl ma = Image $ \ctx -> step (getImage ma ctx)

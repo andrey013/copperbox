@@ -149,15 +149,19 @@ buildAfmFontProps :: MonospaceDefaults AfmUnit
                   -> AfmFile 
                   -> FontLoadIO (FontProps AfmUnit)
 buildAfmFontProps defaults afm = do 
-    cap_height  <- extractCapHeight defaults afm
-    desc_depth  <- extractDescender defaults afm
-    bbox        <- extractFontBBox  defaults afm 
+    cap_height    <- extractCapHeight   defaults afm
+    desc_depth    <- extractDescender   defaults afm
+    ul_position   <- extractUlPosition  defaults afm
+    ul_thickness  <- extractUlThickness defaults afm
+    bbox          <- extractFontBBox    defaults afm 
     return $ FontProps 
-               { fp_bounding_box    = bbox
-               , fp_default_adv_vec = default_char_width defaults
-               , fp_adv_vecs        = char_widths
-               , fp_cap_height      = cap_height
-               , fp_descender       = desc_depth
+               { fp_bounding_box        = bbox
+               , fp_default_adv_vec     = default_char_width defaults
+               , fp_adv_vecs            = char_widths
+               , fp_cap_height          = cap_height
+               , fp_descender           = desc_depth
+               , fp_underline_position  = ul_position
+               , fp_underline_thickness = ul_thickness
                }  
   where
     char_widths = foldr fn IntMap.empty $ afm_glyph_metrics afm
@@ -180,6 +184,20 @@ extractDescender defaults afm = maybe errk return $ afm_descender afm
   where
     errk = tellLoadMsg "WARNING - Could not extract Descender" >> 
            return (default_descender defaults)
+
+extractUlPosition :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
+extractUlPosition defaults afm = 
+    maybe errk return $ afm_underline_position afm
+  where
+    errk = tellLoadMsg "WARNING - Could not extract UnderlinePosition" >> 
+           return (default_underline_position defaults)
+
+extractUlThickness :: MonospaceDefaults AfmUnit -> AfmFile -> FontLoadIO AfmUnit
+extractUlThickness defaults afm = 
+    maybe errk return $ afm_underline_thickness afm
+  where
+    errk = tellLoadMsg "WARNING - Could not extract UnderlineThickness" >> 
+           return (default_underline_thickness defaults)
 
 
 extractFontBBox :: MonospaceDefaults AfmUnit -> AfmFile 

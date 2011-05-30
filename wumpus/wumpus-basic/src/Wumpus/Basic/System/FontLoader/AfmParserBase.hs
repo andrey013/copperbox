@@ -68,11 +68,13 @@ afmFileParser pgm = do
     info <- (versionNumber    *> globalInfo) 
     cms  <- (startCharMetrics *> many pgm)
     return $ AfmFile 
-              { afm_encoding        = getEncodingScheme info
-              , afm_letter_bbox     = getFontBBox       info
-              , afm_cap_height      = getCapHeight      info
-              , afm_descender       = getDescender      info
-              , afm_glyph_metrics   = cms
+              { afm_encoding            = getEncodingScheme info
+              , afm_letter_bbox         = getFontBBox       info
+              , afm_cap_height          = getCapHeight      info
+              , afm_descender           = getDescender      info
+              , afm_underline_position  = getUlPosition     info
+              , afm_underline_thickness = getUlThickness    info
+              , afm_glyph_metrics       = cms
               }
 
 globalInfo :: CharParser GlobalInfo
@@ -105,6 +107,15 @@ getCapHeight           = runQuery "CapHeight" number
 
 getDescender           :: GlobalInfo -> Maybe AfmUnit
 getDescender           = runQuery "Descender" number
+
+
+-- | Expected to be negative...
+--
+getUlPosition          :: GlobalInfo -> Maybe AfmUnit
+getUlPosition          = runQuery "UnderlinePosition" number
+
+getUlThickness         :: GlobalInfo -> Maybe AfmUnit
+getUlThickness         = runQuery "UnderlineThickness" number
 
 
 charBBox :: CharParser AfmBoundingBox
