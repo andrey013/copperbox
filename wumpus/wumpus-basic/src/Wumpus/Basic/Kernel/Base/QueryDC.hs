@@ -53,6 +53,8 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , glyphBoundingBox
   , capHeight
   , descender
+  , underlinePosition
+  , underlineThickness
   , verticalSpan
 
   , cwLookupTable
@@ -225,6 +227,20 @@ capHeight = dinterp <$> asksDC dc_font_size <*> glyphQuery get_cap_height
 --
 descender :: (DrawingCtxM m, InterpretUnit u) => m u
 descender = dinterp <$> asksDC dc_font_size <*> glyphQuery get_descender
+
+
+-- | Note - underline_position is expected to be negative.
+--
+underlinePosition :: (DrawingCtxM m, InterpretUnit u) => m u
+underlinePosition = 
+    dinterp <$> asksDC dc_font_size <*> glyphQuery get_underline_position
+
+
+-- | Line width of underline line.
+--
+underlineThickness :: (DrawingCtxM m, InterpretUnit u) => m u
+underlineThickness = 
+    dinterp <$> asksDC dc_font_size <*> glyphQuery get_underline_thickness
 
 
 -- | This is the distance from cap_height to descender.

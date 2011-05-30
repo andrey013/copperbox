@@ -154,6 +154,8 @@ buildMetricsOps fn font@(FontProps { fp_bounding_box = BBox ll ur
             maybe (defaultAV sz) (scaleVec sz) $ IM.lookup i (fp_adv_vecs font)
       , get_cap_height    = \sz -> fn sz (fp_cap_height font)
       , get_descender     = \sz -> fn sz (fp_descender font)
+      , get_underline_position  = \sz -> fn sz (fp_underline_position font)
+      , get_underline_thickness = \sz -> fn sz (fp_underline_thickness font)
       }
   where
     defaultAV sz            = V2 (fn sz vx) (fn sz vy) 

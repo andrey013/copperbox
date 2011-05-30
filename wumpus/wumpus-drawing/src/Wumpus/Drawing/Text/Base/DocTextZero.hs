@@ -434,19 +434,19 @@ drawStrikethrough (Orientation xmin xmaj _ ymaj) =
 
 drawUnderline :: (Fractional u, InterpretUnit u) 
               => Orientation u -> LocGraphic u
-drawUnderline (Orientation xmin xmaj ymin _) = 
+drawUnderline (Orientation xmin xmaj _ _) = 
+    underlinePosition >>= \vpos ->
     linestyle $ moveStart (vec (-xmin) vpos) ln
   where
-    vpos  = negate $ 0.45 * ymin
     ln    = locStraightLine (hvec $ xmin + xmaj)
 
+
+-- | This uses underline_thickness ...
+--
 linestyle :: LocGraphic u -> LocGraphic u
 linestyle mf = 
-    pointSize >>= \sz -> 
-    localize (stroke_use_text_colour . set_line_width (lim sz)) mf
-  where
-    lim i | i < 10    = 1.0
-          | otherwise = (fromIntegral i) / 15.0 
+    underlineThickness >>= \sz -> 
+    localize (stroke_use_text_colour . set_line_width sz) mf
 
 
 -- | Note - halving the TextMargin looks good.

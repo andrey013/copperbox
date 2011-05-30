@@ -158,10 +158,12 @@ type CharWidthLookup = CodePoint -> Vec2 Double
 -- current point size, the actual fields are all functions.
 --
 data FontMetrics = FontMetrics
-    { get_bounding_box :: FontSize -> BoundingBox Double
-    , get_cw_table     :: FontSize -> CharWidthLookup
-    , get_cap_height   :: FontSize -> Double
-    , get_descender    :: FontSize -> Double
+    { get_bounding_box          :: FontSize -> BoundingBox Double
+    , get_cw_table              :: FontSize -> CharWidthLookup
+    , get_cap_height            :: FontSize -> Double
+    , get_descender             :: FontSize -> Double
+    , get_underline_position    :: FontSize -> Double
+    , get_underline_thickness   :: FontSize -> Double
     }
 
 
@@ -235,10 +237,12 @@ insertFont name ops =
 --
 monospace_metrics :: FontMetrics
 monospace_metrics = FontMetrics
-    { get_bounding_box  = \sz -> BBox (lowerLeft sz) (upperRight sz)
-    , get_cw_table      = \sz _ -> hvec (upscale sz width_vec) 
-    , get_cap_height    = \sz -> upscale sz cap_height
-    , get_descender     = \sz -> upscale sz descender
+    { get_bounding_box          = \sz -> BBox (lowerLeft sz) (upperRight sz)
+    , get_cw_table              = \sz _ -> hvec (upscale sz width_vec) 
+    , get_cap_height            = \sz -> upscale sz cap_height
+    , get_descender             = \sz -> upscale sz descender
+    , get_underline_position    = \sz -> upscale sz underline_pos
+    , get_underline_thickness   = \sz -> upscale sz underline_width
     }
   where
     llx             = (-23)  / 1000
@@ -248,6 +252,8 @@ monospace_metrics = FontMetrics
     width_vec       = 600    / 1000
     cap_height      = 562    / 1000
     descender       = (-157) / 1000
+    underline_pos   = (-100) / 1000
+    underline_width = 50     / 1000
 
     upscale sz d    = d * fromIntegral sz
     lowerLeft sz    = P2 (upscale sz llx) (upscale sz lly) 
