@@ -18,10 +18,10 @@ module Wumpus.Drawing.Text.DirectionZero
   ( 
     module Wumpus.Drawing.Text.Base.DocTextZero
   , module Wumpus.Drawing.Text.Base.PosChar
-  , module Wumpus.Drawing.Text.Base.RotTextZero
+  , module Wumpus.Drawing.Text.Base.SimpleTextZero
 
   ) where
 
 import Wumpus.Drawing.Text.Base.DocTextZero
 import Wumpus.Drawing.Text.Base.PosChar
-import Wumpus.Drawing.Text.Base.RotTextZero
+import Wumpus.Drawing.Text.Base.SimpleTextZero

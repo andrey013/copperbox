@@ -14,11 +14,15 @@
 --
 -- Helpers for working with measured / advance text.
 -- 
+-- This module not expected to be used in client code.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Text.Base.Common
   ( 
-    posTextWithMargins
+
+    TextVSize(..)
+  , posTextWithMargins
   , advtext
   , textVector
   , textOrientationZero
@@ -44,6 +48,22 @@ import qualified Data.Map               as Map
 import Data.Maybe 
 
 
+-- | Wumpus distinguishes two use-cases for displaying vertically 
+-- centered text.
+-- 
+-- Arbitrary text that is expected to contain lower case letters 
+-- with descenders, show take the vertical center as the mid-point 
+-- between the cap height and the descender depth.
+--
+-- Unfortunately including the descender depth can produce 
+-- unbalanced results for text which is not expected to have 
+-- descenders - e.g. numbers within an bordered box. Including the 
+-- descender depth in this case makes the center visually too high.
+-- 
+data TextVSize = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
+  deriving (Enum,Eq,Ord,Show)
+
+
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
                    => PosObject u -> (RectAddress -> LocImage u (BoundingBox u))
@@ -53,6 +73,9 @@ posTextWithMargins obj = \raddr ->
     in runPosObject raddr body
 
 
+--------------------------------------------------------------------------------
+-- Produce advance vectors.
+
 -- | Single line text, returning its advance vector.
 --
 advtext :: InterpretUnit u => EscapedText -> LocImage u (Vec2 u)
@@ -61,6 +84,8 @@ advtext esc = textVector esc >>= body
     body v = replaceAns v $ dcEscapedlabel esc
 
 
+-- | Find the advance vector for the supplied 'EscapedText'.
+--
 textVector :: (DrawingCtxM m, InterpretUnit u) 
            => EscapedText -> m (AdvanceVec u)
 textVector esc = 
@@ -71,42 +96,29 @@ textVector esc =
   where
     step sz table ch v = (v ^+^) $ charWidth sz table ch
 
+
+-- | Find the advance vector for the supplied 'EscapedChar'.
+--
 charVector :: (DrawingCtxM m, InterpretUnit u) 
            => EscapedChar -> m (AdvanceVec u)
 charVector ch = 
     (\table sz -> charWidth sz table ch) <$> cwLookupTable <*> pointSize
 
--- | Build the Orientation of a single line of EscapedText.
--- 
--- The locus of the Orientation is baseline left - margins are 
--- added.
+
+
+-- | This is outside the Drawing context as we don\'t want to get
+-- the @cwLookupTable@ for every char.
 --
-textOrientationZero :: (DrawingCtxM m, InterpretUnit u )
-                    => EscapedText -> m (Orientation u)
-textOrientationZero esc = textVector esc >>= bllOrientationZero
-
--- | Build the Orientation of an EscapedChar.
--- 
--- The locus of the Orientation is baseline left - margins are 
--- added.
---
-charOrientationZero :: (DrawingCtxM m, InterpretUnit u)
-                    => EscapedChar -> m (Orientation u)
-charOrientationZero ch = charVector ch >>= bllOrientationZero 
+charWidth :: InterpretUnit u 
+          => FontSize -> CharWidthLookup -> EscapedChar -> AdvanceVec u
+charWidth sz fn (CharLiteral c) = fmap (dinterp sz) $ fn $ ord c
+charWidth sz fn (CharEscInt i)  = fmap (dinterp sz) $ fn i
+charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
+  where
+    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 
 
 
--- NOTE - TextMargin should probably be added as a final step
--- not during construction...
-
-bllOrientationZero :: (DrawingCtxM m, InterpretUnit u )
-                   => AdvanceVec u -> m (Orientation u)
-bllOrientationZero (V2 w _) = 
-    (\ymin ymaj -> Orientation 0 w ymin ymaj) 
-      <$> fmap abs descender <*> capHeight
-
-
-   
 -- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
 -- 
 -- 'hkernvector' takes whatever length is paired with the 
@@ -124,20 +136,52 @@ hkernVector = go 0
     addWidth w (V2 x y) = V2 (w+x) y
 
     -- ERROR this not the right way to count...
+
+
+--------------------------------------------------------------------------------
+
+
+-- | Build the Orientation of a single line of EscapedText.
+-- 
+-- The locus of the Orientation is baseline left - margins are 
+-- added.
+--
+textOrientationZero :: (DrawingCtxM m, InterpretUnit u )
+                    => TextVSize -> EscapedText -> m (Orientation u)
+textOrientationZero vsz esc = textVector esc >>= bllOrientationZero vsz
+
+-- | Build the Orientation of an EscapedChar.
+-- 
+-- The locus of the Orientation is baseline left - margins are 
+-- added.
+--
+charOrientationZero :: (DrawingCtxM m, InterpretUnit u)
+                    => TextVSize -> EscapedChar -> m (Orientation u)
+charOrientationZero vsz ch = charVector ch >>= bllOrientationZero vsz
+
+
+
+-- NOTE - TextMargin should probably be added as a final step
+-- not during construction...
+
+bllOrientationZero :: (DrawingCtxM m, InterpretUnit u )
+                   => TextVSize -> AdvanceVec u -> m (Orientation u)
+bllOrientationZero JUST_CAP_HEIGHT (V2 w _) = 
+    (\ymaj -> Orientation 0 w 0 ymaj) <$> capHeight
+
+bllOrientationZero CAP_HEIGHT_PLUS_DESCENDER (V2 w _) = 
+    (\ymin ymaj -> Orientation 0 w (abs ymin) ymaj) <$> descender <*> capHeight
+
+
+
+-- TextVSize = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
+
+
+   
     
 
 hkernOrientationZero :: (DrawingCtxM m, InterpretUnit u )
-                     => [KernChar u] -> m (Orientation u)
-hkernOrientationZero xs = hkernVector xs >>= bllOrientationZero
+                     => TextVSize -> [KernChar u] -> m (Orientation u)
+hkernOrientationZero vsz xs = hkernVector xs >>= bllOrientationZero vsz
  
--- | This is outside the Drawing context as we don\'t want to get
--- the @cwLookupTable@ for every char.
---
-charWidth :: InterpretUnit u 
-          => FontSize -> CharWidthLookup -> EscapedChar -> AdvanceVec u
-charWidth sz fn (CharLiteral c) = fmap (dinterp sz) $ fn $ ord c
-charWidth sz fn (CharEscInt i)  = fmap (dinterp sz) $ fn i
-charWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
-  where
-    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
 

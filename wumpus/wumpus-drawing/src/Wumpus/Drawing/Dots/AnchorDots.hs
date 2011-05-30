@@ -65,7 +65,7 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
 import qualified Wumpus.Drawing.Dots.SimpleDots as SD
-import Wumpus.Drawing.Text.Base.RotTextZero
+import Wumpus.Drawing.Text.Base.SimpleTextZero
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel               

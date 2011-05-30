@@ -351,7 +351,8 @@ interpEmpty =
 interpText :: (Fractional u, InterpretUnit u) 
            => EscapedText -> EvalM u (PosObject u)
 interpText esc = interpretLeaf $
-    makePosObject (textOrientationZero esc) (dcEscapedlabel esc)
+    makePosObject (textOrientationZero CAP_HEIGHT_PLUS_DESCENDER esc) 
+                  (dcEscapedlabel esc)
    
 
 
@@ -364,7 +365,7 @@ interpSpace :: InterpretUnit u
             => EvalM u (PosObject u)
 interpSpace = return $ makePosObject qy1  emptyLocImage
   where
-    qy1 = charOrientationZero $ CharEscInt $ ord ' '
+    qy1 = charOrientationZero CAP_HEIGHT_PLUS_DESCENDER $ CharEscInt $ ord ' '
 
 
 ppad :: (Fractional u, Ord u) 
@@ -378,9 +379,9 @@ interpMono :: (Fractional u, InterpretUnit u)
            => Query u (AdvanceVec u) -> [EscapedChar] 
            -> EvalM u (PosObject u)
 interpMono avq chs = 
-    interpretLeaf $ makePosObject (qChars >>= hkernOrientationZero) 
-                                  (promoteLoc $ \pt -> 
-                                    zapQuery qChars >>= \ks -> hkernLine ks `at` pt)
+    interpretLeaf $ makePosObject 
+        (qChars >>= hkernOrientationZero CAP_HEIGHT_PLUS_DESCENDER ) 
+        (promoteLoc $ \pt -> zapQuery qChars >>= \ks -> hkernLine ks `at` pt)
   where
     qChars = (\v1 -> monoSpace (advanceH v1) chs) <$> avq
 

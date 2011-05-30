@@ -65,7 +65,7 @@ module Wumpus.Drawing.Dots.SimpleDots
   ) where
 
 
-import Wumpus.Drawing.Text.Base.RotTextZero
+import Wumpus.Drawing.Text.Base.SimpleTextZero
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
