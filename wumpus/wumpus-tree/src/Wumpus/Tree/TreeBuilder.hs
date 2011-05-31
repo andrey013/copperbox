@@ -48,9 +48,6 @@ import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Tree
 
--- TODO - are you sure this needs to build a Graphic rather than 
--- a LocGraphic?
-
 
 data TbNode u a = RefNode Int (LocImage u a)
                 | PlainNode (LocImage u a)

@@ -85,15 +85,6 @@ dblelaborate :: InterpretUnit u
 dblelaborate ma mb fn = promoteLoc $ \pt -> 
     both (ma `at` pt) (mb `at` pt) >>= \(a,b) -> fn a b >> return a
 
-designOrientateScale :: (Real u, Floating u, InterpretUnit u)
-                     => TreeProps u a  -> Tree (LocImage u a) 
-                     -> Query u (Tree (Point2 u, LocImage u a))
-designOrientateScale props tree =  
-    scaleTree sx sy (design tree) >>= \ans -> return $ orientateTree dir ans
-  where
-    dir = tp_direction props
-    sx  = tp_sibling_distance props
-    sy  = tp_level_distance props
 
 
 
@@ -110,4 +101,15 @@ runDesign props tree =
   where
     fn ((P2 x y), gf) = moveStart (vec x y) gf
 
+
+
+designOrientateScale :: (Real u, Floating u, InterpretUnit u)
+                     => TreeProps u a  -> Tree (LocImage u a) 
+                     -> Query u (Tree (Point2 u, LocImage u a))
+designOrientateScale props tree =  
+    scaleTree sx sy (design tree) >>= \ans -> return $ orientateTree dir ans
+  where
+    dir = tp_direction props
+    sx  = tp_sibling_distance props
+    sy  = tp_level_distance props
 

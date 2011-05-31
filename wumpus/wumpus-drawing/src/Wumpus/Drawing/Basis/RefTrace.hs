@@ -37,9 +37,14 @@ module Wumpus.Drawing.Basis.RefTrace
   , runRefTrace
   , runRefTraceT
 
-  , unaryLink
-  , binaryLink
-  , multiwayLink
+  , Lookup
+  , RefGraphic
+  , lookup
+  , unary
+  , binary
+  , multiway
+  , oneToMany
+
   )
 
   where
@@ -58,6 +63,7 @@ import Control.Monad
 import qualified Data.IntMap as IntMap
 import Data.Maybe
 import Data.Monoid
+import Prelude hiding ( lookup )
 
 
 
@@ -78,36 +84,60 @@ type instance MonUnit (RefTraceT u z m a) = u
 newtype Ref = Ref { getRefUid :: Int }
 
 
--- GRAPHIC or LOC_GRAPHIC?   cf. connectors...
---
--- TODO - make this an newtype and only export an arity family of 
--- constructors.
--- 
--- Maybe we only support the arity2 (connector) and list (path) cases?
---
--- type Elaboration u ans = IntMap.IntMap ans -> Graphic u
+type Lookup u ans = IntMap.IntMap ans -> Query u (Maybe ans)
+type RefGraphic u ans = IntMap.IntMap ans -> Graphic u
 
-data LinkRef u ans = 
-      Unary { refU    :: Ref 
-            , ancrU   :: ans -> Point2 u
-            , drawU   :: LocGraphic u 
-            }
-    | Binary { refB1  :: Ref 
-             , refB2  :: Ref 
-             , ancrB1 :: ans -> Point2 u
-             , ancrB2 :: ans -> Point2 u
-             , drawB  :: ConnectorGraphic u
-             }
-    | Multiway { refLs :: [Ref]
-               , ancrM :: ans -> Point2 u
-               , drawM :: [Point2 u] -> Graphic u
-               }
+
+lookup :: Ref -> Lookup u ans
+lookup ref = \im -> return $ IntMap.lookup (getRefUid ref) im
+
+
+unary :: InterpretUnit u 
+      => (ans -> Graphic u) 
+      -> Ref
+      -> RefGraphic u ans
+unary gf r1 = \im -> 
+  zapQuery (lookup r1 im) >>= maybe mempty gf
+
+
+
+binary :: InterpretUnit u 
+       => (ans -> ans -> Graphic u) 
+       -> Ref -> Ref
+       -> RefGraphic u ans
+binary gf r1 r2 = \im -> 
+  zapQuery (both (lookup r1 im) (lookup r2 im)) >>= \(ma,mb) -> 
+  case (ma,mb) of
+    (Just a, Just b) -> gf a b
+    _                -> mempty
+
+
+multiway :: InterpretUnit u 
+         => ([ans] -> Graphic u) 
+         -> [Ref]
+         -> RefGraphic u ans
+multiway gf rs = \im -> 
+  zapQuery (fmap catMaybes $ mapM (\r -> lookup r im) rs) >>= gf
+
+
+oneToMany :: InterpretUnit u 
+         => (ans -> [ans] -> Graphic u) 
+         -> Ref -> [Ref]
+         -> RefGraphic u ans
+oneToMany gf r1 rs = \im -> 
+    zapQuery (both (lookup r1 im) (allrefs im rs)) >>= \(ma,xs) ->
+    maybe mempty (\a -> gf a xs) ma
+  where
+    allrefs im = fmap catMaybes . mapM (\r -> lookup r im)
+
+
+
 
 data RefSt u z = RefSt 
       { uid_count       :: Int
       , current_tip     :: Vec2 u
       , ref_acc         :: LocImage u (IntMap.IntMap z)
-      , ref_links       :: JL.JoinList (LinkRef u z)
+      , ref_links       :: JL.JoinList (RefGraphic u z)
       }
 
 
@@ -209,34 +239,18 @@ runRefTraceT mf = liftM post $ getRefTraceT mf zeroRefSt
 
 reconcileRefSt :: InterpretUnit u => RefSt u z -> LocGraphic u
 reconcileRefSt st = 
-    step (ref_acc st) (JL.toList $ ref_links st)
+    ignoreAns $ selaborate (ref_acc st) 
+                           (\a -> mconcat $ map (fn a) $ JL.toList $ ref_links st)
   where
-    step img xs = ignoreAns $ selaborate img (\a -> mconcat $ map (fn a) xs)
-    
-    fn im (Unary r1 ar1 gf) = 
-      maybe mempty (\pt -> promoteLoc $ \_ -> applyLoc gf pt) (projectRef r1 ar1 im)
-   
-    fn im (Binary r1 r2 ar1 ar2 conn) = 
-      case (projectRef r1 ar1 im, projectRef r2 ar2 im) of
-        (Just p1, Just p2) -> promoteLoc $ \_ -> applyConn conn p1 p2
-        _                  -> mempty
+    fn im g = promoteLoc $ \_ -> g im
 
-
-    fn im (Multiway rs ar1 gf) = 
-        let ps = catMaybes $ map (\a -> projectRef a ar1 im) rs
-        in promoteLoc $ \_ -> gf ps
-                                 
-
-
-projectRef :: Ref -> (ans -> Point2 u) -> IntMap.IntMap ans -> Maybe (Point2 u)
-projectRef r ancr im = ancr <$> IntMap.lookup (getRefUid r) im
 
 -- Note - probably this supports Tree which is not a Trace monad...
 
 class Monad m => RefTraceM (m :: * -> *) where
   type MonRef m :: *
   insertRef   :: (MonRef m ~ a, MonUnit (m ()) ~ u) => LocImage u a -> m Ref
-  linkRef     :: (MonRef m ~ a, MonUnit (m ()) ~ u) => LinkRef u a -> m ()
+  linkRef     :: (MonRef m ~ a, MonUnit (m ()) ~ u) => RefGraphic u a -> m ()
 
 instance InterpretUnit u => RefTraceM (RefTrace u z) where
   type MonRef (RefTrace u z) = z
@@ -244,6 +258,8 @@ instance InterpretUnit u => RefTraceM (RefTrace u z) where
                                     in (Ref ix, s1)
 
   linkRef fn    = RefTrace $ \s0 -> ((), snocLink fn s0)  
+
+
 
 
 moveSt :: Num u => Vec2 u -> RefStF u z 
@@ -255,7 +271,7 @@ insertSt gf = (\s ac v1 -> let g1 = ignoreAns $ moveStart v1 gf
                            in s { ref_acc = sdecorate ac g1 }) 
                 <*> ref_acc <*> current_tip
 
-snocLink :: LinkRef u ans -> RefStF u ans
+snocLink :: RefGraphic u ans -> RefStF u ans
 snocLink fn = (\s i -> s { ref_links = JL.snoc i fn }) 
                 <*> ref_links
 
@@ -273,26 +289,4 @@ incrementSt img s0 = (uid_count s0, upd s0)
 
 
 
-unaryLink :: (ans -> Point2 u) -> LocGraphic u -> Ref -> LinkRef u ans
-unaryLink f gf = \r1 -> Unary { refU    = r1
-                              , ancrU   = f
-                              , drawU   = gf
-                              }
 
-binaryLink :: (ans -> Point2 u) -> (ans -> Point2 u) 
-           -> ConnectorGraphic u -> Ref -> Ref 
-           -> LinkRef u ans
-binaryLink f g conn = \r1 r2 -> Binary { refB1  = r1
-                                       , refB2  = r2 
-                                       , ancrB1 = f
-                                       , ancrB2 = g
-                                       , drawB  = conn
-                                       }
-
-
-multiwayLink :: (ans -> Point2 u) -> ([Point2 u] -> Graphic u) -> [Ref] 
-             -> LinkRef u ans
-multiwayLink f gf = \rs -> Multiway { refLs = rs
-                                    , ancrM = f
-                                    , drawM = gf
-                                    }
