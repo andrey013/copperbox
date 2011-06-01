@@ -17,73 +17,62 @@
 module Wumpus.Tree.DrawLoc
   (
     
-    runTreeLoc
+    AnnoNode
+  , TreeSpec    
+  , plainTree
+  , treeDrawing
 
   ) where
 
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 
+import Wumpus.Drawing.Basis.RefTrace            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Control.Applicative
 import Data.Tree hiding ( drawTree )
 
 
---
--- DESIGN NOTE 
---
--- Only simplistic trees can be drawn as LocGraphics.
---
--- Technically, this is because LocImages only support 
--- /production/ of /answers/ and not their /introspection/, so
--- we cannot query anchors directly[*] during construction. Thus 
--- we can\'t have /graph-links/ which need /located/ anchors.
---
--- [*] Though we can use @dblelaborate@ for a special case.
---
+data AnnoNode ix u a = PlainNode (LocImage u a)
+                   | RefNode ix (LocImage u a)
 
 
--- | Build a LocGraphic from a @Data.Tree@.
---
--- Nodes support custom drawing as the value of the /label/ at 
--- each node is interpreted (naturally, all node drawings must 
--- be of the same type). 
---
-runTreeLoc :: (Real u, Floating u, InterpretUnit u) 
-           => TreeProps u a -> (elt -> LocImage u a) -> Tree elt 
-           -> LocGraphic u
-runTreeLoc props drawF tree = promoteLoc $ \pt ->
-    let tree1 = fmap drawF tree
-    in zapQuery (runDesign props tree1) >>= \ans -> 
-       ignoreAns (drawStep props ans `at` pt)
+type TreeSpec ix u a = Tree (AnnoNode ix u a)
 
 
+plainTree :: (elt -> LocImage u a) -> Tree elt -> TreeSpec ix u a
+plainTree gf = fmap (PlainNode . gf)
 
-drawStep :: (Real u, Floating u, InterpretUnit u) 
-         => TreeProps u a -> Tree (LocImage u a) -> LocImage u a
-drawStep props (Node gf ns) =
-    getTreeConnector props >>= \conn ->
-    let imgs = sequence $ map (drawStep props) ns
-    in dblelaborate gf imgs conn
-      
 
--- | This is not really a generally function - the types are not
--- complementary and it returns only the first answer but consumes 
--- the second, so it doesn\'t belong in Wumpus-Basic. 
--- 
--- However, it is a problematic that it needs to 
--- deconstruct the Ans directly - this suggests there is a need 
--- for a more general version of this combinator in Wumpus-Basic.
--- 
-dblelaborate :: InterpretUnit u 
-             => LocImage u a -> LocImage u b 
-             -> (a -> b -> Graphic u) 
-             -> LocImage u a
-dblelaborate ma mb fn = promoteLoc $ \pt -> 
-    both (ma `at` pt) (mb `at` pt) >>= \(a,b) -> fn a b >> return a
+treeDrawing :: (Real u, Floating u, InterpretUnit u)
+            => TreeProps u a -> TreeSpec ix u a -> LocGraphic u
+treeDrawing props t1 = promoteLoc $ \pt ->
+    zapQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 props t2) pt
+
+
+phase1 :: InterpretUnit u
+       => TreeProps u a -> TreeSpec ix u a 
+       -> LocGraphic u -- ans should be LocImage u (M.Map ix a)
+phase1 props t1 = ignoreAns $ runRefTrace (step1 t1)
+  where
+    step1 (Node nd []) = insert1 nd
+
+    step1 (Node nd xs) = insert1 nd    >>= \r1 -> 
+                         mapM step1 xs >>= \rs ->
+                         linkRef (otmconn r1 rs) >>
+                         return r1
+
+    otmconn = let fn = getOTMConn $ tp_one_to_many_conn props
+              in fn (tp_direction props) (tp_level_distance props)
+
+    -- TODO ix
+    insert1 (PlainNode gf)         = insertRef gf
+    insert1 (RefNode _ gf)         = insertRef gf
+
 
 
 
@@ -93,23 +82,25 @@ dblelaborate ma mb fn = promoteLoc $ \pt ->
 -- so it can be drawn.
 --
 runDesign :: (Real u, Floating u, InterpretUnit u)
-          => TreeProps u a  -> Tree (LocImage u a) 
-          -> Query u (Tree (LocImage u a))
+          => TreeProps u a  -> TreeSpec ix u a 
+          -> Query u (TreeSpec ix u a)
 runDesign props tree =  
-    designOrientateScale props tree >>= \tree2 -> 
-    return $ fmap fn tree2
+     fmap post <$> designOrientateScale props tree
   where
-    fn ((P2 x y), gf) = moveStart (vec x y) gf
+    post ((P2 x y), PlainNode gf)   = PlainNode $ moveStart (vec x y) gf
+    post ((P2 x y), RefNode ix gf)  = RefNode ix $ moveStart (vec x y) gf
+
 
 
 
 designOrientateScale :: (Real u, Floating u, InterpretUnit u)
-                     => TreeProps u a  -> Tree (LocImage u a) 
-                     -> Query u (Tree (Point2 u, LocImage u a))
+                     => TreeProps u a  -> TreeSpec ix u a 
+                     -> Query u (Tree (Point2 u, AnnoNode ix u a))
 designOrientateScale props tree =  
     scaleTree sx sy (design tree) >>= \ans -> return $ orientateTree dir ans
   where
     dir = tp_direction props
     sx  = tp_sibling_distance props
     sy  = tp_level_distance props
+
 

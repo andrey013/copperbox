@@ -19,16 +19,17 @@
 module Wumpus.Tree.OTMConnectors
   (
 
-    radialOTMC
-  , blankOTMC
-  , familyOTMC
-  , splayOTMC
+    radialOTM
+  , blankOTM
+  , familyOTM
+  , splayOTM
+
 
   ) where
 
 import Wumpus.Tree.Base
 
--- import Wumpus.Drawing.Basis.DrawingPrimitives   -- package: wumpus-drawing
+import Wumpus.Drawing.Basis.RefTrace            -- package: wumpus-drawing
 import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -37,9 +38,26 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
 
+import Data.Maybe
 import Data.Monoid
+import Prelude hiding ( lookup )
+
+type OTMAnchorConn u a = TreeDirection -> u -> a -> [a] -> Graphic u
 
 
+
+radialOTM :: ( Real u, Floating u, InterpretUnit u
+             , RadialAnchor a, CenterAnchor a, u ~ DUnit a) 
+          => OTMConn u a
+radialOTM = OTMConn { getOTMConn = \_ _ -> gf }
+  where
+    find r1 rs im = both (lookup r1 im) 
+                         (fmap catMaybes $ mapM (\a -> lookup a im) rs)
+
+    gf r1 rs im   = zapQuery (find r1 rs im) >>= \(ma,xs) ->
+                    maybe mempty (\a  -> mconcat $ map fn $ radialNodes a xs) ma
+ 
+    fn (a,b)      = straightLine a b
 
 
 
@@ -67,31 +85,15 @@ anchorAngles f t = (theta0, theta1)
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
 
 
+blankOTM :: OTMConn u a
+blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
+
+
 -- 
 -- @radialConn@ cannot be represented as a connector from
 -- one-point-to-many-points as the initial points all start from
 -- slightly different places. 
 --
-
-
--- | 'radialOTMC' has no need for the TreeDirection or height step.
--- 
-radialOTMC :: ( Real u, Floating u, InterpretUnit u
-              , CenterAnchor a, RadialAnchor a 
-              , u ~ DUnit a) 
-           => OTMAnchorConn u a
-radialOTMC _ _ a xs = mconcat $ map fn $ radialNodes a xs
-  where
-    fn (p0,p1) = straightLine p0 p1
-
--- | Blank connector - nothing is drawn.
---
-blankOTMC :: ( Real u, Floating u, InterpretUnit u
-            , CenterAnchor a
-            , u ~ DUnit a) 
-         => OTMAnchorConn u a
-blankOTMC _ _ a _ = emptyLocImage `at` center a
-
 
 --------------------------------------------------------------------------------
 -- 
@@ -103,8 +105,20 @@ blankOTMC _ _ a _ = emptyLocImage `at` center a
 -- calculate it from anchors.
 --
 
--- Drawing a fmaily connector is quite horrible...
 
+
+-- Drawing a family connector is quite horrible, we need to know
+-- both the tree direction and the vertical height between layers.
+
+
+
+familyOTM :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
+             , CenterAnchor a, CardinalAnchor a 
+             , u ~ DUnit a ) 
+          => OTMConn u a
+familyOTM = OTMConn { getOTMConn = gf }
+  where
+    gf dir h = oneToMany (\a as -> familyOTMC dir h a as)
 
 
 familyOTMC :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
@@ -127,7 +141,7 @@ familyOTMC dir h a xs =
 
 
 famAnchors :: (CardinalAnchor a, u ~ DUnit a ) 
-             => TreeDirection -> (a -> Anchor u, a -> Anchor u)
+           => TreeDirection -> (a -> Anchor u, a -> Anchor u)
 famAnchors TREE_UP    = (north, south)
 famAnchors TREE_DOWN  = (south, north)
 famAnchors TREE_LEFT  = (west,  east)
@@ -152,6 +166,13 @@ linkAll [] = Nothing
 linkAll xs = Just $ optimizeLines $ vertexPath xs
 
 
+splayOTM :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
+            , CenterAnchor a, CardinalAnchor a 
+            , u ~ DUnit a ) 
+         => OTMConn u a
+splayOTM = OTMConn { getOTMConn = gf }
+  where
+    gf dir h = oneToMany (\a as -> splayOTMC dir h a as)
 
 
 

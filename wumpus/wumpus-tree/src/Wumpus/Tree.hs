@@ -21,7 +21,8 @@ module Wumpus.Tree
 
   , TreeDirection(..) 
   , tree_direction
-  , runTreeLoc
+  , treeDrawing
+  , plainTree
 
   -- * Definitions
   , standardTreeProps
@@ -39,11 +40,11 @@ import Wumpus.Tree.OTMConnectors
 
 
 standardTreeProps :: Fractional u 
-                  => u -> u -> OTMAnchorConn u a -> TreeProps u a
+                  => u -> u -> OTMConn u a -> TreeProps u a
 standardTreeProps sx sy otm_conn = 
     TreeProps { tp_sibling_distance = sx 
               , tp_level_distance   = sy
-              , tp_multiconn        = otm_conn         
+              , tp_one_to_many_conn = otm_conn         
               , tp_direction        = TREE_DOWN
               }  
 
