@@ -22,6 +22,11 @@ module Wumpus.Tree.DrawLoc
   , plainTree
   , treeDrawing
 
+  , leaf
+  , xleaf
+  , tree
+  , xtree
+
   ) where
 
 import Wumpus.Tree.Base
@@ -54,6 +59,24 @@ treeDrawing props t1 = promoteLoc $ \pt ->
     zapQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 props t2) pt
 
 
+
+-- leaf should build a Data.Tree node with no kids...
+--
+leaf :: LocImage u a -> TreeSpec ix u a
+leaf a = Node (PlainNode a) []
+
+xleaf :: ix -> LocImage u a -> TreeSpec ix u a
+xleaf ix a = Node (RefNode ix a) []
+
+
+tree :: LocImage u a -> [TreeSpec ix u a] -> TreeSpec ix u a
+tree a kids = Node (PlainNode a) kids
+
+xtree :: ix -> LocImage u a -> [TreeSpec ix u a] -> TreeSpec ix u a
+xtree ix a kids = Node (RefNode ix a) kids
+
+
+
 phase1 :: InterpretUnit u
        => TreeProps u a -> TreeSpec ix u a 
        -> LocGraphic u -- ans should be LocImage u (M.Map ix a)
@@ -84,8 +107,8 @@ phase1 props t1 = ignoreAns $ runRefTrace (step1 t1)
 runDesign :: (Real u, Floating u, InterpretUnit u)
           => TreeProps u a  -> TreeSpec ix u a 
           -> Query u (TreeSpec ix u a)
-runDesign props tree =  
-     fmap post <$> designOrientateScale props tree
+runDesign props t1 =  
+     fmap post <$> designOrientateScale props t1
   where
     post ((P2 x y), PlainNode gf)   = PlainNode $ moveStart (vec x y) gf
     post ((P2 x y), RefNode ix gf)  = RefNode ix $ moveStart (vec x y) gf
@@ -96,8 +119,8 @@ runDesign props tree =
 designOrientateScale :: (Real u, Floating u, InterpretUnit u)
                      => TreeProps u a  -> TreeSpec ix u a 
                      -> Query u (Tree (Point2 u, AnnoNode ix u a))
-designOrientateScale props tree =  
-    scaleTree sx sy (design tree) >>= \ans -> return $ orientateTree dir ans
+designOrientateScale props t1 =  
+    scaleTree sx sy (design t1) >>= \ans -> return $ orientateTree dir ans
   where
     dir = tp_direction props
     sx  = tp_sibling_distance props

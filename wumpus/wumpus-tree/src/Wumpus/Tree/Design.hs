@@ -21,6 +21,9 @@
 -- original.
 --
 -- Any mistakes are mine of course.
+--
+-- Note - although this module is exposed, it is not expected to 
+-- be indenpendently useful for client code.
 -- 
 --------------------------------------------------------------------------------
 

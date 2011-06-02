@@ -17,12 +17,10 @@
 module Wumpus.Tree
   (
   -- * Re-exports
-    module Wumpus.Tree.OTMConnectors
-
-  , TreeDirection(..) 
-  , tree_direction
-  , treeDrawing
-  , plainTree
+    module Wumpus.Tree.Base
+  , module Wumpus.Tree.DrawLoc
+  , module Wumpus.Tree.OTMConnectors
+  , module Wumpus.Tree.VersionNumber
 
   -- * Definitions
   , standardTreeProps
@@ -33,6 +31,7 @@ module Wumpus.Tree
 import Wumpus.Tree.Base
 import Wumpus.Tree.DrawLoc
 import Wumpus.Tree.OTMConnectors
+import Wumpus.Tree.VersionNumber
 
 
 

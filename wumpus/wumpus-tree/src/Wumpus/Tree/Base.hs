@@ -29,7 +29,7 @@ module Wumpus.Tree.Base
 
 import Wumpus.Drawing.Basis.RefTrace            -- package: wumpus-drawing
 
-import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+-- import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 
 
