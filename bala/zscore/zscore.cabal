@@ -1,0 +1,44 @@
+name:             zscore
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Score files...
+description:
+  Score files (Csound).
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo01.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5
+  
+  exposed-modules:
+    ZScore.CsoundGens,
+    ZScore.CSoundScore,
+    ZScore.FormatCombinators
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
