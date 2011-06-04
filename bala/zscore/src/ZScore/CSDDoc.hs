@@ -30,7 +30,7 @@ module ZScore.CSDDoc
   ) where
 
 
-import ZScore.FormatCombinators
+import ZScore.Utils.FormatCombinators
 
 csdStartTag :: String -> Doc
 csdStartTag ss = angles $ text ss

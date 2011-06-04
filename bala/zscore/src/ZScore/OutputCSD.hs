@@ -11,16 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Output SVG. 
---
--- Note - the coordinate systems of Wumpus and SVG are different.
---
--- > Wumpus - (0,0) is bottom-left.
---
--- > SVG - (0,0) is top-left.
---
--- To accommodate this, Wumpus adds rectifying matrix 
--- transformations to the generated SVG code.
+-- Output combined orchestra and score files (.csd files). 
 --
 --------------------------------------------------------------------------------
 

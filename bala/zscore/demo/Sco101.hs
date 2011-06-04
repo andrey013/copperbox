@@ -7,7 +7,7 @@ module Sco101 where
 import ZScore.CSDDoc
 import ZScore.CsoundGens
 import ZScore.CsoundScore
-import ZScore.FormatCombinators
+import ZScore.Utils.FormatCombinators
 import ZScore.OutputCSD
 
 import System.Directory

@@ -34,7 +34,7 @@ module ZScore.CsoundScore
  
   ) where
 
-import ZScore.FormatCombinators
+import ZScore.Utils.FormatCombinators
 
 data CsoundType = CsDouble Double
                 | CsInt    Int
