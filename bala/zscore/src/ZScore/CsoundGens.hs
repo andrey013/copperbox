@@ -16,6 +16,7 @@
 
 module ZScore.CsoundGens
   (
+
   
   -- * Sinusoids
     gen9
@@ -24,42 +25,31 @@ module ZScore.CsoundGens
   -- * File access 
   , gen1
 
+
   ) where
 
 import ZScore.CsoundScore
 
+
+
 -- | sinusoids
 -- 
-gen9 :: Int -> Double -> Int -> [(Double,Double,Double)] -> TableStmt
-gen9 i t sz xs = 
-    TableStmt { table_num       = i
-              , table_atime     = t
-              , table_size      = sz
-              , gen_routine     = 9
-              , table_args      = ps
-              }
+gen9 :: Int -> Double -> Int -> [(Double,Double,Double)] -> ScoBuilder ()
+gen9 i t sz xs = dyngen 9 i t sz ps
   where
     ps = concatMap (\(a,b,c) -> [ CsDouble a, CsDouble b, CsDouble c ]) xs
 
 
-gen10 :: Int -> Double -> Int -> [Double] -> TableStmt
-gen10 i t sz xs = 
-    TableStmt { table_num       = i
-              , table_atime     = t
-              , table_size      = sz
-              , gen_routine     = 10
-              , table_args      = map CsDouble xs
-              }
+gen10 :: Int -> Double -> Int -> [Double] -> ScoBuilder ()
+gen10 i t sz xs = dyngen 10 i t sz (map CsDouble xs)
+       
 
 
--- | File access
+
+
+-- | File access - potentially this should be overloaded.
 --
-gen1 :: Int -> Double -> Int -> String -> Double -> Int -> TableStmt
-gen1 i t sz fc skip fmt = 
-    TableStmt { table_num       = i
-              , table_atime     = t
-              , table_size      = sz
-              , gen_routine     = 1
-              , table_args      = [CsString fc, CsDouble skip, CsInt fmt]
-              }
+gen1 :: Int -> Double -> Int -> String -> Double -> Int -> ScoBuilder ()
+gen1 i t sz fc skip fmt = dyngen 1 i t sz [CsString fc, CsDouble skip, CsInt fmt]
+             
 

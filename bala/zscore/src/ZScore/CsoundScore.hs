@@ -17,24 +17,53 @@
 module ZScore.CsoundScore
   (
 
-    CsoundType(..)
+    Section(..)
+  , DStmt(..)
+  , CsoundType(..)
 
-  , Section(..)
-  
-  -- * Statements
-  , InstStmt(..)
-  , TableStmt(..)
-  , DummyStmt(..)
-  , SectionStmt(..)
-  , EndStmt(..)
-   
-  -- * Definitions
-  , PFieldName
-  , InstDefn(..)
+  , ScoBuilder
+  , runScoBuilder
+
+  , advance
+  , dyngen
+  , dyninst
  
   ) where
 
 import ZScore.Utils.FormatCombinators
+import ZScore.Utils.HList
+
+import Control.Applicative
+
+-- Is there a pressing need to build syntax?
+
+
+
+
+newtype Section = Section  { getSection :: [DStmt] }
+  deriving (Eq,Ord,Show)
+      
+
+-- | Dynamically typed statement.
+--
+data DStmt = 
+      TableStmt
+        { table_num       :: Int
+        , table_atime     :: Double
+        , table_size      :: Int
+        , table_gennum    :: Int
+        , table_args      :: [CsoundType]
+        }
+    | InstStmt
+        { inst_num        :: Int
+        , inst_start      :: Double
+        , inst_dur        :: Double
+        , inst_pfields    :: [Double]
+        } 
+    | F0Stmt
+        { dummy_atime     :: Double }
+  deriving (Eq,Ord,Show)
+
 
 data CsoundType = CsDouble Double
                 | CsInt    Int
@@ -42,49 +71,59 @@ data CsoundType = CsDouble Double
   deriving (Eq,Ord,Show)
 
 
-data Section = Section
-      { section_istmts   :: [InstStmt]
-      }
+newtype ScoBuilder a = Build { getBuild :: (a, H DStmt) }
 
 
 
-data InstStmt = InstStmt
-      { inst_num        :: Int
-      , inst_start      :: Double
-      , inst_dur        :: Double
-      , inst_pfields    :: [Double]
-      }
-  deriving (Eq,Ord,Show)
+instance Functor ScoBuilder where
+  fmap f ma = Build $ let (a,w) = getBuild ma in (f a, w)
 
 
-data TableStmt = TableStmt
-      { table_num       :: Int
-      , table_atime     :: Double
-      , table_size      :: Int
-      , gen_routine     :: Int
-      , table_args      :: [CsoundType]
-      }
-  deriving (Eq,Ord,Show)
+instance Applicative ScoBuilder where
+  pure a    = Build $ (a, emptyH)
+  mf <*> ma = Build $ let (f,w1) = getBuild mf
+                          (a,w2) = getBuild ma
+                      in (f a, w1 `appendH` w2)
+
+instance Monad ScoBuilder where
+  return a  = Build $ (a, emptyH)
+  ma >>= k  = Build $ let (a,w1) = getBuild ma
+                          (b,w2) = (getBuild . k) a
+                      in (b, w1 `appendH` w2)
 
 
--- | This is "f0"
+runScoBuilder :: ScoBuilder a -> Section
+runScoBuilder ma = post $ getBuild ma
+  where
+    post (_,w) = Section { getSection = toListH w }
+
+
+advance :: Double -> ScoBuilder ()
+advance d = Build $ ((), wrapH $ F0Stmt d )
+
+-- | Dynamically typed gen statement.
 --
-data DummyStmt = DummyStmt
-       { ds_atime       :: Double }
-  deriving (Eq,Ord,Show)
+dyngen :: Int -> Int -> Double -> Int -> [CsoundType] -> ScoBuilder ()
+dyngen gnum i d sz args = Build $ ((), wrapH $ stmt1 )
+  where
+    stmt1 = TableStmt { table_num       = i
+                      , table_atime     = d
+                      , table_size      = sz
+                      , table_gennum    = gnum
+                      , table_args      = args 
+                      }
 
 
-data SectionStmt = SectionStmt
-  deriving (Eq,Ord,Show)
-
-data EndStmt = EndStmt
-  deriving (Eq,Ord,Show)
-
-type PFieldName = String
-
-newtype InstDefn = InstDefn { getInstDefn :: [PFieldName] }
-  deriving (Eq,Ord,Show)
-
+-- | Dynamically typed inst statement.
+--
+dyninst :: Int -> Double -> Double -> [Double] -> ScoBuilder ()
+dyninst i d dur args = Build $ ((), wrapH $ stmt1 )
+  where
+    stmt1 = InstStmt { inst_num         = i
+                     , inst_start       = d
+                     , inst_dur         = dur
+                     , inst_pfields     = args
+                     }
 
 --------------------------------------------------------------------------------
 -- Format instances
@@ -96,31 +135,16 @@ instance Format CsoundType where
   
 
 instance Format Section where
-  format (Section is) = vcat (map format is) `vconcat` char 's'
+  format (Section xs) = vcat (map format xs)
 
-instance Format InstStmt where
-  format (InstStmt i s d xs) = 
-      char 'i' <+> padr 6 (int i) <+> padl 10 (dtrunc s) <+> padl 10 (dtrunc d)
-               <+> hsep (map (padl 10 . dtrunc) xs)
-
-
-instance Format TableStmt where
+instance Format DStmt where
   format (TableStmt i s sz n xs) = 
       char 'f' <+> padr 6 (int i) <+> padl 10 (dtrunc s) <+> padl 6 (int sz)
                <+> padl 6 (int n) <+> hsep (map (padl 4 . format) xs)
 
-instance Format DummyStmt where
-  format (DummyStmt s) = text "f0" <+> padl 10 (dtrunc s)
+  format (InstStmt i s d xs) = 
+      char 'i' <+> padr 6 (int i) <+> padl 10 (dtrunc s) <+> padl 10 (dtrunc d)
+               <+> hsep (map (padl 10 . dtrunc) xs)
 
-instance Format SectionStmt where
-  format _ = char 's'
+  format (F0Stmt s) = text "f0" <+> padl 10 (dtrunc s)
 
-instance Format EndStmt where
-  format _ = char 'e'
-
-
-
-instance Format InstDefn where
-  format (InstDefn xs) = 
-      char ';' <+> padr 6  (text "ins")  <+> padl 10 (text "st")
-               <+> padl 10 (text "dur")  <+> hsep (map (padl 10 . text) xs)

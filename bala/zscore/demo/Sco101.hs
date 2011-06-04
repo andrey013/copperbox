@@ -56,16 +56,13 @@ data PField = PField
 
 
 demo01 :: IO ()
-demo01 = putStr $ show $ vcat $ 
-      [ format (gen10 1 0 4096 [1.0] )
-      , format (gen9 7 0 513 [(1,1,0), (3, 0.333, 180 )] )
-      , format i01 
-      ] ++ (map format i01_notes)
+demo01 = putStr $ show $ format $ runScoBuilder $ do
+    gen10 1 0 4096 [1.0]
+    gen9 7 0 513 [(1,1,0), (3, 0.333, 180 )]
+    i01_notes
 
 
-i01 :: InstDefn
-i01 = InstDefn []
 
-i01_notes :: [InstStmt]
-i01_notes = [ InstStmt 1 0 3 [] ]
+i01_notes :: ScoBuilder ()
+i01_notes = dyninst 1 0 3 []
 

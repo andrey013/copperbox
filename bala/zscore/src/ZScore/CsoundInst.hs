@@ -1,3 +1,4 @@
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,6 +22,11 @@ module ZScore.CsoundInst
   , InstBuilder
   , Stmt
   , Expr(..)
+  , DExpr(..)
+
+  , IRate
+  , KRate
+  , ARate
 
   , runInstBuilder
 
@@ -62,12 +68,11 @@ data CsValue = CsInt Int
              | CsDouble Double
   deriving (Eq,Ord,Show)
 
-data Stmt = Vardef  SVar Expr
-          | Opcode  SVar String [Expr]
-          | Outs    [Expr]
+data Stmt = Vardef  SVar DExpr
+          | Opcode  SVar String [DExpr]
+          | Outs    [DExpr]
   deriving (Eq,Ord,Show)
 
--- TODO - maybe Expr should have a rate phantom argument.
 
 -- | Synthesized variable
 --
@@ -75,14 +80,24 @@ data SVar = SVar RateVar Int
   deriving (Eq,Ord,Show)
 
 
-
-data Expr = Var     SVar    
-          | PField  Int
-          | Const   CsValue
-          | UnOp    String Expr
-          | BinOp   Expr String Expr
-          | Funcall String Expr
+-- | Dynamically typed expr
+-- 
+data DExpr = Var     SVar
+           | PField  Int
+           | Const   CsValue
+           | UnOp    String DExpr
+           | BinOp   DExpr String DExpr
+           | Funcall String DExpr
   deriving (Eq,Ord,Show)
+
+
+newtype Expr rate = Expr { getExpr :: DExpr }
+  deriving (Eq,Ord,Show)
+
+
+data IRate
+data KRate
+data ARate
 
 -- | CSB page22.
 --
@@ -90,22 +105,22 @@ data RateVar = I | K | A
   deriving (Eq,Ord,Show)
 
 
-binop :: String -> Expr -> Expr -> Expr
-binop name a b = BinOp a name b
+binop :: String -> Expr a -> Expr a -> Expr a
+binop name a b = Expr $ BinOp (getExpr a) name (getExpr b)
 
-instance Num Expr where
+instance Num (Expr a) where
   (+) = binop "+"
   (-) = binop "-"
   (*) = binop "*"
-  abs    = UnOp "abs"
-  negate = UnOp "-"
+  abs    = Expr . UnOp "abs" . getExpr
+  negate = Expr . UnOp "-"   . getExpr
   signum _      = error "signum - no interpretation of signum in Csound."
-  fromInteger i = Const $ CsInt $ fromInteger i
+  fromInteger i = Expr $ Const $ CsInt $ fromInteger i
 
-instance Fractional Expr where
+instance Fractional (Expr a) where
   (/) = binop "/"  
   recip _        = error "recip - no interpretation of recip in Csound."  
-  fromRational i = Const $ CsDouble $ fromRational i
+  fromRational i = Expr $ Const $ CsDouble $ fromRational i
 
 
 
@@ -147,42 +162,42 @@ freshAVar = Build $ \s ->
     let n = a_int s in (SVar A n, emptyH, s { a_int = n + 1 })
 
 
-mkVar :: SVar -> Expr -> InstBuilder Expr
+mkVar :: SVar -> DExpr -> InstBuilder DExpr
 mkVar v expr = tellStmt (Vardef v expr) >> return (Var v)
 
 
 -- | Note some opcodes return pairs...
 --
-mkOpcode :: SVar -> String -> [Expr] -> InstBuilder Expr
+mkOpcode :: SVar -> String -> [DExpr] -> InstBuilder DExpr
 mkOpcode v opcd es = tellStmt (Opcode v opcd es) >> return (Var v)
 
 
 
 
-ivar :: Expr -> InstBuilder Expr
-ivar expr = freshIVar >>= \v -> mkVar v expr
+ivar :: Expr IRate -> InstBuilder (Expr IRate)
+ivar expr = freshIVar >>= \v -> fmap Expr $ mkVar v (getExpr expr)
 
-iopcode :: String -> [Expr] -> InstBuilder Expr
-iopcode opcd es = freshIVar >>= \v -> mkOpcode v opcd es
+iopcode :: String -> [DExpr] -> InstBuilder (Expr IRate)
+iopcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
-kvar :: Expr -> InstBuilder Expr
-kvar expr = freshKVar >>= \v -> mkVar v expr
+kvar :: DExpr -> InstBuilder (Expr KRate)
+kvar expr = freshKVar >>= \v -> fmap Expr $ mkVar v expr
 
-kopcode :: String -> [Expr] -> InstBuilder Expr
-kopcode opcd es = freshKVar >>= \v -> mkOpcode v opcd es
+kopcode :: String -> [DExpr] -> InstBuilder (Expr KRate)
+kopcode opcd es = freshKVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
-avar :: Expr -> InstBuilder Expr
-avar expr = freshAVar >>= \v -> mkVar v expr
+avar :: DExpr -> InstBuilder (Expr ARate)
+avar expr = freshAVar >>= \v -> fmap Expr $ mkVar v expr
 
-aopcode :: String -> [Expr] -> InstBuilder Expr
-aopcode opcd es = freshAVar >>= \v -> mkOpcode v opcd es
+aopcode :: String -> [DExpr] -> InstBuilder (Expr ARate)
+aopcode opcd es = freshAVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
 
-out :: Expr -> InstBuilder ()
-out e = tellStmt $ Outs [e]
+out :: Expr ARate -> InstBuilder ()
+out e = tellStmt $ Outs [getExpr e]
 
-outs :: [Expr] -> InstBuilder ()
-outs = tellStmt . Outs 
+outs :: [Expr ARate] -> InstBuilder ()
+outs = tellStmt . Outs . map getExpr
 
 
 
@@ -209,9 +224,10 @@ instance Format Stmt where
   format (Outs xs)            = 
     indent 8 (padr 11 (text "outs") <+> punctuate (text ", ") (map format xs))
 
+instance Format (Expr a) where
+  format = format . getExpr
 
-
-instance Format Expr where
+instance Format DExpr where
   format (Var s)        = format s
   format (PField i)     = char 'p' <> int i 
   format (Const val)    = format val
