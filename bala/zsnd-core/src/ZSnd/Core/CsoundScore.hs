@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.CsoundScore
+-- Module      :  ZSnd.Core.CsoundScore
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.CsoundScore
+module ZSnd.Core.CsoundScore
   (
 
     Section(..)
@@ -30,8 +30,8 @@ module ZScore.CsoundScore
  
   ) where
 
-import ZScore.Utils.FormatCombinators
-import ZScore.Utils.HList
+import ZSnd.Core.Utils.FormatCombinators
+import ZSnd.Core.Utils.HList
 
 import Control.Applicative
 

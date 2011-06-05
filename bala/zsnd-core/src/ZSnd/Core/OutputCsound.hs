@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.OutputCsound
+-- Module      :  ZSnd.Core.OutputCsound
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.OutputCsound
+module ZSnd.Core.OutputCsound
   (
 
     writeSco
@@ -30,10 +30,10 @@ module ZScore.OutputCsound
 
   ) where
 
-import ZScore.CSDDoc
-import ZScore.CsoundInst
-import ZScore.CsoundScore
-import ZScore.Utils.FormatCombinators
+import ZSnd.Core.CSDDoc
+import ZSnd.Core.CsoundInst
+import ZSnd.Core.CsoundScore
+import ZSnd.Core.Utils.FormatCombinators
 
 import Data.List
 

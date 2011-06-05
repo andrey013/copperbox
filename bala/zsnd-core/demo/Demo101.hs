@@ -5,8 +5,8 @@
 module Demo101 where
 
 
-import ZScore
-import ZScore.Opcodes
+import ZSnd.Core
+import ZSnd.Core.Opcodes
 
 import System.Directory
 import System.Process

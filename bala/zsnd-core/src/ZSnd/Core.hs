@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore
+-- Module      :  ZSnd.Core
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,25 +14,25 @@
 -- Shim module
 --
 -- Note - to avoid Prelude name clashes the module 
--- @ZScore.Opcodes@ must be imported explicitly.
+-- @ZSnd.Core.Opcodes@ must be imported explicitly.
 --
 
 --------------------------------------------------------------------------------
 
-module ZScore
+module ZSnd.Core
   (
-    module ZScore.GenRoutines
-  , module ZScore.CsoundInst
-  , module ZScore.CsoundScore
-  , module ZScore.OutputCsound
+    module ZSnd.Core.GenRoutines
+  , module ZSnd.Core.CsoundInst
+  , module ZSnd.Core.CsoundScore
+  , module ZSnd.Core.OutputCsound
 
   ) where
 
 
-import ZScore.GenRoutines
-import ZScore.CsoundInst
-import ZScore.CsoundScore
-import ZScore.OutputCsound
+import ZSnd.Core.GenRoutines
+import ZSnd.Core.CsoundInst
+import ZSnd.Core.CsoundScore
+import ZSnd.Core.OutputCsound
 
 
 

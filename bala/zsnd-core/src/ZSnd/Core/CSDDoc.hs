@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.CSDDoc
+-- Module      :  ZSnd.Core.CSDDoc
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.CSDDoc
+module ZSnd.Core.CSDDoc
   (
 
     csdStartTag
@@ -31,7 +31,7 @@ module ZScore.CSDDoc
   ) where
 
 
-import ZScore.Utils.FormatCombinators
+import ZSnd.Core.Utils.FormatCombinators
 
 csdStartTag :: String -> Doc
 csdStartTag ss = angles $ text ss

@@ -1,4 +1,4 @@
-name:             zscore
+name:             zsnd-core
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -6,9 +6,11 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Score files...
+synopsis:         Generate Csound.
 description:
-  Score files (Csound).
+  Generate Csound - both scores and orchestras.
+  . 
+  The embeddings are somewhat trivial...
   .
   (c) Stephen Tetley 2011
   .
@@ -26,17 +28,17 @@ library
   build-depends:      base              <  5
   
   exposed-modules:
-    ZScore,
-    ZScore.CSDDoc,
-    ZScore.CsoundInst,
-    ZScore.CsoundScore,
-    ZScore.GenRoutines,
-    ZScore.Opcodes,
-    ZScore.OutputCsound
+    ZSnd.Core,
+    ZSnd.Core.CsoundInst,
+    ZSnd.Core.CsoundScore,
+    ZSnd.Core.GenRoutines,
+    ZSnd.Core.Opcodes,
+    ZSnd.Core.OutputCsound
 
   other-modules:
-    ZScore.Utils.FormatCombinators,
-    ZScore.Utils.HList
+    ZSnd.Core.CSDDoc,
+    ZSnd.Core.Utils.FormatCombinators,
+    ZSnd.Core.Utils.HList
       
   extensions:
     

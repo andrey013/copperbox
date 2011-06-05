@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.Utils.FormatCombinators
+-- Module      :  ZSnd.Core.Utils.FormatCombinators
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.Utils.FormatCombinators
+module ZSnd.Core.Utils.FormatCombinators
   (
     Doc
   , DocS

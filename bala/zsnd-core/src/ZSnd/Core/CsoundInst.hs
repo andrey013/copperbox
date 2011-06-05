@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.CsoundInst
+-- Module      :  ZSnd.Core.CsoundInst
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.CsoundInst
+module ZSnd.Core.CsoundInst
   (
 
     Orch(..)
@@ -49,8 +49,8 @@ module ZScore.CsoundInst
   ) where
 
 
-import ZScore.Utils.FormatCombinators
-import ZScore.Utils.HList
+import ZSnd.Core.Utils.FormatCombinators
+import ZSnd.Core.Utils.HList
 
 import Control.Applicative hiding ( Const, empty )
 

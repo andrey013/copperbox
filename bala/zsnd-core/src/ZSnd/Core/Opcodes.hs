@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.Opcodes
+-- Module      :  ZSnd.Core.Opcodes
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.Opcodes
+module ZSnd.Core.Opcodes
   (
  
     pfield
@@ -33,7 +33,7 @@ module ZScore.Opcodes
   ) where
 
 
-import ZScore.CsoundInst
+import ZSnd.Core.CsoundInst
 
 
 --------------------------------------------------------------------------------

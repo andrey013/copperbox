@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.GenRoutines
+-- Module      :  ZSnd.Core.GenRoutines
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.GenRoutines
+module ZSnd.Core.GenRoutines
   (
 
   
@@ -28,7 +28,7 @@ module ZScore.GenRoutines
 
   ) where
 
-import ZScore.CsoundScore
+import ZSnd.Core.CsoundScore
 
 
 

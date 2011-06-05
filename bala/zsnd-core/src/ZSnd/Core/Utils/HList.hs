@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.Utils.HList
+-- Module      :  ZSnd.Core.Utils.HList
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZScore.Utils.HList
+module ZSnd.Core.Utils.HList
   (
 
   -- * Hughes list
