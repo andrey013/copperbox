@@ -28,6 +28,7 @@ module ZScore.Utils.FormatCombinators
   , hcat
   , hsep
   , vcat
+  , vspace
 
   , text
   , char
@@ -199,6 +200,17 @@ vcat (x:xs) = step x xs
   where
     step acc (z:zs) = step (acc `vconcat` z) zs
     step acc []     = acc
+
+-- | Vertically concatenate a list of documents, with a blank line 
+-- between each doc.
+--
+vspace :: [Doc] -> Doc
+vspace []     = empty
+vspace (x:xs) = step x xs 
+  where
+    step acc (z:zs) = step (acc `vconcat` empty `vconcat` z) zs
+    step acc []     = acc
+
 
 -- | Create a document from a literal string.
 -- 

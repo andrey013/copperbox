@@ -18,7 +18,11 @@
 module ZScore.CsoundInst
   (
 
-    Inst
+    Orch(..)
+  , OrchHeader(..)
+  , Inst
+  , default_orch_header
+
   , InstBuilder
   , Stmt
   , Expr(..)
@@ -48,7 +52,53 @@ module ZScore.CsoundInst
 import ZScore.Utils.FormatCombinators
 import ZScore.Utils.HList
 
-import Control.Applicative hiding ( Const )
+import Control.Applicative hiding ( Const, empty )
+
+
+data Orch = Orch
+      { orch_header     :: OrchHeader
+      , orch_insts      :: [Inst]
+      }
+  deriving (Eq,Ord,Show)
+
+-- | Orchestra file header values.
+--
+-- The following fields are not accessible to ZScore:
+--
+-- > ctrlinit   
+-- > massign
+-- > pgmassign
+-- > pset
+-- > strset
+--
+data OrchHeader = OrchHeader 
+      { zero_dbfs               :: Int     -- default 32767
+      , kr_ctrl_rate            :: Int     -- default 1000
+      , sr_aud_sample_rate      :: Int     -- default 44100
+      , ksmps_ctrl_period_samps :: Int     -- default 10
+      , nchnls_num_chans        :: Int     -- default 1 (mono)
+      , seed_gbl_random         :: Maybe Int  
+      }
+  deriving (Eq,Ord,Show)
+
+      
+default_orch_header :: OrchHeader 
+default_orch_header =  
+    OrchHeader { zero_dbfs                = 32767
+               , kr_ctrl_rate             = 4410
+               , sr_aud_sample_rate       = 44100
+               , ksmps_ctrl_period_samps  = 32
+               , nchnls_num_chans         = 1
+               , seed_gbl_random          = Nothing
+               }
+
+
+data Inst = Inst { inst_num :: Int, inst_body :: [Stmt] }
+  deriving (Eq,Ord,Show)
+
+
+newtype InstBuilder a = Build { 
+          getBuild :: IntSupply -> (a, H Stmt, IntSupply) }
 
 
 data IntSupply = IntSupply
@@ -56,12 +106,6 @@ data IntSupply = IntSupply
       , k_int   :: Int
       , a_int   :: Int
       }
-
-data Inst = Inst { inst_num :: Int, inst_body :: [Stmt] }
-  deriving (Eq,Ord,Show)
-
-newtype InstBuilder a = Build { 
-          getBuild :: IntSupply -> (a, H Stmt, IntSupply) }
 
 
 data CsValue = CsInt Int
@@ -201,6 +245,25 @@ outs = tellStmt . Outs . map getExpr
 
 
 
+--------------------------------------------------------------------------------
+-- Format instances
+
+
+instance Format Orch where
+  format (Orch hdr xs) = vspace (format hdr : map format xs)
+
+instance Format OrchHeader where
+  format orch =        lhs "0dbfs"  <+> int (zero_dbfs orch)
+            `vconcat`  lhs "sr"     <+> int (sr_aud_sample_rate orch)
+--            `vconcat`  lhs "kr"     <+> int (kr_ctrl_rate orch)
+            `vconcat`  lhs "ksmps"  <+> int (ksmps_ctrl_period_samps orch)
+            `vconcat`  lhs "nchnls" <+> int (nchnls_num_chans orch)
+            `vconcat`  opt_seed
+    where
+      lhs s = text s <+> char '='
+      opt_seed = case seed_gbl_random orch of 
+                   Nothing -> empty
+                   Just i  -> lhs "seed" <+> int i
 
 
 instance Format Inst where

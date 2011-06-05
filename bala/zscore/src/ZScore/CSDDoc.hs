@@ -23,6 +23,7 @@ module ZScore.CSDDoc
 
   , commentLine
 
+  , csound_synthesizer
   , cs_options
   , cs_instruments
   , cs_score 
@@ -43,6 +44,10 @@ csdElem name d  = csdStartTag name `vconcat` d `vconcat` csdEndTag name
 
 commentLine :: String -> Doc
 commentLine ss = text $ '#': ss
+
+csound_synthesizer :: Doc -> Doc -> Doc -> Doc
+csound_synthesizer opts orch sco = 
+    csdElem "CsoundSynthesizer" (opts `vconcat` orch `vconcat` sco)
 
 cs_options :: [String] -> Doc
 cs_options xs = csdElem "CsOptions" (vcat $ map text xs)

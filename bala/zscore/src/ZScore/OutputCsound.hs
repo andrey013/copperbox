@@ -19,15 +19,19 @@ module ZScore.OutputCsound
   (
 
     writeSco
---  , writeOrc
+  , writeOrc
+  , writeUnifiedFile
 
-  -- * Output a CSD file
---    writeCSD
+  , CsoundFlags(..)
+  , flags_rt_audio
 
+  , flags_wav_file_out
+  , flags_aiff_file_out
 
   ) where
 
-
+import ZScore.CSDDoc
+import ZScore.CsoundInst
 import ZScore.CsoundScore
 import ZScore.Utils.FormatCombinators
 
@@ -38,10 +42,44 @@ writeSco file_path xs = writeFile file_path $ show $ buildScoreDoc xs
 
 -- | Orchestra file needs a prologue (sr, ksmps, ...)
 --
--- writeOrc :: FilePath -> [Inst] -> IO ()
--- writeOrc file_path xs = writeFile file_path $ show $ buildScoreDoc xs
+writeOrc :: FilePath -> Orch -> IO ()
+writeOrc file_path orch = writeFile file_path $ show $ format orch
 
 
+writeUnifiedFile :: FilePath -> CsoundFlags -> Orch -> [Section] -> IO ()
+writeUnifiedFile file_path flags orch sco = 
+    writeFile file_path $ show $ csound_synthesizer dflags dorch dsco
+  where
+    dflags = cs_options [getCsoundFlags flags]
+    dorch  = cs_instruments [format orch]
+    dsco   = cs_score $ map format sco
+
+
+data CsoundFlags = CsoundFlags { getCsoundFlags :: String }
+  deriving (Eq,Ord,Show)
+
+flags_rt_audio :: CsoundFlags
+flags_rt_audio = CsoundFlags "-odac     ;;; RT audio out"
+
+
+-- | Note - file path is passed to the shell.
+-- 
+flags_wav_file_out :: FilePath -> CsoundFlags
+flags_wav_file_out wav = CsoundFlags $ body 
+  where
+    body = "-o " ++ wav ++ " -W"
+
+
+-- | Note - file path is passed to the shell.
+-- 
+flags_aiff_file_out :: FilePath -> CsoundFlags
+flags_aiff_file_out aiff = CsoundFlags $ body 
+  where
+    body = "-o " ++ aiff ++ " -A"
+
+
+--------------------------------------------------------------------------------
+-- Printing scores
 
 buildScoreDoc :: [Section] -> Doc
 buildScoreDoc []     = empty
