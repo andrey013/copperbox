@@ -139,12 +139,12 @@ instance Format Section where
 
 instance Format DStmt where
   format (TableStmt i s sz n xs) = 
-      char 'f' <+> padr 6 (int i) <+> padl 10 (dtrunc s) <+> padl 6 (int sz)
-               <+> padl 6 (int n) <+> hsep (map (padl 4 . format) xs)
+      char 'f' <+> padr 5 (int i) <+> padl 5 (dtrunc s) <+> padl 5 (int sz)
+               <+> padl 5 (int n) <+> hsep (map (padl 5 . format) xs)
 
   format (InstStmt i s d xs) = 
-      char 'i' <+> padr 6 (int i) <+> padl 10 (dtrunc s) <+> padl 10 (dtrunc d)
-               <+> hsep (map (padl 10 . dtrunc) xs)
+      char 'i' <+> padr 5 (int i) <+> padl 5 (dtrunc s) <+> padl 5 (dtrunc d)
+               <+> hsep (map (padl 5 . dtrunc) xs)
 
-  format (F0Stmt s) = text "f0" <+> padl 10 (dtrunc s)
+  format (F0Stmt s) = text "f0" <+> padl 5 (dtrunc s)
 

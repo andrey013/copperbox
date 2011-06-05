@@ -8,7 +8,7 @@ import ZScore.CSDDoc
 import ZScore.CsoundGens
 import ZScore.CsoundScore
 import ZScore.Utils.FormatCombinators
-import ZScore.OutputCSD
+import ZScore.OutputCsound
 
 import System.Directory
 import System.Process
@@ -56,13 +56,19 @@ data PField = PField
 
 
 demo01 :: IO ()
-demo01 = putStr $ show $ format $ runScoBuilder $ do
+demo01 = writeSco "out/sco101.sco" $ wrap1 $ runScoBuilder $ do
     gen10 1 0 4096 [1.0]
     gen9 7 0 513 [(1,1,0), (3, 0.333, 180 )]
     i01_notes
-
+  where
+    wrap1 = \a -> [a]
 
 
 i01_notes :: ScoBuilder ()
-i01_notes = dyninst 1 0 3 []
+i01_notes = do 
+    dyninst 1 0 3 []
+    dyninst 1 3 3 []
+    dyninst 1 6 3 []
+    advance 3
+    dyninst 1 8 3 []
 
