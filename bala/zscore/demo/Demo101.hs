@@ -2,19 +2,16 @@
 
 -- 101 instrument from the Csound book...
 
-module Inst101 where
+module Demo101 where
 
 
-import ZScore.CsoundGens
-import ZScore.CsoundInst
-import ZScore.CsoundScore
+import ZScore
 import ZScore.Opcodes
-import ZScore.OutputCsound
-import ZScore.Utils.FormatCombinators
 
 import System.Directory
 import System.Process
 
+main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/" 
     writeUnifiedFile "out/cs101.csd" flags orch01 [sco01]

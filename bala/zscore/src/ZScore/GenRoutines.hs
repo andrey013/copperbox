@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZScore.CsoundGens
+-- Module      :  ZScore.GenRoutines
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -10,11 +10,11 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- CsoundScore
+-- Csound gen tables.
 --
 --------------------------------------------------------------------------------
 
-module ZScore.CsoundGens
+module ZScore.GenRoutines
   (
 
   

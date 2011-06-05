@@ -18,8 +18,7 @@ stability:          half baked
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Inst101.hs,
-  demo/Sco101.hs
+  demo/Demo101.hs
 
 
 library
@@ -27,10 +26,11 @@ library
   build-depends:      base              <  5
   
   exposed-modules:
+    ZScore,
     ZScore.CSDDoc,
-    ZScore.CsoundGens,
     ZScore.CsoundInst,
     ZScore.CsoundScore,
+    ZScore.GenRoutines,
     ZScore.Opcodes,
     ZScore.OutputCsound
 
