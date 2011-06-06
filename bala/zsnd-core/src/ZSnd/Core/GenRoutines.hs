@@ -12,6 +12,9 @@
 --
 -- Csound gen tables.
 --
+-- Note - some of the argument may have incorrect types - Doubles 
+-- when they should be Ints, Ints when they should be Doubles.
+--
 --------------------------------------------------------------------------------
 
 module ZSnd.Core.GenRoutines

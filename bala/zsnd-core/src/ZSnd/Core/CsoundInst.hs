@@ -34,6 +34,7 @@ module ZSnd.Core.CsoundInst
 
   , runInstBuilder
 
+  , opcode
   , ivar
   , iopcode
   , kvar
@@ -41,7 +42,7 @@ module ZSnd.Core.CsoundInst
   , avar
   , aopcode
 
-
+  , pfield
   , out
   , outs
 
@@ -129,8 +130,9 @@ data SVar = SVar RateVar Int
 data DExpr = Var     SVar
            | PField  Int
            | Const   CsValue
+           | ZeroOp  String
            | UnOp    String DExpr
-           | BinOp   DExpr String DExpr
+           | BinOp   String DExpr DExpr
            | Funcall String DExpr
   deriving (Eq,Ord,Show)
 
@@ -150,7 +152,7 @@ data RateVar = I | K | A
 
 
 binop :: String -> Expr a -> Expr a -> Expr a
-binop name a b = Expr $ BinOp (getExpr a) name (getExpr b)
+binop name a b = Expr $ BinOp name (getExpr a) (getExpr b)
 
 instance Num (Expr a) where
   (+) = binop "+"
@@ -216,7 +218,8 @@ mkOpcode :: SVar -> String -> [DExpr] -> InstBuilder DExpr
 mkOpcode v opcd es = tellStmt (Opcode v opcd es) >> return (Var v)
 
 
-
+opcode :: String -> [DExpr] -> InstBuilder (Expr a)
+opcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
 ivar :: Expr IRate -> InstBuilder (Expr IRate)
 ivar expr = freshIVar >>= \v -> fmap Expr $ mkVar v (getExpr expr)
@@ -235,6 +238,12 @@ avar expr = freshAVar >>= \v -> fmap Expr $ mkVar v expr
 
 aopcode :: String -> [DExpr] -> InstBuilder (Expr ARate)
 aopcode opcd es = freshAVar >>= \v -> fmap Expr $ mkOpcode v opcd es
+
+
+-- | Declare a p-field.
+--
+pfield    :: Int -> Expr a
+pfield i  = Expr $ PField i
 
 
 out :: Expr ARate -> InstBuilder ()
@@ -294,8 +303,9 @@ instance Format DExpr where
   format (Var s)        = format s
   format (PField i)     = char 'p' <> int i 
   format (Const val)    = format val
-  format (BinOp a ss b) = format a <> text ss <> format b
+  format (ZeroOp ss)    = text ss
   format (UnOp ss a)    = text ss <> format a
+  format (BinOp ss a b) = format a <> text ss <> format b
   format (Funcall ss a) = text ss <> parens (format a)
 
 instance Format SVar where
