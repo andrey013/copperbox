@@ -19,7 +19,7 @@ module ZSnd.Core.CsoundScore
 
     Section(..)
   , DStmt(..)
-  , CsoundType(..)
+  , CsoundValue(..)
 
   , ScoBuilder
   , runScoBuilder
@@ -53,7 +53,7 @@ data DStmt =
         , table_atime     :: Double
         , table_size      :: Int
         , table_gennum    :: Int
-        , table_args      :: [CsoundType]
+        , table_args      :: [CsoundValue]
         }
     | InstStmt
         { inst_num        :: Int
@@ -66,9 +66,9 @@ data DStmt =
   deriving (Eq,Ord,Show)
 
 
-data CsoundType = CsDouble Double
-                | CsInt    Int
-                | CsString String
+data CsoundValue = CsDouble Double
+                 | CsInt    Int
+                 | CsString String
   deriving (Eq,Ord,Show)
 
 
@@ -120,7 +120,7 @@ advance d = Build $ \s -> ((), wrapH $ F0Stmt d, s )
 --
 -- > gen_num * time * size * [arg]
 --
-dyngen :: Int -> Double -> Int -> [CsoundType] -> ScoBuilder ()
+dyngen :: Int -> Double -> Int -> [CsoundValue] -> ScoBuilder ()
 dyngen gnum t sz args = Build $ \s -> ((), wrapH $ stmt1 s, s+1 )
   where
     stmt1 i = TableStmt { table_num       = i
@@ -145,7 +145,7 @@ dyninst i d dur args = Build $ \s -> ((), wrapH $ stmt1, s)
 --------------------------------------------------------------------------------
 -- Format instances
 
-instance Format CsoundType where
+instance Format CsoundValue where
   format (CsDouble d) = dtrunc d
   format (CsInt i)    = int i
   format (CsString s) = dquotes $ text s
