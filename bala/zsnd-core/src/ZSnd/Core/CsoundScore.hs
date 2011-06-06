@@ -23,6 +23,7 @@ module ZSnd.Core.CsoundScore
 
   , ScoBuilder
   , runScoBuilder
+  , setTableNum 
 
   , advance
   , dyngen
@@ -71,53 +72,69 @@ data CsoundType = CsDouble Double
   deriving (Eq,Ord,Show)
 
 
-newtype ScoBuilder a = Build { getBuild :: (a, H DStmt) }
+type TNum = Int
+
+
+-- | ScoBuilder is a State-Writer monad.
+-- 
+-- Writer collects Inst and Table statements.
+--
+-- State tracks table number for generating fresh tables.
+--
+newtype ScoBuilder a = Build { getBuild :: TNum -> (a, H DStmt, TNum) }
 
 
 
 instance Functor ScoBuilder where
-  fmap f ma = Build $ let (a,w) = getBuild ma in (f a, w)
+  fmap f ma = Build $ \s -> let (a,w, s1) = getBuild ma s in (f a, w, s1)
 
 
 instance Applicative ScoBuilder where
-  pure a    = Build $ (a, emptyH)
-  mf <*> ma = Build $ let (f,w1) = getBuild mf
-                          (a,w2) = getBuild ma
-                      in (f a, w1 `appendH` w2)
+  pure a    = Build $ \s -> (a, emptyH, s)
+  mf <*> ma = Build $ \s -> let (f,w1,s1) = getBuild mf s
+                                (a,w2,s2) = getBuild ma s1
+                      in (f a, w1 `appendH` w2,s2)
 
 instance Monad ScoBuilder where
-  return a  = Build $ (a, emptyH)
-  ma >>= k  = Build $ let (a,w1) = getBuild ma
-                          (b,w2) = (getBuild . k) a
-                      in (b, w1 `appendH` w2)
+  return a  = Build $ \s -> (a, emptyH, s)
+  ma >>= k  = Build $ \s -> let (a,w1,s1) = getBuild ma s
+                                (b,w2, s2) = (getBuild . k) a s1
+                            in (b, w1 `appendH` w2, s2)
 
 
 runScoBuilder :: ScoBuilder a -> Section
-runScoBuilder ma = post $ getBuild ma
+runScoBuilder ma = post $ getBuild ma 1
   where
-    post (_,w) = Section { getSection = toListH w }
+    post (_,w,_) = Section { getSection = toListH w }
 
+
+setTableNum :: Int -> ScoBuilder ()
+setTableNum i = Build $ \_ -> ((), emptyH, i)
 
 advance :: Double -> ScoBuilder ()
-advance d = Build $ ((), wrapH $ F0Stmt d )
+advance d = Build $ \s -> ((), wrapH $ F0Stmt d, s )
+
+
 
 -- | Dynamically typed gen statement.
 --
-dyngen :: Int -> Int -> Double -> Int -> [CsoundType] -> ScoBuilder ()
-dyngen gnum i d sz args = Build $ ((), wrapH $ stmt1 )
+-- > gen_num * time * size * [arg]
+--
+dyngen :: Int -> Double -> Int -> [CsoundType] -> ScoBuilder ()
+dyngen gnum t sz args = Build $ \s -> ((), wrapH $ stmt1 s, s+1 )
   where
-    stmt1 = TableStmt { table_num       = i
-                      , table_atime     = d
-                      , table_size      = sz
-                      , table_gennum    = gnum
-                      , table_args      = args 
-                      }
+    stmt1 i = TableStmt { table_num       = i
+                        , table_atime     = t
+                        , table_size      = sz
+                        , table_gennum    = gnum
+                        , table_args      = args 
+                        }
 
 
 -- | Dynamically typed inst statement.
 --
 dyninst :: Int -> Double -> Double -> [Double] -> ScoBuilder ()
-dyninst i d dur args = Build $ ((), wrapH $ stmt1 )
+dyninst i d dur args = Build $ \s -> ((), wrapH $ stmt1, s)
   where
     stmt1 = InstStmt { inst_num         = i
                      , inst_start       = d

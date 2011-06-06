@@ -29,6 +29,6 @@ orch01 = Orch default_orch_header [inst1]
 
 sco01 :: Section
 sco01 = runScoBuilder $ do 
-    gen10   1 0 4096 [1]  
+    gen10   0 4096 [1]  
     dyninst 1 0 3 []
 --    dyninst 1 3 3 []
